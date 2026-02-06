@@ -1,0 +1,144 @@
+"""Authentication and security middleware for UAIS-V API."""
+import os
+import secrets
+from datetime import datetime, timedelta
+from typing import Optional
+
+from fastapi import Depends, HTTPException, Security, status
+from fastapi.security import APIKeyHeader, HTTPAuthorizationCredentials, HTTPBearer
+from jose import JWTError, jwt
+from passlib.context import CryptContext
+from pydantic import BaseModel
+
+# Configuration (in production, load from environment variables or secrets manager)
+SECRET_KEY = os.getenv("UAIS_SECRET_KEY", secrets.token_urlsafe(32))
+ALGORITHM = "HS256"
+ACCESS_TOKEN_EXPIRE_MINUTES = 60
+API_KEYS = set(os.getenv("UAIS_API_KEYS", "").split(",")) if os.getenv("UAIS_API_KEYS") else set()
+
+# Password hashing
+pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+
+# Security schemes
+api_key_header = APIKeyHeader(name="X-API-Key", auto_error=False)
+bearer_scheme = HTTPBearer(auto_error=False)
+
+
+class Token(BaseModel):
+    """OAuth2 access token response."""
+    access_token: str
+    token_type: str
+
+
+class TokenData(BaseModel):
+    """JWT token payload data."""
+    username: Optional[str] = None
+    scopes: list[str] = []
+
+
+class User(BaseModel):
+    """User model."""
+    username: str
+    email: Optional[str] = None
+    disabled: bool = False
+    scopes: list[str] = []
+
+
+def verify_password(plain_password: str, hashed_password: str) -> bool:
+    """Verify a password against its hash."""
+    return pwd_context.verify(plain_password, hashed_password)
+
+
+def get_password_hash(password: str) -> str:
+    """Hash a password."""
+    return pwd_context.hash(password)
+
+
+def create_access_token(data: dict, expires_delta: Optional[timedelta] = None) -> str:
+    """Create a JWT access token."""
+    to_encode = data.copy()
+    if expires_delta:
+        expire = datetime.utcnow() + expires_delta
+    else:
+        expire = datetime.utcnow() + timedelta(minutes=15)
+    to_encode.update({"exp": expire})
+    encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
+    return encoded_jwt
+
+
+def verify_token(token: str) -> TokenData:
+    """Verify and decode a JWT token."""
+    credentials_exception = HTTPException(
+        status_code=status.HTTP_401_UNAUTHORIZED,
+        detail="Could not validate credentials",
+        headers={"WWW-Authenticate": "Bearer"},
+    )
+    try:
+        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        username: str = payload.get("sub")
+        if username is None:
+            raise credentials_exception
+        token_scopes = payload.get("scopes", [])
+        return TokenData(username=username, scopes=token_scopes)
+    except JWTError:
+        raise credentials_exception
+
+
+async def verify_api_key(api_key: Optional[str] = Security(api_key_header)) -> bool:
+    """Verify API key from header."""
+    if not API_KEYS:
+        # If no API keys configured, allow unauthenticated access (development mode)
+        return True
+
+    if api_key is None or api_key not in API_KEYS:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Invalid or missing API key"
+        )
+    return True
+
+
+async def verify_bearer_token(
+    credentials: Optional[HTTPAuthorizationCredentials] = Security(bearer_scheme)
+) -> TokenData:
+    """Verify JWT bearer token."""
+    if credentials is None:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Missing bearer token",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+
+    return verify_token(credentials.credentials)
+
+
+async def get_current_user(token_data: TokenData = Depends(verify_bearer_token)) -> User:
+    """Get current user from token."""
+    # In production, fetch user from database
+    # For now, create user from token data
+    return User(
+        username=token_data.username,
+        scopes=token_data.scopes
+    )
+
+
+async def require_scope(required_scope: str):
+    """Dependency to require specific scope."""
+    async def scope_checker(user: User = Depends(get_current_user)) -> User:
+        if required_scope not in user.scopes and "admin" not in user.scopes:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail=f"Insufficient permissions. Required scope: {required_scope}"
+            )
+        return user
+    return scope_checker
+
+
+# Simplified authentication for demo/development
+# In production, use proper authentication with database
+async def authenticate(api_key: str = Security(api_key_header)) -> bool:
+    """
+    Simple authentication that checks API key.
+    Falls back to allowing unauthenticated access if no keys configured.
+    """
+    return await verify_api_key(api_key)
