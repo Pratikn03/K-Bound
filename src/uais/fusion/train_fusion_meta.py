@@ -30,6 +30,8 @@ def build_fusion_dataset(score_paths: Dict[str, Path] | None = None) -> Tuple[Di
 
     scores = {}
     labels = None
+    sample_id_sets = []
+    score_frames: Dict[str, pd.DataFrame] = {}
     for domain, path in score_paths.items():
         # Allow relative paths to be resolved from project root for notebooks/scripts.
         if not path.is_absolute():
@@ -45,16 +47,57 @@ def build_fusion_dataset(score_paths: Dict[str, Path] | None = None) -> Tuple[Di
         scores[domain] = df["score"].to_numpy()
         if labels is None and "label" in df.columns:
             labels = df["label"].to_numpy()
+        if "sample_id" in df.columns:
+            score_frames[domain] = df.copy()
 
     if not scores:
         raise FileNotFoundError("No score files found for fusion.")
 
-    min_len = min(len(v) for v in scores.values())
-    scores = {k: v[:min_len] for k, v in scores.items()}
-    if labels is None:
-        labels = np.zeros(min_len, dtype=int)
+    if score_frames and len(score_frames) == len(scores):
+        has_timestamp = all("timestamp" in frame.columns for frame in score_frames.values())
+        key_columns = ["sample_id", "timestamp"] if has_timestamp else ["sample_id"]
+        if not has_timestamp and any("timestamp" in frame.columns for frame in score_frames.values()):
+            print("[warn] Timestamp missing in some domains; aligning on sample_id only.")
+        for domain, frame in score_frames.items():
+            cols = key_columns + ["score"] + (["label"] if "label" in frame.columns else [])
+            frame = frame[cols].copy()
+            if frame.duplicated(subset=key_columns).any():
+                agg = {"score": "mean"}
+                if "label" in frame.columns:
+                    agg["label"] = "max"
+                frame = frame.groupby(key_columns, as_index=False).agg(agg)
+            score_frames[domain] = frame
+            keys = (
+                frame[key_columns[0]].astype(str)
+                if len(key_columns) == 1
+                else frame[key_columns[0]].astype(str) + "::" + frame[key_columns[1]].astype(str)
+            )
+            sample_id_sets.append(set(keys))
+        common_ids = sorted(set.intersection(*sample_id_sets)) if sample_id_sets else []
+        if not common_ids:
+            raise ValueError("No overlapping sample_id values found across domains.")
+        labels = None
+        for domain, df in score_frames.items():
+            if len(key_columns) == 1:
+                df = df.set_index(df["sample_id"].astype(str))
+            else:
+                df = df.set_index(df["sample_id"].astype(str) + "::" + df["timestamp"].astype(str))
+            scores[domain] = df.loc[common_ids, "score"].to_numpy()
+            if "label" in df.columns:
+                domain_labels = df.loc[common_ids, "label"].to_numpy()
+                if labels is None:
+                    labels = domain_labels
+                elif not np.array_equal(labels, domain_labels):
+                    raise ValueError("Conflicting labels found across aligned domains.")
+        if labels is None:
+            labels = np.zeros(len(common_ids), dtype=int)
     else:
-        labels = labels[:min_len]
+        min_len = min(len(v) for v in scores.values())
+        scores = {k: v[:min_len] for k, v in scores.items()}
+        if labels is None:
+            labels = np.zeros(min_len, dtype=int)
+        else:
+            labels = labels[:min_len]
 
     return scores, labels
 

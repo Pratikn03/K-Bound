@@ -1,0 +1,64 @@
+data:
+  path: experiments/fusion/attention_fusion/fusion_inputs.csv
+  format: csv
+  id_column: sample_id
+  domain_column: domain
+  label_column: label
+  score_column: score
+  confidence_column: confidence
+  timestamp_column: null
+  embedding_prefix: embedding_
+  feature_columns: []
+  domain_order: []
+
+model:
+  num_domains: 3
+  embed_dim: 64
+  num_heads: 8
+  num_layers: 1
+  dropout: 0.1
+  use_attention: true
+  use_confidence: true
+  use_input_confidence: true
+  use_domain_embeddings: true
+  use_positional_embeddings: true
+  use_missing_embedding: true
+
+training:
+  seed: 42
+  batch_size: 128
+  epochs: 20
+  lr: 0.001
+  weight_decay: 0.01
+  domain_dropout: 0.1
+  test_size: 0.2
+  val_size: 0.1
+  early_stopping: 5
+  lambda_reg: 0.01
+
+output:
+  model_dir: models/fusion/attention
+  checkpoint_name: attention_fusion.pt
+  metrics_path: experiments/fusion/attention_fusion/metrics.json
+
+mlflow:
+  enabled: false
+  tracking_uri: null
+  experiment_name: UAISV_Experiments
+
+validation:
+  report_path: experiments/fusion/attention_fusion/validation.json
+
+evaluation:
+  metrics_path: experiments/fusion/attention_fusion/harness_metrics.json
+  seeds: [42, 43, 44]
+  n_bootstrap: 200
+  bootstrap_alpha: 0.05
+  save_attention_samples: 16
+  attention_weights_dir: experiments/fusion/attention_fusion/attention_weights
+  domain_dropout_probs: [0.0, 0.1, 0.3]
+  drop_domain_pairs: false
+  performance_runs: 3
+  performance_warmup_batches: 2
+  performance_iters: 25
+  performance_batch_size: 256

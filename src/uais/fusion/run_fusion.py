@@ -29,7 +29,11 @@ def _load_yaml(path: Path) -> Dict:
     return yaml.safe_load(path.read_text())
 
 
-def _read_scores(path: Path, score_col: str, label_col: str | None) -> Tuple[np.ndarray, np.ndarray | None]:
+def _read_scores(
+    path: Path,
+    score_col: str,
+    label_col: str | None,
+) -> Tuple[np.ndarray, np.ndarray | None, pd.DataFrame | None]:
     if not path.exists():
         raise FileNotFoundError(f"Score file not found: {path}")
 
@@ -42,6 +46,7 @@ def _read_scores(path: Path, score_col: str, label_col: str | None) -> Tuple[np.
         else:
             scores = np.asarray(data).ravel()
             labels = None
+        return scores, labels, None
     else:
         df = pd.read_csv(path)
         if score_col not in df.columns:
@@ -52,7 +57,18 @@ def _read_scores(path: Path, score_col: str, label_col: str | None) -> Tuple[np.
                     break
         scores = df[score_col].to_numpy()
         labels = df[label_col].to_numpy() if label_col and label_col in df.columns else None
-    return scores, labels
+        if "sample_id" in df.columns:
+            cols = ["sample_id", score_col]
+            if "timestamp" in df.columns:
+                cols.insert(1, "timestamp")
+            if label_col and label_col in df.columns:
+                cols.append(label_col)
+            df = df[cols].copy()
+            df.rename(columns={score_col: "score"}, inplace=True)
+            if label_col and label_col in df.columns:
+                df.rename(columns={label_col: "label"}, inplace=True)
+            return scores, labels, df
+    return scores, labels, None
 
 
 def _align_scores(score_dict: Dict[str, np.ndarray]) -> Dict[str, np.ndarray]:
@@ -73,20 +89,61 @@ def _load_inputs(cfg_path: Path) -> Tuple[Dict[str, np.ndarray], np.ndarray]:
 
     scores = {}
     labels = None
+    score_frames: Dict[str, pd.DataFrame] = {}
     for domain, path in score_paths.items():
-        s, l = _read_scores(Path(path), score_col, label_col)
+        s, l, frame = _read_scores(Path(path), score_col, label_col)
         scores[domain] = s
         if l is not None:
             labels = l
+        if frame is not None:
+            score_frames[domain] = frame
 
-    scores = _align_scores(scores)
-    if labels is not None:
-        labels = labels[: len(next(iter(scores.values())))]
-    elif labels_path:
-        labels = np.load(labels_path)
-        labels = labels[: len(next(iter(scores.values())))]
+    if score_frames and len(score_frames) == len(scores):
+        has_timestamp = all("timestamp" in frame.columns for frame in score_frames.values())
+        key_columns = ["sample_id", "timestamp"] if has_timestamp else ["sample_id"]
+        if not has_timestamp and any("timestamp" in frame.columns for frame in score_frames.values()):
+            print("[warn] Timestamp missing in some domains; aligning on sample_id only.")
+        key_sets = []
+        for domain, frame in score_frames.items():
+            if frame.duplicated(subset=key_columns).any():
+                agg = {"score": "mean"}
+                if "label" in frame.columns:
+                    agg["label"] = "max"
+                frame = frame.groupby(key_columns, as_index=False).agg(agg)
+            score_frames[domain] = frame
+            keys = (
+                frame[key_columns[0]].astype(str)
+                if len(key_columns) == 1
+                else frame[key_columns[0]].astype(str) + "::" + frame[key_columns[1]].astype(str)
+            )
+            key_sets.append(set(keys))
+        common_ids = sorted(set.intersection(*key_sets)) if key_sets else []
+        if not common_ids:
+            raise ValueError("No overlapping sample_id values found across domains.")
+        labels = None
+        for domain, frame in score_frames.items():
+            if len(key_columns) == 1:
+                frame = frame.set_index(frame["sample_id"].astype(str))
+            else:
+                frame = frame.set_index(frame["sample_id"].astype(str) + "::" + frame["timestamp"].astype(str))
+            scores[domain] = frame.loc[common_ids, "score"].to_numpy()
+            if "label" in frame.columns:
+                domain_labels = frame.loc[common_ids, "label"].to_numpy()
+                if labels is None:
+                    labels = domain_labels
+                elif not np.array_equal(labels, domain_labels):
+                    raise ValueError("Conflicting labels found across aligned domains.")
+        if labels is None:
+            labels = np.zeros(len(common_ids))
     else:
-        labels = np.zeros(len(next(iter(scores.values()))))
+        scores = _align_scores(scores)
+        if labels is not None:
+            labels = labels[: len(next(iter(scores.values())))]
+        elif labels_path:
+            labels = np.load(labels_path)
+            labels = labels[: len(next(iter(scores.values())))]
+        else:
+            labels = np.zeros(len(next(iter(scores.values()))))
 
     return scores, labels
 
