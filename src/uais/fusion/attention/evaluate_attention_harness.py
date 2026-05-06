@@ -28,6 +28,8 @@ from uais.fusion.attention.attention_utils import (
 )
 from uais.fusion.attention.cross_modal_attention import AttentionFusionModel
 from uais.fusion.attention.train_attention_fusion import attention_fusion_loss, set_seed
+from uais.fusion.attention.reliability_estimator import ReliabilityEstimator
+from uais.fusion.attention.counterfactual_explainer import CounterfactualDomainExplainer
 from uais.utils.config_loader import load_yaml
 from uais.utils.metrics import classification_metrics
 from uais.utils.stats import bootstrap_ci, delong_roc_test
@@ -340,6 +342,44 @@ def _measure_performance(
         "throughput_samples_per_sec": throughput,
         "max_rss_mb": float(rss_mb),
     }
+
+
+def _collect_predictions_craf(
+    model: AttentionFusionModel,
+    estimator: ReliabilityEstimator,
+    features_np: np.ndarray,
+    masks_np: np.ndarray,
+    labels_np: np.ndarray,
+    batch_size: int,
+    device: torch.device,
+) -> Tuple[np.ndarray, np.ndarray]:
+    """Collect predictions using CRAF reliability weights injected at fusion layer."""
+    model.eval()
+    all_probs: List[np.ndarray] = []
+    all_labels: List[np.ndarray] = []
+
+    for start in range(0, len(labels_np), batch_size):
+        end = min(start + batch_size, len(labels_np))
+        feat_batch = features_np[start:end]
+        mask_batch = masks_np[start:end]
+        lbl_batch = labels_np[start:end]
+
+        rel_weights = estimator.compute_reliability_weights(feat_batch, mask_batch)
+        feat_t = torch.as_tensor(feat_batch, dtype=torch.float32).to(device)
+        mask_t = torch.as_tensor(mask_batch, dtype=torch.bool).to(device)
+        craf_t = torch.as_tensor(rel_weights, dtype=torch.float32).to(device)
+        craf_t = craf_t.masked_fill(mask_t, 0.0)
+
+        with torch.no_grad():
+            embeds = [enc(feat_t[:, i, :]) for i, enc in enumerate(model.domain_encoders)]
+            domain_embeds = torch.stack(embeds, dim=1)
+            logits, _ = model.fusion(domain_embeds, key_padding_mask=mask_t, confidence_weights=craf_t)
+            probs = torch.sigmoid(logits.squeeze(-1)).cpu().numpy()
+
+        all_probs.append(probs)
+        all_labels.append(lbl_batch)
+
+    return np.concatenate(all_labels), np.concatenate(all_probs)
 
 
 def _save_attention_samples(
@@ -762,6 +802,53 @@ def evaluate_attention_harness(cfg_path: Path = DEFAULT_CONFIG) -> Dict[str, Dic
                 device,
             )
 
+            # --- CRAF evaluation (gated by enable_craf) ---
+            craf_metrics: Dict = {}
+            if eval_cfg.get("enable_craf", False) and score_index is not None:
+                try:
+                    val_idx = perf_meta["val_idx"]
+                    estimator = ReliabilityEstimator(
+                        domain_order=list(domain_order),
+                        score_index=score_index,
+                        ece_weight=cfg.get("reliability", {}).get("ece_weight", 0.4),
+                        ks_weight=cfg.get("reliability", {}).get("ks_weight", 0.4),
+                        sharpness_weight=cfg.get("reliability", {}).get("sharpness_weight", 0.2),
+                    )
+                    estimator.fit(features[val_idx], masks[val_idx], labels[val_idx])
+                    craf_y_true, craf_y_prob = _collect_predictions_craf(
+                        model, estimator, test_features, test_masks, test_labels, batch_size, device
+                    )
+                    craf_m = classification_metrics(craf_y_true, craf_y_prob, threshold=0.5)
+                    craf_delong_p = delong_roc_test(y_true, craf_y_prob, y_prob)
+                    craf_metrics = {
+                        "metrics": craf_m,
+                        "delong_vs_static_p": float(craf_delong_p),
+                        "domain_ece": estimator.get_domain_ece(),
+                    }
+                except Exception as exc:
+                    craf_metrics = {"error": str(exc)}
+
+            # --- CDA evaluation (gated by enable_cda) ---
+            cda_output: Dict = {}
+            if eval_cfg.get("enable_cda", False) and score_index is not None:
+                try:
+                    cda_n = int(eval_cfg.get("cda_samples", 100))
+                    cda_features = test_features[:cda_n]
+                    cda_masks = test_masks[:cda_n]
+                    cda_ids = test_sample_ids[:cda_n]
+                    explainer = CounterfactualDomainExplainer(model, list(domain_order), device=device)
+                    cf_results = explainer.explain_batch(cda_features, cda_masks, cda_ids)
+                    mean_cf_impacts = {
+                        d: float(np.nanmean([abs(r.cf_impacts.get(d, float("nan"))) for r in cf_results]))
+                        for d in domain_order
+                    }
+                    cda_output = {
+                        "mean_cf_impacts": mean_cf_impacts,
+                        "sample_narratives": [r.narrative for r in cf_results[:5]],
+                    }
+                except Exception as exc:
+                    cda_output = {"error": str(exc)}
+
             seed_outputs[str(seed)] = {
                 "metrics": metrics,
                 "metrics_ci": ci,
@@ -771,6 +858,8 @@ def evaluate_attention_harness(cfg_path: Path = DEFAULT_CONFIG) -> Dict[str, Dic
                 "interpretability": interpretability,
                 "domain_dropout": dropout_metrics,
                 "performance": performance,
+                "craf": craf_metrics,
+                "cda": cda_output,
             }
 
             test_metric_list.append(metrics["test"])
