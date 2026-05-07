@@ -57,8 +57,27 @@ evaluation:
   save_attention_samples: 16
   attention_weights_dir: experiments/fusion/attention_fusion/attention_weights
   domain_dropout_probs: [0.0, 0.1, 0.3]
+  domain_dropout_probs_extended: [0.0, 0.1, 0.2, 0.3, 0.5]
   drop_domain_pairs: false
   performance_runs: 3
   performance_warmup_batches: 2
   performance_iters: 25
   performance_batch_size: 256
+  enable_craf: false
+  enable_cda: false
+  cda_samples: 100
+
+reliability:
+  score_index: null  # resolved at runtime from feature_columns (index of "score" column)
+  ece_weight: 0.4
+  ks_weight: 0.4
+  sharpness_weight: 0.2
+  n_calibration_bins: 10
+  min_samples_for_ks: 30
+  estimator_path: experiments/fusion/attention_fusion/reliability_estimator.joblib
+
+craf:
+  drift_noise_levels: [0.0, 0.05, 0.1, 0.2, 0.3, 0.5]
+  adversarial_attacks: [zero_attack, max_attack, gaussian_noise]
+  adversarial_sigma: 0.1
+  cda_samples: 100

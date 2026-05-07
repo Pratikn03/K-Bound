@@ -125,6 +125,23 @@ def best_f1_threshold(y_true: np.ndarray, y_prob: np.ndarray) -> float:
     return float(best_thr)
 
 
+def reliability_degradation_auc(
+    noise_levels: np.ndarray,
+    roc_auc_values: np.ndarray,
+) -> float:
+    """Area under the performance-vs-drift curve (trapezoidal rule).
+
+    Higher value means the model degrades more slowly as noise/drift increases.
+    Used to compare CRAF vs static fusion under simulated domain shift.
+    """
+    noise_levels = np.asarray(noise_levels, dtype=float)
+    roc_auc_values = np.asarray(roc_auc_values, dtype=float)
+    valid = np.isfinite(roc_auc_values)
+    if valid.sum() < 2:
+        return float("nan")
+    return float(np.trapz(roc_auc_values[valid], noise_levels[valid]))
+
+
 __all__ = [
     "brier_score",
     "expected_calibration_error",
@@ -134,4 +151,5 @@ __all__ = [
     "compute_confusion_matrix",
     "anomaly_metrics",
     "best_f1_threshold",
+    "reliability_degradation_auc",
 ]
