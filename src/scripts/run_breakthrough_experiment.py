@@ -29,15 +29,14 @@ from typing import Dict, List, Optional, Tuple
 
 import numpy as np
 import torch
-from sklearn.linear_model import LogisticRegression
 from sklearn.model_selection import train_test_split
-from sklearn.preprocessing import StandardScaler
 from torch.utils.data import DataLoader
 
 from uais.fusion.attention.adversarial_robustness import (
     AdversarialAttackType,
     AdversarialPerturbationEngine,
 )
+from uais.fusion.attention.baselines import run_baseline_suite
 from uais.fusion.attention.attention_utils import (
     FusionDataset,
     apply_domain_dropout,
@@ -250,45 +249,7 @@ def _predict_craf(
     return np.concatenate(probs)
 
 
-# ---------------------------------------------------------------------------
-# Baseline models
-# ---------------------------------------------------------------------------
-
-def _run_logistic_baseline(features: np.ndarray, masks: np.ndarray, labels: np.ndarray, train_idx, test_idx) -> Dict:
-    """Logistic regression on flattened domain scores (ignores missing)."""
-    X = features[:, :, 0]  # [N, D] score dimension
-    X_train = X[train_idx].copy()
-    X_test = X[test_idx].copy()
-    # Replace missing with 0.5 (uninformative)
-    m_train = masks[train_idx]
-    m_test = masks[test_idx]
-    X_train[m_train] = 0.5
-    X_test[m_test] = 0.5
-    scaler = StandardScaler()
-    X_train = scaler.fit_transform(X_train)
-    X_test = scaler.transform(X_test)
-    lr = LogisticRegression(max_iter=500, class_weight="balanced")
-    lr.fit(X_train, labels[train_idx])
-    probs = lr.predict_proba(X_test)[:, 1]
-    return classification_metrics(labels[test_idx], probs)
-
-
-def _run_mean_baseline(features: np.ndarray, masks: np.ndarray, labels: np.ndarray, train_idx, test_idx) -> Dict:
-    """Score mean across available domains."""
-    scores = features[:, :, 0].copy()
-    scores[masks] = float("nan")
-    y_prob_test = np.nanmean(scores[test_idx], axis=1)
-    y_prob_test = np.where(np.isnan(y_prob_test), 0.5, y_prob_test)
-    return classification_metrics(labels[test_idx], y_prob_test)
-
-
-def _run_max_baseline(features: np.ndarray, masks: np.ndarray, labels: np.ndarray, train_idx, test_idx) -> Dict:
-    """Max score across available domains."""
-    scores = features[:, :, 0].copy()
-    scores[masks] = float("nan")
-    y_prob_test = np.nanmax(scores[test_idx], axis=1)
-    y_prob_test = np.where(np.isnan(y_prob_test), 0.5, y_prob_test)
-    return classification_metrics(labels[test_idx], y_prob_test)
+# Baseline models are in baselines.py — run_baseline_suite() is the entry point.
 
 
 # ---------------------------------------------------------------------------
@@ -402,18 +363,21 @@ def run_experiment(cfg: Dict, seed_override: Optional[int] = None) -> Dict:
         static_metrics = classification_metrics(test_labels, static_probs)
         craf_metrics = classification_metrics(test_labels, craf_probs)
         delong_p = delong_roc_test(test_labels, craf_probs, static_probs)
-        lr_metrics = _run_logistic_baseline(features, masks, labels, train_idx, test_idx)
-        mean_metrics = _run_mean_baseline(features, masks, labels, train_idx, test_idx)
-        max_metrics = _run_max_baseline(features, masks, labels, train_idx, test_idx)
 
+        logger.info("  Running baseline suite (MLP, ensemble, RF, CWM)...")
+        baseline_metrics = run_baseline_suite(
+            features, masks, labels,
+            train_idx, val_idx, test_idx,
+            score_index=score_index,
+            device=device,
+            random_seed=actual_seed,
+        )
         seed_row = {
             "seed": actual_seed,
             "static_attention": static_metrics,
             "craf_attention": craf_metrics,
             "delong_p_craf_vs_static": float(delong_p),
-            "logistic_regression": lr_metrics,
-            "score_mean": mean_metrics,
-            "score_max": max_metrics,
+            **baseline_metrics,
         }
         per_seed_table1.append(seed_row)
         per_seed_static_probs.append(static_probs)
@@ -774,11 +738,20 @@ def _run_synthetic_experiment(cfg, features, masks, labels, sample_ids, domain_o
         craf_metrics = classification_metrics(test_labels, craf_probs)
         delong_p = delong_roc_test(test_labels, craf_probs, static_probs)
 
+        baseline_metrics = run_baseline_suite(
+            features, masks, labels,
+            train_idx, val_idx, test_idx,
+            score_index=score_index,
+            device=device,
+            random_seed=actual_seed,
+        )
+
         per_seed_table1.append({
             "seed": actual_seed,
             "static_attention": static_metrics,
             "craf_attention": craf_metrics,
             "delong_p_craf_vs_static": float(delong_p),
+            **baseline_metrics,
         })
         per_seed_static_probs.append(static_probs)
         per_seed_craf_probs.append(craf_probs)

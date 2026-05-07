@@ -18,6 +18,13 @@ from uais.fusion.attention.adversarial_robustness import (
     AdversarialAttackType,
     AdversarialPerturbationEngine,
 )
+from uais.fusion.attention.baselines import (
+    EarlyFusionMLP,
+    LateFusionEnsemble,
+    RandomForestFusion,
+    ConfidenceWeightedMean,
+    run_baseline_suite,
+)
 
 __all__ = [
     "AttentionFusionModel",
@@ -33,4 +40,10 @@ __all__ = [
     "CounterfactualResult",
     "AdversarialAttackType",
     "AdversarialPerturbationEngine",
+    # Strong baselines for fair comparison
+    "EarlyFusionMLP",
+    "LateFusionEnsemble",
+    "RandomForestFusion",
+    "ConfidenceWeightedMean",
+    "run_baseline_suite",
 ]
