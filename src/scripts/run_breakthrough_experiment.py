@@ -1,10 +1,10 @@
-"""End-to-end CRAF breakthrough experiment.
+"""End-to-end reliability-gated multimodal fusion experiment.
 
-Produces publication-grade evidence across 8 phases:
+Produces auditable benchmark evidence across 8 phases:
 
   Phase 0 — Setup: load config, split data, set seeds
   Phase 1 — Train + fit ReliabilityEstimator on val split
-  Phase 2 — Table 1: clean-data CRAF vs static attention + baselines; DeLong p-values
+  Phase 2 — clean data: reliability-gated attention vs static attention + baselines
   Phase 3 — Table 2 / Figure 1: domain-shift drift curves; reliability_degradation_auc
   Phase 4 — Table 3: adversarial attack robustness
   Phase 5 — Table 4: missing-modality extended dropout sweep
@@ -23,12 +23,14 @@ from __future__ import annotations
 import argparse
 import json
 import logging
+import math
 import time
 from pathlib import Path
 from typing import Dict, List, Optional, Tuple
 
 import numpy as np
 import torch
+from sklearn import metrics as sk_metrics
 from sklearn.model_selection import train_test_split
 from torch.utils.data import DataLoader
 
@@ -56,6 +58,7 @@ from uais.utils.metrics import (
     reliability_degradation_auc,
 )
 from uais.utils.paths import PROJECT_ROOT
+from uais.utils.result_aggregation import aggregate_stress_rows, summarize_seed_metric_rows, summarize_values
 from uais.utils.stats import bootstrap_ci, delong_roc_test, paired_ttest
 
 logger = logging.getLogger(__name__)
@@ -69,7 +72,13 @@ DEFAULT_CONFIG = Path("src/uais/fusion/attention/attention_config.yaml")
 
 def _resolve(p: str | Path) -> Path:
     path = Path(p)
-    return path if path.is_absolute() else PROJECT_ROOT / path
+    if path.is_absolute():
+        return path
+    repo_root = PROJECT_ROOT.parent if PROJECT_ROOT.name == "src" else PROJECT_ROOT
+    candidate = repo_root / path
+    if candidate.exists() or str(path).startswith(("src/", "configs/", "experiments/", "docs/", "data/")):
+        return candidate
+    return PROJECT_ROOT / path
 
 
 def _load_data(cfg: Dict):
@@ -161,6 +170,50 @@ def _build_model(cfg: Dict, num_domains: int, input_dim: int, confidence_index: 
     return model.to(device)
 
 
+def _component_weights(rel_cfg: Dict, disabled: Tuple[str, ...] = ()) -> Dict[str, float]:
+    """Return normalized reliability-component weights with selected terms removed."""
+    name_to_key = {
+        "ece": "ece_weight",
+        "ks": "ks_weight",
+        "sharpness": "sharpness_weight",
+    }
+    disabled_set = set(disabled)
+    unknown = disabled_set.difference(name_to_key)
+    if unknown:
+        raise ValueError(f"Unknown reliability components: {sorted(unknown)}")
+
+    weights = {
+        key: 0.0 if name in disabled_set else float(rel_cfg.get(key, default))
+        for name, key, default in [
+            ("ece", "ece_weight", 0.4),
+            ("ks", "ks_weight", 0.4),
+            ("sharpness", "sharpness_weight", 0.2),
+        ]
+    }
+    total = sum(weights.values())
+    if total <= 0.0:
+        raise ValueError("At least one reliability component must remain enabled.")
+    return {key: value / total for key, value in weights.items()}
+
+
+def _make_reliability_estimator(
+    rel_cfg: Dict,
+    domain_order: List[str],
+    score_index: int,
+    disabled_components: Tuple[str, ...] = (),
+) -> ReliabilityEstimator:
+    weights = _component_weights(rel_cfg, disabled=disabled_components)
+    return ReliabilityEstimator(
+        domain_order=domain_order,
+        score_index=score_index,
+        ece_weight=weights["ece_weight"],
+        ks_weight=weights["ks_weight"],
+        sharpness_weight=weights["sharpness_weight"],
+        n_calibration_bins=int(rel_cfg.get("n_calibration_bins", 10)),
+        min_samples_for_ks=int(rel_cfg.get("min_samples_for_ks", 30)),
+    )
+
+
 def _train_model(model: AttentionFusionModel, train_loader, val_loader, cfg: Dict, device: torch.device) -> None:
     t_cfg = cfg.get("training", {})
     optimizer = torch.optim.AdamW(
@@ -179,10 +232,16 @@ def _train_model(model: AttentionFusionModel, train_loader, val_loader, cfg: Dic
             feats, msks, lbls = [x.to(device) for x in batch]
             domain_dropout_p = float(t_cfg.get("domain_dropout", 0.1))
             if domain_dropout_p > 0.0:
-                msks = apply_domain_dropout(msks, p=domain_dropout_p)
+                msks = apply_domain_dropout(msks, drop_prob=domain_dropout_p)
             optimizer.zero_grad()
-            logits, _, confidence_w = model(feats, key_padding_mask=msks)
-            loss = attention_fusion_loss(logits.squeeze(-1), lbls, confidence_w, lambda_reg=float(t_cfg.get("lambda_reg", 0.01)))
+            logits, attn_weights, confidences = model(feats, key_padding_mask=msks)
+            loss, _ = attention_fusion_loss(
+                logits.squeeze(-1),
+                lbls,
+                attn_weights,
+                confidences,
+                lambda_reg=float(t_cfg.get("lambda_reg", 0.01)),
+            )
             loss.backward()
             torch.nn.utils.clip_grad_norm_(model.parameters(), 1.0)
             optimizer.step()
@@ -192,8 +251,14 @@ def _train_model(model: AttentionFusionModel, train_loader, val_loader, cfg: Dic
         with torch.no_grad():
             for batch in val_loader:
                 feats, msks, lbls = [x.to(device) for x in batch]
-                logits, _, confidence_w = model(feats, key_padding_mask=msks)
-                loss = attention_fusion_loss(logits.squeeze(-1), lbls, confidence_w, lambda_reg=0.0)
+                logits, attn_weights, confidences = model(feats, key_padding_mask=msks)
+                loss, _ = attention_fusion_loss(
+                    logits.squeeze(-1),
+                    lbls,
+                    attn_weights,
+                    confidences,
+                    lambda_reg=0.0,
+                )
                 val_losses.append(loss.item())
         val_loss = float(np.mean(val_losses))
         scheduler.step(val_loss)
@@ -228,11 +293,56 @@ def _predict_craf(
     masks: np.ndarray,
     device: torch.device,
     batch_size: int = 256,
+    clean_gate_threshold: float = 0.66,
 ) -> np.ndarray:
-    """Predict using CRAF-injected reliability weights (bypasses outer model)."""
+    probs, _ = _predict_craf_with_stats(
+        model,
+        estimator,
+        features,
+        masks,
+        device,
+        batch_size=batch_size,
+        clean_gate_threshold=clean_gate_threshold,
+    )
+    return probs
+
+
+def _gate_decision_stats(reliability_weights: np.ndarray, masks: np.ndarray, threshold: float) -> Dict[str, float | bool | int]:
+    """Summarize whether the reliability gate adapts for one inference batch."""
+    present_weights = reliability_weights[~masks]
+    mean_reliability = float(np.nanmean(present_weights)) if present_weights.size else float("nan")
+    adapted = bool(present_weights.size and mean_reliability < threshold)
+    return {
+        "adapted": adapted,
+        "mean_reliability": mean_reliability,
+        "n_present": int(present_weights.size),
+        "n_samples": int(masks.shape[0]),
+    }
+
+
+@torch.no_grad()
+def _predict_craf_with_stats(
+    model: AttentionFusionModel,
+    estimator: ReliabilityEstimator,
+    features: np.ndarray,
+    masks: np.ndarray,
+    device: torch.device,
+    batch_size: int = 256,
+    clean_gate_threshold: float = 0.66,
+) -> Tuple[np.ndarray, Dict[str, float | int]]:
+    """Predict with reliability-gated attention weights.
+
+    If the batch-level reliability signal is high, the method preserves the learned
+    static attention path. When reliability drops, it injects reliability weights
+    into the fusion layer to down-weight shifted domains.
+    """
     model.eval()
     probs = []
     n = features.shape[0]
+    adapted_samples = 0
+    adapted_batches = 0
+    reliability_numer = 0.0
+    reliability_denom = 0
     for start in range(0, n, batch_size):
         end = min(start + batch_size, n)
         feat_np = features[start:end]
@@ -240,13 +350,30 @@ def _predict_craf(
         craf_w = estimator.compute_reliability_weights(feat_np, mask_np)
         feat_t = torch.tensor(feat_np, dtype=torch.float32, device=device)
         mask_t = torch.tensor(mask_np, dtype=torch.bool, device=device)
+        gate_stats = _gate_decision_stats(craf_w, mask_np, clean_gate_threshold)
+        batch_n = end - start
+        if np.isfinite(float(gate_stats["mean_reliability"])):
+            reliability_numer += float(gate_stats["mean_reliability"]) * batch_n
+            reliability_denom += batch_n
+        if not gate_stats["adapted"]:
+            logits, _, _ = model(feat_t, key_padding_mask=mask_t)
+            probs.append(torch.sigmoid(logits.squeeze(-1)).cpu().numpy())
+            continue
+        adapted_samples += batch_n
+        adapted_batches += 1
         craf_t = torch.tensor(craf_w, dtype=torch.float32, device=device)
         craf_t = craf_t.masked_fill(mask_t, 0.0)
         embeds = [enc(feat_t[:, i, :]) for i, enc in enumerate(model.domain_encoders)]
         domain_embeds = torch.stack(embeds, dim=1)
         logits, _ = model.fusion(domain_embeds, key_padding_mask=mask_t, confidence_weights=craf_t)
         probs.append(torch.sigmoid(logits.squeeze(-1)).cpu().numpy())
-    return np.concatenate(probs)
+    stats = {
+        "adaptation_rate": float(adapted_samples / n) if n else 0.0,
+        "adapted_batches": int(adapted_batches),
+        "n_batches": int(math.ceil(n / batch_size)) if batch_size > 0 else 0,
+        "mean_reliability": float(reliability_numer / reliability_denom) if reliability_denom else float("nan"),
+    }
+    return np.concatenate(probs), stats
 
 
 # Baseline models are in baselines.py — run_baseline_suite() is the entry point.
@@ -291,248 +418,459 @@ def _make_synthetic(n_samples: int = 800, n_domains: int = 3, n_features: int = 
     return features, masks.astype(bool), labels, sample_ids, domain_order
 
 
-# ---------------------------------------------------------------------------
-# Main experiment phases
-# ---------------------------------------------------------------------------
+def _metric_bootstrap_intervals(
+    y_true: np.ndarray,
+    y_prob: np.ndarray,
+    n_bootstrap: int,
+    alpha: float,
+    seed: int,
+) -> Dict[str, Dict[str, float | None]]:
+    """Bootstrap CIs for core probability metrics on one evaluated split."""
 
-def run_experiment(cfg: Dict, seed_override: Optional[int] = None) -> Dict:
-    train_cfg = cfg.get("training", {})
-    eval_cfg = cfg.get("evaluation", {})
-    rel_cfg = cfg.get("reliability", {})
-    craf_cfg = cfg.get("craf", {})
+    def _safe_roc(y, p):
+        try:
+            return float(sk_metrics.roc_auc_score(y, p))
+        except ValueError:
+            return float("nan")
 
-    seeds = eval_cfg.get("seeds", [42])
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    results: Dict = {}
+    def _safe_pr(y, p):
+        try:
+            return float(sk_metrics.average_precision_score(y, p))
+        except ValueError:
+            return float("nan")
 
-    # ------------------------------------------------------------------
-    # Phase 0 — Load data
-    # ------------------------------------------------------------------
-    logger.info("Phase 0: Loading data")
-    features, masks, labels, sample_ids, domain_order, feature_columns, confidence_index, score_index = _load_data(cfg)
-    if score_index is None:
-        score_index = 0
+    def _safe_f1(y, p):
+        return float(sk_metrics.f1_score(y, (p >= 0.5).astype(int), zero_division=0))
 
-    # ------------------------------------------------------------------
-    # Phase 1 — Train model + fit ReliabilityEstimator on first seed
-    # ------------------------------------------------------------------
-    per_seed_table1 = []
-    per_seed_static_probs = []
-    per_seed_craf_probs = []
-
-    for seed in seeds:
-        actual_seed = seed_override if seed_override is not None else seed
-        set_seed(actual_seed)
-        logger.info(f"Phase 1: Training (seed={actual_seed})")
-
-        train_idx, val_idx, test_idx = _split(labels, {**train_cfg, "seed": actual_seed})
-        train_loader, val_loader, test_loader = _make_loaders(
-            features, masks, labels, train_idx, val_idx, test_idx,
-            batch_size=int(train_cfg.get("batch_size", 128)),
+    out: Dict[str, Dict[str, float | None]] = {}
+    for offset, (name, fn) in enumerate({"roc_auc": _safe_roc, "pr_auc": _safe_pr, "f1": _safe_f1}.items()):
+        low, high = bootstrap_ci(
+            y_true,
+            y_prob,
+            fn,
+            n_bootstrap=n_bootstrap,
+            alpha=alpha,
+            random_state=seed + offset,
         )
-        input_dim = features.shape[2]
-        num_domains = features.shape[1]
-
-        model = _build_model(cfg, num_domains, input_dim, confidence_index, device)
-        _train_model(model, train_loader, val_loader, cfg, device)
-        model.eval()
-
-        # Fit ReliabilityEstimator on validation split
-        estimator = ReliabilityEstimator(
-            domain_order=domain_order,
-            score_index=score_index,
-            ece_weight=float(rel_cfg.get("ece_weight", 0.4)),
-            ks_weight=float(rel_cfg.get("ks_weight", 0.4)),
-            sharpness_weight=float(rel_cfg.get("sharpness_weight", 0.2)),
-            n_calibration_bins=int(rel_cfg.get("n_calibration_bins", 10)),
-            min_samples_for_ks=int(rel_cfg.get("min_samples_for_ks", 30)),
-        )
-        estimator.fit(features[val_idx], masks[val_idx], labels[val_idx])
-
-        test_feat = features[test_idx]
-        test_mask = masks[test_idx]
-        test_labels = labels[test_idx]
-
-        # ------------------------------------------------------------------
-        # Phase 2 — Table 1: static vs CRAF vs baselines
-        # ------------------------------------------------------------------
-        logger.info("Phase 2: Table 1 — clean performance")
-        static_probs = _predict_static(model, test_feat, test_mask, device)
-        craf_probs = _predict_craf(model, estimator, test_feat, test_mask, device)
-
-        static_metrics = classification_metrics(test_labels, static_probs)
-        craf_metrics = classification_metrics(test_labels, craf_probs)
-        delong_p = delong_roc_test(test_labels, craf_probs, static_probs)
-
-        logger.info("  Running baseline suite (MLP, ensemble, RF, CWM)...")
-        baseline_metrics = run_baseline_suite(
-            features, masks, labels,
-            train_idx, val_idx, test_idx,
-            score_index=score_index,
-            device=device,
-            random_seed=actual_seed,
-        )
-        seed_row = {
-            "seed": actual_seed,
-            "static_attention": static_metrics,
-            "craf_attention": craf_metrics,
-            "delong_p_craf_vs_static": float(delong_p),
-            **baseline_metrics,
+        out[name] = {
+            "ci_low": float(low) if np.isfinite(low) else None,
+            "ci_high": float(high) if np.isfinite(high) else None,
         }
-        per_seed_table1.append(seed_row)
-        per_seed_static_probs.append(static_probs)
-        per_seed_craf_probs.append(craf_probs)
+    return out
 
-    results["table_1_clean_performance"] = per_seed_table1
-    logger.info(f"Table 1 CRAF AUC (last seed): {per_seed_table1[-1]['craf_attention'].get('roc_auc', 'N/A'):.4f} "
-                f"  DeLong p={per_seed_table1[-1]['delong_p_craf_vs_static']:.4f}")
 
-    # Use last seed's model + estimator for remaining phases
-    final_test_feat = features[test_idx]
-    final_test_mask = masks[test_idx]
-    final_test_labels = labels[test_idx]
-    static_final = per_seed_static_probs[-1]
-    craf_final = per_seed_craf_probs[-1]
-
-    # ------------------------------------------------------------------
-    # Phase 3 — Table 2 / Figure 1: domain-shift drift curves
-    # ------------------------------------------------------------------
-    logger.info("Phase 3: Table 2 — domain drift robustness")
-    noise_levels = craf_cfg.get("drift_noise_levels", [0.0, 0.05, 0.1, 0.2, 0.3, 0.5])
-    engine = AdversarialPerturbationEngine(domain_order, score_index)
-    drift_results = {}
-    degradation_aucs = {}
-
+def _evaluate_drift(
+    model: AttentionFusionModel,
+    estimator: ReliabilityEstimator,
+    test_feat: np.ndarray,
+    test_mask: np.ndarray,
+    test_labels: np.ndarray,
+    domain_order: List[str],
+    score_index: int,
+    device: torch.device,
+    noise_levels: List[float],
+    clean_gate_threshold: float,
+    seed: int,
+) -> tuple[list[dict], list[dict]]:
+    engine = AdversarialPerturbationEngine(domain_order, score_index, random_seed=seed)
+    curve_rows: list[dict] = []
+    degradation_rows: list[dict] = []
     for domain in domain_order:
-        drift_feats_map = engine.simulate_domain_drift(
-            final_test_feat, final_test_mask, domain, noise_levels
-        )
+        drift_feats_map = engine.simulate_domain_drift(test_feat, test_mask, domain, noise_levels)
         auc_static_curve = []
         auc_craf_curve = []
-        domain_drift_rows = []
         for level in noise_levels:
             pert_feat = drift_feats_map[level]
-            s_probs = _predict_static(model, pert_feat, final_test_mask, device)
-            c_probs = _predict_craf(model, estimator, pert_feat, final_test_mask, device)
-            s_m = classification_metrics(final_test_labels, s_probs)
-            c_m = classification_metrics(final_test_labels, c_probs)
+            s_probs = _predict_static(model, pert_feat, test_mask, device)
+            c_probs = _predict_craf(
+                model,
+                estimator,
+                pert_feat,
+                test_mask,
+                device,
+                clean_gate_threshold=clean_gate_threshold,
+            )
+            s_m = classification_metrics(test_labels, s_probs)
+            c_m = classification_metrics(test_labels, c_probs)
             auc_static_curve.append(s_m.get("roc_auc", float("nan")))
             auc_craf_curve.append(c_m.get("roc_auc", float("nan")))
-            domain_drift_rows.append({
-                "noise_level": float(level),
-                "static_auc": s_m.get("roc_auc"),
-                "craf_auc": c_m.get("roc_auc"),
-            })
-
+            curve_rows.append(
+                {
+                    "seed": int(seed),
+                    "domain": domain,
+                    "noise_level": float(level),
+                    "static_auc": s_m.get("roc_auc"),
+                    "craf_auc": c_m.get("roc_auc"),
+                    "static_pr_auc": s_m.get("pr_auc"),
+                    "craf_pr_auc": c_m.get("pr_auc"),
+                    "static_f1": s_m.get("f1"),
+                    "craf_f1": c_m.get("f1"),
+                }
+            )
         noise_arr = np.array(noise_levels, dtype=float)
         deg_auc_static = reliability_degradation_auc(noise_arr, np.array(auc_static_curve))
         deg_auc_craf = reliability_degradation_auc(noise_arr, np.array(auc_craf_curve))
-        degradation_aucs[domain] = {
-            "static": float(deg_auc_static),
-            "craf": float(deg_auc_craf),
-            "craf_better": bool(deg_auc_craf > deg_auc_static),
-        }
-        drift_results[domain] = domain_drift_rows
+        degradation_rows.append(
+            {
+                "seed": int(seed),
+                "domain": domain,
+                "static": float(deg_auc_static),
+                "craf": float(deg_auc_craf),
+                "delta": float(deg_auc_craf - deg_auc_static),
+                "craf_better": bool(deg_auc_craf > deg_auc_static),
+            }
+        )
+    return curve_rows, degradation_rows
 
-    results["table_2_drift_robustness"] = drift_results
-    results["figure_1_drift_curves"] = {
-        "noise_levels": noise_levels,
-        "degradation_aucs": degradation_aucs,
-    }
-    logger.info(f"Phase 3 done. CRAF better on {sum(v['craf_better'] for v in degradation_aucs.values())}/{len(domain_order)} domains")
 
-    # ------------------------------------------------------------------
-    # Phase 4 — Table 3: adversarial attacks
-    # ------------------------------------------------------------------
-    logger.info("Phase 4: Table 3 — adversarial attacks")
-    attack_names = craf_cfg.get("adversarial_attacks", ["zero_attack", "max_attack", "gaussian_noise"])
-    sigma = float(craf_cfg.get("adversarial_sigma", 0.1))
-    adversarial_results = []
-
+def _evaluate_adversarial(
+    model: AttentionFusionModel,
+    estimator: ReliabilityEstimator,
+    test_feat: np.ndarray,
+    test_mask: np.ndarray,
+    test_labels: np.ndarray,
+    domain_order: List[str],
+    score_index: int,
+    device: torch.device,
+    attack_names: List[str],
+    sigma: float,
+    clean_gate_threshold: float,
+    seed: int,
+) -> list[dict]:
+    engine = AdversarialPerturbationEngine(domain_order, score_index, random_seed=seed)
+    rows: list[dict] = []
     for attack_name in attack_names:
         try:
             attack_type = AdversarialAttackType(attack_name)
         except ValueError:
             continue
-        # Per-domain and all-domain attacks
         for target in domain_order + [None]:
             pert_feat, _ = engine.apply_attack(
-                final_test_feat, final_test_mask, attack_type,
-                target_domain=target, sigma=sigma,
+                test_feat,
+                test_mask,
+                attack_type,
+                target_domain=target,
+                sigma=sigma,
             )
-            s_probs = _predict_static(model, pert_feat, final_test_mask, device)
-            c_probs = _predict_craf(model, estimator, pert_feat, final_test_mask, device)
-            s_m = classification_metrics(final_test_labels, s_probs)
-            c_m = classification_metrics(final_test_labels, c_probs)
-            adversarial_results.append({
-                "attack": attack_name,
-                "target_domain": target if target is not None else "all",
+            s_probs = _predict_static(model, pert_feat, test_mask, device)
+            c_probs = _predict_craf(
+                model,
+                estimator,
+                pert_feat,
+                test_mask,
+                device,
+                clean_gate_threshold=clean_gate_threshold,
+            )
+            s_m = classification_metrics(test_labels, s_probs)
+            c_m = classification_metrics(test_labels, c_probs)
+            rows.append(
+                {
+                    "seed": int(seed),
+                    "attack": attack_name,
+                    "target_domain": target if target is not None else "all",
+                    "static_auc": s_m.get("roc_auc"),
+                    "craf_auc": c_m.get("roc_auc"),
+                    "static_pr_auc": s_m.get("pr_auc"),
+                    "craf_pr_auc": c_m.get("pr_auc"),
+                    "static_f1": s_m.get("f1"),
+                    "craf_f1": c_m.get("f1"),
+                    "delta_auc": (c_m.get("roc_auc", 0.0) or 0.0) - (s_m.get("roc_auc", 0.0) or 0.0),
+                }
+            )
+    return rows
+
+
+def _evaluate_missing(
+    model: AttentionFusionModel,
+    estimator: ReliabilityEstimator,
+    test_feat: np.ndarray,
+    test_mask: np.ndarray,
+    test_labels: np.ndarray,
+    device: torch.device,
+    dropout_probs: List[float],
+    clean_gate_threshold: float,
+    seed: int,
+) -> list[dict]:
+    rows: list[dict] = []
+    for p_drop in dropout_probs:
+        rng_seed = np.random.default_rng(seed + int(float(p_drop) * 10_000))
+        drop_mask = test_mask.copy()
+        if p_drop > 0.0:
+            drop_mask = drop_mask | (rng_seed.random(drop_mask.shape) < p_drop)
+        s_probs = _predict_static(model, test_feat, drop_mask, device)
+        c_probs = _predict_craf(
+            model,
+            estimator,
+            test_feat,
+            drop_mask,
+            device,
+            clean_gate_threshold=clean_gate_threshold,
+        )
+        s_m = classification_metrics(test_labels, s_probs)
+        c_m = classification_metrics(test_labels, c_probs)
+        rows.append(
+            {
+                "seed": int(seed),
+                "dropout_prob": float(p_drop),
                 "static_auc": s_m.get("roc_auc"),
                 "craf_auc": c_m.get("roc_auc"),
-                "delta_auc": (c_m.get("roc_auc", 0.0) or 0.0) - (s_m.get("roc_auc", 0.0) or 0.0),
-            })
+                "static_pr_auc": s_m.get("pr_auc"),
+                "craf_pr_auc": c_m.get("pr_auc"),
+                "static_f1": s_m.get("f1"),
+                "craf_f1": c_m.get("f1"),
+            }
+        )
+    return rows
 
-    results["table_3_adversarial"] = adversarial_results
-    logger.info(f"Phase 4 done. {len(adversarial_results)} attack scenarios evaluated.")
 
-    # ------------------------------------------------------------------
-    # Phase 5 — Table 4: missing modality extended dropout sweep
-    # ------------------------------------------------------------------
-    logger.info("Phase 5: Table 4 — missing modality robustness")
-    dropout_probs = eval_cfg.get("domain_dropout_probs_extended", [0.0, 0.1, 0.2, 0.3, 0.5])
-    missing_results = []
+def _all_domain_conditions(
+    test_feat: np.ndarray,
+    test_mask: np.ndarray,
+    domain_order: List[str],
+    score_index: int,
+    attack_names: List[str],
+    sigma: float,
+    seed: int,
+    include_clean: bool = True,
+) -> list[dict]:
+    conditions: list[dict] = []
+    if include_clean:
+        conditions.append(
+            {
+                "condition": "clean",
+                "attack": "none",
+                "target_domain": "none",
+                "features": test_feat,
+                "masks": test_mask,
+            }
+        )
+    engine = AdversarialPerturbationEngine(domain_order, score_index, random_seed=seed)
+    for attack_name in attack_names:
+        try:
+            attack_type = AdversarialAttackType(attack_name)
+        except ValueError:
+            continue
+        pert_feat, pert_mask = engine.apply_attack(
+            test_feat,
+            test_mask,
+            attack_type,
+            target_domain=None,
+            sigma=sigma,
+        )
+        conditions.append(
+            {
+                "condition": f"{attack_name}:all",
+                "attack": attack_name,
+                "target_domain": "all",
+                "features": pert_feat,
+                "masks": pert_mask,
+            }
+        )
+    return conditions
 
-    for p_drop in dropout_probs:
-        rng_seed = np.random.default_rng(99)
-        drop_mask = final_test_mask.copy()
-        if p_drop > 0.0:
-            noise = rng_seed.random(drop_mask.shape) < p_drop
-            drop_mask = drop_mask | noise
 
-        s_probs = _predict_static(model, final_test_feat, drop_mask, device)
-        c_probs = _predict_craf(model, estimator, final_test_feat, drop_mask, device)
-        s_m = classification_metrics(final_test_labels, s_probs)
-        c_m = classification_metrics(final_test_labels, c_probs)
-        missing_results.append({
-            "dropout_prob": float(p_drop),
-            "static_auc": s_m.get("roc_auc"),
-            "craf_auc": c_m.get("roc_auc"),
-            "static_f1": s_m.get("f1"),
-            "craf_f1": c_m.get("f1"),
-        })
+def _evaluate_tau_sweep(
+    model: AttentionFusionModel,
+    estimator: ReliabilityEstimator,
+    test_feat: np.ndarray,
+    test_mask: np.ndarray,
+    test_labels: np.ndarray,
+    domain_order: List[str],
+    score_index: int,
+    device: torch.device,
+    thresholds: List[float],
+    attack_names: List[str],
+    sigma: float,
+    seed: int,
+) -> list[dict]:
+    rows: list[dict] = []
+    if not thresholds:
+        return rows
+    conditions = _all_domain_conditions(
+        test_feat,
+        test_mask,
+        domain_order,
+        score_index,
+        attack_names,
+        sigma,
+        seed=seed + 17_000,
+        include_clean=True,
+    )
+    for condition in conditions:
+        condition_feat = condition["features"]
+        condition_mask = condition["masks"]
+        static_probs = _predict_static(model, condition_feat, condition_mask, device)
+        static_m = classification_metrics(test_labels, static_probs)
+        for threshold in thresholds:
+            craf_probs, gate_stats = _predict_craf_with_stats(
+                model,
+                estimator,
+                condition_feat,
+                condition_mask,
+                device,
+                clean_gate_threshold=float(threshold),
+            )
+            craf_m = classification_metrics(test_labels, craf_probs)
+            rows.append(
+                {
+                    "seed": int(seed),
+                    "condition": condition["condition"],
+                    "attack": condition["attack"],
+                    "target_domain": condition["target_domain"],
+                    "tau": float(threshold),
+                    "static_auc": static_m.get("roc_auc"),
+                    "craf_auc": craf_m.get("roc_auc"),
+                    "static_pr_auc": static_m.get("pr_auc"),
+                    "craf_pr_auc": craf_m.get("pr_auc"),
+                    "static_f1": static_m.get("f1"),
+                    "craf_f1": craf_m.get("f1"),
+                    "adaptation_rate": gate_stats["adaptation_rate"],
+                    "mean_reliability": gate_stats["mean_reliability"],
+                }
+            )
+    return rows
 
-    results["table_4_missing_modality"] = missing_results
-    logger.info("Phase 5 done.")
 
-    # ------------------------------------------------------------------
-    # Phase 6 — Table 5: calibration (ECE, Brier, bin-level)
-    # ------------------------------------------------------------------
-    logger.info("Phase 6: Table 5 — calibration quality")
-    calibration_result = {
-        "static_ece": float(expected_calibration_error(final_test_labels, static_final)),
-        "craf_ece": float(expected_calibration_error(final_test_labels, craf_final)),
-        "static_brier": float(brier_score(final_test_labels, static_final)),
-        "craf_brier": float(brier_score(final_test_labels, craf_final)),
-        "static_bins": _calibration_bins(final_test_labels, static_final),
-        "craf_bins": _calibration_bins(final_test_labels, craf_final),
+def _component_ablation_specs(names: List[str]) -> list[dict]:
+    if not names:
+        return []
+    spec_by_name = {
+        "full": {"variant": "full", "disabled_components": (), "gate_threshold": None},
+        "no_ece": {"variant": "no_ece", "disabled_components": ("ece",), "gate_threshold": None},
+        "no_ks": {"variant": "no_ks", "disabled_components": ("ks",), "gate_threshold": None},
+        "no_sharpness": {
+            "variant": "no_sharpness",
+            "disabled_components": ("sharpness",),
+            "gate_threshold": None,
+        },
+        "no_gate": {"variant": "no_gate", "disabled_components": (), "gate_threshold": 1.01},
+    }
+    unknown = [name for name in names if name not in spec_by_name]
+    if unknown:
+        raise ValueError(f"Unknown reliability ablation variants: {unknown}")
+    return [spec_by_name[name] for name in names]
+
+
+def _evaluate_component_ablation(
+    model: AttentionFusionModel,
+    rel_cfg: Dict,
+    val_feat: np.ndarray,
+    val_mask: np.ndarray,
+    val_labels: np.ndarray,
+    test_feat: np.ndarray,
+    test_mask: np.ndarray,
+    test_labels: np.ndarray,
+    domain_order: List[str],
+    score_index: int,
+    device: torch.device,
+    variant_names: List[str],
+    attack_names: List[str],
+    sigma: float,
+    clean_gate_threshold: float,
+    seed: int,
+) -> list[dict]:
+    rows: list[dict] = []
+    specs = _component_ablation_specs(variant_names)
+    if not specs:
+        return rows
+
+    variant_estimators: dict[str, tuple[ReliabilityEstimator, float, dict[str, float]]] = {}
+    for spec in specs:
+        weights = _component_weights(rel_cfg, disabled=spec["disabled_components"])
+        estimator = _make_reliability_estimator(
+            rel_cfg,
+            domain_order,
+            score_index,
+            disabled_components=spec["disabled_components"],
+        )
+        estimator.fit(val_feat, val_mask, val_labels)
+        threshold = clean_gate_threshold if spec["gate_threshold"] is None else float(spec["gate_threshold"])
+        variant_estimators[spec["variant"]] = (estimator, threshold, weights)
+
+    conditions = _all_domain_conditions(
+        test_feat,
+        test_mask,
+        domain_order,
+        score_index,
+        attack_names,
+        sigma,
+        seed=seed + 29_000,
+        include_clean=False,
+    )
+    for condition in conditions:
+        condition_feat = condition["features"]
+        condition_mask = condition["masks"]
+        static_probs = _predict_static(model, condition_feat, condition_mask, device)
+        static_m = classification_metrics(test_labels, static_probs)
+        for variant, (variant_estimator, threshold, weights) in variant_estimators.items():
+            craf_probs, gate_stats = _predict_craf_with_stats(
+                model,
+                variant_estimator,
+                condition_feat,
+                condition_mask,
+                device,
+                clean_gate_threshold=threshold,
+            )
+            craf_m = classification_metrics(test_labels, craf_probs)
+            rows.append(
+                {
+                    "seed": int(seed),
+                    "variant": variant,
+                    "attack": condition["attack"],
+                    "target_domain": condition["target_domain"],
+                    "gate_threshold": threshold,
+                    "ece_weight": weights["ece_weight"],
+                    "ks_weight": weights["ks_weight"],
+                    "sharpness_weight": weights["sharpness_weight"],
+                    "static_auc": static_m.get("roc_auc"),
+                    "craf_auc": craf_m.get("roc_auc"),
+                    "static_pr_auc": static_m.get("pr_auc"),
+                    "craf_pr_auc": craf_m.get("pr_auc"),
+                    "static_f1": static_m.get("f1"),
+                    "craf_f1": craf_m.get("f1"),
+                    "adaptation_rate": gate_stats["adaptation_rate"],
+                    "mean_reliability": gate_stats["mean_reliability"],
+                    "delta_auc": (craf_m.get("roc_auc", 0.0) or 0.0) - (static_m.get("roc_auc", 0.0) or 0.0),
+                }
+            )
+    return rows
+
+
+def _evaluate_calibration(
+    estimator: ReliabilityEstimator,
+    test_labels: np.ndarray,
+    static_probs: np.ndarray,
+    craf_probs: np.ndarray,
+    seed: int,
+) -> dict:
+    return {
+        "seed": int(seed),
+        "static_ece": float(expected_calibration_error(test_labels, static_probs)),
+        "craf_ece": float(expected_calibration_error(test_labels, craf_probs)),
+        "static_brier": float(brier_score(test_labels, static_probs)),
+        "craf_brier": float(brier_score(test_labels, craf_probs)),
+        "static_bins": _calibration_bins(test_labels, static_probs),
+        "craf_bins": _calibration_bins(test_labels, craf_probs),
         "domain_ece_at_fit": estimator.get_domain_ece(),
     }
-    results["table_5_calibration"] = calibration_result
-    logger.info(
-        f"Phase 6 done. ECE: static={calibration_result['static_ece']:.4f}, "
-        f"CRAF={calibration_result['craf_ece']:.4f}"
-    )
 
-    # ------------------------------------------------------------------
-    # Phase 7 — CDA validation
-    # ------------------------------------------------------------------
-    logger.info("Phase 7: CDA validation")
-    n_cda = int(eval_cfg.get("cda_samples", 100))
+
+def _evaluate_cda(
+    model: AttentionFusionModel,
+    estimator: ReliabilityEstimator,
+    test_feat: np.ndarray,
+    test_mask: np.ndarray,
+    sample_ids: list,
+    test_idx: np.ndarray,
+    domain_order: List[str],
+    device: torch.device,
+    n_cda: int,
+    seed: int,
+) -> dict:
     cda_idx = np.arange(min(n_cda, len(test_idx)))
-    cda_feat = final_test_feat[cda_idx]
-    cda_mask = final_test_mask[cda_idx]
+    cda_feat = test_feat[cda_idx]
+    cda_mask = test_mask[cda_idx]
     cda_ids = [sample_ids[test_idx[i]] for i in cda_idx] if sample_ids else list(range(len(cda_idx)))
-
     explainer = CounterfactualDomainExplainer(
         model=model,
         domain_order=domain_order,
@@ -541,83 +879,573 @@ def run_experiment(cfg: Dict, seed_override: Optional[int] = None) -> Dict:
         use_craf_weights=True,
     )
     cf_results = explainer.explain_batch(cda_feat, cda_mask, cda_ids, batch_size=32)
-
     mean_cf_impacts = {
         d: float(np.nanmean([abs(r.cf_impacts.get(d, float("nan"))) for r in cf_results]))
         for d in domain_order
     }
-    # Spearman vs domain ECE (as a proxy for SHAP importance when SHAP isn't available)
     domain_ece = estimator.get_domain_ece()
     spearman_vs_ece = explainer.correlation_with_shap(cf_results, {d: 1.0 - v for d, v in domain_ece.items()})
-
-    sample_narratives = [r.narrative for r in cf_results[:5]]
-
-    cda_validation = {
+    return {
+        "seed": int(seed),
         "n_samples": len(cf_results),
         "mean_cf_impacts_abs": mean_cf_impacts,
         "spearman_cda_vs_ece_reliability": float(spearman_vs_ece),
-        "sample_narratives": sample_narratives,
+        "sample_narratives": [r.narrative for r in cf_results[:5]],
     }
-    results["cda_validation"] = cda_validation
-    logger.info(f"Phase 7 done. Spearman CDA/ECE={spearman_vs_ece:.3f}")
 
-    # ------------------------------------------------------------------
-    # Phase 8 — Statistical tests + aggregate summary
-    # ------------------------------------------------------------------
-    logger.info("Phase 8: Statistical tests + summary")
-    if len(seeds) > 1:
-        static_aucs = [row["static_attention"].get("roc_auc", float("nan")) for row in per_seed_table1]
-        craf_aucs = [row["craf_attention"].get("roc_auc", float("nan")) for row in per_seed_table1]
-        paired_p = paired_ttest(np.array(craf_aucs), np.array(static_aucs))
-    else:
-        static_aucs = [per_seed_table1[0]["static_attention"].get("roc_auc", float("nan"))]
-        craf_aucs = [per_seed_table1[0]["craf_attention"].get("roc_auc", float("nan"))]
-        paired_p = float("nan")
 
-    n_domains_craf_better_drift = sum(v["craf_better"] for v in degradation_aucs.values())
-    breakthrough_checks = {
+def _failure_case(
+    case_type: str,
+    idx: int,
+    labels: np.ndarray,
+    static_probs: np.ndarray,
+    craf_probs: np.ndarray,
+    sample_ids: list,
+    test_idx: np.ndarray,
+    features: np.ndarray,
+    masks: np.ndarray,
+    reliability_weights: np.ndarray,
+    domain_order: List[str],
+    score_index: int,
+) -> dict:
+    domain_scores = {
+        domain: None if bool(masks[idx, d]) else float(features[idx, d, score_index])
+        for d, domain in enumerate(domain_order)
+    }
+    domain_reliability = {
+        domain: float(reliability_weights[idx, d])
+        for d, domain in enumerate(domain_order)
+    }
+    return {
+        "case_type": case_type,
+        "sample_id": sample_ids[test_idx[idx]] if sample_ids else int(idx),
+        "label": int(labels[idx]),
+        "static_prob": float(static_probs[idx]),
+        "craf_prob": float(craf_probs[idx]),
+        "static_pred": int(static_probs[idx] >= 0.5),
+        "craf_pred": int(craf_probs[idx] >= 0.5),
+        "static_abs_error": float(abs(static_probs[idx] - labels[idx])),
+        "craf_abs_error": float(abs(craf_probs[idx] - labels[idx])),
+        "domain_scores": domain_scores,
+        "domain_reliability": domain_reliability,
+    }
+
+
+def _extract_failure_cases(
+    estimator: ReliabilityEstimator,
+    test_feat: np.ndarray,
+    test_mask: np.ndarray,
+    test_labels: np.ndarray,
+    static_probs: np.ndarray,
+    craf_probs: np.ndarray,
+    sample_ids: list,
+    test_idx: np.ndarray,
+    domain_order: List[str],
+    score_index: int,
+) -> list[dict]:
+    reliability_weights = estimator.compute_reliability_weights(test_feat, test_mask)
+    static_pred = (static_probs >= 0.5).astype(int)
+    craf_pred = (craf_probs >= 0.5).astype(int)
+    improvement = np.abs(static_probs - test_labels) - np.abs(craf_probs - test_labels)
+    candidates: list[tuple[str, np.ndarray]] = [
+        ("biggest_rga_win", np.argsort(-improvement)),
+        ("biggest_rga_loss", np.argsort(improvement)),
+        ("rga_correct_static_wrong", np.flatnonzero((craf_pred == test_labels) & (static_pred != test_labels))),
+        ("static_correct_rga_wrong", np.flatnonzero((static_pred == test_labels) & (craf_pred != test_labels))),
+        ("high_confidence_rga_failure", np.argsort(-np.where(craf_pred != test_labels, np.abs(craf_probs - 0.5), -1))),
+    ]
+    cases = []
+    used: set[int] = set()
+    for case_type, idxs in candidates:
+        for raw_idx in idxs:
+            idx = int(raw_idx)
+            if idx < 0 or idx >= len(test_labels) or idx in used:
+                continue
+            if case_type in {"rga_correct_static_wrong", "static_correct_rga_wrong"} and len(idxs) == 0:
+                continue
+            if case_type == "high_confidence_rga_failure" and craf_pred[idx] == test_labels[idx]:
+                continue
+            cases.append(
+                _failure_case(
+                    case_type,
+                    idx,
+                    test_labels,
+                    static_probs,
+                    craf_probs,
+                    sample_ids,
+                    test_idx,
+                    test_feat,
+                    test_mask,
+                    reliability_weights,
+                    domain_order,
+                    score_index,
+                )
+            )
+            used.add(idx)
+            break
+    return cases
+
+
+def _aggregate_drift_curves(rows: list[dict], alpha: float) -> dict[str, list[dict]]:
+    aggregated = aggregate_stress_rows(
+        rows,
+        group_keys=("domain", "noise_level"),
+        metric_keys=("static_auc", "craf_auc", "static_pr_auc", "craf_pr_auc", "static_f1", "craf_f1"),
+        alpha=alpha,
+    )
+    curves: dict[str, list[dict]] = {}
+    for row in aggregated:
+        curves.setdefault(row["domain"], []).append(row)
+    for domain in curves:
+        curves[domain] = sorted(curves[domain], key=lambda item: item["noise_level"])
+    return curves
+
+
+def _aggregate_degradation(rows: list[dict], alpha: float) -> dict[str, dict]:
+    aggregated = aggregate_stress_rows(rows, group_keys=("domain",), metric_keys=("static", "craf"), alpha=alpha)
+    output = {}
+    for row in aggregated:
+        static = row.get("static")
+        craf = row.get("craf")
+        output[row["domain"]] = {
+            "static": static,
+            "static_std": row.get("static_std"),
+            "static_ci_low": row.get("static_ci_low"),
+            "static_ci_high": row.get("static_ci_high"),
+            "craf": craf,
+            "craf_std": row.get("craf_std"),
+            "craf_ci_low": row.get("craf_ci_low"),
+            "craf_ci_high": row.get("craf_ci_high"),
+            "delta": None if static is None or craf is None else float(craf - static),
+            "craf_better": bool(craf is not None and static is not None and craf > static),
+            "n_seeds": row.get("n_seeds", 0),
+        }
+    return output
+
+
+def _aggregate_calibration(rows: list[dict]) -> dict:
+    if not rows:
+        return {}
+    latest = rows[-1]
+    out = {
+        "static_bins": latest.get("static_bins", []),
+        "craf_bins": latest.get("craf_bins", []),
+        "domain_ece_at_fit": latest.get("domain_ece_at_fit", {}),
+    }
+    for metric in ("static_ece", "craf_ece", "static_brier", "craf_brier"):
+        summary = summarize_values(row.get(metric) for row in rows)
+        out[metric] = summary["mean"]
+        out[f"{metric}_std"] = summary["std"]
+        out[f"{metric}_ci_low"] = summary["ci_low"]
+        out[f"{metric}_ci_high"] = summary["ci_high"]
+    return out
+
+
+def _aggregate_cda(rows: list[dict], domain_order: List[str]) -> dict:
+    if not rows:
+        return {}
+    latest = rows[-1]
+    impacts = {
+        domain: summarize_values(row.get("mean_cf_impacts_abs", {}).get(domain) for row in rows)["mean"]
+        for domain in domain_order
+    }
+    spearman = summarize_values(row.get("spearman_cda_vs_ece_reliability") for row in rows)
+    return {
+        "n_samples": int(sum(row.get("n_samples", 0) for row in rows)),
+        "mean_cf_impacts_abs": impacts,
+        "spearman_cda_vs_ece_reliability": spearman["mean"],
+        "spearman_cda_vs_ece_reliability_std": spearman["std"],
+        "sample_narratives": latest.get("sample_narratives", []),
+        "per_seed": rows,
+    }
+
+
+def _run_experiment_arrays(
+    cfg: Dict,
+    features: np.ndarray,
+    masks: np.ndarray,
+    labels: np.ndarray,
+    sample_ids: list,
+    domain_order: List[str],
+    confidence_index: int | None,
+    score_index: int,
+    seed_override: Optional[int] = None,
+    device: torch.device | None = None,
+) -> Dict:
+    train_cfg = cfg.get("training", {})
+    eval_cfg = cfg.get("evaluation", {})
+    rel_cfg = cfg.get("reliability", {})
+    craf_cfg = cfg.get("craf", {})
+    mechanism_cfg = craf_cfg.get("mechanism_isolation", {})
+
+    seeds = [seed_override] if seed_override is not None else eval_cfg.get("seeds", [42])
+    device = device or torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    clean_gate_threshold = float(rel_cfg.get("clean_gate_threshold", 0.66))
+    n_bootstrap = int(eval_cfg.get("n_bootstrap", 200))
+    bootstrap_alpha = float(eval_cfg.get("bootstrap_alpha", 0.05))
+    attack_names = craf_cfg.get("adversarial_attacks", ["zero_attack", "max_attack", "gaussian_noise"])
+    adversarial_sigma = float(craf_cfg.get("adversarial_sigma", 0.1))
+    tau_sweep_thresholds = [float(v) for v in mechanism_cfg.get("tau_sweep_thresholds", [])]
+    component_ablation_variants = list(mechanism_cfg.get("component_ablation_variants", []))
+
+    per_seed_table1 = []
+    per_seed_drift_rows: list[dict] = []
+    per_seed_degradation_rows: list[dict] = []
+    per_seed_adversarial_rows: list[dict] = []
+    per_seed_missing_rows: list[dict] = []
+    per_seed_calibration_rows: list[dict] = []
+    per_seed_cda_rows: list[dict] = []
+    per_seed_failure_cases: list[dict] = []
+    per_seed_tau_sweep_rows: list[dict] = []
+    per_seed_component_ablation_rows: list[dict] = []
+
+    for seed in seeds:
+        actual_seed = int(seed)
+        set_seed(actual_seed)
+        logger.info("Training and evaluating reliability-gated fusion (seed=%s)", actual_seed)
+
+        train_idx, val_idx, test_idx = _split(labels, {**train_cfg, "seed": actual_seed})
+        train_loader, val_loader, _ = _make_loaders(
+            features,
+            masks,
+            labels,
+            train_idx,
+            val_idx,
+            test_idx,
+            batch_size=int(train_cfg.get("batch_size", 128)),
+        )
+
+        model = _build_model(cfg, features.shape[1], features.shape[2], confidence_index, device)
+        _train_model(model, train_loader, val_loader, cfg, device)
+        model.eval()
+
+        estimator = _make_reliability_estimator(rel_cfg, domain_order, score_index)
+        estimator.fit(features[val_idx], masks[val_idx], labels[val_idx])
+
+        test_feat = features[test_idx]
+        test_mask = masks[test_idx]
+        test_labels = labels[test_idx]
+        static_probs = _predict_static(model, test_feat, test_mask, device)
+        craf_probs = _predict_craf(
+            model,
+            estimator,
+            test_feat,
+            test_mask,
+            device,
+            clean_gate_threshold=clean_gate_threshold,
+        )
+
+        static_metrics = classification_metrics(test_labels, static_probs)
+        craf_metrics = classification_metrics(test_labels, craf_probs)
+        baseline_metrics = run_baseline_suite(
+            features,
+            masks,
+            labels,
+            train_idx,
+            val_idx,
+            test_idx,
+            score_index=score_index,
+            device=device,
+            random_seed=actual_seed,
+        )
+        per_seed_table1.append(
+            {
+                "seed": actual_seed,
+                "static_attention": static_metrics,
+                "craf_attention": craf_metrics,
+                "bootstrap_ci": {
+                    "static_attention": _metric_bootstrap_intervals(
+                        test_labels, static_probs, n_bootstrap, bootstrap_alpha, actual_seed
+                    ),
+                    "craf_attention": _metric_bootstrap_intervals(
+                        test_labels, craf_probs, n_bootstrap, bootstrap_alpha, actual_seed + 1000
+                    ),
+                },
+                "delong_p_craf_vs_static": float(delong_roc_test(test_labels, craf_probs, static_probs)),
+                **baseline_metrics,
+            }
+        )
+
+        drift_rows, degradation_rows = _evaluate_drift(
+            model,
+            estimator,
+            test_feat,
+            test_mask,
+            test_labels,
+            domain_order,
+            score_index,
+            device,
+            craf_cfg.get("drift_noise_levels", [0.0, 0.05, 0.1, 0.2, 0.3]),
+            clean_gate_threshold,
+            actual_seed,
+        )
+        per_seed_drift_rows.extend(drift_rows)
+        per_seed_degradation_rows.extend(degradation_rows)
+        per_seed_adversarial_rows.extend(
+            _evaluate_adversarial(
+                model,
+                estimator,
+                test_feat,
+                test_mask,
+                test_labels,
+                domain_order,
+                score_index,
+                device,
+                attack_names,
+                adversarial_sigma,
+                clean_gate_threshold,
+                actual_seed,
+            )
+        )
+        per_seed_tau_sweep_rows.extend(
+            _evaluate_tau_sweep(
+                model,
+                estimator,
+                test_feat,
+                test_mask,
+                test_labels,
+                domain_order,
+                score_index,
+                device,
+                tau_sweep_thresholds,
+                attack_names,
+                adversarial_sigma,
+                actual_seed,
+            )
+        )
+        per_seed_component_ablation_rows.extend(
+            _evaluate_component_ablation(
+                model,
+                rel_cfg,
+                features[val_idx],
+                masks[val_idx],
+                labels[val_idx],
+                test_feat,
+                test_mask,
+                test_labels,
+                domain_order,
+                score_index,
+                device,
+                component_ablation_variants,
+                attack_names,
+                adversarial_sigma,
+                clean_gate_threshold,
+                actual_seed,
+            )
+        )
+        per_seed_missing_rows.extend(
+            _evaluate_missing(
+                model,
+                estimator,
+                test_feat,
+                test_mask,
+                test_labels,
+                device,
+                eval_cfg.get("domain_dropout_probs_extended", [0.0, 0.1, 0.2, 0.3, 0.5]),
+                clean_gate_threshold,
+                actual_seed,
+            )
+        )
+        per_seed_calibration_rows.append(
+            _evaluate_calibration(estimator, test_labels, static_probs, craf_probs, actual_seed)
+        )
+        per_seed_cda_rows.append(
+            _evaluate_cda(
+                model,
+                estimator,
+                test_feat,
+                test_mask,
+                sample_ids,
+                test_idx,
+                domain_order,
+                device,
+                int(eval_cfg.get("cda_samples", 100)),
+                actual_seed,
+            )
+        )
+        per_seed_failure_cases.append(
+            {
+                "seed": actual_seed,
+                "cases": _extract_failure_cases(
+                    estimator,
+                    test_feat,
+                    test_mask,
+                    test_labels,
+                    static_probs,
+                    craf_probs,
+                    sample_ids,
+                    test_idx,
+                    domain_order,
+                    score_index,
+                ),
+            }
+        )
+
+    clean_methods = [
+        "random_forest",
+        "confidence_weighted_mean",
+        "early_fusion_mlp",
+        "late_fusion_ensemble",
+        "static_attention",
+        "craf_attention",
+    ]
+    clean_summary = summarize_seed_metric_rows(per_seed_table1, methods=clean_methods)
+    degradation_aucs = _aggregate_degradation(per_seed_degradation_rows, alpha=bootstrap_alpha)
+    cda = _aggregate_cda(per_seed_cda_rows, domain_order)
+    adversarial_summary = aggregate_stress_rows(
+        per_seed_adversarial_rows,
+        group_keys=("attack", "target_domain"),
+        metric_keys=("static_auc", "craf_auc", "static_pr_auc", "craf_pr_auc", "static_f1", "craf_f1"),
+        alpha=bootstrap_alpha,
+    )
+    missing_summary = aggregate_stress_rows(
+        per_seed_missing_rows,
+        group_keys=("dropout_prob",),
+        metric_keys=("static_auc", "craf_auc", "static_pr_auc", "craf_pr_auc", "static_f1", "craf_f1"),
+        alpha=bootstrap_alpha,
+    )
+    tau_sweep_summary = (
+        aggregate_stress_rows(
+            per_seed_tau_sweep_rows,
+            group_keys=("condition", "tau"),
+            metric_keys=(
+                "static_auc",
+                "craf_auc",
+                "static_pr_auc",
+                "craf_pr_auc",
+                "static_f1",
+                "craf_f1",
+                "adaptation_rate",
+                "mean_reliability",
+            ),
+            alpha=bootstrap_alpha,
+        )
+        if per_seed_tau_sweep_rows
+        else []
+    )
+    component_ablation_summary = (
+        aggregate_stress_rows(
+            per_seed_component_ablation_rows,
+            group_keys=("variant", "attack", "target_domain"),
+            metric_keys=(
+                "static_auc",
+                "craf_auc",
+                "static_pr_auc",
+                "craf_pr_auc",
+                "static_f1",
+                "craf_f1",
+                "adaptation_rate",
+                "mean_reliability",
+            ),
+            alpha=bootstrap_alpha,
+        )
+        if per_seed_component_ablation_rows
+        else []
+    )
+
+    static_aucs = [row["static_attention"].get("roc_auc", float("nan")) for row in per_seed_table1]
+    craf_aucs = [row["craf_attention"].get("roc_auc", float("nan")) for row in per_seed_table1]
+    paired_p = paired_ttest(np.array(craf_aucs), np.array(static_aucs)) if len(per_seed_table1) > 1 else float("nan")
+    latest_cal = per_seed_calibration_rows[-1] if per_seed_calibration_rows else {}
+    spearman_value = cda.get("spearman_cda_vs_ece_reliability")
+    spearman_finite = spearman_value is not None and np.isfinite(float(spearman_value))
+    claim_checks = {
         "delong_p_lt_0p05_on_last_seed": bool(per_seed_table1[-1]["delong_p_craf_vs_static"] < 0.05),
-        "craf_better_drift_auc_n_domains": n_domains_craf_better_drift,
-        "craf_better_drift_auc_all_domains": bool(n_domains_craf_better_drift == len(domain_order)),
-        "spearman_cda_vs_ece_gt_0p6": bool(np.isfinite(spearman_vs_ece) and spearman_vs_ece > 0.6),
-        "craf_ece_lt_static_ece": bool(calibration_result["craf_ece"] < calibration_result["static_ece"]),
+        "craf_better_drift_auc_n_domains": sum(v["craf_better"] for v in degradation_aucs.values()),
+        "craf_better_drift_auc_all_domains": bool(
+            sum(v["craf_better"] for v in degradation_aucs.values()) == len(domain_order)
+        ),
+        "spearman_cda_vs_ece_gt_0p6": bool(spearman_finite and float(spearman_value) > 0.6),
+        "craf_ece_lt_static_ece": bool(latest_cal.get("craf_ece", float("inf")) < latest_cal.get("static_ece", 0.0)),
         "paired_ttest_p": float(paired_p) if np.isfinite(paired_p) else None,
     }
 
-    results["statistical_summary"] = {
-        "per_seed_static_auc": static_aucs,
-        "per_seed_craf_auc": craf_aucs,
-        "paired_ttest_p_craf_vs_static": float(paired_p) if np.isfinite(paired_p) else None,
-        "breakthrough_checks": breakthrough_checks,
+    return {
+        "table_1_clean_performance": per_seed_table1,
+        "clean_metric_summary": clean_summary,
+        "table_2_drift_robustness_per_seed": per_seed_drift_rows,
+        "table_2_drift_robustness": _aggregate_drift_curves(per_seed_drift_rows, alpha=bootstrap_alpha),
+        "figure_1_drift_curves": {
+            "noise_levels": craf_cfg.get("drift_noise_levels", [0.0, 0.05, 0.1, 0.2, 0.3]),
+            "degradation_aucs": degradation_aucs,
+            "per_seed_degradation_aucs": per_seed_degradation_rows,
+        },
+        "table_3_adversarial_per_seed": per_seed_adversarial_rows,
+        "table_3_adversarial": adversarial_summary,
+        "table_4_missing_modality_per_seed": per_seed_missing_rows,
+        "table_4_missing_modality": missing_summary,
+        "table_5_calibration_per_seed": per_seed_calibration_rows,
+        "table_5_calibration": _aggregate_calibration(per_seed_calibration_rows),
+        "table_6_tau_sweep_per_seed": per_seed_tau_sweep_rows,
+        "table_6_tau_sweep": tau_sweep_summary,
+        "table_7_component_ablation_per_seed": per_seed_component_ablation_rows,
+        "table_7_component_ablation": component_ablation_summary,
+        "cda_validation": cda,
+        "failure_case_analysis": {
+            "per_seed": per_seed_failure_cases,
+            "representative_cases": per_seed_failure_cases[-1]["cases"] if per_seed_failure_cases else [],
+        },
+        "statistical_summary": {
+            "per_seed_static_auc": static_aucs,
+            "per_seed_craf_auc": craf_aucs,
+            "paired_ttest_p_craf_vs_static": float(paired_p) if np.isfinite(paired_p) else None,
+            "clean_metric_summary": clean_summary,
+            "stress_metric_summary": {
+                "drift_degradation": degradation_aucs,
+                "adversarial": adversarial_summary,
+                "missing_modality": missing_summary,
+                "tau_sweep": tau_sweep_summary,
+                "component_ablation": component_ablation_summary,
+            },
+            "claim_checks": claim_checks,
+        },
     }
 
-    passed = sum([
-        breakthrough_checks["delong_p_lt_0p05_on_last_seed"],
-        breakthrough_checks["craf_better_drift_auc_all_domains"],
-        breakthrough_checks["craf_ece_lt_static_ece"],
-    ])
-    logger.info(f"Breakthrough checks passed: {passed}/3")
 
-    return results
+def run_experiment(cfg: Dict, seed_override: Optional[int] = None) -> Dict:
+    logger.info("Phase 0: Loading data")
+    features, masks, labels, sample_ids, domain_order, _, confidence_index, score_index = _load_data(cfg)
+    return _run_experiment_arrays(
+        cfg,
+        features,
+        masks,
+        labels,
+        sample_ids,
+        domain_order,
+        confidence_index,
+        score_index or 0,
+        seed_override=seed_override,
+    )
 
 
-# ---------------------------------------------------------------------------
-# CLI
-# ---------------------------------------------------------------------------
+def _run_synthetic_experiment(cfg, features, masks, labels, sample_ids, domain_order, seed_override=None) -> Dict:
+    """Run experiment using pre-loaded synthetic arrays."""
+    return _run_experiment_arrays(
+        cfg,
+        features,
+        masks,
+        labels,
+        sample_ids,
+        domain_order,
+        confidence_index=None,
+        score_index=0,
+        seed_override=seed_override,
+        device=torch.device("cpu"),
+    )
+
 
 def main():
     logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
-    parser = argparse.ArgumentParser(description="CRAF breakthrough experiment")
+    parser = argparse.ArgumentParser(description="Reliability-gated multimodal fusion experiment")
     parser.add_argument("--config", default=str(DEFAULT_CONFIG), help="Path to attention_config.yaml")
-    parser.add_argument("--output", default="experiments/fusion/attention_fusion/breakthrough_results.json")
-    parser.add_argument("--synthetic", action="store_true", help="Use synthetic data (smoke test)")
+    parser.add_argument("--output", default="experiments/fusion/attention_fusion/reliability_gated_results.json")
+    parser.add_argument("--synthetic", action="store_true", help="Use synthetic data for an explicit smoke test")
     parser.add_argument("--seed", type=int, default=None, help="Override single seed")
     args = parser.parse_args()
 
     if args.synthetic:
-        logger.info("Running with synthetic data (smoke test mode)")
+        logger.warning("Running explicit synthetic smoke test; do not use this output as paper evidence.")
         features, masks, labels, sample_ids, domain_order = _make_synthetic()
-        # Build a minimal cfg dict
         cfg = {
             "data": {"path": "/dev/null", "score_column": "score", "confidence_column": "confidence",
                      "embedding_prefix": "embedding_", "id_column": "sample_id",
@@ -629,7 +1457,7 @@ def main():
             "training": {"seed": 42, "batch_size": 64, "epochs": 5, "lr": 1e-3,
                          "weight_decay": 0.01, "domain_dropout": 0.1,
                          "test_size": 0.2, "val_size": 0.1, "early_stopping": 3, "lambda_reg": 0.01},
-            "evaluation": {"seeds": [42], "cda_samples": 20,
+            "evaluation": {"seeds": [42], "cda_samples": 20, "n_bootstrap": 50,
                            "domain_dropout_probs_extended": [0.0, 0.1, 0.3]},
             "reliability": {"ece_weight": 0.4, "ks_weight": 0.4, "sharpness_weight": 0.2,
                             "n_calibration_bins": 5, "min_samples_for_ks": 10},
@@ -637,20 +1465,9 @@ def main():
                      "adversarial_attacks": ["zero_attack", "gaussian_noise"],
                      "adversarial_sigma": 0.1},
         }
-
-        # Patch _load_data to return synthetic data
-        def _load_data_synthetic(_cfg):
-            n_features = features.shape[2]
-            feature_columns = [f"feat_{i}" for i in range(n_features)]
-            return features, masks, labels, sample_ids, domain_order, feature_columns, None, 0
-
-        import uais.fusion.attention.run_breakthrough_experiment as this_module
-        import types
-        # Monkey-patch for synthetic path
         results = _run_synthetic_experiment(cfg, features, masks, labels, sample_ids, domain_order, seed_override=args.seed)
     else:
-        cfg_path = _resolve(args.config)
-        cfg = load_yaml(str(cfg_path))
+        cfg = load_yaml(str(_resolve(args.config)))
         results = run_experiment(cfg, seed_override=args.seed)
 
     out_path = _resolve(args.output)
@@ -658,8 +1475,8 @@ def main():
 
     def _to_serializable(obj):
         if isinstance(obj, (np.floating, float)):
-            v = float(obj)
-            return None if (v != v) else v  # nan → None
+            value = float(obj)
+            return None if value != value else value
         if isinstance(obj, np.integer):
             return int(obj)
         if isinstance(obj, np.ndarray):
@@ -673,220 +1490,7 @@ def main():
     with open(out_path, "w") as f:
         json.dump(_to_serializable(results), f, indent=2)
 
-    logger.info(f"Results saved to {out_path}")
-    checks = results.get("statistical_summary", {}).get("breakthrough_checks", {})
-    logger.info("=== Breakthrough Summary ===")
-    for k, v in checks.items():
-        logger.info(f"  {k}: {v}")
-
-
-def _run_synthetic_experiment(cfg, features, masks, labels, sample_ids, domain_order, seed_override=None) -> Dict:
-    """Run experiment using pre-loaded synthetic arrays (bypasses _load_data)."""
-    train_cfg = cfg.get("training", {})
-    eval_cfg = cfg.get("evaluation", {})
-    rel_cfg = cfg.get("reliability", {})
-    craf_cfg = cfg.get("craf", {})
-
-    seeds = eval_cfg.get("seeds", [42])
-    device = torch.device("cpu")
-    results: Dict = {}
-
-    score_index = 0
-    n_features = features.shape[2]
-    input_dim = n_features
-    num_domains = features.shape[1]
-    confidence_index = None
-
-    per_seed_table1 = []
-    per_seed_static_probs = []
-    per_seed_craf_probs = []
-    train_idx_last = val_idx_last = test_idx_last = None
-    model_last = estimator_last = None
-
-    for seed in seeds:
-        actual_seed = seed_override if seed_override is not None else seed
-        set_seed(actual_seed)
-
-        train_idx, val_idx, test_idx = _split(labels, {**train_cfg, "seed": actual_seed})
-        train_loader, val_loader, test_loader = _make_loaders(
-            features, masks, labels, train_idx, val_idx, test_idx,
-            batch_size=int(train_cfg.get("batch_size", 64)),
-        )
-
-        model = _build_model(cfg, num_domains, input_dim, confidence_index, device)
-        _train_model(model, train_loader, val_loader, cfg, device)
-        model.eval()
-
-        estimator = ReliabilityEstimator(
-            domain_order=domain_order,
-            score_index=score_index,
-            ece_weight=float(rel_cfg.get("ece_weight", 0.4)),
-            ks_weight=float(rel_cfg.get("ks_weight", 0.4)),
-            sharpness_weight=float(rel_cfg.get("sharpness_weight", 0.2)),
-            n_calibration_bins=int(rel_cfg.get("n_calibration_bins", 5)),
-            min_samples_for_ks=int(rel_cfg.get("min_samples_for_ks", 10)),
-        )
-        estimator.fit(features[val_idx], masks[val_idx], labels[val_idx])
-
-        test_feat = features[test_idx]
-        test_mask = masks[test_idx]
-        test_labels = labels[test_idx]
-
-        static_probs = _predict_static(model, test_feat, test_mask, device)
-        craf_probs = _predict_craf(model, estimator, test_feat, test_mask, device)
-        static_metrics = classification_metrics(test_labels, static_probs)
-        craf_metrics = classification_metrics(test_labels, craf_probs)
-        delong_p = delong_roc_test(test_labels, craf_probs, static_probs)
-
-        baseline_metrics = run_baseline_suite(
-            features, masks, labels,
-            train_idx, val_idx, test_idx,
-            score_index=score_index,
-            device=device,
-            random_seed=actual_seed,
-        )
-
-        per_seed_table1.append({
-            "seed": actual_seed,
-            "static_attention": static_metrics,
-            "craf_attention": craf_metrics,
-            "delong_p_craf_vs_static": float(delong_p),
-            **baseline_metrics,
-        })
-        per_seed_static_probs.append(static_probs)
-        per_seed_craf_probs.append(craf_probs)
-        train_idx_last, val_idx_last, test_idx_last = train_idx, val_idx, test_idx
-        model_last, estimator_last = model, estimator
-
-    results["table_1_clean_performance"] = per_seed_table1
-
-    final_test_feat = features[test_idx_last]
-    final_test_mask = masks[test_idx_last]
-    final_test_labels = labels[test_idx_last]
-    static_final = per_seed_static_probs[-1]
-    craf_final = per_seed_craf_probs[-1]
-    model = model_last
-    estimator = estimator_last
-
-    # Drift
-    noise_levels = craf_cfg.get("drift_noise_levels", [0.0, 0.1, 0.3])
-    engine = AdversarialPerturbationEngine(domain_order, score_index)
-    drift_results = {}
-    degradation_aucs = {}
-    for domain in domain_order:
-        drift_feats_map = engine.simulate_domain_drift(final_test_feat, final_test_mask, domain, noise_levels)
-        auc_static_curve, auc_craf_curve, domain_rows = [], [], []
-        for level in noise_levels:
-            pf = drift_feats_map[level]
-            sp = _predict_static(model, pf, final_test_mask, device)
-            cp = _predict_craf(model, estimator, pf, final_test_mask, device)
-            sm = classification_metrics(final_test_labels, sp)
-            cm = classification_metrics(final_test_labels, cp)
-            auc_static_curve.append(sm.get("roc_auc", float("nan")))
-            auc_craf_curve.append(cm.get("roc_auc", float("nan")))
-            domain_rows.append({"noise_level": float(level), "static_auc": sm.get("roc_auc"), "craf_auc": cm.get("roc_auc")})
-        noise_arr = np.array(noise_levels, dtype=float)
-        deg_s = reliability_degradation_auc(noise_arr, np.array(auc_static_curve))
-        deg_c = reliability_degradation_auc(noise_arr, np.array(auc_craf_curve))
-        degradation_aucs[domain] = {"static": float(deg_s), "craf": float(deg_c), "craf_better": bool(deg_c > deg_s)}
-        drift_results[domain] = domain_rows
-    results["table_2_drift_robustness"] = drift_results
-    results["figure_1_drift_curves"] = {"noise_levels": noise_levels, "degradation_aucs": degradation_aucs}
-
-    # Adversarial
-    attack_names = craf_cfg.get("adversarial_attacks", ["zero_attack", "gaussian_noise"])
-    sigma = float(craf_cfg.get("adversarial_sigma", 0.1))
-    adv_results = []
-    for attack_name in attack_names:
-        try:
-            at = AdversarialAttackType(attack_name)
-        except ValueError:
-            continue
-        for target in domain_order + [None]:
-            pf, _ = engine.apply_attack(final_test_feat, final_test_mask, at, target_domain=target, sigma=sigma)
-            sp = _predict_static(model, pf, final_test_mask, device)
-            cp = _predict_craf(model, estimator, pf, final_test_mask, device)
-            sm = classification_metrics(final_test_labels, sp)
-            cm = classification_metrics(final_test_labels, cp)
-            adv_results.append({"attack": attack_name, "target_domain": target if target else "all",
-                                 "static_auc": sm.get("roc_auc"), "craf_auc": cm.get("roc_auc"),
-                                 "delta_auc": (cm.get("roc_auc") or 0) - (sm.get("roc_auc") or 0)})
-    results["table_3_adversarial"] = adv_results
-
-    # Missing modality
-    dropout_probs = eval_cfg.get("domain_dropout_probs_extended", [0.0, 0.1, 0.3])
-    missing_results = []
-    for p_drop in dropout_probs:
-        rng_seed = np.random.default_rng(99)
-        drop_mask = final_test_mask.copy()
-        if p_drop > 0.0:
-            drop_mask = drop_mask | (rng_seed.random(drop_mask.shape) < p_drop)
-        sp = _predict_static(model, final_test_feat, drop_mask, device)
-        cp = _predict_craf(model, estimator, final_test_feat, drop_mask, device)
-        sm = classification_metrics(final_test_labels, sp)
-        cm = classification_metrics(final_test_labels, cp)
-        missing_results.append({"dropout_prob": float(p_drop), "static_auc": sm.get("roc_auc"),
-                                 "craf_auc": cm.get("roc_auc")})
-    results["table_4_missing_modality"] = missing_results
-
-    # Calibration
-    cal = {
-        "static_ece": float(expected_calibration_error(final_test_labels, static_final)),
-        "craf_ece": float(expected_calibration_error(final_test_labels, craf_final)),
-        "static_brier": float(brier_score(final_test_labels, static_final)),
-        "craf_brier": float(brier_score(final_test_labels, craf_final)),
-        "static_bins": _calibration_bins(final_test_labels, static_final),
-        "craf_bins": _calibration_bins(final_test_labels, craf_final),
-        "domain_ece_at_fit": estimator.get_domain_ece(),
-    }
-    results["table_5_calibration"] = cal
-
-    # CDA
-    n_cda = int(eval_cfg.get("cda_samples", 20))
-    cda_idx = np.arange(min(n_cda, len(test_idx_last)))
-    cda_feat = final_test_feat[cda_idx]
-    cda_mask = final_test_mask[cda_idx]
-    cda_ids = list(range(len(cda_idx)))
-    explainer = CounterfactualDomainExplainer(model=model, domain_order=domain_order, device=device,
-                                              reliability_estimator=estimator, use_craf_weights=True)
-    cf_results = explainer.explain_batch(cda_feat, cda_mask, cda_ids, batch_size=16)
-    mean_cf_impacts = {
-        d: float(np.nanmean([abs(r.cf_impacts.get(d, float("nan"))) for r in cf_results]))
-        for d in domain_order
-    }
-    spearman_vs_ece = explainer.correlation_with_shap(cf_results, {d: 1.0 - v for d, v in estimator.get_domain_ece().items()})
-    results["cda_validation"] = {
-        "n_samples": len(cf_results),
-        "mean_cf_impacts_abs": mean_cf_impacts,
-        "spearman_cda_vs_ece_reliability": float(spearman_vs_ece),
-        "sample_narratives": [r.narrative for r in cf_results[:3]],
-    }
-
-    # Stats
-    if len(seeds) > 1:
-        static_aucs = [row["static_attention"].get("roc_auc", float("nan")) for row in per_seed_table1]
-        craf_aucs = [row["craf_attention"].get("roc_auc", float("nan")) for row in per_seed_table1]
-        paired_p = paired_ttest(np.array(craf_aucs), np.array(static_aucs))
-    else:
-        static_aucs = [per_seed_table1[0]["static_attention"].get("roc_auc", float("nan"))]
-        craf_aucs = [per_seed_table1[0]["craf_attention"].get("roc_auc", float("nan"))]
-        paired_p = float("nan")
-
-    n_better = sum(v["craf_better"] for v in degradation_aucs.values())
-    results["statistical_summary"] = {
-        "per_seed_static_auc": static_aucs,
-        "per_seed_craf_auc": craf_aucs,
-        "paired_ttest_p_craf_vs_static": float(paired_p) if np.isfinite(paired_p) else None,
-        "breakthrough_checks": {
-            "delong_p_lt_0p05_on_last_seed": bool(per_seed_table1[-1]["delong_p_craf_vs_static"] < 0.05),
-            "craf_better_drift_auc_n_domains": n_better,
-            "craf_better_drift_auc_all_domains": bool(n_better == len(domain_order)),
-            "spearman_cda_vs_ece_gt_0p6": bool(np.isfinite(spearman_vs_ece) and spearman_vs_ece > 0.6),
-            "craf_ece_lt_static_ece": bool(cal["craf_ece"] < cal["static_ece"]),
-        },
-    }
-    return results
-
+    logger.info("Results saved to %s", out_path)
 
 if __name__ == "__main__":
     main()
