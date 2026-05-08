@@ -64,12 +64,14 @@ def _find_cyber_csvs(raw_dir: Path) -> List[Path]:
 def load_cyber_data(
     raw_dir: Optional[Union[str, Path, dict]] = None,
     n_rows: Optional[int] = None,
-    allow_synthetic: bool = True,
+    allow_synthetic: bool = False,
 ) -> pd.DataFrame:
     """
     Load the UNSW-NB15 cyber intrusion dataset by combining all CSVs under data/raw/cyber.
 
     If a config dict is provided, it will try to use data.path inside it.
+    Synthetic fallback is opt-in so missing raw data fails loudly in research
+    runs.
     """
     project_root = Path(__file__).resolve().parents[3]
     if isinstance(raw_dir, dict):

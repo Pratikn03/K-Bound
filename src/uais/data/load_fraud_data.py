@@ -58,7 +58,7 @@ def _find_all_fraud_files(root: Path) -> List[Path]:
 def load_fraud_data(
     csv_path: Optional[Union[str, Path, dict]] = None,
     n_rows: Optional[int] = None,
-    allow_synthetic: bool = True,
+    allow_synthetic: bool = False,
     prefer: Optional[str] = None,
 ) -> pd.DataFrame:
     """
@@ -72,6 +72,8 @@ def load_fraud_data(
         Deterministic subsample size.
     allow_synthetic : bool
         If True, return a synthetic credit-card style dataset when no files are found.
+        Defaults to False so research runs fail loudly unless synthetic data is
+        explicitly requested for smoke tests.
     prefer : str, optional
         If provided, prefer "creditcard" or "paysim" datasets when both are present.
     """
@@ -156,7 +158,7 @@ def load_fraud_data(
     return df
 
 
-def load_creditcard(n_rows: Optional[int] = None, allow_synthetic: bool = True) -> pd.DataFrame:
+def load_creditcard(n_rows: Optional[int] = None, allow_synthetic: bool = False) -> pd.DataFrame:
     """Load the Credit Card Fraud dataset (default path: data/raw/fraud/creditcard.csv)."""
     project_root = Path(__file__).resolve().parents[3]
     path = project_root / "data" / "raw" / "fraud" / "creditcard.csv"
@@ -172,5 +174,5 @@ def get_fraud_datasets(n_rows: Optional[int] = None) -> dict:
     """Convenience helper to load key fraud datasets (creditcard + paysim)."""
     return {
         "creditcard": load_creditcard(n_rows),
-        "paysim": load_paysim(n_rows),
+        "paysim": load_paysim(n_rows, allow_synthetic=False),
     }

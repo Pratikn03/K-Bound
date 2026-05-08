@@ -52,7 +52,7 @@ def _load_ldap_dir(ldap_dir: Path) -> pd.DataFrame:
 def load_behavior_data(
     csv_path: Optional[Union[str, Path]] = None,
     n_rows: Optional[int] = None,
-    allow_synthetic: bool = True,
+    allow_synthetic: bool = False,
 ) -> pd.DataFrame:
     """
     Load behavior data.
@@ -61,6 +61,9 @@ def load_behavior_data(
     1) If csv_path is provided (file or directory), use that.
     2) If CERT r4.2 LDAP directory exists, load all CSVs there.
     3) Fallback to Online Shoppers Intention CSV.
+
+    Synthetic fallback is opt-in so missing raw data fails loudly in research
+    runs.
     """
     project_root = Path(__file__).resolve().parents[3]
     ldap_dir = project_root / "data" / "raw" / "behavior" / "r4.2" / "LDAP"

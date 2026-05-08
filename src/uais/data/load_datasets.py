@@ -38,19 +38,19 @@ def _load_all_tabular(path: Path) -> pd.DataFrame:
 
 # Existing domain loaders (now aggregate all files when given a directory)
 
-def load_fraud_data(path: str | Path = "data/raw/fraud", n_rows: int | None = None, allow_synthetic: bool = True):
+def load_fraud_data(path: str | Path = "data/raw/fraud", n_rows: int | None = None, allow_synthetic: bool = False):
     df = load_fraud_data_domain(csv_path=path, n_rows=n_rows, allow_synthetic=allow_synthetic)
     print(f"✅ Loaded fraud data from {path} -> {df.shape}")
     return df
 
 
-def load_cyber_data(path: str | Path = "data/raw/cyber", n_rows: int | None = None, allow_synthetic: bool = True):
+def load_cyber_data(path: str | Path = "data/raw/cyber", n_rows: int | None = None, allow_synthetic: bool = False):
     df = load_cyber_data_domain(raw_dir=path, n_rows=n_rows, allow_synthetic=allow_synthetic)
     print(f"✅ Loaded cyber data from {path} -> {df.shape}")
     return df
 
 
-def load_behavior_data(path: str | Path = "data/raw/behavior", n_rows: int | None = None, allow_synthetic: bool = True):
+def load_behavior_data(path: str | Path = "data/raw/behavior", n_rows: int | None = None, allow_synthetic: bool = False):
     df = load_behavior_data_domain(csv_path=path, n_rows=n_rows, allow_synthetic=allow_synthetic)
     print(f"✅ Loaded behavior data from {path} -> {df.shape}")
     return df
