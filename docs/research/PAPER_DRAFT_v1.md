@@ -1,19 +1,23 @@
 # Paper Draft v1
 
-## Title
+The manuscript is now maintained as LaTeX:
 
-Cross-Modal Attention Fusion for Heterogeneous Anomaly Detection
+- Source: `docs/research/PAPER_DRAFT_v1.tex`
+- Compiled PDF: `output/pdf/PAPER_DRAFT_v1.pdf`
 
-## Abstract
+Current title:
 
-(TBD)
+**VERA: Reliability-Gated Multimodal Anomaly Fusion under Domain Stress**
 
-## Outline
+Draft status: VERA-centered multimodal anomaly-fusion manuscript. The code now includes a naturally paired MVTec 3D-AD RGB/depth benchmark path, while quantitative claims remain limited to generated local artifacts.
 
-1. Introduction
-2. Related Work
-3. Methodology
-4. Experimental Setup
-5. Results
-6. Discussion
-7. Conclusion
+Current results status:
+
+- Real-domain score-level benchmark: fraud, cyber, behavior, and NLP domains.
+- Naturally paired benchmark path: MVTec 3D-AD RGB + depth/XYZ fusion schema.
+- Clean evaluation: five seeds with ROC-AUC, PR-AUC, F1, ECE, and Brier score.
+- Added multi-seed ablation support: missing domains, score drift, adversarial score attacks, calibration, and counterfactual domain attribution.
+- Added mechanism-isolation hooks: reliability-gate tau sweep and reliability-component ablations for ECE, KS, sharpness, and gate removal.
+- Added harder-benchmark prep hook: `--scorer-train-fraction 0.05` to `0.10` intentionally weakens domain scorers before fusion so method comparisons do not saturate.
+- Added system-level VERA framing, architecture figure, threats to validity, reproducibility, and stronger discussion.
+- Important limitation: the benchmark aligns real records by label, so it is not yet a naturally co-observed multimodal incident dataset.

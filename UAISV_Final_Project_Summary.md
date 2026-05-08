@@ -313,21 +313,18 @@ model.fit(dict(train_encodings), labels, epochs=2, batch_size=16)
 
 ---
 
-## 14. Research Impact and Internship Value
-- For internships: Demonstrates strong applied ML, DL, and MLOps integration skills.
-- For research: Meets IEEE publication criteria for multimodal AI innovation.
-- For career: Highlights advanced hands-on capabilities across AI domains.
-
-**Expected Academic Grade (Undergraduate Level): 95–100 / 100**
-**Practical Value: High (Research + Industry ready)**
+## 14. Research Status and Evidence Boundary
+- Applied scope: Demonstrates integrated ML, DL, NLP, CV, and MLOps components.
+- Research scope: Provides a reproducible multimodal anomaly-fusion prototype with benchmark scripts, generated metrics, and known limitations.
+- Evidence boundary: Current results should be treated as draft research evidence until naturally paired benchmarks, external baselines, and independent replication are complete.
 
 ---
 
 ## 15. Conclusion
 
-UAIS-V represents a flagship multimodal AI ecosystem capable of fusing structured, textual, and visual data into a unified intelligence platform. Through modular ML, NLP, and CV subsystems, explainability layers, and orchestration frameworks, it provides a reproducible and scalable foundation for both enterprise applications and academic research.
+UAIS-V represents a multimodal AI research prototype capable of fusing structured, textual, and visual data into a unified anomaly-analysis pipeline. Through modular ML, NLP, and CV subsystems, explainability layers, and orchestration scripts, it provides a reproducible foundation for further evaluation.
 
-The system’s adaptability — powered by boosting models and neural networks — ensures both precision and efficiency across multiple domains. Once fully trained and deployed, UAIS-V stands as an industry-grade portfolio and publication-worthy project, marking the culmination of Pratik Niroula’s data science and AI research journey.
+The system’s adaptability is supported by boosting models, neural networks, and fusion experiments across multiple domains. Its current value is strongest as an auditable research and engineering artifact; deployment or publication claims require the additional validation described in the research manuscript.
 
 ---
 

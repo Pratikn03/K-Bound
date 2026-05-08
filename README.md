@@ -140,4 +140,4 @@ docker-compose up --build
 3. Run relevant scripts or tests before pushing.
 4. PR with a concise summary + screenshots if you touched dashboard/API.
 
-UAIS‑V is maintained by **Pratik Niroula**. Feel free to adapt it for coursework, demos, or research; just keep the provenance in place. Happy experimenting! 🎯
+UAIS-V is maintained by **Pratik Niroula**. The repository is intended for reproducible research and engineering review; preserve provenance when adapting it.
