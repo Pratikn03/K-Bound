@@ -139,7 +139,7 @@ def reliability_degradation_auc(
     valid = np.isfinite(roc_auc_values)
     if valid.sum() < 2:
         return float("nan")
-    return float(np.trapz(roc_auc_values[valid], noise_levels[valid]))
+    return float(np.trapezoid(roc_auc_values[valid], noise_levels[valid]))
 
 
 __all__ = [

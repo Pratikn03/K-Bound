@@ -55,6 +55,9 @@ class CrossModalAttentionBlock(nn.Module):
         if key_padding_mask is not None:
             mask = key_padding_mask.unsqueeze(1).unsqueeze(2)
             attn_scores = attn_scores.masked_fill(mask, float("-inf"))
+            all_masked = key_padding_mask.all(dim=1)
+            if all_masked.any():
+                attn_scores[all_masked] = 0.0
 
         attn_weights = torch.softmax(attn_scores, dim=-1)
         attn_weights = self.attn_dropout(attn_weights)

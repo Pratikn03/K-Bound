@@ -23,6 +23,11 @@ def _compute_midrank(x: np.ndarray) -> np.ndarray:
 
 
 def _fast_delong(predictions: np.ndarray, labels: np.ndarray) -> Tuple[float, float]:
+    predictions = np.asarray(predictions, dtype=float).ravel()
+    labels = np.asarray(labels).ravel()
+    finite = np.isfinite(predictions) & np.isfinite(labels)
+    predictions = predictions[finite]
+    labels = labels[finite]
     pos = predictions[labels == 1]
     neg = predictions[labels == 0]
     if len(pos) == 0 or len(neg) == 0:
