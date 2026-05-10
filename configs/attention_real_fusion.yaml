@@ -1,0 +1,97 @@
+# RealFusion-LA: Label-Aligned multimodal anomaly detection benchmark
+# -----------------------------------------------------------------------
+# 4 domains — Credit Card Fraud | UNSW-NB15 Network Intrusion |
+#             Online Shoppers   | News Text (AG News binary)
+# ~8,000 composite samples | 30.7 % positive rate | 11.8 % natural missingness
+# Benchmark construction: see src/scripts/prepare_realfusion_la_benchmark.py
+# Paper: VERA — Verifiable Evidence Reliability for Anomalies (2026)
+#        Method: RGA (Reliability-Gated Attention) = code name CRAF
+
+data:
+  path: data/real_fusion/realfusion_la.csv
+  format: csv
+  id_column: sample_id
+  domain_column: domain
+  label_column: label
+  score_column: score
+  confidence_column: confidence
+  timestamp_column: null
+  embedding_prefix: embedding_
+  feature_columns: []
+  domain_order:
+    - credit_card_fraud
+    - network_intrusion
+    - online_shoppers
+    - news_text
+
+model:
+  num_domains: 4
+  embed_dim: 64
+  num_heads: 8
+  num_layers: 2
+  dropout: 0.1
+  use_attention: true
+  use_confidence: true
+  use_input_confidence: true
+  use_domain_embeddings: true
+  use_positional_embeddings: true
+  use_missing_embedding: true
+
+training:
+  seed: 42
+  batch_size: 256
+  epochs: 40
+  lr: 0.0005
+  weight_decay: 0.01
+  domain_dropout: 0.12   # mirrors 11.8% natural missingness in the benchmark
+  test_size: 0.15
+  val_size: 0.10
+  early_stopping: 7
+  lambda_reg: 0.01
+
+output:
+  model_dir: models/real_fusion/attention
+  checkpoint_name: realfusion_la_attention.pt
+  metrics_path: experiments/real_fusion/metrics.json
+
+mlflow:
+  enabled: false
+  tracking_uri: null
+  experiment_name: VERA_RealFusion_LA
+
+validation:
+  report_path: experiments/real_fusion/validation.json
+
+evaluation:
+  metrics_path: experiments/real_fusion/harness_metrics.json
+  seeds: [42, 43, 44]
+  n_bootstrap: 1000
+  bootstrap_alpha: 0.05
+  save_attention_samples: 32
+  attention_weights_dir: experiments/real_fusion/attention_weights
+  domain_dropout_probs: [0.0, 0.1, 0.3]
+  domain_dropout_probs_extended: [0.0, 0.1, 0.2, 0.3, 0.5]
+  drop_domain_pairs: true
+  performance_runs: 3
+  performance_warmup_batches: 5
+  performance_iters: 50
+  performance_batch_size: 512
+  enable_craf: true
+  enable_cda: true
+  cda_samples: 200
+
+reliability:
+  score_index: null  # resolved at runtime from feature_columns (index of "score" column)
+  ece_weight: 0.45        # α — validation calibration quality
+  ks_weight: 0.35         # β — KS score-distribution drift
+  sharpness_weight: 0.20  # γ — score sharpness (distance from 0.5)
+  n_calibration_bins: 10
+  min_samples_for_ks: 30
+  gate_threshold: 0.66    # τ — RGA gate; samples below activate reliability path
+  estimator_path: experiments/real_fusion/reliability_estimator.joblib
+
+craf:
+  drift_noise_levels: [0.0, 0.05, 0.1, 0.2, 0.3, 0.5]
+  adversarial_attacks: [zero_attack, max_attack, gaussian_noise]
+  adversarial_sigma: 0.1
+  cda_samples: 200

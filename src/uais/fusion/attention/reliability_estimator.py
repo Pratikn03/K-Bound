@@ -250,4 +250,12 @@ class ReliabilityEstimator:
         return obj
 
 
-__all__ = ["ReliabilityEstimator"]
+# ---------------------------------------------------------------------------
+# Paper-name alias
+# ---------------------------------------------------------------------------
+# The paper (VERA, 2026) calls this component "RGA" (Reliability-Gated Attention).
+# The code uses the internal project name "CRAF" (Calibration-aware Reliability-
+# Adaptive Fusion).  Both names refer to the same class.
+RGAReliabilityEstimator = ReliabilityEstimator
+
+__all__ = ["ReliabilityEstimator", "RGAReliabilityEstimator"]

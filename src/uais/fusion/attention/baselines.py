@@ -1,18 +1,20 @@
-"""Strong multimodal fusion baselines for comparison against CRAF.
+"""Strong multimodal fusion baselines for comparison against CRAF/RGA.
 
-Four published/standard baselines, each handling missing domains correctly:
+Six baselines covering static fusion and test-time adaptive fusion:
 
   EarlyFusionMLP          — concat all domain features + missing indicators → MLP
   LateFusionEnsemble      — per-domain logistic regressor → stacked meta-learner
   RandomForestFusion      — sklearn RF on flattened features + missing indicators
   ConfidenceWeightedMean  — sharpness-weighted score mean (CRAF's direct predecessor)
+  TentAdapter             — test-time entropy minimization on BN params (Wang et al. 2021)
+  PseudoLabelTTTAdapter   — pseudo-label test-time training (Sun et al. 2020)
 
 All models expose a consistent `fit(features, masks, labels)` / `predict_proba(features, masks)`
 interface so the experiment script can treat them uniformly.
 
 Missing-domain handling strategy:
-  - EarlyFusionMLP, RandomForest: fill masked features with 0.5 (uninformative for [0,1] scores)
-    and append a [D]-dim binary missingness indicator vector.
+  - EarlyFusionMLP, RandomForest, TTT variants: fill masked features with 0.5 and append
+    a [D]-dim binary missingness indicator vector.
   - LateFusionEnsemble: per-domain model outputs 0.5 when the domain is absent.
   - ConfidenceWeightedMean: excluded from weighted sum; result falls back to 0.5 if all absent.
 """
@@ -339,6 +341,179 @@ class ConfidenceWeightedMean:
 
 
 # ---------------------------------------------------------------------------
+# 5. TentAdapter  (test-time entropy minimisation, Wang et al. NeurIPS 2020)
+# ---------------------------------------------------------------------------
+
+class TentAdapter:
+    """Adapt a fitted EarlyFusionMLP at test time by minimising prediction entropy.
+
+    Only the BatchNorm affine parameters (weight, bias) are updated — all other
+    weights stay frozen.  This is the "Tent" approach: the model is moved back
+    to its fitted state before every predict_proba() call so adaptation is
+    stateless across batches.
+
+    Reference: Wang et al., "Tent: Fully Test-Time Adaptation by Entropy
+    Minimization", ICLR 2021.
+    """
+
+    def __init__(
+        self,
+        base: Optional[EarlyFusionMLP] = None,
+        n_steps: int = 1,
+        lr: float = 1e-3,
+    ) -> None:
+        self.base = base if base is not None else EarlyFusionMLP()
+        self.n_steps = n_steps
+        self.lr = lr
+        self._base_state: Optional[Dict] = None
+
+    def fit(
+        self,
+        features: np.ndarray,
+        masks: np.ndarray,
+        labels: np.ndarray,
+    ) -> "TentAdapter":
+        self.base.fit(features, masks, labels)
+        self._base_state = {k: v.clone() for k, v in self.base._model.state_dict().items()}
+        return self
+
+    def predict_proba(self, features: np.ndarray, masks: np.ndarray) -> np.ndarray:
+        if self._base_state is None:
+            raise RuntimeError("Call fit() first.")
+        # Reset to fitted state — adaptation is per-call, not accumulated
+        self.base._model.load_state_dict(self._base_state)
+
+        # Collect BN affine parameters; set BN layers to train mode
+        bn_params: List[torch.nn.Parameter] = []
+        for module in self.base._model.modules():
+            if isinstance(module, nn.BatchNorm1d):
+                module.train()
+                bn_params.extend(p for p in module.parameters() if p.requires_grad)
+        # All other layers: eval + no grad
+        for name, module in self.base._model.named_modules():
+            if not isinstance(module, nn.BatchNorm1d):
+                module.eval()
+        for p in self.base._model.parameters():
+            p.requires_grad_(False)
+        for p in bn_params:
+            p.requires_grad_(True)
+
+        if bn_params:
+            opt = torch.optim.Adam(bn_params, lr=self.lr)
+            X = self.base._scaler.transform(_flatten_with_mask(features, masks))
+            xt = torch.tensor(X, dtype=torch.float32, device=self.base.device)
+            for _ in range(self.n_steps):
+                opt.zero_grad()
+                logits = self.base._model(xt)
+                p_hat = torch.sigmoid(logits)
+                eps = 1e-7
+                entropy = -(
+                    p_hat * (p_hat + eps).log()
+                    + (1.0 - p_hat) * (1.0 - p_hat + eps).log()
+                )
+                entropy.mean().backward()
+                opt.step()
+
+        self.base._model.eval()
+        for p in self.base._model.parameters():
+            p.requires_grad_(True)
+
+        X = self.base._scaler.transform(_flatten_with_mask(features, masks))
+        probs: List[np.ndarray] = []
+        with torch.no_grad():
+            for start in range(0, len(X), 256):
+                xb = torch.tensor(X[start:start + 256], dtype=torch.float32, device=self.base.device)
+                probs.append(torch.sigmoid(self.base._model(xb)).cpu().numpy())
+        return np.concatenate(probs)
+
+
+# ---------------------------------------------------------------------------
+# 6. PseudoLabelTTTAdapter  (test-time training with pseudo-labels)
+# ---------------------------------------------------------------------------
+
+class PseudoLabelTTTAdapter:
+    """Test-Time Training via self-generated pseudo-labels.
+
+    After fit(), adapts the MLP on each test batch by:
+    1. Computing initial predictions with the fitted model.
+    2. Selecting high-confidence predictions (p ≥ threshold or p ≤ 1-threshold)
+       as pseudo-labelled samples.
+    3. Running n_steps gradient updates on the whole model using pseudo-label BCE.
+    4. Returning predictions from the adapted model.
+
+    The model is reset to its fitted state before every predict_proba() call
+    so adaptation is stateless across batches.
+
+    Reference: Sun et al., "Test-Time Training with Self-Supervision for
+    Generalization under Distribution Shifts", ICML 2020.
+    """
+
+    def __init__(
+        self,
+        base: Optional[EarlyFusionMLP] = None,
+        confidence_threshold: float = 0.85,
+        n_steps: int = 3,
+        lr: float = 5e-4,
+    ) -> None:
+        self.base = base if base is not None else EarlyFusionMLP()
+        self.confidence_threshold = confidence_threshold
+        self.n_steps = n_steps
+        self.lr = lr
+        self._base_state: Optional[Dict] = None
+
+    def fit(
+        self,
+        features: np.ndarray,
+        masks: np.ndarray,
+        labels: np.ndarray,
+    ) -> "PseudoLabelTTTAdapter":
+        self.base.fit(features, masks, labels)
+        self._base_state = {k: v.clone() for k, v in self.base._model.state_dict().items()}
+        return self
+
+    def predict_proba(self, features: np.ndarray, masks: np.ndarray) -> np.ndarray:
+        if self._base_state is None:
+            raise RuntimeError("Call fit() first.")
+        self.base._model.load_state_dict(self._base_state)
+
+        X = self.base._scaler.transform(_flatten_with_mask(features, masks))
+        xt = torch.tensor(X, dtype=torch.float32, device=self.base.device)
+
+        # Initial predictions → pseudo-labels
+        self.base._model.eval()
+        with torch.no_grad():
+            init_probs = torch.sigmoid(self.base._model(xt)).cpu().numpy()
+
+        pos_mask = init_probs >= self.confidence_threshold
+        neg_mask = init_probs <= (1.0 - self.confidence_threshold)
+        pseudo_mask = pos_mask | neg_mask
+
+        if pseudo_mask.sum() >= 2:
+            pseudo_X = xt[pseudo_mask]
+            pseudo_y = torch.tensor(
+                (init_probs[pseudo_mask] >= self.confidence_threshold).astype(np.float32),
+                device=self.base.device,
+            )
+            optimizer = torch.optim.Adam(self.base._model.parameters(), lr=self.lr)
+            criterion = nn.BCEWithLogitsLoss()
+            torch.manual_seed(0)   # deterministic dropout across calls
+            self.base._model.train()
+            for _ in range(self.n_steps):
+                optimizer.zero_grad()
+                criterion(self.base._model(pseudo_X), pseudo_y).backward()
+                nn.utils.clip_grad_norm_(self.base._model.parameters(), 1.0)
+                optimizer.step()
+
+        self.base._model.eval()
+        probs: List[np.ndarray] = []
+        with torch.no_grad():
+            for start in range(0, len(X), 256):
+                xb = xt[start:start + 256]
+                probs.append(torch.sigmoid(self.base._model(xb)).cpu().numpy())
+        return np.concatenate(probs)
+
+
+# ---------------------------------------------------------------------------
 # Convenience runner
 # ---------------------------------------------------------------------------
 
@@ -388,6 +563,18 @@ def run_baseline_suite(
     cwm.fit(train_feat, train_mask, train_labels)
     results["confidence_weighted_mean"] = classification_metrics(test_labels, cwm.predict_proba(test_feat, test_mask))
 
+    # 5. Tent (test-time entropy minimisation) — wraps a fresh EarlyFusionMLP
+    tent = TentAdapter(base=EarlyFusionMLP(device=device, random_seed=random_seed))
+    tent.fit(train_feat, train_mask, train_labels)
+    results["tent_ttt"] = classification_metrics(test_labels, tent.predict_proba(test_feat, test_mask))
+
+    # 6. Pseudo-Label TTT — wraps a fresh EarlyFusionMLP
+    plt_adapter = PseudoLabelTTTAdapter(
+        base=EarlyFusionMLP(device=device, random_seed=random_seed)
+    )
+    plt_adapter.fit(train_feat, train_mask, train_labels)
+    results["pseudo_label_ttt"] = classification_metrics(test_labels, plt_adapter.predict_proba(test_feat, test_mask))
+
     return results
 
 
@@ -396,5 +583,7 @@ __all__ = [
     "LateFusionEnsemble",
     "RandomForestFusion",
     "ConfidenceWeightedMean",
+    "TentAdapter",
+    "PseudoLabelTTTAdapter",
     "run_baseline_suite",
 ]

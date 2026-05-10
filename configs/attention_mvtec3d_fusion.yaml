@@ -1,0 +1,95 @@
+# MVTec 3D-AD — Bagel category smoke-run config
+# -----------------------------------------------------------------------
+# 2 domains — RGB texture (ResNet-18 penultimate features, 512-dim)
+#           + 3D point cloud (depth-map statistics, 16-dim)
+# ~215 normal training samples | ~78 test samples (normal + defect classes)
+# Naturally paired — no label-alignment needed (genuine multimodal)
+# Data prep: src/scripts/prepare_mvtec3d_fusion_benchmark.py
+# Paper: VERA / RGA — smoke-run dataset (not headline result)
+
+data:
+  path: data/mvtec3d/bagel_fusion.csv
+  format: csv
+  id_column: sample_id
+  domain_column: domain
+  label_column: label
+  score_column: score
+  confidence_column: null   # not available for MVTec 3D-AD
+  timestamp_column: null
+  embedding_prefix: embedding_
+  feature_columns: []
+  domain_order:
+    - rgb
+    - pointcloud
+
+model:
+  num_domains: 2
+  embed_dim: 32           # smaller model for small dataset
+  num_heads: 4
+  num_layers: 1
+  dropout: 0.2
+  use_attention: true
+  use_confidence: false   # no confidence column for this dataset
+  use_input_confidence: false
+  use_domain_embeddings: true
+  use_positional_embeddings: false   # 2-domain; positional encoding less meaningful
+  use_missing_embedding: true
+
+training:
+  seed: 42
+  batch_size: 16          # small dataset — full-batch-ish
+  epochs: 50
+  lr: 0.001
+  weight_decay: 0.01
+  domain_dropout: 0.05
+  test_size: 0.25
+  val_size: 0.15
+  early_stopping: 10
+  lambda_reg: 0.005
+
+output:
+  model_dir: models/mvtec3d/attention
+  checkpoint_name: mvtec3d_bagel_attention.pt
+  metrics_path: experiments/mvtec3d/metrics.json
+
+mlflow:
+  enabled: false
+  tracking_uri: null
+  experiment_name: VERA_MVTec3D
+
+validation:
+  report_path: experiments/mvtec3d/validation.json
+
+evaluation:
+  metrics_path: experiments/mvtec3d/harness_metrics.json
+  seeds: [42, 43, 44]
+  n_bootstrap: 500
+  bootstrap_alpha: 0.05
+  save_attention_samples: 8
+  attention_weights_dir: experiments/mvtec3d/attention_weights
+  domain_dropout_probs: [0.0, 0.5]       # 2-domain: drop one = 50% missing
+  domain_dropout_probs_extended: [0.0, 0.5]
+  drop_domain_pairs: true
+  performance_runs: 3
+  performance_warmup_batches: 2
+  performance_iters: 20
+  performance_batch_size: 16
+  enable_craf: true
+  enable_cda: true
+  cda_samples: 50
+
+reliability:
+  score_index: null
+  ece_weight: 0.45
+  ks_weight: 0.35
+  sharpness_weight: 0.20
+  n_calibration_bins: 5    # fewer bins for small dataset
+  min_samples_for_ks: 10   # lower threshold for small dataset
+  gate_threshold: 0.66
+  estimator_path: experiments/mvtec3d/reliability_estimator.joblib
+
+craf:
+  drift_noise_levels: [0.0, 0.1, 0.2, 0.5]
+  adversarial_attacks: [zero_attack, gaussian_noise]
+  adversarial_sigma: 0.05
+  cda_samples: 50
