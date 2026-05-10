@@ -27,11 +27,13 @@ Required evidence:
 
 Current repo status:
 
-- Implemented: tau-sweep result hooks in `run_breakthrough_experiment.py`.
-- Implemented: component-ablation result hooks in `run_breakthrough_experiment.py`.
+- Implemented and rendered: tau-sweep results with adaptation rates and delta
+  confidence intervals.
+- Implemented and rendered: component-ablation results for ECE, KS, sharpness,
+  and gate removal.
 - Implemented: harder-benchmark scorer cap via
   `prepare_real_fusion_benchmark.py --scorer-train-fraction`.
-- Not yet implemented: Tent/TTT baselines.
+- Implemented: score-level Tent and pseudo-label TTT baselines.
 - Not yet implemented: learned gate.
 
 ## Mid-Tier Conference: Empirical Depth
@@ -50,10 +52,12 @@ Required evidence:
 
 Current repo status:
 
-- Partially implemented: MVTec 3D-AD paired RGB/depth preparation path.
-- Partially implemented: multi-seed stress aggregation and bootstrap CIs.
+- Implemented as a smoke benchmark: MVTec 3D-AD paired RGB/depth preparation
+  and bagel-subset run.
+- Implemented: multi-seed stress aggregation and bootstrap CIs.
 - Not yet implemented: gradient-aligned per-domain attacks.
-- Not yet complete: full paired-data benchmark results.
+- Not yet complete: full paired-data benchmark results with stronger RGB--3D
+  domain experts.
 
 ## Top-Venue Polish: Theory
 

@@ -6,15 +6,15 @@
   - Fraud: `models/fraud/supervised/fraud_model.pkl`
   - Cyber: `models/cyber/supervised/cyber_model.pkl`
   - Fusion: `experiments/fusion/models/fusion_meta_model.pkl`
-  - NLP: `models/nlp/distilbert/` (tokenizer + model.pt)
-  - Vision: `models/vision/resnet/model.pt`
+  - NLP: configured transformer text model artifacts, if present
+  - Vision: configured vision model artifacts, if present
 - Fusion expects a dict of domain scores; keys are sorted before prediction.
 
 Run locally:
 ```bash
 uvicorn deploy.api.main:app --reload --port 8000
 ```
-NLP expects DistilBERT artifacts saved under `models/nlp/distilbert/`; Vision expects a `model.pt` under `models/vision/resnet/`.
+NLP and vision endpoints are optional and load only when their configured artifacts exist locally.
 ## Streamlit (dashboard/app_streamlit.py)
 - Shows metrics for Fraud/Cyber if CSVs exist under `experiments/<domain>/metrics/metrics.csv`
 - Behavior tab displays plot from `experiments/behavior/plots/heatmap.png` if present.

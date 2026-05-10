@@ -1,10 +1,10 @@
 # UAIS-V Technical Brief (Engineering Summary)
 
 ## Overview
-Universal Anomaly Intelligence System (Vision-Enabled) is a multimodal AI stack for anomaly detection, explainability, and risk prediction across:
+Universal Anomaly Intelligence System (Vision-Enabled) is a multimodal AI research stack for anomaly detection, explainability, and score fusion across:
 - Fraud (tabular)
 - Cybersecurity (network intrusion)
-- Behavioral / Insider Threat (CERT r4.2)
+- Behavioral sequence modeling
 - Natural Language Processing (emails / text)
 - Computer Vision (deepfake / forgery detection)
 
@@ -43,20 +43,20 @@ Outputs feed into supervised, unsupervised, sequence, NLP, vision trainers, and 
 - Models: HistGradientBoosting, RandomForest, Autoencoder
 - Frameworks: scikit-learn, LightGBM, Keras
 
-**Behavior / Insider Threat (CERT r4.2)**
+**Behavior sequence modeling**
 - Approach: sequence modeling with unsupervised LSTM autoencoders
-- Data: logon.csv, device.csv, email.csv
-- Current issue: slow TensorFlow CPU training
-- Fixes: smaller batch/epochs, PyTorch Lightning or TCN, or run on GPU (Colab/AWS); reduce sequence length/users for quick tests
+- Data: local behavior logs or enterprise-style sequence files when provided manually
+- Current issue: slow TensorFlow CPU training on large sequences
+- Fixes: smaller batch/epochs, PyTorch Lightning or TCN, or run on GPU; reduce sequence length/users for quick tests
 
 **NLP (text anomaly)**
-- Data: Enron emails
-- Pipeline: preprocess -> DistilBERT embeddings -> fine-tuned classifier (suspicious vs normal)
+- Data: local email/news text files when provided
+- Pipeline: preprocess -> transformer-compatible embeddings/classifier -> suspicious/normal or weak-label output
 - Frameworks: transformers, torch, datasets
 
-**Vision (deepfake/forgery)**
-- Data: DFDC, CelebDF
-- Models: ResNet18 baseline; optional GAN/VAE for synthesis
+**Vision (image anomaly/forgery)**
+- Data: local image datasets when provided
+- Models: CNN/ViT-compatible classifiers; optional GAN/VAE for synthesis
 - Frameworks: torchvision, timm
 
 ## Fusion Meta-Model
@@ -83,7 +83,7 @@ Problem | Fix
 --- | ---
 TensorFlow slow on M-series | Use tensorflow-macos + tensorflow-metal, or switch to PyTorch
 CPU-only training | Prefer HistGradientBoosting / LightGBM over deep nets
-Slow CERT training | Limit rows/epochs, use TCN
+Slow behavior-sequence training | Limit rows/epochs, use TCN
 Memory issues | Process Parquet in chunks
 Slow explainability | Use approximate/fast SHAP mode
 

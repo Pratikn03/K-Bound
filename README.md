@@ -1,11 +1,17 @@
 # Universal Anomaly Intelligence System (UAIS‑V)
 
-UAIS‑V is a multimodal anomaly-intelligence playground that trains domain experts for fraud, cyber, insider behavior, NLP, vision, and fusion models, then serves the results through FastAPI and Streamlit. Prefect + MLflow orchestrate the runs, while pre-generated artifacts allow instant dashboard previews.
+UAIS-V is a multimodal anomaly-intelligence research codebase for training and
+evaluating domain experts, score-level fusion models, and dashboard/API
+surfaces. Some domains are fully scripted with local data; others are optional
+or connector-style modules that require the corresponding datasets and model
+dependencies.
 
 ---
 
 ## 🌟 Highlights
-- **Domain coverage:** LightGBM/CatBoost tabular fraud + cyber, sequence LSTM for behavior, DistilBERT NLP, ResNet/ViT vision, optional VAE/GAN synthesis, and stacked fusion.
+- **Domain coverage:** LightGBM/CatBoost tabular fraud + cyber, behavior
+  sequence modeling, transformer-compatible NLP hooks, vision hooks, optional
+  VAE/GAN synthesis, and score-level fusion.
 - **MLOps tooling:** Prefect flows, MLflow tracking, reproducible configs, and scripted runners.
 - **Explainability:** SHAP summaries, Grad-CAM heatmaps, saliency scores, and drift checks saved under `experiments/`.
 - **Deployment surfaces:** FastAPI endpoints (`deploy/api`) and Streamlit dashboard (`dashboard/`) wired to produced artifacts.
@@ -40,7 +46,7 @@ pip install --upgrade pip
 pip install -r requirements.txt
 ```
 
-### Kaggle credentials (for Enron/NLP data helper)
+### Kaggle credentials (for optional data helpers)
 Download `kaggle.json` from https://www.kaggle.com/settings/account and run:
 ```bash
 mkdir -p ~/.kaggle
@@ -53,10 +59,10 @@ chmod 600 ~/.kaggle/kaggle.json
 ## 📦 Data
 
 ```bash
-# Fetch Enron emails (via Kaggle API) + CIFAR10
+# Fetch optional public datasets, depending on configured helpers
 python scripts/download_data.py --all
 
-# No Kaggle? place data/raw/nlp/enron_emails.csv manually and re-run:
+# No Kaggle? place the needed CSV/image folders manually and re-run:
 python scripts/download_data.py --all --no-kaggle
 ```
 
@@ -77,8 +83,8 @@ All scripts assume the virtualenv is active and `PYTHONPATH=src`.
 bash scripts/run_train_fraud.sh        # LightGBM
 bash scripts/run_train_cyber.sh        # CatBoost
 bash scripts/run_train_behavior.sh     # LSTM autoencoder
-bash scripts/run_train_nlp.sh          # DistilBERT
-bash scripts/run_train_vision.sh       # ResNet/ViT (auto-detects nested Kaggle folders)
+bash scripts/run_train_nlp.sh          # transformer text classifier, if data/deps exist
+bash scripts/run_train_vision.sh       # vision classifier, if data/deps exist
 python src/uais/generative/train_vae.py --config config/base_config.yaml   # optional VAE/GAN
 
 # Fusion stacker (after domains finish)
@@ -103,9 +109,9 @@ Use notebooks for EDA or report figures after scripted training:
 |----------|---------|
 | `00_data_overview.ipynb` | sanity check & join data sources |
 | `10_supervised_fraud.ipynb`, `20_unsupervised_fraud.ipynb` | fraud modeling |
-| `30_sequence_models.ipynb` | CERT behavior LSTM autoencoder |
-| `70_nlp_email_anomalies.ipynb` | DistilBERT on Enron |
-| `80_vision_forgery_detection.ipynb` | ResNet/ViT; now auto-detects nested Kaggle folders |
+| `30_sequence_models.ipynb` | behavior sequence modeling |
+| `70_nlp_email_anomalies.ipynb` | email/news text anomaly experiments |
+| `80_vision_forgery_detection.ipynb` | vision classification experiments |
 | `90_generative_synthesis.ipynb` | VAE/GAN data augmentation |
 | `100_fusion_and_dashboard.ipynb` | combine scores + preview dashboard feeds |
 

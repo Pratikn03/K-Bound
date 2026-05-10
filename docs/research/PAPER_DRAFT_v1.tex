@@ -62,21 +62,24 @@ stress tests, calibration analysis, and counterfactual domain attribution.
 
 This version adds a naturally paired benchmark path based on MVTec 3D-AD:
 paired RGB and 3D/depth observations are converted into the same long-format
-fusion schema used by the rest of \system. The current local empirical study
-still reports \benchmark{} from four real local datasets: Credit Card Fraud,
-UNSW-NB15, Online Shoppers Intention, and labeled news text. Because those
-datasets are not naturally co-observed, they are treated as a secondary
-label-aligned stress benchmark rather than the primary multimodal claim. Across
-five clean seeds, \method{} and static attention are effectively
+fusion schema used by the rest of \system. A local bagel-subset smoke run
+contains 78 paired observations. In that paired run, random forest fusion and
+early-fusion MLP are strong, while static attention and \method{} are not
+competitive; this is reported as end-to-end paired-pipeline evidence, not as a
+performance win. The main local empirical study still reports \benchmark{} from
+four real local datasets: Credit Card Fraud, UNSW-NB15, Online Shoppers
+Intention, and labeled news text. Because those datasets are not naturally
+co-observed, they are treated as a secondary label-aligned stress benchmark.
+Across five clean seeds, \method{} and static attention are effectively
 indistinguishable on ROC-AUC and PR-AUC because the label-aligned split is
 near-saturated. The useful signal is therefore not the saturated clean table
 but the stress setting: under all-domain zero and max score-collapse attacks,
 \method{} improves ROC-AUC by 0.064 and 0.030 over static attention in the
 current result artifact. The central claim is conditional: \emph{\method{}
-helps when evidence streams undergo coherent reliability stress, while
-preserving competitive clean ranking performance.} The manuscript reports that
-claim with confidence intervals and explicit failure cases rather than as a
-blanket superiority statement.
+improves reliability-stress robustness when paired evidence streams undergo
+coherent confidence collapse, while preserving competitive clean ranking
+performance.} The manuscript reports that claim with confidence intervals and
+explicit failure cases rather than as a blanket superiority statement.
 \end{abstract}
 
 \begin{IEEEkeywords}
@@ -142,14 +145,15 @@ This draft makes four scoped contributions:
   \item It defines \method, a conservative reliability-aware fusion module that
   combines masked attention, calibration, score-distribution drift, sharpness,
   and a reliability gate.
-  \item It builds \benchmark, a reproducible label-aligned real-domain
-  score-level benchmark using fraud, cyber, behavior, and text datasets.
+  \item It adds a naturally paired MVTec 3D-AD RGB/3D benchmark path and builds
+  \benchmark, a reproducible label-aligned real-domain score-level stress
+  benchmark using fraud, cyber, behavior, and text datasets.
   \item It reports baselines, missing-domain ablation, drift curves,
   adversarial score attacks, calibration, and counterfactual domain attribution
   with an explicit construct-validity boundary.
 \end{itemize}
 
-\section{Evidence Boundary}
+\subsection{Evidence Boundary}
 The current quantitative evidence is strongest as a reliability-stress study
 over score-level fusion. It should not be read as a general claim that
 \method{} is always superior to static attention, nor as evidence that the
@@ -164,10 +168,10 @@ remaining benchmark gaps.
 confidence values, and compact embeddings; a unified fusion schema feeds static
 attention and the \method{} reliability estimator; the system emits a risk score
 and counterfactual domain attribution.}
-\label{fig:uav-architecture}
+\label{fig:vera-architecture}
 \end{figure*}
 
-Figure~\ref{fig:uav-architecture} shows the system boundary. Table~\ref{tab:requirements}
+Figure~\ref{fig:vera-architecture} shows the system boundary. Table~\ref{tab:requirements}
 summarizes the implementation requirements used to keep the paper aligned with
 the codebase.
 
@@ -232,6 +236,15 @@ Uncertainty and calibration can degrade under dataset shift~\cite{ovadia2019can}
 \method{} uses calibration as one signal inside a wider reliability estimate
 that also includes test-time score-distribution drift and score sharpness.
 
+\subsection{Test-Time Adaptation}
+Test-time training and test-time adaptation update models at inference time to
+handle distribution shift~\cite{sun2020testtime,wang2021tent}. \system{} now
+includes two score-level adaptation comparators: an entropy-minimizing Tent
+adapter over the fusion head and a high-confidence pseudo-label TTT adapter.
+They are intentionally conservative because the fusion setting receives domain
+scores rather than raw modality tensors. Their role is to test whether
+\method{} adds value beyond generic score-level adaptation.
+
 \subsection{Ensembles and Strong Baselines}
 Ensemble methods remain difficult to beat in structured prediction tasks.
 Random forests~\cite{breiman2001random} and gradient boosting~\cite{friedman2001greedy}
@@ -248,7 +261,7 @@ evidence, behavior evidence, or text evidence drove the risk score. \system{}
 therefore includes counterfactual domain attribution: it masks one domain and
 reports the change in predicted risk.
 
-\section{Problem Formulation}
+\section{System and Method}
 Each sample $i$ contains up to $D$ domain observations. Domain $d$ contributes a
 feature vector $x_{i,d} \in \mathbb{R}^{F}$ containing a score, optional
 confidence, and compact embedding features. A binary mask $m_{i,d}$ indicates
@@ -276,42 +289,42 @@ system must also satisfy:
   \item interpretable domain attribution.
 \end{itemize}
 
-\section{\system{} System Architecture}
-\subsection{Domain Experts}
+\subsection{\system{} System Architecture}
+\subsubsection{Domain Experts}
 \system{} assumes that each domain expert is trained or obtained separately.
 For the current benchmark, tabular scorers are trained for fraud, cyber, and
 behavior data, while a text scorer is trained for labeled text. The fusion layer
 does not require these experts to share the same raw feature space. It only
 requires score-level outputs and optional compact evidence features.
 
-\subsection{Fusion Schema}
+\subsubsection{Fusion Schema}
 The unified schema is long-format: each row contains a sample identifier, a
 domain name, a binary label when available, a score, a confidence value, and
 embedding columns. This design allows different samples to have different
 available domains. Missing domains are represented by masks rather than by
 fabricated raw observations.
 
-\subsection{Static Attention Path}
+\subsubsection{Static Attention Path}
 The static attention path encodes each available domain into a shared latent
 space and applies multi-head attention across domains. Domain embeddings allow
 the model to distinguish evidence sources. Missing domains are ignored through
 key-padding masks. This is the high-reliability default path.
 
-\subsection{Reliability-Aware Path}
+\subsubsection{Reliability-Aware Path}
 The reliability-aware path is activated when the average reliability of present
 domains falls below a configured threshold. This avoids the common failure mode
 where reliability weights disturb clean predictions even though no domain
 appears degraded. The reliability path is therefore a stress-response mechanism,
 not a universal replacement for the static model.
 
-\subsection{Explanation Path}
+\subsubsection{Explanation Path}
 For an analyst-facing explanation, the system masks one available domain at a
 time and recomputes risk. The resulting probability change gives a domain-level
 counterfactual attribution. This produces statements such as: if text evidence
 were absent, the risk would decrease by a given amount.
 
-\section{\method{} Method}
-\subsection{Domain Encoding and Attention}
+\subsection{\method{} Method}
+\subsubsection{Domain Encoding and Attention}
 Each domain encoder maps the domain input vector into a shared latent space:
 \begin{equation}
   h_{i,d} = g_d(x_{i,d}) + e_d + p_d,
@@ -325,7 +338,7 @@ block operates across available domain embeddings:
   \hat{p}_i = \sigma(z_i).
 \end{equation}
 
-\subsection{Reliability Estimation}
+\subsubsection{Reliability Estimation}
 After model training, the system fits a reliability estimator on the validation
 split. For domain $d$, it stores validation score distributions, fits an
 isotonic calibrator when enough labels are available, and computes expected
@@ -342,7 +355,7 @@ $p_{\mathrm{KS},d}$ is the Kolmogorov-Smirnov p-value comparing current scores
 with validation scores, and $S_d$ is score sharpness from squared distance to
 0.5. The current benchmark uses $(\alpha,\beta,\gamma)=(0.45,0.35,0.20)$.
 
-\subsection{Reliability Gate}
+\subsubsection{Reliability Gate}
 Let $\bar{r}$ be the mean reliability over present domains and let $\tau=0.66$.
 If $\bar{r}\geq\tau$, \system{} uses the static attention path. If
 $\bar{r}<\tau$, reliability weights are injected into the fusion block:
@@ -354,7 +367,7 @@ uses the local score confidence directly. \method{} uses validation calibration,
 test-time drift evidence, and sharpness to decide when a domain should be
 trusted less.
 
-\subsection{Counterfactual Domain Attribution}
+\subsubsection{Counterfactual Domain Attribution}
 For sample $i$, let $\hat{p}_i$ be the original prediction and
 $\hat{p}_{i,-d}$ be the prediction when domain $d$ is masked. The attribution is
 \begin{equation}
@@ -363,7 +376,9 @@ $\hat{p}_{i,-d}$ be the prediction when domain $d$ is masked. The attribution is
 A positive $\Delta_{i,d}$ indicates that domain $d$ increased anomaly risk. A
 negative value indicates that domain $d$ reduced risk.
 
-\subsection{Algorithm Summary}
+\subsubsection{Algorithm Summary}
+The full inference procedure is summarized in Table~\ref{tab:algorithm}.
+
 \begin{table}[t]
 \centering
 \caption{\method{} inference procedure.}
@@ -395,10 +410,42 @@ scores without requiring a heavy specialized 3D detector. This keeps the first
 paired benchmark auditable; stronger RGB--3D scorers can replace these domain
 experts later while preserving the fusion interface.
 
-\IfFileExists{tables/vera_benchmark_metadata.tex}{
+\IfFileExists{tables/mvtec3d_benchmark_metadata.tex}{
+Table~\ref{tab:mvtec-metadata} records the paired-subset metadata, and
+Table~\ref{tab:mvtec-clean-results} reports the paired smoke-run outcomes.
+The result is deliberately conservative: it proves that the RGB/3D path runs
+end to end, but it also shows that the current lightweight features and
+attention training are not yet competitive with tree and MLP fusion on this
+small subset.
+
 \begin{table}[t]
 \centering
-\caption{Benchmark metadata for the active fusion input artifact.}
+\caption{Naturally paired MVTec 3D-AD subset metadata.}
+\label{tab:mvtec-metadata}
+\footnotesize
+\input{tables/mvtec3d_benchmark_metadata.tex}
+\end{table}
+}{}
+
+\IfFileExists{tables/mvtec3d_clean_results.tex}{
+\begin{table*}[t]
+\centering
+\caption{Paired MVTec 3D-AD bagel-subset smoke benchmark. Values are
+mean$\pm$standard deviation with 95\% confidence intervals across five seeds.}
+\label{tab:mvtec-clean-results}
+\scriptsize
+\resizebox{\textwidth}{!}{\input{tables/mvtec3d_clean_results.tex}}
+\end{table*}
+}{}
+
+\IfFileExists{tables/vera_benchmark_metadata.tex}{
+Table~\ref{tab:benchmark-metadata} reports the metadata of the secondary
+label-aligned fusion input artifact.
+
+\begin{table}[t]
+\centering
+\caption{Benchmark metadata for the secondary label-aligned fusion input
+artifact.}
 \label{tab:benchmark-metadata}
 \footnotesize
 \input{tables/vera_benchmark_metadata.tex}
@@ -451,12 +498,13 @@ domain experts are useful but imperfect.
 
 \subsection{Baselines and Metrics}
 Baselines include confidence-weighted mean fusion, early-fusion MLP,
-late-fusion ensemble, random forest fusion, and static attention without
-reliability adaptation. Metrics include ROC-AUC, PR-AUC, F1, expected
-calibration error, Brier score, and accuracy. Static attention and \method{} are
-compared with a paired t-test over five clean ROC-AUC values. ROC-AUC and
-PR-AUC are both reported because anomaly settings can be highly imbalanced
-and PR-AUC can reveal performance differences that ROC-AUC hides~\cite{davis2006relationship}.
+late-fusion ensemble, random forest fusion, static attention without
+reliability adaptation, a score-level Tent adapter, and a pseudo-label TTT
+adapter. Metrics include ROC-AUC, PR-AUC, F1, expected calibration error, Brier
+score, and accuracy. Static attention and \method{} are compared with a paired
+t-test over five clean ROC-AUC values. ROC-AUC and PR-AUC are both reported
+because anomaly settings can be highly imbalanced and PR-AUC can reveal
+performance differences that ROC-AUC hides~\cite{davis2006relationship}.
 
 \subsection{Confidence Intervals}
 Clean ROC-AUC, PR-AUC, and F1 are summarized across seeds and accompanied by
@@ -465,7 +513,7 @@ for \method{} minus static attention. The result JSON stores raw per-seed
 stress rows so that the interval computation is auditable rather than embedded
 only in the manuscript.
 
-\section{Secondary Clean Sanity Check}
+\subsection{Secondary Clean Sanity Check}
 Table~\ref{tab:clean-results} and Fig.~\ref{fig:clean-benchmark} show clean
 held-out performance. This table is intentionally treated as a sanity check,
 not as the headline result, because the label-aligned split is near saturated.
@@ -479,10 +527,13 @@ mean$\pm$standard deviation across five seeds; this table is not used as the
 headline evidence.}
 \label{tab:clean-results}
 \footnotesize
-\input{tables/rga_clean_results.tex}
+\resizebox{\textwidth}{!}{\input{tables/rga_clean_results.tex}}
 \end{table*}
 
 \IfFileExists{tables/rga_clean_ci_results.tex}{
+Seed-level confidence intervals for the same clean split are reported in
+Table~\ref{tab:clean-ci-results}.
+
 \begin{table*}[t]
 \centering
 \caption{Clean ranking and F1 confidence intervals across configured seeds.}
@@ -585,18 +636,21 @@ Table~\ref{tab:adversarial-results}.}
 \end{figure}
 
 \subsection{Mechanism Isolation Protocol}
-The next revision must isolate the reliability mechanism rather than only report
-end-to-end stress outcomes. The experiment runner is configured to emit two
-additional diagnostics when the mechanism-isolation block is enabled. First, a
+The runner isolates the reliability mechanism rather than only reporting
+end-to-end stress outcomes. It emits two diagnostics when the
+mechanism-isolation block is enabled. First, a
 $\tau$ sweep evaluates $\tau \in \{0.4,0.5,0.6,0.66,0.7,0.8,0.9\}$ on clean
 data and all-domain stress conditions, recording both ROC-AUC deltas and the
 adaptation rate. Second, a reliability-component ablation compares the full
 estimator with no-ECE, no-KS, no-sharpness, and no-gate variants on all-domain
-score attacks. These diagnostics are the minimum evidence needed to show that
+score attacks. These diagnostics show whether
 the gate and reliability terms are active contributors rather than incidental
 implementation details.
 
 \IfFileExists{tables/rga_tau_sweep_results.tex}{
+Threshold-sweep outcomes and adaptation rates are reported in
+Table~\ref{tab:tau-sweep}.
+
 \begin{table*}[t]
 \centering
 \caption{Reliability-gate threshold sweep. Delta is \method{} minus static
@@ -608,7 +662,19 @@ reliability-aware path.}
 \end{table*}
 }{}
 
+At the configured $\tau=0.66$, clean adaptation is rare: the mean adaptation
+rate is 0.032 with a confidence interval that includes zero. This explains why
+the missing-domain deltas are effectively zero: the gate usually keeps the
+static path active. Under all-domain zero and max score collapse, the same
+threshold activates the reliability path for every evaluated sample and yields
+the measured gains. Lower thresholds through $\tau=0.60$ suppress adaptation and
+lose those gains; higher thresholds adapt on clean data more often and slightly
+hurt clean ranking.
+
 \IfFileExists{tables/rga_component_ablation_results.tex}{
+Per-component contributions on all-domain score attacks are reported in
+Table~\ref{tab:component-ablation}.
+
 \begin{table*}[t]
 \centering
 \caption{Reliability-component ablation on all-domain score attacks. Delta is
@@ -618,6 +684,14 @@ reliability-aware path.}
 \resizebox{\textwidth}{!}{\input{tables/rga_component_ablation_results.tex}}
 \end{table*}
 }{}
+
+The component ablation produces a useful negative result. Removing the ECE term
+does not hurt the all-domain collapse cases; it improves the max-attack delta
+from 0.0304 to 0.0428 and the zero-attack delta from 0.0640 to 0.0691. In
+contrast, removing the KS drift term eliminates adaptation and returns exactly
+to static attention. This suggests that, in the current stress benchmark, the
+distribution-shift signal is the necessary trigger while validation ECE is not
+the driver of the robustness gain.
 
 \section{Calibration and Explanation}
 \subsection{Calibration}
@@ -647,7 +721,8 @@ Counterfactual domain attribution was computed for 400 test samples across
 configured seeds. Mean absolute probability changes were 0.0138 for fraud,
 0.0172 for cyber, 0.0059 for behavior, and 0.0353 for text. Text has the
 largest average counterfactual
-impact, consistent with the strong text scorer in Table~\ref{tab:domain-scorers}.
+impact, consistent with the strong text scorer in Table~\ref{tab:domain-scorers};
+the per-domain magnitudes are visualized in Fig.~\ref{fig:cda-impacts}.
 
 \begin{figure}[t]
 \centering
@@ -681,6 +756,8 @@ attention, cases where static attention fixes \method{}, and high-confidence
 weights.
 
 \IfFileExists{tables/rga_failure_cases.tex}{
+Representative cases are listed in Table~\ref{tab:failure-cases}.
+
 \begin{table}[t]
 \centering
 \caption{Representative failure and contrast cases from the latest configured
@@ -697,7 +774,8 @@ The current benchmark exposes four important failure modes:
   \item the conservative reliability gate suppresses adaptation under moderate
   missingness,
   \item random forest fusion remains the strongest F1 baseline,
-  \item naturally paired multimodal data is still missing.
+  \item the naturally paired path is still a small smoke benchmark rather than
+  full-dataset evidence.
 \end{itemize}
 
 \subsection{Internal Validity}
@@ -709,9 +787,12 @@ failures.
 
 \subsection{Construct Validity}
 \benchmark{} measures real-domain score fusion, not naturally paired multimodal
-incident detection. This is the largest construct-validity threat. The paper
+incident detection. The MVTec 3D-AD path addresses natural RGB/3D pairing, but
+the current local run is a small bagel-subset smoke benchmark with lightweight
+features. This remains the largest construct-validity threat. The paper
 therefore avoids claiming that the model has learned causal or temporal
-relationships among fraud, cyber, behavior, and text domains.
+relationships among fraud, cyber, behavior, and text domains, or that the paired
+path is competitive with specialized RGB--3D anomaly detectors.
 
 \subsection{External Validity}
 The datasets are useful but not sufficient for deployment claims. A production
@@ -751,7 +832,7 @@ calibration, and failure analysis. The strongest measured claim is that
 \method{} preserves clean attention performance, improves over
 confidence-weighted mean fusion, and helps under severe all-domain score
 collapse. The main remaining research gap is full naturally paired multimodal
-validation.
+validation with stronger RGB--3D domain experts.
 
 \begin{thebibliography}{99}
 
@@ -788,6 +869,16 @@ Classifiers}, 1999.
 Y. Ovadia et al., ``Can you trust your model's uncertainty? Evaluating
 predictive uncertainty under dataset shift,'' in \emph{Advances in Neural
 Information Processing Systems}, 2019.
+
+\bibitem{sun2020testtime}
+Y. Sun, X. Wang, Z. Liu, J. Miller, A. Efros, and M. Hardt, ``Test-time
+training with self-supervision for generalization under distribution shifts,''
+in \emph{Proceedings of the International Conference on Machine Learning}, 2020.
+
+\bibitem{wang2021tent}
+D. Wang, E. Shelhamer, S. Liu, B. Olshausen, and T. Darrell, ``Tent: Fully
+test-time adaptation by entropy minimization,'' in \emph{International
+Conference on Learning Representations}, 2021.
 
 \bibitem{breiman2001random}
 L. Breiman, ``Random forests,'' \emph{Machine Learning}, vol. 45, pp. 5--32,

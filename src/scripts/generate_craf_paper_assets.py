@@ -15,6 +15,8 @@ import numpy as np
 METHOD_ORDER = [
     ("random_forest", "Random forest"),
     ("confidence_weighted_mean", "Conf.-weighted mean"),
+    ("tent_score_adapter", "Tent score adapter"),
+    ("ttt_pseudo_label_adapter", "TTT pseudo-label"),
     ("early_fusion_mlp", "Early fusion MLP"),
     ("late_fusion_ensemble", "Late fusion ensemble"),
     ("static_attention", "Static attention"),
@@ -68,12 +70,12 @@ def _bold_best(
 ) -> dict[str, str]:
     values = [(key, vals.get(metric)) for key, _, vals in rows if _finite(vals.get(metric))]
     if not values:
-        return {key: _fmt_pm(vals.get(metric), vals.get(f"{metric}_std"), digits=digits) for key, _, vals in rows}
+        return {key: _fmt_pm_ci(vals, metric, digits=digits) for key, _, vals in rows}
     best_value = max(v for _, v in values) if higher_is_better else min(v for _, v in values)
     out: dict[str, str] = {}
     for key, _, vals in rows:
         value = vals.get(metric)
-        rendered = _fmt_pm(value, vals.get(f"{metric}_std"), digits=digits)
+        rendered = _fmt_pm_ci(vals, metric, digits=digits)
         if _finite(value) and abs(float(value) - float(best_value)) <= max(1e-12, 0.5 * 10 ** (-digits)):
             rendered = rf"\textbf{{{rendered}}}"
         out[key] = rendered
@@ -174,6 +176,30 @@ def write_benchmark_metadata_table(metadata: dict[str, Any], out_dir: Path) -> N
     _write(out_dir / "vera_benchmark_metadata.tex", "\n".join(lines))
 
 
+def write_paired_benchmark_metadata_table(metadata: dict[str, Any], out_dir: Path) -> None:
+    if not metadata:
+        return
+    natural = "yes" if metadata.get("natural_pairing") else "no"
+    categories = ", ".join(metadata.get("categories", []))
+    lines = [
+        GENERATED_COMMENT,
+        r"\begin{tabular}{ll}",
+        r"\toprule",
+        r"\textbf{Property} & \textbf{Value} \\",
+        r"\midrule",
+        rf"Benchmark type & {_latex_text(str(metadata.get('benchmark_type', '--')))} \\",
+        rf"Natural pairing & {natural} \\",
+        rf"Categories & {_latex_text(categories or '--')} \\",
+        rf"Samples & {int(metadata.get('samples', 0)) if _finite(metadata.get('samples')) else '--'} \\",
+        rf"Positive fraction & {_fmt(metadata.get('positive_fraction_actual'))} \\",
+        rf"Domains & {_latex_text(', '.join(metadata.get('domain_order', [])))} \\",
+        r"\bottomrule",
+        r"\end{tabular}",
+        "",
+    ]
+    _write(out_dir / "mvtec3d_benchmark_metadata.tex", "\n".join(lines))
+
+
 def write_clean_table(data: dict[str, Any], out_dir: Path) -> None:
     rows = _clean_rows(data)
     roc = _bold_best(rows, "roc_auc", higher_is_better=True, digits=4)
@@ -195,6 +221,25 @@ def write_clean_table(data: dict[str, Any], out_dir: Path) -> None:
         )
     lines += [r"\bottomrule", r"\end{tabular}", ""]
     _write(out_dir / "rga_clean_results.tex", "\n".join(lines))
+
+
+def write_named_clean_table(data: dict[str, Any], out_dir: Path, filename: str) -> None:
+    rows = _clean_rows(data)
+    roc = _bold_best(rows, "roc_auc", higher_is_better=True, digits=4)
+    pr = _bold_best(rows, "pr_auc", higher_is_better=True, digits=4)
+    f1 = _bold_best(rows, "f1", higher_is_better=True, digits=4)
+    ece = _bold_best(rows, "ece", higher_is_better=False, digits=4)
+    lines = [
+        GENERATED_COMMENT,
+        r"\begin{tabular}{lcccc}",
+        r"\toprule",
+        r"\textbf{Method} & \textbf{ROC-AUC} & \textbf{PR-AUC} & \textbf{F1} & \textbf{ECE} \\",
+        r"\midrule",
+    ]
+    for key, label, _ in rows:
+        lines.append(rf"{label} & {roc[key]} & {pr[key]} & {f1[key]} & {ece[key]} \\")
+    lines += [r"\bottomrule", r"\end{tabular}", ""]
+    _write(out_dir / filename, "\n".join(lines))
 
 
 def write_clean_ci_table(data: dict[str, Any], out_dir: Path) -> None:
@@ -300,9 +345,9 @@ def write_tau_sweep_table(data: dict[str, Any], out_dir: Path) -> None:
         return
     lines = [
         GENERATED_COMMENT,
-        r"\begin{tabular}{lccccc}",
+        r"\begin{tabular}{lcccccc}",
         r"\toprule",
-        rf"\textbf{{Condition}} & $\boldsymbol{{\tau}}$ & \textbf{{Static ROC}} & \textbf{{{METHOD_NAME} ROC}} & \textbf{{Delta}} & \textbf{{Adapt rate}} \\",
+        rf"\textbf{{Condition}} & $\boldsymbol{{\tau}}$ & \textbf{{Static ROC}} & \textbf{{{METHOD_NAME} ROC}} & \textbf{{Delta}} & \textbf{{Delta 95\% CI}} & \textbf{{Adapt rate}} \\",
         r"\midrule",
     ]
     for row in rows:
@@ -312,7 +357,8 @@ def write_tau_sweep_table(data: dict[str, Any], out_dir: Path) -> None:
         lines.append(
             rf"{_latex_text(str(row.get('condition', '--')))} & {_fmt(row.get('tau'), 2)} & "
             rf"{_fmt(row.get('static_auc'), 4)} & {_fmt(row.get('craf_auc'), 4)} & "
-            rf"{_fmt(delta, 4)} & {_fmt(row.get('adaptation_rate'), 3)} \\"
+            rf"{_fmt(delta, 4)} & {_fmt_ci(row.get('delta_auc_ci_low'), row.get('delta_auc_ci_high'))} & "
+            rf"{_fmt(row.get('adaptation_rate'), 3)} \\"
         )
     lines += [r"\bottomrule", r"\end{tabular}", ""]
     _write(out_dir / "rga_tau_sweep_results.tex", "\n".join(lines))
@@ -324,9 +370,9 @@ def write_component_ablation_table(data: dict[str, Any], out_dir: Path) -> None:
         return
     lines = [
         GENERATED_COMMENT,
-        r"\begin{tabular}{llcccc}",
+        r"\begin{tabular}{llccccc}",
         r"\toprule",
-        rf"\textbf{{Variant}} & \textbf{{Attack}} & \textbf{{Static ROC}} & \textbf{{{METHOD_NAME} ROC}} & \textbf{{Delta}} & \textbf{{Adapt rate}} \\",
+        rf"\textbf{{Variant}} & \textbf{{Attack}} & \textbf{{Static ROC}} & \textbf{{{METHOD_NAME} ROC}} & \textbf{{Delta}} & \textbf{{Delta 95\% CI}} & \textbf{{Adapt rate}} \\",
         r"\midrule",
     ]
     for row in rows:
@@ -336,7 +382,8 @@ def write_component_ablation_table(data: dict[str, Any], out_dir: Path) -> None:
         lines.append(
             rf"{_latex_text(str(row.get('variant', '--')))} & {_latex_text(str(row.get('attack', '--')))} & "
             rf"{_fmt(row.get('static_auc'), 4)} & {_fmt(row.get('craf_auc'), 4)} & "
-            rf"{_fmt(delta, 4)} & {_fmt(row.get('adaptation_rate'), 3)} \\"
+            rf"{_fmt(delta, 4)} & {_fmt_ci(row.get('delta_auc_ci_low'), row.get('delta_auc_ci_high'))} & "
+            rf"{_fmt(row.get('adaptation_rate'), 3)} \\"
         )
     lines += [r"\bottomrule", r"\end{tabular}", ""]
     _write(out_dir / "rga_component_ablation_results.tex", "\n".join(lines))
@@ -586,10 +633,14 @@ def main() -> None:
     parser.add_argument("--figures-dir", required=True, type=Path)
     parser.add_argument("--tables-dir", required=True, type=Path)
     parser.add_argument("--metadata", type=Path, default=None, help="Optional real-domain metadata JSON")
+    parser.add_argument("--paired-input", type=Path, default=None, help="Optional naturally paired benchmark results JSON")
+    parser.add_argument("--paired-metadata", type=Path, default=None, help="Optional naturally paired benchmark metadata JSON")
     args = parser.parse_args()
 
     data = _load(args.input)
     metadata = _load(args.metadata) if args.metadata else None
+    paired_data = _load(args.paired_input) if args.paired_input else None
+    paired_metadata = _load(args.paired_metadata) if args.paired_metadata else None
     args.figures_dir.mkdir(parents=True, exist_ok=True)
     args.tables_dir.mkdir(parents=True, exist_ok=True)
 
@@ -605,6 +656,10 @@ def main() -> None:
     if metadata:
         write_domain_scorer_table(metadata, args.tables_dir)
         write_benchmark_metadata_table(metadata, args.tables_dir)
+    if paired_data:
+        write_named_clean_table(paired_data, args.tables_dir, "mvtec3d_clean_results.tex")
+    if paired_metadata:
+        write_paired_benchmark_metadata_table(paired_metadata, args.tables_dir)
 
     _set_style()
     plot_clean_benchmark(data, args.figures_dir)

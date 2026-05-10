@@ -8,9 +8,9 @@ Author: Pratik Niroula
 
 ## 1. Overview
 
-The UAIS-V Project (Universal Anomaly Intelligence System – Vision & Language Edition) is an advanced multimodal Artificial Intelligence research and engineering initiative designed to merge multiple domains of machine learning into a unified, real-world system. It combines Machine Learning (ML), Natural Language Processing (NLP), Computer Vision (CV), Generative AI, and Behavioral Analytics to detect complex anomalies across diverse environments — including finance, cybersecurity, human behavior, text communication, and image forgery detection.
+The UAIS-V Project (Universal Anomaly Intelligence System – Vision & Language Edition) is a multimodal AI research and engineering prototype that brings several anomaly-detection domains into one repository. It combines Machine Learning (ML), Natural Language Processing (NLP), Computer Vision (CV), Generative AI, and Behavioral Analytics modules for finance, cybersecurity, user behavior, text, and image-analysis experiments.
 
-UAIS-V represents a transition from traditional single-domain models to cross-domain anomaly intelligence, capable of detecting fraud, cyber threats, behavioral deviations, and synthetic media in a single, scalable platform. This document outlines the technical blueprint, datasets, tools, implementation roadmap, and research-level impact of this project.
+UAIS-V is best read as a reproducible prototype and research scaffold, not a production-validated anomaly platform. This document outlines the technical blueprint, datasets, tools, implementation roadmap, and current evidence boundary of the project.
 
 ---
 
@@ -31,8 +31,8 @@ UAIS-V represents a transition from traditional single-domain models to cross-do
 |---------------------|-------------------------------------------|---------------------------------|
 | Fraud Detection     | Identify credit card and financial fraud   | Banking, eCommerce security     |
 | Cybersecurity       | Detect network intrusions and threats      | Network operations centers      |
-| Behavioral Analytics| Analyze insider threats using CERT logs    | Corporate IT monitoring         |
-| NLP (Text Intelligence) | Detect phishing and insider communication anomalies | Email systems, social engineering detection |
+| Behavioral Analytics| Analyze behavior logs or enterprise-style sequences | Corporate IT monitoring         |
+| NLP (Text Intelligence) | Detect suspicious or anomalous text patterns | Email/news text triage |
 | Computer Vision     | Detect document forgeries and fake media   | KYC verification, forensics     |
 | Generative Modeling | Create synthetic datasets for low-data domains | Data augmentation, simulation   |
 
@@ -44,7 +44,7 @@ UAIS-V represents a transition from traditional single-domain models to cross-do
 |------------------|---------------------------------------------|-----------------------------------------|
 | Machine Learning | scikit-learn, XGBoost, LightGBM, CatBoost   | Tabular modeling and baseline performance|
 | Deep Learning    | TensorFlow, PyTorch                         | LSTM, CNN, Transformer, and GAN architectures|
-| NLP              | Hugging Face Transformers                   | Pretrained models like DistilBERT for text classification|
+| NLP              | Hugging Face Transformers                   | Transformer-compatible text classification|
 | Computer Vision  | OpenCV, torchvision, ViT                    | Image preprocessing and forgery detection|
 | Generative AI    | TensorFlow-GAN, PyTorch-VAE                 | Synthetic data generation               |
 | MLOps            | Prefect, MLflow                             | Workflow orchestration and experiment tracking|
@@ -58,10 +58,10 @@ UAIS-V represents a transition from traditional single-domain models to cross-do
 |-------------|------------------------|------------|------------------------------------|--------|
 | Fraud       | Credit Card Fraud      | Kaggle     | 284,807 transactions, labeled      | 150 MB |
 | Cybersecurity| UNSW-NB15             | UNSW       | Network traffic logs with attacks  | 2 GB   |
-| Behavior    | CERT r4.2             | CMU SEI    | Insider threat user logs           | 5–10GB |
-| NLP         | Enron Emails           | Kaggle     | Real corporate emails              | 400 MB |
-| Vision      | Document Forgery       | Kaggle     | Genuine and forged ID/passport     | 1 GB   |
-| Generative  | Synthetic CERT/Fraud   | Custom     | Generated using VAE/GAN            | Var.   |
+| Behavior    | Online behavior or enterprise-style logs | Local/manual | Sequential behavior records | Var. |
+| NLP         | Labeled email/news text | Local/Kaggle | Text classification inputs | Var. |
+| Vision      | Document/image datasets | Local/Kaggle | Genuine/forged or anomaly imagery | Var. |
+| Generative  | Synthetic fraud/behavior | Custom | Generated using VAE/GAN scripts | Var. |
 
 ---
 
@@ -90,8 +90,8 @@ universal-anomaly-intelligence/
 │   ├─ raw/
 │   │   ├─ fraud/creditcard.csv
 │   │   ├─ cyber/UNSW-NB15.csv
-│   │   ├─ behavior/r4.2/logon.csv
-│   │   ├─ nlp/enron_emails.csv
+│   │   ├─ behavior/<behavior_logs>.csv
+│   │   ├─ nlp/<email_or_news>.csv
 │   │   └─ vision/document_forgery/
 │
 ├─ notebooks/
@@ -139,7 +139,7 @@ pip install --upgrade pip
 pip install -r requirements.txt
 ```
 
-**Step 3: Kaggle credentials for NLP/Vision downloads**
+**Step 3: Optional Kaggle credentials for data helpers**
 
 Download `kaggle.json` from your Kaggle account settings, then:
 
@@ -165,7 +165,7 @@ print(tf.config.list_physical_devices('GPU'))
 ### A. Stage Data
 
 ```sh
-# Download Enron + CIFAR-10 via helper (requires ~/.kaggle/kaggle.json)
+# Download optional NLP/Vision data via helper (requires ~/.kaggle/kaggle.json)
 python scripts/download_data.py --all
 
 # Optional: ingest + engineered feature tables
@@ -173,7 +173,7 @@ bash scripts/run_ingest.sh
 bash scripts/run_build_features.sh
 ```
 
-If you cannot use Kaggle, place `data/raw/nlp/enron_emails.csv` manually and re-run with `--no-kaggle`.
+If you cannot use Kaggle, place the required local CSV or image folders manually and re-run with `--no-kaggle`.
 
 ### B. Train Each Domain (Prefect-powered scripts)
 
@@ -202,9 +202,9 @@ Use the notebooks to inspect data, reproduce plots, or validate outputs after tr
 2. 01_eda_fraud.ipynb – Fraud dataset analysis
 3. 10_supervised_fraud.ipynb – Fraud model training walkthrough
 4. 20_unsupervised_fraud.ipynb – Isolation Forest anomaly detection
-5. 30_sequence_models.ipynb – Behavior modeling (CERT LSTM autoencoder)
-6. 70_nlp_email_anomalies.ipynb – Enron email analysis (DistilBERT)
-7. 80_vision_forgery_detection.ipynb – Document forgery detection (ResNet/ViT)
+5. 30_sequence_models.ipynb – Behavior sequence modeling
+6. 70_nlp_email_anomalies.ipynb – Email/news text anomaly experiments
+7. 80_vision_forgery_detection.ipynb – Vision classification experiments
 8. 90_generative_synthesis.ipynb – Data generation using GAN/VAE
 9. 100_fusion_and_dashboard.ipynb – Combined score and Streamlit integration
 
@@ -223,7 +223,7 @@ streamlit run dashboard/app_streamlit.py
 | Fraud     | LightGBM     | 15–25 min                 | Fast on tabular data     |
 | Cyber     | CatBoost     | 40–60 min                 | Requires memory tuning   |
 | Behavior  | LSTM         | 1–1.5 hr                  | Sequential data processing|
-| NLP       | DistilBERT   | 40 min                    | GPU recommended          |
+| NLP       | Transformer text classifier | 40 min | GPU recommended when using large models |
 | Vision    | ViT          | 1–2 hr                    | Train on subset first    |
 | Generative| GAN/VAE      | 1 hr                      | Optional augmentation    |
 | Fusion    | Meta LightGBM| 20 min                    | Final combination layer  |
@@ -277,17 +277,16 @@ model.compile(optimizer='adam', loss='mse')
 model.fit(X_train, X_train, epochs=10, batch_size=64)
 ```
 
-**DistilBERT (NLP)**
+**Transformer Text Classifier (optional example)**
 
 ```python
-from transformers import DistilBertTokenizer, TFDistilBertForSequenceClassification
-import tensorflow as tf
+from transformers import AutoModelForSequenceClassification, AutoTokenizer
 
-tokenizer = DistilBertTokenizer.from_pretrained('distilbert-base-uncased')
-model = TFDistilBertForSequenceClassification.from_pretrained('distilbert-base-uncased')
+model_name = "your-text-classifier"
+tokenizer = AutoTokenizer.from_pretrained(model_name)
+model = AutoModelForSequenceClassification.from_pretrained(model_name)
 
 train_encodings = tokenizer(list(texts), truncation=True, padding=True)
-model.fit(dict(train_encodings), labels, epochs=2, batch_size=16)
 ```
 
 ---
