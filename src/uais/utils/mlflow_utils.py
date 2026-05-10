@@ -5,7 +5,12 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Dict
 
-import mlflow
+try:
+    import mlflow
+    _MLFLOW_AVAILABLE = True
+except ImportError:
+    mlflow = None  # type: ignore[assignment]
+    _MLFLOW_AVAILABLE = False
 import yaml
 
 from uais.utils.paths import PROJECT_ROOT
@@ -26,13 +31,15 @@ def load_mlflow_settings(config_path: str | Path | None = None) -> Dict[str, str
 
 def setup_mlflow(experiment_name: str = "UAISV_Experiments", tracking_uri: str | None = None) -> None:
     """Configure the MLflow tracking URI and experiment name."""
+    if not _MLFLOW_AVAILABLE:
+        print("[warn] mlflow not installed; skipping MLflow setup.")
+        return
     uri = tracking_uri or "http://localhost:5000"
     try:
         mlflow.set_tracking_uri(uri)
         mlflow.set_experiment(experiment_name)
         print(f"MLflow experiment set: {experiment_name} ({uri})")
     except Exception as exc:
-        # Fallback to local file store if remote tracking is unavailable/forbidden.
         local_uri = PROJECT_ROOT / "mlruns"
         local_uri.mkdir(parents=True, exist_ok=True)
         mlflow.set_tracking_uri(local_uri.as_uri())
@@ -42,6 +49,8 @@ def setup_mlflow(experiment_name: str = "UAISV_Experiments", tracking_uri: str |
 
 def log_run(params: Dict[str, float] | None, metrics: Dict[str, float]) -> None:
     """Log parameters and metrics to MLflow inside a single run."""
+    if not _MLFLOW_AVAILABLE:
+        return
     params = params or {}
     with mlflow.start_run():
         for key, value in params.items():

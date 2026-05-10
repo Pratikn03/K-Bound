@@ -25,7 +25,7 @@ import json
 import logging
 import time
 from pathlib import Path
-from typing import Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional, Tuple
 
 import numpy as np
 import torch
@@ -365,11 +365,12 @@ def run_experiment(cfg: Dict, seed_override: Optional[int] = None) -> Dict:
         estimator = ReliabilityEstimator(
             domain_order=domain_order,
             score_index=score_index,
-            ece_weight=float(rel_cfg.get("ece_weight", 0.4)),
-            ks_weight=float(rel_cfg.get("ks_weight", 0.4)),
-            sharpness_weight=float(rel_cfg.get("sharpness_weight", 0.2)),
+            ece_weight=float(rel_cfg.get("ece_weight", 0.45)),
+            ks_weight=float(rel_cfg.get("ks_weight", 0.35)),
+            sharpness_weight=float(rel_cfg.get("sharpness_weight", 0.20)),
             n_calibration_bins=int(rel_cfg.get("n_calibration_bins", 10)),
             min_samples_for_ks=int(rel_cfg.get("min_samples_for_ks", 30)),
+            gate_threshold=float(rel_cfg.get("gate_threshold", 0.66)),
         )
         estimator.fit(features[val_idx], masks[val_idx], labels[val_idx])
 
@@ -548,6 +549,82 @@ def run_experiment(cfg: Dict, seed_override: Optional[int] = None) -> Dict:
     )
 
     # ------------------------------------------------------------------
+    # Phase 6b — τ sweep + component ablation (paper Section 4.4)
+    # ------------------------------------------------------------------
+    logger.info("Phase 6b: τ sweep and component ablation")
+
+    # τ sweep: AUC as a function of gate threshold
+    TAU_SWEEP = [0.4, 0.5, 0.6, 0.66, 0.7, 0.8, 0.9]
+    tau_sweep_results = []
+    _saved_gate = estimator.gate_threshold
+    for tau in TAU_SWEEP:
+        estimator.gate_threshold = tau
+        tau_probs = _predict_craf(model, estimator, final_test_feat, final_test_mask, device)
+        tau_m = classification_metrics(final_test_labels, tau_probs)
+        tau_sweep_results.append({
+            "gate_threshold": tau,
+            "auc": tau_m.get("roc_auc"),
+            "f1": tau_m.get("f1"),
+        })
+    estimator.gate_threshold = _saved_gate  # restore
+
+    results["tau_sweep"] = tau_sweep_results
+    logger.info(f"τ sweep done over {len(TAU_SWEEP)} thresholds.")
+
+    # Component ablation: zero-out each weight component to isolate its contribution
+    # Also test always-gate (τ=0) to show effect of gate conservatism
+    ABLATIONS: Dict[str, Dict] = {
+        "full_rga":     {"ece_weight": 0.45, "ks_weight": 0.35, "sharpness_weight": 0.20, "gate_threshold": 0.66},
+        "no_ece":       {"ece_weight": 0.0,  "ks_weight": 0.35, "sharpness_weight": 0.20, "gate_threshold": 0.66},
+        "no_ks":        {"ece_weight": 0.45, "ks_weight": 0.0,  "sharpness_weight": 0.20, "gate_threshold": 0.66},
+        "no_sharpness": {"ece_weight": 0.45, "ks_weight": 0.35, "sharpness_weight": 0.0,  "gate_threshold": 0.66},
+        "always_gate":  {"ece_weight": 0.45, "ks_weight": 0.35, "sharpness_weight": 0.20, "gate_threshold": 0.0},
+    }
+
+    # Pre-compute zero-attack perturbed features for ablation stress test
+    _zero_pert: Optional[np.ndarray] = None
+    try:
+        _zero_pert, _ = engine.apply_attack(
+            final_test_feat, final_test_mask,
+            AdversarialAttackType.ZERO_ATTACK, target_domain=None,
+        )
+    except Exception as _exc:
+        logger.warning(f"Could not pre-compute zero_attack for ablation: {_exc}")
+
+    _orig_ece_w = estimator.ece_weight
+    _orig_ks_w  = estimator.ks_weight
+    _orig_shr_w = estimator.sharpness_weight
+    _orig_gate  = estimator.gate_threshold
+    ablation_results: Dict[str, Dict] = {}
+    for variant_name, params in ABLATIONS.items():
+        estimator.ece_weight      = params["ece_weight"]
+        estimator.ks_weight       = params["ks_weight"]
+        estimator.sharpness_weight = params["sharpness_weight"]
+        estimator.gate_threshold  = params["gate_threshold"]
+
+        clean_probs = _predict_craf(model, estimator, final_test_feat, final_test_mask, device)
+        clean_m = classification_metrics(final_test_labels, clean_probs)
+        row: Dict[str, Any] = {"clean_auc": clean_m.get("roc_auc"), "clean_f1": clean_m.get("f1")}
+
+        if _zero_pert is not None:
+            adv_probs = _predict_craf(model, estimator, _zero_pert, final_test_mask, device)
+            adv_m = classification_metrics(final_test_labels, adv_probs)
+            row["zero_attack_auc"] = adv_m.get("roc_auc")
+            row["zero_attack_delta"] = (
+                (adv_m.get("roc_auc") or 0.0) - (clean_m.get("roc_auc") or 0.0)
+            )
+        ablation_results[variant_name] = row
+
+    # Restore original weights
+    estimator.ece_weight      = _orig_ece_w
+    estimator.ks_weight       = _orig_ks_w
+    estimator.sharpness_weight = _orig_shr_w
+    estimator.gate_threshold  = _orig_gate
+
+    results["component_ablation"] = ablation_results
+    logger.info(f"Component ablation done: {list(ablation_results.keys())}")
+
+    # ------------------------------------------------------------------
     # Phase 7 — CDA validation
     # ------------------------------------------------------------------
     logger.info("Phase 7: CDA validation")
@@ -655,8 +732,9 @@ def main():
                          "test_size": 0.2, "val_size": 0.1, "early_stopping": 3, "lambda_reg": 0.01},
             "evaluation": {"seeds": [42], "cda_samples": 20,
                            "domain_dropout_probs_extended": [0.0, 0.1, 0.3]},
-            "reliability": {"ece_weight": 0.4, "ks_weight": 0.4, "sharpness_weight": 0.2,
-                            "n_calibration_bins": 5, "min_samples_for_ks": 10},
+            "reliability": {"ece_weight": 0.45, "ks_weight": 0.35, "sharpness_weight": 0.20,
+                            "n_calibration_bins": 5, "min_samples_for_ks": 10,
+                            "gate_threshold": 0.66},
             "craf": {"drift_noise_levels": [0.0, 0.1, 0.3],
                      "adversarial_attacks": ["zero_attack", "gaussian_noise"],
                      "adversarial_sigma": 0.1},
@@ -744,11 +822,12 @@ def _run_synthetic_experiment(cfg, features, masks, labels, sample_ids, domain_o
         estimator = ReliabilityEstimator(
             domain_order=domain_order,
             score_index=score_index,
-            ece_weight=float(rel_cfg.get("ece_weight", 0.4)),
-            ks_weight=float(rel_cfg.get("ks_weight", 0.4)),
-            sharpness_weight=float(rel_cfg.get("sharpness_weight", 0.2)),
+            ece_weight=float(rel_cfg.get("ece_weight", 0.45)),
+            ks_weight=float(rel_cfg.get("ks_weight", 0.35)),
+            sharpness_weight=float(rel_cfg.get("sharpness_weight", 0.20)),
             n_calibration_bins=int(rel_cfg.get("n_calibration_bins", 5)),
             min_samples_for_ks=int(rel_cfg.get("min_samples_for_ks", 10)),
+            gate_threshold=float(rel_cfg.get("gate_threshold", 0.66)),
         )
         estimator.fit(features[val_idx], masks[val_idx], labels[val_idx])
 
@@ -864,6 +943,42 @@ def _run_synthetic_experiment(cfg, features, masks, labels, sample_ids, domain_o
         "domain_ece_at_fit": estimator.get_domain_ece(),
     }
     results["table_5_calibration"] = cal
+
+    # τ sweep + component ablation (synthetic path — condensed)
+    _saved_gate_s = estimator.gate_threshold
+    tau_sweep_s = []
+    for tau in [0.4, 0.5, 0.6, 0.66, 0.8, 0.9]:
+        estimator.gate_threshold = tau
+        tp = _predict_craf(model, estimator, final_test_feat, final_test_mask, device)
+        tm = classification_metrics(final_test_labels, tp)
+        tau_sweep_s.append({"gate_threshold": tau, "auc": tm.get("roc_auc")})
+    estimator.gate_threshold = _saved_gate_s
+    results["tau_sweep"] = tau_sweep_s
+
+    _orig_ece_ws = estimator.ece_weight
+    _orig_ks_ws  = estimator.ks_weight
+    _orig_shr_ws = estimator.sharpness_weight
+    _orig_gate_s = estimator.gate_threshold
+    ablation_s: Dict[str, Any] = {}
+    for _vname, _params in [
+        ("full_rga",     {"ece_weight": 0.45, "ks_weight": 0.35, "sharpness_weight": 0.20, "gate_threshold": 0.66}),
+        ("no_ece",       {"ece_weight": 0.0,  "ks_weight": 0.35, "sharpness_weight": 0.20, "gate_threshold": 0.66}),
+        ("no_ks",        {"ece_weight": 0.45, "ks_weight": 0.0,  "sharpness_weight": 0.20, "gate_threshold": 0.66}),
+        ("no_sharpness", {"ece_weight": 0.45, "ks_weight": 0.35, "sharpness_weight": 0.0,  "gate_threshold": 0.66}),
+        ("always_gate",  {"ece_weight": 0.45, "ks_weight": 0.35, "sharpness_weight": 0.20, "gate_threshold": 0.0}),
+    ]:
+        estimator.ece_weight      = _params["ece_weight"]
+        estimator.ks_weight       = _params["ks_weight"]
+        estimator.sharpness_weight = _params["sharpness_weight"]
+        estimator.gate_threshold  = _params["gate_threshold"]
+        _cp = _predict_craf(model, estimator, final_test_feat, final_test_mask, device)
+        _cm = classification_metrics(final_test_labels, _cp)
+        ablation_s[_vname] = {"clean_auc": _cm.get("roc_auc")}
+    estimator.ece_weight      = _orig_ece_ws
+    estimator.ks_weight       = _orig_ks_ws
+    estimator.sharpness_weight = _orig_shr_ws
+    estimator.gate_threshold  = _orig_gate_s
+    results["component_ablation"] = ablation_s
 
     # CDA
     n_cda = int(eval_cfg.get("cda_samples", 20))

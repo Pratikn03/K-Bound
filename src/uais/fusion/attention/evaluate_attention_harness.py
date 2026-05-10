@@ -818,12 +818,14 @@ def evaluate_attention_harness(cfg_path: Path = DEFAULT_CONFIG) -> Dict[str, Dic
             if eval_cfg.get("enable_craf", False) and score_index is not None:
                 try:
                     val_idx = perf_meta["val_idx"]
+                    rel_cfg_h = cfg.get("reliability", {})
                     estimator = ReliabilityEstimator(
                         domain_order=list(domain_order),
                         score_index=score_index,
-                        ece_weight=cfg.get("reliability", {}).get("ece_weight", 0.4),
-                        ks_weight=cfg.get("reliability", {}).get("ks_weight", 0.4),
-                        sharpness_weight=cfg.get("reliability", {}).get("sharpness_weight", 0.2),
+                        ece_weight=rel_cfg_h.get("ece_weight", 0.45),
+                        ks_weight=rel_cfg_h.get("ks_weight", 0.35),
+                        sharpness_weight=rel_cfg_h.get("sharpness_weight", 0.20),
+                        gate_threshold=rel_cfg_h.get("gate_threshold", 0.66),
                     )
                     estimator.fit(features[val_idx], masks[val_idx], labels[val_idx])
                     craf_y_true, craf_y_prob = _collect_predictions_craf(
