@@ -38,3 +38,19 @@ def test_mvtec3d_builder_marks_natural_pairing_and_emits_paired_domains(tmp_path
     assert frame["score"].between(0.0, 1.0).all()
     assert frame["confidence"].between(0.0, 1.0).all()
     assert {f"embedding_{idx}" for idx in range(8)}.issubset(frame.columns)
+
+
+def test_mvtec3d_builder_reads_float_xyz_tiff(tmp_path):
+    import tifffile
+
+    root = tmp_path / "mvtec3d"
+    _write_rgb(root / "bagel" / "test" / "combined" / "rgb" / "000.png", 80)
+    xyz_path = root / "bagel" / "test" / "combined" / "xyz" / "000.tiff"
+    xyz_path.parent.mkdir(parents=True, exist_ok=True)
+    tifffile.imwrite(xyz_path, np.zeros((8, 8, 3), dtype=np.float32))
+
+    from scripts.prepare_mvtec3d_fusion_benchmark import build_mvtec3d_fusion_frame
+
+    frame, _ = build_mvtec3d_fusion_frame(root, embedding_dim=8)
+    assert len(frame) == 2
+    assert np.isfinite(frame.filter(like="embedding_").to_numpy()).all()

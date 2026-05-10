@@ -22,7 +22,7 @@ from typing import Iterable
 
 import numpy as np
 import pandas as pd
-from PIL import Image
+from PIL import Image, UnidentifiedImageError
 
 
 DOMAIN_ORDER = ["rgb", "depth_or_xyz"]
@@ -108,11 +108,29 @@ def discover_mvtec3d_pairs(dataset_root: Path, categories: Iterable[str] | None 
     return pairs
 
 
+def _read_image_array(path: Path) -> np.ndarray:
+    try:
+        with Image.open(path) as image:
+            return np.asarray(image.convert("RGB" if image.mode not in {"L", "I;16", "F"} else "L"), dtype=np.float32)
+    except UnidentifiedImageError:
+        if path.suffix.lower() not in {".tif", ".tiff"}:
+            raise
+        try:
+            import tifffile
+        except ImportError as exc:
+            raise ImportError(
+                "Reading MVTec XYZ TIFF files requires tifffile. Install it with `pip install tifffile`."
+            ) from exc
+        return np.asarray(tifffile.imread(path), dtype=np.float32)
+
+
 def _image_features(path: Path, embedding_dim: int) -> np.ndarray:
-    with Image.open(path) as image:
-        arr = np.asarray(image.convert("RGB" if image.mode not in {"L", "I;16", "F"} else "L"), dtype=np.float32)
+    arr = _read_image_array(path)
     flat = arr.reshape(-1, arr.shape[-1]) if arr.ndim == 3 else arr.reshape(-1, 1)
     gray = flat.mean(axis=1)
+    gray = gray[np.isfinite(gray)]
+    if gray.size == 0:
+        gray = np.zeros(1, dtype=np.float32)
     quantiles = np.quantile(gray, [0.05, 0.25, 0.5, 0.75, 0.95])
     values = np.array(
         [

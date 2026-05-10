@@ -154,7 +154,14 @@ def test_run_baseline_suite_keys():
         score_index=SCORE_IDX,
         device=torch.device("cpu"),
     )
-    expected_keys = {"early_fusion_mlp", "late_fusion_ensemble", "random_forest", "confidence_weighted_mean"}
+    expected_keys = {
+        "early_fusion_mlp",
+        "late_fusion_ensemble",
+        "random_forest",
+        "confidence_weighted_mean",
+        "tent_score_adapter",
+        "ttt_pseudo_label_adapter",
+    }
     assert set(results.keys()) == expected_keys, f"Missing keys: {expected_keys - set(results.keys())}"
     for name, metrics in results.items():
         assert "roc_auc" in metrics, f"roc_auc missing from {name}"

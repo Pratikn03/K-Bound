@@ -1,11 +1,13 @@
-"""Strong multimodal fusion baselines for comparison against CRAF.
+"""Strong multimodal fusion baselines for comparison against RGA attention.
 
-Four published/standard baselines, each handling missing domains correctly:
+Six published/standard baselines, each handling missing domains correctly:
 
   EarlyFusionMLP          — concat all domain features + missing indicators → MLP
   LateFusionEnsemble      — per-domain logistic regressor → stacked meta-learner
   RandomForestFusion      — sklearn RF on flattened features + missing indicators
   ConfidenceWeightedMean  — sharpness-weighted score mean (CRAF's direct predecessor)
+  TentScoreAdapter        — test-time entropy minimization over a calibrated score head
+  TTTPseudoLabelAdapter   — test-time pseudo-label adaptation over a calibrated score head
 
 All models expose a consistent `fit(features, masks, labels)` / `predict_proba(features, masks)`
 interface so the experiment script can treat them uniformly.
@@ -300,16 +302,16 @@ class RandomForestFusion:
 
 
 # ---------------------------------------------------------------------------
-# 4. ConfidenceWeightedMean (CRAF predecessor / ablation)
+# 4. ConfidenceWeightedMean (RGA predecessor / ablation)
 # ---------------------------------------------------------------------------
 
 class ConfidenceWeightedMean:
     """Sharpness-weighted score mean: w_d = 2 * |score_d - 0.5|.
 
-    This is the direct predecessor to CRAF's TTRA — it applies the same
+    This is the direct predecessor to RGA's reliability path — it applies the same
     distance-from-0.5 heuristic that the original AttentionFusionModel uses
     internally, but without any calibration correction or drift detection.
-    Including it as a baseline isolates the contribution of CRAF's CRS over
+    Including it as a baseline isolates the contribution of RGA reliability over
     this simpler static heuristic.
 
     Parameter-free — no fitting required (fit() is a no-op).
@@ -339,6 +341,130 @@ class ConfidenceWeightedMean:
 
 
 # ---------------------------------------------------------------------------
+# 5. Test-time adaptation baselines
+# ---------------------------------------------------------------------------
+
+class _ScoreHeadMixin:
+    def __init__(
+        self,
+        random_seed: int = 42,
+        adaptation_steps: int = 25,
+        lr: float = 0.03,
+        l2_anchor: float = 0.01,
+    ) -> None:
+        self.random_seed = random_seed
+        self.adaptation_steps = adaptation_steps
+        self.lr = lr
+        self.l2_anchor = l2_anchor
+        self._scaler = StandardScaler()
+        self._clf: Optional[LogisticRegression] = None
+
+    def fit(self, features: np.ndarray, masks: np.ndarray, labels: np.ndarray):
+        X = self._scaler.fit_transform(_flatten_with_mask(features, masks))
+        self._clf = LogisticRegression(
+            C=1.0,
+            class_weight="balanced",
+            max_iter=500,
+            random_state=self.random_seed,
+        )
+        self._clf.fit(X, labels)
+        return self
+
+    def _scaled(self, features: np.ndarray, masks: np.ndarray) -> np.ndarray:
+        if self._clf is None:
+            raise RuntimeError("Call fit() first.")
+        return self._scaler.transform(_flatten_with_mask(features, masks)).astype(np.float32)
+
+    def _base_logits(self, X: np.ndarray) -> np.ndarray:
+        if self._clf is None:
+            raise RuntimeError("Call fit() first.")
+        return (X @ self._clf.coef_.reshape(-1) + float(self._clf.intercept_[0])).astype(np.float32)
+
+
+class TentScoreAdapter(_ScoreHeadMixin):
+    """Tent-style score adaptation by minimizing unlabeled prediction entropy.
+
+    The baseline freezes a trained logistic fusion head and adapts only a scalar
+    temperature and bias on the test batch. This is intentionally conservative:
+    it tests whether simple entropy minimization can explain away the reported
+    reliability-gating gains.
+    """
+
+    def predict_proba(self, features: np.ndarray, masks: np.ndarray) -> np.ndarray:
+        X = self._scaled(features, masks)
+        base_logits = torch.tensor(self._base_logits(X), dtype=torch.float32)
+        log_temperature = torch.zeros((), requires_grad=True)
+        bias = torch.zeros((), requires_grad=True)
+        optimizer = torch.optim.Adam([log_temperature, bias], lr=self.lr)
+
+        for _ in range(max(int(self.adaptation_steps), 0)):
+            optimizer.zero_grad()
+            logits = base_logits / torch.exp(log_temperature).clamp_min(1e-3) + bias
+            probs = torch.sigmoid(logits).clamp(1e-6, 1.0 - 1e-6)
+            entropy = -(probs * torch.log(probs) + (1.0 - probs) * torch.log(1.0 - probs)).mean()
+            anchor = self.l2_anchor * (log_temperature.pow(2) + bias.pow(2))
+            (entropy + anchor).backward()
+            optimizer.step()
+
+        with torch.no_grad():
+            logits = base_logits / torch.exp(log_temperature).clamp_min(1e-3) + bias
+            return torch.sigmoid(logits).cpu().numpy().astype(np.float32)
+
+
+class TTTPseudoLabelAdapter(_ScoreHeadMixin):
+    """Test-time training baseline using high-confidence pseudo-labels.
+
+    The adapter initializes from a trained logistic fusion head, selects confident
+    unlabeled test examples, and performs a few anchored updates against their
+    pseudo-labels. No test labels are used.
+    """
+
+    def __init__(
+        self,
+        random_seed: int = 42,
+        adaptation_steps: int = 25,
+        lr: float = 0.01,
+        l2_anchor: float = 0.01,
+        confidence_threshold: float = 0.85,
+    ) -> None:
+        super().__init__(
+            random_seed=random_seed,
+            adaptation_steps=adaptation_steps,
+            lr=lr,
+            l2_anchor=l2_anchor,
+        )
+        self.confidence_threshold = confidence_threshold
+
+    def predict_proba(self, features: np.ndarray, masks: np.ndarray) -> np.ndarray:
+        X_np = self._scaled(features, masks)
+        if self._clf is None:
+            raise RuntimeError("Call fit() first.")
+        X = torch.tensor(X_np, dtype=torch.float32)
+        init_w = torch.tensor(self._clf.coef_.reshape(-1), dtype=torch.float32)
+        init_b = torch.tensor(float(self._clf.intercept_[0]), dtype=torch.float32)
+        weight = init_w.clone().requires_grad_(True)
+        bias = init_b.clone().requires_grad_(True)
+
+        with torch.no_grad():
+            base_probs = torch.sigmoid(X @ init_w + init_b)
+            confident = (base_probs >= self.confidence_threshold) | (base_probs <= (1.0 - self.confidence_threshold))
+            pseudo = (base_probs >= 0.5).float()
+
+        if confident.sum().item() >= 2 and int(self.adaptation_steps) > 0:
+            optimizer = torch.optim.Adam([weight, bias], lr=self.lr)
+            for _ in range(int(self.adaptation_steps)):
+                optimizer.zero_grad()
+                logits = X[confident] @ weight + bias
+                loss = nn.functional.binary_cross_entropy_with_logits(logits, pseudo[confident])
+                anchor = self.l2_anchor * ((weight - init_w).pow(2).mean() + (bias - init_b).pow(2))
+                (loss + anchor).backward()
+                optimizer.step()
+
+        with torch.no_grad():
+            return torch.sigmoid(X @ weight + bias).cpu().numpy().astype(np.float32)
+
+
+# ---------------------------------------------------------------------------
 # Convenience runner
 # ---------------------------------------------------------------------------
 
@@ -352,8 +478,10 @@ def run_baseline_suite(
     score_index: int = 0,
     device: Optional[torch.device] = None,
     random_seed: int = 42,
+    baseline_epochs: Optional[int] = None,
+    tta_steps: int = 25,
 ) -> Dict[str, Dict]:
-    """Fit all four baselines and return classification metrics for each.
+    """Fit all baselines and return classification metrics for each.
 
     Returns a dict keyed by baseline name, each value being a classification_metrics dict.
     All baselines receive the same train/val/test split for a fair comparison.
@@ -367,7 +495,11 @@ def run_baseline_suite(
     results: Dict[str, Dict] = {}
 
     # 1. Early Fusion MLP
-    mlp = EarlyFusionMLP(device=device, random_seed=random_seed)
+    mlp_kwargs = {"device": device, "random_seed": random_seed}
+    if baseline_epochs is not None:
+        mlp_kwargs["epochs"] = int(baseline_epochs)
+        mlp_kwargs["patience"] = max(1, min(3, int(baseline_epochs)))
+    mlp = EarlyFusionMLP(**mlp_kwargs)
     mlp.fit(train_feat, train_mask, train_labels, val_feat, val_mask, val_labels)
     results["early_fusion_mlp"] = classification_metrics(test_labels, mlp.predict_proba(test_feat, test_mask))
 
@@ -388,6 +520,16 @@ def run_baseline_suite(
     cwm.fit(train_feat, train_mask, train_labels)
     results["confidence_weighted_mean"] = classification_metrics(test_labels, cwm.predict_proba(test_feat, test_mask))
 
+    # 5. Tent-style test-time entropy minimization
+    tent = TentScoreAdapter(random_seed=random_seed, adaptation_steps=tta_steps)
+    tent.fit(train_feat, train_mask, train_labels)
+    results["tent_score_adapter"] = classification_metrics(test_labels, tent.predict_proba(test_feat, test_mask))
+
+    # 6. TTT-style high-confidence pseudo-label adaptation
+    ttt = TTTPseudoLabelAdapter(random_seed=random_seed, adaptation_steps=tta_steps)
+    ttt.fit(train_feat, train_mask, train_labels)
+    results["ttt_pseudo_label_adapter"] = classification_metrics(test_labels, ttt.predict_proba(test_feat, test_mask))
+
     return results
 
 
@@ -396,5 +538,7 @@ __all__ = [
     "LateFusionEnsemble",
     "RandomForestFusion",
     "ConfidenceWeightedMean",
+    "TentScoreAdapter",
+    "TTTPseudoLabelAdapter",
     "run_baseline_suite",
 ]
