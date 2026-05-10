@@ -145,3 +145,56 @@ def test_ks_reliability_decreases_with_drift():
             clean_weights[:, d], drifted_weights[:, d], rtol=1e-4,
             err_msg=f"Domain {d} weights changed despite no drift"
         )
+
+
+def test_gate_decisions_shape_and_type(fitted_estimator):
+    """gate_decisions() must return a bool array of shape [N]."""
+    est, features, masks, _ = fitted_estimator
+    weights = est.compute_reliability_weights(features, masks)
+    gate = est.gate_decisions(weights, masks)
+    assert gate.shape == (N,), f"Expected ({N},), got {gate.shape}"
+    assert gate.dtype == bool, f"Expected bool, got {gate.dtype}"
+
+
+def test_gate_decisions_high_reliability_stays_static():
+    """Samples with perfect domain scores (sharpness=1) should stay on static path."""
+    features, masks, labels = _make_data(seed=5, missing_prob=0.0)
+    # Push all scores to 0.9 — very sharp, high reliability
+    features[:, :, SCORE_INDEX] = 0.9
+    est = ReliabilityEstimator(DOMAIN_ORDER, SCORE_INDEX, gate_threshold=0.66,
+                               min_samples_for_ks=5)
+    est.fit(features, masks, labels)
+    weights = est.compute_reliability_weights(features, masks)
+    gate = est.gate_decisions(weights, masks)
+    # With high sharpness the mean reliability should exceed 0.66 → gate=False (static path)
+    assert not gate.all(), "All-sharp domains should not all activate the reliability path"
+
+
+def test_gate_decisions_low_reliability_activates():
+    """Scores clustered at 0.5 give zero sharpness → low reliability → gate fires."""
+    features, masks, labels = _make_data(seed=6, missing_prob=0.0)
+    # Push all scores to exactly 0.5 — zero sharpness
+    features[:, :, SCORE_INDEX] = 0.5
+    est = ReliabilityEstimator(DOMAIN_ORDER, SCORE_INDEX,
+                               ece_weight=0.0, ks_weight=0.0, sharpness_weight=1.0,
+                               gate_threshold=0.66, min_samples_for_ks=5)
+    est.fit(features, masks, labels)
+    weights = est.compute_reliability_weights(features, masks)
+    gate = est.gate_decisions(weights, masks)
+    # Zero sharpness → reliability = 0.0 < 0.66 → all samples should activate reliability path
+    assert gate.all(), "Zero-sharpness domains should always activate the reliability path"
+
+
+def test_gate_save_load_preserves_threshold(fitted_estimator):
+    """gate_threshold must survive a save/load round-trip."""
+    import tempfile
+    est, _, _, _ = fitted_estimator
+    est_custom = ReliabilityEstimator(DOMAIN_ORDER, SCORE_INDEX, gate_threshold=0.55,
+                                      min_samples_for_ks=5)
+    with tempfile.TemporaryDirectory() as d:
+        path = f"{d}/est.joblib"
+        est_custom.save(path)
+        loaded = ReliabilityEstimator.load(path)
+    assert loaded.gate_threshold == 0.55, (
+        f"Expected gate_threshold=0.55, got {loaded.gate_threshold}"
+    )

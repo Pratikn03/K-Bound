@@ -221,6 +221,7 @@ def _predict_static(model: AttentionFusionModel, features: np.ndarray, masks: np
 
 
 @torch.no_grad()
+@torch.no_grad()
 def _predict_craf(
     model: AttentionFusionModel,
     estimator: ReliabilityEstimator,
@@ -229,7 +230,14 @@ def _predict_craf(
     device: torch.device,
     batch_size: int = 256,
 ) -> np.ndarray:
-    """Predict using CRAF-injected reliability weights (bypasses outer model)."""
+    """Predict using RGA: static path when reliable, reliability-injected path when degraded.
+
+    Per the RGA paper, for each sample the mean reliability over present domains
+    is compared against estimator.gate_threshold (default 0.66). Samples above
+    the threshold use the static attention path; only samples below it receive
+    reliability-weight injection. This keeps the method conservative: clean
+    predictions are undisturbed, and adaptation only activates under degradation.
+    """
     model.eval()
     probs = []
     n = features.shape[0]
@@ -237,15 +245,31 @@ def _predict_craf(
         end = min(start + batch_size, n)
         feat_np = features[start:end]
         mask_np = masks[start:end]
+
         craf_w = estimator.compute_reliability_weights(feat_np, mask_np)
+        gate = estimator.gate_decisions(craf_w, mask_np)  # [B] bool
+
         feat_t = torch.tensor(feat_np, dtype=torch.float32, device=device)
         mask_t = torch.tensor(mask_np, dtype=torch.bool, device=device)
-        craf_t = torch.tensor(craf_w, dtype=torch.float32, device=device)
-        craf_t = craf_t.masked_fill(mask_t, 0.0)
-        embeds = [enc(feat_t[:, i, :]) for i, enc in enumerate(model.domain_encoders)]
-        domain_embeds = torch.stack(embeds, dim=1)
-        logits, _ = model.fusion(domain_embeds, key_padding_mask=mask_t, confidence_weights=craf_t)
-        probs.append(torch.sigmoid(logits.squeeze(-1)).cpu().numpy())
+
+        # Static path — always run as fallback
+        logits_static, _, _ = model(feat_t, key_padding_mask=mask_t)
+        probs_static = torch.sigmoid(logits_static.squeeze(-1))
+
+        if gate.any():
+            # Reliability path — only for samples whose mean domain reliability < threshold
+            craf_t = torch.tensor(craf_w, dtype=torch.float32, device=device)
+            craf_t = craf_t.masked_fill(mask_t, 0.0)
+            embeds = [enc(feat_t[:, i, :]) for i, enc in enumerate(model.domain_encoders)]
+            domain_embeds = torch.stack(embeds, dim=1)
+            logits_craf, _ = model.fusion(domain_embeds, key_padding_mask=mask_t, confidence_weights=craf_t)
+            probs_craf = torch.sigmoid(logits_craf.squeeze(-1))
+            gate_t = torch.tensor(gate, dtype=torch.bool, device=device)
+            batch_probs = torch.where(gate_t, probs_craf, probs_static)
+        else:
+            batch_probs = probs_static
+
+        probs.append(batch_probs.cpu().numpy())
     return np.concatenate(probs)
 
 

@@ -219,22 +219,33 @@ class CounterfactualDomainExplainer:
         )
 
         with torch.no_grad():
-            if reliability_weights is not None:
-                # CRAF injection: encode each domain, then call fusion with external weights
-                embeds = [
-                    enc(feat_t[:, i, :])
-                    for i, enc in enumerate(self.model.domain_encoders)
-                ]
-                domain_embeds = torch.stack(embeds, dim=1)  # [1, D, embed_dim]
-                craf_t = torch.tensor(
-                    reliability_weights[np.newaxis], dtype=torch.float32, device=self.device
+            if reliability_weights is not None and self.reliability_estimator is not None:
+                # RGA gate: only inject weights when mean domain reliability < gate_threshold.
+                # When reliability is high the static attention path is left unchanged —
+                # this is what makes RGA conservative rather than always-on.
+                use_reliability = bool(
+                    self.reliability_estimator.gate_decisions(
+                        reliability_weights[np.newaxis],  # [1, D]
+                        masks_1d[np.newaxis],             # [1, D]
+                    )[0]
                 )
-                craf_t = craf_t.masked_fill(mask_t, 0.0)
-                logits, _ = self.model.fusion(
-                    domain_embeds,
-                    key_padding_mask=mask_t,
-                    confidence_weights=craf_t,
-                )
+                if use_reliability:
+                    embeds = [
+                        enc(feat_t[:, i, :])
+                        for i, enc in enumerate(self.model.domain_encoders)
+                    ]
+                    domain_embeds = torch.stack(embeds, dim=1)  # [1, D, embed_dim]
+                    craf_t = torch.tensor(
+                        reliability_weights[np.newaxis], dtype=torch.float32, device=self.device
+                    )
+                    craf_t = craf_t.masked_fill(mask_t, 0.0)
+                    logits, _ = self.model.fusion(
+                        domain_embeds,
+                        key_padding_mask=mask_t,
+                        confidence_weights=craf_t,
+                    )
+                else:
+                    logits, _, _ = self.model(feat_t, key_padding_mask=mask_t)
             else:
                 logits, _, _ = self.model(feat_t, key_padding_mask=mask_t)
 
