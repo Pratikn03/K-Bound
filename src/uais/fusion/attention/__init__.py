@@ -39,6 +39,32 @@ from uais.fusion.attention.baselines import (
     PseudoLabelTTTAdapter,
     run_baseline_suite,
 )
+from uais.fusion.attention.unsupervised_baselines import (
+    BGMMConfig, GMMConfig, KMeansConfig, IForestConfig,
+    OCSVMConfig, LOFConfig, AEConfig,
+    BGMMAnomalyDetector, GMMAnomalyDetector, KMeansAnomalyDetector,
+    IsolationForestDetector, OneClassSVMDetector, LOFAnomalyDetector,
+    AutoencoderAnomalyDetector,
+    run_unsupervised_suite,
+)
+from uais.fusion.attention.dim_reduction import (
+    DimReducer, NoOpReducer, PCAReducer, AutoencoderReducer,
+    PCAReducerConfig, AEReducerConfig, make_reducer,
+)
+from uais.fusion.attention.leakage_guard import (
+    check_train_test_contamination,
+    check_label_overlap,
+    assert_no_oversampling_in_test,
+    assert_normal_only_training,
+    flag_suspicious_metrics,
+    PipelineGuard,
+    assert_split_before_preprocess,
+)
+from uais.fusion.attention.cv_evaluator import (
+    BaselineSpec, CVConfig,
+    cross_validate_baselines,
+    pairwise_delong_from_predictions,
+)
 
 __all__ = [
     "AttentionFusionModel",
@@ -63,4 +89,22 @@ __all__ = [
     "TentAdapter",
     "PseudoLabelTTTAdapter",
     "run_baseline_suite",
+    # Unsupervised baselines — normal-only training protocol
+    "BGMMConfig", "GMMConfig", "KMeansConfig", "IForestConfig",
+    "OCSVMConfig", "LOFConfig", "AEConfig",
+    "BGMMAnomalyDetector", "GMMAnomalyDetector", "KMeansAnomalyDetector",
+    "IsolationForestDetector", "OneClassSVMDetector", "LOFAnomalyDetector",
+    "AutoencoderAnomalyDetector",
+    "run_unsupervised_suite",
+    # Consistent dimensionality reduction
+    "DimReducer", "NoOpReducer", "PCAReducer", "AutoencoderReducer",
+    "PCAReducerConfig", "AEReducerConfig", "make_reducer",
+    # Leakage detection + protocol enforcement
+    "check_train_test_contamination", "check_label_overlap",
+    "assert_no_oversampling_in_test", "assert_normal_only_training",
+    "flag_suspicious_metrics", "PipelineGuard", "assert_split_before_preprocess",
+    # Unified CV evaluator
+    "BaselineSpec", "CVConfig",
+    "cross_validate_baselines",
+    "pairwise_delong_from_predictions",
 ]
