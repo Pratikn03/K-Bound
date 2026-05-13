@@ -365,16 +365,27 @@ def _collect_predictions_craf(
         lbl_batch = labels_np[start:end]
 
         rel_weights = estimator.compute_reliability_weights(feat_batch, mask_batch)
+        gate = estimator.gate_decisions(rel_weights, mask_batch)  # [B] bool
         feat_t = torch.as_tensor(feat_batch, dtype=torch.float32).to(device)
         mask_t = torch.as_tensor(mask_batch, dtype=torch.bool).to(device)
-        craf_t = torch.as_tensor(rel_weights, dtype=torch.float32).to(device)
-        craf_t = craf_t.masked_fill(mask_t, 0.0)
 
         with torch.no_grad():
-            embeds = [enc(feat_t[:, i, :]) for i, enc in enumerate(model.domain_encoders)]
-            domain_embeds = torch.stack(embeds, dim=1)
-            logits, _ = model.fusion(domain_embeds, key_padding_mask=mask_t, confidence_weights=craf_t)
-            probs = torch.sigmoid(logits.squeeze(-1)).cpu().numpy()
+            # Static path — always computed as the fallback
+            logits_static, _, _ = model(feat_t, key_padding_mask=mask_t)
+            probs_static = torch.sigmoid(logits_static.squeeze(-1))
+
+            if gate.any():
+                # Reliability path — only for samples below gate_threshold
+                craf_t = torch.as_tensor(rel_weights, dtype=torch.float32).to(device)
+                craf_t = craf_t.masked_fill(mask_t, 0.0)
+                embeds = [enc(feat_t[:, i, :]) for i, enc in enumerate(model.domain_encoders)]
+                domain_embeds = torch.stack(embeds, dim=1)
+                logits_craf, _ = model.fusion(domain_embeds, key_padding_mask=mask_t, confidence_weights=craf_t)
+                probs_craf = torch.sigmoid(logits_craf.squeeze(-1))
+                gate_t = torch.as_tensor(gate, dtype=torch.bool).to(device)
+                probs = torch.where(gate_t, probs_craf, probs_static).cpu().numpy()
+            else:
+                probs = probs_static.cpu().numpy()
 
         all_probs.append(probs)
         all_labels.append(lbl_batch)
@@ -807,12 +818,14 @@ def evaluate_attention_harness(cfg_path: Path = DEFAULT_CONFIG) -> Dict[str, Dic
             if eval_cfg.get("enable_craf", False) and score_index is not None:
                 try:
                     val_idx = perf_meta["val_idx"]
+                    rel_cfg_h = cfg.get("reliability", {})
                     estimator = ReliabilityEstimator(
                         domain_order=list(domain_order),
                         score_index=score_index,
-                        ece_weight=cfg.get("reliability", {}).get("ece_weight", 0.4),
-                        ks_weight=cfg.get("reliability", {}).get("ks_weight", 0.4),
-                        sharpness_weight=cfg.get("reliability", {}).get("sharpness_weight", 0.2),
+                        ece_weight=rel_cfg_h.get("ece_weight", 0.45),
+                        ks_weight=rel_cfg_h.get("ks_weight", 0.35),
+                        sharpness_weight=rel_cfg_h.get("sharpness_weight", 0.20),
+                        gate_threshold=rel_cfg_h.get("gate_threshold", 0.66),
                     )
                     estimator.fit(features[val_idx], masks[val_idx], labels[val_idx])
                     craf_y_true, craf_y_prob = _collect_predictions_craf(

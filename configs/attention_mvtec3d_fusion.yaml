@@ -1,3 +1,12 @@
+# MVTec 3D-AD — Bagel category smoke-run config
+# -----------------------------------------------------------------------
+# 2 domains — RGB texture (ResNet-18 penultimate features, 512-dim)
+#           + 3D point cloud (depth-map statistics, 16-dim)
+# ~215 normal training samples | ~78 test samples (normal + defect classes)
+# Naturally paired — no label-alignment needed (genuine multimodal)
+# Data prep: src/scripts/prepare_mvtec3d_fusion_benchmark.py
+# Paper: VERA / RGA — smoke-run dataset (not headline result)
+
 data:
   path: experiments/fusion/mvtec3d_fusion_inputs.csv
   format: csv

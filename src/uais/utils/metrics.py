@@ -60,8 +60,27 @@ def _compute_from_pred_and_prob(y_true: np.ndarray, y_pred: np.ndarray, y_prob: 
     scores["recall"] = metrics.recall_score(y_true, y_pred, zero_division=0)
     scores["accuracy"] = metrics.accuracy_score(y_true, y_pred)
     scores["balanced_accuracy"] = metrics.balanced_accuracy_score(y_true, y_pred)
+    try:
+        scores["mcc"] = metrics.matthews_corrcoef(y_true, y_pred)
+    except ValueError:
+        scores["mcc"] = float("nan")
+    try:
+        scores["cohen_kappa"] = metrics.cohen_kappa_score(y_true, y_pred)
+    except ValueError:
+        scores["cohen_kappa"] = float("nan")
     scores["brier"] = brier_score(y_true, y_prob)
     scores["ece"] = expected_calibration_error(y_true, y_prob)
+
+    # Confusion matrix entries — addresses reviewer comment on imbalanced metrics
+    try:
+        tn, fp, fn, tp = metrics.confusion_matrix(y_true, y_pred, labels=[0, 1]).ravel()
+        scores["tp"] = int(tp)
+        scores["fp"] = int(fp)
+        scores["tn"] = int(tn)
+        scores["fn"] = int(fn)
+    except ValueError:
+        scores["tp"] = scores["fp"] = scores["tn"] = scores["fn"] = 0
+
     scores.update(detection_rate_at_fpr(y_true, y_prob, target_fpr=0.01))
     return scores
 
@@ -142,6 +161,110 @@ def reliability_degradation_auc(
     return float(np.trapezoid(roc_auc_values[valid], noise_levels[valid]))
 
 
+# ---------------------------------------------------------------------------
+# Statistical helpers for benchmark reporting (addresses reviewer comments
+# on missing CIs, statistical comparisons, and leakage detection)
+# ---------------------------------------------------------------------------
+
+def bootstrap_metric_ci(
+    y_true: np.ndarray,
+    y_score: np.ndarray,
+    metric_fn,
+    n_resamples: int = 1000,
+    alpha: float = 0.05,
+    random_state: int = 42,
+) -> Dict[str, float]:
+    """Bootstrap a 1-alpha confidence interval for any (y_true, y_score) metric.
+
+    Returns {"mean", "lo", "hi", "std"}.  Use for ROC-AUC, PR-AUC, F1, etc.
+    """
+    rng = np.random.default_rng(random_state)
+    y_true = np.asarray(y_true)
+    y_score = np.asarray(y_score)
+    n = len(y_true)
+    samples = []
+    for _ in range(n_resamples):
+        idx = rng.integers(0, n, size=n)
+        if len(np.unique(y_true[idx])) < 2:
+            continue
+        try:
+            samples.append(float(metric_fn(y_true[idx], y_score[idx])))
+        except Exception:
+            continue
+    if not samples:
+        return {"mean": float("nan"), "lo": float("nan"),
+                "hi": float("nan"), "std": float("nan")}
+    arr = np.asarray(samples)
+    lo, hi = np.percentile(arr, [100 * alpha / 2, 100 * (1 - alpha / 2)])
+    return {
+        "mean": float(arr.mean()),
+        "lo": float(lo),
+        "hi": float(hi),
+        "std": float(arr.std()),
+    }
+
+
+def aggregate_cv_metrics(per_fold: list) -> Dict[str, Dict[str, float]]:
+    """Aggregate per-fold metric dicts into mean/std/95% CI across folds.
+
+    Input : list of dicts, e.g. [{"roc_auc": 0.81, "f1": 0.66, ...}, ...]
+    Output: {"roc_auc": {"mean": ..., "std": ..., "lo": ..., "hi": ...}, ...}
+    """
+    if not per_fold:
+        return {}
+    keys = set().union(*per_fold)
+    out: Dict[str, Dict[str, float]] = {}
+    for k in keys:
+        vals = []
+        for fold in per_fold:
+            v = fold.get(k)
+            if v is None:
+                continue
+            try:
+                fv = float(v)
+            except (TypeError, ValueError):
+                continue
+            if np.isfinite(fv):
+                vals.append(fv)
+        if not vals:
+            out[k] = {"mean": float("nan"), "std": float("nan"),
+                      "lo": float("nan"), "hi": float("nan"), "n": 0}
+            continue
+        arr = np.asarray(vals)
+        mean = float(arr.mean())
+        std = float(arr.std(ddof=1)) if len(arr) > 1 else 0.0
+        # Normal approximation 95% CI for the mean across folds
+        if len(arr) > 1:
+            se = std / np.sqrt(len(arr))
+            lo, hi = mean - 1.96 * se, mean + 1.96 * se
+        else:
+            lo = hi = mean
+        out[k] = {"mean": mean, "std": std, "lo": float(lo), "hi": float(hi), "n": len(arr)}
+    return out
+
+
+def flag_suspicious_performance(metrics_dict: Dict[str, float],
+                                 auc_threshold: float = 0.99,
+                                 f1_threshold: float = 0.99) -> Dict[str, bool]:
+    """Detect suspiciously-perfect metric values that often indicate leakage.
+
+    Addresses reviewer comment: 'Unrealistic AUC = 1.000 ... possible data leakage
+    or contamination'.  Returns a dict of boolean flags for each metric exceeding
+    the leakage-suspicion threshold.
+    """
+    flags = {}
+    for key, thr in (("roc_auc", auc_threshold), ("pr_auc", auc_threshold),
+                      ("f1", f1_threshold), ("accuracy", f1_threshold)):
+        v = metrics_dict.get(key, float("nan"))
+        try:
+            v = float(v)
+        except (TypeError, ValueError):
+            continue
+        if np.isfinite(v) and v >= thr:
+            flags[f"{key}_suspicious"] = True
+    return flags
+
+
 __all__ = [
     "brier_score",
     "expected_calibration_error",
@@ -152,4 +275,7 @@ __all__ = [
     "anomaly_metrics",
     "best_f1_threshold",
     "reliability_degradation_auc",
+    "bootstrap_metric_ci",
+    "aggregate_cv_metrics",
+    "flag_suspicious_performance",
 ]

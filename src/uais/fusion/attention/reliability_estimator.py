@@ -38,11 +38,12 @@ class ReliabilityEstimator:
         self,
         domain_order: List[str],
         score_index: int,
-        ece_weight: float = 0.4,
-        ks_weight: float = 0.4,
-        sharpness_weight: float = 0.2,
+        ece_weight: float = 0.45,
+        ks_weight: float = 0.35,
+        sharpness_weight: float = 0.20,
         n_calibration_bins: int = 10,
         min_samples_for_ks: int = 30,
+        gate_threshold: float = 0.66,
     ) -> None:
         if abs(ece_weight + ks_weight + sharpness_weight - 1.0) > 1e-6:
             raise ValueError("ece_weight + ks_weight + sharpness_weight must sum to 1.0")
@@ -53,6 +54,7 @@ class ReliabilityEstimator:
         self.sharpness_weight = sharpness_weight
         self.n_calibration_bins = n_calibration_bins
         self.min_samples_for_ks = min_samples_for_ks
+        self.gate_threshold = gate_threshold
 
         self._calibrators: Dict[str, IsotonicRegression] = {}
         self._reference_scores: Dict[str, np.ndarray] = {}
@@ -165,6 +167,24 @@ class ReliabilityEstimator:
 
         return weights
 
+    def gate_decisions(self, weights: np.ndarray, masks: np.ndarray) -> np.ndarray:
+        """Return [N] bool: True = use reliability path, False = use static path.
+
+        For each sample, mean reliability is computed over present (non-masked)
+        domains only. If that mean falls below gate_threshold, the reliability
+        path is activated for that sample.  This is the conservative gate from
+        the RGA paper: static attention is the default; reliability weights are
+        only injected when domain quality evidence indicates degradation.
+        """
+        n_present = (~masks).sum(axis=1).astype(np.float32)
+        # weights[masks] == 0.0 by contract of compute_reliability_weights
+        mean_r = np.where(
+            n_present > 0,
+            weights.sum(axis=1) / np.maximum(n_present, 1.0),
+            0.0,
+        )
+        return mean_r < self.gate_threshold  # True → use reliability path
+
     # ------------------------------------------------------------------
     # Accessors
     # ------------------------------------------------------------------
@@ -201,6 +221,7 @@ class ReliabilityEstimator:
             "sharpness_weight": self.sharpness_weight,
             "n_calibration_bins": self.n_calibration_bins,
             "min_samples_for_ks": self.min_samples_for_ks,
+            "gate_threshold": self.gate_threshold,
             "calibrators": self._calibrators,
             "reference_scores": self._reference_scores,
             "domain_ece": self._domain_ece,
@@ -220,6 +241,7 @@ class ReliabilityEstimator:
             sharpness_weight=payload["sharpness_weight"],
             n_calibration_bins=payload["n_calibration_bins"],
             min_samples_for_ks=payload["min_samples_for_ks"],
+            gate_threshold=payload.get("gate_threshold", 0.66),
         )
         obj._calibrators = payload["calibrators"]
         obj._reference_scores = payload["reference_scores"]
@@ -228,4 +250,12 @@ class ReliabilityEstimator:
         return obj
 
 
-__all__ = ["ReliabilityEstimator"]
+# ---------------------------------------------------------------------------
+# Paper-name alias
+# ---------------------------------------------------------------------------
+# The paper (VERA, 2026) calls this component "RGA" (Reliability-Gated Attention).
+# The code uses the internal project name "CRAF" (Calibration-aware Reliability-
+# Adaptive Fusion).  Both names refer to the same class.
+RGAReliabilityEstimator = ReliabilityEstimator
+
+__all__ = ["ReliabilityEstimator", "RGAReliabilityEstimator"]
