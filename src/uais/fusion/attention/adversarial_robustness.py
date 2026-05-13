@@ -3,14 +3,25 @@
 Applies structured score perturbations to simulate worst-case deployment
 conditions: suppressed signals, amplified signals, calibration drift, and
 Gaussian noise. All methods return copies — inputs are never mutated.
+
+Also includes ``pgd_attack_subset``: a gradient-aligned PGD attack over an
+arbitrary subset of domains (closes reviewer gap re: stronger threat model
+than zero/max/Gaussian).
 """
 
 from __future__ import annotations
 
 from enum import Enum
-from typing import Dict, List, Optional, Tuple
+from typing import Dict, List, Optional, Sequence, Tuple
 
 import numpy as np
+
+try:
+    import torch
+    _HAS_TORCH = True
+except ImportError:  # torch is an installed dep; tolerate import failure for type-only
+    torch = None  # type: ignore
+    _HAS_TORCH = False
 
 
 class AdversarialAttackType(str, Enum):
@@ -172,6 +183,101 @@ class AdversarialPerturbationEngine:
             )
             for sigma in sigma_values
         }
+
+    def pgd_attack_subset(
+        self,
+        model,
+        features: np.ndarray,
+        masks: np.ndarray,
+        labels: np.ndarray,
+        target_domains: Sequence[str],
+        epsilon: float = 0.1,
+        step_size: float = 0.02,
+        n_steps: int = 10,
+        device=None,
+    ) -> Tuple[np.ndarray, np.ndarray]:
+        """Gradient-aligned PGD attack over a subset of domains.
+
+        Perturbs only the score channel for the named domain subset, bounded
+        in an L_inf ball of radius ``epsilon`` around the original scores, by
+        following the sign of the loss gradient w.r.t. the score input. This
+        is the realistic threat model reviewers ask for: an attacker who has
+        compromised a strict subset of domain experts (not all of them).
+
+        Parameters
+        ----------
+        model : nn.Module with forward(features, key_padding_mask=...) →
+                (logits, *, *) and supporting gradient flow through features.
+        features : [N, D, F] float numpy
+        masks    : [N, D] bool numpy (unchanged)
+        labels   : [N] {0, 1} numpy — ground truth (used to compute loss
+                   direction; for untargeted attacks we always *increase* loss).
+        target_domains : iterable of domain names in ``self.domain_order``.
+        epsilon : L_inf perturbation budget on the score channel.
+        step_size : PGD step magnitude (in score-channel units).
+        n_steps : number of PGD iterations.
+        device : torch.device — defaults to model's parameter device.
+
+        Returns
+        -------
+        (perturbed_features, masks) : same shapes as input.
+
+        Notes
+        -----
+        Only the score channel (``self.score_index``) of each target domain is
+        perturbed; other feature channels (embeddings, confidence) are left
+        untouched. Perturbation is masked to available (non-missing) entries.
+        """
+        if not _HAS_TORCH:
+            raise RuntimeError("torch is required for pgd_attack_subset.")
+        if device is None:
+            device = next(model.parameters()).device
+        target_idxs = [self.domain_order.index(d) for d in target_domains]
+        if not target_idxs:
+            return features.copy().astype(np.float32), masks
+
+        feat_t = torch.tensor(features, dtype=torch.float32, device=device)
+        mask_t = torch.tensor(masks, dtype=torch.bool, device=device)
+        labels_t = torch.tensor(labels.astype(np.float32), device=device)
+
+        orig_scores = feat_t[:, :, self.score_index].clone()
+        # Random init within epsilon-ball (skipped for determinism in test)
+        delta = torch.zeros_like(orig_scores, requires_grad=False)
+        # Only allow perturbation on target domains × available entries
+        edit_mask = torch.zeros_like(orig_scores, dtype=torch.bool)
+        for d in target_idxs:
+            edit_mask[:, d] = ~mask_t[:, d]
+
+        was_training = model.training
+        model.eval()
+        try:
+            for _ in range(n_steps):
+                delta.requires_grad_(True)
+                perturbed = feat_t.clone()
+                new_scores = orig_scores + delta * edit_mask.float()
+                new_scores = new_scores.clamp(0.0, 1.0)
+                perturbed[:, :, self.score_index] = new_scores
+                out = model(perturbed, key_padding_mask=mask_t)
+                logits = out[0] if isinstance(out, tuple) else out
+                logits = logits.squeeze(-1)
+                # Untargeted: maximize BCE loss.
+                loss = torch.nn.functional.binary_cross_entropy_with_logits(
+                    logits, labels_t, reduction="mean"
+                )
+                grad = torch.autograd.grad(loss, delta, retain_graph=False)[0]
+                with torch.no_grad():
+                    delta = delta + step_size * torch.sign(grad) * edit_mask.float()
+                    # Project to L_inf ball
+                    delta = delta.clamp(-epsilon, epsilon)
+        finally:
+            if was_training:
+                model.train()
+
+        with torch.no_grad():
+            adv_scores = (orig_scores + delta * edit_mask.float()).clamp(0.0, 1.0)
+            perturbed = feat_t.clone()
+            perturbed[:, :, self.score_index] = adv_scores
+        return perturbed.detach().cpu().numpy().astype(np.float32), masks
 
 
 __all__ = ["AdversarialAttackType", "AdversarialPerturbationEngine"]

@@ -332,6 +332,7 @@ def _predict_craf_with_stats(
     batch_size: int = 256,
     clean_gate_threshold: float = 0.66,
     per_sample_gating: bool = False,
+    learned_gate: "Optional[LearnedReliabilityGate]" = None,
 ) -> Tuple[np.ndarray, Dict[str, float | int]]:
     """Predict with reliability-gated attention weights.
 
@@ -366,17 +367,21 @@ def _predict_craf_with_stats(
             reliability_numer += float(gate_stats["mean_reliability"]) * batch_n
             reliability_denom += batch_n
 
-        if per_sample_gating:
-            # Per-sample decisions using the per-call threshold (so τ-sweep works).
-            # Mirror estimator.gate_decisions logic but use clean_gate_threshold,
-            # not the estimator's construction-time gate_threshold.
-            n_present = (~mask_np).sum(axis=1).astype(np.float32)
-            mean_r_per_sample = np.where(
-                n_present > 0,
-                craf_w.sum(axis=1) / np.maximum(n_present, 1.0),
-                0.0,
-            )
-            gate_per_sample = mean_r_per_sample < clean_gate_threshold  # [B] bool
+        if per_sample_gating or learned_gate is not None:
+            if learned_gate is not None:
+                # Learned gate overrides the heuristic threshold.
+                gate_per_sample = learned_gate.decide(craf_w, mask_np)
+            else:
+                # Per-sample decisions using the per-call threshold (so τ-sweep works).
+                # Mirror estimator.gate_decisions logic but use clean_gate_threshold,
+                # not the estimator's construction-time gate_threshold.
+                n_present = (~mask_np).sum(axis=1).astype(np.float32)
+                mean_r_per_sample = np.where(
+                    n_present > 0,
+                    craf_w.sum(axis=1) / np.maximum(n_present, 1.0),
+                    0.0,
+                )
+                gate_per_sample = mean_r_per_sample < clean_gate_threshold  # [B] bool
             n_adapted = int(gate_per_sample.sum())
             if n_adapted == 0:
                 logits, _, _ = model(feat_t, key_padding_mask=mask_t)
@@ -418,7 +423,8 @@ def _predict_craf_with_stats(
         "adapted_batches": int(adapted_batches),
         "n_batches": int(math.ceil(n / batch_size)) if batch_size > 0 else 0,
         "mean_reliability": float(reliability_numer / reliability_denom) if reliability_denom else float("nan"),
-        "per_sample_gating": bool(per_sample_gating),
+        "per_sample_gating": bool(per_sample_gating or learned_gate is not None),
+        "learned_gate": bool(learned_gate is not None),
     }
     return np.concatenate(probs), stats
 

@@ -582,6 +582,77 @@ def plot_adversarial_delta(data: dict[str, Any], out_dir: Path) -> None:
     plt.close(fig)
 
 
+def plot_failure_cases(data: dict[str, Any], out_dir: Path) -> None:
+    """Scatter of static-vs-RGA per-sample probabilities for representative cases.
+
+    Highlights disagreements: samples where one method is on the correct side
+    of 0.5 and the other isn't. Reviewer-requested figure (manuscript review
+    v2 §3.3) — counters the "RGA is mechanistically identical to static"
+    framing by visualizing concrete per-sample wins and losses.
+    """
+    cases = data.get("failure_case_analysis", {}).get("representative_cases", [])
+    if not cases:
+        return
+
+    rows = []
+    for case in cases:
+        s = case.get("static_prob")
+        c = case.get("craf_prob")
+        y = case.get("label")
+        if s is None or c is None or y is None:
+            continue
+        rows.append({
+            "static": float(s),
+            "craf": float(c),
+            "label": int(y),
+            "case_type": case.get("case_type", "?"),
+        })
+    if not rows:
+        return
+
+    fig, ax = plt.subplots(figsize=(4.6, 4.6))
+    # Reference diagonal: where both methods agree
+    ax.plot([0, 1], [0, 1], "--", color="#888888", linewidth=0.9, label="Agreement (y = x)")
+    # Decision-boundary cross-hairs at 0.5
+    ax.axhline(0.5, color="#cccccc", linewidth=0.6)
+    ax.axvline(0.5, color="#cccccc", linewidth=0.6)
+
+    # Plot positives and negatives separately
+    pos = [r for r in rows if r["label"] == 1]
+    neg = [r for r in rows if r["label"] == 0]
+    if pos:
+        ax.scatter(
+            [r["static"] for r in pos],
+            [r["craf"] for r in pos],
+            color="#c46a32",
+            edgecolor="#7d3f12",
+            s=58,
+            label="Anomaly (y=1)",
+            zorder=3,
+        )
+    if neg:
+        ax.scatter(
+            [r["static"] for r in neg],
+            [r["craf"] for r in neg],
+            color="#2f6f73",
+            edgecolor="#143033",
+            s=58,
+            marker="s",
+            label="Normal (y=0)",
+            zorder=3,
+        )
+
+    ax.set_xlim(0, 1)
+    ax.set_ylim(0, 1)
+    ax.set_xlabel("Static attention probability")
+    ax.set_ylabel(f"{METHOD_NAME} probability")
+    ax.grid(alpha=0.18)
+    ax.legend(loc="lower right", fontsize=8, framealpha=0.9)
+    fig.tight_layout()
+    _save(fig, out_dir / "rga_failure_cases.png")
+    plt.close(fig)
+
+
 def plot_system_architecture(out_dir: Path) -> None:
     fig, ax = plt.subplots(figsize=(8.4, 4.6))
     ax.set_axis_off()
@@ -668,6 +739,7 @@ def main() -> None:
     plot_calibration(data, args.figures_dir)
     plot_cda_impacts(data, args.figures_dir)
     plot_adversarial_delta(data, args.figures_dir)
+    plot_failure_cases(data, args.figures_dir)
     plot_system_architecture(args.figures_dir)
 
     print(f"Wrote figures to {args.figures_dir}")

@@ -12,6 +12,8 @@
 \usepackage{xcolor}
 \usepackage{url}
 \usepackage{float}
+\usepackage{algorithm}
+\usepackage{algpseudocode}
 
 \hypersetup{
   colorlinks=true,
@@ -377,26 +379,33 @@ A positive $\Delta_{i,d}$ indicates that domain $d$ increased anomaly risk. A
 negative value indicates that domain $d$ reduced risk.
 
 \subsubsection{Algorithm Summary}
-The full inference procedure is summarized in Table~\ref{tab:algorithm}.
+The full inference procedure is given in Algorithm~\ref{alg:rga}. Steps 1--3
+are deterministic feature operations; steps 4--6 are the reliability-gated
+switch. Per-sample gating is the default (mirroring the per-sample
+$r_{i,d}$ formalism of the System and Method section); a batch-level
+fallback is available for reproducibility against earlier paper numbers.
 
-\begin{table}[t]
-\centering
-\caption{\method{} inference procedure.}
-\label{tab:algorithm}
-\footnotesize
-\begin{tabular}{L{0.08\linewidth}L{0.80\linewidth}}
-\toprule
-\textbf{Step} & \textbf{Operation} \\
-\midrule
-1 & Encode all available domain vectors and construct the missing-domain mask. \\
-2 & Estimate domain reliability from validation ECE, KS score-drift evidence, and score sharpness. \\
-3 & Compute mean reliability over present domains. \\
-4 & If mean reliability is above threshold, use static attention inference. \\
-5 & Otherwise inject reliability weights into the attention fusion block. \\
-6 & Produce risk score and optional counterfactual domain attributions. \\
-\bottomrule
-\end{tabular}
-\end{table}
+\begin{algorithm}[t]
+\caption{\method{} inference}
+\label{alg:rga}
+\begin{algorithmic}[1]
+\Require Inputs $x_{i,1\ldots D}$ and mask $M_i \in \{0,1\}^D$ for sample $i$
+\Require Fitted attention model $f_{\text{att}}$ with encoders $\{g_d\}$
+\Require Fitted reliability estimator producing per-sample weights $r_{i,d}$
+\Require Gate threshold $\tau \in (0,1)$, default $\tau = 0.66$
+\Ensure Risk score $\hat p_i \in [0,1]$
+\State $h_{i,d} \gets g_d(x_{i,d}) + e_d + p_d$ for each $d$ with $M_{i,d} = 0$
+\State $r_{i,d} \gets \alpha(1-\mathrm{ECE}_d) + \beta\, p_{\mathrm{KS},d}(x_{i,d}) + \gamma\, S_{i,d}$
+\State $\bar r_i \gets \frac{1}{|D_i^{\text{obs}}|} \sum_{d: M_{i,d}=0} r_{i,d}$
+\If{$\bar r_i \geq \tau$}
+    \State $\hat p_i \gets \sigma\bigl(f_{\text{att}}(h_{i,\cdot}; M_i)\bigr)$ \Comment{static path}
+\Else
+    \State $\hat p_i \gets \sigma\bigl(f_{\text{att}}(h_{i,\cdot}; M_i, w_{i,\cdot} {=} r_{i,\cdot} \odot \neg M_i)\bigr)$
+    \State \hspace{1em} \Comment{reliability-injected fusion}
+\EndIf
+\State \Return $\hat p_i$ and (optional) counterfactual attributions $\{\Delta_{i,d}\}_{d \in D_i^{\text{obs}}}$
+\end{algorithmic}
+\end{algorithm}
 
 \section{Benchmark Construction}
 \subsection{Naturally Paired MVTec 3D-AD Path}

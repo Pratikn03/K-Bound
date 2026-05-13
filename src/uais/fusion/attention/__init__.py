@@ -65,6 +65,10 @@ from uais.fusion.attention.cv_evaluator import (
     cross_validate_baselines,
     pairwise_delong_from_predictions,
 )
+from uais.fusion.attention.learned_gate import (
+    LearnedReliabilityGate,
+    LearnedGateConfig,
+)
 
 __all__ = [
     "AttentionFusionModel",
@@ -107,4 +111,6 @@ __all__ = [
     "BaselineSpec", "CVConfig",
     "cross_validate_baselines",
     "pairwise_delong_from_predictions",
+    # Learned gate (alternative to heuristic τ)
+    "LearnedReliabilityGate", "LearnedGateConfig",
 ]

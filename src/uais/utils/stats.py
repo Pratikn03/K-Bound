@@ -100,4 +100,66 @@ def wilcoxon_test(a: np.ndarray, b: np.ndarray) -> float:
     return float(p)
 
 
-__all__ = ["bootstrap_ci", "paired_ttest", "wilcoxon_test", "delong_roc_test"]
+def holm_bonferroni(pvalues: np.ndarray, alpha: float = 0.05) -> dict:
+    """Holm-Bonferroni step-down multiple-comparison correction.
+
+    Given an array of raw p-values from ``m`` hypothesis tests, returns the
+    adjusted p-values and per-test reject decisions at family-wise error rate
+    ``alpha``. Holm's method is uniformly more powerful than Bonferroni while
+    keeping FWER ≤ α.
+
+    Parameters
+    ----------
+    pvalues : array-like of floats in [0, 1] (may include NaN — those tests
+              are treated as missing and never rejected).
+    alpha   : family-wise α (default 0.05).
+
+    Returns
+    -------
+    dict with keys:
+      - "p_adjusted": [m] adjusted p-values, capped at 1.0, in input order
+      - "reject":     [m] bool — True if H0_i is rejected at FWER ≤ α
+      - "n_tests":    int — number of non-NaN tests in the family
+    """
+    p = np.asarray(pvalues, dtype=float).ravel()
+    m_total = len(p)
+    valid = np.isfinite(p)
+    m = int(valid.sum())
+    p_adj = np.full(m_total, np.nan, dtype=float)
+    reject = np.zeros(m_total, dtype=bool)
+    if m == 0:
+        return {"p_adjusted": p_adj, "reject": reject, "n_tests": 0}
+
+    valid_idxs = np.where(valid)[0]
+    p_valid = p[valid_idxs]
+    order = np.argsort(p_valid)
+    sorted_p = p_valid[order]
+
+    # Holm: adjusted_p_(k) = max_{j <= k} (m - j + 1) * p_(j), capped at 1.
+    multipliers = np.arange(m, 0, -1, dtype=float)
+    raw_scaled = sorted_p * multipliers
+    # Enforce monotonic-non-decreasing (running max)
+    monotone = np.maximum.accumulate(raw_scaled)
+    monotone_capped = np.minimum(monotone, 1.0)
+
+    # Map back to original positions
+    sorted_p_adj = monotone_capped
+    sorted_reject = sorted_p_adj <= alpha
+
+    # Invert the sort to put values back in original ordering
+    inverse_order = np.argsort(order)
+    p_valid_adj = sorted_p_adj[inverse_order]
+    p_valid_reject = sorted_reject[inverse_order]
+
+    p_adj[valid_idxs] = p_valid_adj
+    reject[valid_idxs] = p_valid_reject
+    return {"p_adjusted": p_adj, "reject": reject, "n_tests": m}
+
+
+__all__ = [
+    "bootstrap_ci",
+    "paired_ttest",
+    "wilcoxon_test",
+    "delong_roc_test",
+    "holm_bonferroni",
+]
