@@ -1,6 +1,10 @@
 from __future__ import annotations
 
 import numpy as np
+import torch
+
+from uais.fusion.attention.cross_modal_attention import AttentionFusionModel
+from uais.fusion.attention.reliability_estimator import ReliabilityEstimator
 
 
 def test_gate_stats_reports_sample_weighted_adaptation():
@@ -79,3 +83,109 @@ def test_tau_sweep_rows_aggregate_with_gate_metrics():
     assert np.isclose(clean["craf_auc"], 0.835)
     assert np.isclose(clean["delta_auc"], 0.015)
     assert np.isclose(clean["adaptation_rate"], 0.375)
+
+
+def _make_rga_fixture(seed: int = 42):
+    """Tiny fitted model + estimator for gating-mode tests."""
+    from src.scripts.run_breakthrough_experiment import _predict_craf_with_stats
+
+    rng = np.random.default_rng(seed)
+    domain_order = ["a", "b"]
+    score_index = 0
+    n_val, n_test, D, F = 80, 32, 2, 2
+
+    val_feat = rng.normal(size=(n_val, D, F)).astype(np.float32)
+    val_feat[..., score_index] = np.clip(val_feat[..., score_index] * 0.2 + 0.5, 0.05, 0.95)
+    val_mask = np.zeros((n_val, D), dtype=bool)
+    val_labels = (val_feat[:, score_index, score_index] > 0.5).astype(np.float32)
+
+    test_feat = rng.normal(size=(n_test, D, F)).astype(np.float32)
+    test_feat[..., score_index] = np.clip(test_feat[..., score_index] * 0.2 + 0.5, 0.05, 0.95)
+    test_mask = np.zeros((n_test, D), dtype=bool)
+
+    model = AttentionFusionModel(
+        num_domains=D,
+        input_dim=F,
+        embed_dim=8,
+        num_heads=2,
+        num_layers=1,
+        dropout=0.0,
+        use_confidence=False,
+        use_input_confidence=False,
+    )
+    model.eval()
+
+    estimator = ReliabilityEstimator(
+        domain_order=domain_order,
+        score_index=score_index,
+        ece_weight=0.45,
+        ks_weight=0.35,
+        sharpness_weight=0.20,
+        gate_threshold=0.66,
+    )
+    estimator.fit(val_feat, val_mask, val_labels)
+    return model, estimator, test_feat, test_mask, _predict_craf_with_stats
+
+
+def test_per_sample_gating_high_threshold_matches_full_reliability_path():
+    """At τ=1.01 (impossible to satisfy), every sample is gated regardless of mode."""
+    model, estimator, test_feat, test_mask, predict = _make_rga_fixture()
+    probs_batch, stats_batch = predict(
+        model, estimator, test_feat, test_mask, torch.device("cpu"),
+        clean_gate_threshold=1.01, per_sample_gating=False,
+    )
+    probs_persample, stats_persample = predict(
+        model, estimator, test_feat, test_mask, torch.device("cpu"),
+        clean_gate_threshold=1.01, per_sample_gating=True,
+    )
+    # All samples adapted in both modes
+    assert stats_batch["adaptation_rate"] == 1.0
+    assert stats_persample["adaptation_rate"] == 1.0
+    # Outputs identical when every sample is below threshold
+    np.testing.assert_allclose(probs_batch, probs_persample, atol=1e-6)
+
+
+def test_per_sample_gating_low_threshold_matches_static_path():
+    """At τ=0.0, no sample is below threshold, both modes return static path."""
+    model, estimator, test_feat, test_mask, predict = _make_rga_fixture()
+    probs_batch, stats_batch = predict(
+        model, estimator, test_feat, test_mask, torch.device("cpu"),
+        clean_gate_threshold=0.0, per_sample_gating=False,
+    )
+    probs_persample, stats_persample = predict(
+        model, estimator, test_feat, test_mask, torch.device("cpu"),
+        clean_gate_threshold=0.0, per_sample_gating=True,
+    )
+    assert stats_batch["adaptation_rate"] == 0.0
+    assert stats_persample["adaptation_rate"] == 0.0
+    np.testing.assert_allclose(probs_batch, probs_persample, atol=1e-6)
+
+
+def test_per_sample_gating_reports_flag_in_stats():
+    model, estimator, test_feat, test_mask, predict = _make_rga_fixture()
+    _, stats = predict(
+        model, estimator, test_feat, test_mask, torch.device("cpu"),
+        per_sample_gating=True,
+    )
+    assert stats["per_sample_gating"] is True
+    _, stats2 = predict(
+        model, estimator, test_feat, test_mask, torch.device("cpu"),
+        per_sample_gating=False,
+    )
+    assert stats2["per_sample_gating"] is False
+
+
+def test_per_sample_gating_adapts_only_below_threshold_samples():
+    """With a mid-range threshold, per-sample mode should gate only some samples."""
+    model, estimator, test_feat, test_mask, predict = _make_rga_fixture()
+    # Choose τ so the gate splits the batch
+    craf_w = estimator.compute_reliability_weights(test_feat, test_mask)
+    mean_r = craf_w.mean(axis=1)
+    tau = float(np.median(mean_r))  # half above, half below
+
+    _, stats = predict(
+        model, estimator, test_feat, test_mask, torch.device("cpu"),
+        clean_gate_threshold=tau, per_sample_gating=True,
+    )
+    expected_rate = float((mean_r < tau).mean())
+    assert abs(stats["adaptation_rate"] - expected_rate) <= 1.0 / len(mean_r)

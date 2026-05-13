@@ -294,6 +294,7 @@ def _predict_craf(
     device: torch.device,
     batch_size: int = 256,
     clean_gate_threshold: float = 0.66,
+    per_sample_gating: bool = False,
 ) -> np.ndarray:
     probs, _ = _predict_craf_with_stats(
         model,
@@ -303,6 +304,7 @@ def _predict_craf(
         device,
         batch_size=batch_size,
         clean_gate_threshold=clean_gate_threshold,
+        per_sample_gating=per_sample_gating,
     )
     return probs
 
@@ -329,12 +331,20 @@ def _predict_craf_with_stats(
     device: torch.device,
     batch_size: int = 256,
     clean_gate_threshold: float = 0.66,
+    per_sample_gating: bool = False,
 ) -> Tuple[np.ndarray, Dict[str, float | int]]:
     """Predict with reliability-gated attention weights.
 
-    If the batch-level reliability signal is high, the method preserves the learned
-    static attention path. When reliability drops, it injects reliability weights
-    into the fusion layer to down-weight shifted domains.
+    Two gating modes:
+      - Batch-level (``per_sample_gating=False``, default): if the batch mean
+        reliability over present domains is below ``clean_gate_threshold``, the
+        whole batch is routed through the reliability path. Preserves
+        bit-exact reproducibility for paper numbers generated to date.
+      - Per-sample (``per_sample_gating=True``): for each sample independently,
+        the mean reliability over its present domains is compared to the gate
+        threshold (via ``estimator.gate_decisions``); samples above threshold
+        keep the static path, samples below get the reliability-injected path.
+        Matches the per-sample r_{i,d} formalism stated in the VERA paper.
     """
     model.eval()
     probs = []
@@ -355,6 +365,42 @@ def _predict_craf_with_stats(
         if np.isfinite(float(gate_stats["mean_reliability"])):
             reliability_numer += float(gate_stats["mean_reliability"]) * batch_n
             reliability_denom += batch_n
+
+        if per_sample_gating:
+            # Per-sample decisions using the per-call threshold (so τ-sweep works).
+            # Mirror estimator.gate_decisions logic but use clean_gate_threshold,
+            # not the estimator's construction-time gate_threshold.
+            n_present = (~mask_np).sum(axis=1).astype(np.float32)
+            mean_r_per_sample = np.where(
+                n_present > 0,
+                craf_w.sum(axis=1) / np.maximum(n_present, 1.0),
+                0.0,
+            )
+            gate_per_sample = mean_r_per_sample < clean_gate_threshold  # [B] bool
+            n_adapted = int(gate_per_sample.sum())
+            if n_adapted == 0:
+                logits, _, _ = model(feat_t, key_padding_mask=mask_t)
+                probs.append(torch.sigmoid(logits.squeeze(-1)).cpu().numpy())
+                continue
+            # Both paths needed when at least one sample is gated.
+            logits_static, _, _ = model(feat_t, key_padding_mask=mask_t)
+            probs_static = torch.sigmoid(logits_static.squeeze(-1))
+            craf_t = torch.tensor(craf_w, dtype=torch.float32, device=device)
+            craf_t = craf_t.masked_fill(mask_t, 0.0)
+            embeds = [enc(feat_t[:, i, :]) for i, enc in enumerate(model.domain_encoders)]
+            domain_embeds = torch.stack(embeds, dim=1)
+            logits_craf, _ = model.fusion(
+                domain_embeds, key_padding_mask=mask_t, confidence_weights=craf_t
+            )
+            probs_craf = torch.sigmoid(logits_craf.squeeze(-1))
+            gate_t = torch.tensor(gate_per_sample, dtype=torch.bool, device=device)
+            batch_probs = torch.where(gate_t, probs_craf, probs_static)
+            probs.append(batch_probs.cpu().numpy())
+            adapted_samples += n_adapted
+            adapted_batches += 1
+            continue
+
+        # Batch-level mode (default — preserves existing paper numbers)
         if not gate_stats["adapted"]:
             logits, _, _ = model(feat_t, key_padding_mask=mask_t)
             probs.append(torch.sigmoid(logits.squeeze(-1)).cpu().numpy())
@@ -372,6 +418,7 @@ def _predict_craf_with_stats(
         "adapted_batches": int(adapted_batches),
         "n_batches": int(math.ceil(n / batch_size)) if batch_size > 0 else 0,
         "mean_reliability": float(reliability_numer / reliability_denom) if reliability_denom else float("nan"),
+        "per_sample_gating": bool(per_sample_gating),
     }
     return np.concatenate(probs), stats
 
@@ -471,6 +518,7 @@ def _evaluate_drift(
     noise_levels: List[float],
     clean_gate_threshold: float,
     seed: int,
+    per_sample_gating: bool = False,
 ) -> tuple[list[dict], list[dict]]:
     engine = AdversarialPerturbationEngine(domain_order, score_index, random_seed=seed)
     curve_rows: list[dict] = []
@@ -489,6 +537,7 @@ def _evaluate_drift(
                 test_mask,
                 device,
                 clean_gate_threshold=clean_gate_threshold,
+                per_sample_gating=per_sample_gating,
             )
             s_m = classification_metrics(test_labels, s_probs)
             c_m = classification_metrics(test_labels, c_probs)
@@ -536,6 +585,7 @@ def _evaluate_adversarial(
     sigma: float,
     clean_gate_threshold: float,
     seed: int,
+    per_sample_gating: bool = False,
 ) -> list[dict]:
     engine = AdversarialPerturbationEngine(domain_order, score_index, random_seed=seed)
     rows: list[dict] = []
@@ -560,6 +610,7 @@ def _evaluate_adversarial(
                 test_mask,
                 device,
                 clean_gate_threshold=clean_gate_threshold,
+                per_sample_gating=per_sample_gating,
             )
             s_m = classification_metrics(test_labels, s_probs)
             c_m = classification_metrics(test_labels, c_probs)
@@ -590,6 +641,7 @@ def _evaluate_missing(
     dropout_probs: List[float],
     clean_gate_threshold: float,
     seed: int,
+    per_sample_gating: bool = False,
 ) -> list[dict]:
     rows: list[dict] = []
     for p_drop in dropout_probs:
@@ -605,6 +657,7 @@ def _evaluate_missing(
             drop_mask,
             device,
             clean_gate_threshold=clean_gate_threshold,
+            per_sample_gating=per_sample_gating,
         )
         s_m = classification_metrics(test_labels, s_probs)
         c_m = classification_metrics(test_labels, c_probs)
@@ -682,6 +735,7 @@ def _evaluate_tau_sweep(
     attack_names: List[str],
     sigma: float,
     seed: int,
+    per_sample_gating: bool = False,
 ) -> list[dict]:
     rows: list[dict] = []
     if not thresholds:
@@ -709,6 +763,7 @@ def _evaluate_tau_sweep(
                 condition_mask,
                 device,
                 clean_gate_threshold=float(threshold),
+                per_sample_gating=per_sample_gating,
             )
             craf_m = classification_metrics(test_labels, craf_probs)
             rows.append(
@@ -768,6 +823,7 @@ def _evaluate_component_ablation(
     sigma: float,
     clean_gate_threshold: float,
     seed: int,
+    per_sample_gating: bool = False,
 ) -> list[dict]:
     rows: list[dict] = []
     specs = _component_ablation_specs(variant_names)
@@ -810,6 +866,7 @@ def _evaluate_component_ablation(
                 condition_mask,
                 device,
                 clean_gate_threshold=threshold,
+                per_sample_gating=per_sample_gating,
             )
             craf_m = classification_metrics(test_labels, craf_probs)
             rows.append(
@@ -1081,6 +1138,9 @@ def _run_experiment_arrays(
     seeds = [seed_override] if seed_override is not None else eval_cfg.get("seeds", [42])
     device = device or torch.device("cuda" if torch.cuda.is_available() else "cpu")
     clean_gate_threshold = float(rel_cfg.get("clean_gate_threshold", 0.66))
+    # Per-sample RGA gating (paper formalism r_{i,d}). Default False preserves
+    # batch-level gating used in current paper results.
+    per_sample_gating = bool(rel_cfg.get("per_sample_gating", False))
     n_bootstrap = int(eval_cfg.get("n_bootstrap", 200))
     bootstrap_alpha = float(eval_cfg.get("bootstrap_alpha", 0.05))
     attack_names = craf_cfg.get("adversarial_attacks", ["zero_attack", "max_attack", "gaussian_noise"])
@@ -1133,6 +1193,7 @@ def _run_experiment_arrays(
             test_mask,
             device,
             clean_gate_threshold=clean_gate_threshold,
+            per_sample_gating=per_sample_gating,
         )
 
         static_metrics = classification_metrics(test_labels, static_probs)
@@ -1178,6 +1239,7 @@ def _run_experiment_arrays(
             craf_cfg.get("drift_noise_levels", [0.0, 0.05, 0.1, 0.2, 0.3]),
             clean_gate_threshold,
             actual_seed,
+            per_sample_gating=per_sample_gating,
         )
         per_seed_drift_rows.extend(drift_rows)
         per_seed_degradation_rows.extend(degradation_rows)
@@ -1195,6 +1257,7 @@ def _run_experiment_arrays(
                 adversarial_sigma,
                 clean_gate_threshold,
                 actual_seed,
+                per_sample_gating=per_sample_gating,
             )
         )
         per_seed_tau_sweep_rows.extend(
@@ -1211,6 +1274,7 @@ def _run_experiment_arrays(
                 attack_names,
                 adversarial_sigma,
                 actual_seed,
+                per_sample_gating=per_sample_gating,
             )
         )
         per_seed_component_ablation_rows.extend(
@@ -1231,6 +1295,7 @@ def _run_experiment_arrays(
                 adversarial_sigma,
                 clean_gate_threshold,
                 actual_seed,
+                per_sample_gating=per_sample_gating,
             )
         )
         per_seed_missing_rows.extend(
@@ -1244,6 +1309,7 @@ def _run_experiment_arrays(
                 eval_cfg.get("domain_dropout_probs_extended", [0.0, 0.1, 0.2, 0.3, 0.5]),
                 clean_gate_threshold,
                 actual_seed,
+                per_sample_gating=per_sample_gating,
             )
         )
         per_seed_calibration_rows.append(

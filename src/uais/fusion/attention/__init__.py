@@ -35,8 +35,8 @@ from uais.fusion.attention.baselines import (
     LateFusionEnsemble,
     RandomForestFusion,
     ConfidenceWeightedMean,
-    TentAdapter,
-    PseudoLabelTTTAdapter,
+    TentScoreAdapter,
+    TTTPseudoLabelAdapter,
     run_baseline_suite,
 )
 from uais.fusion.attention.unsupervised_baselines import (
@@ -86,8 +86,8 @@ __all__ = [
     "LateFusionEnsemble",
     "RandomForestFusion",
     "ConfidenceWeightedMean",
-    "TentAdapter",
-    "PseudoLabelTTTAdapter",
+    "TentScoreAdapter",
+    "TTTPseudoLabelAdapter",
     "run_baseline_suite",
     # Unsupervised baselines — normal-only training protocol
     "BGMMConfig", "GMMConfig", "KMeansConfig", "IForestConfig",
