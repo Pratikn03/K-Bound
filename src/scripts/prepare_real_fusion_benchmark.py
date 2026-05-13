@@ -80,12 +80,14 @@ def _safe_pr_auc(y_true: np.ndarray, y_score: np.ndarray) -> float:
 
 
 def _tabular_pipeline(df: pd.DataFrame, feature_columns: Sequence[str], seed: int) -> Pipeline:
+    # Treat anything not numeric as categorical. is_object_dtype misses the
+    # newer pandas StringDtype (pd.api.types.is_string_dtype returns True for
+    # both object-strings and StringDtype); the safest invariant is "not
+    # numeric → encode it categorically".
     categorical = [
         col
         for col in feature_columns
-        if pd.api.types.is_object_dtype(df[col])
-        or pd.api.types.is_bool_dtype(df[col])
-        or isinstance(df[col].dtype, pd.CategoricalDtype)
+        if not pd.api.types.is_numeric_dtype(df[col])
     ]
     numeric = [col for col in feature_columns if col not in categorical]
     transformers = []
