@@ -241,18 +241,29 @@ class LateFusionEnsemble:
             self._domain_models[di] = lr
             self._domain_scalers[di] = scaler
 
-        # Train meta-learner on domain predictions
+        # Train meta-learner on domain predictions. If the training fold only
+        # contains one label class (e.g. MVTec 3D-AD's official train split
+        # which is normal-only by design), logistic regression can't fit; we
+        # remember the degenerate label and fall back to a constant predictor
+        # at inference time rather than crashing the whole experiment.
+        if len(np.unique(labels)) < 2:
+            self._meta = None
+            self._degenerate_prediction = float(np.mean(labels)) if len(labels) else 0.5
+            return self
         self._meta = LogisticRegression(
             C=self.meta_C, class_weight="balanced", max_iter=500,
             random_state=self.random_seed,
         )
         self._meta.fit(domain_preds, labels)
+        self._degenerate_prediction = None
         return self
 
     def predict_proba(self, features: np.ndarray, masks: np.ndarray) -> np.ndarray:
-        if self._meta is None:
-            raise RuntimeError("Call fit() first.")
         n, d, _ = features.shape
+        if self._meta is None:
+            if not hasattr(self, "_degenerate_prediction") or self._degenerate_prediction is None:
+                raise RuntimeError("Call fit() first.")
+            return np.full(n, float(self._degenerate_prediction), dtype=np.float32)
         domain_preds = np.full((n, d), 0.5, dtype=np.float32)
         for di, lr in self._domain_models.items():
             available = ~masks[:, di]
@@ -294,11 +305,23 @@ class RandomForestFusion:
     def fit(self, features: np.ndarray, masks: np.ndarray, labels: np.ndarray) -> "RandomForestFusion":
         X = self._scaler.fit_transform(_flatten_with_mask(features, masks))
         self.rf.fit(X, labels)
+        # Remember a constant fallback when training was single-class
+        if len(np.unique(labels)) < 2:
+            self._degenerate_prediction = float(np.mean(labels)) if len(labels) else 0.5
+        else:
+            self._degenerate_prediction = None
         return self
 
     def predict_proba(self, features: np.ndarray, masks: np.ndarray) -> np.ndarray:
+        n = features.shape[0]
+        if getattr(self, "_degenerate_prediction", None) is not None:
+            return np.full(n, float(self._degenerate_prediction), dtype=np.float32)
         X = self._scaler.transform(_flatten_with_mask(features, masks))
-        return self.rf.predict_proba(X)[:, 1].astype(np.float32)
+        proba = self.rf.predict_proba(X)
+        if proba.shape[1] == 1:
+            # sklearn returns (n,1) when only one class was seen at fit time
+            return np.full(n, float(self.rf.classes_[0]), dtype=np.float32)
+        return proba[:, 1].astype(np.float32)
 
 
 # ---------------------------------------------------------------------------

@@ -1165,14 +1165,20 @@ quality. Replacing the scorer with stronger RGB--3D features~\cite{wang2023m3dm,
 costanzino2023crossmodal, liu2023real3dad} is the natural next step.
 
 \noindent\textbf{(Q3) Why $\tau=0.66$ and not a learned gate?} The
-threshold sweep in §\ref{sec:mvtec-mechanism} and the matching sweep on
-the secondary benchmark show that the conservative threshold preserves
-clean accuracy on the label-aligned data while activating under coherent
-stress. A learned-gate prototype exists in the codebase
-(\path{src/uais/fusion/attention/learned_gate.py}) and is the planned
-next experimental step. On the naturally paired benchmark, however, a
-learned gate would still have to overcome the same KS-drift misfire that
-the component ablation identifies.
+$\tau$-sweep in Table~\ref{tab:tau-sweep} includes a learned-gate row in
+addition to the seven heuristic thresholds. The learned gate is a
+logistic classifier trained on per-sample reliability vectors using
+self-supervised labels generated from validation drift episodes (see
+\path{src/uais/fusion/attention/learned_gate.py}). On the secondary
+benchmark it fires for 12--38\% of samples (rather than 0\% or 100\% as
+the heuristic does at fixed thresholds) and produces small negative
+deltas of $-0.0020$ on \texttt{max\_attack:all} and $-0.0035$ on
+\texttt{zero\_attack:all}: it does not match the heuristic's
+$+0.0319$/$+0.0506$ gains on those conditions and does not deliver any
+new clean-data gain. The learned alternative therefore does not close
+the natural-vs-aligned generalization gap identified by the
+mechanism-isolation results; it is a useful prototype that confirms
+the difficulty of the problem, not a fix for it.
 
 \noindent\textbf{(Q4) Why is the all-domain attack model meaningful?} It
 is not, in the strong realistic sense, and the threat model in

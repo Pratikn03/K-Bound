@@ -49,7 +49,7 @@ from uais.fusion.attention.attention_utils import (
 )
 from uais.fusion.attention.counterfactual_explainer import CounterfactualDomainExplainer
 from uais.fusion.attention.cross_modal_attention import AttentionFusionModel
-from uais.fusion.attention.learned_gate import LearnedReliabilityGate
+from uais.fusion.attention.learned_gate import LearnedGateConfig, LearnedReliabilityGate
 from uais.fusion.attention.reliability_estimator import ReliabilityEstimator
 from uais.fusion.attention.train_attention_fusion import attention_fusion_loss, set_seed
 from uais.utils.config_loader import load_yaml
@@ -852,9 +852,10 @@ def _evaluate_tau_sweep(
     per_sample_gating: bool = False,
     static_decision_threshold: float = 0.5,
     craf_decision_threshold: float = 0.5,
+    learned_gate: Optional[LearnedReliabilityGate] = None,
 ) -> list[dict]:
     rows: list[dict] = []
-    if not thresholds:
+    if not thresholds and learned_gate is None:
         return rows
     conditions = _all_domain_conditions(
         test_feat,
@@ -889,6 +890,37 @@ def _evaluate_tau_sweep(
                     "attack": condition["attack"],
                     "target_domain": condition["target_domain"],
                     "tau": float(threshold),
+                    "static_auc": static_m.get("roc_auc"),
+                    "craf_auc": craf_m.get("roc_auc"),
+                    "static_pr_auc": static_m.get("pr_auc"),
+                    "craf_pr_auc": craf_m.get("pr_auc"),
+                    "static_f1": static_m.get("f1"),
+                    "craf_f1": craf_m.get("f1"),
+                    "static_decision_threshold": float(static_decision_threshold),
+                    "craf_decision_threshold": float(craf_decision_threshold),
+                    "adaptation_rate": gate_stats["adaptation_rate"],
+                    "mean_reliability": gate_stats["mean_reliability"],
+                }
+            )
+        if learned_gate is not None:
+            craf_probs, gate_stats = _predict_craf_with_stats(
+                model,
+                estimator,
+                condition_feat,
+                condition_mask,
+                device,
+                clean_gate_threshold=0.0,  # ignored when learned_gate is set
+                per_sample_gating=True,
+                learned_gate=learned_gate,
+            )
+            craf_m = classification_metrics(test_labels, craf_probs, threshold=craf_decision_threshold)
+            rows.append(
+                {
+                    "seed": int(seed),
+                    "condition": condition["condition"],
+                    "attack": condition["attack"],
+                    "target_domain": condition["target_domain"],
+                    "tau": "learned",
                     "static_auc": static_m.get("roc_auc"),
                     "craf_auc": craf_m.get("roc_auc"),
                     "static_pr_auc": static_m.get("pr_auc"),
@@ -1312,6 +1344,7 @@ def _run_experiment_arrays(
     adversarial_sigma = float(craf_cfg.get("adversarial_sigma", 0.1))
     tau_sweep_thresholds = [float(v) for v in mechanism_cfg.get("tau_sweep_thresholds", [])]
     component_ablation_variants = list(mechanism_cfg.get("component_ablation_variants", []))
+    enable_learned_gate = bool(mechanism_cfg.get("learned_gate", False))
 
     per_seed_table1 = []
     per_seed_drift_rows: list[dict] = []
@@ -1467,6 +1500,52 @@ def _run_experiment_arrays(
                 craf_decision_threshold=craf_decision_threshold,
             )
         )
+        learned_gate_for_seed: Optional[LearnedReliabilityGate] = None
+        if enable_learned_gate:
+            try:
+                gate_engine = AdversarialPerturbationEngine(domain_order, score_index, random_seed=actual_seed + 33_000)
+                perturbation_fns: list = [lambda f, m: (f.copy(), m.copy())]  # clean
+                for attack_name in attack_names:
+                    try:
+                        attack_type = AdversarialAttackType(attack_name)
+                    except ValueError:
+                        continue
+                    def _make_fn(at=attack_type, eng=gate_engine, sg=adversarial_sigma):
+                        return lambda f, m: eng.apply_attack(f, m, at, target_domain=None, sigma=sg)
+                    perturbation_fns.append(_make_fn())
+
+                def _gate_static(f, m):
+                    return _predict_static(model, f, m, device)
+
+                def _gate_weights(f, m):
+                    return estimator.compute_reliability_weights(f, m)
+
+                def _gate_reliability(f, m, w):
+                    # Force the reliability path on for every sample so we can
+                    # measure where it would have helped vs hurt. clean_gate_threshold
+                    # > 1.0 ensures the mean-reliability comparison is always
+                    # satisfied, equivalent to "always fire".
+                    probs, _ = _predict_craf_with_stats(
+                        model, estimator, f, m, device,
+                        clean_gate_threshold=2.0,
+                        per_sample_gating=False,
+                    )
+                    return probs
+
+                learned_gate_for_seed = LearnedReliabilityGate(LearnedGateConfig(random_state=actual_seed))
+                learned_gate_for_seed.fit(
+                    val_feat,
+                    val_mask,
+                    val_labels,
+                    compute_reliability_weights=_gate_weights,
+                    predict_static=_gate_static,
+                    predict_reliability=_gate_reliability,
+                    perturbation_fns=perturbation_fns,
+                )
+            except Exception as exc:
+                logger.warning("Learned-gate fit failed for seed %d: %s", actual_seed, exc)
+                learned_gate_for_seed = None
+
         per_seed_tau_sweep_rows.extend(
             _evaluate_tau_sweep(
                 model,
@@ -1484,6 +1563,7 @@ def _run_experiment_arrays(
                 per_sample_gating=per_sample_gating,
                 static_decision_threshold=static_decision_threshold,
                 craf_decision_threshold=craf_decision_threshold,
+                learned_gate=learned_gate_for_seed,
             )
         )
         per_seed_component_ablation_rows.extend(

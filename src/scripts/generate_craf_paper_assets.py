@@ -318,6 +318,17 @@ def write_drift_table(data: dict[str, Any], out_dir: Path) -> None:
     _write(out_dir / "elara_drift_summary.tex", "\n".join(lines))
 
 
+
+def _cal_cell(cal: dict[str, Any], prefix: str) -> str:
+    mean = cal.get(prefix)
+    std = cal.get(f"{prefix}_std")
+    ci_lo = cal.get(f"{prefix}_ci_low")
+    ci_hi = cal.get(f"{prefix}_ci_high")
+    pm = _fmt_pm(mean, std, digits=4)
+    ci = _fmt_ci(ci_lo, ci_hi, digits=4)
+    return pm if ci == "--" else rf"{pm} {ci}"
+
+
 def write_calibration_table(data: dict[str, Any], out_dir: Path) -> None:
     cal = data["table_5_calibration"]
     cda = data["cda_validation"]
@@ -327,8 +338,8 @@ def write_calibration_table(data: dict[str, Any], out_dir: Path) -> None:
         r"\toprule",
         rf"\textbf{{Metric}} & \textbf{{Static}} & \textbf{{{METHOD_NAME}}} \\",
         r"\midrule",
-        rf"ECE & {_fmt(cal['static_ece'], 4)} & {_fmt(cal['craf_ece'], 4)} \\",
-        rf"Brier & {_fmt(cal['static_brier'], 4)} & {_fmt(cal['craf_brier'], 4)} \\",
+        rf"ECE & {_cal_cell(cal, 'static_ece')} & {_cal_cell(cal, 'craf_ece')} \\",
+        rf"Brier & {_cal_cell(cal, 'static_brier')} & {_cal_cell(cal, 'craf_brier')} \\",
         rf"CDA samples & -- & {int(cda['n_samples'])} \\",
         rf"CDA/ECE Spearman & -- & {_fmt(cda.get('spearman_cda_vs_ece_reliability'))} \\",
         rf"CDA/ECE Spearman status & -- & {_latex_text(_short_status(cda.get('spearman_cda_vs_ece_reliability_status')))} \\",
@@ -373,8 +384,13 @@ def write_tau_sweep_table(data: dict[str, Any], out_dir: Path) -> None:
         delta = row.get("delta_auc")
         if delta is None and _finite(row.get("craf_auc")) and _finite(row.get("static_auc")):
             delta = row["craf_auc"] - row["static_auc"]
+        tau_raw = row.get("tau")
+        if isinstance(tau_raw, str):
+            tau_cell = _latex_text(tau_raw)
+        else:
+            tau_cell = _fmt(tau_raw, 2)
         lines.append(
-            rf"{_latex_text(str(row.get('condition', '--')))} & {_fmt(row.get('tau'), 2)} & "
+            rf"{_latex_text(str(row.get('condition', '--')))} & {tau_cell} & "
             rf"{_fmt(row.get('static_auc'), 4)} & {_fmt(row.get('craf_auc'), 4)} & "
             rf"{_fmt(delta, 4)} & {_fmt_ci(row.get('delta_auc_ci_low'), row.get('delta_auc_ci_high'))} & "
             rf"{_fmt(row.get('adaptation_rate'), 3)} \\"
