@@ -532,74 +532,61 @@ def run_baseline_suite(
 
     results: Dict[str, Dict] = {}
 
-    # 1. Early Fusion MLP
     mlp_kwargs = {"device": device, "random_seed": random_seed}
     if baseline_epochs is not None:
         mlp_kwargs["epochs"] = int(baseline_epochs)
         mlp_kwargs["patience"] = max(1, min(3, int(baseline_epochs)))
-    mlp = EarlyFusionMLP(**mlp_kwargs)
-    mlp.fit(train_feat, train_mask, train_labels, val_feat, val_mask, val_labels)
-    results["early_fusion_mlp"] = _metrics_with_validation_threshold(
-        test_labels,
-        mlp.predict_proba(test_feat, test_mask),
-        val_labels=val_labels,
-        val_probs=mlp.predict_proba(val_feat, val_mask),
-        strategy=decision_threshold_strategy,
-    )
 
-    # 2. Late Fusion Ensemble
-    lfe = LateFusionEnsemble(score_index=score_index, random_seed=random_seed)
-    lfe.fit(train_feat, train_mask, train_labels)
-    results["late_fusion_ensemble"] = _metrics_with_validation_threshold(
-        test_labels,
-        lfe.predict_proba(test_feat, test_mask),
-        val_labels=val_labels,
-        val_probs=lfe.predict_proba(val_feat, val_mask),
-        strategy=decision_threshold_strategy,
-    )
+    # Each baseline runs in its own guard. A single-class training fold or
+    # numerical edge case in one baseline records a constant-prediction
+    # fallback and a `fit_error` field so the rest of the experiment can
+    # finish.
+    def _safe_eval(name: str, factory):
+        try:
+            model = factory()
+            results[name] = _metrics_with_validation_threshold(
+                test_labels,
+                model.predict_proba(test_feat, test_mask),
+                val_labels=val_labels,
+                val_probs=model.predict_proba(val_feat, val_mask),
+                strategy=decision_threshold_strategy,
+            )
+        except Exception as exc:
+            n_test = test_feat.shape[0]
+            n_val = val_feat.shape[0]
+            constant = float(np.mean(train_labels)) if len(train_labels) else 0.5
+            results[name] = _metrics_with_validation_threshold(
+                test_labels,
+                np.full(n_test, constant, dtype=np.float32),
+                val_labels=val_labels,
+                val_probs=np.full(n_val, constant, dtype=np.float32),
+                strategy=decision_threshold_strategy,
+            )
+            results[name]["fit_error"] = f"{type(exc).__name__}: {exc}"
 
-    # 3. Random Forest
-    rf = RandomForestFusion(random_seed=random_seed)
-    rf.fit(train_feat, train_mask, train_labels)
-    results["random_forest"] = _metrics_with_validation_threshold(
-        test_labels,
-        rf.predict_proba(test_feat, test_mask),
-        val_labels=val_labels,
-        val_probs=rf.predict_proba(val_feat, val_mask),
-        strategy=decision_threshold_strategy,
+    _safe_eval(
+        "early_fusion_mlp",
+        lambda: EarlyFusionMLP(**mlp_kwargs).fit(train_feat, train_mask, train_labels, val_feat, val_mask, val_labels),
     )
-
-    # 4. Confidence-Weighted Mean (parameter-free)
-    cwm = ConfidenceWeightedMean(score_index=score_index)
-    cwm.fit(train_feat, train_mask, train_labels)
-    results["confidence_weighted_mean"] = _metrics_with_validation_threshold(
-        test_labels,
-        cwm.predict_proba(test_feat, test_mask),
-        val_labels=val_labels,
-        val_probs=cwm.predict_proba(val_feat, val_mask),
-        strategy=decision_threshold_strategy,
+    _safe_eval(
+        "late_fusion_ensemble",
+        lambda: LateFusionEnsemble(score_index=score_index, random_seed=random_seed).fit(train_feat, train_mask, train_labels),
     )
-
-    # 5. Tent-style test-time entropy minimization
-    tent = TentScoreAdapter(random_seed=random_seed, adaptation_steps=tta_steps)
-    tent.fit(train_feat, train_mask, train_labels)
-    results["tent_score_adapter"] = _metrics_with_validation_threshold(
-        test_labels,
-        tent.predict_proba(test_feat, test_mask),
-        val_labels=val_labels,
-        val_probs=tent.predict_proba(val_feat, val_mask),
-        strategy=decision_threshold_strategy,
+    _safe_eval(
+        "random_forest",
+        lambda: RandomForestFusion(random_seed=random_seed).fit(train_feat, train_mask, train_labels),
     )
-
-    # 6. TTT-style high-confidence pseudo-label adaptation
-    ttt = TTTPseudoLabelAdapter(random_seed=random_seed, adaptation_steps=tta_steps)
-    ttt.fit(train_feat, train_mask, train_labels)
-    results["ttt_pseudo_label_adapter"] = _metrics_with_validation_threshold(
-        test_labels,
-        ttt.predict_proba(test_feat, test_mask),
-        val_labels=val_labels,
-        val_probs=ttt.predict_proba(val_feat, val_mask),
-        strategy=decision_threshold_strategy,
+    _safe_eval(
+        "confidence_weighted_mean",
+        lambda: ConfidenceWeightedMean(score_index=score_index).fit(train_feat, train_mask, train_labels),
+    )
+    _safe_eval(
+        "tent_score_adapter",
+        lambda: TentScoreAdapter(random_seed=random_seed, adaptation_steps=tta_steps).fit(train_feat, train_mask, train_labels),
+    )
+    _safe_eval(
+        "ttt_pseudo_label_adapter",
+        lambda: TTTPseudoLabelAdapter(random_seed=random_seed, adaptation_steps=tta_steps).fit(train_feat, train_mask, train_labels),
     )
 
     return results

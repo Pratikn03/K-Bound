@@ -1,0 +1,176 @@
+"""M3DM-style ResNet-50 penultimate features for paired RGB + depth.
+
+Replaces the lightweight image-statistic scorer with a real pretrained
+backbone, applied to both RGB and depth-as-3-channel inputs. The
+output is a 2048-dim penultimate feature per image, projected to a
+configurable embedding dimension via PCA fitted on the train fold.
+
+Why this exists: the M3DM line of MVTec 3D-AD work (Wang et al. 2023,
+Costanzino et al. 2023) shows that pretrained features are the
+single biggest empirical lever for RGB+3D anomaly fusion. Replacing the
+quantile-statistic features (8 dims) with PCA-projected ResNet-50
+features (D dims) lifts the absolute performance ceiling of every
+fusion method that consumes them. The cross-benchmark contrast then
+re-runs at a higher and fairer per-benchmark performance basis.
+"""
+
+from __future__ import annotations
+
+from pathlib import Path
+from typing import Iterable, Sequence, Tuple
+
+import numpy as np
+import torch
+from PIL import Image
+from sklearn.decomposition import PCA
+
+
+_BACKBONE = None
+_DEVICE = None
+
+
+def _get_backbone() -> Tuple[torch.nn.Module, torch.device]:
+    """Lazily load ResNet-50 with ImageNet weights; cache on first call."""
+    global _BACKBONE, _DEVICE
+    if _BACKBONE is None:
+        from torchvision.models import resnet50, ResNet50_Weights
+
+        weights = ResNet50_Weights.IMAGENET1K_V2
+        model = resnet50(weights=weights)
+        # Strip the final FC layer to get the 2048-dim penultimate vector.
+        model.fc = torch.nn.Identity()
+        model.eval()
+        device = torch.device(
+            "mps"
+            if torch.backends.mps.is_available()
+            else "cuda"
+            if torch.cuda.is_available()
+            else "cpu"
+        )
+        model = model.to(device)
+        _BACKBONE = (model, weights.transforms())
+        _DEVICE = device
+    return _BACKBONE[0], _BACKBONE[1], _DEVICE  # type: ignore[return-value]
+
+
+def _load_pil(path: Path) -> Image.Image:
+    """Read an RGB or single-channel image and return a 3-channel PIL Image."""
+    suffix = path.suffix.lower()
+    if suffix in {".tif", ".tiff"}:
+        # Depth/XYZ TIFF — use tifffile if available, otherwise PIL.
+        try:
+            import tifffile
+
+            arr = tifffile.imread(path)
+        except Exception:
+            arr = np.asarray(Image.open(path))
+        arr = np.asarray(arr, dtype=np.float32)
+        # Normalize to [0, 255]; collapse extra channels to a magnitude scalar.
+        if arr.ndim == 3 and arr.shape[-1] in (2, 3, 4):
+            arr = np.linalg.norm(arr[..., :3], axis=-1)
+        # Drop NaN/Inf
+        arr = np.nan_to_num(arr, nan=0.0, posinf=0.0, neginf=0.0)
+        lo, hi = float(np.min(arr)), float(np.max(arr))
+        if hi - lo < 1e-9:
+            arr = np.zeros_like(arr, dtype=np.float32)
+        else:
+            arr = (arr - lo) / (hi - lo)
+        arr = (arr * 255.0).clip(0, 255).astype(np.uint8)
+        rgb = np.stack([arr, arr, arr], axis=-1)
+        return Image.fromarray(rgb, mode="RGB")
+    image = Image.open(path)
+    if image.mode != "RGB":
+        image = image.convert("RGB")
+    return image
+
+
+def extract_resnet_features(
+    paths: Sequence[Path],
+    batch_size: int = 32,
+) -> np.ndarray:
+    """Return [N, 2048] float32 features from the ImageNet ResNet-50 penultimate layer.
+
+    Images that fail to load are replaced by zero vectors so a single
+    bad file does not break the whole pass.
+    """
+    model, transform, device = _get_backbone()
+    features = np.zeros((len(paths), 2048), dtype=np.float32)
+    batch_tensors: list[torch.Tensor] = []
+    batch_indices: list[int] = []
+    for idx, path in enumerate(paths):
+        try:
+            image = _load_pil(Path(path))
+        except Exception:
+            continue
+        batch_tensors.append(transform(image))
+        batch_indices.append(idx)
+        if len(batch_tensors) >= batch_size:
+            batch = torch.stack(batch_tensors).to(device)
+            with torch.no_grad():
+                out = model(batch).cpu().numpy()
+            for j, target in enumerate(batch_indices):
+                features[target] = out[j]
+            batch_tensors = []
+            batch_indices = []
+    if batch_tensors:
+        batch = torch.stack(batch_tensors).to(device)
+        with torch.no_grad():
+            out = model(batch).cpu().numpy()
+        for j, target in enumerate(batch_indices):
+            features[target] = out[j]
+    return features
+
+
+def fit_pca_projection(
+    features: np.ndarray,
+    fit_mask: np.ndarray,
+    embedding_dim: int,
+) -> Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
+    """Fit PCA on the train fold; return (proj_features, mean, components, scale)."""
+    fit_rows = features[fit_mask]
+    if fit_rows.shape[0] < embedding_dim:
+        # Degenerate — fall back to truncating the raw features.
+        proj = features[:, :embedding_dim].astype(np.float32)
+        mean = np.zeros(features.shape[1], dtype=np.float32)
+        components = np.eye(features.shape[1], embedding_dim, dtype=np.float32).T
+        scale = np.ones(embedding_dim, dtype=np.float32)
+        return proj.astype(np.float32), mean, components, scale
+    pca = PCA(n_components=embedding_dim, random_state=0)
+    pca.fit(fit_rows)
+    proj = pca.transform(features).astype(np.float32)
+    # Per-component scaling to roughly [0, 1] over the fit fold for
+    # downstream attention compatibility.
+    fit_proj = pca.transform(fit_rows)
+    lo = fit_proj.min(axis=0)
+    hi = fit_proj.max(axis=0)
+    span = np.where((hi - lo) > 1e-9, hi - lo, 1.0)
+    proj = (proj - lo) / span
+    proj = np.clip(proj, 0.0, 1.0).astype(np.float32)
+    return proj, pca.mean_.astype(np.float32), pca.components_.astype(np.float32), span.astype(np.float32)
+
+
+def normal_reference_distance_score(
+    features: np.ndarray,
+    fit_mask: np.ndarray,
+) -> np.ndarray:
+    """Mahalanobis-style distance from the train-good centroid, scaled to [0, 1]."""
+    fit_rows = features[fit_mask]
+    if fit_rows.shape[0] == 0:
+        return np.zeros(features.shape[0], dtype=np.float32)
+    center = fit_rows.mean(axis=0)
+    scale = fit_rows.std(axis=0)
+    scale = np.where(scale > 1e-6, scale, 1.0)
+    distances = np.linalg.norm((features - center) / scale, axis=1).astype(np.float32)
+    fit_distances = distances[fit_mask]
+    lo = float(np.min(fit_distances))
+    hi = float(np.percentile(fit_distances, 95))
+    if hi - lo <= 1e-9:
+        hi = lo + 1.0
+    return np.clip((distances - lo) / (hi - lo), 0.0, 1.0).astype(np.float32)
+
+
+__all__ = [
+    "extract_resnet_features",
+    "fit_pca_projection",
+    "normal_reference_distance_score",
+]

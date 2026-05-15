@@ -176,29 +176,86 @@ def build_mvtec3d_fusion_frame(
     dataset_root: Path,
     categories: Iterable[str] | None = None,
     embedding_dim: int = 8,
+    feature_mode: str = "image_statistics",
+    train_categories: Iterable[str] | None = None,
 ) -> tuple[pd.DataFrame, dict]:
-    """Build long-format fusion rows and benchmark metadata."""
+    """Build long-format fusion rows and benchmark metadata.
+
+    Parameters
+    ----------
+    feature_mode : "image_statistics" (default) or "m3dm".
+        "image_statistics" uses the lightweight 8-dim quantile feature
+        described in the original script. "m3dm" uses ResNet-50
+        penultimate features PCA-projected to ``embedding_dim``.
+    train_categories : optional set of category names to treat as the
+        scorer-fit and embedding-PCA fold. When provided, samples from
+        these categories carry the ``split == "train"`` semantics for
+        scoring even if their original MVTec split was test/validation.
+        This enables held-out-category protocols.
+    """
     pairs = discover_mvtec3d_pairs(Path(dataset_root), categories=categories)
     if not pairs:
         raise FileNotFoundError(f"No paired RGB/depth observations found under {dataset_root}")
 
-    rgb_features = np.vstack([_image_features(pair.rgb_path, embedding_dim) for pair in pairs])
-    depth_features = np.vstack([_image_features(pair.depth_path, embedding_dim) for pair in pairs])
     labels = np.asarray([pair.label for pair in pairs], dtype=int)
     splits = np.asarray([pair.split for pair in pairs], dtype=object)
     defect_types = np.asarray([pair.defect_type for pair in pairs], dtype=object)
-    train_mask = splits == "train"
+    pair_categories = np.asarray([pair.category for pair in pairs], dtype=object)
+    if train_categories is not None:
+        train_set = set(train_categories)
+        train_mask = np.array([cat in train_set for cat in pair_categories], dtype=bool)
+    else:
+        train_mask = splits == "train"
     normal_reference_mask = train_mask & (defect_types == "good")
     if not np.any(normal_reference_mask):
         raise ValueError("MVTec 3D score generation requires at least one train/good paired observation.")
 
-    rgb_embeddings = _minmax(rgb_features, fit_mask=train_mask)
-    depth_embeddings = _minmax(depth_features, fit_mask=train_mask)
-    rgb_scores = _normal_reference_scores(rgb_features, normal_reference_mask)
-    depth_scores = _normal_reference_scores(depth_features, normal_reference_mask)
+    feature_mode = (feature_mode or "image_statistics").lower()
+    if feature_mode == "m3dm":
+        from uais.fusion.attention.m3dm_features import (
+            extract_resnet_features,
+            fit_pca_projection,
+            normal_reference_distance_score,
+        )
+
+        rgb_paths = [pair.rgb_path for pair in pairs]
+        depth_paths = [pair.depth_path for pair in pairs]
+        rgb_resnet = extract_resnet_features(rgb_paths)
+        depth_resnet = extract_resnet_features(depth_paths)
+        rgb_embeddings, *_ = fit_pca_projection(rgb_resnet, train_mask, embedding_dim)
+        depth_embeddings, *_ = fit_pca_projection(depth_resnet, train_mask, embedding_dim)
+        rgb_scores = normal_reference_distance_score(rgb_resnet, normal_reference_mask)
+        depth_scores = normal_reference_distance_score(depth_resnet, normal_reference_mask)
+        feature_description = "resnet50_imagenet_pca"
+    else:
+        rgb_features = np.vstack([_image_features(pair.rgb_path, embedding_dim) for pair in pairs])
+        depth_features = np.vstack([_image_features(pair.depth_path, embedding_dim) for pair in pairs])
+        rgb_embeddings = _minmax(rgb_features, fit_mask=train_mask)
+        depth_embeddings = _minmax(depth_features, fit_mask=train_mask)
+        rgb_scores = _normal_reference_scores(rgb_features, normal_reference_mask)
+        depth_scores = _normal_reference_scores(depth_features, normal_reference_mask)
+        feature_description = "lightweight_image_statistics"
 
     rows = []
+    held_out_set = (
+        None
+        if train_categories is None
+        else {cat for cat in pair_categories if cat not in set(train_categories)}
+    )
     for idx, pair in enumerate(pairs):
+        # Held-out-category protocol rewrites the split column so the fusion
+        # runner trains on in-categories and tests on held-out categories.
+        if held_out_set is None:
+            effective_split = pair.split
+        elif pair.category in held_out_set:
+            effective_split = "test"
+        else:
+            # In-category sample. MVTec's official train + validation are
+            # normal-only; we additionally fold in-category defect-bearing
+            # test rows into the fusion train fold so the supervised fusion
+            # baselines see both classes. Held-out categories supply the
+            # canonical multi-class test fold.
+            effective_split = "train" if pair.split == "test" else pair.split
         for domain, score, emb, source_path in [
             ("rgb", rgb_scores[idx], rgb_embeddings[idx], pair.rgb_path),
             ("depth_or_xyz", depth_scores[idx], depth_embeddings[idx], pair.depth_path),
@@ -207,7 +264,7 @@ def build_mvtec3d_fusion_frame(
                 "sample_id": pair.sample_id,
                 "pairing_key": pair.pairing_key,
                 "category": pair.category,
-                "split": pair.split,
+                "split": effective_split,
                 "defect_type": pair.defect_type,
                 "domain": domain,
                 "label": pair.label,
@@ -223,14 +280,22 @@ def build_mvtec3d_fusion_frame(
 
     frame = pd.DataFrame(rows)
     sample_frame = frame.groupby("sample_id").first()
+    important_limitation = (
+        "Scores are ResNet-50 normal-reference distance scores; PCA projection "
+        "yields the per-domain embedding. This is the M3DM-style feature mode."
+        if feature_mode == "m3dm"
+        else (
+            "Scores are lightweight normal-reference image-statistic anomaly scores; "
+            "they provide a reproducible paired fusion benchmark, not a specialized RGB-3D detector."
+        )
+    )
     metadata = {
         "benchmark_type": "naturally_paired_mvtec3d_score_fusion",
         "natural_pairing": True,
         "pairing_unit": "MVTec 3D-AD RGB/depth observation stem",
-        "important_limitation": (
-            "Scores are lightweight normal-reference image-statistic anomaly scores; "
-            "they provide a reproducible paired fusion benchmark, not a specialized RGB-3D detector."
-        ),
+        "feature_mode": feature_mode,
+        "feature_description": feature_description,
+        "important_limitation": important_limitation,
         "samples": int(len(sample_frame)),
         "rows": int(len(frame)),
         "positive_fraction_actual": float(sample_frame["label"].mean()),
@@ -264,13 +329,32 @@ def main() -> None:
     parser.add_argument("--metadata", type=Path, default=Path("experiments/fusion/mvtec3d_fusion_metadata.json"))
     parser.add_argument("--categories", nargs="*", default=None)
     parser.add_argument("--embedding-dim", type=int, default=8)
+    parser.add_argument(
+        "--feature-mode",
+        choices=["image_statistics", "m3dm"],
+        default="image_statistics",
+        help="Which feature extractor to use for the per-domain embedding and the normal-reference score.",
+    )
+    parser.add_argument(
+        "--train-categories",
+        nargs="*",
+        default=None,
+        help="Optional set of category names to treat as the scorer-fit/PCA fold. Enables held-out-category protocols.",
+    )
     args = parser.parse_args()
 
     frame, metadata = build_mvtec3d_fusion_frame(
         args.dataset_root,
         categories=args.categories,
         embedding_dim=args.embedding_dim,
+        feature_mode=args.feature_mode,
+        train_categories=args.train_categories,
     )
+    if args.train_categories:
+        metadata["heldout_protocol"] = {
+            "train_categories": sorted(args.train_categories),
+            "test_categories": sorted(c for c in metadata.get("categories", []) if c not in set(args.train_categories)),
+        }
     args.output.parent.mkdir(parents=True, exist_ok=True)
     args.metadata.parent.mkdir(parents=True, exist_ok=True)
     frame.to_csv(args.output, index=False)

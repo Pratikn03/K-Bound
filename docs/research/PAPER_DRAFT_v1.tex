@@ -43,13 +43,26 @@
 \maketitle
 
 \begin{abstract}
-We report a contrastive negative result for validation-derived drift gates
-in multimodal anomaly fusion: the same Kolmogorov--Smirnov drift signal that
-improves all-domain coherent score-collapse robustness on a label-aligned
-secondary benchmark \emph{hurts} clean and adversarial ROC-AUC on naturally
-paired MVTec 3D-AD, with mechanism isolation identifying KS-drift mis-firing
-on legitimate inter-category variation as the cause. The cross-benchmark
-asymmetry is the central scientific finding.
+We report two complementary results on validation-derived drift gates in
+multimodal anomaly fusion. First, on a label-aligned benchmark with
+both classes present at training time, the Kolmogorov--Smirnov drift
+signal carries the entire all-domain coherent score-collapse robustness
+gain (+0.0506 \texttt{zero\_attack}, +0.0319 \texttt{max\_attack})
+delivered by the reliability gate; removing the KS-drift component
+eliminates the gain. A learned-gate alternative does not match the
+heuristic's gain. Second, on the naturally paired MVTec 3D-AD benchmark
+under its canonical one-class anomaly-detection protocol (normal-only
+training, mixed test), every supervised fusion baseline -- random
+forest, MLP, late-fusion ensemble, Tent, TTT, static attention,
+\method{} -- converges near chance ROC-AUC because none of them can
+learn from one-class training. The gate has neutral effect there. We
+include held-out-category and ResNet-50 (M3DM-style) variants of the
+MVTec experiment to confirm that the chance-level outcome is robust
+to scorer quality and to category split. The combined finding is
+methodological: validation-derived drift gates demonstrably help when
+supervised fusion has well-defined two-class training, but the gate
+question itself is undefined on benchmarks where the baselines cannot
+learn at all.
 
 The result is produced inside \system{} (\systemfull), a research prototype
 for score-level multimodal anomaly fusion. The mechanism under study is
@@ -70,15 +83,19 @@ combines four real local datasets (Credit Card Fraud, UNSW-NB15, Online
 Shoppers Intention, labeled news text) with explicit label alignment. Both
 benchmarks honor their underlying dataset's predefined train/validation/test
 split so the fusion test fold is disjoint from the rows the per-domain
-scorers fit on. On MVTec 3D-AD, random forest fusion dominates (clean
-ROC-AUC $0.959$), static attention is mid-pack ($0.650$), and \method{}
-regresses by $-0.040$ clean and $-0.117$ to $-0.124$ under all-domain
-coherent attacks. On \benchmark{} the same gate improves all-domain
+scorers fit on. On MVTec 3D-AD under its canonical one-class
+anomaly-detection protocol, all supervised fusion baselines converge
+near chance ROC-AUC (random forest $0.500$, static attention $0.542$,
+\method{} $0.561$); the gate's delta to static is small and slightly
+positive ($+0.018$). On \benchmark{} the same gate improves all-domain
 \texttt{zero\_attack} and \texttt{max\_attack} ROC-AUC by $+0.0506$ and
-$+0.0319$ respectively. Component ablation shows the KS-drift signal alone
-controls whether the gate fires; removing it eliminates both the gain and
-the harm. We report both directions of the result with confidence intervals
-and explicit mechanism isolation, not as a blanket superiority claim.
+$+0.0319$ respectively. Component ablation shows the KS-drift signal
+alone controls whether the gate fires; removing it eliminates the
+\benchmark{} gain. We report both benchmarks with confidence intervals
+and explicit mechanism isolation. The MVTec result is a protocol
+diagnostic, not a method critique: any supervised fusion benchmark
+that trains on one class only will see every supervised method
+collapse together, so the gate question is undefined there.
 \end{abstract}
 
 \begin{IEEEkeywords}
@@ -421,6 +438,23 @@ reported tables.
 \end{algorithm}
 
 \section{Benchmark Construction}
+
+\noindent\textbf{Protocol erratum.} Earlier drafts of this manuscript
+reported MVTec 3D-AD numbers that were generated under a random
+train/test split rather than MVTec's official one-class
+(normal-only-train, mixed-test) protocol. Under the proper protocol,
+all supervised fusion baselines (random forest, MLP, Tent, TTT,
+late-fusion ensemble, static attention, \method) converge near chance
+ROC-AUC; the gate's effect is small and slightly positive. The
+\benchmark{} secondary benchmark, which has both classes in train,
+remains the venue where the gate's stress-test behavior can be
+evaluated. The current rendered tables in this section reflect the
+corrected disciplined-split run; some prose elsewhere in the paper
+still uses the earlier numbers and is the next revision target. We
+include M3DM-style ResNet-50 features and a held-out-category
+variant as additional protocol diagnostics; both confirm the
+chance-level supervised outcome under one-class training.
+
 \subsection{Primary Benchmark: Naturally Paired MVTec 3D-AD}
 The primary benchmark of this manuscript is MVTec 3D-AD~\cite{bergmann2022mvtec3d}.
 Each sample contains naturally co-observed RGB and 3D/depth evidence from the
