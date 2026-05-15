@@ -29,7 +29,7 @@
 \newcommand{\benchmark}{ELARA-Bench-LA}
 \newcolumntype{L}[1]{>{\raggedright\arraybackslash}p{#1}}
 
-\title{\system: Reliability-Gated Multimodal Anomaly Fusion under Domain Stress}
+\title{\system: When Reliability Gates Misfire --- A Cross-Benchmark Study of Drift-Signal Generalization in Multimodal Anomaly Fusion}
 
 \author{
   \IEEEauthorblockN{Pratik Niroula}
@@ -43,50 +43,42 @@
 \maketitle
 
 \begin{abstract}
-This manuscript presents \system, a reliability-aware fusion pipeline for
-heterogeneous anomaly detection. The system combines domain experts for fraud,
-cyber telemetry, user behavior, and text evidence, then learns a fusion layer
-that produces a unified anomaly risk score and a domain-level explanation. The
-central research question is whether a practical fusion layer can preserve
-clean benchmark accuracy while using calibration and drift evidence to reduce
-brittle behavior under missing, shifted, or corrupted domains.
+We report a contrastive negative result for validation-derived drift gates
+in multimodal anomaly fusion: the same Kolmogorov--Smirnov drift signal that
+improves all-domain coherent score-collapse robustness on a label-aligned
+secondary benchmark \emph{hurts} clean and adversarial ROC-AUC on naturally
+paired MVTec 3D-AD, with mechanism isolation identifying KS-drift mis-firing
+on legitimate inter-category variation as the cause. The cross-benchmark
+asymmetry is the central scientific finding.
 
-The technical contribution is \methodfull{} (\method), a reliability-aware
-fusion module inside \system. \method{} couples masked cross-domain attention
-with a post-hoc
-reliability estimator that combines validation expected calibration error,
-test-time score-distribution drift, and prediction sharpness. A conservative
-gate preserves the static attention path when domains appear reliable and
-injects reliability weights only when batch evidence indicates degraded domain
-quality. The system also includes a reproducible input schema, strong
-score-level baselines, missing-domain ablations, adversarial perturbation
-stress tests, calibration analysis, and counterfactual domain attribution.
+The result is produced inside \system{} (\systemfull), a research prototype
+for score-level multimodal anomaly fusion. The mechanism under study is
+\methodfull{} (\method), which couples masked cross-domain attention with a
+post-hoc reliability estimator (validation expected calibration error,
+test-time KS drift, prediction sharpness) and a conservative gate that
+preserves the static attention model unless mean reliability falls below a
+threshold. The system bundle includes a reproducible long-format fusion
+schema, strong score-level baselines (random forest, early-fusion MLP,
+late-fusion ensemble, Tent and TTT score adapters, static attention),
+missing-domain ablations, adversarial perturbation stress tests,
+calibration analysis, and counterfactual domain attribution.
 
-The headline empirical study is now a naturally paired benchmark based on
-MVTec 3D-AD: eight object categories, 3{,}226 paired RGB and 3D/depth
-observations, 22.4\% positive rate, no label alignment required. A
-contrastive secondary benchmark, \benchmark, is built from four real local
-datasets (Credit Card Fraud, UNSW-NB15, Online Shoppers Intention, and
-labeled news text) and is explicitly label-aligned. Both benchmarks share the
-same fusion schema, baselines, and mechanism-isolation protocol; the
-asymmetry between them is the central finding of the paper.
-
-On the naturally paired MVTec 3D-AD benchmark, random forest fusion is the
-strongest baseline (clean ROC-AUC 0.959), static attention is competitive
-(0.650), and the reliability gate of \method{} actively \emph{hurts} clean and
-adversarial performance (deltas of $-0.040$ clean, $-0.124$ under all-domain
-\texttt{zero\_attack}, $-0.117$ under \texttt{max\_attack}). On the
-label-aligned secondary benchmark, the same gate improves all-domain
+The empirical study spans two benchmarks. The primary benchmark is
+naturally paired MVTec 3D-AD across eight categories (3{,}226 paired
+RGB/depth samples, 22.4\% positive). The secondary benchmark, \benchmark,
+combines four real local datasets (Credit Card Fraud, UNSW-NB15, Online
+Shoppers Intention, labeled news text) with explicit label alignment. Both
+benchmarks honor their underlying dataset's predefined train/validation/test
+split so the fusion test fold is disjoint from the rows the per-domain
+scorers fit on. On MVTec 3D-AD, random forest fusion dominates (clean
+ROC-AUC $0.959$), static attention is mid-pack ($0.650$), and \method{}
+regresses by $-0.040$ clean and $-0.117$ to $-0.124$ under all-domain
+coherent attacks. On \benchmark{} the same gate improves all-domain
 \texttt{zero\_attack} and \texttt{max\_attack} ROC-AUC by $+0.0506$ and
-$+0.0319$ respectively, but the clean split is near-saturated and method
-differences are not statistically meaningful. The contrast suggests that
-validation-derived drift detectors generalize poorly across paired-versus-aligned
-regimes: the KS-drift component, which carries the entire stress-test gain
-on label-aligned data, mis-fires on the legitimate inter-category variation in
-the natural-paired benchmark and pushes the model into a degraded adapted
-mode. The manuscript reports both directions of the result with confidence
-intervals and explicit mechanism-isolation rather than as a blanket
-superiority statement.
+$+0.0319$ respectively. Component ablation shows the KS-drift signal alone
+controls whether the gate fires; removing it eliminates both the gain and
+the harm. We report both directions of the result with confidence intervals
+and explicit mechanism isolation, not as a blanket superiority claim.
 \end{abstract}
 
 \begin{IEEEkeywords}
@@ -141,32 +133,37 @@ operating condition changes. A strong paper must therefore show three things:
   \item the data and experimental protocol justify the scope of the claim.
 \end{enumerate}
 The current results support the first two conditions for score-level fusion but
-do not yet fully satisfy the third condition for naturally paired multimodal
+do not yet fully satisfy the third condition for co-observed multimodal
 incidents. This limitation is explicit throughout the manuscript.
 
 \subsection{Contributions}
-This draft makes four scoped contributions:
+We make four scoped contributions:
 \begin{itemize}
-  \item It defines \system, a system-level anomaly-fusion pipeline with an
-  explicit long-format multimodal schema.
-  \item It defines \method, a conservative reliability-aware fusion module that
-  combines masked attention, calibration, score-distribution drift, sharpness,
-  and a reliability gate.
-  \item It adds a naturally paired MVTec 3D-AD RGB/3D benchmark path and builds
-  \benchmark, a reproducible label-aligned real-domain score-level stress
-  benchmark using fraud, cyber, behavior, and text datasets.
-  \item It reports baselines, missing-domain ablation, drift curves,
-  adversarial score attacks, calibration, and counterfactual domain attribution
+  \item A contrastive negative result for validation-derived drift gates.
+  The same Kolmogorov--Smirnov drift signal carries the entire all-domain
+  stress-test gain on the synthetically paired secondary benchmark and drives the
+  clean-and-adversarial regression on RGB/3D paired MVTec 3D-AD;
+  component ablation identifies the signal as the cause.
+  \item \method{} couples masked cross-modal attention with a three-signal
+  reliability estimator (validation ECE, test-time KS drift, score
+  sharpness) and a conservative gate that preserves the static path unless
+  mean reliability falls below $\tau$.
+  \item \benchmark{} is a reproducible the secondary benchmark real-domain score-fusion
+  benchmark over Credit Card Fraud, UNSW-NB15, Online Shoppers Intention, and
+  labeled news text. A naturally paired MVTec 3D-AD benchmark path covers
+  eight categories with predefined-split discipline.
+  \item \system{} packages the schema, baselines (random forest,
+  early-fusion MLP, late-fusion ensemble, Tent, TTT, static attention,
+  \method), missing-domain ablation, drift curves, adversarial perturbation
+  stress tests, calibration analysis, and counterfactual domain attribution
   with an explicit construct-validity boundary.
 \end{itemize}
 
-\subsection{Evidence Boundary}
-The current quantitative evidence is strongest as a reliability-stress study
-over score-level fusion. It should not be read as a general claim that
-\method{} is always superior to static attention, nor as evidence that the
-label-aligned benchmark captures naturally co-observed multimodal incidents.
-The paper therefore separates implemented artifacts, measured results, and
-remaining benchmark gaps.
+The evidence is strongest as a reliability-stress
+study over score-level fusion. It is not a general claim
+that \method{} is always superior to static attention, nor as evidence
+that the label-aligned benchmark captures naturally co-observed multimodal
+incidents.
 
 \begin{figure*}[t]
 \centering
@@ -259,8 +256,7 @@ are strong baselines for tabular and score-level settings, and outlier-ensemble
 theory provides a related foundation for combining heterogeneous
 anomaly scorers~\cite{aggarwal2017outlier}. Classical classifier-combiner
 theory~\cite{kittler1998combining} further characterises when sum, product,
-and weighted rules differ in behaviour under noise. This is why the
-benchmark includes random forest fusion, early fusion MLP, late fusion
+and weighted rules differ in behaviour under noise. The benchmark therefore includes random forest fusion, early fusion MLP, late fusion
 ensemble, confidence-weighted mean, and static attention. A credible
 systems paper must compare against these practical alternatives, not only
 against weak averages. The reliability gate of \method{} is itself an
@@ -481,7 +477,7 @@ label-aligned fusion input artifact.
 
 \begin{table}[t]
 \centering
-\caption{Benchmark metadata for the secondary label-aligned fusion input
+\caption{Benchmark metadata for the secondary synthetically paired fusion input
 artifact.}
 \label{tab:benchmark-metadata}
 \footnotesize
@@ -510,10 +506,10 @@ behavior, and 0.877 for text.
 
 \subsection{Label Alignment Limitation}
 The datasets do not share natural entity identifiers or timestamps. Therefore,
-composite samples are label-aligned: a positive composite draws positive
+composite samples are the secondary benchmark: a positive composite draws positive
 records from available domains, and a negative composite draws negative records.
 This is a meaningful real-domain score-fusion benchmark, but it is not evidence
-that the system has learned naturally paired multimodal incident structure. That
+that the system has learned co-observed multimodal incident structure. That
 distinction is central to the claim boundary of the paper. The metadata now
 records this explicitly with \texttt{natural\_pairing=false} for \benchmark{}.
 Source observations are assigned to train, validation, and test pools before
@@ -586,7 +582,7 @@ layer that consumes score-level evidence from upstream detectors.
 Table~\ref{tab:clean-results} and Fig.~\ref{fig:clean-benchmark} show clean
 held-out performance on the label-aligned secondary benchmark. This table is
 intentionally treated as a sanity check, not as the headline result, because
-the label-aligned split is near saturated.
+the synthetically paired split is near saturated.
 Bold values indicate the highest rounded mean in each column; multiple bold
 values are rounded ties.
 
@@ -634,10 +630,10 @@ random forest fusion is strong for thresholded classification, while attention
 fusion is stronger for calibrated risk interpretation.
 
 \section{Primary Headline Results: MVTec 3D-AD}
-This section reports the primary multi-seed evidence on naturally paired
+This section reports the primary multi-seed evidence on RGB/3D paired
 MVTec 3D-AD across all eight extracted object categories (3{,}226 paired
 samples, $22.4\%$ positive). The same suite is repeated on the contrastive
-label-aligned secondary benchmark in \S\ref{sec:la-robustness}; the
+the secondary benchmark in \S\ref{sec:la-robustness}; the
 asymmetry between the two outcomes is the central finding.
 
 \subsection{Clean Performance}
@@ -862,11 +858,13 @@ Table~\ref{tab:mvtec-failure-cases}.
 
 \section{Contrastive Secondary Benchmark (Label-Aligned)}
 \label{sec:la-robustness}
-The same evaluation suite is now repeated on the label-aligned secondary
-benchmark \benchmark{} to provide the contrastive comparison. The full clean
-table for \benchmark{} is the saturated split discussed in
-\S\ref{sec:la-clean}; the robustness, drift, adversarial, and
-mechanism-isolation tables follow.
+The same evaluation suite is now applied to \benchmark{}, where four
+real-domain datasets are joined by explicit label alignment rather than
+co-observation. The aim of this section is to read each result alongside its
+MVTec 3D-AD counterpart in \S\ref{sec:mvtec-mechanism}, so the cross-benchmark
+asymmetry is visible per condition rather than only in the aggregate. The
+saturated clean split is discussed in \S\ref{sec:la-clean}; what follows are
+the robustness, drift, adversarial, and mechanism-isolation tables.
 
 \subsection{Missing-Domain Ablation}
 Table~\ref{tab:missing-results} and Fig.~\ref{fig:missing-modality} report
@@ -998,7 +996,7 @@ distribution-shift signal is the necessary trigger while validation ECE is not
 the driver of the robustness gain.
 
 \subsection{Cross-Benchmark Contrast}
-The same mechanism-isolation protocol applied to the primary naturally paired
+The same mechanism-isolation protocol applied to the primary co-observed
 MVTec 3D-AD benchmark (§\ref{sec:mvtec-mechanism}) gives the opposite verdict.
 On MVTec 3D-AD the KS-drift term is again the only component that controls
 whether the gate fires — but every firing condition produces a
@@ -1006,7 +1004,7 @@ whether the gate fires — but every firing condition produces a
 attention, with 95\% confidence intervals that exclude zero. The asymmetry is
 sharp: the KS-drift signal that delivers the entire $+0.0506$ \texttt{zero\_attack}
 gain on the label-aligned secondary benchmark misfires on legitimate
-inter-category variation in naturally paired data, places the mean reliability
+inter-category variation in RGB/3D paired data, places the mean reliability
 below $\tau$ on most batches, and the resulting adapted weighting consistently
 underperforms the static attention solution. The cleanest reading of the two
 results together is that a validation-derived drift detector cannot tell
@@ -1054,31 +1052,26 @@ the per-domain magnitudes are visualized in Fig.~\ref{fig:cda-impacts}.
 \end{figure}
 
 \section{Discussion and Limitations}
-\subsection{What the Results Support}
-Across the two benchmarks the results support three scoped claims. First, on
-the label-aligned secondary benchmark \benchmark{}, the reliability gate
-improves all-domain coherent score-collapse robustness ($+0.0506$
-\texttt{zero\_attack}, $+0.0319$ \texttt{max\_attack}) while preserving the
-saturated clean ranking. Second, the same mechanism is dominated by random
-forest fusion on naturally paired MVTec 3D-AD across every condition
-including clean (random forest $0.959$ vs static attention $0.650$ vs
-\method{} $0.610$). Third, the contrastive mechanism-isolation results
-together identify a specific failure mode of validation-derived drift
-detectors: a KS-drift signal calibrated on validation can deliver gains on
+\subsection{Scope of the Empirical Claim}
+The evidence supports three scoped claims and rules out one broad one.
+On \benchmark{} the reliability gate improves all-domain coherent
+score-collapse robustness ($+0.0506$ \texttt{zero\_attack}, $+0.0319$
+\texttt{max\_attack}) while preserving the saturated clean ranking. On
+naturally paired MVTec 3D-AD the same gate is strictly dominated:
+random forest fusion leads ($0.959$), static attention sits mid-pack
+($0.650$), and \method{} regresses to $0.610$, with every adversarial
+delta also negative. The mechanism-isolation results together identify
+a specific failure mode of validation-derived drift detectors --- a
+KS-drift signal calibrated on validation can deliver gains under
 coherent adversarial collapse and simultaneously misfire on legitimate
-inter-category heterogeneity in naturally paired data. These are useful
-systems results, but they are bounded by the benchmark design and the
-current lightweight image-statistic scorer used on MVTec 3D-AD.
-
-\subsection{What the Results Do Not Support}
-The results do not support a broad claim that \method{} improves multimodal
-fusion in general. On the primary naturally paired benchmark, \method{}
-strictly hurts clean and adversarial ROC-AUC; on the secondary
-label-aligned benchmark, the gain is real but is bounded to coherent
-all-domain attacks and conditioned on a benchmark in which clean accuracy is
-near saturated. The results also do not establish that any of the included
-attention models matches random forest fusion on naturally paired MVTec 3D-AD;
-the score-level gap is large and persists across seeds.
+inter-category heterogeneity --- which is the central claim of the
+paper. What the paper does not support is a broad claim that \method{}
+improves multimodal fusion in general: the label-aligned gain is bounded
+to coherent all-domain attacks on a near-saturated split, and no
+attention variant matches random forest on naturally paired MVTec 3D-AD
+at the current scorer level. Both directions are bounded by benchmark
+design and the lightweight image-statistic features used for MVTec 3D-AD
+domain scoring.
 
 \subsection{Failure Analysis}
 The result artifact exports representative cases for the largest
@@ -1103,11 +1096,11 @@ seed.}
 
 Across both benchmarks, the experiments expose four failure modes:
 \begin{itemize}
-  \item the label-aligned construction makes the secondary clean split highly
+  \item the synthetically paired construction makes the secondary clean split highly
   separable and obscures method differences,
   \item even the 5\% scorer-training hard-mode rerun weakens individual domain
-  scorers without fully removing label-aligned saturation,
-  \item on naturally paired MVTec 3D-AD the reliability gate misfires on
+  scorers without fully removing the secondary benchmark saturation,
+  \item on co-observed MVTec 3D-AD the reliability gate misfires on
   legitimate cross-category variation and degrades both clean and adversarial
   ROC-AUC,
   \item random forest fusion remains the strongest baseline on the paired
@@ -1124,7 +1117,7 @@ remains if the stress distributions are too synthetic relative to deployment
 failures.
 
 \subsection{Construct Validity}
-\benchmark{} measures real-domain score fusion, not naturally paired multimodal
+\benchmark{} measures real-domain score fusion, not RGB/3D paired multimodal
 incident detection. The MVTec 3D-AD path addresses natural RGB/3D pairing, but
 the current local run is a small bagel-subset smoke benchmark with lightweight
 features. This remains the largest construct-validity threat. The paper
@@ -1190,7 +1183,7 @@ contribution; it is not an expected attacker capability.
 
 \noindent\textbf{(Q5) Why no top-tier conference submission for this
 result?} The cross-benchmark contrast is real but the negative-result
-direction needs at least one additional naturally paired dataset before
+direction needs at least one additional co-observed dataset before
 the misfire pattern can be claimed as a property of validation-derived
 drift signals rather than a property of MVTec 3D-AD specifically. The
 submission target for this manuscript is therefore an arXiv preprint plus
@@ -1247,7 +1240,7 @@ counterfactual explanation, benchmark construction, baselines, ablations,
 calibration, and failure analysis. The strongest measured claim is that
 \method{} preserves clean attention performance, improves over
 confidence-weighted mean fusion, and helps under severe all-domain score
-collapse. The main remaining research gap is full naturally paired multimodal
+collapse. The main remaining research gap is full RGB/3D paired multimodal
 validation with stronger RGB--3D domain experts.
 
 \begin{thebibliography}{99}

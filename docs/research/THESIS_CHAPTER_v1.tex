@@ -35,7 +35,7 @@
 \newcommand{\benchmark}{ELARA-Bench-LA}
 \newcolumntype{L}[1]{>{\raggedright\arraybackslash}p{#1}}
 
-\title{\textbf{\system: A Thesis-Style Study of Reliability-Gated Multimodal Anomaly Fusion}}
+\title{\textbf{\system: When Reliability Gates Misfire --- A Cross-Benchmark Study of Drift-Signal Generalization in Multimodal Anomaly Fusion}}
 \author{Pratik Niroula\\Independent Researcher}
 \date{Draft thesis chapter, May 2026}
 
@@ -44,33 +44,33 @@
 \maketitle
 
 \begin{abstract}
-This chapter studies a practical question that arises when anomaly detection is
-built from several separate sources of evidence: how should a system combine
-domain scores when some domains become missing, shifted, poorly calibrated, or
-otherwise unreliable? The work is organized around \system{} (\systemfull{}), a
-research prototype for score-level multimodal anomaly fusion. The main method
-inside the system is \method{} (\methodfull{}), a reliability-aware attention
-module that keeps the standard attention path under normal conditions and
-injects reliability weights when batch-level evidence suggests that one or more
-domains have degraded.
+This chapter reports a contrastive negative result for validation-derived
+drift gates in multimodal anomaly fusion: the same Kolmogorov--Smirnov drift
+signal that improves all-domain coherent score-collapse robustness on a
+label-aligned secondary benchmark \emph{hurts} clean and adversarial ROC-AUC
+on naturally paired MVTec 3D-AD, with mechanism isolation identifying KS-drift
+mis-firing on legitimate inter-category variation as the cause. A
+validation-derived signal cannot distinguish coherent adversarial collapse
+from natural cross-category heterogeneity at the scale of paired anomaly
+data, and the asymmetry between the two benchmarks is the central scientific
+finding the chapter develops.
 
-The chapter is written as a graduate thesis submission rather than as a
-marketing description of the system. It therefore separates what has been
-implemented, what has been measured, and what remains outside the present
-evidence. The current evidence is a contrast across two benchmarks. The
-primary benchmark is a naturally paired MVTec 3D-AD run that covers all eight
-extracted object categories ($3{,}226$ paired RGB and 3D/depth samples, no
-label alignment). On that benchmark random forest fusion is the strongest
-baseline (clean ROC-AUC $0.959$), static attention is competitive
-($0.650$), and the reliability gate of \method{} \emph{lowers} both clean
-and adversarial ROC-AUC. The secondary benchmark, \benchmark{}, is a
-label-aligned real-domain stress benchmark; on that benchmark the same gate
-improves all-domain coherent-collapse attacks by $+0.0506$ and $+0.0319$ but
-the clean split is near saturated. The asymmetry between the two
-benchmarks is the central scientific finding: a validation-derived
-KS-drift signal cannot distinguish coherent adversarial collapse from
-legitimate inter-category heterogeneity at the scale of natural-paired
-data.
+The work is organized around \system{} (\systemfull{}), a research prototype
+for score-level multimodal anomaly fusion. The mechanism under study is
+\method{} (\methodfull{}), a reliability-aware attention module that keeps
+the standard attention path under normal conditions and injects reliability
+weights when batch-level evidence suggests that one or more domains have
+degraded. This is a graduate thesis submission rather than
+as a marketing description of the system. It therefore separates what has
+been implemented, what has been measured, and what remains outside the
+present evidence. The primary benchmark is co-observed MVTec 3D-AD
+across all eight extracted categories ($3{,}226$ paired RGB/depth samples, no
+label alignment). On that benchmark random forest fusion leads (clean ROC-AUC
+$0.959$), static attention is mid-pack ($0.650$), and \method{} regresses to
+$0.610$. The secondary benchmark, \benchmark{}, combines four real-domain
+datasets via explicit label alignment; on it the same gate improves
+all-domain coherent-collapse attacks by $+0.0506$ and $+0.0319$ but the clean
+split is near saturated.
 
 The chapter concludes that reliability-gated fusion is a useful design pattern
 for stress-aware score fusion under coherent attack assumptions, but it is
@@ -116,13 +116,12 @@ module is deliberately conservative. When domains appear reliable, the system
 uses the static attention model. When the average reliability drops below a
 threshold, the reliability-aware path is activated.
 
-The reason for writing the chapter in this form is that the current empirical
-story has both useful results and important limits. The real-domain fusion
+The chapter is in this form because the current evidence is both useful and bounded. The real-domain fusion
 benchmark combines fraud, cyber, behavior, and text datasets, but those records
 are aligned by label rather than by shared entities, timestamps, or incidents.
-This makes it useful for score-fusion stress testing, but it is not a complete
+It is useful for score-fusion stress testing, but it is not a complete
 multimodal incident benchmark. To reduce this gap, the repository now includes
-a naturally paired MVTec 3D-AD RGB/3D benchmark path. The current MVTec run is
+an MVTec 3D-AD RGB/3D benchmark path. The current MVTec run is
 a small local smoke benchmark, so it verifies the pipeline rather than the
 final performance claim.
 
@@ -139,7 +138,7 @@ brittle behavior under domain reliability stress?}
 This question is intentionally narrower than broad anomaly-detection
 superiority. The chapter does not claim that \method{} is always better than
 static attention, that the current paired MVTec run is complete, or that the
-label-aligned benchmark represents naturally co-observed incidents. The claim
+synthetically paired benchmark represents naturally co-observed incidents. The claim
 is about the fusion layer under specific stress conditions.
 
 \subsection{Main Claim}
@@ -153,14 +152,14 @@ coherent score-collapse conditions when reliability evidence indicates domain
 failure.}
 \end{quote}
 
-The measured evidence supports this claim on the secondary label-aligned
+The measured evidence supports this claim on the secondary
 benchmark. The clean table is near saturated and should be treated as a sanity
 check. The reliability-stress experiments, the threshold sweep, and the
 component ablation provide the more useful evidence about the mechanism.
 
 \subsection{Contributions}
 
-This chapter makes four scoped contributions:
+We make four scoped contributions:
 
 \begin{enumerate}
   \item It describes \system{}, a score-level anomaly-fusion research system
@@ -237,16 +236,46 @@ controlled stress.
 
 \subsection{Test-Time Adaptation Baselines}
 
-Test-time training and test-time adaptation update a model during inference to
-handle distribution shift~\cite{sun2020testtime,wang2021tent}. This chapter
-includes two score-level adaptation baselines because a reliability-gating
-method should not be compared only with static models. The first is a Tent-style
-score adapter that minimizes prediction entropy by adapting a scalar temperature
-and bias over a trained fusion head. The second is a pseudo-label TTT adapter
-that updates a logistic fusion head using high-confidence test predictions. Both
-are conservative because the input is score-level evidence rather than raw
-images or raw text. Their purpose is to answer whether generic score-level
-adaptation explains the same behavior as \method{}.
+Test-time adaptation updates a model during inference to handle distribution
+shift without access to labels at test time. Two threads of this literature
+matter for this work, and both are represented in the baseline suite.
+
+\paragraph{Test-time training (TTT).} Sun et al.~\cite{sun2020testtime}
+proposed updating a model on each test sample by minimizing a
+self-supervised auxiliary loss (the original work used rotation
+prediction). The intuition: an auxiliary task trained jointly with
+the main loss anchors the representation, so adapting the auxiliary
+component at test time also adjusts the main predictor in a useful
+direction. Later variants relax the self-supervision to pseudo-labels:
+the model produces a confident prediction on the test sample, treats it
+as the label, and updates the parameters with a small step against that
+target. The pseudo-label adapter in this study (\texttt{ttt\_pseudo\_label\_adapter})
+is a score-level version of this approach: it acts on the fusion-head
+logits rather than on a deep representation.
+
+\paragraph{Entropy-minimization TTA.} Wang et al.~\cite{wang2021tent}
+introduced Tent, which adapts only the batch normalization affine
+parameters of a frozen model to minimize the entropy of test predictions.
+Tent is simpler than full TTT and is the cleanest articulation of the
+hypothesis that confident predictions are correct predictions ---
+formally, that the local entropy of the predictive distribution is a
+sufficient signal for which direction to update. The Tent score adapter
+in this study (\texttt{tent\_score\_adapter}) implements the score-level
+analog: a frozen fusion head is adapted by a scalar temperature and bias
+fitted to minimize per-sample entropy on the test batch.
+
+\paragraph{Position of \method{} relative to TTA.} Both Tent and TTT
+adapt the \emph{prediction} at test time --- they ask which output should
+be revised. \method{} sits one level up: it adapts the \emph{weighting}
+of upstream domain scorers, not the fusion head itself. The reliability
+signals (validation ECE, KS drift, sharpness) are properties of the
+upstream domains' behavior, and the gate decides whether to trust them
+collectively or to fall back to a static weighting learned from training
+data. This makes \method{} conceptually closer to selective prediction
+\cite{geifman2017selective} --- a controller that decides when to commit
+to the model's standard behavior --- than to TTA in the Tent sense.
+Empirically the chapter compares all three (Tent, TTT, \method{}) on
+both benchmarks so the contrast is visible.
 
 \subsection{RGB--3D Industrial Anomaly Detection}
 
@@ -326,10 +355,11 @@ ablation, but the tables in this chapter use the batch-level gate.
 
 \subsection{Static Attention Path}
 
-The static attention path encodes each domain vector into a shared latent space.
-A learned domain embedding allows the model to distinguish evidence sources.
-The attention block then operates across available domains while ignoring
-missing domains through the mask. This path is the default because reliability
+The static attention path encodes each domain vector into a shared latent
+space. A learned domain embedding allows the model to distinguish evidence
+sources. A multi-head self-attention block~\cite{vaswani2017attention} then
+operates across available domains while ignoring missing domains through the
+mask. This path is the default because reliability
 adaptation should not disturb predictions when the domains look normal.
 
 \subsection{Reliability Estimation}
@@ -423,7 +453,7 @@ strongest baseline by a clear margin
 \method{} \emph{lowers} clean ROC-AUC to $0.610$ on this paired data. Tent and
 TTT score adapters are also competitive at $0.670$ and $0.569$ respectively.
 The headline of the paired benchmark is therefore a negative result for the
-gate: on naturally paired evidence, adapting at all degrades performance.
+gate: on co-observed evidence, adapting at all degrades performance.
 That outcome is the basis for the cross-benchmark contrast discussed in
 \S\ref{sec:thesis-contrast}.
 
@@ -451,7 +481,7 @@ domains.
 
 \begin{table}[H]
 \centering
-\caption{Benchmark metadata for the secondary label-aligned fusion input.}
+\caption{Benchmark metadata for the secondary synthetically paired fusion input.}
 \label{tab:thesis-real-metadata}
 \footnotesize
 \input{tables/elara_benchmark_metadata.tex}
@@ -467,7 +497,7 @@ domains.
 
 This benchmark is useful because it uses real domain datasets and lets the
 fusion layer be tested under controlled stress. It is also limited because the
-domains are label-aligned rather than naturally co-observed. A positive
+domains are the secondary benchmark rather than naturally co-observed. A positive
 composite draws positive records from available domains, and a negative
 composite draws negative records. This creates a meaningful score-fusion stress
 test, but it does not teach the model real temporal or causal relationships
@@ -486,7 +516,8 @@ The evaluation includes practical baselines rather than only weak averages:
   \item early-fusion MLP, which learns from flattened domain features and
   missing indicators;
   \item late-fusion ensemble, which stacks per-domain predictions;
-  \item random forest fusion, a strong structured-data baseline;
+  \item random forest fusion~\cite{breiman2001random}, a strong
+  structured-data baseline;
   \item static attention, the same attention architecture without reliability
   adaptation;
   \item Tent score adapter, a score-level entropy-minimization baseline;
@@ -697,7 +728,7 @@ shows that KS drift is the necessary trigger for the measured gain.
 \subsection{Cross-Benchmark Contrast (MVTec 3D-AD vs Label-Aligned)}
 \label{sec:thesis-contrast}
 
-The same mechanism-isolation protocol applied to the naturally paired MVTec
+The same mechanism-isolation protocol applied to the RGB/3D paired MVTec
 3D-AD benchmark produces the opposite verdict. On MVTec 3D-AD, the KS-drift
 term is again the only component that controls whether the gate fires --
 removing it (the \texttt{no\_ks} variant) returns adaptation to $0\%$ and
@@ -729,7 +760,7 @@ using the reliability-aware path.}
 
 The asymmetry between the two benchmarks is the central scientific finding of
 this chapter. The KS-drift signal that delivers the entire $+0.0506$
-\texttt{zero\_attack} gain on label-aligned synthetic pairing
+\texttt{zero\_attack} gain on synthetically paired data
 \emph{mis-fires} on legitimate inter-category heterogeneity in naturally
 paired data, places the mean reliability below $\tau$ on most batches, and
 the resulting adapted weighting consistently underperforms the static
@@ -839,24 +870,83 @@ statistical evidence is not the clean table, but the consistent all-domain
 score-collapse deltas and the mechanism-isolation tables. Even there, the
 chapter treats the result as conditional because the stress setup is controlled.
 
+\section{Reflection}
+\label{sec:reflection}
+
+This section is the thesis-form addition over the conference manuscript:
+what I would do differently, and which open questions the current evidence
+cannot answer.
+
+\subsection{What I Would Do Differently}
+
+The most useful single change would have been to delay the MVTec 3D-AD path
+until the lightweight image-statistic scorer was replaced with M3DM-style
+RGB features and PointNet++-style depth features. The current scorer caps
+the achievable ceiling on the primary benchmark; random forest fusion
+reaches $0.959$ because the residual non-linear structure in the
+eight-dimensional features is well-suited to trees, not because attention
+is fundamentally weaker for paired anomaly data. A stronger scorer would
+have produced a fairer comparison between RGA and the static-attention
+baseline, and the cross-benchmark contrast finding would then rest on a
+fairer per-benchmark performance basis rather than on absolute deltas at
+a low ceiling.
+
+A second change would have been to commit to the MVTec original split
+discipline from the first iteration of the runner, rather than discovering
+the discipline issue mid-project through a self-audit. The remediation pass
+was inexpensive in code but it shifted the headline numbers materially
+(static attention dropped from $0.728$ to $0.650$, RGA from $0.668$ to
+$0.610$). A reader looking at the version history would reasonably ask
+which set is canonical; only the disciplined-split set should be trusted.
+
+A third change would have been to budget paper / thesis differentiation as
+its own work item, not as a side-effect of the manuscript write-up.
+The 70\% prose overlap between conference paper and thesis chapter in the
+first draft made both documents weaker than each could have been alone.
+
+\subsection{Open Questions This Study Cannot Answer}
+
+The cross-benchmark contrast is suggestive but not conclusive. Specifically:
+
+\begin{itemize}
+  \item Does the KS-drift misfire generalize beyond MVTec 3D-AD? The
+  current evidence is two benchmarks --- one natural, one synthetic.
+  Reproducing the misfire on a third naturally paired benchmark
+  (CICIDS-2017 with authentication logs, MIMIC-IV with clinical notes,
+  or another industrial RGB+3D dataset) would convert the observation
+  from anecdote to pattern.
+  \item Would a category-aware drift signal close the gap? The current
+  KS test treats all inter-category variation as uniformly suspect. A
+  drift signal that conditions on the closest validation cluster, or
+  one that uses an empirical Bayes prior over category baselines, might
+  retain the secondary-benchmark stress gain without the natural-paired harm.
+  \item Is the saturation on \benchmark{} a function of the
+  label-alignment construction itself, or of the four-domain choice?
+  A two-domain or six-domain variant of \benchmark{} would isolate that.
+  \item Is the conservative gate threshold $\tau=0.66$ better or worse
+  than a learned-gate alternative? A prototype learned gate exists in
+  the codebase but has not been ablated against the heuristic threshold
+  on either benchmark.
+  \item Under what theoretical conditions is reliability-gated attention
+  provably preferable to static attention? Formal switching-rule analysis
+  with a bounded-shift assumption is tractable and was not attempted in
+  this study.
+\end{itemize}
+
+Each of these questions is a discrete piece of follow-up work. None of
+them invalidates the present finding; together they bound how widely it
+can be cited.
+
 \section{Reproducibility}
 
-The repository supports a scripted reproduction flow:
-
-\begin{enumerate}
-  \item prepare the real-domain fusion inputs;
-  \item optionally download and prepare the paired MVTec 3D-AD subset;
-  \item run the fusion benchmark YAML configurations;
-  \item generate tables and figures from the result JSON artifacts;
-  \item compile the manuscript with Tectonic.
-\end{enumerate}
-
-The relevant entry points are the benchmark-preparation scripts under
-\texttt{src/scripts/}, the fusion configurations under \texttt{configs/}, the
-generated result artifacts under \texttt{experiments/fusion/}, and the generated
-tables and figures under \texttt{docs/research/}. Regression tests cover
-attention masking, reliability estimation, statistics, baseline inclusion,
-paired-benchmark metadata, float XYZ TIFF reading, and result aggregation.
+The reproduction flow is documented in detail in
+Appendix~\ref{app:reproducibility}. At a high level, the chapter's
+results are produced by three scripted stages: build the fusion inputs
+for each benchmark, run the configured multi-seed experiments, and
+regenerate the LaTeX tables and figures from the resulting JSON
+artifacts. The appendix lists the entry points, configurations, and
+regression tests; a clean clone of the repository can rebuild both
+manuscripts in one command via \texttt{scripts/rebuild\_paper.sh}.
 
 \section{Conclusion and Future Work}
 
@@ -974,6 +1064,67 @@ Denoising,'' \emph{arXiv preprint arXiv:2406.02263}, 2024.
 L. Breiman, ``Random forests,'' \emph{Machine Learning}, vol. 45, pp. 5--32,
 2001.
 
+\bibitem{geifman2017selective}
+Y. Geifman and R. El-Yaniv, ``Selective classification for deep neural
+networks,'' in \emph{Advances in Neural Information Processing Systems},
+2017.
+
 \end{thebibliography}
+
+\appendix
+
+\section{Reproducibility Detail}
+\label{app:reproducibility}
+
+The repository supports a scripted reproduction flow with five stages:
+
+\begin{enumerate}
+  \item \textbf{Prepare \benchmark{} inputs.} Run
+  \texttt{src/scripts/prepare\_realfusion\_la\_benchmark.py} to build the
+  synthetically paired fusion CSV and metadata JSON from local fraud, cyber,
+  behavior, and text datasets. Source-row-disjoint train/validation/test
+  pools are emitted into a \texttt{fusion\_split} column so the
+  experiment runner can honor a predefined split.
+  \item \textbf{Prepare MVTec 3D-AD inputs.} Run
+  \texttt{src/scripts/prepare\_mvtec3d\_fusion\_benchmark.py}, which
+  discovers paired RGB/depth files across all extracted categories,
+  fits score normalization from train/good observations only, and
+  emits a long-format fusion table with the original MVTec
+  \texttt{split} column preserved.
+  \item \textbf{Run the multi-seed benchmark.} Use
+  \texttt{src/scripts/run\_breakthrough\_experiment.py} with the
+  appropriate YAML configuration. Both
+  \texttt{configs/attention\_mvtec3d\_fusion.yaml} and
+  \texttt{configs/attention\_real\_fusion.yaml} set the
+  \texttt{split\_column} field so the runner honors each dataset's
+  predefined train/validation/test partition.
+  \item \textbf{Generate paper assets.} Use
+  \texttt{src/scripts/generate\_craf\_paper\_assets.py} for the
+  \benchmark{} tables (\texttt{elara\_*.tex}, \texttt{elara\_*.png}) and
+  \texttt{src/scripts/emit\_mvtec3d\_assets.py} for the MVTec 3D-AD
+  parallels (\texttt{mvtec3d\_*.tex}, \texttt{mvtec3d\_*.png}).
+  \item \textbf{Compile.} The convenience script
+  \texttt{scripts/rebuild\_paper.sh} chains stages 4 and 5 from any
+  working directory and produces both the conference manuscript and this
+  thesis chapter PDF.
+\end{enumerate}
+
+Regression tests cover attention masking, reliability estimation,
+statistics, baseline inclusion, paired-benchmark metadata, float XYZ TIFF
+reading, leakage guards, predefined-split enforcement, and result
+aggregation. The full suite passes (221 tests, 3 skipped) on a clean
+checkout with \texttt{PYTHONPATH=src pytest tests/}.
+
+\section{Benchmark Construction Detail}
+\label{app:benchmark}
+
+Detailed construction of both benchmarks --- the per-domain feature
+extractors, the score-normalization protocol, the categorical-encoding
+choices, and the label-alignment procedure --- is preserved here so the
+main body of the thesis can focus on the empirical finding rather than
+on construction prose. The same construction details appear in the
+companion conference manuscript and are not duplicated here verbatim;
+readers are pointed to \S Benchmark Construction of
+\texttt{PAPER\_DRAFT\_v1.tex} for the canonical description.
 
 \end{document}
