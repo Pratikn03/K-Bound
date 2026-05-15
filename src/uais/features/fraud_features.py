@@ -45,7 +45,11 @@ def add_basic_fraud_features(
     # Amount column fallback (creditcard uses 'Amount', PaySim uses 'amount')
     amt_col = amount_column if amount_column in df_feats.columns else ("amount" if "amount" in df_feats.columns else None)
     if amt_col:
-        df_feats["amount_log"] = np.log1p(df_feats[amt_col].fillna(0))
+        # Clip negatives to zero before log1p — log1p of a negative is NaN, which breaks
+        # downstream pipelines. Real credit-card data has non-negative amounts; synthetic
+        # / refund rows with negatives are clipped rather than propagating NaN.
+        amt = pd.to_numeric(df_feats[amt_col], errors="coerce").fillna(0).clip(lower=0)
+        df_feats["amount_log"] = np.log1p(amt)
     else:
         raise KeyError(f"Amount column not found in DataFrame (checked '{amount_column}' and 'amount').")
 

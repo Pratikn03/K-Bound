@@ -44,6 +44,8 @@ def test_mvtec3d_builder_reads_float_xyz_tiff(tmp_path):
     import tifffile
 
     root = tmp_path / "mvtec3d"
+    _write_rgb(root / "bagel" / "train" / "good" / "rgb" / "ref.png", 40)
+    _write_depth(root / "bagel" / "train" / "good" / "xyz" / "ref.tiff", 40)
     _write_rgb(root / "bagel" / "test" / "combined" / "rgb" / "000.png", 80)
     xyz_path = root / "bagel" / "test" / "combined" / "xyz" / "000.tiff"
     xyz_path.parent.mkdir(parents=True, exist_ok=True)
@@ -52,5 +54,27 @@ def test_mvtec3d_builder_reads_float_xyz_tiff(tmp_path):
     from scripts.prepare_mvtec3d_fusion_benchmark import build_mvtec3d_fusion_frame
 
     frame, _ = build_mvtec3d_fusion_frame(root, embedding_dim=8)
-    assert len(frame) == 2
+    assert len(frame) == 4
     assert np.isfinite(frame.filter(like="embedding_").to_numpy()).all()
+
+
+def test_mvtec3d_builder_records_train_good_score_protocol(tmp_path):
+    root = tmp_path / "mvtec3d"
+    for idx, value in enumerate([20, 40, 60]):
+        _write_rgb(root / "bagel" / "train" / "good" / "rgb" / f"{idx:03d}.png", value)
+        _write_depth(root / "bagel" / "train" / "good" / "xyz" / f"{idx:03d}.tiff", value + 1)
+    _write_rgb(root / "bagel" / "validation" / "good" / "rgb" / "100.png", 180)
+    _write_depth(root / "bagel" / "validation" / "good" / "xyz" / "100.tiff", 181)
+    _write_rgb(root / "bagel" / "test" / "crack" / "rgb" / "200.png", 220)
+    _write_depth(root / "bagel" / "test" / "crack" / "xyz" / "200.tiff", 221)
+
+    from scripts.prepare_mvtec3d_fusion_benchmark import build_mvtec3d_fusion_frame
+
+    frame, metadata = build_mvtec3d_fusion_frame(root, embedding_dim=8)
+
+    assert metadata["score_protocol"]["normal_reference_split"] == "train"
+    assert metadata["score_protocol"]["normal_reference_defect_type"] == "good"
+    assert metadata["score_protocol"]["normal_reference_samples"] == 3
+    assert metadata["score_protocol"]["score_normalization"] == "train_good_distance_minmax_clipped"
+    assert frame["score_fit_split"].eq("train").all()
+    assert frame["score_fit_defect_type"].eq("good").all()

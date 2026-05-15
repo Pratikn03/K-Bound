@@ -22,27 +22,32 @@ def _compute_midrank(x: np.ndarray) -> np.ndarray:
     return midranks
 
 
+def _auc_structural_components(predictions: np.ndarray, labels: np.ndarray) -> Tuple[float, np.ndarray, np.ndarray]:
+    pos = predictions[labels == 1]
+    neg = predictions[labels == 0]
+    if len(pos) == 0 or len(neg) == 0:
+        return float("nan"), np.asarray([], dtype=float), np.asarray([], dtype=float)
+    comparisons = (pos[:, None] > neg[None, :]).astype(float)
+    comparisons += 0.5 * (pos[:, None] == neg[None, :])
+    auc = float(comparisons.mean())
+    positive_components = comparisons.mean(axis=1)
+    negative_components = comparisons.mean(axis=0)
+    return auc, positive_components, negative_components
+
+
 def _fast_delong(predictions: np.ndarray, labels: np.ndarray) -> Tuple[float, float]:
     predictions = np.asarray(predictions, dtype=float).ravel()
     labels = np.asarray(labels).ravel()
     finite = np.isfinite(predictions) & np.isfinite(labels)
     predictions = predictions[finite]
     labels = labels[finite]
-    pos = predictions[labels == 1]
-    neg = predictions[labels == 0]
-    if len(pos) == 0 or len(neg) == 0:
+    auc, v10, v01 = _auc_structural_components(predictions, labels)
+    if np.isnan(auc):
         return float("nan"), float("nan")
-    k = len(pos)
-    m = len(neg)
-    tx = _compute_midrank(np.concatenate([pos, neg]))[:k]
-    ty = _compute_midrank(np.concatenate([neg, pos]))[:m]
-    auc = (tx.sum() - k * (k + 1) / 2.0) / (k * m)
-    v01 = (tx - np.arange(1, k + 1)) / m
-    v10 = 1.0 - (ty - np.arange(1, m + 1)) / k
-    sx = np.cov(v01, bias=True)
-    sy = np.cov(v10, bias=True)
-    delong_var = sx / k + sy / m
-    return float(auc), float(delong_var)
+    n_pos = len(v10)
+    n_neg = len(v01)
+    delong_var = float(np.var(v10, ddof=0) / n_pos + np.var(v01, ddof=0) / n_neg)
+    return auc, delong_var
 
 
 def delong_roc_test(y_true: np.ndarray, y_score_a: np.ndarray, y_score_b: np.ndarray) -> float:
@@ -50,13 +55,22 @@ def delong_roc_test(y_true: np.ndarray, y_score_a: np.ndarray, y_score_b: np.nda
     y_true = np.asarray(y_true)
     y_score_a = np.asarray(y_score_a)
     y_score_b = np.asarray(y_score_b)
-    auc_a, var_a = _fast_delong(y_score_a, y_true)
-    auc_b, var_b = _fast_delong(y_score_b, y_true)
+    finite = np.isfinite(y_true) & np.isfinite(y_score_a) & np.isfinite(y_score_b)
+    y_true = y_true[finite]
+    y_score_a = y_score_a[finite]
+    y_score_b = y_score_b[finite]
+    auc_a, v10_a, v01_a = _auc_structural_components(y_score_a.astype(float), y_true)
+    auc_b, v10_b, v01_b = _auc_structural_components(y_score_b.astype(float), y_true)
     if np.isnan(auc_a) or np.isnan(auc_b):
         return float("nan")
-    var = var_a + var_b
-    if var <= 0:
-        return float("nan")
+    n_pos = len(v10_a)
+    n_neg = len(v01_a)
+    sx = np.cov(np.vstack([v10_a, v10_b]), bias=True)
+    sy = np.cov(np.vstack([v01_a, v01_b]), bias=True)
+    covariance = sx / n_pos + sy / n_neg
+    var = float(covariance[0, 0] + covariance[1, 1] - 2.0 * covariance[0, 1])
+    if var <= 1e-12:
+        return 1.0 if abs(auc_a - auc_b) <= 1e-12 else 0.0
     z = (auc_a - auc_b) / np.sqrt(var)
     p_value = 2 * (1 - stats.norm.cdf(abs(z)))
     return float(p_value)

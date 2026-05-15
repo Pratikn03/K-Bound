@@ -1,4 +1,4 @@
-"""Tests for TentAdapter and PseudoLabelTTTAdapter (test-time adaptive baselines)."""
+"""Tests for TentScoreAdapter and TTTPseudoLabelAdapter (test-time adaptive baselines)."""
 
 from __future__ import annotations
 
@@ -7,8 +7,8 @@ import pytest
 
 from uais.fusion.attention.baselines import (
     EarlyFusionMLP,
-    PseudoLabelTTTAdapter,
-    TentAdapter,
+    TTTPseudoLabelAdapter,
+    TentScoreAdapter,
     run_baseline_suite,
 )
 
@@ -38,7 +38,7 @@ def _make_data(seed: int = 0, missing_prob: float = 0.0):
 @pytest.fixture
 def fitted_tent():
     features, masks, labels, train_idx, test_idx = _make_data(seed=7)
-    adapter = TentAdapter(n_steps=1, lr=1e-3)
+    adapter = TentScoreAdapter(adaptation_steps=1, lr=1e-3)
     adapter.fit(features[train_idx], masks[train_idx], labels[train_idx])
     return adapter, features[test_idx], masks[test_idx], labels[test_idx]
 
@@ -46,13 +46,13 @@ def fitted_tent():
 @pytest.fixture
 def fitted_plt():
     features, masks, labels, train_idx, test_idx = _make_data(seed=8)
-    adapter = PseudoLabelTTTAdapter(confidence_threshold=0.8, n_steps=2, lr=5e-4)
+    adapter = TTTPseudoLabelAdapter(confidence_threshold=0.8, adaptation_steps=2, lr=5e-4)
     adapter.fit(features[train_idx], masks[train_idx], labels[train_idx])
     return adapter, features[test_idx], masks[test_idx], labels[test_idx]
 
 
 # ---------------------------------------------------------------------------
-# TentAdapter tests
+# TentScoreAdapter tests
 # ---------------------------------------------------------------------------
 
 def test_tent_predict_shape(fitted_tent):
@@ -68,7 +68,7 @@ def test_tent_predictions_in_range(fitted_tent):
 
 
 def test_tent_unfitted_raises():
-    adapter = TentAdapter()
+    adapter = TentScoreAdapter()
     features = np.random.rand(10, D, F).astype(np.float32)
     masks = np.zeros((10, D), dtype=bool)
     with pytest.raises(RuntimeError, match="fit"):
@@ -94,7 +94,7 @@ def test_tent_finite_outputs(fitted_tent):
 
 
 # ---------------------------------------------------------------------------
-# PseudoLabelTTTAdapter tests
+# TTTPseudoLabelAdapter tests
 # ---------------------------------------------------------------------------
 
 def test_plt_predict_shape(fitted_plt):
@@ -110,7 +110,7 @@ def test_plt_predictions_in_range(fitted_plt):
 
 
 def test_plt_unfitted_raises():
-    adapter = PseudoLabelTTTAdapter()
+    adapter = TTTPseudoLabelAdapter()
     features = np.random.rand(10, D, F).astype(np.float32)
     masks = np.zeros((10, D), dtype=bool)
     with pytest.raises(RuntimeError, match="fit"):
@@ -127,16 +127,25 @@ def test_plt_stateless_across_calls(fitted_plt):
 
 
 def test_plt_high_confidence_threshold_falls_back(fitted_plt):
-    """With threshold=1.0, no pseudo-labels are selected → identical to base model."""
+    """With threshold=1.0 no pseudo-labels are selected → result equals adaptation_steps=0."""
     adapter, features, masks, _ = fitted_plt
-    base_probs = adapter.base.predict_proba(features, masks)
-    adapter_no_pseudo = PseudoLabelTTTAdapter(
-        base=adapter.base, confidence_threshold=1.0, n_steps=5
+
+    no_pseudo = TTTPseudoLabelAdapter(confidence_threshold=1.0, adaptation_steps=10)
+    no_pseudo._scaler = adapter._scaler
+    no_pseudo._clf = adapter._clf
+    probs_no_pseudo = no_pseudo.predict_proba(features, masks)
+
+    no_steps = TTTPseudoLabelAdapter(confidence_threshold=0.85, adaptation_steps=0)
+    no_steps._scaler = adapter._scaler
+    no_steps._clf = adapter._clf
+    probs_no_steps = no_steps.predict_proba(features, masks)
+
+    np.testing.assert_allclose(
+        probs_no_pseudo,
+        probs_no_steps,
+        rtol=1e-4,
+        err_msg="With threshold=1.0 no adaptation should occur (equal to steps=0)",
     )
-    adapter_no_pseudo._base_state = adapter._base_state
-    probs = adapter_no_pseudo.predict_proba(features, masks)
-    np.testing.assert_allclose(probs, base_probs, rtol=1e-4,
-                               err_msg="With threshold=1.0 no adaptation should occur")
 
 
 # ---------------------------------------------------------------------------
@@ -144,7 +153,7 @@ def test_plt_high_confidence_threshold_falls_back(fitted_plt):
 # ---------------------------------------------------------------------------
 
 def test_run_baseline_suite_includes_ttt():
-    """run_baseline_suite should return metrics for tent_ttt and pseudo_label_ttt."""
+    """run_baseline_suite should return metrics for tent_score_adapter and ttt_pseudo_label_adapter."""
     features, masks, labels, train_idx, test_idx = _make_data(seed=99, missing_prob=0.1)
     val_idx = train_idx[:20]
     train_idx_ = train_idx[20:]
@@ -153,10 +162,10 @@ def test_run_baseline_suite_includes_ttt():
         train_idx_, val_idx, test_idx,
         score_index=SCORE_IDX,
     )
-    assert "tent_ttt" in results, "tent_ttt missing from run_baseline_suite output"
-    assert "pseudo_label_ttt" in results, "pseudo_label_ttt missing from run_baseline_suite output"
+    assert "tent_score_adapter" in results, "tent_ttt missing from run_baseline_suite output"
+    assert "ttt_pseudo_label_adapter" in results, "pseudo_label_ttt missing from run_baseline_suite output"
 
-    for key in ("tent_ttt", "pseudo_label_ttt"):
+    for key in ("tent_score_adapter", "ttt_pseudo_label_adapter"):
         assert "roc_auc" in results[key], f"{key} is missing roc_auc"
         auc = results[key]["roc_auc"]
         assert auc is None or (0.0 <= auc <= 1.0), f"{key} roc_auc out of [0,1]: {auc}"

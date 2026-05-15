@@ -30,7 +30,7 @@ from sklearn.ensemble import RandomForestClassifier
 from sklearn.linear_model import LogisticRegression
 from sklearn.preprocessing import StandardScaler
 
-from uais.utils.metrics import classification_metrics
+from uais.utils.metrics import classification_metrics, select_decision_threshold
 
 
 # ---------------------------------------------------------------------------
@@ -468,6 +468,20 @@ class TTTPseudoLabelAdapter(_ScoreHeadMixin):
 # Convenience runner
 # ---------------------------------------------------------------------------
 
+def _metrics_with_validation_threshold(
+    test_labels: np.ndarray,
+    test_probs: np.ndarray,
+    *,
+    val_labels: np.ndarray,
+    val_probs: np.ndarray,
+    strategy: str | None,
+) -> Dict[str, float]:
+    threshold = select_decision_threshold(val_labels, val_probs, strategy=strategy)
+    metrics = classification_metrics(test_labels, test_probs, threshold=threshold)
+    metrics["threshold_strategy"] = (strategy or "fixed_0p5").strip().lower()
+    return metrics
+
+
 def run_baseline_suite(
     features: np.ndarray,
     masks: np.ndarray,
@@ -480,6 +494,7 @@ def run_baseline_suite(
     random_seed: int = 42,
     baseline_epochs: Optional[int] = None,
     tta_steps: int = 25,
+    decision_threshold_strategy: str | None = "fixed_0p5",
 ) -> Dict[str, Dict]:
     """Fit all baselines and return classification metrics for each.
 
@@ -501,34 +516,68 @@ def run_baseline_suite(
         mlp_kwargs["patience"] = max(1, min(3, int(baseline_epochs)))
     mlp = EarlyFusionMLP(**mlp_kwargs)
     mlp.fit(train_feat, train_mask, train_labels, val_feat, val_mask, val_labels)
-    results["early_fusion_mlp"] = classification_metrics(test_labels, mlp.predict_proba(test_feat, test_mask))
+    results["early_fusion_mlp"] = _metrics_with_validation_threshold(
+        test_labels,
+        mlp.predict_proba(test_feat, test_mask),
+        val_labels=val_labels,
+        val_probs=mlp.predict_proba(val_feat, val_mask),
+        strategy=decision_threshold_strategy,
+    )
 
     # 2. Late Fusion Ensemble
     lfe = LateFusionEnsemble(score_index=score_index, random_seed=random_seed)
-    # Combine train+val for domain models (standard practice for stacked ensembles)
-    all_idx_for_lfe = np.concatenate([train_idx, val_idx])
-    lfe.fit(features[all_idx_for_lfe], masks[all_idx_for_lfe], labels[all_idx_for_lfe])
-    results["late_fusion_ensemble"] = classification_metrics(test_labels, lfe.predict_proba(test_feat, test_mask))
+    lfe.fit(train_feat, train_mask, train_labels)
+    results["late_fusion_ensemble"] = _metrics_with_validation_threshold(
+        test_labels,
+        lfe.predict_proba(test_feat, test_mask),
+        val_labels=val_labels,
+        val_probs=lfe.predict_proba(val_feat, val_mask),
+        strategy=decision_threshold_strategy,
+    )
 
     # 3. Random Forest
     rf = RandomForestFusion(random_seed=random_seed)
     rf.fit(train_feat, train_mask, train_labels)
-    results["random_forest"] = classification_metrics(test_labels, rf.predict_proba(test_feat, test_mask))
+    results["random_forest"] = _metrics_with_validation_threshold(
+        test_labels,
+        rf.predict_proba(test_feat, test_mask),
+        val_labels=val_labels,
+        val_probs=rf.predict_proba(val_feat, val_mask),
+        strategy=decision_threshold_strategy,
+    )
 
     # 4. Confidence-Weighted Mean (parameter-free)
     cwm = ConfidenceWeightedMean(score_index=score_index)
     cwm.fit(train_feat, train_mask, train_labels)
-    results["confidence_weighted_mean"] = classification_metrics(test_labels, cwm.predict_proba(test_feat, test_mask))
+    results["confidence_weighted_mean"] = _metrics_with_validation_threshold(
+        test_labels,
+        cwm.predict_proba(test_feat, test_mask),
+        val_labels=val_labels,
+        val_probs=cwm.predict_proba(val_feat, val_mask),
+        strategy=decision_threshold_strategy,
+    )
 
     # 5. Tent-style test-time entropy minimization
     tent = TentScoreAdapter(random_seed=random_seed, adaptation_steps=tta_steps)
     tent.fit(train_feat, train_mask, train_labels)
-    results["tent_score_adapter"] = classification_metrics(test_labels, tent.predict_proba(test_feat, test_mask))
+    results["tent_score_adapter"] = _metrics_with_validation_threshold(
+        test_labels,
+        tent.predict_proba(test_feat, test_mask),
+        val_labels=val_labels,
+        val_probs=tent.predict_proba(val_feat, val_mask),
+        strategy=decision_threshold_strategy,
+    )
 
     # 6. TTT-style high-confidence pseudo-label adaptation
     ttt = TTTPseudoLabelAdapter(random_seed=random_seed, adaptation_steps=tta_steps)
     ttt.fit(train_feat, train_mask, train_labels)
-    results["ttt_pseudo_label_adapter"] = classification_metrics(test_labels, ttt.predict_proba(test_feat, test_mask))
+    results["ttt_pseudo_label_adapter"] = _metrics_with_validation_threshold(
+        test_labels,
+        ttt.predict_proba(test_feat, test_mask),
+        val_labels=val_labels,
+        val_probs=ttt.predict_proba(val_feat, val_mask),
+        strategy=decision_threshold_strategy,
+    )
 
     return results
 

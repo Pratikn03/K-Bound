@@ -29,6 +29,7 @@ from pathlib import Path
 from typing import Dict, List, Optional, Tuple
 
 import numpy as np
+import pandas as pd
 import torch
 from sklearn import metrics as sk_metrics
 from sklearn.model_selection import train_test_split
@@ -48,6 +49,7 @@ from uais.fusion.attention.attention_utils import (
 )
 from uais.fusion.attention.counterfactual_explainer import CounterfactualDomainExplainer
 from uais.fusion.attention.cross_modal_attention import AttentionFusionModel
+from uais.fusion.attention.learned_gate import LearnedReliabilityGate
 from uais.fusion.attention.reliability_estimator import ReliabilityEstimator
 from uais.fusion.attention.train_attention_fusion import attention_fusion_loss, set_seed
 from uais.utils.config_loader import load_yaml
@@ -56,6 +58,7 @@ from uais.utils.metrics import (
     classification_metrics,
     expected_calibration_error,
     reliability_degradation_auc,
+    select_decision_threshold,
 )
 from uais.utils.paths import PROJECT_ROOT
 from uais.utils.result_aggregation import aggregate_stress_rows, summarize_seed_metric_rows, summarize_values
@@ -83,6 +86,7 @@ def _resolve(p: str | Path) -> Path:
 
 def _load_data(cfg: Dict):
     data_cfg = cfg.get("data", {})
+    train_cfg = cfg.get("training", {})
     model_cfg = cfg.get("model", {})
     path = _resolve(data_cfg.get("path", ""))
     df = load_fusion_dataframe(path)
@@ -117,10 +121,87 @@ def _load_data(cfg: Dict):
     )
     if labels is None:
         raise ValueError("Label column required for experiment.")
-    return features, masks, labels, sample_ids, domain_order, feature_columns, confidence_index, score_index
+    split_column = train_cfg.get("split_column") or data_cfg.get("split_column")
+    sample_splits = None
+    if split_column:
+        sample_splits = _sample_column_values(
+            df,
+            sample_ids=sample_ids,
+            value_column=str(split_column),
+            id_column=data_cfg.get("id_column", "sample_id"),
+            timestamp_column=data_cfg.get("timestamp_column"),
+        )
+    return features, masks, labels, sample_ids, domain_order, feature_columns, confidence_index, score_index, sample_splits
 
 
-def _split(labels: np.ndarray, train_cfg: Dict):
+def _sample_column_values(
+    df,
+    sample_ids: list,
+    value_column: str,
+    id_column: str = "sample_id",
+    timestamp_column: str | None = None,
+) -> np.ndarray:
+    if value_column not in df.columns:
+        raise ValueError(f"Configured split column '{value_column}' is missing from fusion data.")
+    if id_column not in df.columns:
+        raise ValueError(f"Missing id column: {id_column}")
+
+    if timestamp_column and timestamp_column in df.columns:
+        keys = df[id_column].astype(str).fillna("") + "::" + df[timestamp_column].astype(str).fillna("")
+    else:
+        keys = df[id_column]
+
+    work = pd.DataFrame({"_sample_key": keys, value_column: df[value_column]})
+    unique_counts = work.groupby("_sample_key")[value_column].nunique(dropna=True)
+    conflicts = unique_counts[unique_counts > 1]
+    if not conflicts.empty:
+        raise ValueError(f"Conflicting '{value_column}' values for {len(conflicts)} sample_ids.")
+
+    mapping = work.dropna(subset=[value_column]).groupby("_sample_key")[value_column].first()
+    missing = [sample_id for sample_id in sample_ids if sample_id not in mapping.index]
+    if missing:
+        preview = ", ".join(str(item) for item in missing[:5])
+        raise ValueError(f"Missing '{value_column}' value for sample_ids: {preview}")
+    return mapping.reindex(sample_ids).to_numpy()
+
+
+def _configured_split_values(train_cfg: Dict, key: str, default: list[str]) -> set[str]:
+    values = train_cfg.get(key, default)
+    if isinstance(values, str):
+        values = [values]
+    return {str(value) for value in values}
+
+
+def _split(labels: np.ndarray, train_cfg: Dict, split_values: np.ndarray | None = None):
+    if split_values is not None:
+        split_values = np.asarray(split_values)
+        if len(split_values) != len(labels):
+            raise ValueError("predefined split values must have one entry per label.")
+        train_values = _configured_split_values(train_cfg, "train_split_values", ["train"])
+        val_values = _configured_split_values(train_cfg, "val_split_values", ["validation", "val"])
+        test_values = _configured_split_values(train_cfg, "test_split_values", ["test"])
+        overlap = (train_values & val_values) | (train_values & test_values) | (val_values & test_values)
+        if overlap:
+            raise ValueError(f"Predefined split values overlap across roles: {sorted(overlap)}")
+
+        split_str = split_values.astype(str)
+        train_mask = np.isin(split_str, list(train_values))
+        val_mask = np.isin(split_str, list(val_values))
+        test_mask = np.isin(split_str, list(test_values))
+        assigned = train_mask.astype(int) + val_mask.astype(int) + test_mask.astype(int)
+        if np.any(assigned == 0):
+            unknown = sorted(set(split_str[assigned == 0]))
+            raise ValueError(f"Predefined split values not assigned to train/validation/test: {unknown}")
+        if np.any(assigned > 1):
+            raise ValueError("Predefined split assignment produced overlapping sample indices.")
+
+        train_idx = np.flatnonzero(train_mask)
+        val_idx = np.flatnonzero(val_mask)
+        test_idx = np.flatnonzero(test_mask)
+        if len(train_idx) == 0 or len(val_idx) == 0 or len(test_idx) == 0:
+            raise ValueError("Predefined splits must provide non-empty train, validation, and test sets.")
+        return train_idx, val_idx, test_idx
+
     idx = np.arange(len(labels))
     stratify = labels if len(np.unique(labels)) > 1 else None
     train_idx, test_idx = train_test_split(
@@ -332,7 +413,7 @@ def _predict_craf_with_stats(
     batch_size: int = 256,
     clean_gate_threshold: float = 0.66,
     per_sample_gating: bool = False,
-    learned_gate: "Optional[LearnedReliabilityGate]" = None,
+    learned_gate: Optional[LearnedReliabilityGate] = None,
 ) -> Tuple[np.ndarray, Dict[str, float | int]]:
     """Predict with reliability-gated attention weights.
 
@@ -345,7 +426,7 @@ def _predict_craf_with_stats(
         the mean reliability over its present domains is compared to the gate
         threshold (via ``estimator.gate_decisions``); samples above threshold
         keep the static path, samples below get the reliability-injected path.
-        Matches the per-sample r_{i,d} formalism stated in the VERA paper.
+        Matches the per-sample r_{i,d} formalism stated in the ELARA paper.
     """
     model.eval()
     probs = []
@@ -477,6 +558,7 @@ def _metric_bootstrap_intervals(
     n_bootstrap: int,
     alpha: float,
     seed: int,
+    threshold: float = 0.5,
 ) -> Dict[str, Dict[str, float | None]]:
     """Bootstrap CIs for core probability metrics on one evaluated split."""
 
@@ -493,7 +575,7 @@ def _metric_bootstrap_intervals(
             return float("nan")
 
     def _safe_f1(y, p):
-        return float(sk_metrics.f1_score(y, (p >= 0.5).astype(int), zero_division=0))
+        return float(sk_metrics.f1_score(y, (p >= threshold).astype(int), zero_division=0))
 
     out: Dict[str, Dict[str, float | None]] = {}
     for offset, (name, fn) in enumerate({"roc_auc": _safe_roc, "pr_auc": _safe_pr, "f1": _safe_f1}.items()):
@@ -512,6 +594,20 @@ def _metric_bootstrap_intervals(
     return out
 
 
+def _metrics_from_validation_threshold(
+    test_labels: np.ndarray,
+    test_probs: np.ndarray,
+    *,
+    val_labels: np.ndarray,
+    val_probs: np.ndarray,
+    strategy: str | None,
+) -> Dict[str, float | str]:
+    threshold = select_decision_threshold(val_labels, val_probs, strategy=strategy)
+    metrics = classification_metrics(test_labels, test_probs, threshold=threshold)
+    metrics["threshold_strategy"] = (strategy or "fixed_0p5").strip().lower()
+    return metrics
+
+
 def _evaluate_drift(
     model: AttentionFusionModel,
     estimator: ReliabilityEstimator,
@@ -525,6 +621,8 @@ def _evaluate_drift(
     clean_gate_threshold: float,
     seed: int,
     per_sample_gating: bool = False,
+    static_decision_threshold: float = 0.5,
+    craf_decision_threshold: float = 0.5,
 ) -> tuple[list[dict], list[dict]]:
     engine = AdversarialPerturbationEngine(domain_order, score_index, random_seed=seed)
     curve_rows: list[dict] = []
@@ -545,8 +643,8 @@ def _evaluate_drift(
                 clean_gate_threshold=clean_gate_threshold,
                 per_sample_gating=per_sample_gating,
             )
-            s_m = classification_metrics(test_labels, s_probs)
-            c_m = classification_metrics(test_labels, c_probs)
+            s_m = classification_metrics(test_labels, s_probs, threshold=static_decision_threshold)
+            c_m = classification_metrics(test_labels, c_probs, threshold=craf_decision_threshold)
             auc_static_curve.append(s_m.get("roc_auc", float("nan")))
             auc_craf_curve.append(c_m.get("roc_auc", float("nan")))
             curve_rows.append(
@@ -560,6 +658,8 @@ def _evaluate_drift(
                     "craf_pr_auc": c_m.get("pr_auc"),
                     "static_f1": s_m.get("f1"),
                     "craf_f1": c_m.get("f1"),
+                    "static_decision_threshold": float(static_decision_threshold),
+                    "craf_decision_threshold": float(craf_decision_threshold),
                 }
             )
         noise_arr = np.array(noise_levels, dtype=float)
@@ -592,6 +692,8 @@ def _evaluate_adversarial(
     clean_gate_threshold: float,
     seed: int,
     per_sample_gating: bool = False,
+    static_decision_threshold: float = 0.5,
+    craf_decision_threshold: float = 0.5,
 ) -> list[dict]:
     engine = AdversarialPerturbationEngine(domain_order, score_index, random_seed=seed)
     rows: list[dict] = []
@@ -618,8 +720,8 @@ def _evaluate_adversarial(
                 clean_gate_threshold=clean_gate_threshold,
                 per_sample_gating=per_sample_gating,
             )
-            s_m = classification_metrics(test_labels, s_probs)
-            c_m = classification_metrics(test_labels, c_probs)
+            s_m = classification_metrics(test_labels, s_probs, threshold=static_decision_threshold)
+            c_m = classification_metrics(test_labels, c_probs, threshold=craf_decision_threshold)
             rows.append(
                 {
                     "seed": int(seed),
@@ -631,6 +733,8 @@ def _evaluate_adversarial(
                     "craf_pr_auc": c_m.get("pr_auc"),
                     "static_f1": s_m.get("f1"),
                     "craf_f1": c_m.get("f1"),
+                    "static_decision_threshold": float(static_decision_threshold),
+                    "craf_decision_threshold": float(craf_decision_threshold),
                     "delta_auc": (c_m.get("roc_auc", 0.0) or 0.0) - (s_m.get("roc_auc", 0.0) or 0.0),
                 }
             )
@@ -648,6 +752,8 @@ def _evaluate_missing(
     clean_gate_threshold: float,
     seed: int,
     per_sample_gating: bool = False,
+    static_decision_threshold: float = 0.5,
+    craf_decision_threshold: float = 0.5,
 ) -> list[dict]:
     rows: list[dict] = []
     for p_drop in dropout_probs:
@@ -665,8 +771,8 @@ def _evaluate_missing(
             clean_gate_threshold=clean_gate_threshold,
             per_sample_gating=per_sample_gating,
         )
-        s_m = classification_metrics(test_labels, s_probs)
-        c_m = classification_metrics(test_labels, c_probs)
+        s_m = classification_metrics(test_labels, s_probs, threshold=static_decision_threshold)
+        c_m = classification_metrics(test_labels, c_probs, threshold=craf_decision_threshold)
         rows.append(
             {
                 "seed": int(seed),
@@ -677,6 +783,8 @@ def _evaluate_missing(
                 "craf_pr_auc": c_m.get("pr_auc"),
                 "static_f1": s_m.get("f1"),
                 "craf_f1": c_m.get("f1"),
+                "static_decision_threshold": float(static_decision_threshold),
+                "craf_decision_threshold": float(craf_decision_threshold),
             }
         )
     return rows
@@ -742,6 +850,8 @@ def _evaluate_tau_sweep(
     sigma: float,
     seed: int,
     per_sample_gating: bool = False,
+    static_decision_threshold: float = 0.5,
+    craf_decision_threshold: float = 0.5,
 ) -> list[dict]:
     rows: list[dict] = []
     if not thresholds:
@@ -760,7 +870,7 @@ def _evaluate_tau_sweep(
         condition_feat = condition["features"]
         condition_mask = condition["masks"]
         static_probs = _predict_static(model, condition_feat, condition_mask, device)
-        static_m = classification_metrics(test_labels, static_probs)
+        static_m = classification_metrics(test_labels, static_probs, threshold=static_decision_threshold)
         for threshold in thresholds:
             craf_probs, gate_stats = _predict_craf_with_stats(
                 model,
@@ -771,7 +881,7 @@ def _evaluate_tau_sweep(
                 clean_gate_threshold=float(threshold),
                 per_sample_gating=per_sample_gating,
             )
-            craf_m = classification_metrics(test_labels, craf_probs)
+            craf_m = classification_metrics(test_labels, craf_probs, threshold=craf_decision_threshold)
             rows.append(
                 {
                     "seed": int(seed),
@@ -785,6 +895,8 @@ def _evaluate_tau_sweep(
                     "craf_pr_auc": craf_m.get("pr_auc"),
                     "static_f1": static_m.get("f1"),
                     "craf_f1": craf_m.get("f1"),
+                    "static_decision_threshold": float(static_decision_threshold),
+                    "craf_decision_threshold": float(craf_decision_threshold),
                     "adaptation_rate": gate_stats["adaptation_rate"],
                     "mean_reliability": gate_stats["mean_reliability"],
                 }
@@ -830,13 +942,15 @@ def _evaluate_component_ablation(
     clean_gate_threshold: float,
     seed: int,
     per_sample_gating: bool = False,
+    threshold_strategy: str | None = "fixed_0p5",
+    static_decision_threshold: float = 0.5,
 ) -> list[dict]:
     rows: list[dict] = []
     specs = _component_ablation_specs(variant_names)
     if not specs:
         return rows
 
-    variant_estimators: dict[str, tuple[ReliabilityEstimator, float, dict[str, float]]] = {}
+    variant_estimators: dict[str, tuple[ReliabilityEstimator, float, dict[str, float], float]] = {}
     for spec in specs:
         weights = _component_weights(rel_cfg, disabled=spec["disabled_components"])
         estimator = _make_reliability_estimator(
@@ -846,8 +960,18 @@ def _evaluate_component_ablation(
             disabled_components=spec["disabled_components"],
         )
         estimator.fit(val_feat, val_mask, val_labels)
-        threshold = clean_gate_threshold if spec["gate_threshold"] is None else float(spec["gate_threshold"])
-        variant_estimators[spec["variant"]] = (estimator, threshold, weights)
+        gate_threshold = clean_gate_threshold if spec["gate_threshold"] is None else float(spec["gate_threshold"])
+        val_probs = _predict_craf(
+            model,
+            estimator,
+            val_feat,
+            val_mask,
+            device,
+            clean_gate_threshold=gate_threshold,
+            per_sample_gating=per_sample_gating,
+        )
+        decision_threshold = select_decision_threshold(val_labels, val_probs, strategy=threshold_strategy)
+        variant_estimators[spec["variant"]] = (estimator, gate_threshold, weights, decision_threshold)
 
     conditions = _all_domain_conditions(
         test_feat,
@@ -863,8 +987,8 @@ def _evaluate_component_ablation(
         condition_feat = condition["features"]
         condition_mask = condition["masks"]
         static_probs = _predict_static(model, condition_feat, condition_mask, device)
-        static_m = classification_metrics(test_labels, static_probs)
-        for variant, (variant_estimator, threshold, weights) in variant_estimators.items():
+        static_m = classification_metrics(test_labels, static_probs, threshold=static_decision_threshold)
+        for variant, (variant_estimator, threshold, weights, decision_threshold) in variant_estimators.items():
             craf_probs, gate_stats = _predict_craf_with_stats(
                 model,
                 variant_estimator,
@@ -874,7 +998,7 @@ def _evaluate_component_ablation(
                 clean_gate_threshold=threshold,
                 per_sample_gating=per_sample_gating,
             )
-            craf_m = classification_metrics(test_labels, craf_probs)
+            craf_m = classification_metrics(test_labels, craf_probs, threshold=decision_threshold)
             rows.append(
                 {
                     "seed": int(seed),
@@ -882,6 +1006,9 @@ def _evaluate_component_ablation(
                     "attack": condition["attack"],
                     "target_domain": condition["target_domain"],
                     "gate_threshold": threshold,
+                    "threshold_strategy": (threshold_strategy or "fixed_0p5").strip().lower(),
+                    "static_decision_threshold": float(static_decision_threshold),
+                    "craf_decision_threshold": float(decision_threshold),
                     "ece_weight": weights["ece_weight"],
                     "ks_weight": weights["ks_weight"],
                     "sharpness_weight": weights["sharpness_weight"],
@@ -916,6 +1043,21 @@ def _evaluate_calibration(
         "craf_bins": _calibration_bins(test_labels, craf_probs),
         "domain_ece_at_fit": estimator.get_domain_ece(),
     }
+
+
+def _is_finite_number(value) -> bool:
+    try:
+        return bool(np.isfinite(float(value)))
+    except (TypeError, ValueError):
+        return False
+
+
+def _cda_spearman_status(value: float, domain_order: List[str]) -> str:
+    if _is_finite_number(value):
+        return "computed"
+    if len(domain_order) < 3:
+        return "undefined: fewer than three finite domains"
+    return "undefined: insufficient finite CDA impacts or constant comparison values"
 
 
 def _evaluate_cda(
@@ -953,6 +1095,7 @@ def _evaluate_cda(
         "n_samples": len(cf_results),
         "mean_cf_impacts_abs": mean_cf_impacts,
         "spearman_cda_vs_ece_reliability": float(spearman_vs_ece),
+        "spearman_cda_vs_ece_reliability_status": _cda_spearman_status(spearman_vs_ece, domain_order),
         "sample_narratives": [r.narrative for r in cf_results[:5]],
     }
 
@@ -970,6 +1113,8 @@ def _failure_case(
     reliability_weights: np.ndarray,
     domain_order: List[str],
     score_index: int,
+    static_decision_threshold: float = 0.5,
+    craf_decision_threshold: float = 0.5,
 ) -> dict:
     domain_scores = {
         domain: None if bool(masks[idx, d]) else float(features[idx, d, score_index])
@@ -985,8 +1130,10 @@ def _failure_case(
         "label": int(labels[idx]),
         "static_prob": float(static_probs[idx]),
         "craf_prob": float(craf_probs[idx]),
-        "static_pred": int(static_probs[idx] >= 0.5),
-        "craf_pred": int(craf_probs[idx] >= 0.5),
+        "static_pred": int(static_probs[idx] >= static_decision_threshold),
+        "craf_pred": int(craf_probs[idx] >= craf_decision_threshold),
+        "static_decision_threshold": float(static_decision_threshold),
+        "craf_decision_threshold": float(craf_decision_threshold),
         "static_abs_error": float(abs(static_probs[idx] - labels[idx])),
         "craf_abs_error": float(abs(craf_probs[idx] - labels[idx])),
         "domain_scores": domain_scores,
@@ -1005,17 +1152,22 @@ def _extract_failure_cases(
     test_idx: np.ndarray,
     domain_order: List[str],
     score_index: int,
+    static_decision_threshold: float = 0.5,
+    craf_decision_threshold: float = 0.5,
 ) -> list[dict]:
     reliability_weights = estimator.compute_reliability_weights(test_feat, test_mask)
-    static_pred = (static_probs >= 0.5).astype(int)
-    craf_pred = (craf_probs >= 0.5).astype(int)
+    static_pred = (static_probs >= static_decision_threshold).astype(int)
+    craf_pred = (craf_probs >= craf_decision_threshold).astype(int)
     improvement = np.abs(static_probs - test_labels) - np.abs(craf_probs - test_labels)
     candidates: list[tuple[str, np.ndarray]] = [
-        ("biggest_rga_win", np.argsort(-improvement)),
-        ("biggest_rga_loss", np.argsort(improvement)),
-        ("rga_correct_static_wrong", np.flatnonzero((craf_pred == test_labels) & (static_pred != test_labels))),
-        ("static_correct_rga_wrong", np.flatnonzero((static_pred == test_labels) & (craf_pred != test_labels))),
-        ("high_confidence_rga_failure", np.argsort(-np.where(craf_pred != test_labels, np.abs(craf_probs - 0.5), -1))),
+        ("biggest_elara_win", np.argsort(-improvement)),
+        ("biggest_elara_loss", np.argsort(improvement)),
+        ("elara_correct_static_wrong", np.flatnonzero((craf_pred == test_labels) & (static_pred != test_labels))),
+        ("static_correct_elara_wrong", np.flatnonzero((static_pred == test_labels) & (craf_pred != test_labels))),
+        (
+            "high_confidence_elara_failure",
+            np.argsort(-np.where(craf_pred != test_labels, np.abs(craf_probs - craf_decision_threshold), -1)),
+        ),
     ]
     cases = []
     used: set[int] = set()
@@ -1024,9 +1176,9 @@ def _extract_failure_cases(
             idx = int(raw_idx)
             if idx < 0 or idx >= len(test_labels) or idx in used:
                 continue
-            if case_type in {"rga_correct_static_wrong", "static_correct_rga_wrong"} and len(idxs) == 0:
+            if case_type in {"elara_correct_static_wrong", "static_correct_elara_wrong"} and len(idxs) == 0:
                 continue
-            if case_type == "high_confidence_rga_failure" and craf_pred[idx] == test_labels[idx]:
+            if case_type == "high_confidence_elara_failure" and craf_pred[idx] == test_labels[idx]:
                 continue
             cases.append(
                 _failure_case(
@@ -1042,6 +1194,8 @@ def _extract_failure_cases(
                     reliability_weights,
                     domain_order,
                     score_index,
+                    static_decision_threshold=static_decision_threshold,
+                    craf_decision_threshold=craf_decision_threshold,
                 )
             )
             used.add(idx)
@@ -1113,11 +1267,14 @@ def _aggregate_cda(rows: list[dict], domain_order: List[str]) -> dict:
         for domain in domain_order
     }
     spearman = summarize_values(row.get("spearman_cda_vs_ece_reliability") for row in rows)
+    statuses = [row.get("spearman_cda_vs_ece_reliability_status") for row in rows if row.get("spearman_cda_vs_ece_reliability_status")]
+    status = "computed" if _is_finite_number(spearman["mean"]) else (statuses[-1] if statuses else "undefined")
     return {
         "n_samples": int(sum(row.get("n_samples", 0) for row in rows)),
         "mean_cf_impacts_abs": impacts,
         "spearman_cda_vs_ece_reliability": spearman["mean"],
         "spearman_cda_vs_ece_reliability_std": spearman["std"],
+        "spearman_cda_vs_ece_reliability_status": status,
         "sample_narratives": latest.get("sample_narratives", []),
         "per_seed": rows,
     }
@@ -1132,6 +1289,7 @@ def _run_experiment_arrays(
     domain_order: List[str],
     confidence_index: int | None,
     score_index: int,
+    sample_splits: np.ndarray | None = None,
     seed_override: Optional[int] = None,
     device: torch.device | None = None,
 ) -> Dict:
@@ -1149,6 +1307,7 @@ def _run_experiment_arrays(
     per_sample_gating = bool(rel_cfg.get("per_sample_gating", False))
     n_bootstrap = int(eval_cfg.get("n_bootstrap", 200))
     bootstrap_alpha = float(eval_cfg.get("bootstrap_alpha", 0.05))
+    threshold_strategy = eval_cfg.get("decision_threshold_strategy", eval_cfg.get("decision_threshold", "fixed_0p5"))
     attack_names = craf_cfg.get("adversarial_attacks", ["zero_attack", "max_attack", "gaussian_noise"])
     adversarial_sigma = float(craf_cfg.get("adversarial_sigma", 0.1))
     tau_sweep_thresholds = [float(v) for v in mechanism_cfg.get("tau_sweep_thresholds", [])]
@@ -1170,7 +1329,7 @@ def _run_experiment_arrays(
         set_seed(actual_seed)
         logger.info("Training and evaluating reliability-gated fusion (seed=%s)", actual_seed)
 
-        train_idx, val_idx, test_idx = _split(labels, {**train_cfg, "seed": actual_seed})
+        train_idx, val_idx, test_idx = _split(labels, {**train_cfg, "seed": actual_seed}, split_values=sample_splits)
         train_loader, val_loader, _ = _make_loaders(
             features,
             masks,
@@ -1188,10 +1347,23 @@ def _run_experiment_arrays(
         estimator = _make_reliability_estimator(rel_cfg, domain_order, score_index)
         estimator.fit(features[val_idx], masks[val_idx], labels[val_idx])
 
+        val_feat = features[val_idx]
+        val_mask = masks[val_idx]
+        val_labels = labels[val_idx]
         test_feat = features[test_idx]
         test_mask = masks[test_idx]
         test_labels = labels[test_idx]
+        static_val_probs = _predict_static(model, val_feat, val_mask, device)
         static_probs = _predict_static(model, test_feat, test_mask, device)
+        craf_val_probs = _predict_craf(
+            model,
+            estimator,
+            val_feat,
+            val_mask,
+            device,
+            clean_gate_threshold=clean_gate_threshold,
+            per_sample_gating=per_sample_gating,
+        )
         craf_probs = _predict_craf(
             model,
             estimator,
@@ -1202,8 +1374,22 @@ def _run_experiment_arrays(
             per_sample_gating=per_sample_gating,
         )
 
-        static_metrics = classification_metrics(test_labels, static_probs)
-        craf_metrics = classification_metrics(test_labels, craf_probs)
+        static_metrics = _metrics_from_validation_threshold(
+            test_labels,
+            static_probs,
+            val_labels=val_labels,
+            val_probs=static_val_probs,
+            strategy=threshold_strategy,
+        )
+        craf_metrics = _metrics_from_validation_threshold(
+            test_labels,
+            craf_probs,
+            val_labels=val_labels,
+            val_probs=craf_val_probs,
+            strategy=threshold_strategy,
+        )
+        static_decision_threshold = float(static_metrics["decision_threshold"])
+        craf_decision_threshold = float(craf_metrics["decision_threshold"])
         baseline_metrics = run_baseline_suite(
             features,
             masks,
@@ -1214,6 +1400,7 @@ def _run_experiment_arrays(
             score_index=score_index,
             device=device,
             random_seed=actual_seed,
+            decision_threshold_strategy=threshold_strategy,
         )
         per_seed_table1.append(
             {
@@ -1222,10 +1409,20 @@ def _run_experiment_arrays(
                 "craf_attention": craf_metrics,
                 "bootstrap_ci": {
                     "static_attention": _metric_bootstrap_intervals(
-                        test_labels, static_probs, n_bootstrap, bootstrap_alpha, actual_seed
+                        test_labels,
+                        static_probs,
+                        n_bootstrap,
+                        bootstrap_alpha,
+                        actual_seed,
+                        threshold=static_decision_threshold,
                     ),
                     "craf_attention": _metric_bootstrap_intervals(
-                        test_labels, craf_probs, n_bootstrap, bootstrap_alpha, actual_seed + 1000
+                        test_labels,
+                        craf_probs,
+                        n_bootstrap,
+                        bootstrap_alpha,
+                        actual_seed + 1000,
+                        threshold=craf_decision_threshold,
                     ),
                 },
                 "delong_p_craf_vs_static": float(delong_roc_test(test_labels, craf_probs, static_probs)),
@@ -1246,6 +1443,8 @@ def _run_experiment_arrays(
             clean_gate_threshold,
             actual_seed,
             per_sample_gating=per_sample_gating,
+            static_decision_threshold=static_decision_threshold,
+            craf_decision_threshold=craf_decision_threshold,
         )
         per_seed_drift_rows.extend(drift_rows)
         per_seed_degradation_rows.extend(degradation_rows)
@@ -1264,6 +1463,8 @@ def _run_experiment_arrays(
                 clean_gate_threshold,
                 actual_seed,
                 per_sample_gating=per_sample_gating,
+                static_decision_threshold=static_decision_threshold,
+                craf_decision_threshold=craf_decision_threshold,
             )
         )
         per_seed_tau_sweep_rows.extend(
@@ -1281,6 +1482,8 @@ def _run_experiment_arrays(
                 adversarial_sigma,
                 actual_seed,
                 per_sample_gating=per_sample_gating,
+                static_decision_threshold=static_decision_threshold,
+                craf_decision_threshold=craf_decision_threshold,
             )
         )
         per_seed_component_ablation_rows.extend(
@@ -1302,6 +1505,8 @@ def _run_experiment_arrays(
                 clean_gate_threshold,
                 actual_seed,
                 per_sample_gating=per_sample_gating,
+                threshold_strategy=threshold_strategy,
+                static_decision_threshold=static_decision_threshold,
             )
         )
         per_seed_missing_rows.extend(
@@ -1316,6 +1521,8 @@ def _run_experiment_arrays(
                 clean_gate_threshold,
                 actual_seed,
                 per_sample_gating=per_sample_gating,
+                static_decision_threshold=static_decision_threshold,
+                craf_decision_threshold=craf_decision_threshold,
             )
         )
         per_seed_calibration_rows.append(
@@ -1349,6 +1556,8 @@ def _run_experiment_arrays(
                     test_idx,
                     domain_order,
                     score_index,
+                    static_decision_threshold=static_decision_threshold,
+                    craf_decision_threshold=craf_decision_threshold,
                 ),
             }
         )
@@ -1435,6 +1644,10 @@ def _run_experiment_arrays(
     }
 
     return {
+        "decision_thresholding": {
+            "strategy": (threshold_strategy or "fixed_0p5").strip().lower(),
+            "selection_split": "validation",
+        },
         "table_1_clean_performance": per_seed_table1,
         "clean_metric_summary": clean_summary,
         "table_2_drift_robustness_per_seed": per_seed_drift_rows,
@@ -1478,7 +1691,17 @@ def _run_experiment_arrays(
 
 def run_experiment(cfg: Dict, seed_override: Optional[int] = None) -> Dict:
     logger.info("Phase 0: Loading data")
-    features, masks, labels, sample_ids, domain_order, _, confidence_index, score_index = _load_data(cfg)
+    (
+        features,
+        masks,
+        labels,
+        sample_ids,
+        domain_order,
+        _,
+        confidence_index,
+        score_index,
+        sample_splits,
+    ) = _load_data(cfg)
     return _run_experiment_arrays(
         cfg,
         features,
@@ -1488,6 +1711,7 @@ def run_experiment(cfg: Dict, seed_override: Optional[int] = None) -> Dict:
         domain_order,
         confidence_index,
         score_index or 0,
+        sample_splits=sample_splits,
         seed_override=seed_override,
     )
 

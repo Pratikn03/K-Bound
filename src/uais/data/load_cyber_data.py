@@ -54,6 +54,12 @@ def _normalize_labels(df: pd.DataFrame) -> pd.DataFrame:
 def _find_cyber_csvs(raw_dir: Path) -> List[Path]:
     if not raw_dir.exists():
         raise FileNotFoundError(f"Cyber raw directory not found: {raw_dir}")
+    official_splits = [
+        raw_dir / "UNSW_NB15_testing-set.csv",
+        raw_dir / "UNSW_NB15_training-set.csv",
+    ]
+    if all(path.exists() for path in official_splits):
+        return official_splits
     # Search recursively to pick up any split files
     csv_files = sorted(raw_dir.rglob("*.csv"))
     if not csv_files:

@@ -3,7 +3,7 @@ import os
 import time
 from collections import defaultdict
 from datetime import datetime
-from typing import Callable, Dict, List
+from typing import Callable, Dict, List, Optional
 
 import psutil
 from fastapi import Request, Response

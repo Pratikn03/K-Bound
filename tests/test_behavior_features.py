@@ -281,7 +281,7 @@ def sample_shoppers_data():
     n = 100
     return pd.DataFrame({
         'user': np.random.randint(1, 20, n),
-        'date': pd.date_range('2023-01-01', periods=n, freq='1H'),
+        'date': pd.date_range('2023-01-01', periods=n, freq='1h'),
         'Administrative': np.random.randint(0, 10, n),
         'Informational': np.random.randint(0, 10, n),
         'ProductRelated': np.random.randint(0, 100, n),

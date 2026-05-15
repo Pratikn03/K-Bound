@@ -147,24 +147,29 @@ def _image_features(path: Path, embedding_dim: int) -> np.ndarray:
     return values[:embedding_dim]
 
 
-def _minmax(values: np.ndarray) -> np.ndarray:
-    lo = np.nanmin(values, axis=0)
-    hi = np.nanmax(values, axis=0)
+def _minmax(values: np.ndarray, fit_mask: np.ndarray | None = None) -> np.ndarray:
+    reference = values[fit_mask] if fit_mask is not None and np.any(fit_mask) else values
+    lo = np.nanmin(reference, axis=0)
+    hi = np.nanmax(reference, axis=0)
     denom = np.where((hi - lo) > 1e-9, hi - lo, 1.0)
-    return np.nan_to_num((values - lo) / denom, nan=0.0, posinf=1.0, neginf=0.0)
+    scaled = np.nan_to_num((values - lo) / denom, nan=0.0, posinf=1.0, neginf=0.0)
+    return np.clip(scaled, 0.0, 1.0)
 
 
-def _normal_reference_scores(features: np.ndarray, normal_mask: np.ndarray) -> np.ndarray:
-    reference = features[normal_mask] if np.any(normal_mask) else features
+def _normal_reference_scores(features: np.ndarray, fit_mask: np.ndarray) -> np.ndarray:
+    if not np.any(fit_mask):
+        raise ValueError("Normal-reference scoring requires at least one fit observation.")
+    reference = features[fit_mask]
     center = reference.mean(axis=0)
     scale = reference.std(axis=0)
     scale = np.where(scale > 1e-6, scale, 1.0)
     distances = np.linalg.norm((features - center) / scale, axis=1)
-    lo = float(np.min(distances))
-    hi = float(np.max(distances))
+    reference_distances = distances[fit_mask]
+    lo = float(np.min(reference_distances))
+    hi = float(np.percentile(reference_distances, 95))
     if hi - lo <= 1e-9:
-        return np.zeros(len(distances), dtype=np.float32)
-    return ((distances - lo) / (hi - lo)).astype(np.float32)
+        hi = lo + 1.0
+    return np.clip((distances - lo) / (hi - lo), 0.0, 1.0).astype(np.float32)
 
 
 def build_mvtec3d_fusion_frame(
@@ -180,12 +185,17 @@ def build_mvtec3d_fusion_frame(
     rgb_features = np.vstack([_image_features(pair.rgb_path, embedding_dim) for pair in pairs])
     depth_features = np.vstack([_image_features(pair.depth_path, embedding_dim) for pair in pairs])
     labels = np.asarray([pair.label for pair in pairs], dtype=int)
-    normal_mask = labels == 0
+    splits = np.asarray([pair.split for pair in pairs], dtype=object)
+    defect_types = np.asarray([pair.defect_type for pair in pairs], dtype=object)
+    train_mask = splits == "train"
+    normal_reference_mask = train_mask & (defect_types == "good")
+    if not np.any(normal_reference_mask):
+        raise ValueError("MVTec 3D score generation requires at least one train/good paired observation.")
 
-    rgb_embeddings = _minmax(rgb_features)
-    depth_embeddings = _minmax(depth_features)
-    rgb_scores = _normal_reference_scores(rgb_features, normal_mask)
-    depth_scores = _normal_reference_scores(depth_features, normal_mask)
+    rgb_embeddings = _minmax(rgb_features, fit_mask=train_mask)
+    depth_embeddings = _minmax(depth_features, fit_mask=train_mask)
+    rgb_scores = _normal_reference_scores(rgb_features, normal_reference_mask)
+    depth_scores = _normal_reference_scores(depth_features, normal_reference_mask)
 
     rows = []
     for idx, pair in enumerate(pairs):
@@ -202,6 +212,8 @@ def build_mvtec3d_fusion_frame(
                 "domain": domain,
                 "label": pair.label,
                 "source_path": str(source_path),
+                "score_fit_split": "train",
+                "score_fit_defect_type": "good",
                 "score": float(np.clip(score, 0.0, 1.0)),
                 "confidence": float(np.clip(2.0 * abs(float(score) - 0.5), 0.0, 1.0)),
             }
@@ -226,6 +238,17 @@ def build_mvtec3d_fusion_frame(
         "embedding_dim": int(embedding_dim),
         "categories": sorted(frame["category"].unique().tolist()),
         "splits": sorted(frame["split"].unique().tolist()),
+        "score_protocol": {
+            "normal_reference_split": "train",
+            "normal_reference_defect_type": "good",
+            "normal_reference_samples": int(normal_reference_mask.sum()),
+            "score_normalization": "train_good_distance_minmax_clipped",
+            "embedding_normalization_split": "train",
+        },
+        "fusion_evaluation_protocol": (
+            "Original MVTec split is preserved in the `split` column. The attention-fusion "
+            "runner uses a supervised random split unless configured with an explicit split column."
+        ),
         "domain_coverage": {
             domain: float(frame.loc[frame["domain"] == domain, "sample_id"].nunique() / len(sample_frame))
             for domain in DOMAIN_ORDER

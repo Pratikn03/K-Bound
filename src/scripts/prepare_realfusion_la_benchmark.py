@@ -1,6 +1,6 @@
-"""Prepare the RealFusion-LA benchmark from four public tabular datasets.
+"""Prepare the ELARA-Bench-LA benchmark from four public tabular datasets.
 
-RealFusion-LA (Label-Aligned multimodal anomaly benchmark):
+ELARA-Bench-LA (Label-Aligned multimodal anomaly benchmark):
   4 domains  — credit_card_fraud | network_intrusion | online_shoppers | news_text
   ~8,000 composite samples (exact count depends on source data availability)
   ~30.7% positive rate | ~11.8% synthetic missingness
@@ -301,7 +301,7 @@ def build_benchmark(
     n_embedding_dims: int = 16,
     seed: int = 42,
 ) -> pd.DataFrame:
-    """Build RealFusion-LA and save to output_path. Returns the DataFrame."""
+    """Build ELARA-Bench-LA and save to output_path. Returns the DataFrame."""
     domain_loaders = {
         "credit_card_fraud": (creditcard_path, _load_creditcard),
         "network_intrusion": (unswnb15_path,   _load_unswnb15),
@@ -372,7 +372,7 @@ def build_benchmark(
 
 def main() -> None:
     parser = argparse.ArgumentParser(
-        description="Build the RealFusion-LA benchmark CSV.",
+        description="Build the ELARA-Bench-LA benchmark CSV.",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog=__doc__,
     )

@@ -1,4 +1,10 @@
-"""CLI: train a fusion meta-model from fraud, cyber, and behavior scores."""
+"""Deprecated CLI for legacy dashboard fusion.
+
+This script aligns unrelated fraud, cyber, and behavior rows by index for a
+dashboard feed. It is not split-safe research evidence. For paper experiments,
+use ``prepare_real_fusion_benchmark.py`` followed by
+``run_breakthrough_experiment.py`` with ``configs/attention_real_fusion.yaml``.
+"""
 from __future__ import annotations
 
 import json
@@ -150,6 +156,10 @@ def _save_attention_fusion_inputs(domain_outputs: dict[str, dict[str, np.ndarray
 
 
 def main():
+    logger.warning(
+        "run_fusion_experiment.py is deprecated for research evidence; use "
+        "prepare_real_fusion_benchmark.py + run_breakthrough_experiment.py instead."
+    )
     ensure_directories()
     cfg_fraud = load_config("fraud")
     cfg_cyber = load_config("cyber")

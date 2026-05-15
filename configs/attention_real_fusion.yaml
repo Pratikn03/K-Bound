@@ -1,10 +1,10 @@
-# RealFusion-LA: Label-Aligned multimodal anomaly detection benchmark
+# ELARA-Bench-LA: Label-Aligned multimodal anomaly detection benchmark
 # -----------------------------------------------------------------------
 # 4 domains — Credit Card Fraud | UNSW-NB15 Network Intrusion |
 #             Online Shoppers   | News Text (AG News binary)
 # ~8,000 composite samples | 30.7 % positive rate | 11.8 % natural missingness
 # Benchmark construction: see src/scripts/prepare_realfusion_la_benchmark.py
-# Paper: VERA — Verifiable Evidence Reliability for Anomalies (2026)
+# Paper: ELARA — Verifiable Evidence Reliability for Anomalies (2026)
 #        Method: RGA (Reliability-Gated Attention) = code name CRAF
 
 data:
@@ -50,6 +50,10 @@ training:
   lr: 0.001
   weight_decay: 0.01
   domain_dropout: 0.15
+  split_column: fusion_split
+  train_split_values: [train]
+  val_split_values: [validation]
+  test_split_values: [test]
   test_size: 0.2
   val_size: 0.1
   early_stopping: 6
@@ -65,6 +69,7 @@ evaluation:
   seeds: [42, 43, 44, 45, 46]
   n_bootstrap: 200
   bootstrap_alpha: 0.05
+  decision_threshold: val_f1
   save_attention_samples: 0
   domain_dropout_probs: [0.0, 0.1, 0.3, 0.5]
   domain_dropout_probs_extended: [0.0, 0.1, 0.2, 0.3, 0.5]

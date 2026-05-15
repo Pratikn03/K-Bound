@@ -151,6 +151,35 @@ def test_correlation_with_shap_finite():
     assert -1.0 <= corr <= 1.0, f"Spearman correlation out of [-1, 1]: {corr}"
 
 
+def test_correlation_with_shap_ignores_missing_domain_nan_impacts():
+    """Missing-domain NaNs should not make CDA/Spearman unavailable."""
+    explainer, _ = _make_explainer()
+    results = [
+        CounterfactualResult(
+            sample_id="a",
+            p_baseline=0.5,
+            cf_impacts={"fraud": 0.30, "cyber": float("nan"), "behavior": 0.10},
+            cf_impacts_pct={},
+            narrative="",
+        ),
+        CounterfactualResult(
+            sample_id="b",
+            p_baseline=0.5,
+            cf_impacts={"fraud": 0.20, "cyber": 0.15, "behavior": 0.05},
+            cf_impacts_pct={},
+            narrative="",
+        ),
+    ]
+
+    corr = explainer.correlation_with_shap(
+        results,
+        {"fraud": 0.9, "cyber": 0.7, "behavior": 0.1},
+    )
+
+    assert math.isfinite(corr)
+    assert corr > 0.0
+
+
 def test_single_sample_2d_input():
     """explain() must accept 2-D inputs [D, F] for a single sample."""
     explainer, _ = _make_explainer()

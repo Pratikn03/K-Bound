@@ -89,7 +89,9 @@ def compute_classification_metrics(y_true: np.ndarray, y_prob: np.ndarray, thres
     y_true = np.asarray(y_true)
     y_prob = np.asarray(y_prob)
     y_pred = (y_prob >= threshold).astype(int)
-    return _compute_from_pred_and_prob(y_true, y_pred, y_prob)
+    scores = _compute_from_pred_and_prob(y_true, y_pred, y_prob)
+    scores["decision_threshold"] = float(threshold)
+    return scores
 
 
 def compute_confusion_matrix(y_true: np.ndarray, y_pred: np.ndarray) -> np.ndarray:
@@ -130,8 +132,11 @@ def best_f1_threshold(y_true: np.ndarray, y_prob: np.ndarray) -> float:
     """Find probability threshold that maximizes F1 on given labels."""
     y_true = np.asarray(y_true)
     y_prob = np.asarray(y_prob)
+    finite = np.isfinite(y_true) & np.isfinite(y_prob)
+    y_true = y_true[finite]
+    y_prob = y_prob[finite]
     thresholds = np.unique(y_prob)
-    if len(thresholds) == 0:
+    if len(thresholds) == 0 or len(np.unique(y_true)) < 2:
         return 0.5
     best_thr = 0.5
     best_f1 = -1.0
@@ -142,6 +147,16 @@ def best_f1_threshold(y_true: np.ndarray, y_prob: np.ndarray) -> float:
             best_f1 = f1
             best_thr = thr
     return float(best_thr)
+
+
+def select_decision_threshold(y_true: np.ndarray, y_prob: np.ndarray, strategy: str | None = "fixed_0p5") -> float:
+    """Select a decision threshold from validation labels/probabilities only."""
+    normalized = (strategy or "fixed_0p5").strip().lower()
+    if normalized in {"fixed", "fixed_0p5", "fixed_0.5", "0.5"}:
+        return 0.5
+    if normalized in {"val_f1", "best_f1"}:
+        return best_f1_threshold(y_true, y_prob)
+    raise ValueError(f"Unknown decision threshold strategy: {strategy}")
 
 
 def reliability_degradation_auc(
@@ -274,6 +289,7 @@ __all__ = [
     "compute_confusion_matrix",
     "anomaly_metrics",
     "best_f1_threshold",
+    "select_decision_threshold",
     "reliability_degradation_auc",
     "bootstrap_metric_ci",
     "aggregate_cv_metrics",

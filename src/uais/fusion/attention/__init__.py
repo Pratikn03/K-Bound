@@ -1,7 +1,7 @@
 """Attention-based fusion modules for Phase 2.
 
-Paper names (VERA/RGA) vs. code names (UAIS-V/CRAF) cross-reference:
-  VERA  = Verifiable Evidence Reliability for Anomalies  (paper system name)
+Paper names (ELARA/RGA) vs. code names (UAIS-V/CRAF) cross-reference:
+  ELARA  = Verifiable Evidence Reliability for Anomalies  (paper system name)
   RGA   = Reliability-Gated Attention                    (paper method name)
   CRAF  = Calibration-aware Reliability-Adaptive Fusion  (code / internal name)
   TTRA  = Test-Time Reliability Adaptation               (CRAF injection step)

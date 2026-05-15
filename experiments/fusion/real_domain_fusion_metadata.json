@@ -5,10 +5,86 @@
   "important_limitation": "Domains are sampled from real datasets and aligned by binary label; they are not naturally co-observed entities.",
   "seed": 42,
   "folds": 3,
+  "scorer_train_fraction": 1.0,
   "samples": 8000,
   "positive_fraction_requested": 0.3,
-  "positive_fraction_actual": 0.306875,
+  "positive_fraction_actual": 0.30075,
   "missing_probability": 0.12,
+  "fusion_split_column": "fusion_split",
+  "fusion_split_fractions": {
+    "train": 0.72,
+    "validation": 0.08,
+    "test": 0.2
+  },
+  "source_row_disjoint_splits": true,
+  "split_source_counts": {
+    "train": {
+      "fraud": {
+        "rows": 14400,
+        "positives": 354,
+        "negatives": 14046
+      },
+      "cyber": {
+        "rows": 14400,
+        "positives": 7200,
+        "negatives": 7200
+      },
+      "behavior": {
+        "rows": 8878,
+        "positives": 1374,
+        "negatives": 7504
+      },
+      "nlp": {
+        "rows": 14400,
+        "positives": 7200,
+        "negatives": 7200
+      }
+    },
+    "validation": {
+      "fraud": {
+        "rows": 1600,
+        "positives": 39,
+        "negatives": 1561
+      },
+      "cyber": {
+        "rows": 1600,
+        "positives": 800,
+        "negatives": 800
+      },
+      "behavior": {
+        "rows": 987,
+        "positives": 153,
+        "negatives": 834
+      },
+      "nlp": {
+        "rows": 1600,
+        "positives": 800,
+        "negatives": 800
+      }
+    },
+    "test": {
+      "fraud": {
+        "rows": 4000,
+        "positives": 99,
+        "negatives": 3901
+      },
+      "cyber": {
+        "rows": 4000,
+        "positives": 2000,
+        "negatives": 2000
+      },
+      "behavior": {
+        "rows": 2465,
+        "positives": 381,
+        "negatives": 2084
+      },
+      "nlp": {
+        "rows": 4000,
+        "positives": 2000,
+        "negatives": 2000
+      }
+    }
+  },
   "domain_order": [
     "fraud",
     "cyber",
@@ -17,10 +93,10 @@
   ],
   "embedding_dim": 8,
   "domain_coverage": {
-    "behavior": 0.884625,
-    "cyber": 0.885375,
-    "fraud": 0.882625,
-    "nlp": 0.877
+    "behavior": 0.88125,
+    "cyber": 0.87875,
+    "fraud": 0.877125,
+    "nlp": 0.8765
   },
   "domain_scorer_metrics": {
     "fraud": {
@@ -28,28 +104,36 @@
       "positives": 492,
       "positive_rate": 0.0246,
       "oof_roc_auc": 0.9686390386433084,
-      "oof_pr_auc": 0.7826122707511873
+      "oof_pr_auc": 0.7826122707511873,
+      "scorer_train_fraction": 1.0,
+      "mean_fold_train_rows": 13333.333333333334
     },
     "cyber": {
       "rows": 20000,
       "positives": 10000,
       "positive_rate": 0.5,
       "oof_roc_auc": 0.96836011,
-      "oof_pr_auc": 0.9695657723324117
+      "oof_pr_auc": 0.9695657723324117,
+      "scorer_train_fraction": 1.0,
+      "mean_fold_train_rows": 13333.333333333334
     },
     "behavior": {
       "rows": 12330,
       "positives": 1908,
       "positive_rate": 0.15474452554744525,
-      "oof_roc_auc": 0.8715636462055955,
-      "oof_pr_auc": 0.6053000483412313
+      "oof_roc_auc": 0.8711316912658957,
+      "oof_pr_auc": 0.6042322671324776,
+      "scorer_train_fraction": 1.0,
+      "mean_fold_train_rows": 8220.0
     },
     "nlp": {
       "rows": 20000,
       "positives": 10000,
       "positive_rate": 0.5,
       "oof_roc_auc": 0.9972853900000002,
-      "oof_pr_auc": 0.9973387495194522
+      "oof_pr_auc": 0.9973387495194522,
+      "scorer_train_fraction": 1.0,
+      "mean_fold_train_rows": 13333.333333333334
     }
   },
   "output": "/Volumes/T9/uav/AutoML_Flagship_V8/experiments/fusion/real_domain_fusion_inputs.csv"

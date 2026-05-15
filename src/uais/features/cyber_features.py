@@ -28,7 +28,7 @@ def build_cyber_feature_table(
                 df.drop(columns=[col], inplace=True)
 
     target_series = df[target_column]
-    if not np.issubdtype(target_series.dtype, np.number):
+    if not pd.api.types.is_numeric_dtype(target_series.dtype):
         target_series = pd.Series(LabelEncoder().fit_transform(target_series.astype(str)), index=df.index)
     target_series = pd.to_numeric(target_series, errors="coerce")
     target_series = target_series.replace([np.inf, -np.inf], np.nan)

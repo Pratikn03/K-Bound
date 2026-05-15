@@ -28,11 +28,11 @@
 \setlist[itemize]{leftmargin=1.6em}
 \setlist[enumerate]{leftmargin=1.8em}
 
-\newcommand{\system}{VERA}
-\newcommand{\systemfull}{Verifiable Evidence Reliability for Anomalies}
+\newcommand{\system}{ELARA}
+\newcommand{\systemfull}{Evidence-Layered Reliability for Anomaly fusion}
 \newcommand{\method}{RGA}
 \newcommand{\methodfull}{Reliability-Gated Attention}
-\newcommand{\benchmark}{RealFusion-LA}
+\newcommand{\benchmark}{ELARA-Bench-LA}
 \newcolumntype{L}[1]{>{\raggedright\arraybackslash}p{#1}}
 
 \title{\textbf{\system: A Thesis-Style Study of Reliability-Gated Multimodal Anomaly Fusion}}
@@ -57,22 +57,30 @@ domains have degraded.
 The chapter is written as a graduate thesis submission rather than as a
 marketing description of the system. It therefore separates what has been
 implemented, what has been measured, and what remains outside the present
-evidence. The strongest current result is conditional. On the secondary
-label-aligned real-domain benchmark, the clean split is nearly saturated and
-does not show a meaningful clean-ranking advantage for \method{} over static
-attention. The more informative setting is reliability stress: under all-domain
-zero and max score-collapse attacks, \method{} raises ROC-AUC by 0.064 and
-0.030 over static attention in the current result artifact while preserving
-competitive clean performance. A paired MVTec 3D-AD RGB/3D smoke benchmark is
-also included. That run verifies the naturally paired pipeline, but it does not
-yet support a performance claim because tree and MLP fusion baselines are much
-stronger than the current attention models on the small bagel subset.
+evidence. The current evidence is a contrast across two benchmarks. The
+primary benchmark is a naturally paired MVTec 3D-AD run that covers all eight
+extracted object categories ($3{,}226$ paired RGB and 3D/depth samples, no
+label alignment). On that benchmark random forest fusion is the strongest
+baseline (clean ROC-AUC $0.959$), static attention is competitive
+($0.650$), and the reliability gate of \method{} \emph{lowers} both clean
+and adversarial ROC-AUC. The secondary benchmark, \benchmark{}, is a
+label-aligned real-domain stress benchmark; on that benchmark the same gate
+improves all-domain coherent-collapse attacks by $+0.0506$ and $+0.0319$ but
+the clean split is near saturated. The asymmetry between the two
+benchmarks is the central scientific finding: a validation-derived
+KS-drift signal cannot distinguish coherent adversarial collapse from
+legitimate inter-category heterogeneity at the scale of natural-paired
+data.
 
 The chapter concludes that reliability-gated fusion is a useful design pattern
-for stress-aware score fusion, but not a general replacement for strong
-baselines or specialized domain detectors. The remaining research work is to
-run the paired benchmark at full scale with stronger RGB--3D domain experts and
-to test the reliability gate on additional naturally co-observed anomaly data.
+for stress-aware score fusion under coherent attack assumptions, but it is
+not yet a defensible general replacement for strong baselines on naturally
+paired data. The remaining research work is to replace the lightweight
+MVTec image-statistic scorers with stronger RGB--3D domain experts, to test
+the reliability gate on additional naturally co-observed anomaly datasets,
+to evaluate the learned-gate alternative against the fixed threshold, and to
+develop a formal switching-rule analysis of when reliability-aware fusion
+should be preferred to the static path.
 \end{abstract}
 
 \tableofcontents
@@ -271,7 +279,7 @@ attributions.
 
 \begin{figure}[H]
 \centering
-\includegraphics[width=0.96\textwidth]{vera_system_architecture.png}
+\includegraphics[width=0.96\textwidth]{elara_system_architecture.png}
 \caption{\system{} system architecture. Domain experts produce scores,
 confidence values, and compact embeddings. The fusion schema feeds static
 attention and the reliability estimator. The output is a risk score plus
@@ -312,8 +320,9 @@ $m_{i,d}$. The system estimates
 where $\hat{p}_i$ is the final anomaly probability. A static fusion model learns
 this relationship from the training data and uses the same learned trust policy
 at inference time. \method{} adds a batch-level reliability vector
-$r \in [0,1]^D$. The reliability vector is applied only when the gate indicates
-that the current batch is less reliable than expected.
+$r \in [0,1]^D$ in the reported runs and applies it through each sample's
+observed-domain mask. A per-sample reliability mode is implemented for
+ablation, but the tables in this chapter use the batch-level gate.
 
 \subsection{Static Attention Path}
 
@@ -383,35 +392,48 @@ which source of evidence mattered most.
 
 \section{Benchmark Construction}
 
-\subsection{Naturally Paired MVTec 3D-AD Smoke Benchmark}
+\subsection{Naturally Paired MVTec 3D-AD Benchmark}
 
 The paired benchmark path uses MVTec 3D-AD because each object observation has
 paired RGB and 3D/XYZ evidence. The preparation script discovers paired files,
 emits two rows per observation, stores the original pairing key, and marks the
-metadata as naturally paired. The current local run uses the bagel category
-subset with 78 observations and 156 domain rows.
+metadata as naturally paired. The current run covers all eight extracted
+object categories -- bagel, cable\_gland, cookie, dowel, foam, peach, rope,
+and tire -- for a total of 3{,}226 paired samples and 6{,}452 domain rows,
+with a positive fraction of $0.224$ and full RGB and depth coverage.
 
 \begin{table}[H]
 \centering
-\caption{Naturally paired MVTec 3D-AD subset metadata.}
+\caption{Naturally paired MVTec 3D-AD multi-category metadata.}
 \label{tab:thesis-mvtec-metadata}
 \footnotesize
 \input{tables/mvtec3d_benchmark_metadata.tex}
 \end{table}
 
 The initial MVTec domain scores are lightweight normal-reference image-statistic
-scores. This choice keeps the benchmark locally runnable, but it also limits the
-performance claim. The result in Table~\ref{tab:thesis-mvtec-clean} should be
-read as an end-to-end pipeline check. Random forest fusion and early-fusion MLP
-perform much better than static attention and \method{} on this small paired
-run. That outcome is useful because it shows that the paired benchmark is
-working and that the attention model still needs stronger paired-domain
-features or additional training design before it can be a headline result.
+scores fit from original train-good observations only. This keeps the benchmark
+locally runnable, but it limits the absolute performance ceiling. The supervised
+attention-fusion split is a held-out fusion split over paired observations, not
+the canonical MVTec train/test anomaly-detection protocol. The result in
+Table~\ref{tab:thesis-mvtec-clean} is the primary headline of this chapter and
+should be read with the contrastive view in mind. Random forest fusion is the
+strongest baseline by a clear margin
+(ROC-AUC $0.959$); early-fusion MLP is the second-strongest tabular baseline
+($0.829$). Static attention is mid-pack ($0.650$), and the reliability gate of
+\method{} \emph{lowers} clean ROC-AUC to $0.610$ on this paired data. Tent and
+TTT score adapters are also competitive at $0.670$ and $0.569$ respectively.
+The headline of the paired benchmark is therefore a negative result for the
+gate: on naturally paired evidence, adapting at all degrades performance.
+That outcome is the basis for the cross-benchmark contrast discussed in
+\S\ref{sec:thesis-contrast}.
 
 \begin{table}[H]
 \centering
-\caption{Paired MVTec 3D-AD bagel-subset smoke benchmark. Values are
-mean$\pm$standard deviation with 95\% confidence intervals across five seeds.}
+\caption{Naturally paired MVTec 3D-AD clean held-out performance across
+eight categories. Values are mean$\pm$standard deviation with 95\% confidence
+intervals across five seeds. Random forest fusion is the strongest baseline;
+\method{} attention degrades static-attention performance on this paired
+benchmark.}
 \label{tab:thesis-mvtec-clean}
 \scriptsize
 \resizebox{\textwidth}{!}{\input{tables/mvtec3d_clean_results.tex}}
@@ -432,7 +454,7 @@ domains.
 \caption{Benchmark metadata for the secondary label-aligned fusion input.}
 \label{tab:thesis-real-metadata}
 \footnotesize
-\input{tables/vera_benchmark_metadata.tex}
+\input{tables/elara_benchmark_metadata.tex}
 \end{table}
 
 \begin{table}[H]
@@ -449,7 +471,10 @@ domains are label-aligned rather than naturally co-observed. A positive
 composite draws positive records from available domains, and a negative
 composite draws negative records. This creates a meaningful score-fusion stress
 test, but it does not teach the model real temporal or causal relationships
-among the domains.
+among the domains. Source rows are now split into train, validation, and test
+pools before composite sampling, and the experiment runner consumes the
+\texttt{fusion\_split} column to keep the same \texttt{domain/source\_row/label}
+key out of multiple supervised fusion splits.
 
 \subsection{Baselines}
 
@@ -506,12 +531,12 @@ a meaningful advantage.
 mean, standard deviation, and 95\% confidence intervals across five seeds.}
 \label{tab:thesis-clean-results}
 \scriptsize
-\resizebox{\textwidth}{!}{\input{tables/rga_clean_results.tex}}
+\resizebox{\textwidth}{!}{\input{tables/elara_clean_results.tex}}
 \end{table}
 
 \begin{figure}[H]
 \centering
-\includegraphics[width=0.92\textwidth]{rga_clean_benchmark.png}
+\includegraphics[width=0.92\textwidth]{elara_clean_benchmark.png}
 \caption{Clean benchmark ROC-AUC and PR-AUC across score-level and attention
 fusion methods. The compressed y-axis reflects the near-saturated clean split.}
 \label{fig:thesis-clean}
@@ -529,7 +554,7 @@ claim.
 \caption{Clean ranking and F1 confidence intervals across configured seeds.}
 \label{tab:thesis-clean-ci}
 \scriptsize
-\resizebox{\textwidth}{!}{\input{tables/rga_clean_ci_results.tex}}
+\resizebox{\textwidth}{!}{\input{tables/elara_clean_ci_results.tex}}
 \end{table}
 
 \subsection{Missing-Domain Ablation}
@@ -545,12 +570,12 @@ method behaves like the static model.
 \caption{Missing-domain ablation. Delta is \method{} minus static attention.}
 \label{tab:thesis-missing}
 \scriptsize
-\resizebox{\textwidth}{!}{\input{tables/rga_missing_results.tex}}
+\resizebox{\textwidth}{!}{\input{tables/elara_missing_results.tex}}
 \end{table}
 
 \begin{figure}[H]
 \centering
-\includegraphics[width=0.80\textwidth]{rga_missing_modality.png}
+\includegraphics[width=0.80\textwidth]{elara_missing_modality.png}
 \caption{ROC-AUC under additional missing-domain dropout.}
 \label{fig:thesis-missing}
 \end{figure}
@@ -568,12 +593,12 @@ a large separation under every stress type.
 \caption{Drift robustness summary. Higher area is better.}
 \label{tab:thesis-drift}
 \scriptsize
-\resizebox{\textwidth}{!}{\input{tables/rga_drift_summary.tex}}
+\resizebox{\textwidth}{!}{\input{tables/elara_drift_summary.tex}}
 \end{table}
 
 \begin{figure}[H]
 \centering
-\includegraphics[width=0.96\textwidth]{rga_drift_curves.png}
+\includegraphics[width=0.96\textwidth]{elara_drift_curves.png}
 \caption{Per-domain score-drift curves on the real-domain benchmark.}
 \label{fig:thesis-drift}
 \end{figure}
@@ -581,12 +606,14 @@ a large separation under every stress type.
 \subsection{Adversarial Score Perturbations}
 
 The clearest stress result appears under coherent all-domain score collapse.
-Under the all-domain zero attack, static attention obtains ROC-AUC 0.7130 while
-\method{} obtains 0.7770. Under the all-domain max attack, static attention
-obtains 0.7114 while \method{} obtains 0.7418. Under all-domain Gaussian noise,
-\method{} is slightly worse by about 0.0003 ROC-AUC. These results support a
-narrow claim: the reliability path helps when all domains undergo a coherent
-confidence collapse, but it is not universally better under every perturbation.
+Under the all-domain zero attack, static attention obtains ROC-AUC 0.7212
+while \method{} obtains 0.7718 (delta $+0.0506$). Under the all-domain max
+attack, static attention obtains 0.7401 while \method{} obtains 0.7720
+(delta $+0.0319$). Under all-domain Gaussian noise, \method{} is essentially
+tied with static attention (delta $-0.0001$). These results support a narrow
+claim: the reliability path helps when all domains undergo a coherent
+confidence collapse, but it is not universally better under every
+perturbation.
 
 \begin{table}[H]
 \centering
@@ -594,12 +621,12 @@ confidence collapse, but it is not universally better under every perturbation.
 attention.}
 \label{tab:thesis-adversarial}
 \scriptsize
-\resizebox{\textwidth}{!}{\input{tables/rga_adversarial_results.tex}}
+\resizebox{\textwidth}{!}{\input{tables/elara_adversarial_results.tex}}
 \end{table}
 
 \begin{figure}[H]
 \centering
-\includegraphics[width=0.76\textwidth]{rga_adversarial_delta.png}
+\includegraphics[width=0.76\textwidth]{elara_adversarial_delta.png}
 \caption{All-domain adversarial ROC-AUC delta between \method{} and static
 attention.}
 \label{fig:thesis-adversarial}
@@ -631,15 +658,15 @@ attention; adaptation rate is the fraction of evaluated samples using the
 reliability-aware path.}
 \label{tab:thesis-tau}
 \scriptsize
-\resizebox{\textwidth}{!}{\input{tables/rga_tau_sweep_results.tex}}
+\resizebox{\textwidth}{!}{\input{tables/elara_tau_sweep_results.tex}}
 \end{table}
 
 \subsection{Reliability-Component Ablation}
 
 The component ablation gives one of the most useful findings in the chapter.
 Removing the ECE term does not harm the all-domain collapse cases. In fact, the
-no-ECE variant raises the max-attack delta from 0.0304 to 0.0428 and the
-zero-attack delta from 0.0640 to 0.0691. By contrast, removing the KS drift term
+no-ECE variant raises the max-attack delta from 0.0319 to 0.0457 and the
+zero-attack delta from 0.0506 to 0.0629. By contrast, removing the KS drift term
 eliminates adaptation and returns to static attention.
 
 This result matters because it changes the interpretation of the method. The
@@ -655,8 +682,54 @@ shows that KS drift is the necessary trigger for the measured gain.
 \method{} minus static attention.}
 \label{tab:thesis-components}
 \scriptsize
-\resizebox{\textwidth}{!}{\input{tables/rga_component_ablation_results.tex}}
+\resizebox{\textwidth}{!}{\input{tables/elara_component_ablation_results.tex}}
 \end{table}
+
+\subsection{Cross-Benchmark Contrast (MVTec 3D-AD vs Label-Aligned)}
+\label{sec:thesis-contrast}
+
+The same mechanism-isolation protocol applied to the naturally paired MVTec
+3D-AD benchmark produces the opposite verdict. On MVTec 3D-AD, the KS-drift
+term is again the only component that controls whether the gate fires --
+removing it (the \texttt{no\_ks} variant) returns adaptation to $0\%$ and
+deltas to zero. But every condition that does fire the gate produces a
+\emph{negative} ROC-AUC delta of approximately $-0.10$ to $-0.13$ relative
+to static attention, with 95\% confidence intervals that exclude zero. The
+\texttt{no\_ece} variant on MVTec 3D-AD is marginally better than the full
+configuration on some attacks, mirroring the label-aligned finding, but the
+absolute delta remains strongly negative in every case.
+
+\begin{table}[H]
+\centering
+\caption{MVTec 3D-AD reliability-component ablation on all-domain score
+attacks.}
+\label{tab:thesis-mvtec-components}
+\scriptsize
+\resizebox{\textwidth}{!}{\input{tables/mvtec3d_component_ablation_results.tex}}
+\end{table}
+
+\begin{table}[H]
+\centering
+\caption{MVTec 3D-AD reliability-gate threshold sweep. Delta is \method{}
+minus static attention; adaptation rate is the fraction of evaluated samples
+using the reliability-aware path.}
+\label{tab:thesis-mvtec-tau}
+\scriptsize
+\resizebox{\textwidth}{!}{\input{tables/mvtec3d_tau_sweep_results.tex}}
+\end{table}
+
+The asymmetry between the two benchmarks is the central scientific finding of
+this chapter. The KS-drift signal that delivers the entire $+0.0506$
+\texttt{zero\_attack} gain on label-aligned synthetic pairing
+\emph{mis-fires} on legitimate inter-category heterogeneity in naturally
+paired data, places the mean reliability below $\tau$ on most batches, and
+the resulting adapted weighting consistently underperforms the static
+attention solution. The cleanest reading of the two results together is that
+a validation-derived drift detector cannot tell adversarial coherent score
+collapse apart from natural cross-category variation on this scale of paired
+data. The mechanism therefore needs a benchmark-conditioned drift threshold,
+a different drift signal, or a learned gate before it can be deployed on
+natural paired evidence streams.
 
 \subsection{Calibration and Domain Attribution}
 
@@ -671,12 +744,12 @@ table. This is another reason the chapter avoids a blanket superiority claim.
 \caption{Calibration and counterfactual domain-attribution summary.}
 \label{tab:thesis-calibration-table}
 \footnotesize
-\input{tables/rga_calibration_cda.tex}
+\input{tables/elara_calibration_cda.tex}
 \end{table}
 
 \begin{figure}[H]
 \centering
-\includegraphics[width=0.72\textwidth]{rga_calibration.png}
+\includegraphics[width=0.72\textwidth]{elara_calibration.png}
 \caption{Reliability diagram for static attention and \method{}.}
 \label{fig:thesis-calibration}
 \end{figure}
@@ -690,7 +763,7 @@ explanation of the original raw features.
 
 \begin{figure}[H]
 \centering
-\includegraphics[width=0.72\textwidth]{rga_cda_impacts.png}
+\includegraphics[width=0.72\textwidth]{elara_cda_impacts.png}
 \caption{Mean absolute counterfactual domain-attribution impact.}
 \label{fig:thesis-cda}
 \end{figure}
@@ -711,7 +784,7 @@ mask, and reliability weights.
 seed.}
 \label{tab:thesis-failure-cases}
 \footnotesize
-\resizebox{\textwidth}{!}{\input{tables/rga_failure_cases.tex}}
+\resizebox{\textwidth}{!}{\input{tables/elara_failure_cases.tex}}
 \end{table}
 
 The cases show that reliability weighting can also move predictions in the
@@ -788,19 +861,29 @@ while collapse conditions activate the reliability path. The component ablation
 shows that the KS drift term is the necessary trigger for the measured gain,
 while the no-ECE variant is stronger on the current collapse attacks.
 
-The chapter also reports what did not work. The current MVTec 3D-AD paired run
-is an end-to-end smoke benchmark, not a performance result. Static attention and
-\method{} are weak on that small paired subset compared with random forest and
-early-fusion MLP. Missing-domain and drift sweeps do not show broad advantages.
-These negative results are important because they keep the conclusion scoped.
+The chapter also reports a stronger negative result that did not exist in
+earlier drafts. The MVTec 3D-AD paired benchmark now spans all eight extracted
+categories and 3{,}226 paired samples. On that data, random forest fusion is
+the strongest method by a clear margin, static attention is competitive but
+mid-pack, and the reliability gate actively lowers ROC-AUC on every condition
+including clean. The cross-benchmark contrast in \S\ref{sec:thesis-contrast}
+isolates the cause: the KS-drift signal that delivers the entire
+label-aligned stress gain mis-fires on legitimate inter-category variation
+in naturally paired data. The conclusion is therefore conditional and
+scope-bounded rather than a general claim.
 
-The next research steps are clear. First, run the MVTec 3D-AD path at larger
-scale with stronger RGB--3D domain experts. Second, test the reliability gate on
-additional naturally co-observed anomaly datasets. Third, compare the fixed
-threshold with a learned gate while preserving the conservative behavior that
-makes the current method interpretable. Fourth, develop a formal switching-rule
-analysis that explains when reliability-aware fusion should be preferred to the
-static path.
+The next research steps are clear. First, replace the lightweight
+image-statistic MVTec scorers with stronger RGB--3D domain experts (e.g.\ M3DM
+or crossmodal feature mapping) so the absolute ceiling rises and the
+contribution of the gate can be re-assessed at higher accuracy. Second, run
+the reliability gate against additional naturally co-observed anomaly
+datasets to see whether the misfire pattern is specific to MVTec 3D-AD's
+category heterogeneity or general to natural-paired data. Third, replace
+the fixed threshold with a learned gate (already prototyped in
+\path{src/uais/fusion/attention/learned_gate.py}) and evaluate whether
+data-driven gating closes the natural-paired regression. Fourth, develop a
+formal switching-rule analysis that explains when reliability-aware fusion
+should be preferred to the static path under bounded drift assumptions.
 
 \begin{thebibliography}{99}
 

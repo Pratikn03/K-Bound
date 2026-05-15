@@ -34,6 +34,7 @@ from sklearn.preprocessing import OneHotEncoder, StandardScaler
 
 EMBEDDING_DIM = 8
 DOMAIN_ORDER = ["fraud", "cyber", "behavior", "nlp"]
+DEFAULT_FUSION_SPLIT_FRACTIONS = {"train": 0.72, "validation": 0.08, "test": 0.20}
 
 
 @dataclass(frozen=True)
@@ -348,6 +349,95 @@ def _build_fusion_rows(
     return pd.DataFrame(rows)
 
 
+def _allocate_counts(total: int, fractions: dict[str, float]) -> dict[str, int]:
+    if total < 0:
+        raise ValueError("total must be non-negative.")
+    if not fractions:
+        raise ValueError("At least one split fraction is required.")
+    fraction_sum = float(sum(fractions.values()))
+    if fraction_sum <= 0.0:
+        raise ValueError("Split fractions must sum to a positive value.")
+
+    normalized = {name: float(value) / fraction_sum for name, value in fractions.items()}
+    raw = {name: total * value for name, value in normalized.items()}
+    counts = {name: int(np.floor(value)) for name, value in raw.items()}
+    remainder = total - sum(counts.values())
+    order = sorted(raw, key=lambda name: (raw[name] - counts[name], raw[name]), reverse=True)
+    for name in order[:remainder]:
+        counts[name] += 1
+    return counts
+
+
+def _split_domain_frames_by_source(
+    domain_frames: dict[str, pd.DataFrame],
+    split_fractions: dict[str, float],
+    seed: int,
+) -> tuple[dict[str, dict[str, pd.DataFrame]], dict[str, dict[str, dict[str, int]]]]:
+    split_names = list(split_fractions)
+    split_frames: dict[str, dict[str, pd.DataFrame]] = {name: {} for name in split_names}
+    split_counts: dict[str, dict[str, dict[str, int]]] = {name: {} for name in split_names}
+
+    for domain_idx, (domain, frame) in enumerate(domain_frames.items()):
+        selected_by_split = {name: [] for name in split_names}
+        labels = frame["label"].astype(int)
+        rng = np.random.default_rng(seed + 1009 * domain_idx)
+        for label in sorted(labels.unique()):
+            label_indices = frame.index[labels == label].to_numpy(copy=True)
+            rng.shuffle(label_indices)
+            label_counts = _allocate_counts(len(label_indices), split_fractions)
+            start = 0
+            for split_name in split_names:
+                stop = start + label_counts[split_name]
+                selected_by_split[split_name].extend(label_indices[start:stop].tolist())
+                start = stop
+
+        for split_name in split_names:
+            split_frame = frame.loc[selected_by_split[split_name]].reset_index(drop=True)
+            split_frames[split_name][domain] = split_frame
+            split_counts[split_name][domain] = {
+                "rows": int(len(split_frame)),
+                "positives": int(split_frame["label"].sum()) if not split_frame.empty else 0,
+                "negatives": int((split_frame["label"] == 0).sum()) if not split_frame.empty else 0,
+            }
+
+    return split_frames, split_counts
+
+
+def _build_split_safe_fusion_rows(
+    domain_frames: dict[str, pd.DataFrame],
+    n_samples: int,
+    positive_fraction: float,
+    missing_probability: float,
+    seed: int,
+    split_fractions: dict[str, float] | None = None,
+) -> tuple[pd.DataFrame, dict[str, dict[str, dict[str, int]]]]:
+    split_fractions = dict(split_fractions or DEFAULT_FUSION_SPLIT_FRACTIONS)
+    split_domain_frames, split_source_counts = _split_domain_frames_by_source(
+        domain_frames,
+        split_fractions=split_fractions,
+        seed=seed,
+    )
+    sample_counts = _allocate_counts(n_samples, split_fractions)
+    split_rows = []
+    for split_idx, (split_name, split_count) in enumerate(sample_counts.items()):
+        frame = _build_fusion_rows(
+            split_domain_frames[split_name],
+            n_samples=split_count,
+            positive_fraction=positive_fraction,
+            missing_probability=missing_probability,
+            seed=seed + 7919 * (split_idx + 1),
+        )
+        frame["sample_id"] = frame["sample_id"].str.replace(
+            "real_fusion_",
+            f"real_fusion_{split_name}_",
+            regex=False,
+        )
+        frame.insert(1, "fusion_split", split_name)
+        split_rows.append(frame)
+
+    return pd.concat(split_rows, ignore_index=True), split_source_counts
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description="Prepare real-domain CRAF fusion inputs")
     parser.add_argument("--repo-root", type=Path, default=Path.cwd())
@@ -365,6 +455,9 @@ def main() -> None:
     parser.add_argument("--samples", type=int, default=8000)
     parser.add_argument("--positive-fraction", type=float, default=0.3)
     parser.add_argument("--missing-probability", type=float, default=0.12)
+    parser.add_argument("--fusion-train-fraction", type=float, default=DEFAULT_FUSION_SPLIT_FRACTIONS["train"])
+    parser.add_argument("--fusion-val-fraction", type=float, default=DEFAULT_FUSION_SPLIT_FRACTIONS["validation"])
+    parser.add_argument("--fusion-test-fraction", type=float, default=DEFAULT_FUSION_SPLIT_FRACTIONS["test"])
     args = parser.parse_args()
 
     root = args.repo_root.resolve()
@@ -384,12 +477,18 @@ def main() -> None:
         domain_frames[source.name] = frame
         domain_metrics[source.name] = metrics
 
-    fusion_df = _build_fusion_rows(
+    split_fractions = {
+        "train": args.fusion_train_fraction,
+        "validation": args.fusion_val_fraction,
+        "test": args.fusion_test_fraction,
+    }
+    fusion_df, split_source_counts = _build_split_safe_fusion_rows(
         domain_frames,
         n_samples=args.samples,
         positive_fraction=args.positive_fraction,
         missing_probability=args.missing_probability,
         seed=args.seed,
+        split_fractions=split_fractions,
     )
     output.parent.mkdir(parents=True, exist_ok=True)
     fusion_df.to_csv(output, index=False)
@@ -410,6 +509,10 @@ def main() -> None:
         "positive_fraction_requested": args.positive_fraction,
         "positive_fraction_actual": float(fusion_df.groupby("sample_id")["label"].first().mean()),
         "missing_probability": args.missing_probability,
+        "fusion_split_column": "fusion_split",
+        "fusion_split_fractions": {str(k): float(v) for k, v in split_fractions.items()},
+        "source_row_disjoint_splits": True,
+        "split_source_counts": split_source_counts,
         "domain_order": DOMAIN_ORDER,
         "embedding_dim": EMBEDDING_DIM,
         "domain_coverage": {str(k): float(v) for k, v in coverage.items()},

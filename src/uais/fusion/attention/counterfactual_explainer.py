@@ -123,16 +123,32 @@ class CounterfactualDomainExplainer:
         """
         from scipy.stats import spearmanr
 
-        domains = [d for d in self.domain_order if d in shap_domain_importance]
+        domains: List[str] = []
+        mean_cf_values: List[float] = []
+        shap_values: List[float] = []
+        for domain in self.domain_order:
+            if domain not in shap_domain_importance:
+                continue
+            impacts = np.asarray(
+                [abs(r.cf_impacts[domain]) for r in cf_results if domain in r.cf_impacts],
+                dtype=float,
+            )
+            finite_impacts = impacts[np.isfinite(impacts)]
+            shap_value = float(shap_domain_importance[domain])
+            if len(finite_impacts) == 0 or not math.isfinite(shap_value):
+                continue
+            domains.append(domain)
+            mean_cf_values.append(float(finite_impacts.mean()))
+            shap_values.append(shap_value)
+
         if len(domains) < 3:
             return float("nan")
 
-        mean_cf = np.array([
-            np.mean([abs(r.cf_impacts.get(d, 0.0)) for r in cf_results if d in r.cf_impacts])
-            for d in domains
-        ])
-        shap_vals = np.array([shap_domain_importance[d] for d in domains])
+        mean_cf = np.asarray(mean_cf_values, dtype=float)
+        shap_vals = np.asarray(shap_values, dtype=float)
         if not np.isfinite(mean_cf).all() or not np.isfinite(shap_vals).all():
+            return float("nan")
+        if len(np.unique(mean_cf)) < 2 or len(np.unique(shap_vals)) < 2:
             return float("nan")
         corr, _ = spearmanr(mean_cf, shap_vals)
         return float(corr)

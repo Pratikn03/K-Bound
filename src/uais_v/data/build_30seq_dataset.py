@@ -5,10 +5,16 @@ from typing import Dict, Tuple
 import numpy as np
 import pandas as pd
 
-from ..logging_utils import setup_logging
+from uais.utils.logging_utils import setup_logging
 from ..paths import PROCESSED_DIR, SEQUENCES_DIR
-from ..utils.seed import set_global_seed
 from .load_datasets import load_behavior_events
+
+
+def set_global_seed(seed: int) -> None:
+    """Seed numpy + Python random for reproducibility within the 30-seq builder."""
+    import random as _random
+    _random.seed(seed)
+    np.random.seed(seed)
 
 logger = setup_logging(__name__)
 
