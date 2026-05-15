@@ -19,6 +19,6 @@ Current results status:
 - Test-time adaptation baselines: score-level Tent and pseudo-label TTT comparators.
 - Added multi-seed ablation support: missing domains, score drift, adversarial score attacks, calibration, and counterfactual domain attribution.
 - Added mechanism-isolation hooks: reliability-gate tau sweep and reliability-component ablations for ECE, KS, sharpness, and gate removal.
-- Added harder-benchmark prep hook: `--scorer-train-fraction 0.05` to `0.10` intentionally weakens domain scorers before fusion so method comparisons do not saturate.
+- Added harder-benchmark prep hook: `--scorer-train-fraction 0.05` to `0.10` intentionally weakens domain scorers before fusion. The 0.05 hard run is archived at `experiments/fusion/craf_real_results_hard.json`; it weakens fraud/behavior scorers but the label-aligned fusion task still saturates, so it is treated as a construct-validity warning.
 - Added system-level ELARA framing, architecture figure, threats to validity, reproducibility, and stronger discussion.
 - Important limitation: the real-domain benchmark aligns records by label, and the MVTec attention-fusion run is a supervised fusion stress test rather than the canonical MVTec train/test anomaly-detection protocol.

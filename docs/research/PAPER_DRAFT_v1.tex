@@ -255,16 +255,27 @@ scores rather than raw modality tensors. Their role is to test whether
 \subsection{Ensembles and Strong Baselines}
 Ensemble methods remain difficult to beat in structured prediction tasks.
 Random forests~\cite{breiman2001random} and gradient boosting~\cite{friedman2001greedy}
-are strong baselines for tabular and score-level settings. This is why the
-benchmark includes random forest fusion, early fusion MLP, late fusion ensemble,
-confidence-weighted mean, and static attention. A credible systems paper must
-compare against these practical alternatives, not only against weak averages.
+are strong baselines for tabular and score-level settings, and outlier-ensemble
+theory provides a related foundation for combining heterogeneous
+anomaly scorers~\cite{aggarwal2017outlier}. Classical classifier-combiner
+theory~\cite{kittler1998combining} further characterises when sum, product,
+and weighted rules differ in behaviour under noise. This is why the
+benchmark includes random forest fusion, early fusion MLP, late fusion
+ensemble, confidence-weighted mean, and static attention. A credible
+systems paper must compare against these practical alternatives, not only
+against weak averages. The reliability gate of \method{} is itself an
+inference-time switching rule, conceptually adjacent to selective-prediction
+work that abstains rather than commits when confidence is low~\cite{geifman2017selective}.
 
 \subsection{Explanation for Fusion Systems}
 Feature attribution methods such as SHAP~\cite{lundberg2017unified} explain
 individual model predictions, but fusion systems also need domain-level
 explanations. Analysts may need to know whether fraud evidence, network
-evidence, behavior evidence, or text evidence drove the risk score. \system{}
+evidence, behavior evidence, or text evidence drove the risk score.
+Counterfactual-explanation work~\cite{wachter2017counterfactual} provides
+the conceptual basis for the masking-based domain attribution used here:
+we ask what the risk score would have been had a single domain not been
+observed. \system{}
 therefore includes counterfactual domain attribution: it masks one domain and
 reports the change in predicted risk.
 
@@ -525,6 +536,15 @@ harder scorer setting through \texttt{--scorer-train-fraction}. Values such as
 of its training fold before fusion rows are built. This is intended to reduce
 clean-score saturation and expose whether the fusion mechanism helps when
 domain experts are useful but imperfect.
+
+As a post-audit check, we ran the 0.05 setting and archived the results in
+\texttt{experiments/fusion/craf\_real\_results\_hard.json}. The individual
+domain scorers weakened substantially for fraud and behavior (OOF ROC-AUC
+0.913 and 0.798, respectively), but the label-aligned fusion task remained
+near-saturated: static attention and \method{} both reached mean ROC-AUC
+0.99896 across five seeds, random forest reached 0.99908, and \method{} did
+not improve drift degradation area on any domain. This hard run is therefore
+reported as a construct-validity warning rather than a new performance claim.
 
 \subsection{Baselines and Metrics}
 Baselines include confidence-weighted mean fusion, early-fusion MLP,
@@ -1085,6 +1105,8 @@ Across both benchmarks, the experiments expose four failure modes:
 \begin{itemize}
   \item the label-aligned construction makes the secondary clean split highly
   separable and obscures method differences,
+  \item even the 5\% scorer-training hard-mode rerun weakens individual domain
+  scorers without fully removing label-aligned saturation,
   \item on naturally paired MVTec 3D-AD the reliability gate misfires on
   legitimate cross-category variation and degrades both clean and adversarial
   ROC-AUC,
@@ -1123,6 +1145,58 @@ intervals for clean PR-AUC and F1 and treats stress-test deltas as the primary
 diagnostic. DeLong tests are still used where assumptions hold~\cite{delong1988comparing},
 but the paper avoids treating a single significance test as proof of broad
 superiority.
+
+\subsection{Anticipated Reviewer Questions}
+\label{sec:reviewer-q-and-a}
+We anticipate five lines of reviewer pushback and address each here
+explicitly:
+
+\noindent\textbf{(Q1) Why does the gate hurt on naturally paired data?}
+The mechanism-isolation results in §\ref{sec:mvtec-mechanism} are
+unambiguous: removing the KS-drift component returns \method{} to
+static-attention performance, and every condition that fires the gate
+produces a negative ROC-AUC delta with confidence intervals that exclude
+zero. The KS-drift signal misfires on legitimate inter-category variation
+in MVTec 3D-AD's eight object categories and pushes the model into a
+degraded adapted mode.
+
+\noindent\textbf{(Q2) Why is random forest fusion so much stronger than
+attention on MVTec 3D-AD?} The MVTec domain scorers in this study are
+deliberately lightweight (normal-reference image statistics with
+eight-dim embeddings), which caps the achievable ceiling for any fusion
+model that consumes them. Random forest exploits the residual non-linear
+structure better than a 32-dimensional attention head at this scorer
+level. The paper does not claim that attention is generally worse than RF
+for paired RGB+3D fusion; it reports the contrast at the current feature
+quality. Replacing the scorer with stronger RGB--3D features~\cite{wang2023m3dm,
+costanzino2023crossmodal, liu2023real3dad} is the natural next step.
+
+\noindent\textbf{(Q3) Why $\tau=0.66$ and not a learned gate?} The
+threshold sweep in §\ref{sec:mvtec-mechanism} and the matching sweep on
+the secondary benchmark show that the conservative threshold preserves
+clean accuracy on the label-aligned data while activating under coherent
+stress. A learned-gate prototype exists in the codebase
+(\path{src/uais/fusion/attention/learned_gate.py}) and is the planned
+next experimental step. On the naturally paired benchmark, however, a
+learned gate would still have to overcome the same KS-drift misfire that
+the component ablation identifies.
+
+\noindent\textbf{(Q4) Why is the all-domain attack model meaningful?} It
+is not, in the strong realistic sense, and the threat model in
+§\ref{sec:threat-model} says so explicitly. Single-domain perturbations
+are the realistic case and are reported separately. The all-domain
+coherent attack is a worst-case stress test that bounds the mechanism's
+contribution; it is not an expected attacker capability.
+
+\noindent\textbf{(Q5) Why no top-tier conference submission for this
+result?} The cross-benchmark contrast is real but the negative-result
+direction needs at least one additional naturally paired dataset before
+the misfire pattern can be claimed as a property of validation-derived
+drift signals rather than a property of MVTec 3D-AD specifically. The
+submission target for this manuscript is therefore an arXiv preprint plus
+a workshop submission (e.g.~a NeurIPS workshop on distribution shifts or
+reliable ML); extension toward a mid-tier conference paper is described
+in the accompanying publication roadmap.
 
 \section{Reproducibility}
 The reproducibility flow has three scripted steps:
@@ -1269,6 +1343,24 @@ preprint arXiv:2309.13226}, 2023.
 C. Wang, H. Zhu, J. Peng, Y. Wang, R. Yi, Y. Wu, L. Ma, and J. Zhang,
 ``M3DM-NR: RGB-3D Noisy-Resistant Industrial Anomaly Detection via Multimodal
 Denoising,'' \emph{arXiv preprint arXiv:2406.02263}, 2024.
+
+\bibitem{aggarwal2017outlier}
+C. C. Aggarwal and S. Sathe, \emph{Outlier Ensembles: An Introduction}.
+Springer, 2017.
+
+\bibitem{kittler1998combining}
+J. Kittler, M. Hatef, R. P. W. Duin, and J. Matas, ``On combining
+classifiers,'' \emph{IEEE Transactions on Pattern Analysis and Machine
+Intelligence}, vol. 20, no. 3, pp. 226--239, 1998.
+
+\bibitem{wachter2017counterfactual}
+S. Wachter, B. Mittelstadt, and C. Russell, ``Counterfactual explanations
+without opening the black box: Automated decisions and the GDPR,''
+\emph{Harvard Journal of Law \& Technology}, vol. 31, no. 2, 2017.
+
+\bibitem{geifman2017selective}
+Y. Geifman and R. El-Yaniv, ``Selective classification for deep neural
+networks,'' in \emph{Advances in Neural Information Processing Systems}, 2017.
 
 \end{thebibliography}
 

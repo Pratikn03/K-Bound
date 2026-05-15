@@ -500,6 +500,15 @@ terms would be less interesting. In the current clean table, these baselines are
 competitive, which is expected on the saturated split. The stress tests are more
 important for distinguishing the mechanisms.
 
+The post-audit hard-mode RealFusion-LA run uses
+\texttt{--scorer-train-fraction 0.05} and is archived at
+\texttt{experiments/fusion/craf\_real\_results\_hard.json}. It weakens the
+fraud and behavior domain scorers (OOF ROC-AUC 0.913 and 0.798), but the
+label-aligned fusion task remains near saturated: static attention and RGA both
+reach mean ROC-AUC 0.99896 across five seeds, and RGA improves drift degradation
+area on zero domains. This is evidence about the benchmark limitation, not a
+new superiority claim.
+
 \subsection{Metrics and Statistical Reporting}
 
 The chapter reports ROC-AUC, PR-AUC, F1, expected calibration error, Brier score,

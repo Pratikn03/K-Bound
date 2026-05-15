@@ -52,7 +52,7 @@ YAML configs, LaTeX rebuild script.
 
 ## Remaining 85+ Evidence Step
 
-- [ ] Run the hard RealFusion-LA benchmark on real inputs and update the
+- [x] Run the hard RealFusion-LA benchmark on real inputs and update the
       manuscript/result JSONs:
 
 ```bash
@@ -65,3 +65,7 @@ PYTHONPATH=src python src/scripts/run_breakthrough_experiment.py \
   --config configs/attention_real_fusion_hard.yaml \
   --output experiments/fusion/craf_real_results_hard.json
 ```
+
+Hard-run finding: the 5\% scorer-training setting weakened fraud and behavior
+domain scorers, but the label-aligned fusion task still saturated. This result
+was added to the paper and thesis as a construct-validity warning.
