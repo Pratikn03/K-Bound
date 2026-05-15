@@ -164,13 +164,22 @@ grep -E "Reference|Citation" ../../.tex_build/PAPER_DRAFT_v1.log | grep -i undef
 echo "=== TODOs in source? ==="
 grep -nE "TODO|XXX|FIXME" PAPER_DRAFT_v1.tex
 echo "=== Bibliography entries that are never cited? ==="
-for key in $(grep -oE "bibitem\{[^}]+\}" PAPER_DRAFT_v1.tex | sed 's/bibitem{//;s/}//'); do
-  count=$(grep -c "cite{[^}]*$key" PAPER_DRAFT_v1.tex)
-  if [ "$count" -eq 0 ]; then echo "UNCITED: $key"; fi
-done
+python3 -c '
+import re
+text = open("PAPER_DRAFT_v1.tex").read()
+defined = set(re.findall(r"\\bibitem\{([^}]+)\}", text))
+cited = set()
+for group in re.findall(r"\\cite\{([^}]+)\}", text):
+    for k in group.split(","):
+        cited.add(k.strip())
+for key in sorted(defined - cited):
+    print(f"UNCITED: {key}")
+'
 ```
 
-All three should return empty.
+All three should return empty. (The previous bash-only helper missed
+multi-cite groups with spaces around commas; the Python version splits
+on commas correctly.)
 
 ---
 
