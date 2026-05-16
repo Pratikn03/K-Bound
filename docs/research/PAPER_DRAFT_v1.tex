@@ -473,14 +473,12 @@ preserving the fusion interface.
 \IfFileExists{tables/mvtec3d_benchmark_metadata.tex}{
 Table~\ref{tab:mvtec-metadata} records the paired benchmark metadata, and
 Table~\ref{tab:mvtec-clean-results} reports the multi-seed clean results.
-Random forest fusion is the strongest baseline by a clear margin
-(ROC-AUC $0.959$); static attention is mid-pack ($0.650$); the reliability
-gate of \method{} \emph{hurts} both clean and adversarial conditions on this
-data. The paper reports this outcome directly as a headline result rather
-than framing it as a smoke run. The RGB/depth anomaly scores are fit from
-original MVTec train-good observations only; the supervised fusion evaluation
-uses a held-out fusion split over paired observations and should not be read as
-the canonical MVTec train/test anomaly-detection protocol.
+The RGB/depth anomaly scores are fit from original MVTec train-good
+observations only, and the corrected run uses MVTec's canonical one-class
+protocol: the fusion train and validation rows are normal-only and the test fold
+is mixed. The supervised fusion table is therefore a diagnostic of protocol
+fit, not a conventional two-class leaderboard. Held-out-category and M3DM-style
+variants are included as additional paired-data diagnostics.
 
 \begin{table}[t]
 \centering
@@ -496,9 +494,9 @@ the canonical MVTec train/test anomaly-detection protocol.
 \centering
 \caption{Naturally paired MVTec 3D-AD clean held-out performance across
 eight categories. Values are mean$\pm$standard deviation with 95\% confidence
-intervals across five seeds. Random forest fusion is the strongest baseline;
-\method{} attention degrades static-attention performance on this paired
-benchmark.}
+intervals across five seeds. Under the canonical one-class protocol, supervised
+fusion baselines receive no positive training examples, so this table is a
+protocol diagnostic.}
 \label{tab:mvtec-clean-results}
 \scriptsize
 \resizebox{\textwidth}{!}{\input{tables/mvtec3d_clean_results.tex}}
@@ -694,33 +692,29 @@ fusion methods on naturally paired MVTec 3D-AD.}
 \label{fig:mvtec-clean-benchmark}
 \end{figure*}
 
-Random forest fusion is the strongest baseline (clean ROC-AUC $0.959 \pm
-0.008$); early-fusion MLP is the second strongest tabular baseline ($0.829$).
-The Tent score adapter~\cite{wang2021tent} reaches $0.670$ and outperforms the
-TTT pseudo-label adapter~\cite{sun2020testtime} at $0.569$. Static attention is
-competitive at $0.650$ but loses substantial ground to the random-forest
-ceiling. \method{} attention reaches $0.610$, $-0.040$ below static attention,
-with bootstrap intervals that overlap zero on the lower bound. This is a
-negative result for the reliability mechanism on naturally paired data: the
-gate hurts even before any adversarial stress is applied.
+Under the canonical one-class protocol, random forest, late fusion, Tent, TTT,
+and several neural variants receive normal-only training data and converge near
+chance ROC-AUC. \method{} has a small clean ROC-AUC edge over static attention in
+the current disciplined run, but this is not interpreted as a broad win: the
+benchmark primarily shows that supervised score-level fusion is ill-posed when
+the fusion train fold contains only normal examples.
 
 \subsection{Adversarial Score Perturbations}
 \IfFileExists{tables/mvtec3d_adversarial_results.tex}{
 The MVTec 3D-AD adversarial sweep is reported in
 Table~\ref{tab:mvtec-adversarial-results} and visualized for the all-domain
-attacks in Fig.~\ref{fig:mvtec-adversarial-delta}. Across every attack type
-and every target subset (RGB-only, depth-only, all), \method{} produces a
-\emph{negative} ROC-AUC delta relative to static attention. The harshest
-case is \texttt{zero\_attack:all} at $-0.124$ (95\% CI $[-0.182, -0.078]$);
-the smallest all-domain negative is \texttt{max\_attack:all} at $-0.117$.
-There is no
-attack scenario in which \method{} improves over static attention on this
-benchmark.
+attacks in Fig.~\ref{fig:mvtec-adversarial-delta}. The current disciplined run
+should be read together with the clean table: under one-class supervised fusion,
+adversarial deltas are diagnostic of gate behavior but do not establish a
+general defense. Some stress rows show small positive ranking deltas and others
+remain near zero or negative, so the paired benchmark is evidence about
+protocol limits rather than a clean robustness win.
 
 \begin{table*}[t]
 \centering
 \caption{MVTec 3D-AD adversarial perturbation benchmark. Delta is \method{}
-minus static attention; all deltas are negative or zero.}
+minus static attention; values are interpreted as protocol diagnostics under
+one-class supervised fusion.}
 \label{tab:mvtec-adversarial-results}
 \scriptsize
 \resizebox{\textwidth}{!}{\input{tables/mvtec3d_adversarial_results.tex}}
@@ -803,17 +797,13 @@ using the reliability-aware path.}
 \end{table*}
 }{}
 
-On MVTec 3D-AD, the gate is dormant at $\tau \leq 0.6$ on every condition,
-because the mean reliability is high enough that the static path runs. At
-$\tau = 0.66$ the gate begins to fire on clean data ($\sim 20\%$ adaptation
-rate) and clean ROC-AUC immediately drops by $-0.040$; raising $\tau$ further
-both raises the adaptation rate to $100\%$ and increases the clean penalty to
-$-0.127$ at $\tau = 0.90$. Under all-domain adversarial attacks the gate
-fires for $100\%$ of samples from $\tau = 0.66$ onward, and the delta
-saturates between roughly $-0.117$ and $-0.124$ depending on the attack. Every
-substantial adaptation rate on this benchmark is paired with a negative
-ROC-AUC delta; the clean $\tau=0.66$ interval touches zero, while the stronger
-clean thresholds and all-domain attack intervals are strictly negative.
+On MVTec 3D-AD, the $\tau$ sweep is most useful as a gate-activity diagnostic.
+At low thresholds the gate is dormant and matches the static path; at higher
+thresholds the reliability path activates more often. Because the underlying
+supervised fusion protocol is one-class, these rows are not used as evidence of
+general gate superiority or failure. The learned-gate row is included for the
+same reason: it shows whether validation episodes can learn a selective
+switching rule, not whether the paired benchmark has been solved.
 
 \IfFileExists{tables/mvtec3d_component_ablation_results.tex}{
 The reliability-component ablation in
@@ -1088,24 +1078,21 @@ the per-domain magnitudes are visualized in Fig.~\ref{fig:cda-impacts}.
 \section{Discussion and Limitations}
 \subsection{Scope of the Empirical Claim}
 The evidence supports three scoped claims and rules out one broad one.
-On \benchmark{} the reliability gate improves all-domain coherent
-score-collapse robustness ($+0.0506$ \texttt{zero\_attack}, $+0.0319$
-\texttt{max\_attack}) while preserving the saturated clean ranking. On
-naturally paired MVTec 3D-AD the same gate is strictly dominated:
-random forest fusion leads ($0.959$), static attention sits mid-pack
-($0.650$), and \method{} regresses to $0.610$, with every adversarial
-delta also negative. The mechanism-isolation results together identify
-a specific failure mode of validation-derived drift detectors --- a
-KS-drift signal calibrated on validation can deliver gains under
-coherent adversarial collapse and simultaneously misfire on legitimate
-inter-category heterogeneity --- which is the central claim of the
-paper. What the paper does not support is a broad claim that \method{}
-improves multimodal fusion in general: the label-aligned gain is bounded
-to coherent all-domain attacks on a near-saturated split, and no
-attention variant matches random forest on naturally paired MVTec 3D-AD
-at the current scorer level. Both directions are bounded by benchmark
-design and the lightweight image-statistic features used for MVTec 3D-AD
-domain scoring.
+On the label-aligned stress-only benchmark \benchmark{}, the reliability
+gate improves all-domain coherent score-collapse robustness
+($+0.0506$ \texttt{zero\_attack}, $+0.0319$ \texttt{max\_attack}) while
+preserving the saturated clean ranking. On naturally paired MVTec 3D-AD
+under the canonical one-class protocol, supervised fusion itself is the
+limiting factor: random forest, MLP, late fusion, Tent, TTT, static
+attention, and \method{} all operate near chance because the train fold
+contains normal observations only. The held-out-category and M3DM-style
+diagnostics confirm that the paired benchmark remains hard rather than
+showing a simple leaderboard win for any fusion model. The central claim
+is therefore methodological: \method{} is a diagnostic gate for
+score-collapse stress when two-class fusion training is available, not a
+general replacement for strong modality-specific anomaly detectors.
+Both directions are bounded by benchmark design and by the current
+quality of the MVTec 3D-AD domain scores.
 
 \subsection{Failure Analysis}
 The result artifact exports representative cases for the largest
@@ -1130,17 +1117,18 @@ seed.}
 
 Across both benchmarks, the experiments expose four failure modes:
 \begin{itemize}
-  \item the synthetically paired construction makes the secondary clean split highly
-  separable and obscures method differences,
+  \item the label-aligned stress-only construction makes the secondary clean
+  split highly separable and obscures method differences,
   \item even the 5\% scorer-training hard-mode rerun weakens individual domain
   scorers without fully removing the secondary benchmark saturation,
-  \item on co-observed MVTec 3D-AD the reliability gate misfires on
-  legitimate cross-category variation and degrades both clean and adversarial
-  ROC-AUC,
-  \item random forest fusion remains the strongest baseline on the paired
-  benchmark by a clear margin,
-  \item the lightweight image-statistic domain scorer caps the achievable
-  ceiling on MVTec 3D-AD and is the natural next replacement target.
+  \item on co-observed MVTec 3D-AD under the canonical one-class protocol,
+  supervised fusion baselines cannot learn a two-class boundary from the train
+  fold,
+  \item held-out-category and M3DM-style paired variants remain near chance,
+  so the current paired evidence is a protocol diagnostic rather than a
+  performance claim,
+  \item the lightweight image-statistic domain scorer still caps the paired
+  benchmark and is the natural next replacement target.
 \end{itemize}
 
 \subsection{Internal Validity}
@@ -1151,13 +1139,14 @@ remains if the stress distributions are too synthetic relative to deployment
 failures.
 
 \subsection{Construct Validity}
-\benchmark{} measures real-domain score fusion, not RGB/3D paired multimodal
-incident detection. The MVTec 3D-AD path addresses natural RGB/3D pairing, but
-the current local run is a small bagel-subset smoke benchmark with lightweight
-features. This remains the largest construct-validity threat. The paper
-therefore avoids claiming that the model has learned causal or temporal
-relationships among fraud, cyber, behavior, and text domains, or that the paired
-path is competitive with specialized RGB--3D anomaly detectors.
+\benchmark{} measures real-domain score fusion under label alignment, not
+RGB/3D paired multimodal incident detection. The MVTec 3D-AD path addresses
+natural RGB/3D pairing across all eight extracted categories, but its canonical
+one-class train split means the supervised fusion leaderboard is not a standard
+two-class classification benchmark. This remains the largest construct-validity
+threat. The paper therefore avoids claiming that the model has learned causal or
+temporal relationships among fraud, cyber, behavior, and text domains, or that
+the paired path is competitive with specialized RGB--3D anomaly detectors.
 
 \subsection{External Validity}
 The datasets are useful but not sufficient for deployment claims. A production
@@ -1178,25 +1167,21 @@ superiority.
 We anticipate five lines of reviewer pushback and address each here
 explicitly:
 
-\noindent\textbf{(Q1) Why does the gate hurt on naturally paired data?}
-The mechanism-isolation results in §\ref{sec:mvtec-mechanism} are
-unambiguous: removing the KS-drift component returns \method{} to
-static-attention performance, and every condition that fires the gate
-produces a negative ROC-AUC delta with confidence intervals that exclude
-zero. The KS-drift signal misfires on legitimate inter-category variation
-in MVTec 3D-AD's eight object categories and pushes the model into a
-degraded adapted mode.
+\noindent\textbf{(Q1) Why does the gate not settle the naturally paired
+benchmark?} Under MVTec 3D-AD's canonical one-class protocol, the train fold is
+normal-only. That makes supervised fusion a protocol diagnostic rather than a
+standard two-class leaderboard: the model can score anomalies, but the supervised
+fusion baselines do not receive positive training examples. The gate's small
+positive clean delta in the corrected run is therefore not treated as a broad
+superiority claim.
 
-\noindent\textbf{(Q2) Why is random forest fusion so much stronger than
-attention on MVTec 3D-AD?} The MVTec domain scorers in this study are
-deliberately lightweight (normal-reference image statistics with
-eight-dim embeddings), which caps the achievable ceiling for any fusion
-model that consumes them. Random forest exploits the residual non-linear
-structure better than a 32-dimensional attention head at this scorer
-level. The paper does not claim that attention is generally worse than RF
-for paired RGB+3D fusion; it reports the contrast at the current feature
-quality. Replacing the scorer with stronger RGB--3D features~\cite{wang2023m3dm,
-costanzino2023crossmodal, liu2023real3dad} is the natural next step.
+\noindent\textbf{(Q2) Why keep MVTec 3D-AD if the supervised fusion leaderboard
+is near chance?} It fixes the largest construct-validity issue in
+\benchmark{}: the RGB and depth observations are naturally co-observed. The
+held-out-category and M3DM-style variants are included to probe whether the
+near-chance outcome is caused by scorer quality or category split. Replacing the
+current scorer with stronger RGB--3D features~\cite{wang2023m3dm,
+costanzino2023crossmodal, liu2023real3dad} remains the natural next step.
 
 \noindent\textbf{(Q3) Why $\tau=0.66$ and not a learned gate?} The
 $\tau$-sweep in Table~\ref{tab:tau-sweep} includes a learned-gate row in

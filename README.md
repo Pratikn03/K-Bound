@@ -13,11 +13,12 @@ and prediction sharpness.
 > and the companion thesis chapter
 > [docs/research/THESIS_CHAPTER_v1.tex](docs/research/THESIS_CHAPTER_v1.tex)
 > share the same evidence base and asset pipeline. The headline finding is
-> a contrastive negative result: validation-derived KS-drift gates
-> *help* on label-aligned coherent score-collapse attacks but *hurt* on
-> naturally paired MVTec 3D-AD data because the drift signal mis-fires on
-> legitimate inter-category variation. See the paper's §IX.D.5
-> Cross-Benchmark Contrast for the full argument.
+> scoped: validation-derived KS-drift gates help on a label-aligned
+> stress-only benchmark under coherent score-collapse attacks, while naturally
+> paired MVTec 3D-AD under the canonical one-class protocol shows that
+> supervised fusion itself becomes a protocol diagnostic. RGA is therefore a
+> diagnostic gate for stress analysis, not a broad replacement for specialized
+> RGB-3D anomaly detectors.
 
 ---
 
@@ -32,7 +33,7 @@ and prediction sharpness.
 | `data/raw/` | Datasets (Credit Card Fraud, UNSW-NB15, Online Shoppers, news text, MVTec 3D-AD) |
 | `experiments/fusion/` | Result JSONs and benchmark metadata that feed the paper |
 | `docs/research/` | Manuscripts, table sources, figures, and the audit / review folder |
-| `tests/` | 221 passing tests (3 skipped) |
+| `tests/` | 222 passing tests (3 skipped) |
 | `deploy/api/` + `dashboard/` | FastAPI service and Streamlit dashboard for demo use |
 | `scripts/rebuild_paper.sh` | One-command paper-and-thesis rebuild from current JSON artifacts |
 
@@ -115,28 +116,30 @@ therefore disjoint from the rows the per-domain scorers fit on.
 
 | Method | Clean ROC-AUC |
 |---|---|
-| Random forest | 0.959 ± 0.008 |
-| Early fusion MLP | 0.828 ± 0.021 |
-| Tent score adapter | 0.670 ± 0.019 |
-| Static attention | 0.650 ± 0.038 |
-| **RGA attention** | **0.610 ± 0.031** |
-| TTT pseudo-label | 0.569 ± 0.039 |
-| Conf.-weighted mean | 0.509 ± 0.019 |
+| **RGA attention** | **0.561 ± 0.017** |
+| Early fusion MLP | 0.545 ± 0.025 |
+| Static attention | 0.542 ± 0.025 |
+| Random forest | 0.500 ± 0.000 |
+| Late fusion / Tent / TTT | 0.500 ± 0.000 |
+| Conf.-weighted mean | 0.446 ± 0.000 |
 
-RGA gate *hurts* by $-0.040$ clean and by $-0.117$ to $-0.124$ under
-all-domain coherent score-collapse attacks. Component ablation shows the
-KS-drift signal is the only component that controls whether the gate
-fires; removing it returns the model to static-attention performance.
+These numbers follow MVTec's canonical one-class protocol: train and
+validation are normal-only, while test is mixed. That makes the supervised
+fusion table a protocol diagnostic rather than a normal two-class leaderboard.
+The repo also includes held-out-category and M3DM-style variants to probe this
+boundary.
 
-**Label-aligned secondary benchmark (RealFusion, 8,000 composite samples):**
+**Label-aligned stress-only secondary benchmark (RealFusion, 8,000 composite samples):**
 
 The clean split is near-saturated. Under all-domain coherent attacks,
 the same gate *improves* ROC-AUC by $+0.0506$ (zero attack) and
 $+0.0319$ (max attack). Removing the ECE term further improves the
 attack gain.
 
-The asymmetry between the two benchmarks is the central scientific
-finding of the paper.
+The paper's central claim is now sharper: reliability gating is diagnostically
+useful for coherent score-collapse stress when two-class fusion training exists,
+but this does not transfer into a general SOTA claim on naturally paired
+one-class anomaly protocols.
 
 ## Layout caveats
 

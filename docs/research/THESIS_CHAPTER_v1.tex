@@ -44,16 +44,16 @@
 \maketitle
 
 \begin{abstract}
-This chapter reports a contrastive negative result for validation-derived
-drift gates in multimodal anomaly fusion: the same Kolmogorov--Smirnov drift
-signal that improves all-domain coherent score-collapse robustness on a
-label-aligned secondary benchmark \emph{hurts} clean and adversarial ROC-AUC
-on naturally paired MVTec 3D-AD, with mechanism isolation identifying KS-drift
-mis-firing on legitimate inter-category variation as the cause. A
-validation-derived signal cannot distinguish coherent adversarial collapse
-from natural cross-category heterogeneity at the scale of paired anomaly
-data, and the asymmetry between the two benchmarks is the central scientific
-finding the chapter develops.
+This chapter reports a scoped result for validation-derived drift gates in
+multimodal anomaly fusion: the same Kolmogorov--Smirnov drift signal that
+improves all-domain coherent score-collapse robustness on a label-aligned
+stress-only benchmark does not become a general solution on naturally paired
+MVTec 3D-AD. Under MVTec's canonical one-class protocol, supervised fusion
+baselines operate near chance because the train fold is normal-only. The
+asymmetry between the two benchmarks is therefore methodological rather than a
+simple leaderboard claim: reliability gating is a diagnostic gate for
+score-collapse stress when two-class fusion training exists, not a replacement
+for specialized RGB--3D anomaly detectors.
 
 The work is organized around \system{} (\systemfull{}), a research prototype
 for score-level multimodal anomaly fusion. The mechanism under study is
@@ -63,14 +63,14 @@ weights when batch-level evidence suggests that one or more domains have
 degraded. This is a graduate thesis submission rather than
 as a marketing description of the system. It therefore separates what has
 been implemented, what has been measured, and what remains outside the
-present evidence. The primary benchmark is co-observed MVTec 3D-AD
-across all eight extracted categories ($3{,}226$ paired RGB/depth samples, no
-label alignment). On that benchmark random forest fusion leads (clean ROC-AUC
-$0.959$), static attention is mid-pack ($0.650$), and \method{} regresses to
-$0.610$. The secondary benchmark, \benchmark{}, combines four real-domain
-datasets via explicit label alignment; on it the same gate improves
-all-domain coherent-collapse attacks by $+0.0506$ and $+0.0319$ but the clean
-split is near saturated.
+present evidence. The primary benchmark is co-observed MVTec 3D-AD across all
+eight extracted categories ($3{,}226$ paired RGB/depth samples, no label
+alignment). The corrected MVTec run follows the canonical one-class protocol,
+and the held-out-category and M3DM-style variants are treated as diagnostics
+rather than new superiority claims. The secondary benchmark, \benchmark{},
+combines four real-domain datasets via explicit label alignment; on it the same
+gate improves all-domain coherent-collapse attacks by $+0.0506$ and $+0.0319$
+but the clean split is near saturated.
 
 The chapter concludes that reliability-gated fusion is a useful design pattern
 for stress-aware score fusion under coherent attack assumptions, but it is
@@ -442,28 +442,23 @@ with a positive fraction of $0.224$ and full RGB and depth coverage.
 
 The initial MVTec domain scores are lightweight normal-reference image-statistic
 scores fit from original train-good observations only. This keeps the benchmark
-locally runnable, but it limits the absolute performance ceiling. The supervised
-attention-fusion split is a held-out fusion split over paired observations, not
-the canonical MVTec train/test anomaly-detection protocol. The result in
-Table~\ref{tab:thesis-mvtec-clean} is the primary headline of this chapter and
-should be read with the contrastive view in mind. Random forest fusion is the
-strongest baseline by a clear margin
-(ROC-AUC $0.959$); early-fusion MLP is the second-strongest tabular baseline
-($0.829$). Static attention is mid-pack ($0.650$), and the reliability gate of
-\method{} \emph{lowers} clean ROC-AUC to $0.610$ on this paired data. Tent and
-TTT score adapters are also competitive at $0.670$ and $0.569$ respectively.
-The headline of the paired benchmark is therefore a negative result for the
-gate: on co-observed evidence, adapting at all degrades performance.
-That outcome is the basis for the cross-benchmark contrast discussed in
+locally runnable, but it limits the absolute performance ceiling. The corrected
+attention-fusion split follows the canonical MVTec one-class protocol:
+train/validation rows are normal-only and the test fold is mixed. The result in
+Table~\ref{tab:thesis-mvtec-clean} is therefore a protocol diagnostic rather
+than a conventional supervised leaderboard. Random forest, late fusion, Tent,
+TTT, static attention, and \method{} have little two-class training signal; the
+small \method{} delta should not be read as a general win. The held-out-category
+and M3DM-style variants probe the same limitation under different paired-data
+conditions and remain part of the evidence boundary discussed in
 \S\ref{sec:thesis-contrast}.
 
 \begin{table}[H]
 \centering
 \caption{Naturally paired MVTec 3D-AD clean held-out performance across
 eight categories. Values are mean$\pm$standard deviation with 95\% confidence
-intervals across five seeds. Random forest fusion is the strongest baseline;
-\method{} attention degrades static-attention performance on this paired
-benchmark.}
+intervals across five seeds. Under the canonical one-class protocol, this table
+is a supervised-fusion protocol diagnostic rather than a two-class leaderboard.}
 \label{tab:thesis-mvtec-clean}
 \scriptsize
 \resizebox{\textwidth}{!}{\input{tables/mvtec3d_clean_results.tex}}
@@ -879,25 +874,22 @@ cannot answer.
 
 \subsection{What I Would Do Differently}
 
-The most useful single change would have been to delay the MVTec 3D-AD path
-until the lightweight image-statistic scorer was replaced with M3DM-style
-RGB features and PointNet++-style depth features. The current scorer caps
-the achievable ceiling on the primary benchmark; random forest fusion
-reaches $0.959$ because the residual non-linear structure in the
-eight-dimensional features is well-suited to trees, not because attention
-is fundamentally weaker for paired anomaly data. A stronger scorer would
-have produced a fairer comparison between RGA and the static-attention
-baseline, and the cross-benchmark contrast finding would then rest on a
-fairer per-benchmark performance basis rather than on absolute deltas at
-a low ceiling.
+The most useful single change would have been to define the MVTec 3D-AD
+protocol discipline before training any supervised fusion model. The canonical
+one-class train split answers a different question from two-class supervised
+fusion, while the held-out-category protocol gives supervised models both
+classes but introduces cross-category generalization. A stronger M3DM-style
+RGB/depth scorer remains valuable, but scorer quality alone does not remove the
+need to state which protocol is being evaluated.
 
 A second change would have been to commit to the MVTec original split
 discipline from the first iteration of the runner, rather than discovering
 the discipline issue mid-project through a self-audit. The remediation pass
-was inexpensive in code but it shifted the headline numbers materially
-(static attention dropped from $0.728$ to $0.650$, RGA from $0.668$ to
-$0.610$). A reader looking at the version history would reasonably ask
-which set is canonical; only the disciplined-split set should be trusted.
+was inexpensive in code but it changed the interpretation materially: the
+official split is a one-class anomaly-detection protocol, not a standard
+two-class fusion benchmark. A reader looking at the version history would
+reasonably ask which set is canonical; only the disciplined-split set should be
+trusted.
 
 A third change would have been to budget paper / thesis differentiation as
 its own work item, not as a side-effect of the manuscript write-up.
@@ -960,16 +952,14 @@ while collapse conditions activate the reliability path. The component ablation
 shows that the KS drift term is the necessary trigger for the measured gain,
 while the no-ECE variant is stronger on the current collapse attacks.
 
-The chapter also reports a stronger negative result that did not exist in
+The chapter also reports a stronger protocol diagnosis that did not exist in
 earlier drafts. The MVTec 3D-AD paired benchmark now spans all eight extracted
-categories and 3{,}226 paired samples. On that data, random forest fusion is
-the strongest method by a clear margin, static attention is competitive but
-mid-pack, and the reliability gate actively lowers ROC-AUC on every condition
-including clean. The cross-benchmark contrast in \S\ref{sec:thesis-contrast}
-isolates the cause: the KS-drift signal that delivers the entire
-label-aligned stress gain mis-fires on legitimate inter-category variation
-in naturally paired data. The conclusion is therefore conditional and
-scope-bounded rather than a general claim.
+categories and 3{,}226 paired samples. Under the canonical one-class protocol,
+supervised fusion baselines operate near chance; under the held-out-category
+protocol, paired generalization remains difficult; and under the M3DM-style
+variant, scorer replacement alone does not create a simple RGA superiority
+story. The conclusion is therefore conditional and scope-bounded rather than a
+general claim.
 
 The next research steps are clear. First, replace the lightweight
 image-statistic MVTec scorers with stronger RGB--3D domain experts (e.g.\ M3DM

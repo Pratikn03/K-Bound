@@ -1,6 +1,35 @@
 from pathlib import Path
 
 
+def test_manuscript_rejects_stale_mvtec_claims():
+    repo_root = Path(__file__).resolve().parents[1]
+    paper = (repo_root / "docs" / "research" / "PAPER_DRAFT_v1.tex").read_text()
+    thesis = (repo_root / "docs" / "research" / "THESIS_CHAPTER_v1.tex").read_text()
+    readme = (repo_root / "README.md").read_text()
+    combined = "\n".join([paper, thesis, readme])
+
+    stale_claims = [
+        "random forest fusion leads (clean ROC-AUC\n$0.959$)",
+        "random forest fusion\nreaches $0.959$",
+        "static attention dropped from $0.728$ to $0.650$, RGA from $0.668$ to\n$0.610$",
+        "all deltas are negative or zero",
+        "RGA gate *hurts* by $-0.040$ clean",
+    ]
+
+    for claim in stale_claims:
+        assert claim not in combined
+
+    required_claims = [
+        "label-aligned stress-only benchmark",
+        "canonical one-class protocol",
+        "held-out-category",
+        "M3DM-style",
+        "diagnostic gate",
+    ]
+    for claim in required_claims:
+        assert claim in combined
+
+
 def test_fusion_configs_use_validation_threshold_selection():
     from uais.utils.config_loader import load_yaml
 
