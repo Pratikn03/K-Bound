@@ -8,7 +8,10 @@ from pathlib import Path
 import numpy as np
 import pytest
 
-from uais.fusion.attention.reliability_estimator import ReliabilityEstimator
+from uais.fusion.attention.reliability_estimator import (
+    CategoryAwareReliabilityEstimator,
+    ReliabilityEstimator,
+)
 
 
 # ---------------------------------------------------------------------------
@@ -198,3 +201,50 @@ def test_gate_save_load_preserves_threshold(fitted_estimator):
     assert loaded.gate_threshold == 0.55, (
         f"Expected gate_threshold=0.55, got {loaded.gate_threshold}"
     )
+
+
+def test_category_aware_ks_does_not_misfire_on_category_mix_shift():
+    """Category-aware drift should not penalize legitimate category composition shifts."""
+    rng = np.random.default_rng(123)
+    n_per_category = 80
+    domain_order = ["rgb"]
+    masks = np.zeros((n_per_category * 2, 1), dtype=bool)
+    labels = rng.integers(0, 2, size=n_per_category * 2).astype(float)
+    features = np.zeros((n_per_category * 2, 1, 1), dtype=np.float32)
+    categories = np.array(["bagel"] * n_per_category + ["cable_gland"] * n_per_category)
+    features[:n_per_category, 0, 0] = rng.normal(0.2, 0.02, size=n_per_category)
+    features[n_per_category:, 0, 0] = rng.normal(0.8, 0.02, size=n_per_category)
+    features = np.clip(features, 0.0, 1.0).astype(np.float32)
+
+    global_estimator = ReliabilityEstimator(
+        domain_order=domain_order,
+        score_index=0,
+        ece_weight=0.0,
+        ks_weight=1.0,
+        sharpness_weight=0.0,
+        min_samples_for_ks=20,
+    ).fit(features, masks, labels)
+    category_estimator = CategoryAwareReliabilityEstimator(
+        domain_order=domain_order,
+        score_index=0,
+        ece_weight=0.0,
+        ks_weight=1.0,
+        sharpness_weight=0.0,
+        min_samples_for_ks=20,
+    ).fit(features, masks, labels, categories=categories)
+
+    # Legitimate deployment batch contains only one known category, with the
+    # same category-conditional distribution observed during validation.
+    batch_features = features[:n_per_category].copy()
+    batch_masks = masks[:n_per_category].copy()
+    batch_categories = categories[:n_per_category].copy()
+
+    global_weight = global_estimator.compute_reliability_weights(batch_features, batch_masks)
+    category_weight = category_estimator.compute_reliability_weights(
+        batch_features,
+        batch_masks,
+        categories=batch_categories,
+    )
+
+    assert float(category_weight.mean()) > 0.8
+    assert float(category_weight.mean()) > float(global_weight.mean()) + 0.5

@@ -33,7 +33,7 @@ and prediction sharpness.
 | `data/raw/` | Datasets (Credit Card Fraud, UNSW-NB15, Online Shoppers, news text, MVTec 3D-AD) |
 | `experiments/fusion/` | Result JSONs and benchmark metadata that feed the paper |
 | `docs/research/` | Manuscripts, table sources, figures, and the audit / review folder |
-| `tests/` | 222 passing tests (3 skipped) |
+| `tests/` | 240 passing tests (2 skipped) |
 | `deploy/api/` + `dashboard/` | FastAPI service and Streamlit dashboard for demo use |
 | `scripts/rebuild_paper.sh` | One-command paper-and-thesis rebuild from current JSON artifacts |
 
@@ -140,6 +140,98 @@ The paper's central claim is now sharper: reliability gating is diagnostically
 useful for coherent score-collapse stress when two-class fusion training exists,
 but this does not transfer into a general SOTA claim on naturally paired
 one-class anomaly protocols.
+
+## Engineering gap-closure utilities
+
+The repo now includes local engineering prerequisites for the four enterprise
+readiness gaps, without claiming the external evidence is complete:
+
+- `validate_incident_protocol` checks shared incident IDs, temporal split order,
+  incident-level split isolation, and multi-domain coverage before a dataset is
+  treated as naturally co-observed.
+- `CategoryAwareReliabilityEstimator` uses category-conditional drift references
+  so legitimate category-mix changes do not automatically trigger the global KS
+  gate.
+- The long-format fusion schema remains the plug-in boundary for stronger
+  domain experts, including future RGB-3D anomaly scorers.
+- `calibration_monitor_report` and `bounded_switching_certificate` provide
+  deployment calibration alerts and the finite-sample switching condition for
+  preferring the reliability path.
+
+After copying the local GridPulse healthcare data, the clinical audit can be
+run with:
+
+```bash
+PYTHONPATH=src .venv/bin/python src/scripts/validate_healthcare_gap_closure.py \
+  --data-root data/raw/healthcare/gridpulse
+```
+
+The generated `experiments/fusion/healthcare_gap_validation.json` is a
+Retrospective local healthcare replay, not clinical deployment evidence. It
+projects 146,688 co-observed vital-sign incidents into four fusion domains
+(heart rate, oxygenation, respiration, shock index) with hashed patient and
+incident identifiers. The structural checks pass: four domains per incident, no
+incident split leakage, no patient overlap, temporal ordering preserved, and no
+score/confidence range violations. The provided validation and test windows are
+single-class positive, so this time-forward surface remains a temporal-reference
+audit rather than supervised clinical-performance evidence.
+
+For Gap 1 specifically, the stricter time-forward replay cannot close the
+supervised detection claim because its validation and test windows are
+single-class positive. A second audit therefore uses:
+
+```bash
+PYTHONPATH=src .venv/bin/python src/scripts/validate_healthcare_gap_closure.py \
+  --data-root data/raw/healthcare/gridpulse \
+  --split-strategy patient_stratified \
+  --report experiments/fusion/healthcare_gap1_patient_stratified_validation.json \
+  --fusion-output experiments/fusion/healthcare_gap1_patient_stratified_fusion_inputs.csv
+```
+
+This patient-disjoint stratified replay closes Gap 1 locally: every split has
+both labels, patient overlap is zero, each incident has all four domains, and
+the held-out multimodal score reaches ROC-AUC 0.806 versus 0.770 for the best
+single domain. The tradeoff is explicit: `temporal_order_valid is false`, so
+this is local two-class incident-detection evidence, not time-forward clinical
+deployment evidence.
+
+The same replay now closes Gap 2 locally through a reliability stress audit:
+
+```bash
+PYTHONPATH=src .venv/bin/python src/scripts/validate_healthcare_gap_closure.py \
+  --data-root data/raw/healthcare/gridpulse \
+  --split-strategy patient_stratified \
+  --report experiments/fusion/healthcare_gap2_reliability_stress_validation.json \
+  --fusion-output experiments/fusion/healthcare_gap2_reliability_stress_fusion_inputs.csv
+```
+
+The audit calibrates a conservative category-aware gate threshold from the
+validation natural replay, then evaluates held-out natural replay and injected
+score-collapse episodes. Gap 2 locally closes because the held-out natural fire
+rate is 0.0 while the mean collapse fire rate is 1.0 across the four domains.
+
+Gap 3 and Gap 4 are now closed locally on the same patient-disjoint replay:
+
+```bash
+PYTHONPATH=src .venv/bin/python src/scripts/validate_healthcare_gap_closure.py \
+  --data-root data/raw/healthcare/gridpulse \
+  --split-strategy patient_stratified \
+  --report experiments/fusion/healthcare_gap4_deployment_audit_validation.json \
+  --no-fusion-output
+
+PYTHONPATH=src .venv/bin/python src/scripts/generate_healthcare_gap_assets.py \
+  --report experiments/fusion/healthcare_gap4_deployment_audit_validation.json
+```
+
+Gap 3 closes through the schema-integration report: 586,752 fusion rows,
+four complete domains per incident, a `146688 x 4 x 4` tensor, no raw
+`patient_id` column, hashed patient keys, and no missing schema columns. Gap 4
+closes as a local deployment-replay audit: the provided split remains the
+time-forward temporal reference, manifest review records PhysioNet access and
+citation requirements, calibration monitoring is active, leave-one-domain-out
+CDA-style attribution is emitted, and the diagnostic switching certificate is
+true (`static_loss=0.800`, `policy_loss=0.000`). This is still local replay
+readiness, not prospective clinical deployment or regulated clinical use.
 
 ## Layout caveats
 

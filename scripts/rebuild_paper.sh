@@ -22,6 +22,7 @@ LA_RESULTS="$ROOT/experiments/fusion/craf_real_results.json"
 LA_META="$ROOT/experiments/fusion/real_domain_fusion_metadata.json"
 MVTEC_RESULTS="$ROOT/experiments/fusion/mvtec3d_results.json"
 MVTEC_META="$ROOT/experiments/fusion/mvtec3d_fusion_metadata.json"
+HEALTHCARE_GAP_REPORT="$ROOT/experiments/fusion/healthcare_gap4_deployment_audit_validation.json"
 FIG_DIR="$ROOT/docs/research/figures"
 TBL_DIR="$ROOT/docs/research/tables"
 BUILD_DIR="$ROOT/.tex_build"
@@ -50,6 +51,16 @@ if [ -f "$MVTEC_RESULTS" ]; then
     --tables-dir "$TBL_DIR"
 else
   echo "==> Skipping MVTec3D assets: $MVTEC_RESULTS not found"
+fi
+
+if [ -f "$HEALTHCARE_GAP_REPORT" ]; then
+  echo "==> Regenerate healthcare gap-closure assets"
+  PYTHONPATH=src python src/scripts/generate_healthcare_gap_assets.py \
+    --report "$HEALTHCARE_GAP_REPORT" \
+    --figures-dir "$FIG_DIR" \
+    --tables-dir "$TBL_DIR"
+else
+  echo "==> Skipping healthcare gap assets: $HEALTHCARE_GAP_REPORT not found"
 fi
 
 echo

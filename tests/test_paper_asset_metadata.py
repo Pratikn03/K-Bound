@@ -30,6 +30,128 @@ def test_manuscript_rejects_stale_mvtec_claims():
         assert claim in combined
 
 
+def test_manuscript_keeps_mvtec_protocol_diagnostic_claim_consistent():
+    repo_root = Path(__file__).resolve().parents[1]
+    paper = (repo_root / "docs" / "research" / "PAPER_DRAFT_v1.tex").read_text()
+    thesis = (repo_root / "docs" / "research" / "THESIS_CHAPTER_v1.tex").read_text()
+    combined = "\n".join([paper, thesis])
+
+    contradictory_mvtec_claims = [
+        "clean-and-adversarial regression on RGB/3D paired MVTec 3D-AD",
+        "why the gate hurts on this benchmark",
+        "below static attention by $-0.040$ at zero extra dropout",
+        "Only the \\texttt{no\\_ks} variant avoids harm",
+        "and a strongly negative delta",
+        "clean ROC-AUC penalty",
+        "overall mechanism is harmful",
+        "every firing condition produces a\n\\emph{negative} ROC-AUC delta",
+        "misfires on legitimate",
+        "misfire pattern",
+        "underperforms the static attention solution",
+        "gate-hurts-on-natural-paired",
+        "absolute delta remains strongly negative in every case",
+        "When Reliability Gates Misfire",
+    ]
+
+    for claim in contradictory_mvtec_claims:
+        assert claim not in combined
+
+
+def test_enterprise_gap_closure_is_conditional_not_current_claim():
+    repo_root = Path(__file__).resolve().parents[1]
+    paper = (repo_root / "docs" / "research" / "PAPER_DRAFT_v1.tex").read_text()
+    thesis = (repo_root / "docs" / "research" / "THESIS_CHAPTER_v1.tex").read_text()
+
+    required_closure_dimensions = [
+        "True multimodal incident detection",
+        "Autonomous zero-misfire adaptation",
+        "Universal system integration",
+        "Deployable, auditable analyst AI",
+        "Closure evidence required",
+        "validate_incident_protocol",
+        "CategoryAwareReliabilityEstimator",
+        "calibration_monitor_report",
+        "bounded_switching_certificate",
+    ]
+    for document in [paper, thesis]:
+        for phrase in required_closure_dimensions:
+            assert phrase in document
+
+    forbidden_current_claims = [
+        "ELARA is enterprise-grade",
+        "ELARA is a plug-and-play",
+        "ELARA is production-ready",
+        "ELARA has been deployed",
+        "mathematically verified tool",
+        "perfectly discern",
+    ]
+    combined = "\n".join([paper, thesis])
+    for phrase in forbidden_current_claims:
+        assert phrase not in combined
+
+
+def test_healthcare_gap_validation_claim_boundary_documented():
+    repo_root = Path(__file__).resolve().parents[1]
+    paper = (repo_root / "docs" / "research" / "PAPER_DRAFT_v1.tex").read_text()
+    thesis = (repo_root / "docs" / "research" / "THESIS_CHAPTER_v1.tex").read_text()
+    readme = (repo_root / "README.md").read_text()
+    combined = "\n".join([paper, thesis, readme])
+
+    required = [
+        "healthcare_gap_validation.json",
+        "healthcare_gap1_patient_stratified_validation.json",
+        "healthcare_gap2_reliability_stress_validation.json",
+        "healthcare_gap4_deployment_audit_validation.json",
+        "healthcare_gap_closure_results.tex",
+        "healthcare_gap4_audit_results.tex",
+        "healthcare_gap_closure_status.png",
+        "healthcare_gap2_stress_rates.png",
+        "146,688",
+        "validation and test windows are single-class positive",
+        "patient-disjoint stratified replay closes Gap 1 locally",
+        "Gap 2 locally",
+        "natural fire rate is 0.0",
+        "collapse fire rate is 1.0",
+        "temporal_order_valid is false",
+        "diagnostic switching certificate",
+        "static loss is 0.800",
+        "policy loss is 0.000",
+        "Retrospective local healthcare replay",
+    ]
+    for phrase in required:
+        assert phrase in combined
+
+    forbidden = [
+        "healthcare validation closes all four empirical gaps",
+        "is clinical deployment evidence",
+        "zero-misfire adaptation is proven",
+    ]
+    for phrase in forbidden:
+        assert phrase not in combined
+
+
+def test_healthcare_gap_tables_and_figures_are_materialized():
+    repo_root = Path(__file__).resolve().parents[1]
+    table_paths = [
+        repo_root / "docs" / "research" / "tables" / "healthcare_gap_closure_results.tex",
+        repo_root / "docs" / "research" / "tables" / "healthcare_gap4_audit_results.tex",
+    ]
+    figure_paths = [
+        repo_root / "docs" / "research" / "figures" / "healthcare_gap_closure_status.png",
+        repo_root / "docs" / "research" / "figures" / "healthcare_gap2_stress_rates.png",
+    ]
+
+    for path in table_paths:
+        assert path.exists()
+        text = path.read_text()
+        assert "Gap" in text or "Audit item" in text
+        assert "yes" in text or "pass" in text
+
+    for path in figure_paths:
+        assert path.exists()
+        assert path.stat().st_size > 1000
+
+
 def test_fusion_configs_use_validation_threshold_selection():
     from uais.utils.config_loader import load_yaml
 

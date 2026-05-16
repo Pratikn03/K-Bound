@@ -102,6 +102,93 @@ def validate_fusion_schema(
     return stats
 
 
+def validate_incident_protocol(
+    df: pd.DataFrame,
+    incident_column: str = "incident_id",
+    domain_column: str = "domain",
+    timestamp_column: str = "timestamp",
+    split_column: str = "split",
+    label_column: str = "label",
+    min_domains_per_incident: int = 2,
+    require_temporal_order: bool = True,
+) -> dict:
+    """Validate a naturally co-observed multimodal incident protocol.
+
+    This is stricter than the generic score-fusion schema. It requires a shared
+    incident key, timestamped domain evidence, and split assignment at the
+    incident level so label-aligned composites cannot be mistaken for natural
+    co-observation.
+    """
+    required = {incident_column, domain_column, timestamp_column, split_column, label_column}
+    missing = [col for col in required if col not in df.columns]
+    if missing:
+        raise ValueError(f"Missing required incident-protocol columns: {missing}")
+
+    work = df.copy()
+    if work[incident_column].isna().any():
+        raise ValueError(f"Null incident identifiers found in '{incident_column}'.")
+    if work[domain_column].isna().any():
+        raise ValueError(f"Null domain values found in '{domain_column}'.")
+
+    labels_per_incident = work.groupby(incident_column)[label_column].nunique(dropna=True)
+    conflicting = labels_per_incident[labels_per_incident > 1]
+    if not conflicting.empty:
+        raise ValueError(f"Conflicting labels for {len(conflicting)} incidents.")
+
+    splits_per_incident = work.groupby(incident_column)[split_column].nunique(dropna=True)
+    split_leakage_count = int((splits_per_incident > 1).sum())
+    if split_leakage_count:
+        raise ValueError(f"Incident-level split leakage for {split_leakage_count} incidents.")
+
+    domains_per_incident = work.groupby(incident_column)[domain_column].nunique(dropna=True)
+    undercovered = domains_per_incident[domains_per_incident < min_domains_per_incident]
+    if not undercovered.empty:
+        raise ValueError(
+            f"{len(undercovered)} incidents have fewer than {min_domains_per_incident} domains."
+        )
+
+    timestamps = pd.to_datetime(work[timestamp_column], errors="coerce")
+    if timestamps.isna().any():
+        raise ValueError(f"Non-parseable timestamps found in '{timestamp_column}'.")
+    work["_protocol_timestamp"] = timestamps
+    split_order = {"train": 0, "validation": 1, "val": 1, "test": 2}
+    normalized_splits = work[split_column].astype(str).str.lower()
+    unknown_splits = sorted(set(normalized_splits) - set(split_order))
+    if unknown_splits:
+        raise ValueError(f"Unknown split names: {unknown_splits}")
+
+    temporal_order_valid = True
+    split_ranges = {}
+    for split_name, order_idx in split_order.items():
+        split_mask = normalized_splits == split_name
+        if not split_mask.any():
+            continue
+        canonical = "validation" if split_name == "val" else split_name
+        current = split_ranges.get(canonical, {})
+        current["order"] = order_idx
+        current["min"] = min(current.get("min", work.loc[split_mask, "_protocol_timestamp"].min()), work.loc[split_mask, "_protocol_timestamp"].min())
+        current["max"] = max(current.get("max", work.loc[split_mask, "_protocol_timestamp"].max()), work.loc[split_mask, "_protocol_timestamp"].max())
+        split_ranges[canonical] = current
+    ordered_ranges = sorted(split_ranges.values(), key=lambda item: item["order"])
+    for left, right in zip(ordered_ranges, ordered_ranges[1:]):
+        if left["max"] > right["min"]:
+            temporal_order_valid = False
+            break
+    if require_temporal_order and not temporal_order_valid:
+        raise ValueError("Temporal split order is invalid.")
+
+    return {
+        "rows": int(len(work)),
+        "incident_count": int(work[incident_column].nunique()),
+        "domain_count": int(work[domain_column].nunique()),
+        "min_domains_per_incident": int(domains_per_incident.min()),
+        "median_domains_per_incident": float(domains_per_incident.median()),
+        "natural_pairing": bool((domains_per_incident >= min_domains_per_incident).all()),
+        "split_leakage_count": split_leakage_count,
+        "temporal_order_valid": temporal_order_valid,
+    }
+
+
 def hash_file(path: str | Path, chunk_size: int = 8192) -> str:
     p = Path(path)
     hasher = hashlib.md5()
@@ -314,6 +401,7 @@ __all__ = [
     "infer_feature_columns",
     "hash_file",
     "validate_fusion_schema",
+    "validate_incident_protocol",
     "prepare_fusion_dataframe",
     "build_fusion_tensors",
     "FusionDataset",

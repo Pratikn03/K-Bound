@@ -159,6 +159,100 @@ def select_decision_threshold(y_true: np.ndarray, y_prob: np.ndarray, strategy: 
     raise ValueError(f"Unknown decision threshold strategy: {strategy}")
 
 
+def calibration_monitor_report(
+    reference_y: np.ndarray,
+    reference_prob: np.ndarray,
+    current_y: np.ndarray,
+    current_prob: np.ndarray,
+    max_ece_delta: float = 0.05,
+    max_brier_delta: float = 0.05,
+    n_bins: int = 10,
+) -> Dict[str, object]:
+    """Compare deployment calibration against a reference window.
+
+    Returns a compact alert report suitable for deployment dashboards or
+    runbooks. Labels may be delayed in real systems; when they are available,
+    this function makes calibration drift explicit and auditable.
+    """
+    reference_y = np.asarray(reference_y, dtype=float)
+    reference_prob = np.asarray(reference_prob, dtype=float)
+    current_y = np.asarray(current_y, dtype=float)
+    current_prob = np.asarray(current_prob, dtype=float)
+
+    ref = {
+        "ece": expected_calibration_error(reference_y, reference_prob, n_bins=n_bins),
+        "brier": brier_score(reference_y, reference_prob),
+    }
+    cur = {
+        "ece": expected_calibration_error(current_y, current_prob, n_bins=n_bins),
+        "brier": brier_score(current_y, current_prob),
+    }
+    deltas = {
+        "ece_delta": float(cur["ece"] - ref["ece"]),
+        "brier_delta": float(cur["brier"] - ref["brier"]),
+    }
+    reasons = []
+    if deltas["ece_delta"] > max_ece_delta:
+        reasons.append("ece_delta")
+    if deltas["brier_delta"] > max_brier_delta:
+        reasons.append("brier_delta")
+    return {
+        "alert": bool(reasons),
+        "reasons": reasons,
+        "reference": ref,
+        "current": cur,
+        "deltas": deltas,
+        "thresholds": {
+            "max_ece_delta": float(max_ece_delta),
+            "max_brier_delta": float(max_brier_delta),
+        },
+    }
+
+
+def bounded_switching_certificate(
+    static_loss: np.ndarray,
+    reliability_loss: np.ndarray,
+    fire_decisions: np.ndarray,
+    margin_epsilon: float = 0.0,
+) -> Dict[str, float | bool]:
+    """Empirical certificate for when a reliability switch is preferable.
+
+    If the gate fires only on samples where the reliability path has positive
+    average loss advantage over static attention by more than ``margin_epsilon``,
+    and the realized gated policy loss is lower than static loss, the certificate
+    is marked true. This is not a proof for new populations; it is the auditable
+    finite-sample condition the formal switching-rule analysis can cite.
+    """
+    static_loss = np.asarray(static_loss, dtype=float)
+    reliability_loss = np.asarray(reliability_loss, dtype=float)
+    fire_decisions = np.asarray(fire_decisions, dtype=bool)
+    if static_loss.shape != reliability_loss.shape or static_loss.shape != fire_decisions.shape:
+        raise ValueError("static_loss, reliability_loss, and fire_decisions must have the same shape.")
+    if static_loss.ndim != 1:
+        raise ValueError("switching certificate inputs must be one-dimensional.")
+
+    policy_loss_values = np.where(fire_decisions, reliability_loss, static_loss)
+    fired = fire_decisions
+    fired_advantage = (
+        float(np.mean(static_loss[fired] - reliability_loss[fired]))
+        if fired.any()
+        else 0.0
+    )
+    static_mean = float(np.mean(static_loss))
+    reliability_mean = float(np.mean(reliability_loss))
+    policy_mean = float(np.mean(policy_loss_values))
+    certified = bool(fired.any() and fired_advantage > margin_epsilon and policy_mean < static_mean)
+    return {
+        "certified": certified,
+        "static_loss": static_mean,
+        "reliability_loss": reliability_mean,
+        "policy_loss": policy_mean,
+        "fired_advantage": fired_advantage,
+        "fire_rate": float(np.mean(fire_decisions)),
+        "margin_epsilon": float(margin_epsilon),
+    }
+
+
 def reliability_degradation_auc(
     noise_levels: np.ndarray,
     roc_auc_values: np.ndarray,

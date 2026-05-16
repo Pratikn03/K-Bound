@@ -19,6 +19,7 @@ from uais.fusion.attention.evaluate_attention_fusion import evaluate_attention_f
 from uais.fusion.attention.evaluate_attention_harness import evaluate_attention_harness
 from uais.fusion.attention.validate_fusion_inputs import validate_attention_inputs
 from uais.fusion.attention.reliability_estimator import (
+    CategoryAwareReliabilityEstimator,
     ReliabilityEstimator,
     RGAReliabilityEstimator,   # paper-name alias for ReliabilityEstimator
 )
@@ -80,6 +81,7 @@ __all__ = [
     "validate_attention_inputs",
     # CRAF / RGA — Calibration-aware Reliability-Adaptive Fusion (paper: RGA)
     "ReliabilityEstimator",
+    "CategoryAwareReliabilityEstimator",
     "RGAReliabilityEstimator",
     "CounterfactualDomainExplainer",
     "CounterfactualResult",

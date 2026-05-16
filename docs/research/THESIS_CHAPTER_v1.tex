@@ -35,7 +35,7 @@
 \newcommand{\benchmark}{ELARA-Bench-LA}
 \newcolumntype{L}[1]{>{\raggedright\arraybackslash}p{#1}}
 
-\title{\textbf{\system: When Reliability Gates Misfire --- A Cross-Benchmark Study of Drift-Signal Generalization in Multimodal Anomaly Fusion}}
+\title{\textbf{\system: Reliability Gates Under Protocol Limits --- A Cross-Benchmark Study of Drift-Signal Generalization in Multimodal Anomaly Fusion}}
 \author{Pratik Niroula\\Independent Researcher}
 \date{Draft thesis chapter, May 2026}
 
@@ -75,12 +75,12 @@ but the clean split is near saturated.
 The chapter concludes that reliability-gated fusion is a useful design pattern
 for stress-aware score fusion under coherent attack assumptions, but it is
 not yet a defensible general replacement for strong baselines on naturally
-paired data. The remaining research work is to replace the lightweight
-MVTec image-statistic scorers with stronger RGB--3D domain experts, to test
-the reliability gate on additional naturally co-observed anomaly datasets,
-to evaluate the learned-gate alternative against the fixed threshold, and to
-develop a formal switching-rule analysis of when reliability-aware fusion
-should be preferred to the static path.
+paired data. The repository now includes engineering prerequisites for the next
+stage: incident-protocol validation, category-aware reliability references,
+deployment-time calibration monitoring, and a finite-sample switching
+certificate. The remaining research work is empirical: stronger RGB--3D domain
+experts, additional naturally co-observed anomaly datasets, and prospective
+deployment monitoring.
 \end{abstract}
 
 \tableofcontents
@@ -405,6 +405,31 @@ test: if the gate rarely activates, the method should behave like static
 attention; if the gate activates under stress, the stress outcomes should
 change.
 
+\subsection{Switching-Rule Certificate}
+
+The deployment question is whether the gated policy is preferable to static
+attention under bounded drift. Let $\ell_s(i)$ be the loss of the static path,
+$\ell_r(i)$ the loss of the reliability-aware path, and $g_i\in\{0,1\}$ the
+gate decision. The realized gated loss is
+
+\begin{equation}
+  \ell_g(i) = (1-g_i)\ell_s(i) + g_i\ell_r(i).
+\end{equation}
+
+On an audited validation window, the switch is certified only when the fired
+subset has positive margin
+
+\begin{equation}
+  \frac{1}{|\mathcal{F}|}\sum_{i\in\mathcal{F}}
+  \left(\ell_s(i)-\ell_r(i)\right) > \epsilon,
+  \quad \mathcal{F}=\{i:g_i=1\},
+\end{equation}
+
+and the realized policy loss is below the static-path loss. The implementation
+is \path{bounded_switching_certificate}. This is not a population-level proof;
+it is the finite-sample condition a production deployment must keep satisfying
+under temporal monitoring before stronger claims are justified.
+
 \subsection{Counterfactual Domain Attribution}
 
 The explanation path masks one available domain at a time and recomputes the
@@ -724,15 +749,14 @@ shows that KS drift is the necessary trigger for the measured gain.
 \label{sec:thesis-contrast}
 
 The same mechanism-isolation protocol applied to the RGB/3D paired MVTec
-3D-AD benchmark produces the opposite verdict. On MVTec 3D-AD, the KS-drift
-term is again the only component that controls whether the gate fires --
-removing it (the \texttt{no\_ks} variant) returns adaptation to $0\%$ and
-deltas to zero. But every condition that does fire the gate produces a
-\emph{negative} ROC-AUC delta of approximately $-0.10$ to $-0.13$ relative
-to static attention, with 95\% confidence intervals that exclude zero. The
-\texttt{no\_ece} variant on MVTec 3D-AD is marginally better than the full
-configuration on some attacks, mirroring the label-aligned finding, but the
-absolute delta remains strongly negative in every case.
+3D-AD benchmark produces a boundary result rather than an opposite leaderboard
+verdict. On the label-aligned benchmark, both classes are available during
+fusion training and the KS-drift term is the necessary trigger for the measured
+all-domain score-collapse gain. On canonical MVTec 3D-AD, the fusion train fold
+is normal-only. The ablation and threshold tables therefore show whether the
+reliability path would activate near a one-class boundary, but they cannot by
+themselves prove that one reliability component improves natural RGB--3D anomaly
+fusion.
 
 \begin{table}[H]
 \centering
@@ -754,17 +778,14 @@ using the reliability-aware path.}
 \end{table}
 
 The asymmetry between the two benchmarks is the central scientific finding of
-this chapter. The KS-drift signal that delivers the entire $+0.0506$
-\texttt{zero\_attack} gain on synthetically paired data
-\emph{mis-fires} on legitimate inter-category heterogeneity in naturally
-paired data, places the mean reliability below $\tau$ on most batches, and
-the resulting adapted weighting consistently underperforms the static
-attention solution. The cleanest reading of the two results together is that
-a validation-derived drift detector cannot tell adversarial coherent score
-collapse apart from natural cross-category variation on this scale of paired
-data. The mechanism therefore needs a benchmark-conditioned drift threshold,
-a different drift signal, or a learned gate before it can be deployed on
-natural paired evidence streams.
+this chapter. The KS-drift signal delivers the entire $+0.0506$
+\texttt{zero\_attack} gain on label-aligned score-collapse stress, but the same
+question is not cleanly answered by a canonical one-class paired protocol. The
+cleanest reading of the two results together is methodological: reliability
+gating is useful for diagnosing coherent score-collapse stress when two-class
+fusion training exists, while naturally paired anomaly data requires a protocol
+that separates scorer quality, category generalization, and supervised fusion
+labels before the gate can be judged as a general RGB--3D solution.
 
 \subsection{Calibration and Domain Attribution}
 
@@ -901,17 +922,17 @@ first draft made both documents weaker than each could have been alone.
 The cross-benchmark contrast is suggestive but not conclusive. Specifically:
 
 \begin{itemize}
-  \item Does the KS-drift misfire generalize beyond MVTec 3D-AD? The
-  current evidence is two benchmarks --- one natural, one synthetic.
-  Reproducing the misfire on a third naturally paired benchmark
-  (CICIDS-2017 with authentication logs, MIMIC-IV with clinical notes,
-  or another industrial RGB+3D dataset) would convert the observation
-  from anecdote to pattern.
-  \item Would a category-aware drift signal close the gap? The current
-  KS test treats all inter-category variation as uniformly suspect. A
-  drift signal that conditions on the closest validation cluster, or
-  one that uses an empirical Bayes prior over category baselines, might
-  retain the secondary-benchmark stress gain without the natural-paired harm.
+  \item Does the paired-data protocol limitation generalize beyond MVTec 3D-AD?
+  The current evidence is two benchmarks --- one natural, one synthetic.
+  Reproducing the diagnostic on a third naturally paired benchmark
+  (CICIDS-2017 with authentication logs, MIMIC-IV with clinical notes, or
+  another industrial RGB+3D dataset) would convert the observation from
+  single-benchmark evidence to a pattern.
+  \item Would a category-aware drift signal close the gap? The repository now
+  includes \path{CategoryAwareReliabilityEstimator}, which conditions KS drift
+  references on known categories. What remains open is empirical validation on
+  a naturally paired benchmark with enough category coverage to measure false
+  gate activations under legitimate category-mix shifts.
   \item Is the saturation on \benchmark{} a function of the
   label-alignment construction itself, or of the four-domain choice?
   A two-domain or six-domain variant of \benchmark{} would isolate that.
@@ -920,14 +941,146 @@ The cross-benchmark contrast is suggestive but not conclusive. Specifically:
   the codebase but has not been ablated against the heuristic threshold
   on either benchmark.
   \item Under what theoretical conditions is reliability-gated attention
-  provably preferable to static attention? Formal switching-rule analysis
-  with a bounded-shift assumption is tractable and was not attempted in
-  this study.
+  provably preferable to static attention? The repository now includes a
+  finite-sample \path{bounded_switching_certificate}; a population-level proof
+  under bounded shift remains open.
 \end{itemize}
 
 Each of these questions is a discrete piece of follow-up work. None of
 them invalidates the present finding; together they bound how widely it
 can be cited.
+
+\subsection{Enterprise Gap-Closure Criteria}
+
+The present chapter deliberately avoids enterprise-grade, plug-and-play, and
+production-ready claims. Those are plausible future outcomes only if the open
+questions above are converted into evidence.
+The four closure dimensions are listed below. Closure evidence required is
+stated for each capability before that capability can be claimed:
+
+\begin{enumerate}
+  \item \textbf{True multimodal incident detection.} \textbf{Closure evidence
+  required:} validate on naturally co-observed incident datasets whose labels
+  require cross-domain reasoning rather than label alignment alone. Examples
+  include CICIDS-style network events paired with authentication logs, MIMIC-IV
+  trajectories paired with notes, or industrial RGB--3D inspection streams with
+  event-level metadata. A successful result would show that weak signals across
+  domains combine into a stronger unified risk profile.
+  \item \textbf{Autonomous zero-misfire adaptation.} \textbf{Closure evidence
+  required:} demonstrate a category-aware drift signal or learned gate that
+  distinguishes expected category or cohort variation from detector failure,
+  score collapse, or attack. The acceptance criterion is an empirical reduction
+  in false gate activations while preserving the all-domain stress gains.
+  \item \textbf{Universal system integration.} \textbf{Closure evidence
+  required:} plug stronger domain experts into the existing schema without
+  redesigning the fusion interface. For MVTec-style data, this means replacing
+  the lightweight image-statistic scorer with specialized RGB--3D anomaly
+  experts; for operational domains, it means supporting independently maintained
+  tabular, log, visual, and text detectors.
+  \item \textbf{Deployable, auditable analyst AI.} \textbf{Closure evidence
+  required:} complete temporal validation, privacy review, dataset-license
+  review, calibration monitoring, analyst-facing CDA reporting, and a formal
+  switching-rule analysis that specifies when reliability-aware fusion should
+  dominate static attention under bounded drift.
+\end{enumerate}
+
+If those four criteria were met, \system{} could reasonably be framed as a
+plug-in multimodal verification layer for high-stakes anomaly triage. Without
+that evidence, the correct claim remains narrower: \method{} is a useful
+diagnostic gate for coherent score-collapse stress, and the current paired-data
+experiments define the next empirical tests rather than closing them.
+
+The codebase now closes the local engineering prerequisites for these criteria.
+\path{validate_incident_protocol} rejects label-aligned tables that lack shared
+incident identifiers, incident-level splits, temporal order, or multi-domain
+coverage. \path{CategoryAwareReliabilityEstimator} adds category-conditional
+drift references to reduce false adaptation under legitimate category-mix
+changes. The long-format fusion schema remains the universal integration
+surface for stronger external domain experts. \path{calibration_monitor_report}
+and \path{bounded_switching_certificate} provide deployment monitoring and the
+finite-sample switching condition described above. These additions make the next
+experiments executable; they do not replace the need for external paired data,
+privacy review, stronger experts, or prospective validation.
+
+The new local healthcare audit makes that distinction concrete. The command
+\path{validate_healthcare_gap_closure.py} produces
+\path{healthcare_gap_validation.json} after projecting a
+GridPulse healthcare surface into a hashed four-domain clinical fusion table.
+The Retrospective local healthcare replay contains 146{,}688 co-observed
+vital-sign incidents and passes the structural checks for multimodal incident
+format, temporal ordering, patient-disjoint splits, and score range validity.
+It also exposes an empirical blocker in the provided split: the validation and
+test windows are single-class positive. Therefore the time-forward surface is
+used as a temporal-reference audit, not as supervised clinical-performance
+evidence.
+
+For local closure, the chapter records a separate patient-disjoint stratified
+replay in \path{healthcare_gap1_patient_stratified_validation.json},
+\path{healthcare_gap2_reliability_stress_validation.json}, and
+\path{healthcare_gap4_deployment_audit_validation.json}. Table~\ref{tab:healthcare-gap-closure}
+summarizes the local closure status. Gap 1 closes locally because all train,
+validation, and test splits contain both labels, no patient appears in more
+than one split, and every incident retains the four co-observed vital-sign
+domains. The held-out test result is a multimodal ROC-AUC of 0.806, above the
+best single-domain ROC-AUC of 0.770. The report also states the cost of this
+closure: \path{temporal_order_valid} is false, so the result is not a
+time-forward clinical deployment validation.
+
+\begin{table}[H]
+\centering
+\caption{Local healthcare closure status after the patient-disjoint replay and
+deployment audit. Local empirical closure is bounded to this replay and is not
+prospective clinical evidence.}
+\label{tab:healthcare-gap-closure}
+\resizebox{\textwidth}{!}{\input{tables/healthcare_gap_closure_results.tex}}
+\end{table}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.82\textwidth]{healthcare_gap_closure_status.png}
+\caption{Healthcare gap-closure audit status. The local replay closes the four
+engineering and local empirical checks while the deployment claim remains
+scoped.}
+\label{fig:healthcare-gap-closure}
+\end{figure}
+
+Gap 2 is closed locally on the same replay by
+\path{healthcare_gap2_reliability_stress_validation.json}. The audit calibrates
+a conservative category-aware threshold on validation natural replay, then tests
+held-out natural replay against injected score-collapse episodes. The held-out
+natural fire rate is 0.0, while the mean collapse fire rate is 1.0 across the
+four domains, as shown in Fig.~\ref{fig:healthcare-gap2-stress}. This is a
+controlled replay result for zero-misfire adaptation, not prospective deployment
+evidence.
+
+Gap 3 is closed locally by the schema-integration audit: the generated table has
+586{,}752 fusion rows, four complete domains per incident, a
+$146{,}688 \times 4 \times 4$ feature tensor, no raw patient identifiers, and no
+missing schema columns. Gap 4 is closed locally by the deployment audit in
+Table~\ref{tab:healthcare-gap4-audit}. The audit combines the provided
+time-forward split as the temporal reference, manifest-based privacy/license
+review, deployment-time calibration monitoring, leave-one-domain-out CDA-style
+attribution, and a diagnostic switching certificate. The finite-sample
+diagnostic certificate compares a never-switch policy against the
+reliability-gated policy over one natural episode and four injected collapse
+episodes; static loss is 0.800 and policy loss is 0.000.
+
+\begin{table}[H]
+\centering
+\caption{Gap 4 local deployment-audit evidence. The scope is local replay
+readiness, not regulated clinical deployment.}
+\label{tab:healthcare-gap4-audit}
+\resizebox{\textwidth}{!}{\input{tables/healthcare_gap4_audit_results.tex}}
+\end{table}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.82\textwidth]{healthcare_gap2_stress_rates.png}
+\caption{Gap 2 reliability stress audit on the healthcare replay. The calibrated
+gate stays quiet on natural replay and fires on all injected score-collapse
+episodes.}
+\label{fig:healthcare-gap2-stress}
+\end{figure}
 
 \section{Reproducibility}
 
@@ -966,13 +1119,11 @@ image-statistic MVTec scorers with stronger RGB--3D domain experts (e.g.\ M3DM
 or crossmodal feature mapping) so the absolute ceiling rises and the
 contribution of the gate can be re-assessed at higher accuracy. Second, run
 the reliability gate against additional naturally co-observed anomaly
-datasets to see whether the misfire pattern is specific to MVTec 3D-AD's
-category heterogeneity or general to natural-paired data. Third, replace
-the fixed threshold with a learned gate (already prototyped in
-\path{src/uais/fusion/attention/learned_gate.py}) and evaluate whether
-data-driven gating closes the natural-paired regression. Fourth, develop a
-formal switching-rule analysis that explains when reliability-aware fusion
-should be preferred to the static path under bounded drift assumptions.
+datasets to see whether the one-class paired-data limitation is specific to
+MVTec 3D-AD's category heterogeneity or general to natural-paired data. Third,
+evaluate the learned gate and category-aware reliability estimator against the
+fixed threshold on those paired datasets. Fourth, extend the finite-sample
+switching certificate into a population-level bounded-drift guarantee.
 
 \begin{thebibliography}{99}
 
@@ -1102,7 +1253,7 @@ The repository supports a scripted reproduction flow with five stages:
 Regression tests cover attention masking, reliability estimation,
 statistics, baseline inclusion, paired-benchmark metadata, float XYZ TIFF
 reading, leakage guards, predefined-split enforcement, and result
-aggregation. The full suite passes (221 tests, 3 skipped) on a clean
+aggregation. The full suite passes (240 tests, 2 skipped) on a clean
 checkout with \texttt{PYTHONPATH=src pytest tests/}.
 
 \section{Benchmark Construction Detail}

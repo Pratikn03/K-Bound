@@ -250,6 +250,142 @@ class ReliabilityEstimator:
         return obj
 
 
+class CategoryAwareReliabilityEstimator(ReliabilityEstimator):
+    """Reliability estimator with category-conditional KS drift references.
+
+    The global estimator can fire on legitimate batch-composition changes when
+    each category has a different score distribution. This variant compares the
+    current scores against the matching validation category when categories are
+    supplied, falling back to the global reference for unknown categories.
+    """
+
+    def __init__(self, *args, unknown_category_policy: str = "global", **kwargs) -> None:
+        super().__init__(*args, **kwargs)
+        if unknown_category_policy not in {"global", "assume_reliable"}:
+            raise ValueError("unknown_category_policy must be 'global' or 'assume_reliable'.")
+        self.unknown_category_policy = unknown_category_policy
+        self._category_reference_scores: Dict[str, Dict[str, np.ndarray]] = {}
+
+    def fit(
+        self,
+        features: np.ndarray,
+        masks: np.ndarray,
+        labels: np.ndarray,
+        categories: Optional[np.ndarray] = None,
+    ) -> "CategoryAwareReliabilityEstimator":
+        super().fit(features, masks, labels)
+        self._category_reference_scores = {domain: {} for domain in self.domain_order}
+        if categories is None:
+            return self
+
+        categories = np.asarray(categories).astype(str)
+        if categories.shape[0] != features.shape[0]:
+            raise ValueError("categories must have one value per sample.")
+
+        for i, domain in enumerate(self.domain_order):
+            available = ~masks[:, i]
+            for category in sorted(set(categories[available])):
+                cat_mask = available & (categories == category)
+                scores = features[cat_mask, i, self.score_index].astype(float)
+                self._category_reference_scores[domain][category] = scores.copy()
+        return self
+
+    def _reference_for_category(self, domain: str, category: str) -> np.ndarray:
+        category_refs = self._category_reference_scores.get(domain, {})
+        if category in category_refs:
+            return category_refs[category]
+        if self.unknown_category_policy == "assume_reliable":
+            return np.array([], dtype=float)
+        return self._reference_scores.get(domain, np.array([], dtype=float))
+
+    def compute_reliability_weights(
+        self,
+        features: np.ndarray,
+        masks: np.ndarray,
+        categories: Optional[np.ndarray] = None,
+    ) -> np.ndarray:
+        if categories is None or not self._category_reference_scores:
+            return super().compute_reliability_weights(features, masks)
+        if not self.fitted:
+            raise RuntimeError("ReliabilityEstimator must be fitted before computing weights.")
+
+        categories = np.asarray(categories).astype(str)
+        if categories.shape[0] != features.shape[0]:
+            raise ValueError("categories must have one value per sample.")
+
+        n_samples = features.shape[0]
+        n_domains = len(self.domain_order)
+        weights = np.zeros((n_samples, n_domains), dtype=np.float32)
+
+        for i, domain in enumerate(self.domain_order):
+            available_mask = ~masks[:, i]
+            if not available_mask.any():
+                continue
+
+            for category in sorted(set(categories[available_mask])):
+                cat_mask = available_mask & (categories == category)
+                cur_scores = features[cat_mask, i, self.score_index].astype(float)
+                ref = self._reference_for_category(domain, category)
+                if len(ref) >= self.min_samples_for_ks and len(cur_scores) >= self.min_samples_for_ks:
+                    _, ks_p = ks_2samp(ref, cur_scores)
+                    ks_reliability = float(np.clip(ks_p, 0.0, 1.0))
+                else:
+                    ks_reliability = 1.0
+
+                sharpness = float(np.clip(np.mean((cur_scores - 0.5) ** 2) * 4.0, 0.0, 1.0))
+                stored_ece = self._domain_ece.get(domain, 0.5)
+                ece_reliability = float(max(0.0, 1.0 - stored_ece))
+                rel_d = (
+                    self.ece_weight * ece_reliability
+                    + self.ks_weight * ks_reliability
+                    + self.sharpness_weight * sharpness
+                )
+                weights[cat_mask, i] = float(np.clip(rel_d, 0.0, 1.0))
+
+        return weights
+
+    def save(self, path: str | Path) -> None:
+        Path(path).parent.mkdir(parents=True, exist_ok=True)
+        payload = {
+            "domain_order": self.domain_order,
+            "score_index": self.score_index,
+            "ece_weight": self.ece_weight,
+            "ks_weight": self.ks_weight,
+            "sharpness_weight": self.sharpness_weight,
+            "n_calibration_bins": self.n_calibration_bins,
+            "min_samples_for_ks": self.min_samples_for_ks,
+            "gate_threshold": self.gate_threshold,
+            "calibrators": self._calibrators,
+            "reference_scores": self._reference_scores,
+            "domain_ece": self._domain_ece,
+            "fitted": self.fitted,
+            "unknown_category_policy": self.unknown_category_policy,
+            "category_reference_scores": self._category_reference_scores,
+        }
+        joblib.dump(payload, path)
+
+    @classmethod
+    def load(cls, path: str | Path) -> "CategoryAwareReliabilityEstimator":
+        payload = joblib.load(path)
+        obj = cls(
+            domain_order=payload["domain_order"],
+            score_index=payload["score_index"],
+            ece_weight=payload["ece_weight"],
+            ks_weight=payload["ks_weight"],
+            sharpness_weight=payload["sharpness_weight"],
+            n_calibration_bins=payload["n_calibration_bins"],
+            min_samples_for_ks=payload["min_samples_for_ks"],
+            gate_threshold=payload.get("gate_threshold", 0.66),
+            unknown_category_policy=payload.get("unknown_category_policy", "global"),
+        )
+        obj._calibrators = payload["calibrators"]
+        obj._reference_scores = payload["reference_scores"]
+        obj._domain_ece = payload["domain_ece"]
+        obj.fitted = payload["fitted"]
+        obj._category_reference_scores = payload.get("category_reference_scores", {})
+        return obj
+
+
 # ---------------------------------------------------------------------------
 # Paper-name alias
 # ---------------------------------------------------------------------------
@@ -258,4 +394,8 @@ class ReliabilityEstimator:
 # Adaptive Fusion).  Both names refer to the same class.
 RGAReliabilityEstimator = ReliabilityEstimator
 
-__all__ = ["ReliabilityEstimator", "RGAReliabilityEstimator"]
+__all__ = [
+    "ReliabilityEstimator",
+    "CategoryAwareReliabilityEstimator",
+    "RGAReliabilityEstimator",
+]
