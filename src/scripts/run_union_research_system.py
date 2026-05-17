@@ -198,6 +198,26 @@ def build_plan(
             description="Build the M3DM-style ResNet/PCA MVTec variant.",
         ),
         Step(
+            name="prep_mvtec_patchcore",
+            group="paper_prep",
+            command=(
+                py,
+                "src/scripts/prepare_mvtec3d_fusion_benchmark.py",
+                "--dataset-root",
+                "data/raw/mvtec3d",
+                "--feature-mode",
+                "patchcore",
+                "--embedding-dim",
+                "16",
+                "--output",
+                "experiments/fusion/mvtec3d_patchcore_inputs.csv",
+                "--metadata",
+                "experiments/fusion/mvtec3d_patchcore_metadata.json",
+            ),
+            required_paths=("data/raw/mvtec3d",),
+            description="Build the PatchCore-style kNN one-class scorer MVTec variant.",
+        ),
+        Step(
             name="prep_realfusion",
             group="paper_prep",
             command=(
@@ -268,6 +288,20 @@ def build_plan(
             ),
             required_paths=("experiments/fusion/mvtec3d_m3dm_inputs.csv",),
             description="Run the 5-seed MVTec M3DM-style experiment.",
+        ),
+        Step(
+            name="train_mvtec_patchcore",
+            group="paper_train",
+            command=(
+                py,
+                "src/scripts/run_breakthrough_experiment.py",
+                "--config",
+                "configs/attention_mvtec3d_patchcore.yaml",
+                "--output",
+                "experiments/fusion/mvtec3d_patchcore_results.json",
+            ),
+            required_paths=("experiments/fusion/mvtec3d_patchcore_inputs.csv",),
+            description="Run the 5-seed MVTec PatchCore-style one-class scorer experiment.",
         ),
         Step(
             name="train_realfusion",

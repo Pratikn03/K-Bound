@@ -88,6 +88,11 @@ def main() -> None:
     parser.add_argument("--metadata", type=Path, default=None, help="Path to MVTec3D fusion metadata JSON")
     parser.add_argument("--figures-dir", required=True, type=Path)
     parser.add_argument("--tables-dir", required=True, type=Path)
+    parser.add_argument(
+        "--asset-prefix",
+        default="mvtec3d_",
+        help="Filename prefix for emitted assets (use mvtec3d_patchcore_ to keep Gap 3 assets distinct).",
+    )
     args = parser.parse_args()
 
     data = json.loads(args.input.read_text(encoding="utf-8"))
@@ -106,8 +111,8 @@ def main() -> None:
         for plotter in PLOTTERS:
             plotter(data, tmp_figs)
 
-        moved_tables = _rename_prefixed_files(tmp_tables, args.tables_dir, "elara_", "mvtec3d_")
-        moved_figs = _rename_prefixed_files(tmp_figs, args.figures_dir, "elara_", "mvtec3d_")
+        moved_tables = _rename_prefixed_files(tmp_tables, args.tables_dir, "elara_", args.asset_prefix)
+        moved_figs = _rename_prefixed_files(tmp_figs, args.figures_dir, "elara_", args.asset_prefix)
 
     if metadata is not None:
         write_paired_benchmark_metadata_table(metadata, args.tables_dir)

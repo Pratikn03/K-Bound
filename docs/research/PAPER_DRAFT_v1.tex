@@ -856,6 +856,37 @@ lightweight image-statistic scorers themselves producing high-variance score
 distributions under normal-only training. This isolates the next intervention
 to scorer quality rather than to the drift signal alone.
 
+\subsubsection{One-Class Scorer Quality: PatchCore-Style kNN}
+\label{sec:mvtec-patchcore}
+
+Section~\ref{sec:mvtec-category-aware} pointed the next intervention at scorer
+quality. We replace the lightweight image-statistic score and the M3DM-style
+Mahalanobis-to-centroid score with a PatchCore-style kNN distance to a
+normal-only memory bank of ResNet-50 penultimate features. The kNN score drops
+the unimodal-normal assumption baked into the Mahalanobis variant, which is
+what the canonical MVTec one-class protocol requires.
+\IfFileExists{tables/mvtec3d_patchcore_category_aware_drift.tex}{
+Table~\ref{tab:mvtec-patchcore-category-aware} reports the category-aware
+comparison under PatchCore scoring.
+\begin{table}[t]
+\centering
+\caption{MVTec~3D-AD under PatchCore-style scoring: global versus
+category-conditional KS reference at $\tau=0.66$, five seeds.}
+\label{tab:mvtec-patchcore-category-aware}
+\scriptsize
+\input{tables/mvtec3d_patchcore_category_aware_drift.tex}
+\end{table}
+}{}
+Under PatchCore scoring, category conditioning lifts mean test-time reliability
+from 0.358 to 0.478 (+0.120) and drops the gate adapt rate from 1.000 to
+0.892 (a 10.8~pp reduction). The combined result is a coherent picture of the
+gate's behaviour: the KS signal becomes informative once the scorer itself is
+tight enough that within-category normal scores form a sharp reference, and
+category conditioning then carries genuine drift information rather than
+legitimate inter-category variation. Lightweight image-statistic scorers are
+too noisy for the KS signal to ever be useful regardless of category
+conditioning; PatchCore-quality scorers admit a working drift-aware gate.
+
 \subsection{Calibration and Counterfactual Attribution}
 \IfFileExists{tables/mvtec3d_calibration_cda.tex}{
 \begin{table}[t]

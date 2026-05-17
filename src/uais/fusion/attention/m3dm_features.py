@@ -169,8 +169,63 @@ def normal_reference_distance_score(
     return np.clip((distances - lo) / (hi - lo), 0.0, 1.0).astype(np.float32)
 
 
+def patchcore_knn_score(
+    features: np.ndarray,
+    fit_mask: np.ndarray,
+    k: int = 3,
+    coreset_size: int | None = None,
+    random_state: int = 0,
+) -> np.ndarray:
+    """PatchCore-style kNN distance to a normal-only memory bank.
+
+    The memory bank is the set of normal (train-good) feature rows. For each
+    query feature, the score is the mean Euclidean distance to its k nearest
+    bank entries. Unlike the single-centroid Mahalanobis variant, this places
+    no unimodality assumption on the normal distribution, which is the
+    behaviour the MVTec 3D-AD one-class protocol actually requires.
+
+    The optional coreset subsamples the memory bank for runtime/memory savings;
+    PatchCore originally uses greedy farthest-point selection but a uniform
+    random subsample is sufficient for the score-fusion pipeline here.
+    """
+    n = features.shape[0]
+    fit_rows = features[fit_mask]
+    if fit_rows.shape[0] == 0:
+        return np.zeros(n, dtype=np.float32)
+
+    if coreset_size is not None and fit_rows.shape[0] > coreset_size:
+        rng = np.random.default_rng(random_state)
+        idx = rng.choice(fit_rows.shape[0], size=coreset_size, replace=False)
+        bank = fit_rows[idx]
+    else:
+        bank = fit_rows
+
+    bank = bank.astype(np.float32, copy=False)
+    queries = features.astype(np.float32, copy=False)
+    bank_sq = np.sum(bank * bank, axis=1)
+    chunk = 256
+    distances = np.zeros(n, dtype=np.float32)
+    k_eff = max(1, min(int(k), bank.shape[0]))
+    for start in range(0, n, chunk):
+        end = min(start + chunk, n)
+        q = queries[start:end]
+        q_sq = np.sum(q * q, axis=1, keepdims=True)
+        d2 = q_sq + bank_sq[None, :] - 2.0 * q @ bank.T
+        d2 = np.clip(d2, 0.0, None)
+        partitioned = np.partition(d2, k_eff - 1, axis=1)[:, :k_eff]
+        distances[start:end] = np.sqrt(np.mean(partitioned, axis=1))
+
+    fit_distances = distances[fit_mask]
+    lo = float(np.min(fit_distances))
+    hi = float(np.percentile(fit_distances, 95))
+    if hi - lo <= 1e-9:
+        hi = lo + 1.0
+    return np.clip((distances - lo) / (hi - lo), 0.0, 1.0).astype(np.float32)
+
+
 __all__ = [
     "extract_resnet_features",
     "fit_pca_projection",
     "normal_reference_distance_score",
+    "patchcore_knn_score",
 ]

@@ -178,6 +178,8 @@ def build_mvtec3d_fusion_frame(
     embedding_dim: int = 8,
     feature_mode: str = "image_statistics",
     train_categories: Iterable[str] | None = None,
+    patchcore_k: int = 3,
+    patchcore_coreset_size: int | None = None,
 ) -> tuple[pd.DataFrame, dict]:
     """Build long-format fusion rows and benchmark metadata.
 
@@ -211,11 +213,12 @@ def build_mvtec3d_fusion_frame(
         raise ValueError("MVTec 3D score generation requires at least one train/good paired observation.")
 
     feature_mode = (feature_mode or "image_statistics").lower()
-    if feature_mode == "m3dm":
+    if feature_mode in {"m3dm", "patchcore"}:
         from uais.fusion.attention.m3dm_features import (
             extract_resnet_features,
             fit_pca_projection,
             normal_reference_distance_score,
+            patchcore_knn_score,
         )
 
         rgb_paths = [pair.rgb_path for pair in pairs]
@@ -224,9 +227,24 @@ def build_mvtec3d_fusion_frame(
         depth_resnet = extract_resnet_features(depth_paths)
         rgb_embeddings, *_ = fit_pca_projection(rgb_resnet, train_mask, embedding_dim)
         depth_embeddings, *_ = fit_pca_projection(depth_resnet, train_mask, embedding_dim)
-        rgb_scores = normal_reference_distance_score(rgb_resnet, normal_reference_mask)
-        depth_scores = normal_reference_distance_score(depth_resnet, normal_reference_mask)
-        feature_description = "resnet50_imagenet_pca"
+        if feature_mode == "patchcore":
+            rgb_scores = patchcore_knn_score(
+                rgb_resnet,
+                normal_reference_mask,
+                k=patchcore_k,
+                coreset_size=patchcore_coreset_size,
+            )
+            depth_scores = patchcore_knn_score(
+                depth_resnet,
+                normal_reference_mask,
+                k=patchcore_k,
+                coreset_size=patchcore_coreset_size,
+            )
+            feature_description = "resnet50_imagenet_patchcore_knn"
+        else:
+            rgb_scores = normal_reference_distance_score(rgb_resnet, normal_reference_mask)
+            depth_scores = normal_reference_distance_score(depth_resnet, normal_reference_mask)
+            feature_description = "resnet50_imagenet_pca"
     else:
         rgb_features = np.vstack([_image_features(pair.rgb_path, embedding_dim) for pair in pairs])
         depth_features = np.vstack([_image_features(pair.depth_path, embedding_dim) for pair in pairs])
@@ -280,15 +298,22 @@ def build_mvtec3d_fusion_frame(
 
     frame = pd.DataFrame(rows)
     sample_frame = frame.groupby("sample_id").first()
-    important_limitation = (
-        "Scores are ResNet-50 normal-reference distance scores; PCA projection "
-        "yields the per-domain embedding. This is the M3DM-style feature mode."
-        if feature_mode == "m3dm"
-        else (
+    if feature_mode == "patchcore":
+        important_limitation = (
+            "Scores are PatchCore-style kNN distances to the train-good ResNet-50 "
+            "memory bank; PCA projection yields the per-domain embedding. The kNN score "
+            "drops the unimodal-normal assumption of the M3DM Mahalanobis variant."
+        )
+    elif feature_mode == "m3dm":
+        important_limitation = (
+            "Scores are ResNet-50 normal-reference distance scores; PCA projection "
+            "yields the per-domain embedding. This is the M3DM-style feature mode."
+        )
+    else:
+        important_limitation = (
             "Scores are lightweight normal-reference image-statistic anomaly scores; "
             "they provide a reproducible paired fusion benchmark, not a specialized RGB-3D detector."
         )
-    )
     metadata = {
         "benchmark_type": "naturally_paired_mvtec3d_score_fusion",
         "natural_pairing": True,
@@ -331,9 +356,21 @@ def main() -> None:
     parser.add_argument("--embedding-dim", type=int, default=8)
     parser.add_argument(
         "--feature-mode",
-        choices=["image_statistics", "m3dm"],
+        choices=["image_statistics", "m3dm", "patchcore"],
         default="image_statistics",
-        help="Which feature extractor to use for the per-domain embedding and the normal-reference score.",
+        help="Which feature extractor + normality scorer to use. 'patchcore' uses ResNet-50 features with a kNN-to-normal-memory-bank score, removing the unimodal-normal assumption of the M3DM Mahalanobis variant.",
+    )
+    parser.add_argument(
+        "--patchcore-k",
+        type=int,
+        default=3,
+        help="k for the PatchCore-style kNN score (used when --feature-mode patchcore).",
+    )
+    parser.add_argument(
+        "--patchcore-coreset-size",
+        type=int,
+        default=None,
+        help="Optional coreset size for the PatchCore memory bank; uniform random subsample of normal-only features.",
     )
     parser.add_argument(
         "--train-categories",
@@ -349,6 +386,8 @@ def main() -> None:
         embedding_dim=args.embedding_dim,
         feature_mode=args.feature_mode,
         train_categories=args.train_categories,
+        patchcore_k=args.patchcore_k,
+        patchcore_coreset_size=args.patchcore_coreset_size,
     )
     if args.train_categories:
         metadata["heldout_protocol"] = {
