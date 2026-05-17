@@ -116,14 +116,15 @@ module is deliberately conservative. When domains appear reliable, the system
 uses the static attention model. When the average reliability drops below a
 threshold, the reliability-aware path is activated.
 
-The chapter is in this form because the current evidence is both useful and bounded. The real-domain fusion
-benchmark combines fraud, cyber, behavior, and text datasets, but those records
-are aligned by label rather than by shared entities, timestamps, or incidents.
-It is useful for score-fusion stress testing, but it is not a complete
-multimodal incident benchmark. To reduce this gap, the repository now includes
-an MVTec 3D-AD RGB/3D benchmark path. The current MVTec run is
-a small local smoke benchmark, so it verifies the pipeline rather than the
-final performance claim.
+The chapter is in this form because the current evidence is both useful and
+bounded. The real-domain fusion benchmark combines fraud, cyber, behavior, and
+text datasets, but those records are aligned by label rather than by shared
+entities, timestamps, or incidents. It is useful for score-fusion stress
+testing, but it is not a complete multimodal incident benchmark. To reduce this
+gap, the repository now includes an all-category MVTec 3D-AD RGB/3D benchmark
+path. That path gives natural co-observation, while its canonical one-class
+protocol and lightweight score construction make it a protocol diagnostic
+rather than a final performance claim.
 
 \subsection{Research Question}
 
@@ -169,9 +170,9 @@ We make four scoped contributions:
   \item It evaluates the method against practical score-fusion baselines,
   including random forest fusion, early-fusion MLP, late-fusion ensemble,
   confidence-weighted mean, score-level Tent, and pseudo-label TTT.
-  \item It reports a paired MVTec 3D-AD smoke benchmark, multi-seed confidence
-  intervals, mechanism ablations, failure cases, and explicit threats to
-  validity.
+  \item It reports an all-category paired MVTec 3D-AD benchmark, multi-seed
+  confidence intervals, mechanism ablations, failure cases, and explicit
+  threats to validity.
 \end{enumerate}
 
 \subsection{Evidence Boundary}
@@ -179,11 +180,12 @@ We make four scoped contributions:
 The evidence boundary is part of the contribution because it prevents the
 results from being overstated. The real-domain benchmark uses real local
 datasets, but the records are label-aligned. The MVTec benchmark uses natural
-RGB/3D pairing, but the current local run is small and uses lightweight
-normal-reference image statistics. These two artifacts answer different
-questions. The first is useful for reliability-stress score fusion. The second
-is useful for validating the paired benchmark pipeline. Neither should be
-treated as a complete final benchmark for all multimodal anomaly detection.
+RGB/3D pairing across eight categories, but it still uses lightweight
+normal-reference image statistics and the canonical one-class anomaly protocol.
+These two artifacts answer different questions. The first is useful for
+reliability-stress score fusion. The second is useful for exposing protocol
+limits on naturally paired data. Neither should be treated as a complete final
+benchmark for all multimodal anomaly detection.
 
 \section{Background and Related Work}
 
@@ -1081,6 +1083,17 @@ gate stays quiet on natural replay and fires on all injected score-collapse
 episodes.}
 \label{fig:healthcare-gap2-stress}
 \end{figure}
+
+Read as a single closure flow, the healthcare replay moves from data validity to
+adaptation behavior, then to integration and auditability. Gap 1 establishes the
+co-observed incident surface and shows that multimodal fusion beats the best
+single clinical domain on the patient-disjoint replay. Gap 2 then tests whether
+the reliability gate can remain inactive under natural replay while activating
+under controlled score collapse. Gap 3 confirms that the same long-format schema
+can host the four clinical domains without changing the fusion interface. Gap 4
+wraps the result in the analyst-facing and deployment-time checks summarized in
+Table~\ref{tab:healthcare-gap4-audit}. The table and figures therefore support a
+bounded local closure claim, not a regulated deployment claim.
 
 \section{Reproducibility}
 

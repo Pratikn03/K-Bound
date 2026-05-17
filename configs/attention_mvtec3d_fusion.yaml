@@ -16,6 +16,9 @@ data:
   label_column: label
   score_column: score
   confidence_column: confidence
+  # The category column drives the category-aware KS-drift signal that
+  # protects RGA from misfiring on legitimate inter-category variation.
+  category_column: category
   timestamp_column: null
   embedding_prefix: embedding_
   feature_columns:
@@ -91,6 +94,13 @@ reliability:
   # per_sample_gating: false   # set true to match paper r_{i,d} formalism
   n_calibration_bins: 10
   min_samples_for_ks: 20
+  # Category-aware drift fits a per-category KS reference. The standard
+  # estimator stays the primary gate (so paper headline numbers are
+  # untouched), but a parallel category-aware estimator is fit and its
+  # adapt rate is logged alongside, producing the misfire-reduction
+  # comparison in table_8_category_aware.
+  category_aware: true
+  unknown_category_policy: global
 
 craf:
   drift_noise_levels: [0.0, 0.05, 0.1, 0.2, 0.3]

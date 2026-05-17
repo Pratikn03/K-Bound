@@ -11,7 +11,6 @@ from typing import Any
 import matplotlib.pyplot as plt
 import numpy as np
 
-
 METHOD_ORDER = [
     ("random_forest", "Random forest"),
     ("confidence_weighted_mean", "Conf.-weighted mean"),
@@ -424,6 +423,31 @@ def write_component_ablation_table(data: dict[str, Any], out_dir: Path) -> None:
     _write(out_dir / "elara_component_ablation_results.tex", "\n".join(lines))
 
 
+def write_category_aware_table(data: dict[str, Any], out_dir: Path, output_basename: str = "elara_category_aware_drift.tex") -> None:
+    summary = data.get("table_8_category_aware", {})
+    if not summary:
+        return
+    global_adapt = summary.get("global_adapt_rate")
+    cat_adapt = summary.get("category_aware_adapt_rate")
+    global_rel = summary.get("global_mean_reliability")
+    cat_rel = summary.get("category_aware_mean_reliability")
+    n_seeds = summary.get("n_seeds", 0)
+    lines = [
+        GENERATED_COMMENT,
+        r"\begin{tabular}{lcc}",
+        r"\toprule",
+        rf"\textbf{{Drift signal}} & \textbf{{Adapt rate}} & \textbf{{Mean reliability}} \\",
+        r"\midrule",
+        rf"Global KS reference & {_fmt(global_adapt, 3)} & {_fmt(global_rel, 3)} \\",
+        rf"Category-aware KS reference & {_fmt(cat_adapt, 3)} & {_fmt(cat_rel, 3)} \\",
+        r"\bottomrule",
+        r"\end{tabular}",
+        rf"% n_seeds={int(n_seeds)}; misfire_reduction={_fmt(summary.get('misfire_reduction_absolute'), 3)}",
+        "",
+    ]
+    _write(out_dir / output_basename, "\n".join(lines))
+
+
 def write_failure_case_table(data: dict[str, Any], out_dir: Path) -> None:
     cases = data.get("failure_case_analysis", {}).get("representative_cases", [])
     if not cases:
@@ -689,15 +713,15 @@ def plot_failure_cases(data: dict[str, Any], out_dir: Path) -> None:
 
 
 def plot_system_architecture(out_dir: Path) -> None:
-    fig, ax = plt.subplots(figsize=(8.4, 4.6))
+    fig, ax = plt.subplots(figsize=(8.8, 3.8))
     ax.set_axis_off()
-    ax.set_xlim(0, 10)
-    ax.set_ylim(0, 6)
+    ax.set_xlim(0.2, 10.05)
+    ax.set_ylim(0.35, 5.95)
 
-    def box(x: float, y: float, w: float, h: float, text: str, color: str) -> None:
+    def box(x: float, y: float, w: float, h: float, text: str, color: str, fontsize: float = 8.6) -> None:
         rect = plt.Rectangle((x, y), w, h, linewidth=1.2, edgecolor="#333333", facecolor=color)
         ax.add_patch(rect)
-        ax.text(x + w / 2, y + h / 2, text, ha="center", va="center", fontsize=9, wrap=True)
+        ax.text(x + w / 2, y + h / 2, text, ha="center", va="center", fontsize=fontsize, wrap=True)
 
     def arrow(x1: float, y1: float, x2: float, y2: float) -> None:
         ax.annotate(
@@ -708,16 +732,18 @@ def plot_system_architecture(out_dir: Path) -> None:
         )
 
     domains = [
-        ("Fraud\ntransactions", 0.4, 4.8),
-        ("Cyber\ntelemetry", 0.4, 3.6),
-        ("Behavior\nsessions", 0.4, 2.4),
-        ("Text\nevidence", 0.4, 1.2),
+        ("Fraud\ntransactions", 0.4, 5.05),
+        ("Cyber\ntelemetry", 0.4, 4.20),
+        ("Behavior\nsessions", 0.4, 3.35),
+        ("Text\nevidence", 0.4, 2.50),
+        ("RGB--3D\ninspection", 0.4, 1.65),
+        ("Clinical\nsignals", 0.4, 0.80),
     ]
     for label, x, y in domains:
-        box(x, y, 1.45, 0.72, label, "#e8f1f2")
-        arrow(x + 1.45, y + 0.36, 2.45, y + 0.36)
+        box(x, y, 1.45, 0.56, label, "#e8f1f2", fontsize=8.2)
+        arrow(x + 1.45, y + 0.28, 2.45, y + 0.28)
 
-    box(2.45, 1.1, 1.55, 4.55, "Domain\nexperts\n\nOOF scores\nconfidence\nembeddings", "#f5efe6")
+    box(2.45, 0.55, 1.55, 5.2, "Domain\nexperts\n\nscores\nconfidence\nembeddings", "#f5efe6")
     arrow(4.0, 3.35, 4.55, 3.35)
     box(4.55, 2.35, 1.55, 2.0, "Unified\nfusion\nschema\n\nmask + score\n+ metadata", "#ece7f2")
     arrow(6.1, 3.35, 6.65, 3.35)
@@ -727,8 +753,7 @@ def plot_system_architecture(out_dir: Path) -> None:
     arrow(8.2, 3.95, 8.75, 3.95)
     arrow(8.2, 2.35, 8.75, 3.35)
     box(8.75, 3.05, 1.0, 1.3, "Risk\nscore\n+\nCDA", "#e2e8f0")
-    ax.text(5.1, 5.45, f"{SYSTEM_NAME}: reliability-gated anomaly fusion pipeline", ha="center", fontsize=12, weight="bold")
-    fig.tight_layout()
+    fig.subplots_adjust(left=0.01, right=0.99, top=0.98, bottom=0.02)
     _save(fig, out_dir / "elara_system_architecture.png")
     plt.close(fig)
 

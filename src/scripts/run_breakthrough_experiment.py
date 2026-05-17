@@ -50,7 +50,10 @@ from uais.fusion.attention.attention_utils import (
 from uais.fusion.attention.counterfactual_explainer import CounterfactualDomainExplainer
 from uais.fusion.attention.cross_modal_attention import AttentionFusionModel
 from uais.fusion.attention.learned_gate import LearnedGateConfig, LearnedReliabilityGate
-from uais.fusion.attention.reliability_estimator import ReliabilityEstimator
+from uais.fusion.attention.reliability_estimator import (
+    CategoryAwareReliabilityEstimator,
+    ReliabilityEstimator,
+)
 from uais.fusion.attention.train_attention_fusion import attention_fusion_loss, set_seed
 from uais.utils.config_loader import load_yaml
 from uais.utils.metrics import (
@@ -131,7 +134,28 @@ def _load_data(cfg: Dict):
             id_column=data_cfg.get("id_column", "sample_id"),
             timestamp_column=data_cfg.get("timestamp_column"),
         )
-    return features, masks, labels, sample_ids, domain_order, feature_columns, confidence_index, score_index, sample_splits
+    category_column = data_cfg.get("category_column")
+    sample_categories: np.ndarray | None = None
+    if category_column:
+        sample_categories = _sample_column_values(
+            df,
+            sample_ids=sample_ids,
+            value_column=str(category_column),
+            id_column=data_cfg.get("id_column", "sample_id"),
+            timestamp_column=data_cfg.get("timestamp_column"),
+        ).astype(str)
+    return (
+        features,
+        masks,
+        labels,
+        sample_ids,
+        domain_order,
+        feature_columns,
+        confidence_index,
+        score_index,
+        sample_splits,
+        sample_categories,
+    )
 
 
 def _sample_column_values(
@@ -1290,6 +1314,27 @@ def _aggregate_calibration(rows: list[dict]) -> dict:
     return out
 
 
+def _aggregate_category_aware(rows: list[dict]) -> dict:
+    if not rows:
+        return {}
+    out: dict = {"n_seeds": len(rows)}
+    for metric in (
+        "global_adapt_rate",
+        "category_aware_adapt_rate",
+        "global_mean_reliability",
+        "category_aware_mean_reliability",
+    ):
+        summary = summarize_values(row.get(metric) for row in rows)
+        out[metric] = summary["mean"]
+        out[f"{metric}_std"] = summary["std"]
+        out[f"{metric}_ci_low"] = summary["ci_low"]
+        out[f"{metric}_ci_high"] = summary["ci_high"]
+    out["misfire_reduction_absolute"] = (
+        out["global_adapt_rate"] - out["category_aware_adapt_rate"]
+    )
+    return out
+
+
 def _aggregate_cda(rows: list[dict], domain_order: List[str]) -> dict:
     if not rows:
         return {}
@@ -1322,6 +1367,7 @@ def _run_experiment_arrays(
     confidence_index: int | None,
     score_index: int,
     sample_splits: np.ndarray | None = None,
+    sample_categories: np.ndarray | None = None,
     seed_override: Optional[int] = None,
     device: torch.device | None = None,
 ) -> Dict:
@@ -1356,6 +1402,8 @@ def _run_experiment_arrays(
     per_seed_failure_cases: list[dict] = []
     per_seed_tau_sweep_rows: list[dict] = []
     per_seed_component_ablation_rows: list[dict] = []
+    per_seed_category_aware_rows: list[dict] = []
+    category_aware_enabled = bool(rel_cfg.get("category_aware", False)) and sample_categories is not None
 
     for seed in seeds:
         actual_seed = int(seed)
@@ -1386,6 +1434,55 @@ def _run_experiment_arrays(
         test_feat = features[test_idx]
         test_mask = masks[test_idx]
         test_labels = labels[test_idx]
+
+        if category_aware_enabled:
+            cat_weights = _component_weights(rel_cfg, disabled=())
+            category_estimator = CategoryAwareReliabilityEstimator(
+                domain_order=domain_order,
+                score_index=score_index,
+                ece_weight=cat_weights["ece_weight"],
+                ks_weight=cat_weights["ks_weight"],
+                sharpness_weight=cat_weights["sharpness_weight"],
+                n_calibration_bins=int(rel_cfg.get("n_calibration_bins", 10)),
+                min_samples_for_ks=int(rel_cfg.get("min_samples_for_ks", 30)),
+                gate_threshold=clean_gate_threshold,
+                unknown_category_policy=str(rel_cfg.get("unknown_category_policy", "global")),
+            )
+            category_estimator.fit(
+                val_feat,
+                val_mask,
+                val_labels,
+                categories=sample_categories[val_idx],
+            )
+            global_test_weights = estimator.compute_reliability_weights(test_feat, test_mask)
+            cat_test_weights = category_estimator.compute_reliability_weights(
+                test_feat,
+                test_mask,
+                categories=sample_categories[test_idx],
+            )
+            n_present_per_sample = (~test_mask).sum(axis=1).astype(np.float32)
+            global_mean_r = np.where(
+                n_present_per_sample > 0,
+                global_test_weights.sum(axis=1) / np.maximum(n_present_per_sample, 1.0),
+                0.0,
+            )
+            cat_mean_r = np.where(
+                n_present_per_sample > 0,
+                cat_test_weights.sum(axis=1) / np.maximum(n_present_per_sample, 1.0),
+                0.0,
+            )
+            per_seed_category_aware_rows.append(
+                {
+                    "seed": actual_seed,
+                    "n_test_samples": int(test_feat.shape[0]),
+                    "global_adapt_rate": float(np.mean(global_mean_r < clean_gate_threshold)),
+                    "category_aware_adapt_rate": float(np.mean(cat_mean_r < clean_gate_threshold)),
+                    "global_mean_reliability": float(np.mean(global_mean_r)),
+                    "category_aware_mean_reliability": float(np.mean(cat_mean_r)),
+                    "gate_threshold": float(clean_gate_threshold),
+                    "n_categories_in_test": int(len(set(sample_categories[test_idx].tolist()))),
+                }
+            )
         static_val_probs = _predict_static(model, val_feat, val_mask, device)
         static_probs = _predict_static(model, test_feat, test_mask, device)
         craf_val_probs = _predict_craf(
@@ -1747,6 +1844,8 @@ def _run_experiment_arrays(
         "table_6_tau_sweep": tau_sweep_summary,
         "table_7_component_ablation_per_seed": per_seed_component_ablation_rows,
         "table_7_component_ablation": component_ablation_summary,
+        "table_8_category_aware_per_seed": per_seed_category_aware_rows,
+        "table_8_category_aware": _aggregate_category_aware(per_seed_category_aware_rows),
         "cda_validation": cda,
         "failure_case_analysis": {
             "per_seed": per_seed_failure_cases,
@@ -1781,6 +1880,7 @@ def run_experiment(cfg: Dict, seed_override: Optional[int] = None) -> Dict:
         confidence_index,
         score_index,
         sample_splits,
+        sample_categories,
     ) = _load_data(cfg)
     return _run_experiment_arrays(
         cfg,
@@ -1792,6 +1892,7 @@ def run_experiment(cfg: Dict, seed_override: Optional[int] = None) -> Dict:
         confidence_index,
         score_index or 0,
         sample_splits=sample_splits,
+        sample_categories=sample_categories,
         seed_override=seed_override,
     )
 

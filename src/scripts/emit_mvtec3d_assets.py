@@ -30,6 +30,7 @@ from scripts.generate_craf_paper_assets import (
     write_calibration_table,
     write_clean_ci_table,
     write_clean_table,
+    write_category_aware_table,
     write_component_ablation_table,
     write_drift_table,
     write_failure_case_table,
@@ -48,6 +49,7 @@ WRITERS_TAKING_DATA = [
     write_adversarial_table,
     write_tau_sweep_table,
     write_component_ablation_table,
+    write_category_aware_table,
     write_failure_case_table,
 ]
 

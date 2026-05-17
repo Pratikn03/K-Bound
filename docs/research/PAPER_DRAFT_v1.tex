@@ -184,7 +184,7 @@ incidents.
 
 \begin{figure*}[t]
 \centering
-\includegraphics[width=0.88\textwidth]{elara_system_architecture.png}
+\includegraphics[width=0.96\textwidth]{elara_system_architecture.png}
 \caption{\system{} system architecture. Domain experts produce scores,
 confidence values, and compact embeddings; a unified fusion schema feeds static
 attention and the \method{} reliability estimator; the system emits a risk score
@@ -827,6 +827,35 @@ not a clean component-causality experiment. The table is kept as a diagnostic:
 it records whether the reliability path would fire under the paired protocol,
 not whether any individual reliability term solves RGB--3D anomaly fusion.
 
+\subsubsection{Category-Aware KS Reference}
+\label{sec:mvtec-category-aware}
+
+A natural follow-on hypothesis is that the gate misfires on MVTec~3D-AD because
+the global KS reference treats legitimate inter-category variation (eight object
+categories with different normal-score distributions) as drift. We tested this
+directly by fitting a category-conditional KS reference on the validation split
+and comparing its adapt rate against the global reference at the same
+$\tau=0.66$ gate.
+\IfFileExists{tables/mvtec3d_category_aware_drift.tex}{
+Table~\ref{tab:mvtec-category-aware} reports the comparison.
+\begin{table}[t]
+\centering
+\caption{MVTec~3D-AD: global versus category-conditional KS reference at
+$\tau=0.66$, five seeds.}
+\label{tab:mvtec-category-aware}
+\scriptsize
+\input{tables/mvtec3d_category_aware_drift.tex}
+\end{table}
+}{}
+Category conditioning lifts mean test-time reliability slightly
+(0.350~$\to$~0.364) but the adapt rate stays at 1.0: every batch is still routed
+through the reliability path at this threshold. The KS misfire under the
+canonical one-class protocol is therefore not purely a category-composition
+artefact; the residual signal sits inside each category, consistent with the
+lightweight image-statistic scorers themselves producing high-variance score
+distributions under normal-only training. This isolates the next intervention
+to scorer quality rather than to the drift signal alone.
+
 \subsection{Calibration and Counterfactual Attribution}
 \IfFileExists{tables/mvtec3d_calibration_cda.tex}{
 \begin{table}[t]
@@ -1283,6 +1312,17 @@ gate stays quiet on natural replay and fires on all injected score-collapse
 episodes.}
 \label{fig:healthcare-gap2-stress}
 \end{figure}
+
+Read as a single closure flow, the healthcare replay moves from data validity to
+adaptation behavior, then to integration and auditability. Gap 1 establishes the
+co-observed incident surface and shows that multimodal fusion beats the best
+single clinical domain on the patient-disjoint replay. Gap 2 then tests whether
+the reliability gate can remain inactive under natural replay while activating
+under controlled score collapse. Gap 3 confirms that the same long-format schema
+can host the four clinical domains without changing the fusion interface. Gap 4
+wraps the result in the analyst-facing and deployment-time checks summarized in
+Table~\ref{tab:healthcare-gap4-audit}. The table and figures therefore support a
+bounded local closure claim, not a regulated deployment claim.
 
 \subsection{Statistical Validity}
 Five clean seeds provide only limited statistical support, especially on a
