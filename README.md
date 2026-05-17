@@ -56,6 +56,43 @@ PYTHONPATH=src python scripts/ci_smoke.py
 # → output/pdf/THESIS_CHAPTER_v1.pdf
 ```
 
+## One union research system
+
+The older standalone domain pipelines and the newer paper-grade research
+pipeline are now joined by one orchestrator:
+
+```bash
+# Preview every step without running training.
+PYTHONPATH=src .venv/bin/python src/scripts/run_union_research_system.py \
+  --mode full \
+  --with-tests \
+  --dry-run
+
+# Run the full union system: legacy fraud/cyber/behavior, paper fusion,
+# healthcare audits, tables, figures, PDFs, and focused verification.
+PYTHONPATH=src .venv/bin/python src/scripts/run_union_research_system.py \
+  --mode full \
+  --with-tests \
+  --continue-on-error
+```
+
+The runner writes per-step logs and a machine-readable summary under
+`experiments/union_research_system/`. By default it runs the legacy standalone
+fraud/cyber/behavior experiments plus the current research evidence pipeline,
+but keeps deprecated dashboard fusion and optional standalone NLP/vision
+training opt-in:
+
+```bash
+PYTHONPATH=src .venv/bin/python src/scripts/run_union_research_system.py \
+  --mode full \
+  --include-deprecated-dashboard \
+  --include-optional-nlp-vision
+```
+
+This does not blur the evidence boundary: legacy-domain outputs are retained for
+system continuity, while paper claims still come from the disciplined fusion
+benchmarks, healthcare replay audits, and regenerated manuscript assets.
+
 ## Local quality gates
 
 Use the same commands before treating a research run or manuscript rebuild as
