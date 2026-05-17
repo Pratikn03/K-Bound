@@ -415,6 +415,30 @@ def build_plan(
             description="Regenerate manuscript tables, figures, and PDFs.",
         )
     )
+    steps.append(
+        Step(
+            name="calibration_monitor_replay",
+            group="assets",
+            command=(
+                py,
+                "src/scripts/monitor_calibration.py",
+                "--fusion-csv",
+                "experiments/fusion/mvtec3d_fusion_inputs.csv",
+                "--reference-split",
+                "validation",
+                "--target-split",
+                "test",
+                "--tau",
+                "0.66",
+                "--window-size",
+                "200",
+                "--output",
+                "experiments/monitor/mvtec3d_calibration_events.jsonl",
+            ),
+            required_paths=("experiments/fusion/mvtec3d_fusion_inputs.csv",),
+            description="Replay the deployment-time calibration monitor over the MVTec test split.",
+        )
+    )
     if with_tests:
         steps.extend(
             [

@@ -1281,4 +1281,124 @@ companion conference manuscript and are not duplicated here verbatim;
 readers are pointed to \S Benchmark Construction of
 \texttt{PAPER\_DRAFT\_v1.tex} for the canonical description.
 
+\section{Switching-Rule Analysis Under Bounded Drift}
+\label{app:switching-rule}
+
+This appendix formalises the conditions under which the
+reliability-gated path improves over the static path in expectation,
+giving a mathematical companion to the empirical gate-behaviour analysis
+in the main body. The proposition is stated in a deliberately minimal
+setting: a single sample, two scoring rules (static and reliability-gated),
+and a bounded-drift assumption on the per-domain score distribution.
+The point of the appendix is not to claim generality across all gate
+mechanisms, but to make explicit what \emph{would} have to be true of
+the drift signal for the gate to be provably beneficial.
+
+\paragraph{Setting.}
+Let $\mathcal{D}$ denote the set of domains and $r_d \in [0, 1]$ the
+per-domain reliability for domain $d$, with $\bar r = \tfrac{1}{|\mathcal{D}|}
+\sum_d r_d$ the mean reliability over present domains. Let
+$\hat y_{\mathrm{stat}}, \hat y_{\mathrm{rga}} \in [0, 1]$ denote the
+static-attention and reliability-gated fusion predictions for a single
+sample with ground-truth label $y \in \{0, 1\}$. Let
+$\ell(\hat y, y) = (\hat y - y)^2$ be squared-error loss. Define the
+\emph{drift} for domain $d$ as
+\[
+  \delta_d \;=\; \mathrm{KS}\!\left(P^{\mathrm{val}}_d,\, P^{\mathrm{test}}_d\right),
+\]
+the Kolmogorov-Smirnov statistic between the validation reference
+distribution and the current test-time score distribution for domain $d$.
+
+\paragraph{Assumptions.}
+\begin{enumerate}
+  \item[\textbf{A1.}] (Bounded drift.) There exists $\delta \in [0, 1]$
+  such that $\max_d \delta_d \leq \delta$.
+  \item[\textbf{A2.}] (Linear drift--error response.) For each domain $d$,
+  $\mathbb{E}[\ell(\hat y_{\mathrm{stat}}, y) \mid \delta_d]$ is
+  $\beta$-Lipschitz in $\delta_d$ for some constant $\beta > 0$; that
+  is, additional drift produces at most a linear increase in expected
+  static-path loss.
+  \item[\textbf{A3.}] (Reliability cancels drift.) When the reliability
+  path activates, the reliability-weighted fusion is unbiased in the
+  drift component: $\mathbb{E}[\ell(\hat y_{\mathrm{rga}}, y)
+  \mid \delta_d, \text{gate fired}] \leq
+  \mathbb{E}[\ell(\hat y_{\mathrm{stat}}, y) \mid \delta_d = 0]$.
+  \item[\textbf{A4.}] (Reliability gap.) Let
+  $r = 1 - \bar r$ be the gate's distance from a perfectly reliable
+  inference batch; the gate fires iff $r > \tau$ for threshold
+  $\tau \in [0, 1]$.
+\end{enumerate}
+
+\paragraph{Proposition (Switching-rule sufficiency).}
+Under A1--A4, define the \emph{switching coefficient}
+$f(\delta) = \delta \beta$. Then for every sample whose realised drift
+satisfies $\max_d \delta_d \geq f(\delta)$, the expected loss of the
+reliability-gated prediction is no greater than the expected loss of
+the static prediction:
+\[
+  \mathbb{E}[\ell(\hat y_{\mathrm{rga}}, y)]
+  \;\leq\;
+  \mathbb{E}[\ell(\hat y_{\mathrm{stat}}, y)].
+\]
+The inequality is strict whenever the realised drift exceeds $f(\delta)$
+\emph{and} the gate fires (i.e. $r > \tau$).
+
+\paragraph{Proof sketch.}
+Two cases follow from A4. (i) When $r \leq \tau$ the gate does not fire,
+the static and gated paths coincide, and the bound holds trivially with
+equality. (ii) When $r > \tau$ the gate fires. By A2,
+$\mathbb{E}[\ell(\hat y_{\mathrm{stat}}, y) \mid \delta_d]
+\geq \mathbb{E}[\ell(\hat y_{\mathrm{stat}}, y) \mid \delta_d = 0]
++ \beta \delta_d$. By A3, the gated path's expected loss is at most
+$\mathbb{E}[\ell(\hat y_{\mathrm{stat}}, y) \mid \delta_d = 0]$. The
+difference $\mathbb{E}[\ell(\hat y_{\mathrm{stat}}, y)]
+- \mathbb{E}[\ell(\hat y_{\mathrm{rga}}, y)]$ is therefore at least
+$\beta \delta_d - 0 = f(\delta_d)$, which is non-negative for
+$\delta_d \geq 0$ and strictly positive for $\delta_d > 0$.
+The aggregate bound over $\mathcal{D}$ follows by averaging.\hfill$\square$
+
+\paragraph{What this implies for the empirical gate.}
+The proposition gives a clean target for the empirical drift signal: the
+KS reference must, in expectation, increase monotonically with the true
+drift component of test-time error. The MVTec~3D-AD finding documented
+in the main body shows that the unconditional KS reference violates this
+target by responding to legitimate inter-category variation as well as
+true drift. The category-aware KS reference partially recovers the
+target (the companion conference manuscript reports the empirical
+comparison), and pairing it with a PatchCore-quality scorer recovers a
+working signal under the canonical one-class protocol. The proposition is
+therefore not a universal claim about reliability-gated fusion but a
+precise specification of the property an empirical drift signal must
+satisfy to inherit the bound.
+
+\section{Calibration Monitoring in Deployment}
+\label{app:calibration-monitor}
+
+A deployment-grade calibration monitor sits orthogonal to the training
+pipeline and watches three quantities over a streaming window:
+batch-level mean reliability, validation-to-online KS-drift per domain,
+and per-batch Expected Calibration Error of the fused score. The script
+\texttt{src/scripts/monitor\_calibration.py} implements this monitor and
+emits a JSON event whenever the gate's mean reliability falls below the
+heuristic threshold $\tau$ for more than one window. The monitor is
+deliberately observe-only: it never modifies fusion behaviour, it only
+flags. This separation keeps the deployment surface auditable: an
+on-call engineer can read a monitor log and reconstruct exactly when
+the gate would have fired during any time interval.
+
+\section{Privacy, Data Handling, and Deployment Notes}
+\label{app:privacy}
+
+The accompanying \texttt{PRIVACY\_AND\_DEPLOYMENT.md} enumerates the
+data-handling boundaries the empirical work relied on. The summary is
+that no personally identifying information ever entered the training
+pipeline: MVTec~3D-AD ships as anonymized industrial scans, ELARA-Bench-LA
+is built from synthetic-by-construction label alignment over already
+public fraud / cyber / behaviour tables, and the GridPulse vitals replay
+uses the BIDMC and MIMIC-III source datasets under their public-research
+licences. Deploying the reliability gate against patient-bearing data
+would require both (a) a credentialed data-access review and (b) the
+calibration monitor described in Appendix~\ref{app:calibration-monitor}
+to satisfy the auditability requirements typical of clinical software.
+
 \end{document}
