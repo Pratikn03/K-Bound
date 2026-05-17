@@ -30,6 +30,18 @@ MVTec-3D-AD-specific anecdote.
    the existing `prepare_mvtec3d_fusion_benchmark.py` can be cloned
    with minimal changes.
 
+**Locally-deferred dry-run option — GridPulse vitals.** The repo has a
+`src/scripts/prepare_healthcare_fusion_benchmark.py` that constructs a
+naturally-paired clinical fusion benchmark from
+`data/raw/healthcare/gridpulse/processed/features.parquet` (four
+co-observed physiological channels, patient-stratified by source dataset
+and label). It produced static ROC-AUC 0.579 vs RGA 0.509 on a 5-seed
+run, but it lives off the conference paper's evidence pipeline because
+the clinical-domain framing pulls the narrative out of the visual /
+network anomaly track. Reactivate it for the thesis-only or for a
+clinical-AI venue by re-adding `configs/attention_healthcare_paired.yaml`
+(see git history) and wiring it into the union runner.
+
 **Execution steps:**
 
 ```bash
