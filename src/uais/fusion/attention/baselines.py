@@ -518,7 +518,8 @@ def run_baseline_suite(
     baseline_epochs: Optional[int] = None,
     tta_steps: int = 25,
     decision_threshold_strategy: str | None = "fixed_0p5",
-) -> Dict[str, Dict]:
+    return_predictions: bool = False,
+) -> Dict[str, Dict] | tuple[Dict[str, Dict], Dict[str, Dict[str, np.ndarray]]]:
     """Fit all baselines and return classification metrics for each.
 
     Returns a dict keyed by baseline name, each value being a classification_metrics dict.
@@ -531,6 +532,7 @@ def run_baseline_suite(
     test_feat, test_mask, test_labels = features[test_idx], masks[test_idx], labels[test_idx]
 
     results: Dict[str, Dict] = {}
+    predictions: Dict[str, Dict[str, np.ndarray]] = {}
 
     mlp_kwargs = {"device": device, "random_seed": random_seed}
     if baseline_epochs is not None:
@@ -544,25 +546,39 @@ def run_baseline_suite(
     def _safe_eval(name: str, factory):
         try:
             model = factory()
+            test_probs = model.predict_proba(test_feat, test_mask)
+            val_probs = model.predict_proba(val_feat, val_mask)
             results[name] = _metrics_with_validation_threshold(
                 test_labels,
-                model.predict_proba(test_feat, test_mask),
+                test_probs,
                 val_labels=val_labels,
-                val_probs=model.predict_proba(val_feat, val_mask),
+                val_probs=val_probs,
                 strategy=decision_threshold_strategy,
             )
+            if return_predictions:
+                predictions[name] = {
+                    "val_probs": np.asarray(val_probs, dtype=np.float32),
+                    "test_probs": np.asarray(test_probs, dtype=np.float32),
+                }
         except Exception as exc:
             n_test = test_feat.shape[0]
             n_val = val_feat.shape[0]
             constant = float(np.mean(train_labels)) if len(train_labels) else 0.5
+            test_probs = np.full(n_test, constant, dtype=np.float32)
+            val_probs = np.full(n_val, constant, dtype=np.float32)
             results[name] = _metrics_with_validation_threshold(
                 test_labels,
-                np.full(n_test, constant, dtype=np.float32),
+                test_probs,
                 val_labels=val_labels,
-                val_probs=np.full(n_val, constant, dtype=np.float32),
+                val_probs=val_probs,
                 strategy=decision_threshold_strategy,
             )
             results[name]["fit_error"] = f"{type(exc).__name__}: {exc}"
+            if return_predictions:
+                predictions[name] = {
+                    "val_probs": val_probs,
+                    "test_probs": test_probs,
+                }
 
     _safe_eval(
         "early_fusion_mlp",
@@ -589,6 +605,8 @@ def run_baseline_suite(
         lambda: TTTPseudoLabelAdapter(random_seed=random_seed, adaptation_steps=tta_steps).fit(train_feat, train_mask, train_labels),
     )
 
+    if return_predictions:
+        return results, predictions
     return results
 
 

@@ -22,6 +22,7 @@ LA_RESULTS="$ROOT/experiments/fusion/craf_real_results.json"
 LA_META="$ROOT/experiments/fusion/real_domain_fusion_metadata.json"
 MVTEC_RESULTS="$ROOT/experiments/fusion/mvtec3d_results.json"
 MVTEC_META="$ROOT/experiments/fusion/mvtec3d_fusion_metadata.json"
+MVTEC_PATCHCORE_RESULTS="$ROOT/experiments/fusion/mvtec3d_patchcore_results.json"
 HEALTHCARE_GAP_REPORT="$ROOT/experiments/fusion/healthcare_gap4_deployment_audit_validation.json"
 FIG_DIR="$ROOT/docs/research/figures"
 TBL_DIR="$ROOT/docs/research/tables"
@@ -53,6 +54,17 @@ else
   echo "==> Skipping MVTec3D assets: $MVTEC_RESULTS not found"
 fi
 
+if [ -f "$MVTEC_PATCHCORE_RESULTS" ]; then
+  echo "==> Regenerate MVTec3D PatchCore assets (mvtec3d_patchcore_*)"
+  PYTHONPATH=src python src/scripts/emit_mvtec3d_assets.py \
+    --input "$MVTEC_PATCHCORE_RESULTS" \
+    --figures-dir "$FIG_DIR" \
+    --tables-dir "$TBL_DIR" \
+    --asset-prefix "mvtec3d_patchcore_"
+else
+  echo "==> Skipping MVTec3D PatchCore assets: $MVTEC_PATCHCORE_RESULTS not found"
+fi
+
 if [ -f "$HEALTHCARE_GAP_REPORT" ]; then
   echo "==> Regenerate healthcare gap-closure assets"
   PYTHONPATH=src python src/scripts/generate_healthcare_gap_assets.py \
@@ -62,6 +74,11 @@ if [ -f "$HEALTHCARE_GAP_REPORT" ]; then
 else
   echo "==> Skipping healthcare gap assets: $HEALTHCARE_GAP_REPORT not found"
 fi
+
+echo "==> Regenerate public MVTec protocol comparison"
+PYTHONPATH=src python src/scripts/emit_milestone1_comparison.py \
+  --repo-root "$ROOT" \
+  --output "$TBL_DIR/mvtec3d_milestone1_comparison.tex"
 
 echo
 echo "==> Compile PDF (from docs/research/ so \\graphicspath resolves)"

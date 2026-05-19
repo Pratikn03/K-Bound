@@ -180,6 +180,12 @@ def build_mvtec3d_fusion_frame(
     train_categories: Iterable[str] | None = None,
     patchcore_k: int = 3,
     patchcore_coreset_size: int | None = None,
+    supervised_paired: bool = False,
+    supervised_paired_seed: int = 42,
+    supervised_paired_val_fraction: float = 0.15,
+    supervised_paired_test_fraction: float = 0.30,
+    heldout_val_fraction: float = 0.15,
+    heldout_val_seed: int = 42,
 ) -> tuple[pd.DataFrame, dict]:
     """Build long-format fusion rows and benchmark metadata.
 
@@ -254,6 +260,66 @@ def build_mvtec3d_fusion_frame(
         depth_scores = _normal_reference_scores(depth_features, normal_reference_mask)
         feature_description = "lightweight_image_statistics"
 
+    if supervised_paired and train_categories is not None:
+        raise ValueError(
+            "supervised_paired and train_categories are mutually exclusive: "
+            "the supervised paired protocol redistributes test rows across all "
+            "categories, while the held-out protocol assigns whole categories to test."
+        )
+
+    # Precompute supervised-paired split assignment when requested.
+    sp_assignment: dict[int, str] = {}
+    if supervised_paired:
+        rng = np.random.default_rng(int(supervised_paired_seed))
+        test_indices = [i for i, p in enumerate(pairs) if p.split == "test"]
+        bucketed: dict[tuple, list[int]] = {}
+        for idx in test_indices:
+            key = (pair_categories[idx], bool(labels[idx]))
+            bucketed.setdefault(key, []).append(idx)
+        for key, indices in bucketed.items():
+            indices = list(indices)
+            rng.shuffle(indices)
+            n = len(indices)
+            n_test = max(1, int(round(n * supervised_paired_test_fraction))) if n >= 3 else 0
+            remaining = n - n_test
+            denom = max(1.0 - supervised_paired_test_fraction, 1e-9)
+            n_val = (
+                max(1, int(round(remaining * supervised_paired_val_fraction / denom)))
+                if remaining >= 2
+                else 0
+            )
+            for offset, idx in enumerate(indices):
+                if offset < n_test:
+                    sp_assignment[idx] = "test"
+                elif offset < n_test + n_val:
+                    sp_assignment[idx] = "validation"
+                else:
+                    sp_assignment[idx] = "train"
+
+    # Precompute held-out-category in-domain validation assignment. Held-out
+    # categories remain test-only; this only reserves a fraction of original
+    # test rows from the training categories so validation can contain both
+    # classes without leaking held-out-category samples.
+    heldout_assignment: dict[int, str] = {}
+    if train_categories is not None and not supervised_paired and heldout_val_fraction > 0.0:
+        rng = np.random.default_rng(int(heldout_val_seed))
+        train_set = set(train_categories)
+        eligible_indices = [
+            idx
+            for idx, pair in enumerate(pairs)
+            if pair.category in train_set and pair.split == "test"
+        ]
+        bucketed: dict[tuple, list[int]] = {}
+        for idx in eligible_indices:
+            key = (pair_categories[idx], bool(labels[idx]))
+            bucketed.setdefault(key, []).append(idx)
+        for indices in bucketed.values():
+            indices = list(indices)
+            rng.shuffle(indices)
+            n_val = max(1, int(round(len(indices) * heldout_val_fraction))) if len(indices) >= 2 else 0
+            for offset, idx in enumerate(indices):
+                heldout_assignment[idx] = "validation" if offset < n_val else "train"
+
     rows = []
     held_out_set = (
         None
@@ -263,7 +329,20 @@ def build_mvtec3d_fusion_frame(
     for idx, pair in enumerate(pairs):
         # Held-out-category protocol rewrites the split column so the fusion
         # runner trains on in-categories and tests on held-out categories.
-        if held_out_set is None:
+        if supervised_paired:
+            # The official train/good rows stay in the new train fold (they
+            # are the scorer-fit set and serve as the negative-only fusion
+            # examples that the original protocol provides). The original
+            # validation/good rows go into the new validation fold. All
+            # original test rows (good + defective) are redistributed across
+            # train/validation/test via the stratified-by-(category,label)
+            # assignment computed above so each fusion split sees both
+            # classes.
+            if pair.split == "test":
+                effective_split = sp_assignment.get(idx, "train")
+            else:
+                effective_split = pair.split
+        elif held_out_set is None:
             effective_split = pair.split
         elif pair.category in held_out_set:
             effective_split = "test"
@@ -273,7 +352,10 @@ def build_mvtec3d_fusion_frame(
             # test rows into the fusion train fold so the supervised fusion
             # baselines see both classes. Held-out categories supply the
             # canonical multi-class test fold.
-            effective_split = "train" if pair.split == "test" else pair.split
+            if pair.split == "test":
+                effective_split = heldout_assignment.get(idx, "train")
+            else:
+                effective_split = pair.split
         for domain, score, emb, source_path in [
             ("rgb", rgb_scores[idx], rgb_embeddings[idx], pair.rgb_path),
             ("depth_or_xyz", depth_scores[idx], depth_embeddings[idx], pair.depth_path),
@@ -344,6 +426,15 @@ def build_mvtec3d_fusion_frame(
             for domain in DOMAIN_ORDER
         },
     }
+    if train_categories is not None:
+        metadata["heldout_protocol"] = {
+            "train_categories": sorted(set(train_categories)),
+            "test_categories": sorted(
+                c for c in sorted(frame["category"].unique().tolist()) if c not in set(train_categories)
+            ),
+            "validation_fraction_from_train_category_test_rows": float(heldout_val_fraction),
+            "validation_seed": int(heldout_val_seed),
+        }
     return frame, metadata
 
 
@@ -378,6 +469,29 @@ def main() -> None:
         default=None,
         help="Optional set of category names to treat as the scorer-fit/PCA fold. Enables held-out-category protocols.",
     )
+    parser.add_argument(
+        "--supervised-paired",
+        action="store_true",
+        help=(
+            "Redistribute the original MVTec test rows (good + defects) across train/validation/test "
+            "stratified by (category, label) so all three fusion splits see both classes. The scorer "
+            "is still fit on train/good only, preserving the one-class scorer assumption."
+        ),
+    )
+    parser.add_argument("--supervised-paired-seed", type=int, default=42)
+    parser.add_argument("--supervised-paired-val-fraction", type=float, default=0.15)
+    parser.add_argument("--supervised-paired-test-fraction", type=float, default=0.30)
+    parser.add_argument(
+        "--heldout-val-fraction",
+        type=float,
+        default=0.15,
+        help=(
+            "For --train-categories held-out protocols, reserve this fraction of "
+            "original in-category test rows for validation, stratified by "
+            "(category, label). Held-out categories remain test-only."
+        ),
+    )
+    parser.add_argument("--heldout-val-seed", type=int, default=42)
     args = parser.parse_args()
 
     frame, metadata = build_mvtec3d_fusion_frame(
@@ -388,11 +502,28 @@ def main() -> None:
         train_categories=args.train_categories,
         patchcore_k=args.patchcore_k,
         patchcore_coreset_size=args.patchcore_coreset_size,
+        supervised_paired=args.supervised_paired,
+        supervised_paired_seed=args.supervised_paired_seed,
+        supervised_paired_val_fraction=args.supervised_paired_val_fraction,
+        supervised_paired_test_fraction=args.supervised_paired_test_fraction,
+        heldout_val_fraction=args.heldout_val_fraction,
+        heldout_val_seed=args.heldout_val_seed,
     )
+    if args.supervised_paired:
+        metadata["supervised_paired_protocol"] = {
+            "test_rows_redistributed_across": ["train", "validation", "test"],
+            "stratification_keys": ["category", "label"],
+            "scorer_fit_split": "train/good only (one-class scorer assumption preserved)",
+            "seed": int(args.supervised_paired_seed),
+            "val_fraction": float(args.supervised_paired_val_fraction),
+            "test_fraction": float(args.supervised_paired_test_fraction),
+        }
     if args.train_categories:
         metadata["heldout_protocol"] = {
             "train_categories": sorted(args.train_categories),
             "test_categories": sorted(c for c in metadata.get("categories", []) if c not in set(args.train_categories)),
+            "validation_fraction_from_train_category_test_rows": float(args.heldout_val_fraction),
+            "validation_seed": int(args.heldout_val_seed),
         }
     args.output.parent.mkdir(parents=True, exist_ok=True)
     args.metadata.parent.mkdir(parents=True, exist_ok=True)

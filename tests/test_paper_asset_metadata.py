@@ -92,10 +92,9 @@ def test_enterprise_gap_closure_is_conditional_not_current_claim():
 
 def test_healthcare_gap_validation_claim_boundary_documented():
     repo_root = Path(__file__).resolve().parents[1]
-    paper = (repo_root / "docs" / "research" / "PAPER_DRAFT_v1.tex").read_text()
     thesis = (repo_root / "docs" / "research" / "THESIS_CHAPTER_v1.tex").read_text()
     readme = (repo_root / "README.md").read_text()
-    combined = "\n".join([paper, thesis, readme])
+    combined = "\n".join([thesis, readme])
 
     required = [
         "healthcare_gap_validation.json",
@@ -107,7 +106,7 @@ def test_healthcare_gap_validation_claim_boundary_documented():
         "healthcare_gap_closure_status.png",
         "healthcare_gap2_stress_rates.png",
         "146,688",
-        "validation and test windows are single-class positive",
+        "test windows are single-class positive",
         "patient-disjoint stratified replay closes Gap 1 locally",
         "Gap 2 locally",
         "natural fire rate is 0.0",
@@ -128,6 +127,31 @@ def test_healthcare_gap_validation_claim_boundary_documented():
     ]
     for phrase in forbidden:
         assert phrase not in combined
+
+
+def test_conference_paper_does_not_promote_gridpulse_as_headline_evidence():
+    repo_root = Path(__file__).resolve().parents[1]
+    paper = (repo_root / "docs" / "research" / "PAPER_DRAFT_v1.tex").read_text()
+
+    forbidden = [
+        "GridPulse",
+        "healthcare_paired_results",
+        "clinical-vitals replay",
+        "18{,}149",
+        "$+0.0759$",
+        "0.5131",
+        "0.4372",
+    ]
+    for phrase in forbidden:
+        assert phrase not in paper
+
+    required = [
+        "PatchCore supervised-paired",
+        "public paired benchmark",
+        "mvtec3d_milestone1_comparison",
+    ]
+    for phrase in required:
+        assert phrase in paper
 
 
 def test_healthcare_gap_tables_and_figures_are_materialized():

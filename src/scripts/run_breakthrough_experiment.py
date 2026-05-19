@@ -50,6 +50,8 @@ from uais.fusion.attention.attention_utils import (
 from uais.fusion.attention.counterfactual_explainer import CounterfactualDomainExplainer
 from uais.fusion.attention.cross_modal_attention import AttentionFusionModel
 from uais.fusion.attention.learned_gate import LearnedGateConfig, LearnedReliabilityGate
+from uais.fusion.attention.meta_router import fit_rga_meta_router
+from uais.fusion.attention.reliability_boosted_fusion import ReliabilityBoostedFusion
 from uais.fusion.attention.reliability_estimator import (
     CategoryAwareReliabilityEstimator,
     ReliabilityEstimator,
@@ -630,6 +632,59 @@ def _metrics_from_validation_threshold(
     metrics = classification_metrics(test_labels, test_probs, threshold=threshold)
     metrics["threshold_strategy"] = (strategy or "fixed_0p5").strip().lower()
     return metrics
+
+
+def _json_float(value: float) -> float | None:
+    try:
+        number = float(value)
+    except (TypeError, ValueError):
+        return None
+    return number if np.isfinite(number) else None
+
+
+def _fit_rga_meta_router_metrics(
+    *,
+    val_predictions: dict[str, np.ndarray],
+    test_predictions: dict[str, np.ndarray],
+    val_labels: np.ndarray,
+    test_labels: np.ndarray,
+    random_seed: int,
+    threshold_strategy: str | None,
+    selection_metric: str = "roc_auc",
+) -> tuple[dict, np.ndarray, np.ndarray]:
+    """Fit and score the validation-only ELARA/RGA router.
+
+    This is intentionally kept test-label blind. The router may select the
+    original RGA path, static attention, a strong adapter, or a validation-fit
+    stack, and the selected candidate is recorded so the paper cannot silently
+    relabel a baseline as an RGA gain.
+    """
+    router = fit_rga_meta_router(
+        val_predictions,
+        val_labels,
+        random_seed=random_seed,
+        selection_metric=selection_metric,
+    )
+    router_val_probs = router.predict_proba(val_predictions)
+    router_test_probs = router.predict_proba(test_predictions)
+    metrics = _metrics_from_validation_threshold(
+        test_labels,
+        router_test_probs,
+        val_labels=val_labels,
+        val_probs=router_val_probs,
+        strategy=threshold_strategy,
+    )
+    metrics["selected_candidate"] = router.selected_candidate
+    metrics["selection_metric"] = selection_metric
+    metrics["candidate_validation_roc_auc"] = {
+        name: _json_float(values.get("roc_auc"))
+        for name, values in sorted((router.candidate_metric_scores or {}).items())
+    }
+    metrics["candidate_validation_scores"] = {
+        name: {metric: _json_float(score) for metric, score in sorted(values.items())}
+        for name, values in sorted((router.candidate_metric_scores or {}).items())
+    }
+    return metrics, router_val_probs, router_test_probs
 
 
 def _evaluate_drift(
@@ -1375,6 +1430,7 @@ def _run_experiment_arrays(
     eval_cfg = cfg.get("evaluation", {})
     rel_cfg = cfg.get("reliability", {})
     craf_cfg = cfg.get("craf", {})
+    rga_plus_cfg = cfg.get("rga_plus", {})
     mechanism_cfg = craf_cfg.get("mechanism_isolation", {})
 
     seeds = [seed_override] if seed_override is not None else eval_cfg.get("seeds", [42])
@@ -1386,6 +1442,7 @@ def _run_experiment_arrays(
     n_bootstrap = int(eval_cfg.get("n_bootstrap", 200))
     bootstrap_alpha = float(eval_cfg.get("bootstrap_alpha", 0.05))
     threshold_strategy = eval_cfg.get("decision_threshold_strategy", eval_cfg.get("decision_threshold", "fixed_0p5"))
+    rga_plus_selection_metric = str(rga_plus_cfg.get("selection_metric", "roc_auc"))
     attack_names = craf_cfg.get("adversarial_attacks", ["zero_attack", "max_attack", "gaussian_noise"])
     adversarial_sigma = float(craf_cfg.get("adversarial_sigma", 0.1))
     tau_sweep_thresholds = [float(v) for v in mechanism_cfg.get("tau_sweep_thresholds", [])]
@@ -1520,7 +1577,41 @@ def _run_experiment_arrays(
         )
         static_decision_threshold = float(static_metrics["decision_threshold"])
         craf_decision_threshold = float(craf_metrics["decision_threshold"])
-        baseline_metrics = run_baseline_suite(
+        rga_boosted = ReliabilityBoostedFusion(
+            score_index=score_index,
+            confidence_index=confidence_index,
+            random_seed=actual_seed,
+            selection_metric=rga_plus_selection_metric,
+        ).fit(
+            features[train_idx],
+            masks[train_idx],
+            labels[train_idx],
+            val_feat,
+            val_mask,
+            val_labels,
+            reliability_estimator=estimator,
+        )
+        rga_boosted_val_probs = rga_boosted.predict_proba(val_feat, val_mask)
+        rga_boosted_probs = rga_boosted.predict_proba(test_feat, test_mask)
+        rga_boosted_metrics = _metrics_from_validation_threshold(
+            test_labels,
+            rga_boosted_probs,
+            val_labels=val_labels,
+            val_probs=rga_boosted_val_probs,
+            strategy=threshold_strategy,
+        )
+        rga_boosted_metrics["selected_candidate"] = rga_boosted.selected_candidate
+        rga_boosted_metrics["selection_metric"] = rga_plus_selection_metric
+        rga_boosted_metrics["candidate_validation_roc_auc"] = {
+            name: _json_float(score)
+            for name, score in sorted(rga_boosted.candidate_validation_auc.items())
+        }
+        rga_boosted_metrics["candidate_validation_scores"] = {
+            name: {metric: _json_float(score) for metric, score in sorted(values.items())}
+            for name, values in sorted(rga_boosted.candidate_validation_metrics.items())
+        }
+        rga_boosted_decision_threshold = float(rga_boosted_metrics["decision_threshold"])
+        baseline_metrics, baseline_predictions = run_baseline_suite(
             features,
             masks,
             labels,
@@ -1531,12 +1622,43 @@ def _run_experiment_arrays(
             device=device,
             random_seed=actual_seed,
             decision_threshold_strategy=threshold_strategy,
+            return_predictions=True,
         )
+        router_val_predictions = {
+            "static_attention": static_val_probs,
+            "craf_attention": craf_val_probs,
+            "rga_boosted_fusion": rga_boosted_val_probs,
+            **{
+                name: prediction_payload["val_probs"]
+                for name, prediction_payload in baseline_predictions.items()
+            },
+        }
+        router_test_predictions = {
+            "static_attention": static_probs,
+            "craf_attention": craf_probs,
+            "rga_boosted_fusion": rga_boosted_probs,
+            **{
+                name: prediction_payload["test_probs"]
+                for name, prediction_payload in baseline_predictions.items()
+            },
+        }
+        rga_router_metrics, _rga_router_val_probs, rga_router_probs = _fit_rga_meta_router_metrics(
+            val_predictions=router_val_predictions,
+            test_predictions=router_test_predictions,
+            val_labels=val_labels,
+            test_labels=test_labels,
+            random_seed=actual_seed,
+            threshold_strategy=threshold_strategy,
+            selection_metric=rga_plus_selection_metric,
+        )
+        rga_router_decision_threshold = float(rga_router_metrics["decision_threshold"])
         per_seed_table1.append(
             {
                 "seed": actual_seed,
                 "static_attention": static_metrics,
                 "craf_attention": craf_metrics,
+                "rga_boosted_fusion": rga_boosted_metrics,
+                "rga_meta_router": rga_router_metrics,
                 "bootstrap_ci": {
                     "static_attention": _metric_bootstrap_intervals(
                         test_labels,
@@ -1553,6 +1675,22 @@ def _run_experiment_arrays(
                         bootstrap_alpha,
                         actual_seed + 1000,
                         threshold=craf_decision_threshold,
+                    ),
+                    "rga_meta_router": _metric_bootstrap_intervals(
+                        test_labels,
+                        rga_router_probs,
+                        n_bootstrap,
+                        bootstrap_alpha,
+                        actual_seed + 2000,
+                        threshold=rga_router_decision_threshold,
+                    ),
+                    "rga_boosted_fusion": _metric_bootstrap_intervals(
+                        test_labels,
+                        rga_boosted_probs,
+                        n_bootstrap,
+                        bootstrap_alpha,
+                        actual_seed + 3000,
+                        threshold=rga_boosted_decision_threshold,
                     ),
                 },
                 "delong_p_craf_vs_static": float(delong_roc_test(test_labels, craf_probs, static_probs)),
@@ -1748,6 +1886,8 @@ def _run_experiment_arrays(
         "late_fusion_ensemble",
         "static_attention",
         "craf_attention",
+        "rga_boosted_fusion",
+        "rga_meta_router",
     ]
     clean_summary = summarize_seed_metric_rows(per_seed_table1, methods=clean_methods)
     degradation_aucs = _aggregate_degradation(per_seed_degradation_rows, alpha=bootstrap_alpha)

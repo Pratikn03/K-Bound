@@ -23,9 +23,10 @@
 }
 
 \newcommand{\system}{ELARA}
-\newcommand{\systemfull}{Evidence-Layered Reliability for Anomaly fusion}
+\newcommand{\systemfull}{Evidence-Layered Anomaly Reliability Architecture}
 \newcommand{\method}{RGA}
 \newcommand{\methodfull}{Reliability-Gated Attention}
+\newcommand{\methodplus}{RGA+}
 \newcommand{\benchmark}{ELARA-Bench-LA}
 \newcolumntype{L}[1]{>{\raggedright\arraybackslash}p{#1}}
 
@@ -56,13 +57,17 @@ training, mixed test), every supervised fusion baseline -- random
 forest, MLP, late-fusion ensemble, Tent, TTT, static attention,
 \method{} -- remains near chance ROC-AUC because none of them can
 learn from one-class training. The gate's clean delta is small there. We
-include held-out-category and ResNet-50 (M3DM-style) variants of the
-MVTec experiment to confirm that the chance-level outcome is robust
-to scorer quality and to category split. The combined finding is
-methodological: validation-derived drift gates demonstrably help when
-supervised fusion has well-defined two-class training, but the gate
-question itself is undefined on benchmarks where the baselines cannot
-learn at all.
+include held-out-category, PatchCore-style, and supervised-paired public
+MVTec variants to test whether the conclusion is an artefact of the first
+scorer or split. The combined finding is methodological:
+validation-derived drift gates are useful as diagnostics for coherent
+score-collapse stress, but they are not universal clean-performance
+winners. A validation-selected \methodplus{} head adds reliability-derived
+features and gradient-boosted fusion; on the public PatchCore supervised-paired
+variant it becomes the best ROC-AUC method among pre-specified heads (0.738
+versus Tent 0.735), while an exploratory validation router reaches 0.740. On
+the held-out-category split, \methodplus{} gives only a marginal ROC-AUC gain
+over TTT (0.517 versus 0.516), and TTT remains slightly ahead on PR-AUC.
 
 The result is produced inside \system{} (\systemfull), a research prototype
 for score-level multimodal anomaly fusion. The mechanism under study is
@@ -76,26 +81,31 @@ late-fusion ensemble, Tent and TTT score adapters, static attention),
 missing-domain ablations, adversarial perturbation stress tests,
 calibration analysis, and counterfactual domain attribution.
 
-The empirical study spans two benchmarks. The primary benchmark is
+The empirical study spans one external public paired benchmark family and one
+label-aligned stress benchmark. The primary benchmark family is
 naturally paired MVTec 3D-AD across eight categories (3{,}226 paired
 RGB/depth samples, 22.4\% positive). The secondary benchmark, \benchmark,
 combines four real local datasets (Credit Card Fraud, UNSW-NB15, Online
-Shoppers Intention, labeled news text) with explicit label alignment. Both
-benchmarks honor their underlying dataset's predefined train/validation/test
-split so the fusion test fold is disjoint from the rows the per-domain
-scorers fit on. On MVTec 3D-AD under its canonical one-class
+Shoppers Intention, labeled news text) with explicit label alignment. All
+benchmark configs honor disciplined train/validation/test boundaries so the
+fusion test fold is disjoint from the rows the per-domain scorers fit on. On
+MVTec 3D-AD under its canonical one-class
 anomaly-detection protocol, all supervised fusion baselines converge
 near chance ROC-AUC (random forest $0.500$, static attention $0.542$,
 \method{} $0.561$); the gate's delta to static is small and slightly
 positive ($+0.018$). On \benchmark{} the same gate improves all-domain
 \texttt{zero\_attack} and \texttt{max\_attack} ROC-AUC by $+0.0506$ and
-$+0.0319$ respectively. Component ablation shows the KS-drift signal
-alone controls whether the gate fires; removing it eliminates the
-\benchmark{} gain. We report both benchmarks with confidence intervals
-and explicit mechanism isolation. The MVTec result is a protocol
-diagnostic, not a method critique: any supervised fusion benchmark
-that trains on one class only will see every supervised method
-collapse together, so the gate question is undefined there.
+$+0.0319$ respectively. On the public MVTec PatchCore supervised-paired
+protocol, base \method{} remains below Tent, but the validation-selected
+\methodplus{} boosted fusion reaches ROC-AUC 0.738, above Tent (0.735), TTT
+(0.724), and random forest (0.702); the auxiliary validation router reaches
+0.740. Component ablation shows the KS-drift signal
+controls whether the gate fires; removing it eliminates the \benchmark{} gain.
+We report these benchmarks with confidence intervals and explicit mechanism
+isolation. The MVTec result is a protocol diagnostic, not a method critique:
+any supervised fusion benchmark that trains on one class only will see every
+supervised method collapse together, so the clean-fusion question is undefined
+there.
 \end{abstract}
 
 \begin{IEEEkeywords}
@@ -171,7 +181,8 @@ We make four scoped contributions:
   eight categories with predefined-split discipline.
   \item \system{} packages the schema, baselines (random forest,
   early-fusion MLP, late-fusion ensemble, Tent, TTT, static attention,
-  \method), missing-domain ablation, drift curves, adversarial perturbation
+  \method), the validation-selected \methodplus{} boosted/router head,
+  missing-domain ablation, drift curves, adversarial perturbation
   stress tests, calibration analysis, and counterfactual domain attribution
   with an explicit construct-validity boundary.
 \end{itemize}
@@ -398,6 +409,28 @@ uses the local score confidence directly. \method{} uses validation calibration,
 test-time drift evidence, and sharpness to decide when a domain should be
 trusted less.
 
+\subsubsection{Validation-Selected \methodplus{} Head}
+The implementation also reports a separate \methodplus{} candidate rather than
+silently replacing the base \method{} number. \methodplus{} has two parts. First,
+a reliability-boosted fusion head trains candidate classifiers on the fusion
+train fold using flattened domain evidence, missingness indicators, score and
+confidence summary statistics, and \method{} reliability summaries. The current
+candidate set contains histogram gradient-boosted heads and calibrated logistic
+heads. The selected head is the one with the best validation ROC-AUC; test
+labels are never used for model or hyperparameter selection. Second, a
+validation-only router can choose among static attention, base \method{},
+\methodplus{} boosted fusion, and the strong score-level baselines. The selected
+candidate is written into the result artifact so that a baseline selection is
+not relabeled as a reliability-gate gain. When the validation fold has only one
+class, the router defaults to base \method{} because the validation labels cannot
+rank candidates.
+
+\methodplus{} is therefore a supervised fusion extension of the reliability
+system, not a claim that the original gate alone dominates all baselines. This
+distinction is central to the MVTec results: base \method{} remains the
+diagnostic mechanism; \methodplus{} is the validation-selected modeling head
+used when a two-class fusion split exists.
+
 \subsubsection{Counterfactual Domain Attribution}
 For sample $i$, let $\hat{p}_i$ be the original prediction and
 $\hat{p}_{i,-d}$ be the prediction when domain $d$ is masked. The attribution is
@@ -449,9 +482,8 @@ ROC-AUC; the gate's effect is small and slightly positive. The
 \benchmark{} secondary benchmark, which has both classes in train,
 remains the venue where the gate's stress-test behavior can be
 evaluated. The current rendered tables in this section reflect the
-corrected disciplined-split run; some prose elsewhere in the paper
-still uses the earlier numbers and is the next revision target. We
-include M3DM-style ResNet-50 features and a held-out-category
+corrected disciplined-split run. We include M3DM-style ResNet-50 features
+and a held-out-category
 variant as additional protocol diagnostics; both confirm the
 chance-level supervised outcome under one-class training.
 
@@ -887,6 +919,53 @@ legitimate inter-category variation. Lightweight image-statistic scorers are
 too noisy for the KS signal to ever be useful regardless of category
 conditioning; PatchCore-quality scorers admit a working drift-aware gate.
 
+\subsubsection{Public Paired Protocol Variants}
+\label{sec:mvtec-public-protocols}
+
+Reviewer-facing evidence should not depend on a local clinical replay. We
+therefore keep the conference manuscript centered on the public paired MVTec
+3D-AD benchmark family and add two PatchCore variants: a supervised-paired
+protocol that redistributes original test rows across fusion train,
+validation, and test splits while preserving train-good-only PatchCore scorer
+fitting, and a held-out-category protocol that trains on four categories and
+tests on the remaining four. These variants ask whether a stronger public
+paired scorer and a two-class fusion split are enough to make \method{} a clean
+leader.
+
+\IfFileExists{tables/mvtec3d_milestone1_comparison.tex}{
+\begin{table}[t]
+\centering
+\caption{Public paired benchmark protocol comparison on MVTec~3D-AD. The
+PatchCore supervised-paired protocol gives the fusion model two-class training
+examples while the scorer remains fit on train-good rows only.}
+\label{tab:mvtec-public-protocols}
+\footnotesize
+\resizebox{\linewidth}{!}{\input{tables/mvtec3d_milestone1_comparison.tex}}
+\end{table}
+}{}
+
+Table~\ref{tab:mvtec-public-protocols} prevents an overclaim while also showing
+where the added modeling head helps. PatchCore supervised-paired improves the
+public paired fusion task compared with the canonical one-class setting. Base
+\method{} is not the clean-score leader there: static attention reaches
+ROC-AUC 0.632 and \method{} reaches 0.628. The strongest non-\system{} method is
+Tent at 0.735, followed by TTT at 0.724 and random forest at 0.702. The
+validation-selected \methodplus{} boosted head reaches 0.738, a small but real
+ROC-AUC gain over Tent on the same held-out test fold; the auxiliary router
+reaches 0.740 but is reported separately in the JSON artifact. The result is
+therefore not ``RGA beats everything.'' It is: base \method{} remains a
+diagnostic gate; \methodplus{} can turn reliability-derived features into the
+top supervised paired ROC result when two-class fusion training exists.
+
+The same table also records the boundary. Under canonical PatchCore one-class
+scoring, confidence-weighted mean remains strongest (0.600), \method{} is
+0.505, and \methodplus{} is not applicable because the supervised boosted head
+has no positive validation labels for selection. Under the held-out-category
+split, adding in-category positive validation examples lets \methodplus{}
+reach ROC-AUC 0.517, narrowly above TTT at 0.516. This is still not a broad
+transfer win: PR-AUC remains slightly better for TTT, and all methods remain
+close to chance on unseen categories.
+
 \subsection{Calibration and Counterfactual Attribution}
 \IfFileExists{tables/mvtec3d_calibration_cda.tex}{
 \begin{table}[t]
@@ -1138,15 +1217,21 @@ gate improves all-domain coherent score-collapse robustness
 preserving the saturated clean ranking. On naturally paired MVTec 3D-AD
 under the canonical one-class protocol, supervised fusion itself is the
 limiting factor: random forest, MLP, late fusion, Tent, TTT, static
-attention, and \method{} all operate near chance because the train fold
-contains normal observations only. The held-out-category and M3DM-style
+attention, and \method{} operate near chance or depend on unsupervised score
+rules because the train fold contains normal observations only. On the
+PatchCore supervised-paired variant, \methodplus{} reaches the best
+pre-specified-head ROC-AUC among reported methods (0.738), narrowly above Tent
+(0.735), while base \method{} remains below static attention. On the
+held-out-category variant, \methodplus{} also edges TTT on ROC-AUC
+(0.517 versus 0.516), but not on PR-AUC. The M3DM-style and held-out-category
 diagnostics confirm that the paired benchmark remains hard rather than
-showing a simple leaderboard win for any fusion model. The central claim
+showing a universal leaderboard win for any fusion model. The central claim
 is therefore methodological: \method{} is a diagnostic gate for
-score-collapse stress when two-class fusion training is available, not a
-general replacement for strong modality-specific anomaly detectors.
-Both directions are bounded by benchmark design and by the current
-quality of the MVTec 3D-AD domain scores.
+score-collapse stress, and \methodplus{} is a supervised reliability-boosted
+extension that helps when two-class fusion training exists. Neither is a
+general replacement for strong modality-specific anomaly detectors. Both
+directions are bounded by benchmark design and by the current quality of the
+MVTec 3D-AD domain scores.
 
 \subsection{Failure Analysis}
 The result artifact exports representative cases for the largest
@@ -1178,9 +1263,9 @@ Across both benchmarks, the experiments expose four failure modes:
   \item on co-observed MVTec 3D-AD under the canonical one-class protocol,
   supervised fusion baselines cannot learn a two-class boundary from the train
   fold,
-  \item held-out-category and M3DM-style paired variants remain near chance,
-  so the current paired evidence is a protocol diagnostic rather than a
-  performance claim,
+  \item \methodplus{} gives supervised-paired and held-out-category ROC-AUC
+  wins, but not PR-AUC wins, so the current paired evidence is a bounded
+  modeling improvement rather than a universal performance claim,
   \item the lightweight image-statistic domain scorer still caps the paired
   benchmark and is the natural next replacement target.
 \end{itemize}
@@ -1265,95 +1350,10 @@ These are code-level prerequisites; external paired datasets, stronger experts,
 privacy review, and prospective monitoring are still required for a deployment
 claim.
 
-After staging a local GridPulse healthcare surface, we added a bounded clinical
-audit rather than upgrading the main claim. The script
-\path{validate_healthcare_gap_closure.py} writes
-\path{healthcare_gap_validation.json}. It projects
-146{,}688 co-observed vital-sign incidents into four fusion domains
-(heart rate, oxygenation, respiration, and shock index) using hashed patient and
-incident identifiers. This Retrospective local healthcare replay passes the
-structural incident-protocol checks: four domains per incident, temporal split
-ordering, no incident leakage, no patient overlap, and valid score ranges. The
-provided validation and test windows are single-class positive, so the
-time-forward surface still cannot support supervised discrimination or clinical
-deployment claims.
-
-We therefore separate temporal-reference evidence from a patient-disjoint
-two-class replay. The replay writes
-\path{healthcare_gap1_patient_stratified_validation.json},
-\path{healthcare_gap2_reliability_stress_validation.json}, and
-\path{healthcare_gap4_deployment_audit_validation.json}. Table~\ref{tab:healthcare-gap-closure}
-summarizes the resulting local closure status, and
-Fig.~\ref{fig:healthcare-gap-closure} visualizes the engineering and local
-empirical gates. Gap 1 closes locally because train, validation, and test all
-contain both labels, patient overlap is zero, and the held-out replay test split
-reaches multimodal ROC-AUC 0.806 versus 0.770 for the strongest single domain.
-The tradeoff remains explicit: the patient-disjoint replay's
-\path{temporal_order_valid} is false, so the time-forward clinical validation is
-still a separate reference surface.
-
-\begin{table}[H]
-\centering
-\caption{Local healthcare closure status after the patient-disjoint replay and
-deployment audit. Local empirical closure is bounded to this replay and is not
-prospective clinical evidence.}
-\label{tab:healthcare-gap-closure}
-\resizebox{\linewidth}{!}{\input{tables/healthcare_gap_closure_results.tex}}
-\end{table}
-
-\begin{figure}[H]
-\centering
-\includegraphics[width=\linewidth]{healthcare_gap_closure_status.png}
-\caption{Healthcare gap-closure audit status. All four gaps are locally closed
-on the replay surface, while the manuscript keeps the deployment claim scoped.}
-\label{fig:healthcare-gap-closure}
-\end{figure}
-
-Gap 2 closes locally through a reliability stress audit. The audit calibrates a
-conservative category-aware fire threshold from validation natural replay and
-then evaluates held-out natural replay against injected score-collapse episodes.
-On the held-out test replay, the natural fire rate is 0.0 and the mean collapse
-fire rate is 1.0 across the four domains (Fig.~\ref{fig:healthcare-gap2-stress}).
-
-Gap 3 closes locally through \path{schema_integration}: the generated fusion
-table has 586{,}752 rows, four complete domains per incident, a
-$146{,}688 \times 4 \times 4$ feature tensor, no raw patient identifiers, and no
-missing schema columns. Gap 4 closes locally through the deployment audit in
-Table~\ref{tab:healthcare-gap4-audit}. The audit combines the original
-time-forward split as the temporal reference, manifest-based privacy/license
-review, deployment-time calibration monitoring, leave-one-domain-out
-CDA-style attribution, and a diagnostic switching certificate. The certificate
-compares a never-switch diagnostic policy against the reliability-gated policy
-over one natural episode and four injected collapse episodes; static loss is
-0.800 and policy loss is 0.000.
-
-\begin{table}[H]
-\centering
-\caption{Gap 4 local deployment-audit evidence. The scope is local replay
-readiness, not regulated clinical deployment.}
-\label{tab:healthcare-gap4-audit}
-\resizebox{\linewidth}{!}{\input{tables/healthcare_gap4_audit_results.tex}}
-\end{table}
-
-\begin{figure}[H]
-\centering
-\includegraphics[width=\linewidth]{healthcare_gap2_stress_rates.png}
-\caption{Gap 2 reliability stress audit on the healthcare replay. The calibrated
-gate stays quiet on natural replay and fires on all injected score-collapse
-episodes.}
-\label{fig:healthcare-gap2-stress}
-\end{figure}
-
-Read as a single closure flow, the healthcare replay moves from data validity to
-adaptation behavior, then to integration and auditability. Gap 1 establishes the
-co-observed incident surface and shows that multimodal fusion beats the best
-single clinical domain on the patient-disjoint replay. Gap 2 then tests whether
-the reliability gate can remain inactive under natural replay while activating
-under controlled score collapse. Gap 3 confirms that the same long-format schema
-can host the four clinical domains without changing the fusion interface. Gap 4
-wraps the result in the analyst-facing and deployment-time checks summarized in
-Table~\ref{tab:healthcare-gap4-audit}. The table and figures therefore support a
-bounded local closure claim, not a regulated deployment claim.
+The local deployment-audit utilities remain in the repository and companion
+thesis chapter, but they are not used as conference-paper evidence. This keeps
+the manuscript focused on externally inspectable public paired data and avoids
+mixing a local replay audit with the paper's benchmark claim.
 
 \subsection{Statistical Validity}
 Five clean seeds provide only limited statistical support, especially on a
@@ -1379,10 +1379,15 @@ superiority claim.
 \noindent\textbf{(Q2) Why keep MVTec 3D-AD if the supervised fusion leaderboard
 is near chance?} It fixes the largest construct-validity issue in
 \benchmark{}: the RGB and depth observations are naturally co-observed. The
-held-out-category and M3DM-style variants are included to probe whether the
-near-chance outcome is caused by scorer quality or category split. Replacing the
-current scorer with stronger RGB--3D features~\cite{wang2023m3dm,
-costanzino2023crossmodal, liu2023real3dad} remains the natural next step.
+held-out-category, M3DM-style, PatchCore supervised-paired, and PatchCore
+held-out variants probe whether the near-chance outcome is caused by scorer
+quality, category split, or the absence of positive fusion-training examples.
+The answer is nuanced: supervised-paired PatchCore improves the public paired
+benchmark, and the validation-selected \methodplus{} head now gives the best
+ROC-AUC on that split. Base \method{} still does not become the clean-score
+leader. Held-out-category transfer improves after reserving in-category
+positive validation rows, but the gain over TTT is marginal and PR-AUC still
+favors TTT.
 
 \noindent\textbf{(Q3) Why $\tau=0.66$ and not a learned gate?} The
 $\tau$-sweep in Table~\ref{tab:tau-sweep} includes a learned-gate row in

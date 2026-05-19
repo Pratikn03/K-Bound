@@ -29,7 +29,7 @@
 \setlist[enumerate]{leftmargin=1.8em}
 
 \newcommand{\system}{ELARA}
-\newcommand{\systemfull}{Evidence-Layered Reliability for Anomaly fusion}
+\newcommand{\systemfull}{Evidence-Layered Anomaly Reliability Architecture}
 \newcommand{\method}{RGA}
 \newcommand{\methodfull}{Reliability-Gated Attention}
 \newcommand{\benchmark}{ELARA-Bench-LA}
@@ -49,11 +49,14 @@ multimodal anomaly fusion: the same Kolmogorov--Smirnov drift signal that
 improves all-domain coherent score-collapse robustness on a label-aligned
 stress-only benchmark does not become a general solution on naturally paired
 MVTec 3D-AD. Under MVTec's canonical one-class protocol, supervised fusion
-baselines operate near chance because the train fold is normal-only. The
-asymmetry between the two benchmarks is therefore methodological rather than a
-simple leaderboard claim: reliability gating is a diagnostic gate for
-score-collapse stress when two-class fusion training exists, not a replacement
-for specialized RGB--3D anomaly detectors.
+baselines operate near chance because the train fold is normal-only. A
+validation-selected RGA+ boosted head improves the public PatchCore
+supervised-paired and held-out-category ROC-AUC results, but the held-out gain
+is marginal and PR-AUC remains unresolved. The asymmetry between the two
+benchmarks is therefore methodological rather than a simple leaderboard claim:
+reliability gating is a diagnostic gate for score-collapse stress when
+two-class fusion training exists, and RGA+ is a supervised reliability-boosted
+extension rather than a replacement for specialized RGB--3D anomaly detectors.
 
 The work is organized around \system{} (\systemfull{}), a research prototype
 for score-level multimodal anomaly fusion. The mechanism under study is
@@ -70,7 +73,9 @@ and the held-out-category and M3DM-style variants are treated as diagnostics
 rather than new superiority claims. The secondary benchmark, \benchmark{},
 combines four real-domain datasets via explicit label alignment; on it the same
 gate improves all-domain coherent-collapse attacks by $+0.0506$ and $+0.0319$
-but the clean split is near saturated.
+but the clean split is near saturated. Public PatchCore supervised-paired and
+held-out MVTec variants improve the paired fusion task; base \method{} still
+does not become the clean-score leader, while RGA+ gives bounded ROC-AUC gains.
 
 The chapter concludes that reliability-gated fusion is a useful design pattern
 for stress-aware score fusion under coherent attack assumptions, but it is
@@ -78,9 +83,9 @@ not yet a defensible general replacement for strong baselines on naturally
 paired data. The repository now includes engineering prerequisites for the next
 stage: incident-protocol validation, category-aware reliability references,
 deployment-time calibration monitoring, and a finite-sample switching
-certificate. The remaining research work is empirical: stronger RGB--3D domain
-experts, additional naturally co-observed anomaly datasets, and prospective
-deployment monitoring.
+certificate. The remaining research work is empirical: stronger RGB--3D and
+clinical domain experts, additional naturally co-observed anomaly datasets, and
+prospective deployment monitoring.
 \end{abstract}
 
 \tableofcontents
@@ -477,8 +482,11 @@ than a conventional supervised leaderboard. Random forest, late fusion, Tent,
 TTT, static attention, and \method{} have little two-class training signal; the
 small \method{} delta should not be read as a general win. The held-out-category
 and M3DM-style variants probe the same limitation under different paired-data
-conditions and remain part of the evidence boundary discussed in
-\S\ref{sec:thesis-contrast}.
+conditions. The updated held-out-category protocol now reserves positive
+validation rows from train categories, which lets RGA+ tune without seeing the
+held-out categories; it improves ROC-AUC slightly but does not settle PR-AUC or
+category transfer. These variants remain part of the evidence boundary
+discussed in \S\ref{sec:thesis-contrast}.
 
 \begin{table}[H]
 \centering
@@ -1095,6 +1103,12 @@ wraps the result in the analyst-facing and deployment-time checks summarized in
 Table~\ref{tab:healthcare-gap4-audit}. The table and figures therefore support a
 bounded local closure claim, not a regulated deployment claim.
 
+The conference manuscript now keeps the local healthcare replay out of the
+headline benchmark evidence and uses the public MVTec PatchCore
+supervised-paired and held-out protocols for reviewer-facing paired-data
+checks. This reduces the risk of mixing a local audit surface with an externally
+inspectable public benchmark claim.
+
 \section{Reproducibility}
 
 The reproduction flow is documented in detail in
@@ -1122,10 +1136,10 @@ The chapter also reports a stronger protocol diagnosis that did not exist in
 earlier drafts. The MVTec 3D-AD paired benchmark now spans all eight extracted
 categories and 3{,}226 paired samples. Under the canonical one-class protocol,
 supervised fusion baselines operate near chance; under the held-out-category
-protocol, paired generalization remains difficult; and under the M3DM-style
-variant, scorer replacement alone does not create a simple RGA superiority
-story. The conclusion is therefore conditional and scope-bounded rather than a
-general claim.
+protocol, paired generalization remains difficult despite a small RGA+ ROC-AUC
+gain; and under the M3DM-style variant, scorer replacement alone does not create
+a simple RGA superiority story. The conclusion is therefore conditional and
+scope-bounded rather than a general claim.
 
 The next research steps are clear. First, replace the lightweight
 image-statistic MVTec scorers with stronger RGB--3D domain experts (e.g.\ M3DM

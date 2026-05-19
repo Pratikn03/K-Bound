@@ -1,4 +1,4 @@
-# ELARA — Evidence-Layered Reliability for Anomaly Fusion
+# ELARA — Evidence-Layered Anomaly Reliability Architecture
 
 ELARA is a research prototype for **score-level multimodal anomaly fusion**
 under domain-reliability stress. The core mechanism is **RGA**
@@ -16,9 +16,9 @@ and prediction sharpness.
 > scoped: validation-derived KS-drift gates help on a label-aligned
 > stress-only benchmark under coherent score-collapse attacks, while naturally
 > paired MVTec 3D-AD under the canonical one-class protocol shows that
-> supervised fusion itself becomes a protocol diagnostic. RGA is therefore a
-> diagnostic gate for stress analysis, not a broad replacement for specialized
-> RGB-3D anomaly detectors.
+> supervised fusion itself becomes a protocol diagnostic. Base RGA is therefore
+> a diagnostic gate for stress analysis, while the validation-selected RGA+
+> head gives the top ROC-AUC on the public PatchCore supervised-paired variant.
 
 ---
 
@@ -138,14 +138,27 @@ PYTHONPATH=src python src/scripts/run_breakthrough_experiment.py \
   --config configs/attention_real_fusion_hard.yaml \
   --output experiments/fusion/craf_real_results_hard.json
 
-# D. Regenerate the paper assets and recompile the PDFs
+# D. Build and run the public MVTec PatchCore supervised-paired protocol
+PYTHONPATH=src python src/scripts/prepare_mvtec3d_fusion_benchmark.py \
+  --dataset-root data/raw/mvtec3d \
+  --feature-mode patchcore \
+  --embedding-dim 16 \
+  --supervised-paired \
+  --output experiments/fusion/mvtec3d_patchcore_supervised_paired_inputs.csv \
+  --metadata experiments/fusion/mvtec3d_patchcore_supervised_paired_metadata.json
+
+PYTHONPATH=src python src/scripts/run_breakthrough_experiment.py \
+  --config configs/attention_mvtec3d_patchcore_supervised_paired.yaml \
+  --output experiments/fusion/mvtec3d_patchcore_supervised_paired_results.json
+
+# E. Regenerate the paper assets and recompile the PDFs
 ./scripts/rebuild_paper.sh
 ```
 
-Both benchmark configs honor the underlying dataset's predefined train /
-validation / test split via the `split_column` setting (MVTec uses
-`split`; RealFusion uses `fusion_split`). The fusion train fold is
-therefore disjoint from the rows the per-domain scorers fit on.
+The benchmark configs honor disciplined train / validation / test boundaries via
+the `split_column` setting: MVTec variants use `split`, and RealFusion uses
+`fusion_split`. The fusion train fold is therefore disjoint from held-out
+benchmark rows.
 
 ## Headline numbers (current, under disciplined splits)
 
@@ -163,8 +176,15 @@ therefore disjoint from the rows the per-domain scorers fit on.
 These numbers follow MVTec's canonical one-class protocol: train and
 validation are normal-only, while test is mixed. That makes the supervised
 fusion table a protocol diagnostic rather than a normal two-class leaderboard.
-The repo also includes held-out-category and M3DM-style variants to probe this
-boundary.
+The repo also includes held-out-category, M3DM-style, PatchCore, and
+PatchCore supervised-paired variants to probe this boundary. In the public
+PatchCore supervised-paired protocol, RGA+ boosted fusion reaches ROC-AUC
+`0.738`, the auxiliary RGA+ router reaches `0.740`, Tent reaches `0.735`, TTT
+`0.724`, random forest `0.702`, static attention `0.632`, and base RGA
+`0.628`. That result is included with the negative controls: canonical
+PatchCore is still led by confidence-weighted mean, and held-out-category ROC
+is only a marginal RGA+ win (`0.517` vs TTT `0.516`) with PR-AUC still favoring
+TTT.
 
 **Label-aligned stress-only secondary benchmark (RealFusion, 8,000 composite samples):**
 

@@ -20,6 +20,8 @@ METHOD_ORDER = [
     ("late_fusion_ensemble", "Late fusion ensemble"),
     ("static_attention", "Static attention"),
     ("craf_attention", "RGA attention"),
+    ("rga_boosted_fusion", "RGA+ boosted fusion"),
+    ("rga_meta_router", "RGA+ router"),
 ]
 
 SYSTEM_NAME = "ELARA"

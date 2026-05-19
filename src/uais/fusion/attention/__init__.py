@@ -1,12 +1,12 @@
 """Attention-based fusion modules for Phase 2.
 
 Paper names (ELARA/RGA) vs. code names (UAIS-V/CRAF) cross-reference:
-  ELARA  = Verifiable Evidence Reliability for Anomalies  (paper system name)
-  RGA   = Reliability-Gated Attention                    (paper method name)
-  CRAF  = Calibration-aware Reliability-Adaptive Fusion  (code / internal name)
-  TTRA  = Test-Time Reliability Adaptation               (CRAF injection step)
-  CRS   = Calibrated Reliability Scoring                 (ReliabilityEstimator)
-  CDA   = Counterfactual Domain Attribution              (CounterfactualDomainExplainer)
+  ELARA = Evidence-Layered Anomaly Reliability Architecture (paper system name)
+  RGA   = Reliability-Gated Attention                       (paper method name)
+  CRAF  = Calibration-aware Reliability-Adaptive Fusion     (code / internal name)
+  TTRA  = Test-Time Reliability Adaptation                  (CRAF injection step)
+  CRS   = Calibrated Reliability Scoring                    (ReliabilityEstimator)
+  CDA   = Counterfactual Domain Attribution                 (CounterfactualDomainExplainer)
 """
 
 from uais.fusion.attention.cross_modal_attention import (
@@ -70,6 +70,11 @@ from uais.fusion.attention.learned_gate import (
     LearnedReliabilityGate,
     LearnedGateConfig,
 )
+from uais.fusion.attention.meta_router import (
+    RGAMetaRouter,
+    fit_rga_meta_router,
+)
+from uais.fusion.attention.reliability_boosted_fusion import ReliabilityBoostedFusion
 
 __all__ = [
     "AttentionFusionModel",
@@ -115,4 +120,6 @@ __all__ = [
     "pairwise_delong_from_predictions",
     # Learned gate (alternative to heuristic τ)
     "LearnedReliabilityGate", "LearnedGateConfig",
+    "RGAMetaRouter", "fit_rga_meta_router",
+    "ReliabilityBoostedFusion",
 ]

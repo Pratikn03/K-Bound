@@ -78,3 +78,38 @@ def test_mvtec3d_builder_records_train_good_score_protocol(tmp_path):
     assert metadata["score_protocol"]["score_normalization"] == "train_good_distance_minmax_clipped"
     assert frame["score_fit_split"].eq("train").all()
     assert frame["score_fit_defect_type"].eq("good").all()
+
+
+def test_mvtec3d_heldout_protocol_can_reserve_positive_validation_rows(tmp_path):
+    root = tmp_path / "mvtec3d"
+    for idx in range(4):
+        _write_rgb(root / "bagel" / "train" / "good" / "rgb" / f"tr{idx}.png", 40 + idx)
+        _write_depth(root / "bagel" / "train" / "good" / "xyz" / f"tr{idx}.tiff", 41 + idx)
+        _write_rgb(root / "bagel" / "test" / "good" / "rgb" / f"g{idx}.png", 50 + idx)
+        _write_depth(root / "bagel" / "test" / "good" / "xyz" / f"g{idx}.tiff", 51 + idx)
+        _write_rgb(root / "bagel" / "test" / "crack" / "rgb" / f"c{idx}.png", 200 + idx)
+        _write_depth(root / "bagel" / "test" / "crack" / "xyz" / f"c{idx}.tiff", 201 + idx)
+        _write_rgb(root / "foam" / "train" / "good" / "rgb" / f"tr{idx}.png", 70 + idx)
+        _write_depth(root / "foam" / "train" / "good" / "xyz" / f"tr{idx}.tiff", 71 + idx)
+        _write_rgb(root / "foam" / "test" / "good" / "rgb" / f"g{idx}.png", 80 + idx)
+        _write_depth(root / "foam" / "test" / "good" / "xyz" / f"g{idx}.tiff", 81 + idx)
+        _write_rgb(root / "foam" / "test" / "crack" / "rgb" / f"c{idx}.png", 210 + idx)
+        _write_depth(root / "foam" / "test" / "crack" / "xyz" / f"c{idx}.tiff", 211 + idx)
+
+    from scripts.prepare_mvtec3d_fusion_benchmark import build_mvtec3d_fusion_frame
+
+    frame, metadata = build_mvtec3d_fusion_frame(
+        root,
+        embedding_dim=8,
+        train_categories=["bagel"],
+        heldout_val_fraction=0.5,
+        heldout_val_seed=3,
+    )
+    sample_frame = frame.groupby("sample_id").first()
+    validation = sample_frame[sample_frame["split"] == "validation"]
+    test = sample_frame[sample_frame["split"] == "test"]
+
+    assert set(validation["category"]) == {"bagel"}
+    assert set(validation["label"]) == {0, 1}
+    assert set(test["category"]) == {"foam"}
+    assert metadata["heldout_protocol"]["validation_fraction_from_train_category_test_rows"] == 0.5

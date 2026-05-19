@@ -15,8 +15,15 @@ def test_union_plan_connects_legacy_new_healthcare_and_assets():
     assert "train_realfusion" in names
     assert "prep_mvtec_m3dm" in names
     assert "train_mvtec_m3dm" in names
+    assert "prep_mvtec_patchcore" in names
+    assert "train_mvtec_patchcore" in names
+    assert "prep_mvtec_patchcore_supervised_paired" in names
+    assert "train_mvtec_patchcore_supervised_paired" in names
+    assert "prep_mvtec_patchcore_heldout" in names
+    assert "train_mvtec_patchcore_heldout" in names
     assert "healthcare_gap4" in names
     assert "rebuild_paper" in names
+    assert "calibration_monitor_replay" in names
     assert "verify_metadata_tests" in names
 
 
@@ -37,6 +44,20 @@ def test_m3dm_prep_matches_config_embedding_width():
     command = list(step.command)
     assert "--embedding-dim" in command
     assert command[command.index("--embedding-dim") + 1] == "16"
+
+
+def test_rebuild_paper_regenerates_patchcore_assets():
+    script = Path("scripts/rebuild_paper.sh").read_text(encoding="utf-8")
+
+    assert "mvtec3d_patchcore_results.json" in script
+    assert "--asset-prefix \"mvtec3d_patchcore_\"" in script
+
+
+def test_rebuild_paper_regenerates_public_mvtec_protocol_comparison():
+    script = Path("scripts/rebuild_paper.sh").read_text(encoding="utf-8")
+
+    assert "emit_milestone1_comparison.py" in script
+    assert "mvtec3d_milestone1_comparison.tex" in script
 
 
 def test_optional_nlp_vision_are_opt_in():
