@@ -52,6 +52,10 @@ from uais.fusion.attention.cross_modal_attention import AttentionFusionModel
 from uais.fusion.attention.learned_gate import LearnedGateConfig, LearnedReliabilityGate
 from uais.fusion.attention.meta_router import fit_rga_meta_router
 from uais.fusion.attention.reliability_boosted_fusion import ReliabilityBoostedFusion
+from uais.fusion.attention.causal_attribution import (
+    estimate_all_domain_effects,
+    estimate_all_interventional_ates,
+)
 from uais.fusion.attention.reliability_estimator import (
     CategoryAwareReliabilityEstimator,
     ReliabilityEstimator,
@@ -1369,6 +1373,105 @@ def _aggregate_calibration(rows: list[dict]) -> dict:
     return out
 
 
+def _evaluate_causal_attribution(
+    model: AttentionFusionModel,
+    estimator: ReliabilityEstimator,
+    test_feat: np.ndarray,
+    test_mask: np.ndarray,
+    device: torch.device,
+    domain_order: List[str],
+    seed: int,
+    *,
+    n_bootstrap: int = 200,
+    intervention: str = "population_mean",
+    batch_size: int = 256,
+) -> dict:
+    """Interventional ATE of per-domain reliability on predictions.
+
+    For each domain d we set every sample's domain-d reliability to its
+    population mean (a do-calculus intervention on r_d), re-run the
+    reliability-injected fusion forward pass, and compute the mean
+    prediction shift versus the baseline reliability vector. A
+    sample-level bootstrap gives the 95% CI.
+    """
+    reliability_weights = estimator.compute_reliability_weights(test_feat, test_mask)
+
+    def predict_with_reliability(r_vec: np.ndarray) -> np.ndarray:
+        model.eval()
+        probs: list[np.ndarray] = []
+        n = test_feat.shape[0]
+        with torch.no_grad():
+            for start in range(0, n, batch_size):
+                end = min(start + batch_size, n)
+                feat_t = torch.tensor(test_feat[start:end], dtype=torch.float32, device=device)
+                mask_t = torch.tensor(test_mask[start:end], dtype=torch.bool, device=device)
+                r_t = torch.tensor(r_vec[start:end], dtype=torch.float32, device=device)
+                r_t = r_t.masked_fill(mask_t, 0.0)
+                embeds = [enc(feat_t[:, i, :]) for i, enc in enumerate(model.domain_encoders)]
+                domain_embeds = torch.stack(embeds, dim=1)
+                logits, _ = model.fusion(
+                    domain_embeds, key_padding_mask=mask_t, confidence_weights=r_t
+                )
+                probs.append(torch.sigmoid(logits.squeeze(-1)).cpu().numpy())
+        return np.concatenate(probs)
+
+    effects = estimate_all_interventional_ates(
+        predict_with_reliability,
+        reliability_weights,
+        domain_order=domain_order,
+        n_bootstrap=n_bootstrap,
+        random_state=seed,
+        intervention=intervention,
+    )
+    return {
+        "seed": int(seed),
+        "n_test_samples": int(test_feat.shape[0]),
+        "intervention": str(intervention),
+        "per_domain": [
+            {
+                "domain": e.domain,
+                "ate": float(e.ate),
+                "ate_std_error": float(e.ate_std_error),
+                "ate_ci_low": float(e.ate_ci_low),
+                "ate_ci_high": float(e.ate_ci_high),
+                "n_samples": int(e.n_samples),
+            }
+            for e in effects
+        ],
+    }
+
+
+def _aggregate_causal_attribution(rows: list[dict], domain_order: List[str]) -> dict:
+    if not rows:
+        return {}
+    out: dict = {"n_seeds": len(rows), "per_domain": []}
+    for domain in domain_order:
+        ates = [
+            entry["ate"]
+            for row in rows
+            for entry in row.get("per_domain", [])
+            if entry.get("domain") == domain and np.isfinite(entry.get("ate", float("nan")))
+        ]
+        if not ates:
+            continue
+        ates_arr = np.asarray(ates, dtype=np.float64)
+        ate_mean = float(ates_arr.mean())
+        ate_std = float(ates_arr.std(ddof=0))
+        ate_se = float(ates_arr.std(ddof=0) / max(np.sqrt(len(ates)), 1.0))
+        z = 1.959963984540054
+        out["per_domain"].append(
+            {
+                "domain": domain,
+                "ate_mean": ate_mean,
+                "ate_std_across_seeds": ate_std,
+                "ate_ci_low": ate_mean - z * ate_se,
+                "ate_ci_high": ate_mean + z * ate_se,
+                "n_seeds_with_finite_ate": int(len(ates)),
+            }
+        )
+    return out
+
+
 def _aggregate_category_aware(rows: list[dict]) -> dict:
     if not rows:
         return {}
@@ -1460,6 +1563,7 @@ def _run_experiment_arrays(
     per_seed_tau_sweep_rows: list[dict] = []
     per_seed_component_ablation_rows: list[dict] = []
     per_seed_category_aware_rows: list[dict] = []
+    per_seed_causal_attribution_rows: list[dict] = []
     category_aware_enabled = bool(rel_cfg.get("category_aware", False)) and sample_categories is not None
 
     for seed in seeds:
@@ -1857,6 +1961,17 @@ def _run_experiment_arrays(
                 actual_seed,
             )
         )
+        per_seed_causal_attribution_rows.append(
+            _evaluate_causal_attribution(
+                model,
+                estimator,
+                test_feat,
+                test_mask,
+                device,
+                domain_order,
+                actual_seed,
+            )
+        )
         per_seed_failure_cases.append(
             {
                 "seed": actual_seed,
@@ -1986,6 +2101,8 @@ def _run_experiment_arrays(
         "table_7_component_ablation": component_ablation_summary,
         "table_8_category_aware_per_seed": per_seed_category_aware_rows,
         "table_8_category_aware": _aggregate_category_aware(per_seed_category_aware_rows),
+        "table_9_causal_attribution_per_seed": per_seed_causal_attribution_rows,
+        "table_9_causal_attribution": _aggregate_causal_attribution(per_seed_causal_attribution_rows, domain_order),
         "cda_validation": cda,
         "failure_case_analysis": {
             "per_seed": per_seed_failure_cases,

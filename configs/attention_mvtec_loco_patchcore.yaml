@@ -1,0 +1,110 @@
+# MVTec LOCO-AD — PatchCore scorer + canonical one-class protocol
+# -----------------------------------------------------------------------
+# Sister benchmark to MVTec 3D-AD focused on logical vs structural anomalies.
+# Same naturally-paired RGB/depth observation structure.
+# Data prep: src/scripts/prepare_mvtec_loco_fusion_benchmark.py
+# Paper: ELARA / RGA - Track A1 second-visual-paired benchmark
+
+data:
+  path: experiments/fusion/mvtec_loco_patchcore_inputs.csv
+  format: csv
+  id_column: sample_id
+  domain_column: domain
+  label_column: label
+  score_column: score
+  confidence_column: confidence
+  category_column: category
+  timestamp_column: null
+  embedding_prefix: embedding_
+  feature_columns:
+    - score
+    - confidence
+    - embedding_0
+    - embedding_1
+    - embedding_2
+    - embedding_3
+    - embedding_4
+    - embedding_5
+    - embedding_6
+    - embedding_7
+    - embedding_8
+    - embedding_9
+    - embedding_10
+    - embedding_11
+    - embedding_12
+    - embedding_13
+    - embedding_14
+    - embedding_15
+  domain_order: [rgb, depth_or_xyz]
+
+model:
+  num_domains: 2
+  embed_dim: 48
+  num_heads: 4
+  num_layers: 1
+  dropout: 0.1
+  use_attention: true
+  use_confidence: true
+  use_input_confidence: true
+  use_domain_embeddings: true
+  use_positional_embeddings: true
+  use_missing_embedding: true
+
+training:
+  seed: 42
+  batch_size: 64
+  epochs: 20
+  lr: 0.001
+  weight_decay: 0.01
+  domain_dropout: 0.10
+  split_column: split
+  train_split_values: [train]
+  val_split_values: [validation]
+  test_split_values: [test]
+  test_size: 0.2
+  val_size: 0.1
+  early_stopping: 5
+  lambda_reg: 0.01
+
+output:
+  model_dir: models/fusion/attention_mvtec_loco_patchcore
+  checkpoint_name: attention_mvtec_loco_patchcore_fusion.pt
+  metrics_path: experiments/fusion/mvtec_loco_patchcore_attention_metrics.json
+
+evaluation:
+  metrics_path: experiments/fusion/mvtec_loco_patchcore_attention_harness_metrics.json
+  seeds: [42, 43, 44, 45, 46]
+  n_bootstrap: 200
+  bootstrap_alpha: 0.05
+  decision_threshold: val_f1
+  save_attention_samples: 0
+  domain_dropout_probs: [0.0, 0.1, 0.3, 0.5]
+  domain_dropout_probs_extended: [0.0, 0.1, 0.2, 0.3, 0.5]
+  performance_runs: 2
+  performance_warmup_batches: 1
+  performance_iters: 10
+  performance_batch_size: 256
+  cda_samples: 80
+
+reliability:
+  ece_weight: 0.45
+  ks_weight: 0.35
+  sharpness_weight: 0.20
+  clean_gate_threshold: 0.66
+  n_calibration_bins: 10
+  min_samples_for_ks: 20
+  category_aware: true
+  unknown_category_policy: global
+
+rga_plus:
+  selection_metric: roc_pr_f1
+
+craf:
+  drift_noise_levels: [0.0, 0.05, 0.1, 0.2, 0.3]
+  adversarial_attacks: [zero_attack, max_attack, gaussian_noise]
+  adversarial_sigma: 0.1
+  cda_samples: 80
+  mechanism_isolation:
+    tau_sweep_thresholds: [0.4, 0.5, 0.6, 0.66, 0.7, 0.8, 0.9]
+    component_ablation_variants: [full, no_ece, no_ks, no_sharpness, no_gate]
+    learned_gate: true
