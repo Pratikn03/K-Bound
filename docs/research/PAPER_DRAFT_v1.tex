@@ -230,78 +230,250 @@ Reproducibility & Data generation, benchmark execution, asset generation, and PD
 \section{Related Work}
 \subsection{Anomaly Detection Systems}
 Deep anomaly detection has been studied across tabular, sequential, text, graph,
-and visual data. Pang et al.~\cite{pang2021deep} emphasize that anomaly
-detection is tightly coupled to assumptions about labels, imbalance, and
-application context. \system{} follows this systems view: it does not assume a
-single representation can absorb every domain cleanly. Instead, it treats each
-domain expert as a separate source of evidence.
+and visual data. The classical formulation distinguishes statistical outliers
+from semantically anomalous patterns~\cite{hawkins1980identification,chandola2009anomaly};
+density-based detectors~\cite{breunig2000lof}, ensembles of isolation
+trees~\cite{liu2008isolation}, and distance-based methods~\cite{ramaswamy2000efficient}
+remain widely used baselines. The deep-learning era added one-class SVMs and
+deep one-class classifiers~\cite{scholkopf2001estimating,tax2004support,ruff2018deepsvdd},
+reconstruction-based detectors~\cite{gong2019memorizing,schlegl2019fanogan,zenati2018efficient,akcay2018ganomaly},
+and the broader deep-AD surveys that summarise the
+field~\cite{pang2021deep,chalapathy2019deep,ruff2021unifying,yang2021generalized}.
+For industrial vision specifically, recent surveys cover the explosion of
+unsupervised localisation methods~\cite{liu2024deepind,cui2023survey,tao2022deep}.
+\system{} follows the systems view emphasised by Pang
+et al.~\cite{pang2021deep}: it does not assume a single representation can
+absorb every domain cleanly, but treats each domain expert as a separate
+source of evidence.
 
 \subsection{Multimodal and Score-Level Fusion}
 Multimodal learning surveys distinguish early fusion, late fusion, hybrid
-fusion, and interaction-based fusion~\cite{baltrusaitis2019multimodal}. Early
-fusion concatenates features before prediction; late fusion combines model
-outputs; stacking learns a meta-model over domain predictions. Transformer
-attention~\cite{vaswani2017attention} gives a natural mechanism for modeling
-interactions across available domains. The limitation is that ordinary
-attention learns a trust policy from training data and can remain overconfident
-when the inference condition changes.
+fusion, and interaction-based fusion~\cite{baltrusaitis2019multimodal,lahat2015multimodal,atrey2010multimodal,hall1997introduction,dasarathy1997sensor,poria2017review,ngiam2011multimodal}.
+Early fusion concatenates features before prediction; late fusion combines
+model outputs; stacking~\cite{wolpert1992stacked} learns a meta-model over
+domain predictions, which is the lineage of the \methodplus{} router we
+introduce later. Transformer attention~\cite{vaswani2017attention} gives a
+natural mechanism for modelling interactions across available domains and is
+the basis for recent visual transformers~\cite{dosovitskiy2020vit,liu2021swin,jaegle2021perceiver,ramachandran2019stand};
+cross-modal architectures use attention to align heterogeneous
+streams~\cite{radford2021learning,lu2019vilbert,girdhar2022omnivore}. The
+limitation common to these designs is that ordinary attention learns a trust
+policy from training data and can remain overconfident when the inference
+condition changes.
 
-\subsection{RGB--3D Industrial Anomaly Detection}
-MVTec 3D-AD provides paired RGB and high-resolution 3D scans for industrial
-anomaly detection and localization~\cite{bergmann2022mvtec3d}. Recent RGB--3D
-methods show that multimodal anomaly detection is not solved by direct feature
-concatenation alone. M3DM uses hybrid feature and decision-layer fusion with
-memory banks~\cite{wang2023m3dm}; crossmodal feature mapping detects anomalies
-by checking consistency between RGB and point-cloud features~\cite{costanzino2023crossmodal};
-Real3D-AD expands high-precision point-cloud benchmarking~\cite{liu2023real3dad};
-and noise-resistant multimodal work studies robustness when training data are
-not clean~\cite{wang2024m3dmnr}. These papers motivate the paired benchmark
-path in \system{}: the fusion layer should be judged on naturally paired
-modalities and on reliability stress, not only on clean score fusion.
+\subsection{RGB--3D and Visual Industrial Anomaly Detection}
+The MVTec family of industrial benchmarks established a standard for
+unsupervised anomaly localisation: MVTec AD~\cite{bergmann2019mvtec} on RGB,
+MVTec 3D-AD~\cite{bergmann2022mvtec3d} on paired RGB+depth, and MVTec LOCO-AD
+on logical-versus-structural anomalies~\cite{bergmann2023logical}. VisA
+expanded the RGB-only setting to twelve object categories with
+location-aware spot-the-difference supervision~\cite{zou2022visa}, and
+Real3D-AD established the high-resolution point-cloud
+benchmark~\cite{liu2023real3dad}. The Eyecandies dataset focuses on
+unsupervised multimodal localisation in a synthetic
+setting~\cite{bonfiglioli2022eyecandies}. On methods, the leaderboard is
+dominated by patch-based memory banks (PatchCore~\cite{roth2022patchcore}),
+normalising-flow scorers (FastFlow~\cite{yu2021fastflow},
+CFLOW-AD~\cite{gudovskiy2022cflow}, DifferNet~\cite{rudolph2021same}),
+patch-level density modelling
+(PaDiM~\cite{defard2021padim}, SPADE~\cite{cohen2020spade}),
+reconstruction-by-design objectives
+(DRAEM~\cite{zavrtanik2021draem}, CutPaste~\cite{li2021cutpaste},
+Patch SVDD~\cite{yi2020patchsvdd},
+inpainting transformers~\cite{pirnay2022inpainting},
+divide-and-assemble memories~\cite{hou2021divide}),
+knowledge-distillation
+(uninformed students~\cite{bergmann2020uninformed},
+STPM~\cite{wang2021stpm},
+reverse distillation~\cite{deng2022rd4ad},
+multiresolution KD~\cite{salehi2021multiresolution},
+reconstruction students~\cite{yamada2022reconstruction}),
+and a recent wave of diffusion-based detectors
+(AnoDDPM~\cite{wyatt2022anoddpm},
+DiffusionAD~\cite{zhang2023diffusionad},
+conditioned-diffusion AD~\cite{mousakhan2024anomaly}).
+SimpleNet~\cite{liu2023simplenet} and EfficientAD~\cite{batzner2024efficientad}
+sit on the high-performance / low-latency Pareto frontier. Attention-guided
+localisation~\cite{venkataramanan2020attention} is the closest visual
+precursor to our reliability-aware attention path.
+
+For multimodal industrial anomaly detection specifically, M3DM uses hybrid
+feature and decision-layer fusion with memory
+banks~\cite{wang2023m3dm}; crossmodal feature
+mapping~\cite{costanzino2023crossmodal} checks consistency between RGB and
+point-cloud features; noise-resistant multimodal
+work~\cite{wang2024m3dmnr} studies robustness when training data are not
+clean; back-to-feature analysis shows classical 3D descriptors remain
+competitive~\cite{horwitz2023btf}; asymmetric student-teacher
+networks~\cite{rudolph2023ast} achieve state-of-the-art performance on
+MVTec 3D-AD; EasyNet provides a lightweight alternative for 3D
+anomaly~\cite{chen2023easynet}; complementary pseudo-modality
+features~\cite{cao2023rgbpc}, self-supervised feature
+adaptation~\cite{tu2024self}, and cross-modal diffusion~\cite{li2023rgbd}
+extend the multimodal toolbox. A recent survey of multimodal industrial AD
+synthesises the field~\cite{wang2024multimodal}. These papers motivate the
+paired-benchmark path of \system{}: the fusion layer should be judged on
+naturally paired modalities and on reliability stress, not only on clean
+score fusion.
 
 \subsection{Calibration, Drift, and Uncertainty}
 Calibration asks whether predicted probabilities match empirical outcome
 frequencies. Post-hoc calibration methods~\cite{zadrozny2002transforming,
-guo2017calibration,platt1999probabilistic} improve probability quality, but
-calibration alone does not solve the problem of domain trust under drift.
-Uncertainty and calibration can degrade under dataset shift~\cite{ovadia2019can}.
-\method{} uses calibration as one signal inside a wider reliability estimate
-that also includes test-time score-distribution drift and score sharpness.
+guo2017calibration,platt1999probabilistic,zadrozny2001obtaining,kull2017beta,kuleshov2018accurate}
+improve probability quality, with Bayesian binning~\cite{naeini2015obtaining}
+and verified calibration~\cite{kumar2019verified} providing tighter guarantees;
+the Expected Calibration Error inherits from the Brier
+score~\cite{brier1950verification}. Recent results show that modern deep
+networks remain better calibrated than once feared but degrade under
+shift~\cite{minderer2021revisiting}. Uncertainty quantification draws on
+Bayesian dropout~\cite{gal2016dropout}, deep
+ensembles~\cite{lakshminarayanan2017simple}, and prior
+networks~\cite{malinin2018predictive}; calibration under dataset shift was
+benchmarked broadly by Ovadia et al.~\cite{ovadia2019can}. Out-of-distribution
+detection and drift detection sit alongside calibration: the failing-loudly
+empirical study~\cite{rabanser2019failing}, the MSP
+baseline~\cite{hendrycks2017baseline},
+ODIN~\cite{liang2018odin}, Mahalanobis-style
+detection~\cite{lee2018simple}, and nearest-neighbour
+OOD~\cite{sun2022out} contributed methods that we now know are
+shift-sensitive. Label-shift correction~\cite{lipton2018detecting} and the
+classical concept-drift literature~\cite{gama2014survey,bifet2007adwin,page1954hinkley}
+inform the KS-based drift signal used in \method{}; kernel two-sample
+tests~\cite{gretton2012kernel} provide an alternative. The broader theory of
+dataset shift~\cite{quinonero2009dataset,moreno2012unifying,sugiyama2017dataset,shimodaira2000improving}
+and the WILDS benchmark~\cite{koh2021wilds} frame the setting in which
+\method{} operates. Conformal
+prediction~\cite{vovk2005algorithmic,shafer2008tutorial,romano2019conformalized}
+offers an alternative path to distribution-free uncertainty that we discuss
+as future work. \method{} uses calibration as one signal inside a wider
+reliability estimate that also includes test-time score-distribution drift
+and score sharpness.
 
 \subsection{Test-Time Adaptation}
-Test-time training and test-time adaptation update models at inference time to
-handle distribution shift~\cite{sun2020testtime,wang2021tent}. \system{} now
-includes two score-level adaptation comparators: an entropy-minimizing Tent
-adapter over the fusion head and a high-confidence pseudo-label TTT adapter.
-They are intentionally conservative because the fusion setting receives domain
-scores rather than raw modality tensors. Their role is to test whether
-\method{} adds value beyond generic score-level adaptation.
+Test-time training and test-time adaptation update models at inference time
+to handle distribution shift~\cite{sun2020testtime,wang2021tent}; SHOT
+adapts under source-free hypothesis transfer~\cite{liang2020shot};
+MEMO~\cite{zhang2022memo} and masked-autoencoder TTT~\cite{gandelsman2022tta}
+add augmentation- and reconstruction-based adaptation;
+EATA~\cite{niu2022efficient}, SAR~\cite{yang2023sar}, contrastive
+TTA~\cite{chen2022contrastive}, and module-only
+adjustment~\cite{iwasawa2021testtime} improve stability and efficiency;
+robust-dynamic-scene TTA~\cite{yuan2023robust} and RDumb~\cite{press2023entropy}
+study failure modes of continuous TTA; universal domain
+adaptation~\cite{saito2020universal} handles open-set settings. These TTA
+methods share an underlying assumption common to the broader domain-adaptation
+literature~\cite{ganin2015unsupervised,long2015learning,ben2010theory}: that
+labelled target supervision is unavailable. \system{} now includes two
+score-level adaptation comparators: an entropy-minimising Tent adapter over
+the fusion head and a high-confidence pseudo-label TTT adapter. They are
+intentionally conservative because the fusion setting receives domain scores
+rather than raw modality tensors. Their role is to test whether \method{}
+adds value beyond generic score-level adaptation.
 
-\subsection{Ensembles and Strong Baselines}
+\subsection{Ensembles, Stacking, and Strong Baselines}
 Ensemble methods remain difficult to beat in structured prediction tasks.
-Random forests~\cite{breiman2001random} and gradient boosting~\cite{friedman2001greedy}
-are strong baselines for tabular and score-level settings, and outlier-ensemble
-theory provides a related foundation for combining heterogeneous
-anomaly scorers~\cite{aggarwal2017outlier}. Classical classifier-combiner
-theory~\cite{kittler1998combining} further characterises when sum, product,
-and weighted rules differ in behaviour under noise. The benchmark therefore includes random forest fusion, early fusion MLP, late fusion
-ensemble, confidence-weighted mean, and static attention. A credible
+Random forests~\cite{breiman2001random} and gradient
+boosting~\cite{friedman2001greedy} are strong baselines for tabular and
+score-level settings; modern gradient-boosting libraries such as
+XGBoost~\cite{chen2016xgboost}, LightGBM~\cite{ke2017lightgbm}, and
+CatBoost~\cite{prokhorenkova2018catboost} are widely adopted; outlier-ensemble
+theory provides a related foundation for combining heterogeneous anomaly
+scorers~\cite{aggarwal2017outlier}. Classical classifier-combiner
+theory~\cite{kittler1998combining} characterises when sum, product, and
+weighted rules differ under noise; stacked generalisation~\cite{wolpert1992stacked}
+is the historical precursor to our validation-trained \methodplus{} router. The
+benchmark therefore includes random forest fusion, early fusion MLP, late
+fusion ensemble, confidence-weighted mean, and static attention. A credible
 systems paper must compare against these practical alternatives, not only
 against weak averages. The reliability gate of \method{} is itself an
 inference-time switching rule, conceptually adjacent to selective-prediction
-work that abstains rather than commits when confidence is low~\cite{geifman2017selective}.
+work that abstains rather than commits when confidence is
+low~\cite{geifman2017selective,geifman2019selectivenet,corbiere2019addressing,granese2021doctor}.
 
 \subsection{Explanation for Fusion Systems}
-Feature attribution methods such as SHAP~\cite{lundberg2017unified} explain
-individual model predictions, but fusion systems also need domain-level
-explanations. Analysts may need to know whether fraud evidence, network
-evidence, behavior evidence, or text evidence drove the risk score.
-Counterfactual-explanation work~\cite{wachter2017counterfactual} provides
-the conceptual basis for the masking-based domain attribution used here:
-we ask what the risk score would have been had a single domain not been
-observed. \system{}
-therefore includes counterfactual domain attribution: it masks one domain and
-reports the change in predicted risk.
+Feature attribution methods such as SHAP~\cite{lundberg2017unified} and
+LIME~\cite{ribeiro2016should} explain individual model predictions;
+integrated gradients~\cite{sundararajan2017axiomatic} and
+DeepLIFT~\cite{shrikumar2017learning} attribute output changes to input
+features; Grad-CAM~\cite{selvaraju2017grad} and layer-wise relevance
+propagation~\cite{bach2015pixel} produce visual explanations; attention
+rollout~\cite{abnar2020quantifying} quantifies attention flow in
+transformers. Broader interpretability surveys discuss the trade-off
+between explainability and inherent transparency~\cite{molnar2022interpretable,rudin2019stop}.
+Fusion systems also need domain-level explanations: analysts may need to
+know whether fraud evidence, network evidence, behavior evidence, or text
+evidence drove the risk score. Counterfactual
+explanations~\cite{wachter2017counterfactual} provide the conceptual basis
+for the masking-based domain attribution used here: we ask what the risk
+score would have been had a single domain not been observed. \system{}
+therefore includes counterfactual domain attribution that masks one domain
+and reports the change in predicted risk, and we elevate this in
+\S\ref{sec:causal-attribution} to a formal interventional ATE under a
+structural causal model~\cite{pearl2009causality,peters2017elements,imbens2015causal,hernan2020causal,vanderweele2015explanation}.
+
+\subsection{Causal Inference for Reliability}
+Beyond feature attribution, causal inference provides the formalism needed
+to claim that intervening on a reliability signal would shift the prediction
+by a specific amount. Double machine learning~\cite{chernozhukov2018doubleml}
+gives a doubly-robust estimator under observational confounding; causal
+forests~\cite{athey2019generalized,wager2018estimation} estimate
+heterogeneous treatment effects; meta-learners~\cite{kunzel2019metalearners}
+and representation-based individual treatment-effect
+estimators~\cite{shalit2017estimating} extend the inventory. Augmented
+inverse-probability weighting~\cite{robins1994estimation} is the classical
+template that DML modernises. \method{}'s interventional ATE estimator
+(\S\ref{sec:causal-attribution}) uses direct counterfactual perturbation
+because reliability is constructed by the deployer rather than confounded
+by observed covariates, but the DML formulation is preserved in the code
+for the harder observational setting.
+
+\subsection{Robustness and Adversarial Considerations}
+Adversarial-example research demonstrated that gradient-based
+perturbations~\cite{goodfellow2014explaining,madry2017towards,carlini2017evaluating,szegedy2013intriguing,moosavi2016deepfool,biggio2013evasion,chen2017zoo,ilyas2019adversarial}
+can flip predictions while remaining imperceptible. Defences include
+distillation~\cite{papernot2016distillation} and certified robustness via
+randomised smoothing~\cite{cohen2019certified}, alongside the broader AI
+safety literature that frames reliability monitoring as a concrete
+problem~\cite{amodei2016concrete,varshney2017engineering,moller2024robustness}.
+\system{}'s threat model is intentionally narrower than gradient-based
+adversaries: we evaluate score-level perturbations (zero-attack, max-attack,
+Gaussian noise) that model accidental sensor failure and coherent
+score-collapse, not gradient-aware attacks against the fusion model
+itself. Gradient-based adversarial fusion stress remains future work.
+
+\subsection{Statistical Comparison Protocols}
+Comparing multiple classifiers across multiple data sets requires
+nonparametric tests~\cite{demsar2006statistical,benavoli2017time,nadeau2003inference,garcia2010advanced};
+the bootstrap~\cite{efron1993bootstrap} underpins our confidence intervals
+and DeLong~\cite{delong1988comparing} gives a closed-form variance for
+paired ROC-AUC. Our milestone-2 cross-benchmark master table reports
+per-cell bootstrap intervals; multiple-comparison correction is a
+follow-up item discussed in \S\ref{sec:limitations}.
+
+\subsection{Adjacent Datasets and Application Domains}
+Cross-modal generalisation problems often touch zero-shot transfer where
+classes are unseen at training time~\cite{wang2020deep}; the present work
+stays in the closed-vocabulary binary anomaly regime, but the
+reliability-aware fusion idea is in principle portable to that setting.
+For cyber paired-modality settings the canonical benchmarks are
+UNSW-NB15~\cite{moustafa2015unsw}, CIC-IDS-2017~\cite{sharafaldin2018cicids},
+and KDD~\cite{kdd1999cup}, with intrusion-detection methods
+exploring feature selection~\cite{kasongo2020performance,vinayakumar2019deep}
+and empirical botnet studies~\cite{garcia2020cyber}. Healthcare AD draws
+on MIMIC-III~\cite{johnson2016mimiciii} and clinically-aware modelling
+practices~\cite{tonekaboni2019clinicians,rajkomar2018scalable}.
+Time-series AD~\cite{schmidl2022anomaly,audibert2020usad,zhao2020multivariate}
+extends the score-level fusion idea to streaming settings. Foundational
+deep-learning ingredients used throughout this work include
+ResNet~\cite{he2016deep},
+ImageNet pretraining~\cite{krizhevsky2012imagenet},
+batch normalisation~\cite{ioffe2015batch},
+Adam optimisation~\cite{kingma2014adam},
+variational autoencoders~\cite{kingma2014autoencoding}, and
+classical VC-dimension theory~\cite{vapnik1971uniform} that justifies
+generalisation discussions in the thesis appendix. Bahdanau-style
+soft attention~\cite{bahdanau2014neural} is the precursor of the
+cross-modal attention layers used here.
 
 \section{System and Method}
 Each sample $i$ contains up to $D$ domain observations. Domain $d$ contributes a
@@ -1373,6 +1545,7 @@ diagram is shown in Fig.~\ref{fig:calibration}.
 \end{figure}
 
 \subsection{Counterfactual Domain Attribution}
+\label{sec:cda}
 Counterfactual domain attribution was computed for 400 test samples across
 configured seeds. Mean absolute probability changes were 0.0138 for fraud,
 0.0172 for cyber, 0.0059 for behavior, and 0.0353 for text. Text has the
@@ -1388,6 +1561,7 @@ the per-domain magnitudes are visualized in Fig.~\ref{fig:cda-impacts}.
 \end{figure}
 
 \section{Discussion and Limitations}
+\label{sec:limitations}
 \subsection{Scope of the Empirical Claim}
 The evidence supports three scoped claims and rules out one broad one.
 On the label-aligned stress-only benchmark \benchmark{}, the reliability
@@ -1780,6 +1954,919 @@ V. Chernozhukov, D. Chetverikov, M. Demirer, E. Duflo, C. Hansen, W. Newey,
 and J. Robins, ``Double/debiased machine learning for treatment and
 structural parameters,'' \emph{The Econometrics Journal}, vol. 21, no. 1,
 pp. C1--C68, 2018.
+
+% ---------------------------------------------------------------
+% Anomaly detection foundations
+% ---------------------------------------------------------------
+\bibitem{chandola2009anomaly}
+V. Chandola, A. Banerjee, and V. Kumar, ``Anomaly detection: A survey,''
+\emph{ACM Computing Surveys}, vol. 41, no. 3, pp. 1--58, 2009.
+
+\bibitem{hawkins1980identification}
+D. M. Hawkins, \emph{Identification of Outliers}. London: Chapman and Hall,
+1980.
+
+\bibitem{ruff2021unifying}
+L. Ruff, J. R. Kauffmann, R. A. Vandermeulen, G. Montavon, W. Samek,
+M. Kloft, T. G. Dietterich, and K.-R. M\"uller, ``A unifying review of deep
+and shallow anomaly detection,'' \emph{Proceedings of the IEEE}, vol. 109,
+no. 5, pp. 756--795, 2021.
+
+\bibitem{yang2021generalized}
+J. Yang, K. Zhou, Y. Li, and Z. Liu, ``Generalized out-of-distribution
+detection: A survey,'' \emph{arXiv preprint arXiv:2110.11334}, 2021.
+
+\bibitem{chalapathy2019deep}
+R. Chalapathy and S. Chawla, ``Deep learning for anomaly detection: A
+survey,'' \emph{arXiv preprint arXiv:1901.03407}, 2019.
+
+\bibitem{breunig2000lof}
+M. M. Breunig, H.-P. Kriegel, R. T. Ng, and J. Sander, ``LOF: Identifying
+density-based local outliers,'' in \emph{Proceedings of the ACM SIGMOD
+International Conference on Management of Data}, 2000.
+
+\bibitem{liu2008isolation}
+F. T. Liu, K. M. Ting, and Z.-H. Zhou, ``Isolation forest,'' in
+\emph{Proceedings of the IEEE International Conference on Data Mining}, 2008.
+
+\bibitem{ramaswamy2000efficient}
+S. Ramaswamy, R. Rastogi, and K. Shim, ``Efficient algorithms for mining
+outliers from large data sets,'' in \emph{Proceedings of the ACM SIGMOD
+International Conference on Management of Data}, 2000.
+
+\bibitem{scholkopf2001estimating}
+B. Sch\"olkopf, J. C. Platt, J. Shawe-Taylor, A. J. Smola, and
+R. C. Williamson, ``Estimating the support of a high-dimensional
+distribution,'' \emph{Neural Computation}, vol. 13, no. 7, pp. 1443--1471,
+2001.
+
+\bibitem{tax2004support}
+D. M. J. Tax and R. P. W. Duin, ``Support vector data description,''
+\emph{Machine Learning}, vol. 54, no. 1, pp. 45--66, 2004.
+
+\bibitem{ruff2018deepsvdd}
+L. Ruff, R. A. Vandermeulen, N. Goernitz, L. Deecke, S. A. Siddiqui,
+A. Binder, E. M\"uller, and M. Kloft, ``Deep one-class classification,'' in
+\emph{Proceedings of the International Conference on Machine Learning}, 2018.
+
+\bibitem{akcay2018ganomaly}
+S. Akcay, A. Atapour-Abarghouei, and T. P. Breckon, ``GANomaly:
+Semi-supervised anomaly detection via adversarial training,'' in
+\emph{Asian Conference on Computer Vision}, 2018.
+
+\bibitem{gong2019memorizing}
+D. Gong, L. Liu, V. Le, B. Saha, M. R. Mansour, S. Venkatesh, and
+A. van den Hengel, ``Memorizing normality to detect anomaly: Memory-
+augmented deep autoencoder for unsupervised anomaly detection,'' in
+\emph{Proceedings of the IEEE/CVF International Conference on Computer
+Vision}, 2019.
+
+\bibitem{schlegl2019fanogan}
+T. Schlegl, P. Seeb\"ock, S. M. Waldstein, G. Langs, and
+U. Schmidt-Erfurth, ``f-AnoGAN: Fast unsupervised anomaly detection with
+generative adversarial networks,'' \emph{Medical Image Analysis}, vol. 54,
+pp. 30--44, 2019.
+
+\bibitem{zenati2018efficient}
+H. Zenati, M. Romain, C.-S. Foo, B. Lecouat, and V. Chandrasekhar,
+``Efficient GAN-based anomaly detection,'' \emph{arXiv preprint
+arXiv:1802.06222}, 2018.
+
+% ---------------------------------------------------------------
+% Vision anomaly detection
+% ---------------------------------------------------------------
+\bibitem{bergmann2019mvtec}
+P. Bergmann, M. Fauser, D. Sattlegger, and C. Steger, ``MVTec AD --- A
+comprehensive real-world dataset for unsupervised anomaly detection,'' in
+\emph{Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern
+Recognition}, 2019.
+
+\bibitem{roth2022patchcore}
+K. Roth, L. Pemula, J. Zepeda, B. Sch\"olkopf, T. Brox, and P. Gehler,
+``Towards total recall in industrial anomaly detection,'' in
+\emph{Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern
+Recognition}, 2022.
+
+\bibitem{yu2021fastflow}
+J. Yu, Y. Zheng, X. Wang, W. Li, Y. Wu, R. Zhao, and L. Wu, ``FastFlow:
+Unsupervised anomaly detection and localization via 2D normalizing flows,''
+\emph{arXiv preprint arXiv:2111.07677}, 2021.
+
+\bibitem{batzner2024efficientad}
+K. Batzner, L. Heckler, and R. K\"onig, ``EfficientAD: Accurate visual
+anomaly detection at millisecond-level latencies,'' in \emph{Proceedings of
+the IEEE/CVF Winter Conference on Applications of Computer Vision}, 2024.
+
+\bibitem{defard2021padim}
+T. Defard, A. Setkov, A. Loesch, and R. Audigier, ``PaDiM: A patch
+distribution modeling framework for anomaly detection and localization,''
+in \emph{International Conference on Pattern Recognition Workshops}, 2021.
+
+\bibitem{cohen2020spade}
+N. Cohen and Y. Hoshen, ``Sub-image anomaly detection with deep pyramid
+correspondences,'' \emph{arXiv preprint arXiv:2005.02357}, 2020.
+
+\bibitem{gudovskiy2022cflow}
+D. Gudovskiy, S. Ishizaka, and K. Kozuka, ``CFLOW-AD: Real-time
+unsupervised anomaly detection with localization via conditional
+normalizing flows,'' in \emph{Proceedings of the IEEE/CVF Winter Conference
+on Applications of Computer Vision}, 2022.
+
+\bibitem{zavrtanik2021draem}
+V. Zavrtanik, M. Kristan, and D. Sko\v{c}aj, ``DRAEM: A discriminatively
+trained reconstruction embedding for surface anomaly detection,'' in
+\emph{Proceedings of the IEEE/CVF International Conference on Computer
+Vision}, 2021.
+
+\bibitem{li2021cutpaste}
+C.-L. Li, K. Sohn, J. Yoon, and T. Pfister, ``CutPaste: Self-supervised
+learning for anomaly detection and localization,'' in \emph{Proceedings of
+the IEEE/CVF Conference on Computer Vision and Pattern Recognition}, 2021.
+
+\bibitem{bergmann2020uninformed}
+P. Bergmann, M. Fauser, D. Sattlegger, and C. Steger, ``Uninformed
+students: Student-teacher anomaly detection with discriminative latent
+embeddings,'' in \emph{Proceedings of the IEEE/CVF Conference on Computer
+Vision and Pattern Recognition}, 2020.
+
+\bibitem{deng2022rd4ad}
+H. Deng and X. Li, ``Anomaly detection via reverse distillation from
+one-class embedding,'' in \emph{Proceedings of the IEEE/CVF Conference on
+Computer Vision and Pattern Recognition}, 2022.
+
+\bibitem{liu2023simplenet}
+Z. Liu, Y. Zhou, Y. Xu, and Z. Wang, ``SimpleNet: A simple network for
+image anomaly detection and localization,'' in \emph{Proceedings of the
+IEEE/CVF Conference on Computer Vision and Pattern Recognition}, 2023.
+
+\bibitem{yi2020patchsvdd}
+J. Yi and S. Yoon, ``Patch SVDD: Patch-level SVDD for anomaly detection
+and segmentation,'' in \emph{Asian Conference on Computer Vision}, 2020.
+
+\bibitem{rudolph2021same}
+M. Rudolph, B. Wandt, and B. Rosenhahn, ``Same same but DifferNet:
+Semi-supervised defect detection with normalizing flows,'' in
+\emph{Proceedings of the IEEE/CVF Winter Conference on Applications of
+Computer Vision}, 2021.
+
+\bibitem{salehi2021multiresolution}
+M. Salehi, N. Sadjadi, S. Baselizadeh, M. H. Rohban, and H. R. Rabiee,
+``Multiresolution knowledge distillation for anomaly detection,'' in
+\emph{Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern
+Recognition}, 2021.
+
+\bibitem{wang2021stpm}
+G. Wang, S. Han, E. Ding, and D. Huang, ``Student-teacher feature pyramid
+matching for anomaly detection,'' in \emph{British Machine Vision
+Conference}, 2021.
+
+\bibitem{zhang2023diffusionad}
+H. Zhang, Z. Wang, Z. Wu, and Y.-G. Jiang, ``DiffusionAD: Norm-guided
+one-step denoising diffusion for anomaly detection,'' \emph{arXiv preprint
+arXiv:2303.08730}, 2023.
+
+\bibitem{wyatt2022anoddpm}
+J. Wyatt, A. Leach, S. M. Schmon, and C. G. Willcocks, ``AnoDDPM: Anomaly
+detection with denoising diffusion probabilistic models using simplex
+noise,'' in \emph{Proceedings of the IEEE/CVF Conference on Computer Vision
+and Pattern Recognition Workshops}, 2022.
+
+\bibitem{bergmann2023logical}
+P. Bergmann, K. Batzner, M. Fauser, D. Sattlegger, and C. Steger, ``Beyond
+dents and scratches: Logical constraints in unsupervised anomaly detection
+and localization,'' \emph{International Journal of Computer Vision},
+vol. 130, no. 4, pp. 947--969, 2022.
+
+\bibitem{zou2022visa}
+Y. Zou, J. Jeong, L. Pemula, D. Zhang, and O. Dabeer, ``SPot-the-Difference
+self-supervised pre-training for anomaly detection and segmentation,'' in
+\emph{European Conference on Computer Vision}, 2022.
+
+\bibitem{venkataramanan2020attention}
+S. Venkataramanan, K.-C. Peng, R. V. Singh, and A. Mahalanobis,
+``Attention guided anomaly localization in images,'' in \emph{European
+Conference on Computer Vision}, 2020.
+
+\bibitem{pirnay2022inpainting}
+J. Pirnay and K. Chai, ``Inpainting transformer for anomaly detection,''
+in \emph{International Conference on Image Analysis and Processing}, 2022.
+
+\bibitem{hou2021divide}
+J. Hou, Y. Zhang, Q. Zhong, D. Xie, S. Pu, and H. Zhou, ``Divide-and-
+assemble: Learning block-wise memory for unsupervised anomaly detection,''
+in \emph{Proceedings of the IEEE/CVF International Conference on Computer
+Vision}, 2021.
+
+\bibitem{mousakhan2024anomaly}
+A. Mousakhan, T. Brox, and J. Tayyub, ``Anomaly detection with conditioned
+denoising diffusion models,'' \emph{arXiv preprint arXiv:2305.15956}, 2024.
+
+\bibitem{yamada2022reconstruction}
+S. Yamada and K. Hotta, ``Reconstruction student with attention for
+student-teacher pyramid matching,'' in \emph{British Machine Vision
+Conference}, 2022.
+
+% ---------------------------------------------------------------
+% RGB-3D / multimodal anomaly detection
+% ---------------------------------------------------------------
+\bibitem{horwitz2023btf}
+E. Horwitz and Y. Hoshen, ``Back to the feature: Classical 3D features are
+(almost) all you need for 3D anomaly detection,'' in \emph{Proceedings of
+the IEEE/CVF Conference on Computer Vision and Pattern Recognition
+Workshops}, 2023.
+
+\bibitem{rudolph2023ast}
+M. Rudolph, T. Wehrbein, B. Rosenhahn, and B. Wandt, ``Asymmetric student-
+teacher networks for industrial anomaly detection,'' in \emph{Proceedings
+of the IEEE/CVF Winter Conference on Applications of Computer Vision},
+2023.
+
+\bibitem{chen2023easynet}
+R. Chen, G. Xie, J. Liu, J. Wang, Z. Luo, J. Wang, and F. Zheng,
+``EasyNet: An easy network for 3D industrial anomaly detection,'' in
+\emph{Proceedings of the ACM International Conference on Multimedia}, 2023.
+
+\bibitem{bonfiglioli2022eyecandies}
+L. Bonfiglioli, M. Toschi, D. Silvestri, N. Fioraio, and D. De Gregorio,
+``The Eyecandies dataset for unsupervised multimodal anomaly detection and
+localization,'' in \emph{Asian Conference on Computer Vision}, 2022.
+
+\bibitem{cao2023rgbpc}
+Y. Cao, X. Xu, C. Sun, Y. Cheng, Z. Du, L. Gao, and W. Shen, ``Complementary
+pseudo multimodal feature for point cloud anomaly detection,''
+\emph{Pattern Recognition}, vol. 156, 110761, 2024.
+
+\bibitem{tu2024self}
+Y. Tu, B. Tao, B. Zhang, H. Tang, D. Jian, X. Han, F. Chen, and X. Wang,
+``Self-supervised feature adaptation for 3D industrial anomaly detection,''
+in \emph{European Conference on Computer Vision}, 2024.
+
+\bibitem{wang2024multimodal}
+S. Wang, M. Li, X. Liu, B. Tian, J. Zhu, and L. Wei, ``A survey on
+multimodal anomaly detection in industrial scenarios,'' \emph{Information
+Fusion}, 2024.
+
+\bibitem{li2023rgbd}
+Y. Li, Q. Wu, and X. Wu, ``RGB-D anomaly detection via cross-modal
+diffusion,'' in \emph{British Machine Vision Conference}, 2023.
+
+% ---------------------------------------------------------------
+% Test-time adaptation
+% ---------------------------------------------------------------
+\bibitem{liang2020shot}
+J. Liang, D. Hu, and J. Feng, ``Do we really need to access the source
+data? Source hypothesis transfer for unsupervised domain adaptation,'' in
+\emph{Proceedings of the International Conference on Machine Learning},
+2020.
+
+\bibitem{zhang2022memo}
+M. Zhang, S. Levine, and C. Finn, ``MEMO: Test time robustness via
+adaptation and augmentation,'' in \emph{Advances in Neural Information
+Processing Systems}, 2022.
+
+\bibitem{gandelsman2022tta}
+Y. Gandelsman, Y. Sun, X. Chen, and A. Efros, ``Test-time training with
+masked autoencoders,'' in \emph{Advances in Neural Information Processing
+Systems}, 2022.
+
+\bibitem{niu2022efficient}
+S. Niu, J. Wu, Y. Zhang, Y. Chen, S. Zheng, P. Zhao, and M. Tan,
+``Efficient test-time model adaptation without forgetting,'' in
+\emph{Proceedings of the International Conference on Machine Learning},
+2022.
+
+\bibitem{press2023entropy}
+O. Press, S. Schneider, M. Kuemmerer, and M. Bethge, ``RDumb: A simple
+approach that questions our progress in continual test-time adaptation,''
+in \emph{Advances in Neural Information Processing Systems}, 2023.
+
+\bibitem{yuan2023robust}
+L. Yuan, B. Xie, and S. Li, ``Robust test-time adaptation in dynamic
+scenarios,'' in \emph{Proceedings of the IEEE/CVF Conference on Computer
+Vision and Pattern Recognition}, 2023.
+
+\bibitem{yang2023sar}
+T. Yang, S. Niu, J. Wu, Y. Zhang, S. Zheng, and M. Tan, ``Towards
+stable test-time adaptation in dynamic wild world,'' in
+\emph{International Conference on Learning Representations}, 2023.
+
+\bibitem{iwasawa2021testtime}
+Y. Iwasawa and Y. Matsuo, ``Test-time classifier adjustment module for
+model-agnostic domain generalization,'' in \emph{Advances in Neural
+Information Processing Systems}, 2021.
+
+\bibitem{saito2020universal}
+K. Saito, D. Kim, S. Sclaroff, and K. Saenko, ``Universal domain
+adaptation through self supervision,'' in \emph{Advances in Neural
+Information Processing Systems}, 2020.
+
+\bibitem{chen2022contrastive}
+D. Chen, D. Wang, T. Darrell, and S. Ebrahimi, ``Contrastive test-time
+adaptation,'' in \emph{Proceedings of the IEEE/CVF Conference on Computer
+Vision and Pattern Recognition}, 2022.
+
+% ---------------------------------------------------------------
+% Calibration and uncertainty
+% ---------------------------------------------------------------
+\bibitem{naeini2015obtaining}
+M. P. Naeini, G. Cooper, and M. Hauskrecht, ``Obtaining well calibrated
+probabilities using Bayesian binning,'' in \emph{Proceedings of the AAAI
+Conference on Artificial Intelligence}, 2015.
+
+\bibitem{brier1950verification}
+G. W. Brier, ``Verification of forecasts expressed in terms of
+probability,'' \emph{Monthly Weather Review}, vol. 78, no. 1, pp. 1--3,
+1950.
+
+\bibitem{kuleshov2018accurate}
+V. Kuleshov, N. Fenner, and S. Ermon, ``Accurate uncertainties for deep
+learning using calibrated regression,'' in \emph{Proceedings of the
+International Conference on Machine Learning}, 2018.
+
+\bibitem{minderer2021revisiting}
+M. Minderer, J. Djolonga, R. Romijnders, F. Hubis, X. Zhai, N. Houlsby,
+D. Tran, and M. Lucic, ``Revisiting the calibration of modern neural
+networks,'' in \emph{Advances in Neural Information Processing Systems},
+2021.
+
+\bibitem{kumar2019verified}
+A. Kumar, P. Liang, and T. Ma, ``Verified uncertainty calibration,'' in
+\emph{Advances in Neural Information Processing Systems}, 2019.
+
+\bibitem{lakshminarayanan2017simple}
+B. Lakshminarayanan, A. Pritzel, and C. Blundell, ``Simple and scalable
+predictive uncertainty estimation using deep ensembles,'' in
+\emph{Advances in Neural Information Processing Systems}, 2017.
+
+\bibitem{gal2016dropout}
+Y. Gal and Z. Ghahramani, ``Dropout as a Bayesian approximation:
+Representing model uncertainty in deep learning,'' in \emph{Proceedings
+of the International Conference on Machine Learning}, 2016.
+
+\bibitem{malinin2018predictive}
+A. Malinin and M. Gales, ``Predictive uncertainty estimation via prior
+networks,'' in \emph{Advances in Neural Information Processing Systems},
+2018.
+
+\bibitem{kull2017beta}
+M. Kull, T. M. Silva Filho, and P. Flach, ``Beta calibration: A
+well-founded and easily implemented improvement on logistic calibration
+for binary classifiers,'' in \emph{Proceedings of the International
+Conference on Artificial Intelligence and Statistics}, 2017.
+
+\bibitem{zadrozny2001obtaining}
+B. Zadrozny and C. Elkan, ``Obtaining calibrated probability estimates
+from decision trees and naive Bayesian classifiers,'' in \emph{Proceedings
+of the International Conference on Machine Learning}, 2001.
+
+% ---------------------------------------------------------------
+% Conformal prediction
+% ---------------------------------------------------------------
+\bibitem{vovk2005algorithmic}
+V. Vovk, A. Gammerman, and G. Shafer, \emph{Algorithmic Learning in a
+Random World}. Springer, 2005.
+
+\bibitem{shafer2008tutorial}
+G. Shafer and V. Vovk, ``A tutorial on conformal prediction,''
+\emph{Journal of Machine Learning Research}, vol. 9, pp. 371--421, 2008.
+
+\bibitem{romano2019conformalized}
+Y. Romano, E. Patterson, and E. J. Cand\`es, ``Conformalized quantile
+regression,'' in \emph{Advances in Neural Information Processing Systems},
+2019.
+
+% ---------------------------------------------------------------
+% Drift detection and OOD
+% ---------------------------------------------------------------
+\bibitem{rabanser2019failing}
+S. Rabanser, S. G\"unnemann, and Z. C. Lipton, ``Failing loudly: An
+empirical study of methods for detecting dataset shift,'' in
+\emph{Advances in Neural Information Processing Systems}, 2019.
+
+\bibitem{hendrycks2017baseline}
+D. Hendrycks and K. Gimpel, ``A baseline for detecting misclassified and
+out-of-distribution examples in neural networks,'' in
+\emph{International Conference on Learning Representations}, 2017.
+
+\bibitem{lipton2018detecting}
+Z. C. Lipton, Y.-X. Wang, and A. Smola, ``Detecting and correcting for
+label shift with black box predictors,'' in \emph{Proceedings of the
+International Conference on Machine Learning}, 2018.
+
+\bibitem{gama2014survey}
+J. Gama, I. \v{Z}liobait\.{e}, A. Bifet, M. Pechenizkiy, and
+A. Bouchachia, ``A survey on concept drift adaptation,'' \emph{ACM
+Computing Surveys}, vol. 46, no. 4, pp. 1--37, 2014.
+
+\bibitem{bifet2007adwin}
+A. Bifet and R. Gavalda, ``Learning from time-changing data with adaptive
+windowing,'' in \emph{Proceedings of the SIAM International Conference on
+Data Mining}, 2007.
+
+\bibitem{page1954hinkley}
+E. S. Page, ``Continuous inspection schemes,'' \emph{Biometrika}, vol. 41,
+no. 1/2, pp. 100--115, 1954.
+
+\bibitem{gretton2012kernel}
+A. Gretton, K. M. Borgwardt, M. J. Rasch, B. Sch\"olkopf, and A. Smola,
+``A kernel two-sample test,'' \emph{Journal of Machine Learning
+Research}, vol. 13, pp. 723--773, 2012.
+
+\bibitem{liang2018odin}
+S. Liang, Y. Li, and R. Srikant, ``Enhancing the reliability of
+out-of-distribution image detection in neural networks,'' in
+\emph{International Conference on Learning Representations}, 2018.
+
+\bibitem{lee2018simple}
+K. Lee, K. Lee, H. Lee, and J. Shin, ``A simple unified framework for
+detecting out-of-distribution samples and adversarial attacks,'' in
+\emph{Advances in Neural Information Processing Systems}, 2018.
+
+\bibitem{sun2022out}
+Y. Sun, Y. Ming, X. Zhu, and Y. Li, ``Out-of-distribution detection with
+deep nearest neighbors,'' in \emph{Proceedings of the International
+Conference on Machine Learning}, 2022.
+
+% ---------------------------------------------------------------
+% Causal inference
+% ---------------------------------------------------------------
+\bibitem{pearl2009causality}
+J. Pearl, \emph{Causality}, 2nd ed. Cambridge University Press, 2009.
+
+\bibitem{imbens2015causal}
+G. W. Imbens and D. B. Rubin, \emph{Causal Inference for Statistics,
+Social, and Biomedical Sciences}. Cambridge University Press, 2015.
+
+\bibitem{hernan2020causal}
+M. A. Hern\'an and J. M. Robins, \emph{Causal Inference: What If}. Boca
+Raton: Chapman \& Hall/CRC, 2020.
+
+\bibitem{athey2019generalized}
+S. Athey, J. Tibshirani, and S. Wager, ``Generalized random forests,''
+\emph{The Annals of Statistics}, vol. 47, no. 2, pp. 1148--1178, 2019.
+
+\bibitem{wager2018estimation}
+S. Wager and S. Athey, ``Estimation and inference of heterogeneous
+treatment effects using random forests,'' \emph{Journal of the American
+Statistical Association}, vol. 113, no. 523, pp. 1228--1242, 2018.
+
+\bibitem{robins1994estimation}
+J. M. Robins, A. Rotnitzky, and L. P. Zhao, ``Estimation of regression
+coefficients when some regressors are not always observed,'' \emph{Journal
+of the American Statistical Association}, vol. 89, no. 427, pp. 846--866,
+1994.
+
+\bibitem{shalit2017estimating}
+U. Shalit, F. D. Johansson, and D. Sontag, ``Estimating individual
+treatment effect: Generalization bounds and algorithms,'' in
+\emph{Proceedings of the International Conference on Machine Learning},
+2017.
+
+\bibitem{kunzel2019metalearners}
+S. R. K\"unzel, J. S. Sekhon, P. J. Bickel, and B. Yu, ``Meta-learners for
+estimating heterogeneous treatment effects using machine learning,''
+\emph{Proceedings of the National Academy of Sciences}, vol. 116,
+no. 10, pp. 4156--4165, 2019.
+
+\bibitem{vanderweele2015explanation}
+T. J. VanderWeele, \emph{Explanation in Causal Inference: Methods for
+Mediation and Interaction}. Oxford University Press, 2015.
+
+\bibitem{peters2017elements}
+J. Peters, D. Janzing, and B. Sch\"olkopf, \emph{Elements of Causal
+Inference: Foundations and Learning Algorithms}. MIT Press, 2017.
+
+% ---------------------------------------------------------------
+% Attention / transformers / multimodal fusion
+% ---------------------------------------------------------------
+\bibitem{bahdanau2014neural}
+D. Bahdanau, K. Cho, and Y. Bengio, ``Neural machine translation by
+jointly learning to align and translate,'' in \emph{International
+Conference on Learning Representations}, 2015.
+
+\bibitem{dosovitskiy2020vit}
+A. Dosovitskiy et al., ``An image is worth 16x16 words: Transformers for
+image recognition at scale,'' in \emph{International Conference on
+Learning Representations}, 2021.
+
+\bibitem{radford2021learning}
+A. Radford et al., ``Learning transferable visual models from natural
+language supervision,'' in \emph{Proceedings of the International
+Conference on Machine Learning}, 2021.
+
+\bibitem{jaegle2021perceiver}
+A. Jaegle, F. Gimeno, A. Brock, O. Vinyals, A. Zisserman, and
+J. Carreira, ``Perceiver: General perception with iterative attention,''
+in \emph{Proceedings of the International Conference on Machine
+Learning}, 2021.
+
+\bibitem{girdhar2022omnivore}
+R. Girdhar, M. Singh, N. Ravi, L. van der Maaten, A. Joulin, and
+I. Misra, ``Omnivore: A single model for many visual modalities,'' in
+\emph{Proceedings of the IEEE/CVF Conference on Computer Vision and
+Pattern Recognition}, 2022.
+
+\bibitem{lu2019vilbert}
+J. Lu, D. Batra, D. Parikh, and S. Lee, ``ViLBERT: Pretraining task-
+agnostic visiolinguistic representations for vision-and-language tasks,''
+in \emph{Advances in Neural Information Processing Systems}, 2019.
+
+\bibitem{ramachandran2019stand}
+P. Ramachandran, N. Parmar, A. Vaswani, I. Bello, A. Levskaya, and
+J. Shlens, ``Stand-alone self-attention in vision models,'' in
+\emph{Advances in Neural Information Processing Systems}, 2019.
+
+\bibitem{liu2021swin}
+Z. Liu, Y. Lin, Y. Cao, H. Hu, Y. Wei, Z. Zhang, S. Lin, and B. Guo,
+``Swin Transformer: Hierarchical vision transformer using shifted
+windows,'' in \emph{Proceedings of the IEEE/CVF International Conference
+on Computer Vision}, 2021.
+
+\bibitem{ngiam2011multimodal}
+J. Ngiam, A. Khosla, M. Kim, J. Nam, H. Lee, and A. Y. Ng, ``Multimodal
+deep learning,'' in \emph{Proceedings of the International Conference on
+Machine Learning}, 2011.
+
+\bibitem{wang2020deep}
+W. Wang, V. W. Zheng, H. Yu, and C. Miao, ``A survey of zero-shot
+learning: Settings, methods, and applications,'' \emph{ACM Transactions on
+Intelligent Systems and Technology}, vol. 10, no. 2, pp. 1--37, 2019.
+
+% ---------------------------------------------------------------
+% Robustness / adversarial
+% ---------------------------------------------------------------
+\bibitem{goodfellow2014explaining}
+I. J. Goodfellow, J. Shlens, and C. Szegedy, ``Explaining and harnessing
+adversarial examples,'' in \emph{International Conference on Learning
+Representations}, 2015.
+
+\bibitem{madry2017towards}
+A. Madry, A. Makelov, L. Schmidt, D. Tsipras, and A. Vladu, ``Towards
+deep learning models resistant to adversarial attacks,'' in
+\emph{International Conference on Learning Representations}, 2018.
+
+\bibitem{carlini2017evaluating}
+N. Carlini and D. Wagner, ``Towards evaluating the robustness of neural
+networks,'' in \emph{IEEE Symposium on Security and Privacy}, 2017.
+
+\bibitem{szegedy2013intriguing}
+C. Szegedy, W. Zaremba, I. Sutskever, J. Bruna, D. Erhan, I. J. Goodfellow,
+and R. Fergus, ``Intriguing properties of neural networks,'' in
+\emph{International Conference on Learning Representations}, 2014.
+
+\bibitem{papernot2016distillation}
+N. Papernot, P. McDaniel, X. Wu, S. Jha, and A. Swami, ``Distillation as
+a defense to adversarial perturbations against deep neural networks,'' in
+\emph{IEEE Symposium on Security and Privacy}, 2016.
+
+\bibitem{cohen2019certified}
+J. Cohen, E. Rosenfeld, and Z. Kolter, ``Certified adversarial robustness
+via randomized smoothing,'' in \emph{Proceedings of the International
+Conference on Machine Learning}, 2019.
+
+\bibitem{ilyas2019adversarial}
+A. Ilyas, S. Santurkar, D. Tsipras, L. Engstrom, B. Tran, and A. Madry,
+``Adversarial examples are not bugs, they are features,'' in
+\emph{Advances in Neural Information Processing Systems}, 2019.
+
+\bibitem{biggio2013evasion}
+B. Biggio et al., ``Evasion attacks against machine learning at test
+time,'' in \emph{Joint European Conference on Machine Learning and
+Knowledge Discovery in Databases}, 2013.
+
+\bibitem{moosavi2016deepfool}
+S.-M. Moosavi-Dezfooli, A. Fawzi, and P. Frossard, ``DeepFool: A simple
+and accurate method to fool deep neural networks,'' in \emph{Proceedings
+of the IEEE Conference on Computer Vision and Pattern Recognition}, 2016.
+
+\bibitem{chen2017zoo}
+P.-Y. Chen, H. Zhang, Y. Sharma, J. Yi, and C.-J. Hsieh, ``ZOO: Zeroth
+order optimization based black-box attacks to deep neural networks
+without training substitute models,'' in \emph{Proceedings of the ACM
+Workshop on Artificial Intelligence and Security}, 2017.
+
+% ---------------------------------------------------------------
+% Explanation / interpretability
+% ---------------------------------------------------------------
+\bibitem{ribeiro2016should}
+M. T. Ribeiro, S. Singh, and C. Guestrin, ```Why should I trust you?':
+Explaining the predictions of any classifier,'' in \emph{Proceedings of
+the ACM SIGKDD International Conference on Knowledge Discovery and Data
+Mining}, 2016.
+
+\bibitem{sundararajan2017axiomatic}
+M. Sundararajan, A. Taly, and Q. Yan, ``Axiomatic attribution for deep
+networks,'' in \emph{Proceedings of the International Conference on
+Machine Learning}, 2017.
+
+\bibitem{shrikumar2017learning}
+A. Shrikumar, P. Greenside, and A. Kundaje, ``Learning important
+features through propagating activation differences,'' in
+\emph{Proceedings of the International Conference on Machine Learning},
+2017.
+
+\bibitem{selvaraju2017grad}
+R. R. Selvaraju, M. Cogswell, A. Das, R. Vedantam, D. Parikh, and
+D. Batra, ``Grad-CAM: Visual explanations from deep networks via
+gradient-based localization,'' in \emph{Proceedings of the IEEE
+International Conference on Computer Vision}, 2017.
+
+\bibitem{bach2015pixel}
+S. Bach, A. Binder, G. Montavon, F. Klauschen, K.-R. M\"uller, and
+W. Samek, ``On pixel-wise explanations for non-linear classifier
+decisions by layer-wise relevance propagation,'' \emph{PLoS ONE},
+vol. 10, no. 7, e0130140, 2015.
+
+\bibitem{abnar2020quantifying}
+S. Abnar and W. Zuidema, ``Quantifying attention flow in transformers,''
+in \emph{Proceedings of the Annual Meeting of the Association for
+Computational Linguistics}, 2020.
+
+\bibitem{molnar2022interpretable}
+C. Molnar, \emph{Interpretable Machine Learning: A Guide for Making Black
+Box Models Explainable}, 2nd ed., 2022.
+
+\bibitem{rudin2019stop}
+C. Rudin, ``Stop explaining black box machine learning models for high
+stakes decisions and use interpretable models instead,'' \emph{Nature
+Machine Intelligence}, vol. 1, no. 5, pp. 206--215, 2019.
+
+% ---------------------------------------------------------------
+% Statistical evaluation
+% ---------------------------------------------------------------
+\bibitem{demsar2006statistical}
+J. Dem\v{s}ar, ``Statistical comparisons of classifiers over multiple
+data sets,'' \emph{Journal of Machine Learning Research}, vol. 7,
+pp. 1--30, 2006.
+
+\bibitem{benavoli2017time}
+A. Benavoli, G. Corani, J. Dem\v{s}ar, and M. Zaffalon, ``Time for a
+change: A tutorial for comparing multiple classifiers through Bayesian
+analysis,'' \emph{Journal of Machine Learning Research}, vol. 18,
+pp. 1--36, 2017.
+
+\bibitem{nadeau2003inference}
+C. Nadeau and Y. Bengio, ``Inference for the generalization error,''
+\emph{Machine Learning}, vol. 52, no. 3, pp. 239--281, 2003.
+
+\bibitem{garcia2010advanced}
+S. Garc\'ia, A. Fern\'andez, J. Luengo, and F. Herrera, ``Advanced
+nonparametric tests for multiple comparisons in the design of experiments
+in computational intelligence and data mining,'' \emph{Information
+Sciences}, vol. 180, no. 10, pp. 2044--2064, 2010.
+
+\bibitem{efron1993bootstrap}
+B. Efron and R. J. Tibshirani, \emph{An Introduction to the Bootstrap}.
+Chapman \& Hall/CRC, 1993.
+
+% ---------------------------------------------------------------
+% Cyber security datasets and methods
+% ---------------------------------------------------------------
+\bibitem{moustafa2015unsw}
+N. Moustafa and J. Slay, ``UNSW-NB15: A comprehensive data set for
+network intrusion detection systems,'' in \emph{Military Communications
+and Information Systems Conference}, 2015.
+
+\bibitem{sharafaldin2018cicids}
+I. Sharafaldin, A. H. Lashkari, and A. A. Ghorbani, ``Toward generating a
+new intrusion detection dataset and intrusion traffic characterization,''
+in \emph{International Conference on Information Systems Security and
+Privacy}, 2018.
+
+\bibitem{kdd1999cup}
+S. J. Stolfo, W. Lee, A. Prodromidis, and P. Chan, ``KDD Cup 1999 data
+set,'' UCI Machine Learning Repository, 1999.
+
+\bibitem{vinayakumar2019deep}
+R. Vinayakumar, M. Alazab, K. P. Soman, P. Poornachandran, A. Al-Nemrat,
+and S. Venkatraman, ``Deep learning approach for intelligent intrusion
+detection system,'' \emph{IEEE Access}, vol. 7, pp. 41525--41550, 2019.
+
+\bibitem{kasongo2020performance}
+S. M. Kasongo and Y. Sun, ``Performance analysis of intrusion detection
+systems using a feature selection method on the UNSW-NB15 dataset,''
+\emph{Journal of Big Data}, vol. 7, no. 105, 2020.
+
+\bibitem{garcia2020cyber}
+S. Garc\'ia, M. Grill, J. Stiborek, and A. Zunino, ``An empirical
+comparison of botnet detection methods,'' \emph{Computers \& Security},
+vol. 45, pp. 100--123, 2014.
+
+% ---------------------------------------------------------------
+% Selective prediction / abstention
+% ---------------------------------------------------------------
+\bibitem{geifman2019selectivenet}
+Y. Geifman and R. El-Yaniv, ``SelectiveNet: A deep neural network with an
+integrated reject option,'' in \emph{Proceedings of the International
+Conference on Machine Learning}, 2019.
+
+\bibitem{corbiere2019addressing}
+C. Corbi\`ere, N. Thome, A. Bar-Hen, M. Cord, and P. P\'erez, ``Addressing
+failure prediction by learning model confidence,'' in \emph{Advances in
+Neural Information Processing Systems}, 2019.
+
+\bibitem{granese2021doctor}
+F. Granese, M. Romanelli, D. Gorla, C. Palamidessi, and P. Piantanida,
+``DOCTOR: A simple method for detecting misclassification errors,'' in
+\emph{Advances in Neural Information Processing Systems}, 2021.
+
+% ---------------------------------------------------------------
+% Ensembles and gradient boosting
+% ---------------------------------------------------------------
+\bibitem{chen2016xgboost}
+T. Chen and C. Guestrin, ``XGBoost: A scalable tree boosting system,'' in
+\emph{Proceedings of the ACM SIGKDD International Conference on
+Knowledge Discovery and Data Mining}, 2016.
+
+\bibitem{ke2017lightgbm}
+G. Ke, Q. Meng, T. Finley, T. Wang, W. Chen, W. Ma, Q. Ye, and T.-Y. Liu,
+``LightGBM: A highly efficient gradient boosting decision tree,'' in
+\emph{Advances in Neural Information Processing Systems}, 2017.
+
+\bibitem{prokhorenkova2018catboost}
+L. Prokhorenkova, G. Gusev, A. Vorobev, A. V. Dorogush, and A. Gulin,
+``CatBoost: Unbiased boosting with categorical features,'' in
+\emph{Advances in Neural Information Processing Systems}, 2018.
+
+% ---------------------------------------------------------------
+% Deep learning + meta-learning foundations
+% ---------------------------------------------------------------
+\bibitem{he2016deep}
+K. He, X. Zhang, S. Ren, and J. Sun, ``Deep residual learning for image
+recognition,'' in \emph{Proceedings of the IEEE Conference on Computer
+Vision and Pattern Recognition}, 2016.
+
+\bibitem{krizhevsky2012imagenet}
+A. Krizhevsky, I. Sutskever, and G. E. Hinton, ``ImageNet classification
+with deep convolutional neural networks,'' in \emph{Advances in Neural
+Information Processing Systems}, 2012.
+
+\bibitem{kingma2014adam}
+D. P. Kingma and J. Ba, ``Adam: A method for stochastic optimization,''
+in \emph{International Conference on Learning Representations}, 2015.
+
+\bibitem{ioffe2015batch}
+S. Ioffe and C. Szegedy, ``Batch normalization: Accelerating deep network
+training by reducing internal covariate shift,'' in \emph{Proceedings of
+the International Conference on Machine Learning}, 2015.
+
+\bibitem{kingma2014autoencoding}
+D. P. Kingma and M. Welling, ``Auto-encoding variational Bayes,'' in
+\emph{International Conference on Learning Representations}, 2014.
+
+\bibitem{wolpert1992stacked}
+D. H. Wolpert, ``Stacked generalization,'' \emph{Neural Networks},
+vol. 5, no. 2, pp. 241--259, 1992.
+
+\bibitem{vapnik1971uniform}
+V. N. Vapnik and A. Y. Chervonenkis, ``On the uniform convergence of
+relative frequencies of events to their probabilities,'' \emph{Theory of
+Probability and Its Applications}, vol. 16, no. 2, pp. 264--280, 1971.
+
+% ---------------------------------------------------------------
+% Industrial AD application + survey
+% ---------------------------------------------------------------
+\bibitem{liu2024deepind}
+J. Liu, G. Xie, J. Wang, S. Li, C. Wang, F. Zheng, and Y. Jin, ``Deep
+industrial image anomaly detection: A survey,'' \emph{Machine Intelligence
+Research}, vol. 21, no. 1, pp. 104--135, 2024.
+
+\bibitem{cui2023survey}
+Y. Cui, Z. Liu, and S. Lian, ``A survey on unsupervised anomaly detection
+algorithms for industrial images,'' \emph{IEEE Access}, vol. 11,
+pp. 55297--55315, 2023.
+
+\bibitem{tao2022deep}
+X. Tao, X. Gong, X. Zhang, S. Yan, and C. Adak, ``Deep learning for
+unsupervised anomaly localization in industrial images: A survey,''
+\emph{IEEE Transactions on Instrumentation and Measurement}, vol. 71,
+pp. 1--21, 2022.
+
+% ---------------------------------------------------------------
+% Information fusion theory
+% ---------------------------------------------------------------
+\bibitem{hall1997introduction}
+D. L. Hall and J. Llinas, ``An introduction to multisensor data fusion,''
+\emph{Proceedings of the IEEE}, vol. 85, no. 1, pp. 6--23, 1997.
+
+\bibitem{lahat2015multimodal}
+D. Lahat, T. Adali, and C. Jutten, ``Multimodal data fusion: An overview
+of methods, challenges, and prospects,'' \emph{Proceedings of the IEEE},
+vol. 103, no. 9, pp. 1449--1477, 2015.
+
+\bibitem{atrey2010multimodal}
+P. K. Atrey, M. A. Hossain, A. El Saddik, and M. S. Kankanhalli,
+``Multimodal fusion for multimedia analysis: A survey,''
+\emph{Multimedia Systems}, vol. 16, no. 6, pp. 345--379, 2010.
+
+\bibitem{dasarathy1997sensor}
+B. V. Dasarathy, ``Sensor fusion potential exploitation: Innovative
+architectures and illustrative applications,'' \emph{Proceedings of the
+IEEE}, vol. 85, no. 1, pp. 24--38, 1997.
+
+\bibitem{poria2017review}
+S. Poria, E. Cambria, R. Bajpai, and A. Hussain, ``A review of affective
+computing: From unimodal analysis to multimodal fusion,'' \emph{Information
+Fusion}, vol. 37, pp. 98--125, 2017.
+
+% ---------------------------------------------------------------
+% Distribution-shift surveys
+% ---------------------------------------------------------------
+\bibitem{koh2021wilds}
+P. W. Koh et al., ``WILDS: A benchmark of in-the-wild distribution
+shifts,'' in \emph{Proceedings of the International Conference on Machine
+Learning}, 2021.
+
+\bibitem{quinonero2009dataset}
+J. Qui\~nonero-Candela, M. Sugiyama, A. Schwaighofer, and N. D. Lawrence,
+Eds., \emph{Dataset Shift in Machine Learning}. MIT Press, 2009.
+
+\bibitem{moreno2012unifying}
+J. G. Moreno-Torres, T. Raeder, R. Alaiz-Rodr\'iguez, N. V. Chawla, and
+F. Herrera, ``A unifying view on dataset shift in classification,''
+\emph{Pattern Recognition}, vol. 45, no. 1, pp. 521--530, 2012.
+
+\bibitem{sugiyama2017dataset}
+M. Sugiyama and M. Kawanabe, \emph{Machine Learning in Non-Stationary
+Environments: Introduction to Covariate Shift Adaptation}. MIT Press,
+2012.
+
+\bibitem{shimodaira2000improving}
+H. Shimodaira, ``Improving predictive inference under covariate shift by
+weighting the log-likelihood function,'' \emph{Journal of Statistical
+Planning and Inference}, vol. 90, no. 2, pp. 227--244, 2000.
+
+% ---------------------------------------------------------------
+% Time-series and signal-level AD
+% ---------------------------------------------------------------
+\bibitem{schmidl2022anomaly}
+S. Schmidl, P. Wenig, and T. Papenbrock, ``Anomaly detection in time
+series: A comprehensive evaluation,'' \emph{Proceedings of the VLDB
+Endowment}, vol. 15, no. 9, pp. 1779--1797, 2022.
+
+\bibitem{audibert2020usad}
+J. Audibert, P. Michiardi, F. Guyard, S. Marti, and M. A. Zuluaga,
+``USAD: Unsupervised anomaly detection on multivariate time series,'' in
+\emph{Proceedings of the ACM SIGKDD International Conference on
+Knowledge Discovery and Data Mining}, 2020.
+
+\bibitem{zhao2020multivariate}
+H. Zhao et al., ``Multivariate time-series anomaly detection via graph
+attention network,'' in \emph{Proceedings of the IEEE International
+Conference on Data Mining}, 2020.
+
+% ---------------------------------------------------------------
+% Domain adaptation foundations (related to TTA)
+% ---------------------------------------------------------------
+\bibitem{ganin2015unsupervised}
+Y. Ganin and V. Lempitsky, ``Unsupervised domain adaptation by
+backpropagation,'' in \emph{Proceedings of the International Conference
+on Machine Learning}, 2015.
+
+\bibitem{long2015learning}
+M. Long, Y. Cao, J. Wang, and M. I. Jordan, ``Learning transferable
+features with deep adaptation networks,'' in \emph{Proceedings of the
+International Conference on Machine Learning}, 2015.
+
+\bibitem{ben2010theory}
+S. Ben-David, J. Blitzer, K. Crammer, A. Kulesza, F. Pereira, and
+J. W. Vaughan, ``A theory of learning from different domains,''
+\emph{Machine Learning}, vol. 79, no. 1, pp. 151--175, 2010.
+
+% ---------------------------------------------------------------
+% Healthcare AD baselines and surveys
+% ---------------------------------------------------------------
+\bibitem{johnson2016mimiciii}
+A. E. Johnson, T. J. Pollard, L. Shen, L. H. Lehman, M. Feng,
+M. Ghassemi, B. Moody, P. Szolovits, L. Anthony Celi, and R. G. Mark,
+``MIMIC-III, a freely accessible critical care database,''
+\emph{Scientific Data}, vol. 3, no. 160035, 2016.
+
+\bibitem{tonekaboni2019clinicians}
+S. Tonekaboni, S. Joshi, M. D. McCradden, and A. Goldenberg, ``What
+clinicians want: Contextualizing explainable machine learning for clinical
+end use,'' in \emph{Machine Learning for Healthcare}, 2019.
+
+\bibitem{rajkomar2018scalable}
+A. Rajkomar et al., ``Scalable and accurate deep learning with electronic
+health records,'' \emph{npj Digital Medicine}, vol. 1, no. 18, 2018.
+
+% ---------------------------------------------------------------
+% Reliability / trustworthiness for ML systems
+% ---------------------------------------------------------------
+\bibitem{amodei2016concrete}
+D. Amodei, C. Olah, J. Steinhardt, P. Christiano, J. Schulman, and
+D. Man\'e, ``Concrete problems in AI safety,'' \emph{arXiv preprint
+arXiv:1606.06565}, 2016.
+
+\bibitem{varshney2017engineering}
+K. R. Varshney and H. Alemzadeh, ``On the safety of machine learning:
+Cyber-physical systems, decision sciences, and data products,'' \emph{Big
+Data}, vol. 5, no. 3, pp. 246--255, 2017.
+
+\bibitem{moller2024robustness}
+T. M\"oller et al., ``Towards reliable AI: A survey on robustness
+techniques in machine learning,'' \emph{ACM Computing Surveys}, 2024.
 
 \end{thebibliography}
 
