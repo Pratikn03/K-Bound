@@ -275,3 +275,38 @@ def test_calibration_table_includes_cda_spearman_status(tmp_path: Path):
     table = (tmp_path / "elara_calibration_cda.tex").read_text()
     assert "CDA/ECE Spearman status" in table
     assert "n/a (fewer than 3 domains)" in table
+
+
+def test_mvtec3d_sota_demarcation_assets_and_subsection_present():
+    repo_root = Path(__file__).resolve().parents[1]
+    table_path = repo_root / "docs" / "research" / "tables" / "mvtec3d_sota_demarcation.tex"
+    figure_path = repo_root / "docs" / "research" / "figures" / "mvtec3d_sota_demarcation.png"
+    paper_path = repo_root / "docs" / "research" / "PAPER_DRAFT_v1.tex"
+    thesis_path = repo_root / "docs" / "research" / "THESIS_CHAPTER_v1.tex"
+
+    assert table_path.exists(), "Emit the SOTA demarcation table before running tests."
+    assert figure_path.exists(), "Emit the SOTA demarcation figure before running tests."
+
+    paper = paper_path.read_text()
+    thesis = thesis_path.read_text()
+
+    for document in (paper, thesis):
+        assert "Position Relative to Published MVTec 3D-AD State of the Art" in document
+        assert "leaderboard" in document
+        assert "mvtec3d_sota_demarcation.tex" in document
+        for citation_key in (
+            "wang2023m3dm",
+            "rudolph2023ast",
+            "horwitz2023btf",
+            "chen2023easynet",
+            "roth2022patchcore",
+        ):
+            assert f"\\cite{{{citation_key}}}" in document
+
+    table_text = table_path.read_text()
+    assert "leaderboard" in table_text
+    assert "this work" in table_text
+    assert "no localization head" in table_text
+    # All five published methods must appear in the rendered table body.
+    for method in ("BTF", "EasyNet", "PatchCore-3D", "AST", "M3DM"):
+        assert method in table_text

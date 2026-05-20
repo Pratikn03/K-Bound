@@ -797,6 +797,48 @@ fusion training exists, while naturally paired anomaly data requires a protocol
 that separates scorer quality, category generalization, and supervised fusion
 labels before the gate can be judged as a general RGB--3D solution.
 
+\subsection{Position Relative to Published MVTec 3D-AD State of the Art}
+\label{sec:thesis-sota-demarcation}
+
+A reader familiar with the MVTec 3D-AD leaderboard will reasonably ask
+how the numbers in §\ref{sec:thesis-contrast} sit relative to published
+methods that report image-AUROC under the canonical one-class protocol.
+Table~\ref{tab:thesis-sota-demarcation} gathers the headline
+image-AUROCs reported by PatchCore-3D~\cite{roth2022patchcore},
+BTF~\cite{horwitz2023btf}, EasyNet~\cite{chen2023easynet},
+AST~\cite{rudolph2023ast}, and M3DM~\cite{wang2023m3dm}, and juxtaposes
+them with the two ELARA RGA+ cells reported in this work. The table is
+a demarcation rather than a comparison: published methods perform pixel-
+level localisation under the canonical one-class protocol, while ELARA
+is a score-fusion layer with no localisation head and (for the
+$0.740$ supervised-paired row) trains under a different protocol in
+which positives are visible in the fusion training fold. The
+\emph{Comparable?} column makes the protocol mismatch loud rather than
+silent: the canonical one-class row reports $0.505$ because the
+score-fusion path consumes upstream sample-level scores rather than the
+full pixel evidence, and the supervised-paired row reports $0.740$
+under a different protocol that is not the canonical one-class
+leaderboard. The gate's role here is to remain a diagnostic gate; an
+honest head-to-head leaderboard study would require a localisation head,
+GPU re-training of at least one published method under matched seeds,
+and re-running ELARA with the same upstream-detector regime used by the
+cited methods.
+
+\IfFileExists{tables/mvtec3d_sota_demarcation.tex}{
+\begin{table}[t]
+\centering
+\caption{Position relative to published MVTec 3D-AD state of the art on
+the canonical one-class protocol. Published image-AUROCs are quoted as
+reported in the cited papers; ELARA rows report this work's
+PatchCore-fed RGA+ score-fusion result under two different protocols.
+The \emph{Comparable?} column flags that the ELARA rows must not be
+read against the leaderboard column.}
+\label{tab:thesis-sota-demarcation}
+\scriptsize
+\resizebox{\linewidth}{!}{\input{tables/mvtec3d_sota_demarcation.tex}}
+\end{table}
+}{}
+
 \subsection{Calibration and Domain Attribution}
 
 Calibration is important because anomaly scores often feed analyst review or
@@ -1236,6 +1278,30 @@ L. Breiman, ``Random forests,'' \emph{Machine Learning}, vol. 45, pp. 5--32,
 Y. Geifman and R. El-Yaniv, ``Selective classification for deep neural
 networks,'' in \emph{Advances in Neural Information Processing Systems},
 2017.
+
+\bibitem{roth2022patchcore}
+K. Roth, L. Pemula, J. Zepeda, B. Sch\"olkopf, T. Brox, and P. Gehler,
+``Towards total recall in industrial anomaly detection,'' in
+\emph{Proceedings of the IEEE/CVF Conference on Computer Vision and
+Pattern Recognition}, 2022.
+
+\bibitem{horwitz2023btf}
+E. Horwitz and Y. Hoshen, ``Back to the feature: Classical 3D features
+are (almost) all you need for 3D anomaly detection,'' in
+\emph{Proceedings of the IEEE/CVF Conference on Computer Vision and
+Pattern Recognition Workshops}, 2023.
+
+\bibitem{chen2023easynet}
+R. Chen, G. Xie, J. Liu, J. Wang, Z. Luo, J. Wang, and F. Zheng,
+``EasyNet: An easy network for 3D industrial anomaly detection,'' in
+\emph{Proceedings of the ACM International Conference on Multimedia},
+2023.
+
+\bibitem{rudolph2023ast}
+M. Rudolph, T. Wehrbein, B. Rosenhahn, and B. Wandt, ``Asymmetric
+student-teacher networks for industrial anomaly detection,'' in
+\emph{Proceedings of the IEEE/CVF Winter Conference on Applications of
+Computer Vision}, 2023.
 
 \end{thebibliography}
 

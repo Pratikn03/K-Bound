@@ -80,6 +80,12 @@ PYTHONPATH=src python src/scripts/emit_milestone1_comparison.py \
   --repo-root "$ROOT" \
   --output "$TBL_DIR/mvtec3d_milestone1_comparison.tex"
 
+echo "==> Regenerate MVTec 3D-AD SOTA demarcation table + figure"
+PYTHONPATH=src python src/scripts/emit_mvtec3d_sota_demarcation.py \
+  --repo-root "$ROOT" \
+  --table-output "$TBL_DIR/mvtec3d_sota_demarcation.tex" \
+  --figure-output "$FIG_DIR/mvtec3d_sota_demarcation.png"
+
 echo
 echo "==> Compile PDF (from docs/research/ so \\graphicspath resolves)"
 cd "$ROOT/docs/research"

@@ -1434,6 +1434,111 @@ meaningful supervised signal (visual + cyber). The cross-dataset
 pattern (MVTec~3D, MVTec~LOCO, VisA, UNSW-NB15) suggests this
 behaviour generalises beyond a single benchmark family.
 
+\subsection{Position Relative to Published MVTec 3D-AD State of the Art}
+\label{sec:sota-demarcation}
+
+The numbers reported in §\ref{sec:cross-benchmark-master} are internal
+to the \system{} score-fusion layer. Reviewers familiar with the
+MVTec~3D-AD leaderboard will reasonably ask how those numbers sit
+relative to published methods that report image-AUROC under MVTec's
+canonical one-class protocol.
+Table~\ref{tab:sota-demarcation} gathers the headline image-AUROCs that
+PatchCore-3D~\cite{roth2022patchcore},
+BTF~\cite{horwitz2023btf},
+EasyNet~\cite{chen2023easynet},
+AST~\cite{rudolph2023ast}, and
+M3DM~\cite{wang2023m3dm} report on the canonical one-class protocol,
+and juxtaposes them with the two \system{} RGA+ cells (canonical
+one-class and supervised-paired) from this work.
+Figure~\ref{fig:sota-demarcation} renders the same comparison as a
+bar chart, with the protocol divider made explicit.
+
+\IfFileExists{tables/mvtec3d_sota_demarcation.tex}{
+\begin{table*}[t]
+\centering
+\caption{Position relative to published MVTec~3D-AD state of the art on
+the canonical one-class protocol. Published image-AUROCs are quoted as
+reported in their original papers; we did not re-run them. ELARA rows
+report this work's PatchCore-fed RGA+ score-fusion result on the same
+benchmark, but under two different protocols. The \emph{Comparable?}
+column marks why the ELARA rows must not be read against the
+leaderboard column: ELARA is a score-fusion layer with no localization
+head, and the supervised-paired protocol exposes positive examples
+during fusion training.}
+\label{tab:sota-demarcation}
+\scriptsize
+\resizebox{\textwidth}{!}{\input{tables/mvtec3d_sota_demarcation.tex}}
+\end{table*}
+}{}
+
+\IfFileExists{figures/mvtec3d_sota_demarcation.png}{
+\begin{figure}[t]
+\centering
+\includegraphics[width=\linewidth]{mvtec3d_sota_demarcation.png}
+\caption{Bar-chart view of Table~\ref{tab:sota-demarcation}. Bars above
+the dashed divider are the five published canonical one-class
+leaderboard headlines (BTF~\cite{horwitz2023btf},
+EasyNet~\cite{chen2023easynet},
+PatchCore-3D~\cite{roth2022patchcore},
+AST~\cite{rudolph2023ast},
+M3DM~\cite{wang2023m3dm}). Bars below the divider are the two ELARA
+RGA+ cells from this work and are deliberately drawn in a contrasting
+colour to reinforce that they are not leaderboard-comparable.}
+\label{fig:sota-demarcation}
+\end{figure}
+}{}
+
+\noindent\textbf{What this table is.} A demarcation, not a comparison.
+Published methods --- PatchCore-3D, BTF, EasyNet, AST, M3DM --- detect
+and localise anomalies pixel-by-pixel on the canonical one-class
+protocol, with reported image-AUROCs ranging from $0.865$ (BTF) to
+$0.945$ (M3DM). \system{} is a reliability-aware \emph{score-fusion}
+layer: it consumes per-domain anomaly scores from upstream detectors
+(here, PatchCore-derived RGB and depth scores) and emits a fused
+sample-level risk. It does not have a localization head and does not
+retrain the PatchCore backbone.
+
+\noindent\textbf{Why the supervised-paired number is not
+leaderboard-comparable.} Our $0.740$ ROC-AUC on MVTec~3D-AD PatchCore
+supervised-paired uses a deliberately different protocol from the
+canonical one-class leaderboard: positive examples are visible in the
+fusion training fold so that the reliability-router has a supervised
+signal to learn from. This is the right protocol to ask whether the
+gate is a leader in supervised paired settings (the question
+§\ref{sec:cross-benchmark-master} answers) but it is the wrong protocol
+to compare against M3DM, AST, BTF, EasyNet, and PatchCore-3D, which
+never see positives during training. The $0.740$ number in
+Table~\ref{tab:sota-demarcation} is a diagnostic gate number under the
+supervised-paired protocol, and the table marks it explicitly as not
+leaderboard-comparable.
+
+\noindent\textbf{Why the canonical one-class number is also not
+directly comparable.} Under the canonical one-class protocol,
+\system{}'s PatchCore RGA+ run reports $0.505$ ROC-AUC. The numerical
+gap to the published methods is dominated by what \system{} does not
+attempt: the RGB and depth inputs here are PatchCore-derived
+sample-level anomaly scores fed into a fusion layer; the published 3D
+anomaly detectors consume the full pixel-level patch evidence and run
+image-level pooling that the score-fusion path intentionally does not
+reproduce. Section~\ref{sec:cross-benchmark-master} already documents
+that the gate is a diagnostic, not a leader, in canonical one-class
+cells; Table~\ref{tab:sota-demarcation} makes the quantitative size of
+that gap explicit.
+
+\noindent\textbf{What an honest leaderboard comparison would require.}
+Three pieces, none of which we attempt in this paper: (i) a localization
+head producing per-pixel anomaly maps so that pixel-AUROC and PRO can
+be reported on the same footing as the published methods; (ii) GPU
+re-training of at least one published method (M3DM, AST, or
+PatchCore-3D) under matched seeds in our pipeline so that the
+leaderboard row is re-emitted by the same protocol code rather than
+transcribed from a paper; and (iii) re-running \system{} with the
+upstream detector trained under the same one-class regime that the
+published methods use, so the RGB and depth input scores match. We
+document this here as the out-of-scope step for a strict head-to-head
+leaderboard comparison and treat Table~\ref{tab:sota-demarcation} as a
+demarcation only.
+
 \subsection{Causal Reliability Attribution}
 \label{sec:causal-attribution}
 
