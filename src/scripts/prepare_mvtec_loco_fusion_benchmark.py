@@ -102,12 +102,53 @@ def _make_edge_proxy(rgb_path: Path, target_dir: Path) -> Path:
     return target
 
 
+def _supervised_paired_split(
+    pairs: list[LocoObservation],
+    *,
+    seed: int = 42,
+    val_fraction: float = 0.15,
+    test_fraction: float = 0.30,
+) -> dict[int, str]:
+    """Redistribute the test pairs across train/val/test stratified by (category, label)."""
+    rng = np.random.default_rng(seed)
+    test_indices = [i for i, p in enumerate(pairs) if p.split == "test"]
+    bucketed: dict[tuple, list[int]] = {}
+    for idx in test_indices:
+        key = (pairs[idx].category, pairs[idx].label)
+        bucketed.setdefault(key, []).append(idx)
+    assignment: dict[int, str] = {}
+    for key, indices in bucketed.items():
+        indices = list(indices)
+        rng.shuffle(indices)
+        n = len(indices)
+        n_test = max(1, int(round(n * test_fraction))) if n >= 3 else 0
+        remaining = n - n_test
+        denom = max(1.0 - test_fraction, 1e-9)
+        n_val = (
+            max(1, int(round(remaining * val_fraction / denom)))
+            if remaining >= 2
+            else 0
+        )
+        for offset, idx in enumerate(indices):
+            if offset < n_test:
+                assignment[idx] = "test"
+            elif offset < n_test + n_val:
+                assignment[idx] = "validation"
+            else:
+                assignment[idx] = "train"
+    return assignment
+
+
 def build_loco_fusion_frame(
     dataset_root: Path,
     *,
     categories: list[str] | None = None,
     embedding_dim: int = 16,
     patchcore_k: int = 3,
+    supervised_paired: bool = False,
+    supervised_paired_seed: int = 42,
+    supervised_paired_val_fraction: float = 0.15,
+    supervised_paired_test_fraction: float = 0.30,
 ) -> tuple[pd.DataFrame, dict]:
     pairs = discover_loco_pairs(Path(dataset_root), categories=categories)
     if not pairs:
@@ -144,8 +185,21 @@ def build_loco_fusion_frame(
     rgb_scores = patchcore_knn_score(rgb_features, normal_reference_mask, k=patchcore_k)
     proxy_scores = patchcore_knn_score(proxy_features, normal_reference_mask, k=patchcore_k)
 
+    sp_assignment: dict[int, str] = {}
+    if supervised_paired:
+        sp_assignment = _supervised_paired_split(
+            pairs,
+            seed=supervised_paired_seed,
+            val_fraction=supervised_paired_val_fraction,
+            test_fraction=supervised_paired_test_fraction,
+        )
+
     rows = []
     for idx, pair in enumerate(pairs):
+        if supervised_paired and pair.split == "test":
+            effective_split = sp_assignment.get(idx, "train")
+        else:
+            effective_split = pair.split
         for domain, score, embedding in [
             ("rgb", rgb_scores[idx], rgb_embeddings[idx]),
             ("edge_proxy", proxy_scores[idx], proxy_embeddings[idx]),
@@ -154,7 +208,7 @@ def build_loco_fusion_frame(
                 "sample_id": pair.sample_id,
                 "pairing_key": pair.pairing_key,
                 "category": pair.category,
-                "split": pair.split,
+                "split": effective_split,
                 "defect_type": pair.defect_type,
                 "domain": domain,
                 "label": pair.label,
@@ -201,6 +255,10 @@ def main() -> None:
     parser.add_argument("--categories", nargs="*", default=None)
     parser.add_argument("--embedding-dim", type=int, default=16)
     parser.add_argument("--patchcore-k", type=int, default=3)
+    parser.add_argument("--supervised-paired", action="store_true")
+    parser.add_argument("--supervised-paired-seed", type=int, default=42)
+    parser.add_argument("--supervised-paired-val-fraction", type=float, default=0.15)
+    parser.add_argument("--supervised-paired-test-fraction", type=float, default=0.30)
     parser.add_argument(
         "--output",
         type=Path,
@@ -218,7 +276,17 @@ def main() -> None:
         categories=args.categories,
         embedding_dim=args.embedding_dim,
         patchcore_k=args.patchcore_k,
+        supervised_paired=args.supervised_paired,
+        supervised_paired_seed=args.supervised_paired_seed,
+        supervised_paired_val_fraction=args.supervised_paired_val_fraction,
+        supervised_paired_test_fraction=args.supervised_paired_test_fraction,
     )
+    if args.supervised_paired:
+        metadata["supervised_paired_protocol"] = {
+            "test_rows_redistributed_across": ["train", "validation", "test"],
+            "stratification_keys": ["category", "label"],
+            "scorer_fit_split": "train/good only (one-class scorer assumption preserved)",
+        }
     args.output.parent.mkdir(parents=True, exist_ok=True)
     args.metadata.parent.mkdir(parents=True, exist_ok=True)
     frame.to_csv(args.output, index=False)

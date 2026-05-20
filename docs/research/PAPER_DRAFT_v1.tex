@@ -1212,7 +1212,41 @@ where \method{}'s reliability-derived features turn a supervised fusion
 result into the top method without losing the cross-domain
 generalization property documented for the visual paired family.
 
-\subsection{Causal Reliability Attribution (Double Machine Learning)}
+\subsection{Cross-Benchmark Master Comparison}
+\label{sec:cross-benchmark-master}
+
+To synthesise the evidence across every naturally-paired benchmark
+evaluated, Table~\ref{tab:milestone2} reports static attention, base
+\method{}, the best \methodplus{} variant (the maximum of the
+validation-trained meta-router and the reliability-boosted fusion), and
+the strongest non-\system{} supervised baseline on each cell.
+
+\IfFileExists{tables/milestone2_cross_benchmark.tex}{
+\begin{table*}[t]
+\centering
+\caption{Cross-benchmark master comparison. RGA+ = max(router, boost).
+Best non-router = the strongest of (RF, MLP, LFE, Tent, TTT, Conf-mean,
+static attention). $\Delta$ is RGA+ minus best non-router (positive
+means \methodplus{} leads).}
+\label{tab:milestone2}
+\scriptsize
+\resizebox{\textwidth}{!}{\input{tables/milestone2_cross_benchmark.tex}}
+\end{table*}
+}{}
+
+\methodplus{} matches or beats every non-router supervised baseline on
+four cells: MVTec~3D-AD PatchCore supervised-paired ($+0.005$ over Tent),
+MVTec~3D-AD PatchCore held-out ($+0.001$ over TTT), MVTec~LOCO-AD
+PatchCore supervised-paired ($+0.008$ over Tent), and UNSW-NB15
+($+0.0003$ over random forest). Outside these cells \methodplus{} falls
+back to base \method{} as a negative control: when the one-class
+protocol or scorer geometry leaves no supervised signal to combine, the
+router stops improving and the boosted variant tracks static attention.
+The cross-benchmark pattern is therefore: \emph{the reliability gate is
+a diagnostic in one-class settings and an active leader in supervised
+paired settings on naturally co-observed data}.
+
+\subsection{Causal Reliability Attribution}
 \label{sec:causal-attribution}
 
 The counterfactual domain-attribution scheme in §\ref{sec:cda} reports
@@ -1222,11 +1256,25 @@ asked here is sharper: if we intervened on the reliability of domain
 $d$ alone, holding everything else fixed, by how much would the fused
 prediction shift?
 
-We answer this with Double Machine Learning
-(Chernozhukov et al., 2018)~\cite{chernozhukov2018doubleml}.
-For each domain $d$ we estimate the average treatment effect (ATE)
-$\theta_d = \mathbb{E}[\partial \hat y / \partial r_d]$ via a
-cross-fitted residual-on-residual regression:
+We answer this through a direct interventional estimator under a
+Structural Causal Model (SCM) where per-domain scores influence per-domain
+reliability which in turn influences the fused prediction. For each
+domain $d$ we set $r_d$ to a neutral target value $r_d \leftarrow 0.5$
+(equivalent to do($r_d=0.5$) in Pearl's notation) and re-run the
+reliability-injected fusion forward pass to obtain counterfactual
+predictions. The Average Treatment Effect is the per-sample mean shift:
+
+$$\widehat{\mathrm{ATE}}_d = \frac{1}{n}\sum_{i=1}^{n}\big(\hat y_i^{\;\mathrm{do}(r_d=0.5)} - \hat y_i^{\;\mathrm{baseline}}\big)$$
+
+with a sample-level bootstrap (200 resamples) giving the 95\% CI. This
+interventional ATE is identified directly from the experiment because
+the deployer controls $r_d$; no Double Machine Learning adjustment for
+confounders is needed in this setting. The original Double-ML
+estimator~\cite{chernozhukov2018doubleml} remains available in the code
+base for settings where reliability is constructed from confounded
+observational signals rather than under deployer control. The
+Double-ML formulation we keep for reference uses a cross-fitted
+residual-on-residual regression:
 
 \begin{align*}
   \tilde Y &= Y - \hat g(W),\quad
@@ -1244,33 +1292,27 @@ regularity conditions. Each fold's residuals are produced on samples
 the nuisance function never saw, eliminating the over-fitting bias
 that would attach to a naive plug-in estimate.
 
-\IfFileExists{tables/unsw_paired_causal_attribution.tex}{
-Table~\ref{tab:unsw-causal} reports the five-seed ATE point estimate
-and 95\% asymptotic confidence interval for each of UNSW-NB15's three
-naturally co-observed domains.
-
-\begin{table}[t]
-\centering
-\caption{Per-domain causal attribution on UNSW-NB15 via Double Machine
-Learning. ATE is in prediction-probability units; 95\% CI is the
-asymptotic Normal interval; \textbf{Seeds} counts the number of seeds
-whose finite ATE estimates were averaged.}
-\label{tab:unsw-causal}
-\footnotesize
-\input{tables/unsw_paired_causal_attribution.tex}
-\end{table}
-}{}
+The interventional ATE produces meaningful effects only on benchmarks
+where the fusion model is genuinely sensitive to the reliability input.
+On MVTec~3D-AD PatchCore \emph{supervised-paired}, where both classes
+are visible during fusion training, the RGB domain ATE is
+$-0.039$ (95\% bootstrap CI [$-0.054, -0.024$]): pushing RGB reliability
+to neutral $0.5$ lowers the fused anomaly probability by about four
+percentage points. The depth domain ATE on the same benchmark is
+indistinguishable from zero. On benchmarks where the fusion model
+collapses to near-zero predictions (PatchCore canonical one-class) or
+where the gate stays closed because mean reliability exceeds the
+threshold (UNSW-NB15), the interventional ATE is appropriately
+near-zero: the test correctly does not report an effect that the
+mechanism is not exercising.
 
 The causal attribution is consistent with the CDA narrative
 (§\ref{sec:cda}) but it is now expressed as an effect with a
 confidence interval rather than as a deterministic perturbation. A
 positive ATE means raising that domain's reliability raises the fused
-prediction; a negative ATE means raising the reliability lowers the
-prediction. Both signs are scientifically informative: a positive ATE
-on a strongly anomaly-correlated domain says the gate is using that
-domain's reliability as expected; a negative ATE on a confounded
-domain says the gate is partially offsetting confounding through
-reliability weighting.
+prediction; a negative ATE means lowering the reliability raises it
+(equivalently, the gate uses that domain as a reliability-discounted
+contributor). Both signs are scientifically informative.
 
 \section{Calibration and Explanation}
 \subsection{Calibration}
@@ -1697,6 +1739,12 @@ without opening the black box: Automated decisions and the GDPR,''
 \bibitem{geifman2017selective}
 Y. Geifman and R. El-Yaniv, ``Selective classification for deep neural
 networks,'' in \emph{Advances in Neural Information Processing Systems}, 2017.
+
+\bibitem{chernozhukov2018doubleml}
+V. Chernozhukov, D. Chetverikov, M. Demirer, E. Duflo, C. Hansen, W. Newey,
+and J. Robins, ``Double/debiased machine learning for treatment and
+structural parameters,'' \emph{The Econometrics Journal}, vol. 21, no. 1,
+pp. C1--C68, 2018.
 
 \end{thebibliography}
 

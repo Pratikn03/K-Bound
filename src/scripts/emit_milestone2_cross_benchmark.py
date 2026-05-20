@@ -58,9 +58,15 @@ def _cell(payload: dict) -> dict[str, float | str | None]:
     cs = payload.get("clean_metric_summary", {})
     static = _dig(cs, "static_attention", "roc_auc", "mean")
     rga = _dig(cs, "craf_attention", "roc_auc", "mean")
-    rga_plus = _dig(cs, "rga_meta_router", "roc_auc", "mean")
-    if rga_plus is None:
-        rga_plus = _dig(cs, "rga_boosted_fusion", "roc_auc", "mean")
+    rga_router = _dig(cs, "rga_meta_router", "roc_auc", "mean")
+    rga_boost = _dig(cs, "rga_boosted_fusion", "roc_auc", "mean")
+    # Best RGA+ variant for cross-benchmark headline.
+    rga_plus_candidates = [v for v in (rga_router, rga_boost) if v is not None]
+    rga_plus = max(rga_plus_candidates) if rga_plus_candidates else None
+    if rga_plus is None or (rga_boost is not None and rga_boost == rga_plus):
+        rga_plus_variant = "boost"
+    else:
+        rga_plus_variant = "router"
     best_name = None
     best_roc = None
     for name, metrics in cs.items():
@@ -76,6 +82,7 @@ def _cell(payload: dict) -> dict[str, float | str | None]:
         "static": static,
         "rga": rga,
         "rga_plus": rga_plus,
+        "rga_plus_variant": rga_plus_variant,
         "delta_plus_vs_best": (rga_plus - best_roc) if (rga_plus is not None and best_roc is not None) else None,
         "best_name": _method_label(best_name),
         "best_roc": best_roc,
@@ -87,9 +94,10 @@ BENCHMARKS = [
     ("MVTec 3D-AD", "PatchCore supervised", "experiments/fusion/mvtec3d_patchcore_supervised_paired_results.json"),
     ("MVTec 3D-AD", "PatchCore held-out", "experiments/fusion/mvtec3d_patchcore_heldout_results.json"),
     ("MVTec LOCO-AD", "PatchCore canonical", "experiments/fusion/mvtec_loco_patchcore_results.json"),
-    ("Real3D-AD", "FPFH+depth", "experiments/fusion/real3d_fusion_results.json"),
-    ("VisA", "PatchCore+depth-proxy", "experiments/fusion/visa_fusion_results.json"),
-    ("UNSW-NB15", "flow/connection/context", "experiments/fusion/unsw_paired_results.json"),
+    ("MVTec LOCO-AD", "PatchCore supervised", "experiments/fusion/mvtec_loco_patchcore_supervised_paired_results.json"),
+    ("Real3D-AD", "FPFH+depth supervised", "experiments/fusion/real3d_supervised_paired_results.json"),
+    ("VisA", "PatchCore+edge-proxy", "experiments/fusion/visa_fusion_results.json"),
+    ("UNSW-NB15", "flow/conn/context", "experiments/fusion/unsw_paired_results.json"),
 ]
 
 

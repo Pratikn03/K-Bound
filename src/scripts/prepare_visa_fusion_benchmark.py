@@ -87,6 +87,11 @@ def build_visa_fusion_frame(
     *,
     embedding_dim: int = 16,
     patchcore_k: int = 3,
+    val_fraction_of_train: float = 0.15,
+    val_seed: int = 42,
+    supervised_paired: bool = False,
+    supervised_paired_seed: int = 42,
+    supervised_paired_test_fraction: float = 0.30,
 ) -> tuple[pd.DataFrame, dict]:
     observations = discover_visa_observations(Path(dataset_root))
     if not observations:
@@ -119,6 +124,37 @@ def build_visa_fusion_frame(
     rgb_scores = patchcore_knn_score(rgb_features, normal_reference_mask, k=patchcore_k)
     proxy_scores = patchcore_knn_score(proxy_features, normal_reference_mask, k=patchcore_k)
 
+    # VisA ships only train/test splits; carve a validation slice from train.
+    effective_splits = np.array([o.split for o in observations], dtype=object)
+    rng = np.random.default_rng(val_seed)
+    train_indices = [i for i, o in enumerate(observations) if o.split == "train"]
+    rng.shuffle(train_indices)
+    n_val = max(1, int(round(len(train_indices) * float(val_fraction_of_train))))
+    for i in train_indices[:n_val]:
+        effective_splits[i] = "validation"
+
+    if supervised_paired:
+        rng_sp = np.random.default_rng(int(supervised_paired_seed))
+        test_indices = [i for i, o in enumerate(observations) if o.split == "test"]
+        bucketed: dict[tuple, list[int]] = {}
+        for idx in test_indices:
+            key = (observations[idx].category, observations[idx].label)
+            bucketed.setdefault(key, []).append(idx)
+        for key, indices in bucketed.items():
+            indices = list(indices)
+            rng_sp.shuffle(indices)
+            n = len(indices)
+            n_test = max(1, int(round(n * supervised_paired_test_fraction))) if n >= 3 else 0
+            remaining = n - n_test
+            n_val_sp = max(1, int(round(remaining * 0.15 / 0.7))) if remaining >= 2 else 0
+            for offset, idx in enumerate(indices):
+                if offset < n_test:
+                    effective_splits[idx] = "test"
+                elif offset < n_test + n_val_sp:
+                    effective_splits[idx] = "validation"
+                else:
+                    effective_splits[idx] = "train"
+
     rows = []
     for idx, o in enumerate(observations):
         for domain, score, embedding in [
@@ -129,7 +165,7 @@ def build_visa_fusion_frame(
                 "sample_id": o.sample_id,
                 "pairing_key": o.pairing_key,
                 "category": o.category,
-                "split": o.split,
+                "split": str(effective_splits[idx]),
                 "defect_type": o.defect_type,
                 "domain": domain,
                 "label": int(o.label),
@@ -174,6 +210,11 @@ def main() -> None:
     parser.add_argument("--dataset-root", type=Path, default=Path("data/raw/visa"))
     parser.add_argument("--embedding-dim", type=int, default=16)
     parser.add_argument("--patchcore-k", type=int, default=3)
+    parser.add_argument("--val-fraction-of-train", type=float, default=0.15)
+    parser.add_argument("--val-seed", type=int, default=42)
+    parser.add_argument("--supervised-paired", action="store_true")
+    parser.add_argument("--supervised-paired-seed", type=int, default=42)
+    parser.add_argument("--supervised-paired-test-fraction", type=float, default=0.30)
     parser.add_argument(
         "--output",
         type=Path,
@@ -190,6 +231,11 @@ def main() -> None:
         args.dataset_root,
         embedding_dim=args.embedding_dim,
         patchcore_k=args.patchcore_k,
+        val_fraction_of_train=args.val_fraction_of_train,
+        val_seed=args.val_seed,
+        supervised_paired=args.supervised_paired,
+        supervised_paired_seed=args.supervised_paired_seed,
+        supervised_paired_test_fraction=args.supervised_paired_test_fraction,
     )
     args.output.parent.mkdir(parents=True, exist_ok=True)
     args.metadata.parent.mkdir(parents=True, exist_ok=True)

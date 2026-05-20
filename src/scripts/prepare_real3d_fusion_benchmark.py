@@ -58,77 +58,183 @@ class Real3DObservation:
         return f"{self.category}/{self.split}/{self.defect_type}/{self.stem}"
 
 
+def _parse_defect_from_stem(stem: str) -> str:
+    """Real3D filenames encode the defect via suffix: e.g. 142_good or 142_good_cut.
+
+    A bare ``<id>_good`` is a normal sample; ``<id>_good_<defect>`` is anomaly.
+    """
+    parts = stem.split("_")
+    if len(parts) <= 2:
+        return "good"
+    return "_".join(parts[2:])
+
+
+def _is_visible_pcd(path: Path) -> bool:
+    return (
+        path.is_file()
+        and path.suffix.lower() == ".pcd"
+        and not path.name.startswith(".")
+        and not path.name.startswith("._")
+    )
+
+
 def _discover_real3d_pairs(dataset_root: Path) -> list[Real3DObservation]:
-    """Discover all .pcd observations in a Real3D-AD-style directory."""
+    """Discover all .pcd observations in a Real3D-AD-style directory.
+
+    Real3D-AD's distribution layout is:
+        <root>/Real3D-AD-PCD/<category>/{train,test}/<id>_<good|good_<defect>>.pcd
+
+    The script accepts either ``data/raw/real3d`` or
+    ``data/raw/real3d/Real3D-AD-PCD`` as the dataset root.
+    """
     dataset_root = Path(dataset_root)
+    # If the top-level only has one directory called Real3D-AD-PCD, descend.
+    children = [
+        p for p in dataset_root.iterdir() if p.is_dir() and not p.name.startswith(".")
+    ]
+    if len(children) == 1 and children[0].name.startswith("Real3D"):
+        dataset_root = children[0]
+
     pairs: list[Real3DObservation] = []
     for category_dir in sorted(p for p in dataset_root.iterdir() if p.is_dir() and not p.name.startswith(".")):
         category = category_dir.name
-        train_dir = category_dir / "train"
-        if train_dir.exists():
-            for pcd in sorted(train_dir.rglob("*.pcd")):
+        for split_name in ("train", "test"):
+            split_dir = category_dir / split_name
+            if not split_dir.exists():
+                continue
+            for pcd in sorted(split_dir.iterdir()):
+                if not _is_visible_pcd(pcd):
+                    continue
+                defect_type = _parse_defect_from_stem(pcd.stem) if split_name == "test" else "good"
                 pairs.append(
                     Real3DObservation(
                         category=category,
-                        split="train",
-                        defect_type="good",
+                        split=split_name,
+                        defect_type=defect_type,
                         stem=pcd.stem,
                         pcd_path=pcd,
                     )
                 )
-        test_dir = category_dir / "test"
-        if test_dir.exists():
-            for defect_dir in sorted(p for p in test_dir.iterdir() if p.is_dir()):
-                defect_type = defect_dir.name
-                for pcd in sorted(defect_dir.rglob("*.pcd")):
-                    pairs.append(
-                        Real3DObservation(
-                            category=category,
-                            split="test",
-                            defect_type=defect_type,
-                            stem=pcd.stem,
-                            pcd_path=pcd,
-                        )
-                    )
     return pairs
+
+
+_PCD_TYPE_MAP = {
+    ("F", 4): np.float32,
+    ("F", 8): np.float64,
+    ("U", 1): np.uint8,
+    ("U", 2): np.uint16,
+    ("U", 4): np.uint32,
+    ("I", 1): np.int8,
+    ("I", 2): np.int16,
+    ("I", 4): np.int32,
+}
+
+
+def _read_pcd_binary(path: Path) -> np.ndarray:
+    """Direct binary PCD parser for the common FIELDS x y z layout.
+
+    Reads the header to derive (fields, sizes, types, counts, points,
+    data mode) and decodes the binary or ASCII payload into an [N, 3]
+    XYZ float32 array. Extra fields beyond x/y/z are ignored.
+    """
+    with open(path, "rb") as handle:
+        header_bytes = b""
+        while b"DATA" not in header_bytes:
+            line = handle.readline()
+            if not line:
+                return np.zeros((0, 3), dtype=np.float32)
+            header_bytes += line
+        header_lines = header_bytes.decode("latin-1", errors="ignore").splitlines()
+        fields: list[str] = []
+        sizes: list[int] = []
+        types: list[str] = []
+        counts: list[int] = []
+        points = 0
+        data_mode = "ascii"
+        for line in header_lines:
+            tokens = line.strip().split()
+            if not tokens:
+                continue
+            key = tokens[0].upper()
+            if key == "FIELDS":
+                fields = tokens[1:]
+            elif key == "SIZE":
+                sizes = [int(x) for x in tokens[1:]]
+            elif key == "TYPE":
+                types = tokens[1:]
+            elif key == "COUNT":
+                counts = [int(x) for x in tokens[1:]]
+            elif key == "POINTS":
+                points = int(tokens[1])
+            elif key == "DATA":
+                data_mode = tokens[1].lower() if len(tokens) > 1 else "ascii"
+
+        if not fields or points <= 0:
+            return np.zeros((0, 3), dtype=np.float32)
+        if not counts:
+            counts = [1] * len(fields)
+
+        try:
+            xi, yi, zi = fields.index("x"), fields.index("y"), fields.index("z")
+        except ValueError:
+            return np.zeros((0, 3), dtype=np.float32)
+
+        if data_mode == "binary":
+            # Build a structured dtype matching the header.
+            field_dtypes: list[tuple[str, np.dtype, int]] = []
+            for f, sz, tp, ct in zip(fields, sizes, types, counts):
+                dt = _PCD_TYPE_MAP.get((tp.upper(), int(sz)))
+                if dt is None:
+                    return np.zeros((0, 3), dtype=np.float32)
+                field_dtypes.append((f, np.dtype(dt), int(ct)))
+            record_dtype = np.dtype(
+                [(name, dt, (ct,)) if ct > 1 else (name, dt) for name, dt, ct in field_dtypes]
+            )
+            raw = handle.read(points * record_dtype.itemsize)
+            arr = np.frombuffer(raw, dtype=record_dtype, count=points)
+            try:
+                xyz = np.stack(
+                    [
+                        arr[fields[xi]].astype(np.float32),
+                        arr[fields[yi]].astype(np.float32),
+                        arr[fields[zi]].astype(np.float32),
+                    ],
+                    axis=1,
+                )
+            except Exception:
+                return np.zeros((0, 3), dtype=np.float32)
+            return xyz
+        else:
+            # ASCII fallback
+            remaining = handle.read().decode("latin-1", errors="ignore")
+            records = []
+            for raw_line in remaining.splitlines():
+                parts = raw_line.strip().split()
+                if len(parts) < max(xi, yi, zi) + 1:
+                    continue
+                try:
+                    records.append(
+                        [float(parts[xi]), float(parts[yi]), float(parts[zi])]
+                    )
+                except ValueError:
+                    continue
+            return (
+                np.asarray(records, dtype=np.float32)
+                if records
+                else np.zeros((0, 3), dtype=np.float32)
+            )
 
 
 def _read_pcd_points(path: Path, max_points: int = 4096) -> np.ndarray:
     """Read XYZ coordinates from a .pcd file. Subsamples to max_points."""
-    try:
-        import open3d as o3d
-
-        cloud = o3d.io.read_point_cloud(str(path))
-        points = np.asarray(cloud.points, dtype=np.float32)
-    except ImportError:
-        # Fallback: parse ASCII PCD directly. Supports the common
-        # FIELDS x y z layout.
-        with open(path, "rb") as handle:
-            text = handle.read().decode("latin-1", errors="ignore")
-        lines = text.splitlines()
-        idx = 0
-        for i, line in enumerate(lines):
-            if line.startswith("DATA"):
-                idx = i + 1
-                break
-        records = []
-        for line in lines[idx:]:
-            parts = line.strip().split()
-            if len(parts) < 3:
-                continue
-            try:
-                records.append([float(parts[0]), float(parts[1]), float(parts[2])])
-            except ValueError:
-                continue
-        points = np.asarray(records, dtype=np.float32) if records else np.zeros((0, 3), dtype=np.float32)
-
+    points = _read_pcd_binary(path)
     if points.size == 0:
         return np.zeros((0, 3), dtype=np.float32)
     if points.shape[0] > max_points:
         rng = np.random.default_rng(0)
         idx = rng.choice(points.shape[0], size=max_points, replace=False)
         points = points[idx]
-    return points
+    return points.astype(np.float32, copy=False)
 
 
 def _fpfh_descriptor(points: np.ndarray, embedding_dim: int = 33) -> np.ndarray:
@@ -206,6 +312,10 @@ def build_real3d_fusion_frame(
     categories: list[str] | None = None,
     embedding_dim: int = 16,
     max_points: int = 4096,
+    val_fraction_of_train: float = 0.15,
+    supervised_paired: bool = False,
+    supervised_paired_seed: int = 42,
+    supervised_paired_test_fraction: float = 0.30,
 ) -> tuple[pd.DataFrame, dict]:
     pairs = _discover_real3d_pairs(Path(dataset_root))
     if categories:
@@ -260,6 +370,39 @@ def build_real3d_fusion_frame(
     pcd_scores = patchcore_knn_score(pcd_descriptors, normal_reference_mask, k=3)
     depth_scores = patchcore_knn_score(depth_features, normal_reference_mask, k=3)
 
+    # Real3D-AD doesn't ship a validation split; carve one from train.
+    rng = np.random.default_rng(42)
+    effective_splits = np.array([p.split for p in pairs], dtype=object)
+    train_indices = [i for i, p in enumerate(pairs) if p.split == "train"]
+    rng.shuffle(train_indices)
+    n_val = max(1, int(round(len(train_indices) * float(val_fraction_of_train))))
+    for j, i in enumerate(train_indices[:n_val]):
+        effective_splits[i] = "validation"
+
+    # Supervised-paired redistribution: shuffle test rows across train/val/test
+    # stratified by (category, label).
+    if supervised_paired:
+        rng_sp = np.random.default_rng(int(supervised_paired_seed))
+        test_indices = [i for i, p in enumerate(pairs) if p.split == "test"]
+        bucketed: dict[tuple, list[int]] = {}
+        for idx in test_indices:
+            key = (pairs[idx].category, pairs[idx].label)
+            bucketed.setdefault(key, []).append(idx)
+        for key, indices in bucketed.items():
+            indices = list(indices)
+            rng_sp.shuffle(indices)
+            n = len(indices)
+            n_test = max(1, int(round(n * supervised_paired_test_fraction))) if n >= 3 else 0
+            remaining = n - n_test
+            n_val_sp = max(1, int(round(remaining * 0.15 / 0.7))) if remaining >= 2 else 0
+            for offset, idx in enumerate(indices):
+                if offset < n_test:
+                    effective_splits[idx] = "test"
+                elif offset < n_test + n_val_sp:
+                    effective_splits[idx] = "validation"
+                else:
+                    effective_splits[idx] = "train"
+
     rows = []
     for idx, pair in enumerate(pairs):
         for domain, score, embedding, source_path in [
@@ -270,7 +413,7 @@ def build_real3d_fusion_frame(
                 "sample_id": pair.sample_id,
                 "pairing_key": pair.pairing_key,
                 "category": pair.category,
-                "split": pair.split,
+                "split": str(effective_splits[idx]),
                 "defect_type": pair.defect_type,
                 "domain": domain,
                 "label": pair.label,
@@ -317,6 +460,10 @@ def main() -> None:
     parser.add_argument("--categories", nargs="*", default=None)
     parser.add_argument("--embedding-dim", type=int, default=16)
     parser.add_argument("--max-points", type=int, default=4096)
+    parser.add_argument("--val-fraction-of-train", type=float, default=0.15)
+    parser.add_argument("--supervised-paired", action="store_true")
+    parser.add_argument("--supervised-paired-seed", type=int, default=42)
+    parser.add_argument("--supervised-paired-test-fraction", type=float, default=0.30)
     parser.add_argument(
         "--output",
         type=Path,
@@ -334,6 +481,10 @@ def main() -> None:
         categories=args.categories,
         embedding_dim=args.embedding_dim,
         max_points=args.max_points,
+        val_fraction_of_train=args.val_fraction_of_train,
+        supervised_paired=args.supervised_paired,
+        supervised_paired_seed=args.supervised_paired_seed,
+        supervised_paired_test_fraction=args.supervised_paired_test_fraction,
     )
     args.output.parent.mkdir(parents=True, exist_ok=True)
     args.metadata.parent.mkdir(parents=True, exist_ok=True)
