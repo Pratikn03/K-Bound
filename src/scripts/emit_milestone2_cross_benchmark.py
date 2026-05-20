@@ -96,7 +96,8 @@ BENCHMARKS = [
     ("MVTec LOCO-AD", "PatchCore canonical", "experiments/fusion/mvtec_loco_patchcore_results.json"),
     ("MVTec LOCO-AD", "PatchCore supervised", "experiments/fusion/mvtec_loco_patchcore_supervised_paired_results.json"),
     ("Real3D-AD", "FPFH+depth supervised", "experiments/fusion/real3d_supervised_paired_results.json"),
-    ("VisA", "PatchCore+edge-proxy", "experiments/fusion/visa_fusion_results.json"),
+    ("VisA", "RGB+edge canonical", "experiments/fusion/visa_fusion_results.json"),
+    ("VisA", "RGB+edge supervised", "experiments/fusion/visa_supervised_paired_results.json"),
     ("UNSW-NB15", "flow/conn/context", "experiments/fusion/unsw_paired_results.json"),
 ]
 

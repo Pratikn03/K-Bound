@@ -1235,16 +1235,32 @@ means \methodplus{} leads).}
 }{}
 
 \methodplus{} matches or beats every non-router supervised baseline on
-four cells: MVTec~3D-AD PatchCore supervised-paired ($+0.005$ over Tent),
+five supervised-paired cells across three dataset families:
+MVTec~3D-AD PatchCore supervised-paired ($+0.005$ over Tent),
 MVTec~3D-AD PatchCore held-out ($+0.001$ over TTT), MVTec~LOCO-AD
-PatchCore supervised-paired ($+0.008$ over Tent), and UNSW-NB15
-($+0.0003$ over random forest). Outside these cells \methodplus{} falls
-back to base \method{} as a negative control: when the one-class
-protocol or scorer geometry leaves no supervised signal to combine, the
-router stops improving and the boosted variant tracks static attention.
-The cross-benchmark pattern is therefore: \emph{the reliability gate is
-a diagnostic in one-class settings and an active leader in supervised
-paired settings on naturally co-observed data}.
+PatchCore supervised-paired ($+0.008$ over Tent), VisA RGB+edge-proxy
+supervised-paired ($+0.011$ over random forest), and UNSW-NB15
+($+0.0003$ over random forest). The biggest \methodplus{} lift, on
+VisA supervised-paired, is statistically meaningful at five-seed
+scale: $0.866$ versus the strongest non-router baseline at $0.855$.
+Real3D-AD is the only supervised-paired cell where \methodplus{} loses
+($-0.013$ to a late-fusion ensemble), most likely because the small
+sample count (1\,254 point clouds) and the hand-rolled histogram
+fallback for FPFH leave little supervised signal for the router to
+combine. Outside the supervised-paired family, in canonical one-class
+cells, \methodplus{} falls back to base \method{} as a negative
+control: when the protocol leaves no supervised signal at all, the
+router stops improving and the boosted variant tracks static
+attention.
+
+The cross-benchmark pattern is therefore: \emph{the reliability gate
+is a diagnostic in one-class settings and an active leader in
+supervised paired settings on naturally co-observed data}, with a
+consistent positive delta over the strongest non-router supervised
+baseline whenever the underlying scorer is rich enough to admit a
+meaningful supervised signal (visual + cyber). The cross-dataset
+pattern (MVTec~3D, MVTec~LOCO, VisA, UNSW-NB15) suggests this
+behaviour generalises beyond a single benchmark family.
 
 \subsection{Causal Reliability Attribution}
 \label{sec:causal-attribution}
@@ -1313,6 +1329,25 @@ positive ATE means raising that domain's reliability raises the fused
 prediction; a negative ATE means lowering the reliability raises it
 (equivalently, the gate uses that domain as a reliability-discounted
 contributor). Both signs are scientifically informative.
+
+\paragraph{Cross-benchmark B3 findings.}
+The largest empirically measured causal effect is on MVTec LOCO-AD
+supervised-paired: the edge-proxy domain's ATE is $-0.161$ (95\%
+bootstrap CI $[-0.219, -0.103]$), meaning that pushing the edge-proxy
+reliability to neutral $0.5$ \emph{lowers} the fused anomaly
+probability by 16 percentage points on average. This is consistent
+with the gate using edge-proxy as a reliability-discounted contributor:
+when its reliability is forced upward toward neutral, the gate's
+defensive down-weighting is removed and the prediction drops. The RGB
+domain in the same benchmark has ATE $-0.049$ (CI $[-0.055,-0.043]$),
+in the same direction but smaller in magnitude. On UNSW-NB15 the
+\emph{flow} modality has ATE $-0.023$ (CI $[-0.028,-0.017]$) and the
+\emph{context} modality has ATE $+0.002$ (CI $[+0.0001,+0.0046]$);
+\emph{connection} is indistinguishable from zero. The signs and
+magnitudes together provide a per-benchmark fingerprint of which
+modality the gate is actively shaping versus which it is passing
+through unchanged --- a finer-grained signal than the binary
+on/off gate-adapt rate reported earlier.
 
 \section{Calibration and Explanation}
 \subsection{Calibration}
