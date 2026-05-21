@@ -32,6 +32,7 @@ import numpy as np
 import pandas as pd
 import torch
 from sklearn import metrics as sk_metrics
+from sklearn.metrics import roc_auc_score
 from sklearn.model_selection import train_test_split
 from torch.utils.data import DataLoader
 
@@ -394,6 +395,103 @@ def _predict_static(model: AttentionFusionModel, features: np.ndarray, masks: np
         logits, _, _ = model(feat_t, key_padding_mask=mask_t)
         probs.append(torch.sigmoid(logits.squeeze(-1)).cpu().numpy())
     return np.concatenate(probs)
+
+
+def _delong_pairs_against_baselines(
+    test_labels: np.ndarray,
+    rga_router_probs: np.ndarray,
+    rga_boosted_probs: np.ndarray,
+    baseline_predictions: dict,
+    *,
+    static_probs: np.ndarray | None = None,
+) -> dict:
+    """Compute DeLong's paired ROC p-value for RGA+ (router/boosted)
+    against every non-router baseline available in this run.
+
+    For each baseline name we return both p-values (router vs baseline,
+    boost vs baseline). The milestone-2 emitter combines the two RGA+
+    variants downstream by picking the max(router, boost) AUROC and the
+    corresponding p-value.
+    """
+    out: dict = {}
+    pairs: dict[str, np.ndarray] = {}
+    if static_probs is not None:
+        pairs["static_attention"] = np.asarray(static_probs, dtype=np.float64)
+    for name, payload in baseline_predictions.items():
+        probs = payload.get("test_probs") if isinstance(payload, dict) else None
+        if probs is None:
+            continue
+        pairs[name] = np.asarray(probs, dtype=np.float64)
+    test_labels = np.asarray(test_labels, dtype=int)
+    for variant_name, variant_probs in (
+        ("rga_meta_router", np.asarray(rga_router_probs, dtype=np.float64)),
+        ("rga_boosted_fusion", np.asarray(rga_boosted_probs, dtype=np.float64)),
+    ):
+        per_baseline: dict[str, float] = {}
+        for baseline_name, baseline_probs in pairs.items():
+            if len(baseline_probs) != len(variant_probs):
+                continue
+            try:
+                p = float(delong_roc_test(test_labels, variant_probs, baseline_probs))
+            except Exception:
+                p = float("nan")
+            per_baseline[baseline_name] = p
+        out[variant_name] = per_baseline
+    return out
+
+
+def _calibrate_polarity(
+    model: AttentionFusionModel,
+    val_feat: np.ndarray,
+    val_mask: np.ndarray,
+    val_labels: np.ndarray,
+    score_index: int,
+    device: torch.device,
+    *,
+    perturb_multiplier: float = 1.4,
+    synthetic_fraction: float = 0.5,
+    random_seed: int = 0,
+) -> dict:
+    """Detect output-polarity inversion on a synthetic-anomaly-augmented val set.
+
+    Under canonical one-class training (val and train both normal-only) the
+    supervised fusion head receives no anomaly gradient and can settle into
+    an inverse-polarity solution where higher input scores predict *lower*
+    anomaly probabilities. This helper builds a synthetic-anomaly-augmented
+    calibration set by perturbing the score column upward on a fraction of
+    val samples, computes the model's AUROC on that set, and returns
+    ``flip_required = True`` when the AUROC is below 0.5. The flip is
+    applied at evaluation time only; the trained model is never modified.
+    """
+    rng = np.random.default_rng(int(random_seed))
+    n_val = val_feat.shape[0]
+    if n_val < 4:
+        return {"flip_required": False, "calibration_auroc": float("nan"), "n_calibration": int(n_val), "n_synthetic": 0}
+    n_synth = max(2, int(round(synthetic_fraction * n_val)))
+    perturb_idx = rng.choice(n_val, size=n_synth, replace=False)
+    synth_feat = val_feat[perturb_idx].copy()
+    synth_mask = val_mask[perturb_idx].copy()
+    synth_feat[:, :, score_index] = np.clip(
+        synth_feat[:, :, score_index] * float(perturb_multiplier), 0.0, 1.0
+    )
+    cal_feat = np.concatenate([val_feat, synth_feat], axis=0)
+    cal_mask = np.concatenate([val_mask, synth_mask], axis=0)
+    cal_labels = np.concatenate(
+        [np.asarray(val_labels, dtype=int), np.ones(n_synth, dtype=int)]
+    )
+    if len(np.unique(cal_labels)) < 2:
+        return {"flip_required": False, "calibration_auroc": float("nan"), "n_calibration": int(len(cal_labels)), "n_synthetic": int(n_synth)}
+    cal_probs = _predict_static(model, cal_feat, cal_mask, device)
+    try:
+        auc = float(roc_auc_score(cal_labels, cal_probs))
+    except ValueError:
+        return {"flip_required": False, "calibration_auroc": float("nan"), "n_calibration": int(len(cal_labels)), "n_synthetic": int(n_synth)}
+    return {
+        "flip_required": bool(auc < 0.5),
+        "calibration_auroc": auc,
+        "n_calibration": int(len(cal_labels)),
+        "n_synthetic": int(n_synth),
+    }
 
 
 @torch.no_grad()
@@ -1665,6 +1763,28 @@ def _run_experiment_arrays(
             per_sample_gating=per_sample_gating,
         )
 
+        # Post-hoc polarity calibration. When the supervised fusion head is
+        # trained under a canonical one-class regime (or any regime that
+        # leaves no anomaly gradient on val), the model can settle into an
+        # inverse-polarity solution. We detect this by computing AUROC on a
+        # synthetic-anomaly-augmented val set; if AUROC<0.5 we flip the
+        # subsequent static/RGA predictions globally for this seed. The
+        # trained weights are never modified.
+        polarity_info = _calibrate_polarity(
+            model,
+            val_feat,
+            val_mask,
+            val_labels,
+            score_index=score_index,
+            device=device,
+            random_seed=actual_seed,
+        )
+        if polarity_info["flip_required"]:
+            static_val_probs = 1.0 - static_val_probs
+            static_probs = 1.0 - static_probs
+            craf_val_probs = 1.0 - craf_val_probs
+            craf_probs = 1.0 - craf_probs
+
         static_metrics = _metrics_from_validation_threshold(
             test_labels,
             static_probs,
@@ -1798,6 +1918,14 @@ def _run_experiment_arrays(
                     ),
                 },
                 "delong_p_craf_vs_static": float(delong_roc_test(test_labels, craf_probs, static_probs)),
+                "polarity_calibration": polarity_info,
+                "delong_p_rga_plus_vs_baseline": _delong_pairs_against_baselines(
+                    test_labels,
+                    rga_router_probs,
+                    rga_boosted_probs,
+                    baseline_predictions,
+                    static_probs=static_probs,
+                ),
                 **baseline_metrics,
             }
         )

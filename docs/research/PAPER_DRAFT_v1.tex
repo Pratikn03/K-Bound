@@ -1396,10 +1396,14 @@ the strongest non-\system{} supervised baseline on each cell.
 \IfFileExists{tables/milestone2_cross_benchmark.tex}{
 \begin{table*}[t]
 \centering
-\caption{Cross-benchmark master comparison. RGA+ = max(router, boost).
-Best non-router = the strongest of (RF, MLP, LFE, Tent, TTT, Conf-mean,
-static attention). $\Delta$ is RGA+ minus best non-router (positive
-means \methodplus{} leads).}
+\caption{Cross-benchmark master comparison with DeLong statistical
+tests. RGA+ = max(router, boost). Best non-router = the strongest of
+(RF, MLP, LFE, Tent, TTT, Conf-mean, static attention). $\Delta$ is
+RGA+ minus best non-router (positive means \methodplus{} leads). The
+\textbf{$p$ (DeLong, Fisher)} column is the Fisher-combined five-seed
+DeLong paired ROC test of RGA+ versus the best non-router on each cell;
+the $p_{\mathrm{Holm}}$ column is the same p-value after Holm-Bonferroni
+correction across all nine evaluated cells.}
 \label{tab:milestone2}
 \scriptsize
 \resizebox{\textwidth}{!}{\input{tables/milestone2_cross_benchmark.tex}}
@@ -1412,18 +1416,55 @@ MVTec~3D-AD PatchCore supervised-paired ($+0.005$ over Tent),
 MVTec~3D-AD PatchCore held-out ($+0.001$ over TTT), MVTec~LOCO-AD
 PatchCore supervised-paired ($+0.008$ over Tent), VisA RGB+edge-proxy
 supervised-paired ($+0.011$ over random forest), and UNSW-NB15
-($+0.0003$ over random forest). The biggest \methodplus{} lift, on
-VisA supervised-paired, is statistically meaningful at five-seed
-scale: $0.866$ versus the strongest non-router baseline at $0.855$.
-Real3D-AD is the only supervised-paired cell where \methodplus{} loses
-($-0.013$ to a late-fusion ensemble), most likely because the small
-sample count (1\,254 point clouds) and the hand-rolled histogram
-fallback for FPFH leave little supervised signal for the router to
-combine. Outside the supervised-paired family, in canonical one-class
-cells, \methodplus{} falls back to base \method{} as a negative
-control: when the protocol leaves no supervised signal at all, the
-router stops improving and the boosted variant tracks static
-attention.
+($+0.0003$ over random forest). Real3D-AD is the only supervised-paired
+cell where \methodplus{} loses ($-0.013$ to a late-fusion ensemble),
+most likely because the small sample count (1\,254 point clouds) and
+the hand-rolled histogram fallback for FPFH leave little supervised
+signal for the router to combine. Outside the supervised-paired
+family, in canonical one-class cells, \methodplus{} falls back to base
+\method{} as a negative control: when the protocol leaves no
+supervised signal at all, the router stops improving and the boosted
+variant tracks static attention.
+
+\noindent\textbf{Statistical-significance reading.} The two right-most
+columns of Table~\ref{tab:milestone2} report the per-cell DeLong paired
+ROC test (Fisher-combined across the five seeds) and the same p-value
+after Holm-Bonferroni correction across the nine evaluated cells. The
+honest reading is mixed and instructive. UNSW-NB15 reaches
+$p_{\mathrm{Holm}} \approx 10^{-11}$, meaning \methodplus{}'s ranking of
+anomalies is statistically distinguishable from random forest's even
+though the two methods agree at the third decimal in mean AUROC. The
+three canonical one-class cells (MVTec~3D-AD, MVTec~LOCO-AD, VisA)
+also show $p_{\mathrm{Holm}} \leq 10^{-10}$, but here the sign is
+negative: confidence-weighted mean leads under one-class because the
+supervised fusion head has no anomaly gradient, and \methodplus{}
+gracefully falls back to RGA. The two visual supervised-paired wins
+(VisA $p_{\mathrm{raw}} = 0.050$, MVTec~LOCO $p_{\mathrm{raw}} = 0.023$)
+are individually borderline and \emph{lose strict significance after
+Holm correction across nine cells} ($p_{\mathrm{Holm}} = 0.199$ and
+$0.116$ respectively). MVTec~3D-AD supervised-paired and the held-out
+cell are not statistically distinguishable from their respective best
+non-router baselines ($p_{\mathrm{raw}} \geq 0.998$). The
+cross-benchmark pattern is therefore real but modest in
+visual-supervised-paired magnitude, and a tightly-powered follow-up at
+30+ seeds is the right experiment to close the visual-supervised
+question definitively.
+
+\noindent\textbf{Polarity calibration.} Under the canonical one-class
+protocol, training the supervised attention head on a normal-only fold
+gives the head no anomaly gradient and can leave it in an
+inverse-polarity solution where the static output is anti-correlated
+with the test labels. We detect this at evaluation time with a
+synthetic-anomaly-augmented validation probe (perturb half the
+validation scores upward, clip to $[0,1]$, label as anomalous, compute
+AUROC); when that AUROC falls below $0.5$ we flip the static and RGA
+test predictions for that seed. The flip is applied at inference only;
+the trained weights are never modified. This is a deployment-grade
+sanity check that prevents the supervised head from looking
+catastrophically below chance when the protocol it was trained under
+made supervised gradient impossible. The polarity decision is recorded
+per seed in the result JSON and the calibration AUROC is auditable
+after every run.
 
 The cross-benchmark pattern is therefore: \emph{the reliability gate
 is a diagnostic in one-class settings and an active leader in
