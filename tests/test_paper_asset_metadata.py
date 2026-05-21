@@ -310,3 +310,44 @@ def test_mvtec3d_sota_demarcation_assets_and_subsection_present():
     # All five published methods must appear in the rendered table body.
     for method in ("BTF", "EasyNet", "PatchCore-3D", "AST", "M3DM"):
         assert method in table_text
+
+
+def test_per_category_breakdown_assets_present():
+    repo_root = Path(__file__).resolve().parents[1]
+    tables_dir = repo_root / "docs" / "research" / "tables"
+    expected = [
+        "mvtec3d_patchcore_per_category.tex",
+        "mvtec3d_patchcore_supervised_paired_per_category.tex",
+        "mvtec3d_patchcore_heldout_per_category.tex",
+        "mvtec_loco_patchcore_per_category.tex",
+        "mvtec_loco_patchcore_supervised_paired_per_category.tex",
+    ]
+    for name in expected:
+        path = tables_dir / name
+        assert path.exists(), f"Emit the per-category table {name} before running tests."
+        text = path.read_text()
+        # Every per-category table must include the headline RGA+ columns
+        # and at least one MVTec category.
+        assert "RGA+ router" in text or "RGA+ boost" in text
+        assert r"\textbf{Mean}" in text
+
+    paper = (repo_root / "docs" / "research" / "PAPER_DRAFT_v1.tex").read_text()
+    assert "Per-Category Breakdown" in paper
+    assert "sec:per-category" in paper
+
+
+def test_patchcore3d_baseline_results_present():
+    repo_root = Path(__file__).resolve().parents[1]
+    baseline_path = repo_root / "experiments" / "fusion" / "patchcore3d_baseline_results.json"
+    assert baseline_path.exists(), (
+        "Run src/scripts/eval_patchcore3d_baseline.py to produce the "
+        "PatchCore-3D head-to-head baseline JSON before running tests."
+    )
+    import json
+    payload = json.loads(baseline_path.read_text())
+    assert payload["protocol"] == "canonical_one_class"
+    assert payload["scorer"] == "patchcore_knn"
+    mean = payload.get("mean_image_auroc")
+    assert isinstance(mean, (int, float))
+    # Sanity: re-run should be well above chance and below published headline.
+    assert 0.5 < float(mean) < float(payload["published_reference"]["image_auroc"])

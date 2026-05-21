@@ -118,6 +118,21 @@ def _dig(payload: dict | None, *keys: str) -> Any:
     return payload
 
 
+def _local_patchcore3d_baseline(repo_root: Path) -> float | None:
+    """Read our PatchCore-3D re-run mean image-AUROC from the JSON.
+
+    Returns None when the baseline has not yet been computed. The
+    auto-generated table renders this value alongside the published
+    headline so the gap is visible without claiming we beat anything.
+    """
+    path = repo_root / "experiments" / "fusion" / "patchcore3d_baseline_results.json"
+    if not path.exists():
+        return None
+    payload = json.loads(path.read_text(encoding="utf-8"))
+    val = payload.get("mean_image_auroc")
+    return float(val) if isinstance(val, (int, float)) else None
+
+
 def _local_image_auroc(results_path: Path) -> float | None:
     """Return the headline image-AUROC for an ELARA cell.
 
@@ -167,6 +182,18 @@ def render_table(repo_root: Path) -> str:
 
     rows.append(r"\midrule")
 
+    patchcore_rerun = _local_patchcore3d_baseline(repo_root)
+    if patchcore_rerun is not None:
+        rows.append(
+            rf"PatchCore-3D (this work re-run) & canonical one-class & "
+            rf"{_fmt(patchcore_rerun)} & n/a (no localization head) & "
+            rf"\emph{{partial}} head-to-head & "
+            r"ResNet-50 layer3 patch features, 4096-patch coreset, RGB only, "
+            r"max-pool image score; simpler than the published full memory bank "
+            r"+ depth fusion (image-AUROC gap to 0.901 is the implementation gap, not a leaderboard claim). & "
+            r"this work \\"
+        )
+
     for entry in LOCAL_ROWS:
         local_auroc = _local_image_auroc(repo_root / entry["results_path"])
         rows.append(
@@ -194,6 +221,11 @@ def render_figure(repo_root: Path, out_path: Path) -> None:
     """
     published_sorted = sorted(PUBLISHED_SOTA, key=lambda d: d["image_auroc"])
     local_with_vals = []
+    patchcore_rerun = _local_patchcore3d_baseline(repo_root)
+    if patchcore_rerun is not None:
+        local_with_vals.append(
+            ("PatchCore-3D (this work re-run)\n(canonical one-class, RGB layer3 patch kNN)", float(patchcore_rerun))
+        )
     for entry in LOCAL_ROWS:
         val = _local_image_auroc(repo_root / entry["results_path"])
         if val is None:
@@ -214,7 +246,11 @@ def render_figure(repo_root: Path, out_path: Path) -> None:
     for label, val in local_with_vals:
         labels.append(label)
         values.append(val)
-        colors.append("#d62728")
+        # Patchcore-3D re-run gets a distinct orange to differentiate from RGA+ ELARA rows.
+        if "PatchCore-3D (this work re-run)" in label:
+            colors.append("#ff7f0e")
+        else:
+            colors.append("#d62728")
 
     fig_h = max(3.5, 0.45 * len(labels))
     fig, ax = plt.subplots(figsize=(8.6, fig_h))

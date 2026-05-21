@@ -86,6 +86,16 @@ PYTHONPATH=src python src/scripts/emit_mvtec3d_sota_demarcation.py \
   --table-output "$TBL_DIR/mvtec3d_sota_demarcation.tex" \
   --figure-output "$FIG_DIR/mvtec3d_sota_demarcation.png"
 
+echo "==> Regenerate per-category breakdown tables"
+PYTHONPATH=src python src/scripts/emit_per_category_breakdown.py \
+  --repo-root "$ROOT" \
+  --tables-dir "$TBL_DIR"
+
+echo "==> Regenerate cross-benchmark milestone-2 master (DeLong + Holm)"
+PYTHONPATH=src python src/scripts/emit_milestone2_cross_benchmark.py \
+  --repo-root "$ROOT" \
+  --output "$TBL_DIR/milestone2_cross_benchmark.tex"
+
 echo
 echo "==> Compile PDF (from docs/research/ so \\graphicspath resolves)"
 cd "$ROOT/docs/research"

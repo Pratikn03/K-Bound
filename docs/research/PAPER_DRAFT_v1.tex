@@ -1580,6 +1580,112 @@ document this here as the out-of-scope step for a strict head-to-head
 leaderboard comparison and treat Table~\ref{tab:sota-demarcation} as a
 demarcation only.
 
+\paragraph{Partial head-to-head re-run.} We additionally include a
+\emph{partial} head-to-head row produced by this work's re-run of a
+PatchCore-3D-style evaluator under the same canonical one-class
+protocol the published leaderboard uses
+(\path{src/scripts/eval_patchcore3d_baseline.py}). The re-run uses
+ResNet-50 layer3 patch features, a 4{,}096-patch uniform-coreset
+memory bank per category, RGB-only features (no depth fusion), and
+max-pool image scoring. The resulting mean image-AUROC across the eight
+included MVTec~3D-AD categories is $0.735$ ($\sigma = 0.093$), with a
+range from $0.59$ on \texttt{tire} to $0.92$ on \texttt{bagel}. The
+gap to the published $0.901$ is the implementation-simplification gap
+(no depth fusion, no greedy coreset, single-layer features), not a
+leaderboard claim. The row is marked \emph{partial head-to-head} in
+Table~\ref{tab:sota-demarcation}: it places a real number under the
+canonical protocol from our own code, but it is not a full SOTA
+reproduction.
+
+\subsection{Per-Category Breakdown}
+\label{sec:per-category}
+
+Aggregate ROC-AUC numbers can hide heterogeneous behaviour across
+categories. To make the per-category picture explicit on the standard
+MVTec-family benchmarks, we report image-AUROC per category for the
+MVTec~3D-AD PatchCore canonical, supervised-paired, and held-out
+variants, plus the MVTec~LOCO-AD PatchCore canonical and
+supervised-paired variants.
+
+\IfFileExists{tables/mvtec3d_patchcore_per_category.tex}{
+\begin{table*}[t]
+\centering
+\caption{MVTec 3D-AD PatchCore canonical one-class: per-category
+image-AUROC (mean across five seeds). The Mean row averages across the
+eight included MVTec 3D-AD categories.}
+\label{tab:mvtec3d-canonical-per-category}
+\scriptsize
+\resizebox{\textwidth}{!}{\input{tables/mvtec3d_patchcore_per_category.tex}}
+\end{table*}
+}{}
+
+\IfFileExists{tables/mvtec3d_patchcore_supervised_paired_per_category.tex}{
+\begin{table*}[t]
+\centering
+\caption{MVTec 3D-AD PatchCore supervised-paired: per-category
+image-AUROC (mean across 30 seeds).}
+\label{tab:mvtec3d-sp-per-category}
+\scriptsize
+\resizebox{\textwidth}{!}{\input{tables/mvtec3d_patchcore_supervised_paired_per_category.tex}}
+\end{table*}
+}{}
+
+\IfFileExists{tables/mvtec3d_patchcore_heldout_per_category.tex}{
+\begin{table*}[t]
+\centering
+\caption{MVTec 3D-AD PatchCore held-out-category: per-category
+image-AUROC (mean across 30 seeds).}
+\label{tab:mvtec3d-heldout-per-category}
+\scriptsize
+\resizebox{\textwidth}{!}{\input{tables/mvtec3d_patchcore_heldout_per_category.tex}}
+\end{table*}
+}{}
+
+\IfFileExists{tables/mvtec_loco_patchcore_per_category.tex}{
+\begin{table*}[t]
+\centering
+\caption{MVTec LOCO-AD PatchCore canonical one-class: per-category
+image-AUROC (mean across five seeds).}
+\label{tab:loco-canonical-per-category}
+\scriptsize
+\resizebox{\textwidth}{!}{\input{tables/mvtec_loco_patchcore_per_category.tex}}
+\end{table*}
+}{}
+
+\IfFileExists{tables/mvtec_loco_patchcore_supervised_paired_per_category.tex}{
+\begin{table*}[t]
+\centering
+\caption{MVTec LOCO-AD PatchCore supervised-paired: per-category
+image-AUROC (mean across 30 seeds).}
+\label{tab:loco-sp-per-category}
+\scriptsize
+\resizebox{\textwidth}{!}{\input{tables/mvtec_loco_patchcore_supervised_paired_per_category.tex}}
+\end{table*}
+}{}
+
+\IfFileExists{tables/visa_supervised_paired_per_category.tex}{
+\begin{table*}[t]
+\centering
+\caption{VisA RGB+edge supervised-paired: per-category image-AUROC
+(mean across 30 seeds).}
+\label{tab:visa-sp-per-category}
+\scriptsize
+\resizebox{\textwidth}{!}{\input{tables/visa_supervised_paired_per_category.tex}}
+\end{table*}
+}{}
+
+The per-category tables show that the supervised-paired RGA+ wins are
+concentrated in a subset of categories rather than uniform: on
+MVTec~3D-AD supervised-paired, RGA+ leads on \texttt{cookie} and
+\texttt{rope} but trails on \texttt{tire}; on MVTec LOCO-AD
+supervised-paired, RGA+ leads on \texttt{breakfast\_box} and
+\texttt{splicing\_connectors} but is close to the baseline on
+\texttt{screw\_bag}. This category-conditional structure is honest
+about where the gate's reliability signal carries genuine supervised
+information and where it collapses, and matches the picture from the
+cross-benchmark statistical-significance reading in
+§\ref{sec:cross-benchmark-master}.
+
 \subsection{Causal Reliability Attribution}
 \label{sec:causal-attribution}
 

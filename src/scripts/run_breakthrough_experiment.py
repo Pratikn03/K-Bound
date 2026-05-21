@@ -397,6 +397,83 @@ def _predict_static(model: AttentionFusionModel, features: np.ndarray, masks: np
     return np.concatenate(probs)
 
 
+def _per_category_auroc(
+    labels: np.ndarray,
+    method_probs: dict[str, np.ndarray],
+    categories: np.ndarray | None,
+) -> dict[str, dict[str, float]]:
+    """Compute per-category image-level AUROC for every method.
+
+    Returns ``{category_name: {method_name: roc_auc}}``. Categories with
+    fewer than two classes are skipped. When ``categories`` is None
+    (no category column configured) returns an empty dict.
+    """
+    if categories is None:
+        return {}
+    out: dict[str, dict[str, float]] = {}
+    cats = np.asarray(categories).astype(str)
+    labels = np.asarray(labels, dtype=int)
+    for cat in sorted(set(cats.tolist())):
+        mask = cats == cat
+        if mask.sum() < 4:
+            continue
+        cat_labels = labels[mask]
+        if len(np.unique(cat_labels)) < 2:
+            out[cat] = {"_skipped": True}
+            continue
+        per_method: dict[str, float] = {}
+        for method_name, probs in method_probs.items():
+            if probs is None:
+                continue
+            arr = np.asarray(probs, dtype=np.float64)
+            if arr.shape[0] != labels.shape[0]:
+                continue
+            try:
+                per_method[method_name] = float(roc_auc_score(cat_labels, arr[mask]))
+            except ValueError:
+                continue
+        per_method["n_samples"] = int(mask.sum())
+        per_method["n_positive"] = int(cat_labels.sum())
+        out[cat] = per_method
+    return out
+
+
+def _aggregate_per_category(rows: list[dict]) -> dict:
+    """Mean ± std per (category, method) across seeds."""
+    if not rows:
+        return {}
+    # rows: [{seed: ..., per_category: {cat: {method: auroc}}}]
+    cats: set[str] = set()
+    methods: set[str] = set()
+    for r in rows:
+        for cat, m in (r.get("per_category") or {}).items():
+            cats.add(cat)
+            for method, val in m.items():
+                if method.startswith("_") or method in {"n_samples", "n_positive"}:
+                    continue
+                if isinstance(val, (int, float)) and np.isfinite(val):
+                    methods.add(method)
+    out: dict[str, dict[str, dict[str, float]]] = {}
+    for cat in sorted(cats):
+        out[cat] = {}
+        for method in sorted(methods):
+            values = []
+            for r in rows:
+                cat_dict = (r.get("per_category") or {}).get(cat, {})
+                v = cat_dict.get(method)
+                if isinstance(v, (int, float)) and np.isfinite(v):
+                    values.append(float(v))
+            if not values:
+                continue
+            arr = np.asarray(values, dtype=np.float64)
+            out[cat][method] = {
+                "mean": float(arr.mean()),
+                "std": float(arr.std(ddof=0)),
+                "n_seeds": int(len(arr)),
+            }
+    return out
+
+
 def _delong_pairs_against_baselines(
     test_labels: np.ndarray,
     rga_router_probs: np.ndarray,
@@ -1926,6 +2003,17 @@ def _run_experiment_arrays(
                     baseline_predictions,
                     static_probs=static_probs,
                 ),
+                "per_category": _per_category_auroc(
+                    test_labels,
+                    {
+                        "static_attention": static_probs,
+                        "craf_attention": craf_probs,
+                        "rga_meta_router": rga_router_probs,
+                        "rga_boosted_fusion": rga_boosted_probs,
+                        **{name: pl.get("test_probs") for name, pl in baseline_predictions.items()},
+                    },
+                    sample_categories[test_idx] if sample_categories is not None else None,
+                ),
                 **baseline_metrics,
             }
         )
@@ -2210,6 +2298,7 @@ def _run_experiment_arrays(
         },
         "table_1_clean_performance": per_seed_table1,
         "clean_metric_summary": clean_summary,
+        "table_1b_per_category_clean": _aggregate_per_category(per_seed_table1),
         "table_2_drift_robustness_per_seed": per_seed_drift_rows,
         "table_2_drift_robustness": _aggregate_drift_curves(per_seed_drift_rows, alpha=bootstrap_alpha),
         "figure_1_drift_curves": {
