@@ -29,6 +29,8 @@ METHOD_ORDER = [
     ("late_fusion_ensemble", "LFE"),
     ("tent_score_adapter", "Tent"),
     ("ttt_pseudo_label_adapter", "TTT"),
+    ("eata_score_adapter", "EATA"),
+    ("sar_score_adapter", "SAR"),
     ("confidence_weighted_mean", "Conf-m"),
 ]
 

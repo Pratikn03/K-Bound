@@ -268,15 +268,82 @@ def _fpfh_descriptor(points: np.ndarray, embedding_dim: int = 33) -> np.ndarray:
             descriptor = np.pad(descriptor, (0, embedding_dim - descriptor.shape[0]))
         return descriptor.astype(np.float32)
     except (ImportError, RuntimeError):
-        # Fallback: 33-bin histogram over radial distances from centroid.
+        # Fallback: richer geometric descriptor that augments the radial
+        # histogram with PCA-based local shape statistics (eigenvalue
+        # ratios = surface anisotropy / planarity / sphericity), pairwise
+        # angle histograms, and curvature distribution moments. This is
+        # not full FPFH but it carries non-trivial 3D shape information
+        # beyond pure radial distance.
         centroid = points.mean(axis=0)
-        radii = np.linalg.norm(points - centroid, axis=1)
+        centered = points - centroid
+        radii = np.linalg.norm(centered, axis=1)
         max_r = float(radii.max()) if radii.size else 1.0
         if max_r <= 1e-9:
             max_r = 1.0
-        edges = np.linspace(0.0, max_r * 1.05, embedding_dim + 1)
-        hist, _ = np.histogram(radii, bins=edges)
-        descriptor = hist.astype(np.float32) / max(1.0, hist.sum())
+
+        bins_per_block = max(8, embedding_dim // 4)
+        # Block 1: normalised radial distance histogram.
+        edges = np.linspace(0.0, max_r * 1.05, bins_per_block + 1)
+        radial_hist, _ = np.histogram(radii, bins=edges)
+        radial_hist = radial_hist.astype(np.float32) / max(1.0, radial_hist.sum())
+
+        # Block 2: pairwise angle histogram (subsample pairs for speed).
+        n_pairs = min(2048, max(0, points.shape[0] - 1))
+        if n_pairs >= 2:
+            rng_pairs = np.random.default_rng(0)
+            i_idx = rng_pairs.integers(0, points.shape[0], size=n_pairs)
+            j_idx = rng_pairs.integers(0, points.shape[0], size=n_pairs)
+            valid = i_idx != j_idx
+            i_idx = i_idx[valid]
+            j_idx = j_idx[valid]
+            v1 = centered[i_idx]
+            v2 = centered[j_idx]
+            denom = (np.linalg.norm(v1, axis=1) * np.linalg.norm(v2, axis=1)).clip(1e-9)
+            cosines = np.clip(np.sum(v1 * v2, axis=1) / denom, -1.0, 1.0)
+            angle_edges = np.linspace(-1.0, 1.0, bins_per_block + 1)
+            angle_hist, _ = np.histogram(cosines, bins=angle_edges)
+            angle_hist = angle_hist.astype(np.float32) / max(1.0, angle_hist.sum())
+        else:
+            angle_hist = np.zeros(bins_per_block, dtype=np.float32)
+
+        # Block 3: PCA-derived shape descriptors of the whole cloud.
+        cov = np.cov(centered.T) if centered.shape[0] >= 3 else np.eye(3, dtype=np.float64)
+        try:
+            eigvals = np.sort(np.linalg.eigvalsh(cov))[::-1]
+            eigvals = np.maximum(eigvals, 1e-12)
+            eig_sum = float(eigvals.sum())
+            l1, l2, l3 = float(eigvals[0]), float(eigvals[1]), float(eigvals[2])
+            linearity = (l1 - l2) / l1
+            planarity = (l2 - l3) / l1
+            sphericity = l3 / l1
+            anisotropy = (l1 - l3) / l1
+            change_curv = l3 / max(eig_sum, 1e-12)
+            eig_entropy = -float(sum((v / eig_sum) * np.log(max(v / eig_sum, 1e-12)) for v in (l1, l2, l3)))
+            pca_block = np.array(
+                [linearity, planarity, sphericity, anisotropy, change_curv, eig_entropy],
+                dtype=np.float32,
+            )
+        except np.linalg.LinAlgError:
+            pca_block = np.zeros(6, dtype=np.float32)
+
+        # Block 4: distance-moment statistics (mean / std / skew-proxy / kurt-proxy).
+        if radii.size >= 4:
+            mu = float(radii.mean())
+            sd = float(radii.std())
+            sd_safe = sd if sd > 1e-9 else 1.0
+            z = (radii - mu) / sd_safe
+            moments = np.array(
+                [mu / max_r, sd / max_r, float(np.mean(z ** 3)), float(np.mean(z ** 4))],
+                dtype=np.float32,
+            )
+        else:
+            moments = np.zeros(4, dtype=np.float32)
+
+        descriptor = np.concatenate([radial_hist, angle_hist, pca_block, moments]).astype(np.float32)
+        if descriptor.shape[0] >= embedding_dim:
+            descriptor = descriptor[:embedding_dim]
+        else:
+            descriptor = np.pad(descriptor, (0, embedding_dim - descriptor.shape[0]))
         return descriptor
 
 

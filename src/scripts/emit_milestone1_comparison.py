@@ -44,6 +44,8 @@ def _method_label(name: str | None) -> str:
         "confidence_weighted_mean": "Conf.-mean",
         "tent_score_adapter": "Tent",
         "ttt_pseudo_label_adapter": "TTT",
+        "eata_score_adapter": "EATA",
+        "sar_score_adapter": "SAR",
         "early_fusion_mlp": "MLP",
         "late_fusion_ensemble": "LFE",
         "static_attention": "Static",

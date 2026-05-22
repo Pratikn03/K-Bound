@@ -2213,6 +2213,8 @@ def _run_experiment_arrays(
         "confidence_weighted_mean",
         "tent_score_adapter",
         "ttt_pseudo_label_adapter",
+        "eata_score_adapter",
+        "sar_score_adapter",
         "early_fusion_mlp",
         "late_fusion_ensemble",
         "static_attention",

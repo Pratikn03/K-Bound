@@ -487,6 +487,151 @@ class TTTPseudoLabelAdapter(_ScoreHeadMixin):
             return torch.sigmoid(X @ weight + bias).cpu().numpy().astype(np.float32)
 
 
+class EATAScoreAdapter(_ScoreHeadMixin):
+    """EATA-style entropy-minimization with reliable-sample selection.
+
+    Niu et al. (ICML 2022). Extends Tent with two key ideas:
+      (i) Reliable-sample filter: only test samples whose entropy is
+          below E_max (i.e. the model is already somewhat confident) are
+          allowed to drive the adaptation step.
+      (ii) Non-redundant-sample filter: drop samples whose prediction is
+          too similar to previously seen samples (cosine angle to a
+          running average of unit-normalised predictions).
+    Both filters reduce the variance of TTA on TINY test batches and are
+    standard practice for anomaly-detection-relevant TTA.
+    """
+
+    def __init__(
+        self,
+        random_seed: int = 42,
+        adaptation_steps: int = 30,
+        lr: float = 0.01,
+        l2_anchor: float = 0.005,
+        entropy_margin: float = 0.4,
+        cosine_threshold: float = 0.05,
+    ) -> None:
+        super().__init__(
+            random_seed=random_seed,
+            adaptation_steps=adaptation_steps,
+            lr=lr,
+            l2_anchor=l2_anchor,
+        )
+        self.entropy_margin = float(entropy_margin)
+        self.cosine_threshold = float(cosine_threshold)
+
+    def predict_proba(self, features: np.ndarray, masks: np.ndarray) -> np.ndarray:
+        X = self._scaled(features, masks)
+        base_logits = torch.tensor(self._base_logits(X), dtype=torch.float32)
+        log_temperature = torch.zeros((), requires_grad=True)
+        bias = torch.zeros((), requires_grad=True)
+        optimizer = torch.optim.Adam([log_temperature, bias], lr=self.lr)
+
+        previous_directions: list[torch.Tensor] = []
+        for _ in range(max(int(self.adaptation_steps), 0)):
+            optimizer.zero_grad()
+            logits = base_logits / torch.exp(log_temperature).clamp_min(1e-3) + bias
+            probs = torch.sigmoid(logits).clamp(1e-6, 1.0 - 1e-6)
+            entropy_per_sample = -(probs * torch.log(probs) + (1.0 - probs) * torch.log(1.0 - probs))
+            reliable = entropy_per_sample < self.entropy_margin
+            if reliable.sum().item() < 2:
+                break
+            # Non-redundancy: cosine angle between (prob - 0.5) direction
+            # and the running average. Skip when too aligned with prior step.
+            direction = (probs[reliable] - 0.5)
+            direction = direction / (direction.norm() + 1e-9)
+            if previous_directions:
+                running = torch.stack(previous_directions).mean(dim=0)
+                running = running / (running.norm() + 1e-9)
+                cos = float(torch.dot(direction, running[: direction.shape[0]] if running.shape[0] >= direction.shape[0] else torch.cat([running, torch.zeros(direction.shape[0] - running.shape[0])])).item())
+                if abs(cos) > 1.0 - self.cosine_threshold:
+                    continue
+            previous_directions.append(direction.detach())
+            previous_directions = previous_directions[-5:]
+            entropy = entropy_per_sample[reliable].mean()
+            anchor = self.l2_anchor * (log_temperature.pow(2) + bias.pow(2))
+            (entropy + anchor).backward()
+            optimizer.step()
+
+        with torch.no_grad():
+            logits = base_logits / torch.exp(log_temperature).clamp_min(1e-3) + bias
+            return torch.sigmoid(logits).cpu().numpy().astype(np.float32)
+
+
+class SARScoreAdapter(_ScoreHeadMixin):
+    """SAR-style sample-aware reliable adaptation with stability regularisation.
+
+    Yang et al. (ICLR 2023). Two mechanisms layered on top of Tent:
+      (i) Per-sample weighting w_i = exp(-entropy_i) so high-confidence
+          samples contribute more.
+      (ii) Stability check: after each step, if the running mean of
+          entropies INCREASED instead of decreased, revert the update
+          ("model collapse" guard).
+    These mechanisms are particularly important under low-batch or
+    high-shift test conditions.
+    """
+
+    def __init__(
+        self,
+        random_seed: int = 42,
+        adaptation_steps: int = 30,
+        lr: float = 0.01,
+        l2_anchor: float = 0.005,
+        entropy_margin: float = 0.5,
+    ) -> None:
+        super().__init__(
+            random_seed=random_seed,
+            adaptation_steps=adaptation_steps,
+            lr=lr,
+            l2_anchor=l2_anchor,
+        )
+        self.entropy_margin = float(entropy_margin)
+
+    def predict_proba(self, features: np.ndarray, masks: np.ndarray) -> np.ndarray:
+        X = self._scaled(features, masks)
+        base_logits = torch.tensor(self._base_logits(X), dtype=torch.float32)
+        log_temperature = torch.zeros((), requires_grad=True)
+        bias = torch.zeros((), requires_grad=True)
+        optimizer = torch.optim.Adam([log_temperature, bias], lr=self.lr)
+
+        prev_entropy_mean = None
+        for _ in range(max(int(self.adaptation_steps), 0)):
+            optimizer.zero_grad()
+            logits = base_logits / torch.exp(log_temperature).clamp_min(1e-3) + bias
+            probs = torch.sigmoid(logits).clamp(1e-6, 1.0 - 1e-6)
+            entropy_per_sample = -(probs * torch.log(probs) + (1.0 - probs) * torch.log(1.0 - probs))
+            reliable = entropy_per_sample < self.entropy_margin
+            if reliable.sum().item() < 2:
+                break
+            weights = torch.exp(-entropy_per_sample[reliable]).detach()
+            weights = weights / weights.sum()
+            weighted_entropy = (entropy_per_sample[reliable] * weights).sum()
+            anchor = self.l2_anchor * (log_temperature.pow(2) + bias.pow(2))
+            loss = weighted_entropy + anchor
+
+            # Stability guard: snapshot current params, take a step, and
+            # revert if the new mean entropy on the same reliable subset
+            # is higher than before (collapse).
+            prev_log_t = log_temperature.detach().clone()
+            prev_b = bias.detach().clone()
+            loss.backward()
+            optimizer.step()
+            with torch.no_grad():
+                logits_after = base_logits / torch.exp(log_temperature).clamp_min(1e-3) + bias
+                probs_after = torch.sigmoid(logits_after).clamp(1e-6, 1.0 - 1e-6)
+                ent_after = -(probs_after * torch.log(probs_after) + (1.0 - probs_after) * torch.log(1.0 - probs_after))
+                current_mean = float(ent_after.mean().item())
+            if prev_entropy_mean is not None and current_mean > prev_entropy_mean * 1.10:
+                with torch.no_grad():
+                    log_temperature.copy_(prev_log_t)
+                    bias.copy_(prev_b)
+                break
+            prev_entropy_mean = current_mean
+
+        with torch.no_grad():
+            logits = base_logits / torch.exp(log_temperature).clamp_min(1e-3) + bias
+            return torch.sigmoid(logits).cpu().numpy().astype(np.float32)
+
+
 # ---------------------------------------------------------------------------
 # Convenience runner
 # ---------------------------------------------------------------------------
@@ -604,6 +749,14 @@ def run_baseline_suite(
         "ttt_pseudo_label_adapter",
         lambda: TTTPseudoLabelAdapter(random_seed=random_seed, adaptation_steps=tta_steps).fit(train_feat, train_mask, train_labels),
     )
+    _safe_eval(
+        "eata_score_adapter",
+        lambda: EATAScoreAdapter(random_seed=random_seed, adaptation_steps=tta_steps).fit(train_feat, train_mask, train_labels),
+    )
+    _safe_eval(
+        "sar_score_adapter",
+        lambda: SARScoreAdapter(random_seed=random_seed, adaptation_steps=tta_steps).fit(train_feat, train_mask, train_labels),
+    )
 
     if return_predictions:
         return results, predictions
@@ -617,5 +770,7 @@ __all__ = [
     "ConfidenceWeightedMean",
     "TentScoreAdapter",
     "TTTPseudoLabelAdapter",
+    "EATAScoreAdapter",
+    "SARScoreAdapter",
     "run_baseline_suite",
 ]

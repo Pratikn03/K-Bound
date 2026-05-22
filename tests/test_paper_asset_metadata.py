@@ -336,6 +336,69 @@ def test_per_category_breakdown_assets_present():
     assert "sec:per-category" in paper
 
 
+def test_unsw_heldout_attack_results_present():
+    repo_root = Path(__file__).resolve().parents[1]
+    path = repo_root / "experiments" / "fusion" / "unsw_heldout_attack_results.json"
+    assert path.exists(), (
+        "Run src/scripts/run_breakthrough_experiment.py with "
+        "configs/attention_unsw_heldout_attack.yaml before running tests."
+    )
+    import json
+    payload = json.loads(path.read_text())
+    cs = payload.get("clean_metric_summary", {})
+    # Held-out attack categories should produce a meaningful supervised
+    # fusion signal because the model is trained on related attacks.
+    rga_plus = (
+        cs.get("rga_meta_router", {}).get("roc_auc", {}).get("mean")
+        or cs.get("rga_boosted_fusion", {}).get("roc_auc", {}).get("mean")
+    )
+    rf = cs.get("random_forest", {}).get("roc_auc", {}).get("mean")
+    assert rga_plus is not None and float(rga_plus) > 0.9, (
+        "RGA+ should generalise to held-out UNSW attack categories at AUROC > 0.9."
+    )
+    assert rf is not None and float(rf) > 0.9
+
+    paper = (repo_root / "docs" / "research" / "PAPER_DRAFT_v1.tex").read_text()
+    assert "sec:leakage-checks" in paper
+    assert "held-out-attack-category" in paper or "held-out attack" in paper
+
+
+def test_visa_noise_floor_results_present():
+    repo_root = Path(__file__).resolve().parents[1]
+    path = repo_root / "experiments" / "fusion" / "visa_supervised_paired_noise_floor_results.json"
+    assert path.exists(), (
+        "Run src/scripts/derive_noise_floor_csv.py + "
+        "src/scripts/run_breakthrough_experiment.py with "
+        "configs/attention_visa_supervised_paired_noise_floor.yaml before running tests."
+    )
+    import json
+    payload = json.loads(path.read_text())
+    cs = payload.get("clean_metric_summary", {})
+    rga_plus = (
+        cs.get("rga_meta_router", {}).get("roc_auc", {}).get("mean")
+        or cs.get("rga_boosted_fusion", {}).get("roc_auc", {}).get("mean")
+    )
+    static = cs.get("static_attention", {}).get("roc_auc", {}).get("mean")
+    # Under noise-floor edge_proxy, static (RGB-only) should be ~unchanged
+    # vs original VisA SP and RGA+ should still be above static.
+    assert static is not None and float(static) > 0.75
+    assert rga_plus is not None and float(rga_plus) > float(static)
+
+
+def test_eata_sar_adapters_importable():
+    from uais.fusion.attention.baselines import EATAScoreAdapter, SARScoreAdapter
+    import numpy as np
+    rng = np.random.default_rng(0)
+    features = rng.uniform(0, 1, size=(40, 3, 4)).astype(np.float32)
+    masks = np.zeros((40, 3), dtype=bool)
+    labels = rng.integers(0, 2, size=40).astype(int)
+    for cls in (EATAScoreAdapter, SARScoreAdapter):
+        model = cls(random_seed=0, adaptation_steps=5).fit(features[:30], masks[:30], labels[:30])
+        probs = model.predict_proba(features[30:], masks[30:])
+        assert probs.shape == (10,)
+        assert 0.0 <= float(probs.min()) and float(probs.max()) <= 1.0
+
+
 def test_patchcore3d_baseline_results_present():
     repo_root = Path(__file__).resolve().parents[1]
     baseline_path = repo_root / "experiments" / "fusion" / "patchcore3d_baseline_results.json"

@@ -175,6 +175,8 @@ def build_unsw_fusion_frame(
     test_fraction: float = 0.30,
     seed: int = 42,
     max_rows: int | None = 60000,
+    heldout_attack_categories: list[str] | None = None,
+    heldout_val_fraction: float = 0.15,
 ) -> tuple[pd.DataFrame, dict]:
     train_df = pd.read_csv(train_csv)
     test_df = pd.read_csv(test_csv)
@@ -196,14 +198,46 @@ def build_unsw_fusion_frame(
         idx = rng.choice(len(combined), size=max_rows, replace=False)
         combined = combined.iloc[sorted(idx)].reset_index(drop=True)
 
-    combined["fusion_split"] = _patient_style_stratified_split(
-        combined,
-        label_column="label",
-        category_column="attack_cat",
-        val_fraction=val_fraction,
-        test_fraction=test_fraction,
-        seed=seed,
-    )
+    if heldout_attack_categories:
+        # Held-out-attack-category protocol: the named attack categories go
+        # entirely into the test fold; everything else is split between
+        # train and validation. Normal traffic is split stratified across
+        # the three folds so all splits contain both classes.
+        held = {c.strip() for c in heldout_attack_categories}
+        rng = np.random.default_rng(int(seed))
+        n = len(combined)
+        fusion_split = np.empty(n, dtype=object)
+        cats = combined["attack_cat"].astype(str).to_numpy()
+        labels = combined["label"].to_numpy().astype(int)
+        # Indices of held-out attack rows -> test
+        held_mask = np.array([c in held for c in cats])
+        fusion_split[held_mask] = "test"
+        # Remaining rows: stratify by (cat, label) into train/validation.
+        for (_cat, _label), group in (
+            combined.loc[~held_mask].groupby(["attack_cat", "label"], sort=False)
+        ):
+            idx = group.index.to_numpy().copy()
+            rng.shuffle(idx)
+            n_val = max(1, int(round(len(idx) * float(heldout_val_fraction))))
+            fusion_split[idx[:n_val]] = "validation"
+            fusion_split[idx[n_val:]] = "train"
+        # Also push a small slice of normal traffic into the test fold so
+        # the test split has both classes.
+        normal_train_idx = np.flatnonzero((cats == "Normal") & (fusion_split == "train"))
+        if normal_train_idx.size > 0:
+            move_n = max(2, int(round(0.20 * normal_train_idx.size)))
+            rng.shuffle(normal_train_idx)
+            fusion_split[normal_train_idx[:move_n]] = "test"
+        combined["fusion_split"] = fusion_split
+    else:
+        combined["fusion_split"] = _patient_style_stratified_split(
+            combined,
+            label_column="label",
+            category_column="attack_cat",
+            val_fraction=val_fraction,
+            test_fraction=test_fraction,
+            seed=seed,
+        )
     train_mask = (combined["fusion_split"].to_numpy() == "train")
 
     domain_scores: dict[str, np.ndarray] = {}
@@ -298,6 +332,17 @@ def main() -> None:
     parser.add_argument("--test-fraction", type=float, default=0.30)
     parser.add_argument("--seed", type=int, default=42)
     parser.add_argument("--max-rows", type=int, default=60000)
+    parser.add_argument(
+        "--held-out-attack-categories",
+        nargs="*",
+        default=None,
+        help=(
+            "Optional list of attack_cat values to hold entirely out of train/validation "
+            "and route to the test fold. Triggers the held-out-attack-category protocol "
+            "that defends against UNSW-NB15's known train/test attack overlap."
+        ),
+    )
+    parser.add_argument("--heldout-val-fraction", type=float, default=0.15)
     args = parser.parse_args()
 
     frame, metadata = build_unsw_fusion_frame(
@@ -308,7 +353,20 @@ def main() -> None:
         test_fraction=args.test_fraction,
         seed=args.seed,
         max_rows=args.max_rows,
+        heldout_attack_categories=args.held_out_attack_categories,
+        heldout_val_fraction=args.heldout_val_fraction,
     )
+    if args.held_out_attack_categories:
+        metadata["heldout_attack_protocol"] = {
+            "held_out_attack_categories": sorted(args.held_out_attack_categories),
+            "rationale": (
+                "UNSW-NB15 has known train/test attack-category overlap; the held-out-attack "
+                "protocol routes the named attack categories entirely into the test fold "
+                "and keeps train+validation free of those attacks. Defends against the "
+                "0.989 ROC-AUC leakage criticism."
+            ),
+            "heldout_val_fraction": float(args.heldout_val_fraction),
+        }
     args.output.parent.mkdir(parents=True, exist_ok=True)
     args.metadata.parent.mkdir(parents=True, exist_ok=True)
     frame.to_csv(args.output, index=False)

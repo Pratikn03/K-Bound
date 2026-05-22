@@ -161,6 +161,8 @@ def test_run_baseline_suite_keys():
         "confidence_weighted_mean",
         "tent_score_adapter",
         "ttt_pseudo_label_adapter",
+        "eata_score_adapter",
+        "sar_score_adapter",
     }
     assert set(results.keys()) == expected_keys, f"Missing keys: {expected_keys - set(results.keys())}"
     for name, metrics in results.items():

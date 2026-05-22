@@ -94,6 +94,8 @@ def _method_label(name: str | None) -> str:
         "confidence_weighted_mean": "Conf-mean",
         "tent_score_adapter": "Tent",
         "ttt_pseudo_label_adapter": "TTT",
+        "eata_score_adapter": "EATA",
+        "sar_score_adapter": "SAR",
         "early_fusion_mlp": "MLP",
         "late_fusion_ensemble": "LFE",
         "static_attention": "Static",
@@ -168,7 +170,9 @@ BENCHMARKS = [
     ("Real3D-AD", "FPFH+depth supervised", "experiments/fusion/real3d_supervised_paired_results.json"),
     ("VisA", "RGB+edge canonical", "experiments/fusion/visa_fusion_results.json"),
     ("VisA", "RGB+edge supervised", "experiments/fusion/visa_supervised_paired_results.json"),
+    ("VisA", "RGB+random noise-floor", "experiments/fusion/visa_supervised_paired_noise_floor_results.json"),
     ("UNSW-NB15", "flow/conn/context", "experiments/fusion/unsw_paired_results.json"),
+    ("UNSW-NB15", "held-out attack categories", "experiments/fusion/unsw_heldout_attack_results.json"),
 ]
 
 
