@@ -100,7 +100,7 @@ echo "==> Regenerate Phase-D theorem-stack validation assets"
 PYTHONPATH=src python src/scripts/emit_k_of_d_corruption_table.py \
   --output "$TBL_DIR/elara_k_domain_corruption_results.tex" \
   --mapping-output "$TBL_DIR/elara_theory_experiment_mapping.tex" \
-  --figure-output "$FIG_DIR/elara_k_domain_corruption.png" || true
+  --figure-output "$FIG_DIR/elara_k_domain_corruption.png"
 PYTHONPATH=src python src/scripts/validate_category_mixture_t2.py \
   --output experiments/fusion/category_mixture_t2_validation.json
 PYTHONPATH=src python src/scripts/emit_category_mixture_t2_table.py \

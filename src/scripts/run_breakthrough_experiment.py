@@ -2075,11 +2075,15 @@ def _run_experiment_arrays(
             device=device,
             random_seed=actual_seed,
         )
-        if polarity_info["flip_required"]:
-            static_val_probs = 1.0 - static_val_probs
-            static_probs = 1.0 - static_probs
-            craf_val_probs = 1.0 - craf_val_probs
-            craf_probs = 1.0 - craf_probs
+        # Phase 1.F lock (Locked Audited-Reanalysis Policy):
+        # the polarity probe is a validation-only score-orientation
+        # diagnostic; it MUST NOT alter primary predictions. The flip
+        # decision is logged via polarity_info but the prediction
+        # arrays remain unchanged. Any orientation-corrected variant
+        # must be evaluated as a separately named method.
+        # Previously, an asymmetric flip applied to static + RGA only
+        # (not to boost/router/baselines) was used and produced
+        # mixed-orientation cross-method comparisons; that is removed.
 
         static_metrics = _metrics_from_validation_threshold(
             test_labels,

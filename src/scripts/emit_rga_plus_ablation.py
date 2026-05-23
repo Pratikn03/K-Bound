@@ -59,7 +59,7 @@ BENCHMARKS = [
     ("MVTec 3D-AD", "PatchCore held-out", "experiments/fusion/mvtec3d_patchcore_heldout_results.json"),
     ("MVTec LOCO-AD", "PatchCore canonical", "experiments/fusion/mvtec_loco_patchcore_results.json"),
     ("MVTec LOCO-AD", "PatchCore supervised", "experiments/fusion/mvtec_loco_patchcore_supervised_paired_results.json"),
-    ("Real3D-AD", "FPFH+depth supervised", "experiments/fusion/real3d_supervised_paired_results.json"),
+    ("Real3D-AD", "PCA shape + depth supervised", "experiments/fusion/real3d_supervised_paired_results.json"),
     ("VisA", "RGB+edge canonical", "experiments/fusion/visa_fusion_results.json"),
     ("VisA", "RGB+edge supervised", "experiments/fusion/visa_supervised_paired_results.json"),
     ("VisA", "RGB+random noise-floor", "experiments/fusion/visa_supervised_paired_noise_floor_results.json"),

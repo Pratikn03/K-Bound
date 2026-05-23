@@ -1,0 +1,1481 @@
+{
+  "policy_lock": "Phase 1.E \u2014 locked audited reanalysis; Family A K=5; Family C K=0; canonical PR/ECE/Brier blocked",
+  "claims": [
+    {
+      "cell_id": "A1",
+      "benchmark": "MVTec 3D-AD",
+      "protocol": "PatchCore canonical",
+      "analysis_family": "A",
+      "analysis_status": "protocol-diagnostic",
+      "pairing_strength": "independent_modalities",
+      "rga_plus_head": "boost",
+      "rga_plus_test_roc_auc": 0.5,
+      "rga_plus_validation_roc_auc": 0.5,
+      "rga_plus_selection_rule": "validation_frozen (router vs boost; tie-break boost)",
+      "primary_comparator": "ttt_pseudo_label_adapter",
+      "primary_comparator_test_roc_auc": 0.5,
+      "primary_comparator_validation_roc_auc": 0.5,
+      "primary_comparator_selection_rule": "validation_frozen (max seed-mean val ROC-AUC; deterministic name tie-break)",
+      "delta_auc": 0.0,
+      "delong_p_raw_single_rep_seed": 1.0,
+      "delong_p_holm_family_A_K5": null,
+      "descriptive_seed_variability_per_method": {
+        "static_attention": {
+          "n_seeds": 5,
+          "mean_auc": 0.49087845303867395,
+          "sd_auc": 0.06889399122897684,
+          "min_auc": 0.4006595303867403,
+          "max_auc": 0.562596685082873,
+          "descriptive_only": true
+        },
+        "craf_attention": {
+          "n_seeds": 5,
+          "mean_auc": 0.5143031767955801,
+          "sd_auc": 0.015502217900189106,
+          "min_auc": 0.5,
+          "max_auc": 0.5356215469613259,
+          "descriptive_only": true
+        },
+        "rga_meta_router": {
+          "n_seeds": 5,
+          "mean_auc": 0.5143031767955801,
+          "sd_auc": 0.015502217900189106,
+          "min_auc": 0.5,
+          "max_auc": 0.5356215469613259,
+          "descriptive_only": true
+        },
+        "rga_boosted_fusion": {
+          "n_seeds": 5,
+          "mean_auc": 0.5,
+          "sd_auc": 0.0,
+          "min_auc": 0.5,
+          "max_auc": 0.5,
+          "descriptive_only": true
+        },
+        "random_forest": {
+          "n_seeds": 5,
+          "mean_auc": 0.5,
+          "sd_auc": 0.0,
+          "min_auc": 0.5,
+          "max_auc": 0.5,
+          "descriptive_only": true
+        },
+        "early_fusion_mlp": {
+          "n_seeds": 5,
+          "mean_auc": 0.5468093922651933,
+          "sd_auc": 0.012062859359567127,
+          "min_auc": 0.5304350828729281,
+          "max_auc": 0.5628936464088398,
+          "descriptive_only": true
+        },
+        "late_fusion_ensemble": {
+          "n_seeds": 5,
+          "mean_auc": 0.5,
+          "sd_auc": 0.0,
+          "min_auc": 0.5,
+          "max_auc": 0.5,
+          "descriptive_only": true
+        },
+        "confidence_weighted_mean": {
+          "n_seeds": 5,
+          "mean_auc": 0.5998066298342541,
+          "sd_auc": 0.0,
+          "min_auc": 0.5998066298342541,
+          "max_auc": 0.5998066298342541,
+          "descriptive_only": true
+        },
+        "tent_score_adapter": {
+          "n_seeds": 5,
+          "mean_auc": 0.5,
+          "sd_auc": 0.0,
+          "min_auc": 0.5,
+          "max_auc": 0.5,
+          "descriptive_only": true
+        },
+        "ttt_pseudo_label_adapter": {
+          "n_seeds": 5,
+          "mean_auc": 0.5,
+          "sd_auc": 0.0,
+          "min_auc": 0.5,
+          "max_auc": 0.5,
+          "descriptive_only": true
+        },
+        "eata_score_adapter": {
+          "n_seeds": 5,
+          "mean_auc": 0.5,
+          "sd_auc": 0.0,
+          "min_auc": 0.5,
+          "max_auc": 0.5,
+          "descriptive_only": true
+        },
+        "sar_score_adapter": {
+          "n_seeds": 5,
+          "mean_auc": 0.5,
+          "sd_auc": 0.0,
+          "min_auc": 0.5,
+          "max_auc": 0.5,
+          "descriptive_only": true
+        }
+      },
+      "source_artifacts": {
+        "rga_plus_selection_csv": "experiments/audit/rga_plus_validation_frozen_selection.csv",
+        "comparator_selection_csv": "experiments/audit/audited_comparator_selection.csv",
+        "audited_inference_csv": "experiments/audit/audited_ensemble_inference_results.csv",
+        "descriptive_variability_csv": "experiments/audit/descriptive_seed_variability.csv"
+      },
+      "allowed_claim": "Descriptive only: under canonical one-class training every supervised head collapses near chance ROC-AUC. PR-AUC / ECE / Brier values are degenerate-predictor artefacts (Phase 1.A audit) and are not promoted.",
+      "forbidden_claim": "No superiority claim. No PR-AUC / ECE / Brier promotion. No 'confirmatory' or 'pre-registered' label.",
+      "metric_semantics_verified": false,
+      "metric_semantics_verified_note": "ROC-AUC is interpretable at chance level; canonical PR/ECE/Brier are blocked pending the Phase 1.A audit (METRICS_VALID_BUT_MISINTERPRETED \u2014 PR/ECE/Brier equal test-fold prevalence and are not promoted in the manuscript)."
+    },
+    {
+      "cell_id": "A2",
+      "benchmark": "MVTec 3D-AD",
+      "protocol": "PatchCore supervised",
+      "analysis_family": "A",
+      "analysis_status": "audited primary reanalysis",
+      "pairing_strength": "independent_modalities",
+      "rga_plus_head": "router",
+      "rga_plus_test_roc_auc": 0.7389552013296063,
+      "rga_plus_validation_roc_auc": 0.7334625322997416,
+      "rga_plus_selection_rule": "validation_frozen (router vs boost; tie-break boost)",
+      "primary_comparator": "sar_score_adapter",
+      "primary_comparator_test_roc_auc": 0.7354385434766185,
+      "primary_comparator_validation_roc_auc": 0.687921742340347,
+      "primary_comparator_selection_rule": "validation_frozen (max seed-mean val ROC-AUC; deterministic name tie-break)",
+      "delta_auc": 0.0035166578529878256,
+      "delong_p_raw_single_rep_seed": 0.9192254293089017,
+      "delong_p_holm_family_A_K5": 0.9192254293089017,
+      "descriptive_seed_variability_per_method": {
+        "static_attention": {
+          "n_seeds": 30,
+          "mean_auc": 0.6337387625594924,
+          "sd_auc": 0.00814437617559507,
+          "min_auc": 0.6183425247412556,
+          "max_auc": 0.6506005892573847,
+          "descriptive_only": true
+        },
+        "craf_attention": {
+          "n_seeds": 30,
+          "mean_auc": 0.6235854045478583,
+          "sd_auc": 0.009575719074318235,
+          "min_auc": 0.6076905643272644,
+          "max_auc": 0.6428193699478734,
+          "descriptive_only": true
+        },
+        "rga_meta_router": {
+          "n_seeds": 30,
+          "mean_auc": 0.7389552013296063,
+          "sd_auc": 0.0060310533486005674,
+          "min_auc": 0.7165520888418826,
+          "max_auc": 0.7539472690186598,
+          "descriptive_only": true
+        },
+        "rga_boosted_fusion": {
+          "n_seeds": 30,
+          "mean_auc": 0.7383470574903679,
+          "sd_auc": 0.0,
+          "min_auc": 0.7383470574903679,
+          "max_auc": 0.7383470574903679,
+          "descriptive_only": true
+        },
+        "random_forest": {
+          "n_seeds": 30,
+          "mean_auc": 0.7009594318954446,
+          "sd_auc": 0.004221000152363245,
+          "min_auc": 0.6928307018206543,
+          "max_auc": 0.7113394273626954,
+          "descriptive_only": true
+        },
+        "early_fusion_mlp": {
+          "n_seeds": 30,
+          "mean_auc": 0.6641383999395634,
+          "sd_auc": 0.02023253415075254,
+          "min_auc": 0.6181158872856387,
+          "max_auc": 0.701216287678477,
+          "descriptive_only": true
+        },
+        "late_fusion_ensemble": {
+          "n_seeds": 30,
+          "mean_auc": 0.7007630127672432,
+          "sd_auc": 0.0,
+          "min_auc": 0.7007630127672432,
+          "max_auc": 0.7007630127672432,
+          "descriptive_only": true
+        },
+        "confidence_weighted_mean": {
+          "n_seeds": 30,
+          "mean_auc": 0.6118455843469064,
+          "sd_auc": 0.0,
+          "min_auc": 0.6118455843469064,
+          "max_auc": 0.6118455843469064,
+          "descriptive_only": true
+        },
+        "tent_score_adapter": {
+          "n_seeds": 30,
+          "mean_auc": 0.7353252247488101,
+          "sd_auc": 0.0,
+          "min_auc": 0.7353252247488101,
+          "max_auc": 0.7353252247488101,
+          "descriptive_only": true
+        },
+        "ttt_pseudo_label_adapter": {
+          "n_seeds": 30,
+          "mean_auc": 0.7237289416030823,
+          "sd_auc": 0.0,
+          "min_auc": 0.7237289416030823,
+          "max_auc": 0.7237289416030823,
+          "descriptive_only": true
+        },
+        "eata_score_adapter": {
+          "n_seeds": 30,
+          "mean_auc": 0.5,
+          "sd_auc": 0.0,
+          "min_auc": 0.5,
+          "max_auc": 0.5,
+          "descriptive_only": true
+        },
+        "sar_score_adapter": {
+          "n_seeds": 30,
+          "mean_auc": 0.7354385434766185,
+          "sd_auc": 0.0,
+          "min_auc": 0.7354385434766185,
+          "max_auc": 0.7354385434766185,
+          "descriptive_only": true
+        }
+      },
+      "source_artifacts": {
+        "rga_plus_selection_csv": "experiments/audit/rga_plus_validation_frozen_selection.csv",
+        "comparator_selection_csv": "experiments/audit/audited_comparator_selection.csv",
+        "audited_inference_csv": "experiments/audit/audited_ensemble_inference_results.csv",
+        "descriptive_variability_csv": "experiments/audit/descriptive_seed_variability.csv"
+      },
+      "allowed_claim": "Audited inferential summary: validation-frozen RGA+ vs validation-frozen primary comparator, single-representative-seed DeLong (seed 42), Holm-corrected within Family A K=5.",
+      "forbidden_claim": "No 'confirmatory' or 'pre-registered' label. No 'RGA+ beats every baseline'. No 'best non-router' inferential framing. No SOTA / deployment-grade / production-ready / universal-superiority claims.",
+      "metric_semantics_verified": true,
+      "metric_semantics_verified_note": "Verified by Phase 1.A canonical label/metric semantics audit."
+    },
+    {
+      "cell_id": "A3",
+      "benchmark": "MVTec 3D-AD",
+      "protocol": "PatchCore held-out",
+      "analysis_family": "A",
+      "analysis_status": "audited primary reanalysis",
+      "pairing_strength": "independent_modalities",
+      "rga_plus_head": "router",
+      "rga_plus_test_roc_auc": 0.5087943127672305,
+      "rga_plus_validation_roc_auc": 0.998812724014337,
+      "rga_plus_selection_rule": "validation_frozen (router vs boost; tie-break boost)",
+      "primary_comparator": "tent_score_adapter",
+      "primary_comparator_test_roc_auc": 0.5031532652891876,
+      "primary_comparator_validation_roc_auc": 0.9980734767025089,
+      "primary_comparator_selection_rule": "validation_frozen (max seed-mean val ROC-AUC; deterministic name tie-break)",
+      "delta_auc": 0.005641047478042949,
+      "delong_p_raw_single_rep_seed": 0.050439721325356235,
+      "delong_p_holm_family_A_K5": 0.20175888530142494,
+      "descriptive_seed_variability_per_method": {
+        "static_attention": {
+          "n_seeds": 30,
+          "mean_auc": 0.47216024148829466,
+          "sd_auc": 0.013361109432269298,
+          "min_auc": 0.4388705457944089,
+          "max_auc": 0.4920098353925641,
+          "descriptive_only": true
+        },
+        "craf_attention": {
+          "n_seeds": 30,
+          "mean_auc": 0.4659507036614855,
+          "sd_auc": 0.014721081593272851,
+          "min_auc": 0.4223650363149597,
+          "max_auc": 0.48752887945529744,
+          "descriptive_only": true
+        },
+        "rga_meta_router": {
+          "n_seeds": 30,
+          "mean_auc": 0.5087943127672305,
+          "sd_auc": 0.012128895088776591,
+          "min_auc": 0.47795443924723435,
+          "max_auc": 0.5232149330258682,
+          "descriptive_only": true
+        },
+        "rga_boosted_fusion": {
+          "n_seeds": 30,
+          "mean_auc": 0.516931331315593,
+          "sd_auc": 0.0,
+          "min_auc": 0.516931331315593,
+          "max_auc": 0.516931331315593,
+          "descriptive_only": true
+        },
+        "random_forest": {
+          "n_seeds": 30,
+          "mean_auc": 0.5093436957259134,
+          "sd_auc": 0.008105569038312208,
+          "min_auc": 0.4938506959457394,
+          "max_auc": 0.5278509317855256,
+          "descriptive_only": true
+        },
+        "early_fusion_mlp": {
+          "n_seeds": 30,
+          "mean_auc": 0.5026645528433981,
+          "sd_auc": 0.01055632900366036,
+          "min_auc": 0.4767348418344841,
+          "max_auc": 0.5189556228135686,
+          "descriptive_only": true
+        },
+        "late_fusion_ensemble": {
+          "n_seeds": 30,
+          "mean_auc": 0.47795443924723435,
+          "sd_auc": 0.0,
+          "min_auc": 0.47795443924723435,
+          "max_auc": 0.47795443924723435,
+          "descriptive_only": true
+        },
+        "confidence_weighted_mean": {
+          "n_seeds": 30,
+          "mean_auc": 0.5,
+          "sd_auc": 0.0,
+          "min_auc": 0.5,
+          "max_auc": 0.5,
+          "descriptive_only": true
+        },
+        "tent_score_adapter": {
+          "n_seeds": 30,
+          "mean_auc": 0.5031532652891876,
+          "sd_auc": 0.0,
+          "min_auc": 0.5031532652891876,
+          "max_auc": 0.5031532652891876,
+          "descriptive_only": true
+        },
+        "ttt_pseudo_label_adapter": {
+          "n_seeds": 30,
+          "mean_auc": 0.5163242622363726,
+          "sd_auc": 0.0,
+          "min_auc": 0.5163242622363726,
+          "max_auc": 0.5163242622363726,
+          "descriptive_only": true
+        },
+        "eata_score_adapter": {
+          "n_seeds": 30,
+          "mean_auc": 0.5029305277133587,
+          "sd_auc": 0.0,
+          "min_auc": 0.5029305277133587,
+          "max_auc": 0.5029305277133587,
+          "descriptive_only": true
+        },
+        "sar_score_adapter": {
+          "n_seeds": 30,
+          "mean_auc": 0.5024675829479099,
+          "sd_auc": 0.0,
+          "min_auc": 0.5024675829479099,
+          "max_auc": 0.5024675829479099,
+          "descriptive_only": true
+        }
+      },
+      "source_artifacts": {
+        "rga_plus_selection_csv": "experiments/audit/rga_plus_validation_frozen_selection.csv",
+        "comparator_selection_csv": "experiments/audit/audited_comparator_selection.csv",
+        "audited_inference_csv": "experiments/audit/audited_ensemble_inference_results.csv",
+        "descriptive_variability_csv": "experiments/audit/descriptive_seed_variability.csv"
+      },
+      "allowed_claim": "Audited inferential summary: validation-frozen RGA+ vs validation-frozen primary comparator, single-representative-seed DeLong (seed 42), Holm-corrected within Family A K=5.",
+      "forbidden_claim": "No 'confirmatory' or 'pre-registered' label. No 'RGA+ beats every baseline'. No 'best non-router' inferential framing. No SOTA / deployment-grade / production-ready / universal-superiority claims.",
+      "metric_semantics_verified": true,
+      "metric_semantics_verified_note": "Verified by Phase 1.A canonical label/metric semantics audit."
+    },
+    {
+      "cell_id": "A4",
+      "benchmark": "MVTec LOCO-AD",
+      "protocol": "PatchCore canonical",
+      "analysis_family": "A",
+      "analysis_status": "protocol-diagnostic",
+      "pairing_strength": "independent_modalities",
+      "rga_plus_head": "boost",
+      "rga_plus_test_roc_auc": 0.5,
+      "rga_plus_validation_roc_auc": 0.5,
+      "rga_plus_selection_rule": "validation_frozen (router vs boost; tie-break boost)",
+      "primary_comparator": "ttt_pseudo_label_adapter",
+      "primary_comparator_test_roc_auc": 0.5,
+      "primary_comparator_validation_roc_auc": 0.5,
+      "primary_comparator_selection_rule": "validation_frozen (max seed-mean val ROC-AUC; deterministic name tie-break)",
+      "delta_auc": 0.0,
+      "delong_p_raw_single_rep_seed": 1.0,
+      "delong_p_holm_family_A_K5": null,
+      "descriptive_seed_variability_per_method": {
+        "static_attention": {
+          "n_seeds": 5,
+          "mean_auc": 0.5209667673716012,
+          "sd_auc": 0.03072883677344035,
+          "min_auc": 0.48332939270545994,
+          "max_auc": 0.5527676343097334,
+          "descriptive_only": true
+        },
+        "craf_attention": {
+          "n_seeds": 5,
+          "mean_auc": 0.5060316125924953,
+          "sd_auc": 0.050288250475930024,
+          "min_auc": 0.4331923464249749,
+          "max_auc": 0.5588256928937344,
+          "descriptive_only": true
+        },
+        "rga_meta_router": {
+          "n_seeds": 5,
+          "mean_auc": 0.5060316125924953,
+          "sd_auc": 0.050288250475930024,
+          "min_auc": 0.4331923464249749,
+          "max_auc": 0.5588256928937344,
+          "descriptive_only": true
+        },
+        "rga_boosted_fusion": {
+          "n_seeds": 5,
+          "mean_auc": 0.5,
+          "sd_auc": 0.0,
+          "min_auc": 0.5,
+          "max_auc": 0.5,
+          "descriptive_only": true
+        },
+        "random_forest": {
+          "n_seeds": 5,
+          "mean_auc": 0.5,
+          "sd_auc": 0.0,
+          "min_auc": 0.5,
+          "max_auc": 0.5,
+          "descriptive_only": true
+        },
+        "early_fusion_mlp": {
+          "n_seeds": 5,
+          "mean_auc": 0.5413184465169227,
+          "sd_auc": 0.0199743055991031,
+          "min_auc": 0.5098261745260301,
+          "max_auc": 0.5593957703927492,
+          "descriptive_only": true
+        },
+        "late_fusion_ensemble": {
+          "n_seeds": 5,
+          "mean_auc": 0.5,
+          "sd_auc": 0.0,
+          "min_auc": 0.5,
+          "max_auc": 0.5,
+          "descriptive_only": true
+        },
+        "confidence_weighted_mean": {
+          "n_seeds": 5,
+          "mean_auc": 0.5935662682254039,
+          "sd_auc": 0.0,
+          "min_auc": 0.5935662682254039,
+          "max_auc": 0.5935662682254039,
+          "descriptive_only": true
+        },
+        "tent_score_adapter": {
+          "n_seeds": 5,
+          "mean_auc": 0.5,
+          "sd_auc": 0.0,
+          "min_auc": 0.5,
+          "max_auc": 0.5,
+          "descriptive_only": true
+        },
+        "ttt_pseudo_label_adapter": {
+          "n_seeds": 5,
+          "mean_auc": 0.5,
+          "sd_auc": 0.0,
+          "min_auc": 0.5,
+          "max_auc": 0.5,
+          "descriptive_only": true
+        },
+        "eata_score_adapter": {
+          "n_seeds": 5,
+          "mean_auc": 0.5,
+          "sd_auc": 0.0,
+          "min_auc": 0.5,
+          "max_auc": 0.5,
+          "descriptive_only": true
+        },
+        "sar_score_adapter": {
+          "n_seeds": 5,
+          "mean_auc": 0.5,
+          "sd_auc": 0.0,
+          "min_auc": 0.5,
+          "max_auc": 0.5,
+          "descriptive_only": true
+        }
+      },
+      "source_artifacts": {
+        "rga_plus_selection_csv": "experiments/audit/rga_plus_validation_frozen_selection.csv",
+        "comparator_selection_csv": "experiments/audit/audited_comparator_selection.csv",
+        "audited_inference_csv": "experiments/audit/audited_ensemble_inference_results.csv",
+        "descriptive_variability_csv": "experiments/audit/descriptive_seed_variability.csv"
+      },
+      "allowed_claim": "Descriptive only: under canonical one-class training every supervised head collapses near chance ROC-AUC. PR-AUC / ECE / Brier values are degenerate-predictor artefacts (Phase 1.A audit) and are not promoted.",
+      "forbidden_claim": "No superiority claim. No PR-AUC / ECE / Brier promotion. No 'confirmatory' or 'pre-registered' label.",
+      "metric_semantics_verified": false,
+      "metric_semantics_verified_note": "ROC-AUC is interpretable at chance level; canonical PR/ECE/Brier are blocked pending the Phase 1.A audit (METRICS_VALID_BUT_MISINTERPRETED \u2014 PR/ECE/Brier equal test-fold prevalence and are not promoted in the manuscript)."
+    },
+    {
+      "cell_id": "A5",
+      "benchmark": "MVTec LOCO-AD",
+      "protocol": "PatchCore supervised",
+      "analysis_family": "A",
+      "analysis_status": "audited primary reanalysis",
+      "pairing_strength": "independent_modalities",
+      "rga_plus_head": "router",
+      "rga_plus_test_roc_auc": 0.7175330742810009,
+      "rga_plus_validation_roc_auc": 0.691980056980057,
+      "rga_plus_selection_rule": "validation_frozen (router vs boost; tie-break boost)",
+      "primary_comparator": "tent_score_adapter",
+      "primary_comparator_test_roc_auc": 0.7260038277881957,
+      "primary_comparator_validation_roc_auc": 0.6761645299145299,
+      "primary_comparator_selection_rule": "validation_frozen (max seed-mean val ROC-AUC; deterministic name tie-break)",
+      "delta_auc": -0.00847075350719484,
+      "delong_p_raw_single_rep_seed": 0.1260976841579613,
+      "delong_p_holm_family_A_K5": 0.3782930524738839,
+      "descriptive_seed_variability_per_method": {
+        "static_attention": {
+          "n_seeds": 30,
+          "mean_auc": 0.6308787802630477,
+          "sd_auc": 0.013402942814764455,
+          "min_auc": 0.6076517099387168,
+          "max_auc": 0.6683356854254066,
+          "descriptive_only": true
+        },
+        "craf_attention": {
+          "n_seeds": 30,
+          "mean_auc": 0.6213582848415721,
+          "sd_auc": 0.026430682847525068,
+          "min_auc": 0.5656233688402574,
+          "max_auc": 0.6695149535059061,
+          "descriptive_only": true
+        },
+        "rga_meta_router": {
+          "n_seeds": 30,
+          "mean_auc": 0.7175330742810009,
+          "sd_auc": 0.022932312519548647,
+          "min_auc": 0.664024590639318,
+          "max_auc": 0.7384924700833221,
+          "descriptive_only": true
+        },
+        "rga_boosted_fusion": {
+          "n_seeds": 30,
+          "mean_auc": 0.7336014073887912,
+          "sd_auc": 0.0,
+          "min_auc": 0.7336014073887912,
+          "max_auc": 0.7336014073887912,
+          "descriptive_only": true
+        },
+        "random_forest": {
+          "n_seeds": 30,
+          "mean_auc": 0.7242768122386117,
+          "sd_auc": 0.004604212886862759,
+          "min_auc": 0.7128385562665531,
+          "max_auc": 0.7348193399965203,
+          "descriptive_only": true
+        },
+        "early_fusion_mlp": {
+          "n_seeds": 30,
+          "mean_auc": 0.644132980197318,
+          "sd_auc": 0.02717471744262214,
+          "min_auc": 0.6020840180176698,
+          "max_auc": 0.7009878786707134,
+          "descriptive_only": true
+        },
+        "late_fusion_ensemble": {
+          "n_seeds": 30,
+          "mean_auc": 0.681945599010188,
+          "sd_auc": 0.0,
+          "min_auc": 0.681945599010188,
+          "max_auc": 0.681945599010188,
+          "descriptive_only": true
+        },
+        "confidence_weighted_mean": {
+          "n_seeds": 30,
+          "mean_auc": 0.5767200881551221,
+          "sd_auc": 0.0,
+          "min_auc": 0.5767200881551221,
+          "max_auc": 0.5767200881551221,
+          "descriptive_only": true
+        },
+        "tent_score_adapter": {
+          "n_seeds": 30,
+          "mean_auc": 0.7260038277881957,
+          "sd_auc": 0.0,
+          "min_auc": 0.7260038277881957,
+          "max_auc": 0.7260038277881957,
+          "descriptive_only": true
+        },
+        "ttt_pseudo_label_adapter": {
+          "n_seeds": 30,
+          "mean_auc": 0.7254045276161386,
+          "sd_auc": 0.0,
+          "min_auc": 0.7254045276161386,
+          "max_auc": 0.7254045276161386,
+          "descriptive_only": true
+        },
+        "eata_score_adapter": {
+          "n_seeds": 30,
+          "mean_auc": 0.5,
+          "sd_auc": 0.0,
+          "min_auc": 0.5,
+          "max_auc": 0.5,
+          "descriptive_only": true
+        },
+        "sar_score_adapter": {
+          "n_seeds": 30,
+          "mean_auc": 0.7260038277881957,
+          "sd_auc": 0.0,
+          "min_auc": 0.7260038277881957,
+          "max_auc": 0.7260038277881957,
+          "descriptive_only": true
+        }
+      },
+      "source_artifacts": {
+        "rga_plus_selection_csv": "experiments/audit/rga_plus_validation_frozen_selection.csv",
+        "comparator_selection_csv": "experiments/audit/audited_comparator_selection.csv",
+        "audited_inference_csv": "experiments/audit/audited_ensemble_inference_results.csv",
+        "descriptive_variability_csv": "experiments/audit/descriptive_seed_variability.csv"
+      },
+      "allowed_claim": "Audited inferential summary: validation-frozen RGA+ vs validation-frozen primary comparator, single-representative-seed DeLong (seed 42), Holm-corrected within Family A K=5.",
+      "forbidden_claim": "No 'confirmatory' or 'pre-registered' label. No 'RGA+ beats every baseline'. No 'best non-router' inferential framing. No SOTA / deployment-grade / production-ready / universal-superiority claims.",
+      "metric_semantics_verified": true,
+      "metric_semantics_verified_note": "Verified by Phase 1.A canonical label/metric semantics audit."
+    },
+    {
+      "cell_id": "A6",
+      "benchmark": "VisA",
+      "protocol": "RGB+edge canonical",
+      "analysis_family": "A",
+      "analysis_status": "protocol-diagnostic",
+      "pairing_strength": "derived_view_proxy",
+      "rga_plus_head": "boost",
+      "rga_plus_test_roc_auc": 0.5,
+      "rga_plus_validation_roc_auc": 0.5,
+      "rga_plus_selection_rule": "validation_frozen (router vs boost; tie-break boost)",
+      "primary_comparator": "ttt_pseudo_label_adapter",
+      "primary_comparator_test_roc_auc": 0.5,
+      "primary_comparator_validation_roc_auc": 0.5,
+      "primary_comparator_selection_rule": "validation_frozen (max seed-mean val ROC-AUC; deterministic name tie-break)",
+      "delta_auc": 0.0,
+      "delong_p_raw_single_rep_seed": 1.0,
+      "delong_p_holm_family_A_K5": null,
+      "descriptive_seed_variability_per_method": {
+        "static_attention": {
+          "n_seeds": 5,
+          "mean_auc": 0.48395668745668746,
+          "sd_auc": 0.09001730828183285,
+          "min_auc": 0.3306566181566182,
+          "max_auc": 0.5674809424809424,
+          "descriptive_only": true
+        },
+        "craf_attention": {
+          "n_seeds": 5,
+          "mean_auc": 0.47906860706860704,
+          "sd_auc": 0.04680401745835321,
+          "min_auc": 0.3953430353430353,
+          "max_auc": 0.5,
+          "descriptive_only": true
+        },
+        "rga_meta_router": {
+          "n_seeds": 5,
+          "mean_auc": 0.47906860706860704,
+          "sd_auc": 0.04680401745835321,
+          "min_auc": 0.3953430353430353,
+          "max_auc": 0.5,
+          "descriptive_only": true
+        },
+        "rga_boosted_fusion": {
+          "n_seeds": 5,
+          "mean_auc": 0.5,
+          "sd_auc": 0.0,
+          "min_auc": 0.5,
+          "max_auc": 0.5,
+          "descriptive_only": true
+        },
+        "random_forest": {
+          "n_seeds": 5,
+          "mean_auc": 0.5,
+          "sd_auc": 0.0,
+          "min_auc": 0.5,
+          "max_auc": 0.5,
+          "descriptive_only": true
+        },
+        "early_fusion_mlp": {
+          "n_seeds": 5,
+          "mean_auc": 0.6203573284823285,
+          "sd_auc": 0.056323264185013586,
+          "min_auc": 0.5361425848925849,
+          "max_auc": 0.6882952182952182,
+          "descriptive_only": true
+        },
+        "late_fusion_ensemble": {
+          "n_seeds": 5,
+          "mean_auc": 0.5,
+          "sd_auc": 0.0,
+          "min_auc": 0.5,
+          "max_auc": 0.5,
+          "descriptive_only": true
+        },
+        "confidence_weighted_mean": {
+          "n_seeds": 5,
+          "mean_auc": 0.7132389119889119,
+          "sd_auc": 0.0,
+          "min_auc": 0.7132389119889119,
+          "max_auc": 0.7132389119889119,
+          "descriptive_only": true
+        },
+        "tent_score_adapter": {
+          "n_seeds": 5,
+          "mean_auc": 0.5,
+          "sd_auc": 0.0,
+          "min_auc": 0.5,
+          "max_auc": 0.5,
+          "descriptive_only": true
+        },
+        "ttt_pseudo_label_adapter": {
+          "n_seeds": 5,
+          "mean_auc": 0.5,
+          "sd_auc": 0.0,
+          "min_auc": 0.5,
+          "max_auc": 0.5,
+          "descriptive_only": true
+        },
+        "eata_score_adapter": {
+          "n_seeds": 5,
+          "mean_auc": 0.5,
+          "sd_auc": 0.0,
+          "min_auc": 0.5,
+          "max_auc": 0.5,
+          "descriptive_only": true
+        },
+        "sar_score_adapter": {
+          "n_seeds": 5,
+          "mean_auc": 0.5,
+          "sd_auc": 0.0,
+          "min_auc": 0.5,
+          "max_auc": 0.5,
+          "descriptive_only": true
+        }
+      },
+      "source_artifacts": {
+        "rga_plus_selection_csv": "experiments/audit/rga_plus_validation_frozen_selection.csv",
+        "comparator_selection_csv": "experiments/audit/audited_comparator_selection.csv",
+        "audited_inference_csv": "experiments/audit/audited_ensemble_inference_results.csv",
+        "descriptive_variability_csv": "experiments/audit/descriptive_seed_variability.csv"
+      },
+      "allowed_claim": "Descriptive only: under canonical one-class training every supervised head collapses near chance ROC-AUC. PR-AUC / ECE / Brier values are degenerate-predictor artefacts (Phase 1.A audit) and are not promoted.",
+      "forbidden_claim": "No superiority claim. No PR-AUC / ECE / Brier promotion. No 'confirmatory' or 'pre-registered' label.",
+      "metric_semantics_verified": false,
+      "metric_semantics_verified_note": "ROC-AUC is interpretable at chance level; canonical PR/ECE/Brier are blocked pending the Phase 1.A audit (METRICS_VALID_BUT_MISINTERPRETED \u2014 PR/ECE/Brier equal test-fold prevalence and are not promoted in the manuscript)."
+    },
+    {
+      "cell_id": "A7",
+      "benchmark": "VisA",
+      "protocol": "RGB+edge supervised",
+      "analysis_family": "A",
+      "analysis_status": "audited primary reanalysis",
+      "pairing_strength": "derived_view_proxy",
+      "rga_plus_head": "boost",
+      "rga_plus_test_roc_auc": 0.8661940586419753,
+      "rga_plus_validation_roc_auc": 0.9846789696270665,
+      "rga_plus_selection_rule": "validation_frozen (router vs boost; tie-break boost)",
+      "primary_comparator": "random_forest",
+      "primary_comparator_test_roc_auc": 0.8548649691358025,
+      "primary_comparator_validation_roc_auc": 0.9808607266435986,
+      "primary_comparator_selection_rule": "validation_frozen (max seed-mean val ROC-AUC; deterministic name tie-break)",
+      "delta_auc": 0.01132908950617284,
+      "delong_p_raw_single_rep_seed": 0.24791476904110166,
+      "delong_p_holm_family_A_K5": 0.4958295380822033,
+      "descriptive_seed_variability_per_method": {
+        "static_attention": {
+          "n_seeds": 30,
+          "mean_auc": 0.8218505658436215,
+          "sd_auc": 0.00493506533059705,
+          "min_auc": 0.8132908950617285,
+          "max_auc": 0.8313657407407407,
+          "descriptive_only": true
+        },
+        "craf_attention": {
+          "n_seeds": 30,
+          "mean_auc": 0.7476125257201646,
+          "sd_auc": 0.023431414449317435,
+          "min_auc": 0.7079282407407408,
+          "max_auc": 0.7905574845679013,
+          "descriptive_only": true
+        },
+        "rga_meta_router": {
+          "n_seeds": 30,
+          "mean_auc": 0.8646903935185185,
+          "sd_auc": 0.0028872872519297176,
+          "min_auc": 0.8534143518518518,
+          "max_auc": 0.8666859567901235,
+          "descriptive_only": true
+        },
+        "rga_boosted_fusion": {
+          "n_seeds": 30,
+          "mean_auc": 0.8661940586419753,
+          "sd_auc": 0.0,
+          "min_auc": 0.8661940586419753,
+          "max_auc": 0.8661940586419753,
+          "descriptive_only": true
+        },
+        "random_forest": {
+          "n_seeds": 30,
+          "mean_auc": 0.8548649691358025,
+          "sd_auc": 0.0022385065596614503,
+          "min_auc": 0.8507619598765431,
+          "max_auc": 0.8588155864197532,
+          "descriptive_only": true
+        },
+        "early_fusion_mlp": {
+          "n_seeds": 30,
+          "mean_auc": 0.8425172003600824,
+          "sd_auc": 0.0044397633974480565,
+          "min_auc": 0.833179012345679,
+          "max_auc": 0.8504822530864198,
+          "descriptive_only": true
+        },
+        "late_fusion_ensemble": {
+          "n_seeds": 30,
+          "mean_auc": 0.8108989197530865,
+          "sd_auc": 0.0,
+          "min_auc": 0.8108989197530865,
+          "max_auc": 0.8108989197530865,
+          "descriptive_only": true
+        },
+        "confidence_weighted_mean": {
+          "n_seeds": 30,
+          "mean_auc": 0.7082561728395061,
+          "sd_auc": 0.0,
+          "min_auc": 0.7082561728395061,
+          "max_auc": 0.7082561728395061,
+          "descriptive_only": true
+        },
+        "tent_score_adapter": {
+          "n_seeds": 30,
+          "mean_auc": 0.8145206404320987,
+          "sd_auc": 0.0,
+          "min_auc": 0.8145206404320987,
+          "max_auc": 0.8145206404320987,
+          "descriptive_only": true
+        },
+        "ttt_pseudo_label_adapter": {
+          "n_seeds": 30,
+          "mean_auc": 0.8137297453703705,
+          "sd_auc": 0.0,
+          "min_auc": 0.8137297453703705,
+          "max_auc": 0.8137297453703705,
+          "descriptive_only": true
+        },
+        "eata_score_adapter": {
+          "n_seeds": 30,
+          "mean_auc": 0.5,
+          "sd_auc": 0.0,
+          "min_auc": 0.5,
+          "max_auc": 0.5,
+          "descriptive_only": true
+        },
+        "sar_score_adapter": {
+          "n_seeds": 30,
+          "mean_auc": 0.8146026234567901,
+          "sd_auc": 0.0,
+          "min_auc": 0.8146026234567901,
+          "max_auc": 0.8146026234567901,
+          "descriptive_only": true
+        }
+      },
+      "source_artifacts": {
+        "rga_plus_selection_csv": "experiments/audit/rga_plus_validation_frozen_selection.csv",
+        "comparator_selection_csv": "experiments/audit/audited_comparator_selection.csv",
+        "audited_inference_csv": "experiments/audit/audited_ensemble_inference_results.csv",
+        "descriptive_variability_csv": "experiments/audit/descriptive_seed_variability.csv"
+      },
+      "allowed_claim": "Audited inferential summary: validation-frozen RGA+ vs validation-frozen primary comparator, single-representative-seed DeLong (seed 42), Holm-corrected within Family A K=5.",
+      "forbidden_claim": "No 'confirmatory' or 'pre-registered' label. No 'RGA+ beats every baseline'. No 'best non-router' inferential framing. No SOTA / deployment-grade / production-ready / universal-superiority claims.",
+      "metric_semantics_verified": true,
+      "metric_semantics_verified_note": "Verified by Phase 1.A canonical label/metric semantics audit."
+    },
+    {
+      "cell_id": "A8",
+      "benchmark": "UNSW-NB15",
+      "protocol": "flow/conn/context",
+      "analysis_family": "A",
+      "analysis_status": "audited primary reanalysis",
+      "pairing_strength": "naturally_structured_views",
+      "rga_plus_head": "router",
+      "rga_plus_test_roc_auc": 0.989269222202266,
+      "rga_plus_validation_roc_auc": 0.9879913712374581,
+      "rga_plus_selection_rule": "validation_frozen (router vs boost; tie-break boost)",
+      "primary_comparator": "random_forest",
+      "primary_comparator_test_roc_auc": 0.9889771394436246,
+      "primary_comparator_validation_roc_auc": 0.9876515050167225,
+      "primary_comparator_selection_rule": "validation_frozen (max seed-mean val ROC-AUC; deterministic name tie-break)",
+      "delta_auc": 0.00029208275864134325,
+      "delong_p_raw_single_rep_seed": 1.344371557632229e-06,
+      "delong_p_holm_family_A_K5": 6.721857788161145e-06,
+      "descriptive_seed_variability_per_method": {
+        "static_attention": {
+          "n_seeds": 5,
+          "mean_auc": 0.9789847841937533,
+          "sd_auc": 0.0007383680447141018,
+          "min_auc": 0.978279399521722,
+          "max_auc": 0.9801198632812876,
+          "descriptive_only": true
+        },
+        "craf_attention": {
+          "n_seeds": 5,
+          "mean_auc": 0.9747694332764689,
+          "sd_auc": 0.00400406069091911,
+          "min_auc": 0.9684871004976513,
+          "max_auc": 0.9787724456328726,
+          "descriptive_only": true
+        },
+        "rga_meta_router": {
+          "n_seeds": 5,
+          "mean_auc": 0.989269222202266,
+          "sd_auc": 0.0003479435200724713,
+          "min_auc": 0.9887693900340866,
+          "max_auc": 0.9896488212811605,
+          "descriptive_only": true
+        },
+        "rga_boosted_fusion": {
+          "n_seeds": 5,
+          "mean_auc": 0.9891496995617748,
+          "sd_auc": 0.00020958557094232665,
+          "min_auc": 0.9889510495161671,
+          "max_auc": 0.9893819949102433,
+          "descriptive_only": true
+        },
+        "random_forest": {
+          "n_seeds": 5,
+          "mean_auc": 0.9889771394436246,
+          "sd_auc": 6.127370041025428e-05,
+          "min_auc": 0.9889084025193612,
+          "max_auc": 0.9890759935097895,
+          "descriptive_only": true
+        },
+        "early_fusion_mlp": {
+          "n_seeds": 5,
+          "mean_auc": 0.9854912401529925,
+          "sd_auc": 0.00025589894220619036,
+          "min_auc": 0.9851144186479135,
+          "max_auc": 0.9857787618571362,
+          "descriptive_only": true
+        },
+        "late_fusion_ensemble": {
+          "n_seeds": 5,
+          "mean_auc": 0.9343563711228227,
+          "sd_auc": 0.0,
+          "min_auc": 0.9343563711228227,
+          "max_auc": 0.9343563711228227,
+          "descriptive_only": true
+        },
+        "confidence_weighted_mean": {
+          "n_seeds": 5,
+          "mean_auc": 0.34857482366420106,
+          "sd_auc": 0.0,
+          "min_auc": 0.34857482366420106,
+          "max_auc": 0.34857482366420106,
+          "descriptive_only": true
+        },
+        "tent_score_adapter": {
+          "n_seeds": 5,
+          "mean_auc": 0.9543261769152898,
+          "sd_auc": 1.2412670766236366e-16,
+          "min_auc": 0.9543261769152896,
+          "max_auc": 0.9543261769152896,
+          "descriptive_only": true
+        },
+        "ttt_pseudo_label_adapter": {
+          "n_seeds": 5,
+          "mean_auc": 0.9481724460717185,
+          "sd_auc": 1.2412670766236366e-16,
+          "min_auc": 0.9481724460717186,
+          "max_auc": 0.9481724460717186,
+          "descriptive_only": true
+        },
+        "eata_score_adapter": {
+          "n_seeds": 5,
+          "mean_auc": 0.5,
+          "sd_auc": 0.0,
+          "min_auc": 0.5,
+          "max_auc": 0.5,
+          "descriptive_only": true
+        },
+        "sar_score_adapter": {
+          "n_seeds": 5,
+          "mean_auc": 0.9543653987729008,
+          "sd_auc": 1.2412670766236366e-16,
+          "min_auc": 0.9543653987729009,
+          "max_auc": 0.9543653987729009,
+          "descriptive_only": true
+        }
+      },
+      "source_artifacts": {
+        "rga_plus_selection_csv": "experiments/audit/rga_plus_validation_frozen_selection.csv",
+        "comparator_selection_csv": "experiments/audit/audited_comparator_selection.csv",
+        "audited_inference_csv": "experiments/audit/audited_ensemble_inference_results.csv",
+        "descriptive_variability_csv": "experiments/audit/descriptive_seed_variability.csv"
+      },
+      "allowed_claim": "Audited inferential summary: validation-frozen RGA+ vs validation-frozen primary comparator, single-representative-seed DeLong (seed 42), Holm-corrected within Family A K=5.",
+      "forbidden_claim": "No 'confirmatory' or 'pre-registered' label. No 'RGA+ beats every baseline'. No 'best non-router' inferential framing. No SOTA / deployment-grade / production-ready / universal-superiority claims.",
+      "metric_semantics_verified": true,
+      "metric_semantics_verified_note": "Verified by Phase 1.A canonical label/metric semantics audit."
+    },
+    {
+      "cell_id": "C1",
+      "benchmark": "Real3D-AD",
+      "protocol": "PCA shape + depth supervised",
+      "analysis_family": "C",
+      "analysis_status": "exploratory",
+      "pairing_strength": "naturally_structured_views",
+      "rga_plus_head": "router",
+      "rga_plus_test_roc_auc": 0.5336925002289308,
+      "rga_plus_validation_roc_auc": 0.6555972482801751,
+      "rga_plus_selection_rule": "validation_frozen (router vs boost; tie-break boost)",
+      "primary_comparator": "ttt_pseudo_label_adapter",
+      "primary_comparator_test_roc_auc": 0.5366289185311803,
+      "primary_comparator_validation_roc_auc": 0.6309568480300187,
+      "primary_comparator_selection_rule": "validation_frozen (max seed-mean val ROC-AUC; deterministic name tie-break)",
+      "delta_auc": -0.002936418302249555,
+      "delong_p_raw_single_rep_seed": 1.0,
+      "delong_p_holm_family_A_K5": null,
+      "descriptive_seed_variability_per_method": {
+        "static_attention": {
+          "n_seeds": 5,
+          "mean_auc": 0.5255303562162328,
+          "sd_auc": 0.004642152469926176,
+          "min_auc": 0.5177650254876226,
+          "max_auc": 0.5302799059857758,
+          "descriptive_only": true
+        },
+        "craf_attention": {
+          "n_seeds": 5,
+          "mean_auc": 0.5038918225939379,
+          "sd_auc": 0.019991216641871982,
+          "min_auc": 0.4734745581636702,
+          "max_auc": 0.5296999481090321,
+          "descriptive_only": true
+        },
+        "rga_meta_router": {
+          "n_seeds": 5,
+          "mean_auc": 0.5336925002289308,
+          "sd_auc": 0.02875926095036016,
+          "min_auc": 0.4854705289826318,
+          "max_auc": 0.5607429565642075,
+          "descriptive_only": true
+        },
+        "rga_boosted_fusion": {
+          "n_seeds": 5,
+          "mean_auc": 0.5655962882695889,
+          "sd_auc": 0.0,
+          "min_auc": 0.5655962882695889,
+          "max_auc": 0.5655962882695889,
+          "descriptive_only": true
+        },
+        "random_forest": {
+          "n_seeds": 5,
+          "mean_auc": 0.4896706449742071,
+          "sd_auc": 0.005587852938950346,
+          "min_auc": 0.4843411373279204,
+          "max_auc": 0.4974359757028174,
+          "descriptive_only": true
+        },
+        "early_fusion_mlp": {
+          "n_seeds": 5,
+          "mean_auc": 0.5308110253044779,
+          "sd_auc": 0.011094210350482341,
+          "min_auc": 0.5200238087970452,
+          "max_auc": 0.5488996062391258,
+          "descriptive_only": true
+        },
+        "late_fusion_ensemble": {
+          "n_seeds": 5,
+          "mean_auc": 0.5489911785354538,
+          "sd_auc": 0.0,
+          "min_auc": 0.5489911785354538,
+          "max_auc": 0.5489911785354538,
+          "descriptive_only": true
+        },
+        "confidence_weighted_mean": {
+          "n_seeds": 5,
+          "mean_auc": 0.4969933762705656,
+          "sd_auc": 0.0,
+          "min_auc": 0.4969933762705656,
+          "max_auc": 0.4969933762705656,
+          "descriptive_only": true
+        },
+        "tent_score_adapter": {
+          "n_seeds": 5,
+          "mean_auc": 0.5607429565642075,
+          "sd_auc": 0.0,
+          "min_auc": 0.5607429565642075,
+          "max_auc": 0.5607429565642075,
+          "descriptive_only": true
+        },
+        "ttt_pseudo_label_adapter": {
+          "n_seeds": 5,
+          "mean_auc": 0.5366289185311803,
+          "sd_auc": 0.0,
+          "min_auc": 0.5366289185311803,
+          "max_auc": 0.5366289185311803,
+          "descriptive_only": true
+        },
+        "eata_score_adapter": {
+          "n_seeds": 5,
+          "mean_auc": 0.5607429565642075,
+          "sd_auc": 0.0,
+          "min_auc": 0.5607429565642075,
+          "max_auc": 0.5607429565642075,
+          "descriptive_only": true
+        },
+        "sar_score_adapter": {
+          "n_seeds": 5,
+          "mean_auc": 0.5607429565642075,
+          "sd_auc": 0.0,
+          "min_auc": 0.5607429565642075,
+          "max_auc": 0.5607429565642075,
+          "descriptive_only": true
+        }
+      },
+      "source_artifacts": {
+        "rga_plus_selection_csv": "experiments/audit/rga_plus_validation_frozen_selection.csv",
+        "comparator_selection_csv": "experiments/audit/audited_comparator_selection.csv",
+        "audited_inference_csv": "experiments/audit/audited_ensemble_inference_results.csv",
+        "descriptive_variability_csv": "experiments/audit/descriptive_seed_variability.csv"
+      },
+      "allowed_claim": "Descriptive point estimates only. No Holm correction.",
+      "forbidden_claim": "No confirmatory or superiority claim. No inclusion in Family A inferential summary.",
+      "metric_semantics_verified": true,
+      "metric_semantics_verified_note": "Verified by Phase 1.A canonical label/metric semantics audit."
+    },
+    {
+      "cell_id": "C2",
+      "benchmark": "VisA",
+      "protocol": "RGB+random noise-floor",
+      "analysis_family": "C",
+      "analysis_status": "exploratory",
+      "pairing_strength": "derived_view_proxy",
+      "rga_plus_head": "boost",
+      "rga_plus_test_roc_auc": 0.8492669753086419,
+      "rga_plus_validation_roc_auc": 0.9720684352172242,
+      "rga_plus_selection_rule": "validation_frozen (router vs boost; tie-break boost)",
+      "primary_comparator": "random_forest",
+      "primary_comparator_test_roc_auc": 0.8386091820987656,
+      "primary_comparator_validation_roc_auc": 0.9662629757785467,
+      "primary_comparator_selection_rule": "validation_frozen (max seed-mean val ROC-AUC; deterministic name tie-break)",
+      "delta_auc": 0.010657793209876365,
+      "delong_p_raw_single_rep_seed": 0.19246157472436165,
+      "delong_p_holm_family_A_K5": null,
+      "descriptive_seed_variability_per_method": {
+        "static_attention": {
+          "n_seeds": 5,
+          "mean_auc": 0.8175906635802468,
+          "sd_auc": 0.006732686271172584,
+          "min_auc": 0.8115065586419752,
+          "max_auc": 0.8264371141975309,
+          "descriptive_only": true
+        },
+        "craf_attention": {
+          "n_seeds": 5,
+          "mean_auc": 0.5848263888888889,
+          "sd_auc": 0.08063837724806433,
+          "min_auc": 0.47117091049382726,
+          "max_auc": 0.6752989969135803,
+          "descriptive_only": true
+        },
+        "rga_meta_router": {
+          "n_seeds": 5,
+          "mean_auc": 0.8491280864197531,
+          "sd_auc": 0.00031056499687492,
+          "min_auc": 0.8485725308641976,
+          "max_auc": 0.8492669753086419,
+          "descriptive_only": true
+        },
+        "rga_boosted_fusion": {
+          "n_seeds": 5,
+          "mean_auc": 0.8492669753086419,
+          "sd_auc": 0.0,
+          "min_auc": 0.8492669753086419,
+          "max_auc": 0.8492669753086419,
+          "descriptive_only": true
+        },
+        "random_forest": {
+          "n_seeds": 5,
+          "mean_auc": 0.8386091820987656,
+          "sd_auc": 0.0015950698533310382,
+          "min_auc": 0.8360918209876543,
+          "max_auc": 0.8402488425925925,
+          "descriptive_only": true
+        },
+        "early_fusion_mlp": {
+          "n_seeds": 5,
+          "mean_auc": 0.8117283950617284,
+          "sd_auc": 0.005015988513769941,
+          "min_auc": 0.8061246141975309,
+          "max_auc": 0.818258101851852,
+          "descriptive_only": true
+        },
+        "late_fusion_ensemble": {
+          "n_seeds": 5,
+          "mean_auc": 0.7946180555555555,
+          "sd_auc": 0.0,
+          "min_auc": 0.7946180555555555,
+          "max_auc": 0.7946180555555555,
+          "descriptive_only": true
+        },
+        "confidence_weighted_mean": {
+          "n_seeds": 5,
+          "mean_auc": 0.6332851080246913,
+          "sd_auc": 0.0,
+          "min_auc": 0.6332851080246913,
+          "max_auc": 0.6332851080246913,
+          "descriptive_only": true
+        },
+        "tent_score_adapter": {
+          "n_seeds": 5,
+          "mean_auc": 0.8068769290123455,
+          "sd_auc": 1.2412670766236366e-16,
+          "min_auc": 0.8068769290123456,
+          "max_auc": 0.8068769290123456,
+          "descriptive_only": true
+        },
+        "ttt_pseudo_label_adapter": {
+          "n_seeds": 5,
+          "mean_auc": 0.8041956018518517,
+          "sd_auc": 1.2412670766236366e-16,
+          "min_auc": 0.8041956018518518,
+          "max_auc": 0.8041956018518518,
+          "descriptive_only": true
+        },
+        "eata_score_adapter": {
+          "n_seeds": 5,
+          "mean_auc": 0.5,
+          "sd_auc": 0.0,
+          "min_auc": 0.5,
+          "max_auc": 0.5,
+          "descriptive_only": true
+        },
+        "sar_score_adapter": {
+          "n_seeds": 5,
+          "mean_auc": 0.8071180555555555,
+          "sd_auc": 0.0,
+          "min_auc": 0.8071180555555555,
+          "max_auc": 0.8071180555555555,
+          "descriptive_only": true
+        }
+      },
+      "source_artifacts": {
+        "rga_plus_selection_csv": "experiments/audit/rga_plus_validation_frozen_selection.csv",
+        "comparator_selection_csv": "experiments/audit/audited_comparator_selection.csv",
+        "audited_inference_csv": "experiments/audit/audited_ensemble_inference_results.csv",
+        "descriptive_variability_csv": "experiments/audit/descriptive_seed_variability.csv"
+      },
+      "allowed_claim": "Descriptive point estimates only. No Holm correction.",
+      "forbidden_claim": "No confirmatory or superiority claim. No inclusion in Family A inferential summary.",
+      "metric_semantics_verified": true,
+      "metric_semantics_verified_note": "Verified by Phase 1.A canonical label/metric semantics audit."
+    },
+    {
+      "cell_id": "C3",
+      "benchmark": "UNSW-NB15",
+      "protocol": "held-out attack categories",
+      "analysis_family": "C",
+      "analysis_status": "exploratory",
+      "pairing_strength": "naturally_structured_views",
+      "rga_plus_head": "router",
+      "rga_plus_test_roc_auc": 0.9935539272585483,
+      "rga_plus_validation_roc_auc": 0.9904761823107787,
+      "rga_plus_selection_rule": "validation_frozen (router vs boost; tie-break boost)",
+      "primary_comparator": "random_forest",
+      "primary_comparator_test_roc_auc": 0.9931640074738383,
+      "primary_comparator_validation_roc_auc": 0.9900501045989231,
+      "primary_comparator_selection_rule": "validation_frozen (max seed-mean val ROC-AUC; deterministic name tie-break)",
+      "delta_auc": 0.0003899197847100355,
+      "delong_p_raw_single_rep_seed": 0.04485296696756791,
+      "delong_p_holm_family_A_K5": null,
+      "descriptive_seed_variability_per_method": {
+        "static_attention": {
+          "n_seeds": 5,
+          "mean_auc": 0.9878577175943978,
+          "sd_auc": 0.0004825999168291296,
+          "min_auc": 0.9872737958127574,
+          "max_auc": 0.9883832641019109,
+          "descriptive_only": true
+        },
+        "craf_attention": {
+          "n_seeds": 5,
+          "mean_auc": 0.9824141105884634,
+          "sd_auc": 0.0031428447368085227,
+          "min_auc": 0.9791759169313087,
+          "max_auc": 0.9869731856897185,
+          "descriptive_only": true
+        },
+        "rga_meta_router": {
+          "n_seeds": 5,
+          "mean_auc": 0.9935539272585483,
+          "sd_auc": 0.00046572718025130383,
+          "min_auc": 0.9928566357360356,
+          "max_auc": 0.9940035746403384,
+          "descriptive_only": true
+        },
+        "rga_boosted_fusion": {
+          "n_seeds": 5,
+          "mean_auc": 0.9932403573738788,
+          "sd_auc": 0.0003148935565622401,
+          "min_auc": 0.9928566357360356,
+          "max_auc": 0.9935674504880758,
+          "descriptive_only": true
+        },
+        "random_forest": {
+          "n_seeds": 5,
+          "mean_auc": 0.9931640074738383,
+          "sd_auc": 7.405135801426567e-05,
+          "min_auc": 0.9930597659128969,
+          "max_auc": 0.9932683899017537,
+          "descriptive_only": true
+        },
+        "early_fusion_mlp": {
+          "n_seeds": 5,
+          "mean_auc": 0.991507186469558,
+          "sd_auc": 0.001193882210467244,
+          "min_auc": 0.9895524599881448,
+          "max_auc": 0.9927777502304584,
+          "descriptive_only": true
+        },
+        "late_fusion_ensemble": {
+          "n_seeds": 5,
+          "mean_auc": 0.9436033433931137,
+          "sd_auc": 1.2412670766236366e-16,
+          "min_auc": 0.9436033433931136,
+          "max_auc": 0.9436033433931136,
+          "descriptive_only": true
+        },
+        "confidence_weighted_mean": {
+          "n_seeds": 5,
+          "mean_auc": 0.20071571692274404,
+          "sd_auc": 0.0,
+          "min_auc": 0.20071571692274404,
+          "max_auc": 0.20071571692274404,
+          "descriptive_only": true
+        },
+        "tent_score_adapter": {
+          "n_seeds": 5,
+          "mean_auc": 0.9545957568613485,
+          "sd_auc": 0.0,
+          "min_auc": 0.9545957568613485,
+          "max_auc": 0.9545957568613485,
+          "descriptive_only": true
+        },
+        "ttt_pseudo_label_adapter": {
+          "n_seeds": 5,
+          "mean_auc": 0.9599788474151472,
+          "sd_auc": 1.2412670766236366e-16,
+          "min_auc": 0.9599788474151473,
+          "max_auc": 0.9599788474151473,
+          "descriptive_only": true
+        },
+        "eata_score_adapter": {
+          "n_seeds": 5,
+          "mean_auc": 0.5,
+          "sd_auc": 0.0,
+          "min_auc": 0.5,
+          "max_auc": 0.5,
+          "descriptive_only": true
+        },
+        "sar_score_adapter": {
+          "n_seeds": 5,
+          "mean_auc": 0.9545988559347819,
+          "sd_auc": 0.0,
+          "min_auc": 0.9545988559347819,
+          "max_auc": 0.9545988559347819,
+          "descriptive_only": true
+        }
+      },
+      "source_artifacts": {
+        "rga_plus_selection_csv": "experiments/audit/rga_plus_validation_frozen_selection.csv",
+        "comparator_selection_csv": "experiments/audit/audited_comparator_selection.csv",
+        "audited_inference_csv": "experiments/audit/audited_ensemble_inference_results.csv",
+        "descriptive_variability_csv": "experiments/audit/descriptive_seed_variability.csv"
+      },
+      "allowed_claim": "Descriptive point estimates only. No Holm correction.",
+      "forbidden_claim": "No confirmatory or superiority claim. No inclusion in Family A inferential summary.",
+      "metric_semantics_verified": true,
+      "metric_semantics_verified_note": "Verified by Phase 1.A canonical label/metric semantics audit."
+    }
+  ],
+  "macros": {
+    "elaraA1RgaPlusAuc": "0.5000",
+    "elaraA1ComparatorAuc": "0.5000",
+    "elaraA1DeltaAuc": "0.0000",
+    "elaraA1DelongPRaw": "1.0000",
+    "elaraA1DelongPHolm": "--",
+    "elaraA1PrimaryComparator": "ttt_pseudo_label_adapter",
+    "elaraA1RgaPlusHead": "boost",
+    "elaraA2RgaPlusAuc": "0.7390",
+    "elaraA2ComparatorAuc": "0.7354",
+    "elaraA2DeltaAuc": "0.0035",
+    "elaraA2DelongPRaw": "0.9192",
+    "elaraA2DelongPHolm": "0.9192",
+    "elaraA2PrimaryComparator": "sar_score_adapter",
+    "elaraA2RgaPlusHead": "router",
+    "elaraA3RgaPlusAuc": "0.5088",
+    "elaraA3ComparatorAuc": "0.5032",
+    "elaraA3DeltaAuc": "0.0056",
+    "elaraA3DelongPRaw": "0.0504",
+    "elaraA3DelongPHolm": "0.2018",
+    "elaraA3PrimaryComparator": "tent_score_adapter",
+    "elaraA3RgaPlusHead": "router",
+    "elaraA4RgaPlusAuc": "0.5000",
+    "elaraA4ComparatorAuc": "0.5000",
+    "elaraA4DeltaAuc": "0.0000",
+    "elaraA4DelongPRaw": "1.0000",
+    "elaraA4DelongPHolm": "--",
+    "elaraA4PrimaryComparator": "ttt_pseudo_label_adapter",
+    "elaraA4RgaPlusHead": "boost",
+    "elaraA5RgaPlusAuc": "0.7175",
+    "elaraA5ComparatorAuc": "0.7260",
+    "elaraA5DeltaAuc": "-0.0085",
+    "elaraA5DelongPRaw": "0.1261",
+    "elaraA5DelongPHolm": "0.3783",
+    "elaraA5PrimaryComparator": "tent_score_adapter",
+    "elaraA5RgaPlusHead": "router",
+    "elaraA6RgaPlusAuc": "0.5000",
+    "elaraA6ComparatorAuc": "0.5000",
+    "elaraA6DeltaAuc": "0.0000",
+    "elaraA6DelongPRaw": "1.0000",
+    "elaraA6DelongPHolm": "--",
+    "elaraA6PrimaryComparator": "ttt_pseudo_label_adapter",
+    "elaraA6RgaPlusHead": "boost",
+    "elaraA7RgaPlusAuc": "0.8662",
+    "elaraA7ComparatorAuc": "0.8549",
+    "elaraA7DeltaAuc": "0.0113",
+    "elaraA7DelongPRaw": "0.2479",
+    "elaraA7DelongPHolm": "0.4958",
+    "elaraA7PrimaryComparator": "random_forest",
+    "elaraA7RgaPlusHead": "boost",
+    "elaraA8RgaPlusAuc": "0.9893",
+    "elaraA8ComparatorAuc": "0.9890",
+    "elaraA8DeltaAuc": "0.0003",
+    "elaraA8DelongPRaw": "0.0000",
+    "elaraA8DelongPHolm": "0.0000",
+    "elaraA8PrimaryComparator": "random_forest",
+    "elaraA8RgaPlusHead": "router",
+    "elaraC1RgaPlusAuc": "0.5337",
+    "elaraC1ComparatorAuc": "0.5366",
+    "elaraC1DeltaAuc": "-0.0029",
+    "elaraC1DelongPRaw": "1.0000",
+    "elaraC1DelongPHolm": "--",
+    "elaraC1PrimaryComparator": "ttt_pseudo_label_adapter",
+    "elaraC1RgaPlusHead": "router",
+    "elaraC2RgaPlusAuc": "0.8493",
+    "elaraC2ComparatorAuc": "0.8386",
+    "elaraC2DeltaAuc": "0.0107",
+    "elaraC2DelongPRaw": "0.1925",
+    "elaraC2DelongPHolm": "--",
+    "elaraC2PrimaryComparator": "random_forest",
+    "elaraC2RgaPlusHead": "boost",
+    "elaraC3RgaPlusAuc": "0.9936",
+    "elaraC3ComparatorAuc": "0.9932",
+    "elaraC3DeltaAuc": "0.0004",
+    "elaraC3DelongPRaw": "0.0449",
+    "elaraC3DelongPHolm": "--",
+    "elaraC3PrimaryComparator": "random_forest",
+    "elaraC3RgaPlusHead": "router"
+  }
+}
