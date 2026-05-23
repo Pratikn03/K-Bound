@@ -333,6 +333,7 @@ def estimate_interventional_ate(
     n_bootstrap: int = 200,
     random_state: int = 42,
     intervention: str = "population_mean",
+    domain_baseline: float | None = None,
 ) -> InterventionalEffect:
     """Counterfactual ATE: do(r_d <- intervention) versus the observed r_d.
 
@@ -347,13 +348,25 @@ def estimate_interventional_ate(
         Closure that maps a [N, D] reliability vector to [N] predictions.
         Must reflect the deployed gate/fusion pipeline.
     reliability_weights : [N, D] observed reliability vector.
-    intervention : "population_mean" (default), "zero", or "one".
+    intervention : "population_mean", "zero", "one", "neutral",
+        or "domain_conditional" (use ``domain_baseline``).
+    domain_baseline : Optional float. When ``intervention="domain_conditional"``
+        the counterfactual r_d is set to this value, which should be the
+        domain's empirical population mean from the *validation* set (not
+        the test set), making the intervention domain-specific rather than
+        a literal 0.5 heuristic.
     """
     n_samples, n_domains = reliability_weights.shape
     baseline_probs = np.asarray(predict_fn(reliability_weights), dtype=np.float64)
 
     cf_weights = reliability_weights.copy()
-    if intervention == "population_mean":
+    if intervention == "domain_conditional":
+        if domain_baseline is None:
+            raise ValueError(
+                "intervention='domain_conditional' requires domain_baseline."
+            )
+        cf_weights[:, domain_index] = float(domain_baseline)
+    elif intervention == "population_mean":
         # Intervening on the mean is degenerate when the estimator returns
         # batch-level scalars (variance = 0). In that case, push r_d half-way
         # toward the neutral value 0.5 to construct a meaningful contrast
@@ -407,20 +420,34 @@ def estimate_all_interventional_ates(
     n_bootstrap: int = 200,
     random_state: int = 42,
     intervention: str = "population_mean",
+    domain_baselines: list[float] | None = None,
 ) -> list[InterventionalEffect]:
-    """Run ``estimate_interventional_ate`` for every domain in ``domain_order``."""
-    return [
-        estimate_interventional_ate(
-            predict_fn,
-            reliability_weights,
-            domain_index=d,
-            domain_name=name,
-            n_bootstrap=n_bootstrap,
-            random_state=random_state + d,
-            intervention=intervention,
+    """Run ``estimate_interventional_ate`` for every domain in ``domain_order``.
+
+    When ``intervention="domain_conditional"``, ``domain_baselines`` must be
+    a list of per-domain target values (typically the validation-set mean
+    reliability for each domain).
+    """
+    if intervention == "domain_conditional" and domain_baselines is None:
+        raise ValueError(
+            "intervention='domain_conditional' requires a domain_baselines list."
         )
-        for d, name in enumerate(domain_order)
-    ]
+    out = []
+    for d, name in enumerate(domain_order):
+        baseline = domain_baselines[d] if domain_baselines is not None else None
+        out.append(
+            estimate_interventional_ate(
+                predict_fn,
+                reliability_weights,
+                domain_index=d,
+                domain_name=name,
+                n_bootstrap=n_bootstrap,
+                random_state=random_state + d,
+                intervention=intervention,
+                domain_baseline=baseline,
+            )
+        )
+    return out
 
 
 __all__ = [

@@ -229,7 +229,7 @@ work to lift it from workshop to mid-tier conference.
 | # | Task | Notes |
 |---|---|---|
 | D.1 | Test the reliability gate on a *third* naturally paired dataset (CICIDS + auth logs, MIMIC + clinical notes, or another industrial paired anomaly benchmark) | Confirms whether the misfire pattern generalizes |
-| D.2 | Derive a regret bound for the gate under bounded score-shift | The most realistic path from "competent thesis chapter" to "top-venue submission" |
+| D.2 | Complete the corrected theorem stack and validate it with k-of-D corruption, category-mixture shift, and finite-sample switching-certificate experiments | The most realistic path from "competent thesis chapter" to "top-venue submission" |
 | D.3 | Open-source the runtime-only `infer_rga` package separate from the research codebase | Industry-facing artifact |
 
 ---

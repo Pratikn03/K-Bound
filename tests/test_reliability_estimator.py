@@ -10,6 +10,7 @@ import pytest
 
 from uais.fusion.attention.reliability_estimator import (
     CategoryAwareReliabilityEstimator,
+    PerSampleReliabilityEstimator,
     ReliabilityEstimator,
 )
 
@@ -188,10 +189,61 @@ def test_gate_decisions_low_reliability_activates():
     assert gate.all(), "Zero-sharpness domains should always activate the reliability path"
 
 
+def test_mean_gate_dilutes_single_domain_collapse():
+    """With four domains and tau=0.66, one zero-reliability domain is hidden."""
+    weights = np.array([[0.0, 1.0, 1.0, 1.0]], dtype=np.float32)
+    masks = np.zeros_like(weights, dtype=bool)
+    est = ReliabilityEstimator(["d0", "d1", "d2", "d3"], SCORE_INDEX, gate_threshold=0.66)
+
+    gate = est.gate_decisions(weights, masks)
+
+    assert gate.tolist() == [False]
+
+
+def test_minimum_gate_catches_single_domain_collapse():
+    """A minimum-reliability gate fires on one catastrophic domain failure."""
+    weights = np.array([[0.0, 1.0, 1.0, 1.0]], dtype=np.float32)
+    masks = np.zeros_like(weights, dtype=bool)
+    est = ReliabilityEstimator(
+        ["d0", "d1", "d2", "d3"],
+        SCORE_INDEX,
+        gate_threshold=0.66,
+        gate_mode="minimum",
+        min_gate_threshold=0.34,
+    )
+
+    gate = est.gate_decisions(weights, masks)
+
+    assert gate.tolist() == [True]
+
+
+def test_hybrid_gate_catches_isolated_and_broad_failures():
+    """Hybrid RGA-v2 fires for either mean degradation or a low minimum domain."""
+    masks = np.zeros((3, 4), dtype=bool)
+    weights = np.array(
+        [
+            [0.0, 1.0, 1.0, 1.0],      # isolated catastrophic failure
+            [0.50, 0.55, 0.60, 0.65],  # broad mean degradation
+            [0.80, 0.80, 0.85, 0.90],  # healthy
+        ],
+        dtype=np.float32,
+    )
+    est = ReliabilityEstimator(
+        ["d0", "d1", "d2", "d3"],
+        SCORE_INDEX,
+        gate_threshold=0.66,
+        gate_mode="hybrid",
+        min_gate_threshold=0.34,
+    )
+
+    gate = est.gate_decisions(weights, masks)
+
+    assert gate.tolist() == [True, True, False]
+
+
 def test_gate_save_load_preserves_threshold(fitted_estimator):
     """gate_threshold must survive a save/load round-trip."""
     import tempfile
-    est, _, _, _ = fitted_estimator
     est_custom = ReliabilityEstimator(DOMAIN_ORDER, SCORE_INDEX, gate_threshold=0.55,
                                       min_samples_for_ks=5)
     with tempfile.TemporaryDirectory() as d:
@@ -248,3 +300,89 @@ def test_category_aware_ks_does_not_misfire_on_category_mix_shift():
 
     assert float(category_weight.mean()) > 0.8
     assert float(category_weight.mean()) > float(global_weight.mean()) + 0.5
+
+
+# ---------------------------------------------------------------------------
+# Per-sample reliability estimator (C1)
+# ---------------------------------------------------------------------------
+
+def test_per_sample_reliability_varies_per_sample():
+    """Per-sample estimator must produce non-trivial per-sample variance.
+
+    The batch-level base class collapses to a constant per (domain, batch),
+    which is the streaming-deployment objection that C1 closes.
+    """
+    features, masks, labels = _make_data(seed=2, missing_prob=0.0)
+    base = ReliabilityEstimator(
+        domain_order=DOMAIN_ORDER,
+        score_index=SCORE_INDEX,
+        ece_weight=0.4,
+        ks_weight=0.4,
+        sharpness_weight=0.2,
+        n_calibration_bins=5,
+        min_samples_for_ks=10,
+    ).fit(features, masks, labels)
+    per_sample = PerSampleReliabilityEstimator(
+        domain_order=DOMAIN_ORDER,
+        score_index=SCORE_INDEX,
+        ece_weight=0.4,
+        ks_weight=0.4,
+        sharpness_weight=0.2,
+        n_calibration_bins=5,
+        min_samples_for_ks=10,
+    ).fit(features, masks, labels)
+
+    base_w = base.compute_reliability_weights(features, masks)
+    sample_w = per_sample.compute_reliability_weights(features, masks)
+
+    assert base_w.shape == sample_w.shape == (N, len(DOMAIN_ORDER))
+    # Base estimator: per-domain column is constant within a batch.
+    for d in range(len(DOMAIN_ORDER)):
+        col = base_w[:, d]
+        avail = col > 0
+        if avail.sum() < 2:
+            continue
+        assert float(col[avail].std()) < 1e-6, (
+            f"batch-level estimator should produce constant column for domain {d}"
+        )
+    # Per-sample estimator: every domain column must have non-trivial variance.
+    for d in range(len(DOMAIN_ORDER)):
+        col = sample_w[:, d]
+        avail = col > 0
+        assert avail.sum() > 10, f"too few available rows for domain {d}"
+        assert float(col[avail].std()) > 0.01, (
+            f"per-sample estimator should produce per-sample variance for domain {d}"
+        )
+
+    # Weights still bounded to [0, 1].
+    assert float(sample_w.min()) >= 0.0
+    assert float(sample_w.max()) <= 1.0
+
+
+def test_per_sample_reliability_drops_at_tails():
+    """A sample whose score sits in the validation distribution's tail must
+    receive a lower reliability than one sitting near the median."""
+    features, masks, labels = _make_data(seed=3, missing_prob=0.0)
+    est = PerSampleReliabilityEstimator(
+        domain_order=DOMAIN_ORDER,
+        score_index=SCORE_INDEX,
+        ece_weight=0.0,
+        ks_weight=1.0,
+        sharpness_weight=0.0,
+        n_calibration_bins=5,
+        min_samples_for_ks=10,
+    ).fit(features, masks, labels)
+
+    # Craft a probe batch: one sample at validation median, one at extreme tail.
+    probe = np.zeros((2, len(DOMAIN_ORDER), features.shape[2]), dtype=np.float32)
+    probe[:, :, :] = 0.5
+    median_score = float(np.median(features[~masks[:, 0], 0, SCORE_INDEX]))
+    probe[0, 0, SCORE_INDEX] = median_score
+    probe[1, 0, SCORE_INDEX] = 0.99  # tail
+    probe_masks = np.zeros((2, len(DOMAIN_ORDER)), dtype=bool)
+
+    w = est.compute_reliability_weights(probe, probe_masks)
+    assert w[0, 0] > w[1, 0], (
+        "sample near validation median should receive higher reliability"
+        f" than a tail sample (got median={w[0, 0]}, tail={w[1, 0]})"
+    )

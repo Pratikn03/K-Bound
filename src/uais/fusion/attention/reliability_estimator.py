@@ -44,9 +44,13 @@ class ReliabilityEstimator:
         n_calibration_bins: int = 10,
         min_samples_for_ks: int = 30,
         gate_threshold: float = 0.66,
+        gate_mode: str = "mean",
+        min_gate_threshold: Optional[float] = None,
     ) -> None:
         if abs(ece_weight + ks_weight + sharpness_weight - 1.0) > 1e-6:
             raise ValueError("ece_weight + ks_weight + sharpness_weight must sum to 1.0")
+        if gate_mode not in {"mean", "minimum", "hybrid"}:
+            raise ValueError("gate_mode must be one of 'mean', 'minimum', or 'hybrid'.")
         self.domain_order = list(domain_order)
         self.score_index = score_index
         self.ece_weight = ece_weight
@@ -55,6 +59,8 @@ class ReliabilityEstimator:
         self.n_calibration_bins = n_calibration_bins
         self.min_samples_for_ks = min_samples_for_ks
         self.gate_threshold = gate_threshold
+        self.gate_mode = gate_mode
+        self.min_gate_threshold = 1.0 - gate_threshold if min_gate_threshold is None else float(min_gate_threshold)
 
         self._calibrators: Dict[str, IsotonicRegression] = {}
         self._reference_scores: Dict[str, np.ndarray] = {}
@@ -167,23 +173,43 @@ class ReliabilityEstimator:
 
         return weights
 
-    def gate_decisions(self, weights: np.ndarray, masks: np.ndarray) -> np.ndarray:
+    def gate_decisions(
+        self,
+        weights: np.ndarray,
+        masks: np.ndarray,
+        gate_threshold: Optional[float] = None,
+        gate_mode: Optional[str] = None,
+        min_gate_threshold: Optional[float] = None,
+    ) -> np.ndarray:
         """Return [N] bool: True = use reliability path, False = use static path.
 
         For each sample, mean reliability is computed over present (non-masked)
-        domains only. If that mean falls below gate_threshold, the reliability
-        path is activated for that sample.  This is the conservative gate from
-        the RGA paper: static attention is the default; reliability weights are
-        only injected when domain quality evidence indicates degradation.
+        domains only. The default ``mean`` gate preserves the conservative RGA
+        rule: if the mean falls below gate_threshold, the reliability path is
+        activated for that sample. The optional RGA-v2 ``minimum`` and
+        ``hybrid`` modes add sensitivity to isolated catastrophic domain
+        failures without changing the default paper configuration.
         """
+        threshold = self.gate_threshold if gate_threshold is None else float(gate_threshold)
+        mode = self.gate_mode if gate_mode is None else gate_mode
+        min_threshold = self.min_gate_threshold if min_gate_threshold is None else float(min_gate_threshold)
+        if mode not in {"mean", "minimum", "hybrid"}:
+            raise ValueError("gate_mode must be one of 'mean', 'minimum', or 'hybrid'.")
         n_present = (~masks).sum(axis=1).astype(np.float32)
-        # weights[masks] == 0.0 by contract of compute_reliability_weights
+        present_weights = np.where(masks, 1.0, weights)
         mean_r = np.where(
             n_present > 0,
             weights.sum(axis=1) / np.maximum(n_present, 1.0),
             0.0,
         )
-        return mean_r < self.gate_threshold  # True → use reliability path
+        min_r = np.where(n_present > 0, present_weights.min(axis=1), 0.0)
+        mean_fire = mean_r < threshold
+        min_fire = min_r < min_threshold
+        if mode == "mean":
+            return mean_fire
+        if mode == "minimum":
+            return min_fire
+        return mean_fire | min_fire
 
     # ------------------------------------------------------------------
     # Accessors
@@ -222,6 +248,8 @@ class ReliabilityEstimator:
             "n_calibration_bins": self.n_calibration_bins,
             "min_samples_for_ks": self.min_samples_for_ks,
             "gate_threshold": self.gate_threshold,
+            "gate_mode": self.gate_mode,
+            "min_gate_threshold": self.min_gate_threshold,
             "calibrators": self._calibrators,
             "reference_scores": self._reference_scores,
             "domain_ece": self._domain_ece,
@@ -242,6 +270,8 @@ class ReliabilityEstimator:
             n_calibration_bins=payload["n_calibration_bins"],
             min_samples_for_ks=payload["min_samples_for_ks"],
             gate_threshold=payload.get("gate_threshold", 0.66),
+            gate_mode=payload.get("gate_mode", "mean"),
+            min_gate_threshold=payload.get("min_gate_threshold"),
         )
         obj._calibrators = payload["calibrators"]
         obj._reference_scores = payload["reference_scores"]
@@ -355,6 +385,8 @@ class CategoryAwareReliabilityEstimator(ReliabilityEstimator):
             "n_calibration_bins": self.n_calibration_bins,
             "min_samples_for_ks": self.min_samples_for_ks,
             "gate_threshold": self.gate_threshold,
+            "gate_mode": self.gate_mode,
+            "min_gate_threshold": self.min_gate_threshold,
             "calibrators": self._calibrators,
             "reference_scores": self._reference_scores,
             "domain_ece": self._domain_ece,
@@ -376,6 +408,8 @@ class CategoryAwareReliabilityEstimator(ReliabilityEstimator):
             n_calibration_bins=payload["n_calibration_bins"],
             min_samples_for_ks=payload["min_samples_for_ks"],
             gate_threshold=payload.get("gate_threshold", 0.66),
+            gate_mode=payload.get("gate_mode", "mean"),
+            min_gate_threshold=payload.get("min_gate_threshold"),
             unknown_category_policy=payload.get("unknown_category_policy", "global"),
         )
         obj._calibrators = payload["calibrators"]
@@ -384,6 +418,84 @@ class CategoryAwareReliabilityEstimator(ReliabilityEstimator):
         obj.fitted = payload["fitted"]
         obj._category_reference_scores = payload.get("category_reference_scores", {})
         return obj
+
+
+class PerSampleReliabilityEstimator(ReliabilityEstimator):
+    """Per-sample reliability variant for streaming / low-batch deployment.
+
+    The base ``ReliabilityEstimator`` returns a *batch-level* reliability
+    scalar per domain that is broadcast to every available row in the
+    inference batch. Under streaming or single-sample inference the
+    batch-level reliability degenerates to a constant, which is the
+    deployment-grade objection: the gate does not actually adapt per
+    sample.
+
+    This estimator decomposes the reliability into three terms that are
+    each computed per-sample, plus a single global drift correction:
+
+      r_{i,d} = ece_weight * ece_reliability_d                    (per-domain)
+              + ks_weight * ks_local_reliability_{i,d}            (per-sample)
+              + sharpness_weight * sharpness_local_{i,d}          (per-sample)
+
+    where ``ks_local_reliability_{i,d}`` is computed from the local
+    neighbourhood of sample i in the validation reference distribution
+    (rank-based: 1 - 2|F_d(s_{i,d}) - 0.5|, so higher when the sample's
+    score sits near the validation distribution's median and lower at
+    the tails). ``sharpness_local_{i,d}`` is the per-sample sharpness
+    ``(s_{i,d} - 0.5)^2 * 4`` clipped to [0,1]. The ECE component is
+    necessarily per-domain because ECE itself is a population-level
+    summary; it acts as a uniform per-domain prior. The drift term thus
+    varies sample-by-sample, which is the property that makes this
+    estimator deployment-grade under streaming.
+
+    This subclass is API-compatible with ``ReliabilityEstimator``: the
+    same ``fit`` and ``compute_reliability_weights`` signatures hold.
+    """
+
+    def compute_reliability_weights(
+        self,
+        features: np.ndarray,
+        masks: np.ndarray,
+    ) -> np.ndarray:
+        if not self.fitted:
+            raise RuntimeError("ReliabilityEstimator must be fitted before computing weights.")
+        n_samples = features.shape[0]
+        n_domains = len(self.domain_order)
+        weights = np.zeros((n_samples, n_domains), dtype=np.float32)
+
+        for i, domain in enumerate(self.domain_order):
+            available_mask = ~masks[:, i]
+            if not available_mask.any():
+                continue
+            cur_scores = features[available_mask, i, self.score_index].astype(float)
+            # --- Per-sample rank-based local KS reliability ---
+            ref = self._reference_scores.get(domain, np.array([]))
+            if len(ref) >= self.min_samples_for_ks:
+                # Empirical CDF of the validation reference at each test score.
+                sorted_ref = np.sort(ref)
+                ranks = np.searchsorted(sorted_ref, cur_scores, side="right")
+                cdf = ranks / max(len(sorted_ref), 1)
+                # 1 - 2|F-0.5| equals 1 at the median, 0 at the tails.
+                ks_local = 1.0 - 2.0 * np.abs(cdf - 0.5)
+                ks_local = np.clip(ks_local, 0.0, 1.0)
+            else:
+                ks_local = np.ones_like(cur_scores)
+
+            # --- Per-sample sharpness ---
+            sharp_local = np.clip(((cur_scores - 0.5) ** 2) * 4.0, 0.0, 1.0)
+
+            # --- Per-domain ECE prior ---
+            stored_ece = self._domain_ece.get(domain, 0.5)
+            ece_reliability = float(max(0.0, 1.0 - stored_ece))
+
+            rel = (
+                self.ece_weight * ece_reliability
+                + self.ks_weight * ks_local
+                + self.sharpness_weight * sharp_local
+            )
+            rel = np.clip(rel.astype(np.float32), 0.0, 1.0)
+            weights[available_mask, i] = rel
+        return weights
 
 
 # ---------------------------------------------------------------------------
@@ -397,5 +509,6 @@ RGAReliabilityEstimator = ReliabilityEstimator
 __all__ = [
     "ReliabilityEstimator",
     "CategoryAwareReliabilityEstimator",
+    "PerSampleReliabilityEstimator",
     "RGAReliabilityEstimator",
 ]

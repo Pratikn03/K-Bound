@@ -66,7 +66,7 @@ If the author is willing to invest, three directions in increasing ambition:
 
 2. **Mechanism-novelty path:** replace the heuristic gate $\tau=0.66$ with a *learned* gate trained on validation drift episodes — a small classifier $g(\bar r) \to \{static, adaptive\}$. Now the reliability mechanism is data-driven rather than threshold-tuned. Conference-grade if paired with #1.
 
-3. **Theory-novelty path (highest effort):** prove a regret bound. Under bounded shift on a single domain, show that gated attention has lower worst-case calibration error than static attention. The setup is tractable — the reliability vector is observable, the gate is a finite-state switch, and the data-shift assumption is a one-line condition. PhD/journal-grade.
+3. **Theory-novelty path (highest effort):** replace the invalid bounded-shift sketch with a theorem stack that proves the mechanism boundaries: quality-blind fusion impossibility, global-KS mixture confounding, mean-gate dilution, risk-dominance switching, finite-sample certification, and KS false-fire control. PhD/journal-grade only if those assumptions are validated by matching experiments.
 
 ---
 
@@ -74,7 +74,7 @@ If the author is willing to invest, three directions in increasing ambition:
 
 ### 2.1 What's strong
 
-- **Code matches prose** (with two unfixed math gaps): the modules referenced in [PAPER_DRAFT_v1.tex](../PAPER_DRAFT_v1.tex) actually exist and are tested. Compared to most academic codebases, this is unusual.
+- **Code matches prose** (with the theory appendix now requiring theorem-linked experiments): the modules referenced in [PAPER_DRAFT_v1.tex](../PAPER_DRAFT_v1.tex) actually exist and are tested. Compared to most academic codebases, this is unusual.
 - **Honest construct flagging**: [experiments/fusion/real_domain_fusion_metadata.json](../../../experiments/fusion/real_domain_fusion_metadata.json) literally contains `"important_limitation": "...not naturally co-observed entities."`. Self-flagging like this is rare.
 - **Reproducibility ladder is real**: [src/scripts/prepare_real_fusion_benchmark.py](../../../src/scripts/prepare_real_fusion_benchmark.py) → [configs/attention_real_fusion.yaml](../../../configs/attention_real_fusion.yaml) → [run_breakthrough_experiment.py](../../../src/scripts/run_breakthrough_experiment.py) → [generate_craf_paper_assets.py](../../../src/scripts/generate_craf_paper_assets.py). One command path, deterministic seeds, real outputs.
 - **Multi-seed clean evaluation** (5 seeds, mean ± std). Better than the per-domain pipelines audited in [RESEARCH_QUALITY_AUDIT.md](../../../RESEARCH_QUALITY_AUDIT.md), which all run a single seed.
@@ -266,6 +266,6 @@ If the next revision answers all five proactively, the paper goes from "modest w
 
 ## 8. Bottom line, restated
 
-You have **a real piece of engineering** (the codebase) wrapped in **an honestly written paper** that **does not yet isolate a research result**. The fix is empirical, not editorial. Two weeks of $\tau$-sweep + harder benchmark + Tent/TTT comparators converts the current draft from "competent but indecisive" into "we measurably help in conditions where prior fusion fails." That's a workshop paper. Add a real co-observed dataset on top and it's a conference paper. Add a regret bound on top of that and it's a top-venue paper.
+You have **a real piece of engineering** (the codebase) wrapped in **an honestly written paper** that **does not yet isolate a research result**. The fix is empirical, not editorial. Two weeks of $\tau$-sweep, k-of-D corruption, harder benchmarks, and Tent/TTT comparators converts the current draft from "competent but indecisive" into "we measurably help in conditions where prior fusion fails." That's a workshop paper. Add a real co-observed dataset plus the corrected theorem stack with matching experiments and it becomes a stronger conference paper.
 
 The hardest decision is naming. Make it today; everything else flows from it.

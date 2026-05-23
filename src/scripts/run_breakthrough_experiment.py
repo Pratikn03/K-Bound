@@ -21,6 +21,7 @@ Usage:
 from __future__ import annotations
 
 import argparse
+from itertools import combinations
 import json
 import logging
 import math
@@ -59,6 +60,7 @@ from uais.fusion.attention.causal_attribution import (
 )
 from uais.fusion.attention.reliability_estimator import (
     CategoryAwareReliabilityEstimator,
+    PerSampleReliabilityEstimator,
     ReliabilityEstimator,
 )
 from uais.fusion.attention.train_attention_fusion import attention_fusion_loss, set_seed
@@ -315,7 +317,12 @@ def _make_reliability_estimator(
     disabled_components: Tuple[str, ...] = (),
 ) -> ReliabilityEstimator:
     weights = _component_weights(rel_cfg, disabled=disabled_components)
-    return ReliabilityEstimator(
+    estimator_type = str(rel_cfg.get("estimator_type", "batch")).lower()
+    if estimator_type in ("per_sample", "per-sample", "persample", "streaming"):
+        cls = PerSampleReliabilityEstimator
+    else:
+        cls = ReliabilityEstimator
+    return cls(
         domain_order=domain_order,
         score_index=score_index,
         ece_weight=weights["ece_weight"],
@@ -323,6 +330,14 @@ def _make_reliability_estimator(
         sharpness_weight=weights["sharpness_weight"],
         n_calibration_bins=int(rel_cfg.get("n_calibration_bins", 10)),
         min_samples_for_ks=int(rel_cfg.get("min_samples_for_ks", 30)),
+        gate_threshold=float(rel_cfg.get("clean_gate_threshold", rel_cfg.get("gate_threshold", 0.66))),
+        gate_mode=str(rel_cfg.get("gate_mode", "mean")),
+        min_gate_threshold=float(
+            rel_cfg.get(
+                "min_gate_threshold",
+                1.0 - float(rel_cfg.get("clean_gate_threshold", rel_cfg.get("gate_threshold", 0.66))),
+            )
+        ),
     )
 
 
@@ -595,16 +610,36 @@ def _predict_craf(
     return probs
 
 
-def _gate_decision_stats(reliability_weights: np.ndarray, masks: np.ndarray, threshold: float) -> Dict[str, float | bool | int]:
+def _gate_decision_stats(
+    reliability_weights: np.ndarray,
+    masks: np.ndarray,
+    threshold: float,
+    gate_mode: str = "mean",
+    min_gate_threshold: float | None = None,
+) -> Dict[str, float | bool | int | str]:
     """Summarize whether the reliability gate adapts for one inference batch."""
+    if gate_mode not in {"mean", "minimum", "hybrid"}:
+        raise ValueError("gate_mode must be one of 'mean', 'minimum', or 'hybrid'.")
     present_weights = reliability_weights[~masks]
     mean_reliability = float(np.nanmean(present_weights)) if present_weights.size else float("nan")
-    adapted = bool(present_weights.size and mean_reliability < threshold)
+    min_reliability = float(np.nanmin(present_weights)) if present_weights.size else float("nan")
+    min_threshold = 1.0 - threshold if min_gate_threshold is None else float(min_gate_threshold)
+    mean_fire = bool(present_weights.size and mean_reliability < threshold)
+    min_fire = bool(present_weights.size and min_reliability < min_threshold)
+    if gate_mode == "mean":
+        adapted = mean_fire
+    elif gate_mode == "minimum":
+        adapted = min_fire
+    else:
+        adapted = mean_fire or min_fire
     return {
         "adapted": adapted,
         "mean_reliability": mean_reliability,
+        "min_reliability": min_reliability,
         "n_present": int(present_weights.size),
         "n_samples": int(masks.shape[0]),
+        "gate_mode": gate_mode,
+        "min_gate_threshold": float(min_threshold),
     }
 
 
@@ -639,6 +674,7 @@ def _predict_craf_with_stats(
     adapted_samples = 0
     adapted_batches = 0
     reliability_numer = 0.0
+    min_reliability_numer = 0.0
     reliability_denom = 0
     for start in range(0, n, batch_size):
         end = min(start + batch_size, n)
@@ -647,10 +683,17 @@ def _predict_craf_with_stats(
         craf_w = estimator.compute_reliability_weights(feat_np, mask_np)
         feat_t = torch.tensor(feat_np, dtype=torch.float32, device=device)
         mask_t = torch.tensor(mask_np, dtype=torch.bool, device=device)
-        gate_stats = _gate_decision_stats(craf_w, mask_np, clean_gate_threshold)
+        gate_stats = _gate_decision_stats(
+            craf_w,
+            mask_np,
+            clean_gate_threshold,
+            gate_mode=estimator.gate_mode,
+            min_gate_threshold=estimator.min_gate_threshold,
+        )
         batch_n = end - start
         if np.isfinite(float(gate_stats["mean_reliability"])):
             reliability_numer += float(gate_stats["mean_reliability"]) * batch_n
+            min_reliability_numer += float(gate_stats["min_reliability"]) * batch_n
             reliability_denom += batch_n
 
         if per_sample_gating or learned_gate is not None:
@@ -658,16 +701,11 @@ def _predict_craf_with_stats(
                 # Learned gate overrides the heuristic threshold.
                 gate_per_sample = learned_gate.decide(craf_w, mask_np)
             else:
-                # Per-sample decisions using the per-call threshold (so τ-sweep works).
-                # Mirror estimator.gate_decisions logic but use clean_gate_threshold,
-                # not the estimator's construction-time gate_threshold.
-                n_present = (~mask_np).sum(axis=1).astype(np.float32)
-                mean_r_per_sample = np.where(
-                    n_present > 0,
-                    craf_w.sum(axis=1) / np.maximum(n_present, 1.0),
-                    0.0,
+                gate_per_sample = estimator.gate_decisions(
+                    craf_w,
+                    mask_np,
+                    gate_threshold=clean_gate_threshold,
                 )
-                gate_per_sample = mean_r_per_sample < clean_gate_threshold  # [B] bool
             n_adapted = int(gate_per_sample.sum())
             if n_adapted == 0:
                 logits, _, _ = model(feat_t, key_padding_mask=mask_t)
@@ -709,8 +747,11 @@ def _predict_craf_with_stats(
         "adapted_batches": int(adapted_batches),
         "n_batches": int(math.ceil(n / batch_size)) if batch_size > 0 else 0,
         "mean_reliability": float(reliability_numer / reliability_denom) if reliability_denom else float("nan"),
+        "min_reliability": float(min_reliability_numer / reliability_denom) if reliability_denom else float("nan"),
         "per_sample_gating": bool(per_sample_gating or learned_gate is not None),
         "learned_gate": bool(learned_gate is not None),
+        "gate_mode": estimator.gate_mode,
+        "min_gate_threshold": estimator.min_gate_threshold,
     }
     return np.concatenate(probs), stats
 
@@ -1092,6 +1133,157 @@ def _all_domain_conditions(
             }
         )
     return conditions
+
+
+def _k_domain_corruption_conditions(
+    test_feat: np.ndarray,
+    test_mask: np.ndarray,
+    domain_order: List[str],
+    score_index: int,
+    attack_name: str,
+    k_values: List[int],
+    sigma: float,
+    seed: int,
+) -> list[dict]:
+    """Generate clean and exact k-of-D corrupted score tensors for mechanism tests."""
+    try:
+        attack_type = AdversarialAttackType(attack_name)
+    except ValueError:
+        return []
+
+    engine = AdversarialPerturbationEngine(domain_order, score_index, random_seed=seed)
+    conditions: list[dict] = []
+    for k in sorted(set(int(value) for value in k_values)):
+        if k < 0 or k > len(domain_order):
+            raise ValueError(f"k-domain corruption value {k} is outside [0, {len(domain_order)}].")
+        if k == 0:
+            conditions.append(
+                {
+                    "condition": "clean:k0",
+                    "attack": "none",
+                    "target_domain": "none",
+                    "failed_domains": "none",
+                    "failed_domain_count": 0,
+                    "features": test_feat,
+                    "masks": test_mask,
+                }
+            )
+            continue
+        for subset in combinations(domain_order, k):
+            pert_feat = test_feat.copy()
+            pert_mask = test_mask.copy()
+            for domain in subset:
+                pert_feat, pert_mask = engine.apply_attack(
+                    pert_feat,
+                    pert_mask,
+                    attack_type,
+                    target_domain=domain,
+                    sigma=sigma,
+                )
+            failed_domains = ",".join(subset)
+            conditions.append(
+                {
+                    "condition": f"{attack_name}:k{k}:{failed_domains}",
+                    "attack": attack_name,
+                    "target_domain": failed_domains,
+                    "failed_domains": failed_domains,
+                    "failed_domain_count": int(k),
+                    "features": pert_feat,
+                    "masks": pert_mask,
+                }
+            )
+    return conditions
+
+
+def _evaluate_k_domain_corruption(
+    model: AttentionFusionModel,
+    estimator: ReliabilityEstimator,
+    test_feat: np.ndarray,
+    test_mask: np.ndarray,
+    test_labels: np.ndarray,
+    domain_order: List[str],
+    score_index: int,
+    device: torch.device,
+    attack_names: List[str],
+    k_values: List[int],
+    gate_modes: List[str],
+    sigma: float,
+    clean_gate_threshold: float,
+    min_gate_threshold: float,
+    seed: int,
+    per_sample_gating: bool = False,
+    static_decision_threshold: float = 0.5,
+    craf_decision_threshold: float = 0.5,
+) -> list[dict]:
+    """Evaluate phase-transition behavior as exactly k domains are corrupted."""
+    if not k_values:
+        return []
+    rows: list[dict] = []
+    original_gate_mode = estimator.gate_mode
+    original_min_threshold = estimator.min_gate_threshold
+    clean_added = False
+    try:
+        for attack_name in attack_names:
+            conditions = _k_domain_corruption_conditions(
+                test_feat,
+                test_mask,
+                domain_order,
+                score_index,
+                attack_name,
+                k_values,
+                sigma,
+                seed=seed + 41_000,
+            )
+            for condition in conditions:
+                if condition["failed_domain_count"] == 0:
+                    if clean_added:
+                        continue
+                    clean_added = True
+                condition_feat = condition["features"]
+                condition_mask = condition["masks"]
+                static_probs = _predict_static(model, condition_feat, condition_mask, device)
+                static_m = classification_metrics(test_labels, static_probs, threshold=static_decision_threshold)
+                for gate_mode in gate_modes:
+                    if gate_mode not in {"mean", "minimum", "hybrid"}:
+                        raise ValueError(f"Unknown k-domain gate mode: {gate_mode}")
+                    estimator.gate_mode = gate_mode
+                    estimator.min_gate_threshold = min_gate_threshold
+                    craf_probs, gate_stats = _predict_craf_with_stats(
+                        model,
+                        estimator,
+                        condition_feat,
+                        condition_mask,
+                        device,
+                        clean_gate_threshold=clean_gate_threshold,
+                        per_sample_gating=per_sample_gating,
+                    )
+                    craf_m = classification_metrics(test_labels, craf_probs, threshold=craf_decision_threshold)
+                    rows.append(
+                        {
+                            "seed": int(seed),
+                            "attack": condition["attack"],
+                            "condition": condition["condition"],
+                            "failed_domain_count": int(condition["failed_domain_count"]),
+                            "failed_domains": condition["failed_domains"],
+                            "gate_mode": gate_mode,
+                            "static_auc": static_m.get("roc_auc"),
+                            "craf_auc": craf_m.get("roc_auc"),
+                            "static_pr_auc": static_m.get("pr_auc"),
+                            "craf_pr_auc": craf_m.get("pr_auc"),
+                            "static_f1": static_m.get("f1"),
+                            "craf_f1": craf_m.get("f1"),
+                            "static_decision_threshold": float(static_decision_threshold),
+                            "craf_decision_threshold": float(craf_decision_threshold),
+                            "adaptation_rate": gate_stats["adaptation_rate"],
+                            "mean_reliability": gate_stats["mean_reliability"],
+                            "min_reliability": gate_stats["min_reliability"],
+                            "min_gate_threshold": float(min_gate_threshold),
+                        }
+                    )
+    finally:
+        estimator.gate_mode = original_gate_mode
+        estimator.min_gate_threshold = original_min_threshold
+    return rows
 
 
 def _evaluate_tau_sweep(
@@ -1558,16 +1750,23 @@ def _evaluate_causal_attribution(
     seed: int,
     *,
     n_bootstrap: int = 200,
-    intervention: str = "population_mean",
+    intervention: str = "domain_conditional",
     batch_size: int = 256,
+    val_reliability_weights: np.ndarray | None = None,
 ) -> dict:
     """Interventional ATE of per-domain reliability on predictions.
 
-    For each domain d we set every sample's domain-d reliability to its
-    population mean (a do-calculus intervention on r_d), re-run the
+    For each domain ``d`` we set every sample's domain-d reliability to a
+    target value (a do-calculus intervention on r_d), re-run the
     reliability-injected fusion forward pass, and compute the mean
     prediction shift versus the baseline reliability vector. A
     sample-level bootstrap gives the 95% CI.
+
+    The default intervention is ``domain_conditional``: each domain is
+    intervened on with its empirical validation-set mean reliability,
+    which is a domain-specific neutral target rather than the
+    domain-agnostic heuristic 0.5. When ``val_reliability_weights`` is
+    None the estimator falls back to population_mean.
     """
     reliability_weights = estimator.compute_reliability_weights(test_feat, test_mask)
 
@@ -1590,18 +1789,31 @@ def _evaluate_causal_attribution(
                 probs.append(torch.sigmoid(logits.squeeze(-1)).cpu().numpy())
         return np.concatenate(probs)
 
+    domain_baselines: list[float] | None = None
+    actual_intervention = intervention
+    if intervention == "domain_conditional":
+        if val_reliability_weights is not None and val_reliability_weights.size > 0:
+            domain_baselines = [
+                float(val_reliability_weights[:, d].mean())
+                for d in range(val_reliability_weights.shape[1])
+            ]
+        else:
+            actual_intervention = "population_mean"
+
     effects = estimate_all_interventional_ates(
         predict_with_reliability,
         reliability_weights,
         domain_order=domain_order,
         n_bootstrap=n_bootstrap,
         random_state=seed,
-        intervention=intervention,
+        intervention=actual_intervention,
+        domain_baselines=domain_baselines,
     )
     return {
         "seed": int(seed),
         "n_test_samples": int(test_feat.shape[0]),
-        "intervention": str(intervention),
+        "intervention": str(actual_intervention),
+        "domain_baselines": domain_baselines,
         "per_domain": [
             {
                 "domain": e.domain,
@@ -1713,7 +1925,8 @@ def _run_experiment_arrays(
 
     seeds = [seed_override] if seed_override is not None else eval_cfg.get("seeds", [42])
     device = device or torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    clean_gate_threshold = float(rel_cfg.get("clean_gate_threshold", 0.66))
+    clean_gate_threshold = float(rel_cfg.get("clean_gate_threshold", rel_cfg.get("gate_threshold", 0.66)))
+    min_gate_threshold = float(rel_cfg.get("min_gate_threshold", 1.0 - clean_gate_threshold))
     # Per-sample RGA gating (paper formalism r_{i,d}). Default False preserves
     # batch-level gating used in current paper results.
     per_sample_gating = bool(rel_cfg.get("per_sample_gating", False))
@@ -1726,6 +1939,9 @@ def _run_experiment_arrays(
     tau_sweep_thresholds = [float(v) for v in mechanism_cfg.get("tau_sweep_thresholds", [])]
     component_ablation_variants = list(mechanism_cfg.get("component_ablation_variants", []))
     enable_learned_gate = bool(mechanism_cfg.get("learned_gate", False))
+    k_domain_values = [int(v) for v in mechanism_cfg.get("k_domain_corruption_values", [])]
+    k_domain_attacks = list(mechanism_cfg.get("k_domain_corruption_attacks", attack_names))
+    k_domain_gate_modes = list(mechanism_cfg.get("k_domain_gate_modes", ["mean", "minimum", "hybrid"]))
 
     per_seed_table1 = []
     per_seed_drift_rows: list[dict] = []
@@ -1737,6 +1953,7 @@ def _run_experiment_arrays(
     per_seed_failure_cases: list[dict] = []
     per_seed_tau_sweep_rows: list[dict] = []
     per_seed_component_ablation_rows: list[dict] = []
+    per_seed_k_domain_rows: list[dict] = []
     per_seed_category_aware_rows: list[dict] = []
     per_seed_causal_attribution_rows: list[dict] = []
     category_aware_enabled = bool(rel_cfg.get("category_aware", False)) and sample_categories is not None
@@ -1782,6 +1999,8 @@ def _run_experiment_arrays(
                 n_calibration_bins=int(rel_cfg.get("n_calibration_bins", 10)),
                 min_samples_for_ks=int(rel_cfg.get("min_samples_for_ks", 30)),
                 gate_threshold=clean_gate_threshold,
+                gate_mode=str(rel_cfg.get("gate_mode", "mean")),
+                min_gate_threshold=min_gate_threshold,
                 unknown_category_policy=str(rel_cfg.get("unknown_category_policy", "global")),
             )
             category_estimator.fit(
@@ -2144,6 +2363,28 @@ def _run_experiment_arrays(
                 static_decision_threshold=static_decision_threshold,
             )
         )
+        per_seed_k_domain_rows.extend(
+            _evaluate_k_domain_corruption(
+                model,
+                estimator,
+                test_feat,
+                test_mask,
+                test_labels,
+                domain_order,
+                score_index,
+                device,
+                k_domain_attacks,
+                k_domain_values,
+                k_domain_gate_modes,
+                adversarial_sigma,
+                clean_gate_threshold,
+                min_gate_threshold,
+                actual_seed,
+                per_sample_gating=per_sample_gating,
+                static_decision_threshold=static_decision_threshold,
+                craf_decision_threshold=craf_decision_threshold,
+            )
+        )
         per_seed_missing_rows.extend(
             _evaluate_missing(
                 model,
@@ -2186,6 +2427,7 @@ def _run_experiment_arrays(
                 device,
                 domain_order,
                 actual_seed,
+                val_reliability_weights=estimator.compute_reliability_weights(val_feat, val_mask),
             )
         )
         per_seed_failure_cases.append(
@@ -2275,6 +2517,26 @@ def _run_experiment_arrays(
         if per_seed_component_ablation_rows
         else []
     )
+    k_domain_summary = (
+        aggregate_stress_rows(
+            per_seed_k_domain_rows,
+            group_keys=("attack", "failed_domain_count", "gate_mode"),
+            metric_keys=(
+                "static_auc",
+                "craf_auc",
+                "static_pr_auc",
+                "craf_pr_auc",
+                "static_f1",
+                "craf_f1",
+                "adaptation_rate",
+                "mean_reliability",
+                "min_reliability",
+            ),
+            alpha=bootstrap_alpha,
+        )
+        if per_seed_k_domain_rows
+        else []
+    )
 
     static_aucs = [row["static_attention"].get("roc_auc", float("nan")) for row in per_seed_table1]
     craf_aucs = [row["craf_attention"].get("roc_auc", float("nan")) for row in per_seed_table1]
@@ -2318,6 +2580,8 @@ def _run_experiment_arrays(
         "table_6_tau_sweep": tau_sweep_summary,
         "table_7_component_ablation_per_seed": per_seed_component_ablation_rows,
         "table_7_component_ablation": component_ablation_summary,
+        "table_10_k_domain_corruption_per_seed": per_seed_k_domain_rows,
+        "table_10_k_domain_corruption": k_domain_summary,
         "table_8_category_aware_per_seed": per_seed_category_aware_rows,
         "table_8_category_aware": _aggregate_category_aware(per_seed_category_aware_rows),
         "table_9_causal_attribution_per_seed": per_seed_causal_attribution_rows,
@@ -2338,6 +2602,7 @@ def _run_experiment_arrays(
                 "missing_modality": missing_summary,
                 "tau_sweep": tau_sweep_summary,
                 "component_ablation": component_ablation_summary,
+                "k_domain_corruption": k_domain_summary,
             },
             "claim_checks": claim_checks,
         },

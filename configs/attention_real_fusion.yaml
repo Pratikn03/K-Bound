@@ -84,6 +84,8 @@ reliability:
   ks_weight: 0.35         # β — KS score-distribution drift
   sharpness_weight: 0.20  # γ — score sharpness (distance from 0.5)
   clean_gate_threshold: 0.66
+  min_gate_threshold: 0.34
+  gate_mode: mean
   # per_sample_gating: false   # set true to match paper r_{i,d} formalism
   #                            # (gate fires per sample, not per batch)
   n_calibration_bins: 10
@@ -97,4 +99,7 @@ craf:
   mechanism_isolation:
     tau_sweep_thresholds: [0.4, 0.5, 0.6, 0.66, 0.7, 0.8, 0.9]
     component_ablation_variants: [full, no_ece, no_ks, no_sharpness, no_gate]
+    k_domain_corruption_values: [0, 1, 2, 3, 4]
+    k_domain_corruption_attacks: [zero_attack, max_attack]
+    k_domain_gate_modes: [mean, minimum, hybrid]
     learned_gate: true

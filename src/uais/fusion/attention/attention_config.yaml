@@ -75,6 +75,8 @@ reliability:
   n_calibration_bins: 10
   min_samples_for_ks: 30
   gate_threshold: 0.66    # τ — mean reliability below this activates reliability path
+  min_gate_threshold: 0.34 # RGA-v2 hybrid/min gate threshold for weakest domain
+  gate_mode: mean          # mean | minimum | hybrid
   estimator_path: experiments/fusion/attention_fusion/reliability_estimator.joblib
 
 craf:
@@ -82,3 +84,7 @@ craf:
   adversarial_attacks: [zero_attack, max_attack, gaussian_noise]
   adversarial_sigma: 0.1
   cda_samples: 100
+  mechanism_isolation:
+    k_domain_corruption_values: []  # set to [0, 1, 2, 3, 4] for ELARA-Bench-LA
+    k_domain_corruption_attacks: [zero_attack, max_attack]
+    k_domain_gate_modes: [mean, minimum, hybrid]

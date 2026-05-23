@@ -33,6 +33,55 @@ def test_gate_stats_reports_sample_weighted_adaptation():
     assert np.isclose(stats["mean_reliability"], 0.575)
 
 
+def test_gate_stats_hybrid_mode_catches_minimum_reliability_failure():
+    from src.scripts.run_breakthrough_experiment import _gate_decision_stats
+
+    weights = np.array([[0.0, 1.0, 1.0, 1.0]], dtype=np.float32)
+    masks = np.zeros_like(weights, dtype=bool)
+
+    mean_stats = _gate_decision_stats(weights, masks, threshold=0.66, gate_mode="mean")
+    hybrid_stats = _gate_decision_stats(
+        weights,
+        masks,
+        threshold=0.66,
+        gate_mode="hybrid",
+        min_gate_threshold=0.34,
+    )
+
+    assert mean_stats["adapted"] is False
+    assert hybrid_stats["adapted"] is True
+    assert np.isclose(hybrid_stats["min_reliability"], 0.0)
+
+
+def test_k_domain_corruption_conditions_cover_requested_cardinalities():
+    from src.scripts.run_breakthrough_experiment import _k_domain_corruption_conditions
+
+    domain_order = ["d0", "d1", "d2", "d3"]
+    features = np.ones((2, 4, 2), dtype=np.float32)
+    masks = np.zeros((2, 4), dtype=bool)
+
+    conditions = _k_domain_corruption_conditions(
+        features,
+        masks,
+        domain_order,
+        score_index=0,
+        attack_name="zero_attack",
+        k_values=[0, 1, 2, 4],
+        sigma=0.1,
+        seed=123,
+    )
+
+    counts = [condition["failed_domain_count"] for condition in conditions]
+    assert counts.count(0) == 1
+    assert counts.count(1) == 4
+    assert counts.count(2) == 6
+    assert counts.count(4) == 1
+
+    d0_d1 = next(condition for condition in conditions if condition["failed_domains"] == "d0,d1")
+    np.testing.assert_allclose(d0_d1["features"][:, :2, 0], 0.0)
+    np.testing.assert_allclose(d0_d1["features"][:, 2:, 0], 1.0)
+
+
 def test_reliability_component_weights_disable_and_renormalize():
     from src.scripts.run_breakthrough_experiment import _component_weights
 

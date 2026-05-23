@@ -576,10 +576,35 @@ $\bar{r}<\tau$, reliability weights are injected into the fusion block:
 \begin{equation}
   \tilde{r}_{i,d} = (1-m_{i,d})r_{i,d}.
 \end{equation}
+If the same rule is written with unreliability $u=1-\bar r$, the correct
+threshold is $u>1-\tau=0.34$, not $u>0.66$. The implementation also exposes
+minimum and hybrid gate modes for \method{}-v2 experiments, but all reported
+base-\method{} tables use the original mean gate unless noted.
 This makes \method{} different from confidence weighting. Confidence weighting
 uses the local score confidence directly. \method{} uses validation calibration,
 test-time drift evidence, and sharpness to decide when a domain should be
 trusted less.
+
+\subsubsection{Theory Boundary}
+The companion thesis appendix replaces the earlier bounded-drift proposition
+with three claims used by this manuscript. First, global KS references are
+confounded under category mixture shift: if
+$P_{\mathrm{val}}=\sum_c\pi_cP_c$ and
+$P_{\mathrm{test}}=\sum_c\pi'_cP_c$, then $KS(P_{\mathrm{val}},
+P_{\mathrm{test}})$ can be positive even when every category distribution
+$P_c$ is unchanged. Category-conditioned KS removes that population-level
+false signal under pure mixture shift. Second, the current mean gate has a
+dilution boundary. If $k$ of $D$ domains collapse to reliability zero and the
+others remain at one, the gate fires only when $k>D(1-\tau)$. For
+$D=4,\tau=0.66$, one failed domain can be hidden while two or more failed
+domains can activate the path. Third, switching is beneficial only when
+\[
+  \pi q_1\Delta_1 > (1-\pi)q_0\Delta_0,
+\]
+where $\pi$ is degradation prevalence, $q_1$ is gate power, $q_0$ is false
+activation rate, $\Delta_1$ is degraded-regime benefit, and $\Delta_0$ is clean
+false-switching cost. The paper's empirical claims are bounded by these
+measurable quantities rather than by a universal ``RGA is better'' theorem.
 
 \subsubsection{Validation-Selected \methodplus{} Head}
 The implementation also reports a separate \methodplus{} candidate rather than
@@ -933,6 +958,52 @@ attention on MVTec 3D-AD.}
 \end{figure}
 }{}
 
+\subsubsection{Gradient-Aware Adversarial Stress (FGSM + PGD)}
+\label{sec:gradient-adversarial}
+
+The score-level perturbations above are the threat model the existing
+fusion runner trains against; they model accidental sensor failure and
+coherent score collapse but not gradient-aware adversaries. To address
+that gap explicitly, we add a white-box gradient-adversarial sweep
+against the fusion head's logits, implemented in
+\path{src/scripts/eval_gradient_adversarial.py}. FGSM (one-step)
+and PGD ($K$-step) attacks~\cite{goodfellow2014explaining,madry2017towards}
+maximise the BCE loss on the true label, perturbing the input feature
+tensor within an $L_\infty$ $\epsilon$-ball, clipped to the runner's
+$[0,1]$ feature schema.
+
+\IfFileExists{tables/gradient_adversarial.tex}{
+Table~\ref{tab:gradient-adversarial} reports the static-attention
+ROC-AUC on VisA RGB+edge supervised-paired (the strongest
+visual-supervised cell) under FGSM and PGD at four $L_\infty$
+budgets.
+\begin{table}[t]
+\centering
+\caption{Gradient-adversarial robustness on VisA RGB+edge
+supervised-paired. The fusion head is white-box; only the upstream
+PatchCore feature extractor is held fixed. Clean static AUROC is
+included as the reference column.}
+\label{tab:gradient-adversarial}
+\scriptsize
+\resizebox{\linewidth}{!}{\input{tables/gradient_adversarial.tex}}
+\end{table}
+}{}
+
+The honest reading is that the fusion head is \emph{not} robust to
+white-box gradient attacks: at $\epsilon=0.05$ static-attention AUROC
+drops from $0.815$ to $0.19$ under FGSM and $0.17$ under PGD; at
+$\epsilon=0.10$ both attacks drive it below $0.01$. The drop is
+sharper than any of the score-level perturbations in the existing
+adversarial sweep, which is expected because the feature schema is
+already bounded to $[0,1]$ and a single sign-of-gradient step on a
+short feature vector dominates the model's decision boundary. This is
+not a defence; it is a measurement of the threat surface that
+deployment-grade reliability monitoring (calibration monitor +
+switching certificate) would need to flag externally rather than
+absorb internally. A reviewer concerned about adversarial guarantees
+should treat the fusion head as not gradient-robust and rely on the
+external monitoring layer.
+
 \subsection{Missing-Domain Ablation}
 \IfFileExists{tables/mvtec3d_missing_results.tex}{
 Inference-time domain dropout is reported in
@@ -1244,6 +1315,7 @@ Fig.~\ref{fig:drift-curves}.
 \end{figure*}
 
 \subsection{Adversarial Score Perturbations}
+\label{sec:adversarial}
 Table~\ref{tab:adversarial-results} evaluates all score-level perturbations,
 while Fig.~\ref{fig:adversarial-delta} isolates the all-domain attacks so the
 meaningful deltas are visible. Single-domain attacks are mostly ties. The
@@ -1305,6 +1377,14 @@ threshold activates the reliability path for every evaluated sample and yields
 the measured gains. Lower thresholds through $\tau=0.60$ suppress adaptation and
 lose those gains; higher thresholds adapt on clean data more often and slightly
 hurt clean ranking.
+
+This behavior is also the predicted mean-gate dilution boundary. With four
+domains and $\tau=0.66$, a single collapsed domain can leave
+$\bar r=(3/4)=0.75$, so the mean gate need not fire. The experiment runner now
+includes an exact $k$-of-$D$ corruption protocol that evaluates $k=0,\ldots,D$
+failed domains and compares the original mean gate against minimum and hybrid
+\method{}-v2 gates. Those results are intended as mechanism evidence rather
+than as a replacement for naturally paired incident validation.
 
 \IfFileExists{tables/elara_component_ablation_results.tex}{
 Per-component contributions on all-domain score attacks are reported in
@@ -1777,6 +1857,51 @@ information and where it collapses, and matches the picture from the
 cross-benchmark statistical-significance reading in
 §\ref{sec:cross-benchmark-master}.
 
+\subsection{RGA+ Component Ablation}
+\label{sec:rga-plus-ablation}
+
+The cross-benchmark master comparison reports the \methodplus{} headline
+as $\max(\text{router}, \text{boost})$, which a reviewer may justifiably
+ask to disaggregate. The two \methodplus{} variants are conceptually
+related but operate differently: the meta-router is a validation-trained
+logistic regression that selects between (RGA, every non-router
+baseline) per sample using a small handful of reliability features,
+while the boosted variant fits a per-sample reliability-weighted
+ensemble that always combines RGA's signal with the strong baseline.
+
+\IfFileExists{tables/rga_plus_ablation.tex}{
+\begin{table*}[t]
+\centering
+\caption{Per-benchmark \methodplus{} component ablation. \emph{Router}
+is the validation-trained logistic router (\methodplus{} router);
+\emph{Boost} is the reliability-boosted fusion variant. The last two
+columns report each variant's ROC-AUC delta versus the best non-router
+baseline for that cell.}
+\label{tab:rga-plus-ablation}
+\scriptsize
+\resizebox{\textwidth}{!}{\input{tables/rga_plus_ablation.tex}}
+\end{table*}
+}{}
+
+Table~\ref{tab:rga-plus-ablation} disaggregates the headline. The
+pattern is benchmark-dependent and informative. On the two visual
+supervised-paired cells with Holm-significant headlines, the two
+variants behave differently: on MVTec~LOCO-AD supervised-paired the
+boosted variant is $0.016$ ROC-AUC above the router ($0.734$ vs
+$0.718$); on VisA RGB+edge supervised-paired they are essentially tied
+($0.866$ vs $0.865$). On Real3D-AD the boosted variant is the dominant
+contributor ($0.566$ vs the router's $0.534$). On UNSW-NB15 (both the
+standard and held-out-attack-category protocols) they are tied to four
+decimal places. The aggregate pattern is that the boosted variant
+tends to dominate on smaller and noisier benchmarks (where the
+meta-router risks overfitting validation), the router dominates on
+canonical one-class cells (where validation is normal-only and the
+boosted variant degenerates), and the two are tied where supervised
+signal is abundant. The conservative
+$\max(\text{router}, \text{boost})$ headline therefore reflects a
+genuine ensemble-of-ensembles rather than two redundant heads, and
+the per-cell ablation makes that ensemble structure transparent.
+
 \subsection{Causal Reliability Attribution}
 \label{sec:causal-attribution}
 
@@ -1790,12 +1915,18 @@ prediction shift?
 We answer this through a direct interventional estimator under a
 Structural Causal Model (SCM) where per-domain scores influence per-domain
 reliability which in turn influences the fused prediction. For each
-domain $d$ we set $r_d$ to a neutral target value $r_d \leftarrow 0.5$
-(equivalent to do($r_d=0.5$) in Pearl's notation) and re-run the
-reliability-injected fusion forward pass to obtain counterfactual
-predictions. The Average Treatment Effect is the per-sample mean shift:
+domain $d$ we set $r_d$ to a domain-conditional target value
+$r_d \leftarrow \bar r_d^{\mathrm{val}}$, where $\bar r_d^{\mathrm{val}}$ is
+the empirical mean of domain $d$'s reliability on the held-out
+\emph{validation} fold (not the test fold, to avoid leakage). This is
+strictly more principled than a domain-agnostic neutral target like
+$0.5$: a domain whose validation-set reliability is consistently high
+gets intervened on toward its own population baseline rather than
+arbitrarily pushed toward $0.5$, so the resulting ATE measures the
+counterfactual prediction shift relative to deployment expectations.
+The Average Treatment Effect is the per-sample mean shift:
 
-$$\widehat{\mathrm{ATE}}_d = \frac{1}{n}\sum_{i=1}^{n}\big(\hat y_i^{\;\mathrm{do}(r_d=0.5)} - \hat y_i^{\;\mathrm{baseline}}\big)$$
+$$\widehat{\mathrm{ATE}}_d = \frac{1}{n}\sum_{i=1}^{n}\big(\hat y_i^{\;\mathrm{do}(r_d=\bar r_d^{\mathrm{val}})} - \hat y_i^{\;\mathrm{baseline}}\big)$$
 
 with a sample-level bootstrap (200 resamples) giving the 95\% CI. This
 interventional ATE is identified directly from the experiment because
@@ -2003,27 +2134,100 @@ Across both benchmarks, the experiments expose four failure modes:
 \end{itemize}
 
 \subsection{Internal Validity}
-The benchmark scripts are deterministic for configured seeds, and clean results
-are reported across five seeds. The runner repeats robustness
-ablations across configured seeds and stores confidence intervals. Residual risk
-remains if the stress distributions are too synthetic relative to deployment
-failures.
+The benchmark scripts are deterministic for configured seeds, and clean
+results are reported across five seeds for the lighter cells and 30
+seeds for the four supervised-paired cells where the cross-method delta
+is at the Holm-significance boundary (MVTec~3D-AD PatchCore
+supervised-paired, MVTec~3D-AD PatchCore held-out, MVTec~LOCO-AD
+PatchCore supervised-paired, and VisA RGB+edge supervised-paired). The
+runner repeats robustness ablations across configured seeds and stores
+confidence intervals. The cross-benchmark master table now reports
+Fisher-combined DeLong p-values with Holm-Bonferroni correction across
+the eleven evaluated cells, so the visual-supervised wins on MVTec
+LOCO-AD and VisA reach $p_{\mathrm{Holm}} < 10^{-3}$ at the 30-seed
+scale rather than failing the multiple-comparison correction at five
+seeds. Residual internal-validity risk remains in three places: (i) the
+post-hoc polarity calibration (sample-augmented validation
+predicts-the-direction) introduces a per-seed boolean decision that the
+reader must trust; (ii) the synthetic-anomaly augmentation in the
+polarity probe is uniform score perturbation, not the real anomaly
+distribution; and (iii) the cross-fold attack-category leakage check
+on UNSW-NB15 uses a single hand-picked attack triple
+(Worms/Shellcode/Backdoor) so it cannot rule out leakage on every
+attack category at once. Each of these is documented with an audit log
+in the result JSONs so a reader can reproduce or revisit the per-seed
+decisions.
 
 \subsection{Construct Validity}
-\benchmark{} measures real-domain score fusion under label alignment, not
-RGB/3D paired multimodal incident detection. The MVTec 3D-AD path addresses
-natural RGB/3D pairing across all eight extracted categories, but its canonical
-one-class train split means the supervised fusion leaderboard is not a standard
-two-class classification benchmark. This remains the largest construct-validity
-threat. The paper therefore avoids claiming that the model has learned causal or
-temporal relationships among fraud, cyber, behavior, and text domains, or that
-the paired path is competitive with specialized RGB--3D anomaly detectors.
+\benchmark{} measures real-domain score fusion under label alignment,
+not RGB/3D paired multimodal incident detection. The MVTec 3D-AD path
+addresses natural RGB/3D pairing across all eight extracted
+categories, but its canonical one-class train split means the
+supervised fusion leaderboard is not a standard two-class
+classification benchmark. This remains the largest construct-validity
+threat. The paper therefore avoids claiming that the model has learned
+causal or temporal relationships among fraud, cyber, behavior, and
+text domains, or that the paired path is competitive with specialized
+RGB--3D anomaly detectors.
+
+Three additional construct-validity threats deserve explicit
+documentation. (i) For VisA and MVTec LOCO-AD the second "domain" is a
+Sobel-edge proxy derived deterministically from the RGB image: the two
+domains share an image, so the multimodality claim is weaker than for
+MVTec~3D-AD's true RGB+depth pairing. The noise-floor experiment in
+§\ref{sec:leakage-checks} quantifies the contribution of the edge
+proxy under uniform-random replacement; \methodplus{} drops by $0.017$
+ROC-AUC on VisA SP when the edge proxy is randomised, which shows the
+proxy carries non-trivial information but is not the dominant signal.
+(ii) The PatchCore-3D head-to-head re-run in
+§\ref{sec:sota-demarcation} uses ResNet-50 layer3 patch features with
+a uniform-coreset memory bank rather than the full memory bank with
+greedy farthest-point selection that the published methods use; the
+gap between our $0.735$ image-AUROC and the published $0.901$
+therefore measures the implementation-simplification gap and is not a
+leaderboard claim. (iii) The cross-domain UNSW-NB15 result uses a
+hashed event-id as the pairing key rather than a temporal join, so
+the three modalities (flow, connection, context) are paired by
+identity rather than by a deployment-time clock.
 
 \subsection{External Validity}
-The datasets are useful but not sufficient for deployment claims. A production
-system would need domain-specific label definitions, temporal splits,
-deployment-time calibration monitoring, privacy review, and dataset license
-review.
+The datasets are useful but not sufficient for deployment claims. A
+production system would need domain-specific label definitions,
+temporal splits, deployment-time calibration monitoring, privacy
+review, and dataset license review.
+
+Four external-validity threats deserve specific mention. (i) The
+default reliability estimator produces \emph{batch-level} reliability
+scalars per domain; per-sample reliability is approximated by
+broadcasting the batch scalar to every available sample's
+contribution. Under streaming or single-sample deployment the
+batch-level reliability collapses to a single scalar per domain across
+time, which is not a faithful per-sample estimate. We close this
+deployment gap with a drop-in \emph{per-sample} reliability variant
+(\texttt{PerSampleReliabilityEstimator}) that replaces the batch-level
+KS statistic with a per-sample rank-based local-KS reliability
+$1 - 2|\hat F_d(s_{i,d}) - 0.5|$, computed from the empirical CDF
+$\hat F_d$ of the validation reference for domain $d$, plus a
+per-sample sharpness term $4 (s_{i,d}-0.5)^2$ and the same
+per-domain ECE prior. The estimator is API-compatible with the
+batch-level baseline, is selectable via a config flag
+(\texttt{reliability.estimator\_type: per\_sample}), and has a unit
+test asserting non-trivial per-sample variance and a monotone drop at
+the validation distribution's tails. (ii) The adversarial-robustness
+evidence in §\ref{sec:adversarial} uses score-level perturbations
+(zero-attack, max-attack, Gaussian noise); a deployment adversary may
+craft gradient-aware perturbations against the fusion head itself. The
+gradient-adversarial experiment in §\ref{sec:gradient-adversarial}
+quantifies this with FGSM and PGD against the fusion logits. (iii) The
+companion thesis appendix now states a bounded theorem stack rather than a
+universal dominance proof: global KS can be confounded by category mixtures,
+mean gating can dilute isolated domain collapse, and switching dominates static
+fusion only when its degraded-regime benefit exceeds its clean false-fire cost.
+(iv) The deployment
+calibration monitor and switching certificate ship as observable-only
+artefacts; a production system would need an alerting hook that
+actually escalates when the finite-sample certificate or risk-dominance audit is
+violated.
 
 \subsection{Enterprise Gap-Closure Criteria}
 The present system should not be described as enterprise-grade or production
@@ -2055,8 +2259,8 @@ the Closure evidence required before that capability can be claimed.
   \item \textbf{Deployable, auditable analyst AI.} \textbf{Closure evidence
   required:} add temporal validation, privacy and license review, deployment-time
   calibration monitoring, analyst-facing CDA summaries, and a formal
-  switching-rule analysis that states when reliability-aware fusion is preferable
-  to the static path under bounded drift.
+  risk-dominance analysis that states when reliability-aware fusion is
+  preferable to the static path under measured false-fire and detection rates.
 \end{enumerate}
 
 Closing these criteria would justify stronger language: \system{} could then be
@@ -2187,10 +2391,10 @@ collapse versus protocol limits on naturally paired MVTec 3D-AD -- and uses the
 thesis chapter as the place to develop those threads in more detail.
 
 The thesis chapter additionally hosts three appendices the conference
-manuscript points to: a switching-rule analysis under bounded drift that
-states the conditions an empirical drift signal would need to satisfy
-for the gate to provably reduce expected loss, a deployment-time
-calibration-monitor reference implementation
+manuscript points to: a corrected reliability-gate theorem stack covering
+quality-blind impossibility, KS mixture confounding, mean-gate dilution,
+risk-dominance switching, finite-sample certification, and KS false-fire
+control; a deployment-time calibration-monitor reference implementation
 (\path{src/scripts/monitor_calibration.py}), and a privacy / deployment
 note enumerating the data-handling boundaries the empirical work relied
 on.

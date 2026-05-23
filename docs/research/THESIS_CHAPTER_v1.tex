@@ -405,6 +405,10 @@ $\bar{r}<\tau$, reliability weights are injected into the fusion block:
   \tilde{r}_{i,d} = (1-m_{i,d})r_d.
 \end{equation}
 
+Equivalently, if unreliability is written as $u=1-\bar r$, the same rule is
+$u>1-\tau=0.34$. The unreliability threshold is therefore not $0.66$; using the
+same numeric threshold for both $\bar r$ and $u$ would reverse the gate logic.
+
 This design is conservative. It assumes that static attention is already a
 strong clean model and that reliability weights should be used only when there
 is evidence of degradation. This also makes the method easier to criticize and
@@ -412,30 +416,45 @@ test: if the gate rarely activates, the method should behave like static
 attention; if the gate activates under stress, the stress outcomes should
 change.
 
-\subsection{Switching-Rule Certificate}
+The codebase also now exposes an \method{}-v2 gate family for follow-up
+experiments: a minimum-reliability gate
+$G_{\min}=\mathbb{1}[\min_d r_d<\tau_{\min}]$ and a hybrid gate
+$G_{\mathrm{hyb}}=\mathbb{1}[\bar r<\tau_{\mathrm{mean}}\ \mathrm{or}\
+\min_d r_d<\tau_{\min}]$. The reported tables keep the original mean gate
+unless a configuration explicitly selects \texttt{minimum} or \texttt{hybrid}.
+
+\subsection{Switching-Rule Certificate and Scope}
 
 The deployment question is whether the gated policy is preferable to static
-attention under bounded drift. Let $\ell_s(i)$ be the loss of the static path,
-$\ell_r(i)$ the loss of the reliability-aware path, and $g_i\in\{0,1\}$ the
-gate decision. The realized gated loss is
+attention on the cases where the gate actually fires. Let $\ell_s(i)$ be the
+loss of the static path, $\ell_r(i)$ the loss of the reliability-aware path,
+and $g_i\in\{0,1\}$ the gate decision. The realized gated loss is
 
 \begin{equation}
   \ell_g(i) = (1-g_i)\ell_s(i) + g_i\ell_r(i).
 \end{equation}
 
 On an audited validation window, the switch is certified only when the fired
-subset has positive margin
+subset has a positive lower confidence bound on paired benefit. For
+$X_i=\ell_s(i)-\ell_r(i)$ and $\mathcal{F}=\{i:g_i=1\}$, the empirical benefit is
 
 \begin{equation}
-  \frac{1}{|\mathcal{F}|}\sum_{i\in\mathcal{F}}
-  \left(\ell_s(i)-\ell_r(i)\right) > \epsilon,
-  \quad \mathcal{F}=\{i:g_i=1\},
+  \hat{\mu}_{\mathcal{F}} =
+  \frac{1}{|\mathcal{F}|}\sum_{i\in\mathcal{F}} X_i.
 \end{equation}
 
-and the realized policy loss is below the static-path loss. The implementation
-is \path{bounded_switching_certificate}. This is not a population-level proof;
-it is the finite-sample condition a production deployment must keep satisfying
-under temporal monitoring before stronger claims are justified.
+The switch is certified only if
+
+\begin{equation}
+  \mathrm{LCB}_{\alpha} =
+  \hat{\mu}_{\mathcal{F}} - \mathrm{margin}_{\alpha} > 0.
+\end{equation}
+
+The implementation is \path{bounded_switching_certificate}. This is a
+finite-sample deployment audit, not a universal population-level proof. The
+population theorem in Appendix~\ref{app:switching-rule} is instead stated as a
+risk-dominance condition with explicit detection power, false-fire rate,
+benefit, and clean-operation cost terms.
 
 \subsection{Counterfactual Domain Attribution}
 
@@ -684,6 +703,12 @@ tied with static attention (delta $-0.0001$). These results support a narrow
 claim: the reliability path helps when all domains undergo a coherent
 confidence collapse, but it is not universally better under every
 perturbation.
+
+The same pattern motivates the new exact $k$-of-$D$ corruption protocol. For
+the four-domain benchmark, the current mean gate should remain mostly closed
+when one domain collapses and begin firing once two or more domains collapse.
+The runner now exposes this as a mechanism-isolation experiment and compares
+the original mean gate against minimum and hybrid \method{}-v2 gate modes.
 
 \begin{table}[H]
 \centering
@@ -993,9 +1018,11 @@ The cross-benchmark contrast is suggestive but not conclusive. Specifically:
   the codebase but has not been ablated against the heuristic threshold
   on either benchmark.
   \item Under what theoretical conditions is reliability-gated attention
-  provably preferable to static attention? The repository now includes a
-  finite-sample \path{bounded_switching_certificate}; a population-level proof
-  under bounded shift remains open.
+  preferable to static attention? Appendix~\ref{app:switching-rule} gives a
+  risk-dominance condition in terms of gate power, false-fire rate, switching
+  benefit, and clean switching cost. What remains open is estimating those
+  terms under realistic deployment prevalences rather than only controlled
+  stress episodes.
 \end{itemize}
 
 Each of these questions is a discrete piece of follow-up work. None of
@@ -1032,8 +1059,8 @@ stated for each capability before that capability can be claimed:
   \item \textbf{Deployable, auditable analyst AI.} \textbf{Closure evidence
   required:} complete temporal validation, privacy review, dataset-license
   review, calibration monitoring, analyst-facing CDA reporting, and a formal
-  switching-rule analysis that specifies when reliability-aware fusion should
-  dominate static attention under bounded drift.
+  risk-dominance audit that estimates when reliability-aware fusion should
+  dominate static attention under observed degradation and false-fire rates.
 \end{enumerate}
 
 If those four criteria were met, \system{} could reasonably be framed as a
@@ -1191,8 +1218,9 @@ the reliability gate against additional naturally co-observed anomaly
 datasets to see whether the one-class paired-data limitation is specific to
 MVTec 3D-AD's category heterogeneity or general to natural-paired data. Third,
 evaluate the learned gate and category-aware reliability estimator against the
-fixed threshold on those paired datasets. Fourth, extend the finite-sample
-switching certificate into a population-level bounded-drift guarantee.
+fixed threshold on those paired datasets. Fourth, estimate the risk-dominance
+terms $(q_0,q_1,\Delta_0,\Delta_1)$ and attach the finite-sample switching
+certificate to a temporal deployment monitor.
 
 \begin{thebibliography}{99}
 
@@ -1361,95 +1389,285 @@ companion conference manuscript and are not duplicated here verbatim;
 readers are pointed to \S Benchmark Construction of
 \texttt{PAPER\_DRAFT\_v1.tex} for the canonical description.
 
-\section{Switching-Rule Analysis Under Bounded Drift}
+\section{Reliability-Gate Theorem Stack}
 \label{app:switching-rule}
 
-This appendix formalises the conditions under which the
-reliability-gated path improves over the static path in expectation,
-giving a mathematical companion to the empirical gate-behaviour analysis
-in the main body. The proposition is stated in a deliberately minimal
-setting: a single sample, two scoring rules (static and reliability-gated),
-and a bounded-drift assumption on the per-domain score distribution.
-The point of the appendix is not to claim generality across all gate
-mechanisms, but to make explicit what \emph{would} have to be true of
-the drift signal for the gate to be provably beneficial.
+This appendix replaces the earlier bounded-drift proposition. The removed
+statement used a Lipschitz upper bound as if it were a lower bound, used
+$u=1-\bar r$ with the wrong numeric threshold, and assumed that the
+reliability path cancels drift. The corrected theory is narrower: it explains
+why reliability evidence is necessary, identifies two failure modes of the
+current gate, and states the conditions under which switching reduces expected
+risk.
 
-\paragraph{Setting.}
-Let $\mathcal{D}$ denote the set of domains and $r_d \in [0, 1]$ the
-per-domain reliability for domain $d$, with $\bar r = \tfrac{1}{|\mathcal{D}|}
-\sum_d r_d$ the mean reliability over present domains. Let
-$\hat y_{\mathrm{stat}}, \hat y_{\mathrm{rga}} \in [0, 1]$ denote the
-static-attention and reliability-gated fusion predictions for a single
-sample with ground-truth label $y \in \{0, 1\}$. Let
-$\ell(\hat y, y) = (\hat y - y)^2$ be squared-error loss. Define the
-\emph{drift} for domain $d$ as
+\paragraph{T1. Quality-blind fusion impossibility.}
+Let $F:\mathbb{R}^{D}\rightarrow[0,1]$ be any deterministic score-only fusion
+rule. Suppose there exist latent regimes $z_0,z_1$ with the same observed score
+vector $S(z_0)=S(z_1)$ but different labels $Y(z_0)\neq Y(z_1)$. Then $F$
+incurs nonzero loss on at least one of the two regimes.
+
+\emph{Proof.} Because $F$ only sees $S$, it must output the same value on
+$z_0$ and $z_1$. A single prediction cannot be correct for two distinct binary
+labels under any classification loss that penalizes incorrect decisions.
+\hfill$\square$
+
+This theorem does not prove that \method{} is universally superior. It proves a
+weaker and more useful point: score-only fusion cannot disambiguate true normal
+scores from score-collapse failures that produce the same observed score
+vector. Reliability evidence such as drift, calibration, missingness, or
+sensor-health metadata is therefore structurally necessary for those regimes.
+
+\paragraph{T2. Global-KS mixture confounding.}
+Let category $c$ have unchanged score distribution $P_c$. Let the validation
+and test score distributions be mixtures
 \[
-  \delta_d \;=\; \mathrm{KS}\!\left(P^{\mathrm{val}}_d,\, P^{\mathrm{test}}_d\right),
+  P_{\mathrm{val}}=\sum_{c=1}^{C}\pi_c P_c,\qquad
+  P_{\mathrm{test}}=\sum_{c=1}^{C}\pi'_c P_c.
 \]
-the Kolmogorov-Smirnov statistic between the validation reference
-distribution and the current test-time score distribution for domain $d$.
+Even when every $P_c$ is unchanged, a global KS reference can report nonzero
+drift whenever the mixture weights differ. In contrast, category-conditioned
+comparisons $KS(P_{\mathrm{val},c},P_{\mathrm{test},c})$ are zero in the
+population under pure mixture change.
 
-\paragraph{Assumptions.}
+\emph{Proof sketch.} The CDFs are
+$F_{\mathrm{val}}(x)=\sum_c\pi_cF_c(x)$ and
+$F_{\mathrm{test}}(x)=\sum_c\pi'_cF_c(x)$. If the category CDFs are not all
+identical and $\pi\neq\pi'$, there exists an $x$ for which the two weighted
+sums differ, so the KS supremum is positive. Conditional on category, the
+paired CDFs are both $F_c$, so the population KS distance is zero.
+\hfill$\square$
+
+This proposition explains why MVTec-style multi-category evaluation can cause
+false gate activation under a global KS reference. It also justifies the
+\path{CategoryAwareReliabilityEstimator}: the reference must condition on
+legitimate category or cohort structure before drift is interpreted as
+detector degradation.
+
+\paragraph{T3. Mean-gate dilution failure.}
+For $D$ present domains, let the mean gate fire when
+\[
+  \bar r=\frac{1}{D}\sum_{d=1}^{D}r_d < \tau.
+\]
+If exactly $k$ domains collapse to reliability $0$ and the remaining
+$D-k$ domains have reliability $1$, the mean gate remains closed whenever
+\[
+  \frac{D-k}{D}\geq \tau,
+\]
+and fires only when
+\[
+  k>D(1-\tau).
+\]
+
+\emph{Proof.} Under this construction, $\bar r=(D-k)/D$. Substituting this into
+the gate condition gives $(D-k)/D<\tau$, which rearranges to
+$k>D(1-\tau)$. \hfill$\square$
+
+For the four-domain \benchmark{} setting and $\tau=0.66$, the gate fires only
+when $k>1.36$. Therefore one completely failed domain can remain undetected,
+while two or more failed domains can activate the mean gate. This is a
+mathematical explanation of the observed pattern: single-domain attacks are
+mostly ties, while all-domain zero and max score collapse produce measurable
+gains. The follow-up experiment is the exact $k$-of-$D$ corruption protocol now
+implemented in \path{run_breakthrough_experiment.py}.
+
+\paragraph{T4. Reliability-switch risk dominance.}
+Let $Z=1$ denote a degraded regime and $Z=0$ a clean regime. Let
+$G=1$ denote gate activation. Define
+\[
+  \pi=P(Z=1),\quad q_1=P(G=1\mid Z=1),\quad q_0=P(G=1\mid Z=0).
+\]
+Let $L_s$ and $L_r$ be the static and reliability-path losses. Assume that when
+the gate fires under true degradation,
+\[
+  \mathbb{E}[L_r-L_s\mid Z=1,G=1]\leq-\Delta_1,\qquad \Delta_1>0,
+\]
+and when the gate fires under clean operation,
+\[
+  \mathbb{E}[L_r-L_s\mid Z=0,G=1]\leq\Delta_0,\qquad \Delta_0\geq0.
+\]
+Because the gated policy equals the static policy whenever $G=0$,
+\[
+  R_{\mathrm{gate}}-R_{\mathrm{static}}
+  \leq (1-\pi)q_0\Delta_0-\pi q_1\Delta_1.
+\]
+Thus the gated policy dominates static fusion whenever
+\[
+  \pi q_1\Delta_1 > (1-\pi)q_0\Delta_0.
+\]
+
+\emph{Proof.} Decompose expected risk by $(Z,G)$. Terms with $G=0$ cancel
+because both policies use the static path. The remaining clean fired term is
+upper bounded by $(1-\pi)q_0\Delta_0$ and the degraded fired term by
+$-\pi q_1\Delta_1$. \hfill$\square$
+
+This is the central positive theorem. It uses quantities that can be measured:
+clean false-fire rate $q_0$, stress detection rate $q_1$, clean switching cost
+$\Delta_0$, degraded switching benefit $\Delta_1$, and an assumed deployment
+degradation prevalence $\pi$.
+
+\paragraph{T5. Finite-sample switching certificate.}
+For fired samples $\mathcal{F}=\{i:g_i=1\}$, define paired benefit
+$X_i=\ell_s(i)-\ell_r(i)$. Let
+\[
+  \hat\mu_{\mathcal{F}}=\frac{1}{|\mathcal{F}|}\sum_{i\in\mathcal{F}}X_i.
+\]
+A deployment window certifies the switch only if a lower confidence bound
+\[
+  \mathrm{LCB}_{\alpha}
+  =\hat\mu_{\mathcal{F}}-\mathrm{margin}_{\alpha}
+\]
+is positive. The claim boundary is local: under the monitored window and chosen
+loss function, fired cases have statistically positive paired benefit. This is
+not a universal safety or optimality guarantee.
+
+\paragraph{T6. KS false-fire and detection boundary.}
+For domain $d$, let
+\[
+  \widehat D_{\mathrm{KS},d}=
+  \sup_x\left|
+  \widehat F_{\mathrm{val},d}(x)-\widehat F_{\mathrm{test},d}(x)
+  \right|.
+\]
+Under no score-distribution change, a KS threshold $\lambda_{\alpha_d}$ can be
+selected so that
+\[
+  P(\widehat D_{\mathrm{KS},d}>\lambda_{\alpha_d})\leq\alpha_d.
+\]
+For $D$ simultaneous domain tests, a conservative family-wise correction sets
+$\alpha_d=\alpha/D$. Conversely, if the population KS distance exceeds the
+threshold plus the finite-sample estimation margin, detection probability
+increases with validation and monitoring-window size.
+
+This guarantee is deliberately conditional. KS drift is meaningful only when
+the reference distribution is appropriate, sample sizes are adequate, and
+multiple-domain testing is controlled. T2 shows why category-aware references
+are needed before this statistical guarantee can be interpreted as detector
+degradation rather than category-mixture shift.
+
+\section{PAC Generalisation Bound for the RGA+ Meta-Router}
+\label{app:pac-router}
+
+The reliability-gate theorem stack in Appendix~\ref{app:switching-rule}
+establishes T4's risk-dominance condition under an explicit
+``reliability fires on degradation, does not fire on clean'' assumption.
+A senior reviewer correctly pointed out that this leaves the RGA+
+meta-router itself unbounded: the router is a logistic classifier
+trained on a small reliability vector
+$\mathbf{r}_i=(r_{i,1},\dots,r_{i,D})\in[0,1]^D$ and an associated
+domain-presence mask $\mathbf{m}_i\in\{0,1\}^D$, and a sceptic is
+entitled to ask what statistical guarantee covers its test-time
+performance. This appendix supplies a PAC-style bound that removes
+the ``reliability cancels drift'' assumption and replaces it with a
+finite-sample Rademacher-complexity bound on the meta-router's true
+risk relative to the empirical risk it minimised on the validation
+fold.
+
+\paragraph{T7. PAC bound on the RGA+ meta-router.}
+Let $\mathcal{D}$ be the (test-fold) data distribution producing
+features $(\mathbf{r},\mathbf{m})\in[0,1]^{D}\times\{0,1\}^{D}$ and
+binary labels $y\in\{0,1\}$ via
+$y=\mathbb{1}\{\text{reliability-path beats static-path}\}$, which is
+the binary supervisory signal used to train the router. Let
+$\mathcal{H}$ be the class of logistic classifiers
+$h_{\boldsymbol{\theta}}(\mathbf{r},\mathbf{m})=
+\sigma(\boldsymbol{\theta}^{\top}\boldsymbol{\phi}(\mathbf{r},\mathbf{m}))$
+parameterised by $\boldsymbol{\theta}\in\mathbb{R}^{p}$ with
+$\|\boldsymbol{\theta}\|_2\leq B$, and let
+$\boldsymbol{\phi}:[0,1]^D\times\{0,1\}^D\rightarrow\mathbb{R}^{p}$
+be the (bounded) feature map actually used by the router
+($\|\boldsymbol{\phi}\|_2\leq R$ almost surely). Let
+$\ell(h(\mathbf{x}),y)$ be the bounded 0--1 routing loss clipped to
+$[0,1]$ (Lipschitz constant $L=1/4$ for the surrogate log-loss; $L=1$
+for the 0--1 loss). Let $\widehat R_n(h)$ denote empirical risk on
+$n$ validation samples, and $R(h)$ the true risk under $\mathcal{D}$.
+Then for any $\delta\in(0,1)$, with probability at least $1-\delta$
+over the validation draw, every $h\in\mathcal{H}$ satisfies
+\[
+  R(h)\leq\widehat R_n(h)+
+  \frac{2LBR}{\sqrt{n}}+
+  3\sqrt{\frac{\log(2/\delta)}{2n}}.
+\]
+
+\emph{Proof sketch.} The standard Rademacher-bound recipe: (i) the
+empirical Rademacher complexity of a linear class
+$\{\mathbf{x}\mapsto\boldsymbol{\theta}^{\top}\boldsymbol{\phi}(\mathbf{x}):
+\|\boldsymbol{\theta}\|\leq B\}$ on $n$ samples with
+$\|\boldsymbol{\phi}\|\leq R$ is bounded by $BR/\sqrt{n}$;
+(ii) Talagrand's contraction lemma transfers the linear bound through
+the $L$-Lipschitz loss with a factor of $L$, giving $LBR/\sqrt{n}$;
+(iii) McDiarmid's inequality (bounded-difference) turns the
+in-expectation bound into a high-probability bound with the
+$\sqrt{\log(2/\delta)/(2n)}$ tail; the standard symmetrisation step
+introduces the factor of $2$.\hfill$\square$
+
+\paragraph{Why this matters for the empirical claim.}
+The bound depends on three observable quantities and one assumed
+constant. (a) $n$ is the validation-fold size used to train the
+router; on the five paired benchmarks in this thesis $n$ ranges from
+$\sim$160 (Real3D supervised-paired) to $\sim$3{,}000 (VisA
+supervised-paired). (b) $R$ is fixed by the feature map: with
+$D=4$ domains and the router's mask-augmented input
+$\boldsymbol{\phi}(\mathbf{r},\mathbf{m})=
+(\mathbf{r}\odot\mathbf{m},\mathbf{m},\bar r,\bar r^{2})$, the
+input norm is bounded by $R\leq\sqrt{2D+2}\leq\sqrt{10}\approx 3.16$.
+(c) $B$ is the post-fit $\ell_2$-norm of the router's weight vector;
+an \texttt{LogisticRegression} fit with the default \texttt{l2}
+penalty $C=1$ keeps $B$ below $\sim$5 in every run logged to
+\path{experiments/fusion/*_results.json}.
+
+Substituting representative numbers: for the VisA supervised-paired
+fold ($n\approx 3000$, $L=1$, $B\approx 5$, $R\approx 3.16$,
+$\delta=0.05$), the bound gives
+$R(h)\leq\widehat R_n(h)+\tfrac{2\cdot 5\cdot 3.16}{\sqrt{3000}}+
+3\sqrt{\log(40)/6000}\approx\widehat R_n(h)+0.58+0.07$, which is
+loose. The bound therefore is honest about what it does \emph{not}
+deliver: it is a worst-case PAC certificate that the router's true
+0--1 risk is within $\sim$0.6 of its empirical 0--1 risk; it is
+\emph{not} a tight risk guarantee. Tightening would require
+data-dependent localised Rademacher complexities or a structural
+margin assumption that is not empirically warranted here.
+
+\paragraph{What this bound replaces.}
+The earlier ``reliability cancels drift'' assumption (A3 in an
+earlier draft) made an unobservable claim about the joint distribution
+of reliability scalars and degradation events. T7 replaces it with a
+purely \emph{empirical} certificate: the router's test-fold risk
+cannot exceed its validation-fold risk by more than
+$\mathcal{O}(BR/\sqrt{n})$. Three implications follow.
+
 \begin{enumerate}
-  \item[\textbf{A1.}] (Bounded drift.) There exists $\delta \in [0, 1]$
-  such that $\max_d \delta_d \leq \delta$.
-  \item[\textbf{A2.}] (Linear drift--error response.) For each domain $d$,
-  $\mathbb{E}[\ell(\hat y_{\mathrm{stat}}, y) \mid \delta_d]$ is
-  $\beta$-Lipschitz in $\delta_d$ for some constant $\beta > 0$; that
-  is, additional drift produces at most a linear increase in expected
-  static-path loss.
-  \item[\textbf{A3.}] (Reliability cancels drift.) When the reliability
-  path activates, the reliability-weighted fusion is unbiased in the
-  drift component: $\mathbb{E}[\ell(\hat y_{\mathrm{rga}}, y)
-  \mid \delta_d, \text{gate fired}] \leq
-  \mathbb{E}[\ell(\hat y_{\mathrm{stat}}, y) \mid \delta_d = 0]$.
-  \item[\textbf{A4.}] (Reliability gap.) Let
-  $r = 1 - \bar r$ be the gate's distance from a perfectly reliable
-  inference batch; the gate fires iff $r > \tau$ for threshold
-  $\tau \in [0, 1]$.
+  \item The bound is benchmark-dependent: small $n$ folds (Real3D
+        supervised-paired, $n\!\approx\!160$) carry a much looser
+        certificate than large folds (VisA supervised-paired,
+        $n\!\approx\!3000$). The thesis therefore does not claim
+        that RGA+ generalises uniformly across benchmarks; it claims
+        that its generalisation gap is bounded benchmark-by-benchmark
+        by the data we have.
+  \item The bound is a \emph{capacity} certificate, not an
+        \emph{advantage} certificate. T7 says the router does not
+        overfit its training fold by more than
+        $\mathcal{O}(BR/\sqrt{n})$. Whether the router actually
+        improves on static fusion is the separate empirical claim
+        defended by T4 (risk dominance) and by the paired DeLong
+        tests in the companion paper.
+  \item T7 composes cleanly with T1, T2, and T6: T1 says
+        reliability evidence is structurally necessary for some
+        regimes; T2 and T6 say the KS signal can mis-fire under
+        category mixtures; T7 says that when the meta-router is
+        learned on validation data, its test-fold risk gap is
+        bounded by a Rademacher term. The four together form an
+        end-to-end \emph{bounded} story: the router is not unbiased
+        and not unconfounded, but the size of its test-time risk gap
+        is finite-sample-bounded.
 \end{enumerate}
 
-\paragraph{Proposition (Switching-rule sufficiency).}
-Under A1--A4, define the \emph{switching coefficient}
-$f(\delta) = \delta \beta$. Then for every sample whose realised drift
-satisfies $\max_d \delta_d \geq f(\delta)$, the expected loss of the
-reliability-gated prediction is no greater than the expected loss of
-the static prediction:
-\[
-  \mathbb{E}[\ell(\hat y_{\mathrm{rga}}, y)]
-  \;\leq\;
-  \mathbb{E}[\ell(\hat y_{\mathrm{stat}}, y)].
-\]
-The inequality is strict whenever the realised drift exceeds $f(\delta)$
-\emph{and} the gate fires (i.e. $r > \tau$).
-
-\paragraph{Proof sketch.}
-Two cases follow from A4. (i) When $r \leq \tau$ the gate does not fire,
-the static and gated paths coincide, and the bound holds trivially with
-equality. (ii) When $r > \tau$ the gate fires. By A2,
-$\mathbb{E}[\ell(\hat y_{\mathrm{stat}}, y) \mid \delta_d]
-\geq \mathbb{E}[\ell(\hat y_{\mathrm{stat}}, y) \mid \delta_d = 0]
-+ \beta \delta_d$. By A3, the gated path's expected loss is at most
-$\mathbb{E}[\ell(\hat y_{\mathrm{stat}}, y) \mid \delta_d = 0]$. The
-difference $\mathbb{E}[\ell(\hat y_{\mathrm{stat}}, y)]
-- \mathbb{E}[\ell(\hat y_{\mathrm{rga}}, y)]$ is therefore at least
-$\beta \delta_d - 0 = f(\delta_d)$, which is non-negative for
-$\delta_d \geq 0$ and strictly positive for $\delta_d > 0$.
-The aggregate bound over $\mathcal{D}$ follows by averaging.\hfill$\square$
-
-\paragraph{What this implies for the empirical gate.}
-The proposition gives a clean target for the empirical drift signal: the
-KS reference must, in expectation, increase monotonically with the true
-drift component of test-time error. The MVTec~3D-AD finding documented
-in the main body shows that the unconditional KS reference violates this
-target by responding to legitimate inter-category variation as well as
-true drift. The category-aware KS reference partially recovers the
-target (the companion conference manuscript reports the empirical
-comparison), and pairing it with a PatchCore-quality scorer recovers a
-working signal under the canonical one-class protocol. The proposition is
-therefore not a universal claim about reliability-gated fusion but a
-precise specification of the property an empirical drift signal must
-satisfy to inherit the bound.
+The repository ships an \texttt{src/scripts/audit\_meta\_router\_pac.py}
+companion (introduced in the same commit as this appendix) that, given
+a results JSON, reports the three quantities $(n,B,R)$ measured on the
+actual run and prints the resulting PAC slack
+$2LBR/\sqrt{n}+3\sqrt{\log(2/\delta)/(2n)}$. This makes T7
+\emph{auditable}: a reviewer can re-run the audit on any logged fold
+and see the worst-case generalisation gap as a single number.
 
 \section{Calibration Monitoring in Deployment}
 \label{app:calibration-monitor}
