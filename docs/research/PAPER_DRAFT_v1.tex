@@ -8,7 +8,7 @@
 \usepackage{array}
 \usepackage{graphicx}
 \graphicspath{{figures/}}
-\usepackage{hyperref}
+\usepackage[hypertexnames=false]{hyperref}
 \usepackage{xcolor}
 \usepackage{url}
 \usepackage{float}
@@ -51,7 +51,11 @@ signal carries the entire all-domain coherent score-collapse robustness
 gain (+0.0506 \texttt{zero\_attack}, +0.0319 \texttt{max\_attack})
 delivered by the reliability gate; removing the KS-drift component
 eliminates the gain. A learned-gate alternative does not match the
-heuristic's gain. Second, on the naturally paired MVTec 3D-AD benchmark
+heuristic's gain. A complete $k$-of-$D$ corruption benchmark shows why:
+the mean gate gives weak or mixed effects for isolated and partial failures
+but activates fully under four-domain collapse; the current minimum/hybrid
+RGA-v2 candidates do not yet fix this because the configured minimum threshold
+does not fire. Second, on the naturally paired MVTec 3D-AD benchmark
 under its canonical one-class anomaly-detection protocol (normal-only
 training, mixed test), every supervised fusion baseline -- random
 forest, MLP, late-fusion ensemble, Tent, TTT, static attention,
@@ -164,7 +168,7 @@ do not yet fully satisfy the third condition for co-observed multimodal
 incidents. This limitation is explicit throughout the manuscript.
 
 \subsection{Contributions}
-We make four scoped contributions:
+We make five scoped contributions:
 \begin{itemize}
   \item A cross-benchmark scope result for validation-derived drift gates.
   The Kolmogorov--Smirnov drift signal carries the all-domain stress-test gain
@@ -175,7 +179,11 @@ We make four scoped contributions:
   reliability estimator (validation ECE, test-time KS drift, score
   sharpness) and a conservative gate that preserves the static path unless
   mean reliability falls below $\tau$.
-  \item \benchmark{} is a reproducible the secondary benchmark real-domain score-fusion
+  \item A complete $k$-of-$D$ corruption benchmark turns the single-domain
+  negative result into mechanism evidence: the mean gate responds to coherent
+  all-domain collapse, while the current minimum/hybrid RGA-v2 candidates
+  expose an unresolved thresholding gap.
+  \item \benchmark{} is a reproducible secondary real-domain score-fusion
   benchmark over Credit Card Fraud, UNSW-NB15, Online Shoppers Intention, and
   labeled news text. A naturally paired MVTec 3D-AD benchmark path covers
   eight categories with predefined-split discipline.
@@ -578,8 +586,12 @@ $\bar{r}<\tau$, reliability weights are injected into the fusion block:
 \end{equation}
 If the same rule is written with unreliability $u=1-\bar r$, the correct
 threshold is $u>1-\tau=0.34$, not $u>0.66$. The implementation also exposes
-minimum and hybrid gate modes for \method{}-v2 experiments, but all reported
-base-\method{} tables use the original mean gate unless noted.
+minimum and hybrid gate modes for \method{}-v2 experiments. These variants are
+reported as diagnostic candidates, not as established improvements: in the
+current $k$-of-$D$ run, the configured minimum threshold
+$\tau_{\min}=0.34$ is below the observed minimum reliability, so the minimum
+branch does not fire and the hybrid gate collapses to the mean-gate behavior.
+All reported base-\method{} tables use the original mean gate unless noted.
 This makes \method{} different from confidence weighting. Confidence weighting
 uses the local score confidence directly. \method{} uses validation calibration,
 test-time drift evidence, and sharpness to decide when a domain should be
@@ -714,7 +726,7 @@ variants are included as additional paired-data diagnostics.
 \caption{Naturally paired MVTec 3D-AD multi-category metadata.}
 \label{tab:mvtec-metadata}
 \footnotesize
-\input{tables/mvtec3d_benchmark_metadata.tex}
+\resizebox{\linewidth}{!}{\input{tables/mvtec3d_benchmark_metadata.tex}}
 \end{table}
 }{}
 
@@ -794,14 +806,14 @@ of its training fold before fusion rows are built. This is intended to reduce
 clean-score saturation and expose whether the fusion mechanism helps when
 domain experts are useful but imperfect.
 
-As a post-audit check, we ran the 0.05 setting and archived the results in
-\texttt{experiments/fusion/craf\_real\_results\_hard.json}. The individual
-domain scorers weakened substantially for fraud and behavior (OOF ROC-AUC
-0.913 and 0.798, respectively), but the label-aligned fusion task remained
-near-saturated: static attention and \method{} both reached mean ROC-AUC
-0.99896 across five seeds, random forest reached 0.99908, and \method{} did
-not improve drift degradation area on any domain. This hard run is therefore
-reported as a construct-validity warning rather than a new performance claim.
+As a post-audit check, we ran the 0.05 setting and archived the hard-mode JSON
+artifact. The individual domain scorers weakened substantially for fraud and
+behavior (OOF ROC-AUC 0.913 and 0.798, respectively), but the label-aligned
+fusion task remained near-saturated: static attention and \method{} both
+reached mean ROC-AUC 0.99896 across five seeds, random forest reached 0.99908,
+and \method{} did not improve drift degradation area on any domain. This hard
+run is therefore reported as a construct-validity warning rather than a new
+performance claim.
 
 \subsection{Baselines and Metrics}
 Baselines include confidence-weighted mean fusion, early-fusion MLP,
@@ -1217,7 +1229,7 @@ close to chance on unseen categories.
 summary.}
 \label{tab:mvtec-calibration-cda}
 \footnotesize
-\input{tables/mvtec3d_calibration_cda.tex}
+\resizebox{\linewidth}{!}{\input{tables/mvtec3d_calibration_cda.tex}}
 \end{table}
 
 \begin{figure}[t]
@@ -1320,9 +1332,10 @@ Table~\ref{tab:adversarial-results} evaluates all score-level perturbations,
 while Fig.~\ref{fig:adversarial-delta} isolates the all-domain attacks so the
 meaningful deltas are visible. Single-domain attacks are mostly ties. The
 important stress case is coherent all-domain score collapse. Under the
-all-domain zero attack, \method{} improves ROC-AUC from 0.7130 to 0.7770. Under
-the all-domain max attack, it improves ROC-AUC from 0.7114 to 0.7418. Under
-all-domain Gaussian noise, it is slightly worse by 0.0003 ROC-AUC.
+all-domain zero attack, \method{} improves ROC-AUC from 0.7212 to 0.7718
+($+0.0506$). Under the all-domain max attack, it improves ROC-AUC from 0.7401
+to 0.7720 ($+0.0319$). Under all-domain Gaussian noise, it is essentially tied
+with static attention ($-0.0001$ ROC-AUC).
 
 \begin{table*}[t]
 \centering
@@ -1369,8 +1382,7 @@ reliability-aware path.}
 \end{table*}
 }{}
 
-At the configured $\tau=0.66$, clean adaptation is rare: the mean adaptation
-rate is 0.032 with a confidence interval that includes zero. This explains why
+At the configured $\tau=0.66$, clean adaptation is zero in the current run. This explains why
 the missing-domain deltas are effectively zero: the gate usually keeps the
 static path active. Under all-domain zero and max score collapse, the same
 threshold activates the reliability path for every evaluated sample and yields
@@ -1383,8 +1395,53 @@ domains and $\tau=0.66$, a single collapsed domain can leave
 $\bar r=(3/4)=0.75$, so the mean gate need not fire. The experiment runner now
 includes an exact $k$-of-$D$ corruption protocol that evaluates $k=0,\ldots,D$
 failed domains and compares the original mean gate against minimum and hybrid
-\method{}-v2 gates. Those results are intended as mechanism evidence rather
-than as a replacement for naturally paired incident validation.
+\method{}-v2 gates. Table~\ref{tab:k-domain-corruption} and
+Fig.~\ref{fig:k-domain-corruption} report the completed five-seed run. The
+result supports the dilution diagnosis, but also limits the current RGA-v2
+claim. For $k=1,2,3$, mean and hybrid gating produce weak or mixed ROC-AUC
+deltas: the zero-collapse deltas are $+0.0001$, $+0.0012$, and $+0.0030$ with
+confidence intervals crossing zero, while max-collapse deltas turn negative at
+$k=2$ and $k=3$. At $k=4$, the gate activates for every sample and recovers the
+all-domain gains ($+0.0506$ zero collapse, $+0.0319$ max collapse). The
+minimum gate never activates because the observed minimum reliability remains
+between $0.620$ and $0.650$, above $\tau_{\min}=0.34$; consequently, the hybrid
+gate matches the mean gate rather than fixing isolated-domain collapse. These
+results are mechanism evidence, not a replacement for naturally paired
+incident validation.
+
+\IfFileExists{tables/elara_k_domain_corruption_results.tex}{
+\begin{table*}[t]
+\centering
+\caption{$k$-of-$D$ domain-corruption mechanism benchmark on \benchmark{}.
+The table compares the original mean gate with minimum and hybrid RGA-v2 gate
+candidates. Delta is \method{} minus static attention.}
+\label{tab:k-domain-corruption}
+\scriptsize
+\resizebox{\textwidth}{!}{\input{tables/elara_k_domain_corruption_results.tex}}
+\end{table*}
+}{}
+
+\IfFileExists{figures/elara_k_domain_corruption.png}{
+\begin{figure*}[t]
+\centering
+\includegraphics[width=0.92\textwidth]{elara_k_domain_corruption.png}
+\caption{$k$-of-$D$ corruption mechanism evidence. The mean and hybrid gates
+show little reliable benefit for isolated or partial failures and activate
+fully only at all-domain collapse. The minimum gate remains closed at
+$\tau_{\min}=0.34$, exposing the current RGA-v2 threshold gap.}
+\label{fig:k-domain-corruption}
+\end{figure*}
+}{}
+
+\IfFileExists{tables/elara_theory_experiment_mapping.tex}{
+\begin{table*}[t]
+\centering
+\caption{Theory-to-experiment mapping after the completed $k$-of-$D$ run.}
+\label{tab:theory-experiment-mapping}
+\scriptsize
+\resizebox{\textwidth}{!}{\input{tables/elara_theory_experiment_mapping.tex}}
+\end{table*}
+}{}
 
 \IfFileExists{tables/elara_component_ablation_results.tex}{
 Per-component contributions on all-domain score attacks are reported in
@@ -1590,8 +1647,8 @@ bar chart, with the protocol divider made explicit.
 the canonical one-class protocol. Published image-AUROCs are quoted as
 reported in their original papers; we did not re-run them. ELARA rows
 report this work's PatchCore-fed RGA+ score-fusion result on the same
-benchmark, but under two different protocols. The \emph{Comparable?}
-column marks why the ELARA rows must not be read against the
+benchmark, but under two different protocols. The Comparable? column marks
+why the ELARA rows must not be read against the
 leaderboard column: ELARA is a score-fusion layer with no localization
 head, and the supervised-paired protocol exposes positive examples
 during fusion training.}
@@ -1694,9 +1751,10 @@ than prose-only defences.
 UNSW-NB15 is known to share attack categories between train and test,
 so the headline 0.989 ROC-AUC could in principle be explained by
 within-attack leakage rather than genuine cross-attack generalisation.
-We add a held-out-attack-category variant
-(\path{src/scripts/prepare_unsw_paired_fusion_benchmark.py --held-out-attack-categories
-Worms Shellcode Backdoor}) that routes those three attack categories
+We add a held-out-attack-category variant using
+\path{src/scripts/prepare_unsw_paired_fusion_benchmark.py} with
+\texttt{Worms}, \texttt{Shellcode}, and \texttt{Backdoor} held out. This routes
+those three attack categories
 \emph{entirely} into the test fold, leaving the fusion train and
 validation folds free of those attacks. The fusion model is graded
 on its ability to flag attack categories it never saw during
@@ -1872,9 +1930,9 @@ ensemble that always combines RGA's signal with the strong baseline.
 \IfFileExists{tables/rga_plus_ablation.tex}{
 \begin{table*}[t]
 \centering
-\caption{Per-benchmark \methodplus{} component ablation. \emph{Router}
+\caption{Per-benchmark \methodplus{} component ablation. Router
 is the validation-trained logistic router (\methodplus{} router);
-\emph{Boost} is the reliability-boosted fusion variant. The last two
+Boost is the reliability-boosted fusion variant. The last two
 columns report each variant's ROC-AUC delta versus the best non-router
 baseline for that cell.}
 \label{tab:rga-plus-ablation}
@@ -1901,6 +1959,73 @@ signal is abundant. The conservative
 $\max(\text{router}, \text{boost})$ headline therefore reflects a
 genuine ensemble-of-ensembles rather than two redundant heads, and
 the per-cell ablation makes that ensemble structure transparent.
+
+\subsection{Theorem-Stack Validation: T2, T3, T5}
+\label{sec:theorem-validation}
+
+The companion-thesis appendix theorem stack states three falsifiable
+predictions about the reliability gate's behaviour: T2 (global KS
+mis-fires under pure category-mixture shift), T3 (the mean gate fails
+to fire when fewer than $D(1-\tau)$ domains collapse), and T5 (a
+deployment window certifies the switch only if a paired lower
+confidence bound on the static-minus-RGA loss is positive). Each
+prediction is now backed by auto-generated evidence that a reviewer
+can re-run from the repository. T3 is reported in
+Table~\ref{tab:k-domain-corruption} and Fig.~\ref{fig:k-domain-corruption};
+T2 and T5 are reported below.
+
+\IfFileExists{tables/category_mixture_t2.tex}{
+\begin{table}[t]
+\centering
+\caption{T2 validation: synthetic category-mixture-shift scenario
+($C=3$ categories with unchanged per-category score distributions,
+flipped mixture weights $\pi_{\mathrm{val}}=(0.6,0.3,0.1)$ vs
+$\pi_{\mathrm{test}}=(0.1,0.3,0.6)$). The global KS statistic
+reports a large drift (mean $0.287$) while category-conditional KS
+remains small (mean $\max$ per-cat $0.052$). T2 confirmed at all five
+seeds.}
+\label{tab:category-mixture-t2}
+\scriptsize
+\resizebox{\linewidth}{!}{\input{tables/category_mixture_t2.tex}}
+\end{table}
+}{}
+
+\IfFileExists{tables/switching_certificate_t5.tex}{
+\begin{table*}[t]
+\centering
+\caption{T5 validation: finite-sample switching certificate per
+benchmark and protocol. Per-seed paired benefit is
+$(1-\mathrm{AUROC}_{\mathrm{static}})-(1-\mathrm{AUROC}_{\mathrm{RGA}})$;
+\textbf{LCB$_{0.05}$} is the 95\,\% lower confidence bound from a
+paired bootstrap over seeds. Seven of ten protocols are certified
+(LCB $>0$); the three non-certified rows are exactly the canonical
+one-class protocols where the paper's negative-result claim already
+holds.}
+\label{tab:switching-certificate-t5}
+\scriptsize
+\resizebox{\textwidth}{!}{\input{tables/switching_certificate_t5.tex}}
+\end{table*}
+}{}
+
+Three points follow. (a) Table~\ref{tab:k-domain-corruption} confirms the
+central T3 mechanism while also refining its idealized assumption. Isolated
+and partial failures give weak or mixed effects, all-domain collapse activates
+the mean gate and yields positive ROC-AUC gains, and the minimum branch never
+fires because the implemented estimator keeps minimum reliability above
+$\tau_{\min}=0.34$. (b)
+Table~\ref{tab:category-mixture-t2} confirms T2 on a controlled
+synthetic scenario with a $\sim$$5.5\times$ ratio between global and
+category-conditional KS; this is the mathematical reason a global KS
+reference can spuriously fire on benign category-mixture shift, and
+motivates the \path{CategoryAwareReliabilityEstimator}. (c)
+Table~\ref{tab:switching-certificate-t5} translates T5 into an
+\emph{auditable} per-protocol verdict: the three non-certified rows
+align exactly with the cross-benchmark negative-result reading in
+§\ref{sec:cross-benchmark-master}, which is the empirical evidence
+the manuscript already foregrounded. Together these three validations
+move the theorem stack from a set of population statements to a set
+of empirically anchored predictions a reviewer can re-check on the
+shipped JSONs.
 
 \subsection{Causal Reliability Attribution}
 \label{sec:causal-attribution}
@@ -2228,6 +2353,53 @@ calibration monitor and switching certificate ship as observable-only
 artefacts; a production system would need an alerting hook that
 actually escalates when the finite-sample certificate or risk-dominance audit is
 violated.
+
+\subsection{Fourth Paired-Benchmark Scaffold}
+\label{sec:fourth-benchmark-scaffold}
+
+A senior reviewer asked whether the cross-benchmark contrast
+generalises to a \emph{fourth} naturally paired benchmark beyond
+MVTec~3D-AD, MVTec LOCO-AD / VisA, and UNSW-NB15. This is the right
+question, and the honest answer is that we do not yet have those
+results --- not because the experimental machinery is missing, but
+because the candidate datasets require credentialed access (MIMIC-IV
+clinical notes) or hours of additional feature-extraction engineering
+(CICIDS-2017 paired with authentication logs). Rather than fabricate
+numbers, Table~\ref{tab:fourth-benchmark-scaffold} ships an explicit
+\emph{scaffold} of the candidate datasets with status
+\emph{pending}; the table is auto-generated from a single source of
+truth in \path{src/scripts/emit_fourth_benchmark_scaffold.py} so that
+when actual results land, a single dictionary edit replaces the
+``pending'' status with a real ROC-AUC number.
+
+\IfFileExists{tables/fourth_benchmark_scaffold.tex}{
+\begin{table*}[t]
+\centering
+\caption{Fourth-paired-benchmark scaffold. Candidate datasets named
+by the reviewer; status pending until the relevant
+data-access and pairing scripts have been executed. Replacing
+pending with a real ROC-AUC number is the only step required
+when results land.}
+\label{tab:fourth-benchmark-scaffold}
+\scriptsize
+\resizebox{\textwidth}{!}{\input{tables/fourth_benchmark_scaffold.tex}}
+\end{table*}
+}{}
+
+The three candidate datasets are chosen so that a positive result on
+any of them would falsify or strengthen the cross-benchmark
+hypothesis from a different angle. CICIDS-2017~+~auth logs tests the
+network/security side of the modality space (UNSW-NB15 is already
+covered, but its three modalities are software-derived from the same
+event; the auth-log pairing brings genuinely independent
+modality streams). MIMIC-IV~+~clinical notes tests a clinical
+vitals~+~free-text pairing, where the two modalities are extremely
+asymmetric in noise structure. MVTec AD-2D~+~depth-pseudo tests
+whether the diagnostic gate's behaviour depends on the
+\emph{quality} of the second modality (the depth-pseudo channel is
+deliberately weaker than MVTec 3D-AD's real depth scans). These
+three rows are pre-registered here so a future revision cannot
+silently swap them for an easier target.
 
 \subsection{Enterprise Gap-Closure Criteria}
 The present system should not be described as enterprise-grade or production

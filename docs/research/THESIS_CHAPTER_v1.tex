@@ -9,7 +9,7 @@
 \usepackage{array}
 \usepackage{graphicx}
 \graphicspath{{figures/}}
-\usepackage{hyperref}
+\usepackage[hypertexnames=false]{hyperref}
 \usepackage{xcolor}
 \usepackage{url}
 \usepackage{float}
@@ -73,7 +73,11 @@ and the held-out-category and M3DM-style variants are treated as diagnostics
 rather than new superiority claims. The secondary benchmark, \benchmark{},
 combines four real-domain datasets via explicit label alignment; on it the same
 gate improves all-domain coherent-collapse attacks by $+0.0506$ and $+0.0319$
-but the clean split is near saturated. Public PatchCore supervised-paired and
+but the clean split is near saturated. A complete $k$-of-$D$ corruption
+benchmark shows that the current mean gate has weak or mixed effects for
+isolated and partial domain failures and activates fully only at all-domain
+collapse; the implemented minimum/hybrid RGA-v2 candidates do not yet close
+that gap at $\tau_{\min}=0.34$. Public PatchCore supervised-paired and
 held-out MVTec variants improve the paired fusion task; base \method{} still
 does not become the clean-score leader, while RGA+ gives bounded ROC-AUC gains.
 
@@ -420,8 +424,13 @@ The codebase also now exposes an \method{}-v2 gate family for follow-up
 experiments: a minimum-reliability gate
 $G_{\min}=\mathbb{1}[\min_d r_d<\tau_{\min}]$ and a hybrid gate
 $G_{\mathrm{hyb}}=\mathbb{1}[\bar r<\tau_{\mathrm{mean}}\ \mathrm{or}\
-\min_d r_d<\tau_{\min}]$. The reported tables keep the original mean gate
-unless a configuration explicitly selects \texttt{minimum} or \texttt{hybrid}.
+\min_d r_d<\tau_{\min}]$. These variants are diagnostic candidates in the
+current chapter, not validated fixes. The completed $k$-of-$D$ run shows that
+with $\tau_{\min}=0.34$, observed minimum reliability stays above the minimum
+threshold, so the minimum branch never activates and the hybrid gate behaves
+like the original mean gate. The reported base-\method{} tables keep the
+original mean gate unless a configuration explicitly selects
+\texttt{minimum} or \texttt{hybrid}.
 
 \subsection{Switching-Rule Certificate and Scope}
 
@@ -709,6 +718,15 @@ the four-domain benchmark, the current mean gate should remain mostly closed
 when one domain collapses and begin firing once two or more domains collapse.
 The runner now exposes this as a mechanism-isolation experiment and compares
 the original mean gate against minimum and hybrid \method{}-v2 gate modes.
+The completed run refines that idealized prediction: because the implemented
+reliability estimator does not drive failed domains to reliability zero, the
+aggregate phase transition appears at full four-domain collapse. For
+$k=1,2,3$, mean and hybrid gates produce small or mixed ROC-AUC deltas and
+confidence intervals that include zero; at $k=4$, they recover the all-domain
+gains. The minimum gate never fires at $\tau_{\min}=0.34$, because the observed
+minimum reliability remains between $0.620$ and $0.650$. This makes the
+experiment strong evidence for mean-gate dilution, but not yet evidence that
+the current RGA-v2 hybrid gate solves isolated catastrophic domain failure.
 
 \begin{table}[H]
 \centering
@@ -725,6 +743,26 @@ attention.}
 \caption{All-domain adversarial ROC-AUC delta between \method{} and static
 attention.}
 \label{fig:thesis-adversarial}
+\end{figure}
+
+\begin{table}[H]
+\centering
+\caption{$k$-of-$D$ domain-corruption mechanism benchmark on \benchmark{}.
+The table compares the original mean gate with minimum and hybrid RGA-v2 gate
+candidates. Delta is \method{} minus static attention.}
+\label{tab:thesis-k-domain-corruption}
+\scriptsize
+\resizebox{\textwidth}{!}{\input{tables/elara_k_domain_corruption_results.tex}}
+\end{table}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.90\textwidth]{elara_k_domain_corruption.png}
+\caption{$k$-of-$D$ corruption mechanism evidence. The mean and hybrid gates
+show little reliable benefit for isolated or partial failures and activate
+fully only at all-domain collapse. The minimum gate remains closed at
+$\tau_{\min}=0.34$, exposing the current RGA-v2 threshold gap.}
+\label{fig:thesis-k-domain-corruption}
 \end{figure}
 
 \section{Ablation and Failure Analysis}
@@ -1006,7 +1044,7 @@ The cross-benchmark contrast is suggestive but not conclusive. Specifically:
   another industrial RGB+3D dataset) would convert the observation from
   single-benchmark evidence to a pattern.
   \item Would a category-aware drift signal close the gap? The repository now
-  includes \path{CategoryAwareReliabilityEstimator}, which conditions KS drift
+  includes a category-aware reliability estimator that conditions KS drift
   references on known categories. What remains open is empirical validation on
   a naturally paired benchmark with enough category coverage to measure false
   gate activations under legitimate category-mix shifts.
@@ -1094,10 +1132,9 @@ used as a temporal-reference audit, not as supervised clinical-performance
 evidence.
 
 For local closure, the chapter records a separate patient-disjoint stratified
-replay in \path{healthcare_gap1_patient_stratified_validation.json},
-\path{healthcare_gap2_reliability_stress_validation.json}, and
-\path{healthcare_gap4_deployment_audit_validation.json}. Table~\ref{tab:healthcare-gap-closure}
-summarizes the local closure status. Gap 1 closes locally because all train,
+replay across the gap-1, gap-2, and gap-4 validation artifacts.
+Table~\ref{tab:healthcare-gap-closure} summarizes the local closure status.
+Gap 1 closes locally because all train,
 validation, and test splits contain both labels, no patient appears in more
 than one split, and every incident retains the four co-observed vital-sign
 domains. The held-out test result is a multimodal ROC-AUC of 0.806, above the
@@ -1123,10 +1160,10 @@ scoped.}
 \label{fig:healthcare-gap-closure}
 \end{figure}
 
-Gap 2 is closed locally on the same replay by
-\path{healthcare_gap2_reliability_stress_validation.json}. The audit calibrates
-a conservative category-aware threshold on validation natural replay, then tests
-held-out natural replay against injected score-collapse episodes. The held-out
+Gap 2 is closed locally on the same replay by the reliability-stress audit.
+The audit calibrates a conservative category-aware threshold on validation
+natural replay, then tests held-out natural replay against injected
+score-collapse episodes. The held-out
 natural fire rate is 0.0, while the mean collapse fire rate is 1.0 across the
 four domains, as shown in Fig.~\ref{fig:healthcare-gap2-stress}. This is a
 controlled replay result for zero-misfire adaptation, not prospective deployment
@@ -1341,23 +1378,21 @@ Computer Vision}, 2023.
 The repository supports a scripted reproduction flow with five stages:
 
 \begin{enumerate}
-  \item \textbf{Prepare \benchmark{} inputs.} Run
-  \texttt{src/scripts/prepare\_realfusion\_la\_benchmark.py} to build the
+  \item \textbf{Prepare \benchmark{} inputs.} Run the
+  \benchmark{} preparation script to build the
   synthetically paired fusion CSV and metadata JSON from local fraud, cyber,
   behavior, and text datasets. Source-row-disjoint train/validation/test
   pools are emitted into a \texttt{fusion\_split} column so the
   experiment runner can honor a predefined split.
-  \item \textbf{Prepare MVTec 3D-AD inputs.} Run
-  \texttt{src/scripts/prepare\_mvtec3d\_fusion\_benchmark.py}, which
+  \item \textbf{Prepare MVTec 3D-AD inputs.} Run the MVTec 3D-AD
+  preparation script, which
   discovers paired RGB/depth files across all extracted categories,
   fits score normalization from train/good observations only, and
   emits a long-format fusion table with the original MVTec
   \texttt{split} column preserved.
-  \item \textbf{Run the multi-seed benchmark.} Use
-  \texttt{src/scripts/run\_breakthrough\_experiment.py} with the
-  appropriate YAML configuration. Both
-  \texttt{configs/attention\_mvtec3d\_fusion.yaml} and
-  \texttt{configs/attention\_real\_fusion.yaml} set the
+  \item \textbf{Run the multi-seed benchmark.} Use the breakthrough
+  experiment runner with the
+  appropriate YAML configuration. Both primary configuration files set the
   \texttt{split\_column} field so the runner honors each dataset's
   predefined train/validation/test partition.
   \item \textbf{Generate paper assets.} Use
@@ -1380,14 +1415,10 @@ checkout with \texttt{PYTHONPATH=src pytest tests/}.
 \section{Benchmark Construction Detail}
 \label{app:benchmark}
 
-Detailed construction of both benchmarks --- the per-domain feature
-extractors, the score-normalization protocol, the categorical-encoding
-choices, and the label-alignment procedure --- is preserved here so the
-main body of the thesis can focus on the empirical finding rather than
-on construction prose. The same construction details appear in the
-companion conference manuscript and are not duplicated here verbatim;
-readers are pointed to \S Benchmark Construction of
-\texttt{PAPER\_DRAFT\_v1.tex} for the canonical description.
+Detailed construction of both benchmarks is preserved in the companion
+conference manuscript, including feature extraction, score normalization,
+categorical encoding, and label alignment. The thesis keeps this appendix
+brief so the main text can focus on the empirical findings.
 
 \section{Reliability-Gate Theorem Stack}
 \label{app:switching-rule}
@@ -1544,6 +1575,23 @@ multiple-domain testing is controlled. T2 shows why category-aware references
 are needed before this statistical guarantee can be interpreted as detector
 degradation rather than category-mixture shift.
 
+\subsection{Theory-to-Experiment Mapping}
+
+Table~\ref{tab:thesis-theory-experiment-mapping} records the current status of
+the theorem stack after the completed $k$-of-$D$ experiment. The main update is
+that T3 is no longer only a design critique: it is now directly tested by the
+new mechanism benchmark. T4, T5, and T6 remain conditional tools until the
+deployment-risk terms, fired-case lower confidence bounds, and KS sample-size
+power curves are reported.
+
+\begin{table}[H]
+\centering
+\caption{Theory-to-experiment mapping after the completed $k$-of-$D$ run.}
+\label{tab:thesis-theory-experiment-mapping}
+\scriptsize
+\resizebox{\textwidth}{!}{\input{tables/elara_theory_experiment_mapping.tex}}
+\end{table}
+
 \section{PAC Generalisation Bound for the RGA+ Meta-Router}
 \label{app:pac-router}
 
@@ -1563,19 +1611,27 @@ risk relative to the empirical risk it minimised on the validation
 fold.
 
 \paragraph{T7. PAC bound on the RGA+ meta-router.}
-Let $\mathcal{D}$ be the (test-fold) data distribution producing
-features $(\mathbf{r},\mathbf{m})\in[0,1]^{D}\times\{0,1\}^{D}$ and
-binary labels $y\in\{0,1\}$ via
-$y=\mathbb{1}\{\text{reliability-path beats static-path}\}$, which is
-the binary supervisory signal used to train the router. Let
+Let $\mathcal{D}$ be the test-fold data distribution producing features
+\[
+(\mathbf{r},\mathbf{m})\in[0,1]^{D}\times\{0,1\}^{D}
+\]
+and binary labels $y\in\{0,1\}$ via
+\[
+y=\mathbb{1}\{\text{reliability-path beats static-path}\},
+\]
+which is the binary supervisory signal used to train the router. Let
 $\mathcal{H}$ be the class of logistic classifiers
-$h_{\boldsymbol{\theta}}(\mathbf{r},\mathbf{m})=
-\sigma(\boldsymbol{\theta}^{\top}\boldsymbol{\phi}(\mathbf{r},\mathbf{m}))$
+\[
+h_{\boldsymbol{\theta}}(\mathbf{r},\mathbf{m})=
+\sigma\!\left(
+\boldsymbol{\theta}^{\top}\boldsymbol{\phi}(\mathbf{r},\mathbf{m})
+\right)
+\]
 parameterised by $\boldsymbol{\theta}\in\mathbb{R}^{p}$ with
-$\|\boldsymbol{\theta}\|_2\leq B$, and let
-$\boldsymbol{\phi}:[0,1]^D\times\{0,1\}^D\rightarrow\mathbb{R}^{p}$
-be the (bounded) feature map actually used by the router
-($\|\boldsymbol{\phi}\|_2\leq R$ almost surely). Let
+$\|\boldsymbol{\theta}\|_2\leq B$. The feature map
+$\boldsymbol{\phi}$ sends
+$[0,1]^D\times\{0,1\}^D$ to $\mathbb{R}^{p}$ and is bounded by
+$\|\boldsymbol{\phi}\|_2\leq R$ almost surely. Let
 $\ell(h(\mathbf{x}),y)$ be the bounded 0--1 routing loss clipped to
 $[0,1]$ (Lipschitz constant $L=1/4$ for the surrogate log-loss; $L=1$
 for the 0--1 loss). Let $\widehat R_n(h)$ denote empirical risk on

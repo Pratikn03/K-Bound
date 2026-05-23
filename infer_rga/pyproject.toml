@@ -1,0 +1,24 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "infer_rga"
+version = "0.1.0"
+description = "Runtime-only inference for ELARA reliability-gated attention fusion"
+readme = "README.md"
+requires-python = ">=3.10"
+authors = [{ name = "ELARA Authors" }]
+license = { text = "See repository LICENSE" }
+keywords = ["anomaly-detection", "multimodal-fusion", "reliability", "attention"]
+dependencies = [
+  "torch>=2.0",
+  "numpy>=1.24",
+  "joblib>=1.3",
+]
+
+[project.optional-dependencies]
+test = ["pytest>=7.0"]
+
+[tool.setuptools]
+packages = ["infer_rga"]

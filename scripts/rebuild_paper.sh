@@ -96,6 +96,23 @@ PYTHONPATH=src python src/scripts/emit_milestone2_cross_benchmark.py \
   --repo-root "$ROOT" \
   --output "$TBL_DIR/milestone2_cross_benchmark.tex"
 
+echo "==> Regenerate Phase-D theorem-stack validation assets"
+PYTHONPATH=src python src/scripts/emit_k_of_d_corruption_table.py \
+  --output "$TBL_DIR/elara_k_domain_corruption_results.tex" \
+  --mapping-output "$TBL_DIR/elara_theory_experiment_mapping.tex" \
+  --figure-output "$FIG_DIR/elara_k_domain_corruption.png" || true
+PYTHONPATH=src python src/scripts/validate_category_mixture_t2.py \
+  --output experiments/fusion/category_mixture_t2_validation.json
+PYTHONPATH=src python src/scripts/emit_category_mixture_t2_table.py \
+  --output "$TBL_DIR/category_mixture_t2.tex"
+PYTHONPATH=src python src/scripts/audit_switching_certificate_t5.py \
+  --repo-root "$ROOT" \
+  --output experiments/fusion/switching_certificate_t5_audit.json
+PYTHONPATH=src python src/scripts/emit_switching_certificate_t5_table.py \
+  --output "$TBL_DIR/switching_certificate_t5.tex"
+PYTHONPATH=src python src/scripts/emit_fourth_benchmark_scaffold.py \
+  --output "$TBL_DIR/fourth_benchmark_scaffold.tex"
+
 echo
 echo "==> Compile PDF (from docs/research/ so \\graphicspath resolves)"
 cd "$ROOT/docs/research"
