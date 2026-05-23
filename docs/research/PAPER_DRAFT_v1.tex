@@ -1505,13 +1505,13 @@ the same gate improves natural RGB--3D anomaly fusion. A stronger paired-data
 claim needs either a protocol with supervised fusion labels, stronger
 modality-specific anomaly scorers, or an additional co-observed benchmark.
 
-\subsection{UNSW-NB15 Cross-Domain Naturally-Paired Benchmark}
+\subsection{UNSW-NB15 Naturally Structured Event-View Benchmark}
 \label{sec:unsw-paired}
 
-To prove the cross-benchmark contrast generalizes beyond visual paired
-data, we add a third naturally-paired benchmark from a fundamentally
-different domain. Each row in UNSW-NB15 is a single network event with
-three co-observed measurement modalities:
+UNSW-NB15 is evaluated as an additional naturally structured,
+co-observed event-view benchmark to test whether the observed pattern
+appears outside visual paired data. Each row in UNSW-NB15 is a single
+network event with three co-observed measurement modalities:
 
 \begin{description}
   \item[flow] timing / throughput / inter-packet statistics (13 features)
@@ -1520,32 +1520,41 @@ three co-observed measurement modalities:
 \end{description}
 
 Pairing is by network-event id; the three modalities are measured
-simultaneously, satisfying the same naturally co-observed definition we
-used for MVTec 3D-AD. Splits are patient-stratified-style: random
-draw stratified by (attack category, label) with patient-id replaced by
-event-id so each fusion split sees every attack class and both labels.
+simultaneously and are derived from the same network event (the
+\texttt{pairing\_strength} classification in
+\path{docs/research/audit/EXPERIMENT_REGISTRY.csv} marks UNSW as
+\texttt{naturally\_structured\_views}, not
+\texttt{independent\_modalities}). Splits are stratified random draws
+on (attack category, label) using event id; the test fold is disjoint
+from train and validation.
 
 \IfFileExists{tables/unsw_paired_clean_results.tex}{
 \begin{table}[t]
 \centering
-\caption{UNSW-NB15 five-seed clean ROC-AUC, three naturally co-observed
-domains, 55{,}491 paired events. Method ordering follows the paper's
-clean-table convention.}
+\caption{UNSW-NB15 five-seed clean ROC-AUC over three software-derived
+views (flow / connection / context) of the same network event,
+55{,}491 paired events. Reported as a descriptive cross-domain
+audited reanalysis; method ordering follows the paper's clean-table
+convention.}
 \label{tab:unsw-clean}
 \scriptsize
 \resizebox{\linewidth}{!}{\input{tables/unsw_paired_clean_results.tex}}
 \end{table}
 }{}
 
-Table~\ref{tab:unsw-clean} reports the headline result. \methodplus{}
-router reaches ROC-AUC 0.989, the top score across all evaluated
-methods. The router beats every non-\system{} supervised baseline:
-random forest 0.989, early fusion MLP 0.985, Tent 0.954, TTT 0.948,
-late fusion ensemble 0.934. Static attention reaches 0.979 and base
-\method{} reaches 0.975. This is the first naturally-paired benchmark
-where \method{}'s reliability-derived features turn a supervised fusion
-result into the top method without losing the cross-domain
-generalization property documented for the visual paired family.
+Table~\ref{tab:unsw-clean} reports the cell descriptively. In the
+locked audited reanalysis (see §\ref{sec:cross-benchmark-master}),
+validation-frozen \methodplus{} (router head) obtains the highest
+point estimate against its validation-frozen primary comparator
+(random forest), with a practically very small ROC-AUC delta of
+approximately $+0.0003$. The audited inferential summary at the
+fixed-representative-seed DeLong test is statistically distinguishable
+within the locked Family~A audited-primary $K{=}5$ Holm correction;
+however, this is \emph{not} independent confirmatory replication and
+does not establish broad cross-domain superiority. Independent
+verification requires the Family~D future locked replication track
+(see \path{docs/research/audit/PHASE_0_6_FINAL_POLICY_LOCK.md} §4),
+which has not yet been executed.
 
 \subsection{Cross-Benchmark Master Comparison (Audited Reanalysis)}
 \label{sec:cross-benchmark-master}
@@ -1621,12 +1630,13 @@ $p_{\mathrm{Holm}}=0.496$, n.s.). MVTec~3D-AD PatchCore held-out
 $0.5031$ ($p_{\mathrm{Holm}}=0.202$, n.s.).
 
 \noindent\textbf{What the audited reanalysis does not support.}
-The locked audited-reanalysis policy explicitly forbids
-``\methodplus{} beats every baseline'', ``best non-router'' inferential
-framing chosen from test winners, ``pre-registered'' or
-``confirmatory'' labels on already-observed cells, and Fisher
-combination of per-seed DeLong $p$-values. Earlier drafts of this
-section contained those framings; they are removed here. The
+The locked audited-reanalysis policy explicitly forbids: (i)
+claiming \methodplus{} outperforms every baseline; (ii) choosing the
+inferential comparator from test winners; (iii) applying
+\emph{pre-registered} or \emph{confirmatory} labels to
+already-observed cells; and (iv) Fisher combination of per-seed
+DeLong $p$-values. Earlier drafts contained those framings; they
+are removed here. The
 cross-benchmark pattern is now: \emph{one Family~A cell (UNSW-NB15)
 has Holm-corrected signal at a near-zero practical effect; the
 other four lose Holm-corrected significance once the validation-frozen
@@ -1807,10 +1817,10 @@ late-fusion ensemble $0.944$). The held-out result is materially
 \emph{higher} than the unrestricted UNSW supervised paired result
 because the held-out attacks are individually easier to separate from
 normal traffic than the original mix; what matters is that the
-\methodplus{} margin over the strongest non-router baseline is
-preserved. The headline 0.989 number therefore does not depend on
-within-attack leakage; the gate also wins on unseen attack
-categories.
+\methodplus{} delta against its validation-frozen primary comparator
+is preserved. The descriptive 0.989 / 0.993 numbers therefore do not
+depend on within-attack leakage; this is reported as an exploratory
+Family~C cell rather than as a generalization claim.
 
 \noindent\textbf{Edge-proxy independence noise-floor.}
 For VisA and MVTec LOCO-AD the second "domain" is a Sobel-edge proxy
@@ -1834,22 +1844,19 @@ margin but is not the dominant signal. We treat this as
 honest framing of the edge-proxy limitation rather than a refutation
 of it.
 
-\noindent\textbf{Real3D-AD descriptor upgrade.}
-Real3D-AD was the only naturally-paired supervised-paired cell where
-\methodplus{} previously lost ($0.527$ vs the $0.541$ late-fusion
-ensemble) with a 33-bin radial-distance histogram FPFH fallback. We
-replaced that descriptor with a richer PCA-based local-geometry
-representation that augments the radial histogram with pairwise-angle
-histograms and PCA-eigenvalue shape statistics
-(linearity, planarity, sphericity, anisotropy, change-curvature,
-eigenentropy) plus radial-distance moments. With the richer
-descriptor, \methodplus{} boost reaches $0.5656$, which is now above
-the strongest non-router baseline (late-fusion ensemble $0.5490$;
-Tent / EATA / SAR all clustered at $0.5607$) by $+0.017$. Real3D-AD
-is therefore no longer the negative cell it was at submission time;
-the result still reflects the small dataset size (1\,254 point
-clouds) and the absence of true FPFH ($\mathtt{open3d}$ lacks a
-Python 3.14 wheel) but the new descriptor closes the gap.
+\noindent\textbf{Real3D-AD descriptor (Family C exploratory).}
+Real3D-AD is classified as Family C exploratory under the locked
+audited-reanalysis policy (see
+\path{docs/research/audit/PHASE_1_1_REAL3D_RESOLUTION.md}). The current
+descriptor is PCA-based local-geometry (PCA shape statistics +
+pairwise-angle histogram + radial moments + depth); the legacy FPFH
+fallback has been retired from the implementation. Under the locked
+validation-frozen RGA+ head selection, the Real3D row reports router
+test ROC-AUC $0.534$ vs the validation-frozen primary comparator TTT
+$0.537$, descriptive $\Delta = -0.003$ (audited reanalysis,
+exploratory only). No Real3D superiority or no-longer-negative claim
+is made; a 30-seed re-run is the next step required to revisit Real3D
+under the Family A audited-primary framework.
 
 \paragraph{Partial head-to-head re-run.} We additionally include a
 \emph{partial} head-to-head row produced by this work's re-run of a
@@ -1960,14 +1967,16 @@ cross-benchmark statistical-significance reading in
 \subsection{RGA+ Component Ablation}
 \label{sec:rga-plus-ablation}
 
-The cross-benchmark master comparison reports the \methodplus{} headline
-as $\max(\text{router}, \text{boost})$, which a reviewer may justifiably
-ask to disaggregate. The two \methodplus{} variants are conceptually
-related but operate differently: the meta-router is a validation-trained
-logistic regression that selects between (RGA, every non-router
-baseline) per sample using a small handful of reliability features,
-while the boosted variant fits a per-sample reliability-weighted
-ensemble that always combines RGA's signal with the strong baseline.
+The cross-benchmark master comparison reports the \methodplus{}
+headline as the head selected on validation ROC-AUC and frozen before
+test evaluation (router or boost; tie-break boost; see Phase~1.B
+selection rule). A reviewer may justifiably ask to disaggregate the
+two underlying variants. The two are conceptually related but operate
+differently: the meta-router is a validation-trained logistic
+regression that selects between (RGA, every non-router baseline) per
+sample using a small handful of reliability features, while the
+boosted variant fits a per-sample reliability-weighted ensemble that
+always combines RGA's signal with the strong baseline.
 
 \IfFileExists{tables/rga_plus_ablation.tex}{
 \begin{table*}[t]
@@ -1985,24 +1994,25 @@ component-attribution table, not a confirmatory comparison.}
 \end{table*}
 }{}
 
-Table~\ref{tab:rga-plus-ablation} disaggregates the headline. The
-pattern is benchmark-dependent and informative. On the two visual
-supervised-paired cells with Holm-significant headlines, the two
-variants behave differently: on MVTec~LOCO-AD supervised-paired the
-boosted variant is $0.016$ ROC-AUC above the router ($0.734$ vs
-$0.718$); on VisA RGB+edge supervised-paired they are essentially tied
-($0.866$ vs $0.865$). On Real3D-AD the boosted variant is the dominant
-contributor ($0.566$ vs the router's $0.534$). On UNSW-NB15 (both the
-standard and held-out-attack-category protocols) they are tied to four
-decimal places. The aggregate pattern is that the boosted variant
-tends to dominate on smaller and noisier benchmarks (where the
-meta-router risks overfitting validation), the router dominates on
-canonical one-class cells (where validation is normal-only and the
-boosted variant degenerates), and the two are tied where supervised
-signal is abundant. The conservative
-$\max(\text{router}, \text{boost})$ headline therefore reflects a
-genuine ensemble-of-ensembles rather than two redundant heads, and
-the per-cell ablation makes that ensemble structure transparent.
+Table~\ref{tab:rga-plus-ablation} disaggregates the two heads
+descriptively under the locked audited-reanalysis policy: the
+\emph{headline} \methodplus{} column reports the validation-frozen
+choice (router or boost; tie-break boost). The router and boost
+columns are descriptive component-attribution surfaces; neither is
+used as an inferential statistic. On MVTec~LOCO-AD supervised-paired
+the boosted variant has the higher \emph{test-fold} ROC-AUC, but the
+val-frozen choice is the router and the audited inferential summary
+in §\ref{sec:cross-benchmark-master} reports a $-0.008$ $\Delta$ vs the
+validation-frozen comparator (Tent), Holm-corrected $p=0.378$, not
+significant. On VisA RGB+edge supervised-paired the val-frozen choice
+is the boosted head ($0.866$) with descriptive router test-fold value
+($0.865$). On Real3D-AD (Family C exploratory) the val-frozen choice
+is the router; the boost test-fold value remains visible in the
+descriptive ablation as a component-attribution surface but is not
+used to make any Real3D claim. UNSW-NB15 has both heads tied to four
+decimal places on the test fold; the val-frozen choice is the
+router. Under the locked policy this table is interpreted only as a
+descriptive component-attribution surface, not a comparison.
 
 \subsection{Theorem-Stack Validation: T2, T3, T5}
 \label{sec:theorem-validation}
@@ -2088,8 +2098,8 @@ identification. The reliability scalar $r_d$ is constructed by the
 runner (validation ECE plus test-time KS drift plus prediction
 sharpness, weighted by the gate); the analyst can set it to any
 value. The reported quantity therefore measures the model's
-counterfactual response to a perturbed input, not the causal effect
-of reliability on real anomaly incidence or operational safety. No
+counterfactual response to a perturbed input, not a real-world cause-effect
+on anomaly incidence or operational safety. No
 potential-outcomes identification assumption (ignorability,
 positivity, consistency) is invoked.
 
@@ -2136,19 +2146,22 @@ that domain as a reliability-discounted contributor). Both signs are
 informative about how the model is wired; neither is a claim about
 real anomaly incidence.
 
-\paragraph{Cross-benchmark B3 findings.}
-The largest empirically measured causal effect is on MVTec LOCO-AD
-supervised-paired: the edge-proxy domain's ATE is $-0.161$ (95\%
-bootstrap CI $[-0.219, -0.103]$), meaning that pushing the edge-proxy
-reliability to neutral $0.5$ \emph{lowers} the fused anomaly
-probability by 16 percentage points on average. This is consistent
-with the gate using edge-proxy as a reliability-discounted contributor:
-when its reliability is forced upward toward neutral, the gate's
-defensive down-weighting is removed and the prediction drops. The RGB
-domain in the same benchmark has ATE $-0.049$ (CI $[-0.055,-0.043]$),
-in the same direction but smaller in magnitude. On UNSW-NB15 the
-\emph{flow} modality has ATE $-0.023$ (CI $[-0.028,-0.017]$) and the
-\emph{context} modality has ATE $+0.002$ (CI $[+0.0001,+0.0046]$);
+\paragraph{Cross-benchmark sensitivity findings.}
+The largest empirically measured model-response sensitivity is on
+MVTec~LOCO-AD supervised-paired: the edge-proxy domain's
+$\Delta_{\mathrm{response}}$ is $-0.161$ (95\% bootstrap CI
+$[-0.219, -0.103]$), meaning that pushing the edge-proxy reliability
+to its validation-fold reference value \emph{lowers} the fused
+anomaly probability by 16 percentage points on average. This is
+consistent with the gate using edge-proxy as a reliability-discounted
+contributor: when its reliability is forced upward toward the
+reference value, the gate's defensive down-weighting is removed and
+the prediction drops. The RGB domain in the same benchmark has
+$\Delta_{\mathrm{response}} = -0.049$ (CI $[-0.055,-0.043]$), in the
+same direction but smaller in magnitude. On UNSW-NB15 the
+\emph{flow} view has $\Delta_{\mathrm{response}} = -0.023$ (CI
+$[-0.028,-0.017]$) and the \emph{context} view has
+$\Delta_{\mathrm{response}} = +0.002$ (CI $[+0.0001,+0.0046]$);
 \emph{connection} is indistinguishable from zero. The signs and
 magnitudes together provide a per-benchmark fingerprint of which
 modality the gate is actively shaping versus which it is passing

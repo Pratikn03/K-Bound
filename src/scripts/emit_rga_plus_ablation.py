@@ -69,13 +69,31 @@ BENCHMARKS = [
 
 
 def render_table(repo_root: Path) -> str:
+    """Phase 1.1 — render the RGA+ component-attribution table under the
+    locked validation-frozen comparator policy. The comparator name is
+    read from `experiments/audit/audited_comparator_selection.csv`
+    (validation-frozen, never test-winner). Δ columns are RGA+ router or
+    boost minus the validation-frozen comparator.
+    """
+    import csv
+    # Load validation-frozen comparator per cell.
+    comp_path = repo_root / "experiments/audit/audited_comparator_selection.csv"
+    comp_idx: dict[tuple[str, str], dict] = {}
+    if comp_path.exists():
+        with comp_path.open() as f:
+            for r in csv.DictReader(f):
+                comp_idx[(r["benchmark"], r["protocol"])] = r
+
     rows = [
         GENERATED_COMMENT,
         r"\begin{tabular}{llcccccccc}",
         r"\toprule",
         r"\textbf{Benchmark} & \textbf{Protocol} & \textbf{Static} & \textbf{RGA} & "
-        r"\textbf{RGA+ router} & \textbf{RGA+ boost} & \textbf{Best non-router} & "
-        r"\textbf{Best ROC} & \textbf{Router--Best} & \textbf{Boost--Best} \\",
+        r"\textbf{RGA+ router} & \textbf{RGA+ boost} & "
+        r"\textbf{Validation-frozen comparator} & "
+        r"\textbf{Comparator test ROC} & "
+        r"\textbf{Audited $\Delta$ router} & "
+        r"\textbf{Audited $\Delta$ boost} \\",
         r"\midrule",
     ]
     for benchmark, protocol, rel_path in BENCHMARKS:
@@ -92,25 +110,27 @@ def render_table(repo_root: Path) -> str:
         router = _dig(cs, "rga_meta_router", "roc_auc", "mean")
         boost = _dig(cs, "rga_boosted_fusion", "roc_auc", "mean")
 
-        best_name = None
-        best_roc = None
-        for name, metrics in cs.items():
-            if name in {"craf_attention", "rga_boosted_fusion", "rga_meta_router"}:
-                continue
-            roc = _dig(metrics, "roc_auc", "mean")
-            if roc is None:
-                continue
-            if best_roc is None or float(roc) > float(best_roc):
-                best_name = name
-                best_roc = float(roc)
+        # Validation-frozen comparator (Phase 1.C): never selected from test ROC.
+        comp_row = comp_idx.get((benchmark, protocol)) or {}
+        comp_name = comp_row.get("selected_comparator")
+        try:
+            comp_test = float(comp_row.get("selected_comparator_test_auc"))
+        except (TypeError, ValueError):
+            comp_test = None
 
-        router_delta = (router - best_roc) if (router is not None and best_roc is not None) else None
-        boost_delta = (boost - best_roc) if (boost is not None and best_roc is not None) else None
+        router_delta = (
+            router - comp_test
+            if (router is not None and comp_test is not None) else None
+        )
+        boost_delta = (
+            boost - comp_test
+            if (boost is not None and comp_test is not None) else None
+        )
 
         rows.append(
             rf"{benchmark} & {protocol} & {_fmt(static)} & {_fmt(rga)} & "
-            rf"{_fmt(router)} & {_fmt(boost)} & {_method_label(best_name)} & "
-            rf"{_fmt(best_roc)} & {_fmt(router_delta)} & {_fmt(boost_delta)} \\"
+            rf"{_fmt(router)} & {_fmt(boost)} & {_method_label(comp_name)} & "
+            rf"{_fmt(comp_test)} & {_fmt(router_delta)} & {_fmt(boost_delta)} \\"
         )
     rows += [r"\bottomrule", r"\end{tabular}", ""]
     return "\n".join(rows)

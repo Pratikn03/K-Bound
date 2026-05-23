@@ -113,6 +113,16 @@ PYTHONPATH=src python src/scripts/emit_switching_certificate_t5_table.py \
 PYTHONPATH=src python src/scripts/emit_fourth_benchmark_scaffold.py \
   --output "$TBL_DIR/fourth_benchmark_scaffold.tex"
 
+echo "==> Phase 1.1: strip degenerate canonical PR-AUC / ECE / Brier from promoted tables and figures"
+PYTHONPATH=src python src/scripts/phase1_1_canonical_cleanup.py \
+  --repo-root "$ROOT"
+
+echo "==> Phase 1.1: rebuild metrics manifest + validator macros"
+PYTHONPATH=src python src/scripts/build_metrics_manifest.py \
+  --repo-root "$ROOT" \
+  --output "$ROOT/docs/research/metrics_manifest.json" \
+  --macros-output "$ROOT/docs/research/generated/elara_verified_metrics_macros.tex"
+
 echo
 echo "==> Compile PDF (from docs/research/ so \\graphicspath resolves)"
 cd "$ROOT/docs/research"
