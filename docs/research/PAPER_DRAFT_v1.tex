@@ -939,8 +939,10 @@ Fig.~\ref{fig:mvtec-clean-benchmark}.
 
 \begin{table*}[t]
 \centering
-\caption{Naturally paired MVTec 3D-AD: clean ROC-AUC, PR-AUC, and F1 95\%
-confidence intervals across configured seeds.}
+\caption{Naturally paired MVTec~3D-AD canonical one-class: ROC-AUC
+mean and 95\% confidence interval across configured seeds. PR-AUC,
+ECE, and Brier are omitted as protocol-diagnostic prevalence-valued
+artefacts (Phase~1.A audit).}
 \label{tab:mvtec-clean-ci}
 \scriptsize
 \resizebox{\textwidth}{!}{\input{tables/mvtec3d_clean_ci_results.tex}}
@@ -950,8 +952,13 @@ confidence intervals across configured seeds.}
 \begin{figure*}[t]
 \centering
 \includegraphics[width=0.92\textwidth]{mvtec3d_clean_benchmark.png}
-\caption{Clean benchmark ROC-AUC and PR-AUC across score-level and attention
-fusion methods on naturally paired MVTec 3D-AD.}
+\caption{Protocol-diagnostic ROC-AUC on naturally paired MVTec~3D-AD
+under the canonical one-class fusion protocol. PR-AUC, ECE, and
+Brier are omitted from promoted canonical results following the
+Phase~1.A audit (\path{docs/research/audit/CANONICAL_LABEL_METRIC_AUDIT.md}):
+under one-class training all supervised heads collapse to
+constant-like predictors and those metrics equal the canonical
+test-fold anomaly prevalence rather than discrimination ability.}
 \label{fig:mvtec-clean-benchmark}
 \end{figure*}
 
@@ -1356,17 +1363,32 @@ Fig.~\ref{fig:drift-curves}.
 \label{sec:adversarial}
 Table~\ref{tab:adversarial-results} evaluates all score-level perturbations,
 while Fig.~\ref{fig:adversarial-delta} isolates the all-domain attacks so the
-meaningful deltas are visible. Single-domain attacks are mostly ties. The
-important stress case is coherent all-domain score collapse. Under the
-all-domain zero attack, \method{} improves ROC-AUC from 0.7212 to 0.7718
-($+0.0506$). Under the all-domain max attack, it improves ROC-AUC from 0.7401
-to 0.7720 ($+0.0319$). Under all-domain Gaussian noise, it is essentially tied
-with static attention ($-0.0001$ ROC-AUC).
+deltas are visible. The values reported in this subsection come from the
+\emph{standard / default-gate} evaluation path
+(\path{experiments/fusion/craf_real_results.json}, \texttt{table\_3\_adversarial})
+and are labelled in
+\path{docs/research/audit/PHASE_1_1_PRIMARY_RUN_RESOLUTION.md} as
+\textbf{SECONDARY descriptive surface}. They are \emph{not} the PRIMARY
+B1/B2 audited mechanism endpoints; the PRIMARY values, reported in the
+abstract and §sec:elara-bench-la-mechanism, are $+0.0506$
+(zero-attack all-domain) and $+0.0319$ (max-attack all-domain), drawn
+from the k-of-$D$ sweep at $k{=}4$ mean-gate evaluation
+(\path{experiments/fusion/craf_real_k_domain_results.json}). Under the
+SECONDARY default-gate path here, the all-domain zero-attack delta is
+$+0.0367$ [0.0029, 0.0607] and the all-domain max-attack delta is
+$+0.0538$ [$-$0.0232, 0.1123]; single-domain attacks are mostly ties.
 
 \begin{table*}[t]
 \centering
-\caption{Adversarial perturbation benchmark. Delta is \method{} minus static
-attention.}
+\caption{\textbf{SECONDARY DESCRIPTIVE SURFACE:} Standard-protocol
+adversarial perturbation benchmark under the default-gate evaluation
+path (\texttt{table\_3\_adversarial} from \texttt{craf\_real\_results.json}).
+These rows are \emph{not} the PRIMARY B1/B2 audited mechanism
+endpoints; the locked PRIMARY values are $+0.0506$ / $+0.0319$ from
+the k-of-$D$ k$=$4 mean-gate evaluation (see
+§sec:elara-bench-la-mechanism + Table~\ref{tab:k-domain-corruption}).
+Delta below is \method{} minus static attention under the default-gate
+path.}
 \label{tab:adversarial-results}
 \scriptsize
 \resizebox{\textwidth}{!}{\input{tables/elara_adversarial_results.tex}}
@@ -1375,9 +1397,13 @@ attention.}
 \begin{figure}[t]
 \centering
 \includegraphics[width=\linewidth]{elara_adversarial_delta.png}
-\caption{All-domain adversarial ROC-AUC delta between \method{} and static
-attention. Complete single-domain scenarios are reported in
-Table~\ref{tab:adversarial-results}.}
+\caption{All-domain adversarial ROC-AUC delta between \method{} and
+static attention under the default-gate evaluation path. Complete
+single-domain scenarios are reported in
+Table~\ref{tab:adversarial-results}. \textbf{Secondary descriptive
+surface}; the PRIMARY B1/B2 mechanism endpoints are reported from
+the k-of-$D$ k$=$4 mean-gate evaluation
+(\path{docs/research/audit/PHASE_1_1_PRIMARY_RUN_RESOLUTION.md}).}
 \label{fig:adversarial-delta}
 \end{figure}
 
@@ -1399,9 +1425,14 @@ Table~\ref{tab:tau-sweep}.
 
 \begin{table*}[t]
 \centering
-\caption{Reliability-gate threshold sweep. Delta is \method{} minus static
-attention; adaptation rate is the fraction of evaluated samples using the
-reliability-aware path.}
+\caption{\textbf{SECONDARY DESCRIPTIVE SURFACE:} Reliability-gate
+threshold sweep under the standard / default-gate evaluation path.
+These rows are \emph{not} the PRIMARY B1/B2 audited mechanism
+endpoints; the locked PRIMARY B1/B2 values come from the k-of-$D$
+k$=$4 mean-gate evaluation (+0.0506 / +0.0319; see §sec:elara-bench-la-mechanism).
+Delta below is \method{} minus static attention under the
+default-gate path; adaptation rate is the fraction of evaluated
+samples using the reliability-aware path.}
 \label{tab:tau-sweep}
 \scriptsize
 \resizebox{\textwidth}{!}{\input{tables/elara_tau_sweep_results.tex}}
@@ -1571,7 +1602,7 @@ the primary comparator is the baseline with the highest seed-mean
 validation ROC-AUC, also frozen before test. The single audited
 inferential statistic per Family~A audited-primary cell is the
 single-representative-seed DeLong $p$-value (seed~42), Holm-corrected
-within the locked Family~A confirmatory set $K{=}5$. Family~B
+within the locked Family~A audited-primary reanalysis family $K{=}5$. Family~B
 mechanism endpoints (B1 and B2 at $\tau{=}0.66$) are corrected
 separately at $K{=}2$. Family~C exploratory cells receive no
 correction; their raw $p$-values are reported descriptively only.
