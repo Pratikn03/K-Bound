@@ -1,0 +1,53 @@
+{
+  "contract_version": "v3",
+  "phase": "2.2E",
+  "created_utc": "2026-05-25T19:54:00Z",
+  "lineage": "extends Family-D v2 contract with frozen upstream scoring pipeline spec",
+  "v2_manifest": "docs/research/phase2/FAMILY_D_PARTITION_MANIFEST_v2.json",
+  "v2_freeze_commit": "407c090070a7d4f5a68114df8bc2de906bf864dd",
+  "v3_freeze_note": "v3 adds configs/phase2/family_d_v3_scoring_pipeline.yaml; all v2 frozen artifacts are unchanged",
+  "test_evaluation_executed": false,
+  "frozen_artifacts": {
+    "scoring_pipeline_yaml": {
+      "path": "configs/phase2/family_d_v3_scoring_pipeline.yaml",
+      "sha256": "0a8a844d477d8c0bfaa539a05bd1e89eaeaf707a72f4bc54b9e38ce3e89ce4ac"
+    },
+    "protocol_yaml": {
+      "path": "configs/phase2/family_d_v2_eyecandies_protocol.yaml",
+      "sha256": "104d90c6bab38671bb4dba15414a05ccebc890679cd681a5d46e06e7c8be4f15"
+    },
+    "degradation_operator_spec": {
+      "path": "docs/research/phase2/FAMILY_D_V2_DEGRADATION_OPERATOR_SPEC.md",
+      "sha256": "e18bc05d12fb717b6b5dac738e41c022480374cefaa5556b5cfb48ce1e667f5d"
+    },
+    "hypotheses_csv": {
+      "path": "docs/research/phase2/FAMILY_D_HYPOTHESES_v2.csv",
+      "sha256": "0361a960217f0b32f9a96eef9c261d47af2877a895cbb5e10a0115e8303ad8e2"
+    },
+    "selection_policy": {
+      "path": "docs/research/phase2/FAMILY_D_SELECTION_AND_STATISTICAL_POLICY_v2.md",
+      "sha256": "65f81a240b41e54fd7dafdbdf045f65d5e2d5c06909f0e05d9a56e286712e60b"
+    },
+    "independent_review_signoff": {
+      "path": "docs/research/phase2/FAMILY_D_V2_INDEPENDENT_REVIEW_SIGNOFF.md",
+      "note": "v2 sign-off is inherited; covers v3 because v3 only adds the upstream pipeline spec"
+    }
+  },
+  "v3_scoring_pipeline_sha256": "0a8a844d477d8c0bfaa539a05bd1e89eaeaf707a72f4bc54b9e38ce3e89ce4ac",
+  "scoring_pipeline_yaml_sha256": "0a8a844d477d8c0bfaa539a05bd1e89eaeaf707a72f4bc54b9e38ce3e89ce4ac",
+  "protocol_yaml_sha256": "104d90c6bab38671bb4dba15414a05ccebc890679cd681a5d46e06e7c8be4f15",
+  "hypotheses_csv_sha256": "0361a960217f0b32f9a96eef9c261d47af2877a895cbb5e10a0115e8303ad8e2",
+  "selection_policy_sha256": "65f81a240b41e54fd7dafdbdf045f65d5e2d5c06909f0e05d9a56e286712e60b",
+  "operator_spec_sha256": "e18bc05d12fb717b6b5dac738e41c022480374cefaa5556b5cfb48ce1e667f5d",
+  "implementation_files": {
+    "feature_extractor": "src/scripts/family_d_v2_extract_features.py",
+    "fusion_csv_builder": "src/scripts/family_d_v2_build_fusion_csv.py",
+    "cell_runner": "src/scripts/run_phase2_family_d_v2_cell.py",
+    "inference_runner": "src/scripts/run_phase2_family_d_v2_inference.py"
+  },
+  "boundary_notice": "These are retrospective evaluation protocol artefacts; held-out confirmation requires the one-time Family-D v3 execution AFTER independent external review of both the v2 contract AND the v3 scoring pipeline spec.",
+  "cell_d_eye_1_executed": false,
+  "cell_d_eye_1_seed_count": 2,
+  "v3_execution_cell": "D-EYE-1",
+  "v3_dry_run": true
+}
