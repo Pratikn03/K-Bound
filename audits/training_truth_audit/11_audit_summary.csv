@@ -1,0 +1,41 @@
+audit_id,category,subcategory,finding,severity,status,evidence_file,evidence_detail
+A01,Model,Checkpoint,No .pt model checkpoints found in workspace,CRITICAL,OPEN,"find command result","find /Volumes/T9/uav/AutoML_Flagship_V8 -name '*.pt' returned 0 results"
+A02,Model,Architecture,AttentionFusionModel confirmed as single-layer cross-modal attention transformer,INFO,CONFIRMED,cross_modal_attention.py,embed_dim 32-48 num_heads=4 num_layers=1 per benchmark
+A03,Model,ReliabilityEstimator,Reliability formula confirmed: r_d = 0.45*(1-ECE) + 0.35*KS_p + 0.20*sharpness,INFO,CONFIRMED,reliability_estimator.py:164-168,Weights match paper Eq. 2
+A04,Model,RGAPlus,11-candidate grid confirmed: 7 HGB + 4 LogReg,INFO,CONFIRMED,reliability_boosted_fusion.py:144-186,Candidate names match results JSON
+A05,Model,MetaRouter,Router uses StratifiedShuffleSplit 60/40 on validation fold,INFO,CONFIRMED,meta_router.py:192-194,Val split only; test untouched
+A06,Data,Lineage,MVTec 3D-AD scorer fitted on train/good only,INFO,CONFIRMED,prepare_mvtec3d_fusion_benchmark.py,normal_reference_mask = train_mask & (defect_types == good)
+A07,Data,Lineage,UNSW-NB15 score fitted on train split only (fresh stratified),INFO,CONFIRMED,prepare_unsw_paired_fusion_benchmark.py,_domain_score with train_mask; not original UNSW split
+A08,Data,Leakage,UNSW-NB15 canonical uses fresh stratified split (attack types same in train/test),WARN,ACKNOWLEDGED,attention_unsw_heldout_attack.yaml,Held-out attack protocol exists as defense
+A09,Data,Leakage,Test labels never used in model or threshold selection,INFO,CONFIRMED,"train_attention_fusion.py, reliability_boosted_fusion.py, meta_router.py",All selection on validation data only
+A10,Data,Leakage,Historical test-oracle RGA+ selection corrected (M001/M004),INFO,CORRECTED,claim_matrix.csv rows M001 M004,Test-max replaced by val-frozen selection pre-submission
+A11,Training,Pipeline,Seed set via set_seed() before each training run,INFO,CONFIRMED,train_attention_fusion.py:35-38,np.random.seed + torch.manual_seed + torch.cuda.manual_seed_all
+A12,Training,Pipeline,Early stopping on validation PR-AUC (patience=4-5),INFO,CONFIRMED,train_attention_fusion.py:207-258,Checkpoint saved on best val PR-AUC
+A13,Training,Pipeline,Split column pre-assigned in CSV used for all seeds (same fold for all 30 seeds),WARN,ACKNOWLEDGED,All configs split_column field,30 seeds reflect initialization variance not split variance
+A14,Training,Hyperparameters,Reliability weights (0.45/0.35/0.20) are engineering heuristics not searched,WARN,OPEN,All config YAML files,No evidence of validation-set search for these values
+A15,Training,Hyperparameters,Gate threshold tau=0.66 is engineering heuristic not searched,WARN,OPEN,All config YAML files,tau sweep is descriptive (Family B) not tuning
+A16,Training,Hyperparameters,lr=0.001 AdamW fixed across all benchmarks (no search),INFO,CONFIRMED,train_attention_fusion.py:201,No hyperparameter search for optimizer settings
+A17,Selection,ModelSelection,All 3 selection decisions (attention/boost/router) use validation only,INFO,CONFIRMED,"train_attention_fusion.py, reliability_boosted_fusion.py, meta_router.py",Test fold untouched during all selection
+A18,Selection,ValFoldReuse,Validation fold used for early stopping + reliability fit + RGA+ selection,WARN,ACKNOWLEDGED,Architecture design,Standard practice; should be disclosed explicitly
+A19,Overfitting,CanonicalProtocol,All supervised methods collapse to ~chance under one-class canonical protocol,INFO,CONFIRMED,mvtec3d_patchcore_results.json,static_attention mean=0.491 rga_boosted=0.500
+A20,Overfitting,SeedVariance,High initialization variance under canonical (static_attention std=0.062),INFO,CONFIRMED,mvtec3d_patchcore_results.json:clean_metric_summary,Expected under one-class (random discriminability direction)
+A21,Overfitting,SwitchingCert,3 of 10 benchmark×protocol cells not switching-certified (LCB <= 0),INFO,CONFIRMED,switching_certificate_t5_audit.json,Canonical protocols: MVTec3D/LOCO canonical + VisA canonical
+A22,Overfitting,SwitchingCert,All supervised-paired protocols switching-certified (LCB > 0),INFO,CONFIRMED,switching_certificate_t5_audit.json,LCB range +0.037 to +0.102
+A23,Statistics,MultipleTest,Holm K=5 applied to Family A primary cells only (corrected from K=9),INFO,CONFIRMED,claim_matrix.csv row M003,Family B/C/D descriptive only
+A24,Statistics,Significance,Only UNSW-NB15 achieves Holm-corrected significance (p_Holm=6.7e-6),INFO,CONFIRMED,claim_matrix.csv row M006,Practical effect Δ=+0.0003 ROC-AUC (negligible)
+A25,Statistics,Significance,MVTec LOCO SP and VisA SP lose significance under K=5 correction,INFO,CONFIRMED,claim_matrix.csv row M005,Were significant under K=9; corrected to n.s.
+A26,Statistics,Significance,MVTec 3D-AD PC SP DeLong p=0.919 (not significant for specific comparator pair),INFO,CONFIRMED,claim_matrix.csv row M001,Switching cert LCB=+0.102 shows systematic benefit over static attention
+A27,PaperCode,Consistency,Reliability formula matches paper Eq. 2 exactly,INFO,CONFIRMED,reliability_estimator.py + PAPER_DRAFT_v1.tex:line 600,Weights (0.45/0.35/0.20) confirmed in code
+A28,PaperCode,Consistency,Baseline roster post-M012 matches code (EATA + SAR added),INFO,CONFIRMED,claim_matrix.csv M012 + baselines.py,8 baselines confirmed
+A29,PaperCode,Consistency,Gate logic matches paper description,INFO,CONFIRMED,reliability_estimator.py:176-212,mean_fire = mean_r < threshold; paper threshold complement clarified
+A30,PaperCode,Consistency,KS ablation numbers for ELARA-Bench-LA not directly verified from code,WARN,OPEN,Abstract cites +0.0506/+0.0319,ELARA-Bench-LA results JSON not read in this audit
+A31,PaperCode,Consistency,Causal language removed (M008),INFO,CONFIRMED,claim_matrix.csv M008,SCM/do() language replaced with model-response sensitivity
+A32,PaperCode,Consistency,PR/ECE/Brier omitted from canonical protocol cells (M009),INFO,CONFIRMED,claim_matrix.csv M009,Values equal base rate under one-class training; not discriminability metrics
+A33,PaperCode,Consistency,Real3D-AD val-frozen RGA+ = router (not boost) with test AUC=0.534,INFO,CONFIRMED,claim_matrix.csv M007,Corrected from 0.566 to 0.534; now below TTT comparator (0.537)
+A34,PaperCode,NomenClature,CRAF in code = RGA in paper; alias RGAReliabilityEstimator present,INFO,CONFIRMED,reliability_estimator.py:507,Explicit alias comment in source
+A35,Reproducibility,DataPrep,All preparation scripts confirmed present and audited (except ELARA-Bench-LA),INFO,CONFIRMED,src/scripts/prepare_*.py,5 preparation scripts read
+A36,Reproducibility,DataPrep,ELARA-Bench-LA preparation script not directly audited,WARN,OPEN,ELARA-Bench-LA secondary benchmark,Domain expert pkl files exist; full prep script not read
+A37,Reproducibility,Results,Result JSON artifacts confirmed in experiments/fusion/,INFO,CONFIRMED,experiments/fusion/*.json,Result files present and parseable
+A38,Reproducibility,Checkpoints,No PyTorch checkpoint files (.pt) exist in workspace,CRITICAL,OPEN,find command result,Models must be retrained to reproduce results
+A39,Data,Size,Real3D-AD normal reference n=48 is very small for PCA + PatchCore,WARN,ACKNOWLEDGED,real3d_supervised_paired_metadata.json,Disclosed in metadata important_limitation
+A40,Data,Size,MVTec 3D-AD 3226 samples / 8 categories confirmed,INFO,CONFIRMED,mvtec3d_patchcore_metadata.json,positive_fraction_actual=0.2244

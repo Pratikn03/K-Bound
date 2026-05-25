@@ -17,11 +17,18 @@ def test_b_mech_1_archive_directory_either_absent_or_well_formed():
     # If archives exist, every test parquet must carry the failure_type column.
     import pandas as pd
     for cell_dir in B_MECH_1.iterdir():
-        if not cell_dir.is_dir():
+        # macOS AppleDouble files (._foo) are treated as not-a-directory; skip them
+        if cell_dir.name.startswith("._") or not cell_dir.is_dir():
             continue
         for method_dir in cell_dir.iterdir():
+            if method_dir.name.startswith("._") or not method_dir.is_dir():
+                continue
             for split_dir in method_dir.iterdir():
+                if split_dir.name.startswith("._") or not split_dir.is_dir():
+                    continue
                 for p in split_dir.glob("seed_*.parquet"):
+                    if p.name.startswith("._"):
+                        continue
                     df = pd.read_parquet(p)
                     assert "failure_type_if_applicable" in df.columns
                     assert "failed_domain_count_if_applicable" in df.columns

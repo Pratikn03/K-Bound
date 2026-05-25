@@ -19,22 +19,24 @@ def test_certificate_driver_states_retrospective_boundary_in_source():
 
 
 def test_certificate_driver_does_not_promise_production_safety():
-    src = DRIVER.read_text().lower()
-    for forbidden in (
+    """Every occurrence of a deployment/production-safety phrase in the
+    driver source must be in a negating context — the boundary notice
+    explicitly disclaims these properties."""
+    import re
+    src = DRIVER.read_text()
+    forbidden = (
         "production safety",
         "deployment guarantee",
         "real-world deployment",
         "clinical deployment",
-    ):
-        # The phrase may legally appear inside a negation like "is not a
-        # production safety guarantee" — but bare positive use is forbidden.
-        # The simplest invariant: the driver must not assert these in a
-        # claim-y context, so we restrict the test to a positive-form
-        # substring match. The B-CERT-1 driver currently doesn't quote
-        # these phrases at all, which is the desired state.
-        assert forbidden not in src, (
-            f"driver source contains forbidden phrase {forbidden!r}"
-        )
+    )
+    negation_pat = re.compile(r"\b(not|no|does\s+not|cannot)\b", re.IGNORECASE)
+    for phrase in forbidden:
+        for m in re.finditer(re.escape(phrase), src, re.IGNORECASE):
+            window = src[max(0, m.start() - 80): m.end() + 10]
+            assert negation_pat.search(window), (
+                f"phrase {phrase!r} appears without negation in driver source: {window!r}"
+            )
 
 
 def test_certificate_code_is_importable():
