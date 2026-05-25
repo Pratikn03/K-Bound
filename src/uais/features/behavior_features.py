@@ -45,7 +45,7 @@ def build_behavior_feature_table(
     y = df[target_column].astype(int)
     X = df.drop(columns=[target_column])
 
-    cat_cols = X.select_dtypes(include=["object", "bool", "category"]).columns.tolist()
+    cat_cols = X.select_dtypes(include=["str", "object", "bool", "category"]).columns.tolist()
     num_cols = X.select_dtypes(include=[np.number]).columns.tolist()
 
     print(f"Numeric features: {len(num_cols)}, Categorical features: {len(cat_cols)}")

@@ -113,3 +113,45 @@ def test_mvtec3d_heldout_protocol_can_reserve_positive_validation_rows(tmp_path)
     assert set(validation["label"]) == {0, 1}
     assert set(test["category"]) == {"foam"}
     assert metadata["heldout_protocol"]["validation_fraction_from_train_category_test_rows"] == 0.5
+
+
+def test_extract_point_cloud_statistics(tmp_path):
+    import tifffile
+    from uais.fusion.attention.m3dm_features import extract_point_cloud_statistics
+
+    # Construct a synthetic plane: x from 0..7, y from 0..7, z = 2.0
+    x, y = np.meshgrid(np.arange(8), np.arange(8))
+    z = np.full_like(x, 2.0, dtype=np.float32)
+    xyz = np.stack([x, y, z], axis=-1).astype(np.float32)
+
+    xyz_path = tmp_path / "mock_plane.tiff"
+    tifffile.imwrite(xyz_path, xyz)
+
+    stats = extract_point_cloud_statistics(xyz_path)
+    assert stats.shape == (12,)
+    assert np.isfinite(stats).all()
+    # Sphericity (eigenvalue ratio) for a pure 2D plane should be near 0
+    assert stats[2] < 1e-3  # sphericity index
+    assert abs(stats[6] - 3.5) < 1e-3  # mean_x
+    assert abs(stats[7] - 3.5) < 1e-3  # mean_y
+    assert abs(stats[8] - 2.0) < 1e-3  # mean_z
+
+
+def test_extract_resnet_features_concatenates_point_statistics(tmp_path):
+    import tifffile
+    from uais.fusion.attention.m3dm_features import extract_resnet_features
+
+    x, y = np.meshgrid(np.arange(8), np.arange(8))
+    z = np.full_like(x, 2.0, dtype=np.float32)
+    xyz = np.stack([x, y, z], axis=-1).astype(np.float32)
+
+    xyz_path = tmp_path / "mock_plane.tiff"
+    tifffile.imwrite(xyz_path, xyz)
+
+    # Calling extract_resnet_features on a mock tiff path should return (1, 2060)
+    features = extract_resnet_features([xyz_path], batch_size=1)
+    assert features.shape == (1, 2060)
+    assert np.isfinite(features).all()
+    # The last 12 dimensions contain the PointNet++ statistics we tested above
+    assert features[0, 2048 + 2] < 1e-3  # sphericity index
+    assert abs(features[0, 2048 + 8] - 2.0) < 1e-3  # mean_z

@@ -34,6 +34,10 @@ class ReliabilityEstimator:
     suitable for injection into CrossModalAttentionFusion.forward().
     """
 
+    # Phase 2.2B: allow "top_q" (G3) gate; G4 learned is added by a separate
+    # subclass. The base set is still {mean, minimum, hybrid} per Phase 1.
+    _VALID_GATE_MODES = {"mean", "minimum", "hybrid", "top_q"}
+
     def __init__(
         self,
         domain_order: List[str],
@@ -46,11 +50,18 @@ class ReliabilityEstimator:
         gate_threshold: float = 0.66,
         gate_mode: str = "mean",
         min_gate_threshold: Optional[float] = None,
+        top_q: int = 1,
+        top_q_threshold: Optional[float] = None,
+        ks_window_size: Optional[int] = None,
     ) -> None:
         if abs(ece_weight + ks_weight + sharpness_weight - 1.0) > 1e-6:
             raise ValueError("ece_weight + ks_weight + sharpness_weight must sum to 1.0")
-        if gate_mode not in {"mean", "minimum", "hybrid"}:
-            raise ValueError("gate_mode must be one of 'mean', 'minimum', or 'hybrid'.")
+        if gate_mode not in self._VALID_GATE_MODES:
+            raise ValueError(
+                f"gate_mode must be one of {sorted(self._VALID_GATE_MODES)}; got {gate_mode!r}."
+            )
+        if int(top_q) < 1:
+            raise ValueError("top_q must be a positive integer (1 = minimum-domain gate).")
         self.domain_order = list(domain_order)
         self.score_index = score_index
         self.ece_weight = ece_weight
@@ -61,6 +72,17 @@ class ReliabilityEstimator:
         self.gate_threshold = gate_threshold
         self.gate_mode = gate_mode
         self.min_gate_threshold = 1.0 - gate_threshold if min_gate_threshold is None else float(min_gate_threshold)
+        # Phase 2.2B G3 top-q parameters. `top_q=1` is identical to the
+        # minimum gate; `top_q=2` checks the 2nd-smallest reliability.
+        self.top_q = int(top_q)
+        self.top_q_threshold = (
+            float(top_q_threshold) if top_q_threshold is not None
+            else float(min_gate_threshold) if min_gate_threshold is not None
+            else 1.0 - gate_threshold
+        )
+        # Phase 2.2B B-MECH-4 KS window-size sweep parameter. None → use full
+        # validation reference distribution (Phase-1 behaviour, unchanged).
+        self.ks_window_size = int(ks_window_size) if ks_window_size is not None else None
 
         self._calibrators: Dict[str, IsotonicRegression] = {}
         self._reference_scores: Dict[str, np.ndarray] = {}
@@ -148,6 +170,15 @@ class ReliabilityEstimator:
 
             # --- KS drift ---
             ref = self._reference_scores.get(domain, np.array([]))
+            # Phase 2.2B B-MECH-4: optionally truncate the reference and the
+            # current scores to the configured window size before running KS,
+            # so that detection power can be measured as a function of window.
+            if self.ks_window_size is not None:
+                w = int(self.ks_window_size)
+                if len(ref) > w:
+                    ref = ref[-w:]
+                if len(cur_scores) > w:
+                    cur_scores = cur_scores[-w:]
             if len(ref) >= self.min_samples_for_ks and len(cur_scores) >= self.min_samples_for_ks:
                 _, ks_p = ks_2samp(ref, cur_scores)
                 ks_reliability = float(np.clip(ks_p, 0.0, 1.0))
@@ -180,21 +211,29 @@ class ReliabilityEstimator:
         gate_threshold: Optional[float] = None,
         gate_mode: Optional[str] = None,
         min_gate_threshold: Optional[float] = None,
+        top_q: Optional[int] = None,
+        top_q_threshold: Optional[float] = None,
     ) -> np.ndarray:
         """Return [N] bool: True = use reliability path, False = use static path.
 
-        For each sample, mean reliability is computed over present (non-masked)
-        domains only. The default ``mean`` gate preserves the conservative RGA
-        rule: if the mean falls below gate_threshold, the reliability path is
-        activated for that sample. The optional RGA-v2 ``minimum`` and
-        ``hybrid`` modes add sensitivity to isolated catastrophic domain
-        failures without changing the default paper configuration.
+        Supported gate modes:
+        - ``mean``    (G0 baseline): fire if mean reliability < gate_threshold.
+        - ``minimum`` (G1):          fire if min reliability  < min_gate_threshold.
+        - ``hybrid``  (G2):          OR of mean and minimum.
+        - ``top_q``   (G3 — Phase 2.2B): fire if the q-th smallest reliability
+          across present domains is below ``top_q_threshold``. q = 1 reduces
+          to ``minimum``; q = 2 checks the 2nd-weakest domain (catches
+          two-domain co-failures without firing on single noisy domains).
         """
         threshold = self.gate_threshold if gate_threshold is None else float(gate_threshold)
         mode = self.gate_mode if gate_mode is None else gate_mode
         min_threshold = self.min_gate_threshold if min_gate_threshold is None else float(min_gate_threshold)
-        if mode not in {"mean", "minimum", "hybrid"}:
-            raise ValueError("gate_mode must be one of 'mean', 'minimum', or 'hybrid'.")
+        q = self.top_q if top_q is None else int(top_q)
+        tau_q = self.top_q_threshold if top_q_threshold is None else float(top_q_threshold)
+        if mode not in self._VALID_GATE_MODES:
+            raise ValueError(
+                f"gate_mode must be one of {sorted(self._VALID_GATE_MODES)}; got {mode!r}."
+            )
         n_present = (~masks).sum(axis=1).astype(np.float32)
         present_weights = np.where(masks, 1.0, weights)
         mean_r = np.where(
@@ -209,7 +248,26 @@ class ReliabilityEstimator:
             return mean_fire
         if mode == "minimum":
             return min_fire
-        return mean_fire | min_fire
+        if mode == "hybrid":
+            return mean_fire | min_fire
+        # G3 top-q: for each sample, sort present-domain reliabilities ascending
+        # and check the q-th entry (1-indexed). If fewer than q present domains
+        # exist (e.g. q = 2 but only 1 domain present), the gate is conservatively
+        # not fired — there is not enough evidence of co-failure.
+        if q < 1:
+            raise ValueError("top_q must be >= 1")
+        n_samples = weights.shape[0]
+        topq_fire = np.zeros(n_samples, dtype=bool)
+        for i in range(n_samples):
+            present_idx = np.where(~masks[i])[0]
+            n_p = len(present_idx)
+            if n_p < q:
+                continue
+            sorted_w = np.sort(weights[i, present_idx])
+            qth = sorted_w[q - 1]
+            if qth < tau_q:
+                topq_fire[i] = True
+        return topq_fire
 
     # ------------------------------------------------------------------
     # Accessors
@@ -250,6 +308,9 @@ class ReliabilityEstimator:
             "gate_threshold": self.gate_threshold,
             "gate_mode": self.gate_mode,
             "min_gate_threshold": self.min_gate_threshold,
+            "top_q": self.top_q,
+            "top_q_threshold": self.top_q_threshold,
+            "ks_window_size": self.ks_window_size,
             "calibrators": self._calibrators,
             "reference_scores": self._reference_scores,
             "domain_ece": self._domain_ece,
@@ -272,6 +333,9 @@ class ReliabilityEstimator:
             gate_threshold=payload.get("gate_threshold", 0.66),
             gate_mode=payload.get("gate_mode", "mean"),
             min_gate_threshold=payload.get("min_gate_threshold"),
+            top_q=payload.get("top_q", 1),
+            top_q_threshold=payload.get("top_q_threshold"),
+            ks_window_size=payload.get("ks_window_size"),
         )
         obj._calibrators = payload["calibrators"]
         obj._reference_scores = payload["reference_scores"]

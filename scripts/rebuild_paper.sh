@@ -100,7 +100,7 @@ echo "==> Regenerate Phase-D theorem-stack validation assets"
 PYTHONPATH=src python src/scripts/emit_k_of_d_corruption_table.py \
   --output "$TBL_DIR/elara_k_domain_corruption_results.tex" \
   --mapping-output "$TBL_DIR/elara_theory_experiment_mapping.tex" \
-  --figure-output "$FIG_DIR/elara_k_domain_corruption.png" || true
+  --figure-output "$FIG_DIR/elara_k_domain_corruption.png"
 PYTHONPATH=src python src/scripts/validate_category_mixture_t2.py \
   --output experiments/fusion/category_mixture_t2_validation.json
 PYTHONPATH=src python src/scripts/emit_category_mixture_t2_table.py \
@@ -112,6 +112,16 @@ PYTHONPATH=src python src/scripts/emit_switching_certificate_t5_table.py \
   --output "$TBL_DIR/switching_certificate_t5.tex"
 PYTHONPATH=src python src/scripts/emit_fourth_benchmark_scaffold.py \
   --output "$TBL_DIR/fourth_benchmark_scaffold.tex"
+
+echo "==> Phase 1.1: strip degenerate canonical PR-AUC / ECE / Brier from promoted tables and figures"
+PYTHONPATH=src python src/scripts/phase1_1_canonical_cleanup.py \
+  --repo-root "$ROOT"
+
+echo "==> Phase 1.1: rebuild metrics manifest + validator macros"
+PYTHONPATH=src python src/scripts/build_metrics_manifest.py \
+  --repo-root "$ROOT" \
+  --output "$ROOT/docs/research/metrics_manifest.json" \
+  --macros-output "$ROOT/docs/research/generated/elara_verified_metrics_macros.tex"
 
 echo
 echo "==> Compile PDF (from docs/research/ so \\graphicspath resolves)"

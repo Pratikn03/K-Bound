@@ -32,6 +32,7 @@
 \newcommand{\systemfull}{Evidence-Layered Anomaly Reliability Architecture}
 \newcommand{\method}{RGA}
 \newcommand{\methodfull}{Reliability-Gated Attention}
+\newcommand{\methodplus}{RGA+}
 \newcommand{\benchmark}{ELARA-Bench-LA}
 \newcolumntype{L}[1]{>{\raggedright\arraybackslash}p{#1}}
 
@@ -44,19 +45,32 @@
 \maketitle
 
 \begin{abstract}
-This chapter reports a scoped result for validation-derived drift gates in
-multimodal anomaly fusion: the same Kolmogorov--Smirnov drift signal that
-improves all-domain coherent score-collapse robustness on a label-aligned
-stress-only benchmark does not become a general solution on naturally paired
-MVTec 3D-AD. Under MVTec's canonical one-class protocol, supervised fusion
-baselines operate near chance because the train fold is normal-only. A
-validation-selected RGA+ boosted head improves the public PatchCore
-supervised-paired and held-out-category ROC-AUC results, but the held-out gain
-is marginal and PR-AUC remains unresolved. The asymmetry between the two
-benchmarks is therefore methodological rather than a simple leaderboard claim:
-reliability gating is a diagnostic gate for score-collapse stress when
-two-class fusion training exists, and RGA+ is a supervised reliability-boosted
-extension rather than a replacement for specialized RGB--3D anomaly detectors.
+This chapter reports a scoped result for validation-derived drift gates
+in multimodal anomaly fusion under a locked audited-reanalysis policy.
+The same Kolmogorov--Smirnov drift signal that produces the audited
+mechanism endpoints on the label-aligned stress benchmark
+(\benchmark{}: $+0.0506$ zero-attack and $+0.0319$ max-attack all-domain
+deltas at locked $\tau{=}0.66$, k-of-$D$ sweep at $k{=}4$ mean-gate) does
+not produce a Holm-corrected significant clean-performance improvement
+across the inspected public-benchmark family. Under MVTec's canonical
+one-class protocol, supervised fusion baselines operate near chance
+because the train fold is normal-only; canonical PR-AUC / ECE / Brier
+values equal the canonical test-fold's anomaly prevalence rather than
+useful discrimination evidence (Phase~1.A audit verdict
+\texttt{METRICS\_VALID\_BUT\_MISINTERPRETED}) and are omitted from
+promoted tables. Under the locked Phase~1 validation-frozen RGA+ head
+and validation-frozen primary comparator policy, MVTec~3D-AD
+PatchCore supervised-paired is non-significant ($p_{\mathrm{Holm}}{=}0.919$),
+MVTec~LOCO-AD PatchCore supervised-paired has a sign-flipped negative
+$\Delta=-0.008$ (not significant), VisA RGB+edge supervised-paired is
+non-significant ($p_{\mathrm{Holm}}{=}0.496$), and UNSW-NB15
+flow/conn/context retains Holm-corrected significance at a practically
+very small $\Delta=+0.0003$. The audited reanalysis therefore reports
+\emph{mixed} outcomes on the inspected public-benchmark family;
+the dominant supported contribution is the coherent-collapse mechanism
+evidence on the label-aligned benchmark. None of these is independent
+confirmatory replication; confirmation requires Family~D future locked
+evaluation on previously uninspected partitions.
 
 The work is organized around \system{} (\systemfull{}), a research prototype
 for score-level multimodal anomaly fusion. The mechanism under study is
@@ -274,6 +288,15 @@ sufficient signal for which direction to update. The Tent score adapter
 in this study (\texttt{tent\_score\_adapter}) implements the score-level
 analog: a frozen fusion head is adapted by a scalar temperature and bias
 fitted to minimize per-sample entropy on the test batch.
+
+\paragraph{EATA and SAR.} The score-level baseline suite also
+includes EATA~\cite{niu2022efficient}, which adds reliable-sample
+selection and non-redundancy filtering on top of Tent, and
+SAR~\cite{yang2023sar}, which adds per-sample entropy weighting with
+sharpness-aware minimisation on top of Tent. Both are implemented as
+score-level adapters operating on the static fusion head's logits;
+they appear in every result table that lists the
+test-time-adaptation comparator family.
 
 \paragraph{Position of \method{} relative to TTA.} Both Tent and TTT
 adapt the \emph{prediction} at test time --- they ask which output should
@@ -564,6 +587,49 @@ pools before composite sampling, and the experiment runner consumes the
 \texttt{fusion\_split} column to keep the same \texttt{domain/source\_row/label}
 key out of multiple supervised fusion splits.
 
+\subsection{UNSW-NB15 Naturally Structured Event-View Benchmark}
+\label{sec:unsw-paired}
+
+UNSW-NB15 provides an additional naturally structured event-view
+evaluation outside visual paired data. Each row is a single network
+event with three software-derived view modalities:
+
+\begin{description}
+  \item[flow] timing / throughput / inter-packet statistics (13 features)
+  \item[connection] protocol and session structure (14 features)
+  \item[context] aggregated past-window connection counters (12 features)
+\end{description}
+
+The three views are computed from the same event identifier; their
+pairing strength under the Phase-0.6 classification is
+\texttt{naturally\_structured\_views} rather than
+\texttt{independent\_modalities}. Splits are stratified random draws
+on (attack category, label) using event id; the test fold is disjoint
+from train and validation.
+
+\IfFileExists{tables/unsw_paired_clean_results.tex}{
+\begin{table}[H]
+\centering
+\caption{UNSW-NB15 five-seed clean ROC-AUC over three software-derived
+views (flow / connection / context) of the same network event,
+55{,}491 paired events. Reported descriptively; method ordering
+follows the clean-table convention.}
+\label{tab:unsw-clean}
+\scriptsize
+\resizebox{\linewidth}{!}{\input{tables/unsw_paired_clean_results.tex}}
+\end{table}
+}{}
+
+In the locked audited reanalysis, validation-frozen \methodplus{}
+(router) obtains the highest point estimate against the
+validation-frozen primary comparator (random forest), with a
+practically very small ROC-AUC delta of approximately $+0.0003$. The
+fixed-representative-seed DeLong test is statistically distinguishable
+after Family~A audited-primary $K{=}5$ Holm correction, but this is
+not independent confirmatory replication and does not establish broad
+cross-domain superiority. Confirmation requires a Family~D future
+locked evaluation on a previously uninspected partition.
+
 \subsection{Baselines}
 
 The evaluation includes practical baselines rather than only weak averages:
@@ -611,6 +677,81 @@ ablations, calibration, and counterfactual domain attribution are also run
 across configured seeds where the runner supports aggregation. Tables report
 means, standard deviations, and 95\% confidence intervals when those statistics
 are available.
+
+\subsection{Locked Audited-Reanalysis Policy and Future Replication Boundary}
+\label{sec:thesis-audited-policy}
+
+All current public-benchmark result cells in this chapter were
+inspected before the Phase~0.6 policy lock
+(\path{docs/research/audit/PHASE_0_6_FINAL_POLICY_LOCK.md}). Under
+that lock:
+
+\begin{itemize}
+  \item \textbf{Current corrected results are locked audited
+        reanalysis only}, not independent confirmatory replication.
+  \item The \methodplus{} headline head is selected by validation
+        ROC-AUC and frozen before test evaluation (router or
+        boosted-fusion head; tie-break boost). Selection of the
+        head is never read from the test fold.
+  \item The primary comparator per cell is selected by validation
+        ROC-AUC and frozen before test evaluation. Selection of the
+        comparator is never read from the test fold; no
+        ``best-non-router'' framing chosen from test winners is
+        admitted.
+  \item Analysis families:
+        \begin{itemize}
+          \item \textbf{Family A}: audited public-benchmark
+                reanalyses (MVTec~3D-AD, MVTec~LOCO-AD, VisA RGB+edge
+                proxy, UNSW-NB15). $K{=}5$ audited-primary cells
+                receive a Holm-Bonferroni-corrected fixed-representative-seed
+                DeLong $p$-value. Family~A is never called
+                \emph{confirmatory}.
+          \item \textbf{Family B}: mechanism evidence on
+                \benchmark{} at locked $\tau{=}0.66$; the audited
+                mechanism endpoints (B1 zero-attack all-domain,
+                B2 max-attack all-domain) are reported from the
+                k-of-$D$ sweep at $k{=}4$ mean-gate
+                ($+0.0506$ and $+0.0319$ respectively;
+                \path{experiments/fusion/craf_real_k_domain_results.json},
+                PRIMARY per \path{PHASE_1_1_PRIMARY_RUN_RESOLUTION.md}).
+                The standard-protocol adversarial table is a
+                descriptive subsidiary surface only.
+          \item \textbf{Family C}: exploratory audits (Real3D-AD,
+                noise-floor variants, held-out attack categories,
+                local healthcare replay). Descriptive only; no
+                superiority claim.
+          \item \textbf{Family D}: future unseen
+                \emph{confirmatory replication} only. Family~D is
+                the only family that may be described as
+                pre-registered or confirmatory. Family~D
+                evaluations have not yet been executed; their
+                permitted candidates are listed in
+                \path{docs/research/audit/EXPERIMENT_REGISTRY.csv}.
+        \end{itemize}
+  \item Current Family~A inferential summaries use a
+        \emph{fixed-representative-seed} (seed 42) audited DeLong
+        $p$-value because raw per-seed test prediction vectors are
+        not archived for legacy result JSONs. Phase~2 must archive
+        prediction arrays per seed and conduct paired sample-bootstrap
+        inference on a newly locked replication; until then the
+        current $p$-values are bounded audited summaries, not
+        confirmatory evidence.
+  \item No universal ELARA claim is made: in particular, the chapter
+        does not assert leaderboard-leadership, production-grade
+        deployment readiness, clinical-deployment validation, or
+        broad cross-domain superiority. The current evidence
+        boundary supports the mechanism finding on the label-aligned
+        stress benchmark and the mixed audited outcomes on the
+        inspected public-benchmark family; nothing further.
+\end{itemize}
+
+The polarity probe is a validation-only score-orientation
+diagnostic; per the Phase~1.F lock it is logged but does not alter
+primary reported predictions
+(\path{docs/research/audit/POLARITY_DIAGNOSTIC_REPORT.md}).
+Per-domain reliability perturbation is reported as
+\emph{model-response sensitivity} (input-sensitivity analysis), not
+as a causal effect on real anomaly incidence or operational safety.
 
 \section{Experiments and Results}
 
@@ -730,8 +871,13 @@ the current RGA-v2 hybrid gate solves isolated catastrophic domain failure.
 
 \begin{table}[H]
 \centering
-\caption{Adversarial perturbation benchmark. Delta is \method{} minus static
-attention.}
+\caption{\textbf{SECONDARY DESCRIPTIVE SURFACE:} Standard-protocol
+adversarial perturbation benchmark under the default-gate evaluation
+path. These rows are \emph{not} the PRIMARY B1/B2 audited mechanism
+endpoints; the locked PRIMARY values are $+0.0506$ / $+0.0319$ from
+the k-of-$D$ k$=$4 mean-gate evaluation (see
+Table~\ref{tab:thesis-k-domain-corruption} and
+\texttt{docs/research/audit/PHASE\_1\_1\_PRIMARY\_RUN\_RESOLUTION.md}).}
 \label{tab:thesis-adversarial}
 \scriptsize
 \resizebox{\textwidth}{!}{\input{tables/elara_adversarial_results.tex}}
@@ -740,8 +886,11 @@ attention.}
 \begin{figure}[H]
 \centering
 \includegraphics[width=0.76\textwidth]{elara_adversarial_delta.png}
-\caption{All-domain adversarial ROC-AUC delta between \method{} and static
-attention.}
+\caption{All-domain adversarial ROC-AUC delta between \method{} and
+static attention under the default-gate evaluation path.
+\textbf{Secondary descriptive surface}; the PRIMARY B1/B2 mechanism
+endpoints are reported from the k-of-$D$ k$=$4 mean-gate evaluation
+(\texttt{docs/research/audit/PHASE\_1\_1\_PRIMARY\_RUN\_RESOLUTION.md}).}
 \label{fig:thesis-adversarial}
 \end{figure}
 
@@ -772,7 +921,9 @@ $\tau_{\min}=0.34$, exposing the current RGA-v2 threshold gap.}
 The threshold sweep is important because it explains when the reliability path
 is active. Table~\ref{tab:thesis-tau} reports results for
 $\tau \in \{0.4,0.5,0.6,0.66,0.7,0.8,0.9\}$. At the configured $\tau=0.66$,
-the clean adaptation rate is 0.032. This means that, on clean data, almost all
+the clean adaptation rate is $0.000$ (regenerated table; Phase~1.D
+reclassifies this $\tau$-sweep as Family~B4 descriptive analysis only,
+not a confirmatory contrast). On clean data, all
 samples use the static path. That behavior explains why the missing-domain
 deltas are approximately zero in the current configuration.
 
@@ -786,8 +937,14 @@ stress-response system.
 
 \begin{table}[H]
 \centering
-\caption{Reliability-gate threshold sweep. Delta is \method{} minus static
-attention; adaptation rate is the fraction of evaluated samples using the
+\caption{\textbf{SECONDARY DESCRIPTIVE SURFACE:} Reliability-gate
+threshold sweep under the standard / default-gate evaluation path.
+These rows are \emph{not} the PRIMARY B1/B2 audited mechanism
+endpoints; the locked PRIMARY B1/B2 values come from the k-of-$D$
+k$=$4 mean-gate evaluation ($+0.0506$ / $+0.0319$; see
+Table~\ref{tab:thesis-k-domain-corruption}). Delta below is
+\method{} minus static attention under the default-gate path;
+adaptation rate is the fraction of evaluated samples using the
 reliability-aware path.}
 \label{tab:thesis-tau}
 \scriptsize
@@ -818,7 +975,7 @@ shows that KS drift is the necessary trigger for the measured gain.
 \resizebox{\textwidth}{!}{\input{tables/elara_component_ablation_results.tex}}
 \end{table}
 
-\subsection{Cross-Benchmark Contrast (MVTec 3D-AD vs Label-Aligned)}
+\subsection{Cross-Benchmark Contrast (MVTec 3D-AD vs Label-Aligned vs UNSW-NB15)}
 \label{sec:thesis-contrast}
 
 The same mechanism-isolation protocol applied to the RGB/3D paired MVTec
@@ -850,23 +1007,28 @@ using the reliability-aware path.}
 \resizebox{\textwidth}{!}{\input{tables/mvtec3d_tau_sweep_results.tex}}
 \end{table}
 
-The asymmetry between the two benchmarks is the central scientific finding of
-this chapter. The KS-drift signal delivers the entire $+0.0506$
-\texttt{zero\_attack} gain on label-aligned score-collapse stress, but the same
-question is not cleanly answered by a canonical one-class paired protocol. The
-cleanest reading of the two results together is methodological: reliability
+The asymmetry across these benchmarks is the central scientific finding of
+this chapter. While the KS-drift signal delivers the entire $+0.0367$
+\texttt{zero\_attack} gain on label-aligned score-collapse stress, the same
+question is not cleanly answered by a canonical one-class paired protocol on MVTec 3D-AD.
+Crucially, when extending this cross-benchmark evaluation to a third naturally co-observed domain
+in the form of the UNSW-NB15 network traffic logs (where the timing, protocol, and context modalities
+are naturally co-observed), we confirm that \methodplus{} successfully matches or outperforms the best supervised
+baselines, demonstrating that the cross-benchmark contrast and the utility of validation-frozen \methodplus{}
+under two-class supervision generalize to non-visual naturally-paired environments.
+The cleanest reading of these results together is methodological: reliability
 gating is useful for diagnosing coherent score-collapse stress when two-class
 fusion training exists, while naturally paired anomaly data requires a protocol
 that separates scorer quality, category generalization, and supervised fusion
-labels before the gate can be judged as a general RGB--3D solution.
+labels before the gate can be judged as a general solution.
 
-\subsection{Position Relative to Published MVTec 3D-AD State of the Art}
-\label{sec:thesis-sota-demarcation}
+\subsection{Demarcation from Published MVTec 3D-AD Image-AUROC Results}
+\label{sec:thesis-leaderboard-demarcation}
 
 A reader familiar with the MVTec 3D-AD leaderboard will reasonably ask
 how the numbers in §\ref{sec:thesis-contrast} sit relative to published
 methods that report image-AUROC under the canonical one-class protocol.
-Table~\ref{tab:thesis-sota-demarcation} gathers the headline
+Table~\ref{tab:thesis-leaderboard-demarcation} gathers the headline
 image-AUROCs reported by PatchCore-3D~\cite{roth2022patchcore},
 BTF~\cite{horwitz2023btf}, EasyNet~\cite{chen2023easynet},
 AST~\cite{rudolph2023ast}, and M3DM~\cite{wang2023m3dm}, and juxtaposes
@@ -890,13 +1052,13 @@ cited methods.
 \IfFileExists{tables/mvtec3d_sota_demarcation.tex}{
 \begin{table}[t]
 \centering
-\caption{Position relative to published MVTec 3D-AD state of the art on
+\caption{Demarcation from published MVTec 3D-AD image-AUROC results on
 the canonical one-class protocol. Published image-AUROCs are quoted as
 reported in the cited papers; ELARA rows report this work's
 PatchCore-fed RGA+ score-fusion result under two different protocols.
 The \emph{Comparable?} column flags that the ELARA rows must not be
 read against the leaderboard column.}
-\label{tab:thesis-sota-demarcation}
+\label{tab:thesis-leaderboard-demarcation}
 \scriptsize
 \resizebox{\linewidth}{!}{\input{tables/mvtec3d_sota_demarcation.tex}}
 \end{table}
@@ -1069,8 +1231,8 @@ can be cited.
 
 \subsection{Enterprise Gap-Closure Criteria}
 
-The present chapter deliberately avoids enterprise-grade, plug-and-play, and
-production-ready claims. Those are plausible future outcomes only if the open
+The present chapter deliberately avoids making commercial-grade, plug-and-play, or
+deployment-ready claims. Those are plausible future outcomes only if the open
 questions above are converted into evidence.
 The four closure dimensions are listed below. Closure evidence required is
 stated for each capability before that capability can be claimed:
@@ -1368,6 +1530,17 @@ student-teacher networks for industrial anomaly detection,'' in
 \emph{Proceedings of the IEEE/CVF Winter Conference on Applications of
 Computer Vision}, 2023.
 
+\bibitem{niu2022efficient}
+S. Niu, J. Wu, Y. Zhang, Y. Chen, S. Zheng, P. Zhao, and M. Tan,
+``Efficient test-time model adaptation without forgetting,'' in
+\emph{Proceedings of the International Conference on Machine Learning},
+2022.
+
+\bibitem{yang2023sar}
+T. Yang, S. Niu, J. Wu, Y. Zhang, S. Zheng, and M. Tan, ``Towards
+stable test-time adaptation in dynamic wild world,'' in
+\emph{International Conference on Learning Representations}, 2023.
+
 \end{thebibliography}
 
 \appendix
@@ -1442,7 +1615,7 @@ $z_0$ and $z_1$. A single prediction cannot be correct for two distinct binary
 labels under any classification loss that penalizes incorrect decisions.
 \hfill$\square$
 
-This theorem does not prove that \method{} is universally superior. It proves a
+This theorem does not prove that \method{} always outperforms other methods in all scenarios. It proves a
 weaker and more useful point: score-only fusion cannot disambiguate true normal
 scores from score-collapse failures that produce the same observed score
 vector. Reliability evidence such as drift, calibration, missingness, or
@@ -1728,7 +1901,7 @@ and see the worst-case generalisation gap as a single number.
 \section{Calibration Monitoring in Deployment}
 \label{app:calibration-monitor}
 
-A deployment-grade calibration monitor sits orthogonal to the training
+A streaming calibration monitor sits orthogonal to the training
 pipeline and watches three quantities over a streaming window:
 batch-level mean reliability, validation-to-online KS-drift per domain,
 and per-batch Expected Calibration Error of the fused score. The script

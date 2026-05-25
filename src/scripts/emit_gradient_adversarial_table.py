@@ -31,11 +31,18 @@ def render_table(payload: dict) -> str:
     n_eps = len(epsilons)
     col_spec = "l" + "c" * (1 + 2 * n_eps)
     eps_headers = "".join(rf" & $\epsilon{{=}}{e:.2f}$" for e in epsilons)
+    # Phase 1.G K: explicit FGSM | PGD group label so the duplicate
+    # epsilon columns are unambiguous.
     rows = [
         GENERATED_COMMENT,
         rf"\begin{{tabular}}{{{col_spec}}}",
         r"\toprule",
-        rf"\textbf{{Attack}} & \textbf{{clean}}{eps_headers}{eps_headers} \\",
+        (
+            r"\textbf{Attack} & \textbf{clean} & "
+            rf"\multicolumn{{{n_eps}}}{{c}}{{\textbf{{FGSM (1-step)}}}} & "
+            rf"\multicolumn{{{n_eps}}}{{c}}{{\textbf{{PGD ({n_steps}-step)}}}} \\"
+        ),
+        rf" & {eps_headers}{eps_headers} \\",
         r"\midrule",
     ]
     fgsm_row = ["FGSM (1-step)", _fmt(clean)]

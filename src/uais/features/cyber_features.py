@@ -38,7 +38,7 @@ def build_cyber_feature_table(
     y = df[target_column].astype(int)
 
     X = df.drop(columns=[target_column])
-    cat_cols = X.select_dtypes(include=["object", "category", "bool"]).columns.tolist()
+    cat_cols = X.select_dtypes(include=["str", "object", "category", "bool"]).columns.tolist()
     num_cols = X.select_dtypes(include=[np.number]).columns.tolist()
 
     # Basic rate features if bytes/duration available

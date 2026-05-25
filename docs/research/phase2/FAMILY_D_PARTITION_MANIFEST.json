@@ -1,0 +1,59 @@
+{
+  "contract_version": "v1",
+  "frozen_utc": "2026-05-24T00:00:00Z",
+  "status": "pre-registered_not_executed",
+  "freeze_commit": "TO_BE_FILLED_BY_FREEZE_COMMIT",
+  "datasets": [
+    {
+      "id": "D1",
+      "name": "MPDD",
+      "release_tag": "TO_BE_RECORDED_AT_DOWNLOAD_TIME",
+      "expected_sha256_of_archive": "TO_BE_RECORDED_AT_DOWNLOAD_TIME",
+      "split_policy": {
+        "train": "categories: official train list, seed-shuffled with seed=42",
+        "validation": "10% of train stratified by category, fixed split key = 'family_d_v1_mpdd_val'",
+        "test": "official test list, frozen and untouched until execution"
+      },
+      "n_seeds": 30,
+      "seed_range": "42..71"
+    },
+    {
+      "id": "D2",
+      "name": "Eyecandies",
+      "release_tag": "TO_BE_RECORDED_AT_DOWNLOAD_TIME",
+      "expected_sha256_of_archive": "TO_BE_RECORDED_AT_DOWNLOAD_TIME",
+      "split_policy": {
+        "train": "official train split",
+        "validation": "official validation split",
+        "test": "official test split, frozen"
+      },
+      "n_seeds": 30,
+      "seed_range": "42..71"
+    }
+  ],
+  "selection_rule": "validation-only, RGA+ chosen head = argmax_val{rga_meta_router, rga_boosted_fusion}, tie-break boost",
+  "primary_comparator_selection_rule": "validation-only, frozen before test read",
+  "inference_rule": {
+    "delong": "Sun&Xu 2014 fast-DeLong on seed-averaged ensemble prediction vectors",
+    "bootstrap": "paired sample bootstrap, n_iter=10000, seed=0",
+    "family_correction": "Holm-Bonferroni within K=5 hypotheses (D-H1..D-H5)"
+  },
+  "decision_rules": {
+    "CONFIRMED": "Holm p<=0.05 AND CI excludes 0 in hypothesized direction AND |delta|>=0.005",
+    "DIRECTIONALLY_SUPPORTED": "Holm p<=0.05 only",
+    "NOT_CONFIRMED": "Holm p>0.05",
+    "INVALID": "selection_used_test_metrics ever True"
+  },
+  "what_confirmation_unlocks": [
+    "phrase 'confirmatory evidence on a held-out benchmark' in abstract",
+    "removal of 'audited reanalysis' qualifier from corresponding Family-A claim"
+  ],
+  "what_confirmation_does_not_unlock": [
+    "ELARA is universal",
+    "ELARA is SOTA",
+    "ELARA is production-ready or deployment-ready",
+    "ELARA is validated for clinical deployment",
+    "Public benchmark results prove broad cross-domain superiority",
+    "Real3D supports generalization"
+  ]
+}

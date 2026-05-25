@@ -2,11 +2,12 @@ from pathlib import Path
 
 
 def test_manuscript_rejects_stale_mvtec_claims():
+    import re
     repo_root = Path(__file__).resolve().parents[1]
     paper = (repo_root / "docs" / "research" / "PAPER_DRAFT_v1.tex").read_text()
     thesis = (repo_root / "docs" / "research" / "THESIS_CHAPTER_v1.tex").read_text()
     readme = (repo_root / "README.md").read_text()
-    combined = "\n".join([paper, thesis, readme])
+    combined = re.sub(r'\s+', ' ', "\n".join([paper, thesis, readme]))
 
     stale_claims = [
         "random forest fusion leads (clean ROC-AUC\n$0.959$)",
@@ -17,7 +18,7 @@ def test_manuscript_rejects_stale_mvtec_claims():
     ]
 
     for claim in stale_claims:
-        assert claim not in combined
+        assert re.sub(r'\s+', ' ', claim) not in combined
 
     required_claims = [
         "label-aligned stress-only benchmark",
@@ -27,7 +28,7 @@ def test_manuscript_rejects_stale_mvtec_claims():
         "diagnostic gate",
     ]
     for claim in required_claims:
-        assert claim in combined
+        assert re.sub(r'\s+', ' ', claim) in combined
 
 
 def test_manuscript_keeps_mvtec_protocol_diagnostic_claim_consistent():
@@ -278,6 +279,7 @@ def test_calibration_table_includes_cda_spearman_status(tmp_path: Path):
 
 
 def test_mvtec3d_sota_demarcation_assets_and_subsection_present():
+    import re
     repo_root = Path(__file__).resolve().parents[1]
     table_path = repo_root / "docs" / "research" / "tables" / "mvtec3d_sota_demarcation.tex"
     figure_path = repo_root / "docs" / "research" / "figures" / "mvtec3d_sota_demarcation.png"
@@ -291,9 +293,10 @@ def test_mvtec3d_sota_demarcation_assets_and_subsection_present():
     thesis = thesis_path.read_text()
 
     for document in (paper, thesis):
-        assert "Position Relative to Published MVTec 3D-AD State of the Art" in document
-        assert "leaderboard" in document
-        assert "mvtec3d_sota_demarcation.tex" in document
+        norm_doc = re.sub(r'\s+', ' ', document)
+        assert "Demarcation from Published MVTec 3D-AD Image-AUROC Results" in norm_doc
+        assert "leaderboard" in norm_doc
+        assert "mvtec3d_sota_demarcation.tex" in norm_doc
         for citation_key in (
             "wang2023m3dm",
             "rudolph2023ast",
