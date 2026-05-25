@@ -24,7 +24,7 @@
 |---|---|---|---|---|
 | A-POWERED-1 | MVTec 3D-AD | PatchCore supervised-paired | independent_modalities | 30 seeds (recompute from existing archive) |
 | A-POWERED-2 | MVTec 3D-AD | PatchCore held-out category | independent_modalities | 30 seeds |
-| A-POWERED-3 | MVTec LOCO-AD | PatchCore supervised-paired | independent_modalities | 30 seeds |
+| A-POWERED-3 | MVTec LOCO-AD | PatchCore supervised-paired | **derived_view_proxy** (rgb + edge_proxy; see [PHASE_2_LOCO_PAIRING_STRENGTH_AUDIT.md](./PHASE_2_LOCO_PAIRING_STRENGTH_AUDIT.md)) | 30 seeds |
 | A-POWERED-4 | VisA | RGB+edge supervised-paired | **derived_view_proxy** (not independent modalities) | 30 seeds |
 | A-POWERED-5 | UNSW-NB15 | flow/conn/context | naturally_structured_views | 30 seeds |
 
@@ -104,7 +104,7 @@ forbidden.
 
 - **A-POWERED-1** (independent_modalities): RGB + 3D depth from PatchCore; multimodal cell. Result reflects RGA+ behaviour vs static reference on a label-aligned supervised-paired protocol.
 - **A-POWERED-2** (independent_modalities): MVTec 3D-AD held-out category split — cross-category transfer on the **same** dataset. Any positive Δ does not support cross-dataset generalization. Both methods are near chance on this cell.
-- **A-POWERED-3** (independent_modalities): MVTec LOCO-AD supervised-paired. Logical-anomaly benchmark; mechanism behaviour may differ qualitatively from structural-anomaly benchmarks.
+- **A-POWERED-3** (**derived_view_proxy**): MVTec LOCO-AD supervised-paired uses rgb + edge_proxy (Sobel-gradient view of the same RGB observation; see [PHASE_2_LOCO_PAIRING_STRENGTH_AUDIT.md](./PHASE_2_LOCO_PAIRING_STRENGTH_AUDIT.md)). Logical-anomaly benchmark; mechanism behaviour may differ qualitatively from structural-anomaly benchmarks. Cannot support independent-modality generalization claims.
 - **A-POWERED-4** (**derived_view_proxy**): VisA RGB+edge. The "edge" channel is a derived view of the RGB image, not an independent modality. Any Δ on A-POWERED-4 cannot support independent-modality generalization claims.
 - **A-POWERED-5** (naturally_structured_views): UNSW-NB15 flow/conn/context. Statistically significant Δ = +0.0095 lives in the **small** practical-effect band; this band qualifier MUST accompany any quote of the p-value or CI.
 

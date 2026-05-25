@@ -106,7 +106,7 @@ REGISTRY_ROWS = [
         "Q1",
         "MVTec LOCO-AD",
         "PatchCore supervised-paired",
-        "independent_modalities",
+        "derived_view_proxy",  # PHASE_2_LOCO_PAIRING_STRENGTH_AUDIT: rgb + edge_proxy
         "inspected",
         "powered audited reproduction",
         CAND_POOL,

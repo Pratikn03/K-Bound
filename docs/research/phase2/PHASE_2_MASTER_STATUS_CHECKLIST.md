@@ -103,7 +103,7 @@ Values extracted from `experiments/phase2/statistics/family_a_v2_primary_cell_le
 |---|---|---|---:|---:|---:|---:|---:|---:|---|---|---:|---|
 | A-POWERED-1 | MVTec 3D-AD / PatchCore supervised-paired | independent_modalities | (per raw CSV) | (per raw CSV) | (per raw CSV) | **+0.1082** | 1.67e-04 | **3.35e-04** | [+0.052, +0.166] | large | 30/30 | VERIFIED |
 | A-POWERED-2 | MVTec 3D-AD / PatchCore held-out category | independent_modalities | (per raw CSV) | (per raw CSV) | (per raw CSV) | **+0.0519** | 1.21e-05 | **4.06e-05** | [+0.029, +0.075] | large | 30/30 | VERIFIED |
-| A-POWERED-3 | MVTec LOCO-AD / PatchCore supervised-paired | independent_modalities | (per raw CSV) | (per raw CSV) | (per raw CSV) | **+0.1038** | 1.02e-05 | **4.06e-05** | [+0.058, +0.150] | large | 30/30 | VERIFIED |
+| A-POWERED-3 | MVTec LOCO-AD / PatchCore supervised-paired | **derived_view_proxy** (corrected in Phase 2.2B.2; see [PHASE_2_LOCO_PAIRING_STRENGTH_AUDIT.md](./PHASE_2_LOCO_PAIRING_STRENGTH_AUDIT.md)) | (per raw CSV) | (per raw CSV) | (per raw CSV) | **+0.1038** | 1.02e-05 | **4.06e-05** | [+0.058, +0.150] | large | 30/30 | VERIFIED |
 | A-POWERED-4 | VisA / RGB+edge supervised-paired | **derived_view_proxy** | (per raw CSV) | (per raw CSV) | (per raw CSV) | **+0.0297** | 1.53e-03 | **1.53e-03** | [+0.012, +0.049] | moderate | 30/30 | VERIFIED |
 | A-POWERED-5 | UNSW-NB15 / flow/conn/context | naturally_structured_views | (per raw CSV) | (per raw CSV) | (per raw CSV) | **+0.0095** | 0.00 | **0.00** | [+0.008, +0.011] | small | 30/30 | VERIFIED |
 
