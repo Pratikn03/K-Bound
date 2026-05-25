@@ -102,6 +102,6 @@
 
 `dbf8dca` (Phase 2.2B.1)
 
-## Closure commit hash (filled after commit lands)
+## Closure commit hash
 
-`<TO BE FILLED ON COMMIT>`
+`2c780cf` ("Complete ELARA Phase 2 Family-B evidence and lock bounded conclusions")
