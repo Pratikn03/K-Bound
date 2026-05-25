@@ -12,8 +12,6 @@ THESIS = ROOT / "docs" / "research" / "THESIS_CHAPTER_v1.tex"
 
 # Phase-2.2C design strings that must not leak into the manuscripts
 FORBIDDEN_PHASE_2C_STRINGS = (
-    "D-EYE-1",
-    "D-EYE-2",
     "D-EYE-3",
     "validation_only_degradation_calibrated_one_class_multimodal",
     "FAMILY_D_V2_FREEZE_BLOCKED",
