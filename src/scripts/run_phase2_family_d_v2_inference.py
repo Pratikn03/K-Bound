@@ -196,7 +196,7 @@ def _load_archive_scores(cell_id: str) -> dict[str, dict[int, dict[str, np.ndarr
         return {}
 
     result: dict[str, dict[int, dict[str, Any]]] = {}
-    for parquet_file in sorted(archive_dir.glob("*.parquet")):
+    for parquet_file in sorted(archive_dir.rglob("*.parquet")):
         try:
             import pandas as pd  # type: ignore[import]
             df = pd.read_parquet(parquet_file)
