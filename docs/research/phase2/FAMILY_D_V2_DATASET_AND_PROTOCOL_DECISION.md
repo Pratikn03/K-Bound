@@ -1,85 +1,88 @@
 # Family-D v2 — Dataset and Protocol Decision
 
-**Phase:** 2.2B.2 / Step 10
-**Status:** **`V2_FREEZE_BLOCKED_PENDING_USER_DECISIONS`**
+**Phase:** 2.2C / Step 1
+**Status:** **DECISIONS LOCKED.** Eyecandies selected; freeze gated on archive hashing (see Step 2 of Phase 2.2C and the Step 11 BLOCKED report).
+**Supersedes:** the Phase 2.2B.2 version of this file (which had `V2_FREEZE_BLOCKED_PENDING_USER_DECISIONS`).
 
-This document is the "Required first file" of Step 10 in the Phase 2.2B.2 spec. It honestly enumerates which v2 candidates clear the eligibility bar locked in [FAMILY_D_V2_DATASET_ELIGIBILITY_REVIEW.md](./FAMILY_D_V2_DATASET_ELIGIBILITY_REVIEW.md) and which do not.
+## 1. Decision summary
 
-## A. Candidates explicitly removed
+| Item | Locked value |
+|---|---|
+| Selected dataset | **Eyecandies** |
+| Official release/version | **`eyecandies 1.0.3`** (GitHub release at https://github.com/eyecan-ai/eyecandies, latest as of 2023-01-23) |
+| Selected modalities | **RGB + depth (primary)**; normal maps available, excluded from primary |
+| Primary method | **base RGA** (reliability-aware gating under normal-only calibration) |
+| Comparator | **fixed `static_attention`** |
+| Protocol | **validation-only degradation-calibrated one-class multimodal** |
+| Confirmation claim ceiling | "Held-out confirmatory evidence under the frozen Eyecandies RGB+depth one-class degradation-stress protocol." |
+| Family-D family size | 2 primary hypotheses (D-EYE-1, D-EYE-2) + optional descriptive secondary (D-EYE-3) |
+| `test_evaluation_executed` | **`false`** (must remain false until independent review + execution authorisation) |
 
-| Candidate | Status | Reason |
-|---|---|---|
-| VisA | `INELIGIBLE_FOR_FAMILY_D` | Registry-locked into Family A (A-POWERED-4) as `derived_view_proxy`; cannot also be Family-D held-out. Already removed from any v2 candidate list. |
-| MPDD | `INELIGIBLE_FOR_INDEPENDENT_MULTIMODAL_CONFIRMATION` (current state) | Official multimodal (RGB + depth/3D) modality manifest not verified in the v1 inventory. v2 inclusion gated on official-source verification of paired depth files in the exact release. **Unresolved.** |
+## 2. Untouched eligibility (verified this audit)
 
-## B. Eyecandies — eligible candidate, pending protocol decision
+`grep -rli "eyecandies"` produces only:
 
-`ELIGIBLE_MULTIMODAL_CANDIDATE_PENDING_PROTOCOL_FIX`
+- `docs/research/PAPER_DRAFT_v1.tex` — related-work citation only (`\cite{bonfiglioli2022eyecandies}` reference + one related-work sentence); **no outcome-level use**.
+- Phase-2 Family-D contract / eligibility-review / registry / claim-matrix documents — design references only, **no outcome-level use**.
 
-- **Modality:** RGB + normal map + depth + multi-view (per official Eyecandies release).
-- **Split structure:** official train and validation are **anomaly-free**; anomalies appear **only** in the test split.
-- **Implication:** a naive "supervised-paired" protocol that reads test-set anomaly labels for validation tuning is **not admissible** (it would violate the held-out invariant).
+**No experiment CSV, no prediction archive, no inference table, no model run output references Eyecandies.** Eyecandies has never been evaluated for outcome on this repository. ✓ Untouched.
 
-**Two scientifically valid protocols remain. Exactly one must be locked before v2 freeze:**
+`data/raw/` contains: fraud, mvtec3d, cyber, visa, behavior, healthcare, nlp, vision, mvtec_loco, real3d. **No `eyecandies` subdirectory.** ✓ Not previously downloaded.
 
-1. **Canonical one-class multimodal evaluation.**
-   - Train on official anomaly-free train.
-   - Tune on official anomaly-free validation (normality metrics only — no anomaly labels available on validation by design).
-   - Evaluate ROC-AUC on the official test split exactly once, under the frozen v2 contract.
+## 3. Official modality evidence (verified this audit)
 
-2. **Validation-only synthetic-corruption protocol.**
-   - Train on official anomaly-free train.
-   - Generate synthetic anomalies on the official anomaly-free **validation** split using a frozen corruption operator (must be specified in full in the v2 contract; must not reference any property of the official test split).
-   - Tune RGA+ heads against these synthetic validation anomalies.
-   - Evaluate on the official test split exactly once.
+Sources consulted via WebFetch + the installed `eyecandies==1.0.3` package source code (file `eyecandies/commands/download.py`):
 
-   If chosen, the v2 contract MUST specify (with no placeholders):
-   - the exact synthetic corruption operator and its parameter set;
-   - the random seed governing corruption sampling;
-   - a hash of the generated synthetic validation labels;
-   - a proof that the operator parameters are computed from training statistics only.
+- Official project page: https://eyecan-ai.github.io/eyecandies/
+- Official paper: Bonfiglioli et al. ACCV 2022, *"The Eyecandies Dataset for Unsupervised Multimodal Anomaly Detection and Localization"*.
+- Official repository: https://github.com/eyecan-ai/eyecandies (release 1.0.3).
+- Official distribution: per-category Google Drive archives accessed by the official `eyec ec-get` CLI; per-category file IDs are embedded in the package source and are immutable per the 1.0.3 release.
 
-## C. Search for an additional untouched RGB+depth / RGB+normal / RGB+point-cloud candidate
+Modalities per sample (per official page):
+- 6 RGB images under different lighting conditions
+- depth map
+- normal map (surface normals)
+- 4-channel anomaly-mask annotations on the public test set
+- metadata: camera pose, depth normalisation, object parameters
 
-`SEARCH_OPEN` (no new candidate identified in this audit).
+Splits (per official page): "anomaly-free samples for model training and validation, while anomalous instances with precise ground-truth annotations are provided only in the test set."
 
-Candidates listed in [FAMILY_D_V2_DATASET_ELIGIBILITY_REVIEW.md](./FAMILY_D_V2_DATASET_ELIGIBILITY_REVIEW.md) §D — Real-IAD, 3D-AnomalyMNIST, DDTGS-3D — remain unverified for:
-- official modality manifest;
-- license / academic-access status;
-- zero prior inspection in this repo.
+Modality alignment under official structure: each sample carries a fixed naming key; RGB and depth share the same key per category per split. Verification of byte-level alignment requires local download (see §5).
 
-None of these verification lines is closed.
+## 4. Excluded candidates (carry-over from Phase 2.1 eligibility review)
 
-## D. Confirmation target (cannot be locked without C above)
+| Candidate | Status |
+|---|---|
+| VisA | `INELIGIBLE_FOR_FAMILY_D` — registry-locked in Family A (A-POWERED-4) |
+| MPDD | `INELIGIBLE_FOR_INDEPENDENT_MULTIMODAL_CONFIRMATION` — official modality manifest not verified |
+| Additional RGB+depth/normal/point-cloud candidate | Deferred per spec D8; **not required for first v2 freeze** |
 
-Even if Eyecandies one-class is chosen, the confirmation **target** depends on whether RGA+ supervised-head selection is admissible without official test-anomaly labels. The cleanest bounded target is:
+## 5. Why **base RGA**, not supervised RGA+
 
-> "Base RGA reliability-aware fusion vs fixed static_attention reference under naturally paired multimodal Eyecandies one-class evaluation."
+Eyecandies' official split is anomaly-free train + anomaly-free validation + anomalous test. **No anomalous validation labels exist** under the official structure. Supervised head-selection (router vs boost) requires labelled anomalous validation data; that is **not admissible** under the held-out invariant of this protocol. Therefore:
 
-The supervised-head variant (router vs boost) requires labelled anomalous validation, which is **not available** in canonical one-class Eyecandies. If protocol 2 (synthetic corruption) is chosen, supervised-head selection becomes admissible **only** under the synthetic operator.
+- Primary head: **base RGA** (reliability-aware gating; no anomalous-label-dependent selection).
+- Selection rule: validation-only, using normal-only validation data and pre-specified evidence-degradation injections (per §6 of the operator spec).
+- Comparator: **fixed `static_attention`** (no per-cell selection).
 
-## E. Why v2 cannot be frozen in this Phase 2.2B.2 task
+## 6. Confirmation limitations (preserved verbatim)
 
-The v2 freeze rules forbid:
+- Eyecandies is **synthetic** but naturally multimodal; held-out confirmation here is on synthetic-but-naturally-paired data, not on physical-sensor data.
+- This v2 is held-out confirmation for **one protocol and one dataset** only; it is not universality or deployment validation.
+- Single-dataset confirmation does **not** establish universality.
+- A successful Family-D v2 result may **not** retroactively convert Family-A into confirmatory evidence.
 
-- `TBD`
-- `TO_BE_FILLED`
-- `TO_BE_RECORDED`
-- placeholder
-- pending hash after freeze
+## 7. Current freeze status (Phase 2.2C)
 
-A v2 freeze in this task would require choices that exceed what I can responsibly make without user research input:
+All design decisions D1–D8 are locked. The remaining technical blocker for an actual no-placeholder freeze is the **archive SHA256 manifest**: the official Eyecandies maintainers do not publish per-archive SHA256 hashes, so a real partition-manifest hash field requires a local download of all 10 category archives (~30 GB via `eyec ec-get`).
 
-1. **Choose Eyecandies protocol** (one-class vs synthetic-corruption). This is a research decision that should belong to the research team.
-2. **Specify the synthetic-corruption operator** in full (operator family, parameter values, seed, hash of generated labels) **if** protocol 2 is chosen. Requires user research input.
-3. **Download Eyecandies release** to record SHA256 of the archive. Requires authorization, network access, and storage budget approval.
-4. **Verify the official modality manifest** for Eyecandies (and optionally MPDD) against the exact release tag.
-5. **Identify a second untouched RGB+depth/normal/point-cloud candidate**, or accept Eyecandies as the sole v2 cell.
+A clean freeze therefore requires a download pass under the authorisation already granted by the Phase 2.2C spec ("authorised to download Eyecandies only for: archive/hash recording; file-structure verification..."). That pass produces:
 
-Until items 1–5 are resolved by the research team, no v2 freeze can land without placeholders.
+1. SHA256 of each per-category zip archive.
+2. Sample counts per (category, split).
+3. Modality-file presence per sample.
+4. RGB / depth alignment verification.
 
-## F. Decision
+See [FAMILY_D_V2_DATA_PROVENANCE_AND_HASH_REPORT.md](./FAMILY_D_V2_DATA_PROVENANCE_AND_HASH_REPORT.md) for the recorded download artifacts (currently a no-download access log per Step 2 of this phase), and [PHASE_2_FAMILY_D_V2_BLOCKED_REPORT.md](./PHASE_2_FAMILY_D_V2_BLOCKED_REPORT.md) for the honest BLOCKED-branch verdict at the end of Phase 2.2C.
 
-> **`V2_FREEZE_BLOCKED_PENDING_USER_DECISIONS`**
-
-The companion file [PHASE_2_FAMILY_D_V2_BLOCKED_REPORT.md](./PHASE_2_FAMILY_D_V2_BLOCKED_REPORT.md) (Step 11 blocked branch) documents the exact missing requirements and the next allowed task.
+All other freeze-required fields (protocol YAML, degradation operator spec, hypotheses CSV, selection policy, execution commands NOT_RUN, hostile review) are produced in this phase with **no placeholders**; only the partition manifest's archive SHA256 requires the download pass.

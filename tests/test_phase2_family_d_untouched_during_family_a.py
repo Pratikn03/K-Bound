@@ -44,14 +44,12 @@ def test_family_d_v2_design_status_intact():
     assert "V2_DESIGN_PENDING" in t
 
 
-def test_no_v2_family_d_artifact_was_created():
-    """Phase 2.2A must not create any v2 Family-D file."""
+def test_no_v2_family_d_freeze_partition_manifest_during_family_a():
+    """Phase 2.2A must not create the executable partition manifest;
+    design-stage v2 files (hypotheses, selection policy, etc.) may
+    legitimately exist after Phase 2.2C dataset/protocol decision."""
     forbidden = [
-        "FAMILY_D_CONTRACT_v2_PRE_TEST_FREEZE.md",
         "FAMILY_D_PARTITION_MANIFEST_v2.json",
-        "FAMILY_D_HYPOTHESES_v2.csv",
-        "FAMILY_D_SELECTION_AND_STATISTICAL_POLICY_v2.md",
-        "FAMILY_D_EXECUTION_COMMANDS_v2_NOT_RUN.md",
     ]
     leaked = [name for name in forbidden if (PHASE2 / name).exists()]
     assert not leaked, f"Phase 2.2A leaked Family-D v2 artifacts: {leaked}"

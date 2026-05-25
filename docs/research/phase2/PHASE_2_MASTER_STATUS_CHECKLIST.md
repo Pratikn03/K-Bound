@@ -27,14 +27,14 @@
 | Domain-composition B-MECH-3S | VERIFIED — EXECUTED, FALSE_FIRE_NOT_REDUCED | `experiments/phase2/mechanism/domain_composition_shift_metrics.csv`, `docs/research/phase2/DOMAIN_COMPOSITION_SHIFT_AUDIT_REPORT.md` | 5 seeds × 10 mixtures; global=domain-aware fire rate (=1.0) |
 | KS power B-MECH-4 | VERIFIED — EXECUTED, TRADEOFF_IMPROVED | `experiments/phase2/mechanism/ks_window_size_power.csv` (25 rows), `experiments/phase2/mechanism/ks_true_degradation_power.csv`, `docs/research/phase2/KS_REFERENCE_AND_POWER_REPORT_v2.md` | 5 seeds × 5 windows; larger windows raise detection power without raising false fire |
 | Family-D v1 | VERIFIED — INVALID_FOR_EXECUTION | `docs/research/phase2/FAMILY_D_V1_INVALIDATION_NOTICE.md` | Preserved as historical evidence only |
-| Family-D v2 | VERIFIED — V2_DESIGN_PENDING | `docs/research/phase2/FAMILY_D_V2_DESIGN_STATUS.md` | No execution permitted |
+| Family-D v2 design | **`V2_FREEZE_BLOCKED_AT_PARTITION_MANIFEST_ARCHIVE_SHA256`** (Phase 2.2C) | `FAMILY_D_V2_DATASET_AND_PROTOCOL_DECISION.md`, `FAMILY_D_V2_PRE_TEST_HOSTILE_REVIEW_REPORT.md`, `PHASE_2_FAMILY_D_V2_BLOCKED_REPORT.md` (Phase 2.2C) | D1–D8 user research decisions all LOCKED; protocol YAML, operator spec, hypotheses CSV, selection policy, execution-commands NOT_RUN all complete + placeholder-free; only blocker is per-archive SHA256 requiring a future hash-only download pass |
 | Phase 3 readiness | NOT APPLICABLE | n/a | Phase 3 not opened; explicitly forbidden by Phase-2 stop boundary |
 
 ### Overall status
 
 **`PHASE_2_PARTIALLY_COMPLETE_FAMILY_B_CONTINUATION_REQUIRED`**
 
-Determined from artifact inspection: B-MECH-1 + B-MECH-2 + B-MECH-3S + B-MECH-4 + B-CERT-1 (k=4 scope) all executed with valid result artifacts. Continuation work required is (a) B-CERT-1 extension to RGA-v2 scenarios, (b) Family-B integration into a single hostile-review verdict, (c) Family-D v2 design closure before any held-out evaluation.
+Determined from artifact inspection: Family-B is fully closed (committed `2c780cf` + `4993a14`). Phase 2.2C produced Eyecandies-based Family-D v2 design artifacts (protocol YAML, operator spec, hypotheses CSV, selection policy, execution commands NOT_RUN, hostile-review report). The freeze is blocked **only** at the partition-manifest archive SHA256 step, which requires a future hash-only download pass (Phase 2.2D). All other freeze artifacts are complete with no placeholders.
 
 ## 2. Phase 2 Timeline and Decision History
 

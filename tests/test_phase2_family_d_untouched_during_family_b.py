@@ -44,13 +44,16 @@ def test_family_d_v2_design_status_intact():
     assert "V2_DESIGN_PENDING" in p.read_text()
 
 
-def test_no_v2_family_d_artifact_was_created():
-    forbidden = [
-        "FAMILY_D_CONTRACT_v2_PRE_TEST_FREEZE.md",
-        "FAMILY_D_PARTITION_MANIFEST_v2.json",
-        "FAMILY_D_HYPOTHESES_v2.csv",
-        "FAMILY_D_SELECTION_AND_STATISTICAL_POLICY_v2.md",
-        "FAMILY_D_EXECUTION_COMMANDS_v2_NOT_RUN.md",
-    ]
+def test_no_v2_family_d_freeze_artifact_was_created_during_family_b():
+    """Family-B work must not produce the executable freeze artifact (the
+    partition manifest with archive SHA256). Design-stage v2 files
+    (hypotheses CSV, selection policy, etc.) may exist as part of the
+    Phase 2.2C dataset/protocol decision; the only freeze-equivalent file
+    that must remain absent until the hash-only download pass is the
+    partition manifest itself."""
+    forbidden = ["FAMILY_D_PARTITION_MANIFEST_v2.json"]
     leaked = [n for n in forbidden if (PHASE2 / n).exists()]
-    assert not leaked, f"Phase 2.2B leaked Family-D v2 artifacts: {leaked}"
+    assert not leaked, (
+        f"Family-D v2 partition manifest leaked into earlier phase: {leaked}. "
+        "Partition manifest may exist only after the Phase 2.2D hash-only download pass."
+    )
