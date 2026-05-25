@@ -6,8 +6,8 @@ Generated on: 2026-05-25
 
 | Document | Path | Expected Pages | Compiled Pages | SHA-256 Hash |
 | --- | --- | --- | --- | --- |
-| ELARA Paper Draft | `output/pdf/PAPER_DRAFT_v1.pdf` | 34 | 34 | `1d64a45a7b47375ddf1baa2767f46c1069c372d3d1e028aa86a3a46617a900b3` |
-| ELARA Thesis Chapter | `output/pdf/THESIS_CHAPTER_v1.pdf` | 36 | 36 | `57397bc949ce6ba4272454fdd5dc9ef93626019109b3ddae0af5b95a238f320b` |
+| ELARA Paper Draft | `output/pdf/PAPER_DRAFT_v1.pdf` | 34 | 35 | `1cf92e413a83b3904f755fc7b9642b6b41dfd29dea0c1b39a47fa897e1bc44f7` |
+| ELARA Thesis Chapter | `output/pdf/THESIS_CHAPTER_v1.pdf` | 36 | 36 | `bcfed2b332c5c114278ab2b3e53cc30b8926982d38c13ed31b89dab8031376ef` |
 
 ## 2. Evidence Table Placements
 

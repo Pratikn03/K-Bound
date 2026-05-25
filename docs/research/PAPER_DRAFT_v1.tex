@@ -44,7 +44,7 @@
 \maketitle
 
 \begin{abstract}
-Multimodal anomaly detectors can become unreliable when evidence streams degrade or disagree. This paper presents ELARA, a reliability-aware multimodal anomaly score-fusion architecture with Reliability-Gated Attention (RGA), evaluated under controlled and audited evidence degradation settings. Under a powered, audited, static-reference cross-validation study over five previously inspected benchmark cells (Family A), validation-frozen RGA+ consistently improves on a fixed static-attention reference. In controlled mechanism replication (Family B), RGA reproduces the zero-attack coherent score-collapse benefit (B1: reproduced delta +0.0507 vs Phase-1 target +0.0506, 95\% CI [+0.0364, +0.0650], Holm-corrected $p = 4.31\times 10^{-12}$). A comparable positive effect is observed under maximum attack (B2: Phase-2 delta +0.0939 vs Phase-1 target +0.0319, 95\% CI [+0.0741, +0.1149], Holm-corrected $p < 10^{-15}$), though it is qualified by an estimator change. Bounded monitoring and retrospective evaluation certificates demonstrate mixed success. However, negative results from two key areas reveal critical bounds on the architecture: first, more sensitive RGA-v2 gate variants fail clean validation false-fire controls (firing at 1.000 rate) and are not promoted; second, an attempted held-out transfer study on the Eyecandies dataset (Family D) failed to meet the frozen clean false-fire budget ($\le 0.010$ budget vs $1.0$ observed) and is excluded from primary evidence, showing a non-significant performance difference after correcting a DeLong variance bug (D-EYE-1 corrected $p = 0.3323$; D-EYE-2 corrected $p = 0.3127$). These results support bounded audited/mechanism evidence and identify calibration transfer under score distribution shifts as a central unresolved limitation, rather than establishing universality, state-of-the-art status, or deployment safety.
+Multimodal anomaly detectors can become unreliable when evidence streams degrade or disagree. This paper presents ELARA, a reliability-aware multimodal anomaly score-fusion architecture with Reliability-Gated Attention (RGA), evaluated under controlled and audited evidence degradation settings. Under a powered, audited, static-reference cross-validation study over five previously inspected benchmark cells (Family A), validation-frozen RGA+ consistently improves on a fixed static-attention reference (including the UNSW-NB15 cell where RGA+ achieves +0.0095 compared to the Phase-1 estimate of +0.0003). In controlled mechanism replication (Family B), RGA reproduces the zero-attack coherent score-collapse benefit (B1: reproduced delta +0.0507 vs Phase-1 target +0.0506, 95\% CI [+0.0364, +0.0650], Holm-corrected $p = 4.31\times 10^{-12}$). A comparable positive effect is observed under maximum attack (B2: Phase-2 delta +0.0939 vs Phase-1 target +0.0319, 95\% CI [+0.0741, +0.1149], Holm-corrected $p < 10^{-15}$), though it is qualified by an estimator change. Bounded monitoring and retrospective evaluation certificates demonstrate mixed success. However, negative results from two key areas reveal critical bounds on the architecture: first, more sensitive RGA-v2 gate variants fail clean validation false-fire controls (firing at 1.000 rate) and are not promoted; second, an attempted held-out transfer study on the Eyecandies dataset (Family D) failed to meet the frozen clean false-fire budget ($\le 0.010$ budget vs $1.0$ observed) and is excluded from primary evidence, showing a non-significant performance difference after correcting a DeLong variance bug (D-EYE-1 corrected $p = 0.3323$; D-EYE-2 corrected $p = 0.3127$). These results support bounded audited/mechanism evidence and identify calibration transfer under score distribution shifts as a central unresolved limitation, rather than establishing universality, state-of-the-art status, or deployment safety.
 \end{abstract}
 
 \begin{IEEEkeywords}
@@ -1417,7 +1417,7 @@ Table~\ref{tab:unsw-clean} reports the cell results. In the locked audited reana
 The Phase-0.6 locked audited-reanalysis policy
 (\path{docs/research/audit/PHASE_0_6_FINAL_POLICY_LOCK.md}) governs
 this subsection. Result cells in
-Table~\ref{tab:milestone2} are reported as \emph{locked audited
+Table~\ref{tab:family-a} are reported as \emph{locked audited
 reanalysis} of previously inspected results, \emph{not} as independent
 confirmatory replication. Per-cell selection is locked as follows:
 the \methodplus{} headline is the head selected on validation ROC-AUC
@@ -1833,6 +1833,25 @@ prediction is now backed by auto-generated evidence that a reviewer
 can re-run from the repository. T3 is reported in
 Table~\ref{tab:k-domain-corruption} and Fig.~\ref{fig:k-domain-corruption};
 T2 and T5 are reported below.
+
+\IfFileExists{tables/elara_k_domain_corruption_results.tex}{
+\begin{table}[t]
+\centering
+\caption{T3 validation: $k$-of-$D$ domain corruption sweep under zero and maximum attacks. Mean reliability and adaptation rate are reported across seeds.}
+\label{tab:k-domain-corruption}
+\scriptsize
+\resizebox{\linewidth}{!}{\input{tables/elara_k_domain_corruption_results.tex}}
+\end{table}
+}{}
+
+\IfFileExists{figures/elara_k_domain_corruption.png}{
+\begin{figure}[t]
+\centering
+\includegraphics[width=\linewidth]{elara_k_domain_corruption.png}
+\caption{T3 validation: RGA adaptation rate and ROC-AUC delta as a function of the number of corrupted domains $k$.}
+\label{fig:k-domain-corruption}
+\end{figure}
+}{}
 
 \IfFileExists{tables/category_mixture_t2.tex}{
 \begin{table}[t]

@@ -8,8 +8,8 @@ This report logs scans of compiled PDFs for forbidden terms, stale statistics, a
 
 | Page | Violation Type | Matching Term | Context |
 | --- | --- | --- | --- |
-| Page 1 | SOTA claim | `state-of-the-art` | `... ather than establishing universal- ity, state-of-the-art status, or deployment safety. Index Ter ...` |
-| Page 1 | Universality claim | `universal` | `... ed limitation, rather than establishing universal- ity, state-of-the-art status, or deplo ...` |
+| Page 1 | Universality claim | `universal` | `... ed limitation, rather than establishing universality, state- of-the-art status, or deploy ...` |
+| Page 1 | Stale statistics (0.0003) | `0.0003` | `... 95 compared to the Phase-1 estimate of +0.0003). In controlled mechanism replication ( ...` |
 | Page 3 | SOTA claim | `state-of-the-art` | `...  student- teacher networks [66] achieve state-of-the-art performance on MVTec 3D-AD; EasyNet pro ...` |
 | Page 5 | Universality claim | `universal` | `... fore a stress-response mechanism, not a universal replace- ment for the static model. 5)  ...` |
 | Page 6 | Universality claim | `universal` | `...  measurable quantities rather than by a universal “RGA is better” theorem. 5) Validation- ...` |
@@ -148,11 +148,48 @@ This report logs scans of compiled PDFs for forbidden terms, stale statistics, a
 | Page 20 | Universality claim | `Universal` | `... ce Complete Executed mechanism findings Universal reliability claim Family DHeld-out tran ...` |
 | Page 23 | Stale metrics (0.919) | `0.919` | `... 00 0.859 0.654 cookie 0.870 0.870 0.915 0.919 0.890 0.884 0.831 0.883 0.903 0.500 0.8 ...` |
 | Page 24 | Stale metrics (0.919) | `0.919` | `... .533 pcb1 0.938 0.864 0.891 0.886 0.873 0.919 0.911 0.920 0.911 0.500 0.920 0.907 pcb ...` |
+| Page 25 | Stale statistics (0.0003) | `0.0003` | `... ro_attack 1 mean 0.9921 0.9922 0.0001 [-0.0003, 0.0008] 0.080 0.718 0.620zero_attack 1 ...` |
+| Page 25 | Stale statistics (0.0003) | `0.0003` | `... ro_attack 1 mean 0.9921 0.9922 0.0001 [-0.0003, 0.0008] 0.080 0.718 0.620zero_attack 1 ...` |
+| Page 25 | Stale statistics (0.0003) | `0.0003` | `... ro_attack 1 mean 0.9921 0.9922 0.0001 [-0.0003, 0.0008] 0.080 0.718 0.620zero_attack 1 ...` |
+| Page 25 | Stale statistics (0.0003) | `0.0003` | `... ro_attack 1 mean 0.9921 0.9922 0.0001 [-0.0003, 0.0008] 0.080 0.718 0.620zero_attack 1 ...` |
+| Page 25 | p=0.0000 (Bug explanation=False) | `0.0000` | `... apt MeanrMinr none 0 mean 0.9999 0.9999 0.0000 [0.0000, 0.0000] 0.000 0.741 0.623none  ...` |
+| Page 25 | p=0.0000 (Bug explanation=False) | `0.0000` | `... rMinr none 0 mean 0.9999 0.9999 0.0000 [0.0000, 0.0000] 0.000 0.741 0.623none 0 minimu ...` |
+| Page 25 | p=0.0000 (Bug explanation=False) | `0.0000` | `... ne 0 mean 0.9999 0.9999 0.0000 [0.0000, 0.0000] 0.000 0.741 0.623none 0 minimum 0.9999 ...` |
+| Page 25 | p=0.0000 (Bug explanation=False) | `0.0000` | `... 0.741 0.623none 0 minimum 0.9999 0.9999 0.0000 [0.0000, 0.0000] 0.000 0.741 0.623none  ...` |
+| Page 25 | p=0.0000 (Bug explanation=False) | `0.0000` | `... 623none 0 minimum 0.9999 0.9999 0.0000 [0.0000, 0.0000] 0.000 0.741 0.623none 0 hybrid ...` |
+| Page 25 | p=0.0000 (Bug explanation=False) | `0.0000` | `... 0 minimum 0.9999 0.9999 0.0000 [0.0000, 0.0000] 0.000 0.741 0.623none 0 hybrid 0.9999  ...` |
+| Page 25 | p=0.0000 (Bug explanation=False) | `0.0000` | `...  0.741 0.623none 0 hybrid 0.9999 0.9999 0.0000 [0.0000, 0.0000] 0.000 0.741 0.623 zero ...` |
+| Page 25 | p=0.0000 (Bug explanation=False) | `0.0000` | `... .623none 0 hybrid 0.9999 0.9999 0.0000 [0.0000, 0.0000] 0.000 0.741 0.623 zero_attack  ...` |
+| Page 25 | p=0.0000 (Bug explanation=False) | `0.0000` | `...  0 hybrid 0.9999 0.9999 0.0000 [0.0000, 0.0000] 0.000 0.741 0.623 zero_attack 1 mean 0 ...` |
+| Page 25 | p=0.0000 (Bug explanation=False) | `0.0000` | `... .620zero_attack 1 minimum 0.9921 0.9921 0.0000 [0.0000, 0.0000] 0.000 0.718 0.620zero_ ...` |
+| Page 25 | p=0.0000 (Bug explanation=False) | `0.0000` | `... _attack 1 minimum 0.9921 0.9921 0.0000 [0.0000, 0.0000] 0.000 0.718 0.620zero_attack 1 ...` |
+| Page 25 | p=0.0000 (Bug explanation=False) | `0.0000` | `... 1 minimum 0.9921 0.9921 0.0000 [0.0000, 0.0000] 0.000 0.718 0.620zero_attack 1 hybrid  ...` |
+| Page 25 | p=0.0000 (Bug explanation=False) | `0.0000` | `... .630zero_attack 2 minimum 0.9669 0.9669 0.0000 [0.0000, 0.0000] 0.000 0.696 0.630zero_ ...` |
+| Page 25 | p=0.0000 (Bug explanation=False) | `0.0000` | `... _attack 2 minimum 0.9669 0.9669 0.0000 [0.0000, 0.0000] 0.000 0.696 0.630zero_attack 2 ...` |
+| Page 25 | p=0.0000 (Bug explanation=False) | `0.0000` | `... 2 minimum 0.9669 0.9669 0.0000 [0.0000, 0.0000] 0.000 0.696 0.630zero_attack 2 hybrid  ...` |
+| Page 25 | p=0.0000 (Bug explanation=False) | `0.0000` | `... .640zero_attack 3 minimum 0.8958 0.8958 0.0000 [0.0000, 0.0000] 0.000 0.673 0.640zero_ ...` |
+| Page 25 | p=0.0000 (Bug explanation=False) | `0.0000` | `... _attack 3 minimum 0.8958 0.8958 0.0000 [0.0000, 0.0000] 0.000 0.673 0.640zero_attack 3 ...` |
+| Page 25 | p=0.0000 (Bug explanation=False) | `0.0000` | `... 3 minimum 0.8958 0.8958 0.0000 [0.0000, 0.0000] 0.000 0.673 0.640zero_attack 3 hybrid  ...` |
+| Page 25 | p=0.0000 (Bug explanation=False) | `0.0000` | `... .650zero_attack 4 minimum 0.7212 0.7212 0.0000 [0.0000, 0.0000] 0.000 0.650 0.650zero_ ...` |
+| Page 25 | p=0.0000 (Bug explanation=False) | `0.0000` | `... _attack 4 minimum 0.7212 0.7212 0.0000 [0.0000, 0.0000] 0.000 0.650 0.650zero_attack 4 ...` |
+| Page 25 | p=0.0000 (Bug explanation=False) | `0.0000` | `... 4 minimum 0.7212 0.7212 0.0000 [0.0000, 0.0000] 0.000 0.650 0.650zero_attack 4 hybrid  ...` |
+| Page 25 | p=0.0000 (Bug explanation=False) | `0.0000` | `... 0.620max_attack 1 minimum 0.9951 0.9951 0.0000 [0.0000, 0.0000] 0.000 0.718 0.620max_a ...` |
+| Page 25 | p=0.0000 (Bug explanation=False) | `0.0000` | `... _attack 1 minimum 0.9951 0.9951 0.0000 [0.0000, 0.0000] 0.000 0.718 0.620max_attack 1  ...` |
+| Page 25 | p=0.0000 (Bug explanation=False) | `0.0000` | `... 1 minimum 0.9951 0.9951 0.0000 [0.0000, 0.0000] 0.000 0.718 0.620max_attack 1 hybrid 0 ...` |
+| Page 25 | p=0.0000 (Bug explanation=False) | `0.0000` | `... 0.630max_attack 2 minimum 0.9737 0.9737 0.0000 [0.0000, 0.0000] 0.000 0.696 0.630max_a ...` |
+| Page 25 | p=0.0000 (Bug explanation=False) | `0.0000` | `... _attack 2 minimum 0.9737 0.9737 0.0000 [0.0000, 0.0000] 0.000 0.696 0.630max_attack 2  ...` |
+| Page 25 | p=0.0000 (Bug explanation=False) | `0.0000` | `... 2 minimum 0.9737 0.9737 0.0000 [0.0000, 0.0000] 0.000 0.696 0.630max_attack 2 hybrid 0 ...` |
+| Page 25 | p=0.0000 (Bug explanation=False) | `0.0000` | `... 0.640max_attack 3 minimum 0.9084 0.9084 0.0000 [0.0000, 0.0000] 0.000 0.673 0.640max_a ...` |
+| Page 25 | p=0.0000 (Bug explanation=False) | `0.0000` | `... _attack 3 minimum 0.9084 0.9084 0.0000 [0.0000, 0.0000] 0.000 0.673 0.640max_attack 3  ...` |
+| Page 25 | p=0.0000 (Bug explanation=False) | `0.0000` | `... 3 minimum 0.9084 0.9084 0.0000 [0.0000, 0.0000] 0.000 0.673 0.640max_attack 3 hybrid 0 ...` |
+| Page 25 | p=0.0000 (Bug explanation=False) | `0.0000` | `... 0.650max_attack 4 minimum 0.7401 0.7401 0.0000 [0.0000, 0.0000] 0.000 0.650 0.650max_a ...` |
+| Page 25 | p=0.0000 (Bug explanation=False) | `0.0000` | `... _attack 4 minimum 0.7401 0.7401 0.0000 [0.0000, 0.0000] 0.000 0.650 0.650max_attack 4  ...` |
+| Page 25 | p=0.0000 (Bug explanation=False) | `0.0000` | `... 4 minimum 0.7401 0.7401 0.0000 [0.0000, 0.0000] 0.000 0.650 0.650max_attack 4 hybrid 0 ...` |
 | Page 26 | p=0.0000 (Bug explanation=True) | `0.0000` | `... ance by≈250×and erroneously reportingp= 0.0000. Correcting this bug yieldsp= 0.3323for ...` |
-| Page 27 | Universality claim | `universal` | `... nded modeling improvement rather than a universal performance claim, •the lightweight ima ...` |
+| Page 27 | Universality claim | `universal` | `... nded modeling improvement rather than a universal performance claim, ...` |
 | Page 28 | Universality claim | `universal` | `... s a bounded theorem stack rather than a universal dominance proof: global KS can be confo ...` |
 | Page 29 | Universality claim | `Universal` | `... ss under controlled detector failure. 3)Universal system integration. Closure evidence re ...` |
-| Page 32 | Universality claim | `Universal` | `... o, D. Kim, S. Sclaroff, and K. Saenko, “Universal domain adaptation through self supervis ...` |
+| Page 33 | Universality claim | `Universal` | `... o, D. Kim, S. Sclaroff, and K. Saenko, “Universal domain adaptation through self supervis ...` |
 
 ## 2. Thesis Scan Findings
 

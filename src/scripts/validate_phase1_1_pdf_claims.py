@@ -24,8 +24,8 @@ from pathlib import Path
 
 PAPER = Path("docs/research/PAPER_DRAFT_v1.tex")
 THESIS = Path("docs/research/THESIS_CHAPTER_v1.tex")
-PAPER_PDF = Path("output/pdf/PAPER_DRAFT_PHASE1_1_VERIFIED.pdf")
-THESIS_PDF = Path("output/pdf/THESIS_CHAPTER_PHASE1_1_VERIFIED.pdf")
+PAPER_PDF = Path("output/pdf/PAPER_DRAFT_v1.pdf")
+THESIS_PDF = Path("output/pdf/THESIS_CHAPTER_v1.pdf")
 
 
 def _pdf_text(path: Path) -> str:
