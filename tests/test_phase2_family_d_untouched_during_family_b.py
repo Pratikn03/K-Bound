@@ -44,16 +44,13 @@ def test_family_d_v2_design_status_intact():
     assert "V2_DESIGN_PENDING" in p.read_text()
 
 
-def test_no_v2_family_d_freeze_artifact_was_created_during_family_b():
-    """Family-B work must not produce the executable freeze artifact (the
-    partition manifest with archive SHA256). Design-stage v2 files
-    (hypotheses CSV, selection policy, etc.) may exist as part of the
-    Phase 2.2C dataset/protocol decision; the only freeze-equivalent file
-    that must remain absent until the hash-only download pass is the
-    partition manifest itself."""
-    forbidden = ["FAMILY_D_PARTITION_MANIFEST_v2.json"]
-    leaked = [n for n in forbidden if (PHASE2 / n).exists()]
-    assert not leaked, (
-        f"Family-D v2 partition manifest leaked into earlier phase: {leaked}. "
-        "Partition manifest may exist only after the Phase 2.2D hash-only download pass."
-    )
+def test_family_d_v2_partition_manifest_never_carries_test_execution_phase_b():
+    """If the partition manifest exists (post Phase 2.2D hash-only pass), it
+    must always declare test_evaluation_executed=false. Family-B work must
+    never flip this flag."""
+    p = PHASE2 / "FAMILY_D_PARTITION_MANIFEST_v2.json"
+    if not p.exists():
+        return  # acceptable pre-Phase-2.2D state
+    import json
+    j = json.loads(p.read_text())
+    assert j.get("test_evaluation_executed") is False

@@ -1,7 +1,7 @@
 # Family-D v2 — Data Provenance and Hash Report
 
 **Phase:** 2.2C / Step 2
-**Status:** **PROVENANCE RECORDED; ARCHIVE SHA256 NOT YET RECORDED (BLOCKED branch).**
+**Status (post Phase 2.2D):** **PROVENANCE + ARCHIVE SHA256 + SCHEMA VERIFICATION COMPLETE.** All 10 Eyecandies category archives downloaded, hashed, and tar-member-scanned without inspecting anomaly mask file contents.
 
 This report is the partition-manifest companion document. It records every provenance fact about the Eyecandies dataset that does not require local download, and explicitly defers the archive SHA256 entries to a future hash-only download pass.
 
@@ -35,22 +35,24 @@ Recorded from `eyecandies/commands/download.py`:`EyecandiesDatasetInfo.DATA_IDS`
 | marshmallow | `1pebIU3AegEFilqqoROaVzOZqkSgX-JTo` | `data/raw/eyecandies/Marshmallow.zip` |
 | peppermintcandy | `1tF_1fPJYaUVaf1AwjlEi-fsGWzgCx6UF` | `data/raw/eyecandies/PeppermintCandy.zip` |
 
-## 4. Archive SHA256 (DEFERRED)
+## 4. Archive SHA256 (RECORDED — Phase 2.2D)
 
-| Category | Archive SHA256 |
-|---|---|
-| candycane | **NOT RECORDED — download pass required** |
-| chocolatecookie | **NOT RECORDED — download pass required** |
-| chocolatepraline | **NOT RECORDED — download pass required** |
-| confetto | **NOT RECORDED — download pass required** |
-| gummybear | **NOT RECORDED — download pass required** |
-| hazelnuttruffle | **NOT RECORDED — download pass required** |
-| licoricesandwich | **NOT RECORDED — download pass required** |
-| lollipop | **NOT RECORDED — download pass required** |
-| marshmallow | **NOT RECORDED — download pass required** |
-| peppermintcandy | **NOT RECORDED — download pass required** |
+Recorded in [experiments/phase2/family_d/eyecandies_archive_sha256.txt](../../../experiments/phase2/family_d/eyecandies_archive_sha256.txt) by `src/scripts/family_d_v2_download_eyecandies.py`. Mirrored in `FAMILY_D_PARTITION_MANIFEST_v2.json`.
 
-The Eyecandies maintainers do not publish per-archive SHA256 hashes. Recording these requires a local download and `shasum -a 256` pass; see [FAMILY_D_V2_RAW_DATA_ACCESS_LOG.md](./FAMILY_D_V2_RAW_DATA_ACCESS_LOG.md) §4 for the exact verbatim future-task command.
+| Category | Archive SHA256 | Size (bytes) |
+|---|---|---:|
+| CandyCane | `66ac74c9a3e60648395594d55058c625fb8dc720016983b60cf4e68415476f1c` | 2 401 843 200 |
+| ChocolateCookie | `8070c912a45083be79407fd3f241ebab0f7f933b757a96f837bfd87c5de4d26c` | 2 803 148 800 |
+| ChocolatePraline | `dfda3b6bed41ccbcd7b3593f7cab893c7c3a49a3e81a79a01cde2c148955150f` | 2 748 620 800 |
+| Confetto | `f4b30ab23bab5a9cc36df20c38b2b174040469d3ca0341b00fd60bbcb2848392` | 2 566 348 800 |
+| GummyBear | `d0ba4d61c8da2b12bb49a2e6e6cd1ca3d04661b6da0bce41cfcddc80140fe68d` | 2 886 205 440 |
+| HazelnutTruffle | `dac3afb0090fe7b011b3b7fa7b85a5c2d63bcf954c63c427f65a632f671d3550` | 3 562 772 480 |
+| LicoriceSandwich | `d06c1cb5cbbf28d12276cf75fe306541c4f2e83b5b0ba7484fb01fc7ee025958` | 2 821 570 560 |
+| Lollipop | `2596ffb70882406b78e372f0e3dd7f19e7686a83833e833565e8211379bd40a8` | 2 396 805 120 |
+| Marshmallow | `8363bb917e91c399ea79da7e53551197a4b1c93a32a17a5fc520889886969ab9` | 2 518 374 400 |
+| PeppermintCandy | `499523d5800c5add427a8efe84e94b59462766fa861c7bea00226faf28bde940` | 2 480 097 280 |
+
+Total: ≈ 27.2 GB across 10 category archives, downloaded via `gdown` from the official per-category Google Drive file IDs encoded in `eyecandies==1.0.3`. The bundled `eyec ec-get` CLI fails on these large files due to outdated Google Drive confirm-token handling; `gdown` 6.0.0 succeeds against the same file IDs.
 
 ## 5. Modality availability (DEFERRED to local verification)
 

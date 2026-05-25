@@ -60,13 +60,18 @@
 
 NOT recorded (the explicit blocker):
 
-- Per-category Eyecandies archive SHA256 — Eyecandies maintainers do not publish official hashes; recording requires a local download pass. Not performed in Phase 2.2C (see [FAMILY_D_V2_RAW_DATA_ACCESS_LOG.md](./FAMILY_D_V2_RAW_DATA_ACCESS_LOG.md)).
+- Per-category Eyecandies archive SHA256 — **RECORDED in Phase 2.2D** (10/10 categories hashed via `gdown` against the official `eyecandies==1.0.3` Drive file IDs). See `FAMILY_D_V2_DATA_PROVENANCE_AND_HASH_REPORT.md` §4 and `experiments/phase2/family_d/eyecandies_archive_sha256.txt`.
 
 ### Q12. Are all fields complete with no placeholders?
 
-**NO** — and this is the freeze blocker. The Phase 2.2C spec at Step 5 forbids creating `FAMILY_D_PARTITION_MANIFEST_v2.json` with any of `TBD`, `TO_BE_FILLED`, `TO_BE_RECORDED`, `placeholder`, `unknown hash`, or `planned later`. The per-category archive SHA256 cannot be recorded without the download pass; therefore the partition manifest **cannot be written** in this task without violating that rule.
+**YES (Phase 2.2D update).** `FAMILY_D_PARTITION_MANIFEST_v2.json` is now written with:
+- Per-category real SHA256 + size_bytes (10/10 entries).
+- Per-archive on-disk schema (rgb / depth / normal sample counts per split; mask file counts recorded but never opened).
+- Protocol YAML SHA256, hypotheses CSV SHA256, selection policy SHA256, operator spec SHA256.
+- `freeze_commit_hash`, `frozen_utc`.
+- `test_evaluation_executed: false`.
 
-Therefore the partition manifest is **deliberately NOT created** in this task. Every other freeze-required artifact is complete with no placeholders.
+No `TBD`, `TO_BE_FILLED`, `TO_BE_RECORDED`, `placeholder`, `unknown hash`, or `planned later` fields. Verified by [tests/test_family_d_v2_manifest_no_placeholders.py](../../../tests/test_family_d_v2_manifest_no_placeholders.py).
 
 ### Q13. Has any test outcome been accessed?
 
@@ -84,19 +89,17 @@ Therefore the partition manifest is **deliberately NOT created** in this task. E
 
 ### Q15. Can an independent reviewer safely authorise one future execution?
 
-**NOT YET.** Authorisation requires:
+**YES — pending independent external review.** Phase 2.2D closed items 1–3:
 
-1. A complete partition manifest with real per-archive SHA256.
-2. Hash-only download pass (Stage 1 of [FAMILY_D_EXECUTION_COMMANDS_v2_NOT_RUN.md](./FAMILY_D_EXECUTION_COMMANDS_v2_NOT_RUN.md)).
-3. On-disk schema verification.
-4. Independent external review (NOT the original Phase-2 agent).
-
-Until items 1–3 land in a follow-up task, item 4 cannot meaningfully proceed.
+1. Complete partition manifest with real per-archive SHA256 — **DONE** (`FAMILY_D_PARTITION_MANIFEST_v2.json`).
+2. Hash-only download pass — **DONE** (`src/scripts/family_d_v2_download_eyecandies.py`; 10/10 archives at `data/raw/eyecandies/_archives/`).
+3. On-disk schema verification — **DONE** (`src/scripts/family_d_v2_schema_verify.py`; per-(category, split) RGB / depth / normal sample counts recorded; mask file presence COUNTED but NEVER opened; invariants pass: every train/val sample has paired RGB+depth + 6 RGB views; test_private has no public masks).
+4. Independent external review (NOT the original Phase-2 agent) — **REQUIRED next**.
 
 ## Final pre-test verdict
 
-> **`FAMILY_D_V2_FREEZE_BLOCKED`**
+> **`FAMILY_D_V2_VALID_FOR_PRE_TEST_FREEZE`**
 
-**Reason:** the `FAMILY_D_PARTITION_MANIFEST_v2.json` cannot be written without placeholders because the Eyecandies maintainers do not publish per-archive SHA256 hashes and a local download pass was not performed in Phase 2.2C. Every other freeze artifact is complete and no-placeholder.
+**Phase 2.2D rationale:** All 15 reviewer questions now answer favourably. The partition manifest is real, no placeholders. The clean false-fire budget, the primary method, the comparator, the protocol, the operator spec, the hypothesis family, and the claim ceiling are all locked and recorded by SHA256. No test outcomes have been accessed.
 
-This is a clean, narrow blocker — not a contract validity issue. A follow-up Phase 2.2D task that performs only the hash-only download pass (Stage 1 + Stage 2 of [FAMILY_D_EXECUTION_COMMANDS_v2_NOT_RUN.md](./FAMILY_D_EXECUTION_COMMANDS_v2_NOT_RUN.md)) will unblock the freeze.
+The freeze is therefore **VALID for independent external review**. Family-D execution remains forbidden until an independent reviewer (NOT the original Phase-2 agent) signs off on the frozen artifacts; the sign-off file path is `docs/research/phase2/FAMILY_D_V2_INDEPENDENT_REVIEW_SIGNOFF.md` (per Stage 0.3 of `FAMILY_D_EXECUTION_COMMANDS_v2_NOT_RUN.md`).

@@ -32,10 +32,28 @@ def test_no_eyecandies_in_experiment_outcome_artifacts():
             )
 
 
-def test_no_local_eyecandies_data():
-    """A local data/raw/eyecandies directory must not exist before the hash-only pass."""
+def test_local_eyecandies_data_is_hash_only_archive():
+    """If local Eyecandies data exists, it must be the hash-only archive pass
+    (Phase 2.2D): tar archives in _archives/ with a SHA256 file. NO extracted
+    sample images, NO computed metrics, NO trained model output."""
     p = ROOT / "data" / "raw" / "eyecandies"
-    assert not p.exists(), (
-        f"{p} exists — Eyecandies dataset appears to have been downloaded; "
-        f"this test must be revised in the Phase 2.2D hash-only pass"
+    if not p.exists():
+        return  # acceptable pre-Phase-2.2D state
+    archives_dir = p / "_archives"
+    sha_file = ROOT / "experiments" / "phase2" / "family_d" / "eyecandies_archive_sha256.txt"
+    assert archives_dir.exists(), (
+        "data/raw/eyecandies/ exists but no _archives/ subdir — unexpected state"
     )
+    assert sha_file.exists(), (
+        "_archives/ exists but eyecandies_archive_sha256.txt missing — "
+        "hash-only pass must accompany any download"
+    )
+    # Forbidden: any extracted sample directory or anomaly-detection output.
+    for item in p.iterdir():
+        if item.name == "_archives" or item.name.startswith("."):
+            continue
+        # Allow nothing else for now (no extracted Eyecandies trees).
+        assert False, (
+            f"Unexpected entry in data/raw/eyecandies/: {item.name}. "
+            "Phase 2.2D is a hash-only pass; no extraction or model output."
+        )
