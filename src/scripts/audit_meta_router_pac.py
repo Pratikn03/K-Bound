@@ -119,7 +119,9 @@ def main() -> None:
             f"slack@delta={args.delta:.2f}={row['slack']:.3f}"
         )
     args.output.parent.mkdir(parents=True, exist_ok=True)
-    args.output.write_text(json.dumps({"rows": rows, "B": args.B, "D": args.D, "L": args.L, "delta": args.delta}, indent=2))
+    args.output.write_text(
+        json.dumps({"rows": rows, "B": args.B, "D": args.D, "L": args.L, "delta": args.delta}, indent=2)
+    )
     print(f"\nWrote {args.output}")
 
 

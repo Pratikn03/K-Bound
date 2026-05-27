@@ -6,18 +6,21 @@ import numpy as np
 import pytest
 
 from uais.fusion.attention.baselines import (
-    ConfidenceWeightedMean, RandomForestFusion,
+    ConfidenceWeightedMean,
+    RandomForestFusion,
 )
 from uais.fusion.attention.cv_evaluator import (
-    BaselineSpec, CVConfig,
+    BaselineSpec,
+    CVConfig,
     cross_validate_baselines,
     pairwise_delong_from_predictions,
 )
 from uais.fusion.attention.unsupervised_baselines import (
-    BGMMAnomalyDetector, BGMMConfig,
-    IForestConfig, IsolationForestDetector,
+    BGMMAnomalyDetector,
+    BGMMConfig,
+    IForestConfig,
+    IsolationForestDetector,
 )
-
 
 N, D, F = 200, 3, 4
 
@@ -27,9 +30,7 @@ def _make_data(seed: int = 0, pos_rate: float = 0.3):
     labels = (rng.random(N) < pos_rate).astype(int)
     features = rng.random((N, D, F)).astype(np.float32)
     for d in range(D):
-        features[labels == 1, d, 0] = np.clip(
-            features[labels == 1, d, 0] + 0.45, 0, 1
-        )
+        features[labels == 1, d, 0] = np.clip(features[labels == 1, d, 0] + 0.45, 0, 1)
     masks = (rng.random((N, D)) < 0.1).astype(bool)
     return features, masks, labels
 
@@ -39,24 +40,26 @@ def _basic_specs(seed: int = 42):
         BaselineSpec(
             name="confidence_weighted_mean",
             make=lambda: ConfidenceWeightedMean(),
-            needs_3d=True, is_unsupervised=False,
+            needs_3d=True,
+            is_unsupervised=False,
         ),
         BaselineSpec(
             name="random_forest",
             make=lambda: RandomForestFusion(random_seed=seed),
-            needs_3d=True, is_unsupervised=False,
+            needs_3d=True,
+            is_unsupervised=False,
         ),
         BaselineSpec(
             name="bgmm",
-            make=lambda: BGMMAnomalyDetector(BGMMConfig(n_components=5, max_iter=50,
-                                                       random_state=seed)),
-            needs_3d=True, is_unsupervised=True,
+            make=lambda: BGMMAnomalyDetector(BGMMConfig(n_components=5, max_iter=50, random_state=seed)),
+            needs_3d=True,
+            is_unsupervised=True,
         ),
         BaselineSpec(
             name="isolation_forest",
-            make=lambda: IsolationForestDetector(IForestConfig(n_estimators=50,
-                                                              random_state=seed)),
-            needs_3d=True, is_unsupervised=True,
+            make=lambda: IsolationForestDetector(IForestConfig(n_estimators=50, random_state=seed)),
+            needs_3d=True,
+            is_unsupervised=True,
         ),
     ]
 
@@ -84,7 +87,7 @@ def test_cv_per_fold_metrics_have_required_keys(cv_results):
 
 
 def test_cv_aggregate_has_mean_std_ci(cv_results):
-    for name, data in cv_results["per_baseline"].items():
+    for _name, data in cv_results["per_baseline"].items():
         agg = data["aggregate"]
         if "roc_auc" not in agg:
             continue
@@ -93,7 +96,7 @@ def test_cv_aggregate_has_mean_std_ci(cv_results):
 
 
 def test_cv_bootstrap_ci_present(cv_results):
-    for name, data in cv_results["per_baseline"].items():
+    for _name, data in cv_results["per_baseline"].items():
         if "bootstrap_ci" not in data:
             continue
         roc_ci = data["bootstrap_ci"].get("roc_auc")
@@ -117,7 +120,7 @@ def test_cv_test_oversampling_ok(cv_results):
 
 def test_cv_hyperparameters_recorded(cv_results):
     """Every baseline must record its hyperparameter dict for reproducibility."""
-    for name, data in cv_results["per_baseline"].items():
+    for _name, data in cv_results["per_baseline"].items():
         # Some may be empty dict for sklearn defaults, but key must exist
         assert "hyperparameters" in data
 

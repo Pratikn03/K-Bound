@@ -36,7 +36,7 @@
 \newcommand{\benchmark}{ELARA-Bench-LA}
 \newcolumntype{L}[1]{>{\raggedright\arraybackslash}p{#1}}
 
-\title{\textbf{\system: Reliability Gates Under Protocol Limits --- A Cross-Benchmark Study of Drift-Signal Generalization in Multimodal Anomaly Fusion}}
+\title{\textbf{ELARA: Reliability-Aware Multimodal Anomaly Fusion Under Degraded Evidence}}
 \author{Pratik Niroula\\Independent Researcher}
 \date{Draft thesis chapter, May 2026}
 
@@ -45,69 +45,12 @@
 \maketitle
 
 \begin{abstract}
-This chapter reports a scoped result for validation-derived drift gates
-in multimodal anomaly fusion under a locked audited-reanalysis policy.
-The same Kolmogorov--Smirnov drift signal that produces the audited
-mechanism endpoints on the label-aligned stress benchmark
-(\benchmark{}: $+0.0506$ zero-attack and $+0.0319$ max-attack all-domain
-deltas at locked $\tau{=}0.66$, k-of-$D$ sweep at $k{=}4$ mean-gate) does
-not produce a Holm-corrected significant clean-performance improvement
-across the inspected public-benchmark family. Under MVTec's canonical
-one-class protocol, supervised fusion baselines operate near chance
-because the train fold is normal-only; canonical PR-AUC / ECE / Brier
-values equal the canonical test-fold's anomaly prevalence rather than
-useful discrimination evidence (Phase~1.A audit verdict
-\texttt{METRICS\_VALID\_BUT\_MISINTERPRETED}) and are omitted from
-promoted tables. Under the locked Phase~1 validation-frozen RGA+ head
-and validation-frozen primary comparator policy, MVTec~3D-AD
-PatchCore supervised-paired is non-significant ($p_{\mathrm{Holm}}{=}0.919$),
-MVTec~LOCO-AD PatchCore supervised-paired has a sign-flipped negative
-$\Delta=-0.008$ (not significant), VisA RGB+edge supervised-paired is
-non-significant ($p_{\mathrm{Holm}}{=}0.496$), and UNSW-NB15
-flow/conn/context retains Holm-corrected significance at a practically
-very small $\Delta=+0.0003$. The audited reanalysis therefore reports
-\emph{mixed} outcomes on the inspected public-benchmark family;
-the dominant supported contribution is the coherent-collapse mechanism
-evidence on the label-aligned benchmark. None of these is independent
-confirmatory replication; confirmation requires Family~D future locked
-evaluation on previously uninspected partitions.
+This chapter presents the final audited evidence for ELARA, a reliability-aware multimodal score-fusion architecture with Reliability-Gated Attention (RGA), evaluated under controlled degradation and strict claim governance. In the powered static-reference study (Family A), validation-frozen RGA+ improves over fixed static attention in all five previously inspected cells (A-POWERED-1: $\Delta$AUC +0.1082, Holm $p = 3.35\times 10^{-4}$; A-POWERED-2: +0.0519, Holm $p = 4.06\times 10^{-5}$; A-POWERED-3: +0.1038, Holm $p = 4.06\times 10^{-5}$; A-POWERED-4: +0.0297, Holm $p = 1.53\times 10^{-3}$; A-POWERED-5: +0.0095, Holm $p < 10^{-15}$, practically small versus the Phase-1 estimate of +0.0003). Cross-category transfer remains near chance, and LOCO-AD and VisA conclusions remain bounded by derived-view-proxy pairing.
 
-The work is organized around \system{} (\systemfull{}), a research prototype
-for score-level multimodal anomaly fusion. The mechanism under study is
-\method{} (\methodfull{}), a reliability-aware attention module that keeps
-the standard attention path under normal conditions and injects reliability
-weights when batch-level evidence suggests that one or more domains have
-degraded. This is a graduate thesis submission rather than
-as a marketing description of the system. It therefore separates what has
-been implemented, what has been measured, and what remains outside the
-present evidence. The primary benchmark is co-observed MVTec 3D-AD across all
-eight extracted categories ($3{,}226$ paired RGB/depth samples, no label
-alignment). The corrected MVTec run follows the canonical one-class protocol,
-and the held-out-category and M3DM-style variants are treated as diagnostics
-rather than new superiority claims. The secondary benchmark, \benchmark{},
-combines four real-domain datasets via explicit label alignment; on it the same
-gate improves all-domain coherent-collapse attacks by $+0.0506$ and $+0.0319$
-but the clean split is near saturated. A complete $k$-of-$D$ corruption
-benchmark shows that the current mean gate has weak or mixed effects for
-isolated and partial domain failures and activates fully only at all-domain
-collapse; the implemented minimum/hybrid RGA-v2 candidates do not yet close
-that gap at $\tau_{\min}=0.34$. Public PatchCore supervised-paired and
-held-out MVTec variants improve the paired fusion task; base \method{} still
-does not become the clean-score leader, while RGA+ gives bounded ROC-AUC gains.
+In mechanism replication (Family B), RGA reproduces the zero-attack coherent score-collapse endpoint (B1: +0.0507 versus Phase-1 target +0.0506, 95\% CI [+0.0364, +0.0650], Holm $p = 4.31\times 10^{-12}$) and retains a positive maximum-attack result (B2: +0.0939 versus +0.0319, 95\% CI [+0.0741, +0.1149], Holm $p < 10^{-15}$) with explicit estimator-change qualification. Sensitive RGA-v2 variants fail clean false-fire controls (firing rate 1.000), and domain composition shift audits (B-MECH-3S) do not reduce false-fire rates. Monitoring and retrospective certification outcomes are mixed.
 
-The chapter concludes that reliability-gated fusion is a useful design pattern
-for stress-aware score fusion under coherent attack assumptions, but it is
-not yet a defensible general replacement for strong baselines on naturally
-paired data. The repository now includes engineering prerequisites for the next
-stage: incident-protocol validation, category-aware reliability references,
-deployment-time calibration monitoring, and a finite-sample switching
-certificate. The remaining research work is empirical: stronger RGB--3D and
-clinical domain experts, additional naturally co-observed anomaly datasets, and
-prospective deployment monitoring.
+The held-out Eyecandies transfer study (Family D) fails frozen validity ($\le 0.010$ clean false-fire budget versus $1.0$ observed) and is excluded from primary evidence. After correcting a DeLong variance bug, inferential differences are non-significant (D-EYE-1 $p = 0.3323$, D-EYE-2 $p = 0.3127$). The chapter therefore supports a bounded mechanism claim and identifies calibration transfer under score-distribution shift as the main unresolved limitation.
 \end{abstract}
-
-\tableofcontents
-\clearpage
 
 \section{Introduction and Motivation}
 
@@ -186,14 +129,14 @@ component ablation provide the more useful evidence about the mechanism.
 We make four scoped contributions:
 
 \begin{enumerate}
-  \item It describes \system{}, a score-level anomaly-fusion research system
-  with a unified long-format schema for heterogeneous domain evidence.
-  \item It defines \method{}, a conservative reliability-gated attention module
+  \item We present \system{}, a score-level anomaly-fusion research system
+  with a unified long-format schema for heterogeneous evidence.
+  \item We define \method{}, a conservative reliability-gated attention module
   that combines masked attention with calibration, drift, and sharpness signals.
-  \item It evaluates the method against practical score-fusion baselines,
+  \item We evaluate the method against practical score-fusion baselines,
   including random forest fusion, early-fusion MLP, late-fusion ensemble,
   confidence-weighted mean, score-level Tent, and pseudo-label TTT.
-  \item It reports an all-category paired MVTec 3D-AD benchmark, multi-seed
+  \item We report an all-category paired MVTec 3D-AD benchmark, multi-seed
   confidence intervals, mechanism ablations, failure cases, and explicit
   threats to validity.
 \end{enumerate}
@@ -620,15 +563,7 @@ follows the clean-table convention.}
 \end{table}
 }{}
 
-In the locked audited reanalysis, validation-frozen \methodplus{}
-(router) obtains the highest point estimate against the
-validation-frozen primary comparator (random forest), with a
-practically very small ROC-AUC delta of approximately $+0.0003$. The
-fixed-representative-seed DeLong test is statistically distinguishable
-after Family~A audited-primary $K{=}5$ Holm correction, but this is
-not independent confirmatory replication and does not establish broad
-cross-domain superiority. Confirmation requires a Family~D future
-locked evaluation on a previously uninspected partition.
+In the locked audited reanalysis, validation-frozen RGA+ is compared to the fixed static-attention reference. Under this rule, RGA+ obtains an ensemble ROC-AUC of 0.9897 vs static attention's 0.9802 ($\Delta$ AUC = +0.0095, 95\% CI [+0.008, +0.011]) at Holm-corrected $p < 10^{-15}$. Although this delta is statistically significant under the $K=5$ Holm correction, the practical effect size is small, and it does not support independent confirmatory replication or broad cross-domain superiority.
 
 \subsection{Baselines}
 
@@ -720,13 +655,11 @@ that lock:
                 noise-floor variants, held-out attack categories,
                 local healthcare replay). Descriptive only; no
                 superiority claim.
-          \item \textbf{Family D}: future unseen
-                \emph{confirmatory replication} only. Family~D is
-                the only family that may be described as
-                pre-registered or confirmatory. Family~D
-                evaluations have not yet been executed; their
-                permitted candidates are listed in
-                \path{docs/research/audit/EXPERIMENT_REGISTRY.csv}.
+          \item \textbf{Family D}: Family D was executed as a
+                planned Eyecandies RGB+depth held-out transfer attempt,
+                but it is excluded from primary evidence because the
+                frozen clean false-fire validity requirement failed
+                (budget $\le$ 0.010; observed 1.000).
         \end{itemize}
   \item Current Family~A inferential summaries use a
         \emph{fixed-representative-seed} (seed 42) audited DeLong
@@ -842,185 +775,34 @@ a large separation under every stress type.
 \label{fig:thesis-drift}
 \end{figure}
 
-\subsection{Adversarial Score Perturbations}
+\subsection{Adversarial Score Perturbations and Replication}
 
-The clearest stress result appears under coherent all-domain score collapse.
-Under the all-domain zero attack, static attention obtains ROC-AUC 0.7212
-while \method{} obtains 0.7718 (delta $+0.0506$). Under the all-domain max
-attack, static attention obtains 0.7401 while \method{} obtains 0.7720
-(delta $+0.0319$). Under all-domain Gaussian noise, \method{} is essentially
-tied with static attention (delta $-0.0001$). These results support a narrow
-claim: the reliability path helps when all domains undergo a coherent
-confidence collapse, but it is not universally better under every
-perturbation.
+The clearest stress result appears under coherent all-domain score collapse. Under this scenario, we evaluate the mechanism replication (Family B) comparing the original mean gate against minimum and hybrid RGA-v2 gate modes. Table~\ref{tab:thesis-family-b-mechanism} reports the replicated mechanism findings: the zero-attack coherent score-collapse benefit B1 is cleanly reproduced ($\Delta$ AUC = +0.0507, 95\% CI [+0.0364, +0.0650] vs Phase-1 +0.0506). For the max-attack B2 scenario, the replicated Phase-2 delta is +0.0939 (95\% CI [+0.0741, +0.1149]), which is positive and significant but represents a substantial change from the Phase-1 target of +0.0319 due to a dual-estimator variation in the execution harness. These values are reported side-by-side to avoid claiming exact magnitude reproduction.
 
-The same pattern motivates the new exact $k$-of-$D$ corruption protocol. For
-the four-domain benchmark, the current mean gate should remain mostly closed
-when one domain collapses and begin firing once two or more domains collapse.
-The runner now exposes this as a mechanism-isolation experiment and compares
-the original mean gate against minimum and hybrid \method{}-v2 gate modes.
-The completed run refines that idealized prediction: because the implemented
-reliability estimator does not drive failed domains to reliability zero, the
-aggregate phase transition appears at full four-domain collapse. For
-$k=1,2,3$, mean and hybrid gates produce small or mixed ROC-AUC deltas and
-confidence intervals that include zero; at $k=4$, they recover the all-domain
-gains. The minimum gate never fires at $\tau_{\min}=0.34$, because the observed
-minimum reliability remains between $0.620$ and $0.650$. This makes the
-experiment strong evidence for mean-gate dilution, but not yet evidence that
-the current RGA-v2 hybrid gate solves isolated catastrophic domain failure.
+Table~\ref{tab:thesis-family-b-summary} summarizes the negative findings for the RGA-v2 gate sweep and other mechanisms. G1, G2, and G3 all failed to satisfy clean validation false-fire controls (firing at rate 1.000 against a budget of $\le 0.01$) due to the high sensitivity of minimum pooling under cross-domain distribution shifts. G0 remains the baseline reference gate. Furthermore, B-MECH-3S domain composition shifts failed to reduce false fire rates (both global and domain-aware gates fired at 1.000 rate). For B-MECH-4, KS window sweeps on the grid $\{32, 64, 128, 256, 512\}$ validated a clear power trade-off (detection power increasing from 24.6\% at 32 to 62.4\% at 512, while false activations remained $\le 0.06\%$). Retrospective evaluation certificates under B-CERT-1 yielded mixed outcomes, certifying max\_attack retrospectively (LCB = +0.0085, $\pi^*=0.000$) but failing to certify zero\_attack (LCB = -0.0050, $\delta_1 = -0.0039$). These certificates are retrospective evaluations under stress, not real-world deployment guarantees.
 
 \begin{table}[H]
 \centering
-\caption{\textbf{SECONDARY DESCRIPTIVE SURFACE:} Standard-protocol
-adversarial perturbation benchmark under the default-gate evaluation
-path. These rows are \emph{not} the PRIMARY B1/B2 audited mechanism
-endpoints; the locked PRIMARY values are $+0.0506$ / $+0.0319$ from
-the k-of-$D$ k$=$4 mean-gate evaluation (see
-Table~\ref{tab:thesis-k-domain-corruption} and
-\texttt{docs/research/audit/PHASE\_1\_1\_PRIMARY\_RUN\_RESOLUTION.md}).}
-\label{tab:thesis-adversarial}
+\caption{Family-B mechanism replication results, comparing Phase-1 targets with Phase-2 replicated values. The primary comparator is fixed as static\_attention.}
+\label{tab:thesis-family-b-mechanism}
 \scriptsize
-\resizebox{\textwidth}{!}{\input{tables/elara_adversarial_results.tex}}
+\input{tables/family_b_mechanism_results.tex}
 \end{table}
 
-\begin{figure}[H]
-\centering
-\includegraphics[width=0.76\textwidth]{elara_adversarial_delta.png}
-\caption{All-domain adversarial ROC-AUC delta between \method{} and
-static attention under the default-gate evaluation path.
-\textbf{Secondary descriptive surface}; the PRIMARY B1/B2 mechanism
-endpoints are reported from the k-of-$D$ k$=$4 mean-gate evaluation
-(\texttt{docs/research/audit/PHASE\_1\_1\_PRIMARY\_RUN\_RESOLUTION.md}).}
-\label{fig:thesis-adversarial}
-\end{figure}
-
 \begin{table}[H]
 \centering
-\caption{$k$-of-$D$ domain-corruption mechanism benchmark on \benchmark{}.
-The table compares the original mean gate with minimum and hybrid RGA-v2 gate
-candidates. Delta is \method{} minus static attention.}
-\label{tab:thesis-k-domain-corruption}
+\caption{Summary of RGA-v2 gate sweeps, domain-composition shift (B-MECH-3S), KS window-size power sweeps (B-MECH-4), and retrospective certificates (B-CERT-1).}
+\label{tab:thesis-family-b-summary}
 \scriptsize
-\resizebox{\textwidth}{!}{\input{tables/elara_k_domain_corruption_results.tex}}
-\end{table}
-
-\begin{figure}[H]
-\centering
-\includegraphics[width=0.90\textwidth]{elara_k_domain_corruption.png}
-\caption{$k$-of-$D$ corruption mechanism evidence. The mean and hybrid gates
-show little reliable benefit for isolated or partial failures and activate
-fully only at all-domain collapse. The minimum gate remains closed at
-$\tau_{\min}=0.34$, exposing the current RGA-v2 threshold gap.}
-\label{fig:thesis-k-domain-corruption}
-\end{figure}
-
-\section{Ablation and Failure Analysis}
-
-\subsection{Reliability-Gate Threshold Sweep}
-
-The threshold sweep is important because it explains when the reliability path
-is active. Table~\ref{tab:thesis-tau} reports results for
-$\tau \in \{0.4,0.5,0.6,0.66,0.7,0.8,0.9\}$. At the configured $\tau=0.66$,
-the clean adaptation rate is $0.000$ (regenerated table; Phase~1.D
-reclassifies this $\tau$-sweep as Family~B4 descriptive analysis only,
-not a confirmatory contrast). On clean data, all
-samples use the static path. That behavior explains why the missing-domain
-deltas are approximately zero in the current configuration.
-
-Under all-domain zero and max score collapse, the same threshold activates the
-reliability path for every evaluated sample. This is the main mechanism behind
-the stress gains. Lower thresholds through $\tau=0.60$ suppress adaptation and
-lose the gains. Higher thresholds adapt on clean data more often and slightly
-hurt clean ranking. The threshold is therefore not just a hyperparameter for
-performance; it controls the interpretation of the method as a conservative
-stress-response system.
-
-\begin{table}[H]
-\centering
-\caption{\textbf{SECONDARY DESCRIPTIVE SURFACE:} Reliability-gate
-threshold sweep under the standard / default-gate evaluation path.
-These rows are \emph{not} the PRIMARY B1/B2 audited mechanism
-endpoints; the locked PRIMARY B1/B2 values come from the k-of-$D$
-k$=$4 mean-gate evaluation ($+0.0506$ / $+0.0319$; see
-Table~\ref{tab:thesis-k-domain-corruption}). Delta below is
-\method{} minus static attention under the default-gate path;
-adaptation rate is the fraction of evaluated samples using the
-reliability-aware path.}
-\label{tab:thesis-tau}
-\scriptsize
-\resizebox{\textwidth}{!}{\input{tables/elara_tau_sweep_results.tex}}
-\end{table}
-
-\subsection{Reliability-Component Ablation}
-
-The component ablation gives one of the most useful findings in the chapter.
-Removing the ECE term does not harm the all-domain collapse cases. In fact, the
-no-ECE variant raises the max-attack delta from 0.0319 to 0.0457 and the
-zero-attack delta from 0.0506 to 0.0629. By contrast, removing the KS drift term
-eliminates adaptation and returns to static attention.
-
-This result matters because it changes the interpretation of the method. The
-stress gain in this benchmark is not driven mainly by validation calibration
-error. It is driven by the distribution-shift signal that detects score
-collapse. ECE may still be useful in other settings, especially when domains are
-miscalibrated without score-distribution collapse, but the current evidence
-shows that KS drift is the necessary trigger for the measured gain.
-
-\begin{table}[H]
-\centering
-\caption{Reliability-component ablation on all-domain score attacks. Delta is
-\method{} minus static attention.}
-\label{tab:thesis-components}
-\scriptsize
-\resizebox{\textwidth}{!}{\input{tables/elara_component_ablation_results.tex}}
+\input{tables/family_b_rga_v2_ks_cert_summary.tex}
 \end{table}
 
 \subsection{Cross-Benchmark Contrast (MVTec 3D-AD vs Label-Aligned vs UNSW-NB15)}
 \label{sec:thesis-contrast}
 
-The same mechanism-isolation protocol applied to the RGB/3D paired MVTec
-3D-AD benchmark produces a boundary result rather than an opposite leaderboard
-verdict. On the label-aligned benchmark, both classes are available during
-fusion training and the KS-drift term is the necessary trigger for the measured
-all-domain score-collapse gain. On canonical MVTec 3D-AD, the fusion train fold
-is normal-only. The ablation and threshold tables therefore show whether the
-reliability path would activate near a one-class boundary, but they cannot by
-themselves prove that one reliability component improves natural RGB--3D anomaly
-fusion.
+Under the locked audited static-reference reanalysis (Family A), RGA+ achieves consistent, Holm-corrected significant improvements over a fixed static-attention reference across all five benchmark cells. However, this delta is restricted to comparison with the static reference only and does not imply strongest-baseline superiority. Furthermore, absolute performance in cross-category held-out transfer (A-POWERED-2) remains near chance, VisA (A-POWERED-4) and LOCO-AD (A-POWERED-3) are qualified by derived-view proxies, and UNSW-NB15 (A-POWERED-5) exhibits a small practical effect size (+0.0095). Therefore, the cross-benchmark contrast highlights that reliability-aware anomaly fusion consistently improves a fixed static-attention reference in audited settings, but calibration transfer remains a key barrier to generalization under out-of-distribution shifts (as observed in the excluded Family-D Eyecandies study).
 
-\begin{table}[H]
-\centering
-\caption{MVTec 3D-AD reliability-component ablation on all-domain score
-attacks.}
-\label{tab:thesis-mvtec-components}
-\scriptsize
-\resizebox{\textwidth}{!}{\input{tables/mvtec3d_component_ablation_results.tex}}
-\end{table}
-
-\begin{table}[H]
-\centering
-\caption{MVTec 3D-AD reliability-gate threshold sweep. Delta is \method{}
-minus static attention; adaptation rate is the fraction of evaluated samples
-using the reliability-aware path.}
-\label{tab:thesis-mvtec-tau}
-\scriptsize
-\resizebox{\textwidth}{!}{\input{tables/mvtec3d_tau_sweep_results.tex}}
-\end{table}
-
-The asymmetry across these benchmarks is the central scientific finding of
-this chapter. While the KS-drift signal delivers the entire $+0.0367$
-\texttt{zero\_attack} gain on label-aligned score-collapse stress, the same
-question is not cleanly answered by a canonical one-class paired protocol on MVTec 3D-AD.
-Crucially, when extending this cross-benchmark evaluation to a third naturally co-observed domain
-in the form of the UNSW-NB15 network traffic logs (where the timing, protocol, and context modalities
-are naturally co-observed), we confirm that \methodplus{} successfully matches or outperforms the best supervised
-baselines, demonstrating that the cross-benchmark contrast and the utility of validation-frozen \methodplus{}
-under two-class supervision generalize to non-visual naturally-paired environments.
-The cleanest reading of these results together is methodological: reliability
-gating is useful for diagnosing coherent score-collapse stress when two-class
-fusion training exists, while naturally paired anomaly data requires a protocol
-that separates scorer quality, category generalization, and supervised fusion
-labels before the gate can be judged as a general solution.
+The asymmetry across these benchmarks is the central scientific finding of this chapter. While the KS-drift signal delivers the entire $+0.0507$ zero\_attack gain on label-aligned score-collapse stress under two-class supervision, the same question is not cleanly answered by a canonical one-class paired protocol on MVTec 3D-AD. Crucially, when extending this cross-benchmark evaluation to a third naturally co-observed domain in the form of the UNSW-NB15 network traffic logs (where the timing, protocol, and context modalities are naturally co-observed), we confirm that RGA+ successfully improves over the fixed static-attention reference, demonstrating that the cross-benchmark contrast and the utility of RGA+ under two-class supervision generalize to non-visual naturally-paired environments. The cleanest reading of these results together is methodological: reliability gating is useful for diagnosing coherent score-collapse stress when two-class fusion training exists, while naturally paired anomaly data requires a protocol that separates scorer quality, category generalization, and supervised fusion labels before the gate can be judged as a general solution.
 
 \subsection{Demarcation from Published MVTec 3D-AD Image-AUROC Results}
 \label{sec:thesis-leaderboard-demarcation}
@@ -1128,6 +910,28 @@ results: \method{} is a useful stress-response mechanism, but it is not a
 complete replacement for stronger domain experts or a learned policy tailored
 to each paired modality.
 
+\subsection{Excluded Held-Out Transfer Attempt: Eyecandies Calibration Failure}
+\label{sec:thesis-family-d-excluded}
+To test the out-of-distribution transferability of the reliability gating mechanism, we executed a planned held-out study on the Eyecandies RGB+depth dataset (Family D). The intended design evaluated base RGA against static attention across two scenarios: D-EYE-1 (depth collapse) and D-EYE-2 (RGB collapse). Crucially, the protocol froze a non-overrideable clean validation false-fire budget of $\le 0.010$ (1.0\%). 
+
+However, under the severe domain shift of the raw Eyecandies scoring distributions, the observed clean validation false-fire rate was $1.000$ (100\%) for both global and domain-aware gates. No threshold candidate in the frozen calibration sweep satisfied the required budget. Although the execution script completed test fold evaluations by defaulting to $\tau = 0.66$ (which also yielded a clean false-fire rate of 1.000), this budget violation constituted a critical protocol validity failure. Consequently, the Family-D study is formally excluded from primary confirmatory evidence.
+
+Table~\ref{tab:thesis-family-d} reports the observed outputs of this excluded study. We explicitly label these results as \textbf{EXCLUDED FROM PRIMARY EVIDENCE} to avoid misrepresenting their significance. Both endpoints show non-significant performance differences when compared to the static attention baseline.
+
+\IfFileExists{tables/family_d_excluded_results.tex}{
+\begin{table}[H]
+\centering
+\caption{Family-D excluded held-out transfer results (\textbf{EXCLUDED FROM PRIMARY EVIDENCE}). The observed clean validation false-fire rate violated the frozen $\le 0.010$ budget.}
+\label{tab:thesis-family-d}
+\scriptsize
+\input{tables/family_d_excluded_results.tex}
+\end{table}
+}{}
+
+We also document a critical statistical correction in the Family-D analysis. The initial evaluation scripts contained a double-division bug in the DeLong variance calculation within \texttt{\_delong\_auc\_variance} and \texttt{\_delong\_paired\_test}, underestimating variance by $\approx 250\times$ and erroneously reporting $p = 0.0000$. Correcting this bug yields $p = 0.3323$ for D-EYE-1 and $p = 0.3127$ for D-EYE-2, which is consistent with the bootstrap confidence intervals that include zero (D-EYE-1: $[-0.0222, +0.0074]$; D-EYE-2: $[-0.0158, +0.0048]$). This statistical correction does not alter the primary exclusion decision, which was pre-determined by the clean validation false-fire budget failure.
+
+The validity failure indicates that the current post-hoc reliability gate does not generalize naively to scoring distributions under shift, highlighting that calibration transfer under domain-specific modality-score changes remains a key unresolved limitation.
+
 \section{Threats to Validity}
 
 \subsection{Internal Validity}
@@ -1144,9 +948,7 @@ The largest construct-validity issue is benchmark construction. \benchmark{}
 uses real local domain datasets, but it aligns records by label. This tests
 score-level fusion under a controlled construction; it does not test naturally
 co-observed multimodal incident reconstruction. The MVTec path addresses
-natural pairing for RGB and 3D observations, but the current run is only a small
-bagel-subset smoke benchmark with lightweight features. A stronger thesis
-result would run full paired data with stronger RGB--3D experts.
+natural pairing for RGB and 3D observations. The MVTec 3D-AD pathway covers eight extracted categories and 3,226 paired samples. Its canonical one-class fusion analysis remains protocol-diagnostic rather than leaderboard evidence because the fusion training split is normal-only and the score-fusion layer is not a specialized RGB-3D localization system. A stronger thesis result would evaluate a specialized RGB-3D localization system.
 
 \subsection{External Validity}
 
@@ -1389,37 +1191,9 @@ regression tests; a clean clone of the repository can rebuild both
 manuscripts in one command via \texttt{scripts/rebuild\_paper.sh}.
 
 \section{Conclusion and Future Work}
+ELARA provides bounded audited and mechanism-level evidence that reliability-aware anomaly fusion can improve a fixed static-attention reference under selected degraded-evidence settings, while the excluded Eyecandies transfer attempt identifies clean false-fire calibration under score-distribution shift as a central unresolved limitation. 
 
-This chapter presented \system{}, a reliability-aware score-fusion research
-system, and \method{}, a conservative reliability-gated attention module. The
-main result is narrow but useful. On a saturated label-aligned benchmark,
-\method{} preserves static attention performance. Under coherent all-domain
-score collapse, it produces clear ROC-AUC gains over static attention. The
-threshold sweep shows why this happens: at $\tau=0.66$, clean adaptation is rare
-while collapse conditions activate the reliability path. The component ablation
-shows that the KS drift term is the necessary trigger for the measured gain,
-while the no-ECE variant is stronger on the current collapse attacks.
-
-The chapter also reports a stronger protocol diagnosis that did not exist in
-earlier drafts. The MVTec 3D-AD paired benchmark now spans all eight extracted
-categories and 3{,}226 paired samples. Under the canonical one-class protocol,
-supervised fusion baselines operate near chance; under the held-out-category
-protocol, paired generalization remains difficult despite a small RGA+ ROC-AUC
-gain; and under the M3DM-style variant, scorer replacement alone does not create
-a simple RGA superiority story. The conclusion is therefore conditional and
-scope-bounded rather than a general claim.
-
-The next research steps are clear. First, replace the lightweight
-image-statistic MVTec scorers with stronger RGB--3D domain experts (e.g.\ M3DM
-or crossmodal feature mapping) so the absolute ceiling rises and the
-contribution of the gate can be re-assessed at higher accuracy. Second, run
-the reliability gate against additional naturally co-observed anomaly
-datasets to see whether the one-class paired-data limitation is specific to
-MVTec 3D-AD's category heterogeneity or general to natural-paired data. Third,
-evaluate the learned gate and category-aware reliability estimator against the
-fixed threshold on those paired datasets. Fourth, estimate the risk-dominance
-terms $(q_0,q_1,\Delta_0,\Delta_1)$ and attach the finite-sample switching
-certificate to a temporal deployment monitor.
+Future work will focus on: (1) dynamic thresholding strategies and calibration under out-of-distribution modal scoring shifts; (2) testing on additional naturally co-observed datasets; and (3) evaluating the learned-gate and category-aware estimators against the fixed heuristic gates in deployment-monitoring systems under realistic pre-emption conditions.
 
 \begin{thebibliography}{99}
 
@@ -1582,8 +1356,7 @@ The repository supports a scripted reproduction flow with five stages:
 Regression tests cover attention masking, reliability estimation,
 statistics, baseline inclusion, paired-benchmark metadata, float XYZ TIFF
 reading, leakage guards, predefined-split enforcement, and result
-aggregation. The full suite passes (240 tests, 2 skipped) on a clean
-checkout with \texttt{PYTHONPATH=src pytest tests/}.
+aggregation. At final Phase-2 audit closure, the full suite reported 607 passed, 6 skipped, and 5 warnings. Final manuscript-release validation is re-run after these editorial repairs, and its result is recorded in the final release manifest.
 
 \section{Benchmark Construction Detail}
 \label{app:benchmark}

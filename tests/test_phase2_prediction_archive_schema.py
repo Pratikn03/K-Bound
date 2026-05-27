@@ -11,8 +11,8 @@ import pytest
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 from elara.evaluation.prediction_archive import (  # noqa: E402
-    PREDICTION_ARCHIVE_SCHEMA,
     INDEX_COLUMNS,
+    PREDICTION_ARCHIVE_SCHEMA,
     PredictionArchive,
 )
 

@@ -9,7 +9,6 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Dict, Optional, Tuple
 
 import numpy as np
 import tensorflow as tf
@@ -34,7 +33,7 @@ class VisionAEConfig:
 def _build_autoencoder(image_size: int, latent_dim: int, learning_rate: float) -> tf.keras.Model:
     """Symmetric conv-encoder → dense bottleneck → conv-decoder."""
     n_strides = 3
-    bottleneck_spatial = image_size // (2 ** n_strides)  # spatial dim after encoding
+    bottleneck_spatial = image_size // (2**n_strides)  # spatial dim after encoding
     bottleneck_channels = 128
 
     inputs = tf.keras.layers.Input(shape=(image_size, image_size, 3))
@@ -113,7 +112,7 @@ def train_autoencoder_vision(
     learning_rate: float = 1e-3,
     seed: int = 42,
     **_: object,
-) -> Dict[str, float]:
+) -> dict[str, float]:
     """Train a convolutional autoencoder and return reconstruction-based anomaly metrics.
 
     All images in data_dir are used for unsupervised training. Anomaly threshold
@@ -136,19 +135,15 @@ def train_autoencoder_vision(
     if not root.exists():
         raise FileNotFoundError(f"Vision data directory not found: {root}")
 
-    load_kwargs = dict(
-        directory=root,
-        image_size=(cfg.image_size, cfg.image_size),
-        batch_size=cfg.batch_size,
-        validation_split=cfg.validation_split,
-        seed=cfg.seed,
-    )
-    train_ds = tf.keras.preprocessing.image_dataset_from_directory(
-        subset="training", **load_kwargs
-    )
-    val_ds = tf.keras.preprocessing.image_dataset_from_directory(
-        subset="validation", **load_kwargs
-    )
+    load_kwargs = {
+        "directory": root,
+        "image_size": (cfg.image_size, cfg.image_size),
+        "batch_size": cfg.batch_size,
+        "validation_split": cfg.validation_split,
+        "seed": cfg.seed,
+    }
+    train_ds = tf.keras.preprocessing.image_dataset_from_directory(subset="training", **load_kwargs)
+    val_ds = tf.keras.preprocessing.image_dataset_from_directory(subset="validation", **load_kwargs)
 
     # Autoencoder targets are the inputs themselves
     ae_train = train_ds.map(lambda x, _: (x, x), num_parallel_calls=tf.data.AUTOTUNE).prefetch(tf.data.AUTOTUNE)

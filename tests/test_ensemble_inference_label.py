@@ -26,13 +26,13 @@ def test_inference_rows_carry_explicit_analysis_label(rows):
     for r in rows:
         label = r.get("analysis_label", "")
         if r["analysis_status"] == "audited primary reanalysis":
-            assert label and ("audited" in label.lower() or "ensemble" in label.lower() or "representative" in label.lower()), (
-                f"cell {r['cell_id']} analysis_label={label!r} must contain audited/ensemble/representative wording."
-            )
+            assert label and (
+                "audited" in label.lower() or "ensemble" in label.lower() or "representative" in label.lower()
+            ), f"cell {r['cell_id']} analysis_label={label!r} must contain audited/ensemble/representative wording."
         elif r["analysis_status"] in {"exploratory", "protocol-diagnostic"}:
-            assert label and "descriptive" in label.lower(), (
-                f"cell {r['cell_id']} analysis_label={label!r} must contain 'descriptive' wording."
-            )
+            assert (
+                label and "descriptive" in label.lower()
+            ), f"cell {r['cell_id']} analysis_label={label!r} must contain 'descriptive' wording."
 
 
 def test_paper_does_not_imply_single_model_from_ensemble():
@@ -50,6 +50,5 @@ def test_paper_does_not_imply_single_model_from_ensemble():
     for pat in forbidden:
         m = pat.search(text)
         assert m is None, (
-            f"paper contains forbidden single-model superiority phrasing: "
-            f"{text[max(0,m.start()-40):m.end()+40]!r}"
+            f"paper contains forbidden single-model superiority phrasing: " f"{text[max(0,m.start()-40):m.end()+40]!r}"
         )

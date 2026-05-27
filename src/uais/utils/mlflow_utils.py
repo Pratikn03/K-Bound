@@ -3,10 +3,10 @@
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Dict
 
 try:
     import mlflow
+
     _MLFLOW_AVAILABLE = True
 except ImportError:
     mlflow = None  # type: ignore[assignment]
@@ -16,7 +16,7 @@ import yaml
 from uais.utils.paths import PROJECT_ROOT
 
 
-def load_mlflow_settings(config_path: str | Path | None = None) -> Dict[str, str]:
+def load_mlflow_settings(config_path: str | Path | None = None) -> dict[str, str]:
     """Load tracking URI and experiment name from YAML."""
     path = Path(config_path) if config_path else PROJECT_ROOT / "mlflow_config.yaml"
     if not path.exists():
@@ -47,7 +47,7 @@ def setup_mlflow(experiment_name: str = "UAISV_Experiments", tracking_uri: str |
         print(f"[warn] MLflow tracking at {uri} failed ({exc}); using local file store {local_uri}")
 
 
-def log_run(params: Dict[str, float] | None, metrics: Dict[str, float]) -> None:
+def log_run(params: dict[str, float] | None, metrics: dict[str, float]) -> None:
     """Log parameters and metrics to MLflow inside a single run."""
     if not _MLFLOW_AVAILABLE:
         return

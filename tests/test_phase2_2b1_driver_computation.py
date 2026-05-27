@@ -6,12 +6,10 @@ All tests use only synthetic data — no real dataset access.
 
 from __future__ import annotations
 
-import json
 import sys
 from pathlib import Path
 
 import numpy as np
-import pytest
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "src"))
@@ -22,6 +20,7 @@ sys.path.insert(0, str(ROOT))
 
 def _gate_sweep_module():
     import importlib.util
+
     spec = importlib.util.spec_from_file_location(
         "run_phase2_rga_v2_gate_sweep",
         ROOT / "src" / "scripts" / "run_phase2_rga_v2_gate_sweep.py",
@@ -33,6 +32,7 @@ def _gate_sweep_module():
 
 def _mixture_shift_module():
     import importlib.util
+
     spec = importlib.util.spec_from_file_location(
         "run_phase2_mixture_shift",
         ROOT / "src" / "scripts" / "run_phase2_mixture_shift.py",
@@ -44,6 +44,7 @@ def _mixture_shift_module():
 
 def _ks_sweep_module():
     import importlib.util
+
     spec = importlib.util.spec_from_file_location(
         "run_phase2_ks_power_sweep",
         ROOT / "src" / "scripts" / "run_phase2_ks_power_sweep.py",
@@ -72,6 +73,7 @@ def _make_synthetic_features(n=60, n_domains=4, n_features=10, seed=0):
 def _make_fitted_estimator(features, masks, labels, score_idx=0, domain_order=None):
     """Return a fitted ReliabilityEstimator on the provided data."""
     from uais.fusion.attention.reliability_estimator import ReliabilityEstimator
+
     if domain_order is None:
         domain_order = [f"d{i}" for i in range(features.shape[1])]
     est = ReliabilityEstimator(
@@ -103,20 +105,20 @@ def test_b_mech_2_produces_result_rows_from_synthetic_fixture():
         else:
             selected_tau = None
 
-        gate_fired, mean_rel, min_rel = mod._compute_gate_decision(
-            estimator, features, masks, gate_id, selected_tau
-        )
+        gate_fired, mean_rel, min_rel = mod._compute_gate_decision(estimator, features, masks, gate_id, selected_tau)
         assert gate_fired.shape == (60,), f"{gate_id}: wrong shape"
         assert gate_fired.dtype == bool, f"{gate_id}: wrong dtype"
 
-        static_auc = mod._safe_auc(labels, np.random.default_rng(0).random(60))
-        result_rows.append({
-            "gate_id": gate_id,
-            "delta_auc": 0.01,
-            "clean_activation_rate": float(gate_fired.mean()),
-            "mean_reliability": mean_rel,
-            "min_reliability": min_rel,
-        })
+        mod._safe_auc(labels, np.random.default_rng(0).random(60))
+        result_rows.append(
+            {
+                "gate_id": gate_id,
+                "delta_auc": 0.01,
+                "clean_activation_rate": float(gate_fired.mean()),
+                "mean_reliability": mean_rel,
+                "min_reliability": min_rel,
+            }
+        )
 
     assert len(result_rows) == 4
     # All required fields present
@@ -171,9 +173,14 @@ def test_b_mech_3s_produces_domain_shift_rows_from_synthetic():
 def test_b_mech_4_window_sizes_are_locked():
     """KS_WINDOW_GRID must be exactly (32, 64, 128, 256, 512)."""
     from elara.family_b.ks_window import KS_WINDOW_GRID
-    assert KS_WINDOW_GRID == (32, 64, 128, 256, 512), (
-        f"KS_WINDOW_GRID={KS_WINDOW_GRID!r}; expected (32, 64, 128, 256, 512)"
-    )
+
+    assert KS_WINDOW_GRID == (
+        32,
+        64,
+        128,
+        256,
+        512,
+    ), f"KS_WINDOW_GRID={KS_WINDOW_GRID!r}; expected (32, 64, 128, 256, 512)"
 
 
 # ─── Test 4: PredictionArchive writes under tmp_path ─────────────────────────
@@ -282,14 +289,19 @@ def test_selection_uses_validation_tensors_only():
     domain_order = [f"d{i}" for i in range(4)]
     for gate_id in ("G0", "G1", "G2", "G3"):
         result = mod._select_tau_on_validation_only(
-            estimator, features, masks, labels,
-            gate_id=gate_id, contract=contract,
-            domain_order=domain_order, score_idx=0,
+            estimator,
+            features,
+            masks,
+            labels,
+            gate_id=gate_id,
+            contract=contract,
+            domain_order=domain_order,
+            score_idx=0,
             base_seed=42,
         )
-        assert result["selection_used_test_metrics"] is False, (
-            f"gate {gate_id}: selection_used_test_metrics must be False"
-        )
+        assert (
+            result["selection_used_test_metrics"] is False
+        ), f"gate {gate_id}: selection_used_test_metrics must be False"
         assert "gate_id" in result
         assert result["gate_id"] == gate_id
 
@@ -313,6 +325,5 @@ def test_no_family_d_access_in_drivers():
         src = driver.read_text()
         for pat in forbidden_patterns:
             assert pat not in src, (
-                f"{driver.name} contains forbidden pattern {pat!r} "
-                "(must not access Family-D paths)"
+                f"{driver.name} contains forbidden pattern {pat!r} " "(must not access Family-D paths)"
             )

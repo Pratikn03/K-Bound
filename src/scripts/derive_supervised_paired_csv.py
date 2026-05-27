@@ -29,7 +29,7 @@ def derive(
     # We operate at the sample_id level, then propagate the new split back to all
     # domain rows for that sample.
     samples = df.drop_duplicates("sample_id").reset_index(drop=True)
-    test_mask = (samples["split"] == "test")
+    test_mask = samples["split"] == "test"
     test_samples = samples[test_mask].copy()
     keep_samples = samples[~test_mask].copy()
 

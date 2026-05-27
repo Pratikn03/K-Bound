@@ -34,9 +34,8 @@ sys.path.insert(0, str(ROOT / "src"))
 sys.path.insert(0, str(ROOT))
 
 # Reuse the exact training path from the pilot driver — same code path.
-from scripts.run_phase2_powered_audited_pilot import run_one_seed  # noqa: E402
 from elara.evaluation.prediction_archive import PredictionArchive  # noqa: E402
-
+from scripts.run_phase2_powered_audited_pilot import run_one_seed  # noqa: E402
 
 REGISTRY_V2 = ROOT / "docs" / "research" / "phase2" / "PHASE_2_EXPERIMENT_REGISTRY_v2.csv"
 
@@ -45,16 +44,11 @@ REGISTRY_V2 = ROOT / "docs" / "research" / "phase2" / "PHASE_2_EXPERIMENT_REGIST
 # (benchmark, protocol) pair that has no config file, the driver
 # refuses to run.
 CONFIG_MAP = {
-    ("MVTec 3D-AD", "PatchCore supervised-paired"):
-        "configs/attention_mvtec3d_patchcore_supervised_paired.yaml",
-    ("MVTec 3D-AD", "PatchCore held-out category"):
-        "configs/attention_mvtec3d_patchcore_heldout.yaml",
-    ("MVTec LOCO-AD", "PatchCore supervised-paired"):
-        "configs/attention_mvtec_loco_patchcore_supervised_paired.yaml",
-    ("VisA", "RGB+edge supervised-paired"):
-        "configs/attention_visa_supervised_paired.yaml",
-    ("UNSW-NB15", "flow/conn/context"):
-        "configs/attention_unsw_paired.yaml",
+    ("MVTec 3D-AD", "PatchCore supervised-paired"): "configs/attention_mvtec3d_patchcore_supervised_paired.yaml",
+    ("MVTec 3D-AD", "PatchCore held-out category"): "configs/attention_mvtec3d_patchcore_heldout.yaml",
+    ("MVTec LOCO-AD", "PatchCore supervised-paired"): "configs/attention_mvtec_loco_patchcore_supervised_paired.yaml",
+    ("VisA", "RGB+edge supervised-paired"): "configs/attention_visa_supervised_paired.yaml",
+    ("UNSW-NB15", "flow/conn/context"): "configs/attention_unsw_paired.yaml",
 }
 
 
@@ -66,8 +60,7 @@ def _registry_row(experiment_id: str) -> dict[str, str]:
             if row["experiment_id"] == experiment_id:
                 return row
     raise SystemExit(
-        f"experiment_id {experiment_id!r} not present in v2 registry; "
-        "Family-A driver rejects unknown IDs."
+        f"experiment_id {experiment_id!r} not present in v2 registry; " "Family-A driver rejects unknown IDs."
     )
 
 
@@ -75,13 +68,10 @@ def _validate_cell(row: dict[str, str]) -> None:
     fam = row["analysis_family"]
     if fam != "A":
         raise SystemExit(
-            f"{row['experiment_id']} is family {fam!r}; this driver runs Family A only "
-            "(Family B/C/D IDs rejected)."
+            f"{row['experiment_id']} is family {fam!r}; this driver runs Family A only " "(Family B/C/D IDs rejected)."
         )
     if not row["experiment_id"].startswith("A-POWERED-"):
-        raise SystemExit(
-            f"{row['experiment_id']} is not an A-POWERED-* cell; rejected."
-        )
+        raise SystemExit(f"{row['experiment_id']} is not an A-POWERED-* cell; rejected.")
     if row["primary_comparator"] != "static_attention":
         raise SystemExit(
             f"{row['experiment_id']}: registry primary_comparator={row['primary_comparator']!r}; "
@@ -106,9 +96,7 @@ def _cell_dir_slug(experiment_id: str, benchmark: str, protocol: str) -> str:
     return f"{experiment_id}__{benchmark.replace(' ', '_')}__{protocol.replace(' ', '_')}"
 
 
-def _verify_not_overwriting_a1_historical(
-    experiment_id: str, seed_metrics_out: Path, selection_log_out: Path
-) -> None:
+def _verify_not_overwriting_a1_historical(experiment_id: str, seed_metrics_out: Path, selection_log_out: Path) -> None:
     """Hard protection: refuse to write to the historical A-POWERED-1
     K=10 secondary-pilot-audit CSVs unless we're being explicitly told
     to and the experiment IS A-POWERED-1."""
@@ -120,10 +108,7 @@ def _verify_not_overwriting_a1_historical(
             (selection_log_out, historical_selection),
         ):
             if p.resolve() == hist.resolve():
-                raise SystemExit(
-                    f"refusing to write {experiment_id} metrics to historical "
-                    f"A-POWERED-1 file {hist}"
-                )
+                raise SystemExit(f"refusing to write {experiment_id} metrics to historical " f"A-POWERED-1 file {hist}")
 
 
 def run_cell(
@@ -154,15 +139,30 @@ def run_cell(
     seeds_planned = list(range(int(seed_start), int(seed_start) + int(seeds)))
 
     metrics_fields = [
-        "experiment_id", "benchmark", "protocol", "seed", "n_test_samples",
-        "val_auc_router", "val_auc_boost", "chosen_head",
-        "chosen_val_auc", "chosen_test_auc",
-        "static_test_auc", "craf_test_auc",
-        "router_test_auc", "boost_test_auc",
+        "experiment_id",
+        "benchmark",
+        "protocol",
+        "seed",
+        "n_test_samples",
+        "val_auc_router",
+        "val_auc_boost",
+        "chosen_head",
+        "chosen_val_auc",
+        "chosen_test_auc",
+        "static_test_auc",
+        "craf_test_auc",
+        "router_test_auc",
+        "boost_test_auc",
     ]
     selection_fields = [
-        "experiment_id", "benchmark", "protocol", "seed",
-        "candidate", "val_auc", "test_auc", "selection_used_test_metrics",
+        "experiment_id",
+        "benchmark",
+        "protocol",
+        "seed",
+        "candidate",
+        "val_auc",
+        "test_auc",
+        "selection_used_test_metrics",
     ]
     metrics_new = not seed_metrics_out.exists()
     selection_new = not selection_log_out.exists()
@@ -182,7 +182,8 @@ def run_cell(
     for s in seeds_planned:
         print(f"[v2-family-a {experiment_id}] seed={s} starting", flush=True)
         result = run_one_seed(
-            cfg, s,
+            cfg,
+            s,
             archive=archive,
             experiment_id=experiment_id,
             benchmark=benchmark,
@@ -190,40 +191,59 @@ def run_cell(
             pairing_strength=pairing_strength,
             cell_dir_slug=_cell_dir_slug(experiment_id, benchmark, protocol),
         )
-        metrics_w.writerow({
+        metrics_w.writerow(
+            {
+                "experiment_id": experiment_id,
+                "benchmark": benchmark,
+                "protocol": protocol,
+                "seed": result["seed"],
+                "n_test_samples": result["n_test_samples"],
+                "val_auc_router": result["val_auc_router"],
+                "val_auc_boost": result["val_auc_boost"],
+                "chosen_head": result["chosen_head"],
+                "chosen_val_auc": result["chosen_val_auc"],
+                "chosen_test_auc": result["chosen_test_auc"],
+                "static_test_auc": result["static_test_auc"],
+                "craf_test_auc": result["craf_test_auc"],
+                "router_test_auc": result["router_test_auc"],
+                "boost_test_auc": result["boost_test_auc"],
+            }
+        )
+        metrics_f.flush()
+        common = {
             "experiment_id": experiment_id,
             "benchmark": benchmark,
             "protocol": protocol,
             "seed": result["seed"],
-            "n_test_samples": result["n_test_samples"],
-            "val_auc_router": result["val_auc_router"],
-            "val_auc_boost": result["val_auc_boost"],
-            "chosen_head": result["chosen_head"],
-            "chosen_val_auc": result["chosen_val_auc"],
-            "chosen_test_auc": result["chosen_test_auc"],
-            "static_test_auc": result["static_test_auc"],
-            "craf_test_auc": result["craf_test_auc"],
-            "router_test_auc": result["router_test_auc"],
-            "boost_test_auc": result["boost_test_auc"],
-        })
-        metrics_f.flush()
-        common = {"experiment_id": experiment_id, "benchmark": benchmark,
-                  "protocol": protocol, "seed": result["seed"],
-                  "selection_used_test_metrics": False}
-        selection_w.writerow({**common, "candidate": "rga_meta_router",
-                              "val_auc": result["val_auc_router"],
-                              "test_auc": result["router_test_auc"]})
-        selection_w.writerow({**common, "candidate": "rga_boosted_fusion",
-                              "val_auc": result["val_auc_boost"],
-                              "test_auc": result["boost_test_auc"]})
+            "selection_used_test_metrics": False,
+        }
+        selection_w.writerow(
+            {
+                **common,
+                "candidate": "rga_meta_router",
+                "val_auc": result["val_auc_router"],
+                "test_auc": result["router_test_auc"],
+            }
+        )
+        selection_w.writerow(
+            {
+                **common,
+                "candidate": "rga_boosted_fusion",
+                "val_auc": result["val_auc_boost"],
+                "test_auc": result["boost_test_auc"],
+            }
+        )
         for name, vauc in result["baseline_val_aucs"].items():
-            selection_w.writerow({**common, "candidate": name,
-                                  "val_auc": vauc,
-                                  "test_auc": result["baseline_test_aucs"].get(name)})
+            selection_w.writerow(
+                {**common, "candidate": name, "val_auc": vauc, "test_auc": result["baseline_test_aucs"].get(name)}
+            )
         selection_f.flush()
-        print(f"[v2-family-a {experiment_id}] seed={s} done  "
-              f"chosen={result['chosen_head']}  "
-              f"chosen_test_auc={result['chosen_test_auc']:.4f}", flush=True)
+        print(
+            f"[v2-family-a {experiment_id}] seed={s} done  "
+            f"chosen={result['chosen_head']}  "
+            f"chosen_test_auc={result['chosen_test_auc']:.4f}",
+            flush=True,
+        )
 
     metrics_f.close()
     selection_f.close()
@@ -233,20 +253,25 @@ def run_cell(
 
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--experiment-id", required=True,
-                        help="A-POWERED-N — must exist in the v2 registry")
+    parser.add_argument("--experiment-id", required=True, help="A-POWERED-N — must exist in the v2 registry")
     parser.add_argument("--seeds", type=int, default=30)
     parser.add_argument("--seed-start", type=int, default=42)
-    parser.add_argument("--registry", type=Path, default=REGISTRY_V2,
-                        help="(documented; the driver always reads the v2 registry path)")
-    parser.add_argument("--archive-root", type=Path,
-                        default=Path("experiments/phase2/predictions"))
-    parser.add_argument("--seed-metrics-out", type=Path,
-                        default=None,
-                        help="default: experiments/phase2/statistics/family_a_v2_<EID>_seed_metrics.csv")
-    parser.add_argument("--selection-log-out", type=Path,
-                        default=None,
-                        help="default: experiments/phase2/statistics/family_a_v2_<EID>_selection_log.csv")
+    parser.add_argument(
+        "--registry", type=Path, default=REGISTRY_V2, help="(documented; the driver always reads the v2 registry path)"
+    )
+    parser.add_argument("--archive-root", type=Path, default=Path("experiments/phase2/predictions"))
+    parser.add_argument(
+        "--seed-metrics-out",
+        type=Path,
+        default=None,
+        help="default: experiments/phase2/statistics/family_a_v2_<EID>_seed_metrics.csv",
+    )
+    parser.add_argument(
+        "--selection-log-out",
+        type=Path,
+        default=None,
+        help="default: experiments/phase2/statistics/family_a_v2_<EID>_selection_log.csv",
+    )
     args = parser.parse_args()
 
     eid = args.experiment_id

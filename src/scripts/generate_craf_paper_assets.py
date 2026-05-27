@@ -235,9 +235,7 @@ def write_clean_table(data: dict[str, Any], out_dir: Path) -> None:
         r"\midrule",
     ]
     for key, label, _ in rows:
-        lines.append(
-            rf"{label} & {roc[key]} & {pr[key]} & {f1[key]} & {ece[key]} & {brier[key]} \\"
-        )
+        lines.append(rf"{label} & {roc[key]} & {pr[key]} & {f1[key]} & {ece[key]} & {brier[key]} \\")
     lines += [r"\bottomrule", r"\end{tabular}", ""]
     _write(out_dir / "elara_clean_results.tex", "\n".join(lines))
 
@@ -317,7 +315,6 @@ def write_drift_table(data: dict[str, Any], out_dir: Path) -> None:
         )
     lines += [r"\bottomrule", r"\end{tabular}", ""]
     _write(out_dir / "elara_drift_summary.tex", "\n".join(lines))
-
 
 
 def _cal_cell(cal: dict[str, Any], prefix: str) -> str:
@@ -425,7 +422,9 @@ def write_component_ablation_table(data: dict[str, Any], out_dir: Path) -> None:
     _write(out_dir / "elara_component_ablation_results.tex", "\n".join(lines))
 
 
-def write_category_aware_table(data: dict[str, Any], out_dir: Path, output_basename: str = "elara_category_aware_drift.tex") -> None:
+def write_category_aware_table(
+    data: dict[str, Any], out_dir: Path, output_basename: str = "elara_category_aware_drift.tex"
+) -> None:
     summary = data.get("table_8_category_aware", {})
     if not summary:
         return
@@ -438,7 +437,7 @@ def write_category_aware_table(data: dict[str, Any], out_dir: Path, output_basen
         GENERATED_COMMENT,
         r"\begin{tabular}{lcc}",
         r"\toprule",
-        rf"\textbf{{Drift signal}} & \textbf{{Adapt rate}} & \textbf{{Mean reliability}} \\",
+        r"\textbf{Drift signal} & \textbf{Adapt rate} & \textbf{Mean reliability} \\",
         r"\midrule",
         rf"Global KS reference & {_fmt(global_adapt, 3)} & {_fmt(global_rel, 3)} \\",
         rf"Category-aware KS reference & {_fmt(cat_adapt, 3)} & {_fmt(cat_rel, 3)} \\",
@@ -598,20 +597,13 @@ def plot_cda_impacts(data: dict[str, Any], out_dir: Path) -> None:
 
 
 def plot_adversarial_delta(data: dict[str, Any], out_dir: Path) -> None:
-    rows = [
-        row
-        for row in data["table_3_adversarial"]
-        if row.get("target_domain") == "all"
-    ]
+    rows = [row for row in data["table_3_adversarial"] if row.get("target_domain") == "all"]
     attack_abbrev = {
         "zero_attack": "zero",
         "max_attack": "max",
         "gaussian_noise": "gaussian",
     }
-    labels = [
-        attack_abbrev.get(r["attack"], r["attack"].replace("_", " "))
-        for r in rows
-    ]
+    labels = [attack_abbrev.get(r["attack"], r["attack"].replace("_", " ")) for r in rows]
     values = [r["delta_auc"] for r in rows]
     colors = ["#2f6f73" if v >= 0 else "#c46a32" for v in values]
 
@@ -662,12 +654,14 @@ def plot_failure_cases(data: dict[str, Any], out_dir: Path) -> None:
         y = case.get("label")
         if s is None or c is None or y is None:
             continue
-        rows.append({
-            "static": float(s),
-            "craf": float(c),
-            "label": int(y),
-            "case_type": case.get("case_type", "?"),
-        })
+        rows.append(
+            {
+                "static": float(s),
+                "craf": float(c),
+                "label": int(y),
+                "case_type": case.get("case_type", "?"),
+            }
+        )
     if not rows:
         return
 
@@ -766,8 +760,12 @@ def main() -> None:
     parser.add_argument("--figures-dir", required=True, type=Path)
     parser.add_argument("--tables-dir", required=True, type=Path)
     parser.add_argument("--metadata", type=Path, default=None, help="Optional real-domain metadata JSON")
-    parser.add_argument("--paired-input", type=Path, default=None, help="Optional naturally paired benchmark results JSON")
-    parser.add_argument("--paired-metadata", type=Path, default=None, help="Optional naturally paired benchmark metadata JSON")
+    parser.add_argument(
+        "--paired-input", type=Path, default=None, help="Optional naturally paired benchmark results JSON"
+    )
+    parser.add_argument(
+        "--paired-metadata", type=Path, default=None, help="Optional naturally paired benchmark metadata JSON"
+    )
     args = parser.parse_args()
 
     data = _load(args.input)

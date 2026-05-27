@@ -67,9 +67,9 @@ def test_canonical_train_val_prevalence_is_zero(report):
         train_keys = [k for k in lab if k.startswith("split_train_prevalence")]
         val_keys = [k for k in lab if k.startswith("split_validation_prevalence")]
         for k in train_keys + val_keys:
-            assert lab[k] == 0.0 or lab[k] is None, (
-                f"{cell['benchmark']} split prevalence {k}={lab[k]} should be 0.0 under canonical one-class."
-            )
+            assert (
+                lab[k] == 0.0 or lab[k] is None
+            ), f"{cell['benchmark']} split prevalence {k}={lab[k]} should be 0.0 under canonical one-class."
 
 
 def test_canonical_test_prevalence_is_high(report):
@@ -110,6 +110,7 @@ def test_polarity_diagnostic_log_exists():
 
 def test_polarity_log_primary_metrics_do_not_use_flip():
     import csv
+
     p = Path("experiments/audit/polarity_diagnostic_log.csv")
     if not p.exists():
         pytest.skip("polarity log not yet generated")
@@ -120,6 +121,5 @@ def test_polarity_log_primary_metrics_do_not_use_flip():
     for r in rows:
         flag = (r.get("primary_metrics_use_flip") or "").strip().lower()
         assert flag in {"false", "0"}, (
-            f"primary_metrics_use_flip must be False for every row (Phase 1.F lock); "
-            f"row: {r}"
+            f"primary_metrics_use_flip must be False for every row (Phase 1.F lock); " f"row: {r}"
         )

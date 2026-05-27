@@ -42,9 +42,9 @@ def test_holm_family_size_matches_confirmatory_count(registry):
         pytest.skip("no confirmatory rows")
     # Every confirmatory row's holm_family_size should be 5.
     for r in confirmatory:
-        assert str(r.get("holm_family_size")) == "5", (
-            f"{r['cell_id']} has holm_family_size={r['holm_family_size']} but Family A confirmatory K=5."
-        )
+        assert (
+            str(r.get("holm_family_size")) == "5"
+        ), f"{r['cell_id']} has holm_family_size={r['holm_family_size']} but Family A confirmatory K=5."
 
 
 def test_inference_rows_match_registry_status():
@@ -53,14 +53,14 @@ def test_inference_rows_match_registry_status():
     with INFERENCE.open() as f:
         rows = list(csv.DictReader(f))
     for r in rows:
-        assert r.get("claim_status") == "locked_audited_reanalysis", (
-            f"cell {r['cell_id']} claim_status={r['claim_status']!r} (must be 'locked_audited_reanalysis')"
-        )
+        assert (
+            r.get("claim_status") == "locked_audited_reanalysis"
+        ), f"cell {r['cell_id']} claim_status={r['claim_status']!r} (must be 'locked_audited_reanalysis')"
 
 
 def test_family_C_holm_size_is_zero(registry):
     for r in registry:
         if r["analysis_family"] == "C":
-            assert str(r.get("holm_family_size")) == "0", (
-                f"Family C cell {r['cell_id']} has holm_family_size={r['holm_family_size']} (must be 0)"
-            )
+            assert (
+                str(r.get("holm_family_size")) == "0"
+            ), f"Family C cell {r['cell_id']} has holm_family_size={r['holm_family_size']} (must be 0)"

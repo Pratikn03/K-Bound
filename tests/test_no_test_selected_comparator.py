@@ -26,7 +26,9 @@ LATEX_FILES = [
 # Patterns that indicate post-hoc test-winner comparator selection.
 FORBIDDEN_SOURCE_PATTERNS = [
     # Loops that argmax baselines over test-fold ROC-AUC.
-    re.compile(r"for\s+name\s*,\s*metrics\s+in\s+cs\.items\(\)\s*:\s*\n\s*if\s+name\s+in\s*\{[^}]*'?craf_attention'?[^}]*\}"),
+    re.compile(
+        r"for\s+name\s*,\s*metrics\s+in\s+cs\.items\(\)\s*:\s*\n\s*if\s+name\s+in\s*\{[^}]*'?craf_attention'?[^}]*\}"
+    ),
     re.compile(r"best_roc\s*=\s*None\s*\n\s*for\s+name\s*,\s*metrics\s+in\s+cs\.items"),
 ]
 

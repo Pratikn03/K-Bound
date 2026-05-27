@@ -1,5 +1,4 @@
 """One-Class SVM training for anomaly scoring."""
-from typing import Dict, Tuple
 
 import joblib
 import numpy as np
@@ -11,7 +10,7 @@ from uais.utils.paths import domain_paths
 logger = setup_logging(__name__)
 
 
-def train_ocsvm(df, target: str, preprocessor, config: Dict, domain: str) -> Tuple[OneClassSVM, np.ndarray]:
+def train_ocsvm(df, target: str, preprocessor, config: dict, domain: str) -> tuple[OneClassSVM, np.ndarray]:
     """
     Fit a One-Class SVM on preprocessed features and return scores.
     Scores are negated decision function values so higher = more anomalous.

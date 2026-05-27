@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import numpy as np
-import pytest
 
 from uais.utils.stats import holm_bonferroni
 
@@ -20,10 +19,10 @@ def test_smallest_pvalue_rejected_with_strict_multiplier():
     p = np.array([0.5, 0.01, 0.6, 0.04])
     result = holm_bonferroni(p, alpha=0.05)
     # Only the 0.01 should be rejected; 0.04 needs 0.04*3 = 0.12 > 0.05
-    assert result["reject"][1] == True
-    assert result["reject"][0] == False
-    assert result["reject"][2] == False
-    assert result["reject"][3] == False
+    assert result["reject"][1]
+    assert not result["reject"][0]
+    assert not result["reject"][2]
+    assert not result["reject"][3]
 
 
 def test_monotone_step_down_chain():
@@ -32,7 +31,7 @@ def test_monotone_step_down_chain():
     result = holm_bonferroni(p, alpha=0.05)
     # All three small ones pass step-down: 0.001*4=0.004, 0.002*3=0.006, 0.003*2=0.006
     assert result["reject"][:3].all()
-    assert result["reject"][3] == False
+    assert not result["reject"][3]
 
 
 def test_adjusted_pvalues_capped_at_one():
@@ -57,8 +56,8 @@ def test_nan_handling():
     # n_tests should exclude the NaN
     assert result["n_tests"] == 3
     # Smallest of 3 valid: 0.01 * 3 = 0.03 ≤ 0.05 → reject
-    assert result["reject"][0] == True
-    assert result["reject"][1] == False  # NaN entry never rejected
+    assert result["reject"][0]
+    assert not result["reject"][1]  # NaN entry never rejected
     assert np.isnan(result["p_adjusted"][1])
 
 

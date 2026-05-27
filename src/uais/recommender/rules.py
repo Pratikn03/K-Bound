@@ -1,7 +1,6 @@
 """Heuristic rules to map scores to recommended actions."""
-from __future__ import annotations
 
-from typing import Tuple
+from __future__ import annotations
 
 
 def assign_action_from_scores(
@@ -13,7 +12,7 @@ def assign_action_from_scores(
     hi: float = 0.85,
     med: float = 0.65,
     lo: float = 0.50,
-) -> Tuple[str, str]:
+) -> tuple[str, str]:
     """Return (action, reason) based on score thresholds.
 
     Actions: BLOCK > REVIEW > MONITOR > ALLOW

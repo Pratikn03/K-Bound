@@ -76,6 +76,7 @@ def render_table(repo_root: Path) -> str:
     boost minus the validation-frozen comparator.
     """
     import csv
+
     # Load validation-frozen comparator per cell.
     comp_path = repo_root / "experiments/audit/audited_comparator_selection.csv"
     comp_idx: dict[tuple[str, str], dict] = {}
@@ -99,9 +100,7 @@ def render_table(repo_root: Path) -> str:
     for benchmark, protocol, rel_path in BENCHMARKS:
         full_path = repo_root / rel_path
         if not full_path.exists():
-            rows.append(
-                rf"{benchmark} & {protocol} & \multicolumn{{8}}{{c}}{{\emph{{results pending}}}} \\"
-            )
+            rows.append(rf"{benchmark} & {protocol} & \multicolumn{{8}}{{c}}{{\emph{{results pending}}}} \\")
             continue
         payload = json.loads(full_path.read_text(encoding="utf-8"))
         cs = payload.get("clean_metric_summary", {})
@@ -118,14 +117,8 @@ def render_table(repo_root: Path) -> str:
         except (TypeError, ValueError):
             comp_test = None
 
-        router_delta = (
-            router - comp_test
-            if (router is not None and comp_test is not None) else None
-        )
-        boost_delta = (
-            boost - comp_test
-            if (boost is not None and comp_test is not None) else None
-        )
+        router_delta = router - comp_test if (router is not None and comp_test is not None) else None
+        boost_delta = boost - comp_test if (boost is not None and comp_test is not None) else None
 
         rows.append(
             rf"{benchmark} & {protocol} & {_fmt(static)} & {_fmt(rga)} & "

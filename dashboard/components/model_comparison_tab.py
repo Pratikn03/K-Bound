@@ -1,6 +1,8 @@
 """Model comparison tab."""
+
 import json
 from pathlib import Path
+
 import pandas as pd
 import streamlit as st
 
@@ -10,7 +12,7 @@ from uais.utils.paths import EXPERIMENTS_DIR
 def _load_metrics_file(file: Path) -> dict:
     if file.suffix == ".json":
         try:
-            with open(file, "r", encoding="utf-8") as f:
+            with open(file, encoding="utf-8") as f:
                 data = json.load(f)
             return data if isinstance(data, dict) else {}
         except Exception:

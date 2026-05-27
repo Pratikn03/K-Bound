@@ -11,7 +11,6 @@ from pathlib import Path
 
 import pytest
 
-
 PAPER = Path("docs/research/PAPER_DRAFT_v1.tex")
 THESIS = Path("docs/research/THESIS_CHAPTER_v1.tex")
 PAPER_PDF = Path("output/pdf/PAPER_DRAFT_PHASE1_1_1_VERIFIED.pdf")
@@ -24,6 +23,7 @@ def _pdf_text(path: Path) -> str:
     if not path.exists():
         return ""
     from pypdf import PdfReader
+
     r = PdfReader(str(path))
     return "".join(p.extract_text() + "\n" for p in r.pages)
 
@@ -68,14 +68,13 @@ def test_issue1_pdf_family_a_not_confirmatory():
     thesis_text = _pdf_text(THESIS_PDF) or _pdf_text(THESIS_PDF_STD)
     for name, text in [("paper PDF", paper_text), ("thesis PDF", thesis_text)]:
         for pat in ISSUE_1_PATTERNS:
-            assert pat.search(text) is None, (
-                f"{name} still contains 'Family A confirmatory' wording"
-            )
+            assert pat.search(text) is None, f"{name} still contains 'Family A confirmatory' wording"
 
 
 # ---------------------------------------------------------------------------
 # Issue 2: Canonical MVTec ROC-AUC-only figure caption MUST NOT claim PR-AUC.
 # ---------------------------------------------------------------------------
+
 
 def test_issue2_canonical_mvtec_figure_caption_no_pr_auc():
     """Locate the canonical MVTec clean-benchmark figure caption and verify it
@@ -89,7 +88,7 @@ def test_issue2_canonical_mvtec_figure_caption_no_pr_auc():
     )
     if img_match is None:
         pytest.fail("canonical MVTec clean-benchmark figure not found in paper source")
-    after_img = t[img_match.end():]
+    after_img = t[img_match.end() :]
     cap_start = re.search(r"\\caption\{", after_img)
     assert cap_start is not None, "no \\caption{ after canonical figure"
     # Find matching closing brace.
@@ -102,7 +101,7 @@ def test_issue2_canonical_mvtec_figure_caption_no_pr_auc():
         elif ch == "}":
             depth -= 1
         pos += 1
-    caption = after_img[cap_start.end(): pos - 1]
+    caption = after_img[cap_start.end() : pos - 1]
     # The caption MAY mention PR-AUC only to say it is OMITTED. It must NOT claim
     # PR-AUC is displayed alongside ROC-AUC.
     bad_phrases = [
@@ -116,9 +115,9 @@ def test_issue2_canonical_mvtec_figure_caption_no_pr_auc():
             f"canonical MVTec figure caption still claims PR-AUC is displayed: "
             f"'{m.group(0)}' inside {caption[:200]!r}"
         )
-    assert ("Protocol-diagnostic" in caption) or ("protocol-diagnostic" in caption.lower()), (
-        f"canonical MVTec figure caption missing 'protocol-diagnostic' framing: {caption[:200]!r}"
-    )
+    assert ("Protocol-diagnostic" in caption) or (
+        "protocol-diagnostic" in caption.lower()
+    ), f"canonical MVTec figure caption missing 'protocol-diagnostic' framing: {caption[:200]!r}"
 
 
 # ---------------------------------------------------------------------------
@@ -164,41 +163,31 @@ def test_issue3_adversarial_results_table_secondary():
     t = PAPER.read_text()
     cap = _table_caption(t, "tab:adversarial-results")
     assert cap is not None, "tab:adversarial-results not found"
-    assert SECONDARY_PHRASE.search(cap), (
-        f"tab:adversarial-results caption missing SECONDARY label: {cap[:200]!r}"
-    )
+    assert SECONDARY_PHRASE.search(cap), f"tab:adversarial-results caption missing SECONDARY label: {cap[:200]!r}"
 
 
 def test_issue3_tau_sweep_table_secondary():
     t = PAPER.read_text()
     cap = _table_caption(t, "tab:tau-sweep")
     assert cap is not None, "tab:tau-sweep not found"
-    assert SECONDARY_PHRASE.search(cap), (
-        f"tab:tau-sweep caption missing SECONDARY label: {cap[:200]!r}"
-    )
+    assert SECONDARY_PHRASE.search(cap), f"tab:tau-sweep caption missing SECONDARY label: {cap[:200]!r}"
 
 
 def test_issue3_adversarial_figure_secondary():
     t = PAPER.read_text()
     cap = _figure_caption(t, "fig:adversarial-delta")
     assert cap is not None, "fig:adversarial-delta not found"
-    assert SECONDARY_PHRASE.search(cap), (
-        f"fig:adversarial-delta caption missing SECONDARY label: {cap[:200]!r}"
-    )
+    assert SECONDARY_PHRASE.search(cap), f"fig:adversarial-delta caption missing SECONDARY label: {cap[:200]!r}"
 
 
 def test_issue3_primary_b1_b2_preserved():
     """The abstract and primary mechanism block MUST still cite +0.0506 / +0.0319."""
     t = PAPER.read_text()
     abstract = t[:8000]
-    assert "+0.0506" in abstract and "+0.0319" in abstract, (
-        "paper abstract missing PRIMARY B1/B2 deltas"
-    )
+    assert "+0.0506" in abstract and "+0.0319" in abstract, "paper abstract missing PRIMARY B1/B2 deltas"
 
 
 def test_issue3_thesis_primary_b1_b2_preserved():
     t = THESIS.read_text()
     abstract = t[:8000]
-    assert "+0.0506" in abstract and "+0.0319" in abstract, (
-        "thesis abstract missing PRIMARY B1/B2 deltas"
-    )
+    assert "+0.0506" in abstract and "+0.0319" in abstract, "thesis abstract missing PRIMARY B1/B2 deltas"

@@ -4,8 +4,6 @@ Unsupervised anomaly detection models for fraud (v1).
 This module implements a simple Isolation Forest wrapper for anomaly scores.
 """
 
-from typing import Dict, Tuple
-
 import numpy as np
 import pandas as pd
 from sklearn.ensemble import IsolationForest
@@ -16,7 +14,7 @@ def train_isolation_forest(
     X: pd.DataFrame,
     random_state: int = 42,
     contamination: float = 0.01,
-) -> Tuple[IsolationForest, StandardScaler]:
+) -> tuple[IsolationForest, StandardScaler]:
     """
     Train an Isolation Forest model on feature data.
 
@@ -53,7 +51,7 @@ def train_isolation_forest(
     return model, scaler
 
 
-def _prep_numeric_features(X: pd.DataFrame) -> Tuple[pd.DataFrame, pd.Series]:
+def _prep_numeric_features(X: pd.DataFrame) -> tuple[pd.DataFrame, pd.Series]:
     """Keep only numeric columns with at least one observed value and fill NaNs with medians."""
     numeric = X.select_dtypes(include=[np.number]).copy()
     usable = [col for col in numeric.columns if numeric[col].notna().any()]
@@ -63,6 +61,7 @@ def _prep_numeric_features(X: pd.DataFrame) -> Tuple[pd.DataFrame, pd.Series]:
     median_vals = numeric.median(skipna=True)
     numeric = numeric.fillna(median_vals)
     return numeric, median_vals
+
 
 def compute_anomaly_score(model: IsolationForest, scaler: StandardScaler, X: pd.DataFrame) -> np.ndarray:
     """

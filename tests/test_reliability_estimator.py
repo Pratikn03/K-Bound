@@ -14,7 +14,6 @@ from uais.fusion.attention.reliability_estimator import (
     ReliabilityEstimator,
 )
 
-
 # ---------------------------------------------------------------------------
 # Fixtures
 # ---------------------------------------------------------------------------
@@ -29,9 +28,7 @@ def _make_data(seed: int = 0, missing_prob: float = 0.1):
     labels = (rng.random(N) < 0.2).astype(float)
     features = rng.random((N, D, F)).astype(np.float32)
     for d in range(D):
-        features[labels == 1, d, SCORE_INDEX] = np.clip(
-            features[labels == 1, d, SCORE_INDEX] + 0.4, 0.0, 1.0
-        )
+        features[labels == 1, d, SCORE_INDEX] = np.clip(features[labels == 1, d, SCORE_INDEX] + 0.4, 0.0, 1.0)
     masks = rng.random((N, D)) < missing_prob
     return features, masks.astype(bool), labels
 
@@ -55,6 +52,7 @@ def fitted_estimator():
 # ---------------------------------------------------------------------------
 # Tests
 # ---------------------------------------------------------------------------
+
 
 def test_fit_produces_valid_ece(fitted_estimator):
     est, _, _, _ = fitted_estimator
@@ -113,13 +111,13 @@ def test_unfitted_raises():
 
 def test_ks_reliability_decreases_with_drift():
     """A drifted domain should receive a lower reliability weight than the clean domain."""
-    rng = np.random.default_rng(42)
+    np.random.default_rng(42)
     features, masks, labels = _make_data(seed=42, missing_prob=0.0)
 
     est = ReliabilityEstimator(
         domain_order=DOMAIN_ORDER,
         score_index=SCORE_INDEX,
-        ece_weight=0.0,     # disable ECE and sharpness; isolate KS component
+        ece_weight=0.0,  # disable ECE and sharpness; isolate KS component
         ks_weight=1.0,
         sharpness_weight=0.0,
         n_calibration_bins=5,
@@ -139,15 +137,16 @@ def test_ks_reliability_decreases_with_drift():
     mean_drifted_d0 = float(np.mean(drifted_weights[:, 0]))
 
     assert mean_drifted_d0 < mean_clean_d0, (
-        f"Drifted domain 0 reliability ({mean_drifted_d0:.4f}) should be lower "
-        f"than clean ({mean_clean_d0:.4f})"
+        f"Drifted domain 0 reliability ({mean_drifted_d0:.4f}) should be lower " f"than clean ({mean_clean_d0:.4f})"
     )
 
     # Domains 1 and 2 are unchanged; their weight should not differ between clean and drifted
     for d in [1, 2]:
         np.testing.assert_allclose(
-            clean_weights[:, d], drifted_weights[:, d], rtol=1e-4,
-            err_msg=f"Domain {d} weights changed despite no drift"
+            clean_weights[:, d],
+            drifted_weights[:, d],
+            rtol=1e-4,
+            err_msg=f"Domain {d} weights changed despite no drift",
         )
 
 
@@ -165,8 +164,7 @@ def test_gate_decisions_high_reliability_stays_static():
     features, masks, labels = _make_data(seed=5, missing_prob=0.0)
     # Push all scores to 0.9 — very sharp, high reliability
     features[:, :, SCORE_INDEX] = 0.9
-    est = ReliabilityEstimator(DOMAIN_ORDER, SCORE_INDEX, gate_threshold=0.66,
-                               min_samples_for_ks=5)
+    est = ReliabilityEstimator(DOMAIN_ORDER, SCORE_INDEX, gate_threshold=0.66, min_samples_for_ks=5)
     est.fit(features, masks, labels)
     weights = est.compute_reliability_weights(features, masks)
     gate = est.gate_decisions(weights, masks)
@@ -179,9 +177,15 @@ def test_gate_decisions_low_reliability_activates():
     features, masks, labels = _make_data(seed=6, missing_prob=0.0)
     # Push all scores to exactly 0.5 — zero sharpness
     features[:, :, SCORE_INDEX] = 0.5
-    est = ReliabilityEstimator(DOMAIN_ORDER, SCORE_INDEX,
-                               ece_weight=0.0, ks_weight=0.0, sharpness_weight=1.0,
-                               gate_threshold=0.66, min_samples_for_ks=5)
+    est = ReliabilityEstimator(
+        DOMAIN_ORDER,
+        SCORE_INDEX,
+        ece_weight=0.0,
+        ks_weight=0.0,
+        sharpness_weight=1.0,
+        gate_threshold=0.66,
+        min_samples_for_ks=5,
+    )
     est.fit(features, masks, labels)
     weights = est.compute_reliability_weights(features, masks)
     gate = est.gate_decisions(weights, masks)
@@ -222,7 +226,7 @@ def test_hybrid_gate_catches_isolated_and_broad_failures():
     masks = np.zeros((3, 4), dtype=bool)
     weights = np.array(
         [
-            [0.0, 1.0, 1.0, 1.0],      # isolated catastrophic failure
+            [0.0, 1.0, 1.0, 1.0],  # isolated catastrophic failure
             [0.50, 0.55, 0.60, 0.65],  # broad mean degradation
             [0.80, 0.80, 0.85, 0.90],  # healthy
         ],
@@ -244,15 +248,13 @@ def test_hybrid_gate_catches_isolated_and_broad_failures():
 def test_gate_save_load_preserves_threshold(fitted_estimator):
     """gate_threshold must survive a save/load round-trip."""
     import tempfile
-    est_custom = ReliabilityEstimator(DOMAIN_ORDER, SCORE_INDEX, gate_threshold=0.55,
-                                      min_samples_for_ks=5)
+
+    est_custom = ReliabilityEstimator(DOMAIN_ORDER, SCORE_INDEX, gate_threshold=0.55, min_samples_for_ks=5)
     with tempfile.TemporaryDirectory() as d:
         path = f"{d}/est.joblib"
         est_custom.save(path)
         loaded = ReliabilityEstimator.load(path)
-    assert loaded.gate_threshold == 0.55, (
-        f"Expected gate_threshold=0.55, got {loaded.gate_threshold}"
-    )
+    assert loaded.gate_threshold == 0.55, f"Expected gate_threshold=0.55, got {loaded.gate_threshold}"
 
 
 def test_category_aware_ks_does_not_misfire_on_category_mix_shift():
@@ -306,6 +308,7 @@ def test_category_aware_ks_does_not_misfire_on_category_mix_shift():
 # Per-sample reliability estimator (C1)
 # ---------------------------------------------------------------------------
 
+
 def test_per_sample_reliability_varies_per_sample():
     """Per-sample estimator must produce non-trivial per-sample variance.
 
@@ -342,17 +345,13 @@ def test_per_sample_reliability_varies_per_sample():
         avail = col > 0
         if avail.sum() < 2:
             continue
-        assert float(col[avail].std()) < 1e-6, (
-            f"batch-level estimator should produce constant column for domain {d}"
-        )
+        assert float(col[avail].std()) < 1e-6, f"batch-level estimator should produce constant column for domain {d}"
     # Per-sample estimator: every domain column must have non-trivial variance.
     for d in range(len(DOMAIN_ORDER)):
         col = sample_w[:, d]
         avail = col > 0
         assert avail.sum() > 10, f"too few available rows for domain {d}"
-        assert float(col[avail].std()) > 0.01, (
-            f"per-sample estimator should produce per-sample variance for domain {d}"
-        )
+        assert float(col[avail].std()) > 0.01, f"per-sample estimator should produce per-sample variance for domain {d}"
 
     # Weights still bounded to [0, 1].
     assert float(sample_w.min()) >= 0.0

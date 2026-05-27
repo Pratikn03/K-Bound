@@ -15,8 +15,8 @@ Datasets:
    - Saved to: data/raw/behavior/online_shoppers_intention.csv
 """
 
-from pathlib import Path
 import shutil
+from pathlib import Path
 
 import kagglehub  # pip install kagglehub
 

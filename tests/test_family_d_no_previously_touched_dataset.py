@@ -27,9 +27,9 @@ def test_eligibility_review_explicitly_excludes_visa():
     # Look at the VisA paragraph: it must include the INELIGIBLE_FOR_FAMILY_D marker
     visa_idx = t.find("VisA")
     visa_block = t[visa_idx : visa_idx + 800]
-    assert "INELIGIBLE_FOR_FAMILY_D" in visa_block, (
-        "VisA must be marked INELIGIBLE_FOR_FAMILY_D in the eligibility review"
-    )
+    assert (
+        "INELIGIBLE_FOR_FAMILY_D" in visa_block
+    ), "VisA must be marked INELIGIBLE_FOR_FAMILY_D in the eligibility review"
 
 
 def test_v2_hypotheses_do_not_use_any_family_a_benchmark():
@@ -42,8 +42,7 @@ def test_v2_hypotheses_do_not_use_any_family_a_benchmark():
         for row in csv.DictReader(f):
             bench = row.get("dataset", "")
             assert bench not in family_a, (
-                f"v2 hypothesis {row.get('hypothesis_id')!r} references "
-                f"Family-A benchmark {bench!r}"
+                f"v2 hypothesis {row.get('hypothesis_id')!r} references " f"Family-A benchmark {bench!r}"
             )
 
 

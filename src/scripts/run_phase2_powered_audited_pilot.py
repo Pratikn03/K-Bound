@@ -27,14 +27,11 @@ from __future__ import annotations
 
 import argparse
 import csv
-import hashlib
-import json
 import sys
 from pathlib import Path
 from typing import Any
 
 import numpy as np
-import pandas as pd
 import torch
 import yaml
 from sklearn.metrics import roc_auc_score
@@ -42,13 +39,14 @@ from sklearn.metrics import roc_auc_score
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 # Import the existing runner helpers we need.
+from elara.evaluation.prediction_archive import PredictionArchive  # noqa: E402
 from scripts.run_breakthrough_experiment import (  # noqa: E402
     _build_model,
     _load_data,
     _make_loaders,
     _make_reliability_estimator,
-    _predict_static,
     _predict_craf,
+    _predict_static,
     _split,
     _train_model,
     set_seed,
@@ -56,9 +54,6 @@ from scripts.run_breakthrough_experiment import (  # noqa: E402
 from uais.fusion.attention.baselines import run_baseline_suite  # noqa: E402
 from uais.fusion.attention.meta_router import fit_rga_meta_router  # noqa: E402
 from uais.fusion.attention.reliability_boosted_fusion import ReliabilityBoostedFusion  # noqa: E402
-
-from elara.evaluation.prediction_archive import PredictionArchive  # noqa: E402
-
 
 CANDIDATE_BASELINES = (
     "random_forest",
@@ -107,8 +102,9 @@ def run_one_seed(
     cfg_seed["training"] = dict(cfg.get("training", {}))
     cfg_seed["training"]["seed"] = int(seed)
 
-    (features, masks, labels, sample_ids, _domain_order, _, conf_idx,
-     score_idx, sample_splits, _sample_cats) = _load_data(cfg_seed)
+    features, masks, labels, sample_ids, _domain_order, _, conf_idx, score_idx, sample_splits, _sample_cats = (
+        _load_data(cfg_seed)
+    )
 
     train_idx, val_idx, test_idx = _split(
         labels,
@@ -116,7 +112,12 @@ def run_one_seed(
         split_values=sample_splits,
     )
     train_loader, val_loader, _ = _make_loaders(
-        features, masks, labels, train_idx, val_idx, test_idx,
+        features,
+        masks,
+        labels,
+        train_idx,
+        val_idx,
+        test_idx,
         batch_size=int(cfg_seed["training"].get("batch_size", 64)),
     )
     model = _build_model(cfg_seed, features.shape[1], features.shape[2], conf_idx, device)
@@ -150,8 +151,12 @@ def run_one_seed(
         random_seed=int(seed),
         selection_metric=str(cfg_seed.get("rga_plus_selection_metric", "roc_auc")),
     ).fit(
-        features[train_idx], masks[train_idx], labels[train_idx],
-        val_feat, val_mask, val_labels,
+        features[train_idx],
+        masks[train_idx],
+        labels[train_idx],
+        val_feat,
+        val_mask,
+        val_labels,
         reliability_estimator=estimator,
     )
     boost_val_probs = rga_boosted.predict_proba(val_feat, val_mask)
@@ -159,8 +164,15 @@ def run_one_seed(
 
     # Baseline predictions (val + test)
     baseline_metrics, baseline_predictions = run_baseline_suite(
-        features, masks, labels, train_idx, val_idx, test_idx,
-        score_index=score_idx, device=device, random_seed=int(seed),
+        features,
+        masks,
+        labels,
+        train_idx,
+        val_idx,
+        test_idx,
+        score_index=score_idx,
+        device=device,
+        random_seed=int(seed),
         decision_threshold_strategy=str(cfg_seed.get("clean_decision_threshold_strategy", "val_f1")),
         return_predictions=True,
     )
@@ -191,16 +203,11 @@ def run_one_seed(
     val_auc_boost = _safe_auc(val_labels, boost_val_probs)
     if abs(val_auc_router - val_auc_boost) < 1e-12 or val_auc_boost >= val_auc_router:
         chosen_head = "boost"
-        chosen_val_probs = boost_val_probs
-        chosen_test_probs = boost_probs
     else:
         chosen_head = "router"
-        chosen_val_probs = router_val_probs
-        chosen_test_probs = router_test_probs
 
     # Archive per-method per-split predictions.
-    def _archive(method: str, scores_val: np.ndarray, scores_test: np.ndarray,
-                 selected_status: str):
+    def _archive(method: str, scores_val: np.ndarray, scores_test: np.ndarray, selected_status: str):
         for split_name, sids, lab, scores in [
             ("validation", val_sids, val_labels, scores_val),
             ("test", test_sids, test_labels, scores_test),
@@ -267,11 +274,13 @@ def run_one_seed(
         "boost_test_auc": test_auc_boost,
         "baseline_test_aucs": {
             name: _safe_auc(test_labels, baseline_predictions[name]["test_probs"])
-            for name in CANDIDATE_BASELINES if name in baseline_predictions
+            for name in CANDIDATE_BASELINES
+            if name in baseline_predictions
         },
         "baseline_val_aucs": {
             name: _safe_auc(val_labels, baseline_predictions[name]["val_probs"])
-            for name in CANDIDATE_BASELINES if name in baseline_predictions
+            for name in CANDIDATE_BASELINES
+            if name in baseline_predictions
         },
     }
 
@@ -316,15 +325,30 @@ def main() -> None:
 
     # Append-mode for resumability.
     metrics_fields = [
-        "experiment_id", "benchmark", "protocol", "seed", "n_test_samples",
-        "val_auc_router", "val_auc_boost", "chosen_head",
-        "chosen_val_auc", "chosen_test_auc",
-        "static_test_auc", "craf_test_auc",
-        "router_test_auc", "boost_test_auc",
+        "experiment_id",
+        "benchmark",
+        "protocol",
+        "seed",
+        "n_test_samples",
+        "val_auc_router",
+        "val_auc_boost",
+        "chosen_head",
+        "chosen_val_auc",
+        "chosen_test_auc",
+        "static_test_auc",
+        "craf_test_auc",
+        "router_test_auc",
+        "boost_test_auc",
     ]
     selection_fields = [
-        "experiment_id", "benchmark", "protocol", "seed",
-        "candidate", "val_auc", "test_auc", "selection_used_test_metrics",
+        "experiment_id",
+        "benchmark",
+        "protocol",
+        "seed",
+        "candidate",
+        "val_auc",
+        "test_auc",
+        "selection_used_test_metrics",
     ]
     metrics_new = not args.seed_metrics_out.exists()
     selection_new = not args.selection_log_out.exists()
@@ -340,7 +364,8 @@ def main() -> None:
     for s in seeds_planned:
         print(f"[pilot] seed={s} starting", flush=True)
         result = run_one_seed(
-            cfg, s,
+            cfg,
+            s,
             archive=archive,
             experiment_id=args.experiment_id,
             benchmark=args.benchmark,
@@ -348,40 +373,59 @@ def main() -> None:
             pairing_strength=args.pairing_strength,
             cell_dir_slug="",
         )
-        metrics_w.writerow({
+        metrics_w.writerow(
+            {
+                "experiment_id": args.experiment_id,
+                "benchmark": args.benchmark,
+                "protocol": args.protocol,
+                "seed": result["seed"],
+                "n_test_samples": result["n_test_samples"],
+                "val_auc_router": result["val_auc_router"],
+                "val_auc_boost": result["val_auc_boost"],
+                "chosen_head": result["chosen_head"],
+                "chosen_val_auc": result["chosen_val_auc"],
+                "chosen_test_auc": result["chosen_test_auc"],
+                "static_test_auc": result["static_test_auc"],
+                "craf_test_auc": result["craf_test_auc"],
+                "router_test_auc": result["router_test_auc"],
+                "boost_test_auc": result["boost_test_auc"],
+            }
+        )
+        metrics_f.flush()
+        # Selection log: for every candidate baseline + the two RGA+ heads.
+        common = {
             "experiment_id": args.experiment_id,
             "benchmark": args.benchmark,
             "protocol": args.protocol,
             "seed": result["seed"],
-            "n_test_samples": result["n_test_samples"],
-            "val_auc_router": result["val_auc_router"],
-            "val_auc_boost": result["val_auc_boost"],
-            "chosen_head": result["chosen_head"],
-            "chosen_val_auc": result["chosen_val_auc"],
-            "chosen_test_auc": result["chosen_test_auc"],
-            "static_test_auc": result["static_test_auc"],
-            "craf_test_auc": result["craf_test_auc"],
-            "router_test_auc": result["router_test_auc"],
-            "boost_test_auc": result["boost_test_auc"],
-        })
-        metrics_f.flush()
-        # Selection log: for every candidate baseline + the two RGA+ heads.
-        common = {"experiment_id": args.experiment_id, "benchmark": args.benchmark,
-                  "protocol": args.protocol, "seed": result["seed"],
-                  "selection_used_test_metrics": False}
-        selection_w.writerow({**common, "candidate": "rga_meta_router",
-                              "val_auc": result["val_auc_router"],
-                              "test_auc": result["router_test_auc"]})
-        selection_w.writerow({**common, "candidate": "rga_boosted_fusion",
-                              "val_auc": result["val_auc_boost"],
-                              "test_auc": result["boost_test_auc"]})
+            "selection_used_test_metrics": False,
+        }
+        selection_w.writerow(
+            {
+                **common,
+                "candidate": "rga_meta_router",
+                "val_auc": result["val_auc_router"],
+                "test_auc": result["router_test_auc"],
+            }
+        )
+        selection_w.writerow(
+            {
+                **common,
+                "candidate": "rga_boosted_fusion",
+                "val_auc": result["val_auc_boost"],
+                "test_auc": result["boost_test_auc"],
+            }
+        )
         for name, vauc in result["baseline_val_aucs"].items():
-            selection_w.writerow({**common, "candidate": name,
-                                  "val_auc": vauc,
-                                  "test_auc": result["baseline_test_aucs"].get(name)})
+            selection_w.writerow(
+                {**common, "candidate": name, "val_auc": vauc, "test_auc": result["baseline_test_aucs"].get(name)}
+            )
         selection_f.flush()
-        print(f"[pilot] seed={s} done  chosen={result['chosen_head']}  "
-              f"chosen_test_auc={result['chosen_test_auc']:.4f}", flush=True)
+        print(
+            f"[pilot] seed={s} done  chosen={result['chosen_head']}  "
+            f"chosen_test_auc={result['chosen_test_auc']:.4f}",
+            flush=True,
+        )
 
     metrics_f.close()
     selection_f.close()

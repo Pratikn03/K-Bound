@@ -21,13 +21,23 @@ def rows():
 
 def test_csv_has_required_columns(rows):
     required = {
-        "benchmark", "protocol", "analysis_family", "seed_or_ensemble",
-        "router_validation_auc", "boost_validation_auc",
-        "selected_head", "selected_validation_auc", "selected_test_auc",
-        "old_test_max_head", "old_test_max_auc",
+        "benchmark",
+        "protocol",
+        "analysis_family",
+        "seed_or_ensemble",
+        "router_validation_auc",
+        "boost_validation_auc",
+        "selected_head",
+        "selected_validation_auc",
+        "selected_test_auc",
+        "old_test_max_head",
+        "old_test_max_auc",
         "delta_old_max_minus_corrected_headline",
-        "selection_used_test_metrics", "claim_status",
-        "n_seeds", "n_seed_choose_router", "n_seed_choose_boost",
+        "selection_used_test_metrics",
+        "claim_status",
+        "n_seeds",
+        "n_seed_choose_router",
+        "n_seed_choose_boost",
     }
     cols = set(rows[0].keys()) if rows else set()
     assert required.issubset(cols), f"missing columns: {required - cols}"
@@ -36,10 +46,7 @@ def test_csv_has_required_columns(rows):
 def test_selection_never_used_test_metrics(rows):
     for r in rows:
         flag = (r.get("selection_used_test_metrics") or "").strip().lower()
-        assert flag in {"false", "0"}, (
-            f"selection_used_test_metrics must be False for every row (Rule 4). "
-            f"row: {r}"
-        )
+        assert flag in {"false", "0"}, f"selection_used_test_metrics must be False for every row (Rule 4). " f"row: {r}"
 
 
 def test_all_cells_have_ensemble_row(rows):
@@ -67,9 +74,12 @@ def test_all_cells_have_ensemble_row(rows):
 def test_chosen_head_is_router_or_boost_or_null(rows):
     for r in rows:
         h = r.get("selected_head")
-        assert h in {"router", "boost", "", None}, (
-            f"chosen_head must be 'router' or 'boost' (or empty for missing JSON): row {r}"
-        )
+        assert h in {
+            "router",
+            "boost",
+            "",
+            None,
+        }, f"chosen_head must be 'router' or 'boost' (or empty for missing JSON): row {r}"
 
 
 def test_delta_old_max_minus_corrected_is_nonnegative_for_existing_jsons(rows):
@@ -100,6 +110,7 @@ def test_delta_old_max_minus_corrected_is_nonnegative_for_existing_jsons(rows):
 def test_claim_status_is_audited_reanalysis(rows):
     for r in rows:
         cs = (r.get("claim_status") or "").strip()
-        assert cs in {"locked_audited_reanalysis", "pending — JSON missing"}, (
-            f"claim_status must be 'locked_audited_reanalysis' or 'pending — JSON missing'; got {cs!r} on row {r}"
-        )
+        assert cs in {
+            "locked_audited_reanalysis",
+            "pending — JSON missing",
+        }, f"claim_status must be 'locked_audited_reanalysis' or 'pending — JSON missing'; got {cs!r} on row {r}"

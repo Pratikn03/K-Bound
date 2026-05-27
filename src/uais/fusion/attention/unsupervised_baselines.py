@@ -34,7 +34,6 @@ they can be directly compared and used as input to the fusion pipeline.
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import Dict, List, Optional, Tuple
 
 import numpy as np
 import torch
@@ -46,10 +45,10 @@ from sklearn.neighbors import LocalOutlierFactor
 from sklearn.preprocessing import StandardScaler
 from sklearn.svm import OneClassSVM
 
-
 # ---------------------------------------------------------------------------
 # Shared helpers
 # ---------------------------------------------------------------------------
+
 
 def _flatten_with_mask(features: np.ndarray, masks: np.ndarray) -> np.ndarray:
     """[N, D, F] + [N, D] bool → [N, D*F + D] float (masked → 0.5 + indicator)."""
@@ -66,14 +65,14 @@ def _normal_only(
     features: np.ndarray,
     masks: np.ndarray,
     labels: np.ndarray,
-) -> Tuple[np.ndarray, np.ndarray]:
+) -> tuple[np.ndarray, np.ndarray]:
     """Filter to label==0 rows.  Anomaly labels are never seen during fit().
 
     This enforces the reviewer's required protocol for unsupervised models.
     """
     if labels is None:
         return features, masks
-    keep = (np.asarray(labels) == 0)
+    keep = np.asarray(labels) == 0
     return features[keep], masks[keep]
 
 
@@ -93,6 +92,7 @@ def _percentile_calibrate(
 # ---------------------------------------------------------------------------
 # Hyperparameter registries — every value documented for reproducibility
 # ---------------------------------------------------------------------------
+
 
 @dataclass
 class BGMMConfig:
@@ -130,7 +130,7 @@ class KMeansConfig:
 @dataclass
 class IForestConfig:
     n_estimators: int = 200
-    max_samples: str = "auto"   # 256 or len(X)
+    max_samples: str = "auto"  # 256 or len(X)
     contamination: str = "auto"  # let sklearn pick
     max_features: float = 1.0
     bootstrap: bool = False
@@ -153,7 +153,7 @@ class LOFConfig:
     algorithm: str = "auto"
     metric: str = "minkowski"
     contamination: str = "auto"
-    novelty: bool = True   # required for predict() on new data
+    novelty: bool = True  # required for predict() on new data
     n_jobs: int = -1
 
 
@@ -164,9 +164,10 @@ class AEConfig:
     Addresses reviewer comment: 'Full Autoencoder architecture (layers,
     activations, latent size)'.
     """
-    encoder_dims: List[int] = field(default_factory=lambda: [64, 32])
+
+    encoder_dims: list[int] = field(default_factory=lambda: [64, 32])
     latent_dim: int = 8
-    decoder_dims: List[int] = field(default_factory=lambda: [32, 64])
+    decoder_dims: list[int] = field(default_factory=lambda: [32, 64])
     activation: str = "ReLU"
     dropout: float = 0.0
     epochs: int = 50
@@ -181,6 +182,7 @@ class AEConfig:
 # Mixin: shared interface
 # ---------------------------------------------------------------------------
 
+
 class _BaseUnsupervised:
     """Shared init / scaler / state for all unsupervised baselines."""
 
@@ -189,14 +191,13 @@ class _BaseUnsupervised:
     def __init__(self, config=None) -> None:
         self.config = config or self._config_cls()
         self._scaler = StandardScaler()
-        self._train_raw_scores: Optional[np.ndarray] = None
+        self._train_raw_scores: np.ndarray | None = None
         self._fitted = False
 
     # ------------------------------------------------------------------
     # Public API — every detector implements _fit_normal and _raw_scores
     # ------------------------------------------------------------------
-    def fit(self, features: np.ndarray, masks: np.ndarray,
-            labels: Optional[np.ndarray] = None) -> "_BaseUnsupervised":
+    def fit(self, features: np.ndarray, masks: np.ndarray, labels: np.ndarray | None = None) -> _BaseUnsupervised:
         f_norm, m_norm = _normal_only(features, masks, labels)
         if len(f_norm) == 0:
             raise ValueError(
@@ -216,7 +217,7 @@ class _BaseUnsupervised:
         raw = self._raw_scores(X)
         return _percentile_calibrate(raw, self._train_raw_scores)
 
-    def get_hyperparameters(self) -> Dict:
+    def get_hyperparameters(self) -> dict:
         """Return all hyperparameters used by this baseline (for reproducibility)."""
         return {k: getattr(self.config, k) for k in self.config.__dataclass_fields__}
 
@@ -233,6 +234,7 @@ class _BaseUnsupervised:
 # ---------------------------------------------------------------------------
 # 1. BGMM — Bayesian Gaussian Mixture (paper's headline proposal)
 # ---------------------------------------------------------------------------
+
 
 class BGMMAnomalyDetector(_BaseUnsupervised):
     """Bayesian Gaussian Mixture with Dirichlet-process prior.
@@ -273,6 +275,7 @@ class BGMMAnomalyDetector(_BaseUnsupervised):
 # 2. GMM — Standard Gaussian Mixture
 # ---------------------------------------------------------------------------
 
+
 class GMMAnomalyDetector(_BaseUnsupervised):
     _config_cls = GMMConfig
 
@@ -296,6 +299,7 @@ class GMMAnomalyDetector(_BaseUnsupervised):
 # ---------------------------------------------------------------------------
 # 3. KMeans distance-from-centroid
 # ---------------------------------------------------------------------------
+
 
 class KMeansAnomalyDetector(_BaseUnsupervised):
     _config_cls = KMeansConfig
@@ -322,6 +326,7 @@ class KMeansAnomalyDetector(_BaseUnsupervised):
 # 4. Isolation Forest
 # ---------------------------------------------------------------------------
 
+
 class IsolationForestDetector(_BaseUnsupervised):
     _config_cls = IForestConfig
 
@@ -347,6 +352,7 @@ class IsolationForestDetector(_BaseUnsupervised):
 # 5. One-Class SVM
 # ---------------------------------------------------------------------------
 
+
 class OneClassSVMDetector(_BaseUnsupervised):
     _config_cls = OCSVMConfig
 
@@ -368,6 +374,7 @@ class OneClassSVMDetector(_BaseUnsupervised):
 # ---------------------------------------------------------------------------
 # 6. LOF novelty mode
 # ---------------------------------------------------------------------------
+
 
 class LOFAnomalyDetector(_BaseUnsupervised):
     _config_cls = LOFConfig
@@ -392,13 +399,14 @@ class LOFAnomalyDetector(_BaseUnsupervised):
 # 7. Autoencoder anomaly detector (fully-specified architecture)
 # ---------------------------------------------------------------------------
 
+
 class _SymmetricAE(nn.Module):
     """Symmetric MLP autoencoder.  Architecture printed by repr() for paper tables."""
 
     def __init__(self, input_dim: int, cfg: AEConfig) -> None:
         super().__init__()
         act = getattr(nn, cfg.activation)
-        enc_layers: List[nn.Module] = []
+        enc_layers: list[nn.Module] = []
         prev = input_dim
         for h in cfg.encoder_dims:
             enc_layers += [nn.Linear(prev, h), act()]
@@ -408,7 +416,7 @@ class _SymmetricAE(nn.Module):
         enc_layers.append(nn.Linear(prev, cfg.latent_dim))
         self.encoder = nn.Sequential(*enc_layers)
 
-        dec_layers: List[nn.Module] = []
+        dec_layers: list[nn.Module] = []
         prev = cfg.latent_dim
         for h in cfg.decoder_dims:
             dec_layers += [nn.Linear(prev, h), act()]
@@ -427,11 +435,10 @@ class AutoencoderAnomalyDetector(_BaseUnsupervised):
 
     _config_cls = AEConfig
 
-    def __init__(self, config: Optional[AEConfig] = None,
-                 device: Optional[torch.device] = None) -> None:
+    def __init__(self, config: AEConfig | None = None, device: torch.device | None = None) -> None:
         super().__init__(config)
         self.device = device or torch.device("cpu")
-        self._model: Optional[_SymmetricAE] = None
+        self._model: _SymmetricAE | None = None
 
     def _fit_normal(self, X: np.ndarray) -> None:
         c = self.config
@@ -439,8 +446,7 @@ class AutoencoderAnomalyDetector(_BaseUnsupervised):
         np.random.seed(c.random_state)
 
         self._model = _SymmetricAE(X.shape[1], c).to(self.device)
-        opt = torch.optim.Adam(self._model.parameters(),
-                               lr=c.lr, weight_decay=c.weight_decay)
+        opt = torch.optim.Adam(self._model.parameters(), lr=c.lr, weight_decay=c.weight_decay)
 
         # Internal validation split (10%) for early stopping — uses only
         # normal training data, no anomalies leaked.
@@ -457,7 +463,7 @@ class AutoencoderAnomalyDetector(_BaseUnsupervised):
             self._model.train()
             perm = np.random.permutation(len(X_tr))
             for start in range(0, len(X_tr), c.batch_size):
-                idx = perm[start:start + c.batch_size]
+                idx = perm[start : start + c.batch_size]
                 xb = torch.tensor(X_tr[idx], dtype=torch.float32, device=self.device)
                 opt.zero_grad()
                 ((self._model(xb) - xb) ** 2).mean().backward()
@@ -493,6 +499,7 @@ class AutoencoderAnomalyDetector(_BaseUnsupervised):
 # Convenience runner — all unsupervised baselines, identical protocol
 # ---------------------------------------------------------------------------
 
+
 def run_unsupervised_suite(
     features: np.ndarray,
     masks: np.ndarray,
@@ -500,15 +507,15 @@ def run_unsupervised_suite(
     train_idx: np.ndarray,
     test_idx: np.ndarray,
     *,
-    bgmm_cfg: Optional[BGMMConfig] = None,
-    gmm_cfg: Optional[GMMConfig] = None,
-    kmeans_cfg: Optional[KMeansConfig] = None,
-    iforest_cfg: Optional[IForestConfig] = None,
-    ocsvm_cfg: Optional[OCSVMConfig] = None,
-    lof_cfg: Optional[LOFConfig] = None,
-    ae_cfg: Optional[AEConfig] = None,
-    device: Optional[torch.device] = None,
-) -> Dict[str, Dict]:
+    bgmm_cfg: BGMMConfig | None = None,
+    gmm_cfg: GMMConfig | None = None,
+    kmeans_cfg: KMeansConfig | None = None,
+    iforest_cfg: IForestConfig | None = None,
+    ocsvm_cfg: OCSVMConfig | None = None,
+    lof_cfg: LOFConfig | None = None,
+    ae_cfg: AEConfig | None = None,
+    device: torch.device | None = None,
+) -> dict[str, dict]:
     """Fit every unsupervised baseline on training-set normals only,
     score the test set, and return {name: classification_metrics}."""
     from uais.utils.metrics import classification_metrics
@@ -517,16 +524,16 @@ def run_unsupervised_suite(
     test_feat, test_mask, test_labels = features[test_idx], masks[test_idx], labels[test_idx]
 
     detectors = {
-        "bgmm":          BGMMAnomalyDetector(bgmm_cfg),
-        "gmm":           GMMAnomalyDetector(gmm_cfg),
-        "kmeans":        KMeansAnomalyDetector(kmeans_cfg),
+        "bgmm": BGMMAnomalyDetector(bgmm_cfg),
+        "gmm": GMMAnomalyDetector(gmm_cfg),
+        "kmeans": KMeansAnomalyDetector(kmeans_cfg),
         "isolation_forest": IsolationForestDetector(iforest_cfg),
         "one_class_svm": OneClassSVMDetector(ocsvm_cfg),
-        "lof":           LOFAnomalyDetector(lof_cfg),
-        "autoencoder":   AutoencoderAnomalyDetector(ae_cfg, device=device),
+        "lof": LOFAnomalyDetector(lof_cfg),
+        "autoencoder": AutoencoderAnomalyDetector(ae_cfg, device=device),
     }
 
-    results: Dict[str, Dict] = {}
+    results: dict[str, dict] = {}
     for name, det in detectors.items():
         try:
             det.fit(train_feat, train_mask, train_labels)
@@ -537,17 +544,25 @@ def run_unsupervised_suite(
                 metrics_d["effective_n_components"] = det.get_effective_n_components()
             results[name] = metrics_d
         except Exception as exc:
-            results[name] = {"error": f"{type(exc).__name__}: {exc}",
-                             "hyperparameters": det.get_hyperparameters()}
+            results[name] = {"error": f"{type(exc).__name__}: {exc}", "hyperparameters": det.get_hyperparameters()}
 
     return results
 
 
 __all__ = [
-    "BGMMConfig", "GMMConfig", "KMeansConfig", "IForestConfig",
-    "OCSVMConfig", "LOFConfig", "AEConfig",
-    "BGMMAnomalyDetector", "GMMAnomalyDetector", "KMeansAnomalyDetector",
-    "IsolationForestDetector", "OneClassSVMDetector", "LOFAnomalyDetector",
+    "BGMMConfig",
+    "GMMConfig",
+    "KMeansConfig",
+    "IForestConfig",
+    "OCSVMConfig",
+    "LOFConfig",
+    "AEConfig",
+    "BGMMAnomalyDetector",
+    "GMMAnomalyDetector",
+    "KMeansAnomalyDetector",
+    "IsolationForestDetector",
+    "OneClassSVMDetector",
+    "LOFAnomalyDetector",
     "AutoencoderAnomalyDetector",
     "run_unsupervised_suite",
 ]

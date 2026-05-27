@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
-from typing import Dict, Tuple
 
 import numpy as np
 import torch
@@ -16,11 +15,11 @@ from uais.fusion.attention.attention_utils import (
     FusionDataset,
     apply_domain_dropout,
     build_fusion_tensors,
+    hash_file,
     infer_feature_columns,
     load_fusion_dataframe,
     prepare_fusion_dataframe,
     validate_fusion_schema,
-    hash_file,
 )
 from uais.fusion.attention.cross_modal_attention import AttentionFusionModel
 from uais.utils.config_loader import load_yaml
@@ -44,7 +43,7 @@ def attention_fusion_loss(
     attention_weights: torch.Tensor | None,
     confidences: torch.Tensor | None = None,
     lambda_reg: float = 0.01,
-) -> Tuple[torch.Tensor, Dict[str, float]]:
+) -> tuple[torch.Tensor, dict[str, float]]:
     bce_loss = nn.functional.binary_cross_entropy_with_logits(logits, targets)
     entropy = torch.tensor(0.0, device=logits.device)
     if attention_weights is not None:
@@ -62,7 +61,7 @@ def attention_fusion_loss(
     }
 
 
-def evaluate_model(model: AttentionFusionModel, loader: DataLoader, device: torch.device) -> Dict[str, float]:
+def evaluate_model(model: AttentionFusionModel, loader: DataLoader, device: torch.device) -> dict[str, float]:
     model.eval()
     all_probs = []
     all_labels = []

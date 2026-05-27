@@ -18,9 +18,8 @@ import json
 import shutil
 import tempfile
 from collections import defaultdict
+from collections.abc import Iterable
 from pathlib import Path
-from typing import Iterable
-
 
 DATASET = "gengchensun/mvtec-3d-ad"
 KAGGLE_ROOT = "mvtec_3d_anomaly_detection"
@@ -80,10 +79,7 @@ def select_subset_files(
         {
             key[2]
             for path in file_list
-            if (key := _stem_key(path)) is not None
-            and key[0] == category
-            and key[1] == "test"
-            and key[2] != "good"
+            if (key := _stem_key(path)) is not None and key[0] == category and key[1] == "test" and key[2] != "good"
         }
     )
     for defect in test_defects:
@@ -181,7 +177,9 @@ def main() -> None:
     parser.add_argument("--max-validation-good", type=int, default=12)
     parser.add_argument("--max-test-good", type=int, default=12)
     parser.add_argument("--max-test-per-defect", type=int, default=12)
-    parser.add_argument("--metadata", type=Path, default=Path("experiments/fusion/mvtec3d_download_subset_metadata.json"))
+    parser.add_argument(
+        "--metadata", type=Path, default=Path("experiments/fusion/mvtec3d_download_subset_metadata.json")
+    )
     parser.add_argument("--force", action="store_true")
     args = parser.parse_args()
 

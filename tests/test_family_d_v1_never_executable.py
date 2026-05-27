@@ -17,9 +17,7 @@ def test_invalidation_notice_exists():
 
 def test_invalidation_notice_marks_v1_as_invalid_for_execution():
     t = INVAL_NOTICE.read_text()
-    assert "INVALID_FOR_EXECUTION" in t, (
-        "invalidation notice must state INVALID_FOR_EXECUTION"
-    )
+    assert "INVALID_FOR_EXECUTION" in t, "invalidation notice must state INVALID_FOR_EXECUTION"
 
 
 def test_invalidation_notice_lists_grounds():
@@ -31,9 +29,7 @@ def test_invalidation_notice_lists_grounds():
         "eyecandies",
         "audited-reanalysis",
     ):
-        assert required in t, (
-            f"invalidation notice missing required ground keyword: {required!r}"
-        )
+        assert required in t, f"invalidation notice missing required ground keyword: {required!r}"
 
 
 def test_v1_execution_commands_remain_marked_not_run():
@@ -42,9 +38,7 @@ def test_v1_execution_commands_remain_marked_not_run():
     point from a scripts/ shim."""
     assert V1_EXEC.exists()
     t = V1_EXEC.read_text()
-    assert "NOT RUN" in t or "not run" in t.lower(), (
-        "v1 execution commands must remain labelled NOT RUN"
-    )
+    assert "NOT RUN" in t or "not run" in t.lower(), "v1 execution commands must remain labelled NOT RUN"
 
     # No active shim script should treat the v1 commands as live.
     scripts_dir = ROOT / "src" / "scripts"
@@ -54,6 +48,6 @@ def test_v1_execution_commands_remain_marked_not_run():
                 txt = p.read_text(encoding="utf-8")
             except UnicodeDecodeError:
                 continue
-            assert "FAMILY_D_EXECUTION_COMMANDS_NOT_RUN" not in txt, (
-                f"{p} imports / references the v1 NOT_RUN command set as active"
-            )
+            assert (
+                "FAMILY_D_EXECUTION_COMMANDS_NOT_RUN" not in txt
+            ), f"{p} imports / references the v1 NOT_RUN command set as active"

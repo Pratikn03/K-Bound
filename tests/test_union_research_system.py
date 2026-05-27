@@ -29,10 +29,7 @@ def test_union_plan_connects_legacy_new_healthcare_and_assets():
 
 def test_union_plan_keeps_deprecated_dashboard_opt_in():
     default_names = [step.name for step in build_plan(mode="full")]
-    explicit_names = [
-        step.name
-        for step in build_plan(mode="full", include_deprecated_dashboard=True)
-    ]
+    explicit_names = [step.name for step in build_plan(mode="full", include_deprecated_dashboard=True)]
 
     assert "legacy_dashboard_fusion" not in default_names
     assert "legacy_dashboard_fusion" in explicit_names
@@ -50,7 +47,7 @@ def test_rebuild_paper_regenerates_patchcore_assets():
     script = Path("scripts/rebuild_paper.sh").read_text(encoding="utf-8")
 
     assert "mvtec3d_patchcore_results.json" in script
-    assert "--asset-prefix \"mvtec3d_patchcore_\"" in script
+    assert '--asset-prefix "mvtec3d_patchcore_"' in script
 
 
 def test_rebuild_paper_regenerates_public_mvtec_protocol_comparison():
@@ -62,10 +59,7 @@ def test_rebuild_paper_regenerates_public_mvtec_protocol_comparison():
 
 def test_optional_nlp_vision_are_opt_in():
     default_names = [step.name for step in build_plan(mode="legacy")]
-    explicit_names = [
-        step.name
-        for step in build_plan(mode="legacy", include_optional_nlp_vision=True)
-    ]
+    explicit_names = [step.name for step in build_plan(mode="legacy", include_optional_nlp_vision=True)]
 
     assert "standalone_nlp" not in default_names
     assert "standalone_vision" not in default_names

@@ -28,9 +28,9 @@ from scripts.generate_craf_paper_assets import (
     plot_missing_modality,
     write_adversarial_table,
     write_calibration_table,
+    write_category_aware_table,
     write_clean_ci_table,
     write_clean_table,
-    write_category_aware_table,
     write_component_ablation_table,
     write_drift_table,
     write_failure_case_table,
@@ -38,7 +38,6 @@ from scripts.generate_craf_paper_assets import (
     write_paired_benchmark_metadata_table,
     write_tau_sweep_table,
 )
-
 
 WRITERS_TAKING_DATA = [
     write_clean_table,
@@ -73,7 +72,7 @@ def _rename_prefixed_files(src_dir: Path, dst_dir: Path, src_prefix: str, dst_pr
             continue
         if not path.name.startswith(src_prefix):
             continue
-        new_name = dst_prefix + path.name[len(src_prefix):]
+        new_name = dst_prefix + path.name[len(src_prefix) :]
         target = dst_dir / new_name
         if target.exists():
             target.unlink()

@@ -34,7 +34,12 @@ BENCHMARKS = [
     ("MVTec 3D-AD", "PatchCore supervised", "A", "experiments/fusion/mvtec3d_patchcore_supervised_paired_results.json"),
     ("MVTec 3D-AD", "PatchCore held-out", "A", "experiments/fusion/mvtec3d_patchcore_heldout_results.json"),
     ("MVTec LOCO-AD", "PatchCore canonical", "A", "experiments/fusion/mvtec_loco_patchcore_results.json"),
-    ("MVTec LOCO-AD", "PatchCore supervised", "A", "experiments/fusion/mvtec_loco_patchcore_supervised_paired_results.json"),
+    (
+        "MVTec LOCO-AD",
+        "PatchCore supervised",
+        "A",
+        "experiments/fusion/mvtec_loco_patchcore_supervised_paired_results.json",
+    ),
     ("Real3D-AD", "PCA shape + depth supervised", "C", "experiments/fusion/real3d_supervised_paired_results.json"),
     ("VisA", "RGB+edge canonical", "A", "experiments/fusion/visa_fusion_results.json"),
     ("VisA", "RGB+edge supervised", "A", "experiments/fusion/visa_supervised_paired_results.json"),
@@ -93,21 +98,23 @@ def per_seed_validation_frozen_selection(payload: dict) -> list[dict]:
         chosen_test = None
         chosen_val = None
         if chosen == "router":
-            chosen_test = (router.get("roc_auc") if isinstance(router.get("roc_auc"), (int, float)) else None)
+            chosen_test = router.get("roc_auc") if isinstance(router.get("roc_auc"), (int, float)) else None
             chosen_val = val_router
         elif chosen == "boost":
-            chosen_test = (boost.get("roc_auc") if isinstance(boost.get("roc_auc"), (int, float)) else None)
+            chosen_test = boost.get("roc_auc") if isinstance(boost.get("roc_auc"), (int, float)) else None
             chosen_val = val_boost
-        out.append({
-            "seed": seed,
-            "validation_roc_auc_router": val_router,
-            "validation_roc_auc_boost": val_boost,
-            "chosen_head": chosen,
-            "chosen_validation_roc_auc": chosen_val,
-            "chosen_test_roc_auc": chosen_test,
-            "router_test_roc_auc": router.get("roc_auc"),
-            "boost_test_roc_auc": boost.get("roc_auc"),
-        })
+        out.append(
+            {
+                "seed": seed,
+                "validation_roc_auc_router": val_router,
+                "validation_roc_auc_boost": val_boost,
+                "chosen_head": chosen,
+                "chosen_validation_roc_auc": chosen_val,
+                "chosen_test_roc_auc": chosen_test,
+                "router_test_roc_auc": router.get("roc_auc"),
+                "boost_test_roc_auc": boost.get("roc_auc"),
+            }
+        )
     return out
 
 
@@ -129,7 +136,9 @@ def ensemble_selection(per_seed: list[dict]) -> dict:
             counts[c] += 1
 
     def _mean(key):
-        vals = [r.get(key) for r in per_seed if isinstance(r.get(key), (int, float)) and math.isfinite(float(r.get(key)))]
+        vals = [
+            r.get(key) for r in per_seed if isinstance(r.get(key), (int, float)) and math.isfinite(float(r.get(key)))
+        ]
         return sum(vals) / len(vals) if vals else None
 
     val_router_mean = _mean("validation_roc_auc_router")
@@ -190,36 +199,40 @@ def main() -> None:
     for benchmark, protocol, family, rel_path in BENCHMARKS:
         p = args.repo_root / rel_path
         if not p.exists():
-            rows.append({
-                "benchmark": benchmark,
-                "protocol": protocol,
-                "analysis_family": family,
-                "seed_or_ensemble": "ensemble",
-                "router_validation_auc": None,
-                "boost_validation_auc": None,
-                "selected_head": None,
-                "selected_validation_auc": None,
-                "selected_test_auc": None,
-                "old_test_max_head": None,
-                "old_test_max_auc": None,
-                "delta_old_max_minus_corrected_headline": None,
-                "selection_used_test_metrics": False,
-                "claim_status": "pending — JSON missing",
-                "n_seeds": 0,
-                "n_seed_choose_router": 0,
-                "n_seed_choose_boost": 0,
-            })
+            rows.append(
+                {
+                    "benchmark": benchmark,
+                    "protocol": protocol,
+                    "analysis_family": family,
+                    "seed_or_ensemble": "ensemble",
+                    "router_validation_auc": None,
+                    "boost_validation_auc": None,
+                    "selected_head": None,
+                    "selected_validation_auc": None,
+                    "selected_test_auc": None,
+                    "old_test_max_head": None,
+                    "old_test_max_auc": None,
+                    "delta_old_max_minus_corrected_headline": None,
+                    "selection_used_test_metrics": False,
+                    "claim_status": "pending — JSON missing",
+                    "n_seeds": 0,
+                    "n_seed_choose_router": 0,
+                    "n_seed_choose_boost": 0,
+                }
+            )
             continue
         payload = json.loads(p.read_text())
         per_seed = per_seed_validation_frozen_selection(payload)
         ens = ensemble_selection(per_seed)
         # Old test-max behaviour for delta
         cs = payload.get("clean_metric_summary", {})
-        def _m(name):
-            v = cs.get(name, {}).get("roc_auc")
+
+        def _m(name, _cs=cs):
+            v = _cs.get(name, {}).get("roc_auc")
             if isinstance(v, dict):
                 return v.get("mean")
             return v if isinstance(v, (int, float)) else None
+
         router_test = _m("rga_meta_router")
         boost_test = _m("rga_boosted_fusion")
         if router_test is not None and (boost_test is None or router_test >= boost_test):
@@ -236,54 +249,69 @@ def main() -> None:
             else None
         )
         # Ensemble row
-        rows.append({
-            "benchmark": benchmark,
-            "protocol": protocol,
-            "analysis_family": family,
-            "seed_or_ensemble": "ensemble",
-            "router_validation_auc": ens.get("router_validation_auc_mean"),
-            "boost_validation_auc": ens.get("boost_validation_auc_mean"),
-            "selected_head": corrected_head,
-            "selected_validation_auc": ens.get("chosen_validation_auc_mean"),
-            "selected_test_auc": corrected_auc,
-            "old_test_max_head": old_max_head,
-            "old_test_max_auc": old_max_auc,
-            "delta_old_max_minus_corrected_headline": delta,
-            "selection_used_test_metrics": False,
-            "claim_status": "locked_audited_reanalysis",
-            "n_seeds": ens.get("n_seeds"),
-            "n_seed_choose_router": ens.get("n_seed_choose_router"),
-            "n_seed_choose_boost": ens.get("n_seed_choose_boost"),
-        })
-        # Per-seed rows
-        for r in per_seed:
-            rows.append({
+        rows.append(
+            {
                 "benchmark": benchmark,
                 "protocol": protocol,
                 "analysis_family": family,
-                "seed_or_ensemble": f"seed:{r['seed']}",
-                "router_validation_auc": r["validation_roc_auc_router"],
-                "boost_validation_auc": r["validation_roc_auc_boost"],
-                "selected_head": r["chosen_head"],
-                "selected_validation_auc": r["chosen_validation_roc_auc"],
-                "selected_test_auc": r["chosen_test_roc_auc"],
-                "old_test_max_head": None,
-                "old_test_max_auc": None,
-                "delta_old_max_minus_corrected_headline": None,
+                "seed_or_ensemble": "ensemble",
+                "router_validation_auc": ens.get("router_validation_auc_mean"),
+                "boost_validation_auc": ens.get("boost_validation_auc_mean"),
+                "selected_head": corrected_head,
+                "selected_validation_auc": ens.get("chosen_validation_auc_mean"),
+                "selected_test_auc": corrected_auc,
+                "old_test_max_head": old_max_head,
+                "old_test_max_auc": old_max_auc,
+                "delta_old_max_minus_corrected_headline": delta,
                 "selection_used_test_metrics": False,
                 "claim_status": "locked_audited_reanalysis",
-                "n_seeds": 1,
-                "n_seed_choose_router": int(r["chosen_head"] == "router"),
-                "n_seed_choose_boost": int(r["chosen_head"] == "boost"),
-            })
+                "n_seeds": ens.get("n_seeds"),
+                "n_seed_choose_router": ens.get("n_seed_choose_router"),
+                "n_seed_choose_boost": ens.get("n_seed_choose_boost"),
+            }
+        )
+        # Per-seed rows
+        for r in per_seed:
+            rows.append(
+                {
+                    "benchmark": benchmark,
+                    "protocol": protocol,
+                    "analysis_family": family,
+                    "seed_or_ensemble": f"seed:{r['seed']}",
+                    "router_validation_auc": r["validation_roc_auc_router"],
+                    "boost_validation_auc": r["validation_roc_auc_boost"],
+                    "selected_head": r["chosen_head"],
+                    "selected_validation_auc": r["chosen_validation_roc_auc"],
+                    "selected_test_auc": r["chosen_test_roc_auc"],
+                    "old_test_max_head": None,
+                    "old_test_max_auc": None,
+                    "delta_old_max_minus_corrected_headline": None,
+                    "selection_used_test_metrics": False,
+                    "claim_status": "locked_audited_reanalysis",
+                    "n_seeds": 1,
+                    "n_seed_choose_router": int(r["chosen_head"] == "router"),
+                    "n_seed_choose_boost": int(r["chosen_head"] == "boost"),
+                }
+            )
 
     fields = [
-        "benchmark", "protocol", "analysis_family", "seed_or_ensemble",
-        "router_validation_auc", "boost_validation_auc",
-        "selected_head", "selected_validation_auc", "selected_test_auc",
-        "old_test_max_head", "old_test_max_auc", "delta_old_max_minus_corrected_headline",
-        "selection_used_test_metrics", "claim_status",
-        "n_seeds", "n_seed_choose_router", "n_seed_choose_boost",
+        "benchmark",
+        "protocol",
+        "analysis_family",
+        "seed_or_ensemble",
+        "router_validation_auc",
+        "boost_validation_auc",
+        "selected_head",
+        "selected_validation_auc",
+        "selected_test_auc",
+        "old_test_max_head",
+        "old_test_max_auc",
+        "delta_old_max_minus_corrected_headline",
+        "selection_used_test_metrics",
+        "claim_status",
+        "n_seeds",
+        "n_seed_choose_router",
+        "n_seed_choose_boost",
     ]
     args.output.parent.mkdir(parents=True, exist_ok=True)
     with args.output.open("w", newline="") as f:
@@ -307,7 +335,9 @@ def main() -> None:
         sel_auc_s = f"{sel_auc:.4f}" if isinstance(sel_auc, (int, float)) else "--"
         old_auc_s = f"{old_auc:.4f}" if isinstance(old_auc, (int, float)) else "--"
         delta_s = f"{delta:+.4f}" if isinstance(delta, (int, float)) else "--"
-        print(f"  {r['benchmark']:<14s} {r['protocol']:<30s} val-frozen={sel} ({sel_auc_s}) | old_max={old} ({old_auc_s}) | Δ={delta_s}")
+        print(
+            f"  {r['benchmark']:<14s} {r['protocol']:<30s} val-frozen={sel} ({sel_auc_s}) | old_max={old} ({old_auc_s}) | Δ={delta_s}"
+        )
 
 
 if __name__ == "__main__":

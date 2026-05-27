@@ -1,20 +1,21 @@
 """Load and merge YAML configs."""
+
 from pathlib import Path
-from typing import Any, Dict
+from typing import Any
 
 import yaml
 
 CONFIG_DIR = Path(__file__).resolve().parents[2] / "config"
 
 
-def _load_yaml(path: Path) -> Dict[str, Any]:
+def _load_yaml(path: Path) -> dict[str, Any]:
     if not path.exists():
         return {}
-    with open(path, "r", encoding="utf-8") as f:
+    with open(path, encoding="utf-8") as f:
         return yaml.safe_load(f) or {}
 
 
-def _deep_merge(base: Dict[str, Any], override: Dict[str, Any]) -> Dict[str, Any]:
+def _deep_merge(base: dict[str, Any], override: dict[str, Any]) -> dict[str, Any]:
     result = dict(base)
     for key, value in override.items():
         if isinstance(value, dict) and isinstance(result.get(key), dict):
@@ -24,7 +25,7 @@ def _deep_merge(base: Dict[str, Any], override: Dict[str, Any]) -> Dict[str, Any
     return result
 
 
-def load_config(domain: str, config_dir: Path = CONFIG_DIR) -> Dict[str, Any]:
+def load_config(domain: str, config_dir: Path = CONFIG_DIR) -> dict[str, Any]:
     domain = domain.lower()
     base_cfg = _load_yaml(config_dir / "base_config.yaml")
     domain_cfg = _load_yaml(config_dir / f"{domain}_config.yaml")

@@ -1,5 +1,4 @@
 """Simple feedforward autoencoder for anomaly scoring."""
-from typing import Dict, Tuple
 
 import joblib
 import numpy as np
@@ -11,7 +10,7 @@ from uais.utils.paths import domain_paths
 logger = setup_logging(__name__)
 
 
-def train_autoencoder(df, target: str, preprocessor, config: Dict, domain: str) -> Tuple[MLPRegressor, np.ndarray]:
+def train_autoencoder(df, target: str, preprocessor, config: dict, domain: str) -> tuple[MLPRegressor, np.ndarray]:
     X = df.drop(columns=[target])
     y = df[target]
     X_processed = preprocessor.fit_transform(X)

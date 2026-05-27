@@ -5,18 +5,18 @@ from __future__ import annotations
 import json
 import resource
 import time
+from collections.abc import Sequence
 from pathlib import Path
-from typing import Dict, List, Sequence, Tuple
 
 import numpy as np
 import torch
-from torch.utils.data import DataLoader
-from sklearn.linear_model import LogisticRegression
-from sklearn.preprocessing import StandardScaler
-from sklearn.metrics import average_precision_score
-from sklearn import metrics
 from scipy import stats
 from scipy.optimize import nnls
+from sklearn import metrics
+from sklearn.linear_model import LogisticRegression
+from sklearn.metrics import average_precision_score
+from sklearn.preprocessing import StandardScaler
+from torch.utils.data import DataLoader
 
 from uais.fusion.attention.attention_utils import (
     FusionDataset,
@@ -26,14 +26,14 @@ from uais.fusion.attention.attention_utils import (
     infer_feature_columns,
     load_fusion_dataframe,
 )
-from uais.fusion.attention.cross_modal_attention import AttentionFusionModel
-from uais.fusion.attention.train_attention_fusion import attention_fusion_loss, set_seed
-from uais.fusion.attention.reliability_estimator import ReliabilityEstimator
 from uais.fusion.attention.counterfactual_explainer import CounterfactualDomainExplainer
+from uais.fusion.attention.cross_modal_attention import AttentionFusionModel
+from uais.fusion.attention.reliability_estimator import ReliabilityEstimator
+from uais.fusion.attention.train_attention_fusion import attention_fusion_loss, set_seed
 from uais.utils.config_loader import load_yaml
 from uais.utils.metrics import classification_metrics
-from uais.utils.stats import bootstrap_ci, delong_roc_test
 from uais.utils.paths import PROJECT_ROOT
+from uais.utils.stats import bootstrap_ci, delong_roc_test
 
 DEFAULT_CONFIG = Path("src/uais/fusion/attention/attention_config.yaml")
 
@@ -45,13 +45,15 @@ def _resolve_path(path_value: str | Path) -> Path:
     return PROJECT_ROOT / path
 
 
-def _prepare_data(cfg: Dict, include_confidence: bool | None = None):
+def _prepare_data(cfg: dict, include_confidence: bool | None = None):
     data_cfg = cfg.get("data", {})
     model_cfg = cfg.get("model", {})
     data_path = _resolve_path(data_cfg.get("path", ""))
     df = load_fusion_dataframe(data_path)
 
-    include_conf = bool(model_cfg.get("use_input_confidence", True)) if include_confidence is None else include_confidence
+    include_conf = (
+        bool(model_cfg.get("use_input_confidence", True)) if include_confidence is None else include_confidence
+    )
     feature_columns = infer_feature_columns(
         df,
         score_column=data_cfg.get("score_column", "score"),
@@ -61,7 +63,9 @@ def _prepare_data(cfg: Dict, include_confidence: bool | None = None):
         include_confidence=include_conf,
     )
     confidence_column = data_cfg.get("confidence_column", "confidence")
-    confidence_index = feature_columns.index(confidence_column) if confidence_column in feature_columns and include_conf else None
+    confidence_index = (
+        feature_columns.index(confidence_column) if confidence_column in feature_columns and include_conf else None
+    )
 
     domain_order_cfg = data_cfg.get("domain_order") or model_cfg.get("domain_order")
     features, masks, labels, sample_ids, domain_order = build_fusion_tensors(
@@ -85,7 +89,7 @@ def _prepare_data(cfg: Dict, include_confidence: bool | None = None):
     return features, masks, labels, sample_ids, domain_order, feature_columns, confidence_index, score_index
 
 
-def _split_indices(labels: np.ndarray, train_cfg: Dict) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+def _split_indices(labels: np.ndarray, train_cfg: dict) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
     from sklearn.model_selection import train_test_split
 
     indices = np.arange(labels.shape[0])
@@ -106,7 +110,7 @@ def _split_indices(labels: np.ndarray, train_cfg: Dict) -> tuple[np.ndarray, np.
 
 
 def _build_model(
-    model_cfg: Dict,
+    model_cfg: dict,
     num_domains: int,
     input_dim: int,
     confidence_index: int | None,
@@ -133,7 +137,7 @@ def _collect_predictions(
     loader: DataLoader,
     device: torch.device,
     return_attention: bool = False,
-) -> Tuple[np.ndarray, np.ndarray, np.ndarray | None]:
+) -> tuple[np.ndarray, np.ndarray, np.ndarray | None]:
     model.eval()
     all_probs = []
     all_labels = []
@@ -150,9 +154,7 @@ def _collect_predictions(
             all_labels.append(labels.cpu().numpy())
             if return_attention:
                 if attn_weights is None:
-                    all_attn.append(
-                        torch.zeros((features.shape[0], features.shape[1]), device=features.device)
-                    )
+                    all_attn.append(torch.zeros((features.shape[0], features.shape[1]), device=features.device))
                 else:
                     attn_mean = attn_weights.mean(dim=1).mean(dim=1)
                     all_attn.append(attn_mean)
@@ -164,19 +166,19 @@ def _collect_predictions(
     return y_true, y_prob, attn
 
 
-def _evaluate_model(model: AttentionFusionModel, loader: DataLoader, device: torch.device) -> Dict[str, float]:
+def _evaluate_model(model: AttentionFusionModel, loader: DataLoader, device: torch.device) -> dict[str, float]:
     y_true, y_prob, _ = _collect_predictions(model, loader, device, return_attention=False)
     return classification_metrics(y_true, y_prob, threshold=0.5)
 
 
 def _train_model(
-    cfg: Dict,
+    cfg: dict,
     features: np.ndarray,
     masks: np.ndarray,
     labels: np.ndarray,
     domain_order: Sequence[str],
     confidence_index: int | None,
-) -> tuple[AttentionFusionModel, Dict[str, float], Dict[str, float]]:
+) -> tuple[AttentionFusionModel, dict[str, float], dict[str, float]]:
     train_cfg = cfg.get("training", {})
     model_cfg = cfg.get("model", {})
     train_idx, val_idx, test_idx = _split_indices(labels, train_cfg)
@@ -237,15 +239,19 @@ def _train_model(
 
     y_true, y_prob, _ = _collect_predictions(model, test_loader, device, return_attention=False)
     test_metrics = classification_metrics(y_true, y_prob, threshold=0.5)
-    return model, {"val_best_pr_auc": best_pr_auc, "test": test_metrics}, {
-        "batch_size": batch_size,
-        "device": device.type,
-        "train_idx": train_idx,
-        "val_idx": val_idx,
-        "test_idx": test_idx,
-        "y_true": y_true,
-        "y_prob": y_prob,
-    }
+    return (
+        model,
+        {"val_best_pr_auc": best_pr_auc, "test": test_metrics},
+        {
+            "batch_size": batch_size,
+            "device": device.type,
+            "train_idx": train_idx,
+            "val_idx": val_idx,
+            "test_idx": test_idx,
+            "y_true": y_true,
+            "y_prob": y_prob,
+        },
+    )
 
 
 def _evaluate_domain_dropout(
@@ -259,8 +265,8 @@ def _evaluate_domain_dropout(
     drop_probs: Sequence[float],
     drop_domains: Sequence[str],
     drop_pairs: bool,
-) -> Dict[str, Dict[str, Dict[str, float]]]:
-    results: Dict[str, Dict[str, Dict[str, float]]] = {"random": {}, "drop_domain": {}, "drop_pair": {}}
+) -> dict[str, dict[str, dict[str, float]]]:
+    results: dict[str, dict[str, dict[str, float]]] = {"random": {}, "drop_domain": {}, "drop_pair": {}}
     for prob in drop_probs:
         new_masks = apply_domain_dropout(torch.as_tensor(masks), prob).cpu().numpy()
         dataset = FusionDataset(features, new_masks, labels)
@@ -300,7 +306,7 @@ def _measure_performance(
     warmup_batches: int,
     runs: int,
     max_batches: int | None = None,
-) -> Dict[str, float]:
+) -> dict[str, float]:
     dataset = FusionDataset(features, masks, labels)
     loader = DataLoader(dataset, batch_size=batch_size)
     model.eval()
@@ -352,11 +358,11 @@ def _collect_predictions_craf(
     labels_np: np.ndarray,
     batch_size: int,
     device: torch.device,
-) -> Tuple[np.ndarray, np.ndarray]:
+) -> tuple[np.ndarray, np.ndarray]:
     """Collect predictions using CRAF reliability weights injected at fusion layer."""
     model.eval()
-    all_probs: List[np.ndarray] = []
-    all_labels: List[np.ndarray] = []
+    all_probs: list[np.ndarray] = []
+    all_labels: list[np.ndarray] = []
 
     for start in range(0, len(labels_np), batch_size):
         end = min(start + batch_size, len(labels_np))
@@ -427,7 +433,7 @@ def _bootstrap_summary(
     n_bootstrap: int,
     alpha: float,
     seed: int,
-) -> Dict[str, Dict[str, float]]:
+) -> dict[str, dict[str, float]]:
     def _f1_metric(y_true_arr: np.ndarray, y_prob_arr: np.ndarray) -> float:
         return classification_metrics(y_true_arr, y_prob_arr, threshold=0.5)["f1"]
 
@@ -437,8 +443,12 @@ def _bootstrap_summary(
         except ValueError:
             return float("nan")
 
-    pr_lower, pr_upper = bootstrap_ci(y_true, y_prob, _pr_auc_metric, n_bootstrap=n_bootstrap, alpha=alpha, random_state=seed)
-    f1_lower, f1_upper = bootstrap_ci(y_true, y_prob, _f1_metric, n_bootstrap=n_bootstrap, alpha=alpha, random_state=seed)
+    pr_lower, pr_upper = bootstrap_ci(
+        y_true, y_prob, _pr_auc_metric, n_bootstrap=n_bootstrap, alpha=alpha, random_state=seed
+    )
+    f1_lower, f1_upper = bootstrap_ci(
+        y_true, y_prob, _f1_metric, n_bootstrap=n_bootstrap, alpha=alpha, random_state=seed
+    )
     return {
         "pr_auc": {"lower": pr_lower, "upper": pr_upper},
         "f1": {"lower": f1_lower, "upper": f1_upper},
@@ -460,8 +470,8 @@ def _baseline_predictions(
     train_idx: np.ndarray,
     test_idx: np.ndarray,
     domain_order: Sequence[str],
-) -> Dict[str, Dict[str, np.ndarray]]:
-    baselines: Dict[str, Dict[str, np.ndarray]] = {}
+) -> dict[str, dict[str, np.ndarray]]:
+    baselines: dict[str, dict[str, np.ndarray]] = {}
     present = ~masks
     denom = present.sum(axis=1).clip(min=1)
     avg_scores = (scores * present).sum(axis=1) / denom
@@ -552,13 +562,13 @@ def _interpretability_summary(
     confidence_index: int | None,
     batch_size: int,
     device: torch.device,
-) -> Dict[str, object]:
+) -> dict[str, object]:
     if score_index is None:
         return {}
     dataset = FusionDataset(features, masks, labels)
     loader = DataLoader(dataset, batch_size=batch_size)
     _, _, attn = _collect_predictions(model, loader, device, return_attention=True)
-    attention_means: Dict[str, float] = {}
+    attention_means: dict[str, float] = {}
     for idx, domain in enumerate(domain_order):
         present = ~masks[:, idx]
         if present.sum() == 0:
@@ -567,7 +577,7 @@ def _interpretability_summary(
         attention_means[domain] = float(attn[present, idx].mean()) if attn is not None else float("nan")
 
     reliabilities = compute_domain_reliability(features, masks, labels, domain_order, score_index)
-    confidence_means: Dict[str, float] = {}
+    confidence_means: dict[str, float] = {}
     if confidence_index is not None:
         conf = features[:, :, confidence_index]
         for idx, domain in enumerate(domain_order):
@@ -577,12 +587,8 @@ def _interpretability_summary(
             else:
                 confidence_means[domain] = float(conf[present, idx].mean())
 
-    def _spearman(a: Dict[str, float], b: Dict[str, float]) -> float:
-        pairs = [
-            (a[key], b[key])
-            for key in a
-            if key in b and np.isfinite(a[key]) and np.isfinite(b[key])
-        ]
+    def _spearman(a: dict[str, float], b: dict[str, float]) -> float:
+        pairs = [(a[key], b[key]) for key in a if key in b and np.isfinite(a[key]) and np.isfinite(b[key])]
         if len(pairs) < 2:
             return float("nan")
         left, right = zip(*pairs)
@@ -593,17 +599,21 @@ def _interpretability_summary(
         "domain_reliability": reliabilities,
         "confidence_mean": confidence_means,
         "spearman_attention_vs_reliability": _spearman(attention_means, reliabilities),
-        "spearman_attention_vs_confidence": _spearman(attention_means, confidence_means) if confidence_means else float("nan"),
+        "spearman_attention_vs_confidence": (
+            _spearman(attention_means, confidence_means) if confidence_means else float("nan")
+        ),
     }
 
 
-def _aggregate_metric_dict(metric_dicts: List[Dict[str, float]]) -> Dict[str, Dict[str, float]]:
-    summary: Dict[str, Dict[str, float]] = {}
+def _aggregate_metric_dict(metric_dicts: list[dict[str, float]]) -> dict[str, dict[str, float]]:
+    summary: dict[str, dict[str, float]] = {}
+
     def _is_finite(value: float) -> bool:
         try:
             return bool(np.isfinite(value))
         except TypeError:
             return False
+
     keys = {key for metric in metric_dicts for key in metric}
     for key in sorted(keys):
         values = [metric[key] for metric in metric_dicts if key in metric and _is_finite(metric[key])]
@@ -615,13 +625,15 @@ def _aggregate_metric_dict(metric_dicts: List[Dict[str, float]]) -> Dict[str, Di
     return summary
 
 
-def _aggregate_domain_values(domain_dicts: List[Dict[str, float]]) -> Dict[str, Dict[str, float]]:
-    summary: Dict[str, Dict[str, float]] = {}
+def _aggregate_domain_values(domain_dicts: list[dict[str, float]]) -> dict[str, dict[str, float]]:
+    summary: dict[str, dict[str, float]] = {}
+
     def _is_finite(value: float) -> bool:
         try:
             return bool(np.isfinite(value))
         except TypeError:
             return False
+
     keys = {key for metric in domain_dicts for key in metric}
     for key in sorted(keys):
         values = [metric[key] for metric in domain_dicts if key in metric and _is_finite(metric[key])]
@@ -634,11 +646,11 @@ def _aggregate_domain_values(domain_dicts: List[Dict[str, float]]) -> Dict[str, 
 
 
 def _aggregate_nested_metrics(
-    nested_results: List[Dict[str, Dict[str, Dict[str, float]]]]
-) -> Dict[str, Dict[str, Dict[str, Dict[str, float]]]]:
-    summary: Dict[str, Dict[str, Dict[str, Dict[str, float]]]] = {}
+    nested_results: list[dict[str, dict[str, dict[str, float]]]],
+) -> dict[str, dict[str, dict[str, dict[str, float]]]]:
+    summary: dict[str, dict[str, dict[str, dict[str, float]]]] = {}
     for category in ["random", "drop_domain", "drop_pair"]:
-        category_entries: Dict[str, Dict[str, Dict[str, float]]] = {}
+        category_entries: dict[str, dict[str, dict[str, float]]] = {}
         keys = {key for result in nested_results for key in result.get(category, {})}
         for key in sorted(keys):
             metric_dicts = [result.get(category, {}).get(key, {}) for result in nested_results]
@@ -647,7 +659,7 @@ def _aggregate_nested_metrics(
     return summary
 
 
-def evaluate_attention_harness(cfg_path: Path = DEFAULT_CONFIG) -> Dict[str, Dict]:
+def evaluate_attention_harness(cfg_path: Path = DEFAULT_CONFIG) -> dict[str, dict]:
     cfg = load_yaml(cfg_path)
     train_cfg = cfg.get("training", {})
     eval_cfg = cfg.get("evaluation", {})
@@ -678,7 +690,7 @@ def evaluate_attention_harness(cfg_path: Path = DEFAULT_CONFIG) -> Dict[str, Dic
     n_bootstrap = int(eval_cfg.get("n_bootstrap", 200))
     alpha = float(eval_cfg.get("bootstrap_alpha", 0.05))
 
-    results: Dict[str, Dict] = {}
+    results: dict[str, dict] = {}
 
     for ablation in ablations:
         name = ablation.get("name", "variant")
@@ -696,13 +708,13 @@ def evaluate_attention_harness(cfg_path: Path = DEFAULT_CONFIG) -> Dict[str, Dic
             results[name] = {"error": f"embed_dim {embed_dim} not divisible by num_heads {heads}"}
             continue
 
-        seed_outputs: Dict[str, Dict] = {}
-        test_metric_list: List[Dict[str, float]] = []
-        baseline_metric_lists: Dict[str, List[Dict[str, float]]] = {}
-        baseline_p_lists: Dict[str, List[Dict[str, float]]] = {}
-        interpretability_list: List[Dict[str, object]] = []
-        dropout_list: List[Dict[str, Dict[str, Dict[str, float]]]] = []
-        performance_list: List[Dict[str, float]] = []
+        seed_outputs: dict[str, dict] = {}
+        test_metric_list: list[dict[str, float]] = []
+        baseline_metric_lists: dict[str, list[dict[str, float]]] = {}
+        baseline_p_lists: dict[str, list[dict[str, float]]] = {}
+        interpretability_list: list[dict[str, object]] = []
+        dropout_list: list[dict[str, dict[str, dict[str, float]]]] = []
+        performance_list: list[dict[str, float]] = []
 
         for seed in seeds:
             local_cfg = json.loads(json.dumps(base_cfg))
@@ -814,7 +826,7 @@ def evaluate_attention_harness(cfg_path: Path = DEFAULT_CONFIG) -> Dict[str, Dic
             )
 
             # --- CRAF evaluation (gated by enable_craf) ---
-            craf_metrics: Dict = {}
+            craf_metrics: dict = {}
             if eval_cfg.get("enable_craf", False) and score_index is not None:
                 try:
                     val_idx = perf_meta["val_idx"]
@@ -842,7 +854,7 @@ def evaluate_attention_harness(cfg_path: Path = DEFAULT_CONFIG) -> Dict[str, Dic
                     craf_metrics = {"error": str(exc)}
 
             # --- CDA evaluation (gated by enable_cda) ---
-            cda_output: Dict = {}
+            cda_output: dict = {}
             if eval_cfg.get("enable_cda", False) and score_index is not None:
                 try:
                     cda_n = int(eval_cfg.get("cda_samples", 100))
@@ -892,18 +904,18 @@ def evaluate_attention_harness(cfg_path: Path = DEFAULT_CONFIG) -> Dict[str, Dic
             attention_means = [item.get("attention_mean", {}) for item in interpretability_list]
             reliabilities = [item.get("domain_reliability", {}) for item in interpretability_list]
             confidences = [item.get("confidence_mean", {}) for item in interpretability_list]
-            corr_rel = [
-                item.get("spearman_attention_vs_reliability", float("nan")) for item in interpretability_list
-            ]
-            corr_conf = [
-                item.get("spearman_attention_vs_confidence", float("nan")) for item in interpretability_list
-            ]
+            corr_rel = [item.get("spearman_attention_vs_reliability", float("nan")) for item in interpretability_list]
+            corr_conf = [item.get("spearman_attention_vs_confidence", float("nan")) for item in interpretability_list]
             summary["interpretability"] = {
                 "attention_mean": _aggregate_domain_values(attention_means),
                 "domain_reliability": _aggregate_domain_values(reliabilities),
                 "confidence_mean": _aggregate_domain_values(confidences),
-                "spearman_attention_vs_reliability": _aggregate_metric_dict([{"value": v} for v in corr_rel]).get("value", {}),
-                "spearman_attention_vs_confidence": _aggregate_metric_dict([{"value": v} for v in corr_conf]).get("value", {}),
+                "spearman_attention_vs_reliability": _aggregate_metric_dict([{"value": v} for v in corr_rel]).get(
+                    "value", {}
+                ),
+                "spearman_attention_vs_confidence": _aggregate_metric_dict([{"value": v} for v in corr_conf]).get(
+                    "value", {}
+                ),
             }
 
         results[name] = {

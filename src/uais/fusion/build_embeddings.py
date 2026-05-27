@@ -1,5 +1,6 @@
 """Utilities for building/combining embeddings across domains."""
-from typing import Dict, Iterable
+
+from collections.abc import Iterable
 
 import numpy as np
 from sklearn.preprocessing import StandardScaler
@@ -11,7 +12,7 @@ def to_embedding(matrix: np.ndarray) -> np.ndarray:
     return scaler.fit_transform(matrix)
 
 
-def merge_embeddings(embeddings: Dict[str, np.ndarray]) -> np.ndarray:
+def merge_embeddings(embeddings: dict[str, np.ndarray]) -> np.ndarray:
     """Horizontally concatenate embeddings from multiple domains.
 
     All embeddings are trimmed to the shortest length to keep alignment simple.
@@ -23,7 +24,7 @@ def merge_embeddings(embeddings: Dict[str, np.ndarray]) -> np.ndarray:
     return np.concatenate(trimmed, axis=1)
 
 
-def generate_meta_features(score_dict: Dict[str, Iterable[float]]) -> np.ndarray:
+def generate_meta_features(score_dict: dict[str, Iterable[float]]) -> np.ndarray:
     """Convert domain -> score iterable into a 2D meta-feature array."""
     keys = sorted(score_dict)
     stacked = np.column_stack([np.array(list(score_dict[k])) for k in keys])

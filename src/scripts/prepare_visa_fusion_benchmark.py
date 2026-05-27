@@ -99,8 +99,8 @@ def build_visa_fusion_frame(
 
     labels = np.array([o.label for o in observations], dtype=int)
     splits = np.array([o.split for o in observations], dtype=object)
-    categories = np.array([o.category for o in observations], dtype=object)
-    train_mask = (splits == "train")
+    np.array([o.category for o in observations], dtype=object)
+    train_mask = splits == "train"
     normal_reference_mask = train_mask & (labels == 0)
     if not np.any(normal_reference_mask):
         raise ValueError("VisA prep requires at least one train-normal image.")
@@ -140,7 +140,7 @@ def build_visa_fusion_frame(
         for idx in test_indices:
             key = (observations[idx].category, observations[idx].label)
             bucketed.setdefault(key, []).append(idx)
-        for key, indices in bucketed.items():
+        for _key, indices in bucketed.items():
             indices = list(indices)
             rng_sp.shuffle(indices)
             n = len(indices)

@@ -33,7 +33,6 @@ import json
 import logging
 import sys
 from pathlib import Path
-from typing import Dict, List
 
 import numpy as np
 
@@ -42,31 +41,49 @@ _REPO_ROOT = Path(__file__).resolve().parents[2]
 if str(_REPO_ROOT / "src") not in sys.path:
     sys.path.insert(0, str(_REPO_ROOT / "src"))
 
-import yaml
+import yaml  # noqa: E402
 
-from uais.fusion.attention.baselines import (
-    EarlyFusionMLP, LateFusionEnsemble, RandomForestFusion,
+from uais.fusion.attention.baselines import (  # noqa: E402
     ConfidenceWeightedMean,
+    EarlyFusionMLP,
+    LateFusionEnsemble,
+    RandomForestFusion,
 )
-from uais.fusion.attention.cv_evaluator import (
-    BaselineSpec, CVConfig, cross_validate_baselines,
+from uais.fusion.attention.cv_evaluator import (  # noqa: E402
+    BaselineSpec,
+    CVConfig,
+    cross_validate_baselines,
 )
-from uais.fusion.attention.unsupervised_baselines import (
-    AEConfig, BGMMConfig, GMMConfig, IForestConfig, KMeansConfig,
-    LOFConfig, OCSVMConfig,
-    AutoencoderAnomalyDetector, BGMMAnomalyDetector, GMMAnomalyDetector,
-    IsolationForestDetector, KMeansAnomalyDetector, LOFAnomalyDetector,
+from uais.fusion.attention.unsupervised_baselines import (  # noqa: E402
+    AEConfig,
+    AutoencoderAnomalyDetector,
+    BGMMAnomalyDetector,
+    BGMMConfig,
+    GMMAnomalyDetector,
+    GMMConfig,
+    IForestConfig,
+    IsolationForestDetector,
+    KMeansAnomalyDetector,
+    KMeansConfig,
+    LOFAnomalyDetector,
+    LOFConfig,
+    OCSVMConfig,
     OneClassSVMDetector,
 )
-
 
 # ---------------------------------------------------------------------------
 # Data loading
 # ---------------------------------------------------------------------------
 
-def _make_synthetic(n_samples: int = 600, n_domains: int = 3,
-                    n_features: int = 5, pos_rate: float = 0.25,
-                    missing: float = 0.1, seed: int = 42):
+
+def _make_synthetic(
+    n_samples: int = 600,
+    n_domains: int = 3,
+    n_features: int = 5,
+    pos_rate: float = 0.25,
+    missing: float = 0.1,
+    seed: int = 42,
+):
     rng = np.random.default_rng(seed)
     labels = (rng.random(n_samples) < pos_rate).astype(int)
     features = rng.random((n_samples, n_domains, n_features)).astype(np.float32)
@@ -76,10 +93,12 @@ def _make_synthetic(n_samples: int = 600, n_domains: int = 3,
     return features, masks.astype(bool), labels
 
 
-def _load_real(cfg: Dict):
+def _load_real(cfg: dict):
     """Load fusion CSV via the canonical pipeline."""
     from uais.fusion.attention.attention_utils import (
-        build_fusion_tensors, infer_feature_columns, load_fusion_dataframe,
+        build_fusion_tensors,
+        infer_feature_columns,
+        load_fusion_dataframe,
     )
 
     dcfg = cfg["data"]
@@ -107,9 +126,11 @@ def _load_real(cfg: Dict):
 # Baseline specs (all baselines under the same protocol)
 # ---------------------------------------------------------------------------
 
-def build_specs(seed: int) -> List[BaselineSpec]:
+
+def build_specs(seed: int) -> list[BaselineSpec]:
     """Every spec uses the same random_state and identical DR upstream."""
     import torch
+
     device = torch.device("cpu")
 
     return [
@@ -117,60 +138,70 @@ def build_specs(seed: int) -> List[BaselineSpec]:
         BaselineSpec(
             name="early_fusion_mlp",
             make=lambda: EarlyFusionMLP(device=device, random_seed=seed),
-            needs_3d=True, is_unsupervised=False,
+            needs_3d=True,
+            is_unsupervised=False,
         ),
         BaselineSpec(
             name="late_fusion_ensemble",
             make=lambda: LateFusionEnsemble(random_seed=seed),
-            needs_3d=True, is_unsupervised=False,
+            needs_3d=True,
+            is_unsupervised=False,
         ),
         BaselineSpec(
             name="random_forest",
             make=lambda: RandomForestFusion(random_seed=seed),
-            needs_3d=True, is_unsupervised=False,
+            needs_3d=True,
+            is_unsupervised=False,
         ),
         BaselineSpec(
             name="confidence_weighted_mean",
             make=lambda: ConfidenceWeightedMean(),
-            needs_3d=True, is_unsupervised=False,
+            needs_3d=True,
+            is_unsupervised=False,
         ),
-
         # Unsupervised anomaly detectors (operate on [N, D, F] + masks too;
         # they filter labels==0 internally).
         BaselineSpec(
             name="bgmm",
             make=lambda: BGMMAnomalyDetector(BGMMConfig(random_state=seed)),
-            needs_3d=True, is_unsupervised=True,
+            needs_3d=True,
+            is_unsupervised=True,
         ),
         BaselineSpec(
             name="gmm",
             make=lambda: GMMAnomalyDetector(GMMConfig(random_state=seed)),
-            needs_3d=True, is_unsupervised=True,
+            needs_3d=True,
+            is_unsupervised=True,
         ),
         BaselineSpec(
             name="kmeans",
             make=lambda: KMeansAnomalyDetector(KMeansConfig(random_state=seed)),
-            needs_3d=True, is_unsupervised=True,
+            needs_3d=True,
+            is_unsupervised=True,
         ),
         BaselineSpec(
             name="isolation_forest",
             make=lambda: IsolationForestDetector(IForestConfig(random_state=seed)),
-            needs_3d=True, is_unsupervised=True,
+            needs_3d=True,
+            is_unsupervised=True,
         ),
         BaselineSpec(
             name="one_class_svm",
             make=lambda: OneClassSVMDetector(OCSVMConfig()),
-            needs_3d=True, is_unsupervised=True,
+            needs_3d=True,
+            is_unsupervised=True,
         ),
         BaselineSpec(
             name="lof",
             make=lambda: LOFAnomalyDetector(LOFConfig()),
-            needs_3d=True, is_unsupervised=True,
+            needs_3d=True,
+            is_unsupervised=True,
         ),
         BaselineSpec(
             name="autoencoder",
             make=lambda: AutoencoderAnomalyDetector(AEConfig(random_state=seed)),
-            needs_3d=True, is_unsupervised=True,
+            needs_3d=True,
+            is_unsupervised=True,
         ),
     ]
 
@@ -178,6 +209,7 @@ def build_specs(seed: int) -> List[BaselineSpec]:
 # ---------------------------------------------------------------------------
 # Serialisation helper
 # ---------------------------------------------------------------------------
+
 
 def _to_serializable(obj):
     if isinstance(obj, (np.floating, float)):
@@ -200,16 +232,15 @@ def _to_serializable(obj):
 # CLI
 # ---------------------------------------------------------------------------
 
+
 def main() -> None:
     p = argparse.ArgumentParser(
         description="Run unified 5-fold CV benchmark across all baselines.",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog=__doc__,
     )
-    p.add_argument("--config", type=Path, default=None,
-                   help="YAML config (data section used to locate fusion CSV)")
-    p.add_argument("--synthetic", action="store_true",
-                   help="Use synthetic data (no --config required)")
+    p.add_argument("--config", type=Path, default=None, help="YAML config (data section used to locate fusion CSV)")
+    p.add_argument("--synthetic", action="store_true", help="Use synthetic data (no --config required)")
     p.add_argument("--n-splits", type=int, default=5)
     p.add_argument("--bootstrap-resamples", type=int, default=1000)
     p.add_argument("--reducer", choices=["none", "pca", "autoencoder"], default="none")
@@ -228,8 +259,7 @@ def main() -> None:
     else:
         cfg = yaml.safe_load(args.config.read_text())
         features, masks, labels = _load_real(cfg)
-        print(f"[info] Loaded real data: {features.shape}, "
-              f"positive rate = {labels.mean():.3f}")
+        print(f"[info] Loaded real data: {features.shape}, " f"positive rate = {labels.mean():.3f}")
 
     # Build reducer kwargs
     if args.reducer == "pca":
@@ -249,8 +279,7 @@ def main() -> None:
     )
 
     specs = build_specs(args.seed)
-    print(f"[info] Running {len(specs)} baselines × {cv_cfg.n_splits} folds "
-          f"with reducer={cv_cfg.reducer_name}")
+    print(f"[info] Running {len(specs)} baselines × {cv_cfg.n_splits} folds " f"with reducer={cv_cfg.reducer_name}")
 
     results = cross_validate_baselines(features, masks, labels, specs, cv_cfg)
 
@@ -266,11 +295,13 @@ def main() -> None:
         if agg is None:
             rows.append((name, "N/A", "—"))
             continue
-        rows.append((
-            name,
-            f"{agg['mean']:.4f} ± {agg['std']:.4f}",
-            f"[{agg['lo']:.4f}, {agg['hi']:.4f}]",
-        ))
+        rows.append(
+            (
+                name,
+                f"{agg['mean']:.4f} ± {agg['std']:.4f}",
+                f"[{agg['lo']:.4f}, {agg['hi']:.4f}]",
+            )
+        )
     for r in rows:
         print(f"  {r[0]:>28s}  {r[1]:>22s}  95% CI = {r[2]}")
 
@@ -282,8 +313,10 @@ def main() -> None:
     print(f"\n[info] Full results saved to {args.output}")
     contam = results.get("contamination_check", {})
     if contam.get("max_duplicates", 0) > 0:
-        print(f"[WARN] Contamination detected: max {contam['max_duplicates']} "
-              f"duplicate rows between train and test across folds!")
+        print(
+            f"[WARN] Contamination detected: max {contam['max_duplicates']} "
+            f"duplicate rows between train and test across folds!"
+        )
 
 
 if __name__ == "__main__":

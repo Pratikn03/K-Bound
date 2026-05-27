@@ -4,10 +4,10 @@ It ingests score files defined in configs/fusion_baseline.yaml (or a supplied YA
 aligns them by minimum length, and trains a simple logistic regression stacker.
 If scores/labels are missing, it falls back to synthetic data so the pipeline still runs.
 """
+
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Dict, Tuple
 
 import joblib
 import numpy as np
@@ -23,7 +23,7 @@ from uais.utils.paths import domain_paths
 DEFAULT_CONFIG = Path("configs/fusion_baseline.yaml")
 
 
-def _load_yaml(path: Path) -> Dict:
+def _load_yaml(path: Path) -> dict:
     import yaml
 
     return yaml.safe_load(path.read_text())
@@ -33,7 +33,7 @@ def _read_scores(
     path: Path,
     score_col: str,
     label_col: str | None,
-) -> Tuple[np.ndarray, np.ndarray | None, pd.DataFrame | None]:
+) -> tuple[np.ndarray, np.ndarray | None, pd.DataFrame | None]:
     if not path.exists():
         raise FileNotFoundError(f"Score file not found: {path}")
 
@@ -71,12 +71,12 @@ def _read_scores(
     return scores, labels, None
 
 
-def _align_scores(score_dict: Dict[str, np.ndarray]) -> Dict[str, np.ndarray]:
+def _align_scores(score_dict: dict[str, np.ndarray]) -> dict[str, np.ndarray]:
     min_len = min(len(v) for v in score_dict.values())
     return {k: v[:min_len] for k, v in score_dict.items()}
 
 
-def _load_inputs(cfg_path: Path) -> Tuple[Dict[str, np.ndarray], np.ndarray]:
+def _load_inputs(cfg_path: Path) -> tuple[dict[str, np.ndarray], np.ndarray]:
     cfg = _load_yaml(cfg_path)
     fusion_cfg = cfg.get("fusion", {}) if isinstance(cfg, dict) else {}
     score_col = fusion_cfg.get("score_column", "score")
@@ -89,12 +89,12 @@ def _load_inputs(cfg_path: Path) -> Tuple[Dict[str, np.ndarray], np.ndarray]:
 
     scores = {}
     labels = None
-    score_frames: Dict[str, pd.DataFrame] = {}
+    score_frames: dict[str, pd.DataFrame] = {}
     for domain, path in score_paths.items():
-        s, l, frame = _read_scores(Path(path), score_col, label_col)
+        s, labels_for_domain, frame = _read_scores(Path(path), score_col, label_col)
         scores[domain] = s
-        if l is not None:
-            labels = l
+        if labels_for_domain is not None:
+            labels = labels_for_domain
         if frame is not None:
             score_frames[domain] = frame
 

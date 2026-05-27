@@ -1,5 +1,5 @@
 from pathlib import Path
-from typing import Optional, Union, List
+from typing import Optional, Union
 
 import numpy as np
 import pandas as pd
@@ -51,7 +51,7 @@ def _normalize_labels(df: pd.DataFrame) -> pd.DataFrame:
     return df
 
 
-def _find_cyber_csvs(raw_dir: Path) -> List[Path]:
+def _find_cyber_csvs(raw_dir: Path) -> list[Path]:
     if not raw_dir.exists():
         raise FileNotFoundError(f"Cyber raw directory not found: {raw_dir}")
     official_splits = [

@@ -217,28 +217,29 @@ class ReliabilityBoostedFusion:
             second_score = np.where(masks[:, 1], 0.5, score[:, 1])
             first_conf = np.where(masks[:, 0], 0.5, confidence[:, 0])
             second_conf = np.where(masks[:, 1], 0.5, confidence[:, 1])
-            extras.extend([
-                np.abs(first_score - second_score),
-                first_conf - second_conf,
-            ])
+            extras.extend(
+                [
+                    np.abs(first_score - second_score),
+                    first_conf - second_conf,
+                ]
+            )
 
         if self._reliability_estimator is not None:
             reliability = self._reliability_estimator.compute_reliability_weights(features, masks)
             rel_max = _masked_extreme(reliability, present, 0.0, is_max=True)
             rel_min = _masked_extreme(reliability, present, 0.0, is_max=False)
             rel_sum = np.where(present, reliability, 0.0).sum(axis=1)
-            weighted_score = (
-                np.where(present, reliability * score, 0.0).sum(axis=1)
-                / np.maximum(rel_sum, 1e-6)
+            weighted_score = np.where(present, reliability * score, 0.0).sum(axis=1) / np.maximum(rel_sum, 1e-6)
+            extras.extend(
+                [
+                    _masked_mean(reliability, present, 0.0),
+                    rel_max,
+                    rel_min,
+                    rel_max - rel_min,
+                    _masked_std(reliability, present),
+                    np.where(rel_sum > 1e-6, weighted_score, 0.5),
+                ]
             )
-            extras.extend([
-                _masked_mean(reliability, present, 0.0),
-                rel_max,
-                rel_min,
-                rel_max - rel_min,
-                _masked_std(reliability, present),
-                np.where(rel_sum > 1e-6, weighted_score, 0.5),
-            ])
 
         return np.concatenate(
             [
@@ -257,7 +258,7 @@ class ReliabilityBoostedFusion:
         val_masks: np.ndarray,
         val_labels: np.ndarray,
         reliability_estimator=None,
-    ) -> "ReliabilityBoostedFusion":
+    ) -> ReliabilityBoostedFusion:
         train_labels = np.asarray(train_labels, dtype=np.int64)
         val_labels = np.asarray(val_labels, dtype=np.int64)
         self._reliability_estimator = reliability_estimator
@@ -266,9 +267,7 @@ class ReliabilityBoostedFusion:
             self._constant_prediction = float(np.mean(train_labels)) if len(train_labels) else 0.5
             self.selected_candidate = "constant"
             self.candidate_validation_auc = {"constant": 0.5}
-            self.candidate_validation_metrics = {
-                "constant": {"roc_auc": 0.5, "pr_auc": 0.0, "f1": 0.0, "brier": 0.0}
-            }
+            self.candidate_validation_metrics = {"constant": {"roc_auc": 0.5, "pr_auc": 0.0, "f1": 0.0, "brier": 0.0}}
             return self
 
         x_train = self._features(train_features, train_masks)

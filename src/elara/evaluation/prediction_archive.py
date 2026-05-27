@@ -24,16 +24,15 @@ from __future__ import annotations
 import csv
 import hashlib
 import json
-import os
 import subprocess
-from dataclasses import dataclass, asdict
+from collections.abc import Iterable
+from dataclasses import asdict, dataclass
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any, Iterable
+from typing import Any
 
 import numpy as np
 import pandas as pd
-
 
 PREDICTION_ARCHIVE_SCHEMA: tuple[str, ...] = (
     # identity
@@ -237,21 +236,15 @@ class PredictionArchive:
             "mean_reliability_if_applicable": _col(mean_reliability, default=None),
             "min_reliability_if_applicable": _col(min_reliability, default=None),
             "failure_type_if_applicable": [failure_type or ""] * n,
-            "failed_domain_count_if_applicable": [
-                failed_domain_count if failed_domain_count is not None else None
-            ] * n,
-            "fault_severity_if_applicable": [
-                fault_severity if fault_severity is not None else None
-            ] * n,
+            "failed_domain_count_if_applicable": [failed_domain_count if failed_domain_count is not None else None] * n,
+            "fault_severity_if_applicable": [fault_severity if fault_severity is not None else None] * n,
             "source_artifact_version": [source_artifact_version] * n,
             "config_hash": [config_hash] * n,
             "code_commit_hash": [code_commit_hash] * n,
         }
         return pd.DataFrame(data, columns=list(PREDICTION_ARCHIVE_SCHEMA))
 
-    def _path_for(
-        self, experiment_id: str, benchmark: str, protocol: str, method: str, split: str, seed: int
-    ) -> Path:
+    def _path_for(self, experiment_id: str, benchmark: str, protocol: str, method: str, split: str, seed: int) -> Path:
         cell_slug = (
             f"{experiment_id}__"
             + benchmark.replace(" ", "_").replace("/", "_")
@@ -288,17 +281,13 @@ class PredictionArchive:
         if list(frame.columns) != list(PREDICTION_ARCHIVE_SCHEMA):
             missing = set(PREDICTION_ARCHIVE_SCHEMA) - set(frame.columns)
             extra = set(frame.columns) - set(PREDICTION_ARCHIVE_SCHEMA)
-            raise ValueError(
-                f"frame columns do not match the schema. missing={missing} extra={extra}"
-            )
+            raise ValueError(f"frame columns do not match the schema. missing={missing} extra={extra}")
         if selection_used_test_metrics:
-            raise ValueError(
-                "selection_used_test_metrics=True is FORBIDDEN under Phase 2 contract"
-            )
+            raise ValueError("selection_used_test_metrics=True is FORBIDDEN under Phase 2 contract")
         path = self._path_for(experiment_id, benchmark, protocol, method, split, seed)
         try:
             frame.to_parquet(path, index=False)
-        except Exception as e:  # parquet engine missing → fallback CSV
+        except Exception:  # parquet engine missing → fallback CSV
             path = path.with_suffix(".csv")
             frame.to_csv(path, index=False)
         sha = _hash_file(path)

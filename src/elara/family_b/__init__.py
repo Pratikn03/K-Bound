@@ -18,8 +18,8 @@ from elara.family_b.corruption import (  # noqa: F401
     inject_corruption,
     validation_fold_corruption_grid,
 )
+from elara.family_b.ks_window import KS_WINDOW_GRID  # noqa: F401
 from elara.family_b.mixture_shift import (  # noqa: F401
     MixtureShiftResample,
     pure_mixture_shift_resample,
 )
-from elara.family_b.ks_window import KS_WINDOW_GRID  # noqa: F401

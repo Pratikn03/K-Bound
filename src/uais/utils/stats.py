@@ -1,7 +1,8 @@
 """Simple statistical utilities for CI and significance tests."""
+
 from __future__ import annotations
 
-from typing import Callable, Tuple
+from typing import Callable
 
 import numpy as np
 from scipy import stats
@@ -22,7 +23,7 @@ def _compute_midrank(x: np.ndarray) -> np.ndarray:
     return midranks
 
 
-def _auc_structural_components(predictions: np.ndarray, labels: np.ndarray) -> Tuple[float, np.ndarray, np.ndarray]:
+def _auc_structural_components(predictions: np.ndarray, labels: np.ndarray) -> tuple[float, np.ndarray, np.ndarray]:
     pos = predictions[labels == 1]
     neg = predictions[labels == 0]
     if len(pos) == 0 or len(neg) == 0:
@@ -35,7 +36,7 @@ def _auc_structural_components(predictions: np.ndarray, labels: np.ndarray) -> T
     return auc, positive_components, negative_components
 
 
-def _fast_delong(predictions: np.ndarray, labels: np.ndarray) -> Tuple[float, float]:
+def _fast_delong(predictions: np.ndarray, labels: np.ndarray) -> tuple[float, float]:
     predictions = np.asarray(predictions, dtype=float).ravel()
     labels = np.asarray(labels).ravel()
     finite = np.isfinite(predictions) & np.isfinite(labels)
@@ -83,7 +84,7 @@ def bootstrap_ci(
     n_bootstrap: int = 200,
     alpha: float = 0.05,
     random_state: int = 42,
-) -> Tuple[float, float]:
+) -> tuple[float, float]:
     """Compute bootstrap confidence interval for a metric.
 
     Returns (lower, upper) bounds.

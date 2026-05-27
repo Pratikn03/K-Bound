@@ -1,7 +1,7 @@
 """Dataset loaders for UAIS-V (fraud/cyber/behavior + NLP/Vision)."""
+
 import pickle
 from pathlib import Path
-from typing import Tuple, List
 
 import numpy as np
 import pandas as pd
@@ -38,6 +38,7 @@ def _load_all_tabular(path: Path) -> pd.DataFrame:
 
 # Existing domain loaders (now aggregate all files when given a directory)
 
+
 def load_fraud_data(path: str | Path = "data/raw/fraud", n_rows: int | None = None, allow_synthetic: bool = False):
     df = load_fraud_data_domain(csv_path=path, n_rows=n_rows, allow_synthetic=allow_synthetic)
     print(f"✅ Loaded fraud data from {path} -> {df.shape}")
@@ -50,7 +51,9 @@ def load_cyber_data(path: str | Path = "data/raw/cyber", n_rows: int | None = No
     return df
 
 
-def load_behavior_data(path: str | Path = "data/raw/behavior", n_rows: int | None = None, allow_synthetic: bool = False):
+def load_behavior_data(
+    path: str | Path = "data/raw/behavior", n_rows: int | None = None, allow_synthetic: bool = False
+):
     df = load_behavior_data_domain(csv_path=path, n_rows=n_rows, allow_synthetic=allow_synthetic)
     print(f"✅ Loaded behavior data from {path} -> {df.shape}")
     return df
@@ -73,6 +76,7 @@ def load_vision_data(path: str | Path = "data/raw/vision"):
 
 # Enron email loader
 
+
 def load_enron_emails(subset: int | None = None, columns: list[str] | None = None) -> pd.DataFrame:
     csv_path = DATA_RAW / "nlp" / "enron_emails.csv"
     if not csv_path.exists():
@@ -88,7 +92,8 @@ def load_enron_emails(subset: int | None = None, columns: list[str] | None = Non
 
 # CIFAR-10 loader helpers
 
-def _load_cifar_batch(batch_path: Path) -> Tuple[np.ndarray, np.ndarray]:
+
+def _load_cifar_batch(batch_path: Path) -> tuple[np.ndarray, np.ndarray]:
     with open(batch_path, "rb") as f:
         batch = pickle.load(f, encoding="latin1")
     data = batch["data"]
@@ -98,7 +103,7 @@ def _load_cifar_batch(batch_path: Path) -> Tuple[np.ndarray, np.ndarray]:
     return images, labels
 
 
-def load_cifar10(split: str = "train") -> Tuple[np.ndarray, np.ndarray]:
+def load_cifar10(split: str = "train") -> tuple[np.ndarray, np.ndarray]:
     root = DATA_RAW / "vision" / "cifar-10-python"
     if not root.exists():
         raise FileNotFoundError(f"CIFAR-10 directory not found at {root}. Run download_nlp_vision.py first.")

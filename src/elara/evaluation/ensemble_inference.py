@@ -18,14 +18,11 @@ ensemble predictor; not a typical-single-trained-model claim.
 from __future__ import annotations
 
 import math
-from dataclasses import dataclass, asdict
-from pathlib import Path
+from dataclasses import asdict, dataclass
 from typing import Any
 
 import numpy as np
-import pandas as pd
 from sklearn.metrics import roc_auc_score
-
 
 # ---------------------------------------------------------------------------
 # DeLong's paired ROC test (Sun & Xu 2014 fast-DeLong implementation)
@@ -94,6 +91,7 @@ def _delong_two_sided_p(auc_a: float, auc_b: float, var: float) -> float:
     z = (auc_a - auc_b) / math.sqrt(var)
     # two-sided p
     from scipy.special import erf
+
     return 2.0 * (1.0 - 0.5 * (1.0 + erf(abs(z) / math.sqrt(2.0))))
 
 
@@ -153,8 +151,7 @@ def paired_sample_bootstrap_ci(
         return {"ci_low": float("nan"), "ci_high": float("nan"), "n_finite": 0}
     low = float(np.quantile(finite, alpha / 2))
     high = float(np.quantile(finite, 1.0 - alpha / 2))
-    return {"ci_low": low, "ci_high": high, "n_finite": int(finite.size),
-            "n_iter": int(n_iter), "alpha": float(alpha)}
+    return {"ci_low": low, "ci_high": high, "n_finite": int(finite.size), "n_iter": int(n_iter), "alpha": float(alpha)}
 
 
 # ---------------------------------------------------------------------------
@@ -183,8 +180,11 @@ def practical_effect_band(delta_auc: float) -> str:
 def holm_bonferroni(p_values: dict[str, float], K: int | None = None) -> dict[str, float]:
     """Standard Holm-Bonferroni with explicit family size K (defaults to
     the number of finite p-values supplied)."""
-    finite = [(k, float(p)) for k, p in p_values.items()
-              if p is not None and isinstance(p, (int, float)) and math.isfinite(float(p))]
+    finite = [
+        (k, float(p))
+        for k, p in p_values.items()
+        if p is not None and isinstance(p, (int, float)) and math.isfinite(float(p))
+    ]
     finite.sort(key=lambda kv: kv[1])
     K = K or len(finite)
     out: dict[str, float] = {}

@@ -1,4 +1,5 @@
 """Authentication and security middleware for UAIS-V API."""
+
 import os
 import secrets
 from datetime import datetime, timedelta
@@ -26,18 +27,21 @@ bearer_scheme = HTTPBearer(auto_error=False)
 
 class Token(BaseModel):
     """OAuth2 access token response."""
+
     access_token: str
     token_type: str
 
 
 class TokenData(BaseModel):
     """JWT token payload data."""
+
     username: Optional[str] = None
     scopes: list[str] = []
 
 
 class User(BaseModel):
     """User model."""
+
     username: str
     email: Optional[str] = None
     disabled: bool = False
@@ -80,8 +84,8 @@ def verify_token(token: str) -> TokenData:
             raise credentials_exception
         token_scopes = payload.get("scopes", [])
         return TokenData(username=username, scopes=token_scopes)
-    except JWTError:
-        raise credentials_exception
+    except JWTError as err:
+        raise credentials_exception from err
 
 
 async def verify_api_key(api_key: Optional[str] = Security(api_key_header)) -> bool:
@@ -91,15 +95,12 @@ async def verify_api_key(api_key: Optional[str] = Security(api_key_header)) -> b
         return True
 
     if api_key is None or api_key not in API_KEYS:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Invalid or missing API key"
-        )
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Invalid or missing API key")
     return True
 
 
 async def verify_bearer_token(
-    credentials: Optional[HTTPAuthorizationCredentials] = Security(bearer_scheme)
+    credentials: Optional[HTTPAuthorizationCredentials] = Security(bearer_scheme),
 ) -> TokenData:
     """Verify JWT bearer token."""
     if credentials is None:
@@ -116,21 +117,20 @@ async def get_current_user(token_data: TokenData = Depends(verify_bearer_token))
     """Get current user from token."""
     # In production, fetch user from database
     # For now, create user from token data
-    return User(
-        username=token_data.username,
-        scopes=token_data.scopes
-    )
+    return User(username=token_data.username, scopes=token_data.scopes)
 
 
 async def require_scope(required_scope: str):
     """Dependency to require specific scope."""
+
     async def scope_checker(user: User = Depends(get_current_user)) -> User:
         if required_scope not in user.scopes and "admin" not in user.scopes:
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
-                detail=f"Insufficient permissions. Required scope: {required_scope}"
+                detail=f"Insufficient permissions. Required scope: {required_scope}",
             )
         return user
+
     return scope_checker
 
 

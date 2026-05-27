@@ -3,10 +3,10 @@
 from __future__ import annotations
 
 from collections import defaultdict
-from typing import Any, Iterable, Sequence
+from collections.abc import Iterable, Sequence
+from typing import Any
 
 import numpy as np
-
 
 DEFAULT_METRICS = ("roc_auc", "pr_auc", "f1", "ece", "brier", "accuracy")
 
@@ -62,9 +62,7 @@ def summarize_seed_metric_rows(
     for method in methods:
         method_summary = {}
         for metric in metrics:
-            method_summary[metric] = summarize_values(
-                row.get(method, {}).get(metric) for row in rows
-            )
+            method_summary[metric] = summarize_values(row.get(method, {}).get(metric) for row in rows)
         summary[method] = method_summary
     return summary
 
@@ -83,7 +81,7 @@ def aggregate_stress_rows(
     output = []
     for key_tuple in sorted(grouped, key=lambda item: tuple(str(x) for x in item)):
         group_rows = grouped[key_tuple]
-        out = {key: value for key, value in zip(group_keys, key_tuple)}
+        out = dict(zip(group_keys, key_tuple))
         seeds = {row.get("seed") for row in group_rows if row.get("seed") is not None}
         out["n_seeds"] = len(seeds) if seeds else len(group_rows)
 

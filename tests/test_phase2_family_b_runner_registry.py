@@ -26,22 +26,20 @@ def _run(driver: Path, *args):
     return subprocess.run(
         [sys.executable, str(driver), *args],
         cwd=str(ROOT),
-        capture_output=True, text=True, env=env, timeout=45,
+        capture_output=True,
+        text=True,
+        env=env,
+        timeout=45,
     )
 
 
 @pytest.mark.parametrize("driver_eid,driver_path", list(DRIVERS.items()))
-@pytest.mark.parametrize("bad", ["A-POWERED-1", "C-EXP-EFFICIENTAD-1",
-                                  "D-CONTRACT-V2", "B-MECH-99"])
+@pytest.mark.parametrize("bad", ["A-POWERED-1", "C-EXP-EFFICIENTAD-1", "D-CONTRACT-V2", "B-MECH-99"])
 def test_each_driver_rejects_wrong_id(driver_eid, driver_path, bad):
     if bad == driver_eid:
         pytest.skip("would be the right id")
-    r = _run(driver_path, "--experiment-id", bad,
-             "--dry-run" if "certificate" in driver_path.name else "--seeds", "0")
-    assert r.returncode != 0, (
-        f"{driver_path.name} accepted wrong id {bad}: "
-        f"stdout={r.stdout!r} stderr={r.stderr!r}"
-    )
+    r = _run(driver_path, "--experiment-id", bad, "--dry-run" if "certificate" in driver_path.name else "--seeds", "0")
+    assert r.returncode != 0, f"{driver_path.name} accepted wrong id {bad}: " f"stdout={r.stdout!r} stderr={r.stderr!r}"
 
 
 @pytest.mark.parametrize("eid,driver_path", list(DRIVERS.items()))
@@ -51,6 +49,5 @@ def test_each_driver_accepts_its_locked_id(eid, driver_path):
     else:
         r = _run(driver_path, "--experiment-id", eid, "--seeds", "0")
     assert r.returncode == 0, (
-        f"{driver_path.name} rejected its locked id {eid}: "
-        f"stdout={r.stdout!r} stderr={r.stderr!r}"
+        f"{driver_path.name} rejected its locked id {eid}: " f"stdout={r.stdout!r} stderr={r.stderr!r}"
     )

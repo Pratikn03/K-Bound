@@ -1,8 +1,9 @@
 """
 Supervised fraud modeling with multiple model options.
 """
+
 from dataclasses import dataclass
-from typing import Any, Dict, Tuple
+from typing import Any
 
 import numpy as np
 import pandas as pd
@@ -10,8 +11,8 @@ from sklearn.ensemble import HistGradientBoostingClassifier
 from sklearn.linear_model import LogisticRegression
 from sklearn.model_selection import StratifiedKFold
 
-from uais.utils.metrics import compute_classification_metrics
 from uais.preprocessing.pipeline import build_tabular_pipeline
+from uais.utils.metrics import compute_classification_metrics
 
 
 @dataclass
@@ -93,7 +94,7 @@ def train_fraud_model(
     y_val: pd.Series,
     config: FraudModelConfig,
     use_pipeline: bool = True,
-) -> Tuple[Any, Dict[str, float]]:
+) -> tuple[Any, dict[str, float]]:
     """Train a supervised fraud model and return model + validation metrics."""
     model = _build_model(config)
     has_non_numeric = len(X_train.select_dtypes(exclude=[np.number]).columns) > 0
@@ -113,8 +114,7 @@ def train_fraud_model(
         if has_non_numeric:
             non_num = X_train.select_dtypes(exclude=[np.number]).columns.tolist()
             raise ValueError(
-                f"Non-numeric columns detected {non_num}. "
-                "Re-run with use_pipeline=True to auto-encode categoricals."
+                f"Non-numeric columns detected {non_num}. " "Re-run with use_pipeline=True to auto-encode categoricals."
             )
         model.fit(X_train, y_train)
         estimator = model
@@ -137,7 +137,7 @@ def cross_val_train_fraud(
     n_splits: int = 3,
     random_state: int = 42,
     use_pipeline: bool | None = None,
-) -> Tuple[list[Any], Dict[str, float]]:
+) -> tuple[list[Any], dict[str, float]]:
     """Stratified K-fold training for stability; uses low n_splits to limit budget."""
     skf = StratifiedKFold(n_splits=n_splits, shuffle=True, random_state=random_state)
     aucs = []
@@ -162,9 +162,7 @@ def cross_val_train_fraud(
             model.fit(X_tr, y_tr)
             estimator = model
         proba = (
-            estimator.predict_proba(X_val)[:, 1]
-            if hasattr(estimator, "predict_proba")
-            else estimator.predict(X_val)
+            estimator.predict_proba(X_val)[:, 1] if hasattr(estimator, "predict_proba") else estimator.predict(X_val)
         )
         aucs.append(compute_classification_metrics(y_val.values, proba, threshold=0.5)["roc_auc"])
         models.append(estimator)

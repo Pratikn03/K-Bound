@@ -66,6 +66,7 @@ def download_file(url: str, dest_path: Path, chunk_size: int = 1 << 20) -> None:
 # NLP: Enron email dataset
 # -------------------------
 
+
 def download_enron_via_kaggle() -> Path:
     """
     Download Enron email CSV from Kaggle using the Kaggle API.
@@ -77,10 +78,7 @@ def download_enron_via_kaggle() -> Path:
          (from https://www.kaggle.com -> Account -> API -> Create New Token)
     """
     if not KAGGLE_AVAILABLE:
-        raise RuntimeError(
-            "kaggle package not installed. Run: pip install kaggle\n"
-            "Then re-run this script."
-        )
+        raise RuntimeError("kaggle package not installed. Run: pip install kaggle\n" "Then re-run this script.")
 
     NLP_DIR.mkdir(parents=True, exist_ok=True)
     csv_path = NLP_DIR / "enron_emails.csv"
@@ -102,9 +100,7 @@ def download_enron_via_kaggle() -> Path:
     # Find the downloaded zip file (Kaggle uses `enron-email-dataset.zip`)
     zip_files = list(NLP_DIR.glob("*.zip"))
     if not zip_files:
-        raise FileNotFoundError(
-            "No .zip file found after Kaggle download. Check output above."
-        )
+        raise FileNotFoundError("No .zip file found after Kaggle download. Check output above.")
 
     zip_path = zip_files[0]
     print(f"[info] Extracting {zip_path.name} ...")
@@ -116,9 +112,7 @@ def download_enron_via_kaggle() -> Path:
     # Kaggle version typically contains `enron_email.csv` or similar; normalize name
     candidates = list(NLP_DIR.glob("*.csv"))
     if not candidates:
-        raise FileNotFoundError(
-            "No CSV found in Enron zip. Check dataset structure in NLP_DIR."
-        )
+        raise FileNotFoundError("No CSV found in Enron zip. Check dataset structure in NLP_DIR.")
 
     # Take the first CSV and rename to enron_emails.csv
     src_csv = candidates[0]
@@ -146,8 +140,7 @@ def download_enron_manual_placeholder() -> Path:
     csv_path = NLP_DIR / "enron_emails.csv"
     if not csv_path.exists():
         raise FileNotFoundError(
-            f"{csv_path} not found.\n"
-            "Please manually download an Enron CSV (e.g., Kaggle) and place it there."
+            f"{csv_path} not found.\n" "Please manually download an Enron CSV (e.g., Kaggle) and place it there."
         )
     print(f"[ok] Found existing Enron CSV at {csv_path}")
     return csv_path
@@ -207,12 +200,11 @@ def download_cifar10() -> Path:
 # CLI entry
 # -------------
 
+
 def main() -> None:
     import argparse
 
-    parser = argparse.ArgumentParser(
-        description="Download NLP (Enron) and Vision (CIFAR-10) datasets for UAIS-V."
-    )
+    parser = argparse.ArgumentParser(description="Download NLP (Enron) and Vision (CIFAR-10) datasets for UAIS-V.")
     parser.add_argument(
         "--enron",
         action="store_true",

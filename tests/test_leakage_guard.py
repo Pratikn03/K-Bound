@@ -106,7 +106,7 @@ def test_context_manager_normal_path():
     test_X = _data(1)
     with assert_split_before_preprocess(train_X, test_X) as guard:
         # Preprocess train only
-        train_X_scaled = train_X * 10.0
+        train_X * 10.0
         assert guard.n_unique_in_test() == 50
 
 

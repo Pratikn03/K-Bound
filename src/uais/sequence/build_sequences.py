@@ -1,5 +1,4 @@
 """Sequence building utilities."""
-from typing import List, Tuple
 
 import numpy as np
 import pandas as pd
@@ -10,10 +9,10 @@ def build_sequences(
     id_column: str,
     time_column: str,
     target_column: str,
-) -> Tuple[List[np.ndarray], List[int]]:
+) -> tuple[list[np.ndarray], list[int]]:
     """Group events by id and sort by time to produce variable-length sequences."""
-    sequences: List[np.ndarray] = []
-    labels: List[int] = []
+    sequences: list[np.ndarray] = []
+    labels: list[int] = []
 
     df = df.sort_values(time_column)
     feature_cols = [c for c in df.columns if c not in {id_column, time_column, target_column}]
@@ -24,7 +23,7 @@ def build_sequences(
     return sequences, labels
 
 
-def pad_sequences(sequences: List[np.ndarray], max_len: int | None = None) -> Tuple[np.ndarray, np.ndarray]:
+def pad_sequences(sequences: list[np.ndarray], max_len: int | None = None) -> tuple[np.ndarray, np.ndarray]:
     if not sequences:
         return np.array([]), np.array([])
     feature_dim = sequences[0].shape[1]

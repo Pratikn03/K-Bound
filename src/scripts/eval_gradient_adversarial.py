@@ -34,7 +34,6 @@ from scripts.run_breakthrough_experiment import (
     _build_model,
     _load_data,
     _make_loaders,
-    _make_reliability_estimator,
     _predict_static,
     _split,
     _train_model,
@@ -114,8 +113,16 @@ def run_gradient_adversarial(
 ) -> dict:
     """Run FGSM + PGD against the static-attention fusion head."""
     (
-        features, masks, labels, sample_ids, domain_order, _, conf_idx,
-        score_idx, sample_splits, sample_cats,
+        features,
+        masks,
+        labels,
+        sample_ids,
+        domain_order,
+        _,
+        conf_idx,
+        score_idx,
+        sample_splits,
+        sample_cats,
     ) = _load_data(cfg)
     set_seed(int(cfg.get("training", {}).get("seed", 42)))
     train_idx, val_idx, test_idx = _split(
@@ -124,13 +131,16 @@ def run_gradient_adversarial(
         split_values=sample_splits,
     )
     train_loader, val_loader, _ = _make_loaders(
-        features, masks, labels, train_idx, val_idx, test_idx,
+        features,
+        masks,
+        labels,
+        train_idx,
+        val_idx,
+        test_idx,
         batch_size=int(cfg["training"].get("batch_size", 64)),
     )
     device = torch.device(
-        "mps" if torch.backends.mps.is_available()
-        else "cuda" if torch.cuda.is_available()
-        else "cpu"
+        "mps" if torch.backends.mps.is_available() else "cuda" if torch.cuda.is_available() else "cpu"
     )
     model = _build_model(cfg, features.shape[1], features.shape[2], conf_idx, device)
     _train_model(model, train_loader, val_loader, cfg, device)
@@ -165,8 +175,13 @@ def run_gradient_adversarial(
 
         # PGD
         pgd_feat = _pgd_attack(
-            model, test_feat, test_mask, test_labels,
-            epsilon=eps, n_steps=pgd_steps, step_size=eps / max(pgd_steps // 2, 1),
+            model,
+            test_feat,
+            test_mask,
+            test_labels,
+            epsilon=eps,
+            n_steps=pgd_steps,
+            step_size=eps / max(pgd_steps // 2, 1),
             device=device,
         )
         pgd_probs = _predict_static(model, pgd_feat, test_mask, device)
@@ -191,6 +206,7 @@ def main() -> None:
     args = parser.parse_args()
 
     import yaml
+
     cfg = yaml.safe_load(args.config.read_text())
     results = run_gradient_adversarial(cfg, epsilons=args.epsilons, pgd_steps=args.pgd_steps)
     args.output.parent.mkdir(parents=True, exist_ok=True)

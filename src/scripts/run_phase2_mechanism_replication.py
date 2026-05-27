@@ -29,12 +29,19 @@ ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT / "src"))
 sys.path.insert(0, str(ROOT))
 
-from scripts.run_breakthrough_experiment import (  # noqa: E402
-    _build_model, _load_data, _make_loaders, _make_reliability_estimator,
-    _predict_static, _predict_craf_with_stats, _split, _train_model, set_seed,
-)
 from elara.evaluation.prediction_archive import PredictionArchive  # noqa: E402
 from elara.family_b.corruption import inject_corruption  # noqa: E402
+from scripts.run_breakthrough_experiment import (  # noqa: E402
+    _build_model,
+    _load_data,
+    _make_loaders,
+    _make_reliability_estimator,
+    _predict_craf_with_stats,
+    _predict_static,
+    _split,
+    _train_model,
+    set_seed,
+)
 
 REGISTRY_V2 = ROOT / "docs" / "research" / "phase2" / "PHASE_2_EXPERIMENT_REGISTRY_v2.csv"
 ELARA_BENCH_LA_CONFIG = ROOT / "configs" / "attention_real_fusion.yaml"
@@ -74,9 +81,7 @@ def _validate(eid: str, row: dict[str, str]) -> None:
     if row["analysis_family"] != "B":
         raise SystemExit(f"{eid}: registry analysis_family={row['analysis_family']!r}; refusing")
     if row["benchmark"] != LOCKED["benchmark"]:
-        raise SystemExit(
-            f"{eid}: registry benchmark={row['benchmark']!r}; expected {LOCKED['benchmark']!r}"
-        )
+        raise SystemExit(f"{eid}: registry benchmark={row['benchmark']!r}; expected {LOCKED['benchmark']!r}")
 
 
 def run_one_seed(cfg, seed, archive, eid, benchmark, protocol):
@@ -86,12 +91,15 @@ def run_one_seed(cfg, seed, archive, eid, benchmark, protocol):
     cfg_seed["training"] = dict(cfg.get("training", {}))
     cfg_seed["training"]["seed"] = int(seed)
 
-    (features, masks, labels, sample_ids, domain_order, _, conf_idx,
-     score_idx, sample_splits, _) = _load_data(cfg_seed)
-    train_idx, val_idx, test_idx = _split(labels, cfg_seed["training"],
-                                           split_values=sample_splits)
+    features, masks, labels, sample_ids, domain_order, _, conf_idx, score_idx, sample_splits, _ = _load_data(cfg_seed)
+    train_idx, val_idx, test_idx = _split(labels, cfg_seed["training"], split_values=sample_splits)
     train_loader, val_loader, _ = _make_loaders(
-        features, masks, labels, train_idx, val_idx, test_idx,
+        features,
+        masks,
+        labels,
+        train_idx,
+        val_idx,
+        test_idx,
         batch_size=int(cfg_seed["training"].get("batch_size", 64)),
     )
     model = _build_model(cfg_seed, features.shape[1], features.shape[2], conf_idx, device)
@@ -114,43 +122,55 @@ def run_one_seed(cfg, seed, archive, eid, benchmark, protocol):
     out = []
     for attack in LOCKED["attacks"]:
         conds = inject_corruption(
-            test_feat, test_mask,
-            domain_order=list(domain_order), score_index=score_idx,
-            attack_name=attack, k_values=list(LOCKED["k_values"]),
-            sigma=LOCKED["sigma"], seed=int(seed) + 41_000,
+            test_feat,
+            test_mask,
+            domain_order=list(domain_order),
+            score_index=score_idx,
+            attack_name=attack,
+            k_values=list(LOCKED["k_values"]),
+            sigma=LOCKED["sigma"],
+            seed=int(seed) + 41_000,
         )
         # For k=4 there is exactly one subset (all D=4 domains)
         for cond in conds:
             static_probs = _predict_static(model, cond.features, cond.masks, device)
             craf_probs, gate_stats = _predict_craf_with_stats(
-                model, estimator, cond.features, cond.masks, device,
-                clean_gate_threshold=LOCKED["tau_mean"], per_sample_gating=False,
+                model,
+                estimator,
+                cond.features,
+                cond.masks,
+                device,
+                clean_gate_threshold=LOCKED["tau_mean"],
+                per_sample_gating=False,
             )
             # Archive both methods under the same (cell, attack, k) slice
-            for method, scores in (("static_attention", static_probs),
-                                    ("rga_mean_gate_tau66", craf_probs)):
+            for method, scores in (("static_attention", static_probs), ("rga_mean_gate_tau66", craf_probs)):
                 frame = archive.build_frame(
                     sample_ids=test_sids,
                     labels=np.asarray(test_labels, dtype=int),
                     raw_scores=np.asarray(scores, dtype=float),
                     method=method,
                     method_variant=f"{attack}__k{cond.failed_domain_count}",
-                    benchmark=benchmark, protocol=protocol,
-                    analysis_family="B", pairing_strength=LOCKED["pairing_strength"],
-                    split="test", seed=int(seed),
+                    benchmark=benchmark,
+                    protocol=protocol,
+                    analysis_family="B",
+                    pairing_strength=LOCKED["pairing_strength"],
+                    split="test",
+                    seed=int(seed),
                     selection_rule=(
                         "validation-only: gate threshold tau=0.66 LOCKED by Phase-2 contract; "
                         "no test-fold reads inform gate selection"
                     ),
                     selection_used_test_metrics=False,
                     selected_head_or_comparator_status=(
-                        "RGA G0 mean-gate" if method == "rga_mean_gate_tau66"
-                        else "static reference"
+                        "RGA G0 mean-gate" if method == "rga_mean_gate_tau66" else "static reference"
                     ),
                     gate_mode=LOCKED["gate_mode"],
-                    gate_fired=np.ones(len(test_sids), dtype=bool) if (
-                        method == "rga_mean_gate_tau66" and gate_stats.get("adapted")
-                    ) else np.zeros(len(test_sids), dtype=bool),
+                    gate_fired=(
+                        np.ones(len(test_sids), dtype=bool)
+                        if (method == "rga_mean_gate_tau66" and gate_stats.get("adapted"))
+                        else np.zeros(len(test_sids), dtype=bool)
+                    ),
                     mean_reliability=np.full(len(test_sids), float(gate_stats.get("mean_reliability", 0.0))),
                     min_reliability=np.full(len(test_sids), float(gate_stats.get("min_reliability", 0.0))),
                     failure_type=attack,
@@ -158,25 +178,34 @@ def run_one_seed(cfg, seed, archive, eid, benchmark, protocol):
                     fault_severity=LOCKED["sigma"],
                 )
                 entry = archive.write(
-                    experiment_id=eid, benchmark=benchmark, protocol=protocol,
-                    seed=int(seed), method=f"{method}__{attack}_k{cond.failed_domain_count}",
-                    split="test", frame=frame, config=cfg_seed,
+                    experiment_id=eid,
+                    benchmark=benchmark,
+                    protocol=protocol,
+                    seed=int(seed),
+                    method=f"{method}__{attack}_k{cond.failed_domain_count}",
+                    split="test",
+                    frame=frame,
+                    config=cfg_seed,
                 )
                 archive.append_index(entry)
-            out.append({
-                "seed": int(seed), "attack": attack,
-                "k": int(cond.failed_domain_count),
-                "static_test_auc": _safe_auc(test_labels, static_probs),
-                "rga_test_auc": _safe_auc(test_labels, craf_probs),
-                "adapted": bool(gate_stats.get("adapted", False)),
-                "mean_reliability": float(gate_stats.get("mean_reliability", 0.0)),
-                "min_reliability": float(gate_stats.get("min_reliability", 0.0)),
-            })
+            out.append(
+                {
+                    "seed": int(seed),
+                    "attack": attack,
+                    "k": int(cond.failed_domain_count),
+                    "static_test_auc": _safe_auc(test_labels, static_probs),
+                    "rga_test_auc": _safe_auc(test_labels, craf_probs),
+                    "adapted": bool(gate_stats.get("adapted", False)),
+                    "mean_reliability": float(gate_stats.get("mean_reliability", 0.0)),
+                    "min_reliability": float(gate_stats.get("min_reliability", 0.0)),
+                }
+            )
     return out
 
 
 def _safe_auc(y, p):
     from sklearn.metrics import roc_auc_score
+
     try:
         return float(roc_auc_score(y, p))
     except ValueError:
@@ -188,11 +217,16 @@ def main() -> int:
     p.add_argument("--experiment-id", required=True)
     p.add_argument("--seeds", type=int, default=30)
     p.add_argument("--seed-start", type=int, default=42)
-    p.add_argument("--seed-metrics-out", type=Path,
-                   default=ROOT / "experiments" / "phase2" / "mechanism"
-                   / "family_b_primary_replication_seed_metrics.csv")
-    p.add_argument("--archive-root", type=Path,
-                   default=ROOT / "experiments" / "phase2" / "mechanism" / "b_mech_1_prediction_archives")
+    p.add_argument(
+        "--seed-metrics-out",
+        type=Path,
+        default=ROOT / "experiments" / "phase2" / "mechanism" / "family_b_primary_replication_seed_metrics.csv",
+    )
+    p.add_argument(
+        "--archive-root",
+        type=Path,
+        default=ROOT / "experiments" / "phase2" / "mechanism" / "b_mech_1_prediction_archives",
+    )
     args = p.parse_args()
 
     row = _registry_row(args.experiment_id)
@@ -205,8 +239,17 @@ def main() -> int:
     archive = PredictionArchive(root=args.archive_root)
     args.seed_metrics_out.parent.mkdir(parents=True, exist_ok=True)
 
-    fields = ["experiment_id", "seed", "attack", "k", "static_test_auc",
-              "rga_test_auc", "adapted", "mean_reliability", "min_reliability"]
+    fields = [
+        "experiment_id",
+        "seed",
+        "attack",
+        "k",
+        "static_test_auc",
+        "rga_test_auc",
+        "adapted",
+        "mean_reliability",
+        "min_reliability",
+    ]
     new = not args.seed_metrics_out.exists()
     f = args.seed_metrics_out.open("a", newline="")
     w = csv.DictWriter(f, fieldnames=fields)

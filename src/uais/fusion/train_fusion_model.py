@@ -1,5 +1,4 @@
 """Fusion model that learns from multiple domain embeddings/scores."""
-from typing import Dict, Tuple
 
 import joblib
 import numpy as np
@@ -16,10 +15,10 @@ logger = setup_logging(__name__)
 
 
 def train_fusion_meta_model(
-    score_dict: Dict[str, np.ndarray],
+    score_dict: dict[str, np.ndarray],
     labels: np.ndarray,
-    config: Dict,
-) -> Tuple[LogisticRegression, Dict[str, float]]:
+    config: dict,
+) -> tuple[LogisticRegression, dict[str, float]]:
     ensure_directories()
     X_meta = generate_meta_features(score_dict)
     y = np.asarray(labels)[: X_meta.shape[0]]
@@ -28,7 +27,11 @@ def train_fusion_meta_model(
     X_meta = scaler.fit_transform(X_meta)
 
     X_train, X_test, y_train, y_test = train_test_split(
-        X_meta, y, test_size=config.get("data", {}).get("test_size", 0.2), random_state=config.get("seed", 42), stratify=y
+        X_meta,
+        y,
+        test_size=config.get("data", {}).get("test_size", 0.2),
+        random_state=config.get("seed", 42),
+        stratify=y,
     )
 
     model = LogisticRegression(max_iter=200, class_weight="balanced")

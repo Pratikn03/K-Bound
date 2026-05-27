@@ -6,9 +6,6 @@ Uses the HuggingFace Trainer API with early stopping and full metrics
 
 from __future__ import annotations
 
-from typing import Dict, List
-
-import numpy as np
 import torch
 from sklearn.metrics import accuracy_score, f1_score, roc_auc_score
 from sklearn.model_selection import train_test_split
@@ -23,7 +20,7 @@ from transformers import (
 
 
 class _TextDataset(Dataset):
-    def __init__(self, encodings: dict, labels: List[int]) -> None:
+    def __init__(self, encodings: dict, labels: list[int]) -> None:
         self.encodings = encodings
         self.labels = labels
 
@@ -48,8 +45,8 @@ def _compute_metrics(eval_pred) -> dict:
 
 
 def train_transformer_text(
-    texts: List[str],
-    labels: List[int],
+    texts: list[str],
+    labels: list[int],
     model_name: str = "distilbert-base-uncased",
     max_length: int = 128,
     batch_size: int = 32,
@@ -61,7 +58,7 @@ def train_transformer_text(
     output_dir: str = "/tmp/distilbert_finetuned",
     seed: int = 42,
     **_: object,
-) -> Dict[str, float]:
+) -> dict[str, float]:
     """Fine-tune a DistilBERT model for binary text classification.
 
     Splits texts/labels into train/val, tokenizes with the model's own

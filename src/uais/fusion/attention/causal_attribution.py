@@ -42,7 +42,6 @@ from __future__ import annotations
 
 import math
 from dataclasses import dataclass
-from typing import List
 
 import numpy as np
 from sklearn.ensemble import GradientBoostingRegressor
@@ -53,6 +52,7 @@ from sklearn.model_selection import KFold
 @dataclass
 class DomainCausalEffect:
     """Average treatment effect of per-domain reliability on prediction."""
+
     domain: str
     ate: float
     ate_std_error: float
@@ -180,9 +180,7 @@ def estimate_domain_causal_effect(
     )
 
     def learner():
-        return GradientBoostingRegressor(
-            n_estimators=80, max_depth=3, random_state=random_state, learning_rate=0.05
-        )
+        return GradientBoostingRegressor(n_estimators=80, max_depth=3, random_state=random_state, learning_rate=0.05)
 
     y_residuals = _cross_fitted_residuals(
         y, controls, n_splits=n_splits, random_state=random_state, learner_factory=learner
@@ -191,7 +189,7 @@ def estimate_domain_causal_effect(
         t, controls, n_splits=n_splits, random_state=random_state, learner_factory=learner
     )
 
-    t_norm_sq = float(np.sum(t_residuals ** 2))
+    t_norm_sq = float(np.sum(t_residuals**2))
     if t_norm_sq < 1e-12:
         return DomainCausalEffect(
             domain=domain_name,
@@ -206,12 +204,14 @@ def estimate_domain_causal_effect(
     theta = float(np.sum(t_residuals * y_residuals) / t_norm_sq)
     fitted = theta * t_residuals
     score = (y_residuals - fitted) * t_residuals
-    asymptotic_variance = float(np.mean(score ** 2)) / (t_norm_sq / len(y)) ** 2
+    asymptotic_variance = float(np.mean(score**2)) / (t_norm_sq / len(y)) ** 2
     std_error = float(math.sqrt(max(asymptotic_variance, 0.0) / len(y)))
     z = 1.959963984540054  # 95% normal quantile
     ci_low = theta - z * std_error
     ci_high = theta + z * std_error
-    p_value = 2.0 * (1.0 - 0.5 * (1.0 + math.erf(abs(theta) / (std_error * math.sqrt(2.0)) if std_error > 0 else float("inf"))))
+    p_value = 2.0 * (
+        1.0 - 0.5 * (1.0 + math.erf(abs(theta) / (std_error * math.sqrt(2.0)) if std_error > 0 else float("inf")))
+    )
     p_value = float(min(1.0, max(0.0, p_value)))
 
     return DomainCausalEffect(
@@ -230,7 +230,7 @@ def estimate_all_domain_effects(
     masks: np.ndarray,
     reliability_weights: np.ndarray,
     predictions: np.ndarray,
-    domain_order: List[str],
+    domain_order: list[str],
     *,
     score_index: int = 0,
     n_splits: int = 5,
@@ -291,9 +291,7 @@ def estimate_per_sample_cate(
     )
 
     def learner():
-        return GradientBoostingRegressor(
-            n_estimators=80, max_depth=3, random_state=random_state, learning_rate=0.05
-        )
+        return GradientBoostingRegressor(n_estimators=80, max_depth=3, random_state=random_state, learning_rate=0.05)
 
     y_res = _cross_fitted_residuals(y, controls, n_splits=n_splits, random_state=random_state, learner_factory=learner)
     t_res = _cross_fitted_residuals(t, controls, n_splits=n_splits, random_state=random_state, learner_factory=learner)
@@ -304,7 +302,9 @@ def estimate_per_sample_cate(
     model = Ridge(alpha=1.0, random_state=random_state)
     try:
         model.fit(design, y_res)
-        cate_available = model.coef_[0] + (interaction @ model.coef_[1:] if interaction.shape[1] > 0 else np.zeros_like(t_res))
+        cate_available = model.coef_[0] + (
+            interaction @ model.coef_[1:] if interaction.shape[1] > 0 else np.zeros_like(t_res)
+        )
     except (ValueError, RuntimeError):
         cate_available = np.full(n_available, float("nan"), dtype=np.float64)
 
@@ -316,6 +316,7 @@ def estimate_per_sample_cate(
 @dataclass
 class InterventionalEffect:
     """Direct counterfactual ATE of intervening on per-domain reliability."""
+
     domain: str
     ate: float
     ate_std_error: float
@@ -362,9 +363,7 @@ def estimate_interventional_ate(
     cf_weights = reliability_weights.copy()
     if intervention == "domain_conditional":
         if domain_baseline is None:
-            raise ValueError(
-                "intervention='domain_conditional' requires domain_baseline."
-            )
+            raise ValueError("intervention='domain_conditional' requires domain_baseline.")
         cf_weights[:, domain_index] = float(domain_baseline)
     elif intervention == "population_mean":
         # Intervening on the mean is degenerate when the estimator returns
@@ -415,7 +414,7 @@ def estimate_interventional_ate(
 def estimate_all_interventional_ates(
     predict_fn,
     reliability_weights: np.ndarray,
-    domain_order: List[str],
+    domain_order: list[str],
     *,
     n_bootstrap: int = 200,
     random_state: int = 42,
@@ -429,9 +428,7 @@ def estimate_all_interventional_ates(
     reliability for each domain).
     """
     if intervention == "domain_conditional" and domain_baselines is None:
-        raise ValueError(
-            "intervention='domain_conditional' requires a domain_baselines list."
-        )
+        raise ValueError("intervention='domain_conditional' requires a domain_baselines list.")
     out = []
     for d, name in enumerate(domain_order):
         baseline = domain_baselines[d] if domain_baselines is not None else None

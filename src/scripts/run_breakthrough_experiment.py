@@ -21,13 +21,11 @@ Usage:
 from __future__ import annotations
 
 import argparse
-from itertools import combinations
 import json
 import logging
 import math
-import time
+from itertools import combinations
 from pathlib import Path
-from typing import Dict, List, Optional, Tuple
 
 import numpy as np
 import pandas as pd
@@ -41,7 +39,6 @@ from uais.fusion.attention.adversarial_robustness import (
     AdversarialAttackType,
     AdversarialPerturbationEngine,
 )
-from uais.fusion.attention.baselines import run_baseline_suite
 from uais.fusion.attention.attention_utils import (
     FusionDataset,
     apply_domain_dropout,
@@ -49,15 +46,15 @@ from uais.fusion.attention.attention_utils import (
     infer_feature_columns,
     load_fusion_dataframe,
 )
+from uais.fusion.attention.baselines import run_baseline_suite
+from uais.fusion.attention.causal_attribution import (
+    estimate_all_interventional_ates,
+)
 from uais.fusion.attention.counterfactual_explainer import CounterfactualDomainExplainer
 from uais.fusion.attention.cross_modal_attention import AttentionFusionModel
 from uais.fusion.attention.learned_gate import LearnedGateConfig, LearnedReliabilityGate
 from uais.fusion.attention.meta_router import fit_rga_meta_router
 from uais.fusion.attention.reliability_boosted_fusion import ReliabilityBoostedFusion
-from uais.fusion.attention.causal_attribution import (
-    estimate_all_domain_effects,
-    estimate_all_interventional_ates,
-)
 from uais.fusion.attention.reliability_estimator import (
     CategoryAwareReliabilityEstimator,
     PerSampleReliabilityEstimator,
@@ -85,6 +82,7 @@ DEFAULT_CONFIG = Path("src/uais/fusion/attention/attention_config.yaml")
 # Data helpers
 # ---------------------------------------------------------------------------
 
+
 def _resolve(p: str | Path) -> Path:
     path = Path(p)
     if path.is_absolute():
@@ -96,7 +94,7 @@ def _resolve(p: str | Path) -> Path:
     return PROJECT_ROOT / path
 
 
-def _load_data(cfg: Dict):
+def _load_data(cfg: dict):
     data_cfg = cfg.get("data", {})
     train_cfg = cfg.get("training", {})
     model_cfg = cfg.get("model", {})
@@ -113,9 +111,7 @@ def _load_data(cfg: Dict):
         include_confidence=include_conf,
     )
     conf_col = data_cfg.get("confidence_column", "confidence")
-    confidence_index = (
-        feature_columns.index(conf_col) if (conf_col in feature_columns and include_conf) else None
-    )
+    confidence_index = feature_columns.index(conf_col) if (conf_col in feature_columns and include_conf) else None
     score_col = data_cfg.get("score_column", "score")
     score_index = feature_columns.index(score_col) if score_col in feature_columns else 0
 
@@ -198,14 +194,14 @@ def _sample_column_values(
     return mapping.reindex(sample_ids).to_numpy()
 
 
-def _configured_split_values(train_cfg: Dict, key: str, default: list[str]) -> set[str]:
+def _configured_split_values(train_cfg: dict, key: str, default: list[str]) -> set[str]:
     values = train_cfg.get(key, default)
     if isinstance(values, str):
         values = [values]
     return {str(value) for value in values}
 
 
-def _split(labels: np.ndarray, train_cfg: Dict, split_values: np.ndarray | None = None):
+def _split(labels: np.ndarray, train_cfg: dict, split_values: np.ndarray | None = None):
     if split_values is not None:
         split_values = np.asarray(split_values)
         if len(split_values) != len(labels):
@@ -264,7 +260,10 @@ def _make_loaders(features, masks, labels, train_idx, val_idx, test_idx, batch_s
 # Model construction + inference helpers
 # ---------------------------------------------------------------------------
 
-def _build_model(cfg: Dict, num_domains: int, input_dim: int, confidence_index: int | None, device: torch.device) -> AttentionFusionModel:
+
+def _build_model(
+    cfg: dict, num_domains: int, input_dim: int, confidence_index: int | None, device: torch.device
+) -> AttentionFusionModel:
     m = cfg.get("model", {})
     model = AttentionFusionModel(
         num_domains=num_domains,
@@ -284,7 +283,7 @@ def _build_model(cfg: Dict, num_domains: int, input_dim: int, confidence_index: 
     return model.to(device)
 
 
-def _component_weights(rel_cfg: Dict, disabled: Tuple[str, ...] = ()) -> Dict[str, float]:
+def _component_weights(rel_cfg: dict, disabled: tuple[str, ...] = ()) -> dict[str, float]:
     """Return normalized reliability-component weights with selected terms removed."""
     name_to_key = {
         "ece": "ece_weight",
@@ -311,10 +310,10 @@ def _component_weights(rel_cfg: Dict, disabled: Tuple[str, ...] = ()) -> Dict[st
 
 
 def _make_reliability_estimator(
-    rel_cfg: Dict,
-    domain_order: List[str],
+    rel_cfg: dict,
+    domain_order: list[str],
     score_index: int,
-    disabled_components: Tuple[str, ...] = (),
+    disabled_components: tuple[str, ...] = (),
 ) -> ReliabilityEstimator:
     weights = _component_weights(rel_cfg, disabled=disabled_components)
     estimator_type = str(rel_cfg.get("estimator_type", "batch")).lower()
@@ -341,7 +340,7 @@ def _make_reliability_estimator(
     )
 
 
-def _train_model(model: AttentionFusionModel, train_loader, val_loader, cfg: Dict, device: torch.device) -> None:
+def _train_model(model: AttentionFusionModel, train_loader, val_loader, cfg: dict, device: torch.device) -> None:
     t_cfg = cfg.get("training", {})
     optimizer = torch.optim.AdamW(
         model.parameters(),
@@ -353,7 +352,7 @@ def _train_model(model: AttentionFusionModel, train_loader, val_loader, cfg: Dic
     best_val_loss = float("inf")
     no_improve = 0
 
-    for epoch in range(int(t_cfg.get("epochs", 20))):
+    for _epoch in range(int(t_cfg.get("epochs", 20))):
         model.train()
         for batch in train_loader:
             feats, msks, lbls = [x.to(device) for x in batch]
@@ -399,7 +398,9 @@ def _train_model(model: AttentionFusionModel, train_loader, val_loader, cfg: Dic
 
 
 @torch.no_grad()
-def _predict_static(model: AttentionFusionModel, features: np.ndarray, masks: np.ndarray, device: torch.device, batch_size: int = 256) -> np.ndarray:
+def _predict_static(
+    model: AttentionFusionModel, features: np.ndarray, masks: np.ndarray, device: torch.device, batch_size: int = 256
+) -> np.ndarray:
     model.eval()
     probs = []
     n = features.shape[0]
@@ -558,26 +559,37 @@ def _calibrate_polarity(
     rng = np.random.default_rng(int(random_seed))
     n_val = val_feat.shape[0]
     if n_val < 4:
-        return {"flip_required": False, "calibration_auroc": float("nan"), "n_calibration": int(n_val), "n_synthetic": 0}
+        return {
+            "flip_required": False,
+            "calibration_auroc": float("nan"),
+            "n_calibration": int(n_val),
+            "n_synthetic": 0,
+        }
     n_synth = max(2, int(round(synthetic_fraction * n_val)))
     perturb_idx = rng.choice(n_val, size=n_synth, replace=False)
     synth_feat = val_feat[perturb_idx].copy()
     synth_mask = val_mask[perturb_idx].copy()
-    synth_feat[:, :, score_index] = np.clip(
-        synth_feat[:, :, score_index] * float(perturb_multiplier), 0.0, 1.0
-    )
+    synth_feat[:, :, score_index] = np.clip(synth_feat[:, :, score_index] * float(perturb_multiplier), 0.0, 1.0)
     cal_feat = np.concatenate([val_feat, synth_feat], axis=0)
     cal_mask = np.concatenate([val_mask, synth_mask], axis=0)
-    cal_labels = np.concatenate(
-        [np.asarray(val_labels, dtype=int), np.ones(n_synth, dtype=int)]
-    )
+    cal_labels = np.concatenate([np.asarray(val_labels, dtype=int), np.ones(n_synth, dtype=int)])
     if len(np.unique(cal_labels)) < 2:
-        return {"flip_required": False, "calibration_auroc": float("nan"), "n_calibration": int(len(cal_labels)), "n_synthetic": int(n_synth)}
+        return {
+            "flip_required": False,
+            "calibration_auroc": float("nan"),
+            "n_calibration": int(len(cal_labels)),
+            "n_synthetic": int(n_synth),
+        }
     cal_probs = _predict_static(model, cal_feat, cal_mask, device)
     try:
         auc = float(roc_auc_score(cal_labels, cal_probs))
     except ValueError:
-        return {"flip_required": False, "calibration_auroc": float("nan"), "n_calibration": int(len(cal_labels)), "n_synthetic": int(n_synth)}
+        return {
+            "flip_required": False,
+            "calibration_auroc": float("nan"),
+            "n_calibration": int(len(cal_labels)),
+            "n_synthetic": int(n_synth),
+        }
     return {
         "flip_required": bool(auc < 0.5),
         "calibration_auroc": auc,
@@ -616,7 +628,7 @@ def _gate_decision_stats(
     threshold: float,
     gate_mode: str = "mean",
     min_gate_threshold: float | None = None,
-) -> Dict[str, float | bool | int | str]:
+) -> dict[str, float | bool | int | str]:
     """Summarize whether the reliability gate adapts for one inference batch."""
     if gate_mode not in {"mean", "minimum", "hybrid"}:
         raise ValueError("gate_mode must be one of 'mean', 'minimum', or 'hybrid'.")
@@ -653,8 +665,8 @@ def _predict_craf_with_stats(
     batch_size: int = 256,
     clean_gate_threshold: float = 0.66,
     per_sample_gating: bool = False,
-    learned_gate: Optional[LearnedReliabilityGate] = None,
-) -> Tuple[np.ndarray, Dict[str, float | int]]:
+    learned_gate: LearnedReliabilityGate | None = None,
+) -> tuple[np.ndarray, dict[str, float | int]]:
     """Predict with reliability-gated attention weights.
 
     Two gating modes:
@@ -718,9 +730,7 @@ def _predict_craf_with_stats(
             craf_t = craf_t.masked_fill(mask_t, 0.0)
             embeds = [enc(feat_t[:, i, :]) for i, enc in enumerate(model.domain_encoders)]
             domain_embeds = torch.stack(embeds, dim=1)
-            logits_craf, _ = model.fusion(
-                domain_embeds, key_padding_mask=mask_t, confidence_weights=craf_t
-            )
+            logits_craf, _ = model.fusion(domain_embeds, key_padding_mask=mask_t, confidence_weights=craf_t)
             probs_craf = torch.sigmoid(logits_craf.squeeze(-1))
             gate_t = torch.tensor(gate_per_sample, dtype=torch.bool, device=device)
             batch_probs = torch.where(gate_t, probs_craf, probs_static)
@@ -763,7 +773,8 @@ def _predict_craf_with_stats(
 # Calibration helpers
 # ---------------------------------------------------------------------------
 
-def _calibration_bins(y_true: np.ndarray, y_prob: np.ndarray, n_bins: int = 10) -> List[Dict]:
+
+def _calibration_bins(y_true: np.ndarray, y_prob: np.ndarray, n_bins: int = 10) -> list[dict]:
     bins = np.linspace(0.0, 1.0, n_bins + 1)
     bin_ids = np.digitize(y_prob, bins) - 1
     result = []
@@ -771,12 +782,14 @@ def _calibration_bins(y_true: np.ndarray, y_prob: np.ndarray, n_bins: int = 10) 
         mask = bin_ids == i
         if not np.any(mask):
             continue
-        result.append({
-            "bin_center": float((bins[i] + bins[i + 1]) / 2),
-            "mean_confidence": float(np.mean(y_prob[mask])),
-            "mean_accuracy": float(np.mean(y_true[mask])),
-            "count": int(np.sum(mask)),
-        })
+        result.append(
+            {
+                "bin_center": float((bins[i] + bins[i + 1]) / 2),
+                "mean_confidence": float(np.mean(y_prob[mask])),
+                "mean_accuracy": float(np.mean(y_true[mask])),
+                "count": int(np.sum(mask)),
+            }
+        )
     return result
 
 
@@ -784,7 +797,8 @@ def _calibration_bins(y_true: np.ndarray, y_prob: np.ndarray, n_bins: int = 10) 
 # Synthetic data for smoke testing
 # ---------------------------------------------------------------------------
 
-def _make_synthetic(n_samples: int = 800, n_domains: int = 3, n_features: int = 5, seed: int = 42) -> Tuple:
+
+def _make_synthetic(n_samples: int = 800, n_domains: int = 3, n_features: int = 5, seed: int = 42) -> tuple:
     rng = np.random.default_rng(seed)
     labels = (rng.random(n_samples) < 0.15).astype(np.float32)
     features = rng.random((n_samples, n_domains, n_features)).astype(np.float32)
@@ -805,7 +819,7 @@ def _metric_bootstrap_intervals(
     alpha: float,
     seed: int,
     threshold: float = 0.5,
-) -> Dict[str, Dict[str, float | None]]:
+) -> dict[str, dict[str, float | None]]:
     """Bootstrap CIs for core probability metrics on one evaluated split."""
 
     def _safe_roc(y, p):
@@ -823,7 +837,7 @@ def _metric_bootstrap_intervals(
     def _safe_f1(y, p):
         return float(sk_metrics.f1_score(y, (p >= threshold).astype(int), zero_division=0))
 
-    out: Dict[str, Dict[str, float | None]] = {}
+    out: dict[str, dict[str, float | None]] = {}
     for offset, (name, fn) in enumerate({"roc_auc": _safe_roc, "pr_auc": _safe_pr, "f1": _safe_f1}.items()):
         low, high = bootstrap_ci(
             y_true,
@@ -847,7 +861,7 @@ def _metrics_from_validation_threshold(
     val_labels: np.ndarray,
     val_probs: np.ndarray,
     strategy: str | None,
-) -> Dict[str, float | str]:
+) -> dict[str, float | str]:
     threshold = select_decision_threshold(val_labels, val_probs, strategy=strategy)
     metrics = classification_metrics(test_labels, test_probs, threshold=threshold)
     metrics["threshold_strategy"] = (strategy or "fixed_0p5").strip().lower()
@@ -913,10 +927,10 @@ def _evaluate_drift(
     test_feat: np.ndarray,
     test_mask: np.ndarray,
     test_labels: np.ndarray,
-    domain_order: List[str],
+    domain_order: list[str],
     score_index: int,
     device: torch.device,
-    noise_levels: List[float],
+    noise_levels: list[float],
     clean_gate_threshold: float,
     seed: int,
     per_sample_gating: bool = False,
@@ -983,10 +997,10 @@ def _evaluate_adversarial(
     test_feat: np.ndarray,
     test_mask: np.ndarray,
     test_labels: np.ndarray,
-    domain_order: List[str],
+    domain_order: list[str],
     score_index: int,
     device: torch.device,
-    attack_names: List[str],
+    attack_names: list[str],
     sigma: float,
     clean_gate_threshold: float,
     seed: int,
@@ -1047,7 +1061,7 @@ def _evaluate_missing(
     test_mask: np.ndarray,
     test_labels: np.ndarray,
     device: torch.device,
-    dropout_probs: List[float],
+    dropout_probs: list[float],
     clean_gate_threshold: float,
     seed: int,
     per_sample_gating: bool = False,
@@ -1092,9 +1106,9 @@ def _evaluate_missing(
 def _all_domain_conditions(
     test_feat: np.ndarray,
     test_mask: np.ndarray,
-    domain_order: List[str],
+    domain_order: list[str],
     score_index: int,
-    attack_names: List[str],
+    attack_names: list[str],
     sigma: float,
     seed: int,
     include_clean: bool = True,
@@ -1138,10 +1152,10 @@ def _all_domain_conditions(
 def _k_domain_corruption_conditions(
     test_feat: np.ndarray,
     test_mask: np.ndarray,
-    domain_order: List[str],
+    domain_order: list[str],
     score_index: int,
     attack_name: str,
-    k_values: List[int],
+    k_values: list[int],
     sigma: float,
     seed: int,
 ) -> list[dict]:
@@ -1153,7 +1167,7 @@ def _k_domain_corruption_conditions(
 
     engine = AdversarialPerturbationEngine(domain_order, score_index, random_seed=seed)
     conditions: list[dict] = []
-    for k in sorted(set(int(value) for value in k_values)):
+    for k in sorted({int(value) for value in k_values}):
         if k < 0 or k > len(domain_order):
             raise ValueError(f"k-domain corruption value {k} is outside [0, {len(domain_order)}].")
         if k == 0:
@@ -1201,12 +1215,12 @@ def _evaluate_k_domain_corruption(
     test_feat: np.ndarray,
     test_mask: np.ndarray,
     test_labels: np.ndarray,
-    domain_order: List[str],
+    domain_order: list[str],
     score_index: int,
     device: torch.device,
-    attack_names: List[str],
-    k_values: List[int],
-    gate_modes: List[str],
+    attack_names: list[str],
+    k_values: list[int],
+    gate_modes: list[str],
     sigma: float,
     clean_gate_threshold: float,
     min_gate_threshold: float,
@@ -1292,17 +1306,17 @@ def _evaluate_tau_sweep(
     test_feat: np.ndarray,
     test_mask: np.ndarray,
     test_labels: np.ndarray,
-    domain_order: List[str],
+    domain_order: list[str],
     score_index: int,
     device: torch.device,
-    thresholds: List[float],
-    attack_names: List[str],
+    thresholds: list[float],
+    attack_names: list[str],
     sigma: float,
     seed: int,
     per_sample_gating: bool = False,
     static_decision_threshold: float = 0.5,
     craf_decision_threshold: float = 0.5,
-    learned_gate: Optional[LearnedReliabilityGate] = None,
+    learned_gate: LearnedReliabilityGate | None = None,
 ) -> list[dict]:
     rows: list[dict] = []
     if not thresholds and learned_gate is None:
@@ -1386,7 +1400,7 @@ def _evaluate_tau_sweep(
     return rows
 
 
-def _component_ablation_specs(names: List[str]) -> list[dict]:
+def _component_ablation_specs(names: list[str]) -> list[dict]:
     if not names:
         return []
     spec_by_name = {
@@ -1408,18 +1422,18 @@ def _component_ablation_specs(names: List[str]) -> list[dict]:
 
 def _evaluate_component_ablation(
     model: AttentionFusionModel,
-    rel_cfg: Dict,
+    rel_cfg: dict,
     val_feat: np.ndarray,
     val_mask: np.ndarray,
     val_labels: np.ndarray,
     test_feat: np.ndarray,
     test_mask: np.ndarray,
     test_labels: np.ndarray,
-    domain_order: List[str],
+    domain_order: list[str],
     score_index: int,
     device: torch.device,
-    variant_names: List[str],
-    attack_names: List[str],
+    variant_names: list[str],
+    attack_names: list[str],
     sigma: float,
     clean_gate_threshold: float,
     seed: int,
@@ -1534,7 +1548,7 @@ def _is_finite_number(value) -> bool:
         return False
 
 
-def _cda_spearman_status(value: float, domain_order: List[str]) -> str:
+def _cda_spearman_status(value: float, domain_order: list[str]) -> str:
     if _is_finite_number(value):
         return "computed"
     if len(domain_order) < 3:
@@ -1549,7 +1563,7 @@ def _evaluate_cda(
     test_mask: np.ndarray,
     sample_ids: list,
     test_idx: np.ndarray,
-    domain_order: List[str],
+    domain_order: list[str],
     device: torch.device,
     n_cda: int,
     seed: int,
@@ -1567,8 +1581,7 @@ def _evaluate_cda(
     )
     cf_results = explainer.explain_batch(cda_feat, cda_mask, cda_ids, batch_size=32)
     mean_cf_impacts = {
-        d: float(np.nanmean([abs(r.cf_impacts.get(d, float("nan"))) for r in cf_results]))
-        for d in domain_order
+        d: float(np.nanmean([abs(r.cf_impacts.get(d, float("nan"))) for r in cf_results])) for d in domain_order
     }
     domain_ece = estimator.get_domain_ece()
     spearman_vs_ece = explainer.correlation_with_shap(cf_results, {d: 1.0 - v for d, v in domain_ece.items()})
@@ -1593,7 +1606,7 @@ def _failure_case(
     features: np.ndarray,
     masks: np.ndarray,
     reliability_weights: np.ndarray,
-    domain_order: List[str],
+    domain_order: list[str],
     score_index: int,
     static_decision_threshold: float = 0.5,
     craf_decision_threshold: float = 0.5,
@@ -1602,10 +1615,7 @@ def _failure_case(
         domain: None if bool(masks[idx, d]) else float(features[idx, d, score_index])
         for d, domain in enumerate(domain_order)
     }
-    domain_reliability = {
-        domain: float(reliability_weights[idx, d])
-        for d, domain in enumerate(domain_order)
-    }
+    domain_reliability = {domain: float(reliability_weights[idx, d]) for d, domain in enumerate(domain_order)}
     return {
         "case_type": case_type,
         "sample_id": sample_ids[test_idx[idx]] if sample_ids else int(idx),
@@ -1632,7 +1642,7 @@ def _extract_failure_cases(
     craf_probs: np.ndarray,
     sample_ids: list,
     test_idx: np.ndarray,
-    domain_order: List[str],
+    domain_order: list[str],
     score_index: int,
     static_decision_threshold: float = 0.5,
     craf_decision_threshold: float = 0.5,
@@ -1746,7 +1756,7 @@ def _evaluate_causal_attribution(
     test_feat: np.ndarray,
     test_mask: np.ndarray,
     device: torch.device,
-    domain_order: List[str],
+    domain_order: list[str],
     seed: int,
     *,
     n_bootstrap: int = 200,
@@ -1783,9 +1793,7 @@ def _evaluate_causal_attribution(
                 r_t = r_t.masked_fill(mask_t, 0.0)
                 embeds = [enc(feat_t[:, i, :]) for i, enc in enumerate(model.domain_encoders)]
                 domain_embeds = torch.stack(embeds, dim=1)
-                logits, _ = model.fusion(
-                    domain_embeds, key_padding_mask=mask_t, confidence_weights=r_t
-                )
+                logits, _ = model.fusion(domain_embeds, key_padding_mask=mask_t, confidence_weights=r_t)
                 probs.append(torch.sigmoid(logits.squeeze(-1)).cpu().numpy())
         return np.concatenate(probs)
 
@@ -1794,8 +1802,7 @@ def _evaluate_causal_attribution(
     if intervention == "domain_conditional":
         if val_reliability_weights is not None and val_reliability_weights.size > 0:
             domain_baselines = [
-                float(val_reliability_weights[:, d].mean())
-                for d in range(val_reliability_weights.shape[1])
+                float(val_reliability_weights[:, d].mean()) for d in range(val_reliability_weights.shape[1])
             ]
         else:
             actual_intervention = "population_mean"
@@ -1828,7 +1835,7 @@ def _evaluate_causal_attribution(
     }
 
 
-def _aggregate_causal_attribution(rows: list[dict], domain_order: List[str]) -> dict:
+def _aggregate_causal_attribution(rows: list[dict], domain_order: list[str]) -> dict:
     if not rows:
         return {}
     out: dict = {"n_seeds": len(rows), "per_domain": []}
@@ -1874,13 +1881,11 @@ def _aggregate_category_aware(rows: list[dict]) -> dict:
         out[f"{metric}_std"] = summary["std"]
         out[f"{metric}_ci_low"] = summary["ci_low"]
         out[f"{metric}_ci_high"] = summary["ci_high"]
-    out["misfire_reduction_absolute"] = (
-        out["global_adapt_rate"] - out["category_aware_adapt_rate"]
-    )
+    out["misfire_reduction_absolute"] = out["global_adapt_rate"] - out["category_aware_adapt_rate"]
     return out
 
 
-def _aggregate_cda(rows: list[dict], domain_order: List[str]) -> dict:
+def _aggregate_cda(rows: list[dict], domain_order: list[str]) -> dict:
     if not rows:
         return {}
     latest = rows[-1]
@@ -1889,7 +1894,11 @@ def _aggregate_cda(rows: list[dict], domain_order: List[str]) -> dict:
         for domain in domain_order
     }
     spearman = summarize_values(row.get("spearman_cda_vs_ece_reliability") for row in rows)
-    statuses = [row.get("spearman_cda_vs_ece_reliability_status") for row in rows if row.get("spearman_cda_vs_ece_reliability_status")]
+    statuses = [
+        row.get("spearman_cda_vs_ece_reliability_status")
+        for row in rows
+        if row.get("spearman_cda_vs_ece_reliability_status")
+    ]
     status = "computed" if _is_finite_number(spearman["mean"]) else (statuses[-1] if statuses else "undefined")
     return {
         "n_samples": int(sum(row.get("n_samples", 0) for row in rows)),
@@ -1903,19 +1912,19 @@ def _aggregate_cda(rows: list[dict], domain_order: List[str]) -> dict:
 
 
 def _run_experiment_arrays(
-    cfg: Dict,
+    cfg: dict,
     features: np.ndarray,
     masks: np.ndarray,
     labels: np.ndarray,
     sample_ids: list,
-    domain_order: List[str],
+    domain_order: list[str],
     confidence_index: int | None,
     score_index: int,
     sample_splits: np.ndarray | None = None,
     sample_categories: np.ndarray | None = None,
-    seed_override: Optional[int] = None,
+    seed_override: int | None = None,
     device: torch.device | None = None,
-) -> Dict:
+) -> dict:
     train_cfg = cfg.get("training", {})
     eval_cfg = cfg.get("evaluation", {})
     rel_cfg = cfg.get("reliability", {})
@@ -2127,8 +2136,7 @@ def _run_experiment_arrays(
         rga_boosted_metrics["selected_candidate"] = rga_boosted.selected_candidate
         rga_boosted_metrics["selection_metric"] = rga_plus_selection_metric
         rga_boosted_metrics["candidate_validation_roc_auc"] = {
-            name: _json_float(score)
-            for name, score in sorted(rga_boosted.candidate_validation_auc.items())
+            name: _json_float(score) for name, score in sorted(rga_boosted.candidate_validation_auc.items())
         }
         rga_boosted_metrics["candidate_validation_scores"] = {
             name: {metric: _json_float(score) for metric, score in sorted(values.items())}
@@ -2152,19 +2160,13 @@ def _run_experiment_arrays(
             "static_attention": static_val_probs,
             "craf_attention": craf_val_probs,
             "rga_boosted_fusion": rga_boosted_val_probs,
-            **{
-                name: prediction_payload["val_probs"]
-                for name, prediction_payload in baseline_predictions.items()
-            },
+            **{name: prediction_payload["val_probs"] for name, prediction_payload in baseline_predictions.items()},
         }
         router_test_predictions = {
             "static_attention": static_probs,
             "craf_attention": craf_probs,
             "rga_boosted_fusion": rga_boosted_probs,
-            **{
-                name: prediction_payload["test_probs"]
-                for name, prediction_payload in baseline_predictions.items()
-            },
+            **{name: prediction_payload["test_probs"] for name, prediction_payload in baseline_predictions.items()},
         }
         rga_router_metrics, _rga_router_val_probs, rga_router_probs = _fit_rga_meta_router_metrics(
             val_predictions=router_val_predictions,
@@ -2278,7 +2280,7 @@ def _run_experiment_arrays(
                 craf_decision_threshold=craf_decision_threshold,
             )
         )
-        learned_gate_for_seed: Optional[LearnedReliabilityGate] = None
+        learned_gate_for_seed: LearnedReliabilityGate | None = None
         if enable_learned_gate:
             try:
                 gate_engine = AdversarialPerturbationEngine(domain_order, score_index, random_seed=actual_seed + 33_000)
@@ -2288,23 +2290,29 @@ def _run_experiment_arrays(
                         attack_type = AdversarialAttackType(attack_name)
                     except ValueError:
                         continue
+
                     def _make_fn(at=attack_type, eng=gate_engine, sg=adversarial_sigma):
                         return lambda f, m: eng.apply_attack(f, m, at, target_domain=None, sigma=sg)
+
                     perturbation_fns.append(_make_fn())
 
-                def _gate_static(f, m):
-                    return _predict_static(model, f, m, device)
+                def _gate_static(f, m, _model=model):
+                    return _predict_static(_model, f, m, device)
 
-                def _gate_weights(f, m):
-                    return estimator.compute_reliability_weights(f, m)
+                def _gate_weights(f, m, _estimator=estimator):
+                    return _estimator.compute_reliability_weights(f, m)
 
-                def _gate_reliability(f, m, w):
+                def _gate_reliability(f, m, w, _model=model, _estimator=estimator):
                     # Force the reliability path on for every sample so we can
                     # measure where it would have helped vs hurt. clean_gate_threshold
                     # > 1.0 ensures the mean-reliability comparison is always
                     # satisfied, equivalent to "always fire".
                     probs, _ = _predict_craf_with_stats(
-                        model, estimator, f, m, device,
+                        _model,
+                        _estimator,
+                        f,
+                        m,
+                        device,
                         clean_gate_threshold=2.0,
                         per_sample_gating=False,
                     )
@@ -2613,7 +2621,7 @@ def _run_experiment_arrays(
     }
 
 
-def run_experiment(cfg: Dict, seed_override: Optional[int] = None) -> Dict:
+def run_experiment(cfg: dict, seed_override: int | None = None) -> dict:
     logger.info("Phase 0: Loading data")
     (
         features,
@@ -2642,7 +2650,7 @@ def run_experiment(cfg: Dict, seed_override: Optional[int] = None) -> Dict:
     )
 
 
-def _run_synthetic_experiment(cfg, features, masks, labels, sample_ids, domain_order, seed_override=None) -> Dict:
+def _run_synthetic_experiment(cfg, features, masks, labels, sample_ids, domain_order, seed_override=None) -> dict:
     """Run experiment using pre-loaded synthetic arrays."""
     return _run_experiment_arrays(
         cfg,
@@ -2671,25 +2679,62 @@ def main():
         logger.warning("Running explicit synthetic smoke test; do not use this output as paper evidence.")
         features, masks, labels, sample_ids, domain_order = _make_synthetic()
         cfg = {
-            "data": {"path": "/dev/null", "score_column": "score", "confidence_column": "confidence",
-                     "embedding_prefix": "embedding_", "id_column": "sample_id",
-                     "domain_column": "domain", "label_column": "label"},
-            "model": {"num_domains": 3, "embed_dim": 32, "num_heads": 4, "num_layers": 1,
-                      "dropout": 0.1, "use_confidence": False, "use_input_confidence": False,
-                      "use_attention": True, "use_domain_embeddings": True,
-                      "use_positional_embeddings": True, "use_missing_embedding": True},
-            "training": {"seed": 42, "batch_size": 64, "epochs": 5, "lr": 1e-3,
-                         "weight_decay": 0.01, "domain_dropout": 0.1,
-                         "test_size": 0.2, "val_size": 0.1, "early_stopping": 3, "lambda_reg": 0.01},
-            "evaluation": {"seeds": [42], "cda_samples": 20, "n_bootstrap": 50,
-                           "domain_dropout_probs_extended": [0.0, 0.1, 0.3]},
-            "reliability": {"ece_weight": 0.4, "ks_weight": 0.4, "sharpness_weight": 0.2,
-                            "n_calibration_bins": 5, "min_samples_for_ks": 10},
-            "craf": {"drift_noise_levels": [0.0, 0.1, 0.3],
-                     "adversarial_attacks": ["zero_attack", "gaussian_noise"],
-                     "adversarial_sigma": 0.1},
+            "data": {
+                "path": "/dev/null",
+                "score_column": "score",
+                "confidence_column": "confidence",
+                "embedding_prefix": "embedding_",
+                "id_column": "sample_id",
+                "domain_column": "domain",
+                "label_column": "label",
+            },
+            "model": {
+                "num_domains": 3,
+                "embed_dim": 32,
+                "num_heads": 4,
+                "num_layers": 1,
+                "dropout": 0.1,
+                "use_confidence": False,
+                "use_input_confidence": False,
+                "use_attention": True,
+                "use_domain_embeddings": True,
+                "use_positional_embeddings": True,
+                "use_missing_embedding": True,
+            },
+            "training": {
+                "seed": 42,
+                "batch_size": 64,
+                "epochs": 5,
+                "lr": 1e-3,
+                "weight_decay": 0.01,
+                "domain_dropout": 0.1,
+                "test_size": 0.2,
+                "val_size": 0.1,
+                "early_stopping": 3,
+                "lambda_reg": 0.01,
+            },
+            "evaluation": {
+                "seeds": [42],
+                "cda_samples": 20,
+                "n_bootstrap": 50,
+                "domain_dropout_probs_extended": [0.0, 0.1, 0.3],
+            },
+            "reliability": {
+                "ece_weight": 0.4,
+                "ks_weight": 0.4,
+                "sharpness_weight": 0.2,
+                "n_calibration_bins": 5,
+                "min_samples_for_ks": 10,
+            },
+            "craf": {
+                "drift_noise_levels": [0.0, 0.1, 0.3],
+                "adversarial_attacks": ["zero_attack", "gaussian_noise"],
+                "adversarial_sigma": 0.1,
+            },
         }
-        results = _run_synthetic_experiment(cfg, features, masks, labels, sample_ids, domain_order, seed_override=args.seed)
+        results = _run_synthetic_experiment(
+            cfg, features, masks, labels, sample_ids, domain_order, seed_override=args.seed
+        )
     else:
         cfg = load_yaml(str(_resolve(args.config)))
         results = run_experiment(cfg, seed_override=args.seed)
@@ -2715,6 +2760,7 @@ def main():
         json.dump(_to_serializable(results), f, indent=2)
 
     logger.info("Results saved to %s", out_path)
+
 
 if __name__ == "__main__":
     main()

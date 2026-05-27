@@ -16,8 +16,8 @@ protocol. It is NOT a production safety guarantee.
 
 from __future__ import annotations
 
+from collections.abc import Sequence
 from dataclasses import dataclass
-from typing import Sequence
 
 import numpy as np
 
@@ -92,9 +92,7 @@ def fired_subset_certificate(
     l_static = _loss_proxy(labels[fired], static_scores[fired])
     l_gated = _loss_proxy(labels[fired], gated_scores[fired])
     X = l_static - l_gated
-    mean, lcb = paired_bootstrap_lcb(
-        X, alpha=alpha, n_iter=n_iter, seed=seed
-    )
+    mean, lcb = paired_bootstrap_lcb(X, alpha=alpha, n_iter=n_iter, seed=seed)
     return SwitchingCertificate(
         gate_id=gate_id,
         scenario_id=scenario_id,

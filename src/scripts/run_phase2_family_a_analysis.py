@@ -31,7 +31,6 @@ from __future__ import annotations
 
 import argparse
 import csv
-import math
 import sys
 from pathlib import Path
 
@@ -42,7 +41,8 @@ ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT / "src"))
 
 from elara.evaluation.ensemble_inference import (  # noqa: E402
-    audited_analysis, holm_bonferroni,
+    audited_analysis,
+    holm_bonferroni,
 )
 
 REGISTRY_V2 = ROOT / "docs" / "research" / "phase2" / "PHASE_2_EXPERIMENT_REGISTRY_v2.csv"
@@ -106,9 +106,7 @@ def _load_test_predictions(cell_dir: Path, method: str) -> dict[int, tuple[np.nd
     return out
 
 
-def _rga_plus_val_frozen_scores(
-    eid: str, cell_dir: Path
-) -> tuple[dict[int, np.ndarray], np.ndarray, np.ndarray]:
+def _rga_plus_val_frozen_scores(eid: str, cell_dir: Path) -> tuple[dict[int, np.ndarray], np.ndarray, np.ndarray]:
     """Return (per-seed scores dict, canonical sample_ids, canonical labels)
     for the validation-frozen RGA+ head."""
     sm = _seed_metrics_for(eid)
@@ -130,9 +128,9 @@ def _rga_plus_val_frozen_scores(
     return rga, sids0, lbl0
 
 
-def _static_scores(eid: str, cell_dir: Path,
-                   canonical_ids: np.ndarray, canonical_labels: np.ndarray
-                   ) -> dict[int, np.ndarray]:
+def _static_scores(
+    eid: str, cell_dir: Path, canonical_ids: np.ndarray, canonical_labels: np.ndarray
+) -> dict[int, np.ndarray]:
     static = _load_test_predictions(cell_dir, "static_attention")
     out: dict[int, np.ndarray] = {}
     for s, (sids, lbl, sc) in static.items():
@@ -206,8 +204,9 @@ def _per_cell_audit(eid: str, registry: dict[str, dict[str, str]]):
 
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--apply-holm-k5", action="store_true",
-                        help="apply Holm K=5 — only valid if all 5 cells are present")
+    parser.add_argument(
+        "--apply-holm-k5", action="store_true", help="apply Holm K=5 — only valid if all 5 cells are present"
+    )
     args = parser.parse_args()
     registry = _registry_lookup()
 
@@ -239,9 +238,16 @@ def main() -> int:
     # Holm K = 5 — only if all 5 cells complete
     holm_out = STATS_DIR / "family_a_v2_primary_cell_level_holm_k5.csv"
     holm_fields = [
-        "experiment_id", "benchmark", "protocol", "ensemble_delta_auc",
-        "delong_p_raw", "delong_p_holm_k5", "bootstrap_ci_low",
-        "bootstrap_ci_high", "practical_effect_band", "holm_status",
+        "experiment_id",
+        "benchmark",
+        "protocol",
+        "ensemble_delta_auc",
+        "delong_p_raw",
+        "delong_p_holm_k5",
+        "bootstrap_ci_low",
+        "bootstrap_ci_high",
+        "practical_effect_band",
+        "holm_status",
     ]
     if missing:
         # Partial: write per-cell rows with holm_p = pending_full_family
@@ -249,18 +255,20 @@ def main() -> int:
             w = csv.DictWriter(f, fieldnames=holm_fields)
             w.writeheader()
             for r in rows:
-                w.writerow({
-                    "experiment_id": r["experiment_id"],
-                    "benchmark": r["benchmark"],
-                    "protocol": r["protocol"],
-                    "ensemble_delta_auc": r["ensemble_delta_auc"],
-                    "delong_p_raw": r["delong_p_raw"],
-                    "delong_p_holm_k5": "pending_full_family",
-                    "bootstrap_ci_low": r["bootstrap_ci_low"],
-                    "bootstrap_ci_high": r["bootstrap_ci_high"],
-                    "practical_effect_band": r["practical_effect_band"],
-                    "holm_status": "PARTIAL_FAMILY",
-                })
+                w.writerow(
+                    {
+                        "experiment_id": r["experiment_id"],
+                        "benchmark": r["benchmark"],
+                        "protocol": r["protocol"],
+                        "ensemble_delta_auc": r["ensemble_delta_auc"],
+                        "delong_p_raw": r["delong_p_raw"],
+                        "delong_p_holm_k5": "pending_full_family",
+                        "bootstrap_ci_low": r["bootstrap_ci_low"],
+                        "bootstrap_ci_high": r["bootstrap_ci_high"],
+                        "practical_effect_band": r["practical_effect_band"],
+                        "holm_status": "PARTIAL_FAMILY",
+                    }
+                )
         print(f"wrote {holm_out} — PARTIAL: missing cells = {missing}")
         print("K=5 Holm correction NOT applied (partial family); rerun with all 5 cells.")
     else:
@@ -275,18 +283,20 @@ def main() -> int:
             w.writeheader()
             for r in rows:
                 eid = r["experiment_id"]
-                w.writerow({
-                    "experiment_id": eid,
-                    "benchmark": r["benchmark"],
-                    "protocol": r["protocol"],
-                    "ensemble_delta_auc": r["ensemble_delta_auc"],
-                    "delong_p_raw": r["delong_p_raw"],
-                    "delong_p_holm_k5": holm_map[eid],
-                    "bootstrap_ci_low": r["bootstrap_ci_low"],
-                    "bootstrap_ci_high": r["bootstrap_ci_high"],
-                    "practical_effect_band": r["practical_effect_band"],
-                    "holm_status": "K5_FULL_FAMILY",
-                })
+                w.writerow(
+                    {
+                        "experiment_id": eid,
+                        "benchmark": r["benchmark"],
+                        "protocol": r["protocol"],
+                        "ensemble_delta_auc": r["ensemble_delta_auc"],
+                        "delong_p_raw": r["delong_p_raw"],
+                        "delong_p_holm_k5": holm_map[eid],
+                        "bootstrap_ci_low": r["bootstrap_ci_low"],
+                        "bootstrap_ci_high": r["bootstrap_ci_high"],
+                        "practical_effect_band": r["practical_effect_band"],
+                        "holm_status": "K5_FULL_FAMILY",
+                    }
+                )
         print(f"wrote {holm_out} — FULL K=5 Holm applied across {len(rows)} cells")
 
     print(f"completed: {completed}")

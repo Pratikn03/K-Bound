@@ -1,4 +1,5 @@
 """CLI: behavior anomaly detection run (autoencoder + LOF) using current components."""
+
 from __future__ import annotations
 
 import json
@@ -44,9 +45,7 @@ def main():
 
     preprocessor = StandardScaler()
 
-    ae_model, _, _ = train_autoencoder(
-        pd.concat([X_train, y_train], axis=1), target_col, preprocessor, cfg, "behavior"
-    )
+    ae_model, _, _ = train_autoencoder(pd.concat([X_train, y_train], axis=1), target_col, preprocessor, cfg, "behavior")
     ae_scores_test = ae_model.predict(preprocessor.transform(X_test))
     ae_recon_error = np.mean((preprocessor.transform(X_test) - ae_scores_test) ** 2, axis=1)
     ae_metrics = evaluate_anomaly_scores(
@@ -54,9 +53,7 @@ def main():
     )
     ae_metrics = {f"autoencoder_{k}": v for k, v in ae_metrics.items()}
 
-    lof_model, _, _ = train_lof(
-        pd.concat([X_train, y_train], axis=1), target_col, preprocessor, cfg, "behavior"
-    )
+    lof_model, _, _ = train_lof(pd.concat([X_train, y_train], axis=1), target_col, preprocessor, cfg, "behavior")
     lof_scores_test = -lof_model.score_samples(preprocessor.transform(X_test))
     lof_metrics = evaluate_anomaly_scores(
         y_test, lof_scores_test, cfg.get("training", {}).get("anomaly_contamination", 0.05)
@@ -69,9 +66,9 @@ def main():
     metrics_dir = paths["experiments"] / "metrics"
     metrics_dir.mkdir(parents=True, exist_ok=True)
     save_json(metrics, metrics_dir / "metrics.json")
-    pd.DataFrame(
-        [{"Metric": k, "Value": v} for k, v in metrics.items()]
-    ).to_csv(metrics_dir / "metrics.csv", index=False)
+    pd.DataFrame([{"Metric": k, "Value": v} for k, v in metrics.items()]).to_csv(
+        metrics_dir / "metrics.csv", index=False
+    )
 
     # Normalize autoencoder errors for fusion friendliness.
     ae_norm = (ae_recon_error - ae_recon_error.min()) / (np.ptp(ae_recon_error) + 1e-8)

@@ -13,7 +13,6 @@ returned are unmodified rows drawn from the source split.
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Sequence
 
 import numpy as np
 
@@ -117,11 +116,12 @@ def pure_mixture_shift_resample(
 
     if require_within_category_invariance and scores_for_invariance_check is not None:
         from scipy.stats import ks_2samp
+
         source_scores = np.asarray(scores_for_invariance_check, dtype=float)
         for cat in normed:
             if cat not in actual_proportions or actual_proportions[cat] == 0.0:
                 continue
-            src_mask = (cats == cat)
+            src_mask = cats == cat
             in_cat_idx = indices[cats[indices] == cat]
             if src_mask.sum() < 30 or len(in_cat_idx) < 30:
                 # Insufficient samples for a meaningful invariance check; skip.

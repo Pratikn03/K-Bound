@@ -86,11 +86,7 @@ def render_per_category_table(results_payload: dict, caption_label: str) -> str 
     methods_in_payload: set[str] = set()
     for cat_dict in per_cat.values():
         methods_in_payload.update(cat_dict.keys())
-    visible_methods = [
-        (key, display)
-        for key, display in METHOD_ORDER
-        if key in methods_in_payload
-    ]
+    visible_methods = [(key, display) for key, display in METHOD_ORDER if key in methods_in_payload]
     if not visible_methods:
         return None
 
@@ -99,9 +95,7 @@ def render_per_category_table(results_payload: dict, caption_label: str) -> str 
         GENERATED_COMMENT,
         rf"\begin{{tabular}}{{{col_spec}}}",
         r"\toprule",
-        r"\textbf{Category} & "
-        + " & ".join(rf"\textbf{{{display}}}" for _, display in visible_methods)
-        + r" \\",
+        r"\textbf{Category} & " + " & ".join(rf"\textbf{{{display}}}" for _, display in visible_methods) + r" \\",
         r"\midrule",
     ]
 

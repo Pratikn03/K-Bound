@@ -4,14 +4,13 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Dict
 
 import numpy as np
 import pandas as pd
 import tensorflow as tf
+from keras import ops, random
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler
-from keras import ops, random
 
 
 @dataclass
@@ -112,7 +111,7 @@ def _build_vae(input_dim: int, latent_dim: int) -> tf.keras.Model:
     return vae, decoder
 
 
-def run_vae_pipeline(cfg: VAEConfig) -> Dict[str, float]:
+def run_vae_pipeline(cfg: VAEConfig) -> dict[str, float]:
     path = cfg.resolve_path()
     df = pd.read_parquet(path) if path.suffix == ".parquet" else pd.read_csv(path)
     df = df.select_dtypes(include=[np.number]).dropna()
@@ -133,7 +132,7 @@ def run_vae_pipeline(cfg: VAEConfig) -> Dict[str, float]:
         "val_kl_loss": [],
     }
 
-    for epoch in range(cfg.epochs):
+    for _epoch in range(cfg.epochs):
         perm = np.random.permutation(len(X_train))
         vae.reset_metrics()
         for start in range(0, len(X_train), cfg.batch_size):

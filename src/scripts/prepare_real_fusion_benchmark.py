@@ -15,9 +15,9 @@ import argparse
 import json
 import re
 import string
+from collections.abc import Sequence
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Sequence
 
 import numpy as np
 import pandas as pd
@@ -30,7 +30,6 @@ from sklearn.metrics import average_precision_score, roc_auc_score
 from sklearn.model_selection import StratifiedKFold
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import OneHotEncoder, StandardScaler
-
 
 EMBEDDING_DIM = 8
 DOMAIN_ORDER = ["fraud", "cyber", "behavior", "nlp"]
@@ -85,11 +84,7 @@ def _tabular_pipeline(df: pd.DataFrame, feature_columns: Sequence[str], seed: in
     # newer pandas StringDtype (pd.api.types.is_string_dtype returns True for
     # both object-strings and StringDtype); the safest invariant is "not
     # numeric → encode it categorically".
-    categorical = [
-        col
-        for col in feature_columns
-        if not pd.api.types.is_numeric_dtype(df[col])
-    ]
+    categorical = [col for col in feature_columns if not pd.api.types.is_numeric_dtype(df[col])]
     numeric = [col for col in feature_columns if col not in categorical]
     transformers = []
     if numeric:
@@ -189,7 +184,9 @@ def _oof_scores(source: DomainSource, seed: int, folds: int, train_fraction: flo
     y = source.frame[source.label_column].astype(int).to_numpy()
     scores = np.zeros(len(source.frame), dtype=np.float32)
     splitter = StratifiedKFold(n_splits=folds, shuffle=True, random_state=seed)
-    base_model = _text_pipeline(seed) if source.text_column else _tabular_pipeline(source.frame, source.feature_columns, seed)
+    base_model = (
+        _text_pipeline(seed) if source.text_column else _tabular_pipeline(source.frame, source.feature_columns, seed)
+    )
     X = (
         source.frame[source.text_column].fillna("").astype(str)
         if source.text_column
@@ -259,7 +256,9 @@ def _text_embeddings(text: pd.Series) -> np.ndarray:
     return _minmax_columns(np.asarray(values, dtype=np.float32))
 
 
-def _domain_frame(source: DomainSource, seed: int, folds: int, train_fraction: float = 1.0) -> tuple[pd.DataFrame, dict]:
+def _domain_frame(
+    source: DomainSource, seed: int, folds: int, train_fraction: float = 1.0
+) -> tuple[pd.DataFrame, dict]:
     scores, metrics = _oof_scores(source, seed=seed, folds=folds, train_fraction=train_fraction)
     embeddings = (
         _text_embeddings(source.frame[source.text_column])
@@ -320,10 +319,7 @@ def _build_fusion_rows(
     rows = []
     feature_cols = ["score", "confidence", *[f"embedding_{idx}" for idx in range(EMBEDDING_DIM)]]
     by_label = {
-        domain: {
-            label: frame.index[frame["label"].to_numpy() == label].to_numpy()
-            for label in [0, 1]
-        }
+        domain: {label: frame.index[frame["label"].to_numpy() == label].to_numpy() for label in [0, 1]}
         for domain, frame in domain_frames.items()
     }
     for sample_idx, label in enumerate(labels):

@@ -1,4 +1,5 @@
 """CLI: end-to-end cyber intrusion run using in-repo components."""
+
 from __future__ import annotations
 
 import json

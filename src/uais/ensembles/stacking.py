@@ -1,5 +1,4 @@
 """Simple stacked generalization utilities."""
-from typing import Dict, List, Tuple
 
 import numpy as np
 from sklearn.linear_model import LogisticRegression
@@ -7,7 +6,9 @@ from sklearn.linear_model import LogisticRegression
 from uais.utils.metrics import classification_metrics
 
 
-def stack_predictions(base_scores: Dict[str, np.ndarray], labels: np.ndarray) -> Tuple[LogisticRegression, Dict[str, float]]:
+def stack_predictions(
+    base_scores: dict[str, np.ndarray], labels: np.ndarray
+) -> tuple[LogisticRegression, dict[str, float]]:
     keys = sorted(base_scores)
     X = np.column_stack([base_scores[k] for k in keys])
     y = np.asarray(labels)[: X.shape[0]]

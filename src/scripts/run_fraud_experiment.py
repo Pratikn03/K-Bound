@@ -10,22 +10,22 @@ Steps:
 6. (Optional) Train Isolation Forest and compute a hybrid score.
 """
 
-from pathlib import Path
 import json
-import joblib
+from pathlib import Path
 
+import joblib
 import numpy as np
 import pandas as pd
 from sklearn.model_selection import train_test_split
 
+from uais.anomaly.train_isolation_forest import compute_anomaly_score, train_isolation_forest
 from uais.data.load_fraud_data import load_fraud_data
+from uais.ensembles.blending import blend_supervised_and_anomaly
 from uais.features.fraud_features import build_fraud_feature_table
 from uais.supervised.train_fraud_supervised import FraudModelConfig, train_fraud_model
 from uais.utils.metrics import compute_classification_metrics
-from uais.utils.plotting import plot_roc_curve, plot_pr_curve
-from uais.anomaly.train_isolation_forest import train_isolation_forest, compute_anomaly_score
-from uais.ensembles.blending import blend_supervised_and_anomaly
 from uais.utils.paths import domain_paths, ensure_directories
+from uais.utils.plotting import plot_pr_curve, plot_roc_curve
 
 
 def main():
@@ -49,12 +49,8 @@ def main():
     y = df_feats[target_col].astype(int)
 
     # 3. Split into train/val/test (e.g., 60/20/20)
-    X_train, X_temp, y_train, y_temp = train_test_split(
-        X, y, test_size=0.4, stratify=y, random_state=42
-    )
-    X_val, X_test, y_val, y_test = train_test_split(
-        X_temp, y_temp, test_size=0.5, stratify=y_temp, random_state=42
-    )
+    X_train, X_temp, y_train, y_temp = train_test_split(X, y, test_size=0.4, stratify=y, random_state=42)
+    X_val, X_test, y_val, y_test = train_test_split(X_temp, y_temp, test_size=0.5, stratify=y_temp, random_state=42)
 
     print(f"Train shape: {X_train.shape}, Val shape: {X_val.shape}, Test shape: {X_test.shape}")
 
@@ -82,10 +78,20 @@ def main():
     plots_dir = experiments_dir / "plots"
     plots_dir.mkdir(parents=True, exist_ok=True)
 
-    plot_roc_curve(y_test.values, y_test_prob, title="Fraud ROC (Supervised)", show=False,
-                   save_path=str(plots_dir / "roc_supervised.png"))
-    plot_pr_curve(y_test.values, y_test_prob, title="Fraud PR (Supervised)", show=False,
-                  save_path=str(plots_dir / "pr_supervised.png"))
+    plot_roc_curve(
+        y_test.values,
+        y_test_prob,
+        title="Fraud ROC (Supervised)",
+        show=False,
+        save_path=str(plots_dir / "roc_supervised.png"),
+    )
+    plot_pr_curve(
+        y_test.values,
+        y_test_prob,
+        title="Fraud PR (Supervised)",
+        show=False,
+        save_path=str(plots_dir / "pr_supervised.png"),
+    )
 
     # 5. Train Isolation Forest on training data for anomaly scores (v1: use same features)
     iso_model, scaler = train_isolation_forest(X_train, contamination=0.01)

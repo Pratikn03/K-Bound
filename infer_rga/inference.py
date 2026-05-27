@@ -29,7 +29,6 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any
 
 import numpy as np
 import torch
@@ -91,7 +90,7 @@ class InferRGA:
         *,
         device: torch.device | str = "cpu",
         tau: float = 0.66,
-    ) -> "InferRGA":
+    ) -> InferRGA:
         """Load a fusion model + fitted reliability estimator from disk."""
         model_path = Path(model_path)
         ckpt = torch.load(model_path, map_location=device, weights_only=False)
@@ -199,6 +198,7 @@ class InferRGA:
 # ---------------------------------------------------------------------------
 # Private helpers
 # ---------------------------------------------------------------------------
+
 
 def _load_estimator(path: Path) -> ReliabilityEstimator:
     """Load a fitted ReliabilityEstimator (or PerSampleReliabilityEstimator)."""

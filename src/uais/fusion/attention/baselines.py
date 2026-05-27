@@ -21,8 +21,6 @@ Missing-domain handling strategy:
 
 from __future__ import annotations
 
-from typing import Dict, List, Optional
-
 import numpy as np
 import torch
 import torch.nn as nn
@@ -32,10 +30,10 @@ from sklearn.preprocessing import StandardScaler
 
 from uais.utils.metrics import classification_metrics, select_decision_threshold
 
-
 # ---------------------------------------------------------------------------
 # Feature helpers
 # ---------------------------------------------------------------------------
+
 
 def _flatten_with_mask(features: np.ndarray, masks: np.ndarray) -> np.ndarray:
     """[N, D, F] + [N, D] bool → [N, D*F + D] float.
@@ -56,10 +54,11 @@ def _flatten_with_mask(features: np.ndarray, masks: np.ndarray) -> np.ndarray:
 # 1. EarlyFusionMLP
 # ---------------------------------------------------------------------------
 
+
 class _MLPNet(nn.Module):
-    def __init__(self, input_dim: int, hidden_dims: List[int], dropout: float = 0.3) -> None:
+    def __init__(self, input_dim: int, hidden_dims: list[int], dropout: float = 0.3) -> None:
         super().__init__()
-        layers: List[nn.Module] = [nn.BatchNorm1d(input_dim)]
+        layers: list[nn.Module] = [nn.BatchNorm1d(input_dim)]
         in_dim = input_dim
         for h in hidden_dims:
             layers += [nn.Linear(in_dim, h), nn.ReLU(), nn.Dropout(dropout)]
@@ -80,14 +79,14 @@ class EarlyFusionMLP:
 
     def __init__(
         self,
-        hidden_dims: List[int] = (128, 64),
+        hidden_dims: list[int] = (128, 64),
         dropout: float = 0.3,
         lr: float = 1e-3,
         weight_decay: float = 1e-4,
         epochs: int = 50,
         patience: int = 8,
         batch_size: int = 128,
-        device: Optional[torch.device] = None,
+        device: torch.device | None = None,
         random_seed: int = 42,
     ) -> None:
         self.hidden_dims = list(hidden_dims)
@@ -99,7 +98,7 @@ class EarlyFusionMLP:
         self.batch_size = batch_size
         self.device = device or torch.device("cpu")
         self.random_seed = random_seed
-        self._model: Optional[_MLPNet] = None
+        self._model: _MLPNet | None = None
         self._scaler = StandardScaler()
 
     def fit(
@@ -107,10 +106,10 @@ class EarlyFusionMLP:
         features: np.ndarray,
         masks: np.ndarray,
         labels: np.ndarray,
-        val_features: Optional[np.ndarray] = None,
-        val_masks: Optional[np.ndarray] = None,
-        val_labels: Optional[np.ndarray] = None,
-    ) -> "EarlyFusionMLP":
+        val_features: np.ndarray | None = None,
+        val_masks: np.ndarray | None = None,
+        val_labels: np.ndarray | None = None,
+    ) -> EarlyFusionMLP:
         torch.manual_seed(self.random_seed)
         np.random.seed(self.random_seed)
 
@@ -142,7 +141,7 @@ class EarlyFusionMLP:
             self._model.train()
             perm = np.random.permutation(len(X))
             for start in range(0, len(X), self.batch_size):
-                idx = perm[start:start + self.batch_size]
+                idx = perm[start : start + self.batch_size]
                 xb = torch.tensor(X[idx], dtype=torch.float32, device=self.device)
                 yb = torch.tensor(y[idx], dtype=torch.float32, device=self.device)
                 optimizer.zero_grad()
@@ -177,7 +176,7 @@ class EarlyFusionMLP:
         probs = []
         with torch.no_grad():
             for start in range(0, len(X), 256):
-                xb = torch.tensor(X[start:start + 256], dtype=torch.float32, device=self.device)
+                xb = torch.tensor(X[start : start + 256], dtype=torch.float32, device=self.device)
                 probs.append(torch.sigmoid(self._model(xb)).cpu().numpy())
         return np.concatenate(probs)
 
@@ -185,6 +184,7 @@ class EarlyFusionMLP:
 # ---------------------------------------------------------------------------
 # 2. LateFusionEnsemble (stacked)
 # ---------------------------------------------------------------------------
+
 
 class LateFusionEnsemble:
     """Stacked late fusion: per-domain logistic regressors + learned meta-combiner.
@@ -205,9 +205,9 @@ class LateFusionEnsemble:
         self.min_samples_per_domain = min_samples_per_domain
         self.meta_C = meta_C
         self.random_seed = random_seed
-        self._domain_models: Dict[int, LogisticRegression] = {}
-        self._domain_scalers: Dict[int, StandardScaler] = {}
-        self._meta: Optional[LogisticRegression] = None
+        self._domain_models: dict[int, LogisticRegression] = {}
+        self._domain_scalers: dict[int, StandardScaler] = {}
+        self._meta: LogisticRegression | None = None
         self._n_domains: int = 0
 
     def fit(
@@ -215,7 +215,7 @@ class LateFusionEnsemble:
         features: np.ndarray,
         masks: np.ndarray,
         labels: np.ndarray,
-    ) -> "LateFusionEnsemble":
+    ) -> LateFusionEnsemble:
         n, d, f = features.shape
         self._n_domains = d
 
@@ -232,7 +232,9 @@ class LateFusionEnsemble:
             scaler = StandardScaler()
             X_d_s = scaler.fit_transform(X_d)
             lr = LogisticRegression(
-                C=1.0, class_weight="balanced", max_iter=500,
+                C=1.0,
+                class_weight="balanced",
+                max_iter=500,
                 random_state=self.random_seed,
             )
             lr.fit(X_d_s, y_d)
@@ -251,7 +253,9 @@ class LateFusionEnsemble:
             self._degenerate_prediction = float(np.mean(labels)) if len(labels) else 0.5
             return self
         self._meta = LogisticRegression(
-            C=self.meta_C, class_weight="balanced", max_iter=500,
+            C=self.meta_C,
+            class_weight="balanced",
+            max_iter=500,
             random_state=self.random_seed,
         )
         self._meta.fit(domain_preds, labels)
@@ -278,6 +282,7 @@ class LateFusionEnsemble:
 # 3. RandomForestFusion
 # ---------------------------------------------------------------------------
 
+
 class RandomForestFusion:
     """Random forest on flattened features + missingness indicators.
 
@@ -302,7 +307,7 @@ class RandomForestFusion:
         )
         self._scaler = StandardScaler()
 
-    def fit(self, features: np.ndarray, masks: np.ndarray, labels: np.ndarray) -> "RandomForestFusion":
+    def fit(self, features: np.ndarray, masks: np.ndarray, labels: np.ndarray) -> RandomForestFusion:
         X = self._scaler.fit_transform(_flatten_with_mask(features, masks))
         self.rf.fit(X, labels)
         # Remember a constant fallback when training was single-class
@@ -328,6 +333,7 @@ class RandomForestFusion:
 # 4. ConfidenceWeightedMean (RGA predecessor / ablation)
 # ---------------------------------------------------------------------------
 
+
 class ConfidenceWeightedMean:
     """Sharpness-weighted score mean: w_d = 2 * |score_d - 0.5|.
 
@@ -343,14 +349,14 @@ class ConfidenceWeightedMean:
     def __init__(self, score_index: int = 0) -> None:
         self.score_index = score_index
 
-    def fit(self, features: np.ndarray, masks: np.ndarray, labels: np.ndarray) -> "ConfidenceWeightedMean":
+    def fit(self, features: np.ndarray, masks: np.ndarray, labels: np.ndarray) -> ConfidenceWeightedMean:
         return self  # no-op
 
     def predict_proba(self, features: np.ndarray, masks: np.ndarray) -> np.ndarray:
         n, d, _ = features.shape
         scores = features[:, :, self.score_index].copy()  # [N, D]
-        weights = 2.0 * np.abs(scores - 0.5)             # sharpness weight
-        weights[masks] = 0.0                              # zero out missing
+        weights = 2.0 * np.abs(scores - 0.5)  # sharpness weight
+        weights[masks] = 0.0  # zero out missing
         scores[masks] = 0.0
 
         total_weight = weights.sum(axis=1, keepdims=True)
@@ -367,6 +373,7 @@ class ConfidenceWeightedMean:
 # 5. Test-time adaptation baselines
 # ---------------------------------------------------------------------------
 
+
 class _ScoreHeadMixin:
     def __init__(
         self,
@@ -380,7 +387,7 @@ class _ScoreHeadMixin:
         self.lr = lr
         self.l2_anchor = l2_anchor
         self._scaler = StandardScaler()
-        self._clf: Optional[LogisticRegression] = None
+        self._clf: LogisticRegression | None = None
 
     def fit(self, features: np.ndarray, masks: np.ndarray, labels: np.ndarray):
         X = self._scaler.fit_transform(_flatten_with_mask(features, masks))
@@ -537,12 +544,21 @@ class EATAScoreAdapter(_ScoreHeadMixin):
                 break
             # Non-redundancy: cosine angle between (prob - 0.5) direction
             # and the running average. Skip when too aligned with prior step.
-            direction = (probs[reliable] - 0.5)
+            direction = probs[reliable] - 0.5
             direction = direction / (direction.norm() + 1e-9)
             if previous_directions:
                 running = torch.stack(previous_directions).mean(dim=0)
                 running = running / (running.norm() + 1e-9)
-                cos = float(torch.dot(direction, running[: direction.shape[0]] if running.shape[0] >= direction.shape[0] else torch.cat([running, torch.zeros(direction.shape[0] - running.shape[0])])).item())
+                cos = float(
+                    torch.dot(
+                        direction,
+                        (
+                            running[: direction.shape[0]]
+                            if running.shape[0] >= direction.shape[0]
+                            else torch.cat([running, torch.zeros(direction.shape[0] - running.shape[0])])
+                        ),
+                    ).item()
+                )
                 if abs(cos) > 1.0 - self.cosine_threshold:
                     continue
             previous_directions.append(direction.detach())
@@ -636,6 +652,7 @@ class SARScoreAdapter(_ScoreHeadMixin):
 # Convenience runner
 # ---------------------------------------------------------------------------
 
+
 def _metrics_with_validation_threshold(
     test_labels: np.ndarray,
     test_probs: np.ndarray,
@@ -643,7 +660,7 @@ def _metrics_with_validation_threshold(
     val_labels: np.ndarray,
     val_probs: np.ndarray,
     strategy: str | None,
-) -> Dict[str, float]:
+) -> dict[str, float]:
     threshold = select_decision_threshold(val_labels, val_probs, strategy=strategy)
     metrics = classification_metrics(test_labels, test_probs, threshold=threshold)
     metrics["threshold_strategy"] = (strategy or "fixed_0p5").strip().lower()
@@ -658,13 +675,13 @@ def run_baseline_suite(
     val_idx: np.ndarray,
     test_idx: np.ndarray,
     score_index: int = 0,
-    device: Optional[torch.device] = None,
+    device: torch.device | None = None,
     random_seed: int = 42,
-    baseline_epochs: Optional[int] = None,
+    baseline_epochs: int | None = None,
     tta_steps: int = 25,
     decision_threshold_strategy: str | None = "fixed_0p5",
     return_predictions: bool = False,
-) -> Dict[str, Dict] | tuple[Dict[str, Dict], Dict[str, Dict[str, np.ndarray]]]:
+) -> dict[str, dict] | tuple[dict[str, dict], dict[str, dict[str, np.ndarray]]]:
     """Fit all baselines and return classification metrics for each.
 
     Returns a dict keyed by baseline name, each value being a classification_metrics dict.
@@ -676,8 +693,8 @@ def run_baseline_suite(
     val_feat, val_mask, val_labels = features[val_idx], masks[val_idx], labels[val_idx]
     test_feat, test_mask, test_labels = features[test_idx], masks[test_idx], labels[test_idx]
 
-    results: Dict[str, Dict] = {}
-    predictions: Dict[str, Dict[str, np.ndarray]] = {}
+    results: dict[str, dict] = {}
+    predictions: dict[str, dict[str, np.ndarray]] = {}
 
     mlp_kwargs = {"device": device, "random_seed": random_seed}
     if baseline_epochs is not None:
@@ -731,7 +748,9 @@ def run_baseline_suite(
     )
     _safe_eval(
         "late_fusion_ensemble",
-        lambda: LateFusionEnsemble(score_index=score_index, random_seed=random_seed).fit(train_feat, train_mask, train_labels),
+        lambda: LateFusionEnsemble(score_index=score_index, random_seed=random_seed).fit(
+            train_feat, train_mask, train_labels
+        ),
     )
     _safe_eval(
         "random_forest",
@@ -743,19 +762,27 @@ def run_baseline_suite(
     )
     _safe_eval(
         "tent_score_adapter",
-        lambda: TentScoreAdapter(random_seed=random_seed, adaptation_steps=tta_steps).fit(train_feat, train_mask, train_labels),
+        lambda: TentScoreAdapter(random_seed=random_seed, adaptation_steps=tta_steps).fit(
+            train_feat, train_mask, train_labels
+        ),
     )
     _safe_eval(
         "ttt_pseudo_label_adapter",
-        lambda: TTTPseudoLabelAdapter(random_seed=random_seed, adaptation_steps=tta_steps).fit(train_feat, train_mask, train_labels),
+        lambda: TTTPseudoLabelAdapter(random_seed=random_seed, adaptation_steps=tta_steps).fit(
+            train_feat, train_mask, train_labels
+        ),
     )
     _safe_eval(
         "eata_score_adapter",
-        lambda: EATAScoreAdapter(random_seed=random_seed, adaptation_steps=tta_steps).fit(train_feat, train_mask, train_labels),
+        lambda: EATAScoreAdapter(random_seed=random_seed, adaptation_steps=tta_steps).fit(
+            train_feat, train_mask, train_labels
+        ),
     )
     _safe_eval(
         "sar_score_adapter",
-        lambda: SARScoreAdapter(random_seed=random_seed, adaptation_steps=tta_steps).fit(train_feat, train_mask, train_labels),
+        lambda: SARScoreAdapter(random_seed=random_seed, adaptation_steps=tta_steps).fit(
+            train_feat, train_mask, train_labels
+        ),
     )
 
     if return_predictions:

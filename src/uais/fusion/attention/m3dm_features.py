@@ -16,24 +16,23 @@ re-runs at a higher and fairer per-benchmark performance basis.
 
 from __future__ import annotations
 
+from collections.abc import Sequence
 from pathlib import Path
-from typing import Iterable, Sequence, Tuple
 
 import numpy as np
 import torch
 from PIL import Image
 from sklearn.decomposition import PCA
 
-
 _BACKBONE = None
 _DEVICE = None
 
 
-def _get_backbone() -> Tuple[torch.nn.Module, torch.device]:
+def _get_backbone() -> tuple[torch.nn.Module, torch.device]:
     """Lazily load ResNet-50 with ImageNet weights; cache on first call."""
     global _BACKBONE, _DEVICE
     if _BACKBONE is None:
-        from torchvision.models import resnet50, ResNet50_Weights
+        from torchvision.models import ResNet50_Weights, resnet50
 
         weights = ResNet50_Weights.IMAGENET1K_V2
         model = resnet50(weights=weights)
@@ -41,11 +40,7 @@ def _get_backbone() -> Tuple[torch.nn.Module, torch.device]:
         model.fc = torch.nn.Identity()
         model.eval()
         device = torch.device(
-            "mps"
-            if torch.backends.mps.is_available()
-            else "cuda"
-            if torch.cuda.is_available()
-            else "cpu"
+            "mps" if torch.backends.mps.is_available() else "cuda" if torch.cuda.is_available() else "cpu"
         )
         model = model.to(device)
         _BACKBONE = (model, weights.transforms())
@@ -86,47 +81,48 @@ def _load_pil(path: Path) -> Image.Image:
 
 def extract_point_cloud_statistics(path: Path) -> np.ndarray:
     """Extract PointNet++ style global geometric descriptors and shape statistics from raw XYZ.
-    
+
     Returns a 12-dimensional vector:
       [linearity, planarity, sphericity, anisotropy, curvature, eigenentropy,
        mean_x, mean_y, mean_z, std_x, std_y, std_z]
     """
     try:
         import tifffile
+
         arr = tifffile.imread(path)
     except Exception:
         try:
             arr = np.asarray(Image.open(path))
         except Exception:
             return np.zeros(12, dtype=np.float32)
-            
+
     arr = np.asarray(arr, dtype=np.float32)
     # The MVTec 3D-AD tiff contains [H, W, 3] float coordinates
     if arr.ndim != 3 or arr.shape[-1] < 3:
         return np.zeros(12, dtype=np.float32)
-        
+
     pts = arr.reshape(-1, arr.shape[-1])[..., :3]
     # Drop NaNs, Infs, and zero points (background)
     valid = np.all(np.isfinite(pts), axis=1) & (np.linalg.norm(pts, axis=1) > 1e-6)
     pts = pts[valid]
-    
+
     if pts.shape[0] < 4:
         return np.zeros(12, dtype=np.float32)
-        
+
     # Center of mass and std
     mean = pts.mean(axis=0)
     std = pts.std(axis=0)
-    
+
     # Global Covariance PCA
     cov = np.cov(pts.T)
     evals, _ = np.linalg.eigh(cov)
     evals = np.sort(evals)[::-1]  # descending order: l1 >= l2 >= l3
     evals = np.maximum(evals, 1e-12)
-    
+
     l1, l2, l3 = evals[0], evals[1], evals[2]
     sum_l = l1 + l2 + l3
     p = evals / sum_l
-    
+
     linearity = (l1 - l2) / l1
     planarity = (l2 - l3) / l1
     sphericity = l3 / l1
@@ -135,11 +131,24 @@ def extract_point_cloud_statistics(path: Path) -> np.ndarray:
     # Clamp p to avoid log(0)
     p = np.clip(p, 1e-12, 1.0)
     eigenentropy = -np.sum(p * np.log(p))
-    
-    return np.array([
-        linearity, planarity, sphericity, anisotropy, curvature, eigenentropy,
-        mean[0], mean[1], mean[2], std[0], std[1], std[2]
-    ], dtype=np.float32)
+
+    return np.array(
+        [
+            linearity,
+            planarity,
+            sphericity,
+            anisotropy,
+            curvature,
+            eigenentropy,
+            mean[0],
+            mean[1],
+            mean[2],
+            std[0],
+            std[1],
+            std[2],
+        ],
+        dtype=np.float32,
+    )
 
 
 def extract_resnet_features(
@@ -147,7 +156,7 @@ def extract_resnet_features(
     batch_size: int = 32,
 ) -> np.ndarray:
     """Return [N, 2048] or [N, 2060] float32 features.
-    
+
     If paths contain XYZ tiff files, we append 12 PointNet++ style global
     geometric shape statistics, yielding 2060 dimensions.
     """
@@ -155,22 +164,22 @@ def extract_resnet_features(
     is_depth = any(Path(p).suffix.lower() in {".tif", ".tiff"} for p in paths)
     out_dim = 2060 if is_depth else 2048
     features = np.zeros((len(paths), out_dim), dtype=np.float32)
-    
+
     batch_tensors: list[torch.Tensor] = []
     batch_indices: list[int] = []
-    
+
     for idx, path in enumerate(paths):
         p_path = Path(path)
         try:
             image = _load_pil(p_path)
         except Exception:
             continue
-            
+
         if is_depth:
             # Extract 12 PointNet++ style global geometric descriptors
             stats_vec = extract_point_cloud_statistics(p_path)
             features[idx, 2048:] = stats_vec
-            
+
         batch_tensors.append(transform(image))
         batch_indices.append(idx)
         if len(batch_tensors) >= batch_size:
@@ -181,14 +190,14 @@ def extract_resnet_features(
                 features[target, :2048] = out[j]
             batch_tensors = []
             batch_indices = []
-            
+
     if batch_tensors:
         batch = torch.stack(batch_tensors).to(device)
         with torch.no_grad():
             out = model(batch).cpu().numpy()
         for j, target in enumerate(batch_indices):
             features[target, :2048] = out[j]
-            
+
     return features
 
 
@@ -196,7 +205,7 @@ def fit_pca_projection(
     features: np.ndarray,
     fit_mask: np.ndarray,
     embedding_dim: int,
-) -> Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
+) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
     """Fit PCA on the train fold; return (proj_features, mean, components, scale)."""
     fit_rows = features[fit_mask]
     if fit_rows.shape[0] < embedding_dim:

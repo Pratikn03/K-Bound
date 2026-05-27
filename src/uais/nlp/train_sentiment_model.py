@@ -6,17 +6,15 @@ Trainer-based pipeline and return the same metrics contract.
 
 from __future__ import annotations
 
-from typing import Dict, List
-
 from .train_transformer_text import train_transformer_text
 
 
 def train_sentiment_model(
-    texts: List[str],
-    labels: List[int],
+    texts: list[str],
+    labels: list[int],
     model_name: str = "distilbert-base-uncased",
     **kwargs: object,
-) -> Dict[str, float]:
+) -> dict[str, float]:
     """Fine-tune DistilBERT for sentiment-based anomaly detection.
 
     Any extra kwargs (batch_size, num_epochs, learning_rate, etc.) are

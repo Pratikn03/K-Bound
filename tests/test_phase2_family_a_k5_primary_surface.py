@@ -36,17 +36,13 @@ def test_holm_csv_uses_k_equals_5_or_marks_partial():
         rows = list(csv.DictReader(f))
     assert rows, "holm CSV is empty"
     for r in rows:
-        assert r["holm_status"] in {"K5_FULL_FAMILY", "PARTIAL_FAMILY"}, (
-            f"holm_status={r['holm_status']!r}"
-        )
+        assert r["holm_status"] in {"K5_FULL_FAMILY", "PARTIAL_FAMILY"}, f"holm_status={r['holm_status']!r}"
         # If full family, p must be numeric; if partial, must be the literal placeholder
         if r["holm_status"] == "K5_FULL_FAMILY":
             try:
                 float(r["delong_p_holm_k5"])
-            except ValueError:
-                raise AssertionError(
-                    f"K5_FULL_FAMILY row has non-numeric holm p: {r['delong_p_holm_k5']!r}"
-                )
+            except ValueError as err:
+                raise AssertionError(f"K5_FULL_FAMILY row has non-numeric holm p: {r['delong_p_holm_k5']!r}") from err
         else:
             assert r["delong_p_holm_k5"] == "pending_full_family"
 

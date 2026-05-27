@@ -3,10 +3,8 @@
 from __future__ import annotations
 
 import math
-from typing import List
 
 import numpy as np
-import pytest
 import torch
 
 from uais.fusion.attention.counterfactual_explainer import (
@@ -14,7 +12,6 @@ from uais.fusion.attention.counterfactual_explainer import (
     CounterfactualResult,
 )
 from uais.fusion.attention.cross_modal_attention import AttentionFusionModel
-
 
 # ---------------------------------------------------------------------------
 # Shared test fixtures
@@ -48,13 +45,16 @@ def _make_model() -> AttentionFusionModel:
 
 def _make_explainer(use_craf: bool = False):
     model = _make_model()
-    return CounterfactualDomainExplainer(
-        model=model,
-        domain_order=DOMAIN_ORDER,
-        device=torch.device("cpu"),
-        reliability_estimator=None,
-        use_craf_weights=use_craf,
-    ), model
+    return (
+        CounterfactualDomainExplainer(
+            model=model,
+            domain_order=DOMAIN_ORDER,
+            device=torch.device("cpu"),
+            reliability_estimator=None,
+            use_craf_weights=use_craf,
+        ),
+        model,
+    )
 
 
 def _sample_features(n: int = 4, seed: int = 0) -> tuple:
@@ -67,6 +67,7 @@ def _sample_features(n: int = 4, seed: int = 0) -> tuple:
 # ---------------------------------------------------------------------------
 # Tests
 # ---------------------------------------------------------------------------
+
 
 def test_explain_single_sample_shapes():
     explainer, _ = _make_explainer()
@@ -91,9 +92,7 @@ def test_cf_impact_bounds():
     for r in results:
         for domain, delta in r.cf_impacts.items():
             if math.isfinite(delta):
-                assert abs(delta) <= 1.0 + 1e-6, (
-                    f"CF impact for {domain} out of bounds: {delta:.4f}"
-                )
+                assert abs(delta) <= 1.0 + 1e-6, f"CF impact for {domain} out of bounds: {delta:.4f}"
 
 
 def test_fully_masked_domain_returns_nan():

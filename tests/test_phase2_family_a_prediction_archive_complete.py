@@ -28,7 +28,9 @@ def _family_a_cells():
 
 
 def _cell_dir(row):
-    return ARCHIVE / f"{row['experiment_id']}__{row['benchmark'].replace(' ', '_')}__{row['protocol'].replace(' ', '_')}"
+    return (
+        ARCHIVE / f"{row['experiment_id']}__{row['benchmark'].replace(' ', '_')}__{row['protocol'].replace(' ', '_')}"
+    )
 
 
 @pytest.mark.parametrize("row", _family_a_cells(), ids=lambda r: r["experiment_id"])
@@ -56,12 +58,12 @@ def test_completed_cells_have_sample_id_alignment_across_methods(row):
         if canonical is None:
             canonical = (ids, labels)
         else:
-            assert np.array_equal(ids, canonical[0]), (
-                f"{row['experiment_id']} {m}: sample_id misalignment vs first method"
-            )
-            assert np.array_equal(labels, canonical[1]), (
-                f"{row['experiment_id']} {m}: label misalignment vs first method"
-            )
+            assert np.array_equal(
+                ids, canonical[0]
+            ), f"{row['experiment_id']} {m}: sample_id misalignment vs first method"
+            assert np.array_equal(
+                labels, canonical[1]
+            ), f"{row['experiment_id']} {m}: label misalignment vs first method"
 
 
 @pytest.mark.parametrize("row", _family_a_cells(), ids=lambda r: r["experiment_id"])
@@ -72,6 +74,6 @@ def test_no_test_set_selection_in_any_archive_row(row):
     for m in REQUIRED_METHODS_FOR_PRIMARY_SURFACE:
         for p in sorted((d / m / "test").glob("seed_*.parquet")):
             df = pd.read_parquet(p)
-            assert (df["selection_used_test_metrics"] == False).all(), (  # noqa: E712
-                f"{row['experiment_id']} {m} {p.name}: row with selection_used_test_metrics=True"
-            )
+            assert (
+                ~df["selection_used_test_metrics"]
+            ).all(), f"{row['experiment_id']} {m} {p.name}: row with selection_used_test_metrics=True"

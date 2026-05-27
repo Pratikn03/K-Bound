@@ -1,13 +1,13 @@
 import numpy as np
 import pytest
 
-from uais.utils.stats import delong_roc_test
 from uais.utils.metrics import (
     bounded_switching_certificate,
     calibration_monitor_report,
     reliability_degradation_auc,
     select_decision_threshold,
 )
+from uais.utils.stats import delong_roc_test
 
 
 def test_delong_roc_test_ignores_non_finite_scores():

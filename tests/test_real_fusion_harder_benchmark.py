@@ -64,8 +64,5 @@ def test_build_split_safe_fusion_rows_keeps_source_rows_in_one_split():
     assert fusion_df.groupby("sample_id")["fusion_split"].nunique().eq(1).all()
     assert set(split_counts) == {"train", "validation", "test"}
 
-    key_splits = (
-        fusion_df.groupby(["domain", "source_row", "label"])["fusion_split"]
-        .nunique()
-    )
+    key_splits = fusion_df.groupby(["domain", "source_row", "label"])["fusion_split"].nunique()
     assert key_splits.max() == 1

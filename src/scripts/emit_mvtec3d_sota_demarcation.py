@@ -101,6 +101,7 @@ LOCAL_ROWS: list[dict[str, Any]] = [
 # Helpers
 # ---------------------------------------------------------------------------
 
+
 def _fmt(value: Any, decimals: int = 3) -> str:
     if value is None or (isinstance(value, float) and value != value):
         return "--"
@@ -161,6 +162,7 @@ def _local_image_auroc(results_path: Path) -> float | None:
 # Table rendering
 # ---------------------------------------------------------------------------
 
+
 def render_table(repo_root: Path) -> str:
     rows: list[str] = [
         GENERATED_COMMENT,
@@ -211,6 +213,7 @@ def render_table(repo_root: Path) -> str:
 # Figure rendering
 # ---------------------------------------------------------------------------
 
+
 def render_figure(repo_root: Path, out_path: Path) -> None:
     """Horizontal bar chart of image-AUROC: published SOTA + ELARA rows.
 
@@ -230,9 +233,7 @@ def render_figure(repo_root: Path, out_path: Path) -> None:
         val = _local_image_auroc(repo_root / entry["results_path"])
         if val is None:
             continue
-        local_with_vals.append(
-            (f"{entry['label']}\n({entry['protocol']})", float(val))
-        )
+        local_with_vals.append((f"{entry['label']}\n({entry['protocol']})", float(val)))
 
     labels: list[str] = [f"{e['method']} ({e['protocol']})" for e in published_sorted]
     values: list[float] = [float(e["image_auroc"]) for e in published_sorted]
@@ -294,6 +295,7 @@ def render_figure(repo_root: Path, out_path: Path) -> None:
 # ---------------------------------------------------------------------------
 # Main
 # ---------------------------------------------------------------------------
+
 
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)

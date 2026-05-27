@@ -1,10 +1,11 @@
 """Stub Vision pipeline wrapper."""
+
 from __future__ import annotations
 
 from pathlib import Path
 
-from uais.vision.train_vision_model import VisionConfig, run_vision_experiment
 from uais.utils.logging_utils import setup_logging
+from uais.vision.train_vision_model import VisionConfig, run_vision_experiment
 
 logger = setup_logging(__name__)
 

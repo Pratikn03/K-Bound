@@ -6,9 +6,8 @@ import numpy as np
 import pytest
 
 from uais.fusion.attention.baselines import (
-    EarlyFusionMLP,
-    TTTPseudoLabelAdapter,
     TentScoreAdapter,
+    TTTPseudoLabelAdapter,
     run_baseline_suite,
 )
 
@@ -26,9 +25,7 @@ def _make_data(seed: int = 0, missing_prob: float = 0.0):
     features = rng.random((N_TR + N_TE, D, F)).astype(np.float32)
     # Give anomalies a higher score
     for d in range(D):
-        features[labels == 1, d, SCORE_IDX] = np.clip(
-            features[labels == 1, d, SCORE_IDX] + 0.4, 0.0, 1.0
-        )
+        features[labels == 1, d, SCORE_IDX] = np.clip(features[labels == 1, d, SCORE_IDX] + 0.4, 0.0, 1.0)
     masks = (rng.random((N_TR + N_TE, D)) < missing_prob).astype(bool)
     train_idx = np.arange(N_TR)
     test_idx = np.arange(N_TR, N_TR + N_TE)
@@ -54,6 +51,7 @@ def fitted_plt():
 # ---------------------------------------------------------------------------
 # TentScoreAdapter tests
 # ---------------------------------------------------------------------------
+
 
 def test_tent_predict_shape(fitted_tent):
     adapter, features, masks, _ = fitted_tent
@@ -83,8 +81,7 @@ def test_tent_stateless_across_calls(fitted_tent):
     adapter, features, masks, _ = fitted_tent
     p1 = adapter.predict_proba(features, masks)
     p2 = adapter.predict_proba(features, masks)
-    np.testing.assert_allclose(p1, p2, rtol=1e-5,
-                               err_msg="Tent predictions changed on second call (not stateless)")
+    np.testing.assert_allclose(p1, p2, rtol=1e-5, err_msg="Tent predictions changed on second call (not stateless)")
 
 
 def test_tent_finite_outputs(fitted_tent):
@@ -96,6 +93,7 @@ def test_tent_finite_outputs(fitted_tent):
 # ---------------------------------------------------------------------------
 # TTTPseudoLabelAdapter tests
 # ---------------------------------------------------------------------------
+
 
 def test_plt_predict_shape(fitted_plt):
     adapter, features, masks, _ = fitted_plt
@@ -122,8 +120,7 @@ def test_plt_stateless_across_calls(fitted_plt):
     adapter, features, masks, _ = fitted_plt
     p1 = adapter.predict_proba(features, masks)
     p2 = adapter.predict_proba(features, masks)
-    np.testing.assert_allclose(p1, p2, rtol=1e-5,
-                               err_msg="PLT predictions changed on second call (not stateless)")
+    np.testing.assert_allclose(p1, p2, rtol=1e-5, err_msg="PLT predictions changed on second call (not stateless)")
 
 
 def test_plt_high_confidence_threshold_falls_back(fitted_plt):
@@ -152,14 +149,19 @@ def test_plt_high_confidence_threshold_falls_back(fitted_plt):
 # run_baseline_suite integration — new TTT baselines included
 # ---------------------------------------------------------------------------
 
+
 def test_run_baseline_suite_includes_ttt():
     """run_baseline_suite should return metrics for tent_score_adapter and ttt_pseudo_label_adapter."""
     features, masks, labels, train_idx, test_idx = _make_data(seed=99, missing_prob=0.1)
     val_idx = train_idx[:20]
     train_idx_ = train_idx[20:]
     results = run_baseline_suite(
-        features, masks, labels,
-        train_idx_, val_idx, test_idx,
+        features,
+        masks,
+        labels,
+        train_idx_,
+        val_idx,
+        test_idx,
         score_index=SCORE_IDX,
     )
     assert "tent_score_adapter" in results, "tent_ttt missing from run_baseline_suite output"

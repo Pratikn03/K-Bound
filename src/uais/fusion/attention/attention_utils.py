@@ -2,16 +2,16 @@
 
 from __future__ import annotations
 
-from pathlib import Path
-from typing import Iterable, List, Sequence, Tuple
 import hashlib
 import warnings
+from collections.abc import Sequence
+from pathlib import Path
 
 import numpy as np
 import pandas as pd
 import torch
-from torch.utils.data import Dataset
 from sklearn import metrics
+from torch.utils.data import Dataset
 
 
 def load_fusion_dataframe(path: str | Path) -> pd.DataFrame:
@@ -30,7 +30,7 @@ def infer_feature_columns(
     embedding_prefix: str = "embedding_",
     feature_columns: Sequence[str] | None = None,
     include_confidence: bool = True,
-) -> List[str]:
+) -> list[str]:
     if feature_columns:
         return list(feature_columns)
     columns = []
@@ -82,14 +82,16 @@ def validate_fusion_schema(
     score_vals = df[score_column].to_numpy()
     score_oob = int(((score_vals < 0) | (score_vals > 1)).sum())
     if score_oob:
-        warnings.warn(f"{score_oob} '{score_column}' values outside [0, 1].", RuntimeWarning)
+        warnings.warn(f"{score_oob} '{score_column}' values outside [0, 1].", RuntimeWarning, stacklevel=2)
 
     confidence_oob = 0
     if confidence_column and confidence_column in df.columns:
         conf_vals = df[confidence_column].to_numpy()
         confidence_oob = int(((conf_vals < 0) | (conf_vals > 1)).sum())
         if confidence_oob:
-            warnings.warn(f"{confidence_oob} '{confidence_column}' values outside [0, 1].", RuntimeWarning)
+            warnings.warn(
+                f"{confidence_oob} '{confidence_column}' values outside [0, 1].", RuntimeWarning, stacklevel=2
+            )
 
     stats = {
         "rows": int(len(df)),
@@ -143,9 +145,7 @@ def validate_incident_protocol(
     domains_per_incident = work.groupby(incident_column)[domain_column].nunique(dropna=True)
     undercovered = domains_per_incident[domains_per_incident < min_domains_per_incident]
     if not undercovered.empty:
-        raise ValueError(
-            f"{len(undercovered)} incidents have fewer than {min_domains_per_incident} domains."
-        )
+        raise ValueError(f"{len(undercovered)} incidents have fewer than {min_domains_per_incident} domains.")
 
     timestamps = pd.to_datetime(work[timestamp_column], errors="coerce")
     if timestamps.isna().any():
@@ -166,8 +166,14 @@ def validate_incident_protocol(
         canonical = "validation" if split_name == "val" else split_name
         current = split_ranges.get(canonical, {})
         current["order"] = order_idx
-        current["min"] = min(current.get("min", work.loc[split_mask, "_protocol_timestamp"].min()), work.loc[split_mask, "_protocol_timestamp"].min())
-        current["max"] = max(current.get("max", work.loc[split_mask, "_protocol_timestamp"].max()), work.loc[split_mask, "_protocol_timestamp"].max())
+        current["min"] = min(
+            current.get("min", work.loc[split_mask, "_protocol_timestamp"].min()),
+            work.loc[split_mask, "_protocol_timestamp"].min(),
+        )
+        current["max"] = max(
+            current.get("max", work.loc[split_mask, "_protocol_timestamp"].max()),
+            work.loc[split_mask, "_protocol_timestamp"].max(),
+        )
         split_ranges[canonical] = current
     ordered_ranges = sorted(split_ranges.values(), key=lambda item: item["order"])
     for left, right in zip(ordered_ranges, ordered_ranges[1:]):
@@ -208,7 +214,7 @@ def prepare_fusion_dataframe(
     feature_columns: Sequence[str],
     label_column: str | None = "label",
     timestamp_column: str | None = None,
-) -> Tuple[pd.DataFrame, dict]:
+) -> tuple[pd.DataFrame, dict]:
     required = {id_column, domain_column, *feature_columns}
     if timestamp_column:
         required.add(timestamp_column)
@@ -234,7 +240,7 @@ def prepare_fusion_dataframe(
         dup_cols.append(timestamp_column)
     dupes = df_clean.duplicated(subset=dup_cols).any()
     if dupes:
-        agg = {col: "mean" for col in feature_columns}
+        agg = dict.fromkeys(feature_columns, "mean")
         if label_column and label_column in df_clean.columns:
             agg[label_column] = "max"
         df_clean = df_clean.groupby(dup_cols, as_index=False).agg(agg)
@@ -267,7 +273,7 @@ def build_fusion_tensors(
     domain_order: Sequence[str] | None = None,
     feature_columns: Sequence[str] | None = None,
     validate_schema: bool = True,
-) -> Tuple[np.ndarray, np.ndarray, np.ndarray | None, List[str], List[str]]:
+) -> tuple[np.ndarray, np.ndarray, np.ndarray | None, list[str], list[str]]:
     if id_column not in df.columns:
         raise ValueError(f"Missing id column: {id_column}")
     if domain_column not in df.columns:
@@ -354,7 +360,9 @@ class FusionDataset(Dataset):
         return self.features[idx], self.masks[idx], self.labels[idx]
 
 
-def apply_domain_dropout(mask: torch.Tensor, drop_prob: float, generator: torch.Generator | None = None) -> torch.Tensor:
+def apply_domain_dropout(
+    mask: torch.Tensor, drop_prob: float, generator: torch.Generator | None = None
+) -> torch.Tensor:
     if drop_prob <= 0:
         return mask
     available = ~mask

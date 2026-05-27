@@ -91,7 +91,14 @@ def test_sample_categories_are_loaded_when_configured(tmp_path):
     rows = [
         {"sample_id": "b", "domain": "d1", "label": 1, "score": 0.9, "fusion_split": "test", "category": "cookie"},
         {"sample_id": "a", "domain": "d1", "label": 0, "score": 0.1, "fusion_split": "train", "category": "bagel"},
-        {"sample_id": "c", "domain": "d1", "label": 0, "score": 0.2, "fusion_split": "validation", "category": "cable_gland"},
+        {
+            "sample_id": "c",
+            "domain": "d1",
+            "label": 0,
+            "score": 0.2,
+            "fusion_split": "validation",
+            "category": "cable_gland",
+        },
     ]
     pd.DataFrame(rows).to_csv(path, index=False)
 
@@ -131,9 +138,24 @@ def test_aggregate_category_aware_reports_misfire_delta():
     from scripts.run_breakthrough_experiment import _aggregate_category_aware
 
     rows = [
-        {"global_adapt_rate": 0.80, "category_aware_adapt_rate": 0.40, "global_mean_reliability": 0.40, "category_aware_mean_reliability": 0.70},
-        {"global_adapt_rate": 0.82, "category_aware_adapt_rate": 0.38, "global_mean_reliability": 0.41, "category_aware_mean_reliability": 0.71},
-        {"global_adapt_rate": 0.78, "category_aware_adapt_rate": 0.42, "global_mean_reliability": 0.39, "category_aware_mean_reliability": 0.69},
+        {
+            "global_adapt_rate": 0.80,
+            "category_aware_adapt_rate": 0.40,
+            "global_mean_reliability": 0.40,
+            "category_aware_mean_reliability": 0.70,
+        },
+        {
+            "global_adapt_rate": 0.82,
+            "category_aware_adapt_rate": 0.38,
+            "global_mean_reliability": 0.41,
+            "category_aware_mean_reliability": 0.71,
+        },
+        {
+            "global_adapt_rate": 0.78,
+            "category_aware_adapt_rate": 0.42,
+            "global_mean_reliability": 0.39,
+            "category_aware_mean_reliability": 0.69,
+        },
     ]
     summary = _aggregate_category_aware(rows)
 

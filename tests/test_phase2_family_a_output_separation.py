@@ -31,9 +31,7 @@ def test_historical_and_v2_paths_are_distinct():
 
 def test_v2_csv_paths_have_v2_marker_in_filename():
     for v in V2_PATHS:
-        assert "_v2_" in v.name, (
-            f"{v.name} does not contain '_v2_' marker — separation rule"
-        )
+        assert "_v2_" in v.name, f"{v.name} does not contain '_v2_' marker — separation rule"
 
 
 def test_historical_pilot_csvs_are_unchanged_in_v2_run():
@@ -43,6 +41,6 @@ def test_historical_pilot_csvs_are_unchanged_in_v2_run():
     if not p.exists():
         return
     first_line = p.read_text().splitlines()[0]
-    assert "comparator_method" in first_line, (
-        "historical K=10 secondary-pilot-audit CSV appears to have been overwritten"
-    )
+    assert (
+        "comparator_method" in first_line
+    ), "historical K=10 secondary-pilot-audit CSV appears to have been overwritten"

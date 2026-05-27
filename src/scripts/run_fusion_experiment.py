@@ -5,11 +5,12 @@ dashboard feed. It is not split-safe research evidence. For paper experiments,
 use ``prepare_real_fusion_benchmark.py`` followed by
 ``run_breakthrough_experiment.py`` with ``configs/attention_real_fusion.yaml``.
 """
+
 from __future__ import annotations
 
 import json
-from pathlib import Path
 import os
+from pathlib import Path
 
 import joblib
 import numpy as np
@@ -17,6 +18,7 @@ import pandas as pd
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler
 
+from uais.anomaly.train_autoencoder import train_autoencoder
 from uais.config.config_loader import load_config
 from uais.data.load_behavior_data import load_behavior_data
 from uais.data.load_cyber_data import load_cyber_data
@@ -28,7 +30,6 @@ from uais.fusion.build_embeddings import generate_meta_features, to_embedding
 from uais.fusion.train_fusion_model import train_fusion_meta_model
 from uais.supervised.train_cyber_supervised import CyberModelConfig, train_cyber_model
 from uais.supervised.train_fraud_supervised import FraudModelConfig, train_fraud_model
-from uais.anomaly.train_autoencoder import train_autoencoder
 from uais.utils.logging_utils import setup_logging
 from uais.utils.paths import domain_paths, ensure_directories
 
@@ -48,7 +49,9 @@ def _score_confidence(scores: np.ndarray) -> np.ndarray:
 
 
 def _train_fraud_scores(cfg: dict) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
-    df = build_fraud_feature_table(load_fraud_data(cfg), time_column="Time", amount_column="Amount", target_column="Class")
+    df = build_fraud_feature_table(
+        load_fraud_data(cfg), time_column="Time", amount_column="Amount", target_column="Class"
+    )
     X = df.drop(columns=["Class"])
     y = df["Class"].astype(int)
     X_train, X_val, y_train, y_val = train_test_split(X, y, test_size=0.2, stratify=y, random_state=42)
@@ -69,8 +72,11 @@ def _train_fraud_scores(cfg: dict) -> tuple[np.ndarray, np.ndarray, np.ndarray, 
 
 def _train_cyber_scores(cfg: dict) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
     df_raw = load_cyber_data(cfg)
-    df = build_cyber_feature_table(df_raw, target_column=cfg.get("data", {}).get("target", "label"),
-                                   drop_columns=cfg.get("data", {}).get("drop_columns"))
+    df = build_cyber_feature_table(
+        df_raw,
+        target_column=cfg.get("data", {}).get("target", "label"),
+        drop_columns=cfg.get("data", {}).get("drop_columns"),
+    )
     X = df.drop(columns=[cfg.get("data", {}).get("target", "label")])
     y = df[cfg.get("data", {}).get("target", "label")].astype(int)
     X_train, X_val, y_train, y_val = train_test_split(X, y, test_size=0.2, stratify=y, random_state=42)
@@ -96,9 +102,11 @@ def _train_cyber_scores(cfg: dict) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
 def _train_behavior_scores(cfg: dict) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
     df_raw = load_behavior_data(cfg)
     target_col = cfg.get("data", {}).get("target", "Revenue")
-    df = build_behavior_feature_table(df_raw, target_column=target_col, drop_columns=cfg.get("data", {}).get("drop_columns"))
+    df = build_behavior_feature_table(
+        df_raw, target_column=target_col, drop_columns=cfg.get("data", {}).get("drop_columns")
+    )
     X = df.drop(columns=[target_col])
-    y = df[target_col].astype(int)
+    df[target_col].astype(int)
     preprocessor = StandardScaler()
     ae_model, _, _ = train_autoencoder(df, target_col, preprocessor, cfg, "behavior")
     recon = ae_model.predict(preprocessor.transform(X))
@@ -118,7 +126,9 @@ def _pad_embeddings(embeddings: np.ndarray, target_dim: int) -> np.ndarray:
     return padded
 
 
-def _save_attention_fusion_inputs(domain_outputs: dict[str, dict[str, np.ndarray]], labels: np.ndarray, out_path: Path) -> None:
+def _save_attention_fusion_inputs(
+    domain_outputs: dict[str, dict[str, np.ndarray]], labels: np.ndarray, out_path: Path
+) -> None:
     domains = sorted(domain_outputs)
     min_len = min(len(domain_outputs[domain]["scores"]) for domain in domains)
     max_embed_dim = 0

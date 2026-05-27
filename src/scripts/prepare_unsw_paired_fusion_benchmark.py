@@ -40,7 +40,6 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
-
 DOMAIN_TO_FEATURES: dict[str, list[str]] = {
     "flow": [
         "dur",
@@ -132,11 +131,7 @@ def _patient_style_stratified_split(
         n_test = max(1, int(round(n * test_fraction))) if n >= 3 else 0
         remaining = n - n_test
         denom = max(1.0 - test_fraction, 1e-9)
-        n_val = (
-            max(1, int(round(remaining * val_fraction / denom)))
-            if remaining >= 2
-            else 0
-        )
+        n_val = max(1, int(round(remaining * val_fraction / denom))) if remaining >= 2 else 0
         for offset, row_idx in enumerate(idx):
             if offset < n_test:
                 split[row_idx] = "test"
@@ -213,9 +208,7 @@ def build_unsw_fusion_frame(
         held_mask = np.array([c in held for c in cats])
         fusion_split[held_mask] = "test"
         # Remaining rows: stratify by (cat, label) into train/validation.
-        for (_cat, _label), group in (
-            combined.loc[~held_mask].groupby(["attack_cat", "label"], sort=False)
-        ):
+        for (_cat, _label), group in combined.loc[~held_mask].groupby(["attack_cat", "label"], sort=False):
             idx = group.index.to_numpy().copy()
             rng.shuffle(idx)
             n_val = max(1, int(round(len(idx) * float(heldout_val_fraction))))
@@ -238,7 +231,7 @@ def build_unsw_fusion_frame(
             test_fraction=test_fraction,
             seed=seed,
         )
-    train_mask = (combined["fusion_split"].to_numpy() == "train")
+    train_mask = combined["fusion_split"].to_numpy() == "train"
 
     domain_scores: dict[str, np.ndarray] = {}
     domain_embeddings: dict[str, np.ndarray] = {}
@@ -251,9 +244,7 @@ def build_unsw_fusion_frame(
         else:
             pad = np.zeros((block.shape[0], embedding_dim - block.shape[1]), dtype=np.float32)
             block = np.hstack([block, pad])
-        scaled = np.column_stack(
-            [_minmax_clip(block[:, j], train_mask).ravel() for j in range(block.shape[1])]
-        )
+        scaled = np.column_stack([_minmax_clip(block[:, j], train_mask).ravel() for j in range(block.shape[1])])
         domain_embeddings[domain] = scaled
 
     rows: list[dict] = []
@@ -273,9 +264,7 @@ def build_unsw_fusion_frame(
                 "domain": domain,
                 "label": int(labels[i]),
                 "score": float(domain_scores[domain][i]),
-                "confidence": float(
-                    np.clip(2.0 * abs(float(domain_scores[domain][i]) - 0.5), 0.0, 1.0)
-                ),
+                "confidence": float(np.clip(2.0 * abs(float(domain_scores[domain][i]) - 0.5), 0.0, 1.0)),
             }
             embedding = domain_embeddings[domain][i]
             for emb_idx, value in enumerate(embedding):
@@ -297,10 +286,7 @@ def build_unsw_fusion_frame(
         "categories": sorted(frame["category"].unique().tolist()),
         "fusion_splits": frame["fusion_split"].value_counts().to_dict(),
         "label_distribution_per_split": {
-            split: frame[frame["fusion_split"] == split]
-            .drop_duplicates("sample_id")["label"]
-            .value_counts()
-            .to_dict()
+            split: frame[frame["fusion_split"] == split].drop_duplicates("sample_id")["label"].value_counts().to_dict()
             for split in sorted(frame["fusion_split"].unique())
         },
         "score_protocol": {
@@ -308,7 +294,7 @@ def build_unsw_fusion_frame(
             "score_definition": "Mahalanobis-style distance to train-normal centroid, minmax-clipped against train p0..p95",
             "embedding_normalization_split": "train",
         },
-        "score_features": {domain: cols for domain, cols in DOMAIN_TO_FEATURES.items()},
+        "score_features": dict(DOMAIN_TO_FEATURES.items()),
     }
     return frame, metadata
 

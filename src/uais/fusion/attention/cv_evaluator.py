@@ -16,10 +16,9 @@ DeLong test can be applied to.
 
 from __future__ import annotations
 
-import json
 import logging
 from dataclasses import dataclass, field
-from typing import Any, Callable, Dict, List, Optional, Tuple
+from typing import Any, Callable
 
 import numpy as np
 from sklearn.model_selection import StratifiedKFold
@@ -48,6 +47,7 @@ logger = logging.getLogger(__name__)
 # Reducer-aware feature flattening
 # ---------------------------------------------------------------------------
 
+
 def _flatten_with_mask(features: np.ndarray, masks: np.ndarray) -> np.ndarray:
     n, d, f = features.shape
     flat = features.copy().astype(np.float32)
@@ -75,6 +75,7 @@ def _apply_reducer_3d(
 # Model factory protocol — caller supplies fit/predict wrappers
 # ---------------------------------------------------------------------------
 
+
 @dataclass
 class BaselineSpec:
     """Specification for one baseline in the unified CV runner.
@@ -93,6 +94,7 @@ class BaselineSpec:
                      model receives a flat [N, K] reduced matrix and labels
     predict_method : "predict_proba" or "score_samples"
     """
+
     name: str
     make: Callable[[], Any]
     needs_3d: bool = True
@@ -104,6 +106,7 @@ class BaselineSpec:
 # Single-fold evaluation
 # ---------------------------------------------------------------------------
 
+
 def _fit_predict_one(
     spec: BaselineSpec,
     features_3d: np.ndarray,
@@ -112,7 +115,7 @@ def _fit_predict_one(
     train_idx: np.ndarray,
     test_idx: np.ndarray,
     reducer: DimReducer,
-) -> Tuple[np.ndarray, np.ndarray, Dict]:
+) -> tuple[np.ndarray, np.ndarray, dict]:
     """Fit a single model on the training fold (with DR fit on train only)
     and return (test_labels, test_probs, hyperparameters)."""
     # Fit reducer on training only (no leakage)
@@ -127,9 +130,7 @@ def _fit_predict_one(
             model.fit(features_3d[train_idx], masks[train_idx], labels[train_idx])
         else:
             model.fit(features_3d[train_idx], masks[train_idx], labels[train_idx])
-        probs = getattr(model, spec.predict_method)(
-            features_3d[test_idx], masks[test_idx]
-        )
+        probs = getattr(model, spec.predict_method)(features_3d[test_idx], masks[test_idx])
     else:
         # Flat model — receives reduced 2D matrix
         X_tr = _apply_reducer_3d(features_3d[train_idx], masks[train_idx], reducer)
@@ -149,7 +150,7 @@ def _fit_predict_one(
         else:
             probs = out
 
-    hp: Dict = {}
+    hp: dict = {}
     if hasattr(model, "get_hyperparameters"):
         try:
             hp = model.get_hyperparameters()
@@ -167,6 +168,7 @@ def _fit_predict_one(
 # Main CV runner
 # ---------------------------------------------------------------------------
 
+
 @dataclass
 class CVConfig:
     n_splits: int = 5
@@ -175,7 +177,7 @@ class CVConfig:
     bootstrap_resamples: int = 1000
     bootstrap_alpha: float = 0.05
     reducer_name: str = "none"
-    reducer_kwargs: Dict = field(default_factory=dict)
+    reducer_kwargs: dict = field(default_factory=dict)
     leakage_warn_auc: float = 0.99
     leakage_warn_f1: float = 0.99
 
@@ -184,9 +186,9 @@ def cross_validate_baselines(
     features: np.ndarray,
     masks: np.ndarray,
     labels: np.ndarray,
-    specs: List[BaselineSpec],
-    config: Optional[CVConfig] = None,
-) -> Dict[str, Any]:
+    specs: list[BaselineSpec],
+    config: CVConfig | None = None,
+) -> dict[str, Any]:
     """Run StratifiedKFold across all specs with a shared DR transform.
 
     Returns
@@ -218,15 +220,17 @@ def cross_validate_baselines(
     )
 
     # Per-baseline accumulators
-    per_baseline: Dict[str, Dict] = {
+    per_baseline: dict[str, dict] = {
         s.name: {
-            "per_fold": [], "hyperparameters": None,
-            "y_true_concat": [], "y_prob_concat": [],
+            "per_fold": [],
+            "hyperparameters": None,
+            "y_true_concat": [],
+            "y_prob_concat": [],
             "leakage_warnings": [],
         }
         for s in specs
     }
-    contamination_reports: List[Dict] = []
+    contamination_reports: list[dict] = []
     test_oversampling_status = "ok"
 
     for fold_i, (train_idx, test_idx) in enumerate(skf.split(np.zeros(len(labels)), labels)):
@@ -249,8 +253,13 @@ def cross_validate_baselines(
         for spec in specs:
             try:
                 y_true, y_prob, hp = _fit_predict_one(
-                    spec, features, masks, labels,
-                    train_idx, test_idx, reducer,
+                    spec,
+                    features,
+                    masks,
+                    labels,
+                    train_idx,
+                    test_idx,
+                    reducer,
                 )
                 m = classification_metrics(y_true, y_prob)
                 m["fold"] = fold_i + 1
@@ -262,23 +271,25 @@ def cross_validate_baselines(
 
                 # Per-fold leakage flag
                 warns = flag_suspicious_metrics(
-                    m, auc_threshold=cfg.leakage_warn_auc,
+                    m,
+                    auc_threshold=cfg.leakage_warn_auc,
                     f1_threshold=cfg.leakage_warn_f1,
                 )
                 if warns:
-                    per_baseline[spec.name]["leakage_warnings"].append(
-                        {"fold": fold_i + 1, "warnings": warns}
-                    )
+                    per_baseline[spec.name]["leakage_warnings"].append({"fold": fold_i + 1, "warnings": warns})
             except Exception as exc:
                 logger.warning(f"{spec.name} failed on fold {fold_i + 1}: {exc}")
-                per_baseline[spec.name]["per_fold"].append({
-                    "fold": fold_i + 1, "error": f"{type(exc).__name__}: {exc}",
-                })
+                per_baseline[spec.name]["per_fold"].append(
+                    {
+                        "fold": fold_i + 1,
+                        "error": f"{type(exc).__name__}: {exc}",
+                    }
+                )
 
     # Aggregate across folds + compute bootstrap CIs on pooled predictions
-    from sklearn.metrics import roc_auc_score, average_precision_score, f1_score
+    from sklearn.metrics import average_precision_score, f1_score, roc_auc_score
 
-    pooled_predictions: Dict[str, Tuple[np.ndarray, np.ndarray]] = {}
+    pooled_predictions: dict[str, tuple[np.ndarray, np.ndarray]] = {}
     for name, data in per_baseline.items():
         data["aggregate"] = aggregate_cv_metrics(data["per_fold"])
         if data["y_true_concat"]:
@@ -287,19 +298,24 @@ def cross_validate_baselines(
             pooled_predictions[name] = (y_true, y_prob)
             data["bootstrap_ci"] = {
                 "roc_auc": bootstrap_metric_ci(
-                    y_true, y_prob, roc_auc_score,
+                    y_true,
+                    y_prob,
+                    roc_auc_score,
                     n_resamples=cfg.bootstrap_resamples,
                     alpha=cfg.bootstrap_alpha,
                     random_state=cfg.random_state,
                 ),
                 "pr_auc": bootstrap_metric_ci(
-                    y_true, y_prob, average_precision_score,
+                    y_true,
+                    y_prob,
+                    average_precision_score,
                     n_resamples=cfg.bootstrap_resamples,
                     alpha=cfg.bootstrap_alpha,
                     random_state=cfg.random_state,
                 ),
                 "f1": bootstrap_metric_ci(
-                    y_true, (y_prob >= 0.5).astype(int),
+                    y_true,
+                    (y_prob >= 0.5).astype(int),
                     lambda yt, yp: f1_score(yt, yp, zero_division=0),
                     n_resamples=cfg.bootstrap_resamples,
                     alpha=cfg.bootstrap_alpha,
@@ -314,8 +330,7 @@ def cross_validate_baselines(
 
     contamination_summary = {
         "per_fold": contamination_reports,
-        "max_duplicates": max((r["n_duplicate_rows"] for r in contamination_reports),
-                              default=0),
+        "max_duplicates": max((r["n_duplicate_rows"] for r in contamination_reports), default=0),
     }
 
     return {
@@ -338,9 +353,10 @@ def cross_validate_baselines(
 # Pairwise DeLong wrapper
 # ---------------------------------------------------------------------------
 
+
 def pairwise_delong_from_predictions(
-    predictions_by_name: Dict[str, Tuple[np.ndarray, np.ndarray]],
-) -> Dict[str, float]:
+    predictions_by_name: dict[str, tuple[np.ndarray, np.ndarray]],
+) -> dict[str, float]:
     """Compute DeLong p-values for every pair of (y_true, y_prob) arrays.
 
     Args
@@ -351,10 +367,10 @@ def pairwise_delong_from_predictions(
     """
     if delong_roc_test is None:
         return {}
-    out: Dict[str, float] = {}
+    out: dict[str, float] = {}
     names = list(predictions_by_name.keys())
     for i, a in enumerate(names):
-        for b in names[i + 1:]:
+        for b in names[i + 1 :]:
             y_true_a, y_prob_a = predictions_by_name[a]
             y_true_b, y_prob_b = predictions_by_name[b]
             if not np.array_equal(y_true_a, y_true_b):
@@ -368,7 +384,8 @@ def pairwise_delong_from_predictions(
 
 
 __all__ = [
-    "BaselineSpec", "CVConfig",
+    "BaselineSpec",
+    "CVConfig",
     "cross_validate_baselines",
     "pairwise_delong_from_predictions",
 ]

@@ -40,7 +40,6 @@ import torch
 from sklearn.metrics import roc_auc_score
 
 from scripts.prepare_mvtec3d_fusion_benchmark import discover_mvtec3d_pairs
-from uais.fusion.attention.m3dm_features import extract_resnet_features
 
 
 def _patch_features(image_paths: list[Path], device_hint: str = "auto") -> np.ndarray:
@@ -53,7 +52,7 @@ def _patch_features(image_paths: list[Path], device_hint: str = "auto") -> np.nd
     # The existing extract_resnet_features collapses to the pooled embedding.
     # For a patch-level memory bank we need pre-pool features, which is
     # extracted here directly to avoid re-architecting m3dm_features.py.
-    from torchvision.models import resnet50, ResNet50_Weights
+    from torchvision.models import ResNet50_Weights, resnet50
 
     weights = ResNet50_Weights.IMAGENET1K_V2
     model = resnet50(weights=weights)
@@ -70,11 +69,7 @@ def _patch_features(image_paths: list[Path], device_hint: str = "auto") -> np.nd
     feature_layer.eval()
     if device_hint == "auto":
         device = torch.device(
-            "mps"
-            if torch.backends.mps.is_available()
-            else "cuda"
-            if torch.cuda.is_available()
-            else "cpu"
+            "mps" if torch.backends.mps.is_available() else "cuda" if torch.cuda.is_available() else "cpu"
         )
     else:
         device = torch.device(device_hint)
@@ -199,9 +194,7 @@ def evaluate_patchcore3d(
     per_category: dict[str, dict] = {}
     for cat in sorted(by_category):
         cat_pairs = by_category[cat]
-        train_good = [
-            p for p in cat_pairs if p.split == "train" and p.defect_type == "good"
-        ]
+        train_good = [p for p in cat_pairs if p.split == "train" and p.defect_type == "good"]
         test_pairs = [p for p in cat_pairs if p.split == "test"]
         if not train_good or not test_pairs:
             continue

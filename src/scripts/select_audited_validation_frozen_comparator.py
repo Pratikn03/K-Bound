@@ -29,7 +29,12 @@ BENCHMARKS = [
     ("MVTec 3D-AD", "PatchCore supervised", "A", "experiments/fusion/mvtec3d_patchcore_supervised_paired_results.json"),
     ("MVTec 3D-AD", "PatchCore held-out", "A", "experiments/fusion/mvtec3d_patchcore_heldout_results.json"),
     ("MVTec LOCO-AD", "PatchCore canonical", "A", "experiments/fusion/mvtec_loco_patchcore_results.json"),
-    ("MVTec LOCO-AD", "PatchCore supervised", "A", "experiments/fusion/mvtec_loco_patchcore_supervised_paired_results.json"),
+    (
+        "MVTec LOCO-AD",
+        "PatchCore supervised",
+        "A",
+        "experiments/fusion/mvtec_loco_patchcore_supervised_paired_results.json",
+    ),
     ("Real3D-AD", "PCA shape + depth supervised", "C", "experiments/fusion/real3d_supervised_paired_results.json"),
     ("VisA", "RGB+edge canonical", "A", "experiments/fusion/visa_fusion_results.json"),
     ("VisA", "RGB+edge supervised", "A", "experiments/fusion/visa_supervised_paired_results.json"),
@@ -130,47 +135,59 @@ def main() -> None:
     for benchmark, protocol, family, rel_path in BENCHMARKS:
         p = args.repo_root / rel_path
         if not p.exists():
-            rows.append({
-                "benchmark": benchmark,
-                "protocol": protocol,
-                "analysis_family": family,
-                "candidate_comparators": "",
-                "validation_scores": "",
-                "selected_comparator": "",
-                "selected_comparator_validation_auc": "",
-                "selected_comparator_test_auc": "",
-                "posthoc_test_best_baseline": "",
-                "posthoc_test_best_auc": "",
-                "does_selected_match_test_best": "",
-                "selection_used_test_metrics": False,
-                "analysis_status": "pending — JSON missing",
-            })
+            rows.append(
+                {
+                    "benchmark": benchmark,
+                    "protocol": protocol,
+                    "analysis_family": family,
+                    "candidate_comparators": "",
+                    "validation_scores": "",
+                    "selected_comparator": "",
+                    "selected_comparator_validation_auc": "",
+                    "selected_comparator_test_auc": "",
+                    "posthoc_test_best_baseline": "",
+                    "posthoc_test_best_auc": "",
+                    "does_selected_match_test_best": "",
+                    "selection_used_test_metrics": False,
+                    "analysis_status": "pending — JSON missing",
+                }
+            )
             continue
         payload = json.loads(p.read_text())
         per_seed = per_seed_validation_scores(payload)
         agg = aggregate_per_cell(per_seed)
-        rows.append({
-            "benchmark": benchmark,
-            "protocol": protocol,
-            "analysis_family": family,
-            "candidate_comparators": "|".join(agg.get("candidate_comparators", []) or []),
-            "validation_scores": json.dumps(agg.get("validation_scores") or {}, sort_keys=True),
-            "selected_comparator": agg.get("selected_comparator"),
-            "selected_comparator_validation_auc": agg.get("selected_comparator_validation_auc"),
-            "selected_comparator_test_auc": agg.get("selected_comparator_test_auc"),
-            "posthoc_test_best_baseline": agg.get("posthoc_test_best_baseline"),
-            "posthoc_test_best_auc": agg.get("posthoc_test_best_auc"),
-            "does_selected_match_test_best": agg.get("does_selected_match_test_best"),
-            "selection_used_test_metrics": False,
-            "analysis_status": agg.get("analysis_status", "locked_audited_reanalysis"),
-        })
+        rows.append(
+            {
+                "benchmark": benchmark,
+                "protocol": protocol,
+                "analysis_family": family,
+                "candidate_comparators": "|".join(agg.get("candidate_comparators", []) or []),
+                "validation_scores": json.dumps(agg.get("validation_scores") or {}, sort_keys=True),
+                "selected_comparator": agg.get("selected_comparator"),
+                "selected_comparator_validation_auc": agg.get("selected_comparator_validation_auc"),
+                "selected_comparator_test_auc": agg.get("selected_comparator_test_auc"),
+                "posthoc_test_best_baseline": agg.get("posthoc_test_best_baseline"),
+                "posthoc_test_best_auc": agg.get("posthoc_test_best_auc"),
+                "does_selected_match_test_best": agg.get("does_selected_match_test_best"),
+                "selection_used_test_metrics": False,
+                "analysis_status": agg.get("analysis_status", "locked_audited_reanalysis"),
+            }
+        )
 
     fields = [
-        "benchmark", "protocol", "analysis_family",
-        "candidate_comparators", "validation_scores",
-        "selected_comparator", "selected_comparator_validation_auc", "selected_comparator_test_auc",
-        "posthoc_test_best_baseline", "posthoc_test_best_auc",
-        "does_selected_match_test_best", "selection_used_test_metrics", "analysis_status",
+        "benchmark",
+        "protocol",
+        "analysis_family",
+        "candidate_comparators",
+        "validation_scores",
+        "selected_comparator",
+        "selected_comparator_validation_auc",
+        "selected_comparator_test_auc",
+        "posthoc_test_best_baseline",
+        "posthoc_test_best_auc",
+        "does_selected_match_test_best",
+        "selection_used_test_metrics",
+        "analysis_status",
     ]
     args.output.parent.mkdir(parents=True, exist_ok=True)
     with args.output.open("w", newline="") as f:
@@ -189,7 +206,9 @@ def main() -> None:
         sel_auc_s = f"{sel_auc:.4f}" if isinstance(sel_auc, (int, float)) else "--"
         ph_auc_s = f"{ph_auc:.4f}" if isinstance(ph_auc, (int, float)) else "--"
         match = r["does_selected_match_test_best"]
-        print(f"  {r['benchmark']:<14s} {r['protocol']:<30s} val-frozen={sel} ({sel_auc_s}) | posthoc-best={ph} ({ph_auc_s}) | match={match}")
+        print(
+            f"  {r['benchmark']:<14s} {r['protocol']:<30s} val-frozen={sel} ({sel_auc_s}) | posthoc-best={ph} ({ph_auc_s}) | match={match}"
+        )
 
 
 if __name__ == "__main__":

@@ -27,6 +27,6 @@ def test_runner_does_not_flip_static_or_craf_in_primary_path():
 
 def test_runner_contains_phase_1f_lock_comment():
     text = RUNNER.read_text()
-    assert "Phase 1.F lock" in text, (
-        "Phase 1.F lock comment missing from runner — the polarity-flip removal must be documented inline."
-    )
+    assert (
+        "Phase 1.F lock" in text
+    ), "Phase 1.F lock comment missing from runner — the polarity-flip removal must be documented inline."

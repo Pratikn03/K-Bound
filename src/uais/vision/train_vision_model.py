@@ -9,7 +9,6 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Dict
 
 import tensorflow as tf
 
@@ -110,7 +109,7 @@ def _normalize_dataset_root(directory: Path) -> Path:
     return directory
 
 
-def run_vision_experiment(cfg: VisionConfig) -> Dict[str, float]:
+def run_vision_experiment(cfg: VisionConfig) -> dict[str, float]:
     resolved_dir = cfg.resolve_dir()
     data_dir = _normalize_dataset_root(resolved_dir)
     if data_dir != resolved_dir:

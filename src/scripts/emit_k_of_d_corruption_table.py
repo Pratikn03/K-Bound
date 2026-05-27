@@ -127,10 +127,7 @@ def render_theory_mapping_table() -> str:
 
 def plot_figure(payload: dict, output: Path) -> None:
     rows = _ordered_rows(payload)
-    by_key = {
-        (str(r.get("attack")), str(r.get("gate_mode")), int(r.get("failed_domain_count", 0))): r
-        for r in rows
-    }
+    by_key = {(str(r.get("attack")), str(r.get("gate_mode")), int(r.get("failed_domain_count", 0))): r for r in rows}
     gates = ["mean", "minimum", "hybrid"]
     attacks = ["zero_attack", "max_attack"]
     k_values = [0, 1, 2, 3, 4]
@@ -164,8 +161,12 @@ def plot_figure(payload: dict, output: Path) -> None:
             linestyle = ATTACK_LINESTYLES.get(attack, "-")
             offset = GATE_OFFSETS.get(gate, 0.0)
             x_values = [k + offset for k in k_values]
-            axes[0].plot(x_values, delta_values, marker="o", linewidth=1.8, color=color, linestyle=linestyle, label=label)
-            axes[1].plot(x_values, adapt_values, marker="o", linewidth=1.8, color=color, linestyle=linestyle, label=label)
+            axes[0].plot(
+                x_values, delta_values, marker="o", linewidth=1.8, color=color, linestyle=linestyle, label=label
+            )
+            axes[1].plot(
+                x_values, adapt_values, marker="o", linewidth=1.8, color=color, linestyle=linestyle, label=label
+            )
 
     axes[0].axhline(0.0, color="#444444", linewidth=0.8)
     axes[0].set_title("ROC-AUC delta")

@@ -275,8 +275,7 @@ def label_diversity_report(fusion: pd.DataFrame) -> dict[str, Any]:
 
 def patient_overlap_report(fusion: pd.DataFrame) -> dict[str, Any]:
     split_to_patients = {
-        split: set(part["patient_key"].dropna().astype(str))
-        for split, part in fusion.groupby("fusion_split")
+        split: set(part["patient_key"].dropna().astype(str)) for split, part in fusion.groupby("fusion_split")
     }
     pairwise = {}
     for left, right in combinations(sorted(split_to_patients), 2):
@@ -511,12 +510,10 @@ def fusion_schema_integration_report(
     per_incident_domain_counts = fusion.groupby("incident_id")["domain"].nunique()
     raw_patient_id_absent = "patient_id" not in fusion.columns
     patient_keys_are_hashed = bool(
-        "patient_key" in fusion
-        and fusion["patient_key"].dropna().astype(str).str.fullmatch(r"[0-9a-f]{16}").all()
+        "patient_key" in fusion and fusion["patient_key"].dropna().astype(str).str.fullmatch(r"[0-9a-f]{16}").all()
     )
     incident_ids_are_hashed = bool(
-        "incident_id" in fusion
-        and fusion["incident_id"].dropna().astype(str).str.fullmatch(r"[0-9a-f]{16}").all()
+        "incident_id" in fusion and fusion["incident_id"].dropna().astype(str).str.fullmatch(r"[0-9a-f]{16}").all()
     )
     features, masks, _labels, sample_ids, tensor_domains, _splits, _categories = _tensors_with_metadata(fusion)
     tensor_ready = bool(
@@ -573,12 +570,8 @@ def clinical_domain_attribution_report(fusion: pd.DataFrame) -> dict[str, Any]:
         "incidents": int(scores.shape[0]),
         "domains": [str(domain) for domain in scores.columns],
         "top_domain_by_abs_impact": str(top_domain),
-        "mean_abs_impact_by_domain": {
-            domain: float(values["mean_abs_impact"]) for domain, values in impacts.items()
-        },
-        "mean_impact_by_domain": {
-            domain: float(values["mean_impact"]) for domain, values in impacts.items()
-        },
+        "mean_abs_impact_by_domain": {domain: float(values["mean_abs_impact"]) for domain, values in impacts.items()},
+        "mean_impact_by_domain": {domain: float(values["mean_impact"]) for domain, values in impacts.items()},
     }
 
 
@@ -762,20 +755,13 @@ def clinical_incident_detection_report(
             continue
         y = labels[mask].to_numpy()
         split_scores = scores.loc[mask]
-        domain_roc = {
-            str(domain): _safe_roc_auc(y, split_scores[domain].to_numpy())
-            for domain in split_scores.columns
-        }
+        domain_roc = {str(domain): _safe_roc_auc(y, split_scores[domain].to_numpy()) for domain in split_scores.columns}
         finite_domain_roc = [value for value in domain_roc.values() if value is not None]
         best_single = max(finite_domain_roc) if finite_domain_roc else None
         multi_score = multimodal[mask].to_numpy()
         multi_roc = _safe_roc_auc(y, multi_score)
         multi_pr = _safe_pr_auc(y, multi_score)
-        advantage = (
-            float(multi_roc - best_single)
-            if multi_roc is not None and best_single is not None
-            else None
-        )
+        advantage = float(multi_roc - best_single) if multi_roc is not None and best_single is not None else None
         by_split[split] = {
             "evaluated": multi_roc is not None,
             "incidents": int(mask.sum()),
@@ -843,9 +829,7 @@ def switching_and_calibration_report(fusion: pd.DataFrame) -> dict[str, Any]:
         fire_decisions = fire_series.reindex(current.index).fillna(False).to_numpy(dtype=bool)
 
     static_loss = _binary_log_loss_per_sample(current["label"].to_numpy(), current["static_prob"].to_numpy())
-    reliability_loss = _binary_log_loss_per_sample(
-        current["label"].to_numpy(), current["reliability_prob"].to_numpy()
-    )
+    reliability_loss = _binary_log_loss_per_sample(current["label"].to_numpy(), current["reliability_prob"].to_numpy())
     certificate = bounded_switching_certificate(static_loss, reliability_loss, fire_decisions)
     return {
         "evaluated": True,
@@ -907,34 +891,38 @@ def gap_statuses(
             "empirical_closed": bool(
                 incident_protocol_passed and no_patient_overlap and empirical_labels_ok and incident_detection_ok
             ),
-            "blocker": None
-            if empirical_labels_ok and incident_detection_ok
-            else (
-                "multimodal held-out incident detection target not met"
-                if empirical_labels_ok
-                else "validation/test splits do not contain both labels"
+            "blocker": (
+                None
+                if empirical_labels_ok and incident_detection_ok
+                else (
+                    "multimodal held-out incident detection target not met"
+                    if empirical_labels_ok
+                    else "validation/test splits do not contain both labels"
+                )
             ),
         },
         "2_autonomous_zero_misfire_adaptation": {
             "engineering_closed": bool(category_eval),
             "empirical_closed": bool(category_improves_gate or stress_closed),
-            "blocker": None
-            if category_improves_gate or stress_closed
-            else "category-aware gate did not materially reduce global gate firing on natural clinical variation",
+            "blocker": (
+                None
+                if category_improves_gate or stress_closed
+                else "category-aware gate did not materially reduce global gate firing on natural clinical variation"
+            ),
         },
         "3_universal_system_integration": {
             "engineering_closed": bool(schema_passed and integration_closed),
             "empirical_closed": bool(integration_closed and incident_protocol_passed),
-            "blocker": None
-            if integration_closed
-            else "clinical projection failed fusion-schema integration checks",
+            "blocker": None if integration_closed else "clinical projection failed fusion-schema integration checks",
         },
         "4_deployable_auditable_ai": {
             "engineering_closed": bool(deployment_eval and switching_eval and calibration_eval),
             "empirical_closed": bool(deployment_closed or (switching_certified and empirical_labels_ok)),
-            "blocker": None
-            if deployment_closed or (switching_certified and empirical_labels_ok)
-            else "local deployment audit, switching certificate, or label diversity is insufficient",
+            "blocker": (
+                None
+                if deployment_closed or (switching_certified and empirical_labels_ok)
+                else "local deployment audit, switching certificate, or label diversity is insufficient"
+            ),
         },
     }
 
