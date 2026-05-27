@@ -313,7 +313,18 @@ def run_one_seed(
     estimator = _make_reliability_estimator(rel_cfg, list(domain_order) or ["rgb", "depth"], score_idx)
     estimator.fit(features[train_idx], masks[train_idx], labels[train_idx])
 
-    # ── Validation-only τ selection ──────────────────────────────────────
+    # ── Target-domain KS calibration ─────────────────────────────────────
+    # The training split contains only normal (label=0) samples with cosine
+    # distances in [0, 0.5].  At inference, the validation and test splits
+    # contain a mix of normal and anomalous samples with scores in [0, 1].
+    # Without re-calibration, ks_2samp(train_ref, val_scores) → p≈0 for
+    # every domain → ks_reliability≈0 → rel_d<<0.66 → 100% false-fire rate.
+    # Re-fitting the KS reference on the validation split aligns the reference
+    # to the inference-time distribution.  The validation split is already
+    # used for τ selection so this introduces no new data leakage.
+    estimator.re_fit_ks_reference(features[val_idx], masks[val_idx])
+
+
     val_feat = features[val_idx]
     val_mask = masks[val_idx]
     val_labels_arr = labels[val_idx]
@@ -457,7 +468,7 @@ def run_one_seed(
 
     gate_stats = gate_stats_deg
     gate_activation = (
-        float(gate_stats.get("gate_activation_rate", float("nan"))) if isinstance(gate_stats, dict) else float("nan")
+        float(gate_stats.get("adaptation_rate", float("nan"))) if isinstance(gate_stats, dict) else float("nan")
     )
 
     rows.append(

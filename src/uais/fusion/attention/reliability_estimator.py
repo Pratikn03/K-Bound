@@ -133,6 +133,43 @@ class ReliabilityEstimator:
         self.fitted = True
         return self
 
+    def re_fit_ks_reference(
+        self,
+        features: np.ndarray,
+        masks: np.ndarray,
+    ) -> "ReliabilityEstimator":
+        """Replace KS reference distributions with scores from a calibration set.
+
+        Call this after fit() to align the KS drift detector to the target
+        domain's inference-time score distribution. Typical usage: call with
+        the validation split so that the KS test compares test scores against
+        the same split used for τ selection, rather than against the training
+        split which may have a very different score range (e.g. all-normal
+        training scores vs. mixed anomaly/normal inference scores).
+
+        The isotonic calibrators and stored ECE values are NOT changed — only
+        ``_reference_scores`` is replaced.
+
+        Parameters
+        ----------
+        features : [N, D, F]
+            Feature array from the calibration set (e.g. validation split).
+        masks    : [N, D] bool — True = domain missing for that sample
+        """
+        if not self.fitted:
+            raise RuntimeError(
+                "re_fit_ks_reference() must be called after fit()."
+            )
+        for i, domain in enumerate(self.domain_order):
+            available = ~masks[:, i]
+            if not available.any():
+                continue
+            scores = features[available, i, self.score_index].astype(float)
+            if len(scores) == 0:
+                continue
+            self._reference_scores[domain] = scores.copy()
+        return self
+
     # ------------------------------------------------------------------
     # Inference
     # ------------------------------------------------------------------
