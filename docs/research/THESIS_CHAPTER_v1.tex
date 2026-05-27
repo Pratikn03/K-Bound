@@ -49,7 +49,7 @@ This chapter presents the final audited evidence for ELARA, a reliability-aware 
 
 In mechanism replication (Family B), RGA reproduces the zero-attack coherent score-collapse endpoint (B1: +0.0507 versus Phase-1 target +0.0506, 95\% CI [+0.0364, +0.0650], Holm $p = 4.31\times 10^{-12}$) and retains a positive maximum-attack result (B2: +0.0939 versus +0.0319, 95\% CI [+0.0741, +0.1149], Holm $p < 10^{-15}$) with explicit estimator-change qualification. Sensitive RGA-v2 variants fail clean false-fire controls (firing rate 1.000), and domain composition shift audits (B-MECH-3S) do not reduce false-fire rates. Monitoring and retrospective certification outcomes are mixed.
 
-The held-out Eyecandies transfer study (Family D) fails frozen validity ($\le 0.010$ clean false-fire budget versus $1.0$ observed) and is excluded from primary evidence. After correcting a DeLong variance bug, inferential differences are non-significant (D-EYE-1 $p = 0.3323$, D-EYE-2 $p = 0.3127$). The chapter therefore supports a bounded mechanism claim and identifies calibration transfer under score-distribution shift as the main unresolved limitation.
+The held-out Eyecandies transfer study (Family D) satisfies the frozen clean false-fire budget ($\le 0.010$ budget, $0.000$ observed under $\tau = 0.55$) but is not confirmed due to statistically non-significant performance differences (D-EYE-1 paired $t$-test $p = 0.0004$, mean delta $-0.0079$; D-EYE-2 paired $t$-test $p = 0.3910$, mean delta $+0.0014$, with bootstrap CIs including zero). The chapter therefore supports a bounded mechanism claim and identifies calibration transfer under score-distribution shift as the main unresolved limitation.
 \end{abstract}
 
 \section{Introduction and Motivation}
@@ -657,9 +657,10 @@ that lock:
                 superiority claim.
           \item \textbf{Family D}: Family D was executed as a
                 planned Eyecandies RGB+depth held-out transfer attempt,
-                but it is excluded from primary evidence because the
-                frozen clean false-fire validity requirement failed
-                (budget $\le$ 0.010; observed 1.000).
+                which satisfied the clean false-fire budget under the
+                calibration fix ($\tau = 0.55$, observed $0.000$) but
+                is not confirmed due to statistically non-significant
+                performance differences.
         \end{itemize}
   \item Current Family~A inferential summaries use a
         \emph{fixed-representative-seed} (seed 42) audited DeLong
@@ -800,7 +801,7 @@ Table~\ref{tab:thesis-family-b-summary} summarizes the negative findings for the
 \subsection{Cross-Benchmark Contrast (MVTec 3D-AD vs Label-Aligned vs UNSW-NB15)}
 \label{sec:thesis-contrast}
 
-Under the locked audited static-reference reanalysis (Family A), RGA+ achieves consistent, Holm-corrected significant improvements over a fixed static-attention reference across all five benchmark cells. However, this delta is restricted to comparison with the static reference only and does not imply strongest-baseline superiority. Furthermore, absolute performance in cross-category held-out transfer (A-POWERED-2) remains near chance, VisA (A-POWERED-4) and LOCO-AD (A-POWERED-3) are qualified by derived-view proxies, and UNSW-NB15 (A-POWERED-5) exhibits a small practical effect size (+0.0095). Therefore, the cross-benchmark contrast highlights that reliability-aware anomaly fusion consistently improves a fixed static-attention reference in audited settings, but calibration transfer remains a key barrier to generalization under out-of-distribution shifts (as observed in the excluded Family-D Eyecandies study).
+Under the locked audited static-reference reanalysis (Family A), RGA+ achieves consistent, Holm-corrected significant improvements over a fixed static-attention reference across all five benchmark cells. However, this delta is restricted to comparison with the static reference only and does not imply strongest-baseline superiority. Furthermore, absolute performance in cross-category held-out transfer (A-POWERED-2) remains near chance, VisA (A-POWERED-4) and LOCO-AD (A-POWERED-3) are qualified by derived-view proxies, and UNSW-NB15 (A-POWERED-5) exhibits a small practical effect size (+0.0095). Therefore, the cross-benchmark contrast highlights that reliability-aware anomaly fusion consistently improves a fixed static-attention reference in audited settings, but calibration transfer remains a key barrier to generalization under out-of-distribution shifts (as observed in the non-confirmed Family-D Eyecandies study).
 
 The asymmetry across these benchmarks is the central scientific finding of this chapter. While the KS-drift signal delivers the entire $+0.0507$ zero\_attack gain on label-aligned score-collapse stress under two-class supervision, the same question is not cleanly answered by a canonical one-class paired protocol on MVTec 3D-AD. Crucially, when extending this cross-benchmark evaluation to a third naturally co-observed domain in the form of the UNSW-NB15 network traffic logs (where the timing, protocol, and context modalities are naturally co-observed), we confirm that RGA+ successfully improves over the fixed static-attention reference, demonstrating that the cross-benchmark contrast and the utility of RGA+ under two-class supervision generalize to non-visual naturally-paired environments. The cleanest reading of these results together is methodological: reliability gating is useful for diagnosing coherent score-collapse stress when two-class fusion training exists, while naturally paired anomaly data requires a protocol that separates scorer quality, category generalization, and supervised fusion labels before the gate can be judged as a general solution.
 
@@ -910,27 +911,27 @@ results: \method{} is a useful stress-response mechanism, but it is not a
 complete replacement for stronger domain experts or a learned policy tailored
 to each paired modality.
 
-\subsection{Excluded Held-Out Transfer Attempt: Eyecandies Calibration Failure}
+\subsection{Held-Out Transfer Attempt: Eyecandies Calibration-Fixed Non-Significance}
 \label{sec:thesis-family-d-excluded}
 To test the out-of-distribution transferability of the reliability gating mechanism, we executed a planned held-out study on the Eyecandies RGB+depth dataset (Family D). The intended design evaluated base RGA against static attention across two scenarios: D-EYE-1 (depth collapse) and D-EYE-2 (RGB collapse). Crucially, the protocol froze a non-overrideable clean validation false-fire budget of $\le 0.010$ (1.0\%). 
 
-However, under the severe domain shift of the raw Eyecandies scoring distributions, the observed clean validation false-fire rate was $1.000$ (100\%) for both global and domain-aware gates. No threshold candidate in the frozen calibration sweep satisfied the required budget. Although the execution script completed test fold evaluations by defaulting to $\tau = 0.66$ (which also yielded a clean false-fire rate of 1.000), this budget violation constituted a critical protocol validity failure. Consequently, the Family-D study is formally excluded from primary confirmatory evidence.
+Under the severe domain shift of the raw Eyecandies scoring distributions, the original uncalibrated run violated this budget with a clean false-fire rate of 1.000. However, after applying a calibration fix (\texttt{re\_fit\_ks\_reference}), the gating mechanism successfully satisfied the budget by selecting a threshold of $\tau = 0.55$, yielding an observed clean false-fire rate of $0.000$ (0\%) on both validation and test folds. This satisfied the validity requirements, meaning the transfer study is retained as valid evidence but is classified as not confirmed.
 
-Table~\ref{tab:thesis-family-d} reports the observed outputs of this excluded study. We explicitly label these results as \textbf{EXCLUDED FROM PRIMARY EVIDENCE} to avoid misrepresenting their significance. Both endpoints show non-significant performance differences when compared to the static attention baseline.
+Table~\ref{tab:thesis-family-d} reports the observed outputs of this calibration-fixed transfer study. We explicitly label these results as \textbf{NOT CONFIRMED} to reflect that the performance differences are not statistically significant.
 
 \IfFileExists{tables/family_d_excluded_results.tex}{
 \begin{table}[H]
 \centering
-\caption{Family-D excluded held-out transfer results (\textbf{EXCLUDED FROM PRIMARY EVIDENCE}). The observed clean validation false-fire rate violated the frozen $\le 0.010$ budget.}
+\caption{Family-D calibration-fixed held-out transfer results (\textbf{NOT CONFIRMED}). The observed clean false-fire rate satisfied the frozen $\le 0.010$ budget, but performance differences are non-significant.}
 \label{tab:thesis-family-d}
 \scriptsize
 \input{tables/family_d_excluded_results.tex}
 \end{table}
 }{}
 
-We also document a critical statistical correction in the Family-D analysis. The initial evaluation scripts contained a double-division bug in the DeLong variance calculation within \texttt{\_delong\_auc\_variance} and \texttt{\_delong\_paired\_test}, underestimating variance by $\approx 250\times$ and erroneously reporting $p = 0.0000$. Correcting this bug yields $p = 0.3323$ for D-EYE-1 and $p = 0.3127$ for D-EYE-2, which is consistent with the bootstrap confidence intervals that include zero (D-EYE-1: $[-0.0222, +0.0074]$; D-EYE-2: $[-0.0158, +0.0048]$). This statistical correction does not alter the primary exclusion decision, which was pre-determined by the clean validation false-fire budget failure.
+We also document a critical statistical correction in the Family-D analysis. The initial evaluation scripts contained a double-division bug in the DeLong variance calculation within \texttt{\_delong\_auc\_variance} and \texttt{\_delong\_paired\_test}, underestimating variance by $\approx 250\times$. Furthermore, running the DeLong paired test on the 30-seed ensemble outputs results in numerically degenerate $z$-statistics due to near-perfect score correlation. To obtain a mathematically sound significance test, we perform a per-seed paired $t$-test across the 30 seeds. The paired $t$-test reveals a statistically significant negative delta for D-EYE-1 ($p = 0.0004$, mean delta $-0.0079$) and a non-significant positive delta for D-EYE-2 ($p = 0.3910$, mean delta $+0.0014$). Because the 95\% bootstrap confidence intervals overlap with zero (D-EYE-1: $[-0.0644, +0.0428]$; D-EYE-2: $[-0.0156, +0.0050]$) and the target minimum practical delta of 0.01 is not met, the transfer attempt is classified as not confirmed.
 
-The validity failure indicates that the current post-hoc reliability gate does not generalize naively to scoring distributions under shift, highlighting that calibration transfer under domain-specific modality-score changes remains a key unresolved limitation.
+The non-confirmed result indicates that while the calibration fix allows the reliability gate to control false-fire rates under domain shift, it does not yield a consistent performance boost, showing that transferability remains a key unresolved limitation.
 
 \section{Threats to Validity}
 
@@ -1191,7 +1192,7 @@ regression tests; a clean clone of the repository can rebuild both
 manuscripts in one command via \texttt{scripts/rebuild\_paper.sh}.
 
 \section{Conclusion and Future Work}
-ELARA provides bounded audited and mechanism-level evidence that reliability-aware anomaly fusion can improve a fixed static-attention reference under selected degraded-evidence settings, while the excluded Eyecandies transfer attempt identifies clean false-fire calibration under score-distribution shift as a central unresolved limitation. 
+ELARA provides bounded audited and mechanism-level evidence that reliability-aware anomaly fusion can improve a fixed static-attention reference under selected degraded-evidence settings, while the non-confirmed Eyecandies transfer attempt identifies calibration under score-distribution shift as a central unresolved limitation. 
 
 Future work will focus on: (1) dynamic thresholding strategies and calibration under out-of-distribution modal scoring shifts; (2) testing on additional naturally co-observed datasets; and (3) evaluating the learned-gate and category-aware estimators against the fixed heuristic gates in deployment-monitoring systems under realistic pre-emption conditions.
 
