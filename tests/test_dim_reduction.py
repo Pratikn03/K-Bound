@@ -6,10 +6,13 @@ import numpy as np
 import pytest
 
 from uais.fusion.attention.dim_reduction import (
-    AEReducerConfig, AutoencoderReducer, DimReducer, NoOpReducer,
-    PCAReducerConfig, PCAReducer, make_reducer,
+    AEReducerConfig,
+    AutoencoderReducer,
+    NoOpReducer,
+    PCAReducer,
+    PCAReducerConfig,
+    make_reducer,
 )
-
 
 N, K = 200, 32
 
@@ -73,8 +76,7 @@ def test_unfitted_transform_raises():
 def test_factory_returns_correct_type():
     assert isinstance(make_reducer("none"), NoOpReducer)
     assert isinstance(make_reducer("pca", n_components=4), PCAReducer)
-    assert isinstance(make_reducer("autoencoder", latent_dim=2, epochs=1),
-                      AutoencoderReducer)
+    assert isinstance(make_reducer("autoencoder", latent_dim=2, epochs=1), AutoencoderReducer)
 
 
 def test_factory_rejects_unknown():

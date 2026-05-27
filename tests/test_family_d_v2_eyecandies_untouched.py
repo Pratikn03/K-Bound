@@ -27,9 +27,7 @@ def test_no_eyecandies_in_experiment_outcome_artifacts():
                 t = p.read_text(encoding="utf-8")
             except (UnicodeDecodeError, Exception):
                 continue
-            assert "eyecandies" not in t.lower(), (
-                f"Eyecandies reference found in outcome artifact {p}"
-            )
+            assert "eyecandies" not in t.lower(), f"Eyecandies reference found in outcome artifact {p}"
 
 
 def test_local_eyecandies_data_is_hash_only_archive():
@@ -41,12 +39,9 @@ def test_local_eyecandies_data_is_hash_only_archive():
         return  # acceptable pre-Phase-2.2D state
     archives_dir = p / "_archives"
     sha_file = ROOT / "experiments" / "phase2" / "family_d" / "eyecandies_archive_sha256.txt"
-    assert archives_dir.exists(), (
-        "data/raw/eyecandies/ exists but no _archives/ subdir — unexpected state"
-    )
+    assert archives_dir.exists(), "data/raw/eyecandies/ exists but no _archives/ subdir — unexpected state"
     assert sha_file.exists(), (
-        "_archives/ exists but eyecandies_archive_sha256.txt missing — "
-        "hash-only pass must accompany any download"
+        "_archives/ exists but eyecandies_archive_sha256.txt missing — " "hash-only pass must accompany any download"
     )
     # Forbidden: any extracted sample directory or anomaly-detection output.
     for item in p.iterdir():

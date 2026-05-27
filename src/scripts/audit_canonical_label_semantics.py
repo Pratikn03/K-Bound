@@ -30,7 +30,6 @@ from __future__ import annotations
 import argparse
 import csv
 import json
-import math
 from pathlib import Path
 from typing import Any
 
@@ -43,7 +42,6 @@ from sklearn.metrics import (
 )
 
 from uais.utils.metrics import expected_calibration_error
-
 
 # ---------------------------------------------------------------------------
 # Canonical benchmark cells under audit
@@ -117,7 +115,7 @@ def random_baseline_metrics(y_true: np.ndarray, seed: int, *, inverted: bool = F
     scores = rng.uniform(0.0, 1.0, size=len(y_true))
     if inverted:
         scores = 1.0 - scores
-    y_pred = (scores >= 0.5).astype(int)
+    (scores >= 0.5).astype(int)
     return {
         "seed": seed,
         "inverted": inverted,
@@ -201,9 +199,7 @@ def label_definition_audit(cell: dict, root: Path) -> dict:
             for split_value in sample_split.unique():
                 mask = sample_split == split_value
                 out[f"split_{split_value}_n_samples"] = int(mask.sum())
-                out[f"split_{split_value}_n_positives_label_eq_1"] = int(
-                    (sample_label[mask] == 1).sum()
-                )
+                out[f"split_{split_value}_n_positives_label_eq_1"] = int((sample_label[mask] == 1).sum())
                 out[f"split_{split_value}_prevalence_label_eq_1"] = float(sample_label[mask].mean())
         else:
             for split_value in df[split_col].unique():
@@ -359,21 +355,23 @@ def polarity_diagnostic_rows(cell: dict, root: Path) -> list[dict]:
         borderline = isinstance(probe_auc, (int, float)) and 0.45 <= float(probe_auc) <= 0.55
         # raw vs flipped — the JSON stores the AFTER-flip values for static/craf, so we
         # report the values as-stored and note that the audit will recompute under no-flip.
-        static = r.get("static_attention", {}) or {}
-        rows.append({
-            "benchmark": cell["benchmark"],
-            "protocol": cell["protocol"],
-            "method": "static_attention",
-            "seed": seed,
-            "validation_probe_auc": float(probe_auc) if isinstance(probe_auc, (int, float)) else None,
-            "borderline_flag": bool(borderline),
-            "flip_would_have_been_applied_under_old_logic": flip,
-            "raw_test_roc_auc": None,  # raw predictions not stored
-            "diagnostic_flipped_test_roc_auc": None,
-            "raw_test_pr_auc": None,
-            "diagnostic_flipped_test_pr_auc": None,
-            "primary_metrics_use_flip": False,  # Phase 1.F lock: primary path will not use flip
-        })
+        r.get("static_attention", {}) or {}
+        rows.append(
+            {
+                "benchmark": cell["benchmark"],
+                "protocol": cell["protocol"],
+                "method": "static_attention",
+                "seed": seed,
+                "validation_probe_auc": float(probe_auc) if isinstance(probe_auc, (int, float)) else None,
+                "borderline_flag": bool(borderline),
+                "flip_would_have_been_applied_under_old_logic": flip,
+                "raw_test_roc_auc": None,  # raw predictions not stored
+                "diagnostic_flipped_test_roc_auc": None,
+                "raw_test_pr_auc": None,
+                "diagnostic_flipped_test_pr_auc": None,
+                "primary_metrics_use_flip": False,  # Phase 1.F lock: primary path will not use flip
+            }
+        )
     return rows
 
 
@@ -443,13 +441,15 @@ def main() -> None:
         constants = None
         if y_test is not None and len(y_test) > 0 and len(set(y_test.tolist())) >= 2:
             constants = constant_baseline_replay(y_test)
-        report["cells"].append({
-            "benchmark": cell["benchmark"],
-            "protocol": cell["protocol"],
-            "label_definition": label_audit,
-            "constant_baseline_replay": constants,
-            "artifact_reproduction": repro,
-        })
+        report["cells"].append(
+            {
+                "benchmark": cell["benchmark"],
+                "protocol": cell["protocol"],
+                "label_definition": label_audit,
+                "constant_baseline_replay": constants,
+                "artifact_reproduction": repro,
+            }
+        )
         polarity_rows.extend(polarity_diagnostic_rows(cell, args.repo_root))
 
     report["verdict"] = classify_verdict(report["cells"])
@@ -475,11 +475,17 @@ def main() -> None:
     # Polarity diagnostic CSV
     args.polarity_output.parent.mkdir(parents=True, exist_ok=True)
     cols = [
-        "benchmark", "protocol", "method", "seed",
-        "validation_probe_auc", "borderline_flag",
+        "benchmark",
+        "protocol",
+        "method",
+        "seed",
+        "validation_probe_auc",
+        "borderline_flag",
         "flip_would_have_been_applied_under_old_logic",
-        "raw_test_roc_auc", "diagnostic_flipped_test_roc_auc",
-        "raw_test_pr_auc", "diagnostic_flipped_test_pr_auc",
+        "raw_test_roc_auc",
+        "diagnostic_flipped_test_roc_auc",
+        "raw_test_pr_auc",
+        "diagnostic_flipped_test_pr_auc",
         "primary_metrics_use_flip",
     ]
     with args.polarity_output.open("w", newline="") as f:

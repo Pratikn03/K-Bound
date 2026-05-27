@@ -180,12 +180,22 @@ def test_per_sample_gating_high_threshold_matches_full_reliability_path():
     """At τ=1.01 (impossible to satisfy), every sample is gated regardless of mode."""
     model, estimator, test_feat, test_mask, predict = _make_rga_fixture()
     probs_batch, stats_batch = predict(
-        model, estimator, test_feat, test_mask, torch.device("cpu"),
-        clean_gate_threshold=1.01, per_sample_gating=False,
+        model,
+        estimator,
+        test_feat,
+        test_mask,
+        torch.device("cpu"),
+        clean_gate_threshold=1.01,
+        per_sample_gating=False,
     )
     probs_persample, stats_persample = predict(
-        model, estimator, test_feat, test_mask, torch.device("cpu"),
-        clean_gate_threshold=1.01, per_sample_gating=True,
+        model,
+        estimator,
+        test_feat,
+        test_mask,
+        torch.device("cpu"),
+        clean_gate_threshold=1.01,
+        per_sample_gating=True,
     )
     # All samples adapted in both modes
     assert stats_batch["adaptation_rate"] == 1.0
@@ -198,12 +208,22 @@ def test_per_sample_gating_low_threshold_matches_static_path():
     """At τ=0.0, no sample is below threshold, both modes return static path."""
     model, estimator, test_feat, test_mask, predict = _make_rga_fixture()
     probs_batch, stats_batch = predict(
-        model, estimator, test_feat, test_mask, torch.device("cpu"),
-        clean_gate_threshold=0.0, per_sample_gating=False,
+        model,
+        estimator,
+        test_feat,
+        test_mask,
+        torch.device("cpu"),
+        clean_gate_threshold=0.0,
+        per_sample_gating=False,
     )
     probs_persample, stats_persample = predict(
-        model, estimator, test_feat, test_mask, torch.device("cpu"),
-        clean_gate_threshold=0.0, per_sample_gating=True,
+        model,
+        estimator,
+        test_feat,
+        test_mask,
+        torch.device("cpu"),
+        clean_gate_threshold=0.0,
+        per_sample_gating=True,
     )
     assert stats_batch["adaptation_rate"] == 0.0
     assert stats_persample["adaptation_rate"] == 0.0
@@ -213,12 +233,20 @@ def test_per_sample_gating_low_threshold_matches_static_path():
 def test_per_sample_gating_reports_flag_in_stats():
     model, estimator, test_feat, test_mask, predict = _make_rga_fixture()
     _, stats = predict(
-        model, estimator, test_feat, test_mask, torch.device("cpu"),
+        model,
+        estimator,
+        test_feat,
+        test_mask,
+        torch.device("cpu"),
         per_sample_gating=True,
     )
     assert stats["per_sample_gating"] is True
     _, stats2 = predict(
-        model, estimator, test_feat, test_mask, torch.device("cpu"),
+        model,
+        estimator,
+        test_feat,
+        test_mask,
+        torch.device("cpu"),
         per_sample_gating=False,
     )
     assert stats2["per_sample_gating"] is False
@@ -233,8 +261,13 @@ def test_per_sample_gating_adapts_only_below_threshold_samples():
     tau = float(np.median(mean_r))  # half above, half below
 
     _, stats = predict(
-        model, estimator, test_feat, test_mask, torch.device("cpu"),
-        clean_gate_threshold=tau, per_sample_gating=True,
+        model,
+        estimator,
+        test_feat,
+        test_mask,
+        torch.device("cpu"),
+        clean_gate_threshold=tau,
+        per_sample_gating=True,
     )
     expected_rate = float((mean_r < tau).mean())
     assert abs(stats["adaptation_rate"] - expected_rate) <= 1.0 / len(mean_r)

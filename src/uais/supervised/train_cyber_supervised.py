@@ -1,13 +1,13 @@
 from dataclasses import dataclass
-from typing import Literal, Tuple, Dict
+from typing import Literal
 
 import numpy as np
 import pandas as pd
 from sklearn.ensemble import HistGradientBoostingClassifier
 from sklearn.linear_model import LogisticRegression
 from sklearn.model_selection import StratifiedKFold
-from uais.preprocessing.pipeline import build_tabular_pipeline
 
+from uais.preprocessing.pipeline import build_tabular_pipeline
 from uais.utils.metrics import compute_classification_metrics
 
 ModelType = Literal["hist_gb", "logreg", "xgboost", "lightgbm", "catboost"]
@@ -89,7 +89,7 @@ def train_cyber_model(
     y_val: pd.Series,
     config: CyberModelConfig,
     use_pipeline: bool = False,
-) -> Tuple[object, Dict[str, float]]:
+) -> tuple[object, dict[str, float]]:
     """Train a supervised cyber intrusion model and return model + validation metrics."""
     model = _build_model(config)
     if use_pipeline:
@@ -119,7 +119,7 @@ def cross_val_train_cyber(
     config: CyberModelConfig,
     n_splits: int = 3,
     random_state: int = 42,
-) -> Tuple[list[object], Dict[str, float]]:
+) -> tuple[list[object], dict[str, float]]:
     """Stratified K-fold training; keep n_splits modest to bound compute time."""
     skf = StratifiedKFold(n_splits=n_splits, shuffle=True, random_state=random_state)
     aucs = []

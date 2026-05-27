@@ -43,7 +43,9 @@ def add_basic_fraud_features(
         df_feats = df
 
     # Amount column fallback (creditcard uses 'Amount', PaySim uses 'amount')
-    amt_col = amount_column if amount_column in df_feats.columns else ("amount" if "amount" in df_feats.columns else None)
+    amt_col = (
+        amount_column if amount_column in df_feats.columns else ("amount" if "amount" in df_feats.columns else None)
+    )
     if amt_col:
         # Clip negatives to zero before log1p — log1p of a negative is NaN, which breaks
         # downstream pipelines. Real credit-card data has non-negative amounts; synthetic
@@ -114,21 +116,22 @@ def build_fraud_feature_table(
 
     # Simple rolling aggregates per entity (if an id column is provided)
     if group_id_column and group_id_column in df_feats.columns:
-        df_feats = df_feats.sort_values([group_id_column, time_column] if time_column in df_feats.columns else [group_id_column])
+        df_feats = df_feats.sort_values(
+            [group_id_column, time_column] if time_column in df_feats.columns else [group_id_column]
+        )
         gb = df_feats.groupby(group_id_column)
         # Count of txns in past window proxies via expanding counts
         df_feats["tx_count_per_entity"] = gb.cumcount()
         # Amount running mean/std
-        df_feats["amount_running_mean"] = gb[amount_column if amount_column in df_feats.columns else "Amount"].transform(
-            lambda s: s.expanding().mean()
-        )
+        df_feats["amount_running_mean"] = gb[
+            amount_column if amount_column in df_feats.columns else "Amount"
+        ].transform(lambda s: s.expanding().mean())
         df_feats["amount_running_std"] = gb[amount_column if amount_column in df_feats.columns else "Amount"].transform(
             lambda s: s.expanding().std().fillna(0)
         )
         df_feats["amount_zscore_entity"] = (
-            (df_feats[amount_column if amount_column in df_feats.columns else "Amount"] - df_feats["amount_running_mean"])
-            / (df_feats["amount_running_std"] + 1e-6)
-        )
+            df_feats[amount_column if amount_column in df_feats.columns else "Amount"] - df_feats["amount_running_mean"]
+        ) / (df_feats["amount_running_std"] + 1e-6)
         df_feats = df_feats.fillna(0)
 
     if drop_original_time and time_column in df_feats.columns:

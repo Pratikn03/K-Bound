@@ -27,9 +27,7 @@ def _make_data(seed: int = 0, missing_prob: float = 0.1):
     labels = (rng.random(N) < 0.2).astype(float)
     features = rng.random((N, D, F)).astype(np.float32)
     for d in range(D):
-        features[labels == 1, d, SCORE_IDX] = np.clip(
-            features[labels == 1, d, SCORE_IDX] + 0.4, 0.0, 1.0
-        )
+        features[labels == 1, d, SCORE_IDX] = np.clip(features[labels == 1, d, SCORE_IDX] + 0.4, 0.0, 1.0)
     masks = rng.random((N, D)) < missing_prob
     return features, masks.astype(bool), labels
 
@@ -43,12 +41,14 @@ def _splits():
 # EarlyFusionMLP
 # ---------------------------------------------------------------------------
 
+
 def test_early_fusion_mlp_output_shape():
     features, masks, labels = _make_data()
     train_idx, val_idx, test_idx = _splits()
     mlp = EarlyFusionMLP(hidden_dims=[32, 16], epochs=3, patience=2, device=torch.device("cpu"))
-    mlp.fit(features[train_idx], masks[train_idx], labels[train_idx],
-            features[val_idx], masks[val_idx], labels[val_idx])
+    mlp.fit(
+        features[train_idx], masks[train_idx], labels[train_idx], features[val_idx], masks[val_idx], labels[val_idx]
+    )
     probs = mlp.predict_proba(features[test_idx], masks[test_idx])
     assert probs.shape == (len(test_idx),)
     assert np.all(probs >= 0.0) and np.all(probs <= 1.0)
@@ -64,6 +64,7 @@ def test_early_fusion_mlp_unfitted_raises():
 # ---------------------------------------------------------------------------
 # LateFusionEnsemble
 # ---------------------------------------------------------------------------
+
 
 def test_late_fusion_ensemble_output_shape():
     features, masks, labels = _make_data()
@@ -92,6 +93,7 @@ def test_late_fusion_ensemble_all_missing_domain():
 # RandomForestFusion
 # ---------------------------------------------------------------------------
 
+
 def test_random_forest_output_shape():
     features, masks, labels = _make_data()
     train_idx, _, test_idx = _splits()
@@ -105,6 +107,7 @@ def test_random_forest_output_shape():
 # ---------------------------------------------------------------------------
 # ConfidenceWeightedMean
 # ---------------------------------------------------------------------------
+
 
 def test_confidence_weighted_mean_bounds():
     features, masks, labels = _make_data()
@@ -127,10 +130,10 @@ def test_confidence_weighted_mean_all_missing_fallback():
 
 def test_confidence_weighted_mean_sharpness_ordering():
     """Domain with higher score deviation should get more weight."""
-    rng = np.random.default_rng(42)
+    np.random.default_rng(42)
     # 2-domain case: domain 0 has high scores (far from 0.5), domain 1 near 0.5
     features = np.zeros((10, 2, 3), dtype=np.float32)
-    features[:, 0, 0] = 0.9   # sharp, high anomaly signal
+    features[:, 0, 0] = 0.9  # sharp, high anomaly signal
     features[:, 1, 0] = 0.52  # near 0.5, almost no signal
     masks = np.zeros((10, 2), dtype=bool)
     labels = np.ones(10)
@@ -145,12 +148,17 @@ def test_confidence_weighted_mean_sharpness_ordering():
 # run_baseline_suite integration
 # ---------------------------------------------------------------------------
 
+
 def test_run_baseline_suite_keys():
     features, masks, labels = _make_data()
     train_idx, val_idx, test_idx = _splits()
     results = run_baseline_suite(
-        features, masks, labels,
-        train_idx, val_idx, test_idx,
+        features,
+        masks,
+        labels,
+        train_idx,
+        val_idx,
+        test_idx,
         score_index=SCORE_IDX,
         device=torch.device("cpu"),
     )

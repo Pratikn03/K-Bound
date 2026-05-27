@@ -56,15 +56,14 @@ def _method_label(name: str | None) -> str:
     return labels.get(str(name), str(name or "--"))
 
 
-def _cell(payload: dict, comp_idx: dict | None = None, lookup_key: tuple[str, str] | None = None) -> dict[str, float | str | None]:
+def _cell(
+    payload: dict, comp_idx: dict | None = None, lookup_key: tuple[str, str] | None = None
+) -> dict[str, float | str | None]:
     """Phase 1.1: read validation-frozen comparator from audit CSV; no test-winner argmax."""
     cs = payload.get("clean_metric_summary", {})
     static = _dig(cs, "static_attention", "roc_auc", "mean")
     rga = _dig(cs, "craf_attention", "roc_auc", "mean")
-    boosted_rows = [
-        row.get("rga_boosted_fusion", {})
-        for row in payload.get("table_1_clean_performance", [])
-    ]
+    boosted_rows = [row.get("rga_boosted_fusion", {}) for row in payload.get("table_1_clean_performance", [])]
     boosted_applicable = any(row.get("selected_candidate") != "constant" for row in boosted_rows)
     rga_plus = _dig(cs, "rga_boosted_fusion", "roc_auc", "mean") if boosted_applicable else None
 
@@ -116,6 +115,7 @@ def render_table(repo_root: Path) -> str:
     """Phase 1.1: render milestone1 comparison using the validation-frozen
     primary comparator (Phase 1.C audit CSV) instead of post-hoc test-winner."""
     import csv
+
     comp_path = repo_root / "experiments/audit/audited_comparator_selection.csv"
     comp_idx: dict[tuple[str, str], dict] = {}
     if comp_path.exists():
@@ -136,7 +136,7 @@ def render_table(repo_root: Path) -> str:
         r"\midrule",
     ]
     for scorer, protocol, rel_path in VARIANTS:
-        full_path = (repo_root / rel_path)
+        full_path = repo_root / rel_path
         if not full_path.exists():
             rows.append(rf"{scorer} & {protocol} & -- & -- & -- & -- & -- & -- & -- & -- \\")
             continue

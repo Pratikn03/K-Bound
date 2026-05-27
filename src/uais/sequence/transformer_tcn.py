@@ -12,7 +12,6 @@ from __future__ import annotations
 
 import copy
 from dataclasses import dataclass
-from typing import Dict, List, Optional, Tuple
 
 import numpy as np
 import torch
@@ -28,7 +27,7 @@ logger = setup_logging(__name__)
 
 @dataclass
 class SequenceModelConfig:
-    model_type: str = "transformer"   # "transformer" | "tcn"
+    model_type: str = "transformer"  # "transformer" | "tcn"
     hidden_dim: int = 64
     n_heads: int = 4
     num_layers: int = 2
@@ -44,7 +43,7 @@ class SequenceModelConfig:
 
 
 class SequenceDataset(Dataset):
-    def __init__(self, sequences: np.ndarray, labels: np.ndarray, mask: Optional[np.ndarray] = None) -> None:
+    def __init__(self, sequences: np.ndarray, labels: np.ndarray, mask: np.ndarray | None = None) -> None:
         self.sequences = torch.tensor(sequences, dtype=torch.float32)
         self.labels = torch.tensor(labels, dtype=torch.float32)
         if mask is not None:
@@ -55,7 +54,7 @@ class SequenceDataset(Dataset):
     def __len__(self) -> int:  # pragma: no cover
         return len(self.labels)
 
-    def __getitem__(self, idx: int) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
+    def __getitem__(self, idx: int) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
         return self.sequences[idx], self.mask[idx], self.labels[idx]
 
 
@@ -84,7 +83,7 @@ class TransformerClassifier(nn.Module):
         self.drop = nn.Dropout(dropout)
         self.fc = nn.Linear(hidden_dim, 1)
 
-    def forward(self, x: torch.Tensor, mask: Optional[torch.Tensor] = None) -> torch.Tensor:
+    def forward(self, x: torch.Tensor, mask: torch.Tensor | None = None) -> torch.Tensor:
         x = self.proj(x)  # (batch, seq, hidden_dim)
         # src_key_padding_mask: True where the token should be ignored (i.e. padding)
         pad_mask = (mask == 0) if mask is not None else None
@@ -131,7 +130,7 @@ class TCNClassifier(nn.Module):
         self.pool = nn.AdaptiveAvgPool1d(1)
         self.fc = nn.Linear(hidden_dim, 1)
 
-    def forward(self, x: torch.Tensor, mask: Optional[torch.Tensor] = None) -> torch.Tensor:
+    def forward(self, x: torch.Tensor, mask: torch.Tensor | None = None) -> torch.Tensor:
         # x: (batch, seq, feat) → (batch, feat, seq) for Conv1d
         out = x.transpose(1, 2)
         out = self.block1(out)
@@ -143,9 +142,7 @@ class TCNClassifier(nn.Module):
 
 def _build_model(model_type: str, input_dim: int, cfg: SequenceModelConfig) -> nn.Module:
     if model_type == "transformer":
-        return TransformerClassifier(
-            input_dim, cfg.n_heads, cfg.num_layers, cfg.hidden_dim, cfg.dropout
-        )
+        return TransformerClassifier(input_dim, cfg.n_heads, cfg.num_layers, cfg.hidden_dim, cfg.dropout)
     if model_type == "tcn":
         return TCNClassifier(input_dim, cfg.hidden_dim, cfg.dropout)
     raise ValueError(f"Unknown model_type '{model_type}'. Choose 'transformer' or 'tcn'.")
@@ -155,19 +152,17 @@ def _run_epoch(
     model: nn.Module,
     loader: DataLoader,
     criterion: nn.Module,
-    optimizer: Optional[torch.optim.Optimizer],
+    optimizer: torch.optim.Optimizer | None,
     device: torch.device,
     grad_clip: float,
     training: bool,
-) -> Tuple[float, np.ndarray, np.ndarray]:
+) -> tuple[float, np.ndarray, np.ndarray]:
     model.train() if training else model.eval()
     total_loss, all_probs, all_labels = 0.0, [], []
     ctx = torch.enable_grad() if training else torch.no_grad()
     with ctx:
         for batch_x, batch_mask, batch_y in loader:
-            batch_x, batch_mask, batch_y = (
-                batch_x.to(device), batch_mask.to(device), batch_y.to(device)
-            )
+            batch_x, batch_mask, batch_y = (batch_x.to(device), batch_mask.to(device), batch_y.to(device))
             logits = model(batch_x, batch_mask)
             loss = criterion(logits, batch_y)
             if training:
@@ -188,12 +183,12 @@ def _run_epoch(
 def train_sequence_model(
     sequences: np.ndarray,
     labels: np.ndarray,
-    cfg: Optional[SequenceModelConfig] = None,
-    mask: Optional[np.ndarray] = None,
+    cfg: SequenceModelConfig | None = None,
+    mask: np.ndarray | None = None,
     # Legacy dict-based config still accepted
-    config: Optional[Dict] = None,
+    config: dict | None = None,
     model_type: str = "transformer",
-) -> Tuple[nn.Module, Dict[str, float]]:
+) -> tuple[nn.Module, dict[str, float]]:
     """Train a Transformer or TCN sequence classifier with early stopping.
 
     Returns the best checkpoint (by val AUROC) and a full metrics dict.
@@ -213,9 +208,7 @@ def train_sequence_model(
 
     torch.manual_seed(cfg.seed)
     idx = np.arange(len(labels))
-    train_idx, val_idx = train_test_split(
-        idx, test_size=cfg.val_size, stratify=labels, random_state=cfg.seed
-    )
+    train_idx, val_idx = train_test_split(idx, test_size=cfg.val_size, stratify=labels, random_state=cfg.seed)
 
     train_ds = SequenceDataset(sequences[train_idx], labels[train_idx], mask[train_idx])
     val_ds = SequenceDataset(sequences[val_idx], labels[val_idx], mask[val_idx])
@@ -226,22 +219,16 @@ def train_sequence_model(
     input_dim = sequences.shape[-1]
     model = _build_model(cfg.model_type, input_dim, cfg).to(device)
 
-    pos_weight = torch.tensor(
-        [(labels == 0).sum() / max((labels == 1).sum(), 1)], device=device
-    )
+    pos_weight = torch.tensor([(labels == 0).sum() / max((labels == 1).sum(), 1)], device=device)
     criterion = nn.BCEWithLogitsLoss(pos_weight=pos_weight)
     optimizer = torch.optim.AdamW(model.parameters(), lr=cfg.lr, weight_decay=cfg.weight_decay)
-    scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(
-        optimizer, mode="max", factor=0.5, patience=2
-    )
+    scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode="max", factor=0.5, patience=2)
 
     best_auroc, best_state, patience_left = -1.0, None, cfg.patience
-    history: Dict[str, List[float]] = {"train_loss": [], "val_loss": [], "val_auroc": []}
+    history: dict[str, list[float]] = {"train_loss": [], "val_loss": [], "val_auroc": []}
 
     for epoch in range(cfg.epochs):
-        train_loss, _, _ = _run_epoch(
-            model, train_loader, criterion, optimizer, device, cfg.grad_clip, training=True
-        )
+        train_loss, _, _ = _run_epoch(model, train_loader, criterion, optimizer, device, cfg.grad_clip, training=True)
         val_loss, val_probs, val_labels_arr = _run_epoch(
             model, val_loader, criterion, None, device, cfg.grad_clip, training=False
         )
@@ -255,7 +242,12 @@ def train_sequence_model(
         scheduler.step(val_auroc)
         logger.info(
             "%s epoch %d/%d  train_loss=%.4f  val_loss=%.4f  val_auroc=%.4f",
-            cfg.model_type.upper(), epoch + 1, cfg.epochs, train_loss, val_loss, val_auroc,
+            cfg.model_type.upper(),
+            epoch + 1,
+            cfg.epochs,
+            train_loss,
+            val_loss,
+            val_auroc,
         )
 
         if val_auroc > best_auroc:
@@ -280,7 +272,7 @@ def train_sequence_model(
 def predict_sequence_model(
     model: nn.Module,
     sequences: np.ndarray,
-    mask: Optional[np.ndarray] = None,
+    mask: np.ndarray | None = None,
 ) -> np.ndarray:
     if mask is None:
         mask = np.ones((len(sequences), sequences.shape[1]), dtype=np.float32)

@@ -44,17 +44,18 @@ MODALITIES = ["rgb", "depth"]
 EMBED_DIM = 16
 
 
-def _score_modality(train_feats: np.ndarray,
-                     query_feats: np.ndarray) -> np.ndarray:
+def _score_modality(train_feats: np.ndarray, query_feats: np.ndarray) -> np.ndarray:
     """Cosine-distance-to-nearest-memory-bank entry, then z-norm vs train."""
+
     # Normalise rows
     def _norm(x):
         return x / (np.linalg.norm(x, axis=1, keepdims=True) + 1e-12)
+
     train_n = _norm(train_feats)
     query_n = _norm(query_feats)
     # Cosine similarity, distance = 1 - sim
-    sims = query_n @ train_n.T            # [Q, T]
-    dist = 1.0 - sims.max(axis=1)         # [Q]; near-zero for in-distribution
+    sims = query_n @ train_n.T  # [Q, T]
+    dist = 1.0 - sims.max(axis=1)  # [Q]; near-zero for in-distribution
     # Calibrate against train-on-train distances (leave-one-out approx via second-best)
     train_sims = train_n @ train_n.T
     np.fill_diagonal(train_sims, -np.inf)
@@ -73,7 +74,7 @@ def _pca_directions(feats: np.ndarray, k: int) -> np.ndarray:
     X = feats - mu
     # Truncated SVD
     U, S, Vt = np.linalg.svd(X, full_matrices=False)
-    return Vt[:k]   # [k, D]
+    return Vt[:k]  # [k, D]
 
 
 def _build_one_category(cat: str, writer) -> None:
@@ -129,7 +130,7 @@ def _build_one_category(cat: str, writer) -> None:
     label_rule = {
         "train": 0,
         "val": 0,
-        "test_public": -1,    # placeholder; meaningless until final-metric step
+        "test_public": -1,  # placeholder; meaningless until final-metric step
         "test_private": -1,
     }
 
@@ -138,8 +139,10 @@ def _build_one_category(cat: str, writer) -> None:
         lbl = label_rule[split]
         for i, sid in enumerate(d["sample_ids"]):
             unique_sample = f"{cat}__{split}__{sid}"
-            for mod, scr_arr, emb_arr in (("rgb", d["rgb_score"], d["rgb_emb"]),
-                                            ("depth", d["depth_score"], d["depth_emb"])):
+            for mod, scr_arr, emb_arr in (
+                ("rgb", d["rgb_score"], d["rgb_emb"]),
+                ("depth", d["depth_score"], d["depth_emb"]),
+            ):
                 row = {
                     "sample_id": unique_sample,
                     "fusion_split": fs,
@@ -158,9 +161,9 @@ def _build_one_category(cat: str, writer) -> None:
 
 def main() -> int:
     OUT_CSV.parent.mkdir(parents=True, exist_ok=True)
-    fields = (["sample_id", "fusion_split", "category", "domain", "label",
-               "source_row", "score", "confidence"]
-              + [f"embedding_{j}" for j in range(EMBED_DIM)])
+    fields = ["sample_id", "fusion_split", "category", "domain", "label", "source_row", "score", "confidence"] + [
+        f"embedding_{j}" for j in range(EMBED_DIM)
+    ]
     with OUT_CSV.open("w", newline="") as f:
         w = csv.DictWriter(f, fieldnames=fields)
         w.writeheader()

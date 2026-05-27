@@ -35,6 +35,7 @@ def test_final_decision_forbids_rga_v2_promotion_when_no_candidate_passes_c1():
     t = DEC.read_text()
     # Identify the chosen decision by locating the heading-format string.
     import re
+
     m = re.search(r"## Decision:\s*\**`([A-Z_0-9]+)`\**", t)
     assert m is not None, "decision file must contain a '## Decision: `<LABEL>`' line"
     chosen = m.group(1)

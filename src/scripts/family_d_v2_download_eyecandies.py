@@ -21,7 +21,6 @@ from __future__ import annotations
 
 import argparse
 import hashlib
-import os
 import subprocess
 import sys
 from pathlib import Path
@@ -56,8 +55,7 @@ def _sha256(path: Path) -> str:
 
 def main() -> int:
     p = argparse.ArgumentParser(description=__doc__)
-    p.add_argument("--only", default=None,
-                   help="comma-separated subset of category names (else all 10)")
+    p.add_argument("--only", default=None, help="comma-separated subset of category names (else all 10)")
     args = p.parse_args()
     ARCHIVE_DIR.mkdir(parents=True, exist_ok=True)
     HASH_FILE.parent.mkdir(parents=True, exist_ok=True)
@@ -75,9 +73,14 @@ def main() -> int:
         else:
             print(f"[{cat}] downloading via gdown...", flush=True)
             r = subprocess.run(
-                [sys.executable, "-m", "gdown",
-                 f"https://drive.google.com/uc?id={DATA_IDS[cat]}",
-                 "-O", str(archive_path)],
+                [
+                    sys.executable,
+                    "-m",
+                    "gdown",
+                    f"https://drive.google.com/uc?id={DATA_IDS[cat]}",
+                    "-O",
+                    str(archive_path),
+                ],
                 check=False,
             )
             if r.returncode != 0 or not archive_path.exists():

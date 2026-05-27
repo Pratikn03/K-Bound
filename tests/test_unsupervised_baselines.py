@@ -6,14 +6,22 @@ import numpy as np
 import pytest
 
 from uais.fusion.attention.unsupervised_baselines import (
-    AEConfig, BGMMConfig, GMMConfig, IForestConfig, KMeansConfig,
-    LOFConfig, OCSVMConfig,
-    AutoencoderAnomalyDetector, BGMMAnomalyDetector, GMMAnomalyDetector,
-    IsolationForestDetector, KMeansAnomalyDetector, LOFAnomalyDetector,
+    AEConfig,
+    AutoencoderAnomalyDetector,
+    BGMMAnomalyDetector,
+    BGMMConfig,
+    GMMAnomalyDetector,
+    GMMConfig,
+    IForestConfig,
+    IsolationForestDetector,
+    KMeansAnomalyDetector,
+    KMeansConfig,
+    LOFAnomalyDetector,
+    LOFConfig,
+    OCSVMConfig,
     OneClassSVMDetector,
     run_unsupervised_suite,
 )
-
 
 N, D, F = 200, 3, 4
 
@@ -45,12 +53,12 @@ def split():
 # ---------------------------------------------------------------------------
 
 DETECTORS = [
-    ("bgmm",        BGMMAnomalyDetector, BGMMConfig),
-    ("gmm",         GMMAnomalyDetector, GMMConfig),
-    ("kmeans",      KMeansAnomalyDetector, KMeansConfig),
-    ("iforest",     IsolationForestDetector, IForestConfig),
-    ("ocsvm",       OneClassSVMDetector, OCSVMConfig),
-    ("lof",         LOFAnomalyDetector, LOFConfig),
+    ("bgmm", BGMMAnomalyDetector, BGMMConfig),
+    ("gmm", GMMAnomalyDetector, GMMConfig),
+    ("kmeans", KMeansAnomalyDetector, KMeansConfig),
+    ("iforest", IsolationForestDetector, IForestConfig),
+    ("ocsvm", OneClassSVMDetector, OCSVMConfig),
+    ("lof", LOFAnomalyDetector, LOFConfig),
     ("autoencoder", AutoencoderAnomalyDetector, AEConfig),
 ]
 
@@ -136,17 +144,21 @@ def test_fit_without_normals_raises():
 # Suite runner — all detectors at once
 # ---------------------------------------------------------------------------
 
+
 def test_run_unsupervised_suite(data, split):
     features, masks, labels = data
     train_idx, test_idx = split
     results = run_unsupervised_suite(
-        features, masks, labels, train_idx, test_idx,
+        features,
+        masks,
+        labels,
+        train_idx,
+        test_idx,
         ae_cfg=AEConfig(epochs=3),
     )
-    expected_keys = {"bgmm", "gmm", "kmeans", "isolation_forest",
-                     "one_class_svm", "lof", "autoencoder"}
+    expected_keys = {"bgmm", "gmm", "kmeans", "isolation_forest", "one_class_svm", "lof", "autoencoder"}
     assert set(results.keys()) == expected_keys
-    for name, metrics_d in results.items():
+    for _name, metrics_d in results.items():
         if "error" in metrics_d:
             continue
         assert "roc_auc" in metrics_d

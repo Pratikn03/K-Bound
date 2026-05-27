@@ -35,23 +35,20 @@ PipelineGuard
 from __future__ import annotations
 
 import hashlib
-import warnings
 from contextlib import contextmanager
-from typing import Dict, List, Tuple
 
 import numpy as np
-
 
 # ---------------------------------------------------------------------------
 # Hash helpers
 # ---------------------------------------------------------------------------
 
+
 def _row_hashes(X: np.ndarray) -> np.ndarray:
     """Return a [N] array of stable per-row hashes (8-byte hex strings)."""
     X = np.ascontiguousarray(X)
     return np.array(
-        [hashlib.blake2b(row.tobytes(), digest_size=8).hexdigest()
-         for row in X.reshape(X.shape[0], -1)],
+        [hashlib.blake2b(row.tobytes(), digest_size=8).hexdigest() for row in X.reshape(X.shape[0], -1)],
         dtype=object,
     )
 
@@ -60,9 +57,8 @@ def _row_hashes(X: np.ndarray) -> np.ndarray:
 # Contamination checks
 # ---------------------------------------------------------------------------
 
-def check_train_test_contamination(
-    train_X: np.ndarray, test_X: np.ndarray
-) -> Dict[str, float]:
+
+def check_train_test_contamination(train_X: np.ndarray, test_X: np.ndarray) -> dict[str, float]:
     """Detect rows that appear in BOTH train and test (verbatim duplicates)."""
     th = set(_row_hashes(train_X).tolist())
     test_hashes = _row_hashes(test_X)
@@ -76,9 +72,11 @@ def check_train_test_contamination(
 
 
 def check_label_overlap(
-    train_X: np.ndarray, train_y: np.ndarray,
-    test_X: np.ndarray, test_y: np.ndarray,
-) -> Dict[str, int]:
+    train_X: np.ndarray,
+    train_y: np.ndarray,
+    test_X: np.ndarray,
+    test_y: np.ndarray,
+) -> dict[str, int]:
     """Find samples whose features match across splits but with differing labels.
 
     A non-zero count indicates corrupted preprocessing or label noise.
@@ -87,7 +85,7 @@ def check_label_overlap(
     test_y = np.asarray(test_y)
     h_train = _row_hashes(train_X)
     h_test = _row_hashes(test_X)
-    train_map: Dict[str, int] = {h: int(y) for h, y in zip(h_train, train_y)}
+    train_map: dict[str, int] = {h: int(y) for h, y in zip(h_train, train_y)}
     conflicts = 0
     for h, y in zip(h_test, test_y):
         if h in train_map and train_map[h] != int(y):
@@ -124,19 +122,24 @@ def assert_normal_only_training(train_y: np.ndarray) -> None:
 # Result-level warnings
 # ---------------------------------------------------------------------------
 
+
 def flag_suspicious_metrics(
-    metrics_dict: Dict[str, float],
+    metrics_dict: dict[str, float],
     auc_threshold: float = 0.99,
     f1_threshold: float = 0.99,
-) -> List[str]:
+) -> list[str]:
     """Return a list of warning strings if any metric looks unrealistically high.
 
     Addresses reviewer concern: 'A perfect AUC strongly suggests ... data
     leakage, overfitting, or memorization.'
     """
-    warnings_list: List[str] = []
-    for key, thr in (("roc_auc", auc_threshold), ("pr_auc", auc_threshold),
-                      ("f1", f1_threshold), ("accuracy", f1_threshold)):
+    warnings_list: list[str] = []
+    for key, thr in (
+        ("roc_auc", auc_threshold),
+        ("pr_auc", auc_threshold),
+        ("f1", f1_threshold),
+        ("accuracy", f1_threshold),
+    ):
         v = metrics_dict.get(key)
         if v is None:
             continue
@@ -156,6 +159,7 @@ def flag_suspicious_metrics(
 # PipelineGuard — assert split happens before preprocessing
 # ---------------------------------------------------------------------------
 
+
 class PipelineGuard:
     """Records pre-split hashes and verifies the test set is never preprocessed.
 
@@ -169,8 +173,8 @@ class PipelineGuard:
     """
 
     def __init__(self) -> None:
-        self._train_hashes_at_split: List[str] = []
-        self._test_hashes_at_split: List[str] = []
+        self._train_hashes_at_split: list[str] = []
+        self._test_hashes_at_split: list[str] = []
 
     def record_split(self, train_X: np.ndarray, test_X: np.ndarray) -> None:
         self._train_hashes_at_split = _row_hashes(train_X).tolist()

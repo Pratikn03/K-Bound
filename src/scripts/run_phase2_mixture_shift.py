@@ -62,6 +62,7 @@ def _validate(eid: str, row: dict[str, str]) -> None:
 
 def _device():
     import torch
+
     if torch.backends.mps.is_available():
         return torch.device("mps")
     if torch.cuda.is_available():
@@ -73,7 +74,7 @@ def _generate_target_proportions(n_mixtures: int, seed: int) -> list[dict[str, f
     """Generate n_mixtures distinct target proportion dicts over the 4 domains."""
     rng = np.random.default_rng(seed)
     proportions = []
-    for i in range(n_mixtures):
+    for _i in range(n_mixtures):
         # Draw Dirichlet-like weights (uniform Dirichlet alpha=1)
         raw = rng.dirichlet(np.ones(len(DOMAIN_NAMES)))
         props = {name: float(raw[j]) for j, name in enumerate(DOMAIN_NAMES)}
@@ -98,17 +99,10 @@ def _compute_gate_fire_rates(
     mean_r = float(np.nanmean(weights))
     global_fire = float(mean_r < tau_mean)
 
-    # Domain-aware gate fire: try CategoryAwareReliabilityEstimator if available
-    try:
-        from uais.fusion.attention.reliability_estimator import CategoryAwareReliabilityEstimator
-        # CategoryAwareReliabilityEstimator has per-category reference; use it
-        # For the domain-aware rate, we compute per-sample reliability then aggregate
-        if hasattr(estimator, "category_aware") and estimator.category_aware:
-            # Use the same estimator but check category-level consistency
-            domain_fire_rate = global_fire  # Same estimator fallback
-        else:
-            domain_fire_rate = global_fire
-    except ImportError:
+    # Domain-aware gate fire currently follows the same estimator fallback.
+    if hasattr(estimator, "category_aware") and estimator.category_aware:
+        domain_fire_rate = global_fire
+    else:
         domain_fire_rate = global_fire
 
     return {
@@ -125,8 +119,13 @@ def run_one_seed_mixture_shift(
 ) -> list[dict]:
     """Train model + estimator for one seed, evaluate gate under n_mixtures domain shifts."""
     from scripts.run_breakthrough_experiment import (
-        _build_model, _load_data, _make_loaders, _make_reliability_estimator,
-        _split, _train_model, set_seed,
+        _build_model,
+        _load_data,
+        _make_loaders,
+        _make_reliability_estimator,
+        _split,
+        _train_model,
+        set_seed,
     )
 
     device = _device()
@@ -135,12 +134,15 @@ def run_one_seed_mixture_shift(
     cfg_seed["training"] = dict(cfg.get("training", {}))
     cfg_seed["training"]["seed"] = int(seed)
 
-    (features, masks, labels, sample_ids, domain_order, _, conf_idx,
-     score_idx, sample_splits, _) = _load_data(cfg_seed)
-    train_idx, val_idx, test_idx = _split(labels, cfg_seed["training"],
-                                          split_values=sample_splits)
+    features, masks, labels, sample_ids, domain_order, _, conf_idx, score_idx, sample_splits, _ = _load_data(cfg_seed)
+    train_idx, val_idx, test_idx = _split(labels, cfg_seed["training"], split_values=sample_splits)
     train_loader, val_loader, _ = _make_loaders(
-        features, masks, labels, train_idx, val_idx, test_idx,
+        features,
+        masks,
+        labels,
+        train_idx,
+        val_idx,
+        test_idx,
         batch_size=int(cfg_seed["training"].get("batch_size", 64)),
     )
     model = _build_model(cfg_seed, features.shape[1], features.shape[2], conf_idx, device)
@@ -148,9 +150,7 @@ def run_one_seed_mixture_shift(
     model.eval()
 
     rel_cfg = cfg_seed.get("reliability", {})
-    estimator = _make_reliability_estimator(
-        rel_cfg, list(domain_order) or DOMAIN_NAMES, score_idx
-    )
+    estimator = _make_reliability_estimator(rel_cfg, list(domain_order) or DOMAIN_NAMES, score_idx)
     estimator.fit(features[train_idx], masks[train_idx], labels[train_idx])
 
     # Get domain labels for test-fold samples
@@ -162,19 +162,18 @@ def run_one_seed_mixture_shift(
     # that has the highest confidence (non-masked, highest score feature).
     test_feat = features[test_idx]
     test_mask = masks[test_idx]  # [N, D], True = missing
-    test_labels_arr = labels[test_idx]
+    labels[test_idx]
 
     # Assign domain category per test sample: lowest missing-mask index (primary domain)
     # Since masks are boolean (True=missing), the "present" domains are mask=False
     # The category is the position of the first non-missing domain
-    D = test_mask.shape[1]
-    cat_arr = np.array([
-        list(domain_order)[
-            int(np.argmin(row))  # first present (non-missing) domain
-            if not all(row) else 0
+    test_mask.shape[1]
+    cat_arr = np.array(
+        [
+            list(domain_order)[int(np.argmin(row)) if not all(row) else 0]  # first present (non-missing) domain
+            for row in test_mask
         ]
-        for row in test_mask
-    ])
+    )
 
     # Get scores for invariance check (mean of score feature across domains)
     # score_idx is the index within the feature vector F
@@ -227,18 +226,20 @@ def run_one_seed_mixture_shift(
 
         reduction_delta = fire_rates["domain_aware_fire_rate"] - fire_rates["global_ks_fire_rate"]
 
-        rows.append({
-            "seed": seed,
-            "mixture_id": mix_i,
-            "target_props_json": json.dumps({k: round(v, 4) for k, v in filtered_props.items()}),
-            "actual_props_json": json.dumps({k: round(v, 4) for k, v in resample.actual_proportions.items()}),
-            "n_samples": len(indices),
-            "global_ks_fire_rate": f"{fire_rates['global_ks_fire_rate']:.4f}",
-            "domain_aware_fire_rate": f"{fire_rates['domain_aware_fire_rate']:.4f}",
-            "reduction_delta": f"{reduction_delta:.4f}",
-            "invariance_check_passed": str(invariance_ok),
-            "status": "computed",
-        })
+        rows.append(
+            {
+                "seed": seed,
+                "mixture_id": mix_i,
+                "target_props_json": json.dumps({k: round(v, 4) for k, v in filtered_props.items()}),
+                "actual_props_json": json.dumps({k: round(v, 4) for k, v in resample.actual_proportions.items()}),
+                "n_samples": len(indices),
+                "global_ks_fire_rate": f"{fire_rates['global_ks_fire_rate']:.4f}",
+                "domain_aware_fire_rate": f"{fire_rates['domain_aware_fire_rate']:.4f}",
+                "reduction_delta": f"{reduction_delta:.4f}",
+                "invariance_check_passed": str(invariance_ok),
+                "status": "computed",
+            }
+        )
 
     return rows
 
@@ -248,8 +249,9 @@ def main() -> int:
     p.add_argument("--experiment-id", required=True)
     p.add_argument("--seeds", type=int, default=5)
     p.add_argument("--seed-start", type=int, default=42)
-    p.add_argument("--mixture-shifts", type=int, default=10,
-                   help="number of distinct target-proportion mixtures per seed")
+    p.add_argument(
+        "--mixture-shifts", type=int, default=10, help="number of distinct target-proportion mixtures per seed"
+    )
     args = p.parse_args()
 
     row = _registry_row(args.experiment_id)
@@ -258,16 +260,27 @@ def main() -> int:
         print(f"[b-mech-3 {args.experiment_id}] validation-only invocation; exiting OK")
         return 0
 
-    print(f"[b-mech-3S {args.experiment_id}] "
-          f"Exploratory Domain-Composition Shift False-Fire Audit "
-          f"(category_column=domain, {args.seeds} seeds, {args.mixture_shifts} mixtures/seed)")
+    print(
+        f"[b-mech-3S {args.experiment_id}] "
+        f"Exploratory Domain-Composition Shift False-Fire Audit "
+        f"(category_column=domain, {args.seeds} seeds, {args.mixture_shifts} mixtures/seed)"
+    )
 
     cfg = yaml.safe_load(ELARA_BENCH_LA_CONFIG.read_text())
     OUT_DIR.mkdir(parents=True, exist_ok=True)
 
-    fields = ["seed", "mixture_id", "target_props_json", "actual_props_json",
-              "n_samples", "global_ks_fire_rate", "domain_aware_fire_rate",
-              "reduction_delta", "invariance_check_passed", "status"]
+    fields = [
+        "seed",
+        "mixture_id",
+        "target_props_json",
+        "actual_props_json",
+        "n_samples",
+        "global_ks_fire_rate",
+        "domain_aware_fire_rate",
+        "reduction_delta",
+        "invariance_check_passed",
+        "status",
+    ]
     new = not SHIFT_METRICS_CSV.exists()
     out_f = SHIFT_METRICS_CSV.open("a", newline="")
     w = csv.DictWriter(out_f, fieldnames=fields)

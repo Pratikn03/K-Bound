@@ -523,7 +523,14 @@ def build_plan(
                 Step(
                     name="verify_metadata_tests",
                     group="verify",
-                    command=(py, "-m", "pytest", "tests/test_paper_asset_metadata.py", "tests/test_healthcare_gap_closure.py", "-q"),
+                    command=(
+                        py,
+                        "-m",
+                        "pytest",
+                        "tests/test_paper_asset_metadata.py",
+                        "tests/test_healthcare_gap_closure.py",
+                        "-q",
+                    ),
                     description="Run focused manuscript/healthcare regression tests.",
                 ),
                 Step(
@@ -655,7 +662,11 @@ def main() -> None:
     parser.add_argument("--dry-run", action="store_true", help="Print and summarize the plan without executing steps.")
     parser.add_argument("--continue-on-error", action="store_true", help="Continue after failed executable steps.")
     parser.add_argument("--include-deprecated-dashboard", action="store_true", help="Also run legacy dashboard fusion.")
-    parser.add_argument("--include-optional-nlp-vision", action="store_true", help="Run optional NLP/vision standalone scripts when data exists.")
+    parser.add_argument(
+        "--include-optional-nlp-vision",
+        action="store_true",
+        help="Run optional NLP/vision standalone scripts when data exists.",
+    )
     parser.add_argument("--with-tests", action="store_true", help="Append focused tests and ruff correctness checks.")
     parser.add_argument("--summary", type=Path, default=DEFAULT_SUMMARY)
     parser.add_argument("--logs-dir", type=Path, default=Path("experiments/union_research_system/logs"))

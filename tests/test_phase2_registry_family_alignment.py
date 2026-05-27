@@ -29,12 +29,8 @@ def test_family_a_cells_match_locked_identities():
         assert cell_id in rows, f"missing locked Family-A cell {cell_id}"
         r = rows[cell_id]
         assert r["analysis_family"] == "A", f"{cell_id} not in Family A"
-        assert r["benchmark"] == bench, (
-            f"{cell_id}: benchmark={r['benchmark']!r} (expected {bench!r})"
-        )
-        assert r["protocol"] == proto, (
-            f"{cell_id}: protocol={r['protocol']!r} (expected {proto!r})"
-        )
+        assert r["benchmark"] == bench, f"{cell_id}: benchmark={r['benchmark']!r} (expected {bench!r})"
+        assert r["protocol"] == proto, f"{cell_id}: protocol={r['protocol']!r} (expected {proto!r})"
 
 
 def test_family_a_primary_comparator_is_static_attention_everywhere():
@@ -54,17 +50,11 @@ def test_real3d_and_efficientad_not_in_family_a():
         if r["analysis_family"] == "A":
             bench = r["benchmark"].lower()
             proto = r["protocol"].lower()
-            assert "real3d" not in bench, (
-                f"{r['experiment_id']}: Real3D must not appear in Family A"
-            )
-            assert "efficientad" not in proto, (
-                f"{r['experiment_id']}: EfficientAD must not appear in Family A"
-            )
+            assert "real3d" not in bench, f"{r['experiment_id']}: Real3D must not appear in Family A"
+            assert "efficientad" not in proto, f"{r['experiment_id']}: EfficientAD must not appear in Family A"
 
 
 def test_multiplicity_family_a_powered_k5_has_exactly_five_cells():
     rows = _registry_rows()
     a_powered = [r for r in rows if r["multiplicity_family"] == "A-POWERED-K5"]
-    assert len(a_powered) == 5, (
-        f"A-POWERED-K5 multiplicity family must contain exactly 5 cells; found {len(a_powered)}"
-    )
+    assert len(a_powered) == 5, f"A-POWERED-K5 multiplicity family must contain exactly 5 cells; found {len(a_powered)}"

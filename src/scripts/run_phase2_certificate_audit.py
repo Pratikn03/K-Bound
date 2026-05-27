@@ -38,7 +38,7 @@ ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT / "src"))
 
 from elara.certification import (  # noqa: E402
-    estimate_risk_dominance, fired_subset_certificate,
+    fired_subset_certificate,
 )
 
 REGISTRY_V2 = ROOT / "docs" / "research" / "phase2" / "PHASE_2_EXPERIMENT_REGISTRY_v2.csv"
@@ -106,9 +106,9 @@ def _pair_static_and_rga(scan: dict[str, list[Path]]) -> dict[str, dict]:
     return scenarios
 
 
-def _compute_one_scenario(scenario_id: str,
-                          static_per_seed: dict[int, pd.DataFrame],
-                          rga_per_seed: dict[int, pd.DataFrame]) -> tuple[dict, dict]:
+def _compute_one_scenario(
+    scenario_id: str, static_per_seed: dict[int, pd.DataFrame], rga_per_seed: dict[int, pd.DataFrame]
+) -> tuple[dict, dict]:
     """Return (risk_dominance_row, certificate_row) for one (attack, k)."""
     seeds = sorted(set(static_per_seed) & set(rga_per_seed))
     if not seeds:
@@ -176,9 +176,9 @@ def _compute_one_scenario(scenario_id: str,
     rd_row = {
         "scenario_id": scenario_id,
         "note": "per-scenario risk-dominance requires paired (clean, degraded) folds; "
-                 "B-MECH-1 archives every scenario as a 'degraded' arm only. "
-                 "Risk-dominance (q0,q1,Δ0,Δ1,π*) is therefore not computable from a single arm; "
-                 "see fired-subset certificate column for the executable retrospective evidence.",
+        "B-MECH-1 archives every scenario as a 'degraded' arm only. "
+        "Risk-dominance (q0,q1,Δ0,Δ1,π*) is therefore not computable from a single arm; "
+        "see fired-subset certificate column for the executable retrospective evidence.",
     }
     return rd_row, cert_row
 
@@ -186,12 +186,15 @@ def _compute_one_scenario(scenario_id: str,
 def main() -> int:
     p = argparse.ArgumentParser(description=__doc__)
     p.add_argument("--experiment-id", required=True)
-    p.add_argument("--out-terms", type=Path,
-                   default=ROOT / "experiments" / "phase2" / "certification" / "risk_dominance_terms.csv")
-    p.add_argument("--out-certs", type=Path,
-                   default=ROOT / "experiments" / "phase2" / "certification" / "switching_certificates.csv")
-    p.add_argument("--dry-run", action="store_true",
-                   help="validate inputs without writing")
+    p.add_argument(
+        "--out-terms", type=Path, default=ROOT / "experiments" / "phase2" / "certification" / "risk_dominance_terms.csv"
+    )
+    p.add_argument(
+        "--out-certs",
+        type=Path,
+        default=ROOT / "experiments" / "phase2" / "certification" / "switching_certificates.csv",
+    )
+    p.add_argument("--dry-run", action="store_true", help="validate inputs without writing")
     args = p.parse_args()
     row = _registry_row(args.experiment_id)
     _validate(args.experiment_id, row)
@@ -226,11 +229,13 @@ def main() -> int:
         rd_row, cert_row = _compute_one_scenario(scenario_id, static_per_seed, rga_per_seed)
         rd_rows.append(rd_row)
         cert_rows.append(cert_row)
-        print(f"[b-cert-1] scenario={scenario_id}: "
-              f"n_fired={cert_row['n_fired_samples']}  "
-              f"mean_benefit={cert_row['mean_paired_benefit']:+.4f}  "
-              f"LCB={cert_row['bootstrap_lcb']:+.4f}  "
-              f"certified={cert_row['certified']}")
+        print(
+            f"[b-cert-1] scenario={scenario_id}: "
+            f"n_fired={cert_row['n_fired_samples']}  "
+            f"mean_benefit={cert_row['mean_paired_benefit']:+.4f}  "
+            f"LCB={cert_row['bootstrap_lcb']:+.4f}  "
+            f"certified={cert_row['certified']}"
+        )
 
     if rd_rows:
         with args.out_terms.open("w", newline="") as f:

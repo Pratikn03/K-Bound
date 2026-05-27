@@ -59,6 +59,6 @@ def test_v2_claim_boundary_is_documented_explicitly():
         "may not",
         "not entitled",
     )
-    assert any(s in t for s in require_any), (
-        "v2 design status must explicitly state what Family-D success may not unlock"
-    )
+    assert any(
+        s in t for s in require_any
+    ), "v2 design status must explicitly state what Family-D success may not unlock"

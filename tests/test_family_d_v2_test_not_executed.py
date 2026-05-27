@@ -30,6 +30,4 @@ def test_no_family_d_execution_output_anywhere():
     )
     for marker in forbidden_markers:
         for p in PHASE2.glob("**/*"):
-            assert marker.lower() not in p.name.lower(), (
-                f"forbidden Family-D execution marker in file: {p}"
-            )
+            assert marker.lower() not in p.name.lower(), f"forbidden Family-D execution marker in file: {p}"

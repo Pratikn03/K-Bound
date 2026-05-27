@@ -16,14 +16,13 @@ from __future__ import annotations
 
 import argparse
 import json
+from collections.abc import Iterable
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Iterable
 
 import numpy as np
 import pandas as pd
 from PIL import Image, UnidentifiedImageError
-
 
 DOMAIN_ORDER = ["rgb", "depth_or_xyz"]
 DEPTH_DIR_NAMES = ("xyz", "depth", "depth_or_xyz")
@@ -276,18 +275,14 @@ def build_mvtec3d_fusion_frame(
         for idx in test_indices:
             key = (pair_categories[idx], bool(labels[idx]))
             bucketed.setdefault(key, []).append(idx)
-        for key, indices in bucketed.items():
+        for _key, indices in bucketed.items():
             indices = list(indices)
             rng.shuffle(indices)
             n = len(indices)
             n_test = max(1, int(round(n * supervised_paired_test_fraction))) if n >= 3 else 0
             remaining = n - n_test
             denom = max(1.0 - supervised_paired_test_fraction, 1e-9)
-            n_val = (
-                max(1, int(round(remaining * supervised_paired_val_fraction / denom)))
-                if remaining >= 2
-                else 0
-            )
+            n_val = max(1, int(round(remaining * supervised_paired_val_fraction / denom))) if remaining >= 2 else 0
             for offset, idx in enumerate(indices):
                 if offset < n_test:
                     sp_assignment[idx] = "test"
@@ -305,9 +300,7 @@ def build_mvtec3d_fusion_frame(
         rng = np.random.default_rng(int(heldout_val_seed))
         train_set = set(train_categories)
         eligible_indices = [
-            idx
-            for idx, pair in enumerate(pairs)
-            if pair.category in train_set and pair.split == "test"
+            idx for idx, pair in enumerate(pairs) if pair.category in train_set and pair.split == "test"
         ]
         bucketed: dict[tuple, list[int]] = {}
         for idx in eligible_indices:
@@ -322,9 +315,7 @@ def build_mvtec3d_fusion_frame(
 
     rows = []
     held_out_set = (
-        None
-        if train_categories is None
-        else {cat for cat in pair_categories if cat not in set(train_categories)}
+        None if train_categories is None else {cat for cat in pair_categories if cat not in set(train_categories)}
     )
     for idx, pair in enumerate(pairs):
         # Held-out-category protocol rewrites the split column so the fusion

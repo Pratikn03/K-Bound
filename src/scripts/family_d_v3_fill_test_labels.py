@@ -20,7 +20,6 @@ Usage (one-time, at final-metric step only):
 
 from __future__ import annotations
 
-import io
 import tarfile
 from pathlib import Path
 
@@ -32,8 +31,16 @@ ARCHIVE_DIR = ROOT / "data" / "raw" / "eyecandies" / "_archives"
 FUSION_CSV = ROOT / "experiments" / "fusion" / "eyecandies_inputs.csv"
 
 CATEGORIES = [
-    "CandyCane", "ChocolateCookie", "ChocolatePraline", "Confetto", "GummyBear",
-    "HazelnutTruffle", "LicoriceSandwich", "Lollipop", "Marshmallow", "PeppermintCandy",
+    "CandyCane",
+    "ChocolateCookie",
+    "ChocolatePraline",
+    "Confetto",
+    "GummyBear",
+    "HazelnutTruffle",
+    "LicoriceSandwich",
+    "Lollipop",
+    "Marshmallow",
+    "PeppermintCandy",
 ]
 TEST_SPLITS = ["test_public", "test_private"]
 

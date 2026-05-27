@@ -2,8 +2,6 @@
 
 from __future__ import annotations
 
-from typing import Dict
-
 import numpy as np
 from sklearn import metrics
 
@@ -30,7 +28,7 @@ def expected_calibration_error(y_true: np.ndarray, y_prob: np.ndarray, n_bins: i
     return float(ece)
 
 
-def detection_rate_at_fpr(y_true: np.ndarray, y_prob: np.ndarray, target_fpr: float = 0.01) -> Dict[str, float]:
+def detection_rate_at_fpr(y_true: np.ndarray, y_prob: np.ndarray, target_fpr: float = 0.01) -> dict[str, float]:
     y_true = np.asarray(y_true)
     y_prob = np.asarray(y_prob)
     negatives = y_prob[y_true == 0]
@@ -44,8 +42,8 @@ def detection_rate_at_fpr(y_true: np.ndarray, y_prob: np.ndarray, target_fpr: fl
     return {"tpr_at_fpr": float(tpr), "threshold_at_fpr": float(threshold), "fpr": float(fpr)}
 
 
-def _compute_from_pred_and_prob(y_true: np.ndarray, y_pred: np.ndarray, y_prob: np.ndarray) -> Dict[str, float]:
-    scores: Dict[str, float] = {}
+def _compute_from_pred_and_prob(y_true: np.ndarray, y_pred: np.ndarray, y_prob: np.ndarray) -> dict[str, float]:
+    scores: dict[str, float] = {}
     try:
         scores["roc_auc"] = metrics.roc_auc_score(y_true, y_prob)
     except ValueError:
@@ -85,7 +83,7 @@ def _compute_from_pred_and_prob(y_true: np.ndarray, y_pred: np.ndarray, y_prob: 
     return scores
 
 
-def compute_classification_metrics(y_true: np.ndarray, y_prob: np.ndarray, threshold: float = 0.5) -> Dict[str, float]:
+def compute_classification_metrics(y_true: np.ndarray, y_prob: np.ndarray, threshold: float = 0.5) -> dict[str, float]:
     y_true = np.asarray(y_true)
     y_prob = np.asarray(y_prob)
     y_pred = (y_prob >= threshold).astype(int)
@@ -104,7 +102,7 @@ def classification_metrics(
     y_pred_or_prob: np.ndarray,
     y_prob: np.ndarray | float | None = None,
     threshold: float = 0.5,
-) -> Dict[str, float]:
+) -> dict[str, float]:
     """Backward-compatible wrapper for mixed call signatures."""
     y_true = np.asarray(y_true)
     if y_prob is None:
@@ -167,7 +165,7 @@ def calibration_monitor_report(
     max_ece_delta: float = 0.05,
     max_brier_delta: float = 0.05,
     n_bins: int = 10,
-) -> Dict[str, object]:
+) -> dict[str, object]:
     """Compare deployment calibration against a reference window.
 
     Returns a compact alert report suitable for deployment dashboards or
@@ -214,7 +212,7 @@ def bounded_switching_certificate(
     reliability_loss: np.ndarray,
     fire_decisions: np.ndarray,
     margin_epsilon: float = 0.0,
-) -> Dict[str, float | bool]:
+) -> dict[str, float | bool]:
     """Empirical certificate for when a reliability switch is preferable.
 
     If the gate fires only on samples where the reliability path has positive
@@ -233,11 +231,7 @@ def bounded_switching_certificate(
 
     policy_loss_values = np.where(fire_decisions, reliability_loss, static_loss)
     fired = fire_decisions
-    fired_advantage = (
-        float(np.mean(static_loss[fired] - reliability_loss[fired]))
-        if fired.any()
-        else 0.0
-    )
+    fired_advantage = float(np.mean(static_loss[fired] - reliability_loss[fired])) if fired.any() else 0.0
     static_mean = float(np.mean(static_loss))
     reliability_mean = float(np.mean(reliability_loss))
     policy_mean = float(np.mean(policy_loss_values))
@@ -275,6 +269,7 @@ def reliability_degradation_auc(
 # on missing CIs, statistical comparisons, and leakage detection)
 # ---------------------------------------------------------------------------
 
+
 def bootstrap_metric_ci(
     y_true: np.ndarray,
     y_score: np.ndarray,
@@ -282,7 +277,7 @@ def bootstrap_metric_ci(
     n_resamples: int = 1000,
     alpha: float = 0.05,
     random_state: int = 42,
-) -> Dict[str, float]:
+) -> dict[str, float]:
     """Bootstrap a 1-alpha confidence interval for any (y_true, y_score) metric.
 
     Returns {"mean", "lo", "hi", "std"}.  Use for ROC-AUC, PR-AUC, F1, etc.
@@ -301,8 +296,7 @@ def bootstrap_metric_ci(
         except Exception:
             continue
     if not samples:
-        return {"mean": float("nan"), "lo": float("nan"),
-                "hi": float("nan"), "std": float("nan")}
+        return {"mean": float("nan"), "lo": float("nan"), "hi": float("nan"), "std": float("nan")}
     arr = np.asarray(samples)
     lo, hi = np.percentile(arr, [100 * alpha / 2, 100 * (1 - alpha / 2)])
     return {
@@ -313,7 +307,7 @@ def bootstrap_metric_ci(
     }
 
 
-def aggregate_cv_metrics(per_fold: list) -> Dict[str, Dict[str, float]]:
+def aggregate_cv_metrics(per_fold: list) -> dict[str, dict[str, float]]:
     """Aggregate per-fold metric dicts into mean/std/95% CI across folds.
 
     Input : list of dicts, e.g. [{"roc_auc": 0.81, "f1": 0.66, ...}, ...]
@@ -322,7 +316,7 @@ def aggregate_cv_metrics(per_fold: list) -> Dict[str, Dict[str, float]]:
     if not per_fold:
         return {}
     keys = set().union(*per_fold)
-    out: Dict[str, Dict[str, float]] = {}
+    out: dict[str, dict[str, float]] = {}
     for k in keys:
         vals = []
         for fold in per_fold:
@@ -336,8 +330,7 @@ def aggregate_cv_metrics(per_fold: list) -> Dict[str, Dict[str, float]]:
             if np.isfinite(fv):
                 vals.append(fv)
         if not vals:
-            out[k] = {"mean": float("nan"), "std": float("nan"),
-                      "lo": float("nan"), "hi": float("nan"), "n": 0}
+            out[k] = {"mean": float("nan"), "std": float("nan"), "lo": float("nan"), "hi": float("nan"), "n": 0}
             continue
         arr = np.asarray(vals)
         mean = float(arr.mean())
@@ -352,9 +345,9 @@ def aggregate_cv_metrics(per_fold: list) -> Dict[str, Dict[str, float]]:
     return out
 
 
-def flag_suspicious_performance(metrics_dict: Dict[str, float],
-                                 auc_threshold: float = 0.99,
-                                 f1_threshold: float = 0.99) -> Dict[str, bool]:
+def flag_suspicious_performance(
+    metrics_dict: dict[str, float], auc_threshold: float = 0.99, f1_threshold: float = 0.99
+) -> dict[str, bool]:
     """Detect suspiciously-perfect metric values that often indicate leakage.
 
     Addresses reviewer comment: 'Unrealistic AUC = 1.000 ... possible data leakage
@@ -362,8 +355,12 @@ def flag_suspicious_performance(metrics_dict: Dict[str, float],
     the leakage-suspicion threshold.
     """
     flags = {}
-    for key, thr in (("roc_auc", auc_threshold), ("pr_auc", auc_threshold),
-                      ("f1", f1_threshold), ("accuracy", f1_threshold)):
+    for key, thr in (
+        ("roc_auc", auc_threshold),
+        ("pr_auc", auc_threshold),
+        ("f1", f1_threshold),
+        ("accuracy", f1_threshold),
+    ):
         v = metrics_dict.get(key, float("nan"))
         try:
             v = float(v)

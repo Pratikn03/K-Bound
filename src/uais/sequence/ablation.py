@@ -15,18 +15,14 @@ from __future__ import annotations
 
 import time
 from dataclasses import dataclass, field
-from typing import Dict, List, Optional, Tuple
 
 import numpy as np
 import pandas as pd
-from sklearn.model_selection import train_test_split
-from torch.utils.data import DataLoader
 
 from uais.utils.logging_utils import setup_logging
-from uais.utils.metrics import compute_classification_metrics
 
-from .train_gru import GRUClassifier, GRUConfig, train_gru_classifier
-from .train_lstm import LSTMClassifier, LSTMConfig, train_lstm_classifier
+from .train_gru import GRUConfig, train_gru_classifier
+from .train_lstm import LSTMConfig, train_lstm_classifier
 from .transformer_tcn import SequenceModelConfig, train_sequence_model
 
 logger = setup_logging(__name__)
@@ -35,18 +31,17 @@ logger = setup_logging(__name__)
 # Configuration
 # ---------------------------------------------------------------------------
 
+
 @dataclass
 class AblationConfig:
     """Defines the grid of hyperparameters to sweep."""
 
     # Architectures to compare
-    model_types: List[str] = field(
-        default_factory=lambda: ["lstm", "gru", "transformer", "tcn"]
-    )
+    model_types: list[str] = field(default_factory=lambda: ["lstm", "gru", "transformer", "tcn"])
     # Hidden dimensions to sweep — tests capacity scaling
-    hidden_dims: List[int] = field(default_factory=lambda: [32, 64, 128])
+    hidden_dims: list[int] = field(default_factory=lambda: [32, 64, 128])
     # Number of layers to sweep (for LSTM/GRU/Transformer)
-    num_layers_options: List[int] = field(default_factory=lambda: [1, 2])
+    num_layers_options: list[int] = field(default_factory=lambda: [1, 2])
 
     # Training hyperparameters (fixed across all ablation runs for fair comparison)
     epochs: int = 30
@@ -60,12 +55,13 @@ class AblationConfig:
     seed: int = 42
 
     # If True, save the results DataFrame to this path
-    output_csv: Optional[str] = None
+    output_csv: str | None = None
 
 
 # ---------------------------------------------------------------------------
 # Internal helpers
 # ---------------------------------------------------------------------------
+
 
 def _train_one(
     model_type: str,
@@ -75,12 +71,14 @@ def _train_one(
     mask: np.ndarray,
     labels: np.ndarray,
     cfg: AblationConfig,
-) -> Dict[str, object]:
+) -> dict[str, object]:
     """Train a single model variant and return its metrics + timing."""
     t0 = time.time()
     logger.info(
         "Ablation: model=%s  hidden_dim=%d  num_layers=%d",
-        model_type, hidden_dim, num_layers,
+        model_type,
+        hidden_dim,
+        num_layers,
     )
 
     if model_type == "lstm":
@@ -163,11 +161,12 @@ def _train_one(
 # Public API
 # ---------------------------------------------------------------------------
 
+
 def run_sequence_ablation(
     sequences: np.ndarray,
     mask: np.ndarray,
     labels: np.ndarray,
-    cfg: Optional[AblationConfig] = None,
+    cfg: AblationConfig | None = None,
 ) -> pd.DataFrame:
     """Run the full ablation grid and return results as a sorted DataFrame.
 
@@ -184,7 +183,7 @@ def run_sequence_ablation(
     if cfg is None:
         cfg = AblationConfig()
 
-    rows: List[Dict] = []
+    rows: list[dict] = []
     total = len(cfg.model_types) * len(cfg.hidden_dims) * len(cfg.num_layers_options)
     run = 0
 
@@ -195,13 +194,21 @@ def run_sequence_ablation(
                 logger.info("[%d/%d] Starting ablation run", run, total)
                 try:
                     row = _train_one(
-                        model_type, hidden_dim, num_layers,
-                        sequences, mask, labels, cfg,
+                        model_type,
+                        hidden_dim,
+                        num_layers,
+                        sequences,
+                        mask,
+                        labels,
+                        cfg,
                     )
                 except Exception as exc:
                     logger.warning(
                         "Ablation run failed (model=%s, hidden=%d, layers=%d): %s",
-                        model_type, hidden_dim, num_layers, exc,
+                        model_type,
+                        hidden_dim,
+                        num_layers,
+                        exc,
                     )
                     row = {
                         "model_type": model_type,
@@ -225,11 +232,7 @@ def summarise_ablation(df: pd.DataFrame) -> pd.DataFrame:
     """Aggregate ablation results — mean ± std per model type for the report."""
     metric_cols = ["roc_auc", "pr_auc", "f1", "precision", "recall", "balanced_accuracy"]
     available = [c for c in metric_cols if c in df.columns]
-    summary = (
-        df.groupby("model_type")[available]
-        .agg(["mean", "std"])
-        .round(4)
-    )
+    summary = df.groupby("model_type")[available].agg(["mean", "std"]).round(4)
     summary.columns = ["_".join(c) for c in summary.columns]
     return summary.sort_values("roc_auc_mean", ascending=False)
 

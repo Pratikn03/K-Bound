@@ -24,7 +24,6 @@ from infer_rga import InferRGA
 from uais.fusion.attention.cross_modal_attention import AttentionFusionModel
 from uais.fusion.attention.reliability_estimator import ReliabilityEstimator
 
-
 # ---------------------------------------------------------------------------
 # Fixtures
 # ---------------------------------------------------------------------------
@@ -64,10 +63,10 @@ def trained_artifacts(tmp_path: Path):
     opt = torch.optim.Adam(model.parameters(), lr=1e-2)
     for _ in range(5):
         logits, _, _ = model(feat_t, key_padding_mask=mask_t)
-        loss = torch.nn.functional.binary_cross_entropy_with_logits(
-            logits.squeeze(-1), lbl_t
-        )
-        opt.zero_grad(); loss.backward(); opt.step()
+        loss = torch.nn.functional.binary_cross_entropy_with_logits(logits.squeeze(-1), lbl_t)
+        opt.zero_grad()
+        loss.backward()
+        opt.step()
 
     model_path = tmp_path / "model.pt"
     torch.save(
@@ -106,6 +105,7 @@ def trained_artifacts(tmp_path: Path):
 # ---------------------------------------------------------------------------
 # Tests
 # ---------------------------------------------------------------------------
+
 
 def test_from_checkpoint_loads(trained_artifacts):
     model_path, estimator_path = trained_artifacts

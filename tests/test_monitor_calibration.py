@@ -19,10 +19,7 @@ def _make_fusion_frame(
     rng = np.random.default_rng(seed)
     rows: list[dict] = []
     for split, mean in (("validation", 0.30), ("test", 0.30 + (0.45 if drift else 0.0))):
-        scores = {
-            domain: np.clip(rng.normal(mean, 0.05, size=n_samples_per_split), 0.0, 1.0)
-            for domain in domains
-        }
+        scores = {domain: np.clip(rng.normal(mean, 0.05, size=n_samples_per_split), 0.0, 1.0) for domain in domains}
         labels = rng.integers(0, 2, size=n_samples_per_split)
         for idx in range(n_samples_per_split):
             for domain in domains:
@@ -57,9 +54,7 @@ def test_monitor_emits_one_event_per_window():
 
 def test_monitor_gate_does_not_fire_without_drift():
     fusion = _make_fusion_frame(n_samples_per_split=200, drift=False)
-    events = list(
-        run_monitor(fusion, tau=0.66, window_size=200, split_column="split", min_ks_samples=30)
-    )
+    events = list(run_monitor(fusion, tau=0.66, window_size=200, split_column="split", min_ks_samples=30))
     assert len(events) == 1
     assert events[0].gate_fired is False
     assert events[0].mean_reliability > 0.66
@@ -67,9 +62,7 @@ def test_monitor_gate_does_not_fire_without_drift():
 
 def test_monitor_gate_fires_under_strong_drift():
     fusion = _make_fusion_frame(n_samples_per_split=200, drift=True)
-    events = list(
-        run_monitor(fusion, tau=0.66, window_size=200, split_column="split", min_ks_samples=30)
-    )
+    events = list(run_monitor(fusion, tau=0.66, window_size=200, split_column="split", min_ks_samples=30))
     assert len(events) == 1
     assert events[0].gate_fired is True
     assert events[0].mean_reliability < 0.05
@@ -86,9 +79,7 @@ def test_monitor_writes_jsonl(tmp_path):
     fusion = _make_fusion_frame(n_samples_per_split=200, drift=True)
     out_path = tmp_path / "events.jsonl"
     with out_path.open("w", encoding="utf-8") as stream:
-        for event in run_monitor(
-            fusion, tau=0.66, window_size=50, split_column="split", min_ks_samples=20
-        ):
+        for event in run_monitor(fusion, tau=0.66, window_size=50, split_column="split", min_ks_samples=20):
             stream.write(
                 json.dumps(
                     {

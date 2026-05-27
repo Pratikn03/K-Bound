@@ -1,7 +1,6 @@
 """Leakage-free preprocessing pipelines for tabular data."""
-from __future__ import annotations
 
-from typing import List
+from __future__ import annotations
 
 import numpy as np
 import pandas as pd
@@ -41,7 +40,7 @@ def build_tabular_pipeline(
 
     transformers = []
     if numeric_cols:
-        num_steps: List = [("imputer", SimpleImputer(strategy="median"))]
+        num_steps: list = [("imputer", SimpleImputer(strategy="median"))]
         if scale:
             num_steps.append(("scaler", StandardScaler()))
         transformers.append(("num", Pipeline(num_steps), numeric_cols))

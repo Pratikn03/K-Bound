@@ -1,4 +1,5 @@
 """Feature table builders delegating to existing UAIS modules."""
+
 from pathlib import Path
 from typing import Optional
 
@@ -6,8 +7,8 @@ import pandas as pd
 
 try:
     from uais.features.behavior_features import build_behavior_feature_table
-    from uais.features.fraud_features import build_fraud_features
     from uais.features.cyber_features import build_cyber_features
+    from uais.features.fraud_features import build_fraud_features
 except Exception:  # pragma: no cover - fallback when uais not available
     build_behavior_feature_table = None
     build_fraud_features = None

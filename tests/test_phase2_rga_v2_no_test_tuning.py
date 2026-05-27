@@ -25,8 +25,10 @@ def test_selection_function_takes_only_validation_inputs():
 
 
 def test_validation_fold_corruption_function_does_not_accept_test_data():
-    from elara.family_b.corruption import validation_fold_corruption_grid
     import inspect
+
+    from elara.family_b.corruption import validation_fold_corruption_grid
+
     sig = inspect.signature(validation_fold_corruption_grid)
     params = set(sig.parameters)
     assert "val_features" in params

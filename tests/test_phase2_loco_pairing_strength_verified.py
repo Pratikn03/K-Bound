@@ -14,9 +14,9 @@ def test_registry_a_powered_3_is_derived_view_proxy():
     with REGISTRY.open() as f:
         rows = list(csv.DictReader(f))
     a3 = next(r for r in rows if r["experiment_id"] == "A-POWERED-3")
-    assert a3["pairing_strength"] == "derived_view_proxy", (
-        f"A-POWERED-3 pairing_strength must be derived_view_proxy; got {a3['pairing_strength']!r}"
-    )
+    assert (
+        a3["pairing_strength"] == "derived_view_proxy"
+    ), f"A-POWERED-3 pairing_strength must be derived_view_proxy; got {a3['pairing_strength']!r}"
 
 
 def test_v2_report_classifies_a_powered_3_as_derived_view_proxy():

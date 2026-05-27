@@ -11,7 +11,6 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Dict, Optional, Tuple
 
 import numpy as np
 import pandas as pd
@@ -25,8 +24,8 @@ from sklearn.preprocessing import StandardScaler
 class WGANConfig:
     dataset_path: Path
     latent_dim: int = 128
-    generator_hidden: Tuple[int, ...] = field(default_factory=lambda: (256, 256))
-    critic_hidden: Tuple[int, ...] = field(default_factory=lambda: (256, 256))
+    generator_hidden: tuple[int, ...] = field(default_factory=lambda: (256, 256))
+    critic_hidden: tuple[int, ...] = field(default_factory=lambda: (256, 256))
     epochs: int = 100
     batch_size: int = 128
     # Critic steps per generator step — recommended >=5 for WGAN-GP
@@ -50,7 +49,7 @@ class WGANConfig:
 class _Generator(nn.Module):
     """Maps latent noise z → synthetic tabular sample."""
 
-    def __init__(self, latent_dim: int, output_dim: int, hidden_dims: Tuple[int, ...]) -> None:
+    def __init__(self, latent_dim: int, output_dim: int, hidden_dims: tuple[int, ...]) -> None:
         super().__init__()
         layers: list[nn.Module] = []
         in_dim = latent_dim
@@ -67,7 +66,7 @@ class _Generator(nn.Module):
 class _Critic(nn.Module):
     """Scores how 'real' a tabular sample is — no sigmoid, no BatchNorm."""
 
-    def __init__(self, input_dim: int, hidden_dims: Tuple[int, ...]) -> None:
+    def __init__(self, input_dim: int, hidden_dims: tuple[int, ...]) -> None:
         super().__init__()
         layers: list[nn.Module] = []
         in_dim = input_dim
@@ -104,7 +103,7 @@ def _gradient_penalty(
     return ((grad_norm - 1.0) ** 2).mean()
 
 
-def run_wgan_pipeline(cfg: WGANConfig) -> Dict[str, object]:
+def run_wgan_pipeline(cfg: WGANConfig) -> dict[str, object]:
     """Train a WGAN-GP on numeric tabular data.
 
     Returns a dict containing training history, final losses, estimated
@@ -139,7 +138,7 @@ def run_wgan_pipeline(cfg: WGANConfig) -> Dict[str, object]:
     c_losses: list[float] = []
     g_loss = torch.tensor(0.0)
 
-    for epoch in range(cfg.epochs):
+    for _epoch in range(cfg.epochs):
         perm = torch.randperm(len(X_tensor), device=device)
         X_tensor = X_tensor[perm]
         c_epoch_loss = 0.0
@@ -196,7 +195,7 @@ def generate_synthetic_samples(
     n_samples: int,
     latent_dim: int,
     scaler: StandardScaler,
-    device: Optional[torch.device] = None,
+    device: torch.device | None = None,
 ) -> np.ndarray:
     """Draw n_samples from a trained generator, inverse-scaled to original units."""
     if device is None:

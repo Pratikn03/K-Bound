@@ -3,8 +3,8 @@
 This is a thin wrapper around `train_fusion_meta_model` in train_fusion_model.py
 so notebooks/scripts can easily load score CSVs and fit the stacker.
 """
+
 from pathlib import Path
-from typing import Dict, Tuple
 
 import numpy as np
 import pandas as pd
@@ -14,7 +14,7 @@ from uais.fusion.train_fusion_model import train_fusion_meta_model
 PROJECT_ROOT = Path(__file__).resolve().parents[3]
 
 
-def build_fusion_dataset(score_paths: Dict[str, Path] | None = None) -> Tuple[Dict[str, np.ndarray], np.ndarray]:
+def build_fusion_dataset(score_paths: dict[str, Path] | None = None) -> tuple[dict[str, np.ndarray], np.ndarray]:
     """Load per-domain score CSVs and align lengths.
 
     Expects each CSV to have at least a `score` column; `label` is optional.
@@ -31,7 +31,7 @@ def build_fusion_dataset(score_paths: Dict[str, Path] | None = None) -> Tuple[Di
     scores = {}
     labels = None
     sample_id_sets = []
-    score_frames: Dict[str, pd.DataFrame] = {}
+    score_frames: dict[str, pd.DataFrame] = {}
     for domain, path in score_paths.items():
         # Allow relative paths to be resolved from project root for notebooks/scripts.
         if not path.is_absolute():
@@ -102,7 +102,7 @@ def build_fusion_dataset(score_paths: Dict[str, Path] | None = None) -> Tuple[Di
     return scores, labels
 
 
-def train_fusion_model(score_paths: Dict[str, Path] | None = None, config: Dict | None = None):
+def train_fusion_model(score_paths: dict[str, Path] | None = None, config: dict | None = None):
     score_dict, labels = build_fusion_dataset(score_paths)
     config = config or {"data": {"test_size": 0.2}, "seed": 42}
     return train_fusion_meta_model(score_dict, labels, config)

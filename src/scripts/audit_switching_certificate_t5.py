@@ -75,7 +75,9 @@ def _per_seed_aurocs(payload: dict, method: str) -> list[float]:
     return out
 
 
-def paired_bootstrap_lcb(diffs: list[float], alpha: float = 0.05, n_boot: int = 5000, seed: int = 0) -> tuple[float, float]:
+def paired_bootstrap_lcb(
+    diffs: list[float], alpha: float = 0.05, n_boot: int = 5000, seed: int = 0
+) -> tuple[float, float]:
     """Return (mean, LCB_alpha) for a paired bootstrap on diffs."""
     if not diffs:
         return float("nan"), float("nan")

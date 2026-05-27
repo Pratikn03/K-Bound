@@ -22,6 +22,6 @@ def test_v2_certificate_csv_contains_only_g0_rows():
         pytest.skip("v2 cert CSV not yet produced")
     with CERT_V2.open() as f:
         for r in csv.DictReader(f):
-            assert r["gate_id"].startswith("G0"), (
-                f"row gate_id={r['gate_id']!r} — only G0 rows allowed until any RGA-v2 candidate passes C1"
-            )
+            assert r["gate_id"].startswith(
+                "G0"
+            ), f"row gate_id={r['gate_id']!r} — only G0 rows allowed until any RGA-v2 candidate passes C1"

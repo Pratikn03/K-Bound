@@ -31,9 +31,18 @@ def test_yaml_has_two_primary_operators_and_one_secondary():
 
 def test_every_operator_has_required_fields():
     c = yaml.safe_load(YAML_FILE.read_text())["protocol"]
-    required = ("id", "name", "target_modality", "transformation_level",
-                "operator", "parameters", "seed_policy", "validation_use",
-                "future_test_use", "primary_or_secondary")
+    required = (
+        "id",
+        "name",
+        "target_modality",
+        "transformation_level",
+        "operator",
+        "parameters",
+        "seed_policy",
+        "validation_use",
+        "future_test_use",
+        "primary_or_secondary",
+    )
     for op in c["degradation_operators"]["primary_endpoints"] + c["degradation_operators"]["secondary_descriptive"]:
         for k in required:
             assert k in op, f"operator {op.get('id')!r} missing field {k!r}"

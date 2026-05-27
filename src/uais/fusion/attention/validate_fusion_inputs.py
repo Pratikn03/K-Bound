@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
-from typing import Dict
 
 from uais.fusion.attention.attention_utils import (
     hash_file,
@@ -26,7 +25,7 @@ def _resolve_path(path_value: str | Path) -> Path:
     return PROJECT_ROOT / path
 
 
-def validate_attention_inputs(cfg_path: Path = DEFAULT_CONFIG) -> Dict[str, object]:
+def validate_attention_inputs(cfg_path: Path = DEFAULT_CONFIG) -> dict[str, object]:
     cfg = load_yaml(cfg_path)
     data_cfg = cfg.get("data", {})
     model_cfg = cfg.get("model", {})

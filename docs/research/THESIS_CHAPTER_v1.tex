@@ -45,15 +45,12 @@
 \maketitle
 
 \begin{abstract}
-This chapter reports the final audited results for ELARA, a reliability-aware multimodal anomaly score-fusion architecture with Reliability-Gated Attention (RGA), evaluated under controlled and audited evidence degradation settings. Under a powered, audited, static-reference cross-validation study over five previously inspected cells (Family A), validation-frozen RGA+ consistently improves on a fixed static-attention reference (A-POWERED-1: $\Delta$ AUC = +0.1082, Holm $p = 3.35\times 10^{-4}$; A-POWERED-2: $\Delta$ AUC = +0.0519, Holm $p = 4.06\times 10^{-5}$; A-POWERED-3: $\Delta$ AUC = +0.1038, Holm $p = 4.06\times 10^{-5}$; A-POWERED-4: $\Delta$ AUC = +0.0297, Holm $p = 1.53\times 10^{-3}$; A-POWERED-5: $\Delta$ AUC = +0.0095, Holm $p < 10^{-15}$, practically small compared to the Phase-1 estimate of +0.0003). Absolute performance in cross-category transfer remains near chance, and cells LOCO-AD and VisA are bounded by derived-view-proxy pairing. 
+This chapter presents the final audited evidence for ELARA, a reliability-aware multimodal score-fusion architecture with Reliability-Gated Attention (RGA), evaluated under controlled degradation and strict claim governance. In the powered static-reference study (Family A), validation-frozen RGA+ improves over fixed static attention in all five previously inspected cells (A-POWERED-1: $\Delta$AUC +0.1082, Holm $p = 3.35\times 10^{-4}$; A-POWERED-2: +0.0519, Holm $p = 4.06\times 10^{-5}$; A-POWERED-3: +0.1038, Holm $p = 4.06\times 10^{-5}$; A-POWERED-4: +0.0297, Holm $p = 1.53\times 10^{-3}$; A-POWERED-5: +0.0095, Holm $p < 10^{-15}$, practically small versus the Phase-1 estimate of +0.0003). Cross-category transfer remains near chance, and LOCO-AD and VisA conclusions remain bounded by derived-view-proxy pairing.
 
-In controlled mechanism replication (Family B), RGA reproduces the zero-attack coherent score-collapse benefit (B1: reproduced delta +0.0507 vs Phase-1 target +0.0506, 95\% CI [+0.0364, +0.0650], Holm $p = 4.31\times 10^{-12}$). A comparable positive effect is observed under maximum attack (B2: Phase-2 delta +0.0939 vs Phase-1 target +0.0319, 95\% CI [+0.0741, +0.1149], Holm $p < 10^{-15}$), though it is qualified by an estimator change. More sensitive RGA-v2 gate variants fail clean validation false-fire controls (firing at rate 1.000) and are not promoted. Similarly, domain composition shift audits (B-MECH-3S) did not reduce false-fire rates. Bounded monitoring and retrospective evaluation certificates demonstrate mixed success. 
+In mechanism replication (Family B), RGA reproduces the zero-attack coherent score-collapse endpoint (B1: +0.0507 versus Phase-1 target +0.0506, 95\% CI [+0.0364, +0.0650], Holm $p = 4.31\times 10^{-12}$) and retains a positive maximum-attack result (B2: +0.0939 versus +0.0319, 95\% CI [+0.0741, +0.1149], Holm $p < 10^{-15}$) with explicit estimator-change qualification. Sensitive RGA-v2 variants fail clean false-fire controls (firing rate 1.000), and domain composition shift audits (B-MECH-3S) do not reduce false-fire rates. Monitoring and retrospective certification outcomes are mixed.
 
-Finally, an attempted held-out transfer study on the Eyecandies dataset (Family D) failed to meet the frozen clean false-fire budget ($\le 0.010$ budget vs $1.0$ observed) and is excluded from primary evidence, showing a non-significant performance difference after correcting a DeLong variance bug (D-EYE-1 corrected $p = 0.3323$; D-EYE-2 corrected $p = 0.3127$). These results support bounded audited/mechanism evidence and identify calibration transfer under score distribution shifts as a central unresolved limitation.
+The held-out Eyecandies transfer study (Family D) fails frozen validity ($\le 0.010$ clean false-fire budget versus $1.0$ observed) and is excluded from primary evidence. After correcting a DeLong variance bug, inferential differences are non-significant (D-EYE-1 $p = 0.3323$, D-EYE-2 $p = 0.3127$). The chapter therefore supports a bounded mechanism claim and identifies calibration transfer under score-distribution shift as the main unresolved limitation.
 \end{abstract}
-
-\tableofcontents
-\clearpage
 
 \section{Introduction and Motivation}
 
@@ -132,14 +129,14 @@ component ablation provide the more useful evidence about the mechanism.
 We make four scoped contributions:
 
 \begin{enumerate}
-  \item It describes \system{}, a score-level anomaly-fusion research system
-  with a unified long-format schema for heterogeneous domain evidence.
-  \item It defines \method{}, a conservative reliability-gated attention module
+  \item We present \system{}, a score-level anomaly-fusion research system
+  with a unified long-format schema for heterogeneous evidence.
+  \item We define \method{}, a conservative reliability-gated attention module
   that combines masked attention with calibration, drift, and sharpness signals.
-  \item It evaluates the method against practical score-fusion baselines,
+  \item We evaluate the method against practical score-fusion baselines,
   including random forest fusion, early-fusion MLP, late-fusion ensemble,
   confidence-weighted mean, score-level Tent, and pseudo-label TTT.
-  \item It reports an all-category paired MVTec 3D-AD benchmark, multi-seed
+  \item We report an all-category paired MVTec 3D-AD benchmark, multi-seed
   confidence intervals, mechanism ablations, failure cases, and explicit
   threats to validity.
 \end{enumerate}
@@ -658,13 +655,11 @@ that lock:
                 noise-floor variants, held-out attack categories,
                 local healthcare replay). Descriptive only; no
                 superiority claim.
-          \item \textbf{Family D}: future unseen
-                \emph{confirmatory replication} only. Family~D is
-                the only family that may be described as
-                pre-registered or confirmatory. Family~D
-                evaluations have not yet been executed; their
-                permitted candidates are listed in
-                \path{docs/research/audit/EXPERIMENT_REGISTRY.csv}.
+          \item \textbf{Family D}: Family D was executed as a
+                planned Eyecandies RGB+depth held-out transfer attempt,
+                but it is excluded from primary evidence because the
+                frozen clean false-fire validity requirement failed
+                (budget $\le$ 0.010; observed 1.000).
         \end{itemize}
   \item Current Family~A inferential summaries use a
         \emph{fixed-representative-seed} (seed 42) audited DeLong
@@ -953,9 +948,7 @@ The largest construct-validity issue is benchmark construction. \benchmark{}
 uses real local domain datasets, but it aligns records by label. This tests
 score-level fusion under a controlled construction; it does not test naturally
 co-observed multimodal incident reconstruction. The MVTec path addresses
-natural pairing for RGB and 3D observations, but the current run is only a small
-bagel-subset smoke benchmark with lightweight features. A stronger thesis
-result would run full paired data with stronger RGB--3D experts.
+natural pairing for RGB and 3D observations. The MVTec 3D-AD pathway covers eight extracted categories and 3,226 paired samples. Its canonical one-class fusion analysis remains protocol-diagnostic rather than leaderboard evidence because the fusion training split is normal-only and the score-fusion layer is not a specialized RGB-3D localization system. A stronger thesis result would evaluate a specialized RGB-3D localization system.
 
 \subsection{External Validity}
 
@@ -1198,7 +1191,7 @@ regression tests; a clean clone of the repository can rebuild both
 manuscripts in one command via \texttt{scripts/rebuild\_paper.sh}.
 
 \section{Conclusion and Future Work}
-ELARA establishes evidence that reliability-aware anomaly fusion can improve a fixed static-attention reference in audited settings and under coherent evidence collapse, while also revealing that calibration transfer and clean false-fire control remain unresolved barriers to reliable held-out generalization. 
+ELARA provides bounded audited and mechanism-level evidence that reliability-aware anomaly fusion can improve a fixed static-attention reference under selected degraded-evidence settings, while the excluded Eyecandies transfer attempt identifies clean false-fire calibration under score-distribution shift as a central unresolved limitation. 
 
 Future work will focus on: (1) dynamic thresholding strategies and calibration under out-of-distribution modal scoring shifts; (2) testing on additional naturally co-observed datasets; and (3) evaluating the learned-gate and category-aware estimators against the fixed heuristic gates in deployment-monitoring systems under realistic pre-emption conditions.
 
@@ -1363,8 +1356,7 @@ The repository supports a scripted reproduction flow with five stages:
 Regression tests cover attention masking, reliability estimation,
 statistics, baseline inclusion, paired-benchmark metadata, float XYZ TIFF
 reading, leakage guards, predefined-split enforcement, and result
-aggregation. The full suite passes (240 tests, 2 skipped) on a clean
-checkout with \texttt{PYTHONPATH=src pytest tests/}.
+aggregation. At final Phase-2 audit closure, the full suite reported 607 passed, 6 skipped, and 5 warnings. Final manuscript-release validation is re-run after these editorial repairs, and its result is recorded in the final release manifest.
 
 \section{Benchmark Construction Detail}
 \label{app:benchmark}

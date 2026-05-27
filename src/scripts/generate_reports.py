@@ -1,7 +1,6 @@
 """Generate lightweight reports (JSON aggregation)."""
+
 import json
-from pathlib import Path
-from typing import Dict
 
 import pandas as pd
 
@@ -14,13 +13,13 @@ logger = setup_logging(__name__)
 DOMAINS = ["fraud", "cyber", "behavior", "vision", "fusion"]
 
 
-def load_domain_metrics(domain: str) -> Dict:
+def load_domain_metrics(domain: str) -> dict:
     metrics_path = EXPERIMENTS_DIR / domain / "metrics"
     if not metrics_path.exists():
         return {}
     all_metrics = {}
     for file in metrics_path.glob("*.json"):
-        with open(file, "r", encoding="utf-8") as f:
+        with open(file, encoding="utf-8") as f:
             all_metrics[file.stem] = json.load(f)
     for file in metrics_path.glob("*.csv"):
         try:

@@ -1,5 +1,4 @@
 """Train/validation/test splits."""
-from typing import Dict, Tuple
 
 import pandas as pd
 from sklearn.model_selection import train_test_split
@@ -11,7 +10,7 @@ def split_train_val_test(
     test_size: float = 0.2,
     val_size: float = 0.1,
     random_state: int = 42,
-) -> Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.Series, pd.Series, pd.Series]:
+) -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.Series, pd.Series, pd.Series]:
     X = df.drop(columns=[target])
     y = df[target]
 

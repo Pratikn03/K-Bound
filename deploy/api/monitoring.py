@@ -1,9 +1,9 @@
 """Monitoring, metrics, and observability for UAIS-V API."""
-import os
+
 import time
 from collections import defaultdict
 from datetime import datetime
-from typing import Callable, Dict, List, Optional
+from typing import Callable, Optional
 
 import psutil
 from fastapi import Request, Response
@@ -11,52 +11,28 @@ from prometheus_client import Counter, Gauge, Histogram, generate_latest
 from starlette.middleware.base import BaseHTTPMiddleware
 
 # Prometheus metrics
-REQUEST_COUNT = Counter(
-    "uais_requests_total",
-    "Total number of requests",
-    ["method", "endpoint", "status"]
-)
+REQUEST_COUNT = Counter("uais_requests_total", "Total number of requests", ["method", "endpoint", "status"])
 
-REQUEST_DURATION = Histogram(
-    "uais_request_duration_seconds",
-    "Request duration in seconds",
-    ["method", "endpoint"]
-)
+REQUEST_DURATION = Histogram("uais_request_duration_seconds", "Request duration in seconds", ["method", "endpoint"])
 
-MODEL_INFERENCE_COUNT = Counter(
-    "uais_model_inferences_total",
-    "Total number of model inferences",
-    ["model_type"]
-)
+MODEL_INFERENCE_COUNT = Counter("uais_model_inferences_total", "Total number of model inferences", ["model_type"])
 
 MODEL_INFERENCE_DURATION = Histogram(
-    "uais_model_inference_duration_seconds",
-    "Model inference duration in seconds",
-    ["model_type"]
+    "uais_model_inference_duration_seconds", "Model inference duration in seconds", ["model_type"]
 )
 
 PREDICTION_SCORE = Histogram(
     "uais_prediction_score",
     "Distribution of prediction scores",
     ["model_type"],
-    buckets=[0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0]
+    buckets=[0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0],
 )
 
-SYSTEM_MEMORY_USAGE = Gauge(
-    "uais_system_memory_usage_bytes",
-    "System memory usage in bytes"
-)
+SYSTEM_MEMORY_USAGE = Gauge("uais_system_memory_usage_bytes", "System memory usage in bytes")
 
-SYSTEM_CPU_USAGE = Gauge(
-    "uais_system_cpu_usage_percent",
-    "System CPU usage percentage"
-)
+SYSTEM_CPU_USAGE = Gauge("uais_system_cpu_usage_percent", "System CPU usage percentage")
 
-MODEL_LOADED = Gauge(
-    "uais_model_loaded",
-    "Whether model is loaded (1) or not (0)",
-    ["model_type"]
-)
+MODEL_LOADED = Gauge("uais_model_loaded", "Whether model is loaded (1) or not (0)", ["model_type"])
 
 
 class MetricsMiddleware(BaseHTTPMiddleware):
@@ -76,16 +52,9 @@ class MetricsMiddleware(BaseHTTPMiddleware):
         endpoint = request.url.path
 
         # Record metrics
-        REQUEST_COUNT.labels(
-            method=request.method,
-            endpoint=endpoint,
-            status=response.status_code
-        ).inc()
+        REQUEST_COUNT.labels(method=request.method, endpoint=endpoint, status=response.status_code).inc()
 
-        REQUEST_DURATION.labels(
-            method=request.method,
-            endpoint=endpoint
-        ).observe(duration)
+        REQUEST_DURATION.labels(method=request.method, endpoint=endpoint).observe(duration)
 
         # Update system metrics
         SYSTEM_MEMORY_USAGE.set(psutil.Process().memory_info().rss)
@@ -122,21 +91,17 @@ class HealthChecker:
     """Health check utility for API dependencies."""
 
     def __init__(self):
-        self.checks: Dict[str, Callable] = {}
-        self.history: Dict[str, List[Dict]] = defaultdict(list)
+        self.checks: dict[str, Callable] = {}
+        self.history: dict[str, list[dict]] = defaultdict(list)
         self.max_history = 100
 
     def register_check(self, name: str, check_fn: Callable):
         """Register a health check."""
         self.checks[name] = check_fn
 
-    async def run_checks(self) -> Dict[str, any]:
+    async def run_checks(self) -> dict[str, any]:
         """Run all health checks."""
-        results = {
-            "status": "healthy",
-            "timestamp": datetime.utcnow().isoformat(),
-            "checks": {}
-        }
+        results = {"status": "healthy", "timestamp": datetime.utcnow().isoformat(), "checks": {}}
 
         for name, check_fn in self.checks.items():
             try:
@@ -147,7 +112,7 @@ class HealthChecker:
                 check_result = {
                     "status": "pass" if result else "fail",
                     "duration_ms": round(duration * 1000, 2),
-                    "timestamp": datetime.utcnow().isoformat()
+                    "timestamp": datetime.utcnow().isoformat(),
                 }
 
                 results["checks"][name] = check_result
@@ -164,13 +129,13 @@ class HealthChecker:
                 results["checks"][name] = {
                     "status": "error",
                     "error": str(e),
-                    "timestamp": datetime.utcnow().isoformat()
+                    "timestamp": datetime.utcnow().isoformat(),
                 }
                 results["status"] = "unhealthy"
 
         return results
 
-    def get_history(self, check_name: Optional[str] = None) -> Dict:
+    def get_history(self, check_name: Optional[str] = None) -> dict:
         """Get health check history."""
         if check_name:
             return {check_name: self.history.get(check_name, [])}
@@ -181,7 +146,7 @@ class HealthChecker:
 health_checker = HealthChecker()
 
 
-def get_system_metrics() -> Dict:
+def get_system_metrics() -> dict:
     """Get current system metrics."""
     process = psutil.Process()
     memory = process.memory_info()
@@ -192,17 +157,15 @@ def get_system_metrics() -> Dict:
             "memory": {
                 "rss_bytes": memory.rss,
                 "rss_mb": round(memory.rss / 1024 / 1024, 2),
-                "percent": process.memory_percent()
+                "percent": process.memory_percent(),
             },
-            "disk": {
-                "percent": psutil.disk_usage('/').percent
-            }
+            "disk": {"percent": psutil.disk_usage("/").percent},
         },
         "process": {
             "threads": process.num_threads(),
             "open_files": len(process.open_files()),
-            "connections": len(process.connections())
-        }
+            "connections": len(process.connections()),
+        },
     }
 
 

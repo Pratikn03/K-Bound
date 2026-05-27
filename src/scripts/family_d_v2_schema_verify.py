@@ -27,7 +27,6 @@ import argparse
 import csv
 import json
 import re
-import sys
 import tarfile
 from collections import defaultdict
 from pathlib import Path
@@ -36,8 +35,7 @@ ROOT = Path(__file__).resolve().parents[2]
 ARCHIVE_DIR = ROOT / "data" / "raw" / "eyecandies" / "_archives"
 OUT_DIR = ROOT / "experiments" / "phase2" / "family_d"
 
-SPLIT_TOKENS = {"train", "training", "val", "validation",
-                 "test", "test_public", "test_private"}
+SPLIT_TOKENS = {"train", "training", "val", "validation", "test", "test_public", "test_private"}
 
 
 def _split_from_path(parts: list[str]) -> str:
@@ -51,9 +49,7 @@ def _split_from_path(parts: list[str]) -> str:
 # Mask filename matchers — anomaly-mask files are explicitly enumerated
 # from the Eyecandies file layout. Order matters: most-specific first.
 _MASK_PATTERN = re.compile(
-    r"^(\d+)_("
-    r"mask|bumps_mask|dents_mask|colors_mask|normals_mask"
-    r")\.(png|jpg|jpeg|tif|tiff|npy)$",
+    r"^(\d+)_(" r"mask|bumps_mask|dents_mask|colors_mask|normals_mask" r")\.(png|jpg|jpeg|tif|tiff|npy)$",
     re.IGNORECASE,
 )
 _RGB_PATTERN = re.compile(r"^(\d+)_image_(\d+)\.(png|jpg|jpeg)$", re.IGNORECASE)
@@ -98,13 +94,15 @@ def main() -> int:
         print(f"[{cat}] scanning archive (no extraction)...", flush=True)
 
         # split -> { 'rgb_samples', 'depth_samples', 'normal_samples', 'mask_files' }
-        per_split = defaultdict(lambda: {
-            "rgb_samples": set(),
-            "depth_samples": set(),
-            "normal_samples": set(),
-            "mask_files_NOT_INSPECTED": 0,
-            "rgb_views_per_sample": defaultdict(int),
-        })
+        per_split = defaultdict(
+            lambda: {
+                "rgb_samples": set(),
+                "depth_samples": set(),
+                "normal_samples": set(),
+                "mask_files_NOT_INSPECTED": 0,
+                "rgb_views_per_sample": defaultdict(int),
+            }
+        )
         member_count = 0
         with tarfile.open(archive_path, "r") as tf:
             for m in tf:
@@ -148,23 +146,30 @@ def main() -> int:
                 "anomaly_mask_file_count_NOT_INSPECTED": agg["mask_files_NOT_INSPECTED"],
                 "rgb_views_per_sample_distribution": views_count_set,
             }
-            inventory_rows.append({
-                "category": cat, "split": split,
-                "rgb_samples": len(rgb), "depth_samples": len(depth),
-                "normal_samples": len(normal),
-                "rgb_depth_paired": len(paired),
-                "anomaly_mask_files_present_not_inspected": agg["mask_files_NOT_INSPECTED"],
-                "rgb_views_per_sample": ",".join(str(v) for v in views_count_set),
-            })
+            inventory_rows.append(
+                {
+                    "category": cat,
+                    "split": split,
+                    "rgb_samples": len(rgb),
+                    "depth_samples": len(depth),
+                    "normal_samples": len(normal),
+                    "rgb_depth_paired": len(paired),
+                    "anomaly_mask_files_present_not_inspected": agg["mask_files_NOT_INSPECTED"],
+                    "rgb_views_per_sample": ",".join(str(v) for v in views_count_set),
+                }
+            )
         report[cat] = {
             "tar_member_count_total": member_count,
             "splits": splits_out,
         }
         for split, info in splits_out.items():
-            print(f"  {split}: rgb_samples={info['rgb_sample_count']}  depth_samples={info['depth_sample_count']}  "
-                  f"paired={info['rgb_depth_paired_count']}  normal={info['normal_sample_count']}  "
-                  f"rgb_views_per_sample={info['rgb_views_per_sample_distribution']}  "
-                  f"mask_files_not_inspected={info['anomaly_mask_file_count_NOT_INSPECTED']}", flush=True)
+            print(
+                f"  {split}: rgb_samples={info['rgb_sample_count']}  depth_samples={info['depth_sample_count']}  "
+                f"paired={info['rgb_depth_paired_count']}  normal={info['normal_sample_count']}  "
+                f"rgb_views_per_sample={info['rgb_views_per_sample_distribution']}  "
+                f"mask_files_not_inspected={info['anomaly_mask_file_count_NOT_INSPECTED']}",
+                flush=True,
+            )
 
     out_json = OUT_DIR / "eyecandies_schema_verification.json"
     out_json.write_text(json.dumps(report, indent=2))
@@ -172,9 +177,16 @@ def main() -> int:
 
     out_csv = OUT_DIR / "eyecandies_archive_inventory.csv"
     with out_csv.open("w", newline="") as f:
-        fields = ["category", "split", "rgb_samples", "depth_samples", "normal_samples",
-                  "rgb_depth_paired", "anomaly_mask_files_present_not_inspected",
-                  "rgb_views_per_sample"]
+        fields = [
+            "category",
+            "split",
+            "rgb_samples",
+            "depth_samples",
+            "normal_samples",
+            "rgb_depth_paired",
+            "anomaly_mask_files_present_not_inspected",
+            "rgb_views_per_sample",
+        ]
         w = csv.DictWriter(f, fieldnames=fields)
         w.writeheader()
         for r in inventory_rows:
@@ -201,9 +213,7 @@ def main() -> int:
                 if s["rgb_sample_count"] == 0 or s["depth_sample_count"] == 0:
                     failures.append(f"{cat}/{split}: empty rgb or depth")
                 if s["rgb_depth_paired_count"] != s["rgb_sample_count"]:
-                    failures.append(
-                        f"{cat}/{split}: rgb={s['rgb_sample_count']} paired={s['rgb_depth_paired_count']}"
-                    )
+                    failures.append(f"{cat}/{split}: rgb={s['rgb_sample_count']} paired={s['rgb_depth_paired_count']}")
                 if s["rgb_views_per_sample_distribution"] != [6]:
                     failures.append(
                         f"{cat}/{split}: expected 6 RGB views per sample; "

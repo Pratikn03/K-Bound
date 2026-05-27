@@ -23,24 +23,32 @@ import re
 import sys
 from pathlib import Path
 
-
 FORBIDDEN_TOKENS = [
     # Phase 1.B / 1.C
     (re.compile(r"\bmax\(\s*router\s*,\s*boost\s*\)", re.IGNORECASE), "Phase 1.B forbids RGA+ = max(router, boost)"),
     (re.compile(r"\bMAX\(\s*router\s*,\s*boost\s*\)"), "Phase 1.B forbids RGA+ = MAX(router, boost)"),
-    (re.compile(r"\bbest\s+non-router\s+baseline\s+is\b", re.IGNORECASE), "Phase 1.C forbids 'best non-router baseline is' inferential framing"),
+    (
+        re.compile(r"\bbest\s+non-router\s+baseline\s+is\b", re.IGNORECASE),
+        "Phase 1.C forbids 'best non-router baseline is' inferential framing",
+    ),
     # Phase 1.D
     (re.compile(r"\bFisher-combined\b", re.IGNORECASE), "Phase 1.D forbids Fisher-combined p-value language"),
     (re.compile(r"\bacross\s+all\s+nine\s+evaluated\s+cells\b", re.IGNORECASE), "Phase 1.D — Family A K=5, not 9"),
     (re.compile(r"\b9-test\s+Holm\b", re.IGNORECASE), "Phase 1.D — Family A K=5, not 9"),
     # Phase 0.6 retro AR-11/AR-12/AR-13
     (re.compile(r"\bRGA\+\s+beats\s+every\s+baseline\b", re.IGNORECASE), "AR-12 forbids 'RGA+ beats every baseline'"),
-    (re.compile(r"\bpre-registered\s+confirmatory\b", re.IGNORECASE), "AR-11 forbids pre-registration claim for existing results"),
+    (
+        re.compile(r"\bpre-registered\s+confirmatory\b", re.IGNORECASE),
+        "AR-11 forbids pre-registration claim for existing results",
+    ),
     # Issue H
     (re.compile(r"\binterventional\s+ATE\b", re.IGNORECASE), "Issue H — reframe as model-response sensitivity"),
     (re.compile(r"\bStructural\s+Causal\s+Model\b", re.IGNORECASE), "Issue H — reframe as model-response sensitivity"),
     # Marketing / SOTA / deployment
-    (re.compile(r"\bdeployment-grade\s+sanity\s+check\b", re.IGNORECASE), "Phase 1.F — polarity is a validation-only diagnostic, not deployment-grade"),
+    (
+        re.compile(r"\bdeployment-grade\s+sanity\s+check\b", re.IGNORECASE),
+        "Phase 1.F — polarity is a validation-only diagnostic, not deployment-grade",
+    ),
     (re.compile(r"\bSOTA\b"), "Rule 9 — no SOTA claim"),
     (re.compile(r"\bstate\s+of\s+the\s+art\b", re.IGNORECASE), "Rule 9 — no SOTA claim"),
     (re.compile(r"\buniversally\s+superior\b", re.IGNORECASE), "Rule 9 — no universal superiority claim"),
@@ -83,7 +91,7 @@ def main() -> None:
             n_violations += len(hits)
             print(f"\n=== {path}: {len(hits)} forbidden-token violations ===")
             for offset, match, why in hits[:30]:  # cap output
-                snippet = text[max(0, offset - 30): offset + 60].replace("\n", " ")
+                snippet = text[max(0, offset - 30) : offset + 60].replace("\n", " ")
                 print(f"  @{offset}  {match!r}  ({why})")
                 print(f"    snippet: ...{snippet}...")
             if len(hits) > 30:

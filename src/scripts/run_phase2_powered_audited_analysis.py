@@ -123,6 +123,7 @@ def main() -> int:
     # Step 2 — Holm-Bonferroni across the family of named comparators
     raw_p_map = {comp: per_comp_raw[comp]["raw_p"] for comp in COMPARATORS}
     from elara.evaluation.ensemble_inference import holm_bonferroni
+
     holm_p_map = holm_bonferroni(raw_p_map, K=len(COMPARATORS))
 
     # Step 3 — assemble final rows with the Holm-adjusted p stamped in
@@ -142,13 +143,17 @@ def main() -> int:
     print(f"wrote {out_path}")
 
     # Print a compact table for the report
-    print(f"\n{'comparator':25s}  {'rga_ens':>8s}  {'comp_ens':>8s}  {'delta':>8s}  {'p_raw':>10s}  {'p_holm':>10s}  {'CI':>22s}  band")
+    print(
+        f"\n{'comparator':25s}  {'rga_ens':>8s}  {'comp_ens':>8s}  {'delta':>8s}  {'p_raw':>10s}  {'p_holm':>10s}  {'CI':>22s}  band"
+    )
     for r in rows:
         ci = f"[{r['bootstrap_ci_low']:+.4f}, {r['bootstrap_ci_high']:+.4f}]"
-        print(f"  {r['comparator_method']:25s}  "
-              f"{r['ensemble_rga_auc']:8.4f}  {r['ensemble_comparator_auc']:8.4f}  "
-              f"{r['ensemble_delta_auc']:+8.4f}  {r['delong_p_value']:10.4g}  "
-              f"{r['delong_p_holm']:10.4g}  {ci:>22s}  {r['practical_effect_band']}")
+        print(
+            f"  {r['comparator_method']:25s}  "
+            f"{r['ensemble_rga_auc']:8.4f}  {r['ensemble_comparator_auc']:8.4f}  "
+            f"{r['ensemble_delta_auc']:+8.4f}  {r['delong_p_value']:10.4g}  "
+            f"{r['delong_p_holm']:10.4g}  {ci:>22s}  {r['practical_effect_band']}"
+        )
     return 0
 
 

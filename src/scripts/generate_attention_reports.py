@@ -84,7 +84,9 @@ def generate_attention_reports(cfg_path: Path = DEFAULT_CONFIG) -> None:
     if weight_files:
         _plot_from_attention_weights(weight_files[0], output_dir)
 
-    harness_path = _resolve_path(eval_cfg.get("metrics_path", "experiments/fusion/attention_fusion/harness_metrics.json"))
+    harness_path = _resolve_path(
+        eval_cfg.get("metrics_path", "experiments/fusion/attention_fusion/harness_metrics.json")
+    )
     harness = _load_harness_summary(harness_path)
     _plot_from_harness_summary(harness, output_dir)
 

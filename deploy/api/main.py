@@ -9,14 +9,15 @@ This is an improved version of the UAIS-V API with:
 - Better error handling
 - Request validation
 """
+
 from base64 import b64decode
 from io import BytesIO
 from pathlib import Path
-from typing import Dict, List, Optional
+from typing import Optional
 
 import joblib
 import numpy as np
-from fastapi import Depends, FastAPI, HTTPException, Response, status
+from fastapi import Depends, FastAPI, HTTPException, status
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import PlainTextResponse
 from pydantic import BaseModel, Field, validator
@@ -25,13 +26,14 @@ from pydantic import BaseModel, Field, validator
 try:
     from .auth import authenticate
     from .monitoring import (
+        MODEL_LOADED,
         InferenceMetrics,
         MetricsMiddleware,
         export_prometheus_metrics,
         get_system_metrics,
         health_checker,
-        MODEL_LOADED,
     )
+
     MONITORING_AVAILABLE = True
 except ImportError:
     MONITORING_AVAILABLE = False
@@ -41,7 +43,7 @@ except ImportError:
 app = FastAPI(
     title="UAIS-V Enhanced API",
     version="2.0",
-    description="Universal Anomaly Intelligence System with authentication and monitoring"
+    description="Universal Anomaly Intelligence System with authentication and monitoring",
 )
 
 # CORS middleware
@@ -94,7 +96,8 @@ def _load_nlp():
     if _nlp_artifacts_loaded:
         return _nlp_model, _nlp_tokenizer
     try:
-        import torch
+        import torch  # noqa: I001
+
         from uais_v.models.nlp_text_model import DistilBERTClassifier, get_tokenizer
     except Exception:
         _nlp_artifacts_loaded = True
@@ -122,6 +125,7 @@ def _load_vision():
         return _vision_model
     try:
         import torch
+
         from uais_v.models.vision_resnet import VisionConfig, build_resnet_classifier
     except Exception:
         _vision_model = False
@@ -150,6 +154,7 @@ def _load_attention_fusion():
         return None, {}
     try:
         import torch
+
         from uais.fusion.attention.cross_modal_attention import AttentionFusionModel
     except Exception:
         return None, {}
@@ -202,9 +207,9 @@ def _load_attention_fusion():
 
 # Request/Response models
 class FraudRequest(BaseModel):
-    features: List[float] = Field(..., min_items=1, description="Feature vector for fraud detection")
+    features: list[float] = Field(..., min_items=1, description="Feature vector for fraud detection")
 
-    @validator('features')
+    @validator("features")
     def validate_features(cls, v):
         if any(not np.isfinite(x) for x in v):
             raise ValueError("Features must be finite numbers")
@@ -218,7 +223,7 @@ class FraudResponse(BaseModel):
 
 
 class CyberRequest(BaseModel):
-    features: List[float] = Field(..., min_items=1, description="Feature vector for cyber attack detection")
+    features: list[float] = Field(..., min_items=1, description="Feature vector for cyber attack detection")
 
 
 class CyberResponse(BaseModel):
@@ -227,9 +232,9 @@ class CyberResponse(BaseModel):
 
 
 class FusionRequest(BaseModel):
-    scores: Dict[str, float] = Field(..., description="Domain-specific anomaly scores")
+    scores: dict[str, float] = Field(..., description="Domain-specific anomaly scores")
 
-    @validator('scores')
+    @validator("scores")
     def validate_scores(cls, v):
         for score in v.values():
             if not (0 <= score <= 1):
@@ -239,7 +244,7 @@ class FusionRequest(BaseModel):
 
 class FusionResponse(BaseModel):
     fusion_risk: float
-    domains: List[str]
+    domains: list[str]
     overall_risk_level: str
 
 
@@ -247,18 +252,18 @@ class AttentionDomainInput(BaseModel):
     domain: str
     score: float = Field(..., ge=0.0, le=1.0)
     confidence: Optional[float] = Field(None, ge=0.0, le=1.0)
-    embeddings: Optional[List[float]] = None
+    embeddings: Optional[list[float]] = None
 
 
 class AttentionFusionRequest(BaseModel):
-    domains: List[AttentionDomainInput]
+    domains: list[AttentionDomainInput]
 
 
 class AttentionFusionResponse(BaseModel):
     fusion_risk: float
-    domain_order: List[str]
-    attention_mean: Optional[List[float]]
-    domain_confidence: Optional[List[float]]
+    domain_order: list[str]
+    attention_mean: Optional[list[float]]
+    domain_confidence: Optional[list[float]]
 
 
 class NLPRequest(BaseModel):
@@ -282,7 +287,7 @@ def get_risk_level(probability: float) -> str:
         return "critical"
 
 
-def _build_attention_features(req: AttentionFusionRequest, meta: Dict[str, object]) -> tuple[np.ndarray, np.ndarray]:
+def _build_attention_features(req: AttentionFusionRequest, meta: dict[str, object]) -> tuple[np.ndarray, np.ndarray]:
     domain_order = meta.get("domain_order", [])
     feature_columns = meta.get("feature_columns", [])
     score_column = meta.get("score_column", "score")
@@ -345,7 +350,7 @@ async def root():
 @app.get("/health")
 async def health():
     """Basic health check."""
-    return {"status": "ok", "timestamp": str(np.datetime64('now'))}
+    return {"status": "ok", "timestamp": str(np.datetime64("now"))}
 
 
 @app.get("/health/detailed")
@@ -362,8 +367,7 @@ async def metrics():
     """Prometheus metrics endpoint."""
     if not MONITORING_AVAILABLE:
         raise HTTPException(
-            status_code=status.HTTP_501_NOT_IMPLEMENTED,
-            detail="Metrics not available. Install prometheus_client."
+            status_code=status.HTTP_501_NOT_IMPLEMENTED, detail="Metrics not available. Install prometheus_client."
         )
 
     metrics_data = await export_prometheus_metrics()
@@ -380,16 +384,10 @@ async def system_info():
 
 
 @app.post("/predict_fraud", response_model=FraudResponse)
-async def predict_fraud(
-    req: FraudRequest,
-    authenticated: bool = Depends(authenticate) if authenticate else True
-):
+async def predict_fraud(req: FraudRequest, authenticated: bool = Depends(authenticate) if authenticate else True):
     """Predict fraud probability from features."""
     if fraud_model is None:
-        raise HTTPException(
-            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-            detail="Fraud model not loaded"
-        )
+        raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail="Fraud model not loaded")
 
     try:
         if MONITORING_AVAILABLE:
@@ -404,26 +402,19 @@ async def predict_fraud(
         return FraudResponse(
             fraud_probability=proba,
             risk_level=get_risk_level(proba),
-            confidence=abs(proba - 0.5) * 2  # 0 at 0.5, 1 at 0 or 1
+            confidence=abs(proba - 0.5) * 2,  # 0 at 0.5, 1 at 0 or 1
         )
     except Exception as e:
         raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Prediction failed: {str(e)}"
-        )
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Prediction failed: {str(e)}"
+        ) from e
 
 
 @app.post("/predict_cyber", response_model=CyberResponse)
-async def predict_cyber(
-    req: CyberRequest,
-    authenticated: bool = Depends(authenticate) if authenticate else True
-):
+async def predict_cyber(req: CyberRequest, authenticated: bool = Depends(authenticate) if authenticate else True):
     """Predict cyber attack probability from network features."""
     if cyber_model is None:
-        raise HTTPException(
-            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-            detail="Cyber model not loaded"
-        )
+        raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail="Cyber model not loaded")
 
     try:
         if MONITORING_AVAILABLE:
@@ -435,28 +426,18 @@ async def predict_cyber(
             X = np.array(req.features).reshape(1, -1)
             proba = float(cyber_model.predict_proba(X)[0, 1])
 
-        return CyberResponse(
-            cyber_attack_probability=proba,
-            threat_level=get_risk_level(proba)
-        )
+        return CyberResponse(cyber_attack_probability=proba, threat_level=get_risk_level(proba))
     except Exception as e:
         raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Prediction failed: {str(e)}"
-        )
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Prediction failed: {str(e)}"
+        ) from e
 
 
 @app.post("/predict_fusion", response_model=FusionResponse)
-async def predict_fusion(
-    req: FusionRequest,
-    authenticated: bool = Depends(authenticate) if authenticate else True
-):
+async def predict_fusion(req: FusionRequest, authenticated: bool = Depends(authenticate) if authenticate else True):
     """Predict overall risk from multiple domain scores."""
     if fusion_model is None:
-        raise HTTPException(
-            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-            detail="Fusion model not loaded"
-        )
+        raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail="Fusion model not loaded")
 
     try:
         keys = sorted(req.scores)
@@ -469,16 +450,11 @@ async def predict_fusion(
             X = np.array([[req.scores[k] for k in keys]])
             proba = float(fusion_model.predict_proba(X)[0, 1])
 
-        return FusionResponse(
-            fusion_risk=proba,
-            domains=keys,
-            overall_risk_level=get_risk_level(proba)
-        )
+        return FusionResponse(fusion_risk=proba, domains=keys, overall_risk_level=get_risk_level(proba))
     except Exception as e:
         raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Prediction failed: {str(e)}"
-        )
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Prediction failed: {str(e)}"
+        ) from e
 
 
 @app.post("/predict_attention_fusion", response_model=AttentionFusionResponse)
@@ -530,63 +506,45 @@ async def predict_attention_fusion(
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Attention fusion prediction failed: {str(e)}",
-        )
+        ) from e
 
 
 @app.post("/predict_nlp")
-async def predict_nlp(
-    req: NLPRequest,
-    authenticated: bool = Depends(authenticate) if authenticate else True
-):
+async def predict_nlp(req: NLPRequest, authenticated: bool = Depends(authenticate) if authenticate else True):
     """Analyze text for suspicious content."""
     model, tokenizer = _load_nlp()
     if model is None or tokenizer is None:
-        raise HTTPException(
-            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-            detail="NLP model not available"
-        )
+        raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail="NLP model not available")
 
     try:
         import torch
 
         if MONITORING_AVAILABLE:
             with InferenceMetrics("nlp") as metrics:
-                enc = tokenizer(req.text, return_tensors="pt", truncation=True,
-                              padding="max_length", max_length=128)
+                enc = tokenizer(req.text, return_tensors="pt", truncation=True, padding="max_length", max_length=128)
                 with torch.no_grad():
                     logits = model(enc["input_ids"], enc["attention_mask"])
                     proba = float(torch.softmax(logits, dim=1)[:, 1].item())
                 metrics.record_prediction(proba)
         else:
-            enc = tokenizer(req.text, return_tensors="pt", truncation=True,
-                          padding="max_length", max_length=128)
+            enc = tokenizer(req.text, return_tensors="pt", truncation=True, padding="max_length", max_length=128)
             with torch.no_grad():
                 logits = model(enc["input_ids"], enc["attention_mask"])
                 proba = float(torch.softmax(logits, dim=1)[:, 1].item())
 
-        return {
-            "nlp_suspicion_probability": proba,
-            "risk_level": get_risk_level(proba)
-        }
+        return {"nlp_suspicion_probability": proba, "risk_level": get_risk_level(proba)}
     except Exception as e:
         raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"NLP inference failed: {str(e)}"
-        )
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"NLP inference failed: {str(e)}"
+        ) from e
 
 
 @app.post("/predict_vision")
-async def predict_vision(
-    req: VisionRequest,
-    authenticated: bool = Depends(authenticate) if authenticate else True
-):
+async def predict_vision(req: VisionRequest, authenticated: bool = Depends(authenticate) if authenticate else True):
     """Detect anomalies in images."""
     model = _load_vision()
     if model is None:
-        raise HTTPException(
-            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-            detail="Vision model not available"
-        )
+        raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail="Vision model not available")
 
     try:
         import torch
@@ -596,11 +554,13 @@ async def predict_vision(
         img_bytes = b64decode(req.image_base64)
         image = Image.open(BytesIO(img_bytes)).convert("RGB")
 
-        transform = transforms.Compose([
-            transforms.Resize((224, 224)),
-            transforms.ToTensor(),
-            transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
-        ])
+        transform = transforms.Compose(
+            [
+                transforms.Resize((224, 224)),
+                transforms.ToTensor(),
+                transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
+            ]
+        )
 
         if MONITORING_AVAILABLE:
             with InferenceMetrics("vision") as metrics:
@@ -615,17 +575,14 @@ async def predict_vision(
                 logits = model(x)
                 proba = float(torch.softmax(logits, dim=1)[:, 1].item())
 
-        return {
-            "vision_anomaly_probability": proba,
-            "risk_level": get_risk_level(proba)
-        }
+        return {"vision_anomaly_probability": proba, "risk_level": get_risk_level(proba)}
     except Exception as e:
         raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Vision inference failed: {str(e)}"
-        )
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Vision inference failed: {str(e)}"
+        ) from e
 
 
 if __name__ == "__main__":
     import uvicorn
+
     uvicorn.run(app, host="0.0.0.0", port=8000)

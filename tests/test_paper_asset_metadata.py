@@ -3,11 +3,12 @@ from pathlib import Path
 
 def test_manuscript_rejects_stale_mvtec_claims():
     import re
+
     repo_root = Path(__file__).resolve().parents[1]
     paper = (repo_root / "docs" / "research" / "PAPER_DRAFT_v1.tex").read_text()
     thesis = (repo_root / "docs" / "research" / "THESIS_CHAPTER_v1.tex").read_text()
     readme = (repo_root / "README.md").read_text()
-    combined = re.sub(r'\s+', ' ', "\n".join([paper, thesis, readme]))
+    combined = re.sub(r"\s+", " ", "\n".join([paper, thesis, readme]))
 
     stale_claims = [
         "random forest fusion leads (clean ROC-AUC\n$0.959$)",
@@ -18,7 +19,7 @@ def test_manuscript_rejects_stale_mvtec_claims():
     ]
 
     for claim in stale_claims:
-        assert re.sub(r'\s+', ' ', claim) not in combined
+        assert re.sub(r"\s+", " ", claim) not in combined
 
     required_claims = [
         "label-aligned stress-only benchmark",
@@ -28,7 +29,7 @@ def test_manuscript_rejects_stale_mvtec_claims():
         "diagnostic gate",
     ]
     for claim in required_claims:
-        assert re.sub(r'\s+', ' ', claim) in combined
+        assert re.sub(r"\s+", " ", claim) in combined
 
 
 def test_manuscript_keeps_mvtec_protocol_diagnostic_claim_consistent():
@@ -280,6 +281,7 @@ def test_calibration_table_includes_cda_spearman_status(tmp_path: Path):
 
 def test_mvtec3d_sota_demarcation_assets_and_subsection_present():
     import re
+
     repo_root = Path(__file__).resolve().parents[1]
     table_path = repo_root / "docs" / "research" / "tables" / "mvtec3d_sota_demarcation.tex"
     figure_path = repo_root / "docs" / "research" / "figures" / "mvtec3d_sota_demarcation.png"
@@ -293,7 +295,7 @@ def test_mvtec3d_sota_demarcation_assets_and_subsection_present():
     thesis = thesis_path.read_text()
 
     for document in (paper, thesis):
-        norm_doc = re.sub(r'\s+', ' ', document)
+        norm_doc = re.sub(r"\s+", " ", document)
         assert "Demarcation from Published MVTec 3D-AD Image-AUROC Results" in norm_doc
         assert "leaderboard" in norm_doc
         assert "mvtec3d_sota_demarcation.tex" in norm_doc
@@ -347,18 +349,18 @@ def test_unsw_heldout_attack_results_present():
         "configs/attention_unsw_heldout_attack.yaml before running tests."
     )
     import json
+
     payload = json.loads(path.read_text())
     cs = payload.get("clean_metric_summary", {})
     # Held-out attack categories should produce a meaningful supervised
     # fusion signal because the model is trained on related attacks.
-    rga_plus = (
-        cs.get("rga_meta_router", {}).get("roc_auc", {}).get("mean")
-        or cs.get("rga_boosted_fusion", {}).get("roc_auc", {}).get("mean")
-    )
+    rga_plus = cs.get("rga_meta_router", {}).get("roc_auc", {}).get("mean") or cs.get("rga_boosted_fusion", {}).get(
+        "roc_auc", {}
+    ).get("mean")
     rf = cs.get("random_forest", {}).get("roc_auc", {}).get("mean")
-    assert rga_plus is not None and float(rga_plus) > 0.9, (
-        "RGA+ should generalise to held-out UNSW attack categories at AUROC > 0.9."
-    )
+    assert (
+        rga_plus is not None and float(rga_plus) > 0.9
+    ), "RGA+ should generalise to held-out UNSW attack categories at AUROC > 0.9."
     assert rf is not None and float(rf) > 0.9
 
     paper = (repo_root / "docs" / "research" / "PAPER_DRAFT_v1.tex").read_text()
@@ -375,12 +377,12 @@ def test_visa_noise_floor_results_present():
         "configs/attention_visa_supervised_paired_noise_floor.yaml before running tests."
     )
     import json
+
     payload = json.loads(path.read_text())
     cs = payload.get("clean_metric_summary", {})
-    rga_plus = (
-        cs.get("rga_meta_router", {}).get("roc_auc", {}).get("mean")
-        or cs.get("rga_boosted_fusion", {}).get("roc_auc", {}).get("mean")
-    )
+    rga_plus = cs.get("rga_meta_router", {}).get("roc_auc", {}).get("mean") or cs.get("rga_boosted_fusion", {}).get(
+        "roc_auc", {}
+    ).get("mean")
     static = cs.get("static_attention", {}).get("roc_auc", {}).get("mean")
     # Under noise-floor edge_proxy, static (RGB-only) should be ~unchanged
     # vs original VisA SP and RGA+ should still be above static.
@@ -389,8 +391,10 @@ def test_visa_noise_floor_results_present():
 
 
 def test_eata_sar_adapters_importable():
-    from uais.fusion.attention.baselines import EATAScoreAdapter, SARScoreAdapter
     import numpy as np
+
+    from uais.fusion.attention.baselines import EATAScoreAdapter, SARScoreAdapter
+
     rng = np.random.default_rng(0)
     features = rng.uniform(0, 1, size=(40, 3, 4)).astype(np.float32)
     masks = np.zeros((40, 3), dtype=bool)
@@ -410,6 +414,7 @@ def test_patchcore3d_baseline_results_present():
         "PatchCore-3D head-to-head baseline JSON before running tests."
     )
     import json
+
     payload = json.loads(baseline_path.read_text())
     assert payload["protocol"] == "canonical_one_class"
     assert payload["scorer"] == "patchcore_knn"

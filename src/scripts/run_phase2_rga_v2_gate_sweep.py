@@ -32,13 +32,21 @@ ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT / "src"))
 sys.path.insert(0, str(ROOT))
 
-from scripts.run_breakthrough_experiment import (  # noqa: E402
-    _build_model, _load_data, _make_loaders, _make_reliability_estimator,
-    _predict_static, _predict_craf_with_stats, _split, _train_model, set_seed,
-)
 from elara.evaluation.prediction_archive import PredictionArchive  # noqa: E402
 from elara.family_b.corruption import (  # noqa: E402
-    inject_corruption, validation_fold_corruption_grid,
+    inject_corruption,
+    validation_fold_corruption_grid,
+)
+from scripts.run_breakthrough_experiment import (  # noqa: E402
+    _build_model,
+    _load_data,
+    _make_loaders,
+    _make_reliability_estimator,
+    _predict_craf_with_stats,
+    _predict_static,
+    _split,
+    _train_model,
+    set_seed,
 )
 
 REGISTRY_V2 = ROOT / "docs" / "research" / "phase2" / "PHASE_2_EXPERIMENT_REGISTRY_v2.csv"
@@ -83,6 +91,7 @@ def _load_contract() -> dict:
 
 def _safe_auc(y, p):
     from sklearn.metrics import roc_auc_score
+
     y = np.asarray(y, dtype=int)
     p = np.asarray(p, dtype=float)
     if len(np.unique(y)) < 2:
@@ -184,8 +193,10 @@ def _select_tau_on_validation_only(
 
     # Build val-fold corruption injections
     grid = validation_fold_corruption_grid(
-        val_features, val_masks,
-        domain_order=domain_order, score_index=score_idx,
+        val_features,
+        val_masks,
+        domain_order=domain_order,
+        score_index=score_idx,
         attacks=tuple(contract["fault_surface"]["attacks"][:2]),
         k_values=tuple(contract["fault_surface"]["k_values"]),
         base_seed=int(base_seed),
@@ -203,7 +214,9 @@ def _select_tau_on_validation_only(
 
     if not all_weights:
         return {
-            "gate_id": gate_id, "tuned": True, "selected_value": None,
+            "gate_id": gate_id,
+            "tuned": True,
+            "selected_value": None,
             "selection_basis": "no validation injections produced",
             "selection_used_test_metrics": False,
         }
@@ -219,8 +232,7 @@ def _select_tau_on_validation_only(
     elif gate_id == "G2":
         grid_vals = candidate["tau_min_search_grid"]
     elif gate_id == "G3":
-        grid_vals = [(q, t) for q in candidate["q_search_grid"]
-                     for t in candidate["tau_q_search_grid"]]
+        grid_vals = [(q, t) for q in candidate["q_search_grid"] for t in candidate["tau_q_search_grid"]]
     else:
         grid_vals = [None]
 
@@ -250,7 +262,9 @@ def _select_tau_on_validation_only(
             best = v
 
     return {
-        "gate_id": gate_id, "tuned": True, "selected_value": best,
+        "gate_id": gate_id,
+        "tuned": True,
+        "selected_value": best,
         "selection_basis": f"val-fold corruption fire proxy, best={best_score:.4f}",
         "selection_used_test_metrics": False,
         "trail": selection_trail,
@@ -274,12 +288,15 @@ def run_one_seed(
     cfg_seed["training"] = dict(cfg.get("training", {}))
     cfg_seed["training"]["seed"] = int(seed)
 
-    (features, masks, labels, sample_ids, domain_order, _, conf_idx,
-     score_idx, sample_splits, _) = _load_data(cfg_seed)
-    train_idx, val_idx, test_idx = _split(labels, cfg_seed["training"],
-                                          split_values=sample_splits)
+    features, masks, labels, sample_ids, domain_order, _, conf_idx, score_idx, sample_splits, _ = _load_data(cfg_seed)
+    train_idx, val_idx, test_idx = _split(labels, cfg_seed["training"], split_values=sample_splits)
     train_loader, val_loader, _ = _make_loaders(
-        features, masks, labels, train_idx, val_idx, test_idx,
+        features,
+        masks,
+        labels,
+        train_idx,
+        val_idx,
+        test_idx,
         batch_size=int(cfg_seed["training"].get("batch_size", 64)),
     )
     model = _build_model(cfg_seed, features.shape[1], features.shape[2], conf_idx, device)
@@ -310,9 +327,14 @@ def run_one_seed(
     gate_selections = {}
     for gate_id in gates:
         sel = _select_tau_on_validation_only(
-            estimator, val_feat, val_mask, val_labels_arr,
-            gate_id=gate_id, contract=contract,
-            domain_order=list(domain_order), score_idx=score_idx,
+            estimator,
+            val_feat,
+            val_mask,
+            val_labels_arr,
+            gate_id=gate_id,
+            contract=contract,
+            domain_order=list(domain_order),
+            score_idx=score_idx,
             base_seed=int(seed),
         )
         gate_selections[gate_id] = sel
@@ -347,58 +369,79 @@ def run_one_seed(
             q_cand = "N/A"
             tau_q_cand = "N/A"
 
-        results["threshold_rows"].append({
-            "gate_id": gate_id, "seed": seed,
-            "tau_min_candidate": tau_min_cand,
-            "q_candidate": q_cand,
-            "tau_q_candidate": tau_q_cand,
-            "validation_score": sel.get("selection_basis", "N/A"),
-            "validation_clean_activation": f"{g0_clean_activation:.4f}",
-            "selected": str(selected_tau),
-            "selection_used_test_metrics": sel["selection_used_test_metrics"],
-            "status": "computed",
-        })
+        results["threshold_rows"].append(
+            {
+                "gate_id": gate_id,
+                "seed": seed,
+                "tau_min_candidate": tau_min_cand,
+                "q_candidate": q_cand,
+                "tau_q_candidate": tau_q_cand,
+                "validation_score": sel.get("selection_basis", "N/A"),
+                "validation_clean_activation": f"{g0_clean_activation:.4f}",
+                "selected": str(selected_tau),
+                "selection_used_test_metrics": sel["selection_used_test_metrics"],
+                "status": "computed",
+            }
+        )
 
         # Measure clean false-fire rate on test fold (k=0)
         w_test_clean = estimator.compute_reliability_weights(test_feat, test_mask)
-        mean_r_clean = float(np.nanmean(w_test_clean))
-        min_r_clean = float(np.nanmin(w_test_clean))
+        float(np.nanmean(w_test_clean))
+        float(np.nanmin(w_test_clean))
         gate_fired_clean, _, _ = _compute_gate_decision(
-            estimator, test_feat, test_mask,
-            gate_id=gate_id, selected_tau=selected_tau,
+            estimator,
+            test_feat,
+            test_mask,
+            gate_id=gate_id,
+            selected_tau=selected_tau,
             contract_gate=gate_contract,
         )
         clean_activation = float(gate_fired_clean.mean())
         within_budget = clean_activation <= clean_fire_budget
-        results["false_fire_rows"].append({
-            "gate_id": gate_id, "seed": seed,
-            "clean_activation_rate": f"{clean_activation:.4f}",
-            "within_false_fire_budget": str(within_budget),
-            "promotion_status": "(baseline reference)" if gate_id == "G0" else (
-                "C1_PASS" if within_budget else "C1_FAIL"
-            ),
-            "status": "computed",
-        })
+        results["false_fire_rows"].append(
+            {
+                "gate_id": gate_id,
+                "seed": seed,
+                "clean_activation_rate": f"{clean_activation:.4f}",
+                "within_false_fire_budget": str(within_budget),
+                "promotion_status": (
+                    "(baseline reference)" if gate_id == "G0" else ("C1_PASS" if within_budget else "C1_FAIL")
+                ),
+                "status": "computed",
+            }
+        )
 
         # Evaluate over fault surface
         for attack in attacks:
             conds = inject_corruption(
-                test_feat, test_mask,
-                domain_order=list(domain_order), score_index=score_idx,
-                attack_name=attack, k_values=list(k_values),
-                sigma=sigma, seed=int(seed) + 41_000 + hash(attack) % 10_000,
+                test_feat,
+                test_mask,
+                domain_order=list(domain_order),
+                score_index=score_idx,
+                attack_name=attack,
+                k_values=list(k_values),
+                sigma=sigma,
+                seed=int(seed) + 41_000 + hash(attack) % 10_000,
             )
             for cond in conds:
                 k = cond.failed_domain_count
                 static_probs = _predict_static(model, cond.features, cond.masks, device)
                 craf_probs, gate_stats = _predict_craf_with_stats(
-                    model, estimator, cond.features, cond.masks, device,
-                    clean_gate_threshold=tau_mean, per_sample_gating=False,
+                    model,
+                    estimator,
+                    cond.features,
+                    cond.masks,
+                    device,
+                    clean_gate_threshold=tau_mean,
+                    per_sample_gating=False,
                 )
 
                 gate_fired_arr, mean_r, min_r = _compute_gate_decision(
-                    estimator, cond.features, cond.masks,
-                    gate_id=gate_id, selected_tau=selected_tau,
+                    estimator,
+                    cond.features,
+                    cond.masks,
+                    gate_id=gate_id,
+                    selected_tau=selected_tau,
                     contract_gate=gate_contract,
                 )
 
@@ -407,20 +450,25 @@ def run_one_seed(
                 gate_activation = float(gate_fired_arr.mean())
                 static_auc = _safe_auc(test_labels_arr, static_probs)
                 rga_auc = _safe_auc(test_labels_arr, craf_probs)
-                delta_auc = (rga_auc - static_auc) if (
-                    not np.isnan(static_auc) and not np.isnan(rga_auc)
-                ) else float("nan")
+                delta_auc = (
+                    (rga_auc - static_auc) if (not np.isnan(static_auc) and not np.isnan(rga_auc)) else float("nan")
+                )
 
-                results["failure_surface_rows"].append({
-                    "gate_id": gate_id, "seed": seed, "k": k, "attack": attack,
-                    "static_auc": f"{static_auc:.6f}" if not np.isnan(static_auc) else "nan",
-                    "rga_auc": f"{rga_auc:.6f}" if not np.isnan(rga_auc) else "nan",
-                    "delta_auc": f"{delta_auc:.6f}" if not np.isnan(delta_auc) else "nan",
-                    "gate_activation_rate": f"{gate_activation:.4f}",
-                    "mean_reliability": f"{mean_r:.4f}",
-                    "min_reliability": f"{min_r:.4f}",
-                    "status": "computed",
-                })
+                results["failure_surface_rows"].append(
+                    {
+                        "gate_id": gate_id,
+                        "seed": seed,
+                        "k": k,
+                        "attack": attack,
+                        "static_auc": f"{static_auc:.6f}" if not np.isnan(static_auc) else "nan",
+                        "rga_auc": f"{rga_auc:.6f}" if not np.isnan(rga_auc) else "nan",
+                        "delta_auc": f"{delta_auc:.6f}" if not np.isnan(delta_auc) else "nan",
+                        "gate_activation_rate": f"{gate_activation:.4f}",
+                        "mean_reliability": f"{mean_r:.4f}",
+                        "min_reliability": f"{min_r:.4f}",
+                        "status": "computed",
+                    }
+                )
 
                 # Archive predictions
                 try:
@@ -430,9 +478,12 @@ def run_one_seed(
                         raw_scores=np.asarray(craf_probs, dtype=float),
                         method=f"{gate_id}_rga",
                         method_variant=f"{attack}__k{k}",
-                        benchmark=benchmark, protocol=protocol,
-                        analysis_family="B", pairing_strength="label_aligned_stress_only",
-                        split="test", seed=int(seed),
+                        benchmark=benchmark,
+                        protocol=protocol,
+                        analysis_family="B",
+                        pairing_strength="label_aligned_stress_only",
+                        split="test",
+                        seed=int(seed),
                         selection_rule=f"validation-only gate {gate_id} tau={selected_tau}",
                         selection_used_test_metrics=False,
                         selected_head_or_comparator_status=f"RGA {gate_id}",
@@ -440,13 +491,19 @@ def run_one_seed(
                         gate_fired=gate_fired_arr,
                         mean_reliability=np.full(len(test_idx), mean_r),
                         min_reliability=np.full(len(test_idx), min_r),
-                        failure_type=attack, failed_domain_count=int(k),
+                        failure_type=attack,
+                        failed_domain_count=int(k),
                         fault_severity=sigma,
                     )
                     entry = archive.write(
-                        experiment_id=eid, benchmark=benchmark, protocol=protocol,
-                        seed=int(seed), method=f"{gate_id}__{attack}_k{k}",
-                        split="test", frame=frame, config=cfg_seed,
+                        experiment_id=eid,
+                        benchmark=benchmark,
+                        protocol=protocol,
+                        seed=int(seed),
+                        method=f"{gate_id}__{attack}_k{k}",
+                        split="test",
+                        frame=frame,
+                        config=cfg_seed,
                     )
                     archive.append_index(entry)
                 except Exception as e:
@@ -458,19 +515,24 @@ def run_one_seed(
 def _aggregate_inference(all_ff_rows: list[dict], all_fs_rows: list[dict], contract: dict) -> list[dict]:
     """Compute per-gate promotion decisions across seeds."""
     from collections import defaultdict
-    import statistics
 
     gates = {r["gate_id"] for r in all_fs_rows}
     # Get G0 false-fire rates (baseline) from all_ff_rows
-    g0_ff = [float(r["clean_activation_rate"]) for r in all_ff_rows
-              if r.get("gate_id") == "G0" and r.get("status") == "computed"]
+    g0_ff = [
+        float(r["clean_activation_rate"])
+        for r in all_ff_rows
+        if r.get("gate_id") == "G0" and r.get("status") == "computed"
+    ]
     g0_ff_mean = float(np.mean(g0_ff)) if g0_ff else 0.005
     clean_budget = max(0.010, g0_ff_mean + 0.005)
 
     inference_rows = []
     for gate_id in sorted(gates):
-        ff_rates = [float(r["clean_activation_rate"]) for r in all_ff_rows
-                    if r["gate_id"] == gate_id and r.get("status") == "computed"]
+        ff_rates = [
+            float(r["clean_activation_rate"])
+            for r in all_ff_rows
+            if r["gate_id"] == gate_id and r.get("status") == "computed"
+        ]
         mean_ff = float(np.mean(ff_rates)) if ff_rates else float("nan")
         c1_pass = mean_ff <= clean_budget if not np.isnan(mean_ff) else False
 
@@ -506,19 +568,27 @@ def _aggregate_inference(all_ff_rows: list[dict], all_fs_rows: list[dict], contr
         c2_pass = c2_count >= 2
 
         # C3: k=4 not worsened by more than 0.005
-        k4_delta_gate = [float(r["delta_auc"]) for r in all_fs_rows
-                         if r["gate_id"] == gate_id and int(r["k"]) == 4
-                         and r.get("status") == "computed"
-                         and not np.isnan(float(r.get("delta_auc", "nan")))]
-        k4_delta_g0 = [float(r["delta_auc"]) for r in all_fs_rows
-                       if r["gate_id"] == "G0" and int(r["k"]) == 4
-                       and r.get("status") == "computed"
-                       and not np.isnan(float(r.get("delta_auc", "nan")))]
+        k4_delta_gate = [
+            float(r["delta_auc"])
+            for r in all_fs_rows
+            if r["gate_id"] == gate_id
+            and int(r["k"]) == 4
+            and r.get("status") == "computed"
+            and not np.isnan(float(r.get("delta_auc", "nan")))
+        ]
+        k4_delta_g0 = [
+            float(r["delta_auc"])
+            for r in all_fs_rows
+            if r["gate_id"] == "G0"
+            and int(r["k"]) == 4
+            and r.get("status") == "computed"
+            and not np.isnan(float(r.get("delta_auc", "nan")))
+        ]
         mean_k4_gate = float(np.mean(k4_delta_gate)) if k4_delta_gate else float("nan")
         mean_k4_g0 = float(np.mean(k4_delta_g0)) if k4_delta_g0 else float("nan")
         c3_pass = True
         if not np.isnan(mean_k4_gate) and not np.isnan(mean_k4_g0):
-            c3_pass = (mean_k4_gate >= mean_k4_g0 - 0.005)
+            c3_pass = mean_k4_gate >= mean_k4_g0 - 0.005
 
         # C4: positive switching certificate — requires actual certificate computation
         # We flag this as PENDING for now; B-CERT-1 extension handles it
@@ -543,18 +613,20 @@ def _aggregate_inference(all_ff_rows: list[dict], all_fs_rows: list[dict], contr
         else:
             decision = "NOT_IMPROVED"
 
-        inference_rows.append({
-            "gate_id": gate_id,
-            "mean_clean_false_fire": f"{mean_ff:.4f}" if not np.isnan(mean_ff) else "nan",
-            "clean_budget": f"{clean_budget:.4f}",
-            "C1_false_fire_budget": str(c1_pass),
-            "C2_partial_improvement": str(c2_pass) + f" ({c2_count}/2+ criteria)",
-            "C3_k4_not_worsened": str(c3_pass),
-            "C4_positive_certificate": f"{c4_pass} (pending B-CERT-1 extension)",
-            "C5_validation_only": str(c5_pass),
-            "C6_same_gate_policy": str(c6_pass),
-            "promotion_decision": decision,
-        })
+        inference_rows.append(
+            {
+                "gate_id": gate_id,
+                "mean_clean_false_fire": f"{mean_ff:.4f}" if not np.isnan(mean_ff) else "nan",
+                "clean_budget": f"{clean_budget:.4f}",
+                "C1_false_fire_budget": str(c1_pass),
+                "C2_partial_improvement": str(c2_pass) + f" ({c2_count}/2+ criteria)",
+                "C3_k4_not_worsened": str(c3_pass),
+                "C4_positive_certificate": f"{c4_pass} (pending B-CERT-1 extension)",
+                "C5_validation_only": str(c5_pass),
+                "C6_same_gate_policy": str(c6_pass),
+                "promotion_decision": decision,
+            }
+        )
     return inference_rows
 
 
@@ -563,8 +635,7 @@ def main() -> int:
     p.add_argument("--experiment-id", required=True)
     p.add_argument("--seeds", type=int, default=30)
     p.add_argument("--seed-start", type=int, default=42)
-    p.add_argument("--gates", default="G0,G1,G2,G3",
-                   help="comma-separated subset of {G0,G1,G2,G3,G4}")
+    p.add_argument("--gates", default="G0,G1,G2,G3", help="comma-separated subset of {G0,G1,G2,G3,G4}")
     p.add_argument("--seed-metrics-out", type=Path, default=FAILURE_SURFACE_CSV)
     p.add_argument("--archive-root", type=Path, default=ARCHIVE_DIR)
     args = p.parse_args()
@@ -598,13 +669,32 @@ def main() -> int:
     args.archive_root.mkdir(parents=True, exist_ok=True)
 
     # Open output CSVs
-    thresh_fields = ["gate_id", "seed", "tau_min_candidate", "q_candidate", "tau_q_candidate",
-                     "validation_score", "validation_clean_activation", "selected",
-                     "selection_used_test_metrics", "status"]
-    ff_fields = ["gate_id", "seed", "clean_activation_rate", "within_false_fire_budget",
-                 "promotion_status", "status"]
-    fs_fields = ["gate_id", "seed", "k", "attack", "static_auc", "rga_auc", "delta_auc",
-                 "gate_activation_rate", "mean_reliability", "min_reliability", "status"]
+    thresh_fields = [
+        "gate_id",
+        "seed",
+        "tau_min_candidate",
+        "q_candidate",
+        "tau_q_candidate",
+        "validation_score",
+        "validation_clean_activation",
+        "selected",
+        "selection_used_test_metrics",
+        "status",
+    ]
+    ff_fields = ["gate_id", "seed", "clean_activation_rate", "within_false_fire_budget", "promotion_status", "status"]
+    fs_fields = [
+        "gate_id",
+        "seed",
+        "k",
+        "attack",
+        "static_auc",
+        "rga_auc",
+        "delta_auc",
+        "gate_activation_rate",
+        "mean_reliability",
+        "min_reliability",
+        "status",
+    ]
 
     thresh_new = not THRESHOLD_CSV.exists()
     ff_new = not FALSE_FIRE_CSV.exists()
@@ -632,8 +722,14 @@ def main() -> int:
         print(f"[b-mech-2 seed={s} starting]", flush=True)
         try:
             result = run_one_seed(
-                cfg, s, archive, requested, contract,
-                args.experiment_id, benchmark, protocol,
+                cfg,
+                s,
+                archive,
+                requested,
+                contract,
+                args.experiment_id,
+                benchmark,
+                protocol,
             )
             for r in result["threshold_rows"]:
                 tw.writerow(r)
@@ -657,10 +753,18 @@ def main() -> int:
 
     # Write inference summary
     inf_rows = _aggregate_inference(all_ff_rows, all_fs_rows, contract)
-    inf_fields = ["gate_id", "mean_clean_false_fire", "clean_budget",
-                  "C1_false_fire_budget", "C2_partial_improvement", "C3_k4_not_worsened",
-                  "C4_positive_certificate", "C5_validation_only", "C6_same_gate_policy",
-                  "promotion_decision"]
+    inf_fields = [
+        "gate_id",
+        "mean_clean_false_fire",
+        "clean_budget",
+        "C1_false_fire_budget",
+        "C2_partial_improvement",
+        "C3_k4_not_worsened",
+        "C4_positive_certificate",
+        "C5_validation_only",
+        "C6_same_gate_policy",
+        "promotion_decision",
+    ]
     with INFERENCE_CSV.open("w", newline="") as inf_f:
         w = csv.DictWriter(inf_f, fieldnames=inf_fields)
         w.writeheader()

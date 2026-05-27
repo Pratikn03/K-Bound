@@ -24,16 +24,21 @@ def test_risk_dominance_returns_finite_terms():
     y_deg = (rng.random(n) < 0.3).astype(int)
     static_clean = np.clip(y_clean + rng.normal(0, 0.2, n), 0, 1)
     gated_clean = np.clip(y_clean + rng.normal(0, 0.25, n), 0, 1)  # slightly worse
-    static_deg = np.clip(1 - y_deg + rng.normal(0, 0.2, n), 0, 1)   # static is wrong under degradation
+    static_deg = np.clip(1 - y_deg + rng.normal(0, 0.2, n), 0, 1)  # static is wrong under degradation
     gated_deg = np.clip(y_deg + rng.normal(0, 0.2, n), 0, 1)
     fired_clean = rng.random(n) < 0.05
     fired_deg = rng.random(n) < 0.95
     out = estimate_risk_dominance(
-        gate_id="G0", scenario_id="synthetic",
-        clean_static_scores=static_clean, clean_gated_scores=gated_clean,
-        clean_gate_fired=fired_clean, clean_labels=y_clean,
-        degraded_static_scores=static_deg, degraded_gated_scores=gated_deg,
-        degraded_gate_fired=fired_deg, degraded_labels=y_deg,
+        gate_id="G0",
+        scenario_id="synthetic",
+        clean_static_scores=static_clean,
+        clean_gated_scores=gated_clean,
+        clean_gate_fired=fired_clean,
+        clean_labels=y_clean,
+        degraded_static_scores=static_deg,
+        degraded_gated_scores=gated_deg,
+        degraded_gate_fired=fired_deg,
+        degraded_labels=y_deg,
     )
     assert np.isfinite(out.q0)
     assert np.isfinite(out.q1)
@@ -54,7 +59,7 @@ def test_fired_subset_certificate_positive_when_gated_dominates():
     n = 500
     y = (rng.random(n) < 0.3).astype(int)
     static = np.clip(1 - y + rng.normal(0, 0.1, n), 0, 1)  # wrong polarity
-    gated = np.clip(y + rng.normal(0, 0.1, n), 0, 1)        # correct
+    gated = np.clip(y + rng.normal(0, 0.1, n), 0, 1)  # correct
     fired = np.ones(n, dtype=bool)
     cert = fired_subset_certificate(
         gate_id="G_dominant",

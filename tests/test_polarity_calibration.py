@@ -6,7 +6,6 @@ import numpy as np
 import torch
 
 from scripts.run_breakthrough_experiment import _calibrate_polarity
-from uais.fusion.attention.cross_modal_attention import AttentionFusionModel
 
 
 class _InversePolarityModel(torch.nn.Module):

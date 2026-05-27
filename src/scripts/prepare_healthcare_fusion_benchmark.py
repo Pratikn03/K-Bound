@@ -30,7 +30,6 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
-
 DOMAIN_TO_BASE_FEATURE: dict[str, str] = {
     "cardiac": "hr_bpm",
     "oxygenation": "spo2_pct",
@@ -119,7 +118,7 @@ def build_healthcare_fusion_frame(
         df, val_fraction=val_fraction, test_fraction=test_fraction, seed=seed
     )
     df = df.assign(fusion_split=df["patient_id"].map(patient_split).fillna("train"))
-    train_mask = (df["fusion_split"].to_numpy() == "train")
+    train_mask = df["fusion_split"].to_numpy() == "train"
 
     # Build per-domain score and embedding columns.
     domain_scores: dict[str, np.ndarray] = {}
@@ -146,10 +145,7 @@ def build_healthcare_fusion_frame(
             pad = np.zeros((feature_matrix.shape[0], embedding_dim - feature_matrix.shape[1]), dtype=np.float32)
             feature_matrix = np.hstack([feature_matrix, pad])
         scaled = np.column_stack(
-            [
-                _minmax_clip(feature_matrix[:, j], train_mask)
-                for j in range(feature_matrix.shape[1])
-            ]
+            [_minmax_clip(feature_matrix[:, j], train_mask) for j in range(feature_matrix.shape[1])]
         )
         domain_embeddings[domain] = scaled
 
@@ -193,17 +189,9 @@ def build_healthcare_fusion_frame(
         "positive_fraction_actual": float(sample_frame["label"].mean()),
         "categories": sorted(frame["category"].unique().tolist()),
         "fusion_splits": frame["fusion_split"].value_counts().to_dict(),
-        "patients_per_split": (
-            frame.drop_duplicates("patient_key")
-            .groupby("fusion_split")
-            .size()
-            .to_dict()
-        ),
+        "patients_per_split": (frame.drop_duplicates("patient_key").groupby("fusion_split").size().to_dict()),
         "label_distribution_per_split": {
-            split: frame[frame["fusion_split"] == split]
-            .drop_duplicates("sample_id")["label"]
-            .value_counts()
-            .to_dict()
+            split: frame[frame["fusion_split"] == split].drop_duplicates("sample_id")["label"].value_counts().to_dict()
             for split in sorted(frame["fusion_split"].unique())
         },
         "score_protocol": {
@@ -211,7 +199,7 @@ def build_healthcare_fusion_frame(
             "score_definition": "|x - mean_train(x)| / std_train(x), min-max clipped against train p0..p95",
             "embedding_normalization_split": "train",
         },
-        "score_features": {domain: base for domain, base in DOMAIN_TO_BASE_FEATURE.items()},
+        "score_features": dict(DOMAIN_TO_BASE_FEATURE.items()),
     }
     return frame, metadata
 

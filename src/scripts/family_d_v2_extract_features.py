@@ -16,7 +16,6 @@ from __future__ import annotations
 
 import argparse
 import io
-import sys
 import tarfile
 from pathlib import Path
 
@@ -24,8 +23,7 @@ import numpy as np
 import torch
 import torch.nn.functional as F
 from PIL import Image
-from torchvision.models import resnet50, ResNet50_Weights
-from torchvision.transforms import functional as TF
+from torchvision.models import ResNet50_Weights, resnet50
 
 ROOT = Path(__file__).resolve().parents[2]
 ARCHIVE_DIR = ROOT / "data" / "raw" / "eyecandies" / "_archives"
@@ -33,8 +31,16 @@ OUT_DIR = ROOT / "experiments" / "phase2" / "family_d"
 FEAT_DIR = OUT_DIR / "features"
 
 CATEGORIES = [
-    "CandyCane", "ChocolateCookie", "ChocolatePraline", "Confetto", "GummyBear",
-    "HazelnutTruffle", "LicoriceSandwich", "Lollipop", "Marshmallow", "PeppermintCandy",
+    "CandyCane",
+    "ChocolateCookie",
+    "ChocolatePraline",
+    "Confetto",
+    "GummyBear",
+    "HazelnutTruffle",
+    "LicoriceSandwich",
+    "Lollipop",
+    "Marshmallow",
+    "PeppermintCandy",
 ]
 SPLITS = ["train", "val", "test_public", "test_private"]
 
@@ -49,8 +55,13 @@ def _make_backbone(device):
     m.eval()
     # We want layer3 outputs, then global pool.
     feature_layer = torch.nn.Sequential(
-        m.conv1, m.bn1, m.relu, m.maxpool,
-        m.layer1, m.layer2, m.layer3,
+        m.conv1,
+        m.bn1,
+        m.relu,
+        m.maxpool,
+        m.layer1,
+        m.layer2,
+        m.layer3,
     ).to(device)
     transforms = weights.transforms()
     return feature_layer, transforms
@@ -70,7 +81,7 @@ def _featurize_batch(image_byte_list, backbone, transforms, device, batch_size: 
     """Process N images in one batched forward pass."""
     feats = []
     for start in range(0, len(image_byte_list), batch_size):
-        chunk = image_byte_list[start:start + batch_size]
+        chunk = image_byte_list[start : start + batch_size]
         tensors = []
         for b in chunk:
             img = Image.open(io.BytesIO(b)).convert("RGB")
@@ -123,11 +134,11 @@ def _process_category(cat: str, backbone, transforms, device, batch_size: int) -
         rgb_bytes = [s.get("rgb") for _, s in rgb_pairs]
         depth_bytes = [s.get("depth") for _, s in rgb_pairs]
         if any(b is None for b in rgb_bytes) or any(b is None for b in depth_bytes):
-            missing_ids = [sid for sid, s in rgb_pairs
-                           if s.get("rgb") is None or s.get("depth") is None]
+            missing_ids = [sid for sid, s in rgb_pairs if s.get("rgb") is None or s.get("depth") is None]
             print(f"[{cat}/{split}] WARNING: {len(missing_ids)} samples missing rgb or depth; skipping those")
-            keep = [i for i, (sid, s) in enumerate(rgb_pairs)
-                    if s.get("rgb") is not None and s.get("depth") is not None]
+            keep = [
+                i for i, (sid, s) in enumerate(rgb_pairs) if s.get("rgb") is not None and s.get("depth") is not None
+            ]
             rgb_pairs = [rgb_pairs[i] for i in keep]
             rgb_bytes = [rgb_bytes[i] for i in keep]
             depth_bytes = [depth_bytes[i] for i in keep]
@@ -156,8 +167,7 @@ def _process_category(cat: str, backbone, transforms, device, batch_size: int) -
 
 def main() -> int:
     p = argparse.ArgumentParser(description=__doc__)
-    p.add_argument("--only", default=None,
-                   help="comma-separated category subset")
+    p.add_argument("--only", default=None, help="comma-separated category subset")
     p.add_argument("--batch-size", type=int, default=32)
     args = p.parse_args()
 

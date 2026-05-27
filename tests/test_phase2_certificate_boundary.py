@@ -13,9 +13,7 @@ DRIVER = ROOT / "src" / "scripts" / "run_phase2_certificate_audit.py"
 
 def test_certificate_driver_states_retrospective_boundary_in_source():
     src = DRIVER.read_text()
-    assert "retrospective" in src.lower(), (
-        "certificate driver must state the retrospective-evaluation boundary"
-    )
+    assert "retrospective" in src.lower(), "certificate driver must state the retrospective-evaluation boundary"
 
 
 def test_certificate_driver_does_not_promise_production_safety():
@@ -23,6 +21,7 @@ def test_certificate_driver_does_not_promise_production_safety():
     driver source must be in a negating context — the boundary notice
     explicitly disclaims these properties."""
     import re
+
     src = DRIVER.read_text()
     forbidden = (
         "production safety",
@@ -33,10 +32,10 @@ def test_certificate_driver_does_not_promise_production_safety():
     negation_pat = re.compile(r"\b(not|no|does\s+not|cannot)\b", re.IGNORECASE)
     for phrase in forbidden:
         for m in re.finditer(re.escape(phrase), src, re.IGNORECASE):
-            window = src[max(0, m.start() - 80): m.end() + 10]
-            assert negation_pat.search(window), (
-                f"phrase {phrase!r} appears without negation in driver source: {window!r}"
-            )
+            window = src[max(0, m.start() - 80) : m.end() + 10]
+            assert negation_pat.search(
+                window
+            ), f"phrase {phrase!r} appears without negation in driver source: {window!r}"
 
 
 def test_certificate_code_is_importable():
@@ -45,6 +44,7 @@ def test_certificate_code_is_importable():
         fired_subset_certificate,
         paired_bootstrap_lcb,
     )
+
     assert callable(estimate_risk_dominance)
     assert callable(fired_subset_certificate)
     assert callable(paired_bootstrap_lcb)

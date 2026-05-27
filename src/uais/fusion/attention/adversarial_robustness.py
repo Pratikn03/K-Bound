@@ -11,13 +11,14 @@ than zero/max/Gaussian).
 
 from __future__ import annotations
 
+from collections.abc import Sequence
 from enum import Enum
-from typing import Dict, List, Optional, Sequence, Tuple
 
 import numpy as np
 
 try:
     import torch
+
     _HAS_TORCH = True
 except ImportError:  # torch is an installed dep; tolerate import failure for type-only
     torch = None  # type: ignore
@@ -25,10 +26,10 @@ except ImportError:  # torch is an installed dep; tolerate import failure for ty
 
 
 class AdversarialAttackType(str, Enum):
-    ZERO_ATTACK = "zero_attack"             # Suppress domain signal: score → 0.0
-    MAX_ATTACK = "max_attack"               # Amplify domain signal: score → 1.0
-    GAUSSIAN_NOISE = "gaussian_noise"      # score += N(0, sigma); clipped to [0,1]
-    UNIFORM_NOISE = "uniform_noise"        # score += U(-eps, eps); clipped to [0,1]
+    ZERO_ATTACK = "zero_attack"  # Suppress domain signal: score → 0.0
+    MAX_ATTACK = "max_attack"  # Amplify domain signal: score → 1.0
+    GAUSSIAN_NOISE = "gaussian_noise"  # score += N(0, sigma); clipped to [0,1]
+    UNIFORM_NOISE = "uniform_noise"  # score += U(-eps, eps); clipped to [0,1]
     MEAN_SUBSTITUTION = "mean_substitution"  # Replace score with training mean
 
 
@@ -42,7 +43,7 @@ class AdversarialPerturbationEngine:
 
     def __init__(
         self,
-        domain_order: List[str],
+        domain_order: list[str],
         score_index: int,
         random_seed: int = 42,
     ) -> None:
@@ -50,7 +51,7 @@ class AdversarialPerturbationEngine:
         self.score_index = score_index
         self.rng = np.random.default_rng(random_seed)
 
-    def _domain_indices(self, target_domain: Optional[str]) -> List[int]:
+    def _domain_indices(self, target_domain: str | None) -> list[int]:
         if target_domain is None:
             return list(range(len(self.domain_order)))
         if target_domain not in self.domain_order:
@@ -62,11 +63,11 @@ class AdversarialPerturbationEngine:
         features: np.ndarray,
         masks: np.ndarray,
         attack_type: AdversarialAttackType,
-        target_domain: Optional[str] = None,
+        target_domain: str | None = None,
         sigma: float = 0.1,
         eps: float = 0.1,
-        reference_mean: Optional[np.ndarray] = None,
-    ) -> Tuple[np.ndarray, np.ndarray]:
+        reference_mean: np.ndarray | None = None,
+    ) -> tuple[np.ndarray, np.ndarray]:
         """Apply a structured attack to domain scores.
 
         Parameters
@@ -117,11 +118,11 @@ class AdversarialPerturbationEngine:
         features: np.ndarray,
         masks: np.ndarray,
         target_domain: str,
-        noise_levels: List[float],
+        noise_levels: list[float],
         drift_type: str = "gaussian",
         shift_amount: float = 0.1,
         scale_factor: float = 1.2,
-    ) -> Dict[float, np.ndarray]:
+    ) -> dict[float, np.ndarray]:
         """Sweep domain scores across a range of drift intensities.
 
         Returns a dict mapping each noise level to its perturbed features array.
@@ -135,7 +136,7 @@ class AdversarialPerturbationEngine:
         "scale"    : multiply by `1 + level * (scale_factor - 1)` — simulates magnitude drift
         """
         d = self.domain_order.index(target_domain)
-        result: Dict[float, np.ndarray] = {}
+        result: dict[float, np.ndarray] = {}
 
         for level in noise_levels:
             perturbed = features.copy().astype(np.float32)
@@ -172,14 +173,17 @@ class AdversarialPerturbationEngine:
         self,
         features: np.ndarray,
         masks: np.ndarray,
-        sigma_values: List[float],
-        target_domain: Optional[str] = None,
-    ) -> Dict[float, Tuple[np.ndarray, np.ndarray]]:
+        sigma_values: list[float],
+        target_domain: str | None = None,
+    ) -> dict[float, tuple[np.ndarray, np.ndarray]]:
         """Convenience wrapper: apply GAUSSIAN_NOISE at multiple sigma levels."""
         return {
             sigma: self.apply_attack(
-                features, masks, AdversarialAttackType.GAUSSIAN_NOISE,
-                target_domain=target_domain, sigma=sigma,
+                features,
+                masks,
+                AdversarialAttackType.GAUSSIAN_NOISE,
+                target_domain=target_domain,
+                sigma=sigma,
             )
             for sigma in sigma_values
         }
@@ -195,7 +199,7 @@ class AdversarialPerturbationEngine:
         step_size: float = 0.02,
         n_steps: int = 10,
         device=None,
-    ) -> Tuple[np.ndarray, np.ndarray]:
+    ) -> tuple[np.ndarray, np.ndarray]:
         """Gradient-aligned PGD attack over a subset of domains.
 
         Perturbs only the score channel for the named domain subset, bounded
@@ -261,9 +265,7 @@ class AdversarialPerturbationEngine:
                 logits = out[0] if isinstance(out, tuple) else out
                 logits = logits.squeeze(-1)
                 # Untargeted: maximize BCE loss.
-                loss = torch.nn.functional.binary_cross_entropy_with_logits(
-                    logits, labels_t, reduction="mean"
-                )
+                loss = torch.nn.functional.binary_cross_entropy_with_logits(logits, labels_t, reduction="mean")
                 grad = torch.autograd.grad(loss, delta, retain_graph=False)[0]
                 with torch.no_grad():
                     delta = delta + step_size * torch.sign(grad) * edit_mask.float()

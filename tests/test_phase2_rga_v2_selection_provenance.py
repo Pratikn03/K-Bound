@@ -32,9 +32,9 @@ def test_threshold_selection_row_count_equals_seeds_times_gates():
         rows = list(csv.DictReader(f))
     seeds = {r["seed"] for r in rows}
     gates = {r["gate_id"] for r in rows}
-    assert len(rows) == len(seeds) * len(gates), (
-        f"expected {len(seeds)} × {len(gates)} = {len(seeds)*len(gates)} rows; got {len(rows)}"
-    )
+    assert len(rows) == len(seeds) * len(
+        gates
+    ), f"expected {len(seeds)} × {len(gates)} = {len(seeds)*len(gates)} rows; got {len(rows)}"
 
 
 def test_no_threshold_selection_row_used_test_metrics():

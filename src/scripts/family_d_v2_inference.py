@@ -14,7 +14,6 @@ the Holm K=2 family.
 from __future__ import annotations
 
 import csv
-import io
 import sys
 import tarfile
 from pathlib import Path
@@ -27,7 +26,8 @@ ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT / "src"))
 
 from elara.evaluation.ensemble_inference import (  # noqa: E402
-    audited_analysis, holm_bonferroni,
+    audited_analysis,
+    holm_bonferroni,
 )
 
 ARCHIVE = Path(ROOT, "data", "raw", "eyecandies", "_archives")
@@ -87,8 +87,7 @@ def _load_per_seed_predictions(endpoint: str, method: str) -> dict[int, pd.DataF
             continue
         if not cell_dir.name.startswith(f"{endpoint}__"):
             continue
-        method_subdirs = [d for d in cell_dir.iterdir()
-                          if d.is_dir() and not d.name.startswith("._")]
+        method_subdirs = [d for d in cell_dir.iterdir() if d.is_dir() and not d.name.startswith("._")]
         target_method_dir = None
         for d in method_subdirs:
             if d.name == method or d.name.startswith(f"{method}_"):
@@ -107,8 +106,9 @@ def _load_per_seed_predictions(endpoint: str, method: str) -> dict[int, pd.DataF
     return out
 
 
-def _stack_ensemble(per_seed: dict[int, pd.DataFrame],
-                    labels: dict[str, int]) -> tuple[np.ndarray, np.ndarray, dict[int, np.ndarray]]:
+def _stack_ensemble(
+    per_seed: dict[int, pd.DataFrame], labels: dict[str, int]
+) -> tuple[np.ndarray, np.ndarray, dict[int, np.ndarray]]:
     """Return (sample_ids, label_vec, per_seed_score_vec). Sample IDs that
     don't appear in the label dict are dropped."""
     seeds = sorted(per_seed.keys())
@@ -146,8 +146,10 @@ def main() -> int:
 
     print("Reading Eyecandies test labels (one-time authorised label read)...", flush=True)
     labels = _read_eyecandies_test_labels()
-    print(f"  loaded {len(labels)} test sample labels  "
-          f"({sum(labels.values())} anomalous, {len(labels) - sum(labels.values())} normal)")
+    print(
+        f"  loaded {len(labels)} test sample labels  "
+        f"({sum(labels.values())} anomalous, {len(labels) - sum(labels.values())} normal)"
+    )
 
     # Compute per-endpoint primary metrics
     rows = []
@@ -176,21 +178,23 @@ def main() -> int:
             per_seed_rga_scores=scores_rga,
             per_seed_comp_scores=scores_static,
         )
-        rows.append({
-            "endpoint": endpoint,
-            "n_seeds": res.n_seeds,
-            "n_test_samples": res.n_test_samples,
-            "ensemble_static_auc": res.ensemble_comparator_auc,
-            "ensemble_rga_auc": res.ensemble_rga_auc,
-            "ensemble_delta_auc": res.ensemble_delta_auc,
-            "per_seed_mean_delta": float(np.mean(res.per_seed_deltas)),
-            "per_seed_sd_delta": float(np.std(res.per_seed_deltas, ddof=1)) if res.n_seeds > 1 else 0.0,
-            "sign_consistent_seeds": res.sign_consistent_seeds,
-            "delong_p_raw": res.delong_p_value,
-            "bootstrap_ci_low": res.bootstrap_ci_low,
-            "bootstrap_ci_high": res.bootstrap_ci_high,
-            "practical_effect_band": res.practical_effect_band,
-        })
+        rows.append(
+            {
+                "endpoint": endpoint,
+                "n_seeds": res.n_seeds,
+                "n_test_samples": res.n_test_samples,
+                "ensemble_static_auc": res.ensemble_comparator_auc,
+                "ensemble_rga_auc": res.ensemble_rga_auc,
+                "ensemble_delta_auc": res.ensemble_delta_auc,
+                "per_seed_mean_delta": float(np.mean(res.per_seed_deltas)),
+                "per_seed_sd_delta": float(np.std(res.per_seed_deltas, ddof=1)) if res.n_seeds > 1 else 0.0,
+                "sign_consistent_seeds": res.sign_consistent_seeds,
+                "delong_p_raw": res.delong_p_value,
+                "bootstrap_ci_low": res.bootstrap_ci_low,
+                "bootstrap_ci_high": res.bootstrap_ci_high,
+                "practical_effect_band": res.practical_effect_band,
+            }
+        )
         raw_p_map[endpoint] = res.delong_p_value
 
     if not rows:
@@ -202,8 +206,10 @@ def main() -> int:
     for r in rows:
         r["delong_p_holm_k2"] = holm[r["endpoint"]]
         r["decision"] = _decision(
-            r["ensemble_delta_auc"], r["delong_p_holm_k2"],
-            r["bootstrap_ci_low"], r["bootstrap_ci_high"],
+            r["ensemble_delta_auc"],
+            r["delong_p_holm_k2"],
+            r["bootstrap_ci_low"],
+            r["bootstrap_ci_high"],
             practical_threshold,
         )
 
@@ -228,10 +234,19 @@ def main() -> int:
     print(f"wrote {primary_csv}")
     holm_csv = OUT_DIR / "family_d_v2_holm_k2.csv"
     with holm_csv.open("w", newline="") as f:
-        w = csv.DictWriter(f, fieldnames=["endpoint", "ensemble_delta_auc",
-                                          "delong_p_raw", "delong_p_holm_k2",
-                                          "bootstrap_ci_low", "bootstrap_ci_high",
-                                          "practical_effect_band", "decision"])
+        w = csv.DictWriter(
+            f,
+            fieldnames=[
+                "endpoint",
+                "ensemble_delta_auc",
+                "delong_p_raw",
+                "delong_p_holm_k2",
+                "bootstrap_ci_low",
+                "bootstrap_ci_high",
+                "practical_effect_band",
+                "decision",
+            ],
+        )
         w.writeheader()
         for r in rows:
             w.writerow({k: r[k] for k in w.fieldnames})
@@ -257,19 +272,21 @@ def main() -> int:
             per_seed_rga_scores=scores_rga,
             per_seed_comp_scores=scores_static,
         )
-        sec_rows.append({
-            "endpoint": endpoint,
-            "n_seeds": res.n_seeds,
-            "n_test_samples": res.n_test_samples,
-            "ensemble_static_auc": res.ensemble_comparator_auc,
-            "ensemble_rga_auc": res.ensemble_rga_auc,
-            "ensemble_delta_auc": res.ensemble_delta_auc,
-            "delong_p_raw": res.delong_p_value,
-            "bootstrap_ci_low": res.bootstrap_ci_low,
-            "bootstrap_ci_high": res.bootstrap_ci_high,
-            "practical_effect_band": res.practical_effect_band,
-            "note": "descriptive only; NOT in Holm K=2 family",
-        })
+        sec_rows.append(
+            {
+                "endpoint": endpoint,
+                "n_seeds": res.n_seeds,
+                "n_test_samples": res.n_test_samples,
+                "ensemble_static_auc": res.ensemble_comparator_auc,
+                "ensemble_rga_auc": res.ensemble_rga_auc,
+                "ensemble_delta_auc": res.ensemble_delta_auc,
+                "delong_p_raw": res.delong_p_value,
+                "bootstrap_ci_low": res.bootstrap_ci_low,
+                "bootstrap_ci_high": res.bootstrap_ci_high,
+                "practical_effect_band": res.practical_effect_band,
+                "note": "descriptive only; NOT in Holm K=2 family",
+            }
+        )
     if sec_rows:
         sec_csv = OUT_DIR / "family_d_v2_secondary_descriptive.csv"
         with sec_csv.open("w", newline="") as f:
@@ -282,9 +299,11 @@ def main() -> int:
     print()
     print("=== Family-D v2 primary results ===")
     for r in rows:
-        print(f"{r['endpoint']}: static={r['ensemble_static_auc']:.4f}  rga={r['ensemble_rga_auc']:.4f}  "
-              f"Δ={r['ensemble_delta_auc']:+.4f}  CI=[{r['bootstrap_ci_low']:+.4f},{r['bootstrap_ci_high']:+.4f}]  "
-              f"Holm K=2 p={r['delong_p_holm_k2']:.3g}  band={r['practical_effect_band']}  → {r['decision']}")
+        print(
+            f"{r['endpoint']}: static={r['ensemble_static_auc']:.4f}  rga={r['ensemble_rga_auc']:.4f}  "
+            f"Δ={r['ensemble_delta_auc']:+.4f}  CI=[{r['bootstrap_ci_low']:+.4f},{r['bootstrap_ci_high']:+.4f}]  "
+            f"Holm K=2 p={r['delong_p_holm_k2']:.3g}  band={r['practical_effect_band']}  → {r['decision']}"
+        )
     print(f"\nFamily decision: {family_decision}")
 
     # Save family decision

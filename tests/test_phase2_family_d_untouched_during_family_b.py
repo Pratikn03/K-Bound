@@ -27,9 +27,7 @@ def test_family_b_module_does_not_reference_family_d():
             t = p.read_text(encoding="utf-8")
         except UnicodeDecodeError:
             continue
-        assert "family_d" not in t.lower(), (
-            f"{p} references family_d — Family D must remain untouched"
-        )
+        assert "family_d" not in t.lower(), f"{p} references family_d — Family D must remain untouched"
 
 
 def test_family_d_v1_invalidation_status_intact():
@@ -52,5 +50,6 @@ def test_family_d_v2_partition_manifest_never_carries_test_execution_phase_b():
     if not p.exists():
         return  # acceptable pre-Phase-2.2D state
     import json
+
     j = json.loads(p.read_text())
     assert j.get("test_evaluation_executed") is False

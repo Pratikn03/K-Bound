@@ -3,19 +3,19 @@
 Provides helpers to generate SHAP/LIME for tabular models, text LIME/SHAP (optional),
 and vision Grad-CAM is handled in vision flows.
 """
+
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Callable, Optional
 
 import numpy as np
 import pandas as pd
 
 
-def shap_tabular(model, X: pd.DataFrame, out_dir: Path, class_index: int = 1) -> Optional[Path]:
+def shap_tabular(model, X: pd.DataFrame, out_dir: Path, class_index: int = 1) -> Path | None:
     try:
-        import shap
         import matplotlib.pyplot as plt
+        import shap
     except Exception as exc:  # pragma: no cover
         print(f"SHAP skipped: {exc}")
         return None
@@ -36,7 +36,7 @@ def shap_tabular(model, X: pd.DataFrame, out_dir: Path, class_index: int = 1) ->
         return None
 
 
-def lime_tabular(model, X_train: pd.DataFrame, sample: pd.Series, out_dir: Path, class_names=None) -> Optional[Path]:
+def lime_tabular(model, X_train: pd.DataFrame, sample: pd.Series, out_dir: Path, class_names=None) -> Path | None:
     try:
         from lime.lime_tabular import LimeTabularExplainer
     except Exception as exc:  # pragma: no cover
@@ -56,7 +56,7 @@ def lime_tabular(model, X_train: pd.DataFrame, sample: pd.Series, out_dir: Path,
     return out_path
 
 
-def lime_text(model, text: str, out_dir: Path) -> Optional[Path]:
+def lime_text(model, text: str, out_dir: Path) -> Path | None:
     try:
         from lime.lime_text import LimeTextExplainer
     except Exception as exc:  # pragma: no cover

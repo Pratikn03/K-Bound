@@ -49,8 +49,7 @@ REGISTRY_HEADER = [
 
 # Common candidate pool string (pipe-separated to avoid embedded commas).
 CAND_POOL = (
-    "rga_meta_router|rga_boosted_fusion|static_attention|craf_attention|"
-    "RF|MLP|LFE|Conf-mean|Tent|TTT|EATA|SAR"
+    "rga_meta_router|rga_boosted_fusion|static_attention|craf_attention|" "RF|MLP|LFE|Conf-mean|Tent|TTT|EATA|SAR"
 )
 
 REGISTRY_ROWS = [
@@ -689,9 +688,7 @@ def _write_csv(path: Path, header: list[str], rows: list[list[str]]) -> None:
         w.writerow(header)
         for r in rows:
             if len(r) != len(header):
-                raise ValueError(
-                    f"row id={r[0]!r}: has {len(r)} fields, expected {len(header)}"
-                )
+                raise ValueError(f"row id={r[0]!r}: has {len(r)} fields, expected {len(header)}")
             w.writerow(r)
 
 

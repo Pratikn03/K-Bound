@@ -1,25 +1,26 @@
 """Train supervised models using processed feature tables with optional MLflow logging."""
-from pathlib import Path
+
 import json
-from typing import Any, Dict
+from pathlib import Path
+from typing import Any
 
 import numpy as np
 import pandas as pd
 import yaml
 from sklearn.model_selection import train_test_split
 
-from uais.supervised.train_fraud_supervised import FraudModelConfig, train_fraud_model
 from uais.supervised.train_cyber_supervised import CyberModelConfig, train_cyber_model
+from uais.supervised.train_fraud_supervised import FraudModelConfig, train_fraud_model
 from uais.utils.metrics import compute_classification_metrics, compute_confusion_matrix
-from uais.utils.plotting import plot_roc_curve, plot_pr_curve
+from uais.utils.plotting import plot_pr_curve, plot_roc_curve
 
 
-def _load_config(cfg_path: Path) -> Dict[str, Any]:
+def _load_config(cfg_path: Path) -> dict[str, Any]:
     with cfg_path.open("r", encoding="utf-8") as f:
         return yaml.safe_load(f)
 
 
-def _maybe_start_mlflow(cfg: Dict[str, Any]):
+def _maybe_start_mlflow(cfg: dict[str, Any]):
     mlflow_cfg = cfg.get("mlflow", {})
     enabled = mlflow_cfg.get("enabled", False)
     if not enabled:
@@ -37,7 +38,9 @@ def _maybe_start_mlflow(cfg: Dict[str, Any]):
     return mlflow.start_run(run_name=run_name)
 
 
-def _log_mlflow_params_metrics(cfg: Dict[str, Any], model_params: Dict[str, Any], val_metrics: Dict[str, float], test_metrics: Dict[str, float]):
+def _log_mlflow_params_metrics(
+    cfg: dict[str, Any], model_params: dict[str, Any], val_metrics: dict[str, float], test_metrics: dict[str, float]
+):
     try:
         import mlflow
     except ImportError:  # pragma: no cover

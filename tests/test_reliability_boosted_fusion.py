@@ -34,14 +34,10 @@ def test_reliability_boosted_fusion_selects_validation_candidate():
     rng = np.random.default_rng(7)
     train_features = rng.normal(size=(80, 2, 3)).astype(np.float32)
     train_masks = np.zeros((80, 2), dtype=bool)
-    train_labels = (
-        train_features[:, 0, 0] + 0.8 * train_features[:, 1, 0] > 0.15
-    ).astype(np.int64)
+    train_labels = (train_features[:, 0, 0] + 0.8 * train_features[:, 1, 0] > 0.15).astype(np.int64)
     val_features = rng.normal(size=(40, 2, 3)).astype(np.float32)
     val_masks = np.zeros((40, 2), dtype=bool)
-    val_labels = (
-        val_features[:, 0, 0] + 0.8 * val_features[:, 1, 0] > 0.15
-    ).astype(np.int64)
+    val_labels = (val_features[:, 0, 0] + 0.8 * val_features[:, 1, 0] > 0.15).astype(np.int64)
 
     model = ReliabilityBoostedFusion(random_seed=7).fit(
         train_features,

@@ -89,9 +89,7 @@ def _discover_real3d_pairs(dataset_root: Path) -> list[Real3DObservation]:
     """
     dataset_root = Path(dataset_root)
     # If the top-level only has one directory called Real3D-AD-PCD, descend.
-    children = [
-        p for p in dataset_root.iterdir() if p.is_dir() and not p.name.startswith(".")
-    ]
+    children = [p for p in dataset_root.iterdir() if p.is_dir() and not p.name.startswith(".")]
     if len(children) == 1 and children[0].name.startswith("Real3D"):
         dataset_root = children[0]
 
@@ -187,9 +185,7 @@ def _read_pcd_binary(path: Path) -> np.ndarray:
                 if dt is None:
                     return np.zeros((0, 3), dtype=np.float32)
                 field_dtypes.append((f, np.dtype(dt), int(ct)))
-            record_dtype = np.dtype(
-                [(name, dt, (ct,)) if ct > 1 else (name, dt) for name, dt, ct in field_dtypes]
-            )
+            record_dtype = np.dtype([(name, dt, (ct,)) if ct > 1 else (name, dt) for name, dt, ct in field_dtypes])
             raw = handle.read(points * record_dtype.itemsize)
             arr = np.frombuffer(raw, dtype=record_dtype, count=points)
             try:
@@ -213,16 +209,10 @@ def _read_pcd_binary(path: Path) -> np.ndarray:
                 if len(parts) < max(xi, yi, zi) + 1:
                     continue
                 try:
-                    records.append(
-                        [float(parts[xi]), float(parts[yi]), float(parts[zi])]
-                    )
+                    records.append([float(parts[xi]), float(parts[yi]), float(parts[zi])])
                 except ValueError:
                     continue
-            return (
-                np.asarray(records, dtype=np.float32)
-                if records
-                else np.zeros((0, 3), dtype=np.float32)
-            )
+            return np.asarray(records, dtype=np.float32) if records else np.zeros((0, 3), dtype=np.float32)
 
 
 def _read_pcd_points(path: Path, max_points: int = 4096) -> np.ndarray:
@@ -251,9 +241,7 @@ def _fpfh_descriptor(points: np.ndarray, embedding_dim: int = 33) -> np.ndarray:
 
         cloud = o3d.geometry.PointCloud()
         cloud.points = o3d.utility.Vector3dVector(points.astype(np.float64))
-        cloud.estimate_normals(
-            search_param=o3d.geometry.KDTreeSearchParamHybrid(radius=0.05, max_nn=30)
-        )
+        cloud.estimate_normals(search_param=o3d.geometry.KDTreeSearchParamHybrid(radius=0.05, max_nn=30))
         fpfh = o3d.pipelines.registration.compute_fpfh_feature(
             cloud,
             o3d.geometry.KDTreeSearchParamHybrid(radius=0.1, max_nn=100),
@@ -333,7 +321,7 @@ def _fpfh_descriptor(points: np.ndarray, embedding_dim: int = 33) -> np.ndarray:
             sd_safe = sd if sd > 1e-9 else 1.0
             z = (radii - mu) / sd_safe
             moments = np.array(
-                [mu / max_r, sd / max_r, float(np.mean(z ** 3)), float(np.mean(z ** 4))],
+                [mu / max_r, sd / max_r, float(np.mean(z**3)), float(np.mean(z**4))],
                 dtype=np.float32,
             )
         else:
@@ -400,16 +388,16 @@ def build_real3d_fusion_frame(
     pcd_descriptors = np.zeros((len(pairs), 33), dtype=np.float32)
     depth_features = np.zeros((len(pairs), 2048), dtype=np.float32)
 
+    # We feed depth-projection images into the existing ResNet feature extractor.
+    # extract_resnet_features works on disk paths, so we'll save projections to a
+    # temp directory and feed those paths.
+    import tempfile
+
     from uais.fusion.attention.m3dm_features import (
         extract_resnet_features,
         fit_pca_projection,
         patchcore_knn_score,
     )
-
-    # We feed depth-projection images into the existing ResNet feature extractor.
-    # extract_resnet_features works on disk paths, so we'll save projections to a
-    # temp directory and feed those paths.
-    import tempfile
 
     with tempfile.TemporaryDirectory() as tmpdir:
         tmp_paths = []
@@ -443,7 +431,7 @@ def build_real3d_fusion_frame(
     train_indices = [i for i, p in enumerate(pairs) if p.split == "train"]
     rng.shuffle(train_indices)
     n_val = max(1, int(round(len(train_indices) * float(val_fraction_of_train))))
-    for j, i in enumerate(train_indices[:n_val]):
+    for _j, i in enumerate(train_indices[:n_val]):
         effective_splits[i] = "validation"
 
     # Supervised-paired redistribution: shuffle test rows across train/val/test
@@ -455,7 +443,7 @@ def build_real3d_fusion_frame(
         for idx in test_indices:
             key = (pairs[idx].category, pairs[idx].label)
             bucketed.setdefault(key, []).append(idx)
-        for key, indices in bucketed.items():
+        for _key, indices in bucketed.items():
             indices = list(indices)
             rng_sp.shuffle(indices)
             n = len(indices)

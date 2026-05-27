@@ -2,12 +2,12 @@
 
 from __future__ import annotations
 
-from typing import Dict, Sequence
+from collections.abc import Sequence
 
 import numpy as np
 
 
-def summarize_domain_contributions(attention_weights, domain_labels: Sequence[str] | None = None) -> Dict[str, float]:
+def summarize_domain_contributions(attention_weights, domain_labels: Sequence[str] | None = None) -> dict[str, float]:
     weights = attention_weights
     if hasattr(weights, "detach"):
         weights = weights.detach().cpu().numpy()

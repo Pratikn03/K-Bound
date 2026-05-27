@@ -15,7 +15,6 @@ unchanged to validation and test folds — no leakage.
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import List, Optional
 
 import numpy as np
 import torch
@@ -27,7 +26,7 @@ from sklearn.preprocessing import StandardScaler
 class DimReducer:
     """Abstract DR transform.  Subclasses implement fit() and transform()."""
 
-    def fit(self, X: np.ndarray) -> "DimReducer":
+    def fit(self, X: np.ndarray) -> DimReducer:
         raise NotImplementedError
 
     def transform(self, X: np.ndarray) -> np.ndarray:
@@ -40,7 +39,7 @@ class DimReducer:
 class NoOpReducer(DimReducer):
     """Identity reducer — used as the baseline ('no DR applied')."""
 
-    def fit(self, X: np.ndarray) -> "NoOpReducer":
+    def fit(self, X: np.ndarray) -> NoOpReducer:
         return self
 
     def transform(self, X: np.ndarray) -> np.ndarray:
@@ -58,12 +57,12 @@ class PCAReducerConfig:
 class PCAReducer(DimReducer):
     """PCA wrapper with explicit train-fit / test-transform discipline."""
 
-    def __init__(self, config: Optional[PCAReducerConfig] = None) -> None:
+    def __init__(self, config: PCAReducerConfig | None = None) -> None:
         self.config = config or PCAReducerConfig()
         self._scaler = StandardScaler()
-        self._pca: Optional[PCA] = None
+        self._pca: PCA | None = None
 
-    def fit(self, X: np.ndarray) -> "PCAReducer":
+    def fit(self, X: np.ndarray) -> PCAReducer:
         X_s = self._scaler.fit_transform(X)
         n = min(self.config.n_components, X_s.shape[1], max(1, X_s.shape[0] - 1))
         self._pca = PCA(
@@ -93,7 +92,8 @@ class AEReducerConfig:
     Identical to AEConfig but with the encoder output exposed as the features
     rather than reconstruction error.
     """
-    encoder_dims: List[int] = field(default_factory=lambda: [64, 32])
+
+    encoder_dims: list[int] = field(default_factory=lambda: [64, 32])
     latent_dim: int = 16
     activation: str = "ReLU"
     epochs: int = 50
@@ -108,7 +108,7 @@ class _Encoder(nn.Module):
     def __init__(self, input_dim: int, cfg: AEReducerConfig) -> None:
         super().__init__()
         act = getattr(nn, cfg.activation)
-        layers: List[nn.Module] = []
+        layers: list[nn.Module] = []
         prev = input_dim
         for h in cfg.encoder_dims:
             layers += [nn.Linear(prev, h), act()]
@@ -124,7 +124,7 @@ class _Decoder(nn.Module):
     def __init__(self, output_dim: int, cfg: AEReducerConfig) -> None:
         super().__init__()
         act = getattr(nn, cfg.activation)
-        layers: List[nn.Module] = []
+        layers: list[nn.Module] = []
         prev = cfg.latent_dim
         for h in reversed(cfg.encoder_dims):
             layers += [nn.Linear(prev, h), act()]
@@ -143,15 +143,14 @@ class AutoencoderReducer(DimReducer):
     the encoder so it can be reused on val/test without leakage.
     """
 
-    def __init__(self, config: Optional[AEReducerConfig] = None,
-                 device: Optional[torch.device] = None) -> None:
+    def __init__(self, config: AEReducerConfig | None = None, device: torch.device | None = None) -> None:
         self.config = config or AEReducerConfig()
         self.device = device or torch.device("cpu")
         self._scaler = StandardScaler()
-        self._encoder: Optional[_Encoder] = None
-        self._decoder: Optional[_Decoder] = None
+        self._encoder: _Encoder | None = None
+        self._decoder: _Decoder | None = None
 
-    def fit(self, X: np.ndarray) -> "AutoencoderReducer":
+    def fit(self, X: np.ndarray) -> AutoencoderReducer:
         c = self.config
         torch.manual_seed(c.random_state)
         np.random.seed(c.random_state)
@@ -170,16 +169,18 @@ class AutoencoderReducer(DimReducer):
 
         best_val, no_imp, best_state = float("inf"), 0, None
         for _ in range(c.epochs):
-            self._encoder.train(); self._decoder.train()
+            self._encoder.train()
+            self._decoder.train()
             perm = np.random.permutation(len(X_tr))
             for start in range(0, len(X_tr), c.batch_size):
-                idx = perm[start:start + c.batch_size]
+                idx = perm[start : start + c.batch_size]
                 xb = torch.tensor(X_tr[idx], dtype=torch.float32, device=self.device)
                 opt.zero_grad()
                 recon = self._decoder(self._encoder(xb))
                 ((recon - xb) ** 2).mean().backward()
                 opt.step()
-            self._encoder.eval(); self._decoder.eval()
+            self._encoder.eval()
+            self._decoder.eval()
             with torch.no_grad():
                 xv = torch.tensor(X_val, dtype=torch.float32, device=self.device)
                 val_loss = float(((self._decoder(self._encoder(xv)) - xv) ** 2).mean().item())
@@ -197,15 +198,15 @@ class AutoencoderReducer(DimReducer):
         if best_state is not None:
             self._encoder.load_state_dict(best_state[0])
             self._decoder.load_state_dict(best_state[1])
-        self._encoder.eval(); self._decoder.eval()
+        self._encoder.eval()
+        self._decoder.eval()
         return self
 
     def transform(self, X: np.ndarray) -> np.ndarray:
         if self._encoder is None:
             raise RuntimeError("Call fit() first.")
         with torch.no_grad():
-            xt = torch.tensor(self._scaler.transform(X).astype(np.float32),
-                              device=self.device)
+            xt = torch.tensor(self._scaler.transform(X).astype(np.float32), device=self.device)
             z = self._encoder(xt).cpu().numpy()
         return z.astype(np.float32)
 
@@ -213,6 +214,7 @@ class AutoencoderReducer(DimReducer):
 # ---------------------------------------------------------------------------
 # Factory: select DR by name (used by config-driven scripts)
 # ---------------------------------------------------------------------------
+
 
 def make_reducer(name: str, **kwargs) -> DimReducer:
     """Build a DimReducer by name.  Supported: 'none', 'pca', 'autoencoder'."""
@@ -227,8 +229,11 @@ def make_reducer(name: str, **kwargs) -> DimReducer:
 
 
 __all__ = [
-    "DimReducer", "NoOpReducer",
-    "PCAReducerConfig", "PCAReducer",
-    "AEReducerConfig", "AutoencoderReducer",
+    "DimReducer",
+    "NoOpReducer",
+    "PCAReducerConfig",
+    "PCAReducer",
+    "AEReducerConfig",
+    "AutoencoderReducer",
     "make_reducer",
 ]

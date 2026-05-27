@@ -29,6 +29,7 @@ def test_no_family_d_v2_execution_output_anywhere():
     manifest_path = ROOT / "docs" / "research" / "phase2" / "FAMILY_D_PARTITION_MANIFEST_v3.json"
     if manifest_path.exists():
         import json
+
         with open(manifest_path) as f:
             manifest = json.load(f)
         if manifest.get("test_evaluation_executed", False):

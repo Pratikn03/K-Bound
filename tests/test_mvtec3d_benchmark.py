@@ -117,6 +117,7 @@ def test_mvtec3d_heldout_protocol_can_reserve_positive_validation_rows(tmp_path)
 
 def test_extract_point_cloud_statistics(tmp_path):
     import tifffile
+
     from uais.fusion.attention.m3dm_features import extract_point_cloud_statistics
 
     # Construct a synthetic plane: x from 0..7, y from 0..7, z = 2.0
@@ -139,6 +140,7 @@ def test_extract_point_cloud_statistics(tmp_path):
 
 def test_extract_resnet_features_concatenates_point_statistics(tmp_path):
     import tifffile
+
     from uais.fusion.attention.m3dm_features import extract_resnet_features
 
     x, y = np.meshgrid(np.arange(8), np.arange(8))

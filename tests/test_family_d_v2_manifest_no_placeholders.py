@@ -10,13 +10,10 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-import pytest
-
 ROOT = Path(__file__).resolve().parents[1]
 MAN = ROOT / "docs" / "research" / "phase2" / "FAMILY_D_PARTITION_MANIFEST_v2.json"
 
-FORBIDDEN_TOKENS = ("TBD", "TO_BE_FILLED", "TO_BE_RECORDED", "placeholder",
-                    "unknown hash", "planned later", "DEFERRED")
+FORBIDDEN_TOKENS = ("TBD", "TO_BE_FILLED", "TO_BE_RECORDED", "placeholder", "unknown hash", "planned later", "DEFERRED")
 
 
 def test_manifest_absent_or_no_placeholders():
@@ -25,9 +22,7 @@ def test_manifest_absent_or_no_placeholders():
         return
     t = MAN.read_text()
     for tok in FORBIDDEN_TOKENS:
-        assert tok not in t, (
-            f"FAMILY_D_PARTITION_MANIFEST_v2.json contains forbidden placeholder {tok!r}"
-        )
+        assert tok not in t, f"FAMILY_D_PARTITION_MANIFEST_v2.json contains forbidden placeholder {tok!r}"
     # Also verify required structural fields exist
     j = json.loads(t)
     assert j.get("test_evaluation_executed") is False

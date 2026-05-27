@@ -83,8 +83,8 @@ def test_scalar_feature_mode():
     test_w = np.array([[0.1, 0.1, 0.1], [0.8, 0.8, 0.8]], dtype=np.float32)
     test_m = np.zeros_like(test_w, dtype=bool)
     decisions = gate.decide(test_w, test_m)
-    assert decisions[0] == True   # low reliability → fire
-    assert decisions[1] == False  # high reliability → static
+    assert decisions[0]  # low reliability → fire
+    assert not decisions[1]  # high reliability → static
 
 
 def test_degenerate_fit_constant_decision():
@@ -97,7 +97,7 @@ def test_degenerate_fit_constant_decision():
     # All-zero training labels → constant False decision
     decisions = gate.decide(w, masks)
     assert decisions.shape == (n,)
-    assert (decisions == False).all()
+    assert (~decisions).all()
     assert gate.train_label_balance_ == 0.0
 
 
@@ -105,7 +105,7 @@ def test_mask_indicator_changes_feature_dim():
     rng = np.random.default_rng(17)
     n, d = 80, 3
     masks = np.zeros((n, d), dtype=bool)
-    masks[:n // 2, 0] = True
+    masks[: n // 2, 0] = True
     episode = {
         "weights": rng.uniform(0.0, 1.0, size=(n, d)).astype(np.float32),
         "masks": masks,

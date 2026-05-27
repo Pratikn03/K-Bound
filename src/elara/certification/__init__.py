@@ -13,8 +13,8 @@ NOT clinical / physical deployment guarantees.
 from .risk_dominance import RiskDominanceTerms, estimate_risk_dominance
 from .switching_certificate import (
     SwitchingCertificate,
-    paired_bootstrap_lcb,
     fired_subset_certificate,
+    paired_bootstrap_lcb,
 )
 
 __all__ = [

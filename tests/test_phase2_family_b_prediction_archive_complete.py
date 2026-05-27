@@ -16,6 +16,7 @@ def test_b_mech_1_archive_directory_either_absent_or_well_formed():
         pytest.skip("B-MECH-1 archive not yet produced (infrastructure-only phase)")
     # If archives exist, every test parquet must carry the failure_type column.
     import pandas as pd
+
     for cell_dir in B_MECH_1.iterdir():
         # macOS AppleDouble files (._foo) are treated as not-a-directory; skip them
         if cell_dir.name.startswith("._") or not cell_dir.is_dir():

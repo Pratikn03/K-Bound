@@ -12,13 +12,13 @@ import pandas as pd
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT / "src"))
 
-from elara.evaluation.ensemble_inference import audited_analysis, holm_bonferroni
+from elara.evaluation.ensemble_inference import audited_analysis, holm_bonferroni  # noqa: E402
 
 ARCHIVE = ROOT / "experiments" / "phase2" / "mechanism" / "b_mech_1_prediction_archives"
 
 PHASE1_TARGET = {
     "zero_attack_k4": {"label": "B1", "target_delta": 0.0506, "ci_low": 0.0315, "ci_high": 0.0681},
-    "max_attack_k4":  {"label": "B2", "target_delta": 0.0319, "ci_low": 0.0050, "ci_high": 0.0617},
+    "max_attack_k4": {"label": "B2", "target_delta": 0.0319, "ci_low": 0.0050, "ci_high": 0.0617},
 }
 
 
@@ -71,33 +71,34 @@ def main() -> int:
             per_seed_comp_scores=static_scores,
         )
         target = PHASE1_TARGET[scenario]
-        rows.append({
-            "endpoint": target["label"],
-            "scenario": scenario,
-            "n_seeds": res.n_seeds,
-            "n_test": res.n_test_samples,
-            "ensemble_static_auc": res.ensemble_comparator_auc,
-            "ensemble_rga_auc": res.ensemble_rga_auc,
-            "ensemble_delta_auc": res.ensemble_delta_auc,
-            "per_seed_mean_delta": float(np.mean(res.per_seed_deltas)),
-            "per_seed_sd_delta": float(np.std(res.per_seed_deltas, ddof=1)),
-            "sign_consistent_seeds": res.sign_consistent_seeds,
-            "delong_p_raw": res.delong_p_value,
-            "bootstrap_ci_low": res.bootstrap_ci_low,
-            "bootstrap_ci_high": res.bootstrap_ci_high,
-            "practical_effect_band": res.practical_effect_band,
-            "phase1_target_delta": target["target_delta"],
-            "phase1_target_ci_low": target["ci_low"],
-            "phase1_target_ci_high": target["ci_high"],
-        })
+        rows.append(
+            {
+                "endpoint": target["label"],
+                "scenario": scenario,
+                "n_seeds": res.n_seeds,
+                "n_test": res.n_test_samples,
+                "ensemble_static_auc": res.ensemble_comparator_auc,
+                "ensemble_rga_auc": res.ensemble_rga_auc,
+                "ensemble_delta_auc": res.ensemble_delta_auc,
+                "per_seed_mean_delta": float(np.mean(res.per_seed_deltas)),
+                "per_seed_sd_delta": float(np.std(res.per_seed_deltas, ddof=1)),
+                "sign_consistent_seeds": res.sign_consistent_seeds,
+                "delong_p_raw": res.delong_p_value,
+                "bootstrap_ci_low": res.bootstrap_ci_low,
+                "bootstrap_ci_high": res.bootstrap_ci_high,
+                "practical_effect_band": res.practical_effect_band,
+                "phase1_target_delta": target["target_delta"],
+                "phase1_target_ci_low": target["ci_low"],
+                "phase1_target_ci_high": target["ci_high"],
+            }
+        )
         raw_p_map[scenario] = res.delong_p_value
 
     holm = holm_bonferroni(raw_p_map, K=2)
     for r in rows:
         r["delong_p_holm_k2"] = holm[r["scenario"]]
         # Replication decision per spec
-        if (r["ensemble_delta_auc"] > 0 and r["delong_p_holm_k2"] <= 0.05
-                and r["bootstrap_ci_low"] > 0):
+        if r["ensemble_delta_auc"] > 0 and r["delong_p_holm_k2"] <= 0.05 and r["bootstrap_ci_low"] > 0:
             r["replication_decision"] = "REPRODUCED"
         elif r["ensemble_delta_auc"] > 0:
             r["replication_decision"] = "DIRECTIONALLY_SUPPORTED"
@@ -115,9 +116,17 @@ def main() -> int:
         w.writeheader()
         for r in rows:
             w.writerow(r)
-    holm_fields = ["endpoint", "scenario", "ensemble_delta_auc", "delong_p_raw",
-                   "delong_p_holm_k2", "bootstrap_ci_low", "bootstrap_ci_high",
-                   "practical_effect_band", "replication_decision"]
+    holm_fields = [
+        "endpoint",
+        "scenario",
+        "ensemble_delta_auc",
+        "delong_p_raw",
+        "delong_p_holm_k2",
+        "bootstrap_ci_low",
+        "bootstrap_ci_high",
+        "practical_effect_band",
+        "replication_decision",
+    ]
     with holm_path.open("w", newline="") as f:
         w = csv.DictWriter(f, fieldnames=holm_fields)
         w.writeheader()
@@ -127,10 +136,12 @@ def main() -> int:
     print(f"wrote {holm_path}")
 
     for r in rows:
-        print(f"{r['endpoint']} ({r['scenario']}): Δ={r['ensemble_delta_auc']:+.4f} "
-              f"CI=[{r['bootstrap_ci_low']:+.4f}, {r['bootstrap_ci_high']:+.4f}] "
-              f"raw_p={r['delong_p_raw']:.3e}  Holm_K2={r['delong_p_holm_k2']:.3e}  "
-              f"band={r['practical_effect_band']}  decision={r['replication_decision']}")
+        print(
+            f"{r['endpoint']} ({r['scenario']}): Δ={r['ensemble_delta_auc']:+.4f} "
+            f"CI=[{r['bootstrap_ci_low']:+.4f}, {r['bootstrap_ci_high']:+.4f}] "
+            f"raw_p={r['delong_p_raw']:.3e}  Holm_K2={r['delong_p_holm_k2']:.3e}  "
+            f"band={r['practical_effect_band']}  decision={r['replication_decision']}"
+        )
     return 0
 
 

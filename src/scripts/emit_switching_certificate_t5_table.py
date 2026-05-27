@@ -28,7 +28,8 @@ def render(payload: dict) -> str:
         r"\toprule",
         r"\textbf{Benchmark} & \textbf{Protocol} & \textbf{$n_{\mathrm{seeds}}$} & "
         r"\textbf{RGA path} & \textbf{Static AUROC} & \textbf{RGA AUROC} & "
-        + rf"\textbf{{LCB$_{{{alpha:.2f}}}$}} & " + r"\textbf{Verdict} \\",
+        + rf"\textbf{{LCB$_{{{alpha:.2f}}}$}} & "
+        + r"\textbf{Verdict} \\",
         r"\midrule",
     ]
     for r in rows:
@@ -36,12 +37,13 @@ def render(payload: dict) -> str:
             "rga_boosted_fusion": "boost",
             "rga_meta_router": "router",
         }.get(r.get("rga_path", ""), r.get("rga_path", "?"))
+        verdict_label = r"\textbf{certified}" if r.get("certified") else "not cert."
         out.append(
             rf"{r['benchmark']} & {r['protocol']} & {r['n_seeds']} & "
             rf"{path_label} & {_fmt(r.get('static_auroc_mean'), 3)} & "
             rf"{_fmt(r.get('rga_auroc_mean'), 3)} & "
             rf"{_fmt(r.get('lcb'), 4, sign=True)} & "
-            rf"{'\\textbf{certified}' if r.get('certified') else 'not cert.'} \\"
+            rf"{verdict_label} \\"
         )
     out += [r"\bottomrule", r"\end{tabular}", ""]
     return "\n".join(out)

@@ -19,8 +19,8 @@ code consumes a [N]-bool decision array in the same way as the heuristic.
 
 from __future__ import annotations
 
-from dataclasses import dataclass, field
-from typing import Callable, List, Optional, Tuple
+from dataclasses import dataclass
+from typing import Callable
 
 import numpy as np
 from sklearn.linear_model import LogisticRegression
@@ -30,7 +30,7 @@ from sklearn.linear_model import LogisticRegression
 class LearnedGateConfig:
     """Hyperparameters for the learned gate."""
 
-    drift_levels: Tuple[float, ...] = (0.0, 0.05, 0.1, 0.2, 0.3)
+    drift_levels: tuple[float, ...] = (0.0, 0.05, 0.1, 0.2, 0.3)
     feature_mode: str = "vector"  # "vector" → r ∈ R^D + mean; "scalar" → mean only
     use_mask_indicators: bool = True  # append [D] missing-domain flags
     class_weight: str = "balanced"
@@ -51,11 +51,11 @@ class LearnedReliabilityGate:
         Hyperparameters; defaults are fine for first runs.
     """
 
-    def __init__(self, config: Optional[LearnedGateConfig] = None) -> None:
+    def __init__(self, config: LearnedGateConfig | None = None) -> None:
         self.config = config or LearnedGateConfig()
-        self._clf: Optional[LogisticRegression] = None
+        self._clf: LogisticRegression | None = None
         self.fitted: bool = False
-        self.train_label_balance_: Optional[float] = None
+        self.train_label_balance_: float | None = None
         self.train_n_episodes_: int = 0
 
     # ------------------------------------------------------------------
@@ -92,8 +92,8 @@ class LearnedReliabilityGate:
     # ------------------------------------------------------------------
     def fit_from_episodes(
         self,
-        episodes: List[dict],
-    ) -> "LearnedReliabilityGate":
+        episodes: list[dict],
+    ) -> LearnedReliabilityGate:
         """Fit from pre-computed episode dicts.
 
         Each episode dict must contain:
@@ -107,8 +107,8 @@ class LearnedReliabilityGate:
         """
         if not episodes:
             raise ValueError("No drift episodes provided to fit the learned gate.")
-        Xs: List[np.ndarray] = []
-        ys: List[np.ndarray] = []
+        Xs: list[np.ndarray] = []
+        ys: list[np.ndarray] = []
         for ep in episodes:
             X = self._featurize(ep["weights"], ep["masks"])
             Xs.append(X)
@@ -145,8 +145,8 @@ class LearnedReliabilityGate:
         compute_reliability_weights: Callable[[np.ndarray, np.ndarray], np.ndarray],
         predict_static: Callable[[np.ndarray, np.ndarray], np.ndarray],
         predict_reliability: Callable[[np.ndarray, np.ndarray, np.ndarray], np.ndarray],
-        perturbation_fns: List[Callable[[np.ndarray, np.ndarray], Tuple[np.ndarray, np.ndarray]]],
-    ) -> "LearnedReliabilityGate":
+        perturbation_fns: list[Callable[[np.ndarray, np.ndarray], tuple[np.ndarray, np.ndarray]]],
+    ) -> LearnedReliabilityGate:
         """Generate val drift episodes and fit the gate.
 
         ``perturbation_fns`` is a list of callables (features, masks) →

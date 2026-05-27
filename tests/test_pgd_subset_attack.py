@@ -36,8 +36,14 @@ def test_pgd_preserves_shapes():
     engine = AdversarialPerturbationEngine(domain_order, score_index=0, random_seed=0)
 
     perturbed, returned_masks = engine.pgd_attack_subset(
-        model, features, masks, labels,
-        target_domains=["b"], epsilon=0.1, step_size=0.02, n_steps=3,
+        model,
+        features,
+        masks,
+        labels,
+        target_domains=["b"],
+        epsilon=0.1,
+        step_size=0.02,
+        n_steps=3,
     )
     assert perturbed.shape == features.shape
     assert returned_masks is masks
@@ -54,8 +60,14 @@ def test_pgd_only_perturbs_target_domain_score():
     engine = AdversarialPerturbationEngine(domain_order, score_index=0, random_seed=0)
 
     perturbed, _ = engine.pgd_attack_subset(
-        model, features, masks, labels,
-        target_domains=["b"], epsilon=0.2, step_size=0.05, n_steps=5,
+        model,
+        features,
+        masks,
+        labels,
+        target_domains=["b"],
+        epsilon=0.2,
+        step_size=0.05,
+        n_steps=5,
     )
     # Domain b score channel must differ
     assert not np.allclose(perturbed[:, 1, 0], features[:, 1, 0])
@@ -78,8 +90,14 @@ def test_pgd_respects_epsilon_budget():
 
     epsilon = 0.15
     perturbed, _ = engine.pgd_attack_subset(
-        model, features, masks, labels,
-        target_domains=["a"], epsilon=epsilon, step_size=0.03, n_steps=10,
+        model,
+        features,
+        masks,
+        labels,
+        target_domains=["a"],
+        epsilon=epsilon,
+        step_size=0.03,
+        n_steps=10,
     )
     # Linf budget on score channel of domain a
     delta = perturbed[:, 0, 0] - features[:, 0, 0]
@@ -99,8 +117,14 @@ def test_pgd_respects_missing_mask():
     engine = AdversarialPerturbationEngine(domain_order, score_index=0, random_seed=0)
 
     perturbed, _ = engine.pgd_attack_subset(
-        model, features, masks, labels,
-        target_domains=["a"], epsilon=0.2, step_size=0.05, n_steps=3,
+        model,
+        features,
+        masks,
+        labels,
+        target_domains=["a"],
+        epsilon=0.2,
+        step_size=0.05,
+        n_steps=3,
     )
     # Masked-out entries should not be perturbed
     np.testing.assert_allclose(perturbed[:5, 0, 0], features[:5, 0, 0])
@@ -120,7 +144,13 @@ def test_pgd_empty_target_returns_unchanged():
     model = _make_model(num_domains=d, input_dim=f)
     engine = AdversarialPerturbationEngine(domain_order, score_index=0, random_seed=0)
     perturbed, _ = engine.pgd_attack_subset(
-        model, features, masks, labels,
-        target_domains=[], epsilon=0.1, step_size=0.02, n_steps=3,
+        model,
+        features,
+        masks,
+        labels,
+        target_domains=[],
+        epsilon=0.1,
+        step_size=0.02,
+        n_steps=3,
     )
     np.testing.assert_allclose(perturbed, features)

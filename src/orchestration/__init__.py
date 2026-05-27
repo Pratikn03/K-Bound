@@ -5,9 +5,9 @@ These wrappers call the existing experiment scripts so that references to
 dependencies—use the domain scripts/notebooks for full control.
 """
 
-from .fraud_flow import fraud_pipeline
-from .cyber_flow import cyber_pipeline
 from .behavior_flow import behavior_pipeline
+from .cyber_flow import cyber_pipeline
+from .fraud_flow import fraud_pipeline
 from .fusion_flow import fusion_pipeline
 from .nlp_flow import nlp_pipeline
 from .vision_flow import vision_pipeline

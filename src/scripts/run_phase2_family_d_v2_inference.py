@@ -48,6 +48,7 @@ MIN_SEEDS = 15
 
 # ─── DeLong AUC + variance ────────────────────────────────────────────────────
 
+
 def _kernel(x, y):
     """Kernel for DeLong: P(X > Y) + 0.5 * P(X == Y)."""
     if x > y:
@@ -100,14 +101,18 @@ def _delong_paired_test(
     # Covariance term via placement values
     pos = labels == 1
     neg = labels == 0
-    pv_a_pos = np.array([np.mean([_kernel(scores_a[i], scores_a[j]) for j in np.where(neg)[0]])
-                         for i in np.where(pos)[0]])
-    pv_b_pos = np.array([np.mean([_kernel(scores_b[i], scores_b[j]) for j in np.where(neg)[0]])
-                         for i in np.where(pos)[0]])
-    pv_a_neg = np.array([np.mean([_kernel(scores_a[i], scores_a[j]) for j in np.where(pos)[0]])
-                         for i in np.where(neg)[0]])
-    pv_b_neg = np.array([np.mean([_kernel(scores_b[i], scores_b[j]) for j in np.where(pos)[0]])
-                         for i in np.where(neg)[0]])
+    pv_a_pos = np.array(
+        [np.mean([_kernel(scores_a[i], scores_a[j]) for j in np.where(neg)[0]]) for i in np.where(pos)[0]]
+    )
+    pv_b_pos = np.array(
+        [np.mean([_kernel(scores_b[i], scores_b[j]) for j in np.where(neg)[0]]) for i in np.where(pos)[0]]
+    )
+    pv_a_neg = np.array(
+        [np.mean([_kernel(scores_a[i], scores_a[j]) for j in np.where(pos)[0]]) for i in np.where(neg)[0]]
+    )
+    pv_b_neg = np.array(
+        [np.mean([_kernel(scores_b[i], scores_b[j]) for j in np.where(pos)[0]]) for i in np.where(neg)[0]]
+    )
 
     n_pos = int(pos.sum())
     n_neg = int(neg.sum())
@@ -120,6 +125,7 @@ def _delong_paired_test(
     z = delta / math.sqrt(var_diff)
     # Two-tailed normal p-value
     from scipy.stats import norm  # type: ignore[import]
+
     p = 2.0 * float(norm.sf(abs(z)))
     return delta, z, p
 
@@ -189,7 +195,6 @@ def _load_archive_scores(cell_id: str) -> dict[str, dict[int, dict[str, np.ndarr
 
     Returns: {condition: {seed: {"scores": arr, "labels": arr}}}
     """
-    import glob
 
     archive_dir = OUT_DIR / "archives" / f"family_d_{cell_id.replace('-','_').lower()}"
     if not archive_dir.exists():
@@ -199,6 +204,7 @@ def _load_archive_scores(cell_id: str) -> dict[str, dict[int, dict[str, np.ndarr
     for parquet_file in sorted(archive_dir.rglob("*.parquet")):
         try:
             import pandas as pd  # type: ignore[import]
+
             df = pd.read_parquet(parquet_file)
         except Exception:
             continue
@@ -218,7 +224,6 @@ def _load_archive_scores(cell_id: str) -> dict[str, dict[int, dict[str, np.ndarr
 
 def _infer_cell(cell_id: str) -> dict[str, Any]:
     """Compute all inference quantities for one primary cell."""
-    from sklearn.metrics import roc_auc_score  # type: ignore[import]
 
     per_seed_rows = _load_per_seed_csv(cell_id)
     test_rows = [r for r in per_seed_rows if r.get("fold") == "test"]
@@ -274,9 +279,14 @@ def _infer_cell(cell_id: str) -> dict[str, Any]:
 
     # Build ensemble vectors (average per-sample scores across seeds)
     all_seeds = sorted(archive_scores[degraded_condition].keys())
-    valid_seeds = [s for s in all_seeds
-                   if (len(archive_scores[degraded_condition][s].get("static_scores", [])) > 0
-                       and len(archive_scores[degraded_condition][s].get("rga_scores", [])) > 0)]
+    valid_seeds = [
+        s
+        for s in all_seeds
+        if (
+            len(archive_scores[degraded_condition][s].get("static_scores", [])) > 0
+            and len(archive_scores[degraded_condition][s].get("rga_scores", [])) > 0
+        )
+    ]
 
     if len(valid_seeds) < MIN_SEEDS:
         return {
@@ -291,27 +301,19 @@ def _infer_cell(cell_id: str) -> dict[str, Any]:
     labels_arr = np.asarray(archive_scores[degraded_condition][first_seed]["labels"])
 
     # Ensemble = mean across seeds
-    static_ensemble = np.mean(
-        [archive_scores[degraded_condition][s]["static_scores"] for s in valid_seeds], axis=0
-    )
-    rga_ensemble = np.mean(
-        [archive_scores[degraded_condition][s]["rga_scores"] for s in valid_seeds], axis=0
-    )
+    static_ensemble = np.mean([archive_scores[degraded_condition][s]["static_scores"] for s in valid_seeds], axis=0)
+    rga_ensemble = np.mean([archive_scores[degraded_condition][s]["rga_scores"] for s in valid_seeds], axis=0)
 
     # DeLong paired test
     try:
-        delta_delong, z_stat, delong_p = _delong_paired_test(
-            labels_arr, rga_ensemble, static_ensemble
-        )
+        delta_delong, z_stat, delong_p = _delong_paired_test(labels_arr, rga_ensemble, static_ensemble)
     except Exception as exc:
         print(f"[{cell_id}] DeLong failed: {exc}", flush=True)
         delta_delong, z_stat, delong_p = float("nan"), float("nan"), float("nan")
 
     # Bootstrap CI
     try:
-        bs_point, bs_lo, bs_hi = _bootstrap_delta_ci(
-            labels_arr, rga_ensemble, static_ensemble
-        )
+        bs_point, bs_lo, bs_hi = _bootstrap_delta_ci(labels_arr, rga_ensemble, static_ensemble)
     except Exception as exc:
         print(f"[{cell_id}] Bootstrap failed: {exc}", flush=True)
         bs_point, bs_lo, bs_hi = float("nan"), float("nan"), float("nan")
@@ -351,8 +353,7 @@ def _classify_outcome(delta: float, p: float, ci_lo: float, ci_hi: float) -> str
     return "CONFIRMED"
 
 
-def _write_markdown_report(cell_results: list[dict], holm_results: list[dict],
-                           family_decision: str) -> Path:
+def _write_markdown_report(cell_results: list[dict], holm_results: list[dict], family_decision: str) -> Path:
     """Write the final inference report markdown."""
     out = DOCS_DIR / "FAMILY_D_V3_INFERENCE_REPORT.md"
     lines = [
@@ -416,8 +417,7 @@ def _write_markdown_report(cell_results: list[dict], holm_results: list[dict],
         )
     else:
         lines.append(
-            "> Held-out confirmation was not obtained for the evaluated endpoint(s); "
-            "negative results are retained."
+            "> Held-out confirmation was not obtained for the evaluated endpoint(s); " "negative results are retained."
         )
 
     lines += [
@@ -453,10 +453,8 @@ def _write_markdown_report(cell_results: list[dict], holm_results: list[dict],
 
 def main() -> int:
     p = argparse.ArgumentParser(description=__doc__)
-    p.add_argument("--hypotheses",
-                   default="docs/research/phase2/FAMILY_D_HYPOTHESES_v2.csv")
-    p.add_argument("--policy",
-                   default="docs/research/phase2/FAMILY_D_SELECTION_AND_STATISTICAL_POLICY_v2.md")
+    p.add_argument("--hypotheses", default="docs/research/phase2/FAMILY_D_HYPOTHESES_v2.csv")
+    p.add_argument("--policy", default="docs/research/phase2/FAMILY_D_SELECTION_AND_STATISTICAL_POLICY_v2.md")
     args = p.parse_args()
 
     hyp_path = ROOT / args.hypotheses
@@ -467,8 +465,7 @@ def main() -> int:
     for cell in ("D-EYE-1", "D-EYE-2"):
         rows = _load_per_seed_csv(cell)
         violations = [
-            r for r in rows
-            if str(r.get("selection_used_test_metrics", "False")).lower() not in ("false", "0", "")
+            r for r in rows if str(r.get("selection_used_test_metrics", "False")).lower() not in ("false", "0", "")
         ]
         if violations:
             raise SystemExit(
@@ -492,12 +489,14 @@ def main() -> int:
     for cr, rej in zip(cell_results, rejected):
         pre = cr.get("outcome_pre_holm", cr.get("outcome", "NOT_CONFIRMED"))
         holm_out = pre if rej else "NOT_CONFIRMED"
-        holm_results.append({
-            "cell_id": cr["cell_id"],
-            "delong_p": cr.get("delong_p", float("nan")),
-            "h0_rejected": rej,
-            "holm_outcome": holm_out,
-        })
+        holm_results.append(
+            {
+                "cell_id": cr["cell_id"],
+                "delong_p": cr.get("delong_p", float("nan")),
+                "h0_rejected": rej,
+                "holm_outcome": holm_out,
+            }
+        )
 
     # Family decision
     confirmed_cells = [hr["cell_id"] for hr in holm_results if hr["holm_outcome"] == "CONFIRMED"]
@@ -524,8 +523,7 @@ def main() -> int:
         all_inf_rows.append(row)
 
     if all_inf_rows:
-        fields = sorted({k for r in all_inf_rows for k in r.keys()},
-                        key=lambda k: (k != "cell_id", k))
+        fields = sorted({k for r in all_inf_rows for k in r.keys()}, key=lambda k: (k != "cell_id", k))
         with inf_csv.open("w", newline="") as f:
             w = csv.DictWriter(f, fieldnames=fields, extrasaction="ignore")
             w.writeheader()
@@ -535,8 +533,7 @@ def main() -> int:
     # Holm K=2 CSV
     holm_csv = OUT_DIR / "family_d_v2_holm_k2.csv"
     if holm_results:
-        fields = sorted({k for r in holm_results for k in r.keys()},
-                        key=lambda k: (k != "cell_id", k))
+        fields = sorted({k for r in holm_results for k in r.keys()}, key=lambda k: (k != "cell_id", k))
         fields = ["cell_id"] + [f for f in fields if f != "cell_id"]
         with holm_csv.open("w", newline="") as f:
             w = csv.DictWriter(f, fieldnames=fields, extrasaction="ignore")

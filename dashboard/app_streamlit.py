@@ -1,7 +1,8 @@
 """Interactive Streamlit dashboard for UAIS-V results."""
-from pathlib import Path
+
 import json
 import subprocess
+from pathlib import Path
 
 import pandas as pd
 
@@ -99,7 +100,9 @@ def _render_app():  # pragma: no cover - UI code
                 df = df.assign(Domain=domain.title())
             frames.append(df)
         if not frames:
-            st.info("No metrics found. Run the experiment scripts to populate results under experiments/<domain>/metrics/metrics.csv.")
+            st.info(
+                "No metrics found. Run the experiment scripts to populate results under experiments/<domain>/metrics/metrics.csv."
+            )
             return
 
         combined = pd.concat(frames, ignore_index=True)
@@ -108,7 +111,9 @@ def _render_app():  # pragma: no cover - UI code
         pivot = combined.pivot_table(index="Metric", columns="Domain", values="Value")
         st.dataframe(pivot)
         if px is not None:
-            fig = px.bar(combined, x="Metric", y="Value", color="Domain", barmode="group", title="Metrics across domains")
+            fig = px.bar(
+                combined, x="Metric", y="Value", color="Domain", barmode="group", title="Metrics across domains"
+            )
             st.plotly_chart(fig, use_container_width=True)
         if missing:
             st.warning(f"No metrics file found for: {', '.join(missing)}")

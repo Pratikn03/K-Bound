@@ -9,7 +9,6 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Dict, Tuple
 
 import numpy as np
 import pandas as pd
@@ -39,20 +38,18 @@ class NLPConfig:
         return path
 
 
-def _load_dataset(cfg: NLPConfig) -> Tuple[pd.Series, pd.Series]:
+def _load_dataset(cfg: NLPConfig) -> tuple[pd.Series, pd.Series]:
     path = cfg.resolve_path()
     df = pd.read_csv(path)
     if cfg.text_column not in df.columns or cfg.label_column not in df.columns:
-        raise KeyError(
-            f"Columns '{cfg.text_column}' and '{cfg.label_column}' must exist in {path.name}."
-        )
+        raise KeyError(f"Columns '{cfg.text_column}' and '{cfg.label_column}' must exist in {path.name}.")
     df = df[[cfg.text_column, cfg.label_column]].dropna()
     if cfg.max_samples and len(df) > cfg.max_samples:
         df = df.sample(cfg.max_samples, random_state=cfg.random_state)
     return df[cfg.text_column], df[cfg.label_column]
 
 
-def run_text_experiment(cfg: NLPConfig) -> Dict[str, float]:
+def run_text_experiment(cfg: NLPConfig) -> dict[str, float]:
     """Train a baseline TF-IDF + logistic regression model and return metrics."""
 
     texts, labels = _load_dataset(cfg)
@@ -74,7 +71,7 @@ def run_text_experiment(cfg: NLPConfig) -> Dict[str, float]:
     y_prob = clf.predict_proba(X_test_tfidf)[:, 1]
     y_pred = (y_prob >= 0.5).astype(int)
 
-    metrics: Dict[str, float] = {
+    metrics: dict[str, float] = {
         "roc_auc": float(roc_auc_score(y_test, y_prob)),
         "accuracy": float(np.mean(y_pred == y_test)),
     }

@@ -5,7 +5,6 @@ from __future__ import annotations
 import re
 from pathlib import Path
 
-
 PAPER = Path("docs/research/PAPER_DRAFT_v1.tex")
 THESIS = Path("docs/research/THESIS_CHAPTER_v1.tex")
 

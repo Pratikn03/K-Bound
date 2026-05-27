@@ -34,6 +34,4 @@ def test_manuscript_contains_no_forbidden_phase2_claim(path: Path):
         pytest.skip(f"manuscript not present: {path.name}")
     t = path.read_text()
     offenders = [c for c in FORBIDDEN_CLAIMS if c in t]
-    assert not offenders, (
-        f"{path.name} contains forbidden Phase-2 claim verbatim: {offenders}"
-    )
+    assert not offenders, f"{path.name} contains forbidden Phase-2 claim verbatim: {offenders}"

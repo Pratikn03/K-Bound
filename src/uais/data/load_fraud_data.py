@@ -8,10 +8,11 @@ Assumptions:
 """
 
 from pathlib import Path
-from typing import Optional, List, Union
+from typing import Optional, Union
 
 import numpy as np
 import pandas as pd
+
 from .load_paysim import load_paysim
 
 
@@ -45,7 +46,7 @@ def _normalize_fraud_frame(df: pd.DataFrame) -> pd.DataFrame:
     return df
 
 
-def _find_all_fraud_files(root: Path) -> List[Path]:
+def _find_all_fraud_files(root: Path) -> list[Path]:
     """Find all CSV/Parquet files under fraud raw directory."""
     if not root.exists():
         raise FileNotFoundError(f"Fraud raw data directory not found: {root}")
@@ -98,7 +99,9 @@ def load_fraud_data(
         paysim_csv = path / "paysim" / "paysim_transactions.csv"
         if prefer in (None, "paysim"):
             try:
-                frames.append(_normalize_fraud_frame(load_paysim(n_rows=n_rows, path=paysim_csv, allow_synthetic=allow_synthetic)))
+                frames.append(
+                    _normalize_fraud_frame(load_paysim(n_rows=n_rows, path=paysim_csv, allow_synthetic=allow_synthetic))
+                )
             except FileNotFoundError as exc:
                 print(f"[warn] PaySim not available: {exc}")
 

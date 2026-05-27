@@ -28,6 +28,4 @@ def test_inference_csv_g1_g2_g3_c1_all_fail():
     with INF.open() as f:
         rows = {r["gate_id"]: r for r in csv.DictReader(f)}
     for g in ("G1", "G2", "G3"):
-        assert "False" in rows[g]["C1_false_fire_budget"], (
-            f"{g} should fail C1 to make the 15-seed decision final"
-        )
+        assert "False" in rows[g]["C1_false_fire_budget"], f"{g} should fail C1 to make the 15-seed decision final"

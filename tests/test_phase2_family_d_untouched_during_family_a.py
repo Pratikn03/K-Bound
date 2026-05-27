@@ -25,9 +25,7 @@ def test_no_family_d_script_executed_during_phase_2_2a():
             t = p.read_text(encoding="utf-8")
         except UnicodeDecodeError:
             continue
-        assert "family_d" not in t.lower(), (
-            f"{p}: Family-A driver references family_d — Family D must remain untouched"
-        )
+        assert "family_d" not in t.lower(), f"{p}: Family-A driver references family_d — Family D must remain untouched"
 
 
 def test_family_d_v1_invalidation_status_intact():
@@ -51,6 +49,7 @@ def test_family_d_v2_partition_manifest_never_carries_test_execution():
     if not p.exists():
         return  # acceptable pre-Phase-2.2D state
     import json
+
     j = json.loads(p.read_text())
     assert j.get("test_evaluation_executed") is False
 

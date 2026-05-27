@@ -1,6 +1,6 @@
 """Centralized project paths and helpers."""
+
 from pathlib import Path
-from typing import Dict
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 DATA_DIR = PROJECT_ROOT / "data"
@@ -18,7 +18,7 @@ def ensure_directories() -> None:
         path.mkdir(parents=True, exist_ok=True)
 
 
-def domain_paths(domain: str) -> Dict[str, Path]:
+def domain_paths(domain: str) -> dict[str, Path]:
     """Return resolved paths for a given domain (fraud/cyber/behavior/fusion)."""
     ensure_directories()
     domain = domain.lower()

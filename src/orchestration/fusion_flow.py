@@ -1,4 +1,5 @@
 """Best-effort fusion pipeline wrapper."""
+
 from __future__ import annotations
 
 from uais.utils.logging_utils import setup_logging
@@ -18,12 +19,14 @@ def fusion_pipeline():
     if __import__("os").getenv("RUN_ATTENTION_VALIDATION") == "1":
         try:
             from src.scripts.run_attention_validation import main as run_validation
+
             run_validation()
         except Exception as exc:  # pragma: no cover - optional path
             logger.error("Attention validation failed: %s", exc)
     if __import__("os").getenv("RUN_ATTENTION_HARNESS") == "1":
         try:
             from src.scripts.run_attention_harness import main as run_harness
+
             run_harness()
         except Exception as exc:  # pragma: no cover - optional path
             logger.error("Attention harness failed: %s", exc)

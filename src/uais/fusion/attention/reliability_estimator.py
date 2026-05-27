@@ -16,7 +16,6 @@ contribution of CRAF.
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Dict, List, Optional
 
 import joblib
 import numpy as np
@@ -40,7 +39,7 @@ class ReliabilityEstimator:
 
     def __init__(
         self,
-        domain_order: List[str],
+        domain_order: list[str],
         score_index: int,
         ece_weight: float = 0.45,
         ks_weight: float = 0.35,
@@ -49,17 +48,15 @@ class ReliabilityEstimator:
         min_samples_for_ks: int = 30,
         gate_threshold: float = 0.66,
         gate_mode: str = "mean",
-        min_gate_threshold: Optional[float] = None,
+        min_gate_threshold: float | None = None,
         top_q: int = 1,
-        top_q_threshold: Optional[float] = None,
-        ks_window_size: Optional[int] = None,
+        top_q_threshold: float | None = None,
+        ks_window_size: int | None = None,
     ) -> None:
         if abs(ece_weight + ks_weight + sharpness_weight - 1.0) > 1e-6:
             raise ValueError("ece_weight + ks_weight + sharpness_weight must sum to 1.0")
         if gate_mode not in self._VALID_GATE_MODES:
-            raise ValueError(
-                f"gate_mode must be one of {sorted(self._VALID_GATE_MODES)}; got {gate_mode!r}."
-            )
+            raise ValueError(f"gate_mode must be one of {sorted(self._VALID_GATE_MODES)}; got {gate_mode!r}.")
         if int(top_q) < 1:
             raise ValueError("top_q must be a positive integer (1 = minimum-domain gate).")
         self.domain_order = list(domain_order)
@@ -76,17 +73,17 @@ class ReliabilityEstimator:
         # minimum gate; `top_q=2` checks the 2nd-smallest reliability.
         self.top_q = int(top_q)
         self.top_q_threshold = (
-            float(top_q_threshold) if top_q_threshold is not None
-            else float(min_gate_threshold) if min_gate_threshold is not None
-            else 1.0 - gate_threshold
+            float(top_q_threshold)
+            if top_q_threshold is not None
+            else float(min_gate_threshold) if min_gate_threshold is not None else 1.0 - gate_threshold
         )
         # Phase 2.2B B-MECH-4 KS window-size sweep parameter. None → use full
         # validation reference distribution (Phase-1 behaviour, unchanged).
         self.ks_window_size = int(ks_window_size) if ks_window_size is not None else None
 
-        self._calibrators: Dict[str, IsotonicRegression] = {}
-        self._reference_scores: Dict[str, np.ndarray] = {}
-        self._domain_ece: Dict[str, float] = {}
+        self._calibrators: dict[str, IsotonicRegression] = {}
+        self._reference_scores: dict[str, np.ndarray] = {}
+        self._domain_ece: dict[str, float] = {}
         self.fitted: bool = False
 
     # ------------------------------------------------------------------
@@ -98,7 +95,7 @@ class ReliabilityEstimator:
         features: np.ndarray,
         masks: np.ndarray,
         labels: np.ndarray,
-    ) -> "ReliabilityEstimator":
+    ) -> ReliabilityEstimator:
         """Fit isotonic calibrators and store reference distributions.
 
         Should be called on the same validation split used for early stopping,
@@ -193,9 +190,7 @@ class ReliabilityEstimator:
             ece_reliability = float(max(0.0, 1.0 - stored_ece))
 
             rel_d = (
-                self.ece_weight * ece_reliability
-                + self.ks_weight * ks_reliability
-                + self.sharpness_weight * sharpness
+                self.ece_weight * ece_reliability + self.ks_weight * ks_reliability + self.sharpness_weight * sharpness
             )
             rel_d = float(np.clip(rel_d, 0.0, 1.0))
 
@@ -208,11 +203,11 @@ class ReliabilityEstimator:
         self,
         weights: np.ndarray,
         masks: np.ndarray,
-        gate_threshold: Optional[float] = None,
-        gate_mode: Optional[str] = None,
-        min_gate_threshold: Optional[float] = None,
-        top_q: Optional[int] = None,
-        top_q_threshold: Optional[float] = None,
+        gate_threshold: float | None = None,
+        gate_mode: str | None = None,
+        min_gate_threshold: float | None = None,
+        top_q: int | None = None,
+        top_q_threshold: float | None = None,
     ) -> np.ndarray:
         """Return [N] bool: True = use reliability path, False = use static path.
 
@@ -231,9 +226,7 @@ class ReliabilityEstimator:
         q = self.top_q if top_q is None else int(top_q)
         tau_q = self.top_q_threshold if top_q_threshold is None else float(top_q_threshold)
         if mode not in self._VALID_GATE_MODES:
-            raise ValueError(
-                f"gate_mode must be one of {sorted(self._VALID_GATE_MODES)}; got {mode!r}."
-            )
+            raise ValueError(f"gate_mode must be one of {sorted(self._VALID_GATE_MODES)}; got {mode!r}.")
         n_present = (~masks).sum(axis=1).astype(np.float32)
         present_weights = np.where(masks, 1.0, weights)
         mean_r = np.where(
@@ -273,15 +266,13 @@ class ReliabilityEstimator:
     # Accessors
     # ------------------------------------------------------------------
 
-    def get_domain_ece(self) -> Dict[str, float]:
+    def get_domain_ece(self) -> dict[str, float]:
         """Return stored per-domain ECE from the calibration fit."""
         if not self.fitted:
             raise RuntimeError("Call fit() first.")
         return dict(self._domain_ece)
 
-    def get_domain_calibrated_scores(
-        self, scores: np.ndarray, domain: str
-    ) -> np.ndarray:
+    def get_domain_calibrated_scores(self, scores: np.ndarray, domain: str) -> np.ndarray:
         """Apply the fitted isotonic calibrator for a given domain."""
         if not self.fitted:
             raise RuntimeError("Call fit() first.")
@@ -319,7 +310,7 @@ class ReliabilityEstimator:
         joblib.dump(payload, path)
 
     @classmethod
-    def load(cls, path: str | Path) -> "ReliabilityEstimator":
+    def load(cls, path: str | Path) -> ReliabilityEstimator:
         """Load a previously saved ReliabilityEstimator."""
         payload = joblib.load(path)
         obj = cls(
@@ -358,15 +349,15 @@ class CategoryAwareReliabilityEstimator(ReliabilityEstimator):
         if unknown_category_policy not in {"global", "assume_reliable"}:
             raise ValueError("unknown_category_policy must be 'global' or 'assume_reliable'.")
         self.unknown_category_policy = unknown_category_policy
-        self._category_reference_scores: Dict[str, Dict[str, np.ndarray]] = {}
+        self._category_reference_scores: dict[str, dict[str, np.ndarray]] = {}
 
     def fit(
         self,
         features: np.ndarray,
         masks: np.ndarray,
         labels: np.ndarray,
-        categories: Optional[np.ndarray] = None,
-    ) -> "CategoryAwareReliabilityEstimator":
+        categories: np.ndarray | None = None,
+    ) -> CategoryAwareReliabilityEstimator:
         super().fit(features, masks, labels)
         self._category_reference_scores = {domain: {} for domain in self.domain_order}
         if categories is None:
@@ -396,7 +387,7 @@ class CategoryAwareReliabilityEstimator(ReliabilityEstimator):
         self,
         features: np.ndarray,
         masks: np.ndarray,
-        categories: Optional[np.ndarray] = None,
+        categories: np.ndarray | None = None,
     ) -> np.ndarray:
         if categories is None or not self._category_reference_scores:
             return super().compute_reliability_weights(features, masks)
@@ -461,7 +452,7 @@ class CategoryAwareReliabilityEstimator(ReliabilityEstimator):
         joblib.dump(payload, path)
 
     @classmethod
-    def load(cls, path: str | Path) -> "CategoryAwareReliabilityEstimator":
+    def load(cls, path: str | Path) -> CategoryAwareReliabilityEstimator:
         payload = joblib.load(path)
         obj = cls(
             domain_order=payload["domain_order"],
@@ -552,11 +543,7 @@ class PerSampleReliabilityEstimator(ReliabilityEstimator):
             stored_ece = self._domain_ece.get(domain, 0.5)
             ece_reliability = float(max(0.0, 1.0 - stored_ece))
 
-            rel = (
-                self.ece_weight * ece_reliability
-                + self.ks_weight * ks_local
-                + self.sharpness_weight * sharp_local
-            )
+            rel = self.ece_weight * ece_reliability + self.ks_weight * ks_local + self.sharpness_weight * sharp_local
             rel = np.clip(rel.astype(np.float32), 0.0, 1.0)
             weights[available_mask, i] = rel
         return weights

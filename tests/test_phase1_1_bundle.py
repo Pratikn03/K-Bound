@@ -33,9 +33,9 @@ TABLES_DIR = Path("docs/research/tables")
 def test_real3d_single_policy_valid_row():
     paper = PAPER.read_text()
     # No "no longer the negative cell" claim
-    assert "no longer the negative cell" not in paper, (
-        "paper still contains forbidden Real3D 'no longer the negative cell' claim"
-    )
+    assert (
+        "no longer the negative cell" not in paper
+    ), "paper still contains forbidden Real3D 'no longer the negative cell' claim"
     # No "FPFH+depth" stale label
     assert "FPFH+depth" not in paper
     # No "strongest non-router" framing
@@ -54,9 +54,9 @@ def test_no_promoted_canonical_degenerate_metrics():
         if not f.exists():
             continue
         text = f.read_text()
-        assert "0.7835" not in text, (
-            f"canonical table {f.name} still contains 0.7835 — Phase 1.1 canonical cleanup not applied"
-        )
+        assert (
+            "0.7835" not in text
+        ), f"canonical table {f.name} still contains 0.7835 — Phase 1.1 canonical cleanup not applied"
 
 
 def test_no_canonical_pr_auc_headline_figure():
@@ -74,12 +74,12 @@ def test_no_canonical_pr_auc_headline_figure():
 def test_no_unsw_generalization_overclaim():
     for path in (PAPER, THESIS):
         t = path.read_text()
-        for forbidden in ("prove the cross-benchmark",
-                          "beats every non-ELARA",
-                          "without losing the cross-domain generalization"):
-            assert forbidden not in t, (
-                f"{path} still contains forbidden UNSW phrase: {forbidden!r}"
-            )
+        for forbidden in (
+            "prove the cross-benchmark",
+            "beats every non-ELARA",
+            "without losing the cross-domain generalization",
+        ):
+            assert forbidden not in t, f"{path} still contains forbidden UNSW phrase: {forbidden!r}"
 
 
 # --- Master table language ---
@@ -87,15 +87,14 @@ def test_master_table_validation_frozen_language():
     t = (TABLES_DIR / "milestone2_cross_benchmark.tex").read_text().lower()
     # Accept either "validation-frozen" or the abbreviated "val-frozen" used in the
     # rendered column headers.
-    assert ("validation-frozen" in t) or ("val-frozen" in t), (
-        "master table missing validation-frozen language in column headers"
-    )
+    assert ("validation-frozen" in t) or (
+        "val-frozen" in t
+    ), "master table missing validation-frozen language in column headers"
 
 
 def test_master_table_no_test_oracle_labels():
     t = (TABLES_DIR / "milestone2_cross_benchmark.tex").read_text()
-    for forbidden in ("Best non-router", "best non-router",
-                      "MAX(router", "max(router"):
+    for forbidden in ("Best non-router", "best non-router", "MAX(router", "max(router"):
         assert forbidden not in t, f"master table contains forbidden header: {forbidden!r}"
     # Also check the ablation + milestone1 tables
     for tname in ("rga_plus_ablation.tex", "mvtec3d_milestone1_comparison.tex"):
@@ -118,19 +117,21 @@ def test_family_a_not_called_confirmatory():
 def test_no_causal_overclaim_in_manuscripts():
     for path in (PAPER, THESIS):
         t = path.read_text()
-        for forbidden in ("Causal Reliability Attribution",
-                          "Causal Inference for Reliability",
-                          "Structural Causal Model",
-                          "interventional ATE"):
+        for forbidden in (
+            "Causal Reliability Attribution",
+            "Causal Inference for Reliability",
+            "Structural Causal Model",
+            "interventional ATE",
+        ):
             assert forbidden not in t, f"{path} contains forbidden causal phrase: {forbidden!r}"
 
 
 # --- Model-response sensitivity title present ---
 def test_model_response_sensitivity_title_present():
     paper = PAPER.read_text()
-    assert "Model-Response Sensitivity to Per-Domain Reliability" in paper, (
-        "paper missing Model-Response Sensitivity section title"
-    )
+    assert (
+        "Model-Response Sensitivity to Per-Domain Reliability" in paper
+    ), "paper missing Model-Response Sensitivity section title"
 
 
 # --- Polarity diagnostic only ---
@@ -164,8 +165,13 @@ def test_thesis_abstract_matches_claim_boundary():
     # The thesis abstract must reference the UNSW practically-very-small effect
     assert "+0.0003" in abstract
     # And must NOT contain broad-cross-domain superiority claims.
-    forbidden = ["beats every", "universally superior", "production-ready",
-                 "broad cross-domain superiority", "leaderboard-leading"]
+    forbidden = [
+        "beats every",
+        "universally superior",
+        "production-ready",
+        "broad cross-domain superiority",
+        "leaderboard-leading",
+    ]
     for f in forbidden:
         assert f not in abstract
 
@@ -178,15 +184,14 @@ def test_reported_baselines_are_defined():
         for path in (PAPER, THESIS):
             t = path.read_text()
             assert "EATA" in t, f"{path} references EATA in tables but does not define it"
-            assert ("SAR" in t and "yang2023sar" in t), (
-                f"{path} references SAR but does not define it or cite Yang et al. 2023"
-            )
+            assert (
+                "SAR" in t and "yang2023sar" in t
+            ), f"{path} references SAR but does not define it or cite Yang et al. 2023"
 
 
 # --- No stale generated tables ---
 def test_phase1_1_no_stale_generated_tables():
-    for tname in ("rga_plus_ablation.tex", "milestone2_cross_benchmark.tex",
-                  "mvtec3d_milestone1_comparison.tex"):
+    for tname in ("rga_plus_ablation.tex", "milestone2_cross_benchmark.tex", "mvtec3d_milestone1_comparison.tex"):
         f = TABLES_DIR / tname
         if not f.exists():
             continue

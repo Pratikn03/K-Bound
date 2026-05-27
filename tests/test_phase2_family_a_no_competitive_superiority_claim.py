@@ -54,9 +54,7 @@ def test_report_contains_no_forbidden_competitive_phrase():
         return
     t = _live_prose(REPORT.read_text())
     offenders = [p for p in FORBIDDEN_PHRASES if p in t]
-    assert not offenders, (
-        f"v2 static-reference report contains forbidden phrases in live prose: {offenders}"
-    )
+    assert not offenders, f"v2 static-reference report contains forbidden phrases in live prose: {offenders}"
 
 
 def test_report_negates_phrases_that_require_negation():
@@ -67,15 +65,11 @@ def test_report_negates_phrases_that_require_negation():
     if not REPORT.exists():
         return
     t = _live_prose(REPORT.read_text())
-    negation_pat = re.compile(
-        r"\b(not|no|does\s+not|cannot|only|reserved\s+for)\b", re.IGNORECASE
-    )
+    negation_pat = re.compile(r"\b(not|no|does\s+not|cannot|only|reserved\s+for)\b", re.IGNORECASE)
     for phrase in NEEDS_NEGATION_NEAR:
         for m in re.finditer(re.escape(phrase), t):
-            window = t[max(0, m.start() - 120): m.end() + 120]
-            assert negation_pat.search(window), (
-                f"phrase {phrase!r} appears without negation in live prose: {window!r}"
-            )
+            window = t[max(0, m.start() - 120) : m.end() + 120]
+            assert negation_pat.search(window), f"phrase {phrase!r} appears without negation in live prose: {window!r}"
 
 
 def test_report_states_static_reference_audit_label_explicitly():
@@ -90,8 +84,11 @@ def test_report_states_not_confirmatory_explicitly():
     if not REPORT.exists():
         return
     t = REPORT.read_text().lower()
-    assert any(s in t for s in (
-        "not confirmatory",
-        "not a confirmatory",
-        "is not confirmatory",
-    )), "report must explicitly state Family A is not confirmatory"
+    assert any(
+        s in t
+        for s in (
+            "not confirmatory",
+            "not a confirmatory",
+            "is not confirmatory",
+        )
+    ), "report must explicitly state Family A is not confirmatory"

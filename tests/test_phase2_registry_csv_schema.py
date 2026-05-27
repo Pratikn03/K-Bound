@@ -20,9 +20,9 @@ def test_csv_every_row_has_header_field_count(path: Path):
     assert rows, "file is empty"
     header = rows[0]
     for i, row in enumerate(rows[1:], start=2):
-        assert len(row) == len(header), (
-            f"{path.name}:{i}: row id={row[0]!r} has {len(row)} fields, expected {len(header)}"
-        )
+        assert len(row) == len(
+            header
+        ), f"{path.name}:{i}: row id={row[0]!r} has {len(row)} fields, expected {len(header)}"
 
 
 def test_registry_v2_has_required_columns():
@@ -53,6 +53,4 @@ def test_registry_v2_no_unresolved_placeholders_in_family_a_cells():
     for r in rows:
         if r["analysis_family"] == "A":
             for col in ("benchmark", "protocol", "primary_comparator"):
-                assert "TBD" not in r[col].upper(), (
-                    f"{r['experiment_id']}.{col} has placeholder: {r[col]!r}"
-                )
+                assert "TBD" not in r[col].upper(), f"{r['experiment_id']}.{col} has placeholder: {r[col]!r}"

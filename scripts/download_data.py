@@ -7,6 +7,7 @@ Usage:
     python scripts/download_data.py --all
     python scripts/download_data.py --enron --no-kaggle
 """
+
 import argparse
 import tarfile
 from pathlib import Path
@@ -63,11 +64,10 @@ def download_file(url: str, dest_path: Path, chunk_size: int = 1 << 20):
 # NLP (Enron)
 # -----------
 
+
 def download_enron_via_kaggle() -> Path:
     if not KAGGLE_AVAILABLE:
-        raise RuntimeError(
-            "kaggle package not installed. Install it or use --no-kaggle for manual mode."
-        )
+        raise RuntimeError("kaggle package not installed. Install it or use --no-kaggle for manual mode.")
 
     NLP_DIR.mkdir(parents=True, exist_ok=True)
     csv_path = NLP_DIR / "enron_emails.csv"
@@ -103,9 +103,7 @@ def download_enron_via_kaggle() -> Path:
 def download_enron_manual() -> Path:
     csv_path = NLP_DIR / "enron_emails.csv"
     if not csv_path.exists():
-        raise FileNotFoundError(
-            f"{csv_path} not found. Download Enron CSV manually (e.g., Kaggle) and place it there."
-        )
+        raise FileNotFoundError(f"{csv_path} not found. Download Enron CSV manually (e.g., Kaggle) and place it there.")
     print(f"[ok] Found existing Enron CSV at {csv_path}")
     return csv_path
 
@@ -124,6 +122,7 @@ def download_enron(prefer_kaggle: bool = True) -> Path:
 # --------------
 # Vision CIFAR-10
 # --------------
+
 
 def download_cifar10() -> Path:
     makedirs()
@@ -150,6 +149,7 @@ def download_cifar10() -> Path:
 # -----
 # CLI
 # -----
+
 
 def main():
     parser = argparse.ArgumentParser(description="Download NLP (Enron) and Vision (CIFAR-10) datasets for UAIS-V.")

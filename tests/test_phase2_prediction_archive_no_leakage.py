@@ -47,7 +47,11 @@ def test_test_split_predictions_never_carry_test_selection_flag(archive):
         frame=df,
     )
     archive.append_index(entry)
-    artifact = pd.read_parquet(entry.artifact_path) if entry.artifact_path.endswith(".parquet") else pd.read_csv(entry.artifact_path)
+    artifact = (
+        pd.read_parquet(entry.artifact_path)
+        if entry.artifact_path.endswith(".parquet")
+        else pd.read_csv(entry.artifact_path)
+    )
     assert (artifact["selection_used_test_metrics"].astype(str).str.lower().isin({"false", "0"})).all()
     assert entry.usable_for_inference is True
 

@@ -26,20 +26,19 @@ import csv
 import json
 from pathlib import Path
 
-
 CELL_REGISTRY = [
     # cell_id, benchmark, protocol, family, status
-    ("A1", "MVTec 3D-AD",    "PatchCore canonical",      "A", "protocol-diagnostic"),
-    ("A2", "MVTec 3D-AD",    "PatchCore supervised",     "A", "audited primary reanalysis"),
-    ("A3", "MVTec 3D-AD",    "PatchCore held-out",       "A", "audited primary reanalysis"),
-    ("A4", "MVTec LOCO-AD",  "PatchCore canonical",      "A", "protocol-diagnostic"),
-    ("A5", "MVTec LOCO-AD",  "PatchCore supervised",     "A", "audited primary reanalysis"),
-    ("A6", "VisA",           "RGB+edge canonical",       "A", "protocol-diagnostic"),
-    ("A7", "VisA",           "RGB+edge supervised",      "A", "audited primary reanalysis"),
-    ("A8", "UNSW-NB15",      "flow/conn/context",        "A", "audited primary reanalysis"),
-    ("C1", "Real3D-AD",      "PCA shape + depth supervised", "C", "exploratory"),
-    ("C2", "VisA",           "RGB+random noise-floor",   "C", "exploratory"),
-    ("C3", "UNSW-NB15",      "held-out attack categories", "C", "exploratory"),
+    ("A1", "MVTec 3D-AD", "PatchCore canonical", "A", "protocol-diagnostic"),
+    ("A2", "MVTec 3D-AD", "PatchCore supervised", "A", "audited primary reanalysis"),
+    ("A3", "MVTec 3D-AD", "PatchCore held-out", "A", "audited primary reanalysis"),
+    ("A4", "MVTec LOCO-AD", "PatchCore canonical", "A", "protocol-diagnostic"),
+    ("A5", "MVTec LOCO-AD", "PatchCore supervised", "A", "audited primary reanalysis"),
+    ("A6", "VisA", "RGB+edge canonical", "A", "protocol-diagnostic"),
+    ("A7", "VisA", "RGB+edge supervised", "A", "audited primary reanalysis"),
+    ("A8", "UNSW-NB15", "flow/conn/context", "A", "audited primary reanalysis"),
+    ("C1", "Real3D-AD", "PCA shape + depth supervised", "C", "exploratory"),
+    ("C2", "VisA", "RGB+random noise-floor", "C", "exploratory"),
+    ("C3", "UNSW-NB15", "held-out attack categories", "C", "exploratory"),
 ]
 
 PAIRING_STRENGTH = {
@@ -70,6 +69,7 @@ def _float_or_none(v):
     try:
         f = float(v)
         import math
+
         return f if math.isfinite(f) else None
     except (TypeError, ValueError):
         return None
@@ -158,9 +158,7 @@ def main() -> None:
             )
         else:  # exploratory
             allowed = "Descriptive point estimates only. No Holm correction."
-            forbidden = (
-                "No confirmatory or superiority claim. No inclusion in Family A inferential summary."
-            )
+            forbidden = "No confirmatory or superiority claim. No inclusion in Family A inferential summary."
 
         claim = {
             "cell_id": cell_id,
@@ -194,8 +192,8 @@ def main() -> None:
                 "ROC-AUC is interpretable at chance level; canonical PR/ECE/Brier are "
                 "blocked pending the Phase 1.A audit (METRICS_VALID_BUT_MISINTERPRETED — "
                 "PR/ECE/Brier equal test-fold prevalence and are not promoted in the manuscript)."
-                if status == "protocol-diagnostic" else
-                "Verified by Phase 1.A canonical label/metric semantics audit."
+                if status == "protocol-diagnostic"
+                else "Verified by Phase 1.A canonical label/metric semantics audit."
             ),
         }
         manifest["claims"].append(claim)
@@ -204,14 +202,16 @@ def main() -> None:
     macros: dict[str, str] = {}
     for c in manifest["claims"]:
         cid = c["cell_id"]
-        def _macro(name: str, value):
-            key = f"elara{cid}{name}"  # e.g. elaraA2RgaPlusAuc
+
+        def _macro(name: str, value, _cid=cid):
+            key = f"elara{_cid}{name}"  # e.g. elaraA2RgaPlusAuc
             if isinstance(value, float):
                 macros[key] = f"{value:.4f}"
             elif value is None:
                 macros[key] = "--"
             else:
                 macros[key] = str(value)
+
         _macro("RgaPlusAuc", c.get("rga_plus_test_roc_auc"))
         _macro("ComparatorAuc", c.get("primary_comparator_test_roc_auc"))
         _macro("DeltaAuc", c.get("delta_auc"))
@@ -238,10 +238,16 @@ def main() -> None:
         # so we sanitise digits→letters here. (Macro names cannot contain digits or
         # hyphens.) Replace digit→letter and remove non-alpha.
         sanitised = (
-            k.replace("0", "Zero").replace("1", "One").replace("2", "Two")
-             .replace("3", "Three").replace("4", "Four").replace("5", "Five")
-             .replace("6", "Six").replace("7", "Seven").replace("8", "Eight")
-             .replace("9", "Nine")
+            k.replace("0", "Zero")
+            .replace("1", "One")
+            .replace("2", "Two")
+            .replace("3", "Three")
+            .replace("4", "Four")
+            .replace("5", "Five")
+            .replace("6", "Six")
+            .replace("7", "Seven")
+            .replace("8", "Eight")
+            .replace("9", "Nine")
         )
         # Replace unsafe chars (none expected after sanitise) with empty.
         sanitised = "".join(ch for ch in sanitised if ch.isalpha())

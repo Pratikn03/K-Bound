@@ -39,18 +39,18 @@ ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT / "src"))
 sys.path.insert(0, str(ROOT))
 
+from elara.evaluation.prediction_archive import PredictionArchive  # noqa: E402
 from scripts.run_breakthrough_experiment import (  # noqa: E402
     _build_model,
     _load_data,
     _make_loaders,
     _make_reliability_estimator,
-    _predict_static,
     _predict_craf_with_stats,
+    _predict_static,
     _split,
     _train_model,
     set_seed,
 )
-from elara.evaluation.prediction_archive import PredictionArchive  # noqa: E402
 
 OUT_DIR = ROOT / "experiments" / "phase2" / "family_d"
 ARCHIVE_DIR = OUT_DIR / "archives"
@@ -60,8 +60,8 @@ MANIFEST_V3 = ROOT / "docs" / "research" / "phase2" / "FAMILY_D_PARTITION_MANIFE
 # Locked degradation operator parameters (mirror of frozen YAML + spec)
 OPERATOR_PARAMS = {
     "D-EYE-1": {"target_domain": "depth", "mode": "zero_collapse", "seed_offset": 41000},
-    "D-EYE-2": {"target_domain": "rgb",   "mode": "zero_collapse", "seed_offset": 41001},
-    "D-EYE-3": {"target_domain": "depth", "mode": "mask_collapse",  "seed_offset": 41002},
+    "D-EYE-2": {"target_domain": "rgb", "mode": "zero_collapse", "seed_offset": 41001},
+    "D-EYE-3": {"target_domain": "depth", "mode": "mask_collapse", "seed_offset": 41002},
 }
 PRIMARY_CELLS = ("D-EYE-1", "D-EYE-2")
 SECONDARY_CELLS = ("D-EYE-3",)
@@ -122,13 +122,11 @@ def _preflight_checks(protocol_path: Path, pipeline_spec_path: Path, cell_id: st
             )
     else:
         print(
-            "[PREFLIGHT] FAMILY_D_PARTITION_MANIFEST_v3.json not found; "
-            "will create at end of run.",
+            "[PREFLIGHT] FAMILY_D_PARTITION_MANIFEST_v3.json not found; " "will create at end of run.",
             flush=True,
         )
 
     print("[PREFLIGHT] All pre-execution checks passed.", flush=True)
-
 
 
 def _apply_degradation_operator(
@@ -290,29 +288,29 @@ def run_one_seed(
     cfg_seed["training"] = dict(cfg.get("training", {}))
     cfg_seed["training"]["seed"] = int(seed)
 
-    (features, masks, labels, sample_ids, domain_order, _,
-     conf_idx, score_idx, sample_splits, sample_categories) = _load_data(cfg_seed)
-
-    train_idx, val_idx, test_idx = _split(
-        labels, cfg_seed["training"], split_values=sample_splits
+    features, masks, labels, sample_ids, domain_order, _, conf_idx, score_idx, sample_splits, sample_categories = (
+        _load_data(cfg_seed)
     )
+
+    train_idx, val_idx, test_idx = _split(labels, cfg_seed["training"], split_values=sample_splits)
 
     # ── Train model ──────────────────────────────────────────────────────
     train_loader, val_loader, _ = _make_loaders(
-        features, masks, labels, train_idx, val_idx, test_idx,
+        features,
+        masks,
+        labels,
+        train_idx,
+        val_idx,
+        test_idx,
         batch_size=int(cfg_seed["training"].get("batch_size", 64)),
     )
-    model = _build_model(
-        cfg_seed, features.shape[1], features.shape[2], conf_idx, device
-    )
+    model = _build_model(cfg_seed, features.shape[1], features.shape[2], conf_idx, device)
     _train_model(model, train_loader, val_loader, cfg_seed, device)
     model.eval()
 
     # ── Fit reliability estimator on training data ────────────────────────
     rel_cfg = cfg_seed.get("reliability", {})
-    estimator = _make_reliability_estimator(
-        rel_cfg, list(domain_order) or ["rgb", "depth"], score_idx
-    )
+    estimator = _make_reliability_estimator(rel_cfg, list(domain_order) or ["rgb", "depth"], score_idx)
     estimator.fit(features[train_idx], masks[train_idx], labels[train_idx])
 
     # ── Validation-only τ selection ──────────────────────────────────────
@@ -321,15 +319,14 @@ def run_one_seed(
     val_labels_arr = labels[val_idx]
 
     tau_result = _select_tau_on_validation_only(
-        model, estimator, val_feat, val_mask, val_labels_arr,
-        list(domain_order), cell_id, int(seed), device
+        model, estimator, val_feat, val_mask, val_labels_arr, list(domain_order), cell_id, int(seed), device
     )
     selected_tau = tau_result["selected_tau"]
     clean_rate = tau_result["clean_activation_rate"]
 
-    assert not tau_result["selection_used_test_metrics"], (
-        "INVARIANT VIOLATED: selection_used_test_metrics must be False"
-    )
+    assert not tau_result[
+        "selection_used_test_metrics"
+    ], "INVARIANT VIOLATED: selection_used_test_metrics must be False"
 
     rows = []
     selection_rule = (
@@ -340,15 +337,17 @@ def run_one_seed(
     )
 
     # ── Validation calibration rows (for per-seed log) ───────────────────
-    rows.append({
-        "cell_id": cell_id,
-        "seed": seed,
-        "fold": "validation",
-        "selected_tau": selected_tau,
-        "clean_activation_rate": clean_rate,
-        "selection_used_test_metrics": False,
-        "selection_note": tau_result["selection_note"],
-    })
+    rows.append(
+        {
+            "cell_id": cell_id,
+            "seed": seed,
+            "fold": "validation",
+            "selected_tau": selected_tau,
+            "clean_activation_rate": clean_rate,
+            "selection_used_test_metrics": False,
+            "selection_note": tau_result["selection_note"],
+        }
+    )
 
     if not include_test:
         # Dry-run mode: don't touch test fold
@@ -367,8 +366,11 @@ def run_one_seed(
         return rows
     if valid_test_mask.sum() < len(test_labels_arr):
         n_filtered = int((~valid_test_mask).sum())
-        print(f"[seed={seed}] Filtering {n_filtered} unlabeled test_private rows; "
-              f"using {int(valid_test_mask.sum())} labeled test_public rows.", flush=True)
+        print(
+            f"[seed={seed}] Filtering {n_filtered} unlabeled test_private rows; "
+            f"using {int(valid_test_mask.sum())} labeled test_public rows.",
+            flush=True,
+        )
         test_feat = test_feat[valid_test_mask]
         test_mask = test_mask[valid_test_mask]
         test_labels_arr = test_labels_arr[valid_test_mask]
@@ -381,30 +383,40 @@ def run_one_seed(
 
     # Static predictions (no RGA)
     static_probs_clean = _predict_static(model, test_feat, test_mask, device)
-    static_probs_deg   = _predict_static(model, deg_feat,  deg_mask,  device)
+    static_probs_deg = _predict_static(model, deg_feat, deg_mask, device)
 
     # RGA predictions (with gate at selected_tau)
     estimator.gate_mode = "mean"
     estimator.gate_threshold = selected_tau
     craf_probs_clean, gate_stats_clean = _predict_craf_with_stats(
-        model, estimator, test_feat, test_mask, device,
-        clean_gate_threshold=selected_tau, per_sample_gating=False,
+        model,
+        estimator,
+        test_feat,
+        test_mask,
+        device,
+        clean_gate_threshold=selected_tau,
+        per_sample_gating=False,
     )
     craf_probs_deg, gate_stats_deg = _predict_craf_with_stats(
-        model, estimator, deg_feat, deg_mask, device,
-        clean_gate_threshold=selected_tau, per_sample_gating=False,
+        model,
+        estimator,
+        deg_feat,
+        deg_mask,
+        device,
+        clean_gate_threshold=selected_tau,
+        per_sample_gating=False,
     )
 
     # Archive all four (method × condition) score vectors
-    for condition, f_arr, m_arr in (
+    for condition, _f_arr, _m_arr in (
         ("clean", test_feat, test_mask),
         (cell_id, deg_feat, deg_mask),
     ):
         static_p = static_probs_clean if condition == "clean" else static_probs_deg
-        craf_p   = craf_probs_clean   if condition == "clean" else craf_probs_deg
+        craf_p = craf_probs_clean if condition == "clean" else craf_probs_deg
 
         for method, scores in (
-            ("static_attention",       static_p),
+            ("static_attention", static_p),
             (f"base_rga_tau{selected_tau:.2f}", craf_p),
         ):
             frame = PredictionArchive.build_frame(
@@ -422,8 +434,7 @@ def run_one_seed(
                 selection_rule=selection_rule,
                 selection_used_test_metrics=False,
                 selected_head_or_comparator_status=(
-                    f"base_RGA G0 mean-gate tau={selected_tau:.2f}"
-                    if "rga" in method else "static reference"
+                    f"base_RGA G0 mean-gate tau={selected_tau:.2f}" if "rga" in method else "static reference"
                 ),
                 gate_mode="mean",
             )
@@ -441,47 +452,46 @@ def run_one_seed(
 
     # Compute per-seed AUC metrics
     static_auc = _safe_auc(test_labels_arr, static_probs_deg)
-    rga_auc    = _safe_auc(test_labels_arr, craf_probs_deg)
-    delta_auc  = (rga_auc - static_auc) if (rga_auc is not None and static_auc is not None) else None
+    rga_auc = _safe_auc(test_labels_arr, craf_probs_deg)
+    delta_auc = (rga_auc - static_auc) if (rga_auc is not None and static_auc is not None) else None
 
     gate_stats = gate_stats_deg
     gate_activation = (
-        float(gate_stats.get("gate_activation_rate", float("nan")))
-        if isinstance(gate_stats, dict) else float("nan")
+        float(gate_stats.get("gate_activation_rate", float("nan"))) if isinstance(gate_stats, dict) else float("nan")
     )
 
-    rows.append({
-        "cell_id": cell_id,
-        "seed": seed,
-        "fold": "test",
-        "selected_tau": selected_tau,
-        "clean_activation_rate": clean_rate,
-        "static_auc": static_auc,
-        "rga_auc": rga_auc,
-        "delta_auc": delta_auc,
-        "gate_activation_rate_under_degradation": gate_activation,
-        "selection_used_test_metrics": False,
-    })
+    rows.append(
+        {
+            "cell_id": cell_id,
+            "seed": seed,
+            "fold": "test",
+            "selected_tau": selected_tau,
+            "clean_activation_rate": clean_rate,
+            "static_auc": static_auc,
+            "rga_auc": rga_auc,
+            "delta_auc": delta_auc,
+            "gate_activation_rate_under_degradation": gate_activation,
+            "selection_used_test_metrics": False,
+        }
+    )
     return rows
 
 
 def main() -> int:
     p = argparse.ArgumentParser(description=__doc__)
-    p.add_argument("--cell", required=True, choices=ALL_CELLS,
-                   help="Which D-EYE endpoint to evaluate")
-    p.add_argument("--seeds", type=int, default=30,
-                   help="Number of seeds to run (target=30, minimum=15)")
-    p.add_argument("--seed-start", type=int, default=42,
-                   help="First seed (range: seed_start .. seed_start+seeds-1)")
-    p.add_argument("--protocol", default="configs/phase2/family_d_v2_eyecandies_protocol.yaml",
-                   help="Frozen protocol YAML path")
-    p.add_argument("--pipeline-spec",
-                   default="configs/phase2/family_d_v3_scoring_pipeline.yaml",
-                   help="Frozen scoring-pipeline spec YAML path")
-    p.add_argument("--dry-run", action="store_true",
-                   help="Run validation calibration only; do not touch test fold")
-    p.add_argument("--experiment-id", default="D-EYE-v3",
-                   help="Experiment ID for archive metadata")
+    p.add_argument("--cell", required=True, choices=ALL_CELLS, help="Which D-EYE endpoint to evaluate")
+    p.add_argument("--seeds", type=int, default=30, help="Number of seeds to run (target=30, minimum=15)")
+    p.add_argument("--seed-start", type=int, default=42, help="First seed (range: seed_start .. seed_start+seeds-1)")
+    p.add_argument(
+        "--protocol", default="configs/phase2/family_d_v2_eyecandies_protocol.yaml", help="Frozen protocol YAML path"
+    )
+    p.add_argument(
+        "--pipeline-spec",
+        default="configs/phase2/family_d_v3_scoring_pipeline.yaml",
+        help="Frozen scoring-pipeline spec YAML path",
+    )
+    p.add_argument("--dry-run", action="store_true", help="Run validation calibration only; do not touch test fold")
+    p.add_argument("--experiment-id", default="D-EYE-v3", help="Experiment ID for archive metadata")
     args = p.parse_args()
 
     protocol_path = ROOT / args.protocol
@@ -521,10 +531,10 @@ def main() -> int:
     seeds = list(range(args.seed_start, args.seed_start + args.seeds))
     include_test = not args.dry_run
     if args.dry_run:
-        print(f"[DRY-RUN] Validation calibration only; test fold will NOT be accessed.", flush=True)
+        print("[DRY-RUN] Validation calibration only; test fold will NOT be accessed.", flush=True)
     else:
         print(f"[RUN] Cell={args.cell}, seeds={len(seeds)}, include_test=True", flush=True)
-        print(f"[WARN] This is the ONE-TIME held-out evaluation. It cannot be re-run.", flush=True)
+        print("[WARN] This is the ONE-TIME held-out evaluation. It cannot be re-run.", flush=True)
 
     for seed in seeds:
         print(f"[seed={seed}] starting...", flush=True)
@@ -541,19 +551,25 @@ def main() -> int:
             print(f"[seed={seed}] done. rows={len(seed_rows)}", flush=True)
         except Exception as exc:
             print(f"[seed={seed}] ERROR: {exc}", flush=True)
-            import traceback; traceback.print_exc()
-            all_rows.append({
-                "cell_id": args.cell, "seed": seed, "fold": "error",
-                "error": str(exc), "selection_used_test_metrics": False,
-            })
+            import traceback
+
+            traceback.print_exc()
+            all_rows.append(
+                {
+                    "cell_id": args.cell,
+                    "seed": seed,
+                    "fold": "error",
+                    "error": str(exc),
+                    "selection_used_test_metrics": False,
+                }
+            )
 
     # Write per-seed calibration + result log
     fold_type = "dry_run_validation_only" if args.dry_run else "full_test_evaluation"
     out_csv = OUT_DIR / f"family_d_{args.cell.replace('-','_').lower()}_{fold_type}_per_seed.csv"
     if all_rows:
         fieldnames = sorted(
-            {k for r in all_rows for k in r.keys()},
-            key=lambda k: (k != "cell_id", k != "seed", k != "fold", k)
+            {k for r in all_rows for k in r.keys()}, key=lambda k: (k != "cell_id", k != "seed", k != "fold", k)
         )
         with out_csv.open("w", newline="") as f:
             w = csv.DictWriter(f, fieldnames=fieldnames, extrasaction="ignore")

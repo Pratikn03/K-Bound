@@ -26,6 +26,7 @@ def test_manuscript_validator_returns_clean():
     so it fails loudly until the manuscript repair is done.
     """
     import sys
+
     cp = subprocess.run(
         [sys.executable, str(VALIDATOR)],
         env={"PYTHONPATH": "src"},

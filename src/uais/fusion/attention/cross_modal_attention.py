@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-from typing import Tuple
 import math
 
 import torch
@@ -94,9 +93,13 @@ class CrossModalAttentionFusion(nn.Module):
         self.position_embeddings = nn.Embedding(num_domains, domain_embed_dim) if use_positional_embeddings else None
         self.missing_embedding = nn.Parameter(torch.zeros(domain_embed_dim)) if use_missing_embedding else None
 
-        self.blocks = nn.ModuleList(
-            [CrossModalAttentionBlock(domain_embed_dim, num_heads, dropout=dropout) for _ in range(num_layers)]
-        ) if use_attention else nn.ModuleList()
+        self.blocks = (
+            nn.ModuleList(
+                [CrossModalAttentionBlock(domain_embed_dim, num_heads, dropout=dropout) for _ in range(num_layers)]
+            )
+            if use_attention
+            else nn.ModuleList()
+        )
         self.ffn = nn.Sequential(
             nn.Linear(domain_embed_dim, 128),
             nn.ReLU(),
@@ -113,7 +116,7 @@ class CrossModalAttentionFusion(nn.Module):
         domain_ids: torch.Tensor | None = None,
         position_ids: torch.Tensor | None = None,
         confidence_weights: torch.Tensor | None = None,
-    ) -> Tuple[torch.Tensor, torch.Tensor | None]:
+    ) -> tuple[torch.Tensor, torch.Tensor | None]:
         if domain_embeddings.shape[1] != self.num_domains:
             raise ValueError("domain_embeddings must have shape [batch, num_domains, embed_dim]")
         if domain_ids is None:
@@ -193,7 +196,9 @@ class AttentionFusionModel(nn.Module):
             use_positional_embeddings=use_positional_embeddings,
             use_missing_embedding=use_missing_embedding,
         )
-        self.confidence_estimator = DomainConfidenceEstimator(embed_dim, hidden_dim=32, dropout=dropout) if use_confidence else None
+        self.confidence_estimator = (
+            DomainConfidenceEstimator(embed_dim, hidden_dim=32, dropout=dropout) if use_confidence else None
+        )
         self.use_input_confidence = use_input_confidence
         self.confidence_index = confidence_index
 

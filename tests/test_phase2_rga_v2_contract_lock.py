@@ -48,4 +48,5 @@ def test_g3_top_q_search_grid_locked():
 def test_g3_top_q_implemented_in_estimator():
     """G3 requires top_q gate mode in ReliabilityEstimator."""
     from uais.fusion.attention.reliability_estimator import ReliabilityEstimator
+
     assert "top_q" in ReliabilityEstimator._VALID_GATE_MODES

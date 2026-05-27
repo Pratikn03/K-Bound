@@ -78,17 +78,13 @@ def main() -> None:
             fails.append(f"unreadable: {ap} ({e})")
             continue
         if list(frame.columns) != list(PREDICTION_ARCHIVE_SCHEMA):
-            fails.append(
-                f"schema mismatch: {ap} got={list(frame.columns)} expected={list(PREDICTION_ARCHIVE_SCHEMA)}"
-            )
+            fails.append(f"schema mismatch: {ap} got={list(frame.columns)} expected={list(PREDICTION_ARCHIVE_SCHEMA)}")
             continue
         # selection_used_test_metrics must be False everywhere on test split.
         if row["split"] == "test":
             bad = frame[frame["selection_used_test_metrics"].astype(str).str.lower().isin(["true", "1"])]
             if len(bad) > 0:
-                fails.append(
-                    f"selection_used_test_metrics=True on test split: {ap} (rows={len(bad)})"
-                )
+                fails.append(f"selection_used_test_metrics=True on test split: {ap} (rows={len(bad)})")
         # Verify usable_for_inference column matches the selection flag.
         if not row["usable_for_inference"]:
             fails.append(f"usable_for_inference=False registered: {ap}")

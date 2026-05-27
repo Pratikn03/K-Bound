@@ -9,72 +9,91 @@ Paper names (ELARA/RGA) vs. code names (UAIS-V/CRAF) cross-reference:
   CDA   = Counterfactual Domain Attribution                 (CounterfactualDomainExplainer)
 """
 
-from uais.fusion.attention.cross_modal_attention import (
-    AttentionFusionModel,
-    CrossModalAttentionBlock,
-    CrossModalAttentionFusion,
-)
-from uais.fusion.attention.train_attention_fusion import train_attention_fusion
-from uais.fusion.attention.evaluate_attention_fusion import evaluate_attention_fusion
-from uais.fusion.attention.evaluate_attention_harness import evaluate_attention_harness
-from uais.fusion.attention.validate_fusion_inputs import validate_attention_inputs
-from uais.fusion.attention.reliability_estimator import (
-    CategoryAwareReliabilityEstimator,
-    ReliabilityEstimator,
-    RGAReliabilityEstimator,   # paper-name alias for ReliabilityEstimator
-)
-from uais.fusion.attention.counterfactual_explainer import (
-    CounterfactualDomainExplainer,
-    CounterfactualResult,
-)
+# ruff: noqa: I001
+
 from uais.fusion.attention.adversarial_robustness import (
     AdversarialAttackType,
     AdversarialPerturbationEngine,
 )
 from uais.fusion.attention.baselines import (
+    ConfidenceWeightedMean,
     EarlyFusionMLP,
     LateFusionEnsemble,
     RandomForestFusion,
-    ConfidenceWeightedMean,
     TentScoreAdapter,
     TTTPseudoLabelAdapter,
     run_baseline_suite,
 )
-from uais.fusion.attention.unsupervised_baselines import (
-    BGMMConfig, GMMConfig, KMeansConfig, IForestConfig,
-    OCSVMConfig, LOFConfig, AEConfig,
-    BGMMAnomalyDetector, GMMAnomalyDetector, KMeansAnomalyDetector,
-    IsolationForestDetector, OneClassSVMDetector, LOFAnomalyDetector,
-    AutoencoderAnomalyDetector,
-    run_unsupervised_suite,
+from uais.fusion.attention.counterfactual_explainer import (
+    CounterfactualDomainExplainer,
+    CounterfactualResult,
 )
-from uais.fusion.attention.dim_reduction import (
-    DimReducer, NoOpReducer, PCAReducer, AutoencoderReducer,
-    PCAReducerConfig, AEReducerConfig, make_reducer,
-)
-from uais.fusion.attention.leakage_guard import (
-    check_train_test_contamination,
-    check_label_overlap,
-    assert_no_oversampling_in_test,
-    assert_normal_only_training,
-    flag_suspicious_metrics,
-    PipelineGuard,
-    assert_split_before_preprocess,
+from uais.fusion.attention.cross_modal_attention import (
+    AttentionFusionModel,
+    CrossModalAttentionBlock,
+    CrossModalAttentionFusion,
 )
 from uais.fusion.attention.cv_evaluator import (
-    BaselineSpec, CVConfig,
+    BaselineSpec,
+    CVConfig,
     cross_validate_baselines,
     pairwise_delong_from_predictions,
 )
+from uais.fusion.attention.dim_reduction import (
+    AEReducerConfig,
+    AutoencoderReducer,
+    DimReducer,
+    NoOpReducer,
+    PCAReducer,
+    PCAReducerConfig,
+    make_reducer,
+)
+from uais.fusion.attention.evaluate_attention_fusion import evaluate_attention_fusion
+from uais.fusion.attention.evaluate_attention_harness import evaluate_attention_harness
+from uais.fusion.attention.leakage_guard import (
+    PipelineGuard,
+    assert_no_oversampling_in_test,
+    assert_normal_only_training,
+    assert_split_before_preprocess,
+    check_label_overlap,
+    check_train_test_contamination,
+    flag_suspicious_metrics,
+)
 from uais.fusion.attention.learned_gate import (
-    LearnedReliabilityGate,
     LearnedGateConfig,
+    LearnedReliabilityGate,
 )
 from uais.fusion.attention.meta_router import (
     RGAMetaRouter,
     fit_rga_meta_router,
 )
 from uais.fusion.attention.reliability_boosted_fusion import ReliabilityBoostedFusion
+from uais.fusion.attention.reliability_estimator import (
+    RGAReliabilityEstimator,  # paper-name alias for ReliabilityEstimator
+)
+from uais.fusion.attention.reliability_estimator import (
+    CategoryAwareReliabilityEstimator,
+    ReliabilityEstimator,
+)
+from uais.fusion.attention.train_attention_fusion import train_attention_fusion
+from uais.fusion.attention.unsupervised_baselines import (
+    AEConfig,
+    AutoencoderAnomalyDetector,
+    BGMMAnomalyDetector,
+    BGMMConfig,
+    GMMAnomalyDetector,
+    GMMConfig,
+    IForestConfig,
+    IsolationForestDetector,
+    KMeansAnomalyDetector,
+    KMeansConfig,
+    LOFAnomalyDetector,
+    LOFConfig,
+    OCSVMConfig,
+    OneClassSVMDetector,
+    run_unsupervised_suite,
+)
+from uais.fusion.attention.validate_fusion_inputs import validate_attention_inputs
 
 __all__ = [
     "AttentionFusionModel",
@@ -101,25 +120,46 @@ __all__ = [
     "TTTPseudoLabelAdapter",
     "run_baseline_suite",
     # Unsupervised baselines — normal-only training protocol
-    "BGMMConfig", "GMMConfig", "KMeansConfig", "IForestConfig",
-    "OCSVMConfig", "LOFConfig", "AEConfig",
-    "BGMMAnomalyDetector", "GMMAnomalyDetector", "KMeansAnomalyDetector",
-    "IsolationForestDetector", "OneClassSVMDetector", "LOFAnomalyDetector",
+    "BGMMConfig",
+    "GMMConfig",
+    "KMeansConfig",
+    "IForestConfig",
+    "OCSVMConfig",
+    "LOFConfig",
+    "AEConfig",
+    "BGMMAnomalyDetector",
+    "GMMAnomalyDetector",
+    "KMeansAnomalyDetector",
+    "IsolationForestDetector",
+    "OneClassSVMDetector",
+    "LOFAnomalyDetector",
     "AutoencoderAnomalyDetector",
     "run_unsupervised_suite",
     # Consistent dimensionality reduction
-    "DimReducer", "NoOpReducer", "PCAReducer", "AutoencoderReducer",
-    "PCAReducerConfig", "AEReducerConfig", "make_reducer",
+    "DimReducer",
+    "NoOpReducer",
+    "PCAReducer",
+    "AutoencoderReducer",
+    "PCAReducerConfig",
+    "AEReducerConfig",
+    "make_reducer",
     # Leakage detection + protocol enforcement
-    "check_train_test_contamination", "check_label_overlap",
-    "assert_no_oversampling_in_test", "assert_normal_only_training",
-    "flag_suspicious_metrics", "PipelineGuard", "assert_split_before_preprocess",
+    "check_train_test_contamination",
+    "check_label_overlap",
+    "assert_no_oversampling_in_test",
+    "assert_normal_only_training",
+    "flag_suspicious_metrics",
+    "PipelineGuard",
+    "assert_split_before_preprocess",
     # Unified CV evaluator
-    "BaselineSpec", "CVConfig",
+    "BaselineSpec",
+    "CVConfig",
     "cross_validate_baselines",
     "pairwise_delong_from_predictions",
     # Learned gate (alternative to heuristic τ)
-    "LearnedReliabilityGate", "LearnedGateConfig",
-    "RGAMetaRouter", "fit_rga_meta_router",
+    "LearnedReliabilityGate",
+    "LearnedGateConfig",
+    "RGAMetaRouter",
+    "fit_rga_meta_router",
     "ReliabilityBoostedFusion",
 ]

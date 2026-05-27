@@ -10,9 +10,9 @@ contract rule ``selection_used_test_metrics=False``.
 
 from __future__ import annotations
 
+from collections.abc import Iterable
 from dataclasses import dataclass
 from itertools import combinations
-from typing import Iterable
 
 import numpy as np
 
@@ -77,35 +77,42 @@ def inject_corruption(
 
     engine = AdversarialPerturbationEngine(domain_order, score_index, random_seed=int(seed))
     out: list[KOfDCorruptionResult] = []
-    for k in sorted(set(int(v) for v in k_values)):
+    for k in sorted({int(v) for v in k_values}):
         if k < 0 or k > len(domain_order):
             raise ValueError(f"k {k} outside [0, {len(domain_order)}]")
         if k == 0:
-            out.append(KOfDCorruptionResult(
-                condition="clean:k0",
-                attack="none",
-                failed_domains=tuple(),
-                failed_domain_count=0,
-                features=features,
-                masks=masks,
-            ))
+            out.append(
+                KOfDCorruptionResult(
+                    condition="clean:k0",
+                    attack="none",
+                    failed_domains=(),
+                    failed_domain_count=0,
+                    features=features,
+                    masks=masks,
+                )
+            )
             continue
         for subset in combinations(domain_order, k):
             pert_feat = features.copy()
             pert_mask = masks.copy()
             for domain in subset:
                 pert_feat, pert_mask = engine.apply_attack(
-                    pert_feat, pert_mask, attack_type,
-                    target_domain=domain, sigma=sigma,
+                    pert_feat,
+                    pert_mask,
+                    attack_type,
+                    target_domain=domain,
+                    sigma=sigma,
                 )
-            out.append(KOfDCorruptionResult(
-                condition=f"{attack_name}:k{k}:{','.join(subset)}",
-                attack=attack_name,
-                failed_domains=subset,
-                failed_domain_count=k,
-                features=pert_feat,
-                masks=pert_mask,
-            ))
+            out.append(
+                KOfDCorruptionResult(
+                    condition=f"{attack_name}:k{k}:{','.join(subset)}",
+                    attack=attack_name,
+                    failed_domains=subset,
+                    failed_domain_count=k,
+                    features=pert_feat,
+                    masks=pert_mask,
+                )
+            )
     return out
 
 
@@ -138,7 +145,8 @@ def validation_fold_corruption_grid(
         # different attacks see different perturbation noise streams.
         attack_seed = int(base_seed) + (hash(attack) & 0xFFFF)
         injections = inject_corruption(
-            val_features, val_masks,
+            val_features,
+            val_masks,
             domain_order=domain_order,
             score_index=score_index,
             attack_name=attack,

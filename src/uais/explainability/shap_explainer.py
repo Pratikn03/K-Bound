@@ -7,7 +7,6 @@ Note: This module requires the `shap` package. Install via:
 
 from typing import Optional
 
-import numpy as np
 import pandas as pd
 
 try:

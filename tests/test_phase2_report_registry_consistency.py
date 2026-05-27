@@ -34,6 +34,7 @@ def test_v2_report_does_not_present_efficientad_or_real3d_as_family_a():
     *assertive cell-identity rows* — markdown bullet/table entries
     that start with the cell ID. Prose acknowledging the drift is fine."""
     import re
+
     lines = _text().splitlines()
     pat = re.compile(r"^[-*\s]*\*\*A-POWERED-[2-5]\*\*\s*[—\-:]")  # bullet-form claim line
     table_pat = re.compile(r"^\|\s*A-POWERED-[2-5]\s*\|")  # table-row claim line
@@ -47,19 +48,18 @@ def test_v2_report_does_not_present_efficientad_or_real3d_as_family_a():
 
 def test_v2_report_labels_existing_output_as_secondary_audit():
     t = _text()
-    assert "SECONDARY_ALL_COMPARATOR_PILOT_AUDIT" in t, (
-        "v2 report must label the K=10 output as SECONDARY_ALL_COMPARATOR_PILOT_AUDIT"
-    )
-    assert "PRIMARY_FAMILY_A_CELL_LEVEL" in t, (
-        "v2 report must define the PRIMARY_FAMILY_A_CELL_LEVEL surface"
-    )
+    assert (
+        "SECONDARY_ALL_COMPARATOR_PILOT_AUDIT" in t
+    ), "v2 report must label the K=10 output as SECONDARY_ALL_COMPARATOR_PILOT_AUDIT"
+    assert "PRIMARY_FAMILY_A_CELL_LEVEL" in t, "v2 report must define the PRIMARY_FAMILY_A_CELL_LEVEL surface"
 
 
 def test_v2_report_records_k5_not_final_until_all_cells_complete():
     t = _text().lower()
     # one of these phrasings must be present
     assert any(
-        s in t for s in (
+        s in t
+        for s in (
             "k = 5 holm",
             "k=5 holm",
             "pending_full_family",

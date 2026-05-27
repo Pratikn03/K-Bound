@@ -21,9 +21,7 @@ def test_master_a_powered_3_is_now_derived_view_proxy():
     # Find every line that names A-POWERED-3 plus a pairing strength
     for line in t.splitlines():
         if "A-POWERED-3" in line and "independent_modalities" in line:
-            raise AssertionError(
-                f"master file row for A-POWERED-3 still says independent_modalities: {line!r}"
-            )
+            raise AssertionError(f"master file row for A-POWERED-3 still says independent_modalities: {line!r}")
 
 
 def test_master_b1_b2_wording_uses_estimator_change_label():

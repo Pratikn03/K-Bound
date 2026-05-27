@@ -26,7 +26,6 @@ import numpy as np
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from uais.sequence.ablation import AblationConfig, run_sequence_ablation, summarise_ablation
-from uais.sequence.build_sequences import pad_sequences
 from uais.utils.logging_utils import setup_logging
 
 logger = setup_logging("run_sequence_ablation")
@@ -58,8 +57,10 @@ def _load_npz(path: Path):
     data = np.load(path)
     sequences = data["sequences"].astype(np.float32)
     labels = data["labels"].astype(int)
-    mask = data["mask"].astype(np.float32) if "mask" in data else np.ones(
-        (len(labels), sequences.shape[1]), dtype=np.float32
+    mask = (
+        data["mask"].astype(np.float32)
+        if "mask" in data
+        else np.ones((len(labels), sequences.shape[1]), dtype=np.float32)
     )
     return sequences, mask, labels
 
@@ -94,7 +95,9 @@ def main(argv=None):
 
     logger.info(
         "Dataset: %d sequences, shape %s, anomaly rate=%.2f%%",
-        len(labels), sequences.shape, 100 * labels.mean(),
+        len(labels),
+        sequences.shape,
+        100 * labels.mean(),
     )
 
     args.output.parent.mkdir(parents=True, exist_ok=True)
@@ -115,9 +118,16 @@ def main(argv=None):
 
     print("\n=== Ablation Results (sorted by AUROC) ===")
     display_cols = [
-        "model_type", "hidden_dim", "num_layers",
-        "roc_auc", "pr_auc", "f1", "precision", "recall",
-        "epochs_run", "train_time_s",
+        "model_type",
+        "hidden_dim",
+        "num_layers",
+        "roc_auc",
+        "pr_auc",
+        "f1",
+        "precision",
+        "recall",
+        "epochs_run",
+        "train_time_s",
     ]
     display_cols = [c for c in display_cols if c in results.columns]
     print(results[display_cols].to_string(index=False))

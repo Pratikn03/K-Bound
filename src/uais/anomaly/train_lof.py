@@ -1,5 +1,4 @@
 """Local Outlier Factor training."""
-from typing import Dict, Tuple
 
 import joblib
 import numpy as np
@@ -11,7 +10,7 @@ from uais.utils.paths import domain_paths
 logger = setup_logging(__name__)
 
 
-def train_lof(df, target: str, preprocessor, config: Dict, domain: str) -> Tuple[LocalOutlierFactor, np.ndarray]:
+def train_lof(df, target: str, preprocessor, config: dict, domain: str) -> tuple[LocalOutlierFactor, np.ndarray]:
     contamination = config.get("training", {}).get("anomaly_contamination", 0.05)
     X = df.drop(columns=[target])
     y = df[target]

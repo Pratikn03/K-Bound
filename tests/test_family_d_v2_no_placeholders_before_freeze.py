@@ -34,15 +34,11 @@ def test_no_placeholders_in_any_frozen_v2_file(path: Path):
         pytest.skip(f"{path.name} not yet frozen — v2 design pending")
     t = path.read_text()
     for ph in PLACEHOLDERS:
-        assert ph not in t, (
-            f"{path.name} contains forbidden placeholder {ph!r} — v2 freeze invalid"
-        )
+        assert ph not in t, f"{path.name} contains forbidden placeholder {ph!r} — v2 freeze invalid"
 
 
 def test_v2_design_status_file_exists():
     p = PHASE2 / "FAMILY_D_V2_DESIGN_STATUS.md"
     assert p.exists(), "FAMILY_D_V2_DESIGN_STATUS.md missing"
     t = p.read_text()
-    assert "V2_DESIGN_PENDING" in t, (
-        "design-status file must state V2_DESIGN_PENDING until v2 is fully resolved"
-    )
+    assert "V2_DESIGN_PENDING" in t, "design-status file must state V2_DESIGN_PENDING until v2 is fully resolved"

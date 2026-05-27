@@ -1,17 +1,18 @@
 """Build feature tables from lake parquet into processed feature store."""
-from pathlib import Path
+
 import json
-from typing import Any, Dict
+from pathlib import Path
+from typing import Any
 
 import pandas as pd
 import yaml
 
-from uais.features.fraud_features import build_fraud_feature_table
-from uais.features.cyber_features import build_cyber_feature_table
 from uais.features.behavior_features import build_behavior_feature_table
+from uais.features.cyber_features import build_cyber_feature_table
+from uais.features.fraud_features import build_fraud_feature_table
 
 
-def _load_config(cfg_path: Path) -> Dict[str, Any]:
+def _load_config(cfg_path: Path) -> dict[str, Any]:
     with cfg_path.open("r", encoding="utf-8") as f:
         return yaml.safe_load(f)
 

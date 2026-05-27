@@ -13,7 +13,7 @@ Phase 2 of the ELARA / RGA empirical study produced three evidence families:
 |---|---|---|
 | **A** | Static-reference audited reanalysis (K=5 CV, VisA, Real3D, LOCO, UNSW, ELARA-Bench-LA) | `COMPLETE — AUDITED_STATIC_REFERENCE` |
 | **B** | Mechanism isolation evidence (RGA-v2, domain-composition shift, KS-window sweep, certification) | `COMPLETE — BOUNDED_MECHANISM_EVIDENCE` |
-| **D** | Held-out confirmatory replication (Eyecandies RGB+depth one-class degradation-stress) | `COMPLETE — NOT_CONFIRMED` |
+| **D** | Held-out Eyecandies execution (validity-audited) | `COMPLETE — INVALID_CLEAN_FALSE_FIRE_POLICY_FAILURE` |
 
 ---
 
@@ -32,7 +32,7 @@ Family-B closed at commit `2c780cf`. Key findings:
 - **B1 (zero_attack k=4):** Phase-2 delta = +0.0507, CI [+0.0364, +0.0650]. **Not certified** at per-sample level (LCB −0.0050).
 - **B2 (max_attack k=4):** Phase-2 delta = +0.0939, CI [+0.0741, +0.1149]. **Certified** (LCB +0.0085).
 - **B-MECH-2 (RGA-v2):** Batch-minimum gate (G1/G2) produces >90% false-fire on clean data; G0 is the only production-stable gate.
-- **B-MECH-3S (Domain-composition shift):** Category-aware estimator provides measurable reduction in shift-induced misfire.
+- **B-MECH-3S (Domain-composition shift):** Global and domain-aware references both fire at 100%; no false-fire reduction under this protocol.
 - **B-MECH-4 (KS power):** Detection power peaks at window=512; false-fire rate remains <0.06%.
 
 **Claim ceiling:** "Bounded mechanism evidence: G0 mean-gate certified under max_attack k=4; B1 positive but below per-sample certification threshold."
@@ -70,20 +70,20 @@ Family-B closed at commit `2c780cf`. Key findings:
 
 **Finding:** Clean validation false-fire rate = 1.0 for all tested τ candidates.
 
-> All 9 τ candidates in [0.40, 0.80] exceeded the clean_false_fire_budget = 0.010 on the Eyecandies validation data. The locked G0 τ = 0.66 was selected by default (fallback per protocol).
+> All 9 τ candidates in [0.40, 0.80] exceeded the clean_false_fire_budget = 0.010 on the Eyecandies validation data. No frozen rule authorized fallback to τ = 0.66 after budget failure; default fallback use invalidated protocol compliance.
 
 **Interpretation:** The RGA reliability estimator, as calibrated on the Eyecandies one-class training distribution, fires on the clean normal validation data 100% of the time. This is expected behaviour for an OOD detector calibrated on the ELARA-Bench-LA training distribution: Eyecandies data is a domain shift from the original training data, so the mean reliability score falls below τ = 0.66 for all clean Eyecandies samples.
 
-**Scientific implication:** The RGA gate fires on *all* Eyecandies samples (clean and anomalous alike), which means the gate cannot discriminate between clean and degraded conditions in this domain. Under this calibration, `base_RGA` effectively reverts to a standard attention model for all test samples, since the gate fires unconditionally. The degradation operators (D-EYE-1/2) may still produce measurable Δ(AUC) if the fusion model's attention re-weighting benefits the anomaly detection task.
+**Scientific implication:** The RGA gate fires on *all* Eyecandies samples (clean and anomalous alike), which means the gate cannot discriminate between clean and degraded conditions in this domain. This violates the frozen selection policy's clean-false-fire validity requirement and excludes Family-D v3 from primary evidence.
 
 ### 4.4 Family-D v3 cell results
 
 | Cell | n_seeds | Δ(AUC) mean | Δ(AUC) ensemble | DeLong p | Bootstrap CI (95%) | Pre-Holm | Holm |
 |---|---|---|---|---|---|---|---|
-| D-EYE-1 | 30 | -0.0007 | -0.0072 | 0.0000 | [-0.0222, +0.0074] | NOT_CONFIRMED | NOT_CONFIRMED |
-| D-EYE-2 | 30 | +0.0016 | -0.0053 | 0.0000 | [-0.0158, +0.0048] | NOT_CONFIRMED | NOT_CONFIRMED |
+| D-EYE-1 | 30 | -0.0007 | -0.0072 | 0.3323 (corrected) | [-0.0222, +0.0074] | NOT_CONFIRMED | NOT_CONFIRMED |
+| D-EYE-2 | 30 | +0.0016 | -0.0053 | 0.3127 (corrected) | [-0.0158, +0.0048] | NOT_CONFIRMED | NOT_CONFIRMED |
 
-**Family decision:** `FAMILY_D_V3_NOT_CONFIRMED`
+**Family decision:** `FAMILY_D_V3_INVALID_CLEAN_FALSE_FIRE_POLICY_FAILURE`
 
 ---
 
@@ -99,24 +99,15 @@ Regardless of Family-D v3 outcome, Phase 2 does NOT authorise any of the followi
 - Physical-AI safety validation
 - Raw-sensor corruption robustness
 
-### 5.1 If Family-D v3 is CONFIRMED (both endpoints)
+### 5.1 Final locked Phase-2 claim envelope
 
-> "ELARA Phase 2 provides: (a) audited static-reference evidence from Family-A; (b) bounded mechanism evidence from Family-B with G0 certification under max_attack k=4; and (c) held-out confirmatory evidence under the frozen Eyecandies RGB+depth one-class degradation-stress protocol for D-EYE-1 (depth collapse) and D-EYE-2 (RGB collapse)."
-
-### 5.2 If Family-D v3 is PARTIAL or NOT_CONFIRMED
-
-> "ELARA Phase 2 provides: (a) audited static-reference evidence from Family-A; (b) bounded mechanism evidence from Family-B; and (c) held-out evaluation under the frozen Eyecandies protocol which [did not confirm / partially confirmed] the primary endpoints. Negative results are retained."
+> "ELARA Phase 2 provides: (a) audited static-reference evidence from Family-A; (b) bounded mechanism evidence from Family-B; and (c) a held-out Eyecandies run that is excluded from primary evidence because protocol validity requirements were not satisfied."
 
 ---
 
 ## 6. Phase 3 gate
 
-Phase 3 (ELARA-Universal, ORIUS, or any new training / new benchmark) is FORBIDDEN until:
-1. Family-D v3 execution completes (all 30 seeds × 2 cells).
-2. Inference and Holm correction are computed.
-3. Final family decision is recorded.
-4. This document is updated with `PHASE_2_CLOSED`.
-5. A dedicated Phase 2 closure commit is made.
+Phase 2 closure gates are satisfied. Phase 3 integration may proceed using only valid Family-A and Family-B evidence. Family-D remains excluded from primary evidence unless a new protocol-valid rerun is explicitly authorized in a separate phase.
 
 ---
 

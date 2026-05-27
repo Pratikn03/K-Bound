@@ -24,8 +24,7 @@ def test_clean_arm_methods_present_in_archive():
     cell = _cell_dir()
     if cell is None:
         pytest.skip("B-MECH-1 archive not present")
-    methods = {d.name for d in cell.iterdir()
-               if d.is_dir() and not d.name.startswith("._")}
+    methods = {d.name for d in cell.iterdir() if d.is_dir() and not d.name.startswith("._")}
     if not any("clean_k0" in m for m in methods):
         pytest.skip("clean k=0 arm not yet produced (run run_phase2_b_mech_1_clean_arm.py)")
     assert "static_attention__clean_k0" in methods

@@ -1,4 +1,5 @@
 """Grad-CAM utility for vision models."""
+
 from pathlib import Path
 
 import numpy as np
@@ -58,8 +59,8 @@ def save_gradcam(model: torch.nn.Module, image: Image.Image, out_path: Path, tar
     out_path.parent.mkdir(parents=True, exist_ok=True)
     np.save(out_path.with_suffix(".npy"), cam)
 
-    import matplotlib.pyplot as plt
     import matplotlib.cm as cm
+    import matplotlib.pyplot as plt
 
     plt.figure()
     plt.imshow(image.resize((224, 224)))

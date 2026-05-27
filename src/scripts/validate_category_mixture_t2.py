@@ -30,7 +30,9 @@ import numpy as np
 from scipy import stats
 
 
-def _build_mixture(rng: np.random.Generator, n: int, pis: list[float], shifts: list[float]) -> tuple[np.ndarray, np.ndarray]:
+def _build_mixture(
+    rng: np.random.Generator, n: int, pis: list[float], shifts: list[float]
+) -> tuple[np.ndarray, np.ndarray]:
     """Sample n scores from sum_c pi_c * Beta(2 + shift_c, 2 - shift_c)."""
     cats = rng.choice(len(pis), size=n, p=pis)
     scores = np.zeros(n, dtype=np.float32)
@@ -76,10 +78,7 @@ def run_validation(
     # finite-sample noise; the populaton statement of T2 says the ratio
     # diverges as n grows.
     confirmed = (
-        global_ks is not None
-        and max_per_cat_ks is not None
-        and global_ks > 0.1
-        and global_ks > 3.0 * max_per_cat_ks
+        global_ks is not None and max_per_cat_ks is not None and global_ks > 0.1 and global_ks > 3.0 * max_per_cat_ks
     )
 
     return {

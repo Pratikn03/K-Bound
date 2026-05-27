@@ -41,10 +41,7 @@ from __future__ import annotations
 
 import argparse
 import csv
-import io
-import os
 import sys
-import tarfile
 from pathlib import Path
 
 import numpy as np
@@ -54,15 +51,15 @@ import yaml
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT / "src"))
 
-from uais.fusion.attention.reliability_estimator import ReliabilityEstimator  # noqa: E402
 from elara.evaluation.prediction_archive import PredictionArchive  # noqa: E402
+from uais.fusion.attention.reliability_estimator import ReliabilityEstimator  # noqa: E402
 
 CSV_PATH = ROOT / "experiments" / "fusion" / "eyecandies_inputs.csv"
 PROTOCOL_YAML = ROOT / "configs" / "phase2" / "family_d_v2_eyecandies_protocol.yaml"
 OUT_DIR = ROOT / "experiments" / "phase2" / "family_d"
 PRED_DIR = OUT_DIR / "predictions"
 TAU_MEAN = 0.66
-CORE_SUBSAMPLE = 0.10   # coreset fraction; standard PatchCore default in {0.1, 0.25, 1.0}
+CORE_SUBSAMPLE = 0.10  # coreset fraction; standard PatchCore default in {0.1, 0.25, 1.0}
 
 
 def _read_protocol() -> dict:
@@ -89,22 +86,21 @@ def _per_sample_features(df: pd.DataFrame, split: str) -> dict:
 
 def _apply_operator(samples: dict, endpoint: str) -> dict:
     """Frozen degradation operators."""
-    new = {sid: {m: dict(d) if d is not None else None for m, d in mods.items()}
-           for sid, mods in samples.items()}
+    new = {sid: {m: dict(d) if d is not None else None for m, d in mods.items()} for sid, mods in samples.items()}
     if endpoint == "D-EYE-1":
         # Depth-channel score collapse
-        for sid, mods in new.items():
+        for _sid, mods in new.items():
             if mods["depth"] is not None:
                 mods["depth"]["score"] = 0.0
     elif endpoint == "D-EYE-2":
         # RGB-channel score collapse
-        for sid, mods in new.items():
+        for _sid, mods in new.items():
             if mods["rgb"] is not None:
                 mods["rgb"]["score"] = 0.0
     elif endpoint == "D-EYE-3":
         # Single-modality missingness: alternate per sample
         rng = np.random.default_rng(7)
-        for sid, mods in new.items():
+        for _sid, mods in new.items():
             target = "depth" if rng.random() < 0.5 else "rgb"
             mods[target] = None
     elif endpoint == "clean":
@@ -138,8 +134,8 @@ def _compute_reliability_and_predict(
         depth_features.append(depth["embeddings"] if depth is not None else np.zeros(16))
     rgb_scores = np.array(rgb_scores)
     depth_scores = np.array(depth_scores)
-    rgb_feat = np.stack(rgb_features)
-    depth_feat = np.stack(depth_features)
+    np.stack(rgb_features)
+    np.stack(depth_features)
 
     # Compute per-modality reliability via ReliabilityEstimator's KS-drift
     # logic. The estimator expects [N, D, F] features and [N, D] masks; we
@@ -195,9 +191,16 @@ def _seed_subsample(features: np.ndarray, seed: int, frac: float = CORE_SUBSAMPL
     return features[idx]
 
 
-def run_one_seed(df: pd.DataFrame, seed: int, endpoint: str,
-                 archive: PredictionArchive, out_rows: list, sel_log: list, ffr_log: list,
-                 protocol: dict) -> dict:
+def run_one_seed(
+    df: pd.DataFrame,
+    seed: int,
+    endpoint: str,
+    archive: PredictionArchive,
+    out_rows: list,
+    sel_log: list,
+    ffr_log: list,
+    protocol: dict,
+) -> dict:
     train_per_sample = _per_sample_features(df, "train")
     val_per_sample = _per_sample_features(df, "validation")
     test_per_sample = _per_sample_features(df, "test")
@@ -235,29 +238,33 @@ def run_one_seed(df: pd.DataFrame, seed: int, endpoint: str,
     estimator.fit(train_features_3d, train_masks_2d, train_labels)
 
     # CLEAN false-fire on validation (clean, no degradation operator)
-    sids_v, static_v, rga_v, gate_v = _compute_reliability_and_predict(
-        val_per_sample, train_features, estimator)
+    sids_v, static_v, rga_v, gate_v = _compute_reliability_and_predict(val_per_sample, train_features, estimator)
     clean_false_fire = float(gate_v.mean())
     within_budget = clean_false_fire <= float(protocol["clean_false_fire_budget"]["value"])
-    ffr_log.append({
-        "endpoint": endpoint, "seed": int(seed),
-        "clean_false_fire_rate": f"{clean_false_fire:.4f}",
-        "budget": f"{protocol['clean_false_fire_budget']['value']:.4f}",
-        "within_budget": str(within_budget),
-        "n_val_samples": len(sids_v),
-    })
-    sel_log.append({
-        "endpoint": endpoint, "seed": int(seed),
-        "selection_input": "anomaly_free_validation_and_train_memory_bank_only",
-        "selection_used_test_metrics": False,
-        "gate_threshold": TAU_MEAN,
-        "core_subsample_fraction": CORE_SUBSAMPLE,
-    })
+    ffr_log.append(
+        {
+            "endpoint": endpoint,
+            "seed": int(seed),
+            "clean_false_fire_rate": f"{clean_false_fire:.4f}",
+            "budget": f"{protocol['clean_false_fire_budget']['value']:.4f}",
+            "within_budget": str(within_budget),
+            "n_val_samples": len(sids_v),
+        }
+    )
+    sel_log.append(
+        {
+            "endpoint": endpoint,
+            "seed": int(seed),
+            "selection_input": "anomaly_free_validation_and_train_memory_bank_only",
+            "selection_used_test_metrics": False,
+            "gate_threshold": TAU_MEAN,
+            "core_subsample_fraction": CORE_SUBSAMPLE,
+        }
+    )
 
     # Apply degradation operator on test fold
     test_after_op = _apply_operator(test_per_sample, endpoint)
-    sids_t, static_t, rga_t, gate_t = _compute_reliability_and_predict(
-        test_after_op, train_features, estimator)
+    sids_t, static_t, rga_t, gate_t = _compute_reliability_and_predict(test_after_op, train_features, estimator)
 
     # Archive predictions
     PRED_DIR.mkdir(parents=True, exist_ok=True)
@@ -265,7 +272,7 @@ def run_one_seed(df: pd.DataFrame, seed: int, endpoint: str,
     for method, scores in (("static_attention", static_t), ("base_RGA", rga_t)):
         frame = archive.build_frame(
             sample_ids=list(sids_t),
-            labels=np.full(n, -1, dtype=int),   # labels deferred to inference step
+            labels=np.full(n, -1, dtype=int),  # labels deferred to inference step
             raw_scores=np.asarray(scores, dtype=float),
             method=method,
             method_variant=endpoint,
@@ -298,21 +305,23 @@ def run_one_seed(df: pd.DataFrame, seed: int, endpoint: str,
         )
         archive.append_index(entry)
 
-    out_rows.append({
-        "endpoint": endpoint, "seed": int(seed),
-        "n_val_samples": len(sids_v),
-        "n_test_samples": len(sids_t),
-        "clean_false_fire_rate": f"{clean_false_fire:.4f}",
-        "gate_fire_rate_on_test": f"{float(gate_t.mean()):.4f}",
-        "rga_pred_mean": f"{float(rga_t.mean()):.4f}",
-        "static_pred_mean": f"{float(static_t.mean()):.4f}",
-    })
+    out_rows.append(
+        {
+            "endpoint": endpoint,
+            "seed": int(seed),
+            "n_val_samples": len(sids_v),
+            "n_test_samples": len(sids_t),
+            "clean_false_fire_rate": f"{clean_false_fire:.4f}",
+            "gate_fire_rate_on_test": f"{float(gate_t.mean()):.4f}",
+            "rga_pred_mean": f"{float(rga_t.mean()):.4f}",
+            "static_pred_mean": f"{float(static_t.mean()):.4f}",
+        }
+    )
 
 
 def main() -> int:
     p = argparse.ArgumentParser(description=__doc__)
-    p.add_argument("--endpoints", default="D-EYE-1,D-EYE-2,D-EYE-3",
-                   help="comma-separated subset")
+    p.add_argument("--endpoints", default="D-EYE-1,D-EYE-2,D-EYE-3", help="comma-separated subset")
     p.add_argument("--seeds", type=int, default=30)
     p.add_argument("--seed-start", type=int, default=42)
     args = p.parse_args()
@@ -338,16 +347,38 @@ def main() -> int:
             for r in rows:
                 w.writerow(r)
         print(f"wrote {path}")
-    _write(OUT_DIR / "family_d_v2_seed_metrics.csv", out_rows,
-           ["endpoint", "seed", "n_val_samples", "n_test_samples",
-            "clean_false_fire_rate", "gate_fire_rate_on_test",
-            "rga_pred_mean", "static_pred_mean"])
-    _write(OUT_DIR / "family_d_v2_selection_log.csv", sel_log,
-           ["endpoint", "seed", "selection_input", "selection_used_test_metrics",
-            "gate_threshold", "core_subsample_fraction"])
-    _write(OUT_DIR / "family_d_v2_clean_false_fire.csv", ffr_log,
-           ["endpoint", "seed", "clean_false_fire_rate", "budget",
-            "within_budget", "n_val_samples"])
+
+    _write(
+        OUT_DIR / "family_d_v2_seed_metrics.csv",
+        out_rows,
+        [
+            "endpoint",
+            "seed",
+            "n_val_samples",
+            "n_test_samples",
+            "clean_false_fire_rate",
+            "gate_fire_rate_on_test",
+            "rga_pred_mean",
+            "static_pred_mean",
+        ],
+    )
+    _write(
+        OUT_DIR / "family_d_v2_selection_log.csv",
+        sel_log,
+        [
+            "endpoint",
+            "seed",
+            "selection_input",
+            "selection_used_test_metrics",
+            "gate_threshold",
+            "core_subsample_fraction",
+        ],
+    )
+    _write(
+        OUT_DIR / "family_d_v2_clean_false_fire.csv",
+        ffr_log,
+        ["endpoint", "seed", "clean_false_fire_rate", "budget", "within_budget", "n_val_samples"],
+    )
     return 0
 
 

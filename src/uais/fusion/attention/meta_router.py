@@ -138,7 +138,9 @@ def _candidate_quality(
     return _selection_score(metrics, selection_metric), -metrics["log_loss"], metrics
 
 
-def _fit_logistic(matrix: np.ndarray, labels: np.ndarray, random_seed: int) -> tuple[StandardScaler, LogisticRegression]:
+def _fit_logistic(
+    matrix: np.ndarray, labels: np.ndarray, random_seed: int
+) -> tuple[StandardScaler, LogisticRegression]:
     scaler = StandardScaler()
     scaled = scaler.fit_transform(matrix)
     model = LogisticRegression(
@@ -176,9 +178,7 @@ def fit_rga_meta_router(
         for idx, name in enumerate(method_names)
     }
     candidate_scores: dict[str, float] = {name: score[0] for name, score in base_scores.items()}
-    candidate_metric_scores: dict[str, dict[str, float]] = {
-        name: score[2] for name, score in base_scores.items()
-    }
+    candidate_metric_scores: dict[str, dict[str, float]] = {name: score[2] for name, score in base_scores.items()}
 
     if len(np.unique(labels)) < 2 or len(labels) < 6:
         selected = _single_class_fallback(base_scores)
@@ -211,12 +211,13 @@ def fit_rga_meta_router(
         )
 
         train_scores = [
-            (name, _safe_auc(labels[train_idx], matrix[train_idx, idx]))
-            for idx, name in enumerate(method_names)
+            (name, _safe_auc(labels[train_idx], matrix[train_idx, idx])) for idx, name in enumerate(method_names)
         ]
         ranked = [
             name
-            for name, score in sorted(train_scores, key=lambda item: (np.nan_to_num(item[1], nan=0.5), item[0]), reverse=True)
+            for name, score in sorted(
+                train_scores, key=lambda item: (np.nan_to_num(item[1], nan=0.5), item[0]), reverse=True
+            )
         ]
         for k in (2, 3):
             top = ranked[: min(k, len(ranked))]
@@ -231,9 +232,7 @@ def fit_rga_meta_router(
 
     selected = max(select_candidates, key=lambda name: select_candidates[name][1])
     candidate_scores.update({name: quality[0] for name, (_probs, quality) in select_candidates.items()})
-    candidate_metric_scores.update({
-        name: quality[2] for name, (_probs, quality) in select_candidates.items()
-    })
+    candidate_metric_scores.update({name: quality[2] for name, (_probs, quality) in select_candidates.items()})
 
     if selected == "logistic_stack":
         final_scaler, final_model = _fit_logistic(matrix, labels, random_seed)

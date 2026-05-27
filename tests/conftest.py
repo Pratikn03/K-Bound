@@ -5,8 +5,9 @@ This allows tests to import:
   - `scripts.*`  →  resolved from src/scripts/   (src/ is on path first)
   - top-level modules from the repo root
 """
-import sys
+
 import os
+import sys
 
 # Repository root  (one level above the tests/ directory)
 _REPO_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))

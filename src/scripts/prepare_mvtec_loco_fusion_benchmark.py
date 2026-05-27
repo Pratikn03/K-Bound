@@ -24,9 +24,9 @@ from __future__ import annotations
 
 import argparse
 import json
+from collections.abc import Iterable
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Iterable
 
 import numpy as np
 import pandas as pd
@@ -92,7 +92,10 @@ def discover_loco_pairs(dataset_root: Path, categories: Iterable[str] | None = N
 
 def _make_edge_proxy(rgb_path: Path, target_dir: Path) -> Path:
     """Generate a Sobel-gradient magnitude image and save it as RGB."""
-    target = target_dir / f"{rgb_path.parent.parent.parent.name}_{rgb_path.parent.parent.name}_{rgb_path.parent.name}_{rgb_path.stem}.png"
+    target = (
+        target_dir
+        / f"{rgb_path.parent.parent.parent.name}_{rgb_path.parent.parent.name}_{rgb_path.parent.name}_{rgb_path.stem}.png"
+    )
     if target.exists():
         return target
     img = Image.open(rgb_path).convert("L")
@@ -117,18 +120,14 @@ def _supervised_paired_split(
         key = (pairs[idx].category, pairs[idx].label)
         bucketed.setdefault(key, []).append(idx)
     assignment: dict[int, str] = {}
-    for key, indices in bucketed.items():
+    for _key, indices in bucketed.items():
         indices = list(indices)
         rng.shuffle(indices)
         n = len(indices)
         n_test = max(1, int(round(n * test_fraction))) if n >= 3 else 0
         remaining = n - n_test
         denom = max(1.0 - test_fraction, 1e-9)
-        n_val = (
-            max(1, int(round(remaining * val_fraction / denom)))
-            if remaining >= 2
-            else 0
-        )
+        n_val = max(1, int(round(remaining * val_fraction / denom))) if remaining >= 2 else 0
         for offset, idx in enumerate(indices):
             if offset < n_test:
                 assignment[idx] = "test"
@@ -154,10 +153,10 @@ def build_loco_fusion_frame(
     if not pairs:
         raise FileNotFoundError(f"No LOCO-AD observations found under {dataset_root}")
 
-    labels = np.asarray([p.label for p in pairs], dtype=int)
+    np.asarray([p.label for p in pairs], dtype=int)
     splits = np.asarray([p.split for p in pairs], dtype=object)
     defect_types = np.asarray([p.defect_type for p in pairs], dtype=object)
-    pair_categories = np.asarray([p.category for p in pairs], dtype=object)
+    np.asarray([p.category for p in pairs], dtype=object)
     train_mask = splits == "train"
     normal_reference_mask = train_mask & (defect_types == "good")
     if not np.any(normal_reference_mask):

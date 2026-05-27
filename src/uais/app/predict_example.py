@@ -1,10 +1,11 @@
 """Local inference example for UAIS."""
-import pandas as pd
+
 import joblib
+import pandas as pd
 
 from uais.config.config_loader import load_config
-from uais.utils.paths import domain_paths
 from uais.utils.logging_utils import setup_logging
+from uais.utils.paths import domain_paths
 
 logger = setup_logging(__name__)
 
@@ -31,7 +32,7 @@ def predict(domain: str, samples: list[dict]):
 
 def demo():
     domain = "fraud"
-    cfg = load_config(domain)
+    load_config(domain)
     example_samples = [
         {
             "amount": 123.4,

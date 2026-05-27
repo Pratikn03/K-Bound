@@ -1,10 +1,9 @@
 """Simple saliency for sequence models (heuristic)."""
-from typing import Dict
 
 import numpy as np
 
 
-def sequence_saliency(sequences: np.ndarray, mask: np.ndarray) -> Dict[int, float]:
+def sequence_saliency(sequences: np.ndarray, mask: np.ndarray) -> dict[int, float]:
     """Compute a basic per-time-step saliency using feature magnitudes.
 
     This is a heuristic placeholder until attention/gradient-based methods are added.

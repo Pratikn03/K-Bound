@@ -41,7 +41,4 @@ def test_driver_accepts_all_locked_family_a_ids(eid: str):
     """With --seeds 0 the driver should pass validation and exit cleanly without training."""
     r = _run(eid)
     # exit code 0 means no validation error; 0 seeds → no training loop body executed
-    assert r.returncode == 0, (
-        f"driver rejected locked Family-A id {eid!r}: "
-        f"stdout={r.stdout!r} stderr={r.stderr!r}"
-    )
+    assert r.returncode == 0, f"driver rejected locked Family-A id {eid!r}: " f"stdout={r.stdout!r} stderr={r.stderr!r}"

@@ -51,7 +51,14 @@ def test_yaml_lists_all_10_categories():
     cats = c["dataset"]["categories"]
     assert len(cats) == 10
     assert set(cats) == {
-        "candycane", "chocolatecookie", "chocolatepraline", "confetto",
-        "gummybear", "hazelnuttruffle", "licoricesandwich", "lollipop",
-        "marshmallow", "peppermintcandy",
+        "candycane",
+        "chocolatecookie",
+        "chocolatepraline",
+        "confetto",
+        "gummybear",
+        "hazelnuttruffle",
+        "licoricesandwich",
+        "lollipop",
+        "marshmallow",
+        "peppermintcandy",
     }

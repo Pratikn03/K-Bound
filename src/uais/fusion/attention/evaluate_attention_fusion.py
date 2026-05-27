@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Dict
 
 import numpy as np
 import torch
@@ -31,7 +30,7 @@ def _resolve_path(path_value: str | Path) -> Path:
     return PROJECT_ROOT / path
 
 
-def evaluate_attention_fusion(cfg_path: Path = DEFAULT_CONFIG) -> Dict[str, float]:
+def evaluate_attention_fusion(cfg_path: Path = DEFAULT_CONFIG) -> dict[str, float]:
     cfg = load_yaml(cfg_path)
     data_cfg = cfg.get("data", {})
     model_cfg = cfg.get("model", {})

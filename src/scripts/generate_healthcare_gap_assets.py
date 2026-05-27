@@ -182,7 +182,9 @@ def write_stress_figure(report: dict[str, Any], output_dir: str | Path) -> Path:
     stress = report.get("reliability_stress", {}).get("test", {})
     collapse_rates = stress.get("collapse_fire_rate_by_domain") or {}
     labels = ["natural"] + [str(domain) for domain in collapse_rates]
-    values = [float(stress.get("natural_fire_rate", 0.0))] + [float(collapse_rates[domain]) for domain in collapse_rates]
+    values = [float(stress.get("natural_fire_rate", 0.0))] + [
+        float(collapse_rates[domain]) for domain in collapse_rates
+    ]
     colors = ["#64748b"] + ["#dc2626" for _ in collapse_rates]
 
     fig, ax = plt.subplots(figsize=(6.4, 3.0))

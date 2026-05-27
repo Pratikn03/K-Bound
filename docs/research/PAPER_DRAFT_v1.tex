@@ -44,7 +44,7 @@
 \maketitle
 
 \begin{abstract}
-Multimodal anomaly detectors can become unreliable when evidence streams degrade or disagree. This paper presents ELARA, a reliability-aware multimodal anomaly score-fusion architecture with Reliability-Gated Attention (RGA), evaluated under controlled and audited evidence degradation settings. Under a powered, audited, static-reference cross-validation study over five previously inspected benchmark cells (Family A), validation-frozen RGA+ consistently improves on a fixed static-attention reference (including the UNSW-NB15 cell where RGA+ achieves +0.0095 compared to the Phase-1 estimate of +0.0003). In controlled mechanism replication (Family B), RGA reproduces the zero-attack coherent score-collapse benefit (B1: reproduced delta +0.0507 vs Phase-1 target +0.0506, 95\% CI [+0.0364, +0.0650], Holm-corrected $p = 4.31\times 10^{-12}$). A comparable positive effect is observed under maximum attack (B2: Phase-2 delta +0.0939 vs Phase-1 target +0.0319, 95\% CI [+0.0741, +0.1149], Holm-corrected $p < 10^{-15}$), though it is qualified by an estimator change. Bounded monitoring and retrospective evaluation certificates demonstrate mixed success. However, negative results from two key areas reveal critical bounds on the architecture: first, more sensitive RGA-v2 gate variants fail clean validation false-fire controls (firing at 1.000 rate) and are not promoted; second, an attempted held-out transfer study on the Eyecandies dataset (Family D) failed to meet the frozen clean false-fire budget ($\le 0.010$ budget vs $1.0$ observed) and is excluded from primary evidence, showing a non-significant performance difference after correcting a DeLong variance bug (D-EYE-1 corrected $p = 0.3323$; D-EYE-2 corrected $p = 0.3127$). These results support bounded audited/mechanism evidence and identify calibration transfer under score distribution shifts as a central unresolved limitation, rather than establishing universality, state-of-the-art status, or deployment safety.
+Multimodal anomaly systems often fail not because domain experts are weak, but because the fusion layer keeps trusting degraded signals. We present ELARA, a reliability-aware score-fusion architecture with Reliability-Gated Attention (RGA), and evaluate it under controlled, audited degradation settings. In a powered static-reference study over five previously inspected benchmark cells (Family A), validation-frozen RGA+ consistently improves on a fixed static-attention comparator, including the UNSW-NB15 cell (+0.0095 versus the Phase-1 estimate of +0.0003). In mechanism replication (Family B), RGA reproduces the zero-attack coherent score-collapse endpoint (B1: +0.0507 versus target +0.0506, 95\% CI [+0.0364, +0.0650], Holm-corrected $p = 4.31\times 10^{-12}$) and shows a positive maximum-attack effect (B2: +0.0939 versus target +0.0319, 95\% CI [+0.0741, +0.1149], Holm-corrected $p < 10^{-15}$), with explicit qualification for estimator mismatch. Monitoring and retrospective certification results are mixed. Two negative findings define the boundary of the claim: sensitive RGA-v2 variants fail clean false-fire control (firing rate 1.000), and a held-out Eyecandies transfer study (Family D) violates the frozen clean false-fire budget ($\le 0.010$ budget versus $1.0$ observed) and is excluded from primary evidence; after correcting a DeLong variance bug, both Family D inferential checks are non-significant (D-EYE-1 $p = 0.3323$, D-EYE-2 $p = 0.3127$). The evidence therefore supports a bounded reliability-stress claim and identifies calibration transfer under score-distribution shift as the central unresolved limitation, not a universality or state-of-the-art claim.
 \end{abstract}
 
 \begin{IEEEkeywords}
@@ -155,37 +155,31 @@ Reproducibility & Data generation, benchmark execution, asset generation, and PD
 
 \section{Related Work}
 \subsection{Anomaly Detection Systems}
-Deep anomaly detection has been studied across tabular, sequential, text, graph,
-and visual data. The classical formulation distinguishes statistical outliers
-from semantically anomalous patterns~\cite{hawkins1980identification,chandola2009anomaly};
-density-based detectors~\cite{breunig2000lof}, ensembles of isolation
-trees~\cite{liu2008isolation}, and distance-based methods~\cite{ramaswamy2000efficient}
-remain widely used baselines. The deep-learning era added one-class SVMs and
 deep one-class classifiers~\cite{scholkopf2001estimating,tax2004support,ruff2018deepsvdd},
-reconstruction-based detectors~\cite{gong2019memorizing,schlegl2019fanogan,zenati2018efficient,akcay2018ganomaly},
-and the broader deep-AD surveys that summarise the
-field~\cite{pang2021deep,chalapathy2019deep,ruff2021unifying,yang2021generalized}.
-For industrial vision specifically, recent surveys cover the explosion of
-unsupervised localisation methods~\cite{liu2024deepind,cui2023survey,tao2022deep}.
-\system{} follows the systems view emphasised by Pang
-et al.~\cite{pang2021deep}: it does not assume a single representation can
-absorb every domain cleanly, but treats each domain expert as a separate
-source of evidence.
+Anomaly detection spans tabular, sequential, textual, graph, and visual
+modalities, and the literature consistently warns against one-size-fits-all
+solutions~\cite{hawkins1980identification,chandola2009anomaly,pang2021deep}. Classical
+families such as density methods, isolation ensembles, and distance models
+remain strong practical baselines~\cite{breunig2000lof,liu2008isolation,ramaswamy2000efficient}.
+Modern pipelines add one-class objectives, reconstruction criteria, and broader
+representation learning~\cite{scholkopf2001estimating,tax2004support,ruff2018deepsvdd,gong2019memorizing,schlegl2019fanogan,zenati2018efficient,akcay2018ganomaly}.
+Comprehensive surveys further show that method quality depends on protocol,
+shift, and deployment context~\cite{chalapathy2019deep,ruff2021unifying,yang2021generalized,liu2024deepind,cui2023survey,tao2022deep}.
+\system{} follows this systems-oriented view: each domain expert is treated as
+its own evidence channel, and the fusion layer is designed to arbitrate trust
+rather than replace domain-specific modelling.
 
 \subsection{Multimodal and Score-Level Fusion}
-Multimodal learning surveys distinguish early fusion, late fusion, hybrid
-fusion, and interaction-based fusion~\cite{baltrusaitis2019multimodal,lahat2015multimodal,atrey2010multimodal,hall1997introduction,dasarathy1997sensor,poria2017review,ngiam2011multimodal}.
-Early fusion concatenates features before prediction; late fusion combines
-model outputs; stacking~\cite{wolpert1992stacked} learns a meta-model over
-domain predictions, which is the lineage of the \methodplus{} router we
-introduce later. Transformer attention~\cite{vaswani2017attention} gives a
-natural mechanism for modelling interactions across available domains and is
 the basis for recent visual transformers~\cite{dosovitskiy2020vit,liu2021swin,jaegle2021perceiver,ramachandran2019stand};
-cross-modal architectures use attention to align heterogeneous
-streams~\cite{radford2021learning,lu2019vilbert,girdhar2022omnivore}. The
-limitation common to these designs is that ordinary attention learns a trust
-policy from training data and can remain overconfident when the inference
-condition changes.
+Multimodal fusion is usually framed as early, late, hybrid, or interaction-based
+integration~\cite{baltrusaitis2019multimodal,lahat2015multimodal,atrey2010multimodal,hall1997introduction,dasarathy1997sensor,poria2017review,ngiam2011multimodal}.
+In practice, score-level fusion is often the most deployable option because it
+does not require retraining every upstream expert. Stacking and meta-learning
+formalize this setting~\cite{wolpert1992stacked}, while attention mechanisms
+model inter-domain dependencies~\cite{vaswani2017attention,dosovitskiy2020vit,liu2021swin,jaegle2021perceiver,ramachandran2019stand,radford2021learning,lu2019vilbert,girdhar2022omnivore}.
+The unresolved issue is trust under shift: a model can keep assigning high
+weights to a channel even after that channel has become miscalibrated or
+distributionally unstable. \method{} is built to target that failure mode.
 
 \subsection{RGB--3D and Visual Industrial Anomaly Detection}
 The MVTec family of industrial benchmarks established a standard for
@@ -197,31 +191,14 @@ location-aware spot-the-difference supervision~\cite{zou2022visa}, and
 Real3D-AD established the high-resolution point-cloud
 benchmark~\cite{liu2023real3dad}. The Eyecandies dataset focuses on
 unsupervised multimodal localisation in a synthetic
-setting~\cite{bonfiglioli2022eyecandies}. On methods, the leaderboard is
-dominated by patch-based memory banks (PatchCore~\cite{roth2022patchcore}),
-normalising-flow scorers (FastFlow~\cite{yu2021fastflow},
-CFLOW-AD~\cite{gudovskiy2022cflow}, DifferNet~\cite{rudolph2021same}),
-patch-level density modelling
-(PaDiM~\cite{defard2021padim}, SPADE~\cite{cohen2020spade}),
-reconstruction-by-design objectives
-(DRAEM~\cite{zavrtanik2021draem}, CutPaste~\cite{li2021cutpaste},
-Patch SVDD~\cite{yi2020patchsvdd},
-inpainting transformers~\cite{pirnay2022inpainting},
-divide-and-assemble memories~\cite{hou2021divide}),
-knowledge-distillation
-(uninformed students~\cite{bergmann2020uninformed},
-STPM~\cite{wang2021stpm},
-reverse distillation~\cite{deng2022rd4ad},
-multiresolution KD~\cite{salehi2021multiresolution},
-reconstruction students~\cite{yamada2022reconstruction}),
-and a recent wave of diffusion-based detectors
-(AnoDDPM~\cite{wyatt2022anoddpm},
-DiffusionAD~\cite{zhang2023diffusionad},
-conditioned-diffusion AD~\cite{mousakhan2024anomaly}).
-SimpleNet~\cite{liu2023simplenet} and EfficientAD~\cite{batzner2024efficientad}
-sit on the high-performance / low-latency Pareto frontier. Attention-guided
-localisation~\cite{venkataramanan2020attention} is the closest visual
-precursor to our reliability-aware attention path.
+setting~\cite{bonfiglioli2022eyecandies}. Method families include patch-memory
+approaches (for example PatchCore), flow-based density estimators, reconstruction
+and distillation pipelines, and diffusion-inspired scorers
+~\cite{roth2022patchcore,yu2021fastflow,gudovskiy2022cflow,rudolph2021same,defard2021padim,cohen2020spade,zavrtanik2021draem,li2021cutpaste,yi2020patchsvdd,pirnay2022inpainting,hou2021divide,bergmann2020uninformed,wang2021stpm,deng2022rd4ad,salehi2021multiresolution,yamada2022reconstruction,wyatt2022anoddpm,zhang2023diffusionad,mousakhan2024anomaly}.
+Recent efficient baselines emphasize a practical accuracy-latency frontier
+~\cite{liu2023simplenet,batzner2024efficientad}, and attention-guided
+localisation remains a direct precursor to reliability-aware routing
+~\cite{venkataramanan2020attention}.
 
 For multimodal industrial anomaly detection specifically, M3DM uses hybrid
 feature and decision-layer fusion with memory
@@ -1461,7 +1438,7 @@ Under the locked audited-reanalysis policy, Family A provides powered audited st
 All cells show 30/30 seed sign-consistency.
 
 \noindent\textbf{What the audited reanalysis does not support.}
-The locked audited-reanalysis policy explicitly forbids: (i) claiming RGA+ outperforms every baseline; (ii) choosing the inferential comparator from test winners; (iii) applying pre-registered or confirmatory labels to Family A; and (iv) claiming independent multimodal universality. Family A supports improvement over a fixed static\_attention reference only. Genuine confirmatory replication requires Family~D future-locked evaluations on partitions that have not yet been inspected.
+The locked audited-reanalysis policy explicitly forbids: (i) claiming RGA+ outperforms every baseline; (ii) choosing the inferential comparator from test winners; (iii) applying pre-registered or confirmatory labels to Family A; and (iv) claiming independent multimodal universality. Family A supports improvement over a fixed static\_attention reference only. Family D was executed as a planned Eyecandies RGB+depth held-out transfer attempt, but it is excluded from primary evidence because the frozen clean false-fire validity requirement failed (budget $\le$ 0.010; observed 1.000).
 
 \noindent\textbf{Polarity diagnostic (validation-only).} Under the
 canonical one-class protocol, training the supervised attention head
@@ -2466,7 +2443,7 @@ the extended background, threats-to-validity, and forward-looking research
 agenda) should read the companion chapter.
 
 \section{Conclusion}
-ELARA establishes evidence that reliability-aware anomaly fusion can improve a fixed static-attention reference in audited settings and under coherent evidence collapse, while also revealing that calibration transfer and clean false-fire control remain unresolved barriers to reliable held-out generalization. Future work will focus on dynamic thresholding strategies and calibration under out-of-distribution modal scoring shifts.
+ELARA provides bounded audited and mechanism-level evidence that reliability-aware anomaly fusion can improve a fixed static-attention reference under selected degraded-evidence settings, while the excluded Eyecandies transfer attempt identifies clean false-fire calibration under score-distribution shift as a central unresolved limitation. Future work will focus on dynamic thresholding strategies and calibration under out-of-distribution modal scoring shifts.
 
 \begin{thebibliography}{99}
 

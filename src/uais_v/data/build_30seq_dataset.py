@@ -1,20 +1,23 @@
 """Build 30-sequence arrays from behavior data or synthetic fallback."""
+
 from dataclasses import dataclass
-from typing import Dict, Tuple
 
 import numpy as np
 import pandas as pd
 
 from uais.utils.logging_utils import setup_logging
-from ..paths import PROCESSED_DIR, SEQUENCES_DIR
+
+from ..paths import SEQUENCES_DIR
 from .load_datasets import load_behavior_events
 
 
 def set_global_seed(seed: int) -> None:
     """Seed numpy + Python random for reproducibility within the 30-seq builder."""
     import random as _random
+
     _random.seed(seed)
     np.random.seed(seed)
+
 
 logger = setup_logging(__name__)
 
@@ -48,7 +51,7 @@ def _coerce_feature_dim(x: np.ndarray, target_dim: int) -> np.ndarray:
     return np.hstack([x, pad])
 
 
-def _prepare_behavior_sequences(cfg: SequenceBuildConfig) -> Tuple[Dict[str, np.ndarray], np.ndarray]:
+def _prepare_behavior_sequences(cfg: SequenceBuildConfig) -> tuple[dict[str, np.ndarray], np.ndarray]:
     df = load_behavior_events()
 
     time_col = "date" if "date" in df.columns else "timestamp"
@@ -88,7 +91,7 @@ def _prepare_behavior_sequences(cfg: SequenceBuildConfig) -> Tuple[Dict[str, np.
 
     sequences = []
     labels = []
-    for entity, group in df.groupby(entity_col):
+    for _entity, group in df.groupby(entity_col):
         if len(group) < cfg.min_events_per_entity:
             continue
         feats = group[feature_cols].to_numpy(dtype=np.float32)
@@ -105,7 +108,7 @@ def _prepare_behavior_sequences(cfg: SequenceBuildConfig) -> Tuple[Dict[str, np.
     labels_arr = np.asarray(labels, dtype=np.int64)
 
     rng = np.random.default_rng(cfg.seed)
-    X_dict: Dict[str, np.ndarray] = {}
+    X_dict: dict[str, np.ndarray] = {}
     for i in range(30):
         noise_scale = 0.01 * (i + 1)
         noisy = base + rng.normal(0.0, noise_scale, base.shape)
@@ -114,20 +117,20 @@ def _prepare_behavior_sequences(cfg: SequenceBuildConfig) -> Tuple[Dict[str, np.
     return X_dict, labels_arr
 
 
-def _synthetic_sequences(cfg: SequenceBuildConfig, n_samples: int = 400) -> Tuple[Dict[str, np.ndarray], np.ndarray]:
+def _synthetic_sequences(cfg: SequenceBuildConfig, n_samples: int = 400) -> tuple[dict[str, np.ndarray], np.ndarray]:
     rng = np.random.default_rng(cfg.seed)
     base = rng.normal(0.0, 1.0, size=(n_samples, cfg.seq_len, cfg.n_features)).astype(np.float32)
     labels = (rng.random(n_samples) < cfg.anomaly_ratio).astype(np.int64)
     base[labels == 1] += rng.normal(1.2, 0.5, size=base[labels == 1].shape).astype(np.float32)
 
-    X_dict: Dict[str, np.ndarray] = {}
+    X_dict: dict[str, np.ndarray] = {}
     for i in range(30):
         jitter = rng.normal(0.0, 0.02 * (i + 1), size=base.shape).astype(np.float32)
         X_dict[f"seq_{i+1}"] = base + jitter
     return X_dict, labels
 
 
-def build_30seq_arrays(cfg: SequenceBuildConfig | None = None) -> Tuple[Dict[str, np.ndarray], np.ndarray]:
+def build_30seq_arrays(cfg: SequenceBuildConfig | None = None) -> tuple[dict[str, np.ndarray], np.ndarray]:
     cfg = cfg or SequenceBuildConfig()
     set_global_seed(cfg.seed)
 
@@ -146,7 +149,7 @@ def build_30seq_arrays(cfg: SequenceBuildConfig | None = None) -> Tuple[Dict[str
     return X_dict, y
 
 
-def load_30seq_arrays() -> Tuple[Dict[str, np.ndarray], np.ndarray]:
+def load_30seq_arrays() -> tuple[dict[str, np.ndarray], np.ndarray]:
     X_dict = np.load(SEQUENCES_DIR / "X_30seq.npy", allow_pickle=True).item()
     y = np.load(SEQUENCES_DIR / "y_30seq.npy")
     return X_dict, y
