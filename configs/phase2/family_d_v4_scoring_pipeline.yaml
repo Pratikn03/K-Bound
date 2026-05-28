@@ -1,0 +1,105 @@
+# Family-D v4 — Eyecandies scoring + RGA pipeline (exploratory remediation)
+#
+# Addresses near-chance fusion under one-class labels:
+#   - one_class_score_supervision: train fusion against max domain score (weak labels)
+#   - category_aware reliability (wired in _make_reliability_estimator)
+#   - score_blend_on_gate: when gate fires, fuse domain scores by reliability weights
+#
+# Does NOT change frozen D-EYE degradation operators or statistical policy.
+# Use --output-suffix v4 --allow-rerun --experiment-id D-EYE-v4 for exploratory runs.
+
+scoring_pipeline:
+  name: eyecandies_resnet50_patchcore_style_v4
+  version: "4.0.0"
+  dataset: Eyecandies
+  dataset_release: "1.0.3"
+  lineage: "extends v3; same image→score pipeline, revised RGA consumption"
+
+eyecandies_rga_config:
+  data:
+    path: experiments/fusion/eyecandies_inputs.csv
+    format: csv
+    id_column: sample_id
+    domain_column: domain
+    label_column: label
+    score_column: score
+    confidence_column: confidence
+    category_column: category
+    embedding_prefix: embedding_
+    split_column: fusion_split
+    domain_order: [rgb, depth]
+
+  model:
+    num_domains: 2
+    embed_dim: 32
+    num_heads: 4
+    num_layers: 1
+    dropout: 0.1
+    use_attention: true
+    use_confidence: true
+    use_input_confidence: true
+    use_domain_embeddings: true
+    use_positional_embeddings: true
+    use_missing_embedding: true
+
+  training:
+    seed: 42
+    batch_size: 64
+    epochs: 20
+    lr: 0.001
+    weight_decay: 0.01
+    domain_dropout: 0.10
+    split_column: fusion_split
+    train_split_value: train
+    val_split_value: validation
+    test_split_value: test
+    one_class_score_supervision: true
+    one_class_score_aggregation: max
+
+  reliability:
+    ece_weight: 0.45
+    ks_weight: 0.35
+    sharpness_weight: 0.20
+    clean_gate_threshold: 0.66
+    n_calibration_bins: 10
+    min_samples_for_ks: 20
+    category_aware: true
+    unknown_category_policy: global
+    score_blend_on_gate: true
+
+  degradation:
+    D_EYE_1:
+      target_domain: depth
+      mode: zero_collapse
+      seed_offset: 41000
+    D_EYE_2:
+      target_domain: rgb
+      mode: zero_collapse
+      seed_offset: 41001
+    D_EYE_3:
+      target_domain: alternated
+      mode: mask_collapse
+      seed_offset: 41002
+      mask_count: 1
+
+  calibration:
+    split: validation
+    method: degradation_response_search
+    clean_false_fire_budget: 0.010
+    tau_candidates: [0.40, 0.45, 0.50, 0.55, 0.60, 0.66, 0.70, 0.75, 0.80]
+    selection_criterion: max_degradation_auc_within_clean_budget
+    locked_tau_g0: 0.66
+
+  inference:
+    primary_cells: [D-EYE-1, D-EYE-2]
+    secondary_cells: [D-EYE-3]
+    primary_metric: roc_auc_delta_rga_minus_static
+    seed_count_target: 30
+    seed_count_minimum: 15
+    seed_start: 42
+    paired_bootstrap_iterations: 10000
+    paired_bootstrap_seed: 0
+    ci_alpha: 0.05
+    multiplicity_correction: holm_bonferroni
+    multiplicity_k: 2
+    minimum_practical_delta: 0.010

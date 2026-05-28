@@ -1,0 +1,52 @@
+{
+  "protocol_id": "PHASE3_CAL_TRANSFER_001",
+  "title": "held_out_calibration_transfer_validation_base_rga",
+  "generated_at_utc": "2026-05-28T23:03:20.378748+00:00",
+  "run_mode": "full_run",
+  "seed_count": 30,
+  "seed_start": 42,
+  "protocol_yaml": "configs/phase3/calibration_transfer_closure_protocol.yaml",
+  "protocol_yaml_sha256": "cb27746f79c71bf5132343c7dd5ab9fbcb815c975b66cc50e69d6a8a426d66d7",
+  "family_d_protocol_yaml_sha256": "104d90c6bab38671bb4dba15414a05ccebc890679cd681a5d46e06e7c8be4f15",
+  "family_d_pipeline_yaml_sha256": "0a8a844d477d8c0bfaa539a05bd1e89eaeaf707a72f4bc54b9e38ce3e89ce4ac",
+  "calibration_provenance": {
+    "ks_reference_fit": {
+      "allowed_source": "validation_normal_only",
+      "explicit_source_description": "KS reference may be re-fit only on anomaly-free validation rows.\n",
+      "uses_test_scores": false,
+      "uses_test_labels": false,
+      "frozen_before_test_metric_read": true
+    },
+    "threshold_selection": {
+      "rule": "validation_only",
+      "clean_false_fire_budget": 0.01,
+      "uses_test_scores": false,
+      "uses_test_labels": false,
+      "frozen_before_test_metric_read": true
+    }
+  },
+  "clean_false_fire": {
+    "required_max_rate": 0.01,
+    "required_split": "validation_clean",
+    "failure_policy": "protocol_invalid_if_exceeded"
+  },
+  "stress_endpoints": {
+    "primary": [
+      {
+        "id": "D-EYE-1",
+        "type": "depth_score_collapse"
+      },
+      {
+        "id": "D-EYE-2",
+        "type": "rgb_score_collapse"
+      }
+    ],
+    "secondary": [
+      {
+        "id": "D-EYE-3",
+        "type": "single_modality_missingness"
+      }
+    ]
+  },
+  "selection_used_test_metrics_required": false
+}

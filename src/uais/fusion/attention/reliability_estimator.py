@@ -412,6 +412,31 @@ class CategoryAwareReliabilityEstimator(ReliabilityEstimator):
                 self._category_reference_scores[domain][category] = scores.copy()
         return self
 
+    def re_fit_ks_reference(
+        self,
+        features: np.ndarray,
+        masks: np.ndarray,
+        categories: np.ndarray | None = None,
+    ) -> CategoryAwareReliabilityEstimator:
+        """Align global and per-category KS references to a calibration split."""
+        super().re_fit_ks_reference(features, masks)
+        if categories is None:
+            return self
+
+        categories = np.asarray(categories).astype(str)
+        if categories.shape[0] != features.shape[0]:
+            raise ValueError("categories must have one value per sample.")
+
+        for i, domain in enumerate(self.domain_order):
+            available = ~masks[:, i]
+            for category in sorted(set(categories[available])):
+                cat_mask = available & (categories == category)
+                scores = features[cat_mask, i, self.score_index].astype(float)
+                if len(scores) == 0:
+                    continue
+                self._category_reference_scores.setdefault(domain, {})[category] = scores.copy()
+        return self
+
     def _reference_for_category(self, domain: str, category: str) -> np.ndarray:
         category_refs = self._category_reference_scores.get(domain, {})
         if category in category_refs:

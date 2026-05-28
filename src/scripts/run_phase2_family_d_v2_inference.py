@@ -75,10 +75,12 @@ def _delong_auc_variance(labels: np.ndarray, scores: np.ndarray):
     pv_neg = np.array([np.mean([_kernel(p, n) for p in pos]) for n in neg])
     auc = float(pv_pos.mean())
 
-    # Structural components (DeLong eq. 3)
-    s10 = float(np.var(pv_pos, ddof=1)) / n_pos if n_pos > 1 else 0.0
-    s01 = float(np.var(pv_neg, ddof=1)) / n_neg if n_neg > 1 else 0.0
-    var = s10 / n_pos + s01 / n_neg
+    # Structural components (DeLong eq. 3).
+    # var(AUC) = var(V10) / m + var(V01) / n where m=#positives, n=#negatives.
+    # Do not divide twice by class counts.
+    var_pos = float(np.var(pv_pos, ddof=1)) if n_pos > 1 else 0.0
+    var_neg = float(np.var(pv_neg, ddof=1)) if n_neg > 1 else 0.0
+    var = (var_pos / n_pos) + (var_neg / n_neg)
     return auc, var
 
 
@@ -108,10 +110,10 @@ def _delong_paired_test(
         [np.mean([_kernel(scores_b[i], scores_b[j]) for j in np.where(neg)[0]]) for i in np.where(pos)[0]]
     )
     pv_a_neg = np.array(
-        [np.mean([_kernel(scores_a[i], scores_a[j]) for j in np.where(pos)[0]]) for i in np.where(neg)[0]]
+        [np.mean([_kernel(scores_a[j], scores_a[i]) for j in np.where(pos)[0]]) for i in np.where(neg)[0]]
     )
     pv_b_neg = np.array(
-        [np.mean([_kernel(scores_b[i], scores_b[j]) for j in np.where(pos)[0]]) for i in np.where(neg)[0]]
+        [np.mean([_kernel(scores_b[j], scores_b[i]) for j in np.where(pos)[0]]) for i in np.where(neg)[0]]
     )
 
     n_pos = int(pos.sum())
@@ -119,7 +121,10 @@ def _delong_paired_test(
     cov_pos = float(np.cov(pv_a_pos, pv_b_pos)[0, 1]) / n_pos if n_pos > 1 else 0.0
     cov_neg = float(np.cov(pv_a_neg, pv_b_neg)[0, 1]) / n_neg if n_neg > 1 else 0.0
     var_diff = var_a + var_b - 2 * (cov_pos + cov_neg)
-    var_diff = max(var_diff, 1e-12)  # numerical floor
+    if var_diff <= 0.0:
+        # Degenerate paired variance indicates unstable DeLong covariance in
+        # this sample; report as unavailable instead of forcing extreme z.
+        return auc_a - auc_b, float("nan"), float("nan")
 
     delta = auc_a - auc_b
     z = delta / math.sqrt(var_diff)
@@ -353,6 +358,72 @@ def _classify_outcome(delta: float, p: float, ci_lo: float, ci_hi: float) -> str
     return "CONFIRMED"
 
 
+def _validate_post_run_consistency(cell_results: list[dict], holm_results: list[dict]) -> list[str]:
+    """Cross-check DeLong, bootstrap CI, and Holm outcomes.
+
+    Returns a list of human-readable inconsistency messages.
+    Empty list means checks passed.
+    """
+    issues: list[str] = []
+
+    holm_by_cell = {str(r.get("cell_id")): r for r in holm_results}
+
+    for cr in cell_results:
+        cell_id = str(cr.get("cell_id", "UNKNOWN"))
+        hr = holm_by_cell.get(cell_id, {})
+
+        p = float(cr.get("delong_p", float("nan")))
+        delta = float(cr.get("ensemble_delta_auc", float("nan")))
+        ci_lo = float(cr.get("bootstrap_ci_lo", float("nan")))
+        ci_hi = float(cr.get("bootstrap_ci_hi", float("nan")))
+        pre = str(cr.get("outcome_pre_holm", ""))
+        holm_out = str(hr.get("holm_outcome", ""))
+        rejected = bool(hr.get("h0_rejected", False))
+
+        ci_available = not (math.isnan(ci_lo) or math.isnan(ci_hi))
+        ci_excludes_zero = ci_available and (ci_lo > 0 or ci_hi < 0)
+        ci_includes_zero = ci_available and (ci_lo <= 0 <= ci_hi)
+        p_significant = (not math.isnan(p)) and (p <= CI_ALPHA)
+        practically_positive = (not math.isnan(delta)) and (delta > 0) and (abs(delta) >= MIN_PRACTICAL_DELTA)
+
+        # 1) Direct DeLong-vs-bootstrap contradiction.
+        if p_significant and ci_includes_zero:
+            issues.append(
+                f"{cell_id}: DeLong p={p:.6f} is significant but bootstrap CI includes 0 "
+                f"([{ci_lo:+.6f}, {ci_hi:+.6f}])."
+            )
+
+        # 2) Pre-Holm confirmed claims must satisfy significance + CI + practical + direction.
+        if pre == "CONFIRMED":
+            if (not p_significant) or (not ci_excludes_zero) or (not practically_positive):
+                issues.append(
+                    f"{cell_id}: outcome_pre_holm=CONFIRMED without required evidence "
+                    f"(p_significant={p_significant}, ci_excludes_zero={ci_excludes_zero}, "
+                    f"practically_positive={practically_positive})."
+                )
+
+        # 3) Holm outcome must align with reject flag and pre-Holm state.
+        if rejected and holm_out != pre:
+            issues.append(
+                f"{cell_id}: Holm rejected H0 but holm_outcome ({holm_out}) does not match "
+                f"outcome_pre_holm ({pre})."
+            )
+        if (not rejected) and holm_out != "NOT_CONFIRMED":
+            issues.append(
+                f"{cell_id}: Holm did not reject H0 but holm_outcome is {holm_out} "
+                "instead of NOT_CONFIRMED."
+            )
+
+        # 4) Holm-confirmed cell cannot carry a CI spanning zero.
+        if holm_out == "CONFIRMED" and ci_includes_zero:
+            issues.append(
+                f"{cell_id}: holm_outcome=CONFIRMED but bootstrap CI includes 0 "
+                f"([{ci_lo:+.6f}, {ci_hi:+.6f}])."
+            )
+
+    return issues
+
+
 def _write_markdown_report(cell_results: list[dict], holm_results: list[dict], family_decision: str) -> Path:
     """Write the final inference report markdown."""
     out = DOCS_DIR / "FAMILY_D_V3_INFERENCE_REPORT.md"
@@ -508,6 +579,17 @@ def main() -> int:
         family_decision = "FAMILY_D_V3_NOT_CONFIRMED"
 
     print(f"\nFamily decision: {family_decision}", flush=True)
+
+    # Automated post-run validator: fail hard on statistical inconsistencies.
+    consistency_issues = _validate_post_run_consistency(cell_results, holm_results)
+    if consistency_issues:
+        msg_lines = [
+            "POST-RUN VALIDATOR FAIL: DeLong/Bootstrap/Holm inconsistency detected.",
+            "Resolve these issues before treating the run as valid:",
+        ]
+        msg_lines.extend([f"- {m}" for m in consistency_issues])
+        raise SystemExit("\n".join(msg_lines))
+    print("[VALIDATOR] Post-run consistency checks passed.", flush=True)
 
     # Write outputs
     OUT_DIR.mkdir(parents=True, exist_ok=True)
