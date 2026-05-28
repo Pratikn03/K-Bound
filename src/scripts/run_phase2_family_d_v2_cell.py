@@ -41,6 +41,7 @@ sys.path.insert(0, str(ROOT))
 
 from elara.evaluation.prediction_archive import PredictionArchive  # noqa: E402
 from scripts.run_breakthrough_experiment import (  # noqa: E402
+    CategoryAwareReliabilityEstimator,
     _build_model,
     _load_data,
     _make_loaders,
@@ -88,7 +89,12 @@ def _sha256_file(path: Path) -> str:
     return h.hexdigest()
 
 
-def _preflight_checks(protocol_path: Path, pipeline_spec_path: Path, cell_id: str) -> None:
+def _preflight_checks(
+    protocol_path: Path,
+    pipeline_spec_path: Path,
+    cell_id: str,
+    allow_rerun: bool = False,
+) -> None:
     """Authorisation gate: must pass before any test-fold data is accessed."""
     # 1. Independent review sign-off must exist
     if not SIGNOFF.exists():
@@ -104,21 +110,23 @@ def _preflight_checks(protocol_path: Path, pipeline_spec_path: Path, cell_id: st
             manifest = json.load(f)
         # Verify scoring pipeline SHA256 if recorded
         recorded_sha = manifest.get("scoring_pipeline_yaml_sha256", "")
-        if recorded_sha:
+        if recorded_sha and not allow_rerun:
             actual_sha = _sha256_file(pipeline_spec_path)
             if recorded_sha != actual_sha:
                 raise SystemExit(
                     f"PREFLIGHT FAIL: scoring_pipeline_yaml_sha256 mismatch.\n"
                     f"  Manifest: {recorded_sha}\n"
                     f"  Actual:   {actual_sha}\n"
-                    "The pipeline spec has changed after freeze — execution invalid."
+                    "The pipeline spec has changed after freeze — execution invalid.\n"
+                    "Pass --allow-rerun for exploratory v4+ pipeline specs."
                 )
         # Check per-cell execution flag (allows D-EYE-1 and D-EYE-2 to run independently)
         cell_key = f"cell_{cell_id.lower().replace('-','_')}_executed"
-        if manifest.get(cell_key, False):
+        if manifest.get(cell_key, False) and not allow_rerun:
             raise SystemExit(
                 f"PREFLIGHT FAIL: Manifest shows {cell_key}=true.\n"
-                f"The one-time evaluation for {cell_id} has already been performed."
+                f"The one-time evaluation for {cell_id} has already been performed.\n"
+                "Pass --allow-rerun to write v4 exploratory outputs anyway."
             )
     else:
         print(
@@ -210,6 +218,7 @@ def _select_tau_on_validation_only(
     cell_id: str,
     global_seed: int,
     device,
+    val_categories: np.ndarray | None = None,
 ) -> dict[str, Any]:
     """Select τ using ONLY validation data + frozen degradation injection.
 
@@ -218,7 +227,10 @@ def _select_tau_on_validation_only(
       selection_used_test_metrics (always False).
     """
     # Clean validation: measure gate activation rate on normal-only val data
-    weights = estimator.compute_reliability_weights(val_features, val_masks)
+    if val_categories is not None and isinstance(estimator, CategoryAwareReliabilityEstimator):
+        weights = estimator.compute_reliability_weights(val_features, val_masks, categories=val_categories)
+    else:
+        weights = estimator.compute_reliability_weights(val_features, val_masks)
     mean_r = weights.mean(axis=1)  # [N]
 
     # For D-EYE-3 (secondary), just use τ = LOCKED_TAU_G0 directly
@@ -252,7 +264,10 @@ def _select_tau_on_validation_only(
             continue  # exceeds budget; skip
 
         # Measure degradation response on validation
-        deg_weights = estimator.compute_reliability_weights(deg_feat, deg_mask)
+        if val_categories is not None and isinstance(estimator, CategoryAwareReliabilityEstimator):
+            deg_weights = estimator.compute_reliability_weights(deg_feat, deg_mask, categories=val_categories)
+        else:
+            deg_weights = estimator.compute_reliability_weights(deg_feat, deg_mask)
         deg_mean_r = deg_weights.mean(axis=1)
         degraded_rate = float((deg_mean_r < tau).mean())
 
@@ -305,13 +320,25 @@ def run_one_seed(
         batch_size=int(cfg_seed["training"].get("batch_size", 64)),
     )
     model = _build_model(cfg_seed, features.shape[1], features.shape[2], conf_idx, device)
-    _train_model(model, train_loader, val_loader, cfg_seed, device)
+    rel_cfg = cfg_seed.get("reliability", {})
+    train_cfg = cfg_seed.get("training", {})
+    _train_model(
+        model,
+        train_loader,
+        val_loader,
+        cfg_seed,
+        device,
+        score_index=score_idx if train_cfg.get("one_class_score_supervision") else None,
+    )
     model.eval()
 
     # ── Fit reliability estimator on training data ────────────────────────
-    rel_cfg = cfg_seed.get("reliability", {})
     estimator = _make_reliability_estimator(rel_cfg, list(domain_order) or ["rgb", "depth"], score_idx)
-    estimator.fit(features[train_idx], masks[train_idx], labels[train_idx])
+    train_categories = sample_categories[train_idx] if sample_categories is not None else None
+    if isinstance(estimator, CategoryAwareReliabilityEstimator) and train_categories is not None:
+        estimator.fit(features[train_idx], masks[train_idx], labels[train_idx], categories=train_categories)
+    else:
+        estimator.fit(features[train_idx], masks[train_idx], labels[train_idx])
 
     # ── Target-domain KS calibration ─────────────────────────────────────
     # The training split contains only normal (label=0) samples with cosine
@@ -322,15 +349,27 @@ def run_one_seed(
     # Re-fitting the KS reference on the validation split aligns the reference
     # to the inference-time distribution.  The validation split is already
     # used for τ selection so this introduces no new data leakage.
-    estimator.re_fit_ks_reference(features[val_idx], masks[val_idx])
-
+    val_categories = sample_categories[val_idx] if sample_categories is not None else None
+    if isinstance(estimator, CategoryAwareReliabilityEstimator) and val_categories is not None:
+        estimator.re_fit_ks_reference(features[val_idx], masks[val_idx], categories=val_categories)
+    else:
+        estimator.re_fit_ks_reference(features[val_idx], masks[val_idx])
 
     val_feat = features[val_idx]
     val_mask = masks[val_idx]
     val_labels_arr = labels[val_idx]
 
     tau_result = _select_tau_on_validation_only(
-        model, estimator, val_feat, val_mask, val_labels_arr, list(domain_order), cell_id, int(seed), device
+        model,
+        estimator,
+        val_feat,
+        val_mask,
+        val_labels_arr,
+        list(domain_order),
+        cell_id,
+        int(seed),
+        device,
+        val_categories=val_categories,
     )
     selected_tau = tau_result["selected_tau"]
     clean_rate = tau_result["clean_activation_rate"]
@@ -368,7 +407,10 @@ def run_one_seed(
     test_feat = features[test_idx]
     test_mask = masks[test_idx]
     test_labels_arr = labels[test_idx]
+    test_categories = sample_categories[test_idx] if sample_categories is not None else None
     test_sids = [str(sample_ids[i]) for i in test_idx]
+    score_blend = bool(rel_cfg.get("score_blend_on_gate", False))
+    ignore_zero_scores = bool(rel_cfg.get("score_blend_ignore_zero_scores", True))
 
     # Filter out unlabeled test samples (label == -1; from test_private which has no metadata)
     valid_test_mask = test_labels_arr != -1
@@ -385,6 +427,8 @@ def run_one_seed(
         test_feat = test_feat[valid_test_mask]
         test_mask = test_mask[valid_test_mask]
         test_labels_arr = test_labels_arr[valid_test_mask]
+        if test_categories is not None:
+            test_categories = test_categories[valid_test_mask]
         test_sids = [s for s, v in zip(test_sids, valid_test_mask) if v]
 
     # Apply degradation operator to test fold
@@ -399,6 +443,12 @@ def run_one_seed(
     # RGA predictions (with gate at selected_tau)
     estimator.gate_mode = "mean"
     estimator.gate_threshold = selected_tau
+    predict_kwargs = dict(
+        score_blend_on_gate=score_blend,
+        score_index=score_idx if score_blend else None,
+        categories=test_categories,
+        score_blend_ignore_zero_scores=ignore_zero_scores,
+    )
     craf_probs_clean, gate_stats_clean = _predict_craf_with_stats(
         model,
         estimator,
@@ -407,6 +457,7 @@ def run_one_seed(
         device,
         clean_gate_threshold=selected_tau,
         per_sample_gating=True,
+        **predict_kwargs,
     )
     craf_probs_deg, gate_stats_deg = _predict_craf_with_stats(
         model,
@@ -416,6 +467,7 @@ def run_one_seed(
         device,
         clean_gate_threshold=selected_tau,
         per_sample_gating=True,
+        **predict_kwargs,
     )
 
     # Archive all four (method × condition) score vectors
@@ -503,6 +555,16 @@ def main() -> int:
     )
     p.add_argument("--dry-run", action="store_true", help="Run validation calibration only; do not touch test fold")
     p.add_argument("--experiment-id", default="D-EYE-v3", help="Experiment ID for archive metadata")
+    p.add_argument(
+        "--allow-rerun",
+        action="store_true",
+        help="Bypass manifest one-time guard (writes exploratory v4 outputs)",
+    )
+    p.add_argument(
+        "--output-suffix",
+        default="",
+        help="Suffix for per-seed CSV (e.g. v4) to avoid overwriting v3 results",
+    )
     args = p.parse_args()
 
     protocol_path = ROOT / args.protocol
@@ -514,7 +576,7 @@ def main() -> int:
         raise SystemExit(f"Pipeline spec YAML not found: {pipeline_spec_path}")
 
     # Authorisation gate
-    _preflight_checks(protocol_path, pipeline_spec_path, args.cell)
+    _preflight_checks(protocol_path, pipeline_spec_path, args.cell, allow_rerun=args.allow_rerun)
 
     # Load pipeline spec for eyecandies RGA config
     with pipeline_spec_path.open() as f:
@@ -577,7 +639,8 @@ def main() -> int:
 
     # Write per-seed calibration + result log
     fold_type = "dry_run_validation_only" if args.dry_run else "full_test_evaluation"
-    out_csv = OUT_DIR / f"family_d_{args.cell.replace('-','_').lower()}_{fold_type}_per_seed.csv"
+    suffix = f"_{args.output_suffix}" if args.output_suffix else ""
+    out_csv = OUT_DIR / f"family_d_{args.cell.replace('-','_').lower()}_{fold_type}{suffix}_per_seed.csv"
     if all_rows:
         fieldnames = sorted(
             {k for r in all_rows for k in r.keys()}, key=lambda k: (k != "cell_id", k != "seed", k != "fold", k)
@@ -598,23 +661,44 @@ def main() -> int:
         with manifest_path.open() as f:
             existing = json.load(f)
 
-    existing["scoring_pipeline_yaml_sha256"] = spec_sha
-    existing["protocol_yaml_sha256"] = protocol_sha
-    cell_key = f"cell_{args.cell.lower().replace('-','_')}_executed"
-    existing[cell_key] = include_test
-    existing[f"cell_{args.cell.lower().replace('-','_')}_seed_count"] = len(seeds)
-    existing["v3_last_executed_cell"] = args.cell
-    existing["v3_dry_run"] = args.dry_run
+    exploratory = args.allow_rerun or str(args.experiment_id).lower().startswith("d-eye-v4")
+    if exploratory:
+        v4_log = OUT_DIR / "family_d_v4_execution_log.json"
+        v4_entry = {
+            "cell": args.cell,
+            "experiment_id": args.experiment_id,
+            "pipeline_spec": str(pipeline_spec_path.relative_to(ROOT)),
+            "pipeline_sha256": spec_sha,
+            "seeds": len(seeds),
+            "include_test": include_test,
+            "output_suffix": args.output_suffix,
+            "dry_run": args.dry_run,
+        }
+        v4_history = []
+        if v4_log.exists():
+            with v4_log.open() as f:
+                v4_history = json.load(f)
+        v4_history.append(v4_entry)
+        with v4_log.open("w") as f:
+            json.dump(v4_history, f, indent=2)
+        print(f"Logged exploratory run → {v4_log}", flush=True)
+    else:
+        existing["scoring_pipeline_yaml_sha256"] = spec_sha
+        existing["protocol_yaml_sha256"] = protocol_sha
+        cell_key = f"cell_{args.cell.lower().replace('-','_')}_executed"
+        existing[cell_key] = include_test
+        existing[f"cell_{args.cell.lower().replace('-','_')}_seed_count"] = len(seeds)
+        existing["v3_last_executed_cell"] = args.cell
+        existing["v3_dry_run"] = args.dry_run
 
-    # Set global test_evaluation_executed only when both primary cells have executed
-    d_eye_1_done = existing.get("cell_d_eye_1_executed", False)
-    d_eye_2_done = existing.get("cell_d_eye_2_executed", False)
-    existing["test_evaluation_executed"] = bool(d_eye_1_done and d_eye_2_done)
+        d_eye_1_done = existing.get("cell_d_eye_1_executed", False)
+        d_eye_2_done = existing.get("cell_d_eye_2_executed", False)
+        existing["test_evaluation_executed"] = bool(d_eye_1_done and d_eye_2_done)
 
-    manifest_path.parent.mkdir(parents=True, exist_ok=True)
-    with manifest_path.open("w") as f:
-        json.dump(existing, f, indent=2)
-    print(f"Updated manifest → {manifest_path}", flush=True)
+        manifest_path.parent.mkdir(parents=True, exist_ok=True)
+        with manifest_path.open("w") as f:
+            json.dump(existing, f, indent=2)
+        print(f"Updated manifest → {manifest_path}", flush=True)
 
     print(f"\n[DONE] Cell {args.cell} | seeds={len(seeds)} | include_test={include_test}")
     return 0

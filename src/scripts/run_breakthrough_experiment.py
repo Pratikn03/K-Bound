@@ -26,6 +26,7 @@ import logging
 import math
 from itertools import combinations
 from pathlib import Path
+from typing import Any
 
 import numpy as np
 import pandas as pd
@@ -319,9 +320,11 @@ def _make_reliability_estimator(
     estimator_type = str(rel_cfg.get("estimator_type", "batch")).lower()
     if estimator_type in ("per_sample", "per-sample", "persample", "streaming"):
         cls = PerSampleReliabilityEstimator
+    elif bool(rel_cfg.get("category_aware", False)):
+        cls = CategoryAwareReliabilityEstimator
     else:
         cls = ReliabilityEstimator
-    return cls(
+    kwargs: dict[str, Any] = dict(
         domain_order=domain_order,
         score_index=score_index,
         ece_weight=weights["ece_weight"],
@@ -338,9 +341,56 @@ def _make_reliability_estimator(
             )
         ),
     )
+    if cls is CategoryAwareReliabilityEstimator:
+        kwargs["unknown_category_policy"] = str(rel_cfg.get("unknown_category_policy", "global"))
+    return cls(**kwargs)
 
 
-def _train_model(model: AttentionFusionModel, train_loader, val_loader, cfg: dict, device: torch.device) -> None:
+def _pseudo_targets_from_domain_scores(
+    features: np.ndarray,
+    masks: np.ndarray,
+    score_index: int,
+    aggregation: str = "max",
+) -> np.ndarray:
+    """Weak supervision from per-domain anomaly scores (no label column required)."""
+    scores = features[:, :, score_index].astype(float).copy()
+    scores[masks] = np.nan
+    if aggregation == "mean":
+        pseudo = np.nanmean(scores, axis=1)
+    else:
+        pseudo = np.nanmax(scores, axis=1)
+    return np.nan_to_num(pseudo, nan=0.5).astype(np.float32)
+
+
+def _reliability_weighted_domain_scores(
+    features: np.ndarray,
+    masks: np.ndarray,
+    reliability_weights: np.ndarray,
+    score_index: int,
+    ignore_zero_scores: bool = True,
+) -> np.ndarray:
+    """Fuse domain-level scores using reliability weights; missing domains are excluded."""
+    scores = features[:, :, score_index].astype(float)
+    weights = reliability_weights.astype(float) * (~masks)
+    if ignore_zero_scores:
+        # D-EYE zero_collapse sets collapsed modality score to 0.0; do not average it in.
+        weights = weights * (scores > 1e-8)
+    denom = weights.sum(axis=1)
+    fused = np.zeros(features.shape[0], dtype=float)
+    valid = denom > 0
+    fused[valid] = (scores[valid] * weights[valid]).sum(axis=1) / denom[valid]
+    fused[~valid] = 0.5
+    return np.clip(fused, 0.0, 1.0)
+
+
+def _train_model(
+    model: AttentionFusionModel,
+    train_loader,
+    val_loader,
+    cfg: dict,
+    device: torch.device,
+    score_index: int | None = None,
+) -> None:
     t_cfg = cfg.get("training", {})
     optimizer = torch.optim.AdamW(
         model.parameters(),
@@ -352,6 +402,9 @@ def _train_model(model: AttentionFusionModel, train_loader, val_loader, cfg: dic
     best_val_loss = float("inf")
     no_improve = 0
 
+    one_class_scores = bool(t_cfg.get("one_class_score_supervision", False)) and score_index is not None
+    pseudo_agg = str(t_cfg.get("one_class_score_aggregation", "max"))
+
     for _epoch in range(int(t_cfg.get("epochs", 20))):
         model.train()
         for batch in train_loader:
@@ -361,9 +414,19 @@ def _train_model(model: AttentionFusionModel, train_loader, val_loader, cfg: dic
                 msks = apply_domain_dropout(msks, drop_prob=domain_dropout_p)
             optimizer.zero_grad()
             logits, attn_weights, confidences = model(feats, key_padding_mask=msks)
+            if one_class_scores:
+                pseudo = _pseudo_targets_from_domain_scores(
+                    feats.detach().cpu().numpy(),
+                    msks.detach().cpu().numpy(),
+                    score_index,
+                    aggregation=pseudo_agg,
+                )
+                targets = torch.tensor(pseudo, dtype=torch.float32, device=device)
+            else:
+                targets = lbls
             loss, _ = attention_fusion_loss(
                 logits.squeeze(-1),
-                lbls,
+                targets,
                 attn_weights,
                 confidences,
                 lambda_reg=float(t_cfg.get("lambda_reg", 0.01)),
@@ -378,9 +441,19 @@ def _train_model(model: AttentionFusionModel, train_loader, val_loader, cfg: dic
             for batch in val_loader:
                 feats, msks, lbls = [x.to(device) for x in batch]
                 logits, attn_weights, confidences = model(feats, key_padding_mask=msks)
+                if one_class_scores:
+                    pseudo = _pseudo_targets_from_domain_scores(
+                        feats.cpu().numpy(),
+                        msks.cpu().numpy(),
+                        score_index,
+                        aggregation=pseudo_agg,
+                    )
+                    targets = torch.tensor(pseudo, dtype=torch.float32, device=device)
+                else:
+                    targets = lbls
                 loss, _ = attention_fusion_loss(
                     logits.squeeze(-1),
-                    lbls,
+                    targets,
                     attn_weights,
                     confidences,
                     lambda_reg=0.0,
@@ -666,6 +739,10 @@ def _predict_craf_with_stats(
     clean_gate_threshold: float = 0.66,
     per_sample_gating: bool = False,
     learned_gate: LearnedReliabilityGate | None = None,
+    score_blend_on_gate: bool = False,
+    score_index: int | None = None,
+    categories: np.ndarray | None = None,
+    score_blend_ignore_zero_scores: bool = True,
 ) -> tuple[np.ndarray, dict[str, float | int]]:
     """Predict with reliability-gated attention weights.
 
@@ -692,7 +769,14 @@ def _predict_craf_with_stats(
         end = min(start + batch_size, n)
         feat_np = features[start:end]
         mask_np = masks[start:end]
-        craf_w = estimator.compute_reliability_weights(feat_np, mask_np)
+        cat_np = categories[start:end] if categories is not None else None
+        if cat_np is not None and hasattr(estimator, "compute_reliability_weights"):
+            try:
+                craf_w = estimator.compute_reliability_weights(feat_np, mask_np, categories=cat_np)
+            except TypeError:
+                craf_w = estimator.compute_reliability_weights(feat_np, mask_np)
+        else:
+            craf_w = estimator.compute_reliability_weights(feat_np, mask_np)
         feat_t = torch.tensor(feat_np, dtype=torch.float32, device=device)
         mask_t = torch.tensor(mask_np, dtype=torch.bool, device=device)
         gate_stats = _gate_decision_stats(
@@ -730,8 +814,18 @@ def _predict_craf_with_stats(
             craf_t = craf_t.masked_fill(mask_t, 0.0)
             embeds = [enc(feat_t[:, i, :]) for i, enc in enumerate(model.domain_encoders)]
             domain_embeds = torch.stack(embeds, dim=1)
-            logits_craf, _ = model.fusion(domain_embeds, key_padding_mask=mask_t, confidence_weights=craf_t)
-            probs_craf = torch.sigmoid(logits_craf.squeeze(-1))
+            if score_blend_on_gate and score_index is not None:
+                probs_craf_np = _reliability_weighted_domain_scores(
+                    feat_np,
+                    mask_np,
+                    craf_w,
+                    score_index,
+                    ignore_zero_scores=score_blend_ignore_zero_scores,
+                )
+                probs_craf = torch.tensor(probs_craf_np, dtype=torch.float32, device=device)
+            else:
+                logits_craf, _ = model.fusion(domain_embeds, key_padding_mask=mask_t, confidence_weights=craf_t)
+                probs_craf = torch.sigmoid(logits_craf.squeeze(-1))
             gate_t = torch.tensor(gate_per_sample, dtype=torch.bool, device=device)
             batch_probs = torch.where(gate_t, probs_craf, probs_static)
             probs.append(batch_probs.cpu().numpy())
@@ -746,6 +840,17 @@ def _predict_craf_with_stats(
             continue
         adapted_samples += batch_n
         adapted_batches += 1
+        if score_blend_on_gate and score_index is not None:
+            probs.append(
+                _reliability_weighted_domain_scores(
+                    feat_np,
+                    mask_np,
+                    craf_w,
+                    score_index,
+                    ignore_zero_scores=score_blend_ignore_zero_scores,
+                )
+            )
+            continue
         craf_t = torch.tensor(craf_w, dtype=torch.float32, device=device)
         craf_t = craf_t.masked_fill(mask_t, 0.0)
         embeds = [enc(feat_t[:, i, :]) for i, enc in enumerate(model.domain_encoders)]
