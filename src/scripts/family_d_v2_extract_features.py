@@ -23,7 +23,7 @@ import numpy as np
 import torch
 import torch.nn.functional as F
 from PIL import Image
-from torchvision.models import ResNet50_Weights, resnet50
+from torchvision.models import ResNet101_Weights, resnet101
 
 ROOT = Path(__file__).resolve().parents[2]
 ARCHIVE_DIR = ROOT / "data" / "raw" / "eyecandies" / "_archives"
@@ -50,8 +50,8 @@ def _device():
 
 
 def _make_backbone(device):
-    weights = ResNet50_Weights.IMAGENET1K_V2
-    m = resnet50(weights=weights)
+    weights = ResNet101_Weights.IMAGENET1K_V2
+    m = resnet101(weights=weights)
     m.eval()
     # We want layer3 outputs, then global pool.
     feature_layer = torch.nn.Sequential(

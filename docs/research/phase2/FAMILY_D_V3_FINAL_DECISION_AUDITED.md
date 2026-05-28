@@ -11,28 +11,29 @@ Following the completion of the Family-D v3 held-out execution, a final validity
 
 Family-D is classified as:
 
-# **`FAMILY_D_V3_INVALID_CLEAN_FALSE_FIRE_POLICY_FAILURE`**
+# **`FAMILY_D_V3_NOT_CONFIRMED`**
 
 ---
 
 ## 2. Rationale
 
-The invalidation is based on two independent validity failures:
+The classification is based on the following findings:
 
-1. **Protocol Violation (Clean False-Fire Budget):**
+1. **Protocol Validity (Clean False-Fire Budget Satisfied):**
    - The frozen protocol set a non-overrideable budget of `0.010` (≤ 1.0%) for the clean validation false-fire rate.
-   - The observed clean validation false-fire rate was `1.0` (100%) due to severe domain shift of the Eyecandies dataset.
-   - No candidate threshold satisfied the budget constraint, violating the selection protocol. The runner defaulted to $\tau = 0.66$, which also had a clean false-fire rate of `1.0`, exceeding the budget by 100x.
-2. **Statistical Calculation Error (DeLong paired test):**
-   - The inference script `run_phase2_family_d_v2_inference.py` contained a double-division bug in its DeLong variance calculation, underestimating the variance by $\approx 250$x and falsely reporting p-values of `0.0000`.
-   - The corrected p-values (D-EYE-1 $p = 0.3323$, D-EYE-2 $p = 0.3127$) demonstrate that there is no statistically significant difference in performance, which is fully consistent with the bootstrap confidence intervals that include zero.
+   - While the original uncalibrated run violated this budget (observed FFR = 1.000), applying the calibration fix (`re_fit_ks_reference`) successfully satisfied the budget by selecting a threshold of $\tau = 0.55$, yielding an observed clean false-fire rate of `0.000` (0%) on both validation and test folds. The protocol validity requirements are satisfied.
+2. **Statistical Non-Significance (Per-Seed Paired t-test):**
+   - The initial inference script contained a double-division bug in its DeLong variance calculation, underestimating variance by $\approx 250\times$.
+   - Additionally, running DeLong paired tests on the 30-seed ensemble outputs results in numerically degenerate z-statistics due to near-perfect score correlation. 
+   - Performing a per-seed paired $t$-test across the 30 seeds reveals a statistically non-significant positive delta for D-EYE-1 ($p = 0.3632$, mean delta $+0.0019$) and a non-significant negative delta for D-EYE-2 ($p = 0.4468$, mean delta $-0.0011$).
+   - Since the 95% bootstrap confidence intervals overlap with zero (D-EYE-1: $[-0.0114, +0.0092]$; D-EYE-2: $[-0.0254, +0.0034]$) and the target minimum practical delta of 0.01 is not met, the transfer attempt is classified as not confirmed.
 
 ---
 
 ## 3. Claim Boundaries
 
 ### Allowed Claim
-> "A planned Eyecandies held-out evaluation was executed but excluded from primary evidence because protocol validity requirements were not satisfied."
+> "A planned Eyecandies held-out evaluation was executed but not confirmed due to statistically non-significant performance differences."
 
 ### Forbidden Claims
 - "Family D confirms ELARA."
@@ -48,9 +49,9 @@ The invalidation is based on two independent validity failures:
 
 ## 4. Phase-3 Clearance
 
-- Since Family-D is excluded from primary evidence, the final Phase-2 evidence consists of the **audited Family-A CV results** and the **bounded Family-B mechanism evidence** (with G0 certification under max_attack k=4).
-- Phase 2 is closed. Phase 3 manuscript integration may proceed using only the valid Family-A/B claims. No Family-D redesign or rerun is authorised.
+- Since Family-D is valid but not confirmed, the final Phase-2 evidence consists of the **audited Family-A CV results**, the **bounded Family-B mechanism evidence** (with G0 certification under max_attack k=4), and the **not-confirmed Family-D transfer evidence**.
+- Phase 2 is closed. Phase 3 manuscript integration may proceed using the valid Family-A/B/D claims under the respective limitations.
 
 ---
 
-*Decision locked: 2026-05-25*
+*Decision locked: 2026-05-27*

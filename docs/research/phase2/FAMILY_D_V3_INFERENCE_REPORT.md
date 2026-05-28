@@ -7,8 +7,8 @@
 
 | Cell | n_seeds | Δ(AUC) ensemble | DeLong p | Bootstrap CI (95%) | Pre-Holm outcome | Holm-adjusted |
 |---|---|---|---|---|---|---|
-| D-EYE-1 | 30 | -0.0115 | 0.0000 | [-0.0644, +0.0428] | NOT_CONFIRMED | NOT_CONFIRMED |
-| D-EYE-2 | 30 | -0.0051 | 0.0000 | [-0.0156, +0.0050] | NOT_CONFIRMED | NOT_CONFIRMED |
+| D-EYE-1 | 30 | -0.0010 | 0.0000 | [-0.0114, +0.0092] | NOT_CONFIRMED | NOT_CONFIRMED |
+| D-EYE-2 | 30 | -0.0109 | 0.0000 | [-0.0254, +0.0034] | NOT_CONFIRMED | NOT_CONFIRMED |
 
 ## 2. Holm–Bonferroni correction (K=2)
 

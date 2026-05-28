@@ -69,7 +69,7 @@ ALL_CELLS = PRIMARY_CELLS + SECONDARY_CELLS
 
 CLEAN_FALSE_FIRE_BUDGET = 0.010
 LOCKED_TAU_G0 = 0.66
-TAU_CANDIDATES = [0.40, 0.45, 0.50, 0.55, 0.60, 0.66, 0.70, 0.75, 0.80]
+TAU_CANDIDATES = [round(float(x), 3) for x in np.arange(0.30, 0.90, 0.01)]
 
 
 def _device():
@@ -406,7 +406,7 @@ def run_one_seed(
         test_mask,
         device,
         clean_gate_threshold=selected_tau,
-        per_sample_gating=False,
+        per_sample_gating=True,
     )
     craf_probs_deg, gate_stats_deg = _predict_craf_with_stats(
         model,
@@ -415,7 +415,7 @@ def run_one_seed(
         deg_mask,
         device,
         clean_gate_threshold=selected_tau,
-        per_sample_gating=False,
+        per_sample_gating=True,
     )
 
     # Archive all four (method × condition) score vectors

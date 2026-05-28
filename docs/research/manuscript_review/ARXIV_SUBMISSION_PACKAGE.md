@@ -88,7 +88,7 @@ I.5.1    Models — Statistical
 ### Comments (free-text field, visible on arXiv listing)
 ```
 17 pages, 13 figures, 10 tables. Companion 24-page thesis chapter and
-runnable codebase: https://github.com/<your-handle>/AutoML_Flagship_V8
+runnable codebase: https://github.com/Pratikn03/AutoML_Flagship_V8
 (or whatever public repo URL you set). Negative-result paper:
 validation-derived drift gates misfire on natural-paired anomaly data.
 ```
