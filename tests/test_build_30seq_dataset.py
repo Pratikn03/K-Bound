@@ -1,4 +1,4 @@
-import uais_v.data.build_30seq_dataset as b30
+import uais.sequence.build_30seq_dataset as b30
 
 
 def test_build_sequences_writes_files(tmp_path, monkeypatch):
@@ -12,3 +12,4 @@ def test_build_sequences_writes_files(tmp_path, monkeypatch):
         assert arr.shape == (len(y), cfg.seq_len, cfg.n_features)
     assert (tmp_path / "X_30seq.npy").exists()
     assert (tmp_path / "y_30seq.npy").exists()
+

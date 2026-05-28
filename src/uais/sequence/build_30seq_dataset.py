@@ -1,14 +1,34 @@
 """Build 30-sequence arrays from behavior data or synthetic fallback."""
 
 from dataclasses import dataclass
+from pathlib import Path
+from typing import Optional
 
 import numpy as np
 import pandas as pd
 
 from uais.utils.logging_utils import setup_logging
+from uais.utils.paths import PROCESSED_DIR, RAW_DIR, DATA_DIR
 
-from ..paths import SEQUENCES_DIR
-from .load_datasets import load_behavior_events
+SEQUENCES_DIR = DATA_DIR / "sequences"
+
+
+def load_behavior_events(path: Optional[Path] = None, n_rows: Optional[int] = None) -> pd.DataFrame:
+    candidates = [
+        path,
+        PROCESSED_DIR / "behavior" / "r4_2_raw.parquet",
+        RAW_DIR / "behavior" / "online_shoppers_intention.csv",
+    ]
+    chosen = None
+    for p in candidates:
+        if p and Path(p).exists():
+            chosen = Path(p)
+            break
+    if not chosen:
+        raise FileNotFoundError("Could not find behavior event log (CERT or online shoppers).")
+    if chosen.suffix.lower() == ".parquet":
+        return pd.read_parquet(chosen)
+    return pd.read_csv(chosen, nrows=n_rows)
 
 
 def set_global_seed(seed: int) -> None:
