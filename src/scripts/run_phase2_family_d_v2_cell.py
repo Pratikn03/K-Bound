@@ -411,6 +411,9 @@ def run_one_seed(
     test_sids = [str(sample_ids[i]) for i in test_idx]
     score_blend = bool(rel_cfg.get("score_blend_on_gate", False))
     ignore_zero_scores = bool(rel_cfg.get("score_blend_ignore_zero_scores", True))
+    # ISSUE 3: alpha=1.0 (default) reproduces the pure score-blend; alpha<1.0
+    # mixes in the attention-fusion output so the trained model is not bypassed.
+    score_blend_alpha = float(rel_cfg.get("score_blend_alpha", 1.0))
 
     # Filter out unlabeled test samples (label == -1; from test_private which has no metadata)
     valid_test_mask = test_labels_arr != -1
@@ -448,6 +451,7 @@ def run_one_seed(
         score_index=score_idx if score_blend else None,
         categories=test_categories,
         score_blend_ignore_zero_scores=ignore_zero_scores,
+        score_blend_alpha=score_blend_alpha,
     )
     craf_probs_clean, gate_stats_clean = _predict_craf_with_stats(
         model,
@@ -478,9 +482,15 @@ def run_one_seed(
         static_p = static_probs_clean if condition == "clean" else static_probs_deg
         craf_p = craf_probs_clean if condition == "clean" else craf_probs_deg
 
+        if score_blend and score_blend_alpha < 1.0:
+            rga_method_name = f"rga_score_blend_a{score_blend_alpha:.2f}_tau{selected_tau:.2f}"
+        elif score_blend:
+            rga_method_name = f"rga_score_blend_tau{selected_tau:.2f}"
+        else:
+            rga_method_name = f"base_rga_tau{selected_tau:.2f}"
         for method, scores in (
             ("static_attention", static_p),
-            (f"base_rga_tau{selected_tau:.2f}", craf_p),
+            (rga_method_name, craf_p),
         ):
             frame = PredictionArchive.build_frame(
                 sample_ids=test_sids,

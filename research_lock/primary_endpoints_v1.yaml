@@ -1,0 +1,44 @@
+# primary_endpoints_v1.yaml (frozen)
+# The pre-registered PRIMARY metric for each benchmark family. Frozen before any
+# new test evaluation. Secondary metrics are reported but never decide a claim.
+
+version: 1
+
+global_rules:
+  threshold_selection: validation_only
+  multiplicity: Holm-Bonferroni within each confirmatory endpoint family
+  effect_reporting: report effect size + bootstrap 95% CI, not only p-value
+  no_test_driven_tuning: true
+
+families:
+  M0_mechanism:
+    primary_metric: delta_roc_auc (gated vs static) under controlled collapse
+    secondary: [clean_false_fire_rate, switching_certificate]
+    role: development_only
+
+  M1_natural_paired_industrial:
+    primary_metric: delta_roc_auc vs strongest frozen comparator on degraded-evidence endpoint
+    clean_constraint: clean_false_fire_rate <= 0.010 AND clean ROC-AUC decrease <= tolerance
+    secondary: [pr_auc, ece, brier]
+    statistics: DeLong paired + bootstrap CI + Holm
+
+  M2_heldout_transfer:
+    primary_metric: delta_roc_auc vs strongest frozen comparator on untouched dataset
+    pass: bootstrap CI excludes zero AND clean false-fire within budget AND calibration stable
+    statistics: paired bootstrap + corrected p
+
+  M3_non_vision_paired:
+    primary_metric: delta_roc_auc on degraded-evidence endpoint, same fusion interface
+    pass: positive degraded result + safe clean operation + strong-baseline comparison
+
+  M4_temporal_deployment:
+    primary_metric: monitored switching outcome over chronological windows
+    pass: low clean false-alarm + degradation detected + safe fallback on certificate invalidation
+
+endpoint_decision_rule_phase3_gate:
+  objective: maximize degraded-condition improvement
+  subject_to:
+    - clean_false_fire <= 0.010
+    - clean_roc_auc_decrease <= tolerance
+    - calibration_degradation <= tolerance
+    - transfer_effect_confirmed_on_untouched_dataset

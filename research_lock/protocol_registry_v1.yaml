@@ -1,0 +1,55 @@
+# protocol_registry_v1.yaml (frozen)
+# Evaluation protocols and their authoritative specs. New confirmatory
+# experiments must reference a protocol id frozen here.
+
+version: 1
+
+protocols:
+  family_a_supervised_paired:
+    description: RGA+ vs fixed static attention, validation-only threshold, ensemble + per-seed.
+    selection: validation_only
+    statistics: DeLong paired + Holm-Bonferroni (k=5); bootstrap CI.
+    authoritative_spec: docs/research/phase2/PHASE_2_STATISTICAL_POLICY_v2.md
+    leakage_controls: incident/category split; no test-driven tuning.
+
+  family_b_mechanism_replication:
+    description: Base RGA under coherent score collapse (zero/max attack), k=4 mean gate.
+    selection: validation_only (tau=0.66 frozen)
+    statistics: DeLong paired + Holm-Bonferroni (k=2); bootstrap CI.
+    authoritative_spec: docs/research/phase2/PHASE_2_STATISTICAL_POLICY_v2.md
+
+  rga_v2_gate_sweep:
+    description: Sensitive gate variants G1/G2/G3 clean false-fire control.
+    pass_criterion: clean false-fire <= 0.010
+    authoritative_spec: docs/research/phase2/RGA_V2_CERTIFICATE_EXTENSION_DECISION.md
+    outcome: G1/G2/G3 FAILED (FFR 1.000); not promoted.
+
+  family_d_heldout_transfer:
+    description: Validation-only-calibrated one-class multimodal transfer to Eyecandies.
+    selection: validation_only_degradation_calibrated_one_class_multimodal
+    statistics: paired t-test + bootstrap CI; clean false-fire budget <= 0.010.
+    authoritative_spec: docs/research/phase2/FAMILY_D_SELECTION_AND_STATISTICAL_POLICY_v2.md
+    outcome: NOT_CONFIRMED (sealed FAILED pending D1).
+
+  switching_certificate_retrospective:
+    description: Finite-sample bounded switching certificate (retrospective).
+    authoritative_spec: docs/research/phase2/RISK_DOMINANCE_AND_CERTIFICATE_REPORT_FINAL.md
+    code: src/uais/utils/metrics.py::bounded_switching_certificate
+    scope: retrospective only; NOT a production safety certificate.
+
+pending_protocols:
+  strong_baseline_confirmation:        # Phase 5 (decision D5)
+    status: NOT_FROZEN
+    requirement: >
+      Define every baseline before final test; train/tune on train/val only;
+      select strongest by validation only; freeze; evaluate once on untouched
+      test; store per-sample predictions for paired analysis.
+  partial_domain_failure_sweep:        # Phase 4
+    status: NOT_FROZEN
+    requirement: k-of-D collapse, missing, miscalibrated, delayed, contradictory evidence.
+  temporal_monitoring:                 # Phase 10
+    status: NOT_FROZEN
+    requirement: chronological split + sliding-window monitoring + certificate renewal + intervention policy.
+  safe_failure_under_attack:           # Phase 9
+    status: NOT_FROZEN
+    requirement: FGSM/PGD vs static and RGA/RGA+; monitor detection; abstention coverage-risk.
