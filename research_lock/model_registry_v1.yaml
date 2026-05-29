@@ -1,0 +1,74 @@
+# model_registry_v1.yaml (frozen)
+# ELARA components and gate variants with promotion status. Each maps to exactly
+# one Scenario C claim component (Base RGA / RGA+ / Router / Monitor).
+
+version: 1
+
+components:
+  static_attention:
+    role: reference_comparator
+    component: baseline
+    code: src/uais/fusion/attention/cross_modal_attention.py (AttentionFusionModel)
+
+  base_rga:
+    role: reliability_gate_mechanism
+    component: Base RGA
+    code: src/uais/fusion/attention/reliability_estimator.py (ReliabilityEstimator)
+    status: PARTIAL (B1 confirmed; sensitive gates rejected; transfer not confirmed)
+
+  rga_plus:
+    role: supervised_reliability_feature_fusion
+    component: RGA+
+    code: src/uais/fusion/attention/reliability_boosted_fusion.py (ReliabilityBoostedFusion)
+    status: CONFIRMED vs fixed static attention only (P2 open)
+
+  router:
+    role: validation_selected_model_selection
+    component: Router
+    status: NOT_INDEPENDENTLY_VALIDATED
+
+  monitor_certificate:
+    role: deployment_switching_justification
+    component: Monitor/Certificate
+    code: src/uais/utils/metrics.py (bounded_switching_certificate, calibration_monitor_report)
+    status: PARTIAL (retrospective only)
+
+gate_variants:
+  G0_mean:
+    rule: fire if mean reliability < tau
+    clean_false_fire_rate: 0.0000
+    status: REFERENCE (kept)
+  G1_minimum:
+    clean_false_fire_rate: 1.0000
+    status: REJECTED
+  G2_hybrid:
+    clean_false_fire_rate: 1.0000
+    status: REJECTED
+  G3_top_q:
+    clean_false_fire_rate: 1.0000
+    status: REJECTED
+
+reliability_estimator_candidates:   # Phase 3 grid (development only until frozen)
+  R0_current_mean_gate:
+    status: REFERENCE
+    code: ReliabilityEstimator
+  R1_category_aware:
+    status: IMPLEMENTED_EXPLORATORY
+    code: CategoryAwareReliabilityEstimator
+  R2_per_sample:
+    status: IMPLEMENTED_EXPLORATORY (genuine per-sample, not batch-broadcast)
+    code: PerSampleReliabilityEstimator
+  R3_calibrated_learned_gate:
+    status: IMPLEMENTED_EXPLORATORY
+    code: src/uais/fusion/attention/learned_gate.py (LearnedReliabilityGate)
+  R4_abstention_enabled_gate:
+    status: PARTIAL (coherence + certificate decision rule)
+    code: src/uais/fusion/attention/gate_decision_rule.py
+  R5_conformal_risk_controlled:
+    status: NOT_IMPLEMENTED
+
+session_opt_in_fixes:               # commit beb3fba; NEW EXPLORATORY
+  restore_best_weights: _train_model best-validation checkpoint restore (default on)
+  score_blend_alpha: interpolate score-blend vs attention output (default 1.0 legacy)
+  one_class_score_input_dropout: anti-tautology score-input masking (default 0.0)
+  per_sample_estimator_wiring: estimator_type=per_sample + per_sample_gating

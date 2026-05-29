@@ -1,0 +1,70 @@
+# dataset_registry_v1.yaml (frozen)
+# Classifies every dataset by pairing strength and Scenario C benchmark-family
+# role. Pairing strength values are copied from FINAL_METRICS_MANIFEST.json.
+# Roles: development | confirmation | final_audit | sealed_failed.
+# Families: M0 mechanism | M1 natural paired industrial | M2 held-out transfer
+#           | M3 non-vision paired | M4 temporal/deployment.
+
+version: 1
+authoritative_sources:
+  - docs/research/phase3/FINAL_METRICS_MANIFEST.json
+  - docs/research/phase2/PHASE_2_EXPERIMENT_REGISTRY_v2.csv
+
+datasets:
+  elara_bench_la:
+    pairing_strength: label_aligned          # NOT naturally co-observed
+    family: M0
+    role: development
+    notes: Mechanism-development and stress benchmark only; not headline evidence.
+
+  mvtec_3d_ad:
+    pairing_strength: independent_modalities  # naturally paired RGB+depth
+    family: M1
+    role: development                          # primary paired benchmark (dev side)
+    notes: Strongest natural-pairing evidence to date (A-POWERED-1/2). Upstream PatchCore is a simplified reimplementation (implementation-simplification gap, not a leaderboard result).
+
+  eyecandies:
+    pairing_strength: rgb_depth_naturally_paired
+    family: M2
+    role: sealed_failed                        # pending decision D1
+    notes: Held-out transfer NOT confirmed (D-EYE-1/2). Sealed FAILED until D1 ratified. If reclassified (Policy B) it becomes development and a NEW untouched M2 dataset is required.
+
+  visa_rgb_edge:
+    pairing_strength: derived_view_proxy
+    family: M1
+    role: development
+    notes: Secondary proxy-view evidence only (edge is RGB-derived).
+
+  mvtec_loco_ad_rgb_edge:
+    pairing_strength: derived_view_proxy
+    family: M1
+    role: development
+    notes: Secondary proxy-view evidence only.
+
+  unsw_nb15:
+    pairing_strength: naturally_structured_views
+    family: M3_candidate
+    role: development
+    notes: Structured-view fusion (paired by event identity, not deployment-time temporal fusion); small effect. Not full multimodal sensor proof.
+
+pending_acquisitions:
+  m2_new_untouched_transfer:
+    family: M2
+    role: final_audit
+    status: NOT_SELECTED            # decision D3
+    requirement: Naturally paired RGB+depth, never evaluated, sealed until one-shot final test.
+  m3_non_vision_paired:
+    family: M3
+    role: confirmation
+    status: NOT_SELECTED            # decision D4
+    requirement: Naturally co-observed non-vision domain with incident-level split and privacy/license review.
+  m4_temporal_stream:
+    family: M4
+    role: confirmation
+    status: NOT_SELECTED
+    requirement: Chronological stream from one domain for monitoring/certificate evidence.
+
+scenario_c_minimum_dataset_bar:
+  - ">=2 naturally paired industrial datasets (1 development, 1 untouched transfer)"
+  - ">=1 naturally paired non-industrial domain"
+  - ">=1 temporal/deployment-style stream"

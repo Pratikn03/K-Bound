@@ -1,0 +1,35 @@
+# frozen_test_sets_v1.yaml (frozen)
+# Declares which test sets are sealed, development, or final-unseen audit, to
+# enforce "no test-driven tuning". A sealed/final set may be evaluated ONCE.
+
+version: 1
+
+sealed_failed:
+  eyecandies_v3_heldout:
+    reason: Already evaluated; transfer NOT confirmed. Re-tuning a new gate on
+      this same test set and calling it held-out confirmation is PROHIBITED.
+    record: research_lock/family_d_failure_record.md
+    status_pending_decision: D1   # Policy A keeps sealed; Policy B reclassifies to development.
+
+development:
+  - elara_bench_la
+  - mvtec_3d_ad           # currently development side of M1
+  - visa_rgb_edge
+  - mvtec_loco_ad_rgb_edge
+  - unsw_nb15
+
+final_unseen_audit:
+  m2_new_untouched_transfer:
+    status: NOT_ACQUIRED      # decision D3
+    rule: Evaluate exactly once after the Phase-3 gate + Phase-5 baseline are frozen.
+  m3_non_vision_paired:
+    status: NOT_ACQUIRED      # decision D4
+  m4_temporal_stream:
+    status: NOT_ACQUIRED
+
+enforcement:
+  - A test set listed under sealed_failed or final_unseen_audit must NOT inform
+    model selection, gate tuning, or hyperparameter choices.
+  - Evaluation on a final_unseen_audit set requires the endpoint, baseline, and
+    statistics to already be frozen in research_lock/.
+  - Any violation invalidates the confirmatory status of the result.
