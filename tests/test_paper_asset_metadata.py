@@ -190,7 +190,16 @@ def test_fusion_configs_use_validation_threshold_selection():
 
     for config_path in config_paths:
         cfg = load_yaml(config_path)
-        assert cfg["evaluation"]["decision_threshold"] == "val_f1"
+        # `decision_threshold` lives under `prediction_archive` after the
+        # 67d8887 refactor that extracted the reusable training loop.
+        # The test's intent is the value, not the block location.
+        block = cfg.get("evaluation", {}) if "decision_threshold" in cfg.get("evaluation", {}) \
+            else cfg.get("prediction_archive", {})
+        assert block.get("decision_threshold") == "val_f1", (
+            f"{config_path}: expected decision_threshold=val_f1 in either "
+            f"`evaluation` or `prediction_archive`, got "
+            f"{block.get('decision_threshold')!r}"
+        )
 
 
 def test_hard_real_fusion_config_targets_distinct_hard_artifacts():

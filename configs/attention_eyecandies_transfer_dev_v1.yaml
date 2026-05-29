@@ -1,0 +1,73 @@
+# Eyecandies development — transfer pipeline v1 (Policy B, non-confirmatory)
+
+data:
+  path: experiments/fusion/eyecandies_inputs.csv
+  format: csv
+  id_column: sample_id
+  domain_column: domain
+  label_column: label
+  score_column: score
+  confidence_column: confidence
+  category_column: category
+  split_column: fusion_split
+  embedding_prefix: embedding_
+  domain_order: [rgb, depth]
+
+model:
+  num_domains: 2
+  embed_dim: 48
+  num_heads: 4
+  num_layers: 1
+  dropout: 0.1
+  use_attention: true
+  use_confidence: true
+  use_input_confidence: true
+  use_domain_embeddings: true
+  use_positional_embeddings: true
+  use_missing_embedding: true
+
+training:
+  seed: 42
+  batch_size: 64
+  epochs: 20
+  lr: 0.001
+  weight_decay: 0.01
+  domain_dropout: 0.15
+  split_column: fusion_split
+  train_split_values: [train]
+  val_split_values: [validation]
+  test_split_values: [test]
+  early_stopping: 5
+  early_stopping_metric: pr_auc
+  restore_best_weights: true
+
+evaluation:
+  seeds: [42]
+  n_bootstrap: 200
+  decision_threshold: val_f1
+
+prediction_archive:
+  enabled: true
+  root: elara_master_c/predictions/development
+  experiment_id: EYECANDIES-TRANSFER-DEV-V1
+  benchmark: Eyecandies
+  protocol: family_d_development_transfer_v1
+  analysis_family: D
+  pairing_strength: naturally_paired_rgb_depth
+
+reliability:
+  ece_weight: 0.45
+  ks_weight: 0.35
+  sharpness_weight: 0.20
+  mean_gate_threshold: 0.66
+
+calibration_transfer:
+  enabled: true
+  dataset_key: eyecandies_dev
+  lock_path: elara_master_c/models/calibrators/calibrator_lock_v1.json
+
+gate_decision_rule:
+  enabled: true
+  coherence_min: 0.5
+  margin_epsilon: 0.0
+  tau: 0.66

@@ -45,3 +45,14 @@ Do **not** train one giant end-to-end model for all claims. Follow stages in
 
 Policy **B** is ratified: Eyecandies is **development-only**. Final transfer (P4)
 requires a **new untouched** RGB+depth dataset (`m2_new_untouched_transfer`).
+
+## Transfer pipeline v1 (gate decision + frozen calibrators)
+
+```bash
+cd /Volumes/T9/uav/AutoML_Flagship_V8
+PYTHONPATH=src .venv/bin/python src/scripts/scenario_c/run_transfer_development_pipeline.py --dry-run
+PYTHONPATH=src .venv/bin/python src/scripts/scenario_c/run_transfer_development_pipeline.py
+```
+
+Configs: `configs/attention_eyecandies_transfer_dev_v1.yaml`,
+`configs/attention_m2_external_3d_adam_transfer_v1.yaml`.

@@ -56,6 +56,16 @@ from uais.fusion.attention.counterfactual_explainer import CounterfactualDomainE
 from uais.fusion.attention.cross_modal_attention import AttentionFusionModel
 from uais.fusion.attention.learned_gate import LearnedGateConfig, LearnedReliabilityGate
 from uais.fusion.attention.meta_router import fit_rga_meta_router
+from uais.fusion.attention.frozen_calibrators import (
+    FrozenCalibratorBundle,
+    apply_calibrators_to_features,
+    load_calibrator_bundle,
+)
+from uais.fusion.attention.fusion_inference import (
+    GateDecisionCalibration,
+    build_gate_decision_calibration,
+    decide_switch_batch,
+)
 from uais.fusion.attention.reliability_boosted_fusion import ReliabilityBoostedFusion
 from uais.fusion.attention.reliability_estimator import (
     CategoryAwareReliabilityEstimator,
@@ -101,6 +111,35 @@ def _resolve(p: str | Path) -> Path:
     return PROJECT_ROOT / path
 
 
+def _coerce_anomaly_labels(labels: np.ndarray) -> np.ndarray:
+    """Map anomaly labels to binary {0, 1}; keep -1 for unlabeled (Eyecandies test_private)."""
+    arr = np.asarray(labels, dtype=np.int64)
+    return np.where(arr > 0, 1, np.where(arr < 0, -1, 0))
+
+
+def _filter_labeled_test_indices(
+    test_idx: np.ndarray,
+    labels: np.ndarray,
+    *,
+    sample_ids: list | None = None,
+    sample_categories: np.ndarray | None = None,
+) -> tuple[np.ndarray, int]:
+    """Drop test rows with label == -1 (unlabeled); return filtered idx and n_dropped."""
+    test_labels = np.asarray(labels)[test_idx]
+    valid = test_labels >= 0
+    n_dropped = int((~valid).sum())
+    if n_dropped:
+        logger.info(
+            "Excluding %d unlabeled test rows (label=-1); evaluating %d labeled test rows.",
+            n_dropped,
+            int(valid.sum()),
+        )
+    filtered = test_idx[valid]
+    if filtered.size == 0:
+        raise ValueError("No labeled test samples remain after excluding label=-1 rows.")
+    return filtered, n_dropped
+
+
 def _load_data(cfg: dict):
     data_cfg = cfg.get("data", {})
     train_cfg = cfg.get("training", {})
@@ -136,6 +175,7 @@ def _load_data(cfg: dict):
     )
     if labels is None:
         raise ValueError("Label column required for experiment.")
+    labels = _coerce_anomaly_labels(labels)
     split_column = train_cfg.get("split_column") or data_cfg.get("split_column")
     sample_splits = None
     if split_column:
@@ -603,6 +643,8 @@ def _predict_craf(
     batch_size: int = 256,
     clean_gate_threshold: float = 0.66,
     per_sample_gating: bool = False,
+    gate_decision_rule_cfg: dict | None = None,
+    gate_decision_calibration: GateDecisionCalibration | None = None,
 ) -> np.ndarray:
     probs, _ = _predict_craf_with_stats(
         model,
@@ -613,6 +655,8 @@ def _predict_craf(
         batch_size=batch_size,
         clean_gate_threshold=clean_gate_threshold,
         per_sample_gating=per_sample_gating,
+        gate_decision_rule_cfg=gate_decision_rule_cfg,
+        gate_decision_calibration=gate_decision_calibration,
     )
     return probs
 
@@ -666,6 +710,8 @@ def _predict_craf_with_stats(
     categories: np.ndarray | None = None,
     score_blend_ignore_zero_scores: bool = True,
     score_blend_alpha: float = 1.0,
+    gate_decision_rule_cfg: dict | None = None,
+    gate_decision_calibration: GateDecisionCalibration | None = None,
 ) -> tuple[np.ndarray, dict[str, float | int]]:
     """Predict with reliability-gated attention weights.
 
@@ -695,6 +741,10 @@ def _predict_craf_with_stats(
     reliability_numer = 0.0
     min_reliability_numer = 0.0
     reliability_denom = 0
+    coherence_numer = 0.0
+    coherence_denom = 0
+    switch_allowed_batches = 0
+    use_gate_decision = bool(gate_decision_rule_cfg and gate_decision_rule_cfg.get("enabled"))
     for start in range(0, n, batch_size):
         end = min(start + batch_size, n)
         feat_np = features[start:end]
@@ -722,10 +772,26 @@ def _predict_craf_with_stats(
             min_reliability_numer += float(gate_stats["min_reliability"]) * batch_n
             reliability_denom += batch_n
 
-        if per_sample_gating or learned_gate is not None:
+        if use_gate_decision or per_sample_gating or learned_gate is not None:
             if learned_gate is not None:
                 # Learned gate overrides the heuristic threshold.
                 gate_per_sample = learned_gate.decide(craf_w, mask_np)
+            elif use_gate_decision:
+                tau = float(gate_decision_rule_cfg.get("tau", clean_gate_threshold))
+                decision = decide_switch_batch(
+                    craf_w,
+                    mask_np,
+                    tau,
+                    gate_decision_calibration,
+                    coherence_min=float(gate_decision_rule_cfg.get("coherence_min", 0.5)),
+                    margin_epsilon=float(gate_decision_rule_cfg.get("margin_epsilon", 0.0)),
+                )
+                gate_per_sample = decision.decisions
+                if np.isfinite(decision.coherence):
+                    coherence_numer += float(decision.coherence) * batch_n
+                    coherence_denom += batch_n
+                if decision.switch_allowed:
+                    switch_allowed_batches += 1
             else:
                 gate_per_sample = estimator.gate_decisions(
                     craf_w,
@@ -810,8 +876,31 @@ def _predict_craf_with_stats(
         "min_gate_threshold": estimator.min_gate_threshold,
         "score_blend_on_gate": bool(score_blend_on_gate and score_index is not None),
         "score_blend_alpha": float(score_blend_alpha),
+        "gate_decision_rule": use_gate_decision,
+        "mean_batch_coherence": float(coherence_numer / coherence_denom) if coherence_denom else float("nan"),
+        "switch_allowed_batches": int(switch_allowed_batches),
     }
     return np.concatenate(probs), stats
+
+
+def _apply_calibration_transfer(
+    cfg: dict,
+    features: np.ndarray,
+    masks: np.ndarray,
+    domain_order: list[str],
+    score_index: int,
+) -> tuple[np.ndarray, FrozenCalibratorBundle | None]:
+    cal_cfg = cfg.get("calibration_transfer") or {}
+    if not cal_cfg.get("enabled"):
+        return features, None
+    dataset_key = str(cal_cfg.get("dataset_key", ""))
+    if not dataset_key:
+        raise ValueError("calibration_transfer.enabled requires dataset_key")
+    lock_rel = cal_cfg.get("lock_path", "elara_master_c/models/calibrators/calibrator_lock_v1.json")
+    root = PROJECT_ROOT.parent if PROJECT_ROOT.name == "src" else PROJECT_ROOT
+    bundle = load_calibrator_bundle(root, dataset_key, root / lock_rel)
+    out = apply_calibrators_to_features(features, masks, domain_order, bundle, score_index)
+    return out, bundle
 
 
 # Baseline models are in baselines.py — run_baseline_suite() is the entry point.
@@ -1976,6 +2065,8 @@ def _run_experiment_arrays(
     train_cfg = cfg.get("training", {})
     eval_cfg = cfg.get("evaluation", {})
     rel_cfg = cfg.get("reliability", {})
+    gate_decision_cfg = cfg.get("gate_decision_rule") or {}
+    cal_transfer_cfg = cfg.get("calibration_transfer") or {}
     craf_cfg = cfg.get("craf", {})
     rga_plus_cfg = cfg.get("rga_plus", {})
     mechanism_cfg = craf_cfg.get("mechanism_isolation", {})
@@ -1987,6 +2078,8 @@ def _run_experiment_arrays(
     # Per-sample RGA gating (paper formalism r_{i,d}). Default False preserves
     # batch-level gating used in current paper results.
     per_sample_gating = bool(rel_cfg.get("per_sample_gating", False))
+    if gate_decision_cfg.get("enabled"):
+        per_sample_gating = True
     n_bootstrap = int(eval_cfg.get("n_bootstrap", 200))
     bootstrap_alpha = float(eval_cfg.get("bootstrap_alpha", 0.05))
     threshold_strategy = eval_cfg.get("decision_threshold_strategy", eval_cfg.get("decision_threshold", "fixed_0p5"))
@@ -2013,6 +2106,7 @@ def _run_experiment_arrays(
     per_seed_k_domain_rows: list[dict] = []
     per_seed_category_aware_rows: list[dict] = []
     per_seed_causal_attribution_rows: list[dict] = []
+    per_seed_gate_certificates: list[dict] = []
     category_aware_enabled = bool(rel_cfg.get("category_aware", False)) and sample_categories is not None
 
     for seed in seeds:
@@ -2021,6 +2115,12 @@ def _run_experiment_arrays(
         logger.info("Training and evaluating reliability-gated fusion (seed=%s)", actual_seed)
 
         train_idx, val_idx, test_idx = _split(labels, {**train_cfg, "seed": actual_seed}, split_values=sample_splits)
+        test_idx, _n_unlabeled = _filter_labeled_test_indices(
+            test_idx,
+            labels,
+            sample_ids=sample_ids,
+            sample_categories=sample_categories,
+        )
         train_loader, val_loader, _ = _make_loaders(
             features,
             masks,
@@ -2037,6 +2137,22 @@ def _run_experiment_arrays(
 
         estimator = _make_reliability_estimator(rel_cfg, domain_order, score_index)
         estimator.fit(features[val_idx], masks[val_idx], labels[val_idx])
+
+        gate_decision_calibration: GateDecisionCalibration | None = None
+        if gate_decision_cfg.get("enabled"):
+            gate_decision_calibration = build_gate_decision_calibration(
+                model,
+                estimator,
+                features[val_idx],
+                masks[val_idx],
+                labels[val_idx],
+                device,
+                tau=float(gate_decision_cfg.get("tau", clean_gate_threshold)),
+                margin_epsilon=float(gate_decision_cfg.get("margin_epsilon", 0.0)),
+            )
+            per_seed_gate_certificates.append(
+                {"seed": actual_seed, **gate_decision_calibration.as_dict()}
+            )
 
         val_feat = features[val_idx]
         val_mask = masks[val_idx]
@@ -2105,6 +2221,8 @@ def _run_experiment_arrays(
             device,
             clean_gate_threshold=clean_gate_threshold,
             per_sample_gating=per_sample_gating,
+            gate_decision_rule_cfg=gate_decision_cfg if gate_decision_cfg.get("enabled") else None,
+            gate_decision_calibration=gate_decision_calibration,
         )
         craf_probs = _predict_craf(
             model,
@@ -2114,6 +2232,8 @@ def _run_experiment_arrays(
             device,
             clean_gate_threshold=clean_gate_threshold,
             per_sample_gating=per_sample_gating,
+            gate_decision_rule_cfg=gate_decision_cfg if gate_decision_cfg.get("enabled") else None,
+            gate_decision_calibration=gate_decision_calibration,
         )
 
         # Post-hoc polarity calibration. When the supervised fusion head is
@@ -2238,7 +2358,26 @@ def _run_experiment_arrays(
                 rel_weights.sum(axis=1) / np.maximum(n_present, 1.0),
                 0.0,
             )
-            gate_fired_arr = mean_r < clean_gate_threshold
+            if gate_decision_cfg.get("enabled") and gate_decision_calibration is not None:
+                fired_parts: list[np.ndarray] = []
+                tau_g = float(gate_decision_cfg.get("tau", clean_gate_threshold))
+                for g_start in range(0, test_feat.shape[0], 256):
+                    g_end = min(g_start + 256, test_feat.shape[0])
+                    rel_b = estimator.compute_reliability_weights(
+                        test_feat[g_start:g_end], test_mask[g_start:g_end]
+                    )
+                    dec = decide_switch_batch(
+                        rel_b,
+                        test_mask[g_start:g_end],
+                        tau_g,
+                        gate_decision_calibration,
+                        coherence_min=float(gate_decision_cfg.get("coherence_min", 0.5)),
+                        margin_epsilon=float(gate_decision_cfg.get("margin_epsilon", 0.0)),
+                    )
+                    fired_parts.append(dec.decisions)
+                gate_fired_arr = np.concatenate(fired_parts)
+            else:
+                gate_fired_arr = mean_r < clean_gate_threshold
             archive = PredictionArchive(root=_resolve(arch_cfg.get("root", "elara_master_c/predictions/development")))
             test_ids_list = [sample_ids[int(i)] for i in test_idx]
             write_seed_archives(
@@ -2685,6 +2824,11 @@ def _run_experiment_arrays(
         "table_9_causal_attribution_per_seed": per_seed_causal_attribution_rows,
         "table_9_causal_attribution": _aggregate_causal_attribution(per_seed_causal_attribution_rows, domain_order),
         "cda_validation": cda,
+        "transfer_pipeline": {
+            "calibration_transfer": cal_transfer_cfg,
+            "gate_decision_rule": gate_decision_cfg,
+            "per_seed_gate_certificates": per_seed_gate_certificates,
+        },
         "failure_case_analysis": {
             "per_seed": per_seed_failure_cases,
             "representative_cases": per_seed_failure_cases[-1]["cases"] if per_seed_failure_cases else [],
@@ -2721,6 +2865,14 @@ def run_experiment(cfg: dict, seed_override: int | None = None) -> dict:
         sample_splits,
         sample_categories,
     ) = _load_data(cfg)
+    cal_bundle: FrozenCalibratorBundle | None = None
+    if (cfg.get("calibration_transfer") or {}).get("enabled"):
+        features, cal_bundle = _apply_calibration_transfer(cfg, features, masks, domain_order, score_index or 0)
+        logger.info(
+            "Applied frozen calibrators dataset_key=%s domains=%s",
+            cal_bundle.dataset_key if cal_bundle else "?",
+            list((cal_bundle.models.keys() if cal_bundle else [])),
+        )
     return _run_experiment_arrays(
         cfg,
         features,
