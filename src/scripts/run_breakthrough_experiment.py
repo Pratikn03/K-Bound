@@ -21,6 +21,7 @@ Usage:
 from __future__ import annotations
 
 import argparse
+import copy
 import json
 import logging
 import math
@@ -351,15 +352,62 @@ def _pseudo_targets_from_domain_scores(
     masks: np.ndarray,
     score_index: int,
     aggregation: str = "max",
+    quantile: float = 0.75,
+    trim_frac: float = 0.2,
 ) -> np.ndarray:
-    """Weak supervision from per-domain anomaly scores (no label column required)."""
+    """Weak supervision from per-domain anomaly scores (no label column required).
+
+    Note on construct validity (ISSUE 4): the ``max`` target is read directly
+    off a single input score column, so a model that simply copies the strongest
+    domain score can drive the loss to ~0 without learning any cross-domain
+    reliability structure. The ``median``/``quantile``/``trimmed_mean``
+    aggregations require integrating several domains and are therefore less
+    trivially copyable; pair them with ``one_class_score_input_dropout`` in
+    ``_train_model`` to further break the copy-the-input shortcut. ``max`` is
+    kept as the default so legacy one-class runs reproduce exactly.
+    """
     scores = features[:, :, score_index].astype(float).copy()
     scores[masks] = np.nan
-    if aggregation == "mean":
-        pseudo = np.nanmean(scores, axis=1)
-    else:
-        pseudo = np.nanmax(scores, axis=1)
+    with np.errstate(invalid="ignore"):
+        if aggregation == "mean":
+            pseudo = np.nanmean(scores, axis=1)
+        elif aggregation == "median":
+            pseudo = np.nanmedian(scores, axis=1)
+        elif aggregation == "quantile":
+            pseudo = np.nanquantile(scores, float(quantile), axis=1)
+        elif aggregation == "trimmed_mean":
+            lo = np.nanquantile(scores, float(trim_frac), axis=1, keepdims=True)
+            hi = np.nanquantile(scores, 1.0 - float(trim_frac), axis=1, keepdims=True)
+            kept = np.where((scores >= lo) & (scores <= hi), scores, np.nan)
+            pseudo = np.nanmean(kept, axis=1)
+        else:
+            pseudo = np.nanmax(scores, axis=1)
     return np.nan_to_num(pseudo, nan=0.5).astype(np.float32)
+
+
+def _dropout_score_input(
+    feats: "torch.Tensor",
+    masks: "torch.Tensor",
+    score_index: int,
+    p: float,
+) -> "torch.Tensor":
+    """Randomly neutralize the score column of present domains during training.
+
+    When one-class supervision derives the target from domain scores, leaving
+    those same scores fully visible in the input lets the model copy them
+    (the ISSUE 4 tautology). Replacing a fraction ``p`` of present-domain score
+    entries with the neutral value 0.5 forces the fusion head to rely on the
+    domain embeddings and cross-domain structure instead. Inference is left
+    untouched, mirroring the existing training-only ``domain_dropout``.
+    """
+    if p <= 0.0:
+        return feats
+    present = ~masks
+    drop = (torch.rand(present.shape, device=feats.device) < float(p)) & present
+    out = feats.clone()
+    score_col = out[:, :, score_index]
+    out[:, :, score_index] = torch.where(drop, torch.full_like(score_col, 0.5), score_col)
+    return out
 
 
 def _reliability_weighted_domain_scores(
@@ -399,11 +447,22 @@ def _train_model(
     )
     scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, patience=3, factor=0.5)
     patience = int(t_cfg.get("early_stopping", 5))
+    # Restore the best-validation checkpoint after early stopping. Default True
+    # (correct behaviour). Set restore_best_weights: false to reproduce the
+    # legacy last-epoch behaviour that produced the pre-fix locked artifacts.
+    restore_best_weights = bool(t_cfg.get("restore_best_weights", True))
     best_val_loss = float("inf")
+    best_state: dict[str, Any] | None = None
     no_improve = 0
 
     one_class_scores = bool(t_cfg.get("one_class_score_supervision", False)) and score_index is not None
     pseudo_agg = str(t_cfg.get("one_class_score_aggregation", "max"))
+    pseudo_quantile = float(t_cfg.get("one_class_score_quantile", 0.75))
+    pseudo_trim_frac = float(t_cfg.get("one_class_score_trim_frac", 0.2))
+    # ISSUE 4: optionally neutralize a fraction of present-domain score inputs
+    # during training so the model cannot trivially copy the supervision target.
+    # Default 0.0 -> legacy bit-exact behaviour.
+    score_input_dropout = float(t_cfg.get("one_class_score_input_dropout", 0.0)) if one_class_scores else 0.0
 
     for _epoch in range(int(t_cfg.get("epochs", 20))):
         model.train()
@@ -413,17 +472,21 @@ def _train_model(
             if domain_dropout_p > 0.0:
                 msks = apply_domain_dropout(msks, drop_prob=domain_dropout_p)
             optimizer.zero_grad()
-            logits, attn_weights, confidences = model(feats, key_padding_mask=msks)
             if one_class_scores:
                 pseudo = _pseudo_targets_from_domain_scores(
                     feats.detach().cpu().numpy(),
                     msks.detach().cpu().numpy(),
                     score_index,
                     aggregation=pseudo_agg,
+                    quantile=pseudo_quantile,
+                    trim_frac=pseudo_trim_frac,
                 )
                 targets = torch.tensor(pseudo, dtype=torch.float32, device=device)
+                model_feats = _dropout_score_input(feats, msks, score_index, score_input_dropout)
             else:
                 targets = lbls
+                model_feats = feats
+            logits, attn_weights, confidences = model(model_feats, key_padding_mask=msks)
             loss, _ = attention_fusion_loss(
                 logits.squeeze(-1),
                 targets,
@@ -447,6 +510,8 @@ def _train_model(
                         msks.cpu().numpy(),
                         score_index,
                         aggregation=pseudo_agg,
+                        quantile=pseudo_quantile,
+                        trim_frac=pseudo_trim_frac,
                     )
                     targets = torch.tensor(pseudo, dtype=torch.float32, device=device)
                 else:
@@ -464,10 +529,18 @@ def _train_model(
         if val_loss < best_val_loss - 1e-5:
             best_val_loss = val_loss
             no_improve = 0
+            if restore_best_weights:
+                best_state = copy.deepcopy(model.state_dict())
         else:
             no_improve += 1
             if no_improve >= patience:
                 break
+
+    # Early stopping leaves the model at the patience-th epoch *after* the best
+    # one; restore the best-validation checkpoint so reported metrics reflect
+    # the selected model rather than a degraded later epoch.
+    if restore_best_weights and best_state is not None:
+        model.load_state_dict(best_state)
 
 
 @torch.no_grad()
@@ -743,6 +816,7 @@ def _predict_craf_with_stats(
     score_index: int | None = None,
     categories: np.ndarray | None = None,
     score_blend_ignore_zero_scores: bool = True,
+    score_blend_alpha: float = 1.0,
 ) -> tuple[np.ndarray, dict[str, float | int]]:
     """Predict with reliability-gated attention weights.
 
@@ -756,6 +830,13 @@ def _predict_craf_with_stats(
         threshold (via ``estimator.gate_decisions``); samples above threshold
         keep the static path, samples below get the reliability-injected path.
         Matches the per-sample r_{i,d} formalism stated in the ELARA paper.
+
+    ISSUE 3 (``score_blend_alpha``): when ``score_blend_on_gate`` is set, the
+    gated output is a reliability-weighted average of the raw domain scores,
+    which entirely bypasses the trained attention model. ``score_blend_alpha``
+    interpolates between that score blend (alpha=1.0, legacy default) and the
+    attention-fusion output (alpha=0.0), so the attention model is no longer
+    silently discarded when alpha < 1.0.
     """
     model.eval()
     probs = []
@@ -823,6 +904,10 @@ def _predict_craf_with_stats(
                     ignore_zero_scores=score_blend_ignore_zero_scores,
                 )
                 probs_craf = torch.tensor(probs_craf_np, dtype=torch.float32, device=device)
+                if score_blend_alpha < 1.0:
+                    logits_craf, _ = model.fusion(domain_embeds, key_padding_mask=mask_t, confidence_weights=craf_t)
+                    probs_attn = torch.sigmoid(logits_craf.squeeze(-1))
+                    probs_craf = score_blend_alpha * probs_craf + (1.0 - score_blend_alpha) * probs_attn
             else:
                 logits_craf, _ = model.fusion(domain_embeds, key_padding_mask=mask_t, confidence_weights=craf_t)
                 probs_craf = torch.sigmoid(logits_craf.squeeze(-1))
@@ -841,15 +926,22 @@ def _predict_craf_with_stats(
         adapted_samples += batch_n
         adapted_batches += 1
         if score_blend_on_gate and score_index is not None:
-            probs.append(
-                _reliability_weighted_domain_scores(
-                    feat_np,
-                    mask_np,
-                    craf_w,
-                    score_index,
-                    ignore_zero_scores=score_blend_ignore_zero_scores,
-                )
+            blend_np = _reliability_weighted_domain_scores(
+                feat_np,
+                mask_np,
+                craf_w,
+                score_index,
+                ignore_zero_scores=score_blend_ignore_zero_scores,
             )
+            if score_blend_alpha >= 1.0:
+                probs.append(blend_np)
+                continue
+            craf_t = torch.tensor(craf_w, dtype=torch.float32, device=device).masked_fill(mask_t, 0.0)
+            embeds = [enc(feat_t[:, i, :]) for i, enc in enumerate(model.domain_encoders)]
+            domain_embeds = torch.stack(embeds, dim=1)
+            logits, _ = model.fusion(domain_embeds, key_padding_mask=mask_t, confidence_weights=craf_t)
+            probs_attn = torch.sigmoid(logits.squeeze(-1)).cpu().numpy()
+            probs.append(score_blend_alpha * blend_np + (1.0 - score_blend_alpha) * probs_attn)
             continue
         craf_t = torch.tensor(craf_w, dtype=torch.float32, device=device)
         craf_t = craf_t.masked_fill(mask_t, 0.0)
@@ -867,6 +959,8 @@ def _predict_craf_with_stats(
         "learned_gate": bool(learned_gate is not None),
         "gate_mode": estimator.gate_mode,
         "min_gate_threshold": estimator.min_gate_threshold,
+        "score_blend_on_gate": bool(score_blend_on_gate and score_index is not None),
+        "score_blend_alpha": float(score_blend_alpha),
     }
     return np.concatenate(probs), stats
 
