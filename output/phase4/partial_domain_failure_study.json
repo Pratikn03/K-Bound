@@ -1,0 +1,106 @@
+{
+  "study": "partial_domain_failure_T3",
+  "label": "NEW EXPLORATORY (development/synthetic only; not confirmatory)",
+  "seed": 0,
+  "n": 1500,
+  "n_domains": 8,
+  "false_fire_budget": 0.01,
+  "selected_tau_on_validation": 0.5640859603881836,
+  "benefit_margin": 0.005,
+  "rows": [
+    {
+      "k_failed_domains": 0,
+      "auc_static": 0.998542813624799,
+      "auc_soft_rga": 0.9986066320061946,
+      "auc_hard_gate_g0": 0.998542813624799,
+      "delta_soft_vs_static": 6.381838139557505e-05,
+      "delta_hard_vs_static": 0.0,
+      "gate_fire_rate": 0.0,
+      "mean_reliability": 0.688021719455719
+    },
+    {
+      "k_failed_domains": 1,
+      "auc_static": 0.9966808790338202,
+      "auc_soft_rga": 0.9977473506885272,
+      "auc_hard_gate_g0": 0.9966808790338202,
+      "delta_soft_vs_static": 0.0010664716547069686,
+      "delta_hard_vs_static": 0.0,
+      "gate_fire_rate": 0.0,
+      "mean_reliability": 0.6265920996665955
+    },
+    {
+      "k_failed_domains": 2,
+      "auc_static": 0.9792381253795687,
+      "auc_soft_rga": 0.991232497070371,
+      "auc_hard_gate_g0": 0.9792381253795687,
+      "delta_soft_vs_static": 0.011994371690802308,
+      "delta_hard_vs_static": 0.0,
+      "gate_fire_rate": 0.0,
+      "mean_reliability": 0.6787819862365723
+    },
+    {
+      "k_failed_domains": 3,
+      "auc_static": 0.9533925557157941,
+      "auc_soft_rga": 0.9712536574979531,
+      "auc_hard_gate_g0": 0.9712536574979531,
+      "delta_soft_vs_static": 0.01786110178215905,
+      "delta_hard_vs_static": 0.01786110178215905,
+      "gate_fire_rate": 1.0,
+      "mean_reliability": 0.5532144904136658
+    },
+    {
+      "k_failed_domains": 4,
+      "auc_static": 0.8762030716546678,
+      "auc_soft_rga": 0.908654653397207,
+      "auc_hard_gate_g0": 0.908654653397207,
+      "delta_soft_vs_static": 0.03245158174253915,
+      "delta_hard_vs_static": 0.03245158174253915,
+      "gate_fire_rate": 1.0,
+      "mean_reliability": 0.5241842865943909
+    },
+    {
+      "k_failed_domains": 5,
+      "auc_static": 0.8083276699227866,
+      "auc_soft_rga": 0.8346748110604361,
+      "auc_hard_gate_g0": 0.8346748110604361,
+      "delta_soft_vs_static": 0.026347141137649466,
+      "delta_hard_vs_static": 0.026347141137649466,
+      "gate_fire_rate": 1.0,
+      "mean_reliability": 0.4917430281639099
+    },
+    {
+      "k_failed_domains": 6,
+      "auc_static": 0.7343658774273504,
+      "auc_soft_rga": 0.8174584743206023,
+      "auc_hard_gate_g0": 0.8174584743206023,
+      "delta_soft_vs_static": 0.08309259689325188,
+      "delta_hard_vs_static": 0.08309259689325188,
+      "gate_fire_rate": 1.0,
+      "mean_reliability": 0.5347961187362671
+    },
+    {
+      "k_failed_domains": 7,
+      "auc_static": 0.5877098561108227,
+      "auc_soft_rga": 0.6536427532100645,
+      "auc_hard_gate_g0": 0.6536427532100645,
+      "delta_soft_vs_static": 0.06593289709924177,
+      "delta_hard_vs_static": 0.06593289709924177,
+      "gate_fire_rate": 1.0,
+      "mean_reliability": 0.5092096328735352
+    },
+    {
+      "k_failed_domains": 8,
+      "auc_static": 0.49416221743539884,
+      "auc_soft_rga": 0.4942104116202466,
+      "auc_hard_gate_g0": 0.4942104116202466,
+      "delta_soft_vs_static": 4.819418484774962e-05,
+      "delta_hard_vs_static": 4.819418484774962e-05,
+      "gate_fire_rate": 1.0,
+      "mean_reliability": 0.4660086929798126
+    }
+  ],
+  "clean_false_fire_rate": 0.0,
+  "first_k_with_benefit_soft": 2,
+  "first_k_with_benefit_hard": 3,
+  "finding": "Per-domain soft reliability weighting handles partial (k>=1) failures; the hard batch mean gate is diluted at low k (T3) and begins to help only after enough domains fail to drag the mean reliability below tau."
+}
