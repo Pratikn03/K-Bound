@@ -129,7 +129,7 @@ def main() -> int:
 
     steps = [
         ([py, "src/scripts/scenario_c/confirmatory_statistics.py"], "Confirmatory statistics"),
-        ([py, "src/scripts/scenario_c/audit_gate_decision_rule_e2e.py"], "T6 GDR re-audit"),
+        ([py, "src/scripts/audit_gate_decision_rule_e2e.py"], "T6 GDR re-audit"),
         ([py, "src/scripts/scenario_c/audit_checklist_progress.py"], "Checklist audit"),
     ]
     for cmd, label in steps:

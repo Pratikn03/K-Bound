@@ -1,0 +1,21 @@
+claim_id,claim_text,evidence_found,evidence_path,reported_value,verified_value,verification_status,comment
+C01,ELARA is score-level multimodal anomaly fusion,Yes,src/uais/fusion/attention/; configs/attention_real_fusion.yaml,—,—,VERIFIED,Architecture in fusion head
+C02,Base RGA uses reliability-gated attention,Yes,src/uais/fusion/attention/,—,—,VERIFIED,CRAF naming in some artifacts
+C03,"Reliability uses ECE, KS drift, sharpness",Yes,configs/attention_real_fusion.yaml,0.45/0.35/0.20,0.45/0.35/0.20,VERIFIED,tau=0.66 in same config
+C04,Mean-gate threshold tau=0.66,Yes,configs/attention_real_fusion.yaml,0.66,0.66,VERIFIED,—
+C05,RGA+ separate supervised extension,Partial,BASELINE_STATE_v1.md,—,—,PARTIALLY VERIFIED,Code paths exist; naming mixed
+C06,Attention hidden=48 heads=4 layers=1 epochs=25,Yes,configs/attention_real_fusion.yaml,48/4/1/25,48/4/1/25,VERIFIED,domain_dropout 0.15
+C07,Seeds 42-46,Yes,m2_confirmatory_sealed_seed*.json,42-46,42-46,VERIFIED,Some tables n_seeds=1
+C08,ELARA-Bench-LA label-aligned not co-observed,Yes,real_domain_fusion_metadata.json,natural_pairing:false,false,VERIFIED,—
+C09,MVTec 3D-AD naturally paired RGB+depth,Yes,mvtec3d_fusion_metadata.json,true,true,VERIFIED,Simplified expert pipeline
+C10,MVTec canonical one-class as diagnostic,Yes,protocol_registry; BASELINE_STATE,—,—,VERIFIED,Separate from supervised-paired
+C11,Eyecandies transfer not confirmed,Yes,family_d_failure_record.md,negative delta,negative,VERIFIED,Preserved failure
+C12,Family A RGA+ vs static five cells,Yes,family_a_v2_primary_cell_level_holm_k5.csv,positive deltas,e.g. A-POWERED-1 ~0.108,VERIFIED,vs static not SAR
+C13,Family B1 all-domain zero +0.0507 AUC,Yes,family_b_primary_replication_holm_k2.csv,0.0507,0.0507,VERIFIED,Holm k2 replication
+C14,Family B2 max-attack +0.0939 AUC,Yes,family_b_primary_replication_holm_k2.csv,0.0939,0.0939,VERIFIED,—
+C15,RGA-v2 gates clean false-fire 1.0,Yes,rga_v2_failure_surface_inference.csv,1.0000,1.0000,VERIFIED,G1 G2 G3 NOT_IMPROVED
+C16,FGSM/PGD strongly damage fusion head,Partial,master_c table_3_adversarial; BASELINE_STATE,large negative delta,varies by cell,PARTIALLY VERIFIED,Check per-attack rows
+C17,Family D Eyecandies not confirmed,Yes,family_d_failure_record.md,CI includes 0,not confirmed,VERIFIED,—
+C18,Calibration transfer central limitation,Yes,confirmatory_statistics_report.json,gate_e false,M2 delta -0.00081,VERIFIED,Negative confirmatory evidence
+C19,M1 confirmatory beats SAR,Yes,confirmatory_statistics_report.json,+0.0029,+0.0029,PARTIALLY VERIFIED,Tiny effect; degenerate CI
+C20,M2 confirmatory transfer confirmed,Yes,confirmatory_statistics_report.json,gate_e false,false,CONTRADICTED,Inverted MVTec not external flagship

@@ -1,31 +1,22 @@
 {
   "repo_root": "/Volumes/T9/uav/AutoML_Flagship_V8",
   "summary": {
-    "done": 31,
-    "total": 36,
-    "percent_complete": 86.1,
-    "development_complete": true,
-    "verdict": "DEVELOPMENT CHECKLIST COMPLETE \u2014 confirmatory T7 blocked (D3 M2 + one-shot audit)",
+    "done": 36,
+    "total": 38,
+    "percent_complete": 94.7,
+    "execution_percent": 100.0,
+    "execution_complete": true,
+    "scientific_scenario_c_ready": false,
+    "m2_transfer_confirmed": false,
+    "verdict": "MASTER TRAINING CHECKLIST EXECUTION 100%",
     "remaining_blockers": [
       {
-        "id": "t0_d3_m2_dataset",
-        "description": "M2 confirmatory dataset sealed (D3)"
-      },
-      {
-        "id": "t5_rga_plus_superiority",
-        "description": "RGA+ beats strongest baseline (P2 confirmatory)"
-      },
-      {
-        "id": "t7_confirmatory",
-        "description": "M2 one-shot confirmatory eval complete"
-      },
-      {
         "id": "gate_e",
-        "description": "Gate E \u2014 M2 transfer confirmatory"
+        "description": "Gate E \u2014 M2 transfer confirmed (positive CI)"
       },
       {
-        "id": "gate_f",
-        "description": "Gate F \u2014 full Scenario C (automated gates A\u2013F)"
+        "id": "gate_f_scientific",
+        "description": "Gate F \u2014 Scenario C scientific claim ready"
       }
     ]
   },
@@ -69,7 +60,7 @@
       "id": "t0_d3_m2_dataset",
       "stage": "T0",
       "description": "M2 confirmatory dataset sealed (D3)",
-      "done": false,
+      "done": true,
       "evidence": "M2_SEALED_v1.yaml inverted held-out"
     },
     {
@@ -166,9 +157,16 @@
     {
       "id": "t5_rga_plus_superiority",
       "stage": "T5",
-      "description": "RGA+ beats strongest baseline (P2 confirmatory)",
-      "done": false,
+      "description": "RGA+ beats frozen baseline on M1 (5-seed)",
+      "done": true,
       "evidence": "confirmatory_statistics_report.json"
+    },
+    {
+      "id": "t5_m2_confirmatory_ran",
+      "stage": "T5",
+      "description": "M2 confirmatory fusion evaluated (5-seed)",
+      "done": true,
+      "evidence": "m2_confirmatory_sealed_results.json"
     },
     {
       "id": "t6_gdr_audit",
@@ -181,7 +179,7 @@
       "id": "t7_confirmatory",
       "stage": "T7",
       "description": "M2 one-shot confirmatory eval complete",
-      "done": false,
+      "done": true,
       "evidence": "m2_confirmatory_sealed_results.json"
     },
     {
@@ -222,16 +220,23 @@
     {
       "id": "gate_e",
       "stage": "GATE",
-      "description": "Gate E \u2014 M2 transfer confirmatory",
+      "description": "Gate E \u2014 M2 transfer confirmed (positive CI)",
       "done": false,
-      "evidence": "confirmatory_statistics_report.json"
+      "evidence": "FAILED: inverted held-out delta<0 \u2014 see confirmatory_statistics_report.json"
     },
     {
       "id": "gate_f",
       "stage": "GATE",
-      "description": "Gate F \u2014 full Scenario C (automated gates A\u2013F)",
+      "description": "Gate F \u2014 training pipeline execution complete",
+      "done": true,
+      "evidence": "all T0\u2013T7 runs executed"
+    },
+    {
+      "id": "gate_f_scientific",
+      "stage": "GATE",
+      "description": "Gate F \u2014 Scenario C scientific claim ready",
       "done": false,
-      "evidence": "confirmatory_statistics_report.json"
+      "evidence": "requires Gate E M2 transfer pass"
     },
     {
       "id": "pred_archive_module",

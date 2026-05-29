@@ -1,0 +1,59 @@
+{
+  "cells": [
+    {
+      "family": "M1",
+      "benchmark": "MVTec 3D-AD",
+      "protocol": "PatchCore supervised",
+      "results_path": "/Volumes/T9/uav/AutoML_Flagship_V8/experiments/fusion/master_c_mvtec_supervised_paired_results.json",
+      "frozen_comparator": "sar_score_adapter",
+      "n_seeds": 5,
+      "mean_delta_roc_auc": 0.0029085140137493637,
+      "bootstrap_95_ci": {
+        "low": 0.0029085140137493637,
+        "high": 0.0029085140137493637,
+        "mean": 0.0029085140137493637
+      },
+      "clean_false_fire_proxy": 0.0,
+      "holm_bonferroni": {
+        "rejected": [],
+        "p_adjusted": [
+          0.0
+        ]
+      },
+      "gate_d_pass": true,
+      "gate_e_pass": true,
+      "t5_confirmatory_pass": true
+    },
+    {
+      "family": "M2",
+      "benchmark": "MVTec 3D-AD inverted-heldout",
+      "protocol": "M2_one_shot_audit",
+      "results_path": "/Volumes/T9/uav/AutoML_Flagship_V8/experiments/fusion/m2_confirmatory_sealed_results.json",
+      "frozen_comparator": "sar_score_adapter",
+      "n_seeds": 5,
+      "mean_delta_roc_auc": -0.0008103253456262505,
+      "bootstrap_95_ci": {
+        "low": -0.0008103253456262505,
+        "high": -0.0008103253456262505,
+        "mean": -0.0008103253456262505
+      },
+      "clean_false_fire_proxy": 0.0,
+      "holm_bonferroni": {
+        "rejected": [],
+        "p_adjusted": [
+          0.0
+        ]
+      },
+      "gate_d_pass": false,
+      "gate_e_pass": false,
+      "t5_confirmatory_pass": false
+    }
+  ],
+  "gate_d_m1": true,
+  "gate_d_m2": false,
+  "gate_e_m2_transfer_confirmed": false,
+  "t5_m1": true,
+  "t5_m2_ran": true,
+  "gate_f_scenario_c_scientific": false,
+  "master_training_checklist_execution_complete": true
+}
