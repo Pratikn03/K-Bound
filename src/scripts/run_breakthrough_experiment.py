@@ -62,7 +62,12 @@ from uais.fusion.attention.reliability_estimator import (
     PerSampleReliabilityEstimator,
     ReliabilityEstimator,
 )
-from uais.fusion.attention.train_attention_fusion import attention_fusion_loss, set_seed
+from uais.fusion.attention.train_attention_fusion import set_seed
+from uais.fusion.attention.training_loop import (
+    dropout_score_input as _dropout_score_input,
+    pseudo_targets_from_domain_scores as _pseudo_targets_from_domain_scores,
+    train_attention_model,
+)
 from uais.utils.config_loader import load_yaml
 from uais.utils.metrics import (
     brier_score,
@@ -347,69 +352,6 @@ def _make_reliability_estimator(
     return cls(**kwargs)
 
 
-def _pseudo_targets_from_domain_scores(
-    features: np.ndarray,
-    masks: np.ndarray,
-    score_index: int,
-    aggregation: str = "max",
-    quantile: float = 0.75,
-    trim_frac: float = 0.2,
-) -> np.ndarray:
-    """Weak supervision from per-domain anomaly scores (no label column required).
-
-    Note on construct validity (ISSUE 4): the ``max`` target is read directly
-    off a single input score column, so a model that simply copies the strongest
-    domain score can drive the loss to ~0 without learning any cross-domain
-    reliability structure. The ``median``/``quantile``/``trimmed_mean``
-    aggregations require integrating several domains and are therefore less
-    trivially copyable; pair them with ``one_class_score_input_dropout`` in
-    ``_train_model`` to further break the copy-the-input shortcut. ``max`` is
-    kept as the default so legacy one-class runs reproduce exactly.
-    """
-    scores = features[:, :, score_index].astype(float).copy()
-    scores[masks] = np.nan
-    with np.errstate(invalid="ignore"):
-        if aggregation == "mean":
-            pseudo = np.nanmean(scores, axis=1)
-        elif aggregation == "median":
-            pseudo = np.nanmedian(scores, axis=1)
-        elif aggregation == "quantile":
-            pseudo = np.nanquantile(scores, float(quantile), axis=1)
-        elif aggregation == "trimmed_mean":
-            lo = np.nanquantile(scores, float(trim_frac), axis=1, keepdims=True)
-            hi = np.nanquantile(scores, 1.0 - float(trim_frac), axis=1, keepdims=True)
-            kept = np.where((scores >= lo) & (scores <= hi), scores, np.nan)
-            pseudo = np.nanmean(kept, axis=1)
-        else:
-            pseudo = np.nanmax(scores, axis=1)
-    return np.nan_to_num(pseudo, nan=0.5).astype(np.float32)
-
-
-def _dropout_score_input(
-    feats: "torch.Tensor",
-    masks: "torch.Tensor",
-    score_index: int,
-    p: float,
-) -> "torch.Tensor":
-    """Randomly neutralize the score column of present domains during training.
-
-    When one-class supervision derives the target from domain scores, leaving
-    those same scores fully visible in the input lets the model copy them
-    (the ISSUE 4 tautology). Replacing a fraction ``p`` of present-domain score
-    entries with the neutral value 0.5 forces the fusion head to rely on the
-    domain embeddings and cross-domain structure instead. Inference is left
-    untouched, mirroring the existing training-only ``domain_dropout``.
-    """
-    if p <= 0.0:
-        return feats
-    present = ~masks
-    drop = (torch.rand(present.shape, device=feats.device) < float(p)) & present
-    out = feats.clone()
-    score_col = out[:, :, score_index]
-    out[:, :, score_index] = torch.where(drop, torch.full_like(score_col, 0.5), score_col)
-    return out
-
-
 def _reliability_weighted_domain_scores(
     features: np.ndarray,
     masks: np.ndarray,
@@ -439,108 +381,15 @@ def _train_model(
     device: torch.device,
     score_index: int | None = None,
 ) -> None:
-    t_cfg = cfg.get("training", {})
-    optimizer = torch.optim.AdamW(
-        model.parameters(),
-        lr=float(t_cfg.get("lr", 1e-3)),
-        weight_decay=float(t_cfg.get("weight_decay", 0.01)),
+    """Train fusion model via the shared loop (PR-AUC early stop + best-weight restore)."""
+    train_attention_model(
+        model,
+        train_loader,
+        val_loader,
+        cfg.get("training", {}),
+        device,
+        score_index=score_index,
     )
-    scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, patience=3, factor=0.5)
-    patience = int(t_cfg.get("early_stopping", 5))
-    # Restore the best-validation checkpoint after early stopping. Default True
-    # (correct behaviour). Set restore_best_weights: false to reproduce the
-    # legacy last-epoch behaviour that produced the pre-fix locked artifacts.
-    restore_best_weights = bool(t_cfg.get("restore_best_weights", True))
-    best_val_loss = float("inf")
-    best_state: dict[str, Any] | None = None
-    no_improve = 0
-
-    one_class_scores = bool(t_cfg.get("one_class_score_supervision", False)) and score_index is not None
-    pseudo_agg = str(t_cfg.get("one_class_score_aggregation", "max"))
-    pseudo_quantile = float(t_cfg.get("one_class_score_quantile", 0.75))
-    pseudo_trim_frac = float(t_cfg.get("one_class_score_trim_frac", 0.2))
-    # ISSUE 4: optionally neutralize a fraction of present-domain score inputs
-    # during training so the model cannot trivially copy the supervision target.
-    # Default 0.0 -> legacy bit-exact behaviour.
-    score_input_dropout = float(t_cfg.get("one_class_score_input_dropout", 0.0)) if one_class_scores else 0.0
-
-    for _epoch in range(int(t_cfg.get("epochs", 20))):
-        model.train()
-        for batch in train_loader:
-            feats, msks, lbls = [x.to(device) for x in batch]
-            domain_dropout_p = float(t_cfg.get("domain_dropout", 0.1))
-            if domain_dropout_p > 0.0:
-                msks = apply_domain_dropout(msks, drop_prob=domain_dropout_p)
-            optimizer.zero_grad()
-            if one_class_scores:
-                pseudo = _pseudo_targets_from_domain_scores(
-                    feats.detach().cpu().numpy(),
-                    msks.detach().cpu().numpy(),
-                    score_index,
-                    aggregation=pseudo_agg,
-                    quantile=pseudo_quantile,
-                    trim_frac=pseudo_trim_frac,
-                )
-                targets = torch.tensor(pseudo, dtype=torch.float32, device=device)
-                model_feats = _dropout_score_input(feats, msks, score_index, score_input_dropout)
-            else:
-                targets = lbls
-                model_feats = feats
-            logits, attn_weights, confidences = model(model_feats, key_padding_mask=msks)
-            loss, _ = attention_fusion_loss(
-                logits.squeeze(-1),
-                targets,
-                attn_weights,
-                confidences,
-                lambda_reg=float(t_cfg.get("lambda_reg", 0.01)),
-            )
-            loss.backward()
-            torch.nn.utils.clip_grad_norm_(model.parameters(), 1.0)
-            optimizer.step()
-
-        model.eval()
-        val_losses = []
-        with torch.no_grad():
-            for batch in val_loader:
-                feats, msks, lbls = [x.to(device) for x in batch]
-                logits, attn_weights, confidences = model(feats, key_padding_mask=msks)
-                if one_class_scores:
-                    pseudo = _pseudo_targets_from_domain_scores(
-                        feats.cpu().numpy(),
-                        msks.cpu().numpy(),
-                        score_index,
-                        aggregation=pseudo_agg,
-                        quantile=pseudo_quantile,
-                        trim_frac=pseudo_trim_frac,
-                    )
-                    targets = torch.tensor(pseudo, dtype=torch.float32, device=device)
-                else:
-                    targets = lbls
-                loss, _ = attention_fusion_loss(
-                    logits.squeeze(-1),
-                    targets,
-                    attn_weights,
-                    confidences,
-                    lambda_reg=0.0,
-                )
-                val_losses.append(loss.item())
-        val_loss = float(np.mean(val_losses))
-        scheduler.step(val_loss)
-        if val_loss < best_val_loss - 1e-5:
-            best_val_loss = val_loss
-            no_improve = 0
-            if restore_best_weights:
-                best_state = copy.deepcopy(model.state_dict())
-        else:
-            no_improve += 1
-            if no_improve >= patience:
-                break
-
-    # Early stopping leaves the model at the patience-th epoch *after* the best
-    # one; restore the best-validation checkpoint so reported metrics reflect
-    # the selected model rather than a degraded later epoch.
-    if restore_best_weights and best_state is not None:
-        model.load_state_dict(best_state)
 
 
 @torch.no_grad()
@@ -2377,6 +2226,43 @@ def _run_experiment_arrays(
             selection_metric=rga_plus_selection_metric,
         )
         rga_router_decision_threshold = float(rga_router_metrics["decision_threshold"])
+        arch_cfg = cfg.get("prediction_archive") or {}
+        if arch_cfg.get("enabled"):
+            from elara.evaluation.fusion_prediction_logger import write_seed_archives
+            from elara.evaluation.prediction_archive import PredictionArchive
+
+            rel_weights = estimator.compute_reliability_weights(test_feat, test_mask)
+            n_present = (~test_mask).sum(axis=1).astype(np.float32)
+            mean_r = np.where(
+                n_present > 0,
+                rel_weights.sum(axis=1) / np.maximum(n_present, 1.0),
+                0.0,
+            )
+            gate_fired_arr = mean_r < clean_gate_threshold
+            archive = PredictionArchive(root=_resolve(arch_cfg.get("root", "elara_master_c/predictions/development")))
+            test_ids_list = [sample_ids[int(i)] for i in test_idx]
+            write_seed_archives(
+                archive,
+                experiment_id=str(arch_cfg.get("experiment_id", "MASTER-C-DEV")),
+                benchmark=str(arch_cfg.get("benchmark", "unknown")),
+                protocol=str(arch_cfg.get("protocol", "development")),
+                analysis_family=str(arch_cfg.get("analysis_family", "M0")),
+                pairing_strength=str(arch_cfg.get("pairing_strength", "unknown")),
+                seed=actual_seed,
+                sample_ids=test_ids_list,
+                labels=test_labels,
+                predictions={
+                    "static_attention": static_probs,
+                    "craf_attention": craf_probs,
+                    "rga_boosted_fusion": rga_boosted_probs,
+                    "rga_meta_router": rga_router_probs,
+                    **{name: pl["test_probs"] for name, pl in baseline_predictions.items()},
+                },
+                gate_fired=gate_fired_arr,
+                mean_reliability=mean_r,
+                config=cfg,
+            )
+
         per_seed_table1.append(
             {
                 "seed": actual_seed,
@@ -2872,6 +2758,12 @@ def main():
     parser.add_argument("--output", default="experiments/fusion/attention_fusion/reliability_gated_results.json")
     parser.add_argument("--synthetic", action="store_true", help="Use synthetic data for an explicit smoke test")
     parser.add_argument("--seed", type=int, default=None, help="Override single seed")
+    parser.add_argument(
+        "--archive-root",
+        type=str,
+        default=None,
+        help="Enable prediction_archive writes under this root (Master Scenario C)",
+    )
     args = parser.parse_args()
 
     if args.synthetic:
@@ -2936,6 +2828,10 @@ def main():
         )
     else:
         cfg = load_yaml(str(_resolve(args.config)))
+        if args.archive_root:
+            arch = cfg.setdefault("prediction_archive", {})
+            arch["enabled"] = True
+            arch["root"] = args.archive_root
         results = run_experiment(cfg, seed_override=args.seed)
 
     out_path = _resolve(args.output)

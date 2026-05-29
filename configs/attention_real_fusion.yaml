@@ -57,6 +57,9 @@ training:
   test_size: 0.2
   val_size: 0.1
   early_stopping: 6
+  early_stopping_metric: pr_auc
+  restore_best_weights: true
+  grad_clip_norm: 1.0
   lambda_reg: 0.01
 
 output:
@@ -67,6 +70,15 @@ output:
 evaluation:
   metrics_path: experiments/fusion/real_attention_harness_metrics.json
   seeds: [42, 43, 44, 45, 46]
+
+prediction_archive:
+  enabled: false
+  root: elara_master_c/predictions/development
+  experiment_id: M0-ELARA-BENCH-LA
+  benchmark: ELARA-Bench-LA
+  protocol: label_aligned_mechanism
+  analysis_family: M0
+  pairing_strength: label_aligned
   n_bootstrap: 200
   bootstrap_alpha: 0.05
   decision_threshold: val_f1

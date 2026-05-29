@@ -60,6 +60,9 @@ training:
   test_size: 0.2
   val_size: 0.1
   early_stopping: 5
+  early_stopping_metric: pr_auc
+  restore_best_weights: true
+  grad_clip_norm: 1.0
   lambda_reg: 0.01
 output:
   model_dir: models/fusion/attention_mvtec3d_patchcore_supervised_paired
@@ -129,6 +132,15 @@ reliability:
   unknown_category_policy: global
 rga_plus:
   selection_metric: roc_pr_f1
+prediction_archive:
+  enabled: false
+  root: elara_master_c/predictions/development
+  experiment_id: M1-MVTEC-SUPERVISED-PAIRED
+  benchmark: MVTec 3D-AD
+  protocol: PatchCore supervised-paired
+  analysis_family: M1
+  pairing_strength: independent_modalities
+
 craf:
   drift_noise_levels:
   - 0.0

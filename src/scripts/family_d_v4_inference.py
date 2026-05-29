@@ -99,11 +99,35 @@ def _load_per_seed_predictions(endpoint: str, method: str) -> dict[int, pd.DataF
                 test_dir = d / "test"
                 if not test_dir.exists():
                     continue
+                # parquet stem can be "seed_42" or "seed_42__rerun_1" if the
+                # archive saw a duplicate write. Take the LAST rerun (most recent)
+                # per seed, otherwise the bare "seed_N".
+                by_seed: dict[int, Path] = {}
+                rerun_by_seed: dict[int, tuple[int, Path]] = {}
                 for p in sorted(test_dir.glob("seed_*.parquet")):
                     if p.name.startswith("._"):
                         continue
-                    seed = int(p.stem.replace("seed_", ""))
-                    out[seed] = pd.read_parquet(p)
+                    stem = p.stem
+                    if "__rerun_" in stem:
+                        base, _, rer = stem.partition("__rerun_")
+                        try:
+                            seed = int(base.replace("seed_", ""))
+                            rer_n = int(rer)
+                        except ValueError:
+                            continue
+                        prev = rerun_by_seed.get(seed)
+                        if prev is None or rer_n > prev[0]:
+                            rerun_by_seed[seed] = (rer_n, p)
+                    else:
+                        try:
+                            seed = int(stem.replace("seed_", ""))
+                        except ValueError:
+                            continue
+                        by_seed[seed] = p
+                for seed, (_, path) in rerun_by_seed.items():
+                    by_seed[seed] = path
+                for seed, path in by_seed.items():
+                    out[seed] = pd.read_parquet(path)
                 break
     return out
 
