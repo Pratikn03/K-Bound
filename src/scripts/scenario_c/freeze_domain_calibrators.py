@@ -5,13 +5,13 @@ from __future__ import annotations
 
 import argparse
 import json
-import pickle
 import sys
 from pathlib import Path
 
-import numpy as np
-import pandas as pd
-from sklearn.isotonic import IsotonicRegression
+from uais.fusion.attention.frozen_calibrators import (
+    fit_isotonic_calibrators_from_csv,
+    write_calibrator_lock,
+)
 
 
 def _repo_root() -> Path:
@@ -22,74 +22,89 @@ def _repo_root() -> Path:
     raise RuntimeError("repo root not found")
 
 
-def fit_calibrators(
-    csv_path: Path,
-    *,
-    split_col: str,
-    val_values: tuple[str, ...] = ("validation",),
-) -> dict:
-    df = pd.read_csv(csv_path)
-    val = df[df[split_col].isin(val_values)]
-    calibrators: dict[str, dict] = {}
-    for domain, grp in val.groupby("domain"):
-        y = grp["label"].astype(int).values
-        s = grp["score"].astype(float).values
-        if len(np.unique(y)) < 2 or len(s) < 20:
-            calibrators[str(domain)] = {"status": "skipped", "reason": "insufficient validation data"}
-            continue
-        iso = IsotonicRegression(out_of_bounds="clip")
-        iso.fit(s, y)
-        calibrators[str(domain)] = {
-            "status": "fitted",
-            "n_val": int(len(s)),
-            "model": "isotonic",
-        }
-        calibrators[str(domain)]["_pickle"] = pickle.dumps(iso).hex()[:64]  # fingerprint only
-    return calibrators
+def _dataset_specs(root: Path) -> list[tuple[str, str, str, tuple[str, ...], list[str] | None]]:
+    """name, csv_rel, split_col, val_values, domain_order."""
+    return [
+        (
+            "elara_bench_la",
+            "experiments/fusion/real_domain_fusion_inputs.csv",
+            "fusion_split",
+            ("validation",),
+            None,
+        ),
+        (
+            "mvtec3d_patchcore",
+            "experiments/fusion/mvtec3d_patchcore_inputs.csv",
+            "split",
+            ("validation",),
+            None,
+        ),
+        (
+            "mvtec3d_patchcore_v2",
+            "experiments/fusion/mvtec3d_patchcore_v2_inputs.csv",
+            "split",
+            ("validation",),
+            None,
+        ),
+        (
+            "m2_external_3d_adam",
+            "experiments/fusion/m2_external_3d_adam_sealed_inputs.csv",
+            "split",
+            ("validation",),
+            ["rgb", "depth_or_xyz"],
+        ),
+        (
+            "eyecandies_dev",
+            "experiments/fusion/eyecandies_inputs.csv",
+            "fusion_split",
+            ("validation",),
+            ["rgb", "depth"],
+        ),
+    ]
 
 
 def main() -> int:
     parser = argparse.ArgumentParser()
+    parser.add_argument(
+        "--only",
+        nargs="*",
+        default=None,
+        help="Subset of dataset keys to fit (default: all present CSVs)",
+    )
     args = parser.parse_args()
     root = _repo_root()
-    out_dir = root / "elara_master_c/models/calibrators"
-    out_dir.mkdir(parents=True, exist_ok=True)
-
-    specs = [
-        ("elara_bench_la", "experiments/fusion/real_domain_fusion_inputs.csv", "fusion_split"),
-        ("mvtec3d_patchcore", "experiments/fusion/mvtec3d_patchcore_inputs.csv", "split"),
-    ]
-    manifest: dict = {"version": 1, "frozen_utc": None, "datasets": {}}
-    for name, rel, split_col in specs:
+    bundles = {}
+    for name, rel, split_col, val_values, domain_order in _dataset_specs(root):
+        if args.only and name not in args.only:
+            continue
         path = root / rel
         if not path.is_file():
+            print(f"skip {name}: missing {path}")
             continue
-        df = pd.read_csv(path)
-        val = df[df[split_col].isin(("validation",))]
-        models: dict[str, IsotonicRegression] = {}
-        meta: dict[str, dict] = {}
-        for domain, grp in val.groupby("domain"):
-            y = grp["label"].astype(int).values
-            s = grp["score"].astype(float).values
-            if len(np.unique(y)) < 2 or len(s) < 20:
-                meta[str(domain)] = {"status": "skipped"}
-                continue
-            iso = IsotonicRegression(out_of_bounds="clip")
-            iso.fit(s, y)
-            models[str(domain)] = iso
-            meta[str(domain)] = {"status": "fitted", "n_val": int(len(s))}
-        if models:
-            pkl = out_dir / f"{name}_isotonic.pkl"
-            with pkl.open("wb") as f:
-                pickle.dump(models, f)
-            manifest["datasets"][name] = {"path": str(pkl.relative_to(root)), "domains": meta}
+        try:
+            bundle = fit_isotonic_calibrators_from_csv(
+                path,
+                dataset_key=name,
+                split_col=split_col,
+                val_values=val_values,
+                domain_order=domain_order,
+            )
+        except KeyError as exc:
+            print(f"skip {name}: column error ({exc})")
+            continue
+        if not bundle.models:
+            print(f"skip {name}: no fitted domains — {bundle.meta}")
+            continue
+        bundles[name] = bundle
+        print(f"fitted {name}: {bundle.meta}")
 
-    from datetime import datetime, timezone
+    if not bundles:
+        print("ERROR: no calibrator bundles fitted", file=sys.stderr)
+        return 1
 
-    manifest["frozen_utc"] = datetime.now(timezone.utc).isoformat()
-    lock = root / "elara_master_c/models/calibrators/calibrator_lock_v1.json"
-    lock.write_text(json.dumps(manifest, indent=2), encoding="utf-8")
-    print(f"Calibrator lock: {lock} ({len(manifest['datasets'])} datasets)")
+    merge = not bool(args.only)
+    lock = write_calibrator_lock(root, bundles, merge_existing=merge)
+    print(f"Calibrator lock: {lock} (wrote {len(bundles)} dataset(s); merge={merge})")
     return 0
 
 

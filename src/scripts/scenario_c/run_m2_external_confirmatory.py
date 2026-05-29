@@ -53,7 +53,9 @@ def _merge_seed_results(runs: list[dict]) -> dict:
             }
     base["clean_metric_summary"] = summary
     base["benchmark"] = "3D-ADAM category-held-out"
-    base["protocol"] = "M2_external_one_shot_audit"
+    base["protocol"] = base.get("protocol") or "M2_external_one_shot_audit"
+    if runs and "transfer_pipeline" in runs[-1]:
+        base["transfer_pipeline"] = runs[-1]["transfer_pipeline"]
     return base
 
 
@@ -61,6 +63,11 @@ def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--seeds", nargs="*", type=int, default=[42, 43, 44, 45, 46])
     parser.add_argument("--skip-stats", action="store_true")
+    parser.add_argument(
+        "--transfer-v1",
+        action="store_true",
+        help="Use transfer pipeline config (calibrators + gate decision rule)",
+    )
     args = parser.parse_args()
 
     root = _repo_root()
@@ -74,16 +81,23 @@ def main() -> int:
         print("ERROR: sealed inputs missing — run seal_m2_external_3d_adam.py", file=sys.stderr)
         return 1
 
-    merged_out = root / "experiments/fusion/m2_external_3d_adam_confirmatory_results.json"
+    if args.transfer_v1:
+        config_rel = "configs/attention_m2_external_3d_adam_transfer_v1.yaml"
+        merged_out = root / "experiments/fusion/m2_external_3d_adam_transfer_v1_confirmatory_results.json"
+        seed_prefix = "m2_external_3d_adam_transfer_v1_confirmatory_seed"
+    else:
+        config_rel = "configs/attention_m2_external_3d_adam_sealed.yaml"
+        merged_out = root / "experiments/fusion/m2_external_3d_adam_confirmatory_results.json"
+        seed_prefix = "m2_external_3d_adam_confirmatory_seed"
     all_results: list[dict] = []
     rc = 0
     for seed in args.seeds:
-        seed_out = root / f"experiments/fusion/m2_external_3d_adam_confirmatory_seed{seed}.json"
+        seed_out = root / f"experiments/fusion/{seed_prefix}{seed}.json"
         cmd = [
             py,
             "src/scripts/run_breakthrough_experiment.py",
             "--config",
-            "configs/attention_m2_external_3d_adam_sealed.yaml",
+            config_rel,
             "--output",
             str(seed_out),
             "--archive-root",

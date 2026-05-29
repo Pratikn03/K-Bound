@@ -43,6 +43,11 @@ def detection_rate_at_fpr(y_true: np.ndarray, y_prob: np.ndarray, target_fpr: fl
 
 
 def _compute_from_pred_and_prob(y_true: np.ndarray, y_pred: np.ndarray, y_prob: np.ndarray) -> dict[str, float]:
+    y_true = np.asarray(y_true, dtype=np.int64)
+    y_pred = np.asarray(y_pred, dtype=np.int64)
+    y_prob = np.asarray(y_prob, dtype=float)
+    if np.any((y_true != 0) & (y_true != 1)):
+        y_true = np.where(y_true > 0, 1, 0)
     scores: dict[str, float] = {}
     try:
         scores["roc_auc"] = metrics.roc_auc_score(y_true, y_prob)
