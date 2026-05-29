@@ -49,7 +49,7 @@ This chapter presents the final audited evidence for ELARA, a reliability-aware 
 
 In mechanism replication (Family B), RGA reproduces the zero-attack coherent score-collapse endpoint (B1: +0.0507 versus Phase-1 target +0.0506, 95\% CI [+0.0364, +0.0650], Holm $p = 4.31\times 10^{-12}$) and retains a positive maximum-attack result (B2: +0.0939 versus +0.0319, 95\% CI [+0.0741, +0.1149], Holm $p < 10^{-15}$) with explicit estimator-change qualification. Sensitive RGA-v2 variants fail clean false-fire controls (firing rate 1.000), and domain composition shift audits (B-MECH-3S) do not reduce false-fire rates. Monitoring and retrospective certification outcomes are mixed.
 
-The held-out Eyecandies transfer study (Family D) satisfies the clean false-fire budget ($0.000$ observed under $\tau = 0.55$) but is not confirmed under primary bootstrap interval inference (both D-EYE-1 and D-EYE-2 show non-significant performance differences under a paired $t$-test: D-EYE-1 has $p = 0.3632$ and mean delta $+0.0019$; D-EYE-2 has $p = 0.4468$ and mean delta $-0.0011$, with both bootstrap CIs overlapping zero). The chapter therefore supports a bounded mechanism claim and identifies calibration transfer under score-distribution shift as the main unresolved limitation.
+The held-out Eyecandies transfer study (Family D) satisfies the clean false-fire budget ($0.000$ observed under validation-selected per-cell thresholds $\tau = 0.52$ and $\tau = 0.51$) but is not confirmed under primary bootstrap interval inference: the primary paired-bootstrap ensemble $\Delta$ AUC is $-0.0010$ (95\% CI [$-0.0114$, $+0.0092$]) for D-EYE-1 and $-0.0109$ (95\% CI [$-0.0254$, $+0.0034$]) for D-EYE-2, both intervals spanning zero, and a secondary per-seed paired $t$-test is non-significant ($p = 0.3632$ and $p = 0.4468$). The chapter therefore supports a bounded mechanism claim and identifies calibration transfer under score-distribution shift as the main unresolved limitation.
 \end{abstract}
 
 \section{Introduction and Motivation}
@@ -658,7 +658,8 @@ that lock:
           \item \textbf{Family D}: Family D was executed as a
                 planned Eyecandies RGB+depth held-out transfer attempt,
                 which satisfied the clean false-fire budget under the
-                calibration fix ($\tau = 0.55$, observed $0.000$) but
+                calibration fix (validation-selected per-cell thresholds
+                $\tau = 0.52$ and $\tau = 0.51$, observed $0.000$) but
                 is not confirmed under primary bootstrap inference.
         \end{itemize}
   \item Current Family~A inferential summaries use a
@@ -914,7 +915,7 @@ to each paired modality.
 \label{sec:thesis-family-d-excluded}
 To test the out-of-distribution transferability of the reliability gating mechanism, we executed a planned held-out study on the Eyecandies RGB+depth dataset (Family D). The intended design evaluated base RGA against static attention across two scenarios: D-EYE-1 (depth collapse) and D-EYE-2 (RGB collapse). Crucially, the protocol froze a non-overrideable clean validation false-fire budget of $\le 0.010$ (1.0\%). 
 
-Under the severe domain shift of the raw Eyecandies scoring distributions, the gating mechanism successfully satisfied the budget by selecting a threshold of $\tau = 0.55$ under target-calibration reference fitting (\texttt{re\_fit\_ks\_reference}), yielding an observed clean false-fire rate of $0.000$ (0\%) on both validation and test folds. This satisfied the validity requirements, meaning the transfer study is retained as valid evidence but is classified as not confirmed under primary bootstrap interval inference.
+Under the severe domain shift of the raw Eyecandies scoring distributions, the gating mechanism successfully satisfied the budget by selecting validation-only per-cell thresholds ($\tau = 0.52$ for D-EYE-1 and $\tau = 0.51$ for D-EYE-2) under target-calibration reference fitting (\texttt{re\_fit\_ks\_reference}), yielding an observed clean false-fire rate of $0.000$ (0\%) on both validation and test folds. This satisfied the validity requirements, meaning the transfer study is retained as valid evidence but is classified as not confirmed under primary bootstrap interval inference.
 
 Table~\ref{tab:thesis-family-d} reports the observed outputs of this calibration-fixed transfer study. We explicitly label these results as \textbf{NOT CONFIRMED} to reflect that the performance differences are not confirmed under primary bootstrap inference.
 
@@ -928,7 +929,7 @@ Table~\ref{tab:thesis-family-d} reports the observed outputs of this calibration
 \end{table}
 }{}
 
-We also document a critical statistical correction in the Family-D analysis. The initial evaluation scripts contained a double-division bug in the DeLong variance calculation within \texttt{\_delong\_auc\_variance} and \texttt{\_delong\_paired\_test}, underestimating variance by $\approx 250\times$. Furthermore, running the DeLong paired test on the 30-seed ensemble outputs results in numerically degenerate $z$-statistics due to near-perfect score correlation. To obtain a mathematically sound significance test, we perform a per-seed paired $t$-test across the 30 seeds. Because the primary bootstrap confidence intervals overlap with zero (D-EYE-1: $[-0.0114, +0.0092]$; D-EYE-2: $[-0.0254, +0.0034]$) and the target minimum practical delta of 0.01 is not met, the transfer attempt is classified as not confirmed under primary bootstrap interval inference. In secondary analysis, a paired $t$-test across seeds reveals a statistically non-significant positive delta for D-EYE-1 ($p = 0.3632$, mean delta $+0.0019$) and a non-significant negative delta for D-EYE-2 ($p = 0.4468$, mean delta $-0.0011$).
+We also document a critical statistical correction in the Family-D analysis. The initial evaluation scripts contained a double-division bug in the DeLong variance calculation within \texttt{\_delong\_auc\_variance} and \texttt{\_delong\_paired\_test}, underestimating variance by $\approx 250\times$. Furthermore, running the DeLong paired test on the 30-seed ensemble outputs results in numerically degenerate $z$-statistics due to near-perfect score correlation. To obtain a mathematically sound significance test, we perform a per-seed paired $t$-test across the 30 seeds. Because the primary paired-bootstrap ensemble $\Delta$ AUC is negative with confidence intervals overlapping zero (D-EYE-1: $-0.0010$, 95\% CI $[-0.0114, +0.0092]$; D-EYE-2: $-0.0109$, 95\% CI $[-0.0254, +0.0034]$) and the target minimum practical delta of 0.01 is not met, the transfer attempt is classified as not confirmed under primary bootstrap interval inference. In secondary analysis, a per-seed paired $t$-test reveals a statistically non-significant positive per-seed mean delta for D-EYE-1 ($p = 0.3632$, mean delta $+0.0019$) and a non-significant negative per-seed mean delta for D-EYE-2 ($p = 0.4468$, mean delta $-0.0011$).
 
 The non-confirmed result indicates that while the calibration fix allows the reliability gate to control false-fire rates under domain shift, it does not yield a consistent performance boost, showing that transferability remains a key unresolved limitation.
 

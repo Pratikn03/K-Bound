@@ -99,7 +99,6 @@ PYTHONPATH=src python src/scripts/emit_milestone2_cross_benchmark.py \
 echo "==> Regenerate Phase-D theorem-stack validation assets"
 PYTHONPATH=src python src/scripts/emit_k_of_d_corruption_table.py \
   --output "$TBL_DIR/elara_k_domain_corruption_results.tex" \
-  --mapping-output "$TBL_DIR/elara_theory_experiment_mapping.tex" \
   --figure-output "$FIG_DIR/elara_k_domain_corruption.png"
 PYTHONPATH=src python src/scripts/validate_category_mixture_t2.py \
   --output experiments/fusion/category_mixture_t2_validation.json
@@ -110,6 +109,27 @@ PYTHONPATH=src python src/scripts/audit_switching_certificate_t5.py \
   --output experiments/fusion/switching_certificate_t5_audit.json
 PYTHONPATH=src python src/scripts/emit_switching_certificate_t5_table.py \
   --output "$TBL_DIR/switching_certificate_t5.tex"
+PYTHONPATH=src python src/scripts/emit_risk_dominance_t4_table.py \
+  --output "$TBL_DIR/risk_dominance_t4_prevalence.tex"
+PYTHONPATH=src python src/scripts/emit_ks_power_t6_table.py \
+  --output "$TBL_DIR/ks_power_t6.tex"
+if [[ ! -f experiments/fusion/meta_router_pac_audit.json ]]; then
+  PYTHONPATH=src python src/scripts/audit_meta_router_pac.py \
+    --output experiments/fusion/meta_router_pac_audit.json
+fi
+PYTHONPATH=src python src/scripts/emit_meta_router_pac_t7_table.py \
+  --output "$TBL_DIR/meta_router_pac_t7.tex"
+PYTHONPATH=src python src/scripts/audit_gate_decision_rule_e2e.py \
+  --repo-root "$ROOT" \
+  --output experiments/fusion/gate_decision_rule_e2e_audit.json
+PYTHONPATH=src python src/scripts/emit_gate_decision_rule_table.py \
+  --output "$TBL_DIR/gate_decision_rule_e2e.tex"
+PYTHONPATH=src python src/scripts/emit_theory_experiment_mapping.py \
+  --repo-root "$ROOT" \
+  --output "$TBL_DIR/elara_theory_experiment_mapping.tex"
+PYTHONPATH=src python src/scripts/validate_theorem_stack.py \
+  --repo-root "$ROOT" \
+  --output experiments/fusion/theorem_stack_validation_report.json
 PYTHONPATH=src python src/scripts/emit_fourth_benchmark_scaffold.py \
   --output "$TBL_DIR/fourth_benchmark_scaffold.tex"
 
