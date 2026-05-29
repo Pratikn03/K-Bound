@@ -8,7 +8,6 @@ from pathlib import Path
 import numpy as np
 import torch
 from sklearn.model_selection import train_test_split
-from torch import nn
 from torch.utils.data import DataLoader
 
 from uais.fusion.attention.attention_utils import (
@@ -22,8 +21,9 @@ from uais.fusion.attention.attention_utils import (
     validate_fusion_schema,
 )
 from uais.fusion.attention.cross_modal_attention import AttentionFusionModel
+from uais.fusion.attention.fusion_training_utils import attention_fusion_loss, evaluate_model
+from uais.fusion.attention.training_loop import train_attention_model
 from uais.utils.config_loader import load_yaml
-from uais.utils.metrics import classification_metrics
 from uais.utils.mlflow_utils import load_mlflow_settings, log_run, setup_mlflow
 from uais.utils.paths import PROJECT_ROOT
 
@@ -35,49 +35,6 @@ def set_seed(seed: int) -> None:
     torch.manual_seed(seed)
     if torch.cuda.is_available():
         torch.cuda.manual_seed_all(seed)
-
-
-def attention_fusion_loss(
-    logits: torch.Tensor,
-    targets: torch.Tensor,
-    attention_weights: torch.Tensor | None,
-    confidences: torch.Tensor | None = None,
-    lambda_reg: float = 0.01,
-) -> tuple[torch.Tensor, dict[str, float]]:
-    bce_loss = nn.functional.binary_cross_entropy_with_logits(logits, targets)
-    entropy = torch.tensor(0.0, device=logits.device)
-    if attention_weights is not None:
-        attn = attention_weights.mean(dim=1)
-        attn = attn.mean(dim=1)
-        entropy = -(attn * torch.log(attn + 1e-10)).sum(dim=-1).mean()
-    conf_reg = torch.tensor(0.0, device=logits.device)
-    if confidences is not None:
-        conf_reg = torch.mean((confidences - 1.0) ** 2)
-    total_loss = bce_loss - lambda_reg * entropy + lambda_reg * conf_reg
-    return total_loss, {
-        "bce": float(bce_loss.detach().cpu()),
-        "entropy": float(entropy.detach().cpu()),
-        "conf_reg": float(conf_reg.detach().cpu()),
-    }
-
-
-def evaluate_model(model: AttentionFusionModel, loader: DataLoader, device: torch.device) -> dict[str, float]:
-    model.eval()
-    all_probs = []
-    all_labels = []
-    with torch.no_grad():
-        for batch in loader:
-            features, masks, labels = batch
-            features = features.to(device)
-            masks = masks.to(device)
-            labels = labels.to(device)
-            logits, _, _ = model(features, key_padding_mask=masks)
-            probs = torch.sigmoid(logits.squeeze(-1))
-            all_probs.append(probs.cpu().numpy())
-            all_labels.append(labels.cpu().numpy())
-    y_true = np.concatenate(all_labels)
-    y_prob = np.concatenate(all_probs)
-    return classification_metrics(y_true, y_prob, threshold=0.5)
 
 
 def _resolve_path(path_value: str | Path) -> Path:
@@ -197,68 +154,42 @@ def train_attention_fusion(cfg_path: Path = DEFAULT_CONFIG):
         use_missing_embedding=bool(model_cfg.get("use_missing_embedding", True)),
     ).to(device)
 
-    optimizer = torch.optim.AdamW(
-        model.parameters(),
-        lr=float(train_cfg.get("lr", 1e-3)),
-        weight_decay=float(train_cfg.get("weight_decay", 1e-2)),
+    train_result = train_attention_model(model, train_loader, val_loader, train_cfg, device)
+    print(
+        f"Training done: epochs={train_result.epochs_run}, "
+        f"val_best_pr_auc={train_result.val_best_pr_auc:.4f}, "
+        f"metric={train_result.early_stopping_metric}, "
+        f"restored={train_result.restored_best_weights}"
     )
 
-    best_pr_auc = -1.0
-    patience = 0
-    max_patience = int(train_cfg.get("early_stopping", 5))
-    domain_dropout = float(train_cfg.get("domain_dropout", 0.0))
-    lambda_reg = float(train_cfg.get("lambda_reg", 0.01))
-
-    for epoch in range(int(train_cfg.get("epochs", 10))):
-        model.train()
-        epoch_losses = []
-        for features_batch, masks_batch, labels_batch in train_loader:
-            features_batch = features_batch.to(device)
-            masks_batch = masks_batch.to(device)
-            labels_batch = labels_batch.to(device).unsqueeze(-1)
-            masks_batch = apply_domain_dropout(masks_batch, domain_dropout)
-
-            optimizer.zero_grad()
-            logits, attn_weights, confidences = model(features_batch, key_padding_mask=masks_batch)
-            loss, _ = attention_fusion_loss(
-                logits,
-                labels_batch,
-                attn_weights,
-                confidences=confidences,
-                lambda_reg=lambda_reg,
-            )
-            loss.backward()
-            optimizer.step()
-            epoch_losses.append(loss.item())
-
-        val_metrics = evaluate_model(model, val_loader, device)
-        pr_auc = val_metrics.get("pr_auc", float("nan"))
-        print(f"Epoch {epoch + 1}: train_loss={np.mean(epoch_losses):.4f}, val_pr_auc={pr_auc:.4f}")
-
-        if pr_auc > best_pr_auc:
-            best_pr_auc = pr_auc
-            patience = 0
-            output_dir = _resolve_path(output_cfg.get("model_dir", "models/fusion/attention"))
-            output_dir.mkdir(parents=True, exist_ok=True)
-            ckpt_path = output_dir / output_cfg.get("checkpoint_name", "attention_fusion.pt")
-            torch.save(
-                {
-                    "model_state": model.state_dict(),
-                    "domain_order": domain_order,
-                    "feature_columns": feature_columns,
-                    "config": cfg,
-                },
-                ckpt_path,
-            )
-        else:
-            patience += 1
-            if patience >= max_patience:
-                print("Early stopping triggered.")
-                break
+    output_dir = _resolve_path(output_cfg.get("model_dir", "models/fusion/attention"))
+    output_dir.mkdir(parents=True, exist_ok=True)
+    ckpt_path = output_dir / output_cfg.get("checkpoint_name", "attention_fusion.pt")
+    torch.save(
+        {
+            "model_state": model.state_dict(),
+            "domain_order": domain_order,
+            "feature_columns": feature_columns,
+            "config": cfg,
+            "training_result": {
+                "val_best_pr_auc": train_result.val_best_pr_auc,
+                "val_best_loss": train_result.val_best_loss,
+                "epochs_run": train_result.epochs_run,
+                "early_stopping_metric": train_result.early_stopping_metric,
+                "restored_best_weights": train_result.restored_best_weights,
+            },
+        },
+        ckpt_path,
+    )
 
     test_metrics = evaluate_model(model, test_loader, device)
     metrics_out = {
-        "val_best_pr_auc": best_pr_auc,
+        "val_best_pr_auc": train_result.val_best_pr_auc,
+        "val_best_loss": train_result.val_best_loss,
+        "epochs_run": train_result.epochs_run,
+        "early_stopping_metric": train_result.early_stopping_metric,
+        "restored_best_weights": train_result.restored_best_weights,
+        "train_loss_last_epoch": train_result.train_loss_last_epoch,
         "test": test_metrics,
         "data_stats": {**schema_stats, **prep_stats, "data_hash": hash_file(data_path)},
         "domain_order": domain_order,
@@ -289,7 +220,7 @@ def train_attention_fusion(cfg_path: Path = DEFAULT_CONFIG):
                 "use_input_confidence": bool(model_cfg.get("use_input_confidence", True)),
                 "domain_dropout": float(train_cfg.get("domain_dropout", 0.0)),
             }
-            metrics = {"val_best_pr_auc": best_pr_auc}
+            metrics = {"val_best_pr_auc": train_result.val_best_pr_auc}
             metrics.update(test_metrics)
             log_run(params=params, metrics=metrics)
         except Exception as exc:  # pragma: no cover - optional logging

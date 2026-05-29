@@ -104,27 +104,6 @@ def render_table(payload: dict) -> str:
     return "\n".join(out)
 
 
-def render_theory_mapping_table() -> str:
-    return "\n".join(
-        [
-            GENERATED_COMMENT,
-            r"\begin{tabular}{p{0.16\textwidth}p{0.35\textwidth}p{0.38\textwidth}}",
-            r"\toprule",
-            r"\textbf{Claim} & \textbf{Current evidence} & \textbf{Boundary still open} \\",
-            r"\midrule",
-            r"T1 quality-blind impossibility & Architectural motivation: score-only fusion cannot disambiguate identical score vectors with different latent reliability states. & Formal example is theoretical; no separate empirical table is needed beyond collapse construction. \\",
-            r"T2 global-KS mixture confounding & MVTec category-aware reference experiments show global references can over-activate under heterogeneous categories. & Needs a pure controlled mixture-shift table with no within-category corruption. \\",
-            r"T3 mean-gate dilution & Directly supported by the $k$-of-$D$ table and figure: weak or mixed effects for $k=1,2,3$, full activation and positive ROC-AUC gain at $k=4$. & The ideal theorem assumes failed-domain reliability is zero; the implemented estimator keeps minimum reliability above $0.34$. \\",
-            r"T4 risk dominance & The theorem gives measurable terms $(q_0,q_1,\Delta_0,\Delta_1)$ for when switching should win. & These terms are not yet reported as a deployment prevalence sensitivity table. \\",
-            r"T5 finite-sample certificate & Certificate utility exists and defines fired-case paired benefit. & Needs an audited deployment-window LCB table before making operational safety claims. \\",
-            r"T6 KS false-fire/power & KS is the empirically necessary trigger in component ablation. & Needs sample-size and multiple-testing power curves before claiming calibrated drift detection. \\",
-            r"\bottomrule",
-            r"\end{tabular}",
-            "",
-        ]
-    )
-
-
 def plot_figure(payload: dict, output: Path) -> None:
     rows = _ordered_rows(payload)
     by_key = {(str(r.get("attack")), str(r.get("gate_mode")), int(r.get("failed_domain_count", 0))): r for r in rows}
@@ -203,11 +182,6 @@ def main() -> None:
         default=Path("docs/research/tables/elara_k_domain_corruption_results.tex"),
     )
     parser.add_argument(
-        "--mapping-output",
-        type=Path,
-        default=Path("docs/research/tables/elara_theory_experiment_mapping.tex"),
-    )
-    parser.add_argument(
         "--figure-output",
         type=Path,
         default=Path("docs/research/figures/elara_k_domain_corruption.png"),
@@ -218,11 +192,8 @@ def main() -> None:
     table = render_table(payload)
     args.output.parent.mkdir(parents=True, exist_ok=True)
     args.output.write_text(table, encoding="utf-8")
-    args.mapping_output.parent.mkdir(parents=True, exist_ok=True)
-    args.mapping_output.write_text(render_theory_mapping_table(), encoding="utf-8")
     plot_figure(payload, args.figure_output)
     print(f"Wrote {args.output}")
-    print(f"Wrote {args.mapping_output}")
     print(f"Wrote {args.figure_output}")
     print(table)
 

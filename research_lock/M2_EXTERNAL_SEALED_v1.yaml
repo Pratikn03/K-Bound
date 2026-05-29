@@ -1,0 +1,76 @@
+# M2 external untouched RGB+depth transfer audit (D6) — 3D-ADAM anomalib subset
+#
+# This is the flagship external M2 dataset. It is NOT MVTec 3D-AD (inverted or
+# otherwise), NOT Eyecandies, NOT Real3D-AD, and NOT VisA.
+#
+# Source: pmchard/3D-ADAM_anomalib on Hugging Face (CC BY-NC-SA 4.0)
+# Paper: arXiv:2507.07838 — naturally co-observed RGB PNG + XYZ maps per scan
+
+version: 1
+status: SEALED
+ratified: 2026-05-29
+decision: D6_3d_adam_anomalib_category_heldout
+supersedes_pending: research_lock/M2_FINAL_AUDIT_PENDING_v1.yaml
+
+dataset_id: m2_3d_adam_anomalib_external
+family: M2_external_transfer
+pairing: naturally_paired_rgb_xyz
+source:
+  repository: pmchard/3D-ADAM_anomalib
+  repository_type: huggingface_dataset
+  license: cc-by-nc-sa-4.0
+  local_root: data/raw/3d_adam_anomalib
+  download_script: src/scripts/scenario_c/download_m2_external_3d_adam.py
+
+heldout_protocol:
+  description: >
+    Category-held-out transfer. Train categories fit upstream scores and fusion
+    calibration; held-out test categories are never used for model selection.
+    In-domain validation rows are carved only from train-category official test
+    splits (15% per category×label bucket, seed 20260529).
+  train_categories:
+    - 1m1
+    - 1m2
+    - 1m3
+    - 2m1
+    - 2m2h
+    - 2m2m
+    - 3m1
+    - 3m2
+    - 4m1
+    - 4m2
+    - helicalgear1
+    - helicalgear2
+  test_categories:
+    - 3m2c
+    - 4m2c
+    - gripper_closed
+    - gripper_open
+    - rackgear
+    - spiralgear
+    - spurgear
+    - tapa2m1
+    - tapa3m1
+    - tapa4m1
+    - tapatbb
+  validation_fraction_from_train_category_test_rows: 0.15
+  validation_seed: 20260529
+
+blocked_for_this_claim:
+  - eyecandies
+  - mvtec_3d_ad
+  - real3d
+  - visa_rgb_edge
+
+artifacts:
+  inputs: experiments/fusion/m2_external_3d_adam_sealed_inputs.csv
+  metadata: experiments/fusion/m2_external_3d_adam_sealed_metadata.json
+  acquisition_record: experiments/fusion/m2_external_3d_adam_acquisition.json
+  split_hash: elara_master_c/data/splits/split_hashes/m2_external_3d_adam_sealed.json
+  fusion_config: configs/attention_m2_external_3d_adam_sealed.yaml
+
+rules:
+  - Test categories opened exactly once for confirmatory fusion evaluation.
+  - No hyperparameter, gate, or comparator selection using held-out test categories.
+  - Strongest baseline remains frozen from M1 development (research_lock/strongest_baseline_frozen_v1.json).
+  - Prior inverted-MVTec M2 (M2_SEALED_v1.yaml) remains an internal proxy only; P4 claims use this file.

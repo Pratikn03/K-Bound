@@ -1,0 +1,40 @@
+# frozen_test_sets_v3.yaml
+# Registers sealed external M2 (3D-ADAM) for one-shot final audit.
+
+version: 3
+supersedes: frozen_test_sets_v2.yaml
+ratified: 2026-05-29
+
+historical_sealed_failed:
+  eyecandies_v3_initial_attempt:
+    reason: First held-out transfer attempt NOT confirmed (preserved forever).
+    record: research_lock/family_d_failure_record.md
+
+development:
+  - elara_bench_la
+  - mvtec_3d_ad
+  - eyecandies
+  - visa_rgb_edge
+  - mvtec_loco_ad_rgb_edge
+  - unsw_nb15
+  - real3d
+
+internal_confirmatory_proxy:
+  m2_mvtec3d_inverted_heldout:
+    seal: research_lock/M2_SEALED_v1.yaml
+    note: In-repo MVTec category holdout; NOT valid for P4 external transfer claims.
+
+final_unseen_audit:
+  m2_3d_adam_anomalib_external:
+    status: SEALED
+    seal: research_lock/M2_EXTERNAL_SEALED_v1.yaml
+    rule: One-shot evaluation after strongest-baseline freeze; test categories never used for tuning.
+  m3_non_vision_paired:
+    status: NOT_ACQUIRED
+  m4_temporal_stream:
+    status: NOT_ACQUIRED
+
+enforcement:
+  - P4 headline transfer claims require m2_3d_adam_anomalib_external confirmatory pass only.
+  - m2_mvtec3d_inverted_heldout is diagnostic/proxy only.
+  - Eyecandies remains development-only (D1 Policy B).

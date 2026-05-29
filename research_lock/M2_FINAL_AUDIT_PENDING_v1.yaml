@@ -1,0 +1,26 @@
+# M2 final untouched RGB+depth transfer audit (D3) — NOT YET ACQUIRED
+#
+# Per D1 Policy B, Eyecandies is development-only. Real3D-AD and VisA were used in
+# Family A/C development and cannot serve as the one-shot final M2 audit without
+# contaminating the confirmatory claim.
+
+version: 1
+status: ACQUIRED
+acquired_dataset_id: m2_3d_adam_anomalib_external
+acquired: 2026-05-29
+seal: research_lock/M2_EXTERNAL_SEALED_v1.yaml
+decision: D6_3d_adam_anomalib_category_heldout
+
+requirements:
+  - Naturally paired RGB + depth (or equivalent 3D proxy) from a dataset not used for any prior ELARA transfer claim tuning.
+  - Sealed train/val/test before any model or gate selection on the final test fold.
+  - One-shot evaluation after strongest-baseline freeze.
+
+candidates_to_evaluate_externally:
+  - New industrial RGB-D release (user must download and register in dataset_registry_v3.yaml)
+  - OMP/SDD-style dataset if licensing permits and no prior ELARA tuning occurred
+
+blocked_datasets:
+  - eyecandies: development only (historical failure preserved)
+  - real3d: Family C exploratory
+  - visa: Family A development

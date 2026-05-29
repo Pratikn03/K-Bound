@@ -1,0 +1,84 @@
+{
+  "version": 1,
+  "source": "experiments/audit/audited_comparator_selection.csv",
+  "rule": "max validation ROC-AUC among non-RGA baselines",
+  "cells": [
+    {
+      "benchmark": "MVTec 3D-AD",
+      "protocol": "PatchCore canonical",
+      "strongest_baseline": "ttt_pseudo_label_adapter",
+      "validation_roc_auc": 0.5,
+      "selection_used_test_metrics": false
+    },
+    {
+      "benchmark": "MVTec 3D-AD",
+      "protocol": "PatchCore supervised",
+      "strongest_baseline": "sar_score_adapter",
+      "validation_roc_auc": 0.687921742340347,
+      "selection_used_test_metrics": false
+    },
+    {
+      "benchmark": "MVTec 3D-AD",
+      "protocol": "PatchCore held-out",
+      "strongest_baseline": "tent_score_adapter",
+      "validation_roc_auc": 0.9980734767025088,
+      "selection_used_test_metrics": false
+    },
+    {
+      "benchmark": "MVTec LOCO-AD",
+      "protocol": "PatchCore canonical",
+      "strongest_baseline": "ttt_pseudo_label_adapter",
+      "validation_roc_auc": 0.5,
+      "selection_used_test_metrics": false
+    },
+    {
+      "benchmark": "MVTec LOCO-AD",
+      "protocol": "PatchCore supervised",
+      "strongest_baseline": "tent_score_adapter",
+      "validation_roc_auc": 0.6761645299145299,
+      "selection_used_test_metrics": false
+    },
+    {
+      "benchmark": "Real3D-AD",
+      "protocol": "PCA shape + depth supervised",
+      "strongest_baseline": "ttt_pseudo_label_adapter",
+      "validation_roc_auc": 0.6309568480300187,
+      "selection_used_test_metrics": false
+    },
+    {
+      "benchmark": "VisA",
+      "protocol": "RGB+edge canonical",
+      "strongest_baseline": "ttt_pseudo_label_adapter",
+      "validation_roc_auc": 0.5,
+      "selection_used_test_metrics": false
+    },
+    {
+      "benchmark": "VisA",
+      "protocol": "RGB+edge supervised",
+      "strongest_baseline": "random_forest",
+      "validation_roc_auc": 0.9808607266435986,
+      "selection_used_test_metrics": false
+    },
+    {
+      "benchmark": "VisA",
+      "protocol": "RGB+random noise-floor",
+      "strongest_baseline": "random_forest",
+      "validation_roc_auc": 0.9662629757785468,
+      "selection_used_test_metrics": false
+    },
+    {
+      "benchmark": "UNSW-NB15",
+      "protocol": "flow/conn/context",
+      "strongest_baseline": "random_forest",
+      "validation_roc_auc": 0.9876515050167224,
+      "selection_used_test_metrics": false
+    },
+    {
+      "benchmark": "UNSW-NB15",
+      "protocol": "held-out attack categories",
+      "strongest_baseline": "random_forest",
+      "validation_roc_auc": 0.9900501045989232,
+      "selection_used_test_metrics": false
+    }
+  ]
+}

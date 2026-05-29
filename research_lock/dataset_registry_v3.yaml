@@ -1,0 +1,39 @@
+# dataset_registry_v3.yaml
+# Adds sealed external M2: 3D-ADAM anomalib (D4).
+# Supersedes v2 for m2_new_untouched_transfer status only.
+
+version: 3
+supersedes: dataset_registry_v2.yaml
+ratified: 2026-05-29
+decision_ref: research_lock/DECISIONS_v1.md (D6)
+
+authoritative_sources:
+  - research_lock/dataset_registry_v2.yaml
+  - research_lock/M2_EXTERNAL_SEALED_v1.yaml
+
+datasets:
+  m2_3d_adam_anomalib_external:
+    pairing_strength: rgb_depth_naturally_paired
+    family: M2_external_transfer
+    role: final_audit
+    train_allowed: false_until_one_shot_test
+    headline_claim_allowed: true_when_confirmatory_passes
+    natural_pairing: true
+    local_root: data/raw/3d_adam_anomalib
+    prepare_script: src/scripts/scenario_c/seal_m2_external_3d_adam.py
+    fusion_config: configs/attention_m2_external_3d_adam_sealed.yaml
+    seal: research_lock/M2_EXTERNAL_SEALED_v1.yaml
+    license: cc-by-nc-sa-4.0
+    notes: >
+      External untouched RGB+XYZ transfer benchmark. Never used in Family A/B/D
+      or inverted-MVTec confirmatory. Category-held-out split frozen before fusion.
+
+pending_acquisitions:
+  m2_new_untouched_transfer:
+    status: ACQUIRED
+    acquired_dataset: m2_3d_adam_anomalib_external
+    acquired: 2026-05-29
+  m3_non_vision_paired:
+    status: NOT_SELECTED
+  m4_temporal_stream:
+    status: NOT_SELECTED

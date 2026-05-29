@@ -44,7 +44,7 @@
 \maketitle
 
 \begin{abstract}
-Multimodal anomaly systems often fail not because domain experts are weak, but because the fusion layer keeps trusting degraded signals. We present ELARA, a reliability-aware score-fusion architecture with Reliability-Gated Attention (RGA), and evaluate it under controlled, audited degradation settings. In a powered static-reference study over five previously inspected benchmark cells (Family A), validation-frozen RGA+ consistently improves on a fixed static-attention comparator, including the UNSW-NB15 cell (+0.0095 versus the Phase-1 estimate of +0.0003). In mechanism replication (Family B), RGA reproduces the zero-attack coherent score-collapse endpoint (B1: +0.0507 versus target +0.0506, 95\% CI [+0.0364, +0.0650], Holm-corrected $p = 4.31\times 10^{-12}$) and shows a positive maximum-attack effect (B2: +0.0939 versus target +0.0319, 95\% CI [+0.0741, +0.1149], Holm-corrected $p < 10^{-15}$), with explicit qualification for estimator mismatch. Monitoring and retrospective certification results are mixed. Two negative findings define the boundary of the claim: sensitive RGA-v2 variants fail clean false-fire control (firing rate 1.000), and a held-out Eyecandies transfer study (Family D) satisfies the clean false-fire budget ($0.000$ observed under $\tau = 0.55$) but is not confirmed under primary bootstrap interval inference (both D-EYE-1 and D-EYE-2 show non-significant performance differences under a paired $t$-test: D-EYE-1 has $p = 0.3632$ and mean delta $+0.0019$; D-EYE-2 has $p = 0.4468$ and mean delta $-0.0011$, with both bootstrap CIs overlapping zero). The evidence therefore supports a bounded reliability-stress claim and identifies calibration transfer under score-distribution shift as the central unresolved limitation, not a universality or state-of-the-art claim.
+Multimodal anomaly systems often fail not because domain experts are weak, but because the fusion layer keeps trusting degraded signals. We present ELARA, a reliability-aware score-fusion architecture with Reliability-Gated Attention (RGA), and evaluate it under controlled, audited degradation settings. In a powered static-reference study over five previously inspected benchmark cells (Family A), validation-frozen RGA+ consistently improves on a fixed static-attention comparator, including the UNSW-NB15 cell (+0.0095 versus the Phase-1 estimate of +0.0003). In mechanism replication (Family B), RGA reproduces the zero-attack coherent score-collapse endpoint (B1: +0.0507 versus target +0.0506, 95\% CI [+0.0364, +0.0650], Holm-corrected $p = 4.31\times 10^{-12}$) and shows a positive maximum-attack effect (B2: +0.0939 versus target +0.0319, 95\% CI [+0.0741, +0.1149], Holm-corrected $p < 10^{-15}$), with explicit qualification for estimator mismatch. Monitoring and retrospective certification results are mixed. Two negative findings define the boundary of the claim: sensitive RGA-v2 variants fail clean false-fire control (firing rate 1.000), and a held-out Eyecandies transfer study (Family D) satisfies the clean false-fire budget ($0.000$ observed under validation-selected per-cell thresholds $\tau = 0.52$ and $\tau = 0.51$) but is not confirmed: the primary paired-bootstrap ensemble $\Delta$ AUC is $-0.0010$ (95\% CI [$-0.0114$, $+0.0092$]) for D-EYE-1 and $-0.0109$ (95\% CI [$-0.0254$, $+0.0034$]) for D-EYE-2, both intervals spanning zero, and a secondary per-seed paired $t$-test is non-significant ($p = 0.3632$ and $p = 0.4468$). The evidence therefore supports a bounded reliability-stress claim and identifies calibration transfer under score-distribution shift as the central unresolved limitation, not a universality or state-of-the-art claim.
 \end{abstract}
 
 \begin{IEEEkeywords}
@@ -1435,7 +1435,7 @@ Under the locked audited-reanalysis policy, Family A provides powered audited st
 All cells show 30/30 seed sign-consistency.
 
 \noindent\textbf{What the audited reanalysis does not support.}
-The locked audited-reanalysis policy explicitly forbids: (i) claiming RGA+ outperforms every baseline; (ii) choosing the inferential comparator from test winners; (iii) applying pre-registered or confirmatory labels to Family A; and (iv) claiming independent multimodal universality. Family A supports improvement over a fixed static\_attention reference only. Family D was executed as a planned Eyecandies RGB+depth held-out transfer attempt, which satisfied the clean false-fire budget under the calibration fix ($\tau = 0.55$, observed $0.000$) but is not confirmed under primary bootstrap inference.
+The locked audited-reanalysis policy explicitly forbids: (i) claiming RGA+ outperforms every baseline; (ii) choosing the inferential comparator from test winners; (iii) applying pre-registered or confirmatory labels to Family A; and (iv) claiming independent multimodal universality. Family A supports improvement over a fixed static\_attention reference only. Family D was executed as a planned Eyecandies RGB+depth held-out transfer attempt, which satisfied the clean false-fire budget under the calibration fix (validation-selected per-cell thresholds $\tau = 0.52$ for D-EYE-1 and $\tau = 0.51$ for D-EYE-2, observed false-fire $0.000$) but is not confirmed under primary bootstrap inference.
 
 \noindent\textbf{Polarity diagnostic (validation-only).} Under the
 canonical one-class protocol, training the supervised attention head
@@ -1794,19 +1794,23 @@ decimal places on the test fold; the val-frozen choice is the
 router. Under the locked policy this table is interpreted only as a
 descriptive component-attribution surface, not a comparison.
 
-\subsection{Theorem-Stack Validation: T2, T3, T5}
+\subsection{Theorem-Stack Validation: T2--T7 and GDR}
 \label{sec:theorem-validation}
 
-The companion-thesis appendix theorem stack states three falsifiable
+The companion-thesis appendix theorem stack states falsifiable
 predictions about the reliability gate's behaviour: T2 (global KS
 mis-fires under pure category-mixture shift), T3 (the mean gate fails
-to fire when fewer than $D(1-\tau)$ domains collapse), and T5 (a
-deployment window certifies the switch only if a paired lower
-confidence bound on the static-minus-RGA loss is positive). Each
-prediction is now backed by auto-generated evidence that a reviewer
-can re-run from the repository. T3 is reported in
-Table~\ref{tab:k-domain-corruption} and Fig.~\ref{fig:k-domain-corruption};
-T2 and T5 are reported below.
+to fire when fewer than $D(1-\tau)$ domains collapse), T4 (risk
+dominance at measurable deployment prevalence), T5 (a deployment
+window certifies the switch only if a paired lower confidence bound on
+the static-minus-RGA loss is positive), T6 (KS false-fire and detection
+power on a bounded window grid), and T7 (PAC slack on the meta-router).
+Each prediction is backed by auto-generated evidence that a reviewer
+can re-run from the repository. We additionally audit the
+\emph{coherence-certified gate decision rule} (GDR), a predictive
+policy that combines T2-style heterogeneity detection with the T5
+certificate to decide \emph{when} a validation-derived gate may
+switch.
 
 \IfFileExists{tables/elara_k_domain_corruption_results.tex}{
 \begin{table}[t]
@@ -1860,6 +1864,60 @@ holds.}
 \end{table*}
 }{}
 
+\IfFileExists{tables/risk_dominance_t4_prevalence.tex}{
+\begin{table}[t]
+\centering
+\caption{T4 validation: deployment-prevalence sensitivity for the
+risk-dominance inequality
+$\pi q_1 \Delta_1 > (1-\pi) q_0 \Delta_0$.
+Terms are estimated retrospectively from locked B-CERT-1 archives;
+\textbf{Dominates?} marks whether the inequality holds at prevalence
+$\pi$.}
+\label{tab:risk-dominance-t4}
+\scriptsize
+\resizebox{\linewidth}{!}{\input{tables/risk_dominance_t4_prevalence.tex}}
+\end{table}
+}{}
+
+\IfFileExists{tables/ks_power_t6.tex}{
+\begin{table}[t]
+\centering
+\caption{T6 validation: KS monitoring-window sweep on the locked
+B-MECH-4 grid. False-activation rate stays $\leq 0.06\%$ while
+detection power rises from $0.25$ (window~32) to $0.64$ (window~512).}
+\label{tab:ks-power-t6}
+\scriptsize
+\resizebox{\linewidth}{!}{\input{tables/ks_power_t6.tex}}
+\end{table}
+}{}
+
+\IfFileExists{tables/meta_router_pac_t7.tex}{
+\begin{table}[t]
+\centering
+\caption{T7 validation: auditable PAC slack
+$2LBR/\sqrt{n}+3\sqrt{\log(2/\delta)/(2n)}$ for the RGA+ meta-router
+on each supervised-paired fold ($B=5$, $\delta=0.05$).}
+\label{tab:meta-router-pac-t7}
+\scriptsize
+\resizebox{\linewidth}{!}{\input{tables/meta_router_pac_t7.tex}}
+\end{table}
+}{}
+
+\IfFileExists{tables/gate_decision_rule_e2e.tex}{
+\begin{table}[t]
+\centering
+\caption{Coherence-certified gate decision rule (GDR): end-to-end audit
+on coherent collapse (Family~B analogue), heterogeneous mixture
+(Family~D / MVTec analogue), and locked B-MECH-1 archive proxies.
+The rule \emph{predicts} when a validation-derived gate may switch:
+only when drift is coherent \emph{and} a finite-sample certificate
+holds on calibration data.}
+\label{tab:gate-decision-rule-e2e}
+\scriptsize
+\resizebox{\linewidth}{!}{\input{tables/gate_decision_rule_e2e.tex}}
+\end{table}
+}{}
+
 Three points follow. (a) Table~\ref{tab:k-domain-corruption} confirms the
 central T3 mechanism while also refining its idealized assumption. Isolated
 and partial failures give weak or mixed effects, all-domain collapse activates
@@ -1875,10 +1933,20 @@ Table~\ref{tab:switching-certificate-t5} translates T5 into an
 \emph{auditable} per-protocol verdict: the three non-certified rows
 align exactly with the cross-benchmark negative-result reading in
 §\ref{sec:cross-benchmark-master}, which is the empirical evidence
-the manuscript already foregrounded. Together these three validations
-move the theorem stack from a set of population statements to a set
-of empirically anchored predictions a reviewer can re-check on the
-shipped JSONs.
+the manuscript already foregrounded. (d)
+Table~\ref{tab:risk-dominance-t4} reports when the T4 inequality holds
+across deployment prevalences for the locked B1/B2 endpoints: max\_attack
+dominates at any $\pi>0$ while zero\_attack does not. (e)
+Table~\ref{tab:ks-power-t6} bounds the T6 false-fire / power tradeoff
+on the locked window grid. (f)
+Table~\ref{tab:meta-router-pac-t7} gives auditable PAC slack for the
+meta-router. (g)
+Table~\ref{tab:gate-decision-rule-e2e} is the novel predictive
+contribution: the same validation-derived mechanism that helps under
+coherent collapse is vetoed under heterogeneous mixtures or when the
+finite-sample certificate fails. Together these validations move the
+theorem stack from population statements to empirically anchored
+predictions a reviewer can re-check on the shipped JSONs and CSVs.
 
 \subsection{Model-Response Sensitivity to Per-Domain Reliability}
 \label{sec:causal-attribution}
@@ -2010,7 +2078,7 @@ the per-domain magnitudes are visualized in Fig.~\ref{fig:cda-impacts}.
 \label{sec:family-d-excluded}
 To test the out-of-distribution transferability of the reliability gating mechanism, we executed a planned held-out study on the Eyecandies RGB+depth dataset (Family D). The intended design evaluated base RGA against static attention across two scenarios: D-EYE-1 (depth collapse) and D-EYE-2 (RGB collapse). Crucially, the protocol froze a non-overrideable clean validation false-fire budget of $\le 0.010$ (1.0\%). 
 
-Under the severe domain shift of the raw Eyecandies scoring distributions, the gating mechanism successfully satisfied the budget by selecting a threshold of $\tau = 0.55$ under target-calibration reference fitting (\texttt{re\_fit\_ks\_reference}), yielding an observed clean false-fire rate of $0.000$ (0\%) on both validation and test folds. This satisfied the validity requirements, meaning the transfer study is retained as valid evidence but is classified as not confirmed under primary bootstrap interval inference.
+Under the severe domain shift of the raw Eyecandies scoring distributions, the gating mechanism successfully satisfied the budget by selecting validation-only per-cell thresholds ($\tau = 0.52$ for D-EYE-1 and $\tau = 0.51$ for D-EYE-2) under target-calibration reference fitting (\texttt{re\_fit\_ks\_reference}), yielding an observed clean false-fire rate of $0.000$ (0\%) on both validation and test folds. This satisfied the validity requirements, meaning the transfer study is retained as valid evidence but is classified as not confirmed under primary bootstrap interval inference.
 
 Table~\ref{tab:family-d} reports the observed outputs of this calibration-fixed transfer study. We explicitly label these results as \textbf{NOT CONFIRMED} to reflect that the performance differences are not confirmed under primary bootstrap inference.
 
@@ -2024,7 +2092,7 @@ Table~\ref{tab:family-d} reports the observed outputs of this calibration-fixed 
 \end{table}
 }{}
 
-We also document a critical statistical correction in the Family-D analysis. The initial evaluation scripts contained a double-division bug in the DeLong variance calculation within \texttt{\_delong\_auc\_variance} and \texttt{\_delong\_paired\_test}, underestimating variance by $\approx 250\times$. Furthermore, running the DeLong paired test on the 30-seed ensemble outputs results in numerically degenerate $z$-statistics due to near-perfect score correlation. To obtain a mathematically sound significance test, we perform a per-seed paired $t$-test across the 30 seeds. Because the primary bootstrap confidence intervals overlap with zero (D-EYE-1: $[-0.0114, +0.0092]$; D-EYE-2: $[-0.0254, +0.0034]$) and the target minimum practical delta of 0.01 is not met, the transfer attempt is classified as not confirmed under primary bootstrap interval inference. In secondary analysis, a paired $t$-test across seeds reveals a statistically non-significant positive delta for D-EYE-1 ($p = 0.3632$, mean delta $+0.0019$) and a non-significant negative delta for D-EYE-2 ($p = 0.4468$, mean delta $-0.0011$).
+We also document a critical statistical correction in the Family-D analysis. The initial evaluation scripts contained a double-division bug in the DeLong variance calculation within \texttt{\_delong\_auc\_variance} and \texttt{\_delong\_paired\_test}, underestimating variance by $\approx 250\times$. Furthermore, running the DeLong paired test on the 30-seed ensemble outputs results in numerically degenerate $z$-statistics due to near-perfect score correlation. To obtain a mathematically sound significance test, we perform a per-seed paired $t$-test across the 30 seeds. Because the primary paired-bootstrap ensemble $\Delta$ AUC is negative with confidence intervals overlapping zero (D-EYE-1: $-0.0010$, 95\% CI $[-0.0114, +0.0092]$; D-EYE-2: $-0.0109$, 95\% CI $[-0.0254, +0.0034]$) and the target minimum practical delta of 0.01 is not met, the transfer attempt is classified as not confirmed under primary bootstrap interval inference. In secondary analysis, a per-seed paired $t$-test reveals a statistically non-significant positive per-seed mean delta for D-EYE-1 ($p = 0.3632$, mean delta $+0.0019$) and a non-significant negative per-seed mean delta for D-EYE-2 ($p = 0.4468$, mean delta $-0.0011$).
 
 The non-confirmed result indicates that while the calibration fix allows the reliability gate to control false-fire rates under domain shift, it does not yield a consistent performance boost, showing that transferability remains a key unresolved limitation.
 
@@ -2035,7 +2103,7 @@ The evidence supports positive but bounded claims, under the Phase~2 audited and
 
 On the public-benchmark family (Family A), RGA+ demonstrates consistent positive ROC-AUC deltas against a fixed static-attention reference across all five audited cells: A-POWERED-1 (+0.1082), A-POWERED-2 (+0.0519), A-POWERED-3 (+0.1038), A-POWERED-4 (+0.0297), and A-POWERED-5 (+0.0095), all of which are statistically significant under Holm-Bonferroni correction ($K=5$). Crucially, these results compare RGA+ to the fixed static\_attention reference, not to the strongest baseline. Furthermore, absolute performance on A-POWERED-2 remains near chance, LOCO-AD (A-POWERED-3) and VisA (A-POWERED-4) are bounded by derived-view-proxy pairing, and UNSW-NB15 (A-POWERED-5) represents a small effect size.
 
-We emphasize that the naive extension to more sensitive gate variants (RGA-v2 G1/G2/G3) failed to preserve clean validation false-fire controls (observed 1.000 vs budget $\le 0.01$) and was not promoted. Similarly, the domain composition shift audit (B-MECH-3S) did not reduce false-fire rates. Finally, our transfer study on Eyecandies (Family D) satisfied the clean false-fire budget under target-calibration reference fitting but remains not confirmed under primary bootstrap inference (where the secondary paired $t$-test reveals a non-significant positive delta for depth collapse, $p=0.3632$, mean delta $+0.0019$, and a non-significant negative delta for RGB collapse, $p=0.4468$, mean delta $-0.0011$; bootstrap CIs include zero). These outcomes identify calibration transfer under distribution shift as a primary unresolved barrier to reliable out-of-distribution generalization.
+We emphasize that the naive extension to more sensitive gate variants (RGA-v2 G1/G2/G3) failed to preserve clean validation false-fire controls (observed 1.000 vs budget $\le 0.01$) and was not promoted. Similarly, the domain composition shift audit (B-MECH-3S) did not reduce false-fire rates. Finally, our transfer study on Eyecandies (Family D) satisfied the clean false-fire budget under target-calibration reference fitting but remains not confirmed under primary bootstrap inference (primary ensemble $\Delta$ AUC $-0.0010$ for depth collapse and $-0.0109$ for RGB collapse, both bootstrap CIs including zero; the secondary per-seed paired $t$-test is also non-significant, $p=0.3632$ and $p=0.4468$). These outcomes identify calibration transfer under distribution shift as a primary unresolved barrier to reliable out-of-distribution generalization.
 
 \paragraph{Leakage and independence sanity checks.}
 Section~\ref{sec:leakage-checks} documents three follow-up checks that

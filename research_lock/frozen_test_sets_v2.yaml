@@ -1,0 +1,34 @@
+# frozen_test_sets_v2.yaml
+# Supersedes frozen_test_sets_v1.yaml for Eyecandies handling (D1 Policy B).
+
+version: 2
+supersedes: frozen_test_sets_v1.yaml
+ratified: 2026-05-28
+
+historical_sealed_failed:
+  eyecandies_v3_initial_attempt:
+    reason: First held-out transfer attempt NOT confirmed (preserved forever).
+    record: research_lock/family_d_failure_record.md
+    note: Does not prohibit using Eyecandies for NEW development runs after D1.
+
+development:
+  - elara_bench_la
+  - mvtec_3d_ad
+  - eyecandies
+  - visa_rgb_edge
+  - mvtec_loco_ad_rgb_edge
+  - unsw_nb15
+
+final_unseen_audit:
+  m2_new_untouched_transfer:
+    status: NOT_ACQUIRED
+    rule: One-shot evaluation after Phase-5 baseline freeze; never used for tuning.
+  m3_non_vision_paired:
+    status: NOT_ACQUIRED
+  m4_temporal_stream:
+    status: NOT_ACQUIRED
+
+enforcement:
+  - Test sets under final_unseen_audit must not inform selection or hyperparameter search.
+  - Eyecandies may be used for development (calibration-transfer, gate diagnostics) only.
+  - P4 headline transfer claims require m2_new_untouched_transfer only.

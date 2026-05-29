@@ -28,8 +28,10 @@ from uais.fusion.attention.attention_utils import (
 )
 from uais.fusion.attention.counterfactual_explainer import CounterfactualDomainExplainer
 from uais.fusion.attention.cross_modal_attention import AttentionFusionModel
+from uais.fusion.attention.training_loop import train_attention_model
 from uais.fusion.attention.reliability_estimator import ReliabilityEstimator
-from uais.fusion.attention.train_attention_fusion import attention_fusion_loss, set_seed
+from uais.fusion.attention.fusion_training_utils import attention_fusion_loss
+from uais.fusion.attention.train_attention_fusion import set_seed
 from uais.utils.config_loader import load_yaml
 from uais.utils.metrics import classification_metrics
 from uais.utils.paths import PROJECT_ROOT
@@ -195,53 +197,21 @@ def _train_model(
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     model = _build_model(model_cfg, len(domain_order), features.shape[-1], confidence_index).to(device)
 
-    optimizer = torch.optim.AdamW(
-        model.parameters(),
-        lr=float(train_cfg.get("lr", 1e-3)),
-        weight_decay=float(train_cfg.get("weight_decay", 1e-2)),
-    )
-
-    best_pr_auc = -1.0
-    patience = 0
-    max_patience = int(train_cfg.get("early_stopping", 5))
-    domain_dropout = float(train_cfg.get("domain_dropout", 0.0))
-    lambda_reg = float(train_cfg.get("lambda_reg", 0.01))
-
-    for _ in range(int(train_cfg.get("epochs", 10))):
-        model.train()
-        for features_batch, masks_batch, labels_batch in train_loader:
-            features_batch = features_batch.to(device)
-            masks_batch = masks_batch.to(device)
-            labels_batch = labels_batch.to(device).unsqueeze(-1)
-            masks_batch = apply_domain_dropout(masks_batch, domain_dropout)
-
-            optimizer.zero_grad()
-            logits, attn_weights, confidences = model(features_batch, key_padding_mask=masks_batch)
-            loss, _ = attention_fusion_loss(
-                logits,
-                labels_batch,
-                attn_weights,
-                confidences=confidences,
-                lambda_reg=lambda_reg,
-            )
-            loss.backward()
-            optimizer.step()
-
-        val_metrics = _evaluate_model(model, val_loader, device)
-        pr_auc = val_metrics.get("pr_auc", float("nan"))
-        if pr_auc > best_pr_auc:
-            best_pr_auc = pr_auc
-            patience = 0
-        else:
-            patience += 1
-            if patience >= max_patience:
-                break
+    train_result = train_attention_model(model, train_loader, val_loader, train_cfg, device)
 
     y_true, y_prob, _ = _collect_predictions(model, test_loader, device, return_attention=False)
     test_metrics = classification_metrics(y_true, y_prob, threshold=0.5)
     return (
         model,
-        {"val_best_pr_auc": best_pr_auc, "test": test_metrics},
+        {
+            "val_best_pr_auc": train_result.val_best_pr_auc,
+            "val_best_loss": train_result.val_best_loss,
+            "epochs_run": train_result.epochs_run,
+            "early_stopping_metric": train_result.early_stopping_metric,
+            "restored_best_weights": train_result.restored_best_weights,
+            "train_loss_last_epoch": train_result.train_loss_last_epoch,
+            "test": test_metrics,
+        },
         {
             "batch_size": batch_size,
             "device": device.type,

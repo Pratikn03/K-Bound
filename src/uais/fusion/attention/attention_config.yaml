@@ -34,6 +34,11 @@ training:
   test_size: 0.2
   val_size: 0.1
   early_stopping: 5
+  # Early-stop on validation PR-AUC (audit standard). Use val_loss only for legacy repro.
+  early_stopping_metric: pr_auc
+  restore_best_weights: true
+  grad_clip_norm: 1.0
+  use_lr_scheduler: true
   lambda_reg: 0.01
 
 output:

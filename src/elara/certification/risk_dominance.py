@@ -108,3 +108,69 @@ def estimate_risk_dominance(
         n_degraded_samples=int(degraded_static_scores.shape[0]),
         notes=notes,
     )
+
+
+def risk_dominance_margin(
+    *,
+    pi: float,
+    q0: float,
+    q1: float,
+    delta_0: float,
+    delta_1: float,
+) -> float:
+    """Signed margin for thesis T4: positive means gated policy dominates static.
+
+    Margin = pi * q1 * Delta_1 - (1 - pi) * q0 * Delta_0.
+    """
+    return float(pi * q1 * delta_1 - (1.0 - pi) * q0 * delta_0)
+
+
+def dominates_at_prevalence(
+    *,
+    pi: float,
+    q0: float,
+    q1: float,
+    delta_0: float,
+    delta_1: float,
+) -> bool:
+    """Return True when the T4 inequality holds at deployment prevalence pi."""
+    margin = risk_dominance_margin(pi=pi, q0=q0, q1=q1, delta_0=delta_0, delta_1=delta_1)
+    return bool(margin > 0.0)
+
+
+def prevalence_sensitivity_rows(
+    terms: RiskDominanceTerms,
+    *,
+    pi_values: tuple[float, ...] = (0.0, 0.01, 0.05, 0.1, 0.25, 0.5),
+) -> list[dict[str, float | str | bool]]:
+    """Build deployment-prevalence sensitivity rows for one scenario."""
+    rows: list[dict[str, float | str | bool]] = []
+    for pi in pi_values:
+        margin = risk_dominance_margin(
+            pi=pi,
+            q0=terms.q0,
+            q1=terms.q1,
+            delta_0=terms.delta_0,
+            delta_1=terms.delta_1,
+        )
+        rows.append(
+            {
+                "gate_id": terms.gate_id,
+                "scenario_id": terms.scenario_id,
+                "pi": float(pi),
+                "q0": terms.q0,
+                "q1": terms.q1,
+                "delta_0": terms.delta_0,
+                "delta_1": terms.delta_1,
+                "pi_star": terms.pi_star,
+                "margin": margin,
+                "dominates": dominates_at_prevalence(
+                    pi=pi,
+                    q0=terms.q0,
+                    q1=terms.q1,
+                    delta_0=terms.delta_0,
+                    delta_1=terms.delta_1,
+                ),
+            }
+        )
+    return rows
