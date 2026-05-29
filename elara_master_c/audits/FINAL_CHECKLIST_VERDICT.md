@@ -26,8 +26,8 @@ Refresh: `PYTHONPATH=src python src/scripts/scenario_c/audit_checklist_progress.
 | A — experts | **PASS** (MVTec PatchCore v2) |
 | B — baselines | **PASS** |
 | C — base RGA | **PASS** (mechanism) |
-| D — RGA+ vs frozen (M1) | **PASS** (small positive Δ ROC-AUC, 5 seeds) |
-| E — M2 transfer | **NOT CONFIRMED** (inverted held-out Δ ≈ −0.0008; CI excludes zero on wrong side) |
+| D — RGA+ vs frozen (M1) | **NOT CONFIRMED** (Δ ROC-AUC positive but seed-bootstrap CI is degenerate — see Integrity Caveat) |
+| E — M2 transfer | **NOT CONFIRMED** (inverted held-out Δ ≈ −0.0008; both methods below chance) |
 | F — flagship | **Blocked** until Gate E passes on a **new external** RGB+depth dataset |
 
 See `confirmatory_statistics_report.json` for per-cell numbers.
@@ -77,3 +77,23 @@ must **not** be cited as confirmatory until fixed.
   external untouched RGB+depth dataset still pending under
   `research_lock/M2_FINAL_AUDIT_PENDING_v1.yaml` (the inverted-held-out MVTec
   split is not a usable transfer audit at ~0.39 AUC).
+
+## ENFORCED IN CODE (2026-05-28)
+
+The integrity caveat is now a hard gate, not a footnote. `confirmatory_statistics.py`
+marks a cell `cell_valid=false` and forces `gate_d/gate_e/t5` to **fail** when
+either defect is present:
+
+- **degenerate CI** — `bootstrap_ci_width < 1e-9` or `seed_variance < 1e-12`
+  (deterministic methods → identical per-seed deltas); and/or
+- **below-chance** — `min(mean_rga_auc, mean_base_auc) < 0.5`.
+
+`t5_confirmatory_pass` additionally now requires a genuine Holm-rejected paired
+test (a prior bug read the wrong dict key `rejected` instead of `reject`, so
+significance was never registered). The run output now persists the top-level
+`seeds` list, and `audit_checklist_progress.py` derives `gate_d` **only** from
+the confirmatory report (the development `gate_bd_evaluation.json` can no longer
+mask a confirmatory failure). Regression test: `tests/test_confirmatory_validity_guard.py`.
+
+Honest checklist count after enforcement: **34/38** (execution still complete;
+`t5_rga_plus_superiority` and `gate_d` correctly read as not-confirmed).

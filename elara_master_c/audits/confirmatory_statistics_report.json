@@ -7,53 +7,249 @@
       "results_path": "/Volumes/T9/uav/AutoML_Flagship_V8/experiments/fusion/master_c_mvtec_supervised_paired_results.json",
       "frozen_comparator": "sar_score_adapter",
       "n_seeds": 5,
+      "mean_rga_auc": 0.7383470574903679,
+      "mean_base_auc": 0.7354385434766185,
       "mean_delta_roc_auc": 0.0029085140137493637,
+      "seed_variance": 0.0,
       "bootstrap_95_ci": {
         "low": 0.0029085140137493637,
         "high": 0.0029085140137493637,
         "mean": 0.0029085140137493637
       },
+      "bootstrap_ci_width": 0.0,
       "clean_false_fire_proxy": 0.0,
       "holm_bonferroni": {
-        "rejected": [],
+        "rejected": [
+          true
+        ],
         "p_adjusted": [
           0.0
         ]
       },
-      "gate_d_pass": true,
-      "gate_e_pass": true,
-      "t5_confirmatory_pass": true
+      "cell_valid": false,
+      "validity_reasons": [
+        "degenerate_ci_zero_seed_variance: per-seed deltas are identical (deterministic methods); the seed-bootstrap CI is not a valid interval. Requires a per-sample paired test (DeLong / per-sample bootstrap on archived predictions)."
+      ],
+      "gate_d_pass": false,
+      "gate_e_pass": false,
+      "t5_confirmatory_pass": false
     },
     {
-      "family": "M2",
+      "family": "M2_external",
+      "benchmark": "3D-ADAM category-held-out",
+      "protocol": "M2_external_one_shot_audit",
+      "results_path": "/Volumes/T9/uav/AutoML_Flagship_V8/experiments/fusion/m2_external_3d_adam_confirmatory_results.json",
+      "frozen_comparator": "sar_score_adapter",
+      "n_seeds": 5,
+      "mean_rga_auc": 0.5082901873767258,
+      "mean_base_auc": 0.5458951829558593,
+      "mean_delta_roc_auc": -0.03760499557913344,
+      "seed_variance": 0.0,
+      "bootstrap_95_ci": {
+        "low": -0.06175962423171645,
+        "high": -0.01280744852573433,
+        "mean": -0.03760499557913344
+      },
+      "bootstrap_ci_width": 0.04895217570598212,
+      "clean_false_fire_proxy": 0.0,
+      "holm_bonferroni": {
+        "rejected": [
+          true
+        ],
+        "p_adjusted": [
+          0.0031425681616537027
+        ]
+      },
+      "cell_valid": true,
+      "validity_reasons": [],
+      "gate_d_pass": false,
+      "gate_e_pass": false,
+      "t5_confirmatory_pass": false,
+      "inference_mode": "per_sample_paired_ensemble",
+      "paired_inference_path": "experiments/fusion/m2_external_3d_adam_paired_inference.json",
+      "n_test_samples": 1378,
+      "delong_p_raw": 0.0031425681616537027,
+      "delong_p_holm": 0.0031425681616537027,
+      "bootstrap_ci_excludes_zero": false,
+      "practical_effect_band": "large",
+      "per_seed_rga_auc": [
+        0.5082901873767258,
+        0.5082901873767258,
+        0.5082901873767258,
+        0.5082901873767258,
+        0.5082901873767258
+      ],
+      "per_seed_comparator_auc": [
+        0.5458951829558594,
+        0.5458951829558594,
+        0.5458951829558594,
+        0.5458951829558594,
+        0.5458951829558594
+      ],
+      "per_seed_delta_auc": [
+        -0.03760499557913355,
+        -0.03760499557913355,
+        -0.03760499557913355,
+        -0.03760499557913355,
+        -0.03760499557913355
+      ]
+    },
+    {
+      "family": "M2_proxy",
       "benchmark": "MVTec 3D-AD inverted-heldout",
-      "protocol": "M2_one_shot_audit",
+      "protocol": "M2_one_shot_audit_proxy",
       "results_path": "/Volumes/T9/uav/AutoML_Flagship_V8/experiments/fusion/m2_confirmatory_sealed_results.json",
       "frozen_comparator": "sar_score_adapter",
       "n_seeds": 5,
+      "mean_rga_auc": 0.38666924770295275,
+      "mean_base_auc": 0.387479573048579,
       "mean_delta_roc_auc": -0.0008103253456262505,
+      "seed_variance": 0.0,
       "bootstrap_95_ci": {
         "low": -0.0008103253456262505,
         "high": -0.0008103253456262505,
         "mean": -0.0008103253456262505
       },
+      "bootstrap_ci_width": 0.0,
       "clean_false_fire_proxy": 0.0,
       "holm_bonferroni": {
-        "rejected": [],
+        "rejected": [
+          true
+        ],
         "p_adjusted": [
           0.0
         ]
       },
+      "cell_valid": false,
+      "validity_reasons": [
+        "degenerate_ci_zero_seed_variance: per-seed deltas are identical (deterministic methods); the seed-bootstrap CI is not a valid interval. Requires a per-sample paired test (DeLong / per-sample bootstrap on archived predictions).",
+        "below_chance_auc: min(rga=0.3867, base=0.3875) < 0.5 -> degenerate cell; not a usable comparison."
+      ],
       "gate_d_pass": false,
       "gate_e_pass": false,
       "t5_confirmatory_pass": false
     }
   ],
-  "gate_d_m1": true,
+  "gate_d_m1": false,
   "gate_d_m2": false,
   "gate_e_m2_transfer_confirmed": false,
-  "t5_m1": true,
+  "t5_m1": false,
   "t5_m2_ran": true,
+  "gate_d_m2_external": false,
+  "m2_external_cell_valid": true,
+  "m2_external_paired_inference": {
+    "dataset_id": "m2_3d_adam_anomalib_external",
+    "experiment_id": "M2-EXTERNAL-3D-ADAM",
+    "archive_index": "elara_master_c/predictions/confirmation/PREDICTION_ARCHIVE_INDEX.csv",
+    "n_test_samples": 1378,
+    "positive_rate": 0.4528301886792453,
+    "seeds": [
+      42,
+      43,
+      44,
+      45,
+      46
+    ],
+    "primary_comparison": "M2-EXTERNAL-vs-SAR",
+    "frozen_comparator": "sar_score_adapter",
+    "comparisons": [
+      {
+        "comparison_id": "M2-EXTERNAL-vs-SAR",
+        "cell_id": "M2-EXTERNAL-vs-SAR",
+        "benchmark": "3D-ADAM category-held-out",
+        "protocol": "M2_external_one_shot_audit",
+        "rga_method": "rga_boosted_fusion",
+        "comparator_method": "sar_score_adapter",
+        "n_seeds": 5,
+        "n_test_samples": 1378,
+        "per_seed_rga_auc": [
+          0.5082901873767258,
+          0.5082901873767258,
+          0.5082901873767258,
+          0.5082901873767258,
+          0.5082901873767258
+        ],
+        "per_seed_comparator_auc": [
+          0.5458951829558594,
+          0.5458951829558594,
+          0.5458951829558594,
+          0.5458951829558594,
+          0.5458951829558594
+        ],
+        "per_seed_delta_auc": [
+          -0.03760499557913355,
+          -0.03760499557913355,
+          -0.03760499557913355,
+          -0.03760499557913355,
+          -0.03760499557913355
+        ],
+        "sign_consistent_seeds": 5,
+        "ensemble_rga_auc": 0.5082901873767258,
+        "ensemble_comparator_auc": 0.5458951829558593,
+        "ensemble_delta_auc": -0.03760499557913344,
+        "delong_p_raw": 0.0031425681616537027,
+        "delong_p_holm": 0.0031425681616537027,
+        "bootstrap_95_ci_low": -0.06175962423171645,
+        "bootstrap_95_ci_high": -0.01280744852573433,
+        "bootstrap_n_iter": 10000,
+        "bootstrap_ci_excludes_zero": false,
+        "practical_effect_band": "large",
+        "inference_label": "ensemble audited analysis (seed-averaged predictor): DeLong paired test on seed-averaged ensemble predictions + paired sample bootstrap CI over test rows; not independent confirmatory replication",
+        "transfer_confirmed": false
+      },
+      {
+        "comparison_id": "M2-EXTERNAL-vs-STATIC",
+        "cell_id": "M2-EXTERNAL-vs-STATIC",
+        "benchmark": "3D-ADAM category-held-out",
+        "protocol": "M2_external_one_shot_audit",
+        "rga_method": "rga_boosted_fusion",
+        "comparator_method": "static_attention",
+        "n_seeds": 5,
+        "n_test_samples": 1378,
+        "per_seed_rga_auc": [
+          0.5082901873767258,
+          0.5082901873767258,
+          0.5082901873767258,
+          0.5082901873767258,
+          0.5082901873767258
+        ],
+        "per_seed_comparator_auc": [
+          0.5029054444671155,
+          0.5850442936815616,
+          0.568518117050942,
+          0.594029492280487,
+          0.6042963170781472
+        ],
+        "per_seed_delta_auc": [
+          0.005384742909610329,
+          -0.07675410630483581,
+          -0.060227929674216196,
+          -0.08573930490376114,
+          -0.09600612970142142
+        ],
+        "sign_consistent_seeds": 4,
+        "ensemble_rga_auc": 0.5082901873767258,
+        "ensemble_comparator_auc": 0.5785150139427329,
+        "ensemble_delta_auc": -0.07022482656600704,
+        "delong_p_raw": 3.153661238064487e-05,
+        "delong_p_holm": 6.307322476128974e-05,
+        "bootstrap_95_ci_low": -0.10271794163729636,
+        "bootstrap_95_ci_high": -0.03699460985451675,
+        "bootstrap_n_iter": 10000,
+        "bootstrap_ci_excludes_zero": false,
+        "practical_effect_band": "large",
+        "inference_label": "ensemble audited analysis (seed-averaged predictor): DeLong paired test on seed-averaged ensemble predictions + paired sample bootstrap CI over test rows; not independent confirmatory replication",
+        "transfer_confirmed": false
+      }
+    ],
+    "gate_e_transfer_confirmed": false,
+    "gate_d_beat_comparator": false,
+    "cell_valid": true,
+    "validity_note": "Per-sample paired DeLong on seed-averaged ensemble predictions; 95% bootstrap CI on paired AUROC delta (10k resamples, seed 0)."
+  },
+  "m2_proxy_ran": true,
+  "gate_e_m2_proxy": false,
+  "gate_d_m2_proxy": false,
   "gate_f_scenario_c_scientific": false,
   "master_training_checklist_execution_complete": true
 }

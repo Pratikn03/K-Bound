@@ -2653,6 +2653,7 @@ def _run_experiment_arrays(
     }
 
     return {
+        "seeds": [int(s) for s in seeds],
         "decision_thresholding": {
             "strategy": (threshold_strategy or "fixed_0p5").strip().lower(),
             "selection_split": "validation",

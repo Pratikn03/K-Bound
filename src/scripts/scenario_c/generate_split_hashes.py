@@ -46,6 +46,11 @@ def main() -> int:
         ("mvtec3d_patchcore", "experiments/fusion/mvtec3d_patchcore_inputs.csv", "split"),
         ("mvtec3d_supervised_paired", "experiments/fusion/mvtec3d_patchcore_supervised_paired_inputs.csv", "split"),
         ("m2_confirmatory_sealed", "experiments/fusion/m2_confirmatory_sealed_inputs.csv", "split"),
+        (
+            "m2_external_3d_adam_sealed",
+            "experiments/fusion/m2_external_3d_adam_sealed_inputs.csv",
+            "split",
+        ),
     ]
     manifest: dict = {"version": 1, "datasets": {}}
     for name, rel, split_col in datasets:

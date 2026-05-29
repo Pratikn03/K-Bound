@@ -123,17 +123,17 @@
       "detail": "dataset_registry_v2 reflects Policy B"
     },
     {
-      "name": "decision_D3_final_m2_pending",
+      "name": "decision_D6_external_m2_sealed",
       "passed": true,
-      "detail": "Final untouched M2 still required before confirmatory T7"
+      "detail": "M2_EXTERNAL_SEALED + inputs + split hash"
     }
   ],
   "pass_condition_questions": {
     "development_only": "elara_bench_la, mvtec_3d_ad, eyecandies (post-D1), visa, loco, unsw",
-    "final_confirmation": "m2_new_untouched_transfer (NOT_ACQUIRED)",
-    "validation_tuning_allowed": "all development sets; not final_unseen_audit",
+    "final_confirmation": "m2_3d_adam_anomalib_external (SEALED; confirmatory fusion not yet run)",
+    "validation_tuning_allowed": "all development sets; not m2 external test categories",
     "primary_metric": "see primary_endpoints_v1.yaml per family",
-    "baseline_to_beat": "strongest frozen comparator (Phase 5; not yet frozen)",
-    "sealed_until_final": "m2_new_untouched_transfer, m3, m4"
+    "baseline_to_beat": "strongest frozen comparator (strongest_baseline_frozen_v1.json)",
+    "sealed_until_final": "m2 external test categories (one-shot); m3, m4 still open"
   }
 }

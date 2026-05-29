@@ -115,14 +115,24 @@ def main() -> int:
             )
         )
 
-    # Open decisions block confirmatory
-    decisions = (root / "research_lock/DECISIONS_v1.md").read_text(encoding="utf-8")
-    d3_open = "D3" in decisions and "OPEN" in decisions
+    # D6 external M2 sealed (3D-ADAM) — replaces inverted-MVTec-only proxy for P4
+    m2_external_seal = root / "research_lock/M2_EXTERNAL_SEALED_v1.yaml"
+    m2_external_inputs = root / "experiments/fusion/m2_external_3d_adam_sealed_inputs.csv"
+    m2_external_hash = (
+        root / "elara_master_c/data/splits/split_hashes/m2_external_3d_adam_sealed.json"
+    )
+    d6_ok = (
+        m2_external_seal.is_file()
+        and m2_external_inputs.is_file()
+        and m2_external_hash.is_file()
+    )
     checks.append(
         Check(
-            "decision_D3_final_m2_pending",
-            d3_open,
-            "Final untouched M2 still required before confirmatory T7" if d3_open else "unexpected D3 state",
+            "decision_D6_external_m2_sealed",
+            d6_ok,
+            "M2_EXTERNAL_SEALED + inputs + split hash"
+            if d6_ok
+            else "external 3D-ADAM M2 not sealed — run seal_m2_external_3d_adam.py",
         )
     )
 
@@ -133,11 +143,11 @@ def main() -> int:
         "checks": [asdict(c) for c in checks],
         "pass_condition_questions": {
             "development_only": "elara_bench_la, mvtec_3d_ad, eyecandies (post-D1), visa, loco, unsw",
-            "final_confirmation": "m2_new_untouched_transfer (NOT_ACQUIRED)",
-            "validation_tuning_allowed": "all development sets; not final_unseen_audit",
+            "final_confirmation": "m2_3d_adam_anomalib_external (SEALED; confirmatory fusion not yet run)",
+            "validation_tuning_allowed": "all development sets; not m2 external test categories",
             "primary_metric": "see primary_endpoints_v1.yaml per family",
-            "baseline_to_beat": "strongest frozen comparator (Phase 5; not yet frozen)",
-            "sealed_until_final": "m2_new_untouched_transfer, m3, m4",
+            "baseline_to_beat": "strongest frozen comparator (strongest_baseline_frozen_v1.json)",
+            "sealed_until_final": "m2 external test categories (one-shot); m3, m4 still open",
         },
     }
 

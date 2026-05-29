@@ -65,10 +65,27 @@ for cross-domain confirmation **development** (not final audit until protocol lo
   test: bagel/cable_gland/cookie/dowel) — distinct from prior `mvtec3d_patchcore_heldout`.
 - One-shot test evaluation recorded in `m2_confirmatory_sealed_results.json`.
 
+## 2026-05-29 — D6 ratified: external M2 = 3D-ADAM anomalib (category-held-out)
+
+**Decision:** Acquire and seal **pmchard/3D-ADAM_anomalib** as the untouched external
+RGB+depth transfer benchmark for P4 claims.
+
+- **Seal:** `research_lock/M2_EXTERNAL_SEALED_v1.yaml`
+- **Blocked for this claim:** Eyecandies, MVTec 3D-AD, Real3D-AD, VisA (prior ELARA use).
+- **Verification:** zero functional code paths before 2026-05-29 (`grep 3d.adam` / `3D-ADAM`
+  only in new acquisition scripts and this decision).
+- **Train categories (12):** 1m1, 1m2, 1m3, 2m1, 2m2h, 2m2m, 3m1, 3m2, 4m1, 4m2,
+  helicalgear1, helicalgear2.
+- **Test categories (11):** 3m2c, 4m2c, gripper_closed, gripper_open, rackgear,
+  spiralgear, spurgear, tapa2m1, tapa3m1, tapa4m1, tapatbb.
+- **Inverted MVTec M2** (`M2_SEALED_v1.yaml`) is demoted to **internal proxy only**
+  (`frozen_test_sets_v3.yaml`); P4 requires confirmatory pass on 3D-ADAM external seal.
+- **P4 status:** `NOT_CONFIRMED` until one-shot fusion on held-out test categories passes.
+
 ## Still OPEN (block confirmatory work)
 
-- **D3 external download** — optional future external RGB-D dataset still allowed; current
-  seal uses inverted MVTec 3D held-out as the locked M2 audit in-repo.
 - **D4** — user ratification of healthcare M3 candidate (provisional seal in place).
 - **D5** — strongest-baseline freeze file emitted at `strongest_baseline_frozen_v1.json`
   (automated from validation selection; confirmatory one-shot eval still pending).
+- **M2 external confirmatory fusion** — sealed inputs required; run
+  `configs/attention_m2_external_3d_adam_sealed.yaml` (5 seeds) after download completes.

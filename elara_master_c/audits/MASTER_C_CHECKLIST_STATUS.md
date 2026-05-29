@@ -1,6 +1,6 @@
 # Master Scenario C — Checklist Progress
 
-**36/38 items (94.7%)** | **Execution: 100.0%** | See `FINAL_CHECKLIST_VERDICT.md`.
+**34/38 items (89.5%)** | **Execution: 94.4%** | See `FINAL_CHECKLIST_VERDICT.md`.
 
 | Stage | ID | Done | Description |
 |-------|-----|------|-------------|
@@ -23,7 +23,7 @@
 | T3 | t3_strong_baselines | yes | Strongest baseline frozen (D5) |
 | T3 | t3_mvtec_master_c_retrain | yes | MVTec supervised-paired retrain (master_c) |
 | T4 | t4_base_rga_mechanism | yes | Base RGA mechanism replication |
-| T5 | t5_rga_plus_superiority | yes | RGA+ beats frozen baseline on M1 (5-seed) |
+| T5 | t5_rga_plus_superiority | no | RGA+ beats frozen baseline on M1 (5-seed) |
 | T5 | t5_m2_confirmatory_ran | yes | M2 confirmatory fusion evaluated (5-seed) |
 | T6 | t6_gdr_audit | yes | Gate decision rule E2E audit |
 | T7 | t7_confirmatory | yes | M2 one-shot confirmatory eval complete |
@@ -31,7 +31,7 @@
 | GATE | gate_a | yes | Gate A — upstream experts PASS |
 | GATE | gate_b | yes | Gate B — fusion baselines trained (master_c) |
 | GATE | gate_c | yes | Gate C — base RGA mechanism |
-| GATE | gate_d | yes | Gate D — RGA+ beats frozen comparator (confirmatory) |
+| GATE | gate_d | no | Gate D — RGA+ beats frozen comparator (confirmatory) |
 | GATE | gate_e | no | Gate E — M2 transfer confirmed (positive CI) |
 | GATE | gate_f | yes | Gate F — training pipeline execution complete |
 | GATE | gate_f_scientific | no | Gate F — Scenario C scientific claim ready |

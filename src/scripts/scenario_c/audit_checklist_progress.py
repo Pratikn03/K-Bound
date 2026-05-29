@@ -165,11 +165,13 @@ def build_checklist(root: Path) -> list[Item]:
     add("GATE", "gate_a", "Gate A — upstream experts PASS", gate_a_pass, "RGB+depth AUC + depth complement")
     gate_bd = root / "elara_master_c/audits/gate_bd_evaluation.json"
     gate_b_pass = master_c_real
-    if gate_bd.is_file() and not gate_d_pass:
+    # gate_d is authoritative from the CONFIRMATORY report only. The development
+    # gate_bd_evaluation.json may inform gate_b (baselines trained) but must NOT
+    # flip gate_d to pass when the confirmatory one-shot says otherwise.
+    if gate_bd.is_file():
         try:
             bd = json.loads(gate_bd.read_text(encoding="utf-8"))
             cell = bd.get("MVTec 3D-AD|PatchCore supervised") or {}
-            gate_d_pass = bool(cell.get("gate_d_rga_beats_frozen_test"))
             gate_b_pass = gate_b_pass and bool(cell.get("gate_b_fusion_trained"))
         except (json.JSONDecodeError, OSError):
             pass
