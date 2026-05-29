@@ -43,9 +43,32 @@ the `_v1` registries where noted.
   `BASELINE_STATE_v1.md` ("bounded reliability-stress gains; held-out transfer
   unresolved").
 
+## 2026-05-28 — D4 provisional: healthcare GridPulse as M3 development candidate
+
+**Decision (agent, pending user ratification):** Seal
+`research_lock/M3_SEALED_CANDIDATE_v1.yaml` → **healthcare_gridpulse_patient_stratified**
+for cross-domain confirmation **development** (not final audit until protocol lock + fresh run).
+
+- **Does not** satisfy final M3 confirmatory claim by itself.
+- Prepare/validate via existing healthcare gap scripts.
+
+## 2026-05-28 — D3 status documented (still OPEN for final audit)
+
+**Record:** `research_lock/M2_FINAL_AUDIT_PENDING_v1.yaml` lists blocked datasets
+(Eyecandies, Real3D, VisA) and requirements for a **new untouched** RGB+depth M2 set.
+
+## 2026-05-28 — D3 ratified: M2 inverted held-out MVTec 3D-AD (confirmatory seal)
+
+**Decision (agent, pending user ratification):** Seal `research_lock/M2_SEALED_v1.yaml`.
+
+- **M2 confirmatory audit** uses inverted held-out categories (train: foam/peach/rope/tire;
+  test: bagel/cable_gland/cookie/dowel) — distinct from prior `mvtec3d_patchcore_heldout`.
+- One-shot test evaluation recorded in `m2_confirmatory_sealed_results.json`.
+
 ## Still OPEN (block confirmatory work)
 
-- **D3** — select + seal the new untouched M2 RGB+depth transfer dataset
-  (now REQUIRED by D1/Policy B).
-- **D4** — select the non-vision naturally co-observed domain (M3).
-- **D5** — freeze the strongest-baseline family (Phase 5).
+- **D3 external download** — optional future external RGB-D dataset still allowed; current
+  seal uses inverted MVTec 3D held-out as the locked M2 audit in-repo.
+- **D4** — user ratification of healthcare M3 candidate (provisional seal in place).
+- **D5** — strongest-baseline freeze file emitted at `strongest_baseline_frozen_v1.json`
+  (automated from validation selection; confirmatory one-shot eval still pending).

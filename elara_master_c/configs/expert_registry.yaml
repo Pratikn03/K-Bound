@@ -1,0 +1,35 @@
+# Upstream domain experts — training protocol record (Master Scenario C)
+
+version: 1
+updated: 2026-05-28
+
+experts:
+  mvtec3d_rgb_patchcore:
+    dataset: mvtec_3d_ad
+    modality: rgb
+    method: patchcore_knn_resnet50
+    code: src/scripts/scenario_c/upgrade_mvtec_experts.py
+    train_protocol: train_good_only_one_class
+    outputs: experiments/fusion/mvtec3d_patchcore_v2_inputs.csv
+    qualification: elara_master_c/audits/gate_a_expert_qualification_v2.json
+    gate_a_status: PASS
+
+  mvtec3d_depth_patchcore:
+    dataset: mvtec_3d_ad
+    modality: depth_or_xyz
+    method: patchcore_knn_resnet50
+    code: same prepare script (depth branch)
+    train_protocol: train_good_only_one_class
+    outputs: experiments/fusion/mvtec3d_patchcore_inputs.csv
+
+  elara_bench_la_tabular:
+    dataset: elara_bench_la
+    modalities: [fraud, cyber, behavior, nlp]
+    method: per_domain_tabular_scorer
+    code: src/scripts/prepare_real_fusion_benchmark.py
+    natural_pairing: false
+    outputs: experiments/fusion/real_domain_fusion_inputs.csv
+
+pending:
+  m3_non_vision_experts:
+    status: awaiting D4 dataset selection

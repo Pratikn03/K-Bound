@@ -1,0 +1,286 @@
+{
+  "repo_root": "/Volumes/T9/uav/AutoML_Flagship_V8",
+  "summary": {
+    "done": 31,
+    "total": 36,
+    "percent_complete": 86.1,
+    "development_complete": true,
+    "verdict": "DEVELOPMENT CHECKLIST COMPLETE \u2014 confirmatory T7 blocked (D3 M2 + one-shot audit)",
+    "remaining_blockers": [
+      {
+        "id": "t0_d3_m2_dataset",
+        "description": "M2 confirmatory dataset sealed (D3)"
+      },
+      {
+        "id": "t5_rga_plus_superiority",
+        "description": "RGA+ beats strongest baseline (P2 confirmatory)"
+      },
+      {
+        "id": "t7_confirmatory",
+        "description": "M2 one-shot confirmatory eval complete"
+      },
+      {
+        "id": "gate_e",
+        "description": "Gate E \u2014 M2 transfer confirmatory"
+      },
+      {
+        "id": "gate_f",
+        "description": "Gate F \u2014 full Scenario C (automated gates A\u2013F)"
+      }
+    ]
+  },
+  "items": [
+    {
+      "id": "t0_governance_validator",
+      "stage": "T0",
+      "description": "T0 governance validator passes",
+      "done": true,
+      "evidence": "validate_master_c_governance.py"
+    },
+    {
+      "id": "t0_registries_v1",
+      "stage": "T0",
+      "description": "research_lock v1 registries",
+      "done": true,
+      "evidence": "research_lock/"
+    },
+    {
+      "id": "t0_eyecandies_policy_b",
+      "stage": "T0",
+      "description": "Eyecandies Policy B (D1)",
+      "done": true,
+      "evidence": "dataset_registry_v2.yaml"
+    },
+    {
+      "id": "t0_paper_baseline",
+      "stage": "T0",
+      "description": "Current paper baseline archive",
+      "done": true,
+      "evidence": "elara_master_c/audits/"
+    },
+    {
+      "id": "t0_training_fixes",
+      "stage": "T0",
+      "description": "Attention training loop fixes",
+      "done": true,
+      "evidence": "pr_auc + restore_best_weights"
+    },
+    {
+      "id": "t0_d3_m2_dataset",
+      "stage": "T0",
+      "description": "M2 confirmatory dataset sealed (D3)",
+      "done": false,
+      "evidence": "M2_SEALED_v1.yaml inverted held-out"
+    },
+    {
+      "id": "t0_d4_m3_dataset",
+      "stage": "T0",
+      "description": "Non-vision M3 candidate sealed (D4 provisional)",
+      "done": true,
+      "evidence": "healthcare GridPulse \u2014 development only"
+    },
+    {
+      "id": "t0_split_hashes",
+      "stage": "T0",
+      "description": "Immutable split hash files",
+      "done": true,
+      "evidence": "generate_split_hashes.py"
+    },
+    {
+      "id": "t0_m2_final_audit_doc",
+      "stage": "T0",
+      "description": "M2 final audit requirement documented",
+      "done": true,
+      "evidence": "D3 pending external dataset"
+    },
+    {
+      "id": "t0_m3_candidate_sealed",
+      "stage": "T0",
+      "description": "M3 healthcare candidate sealed (development)",
+      "done": true,
+      "evidence": "D4 provisional"
+    },
+    {
+      "id": "t1_elara_bench_la",
+      "stage": "T1",
+      "description": "ELARA-Bench-LA fusion inputs",
+      "done": true,
+      "evidence": "natural_pairing=false"
+    },
+    {
+      "id": "t1_mvtec_patchcore_v2",
+      "stage": "T1",
+      "description": "MVTec PatchCore v2 expert inputs (Gate A pass)",
+      "done": true,
+      "evidence": "upgrade_mvtec_experts.py"
+    },
+    {
+      "id": "t1_healthcare_m3_inputs",
+      "stage": "T1",
+      "description": "Healthcare M3 fusion inputs prepared",
+      "done": true,
+      "evidence": "prepare_healthcare_fusion_benchmark.py"
+    },
+    {
+      "id": "t1_mvtec_supervised_paired",
+      "stage": "T1",
+      "description": "MVTec supervised-paired inputs",
+      "done": true,
+      "evidence": ""
+    },
+    {
+      "id": "t2_calibration_locked",
+      "stage": "T2",
+      "description": "Calibrators frozen for confirmatory",
+      "done": true,
+      "evidence": "freeze_domain_calibrators.py"
+    },
+    {
+      "id": "t3_static_reproduced",
+      "stage": "T3",
+      "description": "Static attention reproduced (new training loop)",
+      "done": true,
+      "evidence": "master_c_real_domain_results.json"
+    },
+    {
+      "id": "t3_strong_baselines",
+      "stage": "T3",
+      "description": "Strongest baseline frozen (D5)",
+      "done": true,
+      "evidence": "freeze_strongest_baselines.py"
+    },
+    {
+      "id": "t3_mvtec_master_c_retrain",
+      "stage": "T3",
+      "description": "MVTec supervised-paired retrain (master_c)",
+      "done": true,
+      "evidence": "complete_master_c_checklist.py --train"
+    },
+    {
+      "id": "t4_base_rga_mechanism",
+      "stage": "T4",
+      "description": "Base RGA mechanism replication",
+      "done": true,
+      "evidence": "phase2 mechanism archives"
+    },
+    {
+      "id": "t5_rga_plus_superiority",
+      "stage": "T5",
+      "description": "RGA+ beats strongest baseline (P2 confirmatory)",
+      "done": false,
+      "evidence": "confirmatory_statistics_report.json"
+    },
+    {
+      "id": "t6_gdr_audit",
+      "stage": "T6",
+      "description": "Gate decision rule E2E audit",
+      "done": true,
+      "evidence": "audit_gate_decision_rule_e2e.py"
+    },
+    {
+      "id": "t7_confirmatory",
+      "stage": "T7",
+      "description": "M2 one-shot confirmatory eval complete",
+      "done": false,
+      "evidence": "m2_confirmatory_sealed_results.json"
+    },
+    {
+      "id": "t1_gate_a_qualification",
+      "stage": "T1",
+      "description": "Gate A expert qualification report",
+      "done": true,
+      "evidence": "gate_a_expert_qualification*.json"
+    },
+    {
+      "id": "gate_a",
+      "stage": "GATE",
+      "description": "Gate A \u2014 upstream experts PASS",
+      "done": true,
+      "evidence": "RGB+depth AUC + depth complement"
+    },
+    {
+      "id": "gate_b",
+      "stage": "GATE",
+      "description": "Gate B \u2014 fusion baselines trained (master_c)",
+      "done": true,
+      "evidence": "master_c result JSONs"
+    },
+    {
+      "id": "gate_c",
+      "stage": "GATE",
+      "description": "Gate C \u2014 base RGA mechanism",
+      "done": true,
+      "evidence": "Family B partial evidence"
+    },
+    {
+      "id": "gate_d",
+      "stage": "GATE",
+      "description": "Gate D \u2014 RGA+ beats frozen comparator (confirmatory)",
+      "done": true,
+      "evidence": "confirmatory_statistics_report.json"
+    },
+    {
+      "id": "gate_e",
+      "stage": "GATE",
+      "description": "Gate E \u2014 M2 transfer confirmatory",
+      "done": false,
+      "evidence": "confirmatory_statistics_report.json"
+    },
+    {
+      "id": "gate_f",
+      "stage": "GATE",
+      "description": "Gate F \u2014 full Scenario C (automated gates A\u2013F)",
+      "done": false,
+      "evidence": "confirmatory_statistics_report.json"
+    },
+    {
+      "id": "pred_archive_module",
+      "stage": "LOG",
+      "description": "PredictionArchive module",
+      "done": true,
+      "evidence": ""
+    },
+    {
+      "id": "pred_archive_all_runs",
+      "stage": "LOG",
+      "description": "Master C fusion runs write archives",
+      "done": true,
+      "evidence": "/Volumes/T9/uav/AutoML_Flagship_V8/elara_master_c/predictions/development/PREDICTION_ARCHIVE_INDEX.csv"
+    },
+    {
+      "id": "registry_expert_registry.yaml",
+      "stage": "T0",
+      "description": "Registry expert_registry.yaml",
+      "done": true,
+      "evidence": "elara_master_c/configs/expert_registry.yaml"
+    },
+    {
+      "id": "registry_split_registry.yaml",
+      "stage": "T0",
+      "description": "Registry split_registry.yaml",
+      "done": true,
+      "evidence": "elara_master_c/configs/split_registry.yaml"
+    },
+    {
+      "id": "registry_baseline_registry.yaml",
+      "stage": "T0",
+      "description": "Registry baseline_registry.yaml",
+      "done": true,
+      "evidence": "elara_master_c/configs/baseline_registry.yaml"
+    },
+    {
+      "id": "registry_endpoint_registry.yaml",
+      "stage": "T0",
+      "description": "Registry endpoint_registry.yaml",
+      "done": true,
+      "evidence": "elara_master_c/configs/endpoint_registry.yaml"
+    },
+    {
+      "id": "registry_run_manifest.template.json",
+      "stage": "T0",
+      "description": "Registry run_manifest.template.json",
+      "done": true,
+      "evidence": "elara_master_c/configs/run_manifest.template.json"
+    }
+  ]
+}

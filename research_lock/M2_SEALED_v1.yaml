@@ -1,0 +1,29 @@
+# M2 final confirmatory audit dataset (D3 ratified 2026-05-28)
+# Inverted held-out-category MVTec 3D-AD — this exact split was NOT used in any
+# prior ELARA fusion result file (differs from mvtec3d_patchcore_heldout).
+
+version: 1
+status: SEALED
+ratified: 2026-05-28
+decision: D3_inverted_mvtec3d_heldout
+
+dataset_id: m2_mvtec3d_inverted_heldout_confirmatory
+family: M2_heldout_transfer
+pairing: naturally_paired_rgb_depth
+
+heldout_protocol:
+  train_categories: [foam, peach, rope, tire]
+  test_categories: [bagel, cable_gland, cookie, dowel]
+  validation_fraction_from_train_category_test_rows: 0.15
+  validation_seed: 20260528
+
+artifacts:
+  inputs: experiments/fusion/m2_confirmatory_sealed_inputs.csv
+  metadata: experiments/fusion/m2_confirmatory_sealed_metadata.json
+  results: experiments/fusion/m2_confirmatory_sealed_results.json
+  split_hash: elara_master_c/data/splits/split_hashes/m2_confirmatory_sealed.json
+
+rules:
+  - Test fold opened exactly once for confirmatory evaluation.
+  - No hyperparameter or comparator selection using this test fold.
+  - Strongest baseline frozen from validation on train categories only.

@@ -1,0 +1,74 @@
+# dataset_registry_v2.yaml
+# Supersedes dataset_registry_v1.yaml for Eyecandies only (decision D1, Policy B).
+# All other entries unchanged from v1.
+
+version: 2
+supersedes: dataset_registry_v1.yaml
+ratified: 2026-05-28
+decision_ref: research_lock/DECISIONS_v1.md (D1 Policy B)
+
+authoritative_sources:
+  - research_lock/dataset_registry_v1.yaml
+  - docs/research/phase3/FINAL_METRICS_MANIFEST.json
+
+datasets:
+  elara_bench_la:
+    pairing_strength: label_aligned
+    family: M0
+    role: development
+    train_allowed: true
+    headline_claim_allowed: mechanism_only
+
+  mvtec_3d_ad:
+    pairing_strength: independent_modalities
+    family: M1
+    role: development
+    train_allowed: true
+    prepare_script: src/scripts/prepare_mvtec3d_fusion_benchmark.py
+    fusion_configs:
+      - configs/attention_mvtec3d_patchcore_supervised_paired.yaml
+      - configs/attention_mvtec3d_patchcore.yaml
+
+  eyecandies:
+    pairing_strength: rgb_depth_naturally_paired
+    family: M2
+    role: development
+    train_allowed: true
+    headline_claim_allowed: false
+    notes: >
+      Reclassified from sealed_failed (v1) per D1. Original failure preserved in
+      family_d_failure_record.md. Final transfer claim (P4) requires NEW untouched
+      M2 dataset (D3), not Eyecandies.
+
+  visa_rgb_edge:
+    pairing_strength: derived_view_proxy
+    family: M1
+    role: development
+    train_allowed: true
+
+  mvtec_loco_ad_rgb_edge:
+    pairing_strength: derived_view_proxy
+    family: M1
+    role: development
+    train_allowed: true
+
+  unsw_nb15:
+    pairing_strength: naturally_structured_views
+    family: M3_candidate
+    role: development
+    train_allowed: true
+
+pending_acquisitions:
+  m2_new_untouched_transfer:
+    family: M2
+    role: final_audit
+    status: NOT_SELECTED
+    train_allowed: false_until_sealed
+  m3_non_vision_paired:
+    family: M3
+    role: confirmation
+    status: NOT_SELECTED
+  m4_temporal_stream:
+    family: M4
+    role: confirmation
+    status: NOT_SELECTED

@@ -1,0 +1,20 @@
+# M3 non-vision naturally paired domain — sealed development candidate (D4)
+# Final confirmatory evaluation still requires locked protocol + untouched test window.
+
+version: 1
+status: SEALED_DEVELOPMENT_CANDIDATE
+ratified: 2026-05-28
+decision: D4_provisional_healthcare
+
+dataset:
+  id: healthcare_gridpulse_patient_stratified
+  raw_root: data/raw/healthcare/gridpulse
+  pairing_strength: naturally_co_observed_clinical_window
+  role: cross_domain_confirmation_development
+  prepare_script: src/scripts/prepare_healthcare_clinical_fusion_benchmark.py
+  validate_script: src/scripts/validate_healthcare_gap_closure.py
+
+rules:
+  - Patient-level splits only; no patient leakage across train/val/test.
+  - May tune fusion and calibration on development splits only.
+  - Headline M3 claim requires NEW confirmatory run after model freeze (not legacy gap audits alone).
