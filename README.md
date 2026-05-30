@@ -317,15 +317,14 @@ readiness, not prospective clinical deployment or regulated clinical use.
   research metrics — the research metrics live in `experiments/fusion/`
   and the rendered tables under `docs/research/tables/`.
 
-## Status and roadmap
+## Status and roadmap (Scenario C / Flagship)
 
-The research roadmap, gap analysis, and submission plan are tracked in
-[docs/research/manuscript_review/](docs/research/manuscript_review/):
+Governance and gates:
 
-- [SENIOR_ENGINEER_AUDIT_2026-05-15.md](docs/research/manuscript_review/SENIOR_ENGINEER_AUDIT_2026-05-15.md) — full-repo audit
-- [PUBLICATION_ROADMAP.md](docs/research/manuscript_review/PUBLICATION_ROADMAP.md) — arXiv → workshop → conference plan
-- [REVIEWER_RATING_AND_PHASE_PLAN.md](docs/research/manuscript_review/REVIEWER_RATING_AND_PHASE_PLAN.md) — reviewer-style rating and remediation
-- [FULL_RESEARCH_AUDIT_2026-05-14.md](docs/research/manuscript_review/FULL_RESEARCH_AUDIT_2026-05-14.md) — split-discipline and benchmark-construction audit
+- [research_lock/SCENARIO_C_CLAIM_CONTRACT.md](research_lock/SCENARIO_C_CLAIM_CONTRACT.md) — claim contract
+- [elara_master_c/audits/FINAL_CHECKLIST_VERDICT.md](elara_master_c/audits/FINAL_CHECKLIST_VERDICT.md) — checklist verdict
+- [docs/research/scenario_c/WIN_VS_SAR_VALIDATION.md](docs/research/scenario_c/WIN_VS_SAR_VALIDATION.md) — Flagship / ELARA deploy validation
+- [docs/research/scenario_c/MASTER_C_TRAINING_EXECUTION.md](docs/research/scenario_c/MASTER_C_TRAINING_EXECUTION.md) — Master C runbook
 
 ## License
 
