@@ -10,21 +10,28 @@ This is an improved version of the UAIS-V API with:
 - Request validation
 """
 
+import hashlib
+import os
+import time
 from base64 import b64decode
+from binascii import Error as Base64DecodeError
+from collections import defaultdict, deque
 from io import BytesIO
 from pathlib import Path
 from typing import Optional
 
 import joblib
 import numpy as np
-from fastapi import Depends, FastAPI, HTTPException, status
+from fastapi import Depends, FastAPI, HTTPException, Request, status
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import PlainTextResponse
-from pydantic import BaseModel, Field, validator
+from fastapi.responses import JSONResponse, PlainTextResponse
+from pydantic import BaseModel, Field, field_validator
+from starlette.middleware.base import BaseHTTPMiddleware
 
-# Import monitoring and auth (optional - graceful fallback)
+from .auth import authenticate
+
+# Monitoring is optional; authentication is mandatory and must fail at startup if missing.
 try:
-    from .auth import authenticate
     from .monitoring import (
         MODEL_LOADED,
         InferenceMetrics,
@@ -37,7 +44,42 @@ try:
     MONITORING_AVAILABLE = True
 except ImportError:
     MONITORING_AVAILABLE = False
-    authenticate = None
+
+
+def _csv_env(name: str) -> list[str]:
+    return [item.strip() for item in os.getenv(name, "").split(",") if item.strip()]
+
+
+def _int_env(name: str, default: int, minimum: int = 1) -> int:
+    raw = os.getenv(name)
+    if raw is None:
+        return default
+    try:
+        value = int(raw)
+    except ValueError:
+        return default
+    return max(value, minimum)
+
+
+def _bool_env(name: str, default: bool = False) -> bool:
+    raw = os.getenv(name)
+    if raw is None:
+        return default
+    return raw.strip().lower() in {"1", "true", "yes", "on"}
+
+
+CORS_ORIGINS = _csv_env("UAIS_CORS_ORIGINS")
+MAX_FEATURES = _int_env("UAIS_MAX_FEATURES", 4096)
+MAX_SCORES = _int_env("UAIS_MAX_SCORES", 64)
+MAX_DOMAINS = _int_env("UAIS_MAX_DOMAINS", 32)
+MAX_EMBEDDINGS = _int_env("UAIS_MAX_EMBEDDINGS", 8192)
+MAX_TEXT_CHARS = _int_env("UAIS_MAX_TEXT_CHARS", 10000)
+MAX_IMAGE_BASE64_CHARS = _int_env("UAIS_MAX_IMAGE_BASE64_CHARS", 8_000_000)
+MAX_IMAGE_PIXELS = _int_env("UAIS_MAX_IMAGE_PIXELS", 25_000_000)
+RATE_LIMIT_REQUESTS = _int_env("UAIS_RATE_LIMIT_REQUESTS", 120)
+RATE_LIMIT_WINDOW_SECONDS = _int_env("UAIS_RATE_LIMIT_WINDOW_SECONDS", 60)
+TRUSTED_MODEL_ARTIFACTS = _bool_env("UAIS_TRUSTED_MODEL_ARTIFACTS", False)
+REQUIRE_MODEL_CHECKSUMS = _bool_env("UAIS_REQUIRE_MODEL_CHECKSUMS", True)
 
 # FastAPI app
 app = FastAPI(
@@ -46,13 +88,46 @@ app = FastAPI(
     description="Universal Anomaly Intelligence System with authentication and monitoring",
 )
 
+
+class RateLimitMiddleware(BaseHTTPMiddleware):
+    """Small fixed-window limiter for direct API deployments."""
+
+    def __init__(self, app, limit: int, window_seconds: int):
+        super().__init__(app)
+        self.limit = limit
+        self.window_seconds = window_seconds
+        self.requests: dict[tuple[str, str], deque[float]] = defaultdict(deque)
+
+    async def dispatch(self, request: Request, call_next):
+        client = request.client.host if request.client else "unknown"
+        key = (client, request.url.path)
+        now = time.monotonic()
+        bucket = self.requests[key]
+        while bucket and now - bucket[0] >= self.window_seconds:
+            bucket.popleft()
+        if len(bucket) >= self.limit:
+            return JSONResponse(
+                status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+                content={"detail": "Rate limit exceeded"},
+                headers={"Retry-After": str(self.window_seconds)},
+            )
+        bucket.append(now)
+        return await call_next(request)
+
+
+app.add_middleware(
+    RateLimitMiddleware,
+    limit=RATE_LIMIT_REQUESTS,
+    window_seconds=RATE_LIMIT_WINDOW_SECONDS,
+)
+
 # CORS middleware
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # In production, specify allowed origins
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_origins=CORS_ORIGINS,
+    allow_credentials=bool(CORS_ORIGINS),
+    allow_methods=["GET", "POST"],
+    allow_headers=["Authorization", "Content-Type", "X-API-Key"],
 )
 
 # Add metrics middleware if available
@@ -69,10 +144,47 @@ attention_ckpt_path = attention_model_dir / "attention_fusion.pt"
 nlp_model_dir = project_root / "models" / "nlp" / "distilbert"
 vision_model_dir = project_root / "models" / "vision" / "resnet"
 
+
+def _artifact_checksum_env(model_type: str) -> str | None:
+    return os.getenv(f"UAIS_MODEL_SHA256_{model_type.upper()}")
+
+
+def _sha256(path: Path) -> str:
+    digest = hashlib.sha256()
+    with path.open("rb") as handle:
+        for chunk in iter(lambda: handle.read(1024 * 1024), b""):
+            digest.update(chunk)
+    return digest.hexdigest()
+
+
+def _artifact_is_trusted(path: Path, model_type: str) -> bool:
+    if not path.exists() or not TRUSTED_MODEL_ARTIFACTS:
+        return False
+    expected = _artifact_checksum_env(model_type)
+    if expected:
+        return _sha256(path).lower() == expected.strip().lower()
+    return not REQUIRE_MODEL_CHECKSUMS
+
+
+def _load_joblib_artifact(path: Path, model_type: str):
+    if not _artifact_is_trusted(path, model_type):
+        return None
+    return joblib.load(path)
+
+
+def _load_torch_artifact(torch_module, path: Path, model_type: str):
+    if not _artifact_is_trusted(path, model_type):
+        return None
+    try:
+        return torch_module.load(path, map_location="cpu", weights_only=True)
+    except TypeError:
+        return torch_module.load(path, map_location="cpu")
+
+
 # Load models
-fraud_model = joblib.load(fraud_model_path) if fraud_model_path.exists() else None
-cyber_model = joblib.load(cyber_model_path) if cyber_model_path.exists() else None
-fusion_model = joblib.load(fusion_model_path) if fusion_model_path.exists() else None
+fraud_model = _load_joblib_artifact(fraud_model_path, "fraud")
+cyber_model = _load_joblib_artifact(cyber_model_path, "cyber")
+fusion_model = _load_joblib_artifact(fusion_model_path, "fusion")
 
 # Track model loading status
 if MONITORING_AVAILABLE:
@@ -108,8 +220,11 @@ def _load_nlp():
     tokenizer = get_tokenizer(str(nlp_model_dir))
     model = DistilBERTClassifier(str(nlp_model_dir), num_labels=2)
     state_path = nlp_model_dir / "model.pt"
-    if state_path.exists():
-        model.load_state_dict(torch.load(state_path, map_location="cpu"))
+    state = _load_torch_artifact(torch, state_path, "nlp")
+    if state is None:
+        _nlp_artifacts_loaded = True
+        return None, None
+    model.load_state_dict(state)
     model.eval()
     _nlp_model, _nlp_tokenizer = model, tokenizer
     _nlp_artifacts_loaded = True
@@ -125,7 +240,6 @@ def _load_vision():
         return _vision_model
     try:
         import torch
-
         from uais_v.models.vision_resnet import VisionConfig, build_resnet_classifier
     except Exception:
         _vision_model = False
@@ -136,7 +250,11 @@ def _load_vision():
         return None
     cfg = VisionConfig(model_name="resnet18", num_classes=2, pretrained=False)
     model = build_resnet_classifier(cfg)
-    model.load_state_dict(torch.load(state_path, map_location="cpu"))
+    state = _load_torch_artifact(torch, state_path, "vision")
+    if state is None:
+        _vision_model = False
+        return None
+    model.load_state_dict(state)
     model.eval()
     _vision_model = model
     if MONITORING_AVAILABLE:
@@ -159,7 +277,9 @@ def _load_attention_fusion():
     except Exception:
         return None, {}
 
-    state = torch.load(attention_ckpt_path, map_location="cpu")
+    state = _load_torch_artifact(torch, attention_ckpt_path, "attention_fusion")
+    if not isinstance(state, dict):
+        return None, {}
     config = state.get("config", {}) if isinstance(state, dict) else {}
     model_cfg = config.get("model", {})
     data_cfg = config.get("data", {})
@@ -207,9 +327,15 @@ def _load_attention_fusion():
 
 # Request/Response models
 class FraudRequest(BaseModel):
-    features: list[float] = Field(..., min_items=1, description="Feature vector for fraud detection")
+    features: list[float] = Field(
+        ...,
+        min_length=1,
+        max_length=MAX_FEATURES,
+        description="Feature vector for fraud detection",
+    )
 
-    @validator("features")
+    @field_validator("features")
+    @classmethod
     def validate_features(cls, v):
         if any(not np.isfinite(x) for x in v):
             raise ValueError("Features must be finite numbers")
@@ -223,7 +349,19 @@ class FraudResponse(BaseModel):
 
 
 class CyberRequest(BaseModel):
-    features: list[float] = Field(..., min_items=1, description="Feature vector for cyber attack detection")
+    features: list[float] = Field(
+        ...,
+        min_length=1,
+        max_length=MAX_FEATURES,
+        description="Feature vector for cyber attack detection",
+    )
+
+    @field_validator("features")
+    @classmethod
+    def validate_features(cls, v):
+        if any(not np.isfinite(x) for x in v):
+            raise ValueError("Features must be finite numbers")
+        return v
 
 
 class CyberResponse(BaseModel):
@@ -232,12 +370,18 @@ class CyberResponse(BaseModel):
 
 
 class FusionRequest(BaseModel):
-    scores: dict[str, float] = Field(..., description="Domain-specific anomaly scores")
+    scores: dict[str, float] = Field(
+        ...,
+        min_length=1,
+        max_length=MAX_SCORES,
+        description="Domain-specific anomaly scores",
+    )
 
-    @validator("scores")
+    @field_validator("scores")
+    @classmethod
     def validate_scores(cls, v):
         for score in v.values():
-            if not (0 <= score <= 1):
+            if not np.isfinite(score) or not (0 <= score <= 1):
                 raise ValueError("Scores must be between 0 and 1")
         return v
 
@@ -252,11 +396,18 @@ class AttentionDomainInput(BaseModel):
     domain: str
     score: float = Field(..., ge=0.0, le=1.0)
     confidence: Optional[float] = Field(None, ge=0.0, le=1.0)
-    embeddings: Optional[list[float]] = None
+    embeddings: Optional[list[float]] = Field(None, max_length=MAX_EMBEDDINGS)
+
+    @field_validator("embeddings")
+    @classmethod
+    def validate_embeddings(cls, v):
+        if v is not None and any(not np.isfinite(x) for x in v):
+            raise ValueError("Embeddings must be finite numbers")
+        return v
 
 
 class AttentionFusionRequest(BaseModel):
-    domains: list[AttentionDomainInput]
+    domains: list[AttentionDomainInput] = Field(..., min_length=1, max_length=MAX_DOMAINS)
 
 
 class AttentionFusionResponse(BaseModel):
@@ -267,11 +418,16 @@ class AttentionFusionResponse(BaseModel):
 
 
 class NLPRequest(BaseModel):
-    text: str = Field(..., min_length=1, max_length=10000, description="Text to analyze")
+    text: str = Field(..., min_length=1, max_length=MAX_TEXT_CHARS, description="Text to analyze")
 
 
 class VisionRequest(BaseModel):
-    image_base64: str = Field(..., description="Base64-encoded image (jpg/png)")
+    image_base64: str = Field(
+        ...,
+        min_length=1,
+        max_length=MAX_IMAGE_BASE64_CHARS,
+        description="Base64-encoded image (jpg/png)",
+    )
 
 
 # Helper functions
@@ -334,7 +490,7 @@ async def root():
         "version": "2.0",
         "status": "active",
         "features": {
-            "authentication": authenticate is not None,
+            "authentication": True,
             "monitoring": MONITORING_AVAILABLE,
         },
         "available_models": {
@@ -354,7 +510,7 @@ async def health():
 
 
 @app.get("/health/detailed")
-async def health_detailed():
+async def health_detailed(authenticated: bool = Depends(authenticate)):
     """Detailed health check with component status."""
     if not MONITORING_AVAILABLE:
         return {"status": "ok", "note": "Detailed monitoring not available"}
@@ -363,7 +519,7 @@ async def health_detailed():
 
 
 @app.get("/metrics")
-async def metrics():
+async def metrics(authenticated: bool = Depends(authenticate)):
     """Prometheus metrics endpoint."""
     if not MONITORING_AVAILABLE:
         raise HTTPException(
@@ -375,7 +531,7 @@ async def metrics():
 
 
 @app.get("/system")
-async def system_info():
+async def system_info(authenticated: bool = Depends(authenticate)):
     """System resource information."""
     if not MONITORING_AVAILABLE:
         return {"note": "System metrics not available"}
@@ -384,7 +540,7 @@ async def system_info():
 
 
 @app.post("/predict_fraud", response_model=FraudResponse)
-async def predict_fraud(req: FraudRequest, authenticated: bool = Depends(authenticate) if authenticate else True):
+async def predict_fraud(req: FraudRequest, authenticated: bool = Depends(authenticate)):
     """Predict fraud probability from features."""
     if fraud_model is None:
         raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail="Fraud model not loaded")
@@ -406,12 +562,12 @@ async def predict_fraud(req: FraudRequest, authenticated: bool = Depends(authent
         )
     except Exception as e:
         raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Prediction failed: {str(e)}"
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Prediction failed"
         ) from e
 
 
 @app.post("/predict_cyber", response_model=CyberResponse)
-async def predict_cyber(req: CyberRequest, authenticated: bool = Depends(authenticate) if authenticate else True):
+async def predict_cyber(req: CyberRequest, authenticated: bool = Depends(authenticate)):
     """Predict cyber attack probability from network features."""
     if cyber_model is None:
         raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail="Cyber model not loaded")
@@ -429,12 +585,12 @@ async def predict_cyber(req: CyberRequest, authenticated: bool = Depends(authent
         return CyberResponse(cyber_attack_probability=proba, threat_level=get_risk_level(proba))
     except Exception as e:
         raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Prediction failed: {str(e)}"
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Prediction failed"
         ) from e
 
 
 @app.post("/predict_fusion", response_model=FusionResponse)
-async def predict_fusion(req: FusionRequest, authenticated: bool = Depends(authenticate) if authenticate else True):
+async def predict_fusion(req: FusionRequest, authenticated: bool = Depends(authenticate)):
     """Predict overall risk from multiple domain scores."""
     if fusion_model is None:
         raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail="Fusion model not loaded")
@@ -453,14 +609,14 @@ async def predict_fusion(req: FusionRequest, authenticated: bool = Depends(authe
         return FusionResponse(fusion_risk=proba, domains=keys, overall_risk_level=get_risk_level(proba))
     except Exception as e:
         raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Prediction failed: {str(e)}"
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Prediction failed"
         ) from e
 
 
 @app.post("/predict_attention_fusion", response_model=AttentionFusionResponse)
 async def predict_attention_fusion(
     req: AttentionFusionRequest,
-    authenticated: bool = Depends(authenticate) if authenticate else True,
+    authenticated: bool = Depends(authenticate),
 ):
     """Predict overall risk using the attention fusion model."""
     model, meta = _load_attention_fusion()
@@ -505,12 +661,12 @@ async def predict_attention_fusion(
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Attention fusion prediction failed: {str(e)}",
+            detail="Attention fusion prediction failed",
         ) from e
 
 
 @app.post("/predict_nlp")
-async def predict_nlp(req: NLPRequest, authenticated: bool = Depends(authenticate) if authenticate else True):
+async def predict_nlp(req: NLPRequest, authenticated: bool = Depends(authenticate)):
     """Analyze text for suspicious content."""
     model, tokenizer = _load_nlp()
     if model is None or tokenizer is None:
@@ -535,12 +691,12 @@ async def predict_nlp(req: NLPRequest, authenticated: bool = Depends(authenticat
         return {"nlp_suspicion_probability": proba, "risk_level": get_risk_level(proba)}
     except Exception as e:
         raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"NLP inference failed: {str(e)}"
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="NLP inference failed"
         ) from e
 
 
 @app.post("/predict_vision")
-async def predict_vision(req: VisionRequest, authenticated: bool = Depends(authenticate) if authenticate else True):
+async def predict_vision(req: VisionRequest, authenticated: bool = Depends(authenticate)):
     """Detect anomalies in images."""
     model = _load_vision()
     if model is None:
@@ -551,8 +707,12 @@ async def predict_vision(req: VisionRequest, authenticated: bool = Depends(authe
         from PIL import Image
         from torchvision import transforms
 
-        img_bytes = b64decode(req.image_base64)
-        image = Image.open(BytesIO(img_bytes)).convert("RGB")
+        Image.MAX_IMAGE_PIXELS = MAX_IMAGE_PIXELS
+        try:
+            img_bytes = b64decode(req.image_base64, validate=True)
+            image = Image.open(BytesIO(img_bytes)).convert("RGB")
+        except (Base64DecodeError, OSError) as err:
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid image payload") from err
 
         transform = transforms.Compose(
             [
@@ -577,12 +737,14 @@ async def predict_vision(req: VisionRequest, authenticated: bool = Depends(authe
 
         return {"vision_anomaly_probability": proba, "risk_level": get_risk_level(proba)}
     except Exception as e:
+        if isinstance(e, HTTPException):
+            raise
         raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Vision inference failed: {str(e)}"
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Vision inference failed"
         ) from e
 
 
 if __name__ == "__main__":
     import uvicorn
 
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+    uvicorn.run(app, host=os.getenv("UAIS_BIND_HOST", "127.0.0.1"), port=_int_env("UAIS_BIND_PORT", 8000))

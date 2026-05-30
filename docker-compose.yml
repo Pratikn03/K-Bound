@@ -1,15 +1,24 @@
-version: '3.9'
 services:
   api:
-    image: python:3.11-slim
-    working_dir: /app
+    build:
+      context: .
+      dockerfile: Dockerfile
     volumes:
-      - ./:/app
-    command: bash -c "pip install --no-cache-dir -r requirements.txt && uvicorn deploy.api.main:app --host 0.0.0.0 --port 8000"
+      - ./models:/app/models:ro
+      - ./experiments:/app/experiments:ro
     ports:
-      - "8000:8000"
+      - "127.0.0.1:8000:8000"
     environment:
-      - PYTHONPATH=/app/src
+      UAIS_API_KEYS: ${UAIS_API_KEYS:?Set UAIS_API_KEYS before starting the API}
+      UAIS_CORS_ORIGINS: ${UAIS_CORS_ORIGINS:?Set UAIS_CORS_ORIGINS before starting the API}
+      UAIS_TRUSTED_MODEL_ARTIFACTS: ${UAIS_TRUSTED_MODEL_ARTIFACTS:-false}
+      UAIS_REQUIRE_MODEL_CHECKSUMS: ${UAIS_REQUIRE_MODEL_CHECKSUMS:-true}
+    security_opt:
+      - no-new-privileges:true
+    read_only: true
+    tmpfs:
+      - /tmp
+    restart: unless-stopped
     depends_on:
       - mlflow
 
@@ -17,23 +26,25 @@ services:
     image: python:3.11-slim
     working_dir: /app
     volumes:
-      - ./:/app
+      - ./:/app:ro
     command: bash -c "pip install --no-cache-dir -r requirements.txt && streamlit run dashboard/app_streamlit.py --server.port 8501 --server.address 0.0.0.0"
     ports:
-      - "8501:8501"
+      - "127.0.0.1:8501:8501"
     environment:
       - PYTHONPATH=/app/src
     depends_on:
       - api
 
   mlflow:
-    image: ghcr.io/mlflow/mlflow:latest
+    image: ghcr.io/mlflow/mlflow:v2.14.0
     command: mlflow server --host 0.0.0.0 --port 5000 --backend-store-uri sqlite:///mlflow.db --default-artifact-root /mlruns
     ports:
-      - "5000:5000"
+      - "127.0.0.1:5000:5000"
     volumes:
       - ./mlruns:/mlruns
       - ./mlflow.db:/mlflow.db
+    security_opt:
+      - no-new-privileges:true
 
 networks:
   default:

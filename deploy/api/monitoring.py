@@ -3,36 +3,60 @@
 import time
 from collections import defaultdict
 from datetime import datetime
-from typing import Callable, Optional
+from inspect import isawaitable
+from typing import Any, Callable, Optional
 
 import psutil
 from fastapi import Request, Response
-from prometheus_client import Counter, Gauge, Histogram, generate_latest
+from prometheus_client import REGISTRY, Counter, Gauge, Histogram, generate_latest
 from starlette.middleware.base import BaseHTTPMiddleware
 
+
+def _existing_collector(name: str):
+    names = getattr(REGISTRY, "_names_to_collectors", {})
+    base = name.removesuffix("_total")
+    for candidate in (name, base, f"{base}_total", f"{name}_total"):
+        collector = names.get(candidate)
+        if collector is not None:
+            return collector
+    return None
+
+
+def _counter(name: str, documentation: str, labelnames: list[str]):
+    return _existing_collector(name) or Counter(name, documentation, labelnames)
+
+
+def _histogram(name: str, documentation: str, labelnames: list[str], **kwargs):
+    return _existing_collector(name) or Histogram(name, documentation, labelnames, **kwargs)
+
+
+def _gauge(name: str, documentation: str, labelnames: list[str] | None = None):
+    return _existing_collector(name) or Gauge(name, documentation, labelnames or [])
+
+
 # Prometheus metrics
-REQUEST_COUNT = Counter("uais_requests_total", "Total number of requests", ["method", "endpoint", "status"])
+REQUEST_COUNT = _counter("uais_requests_total", "Total number of requests", ["method", "endpoint", "status"])
 
-REQUEST_DURATION = Histogram("uais_request_duration_seconds", "Request duration in seconds", ["method", "endpoint"])
+REQUEST_DURATION = _histogram("uais_request_duration_seconds", "Request duration in seconds", ["method", "endpoint"])
 
-MODEL_INFERENCE_COUNT = Counter("uais_model_inferences_total", "Total number of model inferences", ["model_type"])
+MODEL_INFERENCE_COUNT = _counter("uais_model_inferences_total", "Total number of model inferences", ["model_type"])
 
-MODEL_INFERENCE_DURATION = Histogram(
+MODEL_INFERENCE_DURATION = _histogram(
     "uais_model_inference_duration_seconds", "Model inference duration in seconds", ["model_type"]
 )
 
-PREDICTION_SCORE = Histogram(
+PREDICTION_SCORE = _histogram(
     "uais_prediction_score",
     "Distribution of prediction scores",
     ["model_type"],
     buckets=[0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0],
 )
 
-SYSTEM_MEMORY_USAGE = Gauge("uais_system_memory_usage_bytes", "System memory usage in bytes")
+SYSTEM_MEMORY_USAGE = _gauge("uais_system_memory_usage_bytes", "System memory usage in bytes")
 
-SYSTEM_CPU_USAGE = Gauge("uais_system_cpu_usage_percent", "System CPU usage percentage")
+SYSTEM_CPU_USAGE = _gauge("uais_system_cpu_usage_percent", "System CPU usage percentage")
 
-MODEL_LOADED = Gauge("uais_model_loaded", "Whether model is loaded (1) or not (0)", ["model_type"])
+MODEL_LOADED = _gauge("uais_model_loaded", "Whether model is loaded (1) or not (0)", ["model_type"])
 
 
 class MetricsMiddleware(BaseHTTPMiddleware):
@@ -99,14 +123,16 @@ class HealthChecker:
         """Register a health check."""
         self.checks[name] = check_fn
 
-    async def run_checks(self) -> dict[str, any]:
+    async def run_checks(self) -> dict[str, Any]:
         """Run all health checks."""
         results = {"status": "healthy", "timestamp": datetime.utcnow().isoformat(), "checks": {}}
 
         for name, check_fn in self.checks.items():
             try:
                 start = time.time()
-                result = await check_fn() if callable(check_fn) else check_fn()
+                result = check_fn() if callable(check_fn) else check_fn
+                if isawaitable(result):
+                    result = await result
                 duration = time.time() - start
 
                 check_result = {
@@ -164,7 +190,7 @@ def get_system_metrics() -> dict:
         "process": {
             "threads": process.num_threads(),
             "open_files": len(process.open_files()),
-            "connections": len(process.connections()),
+            "connections": len(process.net_connections()),
         },
     }
 
