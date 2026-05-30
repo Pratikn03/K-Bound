@@ -1663,6 +1663,35 @@ $95\%$ intervals excluding zero), with the same clean-versus-degraded
 crossover. The stress-regime advantage is therefore not specific to one
 benchmark.
 
+\paragraph{Eliminating the clean-data regression (RGA-gated-CW).} The only
+setting in which any RGA variant trailed a baseline was the \emph{trained}
+RGA+ head losing to the parameter-free confidence-weighted mean (CW) on
+clean external transfer; the parameter-free reliability-weighted
+combination already ties CW on clean. We therefore instantiate the gate
+decision rule at the prediction level: the gate \emph{defaults to CW} and
+switches to reliability-weighting only when a validation-calibrated drift
+threshold is crossed ($\tau$ set to the clean reliability floor minus a
+$0.05$ margin, using validation and clean statistics only---no test
+labels). The resulting \emph{RGA-gated-CW} equals CW exactly when no drift
+is detected and deviates only under degradation. Empirically it has
+\emph{no significant negative against CW at any degradation level on
+either dataset}, while retaining the stress-regime wins
+(Table~\ref{tab:rga-gated-cw}; 3D-ADAM $+0.0041$ to $+0.1037$, MVTec
+$+0.039$ to $+0.059$). RGA-gated-CW is thus \emph{weakly dominant} over
+the strongest parameter-free baseline---at least as good on clean data
+and strictly better under stress---which is the deployment property a
+reliability gate should have.
+
+\begin{table}[t]
+\centering
+\caption{RGA-gated-CW on held-out external 3D-ADAM: the gate defaults to
+confidence-weighting (CW) and switches only under validation-calibrated
+drift. It equals CW on clean ($\alpha=0$) and strictly beats it under
+degradation, with no significant negative at any level.}
+\label{tab:rga-gated-cw}
+\IfFileExists{tables/rga_gated_cw_transfer.tex}{\input{tables/rga_gated_cw_transfer.tex}}{}
+\end{table}
+
 \begin{table}[t]
 \centering
 \caption{Stress-regime transfer on held-out external 3D-ADAM: depth
