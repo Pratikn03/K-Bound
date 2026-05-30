@@ -1,0 +1,56 @@
+name: Research Dashboard
+
+on:
+  push:
+    branches: ["main", "master"]
+    paths:
+      - "elara_master_c/audits/**"
+      - "research_lock/FLAGSHIP_DEV_PROTOCOL_v1.yaml"
+      - "research_dashboard/**"
+      - ".github/workflows/research_dashboard.yml"
+  pull_request:
+    branches: ["main", "master"]
+    paths:
+      - "elara_master_c/audits/**"
+      - "research_lock/FLAGSHIP_DEV_PROTOCOL_v1.yaml"
+      - "research_dashboard/**"
+  workflow_dispatch:
+
+jobs:
+  snapshot:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build C++ aggregator
+        run: |
+          cd research_dashboard
+          chmod +x build.sh
+          ./build.sh
+
+      - name: Generate snapshot (with history)
+        run: |
+          ./research_dashboard/build/elara_research_snapshot \
+            --repo-root "${{ github.workspace }}"
+
+      - name: Verify snapshot JSON
+        run: |
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          p = Path("research_dashboard/web/data/snapshot.json")
+          data = json.loads(p.read_text())
+          assert "checklist" in data and "gates" in data
+          assert "history_timeline" in data
+          assert "diff_vs_previous" in data
+          print("snapshot OK:", data.get("generated_at"))
+          PY
+
+      - name: Upload dashboard artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: research-dashboard
+          path: |
+            research_dashboard/web/data/snapshot.json
+            research_dashboard/web/data/history/
+          if-no-files-found: warn
