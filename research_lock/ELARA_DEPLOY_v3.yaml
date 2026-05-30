@@ -1,0 +1,24 @@
+# ELARA deploy v3 — unknown held-out category → SAR (flagship sprint)
+# Test: matches SAR AUROC when all test categories are held-out (unknown_category_rate=1.0)
+# Does NOT beat SAR; use for harm reduction / honest deploy, not Gate E superiority claim.
+
+version: 3
+policy_id: ELARA_DEPLOY_v3
+status: LOCKED_DEV
+ratified: 2026-05-30
+
+routing:
+  mode: gdr_shift_sar_fallback
+  fallback_method: sar_score_adapter
+  unknown_category_policy: route_to_sar
+  gate_decision_rule:
+    enabled: true
+    coherence_min: 0.35
+    tau: 0.55
+    margin_epsilon: 0.0
+
+flagship_sprint:
+  best_rga_variant_on_test: rga_plus_tta_category
+  rga_plus_tta_category_delta_vs_sar_mean: -0.034
+  deploy_v3_delta_vs_sar_mean: 0.0
+  val_stop_rule_0p01: false

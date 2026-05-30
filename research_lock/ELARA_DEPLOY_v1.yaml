@@ -1,0 +1,30 @@
+# ELARA deploy policy v1 — validation-selected, confirmatory-locked
+# Route: GDR-certified CRAF path when coherent+certified; else SAR (TTA).
+
+version: 1
+policy_id: ELARA_DEPLOY_v1
+status: LOCKED_DEV
+ratified: 2026-05-29
+
+routing:
+  mode: gdr_sar_fallback
+  fallback_method: sar_score_adapter
+  gate_decision_rule:
+    enabled: true
+    coherence_min: 0.5
+    tau: 0.66
+    margin_epsilon: 0.0
+
+stop_rule:
+  description: >
+    Do not run one-shot confirmatory test scoring until elara_deploy_v1 mean
+    validation ROC-AUC exceeds frozen SAR on the same sealed CSV splits.
+  validation_must_beat_sar_mean_delta: 0.0
+
+confirmatory:
+  allow_test_eval_flag: elara_deploy.allow_test_eval
+  methods:
+    - elara_deploy_v1
+    - sar_score_adapter
+    - rga_boosted_fusion
+    - craf_gdr

@@ -1,0 +1,23 @@
+# Flagship development protocol (approved sprint)
+
+version: 1
+status: ACTIVE
+ratified: 2026-05-30
+
+stop_rule:
+  eval_split: validation
+  min_mean_delta_vs_sar: 0.01
+  seeds: [42, 43, 44]
+  only_then: one_confirmatory_test_run
+
+method_variants:
+  - rga_plus_baseline
+  - rga_plus_tta
+  - rga_plus_category
+  - rga_plus_tta_category
+  - elara_deploy_v3  # GDR + SAR on unknown held-out categories
+
+confirmatory:
+  blocked_until_stop_rule: true
+  test_seeds: [42, 43, 44, 45, 46]
+  allow_test_flag: elara_deploy.allow_test_eval

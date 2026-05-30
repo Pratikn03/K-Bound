@@ -196,11 +196,26 @@ THEOREM_REGISTRY: dict[str, TheoremSpec] = {
         table_path="docs/research/tables/gdr_minimax.tex",
         status_note="MINIMAX PROVEN in the two-regime model (worst-case regret 0.0006 vs 0.10 for always/never-switch). Real-benchmark separation PARTIAL (1/3 at theta=0.5): bottlenecked by near-chance base detectors that under-disperse the coherence signal. Honest scope: theory A-level, empirics base-detector-limited.",
     ),
+    "T8": TheoremSpec(
+        theorem_id="T8",
+        title="Certified heterogeneous fusion (CHF) under batch/category shift",
+        core_modules=(
+            "src/elara/theory/t8_certified_heterogeneous_fusion.py",
+            "src/uais/fusion/attention/certified_heterogeneous_fusion.py",
+        ),
+        validation_scripts=("src/scripts/validate_t8_chf.py",),
+        artifact_paths=(
+            "experiments/fusion/t8_chf_validation.json",
+            "docs/research/tables/t8_chf.tex",
+        ),
+        table_path="docs/research/tables/t8_chf.tex",
+        status_note="Validation-only route/stack selection among SAR, RGA+, and coherence-gated paths; extends switching certificate to heterogeneous batches.",
+    ),
 }
 
 
 def list_theorems() -> list[TheoremSpec]:
-    return [THEOREM_REGISTRY[k] for k in ("T1", "T2", "T3", "T4", "T5", "T6", "T7", "GDR")]
+    return [THEOREM_REGISTRY[k] for k in ("T1", "T2", "T3", "T4", "T5", "T6", "T7", "T8", "GDR")]
 
 
 def artifact_status(repo_root: Path, spec: TheoremSpec) -> dict[str, bool]:
