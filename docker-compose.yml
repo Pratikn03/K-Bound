@@ -23,7 +23,7 @@ services:
       - mlflow
 
   streamlit:
-    image: python:3.11-slim
+    image: python:3.11-slim-bookworm@sha256:8dca233de9f3d9bb410665f00a4da6dd06f331083137e0e98ccf227236fcc438
     working_dir: /app
     volumes:
       - ./:/app:ro
@@ -36,7 +36,7 @@ services:
       - api
 
   mlflow:
-    image: ghcr.io/mlflow/mlflow:v2.14.0
+    image: ghcr.io/mlflow/mlflow:v2.14.0@sha256:7a1deb607de52710ea860911998ce2693ec50eb1a31dfc6754f5f58a17044e44
     command: mlflow server --host 0.0.0.0 --port 5000 --backend-store-uri sqlite:///mlflow.db --default-artifact-root /mlruns
     ports:
       - "127.0.0.1:5000:5000"

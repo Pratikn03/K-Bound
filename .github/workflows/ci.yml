@@ -55,41 +55,74 @@ jobs:
       - name: Check coverage threshold
         run: |
           python - <<'PY'
-import xml.etree.ElementTree as ET
-tree = ET.parse('coverage.xml')
-root = tree.getroot()
-coverage = float(root.attrib['line-rate']) * 100
-print(f"Coverage: {coverage:.2f}%")
-if coverage < 50:
-    print(f"WARNING: Coverage {coverage:.2f}% is below 50% threshold")
-else:
-    print(f"✓ Coverage {coverage:.2f}% meets threshold")
-PY
+          import xml.etree.ElementTree as ET
+          tree = ET.parse('coverage.xml')
+          root = tree.getroot()
+          coverage = float(root.attrib['line-rate']) * 100
+          print(f"Coverage: {coverage:.2f}%")
+          if coverage < 50:
+              print(f"WARNING: Coverage {coverage:.2f}% is below 50% threshold")
+          else:
+              print(f"✓ Coverage {coverage:.2f}% meets threshold")
+          PY
       - name: Smoke fusion flow
         run: |
           python scripts/ci_smoke.py
       - name: Smoke orchestration stubs (best-effort)
         run: |
           python - <<'PY'
-import os
-os.environ["PYTHONPATH"] = f"{os.getcwd()}/src"
-from orchestration.fraud_flow import fraud_pipeline
-from orchestration.cyber_flow import cyber_pipeline
-from orchestration.behavior_flow import behavior_pipeline
-from orchestration.fusion_flow import fusion_pipeline
+          import os
+          os.environ["PYTHONPATH"] = f"{os.getcwd()}/src"
+          from orchestration.fraud_flow import fraud_pipeline
+          from orchestration.cyber_flow import cyber_pipeline
+          from orchestration.behavior_flow import behavior_pipeline
+          from orchestration.fusion_flow import fusion_pipeline
 
-def safe_run(name, fn):
-    try:
-        print(f"[ci] running {name}")
-        fn()
-        print(f"[ci] {name} succeeded")
-    except Exception as exc:
-        # Do not fail CI on these best-effort smokes
-        print(f"[ci] {name} skipped/failed: {exc}")
+          def safe_run(name, fn):
+              try:
+                  print(f"[ci] running {name}")
+                  fn()
+                  print(f"[ci] {name} succeeded")
+              except Exception as exc:
+                  # Do not fail CI on these best-effort smokes
+                  print(f"[ci] {name} skipped/failed: {exc}")
 
-safe_run("fraud_pipeline", fraud_pipeline)
-safe_run("cyber_pipeline", cyber_pipeline)
-safe_run("behavior_pipeline", behavior_pipeline)
-safe_run("fusion_pipeline", fusion_pipeline)
-print("[ci] orchestration stubs best-effort smoke completed")
-PY
+          safe_run("fraud_pipeline", fraud_pipeline)
+          safe_run("cyber_pipeline", cyber_pipeline)
+          safe_run("behavior_pipeline", behavior_pipeline)
+          safe_run("fusion_pipeline", fusion_pipeline)
+          print("[ci] orchestration stubs best-effort smoke completed")
+          PY
+
+  deploy-security:
+    runs-on: ubuntu-latest
+    env:
+      PYTHONPATH: "${{ github.workspace }}/src"
+      UAIS_API_KEYS: ci-secret
+      UAIS_CORS_ORIGINS: https://ci.example
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install API and security deps
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -r requirements-api.txt
+          python -m pip install bandit[toml] pytest
+      - name: API security regression tests
+        run: |
+          pytest -q tests/test_api_production_security.py
+      - name: Deploy Bandit scan
+        run: |
+          bandit -r deploy -x '*/._*,*/.__*'
+      - name: Compose config validates with required production env
+        run: |
+          docker compose config >/tmp/uais-compose-config.yml
+      - name: API imports with production env
+        run: |
+          python - <<'PY'
+          from deploy.api.main import app, CORS_ORIGINS
+          assert app.title == "UAIS-V Enhanced API"
+          assert CORS_ORIGINS == ["https://ci.example"]
+          PY

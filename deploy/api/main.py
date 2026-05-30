@@ -178,7 +178,7 @@ def _load_torch_artifact(torch_module, path: Path, model_type: str):
     try:
         return torch_module.load(path, map_location="cpu", weights_only=True)
     except TypeError:
-        return torch_module.load(path, map_location="cpu")
+        return None
 
 
 # Load models

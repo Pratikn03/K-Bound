@@ -1,4 +1,5 @@
 import asyncio
+import hashlib
 import importlib
 import sys
 
@@ -147,6 +148,38 @@ def test_joblib_artifacts_are_not_loaded_without_trust_flag(monkeypatch, tmp_pat
     artifact.write_bytes(b"not a trusted model")
 
     assert api._load_joblib_artifact(artifact, "fraud") is None
+
+
+def test_model_artifacts_require_matching_checksum_when_trusted(monkeypatch, tmp_path):
+    api = _reload_api(monkeypatch, UAIS_API_KEYS="secret", UAIS_TRUSTED_MODEL_ARTIFACTS="true")
+    artifact = tmp_path / "model.pkl"
+    artifact.write_bytes(b"trusted bytes")
+
+    assert api._artifact_is_trusted(artifact, "fraud") is False
+
+    monkeypatch.setenv("UAIS_MODEL_SHA256_FRAUD", "0" * 64)
+    assert api._artifact_is_trusted(artifact, "fraud") is False
+
+    expected = hashlib.sha256(b"trusted bytes").hexdigest()
+    monkeypatch.setenv("UAIS_MODEL_SHA256_FRAUD", expected)
+    assert api._artifact_is_trusted(artifact, "fraud") is True
+
+
+def test_torch_artifacts_require_weights_only_loader(monkeypatch, tmp_path):
+    api = _reload_api(
+        monkeypatch,
+        UAIS_API_KEYS="secret",
+        UAIS_TRUSTED_MODEL_ARTIFACTS="true",
+        UAIS_REQUIRE_MODEL_CHECKSUMS="false",
+    )
+    artifact = tmp_path / "model.pt"
+    artifact.write_bytes(b"trusted torch bytes")
+
+    class TorchWithoutWeightsOnly:
+        def load(self, *args, **kwargs):
+            raise TypeError("weights_only is unsupported")
+
+    assert api._load_torch_artifact(TorchWithoutWeightsOnly(), artifact, "vision") is None
 
 
 def test_health_checker_accepts_sync_and_async_checks():

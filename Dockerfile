@@ -1,5 +1,5 @@
 # UAIS-V production API image
-FROM python:3.11-slim
+FROM python:3.11-slim-bookworm@sha256:8dca233de9f3d9bb410665f00a4da6dd06f331083137e0e98ccf227236fcc438
 
 WORKDIR /app
 
@@ -7,14 +7,13 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
     PYTHONPATH=/app/src
 
-# System dependencies
-RUN apt-get update \
-    && apt-get install -y --no-install-recommends build-essential \
-    && rm -rf /var/lib/apt/lists/*
-
 COPY requirements-api.txt /app/requirements-api.txt
 
-RUN pip install --no-cache-dir -r requirements-api.txt \
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends build-essential \
+    && pip install --no-cache-dir -r requirements-api.txt \
+    && apt-get purge -y --auto-remove build-essential \
+    && rm -rf /var/lib/apt/lists/* \
     && useradd --create-home --shell /usr/sbin/nologin uais
 
 COPY deploy /app/deploy
