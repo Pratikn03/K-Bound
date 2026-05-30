@@ -50,7 +50,7 @@ def render(terms_list: list[RiskDominanceTerms]) -> str:
         r"\begin{tabular}{llcccccc}",
         r"\toprule",
         r"\textbf{Scenario} & \textbf{$\pi$} & \textbf{$q_0$} & \textbf{$q_1$} & "
-        r"\textbf{$\Delta_0$} & \textbf{$\Delta_1$} & \textbf{$\pi^\*$} & \textbf{Dominates?} \\",
+        r"\textbf{$\Delta_0$} & \textbf{$\Delta_1$} & \textbf{$\pi^{*}$} & \textbf{Dominates?} \\",
         r"\midrule",
     ]
     for terms in terms_list:

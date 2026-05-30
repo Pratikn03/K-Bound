@@ -55,7 +55,7 @@ def _mapping_rows(repo_root: Path) -> list[tuple[str, str, str]]:
         (
             "T4 risk dominance",
             (
-                "Deployment-prevalence sensitivity table reports $(q_0,q_1,\\Delta_0,\\Delta_1,\\pi^\\*)$ and the dominance margin at $\\pi\\in\\{0,0.01,\\ldots,0.5\\}$."
+                "Deployment-prevalence sensitivity table reports $(q_0,q_1,\\Delta_0,\\Delta_1,\\pi^{*})$ and the dominance margin at $\\pi\\in\\{0,0.01,\\ldots,0.5\\}$."
                 if t4
                 else "The theorem gives measurable terms $(q_0,q_1,\\Delta_0,\\Delta_1)$ for when switching should win."
             ),

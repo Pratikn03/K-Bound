@@ -92,6 +92,30 @@ def paired_bootstrap_lcb(
     return float(arr.mean()), lcb
 
 
+def empirical_bernstein_lcb(
+    diffs: list[float], alpha: float = 0.05, benefit_range: float | None = None
+) -> tuple[float, float, float]:
+    """Closed-form Maurer-Pontil (2009) empirical-Bernstein LCB on the mean.
+
+    Returns (mean, lcb, sample_variance). The aggregate-AUROC surrogate
+    benefit (1 - static_auroc) - (1 - rga_auroc) = rga_auroc - static_auroc
+    lies in [-1, 1], so the range R = 2.0 unless overridden.
+    """
+    if not diffs:
+        return float("nan"), float("nan"), float("nan")
+    arr = np.asarray(diffs, dtype=np.float64)
+    n = arr.size
+    mean = float(arr.mean())
+    if n == 1:
+        return mean, float("-inf"), 0.0
+    var = float(arr.var(ddof=1))
+    R = float(benefit_range) if benefit_range is not None else 2.0
+    ln_term = math.log(2.0 / alpha)
+    var_term = math.sqrt(2.0 * var * ln_term / n)
+    range_term = 7.0 * R * ln_term / (3.0 * (n - 1))
+    return mean, float(mean - var_term - range_term), var
+
+
 BENCHMARKS = [
     ("MVTec 3D-AD", "PatchCore canonical", "experiments/fusion/mvtec3d_patchcore_results.json"),
     ("MVTec 3D-AD", "PatchCore supervised", "experiments/fusion/mvtec3d_patchcore_supervised_paired_results.json"),
@@ -125,6 +149,7 @@ def audit_one(repo_root: Path, rel_path: str, alpha: float = 0.05) -> dict | Non
     # The aggregate-AUROC surrogate loss is 1 - AUROC.
     diffs = [(1.0 - static[i]) - (1.0 - rga_curve[i]) for i in range(n)]
     mean, lcb = paired_bootstrap_lcb(diffs, alpha=alpha)
+    eb_mean, eb_lcb, eb_var = empirical_bernstein_lcb(diffs, alpha=alpha, benefit_range=2.0)
     return {
         "n_seeds": int(n),
         "rga_path": rga_best_path,
@@ -132,6 +157,10 @@ def audit_one(repo_root: Path, rel_path: str, alpha: float = 0.05) -> dict | Non
         "lcb": float(lcb),
         "alpha": float(alpha),
         "certified": bool(lcb > 0.0),
+        "empirical_bernstein_lcb": float(eb_lcb),
+        "sample_variance": float(eb_var),
+        "benefit_range": 2.0,
+        "certified_eb": bool(eb_lcb > 0.0),
         "static_auroc_mean": float(np.mean(static[:n])),
         "rga_auroc_mean": float(np.mean(rga_curve[:n])),
     }
@@ -160,8 +189,10 @@ def main() -> None:
             f"{benchmark:<14s} {protocol:<26s} n={row['n_seeds']:>2d}  "
             f"path={row['rga_path']:<18s}  "
             f"mean={row['paired_benefit_mean']:+.4f}  "
-            f"LCB@{args.alpha:.2f}={row['lcb']:+.4f}  "
-            f"{'CERTIFIED' if row['certified'] else 'not certified'}"
+            f"boot_LCB={row['lcb']:+.4f}  "
+            f"EB_LCB={row['empirical_bernstein_lcb']:+.4f}  "
+            f"{'CERT' if row['certified'] else 'no'}/"
+            f"{'CERT_EB' if row['certified_eb'] else 'no_EB'}"
         )
 
     args.output.parent.mkdir(parents=True, exist_ok=True)

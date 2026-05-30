@@ -33,6 +33,58 @@ class SwitchingCertificate:
     n_iter: int
     certified: bool
     notes: str
+    # T5 Phase-2 additions: closed-form empirical-Bernstein LCB (no resampling).
+    empirical_bernstein_lcb: float = float("nan")
+    sample_variance: float = float("nan")
+    benefit_range: float = float("nan")
+    certified_eb: bool = False
+
+
+def empirical_bernstein_lcb(
+    paired_benefits: Sequence[float],
+    *,
+    alpha: float = 0.05,
+    benefit_range: float | None = None,
+) -> tuple[float, float, float]:
+    """Closed-form Maurer-Pontil (2009) empirical-Bernstein lower confidence bound.
+
+    For i.i.d. paired benefits X_i in [a, b] with empirical mean mu_hat and
+    unbiased sample variance V_hat, with probability at least 1 - alpha:
+
+        E[X] >= mu_hat - sqrt(2 V_hat ln(2/alpha) / n)
+                       - 7 R ln(2/alpha) / (3 (n - 1))
+
+    where R = b - a is the range of the benefit. This is tighter than the
+    Hoeffding bound whenever V_hat << R^2, which is the typical regime for a
+    fired-subset paired benefit (most fired samples agree in sign).
+
+    Unlike the paired bootstrap, this LCB is deterministic (no resampling
+    seed), streamable (mean + variance are sufficient statistics), and has a
+    formal finite-sample guarantee rather than an asymptotic-percentile one.
+
+    Returns (mean, lcb, sample_variance). If ``benefit_range`` is None it is
+    estimated as max - min of the observed benefits (a valid range estimate
+    when the loss surrogate is bounded; for |p - y| losses the exact range
+    is 2.0, which the caller may pass explicitly).
+    """
+    arr = np.asarray(list(paired_benefits), dtype=np.float64)
+    n = arr.size
+    if n == 0:
+        return float("nan"), float("nan"), float("nan")
+    mean = float(arr.mean())
+    if n == 1:
+        # No variance estimate possible; fall back to a degenerate (mean only).
+        return mean, float("-inf"), 0.0
+    var = float(arr.var(ddof=1))
+    R = float(benefit_range) if benefit_range is not None else float(arr.max() - arr.min())
+    R = max(R, 1e-12)
+    import math
+
+    ln_term = math.log(2.0 / alpha)
+    var_term = math.sqrt(2.0 * var * ln_term / n)
+    range_term = 7.0 * R * ln_term / (3.0 * (n - 1))
+    lcb = mean - var_term - range_term
+    return mean, float(lcb), var
 
 
 def _loss_proxy(y_true: np.ndarray, y_prob: np.ndarray) -> np.ndarray:
@@ -93,6 +145,9 @@ def fired_subset_certificate(
     l_gated = _loss_proxy(labels[fired], gated_scores[fired])
     X = l_static - l_gated
     mean, lcb = paired_bootstrap_lcb(X, alpha=alpha, n_iter=n_iter, seed=seed)
+    # |p - y| losses each lie in [0, 1], so the paired benefit lies in [-1, 1]
+    # => exact range R = 2.0 for the empirical-Bernstein bound.
+    eb_mean, eb_lcb, eb_var = empirical_bernstein_lcb(X, alpha=alpha, benefit_range=2.0)
     return SwitchingCertificate(
         gate_id=gate_id,
         scenario_id=scenario_id,
@@ -103,4 +158,8 @@ def fired_subset_certificate(
         n_iter=int(n_iter),
         certified=bool(lcb > 0.0),
         notes=notes,
+        empirical_bernstein_lcb=float(eb_lcb),
+        sample_variance=float(eb_var),
+        benefit_range=2.0,
+        certified_eb=bool(eb_lcb > 0.0),
     )

@@ -24,6 +24,7 @@ guarantee.
 
 from __future__ import annotations
 
+import math
 from dataclasses import dataclass
 
 import numpy as np
@@ -136,6 +137,91 @@ def dominates_at_prevalence(
     """Return True when the T4 inequality holds at deployment prevalence pi."""
     margin = risk_dominance_margin(pi=pi, q0=q0, q1=q1, delta_0=delta_0, delta_1=delta_1)
     return bool(margin > 0.0)
+
+
+def risk_dominance_margin_lcb(
+    *,
+    pi: float,
+    q0: float,
+    q1: float,
+    delta_0: float,
+    delta_1: float,
+    n_clean_fired: int,
+    n_degraded_fired: int,
+    benefit_range: float = 2.0,
+    confidence_delta: float = 0.05,
+) -> dict[str, float | bool]:
+    """Finite-sample lower confidence bound on the T4 risk-dominance margin.
+
+    The margin  M(pi) = pi q1 Delta_1 - (1 - pi) q0 Delta_0  is a function of
+    the empirical benefit estimates Delta_0, Delta_1, each an average of
+    bounded paired losses in [-R/2, R/2] (R = benefit_range). By Hoeffding,
+    with probability at least 1 - confidence_delta each estimate satisfies
+
+        |Delta_hat - Delta| <= eps_i,    eps_i = R sqrt(ln(2/conf) / (2 n_i)).
+
+    Worst-casing the two estimates in the direction that hurts dominance
+    (Delta_1 down by eps_1, Delta_0 up by eps_0) gives the margin LCB
+
+        M_lcb = pi q1 (Delta_1 - eps_1) - (1 - pi) q0 (Delta_0 + eps_0).
+
+    Dominance is *certified at finite n* iff M_lcb > 0. (q0, q1 are treated
+    as known fire-rates; a tighter version would also place a Clopper-Pearson
+    band on them, but for the locked gate these are deterministic given the
+    reliability signal.)
+    """
+    conf = confidence_delta
+    eps_0 = benefit_range * math.sqrt(math.log(2.0 / conf) / (2.0 * max(n_clean_fired, 1)))
+    eps_1 = benefit_range * math.sqrt(math.log(2.0 / conf) / (2.0 * max(n_degraded_fired, 1)))
+    margin_point = pi * q1 * delta_1 - (1.0 - pi) * q0 * delta_0
+    margin_lcb = pi * q1 * (delta_1 - eps_1) - (1.0 - pi) * q0 * (delta_0 + eps_0)
+    return {
+        "pi": float(pi),
+        "margin_point": float(margin_point),
+        "margin_lcb": float(margin_lcb),
+        "eps_0": float(eps_0),
+        "eps_1": float(eps_1),
+        "confidence": float(1.0 - conf),
+        "dominates_finite_sample": bool(margin_lcb > 0.0),
+    }
+
+
+def min_n_for_dominance(
+    *,
+    pi: float,
+    q0: float,
+    q1: float,
+    delta_0: float,
+    delta_1: float,
+    benefit_range: float = 2.0,
+    confidence_delta: float = 0.05,
+    assume_equal_n: bool = True,
+) -> dict[str, float]:
+    """Minimum fired-sample count n needed to certify dominance at prevalence pi.
+
+    Solving M_lcb(n) > 0 with n_clean = n_degraded = n and
+    eps(n) = R sqrt(ln(2/conf)/(2n)):
+
+        pi q1 Delta_1 - (1-pi) q0 Delta_0  >  [pi q1 + (1-pi) q0] R sqrt(ln(2/conf)/(2n))
+
+    Let  M0 = pi q1 Delta_1 - (1-pi) q0 Delta_0   (point margin)
+    and  C  = [pi q1 + (1-pi) q0] R.
+    Then n > C^2 ln(2/conf) / (2 M0^2)  when M0 > 0; otherwise dominance is
+    not certifiable at any finite n (point margin already non-positive).
+    """
+    conf = confidence_delta
+    M0 = pi * q1 * delta_1 - (1.0 - pi) * q0 * delta_0
+    C = (pi * q1 + (1.0 - pi) * q0) * benefit_range
+    if M0 <= 0.0:
+        return {"pi": float(pi), "point_margin": float(M0), "min_n": float("inf"),
+                "certifiable": False}
+    n_req = (C * C * math.log(2.0 / conf)) / (2.0 * M0 * M0)
+    return {
+        "pi": float(pi),
+        "point_margin": float(M0),
+        "min_n": float(math.ceil(n_req)),
+        "certifiable": True,
+    }
 
 
 def prevalence_sensitivity_rows(

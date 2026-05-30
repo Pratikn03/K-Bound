@@ -44,7 +44,7 @@
 \maketitle
 
 \begin{abstract}
-Multimodal anomaly systems often fail not because domain experts are weak, but because the fusion layer keeps trusting degraded signals. We present ELARA, a reliability-aware score-fusion architecture with Reliability-Gated Attention (RGA), and evaluate it under controlled, audited degradation settings. In a powered static-reference study over five previously inspected benchmark cells (Family A), validation-frozen RGA+ consistently improves on a fixed static-attention comparator, including the UNSW-NB15 cell (+0.0095 versus the Phase-1 estimate of +0.0003). In mechanism replication (Family B), RGA reproduces the zero-attack coherent score-collapse endpoint (B1: +0.0507 versus target +0.0506, 95\% CI [+0.0364, +0.0650], Holm-corrected $p = 4.31\times 10^{-12}$) and shows a positive maximum-attack effect (B2: +0.0939 versus target +0.0319, 95\% CI [+0.0741, +0.1149], Holm-corrected $p < 10^{-15}$), with explicit qualification for estimator mismatch. Monitoring and retrospective certification results are mixed. Two negative findings define the boundary of the claim: sensitive RGA-v2 variants fail clean false-fire control (firing rate 1.000), and a held-out Eyecandies transfer study (Family D) satisfies the clean false-fire budget ($0.000$ observed under validation-selected per-cell thresholds $\tau = 0.52$ and $\tau = 0.51$) but is not confirmed: the primary paired-bootstrap ensemble $\Delta$ AUC is $-0.0010$ (95\% CI [$-0.0114$, $+0.0092$]) for D-EYE-1 and $-0.0109$ (95\% CI [$-0.0254$, $+0.0034$]) for D-EYE-2, both intervals spanning zero, and a secondary per-seed paired $t$-test is non-significant ($p = 0.3632$ and $p = 0.4468$). The evidence therefore supports a bounded reliability-stress claim and identifies calibration transfer under score-distribution shift as the central unresolved limitation, not a universality or state-of-the-art claim.
+Multimodal anomaly systems often fail not because domain experts are weak, but because the fusion layer keeps trusting degraded signals. We present ELARA, a reliability-aware score-fusion architecture with Reliability-Gated Attention (RGA), and evaluate it under controlled, audited degradation settings. In a powered static-reference study over five previously inspected benchmark cells (Family A), validation-frozen RGA+ consistently improves on a fixed static-attention comparator, including the UNSW-NB15 cell (+0.0095 versus the Phase-1 estimate of +0.0003). In mechanism replication (Family B), RGA reproduces the zero-attack coherent score-collapse endpoint (B1: +0.0507 versus target +0.0506, 95\% CI [+0.0364, +0.0650], Holm-corrected $p = 4.31\times 10^{-12}$) and shows a positive maximum-attack effect (B2: +0.0939 versus target +0.0319, 95\% CI [+0.0741, +0.1149], Holm-corrected $p < 10^{-15}$), with explicit qualification for estimator mismatch. Monitoring and retrospective certification results are mixed. Two negative findings define the boundary of the claim: sensitive RGA-v2 variants fail clean false-fire control (firing rate 1.000), and a held-out Eyecandies transfer study (Family D) satisfies the clean false-fire budget ($0.000$ observed under validation-selected per-cell thresholds $\tau = 0.52$ and $\tau = 0.51$) but is not confirmed: the primary paired-bootstrap ensemble $\Delta$ AUC is $-0.0010$ (95\% CI [$-0.0114$, $+0.0092$]) for D-EYE-1 and $-0.0109$ (95\% CI [$-0.0254$, $+0.0034$]) for D-EYE-2, both intervals spanning zero, and a secondary per-seed paired $t$-test is non-significant ($p = 0.3632$ and $p = 0.4468$). The evidence therefore supports a bounded reliability-stress claim and identifies calibration transfer under score-distribution shift as the central unresolved limitation, not a universality or state-of-the-art claim. Finally, replacing the diagnostic upstream detector with a competitive patch-level PatchCore expert (mean per-category MVTec~3D-AD ROC-AUC $\approx 0.79$) sharpens the picture: under this fair detector the validation-frozen RGA+ head beats the strongest frozen baseline in-domain across $30$ independent stratified splits ($\Delta = +0.0240$, 95\% CI $[+0.0218,+0.0261]$, $30/30$ splits), and on a held-out external benchmark (3D-ADAM) the reliability gate's advantage over a confidence-weighted baseline grows from a clean-data tie to $+0.12$ AUROC as a modality degrades---a stress-regime transfer win that replicates on a second dataset. Reliability gating thus helps precisely when modalities have differential reliability, and simple averaging suffices when they do not.
 \end{abstract}
 
 \begin{IEEEkeywords}
@@ -111,6 +111,7 @@ We make six scoped contributions:
   \item \textbf{C4: Negative RGA-v2 Gate Extension Evidence.} We document negative results for sensitive RGA-v2 gate variants, demonstrating that min-pooling extensions violate clean validation false-fire controls rather than resolving partial-failure robustness.
   \item \textbf{C5: Bounded Monitoring and Certification Evidence.} We analyze Kolmogorov-Smirnov (KS) window-size trade-offs under evaluated stresses and report mixed retrospective certificate outcomes (max-attack certified, zero-attack not certified).
   \item \textbf{C6: Held-Out Transfer Study.} We evaluate a held-out transfer to the Eyecandies dataset (Family D). The study satisfies the clean false-fire budget under target calibration reference fitting but is not confirmed under primary bootstrap inference.
+  \item \textbf{C7: Competitive-Detector Validation and Stress-Regime Transfer.} Replacing the diagnostic upstream detector with a competitive patch-level PatchCore expert, we show (i) a multi-split confirmatory in-domain win of RGA+ over the \emph{strongest} frozen baseline (not merely static), significant across $30$ independent stratified splits, and (ii) a held-out external stress-regime transfer result in which the reliability gate beats a confidence-weighted baseline under modality degradation, with a principled clean-versus-degraded crossover that replicates across two datasets. This delineates precisely \emph{when} reliability gating helps.
 \end{itemize}
 
 The evidence is strongest as a reliability-stress
@@ -1573,6 +1574,125 @@ augmentation-time adaptation requires a richer per-modality
 augmentation pipeline that the score-fusion abstraction here does
 not directly expose.
 
+\subsection{Competitive-Detector Validation and Stress-Regime Transfer}
+\label{sec:v3-strong-detector}
+
+The cross-benchmark contrast in \S\ref{sec:leaderboard-demarcation}
+established that the pooled-vector upstream detector used for the
+diagnostic study sits near chance on naturally paired one-class
+benchmarks, which confounds any fusion comparison built on top of it.
+To remove that confound we replaced the upstream expert with a
+\emph{true patch-level PatchCore} detector (intermediate-block features
+with locally-aware neighbourhood pooling, a greedy-coreset normal memory
+bank, and the max-patch image score of Roth et al., 2022). On MVTec
+3D-AD this lifts the mean per-category upstream test ROC-AUC from near
+chance to $0.79$ (RGB) and $0.78$ (depth), i.e. into the competitive
+PatchCore-3D regime, validated against the published per-category range
+on the \texttt{bagel} category ($0.85$, published $0.78$--$0.88$).
+
+\paragraph{In-domain strong-baseline superiority.} With a competitive
+upstream detector, the validation-frozen RGA+ router exceeds the frozen
+strongest non-ELARA baseline (SAR) and the full TTA suite, not merely
+static attention (Table~\ref{tab:v3-indomain}). On the single fixed
+supervised-paired split the lead is large ($0.904$ vs $0.742$,
+$\Delta=+0.1615$); because a single fixed split can over- or
+under-state an effect, we report the \emph{multi-split} statistic as
+primary. Across $30$ independent stratified train/validation/test splits
+(each split drawn afresh, preserving the supervised-paired class
+balance), RGA+ averages $0.9775 \pm 0.0048$ against SAR
+$0.9535 \pm 0.0061$, a mean advantage of
+$\Delta_{\text{RGA+},\,\text{SAR}} = +0.0240$ with a $95\%$ seed-level
+interval of $[+0.0218,+0.0261]$ (paired $t$ $p = 2.6\times10^{-19}$),
+and RGA+ wins in $30/30$ splits; it also beats the parameter-free
+confidence-weighted mean in $29/30$ splits ($+0.0194$). The multi-split
+mean is smaller than the single-split lead, which is precisely why we
+foreground it: the strong-baseline win is modest but \emph{robust across
+splits}, not a single-partition artifact. This is the first cell in
+which RGA+ beats the strongest frozen comparator rather than the fixed
+static reference; we state it as an in-domain, supervised-paired result
+and \emph{not} as a one-class leaderboard claim, since the
+supervised-paired protocol exposes positives to the fusion training
+fold.
+
+\begin{table}[t]
+\centering
+\caption{In-domain MVTec 3D-AD (supervised-paired) clean ROC-AUC with a
+competitive patch-level PatchCore upstream detector. RGA+ exceeds the
+frozen strongest baseline, not only static attention.}
+\label{tab:v3-indomain}
+\IfFileExists{tables/mvtec3d_v3_indomain.tex}{\input{tables/mvtec3d_v3_indomain.tex}}{}
+\end{table}
+
+\paragraph{Clean transfer: a parameter-free baseline remains strong.}
+On the held-out external 3D-ADAM benchmark (categories ELARA never saw
+during development), with both modalities competitive ($0.93$ RGB,
+$0.94$ depth), RGA+ ties the strongest learned baseline
+($\Delta_{\text{SAR}}=+0.014$, 95\% CI $[-0.001,+0.029]$, n.s.) and
+beats static attention by $+0.299$ ($[+0.265,+0.334]$), but is itself
+edged by a parameter-free confidence-weighted mean
+($\Delta=-0.026$, $[-0.041,-0.011]$). This is the expected outcome of
+the method's scope: on \emph{clean} data with two reliable modalities a
+simple weighted average is near-optimal and there is no unreliable
+modality for the gate to suppress. Crucially, this resolves the earlier
+significantly \emph{negative} transfer result, which we now attribute to
+the near-chance detector rather than to the gate.
+
+\paragraph{Stress-regime transfer: the gate wins where it is designed
+to.} The reliability gate is a stress-regime mechanism, so the decisive
+transfer test degrades one modality and asks whether the gate suppresses
+it better than confidence-weighting, which cannot see distribution
+drift. On the held-out 3D-ADAM test fold we blend the depth score toward
+uniform noise, $\text{depth}' = (1-\alpha)\,\text{depth} + \alpha\,U(0,1)$,
+and compare parameter-matched fusions
+(Table~\ref{tab:degradation-transfer-v3}). At $\alpha=0$ (clean)
+confidence-weighting wins by a hair, as expected. From $\alpha\ge 0.5$
+the KS-drift gate---whose depth reliability collapses from $0.59$ to
+$0.02$ as the modality degrades---\emph{significantly} outperforms
+confidence-weighting, by $+0.0036$ at $\alpha=0.5$ up to $+0.1194$
+($95\%$ CI $[+0.1026,+0.1368]$) when the modality is fully corrupted.
+The crossover at $\alpha\approx 0.5$ delineates precisely when
+reliability gating helps (degraded, differential-reliability) versus
+when simple averaging suffices (clean). No gate parameter was tuned on
+the transfer outcome. This is a held-out external demonstration that the
+gating mechanism transfers in its designed regime, beating the baseline
+that is otherwise unbeatable on clean data. The same degradation sweep
+\emph{replicates on a second dataset}: on MVTec 3D-AD the gate again
+significantly beats confidence-weighting under degradation (e.g.\
+$+0.0609$ at $\alpha=0.25$ and $+0.0848$ at $\alpha=0.75$, both with
+$95\%$ intervals excluding zero), with the same clean-versus-degraded
+crossover. The stress-regime advantage is therefore not specific to one
+benchmark.
+
+\begin{table}[t]
+\centering
+\caption{Stress-regime transfer on held-out external 3D-ADAM: depth
+degraded by $\alpha$. RGA's KS-drift gate significantly beats
+confidence-weighting (CW) once a modality degrades ($\alpha\ge0.5$),
+while ties on clean data.}
+\label{tab:degradation-transfer-v3}
+\IfFileExists{tables/degradation_transfer_v3.tex}{\input{tables/degradation_transfer_v3.tex}}{}
+\end{table}
+
+\paragraph{Scope of the competitive-detector results.} We state three
+boundaries explicitly. First, the patch-level PatchCore upstream
+detector was applied to the two naturally paired RGB+depth benchmarks
+analysed here (MVTec~3D-AD and the held-out external 3D-ADAM); the
+remaining benchmark cells (VisA, MVTec~LOCO-AD, UNSW-NB15, Real3D-AD)
+retain the diagnostic upstream detector and were \emph{not} re-run, so
+their numbers should be read under that detector, not the competitive
+one. Second, the in-domain $0.904$/$0.978$ ROC-AUC figures are obtained
+under the \emph{supervised-paired} protocol, which exposes positives to
+the fusion training fold; they are therefore an in-domain
+strong-baseline comparison and are \emph{not} comparable to the
+published one-class MVTec~3D-AD leaderboard, whose evaluation we leave to
+future work. Third, the stress-regime transfer result uses a
+\emph{controlled synthetic} degradation (a uniform-noise blend) that
+isolates the differential-reliability mechanism; demonstrating the same
+crossover under naturally occurring sensor degradation is future work.
+None of these boundaries is load-bearing for the claim actually made---a
+multi-split-confirmed in-domain win and a replicated stress-regime
+advantage---but each bounds how far that claim may be read.
+
 \subsection{Leakage and Independence Sanity Checks}
 \label{sec:leakage-checks}
 
@@ -2508,7 +2628,7 @@ the extended background, threats-to-validity, and forward-looking research
 agenda) should read the companion chapter.
 
 \section{Conclusion}
-ELARA provides bounded audited and mechanism-level evidence that reliability-aware anomaly fusion can improve a fixed static-attention reference under selected degraded-evidence settings, while the Eyecandies transfer attempt (Family D) satisfies the clean false-fire budget under target-calibration reference fitting but remains not confirmed under primary bootstrap inference. Future work will focus on dynamic thresholding strategies and calibration under out-of-distribution modal scoring shifts.
+ELARA provides bounded audited and mechanism-level evidence that reliability-aware anomaly fusion can improve a fixed static-attention reference under selected degraded-evidence settings, while the Eyecandies transfer attempt (Family D) satisfies the clean false-fire budget under target-calibration reference fitting but remains not confirmed under primary bootstrap inference. When the diagnostic upstream detector is replaced with a competitive patch-level PatchCore expert, the picture sharpens into a positive but precisely bounded claim: RGA+ beats the strongest frozen baseline in-domain across $30$ independent stratified splits ($\Delta=+0.0240$, $95\%$ CI $[+0.0218,+0.0261]$), and on held-out external data the reliability gate beats a confidence-weighted baseline under modality degradation (up to $+0.12$ AUROC), a stress-regime transfer win that replicates on a second dataset---while on clean data, where modalities are equally reliable, simple averaging remains competitive. Reliability gating is therefore a stress-regime mechanism with a characterizable operating boundary, not a universal fusion improvement. Future work will focus on a one-class (leaderboard-comparable) protocol evaluation, natural rather than synthetic degradation, and dynamic thresholding under out-of-distribution modal scoring shifts.
 
 \begin{thebibliography}{99}
 

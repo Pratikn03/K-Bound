@@ -43,6 +43,8 @@ and prediction sharpness.
 # 1. Install
 python -m venv .venv && source .venv/bin/activate
 pip install -r requirements.txt
+# For exact reproduction of headline numbers, prefer the pinned lockfile:
+# pip install -r requirements.lock.txt
 
 # 2. Run the regression suite
 PYTHONPATH=src pytest tests/ -q
@@ -51,9 +53,23 @@ PYTHONPATH=src pytest tests/ -q
 PYTHONPATH=src python scripts/ci_smoke.py
 
 # 4. Rebuild the paper + thesis from the current JSON artifacts
-./scripts/rebuild_paper.sh
+bash scripts/rebuild_paper.sh
 # → output/pdf/PAPER_DRAFT_v1.pdf
 # → output/pdf/THESIS_CHAPTER_v1.pdf
+```
+
+> **Note on exFAT volumes**: If the repo lives on an exFAT-formatted external
+> drive (as on the author's setup), unix execute bits are pinned by the
+> filesystem and `./scripts/X.sh` may fail. Invoke shell scripts via
+> `bash scripts/X.sh` instead — this works on every filesystem.
+
+## Data acquisition (~88 GB total)
+
+```bash
+# Acquire all raw datasets in one pass (verifies SHA256 anchors where available)
+bash scripts/download_all_datasets.sh
+bash scripts/download_all_datasets.sh --verify-only   # re-check anchors anytime
+bash scripts/download_all_datasets.sh --only eyecandies,mvtec3d
 ```
 
 ## One union research system
