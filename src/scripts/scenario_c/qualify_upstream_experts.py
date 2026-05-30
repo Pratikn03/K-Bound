@@ -107,8 +107,8 @@ def main() -> int:
     args = parser.parse_args()
 
     root = _repo_root()
-    canonical = args.csv or (root / "experiments/fusion/mvtec3d_patchcore_inputs.csv")
-    meta = args.metadata or (root / "experiments/fusion/mvtec3d_patchcore_metadata.json")
+    canonical = args.csv or (root / "experiments/fusion/mvtec3d_patchcore_v2_inputs.csv")
+    meta = args.metadata or (root / "experiments/fusion/mvtec3d_patchcore_v2_metadata.json")
     report: dict = {"datasets": [], "gate_a_overall": False}
 
     if canonical.is_file():
@@ -120,7 +120,7 @@ def main() -> int:
 
     report["gate_a_overall"] = all(d.get("gate_a_passed") for d in report["datasets"])
 
-    out = args.json_out or (root / "elara_master_c/audits/gate_a_expert_qualification.json")
+    out = args.json_out or (root / "elara_master_c/audits/gate_a_expert_qualification_v2.json")
     out.parent.mkdir(parents=True, exist_ok=True)
     out.write_text(json.dumps(report, indent=2), encoding="utf-8")
 

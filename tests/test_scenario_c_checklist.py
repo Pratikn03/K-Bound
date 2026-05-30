@@ -29,7 +29,9 @@ def test_audit_checklist_progress_runs():
 
 def test_qualify_upstream_experts_runs():
     root = _root()
-    csv = root / "experiments/fusion/mvtec3d_patchcore_inputs.csv"
+    csv = root / "experiments/fusion/mvtec3d_patchcore_v2_inputs.csv"
+    if not csv.is_file():
+        csv = root / "experiments/fusion/mvtec3d_patchcore_inputs.csv"
     if not csv.is_file():
         return
     proc = subprocess.run(
@@ -40,5 +42,5 @@ def test_qualify_upstream_experts_runs():
         text=True,
     )
     assert proc.returncode in (0, 1)
-    out = root / "elara_master_c/audits/gate_a_expert_qualification.json"
+    out = root / "elara_master_c/audits/gate_a_expert_qualification_v2.json"
     assert out.is_file()

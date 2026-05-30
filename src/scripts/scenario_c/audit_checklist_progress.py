@@ -146,21 +146,15 @@ def build_checklist(root: Path) -> list[Item]:
 
     # Gates A–F
     gate_a_pass = False
-    for gate_a_path in (
-        root / "elara_master_c/audits/gate_a_expert_qualification_v2.json",
-        root / "elara_master_c/audits/gate_a_expert_qualification.json",
-    ):
-        if not gate_a_path.is_file():
-            continue
+    gate_a_path = root / "elara_master_c/audits/gate_a_expert_qualification_v2.json"
+    if gate_a_path.is_file():
         try:
-            if bool(json.loads(gate_a_path.read_text(encoding="utf-8")).get("gate_a_overall")):
-                gate_a_pass = True
-                break
+            gate_a_pass = bool(
+                json.loads(gate_a_path.read_text(encoding="utf-8")).get("gate_a_overall")
+            )
         except (json.JSONDecodeError, OSError):
             pass
-    ga_report = (
-        root / "elara_master_c/audits/gate_a_expert_qualification_v2.json"
-    ).is_file() or (root / "elara_master_c/audits/gate_a_expert_qualification.json").is_file()
+    ga_report = gate_a_path.is_file()
     add("T1", "t1_gate_a_qualification", "Gate A expert qualification report", ga_report, "gate_a_expert_qualification*.json")
     add("GATE", "gate_a", "Gate A — upstream experts PASS", gate_a_pass, "RGB+depth AUC + depth complement")
     gate_bd = root / "elara_master_c/audits/gate_bd_evaluation.json"
