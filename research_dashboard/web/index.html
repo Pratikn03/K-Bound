@@ -56,6 +56,21 @@
           <p id="verdict-text" class="verdict-text">—</p>
         </section>
 
+        <section class="card claim-card" id="claim-section">
+          <div class="claim-header">
+            <h2>Scientific claim</h2>
+            <span class="tier-badge" id="claim-tier-badge">—</span>
+          </div>
+          <p id="claim-one-sentence" class="claim-sentence">—</p>
+          <div class="claim-meta">
+            <span id="claim-pillars-count">—</span>
+            <span id="claim-scientific-ready">—</span>
+            <span id="claim-flagship-stop">—</span>
+          </div>
+          <div id="home-pillars-preview" class="pillars-table pillars-compact"></div>
+          <button type="button" class="btn btn-link" data-goto="research">Full claim contract →</button>
+        </section>
+
         <section class="action-row" id="home-actions">
           <button type="button" class="btn btn-primary action-btn" data-goto="gates">View gates</button>
           <button type="button" class="btn action-btn" data-goto="confirmatory">Confirmatory stats</button>
@@ -195,7 +210,9 @@
             <label>Program <input type="text" name="program" /></label>
             <label>Repository <input type="text" name="repo" /></label>
             <label>Research focus <textarea name="focus" rows="2"></textarea></label>
-            <label>Claim status (manual) <textarea name="claim_status" rows="2"></textarea></label>
+            <label>Claim summary <span class="hint-inline">(synced from snapshot on refresh)</span>
+              <textarea name="claim_status" rows="3" readonly></textarea>
+            </label>
             <label>Advisor / notes <textarea name="advisor_notes" rows="3"></textarea></label>
             <div class="form-actions">
               <button type="submit" class="btn btn-primary">Save profile</button>
@@ -209,7 +226,12 @@
         </section>
         <section class="card">
           <h2>Claim pillars (contract)</h2>
+          <p class="hint" id="claim-contract-hint">Derived from gates + checklist in <code>snapshot.json</code>.</p>
           <div id="pillars-table" class="pillars-table"></div>
+        </section>
+        <section class="card">
+          <h2>Readiness tiers</h2>
+          <div id="readiness-tiers" class="readiness-tiers"></div>
         </section>
       </div>
 

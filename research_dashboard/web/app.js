@@ -11,15 +11,6 @@ const GATE_LABELS = {
 const STORAGE_SETTINGS = "elara_dash_settings";
 const STORAGE_PROFILE = "elara_dash_profile";
 
-const CLAIM_PILLARS = [
-  { id: "P1", name: "Mechanism validity", status: "PARTIAL" },
-  { id: "P2", name: "Strong-baseline superiority", status: "NOT ESTABLISHED" },
-  { id: "P3", name: "Multimodal generalization", status: "PARTIAL" },
-  { id: "P4", name: "Held-out transfer", status: "NOT CONFIRMED" },
-  { id: "P5", name: "Theory & certificate", status: "PARTIAL" },
-  { id: "P6", name: "Deployment auditability", status: "PARTIAL" },
-];
-
 const PAGE_TITLES = {
   home: ["Home", "Overview & quick actions"],
   analytics: ["Analytics", "Trends & checklist progress"],
@@ -358,12 +349,121 @@ async function openEvidence(gateId, gate) {
   }
 }
 
+function pillarStatusClass(status) {
+  return (status || "unknown").toLowerCase().replace(/\s+/g, "-");
+}
+
+function renderPillarRows(pillars, compact) {
+  if (!pillars?.length) {
+    return '<p class="hint">No claim data in snapshot — rebuild with latest aggregator.</p>';
+  }
+  return pillars
+    .map((p) => {
+      const pass = p.pass ? " pass" : "";
+      const cls = pillarStatusClass(p.status);
+      const evidence = compact ? "" : `<span class="pillar-evidence">${p.required_evidence || ""}</span>`;
+      return `<div class="pillar-row${pass}">
+        <span class="pillar-id">${p.id}</span>
+        <span>${p.name}${evidence}</span>
+        <span class="pillar-status ${cls}">${p.status}</span>
+      </div>`;
+    })
+    .join("");
+}
+
+function syncProfileClaim(data) {
+  const claim = data.claim;
+  if (!claim?.one_sentence_claim) return;
+  researchProfile.claim_status = claim.one_sentence_claim;
+  const field = document.getElementById("profile-form")?.elements?.claim_status;
+  if (field) field.value = claim.one_sentence_claim;
+}
+
+function renderClaim(data) {
+  const claim = data.claim || {};
+  const section = document.getElementById("claim-section");
+  if (!section) return;
+
+  const tier = claim.readiness_tier || "tier_1_bounded";
+  const tierBadge = document.getElementById("claim-tier-badge");
+  if (tierBadge) {
+    tierBadge.textContent = tier.replace(/_/g, " ");
+    tierBadge.className = `tier-badge ${tier}`;
+  }
+
+  const sentence = document.getElementById("claim-one-sentence");
+  if (sentence) sentence.textContent = claim.one_sentence_claim || "—";
+
+  const pillarsCount = document.getElementById("claim-pillars-count");
+  if (pillarsCount) {
+    pillarsCount.textContent = `Pillars pass: ${claim.pillars_pass_count ?? 0}/${claim.pillars_total ?? 6}`;
+  }
+
+  const sci = document.getElementById("claim-scientific-ready");
+  if (sci) {
+    sci.textContent = claim.scientific_ready ? "Scientific: ready" : "Scientific: not ready";
+    sci.className = claim.scientific_ready ? "claim-flag pass" : "claim-flag fail";
+  }
+
+  const stop = document.getElementById("claim-flagship-stop");
+  const fsr = claim.flagship_stop_rule || {};
+  if (stop) {
+    if (!fsr.found) {
+      stop.textContent = "Flagship stop rule: no sweep data";
+      stop.className = "claim-flag warn";
+    } else {
+      const delta = Number(fsr.best_mean_delta ?? 0).toFixed(3);
+      const min = Number(fsr.min_delta_vs_sar ?? 0.01).toFixed(2);
+      stop.textContent = fsr.passed
+        ? `Flagship stop: PASS (Δ ${delta} ≥ ${min})`
+        : `Flagship stop: FAIL (Δ ${delta} < ${min})`;
+      stop.className = fsr.passed ? "claim-flag pass" : "claim-flag fail";
+    }
+  }
+
+  const preview = document.getElementById("home-pillars-preview");
+  if (preview) preview.innerHTML = renderPillarRows(claim.pillars, true);
+
+  section.classList.toggle("pass", !!claim.scientific_ready);
+  section.classList.toggle("fail", !claim.scientific_ready);
+
+  const contractHint = document.getElementById("claim-contract-hint");
+  if (contractHint && claim.contract_path) {
+    contractHint.innerHTML = `Derived from gates + checklist. Contract: <code>${claim.contract_path}</code>`;
+  }
+
+  const pillars = document.getElementById("pillars-table");
+  if (pillars) pillars.innerHTML = renderPillarRows(claim.pillars, false);
+
+  const tiersEl = document.getElementById("readiness-tiers");
+  const checklists = claim.readiness_checklists || {};
+  if (tiersEl) {
+    tiersEl.innerHTML = Object.entries(checklists)
+      .map(([key, block]) => {
+        const items = (block.items || [])
+          .map(
+            (it) =>
+              `<li class="${it.done ? "done" : "open"}"><span>${it.label}</span>${it.done ? " ✓" : ""}</li>`
+          )
+          .join("");
+        return `<article class="tier-block">
+          <h3>${key.replace(/_/g, " ")} <span class="tier-progress">${block.done ?? 0}/${block.total ?? 0}</span></h3>
+          <ul>${items}</ul>
+        </article>`;
+      })
+      .join("");
+  }
+
+  syncProfileClaim(data);
+}
+
 function renderVerdict(data) {
   const cl = data.checklist || {};
   const el = document.getElementById("verdict-text");
   const section = document.getElementById("verdict-section");
   el.textContent = cl.verdict || "No verdict in snapshot.";
-  const ready = cl.scientific_scenario_c_ready && cl.m2_transfer_confirmed;
+  const claim = data.claim || {};
+  const ready = claim.scientific_ready ?? (cl.scientific_scenario_c_ready && cl.m2_transfer_confirmed);
   section.classList.toggle("pass", !!ready);
   section.classList.toggle("fail", !ready);
 }
@@ -504,7 +604,7 @@ function renderHome(data) {
     ["Researcher", p.researcher_name],
     ["Program", p.program],
     ["Focus", p.focus],
-    ["Claim", p.claim_status],
+    ["Claim", p.claim_status || data.claim?.one_sentence_claim],
   ]
     .map(([k, v]) => `<dt>${k}</dt><dd>${v || "—"}</dd>`)
     .join("");
@@ -524,22 +624,22 @@ function renderResearchPage(data) {
 
   const cl = data.checklist || {};
   const c = data.confirmatory || {};
+  const claim = data.claim || {};
   const live = document.getElementById("research-live-kv");
   live.innerHTML = [
     ["Checklist", `${cl.done}/${cl.total} (${fmtPct(cl.percent_complete)})`],
-    ["Scientific ready", c.gate_f_scenario_c_scientific ? "yes" : "no"],
+    ["Readiness tier", (claim.readiness_tier || "—").replace(/_/g, " ")],
+    ["Scientific ready", claim.scientific_ready ? "yes" : "no"],
+    ["Execution ready", claim.execution_ready ? "yes" : "no"],
     ["M2 transfer", c.gate_e_m2_transfer_confirmed ? "confirmed" : "not confirmed"],
+    ["Central claim ratified", claim.central_claim_ratified ? "yes" : "no"],
     ["Repo root", data.repo_root || "—"],
     ["Snapshot", data.generated_at || "—"],
   ]
     .map(([k, v]) => `<dt>${k}</dt><dd>${v}</dd>`)
     .join("");
 
-  const pillars = document.getElementById("pillars-table");
-  pillars.innerHTML = CLAIM_PILLARS.map(
-    (p) =>
-      `<div class="pillar-row"><span class="pillar-id">${p.id}</span><span>${p.name}</span><span class="pillar-status ${p.status.toLowerCase().replace(/\s+/g, "-")}">${p.status}</span></div>`
-  ).join("");
+  renderClaim(data);
 }
 
 function bindProfileForm() {
@@ -636,6 +736,7 @@ function renderAll(data) {
   clearError();
   renderMeta(data);
   renderVerdict(data);
+  renderClaim(data);
   renderDiff(data);
   renderCharts(data);
   renderChecklist(data);

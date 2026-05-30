@@ -12,7 +12,7 @@ All training stages T0–T7 were **executed** in-repo. The latest orchestrated r
 | Stage | Status |
 |-------|--------|
 | T0 governance + registries + split hashes | Done |
-| T1 experts + Gate A | Done (Gate A **FAIL** on canonical depth/RGB AUC ~0.58 — see report) |
+| T1 experts + Gate A | Done — Gate A **PASS** (v2: `gate_a_expert_qualification_v2.json`) |
 | T2 calibrator freeze | Done |
 | T3 fusion (M0/M1) | Skipped retrain in last run (artifacts exist); prior runs complete |
 | T4 mechanism (B-MECH-1) | **Not re-run** in last pipeline (missing `--experiment-id` in that invocation; run manually if needed) |
@@ -77,7 +77,7 @@ RGA+ and SAR scores are **deterministic across fusion seeds** (identical per-see
 
 | Gate | Result |
 |------|--------|
-| A — experts | **FAIL** in latest qualification (RGB/depth ~0.58); prior v2 pass may still exist in archive |
+| A — experts | **PASS** (v2 qualification on sealed upstream experts) |
 | B — baselines | **PASS** |
 | C — base RGA | **PASS** (mechanism / Phase 2) |
 | D — RGA+ vs frozen SAR (M1) | **NOT CONFIRMED** (Δ ≈ +0.0029 but degenerate seed CI; `cell_valid: false`) |

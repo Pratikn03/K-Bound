@@ -394,6 +394,158 @@ void prune_history(const fs::path& history_dir, size_t keep) {
     }
 }
 
+bool item_done(const json& items, const std::string& id) {
+    for (const auto& item : items) {
+        if (item.value("id", std::string{}) == id) {
+            return item.value("done", false);
+        }
+    }
+    return false;
+}
+
+json load_flagship_stop_rule(const fs::path& audits) {
+    json out = {{"found", false}, {"passed", false}, {"min_delta_vs_sar", 0.01}, {"best_mean_delta", 0.0}};
+    const fs::path sweep = audits / "flagship_val_sweep_m2_validation.json";
+    if (!fs::exists(sweep)) {
+        return out;
+    }
+    try {
+        const json doc = read_json_file(sweep);
+        out["found"] = true;
+        out["passed"] = doc.value("stop_rule_passed", false);
+        out["min_delta_vs_sar"] = doc.value("min_delta_vs_sar", 0.01);
+        if (doc.contains("winner") && doc["winner"].is_object()) {
+            out["best_mean_delta"] = doc["winner"].value("delta_vs_sar_mean", 0.0);
+            out["winner"] = doc["winner"].value("name", std::string{});
+        }
+    } catch (...) {
+    }
+    return out;
+}
+
+json build_claim_status(
+    const json& items,
+    const json& summary,
+    const json& confirmatory,
+    const json& gates,
+    const json& flagship_stop) {
+    const bool gate_a = gates.value("gate_a", json::object()).value("done", false);
+    const bool gate_b = gates.value("gate_b", json::object()).value("done", false);
+    const bool gate_c = gates.value("gate_c", json::object()).value("done", false);
+    const bool gate_d = confirmatory.value("gate_d_m1", false);
+    const bool gate_e = confirmatory.value("gate_e_m2_transfer_confirmed", false);
+    const bool gate_f_sci = confirmatory.value("gate_f_scenario_c_scientific", false);
+    const bool t5_m1 = confirmatory.value("t5_m1", false);
+    const bool t6 = item_done(items, "t6_gdr_audit");
+    const bool pred_arch = item_done(items, "pred_archive_all_runs");
+    const bool governance = item_done(items, "t0_governance_validator");
+
+    auto pillar = [](const std::string& id, const std::string& name, const std::string& req,
+                     const std::string& status, bool pass) {
+        return json{
+            {"id", id},
+            {"name", name},
+            {"required_evidence", req},
+            {"status", status},
+            {"pass", pass},
+        };
+    };
+
+    json pillars = json::array({
+        pillar("P1", "Mechanism validity", "Base RGA under degradation; quiet on clean",
+               gate_c ? "PARTIAL" : "NOT ESTABLISHED", gate_c),
+        pillar("P2", "Strong-baseline superiority", "Beat frozen SAR on confirmatory M1",
+               (gate_d && t5_m1) ? "PASS" : "NOT ESTABLISHED", gate_d && t5_m1),
+        pillar("P3", "Multimodal generalization", "Multiple naturally co-observed datasets",
+               (gate_a && gate_b) ? "PARTIAL" : "NOT ESTABLISHED", false),
+        pillar("P4", "Held-out transfer", "M2 external positive CI vs SAR",
+               gate_e ? "PASS" : "NOT CONFIRMED", gate_e),
+        pillar("P5", "Theory & certificate", "GDR + switching conditions",
+               t6 ? "PARTIAL" : "NOT ESTABLISHED", false),
+        pillar("P6", "Deployment auditability", "Archives + monitoring path",
+               pred_arch ? "PARTIAL" : "NOT ESTABLISHED", false),
+    });
+
+    const int pillars_pass = static_cast<int>(std::count_if(pillars.begin(), pillars.end(),
+        [](const json& p) { return p.value("pass", false); }));
+
+    std::string tier = "tier_1_bounded";
+    if (gate_f_sci) {
+        tier = "tier_3_flagship";
+    } else if (gate_e) {
+        tier = "tier_2_generalization";
+    }
+
+    std::string one_sentence;
+    if (gate_f_sci) {
+        one_sentence =
+            "ELARA confirms superiority over frozen SAR on M1 and M2 external confirmatory endpoints.";
+    } else if (gate_e) {
+        one_sentence = "ELARA confirms held-out transfer on M2 external; flagship claim partially met.";
+    } else {
+        one_sentence =
+            "ELARA shows bounded mechanism and pipeline evidence, but does not confirm superiority "
+            "over frozen SAR on M2 external (Δ ≈ −0.04, paired p < 0.01).";
+    }
+
+    json tier1 = json::array({
+        json{{"id", "evidence_frozen"}, {"label", "Evidence frozen & auditable"}, {"done", governance}},
+        json{{"id", "comparator_frozen"}, {"label", "Comparator frozen (D5)"},
+             {"done", item_done(items, "t3_strong_baselines")}},
+        json{{"id", "archives"}, {"label", "Prediction archives"}, {"done", pred_arch}},
+        json{{"id", "gate_c_mechanism"}, {"label", "Base RGA mechanism"}, {"done", gate_c}},
+    });
+    int tier1_done = 0;
+    for (const auto& t : tier1) {
+        if (t.value("done", false)) {
+            ++tier1_done;
+        }
+    }
+
+    json tier2 = json::array({
+        json{{"id", "m2_transfer"}, {"label", "M2 external transfer confirmed"}, {"done", gate_e}},
+        json{{"id", "gate_d_m1"}, {"label", "M1 superiority vs SAR"}, {"done", gate_d && t5_m1}},
+        json{{"id", "gate_a_v2"}, {"label", "Upstream experts (Gate A v2)"}, {"done", gate_a}},
+    });
+    int tier2_done = 0;
+    for (const auto& t : tier2) {
+        if (t.value("done", false)) {
+            ++tier2_done;
+        }
+    }
+
+    json tier3 = json::array({
+        json{{"id", "gate_f_sci"}, {"label", "Scenario C scientific ready"}, {"done", gate_f_sci}},
+        json{{"id", "flagship_stop"}, {"label", "Flagship val stop rule (Δ≥0.01)"},
+             {"done", flagship_stop.value("passed", false)}},
+        json{{"id", "all_gates_de"}, {"label", "Gates D + E pass"}, {"done", gate_d && gate_e}},
+    });
+    int tier3_done = 0;
+    for (const auto& t : tier3) {
+        if (t.value("done", false)) {
+            ++tier3_done;
+        }
+    }
+
+    return {
+        {"readiness_tier", tier},
+        {"scientific_ready", gate_f_sci},
+        {"execution_ready", summary.value("execution_percent", 0.0) >= 94.0},
+        {"one_sentence_claim", one_sentence},
+        {"central_claim_ratified", false},
+        {"pillars", pillars},
+        {"pillars_pass_count", pillars_pass},
+        {"pillars_total", 6},
+        {"readiness_checklists", {
+            {"tier1_bounded_paper", {{"done", tier1_done}, {"total", tier1.size()}, {"items", tier1}}},
+            {"tier2_generalization", {{"done", tier2_done}, {"total", tier2.size()}, {"items", tier2}}},
+            {"tier3_flagship", {{"done", tier3_done}, {"total", tier3.size()}, {"items", tier3}}},
+        }},
+        {"flagship_stop_rule", flagship_stop},
+        {"contract_path", "research_lock/SCENARIO_C_CLAIM_CONTRACT.md"},
+    };
+}
+
 void print_usage(const char* argv0) {
     std::cerr
         << "Usage: " << argv0 << " [options]\n"
@@ -488,11 +640,14 @@ int main(int argc, char* argv[]) {
         }
     }
 
+    const json flagship_stop = load_flagship_stop_rule(audits);
+
     json raw_sources = {
         {"checklist_progress", "elara_master_c/audits/checklist_progress.json"},
         {"confirmatory_statistics", "elara_master_c/audits/confirmatory_statistics_report.json"},
         {"python_file_catalog", "elara_master_c/audits/python_file_catalog.json"},
         {"flagship_protocol", "research_lock/FLAGSHIP_DEV_PROTOCOL_v1.yaml"},
+        {"claim_contract", "research_lock/SCENARIO_C_CLAIM_CONTRACT.md"},
     };
 
     json snapshot = {
@@ -535,6 +690,7 @@ int main(int argc, char* argv[]) {
         {"blockers", summary.value("remaining_blockers", json::array())},
         {"python_catalog", catalog_summary},
         {"protocol", parse_protocol_yaml(repo_root / "research_lock" / "FLAGSHIP_DEV_PROTOCOL_v1.yaml")},
+        {"claim", build_claim_status(items, summary, confirmatory, gates, flagship_stop)},
     };
 
     json previous = json::object();

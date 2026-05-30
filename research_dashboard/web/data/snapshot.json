@@ -290,6 +290,137 @@
     "total": 38,
     "verdict": "Execution 94.4% — scientific Gate E (M2 transfer) NOT CONFIRMED"
   },
+  "claim": {
+    "central_claim_ratified": false,
+    "contract_path": "research_lock/SCENARIO_C_CLAIM_CONTRACT.md",
+    "execution_ready": true,
+    "flagship_stop_rule": {
+      "best_mean_delta": 0.0033132530120482118,
+      "found": true,
+      "min_delta_vs_sar": 0.01,
+      "passed": false,
+      "winner": "rga_plus_baseline"
+    },
+    "one_sentence_claim": "ELARA shows bounded mechanism and pipeline evidence, but does not confirm superiority over frozen SAR on M2 external (Δ ≈ −0.04, paired p < 0.01).",
+    "pillars": [
+      {
+        "id": "P1",
+        "name": "Mechanism validity",
+        "pass": true,
+        "required_evidence": "Base RGA under degradation; quiet on clean",
+        "status": "PARTIAL"
+      },
+      {
+        "id": "P2",
+        "name": "Strong-baseline superiority",
+        "pass": false,
+        "required_evidence": "Beat frozen SAR on confirmatory M1",
+        "status": "NOT ESTABLISHED"
+      },
+      {
+        "id": "P3",
+        "name": "Multimodal generalization",
+        "pass": false,
+        "required_evidence": "Multiple naturally co-observed datasets",
+        "status": "PARTIAL"
+      },
+      {
+        "id": "P4",
+        "name": "Held-out transfer",
+        "pass": false,
+        "required_evidence": "M2 external positive CI vs SAR",
+        "status": "NOT CONFIRMED"
+      },
+      {
+        "id": "P5",
+        "name": "Theory & certificate",
+        "pass": false,
+        "required_evidence": "GDR + switching conditions",
+        "status": "PARTIAL"
+      },
+      {
+        "id": "P6",
+        "name": "Deployment auditability",
+        "pass": false,
+        "required_evidence": "Archives + monitoring path",
+        "status": "PARTIAL"
+      }
+    ],
+    "pillars_pass_count": 1,
+    "pillars_total": 6,
+    "readiness_checklists": {
+      "tier1_bounded_paper": {
+        "done": 4,
+        "items": [
+          {
+            "done": true,
+            "id": "evidence_frozen",
+            "label": "Evidence frozen & auditable"
+          },
+          {
+            "done": true,
+            "id": "comparator_frozen",
+            "label": "Comparator frozen (D5)"
+          },
+          {
+            "done": true,
+            "id": "archives",
+            "label": "Prediction archives"
+          },
+          {
+            "done": true,
+            "id": "gate_c_mechanism",
+            "label": "Base RGA mechanism"
+          }
+        ],
+        "total": 4
+      },
+      "tier2_generalization": {
+        "done": 1,
+        "items": [
+          {
+            "done": false,
+            "id": "m2_transfer",
+            "label": "M2 external transfer confirmed"
+          },
+          {
+            "done": false,
+            "id": "gate_d_m1",
+            "label": "M1 superiority vs SAR"
+          },
+          {
+            "done": true,
+            "id": "gate_a_v2",
+            "label": "Upstream experts (Gate A v2)"
+          }
+        ],
+        "total": 3
+      },
+      "tier3_flagship": {
+        "done": 0,
+        "items": [
+          {
+            "done": false,
+            "id": "gate_f_sci",
+            "label": "Scenario C scientific ready"
+          },
+          {
+            "done": false,
+            "id": "flagship_stop",
+            "label": "Flagship val stop rule (Δ≥0.01)"
+          },
+          {
+            "done": false,
+            "id": "all_gates_de",
+            "label": "Gates D + E pass"
+          }
+        ],
+        "total": 3
+      }
+    },
+    "readiness_tier": "tier_1_bounded",
+    "scientific_ready": false
+  },
   "confirmatory": {
     "cells": [
       {
@@ -371,11 +502,11 @@
     "blockers_removed": [],
     "checklist_percent_delta": 0.0,
     "confirmatory_cell_changes": [],
-    "current_at": "2026-05-30T22:53:51Z",
+    "current_at": "2026-05-30T23:14:59Z",
     "execution_percent_delta": 0.0,
     "gate_changes": [],
     "has_previous": true,
-    "previous_at": "2026-05-30T22:53:51Z"
+    "previous_at": "2026-05-30T23:12:01Z"
   },
   "gates": {
     "gate_a": {
@@ -452,7 +583,7 @@
       "stage": "GATE"
     }
   },
-  "generated_at": "2026-05-30T22:53:51Z",
+  "generated_at": "2026-05-30T23:14:59Z",
   "history_timeline": [
     {
       "blocker_count": 4,
@@ -486,7 +617,19 @@
       "execution_percent": 94.4,
       "gate_d_m1": false,
       "gate_e_m2": false,
-      "generated_at": "2026-05-30T22:53:51Z",
+      "generated_at": "2026-05-30T23:12:01Z",
+      "percent_complete": 89.5,
+      "scientific_ready": false
+    },
+    {
+      "blocker_count": 4,
+      "delta_M1": 0.0029085140137493637,
+      "delta_M2_external": -0.039832432156702846,
+      "delta_M2_proxy": -0.0008272071236601342,
+      "execution_percent": 94.4,
+      "gate_d_m1": false,
+      "gate_e_m2": false,
+      "generated_at": "2026-05-30T23:14:59Z",
       "percent_complete": 89.5,
       "scientific_ready": false
     }
@@ -568,11 +711,12 @@
   },
   "raw_sources": {
     "checklist_progress": "elara_master_c/audits/checklist_progress.json",
+    "claim_contract": "research_lock/SCENARIO_C_CLAIM_CONTRACT.md",
     "confirmatory_statistics": "elara_master_c/audits/confirmatory_statistics_report.json",
     "flagship_protocol": "research_lock/FLAGSHIP_DEV_PROTOCOL_v1.yaml",
     "python_file_catalog": "elara_master_c/audits/python_file_catalog.json"
   },
-  "repo_root": "/Volumes/T9/uav/AutoML_Flagship_V8",
+  "repo_root": "/Volumes/T9/uav/AutoML_Flagship_V8/.",
   "sources": [
     "elara_master_c/audits/checklist_progress.json",
     "elara_master_c/audits/confirmatory_statistics_report.json",
