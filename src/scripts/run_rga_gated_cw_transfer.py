@@ -14,8 +14,10 @@ Fix (the GDR rule realized at prediction level, no test labels used):
     prediction = reliability_weighted  if gate_fires  # stress: downweight drifted modality
                  else confidence_weighted_mean        # clean: defer to the strong baseline
 
-This makes the gated fusion provably >= CW (it EQUALS CW when no drift is
-detected) and strictly better under degradation. Reported as RGA-gated-CW.
+This makes the gated fusion equal CW when no drift is detected and allows a
+reliability-weighted response under degradation. Reported as RGA-gated-CW.
+Because some bootstrap CIs under mild/replication degradation cross zero, this
+script must not be read as a proof of weak dominance or strict non-negativity.
 
 Runs the degradation sweep on both transfer datasets and writes:
     experiments/fusion/rga_gated_cw_transfer_result.json
@@ -40,6 +42,8 @@ BOOT = 10000
 
 
 def _pivot(df, split):
+    """Pivot the long-format fusion CSV for one split into per-sample arrays:
+    rgb/depth scores, rgb/depth confidences, and labels (aligned by sample_id)."""
     s = df[df["split"] == split]
     r = s[s.domain == "rgb"].set_index("sample_id")
     d = s[s.domain == "depth_or_xyz"].set_index("sample_id")
@@ -54,10 +58,13 @@ def _pivot(df, split):
 
 
 def _ksr(t, ref):
+    """KS-drift reliability of a modality: 1 - KS(test, validation-reference)."""
     return float(np.clip(1 - ks_2samp(t, ref).statistic, 0, 1)) if t.size >= 5 else 1.0
 
 
 def _boot(y, a, b, rng):
+    """Paired test-sample bootstrap of AUROC(a) - AUROC(b); returns
+    (point delta, 2.5th pct, 97.5th pct)."""
     n = len(y)
     ds = []
     for _ in range(BOOT):
@@ -70,6 +77,12 @@ def _boot(y, a, b, rng):
 
 
 def run(csv: Path, label: str) -> dict:
+    """Run the RGA-gated-CW degradation sweep on one transfer dataset.
+
+    Calibrates tau from the clean reliability floor (validation/clean only),
+    then at each degradation level reports gated-CW vs confidence-weighting
+    with a paired bootstrap CI and a no-significant-negative flag.
+    """
     df = pd.read_csv(csv)
     val, test = _pivot(df, "validation"), _pivot(df, "test")
     y = test["y"]
@@ -101,6 +114,8 @@ def run(csv: Path, label: str) -> dict:
 
 
 def main() -> int:
+    """Run RGA-gated-CW on both transfer datasets, write the result JSON and the
+    3D-ADAM LaTeX table, and print the per-level deltas."""
     out = {
         "method": "RGA-gated-CW (gate defaults to confidence-weighted baseline; "
                   "switches to reliability-weighting under validation-calibrated drift)",
@@ -131,8 +146,9 @@ def main() -> int:
                  r"\textbf{" + f"{r['auroc_gated_cw']:.4f}" + r"} & "
                  f"{r['delta_gatedcw_minus_cw']:+.4f}{star}" + r" \\")
     L += [r"\bottomrule", r"\end{tabular}", "",
-          r"% RGA-gated-CW equals CW on clean (gate does not fire) and strictly",
-          r"% beats it under degradation; no significant negative at any level.",
+          r"% RGA-gated-CW equals CW on clean (gate does not fire).",
+          r"% Significant positive effects start at alpha >= 0.5 on 3D-ADAM;",
+          r"% mild/replication degradation CIs can include negative values.",
           rf"% Validation-calibrated tau = {d3['tau_validation_calibrated']:.3f}."]
     (ROOT / "docs/research/tables/rga_gated_cw_transfer.tex").write_text("\n".join(L))
     print(f"\nwrote result JSON + table. 3D-ADAM no-neg={d3['no_significant_negative_anywhere']}, "

@@ -72,10 +72,13 @@ def _ks_reliability(test_scores: np.ndarray, ref_scores: np.ndarray) -> float:
 
 
 def _auroc(y, s):
+    """ROC-AUC, or NaN when only one class is present in the resample."""
     return roc_auc_score(y, s) if len(np.unique(y)) > 1 else float("nan")
 
 
 def _boot_delta(y, a, b, seed=0):
+    """Paired test-sample bootstrap of AUROC(a) - AUROC(b); returns
+    (point delta, 2.5th pct, 97.5th pct)."""
     rng = np.random.default_rng(seed)
     n = len(y)
     ds = np.empty(BOOT)
@@ -88,6 +91,8 @@ def _boot_delta(y, a, b, seed=0):
 
 
 def main() -> int:
+    """Run the depth-degradation sweep comparing static, confidence-weighted, and
+    reliability-gated fusion; write the per-level deltas + CIs and the crossover."""
     df = pd.read_csv(CSV)
     val = _pivot(df, "validation")
     test = _pivot(df, "test")

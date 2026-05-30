@@ -16,6 +16,8 @@
 \usepackage{microtype}
 \usepackage{setspace}
 \usepackage{enumitem}
+\usepackage{algorithm}
+\usepackage{algpseudocode}
 
 \hypersetup{
   colorlinks=true,
@@ -846,6 +848,69 @@ read against the leaderboard column.}
 \resizebox{\linewidth}{!}{\input{tables/mvtec3d_sota_demarcation.tex}}
 \end{table}
 }{}
+
+\subsection{Competitive-Detector Validation and Stress-Regime Transfer}
+
+The diagnostic upstream detector used above sits near chance on naturally
+paired one-class data, which confounds any fusion comparison. Replacing it
+with a true patch-level PatchCore expert (Algorithm~\ref{alg:thesis-patchcore})
+lifts the mean per-category MVTec~3D-AD upstream ROC-AUC into the competitive
+$\approx 0.79$ range. Under this fair detector two results emerge. First, an
+in-domain strong-baseline win: across $30$ independent stratified splits the
+validation-frozen RGA+ head beats the strongest frozen baseline (SAR) by
+$\Delta = +0.0240$ ($95\%$ CI $[+0.0218,+0.0261]$, $30/30$ splits) --- the
+first time RGA+ exceeds the strongest comparator and not merely static
+attention, reported as a multi-split mean precisely because a single split
+overstated it ($+0.16$). Second, a stress-regime transfer result: on held-out
+external 3D-ADAM the reliability gate's advantage over a confidence-weighted
+mean grows from a clean tie to $+0.12$ AUROC as a modality degrades, and
+replicates on a second dataset.
+
+To remove the one residual regression --- the trained head trailing a
+parameter-free confidence-weighted mean on \emph{clean} transfer --- we
+instantiate the gate decision rule at the prediction level
+(Algorithm~\ref{alg:thesis-gated-cw}): the gate defaults to the
+confidence-weighted baseline and switches to reliability-weighting only under
+a validation-calibrated drift threshold. The resulting RGA-gated-CW equals the
+baseline on clean data. On held-out 3D-ADAM it significantly improves over the
+confidence-weighted baseline from moderate degradation onward, but the mild
+degradation cell has a 95\% interval that includes a small negative value. On
+the MVTec replication the degraded point estimates are positive but the 95\%
+intervals include negative values. Reliability gating is therefore a
+stress-regime mechanism with a characterisable operating boundary, not a proof
+of weak dominance or strict non-negativity over the strongest parameter-free
+baseline. These results use the two naturally paired RGB+depth
+benchmarks; the remaining cells retain the diagnostic detector, the in-domain
+figures are supervised-paired (not one-class leaderboard-comparable), and the
+degradation is a controlled synthetic sweep --- each a boundary on how far the
+claim may be read, none load-bearing for the claim made.
+
+\begin{algorithm}[H]
+\caption{Patch-level PatchCore upstream detector (per modality)}
+\label{alg:thesis-patchcore}
+\begin{algorithmic}[1]
+\Require Train-good images $\mathcal{N}$, queries $\mathcal{Q}$, backbone blocks $\ell_2,\ell_3$, grid $G$, coreset fraction $c$
+\Function{Patches}{$x$}
+    \State $f_2,f_3 \gets \ell_2(x),\ell_3(x)$; locally-aware $3{\times}3$ avg-pool; resize to $G{\times}G$
+    \State \Return $\{[f_2;f_3]_u : u \in G\times G\}$
+\EndFunction
+\State $\mathcal{B} \gets \textsc{GreedyCoreset}\bigl(\bigcup_{n\in\mathcal{N}}\textsc{Patches}(n),\, c\,|\!\cdot\!|\bigr)$
+\State $s_q \gets \max_{p\in\textsc{Patches}(q)} \min_{b\in\mathcal{B}} \lVert p-b\rVert_2$ for $q\in\mathcal{Q}$; $z$-sigmoid normalise vs.\ train-good
+\end{algorithmic}
+\end{algorithm}
+
+\begin{algorithm}[H]
+\caption{RGA-gated-CW: gate defaults to the strong baseline}
+\label{alg:thesis-gated-cw}
+\begin{algorithmic}[1]
+\Require Modality scores $s^m_i$, confidences $c^m_i$, validation references, margin $\eta=0.05$
+\State $r_m \gets 1 - \mathrm{KS}(s^m_{\text{test}}, s^m_{\text{val}})$; \quad $\tau \gets \min_m r^{\text{clean}}_m - \eta$ \Comment{no test labels}
+\State $\text{CW}_i \gets$ confidence-weighted mean of $s^{\text{rgb}}_i, s^{\text{depth}}_i$
+\If{$\min_m r_m < \tau$} \quad $\hat p_i \gets$ reliability-weighted mean \Comment{drift: downweight it}
+\Else{} \quad $\hat p_i \gets \text{CW}_i$ \Comment{no drift: defer to baseline}
+\EndIf
+\end{algorithmic}
+\end{algorithm}
 
 \subsection{Calibration and Domain Attribution}
 

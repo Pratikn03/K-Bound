@@ -39,6 +39,7 @@ PATCH_GRID = 28
 
 
 def _bank_paths(category: str, domain: str) -> list[Path]:
+    """Train-good image paths for a category/modality (AppleDouble-filtered)."""
     sub = "rgb" if domain == "rgb" else "xyz"
     d = DATA / category / "train" / "good" / sub
     ext = "*.png" if sub == "rgb" else "*.tiff"
@@ -46,6 +47,8 @@ def _bank_paths(category: str, domain: str) -> list[Path]:
 
 
 def main() -> int:
+    """Rebuild the 3D-ADAM transfer fusion CSV with patch-level PatchCore scores;
+    per-category checkpoints make the build resumable across drive disconnects."""
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--coreset-frac", type=float, default=0.10)
     ap.add_argument("--only", default=None)

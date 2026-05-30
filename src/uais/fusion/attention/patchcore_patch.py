@@ -36,6 +36,7 @@ _TRANSFORM = None
 
 
 def _device() -> torch.device:
+    """Return the best available torch device (MPS > CUDA > CPU)."""
     if torch.backends.mps.is_available():
         return torch.device("mps")
     if torch.cuda.is_available():
@@ -56,7 +57,8 @@ def _get_backbone():
         feats: dict[str, torch.Tensor] = {}
 
         def _hook(name):
-            def fn(_m, _i, o):
+            """Build a forward hook that stashes block `name`'s output in feats."""
+            def fn(_m, _i, o):  # noqa: D401 - tiny closure
                 feats[name] = o
             return fn
 
@@ -69,6 +71,9 @@ def _get_backbone():
 
 
 def _load_rgb(path: Path) -> Image.Image:
+    """Load an image as 3-channel RGB. XYZ/depth TIFFs are reduced to a
+    per-pixel magnitude, min-max normalised, and replicated to 3 channels so
+    the same ResNet backbone consumes both modalities."""
     suffix = Path(path).suffix.lower()
     if suffix in {".tif", ".tiff"}:
         try:
@@ -108,6 +113,8 @@ def extract_patch_embeddings(
     buf, idxs = [], []
 
     def _flush():
+        """Run the buffered image batch through the backbone, apply locally-aware
+        pooling + resize to the common grid, and append per-image patch arrays."""
         if not buf:
             return
         batch = torch.stack(buf).to(dev)

@@ -33,11 +33,15 @@ def render(payload: dict) -> str:
         loose = float(row.get("slack_loose", float("nan")))
         factor = row.get("tightening_factor")
         useful = r"\textbf{yes}" if math.isfinite(tight) and tight < 0.5 else "no"
+        if isinstance(factor, (int, float)) and math.isfinite(factor):
+            factor_str = _fmt(factor, 1) + r"$\times$"
+        else:
+            factor_str = "--"
         out.append(
             rf"{fold} & {row['n']} & {_fmt(row.get('B_emp'), 2)} & "
             rf"{_fmt(row.get('R_emp'), 2)} & {_fmt(loose, 2)} & "
             rf"{_fmt(tight, 3)} & "
-            rf"{(_fmt(factor, 1) + r'$\times$') if isinstance(factor,(int,float)) and math.isfinite(factor) else '--'} & "
+            rf"{factor_str} & "
             rf"{useful} \\"
         )
     out += [
