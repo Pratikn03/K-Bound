@@ -122,3 +122,35 @@ def test_immutability_appends_rerun_suffix(archive):
     )
     assert e1.artifact_path != e2.artifact_path
     assert "rerun_1" in e2.artifact_path
+
+
+def test_csv_fallback_preserves_immutability(monkeypatch, archive):
+    df = _make_frame(archive)
+
+    def fail_parquet(*args, **kwargs):
+        raise ImportError("parquet engine unavailable")
+
+    monkeypatch.setattr(pd.DataFrame, "to_parquet", fail_parquet)
+    e1 = archive.write(
+        experiment_id="A-POWERED-1",
+        benchmark="MVTec 3D-AD",
+        protocol="PatchCore supervised-paired",
+        seed=42,
+        method="rga_meta_router",
+        split="test",
+        frame=df,
+    )
+    e2 = archive.write(
+        experiment_id="A-POWERED-1",
+        benchmark="MVTec 3D-AD",
+        protocol="PatchCore supervised-paired",
+        seed=42,
+        method="rga_meta_router",
+        split="test",
+        frame=df,
+    )
+
+    assert e1.artifact_path.endswith("seed_42.csv")
+    assert e2.artifact_path.endswith("seed_42__rerun_1.csv")
+    assert Path(e1.artifact_path).exists()
+    assert Path(e2.artifact_path).exists()

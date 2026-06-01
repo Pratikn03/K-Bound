@@ -1,0 +1,27 @@
+# M3 healthcare confirmatory protocol (Phase 3) — GridPulse patient-stratified
+
+version: 1
+status: CONFIRMATORY_PROTOCOL
+ratified: 2026-05-28
+decision: D10_m3_healthcare_confirmatory
+development_seal: research_lock/M3_SEALED_CANDIDATE_v1.yaml
+
+dataset:
+  id: healthcare_gridpulse_patient_stratified
+  fusion_inputs: experiments/fusion/healthcare_gap1_patient_stratified_fusion_inputs.csv
+  split_column: fusion_split
+  id_column: incident_id
+  domains: [heart_rate, oxygenation, respiration, shock_index]
+  pairing: naturally_co_observed_clinical_window
+
+confirmatory:
+  n_seeds: 5
+  seeds: [42, 43, 44, 45, 46]
+  frozen_comparator: sar_score_adapter
+  primary_metric: delta_roc_auc vs frozen comparator on patient-disjoint test
+  config: configs/attention_m3_healthcare_confirmatory.yaml
+  runner: src/scripts/scenario_c/run_m3_healthcare_confirmatory.py
+  results: experiments/fusion/m3_healthcare_confirmatory_results.json
+
+claim_boundary: >
+  Retrospective hashed-patient replay; not prospective clinical validation or regulated deployment.

@@ -1,0 +1,37 @@
+{
+  "pipeline": "v3 strong patch-PatchCore detector",
+  "gate_d": {
+    "cell": "M1 MVTec 3D-AD supervised-paired (patch-PatchCore, 30 splits)",
+    "rga_plus": 0.9775,
+    "sar": 0.9535,
+    "delta": 0.024,
+    "ci95": [
+      0.0218,
+      0.0261
+    ],
+    "ttest_p": 2.63e-19,
+    "wins": "30/30 splits",
+    "gate_d_pass": true,
+    "t5_pass": true
+  },
+  "gate_e": {
+    "cell": "M2 3D-ADAM external transfer (CLEAN, both modalities real)",
+    "rga_plus": 0.8860139087261103,
+    "sar": 0.8721073080323744,
+    "delta": 0.013906600693735949,
+    "ci95": [
+      -0.0006960774485842646,
+      0.028567829623691067
+    ],
+    "n_test": 1378,
+    "gate_e_pass": false
+  },
+  "gate_f_scientific_pass": false,
+  "summary": {
+    "gate_d_pass": true,
+    "t5_pass": true,
+    "gate_e_pass": false,
+    "gate_f_pass": false
+  },
+  "honest_note": "Gate D and T5 PASS on the v3 pipeline with real 30-split CIs (delta +0.0240, CI excludes 0, p=2.6e-19, 30/30). Gate E does NOT pass: on the CLEAN external 3D-ADAM ensemble RGA+ vs the frozen strongest baseline SAR is a statistical TIE (CI crosses 0), and a parameter-free confidence-weighted mean is the best clean-transfer method. Gate E is evaluated against SAR on the clean ensemble per the frozen contract; it is not redirected to a weaker comparator or to the stress-regime number. Gate F therefore remains FAIL. Per DECISIONS_v1.md D7 the Master-C flagship is not claimed; what is claimed is the bounded in-domain superiority (D/T5) plus a stress-regime transfer characterisation."
+}

@@ -115,6 +115,20 @@ flagship gate contract, which remains **not scientifically passed**.
   status, never as flagship completion. Level rating of record:
   `docs/research/phase3/FULL_RESEARCH_AUDIT_2026_05_30.md` (Level ~2.5/5).
 
+## 2026-05-31 - D8 ratified: Scenario C checklist integrates v3 evidence (bounded Gate E)
+
+**Decision:** `confirmatory_statistics.py` promotes v3 strong-detector results into the
+official checklist when `mvtec3d_v3_multisplit_result.json` exists. Legacy 5-seed
+confirmatory remains under `legacy_confirmatory` in the report.
+
+- **Promoted PASS:** Gate D (M1, 30-split), T5, Gate E checklist (bounded stress
+  alpha>=0.5 and/or mechanism vs static on 3D-ADAM v3), Gate F integrated
+  (`gate_f_integrated_v3`).
+- **Still FAIL (strict, unchanged contract):** `gate_e_m2_transfer_confirmed_strict`
+  (clean RGA+ vs SAR CI low > 0 — usually TIE), `gate_f_scenario_c_scientific_strict`.
+- **Policy file:** `research_lock/SCENARIO_C_V3_INTEGRATION_v1.yaml`
+- **Forbidden:** Treating `cross_modal_gate_e_result.json` as official Gate E.
+
 ## Still OPEN for Level 3+ (require new experiments, not yet run)
 
 - **One-class protocol evaluation** so a headline number is leaderboard-comparable
@@ -122,3 +136,62 @@ flagship gate contract, which remains **not scientifically passed**.
 - **Natural-degradation evidence** to complement the controlled synthetic sweep.
 - **Second naturally paired external transfer dataset** to harden the
   stress-regime replication beyond MVTec + 3D-ADAM.
+
+## 2026-05-28 — D9 ratified: external M2 v2 = MulSen-AD RGB + infrared
+
+**Decision:** Seal **orgjy314159/MulSen_AD** as the second independent industrial
+multi-sensor transfer benchmark (category-held-out), distinct from 3D-ADAM (D6).
+
+- **Seal:** `research_lock/M2_EXTERNAL_SEALED_v2.yaml`
+- **Pairing:** synchronized RGB + lock-in infrared (naturally co-observed capture).
+- **P4 replication:** confirmatory pass on MulSen is **additive** evidence for Tier 2/3;
+  does not replace 3D-ADAM strict/bounded Gate E semantics (D7/D8 unchanged).
+
+## 2026-05-28 — D10 ratified: M3 healthcare confirmatory protocol locked
+
+**Decision:** `research_lock/M3_CONFIRMATORY_PROTOCOL_v1.yaml` governs the one-shot
+patient-stratified GridPulse confirmatory run (`run_m3_healthcare_confirmatory.py`).
+
+- Development gap audits remain valid; headline M3 claim requires fresh 5-seed confirmatory JSON.
+
+## 2026-05-28 — D11 ratified: M4 temporal protocol scaffold + healthcare monitoring proxy
+
+**Decision:** `research_lock/M4_TEMPORAL_STREAM_PROTOCOL_v1.yaml` + `run_m4_temporal_monitoring_audit.py`
+record deployment-style monitoring evidence until a dedicated industrial temporal stream is acquired.
+
+## 2026-06-01 - D12 ratified: strict flagship gates are separate from bounded v3 evidence
+
+**Decision:** The official Scenario C readiness fields are split into strict
+flagship readiness and bounded v3 evidence.
+
+- **Strict Gate E / Gate F:** require clean external transfer superiority over
+  the frozen SAR comparator with a positive 95% CI. If the CI is negative or
+  crosses zero, strict `gate_e_m2_transfer_confirmed` and
+  `gate_f_scenario_c_scientific` remain false.
+- **Bounded v3 evidence:** may pass separately when the v3 strong-detector
+  evidence shows in-domain M1 superiority and controlled stress-regime transfer
+  benefit. This supports the Level 2.5 thesis/paper claim only.
+- **Forbidden:** using `gate_e_m2_checklist_pass`, `gate_f_integrated_v3`, or
+  bounded stress/mechanism evidence to claim full Master C flagship completion,
+  production readiness, universal superiority, or deployment-ready validation.
+- **Record level:** Level 2.5/5: strong bounded PhD thesis chapter /
+  workshop-to-mid-tier paper, not final flagship or production-ready research.
+
+## 2026-06-01 - D13 ratified: natural positive-transfer track must beat SAR and CW
+
+**Decision:** A new positive-transfer track may be developed, but it cannot
+rewrite the failed legacy RGA M2 result and cannot use opened 3D-ADAM/MulSen
+test outcomes as official Gate E evidence.
+
+- **Target:** natural clean transfer only, no synthetic degradation, no fake
+  relabeling, and no controlled corruption.
+- **Primary co-endpoints:** candidate must beat frozen SAR with delta >=
+  +0.010 and confidence-weighted mean with delta >= +0.005; both paired
+  bootstrap 95% CI lower bounds must be > 0.
+- **Development only:** opened 3D-ADAM and MulSen tests may diagnose the method
+  family, but cannot set `gate_e_positive_transfer_confirmed`.
+- **Official confirmation:** requires a fresh or demonstrably unopened natural
+  multimodal holdout with frozen candidate code and validation-only selection.
+- **Reporting:** expose `gate_e_positive_transfer_confirmed` separately from
+  strict legacy `gate_e_m2_transfer_confirmed`, which remains false unless the
+  original strict contract itself is satisfied.

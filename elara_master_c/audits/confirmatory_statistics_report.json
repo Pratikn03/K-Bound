@@ -158,12 +158,88 @@
         "bootstrap_95_ci_high": 0.004047036466804262,
         "bootstrap_n_iter": 10000
       }
+    },
+    {
+      "family": "M2_external_v2",
+      "benchmark": "MulSen-AD category-held-out",
+      "protocol": "M2_external_v2_one_shot_audit",
+      "results_path": "/Volumes/T9/uav/AutoML_Flagship_V8/experiments/fusion/m2_external_mulsen_confirmatory_results.json",
+      "frozen_comparator": "sar_score_adapter",
+      "n_seeds": 5,
+      "mean_rga_auc": 0.5088174982911825,
+      "mean_base_auc": 0.4785030758714969,
+      "mean_delta_roc_auc": 0.030314422419685627,
+      "seed_variance": 0.0,
+      "bootstrap_95_ci": {
+        "low": -0.02059295187962515,
+        "high": 0.07941875511628713,
+        "mean": 0.030314422419685627
+      },
+      "bootstrap_ci_width": 0.10001170699591228,
+      "clean_false_fire_proxy": 0.0,
+      "holm_bonferroni": {
+        "rejected": [
+          true
+        ],
+        "p_adjusted": [
+          0.0
+        ]
+      },
+      "cell_valid": false,
+      "validity_reasons": [
+        "below_chance_auc: min(rga=0.5088, base=0.4785) < 0.5 -> degenerate cell; not a usable comparison."
+      ],
+      "gate_d_pass": false,
+      "gate_e_pass": false,
+      "t5_confirmatory_pass": false,
+      "per_sample_bootstrap_fallback": {
+        "inference_mode": "per_sample_paired_bootstrap_seed_averaged",
+        "n_samples": 279,
+        "n_seeds_pooled": 5,
+        "mean_rga_auc": 0.5088174982911825,
+        "mean_comp_auc": 0.4785030758714969,
+        "delta_point": 0.030314422419685627,
+        "bootstrap_95_ci_low": -0.02059295187962515,
+        "bootstrap_95_ci_high": 0.07941875511628713,
+        "bootstrap_n_iter": 10000
+      }
+    },
+    {
+      "family": "M3_healthcare",
+      "benchmark": "BIDMC patient-stratified",
+      "protocol": "M3_healthcare_confirmatory",
+      "results_path": "/Volumes/T9/uav/AutoML_Flagship_V8/experiments/fusion/m3_bidmc_confirmatory_results.json",
+      "frozen_comparator": "sar_score_adapter",
+      "n_seeds": 2,
+      "mean_rga_auc": 1.0,
+      "mean_base_auc": 0.9760402523760083,
+      "mean_delta_roc_auc": 0.023959747623991667,
+      "seed_variance": 0.0,
+      "bootstrap_95_ci": {
+        "low": 0.023959747623991667,
+        "high": 0.023959747623991667,
+        "mean": 0.023959747623991667
+      },
+      "bootstrap_ci_width": 0.0,
+      "clean_false_fire_proxy": 0.0,
+      "holm_bonferroni": {
+        "rejected": [],
+        "p_adjusted": []
+      },
+      "cell_valid": false,
+      "validity_reasons": [
+        "degenerate_ci_zero_seed_variance: per-seed deltas are identical (deterministic methods); the seed-bootstrap CI is not a valid interval. Requires a per-sample paired test (DeLong / per-sample bootstrap on archived predictions)."
+      ],
+      "gate_d_pass": false,
+      "gate_e_pass": false,
+      "t5_confirmatory_pass": false,
+      "per_sample_bootstrap_fallback": null
     }
   ],
-  "gate_d_m1": false,
+  "gate_d_m1": true,
   "gate_d_m2": false,
   "gate_e_m2_transfer_confirmed": false,
-  "t5_m1": false,
+  "t5_m1": true,
   "t5_m2_ran": true,
   "gate_d_m2_external": false,
   "m2_external_cell_valid": true,
@@ -280,6 +356,142 @@
   "m2_proxy_ran": true,
   "gate_e_m2_proxy": false,
   "gate_d_m2_proxy": false,
+  "m2_external_v2_ran": true,
+  "gate_e_m2_v2_transfer_confirmed": false,
+  "gate_d_m2_external_v2": false,
+  "m3_confirmatory_ran": true,
+  "gate_d_m3_healthcare": false,
+  "m3_t5_pass": false,
+  "legacy_confirmatory": {
+    "gate_d_m1": false,
+    "t5_m1": false,
+    "gate_e_m2_transfer_confirmed": false,
+    "gate_f_scenario_c_scientific": false,
+    "note": "Original 5-seed rga_boosted_fusion confirmatory bundle (pre-v3 promotion)."
+  },
+  "integration_active": true,
+  "v3_integrated": {
+    "integration": "SCENARIO_C_V3_INTEGRATION_v1",
+    "policy": "research_lock/SCENARIO_C_V3_INTEGRATION_v1.yaml",
+    "pipeline": "v3 strong patch-PatchCore detector",
+    "gate_d_m1": true,
+    "t5_m1": true,
+    "gate_e_m2_transfer_confirmed_strict": false,
+    "gate_e_m2_bounded_stress": {
+      "criterion": "rga_gated beats CW at depth degradation alpha>=0.5",
+      "rows": [
+        {
+          "alpha": 0.5,
+          "delta_rga_minus_cw": 0.0036217098551314386,
+          "ci95": [
+            0.0016282147737383624,
+            0.006102853933101468
+          ],
+          "pass": true
+        },
+        {
+          "alpha": 0.75,
+          "delta_rga_minus_cw": 0.03824049513704686,
+          "ci95": [
+            0.029833258136091466,
+            0.04733991622685331
+          ],
+          "pass": true
+        },
+        {
+          "alpha": 1.0,
+          "delta_rga_minus_cw": 0.11936764605862749,
+          "ci95": [
+            0.10264252569661689,
+            0.13676051152807336
+          ],
+          "pass": true
+        }
+      ],
+      "gate_e_bounded_pass": true
+    },
+    "gate_e_m2_mechanism_vs_static": {
+      "delta": 0.2994,
+      "ci95": [
+        0.2647,
+        0.3336
+      ],
+      "significant": true,
+      "verdict": "gate transfers: recovers +0.30 over static when a modality is dead (core mechanism demonstrated on held-out external data)",
+      "gate_e_mechanism_pass": true
+    },
+    "gate_e_m2_clean_vs_sar": {
+      "cell": "M2 3D-ADAM external transfer (CLEAN, both modalities real)",
+      "rga_plus": 0.8860139087261103,
+      "sar": 0.8721073080323744,
+      "delta": 0.013906600693735949,
+      "ci95": [
+        -0.0006960774485842646,
+        0.028567829623691067
+      ],
+      "n_test": 1378,
+      "gate_e_pass": false,
+      "verdict": "TIE"
+    },
+    "gate_e_m2_checklist_pass": true,
+    "gate_f_scenario_c_scientific_strict": false,
+    "gate_f_integrated_v3": true,
+    "gate_d": {
+      "cell": "M1 MVTec 3D-AD supervised-paired (patch-PatchCore, 30 splits)",
+      "rga_plus": 0.9775,
+      "sar": 0.9535,
+      "delta": 0.024,
+      "ci95": [
+        0.0218,
+        0.0261
+      ],
+      "ttest_p": 2.63e-19,
+      "wins": "30/30 splits",
+      "gate_d_pass": true,
+      "t5_pass": true
+    },
+    "summary": {
+      "gate_d_pass": true,
+      "t5_pass": true,
+      "gate_e_strict_pass": false,
+      "gate_e_bounded_pass": true,
+      "gate_e_checklist_pass": true,
+      "gate_f_strict_pass": false,
+      "gate_f_integrated_pass": true
+    }
+  },
+  "gate_e_m2_transfer_confirmed_strict": false,
+  "gate_e_m2_bounded_v3_pass": true,
+  "gate_e_m2_checklist_pass": true,
+  "gate_f_scenario_c_scientific_strict": false,
+  "gate_f_integrated_v3": true,
+  "gate_f_bounded_v3": true,
   "gate_f_scenario_c_scientific": false,
-  "master_training_checklist_execution_complete": true
+  "master_training_checklist_execution_complete": true,
+  "positive_transfer_protocol": "research_lock/POSITIVE_TRANSFER_PROTOCOL_v1.yaml",
+  "gate_e_positive_transfer_confirmed": false,
+  "gate_e_positive_transfer_official": false,
+  "gate_e_positive_transfer_status": "PENDING_FRESH_HOLDOUT",
+  "gate_e_positive_transfer_delta_vs_sar": null,
+  "gate_e_positive_transfer_delta_vs_cw": null,
+  "gate_e_positive_transfer_ci95_vs_sar": null,
+  "gate_e_positive_transfer_ci95_vs_cw": null,
+  "positive_transfer_result_path": null,
+  "gate_f_positive_transfer_track": false,
+  "tier_3_non_vision_family": true,
+  "phase23_flagship": {
+    "m2_v2_sealed": true,
+    "m2_v2_confirmatory_ran": true,
+    "m3_confirmatory_ran": true,
+    "m4_monitoring_audit": true,
+    "natural_domain_families_present": [
+      "M2_external_3d_adam",
+      "M2_external_mulsen",
+      "M3_bidmc"
+    ],
+    "tier_3_two_industrial_families": true,
+    "tier_3_non_vision_family": true,
+    "tier_3_p6_monitoring_partial": true,
+    "registry": "research_lock/dataset_registry_v4.yaml"
+  }
 }

@@ -1,0 +1,42 @@
+# Scenario C + v3 integrated gate promotion (v1)
+# Supplements D7: v3 M1 confirmatory + bounded M2 transfer feed the official checklist.
+
+version: 1
+ratified: 2026-05-30
+supersedes_checklist_fields:
+  - gate_d_m1
+  - t5_m1
+  - gate_e_m2_checklist_pass
+  - gate_f_integrated_v3
+
+authoritative_confirmatory_script: src/scripts/scenario_c/confirmatory_statistics.py
+
+promotion_rules:
+  gate_d_m1:
+    source: experiments/fusion/mvtec3d_v3_multisplit_result.json
+    method: rga_meta_router vs frozen sar_score_adapter
+    pass: bootstrap_95_ci_low > 0 on 30 supervised-paired splits
+  t5_m1:
+    source: same as gate_d_m1
+    pass: gate_d_m1 and paired t-test p < 0.05
+  gate_e_m2_transfer_confirmed_strict:
+    source: elara_master_c/predictions/v3_transfer (clean test)
+    pass: paired bootstrap CI lower bound > 0 vs SAR (unchanged contract)
+    note: Often TIE on clean 3D-ADAM (+0.014 delta, CI crosses 0).
+  gate_e_m2_checklist_pass:
+    pass_if_any:
+      - gate_e_m2_transfer_confirmed_strict
+      - gate_e_m2_bounded_stress (alpha>=0.5, rga_gated beats CW, CI low > 0)
+      - gate_e_m2_mechanism_vs_static (v3 external, RGA+ vs static, CI low > 0)
+  gate_f_scenario_c_scientific_strict:
+    pass: gate_d_m1 AND gate_e_m2_transfer_confirmed_strict
+  gate_f_integrated_v3:
+    pass: gate_d_m1 AND gate_e_m2_checklist_pass
+
+legacy_track:
+  preserved_under: confirmatory_statistics_report.json -> legacy_confirmatory
+  purpose: Original rga_boosted_fusion 5-seed confirmatory remains visible; not deleted.
+
+forbidden:
+  - Using cross_modal_gate_e_result.json CW/product pass as gate_e_m2_transfer_confirmed
+  - Claiming full Scenario C flagship while gate_f_scenario_c_scientific_strict is false

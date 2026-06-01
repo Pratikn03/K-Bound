@@ -143,8 +143,9 @@ Commands run in this audit:
    v3 algorithm material to both, but future updates should preserve that parity.
 4. **For Level 3+: add one-class and natural-degradation evidence.** The current
    result is supervised-paired and controlled synthetic degradation.
-5. **For flagship claims: re-ratify the gate contract.** The v3 bounded claim
-   should not be silently substituted for the original Master C claim.
+5. **For flagship claims: follow D12.** The v3 bounded claim is tracked
+   separately from strict Gate E/F and cannot be silently substituted for the
+   original Master C claim.
 
 ## Admissible Claim Today
 

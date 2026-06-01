@@ -143,6 +143,11 @@ PYTHONPATH=src python src/scripts/build_metrics_manifest.py \
   --output "$ROOT/docs/research/metrics_manifest.json" \
   --macros-output "$ROOT/docs/research/generated/elara_verified_metrics_macros.tex"
 
+echo "==> Regenerate D13 natural positive-transfer development report + table"
+PYTHONPATH=src python src/scripts/scenario_c/run_positive_transfer_development.py \
+  --output "$ROOT/elara_master_c/audits/positive_transfer_development_report.json" \
+  --table-output "$TBL_DIR/natural_positive_transfer_d13.tex" >/dev/null
+
 echo
 echo "==> Compile PDF (from docs/research/ so \\graphicspath resolves)"
 cd "$ROOT/docs/research"

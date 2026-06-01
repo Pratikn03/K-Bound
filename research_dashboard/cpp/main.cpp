@@ -133,9 +133,18 @@ std::vector<std::string> gate_evidence_files(const std::string& gate_id) {
         {"gate_d", {"elara_master_c/audits/confirmatory_statistics_report.json"}},
         {"gate_e", {"elara_master_c/audits/confirmatory_statistics_report.json",
                     "experiments/fusion/m2_external_3d_adam_transfer_v1_confirmatory_results.json"}},
+        {"gate_e_bounded_v3", {"elara_master_c/audits/confirmatory_statistics_report.json",
+                               "research_lock/SCENARIO_C_V3_INTEGRATION_v1.yaml"}},
+        {"gate_e_positive_transfer", {"elara_master_c/audits/confirmatory_statistics_report.json",
+                                      "research_lock/POSITIVE_TRANSFER_PROTOCOL_v1.yaml",
+                                      "elara_master_c/audits/positive_transfer_development_report.json"}},
         {"gate_f", {"elara_master_c/audits/checklist_progress.json"}},
         {"gate_f_scientific", {"elara_master_c/audits/confirmatory_statistics_report.json",
                                "elara_master_c/audits/checklist_progress.json"}},
+        {"gate_f_bounded_v3", {"elara_master_c/audits/confirmatory_statistics_report.json",
+                               "research_lock/SCENARIO_C_V3_INTEGRATION_v1.yaml"}},
+        {"gate_f_positive_transfer", {"elara_master_c/audits/confirmatory_statistics_report.json",
+                                      "research_lock/POSITIVE_TRANSFER_PROTOCOL_v1.yaml"}},
     };
     const auto it = kMap.find(gate_id);
     if (it == kMap.end()) {
@@ -236,6 +245,7 @@ json timeline_point(const json& snap) {
         {"scientific_ready", nested_bool(snap, "checklist", "scientific_scenario_c_ready", false)},
         {"gate_d_m1", nested_bool(snap, "confirmatory", "gate_d_m1", false)},
         {"gate_e_m2", nested_bool(snap, "confirmatory", "gate_e_m2_transfer_confirmed", false)},
+        {"gate_e_positive_transfer", nested_bool(snap, "confirmatory", "gate_e_positive_transfer_confirmed", false)},
         {"blocker_count", snap.value("blockers", json::array()).size()},
     };
     if (snap.contains("confirmatory") && snap["confirmatory"].contains("cells")) {
@@ -434,7 +444,12 @@ json build_claim_status(
     const bool gate_c = gates.value("gate_c", json::object()).value("done", false);
     const bool gate_d = confirmatory.value("gate_d_m1", false);
     const bool gate_e = confirmatory.value("gate_e_m2_transfer_confirmed", false);
+    const bool gate_e_strict = confirmatory.value("gate_e_m2_transfer_confirmed_strict", gate_e);
+    const bool bounded_v3 = confirmatory.value("gate_e_m2_bounded_v3_pass", false);
+    const bool positive_transfer = confirmatory.value("gate_e_positive_transfer_confirmed", false);
     const bool gate_f_sci = confirmatory.value("gate_f_scenario_c_scientific", false);
+    const bool gate_f_bounded = confirmatory.value("gate_f_bounded_v3", false);
+    const bool gate_f_positive = confirmatory.value("gate_f_positive_transfer_track", false);
     const bool t5_m1 = confirmatory.value("t5_m1", false);
     const bool t6 = item_done(items, "t6_gdr_audit");
     const bool pred_arch = item_done(items, "pred_archive_all_runs");
@@ -458,8 +473,9 @@ json build_claim_status(
                (gate_d && t5_m1) ? "PASS" : "NOT ESTABLISHED", gate_d && t5_m1),
         pillar("P3", "Multimodal generalization", "Multiple naturally co-observed datasets",
                (gate_a && gate_b) ? "PARTIAL" : "NOT ESTABLISHED", false),
-        pillar("P4", "Held-out transfer", "M2 external positive CI vs SAR",
-               gate_e ? "PASS" : "NOT CONFIRMED", gate_e),
+        pillar("P4", "Held-out transfer", "Strict clean M2 external positive CI vs SAR",
+               gate_e_strict ? "PASS" : (positive_transfer ? "NATURAL SAR+CW PASS" : (bounded_v3 ? "BOUNDED STRESS ONLY" : "NOT CONFIRMED")),
+               gate_e_strict || positive_transfer),
         pillar("P5", "Theory & certificate", "GDR + switching conditions",
                t6 ? "PARTIAL" : "NOT ESTABLISHED", false),
         pillar("P6", "Deployment auditability", "Archives + monitoring path",
@@ -472,16 +488,23 @@ json build_claim_status(
     std::string tier = "tier_1_bounded";
     if (gate_f_sci) {
         tier = "tier_3_flagship";
-    } else if (gate_e) {
-        tier = "tier_2_generalization";
+    } else if (gate_f_positive || positive_transfer) {
+        tier = "tier_2_natural_positive_transfer";
+    } else if (gate_f_bounded || bounded_v3) {
+        tier = "tier_1_bounded";
     }
 
     std::string one_sentence;
     if (gate_f_sci) {
         one_sentence =
             "ELARA confirms superiority over frozen SAR on M1 and M2 external confirmatory endpoints.";
-    } else if (gate_e) {
-        one_sentence = "ELARA confirms held-out transfer on M2 external; flagship claim partially met.";
+    } else if (positive_transfer) {
+        one_sentence =
+            "ELARA has a D13 natural positive-transfer confirmation against both SAR and CW, while legacy strict Gate E remains preserved separately.";
+    } else if (bounded_v3) {
+        one_sentence =
+            "ELARA has a bounded v3 result: M1 in-domain superiority plus stress-regime "
+            "transfer evidence, while strict clean external Gate E remains not confirmed.";
     } else {
         one_sentence =
             "ELARA shows bounded mechanism and pipeline evidence, but does not confirm superiority "
@@ -503,7 +526,12 @@ json build_claim_status(
     }
 
     json tier2 = json::array({
-        json{{"id", "m2_transfer"}, {"label", "M2 external transfer confirmed"}, {"done", gate_e}},
+        json{{"id", "m2_transfer_strict"}, {"label", "Strict M2 clean transfer confirmed"},
+             {"done", gate_e_strict}},
+        json{{"id", "bounded_v3_stress"}, {"label", "Bounded v3 stress evidence"},
+             {"done", bounded_v3}},
+        json{{"id", "positive_transfer"}, {"label", "D13 natural SAR+CW transfer"},
+             {"done", positive_transfer}},
         json{{"id", "gate_d_m1"}, {"label", "M1 superiority vs SAR"}, {"done", gate_d && t5_m1}},
         json{{"id", "gate_a_v2"}, {"label", "Upstream experts (Gate A v2)"}, {"done", gate_a}},
     });
@@ -518,7 +546,8 @@ json build_claim_status(
         json{{"id", "gate_f_sci"}, {"label", "Scenario C scientific ready"}, {"done", gate_f_sci}},
         json{{"id", "flagship_stop"}, {"label", "Flagship val stop rule (Δ≥0.01)"},
              {"done", flagship_stop.value("passed", false)}},
-        json{{"id", "all_gates_de"}, {"label", "Gates D + E pass"}, {"done", gate_d && gate_e}},
+        json{{"id", "all_gates_de"}, {"label", "Gate D + natural transfer pass"},
+             {"done", gate_d && (gate_e_strict || positive_transfer)}},
     });
     int tier3_done = 0;
     for (const auto& t : tier3) {
@@ -530,6 +559,9 @@ json build_claim_status(
     return {
         {"readiness_tier", tier},
         {"scientific_ready", gate_f_sci},
+        {"strict_scientific_ready", gate_f_sci},
+        {"bounded_v3_evidence_ready", bounded_v3},
+        {"positive_transfer_confirmed", positive_transfer},
         {"execution_ready", summary.value("execution_percent", 0.0) >= 94.0},
         {"one_sentence_claim", one_sentence},
         {"central_claim_ratified", false},
@@ -626,7 +658,9 @@ int main(int argc, char* argv[]) {
     const json& items = checklist.at("items");
 
     const std::vector<std::string> gate_ids = {
-        "gate_a", "gate_b", "gate_c", "gate_d", "gate_e", "gate_f", "gate_f_scientific",
+        "gate_a", "gate_b", "gate_c", "gate_d", "gate_e", "gate_e_bounded_v3",
+        "gate_e_positive_transfer", "gate_f", "gate_f_scientific",
+        "gate_f_bounded_v3", "gate_f_positive_transfer",
     };
     json gates = json::object();
     for (const auto& gate_id : gate_ids) {
@@ -648,6 +682,9 @@ int main(int argc, char* argv[]) {
         {"python_file_catalog", "elara_master_c/audits/python_file_catalog.json"},
         {"flagship_protocol", "research_lock/FLAGSHIP_DEV_PROTOCOL_v1.yaml"},
         {"claim_contract", "research_lock/SCENARIO_C_CLAIM_CONTRACT.md"},
+        {"positive_transfer_protocol", "research_lock/POSITIVE_TRANSFER_PROTOCOL_v1.yaml"},
+        {"positive_transfer_development", "elara_master_c/audits/positive_transfer_development_report.json"},
+        {"positive_transfer_confirmatory", "experiments/fusion/positive_transfer_confirmatory_result.json"},
     };
 
     json snapshot = {
@@ -658,6 +695,7 @@ int main(int argc, char* argv[]) {
             "elara_master_c/audits/confirmatory_statistics_report.json",
             "elara_master_c/audits/python_file_catalog.json",
             "research_lock/FLAGSHIP_DEV_PROTOCOL_v1.yaml",
+            "research_lock/POSITIVE_TRANSFER_PROTOCOL_v1.yaml",
         })},
         {"raw_sources", raw_sources},
         {"checklist", {
@@ -668,6 +706,10 @@ int main(int argc, char* argv[]) {
             {"execution_complete", summary.value("execution_complete", false)},
             {"scientific_scenario_c_ready", summary.value("scientific_scenario_c_ready", false)},
             {"m2_transfer_confirmed", summary.value("m2_transfer_confirmed", false)},
+            {"bounded_v3_evidence_ready", summary.value("bounded_v3_evidence_ready", false)},
+            {"gate_f_bounded_v3", summary.value("gate_f_bounded_v3", false)},
+            {"positive_transfer_confirmed", summary.value("positive_transfer_confirmed", false)},
+            {"gate_f_positive_transfer", summary.value("gate_f_positive_transfer", false)},
             {"verdict", summary.value("verdict", std::string{})},
             {"items_by_stage", items_by_stage(items)},
             {"remaining_count", summary.value("remaining_blockers", json::array()).size()},
@@ -679,7 +721,28 @@ int main(int argc, char* argv[]) {
             {"gate_d_m2_external", confirmatory.value("gate_d_m2_external", false)},
             {"gate_d_m2_proxy", confirmatory.value("gate_d_m2_proxy", false)},
             {"gate_e_m2_transfer_confirmed", confirmatory.value("gate_e_m2_transfer_confirmed", false)},
+            {"gate_e_m2_bounded_v3_pass", confirmatory.value("gate_e_m2_bounded_v3_pass", false)},
+            {"gate_e_m2_checklist_pass", confirmatory.value("gate_e_m2_checklist_pass", false)},
+            {"gate_e_m2_transfer_confirmed_strict",
+             confirmatory.value("gate_e_m2_transfer_confirmed_strict", false)},
+            {"gate_e_positive_transfer_confirmed",
+             confirmatory.value("gate_e_positive_transfer_confirmed", false)},
+            {"gate_e_positive_transfer_official",
+             confirmatory.value("gate_e_positive_transfer_official", false)},
+            {"gate_e_positive_transfer_status",
+             confirmatory.value("gate_e_positive_transfer_status", std::string{"PENDING_FRESH_HOLDOUT"})},
+            {"gate_e_positive_transfer_delta_vs_sar",
+             confirmatory.value("gate_e_positive_transfer_delta_vs_sar", nullptr)},
+            {"gate_e_positive_transfer_delta_vs_cw",
+             confirmatory.value("gate_e_positive_transfer_delta_vs_cw", nullptr)},
+            {"integration_active", confirmatory.value("integration_active", false)},
+            {"gate_f_integrated_v3", confirmatory.value("gate_f_integrated_v3", false)},
+            {"gate_f_bounded_v3", confirmatory.value("gate_f_bounded_v3", false)},
+            {"gate_f_positive_transfer_track",
+             confirmatory.value("gate_f_positive_transfer_track", false)},
             {"gate_e_m2_proxy", confirmatory.value("gate_e_m2_proxy", false)},
+            {"gate_f_scenario_c_scientific_strict",
+             confirmatory.value("gate_f_scenario_c_scientific_strict", false)},
             {"gate_f_scenario_c_scientific", confirmatory.value("gate_f_scenario_c_scientific", false)},
             {"t5_m1", confirmatory.value("t5_m1", false)},
             {"t5_m2_ran", confirmatory.value("t5_m2_ran", false)},

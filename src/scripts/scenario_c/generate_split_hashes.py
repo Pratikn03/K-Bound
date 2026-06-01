@@ -51,16 +51,28 @@ def main() -> int:
             "experiments/fusion/m2_external_3d_adam_sealed_inputs.csv",
             "split",
         ),
+        (
+            "m2_external_mulsen_sealed",
+            "experiments/fusion/m2_external_mulsen_sealed_inputs.csv",
+            "split",
+        ),
+        (
+            "m3_healthcare_gap1",
+            "experiments/fusion/healthcare_gap1_patient_stratified_fusion_inputs.csv",
+            "fusion_split",
+        ),
     ]
     manifest: dict = {"version": 1, "datasets": {}}
     for name, rel, split_col in datasets:
         path = root / rel
         if not path.is_file():
             continue
+        id_col = "incident_id" if "healthcare" in name else "sample_id"
         payload = {
             "csv": rel,
             "split_column": split_col,
-            "splits": hash_dataset_csv(path, split_col=split_col),
+            "id_column": id_col,
+            "splits": hash_dataset_csv(path, split_col=split_col, id_col=id_col),
         }
         manifest["datasets"][name] = payload
         (out_dir / f"{name}.json").write_text(json.dumps(payload, indent=2), encoding="utf-8")

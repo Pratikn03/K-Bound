@@ -171,9 +171,9 @@ def _normal_reference_scores(features: np.ndarray, fit_mask: np.ndarray) -> np.n
     return np.clip((distances - lo) / (hi - lo), 0.0, 1.0).astype(np.float32)
 
 
-def build_mvtec3d_fusion_frame(
-    dataset_root: Path,
-    categories: Iterable[str] | None = None,
+def build_fusion_frame_from_pairs(
+    pairs: list[PairedObservation],
+    *,
     embedding_dim: int = 8,
     feature_mode: str = "image_statistics",
     train_categories: Iterable[str] | None = None,
@@ -185,24 +185,13 @@ def build_mvtec3d_fusion_frame(
     supervised_paired_test_fraction: float = 0.30,
     heldout_val_fraction: float = 0.15,
     heldout_val_seed: int = 42,
+    second_domain_name: str = "depth_or_xyz",
+    benchmark_type: str = "naturally_paired_mvtec3d_score_fusion",
+    pairing_unit: str = "MVTec 3D-AD RGB/depth observation stem",
 ) -> tuple[pd.DataFrame, dict]:
-    """Build long-format fusion rows and benchmark metadata.
-
-    Parameters
-    ----------
-    feature_mode : "image_statistics" (default) or "m3dm".
-        "image_statistics" uses the lightweight 8-dim quantile feature
-        described in the original script. "m3dm" uses ResNet-50
-        penultimate features PCA-projected to ``embedding_dim``.
-    train_categories : optional set of category names to treat as the
-        scorer-fit and embedding-PCA fold. When provided, samples from
-        these categories carry the ``split == "train"`` semantics for
-        scoring even if their original MVTec split was test/validation.
-        This enables held-out-category protocols.
-    """
-    pairs = discover_mvtec3d_pairs(Path(dataset_root), categories=categories)
+    """Build long-format fusion rows from pre-discovered paired observations."""
     if not pairs:
-        raise FileNotFoundError(f"No paired RGB/depth observations found under {dataset_root}")
+        raise ValueError("pairs must be non-empty")
 
     labels = np.asarray([pair.label for pair in pairs], dtype=int)
     splits = np.asarray([pair.split for pair in pairs], dtype=object)
@@ -349,7 +338,7 @@ def build_mvtec3d_fusion_frame(
                 effective_split = pair.split
         for domain, score, emb, source_path in [
             ("rgb", rgb_scores[idx], rgb_embeddings[idx], pair.rgb_path),
-            ("depth_or_xyz", depth_scores[idx], depth_embeddings[idx], pair.depth_path),
+            (second_domain_name, depth_scores[idx], depth_embeddings[idx], pair.depth_path),
         ]:
             row = {
                 "sample_id": pair.sample_id,
@@ -388,16 +377,16 @@ def build_mvtec3d_fusion_frame(
             "they provide a reproducible paired fusion benchmark, not a specialized RGB-3D detector."
         )
     metadata = {
-        "benchmark_type": "naturally_paired_mvtec3d_score_fusion",
+        "benchmark_type": benchmark_type,
         "natural_pairing": True,
-        "pairing_unit": "MVTec 3D-AD RGB/depth observation stem",
+        "pairing_unit": pairing_unit,
         "feature_mode": feature_mode,
         "feature_description": feature_description,
         "important_limitation": important_limitation,
         "samples": int(len(sample_frame)),
         "rows": int(len(frame)),
         "positive_fraction_actual": float(sample_frame["label"].mean()),
-        "domain_order": DOMAIN_ORDER,
+        "domain_order": ["rgb", second_domain_name],
         "embedding_dim": int(embedding_dim),
         "categories": sorted(frame["category"].unique().tolist()),
         "splits": sorted(frame["split"].unique().tolist()),
@@ -414,7 +403,7 @@ def build_mvtec3d_fusion_frame(
         ),
         "domain_coverage": {
             domain: float(frame.loc[frame["domain"] == domain, "sample_id"].nunique() / len(sample_frame))
-            for domain in DOMAIN_ORDER
+            for domain in ("rgb", second_domain_name)
         },
     }
     if train_categories is not None:
@@ -427,6 +416,41 @@ def build_mvtec3d_fusion_frame(
             "validation_seed": int(heldout_val_seed),
         }
     return frame, metadata
+
+
+def build_mvtec3d_fusion_frame(
+    dataset_root: Path,
+    categories: Iterable[str] | None = None,
+    embedding_dim: int = 8,
+    feature_mode: str = "image_statistics",
+    train_categories: Iterable[str] | None = None,
+    patchcore_k: int = 3,
+    patchcore_coreset_size: int | None = None,
+    supervised_paired: bool = False,
+    supervised_paired_seed: int = 42,
+    supervised_paired_val_fraction: float = 0.15,
+    supervised_paired_test_fraction: float = 0.30,
+    heldout_val_fraction: float = 0.15,
+    heldout_val_seed: int = 42,
+) -> tuple[pd.DataFrame, dict]:
+    """Build long-format fusion rows and benchmark metadata from MVTec 3D-AD layout."""
+    pairs = discover_mvtec3d_pairs(Path(dataset_root), categories=categories)
+    if not pairs:
+        raise FileNotFoundError(f"No paired RGB/depth observations found under {dataset_root}")
+    return build_fusion_frame_from_pairs(
+        pairs,
+        embedding_dim=embedding_dim,
+        feature_mode=feature_mode,
+        train_categories=train_categories,
+        patchcore_k=patchcore_k,
+        patchcore_coreset_size=patchcore_coreset_size,
+        supervised_paired=supervised_paired,
+        supervised_paired_seed=supervised_paired_seed,
+        supervised_paired_val_fraction=supervised_paired_val_fraction,
+        supervised_paired_test_fraction=supervised_paired_test_fraction,
+        heldout_val_fraction=heldout_val_fraction,
+        heldout_val_seed=heldout_val_seed,
+    )
 
 
 def main() -> None:

@@ -1,0 +1,76 @@
+# M3 BIDMC confirmatory — trained from data/raw/healthcare bidmc_csv
+
+data:
+  path: experiments/fusion/healthcare_bidmc_patient_stratified_fusion_inputs.csv
+  format: csv
+  id_column: incident_id
+  domain_column: domain
+  label_column: label
+  score_column: score
+  confidence_column: confidence
+  category_column: category
+  split_column: fusion_split
+  embedding_prefix: embedding_
+  feature_columns:
+    - score
+    - confidence
+    - embedding_0
+    - embedding_1
+  domain_order: [heart_rate, oxygenation, respiration, shock_index]
+
+model:
+  num_domains: 4
+  embed_dim: 32
+  num_heads: 4
+  num_layers: 1
+  dropout: 0.1
+  use_attention: true
+  use_confidence: true
+  use_input_confidence: true
+  use_domain_embeddings: true
+  use_positional_embeddings: true
+  use_missing_embedding: true
+
+training:
+  seed: 42
+  batch_size: 128
+  epochs: 20
+  lr: 0.001
+  weight_decay: 0.01
+  domain_dropout: 0.1
+  split_column: fusion_split
+  train_split_values: [train]
+  val_split_values: [validation]
+  test_split_values: [test]
+  early_stopping: 5
+  early_stopping_metric: pr_auc
+  restore_best_weights: true
+  grad_clip_norm: 1.0
+  lambda_reg: 0.01
+
+output:
+  model_dir: models/fusion/attention_m3_bidmc_confirmatory
+  checkpoint_name: attention_m3_bidmc.pt
+  metrics_path: experiments/fusion/m3_bidmc_confirmatory_attention_metrics.json
+
+evaluation:
+  metrics_path: experiments/fusion/m3_bidmc_confirmatory_harness_metrics.json
+  seeds: [42, 43, 44, 45, 46]
+  n_bootstrap: 200
+  bootstrap_alpha: 0.05
+  decision_threshold: val_f1
+
+prediction_archive:
+  enabled: true
+  root: elara_master_c/predictions/confirmation
+  experiment_id: M3-BIDMC
+  benchmark: BIDMC patient-stratified
+  protocol: M3_bidmc_confirmatory
+  analysis_family: M3
+  pairing_strength: naturally_co_observed
+
+reliability:
+  ece_weight: 0.45
+  ks_weight: 0.35
+  sharpness_weight: 0.20
+  mean_gate_threshold: 0.66

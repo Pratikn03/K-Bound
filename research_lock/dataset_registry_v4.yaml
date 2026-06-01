@@ -1,0 +1,52 @@
+# dataset_registry_v4.yaml — Phase 2/3 flagship extensions (D9–D11)
+
+version: 4
+supersedes: dataset_registry_v3.yaml
+ratified: 2026-05-28
+
+authoritative_sources:
+  - research_lock/dataset_registry_v3.yaml
+  - research_lock/M2_EXTERNAL_SEALED_v2.yaml
+  - research_lock/M3_CONFIRMATORY_PROTOCOL_v1.yaml
+  - research_lock/M4_TEMPORAL_STREAM_PROTOCOL_v1.yaml
+
+datasets:
+  m2_mulsen_ad_rgb_infrared_external:
+    pairing_strength: rgb_infrared_naturally_paired
+    family: M2_external_transfer_v2
+    role: final_audit_replication
+    headline_claim_allowed: true_when_confirmatory_passes
+    natural_pairing: true
+    local_root: data/raw/mulsen_ad
+    seal: research_lock/M2_EXTERNAL_SEALED_v2.yaml
+    notes: Second untouched industrial multi-sensor family (CVPR MulSen-AD).
+
+  healthcare_gridpulse_patient_stratified:
+    pairing_strength: naturally_co_observed_clinical_window
+    family: M3_non_vision
+    role: cross_domain_confirmatory
+    seal: research_lock/M3_CONFIRMATORY_PROTOCOL_v1.yaml
+    development_seal: research_lock/M3_SEALED_CANDIDATE_v1.yaml
+
+pending_acquisitions:
+  m2_new_untouched_transfer:
+    status: ACQUIRED
+    acquired_dataset: m2_3d_adam_anomalib_external
+    replication_dataset: m2_mulsen_ad_rgb_infrared_external
+  m3_non_vision_paired:
+    status: CONFIRMATORY_PROTOCOL_LOCKED
+    dataset: healthcare_gridpulse_patient_stratified
+  m4_temporal_stream:
+    status: SCAFFOLD_ONLY
+    protocol: research_lock/M4_TEMPORAL_STREAM_PROTOCOL_v1.yaml
+
+tier_3_progress:
+  distinct_natural_domain_families:
+    required: 2
+    acquired:
+      - M2_external_3d_adam
+      - M2_external_mulsen
+      - M3_healthcare
+  temporal_monitoring:
+    scaffold: M4_TEMPORAL_STREAM_PROTOCOL_v1.yaml
+    proxy_evidence: elara_master_c/audits/m4_temporal_monitoring_audit.json

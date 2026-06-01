@@ -70,6 +70,41 @@ def build_checklist(root: Path) -> list[Item]:
     )
     add(
         "T0",
+        "t0_m2_v2_mulsen_seal",
+        "M2 v2 MulSen-AD external seal (D9)",
+        _exists(root, "research_lock/M2_EXTERNAL_SEALED_v2.yaml"),
+        "M2_EXTERNAL_SEALED_v2.yaml",
+    )
+    add(
+        "T0",
+        "t0_m3_confirmatory_protocol",
+        "M3 healthcare confirmatory protocol (D10)",
+        _exists(root, "research_lock/M3_CONFIRMATORY_PROTOCOL_v1.yaml"),
+        "M3_CONFIRMATORY_PROTOCOL_v1.yaml",
+    )
+    add(
+        "T0",
+        "t0_m4_temporal_protocol",
+        "M4 temporal monitoring protocol scaffold (D11)",
+        _exists(root, "research_lock/M4_TEMPORAL_STREAM_PROTOCOL_v1.yaml"),
+        "M4_TEMPORAL_STREAM_PROTOCOL_v1.yaml",
+    )
+    add(
+        "T0",
+        "t0_dataset_registry_v4",
+        "dataset_registry_v4 (Phase 2/3)",
+        _exists(root, "research_lock/dataset_registry_v4.yaml"),
+        "dataset_registry_v4.yaml",
+    )
+    add(
+        "T0",
+        "t0_positive_transfer_protocol",
+        "D13 natural positive-transfer protocol",
+        _exists(root, "research_lock/POSITIVE_TRANSFER_PROTOCOL_v1.yaml"),
+        "POSITIVE_TRANSFER_PROTOCOL_v1.yaml",
+    )
+    add(
+        "T0",
         "t0_m3_candidate_sealed",
         "M3 healthcare candidate sealed (development)",
         _exists(root, "research_lock/M3_SEALED_CANDIDATE_v1.yaml"),
@@ -93,6 +128,13 @@ def build_checklist(root: Path) -> list[Item]:
         "prepare_healthcare_fusion_benchmark.py",
     )
     add("T1", "t1_mvtec_supervised_paired", "MVTec supervised-paired inputs", _exists(root, "experiments/fusion/mvtec3d_patchcore_supervised_paired_inputs.csv"), "")
+    add(
+        "T1",
+        "t1_m2_mulsen_inputs",
+        "MulSen M2 v2 fusion inputs sealed",
+        _exists(root, "experiments/fusion/m2_external_mulsen_sealed_inputs.csv"),
+        "seal_m2_external_mulsen.py",
+    )
     # T2–T7 (artifact-based)
     add(
         "T2",
@@ -127,15 +169,28 @@ def build_checklist(root: Path) -> list[Item]:
     conf = root / "elara_master_c/audits/confirmatory_statistics_report.json"
     t5_pass = gate_d_pass = gate_e_pass = gate_f_exec = gate_f_sci = False
     m2_transfer_confirmed = False
+    bounded_v3_pass = False
+    gate_f_bounded_v3 = False
+    positive_transfer_confirmed = False
+    gate_f_positive_transfer = False
     if conf.is_file():
         try:
             c = json.loads(conf.read_text(encoding="utf-8"))
             t5_pass = bool(c.get("t5_m1"))
             gate_d_pass = bool(c.get("gate_d_m1"))
-            m2_transfer_confirmed = bool(c.get("gate_e_m2_transfer_confirmed"))
+            m2_transfer_confirmed = bool(
+                c.get("gate_e_m2_transfer_confirmed_strict", c.get("gate_e_m2_transfer_confirmed"))
+            )
+            bounded_v3_pass = bool(
+                c.get("gate_e_m2_bounded_v3_pass")
+                or (c.get("gate_e_m2_checklist_pass") and not m2_transfer_confirmed)
+            )
             gate_e_pass = bool(c.get("t5_m2_ran"))
             gate_f_exec = bool(c.get("master_training_checklist_execution_complete"))
             gate_f_sci = bool(c.get("gate_f_scenario_c_scientific"))
+            gate_f_bounded_v3 = bool(c.get("gate_f_bounded_v3") or c.get("gate_f_integrated_v3"))
+            positive_transfer_confirmed = bool(c.get("gate_e_positive_transfer_confirmed"))
+            gate_f_positive_transfer = bool(c.get("gate_f_positive_transfer_track"))
         except (json.JSONDecodeError, OSError):
             pass
     add("T5", "t5_rga_plus_superiority", "RGA+ beats frozen baseline on M1 (5-seed)", t5_pass, "confirmatory_statistics_report.json")
@@ -177,16 +232,81 @@ def build_checklist(root: Path) -> list[Item]:
         "gate_e",
         "Gate E — M2 transfer confirmed (positive CI)",
         m2_transfer_confirmed,
-        "FAILED: inverted held-out delta<0 — see confirmatory_statistics_report.json",
+        "strict clean external transfer only; bounded v3 evidence is reported separately",
+    )
+    add(
+        "GATE",
+        "gate_e_bounded_v3",
+        "Gate E bounded v3 stress evidence",
+        bounded_v3_pass,
+        "bounded stress/mechanism evidence; not strict clean transfer",
+    )
+    add(
+        "GATE",
+        "gate_e_positive_transfer",
+        "Gate E natural positive transfer (fresh SAR+CW positive CIs)",
+        positive_transfer_confirmed,
+        "D13 natural clean transfer; opened datasets are development only",
     )
     add("GATE", "gate_f", "Gate F — training pipeline execution complete", gate_f_exec, "all T0–T7 runs executed")
-    add("GATE", "gate_f_scientific", "Gate F — Scenario C scientific claim ready", gate_f_sci, "requires Gate E M2 transfer pass")
+    add(
+        "GATE",
+        "gate_f_scientific",
+        "Gate F — Scenario C scientific claim ready",
+        gate_f_sci,
+        "strict Gate E plus Gate D; bounded v3 evidence does not satisfy flagship readiness",
+    )
+    add(
+        "GATE",
+        "gate_f_bounded_v3",
+        "Bounded v3 thesis/paper evidence ready",
+        gate_f_bounded_v3,
+        "bounded Level 2.5 evidence; not Master C flagship completion",
+    )
+    add(
+        "GATE",
+        "gate_f_positive_transfer",
+        "Positive-transfer scientific track ready",
+        gate_f_positive_transfer,
+        "strict Gate D plus D13 natural fresh transfer; does not rewrite legacy Gate E",
+    )
 
     # Prediction logging
     add("LOG", "pred_archive_module", "PredictionArchive module", _exists(root, "src/elara/evaluation/prediction_archive.py"), "")
     idx = root / "elara_master_c/predictions/development/PREDICTION_ARCHIVE_INDEX.csv"
     pred_ok = idx.is_file() and idx.stat().st_size > 80
     add("LOG", "pred_archive_all_runs", "Master C fusion runs write archives", pred_ok, str(idx))
+    add(
+        "TIER3",
+        "tier3_m4_monitoring_audit",
+        "M4 temporal/monitoring audit artifact",
+        _exists(root, "elara_master_c/audits/m4_temporal_monitoring_audit.json"),
+        "run_m4_temporal_monitoring_audit.py",
+    )
+    conf = root / "elara_master_c/audits/confirmatory_statistics_report.json"
+    m3_ran = m2_v2_ran = False
+    if conf.is_file():
+        try:
+            c = json.loads(conf.read_text(encoding="utf-8"))
+            p23 = c.get("phase23_flagship") or {}
+            m3_ran = bool(p23.get("m3_confirmatory_ran") or c.get("m3_confirmatory_ran"))
+            m2_v2_ran = bool(p23.get("m2_v2_confirmatory_ran") or c.get("m2_external_v2_ran"))
+        except (json.JSONDecodeError, OSError):
+            pass
+    add(
+        "TIER3",
+        "tier3_m2_v2_confirmatory",
+        "Second external M2 (MulSen) confirmatory ran",
+        m2_v2_ran,
+        "m2_external_mulsen_confirmatory_results.json",
+    )
+    add(
+        "TIER3",
+        "tier3_m3_confirmatory",
+        "M3 healthcare confirmatory ran",
+        m3_ran,
+        "m3_healthcare_confirmatory_results.json",
+    )
 
   # Master C registries in elara_master_c
     registries = [
@@ -217,14 +337,34 @@ def main() -> int:
     blockers = [i for i in items if not i.done]
     conf_path = root / "elara_master_c/audits/confirmatory_statistics_report.json"
     gate_f_sci = m2_transfer_confirmed = False
+    bounded_v3_pass = gate_f_bounded_v3 = False
+    positive_transfer_confirmed = gate_f_positive_transfer = False
     if conf_path.is_file():
         try:
             c = json.loads(conf_path.read_text(encoding="utf-8"))
             gate_f_sci = bool(c.get("gate_f_scenario_c_scientific"))
-            m2_transfer_confirmed = bool(c.get("gate_e_m2_transfer_confirmed"))
+            m2_transfer_confirmed = bool(
+                c.get("gate_e_m2_transfer_confirmed_strict", c.get("gate_e_m2_transfer_confirmed"))
+            )
+            bounded_v3_pass = bool(
+                c.get("gate_e_m2_bounded_v3_pass")
+                or (c.get("gate_e_m2_checklist_pass") and not m2_transfer_confirmed)
+            )
+            gate_f_bounded_v3 = bool(c.get("gate_f_bounded_v3") or c.get("gate_f_integrated_v3"))
+            positive_transfer_confirmed = bool(c.get("gate_e_positive_transfer_confirmed"))
+            gate_f_positive_transfer = bool(c.get("gate_f_positive_transfer_track"))
         except (json.JSONDecodeError, OSError):
             pass
-    exec_items = [i for i in items if i.id not in ("gate_f_scientific", "gate_e")]
+    exec_items = [
+        i
+        for i in items
+        if i.id not in (
+            "gate_f_scientific",
+            "gate_e",
+            "gate_e_positive_transfer",
+            "gate_f_positive_transfer",
+        )
+    ]
     exec_done = sum(1 for i in exec_items if i.done)
     exec_pct = 100.0 * exec_done / len(exec_items) if exec_items else 0.0
     report = {
@@ -237,10 +377,18 @@ def main() -> int:
             "execution_complete": exec_pct >= 99.9,
             "scientific_scenario_c_ready": gate_f_sci if conf_path.is_file() else False,
             "m2_transfer_confirmed": m2_transfer_confirmed,
+            "bounded_v3_evidence_ready": bounded_v3_pass,
+            "gate_f_bounded_v3": gate_f_bounded_v3,
+            "positive_transfer_confirmed": positive_transfer_confirmed,
+            "gate_f_positive_transfer": gate_f_positive_transfer,
             "verdict": (
-                "MASTER TRAINING CHECKLIST EXECUTION 100%"
-                if exec_pct >= 99.9
-                else f"Execution {exec_pct:.1f}% — scientific Gate E (M2 transfer) {'PASS' if m2_transfer_confirmed else 'NOT CONFIRMED'}"
+                f"Execution {exec_pct:.1f}% - strict Gate E "
+                f"{'PASS' if m2_transfer_confirmed else 'NOT CONFIRMED'}; "
+                f"bounded v3 stress evidence "
+                f"{'PASS' if bounded_v3_pass else 'NOT ESTABLISHED'}; "
+                f"D13 natural positive transfer "
+                f"{'PASS' if positive_transfer_confirmed else 'PENDING FRESH HOLDOUT'}; "
+                f"flagship scientific readiness {'READY' if gate_f_sci else 'NOT READY'}"
             ),
             "remaining_blockers": [{"id": b.id, "description": b.description} for b in blockers],
         },

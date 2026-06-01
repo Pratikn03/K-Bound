@@ -1,0 +1,138 @@
+{
+  "protocol": "POSITIVE_TRANSFER_PROTOCOL_v1",
+  "status": "DEVELOPMENT_ONLY",
+  "cannot_set_gate_e": true,
+  "natural_clean_transfer": true,
+  "synthetic_or_corrupted": false,
+  "target": "beat both SAR and CW on fresh natural clean transfer",
+  "datasets": [
+    {
+      "dataset_id": "3d_adam_v3",
+      "benchmark": "3D-ADAM category-held-out",
+      "protocol": "M2_external_one_shot_audit",
+      "csv": "experiments/fusion/m2_external_3d_adam_v3_inputs.csv",
+      "holdout_status": "OPENED_DEVELOPMENT_ONLY",
+      "selection": {
+        "selected_rule": "residual_stack",
+        "val_auroc_selected": 0.9778915662650602,
+        "all_val_auroc": {
+          "cw": 0.7862650602409639,
+          "rank_cw": 0.5787650602409639,
+          "product": 0.6934939759036144,
+          "max": 0.4931325301204819,
+          "softor": 0.4935240963855421,
+          "residual_stack": 0.9778915662650602
+        },
+        "selection_split": "validation",
+        "used_test_labels": false,
+        "params": {
+          "residual_stack": {
+            "coef": [
+              0.0033710337955734785,
+              0.23184671069159332,
+              0.0030146900365106036,
+              -0.0068046811134942296,
+              2.2131504855691606,
+              -0.00040370486361635384,
+              -2.213554190432776
+            ],
+            "intercept": [
+              -1.1471146040350695
+            ]
+          }
+        }
+      },
+      "stats": {
+        "vs_cw": {
+          "valid": true,
+          "delta": 0.01818293885601563,
+          "ci95": [
+            0.007544338119421901,
+            0.028993337719065624
+          ],
+          "candidate_auc": 0.9304457423655036,
+          "comparator_auc": 0.912262803509488,
+          "n": 1378,
+          "bootstrap_iterations": 10000
+        },
+        "vs_sar": {
+          "valid": true,
+          "delta": 0.05833843433312924,
+          "ci95": [
+            0.04101806694398637,
+            0.07588966113537278
+          ],
+          "candidate_auc": 0.9304457423655036,
+          "comparator_auc": 0.8721073080323744,
+          "n": 1378,
+          "bootstrap_iterations": 10000
+        }
+      },
+      "can_set_gate_e": false
+    },
+    {
+      "dataset_id": "mulsen_v2",
+      "benchmark": "MulSen-AD category-held-out",
+      "protocol": "M2_external_v2_one_shot_audit",
+      "csv": "experiments/fusion/m2_external_mulsen_sealed_inputs.csv",
+      "holdout_status": "OPENED_DEVELOPMENT_ONLY",
+      "selection": {
+        "selected_rule": "residual_stack",
+        "val_auroc_selected": 0.9862804878048781,
+        "all_val_auroc": {
+          "cw": 0.9435975609756098,
+          "rank_cw": 0.9740853658536586,
+          "product": 0.9786585365853658,
+          "max": 0.9588414634146342,
+          "softor": 0.961890243902439,
+          "residual_stack": 0.9862804878048781
+        },
+        "selection_split": "validation",
+        "used_test_labels": false,
+        "params": {
+          "residual_stack": {
+            "coef": [
+              0.7872132803813453,
+              0.6947041606991416,
+              0.8099467864928234,
+              -0.22142845746387294,
+              0.6002263352915356,
+              0.10831328763652706,
+              0.1271419375328464
+            ],
+            "intercept": [
+              -1.7823942565043591
+            ]
+          }
+        }
+      },
+      "stats": {
+        "vs_cw": {
+          "valid": true,
+          "delta": 0.019275461380724612,
+          "ci95": [
+            -0.048810005241740104,
+            0.08828431474647756
+          ],
+          "candidate_auc": 0.5159261790840739,
+          "comparator_auc": 0.4966507177033493,
+          "n": 279,
+          "bootstrap_iterations": 10000
+        },
+        "vs_sar": {
+          "valid": true,
+          "delta": 0.037423103212577025,
+          "ci95": [
+            -0.08238089259794812,
+            0.15751130034383695
+          ],
+          "candidate_auc": 0.5159261790840739,
+          "comparator_auc": 0.4785030758714969,
+          "n": 279,
+          "bootstrap_iterations": 10000
+        }
+      },
+      "can_set_gate_e": false
+    }
+  ]
+}

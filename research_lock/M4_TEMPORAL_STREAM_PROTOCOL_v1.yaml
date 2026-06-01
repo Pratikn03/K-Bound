@@ -1,0 +1,28 @@
+# M4 temporal / deployment-style monitoring protocol (Phase 3 scaffold)
+
+version: 1
+status: PROTOCOL_SCAFFOLD
+ratified: 2026-05-28
+decision: D11_m4_temporal_monitoring_scaffold
+
+dataset:
+  id: m4_temporal_stream
+  status: NOT_SELECTED
+  candidates:
+    - elara_bench_la: label_aligned mechanism stream (development only until natural temporal pairing acquired)
+    - prospective_industrial_stream: user-provided RGB+depth line scan (not acquired)
+
+monitoring_requirements:
+  - rolling_ece_and_brier_vs_reference
+  - calibration_alert_thresholds:
+      max_ece_delta: 0.05
+      max_brier_delta: 0.05
+  - abstention_when_uncertified_shift: true
+  - prediction_archive_required: true
+
+audit_runner: src/scripts/scenario_c/run_m4_temporal_monitoring_audit.py
+audit_output: elara_master_c/audits/m4_temporal_monitoring_audit.json
+
+notes: >
+  Satisfies Tier-3 P6 scaffold using healthcare deployment-replay monitoring evidence
+  until a dedicated industrial temporal stream is acquired.

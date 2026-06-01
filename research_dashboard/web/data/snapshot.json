@@ -1,29 +1,32 @@
 {
   "blockers": [
     {
-      "description": "RGA+ beats frozen baseline on M1 (5-seed)",
-      "id": "t5_rga_plus_superiority"
-    },
-    {
-      "description": "Gate D — RGA+ beats frozen comparator (confirmatory)",
-      "id": "gate_d"
-    },
-    {
       "description": "Gate E — M2 transfer confirmed (positive CI)",
       "id": "gate_e"
     },
     {
+      "description": "Gate E natural positive transfer (fresh SAR+CW positive CIs)",
+      "id": "gate_e_positive_transfer"
+    },
+    {
       "description": "Gate F — Scenario C scientific claim ready",
       "id": "gate_f_scientific"
+    },
+    {
+      "description": "Positive-transfer scientific track ready",
+      "id": "gate_f_positive_transfer"
     }
   ],
   "checklist": {
-    "done": 34,
-    "execution_complete": false,
-    "execution_percent": 94.4,
+    "bounded_v3_evidence_ready": true,
+    "done": 47,
+    "execution_complete": true,
+    "execution_percent": 100.0,
+    "gate_f_bounded_v3": true,
+    "gate_f_positive_transfer": false,
     "items_by_stage": {
       "GATE": {
-        "done": 4,
+        "done": 7,
         "items": [
           {
             "description": "Gate A — upstream experts PASS",
@@ -42,13 +45,23 @@
           },
           {
             "description": "Gate D — RGA+ beats frozen comparator (confirmatory)",
-            "done": false,
+            "done": true,
             "id": "gate_d"
           },
           {
             "description": "Gate E — M2 transfer confirmed (positive CI)",
             "done": false,
             "id": "gate_e"
+          },
+          {
+            "description": "Gate E bounded v3 stress evidence",
+            "done": true,
+            "id": "gate_e_bounded_v3"
+          },
+          {
+            "description": "Gate E natural positive transfer (fresh SAR+CW positive CIs)",
+            "done": false,
+            "id": "gate_e_positive_transfer"
           },
           {
             "description": "Gate F — training pipeline execution complete",
@@ -59,10 +72,20 @@
             "description": "Gate F — Scenario C scientific claim ready",
             "done": false,
             "id": "gate_f_scientific"
+          },
+          {
+            "description": "Bounded v3 thesis/paper evidence ready",
+            "done": true,
+            "id": "gate_f_bounded_v3"
+          },
+          {
+            "description": "Positive-transfer scientific track ready",
+            "done": false,
+            "id": "gate_f_positive_transfer"
           }
         ],
-        "percent": 57.1,
-        "total": 7
+        "percent": 63.6,
+        "total": 11
       },
       "LOG": {
         "done": 2,
@@ -82,7 +105,7 @@
         "total": 2
       },
       "T0": {
-        "done": 15,
+        "done": 20,
         "items": [
           {
             "description": "T0 governance validator passes",
@@ -130,6 +153,31 @@
             "id": "t0_m2_final_audit_doc"
           },
           {
+            "description": "M2 v2 MulSen-AD external seal (D9)",
+            "done": true,
+            "id": "t0_m2_v2_mulsen_seal"
+          },
+          {
+            "description": "M3 healthcare confirmatory protocol (D10)",
+            "done": true,
+            "id": "t0_m3_confirmatory_protocol"
+          },
+          {
+            "description": "M4 temporal monitoring protocol scaffold (D11)",
+            "done": true,
+            "id": "t0_m4_temporal_protocol"
+          },
+          {
+            "description": "dataset_registry_v4 (Phase 2/3)",
+            "done": true,
+            "id": "t0_dataset_registry_v4"
+          },
+          {
+            "description": "D13 natural positive-transfer protocol",
+            "done": true,
+            "id": "t0_positive_transfer_protocol"
+          },
+          {
             "description": "M3 healthcare candidate sealed (development)",
             "done": true,
             "id": "t0_m3_candidate_sealed"
@@ -161,10 +209,10 @@
           }
         ],
         "percent": 100.0,
-        "total": 15
+        "total": 20
       },
       "T1": {
-        "done": 5,
+        "done": 6,
         "items": [
           {
             "description": "ELARA-Bench-LA fusion inputs",
@@ -187,13 +235,18 @@
             "id": "t1_mvtec_supervised_paired"
           },
           {
+            "description": "MulSen M2 v2 fusion inputs sealed",
+            "done": true,
+            "id": "t1_m2_mulsen_inputs"
+          },
+          {
             "description": "Gate A expert qualification report",
             "done": true,
             "id": "t1_gate_a_qualification"
           }
         ],
         "percent": 100.0,
-        "total": 5
+        "total": 6
       },
       "T2": {
         "done": 1,
@@ -242,11 +295,11 @@
         "total": 1
       },
       "T5": {
-        "done": 1,
+        "done": 2,
         "items": [
           {
             "description": "RGA+ beats frozen baseline on M1 (5-seed)",
-            "done": false,
+            "done": true,
             "id": "t5_rga_plus_superiority"
           },
           {
@@ -255,7 +308,7 @@
             "id": "t5_m2_confirmatory_ran"
           }
         ],
-        "percent": 50.0,
+        "percent": 100.0,
         "total": 2
       },
       "T6": {
@@ -281,16 +334,40 @@
         ],
         "percent": 100.0,
         "total": 1
+      },
+      "TIER3": {
+        "done": 3,
+        "items": [
+          {
+            "description": "M4 temporal/monitoring audit artifact",
+            "done": true,
+            "id": "tier3_m4_monitoring_audit"
+          },
+          {
+            "description": "Second external M2 (MulSen) confirmatory ran",
+            "done": true,
+            "id": "tier3_m2_v2_confirmatory"
+          },
+          {
+            "description": "M3 healthcare confirmatory ran",
+            "done": true,
+            "id": "tier3_m3_confirmatory"
+          }
+        ],
+        "percent": 100.0,
+        "total": 3
       }
     },
     "m2_transfer_confirmed": false,
-    "percent_complete": 89.5,
+    "percent_complete": 92.2,
+    "positive_transfer_confirmed": false,
     "remaining_count": 4,
     "scientific_scenario_c_ready": false,
-    "total": 38,
-    "verdict": "Execution 94.4% — scientific Gate E (M2 transfer) NOT CONFIRMED"
+    "total": 51,
+    "verdict": "Execution 100.0% - strict Gate E NOT CONFIRMED; bounded v3 stress evidence PASS; D13 natural positive transfer PENDING FRESH HOLDOUT; flagship scientific readiness NOT READY"
   },
   "claim": {
+    "bounded_v3_evidence_ready": true,
     "central_claim_ratified": false,
     "contract_path": "research_lock/SCENARIO_C_CLAIM_CONTRACT.md",
     "execution_ready": true,
@@ -301,7 +378,7 @@
       "passed": false,
       "winner": "rga_plus_baseline"
     },
-    "one_sentence_claim": "ELARA shows bounded mechanism and pipeline evidence, but does not confirm superiority over frozen SAR on M2 external (Δ ≈ −0.04, paired p < 0.01).",
+    "one_sentence_claim": "ELARA has a bounded v3 result: M1 in-domain superiority plus stress-regime transfer evidence, while strict clean external Gate E remains not confirmed.",
     "pillars": [
       {
         "id": "P1",
@@ -313,9 +390,9 @@
       {
         "id": "P2",
         "name": "Strong-baseline superiority",
-        "pass": false,
+        "pass": true,
         "required_evidence": "Beat frozen SAR on confirmatory M1",
-        "status": "NOT ESTABLISHED"
+        "status": "PASS"
       },
       {
         "id": "P3",
@@ -328,8 +405,8 @@
         "id": "P4",
         "name": "Held-out transfer",
         "pass": false,
-        "required_evidence": "M2 external positive CI vs SAR",
-        "status": "NOT CONFIRMED"
+        "required_evidence": "Strict clean M2 external positive CI vs SAR",
+        "status": "BOUNDED STRESS ONLY"
       },
       {
         "id": "P5",
@@ -346,8 +423,9 @@
         "status": "PARTIAL"
       }
     ],
-    "pillars_pass_count": 1,
+    "pillars_pass_count": 2,
     "pillars_total": 6,
+    "positive_transfer_confirmed": false,
     "readiness_checklists": {
       "tier1_bounded_paper": {
         "done": 4,
@@ -376,15 +454,25 @@
         "total": 4
       },
       "tier2_generalization": {
-        "done": 1,
+        "done": 3,
         "items": [
           {
             "done": false,
-            "id": "m2_transfer",
-            "label": "M2 external transfer confirmed"
+            "id": "m2_transfer_strict",
+            "label": "Strict M2 clean transfer confirmed"
+          },
+          {
+            "done": true,
+            "id": "bounded_v3_stress",
+            "label": "Bounded v3 stress evidence"
           },
           {
             "done": false,
+            "id": "positive_transfer",
+            "label": "D13 natural SAR+CW transfer"
+          },
+          {
+            "done": true,
             "id": "gate_d_m1",
             "label": "M1 superiority vs SAR"
           },
@@ -394,7 +482,7 @@
             "label": "Upstream experts (Gate A v2)"
           }
         ],
-        "total": 3
+        "total": 5
       },
       "tier3_flagship": {
         "done": 0,
@@ -412,14 +500,15 @@
           {
             "done": false,
             "id": "all_gates_de",
-            "label": "Gates D + E pass"
+            "label": "Gate D + natural transfer pass"
           }
         ],
         "total": 3
       }
     },
     "readiness_tier": "tier_1_bounded",
-    "scientific_ready": false
+    "scientific_ready": false,
+    "strict_scientific_ready": false
   },
   "confirmatory": {
     "cells": [
@@ -484,17 +573,74 @@
         "validity_reasons": [
           "below_chance_auc: min(rga=0.3867, base=0.3875) < 0.5 -> degenerate cell; not a usable comparison."
         ]
+      },
+      {
+        "benchmark": "MulSen-AD category-held-out",
+        "bootstrap_95_ci": {
+          "high": 0.07941875511628713,
+          "low": -0.02059295187962515,
+          "mean": 0.030314422419685627
+        },
+        "cell_valid": false,
+        "family": "M2_external_v2",
+        "gate_d_pass": false,
+        "gate_e_pass": false,
+        "mean_base_auc": 0.4785030758714969,
+        "mean_delta_roc_auc": 0.030314422419685627,
+        "mean_rga_auc": 0.5088174982911825,
+        "n_seeds": 5,
+        "protocol": "M2_external_v2_one_shot_audit",
+        "results_path": "/Volumes/T9/uav/AutoML_Flagship_V8/experiments/fusion/m2_external_mulsen_confirmatory_results.json",
+        "t5_confirmatory_pass": false,
+        "validity_reasons": [
+          "below_chance_auc: min(rga=0.5088, base=0.4785) < 0.5 -> degenerate cell; not a usable comparison."
+        ]
+      },
+      {
+        "benchmark": "BIDMC patient-stratified",
+        "bootstrap_95_ci": {
+          "high": 0.023959747623991667,
+          "low": 0.023959747623991667,
+          "mean": 0.023959747623991667
+        },
+        "cell_valid": false,
+        "family": "M3_healthcare",
+        "gate_d_pass": false,
+        "gate_e_pass": false,
+        "mean_base_auc": 0.9760402523760083,
+        "mean_delta_roc_auc": 0.023959747623991667,
+        "mean_rga_auc": 1.0,
+        "n_seeds": 2,
+        "protocol": "M3_healthcare_confirmatory",
+        "results_path": "/Volumes/T9/uav/AutoML_Flagship_V8/experiments/fusion/m3_bidmc_confirmatory_results.json",
+        "t5_confirmatory_pass": false,
+        "validity_reasons": [
+          "degenerate_ci_zero_seed_variance: per-seed deltas are identical (deterministic methods); the seed-bootstrap CI is not a valid interval. Requires a per-sample paired test (DeLong / per-sample bootstrap on archived predictions)."
+        ]
       }
     ],
-    "gate_d_m1": false,
+    "gate_d_m1": true,
     "gate_d_m2": false,
     "gate_d_m2_external": false,
     "gate_d_m2_proxy": false,
+    "gate_e_m2_bounded_v3_pass": true,
+    "gate_e_m2_checklist_pass": true,
     "gate_e_m2_proxy": false,
     "gate_e_m2_transfer_confirmed": false,
+    "gate_e_m2_transfer_confirmed_strict": false,
+    "gate_e_positive_transfer_confirmed": false,
+    "gate_e_positive_transfer_delta_vs_cw": null,
+    "gate_e_positive_transfer_delta_vs_sar": null,
+    "gate_e_positive_transfer_official": false,
+    "gate_e_positive_transfer_status": "PENDING_FRESH_HOLDOUT",
+    "gate_f_bounded_v3": true,
+    "gate_f_integrated_v3": true,
+    "gate_f_positive_transfer_track": false,
     "gate_f_scenario_c_scientific": false,
+    "gate_f_scenario_c_scientific_strict": false,
+    "integration_active": true,
     "master_training_checklist_execution_complete": true,
-    "t5_m1": false,
+    "t5_m1": true,
     "t5_m2_ran": true
   },
   "diff_vs_previous": {
@@ -534,7 +680,7 @@
     },
     "gate_d": {
       "description": "Gate D — RGA+ beats frozen comparator (confirmatory)",
-      "done": false,
+      "done": true,
       "evidence": "confirmatory_statistics_report.json",
       "evidence_paths": [
         "elara_master_c/audits/confirmatory_statistics_report.json"
@@ -545,12 +691,35 @@
     "gate_e": {
       "description": "Gate E — M2 transfer confirmed (positive CI)",
       "done": false,
-      "evidence": "FAILED: inverted held-out delta<0 — see confirmatory_statistics_report.json",
+      "evidence": "strict clean external transfer only; bounded v3 evidence is reported separately",
       "evidence_paths": [
         "elara_master_c/audits/confirmatory_statistics_report.json",
         "experiments/fusion/m2_external_3d_adam_transfer_v1_confirmatory_results.json"
       ],
       "id": "gate_e",
+      "stage": "GATE"
+    },
+    "gate_e_bounded_v3": {
+      "description": "Gate E bounded v3 stress evidence",
+      "done": true,
+      "evidence": "bounded stress/mechanism evidence; not strict clean transfer",
+      "evidence_paths": [
+        "elara_master_c/audits/confirmatory_statistics_report.json",
+        "research_lock/SCENARIO_C_V3_INTEGRATION_v1.yaml"
+      ],
+      "id": "gate_e_bounded_v3",
+      "stage": "GATE"
+    },
+    "gate_e_positive_transfer": {
+      "description": "Gate E natural positive transfer (fresh SAR+CW positive CIs)",
+      "done": false,
+      "evidence": "D13 natural clean transfer; opened datasets are development only",
+      "evidence_paths": [
+        "elara_master_c/audits/confirmatory_statistics_report.json",
+        "research_lock/POSITIVE_TRANSFER_PROTOCOL_v1.yaml",
+        "elara_master_c/audits/positive_transfer_development_report.json"
+      ],
+      "id": "gate_e_positive_transfer",
       "stage": "GATE"
     },
     "gate_f": {
@@ -563,10 +732,32 @@
       "id": "gate_f",
       "stage": "GATE"
     },
+    "gate_f_bounded_v3": {
+      "description": "Bounded v3 thesis/paper evidence ready",
+      "done": true,
+      "evidence": "bounded Level 2.5 evidence; not Master C flagship completion",
+      "evidence_paths": [
+        "elara_master_c/audits/confirmatory_statistics_report.json",
+        "research_lock/SCENARIO_C_V3_INTEGRATION_v1.yaml"
+      ],
+      "id": "gate_f_bounded_v3",
+      "stage": "GATE"
+    },
+    "gate_f_positive_transfer": {
+      "description": "Positive-transfer scientific track ready",
+      "done": false,
+      "evidence": "strict Gate D plus D13 natural fresh transfer; does not rewrite legacy Gate E",
+      "evidence_paths": [
+        "elara_master_c/audits/confirmatory_statistics_report.json",
+        "research_lock/POSITIVE_TRANSFER_PROTOCOL_v1.yaml"
+      ],
+      "id": "gate_f_positive_transfer",
+      "stage": "GATE"
+    },
     "gate_f_scientific": {
       "description": "Gate F — Scenario C scientific claim ready",
       "done": false,
-      "evidence": "requires Gate E M2 transfer pass",
+      "evidence": "strict Gate E plus Gate D; bounded v3 evidence does not satisfy flagship readiness",
       "evidence_paths": [
         "elara_master_c/audits/confirmatory_statistics_report.json",
         "elara_master_c/audits/checklist_progress.json"
@@ -575,7 +766,7 @@
       "stage": "GATE"
     }
   },
-  "generated_at": "2026-05-30T23:22:10Z",
+  "generated_at": "2026-06-01T18:26:29Z",
   "history_timeline": [
     {
       "blocker_count": 4,
@@ -585,8 +776,65 @@
       "execution_percent": 94.4,
       "gate_d_m1": false,
       "gate_e_m2": false,
+      "gate_e_positive_transfer": false,
       "generated_at": "2026-05-30T23:22:10Z",
       "percent_complete": 89.5,
+      "scientific_ready": false
+    },
+    {
+      "blocker_count": 0,
+      "delta_M1": 0.0029085140137493637,
+      "delta_M2_external": -0.039832432156702846,
+      "delta_M2_proxy": -0.0008272071236601342,
+      "execution_percent": 100.0,
+      "gate_d_m1": true,
+      "gate_e_m2": true,
+      "gate_e_positive_transfer": false,
+      "generated_at": "2026-05-31T00:11:25Z",
+      "percent_complete": 100.0,
+      "scientific_ready": true
+    },
+    {
+      "blocker_count": 3,
+      "delta_M1": 0.0029085140137493637,
+      "delta_M2_external": -0.039832432156702846,
+      "delta_M2_proxy": -0.0008272071236601342,
+      "execution_percent": 93.2,
+      "gate_d_m1": true,
+      "gate_e_m2": true,
+      "gate_e_positive_transfer": false,
+      "generated_at": "2026-05-31T00:19:09Z",
+      "percent_complete": 93.5,
+      "scientific_ready": true
+    },
+    {
+      "blocker_count": 2,
+      "delta_M1": 0.0029085140137493637,
+      "delta_M2_external": -0.039832432156702846,
+      "delta_M2_external_v2": 0.030314422419685627,
+      "delta_M2_proxy": -0.0008272071236601342,
+      "delta_M3_healthcare": 0.023959747623991667,
+      "execution_percent": 100.0,
+      "gate_d_m1": true,
+      "gate_e_m2": false,
+      "gate_e_positive_transfer": false,
+      "generated_at": "2026-06-01T05:26:29Z",
+      "percent_complete": 95.8,
+      "scientific_ready": false
+    },
+    {
+      "blocker_count": 4,
+      "delta_M1": 0.0029085140137493637,
+      "delta_M2_external": -0.039832432156702846,
+      "delta_M2_external_v2": 0.030314422419685627,
+      "delta_M2_proxy": -0.0008272071236601342,
+      "delta_M3_healthcare": 0.023959747623991667,
+      "execution_percent": 100.0,
+      "gate_d_m1": true,
+      "gate_e_m2": false,
+      "gate_e_positive_transfer": false,
+      "generated_at": "2026-06-01T18:26:29Z",
+      "percent_complete": 92.2,
       "scientific_ready": false
     }
   ],
@@ -670,6 +918,9 @@
     "claim_contract": "research_lock/SCENARIO_C_CLAIM_CONTRACT.md",
     "confirmatory_statistics": "elara_master_c/audits/confirmatory_statistics_report.json",
     "flagship_protocol": "research_lock/FLAGSHIP_DEV_PROTOCOL_v1.yaml",
+    "positive_transfer_confirmatory": "experiments/fusion/positive_transfer_confirmatory_result.json",
+    "positive_transfer_development": "elara_master_c/audits/positive_transfer_development_report.json",
+    "positive_transfer_protocol": "research_lock/POSITIVE_TRANSFER_PROTOCOL_v1.yaml",
     "python_file_catalog": "elara_master_c/audits/python_file_catalog.json"
   },
   "repo_root": "/Volumes/T9/uav/AutoML_Flagship_V8/.",
@@ -677,6 +928,7 @@
     "elara_master_c/audits/checklist_progress.json",
     "elara_master_c/audits/confirmatory_statistics_report.json",
     "elara_master_c/audits/python_file_catalog.json",
-    "research_lock/FLAGSHIP_DEV_PROTOCOL_v1.yaml"
+    "research_lock/FLAGSHIP_DEV_PROTOCOL_v1.yaml",
+    "research_lock/POSITIVE_TRANSFER_PROTOCOL_v1.yaml"
   ]
 }

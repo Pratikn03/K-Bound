@@ -253,16 +253,21 @@ class PredictionArchive:
         )
         out_dir = self.root / cell_slug / method / split
         out_dir.mkdir(parents=True, exist_ok=True)
-        # immutability: don't overwrite existing files; append rerun suffix.
-        base = out_dir / f"seed_{int(seed):02d}.parquet"
-        if not base.exists():
-            return base
+        # Immutability: parquet is preferred, but CSV fallback must reserve the
+        # same slot so missing parquet engines cannot overwrite prior CSV runs.
+        base_stem = f"seed_{int(seed):02d}"
+        if not self._artifact_exists(out_dir, base_stem):
+            return out_dir / f"{base_stem}.parquet"
         idx = 1
         while True:
-            cand = out_dir / f"seed_{int(seed):02d}__rerun_{idx}.parquet"
-            if not cand.exists():
-                return cand
+            stem = f"{base_stem}__rerun_{idx}"
+            if not self._artifact_exists(out_dir, stem):
+                return out_dir / f"{stem}.parquet"
             idx += 1
+
+    @staticmethod
+    def _artifact_exists(out_dir: Path, stem: str) -> bool:
+        return any((out_dir / f"{stem}{suffix}").exists() for suffix in (".parquet", ".csv"))
 
     def write(
         self,

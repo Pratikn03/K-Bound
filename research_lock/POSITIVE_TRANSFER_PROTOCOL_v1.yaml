@@ -1,0 +1,67 @@
+version: 1
+status: SEALED_DEV_THEN_CONFIRM
+ratified: 2026-06-01
+decision: D13_positive_transfer_candidate_track
+target: natural_clean_transfer_beats_sar_and_cw
+
+purpose: >
+  Develop a natural clean-transfer candidate without rewriting the failed
+  legacy RGA result. Opened 3D-ADAM and MulSen tests are development evidence
+  only. Official confirmation requires a fresh or demonstrably unopened
+  naturally paired holdout.
+
+candidate_family:
+  name: positive_transfer_natural_clean_default
+  allowed_development_sources:
+    - experiments/fusion/m2_external_3d_adam_v3_inputs.csv
+    - elara_master_c/predictions/v3_transfer
+    - experiments/fusion/m2_external_mulsen_sealed_inputs.csv
+    - elara_master_c/predictions/confirmation
+  rules:
+    - validation labels may be used for candidate selection
+    - opened test labels may be used only for development diagnosis
+    - official confirmation requires fresh or unopened natural clean transfer
+    - candidate code and hyperparameters must be frozen before confirmation
+
+primary_endpoints:
+  vs_sar:
+    metric: roc_auc_delta
+    comparator: sar_score_adapter
+    ci_low_must_be_gt: 0.0
+    minimum_practical_delta: 0.010
+    holm_alpha: 0.05
+  vs_cw:
+    metric: roc_auc_delta
+    comparator: confidence_weighted_mean
+    ci_low_must_be_gt: 0.0
+    minimum_practical_delta: 0.005
+    holm_alpha: 0.05
+
+confirmation_rules:
+  fresh_or_unopened_holdout_required: true
+  opened_3d_adam_test_is_development_only: true
+  opened_mulsen_test_is_development_only: true
+  natural_clean_transfer_only: true
+  archive_per_sample_predictions: true
+  no_test_selected_hyperparameters: true
+  bootstrap_iterations: 10000
+
+forbidden:
+  synthetic_degradation: true
+  controlled_corruption: true
+  fake_relabeling: true
+  opened_test_selection: true
+  overwrite_legacy_gate_e: true
+
+forbidden_sources:
+  - experiments/fusion/cross_modal_gate_e_result.json
+  - experiments/fusion/degradation_transfer_v3_investigation.json
+  - experiments/fusion/rga_gated_cw_transfer_result.json
+  - elara_master_c/audits/checklist_progress.json
+  - elara_master_c/audits/confirmatory_statistics_report.json
+
+reporting:
+  keep_legacy_negative_gate_e_visible: true
+  new_track_field: gate_e_positive_transfer_confirmed
+  do_not_overwrite: gate_e_m2_transfer_confirmed
+

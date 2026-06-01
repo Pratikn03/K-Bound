@@ -1,0 +1,64 @@
+# M2 external transfer audit #2 — MulSen-AD RGB + infrared (D9)
+#
+# Distinct from 3D-ADAM (D6): multi-sensor industrial RGB + lock-in IR, not MVTec/Eyecandies/VisA/Real3D.
+
+version: 2
+status: SEALED
+ratified: 2026-05-28
+decision: D9_mulsen_ad_rgb_infrared_category_heldout
+supersedes_pending: null
+companion: research_lock/M2_EXTERNAL_SEALED_v1.yaml
+
+dataset_id: m2_mulsen_ad_rgb_infrared_external
+family: M2_external_transfer_v2
+pairing: naturally_paired_rgb_infrared
+source:
+  repository: orgjy314159/MulSen_AD
+  repository_type: huggingface_dataset
+  license: mit
+  local_root: data/raw/mulsen_ad
+  download_script: src/scripts/scenario_c/download_m2_external_mulsen.py
+
+heldout_protocol:
+  description: >
+    Category-held-out transfer on MulSen-AD. Train categories fit PatchCore memory
+    and fusion calibration; held-out object classes are test-only.
+  train_categories:
+    - button_cell
+    - capsule
+    - cotton
+    - cube
+    - flat_pad
+    - light
+    - nut
+    - piggy
+  test_categories:
+    - plastic_cylinder
+    - screen
+    - screw
+    - solar_panel
+    - spring_pad
+    - toothbrush
+    - zipper
+  validation_fraction_from_train_category_test_rows: 0.15
+  validation_seed: 20260528
+
+blocked_for_this_claim:
+  - eyecandies
+  - mvtec_3d_ad
+  - real3d
+  - visa_rgb_edge
+  - m2_3d_adam_anomalib_external
+
+artifacts:
+  inputs: experiments/fusion/m2_external_mulsen_sealed_inputs.csv
+  metadata: experiments/fusion/m2_external_mulsen_sealed_metadata.json
+  acquisition_record: experiments/fusion/m2_external_mulsen_acquisition.json
+  split_hash: elara_master_c/data/splits/split_hashes/m2_external_mulsen_sealed.json
+  fusion_config: configs/attention_m2_external_mulsen_sealed.yaml
+  confirmatory_results: experiments/fusion/m2_external_mulsen_confirmatory_results.json
+
+rules:
+  - Second independent external transfer family for Tier-2/Tier-3 generalization (D8 still applies to checklist promotion).
+  - One-shot held-out test categories; no selection on test objects.
+  - Strongest baseline frozen from research_lock/strongest_baseline_frozen_v1.json.

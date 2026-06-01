@@ -13,6 +13,11 @@ import numpy as np
 
 from uais.utils.stats import holm_bonferroni
 
+_scenario_c_dir = Path(__file__).resolve().parent
+if str(_scenario_c_dir) not in sys.path:
+    sys.path.insert(0, str(_scenario_c_dir))
+from v3_gate_evidence import build_v3_integration_block  # noqa: E402
+
 
 def _repo_root() -> Path:
     here = Path(__file__).resolve()
@@ -108,7 +113,8 @@ def _per_sample_paired_bootstrap_from_archive(
         labels = first["label"].to_numpy().astype(int)
         # Drop unlabeled rows (label=-1)
         keep = labels >= 0
-        sids = sids[keep]; labels = labels[keep]
+        sids = sids[keep]
+        labels = labels[keep]
         n_samples = len(sids)
         rga_mat = np.zeros((n_samples, len(common_seeds)), dtype=float)
         comp_mat = np.zeros((n_samples, len(common_seeds)), dtype=float)
@@ -132,14 +138,14 @@ def _per_sample_paired_bootstrap_from_archive(
 
         rng = np.random.default_rng(int(seed))
         deltas = np.empty(n_iter, dtype=float)
-        idx_arr = np.arange(n_samples)
         for i in range(n_iter):
             sel = rng.integers(0, n_samples, size=n_samples)
             lbl_b = labels[sel]
             if len(np.unique(lbl_b)) < 2:
                 deltas[i] = np.nan
                 continue
-            r_b = rga_score[sel]; c_b = comp_score[sel]
+            r_b = rga_score[sel]
+            c_b = comp_score[sel]
             try:
                 deltas[i] = roc_auc_score(lbl_b, r_b) - roc_auc_score(lbl_b, c_b)
             except ValueError:
@@ -185,6 +191,69 @@ def _load_m2_external_paired_inference(root: Path) -> dict | None:
     return None
 
 
+def _endpoint_pass(stat: dict, *, min_delta: float) -> bool:
+    ci = stat.get("ci95") or [0.0, 0.0]
+    return bool(
+        stat.get("valid", True)
+        and float(stat.get("delta", 0.0)) >= min_delta
+        and float(ci[0]) > 0.0
+    )
+
+
+def _load_positive_transfer_confirmation(root: Path) -> dict:
+    """Load D13 natural positive-transfer status without mutating legacy Gate E."""
+    out = {
+        "positive_transfer_protocol": "research_lock/POSITIVE_TRANSFER_PROTOCOL_v1.yaml",
+        "gate_e_positive_transfer_confirmed": False,
+        "gate_e_positive_transfer_official": False,
+        "gate_e_positive_transfer_status": "PENDING_FRESH_HOLDOUT",
+        "gate_e_positive_transfer_delta_vs_sar": None,
+        "gate_e_positive_transfer_delta_vs_cw": None,
+        "gate_e_positive_transfer_ci95_vs_sar": None,
+        "gate_e_positive_transfer_ci95_vs_cw": None,
+        "positive_transfer_result_path": None,
+    }
+    for rel in (
+        "experiments/fusion/positive_transfer_confirmatory_result.json",
+        "elara_master_c/audits/positive_transfer_confirmatory_result.json",
+    ):
+        path = root / rel
+        if not path.is_file():
+            continue
+        try:
+            doc = json.loads(path.read_text(encoding="utf-8"))
+        except (json.JSONDecodeError, OSError):
+            continue
+        stats = doc.get("stats") or {}
+        vs_sar = stats.get("vs_sar") or {}
+        vs_cw = stats.get("vs_cw") or {}
+        official = bool(
+            doc.get("protocol") == "POSITIVE_TRANSFER_PROTOCOL_v1"
+            and doc.get("holdout_status") == "FRESH_OR_UNOPENED"
+            and doc.get("natural_clean_transfer") is True
+            and doc.get("synthetic_or_corrupted") is False
+            and _endpoint_pass(vs_sar, min_delta=0.010)
+            and _endpoint_pass(vs_cw, min_delta=0.005)
+        )
+        out.update(
+            {
+                "gate_e_positive_transfer_confirmed": official,
+                "gate_e_positive_transfer_official": official,
+                "gate_e_positive_transfer_status": "PASS" if official else str(doc.get("status", "NOT_CONFIRMED")),
+                "gate_e_positive_transfer_delta_vs_sar": vs_sar.get("delta"),
+                "gate_e_positive_transfer_delta_vs_cw": vs_cw.get("delta"),
+                "gate_e_positive_transfer_ci95_vs_sar": vs_sar.get("ci95"),
+                "gate_e_positive_transfer_ci95_vs_cw": vs_cw.get("ci95"),
+                "positive_transfer_result_path": rel,
+                "positive_transfer_selection": doc.get("selection"),
+                "positive_transfer_holdout_status": doc.get("holdout_status"),
+                "positive_transfer_official_note": doc.get("official_note"),
+            }
+        )
+        return out
+    return out
+
+
 def _merge_paired_into_cell(cell: dict, paired: dict) -> dict:
     """Overlay per-sample DeLong/bootstrap onto M2_external seed-level cell."""
     primary_id = paired.get("primary_comparison", "M2-EXTERNAL-vs-SAR")
@@ -222,7 +291,6 @@ def _merge_paired_into_cell(cell: dict, paired: dict) -> dict:
             },
         }
     )
-    clean_ffr = float(cell.get("clean_false_fire_proxy", 0.0))
     cell["gate_e_pass"] = bool(
         row.get("bootstrap_ci_excludes_zero") and float(row["ensemble_delta_auc"]) > 0
     )
@@ -370,7 +438,7 @@ def evaluate_cell(
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--write-report", action="store_true")
-    args = parser.parse_args()
+    parser.parse_args()
 
     root = _repo_root()
     m2_paired = _load_m2_external_paired_inference(root)
@@ -405,6 +473,33 @@ def main() -> int:
                 "M2_proxy",
             )
         )
+    m2_v2 = root / "experiments/fusion/m2_external_mulsen_confirmatory_results.json"
+    if m2_v2.is_file():
+        cells.append(
+            (
+                m2_v2,
+                "MulSen-AD category-held-out",
+                "M2_external_v2_one_shot_audit",
+                "M2_external_v2",
+            )
+        )
+    m3_path = root / "experiments/fusion/m3_bidmc_confirmatory_results.json"
+    if not m3_path.is_file():
+        m3_path = root / "experiments/fusion/m3_healthcare_confirmatory_results.json"
+    if m3_path.is_file():
+        bench = (
+            "BIDMC patient-stratified"
+            if "bidmc" in m3_path.name
+            else "GridPulse patient-stratified"
+        )
+        cells.append(
+            (
+                m3_path,
+                bench,
+                "M3_healthcare_confirmatory",
+                "M3_healthcare",
+            )
+        )
     report: dict = {
         "cells": [],
         "gate_d_m1": False,
@@ -437,16 +532,107 @@ def main() -> int:
             report["m2_proxy_ran"] = True
             report["gate_e_m2_proxy"] = bool(cell.get("gate_e_pass"))
             report["gate_d_m2_proxy"] = bool(cell.get("gate_d_pass"))
+        if fam == "M2_external_v2":
+            report["m2_external_v2_ran"] = True
+            report["gate_e_m2_v2_transfer_confirmed"] = bool(cell.get("gate_e_pass"))
+            report["gate_d_m2_external_v2"] = bool(cell.get("gate_d_pass"))
+        if fam == "M3_healthcare":
+            report["m3_confirmatory_ran"] = True
+            report["gate_d_m3_healthcare"] = bool(cell.get("gate_d_pass"))
+            report["m3_t5_pass"] = bool(cell.get("t5_confirmatory_pass"))
 
-    report["gate_f_scenario_c_scientific"] = bool(
-        report.get("gate_d_m1")
-        and report.get("gate_e_m2_transfer_confirmed")
-        and _exists_gate_a(root)
-        and _exists_gate_c(root)
+    legacy_gate_d_m1 = bool(report.get("gate_d_m1"))
+    legacy_gate_e = bool(report.get("gate_e_m2_transfer_confirmed"))
+    legacy_t5_m1 = bool(report.get("t5_m1"))
+    legacy_gate_f = bool(
+        legacy_gate_d_m1 and legacy_gate_e and _exists_gate_a(root) and _exists_gate_c(root)
     )
+
+    report["legacy_confirmatory"] = {
+        "gate_d_m1": legacy_gate_d_m1,
+        "t5_m1": legacy_t5_m1,
+        "gate_e_m2_transfer_confirmed": legacy_gate_e,
+        "gate_f_scenario_c_scientific": legacy_gate_f,
+        "note": "Original 5-seed rga_boosted_fusion confirmatory bundle (pre-v3 promotion).",
+    }
+
+    v3_block = build_v3_integration_block(root)
+    report["integration_active"] = v3_block is not None
+    if v3_block is not None:
+        report["v3_integrated"] = v3_block
+        report["gate_d_m1"] = bool(v3_block["gate_d_m1"])
+        report["t5_m1"] = bool(v3_block["t5_m1"])
+        gate_e_strict = bool(v3_block["gate_e_m2_transfer_confirmed_strict"])
+        gate_e_bounded = bool(v3_block["summary"].get("gate_e_bounded_pass"))
+        report["gate_e_m2_transfer_confirmed_strict"] = gate_e_strict
+        report["gate_e_m2_bounded_v3_pass"] = gate_e_bounded
+        report["gate_e_m2_checklist_pass"] = bool(v3_block["gate_e_m2_checklist_pass"])
+        # D12 strict/bounded split: the canonical transfer-confirmed field is
+        # strict clean external transfer only. Bounded v3 stress evidence remains
+        # visible through gate_e_m2_bounded_v3_pass and must not flip Gate E.
+        report["gate_e_m2_transfer_confirmed"] = gate_e_strict
+        report["gate_f_scenario_c_scientific_strict"] = bool(
+            v3_block["gate_f_scenario_c_scientific_strict"]
+        )
+        report["gate_f_integrated_v3"] = bool(v3_block["gate_f_integrated_v3"])
+        report["gate_f_bounded_v3"] = bool(
+            report["gate_f_integrated_v3"] and _exists_gate_a(root) and _exists_gate_c(root)
+        )
+        report["gate_f_scenario_c_scientific"] = bool(
+            report["gate_f_scenario_c_scientific_strict"]
+            and _exists_gate_a(root)
+            and _exists_gate_c(root)
+        )
+    else:
+        report["gate_e_m2_transfer_confirmed_strict"] = legacy_gate_e
+        report["gate_e_m2_bounded_v3_pass"] = False
+        report["gate_f_bounded_v3"] = False
+        report["gate_f_scenario_c_scientific"] = legacy_gate_f
+
     report["master_training_checklist_execution_complete"] = bool(
         report.get("t5_m2_ran") and _exists_gate_a(root) and _exists_gate_c(root)
     )
+
+    positive_transfer = _load_positive_transfer_confirmation(root)
+    report.update(positive_transfer)
+    report["gate_f_positive_transfer_track"] = bool(
+        report.get("gate_d_m1")
+        and positive_transfer.get("gate_e_positive_transfer_confirmed")
+        and _exists_gate_a(root)
+        and _exists_gate_c(root)
+    )
+
+    m4_audit = root / "elara_master_c/audits/m4_temporal_monitoring_audit.json"
+    m4_partial = False
+    if m4_audit.is_file():
+        try:
+            m4_partial = bool(json.loads(m4_audit.read_text(encoding="utf-8")).get("tier_3_p6_partial"))
+        except (json.JSONDecodeError, OSError):
+            pass
+    families_present = []
+    if report.get("t5_m2_ran") or report.get("m2_external_cell_valid"):
+        families_present.append("M2_external_3d_adam")
+    if report.get("m2_external_v2_ran"):
+        families_present.append("M2_external_mulsen")
+    if report.get("m3_confirmatory_ran"):
+        families_present.append(
+            "M3_bidmc" if (root / "experiments/fusion/m3_bidmc_confirmatory_results.json").is_file() else "M3_healthcare"
+        )
+    report["tier_3_non_vision_family"] = bool(report.get("m3_confirmatory_ran"))
+    report["phase23_flagship"] = {
+        "m2_v2_sealed": (root / "research_lock/M2_EXTERNAL_SEALED_v2.yaml").is_file(),
+        "m2_v2_confirmatory_ran": bool(report.get("m2_external_v2_ran")),
+        "m3_confirmatory_ran": bool(report.get("m3_confirmatory_ran")),
+        "m4_monitoring_audit": m4_audit.is_file(),
+        "natural_domain_families_present": families_present,
+        "tier_3_two_industrial_families": len(
+            [f for f in families_present if f.startswith("M2_external")]
+        )
+        >= 2,
+        "tier_3_non_vision_family": bool(report.get("m3_confirmatory_ran")),
+        "tier_3_p6_monitoring_partial": m4_partial,
+        "registry": "research_lock/dataset_registry_v4.yaml",
+    }
 
     out = root / "elara_master_c/audits/confirmatory_statistics_report.json"
     out.write_text(json.dumps(report, indent=2), encoding="utf-8")

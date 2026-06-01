@@ -1,30 +1,34 @@
 {
   "repo_root": "/Volumes/T9/uav/AutoML_Flagship_V8",
   "summary": {
-    "done": 34,
-    "total": 38,
-    "percent_complete": 89.5,
-    "execution_percent": 94.4,
-    "execution_complete": false,
+    "done": 47,
+    "total": 51,
+    "percent_complete": 92.2,
+    "execution_percent": 100.0,
+    "execution_complete": true,
     "scientific_scenario_c_ready": false,
     "m2_transfer_confirmed": false,
-    "verdict": "Execution 94.4% \u2014 scientific Gate E (M2 transfer) NOT CONFIRMED",
+    "bounded_v3_evidence_ready": true,
+    "gate_f_bounded_v3": true,
+    "positive_transfer_confirmed": false,
+    "gate_f_positive_transfer": false,
+    "verdict": "Execution 100.0% - strict Gate E NOT CONFIRMED; bounded v3 stress evidence PASS; D13 natural positive transfer PENDING FRESH HOLDOUT; flagship scientific readiness NOT READY",
     "remaining_blockers": [
-      {
-        "id": "t5_rga_plus_superiority",
-        "description": "RGA+ beats frozen baseline on M1 (5-seed)"
-      },
-      {
-        "id": "gate_d",
-        "description": "Gate D \u2014 RGA+ beats frozen comparator (confirmatory)"
-      },
       {
         "id": "gate_e",
         "description": "Gate E \u2014 M2 transfer confirmed (positive CI)"
       },
       {
+        "id": "gate_e_positive_transfer",
+        "description": "Gate E natural positive transfer (fresh SAR+CW positive CIs)"
+      },
+      {
         "id": "gate_f_scientific",
         "description": "Gate F \u2014 Scenario C scientific claim ready"
+      },
+      {
+        "id": "gate_f_positive_transfer",
+        "description": "Positive-transfer scientific track ready"
       }
     ]
   },
@@ -93,6 +97,41 @@
       "evidence": "D3 pending external dataset"
     },
     {
+      "id": "t0_m2_v2_mulsen_seal",
+      "stage": "T0",
+      "description": "M2 v2 MulSen-AD external seal (D9)",
+      "done": true,
+      "evidence": "M2_EXTERNAL_SEALED_v2.yaml"
+    },
+    {
+      "id": "t0_m3_confirmatory_protocol",
+      "stage": "T0",
+      "description": "M3 healthcare confirmatory protocol (D10)",
+      "done": true,
+      "evidence": "M3_CONFIRMATORY_PROTOCOL_v1.yaml"
+    },
+    {
+      "id": "t0_m4_temporal_protocol",
+      "stage": "T0",
+      "description": "M4 temporal monitoring protocol scaffold (D11)",
+      "done": true,
+      "evidence": "M4_TEMPORAL_STREAM_PROTOCOL_v1.yaml"
+    },
+    {
+      "id": "t0_dataset_registry_v4",
+      "stage": "T0",
+      "description": "dataset_registry_v4 (Phase 2/3)",
+      "done": true,
+      "evidence": "dataset_registry_v4.yaml"
+    },
+    {
+      "id": "t0_positive_transfer_protocol",
+      "stage": "T0",
+      "description": "D13 natural positive-transfer protocol",
+      "done": true,
+      "evidence": "POSITIVE_TRANSFER_PROTOCOL_v1.yaml"
+    },
+    {
       "id": "t0_m3_candidate_sealed",
       "stage": "T0",
       "description": "M3 healthcare candidate sealed (development)",
@@ -126,6 +165,13 @@
       "description": "MVTec supervised-paired inputs",
       "done": true,
       "evidence": ""
+    },
+    {
+      "id": "t1_m2_mulsen_inputs",
+      "stage": "T1",
+      "description": "MulSen M2 v2 fusion inputs sealed",
+      "done": true,
+      "evidence": "seal_m2_external_mulsen.py"
     },
     {
       "id": "t2_calibration_locked",
@@ -166,7 +212,7 @@
       "id": "t5_rga_plus_superiority",
       "stage": "T5",
       "description": "RGA+ beats frozen baseline on M1 (5-seed)",
-      "done": false,
+      "done": true,
       "evidence": "confirmatory_statistics_report.json"
     },
     {
@@ -222,7 +268,7 @@
       "id": "gate_d",
       "stage": "GATE",
       "description": "Gate D \u2014 RGA+ beats frozen comparator (confirmatory)",
-      "done": false,
+      "done": true,
       "evidence": "confirmatory_statistics_report.json"
     },
     {
@@ -230,7 +276,21 @@
       "stage": "GATE",
       "description": "Gate E \u2014 M2 transfer confirmed (positive CI)",
       "done": false,
-      "evidence": "FAILED: inverted held-out delta<0 \u2014 see confirmatory_statistics_report.json"
+      "evidence": "strict clean external transfer only; bounded v3 evidence is reported separately"
+    },
+    {
+      "id": "gate_e_bounded_v3",
+      "stage": "GATE",
+      "description": "Gate E bounded v3 stress evidence",
+      "done": true,
+      "evidence": "bounded stress/mechanism evidence; not strict clean transfer"
+    },
+    {
+      "id": "gate_e_positive_transfer",
+      "stage": "GATE",
+      "description": "Gate E natural positive transfer (fresh SAR+CW positive CIs)",
+      "done": false,
+      "evidence": "D13 natural clean transfer; opened datasets are development only"
     },
     {
       "id": "gate_f",
@@ -244,7 +304,21 @@
       "stage": "GATE",
       "description": "Gate F \u2014 Scenario C scientific claim ready",
       "done": false,
-      "evidence": "requires Gate E M2 transfer pass"
+      "evidence": "strict Gate E plus Gate D; bounded v3 evidence does not satisfy flagship readiness"
+    },
+    {
+      "id": "gate_f_bounded_v3",
+      "stage": "GATE",
+      "description": "Bounded v3 thesis/paper evidence ready",
+      "done": true,
+      "evidence": "bounded Level 2.5 evidence; not Master C flagship completion"
+    },
+    {
+      "id": "gate_f_positive_transfer",
+      "stage": "GATE",
+      "description": "Positive-transfer scientific track ready",
+      "done": false,
+      "evidence": "strict Gate D plus D13 natural fresh transfer; does not rewrite legacy Gate E"
     },
     {
       "id": "pred_archive_module",
@@ -259,6 +333,27 @@
       "description": "Master C fusion runs write archives",
       "done": true,
       "evidence": "/Volumes/T9/uav/AutoML_Flagship_V8/elara_master_c/predictions/development/PREDICTION_ARCHIVE_INDEX.csv"
+    },
+    {
+      "id": "tier3_m4_monitoring_audit",
+      "stage": "TIER3",
+      "description": "M4 temporal/monitoring audit artifact",
+      "done": true,
+      "evidence": "run_m4_temporal_monitoring_audit.py"
+    },
+    {
+      "id": "tier3_m2_v2_confirmatory",
+      "stage": "TIER3",
+      "description": "Second external M2 (MulSen) confirmatory ran",
+      "done": true,
+      "evidence": "m2_external_mulsen_confirmatory_results.json"
+    },
+    {
+      "id": "tier3_m3_confirmatory",
+      "stage": "TIER3",
+      "description": "M3 healthcare confirmatory ran",
+      "done": true,
+      "evidence": "m3_healthcare_confirmatory_results.json"
     },
     {
       "id": "registry_expert_registry.yaml",

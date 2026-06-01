@@ -51,7 +51,7 @@ This chapter presents the final audited evidence for ELARA, a reliability-aware 
 
 In mechanism replication (Family B), RGA reproduces the zero-attack coherent score-collapse endpoint (B1: +0.0507 versus Phase-1 target +0.0506, 95\% CI [+0.0364, +0.0650], Holm $p = 4.31\times 10^{-12}$) and retains a positive maximum-attack result (B2: +0.0939 versus +0.0319, 95\% CI [+0.0741, +0.1149], Holm $p < 10^{-15}$) with explicit estimator-change qualification. Sensitive RGA-v2 variants fail clean false-fire controls (firing rate 1.000), and domain composition shift audits (B-MECH-3S) do not reduce false-fire rates. Monitoring and retrospective certification outcomes are mixed.
 
-The held-out Eyecandies transfer study (Family D) satisfies the clean false-fire budget ($0.000$ observed under validation-selected per-cell thresholds $\tau = 0.52$ and $\tau = 0.51$) but is not confirmed under primary bootstrap interval inference: the primary paired-bootstrap ensemble $\Delta$ AUC is $-0.0010$ (95\% CI [$-0.0114$, $+0.0092$]) for D-EYE-1 and $-0.0109$ (95\% CI [$-0.0254$, $+0.0034$]) for D-EYE-2, both intervals spanning zero, and a secondary per-seed paired $t$-test is non-significant ($p = 0.3632$ and $p = 0.4468$). The chapter therefore supports a bounded mechanism claim and identifies calibration transfer under score-distribution shift as the main unresolved limitation.
+The held-out Eyecandies transfer study (Family D) satisfies the clean false-fire budget ($0.000$ observed under validation-selected per-cell thresholds $\tau = 0.52$ and $\tau = 0.51$) but is not confirmed under primary bootstrap interval inference: the primary paired-bootstrap ensemble $\Delta$ AUC is $-0.0010$ (95\% CI [$-0.0114$, $+0.0092$]) for D-EYE-1 and $-0.0109$ (95\% CI [$-0.0254$, $+0.0034$]) for D-EYE-2, both intervals spanning zero, and a secondary per-seed paired $t$-test is non-significant ($p = 0.3632$ and $p = 0.4468$). A new D13 natural clean-transfer track adds development evidence for a stronger target: a validation-only residual-stack candidate beats both SAR ($\Delta=+0.0583$, 95\% CI $[+0.0410,+0.0759]$) and confidence-weighted mean ($\Delta=+0.0182$, 95\% CI $[+0.0075,+0.0290]$) on opened 3D-ADAM, while MulSen remains unresolved. Because both datasets are opened, D13 is integrated as pending fresh-holdout evidence and not as final Gate E readiness. The chapter therefore supports a bounded mechanism claim and identifies calibration transfer under score-distribution shift as the main unresolved limitation.
 \end{abstract}
 
 \section{Introduction and Motivation}
@@ -128,7 +128,7 @@ component ablation provide the more useful evidence about the mechanism.
 
 \subsection{Contributions}
 
-We make four scoped contributions:
+We make five scoped contributions:
 
 \begin{enumerate}
   \item We present \system{}, a score-level anomaly-fusion research system
@@ -141,6 +141,10 @@ We make four scoped contributions:
   \item We report an all-category paired MVTec 3D-AD benchmark, multi-seed
   confidence intervals, mechanism ablations, failure cases, and explicit
   threats to validity.
+  \item We add the D13 natural positive-transfer track, which requires a
+  validation-only candidate to beat both SAR and confidence-weighted mean on a
+  fresh natural holdout; opened 3D-ADAM and MulSen results are retained as
+  development evidence only.
 \end{enumerate}
 
 \subsection{Evidence Boundary}
@@ -885,6 +889,34 @@ figures are supervised-paired (not one-class leaderboard-comparable), and the
 degradation is a controlled synthetic sweep --- each a boundary on how far the
 claim may be read, none load-bearing for the claim made.
 
+\paragraph{D13 natural clean-transfer track.}
+The failed strict Eyecandies transfer result is not rewritten. Instead, the
+system now carries a separate D13 track for natural clean transfer. D13 requires
+a validation-only candidate to beat both SAR and confidence-weighted mean (CW),
+with paired-bootstrap 95\% CI lower bounds above zero, practical deltas of at
+least $+0.010$ versus SAR and $+0.005$ versus CW, and no synthetic degradation,
+controlled corruption, fake relabeling, or opened-test selection. The
+development runner evaluates a low-capacity candidate family over score,
+confidence, rank, disagreement, and reliability features; the official runner
+will accept only a fresh or demonstrably unopened natural holdout and archives
+per-sample predictions before setting any gate field.
+
+\begin{table}[H]
+\centering
+\caption{D13 natural clean positive-transfer development audit. Opened
+development results can guide method selection but cannot set Gate E.}
+\label{tab:thesis-positive-transfer-d13}
+\scriptsize
+\IfFileExists{tables/natural_positive_transfer_d13.tex}{\input{tables/natural_positive_transfer_d13.tex}}{}
+\end{table}
+
+On opened 3D-ADAM, the selected residual stack is positive against both SAR and
+CW and meets the numeric D13 target in development. On opened MulSen, point
+estimates are positive but the intervals cross zero. The strict legacy
+\texttt{gate\_e\_m2\_transfer\_confirmed} field therefore remains false, and
+\texttt{gate\_e\_positive\_transfer\_confirmed} remains pending until a fresh
+or unopened natural holdout passes both co-endpoints.
+
 \begin{algorithm}[H]
 \caption{Patch-level PatchCore upstream detector (per modality)}
 \label{alg:thesis-patchcore}
@@ -1258,7 +1290,7 @@ manuscripts in one command via \texttt{scripts/rebuild\_paper.sh}.
 
 \section{Conclusion and Future Work}
 ELARA provides bounded audited and mechanism-level evidence that reliability-aware anomaly fusion can improve a fixed static-attention reference under selected degraded-evidence settings, while the Eyecandies transfer attempt (Family D) satisfies the clean false-fire budget under target-calibration reference fitting but remains not confirmed under primary bootstrap inference.
-Future work will focus on: (1) dynamic thresholding strategies and calibration under out-of-distribution modal scoring shifts; (2) testing on additional naturally co-observed datasets; and (3) evaluating the learned-gate and category-aware estimators against the fixed heuristic gates in deployment-monitoring systems under realistic pre-emption conditions.
+The D13 positive-transfer track adds promising opened-development evidence on 3D-ADAM against both SAR and CW, but MulSen is unresolved and official positive transfer remains pending a fresh or unopened natural holdout. Future work will focus on: (1) dynamic thresholding strategies and calibration under out-of-distribution modal scoring shifts; (2) testing on additional naturally co-observed datasets, including a fresh D13 holdout; and (3) evaluating the learned-gate and category-aware estimators against the fixed heuristic gates in deployment-monitoring systems under realistic pre-emption conditions.
 
 \begin{thebibliography}{99}
 

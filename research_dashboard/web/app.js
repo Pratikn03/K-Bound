@@ -4,8 +4,12 @@ const GATE_LABELS = {
   gate_c: "Gate C",
   gate_d: "Gate D",
   gate_e: "Gate E",
+  gate_e_bounded_v3: "Gate E (bounded)",
+  gate_e_positive_transfer: "Gate E (D13)",
   gate_f: "Gate F",
   gate_f_scientific: "Gate F (scientific)",
+  gate_f_bounded_v3: "Gate F (bounded)",
+  gate_f_positive_transfer: "Gate F (D13)",
 };
 
 const STORAGE_SETTINGS = "elara_dash_settings";
@@ -526,10 +530,15 @@ function renderConfirmatory(data) {
   const flags = [
     ["gate_d_m1", c.gate_d_m1],
     ["gate_d_m2_external", c.gate_d_m2_external],
-    ["gate_e_m2_transfer", c.gate_e_m2_transfer_confirmed],
+    ["gate_e_strict", c.gate_e_m2_transfer_confirmed_strict ?? c.gate_e_m2_transfer_confirmed],
+    ["gate_e_bounded_v3", c.gate_e_m2_bounded_v3_pass],
+    ["gate_e_positive_transfer", c.gate_e_positive_transfer_confirmed],
+    ["gate_e_positive_official", c.gate_e_positive_transfer_official],
     ["t5_m1", c.t5_m1],
     ["t5_m2_ran", c.t5_m2_ran],
-    ["gate_f_scientific", c.gate_f_scenario_c_scientific],
+    ["gate_f_strict", c.gate_f_scenario_c_scientific],
+    ["gate_f_bounded_v3", c.gate_f_bounded_v3],
+    ["gate_f_positive_transfer", c.gate_f_positive_transfer_track],
   ];
   flagsEl.innerHTML = flags
     .map(
@@ -632,6 +641,7 @@ function renderResearchPage(data) {
     ["Scientific ready", claim.scientific_ready ? "yes" : "no"],
     ["Execution ready", claim.execution_ready ? "yes" : "no"],
     ["M2 transfer", c.gate_e_m2_transfer_confirmed ? "confirmed" : "not confirmed"],
+    ["D13 positive transfer", c.gate_e_positive_transfer_confirmed ? "confirmed" : (c.gate_e_positive_transfer_status || "pending")],
     ["Central claim ratified", claim.central_claim_ratified ? "yes" : "no"],
     ["Repo root", data.repo_root || "—"],
     ["Snapshot", data.generated_at || "—"],
