@@ -295,12 +295,17 @@ def patchcore_knn_score(
         partitioned = np.partition(d2, k_eff - 1, axis=1)[:, :k_eff]
         distances[start:end] = np.sqrt(np.mean(partitioned, axis=1))
 
+    # MONOTONIC normalisation: z-score against the train-good distance
+    # distribution, then logistic sigmoid. Preserves the raw-distance ranking
+    # exactly (test AUROC == raw-score AUROC) and maps to a calibrated [0,1].
+    # The previous min-max-clip against the 95th train percentile SATURATED
+    # every out-of-range test score to 1.0 (constant -> AUROC 0.5); z-sigmoid
+    # is unbounded-monotone and fixes that (same fix as MVTec 3D-AD v3).
     fit_distances = distances[fit_mask]
-    lo = float(np.min(fit_distances))
-    hi = float(np.percentile(fit_distances, 95))
-    if hi - lo <= 1e-9:
-        hi = lo + 1.0
-    return np.clip((distances - lo) / (hi - lo), 0.0, 1.0).astype(np.float32)
+    mu = float(np.mean(fit_distances))
+    sd = float(np.std(fit_distances) + 1e-8)
+    z = (distances - mu) / sd
+    return (1.0 / (1.0 + np.exp(-z))).astype(np.float32)
 
 
 __all__ = [
