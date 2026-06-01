@@ -2020,6 +2020,54 @@ policy that combines T2-style heterogeneity detection with the T5
 certificate to decide \emph{when} a validation-derived gate may
 switch.
 
+\paragraph{Novel quantitative upgrades.} Beyond the qualitative
+predictions, each theorem now carries a checkable closed form.
+\textbf{T2} bounds the spurious KS inflation under benign mixture
+re-weighting, $\mathbb{E}[\mathrm{KS}(P_{\text{val}},P_{\text{test}})]
+\ge \tfrac12\sum_c|\pi_c-\pi'_c|\min_{j\neq c} d_{cj}$, giving a concrete
+criterion for when category-conditioning is required. \textbf{T3} is
+extended from the deterministic boundary $k^{*}=D(1-\tau)$ to a
+\emph{stochastic} dilution law under noisy reliability estimation,
+$P(\text{gate silent}\mid k)=\Phi\!\big((\mu_k-\tau)/(\sigma/\sqrt{D})\big)$
+with $\mu_k=(D-k)/D$; at $\sigma=0.15$ the $k{=}1$ boundary erodes to
+$88.5\%$ silence (Table~\ref{tab:t3-stochastic}). \textbf{T4} gives the
+risk-minimising threshold $\tau^{*}=1-(1-\pi)q_0\Delta_0/(\pi\,
+\partial_\tau q_1\,\Delta_1)$ under a Bernoulli$(\pi)$ degradation
+process---a prevalence-shift optimum, stated separately from (and
+\emph{not} an explanation of) the clean-transfer redundancy tie.
+\textbf{T6} replaces the empirical grid with a closed-form power
+$\beta(W,\alpha,\delta)=1-\Phi\!\big(z_{1-\alpha}-\delta\sqrt{W}\,c\big)$
+and window-sizing rule $W^{*}=((z_{1-\alpha}+z_{\beta})/(\delta c))^2$
+($c$ fit once; power monotone in $W$, Table~\ref{tab:t6-power}).
+\textbf{T7} uses Massart's finite-class lemma---the meta-router is
+\emph{selection} over $K$ candidates, so $\hat{\mathcal{R}}_n(\mathcal{H})
+=\sqrt{2\ln K/n}$ exactly, tightening the slack roughly sixfold to a
+usable $<1$ on every fold. \textbf{GDR}: the $4/4$ switch/suppress
+prediction record has an exact-binomial $p=0.125$---suggestive but
+\emph{not} significant at the four-scenario sample size, which we state
+plainly rather than overclaim.
+
+\IfFileExists{tables/t3_stochastic_dilution.tex}{
+\begin{table}[t]
+\centering
+\caption{T3 (novel) stochastic dilution: $P(\text{gate silent}\mid k)$ under
+reliability-estimation noise $\sigma$ at $D{=}4,\tau{=}0.66$. Noise erodes the
+deterministic $k^{*}{=}1.36$ boundary.}
+\label{tab:t3-stochastic}
+\input{tables/t3_stochastic_dilution.tex}
+\end{table}
+}{}
+
+\IfFileExists{tables/t6_ks_power_predicted.tex}{
+\begin{table}[t]
+\centering
+\caption{T6 (novel) closed-form KS detection power vs the observed B-MECH-4
+window sweep; power is monotone increasing in $W$ as the theorem predicts.}
+\label{tab:t6-power}
+\input{tables/t6_ks_power_predicted.tex}
+\end{table}
+}{}
+
 \IfFileExists{tables/elara_k_domain_corruption_results.tex}{
 \begin{table}[t]
 \centering
