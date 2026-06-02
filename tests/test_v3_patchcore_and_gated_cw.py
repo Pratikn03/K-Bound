@@ -143,3 +143,15 @@ def test_gated_cw_artifact_has_no_significant_negative_but_not_noninferiority():
         assert res["no_significant_negative_anywhere"] is True, name
         saw_negative_ci_bound |= any(row["ci95"][0] < 0 for row in res["rows"])
     assert saw_negative_ci_bound  # CI crossing zero must not be marketed as weak dominance.
+
+
+def test_v3_gate_report_keeps_strict_scientific_false():
+    p = ROOT / "elara_master_c/audits/v3_gate_report.json"
+    if not p.exists():
+        pytest.skip("v3 gate report not present")
+    d = json.loads(p.read_text())
+
+    assert d["gate_f_scientific_pass"] is False
+    assert d["gate_f_integrated_v3"] is True
+    assert d["summary"]["gate_f_strict_pass"] is False
+    assert d["summary"]["gate_f_integrated_pass"] is True

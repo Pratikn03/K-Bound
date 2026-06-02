@@ -87,9 +87,10 @@ claim would be overclaiming. This conservatism is *why the work is defensible*.
 
 **The one genuine gap:** a *second untouched naturally-paired RGB+depth* dataset
 for the final transfer audit (registry slot `m2_new_untouched_transfer`,
-`train_allowed: false_until_sealed`) has **not been acquired**. That is the
-single missing dataset that would strengthen the transfer claim — not any of the
-ones already on disk.
+`train_allowed: false_until_sealed`) has **not been acquired**. Real-IAD has
+now been opened for D13 and did not beat SAR, so the next transfer upgrade needs
+both a stronger pre-registered method and a separate fresh holdout — not reuse
+of any opened result already on disk.
 
 ---
 
@@ -103,12 +104,19 @@ ones already on disk.
 - **Stress-regime transfer (3D-ADAM external):** when a modality degrades, the
   gate beats confidence-weighting significantly (up to **+0.10 AUROC** at full
   corruption), and defaults safely to the baseline on clean data.
+- **D13 opened-development natural transfer:** the validation-only residual
+  stack beats both SAR and CW on opened 3D-ADAM, but this is development
+  evidence only.
 
 ### What did NOT pass (honestly)
 - **Gate E (clean external transfer): FAIL.** RGA+ vs SAR on *clean* 3D-ADAM is a
   statistical **tie** (+0.0139, CI [−0.0007, +0.0286]). Worse, a parameter-free
   confidence-weighted mean (0.912) beats both RGA+ (0.886) and SAR (0.872) on
   clean transfer. So clean-regime fusion has no edge.
+- **D13 fresh Real-IAD natural transfer: FAIL vs SAR.** The residual-stack
+  candidate beats CW (**Δ = +0.0191, 95% CI [+0.0148, +0.0235]**) but loses to
+  SAR (**Δ = −0.0858, 95% CI [−0.0928, −0.0787]**). Because D13 requires both
+  SAR and CW to pass, `gate_e_positive_transfer_confirmed=false`.
 - **Gate F (scientific flagship): FAIL** — blocked by Gate E.
 - **MVTec degradation replication:** positive point estimates but CIs cross zero
   → "directionally supportive, statistically inconclusive."
@@ -210,8 +218,9 @@ generalization.**
 
 1. **One-class protocol evaluation** → leaderboard-comparable headline. (Level 3)
 2. **Natural degradation** (real sensor artifacts) instead of synthetic noise.
-3. **A second untouched naturally-paired RGB+depth dataset** for the transfer
-   audit (the one genuinely-missing dataset).
+3. **A stronger pre-registered natural-transfer method plus another fresh
+   holdout.** Real-IAD is now opened for D13 and failed SAR, so it can guide
+   method design but cannot be reused as a new official pass.
 4. **A stronger fusion mechanism** (cross-modal patch interaction) to beat the
    confidence-weighted baseline on *clean* transfer — the only path that turns
    Gate E from a tie into a real win.

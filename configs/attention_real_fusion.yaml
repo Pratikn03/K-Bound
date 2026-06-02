@@ -1,12 +1,3 @@
-# ELARA-Bench-LA: Label-Aligned multimodal anomaly detection benchmark
-# -----------------------------------------------------------------------
-# 4 domains — Credit Card Fraud | UNSW-NB15 Network Intrusion |
-#             Online Shoppers   | News Text (AG News binary)
-# ~8,000 composite samples | 30.7 % positive rate | 11.8 % natural missingness
-# Benchmark construction: see src/scripts/prepare_realfusion_la_benchmark.py
-# Paper: ELARA — Evidence-Layered Anomaly Reliability Architecture (2026)
-#        Method: RGA (Reliability-Gated Attention) = code name CRAF
-
 data:
   path: experiments/fusion/real_domain_fusion_inputs.csv
   format: csv
@@ -18,18 +9,21 @@ data:
   timestamp_column: null
   embedding_prefix: embedding_
   feature_columns:
-    - score
-    - confidence
-    - embedding_0
-    - embedding_1
-    - embedding_2
-    - embedding_3
-    - embedding_4
-    - embedding_5
-    - embedding_6
-    - embedding_7
-  domain_order: [fraud, cyber, behavior, nlp]
-
+  - score
+  - confidence
+  - embedding_0
+  - embedding_1
+  - embedding_2
+  - embedding_3
+  - embedding_4
+  - embedding_5
+  - embedding_6
+  - embedding_7
+  domain_order:
+  - fraud
+  - cyber
+  - behavior
+  - nlp
 model:
   num_domains: 4
   embed_dim: 48
@@ -42,18 +36,20 @@ model:
   use_domain_embeddings: true
   use_positional_embeddings: true
   use_missing_embedding: true
-
 training:
   seed: 42
-  batch_size: 128
-  epochs: 25
-  lr: 0.001
+  batch_size: 256
+  epochs: 50
+  lr: 0.003
   weight_decay: 0.01
   domain_dropout: 0.15
   split_column: fusion_split
-  train_split_values: [train]
-  val_split_values: [validation]
-  test_split_values: [test]
+  train_split_values:
+  - train
+  val_split_values:
+  - validation
+  test_split_values:
+  - test
   test_size: 0.2
   val_size: 0.1
   early_stopping: 6
@@ -61,16 +57,43 @@ training:
   restore_best_weights: true
   grad_clip_norm: 1.0
   lambda_reg: 0.01
-
 output:
   model_dir: models/fusion/attention_real
   checkpoint_name: attention_real_fusion.pt
   metrics_path: experiments/fusion/real_attention_metrics.json
-
 evaluation:
   metrics_path: experiments/fusion/real_attention_harness_metrics.json
-  seeds: [42, 43, 44, 45, 46]
-
+  seeds:
+  - 42
+  - 43
+  - 44
+  - 45
+  - 46
+  - 47
+  - 48
+  - 49
+  - 50
+  - 51
+  - 52
+  - 53
+  - 54
+  - 55
+  - 56
+  - 57
+  - 58
+  - 59
+  - 60
+  - 61
+  - 62
+  - 63
+  - 64
+  - 65
+  - 66
+  - 67
+  - 68
+  - 69
+  - 70
+  - 71
 prediction_archive:
   enabled: false
   root: elara_master_c/predictions/development
@@ -83,35 +106,70 @@ prediction_archive:
   bootstrap_alpha: 0.05
   decision_threshold: val_f1
   save_attention_samples: 0
-  domain_dropout_probs: [0.0, 0.1, 0.3, 0.5]
-  domain_dropout_probs_extended: [0.0, 0.1, 0.2, 0.3, 0.5]
+  domain_dropout_probs:
+  - 0.0
+  - 0.1
+  - 0.3
+  - 0.5
+  domain_dropout_probs_extended:
+  - 0.0
+  - 0.1
+  - 0.2
+  - 0.3
+  - 0.5
   performance_runs: 2
   performance_warmup_batches: 1
   performance_iters: 10
   performance_batch_size: 256
   cda_samples: 80
-
 reliability:
-  ece_weight: 0.45        # α — validation calibration quality
-  ks_weight: 0.35         # β — KS score-distribution drift
-  sharpness_weight: 0.20  # γ — score sharpness (distance from 0.5)
+  ece_weight: 0.45
+  ks_weight: 0.35
+  sharpness_weight: 0.2
   clean_gate_threshold: 0.66
   min_gate_threshold: 0.34
   gate_mode: mean
-  # per_sample_gating: false   # set true to match paper r_{i,d} formalism
-  #                            # (gate fires per sample, not per batch)
   n_calibration_bins: 10
   min_samples_for_ks: 30
-
 craf:
-  drift_noise_levels: [0.0, 0.05, 0.1, 0.2, 0.3]
-  adversarial_attacks: [zero_attack, max_attack, gaussian_noise]
+  drift_noise_levels:
+  - 0.0
+  - 0.05
+  - 0.1
+  - 0.2
+  - 0.3
+  adversarial_attacks:
+  - zero_attack
+  - max_attack
+  - gaussian_noise
   adversarial_sigma: 0.1
   cda_samples: 80
   mechanism_isolation:
-    tau_sweep_thresholds: [0.4, 0.5, 0.6, 0.66, 0.7, 0.8, 0.9]
-    component_ablation_variants: [full, no_ece, no_ks, no_sharpness, no_gate]
-    k_domain_corruption_values: [0, 1, 2, 3, 4]
-    k_domain_corruption_attacks: [zero_attack, max_attack]
-    k_domain_gate_modes: [mean, minimum, hybrid]
+    tau_sweep_thresholds:
+    - 0.4
+    - 0.5
+    - 0.6
+    - 0.66
+    - 0.7
+    - 0.8
+    - 0.9
+    component_ablation_variants:
+    - full
+    - no_ece
+    - no_ks
+    - no_sharpness
+    - no_gate
+    k_domain_corruption_values:
+    - 0
+    - 1
+    - 2
+    - 3
+    - 4
+    k_domain_corruption_attacks:
+    - zero_attack
+    - max_attack
+    k_domain_gate_modes:
+    - mean
+    - minimum
+    - hybrid
     learned_gate: true

@@ -364,7 +364,7 @@
     "remaining_count": 4,
     "scientific_scenario_c_ready": false,
     "total": 51,
-    "verdict": "Execution 100.0% - strict Gate E NOT CONFIRMED; bounded v3 stress evidence PASS; D13 natural positive transfer PENDING FRESH HOLDOUT; flagship scientific readiness NOT READY"
+    "verdict": "Execution 100.0% - strict Gate E NOT CONFIRMED; bounded v3 stress evidence PASS; D13 natural positive transfer OFFICIAL NOT CONFIRMED; flagship scientific readiness NOT READY"
   },
   "claim": {
     "bounded_v3_evidence_ready": true,
@@ -378,7 +378,7 @@
       "passed": false,
       "winner": "rga_plus_baseline"
     },
-    "one_sentence_claim": "ELARA has a bounded v3 result: M1 in-domain superiority plus stress-regime transfer evidence, while strict clean external Gate E remains not confirmed.",
+    "one_sentence_claim": "ELARA has bounded v3 stress evidence, but the fresh Real-IAD D13 natural-transfer attempt beat CW and failed the SAR endpoint, so strict clean transfer remains not confirmed.",
     "pillars": [
       {
         "id": "P1",
@@ -406,7 +406,7 @@
         "name": "Held-out transfer",
         "pass": false,
         "required_evidence": "Strict clean M2 external positive CI vs SAR",
-        "status": "BOUNDED STRESS ONLY"
+        "status": "D13 OFFICIAL FAIL"
       },
       {
         "id": "P5",
@@ -525,8 +525,8 @@
         "gate_e_pass": false,
         "mean_base_auc": 0.7354385434766185,
         "mean_delta_roc_auc": 0.0029085140137493637,
-        "mean_rga_auc": 0.7383470574903679,
-        "n_seeds": 5,
+        "mean_rga_auc": 0.738347057490368,
+        "n_seeds": 30,
         "protocol": "PatchCore supervised",
         "results_path": "/Volumes/T9/uav/AutoML_Flagship_V8/experiments/fusion/master_c_mvtec_supervised_paired_results.json",
         "t5_confirmatory_pass": false,
@@ -628,11 +628,22 @@
     "gate_e_m2_proxy": false,
     "gate_e_m2_transfer_confirmed": false,
     "gate_e_m2_transfer_confirmed_strict": false,
+    "gate_e_positive_transfer_ci95_vs_cw": [
+      0.01479049531737191,
+      0.023456076623684607
+    ],
+    "gate_e_positive_transfer_ci95_vs_sar": [
+      -0.09279942121510021,
+      -0.07872115983841738
+    ],
     "gate_e_positive_transfer_confirmed": false,
-    "gate_e_positive_transfer_delta_vs_cw": null,
-    "gate_e_positive_transfer_delta_vs_sar": null,
+    "gate_e_positive_transfer_delta_vs_cw": 0.019090954215335243,
+    "gate_e_positive_transfer_delta_vs_sar": -0.08576690717937452,
     "gate_e_positive_transfer_official": false,
-    "gate_e_positive_transfer_status": "PENDING_FRESH_HOLDOUT",
+    "gate_e_positive_transfer_official_attempt": true,
+    "gate_e_positive_transfer_status": "OFFICIAL_FAIL",
+    "gate_e_positive_transfer_vs_cw_pass": true,
+    "gate_e_positive_transfer_vs_sar_pass": false,
     "gate_f_bounded_v3": true,
     "gate_f_integrated_v3": true,
     "gate_f_positive_transfer_track": false,
@@ -640,6 +651,7 @@
     "gate_f_scenario_c_scientific_strict": false,
     "integration_active": true,
     "master_training_checklist_execution_complete": true,
+    "positive_transfer_official_note": "official attempt not confirmed: SAR endpoint failed",
     "t5_m1": true,
     "t5_m2_ran": true
   },
@@ -766,7 +778,7 @@
       "stage": "GATE"
     }
   },
-  "generated_at": "2026-06-01T18:26:29Z",
+  "generated_at": "2026-06-02T01:34:25Z",
   "history_timeline": [
     {
       "blocker_count": 4,
@@ -833,7 +845,7 @@
       "gate_d_m1": true,
       "gate_e_m2": false,
       "gate_e_positive_transfer": false,
-      "generated_at": "2026-06-01T18:26:29Z",
+      "generated_at": "2026-06-02T01:34:25Z",
       "percent_complete": 92.2,
       "scientific_ready": false
     }

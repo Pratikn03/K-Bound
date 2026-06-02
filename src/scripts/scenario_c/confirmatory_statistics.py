@@ -206,11 +206,14 @@ def _load_positive_transfer_confirmation(root: Path) -> dict:
         "positive_transfer_protocol": "research_lock/POSITIVE_TRANSFER_PROTOCOL_v1.yaml",
         "gate_e_positive_transfer_confirmed": False,
         "gate_e_positive_transfer_official": False,
+        "gate_e_positive_transfer_official_attempt": False,
         "gate_e_positive_transfer_status": "PENDING_FRESH_HOLDOUT",
         "gate_e_positive_transfer_delta_vs_sar": None,
         "gate_e_positive_transfer_delta_vs_cw": None,
         "gate_e_positive_transfer_ci95_vs_sar": None,
         "gate_e_positive_transfer_ci95_vs_cw": None,
+        "gate_e_positive_transfer_vs_sar_pass": False,
+        "gate_e_positive_transfer_vs_cw_pass": False,
         "positive_transfer_result_path": None,
     }
     for rel in (
@@ -227,23 +230,33 @@ def _load_positive_transfer_confirmation(root: Path) -> dict:
         stats = doc.get("stats") or {}
         vs_sar = stats.get("vs_sar") or {}
         vs_cw = stats.get("vs_cw") or {}
-        official = bool(
+        official_attempt = bool(
             doc.get("protocol") == "POSITIVE_TRANSFER_PROTOCOL_v1"
             and doc.get("holdout_status") == "FRESH_OR_UNOPENED"
             and doc.get("natural_clean_transfer") is True
             and doc.get("synthetic_or_corrupted") is False
-            and _endpoint_pass(vs_sar, min_delta=0.010)
-            and _endpoint_pass(vs_cw, min_delta=0.005)
         )
+        sar_pass = _endpoint_pass(vs_sar, min_delta=0.010)
+        cw_pass = _endpoint_pass(vs_cw, min_delta=0.005)
+        official = bool(official_attempt and sar_pass and cw_pass)
+        if official:
+            status = "PASS"
+        elif official_attempt:
+            status = "OFFICIAL_FAIL"
+        else:
+            status = str(doc.get("status", "NOT_CONFIRMED"))
         out.update(
             {
                 "gate_e_positive_transfer_confirmed": official,
                 "gate_e_positive_transfer_official": official,
-                "gate_e_positive_transfer_status": "PASS" if official else str(doc.get("status", "NOT_CONFIRMED")),
+                "gate_e_positive_transfer_official_attempt": official_attempt,
+                "gate_e_positive_transfer_status": status,
                 "gate_e_positive_transfer_delta_vs_sar": vs_sar.get("delta"),
                 "gate_e_positive_transfer_delta_vs_cw": vs_cw.get("delta"),
                 "gate_e_positive_transfer_ci95_vs_sar": vs_sar.get("ci95"),
                 "gate_e_positive_transfer_ci95_vs_cw": vs_cw.get("ci95"),
+                "gate_e_positive_transfer_vs_sar_pass": sar_pass,
+                "gate_e_positive_transfer_vs_cw_pass": cw_pass,
                 "positive_transfer_result_path": rel,
                 "positive_transfer_selection": doc.get("selection"),
                 "positive_transfer_holdout_status": doc.get("holdout_status"),

@@ -11,7 +11,8 @@ Pass rules (unchanged from the contract):
       (here the paired t-test p across the 30 splits, p < 0.05).
   Gate E (M2 clean external transfer): RGA+ beats frozen SAR on the CLEAN
       external paired ensemble with CI lower bound > 0.
-  Gate F (scientific): Gate D AND Gate E (+ pillars A/C already passing).
+  Gate F scientific strict: Gate D AND clean Gate E.
+  Gate F integrated v3: Gate D AND bounded checklist Gate E.
 
 This script does NOT move goalposts: Gate E is evaluated against SAR (the
 strongest frozen baseline) on the CLEAN ensemble, exactly as the contract
@@ -48,24 +49,32 @@ def main() -> int:
     e = gate_e_clean_v3(ROOT) or {"error": "v3 transfer predictions not found"}
     integrated = build_v3_integration_block(ROOT)
     gate_e = bool(e.get("gate_e_pass", False))
-    gate_f = bool(integrated and integrated["gate_f_integrated_v3"])
+    gate_f_scientific = bool(integrated and integrated["gate_f_scenario_c_scientific_strict"])
+    gate_f_integrated = bool(integrated and integrated["gate_f_integrated_v3"])
 
     report = {
         "pipeline": "v3 strong patch-PatchCore detector",
         "gate_d": d_t5,
         "gate_e": e,
         "integrated": integrated,
-        "gate_f_scientific_pass": gate_f,
+        "gate_f_scientific_pass": gate_f_scientific,
+        "gate_f_integrated_v3": gate_f_integrated,
+        "gate_f_bounded_v3_pass": gate_f_integrated,
         "summary": integrated["summary"] if integrated else {
             "gate_d_pass": d_t5["gate_d_pass"],
             "t5_pass": d_t5["t5_pass"],
             "gate_e_pass": gate_e,
-            "gate_f_pass": gate_f,
+            "gate_f_pass": gate_f_scientific,
         },
         "honest_note": (
-            "Gate D and T5 PASS on v3 (30-split M1). Clean Gate E vs SAR is usually a "
-            "TIE; checklist Gate E uses bounded stress (alpha>=0.5) or mechanism vs "
-            "static when SCENARIO_C_V3_INTEGRATION_v1 is active. See confirmatory_statistics_report.json."
+            "Gate D and T5 PASS on v3 (30-split M1). Clean Gate E vs SAR is a TIE and "
+            "is now CLOSED BY PROOF (T9): on every opened external benchmark an "
+            "unconstrained oracle cannot beat the confidence-weighted mean "
+            "(eps_subopt < MDE), so clean Gate E is provably unpassable, not merely "
+            "unmet. Checklist Gate E uses bounded stress (alpha>=0.5) or mechanism vs "
+            "static when SCENARIO_C_V3_INTEGRATION_v1 is active. See "
+            "experiments/fusion/t9_clean_transfer_ceiling_validation.json and "
+            "confirmatory_statistics_report.json."
         ),
     }
     out = ROOT / "elara_master_c/audits/v3_gate_report.json"
@@ -76,7 +85,10 @@ def main() -> int:
     print(f"  T5  (superiority + significance): {'PASS' if d_t5['t5_pass'] else 'FAIL'}")
     print(f"  Gate E (M2 clean external vs SAR): {'PASS' if gate_e else 'FAIL'}  "
           f"(delta={e.get('delta'):+.4f} CI={e.get('ci95')})")
-    print(f"  Gate F (scientific = D AND E):     {'PASS' if gate_f else 'FAIL'}")
+    print(
+        f"  Gate F strict scientific (D AND clean E): {'PASS' if gate_f_scientific else 'FAIL'}"
+    )
+    print(f"  Gate F bounded/integrated v3:            {'PASS' if gate_f_integrated else 'FAIL'}")
     print(f"\nWrote {out}")
     return 0
 

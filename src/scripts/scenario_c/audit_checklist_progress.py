@@ -173,6 +173,7 @@ def build_checklist(root: Path) -> list[Item]:
     gate_f_bounded_v3 = False
     positive_transfer_confirmed = False
     gate_f_positive_transfer = False
+    positive_transfer_status = "PENDING_FRESH_HOLDOUT"
     if conf.is_file():
         try:
             c = json.loads(conf.read_text(encoding="utf-8"))
@@ -191,6 +192,7 @@ def build_checklist(root: Path) -> list[Item]:
             gate_f_bounded_v3 = bool(c.get("gate_f_bounded_v3") or c.get("gate_f_integrated_v3"))
             positive_transfer_confirmed = bool(c.get("gate_e_positive_transfer_confirmed"))
             gate_f_positive_transfer = bool(c.get("gate_f_positive_transfer_track"))
+            positive_transfer_status = str(c.get("gate_e_positive_transfer_status", positive_transfer_status))
         except (json.JSONDecodeError, OSError):
             pass
     add("T5", "t5_rga_plus_superiority", "RGA+ beats frozen baseline on M1 (5-seed)", t5_pass, "confirmatory_statistics_report.json")
@@ -339,6 +341,7 @@ def main() -> int:
     gate_f_sci = m2_transfer_confirmed = False
     bounded_v3_pass = gate_f_bounded_v3 = False
     positive_transfer_confirmed = gate_f_positive_transfer = False
+    positive_transfer_status = "PENDING_FRESH_HOLDOUT"
     if conf_path.is_file():
         try:
             c = json.loads(conf_path.read_text(encoding="utf-8"))
@@ -353,8 +356,17 @@ def main() -> int:
             gate_f_bounded_v3 = bool(c.get("gate_f_bounded_v3") or c.get("gate_f_integrated_v3"))
             positive_transfer_confirmed = bool(c.get("gate_e_positive_transfer_confirmed"))
             gate_f_positive_transfer = bool(c.get("gate_f_positive_transfer_track"))
+            positive_transfer_status = str(c.get("gate_e_positive_transfer_status", positive_transfer_status))
         except (json.JSONDecodeError, OSError):
             pass
+    if positive_transfer_confirmed:
+        positive_transfer_verdict = "PASS"
+    elif positive_transfer_status == "OFFICIAL_FAIL":
+        positive_transfer_verdict = "OFFICIAL NOT CONFIRMED"
+    elif positive_transfer_status == "DEVELOPMENT_ONLY":
+        positive_transfer_verdict = "DEVELOPMENT ONLY"
+    else:
+        positive_transfer_verdict = "PENDING FRESH HOLDOUT"
     exec_items = [
         i
         for i in items
@@ -380,14 +392,14 @@ def main() -> int:
             "bounded_v3_evidence_ready": bounded_v3_pass,
             "gate_f_bounded_v3": gate_f_bounded_v3,
             "positive_transfer_confirmed": positive_transfer_confirmed,
+            "positive_transfer_status": positive_transfer_status,
             "gate_f_positive_transfer": gate_f_positive_transfer,
             "verdict": (
                 f"Execution {exec_pct:.1f}% - strict Gate E "
                 f"{'PASS' if m2_transfer_confirmed else 'NOT CONFIRMED'}; "
                 f"bounded v3 stress evidence "
                 f"{'PASS' if bounded_v3_pass else 'NOT ESTABLISHED'}; "
-                f"D13 natural positive transfer "
-                f"{'PASS' if positive_transfer_confirmed else 'PENDING FRESH HOLDOUT'}; "
+                f"D13 natural positive transfer {positive_transfer_verdict}; "
                 f"flagship scientific readiness {'READY' if gate_f_sci else 'NOT READY'}"
             ),
             "remaining_blockers": [{"id": b.id, "description": b.description} for b in blockers],

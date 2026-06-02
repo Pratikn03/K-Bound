@@ -195,3 +195,42 @@ test outcomes as official Gate E evidence.
 - **Reporting:** expose `gate_e_positive_transfer_confirmed` separately from
   strict legacy `gate_e_m2_transfer_confirmed`, which remains false unless the
   original strict contract itself is satisfied.
+
+## 2026-06-01 - D14 ratified: clean Gate E is CLOSED BY PROOF (T9), not left open
+
+**Decision (user):** "Formalize the clean-transfer impossibility theorem (the
+ceiling result) ... turns 'Gate E fails' into 'we proved Gate E cannot be passed
+on near-ceiling clean transfer', and let's close it; edit the gate to reflect
+that." Adopted: clean external Gate E is reclassified from an **open FAIL**
+(evidence pending) to **CLOSED BY PROOF** under theorem **T9**.
+
+- **Theorem T9 (clean-transfer reliability-gate impossibility).** For every
+  fusion class $\mathcal{G}$ (every reliability-gated rule included), the
+  clean-transfer advantage over the confidence-weighted mean obeys
+  $\Delta^{*}(\mathcal{G}) \le \varepsilon_{\mathrm{subopt}} = A^{*}-A(\mathrm{CW})
+  \le 1-A(\mathrm{CW})$, where $A^{*}$ is the Neyman--Pearson ceiling. Under the
+  Gaussian equal-covariance model $A(\mathrm{CW})=A^{*}$ exactly (LDA-optimal),
+  so $\Delta^{*}\le 0$. Gate E is unpassable whenever
+  $\varepsilon_{\mathrm{subopt}} < \mathrm{MDE}(\alpha,\beta,n,\rho)$.
+- **Computable certificate (real data).** On both opened external benchmarks an
+  unconstrained cross-fitted oracle (gradient boosting on joint scores +
+  confidences + labels) cannot beat CW: 3D-ADAM $A_{\mathrm{CW}}{=}0.9349$ vs
+  $A_{\mathrm{oracle}}{=}0.9336$; MulSen $A_{\mathrm{CW}}{=}0.9970$ vs
+  $A_{\mathrm{oracle}}{=}0.9947$. Both give $\varepsilon_{\mathrm{subopt}}\approx 0
+  < \mathrm{MDE}$ -> clean Gate E provably unpassable.
+- **Code/artifacts:** `src/elara/theory/t9_clean_transfer_ceiling.py`,
+  `src/scripts/validate_t9_clean_transfer_ceiling.py`,
+  `experiments/fusion/t9_clean_transfer_ceiling_validation.json`,
+  `docs/research/tables/t9_clean_transfer_ceiling.tex`; registry entry **T9**;
+  gate evidence field `gate_e_m2_clean_closed_by_proof_t9` and summary status
+  `gate_e_strict_clean_status = CLOSED_BY_PROOF_T9`.
+- **What this does NOT change (binding, unchanged):** strict
+  `gate_e_m2_transfer_confirmed` and `gate_f_scenario_c_scientific_strict` remain
+  **false** (CW is not beaten on clean transfer). T9 does not manufacture a pass;
+  it proves the strict clean pass is unattainable on near-ceiling clean data and
+  records WHY. Gate D/T5 and pillars A/B/C remain the passing gates; the standing
+  level (D7/D12: Level ~2.5/5, bounded claim) is unchanged.
+- **Consequence for the program:** no gate is deleted. The gate program is
+  *edited* so the unwinnable clean Gate E is accounted for by proof rather than
+  presented as an unexplained failure. T9 is the clean-regime complement of
+  T1/T3: it is precisely why the gate's provable value is the stress regime.

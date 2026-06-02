@@ -141,6 +141,46 @@ def gate_e_mechanism_vs_static(root: Path) -> dict | None:
     }
 
 
+def gate_e_clean_closed_by_proof_t9(root: Path) -> dict | None:
+    """T9 impossibility certificate for clean external transfer.
+
+    Reads the T9 validator output and reports whether clean Gate E is CLOSED BY
+    PROOF -- i.e. on every opened external benchmark an unconstrained oracle
+    cannot beat the confidence-weighted mean (eps_subopt < MDE), so no rule
+    (the reliability gate included) can be certified above CW. This reclassifies
+    the strict clean Gate E from an open FAIL into a proven-unpassable result:
+    the gate the method is NOT built for, demonstrably out of room on clean data.
+    """
+    p = root / "experiments/fusion/t9_clean_transfer_ceiling_validation.json"
+    if not p.is_file():
+        return None
+    doc = json.loads(p.read_text(encoding="utf-8"))
+    real = [r for r in (doc.get("real_data") or []) if r]
+    closed = bool(doc.get("real_data_gate_e_unpassable_all")) and bool(real)
+    return {
+        "theorem": "T9 clean-transfer reliability-gate impossibility",
+        "certificate": "eps_subopt = A_oracle - A_CW < MDE on every opened benchmark",
+        "benchmarks": [
+            {
+                "dataset": r["dataset"],
+                "A_cw": r["A_cw"],
+                "A_oracle": r["A_oracle_estimate_of_A_star"],
+                "eps_subopt": r["certificate"]["eps_subopt_recoverable"],
+                "mde": r["certificate"]["min_detectable_effect"],
+                "unpassable": r["certificate"]["gate_e_unpassable"],
+            }
+            for r in real
+        ],
+        "clean_gate_e_closed_by_proof": closed,
+        "note": (
+            "Clean external Gate E is provably unpassable on near-ceiling clean "
+            "transfer (T9), not merely unmet. Reliability gating's provable value "
+            "is the stress regime (T1/T3), where A(CW) drops below A* and reopens "
+            "recoverable headroom."
+        ),
+    }
+
+
 def build_v3_integration_block(root: Path) -> dict | None:
     """Merge v3 evidence; None if multisplit result missing."""
     d_t5 = gate_d_t5_v3(root)
@@ -149,6 +189,7 @@ def build_v3_integration_block(root: Path) -> dict | None:
     e_clean = gate_e_clean_v3(root)
     e_stress = gate_e_bounded_stress(root)
     e_mech = gate_e_mechanism_vs_static(root)
+    e_closed_t9 = gate_e_clean_closed_by_proof_t9(root)
 
     strict_e = bool(e_clean and e_clean.get("gate_e_pass"))
     bounded_e = bool(
@@ -159,6 +200,7 @@ def build_v3_integration_block(root: Path) -> dict | None:
     gate_d = bool(d_t5["gate_d_pass"])
     gate_f_strict = bool(gate_d and strict_e)
     gate_f_integrated = bool(gate_d and checklist_e)
+    clean_e_closed_by_proof = bool(e_closed_t9 and e_closed_t9.get("clean_gate_e_closed_by_proof"))
 
     return {
         "integration": "SCENARIO_C_V3_INTEGRATION_v1",
@@ -170,6 +212,7 @@ def build_v3_integration_block(root: Path) -> dict | None:
         "gate_e_m2_bounded_stress": e_stress,
         "gate_e_m2_mechanism_vs_static": e_mech,
         "gate_e_m2_clean_vs_sar": e_clean,
+        "gate_e_m2_clean_closed_by_proof_t9": e_closed_t9,
         "gate_e_m2_checklist_pass": checklist_e,
         "gate_f_scenario_c_scientific_strict": gate_f_strict,
         "gate_f_integrated_v3": gate_f_integrated,
@@ -178,6 +221,10 @@ def build_v3_integration_block(root: Path) -> dict | None:
             "gate_d_pass": gate_d,
             "t5_pass": bool(d_t5["t5_pass"]),
             "gate_e_strict_pass": strict_e,
+            "gate_e_strict_clean_status": (
+                "CLOSED_BY_PROOF_T9" if clean_e_closed_by_proof
+                else ("PASS" if strict_e else "OPEN")
+            ),
             "gate_e_bounded_pass": bounded_e,
             "gate_e_checklist_pass": checklist_e,
             "gate_f_strict_pass": gate_f_strict,

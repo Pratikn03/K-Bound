@@ -94,6 +94,52 @@ def is_official_confirmation(result: str | Path | dict[str, Any]) -> bool:
     )
 
 
+def _endpoint_passes(stats: dict[str, Any]) -> dict[str, bool]:
+    return {
+        "vs_sar": coendpoint_pass(
+            stats.get("vs_sar") or {},
+            minimum_practical_delta=SAR_MIN_DELTA,
+            ci_low_must_be_gt=CI_LOW_GT,
+        ),
+        "vs_cw": coendpoint_pass(
+            stats.get("vs_cw") or {},
+            minimum_practical_delta=CW_MIN_DELTA,
+            ci_low_must_be_gt=CI_LOW_GT,
+        ),
+    }
+
+
+def _official_attempt(
+    *,
+    holdout_status: str,
+    synthetic_or_corrupted: bool,
+) -> bool:
+    return bool(holdout_status == "FRESH_OR_UNOPENED" and not synthetic_or_corrupted)
+
+
+def _confirmation_note(
+    *,
+    confirmed: bool,
+    official_attempt: bool,
+    endpoint_pass: dict[str, bool],
+    synthetic_or_corrupted: bool,
+) -> tuple[str, str]:
+    if confirmed:
+        return "OFFICIAL_PASS", "official positive transfer confirmed"
+    if synthetic_or_corrupted:
+        return "REJECTED", "not official: synthetic/corrupted inputs are forbidden for D13"
+    if not official_attempt:
+        return "DEVELOPMENT_ONLY", "not official: holdout is opened development evidence"
+    failed = [
+        label
+        for key, label in (("vs_sar", "SAR"), ("vs_cw", "CW"))
+        if not endpoint_pass.get(key, False)
+    ]
+    if not failed:
+        failed = ["unknown"]
+    return "OFFICIAL_FAIL", "official attempt not confirmed: " + ", ".join(failed) + " endpoint failed"
+
+
 def run_confirmatory(
     *,
     csv_path: Path,
@@ -137,24 +183,30 @@ def run_confirmatory(
         "vs_sar": paired_auc_bootstrap(test["y"], candidate, sar, n_iter=bootstrap_iter, seed=0),
         "vs_cw": paired_auc_bootstrap(test["y"], candidate, cw, n_iter=bootstrap_iter, seed=1),
     }
+    endpoint_pass = _endpoint_passes(stats)
     result = {
         "protocol": "POSITIVE_TRANSFER_PROTOCOL_v1",
         "dataset_id": dataset_id,
         "benchmark": benchmark,
-        "status": "OFFICIAL" if holdout_status == "FRESH_OR_UNOPENED" else "DEVELOPMENT_ONLY",
+        "status": "PENDING_EVALUATION",
         "holdout_status": holdout_status,
         "natural_clean_transfer": True,
         "synthetic_or_corrupted": bool(synthetic_or_corrupted),
         "selection": selection.as_dict(),
         "stats": stats,
+        "endpoint_pass": endpoint_pass,
         "gate_e_positive_transfer_confirmed": False,
         "official_note": "",
     }
     result["gate_e_positive_transfer_confirmed"] = is_official_confirmation(result)
-    result["official_note"] = (
-        "official positive transfer confirmed"
-        if result["gate_e_positive_transfer_confirmed"]
-        else "not official: requires fresh/unopened natural holdout and positive SAR+CW CIs"
+    result["status"], result["official_note"] = _confirmation_note(
+        confirmed=bool(result["gate_e_positive_transfer_confirmed"]),
+        official_attempt=_official_attempt(
+            holdout_status=holdout_status,
+            synthetic_or_corrupted=synthetic_or_corrupted,
+        ),
+        endpoint_pass=endpoint_pass,
+        synthetic_or_corrupted=synthetic_or_corrupted,
     )
     output.parent.mkdir(parents=True, exist_ok=True)
     output.write_text(json.dumps(result, indent=2), encoding="utf-8")
@@ -190,4 +242,3 @@ def main() -> int:
 
 if __name__ == "__main__":
     raise SystemExit(main())
-

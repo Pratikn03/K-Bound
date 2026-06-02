@@ -125,13 +125,12 @@ def _fusion_multi_seed(
 
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--seeds", nargs="*", type=int, default=[42, 43, 44, 45, 46])
+    parser.add_argument("--seeds", nargs="*", type=int, default=[42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63, 64, 65, 66, 67, 68, 69, 70, 71])
     parser.add_argument("--prepare-t1", action="store_true", help="Run all T1 prepare scripts (slow)")
     parser.add_argument("--skip-mvtec-upgrade", action="store_true", help="Skip HF/Kaggle expert download")
     parser.add_argument("--skip-phase2", action="store_true", help="Skip T4/T5 phase-2 scripts")
     parser.add_argument("--skip-m2-external", action="store_true", help="Skip M2 3D-ADAM confirmatory retrain")
     parser.add_argument("--skip-m2-proxy", action="store_true", help="Skip inverted-MVTec M2 proxy")
-    parser.add_argument("--extended", action="store_true", help="Train visa/loco/unsw/eyecandies configs")
     parser.add_argument("--force-fusion", action="store_true", help="Re-run fusion even if outputs exist")
     parser.add_argument("--infra-only", action="store_true", help="T0 + audits only, no training")
     args = parser.parse_args()
@@ -179,7 +178,7 @@ def main() -> int:
             "configs/attention_real_fusion.yaml",
             root / "experiments/fusion/master_c_real_domain_results.json",
             "T3 M0 ELARA-Bench-LA",
-            [42],
+            args.seeds,
             "elara_master_c/predictions/development",
         ),
         (
@@ -189,40 +188,35 @@ def main() -> int:
             args.seeds,
             "elara_master_c/predictions/development",
         ),
+        (
+            "configs/attention_visa_supervised_paired.yaml",
+            root / "experiments/fusion/visa_supervised_paired_master_c_results.json",
+            "T3 VisA supervised-paired",
+            args.seeds,
+            None,
+        ),
+        (
+            "configs/attention_mvtec_loco_patchcore_supervised_paired.yaml",
+            root / "experiments/fusion/mvtec_loco_supervised_paired_master_c_results.json",
+            "T3 MVTec LOCO supervised-paired",
+            args.seeds,
+            None,
+        ),
+        (
+            "configs/attention_unsw_paired.yaml",
+            root / "experiments/fusion/unsw_paired_master_c_results.json",
+            "T3 UNSW paired",
+            args.seeds,
+            None,
+        ),
+        (
+            "configs/attention_real3d_fusion.yaml",
+            root / "experiments/fusion/eyecandies_master_c_results.json",
+            "T3 Eyecandies (development)",
+            args.seeds,
+            None,
+        ),
     ]
-    if args.extended:
-        fusion_jobs.extend(
-            [
-                (
-                    "configs/attention_visa_supervised_paired.yaml",
-                    root / "experiments/fusion/visa_supervised_paired_master_c_results.json",
-                    "T3 VisA supervised-paired",
-                    [42],
-                    None,
-                ),
-                (
-                    "configs/attention_mvtec_loco_patchcore_supervised_paired.yaml",
-                    root / "experiments/fusion/mvtec_loco_supervised_paired_master_c_results.json",
-                    "T3 MVTec LOCO supervised-paired",
-                    [42],
-                    None,
-                ),
-                (
-                    "configs/attention_unsw_paired.yaml",
-                    root / "experiments/fusion/unsw_paired_master_c_results.json",
-                    "T3 UNSW paired",
-                    [42],
-                    None,
-                ),
-                (
-                    "configs/attention_real3d_fusion.yaml",
-                    root / "experiments/fusion/eyecandies_master_c_results.json",
-                    "T3 Eyecandies (development)",
-                    [42],
-                    None,
-                ),
-            ]
-        )
 
     for cfg, out, label, seeds, arch in fusion_jobs:
         if not (root / cfg).is_file():
@@ -318,6 +312,8 @@ def main() -> int:
 
 
 def _finalize(root: Path, py: str, rc: int, started: str) -> int:
+    rc = _run([py, "src/scripts/scenario_c/run_one_class_degradation_sweep.py"], root, "One-class degradation sweep") or rc
+    rc = _run([py, "src/scripts/emit_mvtec3d_sota_demarcation.py"], root, "Emit SOTA demarcation") or rc
     rc = _run([py, "src/scripts/scenario_c/confirmatory_statistics.py"], root, "Confirmatory statistics") or rc
     rc = _run([py, "src/scripts/scenario_c/audit_checklist_progress.py"], root, "Checklist audit") or rc
     rc = _run([py, "src/scripts/validate_theorem_stack.py"], root, "Theorem stack validator") or rc

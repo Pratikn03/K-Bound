@@ -33,7 +33,7 @@ def main() -> int:
     parser.add_argument("--download-mulsen", action="store_true")
     parser.add_argument("--skip-mulsen-confirmatory", action="store_true")
     parser.add_argument("--skip-m3-confirmatory", action="store_true")
-    parser.add_argument("--seeds", nargs="*", type=int, default=[42, 43, 44, 45, 46])
+    parser.add_argument("--seeds", nargs="*", type=int, default=[42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63, 64, 65, 66, 67, 68, 69, 70, 71])
     args = parser.parse_args()
     if not args.phase2 and not args.phase3:
         args.phase2 = args.phase3 = True

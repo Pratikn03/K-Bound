@@ -1,0 +1,43 @@
+schema: realiad_d13_sealed_v1
+decision: D14_realiad_d13_natural_holdout
+date_locked: 2026-06-01
+dataset:
+  id: realiad_256_c1_c2_d13
+  source: Real-IAD/Real-IAD
+  package: realiad_256 plus realiad_jsons.zip
+  local_root: data/raw/realiad
+  status_before_run: fresh_unopened_for_d13
+protocol:
+  positive_transfer_protocol: research_lock/POSITIVE_TRANSFER_PROTOCOL_v1.yaml
+  modalities:
+    - rgb_c1
+    - rgb_c2
+  categories: all_downloaded_30_categories
+  normal_reference: official_train_OK_per_category_per_camera
+  validation_split:
+    source: official_test_split
+    rule: stable_sha256_sample_key_fraction
+    fraction: 0.30
+    salt: D13_REALIAD_256_C1_C2_v1_2026-06-01
+  test_split:
+    source: official_test_split
+    rule: complement_of_validation_hash_split
+  candidate_selection: validation_only
+  forbidden:
+    - category_selection_from_test_results
+    - camera_selection_from_test_results
+    - synthetic_degradation
+    - controlled_corruption
+    - fake_relabeling
+    - test_label_tuning
+official_gate:
+  field: gate_e_positive_transfer_confirmed
+  pass_condition:
+    - holdout_status == FRESH_OR_UNOPENED
+    - natural_clean_transfer == true
+    - synthetic_or_corrupted == false
+    - delta_vs_sar >= 0.010
+    - ci95_low_vs_sar > 0
+    - delta_vs_cw >= 0.005
+    - ci95_low_vs_cw > 0
+  do_not_overwrite: gate_e_m2_transfer_confirmed

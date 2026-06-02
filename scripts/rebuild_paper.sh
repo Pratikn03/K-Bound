@@ -119,6 +119,9 @@ if [[ ! -f experiments/fusion/meta_router_pac_audit.json ]]; then
 fi
 PYTHONPATH=src python src/scripts/emit_meta_router_pac_t7_table.py \
   --output "$TBL_DIR/meta_router_pac_t7.tex"
+PYTHONPATH=src python src/scripts/validate_t9_clean_transfer_ceiling.py \
+  --out-json experiments/fusion/t9_clean_transfer_ceiling_validation.json \
+  --out-tex "$TBL_DIR/t9_clean_transfer_ceiling.tex"
 PYTHONPATH=src python src/scripts/audit_gate_decision_rule_e2e.py \
   --repo-root "$ROOT" \
   --output experiments/fusion/gate_decision_rule_e2e_audit.json

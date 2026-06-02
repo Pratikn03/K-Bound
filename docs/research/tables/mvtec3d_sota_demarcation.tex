@@ -10,7 +10,7 @@ AST & canonical one-class & 0.937 & 0.976 & leaderboard & Asymmetric student-tea
 M3DM & canonical one-class & 0.945 & 0.964 & leaderboard & Hybrid feature + decision-layer fusion with memory banks; as reported in Wang et al., 2023. & \cite{wang2023m3dm} \\
 \midrule
 PatchCore-3D (this work re-run) & canonical one-class & 0.735 & n/a (no localization head) & \emph{partial} head-to-head & ResNet-50 layer3 patch features, 4096-patch coreset, RGB only, max-pool image score; simpler than the published full memory bank + depth fusion (image-AUROC gap to 0.901 is the implementation gap, not a leaderboard claim). & this work \\
-ELARA RGA+ (this work) & canonical one-class & 0.514 & n/a (no localization head) & \emph{not} leaderboard-comparable & Score-fusion layer over PatchCore-derived RGB/depth scores; no localization head, no detector retraining. & this work \\
-ELARA RGA+ (this work) & supervised paired (diagnostic only) & 0.739 & n/a (no localization head) & \emph{not} leaderboard-comparable & Different protocol: fusion training fold sees positives. Not directly comparable to canonical leaderboard rows. & this work \\
+ELARA RGA-gated-CW (this work) & canonical one-class & -- & n/a (no localization head) & leaderboard & Score-fusion layer over PatchCore-derived RGB/depth scores; parameter-free validation-calibrated gate; no localization head, no detector retraining. & this work \\
+ELARA RGA+ (this work) & supervised paired (diagnostic only) & 0.739 & n/a (no localization head) & \emph{not} comparable & Different protocol: fusion training fold sees positives. Not directly comparable to canonical leaderboard rows. & this work \\
 \bottomrule
 \end{tabular}

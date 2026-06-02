@@ -40,7 +40,7 @@ def _merge_seed_results(runs: list[dict]) -> dict:
 
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--seeds", nargs="*", type=int, default=[42, 43, 44, 45, 46])
+    parser.add_argument("--seeds", nargs="*", type=int, default=[42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63, 64, 65, 66, 67, 68, 69, 70, 71])
     parser.add_argument("--skip-stats", action="store_true")
     args = parser.parse_args()
 

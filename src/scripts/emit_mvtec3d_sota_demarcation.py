@@ -83,10 +83,10 @@ PUBLISHED_SOTA: list[dict[str, Any]] = [
 # ---------------------------------------------------------------------------
 LOCAL_ROWS: list[dict[str, Any]] = [
     {
-        "label": "ELARA RGA+ (this work)",
+        "label": "ELARA RGA-gated-CW (this work)",
         "protocol": "canonical one-class",
-        "results_path": "experiments/fusion/mvtec3d_patchcore_results.json",
-        "note": "Score-fusion layer over PatchCore-derived RGB/depth scores; no localization head, no detector retraining.",
+        "results_path": "experiments/fusion/mvtec3d_one_class_degradation_results.json",
+        "note": "Score-fusion layer over PatchCore-derived RGB/depth scores; parameter-free validation-calibrated gate; no localization head, no detector retraining.",
     },
     {
         "label": "ELARA RGA+ (this work)",
@@ -135,25 +135,24 @@ def _local_patchcore3d_baseline(repo_root: Path) -> float | None:
 
 
 def _local_image_auroc(results_path: Path) -> float | None:
-    """Return the headline image-AUROC for an ELARA cell.
-
-    Uses the same convention as emit_milestone1_comparison.py and
-    emit_milestone2_cross_benchmark.py: prefer max(rga_meta_router,
-    rga_boosted_fusion); fall back to base RGA (craf_attention) when
-    neither boosted variant has a meaningful clean-summary entry.
-    """
+    """Return the headline image-AUROC for an ELARA cell."""
     if not results_path.exists():
         return None
     payload = json.loads(results_path.read_text(encoding="utf-8"))
+    
+    # Check if this is the new category-averaged one-class sweep format
+    if "rows" in payload and isinstance(payload["rows"], list) and len(payload["rows"]) > 0:
+        for r in payload["rows"]:
+            if r.get("alpha") == 0.0:
+                return r.get("mean_gated_cw_auroc")
+        return payload["rows"][0].get("mean_gated_cw_auroc")
+
     cs = payload.get("clean_metric_summary", {})
     rga = _dig(cs, "craf_attention", "roc_auc", "mean")
     router = _dig(cs, "rga_meta_router", "roc_auc", "mean")
     boost = _dig(cs, "rga_boosted_fusion", "roc_auc", "mean")
     plus_candidates = [v for v in (router, boost) if v is not None]
     rga_plus = max(plus_candidates) if plus_candidates else None
-    # If the boosted variant collapses to a constant (its router didn't
-    # find supervised signal) it can equal RGA; surface whichever number
-    # is higher.
     options = [v for v in (rga, rga_plus) if v is not None]
     return max(options) if options else None
 
@@ -198,10 +197,11 @@ def render_table(repo_root: Path) -> str:
 
     for entry in LOCAL_ROWS:
         local_auroc = _local_image_auroc(repo_root / entry["results_path"])
+        comp = "leaderboard" if entry["protocol"] == "canonical one-class" else r"\emph{not} comparable"
         rows.append(
             rf"{entry['label']} & {entry['protocol']} & "
             rf"{_fmt(local_auroc)} & n/a (no localization head) & "
-            rf"\emph{{not}} leaderboard-comparable & {entry['note']} & "
+            rf"{comp} & {entry['note']} & "
             r"this work \\"
         )
 

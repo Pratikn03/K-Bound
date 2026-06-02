@@ -1,6 +1,3 @@
-# M2 confirmatory — inverted held-out MVTec 3D-AD (one-shot audit)
-# See research_lock/M2_SEALED_v1.yaml
-
 data:
   path: experiments/fusion/m2_confirmatory_sealed_inputs.csv
   format: csv
@@ -13,26 +10,27 @@ data:
   split_column: split
   embedding_prefix: embedding_
   feature_columns:
-    - score
-    - confidence
-    - embedding_0
-    - embedding_1
-    - embedding_2
-    - embedding_3
-    - embedding_4
-    - embedding_5
-    - embedding_6
-    - embedding_7
-    - embedding_8
-    - embedding_9
-    - embedding_10
-    - embedding_11
-    - embedding_12
-    - embedding_13
-    - embedding_14
-    - embedding_15
-  domain_order: [rgb, depth_or_xyz]
-
+  - score
+  - confidence
+  - embedding_0
+  - embedding_1
+  - embedding_2
+  - embedding_3
+  - embedding_4
+  - embedding_5
+  - embedding_6
+  - embedding_7
+  - embedding_8
+  - embedding_9
+  - embedding_10
+  - embedding_11
+  - embedding_12
+  - embedding_13
+  - embedding_14
+  - embedding_15
+  domain_order:
+  - rgb
+  - depth_or_xyz
 model:
   num_domains: 2
   embed_dim: 48
@@ -45,36 +43,65 @@ model:
   use_domain_embeddings: true
   use_positional_embeddings: true
   use_missing_embedding: true
-
 training:
   seed: 42
-  batch_size: 64
-  epochs: 25
-  lr: 0.001
+  batch_size: 128
+  epochs: 50
+  lr: 0.003
   weight_decay: 0.01
   domain_dropout: 0.15
   split_column: split
-  train_split_values: [train]
-  val_split_values: [validation]
-  test_split_values: [test]
+  train_split_values:
+  - train
+  val_split_values:
+  - validation
+  test_split_values:
+  - test
   early_stopping: 6
   early_stopping_metric: pr_auc
   restore_best_weights: true
   grad_clip_norm: 1.0
   lambda_reg: 0.01
-
 output:
   model_dir: models/fusion/attention_m2_confirmatory_sealed
   checkpoint_name: attention_m2_confirmatory.pt
   metrics_path: experiments/fusion/m2_confirmatory_sealed_attention_metrics.json
-
 evaluation:
   metrics_path: experiments/fusion/m2_confirmatory_sealed_harness_metrics.json
-  seeds: [42, 43, 44, 45, 46]
+  seeds:
+  - 42
+  - 43
+  - 44
+  - 45
+  - 46
+  - 47
+  - 48
+  - 49
+  - 50
+  - 51
+  - 52
+  - 53
+  - 54
+  - 55
+  - 56
+  - 57
+  - 58
+  - 59
+  - 60
+  - 61
+  - 62
+  - 63
+  - 64
+  - 65
+  - 66
+  - 67
+  - 68
+  - 69
+  - 70
+  - 71
   n_bootstrap: 200
   bootstrap_alpha: 0.05
   decision_threshold: val_f1
-
 prediction_archive:
   enabled: false
   root: elara_master_c/predictions/confirmation
@@ -83,17 +110,20 @@ prediction_archive:
   protocol: M2_one_shot_audit
   analysis_family: M2
   pairing_strength: independent_modalities
-
 reliability:
   ece_weight: 0.45
   ks_weight: 0.35
-  sharpness_weight: 0.20
+  sharpness_weight: 0.2
   clean_gate_threshold: 0.66
-
 rga_plus:
   selection_metric: roc_pr_f1
-
 craf:
-  drift_noise_levels: [0.0, 0.1, 0.3]
-  adversarial_attacks: [zero_attack, max_attack, gaussian_noise]
+  drift_noise_levels:
+  - 0.0
+  - 0.1
+  - 0.3
+  adversarial_attacks:
+  - zero_attack
+  - max_attack
+  - gaussian_noise
   adversarial_sigma: 0.1

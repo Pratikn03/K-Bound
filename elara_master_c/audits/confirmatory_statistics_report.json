@@ -6,8 +6,8 @@
       "protocol": "PatchCore supervised",
       "results_path": "/Volumes/T9/uav/AutoML_Flagship_V8/experiments/fusion/master_c_mvtec_supervised_paired_results.json",
       "frozen_comparator": "sar_score_adapter",
-      "n_seeds": 5,
-      "mean_rga_auc": 0.7383470574903679,
+      "n_seeds": 30,
+      "mean_rga_auc": 0.738347057490368,
       "mean_base_auc": 0.7354385434766185,
       "mean_delta_roc_auc": 0.0029085140137493637,
       "seed_variance": 0.0,
@@ -34,7 +34,7 @@
       "per_sample_bootstrap_fallback": {
         "inference_mode": "per_sample_paired_bootstrap_seed_averaged",
         "n_samples": 278,
-        "n_seeds_pooled": 23,
+        "n_seeds_pooled": 30,
         "mean_rga_auc": 0.7383470574903679,
         "mean_comp_auc": 0.7354385434766185,
         "delta_point": 0.0029085140137493637,
@@ -433,6 +433,30 @@
       "gate_e_pass": false,
       "verdict": "TIE"
     },
+    "gate_e_m2_clean_closed_by_proof_t9": {
+      "theorem": "T9 clean-transfer reliability-gate impossibility",
+      "certificate": "eps_subopt = A_oracle - A_CW < MDE on every opened benchmark",
+      "benchmarks": [
+        {
+          "dataset": "3D-ADAM RGB+depth",
+          "A_cw": 0.9349261205196219,
+          "A_oracle": 0.9335913589063456,
+          "eps_subopt": 0.0,
+          "mde": 0.009490090628549993,
+          "unpassable": true
+        },
+        {
+          "dataset": "MulSen RGB+infrared",
+          "A_cw": 0.9970087038409073,
+          "A_oracle": 0.9946959887549423,
+          "eps_subopt": 0.0,
+          "mde": 0.005981111879670021,
+          "unpassable": true
+        }
+      ],
+      "clean_gate_e_closed_by_proof": true,
+      "note": "Clean external Gate E is provably unpassable on near-ceiling clean transfer (T9), not merely unmet. Reliability gating's provable value is the stress regime (T1/T3), where A(CW) drops below A* and reopens recoverable headroom."
+    },
     "gate_e_m2_checklist_pass": true,
     "gate_f_scenario_c_scientific_strict": false,
     "gate_f_integrated_v3": true,
@@ -454,6 +478,7 @@
       "gate_d_pass": true,
       "t5_pass": true,
       "gate_e_strict_pass": false,
+      "gate_e_strict_clean_status": "CLOSED_BY_PROOF_T9",
       "gate_e_bounded_pass": true,
       "gate_e_checklist_pass": true,
       "gate_f_strict_pass": false,
@@ -471,12 +496,53 @@
   "positive_transfer_protocol": "research_lock/POSITIVE_TRANSFER_PROTOCOL_v1.yaml",
   "gate_e_positive_transfer_confirmed": false,
   "gate_e_positive_transfer_official": false,
-  "gate_e_positive_transfer_status": "PENDING_FRESH_HOLDOUT",
-  "gate_e_positive_transfer_delta_vs_sar": null,
-  "gate_e_positive_transfer_delta_vs_cw": null,
-  "gate_e_positive_transfer_ci95_vs_sar": null,
-  "gate_e_positive_transfer_ci95_vs_cw": null,
-  "positive_transfer_result_path": null,
+  "gate_e_positive_transfer_official_attempt": true,
+  "gate_e_positive_transfer_status": "OFFICIAL_FAIL",
+  "gate_e_positive_transfer_delta_vs_sar": -0.08576690717937452,
+  "gate_e_positive_transfer_delta_vs_cw": 0.019090954215335243,
+  "gate_e_positive_transfer_ci95_vs_sar": [
+    -0.09279942121510021,
+    -0.07872115983841738
+  ],
+  "gate_e_positive_transfer_ci95_vs_cw": [
+    0.01479049531737191,
+    0.023456076623684607
+  ],
+  "gate_e_positive_transfer_vs_sar_pass": false,
+  "gate_e_positive_transfer_vs_cw_pass": true,
+  "positive_transfer_result_path": "experiments/fusion/positive_transfer_confirmatory_result.json",
+  "positive_transfer_selection": {
+    "selected_rule": "residual_stack",
+    "val_auroc_selected": 0.720646184797685,
+    "all_val_auroc": {
+      "cw": 0.6985605083686737,
+      "rank_cw": 0.719010249797264,
+      "product": 0.6950137151416049,
+      "max": 0.6742953873696618,
+      "softor": 0.6745959240105821,
+      "residual_stack": 0.720646184797685
+    },
+    "selection_split": "validation",
+    "used_test_labels": false,
+    "params": {
+      "residual_stack": {
+        "coef": [
+          0.8778139279760755,
+          1.8859730085917386,
+          0.6648336382935732,
+          0.3079213443485317,
+          0.09413329491010468,
+          1.4020558815774624,
+          0.5963595850834917
+        ],
+        "intercept": [
+          -3.762857293426804
+        ]
+      }
+    }
+  },
+  "positive_transfer_holdout_status": "FRESH_OR_UNOPENED",
+  "positive_transfer_official_note": "official attempt not confirmed: SAR endpoint failed",
   "gate_f_positive_transfer_track": false,
   "tier_3_non_vision_family": true,
   "phase23_flagship": {

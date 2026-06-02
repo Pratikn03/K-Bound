@@ -7,9 +7,9 @@ from pathlib import Path
 from elara.theory.theorem_registry import THEOREM_REGISTRY, artifact_status, list_theorems
 
 
-def test_registry_covers_t1_through_t8_and_gdr():
+def test_registry_covers_t1_through_t9_and_gdr():
     ids = [spec.theorem_id for spec in list_theorems()]
-    assert ids == ["T1", "T2", "T3", "T4", "T5", "T6", "T7", "T8", "GDR"]
+    assert ids == ["T1", "T2", "T3", "T4", "T5", "T6", "T7", "T8", "T9", "GDR"]
 
 
 def test_every_theorem_has_core_modules_except_t1_only_one():

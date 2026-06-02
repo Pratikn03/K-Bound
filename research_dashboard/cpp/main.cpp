@@ -56,6 +56,14 @@ json read_json_file(const fs::path& path) {
     return doc;
 }
 
+json json_or_null(const json& object, const std::string& key) {
+    const auto it = object.find(key);
+    if (it == object.end()) {
+        return nullptr;
+    }
+    return *it;
+}
+
 std::string read_text_file(const fs::path& path) {
     std::ifstream in(path);
     if (!in) {
@@ -447,6 +455,9 @@ json build_claim_status(
     const bool gate_e_strict = confirmatory.value("gate_e_m2_transfer_confirmed_strict", gate_e);
     const bool bounded_v3 = confirmatory.value("gate_e_m2_bounded_v3_pass", false);
     const bool positive_transfer = confirmatory.value("gate_e_positive_transfer_confirmed", false);
+    const std::string positive_transfer_status =
+        confirmatory.value("gate_e_positive_transfer_status", std::string{});
+    const bool positive_transfer_official_fail = positive_transfer_status == "OFFICIAL_FAIL";
     const bool gate_f_sci = confirmatory.value("gate_f_scenario_c_scientific", false);
     const bool gate_f_bounded = confirmatory.value("gate_f_bounded_v3", false);
     const bool gate_f_positive = confirmatory.value("gate_f_positive_transfer_track", false);
@@ -474,7 +485,12 @@ json build_claim_status(
         pillar("P3", "Multimodal generalization", "Multiple naturally co-observed datasets",
                (gate_a && gate_b) ? "PARTIAL" : "NOT ESTABLISHED", false),
         pillar("P4", "Held-out transfer", "Strict clean M2 external positive CI vs SAR",
-               gate_e_strict ? "PASS" : (positive_transfer ? "NATURAL SAR+CW PASS" : (bounded_v3 ? "BOUNDED STRESS ONLY" : "NOT CONFIRMED")),
+               gate_e_strict ? "PASS"
+                             : (positive_transfer ? "NATURAL SAR+CW PASS"
+                                                  : (positive_transfer_official_fail
+                                                         ? "D13 OFFICIAL FAIL"
+                                                         : (bounded_v3 ? "BOUNDED STRESS ONLY"
+                                                                       : "NOT CONFIRMED"))),
                gate_e_strict || positive_transfer),
         pillar("P5", "Theory & certificate", "GDR + switching conditions",
                t6 ? "PARTIAL" : "NOT ESTABLISHED", false),
@@ -501,6 +517,9 @@ json build_claim_status(
     } else if (positive_transfer) {
         one_sentence =
             "ELARA has a D13 natural positive-transfer confirmation against both SAR and CW, while legacy strict Gate E remains preserved separately.";
+    } else if (positive_transfer_official_fail && bounded_v3) {
+        one_sentence =
+            "ELARA has bounded v3 stress evidence, but the fresh Real-IAD D13 natural-transfer attempt beat CW and failed the SAR endpoint, so strict clean transfer remains not confirmed.";
     } else if (bounded_v3) {
         one_sentence =
             "ELARA has a bounded v3 result: M1 in-domain superiority plus stress-regime "
@@ -729,12 +748,24 @@ int main(int argc, char* argv[]) {
              confirmatory.value("gate_e_positive_transfer_confirmed", false)},
             {"gate_e_positive_transfer_official",
              confirmatory.value("gate_e_positive_transfer_official", false)},
+            {"gate_e_positive_transfer_official_attempt",
+             confirmatory.value("gate_e_positive_transfer_official_attempt", false)},
             {"gate_e_positive_transfer_status",
              confirmatory.value("gate_e_positive_transfer_status", std::string{"PENDING_FRESH_HOLDOUT"})},
             {"gate_e_positive_transfer_delta_vs_sar",
-             confirmatory.value("gate_e_positive_transfer_delta_vs_sar", nullptr)},
+             json_or_null(confirmatory, "gate_e_positive_transfer_delta_vs_sar")},
             {"gate_e_positive_transfer_delta_vs_cw",
-             confirmatory.value("gate_e_positive_transfer_delta_vs_cw", nullptr)},
+             json_or_null(confirmatory, "gate_e_positive_transfer_delta_vs_cw")},
+            {"gate_e_positive_transfer_ci95_vs_sar",
+             json_or_null(confirmatory, "gate_e_positive_transfer_ci95_vs_sar")},
+            {"gate_e_positive_transfer_ci95_vs_cw",
+             json_or_null(confirmatory, "gate_e_positive_transfer_ci95_vs_cw")},
+            {"gate_e_positive_transfer_vs_sar_pass",
+             confirmatory.value("gate_e_positive_transfer_vs_sar_pass", false)},
+            {"gate_e_positive_transfer_vs_cw_pass",
+             confirmatory.value("gate_e_positive_transfer_vs_cw_pass", false)},
+            {"positive_transfer_official_note",
+             confirmatory.value("positive_transfer_official_note", std::string{})},
             {"integration_active", confirmatory.value("integration_active", false)},
             {"gate_f_integrated_v3", confirmatory.value("gate_f_integrated_v3", false)},
             {"gate_f_bounded_v3", confirmatory.value("gate_f_bounded_v3", false)},

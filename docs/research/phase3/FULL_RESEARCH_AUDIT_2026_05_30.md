@@ -112,7 +112,7 @@ not retroactively make the old flagship claim true.
 | P1 mechanism validity | Strong but bounded | Coherent degradation/stress results are positive; clean/heterogeneous cases remain bounded |
 | P2 strong-baseline superiority | Pass in-domain | 30/30 split RGA+ win over SAR on supervised-paired MVTec |
 | P3 multimodal generalization | Partial | MVTec + 3D-ADAM are useful, but not enough for broad generalization |
-| P4 held-out transfer | Partial | 3D-ADAM stress-regime transfer yes at alpha 0.5+; MVTec replication inconclusive; clean general dominance no |
+| P4 held-out transfer | Partial | 3D-ADAM stress-regime transfer yes at alpha 0.5+; Real-IAD D13 beats CW but fails SAR; MVTec replication inconclusive; clean general dominance no |
 | P5 theory/certificate | Strong | Theorem stack validator passes |
 | P6 deployment auditability | Partial | prediction archives and GDR exist; no prospective deployment validation |
 
