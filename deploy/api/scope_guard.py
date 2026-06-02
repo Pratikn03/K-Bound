@@ -99,8 +99,12 @@ def evaluate(domain_scores: dict[str, float], *, endpoint: str = "fusion") -> di
         if band_drift > 0:
             reasons.append("input score(s) outside validated range")
 
-    drift = max(band_drift, 0.5 * disagreement)
-    if disagreement >= 0.5:
+    # NOTE (2026-06-02 audit H1 fix): previously drift = max(band, 0.5*disagreement),
+    # which capped advisory-mode drift at 0.5 and could NEVER reach the 0.5 threshold
+    # -> the guard was inert with no reference loaded. Use disagreement directly so
+    # high cross-modal conflict actually trips the out-of-envelope flag.
+    drift = max(band_drift, disagreement)
+    if disagreement >= _DRIFT_THRESHOLD:
         reasons.append("high cross-modal disagreement")
     in_envelope = drift < _DRIFT_THRESHOLD
 

@@ -47,7 +47,10 @@ def _fast_delong(predictions: np.ndarray, labels: np.ndarray) -> tuple[float, fl
         return float("nan"), float("nan")
     n_pos = len(v10)
     n_neg = len(v01)
-    delong_var = float(np.var(v10, ddof=0) / n_pos + np.var(v01, ddof=0) / n_neg)
+    # Unbiased (ddof=1) sample variance of the placement values is the canonical
+    # DeLong estimator; ddof=0 under-estimates variance and makes p-values
+    # slightly anti-conservative at small n (audit M2).
+    delong_var = float(np.var(v10, ddof=1) / n_pos + np.var(v01, ddof=1) / n_neg)
     return auc, delong_var
 
 
@@ -66,8 +69,8 @@ def delong_roc_test(y_true: np.ndarray, y_score_a: np.ndarray, y_score_b: np.nda
         return float("nan")
     n_pos = len(v10_a)
     n_neg = len(v01_a)
-    sx = np.cov(np.vstack([v10_a, v10_b]), bias=True)
-    sy = np.cov(np.vstack([v01_a, v01_b]), bias=True)
+    sx = np.cov(np.vstack([v10_a, v10_b]), bias=False)  # unbiased (audit M2)
+    sy = np.cov(np.vstack([v01_a, v01_b]), bias=False)
     covariance = sx / n_pos + sy / n_neg
     var = float(covariance[0, 0] + covariance[1, 1] - 2.0 * covariance[0, 1])
     if var <= 1e-12:

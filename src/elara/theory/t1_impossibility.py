@@ -17,7 +17,12 @@ collapse, including median):
     domain's score is replaced by a single shared Uniform[0,1] draw),
     every reliability-blind aggregator -- including the median -- has
 
-        risk(f, D o tau_coh) - risk(oracle, D o tau_coh)  >=  p_corrupt / 3.
+        risk(f, D o tau_coh) - risk(oracle, D o tau_coh)  >=  p_corrupt / 12.
+
+    (Derivation: gap | corrupted = E_u[(u-y)^2] - 1/4 = 1/3 - 1/4 = 1/12 per
+    corrupted sample; E[gap] >= p_corrupt/12. This is the value `epsilon_coherent`
+    returns and the validator checks. NOTE: an earlier draft stated p_corrupt/3,
+    which is 4x too large -- corrected 2026-06-02 audit C1.)
 
     Median fails because all D domains shift together so the majority
     vote moves with the corruption. The oracle still has r=0 on every

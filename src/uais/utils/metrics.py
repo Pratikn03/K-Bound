@@ -16,7 +16,10 @@ def expected_calibration_error(y_true: np.ndarray, y_prob: np.ndarray, n_bins: i
     y_true = np.asarray(y_true)
     y_prob = np.asarray(y_prob)
     bins = np.linspace(0.0, 1.0, n_bins + 1)
-    bin_ids = np.digitize(y_prob, bins) - 1
+    # Clip so a probability of exactly 1.0 (digitize -> bin n_bins) folds into the
+    # top bin instead of being silently dropped (audit fix: biased ECE on saturated
+    # scores, which feed the reliability weight).
+    bin_ids = np.clip(np.digitize(y_prob, bins) - 1, 0, n_bins - 1)
     ece = 0.0
     for i in range(n_bins):
         mask = bin_ids == i

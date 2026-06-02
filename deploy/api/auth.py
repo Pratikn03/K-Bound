@@ -1,5 +1,6 @@
 """Authentication and security middleware for UAIS-V API."""
 
+import hmac
 import os
 from datetime import datetime, timezone, timedelta
 from typing import Optional
@@ -106,7 +107,9 @@ async def verify_api_key(api_key: Optional[str] = Security(api_key_header)) -> b
             detail="API key authentication is not configured",
         )
 
-    if api_key is None or api_key not in API_KEYS:
+    # Constant-time comparison against every configured key (audit H2): avoids a
+    # timing oracle from short-circuit/hash-based membership on the secret.
+    if api_key is None or not any(hmac.compare_digest(api_key, k) for k in API_KEYS):
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Invalid or missing API key")
     return True
 

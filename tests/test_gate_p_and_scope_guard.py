@@ -15,11 +15,13 @@ def test_scope_guard_advisory_mode_flags_disagreement():
     os.environ.pop("UAIS_SCOPE_REFERENCE", None)
     from deploy.api import scope_guard
     importlib.reload(scope_guard)
-    # strongly conflicting modalities -> high drift
+    # strongly conflicting modalities -> high drift AND out of envelope (audit H1:
+    # the guard must actually FIRE, not just attach a reason string).
     out = scope_guard.evaluate({"rgb": 0.95, "depth": 0.05}, endpoint="fusion")
     assert out["mode"] == "advisory_no_reference"
     assert 0.0 <= out["drift"] <= 1.0
     assert "high cross-modal disagreement" in out["reasons"]
+    assert out["in_envelope"] is False  # regression guard: must not be inert
     # agreeing modalities -> in envelope
     out2 = scope_guard.evaluate({"rgb": 0.5, "depth": 0.52}, endpoint="fusion")
     assert out2["in_envelope"] is True
