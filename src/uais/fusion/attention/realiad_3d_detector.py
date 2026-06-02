@@ -30,6 +30,7 @@ import numpy as np
 import torch
 import torch.nn.functional as F
 from PIL import Image
+from scipy.spatial import cKDTree
 
 from uais.fusion.attention.patchcore_patch import (
     _get_backbone,
@@ -44,6 +45,8 @@ __all__ = [
     "load_modality_image",
     "extract_patches_from_images",
     "score_one_class_patchcore",
+    "point_cloud_covariance_features",
+    "score_one_class_point_cloud",
 ]
 
 
@@ -111,16 +114,29 @@ def load_pcd_points(data: bytes, stride: int = 8, max_points: int = 200_000) -> 
         if max_points and arr.shape[0] > max_points:
             arr = arr[:: arr.shape[0] // max_points + 1]
         return arr[np.isfinite(arr).all(axis=1)]
+    # Read the column count + x/y/z indices from the FIELDS header (audit M3:
+    # the old token-count heuristic could mis-shape a genuine 3-column cloud).
+    header = data[:i].decode("ascii", "replace")
+    fields: list[str] = []
+    for line in header.splitlines():
+        parts = line.split()
+        if parts and parts[0] == "FIELDS":
+            fields = parts[1:]
+            break
+    ncol = len(fields) if fields else 4
+    try:
+        xi, yi, zi = fields.index("x"), fields.index("y"), fields.index("z")
+    except (ValueError, AttributeError):
+        xi, yi, zi = 0, 1, 2
     body = data[i:].split(b"\n", 1)[1]
     lines = body.splitlines()
     if stride > 1:
         lines = lines[::stride]
     toks = b" ".join(lines).split()
-    ncol = 4 if (len(toks) % 4 == 0 and len(toks) % 3 != 0) else (4 if len(toks) >= 4 else 3)
     n = (len(toks) // ncol) * ncol
     if n == 0:
         return np.zeros((0, 3), np.float32)
-    arr = np.array(toks[:n], dtype=np.float32).reshape(-1, ncol)[:, :3]
+    arr = np.array(toks[:n], dtype=np.float32).reshape(-1, ncol)[:, [xi, yi, zi]]
     if max_points and arr.shape[0] > max_points:
         arr = arr[:: arr.shape[0] // max_points + 1]
     return arr[np.isfinite(arr).all(axis=1)]
@@ -290,3 +306,111 @@ def score_one_class_patchcore(
     bank = greedy_coreset(train_patches, coreset_size, seed=seed) if train_patches.shape[0] > coreset_size else train_patches
     eval_patches, n_patches = extract_patches_from_images(eval_images, batch_size=batch_size)
     return image_anomaly_scores(eval_patches, n_patches, bank)
+
+
+# ---------------------------------------------------------------------------
+# Rotation-invariant point-cloud detector (geometry view that survives where the
+# PCA relief projection inverts).
+#
+# Why this exists (2026-06-02 D18 lego_propeller audit): pcd_to_geometry_image
+# projects the cloud onto its PCA principal axes. The eigenvector signs are
+# arbitrary and the in-plane axes are unstable for thin/symmetric objects (a
+# propeller), so the relief map can FLIP between samples -> the channel inverts
+# (lego_propeller xyz validation AUROC = 0.000). Local covariance shape features
+# are rotation- and sign-invariant, so they do not suffer that failure. They do
+# not dominate every category (the relief view wins on e.g. limit_switch), so the
+# two views are intended to be used together and filtered by the
+# degenerate-channel guard, which selects whichever is non-degenerate per
+# category.
+# ---------------------------------------------------------------------------
+def point_cloud_covariance_features(
+    points: np.ndarray,
+    *,
+    scales: Sequence[int] = (8, 16, 32),
+    n_sample: int = 4096,
+    seed: int = 0,
+) -> np.ndarray | None:
+    """Per-point rotation-invariant local-geometry features for a point cloud.
+
+    The cloud is centred and scaled to unit RMS radius (removing capture-distance
+    variation), optionally subsampled to ``n_sample`` points, then for each scale
+    ``k`` the local k-NN covariance eigenvalues ``l1>=l2>=l3`` give the standard
+    rotation-invariant covariance features (linearity, planarity, scattering,
+    omnivariance, anisotropy, change-of-curvature, eigenentropy) plus the mean
+    neighbour distance. Multi-scale features are concatenated.
+
+    Returns an ``[n_points, 8*len(scales)]`` float32 array, or ``None`` if the
+    cloud is too small to form neighbourhoods.
+    """
+    p = np.asarray(points, dtype=np.float32)
+    if p.ndim != 2 or p.shape[1] != 3 or p.shape[0] < 64:
+        return None
+    p = p - p.mean(0)
+    p = p / (np.sqrt((p ** 2).sum(1).mean()) + 1e-9)
+    rng = np.random.default_rng(seed)
+    if len(p) > n_sample:
+        p = p[rng.choice(len(p), n_sample, replace=False)]
+    tree = cKDTree(p)
+    blocks: list[np.ndarray] = []
+    for k in scales:
+        kk = min(int(k) + 1, len(p))
+        d, nn = tree.query(p, k=kk)
+        nb = p[nn[:, 1:]]                       # [N, k, 3] neighbours (drop self)
+        nb = nb - nb.mean(1, keepdims=True)
+        cov = np.einsum("nki,nkj->nij", nb, nb) / nb.shape[1]
+        w = np.clip(np.linalg.eigvalsh(cov)[:, ::-1], 1e-12, None)  # l1>=l2>=l3
+        l1, l2, l3 = w[:, 0], w[:, 1], w[:, 2]
+        s = w.sum(1)
+        pn = w / s[:, None]
+        blocks.append(np.column_stack([
+            (l1 - l2) / l1,                     # linearity
+            (l2 - l3) / l1,                     # planarity
+            l3 / l1,                            # scattering
+            (l1 * l2 * l3) ** (1.0 / 3.0),      # omnivariance
+            (l1 - l3) / l1,                     # anisotropy
+            l3 / s,                             # change-of-curvature
+            -(pn * np.log(pn)).sum(1),          # eigenentropy
+            d[:, 1:].mean(1),                   # local mean neighbour distance
+        ]))
+    return np.column_stack(blocks).astype(np.float32)
+
+
+def score_one_class_point_cloud(
+    train_clouds: Sequence[np.ndarray],
+    eval_clouds: Sequence[np.ndarray],
+    *,
+    scales: Sequence[int] = (8, 16, 32),
+    n_sample: int = 4096,
+    bank_size: int = 8192,
+    top_frac: float = 0.01,
+    seed: int = 0,
+) -> np.ndarray:
+    """One-class anomaly scores for point clouds via a geometric-feature memory bank.
+
+    Builds a memory bank of per-point covariance features from the all-normal
+    ``train_clouds`` (coreset-subsampled to ``bank_size``), then scores each eval
+    cloud as the mean of its top-``top_frac`` per-point nearest-bank distances
+    (the PatchCore max-patch idea, made robust by averaging the top fraction).
+    Returns raw distances (higher = more anomalous); the caller normalises.
+    """
+    feats = [f for c in train_clouds
+             if (f := point_cloud_covariance_features(c, scales=scales,
+                                                      n_sample=n_sample, seed=seed)) is not None]
+    if not feats:
+        return np.zeros(len(eval_clouds), dtype=np.float32)
+    bank = np.concatenate(feats, axis=0)
+    rng = np.random.default_rng(seed)
+    if len(bank) > bank_size:
+        bank = bank[rng.choice(len(bank), bank_size, replace=False)]
+    tree = cKDTree(bank)
+    scores = np.zeros(len(eval_clouds), dtype=np.float32)
+    for i, c in enumerate(eval_clouds):
+        f = point_cloud_covariance_features(c, scales=scales, n_sample=n_sample, seed=seed)
+        if f is None:
+            scores[i] = 0.0
+            continue
+        d, _ = tree.query(f, k=1)
+        d.sort()
+        top = max(1, int(len(d) * top_frac))
+        scores[i] = float(d[-top:].mean())
+    return scores

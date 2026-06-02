@@ -505,7 +505,15 @@ $\bar{r}<\tau$, reliability weights are injected into the fusion block:
   \tilde{r}_{i,d} = (1-m_{i,d})r_{i,d}.
 \end{equation}
 If the same rule is written with unreliability $u=1-\bar r$, the correct
-threshold is $u>1-\tau=0.34$, not $u>0.66$. The implementation also exposes
+threshold is $u>1-\tau=0.34$, not $u>0.66$. We note for precision that the
+reliability weights $\tilde r_{i,d}$ act at the score-\emph{aggregation} (pooling)
+stage of the fusion block---a soft re-weighting of each present domain's
+contribution---rather than as a hard mask on the attention softmax: scaling the
+attention keys/values by reliability is a soft bias, so a present low-reliability
+domain is down-weighted in the pooled output but is not removed from the attention
+distribution (only absent domains receive key-padding $-\infty$). The
+down-weighting claim therefore refers to the pooled aggregation, not to the
+attention scores. The implementation also exposes
 minimum and hybrid gate modes for \method{}-v2 experiments. These variants are
 reported as diagnostic candidates, not as established improvements: in the
 current $k$-of-$D$ run, the configured minimum threshold
