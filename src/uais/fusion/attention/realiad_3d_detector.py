@@ -47,16 +47,70 @@ __all__ = [
 ]
 
 
+def _parse_pcd_binary(data: bytes) -> np.ndarray:
+    """Parse a binary .pcd (DATA binary) into an (N,3) float32 xyz array.
+
+    Real-IAD-D3 stores SOME categories as binary PCD (knob_cap, fork_crimp_terminal,
+    telephone_spring_switch). The ASCII-only parser silently returned empty for
+    these, causing a fallback to the degenerate XYZ tiff (a placeholder-constant
+    artifact that leaks the OK/NG label) -- caught by the 2026-06-02 audit. This
+    parses the structured binary record so geometry comes from the real cloud."""
+    idx = data.find(b"DATA binary")
+    if idx < 0:
+        return np.zeros((0, 3), np.float32)
+    header = data[:idx].decode("ascii", "replace")
+    fields: list[str] = []
+    sizes: list[int] = []
+    types: list[str] = []
+    npts = None
+    for line in header.splitlines():
+        p = line.split()
+        if not p:
+            continue
+        if p[0] == "FIELDS":
+            fields = p[1:]
+        elif p[0] == "SIZE":
+            sizes = [int(x) for x in p[1:]]
+        elif p[0] == "TYPE":
+            types = p[1:]
+        elif p[0] == "POINTS":
+            npts = int(p[1])
+    if not fields or len(sizes) != len(fields) or "x" not in fields:
+        return np.zeros((0, 3), np.float32)
+    start = data.find(b"\n", idx) + 1
+    np_type = {("F", 4): "f4", ("F", 8): "f8", ("U", 1): "u1", ("U", 2): "u2",
+               ("U", 4): "u4", ("I", 1): "i1", ("I", 2): "i2", ("I", 4): "i4"}
+    try:
+        dt = np.dtype([(f, np_type[(t, s)]) for f, t, s in zip(fields, types, sizes)])
+    except KeyError:
+        return np.zeros((0, 3), np.float32)
+    stride_bytes = dt.itemsize
+    body = data[start:]
+    n_avail = len(body) // stride_bytes
+    if npts:
+        n_avail = min(n_avail, npts)
+    if n_avail == 0:
+        return np.zeros((0, 3), np.float32)
+    rec = np.frombuffer(body[: n_avail * stride_bytes], dtype=dt)
+    xyz = np.column_stack([rec["x"], rec["y"], rec["z"]]).astype(np.float32)
+    return xyz
+
+
 def load_pcd_points(data: bytes, stride: int = 8, max_points: int = 200_000) -> np.ndarray:
-    """Parse an ASCII .pcd (FIELDS x y z [rgb]) into an (N,3) float32 array.
+    """Parse a .pcd (FIELDS x y z [rgb]) into an (N,3) float32 array, ASCII or BINARY.
 
     Real-IAD-D3 stores intact full 3D in the .pcd files even where the XYZ
     *tiff* is degenerate (test-split tiffs collapse X,Y to a placeholder
-    constant), so geometry MUST come from the PCD. Stride-subsamples lines for
-    speed; the object relief survives heavy subsampling."""
+    constant), so geometry MUST come from the PCD. Handles both DATA ascii and
+    DATA binary encodings; for binary it parses the structured record."""
     i = data.find(b"DATA ascii")
     if i < 0:
-        return np.zeros((0, 3), np.float32)
+        arr = _parse_pcd_binary(data)
+        if arr.shape[0] == 0:
+            return arr
+        if max_points and arr.shape[0] > max_points:
+            arr = arr[:: arr.shape[0] // max_points + 1]
+        return arr[np.isfinite(arr).all(axis=1)]
     body = data[i:].split(b"\n", 1)[1]
     lines = body.splitlines()
     if stride > 1:
