@@ -39,10 +39,77 @@ from uais.fusion.attention.patchcore_patch import (
 
 __all__ = [
     "xyz_to_normal_image",
+    "load_pcd_points",
+    "pcd_to_geometry_image",
     "load_modality_image",
     "extract_patches_from_images",
     "score_one_class_patchcore",
 ]
+
+
+def load_pcd_points(data: bytes, stride: int = 8, max_points: int = 200_000) -> np.ndarray:
+    """Parse an ASCII .pcd (FIELDS x y z [rgb]) into an (N,3) float32 array.
+
+    Real-IAD-D3 stores intact full 3D in the .pcd files even where the XYZ
+    *tiff* is degenerate (test-split tiffs collapse X,Y to a placeholder
+    constant), so geometry MUST come from the PCD. Stride-subsamples lines for
+    speed; the object relief survives heavy subsampling."""
+    i = data.find(b"DATA ascii")
+    if i < 0:
+        return np.zeros((0, 3), np.float32)
+    body = data[i:].split(b"\n", 1)[1]
+    lines = body.splitlines()
+    if stride > 1:
+        lines = lines[::stride]
+    toks = b" ".join(lines).split()
+    ncol = 4 if (len(toks) % 4 == 0 and len(toks) % 3 != 0) else (4 if len(toks) >= 4 else 3)
+    n = (len(toks) // ncol) * ncol
+    if n == 0:
+        return np.zeros((0, 3), np.float32)
+    arr = np.array(toks[:n], dtype=np.float32).reshape(-1, ncol)[:, :3]
+    if max_points and arr.shape[0] > max_points:
+        arr = arr[:: arr.shape[0] // max_points + 1]
+    return arr[np.isfinite(arr).all(axis=1)]
+
+
+def pcd_to_geometry_image(points: np.ndarray, size: int = 224, seed: int = 0) -> Image.Image:
+    """Project a point cloud to a 3-channel geometry image via PCA.
+
+    Projects onto the two largest-variance principal axes (the object surface
+    plane); the smallest-variance axis becomes height/relief. Rasterizes the
+    max-height per cell into a relief map, then composes [grad_x, grad_y, relief]
+    so the CNN sees both surface orientation and protrusion -- the signal that
+    isolates dents/bumps/scratches. Pose-normalized by construction (PCA frame)."""
+    import cv2
+    P = np.asarray(points, np.float32)
+    if P.shape[0] < 64:
+        return Image.fromarray(np.zeros((size, size, 3), np.uint8), "RGB")
+    P = P - P.mean(axis=0, keepdims=True)
+    rng = np.random.default_rng(seed)
+    sub = P[rng.integers(0, P.shape[0], min(P.shape[0], 20_000))]
+    _, _, vt = np.linalg.svd(sub, full_matrices=False)
+    proj = P @ vt.T  # columns: pc1, pc2, pc3 (height)
+    uv, h = proj[:, :2], proj[:, 2]
+    lo = uv.min(0)
+    span = uv.max(0) - lo
+    span[span < 1e-6] = 1.0
+    ij = ((uv - lo) / span * (size - 1)).astype(np.int32).clip(0, size - 1)
+    relief = np.full((size, size), np.nan, np.float32)
+    order = np.argsort(h)  # write ascending so max height wins per cell
+    relief[ij[order, 0], ij[order, 1]] = h[order]
+    valid = ~np.isnan(relief)
+    if valid.any():
+        plo, phi = np.percentile(relief[valid], [2, 98])
+        relief = np.clip((relief - plo) / max(phi - plo, 1e-6), 0, 1)
+    relief[~valid] = 0.0
+    relief = relief.astype(np.float32)
+    gx = cv2.Sobel(relief, cv2.CV_32F, 1, 0, ksize=3)
+    gy = cv2.Sobel(relief, cv2.CV_32F, 0, 1, ksize=3)
+    def _n(a):
+        m = np.abs(a).max()
+        return (a / m * 0.5 + 0.5) if m > 1e-6 else np.full_like(a, 0.5)
+    img = np.stack([_n(gx), _n(gy), relief], axis=2)
+    return Image.fromarray((img * 255).clip(0, 255).astype(np.uint8), "RGB")
 
 
 def xyz_to_normal_image(xyz: np.ndarray, work_size: int = 512) -> Image.Image:
@@ -75,14 +142,29 @@ def xyz_to_normal_image(xyz: np.ndarray, work_size: int = 512) -> Image.Image:
     return Image.fromarray(img, "RGB")
 
 
+def _pcd_member_for(xyz_member: str) -> str:
+    """Derive the .pcd path from the XYZ tiff path (same sample, sibling file)."""
+    return xyz_member.replace("_XYZ_", "_PCD_").replace(".tiff", ".pcd").replace(".tif", ".pcd")
+
+
 def load_modality_image(zf: zipfile.ZipFile, member: str, modality: str) -> Image.Image:
     """Load one modality sample from a category zip into a 3-channel PIL image.
-    rgb/ps -> the JPEG directly; xyz -> the surface-normal image of the TIFF."""
-    data = zf.read(member)
+    rgb/ps -> the JPEG directly; xyz -> a PCA relief/geometry image from the .pcd
+    point cloud (the XYZ tiff is degenerate on the test split, so geometry comes
+    from the intact PCD; falls back to the tiff normal image if the PCD is absent).
+    """
     if modality == "xyz":
+        pcd_member = _pcd_member_for(member)
+        try:
+            pts = load_pcd_points(zf.read(pcd_member))
+            if pts.shape[0] >= 64:
+                return pcd_to_geometry_image(pts)
+        except KeyError:
+            pass
         import tifffile
-        arr = tifffile.imread(io.BytesIO(data))
+        arr = tifffile.imread(io.BytesIO(zf.read(member)))
         return xyz_to_normal_image(np.asarray(arr, dtype=np.float32))
+    data = zf.read(member)
     im = Image.open(io.BytesIO(data))
     return im.convert("RGB") if im.mode != "RGB" else im
 
