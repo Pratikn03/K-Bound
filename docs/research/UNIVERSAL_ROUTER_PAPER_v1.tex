@@ -250,4 +250,50 @@ stress, provably costless on clean near-ceiling data, with a computable certific
 for the boundary. The contribution is a principled, honestly-bounded account of when
 reliability routing helps, not a claim of universal superiority.
 
+\appendix
+\section{Proofs}
+
+\subsection{Proof of Theorem~\ref{thm:clean} (clean impossibility)}
+\begin{proof}
+\emph{Ceiling.} By Neyman--Pearson the posterior ranker $g^{*}(s)=\Pr[Y{=}1\mid s]$
+maximizes AUROC, so $A(g)\le A^{*}$ for every measurable $g$; hence
+$\Delta^{*}(\mathcal{G})=\sup_{g\in\mathcal G}A(g)-A(g_{\mathrm{CW}})
+\le A^{*}-A(g_{\mathrm{CW}})=\varepsilon_{\mathrm{subopt}}$.
+\emph{Gaussian closed form.} Under $(S\mid Y{=}y)\sim\mathcal N(\mu_y,\Sigma)$ the
+log-likelihood ratio is $\langle \Sigma^{-1}(\mu_1-\mu_0),s\rangle+c$, monotone in
+$w^{*\top}s$ with $w^{*}=\Sigma^{-1}(\mu_1-\mu_0)$; the Bayes ranker is linear. For
+$g(s)=\langle w,s\rangle$, $g(S^+)-g(S^-)\sim\mathcal N(\langle w,\mu_1-\mu_0\rangle,
+2w^\top\Sigma w)$, so $A(g)=\Phi(\langle w,\mu_1-\mu_0\rangle/\sqrt{2w^\top\Sigma w})$.
+With $w=w^{*}$: $\langle w^{*},\mu_1-\mu_0\rangle=w^{*\top}\Sigma w^{*}=M^{2}$,
+$M^{2}=(\mu_1-\mu_0)^\top\Sigma^{-1}(\mu_1-\mu_0)$, giving $A^{*}=\Phi(M/\sqrt2)$. If
+$w\propto w^{*}$ then $A(g_{\mathrm{CW}})=A^{*}$, so $\Delta^{*}(\mathcal G)\le 0$.
+\emph{Certification.} A one-sided $(\alpha,\beta)$ paired AUROC test rejects
+$H_0:\Delta\le0$ only when $\hat\Delta>(z_{1-\alpha}+z_{\beta})\sigma_\Delta=\mathrm{MDE}$;
+since $\Delta\le\varepsilon_{\mathrm{subopt}}$, if $\varepsilon_{\mathrm{subopt}}<\mathrm{MDE}$
+no test certifies $\Delta>0$.
+\end{proof}
+
+\begin{proposition}[Oracle-credibility guard]
+If a cross-fitted oracle (with strictly more information than CW) has
+$A_{\mathrm{CW}}-\hat A_{\mathrm{orc}}>\mathrm{MDE}$, it is detectably weaker than CW,
+hence not a valid upper estimate of $A^{*}\ge A_{\mathrm{CW}}$; the certificate is then
+\emph{inconclusive}, so the impossibility cannot be manufactured by an under-powered
+oracle.
+\end{proposition}
+
+\subsection{Proof of Theorem~\ref{thm:stress} (stress domination)}
+\begin{proof}
+Let $Y\sim\mathrm{Bernoulli}(\tfrac12)$, clean $S_d=Y+N(0,\sigma^2)$.
+\emph{Sparse.} With prob.\ $p$ modality $0$ becomes $U\sim\mathrm{Uniform}[0,1]\perp Y$;
+on a corrupted sample $\mathbb E[(\bar S-Y)^2]=\tfrac1{D^2}\mathbb E[(U-Y)^2]
++\tfrac{(D-1)\sigma^2}{D^2}$ with $\mathbb E[(U-Y)^2]=\int_0^1(u-Y)^2du=\tfrac13$. The
+oracle drops modality $0$; as $\sigma\to0$ the gap is $\ge\tfrac1{3D^2}$, so
+$\mathbb E[\mathrm{gap}]\ge p/(3D^2)$.
+\emph{Coherent.} With prob.\ $p$ all modalities equal a shared $U\perp Y$; every
+reliability-blind aggregator returns $U$ with $\mathbb E[(U-Y)^2]=\tfrac13$, while the
+oracle abstains to the prior $\tfrac12$ with risk $\tfrac14$; the gap is
+$\tfrac13-\tfrac14=\tfrac1{12}$, so $\mathbb E[\mathrm{gap}]\ge p/12$ for every
+reliability-blind rule.
+\end{proof}
+
 \end{document}

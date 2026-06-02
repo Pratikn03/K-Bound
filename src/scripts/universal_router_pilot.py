@@ -52,6 +52,17 @@ def _load(name):
     rate = y.mean()
     if not (0.005 < rate < 0.45) or X.shape[0] < 200:
         return None
+    # Standard ADBench practice: subsample large datasets (keeps O(n^2) LOF/KNN
+    # tractable) with a stratified draw preserving the anomaly rate.
+    cap = 12000
+    if X.shape[0] > cap:
+        rng = np.random.default_rng(0)
+        pos = np.where(y == 1)[0]; neg = np.where(y == 0)[0]
+        npos = min(len(pos), max(1, int(round(cap * rate))))
+        keep = np.concatenate([rng.choice(pos, npos, replace=False),
+                               rng.choice(neg, min(cap - npos, len(neg)), replace=False)])
+        rng.shuffle(keep)
+        X, y = X[keep], y[keep]
     return X, y
 
 
