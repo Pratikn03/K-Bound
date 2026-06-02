@@ -170,11 +170,23 @@ def run(datasets, seed=0):
     }
 
 
+def _all_classical_names():
+    """Fetch every ADBench Classical dataset name from the GitHub API."""
+    import json as _json
+    url = "https://api.github.com/repos/Minqi824/ADBench/contents/adbench/datasets/Classical"
+    req = urllib.request.Request(url, headers={"User-Agent": "pilot"})
+    data = _json.loads(urllib.request.urlopen(req, timeout=30).read())
+    return [d["name"][:-4] for d in data if d["name"].endswith(".npz")]
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--out", default="experiments/fusion/universal_router_pilot.json")
+    ap.add_argument("--full", action="store_true", help="run the full ADBench Classical suite")
     args = ap.parse_args()
-    rep = run(DATASETS)
+    datasets = _all_classical_names() if args.full else DATASETS
+    print(f"running on {len(datasets)} datasets", flush=True)
+    rep = run(datasets)
     print(json.dumps(rep.get("average_rank", rep), indent=2))
     if "verdict" in rep:
         print("\nrank gain vs best baseline:", rep["router_select_rank_gain_vs_best_baseline"])
