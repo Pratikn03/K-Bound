@@ -80,6 +80,18 @@ def discover_mulsen_rgb_infrared_pairs(
             ir_split = ir_root / split
             if not rgb_split.is_dir() or not ir_split.is_dir():
                 continue
+            # MulSen layout: train/ holds GOOD images directly (flat *.png),
+            # while test/ holds per-defect subdirectories. Handle both: flat
+            # files in train/ are normal-reference ("good"); subdirs are defects.
+            flat_rgb = _image_files(rgb_split)
+            flat_ir = _image_files(ir_split)
+            if flat_rgb:
+                # treat flat train images as good (normal reference)
+                for stem in sorted(set(flat_rgb) & set(flat_ir)):
+                    pairs.append(MulSenPair(
+                        category=category_dir.name, split=split,
+                        defect_type="good", stem=stem,
+                        rgb_path=flat_rgb[stem], infrared_path=flat_ir[stem]))
             for defect_dir in sorted(p for p in rgb_split.iterdir() if _is_visible_dir(p)):
                 ir_defect = ir_split / defect_dir.name
                 if not ir_defect.is_dir():
@@ -113,6 +125,10 @@ def main() -> int:
     parser.add_argument("--patchcore-coreset-size", type=int, default=2048)
     parser.add_argument("--heldout-val-fraction", type=float, default=0.15)
     parser.add_argument("--heldout-val-seed", type=int, default=20260528)
+    parser.add_argument("--per-category-bank", action="store_true",
+                        help="Score each category against its OWN train-good "
+                             "normals (one-class protocol). Required for "
+                             "cross-category held-out transfer.")
     args = parser.parse_args()
 
     mulsen_pairs = discover_mulsen_rgb_infrared_pairs(args.dataset_root, categories=args.categories)
@@ -132,6 +148,7 @@ def main() -> int:
         second_domain_name="infrared",
         benchmark_type="naturally_paired_mulsen_rgb_infrared_score_fusion",
         pairing_unit="MulSen-AD synchronized RGB + lock-in infrared capture",
+        per_category_bank=args.per_category_bank,
     )
     metadata["dataset_layout"] = "MulSen_AD/<category>/{RGB,Infrared}/<train|test>/<defect>/"
     args.output.parent.mkdir(parents=True, exist_ok=True)

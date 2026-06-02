@@ -308,9 +308,100 @@ def patchcore_knn_score(
     return (1.0 / (1.0 + np.exp(-z))).astype(np.float32)
 
 
+def patchcore_knn_score_per_category(
+    features: np.ndarray,
+    normal_mask: np.ndarray,
+    categories: np.ndarray,
+    k: int = 3,
+    coreset_size: int | None = None,
+    random_state: int = 0,
+) -> np.ndarray:
+    """Per-category PatchCore kNN score (the standard one-class protocol).
+
+    Unlike ``patchcore_knn_score`` which pools ALL train-good features into one
+    memory bank, this scores each sample against a memory bank built ONLY from
+    its OWN category's train-good normals, and z-sigmoid normalises within that
+    category. This is required for cross-category held-out transfer: a screw must
+    be compared to normal screws, not to a pooled bank of buttons and capsules.
+
+    A sample whose category has no normal-reference rows (e.g. a held-out test
+    category with no train/good of its own) is scored against the GLOBAL bank as
+    a graceful fallback, and flagged via the returned per-category coverage.
+
+    Parameters mirror ``patchcore_knn_score`` plus a ``categories`` array giving
+    each row's category label.
+    """
+    n = features.shape[0]
+    out = np.full(n, 0.5, dtype=np.float32)
+    cats = np.asarray(categories, dtype=object)
+    normal_mask = np.asarray(normal_mask, dtype=bool)
+    unique_cats = list(dict.fromkeys(cats.tolist()))
+
+    # Global fallback bank (all normals) for categories lacking their own normals.
+    global_bank_mask = normal_mask
+
+    for c in unique_cats:
+        cat_rows = cats == c
+        cat_normal = cat_rows & normal_mask
+        bank_mask = cat_normal if np.any(cat_normal) else global_bank_mask
+        # Score this category's samples against the chosen bank, with the bank's
+        # own distance distribution as the z-sigmoid reference.
+        q_idx = np.flatnonzero(cat_rows)
+        if q_idx.size == 0:
+            continue
+        # Build a sub-problem: query = this category's rows, fit = bank rows.
+        sub_features = features
+        sub_fit = bank_mask
+        # Reuse the single-bank scorer but restrict normalisation to the bank.
+        raw = _knn_raw_distances(sub_features, sub_fit, k=k,
+                                 coreset_size=coreset_size, random_state=random_state)
+        bank_d = raw[sub_fit]
+        mu = float(np.mean(bank_d)) if bank_d.size else 0.0
+        sd = float(np.std(bank_d) + 1e-8) if bank_d.size else 1.0
+        z = (raw[q_idx] - mu) / sd
+        out[q_idx] = (1.0 / (1.0 + np.exp(-z))).astype(np.float32)
+    return out
+
+
+def _knn_raw_distances(
+    features: np.ndarray,
+    fit_mask: np.ndarray,
+    k: int = 3,
+    coreset_size: int | None = None,
+    random_state: int = 0,
+) -> np.ndarray:
+    """Raw (un-normalised) mean-kNN distance to the fit-mask memory bank."""
+    n = features.shape[0]
+    fit_rows = features[fit_mask]
+    if fit_rows.shape[0] == 0:
+        return np.zeros(n, dtype=np.float32)
+    if coreset_size is not None and fit_rows.shape[0] > coreset_size:
+        rng = np.random.default_rng(random_state)
+        idx = rng.choice(fit_rows.shape[0], size=coreset_size, replace=False)
+        bank = fit_rows[idx]
+    else:
+        bank = fit_rows
+    bank = bank.astype(np.float32, copy=False)
+    queries = features.astype(np.float32, copy=False)
+    bank_sq = np.sum(bank * bank, axis=1)
+    chunk = 256
+    distances = np.zeros(n, dtype=np.float32)
+    k_eff = max(1, min(int(k), bank.shape[0]))
+    for start in range(0, n, chunk):
+        end = min(start + chunk, n)
+        q = queries[start:end]
+        q_sq = np.sum(q * q, axis=1, keepdims=True)
+        d2 = q_sq + bank_sq[None, :] - 2.0 * q @ bank.T
+        d2 = np.clip(d2, 0.0, None)
+        partitioned = np.partition(d2, k_eff - 1, axis=1)[:, :k_eff]
+        distances[start:end] = np.sqrt(np.mean(partitioned, axis=1))
+    return distances
+
+
 __all__ = [
     "extract_resnet_features",
     "fit_pca_projection",
     "normal_reference_distance_score",
     "patchcore_knn_score",
+    "patchcore_knn_score_per_category",
 ]

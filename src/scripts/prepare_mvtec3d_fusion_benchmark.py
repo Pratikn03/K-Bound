@@ -188,8 +188,15 @@ def build_fusion_frame_from_pairs(
     second_domain_name: str = "depth_or_xyz",
     benchmark_type: str = "naturally_paired_mvtec3d_score_fusion",
     pairing_unit: str = "MVTec 3D-AD RGB/depth observation stem",
+    per_category_bank: bool = False,
 ) -> tuple[pd.DataFrame, dict]:
-    """Build long-format fusion rows from pre-discovered paired observations."""
+    """Build long-format fusion rows from pre-discovered paired observations.
+
+    ``per_category_bank``: when True, score each sample against a PatchCore
+    memory bank built only from its OWN category's train-good normals (the
+    standard one-class protocol), instead of one pooled cross-category bank.
+    Required for cross-category held-out transfer where a pooled bank fails.
+    """
     if not pairs:
         raise ValueError("pairs must be non-empty")
 
@@ -213,6 +220,7 @@ def build_fusion_frame_from_pairs(
             fit_pca_projection,
             normal_reference_distance_score,
             patchcore_knn_score,
+            patchcore_knn_score_per_category,
         )
 
         rgb_paths = [pair.rgb_path for pair in pairs]
@@ -222,19 +230,33 @@ def build_fusion_frame_from_pairs(
         rgb_embeddings, *_ = fit_pca_projection(rgb_resnet, train_mask, embedding_dim)
         depth_embeddings, *_ = fit_pca_projection(depth_resnet, train_mask, embedding_dim)
         if feature_mode == "patchcore":
-            rgb_scores = patchcore_knn_score(
-                rgb_resnet,
-                normal_reference_mask,
-                k=patchcore_k,
-                coreset_size=patchcore_coreset_size,
-            )
-            depth_scores = patchcore_knn_score(
-                depth_resnet,
-                normal_reference_mask,
-                k=patchcore_k,
-                coreset_size=patchcore_coreset_size,
-            )
-            feature_description = "resnet50_imagenet_patchcore_knn"
+            if per_category_bank:
+                # one-class per-category protocol: score each category against
+                # its OWN train-good normals (test categories use their own
+                # train/good when present).
+                rgb_scores = patchcore_knn_score_per_category(
+                    rgb_resnet, (defect_types == "good"), pair_categories,
+                    k=patchcore_k, coreset_size=patchcore_coreset_size,
+                )
+                depth_scores = patchcore_knn_score_per_category(
+                    depth_resnet, (defect_types == "good"), pair_categories,
+                    k=patchcore_k, coreset_size=patchcore_coreset_size,
+                )
+                feature_description = "resnet50_imagenet_patchcore_knn_per_category"
+            else:
+                rgb_scores = patchcore_knn_score(
+                    rgb_resnet,
+                    normal_reference_mask,
+                    k=patchcore_k,
+                    coreset_size=patchcore_coreset_size,
+                )
+                depth_scores = patchcore_knn_score(
+                    depth_resnet,
+                    normal_reference_mask,
+                    k=patchcore_k,
+                    coreset_size=patchcore_coreset_size,
+                )
+                feature_description = "resnet50_imagenet_patchcore_knn"
         else:
             rgb_scores = normal_reference_distance_score(rgb_resnet, normal_reference_mask)
             depth_scores = normal_reference_distance_score(depth_resnet, normal_reference_mask)
