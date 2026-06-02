@@ -1,9 +1,26 @@
 # D18 Held-Out Confirmation — Natural-Degradation Reliability Gating (2026-06-02)
 
-Pre-registered (commit `d1195d0`, BEFORE this run) one-shot confirmation of the
-frozen `rel_x_sharp` reliability-gated fusion on **11 Real-IAD-3D categories the
-new method had never touched**. Result: **CONFIRMED** on the pre-registered
-primary endpoint, with broad within-category benefit — reported with full caveats.
+> **⚠️ CORRECTED / DOWNGRADED 2026-06-02 (D20). DO NOT cite the "+0.045 CONFIRMED"
+> framing below as a confirmation.** A subsequent same-day audit
+> (`D18_HELDOUT_CONFIRMATION_AUDIT_2026_06_02.md`) showed the pooled +0.0454 is
+> **inflated by one degenerate detector channel** (`lego_propeller` XYZ,
+> validation AUROC = 0.000, +0.98 single-category swing). Applying a
+> validation-only degenerate-channel guard **fairly to both CW and the gated
+> rule** collapses the pooled advantage to **+0.0049 — below the +0.010 bar**
+> (within-category mean +0.120 → +0.011). The guard's main effect is to make CW
+> itself robust, not to validate the gate. **`gate_natdeg_heldout_confirmed`
+> stays FALSE.** The honest standing claim is the *guarded* one (below, and in the
+> audit doc): genuine within-category gains (+0.09 to +0.21) on the 3 categories
+> with an honestly-weak (non-degenerate) modality, ties on 6, a loss on 1; NOT a
+> clean natural-degradation transfer confirmation. The original (unguarded) text
+> is retained below for the record only.
+
+---
+
+Pre-registered (commit `d1195d0`, BEFORE this run) one-shot run of the frozen
+`rel_x_sharp` reliability-gated fusion on **11 Real-IAD-3D categories the new
+method had never touched**. Original framing (NOW SUPERSEDED by the banner
+above): "CONFIRMED on the pre-registered primary endpoint."
 
 ## Result
 

@@ -347,3 +347,33 @@ against 15 production criteria.
 - **Artifacts:** `elara_master_c/audits/gate_p_production_audit.json`,
   `deploy/SCOPE_CONTRACT.md`, `deploy/api/scope_guard.py`,
   `tests/test_gate_p_and_scope_guard.py` (audit + guard tests pass).
+
+## 2026-06-02 - D20 ratified: D18 held-out "+0.045 confirmation" DOWNGRADED (degenerate-channel artifact)
+
+**Decision:** The D18 held-out result, previously recorded as a "+0.0454 CONFIRMED"
+natural-degradation generalization (commit 48c95e7), is **downgraded**. It is NOT
+a clean confirmation.
+
+- **Why:** a same-day audit (`docs/research/phase3/D18_HELDOUT_CONFIRMATION_AUDIT_2026_06_02.md`)
+  showed the pooled +0.0454 (CI [+0.0225,+0.0683]) is inflated by ONE degenerate
+  detector channel -- `lego_propeller` XYZ has validation AUROC = 0.000 (sign
+  inverted), CW naively trusts it (test 0.0175) and the gate drops it (1.0), a
+  +0.98 single-category swing. A validation-only degenerate-channel guard
+  (`src/elara/evaluation/degenerate_channel_guard.py`) applied **fairly to both
+  CW and the gated rule** collapses the pooled advantage to **+0.0049 (below the
+  +0.010 bar)**; within-category mean +0.120 -> +0.011.
+- **Honest standing claim:** genuine within-category reliability-gating gains
+  (+0.09 to +0.21) on the 3 held-out categories with an honestly weak
+  (non-degenerate) modality; ties on 6; loss on 1. Plus the degenerate-channel
+  guard as a reusable robustness contribution (it makes CW itself robust,
+  0.700 -> 0.730 pooled). NOT a clean natural-degradation transfer confirmation.
+- **Binding:** `gate_natdeg_heldout_confirmed` stays **FALSE**. Manuscript
+  (abstract, C10, conclusion), the committed held-out doc, and reports are
+  corrected to the guarded framing. Strict clean Gate E remains CLOSED_BY_PROOF_T9.
+- **Level impact:** the held-out confirmation does NOT hold under fair comparison;
+  honest standing returns to ~2.5-3 (in-domain Gate D/T5 + T9 boundary + genuine
+  within-category mechanism + robustness guard). The path to a real confirmation
+  is better detectors (>=2 non-degenerate channels/category) + a fresh re-sealed
+  holdout, with the guard folded into the frozen method.
+- **Artifacts (now committed):** degenerate_channel_guard.py + test,
+  guarded_channel_dev_analysis.py, guarded_channel_dev_analysis.json, the audit doc.
