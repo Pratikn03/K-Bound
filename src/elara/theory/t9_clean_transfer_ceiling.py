@@ -218,33 +218,69 @@ def gate_e_unpassable_certificate(auc_cw: float, auc_oracle: float,
         auc_cw     : empirical AUROC of the confidence-weighted mean (clean test)
         auc_oracle : empirical AUROC of an UNCONSTRAINED flexible oracle (joint
                      scores + labels, held-out) -- an over-generous estimate of A*.
-    Returns a dict with the headroom decomposition, the MDE, and the boolean
-    `gate_e_unpassable`: True iff the estimated recoverable advantage eps_subopt
-    is below the minimum detectable effect. When True, NO rule (the gate
-    included) can be certified above CW at (alpha, power, n) -- Gate E is closed
-    by proof, not by absence of evidence.
+    Returns a dict with the headroom decomposition, the MDE, and a TERNARY
+    `gate_e_unpassable` in {True, False, None}:
+      True   -> the oracle is a credible ceiling estimate AND its recoverable
+                advantage over CW is below the MDE: no rule (the gate included)
+                can be certified above CW. Gate E closed by proof.
+      False  -> the oracle credibly recovers headroom above the MDE: a good rule
+                could in principle be certified above CW (Gate E not closed).
+      None   -> INCONCLUSIVE: the oracle is NOT a credible ceiling because it is
+                detectably WORSE than CW (deficit > MDE). A weak/underpowered
+                oracle cannot certify impossibility; this guards against the
+                failure mode where `eps_subopt` clips to 0 and falsely reads
+                "unpassable" merely because the oracle is underpowered.
+
+    SOUNDNESS GUARD (added 2026-06-02 audit C3): the oracle has strictly more
+    information than CW (labels + the full joint distribution, and can represent
+    CW as a special case), so a credible oracle must MATCH CW up to finite-sample
+    noise. If `auc_cw - auc_oracle > MDE` the oracle is detectably weaker than CW
+    -> it is not a valid estimate of A* -> the certificate is INCONCLUSIVE, not a
+    pass. This makes the impossibility non-manufacturable by under-powering the
+    oracle.
     """
     eps_subopt = suboptimality_gap(auc_oracle, auc_cw)
     headroom = ceiling_headroom(auc_cw)
     mde = min_detectable_effect(auc_cw, n_pos, n_neg, alpha, power, rho,
                                 auc_alt=auc_oracle)
+    oracle_deficit = float(auc_cw - auc_oracle)        # >0 means oracle below CW
+    oracle_credible = oracle_deficit <= mde            # not detectably worse than CW
+
+    if not oracle_credible:
+        unpassable = None
+        reason = (
+            f"INCONCLUSIVE: the oracle (A={auc_oracle:.4f}) is detectably WORSE than "
+            f"CW (A={auc_cw:.4f}) by {oracle_deficit:.4f} > MDE {mde:.4f}. Since the "
+            "oracle has more information than CW, this means the oracle is "
+            "underpowered/broken, not that CW is optimal -- so impossibility cannot "
+            "be certified from it. (Guards against manufacturing a pass with a weak oracle.)"
+        )
+    elif eps_subopt < mde:
+        unpassable = True
+        reason = (
+            "eps_subopt (A_oracle - A_CW) is below the minimum detectable effect, and "
+            "the oracle credibly matches CW (a valid ceiling): even the unconstrained "
+            "oracle cannot be certified above CW, so the restricted reliability gate "
+            "provably cannot either."
+        )
+    else:
+        unpassable = False
+        reason = (
+            "eps_subopt exceeds MDE with a credible oracle: a sufficiently good rule "
+            "could in principle be certified above CW (Gate E not closed by T9)."
+        )
     return {
         "auc_cw": float(auc_cw),
         "auc_oracle_estimate_of_A_star": float(auc_oracle),
         "headroom_to_perfect": float(headroom),
         "eps_subopt_recoverable": float(eps_subopt),
         "min_detectable_effect": float(mde),
+        "oracle_deficit_vs_cw": oracle_deficit,
+        "oracle_is_credible_ceiling": bool(oracle_credible),
         "alpha": float(alpha), "power": float(power), "rho": float(rho),
         "n_pos": int(n_pos), "n_neg": int(n_neg),
-        "gate_e_unpassable": bool(eps_subopt < mde),
-        "reason": (
-            "eps_subopt (A_oracle - A_CW) is below the minimum detectable effect: "
-            "even the unconstrained oracle cannot be certified above CW, so the "
-            "restricted reliability gate provably cannot either."
-            if eps_subopt < mde else
-            "eps_subopt exceeds MDE: a sufficiently good rule could in principle "
-            "be certified above CW on this dataset (Gate E not closed by T9)."
-        ),
+        "gate_e_unpassable": unpassable,
+        "reason": reason,
     }
 
 
@@ -383,24 +419,31 @@ def validate_t9(seed: int = 7) -> dict:
     for name, dist in regimes.items():
         S, y = dist.sample(seed=seed)
         n_pos = int((y == 1).sum()); n_neg = int((y == 0).sum())
-        # analytic ceilings under the Gaussian model
+        # analytic ceilings under the Gaussian model (the GROUND-TRUTH ceiling here)
         a_star_analytic = neyman_pearson_auc_gaussian(dist.mu0, dist.mu1, dist.Sigma)
         w_equal = np.ones(S.shape[1]) / S.shape[1]
         a_cw_analytic = linear_rule_auc_gaussian(dist.mu0, dist.mu1, dist.Sigma, w_equal)
-        # empirical CW + oracle
+        # empirical CW + flexible oracle (a corroborating real-world-style estimate)
         cw_scores = S @ w_equal
         a_cw_emp = auc_empirical(cw_scores, y)
         a_oracle_emp = _oracle_auc(S, y, seed=seed)
-        cert = gate_e_unpassable_certificate(a_cw_emp, a_oracle_emp, n_pos, n_neg)
+        cert_oracle = gate_e_unpassable_certificate(a_cw_emp, a_oracle_emp, n_pos, n_neg)
 
-        # (i) ceiling bound: oracle advantage <= eps_subopt (+ MC slack)
-        adv = a_oracle_emp - a_cw_emp
-        eps_subopt = suboptimality_gap(a_oracle_emp, a_cw_emp)
-        ceiling_ok = ceiling_ok and (adv <= eps_subopt + 1e-9)
+        # (i) NON-TAUTOLOGICAL ceiling check: the empirical oracle must NOT exceed
+        # the analytic Neyman-Pearson ceiling A* beyond finite-sample noise (3 SE).
+        # This is the falsifiable content of T9-(i) (no rule beats A*); it can FAIL
+        # if the oracle over-fit above the ceiling, unlike the old adv<=max(adv,0).
+        se_star = hanley_mcneil_se(a_star_analytic, n_pos, n_neg)
+        ceiling_ok = ceiling_ok and (a_oracle_emp <= a_star_analytic + 3.0 * se_star)
         # (ii) homoscedastic closure in the redundant regime
         if name == "redundant_mean_optimal":
             homoscedastic_ok = homoscedastic_ok and (abs(a_cw_analytic - a_star_analytic) < 1e-6)
-        all_unpassable = all_unpassable and cert["gate_e_unpassable"]
+        # impossibility via the ANALYTIC ground-truth ceiling (sound for synthetic):
+        # eps_subopt = A* - A(CW) is the true recoverable headroom; compare to MDE.
+        eps_subopt_analytic = max(a_star_analytic - a_cw_analytic, 0.0)
+        mde_a = min_detectable_effect(a_cw_emp, n_pos, n_neg, auc_alt=a_star_analytic)
+        analytic_unpassable = bool(eps_subopt_analytic < mde_a)
+        all_unpassable = all_unpassable and analytic_unpassable
 
         out["regimes"].append({
             "regime": name,
@@ -408,12 +451,16 @@ def validate_t9(seed: int = 7) -> dict:
             "A_cw_analytic": a_cw_analytic,
             "A_cw_empirical": a_cw_emp,
             "A_oracle_empirical": a_oracle_emp,
-            "oracle_advantage": float(adv),
-            "certificate": cert,
+            "oracle_advantage": float(a_oracle_emp - a_cw_emp),
+            "eps_subopt_analytic": float(eps_subopt_analytic),
+            "mde_analytic": float(mde_a),
+            "analytic_unpassable": analytic_unpassable,
+            "oracle_within_ceiling": bool(a_oracle_emp <= a_star_analytic + 3.0 * se_star),
+            "certificate_oracle": cert_oracle,  # ternary (True/False/None) with credibility guard
         })
 
-    out["ceiling_bound_holds"] = bool(ceiling_ok)
+    out["ceiling_bound_holds"] = bool(ceiling_ok)            # oracle <= A* + 3SE (falsifiable)
     out["homoscedastic_cw_is_optimal"] = bool(homoscedastic_ok)
-    out["gate_e_unpassable_all_regimes"] = bool(all_unpassable)
+    out["gate_e_unpassable_all_regimes"] = bool(all_unpassable)  # via analytic ground-truth ceiling
     out["all_ok"] = bool(ceiling_ok and homoscedastic_ok and all_unpassable)
     return out

@@ -125,9 +125,13 @@ def emit_tex(payload: dict) -> str:
         r"$\varepsilon_{\mathrm{subopt}}$ & MDE & \textbf{Gate~E} & $n$ \\",
         r"\midrule",
     ]
+    def _verdict(flag):
+        return {True: r"\textbf{unpassable}", False: "open", None: "inconcl."}[flag]
+
     for reg in payload.get("synthetic", {}).get("regimes", []):
-        c = reg["certificate"]
-        verdict = r"\textbf{unpassable}" if c["gate_e_unpassable"] else "open"
+        c = reg.get("certificate_oracle", reg.get("certificate", {}))
+        # synthetic verdict uses the analytic ground-truth ceiling
+        verdict = _verdict(reg.get("analytic_unpassable", c.get("gate_e_unpassable")))
         out.append(
             rf"{reg['regime'].replace('_',' ')} & {reg['A_cw_empirical']:.4f} & "
             rf"{reg['A_oracle_empirical']:.4f} & {c['eps_subopt_recoverable']:.5f} & "
@@ -139,7 +143,7 @@ def emit_tex(payload: dict) -> str:
         if r is None:
             continue
         c = r["certificate"]
-        verdict = r"\textbf{unpassable}" if c["gate_e_unpassable"] else "open"
+        verdict = _verdict(c["gate_e_unpassable"])
         out.append(
             rf"{r['dataset']} (clean) & {r['A_cw']:.4f} & {r['A_oracle_estimate_of_A_star']:.4f} & "
             rf"{c['eps_subopt_recoverable']:.5f} & {c['min_detectable_effect']:.5f} & "

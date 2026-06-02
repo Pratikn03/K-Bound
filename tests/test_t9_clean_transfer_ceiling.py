@@ -57,6 +57,25 @@ def test_certificate_unpassable_when_oracle_cannot_beat_cw():
     assert cert["gate_e_unpassable"] is True
 
 
+def test_certificate_inconclusive_when_oracle_is_underpowered():
+    """2026-06-02 audit C3 guard: a weak/sabotaged oracle (detectably worse than
+    CW) must yield INCONCLUSIVE (None), NOT a false 'unpassable'. Blocks
+    manufacturing the impossibility by under-powering the oracle."""
+    cert = gate_e_unpassable_certificate(auc_cw=0.93, auc_oracle=0.55,
+                                         n_pos=600, n_neg=600)
+    assert cert["gate_e_unpassable"] is None
+    assert cert["oracle_is_credible_ceiling"] is False
+    assert "INCONCLUSIVE" in cert["reason"]
+
+
+def test_certificate_unpassable_requires_credible_oracle():
+    """A credible oracle (within MDE of CW) with ~no recoverable gap -> unpassable."""
+    cert = gate_e_unpassable_certificate(auc_cw=0.935, auc_oracle=0.934,
+                                         n_pos=624, n_neg=754)
+    assert cert["oracle_is_credible_ceiling"] is True
+    assert cert["gate_e_unpassable"] is True
+
+
 def test_certificate_open_when_large_recoverable_gap_and_enough_samples():
     """A big optimality gap with plenty of samples is NOT closed by T9."""
     cert = gate_e_unpassable_certificate(auc_cw=0.70, auc_oracle=0.85,

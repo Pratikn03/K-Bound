@@ -1,0 +1,138 @@
+{
+  "theorem": "T9 clean-transfer reliability-gate impossibility",
+  "synthetic": {
+    "seed": 7,
+    "regimes": [
+      {
+        "regime": "redundant_mean_optimal",
+        "A_star_analytic": 0.8286091444260443,
+        "A_cw_analytic": 0.8286091444260443,
+        "A_cw_empirical": 0.835599,
+        "A_oracle_empirical": 0.8222005,
+        "oracle_advantage": -0.01339849999999998,
+        "eps_subopt_analytic": 0.0,
+        "mde_analytic": 0.010174833357194416,
+        "analytic_unpassable": true,
+        "oracle_within_ceiling": true,
+        "certificate_oracle": {
+          "auc_cw": 0.835599,
+          "auc_oracle_estimate_of_A_star": 0.8222005,
+          "headroom_to_perfect": 0.16440100000000002,
+          "eps_subopt_recoverable": 0.0,
+          "min_detectable_effect": 0.010283887189004286,
+          "oracle_deficit_vs_cw": 0.01339849999999998,
+          "oracle_is_credible_ceiling": false,
+          "alpha": 0.05,
+          "power": 0.8,
+          "rho": 0.9,
+          "n_pos": 1000,
+          "n_neg": 1000,
+          "gate_e_unpassable": null,
+          "reason": "INCONCLUSIVE: the oracle (A=0.8222) is detectably WORSE than CW (A=0.8356) by 0.0134 > MDE 0.0103. Since the oracle has more information than CW, this means the oracle is underpowered/broken, not that CW is optimal -- so impossibility cannot be certified from it. (Guards against manufacturing a pass with a weak oracle.)"
+        }
+      },
+      {
+        "regime": "complementary_ceiling",
+        "A_star_analytic": 0.9996630707343231,
+        "A_cw_analytic": 0.9996630707343231,
+        "A_cw_empirical": 0.99975,
+        "A_oracle_empirical": 0.999457,
+        "oracle_advantage": -0.0002929999999999877,
+        "eps_subopt_analytic": 0.0,
+        "mde_analytic": 0.00044685550195610766,
+        "analytic_unpassable": true,
+        "oracle_within_ceiling": true,
+        "certificate_oracle": {
+          "auc_cw": 0.99975,
+          "auc_oracle_estimate_of_A_star": 0.999457,
+          "headroom_to_perfect": 0.00024999999999997247,
+          "eps_subopt_recoverable": 0.0,
+          "min_detectable_effect": 0.0006338798092469662,
+          "oracle_deficit_vs_cw": 0.0002929999999999877,
+          "oracle_is_credible_ceiling": true,
+          "alpha": 0.05,
+          "power": 0.8,
+          "rho": 0.9,
+          "n_pos": 1000,
+          "n_neg": 1000,
+          "gate_e_unpassable": true,
+          "reason": "eps_subopt (A_oracle - A_CW) is below the minimum detectable effect, and the oracle credibly matches CW (a valid ceiling): even the unconstrained oracle cannot be certified above CW, so the restricted reliability gate provably cannot either."
+        }
+      }
+    ],
+    "ceiling_bound_holds": true,
+    "homoscedastic_cw_is_optimal": true,
+    "gate_e_unpassable_all_regimes": true,
+    "all_ok": true
+  },
+  "real_data": [
+    {
+      "dataset": "3D-ADAM RGB+depth",
+      "csv": "experiments/fusion/m2_external_3d_adam_v3_inputs.csv",
+      "domains": [
+        "depth_or_xyz",
+        "rgb"
+      ],
+      "n_pairs": 1378,
+      "n_pos": 624,
+      "n_neg": 754,
+      "A_single_depth_or_xyz": 0.9283288274501802,
+      "A_single_rgb": 0.9122628035094879,
+      "A_cw": 0.9349261205196219,
+      "A_oracle_estimate_of_A_star": 0.9335913589063456,
+      "modalities_complementary_on_clean": true,
+      "rho_cw_oracle": 0.8616403292425966,
+      "certificate": {
+        "auc_cw": 0.9349261205196219,
+        "auc_oracle_estimate_of_A_star": 0.9335913589063456,
+        "headroom_to_perfect": 0.06507387948037813,
+        "eps_subopt_recoverable": 0.0,
+        "min_detectable_effect": 0.009490090628549993,
+        "oracle_deficit_vs_cw": 0.0013347616132762807,
+        "oracle_is_credible_ceiling": true,
+        "alpha": 0.05,
+        "power": 0.8,
+        "rho": 0.8616403292425966,
+        "n_pos": 624,
+        "n_neg": 754,
+        "gate_e_unpassable": true,
+        "reason": "eps_subopt (A_oracle - A_CW) is below the minimum detectable effect, and the oracle credibly matches CW (a valid ceiling): even the unconstrained oracle cannot be certified above CW, so the restricted reliability gate provably cannot either."
+      }
+    },
+    {
+      "dataset": "MulSen RGB+infrared",
+      "csv": "experiments/fusion/m2_external_mulsen_percat_inputs.csv",
+      "domains": [
+        "infrared",
+        "rgb"
+      ],
+      "n_pairs": 900,
+      "n_pos": 209,
+      "n_neg": 691,
+      "A_single_infrared": 0.9788808951730728,
+      "A_single_rgb": 0.9800926470893719,
+      "A_cw": 0.9970087038409073,
+      "A_oracle_estimate_of_A_star": 0.9946959887549423,
+      "modalities_complementary_on_clean": true,
+      "rho_cw_oracle": 0.7366775984920029,
+      "certificate": {
+        "auc_cw": 0.9970087038409073,
+        "auc_oracle_estimate_of_A_star": 0.9946959887549423,
+        "headroom_to_perfect": 0.00299129615909266,
+        "eps_subopt_recoverable": 0.0,
+        "min_detectable_effect": 0.005981111879670021,
+        "oracle_deficit_vs_cw": 0.002312715085965089,
+        "oracle_is_credible_ceiling": true,
+        "alpha": 0.05,
+        "power": 0.8,
+        "rho": 0.7366775984920029,
+        "n_pos": 209,
+        "n_neg": 691,
+        "gate_e_unpassable": true,
+        "reason": "eps_subopt (A_oracle - A_CW) is below the minimum detectable effect, and the oracle credibly matches CW (a valid ceiling): even the unconstrained oracle cannot be certified above CW, so the restricted reliability gate provably cannot either."
+      }
+    }
+  ],
+  "real_data_gate_e_unpassable_all": true,
+  "all_ok": true
+}
