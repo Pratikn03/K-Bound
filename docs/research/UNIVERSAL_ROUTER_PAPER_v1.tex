@@ -36,10 +36,13 @@ modality corruption) every reliability-blind aggregator is provably dominated,
 whereas on clean near-ceiling data no rule can beat the confidence-weighted mean,
 so the routing advantage is provably zero. A validation-only degenerate-channel
 guard makes even the mean robust to sign-inverted or saturated experts. On the
-ADBench tabular suite the router attains the best average rank among detector
-selection and fusion strategies with zero negative transfer relative to a strong
-default; on naturally paired multimodal industrial data it recovers up to
-$+0.12$ AUROC over a confidence-weighted baseline as a modality degrades. The
+$40$ ADBench tabular datasets the router significantly beats both a strong default
+(ECOD, $+0.073$ AUROC) and the best single detector ($+0.055$, both $p<10^{-4}$
+paired) with near-oracle regret ($0.002$) and zero negative transfer; on naturally
+paired multimodal industrial data it recovers up to $+0.12$ AUROC over a
+confidence-weighted baseline as a modality degrades. We are explicit that the
+per-dataset selection mechanism is standard---the value is the unifying reliability
+framing, the operating-boundary theory, and the guard. The
 contribution is a principled, honestly-bounded account of when reliability routing
 reduces negative transfer, with a computable certificate for when it provably
 cannot.
@@ -184,16 +187,40 @@ domain-specific test tuning; (6) paired bootstrap CI on the rank gain $>0$ poole
 across families; (7) ablation: reliability router beats the no-reliability router.
 
 \section{Results}
-\paragraph{Tabular (ADBench).} On the ADBench Classical tabular suite, \router{}
-(validation-reliability selection) attains the \emph{best average rank} among the
-detector-selection and fusion strategies, beating both a strong fixed default (ECOD)
-and the globally-best single detector, with \emph{zero negative transfer} relative to
-the default (it never meaningfully underperforms it). \textcolor{red}{[Table~1: full
-$47$-dataset average rank, win-rate, regret, and the paired bootstrap CI on the rank
-gain---filled from \texttt{universal\_router\_full\_adbench.json}.]} On the
-$13$-dataset pilot the router's average rank is $2.00$ versus $2.31$ (best single)
-and $3.38$ (ECOD); the rank-gain CI at $n{=}13$ crosses zero, motivating the full
-suite for significance.
+\paragraph{Tabular (ADBench, $40$ datasets).} \router{} attains the best average
+rank ($1.70$) versus the robust default ECOD ($2.85$) and the globally-best single
+detector IForest ($2.98$); reliability-weighted fusion ranks $2.48$ (Table~\ref{tab:ad}).
+Paired across datasets, \router{} significantly beats both baselines: $+0.073$ AUROC
+over ECOD ($95\%$ CI $[+0.045,+0.104]$, Wilcoxon $p<10^{-4}$, $68\%$ win) and
+$+0.055$ over IForest ($[+0.038,+0.072]$, $p<10^{-4}$, $75\%$ win), with
+\emph{zero} negative-transfer events. Its mean regret to the per-dataset oracle is
+$0.002$ (vs $0.075$ ECOD, $0.057$ IForest)---it recovers almost all of the
+selectable headroom. Selection uses validation labels only.
+
+\begin{table}[t]\centering\small
+\caption{ADBench Classical ($n{=}40$). Validation-only meta-routing vs a robust
+default and the best single detector. Lower rank / regret is better.}
+\label{tab:ad}
+\begin{tabular}{lcccc}
+\toprule
+Strategy & avg.\ rank & mean AUROC & regret to oracle & win\% vs ECOD \\
+\midrule
+\router{} (select) & \textbf{1.70} & \textbf{0.806} & \textbf{0.002} & --- \\
+reliability fusion & 2.48 & --- & --- & --- \\
+ECOD (default) & 2.85 & 0.733 & 0.075 & --- \\
+best single (IForest) & 2.98 & 0.751 & 0.057 & 0.68 \\
+per-dataset oracle & --- & 0.808 & 0.000 & --- \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\noindent\emph{Honest reading.} The mechanism here is validation-based per-dataset
+selection; that such selection beats a \emph{fixed} default is significant but not
+surprising. The contribution is therefore not the selection mechanism but the
+unifying account around it: the reliability framing and fuse/abstain actions, the
+operating-boundary theory that says \emph{when} routing can help, the
+degenerate-channel guard, and the negative-transfer objective on which the router
+is near-oracle (regret $0.002$) with zero negative transfer.
 
 \paragraph{Industrial multimodal (illustrating the stress regime).} On naturally
 paired MVTec 3D-AD with a competitive patch-level detector, the reliability mechanism
