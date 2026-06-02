@@ -1,0 +1,696 @@
+{
+  "protocol": "GATE_U_SEED_EVAL_v1",
+  "status": "DEVELOPMENT_SEED_not_official_gate_pass",
+  "n_tasks": 49,
+  "detectors": [
+    "ECOD",
+    "COPOD",
+    "IForest",
+    "LOF",
+    "KNN",
+    "OCSVM"
+  ],
+  "mean_rank": {
+    "ECOD": 3.9388,
+    "COPOD": 4.6735,
+    "IForest": 4.1429,
+    "LOF": 4.6327,
+    "KNN": 3.9184,
+    "OCSVM": 4.3878,
+    "ROUTER": 2.3061
+  },
+  "worst_case_rank": {
+    "ECOD": 7,
+    "COPOD": 7,
+    "IForest": 7,
+    "LOF": 7,
+    "KNN": 7,
+    "OCSVM": 7,
+    "ROUTER": 7
+  },
+  "mean_test_auroc": {
+    "ECOD": 0.7076,
+    "COPOD": 0.6914,
+    "IForest": 0.7098,
+    "LOF": 0.6485,
+    "KNN": 0.6929,
+    "OCSVM": 0.7032,
+    "ROUTER": 0.7733
+  },
+  "mean_regret_to_oracle": {
+    "ECOD": 0.0691,
+    "COPOD": 0.0853,
+    "IForest": 0.0669,
+    "LOF": 0.1282,
+    "KNN": 0.0838,
+    "OCSVM": 0.0735,
+    "ROUTER": 0.0035
+  },
+  "best_fixed_detector": "KNN",
+  "router_vs_best_fixed_rank_delta": -1.6123,
+  "router_vs_best_fixed_rank_ci95": [
+    -2.183673469387755,
+    -1.0204081632653064
+  ],
+  "router_choices": {
+    "creditcard": "LOF",
+    "online_shoppers": "KNN",
+    "unsw_full": "LOF",
+    "unsw_exploits": "KNN",
+    "unsw_fuzzers": "LOF",
+    "unsw_dos": "ECOD",
+    "unsw_reconnaissance": "LOF",
+    "adb_10_cover": "LOF",
+    "adb_11_donors": "ECOD",
+    "adb_12_fault": "KNN",
+    "adb_13_fraud": "LOF",
+    "adb_15_Hepatitis": "COPOD",
+    "adb_16_http": "IForest",
+    "adb_17_InternetAds": "ECOD",
+    "adb_18_Ionosphere": "KNN",
+    "adb_19_landsat": "KNN",
+    "adb_1_ALOI": "LOF",
+    "adb_20_letter": "KNN",
+    "adb_22_magic.gamma": "KNN",
+    "adb_23_mammography": "COPOD",
+    "adb_24_mnist": "KNN",
+    "adb_25_musk": "IForest",
+    "adb_26_optdigits": "IForest",
+    "adb_27_PageBlocks": "OCSVM",
+    "adb_28_pendigits": "IForest",
+    "adb_29_Pima": "KNN",
+    "adb_2_annthyroid": "IForest",
+    "adb_30_satellite": "IForest",
+    "adb_31_satimage-2": "OCSVM",
+    "adb_32_shuttle": "IForest",
+    "adb_33_skin": "KNN",
+    "adb_34_smtp": "KNN",
+    "adb_35_SpamBase": "COPOD",
+    "adb_36_speech": "COPOD",
+    "adb_37_Stamps": "COPOD",
+    "adb_38_thyroid": "IForest",
+    "adb_39_vertebral": "OCSVM",
+    "adb_3_backdoor": "ECOD",
+    "adb_40_vowels": "KNN",
+    "adb_41_Waveform": "COPOD",
+    "adb_44_Wilt": "LOF",
+    "adb_46_WPBC": "COPOD",
+    "adb_47_yeast": "ECOD",
+    "adb_4_breastw": "COPOD",
+    "adb_5_campaign": "COPOD",
+    "adb_6_cardio": "ECOD",
+    "adb_7_Cardiotocography": "ECOD",
+    "adb_8_celeba": "OCSVM",
+    "adb_9_census": "COPOD"
+  },
+  "per_task": {
+    "creditcard": {
+      "domain": "fraud",
+      "test_auroc": {
+        "ECOD": 0.9715,
+        "COPOD": 0.9573,
+        "IForest": 0.9581,
+        "LOF": 0.9794,
+        "KNN": 0.9698,
+        "OCSVM": 0.9661,
+        "ROUTER": 0.9794
+      }
+    },
+    "online_shoppers": {
+      "domain": "tabular",
+      "test_auroc": {
+        "ECOD": 0.6632,
+        "COPOD": 0.6834,
+        "IForest": 0.6435,
+        "LOF": 0.6491,
+        "KNN": 0.6958,
+        "OCSVM": 0.6128,
+        "ROUTER": 0.6958
+      }
+    },
+    "unsw_full": {
+      "domain": "cyber",
+      "test_auroc": {
+        "ECOD": 0.3807,
+        "COPOD": 0.3318,
+        "IForest": 0.3261,
+        "LOF": 0.5473,
+        "KNN": 0.3433,
+        "OCSVM": 0.3837,
+        "ROUTER": 0.5473
+      }
+    },
+    "unsw_exploits": {
+      "domain": "cyber",
+      "test_auroc": {
+        "ECOD": 0.5293,
+        "COPOD": 0.5417,
+        "IForest": 0.4787,
+        "LOF": 0.5083,
+        "KNN": 0.5504,
+        "OCSVM": 0.5119,
+        "ROUTER": 0.5504
+      }
+    },
+    "unsw_fuzzers": {
+      "domain": "cyber",
+      "test_auroc": {
+        "ECOD": 0.4914,
+        "COPOD": 0.4673,
+        "IForest": 0.3934,
+        "LOF": 0.5662,
+        "KNN": 0.5234,
+        "OCSVM": 0.4771,
+        "ROUTER": 0.5662
+      }
+    },
+    "unsw_dos": {
+      "domain": "cyber",
+      "test_auroc": {
+        "ECOD": 0.6426,
+        "COPOD": 0.447,
+        "IForest": 0.4902,
+        "LOF": 0.6521,
+        "KNN": 0.488,
+        "OCSVM": 0.5468,
+        "ROUTER": 0.6426
+      }
+    },
+    "unsw_reconnaissance": {
+      "domain": "cyber",
+      "test_auroc": {
+        "ECOD": 0.4397,
+        "COPOD": 0.2696,
+        "IForest": 0.2908,
+        "LOF": 0.4976,
+        "KNN": 0.2851,
+        "OCSVM": 0.4318,
+        "ROUTER": 0.4976
+      }
+    },
+    "adb_10_cover": {
+      "domain": "adbench",
+      "test_auroc": {
+        "ECOD": 0.9436,
+        "COPOD": 0.9195,
+        "IForest": 0.9244,
+        "LOF": 0.9642,
+        "KNN": 0.9174,
+        "OCSVM": 0.9643,
+        "ROUTER": 0.9642
+      }
+    },
+    "adb_11_donors": {
+      "domain": "adbench",
+      "test_auroc": {
+        "ECOD": 0.9009,
+        "COPOD": 0.8269,
+        "IForest": 0.7728,
+        "LOF": 0.6086,
+        "KNN": 0.8524,
+        "OCSVM": 0.7706,
+        "ROUTER": 0.9009
+      }
+    },
+    "adb_12_fault": {
+      "domain": "adbench",
+      "test_auroc": {
+        "ECOD": 0.456,
+        "COPOD": 0.4298,
+        "IForest": 0.5782,
+        "LOF": 0.601,
+        "KNN": 0.7043,
+        "OCSVM": 0.5306,
+        "ROUTER": 0.7043
+      }
+    },
+    "adb_13_fraud": {
+      "domain": "adbench",
+      "test_auroc": {
+        "ECOD": 0.9714,
+        "COPOD": 0.957,
+        "IForest": 0.9581,
+        "LOF": 0.9794,
+        "KNN": 0.9698,
+        "OCSVM": 0.9661,
+        "ROUTER": 0.9794
+      }
+    },
+    "adb_15_Hepatitis": {
+      "domain": "adbench",
+      "test_auroc": {
+        "ECOD": 0.5686,
+        "COPOD": 0.5882,
+        "IForest": 0.5686,
+        "LOF": 0.6471,
+        "KNN": 0.6275,
+        "OCSVM": 0.5294,
+        "ROUTER": 0.5882
+      }
+    },
+    "adb_16_http": {
+      "domain": "adbench",
+      "test_auroc": {
+        "ECOD": 0.9774,
+        "COPOD": 0.9875,
+        "IForest": 1.0,
+        "LOF": 0.9975,
+        "KNN": 0.0,
+        "OCSVM": 0.9925,
+        "ROUTER": 1.0
+      }
+    },
+    "adb_17_InternetAds": {
+      "domain": "adbench",
+      "test_auroc": {
+        "ECOD": 0.6756,
+        "COPOD": 0.6753,
+        "IForest": 0.6583,
+        "LOF": 0.6074,
+        "KNN": 0.5775,
+        "OCSVM": 0.5902,
+        "ROUTER": 0.6756
+      }
+    },
+    "adb_18_Ionosphere": {
+      "domain": "adbench",
+      "test_auroc": {
+        "ECOD": 0.8031,
+        "COPOD": 0.8195,
+        "IForest": 0.8461,
+        "LOF": 0.8987,
+        "KNN": 0.9191,
+        "OCSVM": 0.8659,
+        "ROUTER": 0.9191
+      }
+    },
+    "adb_19_landsat": {
+      "domain": "adbench",
+      "test_auroc": {
+        "ECOD": 0.3625,
+        "COPOD": 0.4152,
+        "IForest": 0.4419,
+        "LOF": 0.5341,
+        "KNN": 0.5852,
+        "OCSVM": 0.4154,
+        "ROUTER": 0.5852
+      }
+    },
+    "adb_1_ALOI": {
+      "domain": "adbench",
+      "test_auroc": {
+        "ECOD": 0.5139,
+        "COPOD": 0.5083,
+        "IForest": 0.5204,
+        "LOF": 0.6044,
+        "KNN": 0.5709,
+        "OCSVM": 0.5396,
+        "ROUTER": 0.6044
+      }
+    },
+    "adb_20_letter": {
+      "domain": "adbench",
+      "test_auroc": {
+        "ECOD": 0.5126,
+        "COPOD": 0.5342,
+        "IForest": 0.6546,
+        "LOF": 0.8702,
+        "KNN": 0.8538,
+        "OCSVM": 0.5669,
+        "ROUTER": 0.8538
+      }
+    },
+    "adb_22_magic.gamma": {
+      "domain": "adbench",
+      "test_auroc": {
+        "ECOD": 0.6411,
+        "COPOD": 0.6854,
+        "IForest": 0.7178,
+        "LOF": 0.7174,
+        "KNN": 0.7963,
+        "OCSVM": 0.6686,
+        "ROUTER": 0.7963
+      }
+    },
+    "adb_23_mammography": {
+      "domain": "adbench",
+      "test_auroc": {
+        "ECOD": 0.8823,
+        "COPOD": 0.8732,
+        "IForest": 0.79,
+        "LOF": 0.7108,
+        "KNN": 0.7796,
+        "OCSVM": 0.8134,
+        "ROUTER": 0.8732
+      }
+    },
+    "adb_24_mnist": {
+      "domain": "adbench",
+      "test_auroc": {
+        "ECOD": 0.7425,
+        "COPOD": 0.7731,
+        "IForest": 0.7963,
+        "LOF": 0.7325,
+        "KNN": 0.846,
+        "OCSVM": 0.8411,
+        "ROUTER": 0.846
+      }
+    },
+    "adb_25_musk": {
+      "domain": "adbench",
+      "test_auroc": {
+        "ECOD": 0.9589,
+        "COPOD": 0.9374,
+        "IForest": 1.0,
+        "LOF": 0.6105,
+        "KNN": 0.8007,
+        "OCSVM": 1.0,
+        "ROUTER": 1.0
+      }
+    },
+    "adb_26_optdigits": {
+      "domain": "adbench",
+      "test_auroc": {
+        "ECOD": 0.5697,
+        "COPOD": 0.6372,
+        "IForest": 0.7143,
+        "LOF": 0.5296,
+        "KNN": 0.4232,
+        "OCSVM": 0.4924,
+        "ROUTER": 0.7143
+      }
+    },
+    "adb_27_PageBlocks": {
+      "domain": "adbench",
+      "test_auroc": {
+        "ECOD": 0.9082,
+        "COPOD": 0.875,
+        "IForest": 0.9024,
+        "LOF": 0.7563,
+        "KNN": 0.8933,
+        "OCSVM": 0.9141,
+        "ROUTER": 0.9141
+      }
+    },
+    "adb_28_pendigits": {
+      "domain": "adbench",
+      "test_auroc": {
+        "ECOD": 0.8972,
+        "COPOD": 0.881,
+        "IForest": 0.9268,
+        "LOF": 0.6269,
+        "KNN": 0.8176,
+        "OCSVM": 0.9246,
+        "ROUTER": 0.9268
+      }
+    },
+    "adb_29_Pima": {
+      "domain": "adbench",
+      "test_auroc": {
+        "ECOD": 0.6178,
+        "COPOD": 0.646,
+        "IForest": 0.6605,
+        "LOF": 0.6137,
+        "KNN": 0.707,
+        "OCSVM": 0.6281,
+        "ROUTER": 0.707
+      }
+    },
+    "adb_2_annthyroid": {
+      "domain": "adbench",
+      "test_auroc": {
+        "ECOD": 0.7834,
+        "COPOD": 0.7684,
+        "IForest": 0.8136,
+        "LOF": 0.7321,
+        "KNN": 0.7757,
+        "OCSVM": 0.6652,
+        "ROUTER": 0.8136
+      }
+    },
+    "adb_30_satellite": {
+      "domain": "adbench",
+      "test_auroc": {
+        "ECOD": 0.5894,
+        "COPOD": 0.6403,
+        "IForest": 0.688,
+        "LOF": 0.5795,
+        "KNN": 0.6869,
+        "OCSVM": 0.6641,
+        "ROUTER": 0.688
+      }
+    },
+    "adb_31_satimage-2": {
+      "domain": "adbench",
+      "test_auroc": {
+        "ECOD": 0.904,
+        "COPOD": 0.9232,
+        "IForest": 0.9693,
+        "LOF": 0.4705,
+        "KNN": 0.9714,
+        "OCSVM": 0.9865,
+        "ROUTER": 0.9865
+      }
+    },
+    "adb_32_shuttle": {
+      "domain": "adbench",
+      "test_auroc": {
+        "ECOD": 0.9962,
+        "COPOD": 0.9948,
+        "IForest": 0.9985,
+        "LOF": 0.5196,
+        "KNN": 0.7467,
+        "OCSVM": 0.9934,
+        "ROUTER": 0.9985
+      }
+    },
+    "adb_33_skin": {
+      "domain": "adbench",
+      "test_auroc": {
+        "ECOD": 0.4954,
+        "COPOD": 0.4882,
+        "IForest": 0.6739,
+        "LOF": 0.3981,
+        "KNN": 0.7138,
+        "OCSVM": 0.5457,
+        "ROUTER": 0.7138
+      }
+    },
+    "adb_34_smtp": {
+      "domain": "adbench",
+      "test_auroc": {
+        "ECOD": 0.9364,
+        "COPOD": 0.9298,
+        "IForest": 0.9405,
+        "LOF": 0.8807,
+        "KNN": 0.9411,
+        "OCSVM": 0.93,
+        "ROUTER": 0.9411
+      }
+    },
+    "adb_35_SpamBase": {
+      "domain": "adbench",
+      "test_auroc": {
+        "ECOD": 0.6568,
+        "COPOD": 0.6872,
+        "IForest": 0.6188,
+        "LOF": 0.4268,
+        "KNN": 0.5559,
+        "OCSVM": 0.5539,
+        "ROUTER": 0.6872
+      }
+    },
+    "adb_36_speech": {
+      "domain": "adbench",
+      "test_auroc": {
+        "ECOD": 0.5804,
+        "COPOD": 0.6034,
+        "IForest": 0.5954,
+        "LOF": 0.5966,
+        "KNN": 0.5865,
+        "OCSVM": 0.5758,
+        "ROUTER": 0.6034
+      }
+    },
+    "adb_37_Stamps": {
+      "domain": "adbench",
+      "test_auroc": {
+        "ECOD": 0.9048,
+        "COPOD": 0.9286,
+        "IForest": 0.9029,
+        "LOF": 0.7766,
+        "KNN": 0.837,
+        "OCSVM": 0.8846,
+        "ROUTER": 0.9286
+      }
+    },
+    "adb_38_thyroid": {
+      "domain": "adbench",
+      "test_auroc": {
+        "ECOD": 0.9768,
+        "COPOD": 0.9359,
+        "IForest": 0.9753,
+        "LOF": 0.8417,
+        "KNN": 0.9653,
+        "OCSVM": 0.963,
+        "ROUTER": 0.9753
+      }
+    },
+    "adb_39_vertebral": {
+      "domain": "adbench",
+      "test_auroc": {
+        "ECOD": 0.3261,
+        "COPOD": 0.1698,
+        "IForest": 0.221,
+        "LOF": 0.3342,
+        "KNN": 0.2965,
+        "OCSVM": 0.3477,
+        "ROUTER": 0.3477
+      }
+    },
+    "adb_3_backdoor": {
+      "domain": "adbench",
+      "test_auroc": {
+        "ECOD": 0.8211,
+        "COPOD": 0.7599,
+        "IForest": 0.7096,
+        "LOF": 0.7096,
+        "KNN": 0.7879,
+        "OCSVM": 0.7286,
+        "ROUTER": 0.8211
+      }
+    },
+    "adb_40_vowels": {
+      "domain": "adbench",
+      "test_auroc": {
+        "ECOD": 0.6302,
+        "COPOD": 0.5104,
+        "IForest": 0.8293,
+        "LOF": 0.9486,
+        "KNN": 0.983,
+        "OCSVM": 0.8052,
+        "ROUTER": 0.983
+      }
+    },
+    "adb_41_Waveform": {
+      "domain": "adbench",
+      "test_auroc": {
+        "ECOD": 0.6958,
+        "COPOD": 0.8163,
+        "IForest": 0.8403,
+        "LOF": 0.7424,
+        "KNN": 0.7511,
+        "OCSVM": 0.769,
+        "ROUTER": 0.8163
+      }
+    },
+    "adb_44_Wilt": {
+      "domain": "adbench",
+      "test_auroc": {
+        "ECOD": 0.3791,
+        "COPOD": 0.3205,
+        "IForest": 0.404,
+        "LOF": 0.5807,
+        "KNN": 0.5273,
+        "OCSVM": 0.3105,
+        "ROUTER": 0.5807
+      }
+    },
+    "adb_46_WPBC": {
+      "domain": "adbench",
+      "test_auroc": {
+        "ECOD": 0.557,
+        "COPOD": 0.5088,
+        "IForest": 0.5373,
+        "LOF": 0.5461,
+        "KNN": 0.5373,
+        "OCSVM": 0.5504,
+        "ROUTER": 0.5088
+      }
+    },
+    "adb_47_yeast": {
+      "domain": "adbench",
+      "test_auroc": {
+        "ECOD": 0.4409,
+        "COPOD": 0.381,
+        "IForest": 0.3971,
+        "LOF": 0.4435,
+        "KNN": 0.4057,
+        "OCSVM": 0.4162,
+        "ROUTER": 0.4409
+      }
+    },
+    "adb_4_breastw": {
+      "domain": "adbench",
+      "test_auroc": {
+        "ECOD": 0.9884,
+        "COPOD": 0.9902,
+        "IForest": 0.9746,
+        "LOF": 0.4502,
+        "KNN": 0.9512,
+        "OCSVM": 0.9236,
+        "ROUTER": 0.9902
+      }
+    },
+    "adb_5_campaign": {
+      "domain": "adbench",
+      "test_auroc": {
+        "ECOD": 0.7767,
+        "COPOD": 0.7907,
+        "IForest": 0.7084,
+        "LOF": 0.6429,
+        "KNN": 0.7616,
+        "OCSVM": 0.7584,
+        "ROUTER": 0.7907
+      }
+    },
+    "adb_6_cardio": {
+      "domain": "adbench",
+      "test_auroc": {
+        "ECOD": 0.9328,
+        "COPOD": 0.905,
+        "IForest": 0.914,
+        "LOF": 0.5663,
+        "KNN": 0.6999,
+        "OCSVM": 0.9213,
+        "ROUTER": 0.9328
+      }
+    },
+    "adb_7_Cardiotocography": {
+      "domain": "adbench",
+      "test_auroc": {
+        "ECOD": 0.7951,
+        "COPOD": 0.6697,
+        "IForest": 0.6394,
+        "LOF": 0.5484,
+        "KNN": 0.5021,
+        "OCSVM": 0.7204,
+        "ROUTER": 0.7951
+      }
+    },
+    "adb_8_celeba": {
+      "domain": "adbench",
+      "test_auroc": {
+        "ECOD": 0.8187,
+        "COPOD": 0.8115,
+        "IForest": 0.7777,
+        "LOF": 0.496,
+        "KNN": 0.796,
+        "OCSVM": 0.8357,
+        "ROUTER": 0.8357
+      }
+    },
+    "adb_9_census": {
+      "domain": "adbench",
+      "test_auroc": {
+        "ECOD": 0.6668,
+        "COPOD": 0.6789,
+        "IForest": 0.6392,
+        "LOF": 0.5366,
+        "KNN": 0.6756,
+        "OCSVM": 0.6647,
+        "ROUTER": 0.6789
+      }
+    }
+  }
+}
