@@ -11,11 +11,15 @@ This is an improved version of the UAIS-V API with:
 """
 
 import hashlib
+import logging
 import os
 import time
+import uuid
 from base64 import b64decode
 from binascii import Error as Base64DecodeError
 from collections import defaultdict, deque
+from contextlib import asynccontextmanager
+from datetime import datetime, timezone
 from io import BytesIO
 from pathlib import Path
 from typing import Optional
@@ -28,7 +32,9 @@ from fastapi.responses import JSONResponse, PlainTextResponse
 from pydantic import BaseModel, Field, field_validator
 from starlette.middleware.base import BaseHTTPMiddleware
 
-from .auth import authenticate
+from .auth import API_KEYS, authenticate
+
+logger = logging.getLogger(__name__)
 
 # Monitoring is optional; authentication is mandatory and must fail at startup if missing.
 try:
@@ -78,14 +84,51 @@ MAX_IMAGE_BASE64_CHARS = _int_env("UAIS_MAX_IMAGE_BASE64_CHARS", 8_000_000)
 MAX_IMAGE_PIXELS = _int_env("UAIS_MAX_IMAGE_PIXELS", 25_000_000)
 RATE_LIMIT_REQUESTS = _int_env("UAIS_RATE_LIMIT_REQUESTS", 120)
 RATE_LIMIT_WINDOW_SECONDS = _int_env("UAIS_RATE_LIMIT_WINDOW_SECONDS", 60)
+PRODUCTION_MODE = _bool_env("UAIS_PRODUCTION_MODE", False)
+REQUIRED_MODELS = tuple(_csv_env("UAIS_REQUIRED_MODELS") or ["fraud", "cyber", "fusion"])
 TRUSTED_MODEL_ARTIFACTS = _bool_env("UAIS_TRUSTED_MODEL_ARTIFACTS", False)
 REQUIRE_MODEL_CHECKSUMS = _bool_env("UAIS_REQUIRE_MODEL_CHECKSUMS", True)
+
+
+def utc_timestamp() -> str:
+    """Return an ISO-8601 UTC timestamp with explicit timezone information."""
+    return datetime.now(timezone.utc).isoformat()
+
+
+def runtime_mode() -> str:
+    return "production" if PRODUCTION_MODE else "development"
+
+
+def production_config_errors() -> list[str]:
+    """Return production-blocking configuration errors without exposing secrets."""
+    errors: list[str] = []
+    if not API_KEYS:
+        errors.append("UAIS_API_KEYS must be configured with at least one API key")
+    if PRODUCTION_MODE and not CORS_ORIGINS:
+        errors.append("UAIS_CORS_ORIGINS must be configured with explicit origins in production mode")
+    if any(origin == "*" for origin in CORS_ORIGINS):
+        errors.append("UAIS_CORS_ORIGINS cannot use a wildcard origin in production")
+    if PRODUCTION_MODE and not REQUIRE_MODEL_CHECKSUMS:
+        errors.append("UAIS_REQUIRE_MODEL_CHECKSUMS must remain true in production mode")
+    return errors
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    """Fail production startup if required security configuration is invalid."""
+    if PRODUCTION_MODE:
+        errors = production_config_errors()
+        if errors:
+            raise RuntimeError("Invalid production configuration: " + "; ".join(errors))
+    yield
+
 
 # FastAPI app
 app = FastAPI(
     title="UAIS-V Enhanced API",
     version="2.0",
     description="Universal Anomaly Intelligence System with authentication and monitoring",
+    lifespan=lifespan,
 )
 
 
@@ -115,11 +158,43 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
         return await call_next(request)
 
 
+class RequestLoggingMiddleware(BaseHTTPMiddleware):
+    """Structured request logging with correlation IDs and no payload logging."""
+
+    async def dispatch(self, request: Request, call_next):
+        request_id = request.headers.get("X-Request-ID") or uuid.uuid4().hex
+        start = time.monotonic()
+        try:
+            response = await call_next(request)
+        except Exception:
+            duration_ms = (time.monotonic() - start) * 1000
+            logger.exception(
+                "request_failed request_id=%s method=%s path=%s status=500 duration_ms=%.2f",
+                request_id,
+                request.method,
+                request.url.path,
+                duration_ms,
+            )
+            raise
+        duration_ms = (time.monotonic() - start) * 1000
+        response.headers["X-Request-ID"] = request_id
+        logger.info(
+            "request_completed request_id=%s method=%s path=%s status=%s duration_ms=%.2f",
+            request_id,
+            request.method,
+            request.url.path,
+            response.status_code,
+            duration_ms,
+        )
+        return response
+
+
 app.add_middleware(
     RateLimitMiddleware,
     limit=RATE_LIMIT_REQUESTS,
     window_seconds=RATE_LIMIT_WINDOW_SECONDS,
 )
+app.add_middleware(RequestLoggingMiddleware)
 
 # CORS middleware
 app.add_middleware(
@@ -143,6 +218,15 @@ attention_model_dir = project_root / "models" / "fusion" / "attention"
 attention_ckpt_path = attention_model_dir / "attention_fusion.pt"
 nlp_model_dir = project_root / "models" / "nlp" / "distilbert"
 vision_model_dir = project_root / "models" / "vision" / "resnet"
+
+MODEL_ARTIFACT_PATHS = {
+    "fraud": fraud_model_path,
+    "cyber": cyber_model_path,
+    "fusion": fusion_model_path,
+    "attention_fusion": attention_ckpt_path,
+    "nlp": nlp_model_dir / "model.pt",
+    "vision": vision_model_dir / "model.pt",
+}
 
 
 def _artifact_checksum_env(model_type: str) -> str | None:
@@ -202,28 +286,98 @@ _attention_model = None
 _attention_meta = {}
 
 
+def _loaded_model_status(model_type: str) -> bool:
+    if model_type == "fraud":
+        return fraud_model is not None
+    if model_type == "cyber":
+        return cyber_model is not None
+    if model_type == "fusion":
+        return fusion_model is not None
+    if model_type == "attention_fusion":
+        return _attention_model is not None
+    if model_type == "nlp":
+        return _nlp_model is not None and _nlp_tokenizer is not None
+    if model_type == "vision":
+        return bool(_vision_model)
+    return False
+
+
+def model_statuses() -> dict[str, dict[str, object]]:
+    statuses: dict[str, dict[str, object]] = {}
+    for model_type, path in MODEL_ARTIFACT_PATHS.items():
+        statuses[model_type] = {
+            "required": model_type in REQUIRED_MODELS,
+            "available": _loaded_model_status(model_type),
+            "artifact_path": str(path.relative_to(project_root)),
+            "artifact_exists": path.exists(),
+            "artifact_trusted": _artifact_is_trusted(path, model_type),
+        }
+    return statuses
+
+
+def readiness_report() -> dict[str, object]:
+    config_errors = production_config_errors()
+    models = model_statuses()
+    missing_models = [model_type for model_type in REQUIRED_MODELS if not models.get(model_type, {}).get("available")]
+    monitoring_ready = MONITORING_AVAILABLE
+    ready = not config_errors and not missing_models and monitoring_ready
+    return {
+        "ready": ready,
+        "mode": runtime_mode(),
+        "timestamp": utc_timestamp(),
+        "checks": {
+            "configuration": {
+                "status": "pass" if not config_errors else "fail",
+                "errors": config_errors,
+            },
+            "models": {
+                "status": "pass" if not missing_models else "fail",
+                "required": list(REQUIRED_MODELS),
+                "missing": missing_models,
+            },
+            "monitoring": {
+                "status": "pass" if monitoring_ready else "fail",
+            },
+        },
+        "models": models,
+    }
+
+
+def model_unavailable(model_type: str) -> HTTPException:
+    return HTTPException(
+        status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+        detail={
+            "code": "model_unavailable",
+            "model_type": model_type,
+            "message": f"{model_type} model is not production-ready or not loaded",
+        },
+    )
+
+
 def _load_nlp():
-    """Lazy load NLP model and tokenizer."""
+    """Lazy load NLP model and tokenizer when a production NLP artifact exists."""
     global _nlp_artifacts_loaded, _nlp_model, _nlp_tokenizer
     if _nlp_artifacts_loaded:
         return _nlp_model, _nlp_tokenizer
-    try:
-        import torch  # noqa: I001
-
-        from uais_v.models.nlp_text_model import DistilBERTClassifier, get_tokenizer
-    except Exception:
-        _nlp_artifacts_loaded = True
-        return None, None
     if not nlp_model_dir.exists():
         _nlp_artifacts_loaded = True
         return None, None
-    tokenizer = get_tokenizer(str(nlp_model_dir))
-    model = DistilBERTClassifier(str(nlp_model_dir), num_labels=2)
     state_path = nlp_model_dir / "model.pt"
+    if not state_path.exists():
+        _nlp_artifacts_loaded = True
+        return None, None
+    try:
+        import torch
+        from transformers import AutoModelForSequenceClassification, AutoTokenizer
+    except Exception:
+        _nlp_artifacts_loaded = True
+        return None, None
     state = _load_torch_artifact(torch, state_path, "nlp")
     if state is None:
         _nlp_artifacts_loaded = True
         return None, None
+    tokenizer = AutoTokenizer.from_pretrained(str(nlp_model_dir))
+    model = AutoModelForSequenceClassification.from_pretrained(str(nlp_model_dir), num_labels=2)
     model.load_state_dict(state)
     model.eval()
     _nlp_model, _nlp_tokenizer = model, tokenizer
@@ -236,16 +390,18 @@ def _load_nlp():
 def _load_vision():
     """Lazy load vision model."""
     global _vision_model
+    if _vision_model is False:
+        return None
     if _vision_model is not None:
         return _vision_model
-    try:
-        import torch
-        from uais_v.models.vision_resnet import VisionConfig, build_resnet_classifier
-    except Exception:
-        _vision_model = False
-        return None
     state_path = vision_model_dir / "model.pt"
     if not state_path.exists():
+        _vision_model = False
+        return None
+    try:
+        import torch
+        from uais.vision.vision_resnet import VisionConfig, build_resnet_classifier
+    except Exception:
         _vision_model = False
         return None
     cfg = VisionConfig(model_name="resnet18", num_classes=2, pretrained=False)
@@ -494,11 +650,7 @@ async def root():
             "monitoring": MONITORING_AVAILABLE,
         },
         "available_models": {
-            "fraud": fraud_model is not None,
-            "cyber": cyber_model is not None,
-            "fusion": fusion_model is not None,
-            "nlp": nlp_model_dir.exists(),
-            "vision": vision_model_dir.exists(),
+            model_type: status_info["available"] for model_type, status_info in model_statuses().items()
         },
     }
 
@@ -506,7 +658,17 @@ async def root():
 @app.get("/health")
 async def health():
     """Basic health check."""
-    return {"status": "ok", "timestamp": str(np.datetime64("now"))}
+    return {"status": "ok", "timestamp": utc_timestamp()}
+
+
+@app.get("/ready")
+async def ready(authenticated: bool = Depends(authenticate)):
+    """Readiness check for authenticated production traffic."""
+    report = readiness_report()
+    return JSONResponse(
+        status_code=status.HTTP_200_OK if report["ready"] else status.HTTP_503_SERVICE_UNAVAILABLE,
+        content=report,
+    )
 
 
 @app.get("/health/detailed")
@@ -543,7 +705,7 @@ async def system_info(authenticated: bool = Depends(authenticate)):
 async def predict_fraud(req: FraudRequest, authenticated: bool = Depends(authenticate)):
     """Predict fraud probability from features."""
     if fraud_model is None:
-        raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail="Fraud model not loaded")
+        raise model_unavailable("fraud")
 
     try:
         if MONITORING_AVAILABLE:
@@ -570,7 +732,7 @@ async def predict_fraud(req: FraudRequest, authenticated: bool = Depends(authent
 async def predict_cyber(req: CyberRequest, authenticated: bool = Depends(authenticate)):
     """Predict cyber attack probability from network features."""
     if cyber_model is None:
-        raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail="Cyber model not loaded")
+        raise model_unavailable("cyber")
 
     try:
         if MONITORING_AVAILABLE:
@@ -593,7 +755,7 @@ async def predict_cyber(req: CyberRequest, authenticated: bool = Depends(authent
 async def predict_fusion(req: FusionRequest, authenticated: bool = Depends(authenticate)):
     """Predict overall risk from multiple domain scores."""
     if fusion_model is None:
-        raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail="Fusion model not loaded")
+        raise model_unavailable("fusion")
 
     try:
         keys = sorted(req.scores)
@@ -621,10 +783,7 @@ async def predict_attention_fusion(
     """Predict overall risk using the attention fusion model."""
     model, meta = _load_attention_fusion()
     if model is None:
-        raise HTTPException(
-            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-            detail="Attention fusion model not loaded",
-        )
+        raise model_unavailable("attention_fusion")
 
     try:
         import torch
@@ -670,7 +829,7 @@ async def predict_nlp(req: NLPRequest, authenticated: bool = Depends(authenticat
     """Analyze text for suspicious content."""
     model, tokenizer = _load_nlp()
     if model is None or tokenizer is None:
-        raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail="NLP model not available")
+        raise model_unavailable("nlp")
 
     try:
         import torch
@@ -700,7 +859,7 @@ async def predict_vision(req: VisionRequest, authenticated: bool = Depends(authe
     """Detect anomalies in images."""
     model = _load_vision()
     if model is None:
-        raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail="Vision model not available")
+        raise model_unavailable("vision")
 
     try:
         import torch

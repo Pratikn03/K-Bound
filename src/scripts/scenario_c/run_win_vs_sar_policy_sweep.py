@@ -16,7 +16,6 @@ import yaml
 from src.scripts.scenario_c.win_vs_sar_harness import (
     _repo_root,
     _safe_auc,
-    aggregate_seed_rows,
     train_seed_bundle,
 )
 from uais.fusion.attention.elara_deploy_policy import DeployPolicySpec, predict_elara_deploy

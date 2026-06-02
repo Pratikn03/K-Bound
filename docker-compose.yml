@@ -11,6 +11,8 @@ services:
     environment:
       UAIS_API_KEYS: ${UAIS_API_KEYS:?Set UAIS_API_KEYS before starting the API}
       UAIS_CORS_ORIGINS: ${UAIS_CORS_ORIGINS:?Set UAIS_CORS_ORIGINS before starting the API}
+      UAIS_PRODUCTION_MODE: ${UAIS_PRODUCTION_MODE:-true}
+      UAIS_REQUIRED_MODELS: ${UAIS_REQUIRED_MODELS:-fraud,cyber,fusion}
       UAIS_TRUSTED_MODEL_ARTIFACTS: ${UAIS_TRUSTED_MODEL_ARTIFACTS:-false}
       UAIS_REQUIRE_MODEL_CHECKSUMS: ${UAIS_REQUIRE_MODEL_CHECKSUMS:-true}
     security_opt:
@@ -19,10 +21,10 @@ services:
     tmpfs:
       - /tmp
     restart: unless-stopped
-    depends_on:
-      - mlflow
 
   streamlit:
+    profiles:
+      - research
     image: python:3.11-slim-bookworm@sha256:8dca233de9f3d9bb410665f00a4da6dd06f331083137e0e98ccf227236fcc438
     working_dir: /app
     volumes:
@@ -36,6 +38,8 @@ services:
       - api
 
   mlflow:
+    profiles:
+      - research
     image: ghcr.io/mlflow/mlflow:v2.14.0@sha256:7a1deb607de52710ea860911998ce2693ec50eb1a31dfc6754f5f58a17044e44
     command: mlflow server --host 0.0.0.0 --port 5000 --backend-store-uri sqlite:///mlflow.db --default-artifact-root /mlruns
     ports:

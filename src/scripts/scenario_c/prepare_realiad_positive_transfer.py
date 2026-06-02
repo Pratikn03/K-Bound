@@ -179,10 +179,20 @@ def _score_features(features: dict[tuple[str, str, str], np.ndarray], rows: list
             d = pairwise_distances(eval_z, ref_z, metric="euclidean", n_jobs=1)
             k = min(5, d.shape[1])
             raw = np.sort(d, axis=1)[:, :k].mean(axis=1)
-            lo = float(np.percentile(raw[: len(train_keys)], 5))
-            hi = float(np.percentile(raw[: len(train_keys)], 95))
-            denom = hi - lo if hi > lo else float(np.std(raw) + 1e-6)
-            norm = np.clip((raw - lo) / denom, 0.0, 1.0)
+            # Monotone z-sigmoid normalization centered on the train-normal kNN
+            # distance distribution. The previous min-max clip,
+            #     norm = clip((raw - p5)/(p95 - p5), 0, 1),
+            # pinned the entire upper tail -- ~55% of samples -- to a constant
+            # 1.0, creating massive ties that collapsed both within-category and
+            # pooled AUROC (CW fell to ~0.50 while non-saturated SAR held ~0.80).
+            # A strictly monotone sigmoid in raw preserves the within-category
+            # ranking (AUROC-invariant) AND places every category on a common,
+            # normal-calibrated (0,1) scale for honest cross-category pooling.
+            ref_mask = np.array([key in set(train_keys) for key in eval_keys])
+            ref_raw = raw[ref_mask] if ref_mask.any() else raw
+            mu = float(np.mean(ref_raw))
+            sd = float(np.std(ref_raw) + 1e-6)
+            norm = 1.0 / (1.0 + np.exp(-(raw - mu) / sd))
             for key, value in zip(eval_keys, norm, strict=True):
                 scores[key] = float(value)
     return scores

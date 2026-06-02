@@ -77,14 +77,12 @@ def _archive_diagnosis(
     methods = ["static_attention", "craf_attention", "rga_boosted_fusion", "sar_score_adapter"]
     per_method_seed_scores: dict[str, dict[int, np.ndarray]] = {}
     labels = None
-    sample_ids = None
     for method in methods:
         paths = _pick_parquet_paths(index_df, experiment_id=experiment_id, method=method, split=split)
         paths = {s: paths[s] for s in seeds if s in paths}
         if not paths:
             continue
-        sid, lab, per_seed = _load_method_scores(paths)
-        sample_ids = sid
+        _, lab, per_seed = _load_method_scores(paths)
         labels = lab
         per_method_seed_scores[method] = per_seed
 

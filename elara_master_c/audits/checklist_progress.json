@@ -2,8 +2,8 @@
   "repo_root": "/Volumes/T9/uav/AutoML_Flagship_V8",
   "summary": {
     "done": 47,
-    "total": 51,
-    "percent_complete": 92.2,
+    "total": 53,
+    "percent_complete": 88.7,
     "execution_percent": 100.0,
     "execution_complete": true,
     "scientific_scenario_c_ready": false,
@@ -13,7 +13,31 @@
     "positive_transfer_confirmed": false,
     "positive_transfer_status": "OFFICIAL_FAIL",
     "gate_f_positive_transfer": false,
-    "verdict": "Execution 100.0% - strict Gate E NOT CONFIRMED; bounded v3 stress evidence PASS; D13 natural positive transfer OFFICIAL NOT CONFIRMED; flagship scientific readiness NOT READY",
+    "natural_degradation_confirmed": false,
+    "natural_degradation_status": "OFFICIAL_FAIL",
+    "natural_degradation_dataset_status": "OPENED_AFTER_D16_OFFICIAL_ATTEMPT",
+    "gate_f_natural_degradation": false,
+    "primary_evidence_basis": "real_dataset_evidence",
+    "real_evidence_datasets": [
+      "MVTec 3D-AD",
+      "3D-ADAM",
+      "Real-IAD",
+      "Real-IAD D3",
+      "MulSen-AD",
+      "Real3D-AD",
+      "UNSW-NB15",
+      "BIDMC-healthcare"
+    ],
+    "synthetic_or_proxy_diagnostic_datasets": [
+      "Eyecandies",
+      "VisA derived edge/noise proxy",
+      "MVTec LOCO-AD derived edge proxy",
+      "ELARA-Bench-LA label-aligned composite",
+      "synthetic smoke tests"
+    ],
+    "synthetic_primary_evidence_allowed": false,
+    "synthetic_policy_note": "Synthetic/proxy datasets remain allowed for smoke tests, mechanism diagnostics, and negative evidence, but they are not counted as primary transfer or production-readiness evidence.",
+    "verdict": "Execution 100.0% - strict Gate E NOT CONFIRMED; bounded v3 stress evidence PASS; D13 natural positive transfer OFFICIAL NOT CONFIRMED; D16 natural degradation OFFICIAL NOT CONFIRMED (OPENED_AFTER_D16_OFFICIAL_ATTEMPT); primary evidence basis REAL DATASETS; flagship scientific readiness NOT READY",
     "remaining_blockers": [
       {
         "id": "gate_e",
@@ -21,7 +45,11 @@
       },
       {
         "id": "gate_e_positive_transfer",
-        "description": "Gate E natural positive transfer (fresh SAR+CW positive CIs)"
+        "description": "Gate E natural positive transfer (official SAR+CW positive CIs)"
+      },
+      {
+        "id": "gate_s_natural_degradation",
+        "description": "Gate S natural degradation/headroom transfer"
       },
       {
         "id": "gate_f_scientific",
@@ -30,6 +58,10 @@
       {
         "id": "gate_f_positive_transfer",
         "description": "Positive-transfer scientific track ready"
+      },
+      {
+        "id": "gate_f_natural_degradation",
+        "description": "Natural-degradation scientific track ready"
       }
     ]
   },
@@ -289,9 +321,16 @@
     {
       "id": "gate_e_positive_transfer",
       "stage": "GATE",
-      "description": "Gate E natural positive transfer (fresh SAR+CW positive CIs)",
+      "description": "Gate E natural positive transfer (official SAR+CW positive CIs)",
       "done": false,
       "evidence": "D13 natural clean transfer; opened datasets are development only"
+    },
+    {
+      "id": "gate_s_natural_degradation",
+      "stage": "GATE",
+      "description": "Gate S natural degradation/headroom transfer",
+      "done": false,
+      "evidence": "D16 validation-selected real natural stress transfer; status=OFFICIAL_FAIL; dataset=OPENED_AFTER_D16_OFFICIAL_ATTEMPT"
     },
     {
       "id": "gate_f",
@@ -319,7 +358,14 @@
       "stage": "GATE",
       "description": "Positive-transfer scientific track ready",
       "done": false,
-      "evidence": "strict Gate D plus D13 natural fresh transfer; does not rewrite legacy Gate E"
+      "evidence": "strict Gate D plus D13 official natural transfer; does not rewrite legacy Gate E"
+    },
+    {
+      "id": "gate_f_natural_degradation",
+      "stage": "GATE",
+      "description": "Natural-degradation scientific track ready",
+      "done": false,
+      "evidence": "strict Gate D plus D16 real natural-degradation headroom; current D3 evidence is opened after evaluation; does not rewrite legacy Gate E"
     },
     {
       "id": "pred_archive_module",

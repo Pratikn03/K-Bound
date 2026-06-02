@@ -48,49 +48,64 @@ a precise characterization of **WHEN reliability gating helps**, not a universal
 
 ## 3. Why are some datasets used and others NOT? (your key question)
 
-You have **12 raw datasets on disk (~96 GB)**. Not all feed the headline claim,
-and that is **by design**, not neglect. Here is the full map.
+You now have **15 primary raw dataset directories on disk (~346 GB)**, plus
+download caches. Not all feed the headline claim, and that is **by design**,
+not neglect. The full authoritative map is maintained in
+[`DATASET_USE_MATRIX.md`](./DATASET_USE_MATRIX.md). The compact map is below.
 
 ### Datasets and their role
 
-| Dataset | Size | Modalities | Role | Used in headline? | Why / why not |
-|---|---|---|---|---|---|
-| **MVTec 3D-AD** | 26 GB | RGB + depth (XYZ) | **M1 primary** | **YES** | Naturally paired RGB+depth; the in-domain Gate-D/T5 win lives here |
-| **3D-ADAM** | 6.5 GB | RGB + depth | **M2 external transfer** | **YES** | Held-out external set; the transfer / stress-regime evidence lives here |
-| **Eyecandies** | 25 GB | RGB + depth | M2 development | Partial | Used for Family-D study; reclassified to *development* after it failed transfer (Policy B, D1) — kept for analysis, not for the final transfer claim |
-| **MVTec LOCO-AD** | 12 GB | RGB → derived edge | M1 secondary | Diagnostic only | RGB-only with a *derived* second "modality" — not a true second sensor, so it can't carry a multimodal claim |
-| **VisA** | 4.3 GB | RGB → derived edge | M1 secondary | Diagnostic only | Same reason: derived-view proxy, not genuine multimodality |
-| **Real3D-AD** | 10 GB | RGB + 3D | candidate | Tier-B only | Used in an earlier mechanism replication; not part of the v3 headline |
-| **UNSW-NB15** | 606 MB | network-flow views | M3 candidate (non-vision) | Family-A/B | Used to show the method isn't vision-only, but it's "structured views," not co-observed sensors |
-| **Healthcare (GridPulse)** | 434 MB | clinical multimodal | M3 development | Built, not headline | Fusion inputs exist (`healthcare_*_inputs.csv`); sealed as a *development* M3 candidate (D4), not yet a confirmatory cell |
-| **Fraud / Behavior / NLP** | ~250 MB | tabular / text | M0 components | Mechanism only | These feed the *synthetic label-aligned* ELARA-Bench benchmark (Family-B mechanism), not the natural-pairing transfer claim |
-| **Vision (CIFAR-style)** | 256 KB | image | scaffolding | No | Tiny utility data, not a research benchmark |
+| Dataset | Size | Modalities / views | Current use | Claim ceiling |
+|---|---|---|---|---|
+| **MVTec 3D-AD** | 26 GB | RGB + depth/XYZ | Primary M1/Gate D, T5, and controlled-stress replication | Bounded in-domain/stress evidence; not external transfer or one-class SOTA |
+| **3D-ADAM** | 6.5 GB | RGB + depth | Sealed M2 external transfer and v3 stress-regime transfer | Opened/spent official M2; clean Gate E failed/tied, stress evidence retained |
+| **Real-IAD** | 4.0 GB | RGB industrial images | D13 natural positive-transfer official attempt | Official D13 fail: beats CW, fails SAR; now opened development data |
+| **Real-IAD D3** | 259 GB | RGB + pseudo-3D + point cloud | D16 natural-degradation/headroom audit | All-test CW positive, primary stress CI crosses zero; no Gate S pass |
+| **MulSen-AD** | 19 GB | RGB + infrared + point cloud | D13 opened-development replication | Development only unless an unopened split/category is prelocked |
+| **Eyecandies** | 25 GB | Synthetic RGB + depth + normals | Family D transfer failure record | Valid failed transfer; development/negative evidence only |
+| **Real3D-AD** | 10 GB | 3D point-cloud benchmark | Earlier exploratory/mechanism benchmark cells | Tier-B/exploratory only; not v3 headline transfer |
+| **MVTec LOCO-AD** | 12 GB | RGB + derived edge proxy | Family A secondary diagnostic | Derived-view proxy; no independent-modality claim |
+| **VisA** | 4.3 GB | RGB + derived edge/noise proxy | Family A/C secondary and noise-floor checks | Diagnostic only; not independent multimodal evidence |
+| **UNSW-NB15 / cyber** | 606 MB | Flow / connection / context event views | Non-vision structured event-view benchmark | Fusion machinery outside vision; small effect; not co-observed sensors |
+| **Healthcare / BIDMC** | 354 MB | Clinical structured/time-series views | M3 development and deployment-audit gap checks | Development evidence; not clinical deployment validation |
+| **Fraud / behavior / NLP** | ~252 MB | Tabular / text | ELARA-Bench-LA label-aligned components | Mechanism/stress only; not natural multimodal transfer |
+| **Vision scaffold** | 256 KB | Small image utility data | Smoke/scaffolding | No research claim |
+| **Download caches** | ~8.4 GB | `_downloads_*` staging data | Acquisition cache only | Not evidence |
 
 ### The principle behind "used vs. not used"
 
-The headline claim is about **naturally co-observed multimodal data** (two real
-sensors of the same object). Only a few datasets qualify as *genuinely* paired:
-**MVTec 3D-AD and 3D-ADAM (RGB+depth), Real3D-AD, Eyecandies.** The others are
-either:
+The headline claim is now **real-dataset-first**: primary evidence should come
+from captured datasets such as **MVTec 3D-AD, 3D-ADAM, Real-IAD, Real-IAD D3,
+MulSen-AD, Real3D-AD, UNSW-NB15, and BIDMC-healthcare**. Eyecandies is paired
+RGB-D-normal data, but it is synthetic, so it remains a failure/development
+record rather than positive primary evidence. Also, "genuinely paired" is not
+the same as "fresh official transfer." 3D-ADAM, Real-IAD, Real-IAD D3,
+MulSen-AD, and Eyecandies are now opened for at least one track, so they cannot
+be reused as fresh evidence without a new prelocked unopened split/category.
+
+The others are either:
 
 - **derived-view proxies** (VisA, LOCO — one modality is computed from the
   other, so "fusion" is partly circular), or
 - **label-aligned composites** (ELARA-Bench from fraud/cyber/NLP — different
   samples glued by class label, useful for *mechanism* tests but not a real
   multimodal claim), or
-- **development / candidate** sets (Eyecandies after it failed; Healthcare M3,
-  not yet executed at confirmatory level).
+- **development / candidate** sets (Real-IAD after D13, Real-IAD D3 after D16,
+  MulSen-AD opened-development, Eyecandies after failure, Healthcare M3).
 
 So unused-in-headline ≠ wasted. They are **honestly scoped out** because
 including a derived-view or label-aligned result in a "multimodal generalization"
 claim would be overclaiming. This conservatism is *why the work is defensible*.
 
-**The one genuine gap:** a *second untouched naturally-paired RGB+depth* dataset
-for the final transfer audit (registry slot `m2_new_untouched_transfer`,
-`train_allowed: false_until_sealed`) has **not been acquired**. Real-IAD has
-now been opened for D13 and did not beat SAR, so the next transfer upgrade needs
-both a stronger pre-registered method and a separate fresh holdout — not reuse
-of any opened result already on disk.
+**The one genuine gap:** the next transfer upgrade needs either a new untouched
+RGB+X dataset or a prelocked unopened split/category. It cannot be obtained by
+retuning on Real-IAD, Real-IAD D3, 3D-ADAM, MulSen-AD, or Eyecandies and then
+calling the same opened data fresh.
+
+Real-IAD D3 natural degradation remains useful: it showed all-test headroom
+versus CW and clean default safety, while also proving that the current
+stress-subset gate is not statistically strong enough. It is evidence, not a
+pass.
 
 ---
 
@@ -107,16 +122,28 @@ of any opened result already on disk.
 - **D13 opened-development natural transfer:** the validation-only residual
   stack beats both SAR and CW on opened 3D-ADAM, but this is development
   evidence only.
+- **D16 Real-IAD D3 natural degradation:** the validation-selected stress router
+  beats CW on all D3 holdout samples (**Δ = +0.0624, 95% CI [+0.0347,+0.0896]**)
+  and defaults on clean samples, but this is not the primary gate endpoint.
 
 ### What did NOT pass (honestly)
 - **Gate E (clean external transfer): FAIL.** RGA+ vs SAR on *clean* 3D-ADAM is a
   statistical **tie** (+0.0139, CI [−0.0007, +0.0286]). Worse, a parameter-free
   confidence-weighted mean (0.912) beats both RGA+ (0.886) and SAR (0.872) on
   clean transfer. So clean-regime fusion has no edge.
-- **D13 fresh Real-IAD natural transfer: FAIL vs SAR.** The residual-stack
+- **D13 Real-IAD natural-transfer official attempt: FAIL vs SAR.** The residual-stack
   candidate beats CW (**Δ = +0.0191, 95% CI [+0.0148, +0.0235]**) but loses to
   SAR (**Δ = −0.0858, 95% CI [−0.0928, −0.0787]**). Because D13 requires both
-  SAR and CW to pass, `gate_e_positive_transfer_confirmed=false`.
+  SAR and CW to pass, `gate_e_positive_transfer_confirmed=false`. After this
+  evaluation, the Real-IAD result is opened evidence, not a reusable fresh
+  holdout.
+- **D16 Real-IAD D3 natural degradation: OFFICIAL FAIL.** The selected
+  stress rule (`score_disagreement`) has positive stress-subset point delta vs
+  CW (**Δ = +0.0351**) but the 95% CI crosses zero
+  (**[−0.0276,+0.0980]**). Clean no-regression passes, but the primary stress
+  endpoint does not, so `gate_s_natural_degradation_confirmed=false`. The D3
+  data remain valuable real natural-degradation evidence, but they are now
+  opened after the D16 attempt.
 - **Gate F (scientific flagship): FAIL** — blocked by Gate E.
 - **MVTec degradation replication:** positive point estimates but CIs cross zero
   → "directionally supportive, statistically inconclusive."
@@ -198,8 +225,13 @@ Scale: F → D → C → B → A (A = top-tier). Each grade has its basis.
 **Level 2.5 / 5** = **strong bounded paper / strong PhD thesis chapter / partial
 generalization.**
 
-- **NOT** Master-C flagship, **NOT** deployment-ready, **NOT** universal/SOTA,
-  **NOT** independently reproduced.
+- **NOT** Master-C flagship, **NOT** universal/SOTA, **NOT** independently
+  reproduced, and **NOT** scientifically production-ready in the sense of
+  strict clean-transfer deployment evidence.
+- **Operational API production readiness is a separate engineering track:**
+  `deploy/api` is the bounded production target with authenticated core routes,
+  `/ready`, checksum-gated artifacts, fail-closed optional routes, production
+  compose defaults, and a runbook. This does not make Gate E pass.
 - **IS** a rigorous, honest, novel-in-framing measurement study with a confirmed
   in-domain win and a characterized stress-regime transfer result.
 
@@ -217,7 +249,9 @@ generalization.**
 ## 7. What would raise the level (honest, none faked)
 
 1. **One-class protocol evaluation** → leaderboard-comparable headline. (Level 3)
-2. **Natural degradation** (real sensor artifacts) instead of synthetic noise.
+2. **Natural degradation** (real sensor artifacts) with a stricter confirmed
+   stress endpoint. Real-IAD D3/D16 gives positive all-test evidence but not a
+   stress-subset CI pass.
 3. **A stronger pre-registered natural-transfer method plus another fresh
    holdout.** Real-IAD is now opened for D13 and failed SAR, so it can guide
    method design but cannot be reused as a new official pass.

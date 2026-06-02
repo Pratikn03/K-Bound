@@ -267,6 +267,119 @@ def _load_positive_transfer_confirmation(root: Path) -> dict:
     return out
 
 
+def _load_natural_degradation_confirmation(root: Path) -> dict:
+    """Load D16 natural-degradation status without mutating strict Gate E."""
+    out = {
+        "natural_degradation_protocol": "research_lock/D16_NATURAL_DEGRADATION_SELECTOR_PROTOCOL_v1.yaml",
+        "gate_s_natural_degradation_confirmed": False,
+        "gate_s_natural_degradation_official": False,
+        "gate_s_natural_degradation_official_attempt": False,
+        "gate_s_natural_degradation_status": "PENDING_D3_HOLDOUT",
+        "gate_s_stress_delta_vs_cw": None,
+        "gate_s_stress_ci95_vs_cw": None,
+        "gate_s_stress_vs_cw_pass": False,
+        "gate_s_clean_delta_vs_cw": None,
+        "gate_s_clean_ci95_vs_cw": None,
+        "gate_s_clean_no_regression_pass": False,
+        "gate_s_clean_default_rate": None,
+        "gate_s_selected_method": None,
+        "gate_s_holdout_status": None,
+        "gate_s_initial_holdout_status": None,
+        "gate_s_current_dataset_status": None,
+        "gate_s_evidence_role": None,
+        "gate_s_freshness_note": None,
+        "gate_s_result_path": None,
+    }
+    for rel in (
+        "experiments/fusion/realiad_d3_headroom_audit_result.json",
+        "elara_master_c/audits/realiad_d3_headroom_audit_result.json",
+        "experiments/fusion/realiad_d3_headroom_smoke_audit_result.json",
+    ):
+        path = root / rel
+        if not path.is_file():
+            continue
+        try:
+            doc = json.loads(path.read_text(encoding="utf-8"))
+        except (json.JSONDecodeError, OSError):
+            continue
+        stats = doc.get("stats") or {}
+        stress = stats.get("stress_vs_cw") or {}
+        clean = stats.get("clean_vs_cw") or {}
+        subsets = doc.get("subsets") or {}
+        integrity = doc.get("category_integrity") or {}
+        selection = doc.get("selection") or {}
+        selector = selection.get("method_selector") or {}
+        stress_pass = _endpoint_pass(stress, min_delta=0.005)
+        clean_ci = clean.get("ci95") or [0.0, 0.0]
+        clean_pass = bool(clean.get("valid", False) and float(clean_ci[0]) >= -0.005)
+        clean_default_rate = subsets.get("clean_default_rate")
+        official_attempt = bool(
+            doc.get("protocol") == "D16_NATURAL_DEGRADATION_SELECTOR_PROTOCOL_v1"
+            and doc.get("holdout_status") == "FRESH_OR_UNOPENED"
+            and integrity.get("confirmatory_category_valid", False)
+        )
+        official = bool(
+            official_attempt
+            and stress_pass
+            and clean_pass
+            and clean_default_rate is not None
+            and float(clean_default_rate) >= 0.80
+            and doc.get("gate_s_natural_degradation_confirmed") is True
+        )
+        if official:
+            status = "PASS"
+        elif official_attempt:
+            status = "OFFICIAL_FAIL"
+        else:
+            status = str(doc.get("status", "DEVELOPMENT_ONLY"))
+        initial_holdout_status = doc.get("initial_holdout_status", doc.get("holdout_status"))
+        current_dataset_status = doc.get("current_dataset_status")
+        if current_dataset_status is None:
+            if str(doc.get("status")) in {
+                "OFFICIAL_PASS",
+                "OFFICIAL_FAIL",
+                "INVALID_OFFICIAL_OPENED_CATEGORY",
+            }:
+                current_dataset_status = "OPENED_AFTER_D16_OFFICIAL_ATTEMPT"
+            elif doc.get("holdout_status") == "OPENED_DEVELOPMENT_ONLY":
+                current_dataset_status = "OPENED_DEVELOPMENT_ONLY"
+            else:
+                current_dataset_status = "PENDING_OR_UNEVALUATED"
+        out.update(
+            {
+                "gate_s_natural_degradation_confirmed": official,
+                "gate_s_natural_degradation_official": official,
+                "gate_s_natural_degradation_official_attempt": official_attempt,
+                "gate_s_natural_degradation_status": status,
+                "gate_s_stress_delta_vs_cw": stress.get("delta"),
+                "gate_s_stress_ci95_vs_cw": stress.get("ci95"),
+                "gate_s_stress_vs_cw_pass": stress_pass,
+                "gate_s_clean_delta_vs_cw": clean.get("delta"),
+                "gate_s_clean_ci95_vs_cw": clean.get("ci95"),
+                "gate_s_clean_no_regression_pass": clean_pass,
+                "gate_s_clean_default_rate": clean_default_rate,
+                "gate_s_selected_method": selector.get("selected_method"),
+                "gate_s_holdout_status": doc.get("holdout_status"),
+                "gate_s_initial_holdout_status": initial_holdout_status,
+                "gate_s_current_dataset_status": current_dataset_status,
+                "gate_s_evidence_role": doc.get(
+                    "evidence_role", "real_natural_degradation_evidence"
+                ),
+                "gate_s_freshness_note": doc.get(
+                    "freshness_note",
+                    (
+                        "The archived D16 attempt may record initial holdout eligibility. "
+                        "After evaluation, Real-IAD D3 is opened evidence rather than a reusable fresh holdout."
+                    ),
+                ),
+                "gate_s_result_path": rel,
+                "gate_s_category_integrity": integrity,
+            }
+        )
+        return out
+    return out
+
+
 def _merge_paired_into_cell(cell: dict, paired: dict) -> dict:
     """Overlay per-sample DeLong/bootstrap onto M2_external seed-level cell."""
     primary_id = paired.get("primary_comparison", "M2-EXTERNAL-vs-SAR")
@@ -611,6 +724,15 @@ def main() -> int:
     report["gate_f_positive_transfer_track"] = bool(
         report.get("gate_d_m1")
         and positive_transfer.get("gate_e_positive_transfer_confirmed")
+        and _exists_gate_a(root)
+        and _exists_gate_c(root)
+    )
+
+    natural_degradation = _load_natural_degradation_confirmation(root)
+    report.update(natural_degradation)
+    report["gate_f_natural_degradation_track"] = bool(
+        report.get("gate_d_m1")
+        and natural_degradation.get("gate_s_natural_degradation_confirmed")
         and _exists_gate_a(root)
         and _exists_gate_c(root)
     )

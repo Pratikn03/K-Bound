@@ -2,8 +2,8 @@ import pytest
 
 
 def test_distilbert_forward_smoke():
-    torch = pytest.importorskip("torch")
-    transformers = pytest.importorskip("transformers")
+    pytest.importorskip("torch")
+    pytest.importorskip("transformers")
     from transformers import AutoModelForSequenceClassification, AutoTokenizer
 
     tokenizer = AutoTokenizer.from_pretrained("distilbert-base-uncased")

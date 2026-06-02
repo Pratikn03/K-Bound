@@ -119,6 +119,50 @@ jobs:
       - name: Compose config validates with required production env
         run: |
           docker compose config >/tmp/uais-compose-config.yml
+      - name: Docker production API smoke
+        run: |
+          docker build -t uais-api-ci .
+          docker run --rm -d --name uais-api-ci \
+            -p 127.0.0.1:8000:8000 \
+            -e UAIS_API_KEYS=ci-secret \
+            -e UAIS_CORS_ORIGINS=https://ci.example \
+            -e UAIS_PRODUCTION_MODE=true \
+            uais-api-ci
+          python - <<'PY'
+          import json
+          import time
+          import urllib.error
+          import urllib.request
+
+          def request(path, api_key=None):
+              headers = {}
+              if api_key:
+                  headers["X-API-Key"] = api_key
+              req = urllib.request.Request(f"http://127.0.0.1:8000{path}", headers=headers)
+              try:
+                  with urllib.request.urlopen(req, timeout=5) as resp:
+                      return resp.status, resp.read()
+              except urllib.error.HTTPError as exc:
+                  return exc.code, exc.read()
+
+          try:
+              for _ in range(30):
+                  status, _ = request("/health")
+                  if status == 200:
+                      break
+                  time.sleep(1)
+              else:
+                  raise AssertionError("/health did not become ready")
+
+              assert request("/ready")[0] == 403
+              ready_status, ready_body = request("/ready", "ci-secret")
+              assert ready_status == 503
+              assert json.loads(ready_body)["checks"]["models"]["status"] == "fail"
+          finally:
+              import subprocess
+
+              subprocess.run(["docker", "rm", "-f", "uais-api-ci"], check=False)
+          PY
       - name: API imports with production env
         run: |
           python - <<'PY'

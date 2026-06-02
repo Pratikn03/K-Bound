@@ -1,7 +1,7 @@
 import inspect
 from pathlib import Path
 
-from uais.data import load_behavior_data, load_cyber_data, load_datasets, load_fraud_data
+from uais.data import load_behavior_data, load_cyber_data, load_datasets, load_fraud_data, load_paysim
 
 
 def test_public_domain_loaders_make_synthetic_fallback_opt_in():
@@ -10,6 +10,7 @@ def test_public_domain_loaders_make_synthetic_fallback_opt_in():
         load_fraud_data.load_creditcard,
         load_cyber_data.load_cyber_data,
         load_behavior_data.load_behavior_data,
+        load_paysim.load_paysim,
         load_datasets.load_fraud_data,
         load_datasets.load_cyber_data,
         load_datasets.load_behavior_data,

@@ -27,6 +27,37 @@ class Item:
     evidence: str
 
 
+REAL_EVIDENCE_DATASETS = [
+    "MVTec 3D-AD",
+    "3D-ADAM",
+    "Real-IAD",
+    "Real-IAD D3",
+    "MulSen-AD",
+    "Real3D-AD",
+    "UNSW-NB15",
+    "BIDMC-healthcare",
+]
+
+SYNTHETIC_OR_PROXY_DIAGNOSTIC_DATASETS = [
+    "Eyecandies",
+    "VisA derived edge/noise proxy",
+    "MVTec LOCO-AD derived edge proxy",
+    "ELARA-Bench-LA label-aligned composite",
+    "synthetic smoke tests",
+]
+
+REAL_DATASET_EVIDENCE_POLICY = {
+    "primary_evidence_basis": "real_dataset_evidence",
+    "real_evidence_datasets": REAL_EVIDENCE_DATASETS,
+    "synthetic_or_proxy_diagnostic_datasets": SYNTHETIC_OR_PROXY_DIAGNOSTIC_DATASETS,
+    "synthetic_primary_evidence_allowed": False,
+    "synthetic_policy_note": (
+        "Synthetic/proxy datasets remain allowed for smoke tests, mechanism diagnostics, "
+        "and negative evidence, but they are not counted as primary transfer or production-readiness evidence."
+    ),
+}
+
+
 def _exists(root: Path, rel: str) -> bool:
     return (root / rel).exists()
 
@@ -174,6 +205,10 @@ def build_checklist(root: Path) -> list[Item]:
     positive_transfer_confirmed = False
     gate_f_positive_transfer = False
     positive_transfer_status = "PENDING_FRESH_HOLDOUT"
+    natural_degradation_confirmed = False
+    gate_f_natural_degradation = False
+    natural_degradation_status = "PENDING_D3_HOLDOUT"
+    natural_degradation_dataset_status = "PENDING_OR_UNEVALUATED"
     if conf.is_file():
         try:
             c = json.loads(conf.read_text(encoding="utf-8"))
@@ -193,6 +228,14 @@ def build_checklist(root: Path) -> list[Item]:
             positive_transfer_confirmed = bool(c.get("gate_e_positive_transfer_confirmed"))
             gate_f_positive_transfer = bool(c.get("gate_f_positive_transfer_track"))
             positive_transfer_status = str(c.get("gate_e_positive_transfer_status", positive_transfer_status))
+            natural_degradation_confirmed = bool(c.get("gate_s_natural_degradation_confirmed"))
+            gate_f_natural_degradation = bool(c.get("gate_f_natural_degradation_track"))
+            natural_degradation_status = str(
+                c.get("gate_s_natural_degradation_status", natural_degradation_status)
+            )
+            natural_degradation_dataset_status = str(
+                c.get("gate_s_current_dataset_status", natural_degradation_dataset_status)
+            )
         except (json.JSONDecodeError, OSError):
             pass
     add("T5", "t5_rga_plus_superiority", "RGA+ beats frozen baseline on M1 (5-seed)", t5_pass, "confirmatory_statistics_report.json")
@@ -246,9 +289,19 @@ def build_checklist(root: Path) -> list[Item]:
     add(
         "GATE",
         "gate_e_positive_transfer",
-        "Gate E natural positive transfer (fresh SAR+CW positive CIs)",
+        "Gate E natural positive transfer (official SAR+CW positive CIs)",
         positive_transfer_confirmed,
         "D13 natural clean transfer; opened datasets are development only",
+    )
+    add(
+        "GATE",
+        "gate_s_natural_degradation",
+        "Gate S natural degradation/headroom transfer",
+        natural_degradation_confirmed,
+        (
+            "D16 validation-selected real natural stress transfer; "
+            f"status={natural_degradation_status}; dataset={natural_degradation_dataset_status}"
+        ),
     )
     add("GATE", "gate_f", "Gate F — training pipeline execution complete", gate_f_exec, "all T0–T7 runs executed")
     add(
@@ -270,7 +323,17 @@ def build_checklist(root: Path) -> list[Item]:
         "gate_f_positive_transfer",
         "Positive-transfer scientific track ready",
         gate_f_positive_transfer,
-        "strict Gate D plus D13 natural fresh transfer; does not rewrite legacy Gate E",
+        "strict Gate D plus D13 official natural transfer; does not rewrite legacy Gate E",
+    )
+    add(
+        "GATE",
+        "gate_f_natural_degradation",
+        "Natural-degradation scientific track ready",
+        gate_f_natural_degradation,
+        (
+            "strict Gate D plus D16 real natural-degradation headroom; "
+            "current D3 evidence is opened after evaluation; does not rewrite legacy Gate E"
+        ),
     )
 
     # Prediction logging
@@ -342,6 +405,9 @@ def main() -> int:
     bounded_v3_pass = gate_f_bounded_v3 = False
     positive_transfer_confirmed = gate_f_positive_transfer = False
     positive_transfer_status = "PENDING_FRESH_HOLDOUT"
+    natural_degradation_confirmed = gate_f_natural_degradation = False
+    natural_degradation_status = "PENDING_D3_HOLDOUT"
+    natural_degradation_dataset_status = "PENDING_OR_UNEVALUATED"
     if conf_path.is_file():
         try:
             c = json.loads(conf_path.read_text(encoding="utf-8"))
@@ -357,6 +423,14 @@ def main() -> int:
             positive_transfer_confirmed = bool(c.get("gate_e_positive_transfer_confirmed"))
             gate_f_positive_transfer = bool(c.get("gate_f_positive_transfer_track"))
             positive_transfer_status = str(c.get("gate_e_positive_transfer_status", positive_transfer_status))
+            natural_degradation_confirmed = bool(c.get("gate_s_natural_degradation_confirmed"))
+            gate_f_natural_degradation = bool(c.get("gate_f_natural_degradation_track"))
+            natural_degradation_status = str(
+                c.get("gate_s_natural_degradation_status", natural_degradation_status)
+            )
+            natural_degradation_dataset_status = str(
+                c.get("gate_s_current_dataset_status", natural_degradation_dataset_status)
+            )
         except (json.JSONDecodeError, OSError):
             pass
     if positive_transfer_confirmed:
@@ -367,6 +441,14 @@ def main() -> int:
         positive_transfer_verdict = "DEVELOPMENT ONLY"
     else:
         positive_transfer_verdict = "PENDING FRESH HOLDOUT"
+    if natural_degradation_confirmed:
+        natural_degradation_verdict = "PASS"
+    elif natural_degradation_status == "OFFICIAL_FAIL":
+        natural_degradation_verdict = "OFFICIAL NOT CONFIRMED"
+    elif natural_degradation_status == "DEVELOPMENT_ONLY":
+        natural_degradation_verdict = "DEVELOPMENT ONLY"
+    else:
+        natural_degradation_verdict = "PENDING D3 HOLDOUT"
     exec_items = [
         i
         for i in items
@@ -375,6 +457,8 @@ def main() -> int:
             "gate_e",
             "gate_e_positive_transfer",
             "gate_f_positive_transfer",
+            "gate_s_natural_degradation",
+            "gate_f_natural_degradation",
         )
     ]
     exec_done = sum(1 for i in exec_items if i.done)
@@ -394,12 +478,20 @@ def main() -> int:
             "positive_transfer_confirmed": positive_transfer_confirmed,
             "positive_transfer_status": positive_transfer_status,
             "gate_f_positive_transfer": gate_f_positive_transfer,
+            "natural_degradation_confirmed": natural_degradation_confirmed,
+            "natural_degradation_status": natural_degradation_status,
+            "natural_degradation_dataset_status": natural_degradation_dataset_status,
+            "gate_f_natural_degradation": gate_f_natural_degradation,
+            **REAL_DATASET_EVIDENCE_POLICY,
             "verdict": (
                 f"Execution {exec_pct:.1f}% - strict Gate E "
                 f"{'PASS' if m2_transfer_confirmed else 'NOT CONFIRMED'}; "
                 f"bounded v3 stress evidence "
                 f"{'PASS' if bounded_v3_pass else 'NOT ESTABLISHED'}; "
                 f"D13 natural positive transfer {positive_transfer_verdict}; "
+                f"D16 natural degradation {natural_degradation_verdict} "
+                f"({natural_degradation_dataset_status}); "
+                "primary evidence basis REAL DATASETS; "
                 f"flagship scientific readiness {'READY' if gate_f_sci else 'NOT READY'}"
             ),
             "remaining_blockers": [{"id": b.id, "description": b.description} for b in blockers],

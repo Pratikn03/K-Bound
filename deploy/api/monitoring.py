@@ -2,7 +2,7 @@
 
 import time
 from collections import defaultdict
-from datetime import datetime
+from datetime import datetime, timezone
 from inspect import isawaitable
 from typing import Any, Callable, Optional
 
@@ -57,6 +57,11 @@ SYSTEM_MEMORY_USAGE = _gauge("uais_system_memory_usage_bytes", "System memory us
 SYSTEM_CPU_USAGE = _gauge("uais_system_cpu_usage_percent", "System CPU usage percentage")
 
 MODEL_LOADED = _gauge("uais_model_loaded", "Whether model is loaded (1) or not (0)", ["model_type"])
+
+
+def utc_timestamp() -> str:
+    """Return an ISO-8601 UTC timestamp with explicit timezone information."""
+    return datetime.now(timezone.utc).isoformat()
 
 
 class MetricsMiddleware(BaseHTTPMiddleware):
@@ -125,7 +130,7 @@ class HealthChecker:
 
     async def run_checks(self) -> dict[str, Any]:
         """Run all health checks."""
-        results = {"status": "healthy", "timestamp": datetime.utcnow().isoformat(), "checks": {}}
+        results = {"status": "healthy", "timestamp": utc_timestamp(), "checks": {}}
 
         for name, check_fn in self.checks.items():
             try:
@@ -138,7 +143,7 @@ class HealthChecker:
                 check_result = {
                     "status": "pass" if result else "fail",
                     "duration_ms": round(duration * 1000, 2),
-                    "timestamp": datetime.utcnow().isoformat(),
+                    "timestamp": utc_timestamp(),
                 }
 
                 results["checks"][name] = check_result
@@ -155,7 +160,7 @@ class HealthChecker:
                 results["checks"][name] = {
                     "status": "error",
                     "error": str(e),
-                    "timestamp": datetime.utcnow().isoformat(),
+                    "timestamp": utc_timestamp(),
                 }
                 results["status"] = "unhealthy"
 

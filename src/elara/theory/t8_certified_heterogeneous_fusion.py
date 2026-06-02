@@ -136,7 +136,6 @@ def select_chf_route_on_validation(
     priority_rank = {name: i for i, name in enumerate(route_priority)}
 
     best_route = "sar_only"
-    best_probs = sar_probs
     best_auc = -1.0
     best_meta: dict = {}
     for name, probs, meta in candidates:
@@ -148,7 +147,6 @@ def select_chf_route_on_validation(
         ):
             best_auc = auc
             best_route = name
-            best_probs = probs
             best_meta = meta
 
     stack_weights = None

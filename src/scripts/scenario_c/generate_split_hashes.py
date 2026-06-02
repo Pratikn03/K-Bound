@@ -36,7 +36,7 @@ def hash_dataset_csv(csv_path: Path, *, split_col: str, id_col: str = "sample_id
 
 def main() -> int:
     parser = argparse.ArgumentParser()
-    args = parser.parse_args()
+    parser.parse_args()
     root = _repo_root()
     out_dir = root / "elara_master_c/data/splits/split_hashes"
     out_dir.mkdir(parents=True, exist_ok=True)

@@ -51,10 +51,10 @@ def emit_tex(payload: dict) -> str:
         r"\end{tabular}",
         r"",
         rf"% Deterministic miss boundary: k* = {det:.2f}. The mean gate fails to fire",
-        rf"% for k <= floor(k*) (deterministic prediction). The calibrated prediction",
-        rf"% uses per-sample reliability std ~0.08 to smooth the step transition.",
+        r"% for k <= floor(k*) (deterministic prediction). The calibrated prediction",
+        r"% uses per-sample reliability std ~0.08 to smooth the step transition.",
         rf"% Estimated mu_h={payload['mu_h']:.3f}, mu_c={payload['mu_c']:.3f}",
-        rf"% from k=0 and k=D rows of the empirical k-of-D sweep.",
+        r"% from k=0 and k=D rows of the empirical k-of-D sweep.",
     ]
     return "\n".join(out)
 

@@ -1,6 +1,6 @@
 # Master Scenario C — Checklist Progress
 
-**47/51 items (92.2%)** | **Execution: 100.0%** | See `FINAL_CHECKLIST_VERDICT.md`.
+**47/53 items (88.7%)** | **Execution: 100.0%** | See `FINAL_CHECKLIST_VERDICT.md`.
 
 | Stage | ID | Done | Description |
 |-------|-----|------|-------------|
@@ -40,11 +40,13 @@
 | GATE | gate_d | yes | Gate D — RGA+ beats frozen comparator (confirmatory) |
 | GATE | gate_e | no | Gate E — M2 transfer confirmed (positive CI) |
 | GATE | gate_e_bounded_v3 | yes | Gate E bounded v3 stress evidence |
-| GATE | gate_e_positive_transfer | no | Gate E natural positive transfer (fresh SAR+CW positive CIs) |
+| GATE | gate_e_positive_transfer | no | Gate E natural positive transfer (official SAR+CW positive CIs) |
+| GATE | gate_s_natural_degradation | no | Gate S natural degradation/headroom transfer |
 | GATE | gate_f | yes | Gate F — training pipeline execution complete |
 | GATE | gate_f_scientific | no | Gate F — Scenario C scientific claim ready |
 | GATE | gate_f_bounded_v3 | yes | Bounded v3 thesis/paper evidence ready |
 | GATE | gate_f_positive_transfer | no | Positive-transfer scientific track ready |
+| GATE | gate_f_natural_degradation | no | Natural-degradation scientific track ready |
 | LOG | pred_archive_module | yes | PredictionArchive module |
 | LOG | pred_archive_all_runs | yes | Master C fusion runs write archives |
 | TIER3 | tier3_m4_monitoring_audit | yes | M4 temporal/monitoring audit artifact |

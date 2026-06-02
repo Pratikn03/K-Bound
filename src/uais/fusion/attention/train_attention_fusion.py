@@ -12,7 +12,6 @@ from torch.utils.data import DataLoader
 
 from uais.fusion.attention.attention_utils import (
     FusionDataset,
-    apply_domain_dropout,
     build_fusion_tensors,
     hash_file,
     infer_feature_columns,
@@ -21,7 +20,7 @@ from uais.fusion.attention.attention_utils import (
     validate_fusion_schema,
 )
 from uais.fusion.attention.cross_modal_attention import AttentionFusionModel
-from uais.fusion.attention.fusion_training_utils import attention_fusion_loss, evaluate_model
+from uais.fusion.attention.fusion_training_utils import evaluate_model
 from uais.fusion.attention.training_loop import train_attention_model
 from uais.utils.config_loader import load_yaml
 from uais.utils.mlflow_utils import load_mlflow_settings, log_run, setup_mlflow

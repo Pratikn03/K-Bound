@@ -29,6 +29,11 @@ def test_audit_checklist_progress_runs():
     assert report["summary"]["scientific_scenario_c_ready"] is False
     assert report["summary"]["bounded_v3_evidence_ready"] is True
     assert report["summary"]["positive_transfer_confirmed"] is False
+    assert report["summary"]["natural_degradation_confirmed"] is False
+    assert report["summary"]["primary_evidence_basis"] == "real_dataset_evidence"
+    assert report["summary"]["synthetic_primary_evidence_allowed"] is False
+    assert "Real-IAD D3" in report["summary"]["real_evidence_datasets"]
+    assert "Eyecandies" in report["summary"]["synthetic_or_proxy_diagnostic_datasets"]
     items = {row["id"]: row for row in report["items"]}
     assert items["gate_e"]["done"] is False
     assert items["gate_f_scientific"]["done"] is False
@@ -36,6 +41,8 @@ def test_audit_checklist_progress_runs():
     assert items["gate_f_bounded_v3"]["done"] is True
     assert items["gate_e_positive_transfer"]["done"] is False
     assert items["gate_f_positive_transfer"]["done"] is False
+    assert items["gate_s_natural_degradation"]["done"] is False
+    assert items["gate_f_natural_degradation"]["done"] is False
 
 
 def test_confirmatory_report_keeps_strict_and_bounded_v3_separate():
@@ -52,6 +59,11 @@ def test_confirmatory_report_keeps_strict_and_bounded_v3_separate():
     assert report["gate_e_positive_transfer_confirmed"] is False
     assert report["gate_e_positive_transfer_official"] is False
     assert report["gate_f_positive_transfer_track"] is False
+    assert report["gate_s_natural_degradation_confirmed"] is False
+    assert report["gate_s_natural_degradation_official"] is False
+    assert report["gate_s_initial_holdout_status"] == "FRESH_OR_UNOPENED"
+    assert report["gate_s_current_dataset_status"] == "OPENED_AFTER_D16_OFFICIAL_ATTEMPT"
+    assert report["gate_f_natural_degradation_track"] is False
 
 
 def test_dashboard_snapshot_exposes_strict_and_bounded_readiness():
@@ -65,12 +77,22 @@ def test_dashboard_snapshot_exposes_strict_and_bounded_readiness():
     assert c["gate_e_m2_bounded_v3_pass"] is True
     assert c["gate_e_positive_transfer_confirmed"] is False
     assert c["gate_e_positive_transfer_official"] is False
+    assert c["gate_s_natural_degradation_confirmed"] is False
+    assert c["gate_s_natural_degradation_official"] is False
+    assert c["gate_s_initial_holdout_status"] == "FRESH_OR_UNOPENED"
+    assert c["gate_s_current_dataset_status"] == "OPENED_AFTER_D16_OFFICIAL_ATTEMPT"
     assert c["gate_f_scenario_c_scientific"] is False
     assert c["gate_f_bounded_v3"] is True
     assert c["gate_f_positive_transfer_track"] is False
+    assert c["gate_f_natural_degradation_track"] is False
     assert claim["scientific_ready"] is False
     assert claim["bounded_v3_evidence_ready"] is True
     assert claim["positive_transfer_confirmed"] is False
+    assert claim["natural_degradation_confirmed"] is False
+    assert claim["primary_evidence_basis"] == "real_dataset_evidence"
+    assert claim["synthetic_primary_evidence_allowed"] is False
+    assert "Real-IAD D3" in claim["real_evidence_datasets"]
+    assert "Eyecandies" in claim["synthetic_or_proxy_diagnostic_datasets"]
     assert claim["readiness_tier"] != "tier_3_flagship"
 
 

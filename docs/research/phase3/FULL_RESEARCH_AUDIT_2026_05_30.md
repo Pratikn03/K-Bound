@@ -31,7 +31,8 @@ universal/SOTA, and not independently reproduced.
 **Practical submission level:** arXiv-ready and workshop/short-paper plausible
 for the bounded claim. Top-tier full-paper readiness remains borderline because
 the claim is supervised-paired and controlled-stress, not one-class leaderboard
-or natural-degradation generalization.
+or confirmed natural-degradation generalization. A later D16 Real-IAD D3 run
+adds natural-degradation evidence but does not pass its primary stress endpoint.
 
 ## What Is Now Defensible
 
@@ -85,6 +86,23 @@ MVTec replication is directionally supportive but statistically inconclusive.**
 Because several 95% CIs include negative values, do not claim weak dominance,
 strict non-negativity, or a proven "never worse" property.
 
+Natural degradation (D16, Real-IAD D3):
+
+- Protocol: 19-category Real-IAD D3 holdout; `common_mode_filter` excluded
+  because it was opened for smoke/debugging.
+- Selected stress method: `score_disagreement`, chosen on validation stress
+  subset only.
+- Primary stress subset vs CW: `Δ = +0.0351`, 95% CI `[-0.0276,+0.0980]` ->
+  **not confirmed**.
+- Clean subset no-regression vs CW: `Δ = 0.0000`, CI `[0.0000,0.0000]`,
+  clean default rate `1.0` -> pass.
+- All-test supportive result vs CW: `Δ = +0.0624`, 95% CI
+  `[+0.0347,+0.0896]`.
+
+D16 is therefore useful evidence that natural D3 contains recoverable headroom,
+but it is **not** a Gate S pass because the prelocked primary stress CI crosses
+zero.
+
 ### 3. Master C flagship is still not achieved
 
 Artifacts:
@@ -112,7 +130,7 @@ not retroactively make the old flagship claim true.
 | P1 mechanism validity | Strong but bounded | Coherent degradation/stress results are positive; clean/heterogeneous cases remain bounded |
 | P2 strong-baseline superiority | Pass in-domain | 30/30 split RGA+ win over SAR on supervised-paired MVTec |
 | P3 multimodal generalization | Partial | MVTec + 3D-ADAM are useful, but not enough for broad generalization |
-| P4 held-out transfer | Partial | 3D-ADAM stress-regime transfer yes at alpha 0.5+; Real-IAD D13 beats CW but fails SAR; MVTec replication inconclusive; clean general dominance no |
+| P4 held-out transfer | Partial | 3D-ADAM stress-regime transfer yes at alpha 0.5+; Real-IAD D13 beats CW but fails SAR; Real-IAD D3/D16 all-test natural-degradation signal is positive but primary stress CI crosses zero; MVTec replication inconclusive; clean general dominance no |
 | P5 theory/certificate | Strong | Theorem stack validator passes |
 | P6 deployment auditability | Partial | prediction archives and GDR exist; no prospective deployment validation |
 
@@ -141,8 +159,10 @@ Commands run in this audit:
    test counts and pre-v3 readiness language.
 3. **Keep paper/thesis formalization synchronized.** The current rebuild adds
    v3 algorithm material to both, but future updates should preserve that parity.
-4. **For Level 3+: add one-class and natural-degradation evidence.** The current
-   result is supervised-paired and controlled synthetic degradation.
+4. **For Level 3+: add one-class and stronger natural-degradation evidence.**
+   D16 adds Real-IAD D3 natural-degradation evidence, but the stress-subset gate
+   did not pass; the current main result remains supervised-paired and
+   controlled synthetic degradation.
 5. **For flagship claims: follow D12.** The v3 bounded claim is tracked
    separately from strict Gate E/F and cannot be silently substituted for the
    original Master C claim.

@@ -1,0 +1,64 @@
+version: 1
+status: SEALED_AFTER_D3_SMOKE_BEFORE_REMAINING_D3_OUTCOME_SCORING
+ratified: 2026-06-01
+decision: D16_validation_selected_natural_degradation_router
+target: headroom_aware_validation_selected_natural_reliability_shift
+
+integrity_note: >
+  D15 smoke/debugging opened common_mode_filter test outcomes. Therefore
+  common_mode_filter is development-only for D16. A D16 confirmatory Real-IAD
+  D3 claim must either exclude common_mode_filter or use a separate fresh
+  natural-degradation holdout.
+
+development_opened_categories:
+  - common_mode_filter
+
+confirmatory_d3_holdout_rule:
+  allowed_categories: all_downloaded_realiad_d3_categories_except_development_opened_categories
+  holdout_status_required: FRESH_OR_UNOPENED
+  test_labels_allowed_for_selection: false
+
+candidate_family:
+  selector_source: official_validation_stress_subset_only
+  labels_allowed_for_selection: validation_only
+  score_orientation_source: official_validation_labels_only
+  stress_threshold_source: validation_quality_reliability_quantiles_only
+  clean_behavior: default_to_confidence_weighted_mean
+  candidates:
+    - confidence_weighted_mean
+    - quality_reliability_weighted_mean
+    - inverse_reliability_weighted_mean
+    - max_score
+    - min_score
+    - score_disagreement
+    - max_plus_disagreement
+  fallback_if_validation_stress_degenerate: confidence_weighted_mean
+
+primary_endpoints:
+  stress_vs_cw:
+    subset: stress_subset
+    metric: roc_auc_delta
+    minimum_practical_delta: 0.005
+    ci95_low_must_be_gt: 0.0
+  clean_no_regression_vs_cw:
+    subset: clean_subset
+    metric: roc_auc_delta
+    ci95_low_must_be_gte: -0.005
+  clean_default_rate:
+    subset: clean_subset
+    minimum_rate: 0.80
+
+forbidden:
+  delete_or_overwrite_gate_e: true
+  claim_strict_gate_e_pass: true
+  choose_categories_from_test_performance: true
+  choose_candidate_from_test_labels: true
+  use_common_mode_filter_as_d16_confirmatory: true
+  synthetic_degradation_forbidden_as_primary: true
+
+reporting:
+  new_gate_field: gate_s_natural_degradation_confirmed
+  strict_gate_e_field_remains: gate_e_m2_transfer_confirmed
+  required_claim_language: >
+    D16 reports validation-selected natural-degradation headroom. Opened D3
+    development categories are not counted as confirmatory evidence.

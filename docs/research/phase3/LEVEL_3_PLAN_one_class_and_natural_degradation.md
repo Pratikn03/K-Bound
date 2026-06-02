@@ -1,8 +1,9 @@
 # Level 3+ Plan: One-Class Evaluation and Natural Degradation
 
-**Status:** scoped, NOT yet executed. These are the experiments that would move
-the project from "Level ~2.5/5 (strong bounded paper)" to a top-tier full-paper
-claim. Each requires new compute; none is faked or implied as done.
+**Status:** one-class remains scoped; natural degradation has now been executed
+once under D16 and is **not confirmed**. These are the experiments that would
+move the project from "Level ~2.5/5 (strong bounded paper)" to a top-tier
+full-paper claim. Each requires new compute; none is faked or implied as done.
 
 Authority: `research_lock/DECISIONS_v1.md` D7 (v3 bounded claim is not the
 flagship). Current rating: `FULL_RESEARCH_AUDIT_2026_05_30.md`.
@@ -16,8 +17,9 @@ The two remaining caveats that bound the v3 result are:
    to the fusion training fold) -> not comparable to the published one-class
    MVTec 3D-AD leaderboard (M3DM 0.945, AST 0.937, PatchCore-3D 0.901).
 2. The stress-regime transfer win uses a **controlled synthetic** degradation
-   (uniform-noise blend) -> a reviewer can ask whether it holds under naturally
-   occurring sensor/domain degradation.
+   (uniform-noise blend). D16 adds a Real-IAD D3 natural-degradation attempt,
+   but its primary stress-subset CI crosses zero, so a reviewer can still ask
+   for confirmed natural stress evidence.
 
 Closing both converts "bounded in-domain + synthetic-stress" into
 "leaderboard-positioned + natural-stress", which is the Level-3 bar.
@@ -52,8 +54,15 @@ SOTA claim.
 
 ## Task L3.2 - Natural degradation evidence
 
+**Current D16 result.** Real-IAD D3 was downloaded and evaluated with a
+validation-selected stress router on a 19-category holdout excluding the opened
+smoke category. The all-test result vs CW is positive (`Δ = +0.0624`, 95% CI
+`[+0.0347,+0.0896]`), but the primary stress subset is not confirmed
+(`Δ = +0.0351`, 95% CI `[-0.0276,+0.0980]`). Clean no-regression passes.
+
 **Goal.** Replace (or complement) the synthetic uniform-noise blend with a
-naturally occurring modality degradation and show the same gate crossover.
+naturally occurring modality degradation and show the same gate crossover with
+a primary stress-subset CI excluding zero.
 
 **Candidate natural degradations (no synthetic noise):**
 - **Real depth-sensor artifacts on 3D-ADAM/MVTec**: missing-return regions,
@@ -71,6 +80,9 @@ should default to CW when no drift is detected and beat CW where it is, with a
 per-sample bootstrap CI excluding zero. Report ties/losses where they occur.
 
 **Effort.** ~2-3 days (identify a real degradation axis, build the split, run).
+The first Real-IAD D3 execution is complete; future work is method/endpoint
+refinement or a fresh natural-degradation holdout, not claiming the D16 attempt
+as a pass.
 
 ## Task L3.3 - Second naturally paired external transfer benchmark
 
@@ -87,7 +99,7 @@ D3), processed through the same patch-PatchCore + gated-CW pipeline.
 | Caveat removed | By |
 |---|---|
 | "supervised-paired, not leaderboard" | L3.1 one-class row |
-| "synthetic degradation" | L3.2 natural degradation |
+| "synthetic degradation" | L3.2 confirmed natural degradation; D16 Real-IAD D3 is supportive but not confirmed |
 | "only 2 transfer datasets" | L3.3 third external set |
 
 With L3.1 + L3.2 done and honestly reported, the project would support a

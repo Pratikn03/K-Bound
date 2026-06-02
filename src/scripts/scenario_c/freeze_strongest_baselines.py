@@ -52,7 +52,6 @@ def main() -> int:
     }
     lock = root / "research_lock/strongest_baseline_frozen_v1.json"
     lock.write_text(json.dumps(out, indent=2), encoding="utf-8")
-    master = root / "elara_master_c/configs/baseline_registry.yaml"
     print(f"Frozen {len(rows)} cells -> {lock}")
     return 0
 

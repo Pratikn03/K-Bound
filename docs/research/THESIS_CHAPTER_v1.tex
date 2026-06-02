@@ -51,7 +51,7 @@ This chapter presents the final audited evidence for ELARA, a reliability-aware 
 
 In mechanism replication (Family B), RGA reproduces the zero-attack coherent score-collapse endpoint (B1: +0.0507 versus Phase-1 target +0.0506, 95\% CI [+0.0364, +0.0650], Holm $p = 4.31\times 10^{-12}$) and retains a positive maximum-attack result (B2: +0.0939 versus +0.0319, 95\% CI [+0.0741, +0.1149], Holm $p < 10^{-15}$) with explicit estimator-change qualification. Sensitive RGA-v2 variants fail clean false-fire controls (firing rate 1.000), and domain composition shift audits (B-MECH-3S) do not reduce false-fire rates. Monitoring and retrospective certification outcomes are mixed.
 
-The held-out Eyecandies transfer study (Family D) satisfies the clean false-fire budget ($0.000$ observed under validation-selected per-cell thresholds $\tau = 0.52$ and $\tau = 0.51$) but is not confirmed under primary bootstrap interval inference: the primary paired-bootstrap ensemble $\Delta$ AUC is $-0.0010$ (95\% CI [$-0.0114$, $+0.0092$]) for D-EYE-1 and $-0.0109$ (95\% CI [$-0.0254$, $+0.0034$]) for D-EYE-2, both intervals spanning zero, and a secondary per-seed paired $t$-test is non-significant ($p = 0.3632$ and $p = 0.4468$). A new D13 natural clean-transfer track adds evidence for a stronger target: a validation-only residual-stack candidate beats both SAR ($\Delta=+0.0583$, 95\% CI $[+0.0410,+0.0759]$) and confidence-weighted mean ($\Delta=+0.0182$, 95\% CI $[+0.0075,+0.0290]$) on opened 3D-ADAM, while opened MulSen remains unresolved. A fresh Real-IAD C1/C2 official attempt beats CW ($\Delta=+0.0191$, 95\% CI $[+0.0148,+0.0235]$) but fails SAR ($\Delta=-0.0858$, 95\% CI $[-0.0928,-0.0787]$), so D13 does not set final Gate E readiness. The chapter therefore supports a bounded mechanism claim and identifies calibration transfer under score-distribution shift as the main unresolved limitation.
+The held-out Eyecandies transfer study (Family D) satisfies the clean false-fire budget ($0.000$ observed under validation-selected per-cell thresholds $\tau = 0.52$ and $\tau = 0.51$) but is not confirmed under primary bootstrap interval inference: the primary paired-bootstrap ensemble $\Delta$ AUC is $-0.0010$ (95\% CI [$-0.0114$, $+0.0092$]) for D-EYE-1 and $-0.0109$ (95\% CI [$-0.0254$, $+0.0034$]) for D-EYE-2, both intervals spanning zero, and a secondary per-seed paired $t$-test is non-significant ($p = 0.3632$ and $p = 0.4468$). A new D13 natural clean-transfer track adds evidence for a stronger target: a validation-only residual-stack candidate beats both SAR ($\Delta=+0.0583$, 95\% CI $[+0.0410,+0.0759]$) and confidence-weighted mean ($\Delta=+0.0182$, 95\% CI $[+0.0075,+0.0290]$) on opened 3D-ADAM, while opened MulSen remains unresolved. A prelocked Real-IAD C1/C2 official attempt beats CW ($\Delta=+0.0191$, 95\% CI $[+0.0148,+0.0235]$) but fails SAR ($\Delta=-0.0858$, 95\% CI $[-0.0928,-0.0787]$), so D13 does not set final Gate E readiness and the evaluated Real-IAD data are now opened evidence. A D16 Real-IAD D3 natural-degradation audit adds real natural stress evidence, but its prelocked stress-subset endpoint is not confirmed ($\Delta=+0.0351$, 95\% CI $[-0.0276,+0.0980]$), even though the all-test CW comparison is positive ($\Delta=+0.0624$, 95\% CI $[+0.0347,+0.0896]$). The chapter therefore supports a bounded mechanism claim and identifies calibration transfer under score-distribution shift as the main unresolved limitation.
 \end{abstract}
 
 \section{Introduction and Motivation}
@@ -128,7 +128,7 @@ component ablation provide the more useful evidence about the mechanism.
 
 \subsection{Contributions}
 
-We make five scoped contributions:
+We make six scoped contributions:
 
 \begin{enumerate}
   \item We present \system{}, a score-level anomaly-fusion research system
@@ -145,6 +145,10 @@ We make five scoped contributions:
   validation-only candidate to beat both SAR and confidence-weighted mean on a
   fresh natural holdout; opened 3D-ADAM and MulSen results are retained as
   development evidence only.
+  \item We add the D16 Real-IAD D3 natural-degradation headroom audit, which
+  evaluates a validation-only stress selector on natural degraded samples and
+  reports the official stress-subset fail separately from the supportive
+  all-test CW result.
 \end{enumerate}
 
 \subsection{Evidence Boundary}
@@ -158,6 +162,27 @@ These two artifacts answer different questions. The first is useful for
 reliability-stress score fusion. The second is useful for exposing protocol
 limits on naturally paired data. Neither should be treated as a complete final
 benchmark for all multimodal anomaly detection.
+
+\subsection{Dataset Use Matrix}
+
+Table~\ref{tab:thesis-dataset-use-matrix} records how the local datasets are
+used in this chapter. The table is included because the repository contains
+official evidence, development evidence, diagnostic proxy datasets, and utility
+scaffolding in the same tree. Only prelocked naturally paired data can carry a
+transfer claim; opened datasets, derived-view proxies, and label-aligned
+composites are still useful, but they carry lower claim ceilings. The full
+audited inventory is maintained in
+\texttt{docs/research/DATASET\_USE\_MATRIX.md}.
+
+\begin{table}[H]
+\centering
+\caption{Dataset-use matrix. Official, development, diagnostic, and
+scaffolding datasets are separated to avoid overclaiming from opened or
+derived-view results.}
+\label{tab:thesis-dataset-use-matrix}
+\scriptsize
+\IfFileExists{tables/dataset_use_matrix.tex}{\input{tables/dataset_use_matrix.tex}}{}
+\end{table}
 
 \section{Background and Related Work}
 
@@ -913,12 +938,46 @@ SAR and CW.}
 
 On opened 3D-ADAM, the selected residual stack is positive against both SAR and
 CW and meets the numeric D13 target in development. On opened MulSen, point
-estimates are positive but the intervals cross zero. The fresh Real-IAD C1/C2
+estimates are positive but the intervals cross zero. The Real-IAD C1/C2
 official attempt beats CW ($\Delta=+0.0191$, 95\% CI $[+0.0148,+0.0235]$) but
 fails SAR ($\Delta=-0.0858$, 95\% CI $[-0.0928,-0.0787]$). The strict legacy
 \texttt{gate\_e\_m2\_transfer\_confirmed} field therefore remains false, and
 \texttt{gate\_e\_positive\_transfer\_confirmed} remains false until a fresh or
 unopened natural holdout passes both co-endpoints.
+
+\paragraph{D16 natural-degradation headroom track.}
+The D16 track moves from clean natural transfer to natural degraded samples in
+Real-IAD D3. Because \texttt{common\_mode\_filter} was opened during smoke
+testing and debugging, the official holdout excludes that category and uses the
+remaining nineteen categories. A validation-only selector chooses
+\texttt{score\_disagreement} on the validation stress subset, routes only
+detected stress samples through that method, and defaults clean samples to CW.
+The all-test CW comparison is positive ($\Delta=+0.0624$, 95\% CI
+$[+0.0347,+0.0896]$), and clean no-regression passes. The locked primary
+stress-subset endpoint is not confirmed because its paired-bootstrap interval
+crosses zero ($\Delta=+0.0351$, 95\% CI $[-0.0276,+0.0980]$). Thus
+\texttt{gate\_s\_natural\_degradation\_confirmed} remains false.
+
+\paragraph{Role of the new Real-IAD D3 data.}
+The new Real-IAD D3 data is used to answer a different question from the failed
+clean-transfer Gate E study. It is not a tuning set, and it is not used to
+rewrite the definition of transfer success. Its role is to test whether the
+reliability-stress mechanism still has measurable headroom when degradation is
+natural rather than synthetically injected. The result is useful but not
+decisive: the full D3 test set shows a positive CW comparison, while the locked
+stress-subset endpoint and the SAR comparison remain insufficient. Therefore
+the dataset strengthens the audit and explains the remaining failure mode, but
+does not change the readiness tier.
+
+\begin{table}[H]
+\centering
+\caption{D16 Real-IAD D3 natural-degradation audit. The primary endpoint is
+the stress subset versus confidence-weighted mean (CW); all-test rows are
+supportive only.}
+\label{tab:thesis-natural-degradation-d16}
+\scriptsize
+\IfFileExists{tables/natural_degradation_d16.tex}{\input{tables/natural_degradation_d16.tex}}{}
+\end{table}
 
 \begin{algorithm}[H]
 \caption{Patch-level PatchCore upstream detector (per modality)}
@@ -1293,7 +1352,7 @@ manuscripts in one command via \texttt{scripts/rebuild\_paper.sh}.
 
 \section{Conclusion and Future Work}
 ELARA provides bounded audited and mechanism-level evidence that reliability-aware anomaly fusion can improve a fixed static-attention reference under selected degraded-evidence settings, while the Eyecandies transfer attempt (Family D) satisfies the clean false-fire budget under target-calibration reference fitting but remains not confirmed under primary bootstrap inference.
-The D13 positive-transfer track adds promising opened-development evidence on 3D-ADAM against both SAR and CW, but MulSen is unresolved and the fresh Real-IAD official attempt beats CW while failing SAR. Future work will focus on: (1) dynamic thresholding strategies and calibration under out-of-distribution modal scoring shifts; (2) pre-registering stronger natural-transfer methods before any additional fresh D13 holdout is opened; and (3) evaluating the learned-gate and category-aware estimators against the fixed heuristic gates in deployment-monitoring systems under realistic pre-emption conditions.
+The D13 positive-transfer track adds promising opened-development evidence on 3D-ADAM against both SAR and CW, but MulSen is unresolved and the prelocked Real-IAD official attempt beats CW while failing SAR. The D16 Real-IAD D3 natural-degradation attempt gives real non-synthetic evidence and a positive all-test CW delta but fails the prelocked stress-subset primary CI. Future work will focus on: (1) dynamic thresholding strategies and calibration under out-of-distribution modal scoring shifts; (2) pre-registering stronger natural-transfer methods before any additional fresh D13 or D16 holdout is opened; and (3) evaluating the learned-gate and category-aware estimators against the fixed heuristic gates in deployment-monitoring systems under realistic pre-emption conditions.
 
 \begin{thebibliography}{99}
 

@@ -54,7 +54,7 @@ def main() -> int:
 
     auroc = roc_auc_score(labels, scores)
     print(f"\n=== MVTec 3D-AD bagel RGB-only image-AUROC = {auroc:.4f} ===")
-    print(f"(published PatchCore RGB-only on 3D-AD bagel ~0.78-0.88)")
+    print("(published PatchCore RGB-only on 3D-AD bagel ~0.78-0.88)")
     if auroc >= 0.70:
         print("CORRECTNESS: PASS (substantially above chance; patch pipeline works)")
     else:

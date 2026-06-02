@@ -44,7 +44,7 @@
 \maketitle
 
 \begin{abstract}
-Multimodal anomaly systems often fail not because domain experts are weak, but because the fusion layer keeps trusting degraded signals. We present ELARA, a reliability-aware score-fusion architecture with Reliability-Gated Attention (RGA), and evaluate it under controlled, audited degradation settings. In a powered static-reference study over five previously inspected benchmark cells (Family A), validation-frozen RGA+ consistently improves on a fixed static-attention comparator, including the UNSW-NB15 cell (+0.0095 versus the Phase-1 estimate of +0.0003). In mechanism replication (Family B), RGA reproduces the zero-attack coherent score-collapse endpoint (B1: +0.0507 versus target +0.0506, 95\% CI [+0.0364, +0.0650], Holm-corrected $p = 4.31\times 10^{-12}$) and shows a positive maximum-attack effect (B2: +0.0939 versus target +0.0319, 95\% CI [+0.0741, +0.1149], Holm-corrected $p < 10^{-15}$), with explicit qualification for estimator mismatch. Monitoring and retrospective certification results are mixed. Two negative findings define the boundary of the claim: sensitive RGA-v2 variants fail clean false-fire control (firing rate 1.000), and a held-out Eyecandies transfer study (Family D) satisfies the clean false-fire budget ($0.000$ observed under validation-selected per-cell thresholds $\tau = 0.52$ and $\tau = 0.51$) but is not confirmed: the primary paired-bootstrap ensemble $\Delta$ AUC is $-0.0010$ (95\% CI [$-0.0114$, $+0.0092$]) for D-EYE-1 and $-0.0109$ (95\% CI [$-0.0254$, $+0.0034$]) for D-EYE-2, both intervals spanning zero, and a secondary per-seed paired $t$-test is non-significant ($p = 0.3632$ and $p = 0.4468$). The evidence therefore supports a bounded reliability-stress claim and identifies calibration transfer under score-distribution shift as the central unresolved limitation, not a universality or state-of-the-art claim. Finally, replacing the diagnostic upstream detector with a competitive patch-level PatchCore expert (mean per-category MVTec~3D-AD ROC-AUC $\approx 0.79$) sharpens the picture: under this fair detector the validation-frozen RGA+ head beats the strongest frozen baseline in-domain across $30$ independent stratified splits ($\Delta = +0.0240$, 95\% CI $[+0.0218,+0.0261]$, $30/30$ splits), and on a held-out external benchmark (3D-ADAM) the reliability gate's advantage over a confidence-weighted baseline grows from a clean-data tie to $+0.12$ AUROC as a modality degrades---a stress-regime transfer win that replicates on a second dataset. Reliability gating thus helps precisely when modalities have differential reliability, and simple averaging suffices when they do not. A separate D13 natural clean-transfer track now tests the harder target of beating both SAR and confidence-weighted mean without synthetic degradation: on opened development data, the validation-only residual-stack candidate is positive on 3D-ADAM against SAR ($\Delta=+0.0583$, 95\% CI $[+0.0410,+0.0759]$) and CW ($\Delta=+0.0182$, 95\% CI $[+0.0075,+0.0290]$), while MulSen remains statistically unresolved. A fresh Real-IAD C1/C2 official attempt confirms that the candidate beats CW ($\Delta=+0.0191$, 95\% CI $[+0.0148,+0.0235]$) but fails SAR ($\Delta=-0.0858$, 95\% CI $[-0.0928,-0.0787]$), so official positive transfer remains not confirmed.
+Multimodal anomaly systems often fail not because domain experts are weak, but because the fusion layer keeps trusting degraded signals. We present ELARA, a reliability-aware score-fusion architecture with Reliability-Gated Attention (RGA), and evaluate it under controlled, audited degradation settings. In a powered static-reference study over five previously inspected benchmark cells (Family A), validation-frozen RGA+ consistently improves on a fixed static-attention comparator, including the UNSW-NB15 cell (+0.0095 versus the Phase-1 estimate of +0.0003). In mechanism replication (Family B), RGA reproduces the zero-attack coherent score-collapse endpoint (B1: +0.0507 versus target +0.0506, 95\% CI [+0.0364, +0.0650], Holm-corrected $p = 4.31\times 10^{-12}$) and shows a positive maximum-attack effect (B2: +0.0939 versus target +0.0319, 95\% CI [+0.0741, +0.1149], Holm-corrected $p < 10^{-15}$), with explicit qualification for estimator mismatch. Monitoring and retrospective certification results are mixed. Two negative findings define the boundary of the claim: sensitive RGA-v2 variants fail clean false-fire control (firing rate 1.000), and a held-out Eyecandies transfer study (Family D) satisfies the clean false-fire budget ($0.000$ observed under validation-selected per-cell thresholds $\tau = 0.52$ and $\tau = 0.51$) but is not confirmed: the primary paired-bootstrap ensemble $\Delta$ AUC is $-0.0010$ (95\% CI [$-0.0114$, $+0.0092$]) for D-EYE-1 and $-0.0109$ (95\% CI [$-0.0254$, $+0.0034$]) for D-EYE-2, both intervals spanning zero, and a secondary per-seed paired $t$-test is non-significant ($p = 0.3632$ and $p = 0.4468$). The evidence therefore supports a bounded reliability-stress claim and identifies calibration transfer under score-distribution shift as the central unresolved limitation, not a universality or state-of-the-art claim. Finally, replacing the diagnostic upstream detector with a competitive patch-level PatchCore expert (mean per-category MVTec~3D-AD ROC-AUC $\approx 0.79$) sharpens the picture: under this fair detector the validation-frozen RGA+ head beats the strongest frozen baseline in-domain across $30$ independent stratified splits ($\Delta = +0.0240$, 95\% CI $[+0.0218,+0.0261]$, $30/30$ splits), and on a held-out external benchmark (3D-ADAM) the reliability gate's advantage over a confidence-weighted baseline grows from a clean-data tie to $+0.12$ AUROC as a modality degrades---a stress-regime transfer win that replicates on a second dataset. Reliability gating thus helps precisely when modalities have differential reliability, and simple averaging suffices when they do not. A separate D13 natural clean-transfer track now tests the harder target of beating both SAR and confidence-weighted mean without synthetic degradation: on opened development data, the validation-only residual-stack candidate is positive on 3D-ADAM against SAR ($\Delta=+0.0583$, 95\% CI $[+0.0410,+0.0759]$) and CW ($\Delta=+0.0182$, 95\% CI $[+0.0075,+0.0290]$), while MulSen remains statistically unresolved. A prelocked Real-IAD C1/C2 official attempt confirms that the candidate beats CW ($\Delta=+0.0191$, 95\% CI $[+0.0148,+0.0235]$) but fails SAR ($\Delta=-0.0858$, 95\% CI $[-0.0928,-0.0787]$), so official positive transfer remains not confirmed and the evaluated Real-IAD data are now opened evidence. A D16 Real-IAD D3 natural-degradation audit adds real natural stress evidence, but its prelocked stress-subset primary endpoint is not confirmed ($\Delta=+0.0351$, 95\% CI $[-0.0276,+0.0980]$), even though the all-test CW comparison is positive ($\Delta=+0.0624$, 95\% CI $[+0.0347,+0.0896]$).
 \end{abstract}
 
 \begin{IEEEkeywords}
@@ -103,7 +103,7 @@ do not yet fully satisfy the third condition for co-observed multimodal
 incidents. This limitation is explicit throughout the manuscript.
 
 \subsection{Contributions}
-We make seven scoped contributions:
+We make nine scoped contributions:
 \begin{itemize}
   \item \textbf{C1: Reliability-Aware Anomaly-Fusion Formulation.} We propose a score-level multimodal anomaly-fusion formulation incorporating post-hoc reliability estimation and gating, evaluated under a strictly bounded claim scope.
   \item \textbf{C2: Powered Audited Static-Reference Evaluation.} We present a five-cell powered audited evaluation demonstrating consistent positive ROC-AUC deltas for the validation-frozen RGA+ model over a fixed static-attention reference across MVTec 3D-AD, VisA, and UNSW-NB15 cells.
@@ -113,6 +113,7 @@ We make seven scoped contributions:
   \item \textbf{C6: Held-Out Transfer Study.} We evaluate a held-out transfer to the Eyecandies dataset (Family D). The study satisfies the clean false-fire budget under target calibration reference fitting but is not confirmed under primary bootstrap inference.
   \item \textbf{C7: Competitive-Detector Validation and Stress-Regime Transfer.} Replacing the diagnostic upstream detector with a competitive patch-level PatchCore expert, we show (i) a multi-split confirmatory in-domain win of RGA+ over the \emph{strongest} frozen baseline (not merely static), significant across $30$ independent stratified splits, and (ii) a held-out external stress-regime transfer result in which the reliability gate beats a confidence-weighted baseline under modality degradation, with a principled clean-versus-degraded crossover that replicates across two datasets. This delineates precisely \emph{when} reliability gating helps.
   \item \textbf{C8: Natural Positive-Transfer Track.} We add D13, a natural clean-transfer protocol that requires a validation-only candidate to beat both SAR and confidence-weighted mean with positive paired-bootstrap lower bounds and practical deltas, while forbidding synthetic degradation, fake relabeling, and opened-test selection. Opened 3D-ADAM and MulSen results are reported only as development evidence until a fresh or unopened holdout is evaluated.
+  \item \textbf{C9: Natural-Degradation Headroom Audit.} We add D16, a Real-IAD D3 protocol for validation-only stress routing under naturally degraded samples. The official attempt excludes the opened \texttt{common\_mode\_filter} smoke category, reports a positive all-test CW delta, and leaves the primary stress-subset gate false because its confidence interval crosses zero.
 \end{itemize}
 
 The evidence is strongest as a reliability-stress
@@ -381,6 +382,25 @@ classical VC-dimension theory~\cite{vapnik1971uniform} that justifies
 generalisation discussions in the thesis appendix. Bahdanau-style
 soft attention~\cite{bahdanau2014neural} is the precursor of the
 cross-modal attention layers used here.
+
+\subsection{Dataset Use Matrix}
+The repository contains many datasets, but they do not carry equal evidential
+weight. Table~\ref{tab:dataset-use-matrix} records the current use of each
+dataset group. This separation is central to the claim boundary: naturally
+paired, prelocked datasets can carry transfer evidence; opened datasets become
+development evidence; derived-view and label-aligned datasets remain diagnostic
+mechanism tests. The full machine-readable audit is maintained in
+\texttt{docs/research/DATASET\_USE\_MATRIX.md}.
+
+\begin{table*}[t]
+\centering
+\caption{Dataset-use matrix. The table distinguishes official evidence,
+development evidence, diagnostic datasets, and scaffolding data so that transfer
+claims are not inferred from opened or derived-view results.}
+\label{tab:dataset-use-matrix}
+\scriptsize
+\IfFileExists{tables/dataset_use_matrix.tex}{\input{tables/dataset_use_matrix.tex}}{}
+\end{table*}
 
 \section{System and Method}
 Each sample $i$ contains up to $D$ domain observations. Domain $d$ contributes a
@@ -1766,11 +1786,11 @@ score/confidence/reliability features) with the selection made on the
 validation split and logged as \texttt{used\_test\_labels=false}.
 
 Table~\ref{tab:positive-transfer-d13} reports both the opened development
-audit and the first fresh official attempt. On opened 3D-ADAM the selected
+audit and the prelocked Real-IAD official attempt. On opened 3D-ADAM the selected
 residual stack is positive against both SAR and CW, meeting the numeric D13
 target in development. On opened MulSen the point estimates are positive but
 the intervals cross zero, so that dataset is statistically unresolved. The
-fresh Real-IAD C1/C2 official attempt is stricter: the selected residual stack
+Real-IAD C1/C2 official attempt is stricter: the selected residual stack
 beats CW ($\Delta=+0.0191$, 95\% CI $[+0.0148,+0.0235]$), but fails the SAR
 co-endpoint ($\Delta=-0.0858$, 95\% CI $[-0.0928,-0.0787]$). Therefore neither
 the legacy strict Gate E field nor the new
@@ -1786,6 +1806,40 @@ co-endpoints to pass.}
 \footnotesize
 \IfFileExists{tables/natural_positive_transfer_d13.tex}{\input{tables/natural_positive_transfer_d13.tex}}{}
 \end{table*}
+
+\paragraph{D16 natural-degradation headroom track.}
+We also evaluate Real-IAD D3 under a separate natural-degradation protocol.
+Because \texttt{common\_mode\_filter} was opened for smoke and debugging, the
+official D16 holdout excludes that category and evaluates the remaining
+nineteen categories. A validation-only selector chooses
+\texttt{score\_disagreement} on the validation stress subset and applies it
+only to samples identified as stress cases; clean samples default to CW. The
+all-test comparison against CW is positive ($\Delta=+0.0624$, 95\% CI
+$[+0.0347,+0.0896]$), and clean no-regression passes, but the prelocked
+stress-subset primary endpoint is not confirmed ($\Delta=+0.0351$, 95\% CI
+$[-0.0276,+0.0980]$). Therefore
+\texttt{gate\_s\_natural\_degradation\_confirmed=false}; D16 is supportive
+natural-degradation evidence, not a gate pass.
+
+\paragraph{Role of the new Real-IAD D3 data.}
+The new Real-IAD D3 data is used as a natural-degradation audit, not as a
+retuning set and not as a replacement definition for Gate E. Its purpose is to
+check whether the stress-regime mechanism observed under controlled
+degradation also produces measurable headroom on real degraded samples. The
+answer is mixed: the data reveals a positive full-test signal against CW, but
+also shows that the prelocked stress-subset endpoint and the stronger SAR
+comparison still fail. Thus the dataset improves the evidence boundary and
+failure diagnosis, while leaving flagship readiness unchanged.
+
+\begin{table}[t]
+\centering
+\caption{D16 Real-IAD D3 natural-degradation audit. The primary endpoint is
+the stress subset versus confidence-weighted mean (CW); all-test rows are
+supportive only.}
+\label{tab:natural-degradation-d16}
+\footnotesize
+\IfFileExists{tables/natural_degradation_d16.tex}{\input{tables/natural_degradation_d16.tex}}{}
+\end{table}
 
 \begin{table}[t]
 \centering
@@ -2883,7 +2937,7 @@ the extended background, threats-to-validity, and forward-looking research
 agenda) should read the companion chapter.
 
 \section{Conclusion}
-ELARA provides bounded audited and mechanism-level evidence that reliability-aware anomaly fusion can improve a fixed static-attention reference under selected degraded-evidence settings, while the Eyecandies transfer attempt (Family D) satisfies the clean false-fire budget under target-calibration reference fitting but remains not confirmed under primary bootstrap inference. When the diagnostic upstream detector is replaced with a competitive patch-level PatchCore expert, the picture sharpens into a positive but precisely bounded claim: RGA+ beats the strongest frozen baseline in-domain across $30$ independent stratified splits ($\Delta=+0.0240$, $95\%$ CI $[+0.0218,+0.0261]$), and on held-out external data the reliability gate beats a confidence-weighted baseline under modality degradation (up to $+0.12$ AUROC), a stress-regime transfer win that replicates on a second dataset---while on clean data, where modalities are equally reliable, simple averaging remains competitive. The new D13 track adds natural clean-transfer evidence with a mixed result: a validation-only residual-stack candidate beats both SAR and CW on opened 3D-ADAM, opened MulSen remains unresolved, and a fresh Real-IAD official attempt beats CW but fails SAR. Reliability gating is therefore a stress-regime mechanism with a characterizable operating boundary, plus a clean-transfer candidate whose strict official transfer claim is not yet confirmed, not a universal fusion improvement. Future work will focus on a one-class (leaderboard-comparable) protocol evaluation, stronger pre-registered natural positive-transfer methods, and dynamic thresholding under out-of-distribution modal scoring shifts.
+ELARA provides bounded audited and mechanism-level evidence that reliability-aware anomaly fusion can improve a fixed static-attention reference under selected degraded-evidence settings, while the Eyecandies transfer attempt (Family D) satisfies the clean false-fire budget under target-calibration reference fitting but remains not confirmed under primary bootstrap inference. When the diagnostic upstream detector is replaced with a competitive patch-level PatchCore expert, the picture sharpens into a positive but precisely bounded claim: RGA+ beats the strongest frozen baseline in-domain across $30$ independent stratified splits ($\Delta=+0.0240$, $95\%$ CI $[+0.0218,+0.0261]$), and on held-out external data the reliability gate beats a confidence-weighted baseline under modality degradation (up to $+0.12$ AUROC), a stress-regime transfer win that replicates on a second dataset---while on clean data, where modalities are equally reliable, simple averaging remains competitive. The new D13 track adds natural clean-transfer evidence with a mixed result: a validation-only residual-stack candidate beats both SAR and CW on opened 3D-ADAM, opened MulSen remains unresolved, and a prelocked Real-IAD official attempt beats CW but fails SAR. The D16 Real-IAD D3 natural-degradation attempt adds real non-synthetic evidence and a positive all-test CW comparison but fails its prelocked stress-subset primary CI. Reliability gating is therefore a stress-regime mechanism with a characterizable operating boundary, plus clean-transfer and natural-degradation candidates whose strict official transfer claims are not yet confirmed, not a universal fusion improvement. Future work will focus on a one-class (leaderboard-comparable) protocol evaluation, stronger pre-registered natural positive-transfer methods, and dynamic thresholding under out-of-distribution modal scoring shifts.
 
 \begin{thebibliography}{99}
 

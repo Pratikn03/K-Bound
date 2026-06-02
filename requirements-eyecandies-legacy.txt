@@ -1,0 +1,9 @@
+# Optional legacy Eyecandies acquisition CLI environment only.
+#
+# Do not install this into the production/API or main Pydantic 2 runtime:
+# eyecandies 1.0.3 pulls pipelime-python, which requires pydantic<2 and
+# conflicts with FastAPI/Pydantic 2. The repo's current Eyecandies scripts use
+# local archives and gdown-based acquisition helpers instead of importing the
+# package at runtime.
+eyecandies==1.0.3
+pydantic<2

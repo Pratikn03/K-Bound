@@ -27,7 +27,6 @@ Runs the degradation sweep on both transfer datasets and writes:
 from __future__ import annotations
 
 import json
-import sys
 from pathlib import Path
 
 import numpy as np

@@ -9,7 +9,7 @@ import sys
 import os
 from pathlib import Path
 
-from elara.theory.theorem_registry import THEOREM_REGISTRY, artifact_status, list_theorems
+from elara.theory.theorem_registry import artifact_status, list_theorems
 
 ROOT = Path(__file__).resolve().parents[2]
 

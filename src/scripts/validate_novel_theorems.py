@@ -10,8 +10,6 @@ import math
 import sys
 from pathlib import Path
 
-import numpy as np
-
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT / "src"))
 
@@ -127,7 +125,7 @@ def main() -> int:
     print("=== Novel theorem validation ===")
     print(f"  T3 det. boundary k*={t3['deterministic_kstar']}; noisy sigma erodes it (see table)")
     print(f"  T6 fitted c={t6['fitted_c']}, W*(0.8)={t6['W_star_power0.8']}; power monotone in W")
-    print(f"  T4 tau* grid computed (prevalence-shift scope only)")
+    print("  T4 tau* grid computed (prevalence-shift scope only)")
     print(f"  GDR exact-binomial p={out['gdr_binomial']['exact_binomial_p']} "
           f"(significant={out['gdr_binomial']['significant_at_0.05']})")
     print("\nWrote novel_theorems_validation.json + T3/T6 tables")

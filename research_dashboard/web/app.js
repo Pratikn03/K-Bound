@@ -6,10 +6,12 @@ const GATE_LABELS = {
   gate_e: "Gate E",
   gate_e_bounded_v3: "Gate E (bounded)",
   gate_e_positive_transfer: "Gate E (D13)",
+  gate_s_natural_degradation: "Gate S (D16)",
   gate_f: "Gate F",
   gate_f_scientific: "Gate F (scientific)",
   gate_f_bounded_v3: "Gate F (bounded)",
   gate_f_positive_transfer: "Gate F (D13)",
+  gate_f_natural_degradation: "Gate F (D16)",
 };
 
 const STORAGE_SETTINGS = "elara_dash_settings";
@@ -385,6 +387,7 @@ function syncProfileClaim(data) {
 
 function renderClaim(data) {
   const claim = data.claim || {};
+  const production = data.production || {};
   const section = document.getElementById("claim-section");
   if (!section) return;
 
@@ -423,6 +426,24 @@ function renderClaim(data) {
         : `Flagship stop: FAIL (Δ ${delta} < ${min})`;
       stop.className = fsr.passed ? "claim-flag pass" : "claim-flag fail";
     }
+  }
+
+  const evidenceBasis = document.getElementById("claim-evidence-basis");
+  if (evidenceBasis) {
+    const basis = (claim.primary_evidence_basis || "real_dataset_evidence").replace(/_/g, " ");
+    evidenceBasis.textContent = `Evidence: ${basis}`;
+    evidenceBasis.className = claim.synthetic_primary_evidence_allowed
+      ? "claim-flag warn"
+      : "claim-flag pass";
+  }
+
+  const prod = document.getElementById("claim-production-ready");
+  if (prod) {
+    prod.textContent = production.core_routes_only
+      ? "API prod: core only"
+      : "API prod: not set";
+    prod.className = production.core_routes_only ? "claim-flag pass" : "claim-flag warn";
+    prod.title = production.operational_boundary || "";
   }
 
   const preview = document.getElementById("home-pillars-preview");
@@ -537,11 +558,16 @@ function renderConfirmatory(data) {
     ["gate_e_positive_attempt", c.gate_e_positive_transfer_official_attempt],
     ["gate_e_positive_vs_sar", c.gate_e_positive_transfer_vs_sar_pass],
     ["gate_e_positive_vs_cw", c.gate_e_positive_transfer_vs_cw_pass],
+    ["gate_s_natural_degradation", c.gate_s_natural_degradation_confirmed],
+    ["gate_s_natural_official", c.gate_s_natural_degradation_official],
+    ["gate_s_stress_vs_cw", c.gate_s_stress_vs_cw_pass],
+    ["gate_s_clean_no_regression", c.gate_s_clean_no_regression_pass],
     ["t5_m1", c.t5_m1],
     ["t5_m2_ran", c.t5_m2_ran],
     ["gate_f_strict", c.gate_f_scenario_c_scientific],
     ["gate_f_bounded_v3", c.gate_f_bounded_v3],
     ["gate_f_positive_transfer", c.gate_f_positive_transfer_track],
+    ["gate_f_natural_degradation", c.gate_f_natural_degradation_track],
   ];
   flagsEl.innerHTML = flags
     .map(
@@ -549,6 +575,16 @@ function renderConfirmatory(data) {
         `<span class="flag ${val ? "true" : "false"}">${name}: ${val ? "true" : "false"}</span>`
     )
     .join("");
+  const statusFlags = [
+    ["gate_s_initial_holdout_status", c.gate_s_initial_holdout_status],
+    ["gate_s_current_dataset_status", c.gate_s_current_dataset_status],
+    ["gate_s_evidence_role", c.gate_s_evidence_role],
+  ].filter(([, val]) => val !== undefined && val !== null && val !== "");
+  if (statusFlags.length) {
+    flagsEl.innerHTML += statusFlags
+      .map(([name, val]) => `<span class="flag">${name}: ${val}</span>`)
+      .join("");
+  }
 
   const tbody = document.querySelector("#cells-table tbody");
   tbody.innerHTML = "";
@@ -643,9 +679,14 @@ function renderResearchPage(data) {
     ["Readiness tier", (claim.readiness_tier || "—").replace(/_/g, " ")],
     ["Scientific ready", claim.scientific_ready ? "yes" : "no"],
     ["Execution ready", claim.execution_ready ? "yes" : "no"],
+    ["API production boundary", data.production?.operational_boundary || "—"],
+    ["API route scope", data.production?.core_routes_only ? "core verified routes only" : "—"],
+    ["Optional routes", data.production?.optional_routes_fail_closed ? "fail closed" : "—"],
     ["M2 transfer", c.gate_e_m2_transfer_confirmed ? "confirmed" : "not confirmed"],
     ["D13 positive transfer", c.gate_e_positive_transfer_confirmed ? "confirmed" : (c.gate_e_positive_transfer_status || "pending")],
     ["D13 note", c.positive_transfer_official_note || "—"],
+    ["Evidence basis", (claim.primary_evidence_basis || "—").replace(/_/g, " ")],
+    ["Synthetic primary evidence", claim.synthetic_primary_evidence_allowed ? "allowed" : "not counted"],
     ["Central claim ratified", claim.central_claim_ratified ? "yes" : "no"],
     ["Repo root", data.repo_root || "—"],
     ["Snapshot", data.generated_at || "—"],

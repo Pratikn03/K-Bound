@@ -58,10 +58,12 @@ def _synthetic_paysim(n_rows: int = 1000) -> pd.DataFrame:
 def load_paysim(
     n_rows: Optional[int] = None,
     path: Optional[Union[str, Path]] = None,
-    allow_synthetic: bool = True,
+    allow_synthetic: bool = False,
 ) -> pd.DataFrame:
     """
     Load the PaySim mobile money fraud dataset, auto-downloading via kagglehub if missing.
+    Synthetic fallback is opt-in so research runs fail loudly when the real
+    dataset is unavailable.
 
     Parameters
     ----------
@@ -87,6 +89,6 @@ def load_paysim(
 
 
 if __name__ == "__main__":
-    df = load_paysim(5_000)
+    df = load_paysim(5_000, allow_synthetic=True)
     print(df.head())
     print(df["isfraud"].value_counts(normalize=True))

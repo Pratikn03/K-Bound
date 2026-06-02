@@ -77,7 +77,7 @@
       "per_sample_bootstrap_fallback": {
         "inference_mode": "per_sample_paired_bootstrap_seed_averaged",
         "n_samples": 1378,
-        "n_seeds_pooled": 5,
+        "n_seeds_pooled": 30,
         "mean_rga_auc": 0.5082901873767258,
         "mean_comp_auc": 0.5458951829558594,
         "delta_point": -0.03760499557913355,
@@ -120,9 +120,9 @@
       "protocol": "M2_one_shot_audit_proxy",
       "results_path": "/Volumes/T9/uav/AutoML_Flagship_V8/experiments/fusion/m2_confirmatory_sealed_results.json",
       "frozen_comparator": "sar_score_adapter",
-      "n_seeds": 5,
-      "mean_rga_auc": 0.38665236592491886,
-      "mean_base_auc": 0.387479573048579,
+      "n_seeds": 30,
+      "mean_rga_auc": 0.3866523659249188,
+      "mean_base_auc": 0.3874795730485789,
       "mean_delta_roc_auc": -0.0008272071236601342,
       "seed_variance": 0.0,
       "bootstrap_95_ci": {
@@ -150,7 +150,7 @@
       "per_sample_bootstrap_fallback": {
         "inference_mode": "per_sample_paired_bootstrap_seed_averaged",
         "n_samples": 1545,
-        "n_seeds_pooled": 5,
+        "n_seeds_pooled": 30,
         "mean_rga_auc": 0.38665236592491886,
         "mean_comp_auc": 0.387479573048579,
         "delta_point": -0.0008272071236601342,
@@ -544,6 +544,39 @@
   "positive_transfer_holdout_status": "FRESH_OR_UNOPENED",
   "positive_transfer_official_note": "official attempt not confirmed: SAR endpoint failed",
   "gate_f_positive_transfer_track": false,
+  "natural_degradation_protocol": "research_lock/D16_NATURAL_DEGRADATION_SELECTOR_PROTOCOL_v1.yaml",
+  "gate_s_natural_degradation_confirmed": false,
+  "gate_s_natural_degradation_official": false,
+  "gate_s_natural_degradation_official_attempt": true,
+  "gate_s_natural_degradation_status": "OFFICIAL_FAIL",
+  "gate_s_stress_delta_vs_cw": 0.03510502554536932,
+  "gate_s_stress_ci95_vs_cw": [
+    -0.027619171493718994,
+    0.09803150243847876
+  ],
+  "gate_s_stress_vs_cw_pass": false,
+  "gate_s_clean_delta_vs_cw": 0.0,
+  "gate_s_clean_ci95_vs_cw": [
+    0.0,
+    0.0
+  ],
+  "gate_s_clean_no_regression_pass": true,
+  "gate_s_clean_default_rate": 1.0,
+  "gate_s_selected_method": "score_disagreement",
+  "gate_s_holdout_status": "FRESH_OR_UNOPENED",
+  "gate_s_initial_holdout_status": "FRESH_OR_UNOPENED",
+  "gate_s_current_dataset_status": "OPENED_AFTER_D16_OFFICIAL_ATTEMPT",
+  "gate_s_evidence_role": "real_natural_degradation_evidence",
+  "gate_s_freshness_note": "The initial holdout status records whether the archived D16 attempt was eligible. After that attempt, this Real-IAD D3 dataset is opened evidence, not a reusable fresh holdout.",
+  "gate_s_result_path": "experiments/fusion/realiad_d3_headroom_audit_result.json",
+  "gate_s_category_integrity": {
+    "development_opened_categories": [
+      "common_mode_filter"
+    ],
+    "opened_categories_present": [],
+    "confirmatory_category_valid": true
+  },
+  "gate_f_natural_degradation_track": false,
   "tier_3_non_vision_family": true,
   "phase23_flagship": {
     "m2_v2_sealed": true,

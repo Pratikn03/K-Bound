@@ -234,3 +234,85 @@ that." Adopted: clean external Gate E is reclassified from an **open FAIL**
   *edited* so the unwinnable clean Gate E is accounted for by proof rather than
   presented as an unexplained failure. T9 is the clean-regime complement of
   T1/T3: it is precisely why the gate's provable value is the stress regime.
+
+## 2026-06-01 - D15 ratified: natural degradation/headroom program replaces clean transfer as the primary future target
+
+**Decision:** Add a new prospective D15 program governed by
+`research_lock/D15_NATURAL_DEGRADATION_PROTOCOL_v1.yaml`.
+
+- **Target:** headroom-aware natural reliability-shift routing on Real-IAD D3:
+  default under clean/no-headroom cases and route by modality quality under
+  naturally observed reliability shift.
+- **Primary endpoints:** on the pre-outcome natural stress subset, beat
+  confidence-weighted mean by delta >= +0.005 with 95% CI lower bound > 0; on
+  the clean subset, show no material regression versus CW (CI lower bound >=
+  -0.005) and high default/fallback rate.
+- **Comparator policy:** SAR remains a required secondary report, but D15 does
+  not redefine strict clean Gate E. D15 is a stress/headroom gate, not a clean
+  SAR-superiority gate.
+- **Freshness:** Real-IAD D3 was gated and not outcome-scored before this D15
+  lock. The official test outcomes must not be used for category, modality, or
+  threshold selection.
+- **Forbidden:** deleting Gate E, claiming strict Gate E pass, claiming universal
+  SOTA, or claiming production readiness before a separate Gate P engineering
+  audit passes.
+
+## 2026-06-01 - D16 ratified: validation-selected natural-degradation router
+
+**Decision:** Add a D16 selector protocol governed by
+`research_lock/D16_NATURAL_DEGRADATION_SELECTOR_PROTOCOL_v1.yaml`.
+
+- **Integrity split:** `common_mode_filter` was used for D15 smoke/debugging and
+  is therefore development-only for D16. A D16 confirmatory Real-IAD D3 claim
+  must exclude it or use a separate fresh natural-degradation holdout.
+- **Candidate family:** choose the stress-regime fusion rule from a small,
+  predeclared family using official validation stress-subset labels only:
+  confidence-weighted mean, quality-weighted mean, inverse-reliability-weighted
+  mean, max score, min score, score disagreement, and max-plus-disagreement.
+- **Routing rule:** clean and middle subsets default to CW. The selected stress
+  rule applies only when the validation-frozen natural stress threshold is met.
+- **Forbidden:** no test labels for method selection, no category choice from
+  test outcomes, no deletion/rewrite of strict clean Gate E, and no production
+  readiness claim without Gate P.
+
+## 2026-06-02 - D17 ratified: Real-IAD D3 is the natural-degradation transfer target (current status: detector-limited negative)
+
+**Decision (user):** "use realiad_d3 instead of the Eyecandies one for transfer
+because that is real natural degraded data." Adopted: **Real-IAD D3 replaces
+Eyecandies as the studied natural-degradation transfer benchmark.** Eyecandies
+stays permanently recorded as FAILED (D1) and is not revived.
+
+- **Why Real-IAD is the right target:** it is real, naturally co-observed
+  multimodal data (RGB + PS + point-cloud XYZ) with genuine per-modality
+  reliability differences — a legitimate *natural* stress source, addressing the
+  synthetic-degradation criticism that the controlled-noise stress evidence drew.
+- **Honest current status (no pass manufactured):**
+  - `gate_e_positive_transfer_confirmed` = **FALSE**;
+    `gate_s_natural_degradation_confirmed` = **FALSE**.
+  - The archived `realiad_d3_headroom_audit_result.json` `OFFICIAL_FAIL` stands.
+    The holdout is now **opened**, so any further run is **development** until a
+    fresh re-seal.
+- **Two tracks, two causes (see `docs/research/phase3/REALIAD_TRANSFER_AUDIT_2026_06_02.md`):**
+  1. **D13 multi-view** (`realiad_256_c1_c2`, 2 RGB cameras): had a real
+     clip-saturation bug in `prepare_realiad_positive_transfer.py::_score_features`
+     (55% of per-view scores pinned to 1.0). **FIXED** with the established
+     monotone z-sigmoid; pooled CW 0.698->0.727, within-category CW 0.753 ~ SAR
+     0.752. This is *clean* transfer, so by **T9** it is a tie by construction
+     (no headroom) — not a transfer win.
+  2. **D15/D16 multimodal** (`realiad_d3`, 259 GB, RGB+PS+XYZ): the FAIL is
+     **genuine, not a bug** — per-modality detectors are near-chance pooled
+     (ps 0.549, rgb 0.517, xyz 0.483); within-category signal exists (0.55-0.63)
+     but is inconsistent in direction across categories, and per-category
+     recalibration does not rescue pooling. The `quality_reliability` routing
+     signal barely separates the classes (0.381 vs 0.412).
+- **Root cause of the multimodal negative:** the lightweight handcrafted feature
+  extractor is insufficient for Real-IAD-3D (especially the point-cloud xyz).
+  This is the program's recurring near-chance-detector bottleneck.
+- **Requirement for a positive natural-degradation result (future work):**
+  informative per-modality detectors (deep/patch features for RGB; a proper
+  point-cloud detector for xyz) plus a class-separating reliability signal. Even
+  then, **T9** confines the achievable win to the genuine stress regime.
+- **Forbidden:** claiming Real-IAD transfer as a pass, swapping Eyecandies->Real-IAD
+  in the manuscript as if it were a win, or using the opened holdout as official
+  confirmation. Strict clean Gate E (CLOSED_BY_PROOF_T9) and the bounded v3 level
+  (D12, ~2.5/5) are unchanged.

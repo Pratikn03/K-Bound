@@ -109,7 +109,7 @@ def main() -> int:
     for r in rows:
         print(f"  {r['fold']:40s} n={r['n']:5d}  loose={r['slack_loose_generic']:.3f}  "
               f"massart={r['slack_tight_massart']:.3f}  x{r['tightening_factor']:.1f}  usable={r['usable_bound']}")
-    print(f"\nWrote meta_router_pac_massart.json + table")
+    print("\nWrote meta_router_pac_massart.json + table")
     return 0
 
 

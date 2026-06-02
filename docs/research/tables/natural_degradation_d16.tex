@@ -1,0 +1,16 @@
+% D16 Real-IAD D3 natural-degradation audit summary.
+\resizebox{\columnwidth}{!}{%
+\begin{tabular}{llll}
+\toprule
+Endpoint & Comparator & $\Delta$ AUC (95\% CI) & Decision \\
+\midrule
+Stress subset & CW & +0.0351 $[-0.0276,+0.0980]$ & fail: CI crosses zero \\
+Clean subset & CW & +0.0000 $[+0.0000,+0.0000]$ & pass: no regression \\
+All test & CW & +0.0624 $[+0.0347,+0.0896]$ & supportive only \\
+All test & SAR & -0.2939 $[-0.3213,-0.2665]$ & fail \\
+\bottomrule
+\end{tabular}
+}
+
+% Official D16 excludes the opened common_mode_filter smoke category.
+% Selected validation-only stress method: score_disagreement.

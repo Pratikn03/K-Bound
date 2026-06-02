@@ -1,0 +1,105 @@
+version: 1
+status: SEALED_BEFORE_D3_OUTCOME_SCORING
+ratified: 2026-06-01
+decision: D15_natural_degradation_headroom_program
+target: headroom_aware_natural_reliability_shift
+
+purpose: >
+  Replace clean-transfer superiority as the primary success criterion with a
+  headroom-aware natural-degradation program. D15 evaluates whether ELARA-style
+  reliability routing defaults safely when clean transfer has no recoverable
+  headroom and improves when real multimodal quality/reliability differs.
+
+dataset:
+  id: realiad_d3_natural_degradation_v1
+  source: Real-IAD/Real-IAD_D3
+  local_root: data/raw/realiad_d3
+  status_before_outcome_scoring: fresh_unopened_for_d15
+  modalities:
+    - rgb
+    - photometric_stereo_pseudo3d
+    - xyz_depth_tiff
+  categories: all_downloaded_20_categories
+  splits:
+    train: official_train_ok_only
+    validation: official_validation
+    test: official_test
+
+pre_outcome_subset_rules:
+  natural_stress_score: >
+    Computed without labels from modality quality/reliability statistics:
+    max reliability disagreement and low-modality reliability. Reliability is
+    calibrated against official train OK quality distributions per category and
+    modality.
+  stress_subset: official test samples with stress_score >= validation 70th percentile
+  clean_subset: official test samples with stress_score <= validation 30th percentile
+  no_category_selection_from_test_outcomes: true
+  no_modality_selection_from_test_outcomes: true
+
+candidate:
+  name: headroom_routed_quality_weighted_fusion
+  clean_behavior: default_to_confidence_weighted_mean
+  stress_behavior: quality_reliability_weighted_mean
+  threshold_source: validation_stress_score_quantiles_only
+  labels_allowed_for_method_selection: validation_only
+  test_labels_allowed_for_selection: false
+
+comparators:
+  primary:
+    - confidence_weighted_mean
+  secondary_reported:
+    - sar_score_adapter
+    - equal_mean
+    - max_score
+
+primary_endpoints:
+  stress_vs_cw:
+    subset: stress_subset
+    metric: roc_auc_delta
+    minimum_practical_delta: 0.005
+    ci95_low_must_be_gt: 0.0
+  clean_no_regression_vs_cw:
+    subset: clean_subset
+    metric: roc_auc_delta
+    ci95_low_must_be_gte: -0.005
+  clean_default_rate:
+    subset: clean_subset
+    minimum_rate: 0.80
+
+secondary_endpoints:
+  stress_vs_sar:
+    subset: stress_subset
+    metric: roc_auc_delta
+    report_only: true
+  all_test_vs_cw:
+    subset: all_test
+    metric: roc_auc_delta
+    report_only: true
+  all_test_vs_sar:
+    subset: all_test
+    metric: roc_auc_delta
+    report_only: true
+
+confirmation_rules:
+  fresh_or_unopened_holdout_required: true
+  archive_per_sample_predictions: true
+  bootstrap_iterations: 10000
+  natural_quality_shift_only: true
+  synthetic_degradation_forbidden_as_primary: true
+  opened_clean_gate_e_results_do_not_set_d15: true
+
+forbidden:
+  delete_or_overwrite_gate_e: true
+  claim_strict_gate_e_pass: true
+  claim_universal_sota: true
+  claim_production_ready_without_gate_p: true
+  choose_categories_from_test_performance: true
+  choose_thresholds_from_test_labels: true
+
+reporting:
+  new_gate_field: gate_s_natural_degradation_confirmed
+  strict_gate_e_field_remains: gate_e_m2_transfer_confirmed
+  production_gate_field: gate_p_production_ready
+  required_claim_language: >
+    ELARA is headroom-aware: it defaults under clean no-headroom transfer and
+    routes by reliability under natural modality quality shift.

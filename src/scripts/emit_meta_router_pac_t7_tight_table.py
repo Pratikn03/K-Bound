@@ -18,7 +18,6 @@ def _fmt(value, decimals: int = 3) -> str:
 
 def render(payload: dict) -> str:
     rows = payload.get("rows", [])
-    delta = payload.get("delta", 0.05)
     out = [
         GENERATED,
         r"\begin{tabular}{lccccccc}",

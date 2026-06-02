@@ -21,7 +21,6 @@ Usage:
 from __future__ import annotations
 
 import argparse
-import copy
 import json
 import logging
 import math
@@ -43,7 +42,6 @@ from uais.fusion.attention.adversarial_robustness import (
 )
 from uais.fusion.attention.attention_utils import (
     FusionDataset,
-    apply_domain_dropout,
     build_fusion_tensors,
     infer_feature_columns,
     load_fusion_dataframe,
@@ -74,8 +72,8 @@ from uais.fusion.attention.reliability_estimator import (
 )
 from uais.fusion.attention.train_attention_fusion import set_seed
 from uais.fusion.attention.training_loop import (
-    dropout_score_input as _dropout_score_input,
-    pseudo_targets_from_domain_scores as _pseudo_targets_from_domain_scores,
+    dropout_score_input,
+    pseudo_targets_from_domain_scores,
     train_attention_model,
 )
 from uais.utils.config_loader import load_yaml
@@ -93,6 +91,10 @@ from uais.utils.stats import bootstrap_ci, delong_roc_test, paired_ttest
 logger = logging.getLogger(__name__)
 
 DEFAULT_CONFIG = Path("src/uais/fusion/attention/attention_config.yaml")
+
+# Backward-compatible test/import aliases for the Issue 3/4 helper surface.
+_dropout_score_input = dropout_score_input
+_pseudo_targets_from_domain_scores = pseudo_targets_from_domain_scores
 
 
 # ---------------------------------------------------------------------------

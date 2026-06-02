@@ -30,7 +30,6 @@ from uais.fusion.attention.counterfactual_explainer import CounterfactualDomainE
 from uais.fusion.attention.cross_modal_attention import AttentionFusionModel
 from uais.fusion.attention.training_loop import train_attention_model
 from uais.fusion.attention.reliability_estimator import ReliabilityEstimator
-from uais.fusion.attention.fusion_training_utils import attention_fusion_loss
 from uais.fusion.attention.train_attention_fusion import set_seed
 from uais.utils.config_loader import load_yaml
 from uais.utils.metrics import classification_metrics
