@@ -35,8 +35,10 @@ jq '{checklist:.summary, items:[.items[]|select(.done==false)|{id,stage,descript
 jq '{gate_e_strict:.gate_e_m2_transfer_confirmed_strict, bounded_v3:.gate_e_m2_bounded_v3_pass, positive_transfer:{confirmed:.gate_e_positive_transfer_confirmed,status:.gate_e_positive_transfer_status,delta_sar:.gate_e_positive_transfer_delta_vs_sar,ci_sar:.gate_e_positive_transfer_ci95_vs_sar,delta_cw:.gate_e_positive_transfer_delta_vs_cw,ci_cw:.gate_e_positive_transfer_ci95_vs_cw}, natural_degradation:{confirmed:.gate_s_natural_degradation_confirmed,status:.gate_s_natural_degradation_status,stress_delta_cw:.gate_s_stress_delta_vs_cw,stress_ci_cw:.gate_s_stress_ci95_vs_cw,clean_delta_cw:.gate_s_clean_delta_vs_cw,clean_ci_cw:.gate_s_clean_ci95_vs_cw,dataset_status:.gate_s_current_dataset_status}, gate_f:.gate_f_scenario_c_scientific}' elara_master_c/audits/confirmatory_statistics_report.json
 PYTHONPATH=src .venv/bin/python -m pytest tests/test_api_production_security.py tests/test_production_release_hygiene.py -q
 PYTHONPATH=src .venv/bin/python -m pytest tests/test_confirmatory_validity_guard.py tests/test_scenario_c_checklist.py tests/test_v3_patchcore_and_gated_cw.py tests/test_v3_scripts_smoke.py tests/test_positive_transfer_candidate.py tests/test_positive_transfer_confirmatory.py tests/test_realiad_d3_headroom_audit.py tests/test_data_loader_fallback_policy.py -q
+PYTHONPATH=src .venv/bin/python -m pytest -q
 PYTHONPATH=src .venv/bin/python src/scripts/validate_manuscript_claims.py
 PYTHONPATH=src .venv/bin/python src/scripts/validate_theorem_stack.py
+PYTHONPATH=src .venv/bin/python src/scripts/validate_phase1_1_pdf_claims.py
 .venv/bin/python -m pip check
 PYTHONPATH=src .venv/bin/python -m ruff check deploy src tests --select F,E9
 UAIS_API_KEYS=ci-secret UAIS_CORS_ORIGINS=https://ci.example docker compose config
@@ -48,8 +50,11 @@ Results:
 
 - API production/release tests: **19 passed**.
 - Research-integrity targeted tests: **36 passed**.
+- Full pytest suite: **passed** with 765 collected tests and warning-only
+  library/test edge cases.
 - Manuscript claim validator: **clean**.
 - Theorem stack validator: **all_ok=true**.
+- PDF claim validator: **passed, 0 violations**.
 - `pip check`: **No broken requirements found**.
 - `ruff --select F,E9`: **All checks passed**.
 - Dashboard C++ snapshot binary: **rebuilt** and snapshot regenerated.
@@ -57,7 +62,9 @@ Results:
 - Docker API image: **built**.
 - Docker API smoke: **/health=200, /ready unauth=403, /ready auth=503 until
   model artifacts are mounted, request ID present**.
-- AppleDouble sidecars after cleanup: **0**.
+- AppleDouble sidecars in production build context after cleanup: **0**.
+  Ignored experiment archives on the external T9 volume can re-materialize
+  AppleDouble files when scanned, so release packaging must exclude them.
 - Key JSON scan: **0 NaN/Inf** in the main generated reports.
 
 ## P0 Scientific Blockers
@@ -255,11 +262,14 @@ Still missing for production-ready claim:
 
 ## P2 Repo Hygiene / Reproducibility Gaps
 
-### P2-H1: AppleDouble sidecars were removed
+### P2-H1: AppleDouble sidecars are excluded from release context
 
-Current count after cleanup:
+Current release-context state after cleanup:
 
-- **0** `._*` AppleDouble sidecar files outside `.git`.
+- **0** `._*` AppleDouble sidecar files in the production API build context.
+- The ignored `experiments/` archive on the T9/macOS volume may regenerate
+  AppleDouble sidecars when files are scanned; those files are excluded by
+  `.dockerignore` and are not part of the API image.
 
 Effect:
 
@@ -269,10 +279,11 @@ Effect:
 
 Release rule:
 
-- Keep `.gitignore` rule `._*`.
+- Keep `.gitignore` / `.dockerignore` rules for `._*` and ignored research
+  output trees.
 - Re-run `find . -name '._*' -not -path './.git/*' -delete` immediately
-  before Docker packaging on the T9/macOS volume, because filesystem access can
-  regenerate sidecars.
+  before Docker packaging on the T9/macOS volume, and package only from the
+  production build context.
 
 ### P2-H2: Generated caches and bytecode were cleaned
 

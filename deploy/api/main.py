@@ -10,6 +10,7 @@ This is an improved version of the UAIS-V API with:
 - Request validation
 """
 
+import asyncio
 import hashlib
 import logging
 import os
@@ -32,6 +33,7 @@ from fastapi.responses import JSONResponse, PlainTextResponse
 from pydantic import BaseModel, Field, field_validator
 from starlette.middleware.base import BaseHTTPMiddleware
 
+from . import scope_guard
 from .auth import API_KEYS, authenticate
 
 logger = logging.getLogger(__name__)
@@ -84,6 +86,7 @@ MAX_IMAGE_BASE64_CHARS = _int_env("UAIS_MAX_IMAGE_BASE64_CHARS", 8_000_000)
 MAX_IMAGE_PIXELS = _int_env("UAIS_MAX_IMAGE_PIXELS", 25_000_000)
 RATE_LIMIT_REQUESTS = _int_env("UAIS_RATE_LIMIT_REQUESTS", 120)
 RATE_LIMIT_WINDOW_SECONDS = _int_env("UAIS_RATE_LIMIT_WINDOW_SECONDS", 60)
+REQUEST_TIMEOUT_SECONDS = _int_env("UAIS_REQUEST_TIMEOUT_SECONDS", 30)
 PRODUCTION_MODE = _bool_env("UAIS_PRODUCTION_MODE", False)
 REQUIRED_MODELS = tuple(_csv_env("UAIS_REQUIRED_MODELS") or ["fraud", "cyber", "fusion"])
 TRUSTED_MODEL_ARTIFACTS = _bool_env("UAIS_TRUSTED_MODEL_ARTIFACTS", False)
@@ -158,6 +161,23 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
         return await call_next(request)
 
 
+class TimeoutMiddleware(BaseHTTPMiddleware):
+    """Bound per-request wall-clock so a slow inference can't pin a worker (P14)."""
+
+    def __init__(self, app, timeout_seconds: int):
+        super().__init__(app)
+        self.timeout_seconds = timeout_seconds
+
+    async def dispatch(self, request: Request, call_next):
+        try:
+            return await asyncio.wait_for(call_next(request), timeout=self.timeout_seconds)
+        except asyncio.TimeoutError:
+            return JSONResponse(
+                status_code=status.HTTP_504_GATEWAY_TIMEOUT,
+                content={"detail": "Request timed out"},
+            )
+
+
 class RequestLoggingMiddleware(BaseHTTPMiddleware):
     """Structured request logging with correlation IDs and no payload logging."""
 
@@ -194,6 +214,7 @@ app.add_middleware(
     limit=RATE_LIMIT_REQUESTS,
     window_seconds=RATE_LIMIT_WINDOW_SECONDS,
 )
+app.add_middleware(TimeoutMiddleware, timeout_seconds=REQUEST_TIMEOUT_SECONDS)
 app.add_middleware(RequestLoggingMiddleware)
 
 # CORS middleware
@@ -546,6 +567,7 @@ class FusionResponse(BaseModel):
     fusion_risk: float
     domains: list[str]
     overall_risk_level: str
+    scope: Optional[dict] = None  # out-of-envelope / drift annotation (P12)
 
 
 class AttentionDomainInput(BaseModel):
@@ -661,6 +683,20 @@ async def health():
     return {"status": "ok", "timestamp": utc_timestamp()}
 
 
+@app.get("/scope")
+async def scope(authenticated: bool = Depends(authenticate)):
+    """Declared validated operating envelope + live drift-guard status (P12/P13)."""
+    return {
+        "contract": "deploy/SCOPE_CONTRACT.md",
+        "validated_regime": "in-domain + differential-reliability stress (RGB+depth/IR/3D); "
+                            "clean cross-domain transfer is NOT a validated superiority claim (T9)",
+        "reference_envelope_loaded": scope_guard.reference_loaded(),
+        "drift_threshold": scope_guard._DRIFT_THRESHOLD,
+        "note": "Responses are annotated with an out-of-envelope drift flag; "
+                "out-of-envelope traffic should be alerted/held, not trusted blindly.",
+    }
+
+
 @app.get("/ready")
 async def ready(authenticated: bool = Depends(authenticate)):
     """Readiness check for authenticated production traffic."""
@@ -768,7 +804,10 @@ async def predict_fusion(req: FusionRequest, authenticated: bool = Depends(authe
             X = np.array([[req.scores[k] for k in keys]])
             proba = float(fusion_model.predict_proba(X)[0, 1])
 
-        return FusionResponse(fusion_risk=proba, domains=keys, overall_risk_level=get_risk_level(proba))
+        scope = scope_guard.evaluate(req.scores, endpoint="fusion")
+        return FusionResponse(
+            fusion_risk=proba, domains=keys, overall_risk_level=get_risk_level(proba), scope=scope
+        )
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Prediction failed"

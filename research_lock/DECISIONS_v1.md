@@ -316,3 +316,34 @@ stays permanently recorded as FAILED (D1) and is not revived.
   in the manuscript as if it were a win, or using the opened holdout as official
   confirmation. Strict clean Gate E (CLOSED_BY_PROOF_T9) and the bounded v3 level
   (D12, ~2.5/5) are unchanged.
+
+## 2026-06-02 - D19 ratified: Gate P production audit = SCOPED_PRODUCTION_READY
+
+**Decision (user):** "Build the Gate P production audit -> a real, scoped,
+deployable system." Performed an evidence-based Gate P engineering audit
+(`src/scripts/audit_gate_p_production.py`, re-runnable) grading the deploy stack
+against 15 production criteria.
+
+- **Verdict: SCOPED_PRODUCTION_READY (12/15 PASS).** All CRITICAL criteria pass:
+  container hardening, auth+authz (fails-closed), input validation, safe model
+  loading (checksum + `weights_only`, no pickle RCE), CORS/secrets hygiene,
+  observability, error handling, CI/security, **live drift/out-of-envelope
+  monitoring (P12)**, and **deployment scope contract (P13)**.
+- **Two critical blockers fixed this session** to reach scoped-ready:
+  - **P12**: added `deploy/api/scope_guard.py` -> annotates fusion inferences with
+    an out-of-envelope drift score + Prometheus gauges (`uais_scope_drift`,
+    `uais_out_of_envelope_total`); the production embodiment of the RGA reliability
+    signal. Plus a request-timeout middleware (P14).
+  - **P13**: `deploy/SCOPE_CONTRACT.md` declares the validated operating envelope
+    (in-domain + stress regime) and forbids clean-transfer/unscoped/SOTA claims
+    (T9). New `/scope` endpoint exposes it.
+- **Remaining NON-critical gaps before UNSCOPED production:** P5 (rate limiter is
+  in-memory, not multi-replica/distributed), P11 (no model versioning/rollback
+  registry), P15 (no load/scale test).
+- **Binding scope:** the system may be deployed as a **scoped, monitored** service
+  WITHIN the validated envelope, with out-of-envelope traffic alerted/held. It is
+  NOT cleared for unscoped production, universal-SOTA, or clean-transfer claims.
+  This satisfies the D15/D16 Gate-P requirement for the SCOPED claim only.
+- **Artifacts:** `elara_master_c/audits/gate_p_production_audit.json`,
+  `deploy/SCOPE_CONTRACT.md`, `deploy/api/scope_guard.py`,
+  `tests/test_gate_p_and_scope_guard.py` (audit + guard tests pass).
