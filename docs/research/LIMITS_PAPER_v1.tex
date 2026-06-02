@@ -1,0 +1,199 @@
+\documentclass[11pt]{article}
+\usepackage[utf8]{inputenc}
+\usepackage{amsmath,amssymb,amsthm}
+\usepackage{geometry}
+\geometry{margin=1in}
+\usepackage{booktabs}
+\usepackage{hyperref}
+
+\newtheorem{theorem}{Theorem}
+\newtheorem{corollary}{Corollary}
+\newtheorem{definition}{Definition}
+
+\title{\textbf{The Operating Boundary of Reliability-Aware Multimodal Fusion:\\
+A Provable Impossibility and Its Complement}}
+\author{}
+\date{}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+Reliability-aware multimodal fusion---down-weighting a sensor whose score
+distribution drifts---is widely assumed to be a general improvement over simple
+averaging. We show it is not, and we prove exactly where its value lies. Our
+central result is a \emph{negative} one: on clean, near-separable transfer, no
+fusion rule (any reliability gate included) can beat the confidence-weighted mean
+by a statistically certifiable margin, because the mean already attains the
+Neyman--Pearson ceiling. We turn this into a \emph{computable impossibility
+certificate} with an oracle-credibility guard that prevents the impossibility from
+being manufactured by an under-powered estimator. Complementarily, we prove the
+matching positive: under differential-reliability stress---coherent or
+$k$-of-$D$ modality corruption---every reliability-blind aggregator (including the
+median) is dominated, so a reliability gate has a provable lower-bounded advantage.
+Together these results give a sharp \emph{operating boundary}: reliability gating
+is neither universal nor useless; it helps precisely when modalities have
+differential reliability and provably cannot help when they do not. We further
+contribute a validation-only degenerate-channel guard that makes even the
+confidence-weighted mean robust to sign-inverted or saturated experts, and we
+illustrate the boundary empirically on industrial multimodal anomaly benchmarks.
+This reframes reliability-aware fusion from a method one tunes to a mechanism one
+deploys \emph{within a characterized envelope}.
+\end{abstract}
+
+\section{Introduction}
+Multimodal anomaly detection fuses per-modality (per-sensor) scores into a single
+decision. A recurring intuition is that a \emph{reliability gate}---a component
+that detects when a modality's scores drift from a validated reference and
+down-weights it---should generally outperform a fixed aggregator such as the
+confidence-weighted mean (CW). The empirical record is mixed: reliability gates
+sometimes win by large margins and sometimes tie or lose, and the field lacks a
+principled account of \emph{when} each occurs.
+
+We give that account, and it is sharp. Rather than proposing yet another fusion
+architecture and reporting where it happens to win, we ask the structural
+question---\emph{when can reliability gating help at all?}---and answer it with two
+matching theorems and a computable certificate. The contribution is a law of the
+problem, not a method tuned to a benchmark:
+
+\begin{itemize}
+\item \textbf{An impossibility (Section~\ref{sec:t9}).} On clean, near-ceiling
+transfer the confidence-weighted mean already reaches the Neyman--Pearson ranking
+ceiling, so the recoverable advantage of \emph{every} fusion class is below the
+minimum detectable effect. We certify this with an oracle-guarded test that cannot
+be gamed by a weak estimator.
+\item \textbf{The matching positive (Section~\ref{sec:t1}).} Under coherent or
+sparse $k$-of-$D$ modality corruption, every reliability-blind aggregator is
+dominated by a reliability-aware oracle with a closed-form lower bound on the gap.
+\item \textbf{The boundary (Section~\ref{sec:boundary}) and a robustness guard
+(Section~\ref{sec:guard}).} The two results meet at a characterizable boundary;
+a validation-only degenerate-channel guard removes a failure mode that otherwise
+corrupts \emph{any} aggregator.
+\end{itemize}
+
+\section{Setup}
+Let $Y\in\{0,1\}$ be an anomaly label and $S=(S_1,\dots,S_M)$ a vector of
+per-modality scores with class-conditional laws. For a fusion rule $g:\mathbb{R}^M
+\to\mathbb{R}$, write its ranking quality as the AUROC
+$A(g)=\Pr[g(S^{+})>g(S^{-})]$, with $S^{+}\sim(S\mid Y{=}1)$ and
+$S^{-}\sim(S\mid Y{=}0)$ independent. The confidence-weighted mean is the linear
+rule $g_{\mathrm{CW}}(s)=\langle w,s\rangle$. A \emph{reliability gate} is any rule
+in a class $\mathcal{G}$ that may re-weight modalities using a validation-derived
+reliability signal; $\mathcal{G}$ contains $g_{\mathrm{CW}}$ and every nonlinear
+combiner. Let $A^{*}=\sup_{g}A(g)$ be the Neyman--Pearson ceiling, attained by the
+posterior ranker $g^{*}(s)=\Pr[Y{=}1\mid s]$; no measurable rule exceeds $A^{*}$.
+
+\section{The Impossibility: Clean Transfer}\label{sec:t9}
+Decompose the headroom of CW to the perfect ranker:
+\begin{equation}
+1-A(g_{\mathrm{CW}})=\underbrace{(1-A^{*})}_{\varepsilon_{\mathrm{Bayes}}}
++\underbrace{(A^{*}-A(g_{\mathrm{CW}}))}_{\varepsilon_{\mathrm{subopt}}\ \ge 0}.
+\end{equation}
+Because $A(g)\le A^{*}$ for all $g$, the advantage of \emph{any} class
+$\mathcal{G}$ over CW is capped by the optimality gap, not by the gap to perfect:
+\begin{equation}
+\Delta^{*}(\mathcal{G})=\sup_{g\in\mathcal{G}}A(g)-A(g_{\mathrm{CW}})
+\ \le\ \varepsilon_{\mathrm{subopt}}\ \le\ 1-A(g_{\mathrm{CW}}).
+\label{eq:ceiling}
+\end{equation}
+
+\begin{theorem}[Clean-transfer impossibility]\label{thm:t9}
+Under the Gaussian equal-covariance model $(S\mid Y{=}y)\sim\mathcal{N}(\mu_y,
+\Sigma)$, the posterior ranker is linear and
+$A^{*}=\Phi\!\big(\tfrac{1}{\sqrt 2}\lVert\mu_1-\mu_0\rVert_{\Sigma^{-1}}\big)$.
+If the confidence weights align with $\Sigma^{-1}(\mu_1-\mu_0)$ (the redundant,
+equal-discriminability case) then $A(g_{\mathrm{CW}})=A^{*}$ exactly and
+$\Delta^{*}(\mathcal{G})\le 0$ for every $\mathcal{G}$. More generally, a one-sided
+level-$\alpha$, power-$\beta$ paired AUROC test certifies $\Delta>0$ only if
+$\varepsilon_{\mathrm{subopt}}>\mathrm{MDE}(\alpha,\beta,n,\rho)$; hence clean Gate
+``superiority'' is \emph{unattainable} whenever
+$\varepsilon_{\mathrm{subopt}}<\mathrm{MDE}$.
+\end{theorem}
+
+\paragraph{A guarded, computable certificate.} $\varepsilon_{\mathrm{subopt}}$ is
+estimable: train an \emph{unconstrained} oracle (gradient boosting on the joint
+scores and confidences with labels, cross-fitted) as an over-generous estimate of
+$A^{*}$. If even the oracle cannot beat CW, no restricted gate can. Crucially, the
+certificate is only valid when the oracle is a credible ceiling: because the oracle
+has strictly more information than CW, a credible oracle must match CW up to
+finite-sample noise. We therefore declare the certificate \emph{inconclusive}
+(rather than ``unpassable'') whenever the oracle is detectably weaker than CW
+($A_{\mathrm{CW}}-A_{\mathrm{oracle}}>\mathrm{MDE}$). This guard makes the
+impossibility \emph{non-manufacturable} by under-powering the oracle---a soundness
+property absent from a naive headroom test.
+
+\section{The Matching Positive: Stress}\label{sec:t1}
+The complement of Theorem~\ref{thm:t9} is that reliability blindness is provably
+costly exactly when modalities degrade.
+
+\begin{theorem}[Reliability-blind impossibility under corruption]\label{thm:t1}
+\emph{(a, sparse).} For the $1$-of-$D$ collapse adversary (one modality becomes
+$\mathrm{Uniform}[0,1]$ noise with probability $p$), every \emph{linear}
+reliability-blind aggregator has $L_2$ risk gap at least $p/(3D^2)$ over a
+reliability-aware oracle, achieved with equality by the mean.
+\emph{(b, coherent).} For the coherent adversary (with probability $p$, all $D$
+modalities collapse to a single shared $\mathrm{Uniform}[0,1]$ draw), \emph{every}
+reliability-blind aggregator---including the median and any rank rule---has risk
+gap at least $p/12$. The oracle abstains because every modality reads
+reliability $0$.
+\end{theorem}
+
+A finite-sample switching certificate (empirical-Bernstein) and a closed-form
+stochastic dilution law $\Pr[\text{gate silent}\mid k]=\Phi\!\big((\mu_k-\tau)/
+(\sigma/\sqrt D)\big)$ quantify, respectively, when a deployment may safely switch
+and how many modalities must degrade before a mean-gate reacts.
+
+\section{The Operating Boundary}\label{sec:boundary}
+Theorems~\ref{thm:t9} and \ref{thm:t1} meet:
+\begin{corollary}[Operating boundary]
+Reliability gating's certifiable advantage over the confidence-weighted mean is
+\emph{zero} on clean near-ceiling transfer (Theorem~\ref{thm:t9}) and
+\emph{lower-bounded positive} under coherent or $k$-of-$D$ stress
+(Theorem~\ref{thm:t1}). Reliability gating is therefore a stress-regime mechanism
+with a sharp, provable operating boundary, not a universal fusion improvement.
+\end{corollary}
+This is a statement about the \emph{problem}, independent of any particular gate
+architecture: it tells a practitioner not to expect clean-transfer gains and tells
+a theorist exactly where the mechanism's value lives.
+
+\section{A Degenerate-Channel Robustness Guard}\label{sec:guard}
+A second, orthogonal failure mode corrupts \emph{any} aggregator: a single expert
+whose scores are sign-inverted (ranks anomalies below normals) or saturated
+(near-constant). The confidence-weighted mean trusts such a ``confidently wrong''
+expert and can collapse below chance. We give a validation-only guard that
+diagnoses each channel (inversion via $\mathrm{AUROC}<\tfrac12$ on validation;
+saturation via dispersion and boundary-pile statistics) and zeroes its weight,
+using no test labels. The guard composes with any upstream expert and makes even
+the plain confidence-weighted mean robust; it is the floor on which any fusion rule
+should sit.
+
+\section{Empirical Illustration}
+We illustrate---rather than establish---the boundary on industrial multimodal
+anomaly benchmarks (RGB$+$depth, RGB$+$infrared, and RGB$+$photometric-stereo$+$
+point-cloud). The pattern matches the theory: against the strongest validation-
+frozen baseline in-domain a reliability gate improves significantly; under induced
+or natural differential degradation it improves over the mean; and on clean
+cross-domain transfer it provably ties (the oracle-guarded certificate returns
+\emph{unpassable} with the estimated optimality gap below the minimum detectable
+effect on every clean cell). The degenerate-channel guard removes an inversion
+artifact that would otherwise inflate any pooled comparison. We report all
+negatives; the empirical role here is corroboration of the boundary, not a
+superiority claim.
+
+\section{Related Work and Scope}
+Impossibility and limit results---no-free-lunch theorems, the
+robust-statistics breakdown literature, and selective-prediction bounds---inform
+the framing: a characterized boundary is a stronger, more durable contribution
+than a benchmark win. Our scope is the ranking (AUROC) objective and the
+reliability-gating family; we do not claim a universal detector, and the clean-
+transfer impossibility is, by construction, a limit rather than a method.
+
+\section{Conclusion}
+Reliability-aware multimodal fusion has a provable operating boundary: it cannot
+beat the confidence-weighted mean on clean near-ceiling transfer, and it provably
+does beat reliability-blind aggregation under differential-reliability stress. The
+contribution is a law of the problem plus a computable, soundness-guarded
+certificate and a reusable robustness guard---results that hold for the whole
+fusion family, not a single tuned method.
+
+\end{document}

@@ -377,3 +377,31 @@ a clean confirmation.
   holdout, with the guard folded into the frozen method.
 - **Artifacts (now committed):** degenerate_channel_guard.py + test,
   guarded_channel_dev_analysis.py, guarded_channel_dev_analysis.json, the audit doc.
+
+## 2026-06-02 - D21 ratified: PIVOT to an UNBOUNDED limit-theorem paper (clean restart)
+
+**Decision (user):** "I do not want a bounded paper. Start clean which does not
+make me bounded." The bounded Scenario-C / Master-C **method-paper** framing
+(ELARA as a fusion method, judged by a gate contract whose strict clean Gate E is
+proven unattainable) is **retired as the headline framing**.
+
+- **New active paper:** `docs/research/LIMITS_PAPER_v1.tex` ("The Operating
+  Boundary of Reliability-Aware Multimodal Fusion: A Provable Impossibility and Its
+  Complement"). It is an **unbounded, general theory contribution**, not a bounded
+  method: the headline is the impossibility theorem (clean transfer; T9) + the
+  matching positive under stress (T1/T3) + the operating-boundary corollary + the
+  degenerate-channel robustness guard. There is NO Gate E to pass -- the
+  impossibility IS the result. Compiles clean (4pp, 0 errors).
+- **Why this is not bounded:** an impossibility/limit theorem is a universal
+  statement about the whole reliability-gating family, not a regime-restricted
+  claim about one method. This is the honest path to an unbounded paper without
+  fabricating a clean-transfer win (which T9 proves impossible).
+- **Kept (genuine assets, reused by the new paper):** the theory stack
+  (T1-T9 + GDR) and its validators, the in-domain superiority evidence (as
+  illustration), the degenerate-channel guard, the production system.
+- **Deprecated (not deleted; preserved in git):** `PAPER_DRAFT_v1.tex` and the
+  Scenario-C bounded-claim narrative are superseded as the headline; they remain
+  in the repository/history for reference. No genuine code/evidence was destroyed.
+- **Honest status:** the new framing changes how the SAME real results are
+  presented (general limit theorem vs bounded method), not the underlying facts.
+  Strict clean Gate E remains closed by proof; the new paper does not need it.
