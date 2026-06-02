@@ -1,7 +1,7 @@
 schema: realiad_d3_natdeg_heldout_protocol_v1
 decision: D18_realiad_d3_natural_degradation_heldout_confirmation
 date_locked: 2026-06-02
-status_at_lock: PRE_REGISTERED_BEFORE_HELDOUT_RUN
+status_at_lock: RE_PRE_REGISTERED_AFTER_AUDIT_FIX_BEFORE_HELDOUT_RERUN
 purpose: >
   One-shot category-held-out confirmation of reliability-gated multimodal fusion
   on Real-IAD-D3 natural degradation. Frozen BEFORE the held-out categories are
@@ -10,7 +10,7 @@ purpose: >
   which T9 proves unpassable). It does not rewrite or replace strict Gate E.
 
 frozen_method:
-  commit_hash_at_lock: "33a13b2"   # method code frozen at this commit (+ this protocol)
+  commit_hash_at_lock: "d804e2c"   # frozen AFTER binary-PCD audit fix (F1) + cache guard (F2)
   detectors:
     rgb: deep PatchCore (ResNet-50 layer2+layer3) per-category memory bank
     ps:  deep PatchCore (ResNet-50 layer2+layer3) per-category memory bank
@@ -85,3 +85,20 @@ outputs:
       headphone_jack_socket lattice_block_plug lego_pin_connector_plate lego_propeller
       limit_switch miniature_lifting_motor purple_clay_pot telephone_spring_switch
     --out experiments/fusion/realiad_d3_fusion_heldout_confirmation.json
+
+audit_amendment_2026_06_02:
+  finding_F1: >
+    Binary-PCD label leakage caught by the 100% audit BEFORE accepting any held-out
+    result. 3 categories store binary PCDs; the parser fell back to the degenerate
+    XYZ tiff (placeholder constants leak the OK/NG label). Faked knob_cap XYZ 0.999
+    (real 0.90). The first held-out run had 2/11 categories on artifact-XYZ -> killed.
+  fix_commit: "9823173 (binary PCD parse) + d804e2c (cache version guard)"
+  corrected_development_result:
+    pooled_gated_vs_cw_delta: 0.0455
+    pooled_ci95: [0.0344, 0.0578]
+    within_category_mean_delta: 0.0117
+    disclosure: >
+      ~75% of the pooled gain is cross-category calibration; within-category benefit
+      is concentrated in fuse_holder (+0.060). Held-out report MUST show pooled AND
+      within-category delta.
+  integrity: No held-out test scores were inspected during the audit or fix.
