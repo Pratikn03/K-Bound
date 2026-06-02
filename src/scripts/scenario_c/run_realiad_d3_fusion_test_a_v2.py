@@ -43,6 +43,9 @@ from uais.fusion.attention.realiad_3d_detector import (  # noqa: E402
 
 MODALITIES = ("rgb", "ps", "xyz")
 CACHE_DIR = ROOT / "experiments/fusion/realiad_d3_score_cache"
+# Bump when detector scoring changes so stale caches can't silently persist
+# (the 2026-06-02 binary-PCD audit fix is why this guard exists).
+DETECTOR_VERSION = "v2_binpcd"
 
 
 def _zsig(raw, ref):
@@ -59,7 +62,7 @@ def _strat(rs, cap):
 def score_category(cat, coreset, max_train, max_val, max_test):
     """Return aligned (S_val[N,3], yval, S_test[M,3], ytest, val_auc[3]) with caching."""
     CACHE_DIR.mkdir(parents=True, exist_ok=True)
-    cache = CACHE_DIR / f"{cat}_{max_train}_{max_val}_{max_test}_{coreset}.npz"
+    cache = CACHE_DIR / f"{cat}_{max_train}_{max_val}_{max_test}_{coreset}_{DETECTOR_VERSION}.npz"
     if cache.exists():
         z = np.load(cache)
         return z["Sval"], z["yval"], z["Stest"], z["ytest"], z["valauc"]
