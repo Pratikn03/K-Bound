@@ -147,6 +147,8 @@ def main() -> int:
     ap.add_argument("--max-val", type=int, default=90)
     ap.add_argument("--max-test", type=int, default=130)
     ap.add_argument("--out", type=Path, default=ROOT / "experiments/fusion/realiad_d3_fusion_test_a_v2.json")
+    ap.add_argument("--fixed-rule", choices=list(GATED_RULES), default=None,
+                    help="Freeze the fusion rule (skip val re-selection); use for the held-out confirmation.")
     args = ap.parse_args()
     print(f"=== Fusion test A v2 (development, refined+val-selected): {args.categories} ===", flush=True)
 
@@ -170,12 +172,15 @@ def main() -> int:
             ys.append(y); fs.append(rule_fn(S, va)); cws.append(_cw(S, va))
         return np.concatenate(ys), np.concatenate(fs), np.concatenate(cws)
 
-    # VALIDATION-ONLY rule selection
+    # VALIDATION-ONLY rule selection (or a FROZEN pre-registered rule for held-out)
     val_scores = {}
     for name, fn in GATED_RULES.items():
         yv, fv, _ = pooled(val_blocks, fn)
         val_scores[name] = float(roc_auc_score(yv, fv))
-    selected = max(val_scores, key=val_scores.get)
+    if args.fixed_rule:
+        selected = args.fixed_rule  # frozen: no re-selection on held-out data
+    else:
+        selected = max(val_scores, key=val_scores.get)
 
     # evaluate selected rule on TEST vs CW (+ report all rules on test for transparency)
     yt, ft_sel, cw_t = pooled(test_blocks, GATED_RULES[selected])

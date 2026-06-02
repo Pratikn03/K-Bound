@@ -1,0 +1,87 @@
+schema: realiad_d3_natdeg_heldout_protocol_v1
+decision: D18_realiad_d3_natural_degradation_heldout_confirmation
+date_locked: 2026-06-02
+status_at_lock: PRE_REGISTERED_BEFORE_HELDOUT_RUN
+purpose: >
+  One-shot category-held-out confirmation of reliability-gated multimodal fusion
+  on Real-IAD-D3 natural degradation. Frozen BEFORE the held-out categories are
+  scored by the new method, so the result cannot be tuned post-hoc. This is the
+  legitimate "less-strict" natural-degradation gate (NOT strict clean Gate E,
+  which T9 proves unpassable). It does not rewrite or replace strict Gate E.
+
+frozen_method:
+  commit_hash_at_lock: "33a13b2"   # method code frozen at this commit (+ this protocol)
+  detectors:
+    rgb: deep PatchCore (ResNet-50 layer2+layer3) per-category memory bank
+    ps:  deep PatchCore (ResNet-50 layer2+layer3) per-category memory bank
+    xyz: PCA surface-relief geometry image from the .pcd point cloud -> deep PatchCore
+         (the XYZ tiff is degenerate on the test split; geometry comes from the PCD)
+  per_category_score_norm: monotone z-sigmoid on train-OK distances
+  reliability_signal: per-category VALIDATION AUROC per modality (val labels only)
+  fusion_rule: rel_x_sharp   # FROZEN; selected on the 8 development categories
+  fusion_rule_definition: >
+    w[i,m] = (max(val_auc[cat,m]-0.5,0) + 0.05) * 2|S[i,m]-0.5|;
+    fused[i] = sum_m w[i,m] S[i,m] / sum_m w[i,m]
+  comparator_primary: confidence_weighted_mean (CW)
+  comparator_secondary: [equal_mean, SAR_score_adapter]
+  metric: pooled AUROC across held-out categories
+  inference: paired bootstrap, 10000 iters, two-sided 95% CI
+
+split:
+  development_categories_touched_by_new_method:   # used to build/select the method
+    - ferrite_bead
+    - fuse_holder
+    - knob_cap
+    - audio_jack_socket
+    - dc_power_connector
+    - ethernet_connector
+    - humidity_sensor
+    - power_jack
+  excluded_development_only:
+    - common_mode_filter   # D16 smoke/debug taint
+  heldout_categories_never_touched_by_new_method:  # the confirmation set (11)
+    - connector_housing_female
+    - crimp_st_cable_mount_box
+    - fork_crimp_terminal
+    - headphone_jack_socket
+    - lattice_block_plug
+    - lego_pin_connector_plate
+    - lego_propeller
+    - limit_switch
+    - miniature_lifting_motor
+    - purple_clay_pot
+    - telephone_spring_switch
+
+primary_endpoint:
+  field: gate_natdeg_heldout_confirmed
+  pass_condition:
+    - pooled gated(rel_x_sharp) vs CW delta >= 0.010
+    - pooled gated vs CW 95% CI lower bound > 0
+  run_policy: ONE_SHOT   # run exactly once on the held-out set; no re-runs, no tuning
+
+integrity:
+  used_test_labels_for_any_selection: false
+  rule_selected_on: development categories only (validation AUROC)
+  one_shot: true
+  disclosed_caveat: >
+    The 11 held-out categories were scored ONCE by the prior D16 attempt using a
+    DIFFERENT, broken handcrafted detector (now superseded). That run is
+    uninformative for the new frozen method and used validation-only selection,
+    so it does not bias this confirmation -- but it means these are not a pristine
+    never-seen holdout. Honest level impact: a held-out generalization
+    confirmation (~3-3.5), not a clean-room 4.
+  forbidden:
+    - claiming strict clean Gate E pass (T9-closed)
+    - rewriting strict Gate E or its comparator to manufacture a pass
+    - re-running the held-out set or tuning after seeing its test scores
+    - claiming universal SOTA or production readiness from this result
+
+outputs:
+  result_json: experiments/fusion/realiad_d3_fusion_heldout_confirmation.json
+  command: >
+    PYTHONPATH=.:src python src/scripts/scenario_c/run_realiad_d3_fusion_test_a_v2.py
+    --fixed-rule rel_x_sharp
+    --categories connector_housing_female crimp_st_cable_mount_box fork_crimp_terminal
+      headphone_jack_socket lattice_block_plug lego_pin_connector_plate lego_propeller
+      limit_switch miniature_lifting_motor purple_clay_pot telephone_spring_switch
+    --out experiments/fusion/realiad_d3_fusion_heldout_confirmation.json
