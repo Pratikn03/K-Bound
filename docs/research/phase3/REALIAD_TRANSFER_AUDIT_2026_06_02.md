@@ -79,6 +79,56 @@ program (near-chance upstream detectors), now on Real-IAD-3D.
   the gate can only win in the genuine stress regime where degradation pulls CW
   below the Neyman–Pearson ceiling and opens recoverable headroom.
 
+## Update (2026-06-02) — the hardest fix: strong per-modality detectors
+
+Per user direction ("do the hardest fix"), replaced the lightweight handcrafted
+scorer with the genuine detector pattern and added the missing geometric
+front-end for the point cloud:
+
+- RGB / PS: deep patch features (ResNet-50 layer2+layer3) -> per-category
+  PatchCore memory bank (`realiad_3d_detector.py`).
+- XYZ: the organized (1588x1588x3) point map is converted to a **surface-normal
+  image** (cross product of local tangents; `xyz_to_normal_image`) and fed
+  through the same backbone. This is the real fix — the old pipeline ran image
+  colour/texture stats on a coordinate map, discarding all geometry.
+
+3-category probe (ferrite_bead, fuse_holder, knob_cap; 120 train / 130 eval per
+cat; coreset 4096; MPS), mean within-category AUROC:
+
+| Modality | handcrafted (pooled) | strong detector | per-category |
+|---|---|---|---|
+| **PS** | 0.55 | **0.82** | 0.73 / 0.97 / 0.76 |
+| **RGB** | 0.52 | **0.66** | 0.47 / 0.80 / 0.73 |
+| **XYZ** | 0.48 | **0.49** | 0.685 / 0.425 / 0.356 |
+
+Findings:
+- **PS is the workhorse** — deep PatchCore lifts it to 0.82, strong and
+  consistent. **RGB is moderate** (0.66) and category-dependent.
+- **XYZ is still unreliable** (mean 0.49). The surface-normal fix genuinely helps
+  on some geometries (ferrite_bead 0.48->0.685) but is *below chance* on others
+  (fuse_holder 0.425, knob_cap 0.356). It is **not** a sign/orientation flip
+  (flipping ferrite drops it to 0.315) — the point-cloud signal is genuinely
+  category-dependent and not robustly extractable by normal-map PatchCore.
+  Reliable XYZ would need a stronger 3D method (FPFH / learned point features),
+  which is a major build (no open3d/GPU here) with uncertain payoff.
+
+**The real prize this revealed:** the modalities have *genuine, category-dependent
+reliability heterogeneity* — PS strong everywhere, RGB strong where XYZ is weak
+(fuse_holder, knob_cap) and weak where XYZ is strong (ferrite_bead). That is
+exactly the natural-stress structure reliability gating is built for, and the
+regime where **T9** permits a gate win (an unreliable modality pulls CW below
+the ceiling; a validation-calibrated reliability signal can route around it).
+This is the most promising natural-stress signal seen in the project — but it is
+a *lead*, not a result: the decisive test is whether a reliability-gated fusion
+of strong RGB+PS (with XYZ as the naturally-degraded modality) beats CW on a
+held-out natural-stress subset. That has not yet been run.
+
+Status unchanged: `gate_e_positive_transfer_confirmed` /
+`gate_s_natural_degradation_confirmed` remain FALSE; holdout opened ->
+development. Artifacts: `src/uais/fusion/attention/realiad_3d_detector.py`,
+`src/scripts/scenario_c/validate_realiad_d3_strong_detector.py`,
+`experiments/fusion/realiad_d3_strong_detector_probe.json`.
+
 ## Integrity notes
 
 - The z-sigmoid fix makes the CW comparator *fairer/stronger* (de-saturated),
