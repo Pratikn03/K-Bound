@@ -551,7 +551,9 @@ def evaluate_cell(
         "bootstrap_95_ci": ci,
         "bootstrap_ci_width": ci_width,
         "clean_false_fire_proxy": clean_ffr,
-        "holm_bonferroni": holm,
+        "primary_pvalue": float(pvals[0]) if pvals else None,
+        "holm_bonferroni": holm,  # NOTE: per-cell Holm on a singleton is a no-op;
+        # the cross-benchmark family-wise correction is in report["family_wise_holm"].
         "cell_valid": cell_valid,
         "validity_reasons": reasons,
         "gate_d_pass": pass_gate_d,
@@ -666,6 +668,27 @@ def main() -> int:
             report["m3_confirmatory_ran"] = True
             report["gate_d_m3_healthcare"] = bool(cell.get("gate_d_pass"))
             report["m3_t5_pass"] = bool(cell.get("t5_confirmatory_pass"))
+
+    # --- Cross-benchmark family-wise Holm correction (audit H1) ---
+    # Per-cell Holm runs on a single p-value (a no-op). The confirmatory family
+    # spans multiple benchmarks (M1, M2_external, M2_external_v2, M3_healthcare),
+    # so family-wise error must be controlled ACROSS cells, not within each.
+    fam_cells = [c for c in report["cells"]
+                 if c.get("primary_pvalue") is not None
+                 and c.get("family") in {"M1", "M2_external", "M2_external_v2", "M3_healthcare"}]
+    if fam_cells:
+        fam_p = np.array([c["primary_pvalue"] for c in fam_cells])
+        fam_holm = holm_bonferroni(fam_p, alpha=0.05)
+        report["family_wise_holm"] = {
+            "family_size": int(len(fam_cells)),
+            "members": [c["benchmark"] for c in fam_cells],
+            "raw_pvalues": [float(p) for p in fam_p],
+            "p_adjusted": [float(p) for p in fam_holm.get("p_adjusted", [])],
+            "reject_at_0.05": [bool(r) for r in fam_holm.get("reject", [])],
+            "note": "Holm-Bonferroni across all confirmatory benchmark cells "
+                    "(the correct family). Per-cell holm_bonferroni fields are "
+                    "singletons and do not control family-wise error.",
+        }
 
     legacy_gate_d_m1 = bool(report.get("gate_d_m1"))
     legacy_gate_e = bool(report.get("gate_e_m2_transfer_confirmed"))

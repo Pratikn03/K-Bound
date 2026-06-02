@@ -125,8 +125,10 @@ def test_gated_cw_switches_under_degradation():
 # --------------------------------------------------------------------------
 def test_v3_multisplit_result_is_significant_and_positive():
     p = ROOT / "experiments/fusion/mvtec3d_v3_multisplit_result.json"
-    if not p.exists():
-        pytest.skip("v3 multisplit result not present")
+    # FAIL (not skip) on absence: this is the load-bearing in-domain-win claim
+    # (audit C1) -- it is committed, so a missing/deleted artifact is a regression
+    # to surface in CI, not to silently pass.
+    assert p.exists(), "load-bearing in-domain-win artifact missing (must be committed)"
     d = json.loads(p.read_text())
     delta = d["delta_rga_vs_sar"]
     assert delta["mean"] > 0
@@ -135,8 +137,7 @@ def test_v3_multisplit_result_is_significant_and_positive():
 
 def test_gated_cw_artifact_has_no_significant_negative_but_not_noninferiority():
     p = ROOT / "experiments/fusion/rga_gated_cw_transfer_result.json"
-    if not p.exists():
-        pytest.skip("gated-CW result not present")
+    assert p.exists(), "load-bearing gated-CW artifact missing (must be committed)"
     d = json.loads(p.read_text())
     saw_negative_ci_bound = False
     for name, res in d["datasets"].items():

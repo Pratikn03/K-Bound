@@ -38,9 +38,11 @@ supported by the evidence and is forbidden by decisions D12/D15/D16.
 
 ## Honest status
 
-Gate P verdict: **CONDITIONAL_SCOPED** — security/serving are production-grade;
-the system is deployable as a **scoped, monitored** service within the validated
-envelope above. It is **not** cleared for unscoped production until P11
-(model versioning/rollback) and P15 (load/scale test) are closed and the
-held-out natural-degradation confirmation lands. See
-`elara_master_c/audits/gate_p_production_audit.json`.
+Gate P verdict: **SCOPED_PRODUCTION_READY** (12/15; all CRITICAL criteria pass) —
+security/serving are production-grade and the live out-of-envelope drift guard +
+scope contract are in place, so the system is deployable as a **scoped, monitored**
+service within the validated envelope above. It is **not** cleared for unscoped
+production until the remaining non-critical items close: P5 (distributed rate
+limiting), P11 (model versioning/rollback), P15 (load/scale test). The
+natural-degradation transfer is development-grade and NOT confirmed (D20). See
+`elara_master_c/audits/gate_p_production_audit.json` (authoritative verdict).
