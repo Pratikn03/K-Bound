@@ -1,0 +1,68 @@
+schema: natural_shift_sealed_protocol_v1
+decision: D22_natural_temporal_shift_sealed_benchmark
+date_locked: 2026-06-02
+status_at_lock: PRE_REGISTERED_BEFORE_LATE_PERIOD_SCORED
+
+purpose: >
+  A NATURAL (not synthetic) distribution-shift, SEALED benchmark to test the one
+  hypothesis the i.i.d. results left open: does drift-aware reliability routing
+  beat plain per-task stacking when validation goes stale under real shift? On
+  i.i.d. data the reliability/drift machinery was inert (ablation); the honest
+  bet is it helps only under genuine train->test shift.
+
+natural_shift_sources:   # real temporal concept drift, no synthetic noise
+  unsw_temporal:
+    early: data/raw/cyber/UNSW-NB15_1.csv   # chronological capture (train + validation)
+    late:  data/raw/cyber/UNSW-NB15_3.csv   # later capture (SEALED test)
+    tasks: per attack_cat (vs normal) present in both periods
+  creditcard_temporal:
+    field: Time
+    early: first 60% by time (train + validation)
+    late:  last 40% by time (SEALED test)
+
+frozen_method:
+  detector_zoo: [ECOD, COPOD, IForest, LOF, KNN, OCSVM]   # pyod, fit on early-normal
+  per_dataset_norm: z-sigmoid on early-train scores
+  baselines:
+    - auto_select: argmax early-validation AUROC, applied to late test
+    - plain_stack: logistic stacking on ALL detectors, trained on early validation
+  elara_u:
+    - drift_stack: KS-drift + degenerate guard drops stale detectors (early-val vs
+      late-test score distributions, NO test labels), then logistic stacking on the
+      surviving detectors
+  metric: late-test AUROC per task; paired bootstrap over tasks (10000)
+
+primary_endpoint:
+  field: gate_natural_shift_router_wins
+  pass_condition:   # BOTH required, this is the strong-meta-baseline bar
+    - drift_stack > auto_select on sealed late test: paired AUROC CI lower bound > 0
+    - drift_stack > plain_stack on sealed late test: paired AUROC CI lower bound > 0
+  run_policy: ONE_SHOT on the late (sealed) period
+
+integrity:
+  late_period_never_used_for_training_selection_or_tuning: true
+  drift_detection_uses_test_feature_distribution_not_labels: true
+  used_test_labels_for_selection: false
+  forbidden:
+    - scoring the late period more than once / tuning after seeing it
+    - using sealed results to choose the method or the drift threshold
+    - reporting a win unless BOTH co-endpoints pass
+
+honest_note: >
+  If drift_stack does not beat plain_stack on the sealed shift, the honest
+  conclusion is that the reliability/drift machinery is inert even under natural
+  shift, and the contribution remains "stacking beats per-dataset selection."
+
+outcome_2026_06_02:
+  status: FAIL
+  n_tasks: 7   # unsw exploits/dos/fuzzers/reconnaissance/generic/analysis + creditcard temporal
+  mean_auroc: {auto_select: 0.7596, plain_stack: 0.8178, drift_stack: 0.7678}
+  drift_stack_vs_auto_select: {mean: +0.0083, ci95: [-0.0057, +0.0236], significant: false}
+  drift_stack_vs_plain_stack: {mean: -0.0499, ci95: [-0.1030, -0.0129], significant: true}
+  verdict: >
+    Drift-aware routing does NOT beat plain stacking under natural temporal shift;
+    it is significantly WORSE. Combined with the i.i.d. ablation (components inert)
+    this REFUTES the reliability-aware meta-routing hypothesis. The standing
+    contribution is: per-task supervised stacking beats per-dataset auto-selection
+    across domains and under shift; reliability/drift routing does not help and can
+    hurt. Result: experiments/elara_u/natural_shift_results.json.

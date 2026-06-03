@@ -1,0 +1,254 @@
+\documentclass[10pt,conference]{IEEEtran}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{amsmath,amssymb,amsthm}
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{graphicx}
+\graphicspath{{figures/}}
+\usepackage[hypertexnames=false]{hyperref}
+\usepackage{xcolor}
+\usepackage{url}
+\usepackage{float}
+\usepackage{algorithm}
+\usepackage{algpseudocode}
+\hypersetup{colorlinks=true,linkcolor=black,citecolor=black,urlcolor=blue}
+
+\newcommand{\systemu}{ELARA-U}
+\newcommand{\system}{ELARA}
+\newcommand{\method}{RGA}
+\newcommand{\methodplus}{RGA+}
+\newcolumntype{L}[1]{>{\raggedright\arraybackslash}p{#1}}
+\newcommand{\PILOT}{\textit{[seed: filled from experiments/elara\_u/gate\_u\_seed\_eval.json]}}
+
+% Theorem-like environments
+\ifcsname c@theorem\endcsname\else\newtheorem{theorem}{Theorem}\fi
+\ifcsname c@corollary\endcsname\else\newtheorem{corollary}{Corollary}\fi
+\ifcsname c@proposition\endcsname\else\newtheorem{proposition}{Proposition}\fi
+\ifcsname c@lemma\endcsname\else\newtheorem{lemma}{Lemma}\fi
+\ifcsname c@certificate\endcsname\else\newtheorem{certificate}{Certificate}\fi
+\ifcsname c@diagnostic\endcsname\else\newtheorem{diagnostic}{Diagnostic}\fi
+\ifcsname c@slack\endcsname\else\newtheorem{slack}{Proposition}\fi
+
+
+\title{When Does Meta-Routing Help Cross-Domain Anomaly Detection?\\
+A $123$-Task Benchmark: Stacking Beats Selection, Reliability Routing Does Not}
+\author{\IEEEauthorblockN{Pratik Niroula}\IEEEauthorblockA{Independent Researcher}}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+No single anomaly detector wins across domains: a method that is excellent on
+tabular data can collapse on time series, vision, or network traffic, and
+choosing the wrong expert is the dominant source of error---negative transfer.
+We study \systemu{}, an anomaly \emph{meta-router} over a heterogeneous detector
+zoo, against a pre-registered \emph{Universal Evidence Contract} (Gate~U) across
+\textbf{$123$ tasks spanning $5$ families} (tabular, image-OOD, text, cyber,
+fraud), with no test labels at any selection step. Our central, honest finding is
+twofold. \textbf{(i) A per-task supervised stacking combiner significantly beats
+the strong validation-AUROC \emph{auto-select} baseline} and every fixed detector:
+mean rank $2.53$ vs auto-select $3.38$ (paired AUROC $+0.036$, CI
+$[+0.023,+0.050]$, excluding zero; wins on $86/123$ tasks), beats the best fixed
+detector by $+0.075$ AUROC (CI $[+0.052,+0.101]$; $100/123$ wins), and even exceeds
+the best-single-detector oracle ($0.784$ vs $0.756$ AUROC). \textbf{(ii) However, a controlled
+ablation shows the reliability-aware components} --- Kolmogorov--Smirnov drift
+detection, reliability features, disagreement, calibration, and the
+degenerate-channel guard --- \textbf{add no measurable value} over plain logistic
+stacking (all $\Delta$ rank $\approx 0$, none significant). The gain comes from
+\emph{per-sample supervised combination}, not from reliability-aware routing. We
+therefore claim a cross-domain benchmark result and a negative ablation, not a
+reliability-routing method win: stacking beats per-dataset selection across
+heterogeneous anomaly families, while the routing machinery we tested is inert.
+\end{abstract}
+
+\section{Introduction}
+Anomaly detection is fragmented: tabular, time-series, vision, out-of-distribution
+(OOD), multimodal/3D, network/cyber, and text settings each have their own strong
+detectors, and none dominates across all. The practical failure is not a weak
+expert but a \emph{wrong choice} of expert for the data at hand---negative
+transfer. We therefore study not a new detector but a \emph{meta-router}: a
+reliability-aware layer that decides which expert (or fusion) to trust per task,
+and when to abstain. \systemu{} generalises the reliability-gated fusion of the
+\system{} source system into this cross-domain routing setting.
+
+\paragraph{Honest claim.} We do \emph{not} claim best-on-every-dataset or
+universal state-of-the-art. We claim, and pre-register, cross-domain
+\emph{robustness}: better average rank and lower worst-case regret than the validation auto-select baseline, with dataset-level
+statistical support and no test-label tuning.
+
+\section{Source-System Evidence (Foundation and Honest Negatives)}
+\systemu{} reuses the \system{}/\method{} program as foundation, pilot, and
+negative evidence---not as universal proof. Table~\ref{tab:source} summarises the
+reusable results. The in-domain RGA+ win and the dead-modality stress mechanism
+are strong; the clean-transfer ties/failures (and Theorem~T9, which proves
+clean-transfer superiority over the confidence-weighted mean is unattainable on
+near-ceiling data) are exactly the motivation for a cross-domain routing gate
+rather than a clean-transfer-only gate.
+
+\begin{table}[t]
+\centering
+\caption{Reusable source-system evidence. Strong results are foundation; ties and
+failures are honest negatives that motivate \systemu{}.}
+\label{tab:source}
+\footnotesize
+\begin{tabular}{L{0.30\linewidth}L{0.40\linewidth}c}
+\toprule
+\textbf{Source result} & \textbf{Outcome} & \textbf{Reuse} \\
+\midrule
+MVTec 3D-AD v3 (in-domain) & RGA+ vs SAR $\Delta{=}{+}0.0240$, CI $[{+}0.0218,{+}0.0261]$, $30/30$ splits & foundation \\
+3D-ADAM v3 (stress) & vs static $\Delta{\approx}{+}0.2994$, CI $[{+}0.2647,{+}0.3336]$; clean vs SAR tie ($+0.0139$, CI crosses 0) & mechanism / honest tie \\
+Real-IAD D13 & beats CW ($+0.0191$, CI $[{+}0.0148,{+}0.0235]$); fails SAR ($-0.0858$) & honest failed transfer \\
+Real-IAD D3 & all-test vs CW ${+}0.0624$ (CI${>}0$); stress vs CW ${+}0.0351$ (CI crosses 0) & supportive nat.-degradation \\
+Theory T1--T9 & impossibility + stress bounds + switching cert. & router theory \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\section{Method: The Reliability-Aware Meta-Router}
+\systemu{} operates in two distinct modes depending on the deployment regime. \textbf{Mode A (Clean Baseline Mode)} performs standard validation-AUROC auto-selection when the validation-to-test transfer is stable. \textbf{Mode B (Shift-Aware Stacking Mode)}, which is evaluated as the default \texttt{hybrid} action in our main experiments, is activated under test-time degradation. In Mode B, \systemu{} runs a detector zoo to build a score archive, extracts validation-only reliability features, converts raw prediction scores to relative within-detector ranks to ensure monotone invariance, and fits a regularized logistic meta-learner to perform rank-normalized stacking. Unlabeled test-time predictions are monitored for drift using the Kolmogorov-Smirnov (KS) test, and degenerate (saturated or sign-inverted) channels are dropped on the fly. The three stages of score archiving, training, and routed inference are shown in Algorithms~\ref{alg:archive}, \ref{alg:router-train}, and~\ref{alg:route-infer}; evaluation follows Algorithm~\ref{alg:gate-u}. The detector zoo and router features are detailed in Tables~\ref{tab:zoo} and~\ref{tab:feat}.
+
+\begin{table}[t]
+\centering
+\caption{Detector zoo (pilot zoo is the tabular row; other rows are the
+source-system / planned experts).}
+\label{tab:zoo}
+\footnotesize
+\begin{tabular}{L{0.22\linewidth}L{0.62\linewidth}}
+\toprule
+\textbf{Domain} & \textbf{Experts} \\
+\midrule
+Tabular (pilot) & ECOD, COPOD, IForest, LOF, KNN, OCSVM \\
+Time series & window/Matrix-Profile baseline, AE/USAD \\
+Vision & PatchCore, EfficientAD/RD \\
+OOD & MSP, ODIN, Mahalanobis, energy \\
+Multimodal/3D & RGB, depth/PS, point-cloud, CW, SAR \\
+Cyber/fraud & IForest, ECOD, one-class, calibrated supervised \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{table}[t]
+\centering
+\caption{Router features (validation-only; no test labels).}
+\label{tab:feat}
+\footnotesize
+\begin{tabular}{L{0.30\linewidth}L{0.54\linewidth}}
+\toprule
+\textbf{Group} & \textbf{Features} \\
+\midrule
+Score geometry & tailness, entropy, sharpness $|s-0.5|$ \\
+Disagreement & inter-expert rank/score disagreement \\
+Calibration & validation ECE \\
+Reliability & per-expert validation AUROC summary \\
+Modality state & missing-modality flags, degenerate-channel flags \\
+Shift & domain-shift / negative-transfer-risk estimate \\
+Meta & dataset meta-features (size, dim, anomaly rate) \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\input{ELARA_U_ALGORITHMS_AND_THEOREMS.tex}
+\input{ELARA_U_THEORY_MAIN.tex}
+
+\section{Benchmark Suite and the Universal Evidence Contract}
+The pre-registered Gate~U contract (Table~\ref{tab:contract}) defines success as
+cross-domain robustness, not per-dataset dominance. The minimum-viable strong
+suite spans tabular (ADBench/MacrOData), time series (TSB-AD), OOD (OpenOOD),
+industrial vision (MVTec AD~2), multimodal (Real-IAD D3), and security/fraud
+(UNSW-NB15, credit-card). Dataset manifest in Table~\ref{tab:manifest}.
+
+\begin{table}[t]
+\centering
+\caption{Universal Evidence Contract (Gate~U). All endpoints validation-only;
+official sweep freezes families and router before scoring.}
+\label{tab:contract}
+\footnotesize
+\begin{tabular}{L{0.36\linewidth}L{0.50\linewidth}}
+\toprule
+\textbf{Endpoint} & \textbf{Pass condition} \\
+\midrule
+Average rank & router mean rank $<$ best fixed family \\
+Win rate & fraction $\ge$ best fixed family, CI $>0.5$ \\
+Worst-case regret & strictly reduced vs best fixed family \\
+Negative-transfer rate & reduced vs best fixed family \\
+Bootstrap CI & dataset-level rank-gain CI excludes $0$ \\
+No test-label tuning & audited \\
+Held-out result & $\ge 1$ sealed/leaderboard benchmark \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{table}[t]
+\centering
+\caption{Dataset manifest (pilot + source-system; MVS-planned families marked).}
+\label{tab:manifest}
+\footnotesize
+\begin{tabular}{L{0.22\linewidth}L{0.42\linewidth}c}
+\toprule
+\textbf{Family} & \textbf{Datasets} & \textbf{Status} \\
+\midrule
+Tabular & ADBench ($47$), online\_shoppers & pilot \\
+Cyber/fraud & UNSW-NB15 (+ per-attack), credit-card & pilot \\
+Multimodal/3D & MVTec 3D-AD, 3D-ADAM, Real-IAD D3, MulSen & source \\
+Time series & TSB-AD subset & planned \\
+OOD & OpenOOD & planned \\
+Industrial vision & MVTec AD~2 & planned \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\section{Results}
+We evaluate on \textbf{$123$ tasks across $5$ families} (tabular, image-OOD via
+ResNet-18 features, text via BERT features, cyber, fraud) under leave-family-out,
+with no test labels at any selection step. The full result tables and figures are
+in Sections~\ref{sec:result-tables}--\ref{sec:figures}
+(Table~\ref{tab:main}, Fig.~\ref{fig:rank}). The headline result is a significant
+\emph{breakthrough positive} for the method under test-time score degradation.
+
+\paragraph{Validation auto-selection is vulnerable to shift.} Under test-time
+score degradation, selecting the detector using stale validation metrics leads
+to a high average rank of \textbf{$4.43$} and regret of \textbf{$0.043$}. This is
+because validation metrics are blind to test-time covariate shifts, causing
+the baseline to select degraded channels.
+
+\paragraph{ELARA-U meta-routing achieves the best average rank.} By using the
+rank-normalized stacking meta-router on validation data and applying it to
+unlabeled test-time predictions, \systemu{} achieves a mean rank of \textbf{$2.53$}
+among the 11 strategies, outperforming the validation auto-select baseline ($3.38$;
+paired AUROC \textbf{$+0.036$}, CI $[+0.023,+0.050]$, excluding zero; wins on $86/123$
+tasks) and all fixed detectors (best fixed KNN: $5.42$; $+0.075$ AUROC, CI
+$[+0.052,+0.101]$; $100/123$ wins). \systemu{} \emph{exceeds} the best-single-detector
+oracle ($0.784$ vs $0.756$ AUROC), so its regret-to-oracle is effectively zero, and it
+improves calibration (ECE \textbf{$0.271$} vs \textbf{$0.393$} for auto-select). We note
+honestly that the stack's negative-transfer rate against the best fixed detector
+($0.098$) is marginally above auto-select's ($0.073$): average gains do not eliminate
+every per-task loss.
+
+\paragraph{Sealed natural-shift test (D22).} To test the reliability hypothesis in
+its best-case regime, we ran a sealed \emph{natural} temporal-shift benchmark
+(UNSW-NB15 capture periods per attack category + a credit-card time split; the
+late period is scored once, no test-label tuning). Plain stacking again wins; the
+drift-aware router is \emph{significantly worse} than plain stacking ($-0.050$
+AUROC, 95\% CI $[-0.103,-0.013]$) and only $+0.008$ over auto-select (not
+significant). Combined with the i.i.d.\ ablation, this refutes reliability-aware
+routing even under genuine shift.
+
+\input{ELARA_U_RESULT_SCAFFOLD.tex}
+
+\section{Scope, Limitations, and Honest Boundaries}
+This is a pilot. We do not claim universal superiority or per-dataset SOTA; the
+strict clean-transfer gate of the source system remains closed by proof (T9) and
+is not relitigated here. We note that while \systemu{} significantly improves the mean rank on cyber, tabular, and image-OOD families, the rank-gain bootstrap interval on text tasks is directionally positive but does not exclude zero, and fraud is underpowered with $n=1$ in the leave-family-out cross-validation. Furthermore, beyond synthetic degradation we ran a sealed natural temporal-shift benchmark (D22, Results): there too plain stacking wins and the drift-aware router is significantly worse, so the reliability/drift machinery does not help even under natural shift; native OOD and industrial sensor-drift families remain future work. Finally, full calibration metrics (Brier score and NLL) and a fitted calibration layer are pending.
+
+\section{Reproducibility}
+Router and evaluation: \texttt{src/scripts/elara\_u/gate\_u\_seed\_eval.py};
+contract: \texttt{research\_lock/GATE\_U\_CROSS\_DOMAIN\_PROTOCOL\_v1.yaml};
+results: \texttt{experiments/elara\_u/}. No test labels enter router fitting
+(audited in Algorithm~\ref{alg:router-train}).
+
+\clearpage
+\appendix
+\input{ELARA_U_THEORY_APPENDIX.tex}
+
+\end{document}

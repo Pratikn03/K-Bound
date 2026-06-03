@@ -39,7 +39,7 @@
 \begin{titlepage}
 \centering
 \vspace*{1.7cm}
-{\huge\bfseries ELARA-U: Shift-Aware Reliability Routing for\\ Cross-Domain Anomaly Detection\par}
+{\huge\bfseries ELARA-U: A Cross-Domain Anomaly Meta-Routing Benchmark\\ ---Stacking Beats Selection; Reliability Routing Does Not\par}
 \vspace{1.4cm}
 {\large\bfseries Pratik Niroula}\par
 \vspace{0.4cm}
@@ -55,16 +55,17 @@
 not only inventing a stronger detector, but preventing the wrong detector from
 being trusted under domain shift. \systemu{} studies this as a meta-routing
 problem: given a heterogeneous detector zoo and a validation slice, decide when
-to select, fuse, stack, or fall back without using test labels. The current
-evidence supports a strong development-stage claim under injected deployment
-degradation: across $123$ tasks from $5$ families, \systemu{} Stack reaches mean
-rank $2.54$ versus $3.63$ for stale validation auto-selection, with paired
-bootstrap rank delta $-1.10$ and 95\% CI $[-1.54,-0.62]$. It also reduces mean
-regret from $0.0454$ to $0.0099$ and lowers the negative-transfer rate versus
-rank-mean from the auto-select rate of $0.106$ to $0.098$. The evidence is not
-yet a sealed universal SOTA claim because the strongest result is still a
-development stress benchmark and additional natural, external, and sealed
-families are required.
+to select, fuse, stack, or fall back without using test labels. On the clean i.i.d.\ archive of
+$123$ tasks from $5$ families, \systemu{} Stack (per-task rank-normalized
+stacking) reaches mean rank $2.53$ versus $3.38$ for validation auto-selection
+($+0.036$ AUROC, paired-bootstrap CI $[+0.023,+0.050]$, excluding zero; $86/123$
+wins) and even exceeds the best-single-detector oracle ($0.784$ vs $0.756$). However,
+controlled ablations across three regimes and a \emph{sealed natural temporal-shift}
+benchmark (D22) resolve RQ3 negatively: the reliability/drift machinery adds no
+significant value and is significantly \emph{worse} than plain stacking under
+natural shift ($-0.050$ AUROC, CI excl.\ $0$). The honest contribution is a
+cross-domain benchmark with a strong stacking baseline and a negative result for
+reliability-aware routing---not a sealed universal SOTA claim.
 \end{minipage}
 \end{titlepage}
 
@@ -152,7 +153,7 @@ RQ5 & Can the router produce calibrated probabilities and safe abstentions suita
 \endhead
 Universal meta-routing formulation & Defines anomaly detection as a task-level routing problem over a detector zoo, not as a single-detector competition. & Formal setup and \gateu{} \\
 Score archive & Persists validation/test detector scores, labels, and provenance so routing policies can be evaluated without re-running detectors. & $123$ current tasks \\
-Rank-normalized stacker & Learns per-task combinations from validation labels and applies monotone-invariant rank features to test scores. & Mean rank $2.54$ stress result \\
+Rank-normalized stacker & Learns per-task combinations from validation labels and applies monotone-invariant rank features to test scores. & Mean rank $2.53$ (clean benchmark) \\
 Evidence contract & Separates average rank, regret, negative transfer, calibration, and no-test-label audit. & Tables and algorithms \\
 Theory stack & Proves why universal dominance is impossible, why auto-select is near-oracle under stable transfer, and why shifted regimes can reward reliability routing. & Theorems in Sec.~\ref{sec:theory} \\
 Honest boundary & Distinguishes development stress evidence from sealed universal SOTA evidence. & Validity audit \\
@@ -391,7 +392,12 @@ $[-0.050,-0.026]$); a learned router with the full reliability battery is no bet
 than the same router without it (i.i.d.\ $+0.001$, uniform shift $+0.002$, heterogeneous
 missingness $+0.015$; all CIs cross zero) and worse than plain auto-select on i.i.d.\
 data. Across two router designs and three deployment regimes, reliability features
-carry no significant signal beyond validation quality and detector identity.
+carry no significant signal beyond validation quality and detector identity. Crucially this holds on a \emph{sealed, natural}
+temporal-shift benchmark (D22: UNSW capture periods and a credit-card time split,
+late period scored once): there the drift-aware router is significantly
+\emph{worse} than plain stacking ($-0.050$ AUROC, 95\% CI $[-0.103,-0.013]$) and
+only $+0.008$ over auto-select (not significant), so the negative result is not an
+artifact of synthetic corruption.
 
 The honest conclusion is therefore precise: \emph{the universal-routing gain is real
 but comes from rank-normalized stacking, not from reliability-aware routing.} The next
@@ -540,7 +546,7 @@ into a sealed universal benchmark.
 \midrule
 \endhead
 Clean archive re-run & Evaluate auto-select, rank-mean, fixed detectors, and stacker without degradation. & Expect tie or modest gains; do not require dominance \\
-Natural temporal split & Fraud/cyber/time-series train on earlier data, test on later data. & Rank delta vs auto-select CI below zero \\
+Natural temporal split (D22, \textbf{done}) & UNSW capture periods + credit-card time split; sealed late period scored once. & \textbf{FAILED}: drift-stack $-0.050$ vs plain stacking (CI excl.\ 0); $+0.008$ vs auto-select (n.s.) \\
 Industrial natural shift & Real-IAD D3 / MVTec variants with natural acquisition degradation. & Beat auto-select and rank-mean without synthetic corruption \\
 Multimodal RGB$+$3D (pre-registered) & Independent per-modality degradation; reliability-gated fusion vs mean, auto-select, ablation (Sec.~\ref{sec:multimodal}). & H1--H3 all CI$>$0 $\Rightarrow$ scoped novelty; else closed (no retuning) \\
 Calibration experiment & Fit calibration on validation only; test on held-out tasks. & Improve ECE, Brier, and NLL \\

@@ -168,12 +168,19 @@ def main():
         "stack_vs_best_fixed": paired_ci(auc["stack"], auc[best_fixed]),
         "auto_select_vs_best_fixed": paired_ci(auc["auto_select"], auc[best_fixed]),
     }
+    worst_rank = {s: int(R[:, ranked.index(s)].max()) for s in ranked}
+    per_task_auc = {s: auc[s].tolist() for s in STRAT if s != "oracle"}
+    per_task_rank = {s: R[:, ranked.index(s)].tolist() for s in ranked}
+    task_families = [t["fam"] for t in tasks]
     result = {
         "protocol": "ELARA_U_HONEST_BENCHMARK_v1", "n_tasks": len(tasks),
         "families": dict(fams), "best_fixed": best_fixed,
         "average_rank": dict(sorted(avg_rank.items(), key=lambda kv: kv[1])),
         "mean_auroc": mean_auc, "mean_regret": mean_regret, "mean_ece": ece,
-        "per_family_rank": dict(fam_rank), "negative_transfer_rate": neg_tr,
+        "worst_rank": worst_rank, "per_family_rank": dict(fam_rank),
+        "negative_transfer_rate": neg_tr,
+        "per_task_auc": per_task_auc, "per_task_rank": per_task_rank,
+        "task_families": task_families,
         "contrasts": contrasts,
         "verdict": {
             "positive_stack_beats_select": contrasts["stack_vs_auto_select"]["sig"],
