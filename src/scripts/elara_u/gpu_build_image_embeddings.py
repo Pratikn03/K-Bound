@@ -41,7 +41,8 @@ def _backbone():
     w = ResNet50_Weights.IMAGENET1K_V2
     model = resnet50(weights=w).eval()
     model.fc = torch.nn.Identity()                      # 2048-d global-avg-pool embedding
-    dev = "cuda" if torch.cuda.is_available() else "cpu"
+    dev = ("cuda" if torch.cuda.is_available()
+           else "mps" if torch.backends.mps.is_available() else "cpu")
     return model.to(dev), w.transforms(), dev
 
 
