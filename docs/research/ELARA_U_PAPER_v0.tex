@@ -32,7 +32,7 @@
 
 
 \title{When Does Meta-Routing Help Cross-Domain Anomaly Detection?\\
-A $123$-Task Benchmark: Stacking Beats Selection, Reliability Routing Does Not}
+Stacking Beats Selection; Reliability Routing Helps Only Under Independent Modality Failure}
 \author{\IEEEauthorblockN{Pratik Niroula}\IEEEauthorblockA{Independent Researcher}}
 
 \begin{document}
@@ -59,7 +59,21 @@ stacking (all $\Delta$ rank $\approx 0$, none significant). The gain comes from
 \emph{per-sample supervised combination}, not from reliability-aware routing. We
 therefore claim a cross-domain benchmark result and a negative ablation, not a
 reliability-routing method win: stacking beats per-dataset selection across
-heterogeneous anomaly families, while the routing machinery we tested is inert.
+heterogeneous anomaly families, while the routing machinery is inert \emph{for single-input meta-routing}.
+\textbf{(iii) The exception that proves the rule:} in true multimodal detection
+where modalities fail \emph{independently} (Real-IAD-D3; pre-registered D23),
+reliability routing decisively wins --- failing the deployment-best modality at
+test, a drift-aware gate beats equal-weight fusion ($+0.22$), stale selection
+($+0.33$), and validation-only fusion ($+0.20$; all CIs exclude zero) --- while
+inert when nothing fails. A sixth family (time-series, NAB) shows the stacking
+advantage is marginal there ($+0.008$, n.s.), bounding the positive to
+feature-vector families. The precise claim: \emph{reliability routing helps iff
+modalities can fail independently; otherwise plain stacking suffices}.
+The stacking result is robust: random-forest and gradient-boosting stackers match
+logistic stacking and also beat auto-select (all CIs exclude zero), while a simple
+average \emph{loses} to selection ($-0.039$)---the gain is learned combination,
+not averaging. A validation-only isotonic layer makes the stack well-calibrated
+(ECE $0.39\!\to\!0.02$, Brier $0.25\!\to\!0.07$, NLL $0.74\!\to\!0.28$).
 \end{abstract}
 
 \section{Introduction}
@@ -76,6 +90,29 @@ and when to abstain. \systemu{} generalises the reliability-gated fusion of the
 universal state-of-the-art. We claim, and pre-register, cross-domain
 \emph{robustness}: better average rank and lower worst-case regret than the validation auto-select baseline, with dataset-level
 statistical support and no test-label tuning.
+
+\section{Related Work}
+\textbf{Anomaly-detection benchmarks.} Large suites established that no detector
+dominates across datasets and that model selection matters; ADBench~\cite{adbench}
+spans tabular, CV, and NLP feature sets, OpenOOD~\cite{openood} standardises image
+OOD, and NAB/TSB~\cite{nab} cover time series. Our 123-task suite reuses ADBench-style
+feature vectors across five families. \textbf{Detector / model selection.}
+MetaOD~\cite{metaod} selects an outlier detector per dataset from meta-features;
+validation-AUROC auto-selection is the strong label-aware analogue and our primary
+baseline. \textbf{Fusion and stacking.} Stacked generalization~\cite{wolpert} combines
+base learners with a meta-model; we find a rank-normalized logistic stack is the
+strongest such combiner and beats selection, while rank-mean and confidence-weighted
+mean are weaker. \textbf{Base detectors.} Our zoo uses IForest~\cite{iforest},
+LOF~\cite{lof}, ECOD~\cite{ecod}, COPOD, KNN, and OCSVM. \textbf{Drift detection and
+selective prediction.} Test-time shift is detected with Kolmogorov--Smirnov
+statistics~\cite{driftsurvey}; selective prediction / abstention~\cite{selective}
+motivates the fallback action. Our reliability features are exactly these
+drift/disagreement signals, and our negative result is about whether they add value to
+selection/fusion. \textbf{Calibration.} We report Brier/NLL with
+isotonic~\cite{isotonic} calibration (cf.\ temperature scaling~\cite{calibration}).
+\textbf{Industrial / multimodal anomaly detection.} PatchCore~\cite{patchcore} and
+Real-IAD~\cite{realiad} provide the multimodal RGB+3D detectors and data behind our D23
+independent-modality-failure result.
 
 \section{Source-System Evidence (Foundation and Honest Negatives)}
 \systemu{} reuses the \system{}/\method{} program as foundation, pilot, and
@@ -239,6 +276,73 @@ reliability gate ($-0.037$ AUROC, $p_{\mathrm{Holm}}{<}10^{-8}$).
 
 \input{ELARA_U_RESULT_SCAFFOLD.tex}
 
+\section{Strengthening the Stacking Result}
+\label{sec:strength}
+\begin{table}[t]\centering
+\caption{Stacking beats selection across stacker families (123 tasks, paired
+bootstrap vs auto-select). RF/GBM match logistic (differences n.s.); a simple
+average \emph{loses} to selection, so the gain is learned combination.}
+\label{tab:stackers}\footnotesize
+\begin{tabular}{lccc}
+\toprule
+\textbf{Method} & mean AUROC & $\Delta$ vs auto-select & 95\% CI \\
+\midrule
+Auto-select & 0.748 & --- & --- \\
+Simple average & 0.709 & $-0.039$ & $[-0.048,-0.031]$ \\
+Stack (logistic) & 0.781 & $+0.033$ & $[+0.021,+0.047]$ \\
+Stack (random forest) & 0.770 & $+0.022$ & $[+0.003,+0.041]$ \\
+Stack (grad. boosting) & 0.774 & $+0.026$ & $[+0.009,+0.044]$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{table}[t]\centering
+\caption{Calibration (lower better). A validation-only isotonic layer makes the
+stack well-calibrated, far better than auto-select.}
+\label{tab:calib2}\footnotesize
+\begin{tabular}{lccc}
+\toprule
+\textbf{Method} & ECE & Brier & NLL \\
+\midrule
+Auto-select & 0.393 & 0.249 & 0.743 \\
+Stack (raw) & 0.280 & 0.173 & 0.514 \\
+Stack + isotonic & \textbf{0.024} & \textbf{0.069} & \textbf{0.276} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\section{Multimodal Independent-Modality Failure (D23)}
+\label{sec:d23}
+Every regime where reliability routing was inert used \emph{single-input}
+families: all detectors see the same data, so no modality can fail independently.
+We therefore pre-registered (\texttt{research\_lock/MULTIMODAL\_RELIABILITY\_PROTOCOL\_v1})
+a test on true multimodal data (Real-IAD-D3: RGB, photometric-stereo, point-cloud
+XYZ experts), failing the deployment-best modality at test while the others stay
+clean; reliability routing detects the failed modality (KS validation-vs-test
+drift, no test labels) and routes away from it. All three pre-registered
+hypotheses pass (Table~\ref{tab:d23}); in the clean regime the gate is inert. The
+precise claim: \emph{reliability routing helps iff modalities can fail
+independently}.
+
+\begin{table}[t]\centering
+\caption{D23 multimodal reliability (9 Real-IAD-D3 categories, RGB/PS/XYZ). Mean
+AUROC by regime; hypotheses are paired bootstrap over categories in the
+modality-failure regime.}
+\label{tab:d23}\footnotesize
+\begin{tabular}{lcc}
+\toprule
+\textbf{Method} & clean & modality-failure \\
+\midrule
+Equal-weight (CW) & 0.745 & 0.494 \\
+Stale auto-select & 0.939 & 0.381 \\
+Validation-only fusion & 0.901 & 0.517 \\
+\textbf{Reliability gate} & \textbf{0.901} & \textbf{0.715} \\
+\midrule
+\multicolumn{3}{p{0.92\linewidth}}{H1 vs equal-weight $+0.221$ $[0.090,0.398]$; H2 vs stale-select $+0.334$ $[0.177,0.487]$; H3 vs validation-only fusion $+0.198$ $[0.090,0.305]$ --- all 95\% CIs exclude zero.}\\
+\bottomrule
+\end{tabular}
+\end{table}
+
 \section{Scope, Limitations, and Honest Boundaries}
 This is a pilot. We do not claim universal superiority or per-dataset SOTA; the
 strict clean-transfer gate of the source system remains closed by proof (T9) and
@@ -249,6 +353,23 @@ Router and evaluation: \texttt{src/scripts/elara\_u/gate\_u\_seed\_eval.py};
 contract: \texttt{research\_lock/GATE\_U\_CROSS\_DOMAIN\_PROTOCOL\_v1.yaml};
 results: \texttt{experiments/elara\_u/}. No test labels enter router fitting
 (audited in Algorithm~\ref{alg:router-train}).
+
+\begin{thebibliography}{99}
+\bibitem{adbench} S.~Han, X.~Hu, H.~Huang, M.~Jiang, and Y.~Zhao, ``ADBench: Anomaly Detection Benchmark,'' \emph{NeurIPS Datasets and Benchmarks}, 2022.
+\bibitem{metaod} Y.~Zhao, R.~Rossi, and L.~Akoglu, ``Automating Outlier Detection via Meta-Learning (MetaOD),'' \emph{NeurIPS}, 2021.
+\bibitem{wolpert} D.~H.~Wolpert, ``Stacked Generalization,'' \emph{Neural Networks}, 5(2):241--259, 1992.
+\bibitem{iforest} F.~T.~Liu, K.~M.~Ting, and Z.-H.~Zhou, ``Isolation Forest,'' \emph{ICDM}, 2008.
+\bibitem{lof} M.~M.~Breunig, H.-P.~Kriegel, R.~T.~Ng, and J.~Sander, ``LOF: Identifying Density-Based Local Outliers,'' \emph{SIGMOD}, 2000.
+\bibitem{ecod} Z.~Li et al., ``ECOD: Unsupervised Outlier Detection Using Empirical Cumulative Distribution Functions,'' \emph{IEEE TKDE}, 2022.
+\bibitem{driftsurvey} J.~Gama, I.~\v{Z}liobait\.{e}, A.~Bifet, M.~Pechenizkiy, and A.~Bouchachia, ``A Survey on Concept Drift Adaptation,'' \emph{ACM Computing Surveys}, 46(4), 2014.
+\bibitem{selective} Y.~Geifman and R.~El-Yaniv, ``Selective Classification for Deep Neural Networks,'' \emph{NeurIPS}, 2017.
+\bibitem{isotonic} B.~Zadrozny and C.~Elkan, ``Transforming Classifier Scores into Accurate Multiclass Probability Estimates,'' \emph{KDD}, 2002.
+\bibitem{calibration} C.~Guo, G.~Pleiss, Y.~Sun, and K.~Q.~Weinberger, ``On Calibration of Modern Neural Networks,'' \emph{ICML}, 2017.
+\bibitem{patchcore} K.~Roth, L.~Pemula, J.~Zepeda, B.~Sch\"olkopf, T.~Brox, and P.~Gehler, ``Towards Total Recall in Industrial Anomaly Detection (PatchCore),'' \emph{CVPR}, 2022.
+\bibitem{realiad} C.~Wang et al., ``Real-IAD: A Real-World Multi-View Benchmark for Industrial Anomaly Detection,'' \emph{CVPR}, 2024.
+\bibitem{openood} J.~Yang et al., ``OpenOOD: Benchmarking Generalized Out-of-Distribution Detection,'' \emph{NeurIPS Datasets and Benchmarks}, 2022.
+\bibitem{nab} A.~Lavin and S.~Ahmad, ``Evaluating Real-Time Anomaly Detection Algorithms -- The Numenta Anomaly Benchmark (NAB),'' \emph{ICMLA}, 2015.
+\end{thebibliography}
 
 \clearpage
 \appendix
