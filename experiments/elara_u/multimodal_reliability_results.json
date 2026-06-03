@@ -1,0 +1,49 @@
+{
+  "protocol": "D23_multimodal_reliability",
+  "n_categories": 9,
+  "regimes": {
+    "clean": {
+      "mean_auroc": {
+        "equal_weight": 0.7454,
+        "stale_auto_select": 0.9393,
+        "no_reliability": 0.9009,
+        "reliability_gate": 0.9009
+      }
+    },
+    "modality_failure": {
+      "mean_auroc": {
+        "equal_weight": 0.494,
+        "stale_auto_select": 0.3812,
+        "no_reliability": 0.5169,
+        "reliability_gate": 0.7148
+      }
+    }
+  },
+  "hypotheses_failure_regime": {
+    "H1_vs_equal_weight": {
+      "mean": 0.2208,
+      "ci95": [
+        0.0901,
+        0.3984
+      ],
+      "pass": true
+    },
+    "H2_vs_stale_auto_select": {
+      "mean": 0.3336,
+      "ci95": [
+        0.177,
+        0.4873
+      ],
+      "pass": true
+    },
+    "H3_vs_no_reliability": {
+      "mean": 0.1979,
+      "ci95": [
+        0.0903,
+        0.305
+      ],
+      "pass": true
+    }
+  },
+  "reliability_validated": true
+}

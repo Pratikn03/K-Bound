@@ -69,7 +69,7 @@ def main():
         E("Auto-select > best fixed", H["auto_select_vs_best_fixed"]),
     ])
 
-    # Family B: consolidated reliability ablation (4 regimes + gate)
+    # Family B: consolidated reliability ablation (4 single-input regimes + gate + D23 multimodal)
     famB_raw = [
         E("i.i.d. (learned router)", lr["rel_vs_norel_ABLATION"]),
         E("uniform shift (sev. 3)", ss["rel_vs_norel_ABLATION"]),
@@ -77,6 +77,10 @@ def main():
         E("natural shift D22 (drift vs plain)", ns["drift_stack_vs_plain_stack"]),
         E("stack reliability gate", H["stack_rel_vs_stack_ABLATION"]),
     ]
+    d23 = load("multimodal_reliability_results.json")
+    if d23.get("hypotheses_failure_regime"):
+        h3 = d23["hypotheses_failure_regime"]["H3_vs_no_reliability"]
+        famB_raw.append(E("multimodal indep. failure D23 (drift gate vs val-only)", h3))
     famB = holm(famB_raw)
     for e in famB:
         e["reliability_helps"] = bool(e["delta"] > 0 and e["reject"])

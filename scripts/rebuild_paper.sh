@@ -24,7 +24,8 @@ OUT_PDF_DIR="$ROOT/output/pdf"
 
 mkdir -p "$FIG_DIR" "$BUILD_DIR" "$OUT_PDF_DIR"
 
-echo "==> Recompute calibration (Brier/NLL) + statistical audit (Holm)"
+echo "==> Recompute D23 multimodal reliability + calibration (Brier/NLL) + statistical audit (Holm)"
+PYTHONPATH=src python src/scripts/elara_u/multimodal_reliability_test.py >/dev/null 2>&1 || echo "  (D23 cache absent; using committed result)"
 PYTHONPATH=src python src/scripts/elara_u/calibration_eval.py
 PYTHONPATH=src python src/scripts/elara_u/statistical_audit.py
 

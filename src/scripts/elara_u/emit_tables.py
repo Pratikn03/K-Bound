@@ -152,11 +152,13 @@ def main() -> int:
     ns = _load("natural_shift_results.json")   # kept for tab:natshift below
     L += [r"\begin{table}[t]\centering",
           r"\caption{\textbf{Consolidated reliability ablation (verified, Holm-corrected).} "
-          r"The decisive RQ3 test across four deployment regimes plus the stack gate: does "
-          r"reliability/drift signal improve over plain validation quality? $\Delta=$(with "
-          r"reliability)$-$(without); $>0$ means reliability helps. $p_{\mathrm{Holm}}$ is the "
-          r"two-sided CI$\to p$ value, Holm-corrected within this family. \emph{Reliability helps "
-          r"in no regime after correction; the 123-task stack gate is significantly negative.}}",
+          r"The decisive RQ3 test across four single-input deployment regimes, the stack gate, "
+          r"and the multimodal independent-failure regime (D23): does reliability/drift signal "
+          r"improve over plain validation quality? $\Delta=$(with reliability)$-$(without); $>0$ "
+          r"means reliability helps. $p_{\mathrm{Holm}}$ is the two-sided CI$\to p$ value, "
+          r"Holm-corrected within this family. \emph{Reliability helps in no single-input regime "
+          r"and significantly hurts the stack gate, but significantly HELPS under multimodal "
+          r"independent modality failure (D23)---the precise operating boundary.}}",
           r"\label{tab:ablation}\footnotesize", r"\begin{tabular}{lccc}", r"\toprule",
           r"\textbf{Regime} & $\Delta$AUROC & 95\% CI & $p_{\mathrm{Holm}}$ (helps?) \\", r"\midrule"]
     if SA:
