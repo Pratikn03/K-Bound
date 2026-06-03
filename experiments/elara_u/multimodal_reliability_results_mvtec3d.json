@@ -1,0 +1,50 @@
+{
+  "protocol": "D23_multimodal_reliability",
+  "dataset": "MVTec-3D",
+  "n_categories": 7,
+  "regimes": {
+    "clean": {
+      "mean_auroc": {
+        "equal_weight": 0.8655,
+        "stale_auto_select": 0.8715,
+        "no_reliability": 0.882,
+        "reliability_gate": 0.882
+      }
+    },
+    "modality_failure": {
+      "mean_auroc": {
+        "equal_weight": 0.5855,
+        "stale_auto_select": 0.4752,
+        "no_reliability": 0.5811,
+        "reliability_gate": 0.7923
+      }
+    }
+  },
+  "hypotheses_failure_regime": {
+    "H1_vs_equal_weight": {
+      "mean": 0.2069,
+      "ci95": [
+        0.1722,
+        0.2418
+      ],
+      "pass": true
+    },
+    "H2_vs_stale_auto_select": {
+      "mean": 0.3171,
+      "ci95": [
+        0.2398,
+        0.4052
+      ],
+      "pass": true
+    },
+    "H3_vs_no_reliability": {
+      "mean": 0.2112,
+      "ci95": [
+        0.1799,
+        0.2436
+      ],
+      "pass": true
+    }
+  },
+  "reliability_validated": true
+}
