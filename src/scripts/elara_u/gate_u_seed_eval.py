@@ -94,7 +94,8 @@ def load_tasks():
     import os
     for subdir, domain, prefix in [("adbench", "adbench", "adb_"),
                                     ("adbench_cv", "image_ood", "cv_"),
-                                    ("adbench_nlp", "text", "nlp_")]:
+                                    ("adbench_nlp", "text", "nlp_"),
+                                    ("adbench_industrial", "industrial", "ind_")]:
         for f in sorted(glob.glob(str(RAW / subdir / "*.npz"))):
             if os.path.basename(f).startswith("._"):
                 continue
