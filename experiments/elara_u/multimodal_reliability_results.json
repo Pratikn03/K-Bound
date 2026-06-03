@@ -1,46 +1,47 @@
 {
   "protocol": "D23_multimodal_reliability",
-  "n_categories": 9,
+  "dataset": "Real-IAD-D3",
+  "n_categories": 15,
   "regimes": {
     "clean": {
       "mean_auroc": {
-        "equal_weight": 0.7454,
-        "stale_auto_select": 0.9393,
-        "no_reliability": 0.9009,
-        "reliability_gate": 0.9009
+        "equal_weight": 0.8106,
+        "stale_auto_select": 0.9342,
+        "no_reliability": 0.9084,
+        "reliability_gate": 0.9028
       }
     },
     "modality_failure": {
       "mean_auroc": {
-        "equal_weight": 0.494,
+        "equal_weight": 0.5263,
         "stale_auto_select": 0.3812,
-        "no_reliability": 0.5169,
-        "reliability_gate": 0.7148
+        "no_reliability": 0.5193,
+        "reliability_gate": 0.7673
       }
     }
   },
   "hypotheses_failure_regime": {
     "H1_vs_equal_weight": {
-      "mean": 0.2208,
+      "mean": 0.241,
       "ci95": [
-        0.0901,
-        0.3984
+        0.152,
+        0.3479
       ],
       "pass": true
     },
     "H2_vs_stale_auto_select": {
-      "mean": 0.3336,
+      "mean": 0.386,
       "ci95": [
-        0.177,
-        0.4873
+        0.2807,
+        0.4827
       ],
       "pass": true
     },
     "H3_vs_no_reliability": {
-      "mean": 0.1979,
+      "mean": 0.248,
       "ci95": [
-        0.0903,
-        0.305
+        0.1679,
+        0.3232
       ],
       "pass": true
     }
