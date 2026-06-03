@@ -9,6 +9,7 @@ labels are used for selection or drift (drift uses the test score distribution).
 
 from __future__ import annotations
 
+import argparse
 import glob
 import json
 import os
@@ -64,7 +65,14 @@ def _boot(diff, seed=0):
 
 
 def main() -> int:
-    files = [f for f in sorted(glob.glob(str(CACHE / "*_v2_binpcd.npz")))
+    ap = argparse.ArgumentParser(description="D23 multimodal independent-failure reliability test")
+    ap.add_argument("--cache", default=str(CACHE), help="dir of per-category *.npz score caches")
+    ap.add_argument("--glob", default="*_v2_binpcd.npz", help="cache filename glob")
+    ap.add_argument("--out", default=str(ROOT / "experiments/elara_u/multimodal_reliability_results.json"))
+    ap.add_argument("--tag", default="Real-IAD-D3", help="dataset label for the printout")
+    args = ap.parse_args()
+    cache_dir = Path(args.cache)
+    files = [f for f in sorted(glob.glob(str(cache_dir / args.glob)))
              if not os.path.basename(f).startswith("._")]
     regimes = {"clean": False, "modality_failure": True}
     out = {r: {m: [] for m in ["equal_weight", "stale_auto_select", "no_reliability", "reliability_gate"]}
@@ -81,7 +89,7 @@ def main() -> int:
             for m in out[r]:
                 out[r][m].append(res[m])
 
-    summary = {"protocol": "D23_multimodal_reliability", "n_categories": n, "regimes": {}}
+    summary = {"protocol": "D23_multimodal_reliability", "dataset": args.tag, "n_categories": n, "regimes": {}}
     for r in regimes:
         pa = {m: np.array(v) for m, v in out[r].items()}
         summary["regimes"][r] = {"mean_auroc": {m: round(float(v.mean()), 4) for m, v in pa.items()}}
@@ -95,10 +103,11 @@ def main() -> int:
         H[name] = {"mean": round(mean, 4), "ci95": [round(lo, 4), round(hi, 4)], "pass": lo > 0}
     summary["hypotheses_failure_regime"] = H
     summary["reliability_validated"] = all(h["pass"] for h in H.values())
-    res_path = ROOT / "experiments/elara_u/multimodal_reliability_results.json"
+    res_path = Path(args.out)
+    res_path.parent.mkdir(parents=True, exist_ok=True)
     res_path.write_text(json.dumps(summary, indent=2))
 
-    print(f"=== D23 MULTIMODAL RELIABILITY ({n} categories, rgb/ps/xyz) ===")
+    print(f"=== D23 MULTIMODAL RELIABILITY [{args.tag}] ({n} categories, rgb/ps/xyz) ===")
     for r in regimes:
         print(f"  [{r}] " + "  ".join(f"{m}={summary['regimes'][r]['mean_auroc'][m]:.3f}"
                                       for m in ["equal_weight", "stale_auto_select", "no_reliability", "reliability_gate"]))
