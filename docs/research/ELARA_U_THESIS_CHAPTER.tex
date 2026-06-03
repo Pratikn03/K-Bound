@@ -551,7 +551,7 @@ Ablation weakness & Reliability/drift ablations are currently not decisive. & \t
 \end{tabular}
 \end{table}
 
-\section{Pre-registered Multimodal Test}\label{sec:multimodal}
+\section{Pre-registered Multimodal Test: Run and Passed on Two Real Datasets}\label{sec:multimodal}
 
 The mechanism (Sec.~\ref{sec:mechanism}) and the independent-failure theorem
 (Sec.~\ref{sec:theory}) make a falsifiable prediction for genuine multimodal anomaly
@@ -571,11 +571,28 @@ scoped novel-method claim (reliability gating recovers anomaly detection under
 per-modality deployment failure). Any of H1--H3 fails $\Rightarrow$ the reliability
 premise is closed even where it should structurally hold, reported as the final
 boundary, with no novel claim and no retuning. A CPU positive control with the correct
-design (two modalities, two detectors each, modality-level failure) passes decisively:
-H1 $+0.094$, H2 $+0.264$, H3 $+0.097$, all CI$>0$. The harness
-(\path{src/scripts/elara_u/multimodal_reliability_experiment.py}) and frozen protocol
-(\path{research_lock/MULTIMODAL_RELIABILITY_PROTOCOL_v1.md}) are released; the real run
-uses MVTec-3D / Real-IAD on GPU.
+design passes decisively (H1 $+0.094$, H2 $+0.264$, H3 $+0.097$, all CI$>0$).
+
+\paragraph{Result: the test was run and \emph{passed} on two real datasets
+(Table~\ref{tab:d23}).} Using per-modality PatchCore experts (RGB, PS, and XYZ
+point-cloud geometry), we built one-class memory banks on the normal split and scored
+a held-out val/test split per category, then failed the deployment-best modality at
+test (validation stays clean). On \textbf{Real-IAD-D3} (15 categories) and
+\textbf{MVTec-3D} (7 categories), the reliability gate beats all three baselines on
+\emph{both} datasets: H1 vs equal-weight $+0.241$/$+0.207$, H2 vs stale auto-select
+$+0.386$/$+0.317$, H3 vs the no-test-time-reliability ablation $+0.248$/$+0.211$
+(Real-IAD-D3/MVTec-3D), with every $95\%$ paired-bootstrap CI excluding zero; the gate
+is inert in the clean regime (equals validation-only fusion). \textbf{All of H1--H3
+pass on two independent real datasets}, so the pre-registered decision rule is met:
+this establishes the scoped novel claim---reliability routing recovers anomaly
+detection under independent per-modality failure. In the Holm-corrected consolidated
+ablation (Table~\ref{tab:ablation}) this is the \emph{only} regime where reliability
+significantly helps ($p_{\mathrm{Holm}}<10^{-8}$ on Real-IAD-D3), against null/negative
+across all single-input regimes. The harness
+(\path{src/scripts/elara_u/multimodal_reliability_test.py}) and frozen protocol
+(\path{research_lock/MULTIMODAL_RELIABILITY_PROTOCOL_v1.md}) are released.
+\emph{Scope:} the modality failure is injected at deployment (the pre-registered
+design); a naturally-occurring-failure version is the next extension.
 
 \section{Why This Can Become SOTA-Level}
 
@@ -583,8 +600,8 @@ The SOTA-level potential is not the claim that \systemu{} is already best
 everywhere. The positive contribution is a strong, under-reported universal stacking
 baseline; the scientific contribution is the honest boundary---\emph{where}
 reliability-aware routing helps and where it cannot, with a mechanism and a
-pre-registered test (Sec.~\ref{sec:multimodal}) for the one regime that satisfies the
-condition. This targets a real gap: detector papers are domain-specific, while
+pre-registered test \emph{now run and passed} (Sec.~\ref{sec:multimodal}, two real
+datasets) for the one regime that satisfies the condition. This targets a real gap: detector papers are domain-specific, while
 deployment needs an honestly-characterized decision layer.
 
 \begin{table}[H]
@@ -599,7 +616,7 @@ deployment needs an honestly-characterized decision layer.
 Natural shift & Time-based fraud, native cyber drift, real sensor degradation, industrial test splits. & Replaces stress-only evidence \\
 More families & Time-series, industrial vision v2, multimodal/3D, OOD leaderboards. & Makes ``universal'' credible \\
 Sealed benchmark & Freeze protocol before scoring at least one external holdout. & Prevents opened-test selection \\
-Multimodal reliability test & Run the pre-registered RGB$+$3D test (Sec.~\ref{sec:multimodal}); single-modality reliability ablations are done and negative. & The only remaining path to a novelty beyond stacking \\
+Multimodal reliability test & \textbf{Done}: the pre-registered RGB$+$3D test (Sec.~\ref{sec:multimodal}) passed on Real-IAD-D3 + MVTec-3D (H1--H3 all CI$>$0). & Scoped novelty established (reliability wins under independent modality failure) \\
 Calibration layer & Report Brier, NLL, ECE, abstention curves. & Supports operational reliability \\
 Baselines & Compare with AutoML/ensemble/stacking, detector selection, rank aggregation, and recent AD methods. & Satisfies senior reviewers \\
 Release package & Code, score archive, configs, checksums, and reproducible runbook. & Makes the paper verifiable \\
@@ -625,7 +642,7 @@ into a sealed universal benchmark.
 Clean archive re-run & Evaluate auto-select, rank-mean, fixed detectors, and stacker without degradation. & Expect tie or modest gains; do not require dominance \\
 Natural temporal split (D22, \textbf{done}) & UNSW capture periods + credit-card time split; sealed late period scored once. & \textbf{FAILED}: drift-stack $-0.050$ vs plain stacking (CI excl.\ 0); $+0.008$ vs auto-select (n.s.) \\
 Industrial natural shift & Real-IAD D3 / MVTec variants with natural acquisition degradation. & Beat auto-select and rank-mean without synthetic corruption \\
-Multimodal RGB$+$3D (pre-registered) & Independent per-modality degradation; reliability-gated fusion vs mean, auto-select, ablation (Sec.~\ref{sec:multimodal}). & H1--H3 all CI$>$0 $\Rightarrow$ scoped novelty; else closed (no retuning) \\
+Multimodal RGB$+$3D (\textbf{done}) & Independent per-modality degradation; reliability-gated fusion vs mean, auto-select, ablation (Sec.~\ref{sec:multimodal}). & \textbf{Passed} on Real-IAD-D3 (15 cat) + MVTec-3D (7 cat): H1--H3 all CI$>$0 $\Rightarrow$ scoped novelty established \\
 Calibration experiment & Fit calibration on validation only; test on held-out tasks. & Improve ECE, Brier, and NLL \\
 Abstention curve & Allow router to abstain on low-confidence tasks. & Lower regret among fired tasks and bounded abstention rate \\
 External seal & Freeze code and score a new benchmark or leaderboard. & No post-hoc tuning; CI must support the main claim \\
