@@ -1,24 +1,62 @@
-# ELARA — Evidence-Layered Anomaly Reliability Architecture
+# ELARA-U — Cross-Domain Anomaly Meta-Routing Benchmark
 
-ELARA is a research prototype for **score-level multimodal anomaly fusion**
-under domain-reliability stress. The core mechanism is **RGA**
-(Reliability-Gated Attention), a masked cross-domain attention module
-extended with a conservative reliability gate that decides at inference
-time whether to keep the static attention path or inject reliability
-weights derived from validation calibration, score-distribution drift,
-and prediction sharpness.
+**ELARA-U** studies anomaly detection as a *meta-routing* problem: given a
+heterogeneous detector zoo and a labelled validation slice, decide when to
+**select, fuse, stack, or fall back** — without using test labels. It is a
+benchmark + an honest result, not a new detector.
 
-> **Paper status:** preprint-track. The conference manuscript
-> [docs/research/PAPER_DRAFT_v1.tex](docs/research/PAPER_DRAFT_v1.tex)
-> and the companion thesis chapter
-> [docs/research/THESIS_CHAPTER_v1.tex](docs/research/THESIS_CHAPTER_v1.tex)
-> share the same evidence base and asset pipeline. The headline finding is
-> scoped: validation-derived KS-drift gates help on a label-aligned
-> stress-only benchmark under coherent score-collapse attacks, while naturally
-> paired MVTec 3D-AD under the canonical one-class protocol shows that
-> supervised fusion itself becomes a protocol diagnostic. Base RGA is therefore
-> a diagnostic gate for stress analysis, while the validation-selected RGA+
-> head gives the top ROC-AUC on the public PatchCore supervised-paired variant.
+### The precise claim (verified)
+> **Stacking beats selection; reliability routing helps *iff* modalities can fail independently.**
+
+- On **123 tasks / 5 families** (tabular, image-OOD, text, cyber, fraud), a
+  rank-normalized logistic **stack** beats validation auto-selection
+  (**+0.036 AUROC**, CI [0.023, 0.050]; 86/123 wins) and the best fixed
+  detector (**+0.075**, CI [0.052, 0.101]) — leakage-free, all **Holm-robust**.
+- **Reliability/drift routing adds no value** on single-input data across
+  4 deployment regimes + a sealed natural temporal-shift benchmark (D22), and a
+  reliability gate significantly *hurts* the stack (Holm p < 10⁻⁸).
+- **But it wins where it structurally should:** on real **Real-IAD-D3**
+  multimodal data with independent modality failure (**D23**), drift-gated
+  fusion recovers performance (0.517 → 0.715; H1 +0.221, H2 +0.334, H3 +0.198,
+  all CIs exclude zero).
+
+We do **not** claim universal/per-dataset SOTA. The contribution is a
+cross-domain benchmark, a strong stacking baseline, a Holm-robust negative
+result for reliability routing on single-input data, and a positive result that
+pins its exact operating boundary.
+
+> **Canonical paper + thesis:**
+> [docs/research/ELARA_U_PAPER_v0.tex](docs/research/ELARA_U_PAPER_v0.tex) and
+> [docs/research/ELARA_U_THESIS_CHAPTER.tex](docs/research/ELARA_U_THESIS_CHAPTER.tex).
+> Rebuild both (regenerating all tables/figures from verified data) with
+> `bash scripts/rebuild_paper.sh` → `output/pdf/`.
+
+### Reproduce the evidence
+```bash
+PYTHONPATH=src python src/scripts/elara_u/honest_benchmark.py             # main 123-task result
+PYTHONPATH=src python src/scripts/elara_u/multimodal_reliability_test.py  # D23 (Real-IAD-D3)
+PYTHONPATH=src python src/scripts/elara_u/natural_shift_benchmark.py      # D22 sealed natural shift
+PYTHONPATH=src python src/scripts/elara_u/statistical_audit.py            # Holm correction
+PYTHONPATH=src python -m pytest tests/elara_u/                            # no-leakage + schema + smoke
+bash scripts/rebuild_paper.sh                                            # paper + thesis PDFs
+```
+Curated results live in `experiments/elara_u/` (`honest_benchmark.json`,
+`statistical_audit.json`, `multimodal_reliability_results.json`,
+`natural_shift_results.json`, `calibration_results.json`, `manifest.json`,
+`sha256sums.txt`); the Real-IAD-D3 score cache is in
+`experiments/fusion/realiad_d3_score_cache/`.
+
+---
+
+### Legacy: ELARA / RGA source system
+ELARA-U reuses the earlier **ELARA / RGA** (Reliability-Gated Attention) program
+as *foundation and honest-negative evidence*, not as universal proof: the
+in-domain MVTec-3D RGA+ win and the dead-modality stress mechanism are strong,
+while the clean-transfer ties/failures (and Theorem T9) are exactly what motivate
+the cross-domain routing framing. The RGA source code remains under
+`src/uais/fusion/attention/`; its evidence is summarised in the paper's
+source-system table. The legacy RGA manuscripts have been superseded by the
+ELARA-U paper/thesis above.
 
 ---
 
