@@ -1,0 +1,329 @@
+\documentclass[11pt]{article}
+\usepackage[margin=1in]{geometry}
+\usepackage{amsmath,amssymb,amsthm}
+\usepackage{booktabs}
+\usepackage{graphicx}
+\usepackage{hyperref}
+\usepackage{xcolor}
+
+\newtheorem{theorem}{Theorem}
+\newtheorem{proposition}{Proposition}
+\newcommand{\stack}{\textsc{Stack}}
+\newcommand{\auto}{\textsc{AutoSelect}}
+\newcommand{\relg}{\textsc{RelGate}}
+
+\title{\textbf{When Does Reliability Help Universal Anomaly Detection?\\
+A Strong Stacking Baseline, a Rigorous Negative Result, and a Mechanism}}
+\author{}
+\date{}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+No single anomaly detector dominates across domains, which has motivated a wave of
+\emph{reliability-aware} meta-routers that select, fuse, or abstain among detector
+experts using validation quality, score-distribution drift, inter-detector
+disagreement, and calibration signals. We ask a blunt question: does any of this
+machinery beat the obvious baseline of picking, or stacking, detectors by
+validation performance? On a broad benchmark of \textbf{123 anomaly-detection tasks
+across five families} (tabular, image-OOD, text, cyber, fraud) we report three
+results. \textbf{(1) Positive:} a parameter-light rank-normalized logistic
+\emph{stack} is a strong, underused universal baseline---it beats per-task
+validation-AUROC selection by $+0.036$ AUROC (95\% CI $[0.023,0.050]$) and the best
+fixed detector by $+0.075$ ($[0.052,0.101]$), and even exceeds the best-single-detector
+oracle. \textbf{(2) Negative:} reliability-aware routing does \emph{not} beat these
+simple baselines. Across three deployment-degradation regimes (i.i.d., uniform shift,
+heterogeneous missingness) and two independent router designs, with clean ablations,
+reliability features carry no significant signal beyond validation quality and
+detector identity; an explicit reliability gate on the stack \emph{hurts} ($-0.037$,
+$[-0.050,-0.026]$). \textbf{(3) Mechanism:} we show in a controlled simulation that
+reliability gating helps \emph{if and only if} a channel can fail independently while
+others stay clean. Single-modality detectors share one input, so degradation is
+shared and the condition is violated---explaining the negative result---whereas
+genuine multimodal sensing satisfies it. We pre-register a falsifiable multimodal
+test for exactly that regime. Our contribution is an honest map of where
+reliability-aware anomaly routing helps, where it does not, and why.
+\end{abstract}
+
+\section{Introduction}
+Anomaly detection spans tabular records, industrial vision, RGB-D, time series,
+cyber traffic, fraud, and out-of-distribution image classification. A robust
+empirical regularity, confirmed again here, is that \emph{no single detector wins
+everywhere}: the best detector on one task is mediocre on the next (Table~\ref{tab:main},
+fixed detectors span ranks $5.4$--$8.7$ of $11$). This non-dominance is the practical
+driver of \emph{negative transfer}---deploying a detector chosen on one domain and
+losing on another.
+
+The natural response is to choose per task. The simplest choice rule, picking the
+detector with best validation AUROC (\auto), is already strong and is the honest
+baseline any meta-method must beat. A large recent literature instead proposes
+\emph{reliability-aware} routers that estimate, at deployment, which experts to
+trust---via score-distribution drift, inter-detector disagreement, calibration, and
+sharpness---and select, fuse, or abstain accordingly. The intuition is compelling:
+when validation performance becomes \emph{stale} under deployment shift, a reliability
+signal computed at test time should rescue the routing decision.
+
+We test that intuition as hard as we can and find it does not hold on real
+single-modality benchmarks. Our contributions:
+\begin{enumerate}
+\item \textbf{A strong baseline.} A rank-normalized logistic stack beats validation
+selection and every fixed detector across 123 tasks / 5 families, with no test-label
+leakage (\S\ref{sec:results}). It should be the default comparator for universal
+anomaly detection; it is rarely reported.
+\item \textbf{A rigorous negative result.} Reliability-aware routing does not beat it.
+We show this for two router families (a learned gradient-boosted selector and a
+hand-designed gate/stack) across three degradation regimes, each with a
+reliability-features-removed ablation that comes back null or negative
+(\S\ref{sec:negative}). We also document a parallel pipeline whose ``ablation''
+silently held all variants identical---a cautionary failure mode.
+\item \textbf{A mechanism.} A controlled simulation isolates the single structural
+variable that decides the matter: reliability gating helps iff channels fail
+\emph{independently}. Single-modality detectors share one input, violating it
+(\S\ref{sec:mechanism}). This reconciles the negative result with the operating-boundary
+theory (\S\ref{sec:theory}) and motivates a pre-registered multimodal test
+(\S\ref{sec:multimodal}).
+\end{enumerate}
+We deliberately do not claim a universal state-of-the-art detector. We claim an honest
+characterization of when a popular idea works.
+
+\section{Related Work}
+\textbf{Universal benchmarks and non-dominance.} Large suites such as ADBench
+established that no detector dominates and that model selection matters; our 123-task
+set extends this view across five families using pre-extracted feature
+representations (ResNet for image-OOD, BERT for text). \textbf{Model selection /
+meta-learning} (MetaOD and unsupervised outlier model selection) pick a detector per
+dataset from meta-features; \auto{} is the strong label-aware analogue and our primary
+baseline. \textbf{Fusion, stacking, and calibration} combine experts via rank mean,
+confidence-weighted mean, or learned stacking; we find rank-normalized stacking is the
+strongest of these and beats selection. \textbf{Drift detection and selective
+prediction} provide the reliability signals (KS drift, disagreement, abstention) that
+reliability-aware routers use; our negative result is precisely about whether those
+signals add value to selection/fusion for anomaly detection.
+
+\section{Problem Setup}
+For task $t$ we have detectors $D_1,\dots,D_M$ producing scores $s_m(x)$. We split each
+task into train (fit detectors, unlabeled), validation (labeled), and test (labeled,
+held out). $A_V(m)$ and $A_T(m)$ denote validation and test AUROC; $m^\star=\arg\max_m
+A_T(m)$ is the best-single-detector oracle (an upper bound for \emph{selection}, not
+for fusion). \emph{Regret} is $A_T(m^\star)-A_T(h)$ for routed scores $h$.
+
+\textbf{Leakage discipline.} No test labels are used to fit any router, stacker, gate,
+or threshold. Validation labels are permitted (they are available at deploy time).
+Unlabeled test-score \emph{distributions} may inform reliability features---this is
+deployment monitoring, not label use---and we mark it as such.
+
+\section{Methods}
+We compare: each \textbf{fixed} detector; \auto{} (per-task $\arg\max_m A_V(m)$);
+\textbf{rank\_mean} and \textbf{cw\_mean} (naive ensembles); \stack, a logistic
+regression trained on \emph{rank-normalized validation scores} $r_m(x)=\mathrm{rank}_m(x)/n$
+and applied to rank-normalized test scores; and reliability variants. The
+\textbf{reliability gate} $\relg$ reweights channels by validation quality times an
+unlabeled test-time consensus-agreement term; its \textbf{ablation} uses validation
+quality only. A learned router (gradient-boosted regressor over detector identity,
+validation AUROC, dataset meta-features, and---in the reliability arm---score
+dispersion, gini, skew/kurtosis, inter-detector disagreement, and val$\to$test KS
+drift) predicts per-detector test AUROC under leave-task-out and leave-family-out
+cross-validation.
+
+\section{Benchmark and Protocol}
+123 tasks: tabular (43, ADBench Classical), image-OOD (61, ADBench CV/ResNet18), text
+(13, ADBench NLP/BERT), cyber (5, UNSW-NB15 splits), fraud (1, credit-card). Detector
+zoo: ECOD, COPOD, IForest, LOF, KNN, OCSVM. Each task: $50/25/25$ stratified
+train/val/test, standardized on train. Metrics: per-task average rank, mean AUROC,
+regret-to-oracle, expected calibration error (ECE), and paired bootstrap CIs over
+tasks ($10^4$ resamples). Per-family results are reported to expose worst-family
+behavior. All scores are persisted to a score archive so routing, ablation, and
+calibration iterate without re-running detectors.
+
+\section{Results: a strong stacking baseline}\label{sec:results}
+Table~\ref{tab:main} reports the main comparison. Stacking is the best non-oracle
+strategy and \emph{exceeds the best-single-detector oracle} ($0.784$ vs $0.756$):
+fusion beats selection because diverse detectors are complementary. Validation
+selection is itself strong---well above any fixed detector---confirming that the right
+baseline for ``universal'' anomaly detection is per-task selection, not a fixed default.
+
+\begin{table}[t]\centering
+\caption{Main benchmark, 123 tasks / 5 families. Average rank is among the 11 non-oracle
+strategies (lower is better). The oracle is the best \emph{single} detector per task
+(a selection ceiling; fusion may exceed it). Leakage-free; see \S\ref{sec:results}.}
+\label{tab:main}
+\begin{tabular}{lrrrr}
+\toprule
+Strategy & Avg rank & Mean AUROC & Regret & ECE \\
+\midrule
+\stack{} (rank-norm logistic) & \textbf{2.53} & \textbf{0.784} & --- & 0.271 \\
+\auto{} (val-AUROC) & 3.38 & 0.748 & 0.008 & 0.393 \\
+\stack{}+reliability gate & 4.00 & 0.746 & 0.010 & 0.325 \\
+fixed/KNN (best fixed) & 5.42 & 0.709 & 0.048 & --- \\
+rank\_mean & 6.53 & 0.707 & 0.049 & 0.407 \\
+cw\_mean & 6.66 & 0.708 & 0.048 & 0.396 \\
+fixed/\{LOF,OCSVM,IForest,ECOD,COPOD\} & 6.4--8.7 & 0.68--0.70 & 0.05--0.08 & --- \\
+\midrule
+oracle (best single detector) & --- & 0.756 & 0.000 & --- \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{table}[t]\centering
+\caption{Key contrasts (paired bootstrap over 123 tasks, $10^4$ resamples).}
+\label{tab:contrasts}
+\begin{tabular}{lrrc}
+\toprule
+Contrast & $\Delta$AUROC & 95\% CI & Significant \\
+\midrule
+\stack{} $-$ \auto{}            & $+0.036$ & $[0.023,\,0.050]$ & yes \\
+\stack{} $-$ best fixed         & $+0.075$ & $[0.052,\,0.101]$ & yes \\
+\auto{} $-$ best fixed          & $+0.040$ & $[0.023,\,0.061]$ & yes \\
+\stack{}+gate $-$ \stack{} (\emph{reliability ablation}) & $-0.037$ & $[-0.050,\,-0.026]$ & \textbf{hurts} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Per-family average rank confirms the stack is robust, not driven by one family:
+tabular $2.41$, image-OOD $2.49$, cyber $1.00$, text $3.69$; it loses only on fraud
+($n{=}1$, underpowered). Crucially, adding a reliability gate to the stack
+\emph{reduces} AUROC by $0.037$ (Table~\ref{tab:contrasts})---our first and cleanest
+sign that reliability signals do not help here.
+
+\section{Results: reliability-aware routing does not help}\label{sec:negative}
+We test the reliability premise directly, twice, with clean ablations
+(Table~\ref{tab:negative}). A learned selector with the full reliability-feature
+battery is \emph{worse} than plain validation selection on i.i.d.\ data ($-0.005$, CI
+excludes $0$), and the reliability-vs-no-reliability ablation is null ($+0.001$, CI
+$[-0.005,0.006]$). Under uniform deployment shift a learned router does beat \emph{stale}
+selection, but a leave-one-out attribution shows the gain comes from \emph{detector-identity
+priors} (which architectures survive corruption), not reliability features: the
+reliability ablation is null at every severity. Under heterogeneous per-task
+missingness---the regime most favorable to reliability---the ablation flickers around
+zero non-monotonically ($-0.003,+0.006,-0.003,+0.015$) and never reaches significance.
+
+\begin{table}[t]\centering
+\caption{Reliability-feature ablations. $\Delta = $ (with reliability) $-$ (without);
+$>0$ means reliability helps. None is significant; the stacker gate is significantly
+negative. Two router designs, three regimes.}
+\label{tab:negative}
+\begin{tabular}{llrc}
+\toprule
+Regime / design & comparison & $\Delta$AUROC & CI excludes 0? \\
+\midrule
+i.i.d., learned selector & rel.\ vs no-rel.\ & $+0.001$ & no \\
+i.i.d., learned selector & rel.\ vs \auto{} & $-0.005$ & yes (worse) \\
+uniform shift (sev.\ 3), learned & rel.\ vs no-rel.\ & $+0.002$ & no \\
+heterog.\ missingness (frac.\ 0.7), learned & rel.\ vs no-rel.\ & $+0.015$ & no \\
+123-task benchmark, stacker gate & gate vs \stack{} & $-0.037$ & yes (worse) \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{A cautionary note on ablations.} A parallel pipeline reported a polished
+``reliability ablation'' in which \emph{every} variant (full, no-reliability, no-drift,
+no-disagreement, no-calibration) returned byte-identical metrics, because all were
+silently mapped to the same model---the reliability features were never in the method.
+We flag this because an ablation that does not ablate is indistinguishable, at a glance,
+from one that shows components ``all contribute,'' and only inspection of identical
+digits reveals it.
+
+\section{Mechanism: reliability needs an independent clean channel}\label{sec:mechanism}
+Why does a structurally reasonable idea fail? We isolate the cause in a controlled
+simulation (Table~\ref{tab:mechanism}) with two regimes differing only in how
+degradation acts. In \textbf{SHARED}, all channels are weakened together (the
+single-modality analogue: one input feeds all detectors); in \textbf{INDEPENDENT}, one
+channel loses its signal while the others stay clean (the genuine multimodal case). The
+reliability gate, validation selection, and ablation are identical across regimes.
+
+\begin{table}[t]\centering
+\caption{Mechanism simulation (300 trials/regime, paired bootstrap). Reliability gating
+helps iff a channel fails independently.}
+\label{tab:mechanism}
+\begin{tabular}{lrrr}
+\toprule
+ & \relg{} $-$ mean & \relg{} $-$ \auto{} & \relg{} $-$ ablation \\
+\midrule
+SHARED (all weaken together) & $-0.016$ (ns) & $+0.081$ & $-0.019$ (ns) \\
+INDEPENDENT (one fails, rest clean) & $+0.026$ \checkmark & $+0.144$ \checkmark & $+0.024$ \checkmark \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Under SHARED degradation reliability gating cannot help---there is no clean channel to
+switch to---matching the single-modality benchmark. Under INDEPENDENT failure it beats
+equal-weight fusion, stale selection, and its own no-test-time ablation, all with
+CI$>0$: the unlabeled test-time reliability signal, not validation quality, carries the
+gain. The negative result is thus not a refutation of reliability gating in general but
+a statement that real single-modality detectors violate its enabling condition.
+
+\section{Operating-Boundary Theory}\label{sec:theory}
+The simulation instantiates two boundary theorems (proofs in Appendix~\ref{sec:proofs}).
+
+\begin{theorem}[Clean ceiling]\label{thm:clean}
+When validation and test are drawn from the same distribution and detectors are
+calibrated on validation, no reliability reweighting of test scores improves expected
+AUROC over the validation-optimal combination in expectation. Validation quality is a
+sufficient statistic; reliability features are redundant.
+\end{theorem}
+
+\begin{theorem}[Independent-failure gain]\label{thm:stress}
+If at deployment a strict subset of channels loses discriminative signal while the
+complement remains informative, and the failure is detectable from unlabeled test-score
+disagreement, then a consensus-agreement reweighting achieves strictly lower expected
+regret than both equal-weight fusion and stale validation selection.
+\end{theorem}
+
+Theorem~\ref{thm:clean} explains the i.i.d.\ null; Theorem~\ref{thm:stress} explains the
+INDEPENDENT-regime gain and predicts where reliability routing can help. Single-modality
+data fails the antecedent of Theorem~\ref{thm:stress} (channels share inputs, so failure
+is not a strict subset)---hence the negative result is theory-consistent.
+
+\section{Pre-registered Multimodal Test}\label{sec:multimodal}
+Theorem~\ref{thm:stress} and the simulation make a falsifiable prediction for genuine
+multimodal anomaly detection (RGB $+$ 3D), where a modality can fail independently. We
+pre-register the test (frozen decision rule, no post-hoc retuning): under independent
+per-modality deployment degradation, reliability-gated fusion must beat (H1) equal-weight
+fusion, (H2) stale validation selection, and (H3) its no-test-time ablation, each with
+paired-bootstrap CI$>0$ over (category $\times$ degradation-seed) units. A CPU positive
+control with the correct design passes decisively (H1 $+0.094$, H2 $+0.264$, H3 $+0.097$,
+all CI$>0$); the real test runs on MVTec-3D / Real-IAD. A pass yields a scoped
+novel-method claim; a failure is reported as the final boundary, with no novel claim.
+
+\section{Honest Scope and Limitations}
+The positive baseline and the negative reliability result are established only on
+single-modality, feature-vector anomaly tasks; we make no industrial-vision or
+time-series claim. The reliability gate we test is one (consensus-agreement)
+instantiation; we cannot exclude that a different reliability parameterization helps,
+though three regimes and two designs make it unlikely on this data. The mechanism
+section is a controlled simulation, not real-data evidence; it motivates rather than
+proves the multimodal claim, which is why we pre-register it. The fraud family has
+$n{=}1$ and is excluded from family-level conclusions.
+
+\section{Conclusion}
+On a broad anomaly-detection benchmark, a simple rank-normalized stack is a strong,
+under-reported universal baseline, and reliability-aware routing---despite its intuitive
+appeal---does not improve on it. We trace this to a single structural condition:
+reliability gating requires an independently failing channel, which single-modality
+detection cannot provide. The honest contribution is a map of where the idea helps and
+where it cannot, plus a pre-registered test for the one regime that satisfies the
+condition.
+
+\appendix
+\section{Proofs}\label{sec:proofs}
+\begin{proof}[Proof sketch of Theorem~\ref{thm:clean}]
+If $(S_{\text{val}},y_{\text{val}})$ and $(S_{\text{test}},y_{\text{test}})$ are i.i.d.,
+the conditional score distributions $p(s\mid y)$ are identical across splits. The AUROC
+of any fixed scalarization $w^\top r(x)$ is a functional of these conditionals; hence the
+weights maximizing validation AUROC maximize expected test AUROC. A reliability
+reweighting that depends only on the (label-free) marginal $p(s)$ cannot improve on the
+validation-optimal $w$ in expectation, since the marginal carries no information about
+$p(s\mid y)$ beyond what validation already used. $\square$
+\end{proof}
+\begin{proof}[Proof sketch of Theorem~\ref{thm:stress}]
+Partition channels into informative $\mathcal{I}$ and failed $\mathcal{F}$ at test.
+Failed channels have test scores independent of $y$, so they (i) add zero-mean noise to
+equal-weight fusion, raising regret, and (ii) are detectable by low rank-correlation with
+the $\mathcal{I}$-consensus. A weighting $w_m \propto q_m\,a_m$ with $a_m$ the
+consensus-agreement drives $w_{\mathcal{F}}\to 0$, recovering the fusion restricted to
+$\mathcal{I}$, whose expected AUROC strictly exceeds both the diluted equal-weight fusion
+and any single (possibly stale-selected) channel when $|\mathcal{I}|\ge 2$. $\square$
+\end{proof}
+
+\end{document}
