@@ -25,6 +25,8 @@ EXP = ROOT / "experiments/elara_u"
 OUT = ROOT / "docs/research/ELARA_U_RESULT_TABLES.tex"
 
 H = json.loads((EXP / "honest_benchmark.json").read_text())
+CAL = json.loads((EXP / "calibration_results.json").read_text()) if (EXP / "calibration_results.json").exists() else None
+SA = json.loads((EXP / "statistical_audit.json").read_text()) if (EXP / "statistical_audit.json").exists() else None
 PT_AUC = {m: np.array(v, float) for m, v in H["per_task_auc"].items()}
 PT_RANK = {m: np.array(v, float) for m, v in H["per_task_rank"].items()}
 FAM = np.array(H["task_families"])
@@ -113,12 +115,22 @@ def main() -> int:
         L.append(f"{LBL[m]} & {reg.mean():+.4f} & {reg.max():.4f} \\\\")
     L += [r"\bottomrule", r"\end{tabular}", r"\end{table}", ""]
 
-    # tab:calib
-    L += [r"\begin{table}[t]\centering", r"\caption{Calibration (ECE on $[0,1]$ scores; "
-          r"Brier/NLL pending a fitted calibration layer).}", r"\label{tab:calib}\footnotesize",
-          r"\begin{tabular}{lccc}", r"\toprule", r"\textbf{Method} & ECE & Brier & NLL \\", r"\midrule"]
-    for m in ["stack", "auto_select", "rank_mean"]:
-        L.append(f"{LBL[m]} & {H['mean_ece'][m]:.3f} & -- & -- \\\\")
+    # tab:calib -- real Brier/NLL/ECE, raw -> isotonic-calibrated (validation-fit)
+    L += [r"\begin{table}[t]\centering",
+          r"\caption{Calibration: Brier, NLL, ECE as raw\,$\to$\,isotonic-calibrated "
+          r"(calibrator fit on validation only). The stack has the best raw calibration; "
+          r"after calibration all methods are well-calibrated.}",
+          r"\label{tab:calib}\footnotesize", r"\begin{tabular}{lccc}", r"\toprule",
+          r"\textbf{Method} & Brier (raw$\to$cal) & NLL (raw$\to$cal) & ECE (raw$\to$cal) \\", r"\midrule"]
+    if CAL:
+        for m in ["stack", "auto_select", "rank_mean"]:
+            d = CAL["metrics"][m]
+            L.append(f"{LBL[m]} & {d['brier_raw']:.3f}$\\to${d['brier_cal']:.3f} & "
+                     f"{d['nll_raw']:.3f}$\\to${d['nll_cal']:.3f} & "
+                     f"{d['ece_raw']:.3f}$\\to${d['ece_cal']:.3f} \\\\")
+    else:
+        for m in ["stack", "auto_select", "rank_mean"]:
+            L.append(f"{LBL[m]} & -- & -- & {H['mean_ece'][m]:.3f} \\\\")
     L += [r"\bottomrule", r"\end{tabular}", r"\end{table}", ""]
 
     # tab:lfo
@@ -136,38 +148,27 @@ def main() -> int:
         L.append(f"{tex(f)} & {delta:+.2f} & $[{lo:+.2f},{hi:+.2f}]$ & {'yes' if (hi<0 or lo>0) else 'no'} \\\\")
     L += [r"\bottomrule", r"\end{tabular}", r"\end{table}", ""]
 
-    # tab:ablation -- the REAL reliability ablation (verified, incl. D22 natural shift)
-    lr = _load("learned_router_ablation.json").get("decisive_contrasts", {})
-    ss = _load("shift_stress_ablation.json").get("severity_3.0", {}).get("contrasts", {})
-    hg = _load("heterogeneous_degradation_ablation.json").get("missing_0.7", {}).get("contrasts", {})
-    ns = _load("natural_shift_results.json")
-    gate = H["contrasts"]["stack_rel_vs_stack_ABLATION"]
-
-    def row(label, comp, c):
-        if not c:
-            return f"{label} & {comp} & -- & -- \\\\"
-        excl = c.get("ci_low_gt_0") or (c["ci95"][1] < 0)
-        tag = "yes" if excl else "no"
-        if excl and c["mean"] < 0:
-            tag = r"yes (\textbf{worse})"
-        return f"{label} & {comp} & {c['mean']:+.3f} & {tag} \\\\"
-
+    # tab:ablation -- CONSOLIDATED reliability ablation (4 regimes + gate), Holm-corrected
+    ns = _load("natural_shift_results.json")   # kept for tab:natshift below
     L += [r"\begin{table}[t]\centering",
-          r"\caption{\textbf{Reliability-feature ablations (verified).} The decisive RQ3 test: "
-          r"does reliability/drift/disagreement signal improve over plain validation quality? "
-          r"$\Delta=$ (with reliability) $-$ (without); $>0$ means reliability helps. "
-          r"\emph{None is a significant positive; two are significantly negative.}}",
-          r"\label{tab:ablation}\footnotesize", r"\begin{tabular}{llcc}", r"\toprule",
-          r"\textbf{Design / regime} & \textbf{Comparison} & $\Delta$AUROC & Excl.\ 0? \\", r"\midrule",
-          row(r"Stack $+$ reliability gate", "gate vs plain stack", gate),
-          row("Learned router, i.i.d.", "reliability vs no-reliability", lr.get("rel_vs_norel_ABLATION")),
-          row("Learned router, i.i.d.", "reliability vs auto-select", lr.get("rel_vs_val_select")),
-          row("Learned router, uniform shift", "reliability vs no-reliability", ss.get("rel_vs_norel_ABLATION")),
-          row("Learned router, missingness", "reliability vs no-reliability", hg.get("rel_vs_norel_ABLATION")),
-          (f"Drift router, natural shift (D22) & drift vs plain stack & "
-           f"{ns['drift_stack_vs_plain_stack']['mean']:+.3f} & yes (\\textbf{{worse}}) \\\\" if ns else
-           r"Drift router, natural shift (D22) & drift vs plain stack & -- & -- \\"),
-          r"\bottomrule", r"\end{tabular}", r"\end{table}", ""]
+          r"\caption{\textbf{Consolidated reliability ablation (verified, Holm-corrected).} "
+          r"The decisive RQ3 test across four deployment regimes plus the stack gate: does "
+          r"reliability/drift signal improve over plain validation quality? $\Delta=$(with "
+          r"reliability)$-$(without); $>0$ means reliability helps. $p_{\mathrm{Holm}}$ is the "
+          r"two-sided CI$\to p$ value, Holm-corrected within this family. \emph{Reliability helps "
+          r"in no regime after correction; the 123-task stack gate is significantly negative.}}",
+          r"\label{tab:ablation}\footnotesize", r"\begin{tabular}{lccc}", r"\toprule",
+          r"\textbf{Regime} & $\Delta$AUROC & 95\% CI & $p_{\mathrm{Holm}}$ (helps?) \\", r"\midrule"]
+    if SA:
+        for e in SA["family_B_reliability_ablation"]:
+            v = "HELPS" if e["reliability_helps"] else (r"\textbf{HURTS}" if e["reliability_hurts"] else "no")
+            ci = e["ci95"]
+            L.append(f"{e['label']} & {e['delta']:+.3f} & $[{ci[0]:+.3f},{ci[1]:+.3f}]$ & "
+                     f"{e['p_holm']:.2g} ({v}) \\\\")
+    L += [r"\bottomrule", r"\end{tabular}", r"\end{table}",
+          r"\noindent\emph{Primary claims, Holm-corrected:} the three positive results "
+          r"(Stack$>$auto-select, Stack$>$best fixed, auto-select$>$best fixed; "
+          r"Table~\ref{tab:main}) all survive Holm correction ($p_{\mathrm{Holm}}<10^{-4}$).", ""]
 
     # tab:natshift -- D22 detail
     if ns:
@@ -175,8 +176,10 @@ def main() -> int:
         L += [r"\begin{table}[t]\centering",
               r"\caption{\textbf{D22 sealed natural temporal-shift benchmark} (" + f"{ns['n_tasks']}"
               + r" UNSW attack-category tasks, train-early/test-late). Plain stacking wins; the "
-              r"drift-aware (reliability) router is significantly \emph{worse}---reliability does "
-              r"not help even under genuine natural shift.}",
+              r"drift-aware (reliability) router is \emph{worse} (raw 95\% CI excludes 0). With only "
+              r"$n{=}7$ tasks this does \emph{not} survive Holm correction across the ablation family "
+              r"($p_{\mathrm{Holm}}{=}0.12$), but it is directionally consistent: reliability does not "
+              r"help even under genuine natural shift.}",
               r"\label{tab:natshift}\footnotesize", r"\begin{tabular}{lc}", r"\toprule",
               r"\textbf{Method / contrast} & AUROC or $\Delta$ (95\% CI) \\", r"\midrule",
               f"Auto-select & {m['auto_select']:.3f} \\\\",

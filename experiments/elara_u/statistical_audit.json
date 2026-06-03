@@ -1,0 +1,110 @@
+{
+  "protocol": "ELARA_U_STATISTICAL_AUDIT_v1 (Holm-Bonferroni, CI->p Altman-Bland)",
+  "family_A_primary_positive": [
+    {
+      "label": "Stack > auto-select",
+      "delta": 0.03550550721068922,
+      "ci95": [
+        0.02332741834030701,
+        0.04952472750522764
+      ],
+      "p": 1.0799948115279647e-07,
+      "p_holm": 2.1599896230559294e-07,
+      "reject": true
+    },
+    {
+      "label": "Stack > best fixed",
+      "delta": 0.07501136134171561,
+      "ci95": [
+        0.05201260200298475,
+        0.10109014063899127
+      ],
+      "p": 2.081473079458414e-09,
+      "p_holm": 6.244419238375242e-09,
+      "reject": true
+    },
+    {
+      "label": "Auto-select > best fixed",
+      "delta": 0.0395058541310264,
+      "ci95": [
+        0.023298268093461156,
+        0.06055781610040807
+      ],
+      "p": 3.2350973502528915e-05,
+      "p_holm": 3.2350973502528915e-05,
+      "reject": true
+    }
+  ],
+  "family_B_reliability_ablation": [
+    {
+      "label": "i.i.d. (learned router)",
+      "delta": 0.0008807657228954837,
+      "ci95": [
+        -0.004478563624519836,
+        0.0061314639255141525
+      ],
+      "p": 0.7448758410974701,
+      "p_holm": 1.0,
+      "reject": false,
+      "reliability_helps": false,
+      "reliability_hurts": false
+    },
+    {
+      "label": "uniform shift (sev. 3)",
+      "delta": 0.001984972227494334,
+      "ci95": [
+        -0.010216618802021429,
+        0.014048933675724242
+      ],
+      "p": 0.7484694325238221,
+      "p_holm": 1.0,
+      "reject": false,
+      "reliability_helps": false,
+      "reliability_hurts": false
+    },
+    {
+      "label": "heterogeneous missingness (0.7)",
+      "delta": 0.015370272266220649,
+      "ci95": [
+        -0.0006064161116550418,
+        0.03581180608136559
+      ],
+      "p": 0.09804596636398162,
+      "p_holm": 0.2941378990919449,
+      "reject": false,
+      "reliability_helps": false,
+      "reliability_hurts": false
+    },
+    {
+      "label": "natural shift D22 (drift vs plain)",
+      "delta": -0.049939555301287894,
+      "ci95": [
+        -0.10304325824175828,
+        -0.012851374338839492
+      ],
+      "p": 0.029970685925087684,
+      "p_holm": 0.11988274370035074,
+      "reject": false,
+      "reliability_helps": false,
+      "reliability_hurts": false
+    },
+    {
+      "label": "stack reliability gate",
+      "delta": -0.03741062309169057,
+      "ci95": [
+        -0.0502339597897044,
+        -0.02644412135181848
+      ],
+      "p": 7.080975728278088e-10,
+      "p_holm": 3.5404878641390443e-09,
+      "reject": true,
+      "reliability_helps": false,
+      "reliability_hurts": true
+    }
+  ],
+  "summary": {
+    "all_primary_claims_hold_after_holm": true,
+    "any_regime_reliability_helps_after_holm": false,
+    "n_regimes_reliability_hurts_after_holm": 1
+  }
+}

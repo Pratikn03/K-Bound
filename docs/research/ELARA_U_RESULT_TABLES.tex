@@ -63,15 +63,15 @@ KNN (best fixed) & +0.0476 & 1.0000 \\
 \end{table}
 
 \begin{table}[t]\centering
-\caption{Calibration (ECE on $[0,1]$ scores; Brier/NLL pending a fitted calibration layer).}
+\caption{Calibration: Brier, NLL, ECE as raw\,$\to$\,isotonic-calibrated (calibrator fit on validation only). The stack has the best raw calibration; after calibration all methods are well-calibrated.}
 \label{tab:calib}\footnotesize
 \begin{tabular}{lccc}
 \toprule
-\textbf{Method} & ECE & Brier & NLL \\
+\textbf{Method} & Brier (raw$\to$cal) & NLL (raw$\to$cal) & ECE (raw$\to$cal) \\
 \midrule
-ELARA-U Stack & 0.271 & -- & -- \\
-Auto-select & 0.393 & -- & -- \\
-Rank-mean & 0.407 & -- & -- \\
+ELARA-U Stack & 0.175$\to$0.069 & 0.507$\to$0.277 & 0.271$\to$0.025 \\
+Auto-select & 0.248$\to$0.072 & 0.743$\to$0.285 & 0.393$\to$0.024 \\
+Rank-mean & 0.291$\to$0.075 & 0.842$\to$0.291 & 0.407$\to$0.020 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -93,24 +93,24 @@ text & -0.69 & $[-2.04,+0.69]$ & no \\
 \end{table}
 
 \begin{table}[t]\centering
-\caption{\textbf{Reliability-feature ablations (verified).} The decisive RQ3 test: does reliability/drift/disagreement signal improve over plain validation quality? $\Delta=$ (with reliability) $-$ (without); $>0$ means reliability helps. \emph{None is a significant positive; two are significantly negative.}}
+\caption{\textbf{Consolidated reliability ablation (verified, Holm-corrected).} The decisive RQ3 test across four deployment regimes plus the stack gate: does reliability/drift signal improve over plain validation quality? $\Delta=$(with reliability)$-$(without); $>0$ means reliability helps. $p_{\mathrm{Holm}}$ is the two-sided CI$\to p$ value, Holm-corrected within this family. \emph{Reliability helps in no regime after correction; the 123-task stack gate is significantly negative.}}
 \label{tab:ablation}\footnotesize
-\begin{tabular}{llcc}
+\begin{tabular}{lccc}
 \toprule
-\textbf{Design / regime} & \textbf{Comparison} & $\Delta$AUROC & Excl.\ 0? \\
+\textbf{Regime} & $\Delta$AUROC & 95\% CI & $p_{\mathrm{Holm}}$ (helps?) \\
 \midrule
-Stack $+$ reliability gate & gate vs plain stack & -0.037 & yes (\textbf{worse}) \\
-Learned router, i.i.d. & reliability vs no-reliability & +0.001 & no \\
-Learned router, i.i.d. & reliability vs auto-select & -0.005 & yes (\textbf{worse}) \\
-Learned router, uniform shift & reliability vs no-reliability & +0.002 & no \\
-Learned router, missingness & reliability vs no-reliability & +0.015 & no \\
-Drift router, natural shift (D22) & drift vs plain stack & -0.050 & yes (\textbf{worse}) \\
+i.i.d. (learned router) & +0.001 & $[-0.004,+0.006]$ & 1 (no) \\
+uniform shift (sev. 3) & +0.002 & $[-0.010,+0.014]$ & 1 (no) \\
+heterogeneous missingness (0.7) & +0.015 & $[-0.001,+0.036]$ & 0.29 (no) \\
+natural shift D22 (drift vs plain) & -0.050 & $[-0.103,-0.013]$ & 0.12 (no) \\
+stack reliability gate & -0.037 & $[-0.050,-0.026]$ & 3.5e-09 (\textbf{HURTS}) \\
 \bottomrule
 \end{tabular}
 \end{table}
+\noindent\emph{Primary claims, Holm-corrected:} the three positive results (Stack$>$auto-select, Stack$>$best fixed, auto-select$>$best fixed; Table~\ref{tab:main}) all survive Holm correction ($p_{\mathrm{Holm}}<10^{-4}$).
 
 \begin{table}[t]\centering
-\caption{\textbf{D22 sealed natural temporal-shift benchmark} (7 UNSW attack-category tasks, train-early/test-late). Plain stacking wins; the drift-aware (reliability) router is significantly \emph{worse}---reliability does not help even under genuine natural shift.}
+\caption{\textbf{D22 sealed natural temporal-shift benchmark} (7 UNSW attack-category tasks, train-early/test-late). Plain stacking wins; the drift-aware (reliability) router is \emph{worse} (raw 95\% CI excludes 0). With only $n{=}7$ tasks this does \emph{not} survive Holm correction across the ablation family ($p_{\mathrm{Holm}}{=}0.12$), but it is directionally consistent: reliability does not help even under genuine natural shift.}
 \label{tab:natshift}\footnotesize
 \begin{tabular}{lc}
 \toprule

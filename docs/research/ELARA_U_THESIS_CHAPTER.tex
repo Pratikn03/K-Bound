@@ -60,12 +60,14 @@ $123$ tasks from $5$ families, \systemu{} Stack (per-task rank-normalized
 stacking) reaches mean rank $2.53$ versus $3.38$ for validation auto-selection
 ($+0.036$ AUROC, paired-bootstrap CI $[+0.023,+0.050]$, excluding zero; $86/123$
 wins) and even exceeds the best-single-detector oracle ($0.784$ vs $0.756$). However,
-controlled ablations across three regimes and a \emph{sealed natural temporal-shift}
-benchmark (D22) resolve RQ3 negatively: the reliability/drift machinery adds no
-significant value and is significantly \emph{worse} than plain stacking under
-natural shift ($-0.050$ AUROC, CI excl.\ $0$). The honest contribution is a
-cross-domain benchmark with a strong stacking baseline and a negative result for
-reliability-aware routing---not a sealed universal SOTA claim.
+controlled ablations across four regimes (Holm-corrected) and a \emph{sealed natural
+temporal-shift} benchmark (D22) resolve RQ3 negatively: reliability/drift features add
+no significant value in any regime, and a reliability gate on the stack is significantly
+\emph{worse} ($-0.037$ AUROC, $p_{\mathrm{Holm}}{<}10^{-8}$); under natural shift the
+drift router is directionally worse ($-0.050$ AUROC, raw CI excl.\ $0$, but $n{=}7$ does
+not survive Holm). The honest contribution is a cross-domain benchmark with a strong
+stacking baseline and a Holm-robust negative result for reliability-aware
+routing---not a sealed universal SOTA claim.
 \end{minipage}
 \end{titlepage}
 

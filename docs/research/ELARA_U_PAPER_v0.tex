@@ -229,17 +229,20 @@ every per-task loss.
 its best-case regime, we ran a sealed \emph{natural} temporal-shift benchmark
 (UNSW-NB15 capture periods per attack category + a credit-card time split; the
 late period is scored once, no test-label tuning). Plain stacking again wins; the
-drift-aware router is \emph{significantly worse} than plain stacking ($-0.050$
-AUROC, 95\% CI $[-0.103,-0.013]$) and only $+0.008$ over auto-select (not
-significant). Combined with the i.i.d.\ ablation, this refutes reliability-aware
-routing even under genuine shift.
+drift-aware router is \emph{worse} than plain stacking ($-0.050$ AUROC, raw 95\% CI
+$[-0.103,-0.013]$) and only $+0.008$ over auto-select (not significant). With only
+$n{=}7$ tasks this negative does not survive Holm correction across the ablation
+family ($p_{\mathrm{Holm}}{=}0.12$; Table~\ref{tab:ablation}), but it is directionally
+consistent with the i.i.d.\ ablation: reliability-aware routing does not help even
+under genuine shift. The robust, Holm-significant negative is the 123-task stack
+reliability gate ($-0.037$ AUROC, $p_{\mathrm{Holm}}{<}10^{-8}$).
 
 \input{ELARA_U_RESULT_SCAFFOLD.tex}
 
 \section{Scope, Limitations, and Honest Boundaries}
 This is a pilot. We do not claim universal superiority or per-dataset SOTA; the
 strict clean-transfer gate of the source system remains closed by proof (T9) and
-is not relitigated here. We note that while \systemu{} significantly improves the mean rank on cyber, tabular, and image-OOD families, the rank-gain bootstrap interval on text tasks is directionally positive but does not exclude zero, and fraud is underpowered with $n=1$ in the leave-family-out cross-validation. Furthermore, beyond synthetic degradation we ran a sealed natural temporal-shift benchmark (D22, Results): there too plain stacking wins and the drift-aware router is significantly worse, so the reliability/drift machinery does not help even under natural shift; native OOD and industrial sensor-drift families remain future work. Finally, full calibration metrics (Brier score and NLL) and a fitted calibration layer are pending.
+is not relitigated here. We note that while \systemu{} significantly improves the mean rank on cyber, tabular, and image-OOD families, the rank-gain bootstrap interval on text tasks is directionally positive but does not exclude zero, and fraud is underpowered with $n=1$ in the leave-family-out cross-validation. Furthermore, beyond synthetic degradation we ran a sealed natural temporal-shift benchmark (D22, Results): there too plain stacking wins and the drift-aware router is worse (directionally; the $n{=}7$ negative does not survive Holm correction, while the 123-task stack-gate negative does), so the reliability/drift machinery does not help even under natural shift; native OOD and industrial sensor-drift families remain future work. Calibration is now reported with fitted Brier and NLL (Table~\ref{tab:calib}, reliability diagram Fig.~\ref{fig:reliability}); larger sealed natural-shift suites remain future work.
 
 \section{Reproducibility}
 Router and evaluation: \texttt{src/scripts/elara\_u/gate\_u\_seed\_eval.py};
