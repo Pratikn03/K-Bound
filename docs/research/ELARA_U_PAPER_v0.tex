@@ -78,9 +78,13 @@ logistic stacking and also beat auto-select (all CIs exclude zero), while a simp
 average \emph{loses} to selection ($-0.039$)---the gain is learned combination,
 not averaging. A validation-only isotonic layer makes the stack well-calibrated
 (ECE $0.39\!\to\!0.02$, Brier $0.25\!\to\!0.07$, NLL $0.74\!\to\!0.28$).
-Finally, on a \emph{sealed} one-shot holdout of $74$ untouched tasks under a
-different feature extractor (ViT/RoBERTa; protocol frozen before scoring), the
-stacking advantage replicates ($+0.016$ vs auto-select, CI $[+0.004,+0.032]$).
+Finally, two holdouts probe generalization. A \emph{feature-extractor-robustness}
+holdout (D24): the same $74$ datasets re-featurized with an untouched ViT/RoBERTa
+extractor (never loaded during development; protocol frozen, one-shot) --- the
+stacking advantage replicates ($+0.016$ vs auto-select, CI $[+0.004,+0.032]$). And a
+\emph{genuinely new-data} holdout of $20$ tasks from distinct sources (sklearn
+digits/wine/wdbc, HAR smartphones; one-shot, verifiably absent from development) ---
+the advantage is \emph{larger} still ($+0.111$ vs auto-select, CI $[+0.052,+0.176]$).
 \end{abstract}
 
 \section{Introduction}
@@ -285,7 +289,7 @@ reliability gate ($-0.037$ AUROC, $p_{\mathrm{Holm}}{<}10^{-8}$).
 
 \section{Strengthening the Stacking Result}
 \label{sec:strength}
-We harden the main result against six reviewer concerns. \textbf{(i) Stacker
+We harden the main result against seven reviewer concerns. \textbf{(i) Stacker
 family} (Table~\ref{tab:stackers}): random-forest and gradient-boosting stackers
 match logistic stacking and all beat auto-select (CIs exclude zero), while a simple
 average \emph{loses} --- the gain is learned combination, not averaging. A
@@ -302,9 +306,10 @@ $[+0.025,+0.051]$); DeepSVDD is not stronger than the classical detectors here
 \textbf{(iii) Calibration} (Table~\ref{tab:calib2}): a validation-only isotonic
 layer yields well-calibrated probabilities. \textbf{(iv) Sealed external
 replication} (Table~\ref{tab:sealed}): the method, baselines, and pass condition
-were frozen (protocol D24) \emph{before} scoring $74$ untouched ADBench tasks under
-a \emph{different feature extractor} than development (ViT/RoBERTa vs.\
-ResNet18/BERT). On this one-shot sealed holdout the stack still beats auto-select
+were frozen (protocol D24) \emph{before} scoring the same $74$ ADBench datasets
+\emph{re-featurized with a different (untouched) feature extractor} than development
+(ViT/RoBERTa vs.\ ResNet18/BERT)---a representation-shift, not new-data, holdout. On
+this one-shot sealed holdout the stack still beats auto-select
 ($+0.016$, CI $[+0.004,+0.032]$) and the best fixed detector ($+0.043$, CI
 $[+0.022,+0.073]$), so the effect replicates under representation shift rather than
 being an artefact of the development split. \textbf{(vi) Fraud-family power (D26):}
@@ -316,6 +321,14 @@ AUROC), and there stacking is \emph{not} significantly better than selection
 $[-0.098,+0.022]$), and on one variant the per-task stack collapses below chance.
 Stacking helps where the base detectors are individually informative; on near-chance
 fraud it neither manufactures signal nor systematically hurts.
+\textbf{(vii) Fully independent external corpus (D27):} the sharpest test of
+generalisation is a different data \emph{source}, not the same suite re-extracted. We
+froze the method and the exact $20$-task list (protocol D27) over sources verifiably
+absent from the development archive --- sklearn \texttt{digits}/\texttt{wine}/%
+\texttt{wdbc} and HAR smartphones, one-vs-rest --- and scored once. The advantage is
+\emph{larger} than on the development split: stack $0.799$ vs auto-select $0.689$
+($+0.111$, CI $[+0.052,+0.176]$) and vs the best fixed detector ($+0.209$, CI
+$[+0.120,+0.303]$). Combination generalises to genuinely new sources.
 
 \begin{table}[t]\centering
 \caption{Stacking beats selection across stacker families (123 tasks, paired
@@ -354,7 +367,7 @@ Stack + isotonic & \textbf{0.024} & \textbf{0.069} & \textbf{0.276} \\
 
 \begin{table}[t]\centering
 \caption{Sealed external holdout (D24, \textbf{one-shot}): method frozen before
-scoring $74$ untouched ADBench tasks under a different feature extractor (ViT/RoBERTa)
+scoring the same $74$ ADBench datasets re-featurized with an untouched ViT/RoBERTa extractor (representation-shift holdout)
 than development. Stacking beats both auto-select and the best fixed detector; both
 CIs exclude zero.}
 \label{tab:sealed}\footnotesize

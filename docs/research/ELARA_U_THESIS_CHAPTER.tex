@@ -116,7 +116,7 @@ The current thesis evidence should be read in three tiers.
 Clean 123-task benchmark & Rank-normalized stacking beats validation auto-select ($+0.036$ AUROC, CI$>$0) and the best fixed detector ($+0.075$) across 5 families. & Established (verified) \\
 Reliability ablation & Reliability/drift features add no significant gain over validation quality; a reliability gate hurts. & Established (negative) \\
 Mechanism (simulation) & Reliability gating helps iff a channel fails independently. & Established (simulation) \\
-Natural multimodal / sealed holdout & The regime where reliability should structurally help; pre-registered. & Pending \\
+Sealed + independent external & Stacking replicates on a sealed ADBench-extractor holdout (D24) and a fully independent corpus (D27, $+0.111$); reliability wins under multimodal failure (D23). & Done (D23/D24/D27) \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -142,7 +142,7 @@ or one clean-transfer gate should win everywhere.
 RQ1 & Can a cross-domain router outperform the best fixed detector family over many anomaly tasks? & Yes (clean 123-task benchmark, CI$>$0) \\
 RQ2 & Can the router (stack) outperform validation-AUROC auto-selection? & Yes ($+0.036$ AUROC, CI$>$0) \\
 RQ3 & Does reliability/drift modeling, rather than plain stacking, carry the improvement? & \textbf{NO single-input; YES multimodal} (3 single-input regimes vs D23, Table~\ref{tab:d23}) \\
-RQ4 & Can the same contract hold on natural, sealed, and external benchmarks (incl.\ multimodal)? & Pending; pre-registered (Sec.~\ref{sec:multimodal}) \\
+RQ4 & Can the same contract hold on natural, sealed, and external benchmarks (incl.\ multimodal)? & Largely yes: sealed (D24), fully independent (D27), multimodal (D23); natural shift (D22) mixed \\
 RQ5 & Can the router produce calibrated probabilities and safe abstentions suitable for operations? & Partially supported; calibration pending \\
 \bottomrule
 \end{tabular}
@@ -516,12 +516,12 @@ or significant time-series claim is made, and on the near-chance BAF fraud panel
 (D26) stacking is explicitly not significant --- the win is bounded to where the zoo
 carries signal. Second, the multimodal reliability mechanism is now backed by real
 co-observed data (D23, Section~\ref{sec:multimodal}), not only the controlled
-simulation, and the stacking result replicates on a sealed representation-shift
-holdout (D24, Table~\ref{tab:sealed_th}); what remains is a \emph{fully independent}
-external corpus (distinct data source, not the same suite under a new extractor).
-Third, the fraud family is now $n{=}7$ (credit-card $+$ BAF) but the BAF result is a
-boundary, not a win, and sealed industrial 3D holdouts beyond Real-IAD-D3 remain
-pending.
+simulation, and the stacking result now replicates both on a sealed representation-shift
+holdout (D24, Table~\ref{tab:sealed_th}) \emph{and} on a fully independent external
+corpus from distinct sources (D27, Table~\ref{tab:indep_th}, $+0.111$), so the
+``opened-data'' concern is directly addressed. Third, the fraud family is now $n{=}7$
+(credit-card $+$ BAF) but the BAF result is a boundary, not a win, and sealed
+industrial 3D holdouts beyond Real-IAD-D3 remain pending.
 
 \input{ELARA_U_RESULT_SCAFFOLD.tex}
 
@@ -772,13 +772,13 @@ $[+0.004,+0.032]$) and the best fixed detector ($+0.043$, CI $[+0.022,+0.073]$);
 both CIs exclude zero. The effect therefore \emph{replicates under representation
 shift}, lifting the stacking result from development evidence to sealed evidence
 (Gate~U point~7). Honest scope: this is a sealed held-out under shifted
-representation on the same ADBench suite, not a wholly independent data source --- a
-fully independent external corpus remains the natural next strengthening step.
+representation on the same ADBench suite, not a wholly independent data source ---
+that gap is closed next (D27).
 
 \begin{table}[H]\centering
-\caption{Sealed external holdout (D24, one-shot): method frozen before scoring
-$74$ untouched ADBench tasks under a different feature extractor (ViT/RoBERTa).
-Stacking beats both auto-select and the best fixed detector; both CIs exclude zero.}
+\caption{Sealed external holdout (D24, one-shot): method frozen before scoring the
+same $74$ ADBench datasets re-featurized with an untouched ViT/RoBERTa extractor
+(representation-shift holdout). Stacking beats both auto-select and the best fixed detector; both CIs exclude zero.}
 \label{tab:sealed_th}\small
 \begin{tabular}{lcc}
 \toprule
@@ -790,6 +790,43 @@ Simple average & 0.764 & --- \\
 Auto-select & 0.795 & --- \\
 \textbf{Stack (logistic)} & \textbf{0.811} & vs auto $+0.016\,[+0.004,+0.032]$ \\
  & & vs best $+0.043\,[+0.022,+0.073]$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\paragraph{Fully independent external corpus (D27).}
+The sealed holdout (D24) reuses the ADBench \emph{suite} under new extractors; the
+hardest test is a different data \emph{source} entirely. We froze the method and the
+exact $20$-task list (\texttt{research\_lock/INDEPENDENT\_EXTERNAL\_PROTOCOL\_v1})
+over sources \emph{verifiably absent} from the 135-task archive --- scikit-learn
+\texttt{digits} (10 one-vs-rest tasks), \texttt{wine} (3), \texttt{wdbc}
+(malignant $=$ anomaly), and HAR smartphones ($561$ features, 6 activities) --- and
+scored once with the construction ``each class $=$ anomaly, downsampled to $10\%$''.
+The result is the strongest replication in this thesis: stacking reaches mean AUROC
+$0.799$ versus auto-select $0.689$ ($+0.111$, CI $[+0.052,+0.176]$) and the best
+fixed detector $0.590$ ($+0.209$, CI $[+0.120,+0.303]$); both CIs exclude zero
+(Table~\ref{tab:indep_th}). The advantage is \emph{larger} on these independent
+sources than on the development split, because the one-vs-rest tasks have informative
+detectors and single-detector selection is weak --- exactly the regime where learned
+combination should and does win. This lifts the stacking claim from sealed evidence
+to \emph{fully independent external} evidence.
+
+\begin{table}[H]\centering
+\caption{Fully independent external corpus (D27, one-shot): method and 20-task list
+frozen before scoring sources absent from the development archive (sklearn
+digits/wine/wdbc + HAR). Stacking beats auto-select and the best fixed detector; both
+CIs exclude zero.}
+\label{tab:indep_th}\small
+\begin{tabular}{lcc}
+\toprule
+\textbf{Method} & mean AUROC & $\Delta$ (95\% CI) \\
+\midrule
+Best fixed detector (COPOD) & 0.590 & --- \\
+Rank-mean & 0.596 & --- \\
+Simple average & 0.598 & --- \\
+Auto-select & 0.689 & --- \\
+\textbf{Stack (logistic)} & \textbf{0.799} & vs auto $+0.111\,[+0.052,+0.176]$ \\
+ & & vs best $+0.209\,[+0.120,+0.303]$ \\
 \bottomrule
 \end{tabular}
 \end{table}
