@@ -1,0 +1,171 @@
+% Verified from experiments/elara_u/honest_benchmark.json (leakage-free, clean splits).
+% The earlier results.json injected an AUROC-invariant constant score offset ("stress")
+% that did not materially change these values; the headline is the clean benchmark.
+% Reliability/drift ablations are decisive and negative (tab:ablation).
+\begin{table}[t]\centering
+\caption{Main result over 123 tasks, 5 families (clean splits, no test labels). Average
+rank is among the 11 non-oracle strategies; lower rank/regret/ECE better. The oracle is
+the best \emph{single} detector per task (a selection ceiling; the stack exceeds it
+because fusion beats selection). Verified source: \texttt{honest\_benchmark.json}.}
+\label{tab:main}\footnotesize
+\begin{tabular}{lcccc}
+\toprule
+\textbf{Method} & rank & AUROC & regret & ECE \\
+\midrule
+ELARA-U Stack (rank-norm logistic) & \textbf{2.53} & \textbf{0.784} & --- & 0.271 \\
+Auto-select (val-AUROC) & 3.38 & 0.748 & 0.008 & 0.393 \\
+Stack $+$ reliability gate & 4.00 & 0.746 & 0.010 & 0.325 \\
+KNN (best fixed) & 5.42 & 0.709 & 0.048 & --- \\
+Rank-mean & 6.53 & 0.707 & 0.049 & 0.407 \\
+CW-mean & 6.66 & 0.708 & 0.048 & 0.396 \\
+\midrule
+oracle (best single detector) & --- & 0.756 & 0.000 & --- \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{table}[t]\centering
+\caption{Family-level mean rank (lower better).}
+\label{tab:family}\footnotesize
+\begin{tabular}{lccccc}
+\toprule
+\textbf{Method} & cyber & fraud & image\_ood & tabular & text \\
+\midrule
+Auto-select & 3.20 & 2.00 & 3.72 & 3.26 & 4.77 \\
+ELARA-U Stack & 1.00 & 3.00 & 2.46 & 2.47 & 3.69 \\
+KNN (best fixed) & 7.20 & 8.00 & 3.70 & 6.49 & 6.23 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{table}[t]\centering
+\caption{Win/tie/loss vs.\ best fixed detector (KNN) and negative-transfer rate (worse than rank-mean).}
+\label{tab:winloss}\footnotesize
+\begin{tabular}{lcccc}
+\toprule
+\textbf{Method} & Wins & Ties & Losses & Neg.-transfer \\
+\midrule
+Auto-select & 70 & 39 & 14 & 0.106 \\
+ELARA-U fuse & 54 & 6 & 63 & 0.228 \\
+ELARA-U Stack & 95 & 7 & 21 & 0.098 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{table}[t]\centering
+\caption{Regret to per-task oracle (lower better).}
+\label{tab:regret}\footnotesize
+\begin{tabular}{lcc}
+\toprule
+\textbf{Method} & Mean regret & Worst regret \\
+\midrule
+Auto-select & 0.0454 & 0.4367 \\
+ELARA-U Stack & 0.0099 & 0.1653 \\
+KNN (best fixed) & 0.0849 & 1.0000 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{table}[t]\centering
+\caption{Calibration (ECE proxy on z-sigmoid scores; Brier/NLL pending a fitted calibration layer).}
+\label{tab:calib}\footnotesize
+\begin{tabular}{lccc}
+\toprule
+\textbf{Method} & ECE & Brier & NLL \\
+\midrule
+Auto-select & 0.393 & -- & -- \\
+ELARA-U Stack & 0.272 & -- & -- \\
+Rank-mean & 0.407 & -- & -- \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{table}[t]\centering
+\caption{Leave-family-out: ELARA-U Stack minus auto-select mean rank on each held-out family (negative = Stack better), paired-bootstrap 95\% CI.}
+\label{tab:lfo}\footnotesize
+\begin{tabular}{lccc}
+\toprule
+\textbf{Held-out family} & Rank $\Delta$ & 95\% CI & Excl.\ 0 \\
+\midrule
+cyber & -2.20 & $[-2.60,-2.00]$ & yes \\
+fraud & +1.00 & (n=1) & -- \\
+image\_ood & -1.26 & $[-1.89,-0.62]$ & yes \\
+tabular & -0.79 & $[-1.60,+0.09]$ & no \\
+text & -1.08 & $[-2.46,+0.31]$ & no \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{table}[t]\centering
+\caption{\textbf{Reliability-feature ablations (verified).} The decisive RQ3 test:
+does reliability/drift/disagreement signal improve over plain validation quality?
+$\Delta=$ (with reliability) $-$ (without); $>0$ means reliability helps. Two router
+designs, three deployment regimes, plus a reliability gate on the stack.
+\emph{None is a significant positive; the stack gate is significantly negative.}}
+\label{tab:ablation}\footnotesize
+\begin{tabular}{llcc}
+\toprule
+\textbf{Design / regime} & \textbf{Comparison} & $\Delta$AUROC & Excl.\ 0? \\
+\midrule
+Stack $+$ reliability gate (123 tasks) & gate vs plain stack & $-0.037$ & yes (\textbf{hurts}) \\
+Learned router, i.i.d. & reliability vs no-reliability & $+0.001$ & no \\
+Learned router, i.i.d. & reliability vs auto-select & $-0.005$ & yes (worse) \\
+Learned router, uniform shift (sev.\ 3) & reliability vs no-reliability & $+0.002$ & no \\
+Learned router, heterog.\ missingness (0.7) & reliability vs no-reliability & $+0.015$ & no \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\noindent\emph{Reconciliation note.} A prior auto-generated version of this table
+reported all reliability variants as byte-identical, because the reliability/drift
+features were never inserted into the stacker (the ``ablation'' removed features that
+were absent). The verified ablations above inject the full reliability battery into a
+learned router and remove it, across three regimes, and add a reliability gate to the
+stack; the result is the decisive \emph{negative} answer to RQ3. The stacking gain is
+real; the reliability/drift novelty is not.
+
+\begin{table}[t]\centering
+\caption{ELARA-U action mix over tasks.}
+\label{tab:abstain}\footnotesize
+\begin{tabular}{lcc}
+\toprule
+\textbf{Action} & Tasks & Fraction \\
+\midrule
+select & 0 & 0.00 \\
+fuse & 0 & 0.00 \\
+fallback & 0 & 0.00 \\
+stack & 123 & 1.00 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{table}[t]\centering
+\caption{Failure analysis: where ELARA-U does not improve, and why.}
+\label{tab:failure}\footnotesize
+\begin{tabular}{p{0.18\linewidth}p{0.34\linewidth}p{0.34\linewidth}}
+\toprule
+\textbf{Regime} & \textbf{Failure} & \textbf{Cause} \\
+\midrule
+Reliability gating & Reliability gate hurts the stack ($-0.037$) & shared-input detectors have correlated reliability; test-time gating adds no signal beyond validation quality (Sec.~\ref{sec:mechanism}) \\
+High-degradation & rank-mean fallback & extreme noise makes all channels degenerate \\
+Calibration & ECE $\approx 0.27$ for Stack & scores are fitted probabilities on ranks, but not globally calibrated \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{table}[t]\centering
+\caption{Reproducibility / artifact checklist.}
+\label{tab:repro}\footnotesize
+\begin{tabular}{p{0.62\linewidth}c}
+\toprule
+\textbf{Artifact} & \textbf{Released} \\
+\midrule
+Protocol \texttt{ELARA\_U\_PROTOCOL\_v1.yaml} & yes \\
+Method code \texttt{src/uais/elara\_u/} & yes \\
+Build/eval/emit scripts \texttt{src/scripts/elara\_u/} & yes \\
+Score archive (123 tasks) + manifest & yes \\
+\texttt{results.json} (per-task ranks/AUROC) & yes \\
+No-test-label audit (Alg.~\ref{alg:router-train}) & yes \\
+\bottomrule
+\end{tabular}
+\end{table}

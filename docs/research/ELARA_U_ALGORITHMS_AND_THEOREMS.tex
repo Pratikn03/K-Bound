@@ -1,0 +1,95 @@
+% ELARA-U: main algorithms + theorem/certificate boxes.
+% Include file for the ELARA-U flagship manuscript. Host preamble must load:
+%   \usepackage{amsmath,amssymb,amsthm,algorithm,algpseudocode}
+% and define theorem-like environments (provided here if not already defined).
+%
+% Algorithms mirror the real harness src/scripts/elara_u/gate_u_seed_eval.py and
+% the Gate U protocol research_lock/GATE_U_CROSS_DOMAIN_PROTOCOL_v1.yaml.
+
+% ---- theorem-like environments (guarded so double-definition is harmless) ----
+\ifcsname c@certificate\endcsname\else\newtheorem{certificate}{Certificate}\fi
+\ifcsname c@diagnostic\endcsname\else\newtheorem{diagnostic}{Diagnostic}\fi
+\ifcsname c@slack\endcsname\else\newtheorem{slack}{Proposition}\fi
+
+% =====================================================================
+% Algorithm 1: Universal Score Archive Construction
+% =====================================================================
+\begin{algorithm}[t]
+\caption{Universal Score Archive Construction}
+\label{alg:archive}
+\begin{algorithmic}[1]
+\Require datasets $\mathcal{D}=\{X_d\}$, detector zoo $\mathcal{E}=\{e_1,\dots,e_M\}$
+\Ensure score archive $\mathcal{A}$, validation summaries $V$
+\For{each dataset $d \in \mathcal{D}$}
+  \State split $X_d$ into $\mathrm{train}/\mathrm{val}/\mathrm{test}$; fit scaler on train
+  \For{each expert $e_m \in \mathcal{E}$}
+    \State fit $e_m$ on (unlabelled) train; $s^{\mathrm{val}}_{d,m}\!\gets\! e_m(\mathrm{val})$, $s^{\mathrm{test}}_{d,m}\!\gets\! e_m(\mathrm{test})$
+    \State normalise by monotone $z$-sigmoid on the train-OK score distribution
+    \State $v_{d,m} \gets \mathrm{AUROC}(y_{\mathrm{val}}, s^{\mathrm{val}}_{d,m})$ \Comment{validation labels only}
+    \State store $(s^{\mathrm{val}}_{d,m}, s^{\mathrm{test}}_{d,m}, v_{d,m})$ and provenance (config hash, artifact hash) in $\mathcal{A}$
+  \EndFor
+\EndFor
+\State \Return $\mathcal{A}$, $V=\{v_{d,m}\}$
+\end{algorithmic}
+\end{algorithm}
+
+% =====================================================================
+% Algorithm 2: Validation-Only Reliability Router Training
+% =====================================================================
+\begin{algorithm}[t]
+\caption{Validation-Only Reliability Router Training}
+\label{alg:router-train}
+\begin{algorithmic}[1]
+\Require archive $\mathcal{A}$, validation summaries $V$, dataset meta-features $\Phi$
+\Ensure frozen router $R$
+\For{each $(d,m)$}
+  \State $r_{d,m} \gets [\,$score tailness, entropy, inter-expert disagreement, calibration error,
+  \Statex \hspace{2.2em} missing-modality flags, domain-shift estimate, $v_{d,m}$, $\Phi_d\,]$ \Comment{no test labels}
+\EndFor
+\State target $t_d \gets \arg\max_m v_{d,m}$ (or the per-dataset rank vector)
+\State fit $R:\; r \mapsto$ (expert choice / fusion weights) on $\{(r_{d,\cdot}, t_d)\}$ using validation only
+\State \textbf{audit:} assert no test split or test label entered $R$'s fit
+\State \Return frozen $R$
+\end{algorithmic}
+\end{algorithm}
+
+% =====================================================================
+% Algorithm 3: Routed Inference With Abstention
+% =====================================================================
+\begin{algorithm}[t]
+\caption{Routed Inference With Abstention}
+\label{alg:route-infer}
+\begin{algorithmic}[1]
+\Require frozen router $R$, calibrator $g$, abstention threshold $\tau_a$, new task scores $\{s_m\}$ with validation slice
+\Ensure calibrated routed score or abstention, with reason code
+\State $r \gets$ reliability features on the task's validation slice (Alg.~\ref{alg:router-train})
+\State $(\,w, \hat{\rho}\,) \gets R(r)$ \Comment{fusion weights $w$ and predicted reliability $\hat{\rho}$}
+\If{$\hat{\rho} < \tau_a$ \textbf{or} all experts flagged degenerate}
+  \State \Return \textsc{Abstain} with reason code (low predicted reliability)
+\EndIf
+\State $\tilde{s} \gets \sum_m w_m\, s_m$ over non-degenerate experts (degenerate-channel guard)
+\State \Return $g(\tilde{s})$ (calibrated) with reason code (selected experts, weights)
+\end{algorithmic}
+\end{algorithm}
+
+% =====================================================================
+% Algorithm 4 (appendix): Universal Evidence Evaluation
+% =====================================================================
+\begin{algorithm}[t]
+\caption{Universal Evidence Evaluation (Gate U)}
+\label{alg:gate-u}
+\begin{algorithmic}[1]
+\Require per-task test AUROCs for router and baselines over tasks $\mathcal{T}$
+\Ensure Gate U evidence report
+\For{each task $\tau \in \mathcal{T}$}
+  \State rank methods by test AUROC; $\mathrm{oracle}_\tau \gets \max$ AUROC
+  \State $\mathrm{regret}_\tau(\cdot) \gets \mathrm{oracle}_\tau - \mathrm{AUROC}_\tau(\cdot)$; flag negative transfer vs best fixed
+\EndFor
+\State aggregate mean rank, win rate, mean/worst regret, negative-transfer rate
+\State paired bootstrap over $\mathcal{T}$ for (router $-$ best-fixed) rank gain $\Rightarrow$ 95\% CI
+\State Holm-correct across the endpoint family; \Return report
+\end{algorithmic}
+\end{algorithm}
+
+% Theorem / certificate boxes have been moved to the appendix (ELARA_U_THEORY_APPENDIX.tex)
+

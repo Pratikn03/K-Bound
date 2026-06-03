@@ -1,0 +1,40 @@
+% ELARA-U results: filled tables (emit_tables.py) + data figures (emit_figures.py)
+% + conceptual figures. Regenerate tables/figures by running:
+%   src/scripts/elara_u/emit_tables.py ; src/scripts/elara_u/emit_figures.py
+
+\section{Result Tables}
+\label{sec:result-tables}
+All result tables below trace to the verified
+\texttt{experiments/elara\_u/honest\_benchmark.json} and the ablation result files
+($123$ tasks, $5$ families, leakage-free). The headline is on the \emph{clean}
+benchmark: ELARA-U's rank-normalized stacking meta-router significantly improves
+average rank, AUROC, and regret over validation auto-selection and fixed detectors.
+The reliability/drift novelty, however, is decisively \emph{negative}
+(Table~\ref{tab:ablation}). This is not a sealed universal SOTA claim.
+\input{ELARA_U_RESULT_TABLES.tex}
+
+\section{Figures}
+\label{sec:figures}
+\begin{figure}[H]\centering\includegraphics[width=0.95\linewidth]{elara_u_rank.png}
+\caption{Cross-domain mean rank over $123$ tasks (lower better). ELARA-U Stack achieves the best average rank on the clean benchmark. (Illustrative; authoritative values in Table~\ref{tab:main}.)}\label{fig:rank}\end{figure}
+
+\begin{figure}[H]\centering\includegraphics[width=0.95\linewidth]{elara_u_regret.png}
+\caption{Mean regret to the per-task oracle. ELARA-U Stack has the lowest regret in the current stress archive.}\label{fig:regret}\end{figure}
+
+\begin{figure}[H]\centering\includegraphics[width=0.95\linewidth]{elara_u_calib.png}
+\caption{Calibration error (ECE proxy). ELARA-U Stack improves the proxy ECE but still requires a fitted calibration layer for probability claims.}\label{fig:calib}\end{figure}
+
+\begin{figure}[H]\centering\includegraphics[width=0.95\linewidth]{elara_u_family_heatmap.png}
+\caption{Per-family mean rank (greener = better).}\label{fig:heatmap}\end{figure}
+
+\begin{figure}[H]\centering\includegraphics[width=0.95\linewidth]{elara_u_ablation.png}
+\caption{Component ablation summary. The stack gain comes from rank-normalized per-task stacking; reliability/drift feature ablations are decisive and \emph{negative} (Table~\ref{tab:ablation}). (Illustrative; authoritative values in Table~\ref{tab:ablation}.)}\label{fig:ablation}\end{figure}
+
+\begin{figure}[H]\centering\includegraphics[width=0.95\linewidth]{elara_u_architecture.png}
+\caption{ELARA-U architecture: benchmark families feed a detector zoo and score archive; validation-only labels and unlabeled deployment scores drive the router.}\label{fig:arch}\end{figure}
+
+\begin{figure}[H]\centering\includegraphics[width=0.95\linewidth]{elara_u_coverage.png}
+\caption{Benchmark coverage map. Current evidence covers five families; time-series, additional industrial-vision, and multimodal/3D families remain planned expansion targets for stronger universal claims.}\label{fig:coverage}\end{figure}
+
+\begin{figure}[H]\centering\includegraphics[width=0.95\linewidth]{elara_u_lifecycle.png}
+\caption{Router decision lifecycle and evidence boundary. Development stress evidence is useful, but sealed external evidence is required before SOTA-level claims.}\label{fig:lifecycle}\end{figure}

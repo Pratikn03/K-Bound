@@ -1,0 +1,634 @@
+\documentclass[11pt,titlepage]{article}
+\usepackage[margin=1.0in]{geometry}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{amsmath,amssymb,amsthm}
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{longtable}
+\usepackage{graphicx}
+\graphicspath{{figures/}}
+\usepackage[hypertexnames=false]{hyperref}
+\usepackage{xcolor}
+\usepackage{url}
+\usepackage{float}
+\usepackage{algorithm}
+\usepackage{algpseudocode}
+\hypersetup{colorlinks=true,linkcolor=darkgray,citecolor=blue,urlcolor=blue}
+\emergencystretch=2em
+
+\newcommand{\systemu}{ELARA-U}
+\newcommand{\system}{ELARA}
+\newcommand{\method}{RGA}
+\newcommand{\methodplus}{RGA+}
+\newcommand{\gateu}{Gate U}
+\newcommand{\relg}{\textsc{RelGate}}
+\newcolumntype{L}[1]{>{\raggedright\arraybackslash}p{#1}}
+
+% Theorem-like environments
+\ifcsname c@theorem\endcsname\else\newtheorem{theorem}{Theorem}\fi
+\ifcsname c@corollary\endcsname\else\newtheorem{corollary}{Corollary}\fi
+\ifcsname c@proposition\endcsname\else\newtheorem{proposition}{Proposition}\fi
+\ifcsname c@lemma\endcsname\else\newtheorem{lemma}{Lemma}\fi
+\ifcsname c@certificate\endcsname\else\newtheorem{certificate}{Certificate}\fi
+\ifcsname c@diagnostic\endcsname\else\newtheorem{diagnostic}{Diagnostic}\fi
+\ifcsname c@slack\endcsname\else\newtheorem{slack}{Proposition}\fi
+
+\begin{document}
+
+\begin{titlepage}
+\centering
+\vspace*{1.7cm}
+{\huge\bfseries ELARA-U: Shift-Aware Reliability Routing for\\ Cross-Domain Anomaly Detection\par}
+\vspace{1.4cm}
+{\large\bfseries Pratik Niroula}\par
+\vspace{0.4cm}
+{\large Independent Researcher}\par
+\vspace{1.8cm}
+{\Large\itshape Expanded Thesis Chapter and Research Monograph\par}
+\vspace{1.5cm}
+{\large \today\par}
+\vspace{1.6cm}
+\begin{minipage}{0.86\linewidth}
+\small
+\textbf{Thesis statement.} The central problem in universal anomaly detection is
+not only inventing a stronger detector, but preventing the wrong detector from
+being trusted under domain shift. \systemu{} studies this as a meta-routing
+problem: given a heterogeneous detector zoo and a validation slice, decide when
+to select, fuse, stack, or fall back without using test labels. The current
+evidence supports a strong development-stage claim under injected deployment
+degradation: across $123$ tasks from $5$ families, \systemu{} Stack reaches mean
+rank $2.54$ versus $3.63$ for stale validation auto-selection, with paired
+bootstrap rank delta $-1.10$ and 95\% CI $[-1.54,-0.62]$. It also reduces mean
+regret from $0.0454$ to $0.0099$ and lowers the negative-transfer rate versus
+rank-mean from the auto-select rate of $0.106$ to $0.098$. The evidence is not
+yet a sealed universal SOTA claim because the strongest result is still a
+development stress benchmark and additional natural, external, and sealed
+families are required.
+\end{minipage}
+\end{titlepage}
+
+\tableofcontents
+\listoftables
+\listoffigures
+\newpage
+
+\section{Executive Summary}
+
+Anomaly detection is fragmented across tabular, cyber, fraud, image-OOD, text,
+industrial vision, time-series, and multimodal settings. Each family has strong
+specialists, but none is uniformly best. In deployment, the damaging failure is
+often not the absence of a useful expert; it is selecting a detector whose
+validation performance no longer predicts deployment performance. This is the
+negative-transfer problem.
+
+\systemu{} reframes the project around a universal anomaly \emph{meta-router}.
+Instead of claiming that one detector is universal, \systemu{} asks whether a
+router can reduce average rank, regret to the per-task oracle, and harmful
+transfer events across many task families. The project therefore moves from the
+old clean-transfer-only framing to a broader \gateu{} contract: success is judged
+by cross-family rank, regret, calibration, negative-transfer reduction, and
+audited no-test-label routing.
+
+\subsection{Current Evidence Level}
+
+The current thesis evidence should be read in three tiers.
+
+\begin{table}[H]
+\centering
+\caption{Evidence status of the current ELARA-U thesis.}
+\label{tab:evidence-status}
+\small
+\begin{tabular}{L{0.25\linewidth}L{0.43\linewidth}L{0.22\linewidth}}
+\toprule
+\textbf{Evidence tier} & \textbf{What it shows} & \textbf{Claim status} \\
+\midrule
+Clean 123-task benchmark & Rank-normalized stacking beats validation auto-select ($+0.036$ AUROC, CI$>$0) and the best fixed detector ($+0.075$) across 5 families. & Established (verified) \\
+Reliability ablation & Reliability/drift features add no significant gain over validation quality; a reliability gate hurts. & Established (negative) \\
+Mechanism (simulation) & Reliability gating helps iff a channel fails independently. & Established (simulation) \\
+Natural multimodal / sealed holdout & The regime where reliability should structurally help; pre-registered. & Pending \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+The immediate research value is that the work now has a defensible thesis:
+\emph{meta-routing is most useful when validation metrics become stale under
+deployment shift}. This is stronger and cleaner than claiming one fixed detector
+or one clean-transfer gate should win everywhere.
+
+\section{Research Questions and Contributions}
+
+\subsection{Research Questions}
+
+\begin{table}[H]
+\centering
+\caption{Core research questions for the ELARA-U thesis.}
+\label{tab:rq}
+\small
+\begin{tabular}{L{0.08\linewidth}L{0.56\linewidth}L{0.24\linewidth}}
+\toprule
+\textbf{ID} & \textbf{Question} & \textbf{Current status} \\
+\midrule
+RQ1 & Can a cross-domain router outperform the best fixed detector family over many anomaly tasks? & Yes (clean 123-task benchmark, CI$>$0) \\
+RQ2 & Can the router (stack) outperform validation-AUROC auto-selection? & Yes ($+0.036$ AUROC, CI$>$0) \\
+RQ3 & Does reliability/drift modeling, rather than plain stacking, carry the improvement? & \textbf{Resolved: NO} (3 regimes, 2 designs; Table~\ref{tab:ablation}) \\
+RQ4 & Can the same contract hold on natural, sealed, and external benchmarks (incl.\ multimodal)? & Pending; pre-registered (Sec.~\ref{sec:multimodal}) \\
+RQ5 & Can the router produce calibrated probabilities and safe abstentions suitable for operations? & Partially supported; calibration pending \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Contributions}
+
+\begin{longtable}{L{0.22\linewidth}L{0.47\linewidth}L{0.22\linewidth}}
+\caption{Contribution matrix.}\label{tab:contrib}\\
+\toprule
+\textbf{Contribution} & \textbf{Description} & \textbf{Evidence} \\
+\midrule
+\endfirsthead
+\toprule
+\textbf{Contribution} & \textbf{Description} & \textbf{Evidence} \\
+\midrule
+\endhead
+Universal meta-routing formulation & Defines anomaly detection as a task-level routing problem over a detector zoo, not as a single-detector competition. & Formal setup and \gateu{} \\
+Score archive & Persists validation/test detector scores, labels, and provenance so routing policies can be evaluated without re-running detectors. & $123$ current tasks \\
+Rank-normalized stacker & Learns per-task combinations from validation labels and applies monotone-invariant rank features to test scores. & Mean rank $2.54$ stress result \\
+Evidence contract & Separates average rank, regret, negative transfer, calibration, and no-test-label audit. & Tables and algorithms \\
+Theory stack & Proves why universal dominance is impossible, why auto-select is near-oracle under stable transfer, and why shifted regimes can reward reliability routing. & Theorems in Sec.~\ref{sec:theory} \\
+Honest boundary & Distinguishes development stress evidence from sealed universal SOTA evidence. & Validity audit \\
+\bottomrule
+\end{longtable}
+
+\section{Problem Definition}
+
+Let $\mathcal{T}$ be a collection of anomaly-detection tasks. Each task
+$\tau\in\mathcal{T}$ has a training split, a validation split, and a deployment or
+test split. A detector zoo
+\[
+\mathcal{D}=\{d_1,\ldots,d_M\}
+\]
+produces detector scores $s_{\tau,m}(x)$ for every sample $x$. The objective is
+not to find a detector that wins every task. The objective is to learn or define a
+router $R$ that maps task evidence into a selected, fused, or stacked score
+\[
+g_\tau(x)=R\left(\{s_{\tau,m}\}_{m=1}^{M}, \Phi_\tau\right)(x),
+\]
+where $\Phi_\tau$ contains validation-only and unlabeled deployment-shift
+features. The router is evaluated using test labels only after routing decisions
+are frozen.
+
+\subsection{Metrics}
+
+\begin{table}[H]
+\centering
+\caption{Primary metrics used by the thesis.}
+\label{tab:metrics}
+\small
+\begin{tabular}{L{0.25\linewidth}L{0.47\linewidth}L{0.20\linewidth}}
+\toprule
+\textbf{Metric} & \textbf{Definition} & \textbf{Preferred direction} \\
+\midrule
+Mean rank & Average rank of each method by task AUROC. & Lower \\
+Regret & Per-task oracle AUROC minus method AUROC. & Lower \\
+Negative-transfer rate & Fraction of tasks where the method underperforms a safe reference such as rank-mean. & Lower \\
+Bootstrap CI & Paired task-level confidence interval for rank delta. & Exclude zero \\
+ECE proxy & Calibration error treating normalized scores as probabilities. & Lower \\
+Worst rank/regret & Worst observed task-level failure. & Lower \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\section{From the Old ELARA System to ELARA-U}
+
+The prior \system{}/\method{} work remains useful, but it should be treated as
+source-system evidence rather than the main flagship claim. Its value is threefold:
+it provides a detector-and-fusion foundation, it supplies negative evidence about
+near-ceiling clean transfer, and it motivates a broader meta-routing benchmark.
+
+\begin{table}[H]
+\centering
+\caption{How old artifacts should be reused in the new thesis.}
+\label{tab:reuse}
+\small
+\begin{tabular}{L{0.24\linewidth}L{0.42\linewidth}L{0.24\linewidth}}
+\toprule
+\textbf{Old artifact} & \textbf{Reuse in ELARA-U} & \textbf{Do not use as} \\
+\midrule
+RGA/RGA+ source system & Detector/fusion foundation and stress mechanism. & Universal proof \\
+Clean-transfer failures & Motivation for the new routing objective. & A hidden pass \\
+T1--T9 theory stack & Boundary theorems explaining when clean transfer is hard. & A reason to overclaim \\
+Real-IAD / Real-IAD D3 & Natural-degradation evidence track and future family input. & Fresh sealed evidence if already opened \\
+MVTec 3D-AD / 3D-ADAM / MulSen & Multimodal source families and development evidence. & Final universal holdout without preregistration \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+This distinction is important. A failed clean-transfer gate does not make the
+project worthless; it says that the old claim was too narrow. The stronger
+scientific move is to make the failure part of the motivation: when clean
+validation-to-test transfer is stable, validation auto-selection is already a
+strong baseline. A universal paper should therefore focus on the regimes where
+selection becomes stale.
+
+\section{Methodology: The Reliability-Aware Meta-Router}
+
+\systemu{} operates in two conceptually distinct modes.
+
+\begin{table}[H]
+\centering
+\caption{ELARA-U operating modes.}
+\label{tab:modes}
+\small
+\begin{tabular}{L{0.20\linewidth}L{0.42\linewidth}L{0.26\linewidth}}
+\toprule
+\textbf{Mode} & \textbf{Behavior} & \textbf{Best use} \\
+\midrule
+Clean baseline mode & Select the detector with highest validation AUROC. & Stable validation-to-test transfer \\
+Shift-aware stack mode & Fit a regularized rank-normalized stacker on validation data and apply it to test ranks. & Stale validation under score shift or degradation \\
+Fallback mode & Use rank-mean or abstain when channels are degenerate. & Unsafe or untrusted routing \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Detector Zoo and Router Features}
+
+\begin{table}[H]
+\centering
+\caption{Detector zoo. Current archive uses the tabular/cyber/fraud/image/text subsets; the remaining families are thesis expansion targets.}
+\label{tab:zoo}
+\small
+\begin{tabular}{L{0.22\linewidth}L{0.62\linewidth}}
+\toprule
+\textbf{Domain} & \textbf{Experts} \\
+\midrule
+Tabular & ECOD, COPOD, Isolation Forest, LOF, KNN, OCSVM \\
+Cyber/fraud & One-class and density detectors over transaction or network features \\
+Image-OOD & Feature-space anomaly detectors over CNN representations \\
+Text & Feature-space anomaly detectors over sentence/document embeddings \\
+Time series & Matrix profile, forecasting residual, reconstruction, and sequence models \\
+Industrial vision & PatchCore, reverse-distillation, EfficientAD-style experts \\
+Multimodal/3D & RGB, depth, point-cloud, SAR/CW-style multimodal fusions \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{table}[H]
+\centering
+\caption{Router feature families.}
+\label{tab:feat}
+\small
+\begin{tabular}{L{0.22\linewidth}L{0.50\linewidth}L{0.18\linewidth}}
+\toprule
+\textbf{Group} & \textbf{Examples} & \textbf{Labels} \\
+\midrule
+Validation reliability & validation AUROC, spread, confidence, inversion flags & validation only \\
+Score geometry & entropy, sharpness, tail mass, saturation, rank dispersion & no labels \\
+Disagreement & inter-expert rank and score disagreement & no labels \\
+Shift & validation-to-test KS drift, score distribution drift & no test labels \\
+Dataset meta-features & sample count, dimension, anomaly rate on validation & validation only \\
+Calibration & ECE proxy, future Brier/NLL after fitted calibration & validation only \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\input{ELARA_U_ALGORITHMS_AND_THEOREMS.tex}
+
+\section{Theory Stack}
+\label{sec:theory-intro}
+
+The theory stack is not a proof that \systemu{} is universal SOTA. It is a proof
+of when the claim is possible and when it is structurally impossible. The key
+message is:
+\[
+\text{ELARA-U helps when stale-validation regret } \Delta \text{ exceeds router prediction error } 2\eta.
+\]
+If validation and deployment detector rankings remain stable, auto-selection is
+already near-oracle. If deployment shift changes detector ranking and the router
+can predict that change from validation-only and unlabeled shift evidence, routing
+can reduce regret.
+
+\input{ELARA_U_THEORY_MAIN.tex}
+
+\section{Benchmark Suite and Universal Evidence Contract}
+
+\gateu{} is the evidence contract for the new thesis. It is broader than the old
+clean-transfer gate and does not require a single method to be best on every
+task. Instead, it asks whether the router reduces rank and regret across a
+frozen task suite while avoiding hidden test-label tuning.
+
+\begin{table}[H]
+\centering
+\caption{Universal Evidence Contract.}
+\label{tab:contract}
+\small
+\begin{tabular}{L{0.34\linewidth}L{0.44\linewidth}L{0.14\linewidth}}
+\toprule
+\textbf{Endpoint} & \textbf{Pass condition} & \textbf{Current status} \\
+\midrule
+Average rank & Router mean rank below auto-select and best fixed detector with paired CI excluding zero. & Supported in stress archive \\
+Mean regret & Router regret below auto-select and best fixed detector. & Supported in stress archive \\
+Negative-transfer rate & Router negative-transfer rate below safe reference or auto-select. & Partially supported \\
+Family robustness & Gains on multiple families, not only one category. & Partial \\
+Calibration & ECE/Brier/NLL improve after a fitted calibration layer. & Pending \\
+No test-label tuning & Routing decisions use validation labels and unlabeled test scores only. & Audited in code path \\
+External seal & At least one frozen external/leaderboard-style benchmark. & Pending \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{table}[H]
+\centering
+\caption{Current and planned benchmark coverage.}
+\label{tab:manifest}
+\small
+\begin{tabular}{L{0.20\linewidth}L{0.48\linewidth}L{0.22\linewidth}}
+\toprule
+\textbf{Family} & \textbf{Datasets / tasks} & \textbf{Status} \\
+\midrule
+Tabular & ADBench-style datasets and online shoppers & Current archive \\
+Cyber & UNSW-NB15 full and attack-family tasks & Current archive \\
+Fraud & Credit-card fraud task & Current archive, underpowered \\
+Image-OOD & CIFAR10, FashionMNIST, SVHN, MNIST-C, MVTec-AD feature tasks & Current archive \\
+Text & 20News, AGNews, Amazon, IMDB, Yelp feature tasks & Current archive \\
+Industrial vision v2 & MVTec AD 2 and related real industrial benchmarks & Planned \\
+Time series & TSB-AD and native temporal anomaly suites & Planned \\
+Multimodal/3D & Real-IAD D3, MVTec 3D-AD, 3D-ADAM, MulSen & Planned integration \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\section{Experimental Evaluation}
+
+The canonical archive contains $123$ tasks across five families. The verified
+headline (Table~\ref{tab:main}, \texttt{honest\_benchmark.json}) is on the
+\emph{clean} benchmark: an earlier evaluator injected a constant score offset as a
+``stress'' test, but a constant offset is AUROC-invariant (it preserves every
+detector's ranking), so it did not materially change the result---clean and
+``degraded'' numbers coincide. We therefore report the clean benchmark, where the
+comparison is honest and unconfounded: \systemu{} Stack versus validation-AUROC
+auto-selection versus fixed detectors.
+
+\subsection{Headline Result}\label{sec:headline}
+
+On the clean 123-task benchmark, the rank-normalized logistic stack is the strongest
+non-oracle strategy and even exceeds the best-single-detector oracle (fusion beats
+selection):
+\begin{align*}
+\text{Stack: } &\text{rank}=2.53, & \text{AUROC}&=0.784, & \text{ECE}&=0.271,\\
+\text{Auto-select: } &\text{rank}=3.38, & \text{AUROC}&=0.748, & \text{ECE}&=0.393.
+\end{align*}
+The paired bootstrap over 123 tasks gives Stack $-$ auto-select $=+0.036$ AUROC
+(95\% CI $[0.023,0.050]$), Stack $-$ best fixed $=+0.075$ ($[0.052,0.101]$), and
+auto-select $-$ best fixed $=+0.040$ ($[0.023,0.061]$); all exclude zero. This
+answers RQ1 and RQ2 affirmatively.
+
+\subsection{Interpretation: RQ3 resolved (negative)}
+
+The decisive question is RQ3: does the gain come from \emph{reliability/drift}
+modeling, or from plain stacking? The verified ablations (Table~\ref{tab:ablation})
+answer it: a reliability gate on the stack significantly \emph{hurts} ($-0.037$ AUROC,
+$[-0.050,-0.026]$); a learned router with the full reliability battery is no better
+than the same router without it (i.i.d.\ $+0.001$, uniform shift $+0.002$, heterogeneous
+missingness $+0.015$; all CIs cross zero) and worse than plain auto-select on i.i.d.\
+data. Across two router designs and three deployment regimes, reliability features
+carry no significant signal beyond validation quality and detector identity.
+
+The honest conclusion is therefore precise: \emph{the universal-routing gain is real
+but comes from rank-normalized stacking, not from reliability-aware routing.} The next
+subsection explains \emph{why} reliability fails here, and Section~\ref{sec:multimodal}
+pre-registers the one regime where it should structurally succeed.
+
+\subsection{Mechanism: reliability needs an independent clean channel}\label{sec:mechanism}
+
+Why does a structurally reasonable idea fail? A controlled simulation isolates the
+single deciding variable: whether a channel can fail independently while the others
+stay clean. In a \textbf{SHARED} regime all channels weaken together (the
+single-modality analogue---one input feeds every detector); in an \textbf{INDEPENDENT}
+regime one channel loses its signal while the rest stay clean (genuine multimodal).
+The reliability gate, auto-select, and the no-test-time ablation are identical across
+regimes.
+
+\begin{table}[H]\centering
+\caption{Mechanism simulation (300 trials/regime, paired bootstrap). Reliability gating
+helps iff a channel fails independently.}
+\label{tab:mechanism}\footnotesize
+\begin{tabular}{lccc}
+\toprule
+\textbf{Regime} & \relg{} $-$ mean & \relg{} $-$ auto-select & \relg{} $-$ ablation \\
+\midrule
+SHARED (all weaken together) & $-0.016$ (ns) & $+0.081$ & $-0.019$ (ns) \\
+INDEPENDENT (one fails, rest clean) & $+0.026$ \checkmark & $+0.144$ \checkmark & $+0.024$ \checkmark \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Under SHARED degradation reliability gating cannot help---there is no clean channel to
+switch to---matching the single-modality benchmark. Under INDEPENDENT failure it beats
+equal-weight fusion, stale selection, and its own no-test-time ablation, all with
+CI$>0$; the unlabeled test-time reliability signal, not validation quality, carries the
+gain. Single-modality detectors share one input, so deployment degradation is shared and
+the enabling condition is violated. This is exactly the antecedent of the
+independent-failure theorem (Sec.~\ref{sec:theory}): the negative result is
+theory-consistent, not a refutation of reliability gating in general.
+
+\subsection{Honest boundary}
+
+The result is not a sealed universal SOTA claim, for three reasons. First, the
+positive (stacking) and the negative (reliability) are established on single-modality
+feature-vector tasks; no industrial-vision or time-series claim is made. Second, the
+mechanism is a controlled simulation, not real-data evidence---hence the
+pre-registration in Section~\ref{sec:multimodal}. Third, some families remain
+underpowered (fraud $n{=}1$) or pending (natural multimodal, sealed industrial holdouts).
+
+\input{ELARA_U_RESULT_SCAFFOLD.tex}
+
+\section{Validity and Leakage Audit}
+
+The paper must be strict about what information the router may use. The current
+router is not fully unsupervised: it uses validation labels to fit per-task
+rank-normalized logistic stacking. That is acceptable if the benchmark contract
+states it clearly. It is not acceptable to describe the router as label-free.
+
+\begin{table}[H]
+\centering
+\caption{Leakage and validity audit.}
+\label{tab:leakage}
+\small
+\begin{tabular}{L{0.26\linewidth}L{0.42\linewidth}L{0.22\linewidth}}
+\toprule
+\textbf{Risk} & \textbf{Current control} & \textbf{Remaining work} \\
+\midrule
+Test-label routing & Routing uses validation labels and unlabeled test scores; test labels score only after routing. & Add automated assertions around every router path \\
+Opened data & Current archive is development evidence. & Freeze new external holdouts before scoring \\
+Synthetic degradation & Stress benchmark is useful but not natural evidence. & Add natural time, sensor, and domain-shift benchmarks \\
+Overfitting to families & Leave-family-out is used, but only five families exist. & Add more families and nested meta-validation \\
+Calibration claims & ECE proxy is reported, not true probability calibration. & Fit calibrator and report Brier/NLL \\
+Ablation weakness & Reliability/drift ablations are currently not decisive. & Redesign features or narrow the claim to rank stacking \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\section{Pre-registered Multimodal Test}\label{sec:multimodal}
+
+The mechanism (Sec.~\ref{sec:mechanism}) and the independent-failure theorem
+(Sec.~\ref{sec:theory}) make a falsifiable prediction for genuine multimodal anomaly
+detection (RGB $+$ 3D), where one modality can fail independently. We pre-register the
+test with a \emph{frozen decision rule and no post-hoc retuning}. Under independent
+per-modality deployment degradation (one modality degrades at test; the other and the
+validation split stay clean), reliability-gated fusion must beat:
+\begin{itemize}
+\item[\textbf{H1}] equal-weight fusion, paired-bootstrap CI$>0$;
+\item[\textbf{H2}] stale validation-AUROC selection, CI$>0$;
+\item[\textbf{H3}] its own no-test-time-reliability ablation, CI$>0$ (the test-time
+reliability signal, not validation quality, must carry the gain).
+\end{itemize}
+The statistical unit is (category $\times$ degradation-seed); MVTec-3D's ten categories
+alone are too few. \textbf{Decision rule:} all of H1--H3 significant $\Rightarrow$ a real,
+scoped novel-method claim (reliability gating recovers anomaly detection under
+per-modality deployment failure). Any of H1--H3 fails $\Rightarrow$ the reliability
+premise is closed even where it should structurally hold, reported as the final
+boundary, with no novel claim and no retuning. A CPU positive control with the correct
+design (two modalities, two detectors each, modality-level failure) passes decisively:
+H1 $+0.094$, H2 $+0.264$, H3 $+0.097$, all CI$>0$. The harness
+(\path{src/scripts/elara_u/multimodal_reliability_experiment.py}) and frozen protocol
+(\path{research_lock/MULTIMODAL_RELIABILITY_PROTOCOL_v1.md}) are released; the real run
+uses MVTec-3D / Real-IAD on GPU.
+
+\section{Why This Can Become SOTA-Level}
+
+The SOTA-level potential is not the claim that \systemu{} is already best
+everywhere. The positive contribution is a strong, under-reported universal stacking
+baseline; the scientific contribution is the honest boundary---\emph{where}
+reliability-aware routing helps and where it cannot, with a mechanism and a
+pre-registered test (Sec.~\ref{sec:multimodal}) for the one regime that satisfies the
+condition. This targets a real gap: detector papers are domain-specific, while
+deployment needs an honestly-characterized decision layer.
+
+\begin{table}[H]
+\centering
+\caption{Path from current thesis evidence to SOTA-level evidence.}
+\label{tab:sota-path}
+\small
+\begin{tabular}{L{0.22\linewidth}L{0.46\linewidth}L{0.22\linewidth}}
+\toprule
+\textbf{Requirement} & \textbf{What must be added} & \textbf{Why it matters} \\
+\midrule
+Natural shift & Time-based fraud, native cyber drift, real sensor degradation, industrial test splits. & Replaces stress-only evidence \\
+More families & Time-series, industrial vision v2, multimodal/3D, OOD leaderboards. & Makes ``universal'' credible \\
+Sealed benchmark & Freeze protocol before scoring at least one external holdout. & Prevents opened-test selection \\
+Multimodal reliability test & Run the pre-registered RGB$+$3D test (Sec.~\ref{sec:multimodal}); single-modality reliability ablations are done and negative. & The only remaining path to a novelty beyond stacking \\
+Calibration layer & Report Brier, NLL, ECE, abstention curves. & Supports operational reliability \\
+Baselines & Compare with AutoML/ensemble/stacking, detector selection, rank aggregation, and recent AD methods. & Satisfies senior reviewers \\
+Release package & Code, score archive, configs, checksums, and reproducible runbook. & Makes the paper verifiable \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\section{Expanded Experimental Plan}
+
+The next experimental stage should turn the current development stress result
+into a sealed universal benchmark.
+
+\begin{longtable}{L{0.18\linewidth}L{0.39\linewidth}L{0.31\linewidth}}
+\caption{Recommended next experiments for the thesis.}\label{tab:next-exp}\\
+\toprule
+\textbf{Experiment} & \textbf{Design} & \textbf{Pass/fail rule} \\
+\midrule
+\endfirsthead
+\toprule
+\textbf{Experiment} & \textbf{Design} & \textbf{Pass/fail rule} \\
+\midrule
+\endhead
+Clean archive re-run & Evaluate auto-select, rank-mean, fixed detectors, and stacker without degradation. & Expect tie or modest gains; do not require dominance \\
+Natural temporal split & Fraud/cyber/time-series train on earlier data, test on later data. & Rank delta vs auto-select CI below zero \\
+Industrial natural shift & Real-IAD D3 / MVTec variants with natural acquisition degradation. & Beat auto-select and rank-mean without synthetic corruption \\
+Multimodal RGB$+$3D (pre-registered) & Independent per-modality degradation; reliability-gated fusion vs mean, auto-select, ablation (Sec.~\ref{sec:multimodal}). & H1--H3 all CI$>$0 $\Rightarrow$ scoped novelty; else closed (no retuning) \\
+Calibration experiment & Fit calibration on validation only; test on held-out tasks. & Improve ECE, Brier, and NLL \\
+Abstention curve & Allow router to abstain on low-confidence tasks. & Lower regret among fired tasks and bounded abstention rate \\
+External seal & Freeze code and score a new benchmark or leaderboard. & No post-hoc tuning; CI must support the main claim \\
+\bottomrule
+\end{longtable}
+
+\section{Production and Release Boundary}
+
+Scientific readiness and production readiness are separate. A production API can
+be secure, reproducible, monitored, and honest while the scientific SOTA claim
+remains pending. The release should therefore present two statuses:
+
+\begin{table}[H]
+\centering
+\caption{Release boundary.}
+\label{tab:release-boundary}
+\small
+\begin{tabular}{L{0.24\linewidth}L{0.44\linewidth}L{0.22\linewidth}}
+\toprule
+\textbf{Status} & \textbf{Meaning} & \textbf{Current position} \\
+\midrule
+Operational readiness & API/runtime is secure, authenticated, monitored, reproducible, and honest about model availability. & Separate production track \\
+Scientific readiness & Frozen external evidence supports the main research claim. & Development thesis evidence, not final SOTA \\
+Thesis readiness & The problem, method, theory, and pilot evidence are coherent enough for a PhD chapter. & Strong if boundaries remain explicit \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\section{Reproducibility}
+
+\begin{table}[H]
+\centering
+\caption{Current reproducibility map.}
+\label{tab:repro-map}
+\small
+\begin{tabular}{L{0.33\linewidth}L{0.52\linewidth}}
+\toprule
+\textbf{Artifact} & \textbf{Path} \\
+\midrule
+Score archive builder & \path{src/scripts/elara_u/build_score_archive.py} \\
+Universal contract evaluator & \path{src/scripts/elara_u/evaluate_universal_contract.py} \\
+Stacker ablation runner & \path{src/scripts/elara_u/run_stacker_ablations.py} \\
+Heterogeneous degradation ablation & \path{src/scripts/elara_u/heterogeneous_degradation_ablation.py} \\
+Router implementation & \path{src/uais/elara_u/router.py} \\
+Metrics implementation & \path{src/uais/elara_u/contract.py} \\
+Canonical results & \path{experiments/elara_u/results.json} \\
+Generated result tables & \path{docs/research/ELARA_U_RESULT_TABLES.tex} \\
+Generated figures & \path{docs/research/figures/} \\
+Protocol & \path{research_lock/GATE_U_CROSS_DOMAIN_PROTOCOL_v1.yaml} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\section{Conclusion}
+
+\systemu{} is now best framed as a universal anomaly meta-routing thesis rather
+than a clean-transfer superiority paper. The current result is promising:
+rank-normalized stacking substantially improves average rank and regret under a
+development stress benchmark where validation metrics become stale. The honest
+scientific boundary is equally clear: the current evidence is not enough for a
+sealed universal SOTA claim, and the reliability/drift novelty must be
+strengthened beyond plain stacking. The next phase should therefore prioritize
+natural shift, sealed holdouts, stronger ablations, calibrated abstention, and a
+clean reproducibility package.
+
+\appendix
+\input{ELARA_U_THEORY_APPENDIX.tex}
+
+\begin{thebibliography}{9}
+\bibitem{breunig2000lof}
+M. M. Breunig, H.-P. Kriegel, R. T. Ng, and J. Sander, ``LOF: Identifying density-based local outliers,'' in \emph{SIGMOD}, 2000.
+
+\bibitem{liu2008iforest}
+F. T. Liu, K. M. Ting, and Z.-H. Zhou, ``Isolation forest,'' in \emph{ICDM}, 2008.
+
+\bibitem{bergman2020classification}
+L. Bergman and Y. Hoshen, ``Classification-based anomaly detection for general data,'' in \emph{ICLR}, 2020.
+
+\bibitem{roth2022patchcore}
+K. Roth et al., ``Towards total recall in industrial anomaly detection,'' in \emph{CVPR}, 2022.
+
+\bibitem{hendrycks2017baseline}
+D. Hendrycks and K. Gimpel, ``A baseline for detecting misclassified and out-of-distribution examples in neural networks,'' in \emph{ICLR}, 2017.
+
+\bibitem{guo2017calibration}
+C. Guo, G. Pleiss, Y. Sun, and K. Q. Weinberger, ``On calibration of modern neural networks,'' in \emph{ICML}, 2017.
+\end{thebibliography}
+
+\end{document}
