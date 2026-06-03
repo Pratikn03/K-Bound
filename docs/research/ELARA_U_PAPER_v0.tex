@@ -61,19 +61,26 @@ therefore claim a cross-domain benchmark result and a negative ablation, not a
 reliability-routing method win: stacking beats per-dataset selection across
 heterogeneous anomaly families, while the routing machinery is inert \emph{for single-input meta-routing}.
 \textbf{(iii) The exception that proves the rule:} in true multimodal detection
-where modalities fail \emph{independently} (Real-IAD-D3; pre-registered D23),
+where modalities fail \emph{independently} (pre-registered D23, validated on
+\emph{two} real datasets --- Real-IAD-D3, 15 categories, and MVTec-3D, 7 categories),
 reliability routing decisively wins --- failing the deployment-best modality at
-test, a drift-aware gate beats equal-weight fusion ($+0.22$), stale selection
-($+0.33$), and validation-only fusion ($+0.20$; all CIs exclude zero) --- while
-inert when nothing fails. A sixth family (time-series, NAB) shows the stacking
-advantage is marginal there ($+0.008$, n.s.), bounding the positive to
-feature-vector families. The precise claim: \emph{reliability routing helps iff
-modalities can fail independently; otherwise plain stacking suffices}.
+test, a drift-aware gate beats equal-weight fusion ($+0.24$/$+0.21$), stale selection
+($+0.39$/$+0.32$), and validation-only fusion ($+0.25$/$+0.21$; all CIs exclude zero
+on both) --- while inert when nothing fails. The advantage has a clear boundary, mapped on two fronts:
+two time-series families (NAB $+0.008$; SMD multivariate $+0.011$; both n.s.) and a
+hard near-chance fraud panel (BAF, $6$ variants, base detectors $\approx\!0.6$ AUROC;
+$+0.011$, n.s.) show stacking is marginal where the base detectors carry little
+individual signal --- it neither manufactures signal nor reliably hurts. The precise
+claim: \emph{reliability routing helps iff modalities can fail independently;
+otherwise plain stacking suffices where detectors are individually informative}.
 The stacking result is robust: random-forest and gradient-boosting stackers match
 logistic stacking and also beat auto-select (all CIs exclude zero), while a simple
 average \emph{loses} to selection ($-0.039$)---the gain is learned combination,
 not averaging. A validation-only isotonic layer makes the stack well-calibrated
 (ECE $0.39\!\to\!0.02$, Brier $0.25\!\to\!0.07$, NLL $0.74\!\to\!0.28$).
+Finally, on a \emph{sealed} one-shot holdout of $74$ untouched tasks under a
+different feature extractor (ViT/RoBERTa; protocol frozen before scoring), the
+stacking advantage replicates ($+0.016$ vs auto-select, CI $[+0.004,+0.032]$).
 \end{abstract}
 
 \section{Introduction}
@@ -278,16 +285,50 @@ reliability gate ($-0.037$ AUROC, $p_{\mathrm{Holm}}{<}10^{-8}$).
 
 \section{Strengthening the Stacking Result}
 \label{sec:strength}
+We harden the main result against six reviewer concerns. \textbf{(i) Stacker
+family} (Table~\ref{tab:stackers}): random-forest and gradient-boosting stackers
+match logistic stacking and all beat auto-select (CIs exclude zero), while a simple
+average \emph{loses} --- the gain is learned combination, not averaging. A
+\emph{learned} meta-selector in the spirit of MetaOD~\cite{metaod} (random forest
+over $28$ validation-only meta-features incl.\ landmarkers, leave-one-task-out) does
+\emph{not} rescue selection: it scores $0.737$, \emph{below} naive auto-select
+($-0.011$, CI $[-0.017,-0.006]$), and stacking beats it by $+0.044$ (CI
+$[+0.030,+0.060]$). The winning move is combining, not selecting --- even
+cleverly.
+\textbf{(ii) Detector-zoo strength:} adding a deep detector (DeepSVDD) to the six
+classical detectors preserves the win (stack $-$ auto-select $+0.038$, CI
+$[+0.025,+0.051]$); DeepSVDD is not stronger than the classical detectors here
+(mean AUROC $0.65$), consistent with ADBench, so it does not trivialise routing.
+\textbf{(iii) Calibration} (Table~\ref{tab:calib2}): a validation-only isotonic
+layer yields well-calibrated probabilities. \textbf{(iv) Sealed external
+replication} (Table~\ref{tab:sealed}): the method, baselines, and pass condition
+were frozen (protocol D24) \emph{before} scoring $74$ untouched ADBench tasks under
+a \emph{different feature extractor} than development (ViT/RoBERTa vs.\
+ResNet18/BERT). On this one-shot sealed holdout the stack still beats auto-select
+($+0.016$, CI $[+0.004,+0.032]$) and the best fixed detector ($+0.043$, CI
+$[+0.022,+0.073]$), so the effect replicates under representation shift rather than
+being an artefact of the development split. \textbf{(vi) Fraud-family power (D26):}
+the fraud family was $n{=}1$ in leave-family-out; we expand it with the BAF suite
+\cite{baf} ($6$ bias-controlled variants, a second fraud source, $n{=}7$ total).
+This is an honest \emph{boundary}: BAF's base detectors are near-chance ($\approx\!0.6$
+AUROC), and there stacking is \emph{not} significantly better than selection
+($+0.011$, CI $[-0.066,+0.064]$) nor than the best fixed detector ($-0.033$, CI
+$[-0.098,+0.022]$), and on one variant the per-task stack collapses below chance.
+Stacking helps where the base detectors are individually informative; on near-chance
+fraud it neither manufactures signal nor systematically hurts.
+
 \begin{table}[t]\centering
 \caption{Stacking beats selection across stacker families (123 tasks, paired
 bootstrap vs auto-select). RF/GBM match logistic (differences n.s.); a simple
-average \emph{loses} to selection, so the gain is learned combination.}
+average \emph{loses} to selection; and a learned MetaOD-style meta-selector is
+\emph{below} naive auto-select --- so the gain is learned combination, not selection.}
 \label{tab:stackers}\footnotesize
 \begin{tabular}{lccc}
 \toprule
 \textbf{Method} & mean AUROC & $\Delta$ vs auto-select & 95\% CI \\
 \midrule
 Auto-select & 0.748 & --- & --- \\
+Meta-select (MetaOD-style, learned) & 0.737 & $-0.011$ & $[-0.017,-0.006]$ \\
 Simple average & 0.709 & $-0.039$ & $[-0.048,-0.031]$ \\
 Stack (logistic) & 0.781 & $+0.033$ & $[+0.021,+0.047]$ \\
 Stack (random forest) & 0.770 & $+0.022$ & $[+0.003,+0.041]$ \\
@@ -311,6 +352,26 @@ Stack + isotonic & \textbf{0.024} & \textbf{0.069} & \textbf{0.276} \\
 \end{tabular}
 \end{table}
 
+\begin{table}[t]\centering
+\caption{Sealed external holdout (D24, \textbf{one-shot}): method frozen before
+scoring $74$ untouched ADBench tasks under a different feature extractor (ViT/RoBERTa)
+than development. Stacking beats both auto-select and the best fixed detector; both
+CIs exclude zero.}
+\label{tab:sealed}\footnotesize
+\begin{tabular}{lcc}
+\toprule
+\textbf{Method} & mean AUROC & $\Delta$ (95\% CI) \\
+\midrule
+Best fixed detector (KNN) & 0.768 & --- \\
+Rank-mean & 0.762 & --- \\
+Simple average & 0.764 & --- \\
+Auto-select & 0.795 & --- \\
+\textbf{Stack (logistic)} & \textbf{0.811} & vs auto $+0.016\,[+0.004,+0.032]$ \\
+ & & vs best $+0.043\,[+0.022,+0.073]$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
 \section{Multimodal Independent-Modality Failure (D23)}
 \label{sec:d23}
 Every regime where reliability routing was inert used \emph{single-input}
@@ -325,20 +386,21 @@ precise claim: \emph{reliability routing helps iff modalities can fail
 independently}.
 
 \begin{table}[t]\centering
-\caption{D23 multimodal reliability (9 Real-IAD-D3 categories, RGB/PS/XYZ). Mean
-AUROC by regime; hypotheses are paired bootstrap over categories in the
-modality-failure regime.}
+\caption{D23 multimodal reliability on \emph{two} real datasets (Real-IAD-D3, 15
+categories; MVTec-3D, 7 categories). Mean AUROC in the modality-failure regime; the
+gate is inert in the clean regime (equals validation-only fusion) on both. Hypotheses
+are paired bootstrap over categories.}
 \label{tab:d23}\footnotesize
 \begin{tabular}{lcc}
 \toprule
-\textbf{Method} & clean & modality-failure \\
+\textbf{Method (failure regime)} & Real-IAD-D3 & MVTec-3D \\
 \midrule
-Equal-weight (CW) & 0.745 & 0.494 \\
-Stale auto-select & 0.939 & 0.381 \\
-Validation-only fusion & 0.901 & 0.517 \\
-\textbf{Reliability gate} & \textbf{0.901} & \textbf{0.715} \\
+Equal-weight (CW) & 0.526 & 0.586 \\
+Stale auto-select & 0.381 & 0.475 \\
+Validation-only fusion & 0.519 & 0.581 \\
+\textbf{Reliability gate} & \textbf{0.767} & \textbf{0.792} \\
 \midrule
-\multicolumn{3}{p{0.92\linewidth}}{H1 vs equal-weight $+0.221$ $[0.090,0.398]$; H2 vs stale-select $+0.334$ $[0.177,0.487]$; H3 vs validation-only fusion $+0.198$ $[0.090,0.305]$ --- all 95\% CIs exclude zero.}\\
+\multicolumn{3}{p{0.92\linewidth}}{\emph{Real-IAD-D3:} H1 vs equal-weight $+0.241$ $[0.152,0.348]$; H2 vs stale-select $+0.386$ $[0.281,0.483]$; H3 vs validation-only $+0.248$ $[0.168,0.323]$. \emph{MVTec-3D:} H1 $+0.207$ $[0.172,0.242]$; H2 $+0.317$ $[0.240,0.405]$; H3 $+0.211$ $[0.180,0.244]$. All 95\% CIs exclude zero.}\\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -346,7 +408,7 @@ Validation-only fusion & 0.901 & 0.517 \\
 \section{Scope, Limitations, and Honest Boundaries}
 This is a pilot. We do not claim universal superiority or per-dataset SOTA; the
 strict clean-transfer gate of the source system remains closed by proof (T9) and
-is not relitigated here. We note that while \systemu{} significantly improves the mean rank on cyber, tabular, and image-OOD families, the rank-gain bootstrap interval on text tasks is directionally positive but does not exclude zero, and fraud is underpowered with $n=1$ in the leave-family-out cross-validation. Furthermore, beyond synthetic degradation we ran a sealed natural temporal-shift benchmark (D22, Results): there too plain stacking wins and the drift-aware router is worse (directionally; the $n{=}7$ negative does not survive Holm correction, while the 123-task stack-gate negative does), so the reliability/drift machinery does not help even under natural shift; native OOD and industrial sensor-drift families remain future work. Calibration is now reported with fitted Brier and NLL (Table~\ref{tab:calib}, reliability diagram Fig.~\ref{fig:reliability}); larger sealed natural-shift suites remain future work.
+is not relitigated here. We note that while \systemu{} significantly improves the mean rank on cyber, tabular, and image-OOD families, the rank-gain bootstrap interval on text tasks is directionally positive but does not exclude zero. The fraud family, previously $n=1$, is now expanded to $n=7$ with the BAF suite~\cite{baf} (Strengthening \S vi); on that hard near-chance panel stacking is \emph{not} significantly better than selection --- an honest boundary, not a win. Furthermore, beyond synthetic degradation we ran a sealed natural temporal-shift benchmark (D22, Results): there too plain stacking wins and the drift-aware router is worse (directionally; the $n{=}7$ negative does not survive Holm correction, while the 123-task stack-gate negative does), so the reliability/drift machinery does not help even under natural shift; native OOD and industrial sensor-drift families remain future work. Calibration is now reported with fitted Brier and NLL (Table~\ref{tab:calib}, reliability diagram Fig.~\ref{fig:reliability}); larger sealed natural-shift suites remain future work.
 
 \section{Reproducibility}
 Router and evaluation: \texttt{src/scripts/elara\_u/gate\_u\_seed\_eval.py};
@@ -365,6 +427,8 @@ results: \texttt{experiments/elara\_u/}. No test labels enter router fitting
 \bibitem{selective} Y.~Geifman and R.~El-Yaniv, ``Selective Classification for Deep Neural Networks,'' \emph{NeurIPS}, 2017.
 \bibitem{isotonic} B.~Zadrozny and C.~Elkan, ``Transforming Classifier Scores into Accurate Multiclass Probability Estimates,'' \emph{KDD}, 2002.
 \bibitem{calibration} C.~Guo, G.~Pleiss, Y.~Sun, and K.~Q.~Weinberger, ``On Calibration of Modern Neural Networks,'' \emph{ICML}, 2017.
+\bibitem{metaod} Y.~Zhao, R.~Rossi, and L.~Akoglu, ``Automating Outlier Detection via Meta-Learning,'' \emph{NeurIPS}, 2021.
+\bibitem{baf} S.~Jesus, J.~Pombal, D.~Alves, et al., ``Turning the Tables: Biased, Imbalanced, Dynamic Tabular Datasets for ML Evaluation (Bank Account Fraud),'' \emph{NeurIPS Datasets and Benchmarks}, 2022.
 \bibitem{patchcore} K.~Roth, L.~Pemula, J.~Zepeda, B.~Sch\"olkopf, T.~Brox, and P.~Gehler, ``Towards Total Recall in Industrial Anomaly Detection (PatchCore),'' \emph{CVPR}, 2022.
 \bibitem{realiad} C.~Wang et al., ``Real-IAD: A Real-World Multi-View Benchmark for Industrial Anomaly Detection,'' \emph{CVPR}, 2024.
 \bibitem{openood} J.~Yang et al., ``OpenOOD: Benchmarking Generalized Out-of-Distribution Detection,'' \emph{NeurIPS Datasets and Benchmarks}, 2022.

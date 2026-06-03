@@ -39,7 +39,7 @@
 \begin{titlepage}
 \centering
 \vspace*{1.7cm}
-{\huge\bfseries ELARA-U: A Cross-Domain Anomaly Meta-Routing Benchmark\\ ---Stacking Beats Selection; Reliability Routing Does Not\par}
+{\huge\bfseries ELARA-U: A Cross-Domain Anomaly Meta-Routing Benchmark\\ ---Stacking Beats Selection; Reliability Routing Helps Only Under Independent Modality Failure\par}
 \vspace{1.4cm}
 {\large\bfseries Pratik Niroula}\par
 \vspace{0.4cm}
@@ -68,6 +68,13 @@ drift router is directionally worse ($-0.050$ AUROC, raw CI excl.\ $0$, but $n{=
 not survive Holm). The honest contribution is a cross-domain benchmark with a strong
 stacking baseline and a Holm-robust negative result for reliability-aware
 routing---not a sealed universal SOTA claim.
+\textbf{The decisive update:} in true multimodal detection with independent
+modality failure (pre-registered D23, validated on \emph{two} real datasets ---
+Real-IAD-D3 (15 categories) and MVTec-3D (7 categories)), reliability routing wins
+(beats equal-weight $+0.24$/$+0.21$, stale-select $+0.39$/$+0.32$, validation-only
+fusion $+0.25$/$+0.21$; all CIs exclude zero on both), while remaining inert when no
+modality fails. The precise claim is therefore \emph{reliability routing helps iff
+modalities can fail independently}; for single-input meta-routing plain stacking suffices.
 \end{minipage}
 \end{titlepage}
 
@@ -134,7 +141,7 @@ or one clean-transfer gate should win everywhere.
 \midrule
 RQ1 & Can a cross-domain router outperform the best fixed detector family over many anomaly tasks? & Yes (clean 123-task benchmark, CI$>$0) \\
 RQ2 & Can the router (stack) outperform validation-AUROC auto-selection? & Yes ($+0.036$ AUROC, CI$>$0) \\
-RQ3 & Does reliability/drift modeling, rather than plain stacking, carry the improvement? & \textbf{Resolved: NO} (3 regimes, 2 designs; Table~\ref{tab:ablation}) \\
+RQ3 & Does reliability/drift modeling, rather than plain stacking, carry the improvement? & \textbf{NO single-input; YES multimodal} (3 single-input regimes vs D23, Table~\ref{tab:d23}) \\
 RQ4 & Can the same contract hold on natural, sealed, and external benchmarks (incl.\ multimodal)? & Pending; pre-registered (Sec.~\ref{sec:multimodal}) \\
 RQ5 & Can the router produce calibrated probabilities and safe abstentions suitable for operations? & Partially supported; calibration pending \\
 \bottomrule
@@ -200,6 +207,67 @@ Worst rank/regret & Worst observed task-level failure. & Lower \\
 \bottomrule
 \end{tabular}
 \end{table}
+
+\section{Related Work}
+\label{sec:related}
+
+\paragraph{Benchmarks and the no-free-lunch result.} A consistent finding across
+large anomaly-detection studies is that \emph{no single detector dominates}: ADBench
+\cite{adbench_th} evaluates 30 algorithms over 57 tabular, vision, and language
+feature sets and reports that the best method varies by dataset; PyOD~\cite{pyod_th}
+standardises the detector implementations we use. This per-dataset variability is the
+empirical premise of our work --- it is exactly what makes a routing/combination
+layer plausible --- and our 123-task suite is built from ADBench-style feature
+vectors across five families, extended here with time-series (NAB, SMD) and a sealed
+representation-shift holdout.
+
+\paragraph{Model and detector selection.} The natural response to no-free-lunch is to
+\emph{select} the right detector per dataset. MetaOD~\cite{metaod_th} learns this
+mapping from dataset meta-features via collaborative filtering; classical AutoML
+selectors and landmarker-based meta-learning follow the same template. The strong
+label-aware analogue is validation-AUROC auto-selection, which is our primary
+baseline. A central contribution of this chapter is the (perhaps surprising) negative
+result that selection --- even a learned MetaOD-style meta-selector --- is the
+\emph{wrong primitive}: it does not beat naive auto-select on our suite, and is itself
+beaten by stacking (Section~\ref{sec:strength}).
+
+\paragraph{Ensembles, fusion, and stacking.} An alternative to selection is to
+\emph{combine} detectors. Score normalisation and averaging, rank aggregation, and
+greedy ensemble selection are common in outlier-ensemble work; stacked generalisation
+\cite{wolpert_th} fits a meta-model over base-learner outputs. We find that a
+rank-normalised logistic stack is the strongest combiner in this family --- it beats
+selection with confidence intervals excluding zero, is robust to the stacker family
+(random forest, gradient boosting), and \emph{outperforms} the simple average, which
+itself loses to selection. The contribution is not a new combiner but a clean,
+hardened demonstration of \emph{when} combination beats selection across heterogeneous
+anomaly families.
+
+\paragraph{Distribution shift, drift, and selective prediction.} Test-time shift is
+classically detected with two-sample statistics such as Kolmogorov--Smirnov, and
+selective prediction / learning-to-abstain~\cite{geifman_th} motivates a fallback
+action when no expert is trustworthy. Our \emph{reliability} machinery (validation--test
+KS drift, calibration, inter-detector disagreement) is built from exactly these
+signals. Our honest finding is a boundary result: these signals do \emph{not} add
+value over plain stacking in single-input regimes, and help only when modalities can
+fail \emph{independently} (Section~\ref{sec:d23}).
+
+\paragraph{Calibration.} Beyond ranking quality, deployable detectors need calibrated
+scores. We report fitted Brier and negative log-likelihood under
+isotonic-regression calibration~\cite{guo2017calibration}, rather than a raw ECE proxy.
+
+\paragraph{Multimodal and industrial anomaly detection.} Industrial inspection
+provides genuinely multimodal data (RGB, photometric stereo, point cloud): PatchCore
+\cite{roth2022patchcore} and Real-IAD supply the detectors and co-observed modalities
+behind our independent-modality-failure study (D23), the one regime where reliability
+routing decisively wins. Deep one-class methods~\cite{bergman2020classification} and
+OOD baselines~\cite{hendrycks2017baseline} are included in or motivate our detector
+zoo and image-OOD family.
+
+\paragraph{Positioning.} In short, prior work establishes (i) that no detector is
+universal, and (ii) two competing remedies --- meta-selection and ensembling. This
+chapter adjudicates between them on a broad, pre-registered, leakage-audited suite and
+reaches a sharp conclusion: \emph{stacking beats selection; reliability routing helps
+only under independent modality failure}.
 
 \section{From the Old ELARA System to ELARA-U}
 
@@ -332,9 +400,9 @@ Average rank & Router mean rank below auto-select and best fixed detector with p
 Mean regret & Router regret below auto-select and best fixed detector. & Supported in stress archive \\
 Negative-transfer rate & Router negative-transfer rate below safe reference or auto-select. & Partially supported \\
 Family robustness & Gains on multiple families, not only one category. & Partial \\
-Calibration & ECE/Brier/NLL improve after a fitted calibration layer. & Pending \\
+Calibration & ECE/Brier/NLL improve after a fitted calibration layer. & Done (Table~\ref{tab:calib_th}) \\
 No test-label tuning & Routing decisions use validation labels and unlabeled test scores only. & Audited in code path \\
-External seal & At least one frozen external/leaderboard-style benchmark. & Pending \\
+External seal & At least one frozen external/leaderboard-style benchmark. & Done (D24, Table~\ref{tab:sealed_th}) \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -350,7 +418,7 @@ External seal & At least one frozen external/leaderboard-style benchmark. & Pend
 \midrule
 Tabular & ADBench-style datasets and online shoppers & Current archive \\
 Cyber & UNSW-NB15 full and attack-family tasks & Current archive \\
-Fraud & Credit-card fraud task & Current archive, underpowered \\
+Fraud & Credit-card $+$ BAF 6-variant panel ($n{=}7$) & Current archive; stacking n.s.\ on near-chance BAF (boundary, D26) \\
 Image-OOD & CIFAR10, FashionMNIST, SVHN, MNIST-C, MVTec-AD feature tasks & Current archive \\
 Text & 20News, AGNews, Amazon, IMDB, Yelp feature tasks & Current archive \\
 Industrial vision v2 & MVTec AD 2 and related real industrial benchmarks & Planned \\
@@ -442,11 +510,18 @@ theory-consistent, not a refutation of reliability gating in general.
 \subsection{Honest boundary}
 
 The result is not a sealed universal SOTA claim, for three reasons. First, the
-positive (stacking) and the negative (reliability) are established on single-modality
-feature-vector tasks; no industrial-vision or time-series claim is made. Second, the
-mechanism is a controlled simulation, not real-data evidence---hence the
-pre-registration in Section~\ref{sec:multimodal}. Third, some families remain
-underpowered (fraud $n{=}1$) or pending (natural multimodal, sealed industrial holdouts).
+significant stacking advantage is established on families with \emph{individually
+informative} base detectors (tabular, image-OOD, text, cyber); no industrial-vision
+or significant time-series claim is made, and on the near-chance BAF fraud panel
+(D26) stacking is explicitly not significant --- the win is bounded to where the zoo
+carries signal. Second, the multimodal reliability mechanism is now backed by real
+co-observed data (D23, Section~\ref{sec:multimodal}), not only the controlled
+simulation, and the stacking result replicates on a sealed representation-shift
+holdout (D24, Table~\ref{tab:sealed_th}); what remains is a \emph{fully independent}
+external corpus (distinct data source, not the same suite under a new extractor).
+Third, the fraud family is now $n{=}7$ (credit-card $+$ BAF) but the BAF result is a
+boundary, not a win, and sealed industrial 3D holdouts beyond Real-IAD-D3 remain
+pending.
 
 \input{ELARA_U_RESULT_SCAFFOLD.tex}
 
@@ -466,12 +541,12 @@ states it clearly. It is not acceptable to describe the router as label-free.
 \toprule
 \textbf{Risk} & \textbf{Current control} & \textbf{Remaining work} \\
 \midrule
-Test-label routing & Routing uses validation labels and unlabeled test scores; test labels score only after routing. & Add automated assertions around every router path \\
-Opened data & Current archive is development evidence. & Freeze new external holdouts before scoring \\
-Synthetic degradation & Stress benchmark is useful but not natural evidence. & Add natural time, sensor, and domain-shift benchmarks \\
+Test-label routing & Routing uses validation labels and unlabeled test scores; test labels score only after routing. & \textbf{Done}: executable no-test-label suite (\texttt{tests/elara\_u/test\_no\_test\_label\_leakage.py}; $6$ guards over stacking, router, and meta-selection paths) \\
+Opened data & Current archive is development evidence. & \textbf{Done}: sealed external holdout frozen \emph{before} scoring (D24, Table~\ref{tab:sealed_th}) \\
+Synthetic degradation & Stress benchmark is useful but not natural evidence. & \textbf{Partly done}: natural temporal shift (D22) and time-series (NAB, SMD) added; native sensor/domain shift remains \\
 Overfitting to families & Leave-family-out is used, but only five families exist. & Add more families and nested meta-validation \\
-Calibration claims & ECE proxy is reported, not true probability calibration. & Fit calibrator and report Brier/NLL \\
-Ablation weakness & Reliability/drift ablations are currently not decisive. & Redesign features or narrow the claim to rank stacking \\
+Calibration claims & ECE proxy is reported, not true probability calibration. & \textbf{Done}: isotonic calibrator fitted; Brier/NLL reported (Table~\ref{tab:calib_th}) \\
+Ablation weakness & Reliability/drift ablations are currently not decisive. & \textbf{Resolved}: claim narrowed to rank stacking; reliability validated only under independent multimodal failure (D23) \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -604,6 +679,154 @@ Protocol & \path{research_lock/GATE_U_CROSS_DOMAIN_PROTOCOL_v1.yaml} \\
 \end{tabular}
 \end{table}
 
+\section{Strengthening the Stacking Result}
+\label{sec:strength}
+Five reviewer-hardening checks confirm the main (single-input) result is robust:
+stacker-family invariance, a stronger \emph{learned} selection baseline,
+detector-zoo strength, calibration, and a sealed one-shot external replication.
+
+\begin{table}[H]\centering
+\caption{Stacking beats selection across stacker families (123 tasks; paired
+bootstrap vs auto-select). RF/GBM match logistic (n.s.); a simple average loses,
+so the gain is learned combination, not averaging.}
+\label{tab:stackers_th}\small
+\begin{tabular}{lccc}
+\toprule
+\textbf{Method} & mean AUROC & $\Delta$ vs auto-select & 95\% CI \\
+\midrule
+Auto-select & 0.748 & --- & --- \\
+Meta-select (MetaOD-style, learned) & 0.737 & $-0.011$ & $[-0.017,-0.006]$ \\
+Simple average & 0.709 & $-0.039$ & $[-0.048,-0.031]$ \\
+Stack (logistic) & 0.781 & $+0.033$ & $[+0.021,+0.047]$ \\
+Stack (random forest) & 0.770 & $+0.022$ & $[+0.003,+0.041]$ \\
+Stack (grad.\ boosting) & 0.774 & $+0.026$ & $[+0.009,+0.044]$ \\
+Stack ($+$ DeepSVDD in zoo) & 0.784 & $+0.038$ & $[+0.025,+0.051]$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{table}[H]\centering
+\caption{Calibration (lower better): a validation-only isotonic layer makes the
+stack well-calibrated, far better than auto-select.}
+\label{tab:calib_th}\small
+\begin{tabular}{lccc}
+\toprule
+\textbf{Method} & ECE & Brier & NLL \\
+\midrule
+Auto-select & 0.393 & 0.249 & 0.743 \\
+Stack (raw) & 0.280 & 0.173 & 0.514 \\
+Stack $+$ isotonic & \textbf{0.024} & \textbf{0.069} & \textbf{0.276} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\paragraph{Stacking beats \emph{learned} selection too (D25).}
+The strongest form of the ``you only beat argmax auto-select'' objection is a
+\emph{learned} meta-selector such as MetaOD~\cite{metaod_th}, which predicts the
+best model from dataset meta-features. We implement an in-repo MetaOD-style selector
+(a random forest over $28$ validation-only meta-features --- including the
+validation-AUROC landmarkers --- trained leave-one-task-out to predict each
+detector's test AUROC, then selecting the predicted-best detector; honest scope:
+this is our reimplementation in MetaOD's spirit, not the published artefact).
+Strikingly, learned selection does \emph{not} beat naive auto-select: it scores
+$0.737$, \emph{below} auto-select ($-0.011$, CI $[-0.017,-0.006]$, n.\,tasks $=123$).
+Per-task stacking beats this learned selector by $+0.044$ (CI $[+0.030,+0.060]$).
+The lesson is sharp: the gain is not from picking a \emph{better} detector --- even a
+meta-learned pick underperforms --- but from \emph{combining} the detector scores.
+Selection, however clever, is the wrong primitive here.
+
+Adding a deep detector (DeepSVDD) does not trivialise routing: DeepSVDD underperforms
+the classical detectors here (mean AUROC $0.65$, consistent with ADBench), and the
+stacking advantage over auto-select persists ($+0.038$, CI excludes zero). The boundary is also mapped: on two time-series families
+(NAB univariate $+0.008$; SMD multivariate $+0.011$; both n.s.) stacking is only
+marginally ahead of auto-select.
+
+\paragraph{Fraud-family power and a near-chance boundary (D26).}
+The fraud family was the weakest point of the leave-family-out analysis ($n{=}1$:
+credit-card). We expand it with the Bank Account Fraud suite~\cite{baf_th}
+(Feedzai, NeurIPS 2022): six bias-controlled variants (Base, I--V) of a large
+tabular fraud problem, a second fraud source, lifting the family to $n{=}7$. The
+result is an honest \emph{negative/boundary} finding. On BAF the entire detector zoo
+is near chance (mean AUROC $\approx 0.6$; BAF is engineered to be hard, with label
+noise and temporal drift), and there stacking is \emph{not} significantly better
+than auto-select ($+0.011$, CI $[-0.066,+0.064]$) and sits \emph{below} the best
+fixed detector ($-0.033$, CI $[-0.098,+0.022]$); on Variant~I the per-task logistic
+stack even collapses below chance ($0.375$). This refines the central claim: the
+significant stacking advantage holds where base detectors are \emph{individually
+informative}, and not on near-chance problems --- combination amplifies signal that
+exists but cannot conjure it where the zoo is uniformly weak. Together with the
+time-series boundary, this confines the significant win to families with informative
+base detectors, rather than to ``feature-vector'' families per se (BAF is itself
+tabular).
+
+\paragraph{Sealed external replication (D24).}
+The strongest guard against an over-fit development split is a \emph{sealed}
+holdout: the method, baselines, detector zoo, and pass condition were frozen
+(\texttt{research\_lock/SEALED\_EXTERNAL\_PROTOCOL\_v1}) \emph{before} any holdout
+data was loaded, then scored exactly once with no post-hoc tuning. The holdout is
+$74$ ADBench tasks under a \emph{different feature extractor} than development
+(CV\_by\_ViT and NLP\_by\_RoBERTa vs.\ the ResNet18/BERT features used to build the
+123-task archive), so these representations were never inspected. On this one-shot
+test (Table~\ref{tab:sealed_th}) the stack still beats auto-select ($+0.016$, CI
+$[+0.004,+0.032]$) and the best fixed detector ($+0.043$, CI $[+0.022,+0.073]$);
+both CIs exclude zero. The effect therefore \emph{replicates under representation
+shift}, lifting the stacking result from development evidence to sealed evidence
+(Gate~U point~7). Honest scope: this is a sealed held-out under shifted
+representation on the same ADBench suite, not a wholly independent data source --- a
+fully independent external corpus remains the natural next strengthening step.
+
+\begin{table}[H]\centering
+\caption{Sealed external holdout (D24, one-shot): method frozen before scoring
+$74$ untouched ADBench tasks under a different feature extractor (ViT/RoBERTa).
+Stacking beats both auto-select and the best fixed detector; both CIs exclude zero.}
+\label{tab:sealed_th}\small
+\begin{tabular}{lcc}
+\toprule
+\textbf{Method} & mean AUROC & $\Delta$ (95\% CI) \\
+\midrule
+Best fixed detector (KNN) & 0.768 & --- \\
+Rank-mean & 0.762 & --- \\
+Simple average & 0.764 & --- \\
+Auto-select & 0.795 & --- \\
+\textbf{Stack (logistic)} & \textbf{0.811} & vs auto $+0.016\,[+0.004,+0.032]$ \\
+ & & vs best $+0.043\,[+0.022,+0.073]$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\section{Multimodal Independent-Modality Failure (D23)}
+\label{sec:d23}
+Every regime where reliability routing was inert used \emph{single-input}
+families: all detectors see the same data, so no modality can fail independently.
+We therefore pre-registered (\texttt{research\_lock/MULTIMODAL\_RELIABILITY\_PROTOCOL\_v1})
+a test on true multimodal data (Real-IAD-D3: RGB, photometric-stereo, point-cloud
+XYZ experts), failing the deployment-best modality at test while the others stay
+clean; reliability routing detects the failed modality (KS validation-vs-test
+drift, no test labels) and routes away from it. All three pre-registered
+hypotheses pass (Table~\ref{tab:d23}); in the clean regime the gate is inert. The
+precise claim: \emph{reliability routing helps iff modalities can fail
+independently}.
+
+\begin{table}[t]\centering
+\caption{D23 multimodal reliability on \emph{two} real datasets (Real-IAD-D3, 15
+categories; MVTec-3D, 7 categories). Mean AUROC in the modality-failure regime; the
+gate is inert in the clean regime (equals validation-only fusion) on both. Hypotheses
+are paired bootstrap over categories.}
+\label{tab:d23}\footnotesize
+\begin{tabular}{lcc}
+\toprule
+\textbf{Method (failure regime)} & Real-IAD-D3 & MVTec-3D \\
+\midrule
+Equal-weight (CW) & 0.526 & 0.586 \\
+Stale auto-select & 0.381 & 0.475 \\
+Validation-only fusion & 0.519 & 0.581 \\
+\textbf{Reliability gate} & \textbf{0.767} & \textbf{0.792} \\
+\midrule
+\multicolumn{3}{p{0.92\linewidth}}{\emph{Real-IAD-D3:} H1 vs equal-weight $+0.241$ $[0.152,0.348]$; H2 vs stale-select $+0.386$ $[0.281,0.483]$; H3 vs validation-only $+0.248$ $[0.168,0.323]$. \emph{MVTec-3D:} H1 $+0.207$ $[0.172,0.242]$; H2 $+0.317$ $[0.240,0.405]$; H3 $+0.211$ $[0.180,0.244]$. All 95\% CIs exclude zero.}\\
+\bottomrule
+\end{tabular}
+\end{table}
+
 \section{Conclusion}
 
 \systemu{} is now best framed as a universal anomaly meta-routing thesis rather
@@ -637,6 +860,18 @@ D. Hendrycks and K. Gimpel, ``A baseline for detecting misclassified and out-of-
 
 \bibitem{guo2017calibration}
 C. Guo, G. Pleiss, Y. Sun, and K. Q. Weinberger, ``On calibration of modern neural networks,'' in \emph{ICML}, 2017.
+\bibitem{metaod_th}
+Y. Zhao, R. Rossi, and L. Akoglu, ``Automating outlier detection via meta-learning,'' in \emph{NeurIPS}, 2021.
+\bibitem{adbench_th}
+S. Han, X. Hu, H. Huang, M. Jiang, and Y. Zhao, ``ADBench: Anomaly detection benchmark,'' in \emph{NeurIPS Datasets and Benchmarks}, 2022.
+\bibitem{pyod_th}
+Y. Zhao, Z. Nasrullah, and Z. Li, ``PyOD: A Python toolbox for scalable outlier detection,'' \emph{JMLR}, vol.~20, 2019.
+\bibitem{wolpert_th}
+D. H. Wolpert, ``Stacked generalization,'' \emph{Neural Networks}, vol.~5, no.~2, 1992.
+\bibitem{geifman_th}
+Y. Geifman and R. El-Yaniv, ``Selective classification for deep neural networks,'' in \emph{NeurIPS}, 2017.
+\bibitem{baf_th}
+S. Jesus, J. Pombal, D. Alves, et al., ``Turning the tables: Biased, imbalanced, dynamic tabular datasets for ML evaluation (Bank Account Fraud),'' in \emph{NeurIPS Datasets and Benchmarks}, 2022.
 \end{thebibliography}
 
 \end{document}
