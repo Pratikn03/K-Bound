@@ -33,7 +33,18 @@ creditcard.csv
 *.7z
 *.rar
 models/
-experiments/
+# experiments/ is ignored, EXCEPT the curated ELARA-U results + Real-IAD-D3 score
+# cache (verified evidence). Re-include via the exclude-then-re-include pattern.
+experiments/*
+!experiments/elara_u/
+experiments/elara_u/*
+!experiments/elara_u/*.json
+!experiments/elara_u/sha256sums.txt
+!experiments/fusion/
+experiments/fusion/*
+!experiments/fusion/realiad_d3_score_cache/
+experiments/fusion/realiad_d3_score_cache/*
+!experiments/fusion/realiad_d3_score_cache/*_v2_binpcd.npz
 reports/*.pdf
 reports/*.html
 
