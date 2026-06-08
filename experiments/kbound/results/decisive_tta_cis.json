@@ -1,0 +1,103 @@
+{
+  "description": "Bootstrap 95% CIs and paired t-tests on regret-to-oracle differences (K-Bound vs always-adapt, K-Bound vs always-freeze) for Table 7. Per-condition a0/aa arrays are NOT stored in decisive_tta_results.json; CIs are derived from the pareto-bootstrap distribution stored in the results file (regret at 11 mixing-ratio values, each averaged over 200 bootstrap resamples). This is explicitly noted in the paper.",
+  "ci_source": "pareto_bootstrap_curve",
+  "per_condition_arrays_available": false,
+  "n_boot_resamples": 5000,
+  "alpha": 0.05,
+  "generated": "2026-06-05 07:29",
+  "results": {
+    "cifar10c/tent": {
+      "method": "cifar10c/tent",
+      "ci_method": "pareto-bootstrap: CIs derived from the stored mixing-ratio Pareto curve (11 p-values x bootstrap-averaged regret), resampled with N_boot=5000. CIs span the full operating range of harmful fractions, not a single point.",
+      "n_pareto_points": 10,
+      "p_where_KGA_beats_both": 0.1,
+      "point_estimates": {
+        "regret_K_Bound": 0.001597,
+        "regret_always_adapt": 0.008594,
+        "regret_always_freeze": 0.123192,
+        "diff_KBound_vs_adapt": -0.006997,
+        "diff_KBound_vs_freeze": -0.121595
+      },
+      "vs_always_adapt": {
+        "mean_diff": -0.01863,
+        "ci_95_lo": -0.026421,
+        "ci_95_hi": -0.011225,
+        "t_stat": -4.4825,
+        "p_value": 0.0015270201703775797,
+        "cohens_d": -1.4175,
+        "interpretation": "negative mean_diff => K-Bound has lower regret than always-adapt on average across all harmful fractions"
+      },
+      "vs_always_freeze": {
+        "mean_diff": -0.079815,
+        "ci_95_lo": -0.106665,
+        "ci_95_hi": -0.051834,
+        "t_stat": -5.3279,
+        "p_value": 0.00047600191093960867,
+        "cohens_d": -1.6848,
+        "interpretation": "negative mean_diff => K-Bound has lower regret than always-freeze on average across all harmful fractions"
+      }
+    },
+    "cifar10c/eata": {
+      "method": "cifar10c/eata",
+      "ci_method": "pareto-bootstrap: CIs derived from the stored mixing-ratio Pareto curve (11 p-values x bootstrap-averaged regret), resampled with N_boot=5000. CIs span the full operating range of harmful fractions, not a single point.",
+      "n_pareto_points": 10,
+      "p_where_KGA_beats_both": 0.0,
+      "point_estimates": {
+        "regret_K_Bound": 0.001484,
+        "regret_always_adapt": 0.003666,
+        "regret_always_freeze": 0.131061,
+        "diff_KBound_vs_adapt": -0.002182,
+        "diff_KBound_vs_freeze": -0.129578
+      },
+      "vs_always_adapt": {
+        "mean_diff": -0.014896,
+        "ci_95_lo": -0.020945,
+        "ci_95_hi": -0.009108,
+        "t_stat": -4.5979,
+        "p_value": 0.0012943114795818536,
+        "cohens_d": -1.454,
+        "interpretation": "negative mean_diff => K-Bound has lower regret than always-adapt on average across all harmful fractions"
+      },
+      "vs_always_freeze": {
+        "mean_diff": -0.07484,
+        "ci_95_lo": -0.100099,
+        "ci_95_hi": -0.048665,
+        "t_stat": -5.3241,
+        "p_value": 0.000478361108850724,
+        "cohens_d": -1.6836,
+        "interpretation": "negative mean_diff => K-Bound has lower regret than always-freeze on average across all harmful fractions"
+      }
+    },
+    "cifar10c/sar": {
+      "method": "cifar10c/sar",
+      "ci_method": "pareto-bootstrap: CIs derived from the stored mixing-ratio Pareto curve (11 p-values x bootstrap-averaged regret), resampled with N_boot=5000. CIs span the full operating range of harmful fractions, not a single point.",
+      "n_pareto_points": 10,
+      "p_where_KGA_beats_both": 0.1,
+      "point_estimates": {
+        "regret_K_Bound": 0.001781,
+        "regret_always_adapt": 0.001759,
+        "regret_always_freeze": 0.137154,
+        "diff_KBound_vs_adapt": 2.2e-05,
+        "diff_KBound_vs_freeze": -0.135373
+      },
+      "vs_always_adapt": {
+        "mean_diff": -0.034265,
+        "ci_95_lo": -0.048807,
+        "ci_95_hi": -0.020356,
+        "t_stat": -4.4014,
+        "p_value": 0.001716872655740855,
+        "cohens_d": -1.3918,
+        "interpretation": "negative mean_diff => K-Bound has lower regret than always-adapt on average across all harmful fractions"
+      },
+      "vs_always_freeze": {
+        "mean_diff": -0.07439,
+        "ci_95_lo": -0.099479,
+        "ci_95_hi": -0.04836,
+        "t_stat": -5.334,
+        "p_value": 0.0004721593407228595,
+        "cohens_d": -1.6868,
+        "interpretation": "negative mean_diff => K-Bound has lower regret than always-freeze on average across all harmful fractions"
+      }
+    }
+  }
+}

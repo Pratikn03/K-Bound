@@ -1,0 +1,334 @@
+{
+  "config": {
+    "seed": 12345,
+    "n_per_sample": 64,
+    "n_mc": 20000,
+    "json": "results_thm1_lecam.json"
+  },
+  "theorem": "inf_g [ P1(g=adapt) + P2(g=freeze) ] >= 1 - TV(P1_Z^n, P2_Z^n)",
+  "witness": {
+    "regime": "A_exact_witness",
+    "description": "X~N(0,1) both worlds; f0=1[x>0], fa=1[x<0]; opposite labels.",
+    "Delta_world1": {
+      "closed_form": -1.0,
+      "mc": -1.0
+    },
+    "Delta_world2": {
+      "closed_form": 1.0,
+      "mc": 1.0
+    },
+    "per_sample_TV": {
+      "z_x": {
+        "tv_raw": 0.013900000000000004,
+        "tv_null_mean": 0.013234333333333334,
+        "tv_null_sd": 0.0006256575207997849,
+        "tv_debiased": 0.0006656666666666703,
+        "z_excess": 1.0639473569370572
+      },
+      "z_absx": {
+        "tv_raw": 0.014500000000000002,
+        "tv_null_mean": 0.012647333333333333,
+        "tv_null_sd": 0.0007546026180123617,
+        "tv_debiased": 0.0018526666666666691,
+        "z_excess": 2.455155362555559
+      },
+      "z_f0": {
+        "tv_raw": 0.0009000000000000119,
+        "tv_null_mean": 0.0009911666666666652,
+        "tv_null_sd": 0.0008365675738131177,
+        "tv_debiased": 0.0,
+        "z_excess": -0.10897705028433494
+      },
+      "z_disagree": {
+        "tv_raw": 0.0,
+        "tv_null_mean": 0.0,
+        "tv_null_sd": 0.0,
+        "tv_debiased": 0.0,
+        "z_excess": 0.0
+      },
+      "z_conf": {
+        "tv_raw": 0.016966666666666668,
+        "tv_null_mean": 0.01684525,
+        "tv_null_sd": 0.0009036564266910293,
+        "tv_debiased": 0.00012141666666666898,
+        "z_excess": 0.1343615371351984
+      }
+    },
+    "per_sample_KS_pvalue": {
+      "z_x": 0.46535782712685475,
+      "z_absx": 0.2808939724267857,
+      "z_f0": 1.0,
+      "z_disagree": 1.0,
+      "z_conf": 0.2808939724267857
+    },
+    "nsample_evidence_TV": [
+      {
+        "n": 1,
+        "TV_Zn_raw": 0.037149999999999996,
+        "TV_Zn_debiased": 0.0,
+        "TV_Zn_null_mean": 0.037798750000000006,
+        "lecam_floor_1_minus_TVdebiased": 1.0,
+        "TV_Zn_exact": 0.0
+      },
+      {
+        "n": 2,
+        "TV_Zn_raw": 0.03975,
+        "TV_Zn_debiased": 0.002177499999999992,
+        "TV_Zn_null_mean": 0.03757250000000001,
+        "lecam_floor_1_minus_TVdebiased": 0.9978225000000001,
+        "TV_Zn_exact": 0.0
+      },
+      {
+        "n": 4,
+        "TV_Zn_raw": 0.03660000000000001,
+        "TV_Zn_debiased": 0.0,
+        "TV_Zn_null_mean": 0.036928749999999996,
+        "lecam_floor_1_minus_TVdebiased": 1.0,
+        "TV_Zn_exact": 0.0
+      },
+      {
+        "n": 8,
+        "TV_Zn_raw": 0.0335,
+        "TV_Zn_debiased": 0.0,
+        "TV_Zn_null_mean": 0.03671875,
+        "lecam_floor_1_minus_TVdebiased": 1.0,
+        "TV_Zn_exact": 0.0
+      },
+      {
+        "n": 16,
+        "TV_Zn_raw": 0.04245,
+        "TV_Zn_debiased": 0.004723749999999999,
+        "TV_Zn_null_mean": 0.03772625,
+        "lecam_floor_1_minus_TVdebiased": 0.99527625,
+        "TV_Zn_exact": 0.0
+      },
+      {
+        "n": 32,
+        "TV_Zn_raw": 0.0364,
+        "TV_Zn_debiased": 0.0,
+        "TV_Zn_null_mean": 0.03846875,
+        "lecam_floor_1_minus_TVdebiased": 1.0,
+        "TV_Zn_exact": 0.0
+      },
+      {
+        "n": 64,
+        "TV_Zn_raw": 0.03864999999999999,
+        "TV_Zn_debiased": 0.0017737499999999906,
+        "TV_Zn_null_mean": 0.03687625,
+        "lecam_floor_1_minus_TVdebiased": 0.99822625,
+        "TV_Zn_exact": 0.0
+      },
+      {
+        "n": 128,
+        "TV_Zn_raw": 0.03985,
+        "TV_Zn_debiased": 0.0023824999999999957,
+        "TV_Zn_null_mean": 0.0374675,
+        "lecam_floor_1_minus_TVdebiased": 0.9976175,
+        "TV_Zn_exact": 0.0
+      },
+      {
+        "n": 256,
+        "TV_Zn_raw": 0.037849999999999995,
+        "TV_Zn_debiased": 0.0,
+        "TV_Zn_null_mean": 0.03858874999999999,
+        "lecam_floor_1_minus_TVdebiased": 1.0,
+        "TV_Zn_exact": 0.0
+      }
+    ],
+    "inf_M_threshold_families": {
+      "Zn": {
+        "feature": "Zn",
+        "n_per_batch": 64,
+        "n_batches": 20000,
+        "inf_M_threshold_family": 0.99115,
+        "best_threshold": -0.5269633993331388,
+        "best_polarity": 1.0,
+        "lecam_floor_1_minus_TVemp": 0.9598,
+        "TV_evidence_emp": 0.0402
+      },
+      "z_x": {
+        "feature": "z_x",
+        "n_per_batch": 64,
+        "n_batches": 20000,
+        "inf_M_threshold_family": 0.9919,
+        "best_threshold": 0.07973217151472811,
+        "best_polarity": 1.0,
+        "lecam_floor_1_minus_TVemp": 0.9621500000000001,
+        "TV_evidence_emp": 0.037849999999999995
+      },
+      "z_absx": {
+        "feature": "z_absx",
+        "n_per_batch": 64,
+        "n_batches": 20000,
+        "inf_M_threshold_family": 0.99825,
+        "best_threshold": 0.7182494967921595,
+        "best_polarity": 1.0,
+        "lecam_floor_1_minus_TVemp": 0.9583,
+        "TV_evidence_emp": 0.0417
+      },
+      "z_disagree": {
+        "feature": "z_disagree",
+        "n_per_batch": 64,
+        "n_batches": 20000,
+        "inf_M_threshold_family": 1.0,
+        "best_threshold": 0.99999999995,
+        "best_polarity": 1.0,
+        "lecam_floor_1_minus_TVemp": 1.0,
+        "TV_evidence_emp": 0.0
+      },
+      "z_conf": {
+        "feature": "z_conf",
+        "n_per_batch": 64,
+        "n_batches": 20000,
+        "inf_M_threshold_family": 0.99515,
+        "best_threshold": 0.6627802013400241,
+        "best_polarity": 1.0,
+        "lecam_floor_1_minus_TVemp": 0.9599,
+        "TV_evidence_emp": 0.04009999999999999
+      }
+    },
+    "kbound_rule": {
+      "alpha": 0.1,
+      "eps_radius": 1.146031746031743,
+      "abstain_frac": 1.0,
+      "P1_adapt": 0.0,
+      "P2_freeze": 0.0,
+      "kbound_committal_M": 0.0,
+      "false_adapt_rate": 0.0,
+      "false_freeze_rate": 0.0,
+      "decision_counts": {
+        "ADAPT": 0,
+        "FREEZE": 0,
+        "ABSTAIN": 4000
+      }
+    }
+  },
+  "detectable": {
+    "regime": "B_detectable",
+    "description": "P1(X)=N(-mu,1), P2(X)=N(+mu,1); opposite benefit; Z informative.",
+    "mu_sweep": [
+      {
+        "mu": 0.0,
+        "n_per_sample": 64,
+        "TV_per_sample_x_exact": 0.0,
+        "TV_Zn_exact": 0.0,
+        "lecam_floor_1_minus_TV_Zn": 1.0,
+        "inf_M_threshold_Zn": 0.99195,
+        "TV_evidence_emp": 0.043300000000000005,
+        "kbound_abstain_frac": 1.0,
+        "kbound_committal_M": 0.0,
+        "kbound_false_adapt": 0.0,
+        "kbound_false_freeze": 0.0
+      },
+      {
+        "mu": 0.1,
+        "n_per_sample": 64,
+        "TV_per_sample_x_exact": 0.07965567455405798,
+        "TV_Zn_exact": 0.5762892028332067,
+        "lecam_floor_1_minus_TV_Zn": 0.4237107971667933,
+        "inf_M_threshold_Zn": 0.41889999999999994,
+        "TV_evidence_emp": 0.5806,
+        "kbound_abstain_frac": 1.0,
+        "kbound_committal_M": 0.0,
+        "kbound_false_adapt": 0.0,
+        "kbound_false_freeze": 0.0
+      },
+      {
+        "mu": 0.25,
+        "n_per_sample": 64,
+        "TV_per_sample_x_exact": 0.1974126513658474,
+        "TV_Zn_exact": 0.9544997361036416,
+        "lecam_floor_1_minus_TV_Zn": 0.04550026389635842,
+        "inf_M_threshold_Zn": 0.04509999999999996,
+        "TV_evidence_emp": 0.95495,
+        "kbound_abstain_frac": 0.0045,
+        "kbound_committal_M": 0.048,
+        "kbound_false_adapt": 0.01275,
+        "kbound_false_freeze": 0.01125
+      },
+      {
+        "mu": 0.5,
+        "n_per_sample": 64,
+        "TV_per_sample_x_exact": 0.38292492254802624,
+        "TV_Zn_exact": 0.9999366575163338,
+        "lecam_floor_1_minus_TV_Zn": 6.334248366623996e-05,
+        "inf_M_threshold_Zn": 0.0,
+        "TV_evidence_emp": 1.0,
+        "kbound_abstain_frac": 0.0,
+        "kbound_committal_M": 0.0,
+        "kbound_false_adapt": 0.0,
+        "kbound_false_freeze": 0.0
+      },
+      {
+        "mu": 1.0,
+        "n_per_sample": 64,
+        "TV_per_sample_x_exact": 0.6826894921370859,
+        "TV_Zn_exact": 0.9999999999999987,
+        "lecam_floor_1_minus_TV_Zn": 1.3322676295501878e-15,
+        "inf_M_threshold_Zn": 0.0,
+        "TV_evidence_emp": 1.0,
+        "kbound_abstain_frac": 0.0,
+        "kbound_committal_M": 0.0,
+        "kbound_false_adapt": 0.0,
+        "kbound_false_freeze": 0.0
+      },
+      {
+        "mu": 2.0,
+        "n_per_sample": 64,
+        "TV_per_sample_x_exact": 0.9544997361036416,
+        "TV_Zn_exact": 1.0,
+        "lecam_floor_1_minus_TV_Zn": 0.0,
+        "inf_M_threshold_Zn": 0.0,
+        "TV_evidence_emp": 1.0,
+        "kbound_abstain_frac": 0.0,
+        "kbound_committal_M": 0.0,
+        "kbound_false_adapt": 0.0,
+        "kbound_false_freeze": 0.0
+      }
+    ],
+    "rate_vs_n_at_mu=0.25": [
+      {
+        "n": 1,
+        "mu_per_sample": 0.25,
+        "TV_Zn_exact": 0.1974126513658474,
+        "lecam_floor_1_minus_TV": 0.8025873486341526,
+        "inf_M_threshold_Zn": 0.81335
+      },
+      {
+        "n": 4,
+        "mu_per_sample": 0.25,
+        "TV_Zn_exact": 0.38292492254802624,
+        "lecam_floor_1_minus_TV": 0.6170750774519738,
+        "inf_M_threshold_Zn": 0.6054999999999999
+      },
+      {
+        "n": 16,
+        "mu_per_sample": 0.25,
+        "TV_Zn_exact": 0.6826894921370859,
+        "lecam_floor_1_minus_TV": 0.31731050786291415,
+        "inf_M_threshold_Zn": 0.32089999999999996
+      },
+      {
+        "n": 64,
+        "mu_per_sample": 0.25,
+        "TV_Zn_exact": 0.9544997361036416,
+        "lecam_floor_1_minus_TV": 0.04550026389635842,
+        "inf_M_threshold_Zn": 0.04519999999999996
+      },
+      {
+        "n": 256,
+        "mu_per_sample": 0.25,
+        "TV_Zn_exact": 0.9999366575163338,
+        "lecam_floor_1_minus_TV": 6.334248366623996e-05,
+        "inf_M_threshold_Zn": 0.0
+      },
+      {
+        "n": 1024,
+        "mu_per_sample": 0.25,
+        "TV_Zn_exact": 0.9999999999999987,
+        "lecam_floor_1_minus_TV": 1.3322676295501878e-15,
+        "inf_M_threshold_Zn": 0.0
+      }
+    ]
+  }
+}
