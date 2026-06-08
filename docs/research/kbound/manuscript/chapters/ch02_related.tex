@@ -1,0 +1,583 @@
+% =============================================================================
+% ch02_related.tex  —  Chapter 2: Background and Related Work
+% K-Bound long-form monograph.
+% NO \documentclass or \usepackage. Begins with \chapter.
+% =============================================================================
+
+\chapter{Background and Related Work}\label{ch:related}
+
+We position K-Bound as a precise delta over five adjacent lines of work.
+In each case the distinction is the one the theory formalizes: between
+\emph{improving} an unlabeled objective and \emph{certifying the sign} of
+its benefit before acting.
+We survey each line in enough depth to make the gap concrete, then close
+with a positioning table and a synthetic statement of what K-Bound adds.
+
+\section{Test-Time Adaptation: Mechanisms and Methods}\label{sec:rel-tta}
+
+Test-time adaptation originated as a practical answer to the distribution-shift
+problem: rather than retraining, use the unlabeled target stream to adjust the
+deployed model.
+The field has developed along several distinct axes, each representing a
+different hypothesis about what makes TTA fragile and how to make it robust.
+
+\paragraph{Entropy minimization.}
+\textbf{Tent} \cite{wang2021tent} is the canonical entropy-minimization method.
+At each test batch, Tent minimizes the Shannon entropy of the model's softmax
+predictions over only the batch-normalization affine parameters, keeping the
+rest of the network frozen.
+The intuition is that predictions on target data should be confident
+(low entropy), and adjusting normalization statistics accomplishes this with
+minimal risk of catastrophic forgetting.
+On i.i.d.\ corruption benchmarks such as CIFAR-10-C
+\cite{hendrycks2019benchmarking} and ImageNet-C, Tent yields substantial
+accuracy improvements over the frozen baseline.
+
+The fragility of pure entropy minimization, however, is well documented.
+Tent applied continually to non-stationary or class-imbalanced streams
+accumulates normalization-parameter damage; once the predictions collapse to
+a single class, entropy continues to decrease while accuracy plummets.
+Our stress-grid experiments (Chapter~\ref{ch:exp2}) reproduce this collapse
+in the harm-dominated online CIFAR-10 regime, where always-adapt with Tent
+falls to $0.339$ accuracy while a frozen model holds $0.440$.
+
+\paragraph{Batch-normalization statistics adaptation.}
+\textbf{Schneider et al.}~\cite{schneider2020bn} showed that a large fraction
+of the performance gap on corruption benchmarks can be closed simply by
+re-estimating batch-normalization running statistics from a mixture of source
+and target data, without any gradient update.
+This observation motivated a family of statistics-only approaches that avoid
+the optimization risk of entropy minimization entirely, at the cost of needing
+a sufficient target batch size to estimate stable statistics.
+\textbf{NOTE}~\cite{gong2022note} extends this direction to non-i.i.d.\ streams
+using class-conditional normalization, addressing the label-shift fragility of
+global statistics.
+
+\paragraph{Filtering and Fisher regularization.}
+\textbf{EATA}~\cite{niu2022eata} addresses Tent's catastrophic-forgetting
+tendency with two additions: an entropy filter that rejects unreliable
+(high-entropy) samples from the update, and a Fisher-information-based
+regularization penalty that penalizes updates proportional to their importance
+for source-domain performance.
+The entropy filter prevents the worst collapse triggers from entering the
+update gradient; the Fisher penalty ensures the normalization parameters do
+not drift too far from their source-optimal values.
+EATA retains substantial improvement over the frozen baseline on standard
+benchmarks while partially protecting against the forgetting that pure Tent
+suffers.
+
+\paragraph{Sharpness-aware updates and resets.}
+\textbf{SAR}~\cite{niu2023sar} adds sharpness-aware entropy minimization
+combined with an online reset mechanism.
+Sharpness-aware optimization minimizes an upper bound on the worst-case
+perturbation of the loss landscape, producing parameter updates that land in
+flat regions less susceptible to subsequent drift.
+The reset mechanism monitors a model-divergence criterion and resets the
+normalization parameters to their source values if divergence exceeds a
+threshold, aborting incipient collapse.
+SAR is notably more robust than Tent or EATA on the continual and
+non-stationary regimes that provoke collapse; our experiments confirm this,
+with SAR's harmful base rate ($16\%$ on the stress grid) substantially lower
+than Tent's ($34\%$) and EATA's ($27\%$).
+This robustness is also the reason K-Bound ties rather than beats SAR:
+when the candidate already self-protects, the certificate's additional value
+is limited.
+
+\paragraph{Source-free and continual adaptation.}
+\textbf{SHOT} trains a source-free adaptation by information maximization and
+self-supervised pseudo-labeling, enabling adaptation when the source data is
+unavailable at deployment.
+\textbf{CoTTA}~\cite{wang2022cotta} addresses the continual adaptation setting
+by stochastic restoring: with some probability, parameters are reset to their
+source-pre-trained values, preventing irreversible forgetting across a long
+non-stationary stream.
+\textbf{TTT}~\cite{sun2020ttt} augments the source training with a
+self-supervised auxiliary task and continues training that task at test time,
+adapting the shared feature extractor.
+\textbf{MEMO}~\cite{zhang2022memo} takes a different route: for each test
+point it generates multiple augmented views and minimizes the marginal entropy
+across augmentations, adapting per-sample rather than per-batch.
+
+\paragraph{Parameter-free approaches.}
+\textbf{LAME}~\cite{boudiaf2022lame} is at the opposite extreme: it requires
+no parameter update at all, instead post-processing the model's predictions
+using a Laplacian regularization that encourages smoothness across the target
+batch.
+Its robustness to collapse is guaranteed by construction, since there are no
+parameters to corrupt, but it cannot recover the same accuracy gains as
+gradient-based methods when the distribution shift is large.
+
+\paragraph{What all TTA methods share.}
+Every method in this section, whether gradient-based or gradient-free, whether
+it uses resets or regularization or filtering, makes the same architectural
+commitment: \emph{it adapts}.
+The question of whether adaptation is the right action on a given deployment
+batch is not posed; the decision is implicit in the method's deployment.
+K-Bound is mechanism-agnostic with respect to this entire class of methods.
+It wraps any such candidate --- we evaluate Tent, EATA, and SAR --- and
+makes the adapt/freeze/abstain decision at the certificate level, before
+the adaptation mechanism executes.
+
+\section{TTA Failure, Collapse, and Evaluation}\label{sec:rel-failure}
+
+The recognition that TTA can fail destructively has generated a parallel line
+of work on understanding and measuring when failure occurs.
+
+\paragraph{Pitfalls and failure modes.}
+\textbf{Zhao et al.}~\cite{zhao2023pitfalls} systematically catalogued the
+pitfalls of test-time adaptation evaluation: sensitivity to the batch-size
+regime, stream composition, update budget, and the distinction between
+i.i.d.\ and temporally correlated streams.
+Their analysis showed that many published TTA results are obtained in regimes
+where adaptation is effectively guaranteed to help (large i.i.d.\ batches of
+a single corruption type), and that performance degrades substantially ---
+sometimes below the frozen baseline --- in the more realistic regimes of mixed,
+imbalanced, or small-batch streams.
+This work directly motivates the design of the K-Bound pre-registered stress
+grid: we cross severity, batch size, composition, and aggressiveness to
+construct conditions that span the helpful and harmful regimes.
+
+\paragraph{Robustness benchmarks.}
+\textbf{RDumb}~\cite{press2023rdumb} demonstrated that a periodically
+resetting stupid baseline (no adaptation, periodic reset to the source model)
+outperforms many published TTA methods on long, non-stationary streams.
+The implication is that sophisticated adaptation mechanisms may be
+over-optimized for the benign conditions under which they are evaluated and
+break down precisely when deployment conditions are most challenging.
+
+\paragraph{Standardized benchmarks.}
+\textbf{Hendrycks and Dietterich}~\cite{hendrycks2019benchmarking} introduced
+the CIFAR-10-C, CIFAR-100-C, and ImageNet-C benchmarks, which apply 19
+algorithmically defined corruptions at five severity levels to standard test
+sets.
+These benchmarks have become the standard evaluation platform for TTA methods;
+they are also the platform for our per-corruption experiment
+(Chapter~\ref{ch:exp2}).
+However, as Zhao et al.\ and Press et al.\ note, per-corruption evaluation
+is inherently helpful-dominated: each batch contains a single corruption type
+at a single severity, giving the adaptation mechanism a maximally informative
+signal.
+Our stress grid goes beyond this by mixing compositions.
+
+\paragraph{DomainBed.}
+\textbf{Gulrajani and Lopez-Paz}~\cite{gulrajani2021domainbed} introduced the
+DomainBed benchmark for domain generalization, emphasizing standardized
+evaluation protocols and a thorough comparison of algorithms under matched
+hyperparameter selection.
+Their finding that many domain generalization methods do not consistently
+outperform empirical risk minimization under rigorous evaluation is
+methodologically analogous to our finding about TTA in the benign regime:
+sophisticated methods add value primarily in the regimes where they are
+designed to help.
+\textbf{WILDS}~\cite{koh2021wilds} extends this to real-world distribution
+shifts, including medical imaging, satellite imagery, and user-generated
+content.
+Extending K-Bound to WILDS benchmarks is an explicit item of future work
+(Chapter~\ref{ch:discussion}).
+
+\section{Guarded and Protected Adaptation}\label{sec:rel-guarded}
+
+A line of work distinct from both TTA mechanisms and TTA failure analysis
+guards adaptation against specific failure modes \emph{during} the update.
+
+\paragraph{Entropy thresholding and filtering.}
+EATA's entropy filter is the most direct example: high-entropy samples are
+excluded from the update gradient on the hypothesis that they carry
+corrupted or uninformative signal.
+This protects against one failure direction (adapting on adversarial inputs)
+but does not address the three-way decision between helpful, harmful, and
+unknowable evidence, nor does it provide a formal bound on the false-adapt
+rate.
+
+\paragraph{Betting-style monitors.}
+Sequential testing literature has developed monitors that halt or dampen a
+running process when a specific failure mode is detected.
+In the TTA setting, such a monitor could, for example, halt entropy
+minimization when the estimated class distribution collapses below a threshold.
+These approaches protect one direction --- typically against collapse --- but
+they do not pose the three-way decision with an explicit unknowable region,
+and they do not certify \emph{before} acting that adaptation will help.
+
+\paragraph{NOTE's class-conditional normalization.}
+\textbf{NOTE}~\cite{gong2022note} addresses the temporal correlation between
+samples in a non-stationary stream by estimating class-conditional
+normalization statistics.
+This is a form of guarded adaptation in the sense that it conditions the
+normalization update on the estimated class label of each sample, reducing
+the sensitivity to class imbalance that causes Tent to collapse.
+The guard is built into the mechanism, not into a separate decision layer.
+
+\paragraph{The structural gap.}
+All guarded-adaptation approaches share the architecture of operating
+\emph{during} the update.
+K-Bound operates \emph{before} the update: it makes the adapt/freeze/abstain
+decision first, and only then --- if the decision is \textsc{adapt} ---
+does it invoke the underlying mechanism.
+This separation is not merely organizational; it is what makes the
+false-adapt guarantee meaningful.
+A certificate that fires after an adaptation has already occurred cannot
+meaningfully bound the false-adapt rate; one that fires before can.
+
+\section{Label-Free Accuracy Estimation}\label{sec:rel-estimation}
+
+A third line of work predicts target performance from unlabeled data, without
+the explicit goal of making an adapt/freeze decision.
+
+\paragraph{ATC.}
+\textbf{Garg et al.}~\cite{garg2022atc} introduced Average Threshold
+Confidence (ATC), which thresholds source-calibrated softmax confidence to
+estimate the fraction of correct predictions on a target set.
+ATC achieves strong empirical accuracy on standard benchmarks and has become
+a reference method for label-free performance estimation.
+Its training requires a labeled source set to calibrate the confidence
+threshold; given that calibration, it requires only unlabeled target data.
+
+\paragraph{Agreement-on-the-Line.}
+\textbf{Baek et al.}~\cite{baek2022agreement} exploited the empirical
+observation that model agreement (the fraction of inputs on which two
+independently trained models make the same prediction) correlates linearly
+with accuracy on both in-distribution and out-of-distribution data.
+The linear relationship can be calibrated from in-distribution data and
+extrapolated to estimate OOD accuracy from OOD agreement, which is label-free
+and observable.
+The method is particularly valuable in the covariate-shift regime where the
+linear correlation holds reliably, and less so in label-shift regimes where
+it breaks down.
+
+\paragraph{Predicting with confidence.}
+\textbf{Guillory et al.}~\cite{guillory2021predicting} studied the problem
+of estimating model accuracy on unseen distributions with confidence
+intervals, developing methods based on source/target distribution divergence
+and ensemble disagreement.
+
+\paragraph{The distinction from K-Bound.}
+All of these methods estimate $R_T(f)$ or $R_T(f_0)$ --- the target risk of
+a single model --- or detect that TTA has failed \emph{post hoc}.
+K-Bound's object of study is strictly different: the \emph{sign} of
+$R_T(f_0) - R_T(f_a)$.
+This is a relational quantity involving \emph{two} models, not an absolute
+risk estimate.
+Certifying the sign is a strictly weaker requirement than estimating either
+absolute risk, so the knowable set is strictly larger --- but, as
+Theorem~\ref{thm:imp} establishes, it is not all of evidence space.
+Furthermore, K-Bound provides a \emph{pre-adaptation} certificate with a
+controlled false-adapt rate: it fires before $f_a$ is deployed, not after.
+Post-hoc detection that TTA has hurt (as in AETTA and some ensemble-based
+monitors) is useful for retrospective analysis but cannot prevent a false
+adaptation from occurring.
+
+\section{Unsupervised Risk Estimation and Identifiability}\label{sec:rel-ident}
+
+The hardness of K-Bound's problem is inherited from the broader problem of
+unsupervised risk estimation, and the impossibility results in that literature
+are directly relevant.
+
+\paragraph{Steinhardt and Liang.}
+Steinhardt and Liang showed that unsupervised risk estimation is possible only
+under a conditional-independence structure between the features, the label,
+and the observed predictions.
+In particular, they required that the label can be recovered from the
+prediction via a known conditional distribution, which is essentially an
+assumption of calibration stability.
+Under this assumption, the target risk is identifiable from unlabeled data;
+without it, the problem is generally intractable.
+Their work establishes the structural condition under which label-free risk
+estimation is possible and motivates our weaker target: the sign rather
+than the magnitude of a risk difference.
+
+\paragraph{Ben-David et al.}
+\textbf{Ben-David et al.}~\cite{bendavid2010theory} established the canonical
+learning-theoretic framework for domain adaptation.
+Their central bound expresses the target risk as the source risk plus an
+$\mathcal{H}$-divergence between the source and target marginals plus a
+residual term capturing the irreducible concept-shift component.
+The $\mathcal{H}$-divergence is computable from unlabeled data; the residual
+term is not.
+This bound is tight in the sense that all three terms are necessary; the
+identifiability result of Theorem~\ref{thm:pos} can be understood as showing
+that under covariate shift the residual term vanishes and the $\mathcal{H}$-divergence
+is controlled by the density ratio.
+
+\paragraph{Mansour et al.}
+\textbf{Mansour et al.}~\cite{mansour2009domain} studied domain adaptation
+from a learning-bounds perspective, extending the Ben-David et al.\ framework
+to mixture-of-source distributions and developing discrepancy-based bounds.
+Their discrepancy measure generalizes the $\mathcal{H}$-divergence and admits
+importance-weighting interpretations that connect to our covariate-shift
+positive result.
+
+\paragraph{Label-shift correction.}
+\textbf{Lipton et al.}~\cite{lipton2018detecting} developed Black Box Shift
+Estimation (BBSE), which corrects for label shift --- a change in the marginal
+$P(Y)$ with stable class-conditional distributions $P(X \mid Y)$ --- using
+an invertible confusion matrix estimated from labeled source data.
+BBSE identifies the target label marginal from unlabeled target predictions,
+enabling unbiased risk estimation under label shift.
+This is one of the two identifiable special cases in the knowability hierarchy
+(Table~\ref{tab:rel} in Chapter~\ref{ch:formulation}): label shift with an
+invertible confusion matrix places us in the knowably helpful or knowably
+harmful regime, not the unknowable one.
+
+\paragraph{Dataset shift taxonomy.}
+\textbf{Quino\~nero-Candela et al.}~\cite{quinonero2009dataset} provide the
+standard taxonomy of dataset shift: covariate shift, label shift, concept
+shift, and their combinations.
+This taxonomy is the organizational backbone of the knowability hierarchy:
+covariate shift is provably identifiable (Theorem~\ref{thm:pos}), label shift
+is identifiable under a mild structural assumption (invertible confusion),
+concept shift re-enters the unknowable regime (Theorem~\ref{thm:imp}), and
+mixed/unknown shift requires certify-or-abstain.
+
+\paragraph{Importance weighting.}
+\textbf{Shimodaira}~\cite{shimodaira2000improving} introduced importance
+weighting (weighted log-likelihood) as the canonical approach to covariate-shift
+adaptation, showing that reweighting the source loss by the density ratio
+$p_T(x)/p_S(x)$ yields consistent estimators of target risk.
+\textbf{Sugiyama et al.}~\cite{sugiyama2007covariate} developed importance
+weighted cross-validation, which uses the density ratio to select hyperparameters
+in a way that is consistent under covariate shift.
+These works are the direct antecedents of Theorem~\ref{thm:pos}: the
+importance-weighted estimator $\widehat{R}_T(f) = n^{-1} \sum_i r(x_i)
+\ell(f(x_i), y_i)$ is the operational mechanism behind the covariate-shift
+positive result.
+
+\paragraph{The K-Bound delta over this line.}
+The identifiability literature establishes when risk is identifiable and when
+it is not.
+K-Bound's contribution within this line is twofold.
+First, we target the \emph{sign} of a risk difference, which is identifiable
+on a strictly larger set than the risk itself: the unknowable regime in
+K-Bound is strictly smaller than the non-identifiable regime for risk
+estimation.
+Second, we instantiate the identifiability result as a \emph{finite-sample,
+false-adapt-controlled certificate} (Theorem~\ref{thm:cert}), going from an
+asymptotic identifiability statement to an operational, finite-sample
+decision procedure.
+
+\section{Selective Prediction and Abstention}\label{sec:rel-selective}
+
+Abstention is not new to machine learning; it has been studied in the context
+of individual predictions for decades.
+
+\paragraph{Chow's reject option.}
+\textbf{Chow}~\cite{chow1970optimum} introduced the reject option for
+classifiers: rather than committing to a prediction for every input, a
+classifier may abstain when its confidence is below a threshold, trading
+coverage for accuracy.
+The optimality theory shows that the Bayes-optimal reject rule thresholds the
+posterior probability, and the coverage-accuracy tradeoff is characterized by
+the Bayes optimal.
+
+\paragraph{Selective classification.}
+\textbf{El-Yaniv and Wiener}~\cite{elyaniv2010selective} and
+\textbf{Geifman and El-Yaniv}~\cite{geifman2017selective} developed the
+modern theory of selective classification, providing finite-sample guarantees
+on the accuracy of a classifier conditioned on its decision to predict.
+SelectiveNet extends selective classification to deep neural networks with
+an end-to-end trainable coverage mechanism.
+
+\paragraph{Conformal prediction.}
+\textbf{Vovk et al.}~\cite{vovk2005algorithmic} introduced conformal
+prediction as a framework for constructing prediction sets with valid marginal
+coverage.
+\textbf{Angelopoulos and Bates}~\cite{angelopoulos2023conformal} provide a
+recent tutorial treatment, including split-conformal prediction (which
+uses a held-out calibration set to set the threshold) and risk-controlling
+prediction sets.
+Split-conformal prediction is the mechanism behind Theorem~\ref{thm:cert}:
+the conformal radius $\varepsilon$ is constructed from a held-out set of
+labeled source/validation benefits, and its coverage guarantee transfers to
+the certificate.
+
+\paragraph{K-Bound's abstention is over a decision, not a prediction.}
+Selective prediction abstracts on individual \emph{predictions}: given a single
+test input $x$, should the model commit to a class label $\hat{y}$ or abstain?
+K-Bound's abstention is at a different level: given a deployment batch and an
+observable evidence vector $Z$, should the system commit to the
+\textsc{adapt} or \textsc{freeze} \emph{action}, or abstain from the
+adaptation decision?
+The object is not a label for a single point but a binary action for an entire
+deployment episode.
+This distinction matters because the cost of a wrong action is not the
+per-sample misclassification rate but the regret relative to the oracle
+policy --- an expectation over the entire deployed batch.
+
+\section{Conformal Prediction and Anytime-Valid Inference}\label{sec:rel-conformal}
+
+The certificate construction connects to several recent developments in
+sequential and anytime-valid inference.
+
+\paragraph{Game-theoretic probability.}
+\textbf{Ville}~\cite{ville1939etude} introduced the concept of e-processes
+(nonneg.\ supermartingales) and established Ville's inequality, which gives
+the anytime-valid analogue of Markov's inequality.
+\textbf{Shafer and Vovk}~\cite{shafer2019game} developed the game-theoretic
+foundations for probability and statistics, showing that betting-style
+arguments yield valid inference without relying on the law of large numbers.
+
+\paragraph{Testing by betting and e-values.}
+\textbf{Shafer}~\cite{shafer2019game} and \textbf{Ramdas et al.}\
+\cite{ramdas2023gametheoretic} developed the testing-by-betting framework:
+a hypothesis is rejected when the cumulative product of e-values (factors
+$1 + \lambda_t X_t$ where $X_t$ is a bounded observation) exceeds $1/\alpha$.
+The product is a nonneg.\ supermartingale under the null, so its exceedance
+is controlled at level $\alpha$ uniformly over all stopping times (Ville's
+inequality), without any correction for repeated looks.
+
+\paragraph{Anytime-valid confidence sequences.}
+\textbf{Howard et al.}~\cite{howard2021timeuniform} constructed
+time-uniform, nonparametric confidence sequences: intervals that are valid
+at all sample sizes simultaneously.
+\textbf{Waudby-Smith and Ramdas}~\cite{waudbysmith2024betting} developed
+betting-based confidence intervals for bounded random variables, establishing
+tight bounds via predictable bets.
+\textbf{Gr\"unwald et al.}~\cite{grunwald2024safe} formalized safe testing,
+which uses e-values to test composite hypotheses in a way that is valid
+under optional stopping.
+
+\paragraph{Connection to K-Bound.}
+Theorem~\ref{thm:cert} is a fixed-$n$ certificate; the anytime-valid
+extension (Appendix~\ref{app:repro}) uses a testing-by-betting e-process.
+The anytime-valid version is strictly more powerful than any fixed-$n$
+certificate in the sequential regime (it is valid at any stopping time with
+no multiplicity correction), while the fixed-$n$ version is tighter at a
+known sample size.
+The empirical-Bernstein bound of \textbf{Maurer and Pontil}
+\cite{maurer2009empirical} provides the radius discharge: for bounded
+paired benefits in $[a,b]$, the empirical variance proxy yields a confidence
+radius under independence/exchangeability.
+
+\paragraph{Classical concentration.}
+\textbf{Hoeffding}~\cite{hoeffding1963probability} established the classic
+exponential tail bound for bounded independent random variables, and
+\textbf{Le Cam}~\cite{lecam1973convergence} developed the two-point lower
+bound technique (used in Theorem~\ref{thm:imp}) and the fundamental
+convergence-of-estimates theory.
+\textbf{Tsybakov}~\cite{tsybakov2009introduction} and
+\textbf{Lehmann and Romano}~\cite{lehmann2005testing} are the standard
+references for nonparametric estimation theory and testing, respectively.
+
+\section{Benchmarks, Robustness, and Distribution Shift}\label{sec:rel-bench}
+
+\paragraph{Robustness benchmarks.}
+\textbf{Hendrycks and Dietterich}~\cite{hendrycks2019benchmarking} introduced
+the corruption benchmarks that anchor all of our CIFAR-10-C experiments.
+\textbf{Recht et al.}~\cite{recht2019imagenet} showed that ImageNet classifiers
+lose substantial accuracy on a re-collected ImageNet test set, motivating the
+study of natural distribution shift.
+\textbf{Taori et al.}~\cite{taori2020measuring} measured robustness to a broad
+set of natural and synthetic distribution shifts, finding that effective
+robustness (robustness beyond what is predicted by the in-distribution to
+OOD correlation) is rare.
+\textbf{Miller et al.}~\cite{miller2021accuracy} established the accuracy-on-the-line
+phenomenon: across many models and distribution shifts, in-distribution and
+OOD accuracy are linearly correlated.
+
+\paragraph{Anomaly detection benchmarks.}
+K-Bound's anomaly-routing experiments use the ADBench benchmark
+\cite{han2022adbench}, which covers tabular, image, text, cyber, and fraud
+anomaly detection across 57 datasets and multiple detector families.
+\textbf{MVTec AD}~\cite{bergmann2019mvtec} and
+\textbf{MVTec 3D-AD}~\cite{bergmann2022mvtec3d} provide industrial
+visual-inspection benchmarks where distribution shift is induced by modality
+failure; the ELARA/RGA instantiation (Chapter~\ref{ch:elara}) is evaluated
+on MVTec 3D-AD.
+\textbf{Real-IAD}~\cite{wang2024realiad} is a large-scale real industrial
+anomaly detection dataset with 30 object categories; Real-IAD-D3 is the
+ELARA/RGA multimodal reliability experiment.
+\textbf{PyOD}~\cite{zhao2019pyod} provides the detector library from which
+most of our detector scores are extracted.
+
+\paragraph{Standard vision.}
+\textbf{CIFAR-10}~\cite{krizhevsky2009cifar}, \textbf{ImageNet}~\cite{deng2009imagenet},
+\textbf{ResNet}~\cite{he2016resnet}, \textbf{ViT}~\cite{dosovitskiy2021vit},
+and \textbf{Imagenette}~\cite{howard2019imagenette} are the standard
+building blocks of our online TTA and CIFAR-10-C experiments.
+
+\paragraph{Label-free performance prediction and accuracy estimation.}
+\textbf{Deng and Zheng}~\cite{deng2021labels} studied the problem of evaluating
+classifier accuracy without labels, developing methods based on the agreement
+between classifiers and the structure of the confidence distributions.
+This work is closely related to ATC \cite{garg2022atc} and Agreement-on-the-Line
+\cite{baek2022agreement} in its goals and is part of the same literature that
+K-Bound departs from in its relational target (sign of difference) and
+pre-adaptation certificate.
+
+\paragraph{Anomaly/outlier detection methods.}
+The anomaly detection backbone of the experiments uses standard methods from
+the literature: \textbf{Isolation Forest}~\cite{liu2008isolation},
+\textbf{Local Outlier Factor}~\cite{breunig2000lof},
+\textbf{One-Class SVM}~\cite{scholkopf2001estimating},
+\textbf{ECOD}~\cite{li2022ecod}, and the PyOD suite~\cite{zhao2019pyod}.
+
+\section{Positioning: The Gap K-Bound Fills}\label{sec:rel-gap}
+
+Table~\ref{tab:rel} reproduces and expands the positioning table from the
+working paper.
+The six columns characterize each method along the five dimensions that are
+jointly required for K-Bound's contribution: label-free operation, the
+distinction between adapting and wrapping, benefit prediction before acting,
+abstention on the adaptation decision itself, and a formal false-adapt
+guarantee.
+
+\begin{table}[h]
+\centering
+\small
+\begin{tabular}{lccccc}
+\toprule
+ & label- & adapts? & predicts benefit & abstains on & false-adapt \\
+Work & free? & & \emph{before} adapting? & the decision? & guarantee? \\
+\midrule
+Tent \cite{wang2021tent} & yes & yes & no & no & no \\
+EATA \cite{niu2022eata} & yes & yes & partial (filtering) & no & no \\
+SAR \cite{niu2023sar} & yes & yes & stability only & no & no \\
+CoTTA \cite{wang2022cotta} & yes & yes & no & no & no \\
+TTT \cite{sun2020ttt} & yes & yes & no & no & no \\
+MEMO \cite{zhang2022memo} & yes & yes & no & no & no \\
+LAME \cite{boudiaf2022lame} & yes & yes & no & no & no \\
+NOTE \cite{gong2022note} & yes & yes & no & no & no \\
+ATC \cite{garg2022atc} & yes & monitors & post-hoc estimate & --- & no \\
+Agr.-on-Line \cite{baek2022agreement} & yes & monitors & post-hoc estimate & --- & no \\
+BBSE \cite{lipton2018detecting} & partial & corrects & corrects shift & no & no \\
+\textbf{\KGA\ (ours)} & yes & wrapper & \textbf{yes} & \textbf{yes} & \textbf{yes} \\
+\bottomrule
+\end{tabular}
+\caption{Positioning of K-Bound against adjacent methods. Prior TTA methods
+adapt (some with internal guards); performance estimators operate post-hoc.
+No prior method provides a single pre-adaptation adapt/freeze/abstain
+certificate with an explicit, proven unknowable region and a false-adapt bound.
+\KGA\ wraps any TTA candidate without modifying it.}
+\label{tab:rel}
+\end{table}
+
+The surviving gap is precise: no prior method provides a single
+adapt/freeze/abstain certificate with an \emph{explicit, proven} unknowable
+region and a false-adapt guarantee.
+
+To state this more carefully:
+\begin{itemize}
+\item TTA mechanisms adapt and (some) detect failure, but commitment happens
+    before detection and no false-adapt rate is bounded.
+\item Performance estimators (ATC, Agreement-on-the-Line) estimate $R_T(f)$
+    post-hoc; they do not certify $\sign\Delta$ before the adaptation decision.
+\item Guarded adaptation (EATA filtering, SAR resets) protects one failure
+    direction but does not pose the three-way decision with an unknowable
+    region.
+\item Identifiability theory (Ben-David et al., BBSE) shows when risk is
+    identifiable but does not yield a finite-sample, false-adapt-controlled
+    operational certificate.
+\item Selective prediction (Geifman and El-Yaniv) abstains on individual
+    predictions, not on the adaptation decision as a whole.
+\item Conformal prediction (Vovk et al., Angelopoulos and Bates) provides the
+    interval mechanism K-Bound uses, but not the framing of the
+    adapt/freeze/abstain decision.
+\end{itemize}
+
+K-Bound combines the identifiability insight (when is $\sign\Delta$
+recoverable?) with the conformal certificate mechanism (how do we control
+the false-adapt rate given a valid interval?) and the selective-abstention
+logic (when the interval is too wide to certify either sign, the correct
+action is to abstain) into a single coherent decision framework.
+The result is a method that is simultaneously label-free, mechanism-agnostic,
+pre-adaptive, three-way, and formally guaranteed --- a combination no prior
+work achieves.

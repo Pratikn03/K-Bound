@@ -1,0 +1,288 @@
+\chapter{Notation and Glossary}\label{app:notation}
+
+This appendix collects all mathematical notation used in the monograph in a
+single reference table, followed by a glossary of key technical terms.  Symbol
+conventions are drawn directly from the paper \cite{kbound2026repo} and are
+consistent throughout all chapters.
+
+% -----------------------------------------------------------------------
+\section{Notation table}
+\label{sec:app-notation-table}
+% -----------------------------------------------------------------------
+
+\begin{longtable}{lp{11cm}}
+\caption{Mathematical notation used throughout the monograph.}
+\label{tab:notation}\\
+\toprule
+Symbol & Meaning \\
+\midrule
+\endfirsthead
+\toprule
+Symbol & Meaning \\
+\midrule
+\endhead
+\midrule
+\multicolumn{2}{r}{\textit{continued on next page}}\\
+\endfoot
+\bottomrule
+\endlastfoot
+
+$P_S(X,Y)$ &
+  Source distribution.  Labels $Y$ are available at training and validation
+  time. \\
+
+$P_T(X,Y)$ &
+  Target distribution.  At deployment only $P_T(X)$ is observable (no target
+  labels). \\
+
+$f_0$ &
+  Frozen (baseline) predictor.  Deployed without modification unless
+  \textsc{adapt} fires. \\
+
+$f_a$ &
+  Adapted (candidate) predictor.  The output of an adaptation mechanism
+  (Tent, EATA, SAR, or any other) that is being evaluated. \\
+
+$\ell$ &
+  Per-sample loss function, e.g.\ $0/1$ loss or cross-entropy. \\
+
+$R_T(f)$ &
+  Target risk of predictor $f$: $R_T(f) = \E_{P_T}[\ell(f(X),Y)]$. \\
+
+$\Delta$ &
+  Adaptation benefit: $\Delta = R_T(f_0) - R_T(f_a)$.  Positive means
+  adapting reduces risk (helps); negative means it hurts. \\
+
+$\Delta(z)$ &
+  Conditional benefit at evidence value $z$: $\Delta(z) = \E[\ell(f_0(X),Y)
+  - \ell(f_a(X),Y) \mid Z = z]$. \\
+
+$\widehat\Delta$ &
+  Label-free (point) estimator of $\Delta$ or $\Delta(z)$, built without
+  target labels. \\
+
+$\varepsilon$ &
+  Certificate radius at level $\alpha$: with probability $\geq 1-\alpha$,
+  $|\Delta - \widehat\Delta| \leq \varepsilon$ (or $\Delta \geq \widehat\Delta
+  - \varepsilon$ for the one-sided form). \\
+
+$\alpha$ &
+  Miscoverage level in $(0,1)$; bounds the false-adapt probability
+  $\Pr(\textsc{adapt}\ \text{and}\ \Delta \leq 0) \leq \alpha$. \\
+
+$Z$ &
+  Label-free observable evidence: $Z = \phi(X_{1:m}, f_0, f_a)$, a vector of
+  statistics computable from unlabelled test scores and fixed predictors. \\
+
+$\phi(\cdot)$ &
+  Evidence map; extracts $Z$ from the unlabelled batch and predictor pair. \\
+
+$g(Z)$ &
+  Decision rule; maps evidence $Z$ to one of $\{\textsc{adapt}, \textsc{freeze},
+  \textsc{abstain}\}$. \\
+
+$g^\star$ &
+  Bayes-optimal gate: $g^\star(z) = \ind[\Delta(z) > 0]$. \\
+
+$D$ &
+  Observable disagreement region: $D = \{x : f_0(x) \neq f_a(x)\}$;
+  the support of the sign-of-difference signal. \\
+
+$p_a$ &
+  Probability mass of the target distribution on $D$: $p_a = P_T(X \in D)$. \\
+
+$p_0$ &
+  Probability mass of the source distribution on $D$: $p_0 = P_S(X \in D)$. \\
+
+$\TV(P, Q)$ &
+  Total variation distance between distributions $P$ and $Q$:
+  $\TV(P,Q) = \sup_{A} |P(A) - Q(A)|$. \\
+
+$\Law(X \mid P)$ &
+  Distribution (law) of $X$ under $P$. \\
+
+$\ind[E]$ &
+  Indicator of event $E$; equals $1$ if $E$ holds, $0$ otherwise. \\
+
+$\sign(t)$ &
+  Sign function: $\sign(t) = \ind[t > 0]$ (as used in
+  Theorem~\ref{thm:gate}). \\
+
+$\argmax$, $\argmin$ &
+  Arg-max and arg-min operators. \\
+
+$\R$ &
+  The real numbers $(-\infty, +\infty)$. \\
+
+$\E[\cdot]$ &
+  Expectation under the distribution clear from context. \\
+
+$\Pr[\cdot]$ &
+  Probability under the distribution clear from context. \\
+
+$n$ &
+  Sample size (number of paired benefits, calibration tasks, or stream steps
+  depending on context). \\
+
+$m$ &
+  Size of the unlabelled target batch. \\
+
+$R$ &
+  Benefit range $R = b - a$ where the paired benefits $X_i \in [a, b]$. \\
+
+$\widehat{V}$ &
+  Unbiased sample variance (denominator $n-1$) of the paired benefits $X_i$. \\
+
+$\widehat\mu$ &
+  Empirical mean of the paired benefits; equals $\widehat\Delta$ in the
+  batch estimator. \\
+
+$E_t^+$, $E_t^-$ &
+  Two one-sided betting e-processes (Theorem~\ref{thm:evalue}):
+  $E_t^+$ tests $H_0^+: \Delta \leq 0$; $E_t^-$ tests $H_0^-: \Delta \geq 0$. \\
+
+$\lambda_i$, $\nu_i$ &
+  Predictable bet sizes for $E_t^+$ and $E_t^-$ respectively (aGRAPA
+  truncated bets, formed from past observations). \\
+
+$\texttt{ks\_mean}$, $\texttt{ks\_max}$ &
+  Mean and maximum per-detector Kolmogorov--Smirnov drift between calibration
+  and test score marginals (fields of \texttt{Evidence}). \\
+
+$\texttt{disagree}$ &
+  $1 - \overline{\rho}$: one minus the mean pairwise rank correlation of
+  test scores across detectors (field of \texttt{Evidence}). \\
+
+$\texttt{ess\_frac}$ &
+  $\mathrm{ESS}/n_\mathrm{test}$: scale-free effective sample size of
+  the Gaussian-ratio importance weights (field of \texttt{Evidence}). \\
+
+$\delta$ &
+  Detection threshold or evidence separation; in the quantitative
+  non-identifiability theorem (Theorem~\ref{thm:imp}) a location-shift
+  parameter indexing $\TV = 2\Phi(\tfrac{1}{2}\sqrt{n}\,\delta) - 1$. \\
+
+Regret-to-oracle &
+  $R(g) - R(g^\star)$: excess risk of decision rule $g$ over the
+  per-condition oracle $g^\star = \ind[\Delta > 0]$. \\
+
+\end{longtable}
+
+% -----------------------------------------------------------------------
+\section{Glossary}
+\label{sec:app-notation-glossary}
+% -----------------------------------------------------------------------
+
+\begin{description}
+
+\item[Test-time adaptation (TTA).]
+  The practice of updating (adapting) a pre-trained model using only unlabelled
+  data from a new target distribution at deployment time.  Standard TTA
+  mechanisms include entropy minimisation (Tent \cite{wang2021tent}),
+  sample-filtered updates (EATA \cite{niu2022eata}), and sharpness-aware resets
+  (SAR \cite{niu2023sar}).
+
+\item[Trichotomy.]
+  The three-way decision returned by \KGA{}: \textsc{adapt} (adapting is
+  certified beneficial), \textsc{freeze} (adapting is certified harmful), or
+  \textsc{abstain} (the sign of the benefit is not knowable at level $\alpha$).
+  Contrasts with the binary adapt/freeze choice of all prior TTA methods.
+
+\item[Label-free evidence $Z$.]
+  The vector of statistics $Z = \phi(X_{1:m}, f_0, f_a)$ computable from
+  unlabelled target data, the frozen model, and the candidate adaptation,
+  without any target labels.  In the \texttt{kga} package, $Z$ is represented
+  by the \texttt{Evidence} dataclass with fields \texttt{ks\_mean},
+  \texttt{ks\_max}, \texttt{disagree}, \texttt{entropy\_shift},
+  \texttt{conf\_shift}, \texttt{calib\_conf}, \texttt{test\_conf},
+  \texttt{ess}, and \texttt{ess\_frac}.
+
+\item[Certificate.]
+  A finite-sample statement of the form $\Delta \geq \widehat\Delta - \varepsilon$
+  holding with probability at least $1 - \alpha$.  Represented in the \texttt{kga}
+  package as the \texttt{Certificate} dataclass with fields \texttt{delta\_hat},
+  \texttt{epsilon}, \texttt{method}, \texttt{alpha}, \texttt{n}, and derived
+  properties \texttt{lower} / \texttt{upper}.
+
+\item[False adapt.]
+  The event that \KGA{} returns \textsc{adapt} but the true benefit is
+  non-positive ($\Delta \leq 0$); i.e.\ deploying $f_a$ actually hurts.
+  Theorem~\ref{thm:cert} guarantees $\Pr(\text{false adapt}) \leq \alpha$.
+
+\item[False freeze.]
+  The symmetric event: \KGA{} returns \textsc{freeze} but $\Delta > 0$ (keeping
+  $f_0$ forgoes a genuine benefit).  Also bounded at $\leq \alpha$ by the
+  two-sided version of the certificate.
+
+\item[Abstention.]
+  The safe default action returned when the certificate brackets zero (i.e.\
+  $\widehat\Delta - \varepsilon \leq 0 \leq \widehat\Delta + \varepsilon$).
+  \KGA{} keeps the frozen model $f_0$ and logs the evidence for monitoring.
+  Abstention is mandatory, not merely conservative, in the non-identifiable
+  regime (Theorem~\ref{thm:imp}, Corollary~\ref{sec:t2-cor-abstain}).
+
+\item[Empirical-Bernstein certificate.]
+  The batch certificate estimator of Maurer \& Pontil (2009)
+  \cite{maurer2009empirical}, the default in \KGA{} (\texttt{method='ebern'}).
+  The radius is $\varepsilon = \sqrt{2\widehat{V}\ln(2/\alpha)/n} +
+  7R\ln(2/\alpha)/(3(n-1))$, which is strictly tighter than Hoeffding when the
+  sample variance $\widehat{V} \ll R^2$.
+
+\item[Conformal certificate (split-conformal).]
+  A certificate whose radius is the $(1-\alpha)$-quantile of held-out
+  calibration residuals $r_i = |\widehat\Delta_i - \Delta_i|$
+  \cite{vovk2005algorithmic,angelopoulos2023conformal}.  The estimator used in
+  the main K-Bound cross-task experiments (\texttt{method='conformal'}).
+
+\item[E-value / anytime certificate.]
+  The anytime-valid certificate based on two one-sided testing-by-betting
+  e-processes \cite{ville1939etude,waudbysmith2024betting}.  Unlike the batch
+  and conformal certificates, this certificate is valid simultaneously over all
+  stream lengths with no multiplicity correction (\texttt{method='evalue'}).
+
+\item[Covariate shift.]
+  The setting where $P_T(X) \neq P_S(X)$ but $P_T(Y \mid X) = P_S(Y \mid X)$.
+  Theorem~\ref{thm:pos} identifies this as a provably knowable regime under the
+  support-overlap condition: large KS drift combined with adequate importance-weight
+  ESS allows \KGA{} to certify the correct action.
+
+\item[Disagreement region.]
+  The set $D = \{x : f_0(x) \neq f_a(x)\}$ of inputs on which the frozen and
+  adapted predictors differ.  Its probability mass under $P_T$ governs the
+  sign-of-difference identifiability (Theorem~\ref{thm:disagree}).
+
+\item[Score archive.]
+  The 123-task score cache at \texttt{experiments/elara\_u/score\_archive/},
+  the main empirical dataset for K-Bound.  Each task is one \texttt{.npz} file
+  with keys \texttt{Sval}, \texttt{yval}, \texttt{Stest}, \texttt{ytest},
+  \texttt{det\_names}, \texttt{val\_auc}, and \texttt{domain}.  The archive
+  covers ADBench tabular (47 tasks), credit-card fraud, UNSW-NB15 cyber,
+  behaviour/HAR, NLP (Enron), time-series (NAB/SMD/TSB-AD), and image benchmarks.
+
+\item[Non-identifiability witness.]
+  A pair of target worlds $(P_T^1, P_T^2)$ with $\Law(Z \mid P_T^1) = \Law(Z
+  \mid P_T^2)$ and $\sign\Delta^1 = -\sign\Delta^2 \neq 0$, proving that no
+  label-free rule can commit correctly in both worlds.  The canonical witness
+  (Theorem~\ref{thm:imp}) uses $X \sim \mathcal{N}(0,1)$, $f_0 = \ind[X > 0]$,
+  $f_a = \ind[X < 0]$, and flipped labels.
+
+\item[Regret-to-oracle.]
+  The excess risk $R(g) - R(g^\star)$ of a decision rule $g$ over the
+  per-condition oracle $g^\star = \ind[\Delta > 0]$.  By
+  Theorem~\ref{thm:gate}, regret decomposes as
+  $\E[|\Delta(Z)| \ind\{\sign\widehat\Delta(Z) \neq \sign\Delta(Z)\}]$;
+  the experiments report this quantity as the primary performance metric
+  alongside AUROC.
+
+\item[Risk-aligned evidence.]
+  Evidence $Z$ is risk-aligned (Definition~3 of Chapter~\ref{ch:formulation})
+  if it identifies or brackets the sign of $\Delta(z)$; equivalently, $Z$
+  suffices to determine whether adapting helps.  Risk alignment is Assumption~(iii)
+  inherited by \KGA{} from Theorem~\ref{thm:cert}.
+
+\item[Mechanism-agnostic wrapper.]
+  The design pattern of \KGA{}: the algorithm wraps any existing adaptation
+  mechanism (Tent, EATA, SAR, or other) without modifying it.  The
+  adaptation mechanism supplies $f_a$; \KGA{} decides whether to deploy it.
+
+\end{description}

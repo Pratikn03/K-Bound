@@ -18,18 +18,27 @@ classifiers = [
 ]
 
 [tool.setuptools]
-package-dir = {"" = "src"}
+package-dir = {"" = "src", "kga" = "kga"}
 
 [tool.setuptools.packages.find]
-where = ["src"]
-include = ["uais*"]
+where = ["src", "."]
+include = ["uais*", "kga*"]
+
+[tool.setuptools.package-data]
+kga = ["py.typed"]
 
 [tool.setuptools.dynamic]
 dependencies = {file = ["requirements.txt"]}
 
+[tool.pytest.ini_options]
+minversion = "7.0"
+testpaths = ["tests"]
+addopts = "-q --strict-markers"
+pythonpath = [".", "src"]
+
 [tool.coverage.run]
 branch = true
-source = ["src/uais"]
+source = ["kga", "src/uais"]
 
 [tool.black]
 line-length = 120

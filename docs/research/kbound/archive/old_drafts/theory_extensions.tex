@@ -1,0 +1,97 @@
+% K-Bound theory extensions — ready to \input into kbound.tex (§5).
+% Requires amsthm with \newtheorem{theorem}/{lemma} and \graphicspath including ../figures/final/.
+% Every numeric claim is produced by scripts/theory_extensions_validation.py.
+
+% ---------- A1: Le Cam minimax lower bound ----------
+\begin{theorem}[Le Cam lower bound for label-free adaptation]\label{thm:lecam}
+Let $P_T^1,P_T^2$ be target worlds with $\Delta_1>0$ (adapt correct) and $\Delta_2<0$ (freeze
+correct), inducing evidence laws $\mu_i=\mathrm{Law}(Z\mid P_T^i)$. Put $\delta=\min(|\Delta_1|,|\Delta_2|)$
+and $\mathrm{TV}=\mathrm{TV}(\mu_1,\mu_2)$. Every (randomized) committal label-free rule
+$g:Z\to\{\mathrm{adapt},\mathrm{freeze}\}$ satisfies
+\[
+\max_{i\in\{1,2\}}\mathbb{E}_i[\text{committal regret}]\;\ge\;\tfrac{\delta}{2}\,(1-\mathrm{TV}),
+\]
+with equality attainable by the likelihood-ratio test. In the observationally-equivalent case
+$\mu_1=\mu_2$ ($\mathrm{TV}=0$) the bound is $\delta/2$.
+\end{theorem}
+\begin{proof}
+Committal regret is $|\Delta_1|\mathbf 1[g{=}\mathrm{freeze}]$ in world 1 and
+$|\Delta_2|\mathbf 1[g{=}\mathrm{adapt}]$ in world 2. Under the uniform prior, the Bayes regret is
+$\tfrac12\!\left(|\Delta_1|P_1(g{=}\mathrm{freeze})+|\Delta_2|P_2(g{=}\mathrm{adapt})\right)
+\ge \tfrac{\delta}{2}\!\left(P_1(g{=}\mathrm{freeze})+P_2(g{=}\mathrm{adapt})\right)$.
+The parenthesised sum is the type-I plus type-II error of a test of $\mu_1$ versus $\mu_2$; its
+minimum over all $Z$-measurable tests is $1-\mathrm{TV}(\mu_1,\mu_2)$ (Neyman--Pearson / Le Cam).
+Hence the Bayes regret is at least $\tfrac{\delta}{2}(1-\mathrm{TV})$, and the worst case dominates
+the average. The likelihood-ratio test attains the $1-\mathrm{TV}$ error sum, giving the matching
+upper bound.
+\end{proof}
+\noindent\emph{Witness.} $X\sim\mathcal N(0,1)$ in both worlds, $f_0=\mathbf 1[x>0]$, $f_a=\mathbf 1[x<0]$,
+$0/1$ loss, with $Y=\mathbf 1[X>0]$ (world 1, $\Delta_1{=}{+}1$) and $Y=\mathbf 1[X<0]$ (world 2,
+$\Delta_2{=}{-}1$). As $Z$ is a function of $X$ alone, $\mu_1=\mu_2$, so worst-case regret $\ge 1/2$.
+Empirically the optimal rule attains $0.500$ at $\mathrm{TV}{=}0$ and the bound is tight to
+$1.3\times10^{-3}$ across a TV sweep (Fig.~\ref{fig:lecam}).
+\begin{figure}[t]\centering\includegraphics[width=0.62\textwidth]{fig_lecam_bound.png}
+\caption{Theorem~\ref{thm:lecam}: the Le Cam bound $(\delta/2)(1-\mathrm{TV})$ coincides with the
+optimal rule's worst-case regret; at $\mathrm{TV}=0$ (the witness) it equals $\delta/2$.}\label{fig:lecam}\end{figure}
+
+% ---------- A2: Forced abstention ----------
+\begin{theorem}[Forced abstention]\label{thm:forced}
+On an observationally-equivalent pair ($\mu_1=\mu_2$, $\Delta_1>0,\Delta_2<0$), any label-free rule
+$g:Z\to\{\mathrm{adapt},\mathrm{freeze},\mathrm{abstain}\}$ with false-adapt rate $\le\alpha$ and
+false-freeze rate $\le\alpha$ abstains with probability at least $1-2\alpha$; as $\alpha\to0$ the
+abstention probability tends to $1$.
+\end{theorem}
+\begin{proof}
+Because $\mu_1=\mu_2=\mu$ and $g$ depends only on $Z$ (plus independent randomness), the action law
+$(a,f,s)$ under $\mu$ is the same in both worlds and sums to $1$. False-freeze in world 1 is $f\le\alpha$
+and false-adapt in world 2 is $a\le\alpha$, so $s=1-a-f\ge 1-2\alpha$; $a=f=\alpha$ achieves it.
+\end{proof}
+\noindent The certificate's conformal rule abstains on $100\%$ of the witness instances, the
+$\alpha\to0$ prediction.
+
+% ---------- A3: Regret decomposition ----------
+\begin{lemma}[Regret decomposition]\label{lem:regret}
+For $\Delta=R_T(f_0)-R_T(f_a)$ and any policy whose abstentions default to $f_0$,
+\[
+\mathrm{Regret}(g)=\mathbb E\big[|\Delta|\mathbf 1\{g{=}\mathrm{adapt},\Delta{<}0\}\big]
++\mathbb E\big[|\Delta|\mathbf 1\{g{=}\mathrm{freeze},\Delta{>}0\}\big]
++\mathbb E\big[|\Delta|\mathbf 1\{g{=}\mathrm{abstain},\Delta{>}0\}\big],
+\]
+i.e.\ \textsc{false-adapt} $+$ \textsc{false-freeze} $+$ \textsc{abstain-coverage}, each $\ge0$.
+Always-adapt equals the first term over all $\Delta<0$; always-freeze the second over all $\Delta>0$.
+\end{lemma}
+\begin{proof}
+The oracle attains $\min(R_{f_0},R_{f_a})$. Adapting costs $R_{f_a}-\min=|\Delta|\mathbf1\{\Delta<0\}$;
+freezing or abstaining (to $f_0$) costs $R_{f_0}-\min=|\Delta|\mathbf1\{\Delta>0\}$. Partitioning by the
+disjoint decision events yields the three terms; abstaining when $\Delta<0$ is costless.
+\end{proof}
+\noindent Empirically the identity is exact: total regret $49.34 = 0.257+0.189+48.90$, and the
+trichotomy ($49.34$) beats always-adapt ($163.81$) and always-freeze ($153.05$) on a mixed set
+(Fig.~\ref{fig:regret}).
+\begin{figure}[t]\centering\includegraphics[width=0.55\textwidth]{fig_regret_decomposition.png}
+\caption{Lemma~\ref{lem:regret}: regret splits into false-adapt, false-freeze, and
+abstain-coverage; KGA suppresses false-adapt at the cost of coverage.}\label{fig:regret}\end{figure}
+
+% ---------- A4: Multiclass disagreement-region identifiability ----------
+\begin{theorem}[Multiclass sign identifiability on the disagreement region]\label{thm:multiclass}
+Let $Y\in\{1,\dots,K\}$ with $0/1$ loss, $f_0,f_a$ known, and $D=\{x:f_0(x)\ne f_a(x)\}$. With
+$a_0^D=P_T(f_0{=}Y\mid D)$, $a_a^D=P_T(f_a{=}Y\mid D)$,
+\[
+\Delta=R_T(f_0)-R_T(f_a)=P_T(D)\,(a_a^D-a_0^D),\qquad
+\operatorname{sign}\Delta=\operatorname{sign}(a_a^D-a_0^D).
+\]
+Hence $\operatorname{sign}\Delta$ is label-free identifiable iff the evidence determines which
+predictor is more accurate on $D$. Theorem~5 (binary) is the case $a_0^D=1-a_a^D$.
+\end{theorem}
+\begin{proof}
+Off $D$, $f_0=f_a$, so $\delta(x)=\mathbf1\{f_0\,\text{wrong}\}-\mathbf1\{f_a\,\text{wrong}\}=0$. On
+$D$, $\delta(x)=\mathbf1\{f_a{=}Y\}-\mathbf1\{f_0{=}Y\}\in\{-1,0,+1\}$, where the value $0$ (both wrong)
+is possible only for $K\ge3$. Thus $\Delta=\mathbb E[\delta]=P(D)\,\mathbb E[\delta\mid D]=P(D)(a_a^D-a_0^D)$.
+\end{proof}
+\noindent\emph{Delta over Steinhardt--Liang.} The criterion needs only the \emph{sign of a difference}
+of two accuracies on $D$ (an ordinal, paired judgment), strictly weaker than estimating the absolute
+risks $R(f_0),R(f_a)$. This closes the classification half of Conjecture~1; the regression-loss case,
+where $\delta$ is real-valued, remains open. Validation ($K{=}5$): a helpful world
+($a_a^D{=}0.542>a_0^D{=}0.283$, $\Delta{=}{+}0.150$) and a harmful world
+($a_a^D{=}0.279<a_0^D{=}0.511$, $\Delta{=}{-}0.146$) match the identity to machine precision with a
+both-wrong-on-$D$ mass of $0.18$, confirming the genuinely multiclass regime.

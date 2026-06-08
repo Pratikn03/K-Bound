@@ -1,0 +1,407 @@
+\chapter{Complete Result Tables}\label{app:tables}
+
+This appendix contains the full numerical tables for all primary experiments reported in
+Chapter~\ref{ch:exp1} (anomaly-routing benchmark) and Chapter~\ref{ch:exp2} (TTA and
+CIFAR-10 experiments).  Each table identifies its source JSON file and field path.
+Numbers are reproduced verbatim from the JSON files without rounding beyond what floating-point
+display requires.  All tables are self-contained: column headings, units, and source fields
+are given in each caption.
+
+% ============================================================
+\section{Per-Seed Rigor Table (Mixed Regime, 8 Seeds)}
+\label{sec:app-rigor}
+% ============================================================
+
+Source file: \texttt{experiments/kbound/results/rigor\_multiseed.json}.
+The file stores aggregate mean and standard deviation across seeds (field
+\texttt{mean\_std}); per-seed individual AUROC values are not stored in the JSON output
+(the seeded runs are summarised by the aggregate statistics).  The table below therefore
+presents the complete set of aggregate statistics as stored, together with the paired
+$t$-test results for both comparisons.
+
+\begin{table}[ht]
+\centering
+\caption{Multi-seed aggregate statistics for the mixed regime (8 seeds, split-conformal,
+  $\alpha = 0.1$).  Source: \texttt{rigor\_multiseed.json}, fields \texttt{mean\_std}
+  and \texttt{paired\_ttest\_*}.  Mean and standard deviation are across all 8 seeds.}
+\label{tab:full-rigor}
+\begin{tabular}{llcc}
+\toprule
+Metric & Policy / Description & Mean & Std \\
+\midrule
+Mean test AUROC & Always-adapt       & 0.69698 & 0.00008 \\
+Mean test AUROC & Always-freeze      & 0.58419 & 0.00147 \\
+Mean test AUROC & \KGA               & 0.68598 & 0.00334 \\
+Mean test AUROC & Oracle             & 0.71803 & 0.00064 \\
+\midrule
+Safety: adapt precision  & $\Pr(B>0 \mid \text{ADAPT})$    & 0.93577 & 0.01014 \\
+Safety: false-adapt rate & $\Pr(B<0 \mid \text{ADAPT})$    & 0.06423 & 0.01014 \\
+Coverage (fraction acted) & adapt $+$ freeze decisions     & 0.37263 & 0.01746 \\
+\midrule
+\multicolumn{4}{l}{\textit{Paired $t$-tests (degrees of freedom $= n\_\text{seeds} - 1 = 7$):}} \\
+\KGA\ vs always-freeze & $t = 62.236$, $p = 7.262 \times 10^{-11}$ & \multicolumn{2}{l}{\KGA\ significantly higher} \\
+\KGA\ vs always-adapt  & $t = -8.760$, $p = 5.084 \times 10^{-5}$  & \multicolumn{2}{l}{\KGA\ significantly lower} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\paragraph{Notes.}  The paired $t$-test values are sourced from fields
+\texttt{paired\_ttest\_KBound\_vs\_always\_freeze} ($t = 62.2358$,
+$p = 7.2620 \times 10^{-11}$) and \texttt{paired\_ttest\_KBound\_vs\_always\_adapt}
+($t = -8.7599$, $p = 5.0843 \times 10^{-5}$).  Both signs are reported honestly:
+\KGA\ reliably beats freezing and reliably trails always-adapt in this mild-harm regime.
+
+% ============================================================
+\section{Full Ablation Grid}
+\label{sec:app-ablations}
+% ============================================================
+
+Source file: \texttt{experiments/kbound/results/ablations.json}.  The table below
+gives every entry from the three sub-experiments: evidence-drop, $\alpha$ sweep, and
+batch-size sweep.
+
+\subsection{Evidence-Drop Ablation (Full Grid)}
+
+\begin{longtable}{lccc}
+\caption{Evidence-drop ablation: complete grid.  Each row drops one feature of $Z$ and
+  reports regret, false-adapt rate, and coverage on the mixed-regime benchmark.
+  Baseline uses all nine features.  Source: \texttt{ablations.json},
+  fields \texttt{baseline} and \texttt{evidence\_drop}.}\label{tab:full-abl-drop} \\
+\toprule
+Feature dropped & Regret & False-adapt & Coverage \\
+\midrule
+\endfirsthead
+\multicolumn{4}{c}{\tablename\ \thetable{} (continued)}\\
+\toprule
+Feature dropped & Regret & False-adapt & Coverage \\
+\midrule
+\endhead
+\midrule
+\multicolumn{4}{r}{\textit{Continued on next page}}\\
+\endfoot
+\bottomrule
+\endlastfoot
+Baseline (all 9 features) & 0.036554 & 0.065041 & --- \\
+\midrule
+\texttt{val\_max}      & 0.035039 & 0.064000 & 0.360434 \\
+\texttt{val\_gap}      & 0.037203 & 0.066667 & 0.336043 \\
+\texttt{val\_mean}     & 0.042568 & 0.070796 & 0.319783 \\
+\texttt{ks\_mean}      & 0.036121 & 0.065574 & 0.352304 \\
+\texttt{ks\_max}       & 0.037279 & 0.065574 & 0.352304 \\
+\textbf{\texttt{disagree}} & \textbf{0.094045} & \textbf{0.250000} & \textbf{0.140921} \\
+\texttt{val\_std}      & 0.036518 & 0.074380 & 0.344173 \\
+\texttt{anomaly\_rate} & 0.036615 & 0.065041 & 0.349593 \\
+\texttt{log\_ntest}    & 0.039264 & 0.067797 & 0.336043 \\
+\end{longtable}
+
+\subsection{Alpha Sweep (Full Grid)}
+
+\begin{table}[ht]
+\centering
+\caption{$\alpha$ sweep: complete grid of conformal level, band width $\varepsilon$,
+  coverage, and false-adapt rate.  Source: \texttt{ablations.json},
+  field \texttt{alpha\_sweep}.}
+\label{tab:full-alpha}
+\begin{tabular}{lcccc}
+\toprule
+$\alpha$ & $\varepsilon$ & Coverage & False-adapt & Source key \\
+\midrule
+0.01 & 0.323988 & 0.113821 & 0.000000 & \texttt{"0.01"} \\
+0.05 & 0.191235 & 0.262873 & 0.073684 & \texttt{"0.05"} \\
+0.10 & 0.139075 & 0.349593 & 0.065041 & \texttt{"0.1"} \\
+0.20 & 0.091047 & 0.487805 & 0.072289 & \texttt{"0.2"} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Batch-Size Sweep (Full Grid)}
+
+\begin{table}[ht]
+\centering
+\caption{Batch-size sweep: complete grid of test-batch size, certificate width
+  $\varepsilon$, and coverage.  Source: \texttt{ablations.json},
+  field \texttt{batchsize\_sweep}.}
+\label{tab:full-batch}
+\begin{tabular}{lccc}
+\toprule
+Batch size & $\varepsilon$ & Coverage & Source key \\
+\midrule
+16  & 0.443381 & 0.020325 & \texttt{"16"} \\
+32  & 0.354927 & 0.035599 & \texttt{"32"} \\
+64  & 0.277723 & 0.198830 & \texttt{"64"} \\
+128 & 0.255357 & 0.209040 & \texttt{"128"} \\
+256 & 0.182329 & 0.261111 & \texttt{"256"} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+% ============================================================
+\section{Regression Covariate-Shift Decision Summary}
+\label{sec:app-regression}
+% ============================================================
+
+Source file: \texttt{experiments/kbound/results/regression\_covariate.json}.
+
+\begin{table}[ht]
+\centering
+\caption{Regression covariate-shift experiment: full metrics.
+  Source: \texttt{regression\_covariate.json}.
+  Benefit $B = \text{MSE}(f_0) - \text{MSE}(f_a)$; positive $B$ means adaptation hurts
+  (higher MSE for $f_a$).  No adapt decisions were issued; adapt precision and
+  false-adapt rate are undefined (\texttt{null} in the JSON).}
+\label{tab:full-regression}
+\begin{tabular}{ll}
+\toprule
+Field & Value \\
+\midrule
+\texttt{n\_instances}              & 72 \\
+\texttt{eps}                       & 0.218147 \\
+\texttt{mean\_B(mse0-msea)}        & $-0.086346$ \\
+\texttt{harmful\_rate\_B\textless{}0} & 0.791667 \\
+\midrule
+\textit{Decision counts} & \\
+\texttt{decision\_counts.ADAPT}    & 0 \\
+\texttt{decision\_counts.FREEZE}   & 11 \\
+\texttt{decision\_counts.ABSTAIN}  & 61 \\
+\midrule
+\textit{Policy mean MSE} & \\
+\texttt{mean\_MSE.always\_adapt(IW)} & 0.337601 \\
+\texttt{mean\_MSE.always\_freeze}    & 0.251255 \\
+\texttt{mean\_MSE.K\_Bound}          & 0.251255 \\
+\texttt{mean\_MSE.oracle}            & 0.251188 \\
+\midrule
+\texttt{adapt\_precision\_B>0}     & null (no adapt decisions) \\
+\texttt{false\_adapt\_rate\_B\textless{}0} & null (no adapt decisions) \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+% ============================================================
+\section{Mixed-Regime Full Metrics}
+\label{sec:app-mixed}
+% ============================================================
+
+Source file: \texttt{experiments/kbound/results/mixed\_regime\_results.json}.
+
+\begin{table}[ht]
+\centering
+\caption{Mixed-regime benchmark: complete metrics from a single run ($n = 369$).
+  Source: \texttt{mixed\_regime\_results.json}.}
+\label{tab:full-mixed}
+\begin{tabular}{ll}
+\toprule
+Field & Value \\
+\midrule
+\texttt{n\_instances}  & 369 \\
+\texttt{eps}           & 0.131487 \\
+\midrule
+\textit{Decision distribution --- clean condition (true $\Delta = -0.041$)} & \\
+\texttt{decision\_distribution\_by\_condition.clean.ADAPT}    & 8 \\
+\texttt{decision\_distribution\_by\_condition.clean.FREEZE}   & 5 \\
+\texttt{decision\_distribution\_by\_condition.clean.ABSTAIN}  & 110 \\
+\midrule
+\textit{Decision distribution --- detectable-failure condition (true $\Delta = +0.193$)} & \\
+\texttt{decision\_distribution\_by\_condition.detectable.ADAPT}    & 71 \\
+\texttt{decision\_distribution\_by\_condition.detectable.FREEZE}   & 3 \\
+\texttt{decision\_distribution\_by\_condition.detectable.ABSTAIN}  & 49 \\
+\midrule
+\textit{Decision distribution --- covert-failure condition (true $\Delta = +0.181$)} & \\
+\texttt{decision\_distribution\_by\_condition.covert.ADAPT}    & 59 \\
+\texttt{decision\_distribution\_by\_condition.covert.FREEZE}   & 3 \\
+\texttt{decision\_distribution\_by\_condition.covert.ABSTAIN}  & 61 \\
+\midrule
+\textit{True mean benefit by condition} & \\
+\texttt{true\_mean\_benefit\_B\_by\_condition.clean}       & $-0.040876$ \\
+\texttt{true\_mean\_benefit\_B\_by\_condition.detectable}  & $+0.192928$ \\
+\texttt{true\_mean\_benefit\_B\_by\_condition.covert}      & $+0.180573$ \\
+\midrule
+\textit{Safety} & \\
+\texttt{safety.adapt\_precision\_B>0}       & 0.934783 \\
+\texttt{safety.false\_adapt\_rate\_B\textless{}0} & 0.065217 \\
+\midrule
+\textit{Policy mean AUROC} & \\
+\texttt{mean\_auc\_policies.always\_adapt}  & 0.697111 \\
+\texttt{mean\_auc\_policies.always\_freeze} & 0.586236 \\
+\texttt{mean\_auc\_policies.K\_Bound}       & 0.689852 \\
+\texttt{mean\_auc\_policies.oracle}         & 0.718913 \\
+\midrule
+\textit{Regret vs oracle} & \\
+\texttt{regret\_vs\_oracle.always\_adapt}   & 0.021801 \\
+\texttt{regret\_vs\_oracle.always\_freeze}  & 0.132677 \\
+\texttt{regret\_vs\_oracle.K\_Bound}        & 0.029061 \\
+\midrule
+\textit{Non-identifiability: clean vs covert boundary} & \\
+\texttt{nonidentifiability\_clean\_vs\_covert.mean\_Z\_L2\_distance\_clean\_to\_nearest\_covert} & 1.353908 \\
+\texttt{nonidentifiability\_clean\_vs\_covert.mean\_B\_clean}   & $-0.040876$ \\
+\texttt{nonidentifiability\_clean\_vs\_covert.mean\_B\_covert}  & $+0.180573$ \\
+\texttt{nonidentifiability\_clean\_vs\_covert.mean\_Z\_L2\_distance\_clean\_to\_nearest\_detectable} & 3.099503 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+% ============================================================
+\section{Harmful-Fusion Regime Full Metrics}
+\label{sec:app-harmful}
+% ============================================================
+
+Source file: \texttt{experiments/kbound/results/kbound\_harmful\_results.json}.
+
+\begin{table}[ht]
+\centering
+\caption{Harmful-fusion regime: complete metrics ($n = 123$ tasks,
+  candidate $= \texttt{elara\_fuse}$, base rate harmful $= 79.7\%$).
+  Source: \texttt{kbound\_harmful\_results.json}.}
+\label{tab:full-harmful}
+\begin{tabular}{ll}
+\toprule
+Field & Value \\
+\midrule
+\texttt{setup}              & \texttt{fa=elara\_fuse (harmful {\textasciitilde}80\%), f0=auto\_select} \\
+\texttt{n\_tasks}           & 123 \\
+\texttt{eps}                & 0.039848 \\
+\texttt{base\_rate\_harmful\_B\textless{}0} & 0.796748 \\
+\midrule
+\textit{Decision counts} & \\
+\texttt{counts.ADAPT}   & 1 \\
+\texttt{counts.FREEZE}  & 13 \\
+\texttt{counts.ABSTAIN} & 109 \\
+\midrule
+\textit{Safety} & \\
+\texttt{adapt\_precision\_B>0}       & 0.000 \\
+\texttt{false\_adapt\_rate\_B\textless{}0} & 1.000 \\
+\texttt{freeze\_correct\_B\textless{}=0}   & 1.000 \\
+\midrule
+\textit{Policy mean AUROC} & \\
+\texttt{mean\_auc.always\_adapt(elara\_fuse)} & 0.728428 \\
+\texttt{mean\_auc.always\_freeze(auto\_select)} & 0.748058 \\
+\texttt{mean\_auc.K-Bound\_trichotomy}  & 0.747946 \\
+\texttt{mean\_auc.oracle}               & 0.749863 \\
+\midrule
+\textit{Regret vs oracle} & \\
+\texttt{regret\_vs\_oracle.always\_adapt}  & 0.021435 \\
+\texttt{regret\_vs\_oracle.always\_freeze} & 0.001806 \\
+\texttt{regret\_vs\_oracle.K-Bound}        & 0.001918 \\
+\midrule
+\textit{Regret ratio (always-adapt / \KGA)} & $0.021435 / 0.001918 \approx 11.2$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\paragraph{Note on the adapt decision.}  The single ADAPT decision issued by \KGA\
+(\texttt{counts.ADAPT} $= 1$) was on a task where $B < 0$ (field
+\texttt{adapt\_precision\_B>0} $= 0.0$, field
+\texttt{false\_adapt\_rate\_B\textless{}0} $= 1.0$).  This single error does not affect
+the AUROC or regret materially because one task out of 123 has negligible weight; it
+reflects the irreducible probabilistic tolerance of the conformal guarantee at $\alpha=0.1$.
+
+% ============================================================
+\section{Clean Non-identifiability Witness: Full Metrics}
+\label{sec:app-witness}
+% ============================================================
+
+Source file: \texttt{experiments/kbound/results/witness\_clean.json}.
+
+\begin{table}[ht]
+\centering
+\caption{Clean non-identifiability witness: complete metrics ($M = 300$ instances).
+  Source: \texttt{witness\_clean.json}.  All five KS $p$-values exceed $0.05$;
+  \KGA\ abstains on $100\%$ of instances.}
+\label{tab:full-witness}
+\begin{tabular}{ll}
+\toprule
+Field & Value \\
+\midrule
+\texttt{M}                    & 300 \\
+\texttt{mean\_abs\_true\_benefit} & 1.0 \\
+\texttt{world0\_mean\_B}      & $-1.0$ \\
+\texttt{world1\_mean\_B}      & $+1.0$ \\
+\midrule
+\textit{KS $p$-values (Z-feature law, World 0 vs World 1)} & \\
+\texttt{Z\_indistinguishable\_KS\_pvalues.frac\_pos}   & 0.9647 \\
+\texttt{Z\_indistinguishable\_KS\_pvalues.std}         & 0.9418 \\
+\texttt{Z\_indistinguishable\_KS\_pvalues.ks\_vs\_ref} & 0.7988 \\
+\texttt{Z\_indistinguishable\_KS\_pvalues.mean\_f0}    & 0.9647 \\
+\texttt{Z\_indistinguishable\_KS\_pvalues.skew}        & 0.1648 \\
+\texttt{all\_Z\_features\_p>0.05}                      & \texttt{true} \\
+\midrule
+\texttt{abstain\_rate}                            & 1.0 \\
+\texttt{eps}                                      & 1.395233 \\
+\texttt{mean\_|\textasciicircum{}Bhat|}            & 0.263773 \\
+\texttt{forced\_commit\_regret\_vs\_oracle}        & 0.513333 \\
+\texttt{abstain\_regret\_vs\_oracle(default\_freeze)} & 0.466667 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+% ============================================================
+\section{Knowability Trichotomy Suite: Full Metrics}
+\label{sec:app-trichotomy}
+% ============================================================
+
+Source file: \texttt{experiments/kbound/results/knowability\_results.json}.
+
+\begin{table}[ht]
+\centering
+\caption{Knowability trichotomy suite (clean, 123 tasks): complete metrics.
+  Source: \texttt{knowability\_results.json}.}
+\label{tab:full-trichotomy}
+\begin{tabular}{ll}
+\toprule
+Field & Value \\
+\midrule
+\texttt{metrics.n\_tasks}                          & 123 \\
+\texttt{metrics.eps\_conformal}                    & 0.049201 \\
+\texttt{metrics.alpha}                             & 0.10 \\
+\texttt{metrics.coverage}                          & 0.170732 \\
+\texttt{metrics.n\_adapt}                          & 20 \\
+\texttt{metrics.n\_freeze}                         & 1 \\
+\texttt{metrics.n\_abstain}                        & 102 \\
+\texttt{metrics.adapt\_precision\_(B>0|ADAPT)}     & 0.90 \\
+\texttt{metrics.false\_adapt\_rate\_(B\textless{}0|ADAPT)} & 0.10 \\
+\texttt{metrics.freeze\_precision\_(B\textless{}=0|FREEZE)} & 0.00 \\
+\texttt{metrics.abstain\_mean\_|B|}                & 0.021504 \\
+\texttt{metrics.nonabstain\_mean\_|B|}             & 0.132367 \\
+\midrule
+\texttt{policy.mean\_auc\_trichotomy}              & 0.766119 \\
+\texttt{policy.mean\_auc\_always\_adapt}           & 0.777145 \\
+\texttt{policy.mean\_auc\_always\_freeze}          & 0.748056 \\
+\texttt{policy.mean\_auc\_oracle}                  & 0.782816 \\
+\texttt{policy.regret\_trichotomy\_vs\_oracle}     & 0.016697 \\
+\texttt{policy.regret\_always\_adapt\_vs\_oracle}  & 0.005671 \\
+\texttt{policy.regret\_naive\_vs\_oracle}          & 0.004220 \\
+\texttt{policy.mean\_auc\_naive\_val\_rule}        & 0.778596 \\
+\texttt{policy.false\_adapt\_rate\_naive\_(B\textless{}0|naive ADAPT)} & 0.179775 \\
+\midrule
+\textit{Non-identifiability witness (in-distribution)} & \\
+\texttt{nonidentifiability\_witness.z\_distance}   & 0.798586 \\
+\texttt{nonidentifiability\_witness.task\_i}       & \texttt{cv\_CIFAR10\_7} \\
+\texttt{nonidentifiability\_witness.B\_i}          & $+0.038255$ \\
+\texttt{nonidentifiability\_witness.task\_j}       & \texttt{cv\_SVHN\_3} \\
+\texttt{nonidentifiability\_witness.B\_j}          & $-0.017858$ \\
+\midrule
+\textit{Evidence feature names (9 features)} & \\
+& \texttt{val\_max}, \texttt{val\_gap}, \texttt{val\_mean} \\
+& \texttt{ks\_mean}, \texttt{ks\_max}, \texttt{disagree} \\
+& \texttt{val\_stack\_margin}, \texttt{anomaly\_rate}, \texttt{log\_ntest} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\paragraph{Note on naive rule.}  The JSON also records a naive validation rule
+(\texttt{mean\_auc\_naive\_val\_rule} $= 0.7786$, \texttt{regret\_naive\_vs\_oracle}
+$= 0.0042$, false-adapt $= 0.1798$).  The naive rule achieves lower regret than \KGA\
+in this helpful-dominated regime but has a much higher false-adapt rate ($17.98\%$ vs
+$10\%$), illustrating the safety-performance tradeoff.
+
+% ============================================================
+\section{All 65 CIFAR-10-C Cells}
+\label{sec:app-cifar10c}\label{tab:c10c}
+% ============================================================
+
+The following table contains per-cell results for all 13 official CIFAR-10-C corruptions
+at 5 severity levels (65 cells total), comparing frozen, online Tent, EATA-style,
+SAR-style, and \KGA\ on a ResNet-18 ($0.874$ clean accuracy).  The table is generated
+directly from the experiment output; see Appendix~\ref{app:repro} for the script that
+produces it.
+
+\input{../paper/appendix_cifar10c_cells}

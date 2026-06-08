@@ -1,0 +1,160 @@
+{
+  "description": "Rademacher generalization bound for GB benefit router (thm:router-rad)",
+  "seed": 20260606,
+  "n_sweep": {
+    "p": 8,
+    "T": 60,
+    "d": 3,
+    "ns": [
+      200,
+      400,
+      800,
+      1600,
+      3200
+    ],
+    "reps": 6,
+    "rows": [
+      {
+        "n": 200,
+        "mean_gap": 0.3614687042720175,
+        "std_gap": 0.0118019809398925,
+        "complexity_term": 1.3680268226580399
+      },
+      {
+        "n": 400,
+        "mean_gap": 0.267910953900802,
+        "std_gap": 0.023141644164674985,
+        "complexity_term": 0.9673410431465865
+      },
+      {
+        "n": 800,
+        "mean_gap": 0.16338139524554118,
+        "std_gap": 0.011766830223757256,
+        "complexity_term": 0.6840134113290199
+      },
+      {
+        "n": 1600,
+        "mean_gap": 0.10408320093956092,
+        "std_gap": 0.01930892317302702,
+        "complexity_term": 0.48367052157329327
+      },
+      {
+        "n": 3200,
+        "mean_gap": 0.05937474237300161,
+        "std_gap": 0.008325411121210049,
+        "complexity_term": 0.34200670566450997
+      }
+    ],
+    "power_law": {
+      "A": 12.796659705641817,
+      "exponent_b": 0.657591531565487,
+      "r2": 0.9907615634402848,
+      "target_b": 0.5,
+      "b_close_to_half": true
+    },
+    "envelope": {
+      "C": 0.27695604957413555,
+      "form": "C*sqrt(T*d*log(p)/n)",
+      "all_below_envelope": true
+    }
+  },
+  "capacity_sweep": {
+    "n": 1000,
+    "p": 8,
+    "configs": [
+      [
+        40,
+        2
+      ],
+      [
+        80,
+        2
+      ],
+      [
+        80,
+        3
+      ],
+      [
+        160,
+        3
+      ],
+      [
+        240,
+        4
+      ]
+    ],
+    "rows": [
+      {
+        "T": 40,
+        "d": 2,
+        "capacity_TdlogP": 166.35532333438687,
+        "mean_gap": 0.07893344676810019
+      },
+      {
+        "T": 80,
+        "d": 2,
+        "capacity_TdlogP": 332.71064666877373,
+        "mean_gap": 0.09899202288653428
+      },
+      {
+        "T": 80,
+        "d": 3,
+        "capacity_TdlogP": 499.0659700031606,
+        "mean_gap": 0.16752537701380987
+      },
+      {
+        "T": 160,
+        "d": 3,
+        "capacity_TdlogP": 998.1319400063212,
+        "mean_gap": 0.20035076181293093
+      },
+      {
+        "T": 240,
+        "d": 4,
+        "capacity_TdlogP": 1996.2638800126424,
+        "mean_gap": 0.2895050173071557
+      }
+    ],
+    "loglog_slope_gap_vs_capacity": 0.5356926365539556,
+    "slope_positive": true
+  },
+  "sample_complexity": {
+    "T": 100,
+    "d": 3,
+    "p": 8,
+    "formula": "n = (T d log p / Delta^2) log(1/delta)",
+    "rows": [
+      {
+        "Delta": 0.05,
+        "delta": 0.1,
+        "n_required_const1": 574570.9314749455
+      },
+      {
+        "Delta": 0.1,
+        "delta": 0.1,
+        "n_required_const1": 143642.73286873638
+      },
+      {
+        "Delta": 0.2,
+        "delta": 0.1,
+        "n_required_const1": 35910.683217184094
+      },
+      {
+        "Delta": 0.4,
+        "delta": 0.1,
+        "n_required_const1": 8977.670804296024
+      }
+    ]
+  },
+  "headline": {
+    "fitted_decay_exponent_b": 0.657591531565487,
+    "power_law_r2": 0.9907615634402848,
+    "PASS_b_near_half": true,
+    "envelope_C": 0.27695604957413555,
+    "PASS_all_below_rademacher_envelope": true,
+    "gap_at_smallest_n": 0.3614687042720175,
+    "gap_at_largest_n": 0.05937474237300161,
+    "capacity_loglog_slope": 0.5356926365539556,
+    "PASS_capacity_slope_positive": true
+  }
+}

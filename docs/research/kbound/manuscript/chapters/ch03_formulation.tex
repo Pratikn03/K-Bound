@@ -1,0 +1,578 @@
+% =============================================================================
+% ch03_formulation.tex — Problem Formulation and the Knowability Trichotomy
+% Long-form expansion of kbound.tex §3 (Problem setup) and §4 (Definitions).
+% All formal statements are copied from the verified paper; everything added
+% beyond them (worked examples, assumption discussion, reader's map) is
+% exposition and is flagged as such. NO preamble here; \input by main.tex.
+% =============================================================================
+
+\chapter{Problem Formulation and the Knowability Trichotomy}\label{ch:formulation}
+
+This chapter fixes the objects that every later result manipulates: the
+deployment protocol under which a frozen model meets a shifted, unlabeled
+target stream; the \emph{adaptation benefit} $\Delta$, which is the quantity a
+deployed system would like to know; the \emph{label-free evidence} $Z$, which
+is the only quantity it can actually observe; and the trichotomy of
+\emph{knowably helpful}, \emph{knowably harmful}, and \emph{unknowable}
+regimes that organizes the entire theory. We then formalize the decision
+problem itself --- rules $g(Z) \in \{\textsc{adapt}, \textsc{freeze},
+\textsc{abstain}\}$, the oracle, regret-to-oracle, and the false-adapt and
+false-freeze error rates --- and close with three fully worked example
+environments, a discussion of the standing assumptions, and a reader's map
+from questions to theorems.
+
+The formal content of this chapter is exactly that of the paper's problem
+setup and definitions \cite{kbound2026repo}; the worked examples and the
+assumptions discussion are expository additions that introduce no new claims.
+A reader who internalizes one idea from this chapter should make it this one:
+\emph{the constraint that drives everything is not noise but measurability}.
+The decision rule is a function of $Z$, and $Z$ is a function of unlabeled
+data alone. Whether the right decision is \emph{knowable} is a property of
+the $\sigma$-algebra the evidence generates, not of how many samples populate
+it. Chapter~\ref{ch:theory1} makes that remark a theorem.
+
+\section{The deployment protocol}\label{sec:form-protocol}
+
+The setting is the standard one of test-time adaptation under distribution
+shift \cite{wang2021tent, quinonero2009dataset}, stated so that the
+information structure --- who sees which labels, and when --- is completely
+explicit.
+
+A \emph{source} distribution $P_S(X,Y)$ over inputs $X \in \mathcal{X}$ and
+labels $Y \in \mathcal{Y}$ is available with labels at training and validation
+time: the model was fit on labeled source data, and a held-out labeled
+validation (or probe) set from the source environment may be retained. A
+\emph{target} distribution $P_T(X,Y)$ governs deployment, and it exposes only
+its covariate marginal $P_T(X)$ at test time: the deployed system receives a
+stream (or batch) of unlabeled target inputs $X_1, \dots, X_m \sim P_T(X)$ and
+never observes a target label. The two distributions may differ in any way
+--- covariate shift, label-prior shift, concept shift, or arbitrary mixtures
+\cite{quinonero2009dataset, shimodaira2000improving, lipton2018detecting};
+part of the point of the theory is to classify which kinds of difference
+leave the adaptation decision decidable.
+
+Three further objects are fixed. A loss $\ell : \mathcal{Y} \times
+\mathcal{Y} \to \R$ scores predictions (the paper's results are stated for
+$0/1$ loss, multiclass $0/1$ loss, and squared error at the points where the
+loss matters; until then $\ell$ is generic). A \emph{frozen model} $f_0$ is
+the system as deployed: source-trained, untouched by the target stream. An
+\emph{adapted or gated candidate} $f_a$ is the alternative the system could
+deploy instead: the output of a test-time adaptation procedure run on the
+unlabeled batch (entropy minimization in the style of Tent
+\cite{wang2021tent}, a reliability-gated fusion, a recalibrated threshold, an
+importance-weighted refit --- the framework is agnostic to the mechanism).
+What matters is only that at decision time $f_0$ and $f_a$ are both concrete,
+known, fixed maps from inputs to predictions: the decision under study is
+\emph{which of two specific models to deploy}, not how to construct a better
+candidate. Target risk is
+\[
+R_T(f) \;=\; \E_{P_T}\bigl[\ell(f(X), Y)\bigr],
+\]
+the population average loss of a model $f$ on the deployment distribution.
+Note carefully where the inaccessibility lies: $R_T(f)$ averages over the
+\emph{joint} law $P_T(X,Y)$, while the system observes draws from $P_T(X)$
+only. Both $R_T(f_0)$ and $R_T(f_a)$ are therefore well-defined but
+unobserved quantities, and every question in this monograph is a question
+about what can be inferred about them --- more precisely, about their
+difference --- through the keyhole of unlabeled data.
+
+\section{The adaptation benefit}\label{sec:form-benefit}
+
+The decision-relevant quantity is not either risk in isolation but their
+difference.
+
+\begin{definition}[Adaptation benefit]\label{def:form-benefit}
+Fix the loss $\ell$, the frozen model $f_0$, and the adapted/gated candidate
+$f_a$. The \emph{adaptation benefit} is
+\begin{equation}\label{eq:form-benefit}
+\Delta \;=\; R_T(f_0)-R_T(f_a),\qquad \Delta>0 \iff \text{adapting helps.}
+\end{equation}
+\end{definition}
+
+The sign convention reads naturally: $\Delta$ is the risk \emph{removed} by
+switching from the frozen model to the candidate. When $\Delta > 0$ the
+candidate is strictly better on the target and the correct action is to
+\textsc{adapt}; when $\Delta < 0$ adaptation is harmful and the correct
+action is to \textsc{freeze}; $\Delta = 0$ is the indifference point. The
+benefit also has a per-sample form that recurs throughout the proofs: writing
+$\delta = \ell(f_0(X),Y) - \ell(f_a(X),Y)$ for the paired per-sample benefit,
+we have $\Delta = \E_{P_T}[\delta]$, and the paired structure --- both losses
+evaluated on the \emph{same} draw $(X,Y)$ --- is what later makes
+finite-sample certification statistically cheap relative to estimating either
+risk on its own (Chapter~\ref{ch:theory2}).
+
+Because the decision will be made on observed evidence, we also need the
+benefit \emph{conditioned} on that evidence. With $Z$ the observable evidence
+of the next section, the \emph{conditional benefit} is
+\begin{equation}\label{eq:form-condbenefit}
+\Delta(z)\;=\;\E\bigl[\ell(f_0(X),Y)-\ell(f_a(X),Y)\;\big|\; Z=z\bigr],
+\end{equation}
+the expected gain from adapting given that the evidence took the value $z$.
+The unconditional benefit is recovered by the tower property, $\Delta =
+\E[\Delta(Z)]$. The paper's central question, stated once and answered over
+two chapters, is:
+
+\begin{quote}
+\emph{When is $\sign\Delta(z)$ recoverable from $Z$ alone?}
+\end{quote}
+
+Note the deliberate modesty of the target. We do not ask to estimate
+$R_T(f_0)$ or $R_T(f_a)$ (a cardinal estimation problem, known to be
+non-identifiable without structural assumptions
+\cite{bendavid2010theory, lipton2018detecting}), nor even to estimate
+$\Delta$ to additive accuracy. We ask only for the \emph{sign} of a
+difference --- a single bit. Part of the content of the theory is that even
+this single bit is sometimes information-theoretically out of reach
+(Chapter~\ref{ch:theory1}), and that, conversely, the sign is recoverable on
+a strictly larger set of shifts than either risk is
+(Theorem~\ref{thm:disagree} in Chapter~\ref{ch:theory2}).
+
+\section{Label-free observable evidence}\label{sec:form-evidence}
+
+\begin{definition}[Observable evidence]\label{def:form-evidence}
+\emph{Observable evidence} $Z=\phi(X_{1:m},f_0,f_a)$ is any statistic
+computable \emph{without} target labels: examples include entropy,
+confidence, score-distribution drift, detector disagreement, predicted-class
+balance, update norm, and density-ratio diagnostics.
+\end{definition}
+
+The definition is intentionally maximal. The evidence map $\phi$ may be any
+measurable function of the unlabeled batch $X_{1:m}$ and of the two fixed
+models; in particular it may use the models' outputs, internal activations,
+confidence scores, and any comparison between them. Concretely, the evidence
+panels used in the experiments of Chapters~\ref{ch:exp1} and~\ref{ch:exp2}
+include: prediction-entropy statistics of $f_0$ and $f_a$ on the batch;
+confidence and margin distributions; drift statistics comparing the batch's
+score distribution to the source validation distribution (for example
+Kolmogorov--Smirnov distances); the rate and pattern of \emph{disagreement}
+between $f_0$ and $f_a$; the predicted-class balance and its drift from the
+source balance; the norm of the adaptation update; and density-ratio
+diagnostics. All of these are functions of covariates and known maps only;
+none touches a target label. Label-free accuracy-estimation statistics in the
+style of average thresholded confidence \cite{garg2022atc} are admissible
+evidence features under this definition --- the framework subsumes them as
+particular choices of $\phi$.
+
+Two structural remarks will carry weight later. First, since $f_0$ and $f_a$
+are fixed known maps, the \emph{disagreement region}
+\[
+D \;=\; \{x : f_0(x)\neq f_a(x)\}
+\]
+is itself observable: membership of each batch point in $D$ is computable
+without labels, and statistics of the batch restricted to $D$ are legitimate
+evidence. This observable region turns out to carry the entire decision
+(Theorem~\ref{thm:disagree}). Second --- and this is the pivot of
+Chapter~\ref{ch:theory1} --- whatever $\phi$ one chooses, the distribution of
+$Z$ under a target world $P_T$ depends on that world \emph{only through}
+$P_T(X)$, because $Z$ is a function of covariates and fixed maps alone. Two
+target worlds that share a covariate marginal but differ in $P_T(Y \mid X)$
+induce \emph{identical} evidence laws for every conceivable evidence map.
+The impossibility theorem is, at bottom, this observation plus a careful
+accounting of what it costs.
+
+\section{The knowability trichotomy}\label{sec:form-trichotomy}
+
+The paper's two definitions classify evidence values by what they permit.
+
+\begin{definition}[Observable risk alignment]\label{def:form-alignment}
+$Z$ is \emph{risk-aligned} if it identifies or bounds $\sign\Delta(z)$ (it
+need not reveal the label, only whether adaptation helps).
+\end{definition}
+
+\begin{definition}[Regimes]\label{def:form-regimes}
+At evidence $z$: \emph{knowably helpful} if $Z$ certifies $\Delta(z)>0$
+(\textbf{adapt}); \emph{knowably harmful} if $Z$ certifies $\Delta(z)<0$
+(\textbf{freeze}); \emph{unknowable} if the same $Z$ is compatible with both
+signs (\textbf{abstain}).
+\end{definition}
+
+Definition~\ref{def:form-alignment} isolates the property that makes
+label-free decisions possible at all. Risk alignment does \emph{not} ask the
+evidence to reveal labels, risks, or even the magnitude of the benefit; it
+asks only that the evidence constrain the benefit's sign. It is a property of
+the pair (evidence map, family of plausible target worlds): the same $\phi$
+can be risk-aligned against one family of shifts and blind against another.
+Definition~\ref{def:form-regimes} then partitions evidence values
+accordingly. The word ``certifies'' is doing real work: in the knowable
+regimes, every target world consistent with the observed evidence has the
+same benefit sign, so committing is safe; in the unknowable regime there
+exist worlds consistent with the same evidence whose benefits have opposite
+signs, and Chapter~\ref{ch:theory1} proves that no rule --- however clever,
+and at any unlabeled sample size --- can then commit correctly in all of
+them. The trichotomy is thus not a design choice but a theorem-shaped fact:
+the three actions \textsc{adapt}, \textsc{freeze}, \textsc{abstain} are
+exactly the actions matched to the three regimes.
+
+\begin{figure}[t]\centering
+\includegraphics[width=0.85\textwidth]{fig_phase_diagram.png}
+\caption[The knowability phase diagram]{\textbf{The knowability phase
+diagram.} Each test-time condition lands at a point set by the evidence
+separability between opposite-benefit worlds ($x$-axis; a
+total-variation/detectability proxy) and the benefit margin $|\Delta|$
+($y$-axis). \KGA\ commits (\textsc{adapt}/\textsc{freeze}) only outside the
+central \emph{unknowable} wedge, where the certificate radius exceeds the
+estimated benefit ($\varepsilon>|\widehat\Delta|$); inside it the
+worst-case-optimal action is \textsc{abstain} (Theorem~\ref{thm:imp}).
+Benchmark points --- the CIFAR-10-C stress grid (Tent/EATA/SAR), the
+controlled mixed regime, and the clean non-identifiability witness
+(Chapters~\ref{ch:exp1} and~\ref{ch:exp2}) --- are overlaid from their
+measured values. The two axes of this diagram are exactly the two
+hypotheses of the impossibility theorem: the $x$-axis measures how far the
+evidence laws of opposite-benefit worlds separate (Chapter~\ref{ch:theory1}'s
+total-variation quantity), and the $y$-axis measures how much a wrong
+commitment costs (the margin $|\Delta|$ in the regret identity of
+Theorem~\ref{thm:gate}).}
+\label{fig:form-phase}
+\end{figure}
+
+Because ``label-free'' is used in subtly different senses across the
+adaptation literature, the paper pins down its meaning in a box that we
+reproduce here in full, as the protocol is part of the formulation.
+
+\begin{remark}[What ``label-free'' means here]\label{rem:form-labelfree}
+\emph{Target-label-free} (our setting): no labels from the target/test
+stream are ever used. \emph{Validation labels allowed}: labeled source and a
+held-out labeled validation/probe set may calibrate the benefit estimator
+$\widehat\Delta$ and the radius $\varepsilon$. \emph{Target-unsupervised
+evidence}: the deployment batch contributes only $X$, predictions, entropy,
+confidence, drift and other label-free statistics $Z$. The online-TTA
+results that use a clean labelled validation probe
+(Chapter~\ref{ch:exp2}) are target-label-free in this sense --- they use no
+\emph{target} labels --- not unsupervised of all labels.
+\end{remark}
+
+The distinction matters because the impossibility results of
+Chapter~\ref{ch:theory1} hold against the strongest reading (no target
+labels, arbitrary evidence maps, source labels freely available), while the
+positive results of Chapter~\ref{ch:theory2} consume the weaker allowances
+explicitly: the certificate's radius is calibrated on labeled validation
+data, and the covariate-shift theorem reweights labeled \emph{source}
+examples. Nothing anywhere uses a target label.
+
+\section{Decision rules, the oracle, and error rates}\label{sec:form-decisions}
+
+The system's output is a decision, so we now formalize the decision-maker.
+
+\begin{definition}[Label-free decision rule]\label{def:form-rule}
+A \emph{label-free decision rule} is a (possibly randomized) map
+\[
+g(Z)\;\in\;\{\textsc{adapt},\ \textsc{freeze},\ \textsc{abstain}\},
+\]
+measurable in the evidence $Z$ and in randomness independent of the target
+world. \textsc{adapt} deploys $f_a$; \textsc{freeze} retains $f_0$;
+\textsc{abstain} retains $f_0$ \emph{and} flags the condition as undecided
+(declining to certify either committed action). The \emph{coverage} of a
+rule is $\Pr[g\neq\textsc{abstain}]$, the fraction of conditions on which it
+commits.
+\end{definition}
+
+Two readings of \textsc{abstain} coexist in the monograph and it is worth
+separating them now. Operationally, an abstaining system keeps the frozen
+model running (the conservative default) while routing the condition to
+fallback handling --- human review, data collection, a wider probe.
+Decision-theoretically, \textsc{abstain} is a first-class third action whose
+role is exactly analogous to the reject option in selective prediction
+\cite{chow1970optimum, elyaniv2010selective, geifman2017selective}, with one
+crucial difference of granularity: selective prediction abstains on
+individual \emph{predictions}, while our rules abstain on the
+\emph{adaptation decision} for a deployment condition. The cost accounting
+of abstention (a coverage cost, distinct from the cost of a wrong
+commitment) is made precise inside the proofs of Chapter~\ref{ch:theory1}.
+
+Performance is measured against the best decision made with full knowledge.
+
+\begin{definition}[Oracle and regret-to-oracle]\label{def:form-regret}
+The \emph{per-condition oracle} is $g^\star=\mathbf1[\Delta>0]$: it adapts
+exactly when the true benefit is positive. \emph{Regret-to-oracle} of a rule
+$g$ denotes $R(g)-R(g^\star)$, where $R(\cdot)$ is the deployed risk of the
+rule's chosen actions.
+\end{definition}
+
+For committal gates the deployed risk takes the explicit form analyzed in
+Chapter~\ref{ch:theory1}: with the action-conditional means
+$a_{\textsc{frz}}(z)=\E[\ell(f_0(X),Y)\mid Z{=}z]$ and
+$a_{\textsc{adp}}(z)=\E[\ell(f_a(X),Y)\mid Z{=}z]$, a gate $g$ has risk
+$R(g)=\E[g(Z)\,a_{\textsc{adp}}(Z)+(1-g(Z))\,a_{\textsc{frz}}(Z)]$, and the
+conditional benefit of Definition~\ref{def:form-benefit} is recovered as
+$\Delta(z)=a_{\textsc{frz}}(z)-a_{\textsc{adp}}(z)$. Theorem~\ref{thm:gate}
+will show that the regret-to-oracle of any plug-in gate is \emph{exactly}
+the benefit it forfeits on the evidence values where it picks the wrong
+sign.
+
+Finally, the two failure modes of a three-way rule are named and will be the
+quantities the certificate of Chapter~\ref{ch:theory2} controls.
+
+\begin{definition}[False-adapt and false-freeze rates]\label{def:form-errors}
+For a rule $g$,
+\[
+\mathrm{FA}(g)\;=\;\Pr\bigl[g=\textsc{adapt}\ \wedge\ \Delta\le 0\bigr],
+\qquad
+\mathrm{FF}(g)\;=\;\Pr\bigl[g=\textsc{freeze}\ \wedge\ \Delta\ge 0\bigr],
+\]
+the probabilities of committing to adaptation when it does not help and of
+refusing adaptation when it would not hurt, respectively.
+\end{definition}
+
+The asymmetry of consequences in practice --- a false adapt deploys a model
+that silently degrades, a false freeze merely forgoes an improvement ---
+motivates treating $\mathrm{FA}$ as the safety-critical rate; the
+certificate (Theorem~\ref{thm:cert}) bounds both at a user-chosen level
+$\alpha$, and the experiments report both, together with coverage and
+regret-to-oracle. Throughout, $\widehat\Delta$ denotes a label-free
+estimator of $\Delta$ with confidence radius $\varepsilon$ at miscoverage
+level $\alpha$; the operational rule built from
+$(\widehat\Delta, \varepsilon)$ is the subject of Chapters~\ref{ch:theory2}
+and~\ref{ch:kga}.
+
+\begin{figure}[t]\centering
+\includegraphics[width=0.8\textwidth]{fig_decision_flow.png}
+\caption[The KGA decision flow]{The \KGA\ decision flow realizing the
+formulation of this chapter: label-free evidence $Z=\phi(X_{1:m},f_0,f_a)$
+is extracted from the unlabeled batch and the two fixed models; a calibrated
+benefit estimate $\widehat\Delta(Z)$ with conformal radius $\varepsilon$ is
+formed; and the rule commits to \textsc{adapt} only if
+$\widehat\Delta-\varepsilon>0$, to \textsc{freeze} only if
+$\widehat\Delta+\varepsilon<0$, and otherwise \textsc{abstain}s (keeping
+$f_0$ and flagging the condition). The three exits are the three regimes of
+Definition~\ref{def:form-regimes}; the guarantees attached to each exit are
+proved in Chapters~\ref{ch:theory1} and~\ref{ch:theory2}, and the algorithm
+itself is the subject of Chapter~\ref{ch:kga}.}
+\label{fig:form-flow}
+\end{figure}
+
+\section{Three worked environments}\label{sec:form-examples}
+
+The definitions above are abstract by design. The following three example
+environments --- expository additions to the paper, chosen so that every
+quantity is computable in closed form --- exhibit one regime each: a
+knowable covariate shift, an unknowable posterior flip in which the evidence
+is provably blind, and a low-margin band in which the evidence is
+informative in principle but commitment is not worth its price. Together
+they walk the phase diagram of Figure~\ref{fig:form-phase}: far right, far
+left, and the bottom wedge.
+
+\begin{example}[A knowable Gaussian location shift]\label{ex:form-gauss}
+Let the label be a fixed deterministic function of the input,
+$Y=\mathbf1[X>\tfrac12]$, in source and target alike, so that
+$P_S(Y\mid X)=P_T(Y\mid X)$ and any shift is pure covariate shift
+\cite{shimodaira2000improving}. The source is $X\sim\mathcal N(0,1)$; the
+target is $X\sim\mathcal N(\mu,1)$ with $\mu$ unknown. The frozen model is
+$f_0(x)=\mathbf1[x>0]$ (its threshold sits below the Bayes boundary
+$\tfrac12$), and the adaptation procedure proposes the candidate
+$f_a(x)=\mathbf1[x>1]$ (a threshold recalibration overshooting the boundary
+from the other side); under $0/1$ loss, with $\Phi$ the standard normal
+distribution function, the risks are the masses of the two mismatch
+intervals,
+\[
+R_T(f_0)=\Pr\bigl[0<X\le\tfrac12\bigr]=\Phi(\tfrac12-\mu)-\Phi(-\mu),
+\qquad
+R_T(f_a)=\Pr\bigl[\tfrac12<X\le 1\bigr]=\Phi(1-\mu)-\Phi(\tfrac12-\mu),
+\]
+so the benefit is the explicit function
+\[
+\Delta(\mu)\;=\;2\,\Phi(\tfrac12-\mu)-\Phi(-\mu)-\Phi(1-\mu).
+\]
+The two error intervals $(0,\tfrac12]$ and $(\tfrac12,1]$ have equal length
+and sit symmetrically about the Bayes boundary; since the unimodal target
+density places more mass on whichever interval is nearer its mode $\mu$, we
+get $\sign\Delta(\mu)=\sign(\tfrac12-\mu)$, with $\Delta(\mu)=0$ exactly at
+$\mu=\tfrac12$ and the antisymmetry $\Delta(\tfrac12+t)=-\Delta(\tfrac12-t)$.
+Numerically, $\Delta(-1)\approx+0.048$ (adapt), $\Delta(0)\approx+0.042$
+(adapt), and $\Delta(2)\approx-0.048$ (freeze). Now take the simplest
+evidence map: $Z=\bar X_m=\tfrac1m\sum_{i\le m}X_i$, the batch mean, which is
+label-free. Then $Z\sim\mathcal N(\mu,1/m)$: the evidence identifies $\mu$
+consistently, and since $\sign\Delta$ is a known function of $\mu$, the
+evidence is \emph{risk-aligned} (Definition~\ref{def:form-alignment}) ---
+indeed two target worlds $\mu_1<\tfrac12<\mu_2$ with opposite benefit have
+evidence laws separating at total-variation rate
+$2\Phi(\sqrt m\,|\mu_1-\mu_2|/2)-1\to1$. Every $\mu\neq\tfrac12$ is
+knowably helpful or knowably harmful; the decision is computable from
+unlabeled data alone.
+\end{example}
+
+\begin{example}[A posterior flip to which all evidence is blind]\label{ex:form-flip}
+Now keep the covariate marginal fixed and flip the labels' association with
+it. In both worlds, $Y\sim\mathrm{Bernoulli}(\tfrac12)$ and the covariate is
+drawn from a symmetric two-component mixture: in world $W^{+}$,
+$X\mid Y{=}1\sim\mathcal N(+1,1)$ and $X\mid Y{=}0\sim\mathcal N(-1,1)$;
+in world $W^{-}$ the two class-conditionals are swapped. Both worlds have
+the \emph{identical} covariate marginal
+$p(x)=\tfrac12\varphi(x-1)+\tfrac12\varphi(x+1)$, where $\varphi$ is the
+standard normal density; what differs is the posterior, which flips from
+$\Pr_{W^+}(Y{=}1\mid x)=1/(1+e^{-2x})$ to
+$\Pr_{W^-}(Y{=}1\mid x)=1/(1+e^{+2x})$. Take $f_0(x)=\mathbf1[x>0]$ and
+$f_a(x)=\mathbf1[x<0]$ with $0/1$ loss. In world $W^{+}$,
+$R(f_0)=\Phi(-1)\approx0.159$ and $R(f_a)=\Phi(1)\approx0.841$, so
+$\Delta^{+}=-(2\Phi(1)-1)\approx-0.683$: freezing is correct, by a wide
+margin. In world $W^{-}$ the computation mirrors and
+$\Delta^{-}=+(2\Phi(1)-1)\approx+0.683$: adapting is correct, by the same
+margin. Yet \emph{every} evidence statistic $Z=\phi(X_{1:m},f_0,f_a)$ ---
+not just a particular panel, but any measurable label-free map --- has
+identical law in the two worlds, because it is a function of $X_{1:m}$ and
+the fixed models only and $\mathrm{Law}(X_{1:m})$ is shared. The evidence is
+blind to a benefit of magnitude $0.683$. This is the smoothed sibling of the
+exact witness that proves Theorem~\ref{thm:imp} (where labels are
+deterministic and $|\Delta|=1$); the overlap between the classes here shows
+that the phenomenon is not an artifact of noise-free labels.
+
+It is instructive to contrast this with \emph{genuine label shift}, where
+the class priors move but the class-conditionals stay fixed
+\cite{lipton2018detecting}. There the covariate marginal does shift (a prior
+flip $\pi\leftrightarrow1-\pi$ reflects the marginal, $m_{1-\pi}(x)=
+m_{\pi}(-x)$), so some statistics can detect that \emph{something} changed:
+sign-asymmetric features such as the predicted-class balance of $f_0$ move
+with $\pi$, while sign-symmetric panels --- confidence $|x|$-margins,
+disagreement indicators, entropy --- remain exactly blind. But detecting
+motion is not certifying a sign: the same movement of a class-balance
+statistic can be produced by a covariate shift under which the benefit keeps
+its sign, so converting the detection into a decision requires label-shift
+structure (stable class-conditionals and an invertible confusion matrix, as
+in black-box shift estimation \cite{lipton2018detecting}) --- structure that
+is itself untestable from unlabeled target data. The knowability hierarchy
+of Chapter~\ref{ch:theory2} makes this precise shift class by shift class.
+\end{example}
+
+\begin{example}[The low-margin band]\label{ex:form-band}
+Return to Example~\ref{ex:form-gauss} and let the target location approach
+the crossover: $\mu=\tfrac12+t$ with $t$ small. A first-order expansion
+gives $\Delta(\tfrac12+t)\approx-0.094\,t$ (the derivative of $\Delta$ at
+the crossover is $2\varphi(\tfrac12)-2\varphi(0)\approx-0.094$), so the
+benefit margin $|\Delta|$ collapses linearly as the condition nears the
+boundary. The evidence remains risk-aligned in the limit --- with infinite
+data the sign is identifiable for every $t\neq0$ --- but a deployment batch
+of size $m$ resolves $\mu$ only to precision $O(1/\sqrt m)$, so conditions
+with $|t|\lesssim1/\sqrt m$ are \emph{effectively} undecidable at the
+operating sample size, and the benefit at stake there is only
+$|\Delta|\lesssim0.1/\sqrt m$. This is the regime in which abstention is
+cheap by design: Theorem~\ref{thm:gate} shows that committal regret on the
+band $\{|\Delta|<\varepsilon\}$ is at most $\varepsilon$, and the
+finite-sample certificate of Chapter~\ref{ch:theory2} abstains there
+automatically because its confidence interval
+$\widehat\Delta\pm\varepsilon$ straddles zero. In the phase diagram this is
+the lower wedge: not blind, but not worth the risk of commitment either.
+\end{example}
+
+The three examples mark the three corners of the problem. In
+Example~\ref{ex:form-gauss} the evidence separates opposite-benefit worlds
+and the margin is healthy: commit. In Example~\ref{ex:form-flip} no evidence
+map can separate them at any sample size: abstain, necessarily. In
+Example~\ref{ex:form-band} separation is possible but the margin is too
+small to matter at the achievable resolution: abstain, economically. The
+theory of the next two chapters is the general statement of exactly these
+three verdicts.
+
+\section{Standing assumptions, and what each one buys}\label{sec:form-assumptions}
+
+We collect the standing conventions of the framework as explicit
+assumptions. These are not new postulates --- each is stated or used in the
+paper --- but displaying them separately clarifies which results lean on
+which, and what breaks when each fails.
+
+\begin{assumption}[Fixed decision triple]\label{asm:form-triple}
+The loss $\ell$, the frozen model $f_0$, and the candidate $f_a$ are fixed,
+known, measurable objects at decision time; the risks $R_T(f_0)$ and
+$R_T(f_a)$ exist and are finite.
+\end{assumption}
+
+\begin{assumption}[Label-free protocol]\label{asm:form-protocol}
+No target labels are observed at any stage of the decision. Labeled source
+and held-out labeled validation data may be used to calibrate estimators and
+radii (Remark~\ref{rem:form-labelfree}); the deployment batch contributes
+covariates and model outputs only.
+\end{assumption}
+
+\begin{assumption}[Evidence-measurable rules]\label{asm:form-measurable}
+Decision rules are measurable functions of the evidence $Z$ and of
+randomness independent of the target world.
+\end{assumption}
+
+Assumption~\ref{asm:form-triple} is what makes the question well-posed as a
+\emph{decision between two named alternatives}. If the candidate were
+allowed to change after the decision (for instance, if adaptation continued
+to update $f_a$ on data the certificate never saw), the certified quantity
+$\Delta$ would no longer describe the deployed comparison; in the online
+experiments of Chapter~\ref{ch:exp2} this is respected by re-running the
+decision at each adaptation step. The fixedness of $(f_0,f_a)$ is also what
+makes the disagreement region $D$ observable, on which the
+sign-of-difference theory of Chapter~\ref{ch:theory2} lives. Boundedness of
+per-sample benefits --- needed for the empirical-Bernstein radius
+\cite{maurer2009empirical, hoeffding1963probability} inside the certificate
+--- is a local hypothesis of Theorem~\ref{thm:cert}, not a standing one.
+
+Assumption~\ref{asm:form-protocol} is the problem statement itself: with
+target labels the benefit could be estimated directly and the entire subject
+would collapse into ordinary validation. Its bite is asymmetric across the
+theory. The impossibility results of Chapter~\ref{ch:theory1} hold
+\emph{against} every rule satisfying it, so they are strongest when the
+allowance for source labels is most generous; the positive results consume
+the allowance explicitly --- the certificate's radius is calibrated on a
+labeled validation sample assumed exchangeable with deployment conditions (a
+hypothesis stated and discharged in Chapter~\ref{ch:theory2}, in the
+conformal tradition \cite{vovk2005algorithmic}), and the covariate-shift
+theorem (Theorem~\ref{thm:pos}) reweights labeled source points.
+
+Assumption~\ref{asm:form-measurable} looks like bookkeeping but is the load-bearing
+wall of Chapter~\ref{ch:theory1}: a rule that is a function of $Z$ inherits
+the law of $Z$, so two worlds with identical evidence laws force identical
+behavior --- in distribution, exactly --- whatever the rule's internal
+sophistication. Independent randomization buys nothing, because it is
+world-independent by construction.
+
+Finally, \emph{risk alignment} (Definition~\ref{def:form-alignment}) is
+deliberately \emph{not} a standing assumption. It is the property whose
+presence defines the knowable regimes and whose failure defines the
+unknowable one; assuming it globally would assume away the central question.
+The \KGA\ algorithm of Chapter~\ref{ch:kga} needs it only on the conditions
+where it commits --- where it fails, the certificate cannot fire and the
+rule abstains, which Chapter~\ref{ch:theory2} shows is then mandatory (any
+rule with valid false-adapt and false-freeze control must abstain with
+probability at least $1-2\alpha$ on evidence shared by opposite-benefit
+worlds).
+
+\section{A reader's map from questions to results}\label{sec:form-map}
+
+The formulation poses a short list of natural questions; each is answered by
+exactly one result in the next two chapters.
+Table~\ref{tab:form-map} is the itinerary.
+
+\begin{table}[t]\centering\small
+\begin{tabular}{p{0.52\textwidth}ll}
+\toprule
+Question & Result & Chapter\\
+\midrule
+Can any label-free rule decide correctly in all worlds? &
+Theorem~\ref{thm:imp} (with witness; Le Cam bound) & \ref{ch:theory1}\\
+What does a forced commitment cost, exactly? &
+Theorem~\ref{thm:gate} (regret identity; minimax floor) & \ref{ch:theory1}\\
+When can a rule commit with finite-sample guarantees? &
+Theorem~\ref{thm:cert} (certificate; forced abstention) & \ref{ch:theory2}\\
+Can decisions stay valid on a stream with repeated looks? &
+Theorem~\ref{thm:evalue} (anytime-valid e-process) & \ref{ch:theory2}\\
+Is any shift class provably knowable? &
+Theorem~\ref{thm:pos} (covariate shift) & \ref{ch:theory2}\\
+What single quantity determines $\sign\Delta$? &
+Theorem~\ref{thm:disagree} (disagreement region) & \ref{ch:theory2}\\
+What remains open? &
+Conjecture~\ref{conj:gen} (label-free bracketing) & \ref{ch:theory2}\\
+\bottomrule
+\end{tabular}
+\caption[Map from formulation questions to results]{The reader's map from
+the questions raised by this chapter's formulation to the results that
+answer them. The first two rows draw the boundary of the possible
+(Chapter~\ref{ch:theory1}); the remaining rows populate the possible side of
+it (Chapter~\ref{ch:theory2}). The \KGA\ algorithm (Chapter~\ref{ch:kga})
+operationalizes the certificate row, and the experiments
+(Chapters~\ref{ch:exp1}--\ref{ch:exp2}) measure every quantity defined here
+--- benefit, coverage, false-adapt rate, regret-to-oracle --- on real
+benchmarks.}
+\label{tab:form-map}
+\end{table}
+
+One closing orientation. The order of the results is the logic of the
+subject: first the negative boundary, because without it every positive
+claim would be suspected of hiding an assumption; then the exact price of
+ignoring the boundary; then the certificates and positive regimes that live
+within it. Chapter~\ref{ch:theory1} now takes up the first two rows of the
+map --- the impossibility theorem with its explicit witness, its
+quantitative Le~Cam strengthening, and the plug-in regret identity that
+prices every wrong commitment.

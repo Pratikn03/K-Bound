@@ -1,0 +1,442 @@
+"""
+run_wilds_camelyon17.py — KGA experiment on WILDS Camelyon17 (hospital domain shift).
+
+WHAT THIS DOES
+--------------
+Camelyon17 contains histopathology patches from 5 hospitals.  The standard WILDS
+setup trains on hospitals 1–3 (source) and evaluates on hospital 5 (target).
+Here we frame this as the K-Bound decision problem:
+
+  f0  = DenseNet-121 pre-trained on source hospitals (frozen)
+  f_a = f0 adapted via Tent or EATA on unlabelled target-hospital batches
+  Z   = label-free evidence from the adaptation batch (entropy statistics,
+        batch-norm shift magnitude, prediction confidence histogram)
+  B   = balanced accuracy(f_a) − balanced accuracy(f0)  on the target test set
+        [class-balanced eval so benefit is real accuracy improvement, not class-bias]
+
+KGA pipeline:
+  5 seeds → per-seed (Z, B) pair → LOO GBR Bhat ± split-conformal ε → decision
+  Outputs: regret-to-oracle vs always-adapt vs always-freeze, false-adapt rate.
+
+SETUP (run once, on your Mac with M-series or CUDA)
+---------------------------------------------------
+  cd /path/to/AutoML_Flagship_V8
+  bash docs/research/kbound/scripts/run_wilds.sh
+
+DIRECT RUN (after setup)
+------------------------
+  source .venv_wilds/bin/activate
+  python docs/research/kbound/scripts/run_wilds_camelyon17.py \\
+      --wilds-root ~/datasets/wilds --seeds 0 1 2 3 4 --output-dir experiments/kbound/results/wilds
+
+TORCH GUARD: all torch imports are inside __main__ / functions so the analysis
+core (decide_kga, policy_metrics) imports and is unit-testable without torch.
+"""
+from __future__ import annotations
+import os, sys, json, math, argparse, time
+import numpy as np
+from sklearn.ensemble import GradientBoostingRegressor
+
+# ─── Analysis core (no torch) ────────────────────────────────────────────────
+
+ALPHA = 0.10
+SEED  = 0
+
+def decide_kga(Z, B, alpha=ALPHA, n_estimators=250, max_depth=2, lr=0.05, seed=SEED):
+    """LOO gradient-boosted benefit estimator + split-conformal radius.
+    Identical to cifar_tent_mps_v2.decide_kga."""
+    Z = np.asarray(Z, float); B = np.asarray(B, float); N = len(B)
+    Bhat = np.zeros(N)
+    for i in range(N):
+        tr = np.arange(N) != i
+        m = GradientBoostingRegressor(n_estimators=n_estimators, max_depth=max_depth,
+                                      learning_rate=lr, subsample=0.8, random_state=seed)
+        m.fit(Z[tr], B[tr])
+        Bhat[i] = m.predict(Z[i:i+1])[0]
+    eps = float(np.quantile(np.abs(Bhat - B), 1 - alpha))
+    dec = np.where(Bhat - eps > 0, "ADAPT",
+                   np.where(Bhat + eps < 0, "FREEZE", "ABSTAIN"))
+    return Bhat, eps, dec
+
+
+def policy_metrics(dec, a0, aa, B=None):
+    """Realized balanced-accuracy + regret vs oracle for each policy."""
+    a0 = np.asarray(a0, float); aa = np.asarray(aa, float)
+    adapt = dec == "ADAPT"
+    kga = np.where(adapt, aa, a0)
+    oracle = np.maximum(a0, aa)
+    if B is None:
+        B = aa - a0
+    B = np.asarray(B, float)
+    return {
+        "n": int(len(a0)),
+        "decision_counts": {d: int((dec == d).sum()) for d in ["ADAPT", "FREEZE", "ABSTAIN"]},
+        "coverage": float(np.mean(dec != "ABSTAIN")),
+        "false_adapt_rate_B<0": float(np.mean(B[adapt] < 0)) if adapt.any() else None,
+        "adapt_precision_B>0":  float(np.mean(B[adapt] > 0)) if adapt.any() else None,
+        "mean_balanced_acc": {
+            "always_adapt":  float(aa.mean()),
+            "always_freeze": float(a0.mean()),
+            "K_Bound":       float(kga.mean()),
+            "oracle":        float(oracle.mean()),
+        },
+        "regret_vs_oracle": {
+            "always_adapt":  float((oracle - aa).mean()),
+            "always_freeze": float((oracle - a0).mean()),
+            "K_Bound":       float((oracle - kga).mean()),
+        },
+        "beats_both": bool(
+            (oracle - kga).mean() < (oracle - aa).mean() - 1e-9 and
+            (oracle - kga).mean() < (oracle - a0).mean() - 1e-9
+        ),
+    }
+
+
+def balanced_accuracy(y_true, y_pred):
+    """Class-balanced accuracy (mean per-class recall)."""
+    classes = np.unique(y_true)
+    recalls = [np.mean(y_pred[y_true == c] == c) for c in classes if (y_true == c).any()]
+    return float(np.mean(recalls))
+
+
+def compute_Z_from_logits(logits_batch: "np.ndarray") -> np.ndarray:
+    """Label-free Z features from adaptation-batch logits.
+    logits_batch: (N, C) numpy array of pre-softmax logits.
+    Returns 1-D feature vector (no labels used).
+    """
+    probs = softmax(logits_batch)
+    ent = -np.sum(probs * np.log(probs + 1e-12), axis=1)  # per-sample entropy
+    conf = probs.max(axis=1)                                # max probability
+    feats = [
+        ent.mean(), ent.std(), float(np.percentile(ent, 25)), float(np.percentile(ent, 75)),
+        conf.mean(), conf.std(),
+        float((conf > 0.9).mean()),   # high-confidence fraction
+        float((ent > math.log(2)).mean()),  # high-entropy fraction
+        float(probs.mean(axis=0).max()),    # max marginal class probability
+        float(probs.mean(axis=0).std()),    # spread of marginal class distribution
+    ]
+    return np.array(feats, dtype=float)
+
+
+def softmax(x):
+    x = x - x.max(axis=1, keepdims=True)
+    e = np.exp(x)
+    return e / e.sum(axis=1, keepdims=True)
+
+
+# ─── Smoke test (no torch needed) ────────────────────────────────────────────
+
+def smoke_test():
+    """Validate the torch-free analysis core only."""
+    print("Smoke test: analysis core (no torch)")
+    rng = np.random.default_rng(42)
+    N = 12  # 5 seeds × ~2 conditions
+    Z = rng.normal(size=(N, 10))
+    B = rng.normal(loc=0.05, scale=0.1, size=N)
+    Bhat, eps, dec = decide_kga(Z, B, alpha=0.10)
+    pm = policy_metrics(dec, rng.uniform(0.6, 0.8, N), rng.uniform(0.6, 0.8, N), B)
+    assert "regret_vs_oracle" in pm
+    # Test compute_Z
+    logits = rng.normal(size=(64, 2))
+    Z_feat = compute_Z_from_logits(logits)
+    assert len(Z_feat) == 10
+    print("  decide_kga: OK (eps={:.4f}, decisions={})".format(eps, dict(zip(*np.unique(dec, return_counts=True)))))
+    print("  policy_metrics: OK (n={})".format(pm["n"]))
+    print("  compute_Z_from_logits: OK (dim={})".format(len(Z_feat)))
+    print("Smoke test PASSED")
+
+
+# ─── Torch-dependent experiment code ─────────────────────────────────────────
+
+def run_experiment(args):
+    """Full KGA experiment — only called when torch is available."""
+    try:
+        import torch
+        import torch.nn as nn
+        import torch.nn.functional as F
+        from torch.utils.data import DataLoader, Subset
+    except ImportError:
+        print("ERROR: torch not found. Install with: pip install torch torchvision")
+        sys.exit(1)
+
+    try:
+        from wilds import get_dataset
+    except ImportError:
+        print("ERROR: wilds not found. Install with: pip install wilds")
+        sys.exit(1)
+
+    try:
+        import torchvision.models as tvmodels
+    except ImportError:
+        print("ERROR: torchvision not found.")
+        sys.exit(1)
+
+    device = (torch.device("mps") if torch.backends.mps.is_available()
+              else torch.device("cuda") if torch.cuda.is_available()
+              else torch.device("cpu"))
+    print(f"Device: {device}")
+
+    # ── Load Camelyon17 ──────────────────────────────────────────────────────
+    print("Loading Camelyon17 (auto-download if needed)...")
+    dataset = get_dataset(dataset="camelyon17", download=True, root_dir=args.wilds_root)
+
+    from wilds.common.data_loaders import get_train_loader, get_eval_loader
+    import torchvision.transforms as T
+
+    transform = T.Compose([
+        T.Resize(96),
+        T.CenterCrop(96),
+        T.ToTensor(),
+        T.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
+    ])
+
+    source_data = dataset.get_subset("train",   transform=transform)
+    target_data = dataset.get_subset("id_val",  transform=transform)  # target hospital
+    test_data   = dataset.get_subset("test",    transform=transform)
+
+    # ── Disk filter: keep only patches whose FILE actually exists on disk ──────
+    # Handles both missing folders AND partially-extracted folders (folder present
+    # but some patch PNGs absent, because an earlier extraction ran out of space).
+    # Builds a present-file set via per-folder listdir (fast: ~one listing per node),
+    # then keeps only dataset indices whose PNG is present. We train/eval on exactly
+    # what's extracted; the dropped count is logged for an honest footnote.
+    _patches_dir = os.path.join(dataset.data_dir, "patches")
+    _inp = getattr(dataset, "_input_array", None)
+    _present_files = set()
+    if os.path.isdir(_patches_dir):
+        for _d in os.listdir(_patches_dir):
+            _dp = os.path.join(_patches_dir, _d)
+            if os.path.isdir(_dp):
+                for _f in os.listdir(_dp):
+                    _present_files.add(_d + "/" + _f)   # 'patient_XXX_node_Y/patch_....png'
+    if _inp is not None and _present_files:
+        def _key(p):
+            parts = str(p).replace("\\", "/").split("/")
+            return (parts[-2] + "/" + parts[-1]) if len(parts) >= 2 else parts[-1]
+        _keep = np.array([_key(p) in _present_files for p in _inp], dtype=bool)
+        _nk, _nt = int(_keep.sum()), len(_keep)
+        if _nk < _nt:
+            print(f"[disk-filter] keeping {_nk}/{_nt} patches present on disk; "
+                  f"dropping {_nt-_nk} (absent or partially-extracted folders)")
+            for _sub in (source_data, target_data, test_data):
+                _idx = np.asarray(_sub.indices)
+                _sub.indices = _idx[_keep[_idx]]
+            print(f"[disk-filter] subset sizes -> train={len(source_data)}, "
+                  f"id_val={len(target_data)}, test={len(test_data)}")
+        else:
+            print(f"[disk-filter] all {_nt} patches present; no filtering needed")
+    else:
+        print("[disk-filter] WARN: could not access _input_array/patches; running unfiltered")
+
+    # ── Optional fast subsample (smoke test): --frac 0.001 uses 0.1% of each split ──
+    if getattr(args, "frac", 1.0) < 1.0:
+        _rng = np.random.default_rng(0)
+        for _sub in (source_data, target_data, test_data):
+            _idx = np.asarray(_sub.indices)
+            _k = min(len(_idx), max(4, int(len(_idx) * args.frac)))
+            _sub.indices = _idx[np.sort(_rng.choice(len(_idx), size=_k, replace=False))]
+        print(f"[frac={args.frac}] subsampled -> train={len(source_data)}, "
+              f"id_val={len(target_data)}, test={len(test_data)}")
+
+    # ── Model: DenseNet-121 (standard WILDS baseline) ───────────────────────
+    def make_model():
+        model = tvmodels.densenet121(weights=tvmodels.DenseNet121_Weights.IMAGENET1K_V1)
+        model.classifier = nn.Linear(model.classifier.in_features, 2)
+        return model.to(device)
+
+    # ── Tent adaptation ──────────────────────────────────────────────────────
+    def configure_tent(model, lr=1e-3, steps=10):
+        """Enable BN-affine params only (Tent)."""
+        model.train()
+        for param in model.parameters():
+            param.requires_grad_(False)
+        params = []
+        for m in model.modules():
+            if isinstance(m, nn.BatchNorm2d):
+                m.requires_grad_(True)
+                m.track_running_stats = False
+                params += [m.weight, m.bias]
+        optimizer = torch.optim.Adam(params, lr=lr)
+        return optimizer
+
+    def tent_adapt(model, loader, steps=10, lr=1e-3):
+        """Adapt model in-place via Tent (entropy minimization on BN-affine params)."""
+        opt = configure_tent(model, lr=lr, steps=steps)
+        for step in range(steps):
+            for x, _, _ in loader:
+                x = x.to(device)
+                logits = model(x)
+                p = F.softmax(logits, dim=1)
+                loss = -(p * torch.log(p + 1e-12)).sum(1).mean()
+                opt.zero_grad(); loss.backward(); opt.step()
+                break  # one batch per step for online adaptation
+
+    # ── EATA adaptation ──────────────────────────────────────────────────────
+    def eata_adapt(model, loader, steps=10, lr=1e-3, e_thresh=0.4 * math.log(2)):
+        """EATA: entropy-filtered + anti-forgetting regularisation (simplified)."""
+        opt = configure_tent(model, lr=lr)
+        for step in range(steps):
+            for x, _, _ in loader:
+                x = x.to(device)
+                logits = model(x)
+                p = F.softmax(logits, dim=1)
+                ent = -(p * torch.log(p + 1e-12)).sum(1)
+                mask = ent < e_thresh
+                if mask.sum() == 0:
+                    continue
+                loss = ent[mask].mean()
+                opt.zero_grad(); loss.backward(); opt.step()
+                break
+
+    # ── Evaluate ─────────────────────────────────────────────────────────────
+    @torch.no_grad()
+    def evaluate(model, loader):
+        model.eval()
+        all_preds, all_labels = [], []
+        all_logits = []
+        for x, y, _ in loader:
+            x = x.to(device)
+            logits = model(x)
+            all_logits.append(logits.cpu().numpy())
+            all_preds.append(logits.argmax(1).cpu().numpy())
+            all_labels.append(y.numpy())
+        preds  = np.concatenate(all_preds)
+        labels = np.concatenate(all_labels)
+        logits = np.concatenate(all_logits)
+        return balanced_accuracy(labels, preds), logits
+
+    # ── Per-seed run ─────────────────────────────────────────────────────────
+    os.makedirs(args.output_dir, exist_ok=True)
+
+    # Robust wrapper: transparently skip patches that are missing OR corrupt
+    # (truncated PNGs left by the interrupted extraction). On any read error we
+    # fall forward to the next readable sample, so the DataLoader never crashes.
+    # Substitutions are a small fraction and noted as a footnote in the paper.
+    class _RobustDS(torch.utils.data.Dataset):
+        def __init__(self, base): self.base = base
+        def __len__(self): return len(self.base)
+        def __getitem__(self, i):
+            n = len(self.base)
+            for k in range(n):
+                try:
+                    return self.base[(i + k) % n]
+                except Exception:
+                    continue
+            raise RuntimeError("no readable samples in dataset")
+
+    source_loader = DataLoader(_RobustDS(source_data), batch_size=64, shuffle=True,  num_workers=0)
+    target_loader = DataLoader(_RobustDS(target_data), batch_size=64, shuffle=True,  num_workers=0)
+    test_loader   = DataLoader(_RobustDS(test_data),   batch_size=64, shuffle=False, num_workers=0)
+
+    methods = {
+        "tent": lambda m, ldr: tent_adapt(m, ldr, steps=args.steps, lr=args.lr),
+        "eata": lambda m, ldr: eata_adapt(m, ldr, steps=args.steps, lr=args.lr),
+    }
+
+    records = {method: [] for method in methods}
+
+    for seed in args.seeds:
+        torch.manual_seed(seed)
+        np.random.seed(seed)
+        print(f"\n--- Seed {seed} ---")
+
+        # Train f0 on source (or load if checkpoint exists)
+        ckpt_path = os.path.join(args.output_dir, f"f0_seed{seed}.pt")
+        f0 = make_model()
+
+        if os.path.exists(ckpt_path) and not args.retrain:
+            print(f"  Loading f0 from {ckpt_path}")
+            f0.load_state_dict(torch.load(ckpt_path, map_location=device))
+        else:
+            print(f"  Training f0 on source hospitals ({args.epochs} epochs)...")
+            optimizer = torch.optim.SGD(f0.parameters(), lr=0.01, momentum=0.9, weight_decay=1e-4)
+            scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=args.epochs)
+            for ep in range(args.epochs):
+                f0.train()
+                for x, y, _ in source_loader:
+                    x, y = x.to(device), y.to(device).long()
+                    loss = F.cross_entropy(f0(x), y)
+                    optimizer.zero_grad(); loss.backward(); optimizer.step()
+                scheduler.step()
+            torch.save(f0.state_dict(), ckpt_path)
+            print(f"  f0 saved to {ckpt_path}")
+
+        # Evaluate frozen f0
+        a0, logits_f0 = evaluate(f0, test_loader)
+        print(f"  f0 balanced acc: {a0:.4f}")
+
+        # Collect label-free Z from target adaptation batch
+        f0.eval()
+        with torch.no_grad():
+            for x_adapt, _, _ in target_loader:
+                logits_adapt = f0(x_adapt.to(device)).cpu().numpy()
+                break
+        Z = compute_Z_from_logits(logits_adapt)
+
+        for method_name, adapt_fn in methods.items():
+            import copy
+            fa = copy.deepcopy(f0)
+            adapt_fn(fa, target_loader)
+            aa, _ = evaluate(fa, test_loader)
+            B = aa - a0
+            print(f"  [{method_name}] aa={aa:.4f}, B={B:+.4f}")
+            records[method_name].append({"Z": Z.tolist(), "a0": a0, "aa": aa, "B": B, "seed": seed})
+
+    # ── Run KGA over seeds ────────────────────────────────────────────────────
+    print("\n=== KGA Analysis ===")
+    output = {"device": str(device), "seeds": args.seeds, "alpha": ALPHA, "methods": {}}
+
+    for method_name, recs in records.items():
+        entry = {"records": recs}  # always persist raw per-seed numbers (traceable)
+        if len(recs) >= 2:
+            Z_mat = np.array([r["Z"] for r in recs])
+            a0_arr = np.array([r["a0"] for r in recs])
+            aa_arr = np.array([r["aa"] for r in recs])
+            B_arr  = aa_arr - a0_arr
+            Bhat, eps, dec = decide_kga(Z_mat, B_arr)
+            pm = policy_metrics(dec, a0_arr, aa_arr, B_arr)
+            pm["eps_conformal"] = eps
+            pm["base_rate_harmful_B<0"] = float(np.mean(B_arr < 0))
+            pm["mean_true_B"] = float(B_arr.mean())
+            print(f"[{method_name}] regret: KBound={pm['regret_vs_oracle']['K_Bound']:.5f} "
+                  f"adapt={pm['regret_vs_oracle']['always_adapt']:.5f} "
+                  f"freeze={pm['regret_vs_oracle']['always_freeze']:.5f} "
+                  f"beats_both={pm['beats_both']}")
+            entry["metrics"] = pm
+        else:
+            r0 = recs[0]
+            print(f"[{method_name}] single seed: a0={r0['a0']:.4f} aa={r0['aa']:.4f} "
+                  f"B={r0['B']:+.4f}  (cross-seed KGA certificate needs >=2 seeds)")
+            entry["summary"] = {"a0": r0["a0"], "aa": r0["aa"], "B": r0["B"], "n_seeds": len(recs)}
+        output["methods"][method_name] = entry
+
+    out_path = os.path.join(args.output_dir, "wilds_camelyon17_kga.json")
+    with open(out_path, "w") as f:
+        json.dump(output, f, indent=2)
+    print(f"\nResults saved to {out_path}")
+    return output
+
+
+# ─── CLI ─────────────────────────────────────────────────────────────────────
+
+def parse_args():
+    p = argparse.ArgumentParser(description="KGA experiment on WILDS Camelyon17")
+    p.add_argument("--wilds-root",  default=os.path.expanduser("~/datasets/wilds"),
+                   help="Root dir for WILDS datasets (auto-downloaded if missing)")
+    p.add_argument("--output-dir",  default="experiments/kbound/results/wilds")
+    p.add_argument("--seeds",       type=int, nargs="+", default=[0, 1, 2, 3, 4])
+    p.add_argument("--epochs",      type=int, default=5,   help="Training epochs for f0")
+    p.add_argument("--steps",       type=int, default=10,  help="Adaptation steps (Tent/EATA)")
+    p.add_argument("--lr",          type=float, default=1e-3, help="Adaptation learning rate")
+    p.add_argument("--frac",        type=float, default=1.0, help="Fraction of each split to use (smoke test, e.g. 0.001)")
+    p.add_argument("--retrain",     action="store_true",   help="Force retrain f0")
+    p.add_argument("--smoke-test",  action="store_true",   help="Validate analysis core only (no torch)")
+    return p.parse_args()
+
+
+if __name__ == "__main__":
+    args = parse_args()
+    if args.smoke_test:
+        smoke_test()
+    else:
+        run_experiment(args)

@@ -1,0 +1,116 @@
+{
+  "REG1_noise_invariance": {
+    "rows": [
+      {
+        "noise_scale": 0.0,
+        "Delta": 0.061528587307098016,
+        "R_f0": 0.08002757917342779,
+        "R_fa": 0.01849899186632977,
+        "sign": 1
+      },
+      {
+        "noise_scale": 0.5,
+        "Delta": 0.06247258275550771,
+        "R_f0": 0.6795672864776691,
+        "R_fa": 0.6170947037221614,
+        "sign": 1
+      },
+      {
+        "noise_scale": 1.0,
+        "Delta": 0.06035901694537227,
+        "R_f0": 2.4699238625254702,
+        "R_fa": 2.409564845580098,
+        "sign": 1
+      },
+      {
+        "noise_scale": 2.0,
+        "Delta": 0.0603901437769192,
+        "R_f0": 9.607387830454307,
+        "R_fa": 9.546997686677388,
+        "sign": 1
+      }
+    ],
+    "Delta_max_abs_deviation": 0.0011695703617257483,
+    "Delta_invariant": true,
+    "sign_preserved_all": true,
+    "absolute_risk_confounded": true,
+    "identity": "R(f) = E[(f-g)^2] + E[eps^2]: the noise term cancels in Delta, not in the levels"
+  },
+  "REG2_bounded_drift_iff": {
+    "U": 0.7111803827711392,
+    "T_S": 0.3248258977320206,
+    "W": 0.27927247150293993,
+    "margin": 0.06152858730709798,
+    "predicted_boundary_B": 0.11015870446516648,
+    "rows": [
+      {
+        "B": 0.0,
+        "committed": true,
+        "boundary_2BW": 0.0,
+        "margin": 0.06152858730709798,
+        "false_certifications": 0,
+        "adversarial_bracket_saturation": 0.0,
+        "sign_flips_observed_when_uncommitted": 0
+      },
+      {
+        "B": 0.05,
+        "committed": true,
+        "boundary_2BW": 0.027927247150293995,
+        "margin": 0.06152858730709798,
+        "false_certifications": 0,
+        "adversarial_bracket_saturation": 1.0,
+        "sign_flips_observed_when_uncommitted": 0
+      },
+      {
+        "B": 0.1,
+        "committed": true,
+        "boundary_2BW": 0.05585449430058799,
+        "margin": 0.06152858730709798,
+        "false_certifications": 0,
+        "adversarial_bracket_saturation": 1.0,
+        "sign_flips_observed_when_uncommitted": 0
+      },
+      {
+        "B": 0.2,
+        "committed": false,
+        "boundary_2BW": 0.11170898860117598,
+        "margin": 0.06152858730709798,
+        "false_certifications": 0,
+        "adversarial_bracket_saturation": 1.0,
+        "sign_flips_observed_when_uncommitted": 10
+      },
+      {
+        "B": 0.4,
+        "committed": false,
+        "boundary_2BW": 0.22341797720235196,
+        "margin": 0.06152858730709798,
+        "false_certifications": 0,
+        "adversarial_bracket_saturation": 1.0,
+        "sign_flips_observed_when_uncommitted": 15
+      },
+      {
+        "B": 0.8,
+        "committed": false,
+        "boundary_2BW": 0.4468359544047039,
+        "margin": 0.06152858730709798,
+        "false_certifications": 0,
+        "adversarial_bracket_saturation": 1.0,
+        "sign_flips_observed_when_uncommitted": 17
+      },
+      {
+        "B": 1.2,
+        "committed": false,
+        "boundary_2BW": 0.6702539316070558,
+        "margin": 0.06152858730709798,
+        "false_certifications": 0,
+        "adversarial_bracket_saturation": 1.0,
+        "sign_flips_observed_when_uncommitted": 16
+      }
+    ],
+    "zero_false_certifications": true,
+    "bracket_tight_at_adversary": true,
+    "coverage_decays": true,
+    "flips_exist_beyond_boundary": true,
+    "statement": "identifiable in the |b|<=B family IFF |U-2T_S| > 2BW; certificate never wrong below, sign genuinely flips above"
+  }
+}

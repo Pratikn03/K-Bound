@@ -13,6 +13,7 @@ __pycache__/
 # Heavy raw prediction-array payloads (index CSVs are committed explicitly)
 elara_master_c/predictions/confirmation/M2-CONFIRMATORY__*/
 .coverage
+.coverage*
 htmlcov/
 .virtual_documents/
 .DS_Store
@@ -45,6 +46,9 @@ experiments/fusion/*
 !experiments/fusion/realiad_d3_score_cache/
 experiments/fusion/realiad_d3_score_cache/*
 !experiments/fusion/realiad_d3_score_cache/*_v2_binpcd.npz
+!experiments/fusion/mvtec3d_score_cache/
+experiments/fusion/mvtec3d_score_cache/*
+!experiments/fusion/mvtec3d_score_cache/*.npz
 reports/*.pdf
 reports/*.html
 
@@ -58,3 +62,48 @@ data/_archived_subsets/
 # Research dashboard: keep latest snapshot; ignore timestamped history locally
 research_dashboard/web/data/history/snapshot_*.json
 research_dashboard/build/
+
+# ===== K-Bound commit hygiene (added) =====
+# download/run logs and junk
+wget-log*
+nohup.out
+# heavy generated CSV input (data artifact, not code)
+src/experiments/fusion/attention_fusion/fusion_inputs.csv
+
+# Re-include curated K-Bound experiment artifacts (lightweight) despite experiments/* ignore
+!experiments/kbound/
+experiments/kbound/*
+!experiments/kbound/results/
+experiments/kbound/results/*
+!experiments/kbound/results/*.json
+!experiments/kbound/results/*.csv
+!experiments/kbound/results/*.md
+!experiments/kbound/results/**/
+!experiments/kbound/results/**/*.json
+!experiments/kbound/results/**/*.csv
+!experiments/kbound/results/**/*.md
+experiments/kbound/results/**/*.pt
+experiments/kbound/results/**/*.log
+experiments/kbound/**/._*
+!experiments/kbound/theory_validation/
+experiments/kbound/theory_validation/*
+!experiments/kbound/theory_validation/*.py
+!experiments/kbound/theory_validation/*.json
+experiments/kbound/theory_validation/._*
+
+# K-Bound local paper build logs/artifacts
+docs/research/kbound/**/*.log
+docs/research/kbound/**/*.aux
+docs/research/kbound/**/*.out
+docs/research/kbound/**/*.toc
+docs/research/kbound/**/*.fls
+docs/research/kbound/**/*.fdb_latexmk
+docs/research/kbound/**/*.synctex.gz
+
+# Re-include model documentation (cards + integrity manifest); keep binaries out
+!models/
+models/*
+!models/*/
+!models/MANIFEST.json
+!models/REGISTRY.md
+!models/*/MODEL_CARD.md

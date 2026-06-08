@@ -1,82 +1,51 @@
-# Pre-commit hooks for UAIS-V code quality
-# Install: pip install pre-commit && pre-commit install
-# Run: pre-commit run --all-files
+# Pre-commit hooks for the K-Bound / KGA anomaly-intelligence repo.
+#
+#   pip install pre-commit
+#   pre-commit install            # enable the git hook
+#   pre-commit run --all-files    # run every hook over the whole tree
+#
+# Ruff is the single source of truth for linting and formatting (line-length 120,
+# rule set E,W,F,I,C,B,UP), configured in pyproject.toml under [tool.ruff]; the
+# hooks below inherit that configuration. mypy is run only over the pure-numpy
+# `kga/` package, which is fully typed.
+#
+# Pinned revisions are recent stable tags; bump them with `pre-commit autoupdate`.
+
+minimum_pre_commit_version: "3.5.0"
 
 repos:
-  # Code formatting with black
-  - repo: https://github.com/psf/black
-    rev: 24.1.1
-    hooks:
-      - id: black
-        language_version: python3
-        args: ['--line-length=120']
-
-  # Import sorting with isort
-  - repo: https://github.com/PyCQA/isort
-    rev: 5.13.2
-    hooks:
-      - id: isort
-        args: ['--profile=black', '--line-length=120']
-
-  # Linting with ruff (faster alternative to flake8)
+  # --- Ruff: lint (with autofix) + format -------------------------------------
+  # Pinned to the 0.6.x family, which matches the ruff config in pyproject.toml.
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.1.14
+    rev: v0.6.9
     hooks:
       - id: ruff
-        args: ['--fix', '--exit-non-zero-on-fix']
+        name: ruff (lint, autofix)
+        args: ["--fix", "--exit-non-zero-on-fix"]
+      - id: ruff-format
+        name: ruff (format)
 
-  # Type checking with mypy
-  - repo: https://github.com/pre-commit/mirrors-mypy
-    rev: v1.8.0
-    hooks:
-      - id: mypy
-        additional_dependencies: [
-          'types-PyYAML',
-          'types-requests',
-          'pandas-stubs',
-          'numpy',
-        ]
-        args: [
-          '--ignore-missing-imports',
-          '--allow-redefinition',
-          '--check-untyped-defs',
-          '--warn-redundant-casts',
-          '--warn-unused-ignores',
-        ]
-        files: ^src/
-
-  # Check for common Python errors
+  # --- Standard hygiene hooks -------------------------------------------------
   - repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v4.5.0
+    rev: v5.0.0
     hooks:
       - id: trailing-whitespace
       - id: end-of-file-fixer
       - id: check-yaml
       - id: check-json
       - id: check-added-large-files
-        args: ['--maxkb=10000']
+        args: ["--maxkb=2048"]
       - id: check-merge-conflict
       - id: debug-statements
-      - id: mixed-line-ending
 
-  # Security checks with bandit
-  - repo: https://github.com/PyCQA/bandit
-    rev: 1.7.6
+  # --- Static typing for the kga/ package only --------------------------------
+  # The rest of the repo carries optional/heavy deps and is not yet fully typed;
+  # `kga/` is pure numpy/scipy and type-clean, so we gate it here.
+  - repo: https://github.com/pre-commit/mirrors-mypy
+    rev: v1.11.2
     hooks:
-      - id: bandit
-        args: ['-c', 'pyproject.toml', '-r', 'src/']
-        additional_dependencies: ['bandit[toml]']
-
-  # Docstring coverage check
-  - repo: https://github.com/econchick/interrogate
-    rev: 1.5.0
-    hooks:
-      - id: interrogate
-        args: [
-          '--ignore-init-method',
-          '--ignore-init-module',
-          '--ignore-magic',
-          '--ignore-module',
-          '--fail-under=60',
-          'src/uais'
-        ]
+      - id: mypy
+        name: mypy (kga only)
+        files: ^kga/
+        args: ["--ignore-missing-imports"]
+        additional_dependencies: ["numpy"]

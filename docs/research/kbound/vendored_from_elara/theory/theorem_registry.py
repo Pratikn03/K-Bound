@@ -1,0 +1,259 @@
+"""Central registry mapping thesis theorems T1--T7 to code and artifacts.
+
+Every theorem entry lists:
+  - the validating script(s)
+  - the core library module(s)
+  - the expected artifact path(s) relative to the repository root
+  - the manuscript table (if any)
+
+Use ``validate_theorem_stack.py`` to check that artifacts exist after a rebuild.
+"""
+
+from __future__ import annotations
+
+from dataclasses import dataclass
+from pathlib import Path
+
+
+@dataclass(frozen=True)
+class TheoremSpec:
+    theorem_id: str
+    title: str
+    core_modules: tuple[str, ...]
+    validation_scripts: tuple[str, ...]
+    artifact_paths: tuple[str, ...]
+    table_path: str | None
+    status_note: str
+
+
+THEOREM_REGISTRY: dict[str, TheoremSpec] = {
+    "T1": TheoremSpec(
+        theorem_id="T1",
+        title="Quality-blind fusion impossibility (T1a sparse-linear + T1b coherent-all-rules)",
+        core_modules=(
+            "src/uais/fusion/attention/reliability_estimator.py",
+            "src/elara/theory/t1_impossibility.py",
+        ),
+        validation_scripts=("src/scripts/validate_t1_impossibility.py",),
+        artifact_paths=(
+            "experiments/fusion/t1_impossibility_validation.json",
+            "docs/research/tables/t1_impossibility.tex",
+        ),
+        table_path="docs/research/tables/t1_impossibility.tex",
+        status_note="Formal lemma + constructive adversary. T1a: linear rules dominated under sparse corruption; T1b: every rule (incl. median) dominated under coherent corruption.",
+    ),
+    "T2": TheoremSpec(
+        theorem_id="T2",
+        title="Global-KS mixture confounding (mixture-entropy bound + real-cohort validation)",
+        core_modules=(
+            "src/uais/fusion/attention/reliability_estimator.py",
+            "src/elara/family_b/mixture_shift.py",
+            "src/elara/theory/t2_mixture_entropy.py",
+        ),
+        validation_scripts=(
+            "src/scripts/validate_category_mixture_t2.py",
+            "src/scripts/emit_category_mixture_t2_table.py",
+            "src/scripts/run_phase2_mixture_shift.py",
+            "src/scripts/validate_t2_eyecandies_categories.py",
+        ),
+        artifact_paths=(
+            "experiments/fusion/category_mixture_t2_validation.json",
+            "docs/research/tables/category_mixture_t2.tex",
+            "experiments/phase2/mechanism/domain_composition_shift_metrics.csv",
+            "experiments/fusion/t2_category_ks_validation.json",
+            "docs/research/tables/t2_category_ks.tex",
+        ),
+        table_path="docs/research/tables/t2_category_ks.tex",
+        status_note="Real-cohort confirmed: on MVTec 3D-AD (separated categories) global KS false-fires under pure mixture re-weighting (p=4e-5) while category-aware KS stays null (0/8). Eyecandies negative control shows the effect requires inter-category separation (degenerate near-chance detector -> no confounding).",
+    ),
+    "T3": TheoremSpec(
+        theorem_id="T3",
+        title="Mean-gate dilution failure (closed-form miss probability)",
+        core_modules=(
+            "src/uais/fusion/attention/reliability_estimator.py",
+            "src/elara/family_b/corruption.py",
+            "src/elara/theory/t3_mean_gate_miss.py",
+            "src/elara/theory/novel_theorem_bounds.py",
+        ),
+        validation_scripts=(
+            "src/scripts/run_breakthrough_experiment.py",
+            "src/scripts/emit_k_of_d_corruption_table.py",
+            "src/scripts/run_phase2_mechanism_replication.py",
+            "src/scripts/validate_t3_mean_gate_miss.py",
+            "src/scripts/validate_novel_theorems.py",
+        ),
+        artifact_paths=(
+            "experiments/fusion/craf_real_k_domain_results.json",
+            "docs/research/tables/elara_k_domain_corruption_results.tex",
+            "docs/research/figures/elara_k_domain_corruption.png",
+            "experiments/fusion/t3_mean_gate_miss_validation.json",
+            "docs/research/tables/t3_mean_gate_miss.tex",
+            "experiments/fusion/novel_theorems_validation.json",
+            "docs/research/tables/t3_stochastic_dilution.tex",
+        ),
+        table_path="docs/research/tables/elara_k_domain_corruption_results.tex",
+        status_note="Closed-form P(miss)=Phi((mu_bar-tau)/sigma_bar); det. boundary k*=D(mu_h-tau)/(mu_h-mu_c). NOVEL T3 upgrade: STOCHASTIC dilution P(silent|k)=Phi((mu_k-tau)/(sigma/sqrt D)) under noisy reliability (corrected full-mean argument); sigma=0.15 erodes the k=1 boundary to 88.5% silent.",
+    ),
+    "T4": TheoremSpec(
+        theorem_id="T4",
+        title="Reliability-switch risk dominance (finite-sample sample complexity)",
+        core_modules=("src/elara/certification/risk_dominance.py",),
+        validation_scripts=(
+            "src/scripts/run_phase2_b_cert_1_v2.py",
+            "src/scripts/emit_risk_dominance_t4_table.py",
+            "src/scripts/validate_t4_risk_dominance_sample_complexity.py",
+        ),
+        artifact_paths=(
+            "experiments/phase2/certification/risk_dominance_terms_v2.csv",
+            "docs/research/tables/risk_dominance_t4_prevalence.tex",
+            "experiments/fusion/t4_risk_dominance_sample_complexity.json",
+            "docs/research/tables/t4_risk_dominance_sample_complexity.tex",
+        ),
+        table_path="docs/research/tables/risk_dominance_t4_prevalence.tex",
+        status_note="Finite-sample LCB on the dominance margin + closed-form min-n. On max_attack the point margin is positive but certifying deployment-prevalence dominance needs ~82k fired samples vs 1.6k available -- quantifies why the retrospective certificate is not a deployment guarantee.",
+    ),
+    "T5": TheoremSpec(
+        theorem_id="T5",
+        title="Finite-sample switching certificate (empirical-Bernstein closed form)",
+        core_modules=(
+            "src/uais/utils/metrics.py",
+            "src/elara/certification/switching_certificate.py",
+        ),
+        validation_scripts=(
+            "src/scripts/audit_switching_certificate_t5.py",
+            "src/scripts/emit_switching_certificate_t5_table.py",
+            "src/scripts/audit_switching_certificate_t5_persample.py",
+        ),
+        artifact_paths=(
+            "experiments/fusion/switching_certificate_t5_audit.json",
+            "docs/research/tables/switching_certificate_t5.tex",
+            "experiments/fusion/switching_certificate_t5_persample_audit.json",
+            "docs/research/tables/switching_certificate_t5_persample.tex",
+        ),
+        table_path="docs/research/tables/switching_certificate_t5.tex",
+        status_note="Added deterministic empirical-Bernstein LCB (Maurer-Pontil) alongside bootstrap. At the per-sample level (n=48k) the closed form is tight (EB -0.0015 vs bootstrap -0.0011); at per-seed n=5 it is vacuous, honestly revealing the n=5 bootstrap certificates are not finite-sample valid.",
+    ),
+    "T6": TheoremSpec(
+        theorem_id="T6",
+        title="KS drift gate as sequential detector (CUSUM-style ARL/AED trade-off)",
+        core_modules=(
+            "src/uais/fusion/attention/reliability_estimator.py",
+            "src/elara/theory/t6_sequential_detection.py",
+            "src/elara/theory/novel_theorem_bounds.py",
+        ),
+        validation_scripts=(
+            "src/scripts/run_phase2_ks_power_sweep.py",
+            "src/scripts/emit_ks_power_t6_table.py",
+            "src/scripts/validate_t6_sequential_detection.py",
+            "src/scripts/validate_novel_theorems.py",
+        ),
+        artifact_paths=(
+            "experiments/phase2/mechanism/ks_window_size_power.csv",
+            "docs/research/tables/ks_power_t6.tex",
+            "experiments/fusion/t6_sequential_detection_validation.json",
+            "docs/research/tables/t6_sequential_detection.tex",
+            "docs/research/tables/t6_ks_power_predicted.tex",
+        ),
+        table_path="docs/research/tables/t6_sequential_detection.tex",
+        status_note="Sequential-detection theorem: ARL_0(W)=1/(2 exp(-2 W h^2)), power Phi((delta-h)sqrt(2W)). NOVEL closed-form power(W,alpha,delta)=1-Phi(z-delta sqrt(W) c) with window-sizing W*=((z_a+z_b)/(delta c))^2; fitted c=0.578, monotone-in-W power matches the B-MECH-4 sweep.",
+    ),
+    "T7": TheoremSpec(
+        theorem_id="T7",
+        title="Tight meta-router generalization bound (Massart finite-class Rademacher)",
+        core_modules=(
+            "src/scripts/audit_meta_router_pac.py",
+            "src/scripts/audit_meta_router_pac_tight.py",
+            "src/scripts/audit_meta_router_pac_massart.py",
+        ),
+        validation_scripts=(
+            "src/scripts/audit_meta_router_pac.py",
+            "src/scripts/audit_meta_router_pac_tight.py",
+            "src/scripts/audit_meta_router_pac_massart.py",
+            "src/scripts/emit_meta_router_pac_t7_table.py",
+            "src/scripts/emit_meta_router_pac_t7_tight_table.py",
+        ),
+        artifact_paths=(
+            "experiments/fusion/meta_router_pac_audit.json",
+            "experiments/fusion/meta_router_pac_audit_tight.json",
+            "experiments/fusion/meta_router_pac_massart.json",
+            "docs/research/tables/meta_router_pac_t7.tex",
+            "docs/research/tables/meta_router_pac_t7_tight.tex",
+            "docs/research/tables/meta_router_pac_t7_massart.tex",
+        ),
+        table_path="docs/research/tables/meta_router_pac_t7_massart.tex",
+        status_note="NOVEL: the meta-router is finite SELECTION over K=13 candidates, so Massart's lemma gives R_hat=sqrt(2 ln K/n) exactly. Slack ~0.04-0.30 (usable<1 on ALL folds), ~6x tighter than the generic linear-class bound (1.5-2.8). Honest K=13 (not optimistic 4); n=740 slack=0.216.",
+    ),
+    "GDR": TheoremSpec(
+        theorem_id="GDR",
+        title="Coherence-certified gate decision rule (minimax-optimal; real-validation partial)",
+        core_modules=(
+            "src/uais/fusion/attention/gate_decision_rule.py",
+            "src/elara/theory/gdr_minimax.py",
+        ),
+        validation_scripts=(
+            "src/scripts/audit_gate_decision_rule_e2e.py",
+            "src/scripts/emit_gate_decision_rule_table.py",
+            "src/scripts/validate_gdr_minimax.py",
+            "src/scripts/audit_gdr_real_benchmark.py",
+        ),
+        artifact_paths=(
+            "experiments/fusion/gate_decision_rule_e2e_audit.json",
+            "docs/research/tables/gate_decision_rule_e2e.tex",
+            "experiments/fusion/gdr_minimax_validation.json",
+            "docs/research/tables/gdr_minimax.tex",
+            "experiments/fusion/gdr_real_benchmark_validation.json",
+            "docs/research/tables/gdr_real_benchmark.tex",
+        ),
+        table_path="docs/research/tables/gdr_minimax.tex",
+        status_note="MINIMAX PROVEN in the two-regime model (worst-case regret 0.0006 vs 0.10 for always/never-switch). Real-benchmark separation PARTIAL (1/3 at theta=0.5): bottlenecked by near-chance base detectors that under-disperse the coherence signal. Honest scope: theory A-level, empirics base-detector-limited.",
+    ),
+    "T8": TheoremSpec(
+        theorem_id="T8",
+        title="Certified heterogeneous fusion (CHF) under batch/category shift",
+        core_modules=(
+            "src/elara/theory/t8_certified_heterogeneous_fusion.py",
+            "src/uais/fusion/attention/certified_heterogeneous_fusion.py",
+        ),
+        validation_scripts=("src/scripts/validate_t8_chf.py",),
+        artifact_paths=(
+            "experiments/fusion/t8_chf_validation.json",
+            "docs/research/tables/t8_chf.tex",
+        ),
+        table_path="docs/research/tables/t8_chf.tex",
+        status_note="Validation-only route/stack selection among SAR, RGA+, and coherence-gated paths; extends switching certificate to heterogeneous batches.",
+    ),
+    "T9": TheoremSpec(
+        theorem_id="T9",
+        title="Clean-transfer reliability-gate impossibility (optimality-gap closure)",
+        core_modules=(
+            "src/elara/theory/t9_clean_transfer_ceiling.py",
+        ),
+        validation_scripts=(
+            "src/scripts/validate_t9_clean_transfer_ceiling.py",
+        ),
+        artifact_paths=(
+            "experiments/fusion/t9_clean_transfer_ceiling_validation.json",
+            "docs/research/tables/t9_clean_transfer_ceiling.tex",
+        ),
+        table_path="docs/research/tables/t9_clean_transfer_ceiling.tex",
+        status_note=(
+            "NOVEL impossibility (clean-regime complement to T1/T3). Delta*(G) <= "
+            "eps_subopt = A* - A(CW) for EVERY fusion class via the Neyman-Pearson "
+            "ceiling; homoscedastic-Gaussian closure gives A(CW)=A* exactly. "
+            "Computable certificate: on BOTH opened external benchmarks an "
+            "unconstrained cross-fitted oracle (joint scores+confidences+labels) "
+            "cannot beat CW -- 3D-ADAM A_cw=0.9349 vs A_oracle=0.9336, MulSen "
+            "A_cw=0.9970 vs A_oracle=0.9947 -- so eps_subopt~0 < MDE and clean "
+            "Gate E is closed by proof, not by absent evidence. This is exactly "
+            "WHY the gate's provable value is the stress regime (T1/T3)."
+        ),
+    ),
+}
+
+
+def list_theorems() -> list[TheoremSpec]:
+    return [THEOREM_REGISTRY[k] for k in ("T1", "T2", "T3", "T4", "T5", "T6", "T7", "T8", "T9", "GDR")]
+
+
+def artifact_status(repo_root: Path, spec: TheoremSpec) -> dict[str, bool]:
+    return {rel: (repo_root / rel).exists() for rel in spec.artifact_paths}

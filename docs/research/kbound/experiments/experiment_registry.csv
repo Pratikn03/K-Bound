@@ -1,0 +1,12 @@
+experiment_id,name,generating_script,result_file,figures,n,claim_status,key_result
+E1,clean_suite,src/scripts/kbound/knowability_experiment.py,results/main/knowability_results.json,fig_certificate.png;fig_false_adapt.png,123,used,adapt_precision=0.90; coverage=0.17; abstain|B|=0.021 vs 0.132
+E2,harmful_fusion,src/scripts/kbound/kbound_harmful_regime.py,results/main/kbound_harmful_results.json,fig_kbound_harmful.png,123,used,KGA=freeze 0.748; always-adapt 0.728; regret 0.0214->0.0019 (~11x)
+E3,mixed_regime,src/scripts/kbound/mixed_regime_experiment.py,results/main/mixed_regime_results.json,fig_mixed_policies.png;fig_mixed_decisions.png,369,used,KGA 0.690 vs freeze 0.586 vs adapt 0.697; adapt_prec 0.935
+E4,mixed_regime_rigor,src/scripts/kbound/kbound_full_experiments.py,results/main/rigor_multiseed.json,,8 seeds,used,vs freeze t=62.2 p=7.3e-11; vs adapt t=-8.8 p=5.1e-5
+E5,nonidentifiability_witness,src/scripts/kbound/kbound_full_experiments.py,results/witness/witness_clean.json,fig_witness_clean.png,300,used,all Z KS p>0.05; 100% abstain; forced-commit regret 0.51
+E6,regression_covariate_shift,src/scripts/kbound/kbound_full_experiments.py,results/regression/regression_covariate.json,fig_regression.png,72,used,KGA MSE 0.251 = oracle; always-adapt(IW) 0.338; IW hurts 79%
+E7,ablations,src/scripts/kbound/kbound_full_experiments.py,results/ablations/ablations.json,fig_ablation_evidence.png;fig_alpha_coverage.png,123,used,drop disagreement regret 0.037->0.094; alpha & batch sweeps
+E8,cifar_tent,src/scripts/kbound/cifar_tent_mps.py;cifar_tent_mps_v2.py,results/tta/cifar_tent_results.json,fig_cifar_tent.png,44,verify_before_claim,helpful-dominated (harmful base rate 0.023); v2 harness fixes the grid
+E9,cifar_tent_online,src/scripts/kbound/cifar_tent_online.py,results/tta/cifar_tent_online_results.json,fig_cifar_tent_online.png,,verify_before_claim,online-stream Tent variant; verify before claiming
+E10,tta_collapse,src/scripts/kbound/tta_collapse_experiment.py,results/tta/tta_collapse_results.json,fig_tta_collapse.png,210,verify_before_claim,2-D logistic TTA did not collapse (harmful B small)
+E11,multimodal_instantiation,experiments/elara_u (multimodal reliability suite),results/multimodal/*.json,,—,corroborating,MVTec-3D +0.21 AUROC under modality failure; CIs exclude zero
