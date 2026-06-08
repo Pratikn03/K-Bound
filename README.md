@@ -1,4 +1,43 @@
-# ELARA-U — Cross-Domain Anomaly Meta-Routing Benchmark
+# K-Bound — The Knowability Boundary of Label-Free Adaptation
+
+[![kbound-ci](https://github.com/Pratikn03/AutoML_Flagship_V8/actions/workflows/kbound-ci.yml/badge.svg)](https://github.com/Pratikn03/AutoML_Flagship_V8/actions/workflows/kbound-ci.yml)
+[![CI](https://github.com/Pratikn03/AutoML_Flagship_V8/actions/workflows/ci.yml/badge.svg)](https://github.com/Pratikn03/AutoML_Flagship_V8/actions/workflows/ci.yml)
+[![Ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json)](https://github.com/astral-sh/ruff)
+[![pre-commit](https://img.shields.io/badge/pre--commit-enabled-brightgreen?logo=pre-commit)](https://github.com/pre-commit/pre-commit)
+
+> **Current paper.** *When Is Label-Free Adaptation Knowable?* — a theory + certificate
+> (KGA: Knowability-Guided Adaptation) for deciding, without target labels, whether to
+> **adapt, freeze, or abstain** under distribution shift. ELARA (below) is the worked
+> reliability-gated-fusion instantiation that K-Bound generalises.
+>
+> - Paper: [`docs/research/kbound/K-Bound_paper.pdf`](docs/research/kbound/K-Bound_paper.pdf) (20 pp)
+> - **Manuscript (long-form, 166 pp):** [`docs/research/kbound/manuscript/K-Bound_Manuscript.pdf`](docs/research/kbound/manuscript/K-Bound_Manuscript.pdf)
+> - Reproduction dashboard: [`docs/research/kbound/kbound_dashboard.html`](docs/research/kbound/kbound_dashboard.html)
+> - Reproduction notebooks (10, executed): [`notebooks/`](notebooks/) (`00`–`09`)
+> - Importable algorithm: [`kga/`](kga/) — `from kga import KGA` · `python -m kga decide`
+> - Theorem↔code map: [`docs/research/kbound/THEOREM_CODE_STATUS.md`](docs/research/kbound/THEOREM_CODE_STATUS.md)
+> - **Reproduce everything:** `PYTHON=.venv/bin/python bash scripts/rebuild_kbound.sh` (add `KBOUND_GPU=1` for the TTA experiments)
+>
+> Status: 5/5 core theorems proved (Thm 3 conditional, Thm 5 binary→multiclass), 33/33 theorem
+> tests pass, 9 real experiments (anomaly routing, regression, CIFAR-10-C, online continual-Tent,
+> non-identifiability witness). Honest scope: KGA's edge is safety + cross-regime robustness;
+> full ImageNet-C scale is pending.
+
+### Engineering & reproducibility
+
+Contributor + engineering guide: [`docs/ENGINEERING.md`](docs/ENGINEERING.md). Data provenance + integrity: [`DATA.md`](DATA.md).
+
+- **The decision rule, importable:** the pure-numpy [`kga/`](kga/) package — `python -m kga decide --calib calib.npy --test test.npy --alpha 0.1`, or `from kga import KGA`. Served at `POST /decide` ([`deploy/api/kga_routes.py`](deploy/api/kga_routes.py)).
+- **Hermetic smoke (zero external data, < 60s):** `bash scripts/smoke_kbound.sh`.
+- **Full rebuild:** `bash scripts/rebuild_kbound.sh` (`KBOUND_GPU=1` adds the TTA experiments).
+- **Pipelines:** real Prefect flows — `python -m src.orchestration.runner list`.
+- **Model registry + integrity:** `python -m uais.registry.build_manifest`; model cards under [`models/`](models/).
+- **Training harness:** `python -m uais.training.cli --list` (configs in [`configs/training/`](configs/training/)).
+- **Quality gates:** `ruff check . && pytest -q`, or `pre-commit run --all-files`; CI in [`.github/workflows/kbound-ci.yml`](.github/workflows/kbound-ci.yml).
+
+---
+
+# ELARA-U — Cross-Domain Anomaly Meta-Routing Benchmark  *(superseded foundation)*
 
 **ELARA-U** studies anomaly detection as a *meta-routing* problem: given a
 heterogeneous detector zoo and a labelled validation slice, decide when to
@@ -15,10 +54,35 @@ benchmark + an honest result, not a new detector.
 - **Reliability/drift routing adds no value** on single-input data across
   4 deployment regimes + a sealed natural temporal-shift benchmark (D22), and a
   reliability gate significantly *hurts* the stack (Holm p < 10⁻⁸).
-- **But it wins where it structurally should:** on real **Real-IAD-D3**
-  multimodal data with independent modality failure (**D23**), drift-gated
-  fusion recovers performance (0.517 → 0.715; H1 +0.221, H2 +0.334, H3 +0.198,
-  all CIs exclude zero).
+- **But it wins where it structurally should:** on **two** real multimodal datasets
+  with independent modality failure (**D23**) — Real-IAD-D3 (15 categories) and
+  MVTec-3D (7 categories) — drift-gated fusion recovers performance (e.g. Real-IAD-D3
+  0.517 → 0.715). Real-IAD-D3: H1 +0.241, H2 +0.386, H3 +0.248; MVTec-3D: H1 +0.207,
+  H2 +0.317, H3 +0.211; all CIs exclude zero on **both**.
+
+**Hardening (Path 1).** The stacking result survives every standard reviewer attack:
+- **Comprehensive baselines (D28)** — the headline stack beats *all nine* non-oracle
+  baselines (best-fixed, auto-select, MetaOD-style, rank/CW/raw/calibrated averages,
+  AutoML greedy ensemble, per-family specialist) **and both test-label oracles**
+  (best single +0.025, best pair +0.032; CIs exclude 0). Not a weak-baseline win.
+- **Stacker family** — RF/GBM/HistGBM stackers match logistic; the simple average *loses*.
+- **Learned selection (D25)** — a MetaOD-style meta-selector (LOO, 28 meta-features)
+  scores **below** naive auto-select (−0.011, CI [−0.017, −0.006]); stacking beats it
+  by **+0.044** (CI [+0.030, +0.060]). *Combining, not selecting, is the winning move.*
+- **Calibration** — a validation-only isotonic layer: ECE 0.39→0.02, Brier 0.25→0.07, NLL 0.74→0.28.
+- **Sealed external (D24)** — method frozen *before* scoring **74 untouched** ADBench
+  tasks under a different feature extractor (ViT/RoBERTa); one-shot, the stack still
+  wins **+0.016** vs auto-select (CI [+0.004, +0.032]) and **+0.043** vs best fixed.
+- **Fully independent external (D27)** — the hardest test: a different *source*, not
+  the same suite re-extracted. Method + 20-task list frozen, scored once on sources
+  absent from the archive (sklearn digits/wine/wdbc + HAR smartphones). The advantage
+  is *larger* there: **+0.111** vs auto-select (CI [+0.052, +0.176]), **+0.209** vs
+  best fixed. Stacking generalises to genuinely new data.
+- **Boundaries (honest negatives)** — the significant win holds only where base
+  detectors are *individually informative*. It is marginal/n.s. on **time-series**
+  (NAB +0.008, SMD +0.011) and on the **near-chance BAF fraud panel** (D26; 6 Feedzai
+  variants, detectors ≈0.6 AUROC; +0.011 n.s., and *below* the best fixed detector).
+  Stacking amplifies signal that exists but cannot conjure it where the zoo is weak.
 
 We do **not** claim universal/per-dataset SOTA. The contribution is a
 cross-domain benchmark, a strong stacking baseline, a Holm-robust negative
@@ -34,22 +98,39 @@ pins its exact operating boundary.
 ### Reproduce the evidence
 ```bash
 PYTHONPATH=src python src/scripts/elara_u/honest_benchmark.py             # main 123-task result
+PYTHONPATH=src python src/scripts/elara_u/path1_stacking_strength.py      # stronger stackers + calibration
+PYTHONPATH=src python -m scripts.elara_u.baselines_suite                  # D28 comprehensive baselines + oracle ceilings
+PYTHONPATH=src python -m scripts.elara_u.metaod_baseline                  # D25 MetaOD-style learned selection
+PYTHONPATH=src python -m scripts.elara_u.sealed_external_eval             # D24 sealed external (ViT/RoBERTa, one-shot)
+PYTHONPATH=src python -m scripts.elara_u.build_indep_suite               # D27 build fully-independent suite
+PYTHONPATH=src python -m scripts.elara_u.openml_indep_eval               # D27 fully-independent external (one-shot)
+PYTHONPATH=src python src/scripts/elara_u/timeseries_benchmark.py         # NAB univariate time-series
+PYTHONPATH=src python src/scripts/elara_u/smd_benchmark.py                # SMD multivariate time-series
+PYTHONPATH=src python -m scripts.elara_u.baf_benchmark                    # D26 BAF fraud panel (Kaggle creds req.)
 PYTHONPATH=src python src/scripts/elara_u/multimodal_reliability_test.py  # D23 (Real-IAD-D3)
+PYTHONPATH=src python -m scripts.elara_u.multimodal_reliability_test \
+  --cache experiments/fusion/mvtec3d_score_cache --glob "*.npz" --tag MVTec-3D \
+  --out experiments/elara_u/multimodal_reliability_results_mvtec3d.json     # D23 (MVTec-3D, 2nd dataset)
 PYTHONPATH=src python src/scripts/elara_u/natural_shift_benchmark.py      # D22 sealed natural shift
 PYTHONPATH=src python src/scripts/elara_u/statistical_audit.py            # Holm correction
 PYTHONPATH=src python -m pytest tests/elara_u/                            # no-leakage + schema + smoke
 bash scripts/rebuild_paper.sh                                            # paper + thesis PDFs
 ```
 Curated results live in `experiments/elara_u/` (`honest_benchmark.json`,
-`statistical_audit.json`, `multimodal_reliability_results.json`,
-`natural_shift_results.json`, `calibration_results.json`, `manifest.json`,
-`sha256sums.txt`); the Real-IAD-D3 score cache is in
-`experiments/fusion/realiad_d3_score_cache/`.
+`statistical_audit.json`, `path1_stacking_strength.json`, `deep_zoo_results.json`,
+`metaod_baseline_results.json`, `baselines_suite_results.json`,
+`sealed_external_results.json`,
+`timeseries_results.json`, `smd_results.json`, `baf_fraud_results.json`,
+`indep_external_results.json`,
+`multimodal_reliability_results.json`, `natural_shift_results.json`,
+`calibration_results.json`, `manifest.json`, `sha256sums.txt`); the Real-IAD-D3
+score cache is in `experiments/fusion/realiad_d3_score_cache/`. Pre-registered
+protocols (D19–D25) are under `research_lock/`.
 
 ---
 
 ### Legacy: ELARA / RGA source system
-ELARA-U reuses the earlier **ELARA / RGA** (Reliability-Gated Attention) program
+ELARA-U reuses the earlier **ELARA** (Evidence-Layered Anomaly Reliability Architecture) **/ RGA** (Reliability-Gated Attention) program
 as *foundation and honest-negative evidence*, not as universal proof: the
 in-domain MVTec-3D RGA+ win and the dead-modality stress mechanism are strong,
 while the clean-transfer ties/failures (and Theorem T9) are exactly what motivate
@@ -92,8 +173,8 @@ PYTHONPATH=src python scripts/ci_smoke.py
 
 # 4. Rebuild the paper + thesis from the current JSON artifacts
 bash scripts/rebuild_paper.sh
-# → output/pdf/PAPER_DRAFT_v1.pdf
-# → output/pdf/THESIS_CHAPTER_v1.pdf
+# → output/pdf/ELARA_U_PAPER_v0.pdf
+# → output/pdf/ELARA_U_THESIS_CHAPTER.pdf
 ```
 
 > **Note on exFAT volumes**: If the repo lives on an exFAT-formatted external

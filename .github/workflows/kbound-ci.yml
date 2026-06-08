@@ -1,0 +1,174 @@
+# =============================================================================
+# K-Bound / KGA continuous integration (fast, hermetic, no GPU, no external data)
+#
+# Complements the existing .github/workflows/ci.yml (torch CPU + full suite +
+# Docker/API security gate). This workflow is the lightweight A+ matrix:
+#   * lint      — repo-wide critical-error gate + STRICT ruff lint/format on the
+#                 maintained A+ surfaces (kga/, the new src/uais packages, the
+#                 K-Bound scripts, the kga API route, and their tests).
+#   * kga-package      — import + version + the pure-numpy/scipy package tests.
+#   * unit-tests       — the new package test suite with coverage.
+#   * hermetic-smoke   — scripts/smoke_kbound.sh: zero external data, < 60s.
+#   * theorem-validators — every val_thm*.py must exit 0.
+#   * orchestration-import — imports work WITHOUT prefect (import-shim contract).
+#
+# kga is a top-level package -> repo root on PYTHONPATH.
+# uais.* / orchestration live under src/ -> src on PYTHONPATH.
+# =============================================================================
+
+name: kbound-ci
+
+on:
+  push:
+    branches: ["main", "master"]
+  pull_request:
+    branches: ["main", "master"]
+
+concurrency:
+  group: kbound-ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+# Maintained A+ surfaces held to the full ruff rule set + formatting.
+env:
+  APLUS_PATHS: >-
+    kga
+    src/orchestration
+    src/uais/registry
+    src/uais/training
+    src/uais/data/manifest.py
+    src/scripts/kbound/make_synth_archive.py
+    src/scripts/kbound/smoke_trichotomy.py
+    deploy/api/kga_routes.py
+    tests/test_kga_package.py
+    tests/test_model_registry.py
+    tests/test_training_harness.py
+    tests/test_data_manifest.py
+    tests/test_smoke_trichotomy.py
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install ruff
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install ruff
+      - name: Critical-error gate (whole repo)
+        run: ruff check --select E9,F63,F7,F82 .
+      - name: Full ruff lint (A+ surfaces)
+        run: ruff check ${{ env.APLUS_PATHS }}
+      - name: Ruff format check (A+ surfaces)
+        run: ruff format --check ${{ env.APLUS_PATHS }}
+
+  kga-package:
+    runs-on: ubuntu-latest
+    env:
+      PYTHONPATH: ${{ github.workspace }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install minimal kga deps
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install numpy scipy pytest
+      - name: Import kga and print version
+        run: python -c "import kga; print(kga.__version__)"
+      - name: kga unit tests
+        run: pytest tests/test_kga_package.py -q
+
+  unit-tests:
+    runs-on: ubuntu-latest
+    env:
+      PYTHONPATH: ${{ github.workspace }}:${{ github.workspace }}/src
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install minimal deps
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install numpy scipy scikit-learn pandas pyyaml joblib \
+            pytest pytest-cov httpx fastapi
+      - name: Run unit tests with coverage
+        run: |
+          pytest \
+            tests/test_kga_package.py \
+            tests/test_model_registry.py \
+            tests/test_training_harness.py \
+            tests/test_data_manifest.py \
+            tests/test_smoke_trichotomy.py \
+            --cov=kga --cov=src/uais \
+            --cov-report=term-missing --cov-report=xml
+      - name: Upload coverage.xml
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-xml
+          path: coverage.xml
+          if-no-files-found: error
+
+  hermetic-smoke:
+    runs-on: ubuntu-latest
+    env:
+      PYTHONPATH: ${{ github.workspace }}:${{ github.workspace }}/src
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install smoke deps
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install numpy scipy
+      - name: Run hermetic K-Bound smoke
+        run: bash scripts/smoke_kbound.sh
+
+  theorem-validators:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install validator deps
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install numpy scipy
+      - name: Run every theorem validator
+        run: |
+          set -euo pipefail
+          shopt -s nullglob
+          scripts=(experiments/kbound/theory_validation/val_thm*.py)
+          if [ ${#scripts[@]} -eq 0 ]; then
+            echo "No theorem validators found" >&2
+            exit 1
+          fi
+          for script in "${scripts[@]}"; do
+            echo "::group::$script"
+            python "$script"
+            echo "::endgroup::"
+          done
+
+  orchestration-import:
+    runs-on: ubuntu-latest
+    env:
+      PYTHONPATH: ${{ github.workspace }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Upgrade pip (no prefect on purpose)
+        run: python -m pip install --upgrade pip
+      - name: Import orchestration and list flows (no prefect)
+        run: |
+          python -c "import src.orchestration as o; print(o.PREFECT, sorted(o.FLOWS.keys()))"

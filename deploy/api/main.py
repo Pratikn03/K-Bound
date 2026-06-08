@@ -35,6 +35,7 @@ from starlette.middleware.base import BaseHTTPMiddleware
 
 from . import scope_guard
 from .auth import API_KEYS, authenticate
+from .kga_routes import router as kga_router
 
 logger = logging.getLogger(__name__)
 
@@ -229,6 +230,9 @@ app.add_middleware(
 # Add metrics middleware if available
 if MONITORING_AVAILABLE:
     app.add_middleware(MetricsMiddleware)
+
+# KGA (Knowability-Guided Adaptation) certificate routes (POST /decide, GET /kga/health)
+app.include_router(kga_router)
 
 # Model paths
 project_root = Path(__file__).resolve().parents[2]
