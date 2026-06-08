@@ -1,0 +1,14 @@
+experiment: tta_collapse
+generating_script: src/scripts/kbound/tta_collapse_experiment.py
+result_file: ../../results/tta/tta_collapse_results.json
+claim_status: verify_before_claim
+kga:
+  estimator: GradientBoostingRegressor
+  n_estimators: 250
+  max_depth: 2
+  learning_rate: 0.05
+  subsample: 0.8
+  cv: leave_one_out
+  conformal_alpha: 0.10
+  conformal_quantile: 0.90
+seed: 0

@@ -1,0 +1,215 @@
+{
+  "frontier_synthetic": {
+    "N": 4000,
+    "ambiguous_mass": 0.3,
+    "delta": 0.4,
+    "rows": [
+      {
+        "alpha": 0.02,
+        "eps": 0.48770331845094417,
+        "FA": 0.0,
+        "FF": 0.0,
+        "coverage": 0.00225,
+        "bound_cov_lo": 0.0,
+        "P_kappa_pos": 0.0,
+        "commit_on_ambiguous": 0.0,
+        "converse_cap_2alpha": 0.04
+      },
+      {
+        "alpha": 0.05,
+        "eps": 0.45276963191430314,
+        "FA": 0.0,
+        "FF": 0.0,
+        "coverage": 0.00425,
+        "bound_cov_lo": 0.0,
+        "P_kappa_pos": 0.0,
+        "commit_on_ambiguous": 0.0,
+        "converse_cap_2alpha": 0.1
+      },
+      {
+        "alpha": 0.1,
+        "eps": 0.4237082831033889,
+        "FA": 0.0,
+        "FF": 0.0,
+        "coverage": 0.0055,
+        "bound_cov_lo": 0.0,
+        "P_kappa_pos": 0.0,
+        "commit_on_ambiguous": 0.0,
+        "converse_cap_2alpha": 0.2
+      },
+      {
+        "alpha": 0.15,
+        "eps": 0.40104623766917485,
+        "FA": 0.0,
+        "FF": 0.0,
+        "coverage": 0.007,
+        "bound_cov_lo": 0.0,
+        "P_kappa_pos": 0.0,
+        "commit_on_ambiguous": 0.0,
+        "converse_cap_2alpha": 0.3
+      },
+      {
+        "alpha": 0.2,
+        "eps": 0.3789019310389572,
+        "FA": 0.0,
+        "FF": 0.0,
+        "coverage": 0.009,
+        "bound_cov_lo": 0.0,
+        "P_kappa_pos": 0.0,
+        "commit_on_ambiguous": 0.0,
+        "converse_cap_2alpha": 0.4
+      },
+      {
+        "alpha": 0.3,
+        "eps": 0.1902752154930185,
+        "FA": 0.00075,
+        "FF": 0.00075,
+        "coverage": 0.1965,
+        "bound_cov_lo": 0.02250000000000002,
+        "P_kappa_pos": 0.3225,
+        "commit_on_ambiguous": 0.0125,
+        "converse_cap_2alpha": 0.6
+      }
+    ],
+    "checks": {
+      "FA_le_alpha": true,
+      "FF_le_alpha": true,
+      "coverage_ge_bound": true,
+      "ambiguous_commit_le_2alpha": true
+    }
+  },
+  "S1_always_adapt": {
+    "regret_always_adapt": 455.2844430131982,
+    "regret_certificate_committal": 0.0,
+    "witness_pair": {
+      "always_adapt_worstcase_regret": 1.0,
+      "lecam_floor": 0.5,
+      "certificate_committal_regret": 0.0,
+      "note": "abstention shown in witness_clean.json: abstain_rate=1.0"
+    },
+    "statement": "always-adapt == certificate with eps==0 (kappa-blind); pays the full false-adapt mass and 2x the Le Cam floor on the witness"
+  },
+  "S2_filter_vs_certificate": {
+    "FA_entropy_filter": 0.5006666666666667,
+    "FA_certificate": 0.0,
+    "alpha": 0.1,
+    "filter_fails": true,
+    "certificate_holds": true,
+    "statement": "confidently-wrong world: filter adapts blindly (FA~harmful share); certificate abstains. Safety is purchased by the calibrated benefit sample, not the heuristic."
+  },
+  "S3_ordinal_vs_cardinal": {
+    "a_a_true": 0.62,
+    "a_0_true": 0.47,
+    "rows": [
+      {
+        "eta": 0.0,
+        "a_a_obs": 0.621115,
+        "a_0_obs": 0.470145,
+        "diff_obs": 0.15097,
+        "sign_preserved": true,
+        "cardinal_bias_a": 0.0011149999999999771
+      },
+      {
+        "eta": 0.1,
+        "a_a_obs": 0.596375,
+        "a_0_obs": 0.476675,
+        "diff_obs": 0.11969999999999997,
+        "sign_preserved": true,
+        "cardinal_bias_a": 0.023625000000000007
+      },
+      {
+        "eta": 0.2,
+        "a_a_obs": 0.57277,
+        "a_0_obs": 0.48237,
+        "diff_obs": 0.09039999999999998,
+        "sign_preserved": true,
+        "cardinal_bias_a": 0.047229999999999994
+      },
+      {
+        "eta": 0.3,
+        "a_a_obs": 0.54943,
+        "a_0_obs": 0.48829,
+        "diff_obs": 0.06113999999999997,
+        "sign_preserved": true,
+        "cardinal_bias_a": 0.07057000000000002
+      },
+      {
+        "eta": 0.4,
+        "a_a_obs": 0.52412,
+        "a_0_obs": 0.49493,
+        "diff_obs": 0.02919000000000005,
+        "sign_preserved": true,
+        "cardinal_bias_a": 0.09587999999999997
+      }
+    ],
+    "sign_invariant_all_eta": true,
+    "cardinal_bias_grows": true,
+    "identity": "a_obs - 1/2 = (1-2*eta)(a_true - 1/2)  => sign(diff) invariant; absolute level confounded by unknown eta"
+  },
+  "frontier_real_archive": {
+    "n_tasks": 123,
+    "source": "experiments/elara_u/score_archive (REAL)",
+    "seconds": 11.3,
+    "rows": [
+      {
+        "alpha": 0.02,
+        "eps": 0.23086769962034615,
+        "FA": 0.008130081300813009,
+        "FF": 0.0,
+        "coverage": 0.024390243902439025,
+        "bound_cov_lo": 0.0,
+        "P_kappa_pos": 0.0
+      },
+      {
+        "alpha": 0.05,
+        "eps": 0.11898953833613124,
+        "FA": 0.016260162601626018,
+        "FF": 0.0,
+        "coverage": 0.056910569105691054,
+        "bound_cov_lo": 0.0,
+        "P_kappa_pos": 0.024390243902439025
+      },
+      {
+        "alpha": 0.1,
+        "eps": 0.08581960872323388,
+        "FA": 0.024390243902439025,
+        "FF": 0.0,
+        "coverage": 0.08130081300813008,
+        "bound_cov_lo": 0.0,
+        "P_kappa_pos": 0.06504065040650407
+      },
+      {
+        "alpha": 0.15,
+        "eps": 0.0721344231374779,
+        "FA": 0.024390243902439025,
+        "FF": 0.0,
+        "coverage": 0.0975609756097561,
+        "bound_cov_lo": 0.0,
+        "P_kappa_pos": 0.08130081300813008
+      },
+      {
+        "alpha": 0.2,
+        "eps": 0.04888857875425739,
+        "FA": 0.032520325203252036,
+        "FF": 0.0,
+        "coverage": 0.15447154471544716,
+        "bound_cov_lo": 0.0,
+        "P_kappa_pos": 0.12195121951219512
+      },
+      {
+        "alpha": 0.3,
+        "eps": 0.03802142878799331,
+        "FA": 0.04065040650406504,
+        "FF": 0.0,
+        "coverage": 0.23577235772357724,
+        "bound_cov_lo": 0.0,
+        "P_kappa_pos": 0.16260162601626016
+      }
+    ],
+    "checks": {
+      "FA_le_alpha": true,
+      "FF_le_alpha": true,
+      "coverage_ge_bound": true
+    }
+  }
+}

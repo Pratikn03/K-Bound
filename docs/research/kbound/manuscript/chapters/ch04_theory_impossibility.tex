@@ -1,0 +1,838 @@
+% =============================================================================
+% ch04_theory_impossibility.tex — The Unknowable Regime
+% Long-form expansion of kbound.tex §5.1 (Result 1: non-identifiability,
+% witness, Le Cam two-point bound) and §5.2 (Result 2: Bayes gate, plug-in
+% regret, minimax floor). Theorem/proposition statements are VERBATIM from
+% the paper; proofs are expanded line by line; numerical-validation numbers
+% are quoted from experiments/kbound/theory_validation/. NO preamble here.
+% =============================================================================
+
+\chapter{The Unknowable Regime: Non-Identifiability and the Minimax Floor}\label{ch:theory1}
+
+The first half of the theory draws the boundary of the possible. This
+chapter proves two results. The first
+(Theorem~\ref{thm:imp}, with its quantitative Le~Cam strengthening,
+Theorem~\ref{thm:t1-impquant}) shows that the unknowable regime of
+Definition~\ref{def:form-regimes} is not an artifact of weak evidence
+features or small batches: there exist pairs of target worlds whose
+label-free evidence laws coincide \emph{exactly} --- for every evidence map
+and every unlabeled sample size --- while their adaptation benefits have
+opposite signs, and on such pairs the optimal committal error admits a
+closed-form floor, $1-\TV$, which equals $1$ at the witness. The second
+(Theorem~\ref{thm:gate}) prices every violation of the boundary: the
+regret-to-oracle of any plug-in gate equals, \emph{exactly}, the expected
+benefit forfeited on the evidence values where the estimated sign is wrong,
+which yields the matching minimax floor $\E[|\Delta(Z)|]/2$ for the
+unknowable regime and justifies abstention on the low-margin band.
+
+The paper's running example sets the stakes. Two hospitals' scanners induce
+identical confidence and entropy statistics in a deployed classifier, yet in
+one hospital adapting helps and in the other --- a flipped label frequency
+--- it badly hurts; no label-free rule can separate them, so the safe action
+is to abstain. The mathematics below shows that this story is not a corner
+case but a face of the problem: whenever the posterior $P_T(Y\mid X)$ can
+move while the covariate law $P_T(X)$ does not, the evidence
+$\sigma$-algebra simply does not contain the answer. Everything in this
+chapter is proved against the strongest reading of the protocol of
+Chapter~\ref{ch:formulation}: arbitrary evidence maps, arbitrary
+(randomized) rules, unlimited unlabeled data, and free access to labeled
+source data.
+
+We emphasize the chapter's intellectual posture at the outset, because the
+paper does. Non-identifiability of unlabeled target \emph{risk} is, by
+itself, close to folklore --- it is the reason the unsupervised risk
+estimation, domain adaptation, and label-shift literatures all carry
+structural assumptions \cite{bendavid2010theory, mansour2009domain,
+lipton2018detecting}. What this chapter contributes is (i) the statement at
+the level of the \emph{decision}, where it justifies a specific third
+action; (ii) an explicit, maximally separated witness pair on which every
+later experiment can be run; (iii) the exact minimax form of the floor via
+the Le~Cam two-point method \cite{lecam1973convergence,
+tsybakov2009introduction}; and (iv) the exact regret identity that converts
+the floor into a deployment-relevant quantity. Each component is validated
+numerically by a machine-checked script in the public repository
+\cite{kbound2026repo}, and we quote those checks where they occur.
+
+\section{The non-identifiability theorem}\label{sec:t1-imp}
+
+We begin with the qualitative statement, copied verbatim from the paper.
+
+\begin{theorem}[Non-identifiability; with witness]\label{thm:imp}
+Let $g(Z)\in\{\textsc{adapt},\textsc{freeze},\textsc{abstain}\}$ be any
+(possibly randomized) rule depending on label-free evidence $Z$. There exist
+two target worlds $P_T^1,P_T^2$ with
+\textup{(i)} $\Law(Z\mid P_T^1)=\Law(Z\mid P_T^2)$ and
+\textup{(ii)} $\sign\Delta^1=-\sign\Delta^2\neq 0$.
+For any such pair, $\Law(g)$ is identical across the two worlds; hence no
+label-free rule commits to the benefit-maximizing action in both, and the
+action minimizing the worst-case committal regret over $\{P_T^1,P_T^2\}$ is
+\textsc{abstain}.
+\end{theorem}
+
+Before the proof, three reading notes. First, the theorem has an
+existence half and a universal half: it \emph{exhibits} one pair of worlds
+satisfying (i)--(ii) (the witness), and then shows that for \emph{every}
+pair satisfying (i)--(ii) --- witness or otherwise --- every rule is stuck.
+Second, the conclusion is about laws, not samples: $\Law(g)$ identical
+across worlds means the rule's behavior is indistinguishable \emph{in
+distribution}, so no accounting trick (more batches, more features, more
+randomization) recovers a difference. Third, the optimality of
+\textsc{abstain} is a genuine minimax statement over a two-point family,
+in the classical mold of two-point lower bounds
+\cite{lecam1973convergence, tsybakov2009introduction}; the next section
+upgrades it to an exact quantitative floor.
+
+\begin{proof}
+The proof has four steps: construct the witness; verify properties (i) and
+(ii); show every label-free rule has world-independent law; and solve the
+resulting worst-case decision problem.
+
+\emph{Step 1 (witness construction; non-vacuous).}
+Let $X\sim\mathcal N(0,1)$ under \emph{both} worlds, so $P_T^1(X)=P_T^2(X)$.
+Take the fixed predictors $f_0(x)=\mathbf 1[x>0]$ and
+$f_a(x)=\mathbf 1[x<0]$, and $0/1$ loss. Define the two conditional label
+laws degenerately:
+\[
+P_T^1(Y\mid X)\colon\ Y=\mathbf 1[X>0],
+\qquad
+P_T^2(Y\mid X)\colon\ Y=\mathbf 1[X<0].
+\]
+In world~1, $f_0(X)=\mathbf1[X>0]=Y$ holds almost surely, so
+$R_T^1(f_0)=\Pr[f_0(X)\neq Y]=0$; and since $\Pr[X=0]=0$, we have
+$f_a(X)=\mathbf1[X<0]=1-Y$ almost surely, so $R_T^1(f_a)=1$. Hence
+\[
+\Delta^1=R_T^1(f_0)-R_T^1(f_a)=0-1=-1<0,
+\]
+and freezing is the benefit-maximizing action in world~1. World~2 is the
+mirror image: $f_a(X)=Y$ and $f_0(X)=1-Y$ almost surely, so
+$R_T^2(f_0)=1$, $R_T^2(f_a)=0$, and $\Delta^2=+1>0$: adapting is correct.
+The benefit gap is maximal ($|\Delta^j|=1$, the full range of $0/1$ risk),
+so the construction is not a degenerate tie.
+
+\emph{Step 2 (identical evidence laws).}
+The evidence $Z=\phi(X_{1:m},f_0,f_a)$ is, for any evidence map $\phi$ and
+any batch size $m$, a function of $X_{1:m}$ and of the fixed maps $f_0,f_a$
+only: writing $\psi(\cdot):=\phi(\cdot,f_0,f_a)$, we have
+$Z=\psi(X_{1:m})$ with $\psi$ measurable and world-independent. The law of
+$X_{1:m}$ is $\mathcal N(0,1)^{\otimes m}$ in both worlds, so the
+pushforward laws coincide:
+$\Law(Z\mid P_T^1)=\Law(X_{1:m})\circ\psi^{-1}=\Law(Z\mid P_T^2)$. This is
+property (i); property (ii) was verified in Step~1
+($\sign\Delta^1=-1=-\sign\Delta^2\neq0$). Thus (i) and (ii) hold
+simultaneously.
+
+\emph{Step 3 (the rule's law is world-independent).}
+A label-free rule is a measurable map of the evidence and of independent
+randomness: $g=\Gamma(Z,U)$, where $U$ is a randomization variable whose
+law does not depend on the target world (it is generated by the system, not
+by the data), and $\Gamma$ is measurable. Under world $j$ the law of $g$ is
+the pushforward of $\Law(Z\mid P_T^j)\otimes\Law(U)$ under $\Gamma$. By
+(i) the two product laws coincide, hence so do the laws of $g$. In
+particular the three numbers
+\[
+q:=\Pr[g=\textsc{adapt}],\qquad r:=\Pr[g=\textsc{freeze}],\qquad
+1-q-r=\Pr[g=\textsc{abstain}]
+\]
+are the \emph{same} in both worlds.
+
+\emph{Step 4 (no simultaneous correctness, and the worst-case-optimal
+action).}
+The benefit-maximizing action is \textsc{freeze} in world~1 and
+\textsc{adapt} in world~2. A rule committing to the correct action with
+probability one in world~1 needs $r=1$; in world~2 it needs $q=1$; both
+cannot hold since $q+r\le1$. Hence no label-free rule commits to the
+benefit-maximizing action in both worlds. To identify the minimax action,
+measure committal regret as the excess $0/1$ risk of a committed action
+versus the better committed action in that world, and assign abstention a
+separate coverage cost (it is a different kind of outcome --- a flagged
+non-decision --- and is priced separately; the quantitative theorem below
+makes this explicit). In world~1, committing to \textsc{adapt} costs
+$R_T^1(f_a)-R_T^1(f_0)=|\Delta^1|=1$ and committing to \textsc{freeze}
+costs $0$; so world~1 charges expected committal regret
+$q\cdot|\Delta^1|=q$. Symmetrically world~2 charges
+$r\cdot|\Delta^2|=r$. The worst case over the two-point family is
+\[
+W(q,r)\;=\;\max(q,\,r),
+\]
+to be minimized over the simplex $\{q,r\ge0,\ q+r\le1\}$. Since
+$W(q,r)\ge0$ with equality if and only if $q=r=0$, the unique minimizer is
+$q=r=0$, i.e.\ the rule that plays \textsc{abstain} with probability one.
+\end{proof}
+
+The paper attaches an explicit calibration of the theorem's weight, which
+we reproduce because it governs how the result should be cited.
+
+\begin{remark}[Weight of the result]\label{rem:t1-weight}
+Theorem~\ref{thm:imp} is close to known non-identifiability of target risk
+without labels; its purpose here is to \emph{justify the abstain action},
+not to claim impossibility as novel. The quantitative strengthening below
+(Theorem~\ref{thm:t1-impquant}) makes it a tight minimax statement.
+\end{remark}
+
+\begin{remark}[Both hypotheses are necessary]\label{rem:t1-hypotheses}
+The two-point structure is sharp in both coordinates. If (i) fails --- the
+evidence laws differ by total variation $\tau>0$ --- then
+Theorem~\ref{thm:t1-impquant} shows the optimal committal error drops to
+$1-\tau<1$, and a certificate may commit on the distinguishable part
+(Chapter~\ref{ch:theory2} builds exactly that). If (ii) fails --- the two
+worlds' benefits share a sign --- then committing to the common
+benefit-maximizing action is correct in both worlds even though the
+evidence cannot tell them apart; indistinguishability is harmless when the
+decision does not depend on the distinction. The impossibility requires the
+conjunction: \emph{the evidence cannot separate the worlds, and the worlds
+disagree about what to do.} The unknowable regime of
+Definition~\ref{def:form-regimes} is precisely the set of evidence values
+where some such pair lives.
+\end{remark}
+
+\section{The explicit witness, in full}\label{sec:t1-witness}
+
+Because the witness carries both the theorem's existence half and the
+paper's cleanest experiment, we devote a section to it: first the algebra
+in complete detail, then its interpretation, then the empirical
+realization.
+
+\subsection{Construction and verification}\label{sec:t1-witness-algebra}
+
+The witness consists of: covariate law $X\sim\mathcal N(0,1)$, shared by
+both worlds; predictors $f_0(x)=\mathbf1[x>0]$ and $f_a(x)=\mathbf1[x<0]$,
+fixed and known; loss $0/1$; and the two degenerate posteriors
+$Y=\mathbf1[X>0]$ (world~1) and $Y=\mathbf1[X<0]$ (world~2). Three features
+deserve explicit verification beyond the proof above.
+
+\emph{The risks, entry by entry.} Under world~1, the event
+$\{f_0(X)\neq Y\}=\{\mathbf1[X>0]\neq\mathbf1[X>0]\}=\emptyset$, so
+$R_T^1(f_0)=0$ exactly (not merely almost). The event
+$\{f_a(X)\neq Y\}=\{\mathbf1[X<0]\neq\mathbf1[X>0]\}=\{X\neq0\}$ has
+probability one under the atomless Gaussian, so $R_T^1(f_a)=1$. The four
+risks are
+\[
+R_T^1(f_0)=0,\quad R_T^1(f_a)=1,\quad R_T^2(f_0)=1,\quad R_T^2(f_a)=0,
+\]
+giving $\Delta^1=-1$ and $\Delta^2=+1$: the largest benefit gap the $0/1$
+scale permits, in opposite directions.
+
+\emph{Evidence-law equality, for every $\phi$ and every $m$.} The claim is
+not that some chosen panel of statistics happens to match across worlds; it
+is that the entire observable $\sigma$-algebra matches. Any label-free
+evidence is $Z=\psi(X_{1:m})$ for a fixed measurable $\psi$ (the models
+being fixed known maps, they are absorbed into $\psi$), and equality of the
+laws of $X_{1:m}$ forces equality of the laws of $Z$ --- a pushforward of
+equal measures under one map. Consequently \emph{no} statistic computable
+without target labels --- no entropy histogram, no drift score, no
+disagreement pattern, no density-ratio diagnostic, nor any statistic anyone
+will ever invent --- distinguishes the worlds at any batch size. The
+quantifier order is the point: the construction defeats all evidence maps
+simultaneously, not a fixed one.
+
+\emph{What kind of shift this is.} Between the two worlds the covariate law
+is untouched and the posterior flips: $P_T^1(Y{=}1\mid x)=\mathbf1[x>0]$
+versus $P_T^2(Y{=}1\mid x)=\mathbf1[x<0]$. In the taxonomy of shifts this
+is pure concept shift \cite{quinonero2009dataset}, the row of the
+knowability hierarchy that Chapter~\ref{ch:theory2} marks non-identifiable;
+Example~\ref{ex:form-flip} of Chapter~\ref{ch:formulation} is its smoothed
+sibling, with overlapping classes and $|\Delta|=2\Phi(1)-1\approx0.683$ in
+place of the extremal $|\Delta|=1$, showing the phenomenon survives label
+noise. It is also instructive to view the witness through the
+disagreement-region lens of Theorem~\ref{thm:disagree}: here the observable
+disagreement region is $D=\{x:f_0(x)\neq f_a(x)\}=\{x\neq0\}$, essentially
+the whole line, and the candidate's accuracy on it is $a_a^D=0$ in world~1
+and $a_a^D=1$ in world~2 --- the identity
+$\sign\Delta=\sign(a_a^D-\tfrac12)$ holds in both worlds, and what the
+witness makes impossible is precisely any label-free \emph{bracketing} of
+$a_a^D$ around $\tfrac12$. The impossibility and the
+sign-of-difference characterization are two views of one boundary.
+
+\subsection{Empirical realization}\label{sec:t1-witness-empirical}
+
+The witness is constructive, so it can be run. The paper reports a clean
+witness experiment (the full experimental protocol appears in
+Chapter~\ref{ch:exp1}): two simulated worlds with $X\sim\mathcal N(0,1)$,
+$f_0=\mathbf1[X{>}0]$, $f_a=\mathbf1[X{<}0]$, and flipped labels, so the
+benefit is exactly opposite (world means $-1.0$ versus $+1.0$) while every
+evidence feature is a function of $X$ only. Across $300$ instances, all
+five evidence features used by \KGA\ are statistically indistinguishable
+between the worlds --- two-sample Kolmogorov--Smirnov $p$-values in
+$[0.16,0.96]$, all above $0.05$ --- yet the ground truth is opposite, so
+$Z$ cannot decide. \KGA\ abstains on $100\%$ of instances, and a rule
+forced to commit by $\sign\widehat\Delta$ pays regret $0.51$, near chance.
+This is the clean theory--experiment bridge
+(Figure~\ref{fig:t1-witness}).
+
+The repository's theorem validator
+(\texttt{experiments/kbound/theory\_validation/val\_thm1\_lecam.py}, results
+in \texttt{results\_thm1\_lecam.json} \cite{kbound2026repo}) re-runs the
+witness at scale with $20{,}000$ Monte-Carlo batches of $n=64$ unlabeled
+samples per world and reports four independent checks. (1)~The closed-form
+benefits $\Delta^1=-1$, $\Delta^2=+1$ are reproduced exactly by Monte
+Carlo. (2)~For each of five per-sample evidence features (the raw
+covariate, the margin $|x|$, the predicted class of $f_0$, the
+disagreement indicator, and a smooth confidence transform), the
+permutation-debiased total-variation estimate between the two worlds'
+evidence laws is at most $1.9\times10^{-3}$ --- zero up to the estimator's
+own null floor --- with two-sample KS $p$-values between $0.28$ and $1.0$;
+and the $n$-sample aggregated evidence statistic has exact TV $0$ for every
+$n$ in $\{1,2,4,\dots,256\}$ (debiased estimates $\le4.8\times10^{-3}$).
+(3)~Optimizing the committal error over a dense family of threshold rules
+(all thresholds, both polarities) on each evidence statistic yields
+$\inf_g M(g)$ between $0.991$ and $1.000$ across the five statistics,
+against the theoretical floor of $1$. (4)~The actual \KGA\
+conformal three-way rule, run exactly as in the paper with $\alpha=0.1$,
+abstains on $4{,}000$ of $4{,}000$ instances ($100\%$ abstention; zero
+false adapts and zero false freezes): its calibrated radius
+($\varepsilon\approx1.15$) straddles zero because the evidence carries no
+benefit signal, so the certificate cannot fire --- the behavior that
+Chapter~\ref{ch:theory2} proves is mandatory for any rule with valid error
+control. The paper's summary sentence is exact: in the witness the
+empirical $\inf_g M$ is ${\approx}1$ (\KGA\ abstains $100\%$); in the
+detectable regime the empirical minimax error tracks the closed-form
+$1-\TV$ across all $n$ and shift magnitudes.
+
+\begin{figure}[t]\centering
+\includegraphics[width=0.72\textwidth]{fig_witness_clean.png}
+\caption[Clean non-identifiability witness]{The clean non-identifiability
+witness of Theorem~\ref{thm:imp}, realized empirically: identical evidence
+law across the two worlds (two-sample KS $p>0.05$ on all five evidence
+features), exactly opposite true benefit ($-1.0$ versus $+1.0$), and
+$100\%$ abstention by the \KGA\ rule; a rule forced to commit pays regret
+$0.51$, near chance. The experiment instantiates hypotheses (i) and (ii)
+of the theorem exactly rather than approximately, which is what makes it a
+\emph{witness} rather than a hard benchmark.}
+\label{fig:t1-witness}
+\end{figure}
+
+\section{The quantitative floor: a Le Cam two-point bound}\label{sec:t1-lecam}
+
+Theorem~\ref{thm:imp} says committal rules fail on matched evidence; it
+does not yet say how badly, nor what happens as the evidence laws begin to
+separate. The paper's quantitative strengthening answers both with an exact
+identity, in the two-point tradition of Le~Cam \cite{lecam1973convergence};
+the intuition, in the paper's words: the more alike two such worlds look in
+the observable evidence (smaller TV distance), the closer any rule forced
+to commit is pushed toward a coin flip, and the error floor vanishes only
+as their evidence separates.
+
+We first isolate the two classical ingredients as lemmas, with proofs,
+since the theorem's proof is a direct composition of them.
+
+\begin{lemma}[Testing affinity identity]\label{lem:t1-affinity}
+Let $Q_1,Q_2$ be probability measures on a common measurable space. Over
+all randomized tests $\psi$ (measurable functions with values in $[0,1]$),
+\[
+\inf_{\psi}\;\bigl\{\E_{Q_1}[\psi]+\E_{Q_2}[1-\psi]\bigr\}
+\;=\;1-\TV(Q_1,Q_2),
+\]
+and the infimum is attained by the deterministic likelihood-ratio test
+$\psi^\star=\mathbf1[\mathrm dQ_2>\mathrm dQ_1]$.
+\end{lemma}
+
+\begin{proof}
+Let $\nu=Q_1+Q_2$, which dominates both measures, and let $q_1,q_2$ be the
+corresponding densities. For any test $\psi$,
+\[
+\E_{Q_1}[\psi]+\E_{Q_2}[1-\psi]
+=\int\psi\,q_1\,\mathrm d\nu+\int(1-\psi)\,q_2\,\mathrm d\nu
+=1+\int\psi\,(q_1-q_2)\,\mathrm d\nu,
+\]
+using $\int q_2\,\mathrm d\nu=1$. The integrand is minimized pointwise over
+$\psi(z)\in[0,1]$ by setting $\psi=1$ where $q_1-q_2<0$, $\psi=0$ where
+$q_1-q_2>0$, and arbitrarily on the crossing set $\{q_1=q_2\}$ (which
+contributes zero); this is exactly $\psi^\star=\mathbf1[q_2>q_1]$, a
+deterministic test, so randomization buys nothing. The attained value is
+\[
+1-\int (q_2-q_1)_+\,\mathrm d\nu .
+\]
+It remains to identify the integral with total variation. For any
+measurable $A$,
+$Q_2(A)-Q_1(A)=\int_A(q_2-q_1)\,\mathrm d\nu\le\int(q_2-q_1)_+\,\mathrm
+d\nu$, with equality at $A^\star=\{q_2>q_1\}$; hence
+$\TV(Q_1,Q_2):=\sup_A|Q_1(A)-Q_2(A)|=\int(q_2-q_1)_+\,\mathrm d\nu$, which
+also equals $\tfrac12\int|q_1-q_2|\,\mathrm d\nu$ because
+$\int(q_2-q_1)\,\mathrm d\nu=0$ forces the positive and negative parts to
+have equal mass. Substituting gives the identity
+\cite{lecam1973convergence, tsybakov2009introduction, lehmann2005testing}.
+\end{proof}
+
+\begin{lemma}[Data-processing inequality for total variation]\label{lem:t1-dpi}
+Let $P_1,P_2$ be probability measures and $T$ a measurable map. Then
+$\TV\bigl(P_1\circ T^{-1},\,P_2\circ T^{-1}\bigr)\le\TV(P_1,P_2)$, with
+equality whenever $T$ is a sufficient statistic for the pair
+$\{P_1,P_2\}$.
+\end{lemma}
+
+\begin{proof}
+For the inequality, every event of the pushforward laws is the preimage of
+an event: $\sup_A|P_1(T^{-1}A)-P_2(T^{-1}A)|$ is a supremum over the
+sub-collection $\{T^{-1}A\}$ of measurable sets, hence at most the
+supremum over all measurable sets, which is $\TV(P_1,P_2)$. For the
+equality claim: if $T$ is sufficient for $\{P_1,P_2\}$, the likelihood
+ratio $\mathrm dP_2/\mathrm dP_1$ is ($P_1$-a.s.) a function of $T$ by the
+factorization theorem \cite{lehmann2005testing}, so the optimal set
+$A^\star=\{\mathrm dP_2>\mathrm dP_1\}$ realizing the supremum in
+Lemma~\ref{lem:t1-affinity}'s identification of $\TV$ is itself of the
+form $T^{-1}(B)$, and the restricted supremum already attains the
+unrestricted one.
+\end{proof}
+
+With the two lemmas in hand we state the paper's theorem verbatim.
+
+\begin{theorem}[Quantitative non-identifiability; Le Cam two-point lower bound]
+\label{thm:t1-impquant}
+Consider two target worlds $P_T^1,P_T^2$ with $\Delta^1<0<\Delta^2$. Let the
+label-free evidence be $Z=\phi(X_{1:n},f_0,f_a)$ with $n$-sample evidence
+laws $P_{T,Z}^{j,(n)}:=\Law(Z\mid P_T^j)$. For any (randomized) committal
+rule $g(Z)\in\{\textsc{adapt},\textsc{freeze}\}$ define the mixed committal
+error $M(g):=\Pr_{P_T^1}[g=\textsc{adapt}]+\Pr_{P_T^2}[g=\textsc{freeze}]$.
+Then
+\[
+\inf_{g} M(g)\;=\;1-\TV\!\big(P_{T,Z}^{1,(n)},P_{T,Z}^{2,(n)}\big)\;\ge\;1-\TV\!\big(P_T^{1,(n)},P_T^{2,(n)}\big).
+\]
+In the witness above ($Z$ a function of $X$, $P_T^1(X)=P_T^2(X)$) the
+evidence TV is $0$, so $\inf_g M(g)=1$ for \emph{every} $n$: no committal
+rule beats blind guessing in the worst world, and under any positive
+coverage cost \textsc{abstain} is uniquely worst-case optimal. If the
+worlds become $\delta$-detectable so the evidence laws separate,
+$\inf_g M(g)=1-\TV\to0$ at the separation rate (for a location shift
+summarized by a sufficient statistic, $\TV=2\Phi(\tfrac12\sqrt n\,\delta)-1$).
+\end{theorem}
+
+\begin{proof}
+We expand the paper's proof into five steps.
+
+\emph{Step 1 (reduction to binary testing).}
+A randomized committal rule on $Z$ is characterized by its adapt-probability
+$\psi(z):=\Pr[g=\textsc{adapt}\mid Z=z]\in[0,1]$, a randomized test of the
+two evidence laws. Identify $\{g=\textsc{adapt}\}$ with deciding world~2
+(where adapting is correct, since $\Delta^2>0$). Writing
+$Q_j:=P_{T,Z}^{j,(n)}$, the mixed committal error is
+\[
+M(g)=\Pr_{Q_1}[g=\textsc{adapt}]+\Pr_{Q_2}[g=\textsc{freeze}]
+=\E_{Q_1}[\psi(Z)]+\E_{Q_2}[1-\psi(Z)],
+\]
+the sum of the test's type-I and type-II errors. The infimum of $M$ over
+committal rules is therefore the infimum of the testing risk over
+randomized tests.
+
+\emph{Step 2 (the equality).}
+Lemma~\ref{lem:t1-affinity} applied to $Q_1,Q_2$ gives
+$\inf_g M(g)=1-\TV(Q_1,Q_2)$, attained by the likelihood-ratio rule that
+plays \textsc{adapt} exactly on $\{\mathrm dQ_2>\mathrm dQ_1\}$. Note this
+is an identity, not merely a bound: the optimal committal rule's mixed
+error \emph{equals} one minus the evidence separation. This is the
+tightness direction --- no slack is lost between the decision problem and
+the total-variation geometry, because the optimal test is exhibited.
+
+\emph{Step 3 (the inequality to the full data).}
+The evidence is a measurable reduction of the raw unlabeled batch:
+$Z=T(X_{1:n})$ with $T:=\phi(\cdot,f_0,f_a)$. By Lemma~\ref{lem:t1-dpi},
+$\TV(Q_1,Q_2)\le\TV\bigl(P_T^{1,(n)},P_T^{2,(n)}\bigr)$, the total
+variation between the worlds' $n$-sample \emph{covariate-data} laws.
+Negating, $1-\TV(Q_1,Q_2)\ge1-\TV(P_T^{1,(n)},P_T^{2,(n)})$: summarizing
+data can only raise the error floor. Equality holds when $Z$ is sufficient
+for the two-world testing problem --- the evidence then loses nothing.
+
+\emph{Step 4 (the witness: floor $1$ at every $n$).}
+In the witness, $Z$ depends on the worlds only through $\Law(X_{1:n})$,
+and these laws coincide; hence $Q_1=Q_2$, $\TV(Q_1,Q_2)=0$, and
+$\inf_g M(g)=1$ for every $n$. Unpacking what $M(g)=1$ forces: since
+$M(g)=\Pr_1[\text{err}]+\Pr_2[\text{err}]\ge1$ for every committal $g$,
+at least one world sees error probability $\ge\tfrac12$ --- no committal
+rule beats blind guessing in its worst world, and this does not improve
+with $n$. Now add a coverage cost $c\in(0,\tfrac12)$ for abstention, and
+recall from the witness that a wrong commitment costs $|\Delta^j|=1$.
+A rule with commitment probabilities $(q,r)$ (Step~3 of
+Theorem~\ref{thm:imp}'s proof; world-independent by matched evidence) has
+worst-case expected cost
+\[
+\max\bigl(q+ (1-q-r)c,\; r+(1-q-r)c\bigr)
+\;=\;\max(q,r)+(1-q-r)\,c
+\;\ge\;\tfrac{q+r}{2}+(1-q-r)\,c,
+\]
+which, as a function of the total commitment mass $s=q+r\in[0,1]$, is
+$\ge s/2+(1-s)c$, strictly increasing in $s$ because $c<\tfrac12$. The
+minimum is at $s=0$, value $c$: always-\textsc{abstain} is the unique
+worst-case-optimal rule.
+
+\emph{Step 5 (the detectable rate).}
+Suppose the worlds are $\delta$-detectable through a real-valued
+per-sample summary with unit noise scale: the summary is Gaussian with
+means separated by $\delta$ and variance $1$ (the canonical location
+family; in the validator below, the worlds are
+$P^1(X)=\mathcal N(-\delta/2,1)$ and $P^2(X)=\mathcal N(+\delta/2,1)$).
+The sample mean $\bar X_n$ is sufficient for the location parameter, so by
+Lemma~\ref{lem:t1-dpi} the evidence loses nothing and
+$\TV(Q_1,Q_2)=\TV\bigl(\mathcal N(-\tfrac\delta2,\tfrac1n),
+\mathcal N(+\tfrac\delta2,\tfrac1n)\bigr)$. For two equal-variance
+Gaussians $\mathcal N(\theta_1,\sigma^2)$, $\mathcal N(\theta_2,\sigma^2)$
+the densities cross exactly at the midpoint $(\theta_1+\theta_2)/2$, so
+the positive part integrates to
+$\TV=\Phi\bigl(\tfrac{|\theta_1-\theta_2|}{2\sigma}\bigr)-
+\Phi\bigl(-\tfrac{|\theta_1-\theta_2|}{2\sigma}\bigr)
+=2\Phi\bigl(\tfrac{|\theta_1-\theta_2|}{2\sigma}\bigr)-1$. With
+$|\theta_1-\theta_2|=\delta$ and $\sigma=1/\sqrt n$ this is
+$\TV=2\Phi(\tfrac12\sqrt n\,\delta)-1$, whence
+$\inf_g M(g)=1-\TV=2\Phi(-\tfrac12\sqrt n\,\delta)\to0$ as $\sqrt
+n\,\delta\to\infty$: the committal-error floor decays at the Gaussian
+separation rate, and the unknowable regime shrinks exactly as fast as the
+evidence separates.
+\end{proof}
+
+\begin{remark}[Where the bound is and is not tight]\label{rem:t1-tightness}
+Two distinct tightness claims should be kept apart. The first equality,
+$\inf_g M=1-\TV$ \emph{on the evidence laws}, is always exact
+(Lemma~\ref{lem:t1-affinity} exhibits the optimal test); there is no
+asymptotic or constant slack anywhere in the chain from decision problem
+to total-variation geometry. The second relation, the inequality to the
+\emph{full-data} TV, is an inequality precisely because a poorly chosen
+evidence map can discard separation that the raw batch contains; it
+collapses to equality when $Z$ is sufficient for the two-world problem
+(Lemma~\ref{lem:t1-dpi}), as in the location family of Step~5. The design
+lesson for evidence panels is contained in that gap: the floor an
+operator actually faces is $1-\TV(\text{evidence})$, which the operator
+partially controls through $\phi$, bounded below by
+$1-\TV(\text{full data})$, which nature controls. In the witness nature
+sets the latter to $1$ and the choice of $\phi$ is irrelevant.
+\end{remark}
+
+\subsection{Numerical validation of the floor}\label{sec:t1-lecam-val}
+
+The validator \texttt{val\_thm1\_lecam.py} \cite{kbound2026repo} checks the
+identity $\inf_g M(g)=1-\TV$ in both regimes, using $20{,}000$ Monte-Carlo
+evidence instances per world ($n=64$ unlabeled samples each, seed
+$12345$) and optimizing committal rules over a dense
+threshold-and-polarity family on each evidence statistic.
+
+In the \emph{witness} regime the results were quoted in
+Section~\ref{sec:t1-witness-empirical}: empirical floors
+$0.991$--$1.000$ against the theoretical $1$, exact $n$-sample evidence
+TV equal to $0$ at every $n$, and $100\%$ \KGA\ abstention. In the
+\emph{detectable} regime, $P^1(X)=\mathcal N(-\mu,1)$ and
+$P^2(X)=\mathcal N(+\mu,1)$ with opposite benefits, the closed form of
+Step~5 (with $\delta=2\mu$) is traced across both the shift magnitude and
+the sample size. Sweeping $\mu$ at $n=64$: at $\mu=0.1$ the exact floor is
+$1-\TV=0.4237$ and the best empirical committal error is $0.4189$; at
+$\mu=0.25$, floor $0.0455$ versus empirical $0.0451$; at $\mu=0.5$ the
+floor is $6.3\times10^{-5}$ and the empirical error is $0.0$. Sweeping $n$
+at fixed $\mu=0.25$, the (floor, empirical) pairs are
+$(0.8026,\,0.8134)$ at $n=1$, $(0.6171,\,0.6055)$ at $n=4$,
+$(0.3173,\,0.3209)$ at $n=16$, $(0.0455,\,0.0452)$ at $n=64$, and
+$(6.3\times10^{-5},\,0.0)$ at $n=256$ --- the empirical optimum tracks the
+closed form throughout, fluctuating around it in both directions by
+Monte-Carlo error (the threshold is optimized on the same finite sample,
+so small dips below the population floor are expected and honest).
+Meanwhile the \KGA\ three-way rule abstains on $100\%$ of instances at
+$\mu\in\{0,0.1\}$, on $0.45\%$ at $\mu=0.25$, and on $0\%$ at
+$\mu\ge0.5$ with zero committal error: the rule stops abstaining exactly
+as the worlds become detectable, which is the operational content of the
+phase diagram's $x$-axis (Figure~\ref{fig:form-phase}).
+
+\begin{figure}[t]\centering
+\includegraphics[width=0.66\textwidth]{fig_lecam_bound.png}
+\caption[Le Cam floor versus optimal committal regret]{Theorem~\ref{thm:t1-impquant}
+in measurement: the optimal committal rule's worst-case regret coincides
+with the Le~Cam floor $\tfrac{\delta}{2}(1-\TV)$ across the
+total-variation sweep; at $\TV=0$ (the witness) it equals $\delta/2$, the
+minimax floor of Proposition~\ref{prop:t1-minimax} with benefit gap
+$\delta$. Produced by \texttt{scripts/theory\_extensions\_validation.py}
+\cite{kbound2026repo}. The plot is the bridge between this section and the
+next: the testing floor $1-\TV$ (this section) multiplies the benefit
+margin (next section) to give worst-case regret.}
+\label{fig:t1-lecam}
+\end{figure}
+
+\section{The Bayes gate and the plug-in regret identity}\label{sec:t1-gate}
+
+The impossibility results bound what \emph{cannot} be decided; the second
+result of this chapter prices decisions exactly, and in doing so converts
+the abstract floor into deployed risk. The objects are the
+action-conditional risks of Chapter~\ref{ch:formulation}: with
+$a_{\textsc{frz}}(z)=\E[\ell(f_0(X),Y)\mid Z{=}z]$ and
+$a_{\textsc{adp}}(z)=\E[\ell(f_a(X),Y)\mid Z{=}z]$, so that
+$\Delta(z)=a_{\textsc{frz}}(z)-a_{\textsc{adp}}(z)$, a gate
+$g\colon z\mapsto\{0,1\}$ (encoding $1=\textsc{adapt}$,
+$0=\textsc{freeze}$) has risk
+\[
+R(g)\;=\;\E\bigl[g(Z)\,a_{\textsc{adp}}(Z)+(1-g(Z))\,a_{\textsc{frz}}(Z)\bigr].
+\]
+The Bayes gate is $g^\star(z)=\mathbf1[\Delta(z)>0]$; a plug-in gate built
+from any label-free benefit estimator $\widehat\Delta$ is
+$\widehat g(z)=\mathbf1[\widehat\Delta(z)>0]$. The paper's intuition for
+what follows: a gate's excess risk over the oracle equals the benefit it
+forfeits exactly where it picks the wrong sign --- near-zero-benefit
+mistakes are cheap, large-benefit ones are not, which is why abstaining in
+the low-margin band is safe.
+
+\begin{theorem}[Plug-in regret decomposition]\label{thm:gate}
+For every estimator $\widehat\Delta$,
+\[
+R(\widehat g)-R(g^\star)\;=\;\E\big[\,|\Delta(Z)|\,\mathbf1\{\sign\widehat\Delta(Z)\neq\sign\Delta(Z)\}\,\big],
+\]
+where $\sign(t)=\mathbf1[t>0]$. In particular $g^\star$ minimizes $R$,
+regret is zero iff the gate's sign matches a.e., and on the boundary band
+$\{|\Delta|<\varepsilon\}$ the committal regret is
+$\le\varepsilon$---justifying \textsc{abstain} there.
+\end{theorem}
+
+\begin{proof}
+We expand the paper's one-paragraph proof into its pointwise case
+analysis, the integration step, and the three consequences.
+
+\emph{Step 1 (the conditional risk is affine in the action).}
+Condition on $Z=z$ and write $\rho(a;z)$ for the conditional risk of
+playing action $a\in\{0,1\}$ at $z$: by definition of the
+action-conditional means, $\rho(1;z)=a_{\textsc{adp}}(z)$ and
+$\rho(0;z)=a_{\textsc{frz}}(z)$, so
+\[
+\rho(1;z)-\rho(0;z)\;=\;a_{\textsc{adp}}(z)-a_{\textsc{frz}}(z)\;=\;-\Delta(z):
+\]
+adapting lowers conditional risk by exactly $\Delta(z)$ (raises it when
+$\Delta(z)<0$). The total risk of any gate is the average of its pointwise
+choices, $R(g)=\E_Z[\rho(g(Z);Z)]$, by the tower property.
+
+\emph{Step 2 (pointwise excess of the plug-in gate).}
+Fix $z$ and compare $\widehat g(z)$ with $g^\star(z)=\mathbf1[\Delta(z)>0]$.
+There are three cases.
+If $\widehat g(z)=g^\star(z)$, the excess
+$\rho(\widehat g(z);z)-\rho(g^\star(z);z)$ is $0$.
+If $\widehat g(z)=1$ but $g^\star(z)=0$ --- the gate adapts although
+$\Delta(z)\le0$ --- the excess is $\rho(1;z)-\rho(0;z)=-\Delta(z)=
+|\Delta(z)|$, using $\Delta(z)\le0$.
+If $\widehat g(z)=0$ but $g^\star(z)=1$ --- the gate freezes although
+$\Delta(z)>0$ --- the excess is $\rho(0;z)-\rho(1;z)=\Delta(z)=
+|\Delta(z)|$. In all cases,
+\[
+\rho(\widehat g(z);z)-\rho(g^\star(z);z)
+\;=\;|\Delta(z)|\;\mathbf1\{\widehat g(z)\neq g^\star(z)\},
+\]
+and since $\widehat g(z)=\mathbf1[\widehat\Delta(z)>0]$ and
+$g^\star(z)=\mathbf1[\Delta(z)>0]$, the disagreement event
+$\{\widehat g(z)\neq g^\star(z)\}$ is exactly the sign-mismatch event
+$\{\sign\widehat\Delta(z)\neq\sign\Delta(z)\}$ under the stated convention
+$\sign(t)=\mathbf1[t>0]$. (Ties $\Delta(z)=0$ are immaterial: whatever the
+convention assigns them, they enter the right-hand side multiplied by
+$|\Delta(z)|=0$.)
+
+\emph{Step 3 (integrate, and read off the consequences).}
+Taking $\E_Z$ of the pointwise identity gives the displayed equation
+exactly --- it is an identity, not an inequality, valid for every
+estimator, every evidence map, and every loss with finite conditional
+means; no boundedness, continuity, or distributional assumption enters.
+The three consequences: (a) running the same two steps with an arbitrary
+gate $g$ in place of $\widehat g$ shows
+$R(g)-R(g^\star)=\E[|\Delta(Z)|\mathbf1\{g\neq g^\star\}]\ge0$, so
+$g^\star$ minimizes $R$ over all gates; (b) the regret vanishes iff the
+mismatch indicator vanishes $\Delta$-weighted almost everywhere, i.e.\ iff
+the gate's sign matches that of $\Delta(Z)$ a.e.\ on
+$\{\Delta(Z)\neq0\}$; (c) on the boundary band
+$\{|\Delta(Z)|<\varepsilon\}$, the pointwise excess is
+$|\Delta(z)|\,\mathbf1\{\cdot\}<\varepsilon$, so any committal choice
+there --- right or wrong --- forfeits less than $\varepsilon$ of risk;
+abstaining on the band is therefore safe at price at most $\varepsilon$,
+which is the decision-theoretic justification for the certificate's
+abstention region in Chapter~\ref{ch:theory2}.
+\end{proof}
+
+The identity composes with the matched-evidence situation of
+Theorem~\ref{thm:imp} to give the floor in regret units; this is the
+paper's proposition, stated verbatim.
+
+\begin{proposition}[Label-free minimax floor]\label{prop:t1-minimax}
+In the unknowable two-point regime of Theorem~\ref{thm:imp}
+($\Law(Z\mid P_T^1)=\Law(Z\mid P_T^2)$, $|\Delta^1|=|\Delta^2|=|\Delta|$,
+opposite signs), every label-free estimator has worst-case expected regret
+$\ge \E[|\Delta(Z)|]/2$, attained by abstaining.
+\end{proposition}
+
+\begin{proof}
+Let $\widehat\Delta$ be any label-free estimator, $\widehat g$ its plug-in
+gate, and allow the gate to be randomized: define
+$q(z)=\Pr[\widehat g(z)=1\mid Z=z]$, the adapt-probability at evidence
+$z$. Because the estimator and any internal randomization are label-free,
+and the evidence law is the \emph{same} measure under both worlds, the
+function $q$ is common to the two worlds --- this is Step~3 of
+Theorem~\ref{thm:imp}'s proof applied conditionally at each $z$. Now
+evaluate the sign-error probability at $z$ in each world: in world~1 the
+benefit is negative, so the gate errs exactly when it adapts, with
+probability $q(z)$; in world~2 the benefit is positive, so the gate errs
+exactly when it freezes, with probability $1-q(z)$. The two error
+probabilities sum to $1$ at every $z$, so the larger is $\ge\tfrac12$.
+By Theorem~\ref{thm:gate}, extended to randomized gates by averaging the
+pointwise identity over the gate's internal randomness, the regret in
+world $j$ is
+$\mathrm{reg}_j=\E\bigl[|\Delta(Z)|\cdot\Pr(\text{sign error at }Z\text{
+in world }j)\bigr]$; hence
+\[
+\mathrm{reg}_1+\mathrm{reg}_2
+=\E\bigl[|\Delta(Z)|\,(q(Z)+1-q(Z))\bigr]
+=\E\bigl[|\Delta(Z)|\bigr],
+\]
+and therefore
+$\max_j \mathrm{reg}_j\ge\tfrac12(\mathrm{reg}_1+\mathrm{reg}_2)
+=\E[|\Delta(Z)|]/2$. The floor is attained: the maximally non-committal
+allocation $q\equiv\tfrac12$ --- the gate-level expression of abstention,
+declining to favor either sign --- has
+$\mathrm{reg}_1=\mathrm{reg}_2=\E[|\Delta(Z)|]/2$, so its worst case
+equals the floor exactly. In the three-action protocol the
+\textsc{abstain} action realizes the same worst-case value through its
+coverage accounting, which is the sense of the statement's final clause.
+\end{proof}
+
+\begin{remark}[Reading the floor]\label{rem:t1-floor}
+The proposition is the regret-denominated shadow of
+Theorem~\ref{thm:t1-impquant} at $\TV=0$: the testing floor says the sign
+error must be $\ge\tfrac12$ in some world, and the regret identity says
+each unit of sign error costs $|\Delta(Z)|$. At intermediate separations
+the same composition gives worst-case regret of order
+$\tfrac{|\Delta|}{2}(1-\TV)$, which is exactly the curve traced by the
+validation plot of Figure~\ref{fig:t1-lecam}. Note also what the floor does
+\emph{not} say: it does not make abstention free. Abstention forfeits
+$\E[|\Delta|]/2$ of worst-case benefit too --- the floor is a statement
+that nothing label-free can do better on matched evidence, not that
+abstaining is costless. The value of abstention is realized only when the
+system can \emph{also} commit on the conditions where evidence does
+separate, which is the certificate's job in Chapter~\ref{ch:theory2}.
+\end{remark}
+
+\subsection{Numerical validation of the identity}\label{sec:t1-gate-val}
+
+Because Theorem~\ref{thm:gate} is an exact identity, its validator
+(\texttt{experiments/kbound/theory\_validation/val\_thm2\_regret.py}
+\cite{kbound2026repo}) can demand machine precision rather than
+statistical agreement, and it does, in two layers. Layer (A), the literal
+content of the theorem: on $n=400{,}000$ sampled evidence points with
+known conditional benefit $\Delta(z)\sim\mathcal N(0,1)$ and a non-trivial
+action-conditional baseline $a_{\textsc{adp}}(z)$ (so the cancellation in
+$R(\widehat g)-R(g^\star)$ is exercised, not assumed), it computes the
+left side from the conditional action risks and the right side from the
+mismatch identity, for plug-in estimators
+$\widehat\Delta=\Delta+\mathrm{noise}$ across seven noise levels from $0$
+to $2.0$; the script \emph{asserts} that the maximum absolute gap over
+all noise levels is below $10^{-9}$, and the measured gap is
+${\sim}10^{-17}$ --- pure floating-point rounding, as the paper reports
+(``the identity holds to ${\sim}10^{-17}$''). Layer (B): the same
+comparison with \emph{realized} per-sample losses drawn around the
+conditional means, confirming the identity at the accuracy Monte Carlo
+permits (all cells within $4$ standard errors).
+
+The validator also checks each clause of the theorem and the proposition.
+At zero estimator noise the gates agree everywhere and both sides are
+exactly $0$ (regret zero iff signs match a.e.). On the boundary band
+$\{|\Delta|<\varepsilon\}$ with $\varepsilon=0.05$, the maximum per-$z$
+regret contribution observed is below $\varepsilon$, the ``abstaining
+there costs at most $\varepsilon$'' clause. Regret rises monotonically
+with estimator noise, and large noise approaches --- but does not reach
+--- the coin-flip ceiling; the ceiling itself is attained by a fully
+uninformative estimator (independent of $\Delta$, the empirical surrogate
+of the matched-evidence regime), whose sign-mismatch rate is
+${\approx}\tfrac12$ and whose regret is $0.3986$ against the floor
+$\E[|\Delta|]/2=0.3985$ --- Proposition~\ref{prop:t1-minimax} realized to
+three decimal places.
+
+\begin{figure}[t]\centering
+\includegraphics[width=0.62\textwidth]{fig_regret_decomposition.png}
+\caption[Regret decomposition across policies]{Synthetic illustration of
+the regret split (Theorem~\ref{thm:gate} /
+Proposition~\ref{prop:t1-minimax}): total regret decomposes into
+false-adapt, false-freeze, and abstain-coverage contributions; the
+trichotomy's total is far below both trivial policies and is dominated by
+benign abstain-coverage rather than harmful false-adapt. Synthetic data;
+produced by \texttt{scripts/theory\_extensions\_validation.py}
+\cite{kbound2026repo}. The decomposition is the deployment-facing
+restatement of the regret identity: every unit of regret is attributable
+to a named decision error, weighted by the benefit at stake.}
+\label{fig:t1-regret}
+\end{figure}
+
+\section{Remarks: scope, mechanism, and what abstention buys}\label{sec:t1-remarks}
+
+\begin{remark}[Relation to selective prediction]\label{rem:t1-selective}
+The reject option is as old as decision theory: Chow's rule abstains from
+\emph{classifying} a point when the conditional error probability exceeds
+a threshold \cite{chow1970optimum}, and the selective-prediction
+literature develops the resulting risk--coverage tradeoff
+\cite{elyaniv2010selective, geifman2017selective}. The present chapter
+lifts the same logic one level: the object declined is not a prediction
+but the \emph{adaptation decision} for a deployment condition, the
+``conditional error'' is the probability of picking the wrong sign of
+$\Delta$, and the analogue of Chow's excess-risk computation is exactly
+Theorem~\ref{thm:gate}, with $|\Delta(z)|$ playing the role of the margin.
+The analogy is precise enough to transfer intuition --- low-margin points
+are where rejection is cheap in both settings --- but the impossibility
+half has no per-prediction counterpart: a selective classifier can always
+in principle resolve its uncertainty with more labeled data, whereas
+Theorem~\ref{thm:t1-impquant} exhibits decision uncertainty that no amount
+of the only available (unlabeled) data resolves.
+\end{remark}
+
+\begin{remark}[The impossibility is about evidence-measurability, not
+sample size]\label{rem:t1-measurability}
+Every quantity in Theorem~\ref{thm:t1-impquant} is indexed by the batch
+size $n$, and the witness conclusion holds \emph{for every} $n$: the floor
+is $1$ at $n=10$ and at $n=10^{9}$. This locates the obstruction
+precisely. Statistical folklore expects uncertainty to shrink at rate
+$n^{-1/2}$, and indeed the concentration tools that power the certificate
+of Chapter~\ref{ch:theory2} --- Hoeffding and empirical-Bernstein bounds
+\cite{hoeffding1963probability, maurer2009empirical} --- shrink the
+\emph{radius} $\varepsilon$ at exactly that rate. But a confidence radius
+shrinks toward the estimand's identifiable value; when the sign of
+$\Delta$ is not a function of the evidence law, there is no identifiable
+value to shrink toward. Formally, the decision rule is measurable with
+respect to $\sigma(Z)$ (plus independent randomness), and on the witness
+pair the two worlds induce the \emph{same} measure on $\sigma(Z)$; the
+answer is not a random variable on the space the rule lives on. More data
+refines the empirical estimate of that common measure --- it cannot break
+the tie. This is why the chapter's results are phrased as
+non-identifiability rather than as a rate: the failure is of the
+$\sigma$-algebra, not of the variance.
+\end{remark}
+
+\begin{remark}[What breaks without each hypothesis]\label{rem:t1-necessity}
+It is worth walking the hypotheses of the two theorems once more, now with
+their proofs in hand. \emph{Matched evidence laws} (hypothesis (i)): drop
+it and Lemma~\ref{lem:t1-affinity} immediately monetizes the difference
+--- the floor falls to $1-\TV<1$, and a likelihood-ratio test on the
+evidence achieves it; this is not a pathology but the design target of
+evidence engineering (Remark~\ref{rem:t1-tightness}). \emph{Opposite
+benefit signs} (hypothesis (ii)): drop it and the matched evidence is
+harmless, since one committed action is correct in both worlds; the
+trichotomy collapses to a dichotomy on such families. \emph{Fixed, known
+$(f_0,f_a)$} (Assumption~\ref{asm:form-triple}): if the candidate were not
+fixed at decision time, $Z$ would not be a world-independent function of
+the covariates and Step~2 of Theorem~\ref{thm:imp}'s proof would fail to
+produce matched evidence laws --- but the conclusion would not improve,
+because the benefit being certified would itself be a moving target.
+\emph{The label-free protocol} (Assumption~\ref{asm:form-protocol}): a
+single labeled target batch breaks the construction completely --- the
+per-sample paired benefits $\delta_i$ become observable, their mean
+estimates $\Delta$ directly, and the witness worlds separate at the first
+label. The impossibility is exactly as strong as the constraint that
+creates it, which is why the paper is careful to state the protocol
+(Remark~\ref{rem:form-labelfree}) before the theorems.
+\end{remark}
+
+\begin{remark}[What abstention buys, and what comes next]\label{rem:t1-buys}
+The two results of this chapter are deliberately one-sided: they establish
+that on matched-evidence pairs every committal policy pays the floor, and
+that the unique worst-case-optimal action there is \textsc{abstain}. What
+they do not yet provide is a \emph{computable} rule that abstains there
+and commits elsewhere with guarantees. That is the certificate's job:
+Theorem~\ref{thm:cert} (Chapter~\ref{ch:theory2}) shows that an interval
+$\widehat\Delta\pm\varepsilon$ with $1-\alpha$ coverage yields an
+adapt/freeze/abstain rule whose false-adapt and false-freeze rates are
+each at most $\alpha$; its forced-abstention corollary closes the loop
+with this chapter by showing that on matched evidence any such valid rule
+\emph{must} abstain with probability at least $1-2\alpha$ --- abstention
+is mandatory, not merely prudent; and its sequential complement
+(Theorem~\ref{thm:evalue}) extends the guarantee to streams with optional
+stopping. On the positive side of the boundary,
+Theorem~\ref{thm:pos} proves that under covariate shift with a bounded
+density ratio the sign of $\Delta$ \emph{is} identifiable from labeled
+source plus unlabeled target \cite{shimodaira2000improving}, and
+Theorem~\ref{thm:disagree} characterizes $\sign\Delta$ in general as an
+ordinal accuracy comparison on the observable disagreement region $D$ ---
+the quantity whose label-free bracketing is the program's one remaining
+open piece (Conjecture~\ref{conj:gen}). The unknowable regime proved here
+is thus not the end of the story but its boundary condition: everything
+Chapter~\ref{ch:theory2} certifies, it certifies \emph{because} it
+abstains where this chapter says it must.
+\end{remark}
