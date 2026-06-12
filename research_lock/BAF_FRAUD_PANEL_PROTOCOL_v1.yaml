@@ -1,0 +1,50 @@
+schema: fraud_panel_protocol_v1
+decision: D26_baf_fraud_panel
+date_locked: 2026-06-03
+status_at_lock: RUN_ONCE_REPORTED_AS_IS
+
+purpose: >
+  Address the fraud family being underpowered (n=1, credit-card only) in
+  leave-family-out CV by adding the Bank Account Fraud (BAF) suite as a second fraud
+  source. This is an exploratory family-expansion, not a confirmatory test of a
+  pre-registered hypothesis: the development-frozen pipeline was applied once to BAF
+  and the outcome is reported regardless of sign.
+
+frozen_method:   # identical to the development pipeline; no BAF-specific tuning
+  detector_zoo: [ECOD, COPOD, IForest, LOF, KNN, OCSVM]
+  encode: numeric pass-through; non-numeric columns factorized
+  balance: cap rows preserving fraud rate (_balance)
+  split: stratified 50/25/25 train/val/test, seed 0 (build_task)
+  main_method: rank-normalized logistic stacking on validation scores (no test labels)
+  baselines: [auto_select (val-AUROC argmax), best_fixed_detector, rank_mean]
+  metric: per-task test AUROC; paired bootstrap (10000) over the 6 variants
+  code: src/scripts/elara_u/baf_benchmark.py
+
+dataset:
+  source: Feedzai Bank Account Fraud (BAF), NeurIPS 2022 Datasets & Benchmarks
+  kaggle: sgpjesus/bank-account-fraud-dataset-neurips-2022
+  license: CC-BY-NC-SA-4.0 (non-commercial research)
+  tasks: [Base, Variant I, Variant II, Variant III, Variant IV, Variant V]
+  honest_scope: >
+    The six variants are bias-controlled versions of one base generator, hence
+    related rather than fully independent; they form a within-source fraud panel that
+    lifts the fraud family from n=1 to n=7 (with credit-card).
+
+outcome:   # recorded as-is (honest negative / boundary)
+  base_detectors_near_chance: true   # zoo mean AUROC ~ 0.6
+  stack_vs_auto_select: {mean: 0.0111, ci95: [-0.0660, 0.0638], significant: false}
+  stack_vs_best_fixed:   {mean: -0.0332, ci95: [-0.0978, 0.0219], significant: false}
+  per_task_failure: "Variant I logistic stack collapses below chance (0.375)"
+  interpretation: >
+    Stacking is NOT significantly better than selection on the near-chance BAF panel,
+    and is below the best fixed detector. Boundary result: the significant stacking
+    advantage requires individually-informative base detectors; combination amplifies
+    existing signal but cannot conjure it where the zoo is uniformly weak.
+
+integrity:
+  pre_registered: false   # exploratory expansion, explicitly labelled as such
+  used_test_labels_for_selection: false
+  reported_regardless_of_sign: true
+  forbidden:
+    - presenting BAF as a stacking win
+    - dropping the unfavourable Variant I result

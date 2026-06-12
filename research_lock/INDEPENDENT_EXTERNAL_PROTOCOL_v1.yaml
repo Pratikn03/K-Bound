@@ -1,0 +1,71 @@
+schema: independent_external_protocol_v1
+decision: D27_fully_independent_external
+date_locked: 2026-06-03
+status_at_lock: FROZEN_AFTER_CACHING_BEFORE_SCORING
+
+purpose: >
+  The hardest evidence tier: a FULLY INDEPENDENT external corpus -- distinct data
+  sources, not the same suite re-extracted (cf. D24, which reused ADBench under new
+  extractors). The 20 tasks below come from sources verifiably ABSENT from the
+  135-task development archive. Data was cached first; this protocol freezes the
+  method and the exact cached task list BEFORE any task is scored; scoring runs once.
+
+frozen_method:   # identical to development; no per-task tuning
+  detector_zoo: [ECOD, COPOD, IForest, LOF, KNN, OCSVM]
+  construction: one-vs-rest (each class = anomaly); downsample anomalies to 10% (seed 0); cap rows preserving rate
+  split: stratified 50/25/25 train/val/test, seed 0 (build_task)
+  main_method: rank-normalized logistic stacking on validation scores (no test labels)
+  baselines: [auto_select (val-AUROC argmax), best_fixed_detector, rank_mean, simple_average]
+  metric: per-task test AUROC; paired bootstrap (10000) over tasks
+  builder: src/scripts/elara_u/build_indep_suite.py
+  scorer:  src/scripts/elara_u/openml_indep_eval.py
+
+independent_sources:   # NONE in the development archive
+  - sklearn digits (8x8 handwritten, 10 classes -> 10 tasks)   # distinct from optdigits/pendigits/mnist
+  - sklearn wine (3 classes -> 3 tasks)
+  - sklearn wdbc / breast_cancer (malignant = anomaly, 1 task)  # distinct from breastw
+  - HAR smartphones (561 features, 6 activities -> 6 tasks)     # Kaggle uciml mirror
+  note: >
+    OpenML API was unavailable at run time; these reliable, offline-first/Kaggle
+    sources were substituted. Disjointness from the archive verified by name against
+    experiments/elara_u/score_archive/.
+
+frozen_task_list:   # exactly the 20 cached npz under data/raw/indep_external/
+  - digits__d0
+  - digits__d1
+  - digits__d2
+  - digits__d3
+  - digits__d4
+  - digits__d5
+  - digits__d6
+  - digits__d7
+  - digits__d8
+  - digits__d9
+  - wine__c0
+  - wine__c1
+  - wine__c2
+  - wdbc__malignant
+  - har__LAYING
+  - har__SITTING
+  - har__STANDING
+  - har__WALKING
+  - har__WALKING_DOWNSTAIRS
+  - har__WALKING_UPSTAIRS
+
+primary_endpoint:
+  field: gate_independent_external_confirmed
+  pass_condition:
+    - stack vs auto_select: mean > 0 AND 95% CI lower bound > 0
+    - stack vs best_fixed_detector: mean > 0 AND 95% CI lower bound > 0
+  run_policy: ONE_SHOT (no re-run, no tuning, no task/threshold selection after scoring)
+
+integrity:
+  method_frozen_before_scoring: true
+  task_list_frozen_before_scoring: true
+  used_test_labels_for_selection: false
+  one_shot: true
+  reported_regardless_of_sign: true
+  forbidden:
+    - tuning the stacker/zoo/threshold after seeing the result
+    - dropping tasks from the frozen list post-hoc
+    - re-running with a different method if the first result is unfavourable

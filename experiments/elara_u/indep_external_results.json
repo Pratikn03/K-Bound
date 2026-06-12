@@ -1,0 +1,58 @@
+{
+  "protocol": "D27_FULLY_INDEPENDENT_EXTERNAL (sklearn+HAR, ONE-SHOT, frozen)",
+  "n_tasks": 20,
+  "datasets": [
+    "digits__d0",
+    "digits__d1",
+    "digits__d2",
+    "digits__d3",
+    "digits__d4",
+    "digits__d5",
+    "digits__d6",
+    "digits__d7",
+    "digits__d8",
+    "digits__d9",
+    "har__LAYING",
+    "har__SITTING",
+    "har__STANDING",
+    "har__WALKING",
+    "har__WALKING_DOWNSTAIRS",
+    "har__WALKING_UPSTAIRS",
+    "wdbc__malignant",
+    "wine__c0",
+    "wine__c1",
+    "wine__c2"
+  ],
+  "source": "sklearn digits/wine/wdbc + HAR smartphones; distinct sources, verifiably absent from the 135-task development archive",
+  "construction": "one-vs-rest (class=anomaly); downsample anomalies to 10% (seed 0); cap rows preserving rate",
+  "mean_auroc": {
+    "ECOD": 0.5789,
+    "COPOD": 0.5904,
+    "IForest": 0.59,
+    "LOF": 0.5878,
+    "KNN": 0.5779,
+    "OCSVM": 0.5775,
+    "auto_select": 0.6885,
+    "rank_mean": 0.5956,
+    "avg": 0.5976,
+    "stack": 0.7992
+  },
+  "best_fixed": "COPOD",
+  "stack_vs_auto_select": {
+    "mean": 0.1106,
+    "ci95": [
+      0.0519,
+      0.1755
+    ],
+    "pass": true
+  },
+  "stack_vs_best_fixed": {
+    "mean": 0.2087,
+    "ci95": [
+      0.1196,
+      0.3034
+    ],
+    "pass": true
+  },
+  "gate_independent_external_confirmed": true
+}

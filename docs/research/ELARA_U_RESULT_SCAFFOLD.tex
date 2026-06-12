@@ -33,11 +33,19 @@ The reliability/drift novelty, however, is decisively \emph{negative}
 \begin{figure}[H]\centering\includegraphics[width=0.95\linewidth]{elara_u_ablation.png}
 \caption{Component ablation summary. The stack gain comes from rank-normalized per-task stacking; reliability/drift feature ablations are decisive and \emph{negative} (Table~\ref{tab:ablation}). (Illustrative; authoritative values in Table~\ref{tab:ablation}.)}\label{fig:ablation}\end{figure}
 
+\begin{figure}[H]\centering\includegraphics[width=0.98\linewidth]{elara_u_d23_multidataset.png}
+\caption{Multimodal independent-modality-failure regime (D23) on \emph{four} real
+datasets under the canonical noise protocol. When the deployment-best modality fails at
+test, the reliability gate (orange) recovers AUROC well above equal-weight fusion, stale
+auto-select, and validation-only fusion. ``H1,H2,H3 \checkmark'' marks datasets where all
+three pre-registered hypotheses pass --- all four do. Authoritative deltas and CIs in
+Table~\ref{tab:d23}.}\label{fig:d23}\end{figure}
+
 \begin{figure}[H]\centering\includegraphics[width=0.95\linewidth]{elara_u_architecture.png}
 \caption{ELARA-U architecture: benchmark families feed a detector zoo and score archive; validation-only labels and unlabeled deployment scores drive the router.}\label{fig:arch}\end{figure}
 
 \begin{figure}[H]\centering\includegraphics[width=0.95\linewidth]{elara_u_coverage.png}
-\caption{Benchmark coverage map. Current evidence covers five families; time-series, additional industrial-vision, and multimodal/3D families remain planned expansion targets for stronger universal claims.}\label{fig:coverage}\end{figure}
+\caption{Benchmark coverage map. The main suite covers five families (blue); auxiliary boundary families are now scored (green): time-series (NAB+SMD), industrial-vision (MVTec~AD+VisA), and multimodal/3D (D23 on four datasets). OpenOOD and MVTec~AD~2 remain planned (grey).}\label{fig:coverage}\end{figure}
 
 \begin{figure}[H]\centering\includegraphics[width=0.95\linewidth]{elara_u_lifecycle.png}
-\caption{Router decision lifecycle and evidence boundary. Development stress evidence is useful, but sealed external evidence is required before SOTA-level claims.}\label{fig:lifecycle}\end{figure}
+\caption{Router decision lifecycle and evidence boundary. Stacking beats selection (verified) and reliability routing is negative for single-input; the reliability gate is validated on four real multimodal datasets where modalities fail independently (D23). Sealed external evidence still bounds any universal-SOTA claim.}\label{fig:lifecycle}\end{figure}

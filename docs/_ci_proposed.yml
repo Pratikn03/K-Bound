@@ -1,0 +1,179 @@
+# =============================================================================
+# PROPOSED CI workflow for the K-Bound / KGA anomaly-intelligence repo.
+#
+# This file is a *proposal*. The lead reviews it and installs it into
+# .github/workflows/ (e.g. as .github/workflows/kbound-ci.yml). It is written to
+# be genuinely runnable as-is.
+#
+# Design:
+#   * Fast, layered jobs that each install only what they need (no torch, no GPU,
+#     no external data) so the whole matrix runs in minutes on ubuntu-latest.
+#   * `kga` is a top-level package -> the repository root must be on PYTHONPATH.
+#   * `uais.*` and `orchestration` live under src/ -> `src` must be on PYTHONPATH.
+#   * The orchestration-import job deliberately installs NO prefect, proving the
+#     import shim keeps every flow importable without it.
+#
+# Relationship to the existing .github/workflows/ci.yml (which builds torch CPU,
+# runs the full pytest+coverage suite, and does the Docker/API security gate):
+# this workflow is complementary and lightweight. See docs/ENGINEERING.md and the
+# "lead must reconcile" notes in the hardening report before merging the two.
+# =============================================================================
+
+name: kbound-ci
+
+on:
+  push:
+    branches: ["main", "master"]
+  pull_request:
+    branches: ["main", "master"]
+
+# Cancel superseded runs on the same ref to save CI minutes.
+concurrency:
+  group: kbound-ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  # ---------------------------------------------------------------------------
+  # Lint + format gate (ruff is the single source of truth; config in pyproject)
+  # ---------------------------------------------------------------------------
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install ruff
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install ruff
+      - name: Ruff lint
+        run: ruff check .
+      - name: Ruff format (check only)
+        run: ruff format --check .
+
+  # ---------------------------------------------------------------------------
+  # The pure-numpy/scipy kga package: import + version + its own test module
+  # ---------------------------------------------------------------------------
+  kga-package:
+    runs-on: ubuntu-latest
+    env:
+      # kga is a top-level package; put the repo root on the path.
+      PYTHONPATH: ${{ github.workspace }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install minimal kga deps
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install numpy scipy pytest
+      - name: Import kga and print version
+        run: python -c "import kga; print(kga.__version__)"
+      - name: kga unit tests
+        run: pytest tests/test_kga_package.py -q
+
+  # ---------------------------------------------------------------------------
+  # Lightweight unit tests across the new packages, with coverage
+  # ---------------------------------------------------------------------------
+  unit-tests:
+    runs-on: ubuntu-latest
+    env:
+      # kga (repo root) + uais/orchestration (src) both need to be importable.
+      PYTHONPATH: ${{ github.workspace }}:${{ github.workspace }}/src
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install minimal deps
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install numpy scipy scikit-learn pandas pyyaml joblib \
+            pytest pytest-cov httpx fastapi
+      - name: Run unit tests with coverage
+        run: |
+          pytest \
+            tests/test_kga_package.py \
+            tests/test_model_registry.py \
+            tests/test_training_harness.py \
+            tests/test_data_manifest.py \
+            tests/test_smoke_trichotomy.py \
+            --cov=kga --cov=src/uais \
+            --cov-report=term-missing --cov-report=xml
+      - name: Upload coverage.xml
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-xml
+          path: coverage.xml
+          if-no-files-found: error
+
+  # ---------------------------------------------------------------------------
+  # Hermetic smoke: zero external data, < 60s, exercises the kga trichotomy
+  # ---------------------------------------------------------------------------
+  hermetic-smoke:
+    runs-on: ubuntu-latest
+    env:
+      PYTHONPATH: ${{ github.workspace }}:${{ github.workspace }}/src
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install smoke deps
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install numpy scipy
+      - name: Run hermetic K-Bound smoke
+        run: bash scripts/smoke_kbound.sh
+
+  # ---------------------------------------------------------------------------
+  # Theorem validators: each must exit 0 (a crash/nonzero exit fails the job)
+  # ---------------------------------------------------------------------------
+  theorem-validators:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install validator deps
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install numpy scipy
+      - name: Run every theorem validator
+        run: |
+          set -euo pipefail
+          shopt -s nullglob
+          scripts=(experiments/kbound/theory_validation/val_thm*.py)
+          if [ ${#scripts[@]} -eq 0 ]; then
+            echo "No theorem validators found under experiments/kbound/theory_validation/" >&2
+            exit 1
+          fi
+          for script in "${scripts[@]}"; do
+            echo "::group::$script"
+            python "$script"
+            echo "::endgroup::"
+          done
+
+  # ---------------------------------------------------------------------------
+  # Orchestration import works WITHOUT prefect installed (import-shim contract)
+  # ---------------------------------------------------------------------------
+  orchestration-import:
+    runs-on: ubuntu-latest
+    env:
+      PYTHONPATH: ${{ github.workspace }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Upgrade pip (no prefect on purpose)
+        run: python -m pip install --upgrade pip
+      - name: Import orchestration and list flows (no prefect)
+        run: |
+          python -c "import src.orchestration as o; print(o.PREFECT, sorted(o.FLOWS.keys()))"

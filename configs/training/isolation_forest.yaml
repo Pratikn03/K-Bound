@@ -1,0 +1,14 @@
+# Unified training-harness config: Isolation Forest anomaly detector.
+# Run with: python -m uais.training.cli --config configs/training/isolation_forest.yaml
+name: isolation_forest
+trainer: isolation_forest
+seed: 42
+# Path is resolved relative to the project root when not absolute.
+data_path: data/processed/fraud/fraud_features.parquet
+output_dir: experiments/training/isolation_forest
+hyperparams:
+  # Optional target column to drop before unsupervised fitting (null = use all).
+  target: null
+  # Expected proportion of outliers (matches train_isolation_forest default).
+  contamination: 0.01
+tracker: json

@@ -1,0 +1,37 @@
+{
+  "protocol": "D25_meta_selection_baseline (MetaOD-style, leave-one-task-out)",
+  "n_tasks": 123,
+  "note": "In-repo MetaOD-style meta-feature selector (RF over 28 val-only meta-features incl. landmarkers); not the published MetaOD artifact.",
+  "mean_auroc": {
+    "auto_select": 0.7481,
+    "meta_select": 0.7368,
+    "stack": 0.781
+  },
+  "comparisons": {
+    "stack_vs_meta_select": {
+      "mean": 0.0442,
+      "ci95": [
+        0.03,
+        0.0602
+      ],
+      "pass": true
+    },
+    "stack_vs_auto_select": {
+      "mean": 0.033,
+      "ci95": [
+        0.0209,
+        0.0467
+      ],
+      "pass": true
+    },
+    "meta_select_vs_auto_select": {
+      "mean": -0.0113,
+      "ci95": [
+        -0.0174,
+        -0.0056
+      ],
+      "pass": false
+    }
+  },
+  "stacking_beats_learned_selection": true
+}

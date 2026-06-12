@@ -1,0 +1,12 @@
+# Unified training-harness config: scikit-learn MLP autoencoder anomaly model.
+# Targets uais.anomaly.train_autoencoder (no deep-learning backend required).
+# Run with: python -m uais.training.cli --config configs/training/autoencoder.yaml
+name: autoencoder
+trainer: autoencoder
+seed: 42
+data_path: data/processed/fraud/fraud_features.parquet
+output_dir: experiments/training/autoencoder
+hyperparams:
+  target: label
+  domain: fraud
+tracker: json

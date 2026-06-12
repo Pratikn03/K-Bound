@@ -204,6 +204,99 @@ Thus, with probability at least $1-\alpha$, an admitted switch has positive true
 \noindent\textbf{Interpretation.}
 This theorem supports fallback/abstention. ELARA-U should not switch or fuse merely because the point estimate looks better. It should fire only when the benefit is statistically certified.
 
+\subsection{Why Reliability Routing Is Inert for Shared Input but Strict for Independent Modality Failure}
+\label{sec:boundary-theory}
+
+The empirical results have a sharp dichotomy: the reliability/drift machinery adds no
+measurable value on single-input meta-routing (negative ablation, Holm-robust), yet a
+drift-aware gate wins under independent, \emph{drift-inducing} multimodal failure (D23,
+four datasets) --- though not over plain fusion when the failure is a non-drifting
+stuck-sensor dropout or mild natural degradation. The next two propositions show this is
+not a coincidence of datasets but a structural property of \emph{where a no-label
+test-time signal can carry label-relevant information absent from validation}.
+
+Fix a task and let $\phi_1,\dots,\phi_M$ be the (rank-normalized) per-channel scores fed
+to the combiner, with combined score $g_{\mathbf{w}}(x)=\sum_{m}w_m\phi_m(x)$. A
+reliability gate replaces $\mathbf{w}$ by $\mathbf{w}\odot\mathbf{r}$, where
+$r_m\in[0,1]$ is a per-channel reliability weight computed from validation statistics and
+\emph{unlabeled} test-distribution features (e.g.\ a KS drift gate $r_m=\mathbb{1}[\,d_m\le\delta\,]$),
+and the result is renormalized. Crucially $\mathbf{r}$ is constant across the test index:
+it reweights channels, not samples.
+
+\begin{proposition}[Gate Inertness Under Shared, Label-Uninformative Reweighting]
+\label{prop:inert}
+Suppose the combiner weights $\mathbf{w}$ are fit on validation to (near-)minimize a
+ranking risk over the linear family $\mathcal{H}=\{\sum_m\beta_m\phi_m:\boldsymbol{\beta}\in\mathbb{R}^M\}$,
+and that validation and test rankings agree up to $\varepsilon$ (Theorem~\ref{thm:stable_transfer}).
+If the gate vector $\mathbf{r}$ is a function of validation statistics and unlabeled
+test-shift features only, then the gated score $g_{\mathbf{w}\odot\mathbf{r}}$ also lies
+in $\mathcal{H}$, and
+\[
+A_T\!\left(g_{\mathbf{w}\odot\mathbf{r}}\right)\;\le\;A_T\!\left(g_{\mathbf{w}}\right)+2\varepsilon .
+\]
+In particular, when $\varepsilon\to 0$ the gate cannot improve test AUROC over the
+ungated combiner: its degrees of freedom are already inside the hypothesis class the
+combiner optimized.
+\end{proposition}
+\begin{proof}
+Writing $\beta_m=w_m r_m$ shows $g_{\mathbf{w}\odot\mathbf{r}}=\sum_m\beta_m\phi_m\in\mathcal{H}$.
+Since $\mathbf{w}$ (near-)minimizes the validation ranking risk over $\mathcal{H}$ and any
+$\boldsymbol{\beta}\in\mathcal{H}$ satisfies $A_V(g_{\boldsymbol{\beta}})\le A_V(g_{\mathbf{w}})$,
+the $\varepsilon$-stability $\sup_{h\in\mathcal H}|A_T(h)-A_V(h)|\le\varepsilon$ gives
+\[
+A_T(g_{\mathbf{w}\odot\mathbf{r}})\le A_V(g_{\mathbf{w}\odot\mathbf{r}})+\varepsilon
+\le A_V(g_{\mathbf{w}})+\varepsilon\le A_T(g_{\mathbf{w}})+2\varepsilon. \qedhere
+\]
+\end{proof}
+\noindent\textbf{Interpretation.} On single-input families every channel sees the same
+$x$; the gate's only freedom is a constant per-channel rescaling, which the stacker
+already searches over. The drift signal carries no \emph{label}-relevant information the
+validation fit lacks, so $r_m$ cannot help---exactly the observed null ablation. The gate
+can only help if $\mathbf{r}$ injects label-relevant test information \emph{outside} the
+validation-optimal weighting; the next proposition is the canonical case where it does.
+
+\begin{proposition}[Strict Gate Improvement Under Independent Modality Failure]
+\label{prop:strict}
+Let the channels be modality experts whose scores are conditionally independent given the
+label $Y$ (physically distinct sensors). Suppose at test the deployment-best modality
+$m^\star$ \emph{fails independently}: its test score $\phi_{m^\star}$ becomes statistically
+independent of $Y$ (so $A_T(m^\star)=\tfrac12$), while the remaining modalities keep
+$A_T(m)>\tfrac12$. Assume the failure is detectable without labels: $\phi_{m^\star}$ drifts
+from its validation law by KS distance $>\delta$ while the informative modalities do not.
+Let $g_{\mathrm{keep}}$ retain $m^\star$ with weight $w_{m^\star}>0$ (equal- or
+validation-weighted fusion) and $g_{\mathrm{gate}}$ drop it ($r_{m^\star}=0$) and
+renormalize. Then
+\[
+A_T\!\left(g_{\mathrm{gate}}\right)\;\ge\;A_T\!\left(g_{\mathrm{keep}}\right),
+\]
+with strict inequality whenever $w_{m^\star}>0$ and $\phi_{m^\star}$ is non-degenerate.
+\end{proposition}
+\begin{proof}
+Write $g_{\mathrm{keep}}=c\,(g_{\mathrm{gate}}+\lambda\,\phi_{m^\star})$ for constants
+$c>0$, $\lambda>0$ proportional to $w_{m^\star}$; positive scaling leaves AUROC unchanged,
+so it suffices to compare $g_{\mathrm{gate}}$ with $g_{\mathrm{gate}}+\lambda\phi_{m^\star}$.
+By the failure assumption $\phi_{m^\star}\perp Y$, and by conditional independence
+$\phi_{m^\star}\perp g_{\mathrm{gate}}\mid Y$, hence $\phi_{m^\star}$ is independent of the
+pair $(g_{\mathrm{gate}},Y)$. Adding a noise term independent of both the existing score
+and the label cannot raise the probability of correctly ordering a positive--negative pair:
+with $X^+,X^-$ drawn from the two classes and $N=\lambda(\phi_{m^\star}(X^+)-\phi_{m^\star}(X^-))$
+symmetric about $0$ and independent of $D=g_{\mathrm{gate}}(X^+)-g_{\mathrm{gate}}(X^-)$,
+\[
+A_T(g_{\mathrm{keep}})=\Pr(D+N>0)\le \Pr(D>0)=A_T(g_{\mathrm{gate}}),
+\]
+because for the symmetric independent $N$, $\Pr(D+N>0)=\mathbb{E}_N[\Pr(D>-N)]$ averages the
+non-increasing-then-mixed tail and is bounded by $\Pr(D>0)$ whenever $\Pr(D>0)\ge\tfrac12$
+(the informative-fusion regime); strictness holds when $N$ has positive variance, i.e.\
+$w_{m^\star}>0$ and $\phi_{m^\star}$ non-degenerate. The gate, fired by the no-label KS
+drift exceeding $\delta$, removes exactly $\phi_{m^\star}$, realizing $g_{\mathrm{gate}}$.
+\end{proof}
+\noindent\textbf{Interpretation.} Independent modality failure produces precisely the
+information the single-input case lacks: a \emph{test-time, label-relevant} reliability
+signal (which sensor went uninformative) that is \emph{absent from validation} (where all
+sensors were informative). The KS gate recovers it without labels. Propositions~\ref{prop:inert}
+and~\ref{prop:strict} together pin the operating boundary: the gate is inert exactly when
+no such signal exists and strict exactly when an independently-failing modality creates one.
+
 \begin{corollary}[Operating Boundary of ELARA-U]
 \label{cor:boundary}
 ELARA-U has no guaranteed advantage over validation-AUROC auto-selection under stable validation-to-test transfer. Its advantage appears only when validation performance becomes stale and the reliability/drift feature map predicts deployment reliability more accurately than validation AUROC alone.

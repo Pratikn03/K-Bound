@@ -1,0 +1,19 @@
+# Unified training-harness config: fusion meta-model (stacked domain scores).
+# Run with: python -m uais.training.cli --config configs/training/fusion_meta.yaml
+name: fusion_meta
+trainer: fusion_meta
+seed: 42
+# Fusion sources its data from per-domain score CSVs (see hyperparams.scores),
+# so no single data_path is required.
+data_path: null
+output_dir: experiments/training/fusion_meta
+hyperparams:
+  test_size: 0.2
+  # Per-domain score CSVs (each needs at least a 'score' column; 'label'
+  # optional). Paths resolve relative to the project root.
+  scores:
+    fraud: experiments/fraud/scores.csv
+    cyber: experiments/cyber/scores.csv
+    behavior: experiments/behavior/scores.csv
+    vision: experiments/vision/scores.csv
+tracker: json

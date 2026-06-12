@@ -1,0 +1,41 @@
+{
+  "protocol": "D26_BAF_FRAUD_PANEL (Feedzai NeurIPS-2022)",
+  "n_tasks": 6,
+  "variants": [
+    "Base",
+    "Variant I",
+    "Variant II",
+    "Variant III",
+    "Variant IV",
+    "Variant V"
+  ],
+  "note": "6 bias-controlled variants of one base generator; related within-source fraud panel, lifts fraud family from n=1 to n=7 (with credit-card).",
+  "mean_auroc": {
+    "ECOD": 0.6366,
+    "COPOD": 0.6128,
+    "IForest": 0.5835,
+    "LOF": 0.5541,
+    "KNN": 0.5704,
+    "OCSVM": 0.6157,
+    "auto_select": 0.5923,
+    "rank_mean": 0.6032,
+    "stack": 0.6034
+  },
+  "best_fixed": "ECOD",
+  "stack_vs_auto_select": {
+    "mean": 0.0111,
+    "ci95": [
+      -0.066,
+      0.0638
+    ],
+    "ci_excludes_zero": false
+  },
+  "stack_vs_best_fixed": {
+    "mean": -0.0332,
+    "ci95": [
+      -0.0978,
+      0.0219
+    ],
+    "ci_excludes_zero": false
+  }
+}

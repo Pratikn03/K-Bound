@@ -1,19 +1,46 @@
 {
-  "n_datasets": 13,
+  "n_datasets": 40,
   "datasets": [
+    "10_cover",
+    "11_donors",
+    "12_fault",
+    "14_glass",
+    "17_InternetAds",
     "18_Ionosphere",
+    "19_landsat",
+    "1_ALOI",
     "20_letter",
+    "22_magic.gamma",
     "23_mammography",
+    "24_mnist",
     "25_musk",
     "26_optdigits",
+    "27_PageBlocks",
     "28_pendigits",
     "29_Pima",
     "2_annthyroid",
     "30_satellite",
     "31_satimage-2",
+    "32_shuttle",
+    "33_skin",
+    "35_SpamBase",
+    "36_speech",
+    "37_Stamps",
     "38_thyroid",
-    "27_PageBlocks",
-    "19_landsat"
+    "39_vertebral",
+    "3_backdoor",
+    "40_vowels",
+    "41_Waveform",
+    "42_WBC",
+    "43_WDBC",
+    "44_Wilt",
+    "47_yeast",
+    "4_breastw",
+    "5_campaign",
+    "6_cardio",
+    "7_Cardiotocography",
+    "8_celeba",
+    "9_census"
   ],
   "strategies": [
     "ECOD",
@@ -22,22 +49,62 @@
     "router_relfuse"
   ],
   "average_rank": {
-    "ECOD": 3.3846153846153846,
-    "best_single(IForest)": 2.3076923076923075,
-    "router_select": 2.0,
-    "router_relfuse": 2.3076923076923075
+    "ECOD": 2.85,
+    "best_single(IForest)": 2.975,
+    "router_select": 1.7,
+    "router_relfuse": 2.475
   },
   "router_select_rank_gain_vs_best_baseline": {
-    "mean": -0.1546769230769231,
+    "mean": 0.22328499999999998,
     "ci95": [
-      -0.9230769230769229,
-      0.6153846153846154
+      -0.22499999999999987,
+      0.6749999999999998
     ],
     "ci_low_gt_0": false
   },
-  "router_winrate_vs_ECOD": 0.7692307692307693,
+  "router_winrate_vs_ECOD": 0.675,
   "router_negative_transfer_rate_vs_ECOD": 0.0,
   "per_dataset": [
+    {
+      "dataset": "10_cover",
+      "oracle": 0.9312201859353055,
+      "ECOD": 0.9157139706821109,
+      "best_single(IForest)": 0.8810339024361935,
+      "router_select": 0.9157139706821109,
+      "router_relfuse": 0.9278775287549763
+    },
+    {
+      "dataset": "11_donors",
+      "oracle": 0.8990715891056316,
+      "ECOD": 0.8990715891056316,
+      "best_single(IForest)": 0.7925735133717986,
+      "router_select": 0.8990715891056316,
+      "router_relfuse": 0.882830902733999
+    },
+    {
+      "dataset": "12_fault",
+      "oracle": 0.7043100069064641,
+      "ECOD": 0.45597595803856417,
+      "best_single(IForest)": 0.5781643738450339,
+      "router_select": 0.7043100069064641,
+      "router_relfuse": 0.6225150728911952
+    },
+    {
+      "dataset": "14_glass",
+      "oracle": 0.9038461538461539,
+      "ECOD": 0.7307692307692308,
+      "best_single(IForest)": 0.8173076923076923,
+      "router_select": 0.9038461538461539,
+      "router_relfuse": 0.846153846153846
+    },
+    {
+      "dataset": "17_InternetAds",
+      "oracle": 0.675625,
+      "ECOD": 0.675625,
+      "best_single(IForest)": 0.6583423913043478,
+      "router_select": 0.675625,
+      "router_relfuse": 0.6647010869565217
+    },
     {
       "dataset": "18_Ionosphere",
       "oracle": 0.9190718732314658,
@@ -45,6 +112,22 @@
       "best_single(IForest)": 0.8460667798528579,
       "router_select": 0.9190718732314658,
       "router_relfuse": 0.8845500848896435
+    },
+    {
+      "dataset": "19_landsat",
+      "oracle": 0.5852490421455939,
+      "ECOD": 0.3625137676861815,
+      "best_single(IForest)": 0.44188389015975227,
+      "router_select": 0.5852490421455939,
+      "router_relfuse": 0.5675275589068693
+    },
+    {
+      "dataset": "1_ALOI",
+      "oracle": 0.6397349642451052,
+      "ECOD": 0.5819982698635157,
+      "best_single(IForest)": 0.5461073817897468,
+      "router_select": 0.6397349642451052,
+      "router_relfuse": 0.6204163660334165
     },
     {
       "dataset": "20_letter",
@@ -55,12 +138,28 @@
       "router_relfuse": 0.7959466666666667
     },
     {
+      "dataset": "22_magic.gamma",
+      "oracle": 0.7992343961305571,
+      "ECOD": 0.6449279352818627,
+      "best_single(IForest)": 0.7218932979202962,
+      "router_select": 0.7992343961305571,
+      "router_relfuse": 0.7476104728371447
+    },
+    {
       "dataset": "23_mammography",
       "oracle": 0.9347604427794836,
       "ECOD": 0.9347604427794836,
       "best_single(IForest)": 0.8797566402839196,
       "router_select": 0.9299890150128158,
       "router_relfuse": 0.9209137256006535
+    },
+    {
+      "dataset": "24_mnist",
+      "oracle": 0.8460089389173978,
+      "ECOD": 0.7425492468134415,
+      "best_single(IForest)": 0.7962953153451415,
+      "router_select": 0.8460089389173978,
+      "router_relfuse": 0.7963019367654361
     },
     {
       "dataset": "25_musk",
@@ -77,6 +176,14 @@
       "best_single(IForest)": 0.7142857142857143,
       "router_select": 0.7142857142857143,
       "router_relfuse": 0.6660551632927323
+    },
+    {
+      "dataset": "27_PageBlocks",
+      "oracle": 0.9082079238329239,
+      "ECOD": 0.9082079238329239,
+      "best_single(IForest)": 0.9024365274365275,
+      "router_select": 0.9082079238329239,
+      "router_relfuse": 0.9212287571662572
     },
     {
       "dataset": "28_pendigits",
@@ -119,6 +226,46 @@
       "router_relfuse": 0.9754206404590215
     },
     {
+      "dataset": "32_shuttle",
+      "oracle": 0.9981779466410589,
+      "ECOD": 0.9936937914909607,
+      "best_single(IForest)": 0.9981779466410589,
+      "router_select": 0.9981779466410589,
+      "router_relfuse": 0.9966431464239489
+    },
+    {
+      "dataset": "33_skin",
+      "oracle": 0.7080577182587438,
+      "ECOD": 0.4908499400993567,
+      "best_single(IForest)": 0.671204286884869,
+      "router_select": 0.7080577182587438,
+      "router_relfuse": 0.670597167497343
+    },
+    {
+      "dataset": "35_SpamBase",
+      "oracle": 0.6872212176009644,
+      "ECOD": 0.6568037974683545,
+      "best_single(IForest)": 0.6188441832429175,
+      "router_select": 0.6872212176009644,
+      "router_relfuse": 0.6624284207353828
+    },
+    {
+      "dataset": "36_speech",
+      "oracle": 0.6033811098860713,
+      "ECOD": 0.5804483645718486,
+      "best_single(IForest)": 0.5954428518926864,
+      "router_select": 0.6033811098860713,
+      "router_relfuse": 0.5919882396177877
+    },
+    {
+      "dataset": "37_Stamps",
+      "oracle": 0.9285714285714286,
+      "ECOD": 0.9047619047619049,
+      "best_single(IForest)": 0.9029304029304029,
+      "router_select": 0.9285714285714286,
+      "router_relfuse": 0.9212454212454212
+    },
+    {
       "dataset": "38_thyroid",
       "oracle": 0.9767958412098299,
       "ECOD": 0.9767958412098299,
@@ -127,20 +274,116 @@
       "router_relfuse": 0.9680056710775047
     },
     {
-      "dataset": "27_PageBlocks",
-      "oracle": 0.9082079238329239,
-      "ECOD": 0.9082079238329239,
-      "best_single(IForest)": 0.9024365274365275,
-      "router_select": 0.9082079238329239,
-      "router_relfuse": 0.9212287571662572
+      "dataset": "39_vertebral",
+      "oracle": 0.33423180592991913,
+      "ECOD": 0.3261455525606469,
+      "best_single(IForest)": 0.22102425876010778,
+      "router_select": 0.3261455525606469,
+      "router_relfuse": 0.3261455525606469
     },
     {
-      "dataset": "19_landsat",
-      "oracle": 0.5852490421455939,
-      "ECOD": 0.3625137676861815,
-      "best_single(IForest)": 0.44188389015975227,
-      "router_select": 0.5852490421455939,
-      "router_relfuse": 0.5675275589068693
+      "dataset": "3_backdoor",
+      "oracle": 0.8133766397873367,
+      "ECOD": 0.8133766397873367,
+      "best_single(IForest)": 0.7417431471748623,
+      "router_select": 0.8133766397873367,
+      "router_relfuse": 0.8049945944934035
+    },
+    {
+      "dataset": "40_vowels",
+      "oracle": 0.9829545454545454,
+      "ECOD": 0.6302083333333334,
+      "best_single(IForest)": 0.829308712121212,
+      "router_select": 0.9829545454545454,
+      "router_relfuse": 0.9720643939393939
+    },
+    {
+      "dataset": "41_Waveform",
+      "oracle": 0.840334928229665,
+      "ECOD": 0.6958373205741627,
+      "best_single(IForest)": 0.840334928229665,
+      "router_select": 0.8163157894736841,
+      "router_relfuse": 0.8403827751196172
+    },
+    {
+      "dataset": "42_WBC",
+      "oracle": 1.0,
+      "ECOD": 1.0,
+      "best_single(IForest)": 1.0,
+      "router_select": 1.0,
+      "router_relfuse": 1.0
+    },
+    {
+      "dataset": "43_WDBC",
+      "oracle": 0.9888888888888889,
+      "ECOD": 0.9666666666666667,
+      "best_single(IForest)": 0.9833333333333333,
+      "router_select": 0.9888888888888889,
+      "router_relfuse": 0.9833333333333333
+    },
+    {
+      "dataset": "44_Wilt",
+      "oracle": 0.5807131901840491,
+      "ECOD": 0.37912193251533743,
+      "best_single(IForest)": 0.40400416301489916,
+      "router_select": 0.5807131901840491,
+      "router_relfuse": 0.5664986853637161
+    },
+    {
+      "dataset": "47_yeast",
+      "oracle": 0.4435374149659865,
+      "ECOD": 0.440945902170392,
+      "best_single(IForest)": 0.39714933592484614,
+      "router_select": 0.440945902170392,
+      "router_relfuse": 0.4015873015873016
+    },
+    {
+      "dataset": "4_breastw",
+      "oracle": 0.9902402402402403,
+      "ECOD": 0.9884384384384384,
+      "best_single(IForest)": 0.9746246246246246,
+      "router_select": 0.9902402402402403,
+      "router_relfuse": 0.9842342342342343
+    },
+    {
+      "dataset": "5_campaign",
+      "oracle": 0.7891039348445579,
+      "ECOD": 0.783613557453354,
+      "best_single(IForest)": 0.7145904000640173,
+      "router_select": 0.7891039348445579,
+      "router_relfuse": 0.7778497726050173
+    },
+    {
+      "dataset": "6_cardio",
+      "oracle": 0.9328063241106719,
+      "ECOD": 0.9328063241106719,
+      "best_single(IForest)": 0.9140316205533597,
+      "router_select": 0.9328063241106719,
+      "router_relfuse": 0.9184782608695652
+    },
+    {
+      "dataset": "7_Cardiotocography",
+      "oracle": 0.7950999917019334,
+      "ECOD": 0.7950999917019334,
+      "best_single(IForest)": 0.6394075180482947,
+      "router_select": 0.7950999917019334,
+      "router_relfuse": 0.7364119160235665
+    },
+    {
+      "dataset": "8_celeba",
+      "oracle": 0.8119647246210135,
+      "ECOD": 0.8119647246210135,
+      "best_single(IForest)": 0.7267837423859225,
+      "router_select": 0.8119647246210135,
+      "router_relfuse": 0.8026166474141396
+    },
+    {
+      "dataset": "9_census",
+      "oracle": 0.6585123537458636,
+      "ECOD": 0.6445384444902982,
+      "best_single(IForest)": 0.5997002315610886,
+      "router_select": 0.6585123537458636,
+      "router_relfuse": 0.6391449052739375
     }
   ],
   "verdict": "NO WIN on avg rank (CI crosses 0) -- universal direction does NOT clear the bar on tabular pilot"

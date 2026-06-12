@@ -1,0 +1,39 @@
+{
+  "protocol": "D24_SEALED_EXTERNAL (ONE-SHOT, frozen)",
+  "n_tasks": 74,
+  "holdout": "ADBench CV_by_ViT + NLP_by_RoBERTa (untouched extractors)",
+  "families": {
+    "image_ood_vit": 61,
+    "text_roberta": 13
+  },
+  "mean_auroc": {
+    "ECOD": 0.7391,
+    "COPOD": 0.7414,
+    "IForest": 0.74,
+    "LOF": 0.6845,
+    "KNN": 0.7684,
+    "OCSVM": 0.7617,
+    "auto_select": 0.7949,
+    "rank_mean": 0.7615,
+    "avg": 0.7636,
+    "stack": 0.811
+  },
+  "best_fixed": "KNN",
+  "stack_vs_auto_select": {
+    "mean": 0.0161,
+    "ci95": [
+      0.0039,
+      0.0319
+    ],
+    "pass": true
+  },
+  "stack_vs_best_fixed": {
+    "mean": 0.0426,
+    "ci95": [
+      0.022,
+      0.0729
+    ],
+    "pass": true
+  },
+  "gate_sealed_external_confirmed": true
+}

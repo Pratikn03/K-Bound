@@ -73,8 +73,11 @@ modality failure (pre-registered D23, validated on \emph{two} real datasets ---
 Real-IAD-D3 (15 categories) and MVTec-3D (7 categories)), reliability routing wins
 (beats equal-weight $+0.24$/$+0.21$, stale-select $+0.39$/$+0.32$, validation-only
 fusion $+0.25$/$+0.21$; all CIs exclude zero on both), while remaining inert when no
-modality fails. The precise claim is therefore \emph{reliability routing helps iff
-modalities can fail independently}; for single-input meta-routing plain stacking suffices.
+modality fails. This win is, however, \emph{failure-model-specific}: under a realistic
+stuck-sensor dropout and under real natural degradation the gate beats stale selection
+but not plain fusion (n.s.), so its value needs a detectable drift signal. The precise
+claim is therefore \emph{reliability routing helps iff a modality fails independently
+\textbf{and detectably}}; for single-input meta-routing plain stacking suffices.
 \end{minipage}
 \end{titlepage}
 
@@ -259,7 +262,7 @@ isotonic-regression calibration~\cite{guo2017calibration}, rather than a raw ECE
 provides genuinely multimodal data (RGB, photometric stereo, point cloud): PatchCore
 \cite{roth2022patchcore} and Real-IAD supply the detectors and co-observed modalities
 behind our independent-modality-failure study (D23), the one regime where reliability
-routing decisively wins. Deep one-class methods~\cite{bergman2020classification} and
+routing wins over plain fusion (and then only under a drift-inducing failure). Deep one-class methods~\cite{bergman2020classification} and
 OOD baselines~\cite{hendrycks2017baseline} are included in or motivate our detector
 zoo and image-OOD family.
 
@@ -699,8 +702,55 @@ Protocol & \path{research_lock/GATE_U_CROSS_DOMAIN_PROTOCOL_v1.yaml} \\
 \section{Strengthening the Stacking Result}
 \label{sec:strength}
 Five reviewer-hardening checks confirm the main (single-input) result is robust:
-stacker-family invariance, a stronger \emph{learned} selection baseline,
-detector-zoo strength, calibration, and a sealed one-shot external replication.
+a comprehensive baseline comparison, stacker-family invariance, detector-zoo
+strength, calibration, and external replication. We first establish that the win is
+not an artefact of weak baselines.
+
+\paragraph{Comprehensive baseline comparison (D28).}
+The strongest objection to a stacking result is that the baselines are weak. We
+therefore compare the headline logistic stack against \emph{every} standard
+combiner, selector, and ensemble, plus two test-label oracle ceilings, on the
+123-task archive (Table~\ref{tab:baselines_th}). The stack beats all nine non-oracle
+baselines with CIs excluding zero --- selection (best fixed, auto-select, a learned
+MetaOD-style selector), averaging (raw, rank, confidence-weighted, calibrated), an
+AutoML-style greedy ensemble (Caruana), and a per-family specialist stacker.
+Decisively, it also beats the \emph{oracle best single detector} ($+0.025$, CI
+$[+0.012,+0.039]$) and the \emph{oracle best equal-weight pair} ($+0.032$, CI
+$[+0.018,+0.048]$), both of which use test labels to pick. A weak-baseline win cannot
+exceed the oracle selection ceiling; a genuine $6$-way per-sample combination can.
+
+\begin{table}[H]\centering
+\caption{Comprehensive baseline comparison (123 tasks; paired bootstrap of headline
+logistic stack minus each method). Beats every non-oracle baseline and both
+test-label oracle ceilings; CIs exclude zero except where n.s.}
+\label{tab:baselines_th}\small
+\begin{tabular}{lcc}
+\toprule
+\textbf{Method} & mean AUROC & stack $-$ method (95\% CI) \\
+\midrule
+\multicolumn{3}{l}{\emph{Selection}}\\
+Best fixed detector & 0.709 & $+0.073\,[+0.050,+0.099]$ \\
+Validation auto-select & 0.748 & $+0.033\,[+0.021,+0.047]$ \\
+MetaOD-style learned select & 0.736 & $+0.045\,[+0.031,+0.061]$ \\
+\multicolumn{3}{l}{\emph{Averaging / ensemble}}\\
+Rank-mean & 0.707 & $+0.074\,[+0.057,+0.093]$ \\
+Confidence-weighted mean & 0.708 & $+0.073\,[+0.055,+0.093]$ \\
+Simple average (raw) & 0.709 & $+0.072\,[+0.054,+0.092]$ \\
+Average (calibrated) & 0.734 & $+0.048\,[+0.035,+0.062]$ \\
+AutoML greedy ensemble & 0.749 & $+0.032\,[+0.020,+0.046]$ \\
+\multicolumn{3}{l}{\emph{Stackers}}\\
+Per-family specialist & 0.732 & $+0.049\,[+0.034,+0.066]$ \\
+Stack (random forest) & 0.771 & $+0.010$ (n.s.) \\
+Stack (grad.\ boosting) & 0.763 & $+0.019\,[+0.005,+0.033]$ \\
+Stack (hist-GBM) & 0.769 & $+0.012$ (n.s.) \\
+Stack (logistic, rank-norm) & 0.783 & $-0.003$ (n.s.) \\
+\textbf{Stack (logistic, headline)} & \textbf{0.781} & --- \\
+\multicolumn{3}{l}{\emph{Oracle upper bounds (use test labels)}}\\
+Oracle best single detector & 0.756 & $+0.025\,[+0.012,+0.039]$ \\
+Oracle best pair fusion & 0.749 & $+0.032\,[+0.018,+0.048]$ \\
+\bottomrule
+\end{tabular}
+\end{table}
 
 \begin{table}[H]\centering
 \caption{Stacking beats selection across stacker families (123 tasks; paired
@@ -880,6 +930,52 @@ Validation-only fusion & 0.519 & 0.581 \\
 \bottomrule
 \end{tabular}
 \end{table}
+
+\paragraph{Failure-model dependence and real degradation (honest reality check).}
+The D23 wins use the canonical \emph{uniform-noise} modality failure (the failed
+sensor emits garbage, which \emph{drifts} detectably). Two checks with more realistic
+faults locate the gate's true regime. \textbf{(i) Real sensor dropout} (MulSen-AD,
+stuck/constant reading): the gate still beats stale single-modality selection
+($+0.28$) but \emph{not} plain fusion (vs equal-weight $-0.03$, n.s.; vs
+validation-only fusion $-0.05$). \textbf{(ii) Real natural degradation} (D29:
+Real-IAD-D3 per-modality deep-PatchCore scores from the raw $259$\,GB, $16$ categories,
+no injection): the gate beats stale selection ($+0.13$) but not plain fusion
+($+0.02$/$+0.03$, n.s.). The honest refinement: \emph{fusion robustly beats selection,
+but the reliability gate's extra value over fusion is specific to drift-inducing
+faults}; under a stuck sensor or mild natural degradation there is no test-time drift to
+exploit and plain fusion is as good --- exactly the inertness proposition.
+
+\paragraph{A new method and a conjecture (per-sample routing).} The inertness result is
+specific to \emph{per-channel} reweighting (constant across samples). This motivates a
+genuinely new combiner: \emph{per-sample reliability-gated stacking} (PS-RGS), whose
+weights $w_m(x)$ vary with the input via no-label local-reliability features and thus
+lie \emph{outside} the linear class the inertness proposition bounds. We conjecture
+(T10) that per-sample gating strictly exceeds the best linear stacker \emph{iff}
+per-sample reliability is label-relevant and heterogeneous across the input space. On
+the $123$-task suite PS-RGS gives a small directional improvement over plain stacking
+($+0.0068$, CI $[-0.0002,+0.015]$; $83/123$ wins) that does \emph{not} reach
+significance, and its per-task gain correlates positively but not significantly with
+detector heterogeneity (Spearman $r\!\approx\!0.14$, $p\!\approx\!0.12$) --- the right
+direction for T10, but underpowered on a homogeneous classical zoo. PS-RGS is therefore
+a theoretically-grounded direction with honest \emph{preliminary} evidence, not a
+confirmed win.
+
+We then \emph{ran} the natural next experiment --- PS-RGS on a heterogeneous
+deep$+$classical zoo (adding DeepSVDD, an autoencoder, and a VAE) --- and pre-registered
+a one-shot held-out confirmation (protocol D32) to guard against a development
+false-positive. The result is an instructive \textbf{honest negative}. On tabular
+\emph{development} data the deep zoo made PS-RGS significantly beat plain stacking
+($+0.016$, CI excl.\ $0$); but on the \emph{pre-registered held-out} families the effect
+\emph{did not replicate}: ADBench-CV $+0.002$ (n.s.) and ADBench-NLP $-0.020$
+(significantly \emph{worse}). The tabular significance was therefore a development-set
+artefact, and the pre-registered one-shot caught it. PS-RGS is thus \textbf{not} a
+confirmed improvement; we report it as a theoretically-motivated method refuted by
+held-out confirmation --- a textbook illustration of why pre-registration is the
+backbone of this thesis. The only robust effect from the deep zoo is minor: it modestly
+improves \emph{plain} stacking on feature-vector families (tabular $+0.010$, CV $+0.004$;
+both CIs exclude $0$; n.s.\ on NLP). No SOTA or breakthrough claim follows: the absolute
+levels ($0.87$/$0.78$/$0.65$ across tabular/CV/NLP) are not leaderboard-beating, and the
+new method does not even reliably beat plain stacking out-of-family.
 
 \section{Conclusion}
 

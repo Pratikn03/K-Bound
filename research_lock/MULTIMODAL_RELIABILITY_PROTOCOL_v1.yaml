@@ -1,0 +1,55 @@
+schema: multimodal_reliability_protocol_v1
+decision: D23_multimodal_independent_modality_failure
+date_locked: 2026-06-02
+status_at_lock: PRE_REGISTERED_BEFORE_SCORING
+
+purpose: >
+  The last regime where reliability routing could structurally help: TRUE
+  multimodal anomaly detection with INDEPENDENT modality failure. Every prior
+  regime where reliability was refuted (i.i.d., synthetic shift, D22, unsupervised)
+  used single-input families - all detectors see the same data, so no modality can
+  fail independently. Here three real co-observed modality experts (RGB,
+  photometric-stereo, point-cloud XYZ) are fused; one modality fails at test while
+  the others stay clean. Reliability gating should detect and route away from the
+  failed modality - the mechanism the source-system RGA work demonstrated.
+
+data: Real-IAD-D3 per-modality score cache (rgb/ps/xyz), categories with >=2
+      modalities informative on validation (val AUROC > 0.6).
+      Second independent confirmation: MVTec-3D per-modality score cache
+      (experiments/fusion/mvtec3d_score_cache/, 7 informative categories) scored with
+      the identical frozen procedure (--cache .../mvtec3d_score_cache --glob "*.npz"
+      --tag MVTec-3D). Both datasets pass H1/H2/H3 with CIs excluding zero.
+
+regimes:
+  clean: test scores as-is (no failure)
+  modality_failure: the DEPLOYMENT-BEST modality (highest validation AUROC) is
+    corrupted on test only (replaced by uniform noise) - validation stays clean,
+    so the failure is unforeseen. This is the worst case for stale selection.
+
+methods:
+  equal_weight: confidence-weighted mean over all modalities (incl. failed one)
+  stale_auto_select: pick the highest-validation-AUROC modality, score on test
+  no_reliability: drop only validation-degenerate modalities, fuse rest (NO test-time
+    drift detection) -- the ablation that isolates the reliability signal
+  reliability_gate: drop validation-degenerate AND test-time-drifted modalities
+    (KS val-vs-test, no test labels), fuse the rest -- ELARA-U reliability routing
+
+pre_registered_hypotheses:   # tested in the modality_failure regime, bootstrap over categories
+  H1: reliability_gate > equal_weight (paired AUROC CI lower bound > 0)
+  H2: reliability_gate > stale_auto_select (CI lower bound > 0)
+  H3: reliability_gate > no_reliability (CI lower bound > 0)  # the decisive one: does
+      test-time drift detection add value over validation-only fusion?
+
+pass_condition:
+  reliability_routing_validated: H1 AND H2 AND H3 all pass in modality_failure regime
+  consistency_check: in the clean regime reliability_gate ~ no_reliability (drift
+    detection inert when nothing fails) -- expected and honest
+
+integrity:
+  used_test_labels_for_selection_or_drift: false   # drift uses test SCORE distribution only
+  one_shot: true
+  honest_note: >
+    If H3 fails, reliability routing is refuted in its LAST plausible regime and the
+    project's reliability claim is permanently closed. If H1-H3 pass, the honest
+    contribution is precise: reliability routing helps ONLY under independent
+    multimodal failure, not in single-input meta-routing.

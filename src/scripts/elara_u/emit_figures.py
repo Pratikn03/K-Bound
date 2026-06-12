@@ -122,17 +122,41 @@ def _architecture():
 
 
 def _coverage():
-    fams = sorted(set(FAM.tolist()))
-    counts = {f: int((FAM == f).sum()) for f in fams}
-    planned = {"time_series": 0, "industrial_v2": 0, "multimodal_3d": 0}
-    labels = list(counts) + list(planned)
-    vals = [counts[k] for k in counts] + [planned[k] for k in planned]
-    colors = ["#2c7fb8"] * len(counts) + ["#cccccc"] * len(planned)
-    plt.figure(figsize=(7, 3))
+    """Coverage map: 5 main-suite families (blue) + completed auxiliary/boundary families
+    (green, real counts from their result JSONs) + still-planned families (grey). Counts
+    trace to verified files; missing files degrade gracefully to 0/grey."""
+    def _n(path, key="n_tasks"):
+        p = EXP / path
+        if not p.exists():
+            return 0
+        try:
+            return int(json.loads(p.read_text()).get(key, 0))
+        except Exception:
+            return 0
+    def _d23_cats():
+        tot = 0
+        for fn in ("multimodal_reliability_results.json", "multimodal_reliability_results_mvtec3d.json",
+                   "multimodal_reliability_results_3d_adam.json", "multimodal_reliability_results_mulsen.json"):
+            p = EXP / fn
+            if p.exists():
+                try:
+                    tot += int(json.loads(p.read_text()).get("n_categories", 0))
+                except Exception:
+                    pass
+        return tot
+    main = {f: int((FAM == f).sum()) for f in sorted(set(FAM.tolist()))}
+    aux = {"time-series\n(NAB+SMD)": _n("timeseries_results.json") + _n("smd_results.json"),
+           "industrial\n(MVTec+VisA)": _n("industrial_benchmark.json"),
+           "multimodal/3D\n(D23, 3 sets)": _d23_cats()}
+    planned = {"OpenOOD": 0, "MVTec AD~2": 0}
+    labels = list(main) + list(aux) + list(planned)
+    vals = list(main.values()) + list(aux.values()) + list(planned.values())
+    colors = ["#2c7fb8"] * len(main) + ["#41ab5d"] * len(aux) + ["#cccccc"] * len(planned)
+    plt.figure(figsize=(8, 3.2))
     plt.bar(labels, vals, color=colors)
-    plt.ylabel("tasks in current archive")
-    plt.title("Benchmark coverage: current (blue) + planned (grey)")
-    plt.xticks(rotation=25, ha="right", fontsize=8)
+    plt.ylabel("tasks / categories scored")
+    plt.title("Benchmark coverage: main suite (blue) + completed auxiliary (green) + planned (grey)")
+    plt.xticks(rotation=25, ha="right", fontsize=7.5)
     for i, v in enumerate(vals):
         plt.text(i, v + 0.8, str(v), ha="center", fontsize=8)
     plt.tight_layout(); plt.savefig(FIG / "elara_u_coverage.png", dpi=150); plt.close()
@@ -150,12 +174,56 @@ def _lifecycle():
             _arrow(ax, (x + 0.16, 0.58), (x + 0.19, 0.58))
         x += 0.19
     _box(ax, (0.20, 0.12), (0.60, 0.18),
-         "Stacking beats selection (verified); reliability routing is negative (3 regimes + D22).\n"
-         "Multimodal reliability test is pre-registered for the regime where it could help.",
+         "Stacking beats selection (verified); reliability routing is negative for single-input (3 regimes + D22).\n"
+         "Multimodal reliability gate VALIDATED on 4 real datasets where modalities fail independently (D23).",
          "#fff5eb", "#d95f02", fs=8)
     ax.set_xlim(0, 1); ax.set_ylim(0, 1)
     ax.set_title("ELARA-U evidence lifecycle", fontsize=11)
     plt.tight_layout(); plt.savefig(FIG / "elara_u_lifecycle.png", dpi=150); plt.close(fig)
+
+
+def _d23_multidataset():
+    """D23 cross-dataset figure: failure-regime AUROC of the four fusion strategies on
+    every real multimodal dataset run under the canonical noise protocol. Reads only the
+    verified per-dataset result JSONs; a check mark annotates datasets where all three
+    pre-registered hypotheses (H1,H2,H3) pass. Honest: non-passing datasets are shown,
+    not hidden."""
+    order = [("Real-IAD-D3", "multimodal_reliability_results.json"),
+             ("MVTec-3D", "multimodal_reliability_results_mvtec3d.json"),
+             ("3D-ADAM", "multimodal_reliability_results_3d_adam.json"),
+             ("MulSen-AD", "multimodal_reliability_results_mulsen.json")]
+    methods = ["equal_weight", "stale_auto_select", "no_reliability", "reliability_gate"]
+    mlbl = {"equal_weight": "equal-weight", "stale_auto_select": "stale auto-select",
+            "no_reliability": "valid.-only fusion", "reliability_gate": "reliability gate"}
+    mcol = {"equal_weight": "#9ecae1", "stale_auto_select": "#fdae6b",
+            "no_reliability": "#a1d99b", "reliability_gate": "#d95f02"}
+    rows = []
+    for tag, fn in order:
+        p = EXP / fn
+        if not p.exists():
+            continue
+        d = json.loads(p.read_text())
+        mf = d.get("regimes", {}).get("modality_failure", {}).get("mean_auroc")
+        if not mf:
+            continue
+        rows.append((tag, mf, bool(d.get("reliability_validated")), int(d.get("n_categories", 0))))
+    if not rows:
+        return False
+    x = np.arange(len(rows)); w = 0.2
+    plt.figure(figsize=(7, 3.2))
+    for k, m in enumerate(methods):
+        plt.bar(x + (k - 1.5) * w, [r[1].get(m, np.nan) for r in rows], w,
+                label=mlbl[m], color=mcol[m])
+    plt.axhline(0.5, color="k", lw=0.7, ls=":")
+    for i, r in enumerate(rows):
+        if r[2]:
+            plt.text(i, 1.02, "H1,H2,H3 ✓", ha="center", fontsize=7.5, color="#1a7a1a")
+    plt.xticks(x, [f"{r[0]}\n({r[3]} cat.)" for r in rows], fontsize=8)
+    plt.ylim(0.3, 1.12); plt.ylabel("AUROC under modality failure")
+    plt.title("D23: reliability gate recovers AUROC when a modality fails independently")
+    plt.legend(fontsize=7, ncol=4, loc="lower center", bbox_to_anchor=(0.5, -0.02), framealpha=0.9)
+    plt.tight_layout(); plt.savefig(FIG / "elara_u_d23_multidataset.png", dpi=150); plt.close()
+    return True
 
 
 def main() -> int:
@@ -169,7 +237,10 @@ def main() -> int:
     _architecture()
     _coverage()
     _lifecycle()
-    print(f"wrote 8 figures to {FIG} from VERIFIED data")
+    n = 8
+    if _d23_multidataset():
+        n += 1
+    print(f"wrote {n} figures to {FIG} from VERIFIED data")
     return 0
 
 

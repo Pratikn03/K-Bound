@@ -1,0 +1,513 @@
+# Codebase Map (auto-generated — every .py parsed)
+
+Parsed **494 files / 72677 LOC**.
+
+
+## UAIS-legacy  (246 files, 40935 LOC)
+
+- `scripts/ci_smoke.py` (28L) — Tiny smoke check for CI.  ·  main
+- `scripts/download_data.py` (176L) — Download helper for NLP (Enron) and Vision (CIFAR-10) datasets.  ·  makedirs, download_file, download_enron_via_kaggle, download_enron_manual, download_enron, download_cifar10
+- `scripts/patch_hyperparameters.py` (49L)  ·  patch_configs
+- `src/__init__.py` (1L) — Source namespace for UAIS.
+- `src/elara/__init__.py` (6L) — ELARA Phase 2 — research module namespace.
+- `src/elara/certification/__init__.py` (26L) — Phase 2.G certification utilities.
+- `src/elara/certification/risk_dominance.py` (262L) — Phase 2.G — risk-dominance term estimation.  ·  RiskDominanceTerms, _loss_proxy, estimate_risk_dominance, risk_dominance_margin, dominates_at_prevalence, risk_dominance_margin_lcb
+- `src/elara/certification/switching_certificate.py` (165L) — Phase 2.G — finite-sample switching certificate.  ·  SwitchingCertificate, empirical_bernstein_lcb, _loss_proxy, paired_bootstrap_lcb, fired_subset_certificate
+- `src/elara/family_b/__init__.py` (25L) — Phase 2.2B — Family-B (mechanism) experiment infrastructure.
+- `src/elara/family_b/corruption.py` (166L) — Phase 2.2B — k-of-D corruption helpers (validation-fold safe).  ·  KOfDCorruptionResult, inject_corruption, validation_fold_corruption_grid
+- `src/elara/family_b/ks_window.py` (13L) — Phase 2.2B — KS-window-size sweep grid (B-MECH-4).
+- `src/elara/family_b/mixture_shift.py` (145L) — Phase 2.2B — pure mixture-shift sampler for B-MECH-3.  ·  MixtureShiftResample, pure_mixture_shift_resample
+- `src/elara/theory/__init__.py` (15L) — Formal theorem stack registry and helpers.
+- `src/elara/theory/gdr_minimax.py` (177L) — GDR — minimax optimality of the coherence-certified switching policy.  ·  GDRMinimaxResult, regret, _max_regret_over_pi, minimax_value, gdr_separation_eps, validate_minimax
+- `src/elara/theory/novel_theorem_bounds.py` (192L) — Novel quantitative theorem upgrades (T2, T3, T4, T6) + GDR formal test.  ·  _phi, _phi_inv, _erfinv, mixture_ks_inflation_bound, stochastic_dilution_prob, min_failed_domains_for_activation
+- `src/elara/theory/t1_impossibility.py` (290L) — T1 — Quality-blind fusion impossibility (two formal results).  ·  T1SparseDistribution, T1CoherentDistribution, ReliabilityBlindMean, ReliabilityBlindMedian, ReliabilityBlindMax, OracleReliabilityWeighted
+- `src/elara/theory/t2_mixture_entropy.py` (245L) — T2 — Global-KS mixture confounding (mixture-entropy bound + real-cohort test).  ·  T2CohortResult, mixture_entropy, total_variation, global_ks_inflation_bound, category_aware_ks, validate_against_cohorts
+- `src/elara/theory/t3_mean_gate_miss.py` (198L) — T3 — Mean-gate dilution failure (closed-form miss probability).  ·  T3Prediction, _phi, mean_gate_miss_probability, deterministic_miss_threshold, validate_against_empirical
+- `src/elara/theory/t6_sequential_detection.py` (177L) — T6 — KS false-fire / detection boundary as a sequential-detection theorem.  ·  T6SweepValidation, _phi, kolmogorov_false_alarm_rate, average_run_length_h0, detection_power, average_detection_delay
+- `src/elara/theory/t8_certified_heterogeneous_fusion.py` (235L) — T8: Certified heterogeneous fusion (CHF) under category / batch shift.  ·  CHFCertificate, batch_coherence_scores, _safe_auc, select_chf_route_on_validation, predict_chf_shift_aware, predict_chf
+- `src/elara/theory/t9_clean_transfer_ceiling.py` (466L) — T9 — Clean-transfer reliability-gate impossibility (optimality-gap closure).  ·  RedundantGaussianScores, ComplementaryCeilingScores, _phi, _phi_inv, neyman_pearson_auc_gaussian, linear_rule_auc_gaussian
+- `src/elara/theory/theorem_registry.py` (259L) — Central registry mapping thesis theorems T1--T7 to code and artifacts.  ·  TheoremSpec, list_theorems, artifact_status
+- `src/orchestration/__init__.py` (39L) — Lightweight orchestration stubs for UAIS-V.  ·  __getattr__
+- `src/orchestration/behavior_flow.py` (22L) — Best-effort behavior pipeline wrapper.  ·  behavior_pipeline
+- `src/orchestration/cyber_flow.py` (22L) — Best-effort cyber pipeline wrapper.  ·  cyber_pipeline
+- `src/orchestration/fraud_flow.py` (22L) — Best-effort fraud pipeline wrapper.  ·  fraud_pipeline
+- `src/orchestration/fusion_flow.py` (36L) — Best-effort fusion pipeline wrapper.  ·  fusion_pipeline
+- `src/orchestration/nlp_flow.py` (32L) — Stub NLP pipeline wrapper.  ·  nlp_pipeline
+- `src/orchestration/vision_flow.py` (26L) — Stub Vision pipeline wrapper.  ·  vision_pipeline
+- `src/pipeline/build_features.py` (78L) — Build feature tables from lake parquet into processed feature store.  ·  _load_config, build_features, main
+- `src/pipeline/ingest.py` (93L) — Data ingestion utilities: raw -> lake parquet with basic validation.  ·  _timestamp_suffix, ingest_csv, ingest_fraud, ingest_cyber, ingest_behavior, main
+- `src/pipeline/train_models.py` (157L) — Train supervised models using processed feature tables with optional MLflow logg  ·  _load_config, _maybe_start_mlflow, _log_mlflow_params_metrics, train_from_config, main
+- `src/scripts/__init__.py` (0L)
+- `src/scripts/audit_canonical_label_semantics.py` (500L) — Phase 1.A — Canonical label / metric semantics audit.  ·  _safe_metric, constant_baseline_metrics, random_baseline_metrics, load_test_labels, label_definition_audit, metric_function_audit
+- `src/scripts/audit_gate_decision_rule_e2e.py` (218L) — End-to-end audit of the coherence-certified gate decision rule (GDR).  ·  _loss_proxy, _scenario_result, _synthetic_coherent, _synthetic_heterogeneous, _load_archive_scenario, run_audit
+- `src/scripts/audit_gate_p_production.py` (193L) — Gate P — production-readiness engineering audit (re-runnable, evidence-based).  ·  _read, grade, main
+- `src/scripts/audit_gdr_real_benchmark.py` (232L) — GDR real-benchmark validation: does drift coherence predict where switching help  ·  _reliability_from_scores, _coherence, _load_csv, audit_coherent_regime, audit_heterogeneous_regime, emit_tex
+- `src/scripts/audit_meta_router_pac.py` (129L) — Audit the PAC bound for the RGA+ meta-router on a logged results fold.  ·  _pac_slack, _infer_n, audit, main
+- `src/scripts/audit_meta_router_pac_massart.py` (117L) — T7 (novel): tight meta-router generalization bound via Massart's finite-class le  ·  _count_candidates, massart_slack, loose_slack, main
+- `src/scripts/audit_meta_router_pac_tight.py` (264L) — Tightened PAC bound audit for the RGA+ meta-router (T7).  ·  _empirical_router_bounds, _slack_tight, _slack_loose, audit_cell, main
+- `src/scripts/audit_switching_certificate_t5.py` (204L) — Finite-sample switching-certificate audit (T5).  ·  _dig, _per_seed_aurocs, paired_bootstrap_lcb, empirical_bernstein_lcb, audit_one, main
+- `src/scripts/audit_switching_certificate_t5_persample.py` (209L) — Per-sample finite-sample switching-certificate audit (T5, Phase-2).  ·  _load_method_frames, _loss, audit_condition, emit_tex, main
+- `src/scripts/audit_switching_sample_complexity_t5b.py` (116L) — T5b (novel): sample-complexity guarantee for the switching certificate.  ·  n_star, cert, main
+- `src/scripts/benchmark_inference_runtime.py` (212L) — Measure RGA's inference-time overhead vs. static attention.  ·  _build_synthetic_inputs, _build_model_and_estimator, _time_static, _time_rga, _summary, _write_latex_table
+- `src/scripts/build_3d_adam_patchcore_v3.py` (141L) — Build 3D-ADAM v3 transfer fusion inputs with TRUE patch-level PatchCore.  ·  _bank_paths, main
+- `src/scripts/build_metrics_manifest.py` (263L) — Phase 1.E — build the locked metrics manifest.  ·  _load_csv, _idx, _float_or_none, main
+- `src/scripts/build_mvtec3d_patchcore_v3.py` (144L) — Build MVTec 3D-AD v3 fusion inputs with TRUE patch-level PatchCore scores.  ·  _bank_paths, main
+- `src/scripts/derive_noise_floor_csv.py` (107L) — Derive a noise-floor variant of an existing fusion CSV.  ·  derive_noise_floor, main
+- `src/scripts/derive_supervised_paired_csv.py` (94L) — Derive a supervised-paired variant from an existing fusion CSV.  ·  derive, main
+- `src/scripts/download_datasets.py` (105L) — Auto-download datasets for the UAIS project using kagglehub.  ·  ensure_dir, download_creditcard_fraud, download_unsw_nb15, download_online_shoppers_intention, main
+- `src/scripts/download_mvtec3d_kaggle_subset.py` (202L) — Download a small, auditable MVTec 3D-AD RGB/XYZ subset from Kaggle.  ·  _stem_key, _sorted_stems, _paired_paths, select_subset_files, _list_dataset_files, download_subset
+- `src/scripts/download_nlp_vision.py` (246L) — Download NLP (Enron emails) and Vision (CIFAR-10) datasets for UAIS-V.  ·  makedirs, download_file, download_enron_via_kaggle, download_enron_manual_placeholder, download_enron, download_cifar10
+- `src/scripts/emit_category_mixture_t2_table.py` (73L) — Emit the T2 (Global-KS mixture confounding) validation table.  ·  _fmt, render, main
+- `src/scripts/emit_causal_attribution.py` (74L) — Emit per-domain causal attribution tables (B3 Double-ML estimates).  ·  _fmt, _ci, render_table, main
+- `src/scripts/emit_fourth_benchmark_scaffold.py` (88L) — Emit the fourth-paired-benchmark scaffold table.  ·  render_table, main
+- `src/scripts/emit_gate_decision_rule_table.py` (73L) — Emit GDR end-to-end audit table.  ·  _fmt, render, main
+- `src/scripts/emit_gradient_adversarial_table.py` (84L) — Emit a LaTeX table summarising the gradient-adversarial sweep.  ·  _fmt, render_table, main
+- `src/scripts/emit_k_of_d_corruption_table.py` (202L) — Emit k-of-D corruption assets that validate Theorem T3.  ·  _fmt, _escape_latex, _delta, _ordered_rows, render_table, plot_figure
+- `src/scripts/emit_ks_power_t6_table.py` (84L) — Emit T6 KS window power table from B-MECH-4 sweep CSV.  ·  _fmt, _aggregate, render, main
+- `src/scripts/emit_locked_audited_statistics.py` (421L) — Phase 1.D — emit the locked audited-reanalysis statistical artifacts.  ·  _load_csv, _holm_bonferroni, _safe_float, main
+- `src/scripts/emit_meta_router_pac_t7_table.py` (63L) — Emit T7 PAC meta-router slack table.  ·  _fmt, render, main
+- `src/scripts/emit_meta_router_pac_t7_tight_table.py` (72L) — Emit the tightened T7 PAC slack table (loose vs tight side-by-side).  ·  _fmt, render, main
+- `src/scripts/emit_milestone1_comparison.py` (170L) — Emit the Milestone-1 cross-protocol comparison table for the paper.  ·  _fmt, _dig, _method_label, _cell, render_table, main
+- `src/scripts/emit_milestone2_cross_benchmark.py` (244L) — Emit the cross-benchmark master comparison table — Phase 1 audited reanalysis.  ·  _fmt, _fmt_signed, _fmt_p, _load_csv, _idx_by_cell, _static_rga_from_json
+- `src/scripts/emit_mvtec3d_assets.py` (128L) — Render MVTec 3D-AD paper assets with an ``mvtec3d_`` filename prefix.  ·  _rename_prefixed_files, main
+- `src/scripts/emit_mvtec3d_sota_demarcation.py` (325L) — Emit the MVTec 3D-AD SOTA demarcation table + companion bar-chart figure.  ·  _fmt, _dig, _local_patchcore3d_baseline, _local_image_auroc, render_table, render_figure
+- `src/scripts/emit_per_category_breakdown.py` (168L) — Emit per-category clean-AUROC tables for MVTec 3D-AD + LOCO-AD variants.  ·  _fmt, render_per_category_table, _safe_cat_name, main
+- `src/scripts/emit_phase2_registries_v2.py` (710L) — Phase 2.1 — emit corrected Phase-2 registries as v2 sibling files.  ·  _write_csv, main
+- `src/scripts/emit_rga_plus_ablation.py` (150L) — Emit a per-benchmark RGA+ component ablation table.  ·  _fmt, _dig, _method_label, render_table, main
+- `src/scripts/emit_rga_plus_validation_frozen_selection.py` (344L) — Phase 1.B — emit validation-frozen RGA+ headline selection.  ·  _selected_validation_auc, per_seed_validation_frozen_selection, ensemble_selection, main
+- `src/scripts/emit_risk_dominance_t4_table.py` (97L) — Emit T4 prevalence-sensitivity table from locked B-CERT-1 v2 terms.  ·  _fmt, _load_terms, render, main
+- `src/scripts/emit_switching_certificate_t5_table.py` (74L) — Emit the T5 (finite-sample switching certificate) audit table.  ·  _fmt, render, main
+- `src/scripts/emit_t8_chf_table.py` (54L) — Render docs/research/tables/t8_chf.tex from the VERIFIED, surviving T8 validatio  ·  _repo_root, main
+- `src/scripts/emit_theory_experiment_mapping.py` (144L) — Emit the thesis theory-to-experiment mapping table from the theorem registry.  ·  _exists, _mapping_rows, render, main
+- `src/scripts/emit_v3_tables.py` (75L) — Emit v3 result tables (in-domain MVTec 3D-AD + degradation-regime transfer).  ·  emit_indomain, emit_degradation
+- `src/scripts/eval_gradient_adversarial.py` (218L) — Gradient-based adversarial robustness for the fusion head.  ·  _fgsm_attack, _pgd_attack, run_gradient_adversarial, main
+- `src/scripts/eval_patchcore3d_baseline.py` (281L) — Run a faithful PatchCore-3D baseline on MVTec 3D-AD canonical one-class.  ·  _patch_features, _coreset_subsample, _patch_knn_distances, evaluate_patchcore3d, main
+- `src/scripts/family_d_v2_build_fusion_csv.py` (177L) — Phase 2.2E — build Eyecandies fusion-input CSV from per-category features.  ·  _score_modality, _pca_directions, _build_one_category, main
+- `src/scripts/family_d_v2_download_eyecandies.py` (106L) — Phase 2.2D — hash-only Eyecandies download via gdown.  ·  _sha256, main
+- `src/scripts/family_d_v2_execute.py` (386L) — Phase 2.2E — Family-D v2 one-time held-out execution under frozen contract.  ·  _read_protocol, _per_sample_features, _apply_operator, _compute_reliability_and_predict, _seed_subsample, run_one_seed
+- `src/scripts/family_d_v2_extract_features.py` (190L) — Phase 2.2E — Eyecandies per-modality one-class scoring pipeline.  ·  _device, _make_backbone, _featurize_image, _featurize_batch, _process_category, main
+- `src/scripts/family_d_v2_inference.py` (339L) — Phase 2.2E — Family-D v2 inference: read test labels (one-time, authorised),  ·  _read_eyecandies_test_labels, _load_per_seed_predictions, _stack_ensemble, _decision, main
+- `src/scripts/family_d_v2_schema_verify.py` (232L) — Phase 2.2D — Eyecandies schema verification (no label inspection, no model run).  ·  _split_from_path, _categorise, main
+- `src/scripts/family_d_v2_write_partition_manifest.py` (157L) — Phase 2.2D — emit FAMILY_D_PARTITION_MANIFEST_v2.json with real archive SHA256s.  ·  _sha256, _git_head, main
+- `src/scripts/family_d_v3_fill_test_labels.py` (147L) — Phase 2.2E — Authorised final-metric label-fill step.  ·  _extract_test_labels, main
+- `src/scripts/family_d_v4_execute.py` (301L) — Family-D v4 EXPLORATORY execution under post-v3 modified protocol.  ·  _read_protocol, _per_sample_features, _apply_soft_operator, _compute_reliability_and_predict, _seed_subsample, run_one_seed
+- `src/scripts/family_d_v4_inference.py` (355L) — Family-D v4 EXPLORATORY inference.  ·  _read_eyecandies_test_labels, _load_per_seed_predictions, _stack_ensemble, _brier, _per_seed_aucs_and_briers, _paired_bootstrap_ci
+- `src/scripts/generate_attention_reports.py` (97L) — Generate attention fusion report plots from harness outputs.  ·  _resolve_path, _load_harness_summary, _plot_from_attention_weights, _plot_from_harness_summary, generate_attention_reports
+- `src/scripts/generate_craf_paper_assets.py` (810L) — Generate paper tables and figures from reliability-gated fusion benchmark JSON.  ·  _finite, _fmt, _fmt_pm, _fmt_ci, _fmt_pm_ci, _latex_text
+- `src/scripts/generate_healthcare_gap_assets.py` (232L) — Generate manuscript tables and figures for the healthcare gap audit.  ·  _load_report, _fmt, _latex_text, _yes_no, write_gap_closure_table, write_gap4_audit_table
+- `src/scripts/generate_reports.py` (51L) — Generate lightweight reports (JSON aggregation).  ·  load_domain_metrics, main
+- `src/scripts/investigate_degradation_transfer_v3.py` (161L) — Degradation-regime transfer investigation: does RGA's reliability gate beat  ·  _pivot, _ks_reliability, _auroc, _boot_delta, main
+- `src/scripts/monitor_calibration.py` (220L) — Streaming calibration / drift monitor for the reliability-gated fusion path.  ·  WindowEvent, _compute_ece, _per_domain_pivot, _reference_distributions, iter_windows, run_monitor
+- `src/scripts/phase1_1_canonical_cleanup.py` (251L) — Phase 1.1 — strip degenerate PR-AUC / ECE / Brier from promoted canonical  ·  _fmt_ci, _fmt, _gather_canonical_rows, emit_canonical_roc_ci_table, emit_canonical_calibration_diagnostic, plot_canonical_roc_only
+- `src/scripts/prepare_bidmc_healthcare_fusion_benchmark.py` (177L) — Build multimodal fusion inputs from PhysioNet BIDMC numerics (local raw data).  ·  _minmax, _load_cases, _patient_splits, build_bidmc_fusion_frame, main
+- `src/scripts/prepare_healthcare_fusion_benchmark.py` (240L) — Build a naturally-paired multimodal fusion benchmark from GridPulse vitals.  ·  _domain_feature_columns, _minmax_clip, _patient_stratified_assignment, build_healthcare_fusion_frame, main
+- `src/scripts/prepare_mulsen_fusion_benchmark.py` (163L) — Prepare naturally paired MulSen-AD RGB + infrared fusion inputs.  ·  MulSenPairedObservation, MulSenPair, _image_files, discover_mulsen_rgb_infrared_pairs, main
+- `src/scripts/prepare_mvtec3d_fusion_benchmark.py` (574L) — Prepare a naturally paired MVTec 3D-AD score-level fusion benchmark.  ·  PairedObservation, _is_visible_dir, _image_files, _find_depth_dir, discover_mvtec3d_pairs, _read_image_array
+- `src/scripts/prepare_mvtec_loco_fusion_benchmark.py` (298L) — Prepare a paired MVTec LOCO-AD fusion benchmark.  ·  LocoObservation, _is_visible, discover_loco_pairs, _make_edge_proxy, _supervised_paired_split, build_loco_fusion_frame
+- `src/scripts/prepare_real3d_fusion_benchmark.py` (553L) — Prepare a naturally paired Real3D-AD fusion benchmark.  ·  Real3DObservation, _parse_defect_from_stem, _is_visible_pcd, _discover_real3d_pairs, _read_pcd_binary, _read_pcd_points
+- `src/scripts/prepare_real_fusion_benchmark.py` (524L) — Prepare a real-domain score-level fusion benchmark for CRAF.  ·  DomainSource, _balanced_sample, _safe_auc, _safe_pr_auc, _tabular_pipeline, _text_pipeline
+- `src/scripts/prepare_realfusion_la_benchmark.py` (424L) — Prepare the ELARA-Bench-LA benchmark from four public tabular datasets.  ·  _load_creditcard, _load_unswnb15, _load_online_shoppers, _load_news_text, _compute_score_and_embedding, _label_align
+- `src/scripts/prepare_unsw_paired_fusion_benchmark.py` (365L) — Build a naturally-paired multimodal fusion benchmark from UNSW-NB15.  ·  _safe_numeric, _minmax_clip, _patient_style_stratified_split, _domain_score, build_unsw_fusion_frame, main
+- `src/scripts/prepare_visa_fusion_benchmark.py` (249L) — Prepare a paired VisA fusion benchmark.  ·  VisaObservation, discover_visa_observations, _make_edge_proxy, build_visa_fusion_frame, main
+- `src/scripts/run_attention_harness.py` (11L) — CLI wrapper to run attention fusion evaluation harness.  ·  main
+- `src/scripts/run_attention_validation.py` (11L) — CLI wrapper to validate attention fusion input schema.  ·  main
+- `src/scripts/run_behavior_experiment.py` (83L) — CLI: behavior anomaly detection run (autoencoder + LOF) using current components  ·  save_json, main
+- `src/scripts/run_breakthrough_experiment.py` (3016L) — End-to-end reliability-gated multimodal fusion experiment.  ·  _resolve, _coerce_anomaly_labels, _filter_labeled_test_indices, _load_data, _sample_column_values, _configured_split_values
+- `src/scripts/run_calibration_transfer_study.py` (269L) — Phase 3 / Theorem T6 — controlled calibration-transfer study.  ·  _make_domain_scores, _make_dataset, _fuse_mean, _fuse_reliability_weighted, _apply_transfer_shift, _collapse_domain
+- `src/scripts/run_cross_modal_gate_e.py` (130L) — Gate-E research run: can a stronger CROSS-MODAL fusion beat the  ·  _pivot, _sar_test_scores, _boot, main
+- `src/scripts/run_cv_benchmark.py` (323L) — Unified 5-fold cross-validation benchmark for ALL baseline families.  ·  _make_synthetic, _load_real, build_specs, _to_serializable, main
+- `src/scripts/run_cyber_experiment.py` (102L) — CLI: end-to-end cyber intrusion run using in-repo components.  ·  save_json, main
+- `src/scripts/run_false_fire_power_study.py` (193L) — Phase 8 / Theorem T5 — false-fire vs detection-power trade-off.  ·  _degrade, _mean_reliability, run_study, main
+- `src/scripts/run_fraud_experiment.py` (157L) — Run a full fraud experiment end-to-end (v1).  ·  main
+- `src/scripts/run_fusion_experiment.py` (249L) — Deprecated CLI for legacy dashboard fusion.  ·  save_json, _score_confidence, _train_fraud_scores, _train_cyber_scores, _train_behavior_scores, _pad_embeddings
+- `src/scripts/run_partial_domain_failure_study.py` (174L) — Phase 4 / Theorem T3 — partial (k-of-D) domain-failure study.  ·  _fuse_mean, _fuse_weighted, _corrupt_noise, run_study, main
+- `src/scripts/run_per_sample_gating_benchmark.py` (206L) — ISSUE 2 benchmark: batch-level vs genuine per-sample reliability gating.  ·  _base_cfg, _reliability_dispersion, _run_mode, main
+- `src/scripts/run_phase2_b_cert_1_v2.py` (194L) — Phase 2.2B.2 / Step 5 — B-CERT-1 v2.  ·  _load_per_seed_method, _ensemble, main
+- `src/scripts/run_phase2_b_mech_1_clean_arm.py` (174L) — Phase 2.2B.2 / Step 5 — add the clean k=0 arm to the B-MECH-1 archive.  ·  _device, run_one_seed, _safe_auc, main
+- `src/scripts/run_phase2_b_mech_1_inference.py` (149L) — Phase 2.2B.exec — B-MECH-1 seed-ensemble inference + Holm K=2.  ·  _load_per_seed, main
+- `src/scripts/run_phase2_certificate_audit.py` (258L) — Phase 2.2B B-CERT-1 — risk-dominance + retrospective switching certificate.  ·  _registry_row, _validate, _scan_b_mech_1_archive, _load_per_seed, _pair_static_and_rga, _compute_one_scenario
+- `src/scripts/run_phase2_family_a_analysis.py` (308L) — Phase 2.2A — Family-A v2 audited analysis driver.  ·  _registry_lookup, _slug, _cell_dir, _v2_seed_metrics_path, _seed_metrics_for, _load_test_predictions
+- `src/scripts/run_phase2_family_a_cell.py` (294L) — Phase 2.2A — registry-driven Family-A cell driver.  ·  _registry_row, _validate_cell, _config_for, _cell_dir_slug, _verify_not_overwriting_a1_historical, run_cell
+- `src/scripts/run_phase2_family_d_v2_cell.py` (718L) — Phase 2.2E (Family-D v3) — one-time held-out cell evaluation driver.  ·  _device, _sha256_file, _preflight_checks, _apply_degradation_operator, _safe_auc, _select_tau_on_validation_only
+- `src/scripts/run_phase2_family_d_v2_inference.py` (646L) — Phase 2.2E (Family-D v3) — DeLong + Holm–Bonferroni inference.  ·  _kernel, _delong_auc_variance, _delong_paired_test, _bootstrap_delta_ci, _holm_bonferroni, _load_per_seed_csv
+- `src/scripts/run_phase2_ks_power_sweep.py` (430L) — Phase 2.2B B-MECH-4 — KS true-degradation power × window-size sweep.  ·  _registry_row, _validate, _device, _safe_auc, _apply_degradation, _build_windowed_estimator
+- `src/scripts/run_phase2_mechanism_replication.py` (274L) — Phase 2.2B B-MECH-1 — primary B1/B2 coherent-collapse replication.  ·  _device, _registry_row, _validate, run_one_seed, _safe_auc, main
+- `src/scripts/run_phase2_mixture_shift.py` (308L) — Phase 2.2B B-MECH-3 — pure mixture-shift false-fire control (domain-composition   ·  _registry_row, _validate, _device, _generate_target_proportions, _compute_gate_fire_rates, run_one_seed_mixture_shift
+- `src/scripts/run_phase2_powered_audited_analysis.py` (161L) — Phase 2.A.4 — run the seed-ensemble audited analysis on the  ·  _load_test_predictions, _load_rga_plus_validation_frozen, main
+- `src/scripts/run_phase2_powered_audited_pilot.py` (436L) — Phase 2.C pilot — powered audited reproduction of A-POWERED-1 with archiving.  ·  _device, _safe_auc, run_one_seed, main
+- `src/scripts/run_phase2_rga_v2_gate_sweep.py` (779L) — Phase 2.2B B-MECH-2 — RGA-v2 partial-failure gate sweep.  ·  _device, _registry_row, _validate, _load_contract, _safe_auc, _compute_gate_decision
+- `src/scripts/run_phase3_calibration_transfer_closure.py` (217L) — Phase 3 — calibration-transfer closure orchestrator.  ·  _load_protocol, _sha256, _require, _validate_freeze, _resolve_exec_paths, _write_manifest
+- `src/scripts/run_rga_gated_cw_transfer.py` (159L) — RGA-gated-CW: eliminate the clean-transfer regression by defaulting the gate  ·  _pivot, _ksr, _boot, run, main
+- `src/scripts/run_sequence_ablation.py` (143L) — CLI runner for the sequence model ablation study.  ·  _make_synthetic, _load_npz, parse_args, main
+- `src/scripts/run_temporal_monitoring_study.py` (212L) — Phase 10 / Pillar P6 — deployment-style temporal monitoring + abstention.  ·  _healthy_divergence, run_study, main
+- `src/scripts/run_union_research_system.py` (694L) — Run the unified ELARA research system.  ·  Step, StepResult, _python, _path_has_data, _missing_required, build_plan
+- `src/scripts/select_audited_validation_frozen_comparator.py` (215L) — Phase 1.C — emit the validation-frozen primary comparator per cell.  ·  per_seed_validation_scores, aggregate_per_cell, main
+- `src/scripts/summarize_family_d_eye3.py` (165L) — Aggregate Family-D D-EYE-3 seed results.  ·  _to_float, _bootstrap_ci, main
+- `src/scripts/universal_router_pilot.py` (215L) — Universal anomaly meta-routing PILOT (make-or-break, tabular only).  ·  _load, _detectors, _score_dataset, run, _all_classical_names, main
+- `src/scripts/validate_category_mixture_t2.py` (128L) — Synthetic validation of Theorem T2 (Global-KS mixture confounding).  ·  _build_mixture, run_validation, main
+- `src/scripts/validate_gdr_minimax.py` (77L) — Validate the GDR minimax theorem on a synthetic two-regime operator family.  ·  emit_tex, main
+- `src/scripts/validate_healthcare_gap_closure.py` (44L) — Run the healthcare/clinical gap-closure validation audit.  ·  main
+- `src/scripts/validate_manuscript_claims.py` (129L) — Phase 1.E — manuscript claim validator.  ·  scan_tokens, main
+- `src/scripts/validate_novel_theorems.py` (136L) — Validate the novel theorem bounds (T2/T3/T4/T6/GDR) against real artifacts  ·  validate_t3, validate_t6, validate_t4, validate_gdr, main
+- `src/scripts/validate_patchcore_bagel.py` (66L) — Correctness check: true patch-level PatchCore on MVTec 3D-AD bagel (RGB only).  ·  main
+- `src/scripts/validate_phase1_1_pdf_claims.py` (145L) — Phase 1.1 — deterministic validator for PDF-source-result consistency.  ·  _pdf_text, _count, main
+- `src/scripts/validate_phase2_prediction_archives.py` (111L) — Phase 2.B — validator for the prediction-archive index.  ·  _hash_file, main
+- `src/scripts/validate_t1_impossibility.py` (81L) — Empirically verify T1 quality-blind fusion impossibility on the  ·  emit_tex, main
+- `src/scripts/validate_t2_eyecandies_categories.py` (135L) — Validate T2 mixture-confounding on REAL Eyecandies category scores.  ·  emit_tex, main
+- `src/scripts/validate_t3_mean_gate_miss.py` (106L) — Validate T3 closed-form mean-gate miss probability against the  ·  emit_tex, main
+- `src/scripts/validate_t4_risk_dominance_sample_complexity.py` (147L) — T4 — finite-sample risk-dominance sample complexity.  ·  emit_tex, main
+- `src/scripts/validate_t6_sequential_detection.py` (126L) — Validate the T6 sequential-detection (CUSUM-style ARL/AED) theorem against  ·  _aggregate, emit_tex, main
+- `src/scripts/validate_t8_chf.py` (53L) — Emit T8 CHF validation artifact from flagship harness (M2 validation).  ·  main
+- `src/scripts/validate_t9_clean_transfer_ceiling.py` (211L) — Validate T9 (clean-transfer reliability-gate impossibility) two ways:  ·  _cross_fitted_oracle, real_data_arm, emit_tex, main
+- `src/scripts/validate_theorem_stack.py` (85L) — Validate that every theorem in the registry has its expected artifacts on disk.  ·  _run_script, validate, main
+- `src/uais/__init__.py` (16L) — Universal Anomaly Intelligence System (UAIS).
+- `src/uais/anomaly/__init__.py` (1L) — Anomaly detection models for UAIS.
+- `src/uais/anomaly/evaluate_anomaly.py` (16L) — Evaluation helpers for anomaly detectors.  ·  evaluate_anomaly_scores
+- `src/uais/anomaly/train_autoencoder.py` (39L) — Simple feedforward autoencoder for anomaly scoring.  ·  train_autoencoder
+- `src/uais/anomaly/train_isolation_forest.py` (100L) — Unsupervised anomaly detection models for fraud (v1).  ·  train_isolation_forest, _prep_numeric_features, compute_anomaly_score
+- `src/uais/anomaly/train_lof.py` (37L) — Local Outlier Factor training.  ·  train_lof
+- `src/uais/anomaly/train_ocsvm.py` (39L) — One-Class SVM training for anomaly scoring.  ·  train_ocsvm
+- `src/uais/app/__init__.py` (1L) — Local inference utilities for UAIS.
+- `src/uais/app/predict_example.py` (51L) — Local inference example for UAIS.  ·  load_artifact, predict, demo
+- `src/uais/config/__init__.py` (1L) — Configuration loading utilities.
+- `src/uais/config/config_loader.py` (38L) — Load and merge YAML configs.  ·  _load_yaml, _deep_merge, load_config
+- `src/uais/data/__init__.py` (1L) — Data loading and splitting modules.
+- `src/uais/data/download_fake_news.py` (64L) — Download Fake and Real News dataset via kagglehub (optional).  ·  download_fake_news, main
+- `src/uais/data/download_nlp_vision.py` (165L) — Download helper for NLP (Enron) and Vision (CIFAR-10) datasets.  ·  makedirs, download_file, download_enron_via_kaggle, download_enron_manual, download_enron, download_cifar10
+- `src/uais/data/load_behavior_data.py` (124L)  ·  _synthetic_behavior, _load_ldap_dir, load_behavior_data
+- `src/uais/data/load_cert_behavior_data.py` (60L) — Utilities to load CERT Insider Threat behavior logs  ·  get_cert_raw_dir, load_cert_logon, load_cert_behavior_minimal
+- `src/uais/data/load_cyber_data.py` (138L)  ·  _synthetic_cyber, _normalize_labels, _find_cyber_csvs, load_cyber_data
+- `src/uais/data/load_datasets.py` (141L) — Dataset loaders for UAIS-V (fraud/cyber/behavior + NLP/Vision).  ·  _load_all_tabular, load_fraud_data, load_cyber_data, load_behavior_data, load_nlp_data, load_vision_data
+- `src/uais/data/load_fraud_data.py` (181L) — Data loading utilities for fraud datasets (v1).  ·  _synthetic_fraud, _normalize_fraud_frame, _find_all_fraud_files, load_fraud_data, load_creditcard, get_fraud_datasets
+- `src/uais/data/load_paysim.py` (94L)  ·  _ensure_paysim, _synthetic_paysim, load_paysim
+- `src/uais/data/split_data.py` (27L) — Train/validation/test splits.  ·  split_train_val_test
+- `src/uais/drift/__init__.py` (1L) — Drift detection utilities.
+- `src/uais/drift/drift_nlp.py` (14L) — Stub for NLP drift detection.  ·  drift_report_nlp
+- `src/uais/drift/drift_tabular.py` (17L) — Tabular drift detection utilities.  ·  ks_drift
+- `src/uais/drift/drift_time_series.py` (16L) — Time-based drift and stability checks.  ·  rolling_mean_drift
+- `src/uais/drift/drift_vision.py` (11L) — Stub for vision drift detection.  ·  drift_report_vision
+- `src/uais/ensembles/__init__.py` (1L) — Ensembling helpers for UAIS.
+- `src/uais/ensembles/blending.py` (47L) — Simple blending utilities to combine supervised probabilities and anomaly scores  ·  blend_supervised_and_anomaly
+- `src/uais/ensembles/stacking.py` (24L) — Simple stacked generalization utilities.  ·  stack_predictions
+- `src/uais/explainability/__init__.py` (11L) — Explainability helpers (SHAP, LIME, sequence).
+- `src/uais/explainability/attention_visualizer.py` (127L) — Attention visualization helpers for fusion models.  ·  plot_attention_heatmap, summarize_attention_weights, plot_domain_contributions, plot_confidence_map
+- `src/uais/explainability/domain_contribution.py` (30L) — Aggregate attention weights into per-domain contributions.  ·  summarize_domain_contributions
+- `src/uais/explainability/explainer_utils.py` (17L) — Shared explainability helpers (stub).  ·  safe_import_shap
+- `src/uais/explainability/gradcam_explainer.py` (16L) — Thin wrapper around the existing vision_gradcam utilities.  ·  gradcam_on_image
+- `src/uais/explainability/interactive_attention_dash.py` (32L) — Interactive Streamlit dashboard for attention analysis.  ·  run_attention_dashboard
+- `src/uais/explainability/lime_explainer.py` (29L) — LIME helper functions.  ·  explain_with_lime
+- `src/uais/explainability/runner.py` (103L) — Central explainability runner for UAIS.  ·  shap_tabular, lime_tabular, lime_text, export_tabular_explainability
+- `src/uais/explainability/sequence_explainer.py` (16L) — Simple saliency for sequence models (heuristic).  ·  sequence_saliency
+- `src/uais/explainability/shap_explainer.py` (59L) — SHAP explainability utilities for fraud models (v1).  ·  compute_shap_values, plot_shap_summary
+- `src/uais/explainability/vision_gradcam.py` (76L) — Grad-CAM utility for vision models.  ·  grad_cam, save_gradcam
+- `src/uais/features/__init__.py` (1L) — Feature engineering utilities by domain.
+- `src/uais/features/behavior_features.py` (68L)  ·  build_behavior_feature_table
+- `src/uais/features/cert_behavior_features.py` (32L) — Feature engineering for CERT r4.2 (Insider Threat) behavior data.  ·  add_cert_behavior_features
+- `src/uais/features/cyber_features.py` (71L)  ·  build_cyber_feature_table
+- `src/uais/features/fraud_features.py` (163L) — Feature engineering for fraud detection (v1).  ·  add_basic_fraud_features, build_fraud_feature_table
+- `src/uais/features/scalers_encoders.py` (23L) — Reusable preprocessing pieces.  ·  build_preprocessor
+- `src/uais/generative/__init__.py` (10L)
+- `src/uais/generative/train_vae.py` (163L) — Tabular Variational Autoencoder utilities for UAIS generative experiments.  ·  VAEConfig, _build_vae, run_vae_pipeline
+- `src/uais/generative/train_wgan.py` (210L) — Wasserstein GAN with Gradient Penalty (WGAN-GP) for tabular synthetic data.  ·  WGANConfig, _Generator, _Critic, _gradient_penalty, run_wgan_pipeline, generate_synthetic_samples
+- `src/uais/nlp/__init__.py` (0L)
+- `src/uais/nlp/nlp_utils.py` (30L) — Utility helpers for NLP models (tokenization, batching, quick splits).  ·  simple_train_val_split, load_csv_text_label
+- `src/uais/nlp/train_sentiment_model.py` (26L) — Sentiment-style binary text classification via DistilBERT fine-tuning.  ·  train_sentiment_model
+- `src/uais/nlp/train_text_classifier.py` (84L) — Lightweight NLP text anomaly training utilities.  ·  NLPConfig, _load_dataset, run_text_experiment
+- `src/uais/nlp/train_transformer_text.py` (120L) — DistilBERT fine-tuning for binary text anomaly / phishing detection.  ·  _TextDataset, _compute_metrics, train_transformer_text
+- `src/uais/preprocessing/__init__.py` (1L) — Preprocessing utilities for UAIS.
+- `src/uais/preprocessing/pipeline.py` (64L) — Leakage-free preprocessing pipelines for tabular data.  ·  build_tabular_pipeline
+- `src/uais/recommender/rules.py` (40L) — Heuristic rules to map scores to recommended actions.  ·  assign_action_from_scores
+- `src/uais/reporting/make_plots.py` (55L) — Generate plots from experiment metrics with optional CI bars if available.  ·  plot_metric_bar, main
+- `src/uais/reporting/make_tables.py` (62L) — Generate summary tables from experiments metrics (mean±sd if available).  ·  gather_metrics, make_summary
+- `src/uais/sequence/__init__.py` (36L) — Sequence modeling utilities — LSTM, GRU, Transformer, TCN.
+- `src/uais/sequence/ablation.py` (240L) — Sequence model ablation study.  ·  AblationConfig, _train_one, run_sequence_ablation, summarise_ablation
+- `src/uais/sequence/build_30seq_dataset.py` (178L) — Build 30-sequence arrays from behavior data or synthetic fallback.  ·  SequenceBuildConfig, load_behavior_events, set_global_seed, _pad_or_truncate, _coerce_feature_dim, _prepare_behavior_sequences
+- `src/uais/sequence/build_sequences.py` (40L) — Sequence building utilities.  ·  build_sequences, pad_sequences
+- `src/uais/sequence/evaluate_sequence.py` (15L) — Evaluation helpers for sequence models.  ·  evaluate_sequence_predictions
+- `src/uais/sequence/multi_sequence_30_tf.py` (63L) — TensorFlow multi-sequence model for the 30-sequence behavior task.  ·  build_30_sequence_model
+- `src/uais/sequence/multi_sequence_30_torch.py` (111L) — PyTorch multi-sequence classifier for the 30-sequence behavior task.  ·  _PerSequenceTCN, MultiSequenceTCNClassifier
+- `src/uais/sequence/train_gru.py` (209L) — GRU classifier for sequence anomaly detection.  ·  GRUConfig, SequenceDataset, GRUClassifier, _run_epoch, train_gru_classifier, predict_gru
+- `src/uais/sequence/train_lstm.py` (216L) — LSTM classifier for sequence anomaly detection.  ·  LSTMConfig, SequenceDataset, LSTMClassifier, _run_epoch, train_lstm_classifier, predict_lstm
+- `src/uais/sequence/transformer_tcn.py` (297L) — Transformer and TCN sequence classifiers for behavior anomaly detection.  ·  SequenceModelConfig, SequenceDataset, TransformerClassifier, TCNBlock, TCNClassifier, _build_model
+- `src/uais/supervised/__init__.py` (1L) — Supervised baselines for UAIS.
+- `src/uais/supervised/evaluate_supervised.py` (22L) — Evaluation utilities for supervised models.  ·  evaluate_supervised
+- `src/uais/supervised/train_cyber_supervised.py` (136L)  ·  CyberModelConfig, _build_model, train_cyber_model, cross_val_train_cyber
+- `src/uais/supervised/train_fraud_supervised.py` (173L) — Supervised fraud modeling with multiple model options.  ·  FraudModelConfig, _build_model, train_fraud_model, cross_val_train_fraud
+- `src/uais/utils/__init__.py` (1L) — Utility helpers shared across UAIS.
+- `src/uais/utils/config_loader.py` (18L) — Simple YAML config loader stub.  ·  load_yaml
+- `src/uais/utils/file_utils.py` (14L) — File helpers (stub).  ·  ensure_dir
+- `src/uais/utils/logging_utils.py` (37L) — Logging configuration helpers.  ·  setup_logging
+- `src/uais/utils/metrics.py` (396L) — Shared metric utilities for fraud / anomaly models.  ·  brier_score, expected_calibration_error, detection_rate_at_fpr, _compute_from_pred_and_prob, compute_classification_metrics, compute_confusion_matrix
+- `src/uais/utils/mlflow_utils.py` (63L) — Utilities for MLflow experiment tracking.  ·  load_mlflow_settings, setup_mlflow, log_run
+- `src/uais/utils/paths.py` (45L) — Centralized project paths and helpers.  ·  ensure_directories, domain_paths
+- `src/uais/utils/plotting.py` (67L) — Plotting utilities for model evaluation.  ·  plot_roc_curve, plot_pr_curve
+- `src/uais/utils/result_aggregation.py` (118L) — Result aggregation helpers for multi-seed UAV experiments.  ·  _finite_values, summarize_values, summarize_seed_metric_rows, aggregate_stress_rows
+- `src/uais/utils/runtime.py` (37L) — Runtime and inference benchmarking utilities.  ·  time_block, measure_inference, measure_proba
+- `src/uais/utils/stats.py` (183L) — Simple statistical utilities for CI and significance tests.  ·  _compute_midrank, _auc_structural_components, _fast_delong, delong_roc_test, bootstrap_ci, paired_ttest
+- `src/uais/validation/__init__.py` (5L) — Validation helpers for empirical gap-closure audits.
+- `src/uais/validation/healthcare_gap_closure.py` (1050L) — Healthcare/clinical validation for the ELARA gap-closure checklist.  ·  ClinicalDomainSpec, _stable_hash, _clip01, _domain_score, _domain_embedding, _normalise_split
+- `src/uais/vision/__init__.py` (0L)
+- `src/uais/vision/train_autoencoder_vision.py` (180L) — Convolutional autoencoder for unsupervised visual anomaly detection.  ·  VisionAEConfig, _build_autoencoder, _iter_images, _find_dataset_root, _reconstruction_errors, train_autoencoder_vision
+- `src/uais/vision/train_vision_model.py` (143L) — Vision anomaly detection helpers using TensorFlow/Keras.  ·  VisionConfig, _build_model, _contains_images, _normalize_dataset_root, run_vision_experiment
+- `src/uais/vision/vision_resnet.py` (35L) — Minimal ResNet classifier wrapper used by the test suite.  ·  VisionConfig, build_resnet_classifier
+- `src/uais/vision/vision_utils.py` (15L) — Utility stubs for vision pipelines (transforms, small helpers).  ·  ensure_vision_root
+
+## tests(legacy)  (142 files, 11718 LOC)
+
+- `tests/__init__.py` (1L) — Test suite for UAIS-V additions.
+- `tests/conftest.py` (19L) — conftest.py – ensure both the repository root and src/ are on sys.path.
+- `tests/test_analysis_family_partition.py` (66L) — Phase 1.D — analysis family partition is consistent across artifacts.  ·  registry, test_registry_has_family_a_b_c_partitions, test_family_A_has_5_confirmatory_and_3_diagnostic, test_holm_family_size_matches_confirmatory_count, test_inference_rows_match_registry_status, test_family_C_holm_size_is_zero
+- `tests/test_api_payloads.py` (9L)  ·  test_fusion_keys_sorted_for_payload
+- `tests/test_api_production_security.py` (291L)  ·  _reload_api, _reload_auth, test_api_key_auth_fails_closed_when_no_keys_configured, test_password_hashing_backend_is_compatible, test_cors_uses_explicit_allowlist_from_environment, test_operational_endpoints_require_api_key
+- `tests/test_attention_fusion_e2e.py` (48L)  ·  test_attention_fusion_end_to_end
+- `tests/test_attention_training_loop.py` (67L) — Tests for unified attention training loop.  ·  _tiny_setup, test_train_restores_best_pr_auc_checkpoint, test_without_restore_can_differ_from_best_epoch
+- `tests/test_attention_utils_schema.py` (134L)  ·  test_validate_fusion_schema_basic, test_build_fusion_tensors_with_timestamp, test_validate_incident_protocol_accepts_naturally_coobserved_temporal_splits, test_validate_incident_protocol_rejects_split_leakage, test_validate_incident_protocol_can_report_non_temporal_replay_without_accepting_it_as_temporal
+- `tests/test_audit_gate_decision_rule_e2e.py` (24L) — Smoke tests for the gate decision rule end-to-end audit.  ·  _load_audit_module, test_synthetic_scenarios_pass_audit
+- `tests/test_baseline_prediction_exports.py` (32L)  ·  test_baseline_suite_can_return_validation_and_test_predictions
+- `tests/test_baselines.py` (180L) — Tests for the four strong fusion baselines.  ·  _make_data, _splits, test_early_fusion_mlp_output_shape, test_early_fusion_mlp_unfitted_raises, test_late_fusion_ensemble_output_shape, test_late_fusion_ensemble_all_missing_domain
+- `tests/test_behavior_features.py` (318L) — Comprehensive tests for behavioral analytics feature engineering.  ·  TestBuildBehaviorFeatureTable, TestBehaviorFeaturesEdgeCases, sample_shoppers_data, test_behavior_features_integration
+- `tests/test_breakthrough_aggregation.py` (76L)  ·  test_summarize_seed_metric_rows_reports_mean_std_and_ci, test_aggregate_stress_rows_groups_scenarios_across_seeds, test_metrics_from_validation_threshold_records_threshold_source
+- `tests/test_breakthrough_mechanism_isolation.py` (273L)  ·  test_gate_stats_reports_sample_weighted_adaptation, test_gate_stats_hybrid_mode_catches_minimum_reliability_failure, test_k_domain_corruption_conditions_cover_requested_cardinalities, test_reliability_component_weights_disable_and_renormalize, test_tau_sweep_rows_aggregate_with_gate_metrics, _make_rga_fixture
+- `tests/test_breakthrough_predefined_split.py` (166L)  ·  test_split_uses_predefined_split_values, test_split_rejects_unassigned_predefined_values, test_sample_split_values_are_loaded_in_tensor_order, test_sample_categories_are_loaded_when_configured, test_aggregate_category_aware_reports_misfire_delta
+- `tests/test_build_30seq_dataset.py` (15L)  ·  test_build_sequences_writes_files
+- `tests/test_calibration_transfer_study.py` (43L) — Deterministic checks for the Phase-3 / T6 calibration-transfer study.  ·  test_help_and_hurt_regimes_both_present, test_help_occurs_at_low_divergence_and_hurt_at_higher, test_source_side_signals_are_blind_to_transfer_failure, test_divergence_abstention_covers_all_hurt, test_study_is_labeled_exploratory
+- `tests/test_canonical_label_semantics.py` (125L) — Phase 1.A — gating tests for the canonical label/metric semantics audit.  ·  report, test_verdict_classified, test_verdict_is_misinterpretation_not_bug, test_three_canonical_cells_present, test_label_semantics_anomaly_eq_1_in_every_canonical_cell, test_canonical_train_val_prevalence_is_zero
+- `tests/test_causal_attribution.py` (243L) — Tests for the Double-ML causal reliability attribution module.  ·  _make_synthetic_panel, test_estimate_domain_causal_effect_recovers_known_positive_effect, test_estimate_domain_causal_effect_recovers_known_negative_effect, test_estimate_domain_causal_effect_returns_near_zero_for_null_effect, test_estimate_all_domain_effects_ranks_domains_correctly, test_estimate_handles_missing_domain_via_masks
+- `tests/test_comparator_selection_from_validation_only.py` (98L) — Phase 1.C — assert the validation-frozen comparator artifact is  ·  rows, test_csv_has_required_columns, test_selection_never_used_test_metrics, test_selected_comparator_drawn_from_pool, test_analysis_status_is_locked_audited_reanalysis, test_validation_winner_logged_per_cell
+- `tests/test_counterfactual_explainer.py` (192L) — Tests for CounterfactualDomainExplainer (CDA component of CRAF).  ·  _make_model, _make_explainer, _sample_features, test_explain_single_sample_shapes, test_cf_impact_bounds, test_fully_masked_domain_returns_nan
+- `tests/test_cross_modal_attention.py` (29L)  ·  test_cross_modal_attention_shapes, test_cross_modal_attention_mask, test_cross_modal_attention_all_missing_row_is_finite
+- `tests/test_cross_modal_patchcore.py` (70L) — Tests for the cross-modal patch-interaction detector (Level-4 lever).  ·  _img_patches, test_combine_shapes_and_alignment, test_misaligned_grids_raise, test_cross_modal_anomaly_detected, test_marginals_alone_would_miss_it
+- `tests/test_cv_evaluator.py` (139L) — Tests for the unified 5-fold CV evaluator.  ·  _make_data, _basic_specs, cv_results, test_cv_returns_results_for_every_spec, test_cv_per_fold_metrics_have_required_keys, test_cv_aggregate_has_mean_std_ci
+- `tests/test_cyber_features.py` (263L) — Comprehensive tests for cyber security feature engineering.  ·  TestBuildCyberFeatureTable, TestCyberFeaturesEdgeCases, sample_unsw_data, test_cyber_features_integration
+- `tests/test_data_loader_fallback_policy.py` (33L)  ·  test_public_domain_loaders_make_synthetic_fallback_opt_in, test_cyber_csv_discovery_prefers_official_unsw_split_files
+- `tests/test_degenerate_channel_guard.py` (108L) — Regression guard for the degenerate-channel filter (D18 lego_propeller audit).  ·  _labels, _informative, _inverted, _saturated, test_informative_channel_is_kept, test_inverted_channel_is_flagged
+- `tests/test_dim_reduction.py` (84L) — Tests for consistent dimensionality reduction across baselines.  ·  _data, test_noop_passes_through, test_pca_reduces_dimensionality, test_pca_explained_variance_monotonic, test_pca_train_test_consistency, test_autoencoder_reducer_shape
+- `tests/test_domain_encoders.py` (20L)  ·  test_domain_encoder_output_shape, test_confidence_estimator_output_shape
+- `tests/test_elara_deploy_policy.py` (99L) — Unit tests for ELARA deploy policy routing.  ·  _toy_setup, test_heterogeneous_batch_uses_sar_fallback, test_select_validation_fallback_picks_rga_when_better, test_deploy_policy_spec_from_mapping
+- `tests/test_ensemble_inference_label.py` (54L) — Phase 1.D — any audited inferential statistic computed on seed-averaged  ·  rows, test_inference_rows_carry_explicit_analysis_label, test_paper_does_not_imply_single_model_from_ensemble
+- `tests/test_false_fire_power_study.py` (52L) — Deterministic checks for the Phase-8 / T5 false-fire vs power study.  ·  test_cost_and_power_monotone_in_tau, test_detector_separates_and_power_dominates_cost, test_budget_controls_out_of_sample_false_fire, test_relaxing_budget_buys_detection_power, test_benefit_is_bounded_by_budget_tradeoff, test_study_is_labelled_exploratory
+- `tests/test_family_d_claim_boundary.py` (64L) — Phase 2.1 — Family-D claim boundary must not state that Family-D  ·  _docs_to_check, test_no_doc_states_family_d_success_removes_family_a_audited_status, test_v2_claim_boundary_is_documented_explicitly
+- `tests/test_family_d_no_previously_touched_dataset.py` (54L) — Phase 2.1 — Family-D v2 must not list any dataset that has been  ·  _family_a_benchmarks, test_eligibility_review_explicitly_excludes_visa, test_v2_hypotheses_do_not_use_any_family_a_benchmark, test_v2_hypotheses_do_not_reference_visa_anywhere
+- `tests/test_family_d_v1_never_executable.py` (53L) — Phase 2.1 — Family-D v1 must remain marked INVALID_FOR_EXECUTION and  ·  test_invalidation_notice_exists, test_invalidation_notice_marks_v1_as_invalid_for_execution, test_invalidation_notice_lists_grounds, test_v1_execution_commands_remain_marked_not_run
+- `tests/test_family_d_v2_candidate_eligibility.py` (39L) — Phase 2.2B.2 — Family-D v2 candidate eligibility invariants.  ·  test_eligibility_review_excludes_visa, test_design_status_or_decision_doc_exists, test_no_v2_decision_doc_lists_visa_as_candidate
+- `tests/test_family_d_v2_eyecandies_untouched.py` (54L) — Phase 2.2C — Eyecandies must remain untouched at outcome level.  ·  test_no_eyecandies_in_experiment_outcome_artifacts, test_local_eyecandies_data_is_hash_only_archive
+- `tests/test_family_d_v2_hypothesis_family_locked.py` (49L) — Phase 2.2C — Family-D v2 hypothesis family invariants.  ·  test_hypotheses_csv_has_two_primary_and_one_secondary, test_holm_family_size_is_2, test_primary_endpoints_share_multiplicity_family_and_comparator, test_secondary_endpoint_is_descriptive_only
+- `tests/test_family_d_v2_manifest_no_placeholders.py` (35L) — Phase 2.2C — if FAMILY_D_PARTITION_MANIFEST_v2.json exists, it must have no plac  ·  test_manifest_absent_or_no_placeholders, test_blocked_report_documents_partition_manifest_blocker
+- `tests/test_family_d_v2_no_manuscript_edits.py` (50L) — Phase 2.2C — paper / thesis must not be edited with Family-D v2 design content.  ·  test_manuscripts_contain_no_family_d_v2_design_strings, test_manuscripts_still_only_cite_eyecandies_in_related_work_context
+- `tests/test_family_d_v2_no_placeholders_before_freeze.py` (44L) — Phase 2.1 — any Family-D v2 frozen manifest must contain no  ·  test_no_placeholders_in_any_frozen_v2_file, test_v2_design_status_file_exists
+- `tests/test_family_d_v2_no_supervised_test_label_selection.py` (42L) — Phase 2.2C — Family-D v2 method selection must not depend on test labels.  ·  test_yaml_disables_rga_plus_supervised_head, test_yaml_primary_method_is_base_rga, test_yaml_comparator_is_static_attention, test_hypotheses_every_row_forbids_test_data_access_before_execution, test_policy_forbids_official_test_label_inputs_to_selection
+- `tests/test_family_d_v2_official_modalities_verified.py` (64L) — Phase 2.2C — official modality + release version documentary verification.  ·  test_decision_doc_locks_release_1_0_3, test_decision_doc_names_rgb_and_depth_primary, test_provenance_records_official_paper_and_repo, test_provenance_records_all_10_drive_file_ids, test_yaml_lists_all_10_categories
+- `tests/test_family_d_v2_one_class_protocol.py` (41L) — Phase 2.2C — Family-D v2 must use one-class multimodal protocol; no supervised l  ·  test_yaml_protocol_is_one_class_multimodal, test_yaml_splits_are_anomaly_free_train_val_and_held_out_test, test_yaml_primary_modalities_rgb_depth_only, test_yaml_normal_excluded_from_primary, test_yaml_test_evaluation_executed_false
+- `tests/test_family_d_v2_operator_spec_complete.py` (53L) — Phase 2.2C — every degradation operator must be fully specified with no placehol  ·  test_operator_spec_has_no_placeholders, test_yaml_has_two_primary_operators_and_one_secondary, test_every_operator_has_required_fields
+- `tests/test_family_d_v2_test_not_executed.py` (33L) — Phase 2.2B.2 — Family-D v2 must not have been executed.  ·  test_no_family_d_v2_freeze_with_executed_outcomes, test_no_family_d_execution_output_anywhere
+- `tests/test_family_d_v2_test_not_executed_phase_2_2c.py` (54L) — Phase 2.2C — Family-D v2 must not have been executed during Phase 2.2C.  ·  test_protocol_test_evaluation_executed_is_false, test_access_log_states_no_model_evaluation_executed, test_no_family_d_v2_execution_output_anywhere
+- `tests/test_fraud_features.py` (236L) — Comprehensive tests for fraud feature engineering.  ·  TestAddBasicFraudFeatures, TestBuildFraudFeatureTable, TestFraudFeaturesEdgeCases, sample_fraud_data, test_fraud_features_integration
+- `tests/test_fusion_run.py` (25L)  ·  test_generate_meta_features_and_train
+- `tests/test_gate_decision_rule.py` (119L) — Tests for the coherence-certified gate decision rule.  ·  _no_mask, test_per_sample_mean_reliability_ignores_missing_domains, test_per_sample_mean_reliability_nan_when_all_missing, test_coherent_collapse_has_high_coherence, test_heterogeneous_mixture_has_low_coherence, test_switch_allowed_under_coherent_collapse
+- `tests/test_gate_p_and_scope_guard.py` (51L) — Tests for the Gate P production audit + the serving scope guard.  ·  test_scope_guard_advisory_mode_flags_disagreement, test_scope_guard_reference_envelope_detects_out_of_range, test_gate_p_audit_runs_and_is_scoped_ready
+- `tests/test_headroom_routing_d15.py` (89L)  ·  test_stress_score_increases_with_reliability_disagreement, test_threshold_selection_is_validation_only, test_headroom_router_defaults_clean_and_routes_stress, test_headroom_router_can_activate_at_validation_threshold_one, test_confidence_weighted_mean_is_finite_with_bad_inputs
+- `tests/test_healthcare_gap_closure.py` (265L)  ·  _toy_split_frame, _toy_stratified_frame, test_build_clinical_fusion_frame_hashes_incidents_and_emits_four_domains, test_label_diversity_report_blocks_single_class_empirical_claims, test_gap_statuses_keep_structural_and_empirical_closure_separate, test_patient_stratified_split_closes_gap1_local_replay_conditions
+- `tests/test_holm_bonferroni.py` (81L) — Tests for Holm-Bonferroni multiple-comparison correction.  ·  test_all_large_pvalues_no_rejection, test_smallest_pvalue_rejected_with_strict_multiplier, test_monotone_step_down_chain, test_adjusted_pvalues_capped_at_one, test_adjusted_pvalues_monotone_after_sorting, test_nan_handling
+- `tests/test_holm_family_size_matches_registry.py` (65L) — Phase 1.D — table captions and emitted artifacts must report a  ·  k_family_a, test_family_a_k_is_five, test_paper_does_not_state_nine_cells, test_thesis_does_not_state_nine_cells
+- `tests/test_infer_rga.py` (176L) — Smoke tests for the infer_rga runtime-only package.  ·  _make_synthetic_fit_data, trained_artifacts, test_from_checkpoint_loads, test_predict_proba_shape_and_range, test_predict_with_gate_returns_observe_only_diagnostics, test_reliability_returns_per_domain_array
+- `tests/test_issue3_issue4_fixes.py` (130L) — Tests for ISSUE 3 (score-blend bypasses attention) and ISSUE 4 (tautological  ·  _toy_scores, test_max_aggregation_is_copyable_but_quantile_is_not, test_mean_and_trimmed_mean_aggregations, test_pseudo_targets_handle_all_missing_row, test_score_input_dropout_p0_is_identity, test_score_input_dropout_p1_neutralizes_present_scores_only
+- `tests/test_leakage_guard.py` (118L) — Tests for leakage detection and protocol enforcement.  ·  _data, test_no_contamination_on_disjoint_data, test_contamination_detects_duplicates, test_label_overlap_detects_conflicts, test_assert_no_oversampling_in_test_clean, test_assert_no_oversampling_in_test_dupes
+- `tests/test_learned_gate.py` (124L) — Tests for LearnedReliabilityGate (alternative to heuristic τ threshold).  ·  _rng_weights, test_unfitted_decide_raises, test_fit_from_episodes_learns_separator, test_decision_probabilities_shape_and_range, test_scalar_feature_mode, test_degenerate_fit_constant_decision
+- `tests/test_manuscript_claim_consistency.py` (42L) — Phase 1.E — manuscript claim consistency tests.  ·  test_validator_script_exists, test_manuscript_validator_returns_clean
+- `tests/test_metrics_manifest_integrity.py` (115L) — Phase 1.E — manifest integrity tests.  ·  manifest, test_manifest_has_claims, test_family_a_confirmatory_cells_have_required_fields, test_no_claim_uses_confirmatory_language, test_selection_rules_recorded, test_source_artifacts_present
+- `tests/test_monitor_calibration.py` (96L)  ·  _make_fusion_frame, test_monitor_emits_one_event_per_window, test_monitor_gate_does_not_fire_without_drift, test_monitor_gate_fires_under_strong_drift, test_monitor_raises_when_reference_split_missing, test_monitor_writes_jsonl
+- `tests/test_multi_sequence_30_tf.py` (13L)  ·  test_forward_pass_small_shape
+- `tests/test_multi_sequence_30_torch.py` (13L)  ·  test_forward_pass_small_shape
+- `tests/test_mvtec3d_benchmark.py` (159L)  ·  _write_rgb, _write_depth, test_mvtec3d_builder_marks_natural_pairing_and_emits_paired_domains, test_mvtec3d_builder_reads_float_xyz_tiff, test_mvtec3d_builder_records_train_good_score_protocol, test_mvtec3d_heldout_protocol_can_reserve_positive_validation_rows
+- `tests/test_mvtec3d_kaggle_subset.py` (32L)  ·  test_select_subset_files_keeps_rgb_xyz_pairs_and_limits_counts
+- `tests/test_nlp_tiny.py` (13L)  ·  test_distilbert_forward_smoke
+- `tests/test_no_fisher_seed_combination.py` (52L) — Phase 1.D — no Fisher combination of per-seed DeLong p-values may  ·  test_no_active_fisher_invocation
+- `tests/test_no_retroactive_confirmatory_language.py` (44L) — Phase 1.D / Phase 0.6 AR-11 — no already-observed cell may be  ·  _pre_registered_forbidden_patterns, test_no_retroactive_preregistration_phrase
+- `tests/test_no_test_selected_comparator.py` (75L) — Phase 1.C — assert no active code or LaTeX caption selects the  ·  test_no_test_argmax_baseline_in_active_source, test_no_best_non_router_inferential_phrase
+- `tests/test_no_test_selected_rga_plus.py` (64L) — Phase 1.B — source-code + caption check: no active code may select  ·  test_no_test_max_rga_plus_in_active_source, test_no_test_max_rga_plus_in_latex_caption
+- `tests/test_novel_theorem_bounds.py` (77L) — Unit tests for the novel theorem bounds (T2/T3/T4/T6/GDR).  ·  test_t3_deterministic_boundary_matches_k_star, test_t3_carries_full_mean_term_not_dropped, test_t3_noise_erodes_boundary_monotonically, test_t6_power_monotone_and_window_sizing_consistent, test_t4_tau_monotone_in_prevalence, test_gdr_binomial_is_honest_0125_not_significant
+- `tests/test_orchestration_imports.py` (25L) — Import guards for optional orchestration dependencies.  ·  test_submodule_imports_do_not_require_tensorflow
+- `tests/test_partial_domain_failure_study.py` (47L) — Deterministic checks for the Phase-4 / T3 partial-domain-failure study.  ·  test_clean_quietness, test_soft_helps_no_later_than_hard, test_mean_gate_dilution_region_exists, test_all_domain_collapse_is_neutral
+- `tests/test_patchcore_score.py` (69L)  ·  test_patchcore_separates_unimodal_anomalies_from_normals, test_patchcore_separates_multimodal_anomalies_better_than_mahalanobis, test_patchcore_handles_empty_fit_mask, test_patchcore_coreset_subsamples_bank
+- `tests/test_paths.py` (9L)  ·  test_paths_exist
+- `tests/test_per_sample_reliability_nondegenerate.py` (72L) — ISSUE 2 regression guard: per-sample reliability must not be degenerate.  ·  _synthetic_split, _per_sample_mean_reliability, _common_kwargs, test_batch_estimator_is_degenerate_per_sample, test_per_sample_estimator_varies_across_samples
+- `tests/test_pgd_subset_attack.py` (156L) — Tests for gradient-aligned PGD attack over a subset of domains.  ·  _make_model, test_pgd_preserves_shapes, test_pgd_only_perturbs_target_domain_score, test_pgd_respects_epsilon_budget, test_pgd_respects_missing_mask, test_pgd_empty_target_returns_unchanged
+- `tests/test_phase2_2b1_driver_computation.py` (329L) — Tests proving B-MECH-2/3S/4 drivers implement actual computation.  ·  _gate_sweep_module, _mixture_shift_module, _ks_sweep_module, _make_synthetic_features, _make_fitted_estimator, test_b_mech_2_produces_result_rows_from_synthetic_fixture
+- `tests/test_phase2_b2_dual_number_policy.py` (31L) — Phase 2.2B.2 — B2 dual-number policy invariants.  ·  test_b2_comparability_csv_has_both_phase1_and_phase2_rows, test_policy_doc_locks_dual_number_wording, test_policy_doc_forbids_replacement_phrases
+- `tests/test_phase2_certificate_boundary.py` (50L) — Phase 2.2B — risk-dominance + switching certificate code remains  ·  test_certificate_driver_states_retrospective_boundary_in_source, test_certificate_driver_does_not_promise_production_safety, test_certificate_code_is_importable
+- `tests/test_phase2_certification.py` (91L) — Phase 2.G — risk-dominance + switching-certificate smoke tests.  ·  test_risk_dominance_returns_finite_terms, test_paired_bootstrap_lcb_basic, test_fired_subset_certificate_positive_when_gated_dominates, test_fired_subset_certificate_negative_when_no_fired_samples
+- `tests/test_phase2_family_a_driver_registry.py` (44L) — Phase 2.2A — registry-driven Family-A driver must reject any non-A-POWERED-* ID.  ·  _run, test_driver_rejects_non_family_a_ids, test_driver_rejects_unknown_experiment_id, test_driver_accepts_all_locked_family_a_ids
+- `tests/test_phase2_family_a_historical_pilot_unchanged.py` (62L) — Phase 2.2A QC — the historical A-POWERED-1 K=10 secondary pilot  ·  _sha, test_historical_csv_still_has_legacy_schema, test_historical_pilot_archive_directory_exists
+- `tests/test_phase2_family_a_k5_primary_surface.py` (58L) — Phase 2.2A QC — the v2 primary-surface CSV must obey the K=5 policy.  ·  test_v2_csv_exists_after_analysis, test_raw_csv_rows_label_primary_static_reference_audit, test_holm_csv_uses_k_equals_5_or_marks_partial, test_holm_full_family_has_exactly_five_cells
+- `tests/test_phase2_family_a_no_competitive_superiority_claim.py` (94L) — Phase 2.2A QC — the v2 Family-A static-reference report must not  ·  _live_prose, test_report_contains_no_forbidden_competitive_phrase, test_report_negates_phrases_that_require_negation, test_report_states_static_reference_audit_label_explicitly, test_report_states_not_confirmatory_explicitly
+- `tests/test_phase2_family_a_output_separation.py` (46L) — Phase 2.2A — v2 outputs must be on separate paths from the  ·  test_historical_and_v2_paths_are_distinct, test_v2_csv_paths_have_v2_marker_in_filename, test_historical_pilot_csvs_are_unchanged_in_v2_run
+- `tests/test_phase2_family_a_prediction_archive_complete.py` (79L) — Phase 2.2A QC — every completed Family-A cell archive must contain  ·  _family_a_cells, _cell_dir, test_completed_cells_have_all_required_methods, test_completed_cells_have_sample_id_alignment_across_methods, test_no_test_set_selection_in_any_archive_row
+- `tests/test_phase2_family_a_static_reference_policy.py` (68L) — Phase 2.2A — the Family-A analysis driver must compare RGA+ only  ·  _source, test_analysis_driver_hard_codes_static_attention_as_only_comparator, test_analysis_driver_uses_k_equals_5_holm, test_analysis_driver_writes_v2_primary_paths, test_analysis_driver_does_not_overwrite_historical_pilot_paths
+- `tests/test_phase2_family_b_final_decision.py` (44L) — Phase 2.2B.2 — Family-B final decision invariants.  ·  test_final_decision_doc_present, test_final_decision_contains_exactly_one_locked_decision_label, test_final_decision_forbids_rga_v2_promotion_when_no_candidate_passes_c1
+- `tests/test_phase2_family_b_g3_top_q_gate.py` (80L) — Phase 2.2B — G3 top-q gate implementation correctness.  ·  _estimator, test_top_q_with_q1_equals_minimum_gate_when_thresholds_match, test_top_q_with_q2_does_not_fire_on_single_weak_domain, test_top_q_respects_per_sample_masks, test_top_q_rejects_q_less_than_1, test_invalid_gate_mode_rejected
+- `tests/test_phase2_family_b_prediction_archive_complete.py` (39L) — Phase 2.2B — Family-B prediction archives (if present) must have the  ·  test_b_mech_1_archive_directory_either_absent_or_well_formed
+- `tests/test_phase2_family_b_primary_endpoint_lock.py` (33L) — Phase 2.2B — B-MECH-1 primary endpoint parameters are locked in source.  ·  test_b_mech_1_tau_is_locked_at_066, test_b_mech_1_gate_mode_is_locked_at_mean, test_b_mech_1_k_values_is_locked_at_4_only, test_b_mech_1_attacks_are_zero_and_max_only, test_b_mech_1_writes_selection_used_test_metrics_false
+- `tests/test_phase2_family_b_runner_registry.py` (53L) — Phase 2.2B — every Family-B driver must reject non-B IDs.  ·  _run, test_each_driver_rejects_wrong_id, test_each_driver_accepts_its_locked_id
+- `tests/test_phase2_family_d_untouched_during_family_a.py` (60L) — Phase 2.2A QC — no Family-D file may be modified or invoked during  ·  test_no_family_d_script_executed_during_phase_2_2a, test_family_d_v1_invalidation_status_intact, test_family_d_v2_design_status_intact, test_family_d_v2_partition_manifest_never_carries_test_execution, test_v1_family_d_files_still_present
+- `tests/test_phase2_family_d_untouched_during_family_b.py` (55L) — Phase 2.2B — Family-D files must not be modified by any Phase-2.2B  ·  test_no_family_b_driver_references_family_d, test_family_b_module_does_not_reference_family_d, test_family_d_v1_invalidation_status_intact, test_family_d_v2_design_status_intact, test_family_d_v2_partition_manifest_never_carries_test_execution_phase_b
+- `tests/test_phase2_ks_protocol_lock.py` (81L) — Phase 2.2B — KS window-size and mixture-shift protocol invariants.  ·  test_ks_window_grid_locked, test_estimator_accepts_ks_window_size, test_estimator_default_ks_window_is_none, test_mixture_shift_does_not_inject_score_corruption, test_mixture_shift_invariance_check_catches_distorted_resample, test_mixture_shift_unknown_category_raises
+- `tests/test_phase2_loco_pairing_strength_verified.py` (26L) — Phase 2.2B.2 — A-POWERED-3 MVTec LOCO-AD must be derived_view_proxy.  ·  test_registry_a_powered_3_is_derived_view_proxy, test_v2_report_classifies_a_powered_3_as_derived_view_proxy
+- `tests/test_phase2_manuscripts_unchanged_during_closure.py` (31L) — Phase 2.2B.2 — paper / thesis must not be edited during Phase-2 closure.  ·  test_manuscripts_contain_no_phase2_2b_decision_strings
+- `tests/test_phase2_master_status_consistency.py` (41L) — Phase 2.2B.2 — Master status checklist consistency.  ·  test_master_exists, test_master_a_powered_3_is_now_derived_view_proxy, test_master_b1_b2_wording_uses_estimator_change_label, test_master_rga_v2_status_is_executed_not_promoted_or_equivalent
+- `tests/test_phase2_no_forbidden_claims_in_manuscripts.py` (37L) — Phase 2.1 — the manuscript LaTeX sources must not contain any of the  ·  test_manuscript_contains_no_forbidden_phase2_claim
+- `tests/test_phase2_prediction_archive_no_leakage.py` (85L) — Phase 2.B — selection-leakage gate for the prediction archive.  ·  archive, test_test_split_predictions_never_carry_test_selection_flag, test_validation_only_selection_verified_column_default_true
+- `tests/test_phase2_prediction_archive_schema.py` (156L) — Phase 2.B — schema tests for the prediction-archive contract.  ·  archive, _make_frame, test_schema_has_required_columns, test_index_has_required_columns, test_write_rejects_test_set_selection_flag, test_write_rejects_schema_mismatch
+- `tests/test_phase2_registry_csv_schema.py` (56L) — Phase 2.1 — registry / claim-matrix CSV schema integrity tests.  ·  test_csv_every_row_has_header_field_count, test_registry_v2_has_required_columns, test_claim_matrix_v2_has_required_columns, test_registry_v2_no_unresolved_placeholders_in_family_a_cells
+- `tests/test_phase2_registry_family_alignment.py` (60L) — Phase 2.1 — registry must match the locked Family-A cell identities.  ·  _registry_rows, test_family_a_cells_match_locked_identities, test_family_a_primary_comparator_is_static_attention_everywhere, test_real3d_and_efficientad_not_in_family_a, test_multiplicity_family_a_powered_k5_has_exactly_five_cells
+- `tests/test_phase2_report_registry_consistency.py` (70L) — Phase 2.1 — the v2 Family-A report must reference the registry cells, not the v1  ·  _text, test_v2_report_lists_locked_family_a_cells, test_v2_report_does_not_present_efficientad_or_real3d_as_family_a, test_v2_report_labels_existing_output_as_secondary_audit, test_v2_report_records_k5_not_final_until_all_cells_complete
+- `tests/test_phase2_rga_v2_certificate_extension_boundary.py` (27L) — Phase 2.2B.2 — RGA-v2 certificate extension boundary: only G0 rows in v2 CSV.  ·  test_decision_doc_states_no_admissible_extension, test_v2_certificate_csv_contains_only_g0_rows
+- `tests/test_phase2_rga_v2_contract_lock.py` (52L) — Phase 2.2B — RGA-v2 contract lock invariants.  ·  _contract, test_contract_locks_g0_g1_g2_g3_g4, test_g0_baseline_tau_is_066, test_clean_false_fire_budget_rule_is_locked, test_promotion_criteria_includes_all_six, test_g3_top_q_search_grid_locked
+- `tests/test_phase2_rga_v2_no_test_tuning.py` (43L) — Phase 2.2B — RGA-v2 gate-threshold selection must never read test-fold data.  ·  test_selection_function_takes_only_validation_inputs, test_validation_fold_corruption_function_does_not_accept_test_data, test_driver_stamps_selection_used_test_metrics_false_in_records
+- `tests/test_phase2_rga_v2_seed_count_decision.py` (31L) — Phase 2.2B.2 — RGA-v2 seed-count decision: 15 is valid per contract YAML.  ·  test_contract_yaml_locks_minimum_for_inference_at_15, test_failure_surface_csv_has_at_least_15_seeds, test_inference_csv_g1_g2_g3_c1_all_fail
+- `tests/test_phase2_rga_v2_selection_provenance.py` (43L) — Phase 2.2B.2 — RGA-v2 selection provenance: 15 seeds × 4 gates across all three   ·  _seeds, test_all_three_csvs_share_15_seeds, test_threshold_selection_row_count_equals_seeds_times_gates, test_no_threshold_selection_row_used_test_metrics
+- `tests/test_phase2_risk_dominance_clean_arm.py` (56L) — Phase 2.2B.2 — risk-dominance terms now admissible (clean arm present).  ·  _cell_dir, test_clean_arm_methods_present_in_archive, test_risk_dominance_v2_csv_present_and_has_q0_q1_pi_star, test_switching_certificates_v2_present_with_boundary_notice
+- `tests/test_phase2_validation_only_selection.py` (37L) — Phase 2 — assert no Phase-2 code path selects methods/comparators from the test   ·  test_phase2_source_no_test_set_selection, test_phase2_contract_forbids_selection_used_test_metrics
+- `tests/test_point_cloud_detector.py` (74L) — Tests for the rotation-invariant point-cloud detector (D18 XYZ fix).  ·  _flat_plane, _bumped_plane, _random_rotation, test_features_shape_and_none_guard, test_rotation_invariance, test_bump_scores_higher_than_flat
+- `tests/test_polarity_calibration.py` (118L) — Tests for the post-hoc polarity-calibration helper in the breakthrough runner.  ·  _InversePolarityModel, _CorrectPolarityModel, _make_val, test_polarity_calibration_flags_inverse_model, test_polarity_calibration_does_not_flag_correct_model, test_polarity_calibration_handles_tiny_val
+- `tests/test_polarity_probe_diagnostic_only.py` (54L) — Phase 1.F — polarity probe is diagnostic-only.  ·  test_polarity_log_exists, test_log_columns, test_primary_metrics_use_flip_is_false_for_every_row
+- `tests/test_positive_transfer_calibration.py` (257L) — Tests for target-domain KS reference calibration (positive transfer fix).  ·  TestReFitKsReference, _make_train_distribution, _make_val_distribution
+- `tests/test_positive_transfer_candidate.py` (79L)  ·  test_candidate_scores_are_finite_and_shape_stable, test_selector_uses_validation_only_and_records_no_test_metrics, test_bootstrap_ci_crossing_zero_does_not_pass, test_negative_delta_never_passes, test_both_sar_and_cw_endpoints_are_required
+- `tests/test_positive_transfer_protocol_lock.py` (25L)  ·  test_positive_transfer_protocol_is_natural_and_cw_locked
+- `tests/test_primary_metrics_do_not_apply_polarity_flip.py` (32L) — Phase 1.F — assert the runner does not flip primary predictions.  ·  test_runner_does_not_flip_static_or_craf_in_primary_path, test_runner_contains_phase_1f_lock_comment
+- `tests/test_production_release_hygiene.py` (46L)  ·  test_production_compose_defaults_to_api_only_service, test_dockerignore_excludes_large_and_untrusted_release_inputs, test_production_runbook_documents_required_operations
+- `tests/test_real_fusion_harder_benchmark.py` (68L)  ·  test_subsample_train_indices_keeps_classes_and_is_deterministic, test_subsample_train_indices_fraction_one_returns_all_indices, _domain_frame, test_build_split_safe_fusion_rows_keeps_source_rows_in_one_split
+- `tests/test_realiad_3d_detector.py` (69L) — Regression tests for the Real-IAD-3D detector front-end.  ·  _make_pcd, test_load_pcd_ascii, test_load_pcd_binary_does_not_fall_back_to_empty, test_binary_and_ascii_agree, test_geometry_image_shape_and_type, test_xyz_normal_image_handles_degenerate
+- `tests/test_reliability_boosted_fusion.py` (101L)  ·  _FixedProbabilityModel, _FixedGridReliabilityBoostedFusion, test_reliability_boosted_fusion_selects_validation_candidate, test_reliability_boosted_fusion_handles_single_class_training_fold, test_reliability_boosted_fusion_honors_selection_metric
+- `tests/test_reliability_estimator.py` (387L) — Tests for ReliabilityEstimator (CRS component of CRAF).  ·  _make_data, fitted_estimator, test_fit_produces_valid_ece, test_compute_reliability_weights_shape, test_reliability_zeros_for_missing_domains, test_save_load_roundtrip
+- `tests/test_research_naming.py` (22L)  ·  test_elara_full_form_matches_system_purpose, test_rga_full_form_remains_reliability_gated_attention
+- `tests/test_rga_meta_router.py` (77L)  ·  test_rga_meta_router_learns_from_validation_predictions, test_rga_meta_router_falls_back_on_single_class_validation, test_rga_meta_router_preserves_tiny_probability_ranking, test_rga_meta_router_honors_selection_metric
+- `tests/test_rga_plus_flagship.py` (43L) — Smoke tests for flagship RGA+ variants.  ·  test_entropy_tta_preserves_shape, test_flagship_fit_predict_smoke
+- `tests/test_risk_dominance_prevalence.py` (50L) — Tests for T4 prevalence sensitivity helpers.  ·  test_risk_dominance_margin_matches_t4_inequality, test_zero_attack_b1_terms_do_not_dominate_at_positive_prevalence, test_max_attack_b2_terms_dominate_for_any_positive_prevalence
+- `tests/test_stats.py` (91L)  ·  test_delong_roc_test_ignores_non_finite_scores, test_delong_roc_test_filters_non_finite_rows_pairwise, test_reliability_degradation_auc_uses_finite_points, test_select_decision_threshold_uses_validation_f1_without_test_labels, test_select_decision_threshold_rejects_unknown_strategy, test_calibration_monitor_report_flags_ece_regression
+- `tests/test_t9_clean_transfer_ceiling.py` (106L) — Unit tests for T9 — clean-transfer reliability-gate impossibility.  ·  test_neyman_pearson_auc_matches_mahalanobis_form, test_homoscedastic_closure_equal_weight_cw_is_optimal_when_exchangeable, test_sharp_ceiling_is_tighter_than_headroom_to_one, test_certificate_unpassable_when_oracle_cannot_beat_cw, test_certificate_inconclusive_when_oracle_is_underpowered, test_certificate_unpassable_requires_credible_oracle
+- `tests/test_temporal_monitoring_study.py` (68L) — Deterministic checks for the Phase-10 / P6 temporal-monitoring study.  ·  test_clean_windows_do_not_false_alarm, test_all_transfer_drift_windows_detected, test_in_distribution_failure_gates_and_helps, test_policy_abstains_and_avoids_harm_under_drift, test_acted_policy_dominates_both_fixed_policies, test_certificate_invalidation_implies_fallback
+- `tests/test_theorem_registry.py` (23L) — Tests for the central theorem registry.  ·  test_registry_covers_t1_through_t9_and_gdr, test_every_theorem_has_core_modules_except_t1_only_one, test_t3_artifacts_exist_in_repo
+- `tests/test_train_restore_best_weights.py` (53L) — Regression guard for the early-stopping best-weights restore fix.  ·  _tiny_setup, test_train_with_restore_best_weights_updates_parameters, test_train_without_restore_best_weights_still_runs
+- `tests/test_transfer_pipeline_inference.py` (121L) — Tests for transfer pipeline: frozen calibrators + gate-decision CRAF path.  ·  test_apply_calibrators_monotone_on_scores, test_quantile_calibrator_single_class_validation, test_heterogeneous_batch_blocks_gate_decision_switch, test_predict_craf_with_gate_decision_rule_smoke
+- `tests/test_tta_baselines.py` (55L)  ·  _toy_fusion_data, test_tent_and_ttt_adapters_return_finite_probabilities, test_baseline_suite_includes_tent_and_ttt_metrics
+- `tests/test_ttt_adapters.py` (173L) — Tests for TentScoreAdapter and TTTPseudoLabelAdapter (test-time adaptive baselin  ·  _make_data, fitted_tent, fitted_plt, test_tent_predict_shape, test_tent_predictions_in_range, test_tent_unfitted_raises
+- `tests/test_union_research_system.py` (103L)  ·  test_union_plan_connects_legacy_new_healthcare_and_assets, test_union_plan_keeps_deprecated_dashboard_opt_in, test_m3dm_prep_matches_config_embedding_width, test_optional_nlp_vision_are_opt_in, test_run_step_skips_missing_required_path, test_run_step_dry_run_marks_existing_step_planned
+- `tests/test_unsupervised_baselines.py` (171L) — Tests for unsupervised anomaly baselines (normal-only training protocol).  ·  _make_data, data, split, test_detector_fit_predict_shape, test_detector_predictions_in_range, test_detector_finite_outputs
+- `tests/test_v3_scripts_smoke.py` (122L) — Direct smoke tests for the v3 claim-bearing SCRIPTS:  ·  _run, test_builder_cli_parses, test_builder_bank_paths_helper, _synth_csv, test_degradation_sweep_end_to_end
+- `tests/test_validation_frozen_rga_plus.py` (116L) — Phase 1.B — assert the validation-frozen RGA+ selection artifact is  ·  rows, test_csv_has_required_columns, test_selection_never_used_test_metrics, test_all_cells_have_ensemble_row, test_chosen_head_is_router_or_boost_or_null, test_delta_old_max_minus_corrected_is_nonnegative_for_existing_jsons
+- `tests/test_vision_resnet.py` (14L)  ·  test_resnet_forward_smoke
+
+## RGA/provenance  (42 files, 10754 LOC)
+
+- `src/scripts/scenario_c/flagship_harness.py` (385L) — Train-once, score flagship RGA+ variants + deploy v3 (validation / test).  ·  _unknown_category_mask, predict_deploy_v3_shift_sar, evaluate_flagship_seed
+- `src/scripts/scenario_c/win_vs_sar_harness.py` (491L) — Shared train/eval harness for WIN vs SAR validation (validation split only).  ·  SeedInferenceBundle, _repo_root, _safe_auc, _metrics_with_threshold, train_seed_bundle, evaluate_seed
+- `src/uais/fusion/__init__.py` (1L) — Fusion utilities combining multiple domain signals.
+- `src/uais/fusion/attention/__init__.py` (165L) — Attention-based fusion modules for Phase 2.
+- `src/uais/fusion/attention/adversarial_robustness.py` (285L) — Adversarial perturbation engine for stress-testing fusion robustness.  ·  AdversarialAttackType, AdversarialPerturbationEngine
+- `src/uais/fusion/attention/attention_utils.py` (418L) — Utility helpers for attention fusion data handling.  ·  FusionDataset, load_fusion_dataframe, infer_feature_columns, validate_fusion_schema, validate_incident_protocol, hash_file
+- `src/uais/fusion/attention/baselines.py` (803L) — Strong multimodal fusion baselines for comparison against RGA attention.  ·  _MLPNet, EarlyFusionMLP, LateFusionEnsemble, RandomForestFusion, ConfidenceWeightedMean, _ScoreHeadMixin
+- `src/uais/fusion/attention/causal_attribution.py` (458L) — Causal reliability attribution via Double Machine Learning.  ·  DomainCausalEffect, InterventionalEffect, _design_controls, _cross_fitted_residuals, estimate_domain_causal_effect, estimate_all_domain_effects
+- `src/uais/fusion/attention/certified_heterogeneous_fusion.py` (85L) — ELARA-CHF: validation-locked certified heterogeneous fusion (T8).  ·  CertifiedHeterogeneousFusion, fit_chf_on_validation
+- `src/uais/fusion/attention/confidence_estimator.py` (26L) — Confidence estimation head for domain embeddings.  ·  DomainConfidenceEstimator
+- `src/uais/fusion/attention/counterfactual_explainer.py` (285L) — Counterfactual Domain Attribution (CDA) for multimodal fusion explanations.  ·  CounterfactualResult, CounterfactualDomainExplainer
+- `src/uais/fusion/attention/cross_modal_attention.py` (236L) — Cross-modal attention fusion modules.  ·  CrossModalAttentionBlock, CrossModalAttentionFusion, AttentionFusionModel
+- `src/uais/fusion/attention/cross_modal_fusion.py` (158L) — Cross-modal anomaly fusion methods (Gate-E research).  ·  _LogisticXModal, _CopulaLite, FusionResult, _rank_norm, cw, fuse_max
+- `src/uais/fusion/attention/cross_modal_patchcore.py` (116L) — Cross-modal patch-interaction PatchCore (feature-level fusion).  ·  combine_cross_modal_patches, score_cross_modal_from_features, score_one_class_cross_modal_patchcore
+- `src/uais/fusion/attention/cv_evaluator.py` (391L) — Unified 5-fold cross-validation evaluator for ALL baseline families.  ·  BaselineSpec, CVConfig, _flatten_with_mask, _apply_reducer_3d, _fit_predict_one, cross_validate_baselines
+- `src/uais/fusion/attention/dim_reduction.py` (239L) — Dimensionality reduction applied CONSISTENTLY to all baselines.  ·  DimReducer, NoOpReducer, PCAReducerConfig, PCAReducer, AEReducerConfig, _Encoder
+- `src/uais/fusion/attention/domain_encoders.py` (30L) — Domain encoder modules for attention fusion.  ·  DomainEncoder
+- `src/uais/fusion/attention/elara_deploy_policy.py` (211L) — ELARA deploy policy: coherence-certified gating with SAR fallback.  ·  DeployPolicySpec, ElaraDeployArtifacts, load_deploy_policy_spec, deploy_policy_from_cfg, select_validation_fallback, predict_elara_deploy
+- `src/uais/fusion/attention/evaluate_attention_fusion.py` (133L) — Evaluation helper for attention fusion checkpoints.  ·  _resolve_path, evaluate_attention_fusion
+- `src/uais/fusion/attention/evaluate_attention_harness.py` (909L) — Evaluation harness for attention fusion ablations and robustness checks.  ·  _resolve_path, _prepare_data, _split_indices, _build_model, _collect_predictions, _evaluate_model
+- `src/uais/fusion/attention/frozen_calibrators.py` (181L) — Load and apply validation-fitted per-domain isotonic score calibrators.  ·  FrozenCalibratorBundle, fit_isotonic_calibrators_from_csv, apply_calibrators_to_features, write_calibrator_lock, load_calibrator_bundle
+- `src/uais/fusion/attention/fusion_inference.py` (163L) — Coherence-certified gating + switching-certificate calibration for fusion infere  ·  GateDecisionCalibration, binary_cross_entropy_loss, predict_static_probs, predict_reliability_path_probs, build_gate_decision_calibration, decide_switch_batch
+- `src/uais/fusion/attention/fusion_training_utils.py` (53L) — Shared loss and evaluation helpers for attention-fusion training.  ·  attention_fusion_loss, evaluate_model
+- `src/uais/fusion/attention/gate_decision_rule.py` (215L) — Coherence-certified gate decision rule for Reliability-Gated Attention.  ·  GateDecision, per_sample_mean_reliability, drift_coherence, decide_switch
+- `src/uais/fusion/attention/headroom_routing.py` (130L) — Headroom-aware reliability routing for D15 natural-degradation evidence.  ·  HeadroomThresholds, _finite_2d, confidence_weighted_mean, stress_score_from_reliability, select_headroom_thresholds, headroom_routed_score
+- `src/uais/fusion/attention/leakage_guard.py` (215L) — Data-leakage detection and protocol enforcement.  ·  PipelineGuard, _row_hashes, check_train_test_contamination, check_label_overlap, assert_no_oversampling_in_test, assert_normal_only_training
+- `src/uais/fusion/attention/learned_gate.py` (195L) — Learned reliability gate — alternative to the heuristic τ threshold.  ·  LearnedGateConfig, LearnedReliabilityGate
+- `src/uais/fusion/attention/m3dm_features.py` (407L) — M3DM-style ResNet-50 penultimate features for paired RGB + depth.  ·  _get_backbone, _load_pil, extract_point_cloud_statistics, extract_resnet_features, fit_pca_projection, normal_reference_distance_score
+- `src/uais/fusion/attention/meta_router.py` (258L) — Validation-trained reliability router over RGA and strong fusion baselines.  ·  RGAMetaRouter, _clip_probs, _prediction_matrix, _safe_auc, _safe_logloss, _safe_pr_auc
+- `src/uais/fusion/attention/positive_transfer.py` (316L) — Natural clean-transfer candidate rules and statistics.  ·  SelectionResult, _as_float, _safe_auc, _rank_norm, _cw, candidate_scores
+- `src/uais/fusion/attention/reliability_boosted_fusion.py` (307L) — Validation-selected reliability-boosted fusion head for ELARA/RGA+.  ·  _Candidate, ReliabilityBoostedFusion, _flatten_with_mask, _safe_auc, _safe_pr_auc, _best_f1
+- `src/uais/fusion/attention/reliability_boosted_fusion_flagship.py` (235L) — Flagship RGA+ variants: validation-selected TTA + optional category features.  ·  ReliabilityBoostedFusionFlagship, _probs_to_logits, _apply_entropy_tta, _category_matrix
+- `src/uais/fusion/attention/reliability_estimator.py` (627L) — Calibrated Reliability Scoring (CRS) for test-time adaptive fusion.  ·  ReliabilityEstimator, CategoryAwareReliabilityEstimator, PerSampleReliabilityEstimator
+- `src/uais/fusion/attention/train_attention_fusion.py` (232L) — Training script for cross-modal attention fusion.  ·  set_seed, _resolve_path, train_attention_fusion
+- `src/uais/fusion/attention/training_loop.py` (318L) — Unified attention-fusion training loop (early stopping + best-weight restore).  ·  AttentionTrainingResult, pseudo_targets_from_domain_scores, dropout_score_input, _batch_loss, _epoch_train_loss, _epoch_val_metrics
+- `src/uais/fusion/attention/unsupervised_baselines.py` (568L) — Unsupervised anomaly-detection baselines (normal-only training protocol).  ·  BGMMConfig, GMMConfig, KMeansConfig, IForestConfig, OCSVMConfig, LOFConfig
+- `src/uais/fusion/attention/validate_fusion_inputs.py` (84L) — Validation helper for attention fusion inputs.  ·  _resolve_path, validate_attention_inputs
+- `src/uais/fusion/build_embeddings.py` (34L) — Utilities for building/combining embeddings across domains.  ·  to_embedding, merge_embeddings, generate_meta_features
+- `src/uais/fusion/evaluate_fusion.py` (14L) — Evaluation utilities for fusion models.  ·  evaluate_fusion
+- `src/uais/fusion/run_fusion.py` (201L) — CLI to train a fusion meta-model from per-domain scores.  ·  _load_yaml, _read_scores, _align_scores, _load_inputs, train_fusion
+- `src/uais/fusion/train_fusion_meta.py` (111L) — Helper to build fusion dataset from score files and train meta-model.  ·  build_fusion_dataset, train_fusion_model
+- `src/uais/fusion/train_fusion_model.py` (65L) — Fusion model that learns from multiple domain embeddings/scores.  ·  train_fusion_meta_model
+
+## ELARA-U  (55 files, 7580 LOC)
+
+- `src/elara/evaluation/__init__.py` (21L) — Phase 2 evaluation utilities.
+- `src/elara/evaluation/degenerate_channel_guard.py` (143L) — Degenerate-channel guard for reliability-gated multimodal fusion.  ·  ChannelDiagnostic, channel_diagnostic, diagnose_channels, guarded_channel_mask, guarded_reliability
+- `src/elara/evaluation/ensemble_inference.py` (327L) — Phase 2 — seed-ensemble audited inference.  ·  SeedEnsembleAuditedAnalysis, _compute_midrank, _delong_compute, _delong_two_sided_p, seed_averaged_delong, paired_sample_bootstrap_ci
+- `src/elara/evaluation/fusion_prediction_logger.py` (68L) — Write Master Scenario C prediction archives from fusion experiment outputs.  ·  write_seed_archives
+- `src/elara/evaluation/prediction_archive.py` (341L) — Phase 2.B — raw per-seed test prediction archive contract.  ·  ArchiveEntry, PredictionArchive, _git_commit_hash, _hash_file, _hash_dict
+- `src/scripts/elara_u/baf_benchmark.py` (102L) — BAF (Bank Account Fraud, Feedzai/NeurIPS-2022) fraud-family expansion (D26).  ·  _encode, _boot, main
+- `src/scripts/elara_u/baselines_suite.py` (166L) — Comprehensive baseline suite (D28): prove stacking is not a weak-baseline win.  ·  _ranknorm, _meta_features, _greedy_ensemble, _boot, main
+- `src/scripts/elara_u/build_indep_suite.py` (75L) — Build a fully-independent external suite (D27 phase 1) -- reliable, offline-firs  ·  _one_vs_rest, _load_har, main
+- `src/scripts/elara_u/build_realiad_natdeg_cache.py` (79L) — Build a D23-format cache from the REAL Real-IAD-D3 natural-degradation per-modal  ·  build_category, main
+- `src/scripts/elara_u/build_score_archive.py` (78L) — Build the ELARA-U score archive: per-(task, detector) val/test scores + labels.  ·  _zsig, build_task, main
+- `src/scripts/elara_u/calibration_eval.py` (126L) — Calibration evaluation (verified): Brier / NLL / ECE, raw and isotonic-calibrate  ·  _rn, _brier, _nll, _ece, task_probs, main
+- `src/scripts/elara_u/deep_zoo_sota_probe.py` (137L) — SOTA-attempt EARLY SIGNAL (D31, development exploration -- NOT the sealed one-sh  ·  _zsig, _deep_ctors, score_task, _boot, _stack, _psrgs
+- `src/scripts/elara_u/deep_zoo_test.py` (107L) — Path 1c: does stacking still beat selection with a DEEP detector in the zoo?  ·  _zsig, _deepsvdd_scores, score, _boot, main
+- `src/scripts/elara_u/emit_figures.py` (248L) — Generate ELARA-U result figures (PNG) from VERIFIED data.  ·  _color, _bar, _heatmap, _ablation, _box, _arrow
+- `src/scripts/elara_u/emit_manifest.py` (41L) — Emit experiments/elara_u/manifest.json + sha256sums.txt for the curated ELARA-U  ·  sha256, main
+- `src/scripts/elara_u/emit_tables.py` (233L) — Generate filled ELARA-U result tables (LaTeX) from VERIFIED data.  ·  tex, boot, _load, main
+- `src/scripts/elara_u/evaluate_universal_contract.py` (206L) — Evaluate the ELARA-U Universal Evidence Contract on the score archive.  ·  _cw, _rank_mean, degrade_test_scores, load_archive, _family, _routed_val_auc
+- `src/scripts/elara_u/extended_stats.py` (95L) — Extended statistics (A4/A5 checklist): AUPRC, family-balanced mean rank/AUROC,  ·  main
+- `src/scripts/elara_u/fetch_openml_indep.py` (76L) — Download + cache a fully-independent tabular suite from OpenML (D27 phase 1).  ·  _encode, fetch_one, main
+- `src/scripts/elara_u/gate_u_seed_eval.py` (227L) — Gate U seed evaluation: a reliability-aware anomaly META-ROUTER over a detector   ·  _balance, _numeric, load_tasks, detector_zoo, eval_task, main
+- `src/scripts/elara_u/gpu_build_image_embeddings.py` (100L) — GPU: extract ResNet-50 embeddings for an image anomaly category -> ADBench-forma  ·  _backbone, _embed, _expand, main
+- `src/scripts/elara_u/gpu_build_mulsen_cache.py` (144L) — GPU: build a D23-format multimodal score cache for MulSen-AD (rgb + infrared + p  ·  _zsig, _load_img, _load_pcd_depth, _paths, _samples, build_category
+- `src/scripts/elara_u/gpu_build_mvtec3d_cache.py` (153L) — GPU: build a D23-format multimodal score cache for MVTec-3D-AD (rgb + xyz).  ·  _zsig, _load_rgb, _load_xyz, _load_depth, _samples, build_category
+- `src/scripts/elara_u/heterogeneous_degradation_ablation.py` (213L) — DECISIVE round 2: does reliability routing beat val-selection under HETEROGENEOU  ·  _family, _gini, degrade, score_task, meta_features, feature_row
+- `src/scripts/elara_u/honest_benchmark.py` (214L) — Single source of truth for the HONEST ELARA-U paper (123 tasks, 5 families).  ·  _family, load_archive, _ranknorm, _auc, _ece, strategies_for_task
+- `src/scripts/elara_u/industrial_benchmark.py` (82L) — Industrial-vision family benchmark (MVTec AD + VisA, ResNet-50 embeddings).  ·  main
+- `src/scripts/elara_u/learned_router_ablation.py` (217L) — DECISIVE ablation: does a LEARNED router extract signal from reliability  ·  load_archive, _family, _gini, meta_features, feature_row, test_auc
+- `src/scripts/elara_u/metaod_baseline.py` (121L) — Stronger meta-selection baseline (MetaOD-style), leave-one-task-out (D25).  ·  meta_features, _boot, main
+- `src/scripts/elara_u/multimodal_failure_matrix.py` (143L) — B2 multimodal failure-type matrix: does the reliability gate recover under MANY  ·  _cw, _wfuse, corrupt, run_category, _boot, main
+- `src/scripts/elara_u/multimodal_reliability_experiment.py` (234L) — Multimodal reliability-gating experiment (RGB + 3D) -- the REAL test of the  ·  _auc, _ranknorm, reliability_weights, evaluate_fusion, paired_ci, run_contract
+- `src/scripts/elara_u/multimodal_reliability_test.py` (138L) — Multimodal independent-modality-failure reliability test (D23).  ·  _cw, _wfuse, run_category, _boot, main
+- `src/scripts/elara_u/natural_shift_benchmark.py` (159L) — Natural temporal-shift SEALED benchmark (D22).  ·  _zsig, _unsw, unsw_tasks, creditcard_task, score_task, _plain_stack
+- `src/scripts/elara_u/openml_indep_eval.py` (107L) — Fully-independent external benchmark (D27 phase 2) -- ONE SHOT, frozen pipeline.  ·  _downsample_anom, _boot, main
+- `src/scripts/elara_u/path1_stacking_strength.py` (138L) — Path 1: strengthen the stacking result.  ·  _stack, _boot, main
+- `src/scripts/elara_u/per_sample_routing.py` (143L) — Per-Sample Reliability-Gated Stacking (PS-RGS), a NEW method (D30).  ·  _ranknorm, _per_sample_features, Rq_proxy, _boot, main
+- `src/scripts/elara_u/run_stacker_ablations.py` (190L) — Run stacker reliability/drift/disagreement/calibration/guard ablations on the 12  ·  ranks_and_regret_tied, run_stacker_variant, main
+- `src/scripts/elara_u/sealed_external_eval.py` (98L) — Sealed external holdout evaluation (D24) -- ONE SHOT, frozen pipeline.  ·  _boot, main
+- `src/scripts/elara_u/shift_stress_ablation.py` (227L) — NOVEL-OR-DEAD test: does reliability routing beat val-selection UNDER SHIFT?  ·  _family, _gini, corrupt, score_task, meta_features, feature_row
+- `src/scripts/elara_u/smd_benchmark.py` (109L) — SMD (Server Machine Dataset) multivariate time-series anomaly family.  ·  _zsig, _windows, task, _boot, main
+- `src/scripts/elara_u/statistical_audit.py` (126L) — Statistical audit: Holm-Bonferroni correction over the primary endpoints and the  ·  load, p_from_ci, holm, main
+- `src/scripts/elara_u/synthetic_multimodal_poc.py` (178L) — Proof-of-concept: reliability gating helps IFF modalities fail INDEPENDENTLY.  ·  _auc, _gen_scores, reliability_weights, _ranknorm, one_trial, paired_ci
+- `src/scripts/elara_u/timeseries_benchmark.py` (123L) — Time-series anomaly family (NAB) for the ELARA-U benchmark.  ·  _zsig, _windows, load_tasks, score, _stack, _boot
+- `src/scripts/elara_u/tsb_timeseries_benchmark.py` (143L) — Time-series family benchmark on TSB-AD-M (multivariate). Tests whether the  ·  _zsig, _rn, _auc, score_series, _boot, main
+- `src/scripts/elara_u/unsupervised_routing.py` (119L) — Unsupervised meta-combination: can label-free reliability heuristics beat  ·  _ranks, avg, rank_mean, smax, sharp_w, consensus_w
+- `src/uais/elara_u/__init__.py` (0L)
+- `src/uais/elara_u/contract.py` (64L) — ELARA-U Universal Evidence Contract metrics (Gate U / D21).  ·  ece, ranks_and_regret, negative_transfer_rate, bootstrap_delta
+- `src/uais/elara_u/router.py` (168L) — ELARA-U reliability-aware meta-router: select / fuse / abstain / fall back.  ·  RouterPolicy, reliability_features, _reliab_weights, _rank_mean, fuse, select
+- `src/uais/fusion/attention/patchcore_patch.py` (210L) — True patch-level PatchCore (Roth et al., 2022) for the ELARA upstream detector.  ·  _device, _get_backbone, _load_rgb, extract_patch_embeddings, greedy_coreset, image_anomaly_scores
+- `src/uais/fusion/attention/realiad_3d_detector.py` (416L) — Strong per-modality detectors for Real-IAD-D3 (RGB + photometric-stereo + XYZ).  ·  _parse_pcd_binary, load_pcd_points, pcd_to_geometry_image, xyz_to_normal_image, _pcd_member_for, load_modality_image
+- `tests/elara_u/__init__.py` (0L)
+- `tests/elara_u/test_gpu_builders_logic.py` (14L) — CPU smoke for the GPU builders' non-GPU logic (glob expansion + exclusion).  ·  test_expand_includes_and_excludes
+- `tests/elara_u/test_no_opened_holdout_tuning.py` (18L) — Guard: sealed/external holdout results must be ONE-SHOT (no per-holdout tuning).  ·  test_sealed_evaluators_are_one_shot
+- `tests/elara_u/test_no_test_label_leakage.py` (100L) — Regression guard: ELARA-U routing/stacking scores must not depend on TEST labels  ·  _synthetic_task, test_routed_scores_invariant_to_test_label_permutation, test_router_functions_take_no_test_labels, test_super_route_scores_depend_only_on_val_and_test_scores, test_auto_select_index_invariant_to_test_label_permutation, test_meta_features_take_no_test_labels
+- `tests/elara_u/test_results_schema.py` (54L) — Schema guard: curated ELARA-U result artifacts have the keys the paper relies on  ·  test_required_keys_present, test_d23_hypotheses_block_present, test_primary_claims_and_boundary_hold
+- `tests/elara_u/test_smoke_eval.py` (21L) — Smoke test: the multimodal reliability contract logic runs and is internally  ·  test_reliability_gate_recovers_under_independent_failure
+
+## production  (9 files, 1690 LOC)
+
+- `dashboard/__init__.py` (1L) — UAIS dashboard package.
+- `dashboard/app_streamlit.py` (195L) — Interactive Streamlit dashboard for UAIS-V results.  ·  _deps_message, launch_preview, _render_app
+- `dashboard/components/__init__.py` (1L) — Streamlit dashboard components.
+- `deploy/api/auth.py` (154L) — Authentication and security middleware for UAIS-V API.  ·  Token, TokenData, User, verify_password, get_password_hash, create_access_token
+- `deploy/api/main.py` (948L) — Enhanced FastAPI endpoint with authentication, monitoring, and rate limiting.  ·  RateLimitMiddleware, TimeoutMiddleware, RequestLoggingMiddleware, FraudRequest, FraudResponse, CyberRequest
+- `deploy/api/monitoring.py` (205L) — Monitoring, metrics, and observability for UAIS-V API.  ·  MetricsMiddleware, InferenceMetrics, HealthChecker, _existing_collector, _counter, _histogram
+- `deploy/api/scope_guard.py` (122L) — Scope guard — live out-of-envelope / drift monitoring for the serving path.  ·  _load_reference, reference_loaded, evaluate
+- `scripts/api_latency_check.py` (46L) — Simple API latency checker for UAIS-V FastAPI endpoints.  ·  time_endpoint, main
+- `src/uais/app/api_schema.py` (18L) — Pydantic schemas for the UAIS local inference API.  ·  PredictRequest, PredictResponse

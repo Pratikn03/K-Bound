@@ -78,12 +78,16 @@ def main():
         E("stack reliability gate", H["stack_rel_vs_stack_ABLATION"]),
     ]
     for fname, label in [("multimodal_reliability_results.json", "multimodal D23 Real-IAD-D3 (gate vs val-only)"),
-                         ("multimodal_reliability_results_mvtec3d.json", "multimodal D23 MVTec-3D (gate vs val-only)")]:
+                         ("multimodal_reliability_results_mvtec3d.json", "multimodal D23 MVTec-3D (gate vs val-only)"),
+                         ("multimodal_reliability_results_3d_adam.json", "multimodal D23 3D-ADAM (gate vs val-only)"),
+                         ("multimodal_reliability_results_mulsen.json", "multimodal D23 MulSen-AD (gate vs val-only)")]:
         if not (EXP / fname).exists():
             continue
         d = load(fname)
-        if d.get("hypotheses_failure_regime"):
-            famB_raw.append(E(label, d["hypotheses_failure_regime"]["H3_vs_no_reliability"]))
+        # tolerate both schema keys (script was co-edited): old + new hypotheses key
+        hyp = d.get("hypotheses_failure_regime") or d.get("hypotheses_modality_failure_regime")
+        if hyp:
+            famB_raw.append(E(label, hyp["H3_vs_no_reliability"]))
     famB = holm(famB_raw)
     for e in famB:
         e["reliability_helps"] = bool(e["delta"] > 0 and e["reject"])

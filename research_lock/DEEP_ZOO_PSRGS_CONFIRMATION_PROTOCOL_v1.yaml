@@ -1,0 +1,54 @@
+schema: deep_zoo_psrgs_confirmation_protocol_v1
+decision: D32_psrgs_deep_zoo_confirmation
+date_locked: 2026-06-03
+status_at_lock: FROZEN_BEFORE_HELDOUT_FAMILY_SCORED
+
+purpose: >
+  The D31 development probe (ADBench tabular, OPENED) found that on a heterogeneous
+  deep+classical zoo, per-sample reliability-gated stacking (PS-RGS) significantly beats
+  plain logistic stacking (+0.016, CI excl 0) -- confirming conjecture T10 (per-sample
+  routing helps in proportion to detector heterogeneity). This protocol freezes the
+  method BEFORE scoring a HELD-OUT family, to confirm the effect is not an artefact of
+  the tabular development set. Run once; report regardless of sign.
+
+frozen_method:
+  zoo: [ECOD, COPOD, IForest, LOF, KNN, OCSVM, DeepSVDD, AutoEncoder, VAE]   # 6 classical + 3 deep
+  deep_settings: DeepSVDD(epochs=20), AutoEncoder(epoch_num=20), VAE(epoch_num=20); z-sigmoid on train scores
+  split: stratified 50/25/25 train/val/test, seed 0; StandardScaler on train
+  baseline: plain logistic stacking on the 9 detector scores
+  method: PS-RGS = logistic stack on augmented [phi, rho, dis, sharp, phi*rho] where
+          rho/dis/sharp are the per-sample reliability features (kNN local separation,
+          per-sample disagreement, sharpness); identical to src/scripts/elara_u/per_sample_routing.py
+  code: src/scripts/elara_u/deep_zoo_sota_probe.py  (run with --raw on the held-out family)
+  metric: per-task test AUROC; paired bootstrap (10000) over tasks
+  no_test_labels_in_fit: true
+
+held_out_families:   # NOT used to develop the deep-zoo+PS-RGS combination (D31 used only tabular)
+  primary: ADBench CV_by_ResNet18 (data/raw/adbench_cv, 61 tasks)
+  secondary: ADBench NLP_by_BERT (data/raw/adbench_nlp, 13 tasks)
+
+primary_endpoint:
+  field: psrgs_beats_stack_on_deep_zoo
+  pass_condition: "PS-RGS - plain stack: mean > 0 AND 95% CI lower bound > 0 on the primary held-out family"
+  run_policy: ONE_SHOT (no re-run, no tuning, no task/threshold selection after scoring)
+
+secondary_endpoints:
+  - deep zoo beats classical-only stacking (mean > 0, CI excl 0)
+  - PS-RGS vs best single detector (reported, not gating)
+
+leaderboard_note: >
+  Absolute AUROC is recorded for a head-to-head against published ADBench numbers.
+  A SOTA claim requires PS-RGS to exceed the best published per-family result under the
+  same protocol; this protocol does NOT presume that outcome and reports the comparison
+  honestly whatever it shows.
+
+integrity:
+  method_frozen_before_heldout: true
+  family_held_out_from_D31: true
+  one_shot: true
+  reported_regardless_of_sign: true
+  honest_scope: >
+    PS-RGS was previously evaluated on these families with the CLASSICAL zoo (D30); the
+    NEW, unseen element confirmed here is the deep+classical zoo combination. If PS-RGS
+    does NOT beat stacking on the held-out family, T10's confirmation is withdrawn and
+    reported as a development-only signal.

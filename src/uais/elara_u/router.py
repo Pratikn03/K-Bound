@@ -19,6 +19,8 @@ from __future__ import annotations
 from dataclasses import dataclass
 
 import numpy as np
+from scipy.stats import ks_2samp
+from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import roc_auc_score
 
 
@@ -65,6 +67,7 @@ class RouterPolicy:
     conf: float = 0.70      # min best-AUROC to trust a single expert
     gap: float = 0.05       # min lead of best over 2nd-best to select
     guard: float = 0.55     # below this best-AUROC -> negative-transfer fallback
+    drift_threshold: float = 0.25 # KS statistic above this -> drop detector as drifted
 
 
 def route(s_val, y_val, s_test, policy: RouterPolicy, action: str = "hybrid"):
@@ -74,15 +77,92 @@ def route(s_val, y_val, s_test, policy: RouterPolicy, action: str = "hybrid"):
     when one expert is clearly+confidently best, otherwise fuse; fall back to
     rank-mean when no expert clears the negative-transfer guard.
     """
+    if action == "hybrid":
+        return super_route(s_val, y_val, s_test, policy)
+        
     f = reliability_features(s_val, y_val)
     auc = f["val_auc"]
-    if f["best_auc"] < policy.guard:
+    
+    # Calculate drift per detector using Kolmogorov-Smirnov test against validation
+    M = s_test.shape[1]
+    drift = np.array([ks_2samp(s_val[:, m], s_test[:, m]).statistic for m in range(M)])
+    
+    # Apply degenerate-channel and drift guards
+    # We drop any detector that is saturated (std < 1e-4), sign-inverted (auc < 0.5),
+    # or drifted (drift > threshold).
+    # Threshold uses the statistical KS critical value at alpha=0.05, with drift_threshold as a floor.
+    n_val, n_test = len(s_val), len(s_test)
+    critical_val = 1.36 * np.sqrt((n_val + n_test) / (n_val * n_test + 1e-9))
+    threshold = max(policy.drift_threshold, critical_val)
+    
+    active = np.ones(M, dtype=bool)
+    for m in range(M):
+        std_val = np.std(s_val[:, m])
+        if std_val < 1e-4 or auc[m] < 0.50 or drift[m] > threshold:
+            active[m] = False
+
+    # If all detectors are dead/drifted, trigger fallback action
+    if not active.any():
         return _rank_mean(s_test), "fallback"
+        
+    # Filter AUC to active detectors
+    active_auc = np.where(active, auc, -1.0)
+    best_idx = int(np.argmax(active_auc))
+    best_auc = active_auc[best_idx]
+    
+    if best_auc < policy.guard:
+        return _rank_mean(s_test), "fallback"
+        
     if action == "select":
-        return select(s_test, auc), "select"
+        return s_test[:, best_idx], "select"
+        
+    # Calculate gap to the second-best active detector
+    sorted_active_auc = np.sort(active_auc[active])
+    gap = float(sorted_active_auc[-1] - sorted_active_auc[-2]) if len(sorted_active_auc) > 1 else 1.0
+    
     if action == "fuse":
-        return fuse(s_test, auc), "fuse"
-    # hybrid
-    if f["best_auc"] >= policy.conf and f["gap"] >= policy.gap:
-        return select(s_test, auc), "select"
-    return fuse(s_test, auc), "fuse"
+        # Fuse only active detectors
+        w = _reliab_weights(auc[active], floor=0.5)
+        fused = s_test[:, active] @ w
+        return fused, "fuse"
+        
+    # Hybrid action: select if confidently leading, else fuse
+    if best_auc >= policy.conf and gap >= policy.gap:
+        return s_test[:, best_idx], "select"
+        
+    w = _reliab_weights(auc[active], floor=0.5)
+    fused = s_test[:, active] @ w
+    return fused, "fuse"
+
+
+def super_route(s_val, y_val, s_test, policy: "RouterPolicy"):
+    """ELARA-U super-selection: per-sample reliability-gated stacking.
+
+    The path to beating auto-select. Auto-select picks one detector per *dataset*
+    (near-oracle at that level); a per-*sample* combiner can exceed the best single
+    detector by learning, from validation only, how to combine experts sample-by-
+    sample. We drop saturated channels (no test labels), then fit a regularized
+    logistic meta-learner on the relative ranks of active validation detector scores
+    and apply it to the test ranks. Falls back to rank-mean when no channel survives
+    or validation has a single class.
+    """
+    y = np.asarray(y_val).astype(int)
+    M = s_test.shape[1]
+    if len(np.unique(y)) < 2:
+        return _rank_mean(s_test), "fallback"
+    
+    # Only drop saturated channels
+    active = np.array([np.std(s_val[:, m]) >= 1e-4 for m in range(M)])
+    if not active.any():
+        return _rank_mean(s_test), "fallback"
+    
+    # Convert scores to relative ranks to be robust to score shift
+    r_val = np.zeros_like(s_val)
+    r_test = np.zeros_like(s_test)
+    for m in range(M):
+        r_val[:, m] = np.argsort(np.argsort(s_val[:, m])) / max(len(s_val) - 1, 1)
+        r_test[:, m] = np.argsort(np.argsort(s_test[:, m])) / max(len(s_test) - 1, 1)
+        
+    clf = LogisticRegression(C=1.0, max_iter=2000, class_weight="balanced")
+    clf.fit(r_val[:, active], y)
+    return clf.predict_proba(r_test[:, active])[:, 1], "stack"

@@ -41,14 +41,46 @@ def _rank_mean(S):
     return (np.argsort(np.argsort(S, axis=0), axis=0) / max(S.shape[0] - 1, 1)).mean(1)
 
 
-def load_archive():
+def degrade_test_scores(s_val: np.ndarray, s_test: np.ndarray, seed: int) -> tuple[np.ndarray, list[int]]:
+    """Simulate heterogeneous test-time detector score shift (covariate shift).
+    Randomly select 50% of the detectors on this task and shift their test scores,
+    simulating score-distribution drift.
+    """
+    rng = np.random.default_rng(seed)
+    M = s_test.shape[1]
+    degraded_test = s_test.copy()
+    
+    # Select 50% of the detectors to degrade
+    n_degrade = max(1, int(round(0.5 * M)))
+    degrade_indices = rng.choice(M, n_degrade, replace=False)
+    
+    for m in degrade_indices:
+        # Shift the scores by a random offset in [-0.5, -0.25] or [0.25, 0.5]
+        offset = rng.uniform(0.25, 0.5) * rng.choice([-1, 1])
+        degraded_test[:, m] = np.clip(s_test[:, m] + offset, 0.0, 1.0)
+        
+    return degraded_test, list(degrade_indices)
+
+
+def load_archive(degrade_shift: bool = True):
     tasks = {}
     for f in sorted(ARCHIVE.glob("*.npz")):
         if f.name.startswith("._"):
             continue
         z = np.load(f, allow_pickle=True)
-        tasks[f.stem] = {"Sval": z["Sval"], "yval": z["yval"], "Stest": z["Stest"],
-                         "ytest": z["ytest"], "val_auc": z["val_auc"],
+        sval, stest = z["Sval"], z["Stest"]
+        yval, ytest = z["yval"], z["ytest"]
+        val_auc = z["val_auc"]
+        
+        # Inject heterogeneous test-time degradation if degrade_shift is True
+        if degrade_shift:
+            # Seed based on task name hash to keep it stable and reproducible
+            import hashlib
+            seed = int(hashlib.sha256(f.stem.encode()).hexdigest(), 16) % (2**31)
+            stest, _ = degrade_test_scores(sval, stest, seed)
+            
+        tasks[f.stem] = {"Sval": sval, "yval": yval, "Stest": stest,
+                         "ytest": ytest, "val_auc": val_auc,
                          "domain": str(z["domain"]), "det": list(z["det_names"])}
     return tasks
 
@@ -80,7 +112,12 @@ def fit_policy(train_tasks):
 
 
 def main() -> int:
-    tasks = load_archive()
+    import argparse
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--degrade", action="store_true",
+                    help="inject synthetic test-time detector degradation (stress regime)")
+    args = ap.parse_args()
+    tasks = load_archive(degrade_shift=args.degrade)
     if not tasks:
         print("no archive found; run build_score_archive.py first")
         return 1
@@ -99,6 +136,8 @@ def main() -> int:
 
     det_names = tasks[names[0]]["det"]
     per_auc: dict[str, list[float]] = {d: [] for d in det_names}
+    # Single ELARA-U entry (elara_hybrid == the stacking router) to avoid
+    # double-counting identical methods in the ranking pool.
     for extra in ["auto_select", "cw_mean", "rank_mean", "elara_fuse", "elara_hybrid"]:
         per_auc[extra] = []
     ece_acc = {m: [] for m in per_auc}
@@ -136,6 +175,12 @@ def main() -> int:
         "elara_hybrid_vs_best_fixed": vs_best,
         "negative_transfer_rate_hybrid_vs_rankmean": negative_transfer_rate(per_auc, "elara_hybrid", "rank_mean"),
         "hybrid_action_counts": {a: hybrid_actions.count(a) for a in set(hybrid_actions)},
+        # per-task / per-family detail so emit_tables.py and emit_figures.py can
+        # build every result table and plot from real numbers.
+        "task_names": names,
+        "task_families": [_family(tasks[n]["domain"]) for n in names],
+        "per_task_auc": {m: [round(float(x), 4) for x in per_auc[m]] for m in per_auc},
+        "per_task_rank": {m: rr["_ranks"][m] for m in rr["_ranks"]},
     }
     out = ROOT / "experiments/elara_u/results.json"
     out.write_text(json.dumps(result, indent=2))

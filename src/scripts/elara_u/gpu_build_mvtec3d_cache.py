@@ -50,6 +50,22 @@ def _load_xyz(p: Path):
     return xyz_to_normal_image(arr)
 
 
+def _load_depth(p: Path):
+    """xyz tiff whose 3 channels are a *replicated* single-channel depth map (3D-ADAM
+    'anomalib' layout) -> contrast-stretched depth image. Surface normals are degenerate
+    here (identical channels), so the geometry modality is scored as a depth image, the
+    same way MVTec-3D's depth is consumed by PatchCore. Verified to carry real signal."""
+    import tifffile
+    from PIL import Image
+    a = np.asarray(tifffile.imread(p), dtype=np.float32)
+    d = a[..., 0] if a.ndim == 3 else a
+    m = d > 0
+    if int(m.sum()) > 10:
+        lo, hi = np.percentile(d[m], 2), np.percentile(d[m], 98)
+        d = np.clip((d - lo) / (hi - lo + 1e-6), 0, 1)
+    return Image.fromarray((d * 255).astype(np.uint8)).convert("RGB")
+
+
 def _samples(cat_dir: Path, split: str):
     """Return list of (rgb_path, xyz_path, label) for a split. label 1 = defect."""
     out = []
@@ -68,7 +84,7 @@ def _samples(cat_dir: Path, split: str):
     return out
 
 
-def build_category(cat: str, coreset=4096, cap=130):
+def build_category(cat: str, coreset=4096, cap=130, geom="normal"):
     from uais.fusion.attention.realiad_3d_detector import score_one_class_patchcore
     cat_dir = RAW / cat
     train = _samples(cat_dir, "train")            # all good
@@ -89,7 +105,8 @@ def build_category(cat: str, coreset=4096, cap=130):
 
     Sval_cols, Stest_cols, vauc = [], [], []
     from sklearn.metrics import roc_auc_score
-    loaders = {"rgb": (_load_rgb, 0), "xyz": (_load_xyz, 1)}
+    geom_loader = _load_depth if geom == "depth" else _load_xyz
+    loaders = {"rgb": (_load_rgb, 0), "xyz": (geom_loader, 1)}
     for m, (load, col) in loaders.items():
         bank = [load(s[col]) for s in train]
         ref = score_one_class_patchcore(bank[: min(40, len(bank))], bank, coreset_size=coreset)
@@ -102,17 +119,24 @@ def build_category(cat: str, coreset=4096, cap=130):
 
 
 def main():
+    global RAW, CACHE
     ap = argparse.ArgumentParser()
-    ap.add_argument("--categories", nargs="*", default=None, help="default: all under data/raw/mvtec3d")
+    ap.add_argument("--categories", nargs="*", default=None, help="default: all under --raw")
     ap.add_argument("--coreset", type=int, default=4096)
+    ap.add_argument("--raw", default=str(RAW), help="dataset root (MVTec-3D-style train/val/test rgb+xyz)")
+    ap.add_argument("--cache", default=str(CACHE), help="output score-cache dir")
+    ap.add_argument("--geom", choices=["normal", "depth"], default="normal",
+                    help="geometry modality: 'normal'=organized-pcd surface normals (MVTec-3D); "
+                         "'depth'=contrast-stretched depth image (3D-ADAM replicated-channel tiffs)")
     args = ap.parse_args()
+    RAW = Path(args.raw); CACHE = Path(args.cache)
     CACHE.mkdir(parents=True, exist_ok=True)
     cats = args.categories or sorted(p.name for p in RAW.iterdir()
                                      if p.is_dir() and not p.name.startswith("._"))
     n = 0
     for cat in cats:
         try:
-            res = build_category(cat, coreset=args.coreset)
+            res = build_category(cat, coreset=args.coreset, geom=args.geom)
         except Exception as e:
             print(f"[{cat}] FAILED: {e}"); continue
         if res is None:

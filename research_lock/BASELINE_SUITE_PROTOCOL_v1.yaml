@@ -1,0 +1,41 @@
+schema: baseline_suite_protocol_v1
+decision: D28_comprehensive_baselines
+date_locked: 2026-06-03
+status_at_lock: DEVELOPMENT_DATA_ANALYSIS
+
+purpose: >
+  Demonstrate the stacking win is not a weak-baseline artefact by comparing the
+  headline logistic stack against every standard combiner/selector/ensemble and two
+  test-label oracle ceilings on the 123-task development archive. This is an analysis
+  on already-opened development data (not a sealed/one-shot test), reported in full.
+
+method:
+  data: experiments/elara_u/score_archive (123 tasks, 5 families)
+  headline: stack_logistic (logistic regression on per-detector normalized scores)
+  baselines:
+    selection: [best_fixed_detector, validation_auto_select, metaod_style_learned_select (LOO RF over 28 meta-features)]
+    averaging: [rank_mean, confidence_weighted_mean, simple_average_raw, average_calibrated (isotonic per detector)]
+    automl: [greedy_ensemble (Caruana et al. 2004, val-AUROC, with replacement, T=15)]
+    stackers: [random_forest, gradient_boosting, hist_gbm, logistic_ranknorm, per_family_specialist]
+    oracles: [oracle_best_single_detector, oracle_best_pair_fusion]   # USE TEST LABELS; upper bounds only
+  metric: per-task test AUROC; paired bootstrap (10000) of (headline - method)
+  code: src/scripts/elara_u/baselines_suite.py
+  result: experiments/elara_u/baselines_suite_results.json
+
+outcome:
+  headline_mean_auroc: 0.781
+  beats_all_non_oracle: true   # every non-oracle baseline, CI excludes zero
+  beats_oracle_best_single: {mean: 0.0249, ci95: [0.012, 0.039]}
+  beats_oracle_best_pair:   {mean: 0.0318, ci95: [0.018, 0.048]}
+  n_s_ties: [stack_random_forest, stack_hist_gbm, stack_logistic_ranknorm]  # same class, not weaker baselines
+  interpretation: >
+    The headline stack exceeds even the test-label oracle best-single-detector and
+    best-pair-fusion ceilings, which is impossible for a weak-baseline win and follows
+    from genuine learned 6-way per-sample combination. RF/HistGBM/rank-norm logistic
+    are statistically tied (same combiner class), confirming robustness to the learner.
+
+integrity:
+  xgboost_substitute: "sklearn GradientBoosting + HistGradientBoosting (xgboost not installed); gradient-boosting class represented"
+  oracles_clearly_labelled_as_test_label_upper_bounds: true
+  reported_regardless_of_sign: true
+  note: development-data analysis; not a sealed one-shot test (cf. D24/D27)

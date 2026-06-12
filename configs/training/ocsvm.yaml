@@ -1,0 +1,13 @@
+# Unified training-harness config: One-Class SVM anomaly detector.
+# Run with: python -m uais.training.cli --config configs/training/ocsvm.yaml
+name: ocsvm
+trainer: ocsvm
+seed: 42
+data_path: data/processed/fraud/fraud_features.parquet
+output_dir: experiments/training/ocsvm
+hyperparams:
+  target: label
+  domain: fraud
+  # nu parameter of the One-Class SVM (matches train_ocsvm default).
+  contamination: 0.05
+tracker: json

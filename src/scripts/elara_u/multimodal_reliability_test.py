@@ -38,13 +38,21 @@ def _wfuse(S, vauc, keep):
     return S[:, keep] @ (w / w.sum())
 
 
-def run_category(Sval, yval, Stest, ytest, vauc, fail):
-    """Return dict of method->test AUROC. If fail, corrupt the best-val modality on test."""
+def run_category(Sval, yval, Stest, ytest, vauc, fail, failure="noise"):
+    """Return dict of method->test AUROC. If fail, corrupt the best-val modality on test.
+
+    failure="noise"   : modality emits uniform garbage (random sensor fault).
+    failure="dropout" : modality goes offline and returns a stuck/constant reading
+                        (realistic sensor outage; zero variance at test).
+    """
     rng = np.random.default_rng(RNG)
     St = Stest.copy()
     best = int(np.argmax(vauc))
     if fail:
-        St[:, best] = rng.uniform(0, 1, len(St))      # deployment-best modality fails at test
+        if failure == "dropout":
+            St[:, best] = float(np.mean(Sval[:, best]))   # sensor offline -> stuck at its typical reading
+        else:
+            St[:, best] = rng.uniform(0, 1, len(St))      # deployment-best modality emits garbage
     A = lambda s: roc_auc_score(ytest, s) if len(np.unique(ytest)) > 1 else 0.5
     # drift per modality: KS(val, test) -- uses test score distribution, no labels
     drift = np.array([ks_2samp(Sval[:, m], St[:, m]).statistic for m in range(St.shape[1])])
@@ -70,6 +78,10 @@ def main() -> int:
     ap.add_argument("--glob", default="*_v2_binpcd.npz", help="cache filename glob")
     ap.add_argument("--out", default=str(ROOT / "experiments/elara_u/multimodal_reliability_results.json"))
     ap.add_argument("--tag", default="Real-IAD-D3", help="dataset label for the printout")
+    ap.add_argument("--failure", choices=["noise", "dropout"], default="noise",
+                    help="failure model: noise=garbage, dropout=stuck/offline sensor")
+    ap.add_argument("--natural", action="store_true",
+                    help="degradation already in the data (real nat-deg): test hypotheses on the as-is/clean regime, no injection")
     args = ap.parse_args()
     cache_dir = Path(args.cache)
     files = [f for f in sorted(glob.glob(str(cache_dir / args.glob)))
@@ -85,23 +97,26 @@ def main() -> int:
             continue
         n += 1
         for r, fail in regimes.items():
-            res = run_category(Sval, yval, Stest, ytest, vauc, fail)
+            res = run_category(Sval, yval, Stest, ytest, vauc, fail, failure=args.failure)
             for m in out[r]:
                 out[r][m].append(res[m])
 
-    summary = {"protocol": "D23_multimodal_reliability", "dataset": args.tag, "n_categories": n, "regimes": {}}
+    summary = {"protocol": "D23_multimodal_reliability", "dataset": args.tag,
+               "failure_model": args.failure, "n_categories": n, "regimes": {}}
     for r in regimes:
         pa = {m: np.array(v) for m, v in out[r].items()}
         summary["regimes"][r] = {"mean_auroc": {m: round(float(v.mean()), 4) for m, v in pa.items()}}
-    # hypotheses in the failure regime
-    pf = {m: np.array(out["modality_failure"][m]) for m in out["modality_failure"]}
+    # hypotheses: failure regime (injected) by default; clean/as-is regime under --natural
+    # (real natural degradation is already in the data, so no injection is applied)
+    hyp_regime = "clean" if args.natural else "modality_failure"
+    pf = {m: np.array(out[hyp_regime][m]) for m in out[hyp_regime]}
     H = {}
     for name, base in [("H1_vs_equal_weight", "equal_weight"),
                        ("H2_vs_stale_auto_select", "stale_auto_select"),
                        ("H3_vs_no_reliability", "no_reliability")]:
         mean, lo, hi = _boot(pf["reliability_gate"] - pf[base])
         H[name] = {"mean": round(mean, 4), "ci95": [round(lo, 4), round(hi, 4)], "pass": lo > 0}
-    summary["hypotheses_failure_regime"] = H
+    summary[f"hypotheses_{hyp_regime}_regime"] = H
     summary["reliability_validated"] = all(h["pass"] for h in H.values())
     res_path = Path(args.out)
     res_path.parent.mkdir(parents=True, exist_ok=True)
@@ -111,7 +126,7 @@ def main() -> int:
     for r in regimes:
         print(f"  [{r}] " + "  ".join(f"{m}={summary['regimes'][r]['mean_auroc'][m]:.3f}"
                                       for m in ["equal_weight", "stale_auto_select", "no_reliability", "reliability_gate"]))
-    print("\n  Hypotheses (modality_failure regime; reliability_gate minus baseline):")
+    print(f"\n  Hypotheses ({hyp_regime} regime; reliability_gate minus baseline):")
     for k, v in H.items():
         print(f"    {k:26} {v['mean']:+.4f} CI {v['ci95']} pass={v['pass']}")
     print(f"\n  RELIABILITY ROUTING VALIDATED (H1&H2&H3)? {'YES' if summary['reliability_validated'] else 'NO'}")

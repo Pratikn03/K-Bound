@@ -62,11 +62,18 @@ reliability-routing method win: stacking beats per-dataset selection across
 heterogeneous anomaly families, while the routing machinery is inert \emph{for single-input meta-routing}.
 \textbf{(iii) The exception that proves the rule:} in true multimodal detection
 where modalities fail \emph{independently} (pre-registered D23, validated on
-\emph{two} real datasets --- Real-IAD-D3, 15 categories, and MVTec-3D, 7 categories),
-reliability routing decisively wins --- failing the deployment-best modality at
-test, a drift-aware gate beats equal-weight fusion ($+0.24$/$+0.21$), stale selection
-($+0.39$/$+0.32$), and validation-only fusion ($+0.25$/$+0.21$; all CIs exclude zero
-on both) --- while inert when nothing fails. The advantage has a clear boundary, mapped on two fronts:
+\emph{four} real datasets --- Real-IAD-D3 (RGB/PS/XYZ, 15 categories), MVTec-3D
+(RGB/depth, 7), 3D-ADAM (RGB/depth, 12), and MulSen-AD (RGB/infrared/point-cloud, 15),
+spanning two- and three-sensor regimes), reliability routing wins \emph{when the failure
+is drift-inducing} --- failing the deployment-best modality at test with garbage, a
+drift-aware gate beats equal-weight fusion ($+0.13$ to $+0.24$), stale selection
+($+0.28$ to $+0.39$), and validation-only fusion ($+0.12$ to $+0.25$; all twelve $95\%$
+CIs exclude zero, all four datasets pass H1--H3), while inert when nothing fails.
+\textbf{This advantage is failure-model-specific:} under a realistic stuck-sensor
+\emph{dropout} (MulSen) and \emph{real} natural degradation (D29) the gate still beats
+stale selection but \emph{not} plain fusion (n.s.) --- its extra value over fusion needs
+a detectable test-time drift signal, not merely a degraded modality. The advantage has a
+clear boundary, mapped on further fronts:
 two time-series families (NAB $+0.008$; SMD multivariate $+0.011$; both n.s.) and a
 hard near-chance fraud panel (BAF, $6$ variants, base detectors $\approx\!0.6$ AUROC;
 $+0.011$, n.s.) show stacking is marginal where the base detectors carry little
@@ -103,27 +110,63 @@ universal state-of-the-art. We claim, and pre-register, cross-domain
 statistical support and no test-label tuning.
 
 \section{Related Work}
-\textbf{Anomaly-detection benchmarks.} Large suites established that no detector
-dominates across datasets and that model selection matters; ADBench~\cite{adbench}
-spans tabular, CV, and NLP feature sets, OpenOOD~\cite{openood} standardises image
-OOD, and NAB/TSB~\cite{nab} cover time series. Our 123-task suite reuses ADBench-style
-feature vectors across five families. \textbf{Detector / model selection.}
+
+\subsection{Anomaly-detection benchmarks and the no-free-lunch view}
+Large suites established that no detector dominates across datasets and that model
+selection matters. ADBench~\cite{adbench} spans tabular, CV, and NLP feature sets over
+$30$ algorithms, OpenOOD~\cite{openood} standardises image OOD, and NAB~\cite{nab} and
+the broader TSB time-series effort cover temporal anomalies; the PyOD
+toolbox~\cite{pyod} consolidates classical detectors. Our $123$-task suite reuses
+ADBench-style feature vectors across five families and adds auxiliary time-series,
+industrial, and multimodal panels. Theorem~\ref{thm:universal_dominance} formalises the
+no-free-lunch view these benchmarks document empirically.
+
+\subsection{Model and detector selection}
 MetaOD~\cite{metaod} selects an outlier detector per dataset from meta-features;
 validation-AUROC auto-selection is the strong label-aware analogue and our primary
-baseline. \textbf{Fusion and stacking.} Stacked generalization~\cite{wolpert} combines
-base learners with a meta-model; we find a rank-normalized logistic stack is the
-strongest such combiner and beats selection, while rank-mean and confidence-weighted
-mean are weaker. \textbf{Base detectors.} Our zoo uses IForest~\cite{iforest},
-LOF~\cite{lof}, ECOD~\cite{ecod}, COPOD, KNN, and OCSVM. \textbf{Drift detection and
-selective prediction.} Test-time shift is detected with Kolmogorov--Smirnov
-statistics~\cite{driftsurvey}; selective prediction / abstention~\cite{selective}
-motivates the fallback action. Our reliability features are exactly these
-drift/disagreement signals, and our negative result is about whether they add value to
-selection/fusion. \textbf{Calibration.} We report Brier/NLL with
-isotonic~\cite{isotonic} calibration (cf.\ temperature scaling~\cite{calibration}).
-\textbf{Industrial / multimodal anomaly detection.} PatchCore~\cite{patchcore} and
-Real-IAD~\cite{realiad} provide the multimodal RGB+3D detectors and data behind our D23
-independent-modality-failure result.
+baseline. Theorems~\ref{thm:stable_transfer}--\ref{thm:stale_validation} characterise
+when such selection is near-oracle and when it fails. Our finding is that learned
+\emph{combination} dominates \emph{selection} even against a learned MetaOD-style
+selector and the test-label selection oracle.
+
+\subsection{Ensembling, stacking, and AutoML}
+Stacked generalization~\cite{wolpert} combines base learners with a meta-model; ensemble
+selection from libraries of models~\cite{caruana} and automated ML
+pipelines~\cite{autosklearn} are the AutoML analogues. We find a rank-normalized
+logistic stack is the strongest such combiner and beats selection, a greedy Caruana
+ensemble, and per-family specialists, while rank-mean and confidence-weighted mean are
+weaker. The base zoo uses IForest~\cite{iforest}, LOF~\cite{lof}, ECOD~\cite{ecod},
+COPOD, KNN, OCSVM, and (in a robustness check) Deep SVDD~\cite{deepsvdd}.
+
+\subsection{Out-of-distribution detection}
+The image-OOD family draws on the standard post-hoc detector line: maximum softmax
+probability~\cite{msp}, ODIN~\cite{odin}, the Mahalanobis detector~\cite{mahalanobis},
+and energy-based scoring~\cite{energyood}. We treat these as channels in the zoo rather
+than competing with any single one.
+
+\subsection{Drift, test-time adaptation, and selective prediction}
+Test-time shift is detected with Kolmogorov--Smirnov statistics~\cite{driftsurvey}; our
+reliability features are exactly these drift/disagreement signals. Test-time
+adaptation---entropy minimisation (Tent~\cite{tent}) and self-supervised test-time
+training~\cite{ttt}---adapts a model online, whereas we instead \emph{gate} fixed experts;
+selective prediction / abstention~\cite{selective} motivates the fallback action. Our
+negative result is precisely about whether these drift signals add value to
+selection/fusion on single-input data (Proposition~\ref{prop:inert}), and our positive
+result is where they provably must (Proposition~\ref{prop:strict}).
+
+\subsection{Calibration}
+We report Brier/NLL with isotonic~\cite{isotonic} calibration fit on validation only
+(cf.\ temperature scaling~\cite{calibration}).
+
+\subsection{Multimodal and 3D industrial anomaly detection}
+PatchCore~\cite{patchcore} supplies the per-modality memory-bank detectors; the
+multimodal data behind our D23 independent-modality-failure result are
+Real-IAD~\cite{realiad} (RGB/photometric-stereo/point-cloud), the MVTec
+3D-AD~\cite{mvtec3d} and 3D-ADAM RGB+depth benchmarks, and MulSen-AD~\cite{mulsen}
+(RGB camera, infrared, and point cloud---three physically distinct sensors). Dedicated
+multimodal fusion methods such as M3DM~\cite{m3dm} target per-dataset accuracy; our use
+of these datasets is orthogonal---a controlled \emph{reliability} test under
+independent modality failure, not a localisation-accuracy leaderboard entry.
 
 \section{Source-System Evidence (Foundation and Honest Negatives)}
 \systemu{} reuses the \system{}/\method{} program as foundation, pilot, and
@@ -201,10 +244,12 @@ Meta & dataset meta-features (size, dim, anomaly rate) \\
 
 \section{Benchmark Suite and the Universal Evidence Contract}
 The pre-registered Gate~U contract (Table~\ref{tab:contract}) defines success as
-cross-domain robustness, not per-dataset dominance. The minimum-viable strong
-suite spans tabular (ADBench/MacrOData), time series (TSB-AD), OOD (OpenOOD),
-industrial vision (MVTec AD~2), multimodal (Real-IAD D3), and security/fraud
-(UNSW-NB15, credit-card). Dataset manifest in Table~\ref{tab:manifest}.
+cross-domain robustness, not per-dataset dominance. The evaluated suite spans
+tabular (ADBench), image-OOD (ResNet-18 features), text (BERT features), cyber
+(UNSW-NB15), fraud (credit-card $+$ BAF), time series (NAB $+$ SMD), and multimodal
+(Real-IAD-D3, MVTec-3D, 3D-ADAM, MulSen-AD), with two one-shot holdouts (D24
+representation-shift, D27 independent); OpenOOD and MVTec~AD~2 remain planned. Dataset manifest and status in
+Table~\ref{tab:manifest}.
 
 \begin{table}[t]
 \centering
@@ -229,19 +274,24 @@ Held-out result & $\ge 1$ sealed/leaderboard benchmark \\
 
 \begin{table}[t]
 \centering
-\caption{Dataset manifest (pilot + source-system; MVS-planned families marked).}
+\caption{Dataset manifest and status. ``Done'' = scored in this paper (main $123$-task
+suite or a named holdout/panel); ``planned'' = future work.}
 \label{tab:manifest}
 \footnotesize
-\begin{tabular}{L{0.22\linewidth}L{0.42\linewidth}c}
+\begin{tabular}{L{0.20\linewidth}L{0.46\linewidth}c}
 \toprule
-\textbf{Family} & \textbf{Datasets} & \textbf{Status} \\
+\textbf{Family} & \textbf{Datasets (tasks)} & \textbf{Status} \\
 \midrule
-Tabular & ADBench ($47$), online\_shoppers & pilot \\
-Cyber/fraud & UNSW-NB15 (+ per-attack), credit-card & pilot \\
-Multimodal/3D & MVTec 3D-AD, 3D-ADAM, Real-IAD D3, MulSen & source \\
-Time series & TSB-AD subset & planned \\
-OOD & OpenOOD & planned \\
-Industrial vision & MVTec AD~2 & planned \\
+Tabular & ADBench classical, online\_shoppers ($43$) & Done (main) \\
+Image-OOD & CIFAR-10/FashionMNIST/SVHN/MNIST-C, ResNet-18 ($61$) & Done (main) \\
+Text & 20News/AGNews/Amazon/IMDB/Yelp, BERT ($13$) & Done (main) \\
+Cyber & UNSW-NB15 (+ per-attack, $5$) & Done (main) \\
+Fraud & credit-card ($1$) $+$ BAF $6$-variant panel & Done ($n{=}7$, D26) \\
+Time series & NAB (univariate) $+$ SMD (multivariate) & Done (boundary) \\
+Multimodal/3D & Real-IAD-D3, MVTec-3D, 3D-ADAM, MulSen-AD & Done (D23, $4$ sets) \\
+Sealed holdout & ADBench re-featurized ViT/RoBERTa & Done (1-shot, D24) \\
+Independent ext. & digits/wine/wdbc, HAR smartphones & Done (1-shot, D27) \\
+OOD / Ind.\ vision~2 & OpenOOD, MVTec AD~2 & Planned \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -254,17 +304,23 @@ in Sections~\ref{sec:result-tables}--\ref{sec:figures}
 (Table~\ref{tab:main}, Fig.~\ref{fig:rank}). The headline result is a significant
 \emph{breakthrough positive} for the method under test-time score degradation.
 
-\paragraph{Validation auto-selection is vulnerable to shift.} Under test-time
-score degradation, selecting the detector using stale validation metrics leads
-to a high average rank of \textbf{$4.43$} and regret of \textbf{$0.043$}. This is
-because validation metrics are blind to test-time covariate shifts, causing
-the baseline to select degraded channels.
+We report two regimes. The \emph{main} regime is the clean $123$-task i.i.d.\
+evaluation (the headline numbers); the \emph{degradation-stress} regime applies the
+synthetic test-time score corruption used for the reliability ablation.
 
-\paragraph{ELARA-U meta-routing achieves the best average rank.} By using the
-rank-normalized stacking meta-router on validation data and applying it to
-unlabeled test-time predictions, \systemu{} achieves a mean rank of \textbf{$2.53$}
-among the 11 strategies, outperforming the validation auto-select baseline ($3.38$;
-paired AUROC \textbf{$+0.036$}, CI $[+0.023,+0.050]$, excluding zero; wins on $86/123$
+\paragraph{Validation auto-selection is vulnerable to shift (degradation-stress
+regime).} Under the synthetic test-time score-degradation stress, selecting the
+detector by stale validation metrics gives a poor average rank of \textbf{$4.43$}
+(of $11$ strategies) and regret \textbf{$0.043$}, because validation metrics are
+blind to test-time covariate shift and the baseline keeps selecting degraded
+channels.
+
+\paragraph{ELARA-U meta-routing achieves the best average rank (main regime).} On
+the clean $123$-task evaluation, the rank-normalized stacking meta-router (fit on
+validation, applied to unlabeled test predictions) achieves a mean rank of
+\textbf{$2.53$} among the $11$ strategies, outperforming validation auto-select
+(\textbf{$3.38$} in this regime; $4.43$ under the degradation stress above; paired
+AUROC \textbf{$+0.036$}, CI $[+0.023,+0.050]$, excluding zero; wins on $86/123$
 tasks) and all fixed detectors (best fixed KNN: $5.42$; $+0.075$ AUROC, CI
 $[+0.052,+0.101]$; $100/123$ wins). \systemu{} \emph{exceeds} the best-single-detector
 oracle ($0.784$ vs $0.756$ AUROC), so its regret-to-oracle is effectively zero, and it
@@ -289,22 +345,27 @@ reliability gate ($-0.037$ AUROC, $p_{\mathrm{Holm}}{<}10^{-8}$).
 
 \section{Strengthening the Stacking Result}
 \label{sec:strength}
-We harden the main result against seven reviewer concerns. \textbf{(i) Stacker
-family} (Table~\ref{tab:stackers}): random-forest and gradient-boosting stackers
-match logistic stacking and all beat auto-select (CIs exclude zero), while a simple
-average \emph{loses} --- the gain is learned combination, not averaging. A
-\emph{learned} meta-selector in the spirit of MetaOD~\cite{metaod} (random forest
-over $28$ validation-only meta-features incl.\ landmarkers, leave-one-task-out) does
-\emph{not} rescue selection: it scores $0.737$, \emph{below} naive auto-select
-($-0.011$, CI $[-0.017,-0.006]$), and stacking beats it by $+0.044$ (CI
-$[+0.030,+0.060]$). The winning move is combining, not selecting --- even
-cleverly.
-\textbf{(ii) Detector-zoo strength:} adding a deep detector (DeepSVDD) to the six
+We harden the main result against seven reviewer concerns.
+\textbf{(i) Comprehensive baselines} (Table~\ref{tab:baselines}): the headline
+logistic stack beats \emph{every} non-oracle baseline with $95\%$ CIs excluding zero
+--- selection (best fixed $+0.073$, validation auto-select $+0.033$, a learned
+MetaOD-style~\cite{metaod} selector $+0.045$), averaging (raw / rank /
+confidence-weighted $\approx+0.073$; calibrated average $+0.048$), an AutoML-style
+greedy ensemble (Caruana, $+0.032$), and a per-family specialist stacker ($+0.049$).
+Decisively, it also beats two \emph{test-label oracle} ceilings: the
+best-single-detector selection ceiling ($+0.025$, CI $[+0.012,+0.039]$) and the best
+equal-weight pair-fusion ceiling ($+0.032$, CI $[+0.018,+0.048]$). A weak-baseline win
+cannot exceed the oracle selection ceiling; learned $6$-way per-sample combination can.
+\textbf{(ii) Stacker family:} random-forest, gradient-boosting, and hist-GBM stackers
+match logistic (differences n.s.), and a rank-normalized logistic variant is
+statistically identical ($0.783$); the gain is learned combination, not the choice of
+learner.
+\textbf{(iii) Detector-zoo strength:} adding a deep detector (DeepSVDD) to the six
 classical detectors preserves the win (stack $-$ auto-select $+0.038$, CI
 $[+0.025,+0.051]$); DeepSVDD is not stronger than the classical detectors here
 (mean AUROC $0.65$), consistent with ADBench, so it does not trivialise routing.
-\textbf{(iii) Calibration} (Table~\ref{tab:calib2}): a validation-only isotonic
-layer yields well-calibrated probabilities. \textbf{(iv) Sealed external
+\textbf{(iv) Calibration} (Table~\ref{tab:calib2}): a validation-only isotonic
+layer yields well-calibrated probabilities. \textbf{(v) Sealed external
 replication} (Table~\ref{tab:sealed}): the method, baselines, and pass condition
 were frozen (protocol D24) \emph{before} scoring the same $74$ ADBench datasets
 \emph{re-featurized with a different (untouched) feature extractor} than development
@@ -331,21 +392,38 @@ absent from the development archive --- sklearn \texttt{digits}/\texttt{wine}/%
 $[+0.120,+0.303]$). Combination generalises to genuinely new sources.
 
 \begin{table}[t]\centering
-\caption{Stacking beats selection across stacker families (123 tasks, paired
-bootstrap vs auto-select). RF/GBM match logistic (differences n.s.); a simple
-average \emph{loses} to selection; and a learned MetaOD-style meta-selector is
-\emph{below} naive auto-select --- so the gain is learned combination, not selection.}
-\label{tab:stackers}\footnotesize
-\begin{tabular}{lccc}
+\caption{Comprehensive baseline comparison (123 tasks; paired bootstrap of the
+headline logistic stack minus each method). The headline stack beats \emph{every}
+non-oracle baseline \emph{and} both test-label oracle ceilings; all CIs exclude zero
+except where marked n.s. ``Stack (logistic)'' is the headline.}
+\label{tab:baselines}\footnotesize
+\begin{tabular}{lcc}
 \toprule
-\textbf{Method} & mean AUROC & $\Delta$ vs auto-select & 95\% CI \\
+\textbf{Method} & mean AUROC & stack $-$ method (95\% CI) \\
 \midrule
-Auto-select & 0.748 & --- & --- \\
-Meta-select (MetaOD-style, learned) & 0.737 & $-0.011$ & $[-0.017,-0.006]$ \\
-Simple average & 0.709 & $-0.039$ & $[-0.048,-0.031]$ \\
-Stack (logistic) & 0.781 & $+0.033$ & $[+0.021,+0.047]$ \\
-Stack (random forest) & 0.770 & $+0.022$ & $[+0.003,+0.041]$ \\
-Stack (grad. boosting) & 0.774 & $+0.026$ & $[+0.009,+0.044]$ \\
+\multicolumn{3}{l}{\emph{Selection}}\\
+Best fixed detector & 0.709 & $+0.073\,[+0.050,+0.099]$ \\
+Validation auto-select & 0.748 & $+0.033\,[+0.021,+0.047]$ \\
+MetaOD-style learned select & 0.736 & $+0.045\,[+0.031,+0.061]$ \\
+\midrule
+\multicolumn{3}{l}{\emph{Averaging / ensemble}}\\
+Rank-mean & 0.707 & $+0.074\,[+0.057,+0.093]$ \\
+Confidence-weighted mean & 0.708 & $+0.073\,[+0.055,+0.093]$ \\
+Simple average (raw) & 0.709 & $+0.072\,[+0.054,+0.092]$ \\
+Average (calibrated) & 0.734 & $+0.048\,[+0.035,+0.062]$ \\
+AutoML greedy ensemble & 0.749 & $+0.032\,[+0.020,+0.046]$ \\
+\midrule
+\multicolumn{3}{l}{\emph{Stackers}}\\
+Per-family specialist & 0.732 & $+0.049\,[+0.034,+0.066]$ \\
+Stack (random forest) & 0.771 & $+0.010$ (n.s.) \\
+Stack (grad.\ boosting) & 0.763 & $+0.019\,[+0.005,+0.033]$ \\
+Stack (hist-GBM) & 0.769 & $+0.012$ (n.s.) \\
+Stack (logistic, rank-norm) & 0.783 & $-0.003$ (n.s.) \\
+\textbf{Stack (logistic, headline)} & \textbf{0.781} & --- \\
+\midrule
+\multicolumn{3}{l}{\emph{Oracle upper bounds (use test labels)}}\\
+Oracle best single detector & 0.756 & $+0.025\,[+0.012,+0.039]$ \\
+Oracle best pair fusion & 0.749 & $+0.032\,[+0.018,+0.048]$ \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -390,38 +468,182 @@ Auto-select & 0.795 & --- \\
 Every regime where reliability routing was inert used \emph{single-input}
 families: all detectors see the same data, so no modality can fail independently.
 We therefore pre-registered (\texttt{research\_lock/MULTIMODAL\_RELIABILITY\_PROTOCOL\_v1})
-a test on true multimodal data (Real-IAD-D3: RGB, photometric-stereo, point-cloud
-XYZ experts), failing the deployment-best modality at test while the others stay
-clean; reliability routing detects the failed modality (KS validation-vs-test
-drift, no test labels) and routes away from it. All three pre-registered
-hypotheses pass (Table~\ref{tab:d23}); in the clean regime the gate is inert. The
-precise claim: \emph{reliability routing helps iff modalities can fail
-independently}.
+a test on true multimodal data, failing the deployment-best modality at test while the
+others stay clean; reliability routing detects the failed modality (KS validation-vs-test
+drift, no test labels) and routes away from it. We run it on \emph{four} real datasets
+that together span both the two-sensor and three-sensor regimes: Real-IAD-D3 (RGB,
+photometric-stereo, point-cloud XYZ), MVTec-3D (RGB, depth), 3D-ADAM (RGB, depth), and
+MulSen-AD (RGB camera, infrared, point cloud)~\cite{mulsen}. MulSen-AD is the cleanest
+case --- three \emph{physically distinct sensors}, so the independent-failure premise is
+intrinsic rather than induced. All three pre-registered hypotheses pass on \emph{every}
+dataset (Table~\ref{tab:d23}, Fig.~\ref{fig:d23}); in the clean regime the gate is inert
+on all four. The two-sensor datasets (MVTec-3D, 3D-ADAM) confirm the effect does not
+require three modalities. The precise claim: \emph{reliability routing helps iff
+modalities can fail independently}. Theory Propositions~\ref{prop:inert}
+and~\ref{prop:strict} explain why this boundary --- not three datasets' coincidence ---
+is where the gate must help.
 
 \begin{table}[t]\centering
-\caption{D23 multimodal reliability on \emph{two} real datasets (Real-IAD-D3, 15
-categories; MVTec-3D, 7 categories). Mean AUROC in the modality-failure regime; the
-gate is inert in the clean regime (equals validation-only fusion) on both. Hypotheses
-are paired bootstrap over categories.}
+\caption{D23 multimodal reliability on \emph{four} real datasets, spanning two-sensor
+(MVTec-3D, 3D-ADAM) and three-sensor (Real-IAD-D3, MulSen-AD) regimes. Mean AUROC in
+the modality-failure regime (deployment-best modality fails at test; canonical noise
+protocol); the gate is inert in the clean regime (equals validation-only fusion) on all
+four. Hypotheses are paired bootstrap over categories; \emph{all four datasets pass
+H1--H3}.}
 \label{tab:d23}\footnotesize
-\begin{tabular}{lcc}
+\begin{tabular}{lcccc}
 \toprule
-\textbf{Method (failure regime)} & Real-IAD-D3 & MVTec-3D \\
+\textbf{Method (failure regime)} & \scriptsize Real- & \scriptsize MVTec & \scriptsize 3D- & \scriptsize MulSen \\
+ & \scriptsize IAD-D3 & \scriptsize -3D & \scriptsize ADAM & \scriptsize -AD \\
+ & \scriptsize 3 mod, 15 & \scriptsize 2 mod, 7 & \scriptsize 2 mod, 12 & \scriptsize 3 mod, 15 \\
 \midrule
-Equal-weight (CW) & 0.526 & 0.586 \\
-Stale auto-select & 0.381 & 0.475 \\
-Validation-only fusion & 0.519 & 0.581 \\
-\textbf{Reliability gate} & \textbf{0.767} & \textbf{0.792} \\
+Equal-weight (CW) & 0.526 & 0.586 & 0.583 & 0.632 \\
+Stale auto-select & 0.381 & 0.475 & 0.472 & 0.460 \\
+Validation-only fusion & 0.519 & 0.581 & 0.630 & 0.599 \\
+\textbf{Reliability gate} & \textbf{0.767} & \textbf{0.792} & \textbf{0.748} & \textbf{0.763} \\
 \midrule
-\multicolumn{3}{p{0.92\linewidth}}{\emph{Real-IAD-D3:} H1 vs equal-weight $+0.241$ $[0.152,0.348]$; H2 vs stale-select $+0.386$ $[0.281,0.483]$; H3 vs validation-only $+0.248$ $[0.168,0.323]$. \emph{MVTec-3D:} H1 $+0.207$ $[0.172,0.242]$; H2 $+0.317$ $[0.240,0.405]$; H3 $+0.211$ $[0.180,0.244]$. All 95\% CIs exclude zero.}\\
+\multicolumn{5}{p{0.95\linewidth}}{\footnotesize Reliability-gate minus baseline (mean, 95\% CI), all excluding zero. \emph{Real-IAD-D3:} H1 $+0.241\,[0.152,0.348]$, H2 $+0.386\,[0.281,0.483]$, H3 $+0.248\,[0.168,0.323]$. \emph{MVTec-3D:} H1 $+0.207\,[0.172,0.242]$, H2 $+0.317\,[0.240,0.405]$, H3 $+0.211\,[0.180,0.244]$. \emph{3D-ADAM:} H1 $+0.166\,[0.088,0.248]$, H2 $+0.277\,[0.161,0.394]$, H3 $+0.118\,[0.038,0.213]$. \emph{MulSen-AD:} H1 $+0.131\,[0.049,0.221]$, H2 $+0.303\,[0.196,0.410]$, H3 $+0.164\,[0.074,0.261]$. (H1 vs equal-weight, H2 vs stale-select, H3 vs validation-only fusion.)}\\
 \bottomrule
 \end{tabular}
 \end{table}
 
+\paragraph{Failure-model dependence: real degradation.} The four-dataset wins above
+use the canonical \emph{uniform-noise} failure (the failed sensor emits garbage, which
+\emph{drifts} detectably). Two further checks locate the gate's true operating regime.
+\textbf{(i) Real sensor dropout:} on MulSen-AD we replace noise with a stuck/constant
+sensor reading (a realistic outage): the gate still beats stale single-modality
+selection ($+0.28$) but \emph{not} plain fusion (vs equal-weight $-0.03$, n.s.; vs
+validation-only fusion $-0.05$). \textbf{(ii) Real natural degradation (D29):} on
+Real-IAD-D3 with per-modality deep-PatchCore scores taken from the raw data ($16$
+categories, \emph{no injection}), the gate again beats stale selection ($+0.13$) but
+not plain fusion ($+0.02$/$+0.03$, n.s.). The honest refinement: \emph{fusion robustly
+beats selection, but the gate's extra value over fusion is specific to drift-inducing
+faults}; under a stuck sensor or mild natural degradation there is no test-time drift to
+exploit and plain fusion is as good --- exactly Proposition~\ref{prop:inert} (no
+label-relevant test signal $\Rightarrow$ gate inert).
+
+\section{Validated Theory Stack: What Is Certified and What Is Bounded}
+\label{sec:theory-stack}
+Beyond the routing theorems of Section~\ref{sec:theory}, the reliability-routing program
+carries a validated theory stack (\textbf{T1--T9}) inherited from the source multimodal
+system; \systemu{} reuses its meta-router capacity and switching results directly. Rather
+than restate proofs, Table~\ref{tab:theory-map} summarises what each result
+\emph{certifies} and where it is \emph{bounded}; the full stack re-runs from
+\texttt{src/scripts/validate\_theorem\_stack.py} (\texttt{all\_ok=true}, $21$ artifact
+tables). The stack is deliberately self-limiting: several flagship results are
+\emph{impossibility} or \emph{non-dominance} statements that fence the claim rather than
+inflate it.
+
+\begin{table*}[t]\centering
+\caption{Validated theory stack T1--T9 (+ the gate-decision rule, GDR): what each result
+certifies and the boundary it leaves open. All rows re-run green in
+\texttt{validate\_theorem\_stack.py}.}
+\label{tab:theory-map}\footnotesize
+\input{tables/elara_theory_experiment_mapping.tex}
+\end{table*}
+
+\paragraph{Meta-router capacity (T7).} A PAC slack bound certifies the router's
+generalisation per fold (Table~\ref{tab:t7}): tight on the larger folds (VisA $n{=}3000$,
+slack $0.65$; UNSW $n{=}2200$, slack $0.76$) and loose on small ones. This bounds the
+router's \emph{capacity}; it does not by itself prove fusion dominance, and we do not
+claim it does.
+
+\begin{table*}[t]\centering
+\caption{T7 PAC meta-router capacity bound (auditable $(n,B,R)$ slack per fold; tight
+where slack $<1$). Bounds the router; composes with T1/T2/T6 rather than proving fusion
+dominance.}
+\label{tab:t7}\footnotesize
+\input{tables/meta_router_pac_t7.tex}
+\end{table*}
+
+\paragraph{Finite-sample switching certificate (T5).} An empirical-Bernstein
+deployment-window lower-confidence bound certifies a positive switch on \emph{7 of 10}
+benchmark/protocol pairs (Table~\ref{tab:t5}); the three uncertified pairs are exactly the
+near-ceiling canonical protocols, consistent with the clean-transfer impossibility below.
+
+\begin{table*}[t]\centering
+\caption{T5 finite-sample switching certificate (empirical-Bernstein LCB at $\delta=0.05$).
+Certified on 7 of 10 pairs; the uncertified three are near-ceiling canonical protocols.}
+\label{tab:t5}\footnotesize
+\input{tables/switching_certificate_t5.tex}
+\end{table*}
+
+\paragraph{The boundary is proved, not assumed (T1, T4, T9).} The stack proves its own
+limits. Quality-blind fusion cannot disambiguate identical score vectors with different
+latent reliability (T1, validated across $D\in\{2,4,8\}$ and four prevalences). The
+reliability switch does \emph{not} certifiably dominate at realistic prevalence and
+sample sizes (T4: every audited row returns ``no'', requiring $n^\star\!\ge\!82{,}427$
+fired samples to certify). And on clean, near-ceiling transfer the reliability gate is
+\emph{unpassable by proof} (T9, Table~\ref{tab:t9}): even an unconstrained oracle cannot
+be certified above the confidence-weighted mean, including on the clean 3D-ADAM and
+MulSen panels. T8 (certified heterogeneous fusion) holds, but with a razor-thin margin
+($\Delta$ vs SAR $+0.0033$). These negative results are precisely why \systemu{} claims a
+bounded operating region rather than universal superiority --- the theory and the
+experiments agree on the same boundary.
+
+\begin{table}[t]\centering
+\caption{T9 clean-transfer ceiling: $\varepsilon_{\mathrm{subopt}}<$ MDE makes Gate~E
+\emph{unpassable by proof} --- no fusion class, oracle included, is certifiable above the
+confidence-weighted mean on clean near-ceiling data.}
+\label{tab:t9}\footnotesize
+\input{tables/t9_clean_transfer_ceiling.tex}
+\end{table}
+
 \section{Scope, Limitations, and Honest Boundaries}
-This is a pilot. We do not claim universal superiority or per-dataset SOTA; the
-strict clean-transfer gate of the source system remains closed by proof (T9) and
-is not relitigated here. We note that while \systemu{} significantly improves the mean rank on cyber, tabular, and image-OOD families, the rank-gain bootstrap interval on text tasks is directionally positive but does not exclude zero. The fraud family, previously $n=1$, is now expanded to $n=7$ with the BAF suite~\cite{baf} (Strengthening \S vi); on that hard near-chance panel stacking is \emph{not} significantly better than selection --- an honest boundary, not a win. Furthermore, beyond synthetic degradation we ran a sealed natural temporal-shift benchmark (D22, Results): there too plain stacking wins and the drift-aware router is worse (directionally; the $n{=}7$ negative does not survive Holm correction, while the 123-task stack-gate negative does), so the reliability/drift machinery does not help even under natural shift; native OOD and industrial sensor-drift families remain future work. Calibration is now reported with fitted Brier and NLL (Table~\ref{tab:calib}, reliability diagram Fig.~\ref{fig:reliability}); larger sealed natural-shift suites remain future work.
+This is a focused cross-domain study, not a universal-SOTA claim. The positive
+(stacking) is now supported by a comprehensive baseline sweep including oracle
+ceilings (D28), calibration, a representation-shift holdout (D24), and a fully
+independent external corpus (D27); the negative (reliability routing) is Holm-robust
+on single-input data and reversed only under independent multimodal failure (D23).
+We do not claim universal superiority or per-dataset SOTA; the strict clean-transfer
+gate of the source system remains closed by proof (T9) and is not relitigated here. We note that while \systemu{} significantly improves the mean rank on cyber, tabular, and image-OOD families, the rank-gain bootstrap interval on text tasks is directionally positive but does not exclude zero. The fraud family, previously $n=1$, is now expanded to $n=7$ with the BAF suite~\cite{baf} (Strengthening \S vi); on that hard near-chance panel stacking is \emph{not} significantly better than selection --- an honest boundary, not a win. Furthermore, beyond synthetic degradation we ran a sealed natural temporal-shift benchmark (D22, Results): there too plain stacking wins and the drift-aware router is worse (directionally; the $n{=}7$ negative does not survive Holm correction, while the 123-task stack-gate negative does), so the reliability/drift machinery does not help even under natural shift; native OOD and industrial sensor-drift families remain future work. Calibration is now reported with fitted Brier and NLL (Table~\ref{tab:calib}, reliability diagram Fig.~\ref{fig:reliability}); larger sealed natural-shift suites remain future work.
+
+\section{Conclusion}
+We asked when meta-routing helps cross-domain anomaly detection and answered it with
+a pre-registered evidence contract rather than a leaderboard claim. Three findings
+stand. \textbf{First, stacking beats selection.} A per-task logistic stack beats
+validation auto-selection ($+0.036$) across $123$ tasks and, in a comprehensive
+sweep (Table~\ref{tab:baselines}), beats every standard combiner, a learned
+MetaOD-style selector, an AutoML greedy ensemble, and even the test-label
+oracle best-single and best-pair ceilings --- so the gain is genuine learned
+combination, not a weak-baseline artefact. It replicates under representation shift
+(D24, $+0.016$) and on a fully independent external corpus (D27, $+0.111$), and is
+well-calibrated after a validation-only isotonic layer. \textbf{Second, reliability
+routing does not help single-input meta-routing}: KS drift, disagreement, and a
+degenerate-channel guard add no value over plain stacking, and a reliability gate is
+Holm-significantly worse --- a clean negative. \textbf{Third, the exception that
+proves the rule}: when a modality fails \emph{independently and detectably} (D23,
+four real multimodal datasets across two- and three-sensor regimes), a drift-aware gate
+wins over both selection and fusion --- but this is failure-model-specific: under a
+realistic stuck-sensor dropout or real natural degradation the gate beats selection yet
+not plain fusion (n.s.), so its value needs a detectable drift signal. The advantage is
+also honestly bounded --- marginal on time-series (NAB, SMD) and on the near-chance BAF
+fraud panel, where the base detectors carry little individual signal. The practical
+takeaway: \emph{combine detectors by default; add reliability gating only where
+inputs can fail independently}.
+
+\paragraph{A tested new direction (per-sample routing) --- and an honest negative.}
+We include this refuted method deliberately: it shows the pre-registered evidence
+contract catching a false positive in real time --- the same machinery that licenses
+the positive claims above. Proposition~\ref{prop:inert}'s inertness is specific to
+\emph{per-channel} reweighting (constant across samples), suggesting an escape: a
+\emph{per-sample} reliability-gated stacker (PS-RGS) whose weights vary with the input
+lies \emph{outside} the linear class the proposition bounds. On the $123$-task classical zoo PS-RGS gives only a directional,
+non-significant gain ($+0.0068$, CI $[-0.0002,+0.015]$), with a positive-but-n.s.\
+correlation to detector heterogeneity (Spearman $r\!\approx\!0.14$) --- consistent with
+a conjecture (T10) that per-sample routing should help in proportion to reliability
+heterogeneity. We \emph{tested} that conjecture on a heterogeneous deep$+$classical zoo
+(adding DeepSVDD, an autoencoder, and a VAE). On tabular development data PS-RGS
+significantly beat plain stacking ($+0.016$, CI excl.\ $0$); but in a \textbf{pre-registered
+one-shot held-out confirmation} (protocol D32) the effect \emph{did not replicate} ---
+ADBench-CV $+0.002$ (n.s.) and ADBench-NLP $-0.020$ (significantly \emph{worse}). We
+therefore report PS-RGS as a theoretically-motivated method whose advantage is
+\textbf{not robust}: a development-only signal refuted by held-out confirmation --- a
+cautionary result, and a concrete demonstration of why pre-registration matters. The
+one effect that \emph{does} replicate is minor: a deep zoo modestly improves plain
+stacking on feature-vector families (tabular $+0.010$, CV $+0.004$; both CIs exclude
+$0$; n.s.\ on NLP). Future work includes a fully independent multimodal industrial
+holdout and native OOD/sensor-drift families.
 
 \section{Reproducibility}
 Router and evaluation: \texttt{src/scripts/elara\_u/gate\_u\_seed\_eval.py};
@@ -440,12 +662,24 @@ results: \texttt{experiments/elara\_u/}. No test labels enter router fitting
 \bibitem{selective} Y.~Geifman and R.~El-Yaniv, ``Selective Classification for Deep Neural Networks,'' \emph{NeurIPS}, 2017.
 \bibitem{isotonic} B.~Zadrozny and C.~Elkan, ``Transforming Classifier Scores into Accurate Multiclass Probability Estimates,'' \emph{KDD}, 2002.
 \bibitem{calibration} C.~Guo, G.~Pleiss, Y.~Sun, and K.~Q.~Weinberger, ``On Calibration of Modern Neural Networks,'' \emph{ICML}, 2017.
-\bibitem{metaod} Y.~Zhao, R.~Rossi, and L.~Akoglu, ``Automating Outlier Detection via Meta-Learning,'' \emph{NeurIPS}, 2021.
 \bibitem{baf} S.~Jesus, J.~Pombal, D.~Alves, et al., ``Turning the Tables: Biased, Imbalanced, Dynamic Tabular Datasets for ML Evaluation (Bank Account Fraud),'' \emph{NeurIPS Datasets and Benchmarks}, 2022.
 \bibitem{patchcore} K.~Roth, L.~Pemula, J.~Zepeda, B.~Sch\"olkopf, T.~Brox, and P.~Gehler, ``Towards Total Recall in Industrial Anomaly Detection (PatchCore),'' \emph{CVPR}, 2022.
 \bibitem{realiad} C.~Wang et al., ``Real-IAD: A Real-World Multi-View Benchmark for Industrial Anomaly Detection,'' \emph{CVPR}, 2024.
+\bibitem{mulsen} W.~Li et al., ``MulSen-AD: A Multi-Sensor Benchmark for Industrial Anomaly Detection (RGB, infrared, and point cloud),'' benchmark dataset, 2024.
 \bibitem{openood} J.~Yang et al., ``OpenOOD: Benchmarking Generalized Out-of-Distribution Detection,'' \emph{NeurIPS Datasets and Benchmarks}, 2022.
 \bibitem{nab} A.~Lavin and S.~Ahmad, ``Evaluating Real-Time Anomaly Detection Algorithms -- The Numenta Anomaly Benchmark (NAB),'' \emph{ICMLA}, 2015.
+\bibitem{pyod} Y.~Zhao, Z.~Nasrullah, and Z.~Li, ``PyOD: A Python Toolbox for Scalable Outlier Detection,'' \emph{Journal of Machine Learning Research}, 20(96):1--7, 2019.
+\bibitem{caruana} R.~Caruana, A.~Niculescu-Mizil, G.~Crew, and A.~Ksikes, ``Ensemble Selection from Libraries of Models,'' \emph{ICML}, 2004.
+\bibitem{autosklearn} M.~Feurer, A.~Klein, K.~Eggensperger, J.~Springenberg, M.~Blum, and F.~Hutter, ``Efficient and Robust Automated Machine Learning (auto-sklearn),'' \emph{NeurIPS}, 2015.
+\bibitem{deepsvdd} L.~Ruff, R.~Vandermeulen, N.~G\"ornitz, et al., ``Deep One-Class Classification (Deep SVDD),'' \emph{ICML}, 2018.
+\bibitem{msp} D.~Hendrycks and K.~Gimpel, ``A Baseline for Detecting Misclassified and Out-of-Distribution Examples in Neural Networks,'' \emph{ICLR}, 2017.
+\bibitem{odin} S.~Liang, Y.~Li, and R.~Srikant, ``Enhancing the Reliability of Out-of-Distribution Image Detection in Neural Networks (ODIN),'' \emph{ICLR}, 2018.
+\bibitem{mahalanobis} K.~Lee, K.~Lee, H.~Lee, and J.~Shin, ``A Simple Unified Framework for Detecting Out-of-Distribution Samples and Adversarial Attacks,'' \emph{NeurIPS}, 2018.
+\bibitem{energyood} W.~Liu, X.~Wang, J.~D.~Owens, and Y.~Li, ``Energy-based Out-of-Distribution Detection,'' \emph{NeurIPS}, 2020.
+\bibitem{tent} D.~Wang, E.~Shelhamer, S.~Liu, B.~Olshausen, and T.~Darrell, ``Tent: Fully Test-Time Adaptation by Entropy Minimization,'' \emph{ICLR}, 2021.
+\bibitem{ttt} Y.~Sun, X.~Wang, Z.~Liu, J.~Miller, A.~A.~Efros, and M.~Hardt, ``Test-Time Training with Self-Supervision for Generalization under Distribution Shifts,'' \emph{ICML}, 2020.
+\bibitem{mvtec3d} P.~Bergmann, X.~Jin, D.~Sattlegger, and C.~Steger, ``The MVTec 3D-AD Dataset for Unsupervised 3D Anomaly Detection and Localization,'' \emph{VISAPP}, 2022.
+\bibitem{m3dm} Y.~Wang, J.~Peng, J.~Zhang, R.~Yi, Y.~Wang, and C.~Wang, ``Multimodal Industrial Anomaly Detection via Hybrid Fusion (M3DM),'' \emph{CVPR}, 2023.
 \end{thebibliography}
 
 \clearpage
