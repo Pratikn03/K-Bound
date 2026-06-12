@@ -30,8 +30,11 @@ logger = logging.getLogger(__name__)
 
 def _repo_root() -> Path:
     here = Path(__file__).resolve()
+    # The original marker dir `elara_master_c/` was removed in the 2026-06-03 Master-C
+    # retirement; fall back to surviving repo-root sentinels (research_lock is kept).
+    markers = ("elara_master_c", "research_lock", "pyproject.toml", "experiments")
     for parent in here.parents:
-        if (parent / "elara_master_c").is_dir():
+        if any((parent / m).exists() for m in markers):
             return parent
     raise RuntimeError("repo root not found")
 
