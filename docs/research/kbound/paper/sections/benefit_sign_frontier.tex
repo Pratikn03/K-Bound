@@ -28,9 +28,10 @@ labeled source $P_S$, and hence any source-derived score $s(x)$ for $\eta_a(x)$ 
 source-calibrated confidence of $f_a$). Define the \emph{observable margin} and the
 \emph{calibration drift on the decision region}
 \[
-  M \;:=\; \E_{\mu\mid D}[\,s\,]-\tfrac12 \quad(\text{observable}),
-  \qquad
-  \gamma \;:=\; \E_{\mu\mid D}[\,\eta_a-s\,]\quad(\text{unobservable}).
+  \begin{aligned}
+  M &\;:=\; \E_{\mu\mid D}[\,s\,]-\tfrac12 \quad(\text{observable}),\\
+  \gamma &\;:=\; \E_{\mu\mid D}[\,\eta_a-s\,]\quad(\text{unobservable}).
+  \end{aligned}
 \]
 
 \begin{lemma}[Reduction]\label{lem:reduction}
@@ -50,7 +51,7 @@ $\bar a-\tfrac12=\E_{\mu\mid D}[\eta_a]-\tfrac12=(\E_{\mu\mid D}[s]-\tfrac12)+\E
 Since $\mu(D)>0$, $\sign\Delta=\sign(M+\gamma)$.
 \end{proof}
 
-\begin{theorem}[Exact frontier, sufficiency, and necessity]\label{thm:frontier}
+\begin{theorem}[Exact benefit-sign frontier: sufficiency and necessity \textnormal{(main result)}]\label{thm:frontier}
 Fix the observables $(\mu,P_S,f_0,f_a)$ with $\mu(D)>0$, so $M$ is determined.
 \begin{enumerate}\itemsep1pt
 \item[\textnormal{(i)}] \textbf{(Scalar sufficiency.)} Any two targets with the same
@@ -72,8 +73,8 @@ $-M$ can identify $\sign\Delta$.}
 $M$ is fixed by the observables. (ii) If $|M|>\beta$ then for all $|\gamma|\le\beta$,
 $\sign(M+\gamma)=\sign M$ (the perturbation cannot cross $0$), so the sign is constant on
 $\mathcal C_\beta$ and equals $\sign M$. Conversely if $|M|\le\beta$, choose
-$\gamma=+\beta$ and $\gamma=-\beta$: both lie in $\mathcal C_\beta$ and give
-$M+\gamma\ge 0\ge M-\beta$ wait— $M+\beta\ge0$ (as $M\ge-\beta$) and $M-\beta\le0$ (as
+$\gamma=+\beta$ and $\gamma=-\beta$: both lie in $\mathcal C_\beta$, and
+$M+\beta\ge0$ (since $M\ge-\beta$) while $M-\beta\le0$ (since
 $M\le\beta$), so the two admissible targets have $\Delta\ge0$ and $\Delta\le0$
 respectively; the sign is not constant, hence not identifiable.
 (iii) $\sign\Delta=\sign(M+\gamma)$ with $M$ fixed; constancy of $\sign(M+\gamma)$ on
@@ -81,7 +82,16 @@ $\mathcal C$ is, by definition, the statement that $M+\gamma$ does not change si
 $\mathcal C$, i.e.\ $\gamma$ stays on one side of $-M$.
 \end{proof}
 
-\begin{theorem}[Tight minimax impossibility]\label{thm:minimax}
+\smallskip\noindent\emph{Significance (the paper's main result).} The knowable/unknowable
+boundary is pinned to a single inequality $|M|>\beta$ in \emph{observable} quantities; the sole
+obstruction is the one-dimensional drift $\gamma$, proved \emph{necessary} by clause~(iii)---not an
+artifact of any particular estimator. Corollary~\ref{cor:irreducible} shows the budget $\beta$ is
+irreducible, and Proposition~\ref{prop:beta0} shows every prior label-free accuracy heuristic
+(ATC, DoC, GDE, COT, AETTA, Agreement-on-the-Line) is the degenerate $\beta{=}0$ face of this
+frontier. To our knowledge this is the first exact, two-sided characterization of label-free
+benefit-sign identifiability.
+
+\begin{proposition}[Tight minimax impossibility]\label{thm:minimax}
 Let a committal rule be any map $g$ from the observables to $\{\textsc{adapt},\textsc{freeze}\}$,
 and let its error be $\sup_{P_T\in\mathcal C_\beta}\Pr[g\ \text{wrong about }\sign\Delta]$.
 Then the minimax committal error equals
@@ -94,7 +104,7 @@ Hence the three-way rule
 $\textsc{adapt}$ if $M>\beta$, $\textsc{freeze}$ if $M<-\beta$, else $\textsc{abstain}$,
 is the \emph{unique maximal sound} certificate: it never commits to the wrong sign, and it
 abstains exactly on the information-theoretically unknowable set $\{|M|\le\beta\}$.
-\end{theorem}
+\end{proposition}
 \begin{proof}
 For $|M|>\beta$, Theorem~\ref{thm:frontier}(ii) makes the sign certain, so $g\equiv\sign M$
 errs with probability $0$. For $|M|\le\beta$, consider the two targets $P^+$ ($\gamma=+\beta$)
@@ -109,7 +119,7 @@ two-point bound $\tfrac12(1-\mathrm{TV})$ with $\mathrm{TV}=0$.
 
 \begin{corollary}[Irreducibility of the drift budget]\label{cor:irreducible}
 $\gamma$ is a functional of the unobservable conditional $\eta_a$ on $D$ and is not
-determined by the observable law (Theorem~\ref{thm:minimax} exhibits observationally
+determined by the observable law (Proposition~\ref{thm:minimax} exhibits observationally
 identical targets with $\gamma=\pm\beta$). Combined with the necessity clause
 Theorem~\ref{thm:frontier}(iii), \emph{no label-free certificate can identify $\sign\Delta$
 without a supplied bound on $\gamma$}. The calibration-drift budget $\beta$ is therefore
@@ -120,7 +130,7 @@ prior heuristics provably does not exist.
 \begin{proposition}[The heuristics are the $\beta{=}0$ face]\label{prop:beta0}
 The benefit-sign certificate induced by any source-calibrated confidence estimator (ATC),
 by model--dropout disagreement (AETTA), or by agreement slope (Agreement-on-the-Line) is
-the plug-in $\sign M$, i.e.\ the $\beta{=}0$ instance of Theorem~\ref{thm:minimax}. It is
+the plug-in $\sign M$, i.e.\ the $\beta{=}0$ instance of Proposition~\ref{thm:minimax}. It is
 sound \emph{iff} $\gamma=0$ (calibration transfers on $D$), and its error equals
 $\Pr\!\big[\,|\gamma|>|M|\ \text{and}\ \sign\gamma\neq\sign M\,\big]$. Thus these methods do
 not fail for independent reasons; they share the single failure mode $\gamma\neq0$, the
@@ -129,14 +139,14 @@ calibration drift on the decision region.
 \begin{proof}
 Each method thresholds an observable surrogate $s$ for $\eta_a$ and predicts the benefit
 sign by whether the average surrogate exceeds chance, i.e.\ by $\sign(\E_{\mu\mid D}[s]-\tfrac12)=\sign M$;
-this is Theorem~\ref{thm:minimax} with $\beta=0$. Correctness $\sign M=\sign(M+\gamma)$ fails
+this is Proposition~\ref{thm:minimax} with $\beta=0$. Correctness $\sign M=\sign(M+\gamma)$ fails
 exactly when $\gamma$ has the opposite sign to $M$ and $|\gamma|>|M|$ (Lemma~\ref{lem:reduction}).
 \end{proof}
 
 \paragraph{Multiclass and regression.} The reduction generalizes: for $K$-class $0/1$ loss
 $\gamma=\E_{\mu\mid D}[(p_a-p_0)-(s_a-s_0)]$ and for squared loss $\gamma$ is the
 unobservable moment $\E_{\mu\mid D}[(f_0-f_a)(\,\E[Y\mid x]-\hat m(x))]$ with $\hat m$ the
-source regressor; Theorems~\ref{thm:frontier}--\ref{thm:minimax} and
+source regressor; Theorem~\ref{thm:frontier} and Proposition~\ref{thm:minimax} and
 Corollary~\ref{cor:irreducible} hold verbatim with the corresponding $\gamma$
 (Appendix~\ref{app:theory-ext}).
 
@@ -147,7 +157,7 @@ calibration is not unlabeled-checkable (\textbf{Rosenfeld \& Garg}\ 2023). Our c
 \emph{exact} for the comparative benefit-sign object on the disagreement region: the single
 scalar $\gamma$ is shown \emph{necessary} (Theorem~\ref{thm:frontier}(iii)), the frontier
 $|M|>\beta$ is shown \emph{tight} with a matching $\tfrac12$ minimax bound
-(Theorem~\ref{thm:minimax}), the drift budget is shown \emph{irreducible}
+(Proposition~\ref{thm:minimax}), the drift budget is shown \emph{irreducible}
 (Corollary~\ref{cor:irreducible}), and the existing label-free estimators are shown to be
 its single degenerate face (Proposition~\ref{prop:beta0}). All four statements are validated
 numerically (\texttt{val\_frontier.py}; identity exact over $2{\times}10^4$ draws, frontier

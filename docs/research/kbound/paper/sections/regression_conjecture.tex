@@ -8,27 +8,29 @@ is invariant to arbitrary unknown zero-mean label noise (where cardinal risk est
 is confounded), and within drifts of known radius $B$ the knowability of $\sign\Delta$
 admits a \emph{complete characterization} --- an exact, observable boundary.
 
-\begin{theorem}[Noise-invariance of the regression decision]\label{thm:reg-noise}
+\begin{proposition}[Noise-invariance of the regression decision]\label{thm:reg-noise}
 Let $Y=g(X)+\epsilon$ with $\E[\epsilon\mid X]=0$ and arbitrary, unknown
 (heteroscedastic) noise law. Under squared loss,
 $\Delta=R_T(f_0)-R_T(f_a)=\E_T[(f_0-g)^2-(f_a-g)^2]$ does not depend on the noise,
 while each absolute risk is shifted by the unidentifiable constant $\E[\epsilon^2]$.
 The decision is ordinal-robust; cardinal risk estimation is confounded.
-\end{theorem}
+\end{proposition}
 \begin{proof}
 $R_T(f)=\E(f-g-\epsilon)^2=\E(f-g)^2+\E[\epsilon^2]$, the cross term vanishing by
 $\E[\epsilon\mid X]=0$. The noise term cancels in the difference and survives in the
 levels.
 \end{proof}
 
-\begin{theorem}[Bounded-drift knowability boundary; exact characterization]\label{thm:reg-iff}
+\begin{proposition}[Bounded-drift knowability boundary; exact characterization]\label{thm:reg-iff}
 Let the target conditional mean be $g_T=g_S+b$ with $\|b\|_\infty\le B$ for a known
 radius $B$ (and the covariate-shift machinery of Theorem~\ref{thm:pos} available for the
 source-transfer term). Define
 \[
-U=\E_T\!\big[(f_0-f_a)(f_0+f_a)\big],\qquad
-T_S=\E_T\!\big[(f_0-f_a)\,g_S\big],\qquad
-W=\E_T\!\big[|f_0-f_a|\big],
+\begin{aligned}
+U &=\E_T\!\big[(f_0-f_a)(f_0+f_a)\big],\\
+T_S &=\E_T\!\big[(f_0-f_a)\,g_S\big],\\
+W &=\E_T\!\big[|f_0-f_a|\big],
+\end{aligned}
 \]
 where $U,W$ are computable from unlabeled target data and $T_S$ is importance-weighted
 estimable from labeled source data with radius $\varepsilon_n$. Then
@@ -49,11 +51,11 @@ family: the regime is unknowable.
 Hence $\sign\Delta$ is label-free identifiable in the bounded-drift family \emph{if and
 only if} $|U-2T_S|>2BW$: an exact knowability boundary, computable from observables, at
 drift radius $B^\star=|U-2T_S|/(2W)$.
-\end{theorem}
+\end{proposition}
 \begin{proof}
 Expanding the squared losses, $\delta=(f_0-f_a)(f_0+f_a-2Y)$ and taking target
 expectations with $Y=g_S+b+\epsilon$ (noise vanishing by
-Theorem~\ref{thm:reg-noise}) gives the displayed decomposition. H\"older yields
+Proposition~\ref{thm:reg-noise}) gives the displayed decomposition. H\"older yields
 $|\E_T[(f_0-f_a)b]|\le \|b\|_\infty\,\E_T|f_0-f_a|\le BW$, with equality iff
 $b=-B\sign(f_0-f_a)$ a.e.\ on $\{f_0\ne f_a\}$ --- an admissible member of the family,
 so the bracket is tight. (i): on the $1-\alpha$ event
@@ -76,16 +78,16 @@ $B^\star=0.11$ in the synthetic world; and genuine sign flips occur exactly in t
 uncommitted region beyond the boundary --- the converse is real, not hypothetical.
 
 \begin{figure}[t]\centering
-\includegraphics[width=0.92\textwidth]{figures/fig_regression_boundary.png}
-\caption{The bounded-drift knowability boundary (Theorem~\ref{thm:reg-iff}). Left:
+\includegraphics[width=0.92\linewidth]{figures/fig_regression_boundary.png}
+\caption{The bounded-drift knowability boundary (Proposition~\ref{thm:reg-iff}). Left:
 the decision target $\Delta$ is invariant to unknown label noise while cardinal risks
-are confounded (Theorem~\ref{thm:reg-noise}). Right: identifiability holds exactly
+are confounded (Proposition~\ref{thm:reg-noise}). Right: identifiability holds exactly
 while the observable margin $|U-2T_S|$ exceeds the tight drift reach $2BW$; the
 crossing defines the computable boundary $B^\star$.}
 \label{fig:regboundary}
 \end{figure}
 
-\paragraph{Weight (honest).} Theorem~\ref{thm:reg-iff} is, to our knowledge, the first
+\paragraph{Weight (honest).} Proposition~\ref{thm:reg-iff} is, to our knowledge, the first
 \emph{complete} per-family characterization in this paper beyond pure covariate shift:
 both directions are proved and the boundary is computable from observables. Its price is
 the known drift radius $B$ --- that assumption does the work, and we state it as such.

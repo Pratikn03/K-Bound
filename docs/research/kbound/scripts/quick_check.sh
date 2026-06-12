@@ -1,27 +1,17 @@
 #!/usr/bin/env bash
-# quick_check.sh  --  ~1% SMOKE of both remaining runs, end-to-end, in a few minutes.
-# Confirms the pipelines are healthy BEFORE the multi-hour full run.
-# Safe: writes only to *_smoke result dirs; does NOT touch real results.
-#
-#   bash /Volumes/T9/uav/AutoML_Flagship_V8/docs/research/kbound/scripts/quick_check.sh
-#
+# quick_check.sh -- 0.1% SMOKE of both pending datasets, end-to-end, in a few minutes.
+# Confirms the pipelines (incl. progress.log + checkpoint) are healthy BEFORE the full run.
+# Writes ONLY to *_smoke* dirs -> never touches real results or their resume checkpoints.
 set -uo pipefail
 K=/Volumes/T9/uav/AutoML_Flagship_V8/docs/research/kbound/scripts/kbtrain.sh
-
-echo "##########################################################"
-echo "# QUICK CHECK 1/2 : ImageNet-C noise  (FULL grid 3x3x3, ~1% = 50 imgs/cell, internal SSD)"
-echo "##########################################################"
-if bash "$K" noise-fast-1pct; then echo "  -> ImageNet-C pipeline: OK"; else echo "  -> ImageNet-C pipeline: FAILED"; exit 1; fi
-
+echo "########## QUICK 0.1% SMOKE 1/2 : ImageNet-C noise (full 3x3 grid, ~8 imgs/cell) ##########"
+if bash "$K" noise-fast-01pct; then echo "  -> ImageNet-C pipeline: OK"; else echo "  -> ImageNet-C pipeline: FAILED"; exit 1; fi
 echo
-echo "##########################################################"
-echo "# QUICK CHECK 2/2 : Camelyon17  (4 seeds x 1 epoch x 1% data, internal SSD)"
-echo "##########################################################"
-if bash "$K" camelyon-fast-1pct; then echo "  -> Camelyon pipeline: OK"; else echo "  -> Camelyon pipeline: FAILED"; exit 1; fi
-
+echo "########## QUICK 0.1% SMOKE 2/2 : CIFAR-10.1 natural shift (quick subset) ##########"
+if bash "$K" cifar101-quick; then echo "  -> CIFAR-10.1 pipeline: OK"; else echo "  -> CIFAR-10.1 pipeline: FAILED"; exit 1; fi
 echo
-echo "=========================================================="
-echo " BOTH PIPELINES HEALTHY (numbers are meaningless at this scale)."
+echo "=================================================================="
+echo " BOTH PIPELINES HEALTHY (numbers are meaningless at 0.1%)."
 echo " Now launch the real runs:"
 echo "   bash /Volumes/T9/uav/AutoML_Flagship_V8/docs/research/kbound/scripts/full_run.sh"
-echo "=========================================================="
+echo "=================================================================="

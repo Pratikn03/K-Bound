@@ -67,7 +67,7 @@ case "${1:-}" in
     [ -d "$IC_FAST/gaussian_noise/1" ] || { echo "ERROR: internal copy not found at $IC_FAST -- run prep_internal_noise.sh first."; exit 1; }
     caffeinate -is python "$S2" --benchmarks imagenetc --imagenetc-root "$IC_FAST" \
       --corruptions gaussian_noise shot_noise impulse_noise \
-      --arch resnet50 --methods tent eata sar --out-results "$RES/imagenetc_noise" ;;
+      --arch resnet50 --methods tent eata sar --out-results "$RES/imagenetc_noise" --cooldown 3 ;;
   noise-fast-1pct)
     # FULL grid (3 corruptions x 3 sev x 3 methods, all 108 conditions) at ~1% images/cell.
     [ -d "$IC_FAST/gaussian_noise/1" ] || { echo "ERROR: internal copy not found at $IC_FAST -- run prep_internal_noise.sh first."; exit 1; }
@@ -75,11 +75,28 @@ case "${1:-}" in
       --corruptions gaussian_noise shot_noise impulse_noise \
       --arch resnet50 --methods tent eata sar --out-results "$RES/imagenetc_1pct" \
       --max-images 50 ;;
+  noise-fast-01pct)
+    # 0.1% SMOKE: full 3x3 grid, ~8 imgs/cell -> proves the pipeline end-to-end in ~1-2 min.
+    # Writes to a SEPARATE dir so it NEVER contaminates the full run's resume checkpoint.
+    [ -d "$IC_FAST/gaussian_noise/1" ] || { echo "ERROR: internal copy not found at $IC_FAST -- run prep_internal_noise.sh first."; exit 1; }
+    caffeinate -is python "$S2" --benchmarks imagenetc --imagenetc-root "$IC_FAST" \
+      --corruptions gaussian_noise shot_noise impulse_noise \
+      --arch resnet50 --methods tent eata sar --out-results "$RES/imagenetc_smoke01" \
+      --max-images 8 ;;
   vit-fast)
     [ -d "$IC_FAST/gaussian_noise/1" ] || { echo "ERROR: internal copy not found at $IC_FAST -- run prep_internal_noise.sh first."; exit 1; }
     caffeinate -is python "$S2" --benchmarks imagenetc --imagenetc-root "$IC_FAST" \
       --corruptions gaussian_noise shot_noise impulse_noise \
       --arch vit_b16 --methods tent eata sar --out-results "$RES/imagenetc_noise_vit" ;;
+  cifar101)
+    # CIFAR-10.1 NATURAL distribution shift (reuses experiments/kbound/cifar/resnet18_cifar.pt; auto-downloads ~30MB .npy)
+    caffeinate -is python "$S2" --benchmarks cifar101 \
+      --data-root experiments/kbound/cifar --methods tent eata sar \
+      --out-results "$RES/cifar101" ;;
+  cifar101-quick)
+    caffeinate -is python "$S2" --benchmarks cifar101 \
+      --data-root experiments/kbound/cifar --methods tent eata sar \
+      --out-results "$RES/cifar101_quick" --quick ;;
   *)
-    echo "usage: bash kbtrain.sh [noise|noise-fast|noise-fast-1pct|noise-full|noise-quick|noise-smoke|camelyon|camelyon-fast|camelyon-fast-1pct|camelyon-smoke|noiseblur|vit|vit-fast]"; exit 1 ;;
+    echo "usage: bash kbtrain.sh [noise|noise-fast|noise-fast-1pct|noise-fast-01pct|noise-full|noise-quick|noise-smoke|camelyon|camelyon-fast|camelyon-fast-1pct|camelyon-smoke|cifar101|cifar101-quick|noiseblur|vit|vit-fast]"; exit 1 ;;
 esac

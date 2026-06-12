@@ -1,0 +1,477 @@
+{
+  "alpha": 0.1,
+  "device": "mps",
+  "benchmarks": {
+    "cifar101": {
+      "clean_acc": 0.7710000276565552,
+      "methods": {
+        "tent": {
+          "metrics": {
+            "n": 36,
+            "decision_counts": {
+              "ADAPT": 0,
+              "FREEZE": 16,
+              "ABSTAIN": 20
+            },
+            "coverage": 0.4444444444444444,
+            "adapt_precision_B>0": null,
+            "false_adapt_rate_B<0": null,
+            "mean_acc": {
+              "always_adapt": 0.7550000018543668,
+              "always_freeze": 0.7705000009801652,
+              "K_Bound": 0.7705000009801652,
+              "oracle": 0.7738333344459534
+            },
+            "regret_vs_oracle": {
+              "always_adapt": 0.018833332591586642,
+              "always_freeze": 0.0033333334657880995,
+              "K_Bound": 0.0033333334657880995
+            },
+            "worst_case_acc": {
+              "always_adapt": 0.6890000104904175,
+              "always_freeze": 0.7509999871253967,
+              "K_Bound": 0.7509999871253967
+            },
+            "beats_both": false,
+            "eps_conformal": 0.019923014900748673,
+            "alpha": 0.1,
+            "base_rate_harmful_B<0": 0.5833333333333334,
+            "mean_true_B": -0.015499999125798544,
+            "decisions_by_regime": {
+              "helpful": {
+                "ADAPT": 0,
+                "FREEZE": 0,
+                "ABSTAIN": 1
+              },
+              "harmful": {
+                "ADAPT": 0,
+                "FREEZE": 14,
+                "ABSTAIN": 2
+              },
+              "marginal": {
+                "ADAPT": 0,
+                "FREEZE": 2,
+                "ABSTAIN": 17
+              }
+            },
+            "pareto": {
+              "curve": [
+                {
+                  "p_harmful": 0.0,
+                  "always_adapt": 0.0018431219145655631,
+                  "always_freeze": 0.005972500397264957,
+                  "K_Bound": 0.005972500397264957
+                },
+                {
+                  "p_harmful": 0.1,
+                  "always_adapt": 0.00566862263083458,
+                  "always_freeze": 0.005385000334680081,
+                  "K_Bound": 0.005385000334680081
+                },
+                {
+                  "p_harmful": 0.2,
+                  "always_adapt": 0.009451823008060457,
+                  "always_freeze": 0.004770350129902363,
+                  "K_Bound": 0.004770350129902363
+                },
+                {
+                  "p_harmful": 0.3,
+                  "always_adapt": 0.013312723681330683,
+                  "always_freeze": 0.004203550331294536,
+                  "K_Bound": 0.004203550331294536
+                },
+                {
+                  "p_harmful": 0.4,
+                  "always_adapt": 0.01716117406338453,
+                  "always_freeze": 0.003605550211668015,
+                  "K_Bound": 0.003605550211668015
+                },
+                {
+                  "p_harmful": 0.5,
+                  "always_adapt": 0.020887899491190912,
+                  "always_freeze": 0.0029991000533103945,
+                  "K_Bound": 0.0029991000533103945
+                },
+                {
+                  "p_harmful": 0.6,
+                  "always_adapt": 0.02491929991841316,
+                  "always_freeze": 0.0023645250886678696,
+                  "K_Bound": 0.0023645250886678696
+                },
+                {
+                  "p_harmful": 0.7,
+                  "always_adapt": 0.028757725568115712,
+                  "always_freeze": 0.001825900089740753,
+                  "K_Bound": 0.001825900089740753
+                },
+                {
+                  "p_harmful": 0.8,
+                  "always_adapt": 0.032361826103925705,
+                  "always_freeze": 0.001214525018632412,
+                  "K_Bound": 0.001214525018632412
+                },
+                {
+                  "p_harmful": 1.0,
+                  "always_adapt": 0.03998727709054947,
+                  "always_freeze": 0.0,
+                  "K_Bound": 0.0
+                }
+              ],
+              "p_where_KGA_beats_both": null
+            }
+          },
+          "n_conditions": 36,
+          "conditions": [
+            "cifar101|large_iid|iid|mild|r0",
+            "cifar101|large_iid|iid|mild|r1",
+            "cifar101|large_iid|iid|aggressive|r0",
+            "cifar101|large_iid|iid|aggressive|r1",
+            "cifar101|large_iid|imbalanced|mild|r0",
+            "cifar101|large_iid|imbalanced|mild|r1",
+            "cifar101|large_iid|imbalanced|aggressive|r0",
+            "cifar101|large_iid|imbalanced|aggressive|r1",
+            "cifar101|large_iid|single_class|mild|r0",
+            "cifar101|large_iid|single_class|mild|r1",
+            "cifar101|large_iid|single_class|aggressive|r0",
+            "cifar101|large_iid|single_class|aggressive|r1",
+            "cifar101|small|iid|mild|r0",
+            "cifar101|small|iid|mild|r1",
+            "cifar101|small|iid|aggressive|r0",
+            "cifar101|small|iid|aggressive|r1",
+            "cifar101|small|imbalanced|mild|r0",
+            "cifar101|small|imbalanced|mild|r1",
+            "cifar101|small|imbalanced|aggressive|r0",
+            "cifar101|small|imbalanced|aggressive|r1",
+            "cifar101|small|single_class|mild|r0",
+            "cifar101|small|single_class|mild|r1",
+            "cifar101|small|single_class|aggressive|r0",
+            "cifar101|small|single_class|aggressive|r1",
+            "cifar101|tiny|iid|mild|r0",
+            "cifar101|tiny|iid|mild|r1",
+            "cifar101|tiny|iid|aggressive|r0",
+            "cifar101|tiny|iid|aggressive|r1",
+            "cifar101|tiny|imbalanced|mild|r0",
+            "cifar101|tiny|imbalanced|mild|r1",
+            "cifar101|tiny|imbalanced|aggressive|r0",
+            "cifar101|tiny|imbalanced|aggressive|r1",
+            "cifar101|tiny|single_class|mild|r0",
+            "cifar101|tiny|single_class|mild|r1",
+            "cifar101|tiny|single_class|aggressive|r0",
+            "cifar101|tiny|single_class|aggressive|r1"
+          ]
+        },
+        "eata": {
+          "metrics": {
+            "n": 36,
+            "decision_counts": {
+              "ADAPT": 0,
+              "FREEZE": 1,
+              "ABSTAIN": 35
+            },
+            "coverage": 0.027777777777777776,
+            "adapt_precision_B>0": null,
+            "false_adapt_rate_B<0": null,
+            "mean_acc": {
+              "always_adapt": 0.7709166705608368,
+              "always_freeze": 0.7705000009801652,
+              "K_Bound": 0.7705000009801652,
+              "oracle": 0.7754166722297668
+            },
+            "regret_vs_oracle": {
+              "always_adapt": 0.004500001668930054,
+              "always_freeze": 0.0049166712496015764,
+              "K_Bound": 0.0049166712496015764
+            },
+            "worst_case_acc": {
+              "always_adapt": 0.6909999847412109,
+              "always_freeze": 0.7509999871253967,
+              "K_Bound": 0.7509999871253967
+            },
+            "beats_both": false,
+            "eps_conformal": 0.01674834188097697,
+            "alpha": 0.1,
+            "base_rate_harmful_B<0": 0.4444444444444444,
+            "mean_true_B": 0.00041666958067152236,
+            "decisions_by_regime": {
+              "helpful": {
+                "ADAPT": 0,
+                "FREEZE": 0,
+                "ABSTAIN": 1
+              },
+              "harmful": {
+                "ADAPT": 0,
+                "FREEZE": 0,
+                "ABSTAIN": 2
+              },
+              "marginal": {
+                "ADAPT": 0,
+                "FREEZE": 1,
+                "ABSTAIN": 32
+              }
+            },
+            "pareto": {
+              "curve": [
+                {
+                  "p_harmful": 0.0,
+                  "always_adapt": 0.0022218777835369113,
+                  "always_freeze": 0.0052355548322200775,
+                  "K_Bound": 0.0052355548322200775
+                },
+                {
+                  "p_harmful": 0.1,
+                  "always_adapt": 0.006319850674271583,
+                  "always_freeze": 0.004682529279589653,
+                  "K_Bound": 0.004682529279589653
+                },
+                {
+                  "p_harmful": 0.2,
+                  "always_adapt": 0.010411873765289783,
+                  "always_freeze": 0.004159403970837593,
+                  "K_Bound": 0.004159403970837593
+                },
+                {
+                  "p_harmful": 0.3,
+                  "always_adapt": 0.014498321849107742,
+                  "always_freeze": 0.003670228387415409,
+                  "K_Bound": 0.003670228387415409
+                },
+                {
+                  "p_harmful": 0.4,
+                  "always_adapt": 0.018502294753491876,
+                  "always_freeze": 0.0031077029556035997,
+                  "K_Bound": 0.0031077029556035997
+                },
+                {
+                  "p_harmful": 0.5,
+                  "always_adapt": 0.02261741787940264,
+                  "always_freeze": 0.0025947774618864062,
+                  "K_Bound": 0.0025947774618864062
+                },
+                {
+                  "p_harmful": 0.6,
+                  "always_adapt": 0.02667996573150158,
+                  "always_freeze": 0.0021522019803524015,
+                  "K_Bound": 0.0021522019803524015
+                },
+                {
+                  "p_harmful": 0.7,
+                  "always_adapt": 0.030807413856685163,
+                  "always_freeze": 0.0015499264732003212,
+                  "K_Bound": 0.0015499264732003212
+                },
+                {
+                  "p_harmful": 0.8,
+                  "always_adapt": 0.03471451164335013,
+                  "always_freeze": 0.0010348259657621383,
+                  "K_Bound": 0.0010348259657621383
+                },
+                {
+                  "p_harmful": 1.0,
+                  "always_adapt": 0.04299743283092976,
+                  "always_freeze": 0.0,
+                  "K_Bound": 0.0
+                }
+              ],
+              "p_where_KGA_beats_both": null
+            }
+          },
+          "n_conditions": 36,
+          "conditions": [
+            "cifar101|large_iid|iid|mild|r0",
+            "cifar101|large_iid|iid|mild|r1",
+            "cifar101|large_iid|iid|aggressive|r0",
+            "cifar101|large_iid|iid|aggressive|r1",
+            "cifar101|large_iid|imbalanced|mild|r0",
+            "cifar101|large_iid|imbalanced|mild|r1",
+            "cifar101|large_iid|imbalanced|aggressive|r0",
+            "cifar101|large_iid|imbalanced|aggressive|r1",
+            "cifar101|large_iid|single_class|mild|r0",
+            "cifar101|large_iid|single_class|mild|r1",
+            "cifar101|large_iid|single_class|aggressive|r0",
+            "cifar101|large_iid|single_class|aggressive|r1",
+            "cifar101|small|iid|mild|r0",
+            "cifar101|small|iid|mild|r1",
+            "cifar101|small|iid|aggressive|r0",
+            "cifar101|small|iid|aggressive|r1",
+            "cifar101|small|imbalanced|mild|r0",
+            "cifar101|small|imbalanced|mild|r1",
+            "cifar101|small|imbalanced|aggressive|r0",
+            "cifar101|small|imbalanced|aggressive|r1",
+            "cifar101|small|single_class|mild|r0",
+            "cifar101|small|single_class|mild|r1",
+            "cifar101|small|single_class|aggressive|r0",
+            "cifar101|small|single_class|aggressive|r1",
+            "cifar101|tiny|iid|mild|r0",
+            "cifar101|tiny|iid|mild|r1",
+            "cifar101|tiny|iid|aggressive|r0",
+            "cifar101|tiny|iid|aggressive|r1",
+            "cifar101|tiny|imbalanced|mild|r0",
+            "cifar101|tiny|imbalanced|mild|r1",
+            "cifar101|tiny|imbalanced|aggressive|r0",
+            "cifar101|tiny|imbalanced|aggressive|r1",
+            "cifar101|tiny|single_class|mild|r0",
+            "cifar101|tiny|single_class|mild|r1",
+            "cifar101|tiny|single_class|aggressive|r0",
+            "cifar101|tiny|single_class|aggressive|r1"
+          ]
+        },
+        "sar": {
+          "metrics": {
+            "n": 36,
+            "decision_counts": {
+              "ADAPT": 0,
+              "FREEZE": 18,
+              "ABSTAIN": 18
+            },
+            "coverage": 0.5,
+            "adapt_precision_B>0": null,
+            "false_adapt_rate_B<0": null,
+            "mean_acc": {
+              "always_adapt": 0.679666668176651,
+              "always_freeze": 0.7705000009801652,
+              "K_Bound": 0.7705000009801652,
+              "oracle": 0.7710277785857519
+            },
+            "regret_vs_oracle": {
+              "always_adapt": 0.09136111040910085,
+              "always_freeze": 0.0005277776055865817,
+              "K_Bound": 0.0005277776055865817
+            },
+            "worst_case_acc": {
+              "always_adapt": 0.5600000023841858,
+              "always_freeze": 0.7509999871253967,
+              "K_Bound": 0.7509999871253967
+            },
+            "beats_both": false,
+            "eps_conformal": 0.019435797924042285,
+            "alpha": 0.1,
+            "base_rate_harmful_B<0": 0.8888888888888888,
+            "mean_true_B": -0.09083333280351427,
+            "decisions_by_regime": {
+              "helpful": {
+                "ADAPT": 0,
+                "FREEZE": 0,
+                "ABSTAIN": 0
+              },
+              "harmful": {
+                "ADAPT": 0,
+                "FREEZE": 18,
+                "ABSTAIN": 0
+              },
+              "marginal": {
+                "ADAPT": 0,
+                "FREEZE": 0,
+                "ABSTAIN": 18
+              }
+            },
+            "pareto": {
+              "curve": [
+                {
+                  "p_harmful": 0.0,
+                  "always_adapt": 0.005501270490884781,
+                  "always_freeze": 0.0010648746863007544,
+                  "K_Bound": 0.0010648746863007544
+                },
+                {
+                  "p_harmful": 0.1,
+                  "always_adapt": 0.022641721105575562,
+                  "always_freeze": 0.0009412497073411941,
+                  "K_Bound": 0.0009412497073411941
+                },
+                {
+                  "p_harmful": 0.2,
+                  "always_adapt": 0.03993449696004391,
+                  "always_freeze": 0.0008322247132658958,
+                  "K_Bound": 0.0008322247132658958
+                },
+                {
+                  "p_harmful": 0.3,
+                  "always_adapt": 0.05697762271016837,
+                  "always_freeze": 0.0007500747442245483,
+                  "K_Bound": 0.0007500747442245483
+                },
+                {
+                  "p_harmful": 0.4,
+                  "always_adapt": 0.07418404866456985,
+                  "always_freeze": 0.0006412498086690903,
+                  "K_Bound": 0.0006412498086690903
+                },
+                {
+                  "p_harmful": 0.5,
+                  "always_adapt": 0.09134389935731888,
+                  "always_freeze": 0.0005265248358249665,
+                  "K_Bound": 0.0005265248358249665
+                },
+                {
+                  "p_harmful": 0.6,
+                  "always_adapt": 0.10851902503818273,
+                  "always_freeze": 0.0004256748765707016,
+                  "K_Bound": 0.0004256748765707016
+                },
+                {
+                  "p_harmful": 0.7,
+                  "always_adapt": 0.12563050073981283,
+                  "always_freeze": 0.0003166999042034149,
+                  "K_Bound": 0.0003166999042034149
+                },
+                {
+                  "p_harmful": 0.8,
+                  "always_adapt": 0.14289697653204203,
+                  "always_freeze": 0.0002123249113559723,
+                  "K_Bound": 0.0002123249113559723
+                },
+                {
+                  "p_harmful": 1.0,
+                  "always_adapt": 0.17709627801924943,
+                  "always_freeze": 0.0,
+                  "K_Bound": 0.0
+                }
+              ],
+              "p_where_KGA_beats_both": null
+            }
+          },
+          "n_conditions": 36,
+          "conditions": [
+            "cifar101|large_iid|iid|mild|r0",
+            "cifar101|large_iid|iid|mild|r1",
+            "cifar101|large_iid|iid|aggressive|r0",
+            "cifar101|large_iid|iid|aggressive|r1",
+            "cifar101|large_iid|imbalanced|mild|r0",
+            "cifar101|large_iid|imbalanced|mild|r1",
+            "cifar101|large_iid|imbalanced|aggressive|r0",
+            "cifar101|large_iid|imbalanced|aggressive|r1",
+            "cifar101|large_iid|single_class|mild|r0",
+            "cifar101|large_iid|single_class|mild|r1",
+            "cifar101|large_iid|single_class|aggressive|r0",
+            "cifar101|large_iid|single_class|aggressive|r1",
+            "cifar101|small|iid|mild|r0",
+            "cifar101|small|iid|mild|r1",
+            "cifar101|small|iid|aggressive|r0",
+            "cifar101|small|iid|aggressive|r1",
+            "cifar101|small|imbalanced|mild|r0",
+            "cifar101|small|imbalanced|mild|r1",
+            "cifar101|small|imbalanced|aggressive|r0",
+            "cifar101|small|imbalanced|aggressive|r1",
+            "cifar101|small|single_class|mild|r0",
+            "cifar101|small|single_class|mild|r1",
+            "cifar101|small|single_class|aggressive|r0",
+            "cifar101|small|single_class|aggressive|r1",
+            "cifar101|tiny|iid|mild|r0",
+            "cifar101|tiny|iid|mild|r1",
+            "cifar101|tiny|iid|aggressive|r0",
+            "cifar101|tiny|iid|aggressive|r1",
+            "cifar101|tiny|imbalanced|mild|r0",
+            "cifar101|tiny|imbalanced|mild|r1",
+            "cifar101|tiny|imbalanced|aggressive|r0",
+            "cifar101|tiny|imbalanced|aggressive|r1",
+            "cifar101|tiny|single_class|mild|r0",
+            "cifar101|tiny|single_class|mild|r1",
+            "cifar101|tiny|single_class|aggressive|r0",
+            "cifar101|tiny|single_class|aggressive|r1"
+          ]
+        }
+      }
+    }
+  },
+  "generated": "2026-06-09 19:15"
+}

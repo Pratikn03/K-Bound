@@ -9,7 +9,7 @@ most $\alpha$ in every admissible world, and it abstains with probability at mos
 whenever $|\Delta|\ge\kappa$. The question of this subsection: \emph{how fast, in the
 number $n$ of calibrated benefit samples, does the smallest reliable margin shrink?}
 
-\begin{theorem}[Knowability rate: adaptive achievability]\label{thm:rate-ub}
+\begin{proposition}[Knowability rate: adaptive achievability]\label{thm:rate-ub}
 Let $X_1,\dots,X_n\in[-R/2,R/2]$ be i.i.d.\ paired benefits with mean $\Delta$ and
 variance $\sigma^2$. The empirical-Bernstein certificate (Theorem~\ref{thm:cert}
 instantiated with the Maurer--Pontil radius, exactly as deployed in
@@ -20,7 +20,7 @@ instantiated with the Maurer--Pontil radius, exactly as deployed in
 \]
 for a universal constant $C$, \emph{without knowledge of $\sigma$}: the empirical
 variance self-normalizes the radius.
-\end{theorem}
+\end{proposition}
 \begin{proof}
 Validity is Theorem~\ref{thm:cert} with the Maurer--Pontil deviation bound
 $|\bar X-\Delta|\le\sqrt{2\widehat V\log(2/\alpha)/n}+7R\log(2/\alpha)/(3(n-1))$
@@ -33,7 +33,7 @@ $\bar X-\mathrm{rad}>0$ whenever $\Delta$ exceeds the displayed rate; the freeze
 symmetric. No step uses $\sigma$.
 \end{proof}
 
-\begin{theorem}[Knowability rate: two-point lower bound]\label{thm:rate-lb}
+\begin{proposition}[Knowability rate: two-point lower bound]\label{thm:rate-lb}
 Let $\alpha+\beta<\tfrac14$. Every label-free rule that is $(\alpha,\beta)$-reliable at
 margin $\kappa$ over all distributions on $[-R/2,R/2]$ with variance at most $\sigma^2$
 must satisfy
@@ -43,7 +43,7 @@ R\,\tfrac{\log\frac{1}{2(\alpha+\beta)}}{n}\right)
 \]
 for a universal constant $c>0$ (one may take $c=\tfrac14$ in the second branch and
 $c=\tfrac{1}{2\sqrt2}$ in the first).
-\end{theorem}
+\end{proposition}
 \begin{proof}
 \emph{Dense branch.} Take $X=\pm\sigma$ with probabilities $q_\pm=\tfrac12(1\pm\kappa/\sigma)$
 (mean $\pm\kappa$, variance $\le\sigma^2$). Then
@@ -67,7 +67,7 @@ $\kappa=\tfrac{p}{2}(R/2+\kappa)\ge\tfrac{R}{4}\,\log\frac{1}{2(\alpha+\beta)}/n
 The upper and lower rates match in both regimes up to universal constants:
 $\kappa_n^{\mathrm{EB}}\asymp \sigma\sqrt{\log(1/\bar\alpha)/n}+R\log(1/\bar\alpha)/n
 \asymp\kappa_n^{\mathrm{LB}}$. Consequently the knowability frontier of
-Theorem~\ref{thm:frontier} is attained at the optimal rate by the certificate already
+Proposition~\ref{prop:kfrontier} is attained at the optimal rate by the certificate already
 in deployment, adaptively in $\sigma$.
 \end{proposition}
 
@@ -83,8 +83,8 @@ achieved margin stays below $\alpha$ throughout. Below half the lower bound the
 every $n$ tested --- no rule, certificate or otherwise, is reliable there.
 
 \begin{figure}[t]\centering
-\includegraphics[width=0.92\textwidth]{figures/fig_krates.png}
-\caption{The knowability rate (Theorems~\ref{thm:rate-ub}--\ref{thm:rate-lb}). Achieved
+\includegraphics[width=0.92\linewidth]{figures/fig_krates.png}
+\caption{The knowability rate (Propositions~\ref{thm:rate-ub}--\ref{thm:rate-lb}). Achieved
 certifiable margin of the deployed empirical-Bernstein certificate versus the two-point
 lower bound, in the dense ($n^{-1/2}$) and spike ($n^{-1}$) regimes; slopes match and the
 offset is a bounded universal constant.}
@@ -99,4 +99,4 @@ the certificate already deployed in this paper attains it \emph{adaptively}. Wha
 remains open --- and is not claimed --- are rates for evidence-channel decisions
 (deciding from $Z=\phi(X_{1:n})$ over nonparametric shift families rather than from
 calibrated benefits), where only the location-family instance of
-Theorem~\ref{thm:imp-quant} is currently characterized.
+Proposition~\ref{thm:imp-quant} is currently characterized.

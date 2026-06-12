@@ -8,16 +8,23 @@ drift radius, or known class-conditionals). This subsection enlarges the knowabl
 along a different axis: instead of one candidate $f_a$, use several
 ($f_a^{(1)},\dots,f_a^{(M)}$, e.g.\ Tent, EATA, SAR) and identify the accuracy ordering on
 the disagreement region from their \emph{joint} label-free agreements. By
-Theorems~\ref{thm:disagree}--\ref{thm:disagree-mc} this ordering is exactly what fixes
+Theorem~\ref{thm:disagree} and Proposition~\ref{thm:disagree-mc} this ordering is exactly what fixes
 $\sign\Delta$. The price becomes a \emph{checkable} condition rather than an untestable
 premise.
 
-\begin{definition}[Conditional error-independence on $D$]\label{def:cei}
-On the disagreement region $D$ with latent label $Y$, candidates' correctness indicators
-$\{\mathbf1[f_a^{(j)}(X){=}Y]\}_{j=1}^M$ are \emph{conditionally independent given $Y$}.
+\begin{definition}[Conditional error-independence on $D$, with per-class symmetry]\label{def:cei}
+On the disagreement region $D$ with latent label $Y$: (i) candidates' correctness indicators
+$\{\mathbf1[f_a^{(j)}(X){=}Y]\}_{j=1}^M$ are \emph{conditionally independent given $Y$};
+\emph{and} (ii) each candidate is \emph{per-class symmetric},
+$\Pr(f_a^{(j)}{=}Y\mid Y{=}1)=\Pr(f_a^{(j)}{=}Y\mid Y{=}0)$.
+Clause (ii) is load-bearing, not cosmetic: under (i) alone the agreement law carries the
+exact deficit $c_{ij}-b_ib_j=\pi(1-\pi)\,\delta_i\delta_j$ ($\pi=\Pr(Y{=}1\mid D)$,
+$\delta_j$ the per-class accuracy gap), so the rank-one identity below holds for a
+$M\ge3$ panel iff every $\delta_j=0$ --- see Theorem~\ref{thm:H-deficit}, where (i)+(ii)
+is named \textbf{H} and this insufficiency is proved and validated.
 \end{definition}
 
-\begin{theorem}[Multi-candidate ordering identifiability]\label{thm:multicand}
+\begin{proposition}[Multi-candidate ordering identifiability]\label{thm:multicand}
 Let $Y\in\{0,1\}$ on $D$, $M\ge3$ candidates with accuracies $a_j=\Pr(f_a^{(j)}{=}Y\mid D)\neq\tfrac12$
 and advantages $b_j=2a_j-1$. Under Definition~\ref{def:cei}, the pairwise agreement rates
 $A_{ij}=\Pr(f_a^{(i)}{=}f_a^{(j)}\mid D)$ satisfy
@@ -28,9 +35,9 @@ so for any distinct $i,k,l$, $\;b_i^2=c_{ik}c_{il}/c_{kl}$, and the sign of $b_i
 by an anchor (e.g.\ the majority of candidates exceeds chance). Hence every $a_j$ --- thus
 the full ordering and every $\sign(a_i-a_j)$ --- is identified from label-free agreements
 alone, with \emph{no} target labels and \emph{no} calibration-transfer assumption.
-Combined with Theorems~\ref{thm:disagree}--\ref{thm:disagree-mc}, $\sign\Delta$ for any
+Combined with Theorem~\ref{thm:disagree} and Proposition~\ref{thm:disagree-mc}, $\sign\Delta$ for any
 candidate is label-free identifiable on $D$.
-\end{theorem}
+\end{proposition}
 \begin{proof}
 On $D$ with binary $Y$, $f_a^{(i)}{=}f_a^{(j)}$ iff both are correct or both wrong; under
 Definition~\ref{def:cei},
@@ -48,6 +55,10 @@ Definition~\ref{def:cei}, $\tau=0$; therefore $\tau>0$ \emph{certifies that cond
 error-independence is violated}. The test is sound one-sided (it never falsely rejects a
 truly independent triple in the population limit) and is exactly the verifiability that
 agreement-based accuracy heuristics (ATC, Agreement-on-the-Line, AETTA) leave implicit.
+It is, however, \emph{not complete}: there exist strictly interior laws with $\tau=0$
+that violate Definition~\ref{def:cei} and bias the recovered $b$ --- the constructive
+witness and the exact characterization of what $\tau=0$ pins down (rank-one $c$, i.e.\
+pairwise H-realizability) are given in Theorem~\ref{thm:no-verify}(b).
 \end{proposition}
 \begin{proof}
 Rank-one consistency of $c=bb^\top$ forces all $2\times2$ minors to vanish; the listed
@@ -80,8 +91,8 @@ diagnostic residual is $\approx\!0$ under independence and rises monotonically w
 $\rho$ (Pearson $0.98$) --- a working, sound-one-sided check.
 
 \begin{figure}[t]\centering
-\includegraphics[width=0.92\textwidth]{figures/final/fig_feasibility.png}
-\caption{Multi-candidate identifiability (Theorem~\ref{thm:multicand},
+\includegraphics[width=0.92\linewidth]{figures/final/fig_feasibility.png}
+\caption{Multi-candidate identifiability (Proposition~\ref{thm:multicand},
 Proposition~\ref{prop:cei-test}). Left: the label-free ordering estimator is exact under
 conditional error-independence and degrades as it fails. Right: the overdetermination
 residual is a checkable diagnostic --- $\approx\!0$ under independence, rising with
@@ -89,13 +100,25 @@ error-correlation.}
 \label{fig:multicand}
 \end{figure}
 
-\paragraph{Weight (honest).} This \emph{enlarges} the knowable region beyond the
+\paragraph{Weight (honest).} The estimator itself is \emph{not} ours: under conditional
+error-independence the identity $2A_{ij}-1=b_ib_j$, the triple-product recovery
+$b_i^2=c_{ik}c_{il}/c_{kl}$, and the better-than-chance sign anchor appear, equation for
+equation, in \textbf{Platanios et al.}\ (UAI 2014), and the same rank-one structure powers
+the spectral ranking of \textbf{Parisi et al.}\ (PNAS 2014) and the per-classifier
+accuracy estimation of \textbf{Jaffe et al.}\ (AISTATS 2015). Platanios et al.\ also
+already observe the $M\ge4$ overdetermination and use a residual to quantify dependence,
+anticipating much of Proposition~\ref{prop:cei-test}; our residual adds only the explicit
+closed-form vanishing-minor statistic and its sound one-sided reading. What this
+subsection contributes is therefore \emph{not} the estimator but its \emph{decision use}:
+wiring the classical agreement machinery into a label-free \emph{adapt/freeze certificate}
+for $\sign\Delta$ on the disagreement region, with the diagnostic as a checkable guard on
+the identifying assumption. So scoped, it \emph{enlarges} the knowable region beyond the
 single-candidate certificate: where one candidate must abstain for want of calibration,
 $M\ge3$ candidates can certify $\sign\Delta$ under a condition that is, crucially,
-\emph{testable} (Proposition~\ref{prop:cei-test}) --- the guarantee that agreement-based
-heuristics (ATC, AoL, AETTA) use empirically but never establish. It is not an
-assumption-free result: it substitutes conditional error-independence (often violated by
-co-trained models, which is exactly why the diagnostic matters) for the earlier crutches.
-The assumption-free dichotomy --- the weakest checkable condition with a tight matching
-converse --- remains open and is the stated frontier of this program
+\emph{testable} --- the guarantee that agreement-based heuristics (ATC, AoL, AETTA) use
+empirically but never establish. It is not an assumption-free result: it substitutes
+conditional error-independence (often violated by co-trained models, which is exactly why
+the diagnostic matters) for the earlier crutches, and its sign anchor is as untestable as
+theirs. The assumption-free dichotomy --- the weakest checkable condition with a tight
+matching converse --- remains open and is the stated frontier of this program
 (Conjecture~\ref{conj:gen}).

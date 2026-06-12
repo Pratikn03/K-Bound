@@ -1,0 +1,1448 @@
+{
+  "schema": "kbound_wilds_camelyon17_v0.5",
+  "created": "2026-06-09T11:08:16",
+  "host": {
+    "node": "Pratik-Ns-MacBook-Pro.local",
+    "platform": "macOS-26.2-arm64-arm-64bit",
+    "python": "3.12.13",
+    "torch": "2.5.1",
+    "mps": true
+  },
+  "config": {
+    "data_root": "/Users/pratik_n/kbound_cam/wilds",
+    "f0_template": "/Volumes/T9/uav/AutoML_Flagship_V8/experiments/kbound/results/wilds/f0_seed{seed}.pt",
+    "seeds": [
+      0,
+      1
+    ],
+    "domains": [
+      "test"
+    ],
+    "compositions": [
+      "iid",
+      "single_class"
+    ],
+    "batch_regimes": [
+      "tiny"
+    ],
+    "aggressiveness": [
+      "mild"
+    ],
+    "n_eval": 32,
+    "n_batches": 2,
+    "tau_star": 0.08,
+    "kappa": 2.5,
+    "device": "cpu",
+    "steps_override": 4,
+    "delta": 0.05,
+    "sd_L": 0.6,
+    "smoke": true
+  },
+  "config_sha8": "207a1a45",
+  "f0_checkpoints": {
+    "0": "/Volumes/T9/uav/AutoML_Flagship_V8/experiments/kbound/results/wilds/f0_seed0.pt",
+    "1": "/Volumes/T9/uav/AutoML_Flagship_V8/experiments/kbound/results/wilds/f0_seed1.pt"
+  },
+  "data": {
+    "data_root": "/Users/pratik_n/kbound_cam/wilds",
+    "n_present": 414389,
+    "n_total": 455954,
+    "n_dropped_disk_filter": 41565,
+    "wall_sec": 72.1
+  },
+  "candidates": [
+    "tent_online",
+    "tent_episodic",
+    "eata_online",
+    "eata_episodic",
+    "sar_online",
+    "sar_episodic"
+  ],
+  "baselines": {
+    "always_freeze_mean_acc": 0.8046875,
+    "per_candidate_always_adapt_mean_acc": {
+      "eata_episodic": 0.8125,
+      "eata_online": 0.84375,
+      "sar_episodic": 0.8046875,
+      "sar_online": 0.8515625,
+      "tent_episodic": 0.8046875,
+      "tent_online": 0.8515625
+    },
+    "per_condition_oracle_mean_acc": 0.859375
+  },
+  "routing_a_single_candidate": {
+    "eata_episodic": {
+      "n_cells": 4,
+      "mean_B": 0.0078125,
+      "base_rate_harmful_B<0": 0.25,
+      "mean_acc": {
+        "always_adapt": 0.8125,
+        "always_freeze": 0.8046875
+      },
+      "kga": {
+        "n": 4,
+        "decision_counts": {
+          "ADAPT": 0,
+          "FREEZE": 0,
+          "ABSTAIN": 4
+        },
+        "coverage": 0.0,
+        "abstention_rate": 1.0,
+        "adapt_precision_B>0": null,
+        "false_adapt_rate_B<0": null,
+        "mean_acc": {
+          "always_adapt": 0.8125,
+          "always_freeze": 0.8046875,
+          "K_Bound": 0.8046875,
+          "oracle": 0.8203125
+        },
+        "regret_vs_oracle": {
+          "always_adapt": 0.0078125,
+          "always_freeze": 0.015625,
+          "K_Bound": 0.015625
+        },
+        "worst_case_acc": {
+          "always_adapt": 0.6875,
+          "always_freeze": 0.71875,
+          "K_Bound": 0.71875
+        },
+        "beats_both": false,
+        "eps_conformal": 0.05684475841309256
+      }
+    },
+    "eata_online": {
+      "n_cells": 4,
+      "mean_B": 0.0390625,
+      "base_rate_harmful_B<0": 0.0,
+      "mean_acc": {
+        "always_adapt": 0.84375,
+        "always_freeze": 0.8046875
+      },
+      "kga": {
+        "n": 4,
+        "decision_counts": {
+          "ADAPT": 0,
+          "FREEZE": 0,
+          "ABSTAIN": 4
+        },
+        "coverage": 0.0,
+        "abstention_rate": 1.0,
+        "adapt_precision_B>0": null,
+        "false_adapt_rate_B<0": null,
+        "mean_acc": {
+          "always_adapt": 0.84375,
+          "always_freeze": 0.8046875,
+          "K_Bound": 0.8046875,
+          "oracle": 0.84375
+        },
+        "regret_vs_oracle": {
+          "always_adapt": 0.0,
+          "always_freeze": 0.0390625,
+          "K_Bound": 0.0390625
+        },
+        "worst_case_acc": {
+          "always_adapt": 0.71875,
+          "always_freeze": 0.71875,
+          "K_Bound": 0.71875
+        },
+        "beats_both": false,
+        "eps_conformal": 0.0757804595425893
+      }
+    },
+    "sar_episodic": {
+      "n_cells": 4,
+      "mean_B": 0.0,
+      "base_rate_harmful_B<0": 0.25,
+      "mean_acc": {
+        "always_adapt": 0.8046875,
+        "always_freeze": 0.8046875
+      },
+      "kga": {
+        "n": 4,
+        "decision_counts": {
+          "ADAPT": 0,
+          "FREEZE": 0,
+          "ABSTAIN": 4
+        },
+        "coverage": 0.0,
+        "abstention_rate": 1.0,
+        "adapt_precision_B>0": null,
+        "false_adapt_rate_B<0": null,
+        "mean_acc": {
+          "always_adapt": 0.8046875,
+          "always_freeze": 0.8046875,
+          "K_Bound": 0.8046875,
+          "oracle": 0.8125
+        },
+        "regret_vs_oracle": {
+          "always_adapt": 0.0078125,
+          "always_freeze": 0.0078125,
+          "K_Bound": 0.0078125
+        },
+        "worst_case_acc": {
+          "always_adapt": 0.71875,
+          "always_freeze": 0.71875,
+          "K_Bound": 0.71875
+        },
+        "beats_both": false,
+        "eps_conformal": 0.031061096526131426
+      }
+    },
+    "sar_online": {
+      "n_cells": 4,
+      "mean_B": 0.046875,
+      "base_rate_harmful_B<0": 0.0,
+      "mean_acc": {
+        "always_adapt": 0.8515625,
+        "always_freeze": 0.8046875
+      },
+      "kga": {
+        "n": 4,
+        "decision_counts": {
+          "ADAPT": 1,
+          "FREEZE": 0,
+          "ABSTAIN": 3
+        },
+        "coverage": 0.25,
+        "abstention_rate": 0.75,
+        "adapt_precision_B>0": 0.0,
+        "false_adapt_rate_B<0": 0.0,
+        "mean_acc": {
+          "always_adapt": 0.8515625,
+          "always_freeze": 0.8046875,
+          "K_Bound": 0.8046875,
+          "oracle": 0.8515625
+        },
+        "regret_vs_oracle": {
+          "always_adapt": 0.0,
+          "always_freeze": 0.046875,
+          "K_Bound": 0.046875
+        },
+        "worst_case_acc": {
+          "always_adapt": 0.78125,
+          "always_freeze": 0.71875,
+          "K_Bound": 0.71875
+        },
+        "beats_both": false,
+        "eps_conformal": 0.061498944995061984
+      }
+    },
+    "tent_episodic": {
+      "n_cells": 4,
+      "mean_B": 0.0,
+      "base_rate_harmful_B<0": 0.25,
+      "mean_acc": {
+        "always_adapt": 0.8046875,
+        "always_freeze": 0.8046875
+      },
+      "kga": {
+        "n": 4,
+        "decision_counts": {
+          "ADAPT": 0,
+          "FREEZE": 0,
+          "ABSTAIN": 4
+        },
+        "coverage": 0.0,
+        "abstention_rate": 1.0,
+        "adapt_precision_B>0": null,
+        "false_adapt_rate_B<0": null,
+        "mean_acc": {
+          "always_adapt": 0.8046875,
+          "always_freeze": 0.8046875,
+          "K_Bound": 0.8046875,
+          "oracle": 0.8125
+        },
+        "regret_vs_oracle": {
+          "always_adapt": 0.0078125,
+          "always_freeze": 0.0078125,
+          "K_Bound": 0.0078125
+        },
+        "worst_case_acc": {
+          "always_adapt": 0.71875,
+          "always_freeze": 0.71875,
+          "K_Bound": 0.71875
+        },
+        "beats_both": false,
+        "eps_conformal": 0.04839844206631169
+      }
+    },
+    "tent_online": {
+      "n_cells": 4,
+      "mean_B": 0.046875,
+      "base_rate_harmful_B<0": 0.0,
+      "mean_acc": {
+        "always_adapt": 0.8515625,
+        "always_freeze": 0.8046875
+      },
+      "kga": {
+        "n": 4,
+        "decision_counts": {
+          "ADAPT": 2,
+          "FREEZE": 0,
+          "ABSTAIN": 2
+        },
+        "coverage": 0.5,
+        "abstention_rate": 0.5,
+        "adapt_precision_B>0": 0.5,
+        "false_adapt_rate_B<0": 0.0,
+        "mean_acc": {
+          "always_adapt": 0.8515625,
+          "always_freeze": 0.8046875,
+          "K_Bound": 0.8203125,
+          "oracle": 0.8515625
+        },
+        "regret_vs_oracle": {
+          "always_adapt": 0.0,
+          "always_freeze": 0.046875,
+          "K_Bound": 0.03125
+        },
+        "worst_case_acc": {
+          "always_adapt": 0.78125,
+          "always_freeze": 0.71875,
+          "K_Bound": 0.71875
+        },
+        "beats_both": false,
+        "eps_conformal": 0.055999851672430094
+      }
+    }
+  },
+  "routing_b_multicandidate": {
+    "n_conditions": 4,
+    "mean_acc": {
+      "router": 0.8046875,
+      "always_freeze": 0.8046875,
+      "best_fixed_always_adapt": 0.8515625,
+      "per_condition_oracle": 0.859375
+    },
+    "regret_vs_oracle": {
+      "router": 0.0546875,
+      "always_freeze": 0.0546875,
+      "best_fixed_always_adapt": 0.0078125
+    },
+    "coverage": 0.0,
+    "abstention_rate": 1.0,
+    "false_adapt_rate": null,
+    "mean_tau": 1.5076312174925715,
+    "gate_pass_rate": 0.0,
+    "fixed_best_candidate": "tent_online",
+    "routing_breakdown": {
+      "ABSTAIN": 4
+    },
+    "decisions_by_regime": {
+      "marginal": {
+        "ABSTAIN": 1
+      },
+      "helpful": {
+        "ABSTAIN": 3
+      }
+    },
+    "decisions_by_domain": {
+      "test": {
+        "ABSTAIN": 4
+      }
+    },
+    "beats_both": false
+  },
+  "routing_c_smooth_drift": {
+    "implemented": true,
+    "theorem": "1B",
+    "view": "brier_squared_loss",
+    "gS_estimate": "f0_surrogate(conservative)",
+    "n_conditions": 4,
+    "decision_counts": {
+      "ABSTAIN": 4
+    },
+    "mean_center_c": -0.15843389974736943,
+    "mean_reach": 0.047435397848042904,
+    "mean_d_obs": 0.17661950765005158,
+    "bracket_coverage_trueB": 1.0,
+    "status": "DIAGNOSTIC (wired to val_smooth_drift.py; conservative g_S~f0 surrogate)",
+    "note": "DIAGNOSTIC: g_S~f0 makes center conservative; full 1B classification instantiation needs an f0-independent source-concept estimate."
+  },
+  "detectability": {
+    "n_cells": 24,
+    "n_harmful": 3,
+    "base_rate_harmful": 0.125,
+    "mean_B": 0.0234375,
+    "per_feature": {
+      "pre_entropy": {
+        "pearson_corr_B": -0.1830950926836549,
+        "harm_AUC": 0.6428571428571429
+      },
+      "pre_conf": {
+        "pearson_corr_B": 0.16129840924166802,
+        "harm_AUC": 0.6428571428571429
+      },
+      "pre_pbal": {
+        "pearson_corr_B": -0.06090574811924384,
+        "harm_AUC": 0.8333333333333334
+      },
+      "post_entropy": {
+        "pearson_corr_B": -0.15718473361377505,
+        "harm_AUC": 0.5793650793650794
+      },
+      "post_conf": {
+        "pearson_corr_B": 0.1791924361664553,
+        "harm_AUC": 0.5793650793650794
+      },
+      "post_pbal": {
+        "pearson_corr_B": 0.16832810515899838,
+        "harm_AUC": 0.5317460317460317
+      },
+      "pbal_drop": {
+        "pearson_corr_B": -0.09287708977128306,
+        "harm_AUC": 0.753968253968254
+      },
+      "entropy_drop": {
+        "pearson_corr_B": -0.05204735823819976,
+        "harm_AUC": 0.5952380952380952
+      },
+      "frac_highconf": {
+        "pearson_corr_B": 0.298752719843424,
+        "harm_AUC": 0.5476190476190477
+      },
+      "marginal_KL": {
+        "pearson_corr_B": 0.05387774527691261,
+        "harm_AUC": 0.9126984126984127
+      },
+      "update_norm": {
+        "pearson_corr_B": 0.15832731989596502,
+        "harm_AUC": 0.5634920634920635
+      }
+    },
+    "certificate_harm_AUC_negBhat": 0.42857142857142855,
+    "certificate_eps": 0.06093556756740333,
+    "best_single_feature_harm_AUC": 0.9126984126984127,
+    "detectability_verdict": "detectable"
+  },
+  "kbound_summary": {
+    "classification": "mixed+detectable",
+    "base_rate_harmful_B<0": 0.125,
+    "mean_B": 0.0234375,
+    "detectability_verdict": "detectable",
+    "best_single_feature_harm_AUC": 0.9126984126984127,
+    "gamma_S_proxy_indist_advantage": null,
+    "gamma_T_proxy_oracle_advantage": 0.0546875,
+    "delta": 0.05,
+    "abs_gammaT_minus_gammaS": null,
+    "gamma_gap_within_delta": null,
+    "real_data_multicandidate_tau_mean": 1.5076312174925715,
+    "_note": "gamma_S/gamma_T are operational debug-scale proxies (in-dist vs OOD adaptation advantage); final defs follow the paper. Classification honors the integrity policy: reported from measured B, never tuned to a target."
+  },
+  "records": [
+    {
+      "seed": 0,
+      "domain": "test",
+      "comp": "iid",
+      "regime": "tiny",
+      "aggr": "mild",
+      "method": "tent",
+      "mode": "online",
+      "candidate": "tent_online",
+      "a0": 0.84375,
+      "aa": 0.84375,
+      "B": 0.0,
+      "upd_norm": 0.9792624296926281,
+      "Z": [
+        0.08506716042757034,
+        0.9714888334274292,
+        0.8459393199661382,
+        5.6421577028231695e-05,
+        0.999995231628418,
+        0.9544349192282429,
+        -0.10849559926210461,
+        0.08501073885054211,
+        1.0,
+        0.26916855573654175,
+        0.9792624296926281
+      ],
+      "regime_label": "marginal"
+    },
+    {
+      "seed": 0,
+      "domain": "test",
+      "comp": "iid",
+      "regime": "tiny",
+      "aggr": "mild",
+      "method": "tent",
+      "mode": "episodic",
+      "candidate": "tent_episodic",
+      "a0": 0.84375,
+      "aa": 0.84375,
+      "B": 0.0,
+      "upd_norm": 0.725812159360231,
+      "Z": [
+        0.08506716042757034,
+        0.9714888334274292,
+        0.8459393199661382,
+        4.9744056013878435e-05,
+        0.9999959468841553,
+        0.9544318235405272,
+        -0.108492503574389,
+        0.08501741637155646,
+        1.0,
+        0.26917457580566406,
+        0.725812159360231
+      ],
+      "regime_label": "marginal"
+    },
+    {
+      "seed": 0,
+      "domain": "test",
+      "comp": "iid",
+      "regime": "tiny",
+      "aggr": "mild",
+      "method": "eata",
+      "mode": "online",
+      "candidate": "eata_online",
+      "a0": 0.84375,
+      "aa": 0.84375,
+      "B": 0.0,
+      "upd_norm": 0.4518923382048482,
+      "Z": [
+        0.08506716042757034,
+        0.9714888334274292,
+        0.8459393199661382,
+        0.04950285330414772,
+        0.9831126928329468,
+        0.9660060839609435,
+        -0.1200667639948052,
+        0.03556430712342262,
+        0.875,
+        0.24462197721004486,
+        0.4518923382048482
+      ],
+      "regime_label": "marginal"
+    },
+    {
+      "seed": 0,
+      "domain": "test",
+      "comp": "iid",
+      "regime": "tiny",
+      "aggr": "mild",
+      "method": "eata",
+      "mode": "episodic",
+      "candidate": "eata_episodic",
+      "a0": 0.84375,
+      "aa": 0.84375,
+      "B": 0.0,
+      "upd_norm": 0.32804610478223173,
+      "Z": [
+        0.08506716042757034,
+        0.9714888334274292,
+        0.8459393199661382,
+        0.04218843951821327,
+        0.9867900609970093,
+        0.9636339272575928,
+        -0.11769460729145453,
+        0.04287872090935707,
+        0.875,
+        0.24986569583415985,
+        0.32804610478223173
+      ],
+      "regime_label": "marginal"
+    },
+    {
+      "seed": 0,
+      "domain": "test",
+      "comp": "iid",
+      "regime": "tiny",
+      "aggr": "mild",
+      "method": "sar",
+      "mode": "online",
+      "candidate": "sar_online",
+      "a0": 0.84375,
+      "aa": 0.84375,
+      "B": 0.0,
+      "upd_norm": 0.0,
+      "Z": [
+        0.08506716042757034,
+        0.9714888334274292,
+        0.8459393199661382,
+        0.041139114648103714,
+        0.9873132705688477,
+        0.9632884141120094,
+        -0.11734909414587114,
+        0.04392804577946663,
+        0.875,
+        0.2506190538406372,
+        0.0
+      ],
+      "regime_label": "marginal"
+    },
+    {
+      "seed": 0,
+      "domain": "test",
+      "comp": "iid",
+      "regime": "tiny",
+      "aggr": "mild",
+      "method": "sar",
+      "mode": "episodic",
+      "candidate": "sar_episodic",
+      "a0": 0.84375,
+      "aa": 0.84375,
+      "B": 0.0,
+      "upd_norm": 0.0,
+      "Z": [
+        0.08506716042757034,
+        0.9714888334274292,
+        0.8459393199661382,
+        0.041139114648103714,
+        0.9873132705688477,
+        0.9632884141120094,
+        -0.11734909414587114,
+        0.04392804577946663,
+        0.875,
+        0.2506190538406372,
+        0.0
+      ],
+      "regime_label": "marginal"
+    },
+    {
+      "seed": 0,
+      "domain": "test",
+      "comp": "single_class",
+      "regime": "tiny",
+      "aggr": "mild",
+      "method": "tent",
+      "mode": "online",
+      "candidate": "tent_online",
+      "a0": 0.71875,
+      "aa": 0.78125,
+      "B": 0.0625,
+      "upd_norm": 0.9352043393408053,
+      "Z": [
+        0.08547338098287582,
+        0.955674409866333,
+        0.4089589213478796,
+        0.0005497537786141038,
+        0.9999414086341858,
+        0.8113114731281661,
+        -0.4023525517802865,
+        0.08492362720426172,
+        1.0,
+        1.3353393077850342,
+        0.9352043393408053
+      ],
+      "regime_label": "helpful"
+    },
+    {
+      "seed": 0,
+      "domain": "test",
+      "comp": "single_class",
+      "regime": "tiny",
+      "aggr": "mild",
+      "method": "tent",
+      "mode": "episodic",
+      "candidate": "tent_episodic",
+      "a0": 0.71875,
+      "aa": 0.71875,
+      "B": 0.0,
+      "upd_norm": 0.6994611861693335,
+      "Z": [
+        0.08547338098287582,
+        0.955674409866333,
+        0.4089589213478796,
+        9.145114745479077e-05,
+        0.9999924302101135,
+        0.8112892013748794,
+        -0.4023302800269998,
+        0.08538192983542103,
+        1.0,
+        1.3353888988494873,
+        0.6994611861693335
+      ],
+      "regime_label": "marginal"
+    },
+    {
+      "seed": 0,
+      "domain": "test",
+      "comp": "single_class",
+      "regime": "tiny",
+      "aggr": "mild",
+      "method": "eata",
+      "mode": "online",
+      "candidate": "eata_online",
+      "a0": 0.71875,
+      "aa": 0.71875,
+      "B": 0.0,
+      "upd_norm": 0.8829747906239017,
+      "Z": [
+        0.08547338098287582,
+        0.955674409866333,
+        0.4089589213478796,
+        0.00041183712892234325,
+        0.9999569058418274,
+        0.8113438058665283,
+        -0.40238488451864873,
+        0.08506154385395348,
+        1.0,
+        1.3352675437927246,
+        0.8829747906239017
+      ],
+      "regime_label": "marginal"
+    },
+    {
+      "seed": 0,
+      "domain": "test",
+      "comp": "single_class",
+      "regime": "tiny",
+      "aggr": "mild",
+      "method": "eata",
+      "mode": "episodic",
+      "candidate": "eata_episodic",
+      "a0": 0.71875,
+      "aa": 0.6875,
+      "B": -0.03125,
+      "upd_norm": 0.6910189336315063,
+      "Z": [
+        0.08547338098287582,
+        0.955674409866333,
+        0.4089589213478796,
+        7.352915417868644e-05,
+        0.9999940395355225,
+        0.8112867076264418,
+        -0.40232778627856225,
+        0.08539985182869714,
+        1.0,
+        1.3353945016860962,
+        0.6910189336315063
+      ],
+      "regime_label": "harmful"
+    },
+    {
+      "seed": 0,
+      "domain": "test",
+      "comp": "single_class",
+      "regime": "tiny",
+      "aggr": "mild",
+      "method": "sar",
+      "mode": "online",
+      "candidate": "sar_online",
+      "a0": 0.71875,
+      "aa": 0.78125,
+      "B": 0.0625,
+      "upd_norm": 0.0,
+      "Z": [
+        0.08547338098287582,
+        0.955674409866333,
+        0.4089589213478796,
+        0.00823460053652525,
+        0.9986892938613892,
+        0.8133329572064075,
+        -0.40437403585852794,
+        0.07723878044635057,
+        1.0,
+        1.3308464288711548,
+        0.0
+      ],
+      "regime_label": "helpful"
+    },
+    {
+      "seed": 0,
+      "domain": "test",
+      "comp": "single_class",
+      "regime": "tiny",
+      "aggr": "mild",
+      "method": "sar",
+      "mode": "episodic",
+      "candidate": "sar_episodic",
+      "a0": 0.71875,
+      "aa": 0.71875,
+      "B": 0.0,
+      "upd_norm": 0.0,
+      "Z": [
+        0.08547338098287582,
+        0.955674409866333,
+        0.4089589213478796,
+        0.00823460053652525,
+        0.9986892938613892,
+        0.8133329572064075,
+        -0.40437403585852794,
+        0.07723878044635057,
+        1.0,
+        1.3308464288711548,
+        0.0
+      ],
+      "regime_label": "marginal"
+    },
+    {
+      "seed": 1,
+      "domain": "test",
+      "comp": "iid",
+      "regime": "tiny",
+      "aggr": "mild",
+      "method": "tent",
+      "mode": "online",
+      "candidate": "tent_online",
+      "a0": 0.8125,
+      "aa": 0.875,
+      "B": 0.0625,
+      "upd_norm": 1.0136658411314987,
+      "Z": [
+        0.0745038166642189,
+        0.9721819162368774,
+        0.852453936789496,
+        0.0005381250521168113,
+        0.999946653842926,
+        0.9544442062913894,
+        -0.10199026950189338,
+        0.07396569161210209,
+        1.0,
+        0.2609720826148987,
+        1.0136658411314987
+      ],
+      "regime_label": "helpful"
+    },
+    {
+      "seed": 1,
+      "domain": "test",
+      "comp": "iid",
+      "regime": "tiny",
+      "aggr": "mild",
+      "method": "tent",
+      "mode": "episodic",
+      "candidate": "tent_episodic",
+      "a0": 0.8125,
+      "aa": 0.84375,
+      "B": 0.03125,
+      "upd_norm": 0.7262758832019376,
+      "Z": [
+        0.0745038166642189,
+        0.9721819162368774,
+        0.852453936789496,
+        0.00026320022880099714,
+        0.9999759793281555,
+        0.9544388748292126,
+        -0.10198493803971664,
+        0.0742406164354179,
+        1.0,
+        0.260982871055603,
+        0.7262758832019376
+      ],
+      "regime_label": "helpful"
+    },
+    {
+      "seed": 1,
+      "domain": "test",
+      "comp": "iid",
+      "regime": "tiny",
+      "aggr": "mild",
+      "method": "eata",
+      "mode": "online",
+      "candidate": "eata_online",
+      "a0": 0.8125,
+      "aa": 0.875,
+      "B": 0.0625,
+      "upd_norm": 0.9438004026293011,
+      "Z": [
+        0.0745038166642189,
+        0.9721819162368774,
+        0.852453936789496,
+        0.00026346041704528034,
+        0.999975323677063,
+        0.9544225364773807,
+        -0.10196859968788474,
+        0.07424035624717362,
+        1.0,
+        0.26101529598236084,
+        0.9438004026293011
+      ],
+      "regime_label": "helpful"
+    },
+    {
+      "seed": 1,
+      "domain": "test",
+      "comp": "iid",
+      "regime": "tiny",
+      "aggr": "mild",
+      "method": "eata",
+      "mode": "episodic",
+      "candidate": "eata_episodic",
+      "a0": 0.8125,
+      "aa": 0.84375,
+      "B": 0.03125,
+      "upd_norm": 0.7051823016720744,
+      "Z": [
+        0.0745038166642189,
+        0.9721819162368774,
+        0.852453936789496,
+        0.00018041557632386684,
+        0.9999842643737793,
+        0.9544334573757105,
+        -0.10197952058621451,
+        0.07432340108789504,
+        1.0,
+        0.260993629693985,
+        0.7051823016720744
+      ],
+      "regime_label": "helpful"
+    },
+    {
+      "seed": 1,
+      "domain": "test",
+      "comp": "iid",
+      "regime": "tiny",
+      "aggr": "mild",
+      "method": "sar",
+      "mode": "online",
+      "candidate": "sar_online",
+      "a0": 0.8125,
+      "aa": 0.875,
+      "B": 0.0625,
+      "upd_norm": 0.0,
+      "Z": [
+        0.0745038166642189,
+        0.9721819162368774,
+        0.852453936789496,
+        0.03517947718501091,
+        0.9907840490341187,
+        0.9603073528332788,
+        -0.10785341604378285,
+        0.03932433947920799,
+        1.0,
+        0.24903669953346252,
+        0.0
+      ],
+      "regime_label": "helpful"
+    },
+    {
+      "seed": 1,
+      "domain": "test",
+      "comp": "iid",
+      "regime": "tiny",
+      "aggr": "mild",
+      "method": "sar",
+      "mode": "episodic",
+      "candidate": "sar_episodic",
+      "a0": 0.8125,
+      "aa": 0.84375,
+      "B": 0.03125,
+      "upd_norm": 0.0,
+      "Z": [
+        0.0745038166642189,
+        0.9721819162368774,
+        0.852453936789496,
+        0.03517947718501091,
+        0.9907840490341187,
+        0.9603073528332788,
+        -0.10785341604378285,
+        0.03932433947920799,
+        1.0,
+        0.24903669953346252,
+        0.0
+      ],
+      "regime_label": "helpful"
+    },
+    {
+      "seed": 1,
+      "domain": "test",
+      "comp": "single_class",
+      "regime": "tiny",
+      "aggr": "mild",
+      "method": "tent",
+      "mode": "online",
+      "candidate": "tent_online",
+      "a0": 0.84375,
+      "aa": 0.90625,
+      "B": 0.0625,
+      "upd_norm": 1.0017346923724286,
+      "Z": [
+        0.0012938457075506449,
+        0.9998455047607422,
+        0.0021782051163100695,
+        0.000557662860956043,
+        0.9999412894248962,
+        0.9544767110124025,
+        -0.9522985058960924,
+        0.0007361828465946019,
+        1.0,
+        4.822728157043457,
+        1.0017346923724286
+      ],
+      "regime_label": "helpful"
+    },
+    {
+      "seed": 1,
+      "domain": "test",
+      "comp": "single_class",
+      "regime": "tiny",
+      "aggr": "mild",
+      "method": "tent",
+      "mode": "episodic",
+      "candidate": "tent_episodic",
+      "a0": 0.84375,
+      "aa": 0.8125,
+      "B": -0.03125,
+      "upd_norm": 0.726416325593927,
+      "Z": [
+        0.0012938457075506449,
+        0.9998455047607422,
+        0.0021782051163100695,
+        0.0002023625565925613,
+        0.9999803304672241,
+        0.9544476459444067,
+        -0.9522694408280966,
+        0.0010914831509580836,
+        1.0,
+        4.823094844818115,
+        0.726416325593927
+      ],
+      "regime_label": "harmful"
+    },
+    {
+      "seed": 1,
+      "domain": "test",
+      "comp": "single_class",
+      "regime": "tiny",
+      "aggr": "mild",
+      "method": "eata",
+      "mode": "online",
+      "candidate": "eata_online",
+      "a0": 0.84375,
+      "aa": 0.9375,
+      "B": 0.09375,
+      "upd_norm": 0.8150283284444467,
+      "Z": [
+        0.0012938457075506449,
+        0.9998455047607422,
+        0.0021782051163100695,
+        0.0018977407598868012,
+        0.9997573494911194,
+        0.9999998307651845,
+        -0.9978216256488744,
+        -0.0006038950523361564,
+        1.0,
+        3.6965575218200684,
+        0.8150283284444467
+      ],
+      "regime_label": "helpful"
+    },
+    {
+      "seed": 1,
+      "domain": "test",
+      "comp": "single_class",
+      "regime": "tiny",
+      "aggr": "mild",
+      "method": "eata",
+      "mode": "episodic",
+      "candidate": "eata_episodic",
+      "a0": 0.84375,
+      "aa": 0.875,
+      "B": 0.03125,
+      "upd_norm": 0.6041834136443609,
+      "Z": [
+        0.0012938457075506449,
+        0.9998455047607422,
+        0.0021782051163100695,
+        0.00029493632609955966,
+        0.9999727010726929,
+        1.0000000027478353,
+        -0.9978217976315252,
+        0.0009989093814510852,
+        1.0,
+        3.69486665725708,
+        0.6041834136443609
+      ],
+      "regime_label": "helpful"
+    },
+    {
+      "seed": 1,
+      "domain": "test",
+      "comp": "single_class",
+      "regime": "tiny",
+      "aggr": "mild",
+      "method": "sar",
+      "mode": "online",
+      "candidate": "sar_online",
+      "a0": 0.84375,
+      "aa": 0.90625,
+      "B": 0.0625,
+      "upd_norm": 0.0,
+      "Z": [
+        0.0012938457075506449,
+        0.9998455047607422,
+        0.0021782051163100695,
+        0.0793161541223526,
+        0.9746493697166443,
+        0.9660966328266227,
+        -0.9639184277103127,
+        -0.07802230841480196,
+        0.875,
+        4.665743827819824,
+        0.0
+      ],
+      "regime_label": "helpful"
+    },
+    {
+      "seed": 1,
+      "domain": "test",
+      "comp": "single_class",
+      "regime": "tiny",
+      "aggr": "mild",
+      "method": "sar",
+      "mode": "episodic",
+      "candidate": "sar_episodic",
+      "a0": 0.84375,
+      "aa": 0.8125,
+      "B": -0.03125,
+      "upd_norm": 0.0,
+      "Z": [
+        0.0012938457075506449,
+        0.9998455047607422,
+        0.0021782051163100695,
+        0.0793161541223526,
+        0.9746493697166443,
+        0.9660966328266227,
+        -0.9639184277103127,
+        -0.07802230841480196,
+        0.875,
+        4.665743827819824,
+        0.0
+      ],
+      "regime_label": "harmful"
+    }
+  ],
+  "conditions": [
+    {
+      "seed": 0,
+      "domain": "test",
+      "comp": "iid",
+      "regime": "tiny",
+      "aggr": "mild",
+      "cand_names": [
+        "freeze_f0",
+        "tent_online",
+        "tent_episodic",
+        "eata_online",
+        "eata_episodic",
+        "sar_online",
+        "sar_episodic"
+      ],
+      "aa_all": [
+        0.84375,
+        0.84375,
+        0.84375,
+        0.84375,
+        0.84375,
+        0.84375,
+        0.84375
+      ],
+      "a0": 0.84375,
+      "oracle": 0.84375,
+      "best_adapt": 0.84375,
+      "true_best": "freeze_f0",
+      "route": {
+        "tau": 2.4307222352830933,
+        "tau_star": 0.08,
+        "gate_pass": false,
+        "overdet_residual": 0.49371428571428577,
+        "h_hat": 0.8644194098982326,
+        "margin": 2.7935040567792577,
+        "b_hat": [
+          0.47167567236328223,
+          0.36821269682313695,
+          -0.9719235289099221,
+          0.36821269682313706,
+          -0.9719235289099225,
+          0.36821269682313695,
+          -0.9719235289099221
+        ],
+        "b_tilde": [
+          0.0,
+          -1.0,
+          -1.0,
+          -1.0,
+          -1.0,
+          -1.0,
+          -1.0
+        ],
+        "anchor_b0": 0.47167567236328223,
+        "n_D": 10,
+        "M": 7,
+        "decision": "ABSTAIN",
+        "choice": null,
+        "reason": "tau=2.4307 > tau*=0.08 certifies Def-5 violated"
+      },
+      "route_c": {
+        "decision": "ABSTAIN",
+        "implemented": true,
+        "theorem": "1B",
+        "view": "brier_squared_loss",
+        "gS_estimate": "f0_surrogate(conservative)",
+        "center_c": 0.0,
+        "U": 0.0,
+        "T_S": 0.0,
+        "W": 0.0,
+        "d_obs": 0.07622223472359131,
+        "L": 0.6,
+        "reach": 0.0,
+        "eps_n": 0.35355339059327373,
+        "bracket": [
+          -0.35355339059327373,
+          0.35355339059327373
+        ],
+        "note": "DIAGNOSTIC: g_S~f0 makes center conservative; full 1B classification instantiation needs an f0-independent source-concept estimate.",
+        "true_B_best": 0.0,
+        "bracket_covers_trueB": true
+      },
+      "realized": 0.84375,
+      "regime_label": "marginal"
+    },
+    {
+      "seed": 0,
+      "domain": "test",
+      "comp": "single_class",
+      "regime": "tiny",
+      "aggr": "mild",
+      "cand_names": [
+        "freeze_f0",
+        "tent_online",
+        "tent_episodic",
+        "eata_online",
+        "eata_episodic",
+        "sar_online",
+        "sar_episodic"
+      ],
+      "aa_all": [
+        0.71875,
+        0.78125,
+        0.71875,
+        0.71875,
+        0.6875,
+        0.78125,
+        0.71875
+      ],
+      "a0": 0.71875,
+      "oracle": 0.78125,
+      "best_adapt": 0.78125,
+      "true_best": "tent_online",
+      "route": {
+        "tau": 1.544280943172542,
+        "tau_star": 0.08,
+        "gate_pass": false,
+        "overdet_residual": 0.37193575655114114,
+        "h_hat": 0.5893248454337398,
+        "margin": 2.0280123098095784,
+        "b_hat": [
+          -0.8385590761858622,
+          0.43177134620098506,
+          0.8061876906053219,
+          0.728608976535372,
+          0.8708196541708011,
+          0.2385124621632838,
+          0.8061876906053219
+        ],
+        "b_tilde": [
+          1.0,
+          -0.37210420376762526,
+          -0.531085004543794,
+          -0.8112457445926347,
+          -0.6637465183030647,
+          -0.18156825980064067,
+          -0.531085004543794
+        ],
+        "anchor_b0": -0.8385590761858622,
+        "n_D": 13,
+        "M": 7,
+        "decision": "ABSTAIN",
+        "choice": null,
+        "reason": "tau=1.5443 > tau*=0.08 certifies Def-5 violated"
+      },
+      "route_c": {
+        "decision": "ABSTAIN",
+        "implemented": true,
+        "theorem": "1B",
+        "view": "brier_squared_loss",
+        "gS_estimate": "f0_surrogate(conservative)",
+        "center_c": -0.222790616018366,
+        "U": -0.24760922067509314,
+        "T_S": -0.012409302328363568,
+        "W": 0.27386934275952246,
+        "d_obs": 0.18114778395766298,
+        "L": 0.6,
+        "reach": 0.05953298944179495,
+        "eps_n": 0.35355339059327373,
+        "bracket": [
+          -0.6358769960534347,
+          0.19029576401670267
+        ],
+        "note": "DIAGNOSTIC: g_S~f0 makes center conservative; full 1B classification instantiation needs an f0-independent source-concept estimate.",
+        "true_B_best": 0.0625,
+        "bracket_covers_trueB": true
+      },
+      "realized": 0.71875,
+      "regime_label": "helpful"
+    },
+    {
+      "seed": 1,
+      "domain": "test",
+      "comp": "iid",
+      "regime": "tiny",
+      "aggr": "mild",
+      "cand_names": [
+        "freeze_f0",
+        "tent_online",
+        "tent_episodic",
+        "eata_online",
+        "eata_episodic",
+        "sar_online",
+        "sar_episodic"
+      ],
+      "aa_all": [
+        0.8125,
+        0.875,
+        0.84375,
+        0.875,
+        0.84375,
+        0.875,
+        0.84375
+      ],
+      "a0": 0.8125,
+      "oracle": 0.875,
+      "best_adapt": 0.875,
+      "true_best": "tent_online",
+      "route": {
+        "tau": 0.7221746517324071,
+        "tau_star": 0.08,
+        "gate_pass": false,
+        "overdet_residual": 0.21446208112874782,
+        "h_hat": 0.2824170080462203,
+        "margin": 1.3727091867822172,
+        "b_hat": [
+          -0.9839596710232383,
+          0.8471027044897093,
+          0.9839596710232381,
+          0.8471027044897093,
+          0.07954491411925463,
+          0.7509499805844431,
+          0.9839596710232381
+        ],
+        "b_tilde": [
+          1.0,
+          -0.7777777777777777,
+          -1.0,
+          -0.7777777777777777,
+          -0.0,
+          -0.7453559924999299,
+          -1.0
+        ],
+        "anchor_b0": -0.9839596710232383,
+        "n_D": 9,
+        "M": 7,
+        "decision": "ABSTAIN",
+        "choice": null,
+        "reason": "tau=0.7222 > tau*=0.08 certifies Def-5 violated"
+      },
+      "route_c": {
+        "decision": "ABSTAIN",
+        "implemented": true,
+        "theorem": "1B",
+        "view": "brier_squared_loss",
+        "gS_estimate": "f0_surrogate(conservative)",
+        "center_c": -0.21875544234325814,
+        "U": -0.16305854387325203,
+        "T_S": 0.027848449235003056,
+        "W": 0.26942770813394873,
+        "d_obs": 0.01827077270151012,
+        "L": 0.6,
+        "reach": 0.0059071828977650225,
+        "eps_n": 0.35355339059327373,
+        "bracket": [
+          -0.5782160158342968,
+          0.1407051311477806
+        ],
+        "note": "DIAGNOSTIC: g_S~f0 makes center conservative; full 1B classification instantiation needs an f0-independent source-concept estimate.",
+        "true_B_best": 0.0625,
+        "bracket_covers_trueB": true
+      },
+      "realized": 0.8125,
+      "regime_label": "helpful"
+    },
+    {
+      "seed": 1,
+      "domain": "test",
+      "comp": "single_class",
+      "regime": "tiny",
+      "aggr": "mild",
+      "cand_names": [
+        "freeze_f0",
+        "tent_online",
+        "tent_episodic",
+        "eata_online",
+        "eata_episodic",
+        "sar_online",
+        "sar_episodic"
+      ],
+      "aa_all": [
+        0.84375,
+        0.90625,
+        0.8125,
+        0.9375,
+        0.875,
+        0.90625,
+        0.8125
+      ],
+      "a0": 0.84375,
+      "oracle": 0.9375,
+      "best_adapt": 0.9375,
+      "true_best": "eata_online",
+      "route": {
+        "tau": 1.3333470397822436,
+        "tau_star": 0.08,
+        "gate_pass": false,
+        "overdet_residual": 0.19456906729634005,
+        "h_hat": 0.4369779413795304,
+        "margin": 1.6954675426043533,
+        "b_hat": [
+          0.26808593972642636,
+          -0.8288488647755752,
+          -0.7503479583636312,
+          -0.2887173104406148,
+          -0.2680859397264261,
+          -0.8288488647755755,
+          -0.7503479583636312
+        ],
+        "b_tilde": [
+          0.2335496832484569,
+          -0.38924947208076155,
+          -1.0,
+          -0.0,
+          -0.23354968324845676,
+          -0.38924947208076155,
+          -1.0
+        ],
+        "anchor_b0": 0.26808593972642636,
+        "n_D": 11,
+        "M": 7,
+        "decision": "ABSTAIN",
+        "choice": null,
+        "reason": "tau=1.3333 > tau*=0.08 certifies Def-5 violated"
+      },
+      "route_c": {
+        "decision": "ABSTAIN",
+        "implemented": true,
+        "theorem": "1B",
+        "view": "brier_squared_loss",
+        "gS_estimate": "f0_surrogate(conservative)",
+        "center_c": -0.19218954062785354,
+        "U": -0.20111212302354217,
+        "T_S": -0.0044612911978443165,
+        "W": 0.2404260970229123,
+        "d_obs": 0.4308372392174419,
+        "L": 0.6,
+        "reach": 0.12430141905261163,
+        "eps_n": 0.35355339059327373,
+        "bracket": [
+          -0.6700443502737389,
+          0.2856652690180318
+        ],
+        "note": "DIAGNOSTIC: g_S~f0 makes center conservative; full 1B classification instantiation needs an f0-independent source-concept estimate.",
+        "true_B_best": 0.09375,
+        "bracket_covers_trueB": true
+      },
+      "realized": 0.84375,
+      "regime_label": "helpful"
+    }
+  ]
+}

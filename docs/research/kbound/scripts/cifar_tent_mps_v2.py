@@ -56,7 +56,7 @@ The analysis core (decide_kga, policy_metrics, mixing_pareto, summarize) imports
 WITHOUT torch so it can be unit-tested off-GPU.
 """
 from __future__ import annotations
-import os, sys, json, copy, math, time, argparse, glob
+import os, sys, json, copy, math, time, argparse, glob, random
 import numpy as np
 
 # torch is only needed for the actual TTA runs; guard it so the analysis core
@@ -86,6 +86,23 @@ EVAL_POOL       = 2000       # balanced held-out eval images per corruption/seve
 HELP_THR        = 0.02       # |B| band for labeling regime (REPORTING ONLY)
 ALPHA           = 0.10       # conformal miscoverage -> false-adapt/false-freeze target
 SEED            = 0
+
+def set_global_seed(seed):
+    """Set the run seed for ALL rng (protocol: 'seed sets ALL rng').
+    Reassigns the module-global SEED so every np.random.default_rng(SEED) created
+    inside the benchmark functions (batch-composition / eval-pool sampling) and the
+    decide_kga/mixing_pareto defaults pick it up, and seeds torch/np/python-random."""
+    global SEED
+    SEED = int(seed)
+    random.seed(SEED)
+    np.random.seed(SEED)
+    if _HAS_TORCH:
+        torch.manual_seed(SEED)
+        try:
+            torch.cuda.manual_seed_all(SEED)
+        except Exception:
+            pass
+    return SEED
 
 # CIFAR-C corruption names (standard 15 + 4 extra). --quick uses a representative subset.
 CIFAR_C_ALL = ["gaussian_noise","shot_noise","impulse_noise","defocus_blur","glass_blur",
@@ -336,6 +353,33 @@ def cifar_c_severity(X, y, sev):
     a = (sev - 1) * 10000; b = sev * 10000
     return X[a:b], y[a:b]
 
+# ---- data: CIFAR-10.1 (NATURAL distribution shift; reuses the CIFAR-10 model) ----
+CIFAR101_URLS = {
+    "data":   "https://github.com/modestyachts/CIFAR-10.1/raw/master/datasets/cifar10.1_v6_data.npy",
+    "labels": "https://github.com/modestyachts/CIFAR-10.1/raw/master/datasets/cifar10.1_v6_labels.npy",
+}
+def load_cifar_101(root):
+    """CIFAR-10.1 v6: ~2000 brand-new REAL photos collected by CIFAR-10's own protocol
+    (a NATURAL distribution shift -- no synthetic corruption). Returns
+    (X uint8 [N,32,32,3], y [N]) -- identical format to load_cifar_c, so it flows through
+    the SAME stream/KGA machinery. Auto-downloads the two .npy files (~30 MB) into
+    <root>/CIFAR-10.1/ if absent."""
+    base = os.path.join(root, "CIFAR-10.1"); os.makedirs(base, exist_ok=True)
+    xp = os.path.join(base, "cifar10.1_v6_data.npy")
+    yp = os.path.join(base, "cifar10.1_v6_labels.npy")
+    for path, url in ((xp, CIFAR101_URLS["data"]), (yp, CIFAR101_URLS["labels"])):
+        if not os.path.exists(path):
+            try:
+                import urllib.request
+                print(f"[cifar10.1] downloading {os.path.basename(path)} ...")
+                urllib.request.urlretrieve(url, path)
+            except Exception as e:
+                raise FileNotFoundError(
+                    f"Missing {path}; auto-download failed ({e}). Fetch manually:\n"
+                    f"  curl -L -o {xp} {CIFAR101_URLS['data']}\n"
+                    f"  curl -L -o {yp} {CIFAR101_URLS['labels']}")
+    return np.load(xp), np.load(yp).astype(int)
+
 # ---- data: ImageNet-C (folder of corruption/severity/class/*.JPEG) ----
 # Speed: pass DataLoader worker tensors over file descriptors (no shm files on exFAT),
 # and raise the fd soft limit so many workers don't trip macOS's low default (256).
@@ -480,34 +524,58 @@ def eata_adapt(base, stream, steps, lr, num_classes, e_margin=None, fisher_alpha
             opt.zero_grad(); loss.backward(); opt.step()
     return m, _upd_norm(ps, init)
 
-def sar_adapt(base, stream, steps, lr, num_classes, rho=0.05, e_reset=None):
-    """Sharpness-aware (SAM) reliable entropy minimization + collapse reset (faithful-ish SAR)."""
-    margin = 0.4 * math.log(num_classes)
-    if e_reset is None: e_reset = 0.2 * math.log(num_classes)
-    m, ps, init = _clone_for_tta(base); opt = torch.optim.SGD(ps, lr=lr, momentum=0.9)
+def sar_adapt(base, stream, steps, lr, num_classes, rho=0.05, margin_e0=None, reset_constant_em=0.2):
+    """Faithful SAR (Niu et al., ICLR 2023; github.com/mr-eggplant/SAR), ported from
+    sar.py/sam.py. Four components of the reference, all present here:
+      (1) SAM optimizer wrapping SGD: first_step climbs to w+e(w) and SAVES the per-param
+          perturbation so second_step can restore w EXACTLY, then applies the base SGD step
+          using the gradient evaluated at w+e(w);
+      (2) reliable-sample selection: keep only samples with entropy < E_0 = 0.4*ln(K);
+      (3) an EMA of the reliable (second-step) entropy loss as the collapse criterion;
+      (4) model recovery: when ema < reset_constant_em, restore BOTH the weights and the
+          optimizer state (momentum), and reset the EMA.
+    Adapted to this harness's BN/LN-affine param set and shared (lr, steps) budget so SAR is
+    compared apples-to-apples with tent/eata. (The only deliberate departure from the
+    official repo is that it adapts the same affine params as tent/eata rather than excluding
+    ResNet-layer4 / ViT top-blocks, to keep the candidate-method comparison controlled.)"""
+    if margin_e0 is None: margin_e0 = 0.4 * math.log(num_classes)             # E_0, Eqn. (2)
+    m, ps, init = _clone_for_tta(base)
+    opt = torch.optim.SGD(ps, lr=lr, momentum=0.9)                            # SAM's base optimizer
+    # snapshot for the recovery scheme (faithful copy_model_and_optimizer)
+    model_state = copy.deepcopy(m.state_dict())
+    opt_state = copy.deepcopy(opt.state_dict())
     ema = None
     for _ in range(steps):
         for xb in stream:
-            out = m(xb.contiguous()); ent = _entropy(out.softmax(1)); keep = ent < margin
-            if keep.sum() == 0: continue
-            loss = ent[keep].mean()
-            opt.zero_grad(); loss.backward()
-            # SAM ascent step
+            xb = xb.contiguous()
+            # (2) first forward + reliable-sample selection
+            opt.zero_grad()
+            ent = _entropy(m(xb).softmax(1)); keep1 = ent < margin_e0
+            if keep1.sum() == 0: continue
+            ent[keep1].mean().backward()
+            # (1) SAM first_step: climb to w+e(w), saving old_p to restore w exactly later
             with torch.no_grad():
-                g = [p.grad.detach() for p in ps]; gn = (sum((gi ** 2).sum() for gi in g) ** 0.5) + 1e-12
-                for p, gi in zip(ps, g): p.add_(gi * (rho / gn))
-            out2 = m(xb.contiguous()); ent2 = _entropy(out2.softmax(1)); keep2 = ent2 < margin
+                gnorm = sum((p.grad.detach() ** 2).sum() for p in ps if p.grad is not None) ** 0.5
+                scale = rho / (gnorm + 1e-12)
+                old_p = [p.data.clone() for p in ps]
+                for p in ps:
+                    if p.grad is not None: p.add_(p.grad * scale)
+            # second forward at w+e(w); re-filter the SAME first-reliable subset
+            opt.zero_grad()
+            ent2 = _entropy(m(xb).softmax(1))[keep1]; keep2 = ent2 < margin_e0
             loss2 = ent2[keep2].mean() if keep2.any() else ent2.mean()
-            opt.zero_grad(); loss2.backward()
+            # (3) EMA of the reliable second-step loss = model-recovery criterion
+            if not math.isnan(loss2.item()):
+                ema = loss2.item() if ema is None else 0.9 * ema + 0.1 * loss2.item()
+            loss2.backward()
+            # (1) SAM second_step: restore w exactly, then the base SGD update at the w+e(w) gradient
             with torch.no_grad():
-                g = [p.grad.detach() for p in ps]; gn = (sum((gi ** 2).sum() for gi in g) ** 0.5) + 1e-12
-                for p, gi in zip(ps, g): p.sub_(gi * (rho / gn))   # back to weights
+                for p, q in zip(ps, old_p): p.data = q
             opt.step()
-            em = ent[keep].mean().item(); ema = em if ema is None else 0.9 * ema + 0.1 * em
-            if ema is not None and ema < e_reset:      # collapse guard -> reset
-                with torch.no_grad():
-                    for p, q in zip(ps, init): p.copy_(q)
-                ema = None
+            # (4) model recovery on detected collapse: restore weights AND optimizer, reset EMA
+            if ema is not None and ema < reset_constant_em:
+                with torch.no_grad(): m.load_state_dict(model_state, strict=True)
+                opt.load_state_dict(opt_state); ema = None
     return m, _upd_norm(ps, init)
 
 TTA_METHODS = {"tent": tent_adapt, "eata": eata_adapt, "sar": sar_adapt}
@@ -570,7 +638,7 @@ def _mps_free():
 # =============================================================================
 #  RUN ONE BENCHMARK
 # =============================================================================
-def run_cifar_benchmark(which, data_root, dev, methods, corruptions, ckpt=None, quick=False):
+def run_cifar_benchmark(which, data_root, dev, methods, corruptions, ckpt=None, quick=False, max_cells=0):
     num_classes = 10 if which == "10" else 100
     model = get_cifar_model(which, data_root, dev, ckpt)
     rng = np.random.default_rng(SEED)
@@ -586,6 +654,9 @@ def run_cifar_benchmark(which, data_root, dev, methods, corruptions, ckpt=None, 
              for br in BATCH_REGIMES for comp in COMPOSITIONS for ag in AGGRESSIVENESS]
     if quick:
         cells = [c for c in cells if c[1] in (1, 5)]  # only mild & severe in quick mode
+    if max_cells and max_cells > 0:
+        cells = cells[:max_cells]  # SMOKE-TEST ONLY truncation (0 = full grid, untouched)
+        print(f"[{which}] [SMOKE] max_cells={max_cells} -> running only {len(cells)} cell(s)")
     print(f"[{which}] {len(cells)} cells x {N_REPEATS} repeats x {len(methods)} methods")
     t0 = time.time()
     for ci, (corr, sev, brn, comp, agn) in enumerate(cells):
@@ -609,10 +680,52 @@ def run_cifar_benchmark(which, data_root, dev, methods, corruptions, ckpt=None, 
     return clean_acc, rows
 
 
-def run_imagenet_benchmark(ic_root, val_root, dev, methods, corruptions, quick=False, max_images=4000, arch="resnet50", severities=None, batch_regimes=None):
+def run_cifar101_benchmark(data_root, dev, methods, ckpt=None, quick=False):
+    """CIFAR-10.1 NATURAL-shift harmful-TTA cells. Reuses the CIFAR-10 model and the
+    identical stream/KGA machinery as CIFAR-10-C; the ONLY change is the test set is a
+    real natural distribution shift instead of a synthetic corruption (no severity axis).
+    CIFAR-10.1 v6 is small (~2000 imgs) so we split it ~half eval / ~half adapt-stream."""
+    num_classes = 10
+    model = get_cifar_model("10", data_root, dev, ckpt)
+    rng = np.random.default_rng(SEED)
+    X, y = load_cifar_101(data_root); y = np.asarray(y).astype(int)
+    print(f"[cifar101] loaded {len(y)} natural-shift images (CIFAR-10.1 v6)")
+    # base (no-adapt) accuracy on the whole natural set
+    Xt = _norm_cifar((torch.tensor(X).permute(0, 3, 1, 2).float() / 255.0).to(dev))
+    clean_acc = acc_on(model, Xt, torch.tensor(y), train_mode=False)
+    del Xt; _mps_free()
+    print(f"[cifar101] base (no-adapt) acc on CIFAR-10.1 = {clean_acc:.3f}")
+    ep = max(num_classes * 10, len(y) // 2)     # ~half eval, ~half adaptation stream
+    bkeys = ["small", "tiny"] if quick else list(BATCH_REGIMES.keys())
+    cells = [(br, comp, agn) for br in bkeys for comp in COMPOSITIONS for agn in AGGRESSIVENESS]
+    rows = {m: [] for m in methods}
+    print(f"[cifar101] {len(cells)} cells x {N_REPEATS} repeats x {len(methods)} methods")
+    t0 = time.time()
+    for ci, (brn, comp, agn) in enumerate(cells):
+        bs = BATCH_REGIMES[brn]; ag = AGGRESSIVENESS[agn]
+        for rep in range(N_REPEATS):
+            stream, ex, ey = build_stream_and_eval(X, y, X, y, comp, bs, num_classes, rng, dev, eval_pool=ep)
+            a0 = acc_on(model, ex, ey, train_mode=False)
+            for mth in methods:
+                fn = TTA_METHODS[mth]; kwargs = dict(steps=ag["steps"], lr=ag["lr"])
+                if mth in ("eata", "sar"): kwargs["num_classes"] = num_classes
+                adapted, un = fn(model, stream, **kwargs)
+                aa = acc_on(adapted, ex, ey, train_mode=True)
+                Z = evidence_vector(model, adapted, ex, num_classes, un)
+                rows[mth].append(dict(condition=f"cifar101|{brn}|{comp}|{agn}|r{rep}",
+                                      Z=Z, a0=a0, aa=aa, regime=label_regime(aa - a0)))
+                del adapted, un; _mps_free()
+        if (ci + 1) % 10 == 0:
+            print(f"   {ci+1}/{len(cells)} cells  ({time.time()-t0:.0f}s)")
+    return clean_acc, rows
+
+
+def run_imagenet_benchmark(ic_root, val_root, dev, methods, corruptions, quick=False, max_images=4000, arch="resnet50", severities=None, batch_regimes=None, out_dir=None, cooldown=0.0):
     # Frozen pretrained ImageNet backbone; Tent/EATA/SAR adapt BN-affine (ResNet) or
     # LayerNorm-affine (ViT) params; eval on the corruption set itself.
-    # Keep only corruptions actually present on disk -> enables subset runs (e.g. noise-only).
+    # Writes progress.log + checkpoint.json after EVERY cell, so the run is VISIBLE on disk
+    # and RESUMABLE: if the Mac sleeps / overheats / shuts down, just relaunch -- finished
+    # cells are skipped and it continues from where it stopped (no work lost).
     present = [c for c in corruptions if os.path.isdir(os.path.join(ic_root, c))]
     _missing = [c for c in corruptions if c not in present]
     if _missing:
@@ -628,35 +741,84 @@ def run_imagenet_benchmark(ic_root, val_root, dev, methods, corruptions, quick=F
         model = tv.models.resnet50(weights=weights).to(dev).eval()
     tf = weights.transforms()
     num_classes = 1000
-    print(f"[imagenet-c] backbone={arch}")
     rng = np.random.default_rng(SEED)
-    rows = {m: [] for m in methods}
     sevs = [1, 5] if quick else (severities if severities else SEVERITIES)
-    print(f"[imagenet-c] {len(corruptions)} corruptions x {len(sevs)} sev x {len(methods)} methods")
+    bregimes = batch_regimes if batch_regimes else [("large_iid", 64), ("tiny", 8)]
+    inner = [(brn, bs, agn, AGGRESSIVENESS[agn]) for (brn, bs) in bregimes for agn in AGGRESSIVENESS]
+
+    rows = {m: [] for m in methods}
+    done = set()
+    prog_path = ckpt_path = None
+    if out_dir:
+        os.makedirs(out_dir, exist_ok=True)
+        prog_path = os.path.join(out_dir, "progress.log")
+        ckpt_path = os.path.join(out_dir, "checkpoint.json")
+        if os.path.exists(ckpt_path):
+            try:
+                ck = json.load(open(ckpt_path))
+                rows = {m: ck.get("rows", {}).get(m, []) for m in methods}
+                done = set(ck.get("done", []))
+                print(f"[imagenet-c] RESUMING from checkpoint: {len(done)} cells already done, skipping them")
+            except Exception as e:
+                print(f"[imagenet-c] checkpoint unreadable ({e}); starting fresh")
+
+    total = len(corruptions) * len(sevs) * len(inner)
+    def _log(msg):
+        line = f"{time.strftime('%H:%M:%S')} {msg}"
+        print(line, flush=True)
+        if prog_path:
+            try:
+                with open(prog_path, "a") as f: f.write(line + "\n")
+            except Exception:
+                pass
+    def _checkpoint():
+        if not ckpt_path: return
+        try:
+            tmp = ckpt_path + ".tmp"
+            json.dump({"rows": rows, "done": sorted(done), "cells_done": len(done),
+                       "cells_total": total, "updated": time.strftime("%Y-%m-%d %H:%M:%S")},
+                      open(tmp, "w"))
+            os.replace(tmp, ckpt_path)
+        except Exception as e:
+            print(f"[imagenet-c] checkpoint write failed: {e}")
+    _log(f"START imagenet-c backbone={arch} | {len(corruptions)} corr x {len(sevs)} sev x {len(inner)} (batch x aggr) x {len(methods)} methods = {total} cells | {len(done)}/{total} already done")
+
+    t0 = time.time()
     for corr in corruptions:
         for sev in sevs:
+            keys_here = [f"{corr}|s{sev}|{brn}|{agn}" for (brn, bs, agn, ag) in inner]
+            if keys_here and all(k in done for k in keys_here):
+                continue  # whole (corruption,severity) finished -> don't even load its images
             if not os.path.isdir(os.path.join(ic_root, corr, str(sev))):
-                print(f"[imagenet-c] skip {corr} sev{sev} (folder absent)"); continue
+                _log(f"skip {corr} sev{sev} (folder absent)"); continue
             loader = imagenet_c_loader(ic_root, corr, sev, tf, max_images, dev)
             xs, ys = [], []
             for xb, yb in loader: xs.append(xb); ys.append(yb)
             X = torch.cat(xs).to(dev); Y = torch.cat(ys)
-            # eval = all; stream = shuffled minibatches (tiny+aggressive to provoke collapse)
-            for brn, bs in (batch_regimes if batch_regimes else [("large_iid", 64), ("tiny", 8)]):
-                for agn, ag in AGGRESSIVENESS.items():
-                    perm = torch.randperm(len(X))[: bs * 8]
-                    stream = [X[perm[i:i+bs]] for i in range(0, len(perm), bs)]
-                    a0 = acc_on(model, X, Y, train_mode=False)
-                    for mth in methods:
-                        fn = TTA_METHODS[mth]; kw = dict(steps=ag["steps"], lr=ag["lr"])
-                        if mth in ("eata", "sar"): kw["num_classes"] = num_classes
-                        adapted, un = fn(model, stream, **kw)
-                        aa = acc_on(adapted, X, Y, train_mode=True)
-                        Z = evidence_vector(model, adapted, X[:1024], num_classes, un)
-                        rows[mth].append(dict(condition=f"{corr}|s{sev}|{brn}|{agn}",
-                                              Z=Z, a0=a0, aa=aa, regime=label_regime(aa - a0)))
-                        del adapted, un; _mps_free()      # free the adapted-model copy each method
-            del X, Y; _mps_free()                          # free this cell's images before the next
+            for (brn, bs, agn, ag) in inner:
+                key = f"{corr}|s{sev}|{brn}|{agn}"
+                if key in done:
+                    continue
+                perm = torch.randperm(len(X))[: bs * 8]
+                stream = [X[perm[i:i+bs]] for i in range(0, len(perm), bs)]
+                a0 = acc_on(model, X, Y, train_mode=False)
+                cell_msg = []
+                for mth in methods:
+                    fn = TTA_METHODS[mth]; kw = dict(steps=ag["steps"], lr=ag["lr"])
+                    if mth in ("eata", "sar"): kw["num_classes"] = num_classes
+                    adapted, un = fn(model, stream, **kw)
+                    aa = acc_on(adapted, X, Y, train_mode=True)
+                    Z = evidence_vector(model, adapted, X[:1024], num_classes, un)
+                    rows[mth].append(dict(condition=key, Z=Z, a0=a0, aa=aa, regime=label_regime(aa - a0)))
+                    cell_msg.append(f"{mth} a0={a0:.3f} aa={aa:.3f} dB={aa-a0:+.3f}")
+                    del adapted, un; _mps_free()
+                done.add(key)
+                _checkpoint()
+                _log(f"[{len(done)}/{total}] {key} | " + " | ".join(cell_msg) + f" | {time.time()-t0:.0f}s")
+                if cooldown > 0:
+                    time.sleep(cooldown)
+            del X, Y; _mps_free()
+    _log(f"DONE imagenet-c: {len(done)}/{total} cells")
     return None, rows
 
 
@@ -666,7 +828,7 @@ def run_imagenet_benchmark(ic_root, val_root, dev, methods, corruptions, quick=F
 def main():
     ap = argparse.ArgumentParser(description="K-Bound decisive deep-TTA benchmark v2")
     ap.add_argument("--benchmarks", nargs="+", default=["cifar10c"],
-                    choices=["cifar10c", "cifar100c", "imagenetc"])
+                    choices=["cifar10c", "cifar100c", "cifar101", "imagenetc"])
     ap.add_argument("--methods", nargs="+", default=["tent", "eata", "sar"],
                     choices=["tent", "eata", "sar"])
     ap.add_argument("--data-root", default="experiments/kbound/cifar",
@@ -684,38 +846,90 @@ def main():
     ap.add_argument("--all-batch", action="store_true",
                     help="ImageNet-C: use 3 batch regimes (large=128, small=16, tiny=8) instead of 2")
     ap.add_argument("--out-results", default="experiments/kbound/results")
+    ap.add_argument("--cooldown", type=float, default=0.0,
+                    help="seconds to sleep between cells (thermal relief for hot laptops; e.g. 3)")
     ap.add_argument("--out-figs", default="docs/research/kbound/figures")
     ap.add_argument("--alpha", type=float, default=ALPHA)
     ap.add_argument("--quick", action="store_true", help="subset of corruptions/severities (fast smoke run)")
     ap.add_argument("--arch", default="resnet50", choices=["resnet50", "vit_b16"],
                     help="ImageNet-C backbone: resnet50 (BN-affine Tent) or vit_b16 (LayerNorm-affine Tent)")
+    ap.add_argument("--seed", type=int, default=SEED,
+                    help="run seed; sets ALL rng (torch/np/random + batch-composition sampler). "
+                         "Each value is a full independent grid replicate.")
+    ap.add_argument("--max-cells", type=int, default=0,
+                    help="SMOKE-TEST ONLY: cap number of grid cells (0 = no cap = full grid). "
+                         "Leave at 0 for any real/confirmatory run so the grid stays byte-identical.")
     args = ap.parse_args()
 
     os.makedirs(args.out_results, exist_ok=True); os.makedirs(args.out_figs, exist_ok=True)
     dev = pick_device(); print("device:", dev)
-    torch.manual_seed(SEED); np.random.seed(SEED)
+    set_global_seed(args.seed); print("seed:", SEED)
+    _t_start = time.time()
 
-    combined = {"alpha": args.alpha, "device": dev, "benchmarks": {}, "generated": time.strftime("%Y-%m-%d %H:%M")}
+    combined = {"alpha": args.alpha, "device": dev, "seed": SEED, "benchmarks": {},
+                "generated": time.strftime("%Y-%m-%d %H:%M")}
 
     for bench in args.benchmarks:
         if bench in ("cifar10c", "cifar100c"):
             which = "10" if bench == "cifar10c" else "100"
             corrs = (CIFAR_C_QUICK if args.quick else CIFAR_C_ALL)
             ck = args.cifar10_ckpt if which == "10" else args.cifar100_ckpt
-            clean_acc, rows = run_cifar_benchmark(which, args.data_root, dev, args.methods, corrs, ck, args.quick)
+            clean_acc, rows = run_cifar_benchmark(which, args.data_root, dev, args.methods, corrs, ck, args.quick, max_cells=args.max_cells)
+        elif bench == "cifar101":
+            clean_acc, rows = run_cifar101_benchmark(args.data_root, dev, args.methods, args.cifar10_ckpt, args.quick)
         else:
             if not args.imagenetc_root: print("[skip] imagenetc needs --imagenetc-root"); continue
             corrs = args.corruptions if args.corruptions else IMAGENET_C_QUICK
             _bregimes = [("large_iid", 64), ("small", 16), ("tiny", 8)] if args.all_batch else None
-            clean_acc, rows = run_imagenet_benchmark(args.imagenetc_root, None, dev, args.methods, corrs, args.quick, max_images=args.max_images, arch=args.arch, severities=args.severities, batch_regimes=_bregimes)
+            clean_acc, rows = run_imagenet_benchmark(args.imagenetc_root, None, dev, args.methods, corrs, args.quick, max_images=args.max_images, arch=args.arch, severities=args.severities, batch_regimes=_bregimes, out_dir=args.out_results, cooldown=args.cooldown)
 
         per_method = {}
         for mth, rws in rows.items():
             if len(rws) < 8:
                 print(f"[warn] {bench}/{mth}: only {len(rws)} conditions");
             metrics, detail = summarize(rws, alpha=args.alpha)
+            # ---- PER-CONDITION serialization (protocol serialization_contract) ----
+            # Join each condition's raw record with its KGA outputs and write one
+            # JSON object per (condition x seed). Only fields this v2 runner actually
+            # computes are emitted; agreement/tau/n_D are not part of this runner's
+            # KGA machinery (it uses GB B_hat(Z)+split-conformal), so they are recorded
+            # as null rather than fabricated. See per_condition_fields_absent below.
+            _per_cond = []
+            for i, r in enumerate(rws):
+                _per_cond.append({
+                    "seed": SEED, "benchmark": bench, "method": mth,
+                    "condition": r["condition"],
+                    "B": float(detail["B"][i]),            # true benefit aa - a0
+                    "a0": float(r["a0"]),                  # frozen accuracy
+                    "a_adapted": float(r["aa"]),           # adapted accuracy
+                    "regime": r["regime"],                 # helpful/harmful/marginal (oracle action proxy)
+                    "oracle_action": ("ADAPT" if r["aa"] > r["a0"] else "FREEZE"),
+                    "Z": [float(z) for z in r["Z"]],       # label-free evidence vector
+                    "Z_names": EVIDENCE_NAMES,
+                    "n_D": None,                           # not computed by v2 KGA
+                    "c_ij": None,                          # pairwise agreements: not computed by v2 KGA
+                    "tau_hat": None,                       # route threshold: not computed by v2 KGA
+                    "b_hat": float(detail["Bhat"][i]),     # GB leave-one-out benefit estimate
+                    "eps_conformal": float(detail["eps"]), # split-conformal certificate radius
+                    "kga_decision": str(detail["dec"][i]), # ADAPT/FREEZE/ABSTAIN
+                })
+            _pc_path = os.path.join(args.out_results, f"per_condition_{bench}_{mth}_seed{SEED}.json")
+            with open(_pc_path, "w") as _f:
+                json.dump({"seed": SEED, "benchmark": bench, "method": mth,
+                           "alpha": args.alpha, "n_conditions": len(_per_cond),
+                           "per_condition_fields_absent": ["n_D", "c_ij", "tau_hat"],
+                           "per_condition_fields_absent_reason":
+                               "v2 KGA = gradient-boosted B_hat(Z) + split-conformal eps; "
+                               "it does not compute pairwise agreements c_ij, tau_hat, or n_D.",
+                           "records": _per_cond}, _f, indent=2)
+            print(f"  [serialize] wrote {len(_per_cond)} per-condition records -> {_pc_path}")
             per_method[mth] = {"metrics": metrics, "n_conditions": len(rws),
-                               "conditions": [r["condition"] for r in rws]}
+                               "per_condition_file": os.path.basename(_pc_path),
+                               "conditions": [r["condition"] for r in rws],
+                               "detail": {"Bhat": detail["Bhat"].tolist() if hasattr(detail["Bhat"], "tolist") else detail["Bhat"],
+                                          "eps": float(detail["eps"]),
+                                          "dec": list(detail["dec"]),
+                                          "B": detail["B"].tolist() if hasattr(detail["B"], "tolist") else detail["B"]}}
             print(f"\n=== {bench} / {mth} ===")
             print("  harmful base rate:", round(metrics["base_rate_harmful_B<0"], 3),
                   "| mean B:", round(metrics["mean_true_B"], 3))
@@ -734,6 +948,38 @@ def main():
     # markdown decisive table
     _write_md_table(combined, os.path.join(args.out_results, "decisive_tta_table.md"))
     print("Saved decisive_tta_table.md")
+
+    # ---- per-seed manifest (protocol serialization_contract: result_manifest.json) ----
+    def _git_hash():
+        try:
+            import subprocess
+            return subprocess.check_output(["git", "rev-parse", "HEAD"],
+                                           cwd=os.path.dirname(os.path.abspath(__file__)),
+                                           stderr=subprocess.DEVNULL).decode().strip()
+        except Exception:
+            return None
+    manifest = {
+        "seed": SEED, "alpha": args.alpha, "device": dev,
+        "benchmarks": args.benchmarks, "methods": args.methods,
+        "quick": args.quick, "max_cells": args.max_cells,
+        "grid": {"severities": SEVERITIES, "quick_severities": [1, 5],
+                 "batch_regimes": BATCH_REGIMES, "compositions": COMPOSITIONS,
+                 "aggressiveness": AGGRESSIVENESS, "n_repeats": N_REPEATS,
+                 "eval_pool": EVAL_POOL, "help_thr": HELP_THR},
+        "n_conditions_per_method": {b: {m: combined["benchmarks"][b]["methods"][m]["n_conditions"]
+                                        for m in combined["benchmarks"][b]["methods"]}
+                                    for b in combined["benchmarks"]},
+        "git_hash": _git_hash(),
+        "python": sys.version.split()[0],
+        "torch": (torch.__version__ if _HAS_TORCH else None),
+        "numpy": np.__version__,
+        "argv": sys.argv,
+        "wall_time_sec": round(time.time() - _t_start, 1),
+        "finished": time.strftime("%Y-%m-%d %H:%M:%S"),
+    }
+    man_path = os.path.join(args.out_results, "result_manifest.json")
+    json.dump(manifest, open(man_path, "w"), indent=2)
+    print("Saved", man_path, f"(wall {manifest['wall_time_sec']}s)")
 
 
 def _write_md_table(combined, path):

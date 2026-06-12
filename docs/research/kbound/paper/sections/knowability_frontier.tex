@@ -14,7 +14,7 @@ $\kappa_\alpha>0$ means the true benefit clears twice the certified uncertainty:
 instance is \emph{knowable at level $\alpha$}.
 \end{definition}
 
-\begin{theorem}[Knowability frontier]\label{thm:frontier}
+\begin{proposition}[Knowability frontier]\label{prop:kfrontier}
 Let $\mathrm{FA}=\Pr[\textsc{adapt}\wedge\Delta\le0]$, $\mathrm{FF}=\Pr[\textsc{freeze}\wedge\Delta\ge0]$,
 and coverage $C=\Pr[\textsc{adapt}\vee\textsc{freeze}]$.
 \textup{(i) (Achievability.)} The certificate rule of Theorem~\ref{thm:cert} satisfies
@@ -29,7 +29,7 @@ probability is at most $\alpha$ in every admissible world commits on a
 $(\delta,t)$-ambiguous pair with probability at most $2\alpha+t$. In particular, for
 observationally equivalent pairs ($t=0$), ambiguous evidence can be covered with
 probability at most $2\alpha$.
-\end{theorem}
+\end{proposition}
 
 \begin{proof}
 (i) The error bounds are Theorem~\ref{thm:cert}. On the event
@@ -59,7 +59,7 @@ optimal coverage at safety level $\alpha$ obeys
 $\alpha\in[0.02,0.30]$, $\mathrm{FA}\le\alpha$ and $\mathrm{FF}\le\alpha$ everywhere,
 coverage dominates the $\Pr[\kappa_\alpha>0]-\alpha$ bound, and the commit rate \emph{on
 the ambiguous subset} never exceeds the converse cap $2\alpha$ --- both directions of
-Theorem~\ref{thm:frontier} hold (Fig.~\ref{fig:kfrontier}, left).
+Proposition~\ref{prop:kfrontier} hold (Fig.~\ref{fig:kfrontier}, left).
 \emph{Real data} (the full 123-task score archive): the certificate keeps
 $\mathrm{FA}\le\alpha$ at every level (e.g.\ $0.024$ at $\alpha{=}0.10$; $0.016$ at
 $\alpha{=}0.05$) with coverage rising $0.02\to0.24$ as $\alpha$ goes $0.02\to0.30$
@@ -68,8 +68,8 @@ relative to $2\varepsilon_\alpha$, so the margin lower bound is loose (trivial) 
 reported as is.
 
 \begin{figure}[t]\centering
-\includegraphics[width=0.95\textwidth]{figures/fig_kfrontier.png}
-\caption{The knowability frontier (Theorem~\ref{thm:frontier}). Left: synthetic stream
+\includegraphics[width=0.95\linewidth]{figures/fig_kfrontier.png}
+\caption{The knowability frontier (Proposition~\ref{prop:kfrontier}). Left: synthetic stream
 with planted ambiguous mass --- false-adapt stays below $\alpha$, coverage dominates the
 $\Pr[\kappa_\alpha>0]-\alpha$ bound, and commits on ambiguous evidence respect the
 $2\alpha$ converse cap. Right: the same certificate on the \emph{real} 123-task archive.
@@ -84,7 +84,7 @@ special --- and weaker --- points of the same object.
 \begin{proposition}[Always-adapt is the $\varepsilon\equiv0$ certificate]\label{prop:s1}
 Always-adapt is the rule of Theorem~\ref{thm:cert} with $\varepsilon\equiv0$ and a
 positive prior estimate (it is $\kappa$-blind). Its regret equals the full false-adapt
-mass $\E[|\Delta|\mathbf1\{\Delta<0\}]$ (Theorem~\ref{thm:gate}), and on a
+mass $\E[|\Delta|\mathbf1\{\Delta<0\}]$ (Proposition~\ref{thm:gate}), and on a
 $(\delta,0)$-ambiguous pair its worst-case committal regret is $\delta$ --- twice the
 Le Cam floor $\delta/2$ of Proposition~\ref{prop:gate-minimax} --- while the certificate
 abstains (zero committal regret).
@@ -118,7 +118,7 @@ On the disagreement region $D$, let labels be corrupted by unknown symmetric noi
 $\eta<\tfrac12$. Observed accuracies obey
 $a'-\tfrac12=(1-2\eta)(a-\tfrac12)$, hence
 $\sign(a_a'-a_0')=\sign(a_a-a_0)$: the adapt/freeze decision of
-Theorems~\ref{thm:disagree}--\ref{thm:disagree-mc} is invariant to $\eta$, while the
+Theorem~\ref{thm:disagree} and Proposition~\ref{thm:disagree-mc} is invariant to $\eta$, while the
 absolute risks $R_T(f_0),R_T(f_a)$ are confounded by $\eta$ and not identifiable.
 Label-free \emph{accuracy estimation} (the AETTA/ATC target) therefore solves a strictly
 harder problem than the decision requires.
@@ -136,7 +136,7 @@ S3: the decision sign is preserved at every $\eta\in\{0,\dots,0.4\}$ while the c
 accuracy bias grows to $0.096$ at $\eta{=}0.4$ (Fig.~\ref{fig:subsume}).
 
 \begin{figure}[t]\centering
-\includegraphics[width=0.85\textwidth]{figures/fig_subsumption.png}
+\includegraphics[width=0.85\linewidth]{figures/fig_subsumption.png}
 \caption{Prior decision styles as degenerate certificates
 (Propositions~\ref{prop:s1}--\ref{prop:s2}). Left: always-adapt pays the full false-adapt
 regret mass; the certificate's committal regret is zero. Right: in a confidently-wrong
@@ -145,9 +145,9 @@ $\mathrm{FA}\le\alpha$.}
 \label{fig:subsume}
 \end{figure}
 
-\paragraph{Weight (honest).} Theorem~\ref{thm:frontier} assembles this paper's own
+\paragraph{Weight (honest).} Proposition~\ref{prop:kfrontier} assembles this paper's own
 ingredients --- the certificate (Theorem~\ref{thm:cert}), the Le Cam bound
-(Theorem~\ref{thm:imp-quant}), and the abstention logic --- into a single quantitative
+(Proposition~\ref{thm:imp-quant}), and the abstention logic --- into a single quantitative
 frontier; the new elements are the margin primitive $\kappa_\alpha$ and the
 total-variation-slack converse. Propositions~\ref{prop:s1}--\ref{prop:s3} formalize the
 positioning claims rather than introduce machinery. The synthetic stream validates both

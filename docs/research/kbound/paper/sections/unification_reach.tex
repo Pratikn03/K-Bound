@@ -13,7 +13,7 @@ The \emph{evidence class} of $P$ is $[P]=\{Q\in\mathcal F: O(Q)=O(P)\}$, its
 $c(P)=\tfrac12(\sup I+\inf I)$ and \emph{reach} $\rho(P)=\tfrac12(\sup I-\inf I)$.
 \end{definition}
 
-\begin{theorem}[Knowability $=$ margin beyond reach]\label{thm:unify}
+\begin{proposition}[Knowability $=$ margin beyond reach]\label{thm:unify}
 Assume the regularity needed for a measurable selection of a point of $[P]$
 ($\mathcal F$ Polish, $O$ and $\Delta$ measurable, $[P]$ compact-valued; standard and
 flagged as an assumption). Then:
@@ -27,7 +27,7 @@ Theorem~\ref{thm:imp} applies and no label-free rule with wrong-commit
 $<\tfrac12$ can commit on $[P]$.
 Hence $\sign\Delta$ is identifiable on $\mathcal F$ exactly where the margin $|c|$
 exceeds the reach $\rho$.
-\end{theorem}
+\end{proposition}
 \begin{proof}
 (i) On the $1-\alpha$ event, $|\widehat c-c|\le\varepsilon_n$, so
 $|\widehat c|>\rho+\varepsilon_n$ implies $|c|>\rho$, and every $Q\in[P]$ has
@@ -41,21 +41,22 @@ commitment.
 \begin{proposition}[The reach table]\label{prop:reach-table}
 The boundaries of this paper are evaluations of $\rho$:
 \begin{center}
+\resizebox{\columnwidth}{!}{%
 \begin{tabular}{llll}
 \hline
 family & center $c$ & reach $\rho$ & source \\
 \hline
 covariate shift & $\Delta$ & $0$ & Thm.~\ref{thm:pos} \\
-bounded drift $\|b\|_\infty\!\le\!B$ & $U-2T_S$ & $2B\,\E_T|f_0{-}f_a|$ & Thm.~\ref{thm:reg-iff} \\
-label shift & midpoint over $A(\pi)$ & $\sup_{A(\pi)}|\delta\cdot v|$ & Thm.~\ref{thm:ls-iff} \\
+bounded drift $\|b\|_\infty\!\le\!B$ & $U-2T_S$ & $2B\,\E_T|f_0{-}f_a|$ & Prop.~\ref{thm:reg-iff} \\
+label shift & midpoint over $A(\pi)$ & $\sup_{A(\pi)}|\delta\cdot v|$ & Prop.~\ref{thm:ls-iff} \\
 multi-view (cond.\ indep.) & $\Delta$ & $0$ under moment non-degeneracy & known (Steinhardt--Liang) \\
 two-point witness & $0$ & $|\Delta|$ & Thm.~\ref{thm:imp} \\
 \hline
-\end{tabular}
+\end{tabular}}
 \end{center}
 Each row follows by computing $I(P)$ in the family; the witness row shows the maximal
 case $c=0$, $\rho=|\Delta|$ --- never identifiable. The margin $\kappa_\alpha$ of
-Theorem~\ref{thm:frontier} is the finite-sample shadow of $|c|-\rho$.
+Proposition~\ref{prop:kfrontier} is the finite-sample shadow of $|c|-\rho$.
 \end{proposition}
 
 \noindent\emph{Numerically validated}
@@ -67,8 +68,8 @@ and sign flips among equivalent worlds occur exactly when the margin is below th
 reach.
 
 \begin{figure}[t]\centering
-\includegraphics[width=0.8\textwidth]{figures/fig_reach_table.png}
-\caption{One quantity decides every family (Theorem~\ref{thm:unify}): identifiable iff
+\includegraphics[width=0.8\linewidth]{figures/fig_reach_table.png}
+\caption{One quantity decides every family (Proposition~\ref{thm:unify}): identifiable iff
 the margin $|c|$ exceeds the reach $\rho$. Bars: closed forms; diamonds: brute-force
 empirical reach over admissible equivalent worlds.}
 \label{fig:reachtable}

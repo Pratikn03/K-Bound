@@ -1,0 +1,1958 @@
+{
+  "schema": "kbound_imagenetr_v0.5",
+  "dataset": "imagenet-r",
+  "created": "2026-06-09T20:11:57",
+  "host": {
+    "platform": "macOS-26.2-arm64-arm-64bit",
+    "torch": "2.5.1",
+    "mps": true
+  },
+  "config": {
+    "imagenetr_dir": "/Users/pratik_n/kbound_inr/imagenet-r",
+    "seeds": [
+      0
+    ],
+    "compositions": [
+      "iid",
+      "imbalanced",
+      "single_class"
+    ],
+    "batch_regimes": [
+      "tiny",
+      "small"
+    ],
+    "aggressiveness": [
+      "mild"
+    ],
+    "n_eval": 300,
+    "n_batches": 2,
+    "tau_star": 0.52,
+    "kappa": 2.5,
+    "sd_L": 0.6,
+    "delta": 0.05,
+    "device": "mps",
+    "steps_override": 0,
+    "max_classes": 200,
+    "episodic_steps": 5,
+    "episodic_batch": 64,
+    "smoke": false
+  },
+  "config_sha8": "604f04ba",
+  "f0": "torchvision resnet50 IMAGENET1K_V2; 1000 logits masked to 200 ImageNet-R classes (frozen)",
+  "num_classes": 200,
+  "candidates": [
+    "tent_online",
+    "tent_episodic",
+    "eata_online",
+    "eata_episodic",
+    "sar_online",
+    "sar_episodic"
+  ],
+  "multiclass_caveat": "multi-candidate tau-route (b) uses prediction agreement on a 200-class label space; the binary-Y advantage recovery (Thm 1A) is heuristic here, so per-condition tau is stored for re-pick. (a) KGA and (c) smooth-drift (max-prob Brier) generalize directly.",
+  "data": {
+    "n_images": 30000,
+    "n_classes": 200,
+    "wall_sec": 499.9
+  },
+  "baselines": {
+    "always_freeze_mean_acc": 0.4441666666666666,
+    "per_candidate_always_adapt_mean_acc": {
+      "eata_episodic": 0.45999999999999996,
+      "eata_online": 0.46916666666666657,
+      "sar_episodic": 0.4633333333333333,
+      "sar_online": 0.46749999999999997,
+      "tent_episodic": 0.46249999999999997,
+      "tent_online": 0.4683333333333333
+    },
+    "per_condition_oracle_mean_acc": 0.4750000000000001
+  },
+  "routing_a_single_candidate": {
+    "eata_episodic": {
+      "n_cells": 6,
+      "mean_B": 0.01583333333333335,
+      "base_rate_harmful_B<0": 0.16666666666666666,
+      "mean_acc": {
+        "always_adapt": 0.45999999999999996,
+        "always_freeze": 0.44416666666666665
+      },
+      "kga": {
+        "n": 6,
+        "decision_counts": {
+          "ADAPT": 1,
+          "FREEZE": 0,
+          "ABSTAIN": 5
+        },
+        "coverage": 0.16666666666666666,
+        "abstention_rate": 0.8333333333333334,
+        "adapt_precision_B>0": 1.0,
+        "false_adapt_rate_B<0": 0.0,
+        "mean_acc": {
+          "always_adapt": 0.45999999999999996,
+          "always_freeze": 0.44416666666666665,
+          "K_Bound": 0.445,
+          "oracle": 0.46249999999999997
+        },
+        "regret_vs_oracle": {
+          "always_adapt": 0.0025000000000000022,
+          "always_freeze": 0.01833333333333335,
+          "K_Bound": 0.017500000000000016
+        },
+        "worst_case_acc": {
+          "always_adapt": 0.41,
+          "always_freeze": 0.415,
+          "K_Bound": 0.415
+        },
+        "beats_both": false,
+        "eps_conformal": 0.029623611033577354
+      }
+    },
+    "eata_online": {
+      "n_cells": 6,
+      "mean_B": 0.025000000000000005,
+      "base_rate_harmful_B<0": 0.16666666666666666,
+      "mean_acc": {
+        "always_adapt": 0.46916666666666657,
+        "always_freeze": 0.44416666666666665
+      },
+      "kga": {
+        "n": 6,
+        "decision_counts": {
+          "ADAPT": 4,
+          "FREEZE": 0,
+          "ABSTAIN": 2
+        },
+        "coverage": 0.6666666666666666,
+        "abstention_rate": 0.3333333333333333,
+        "adapt_precision_B>0": 1.0,
+        "false_adapt_rate_B<0": 0.0,
+        "mean_acc": {
+          "always_adapt": 0.46916666666666657,
+          "always_freeze": 0.44416666666666665,
+          "K_Bound": 0.4658333333333333,
+          "oracle": 0.4708333333333334
+        },
+        "regret_vs_oracle": {
+          "always_adapt": 0.001666666666666668,
+          "always_freeze": 0.026666666666666672,
+          "K_Bound": 0.0050000000000000044
+        },
+        "worst_case_acc": {
+          "always_adapt": 0.415,
+          "always_freeze": 0.415,
+          "K_Bound": 0.425
+        },
+        "beats_both": false,
+        "eps_conformal": 0.025302584973484706
+      }
+    },
+    "sar_episodic": {
+      "n_cells": 6,
+      "mean_B": 0.019166666666666665,
+      "base_rate_harmful_B<0": 0.16666666666666666,
+      "mean_acc": {
+        "always_adapt": 0.4633333333333333,
+        "always_freeze": 0.44416666666666665
+      },
+      "kga": {
+        "n": 6,
+        "decision_counts": {
+          "ADAPT": 3,
+          "FREEZE": 0,
+          "ABSTAIN": 3
+        },
+        "coverage": 0.5,
+        "abstention_rate": 0.5,
+        "adapt_precision_B>0": 1.0,
+        "false_adapt_rate_B<0": 0.0,
+        "mean_acc": {
+          "always_adapt": 0.4633333333333333,
+          "always_freeze": 0.44416666666666665,
+          "K_Bound": 0.4558333333333333,
+          "oracle": 0.4658333333333333
+        },
+        "regret_vs_oracle": {
+          "always_adapt": 0.0025000000000000022,
+          "always_freeze": 0.021666666666666667,
+          "K_Bound": 0.01
+        },
+        "worst_case_acc": {
+          "always_adapt": 0.41,
+          "always_freeze": 0.415,
+          "K_Bound": 0.425
+        },
+        "beats_both": false,
+        "eps_conformal": 0.024835584144767567
+      }
+    },
+    "sar_online": {
+      "n_cells": 6,
+      "mean_B": 0.023333333333333334,
+      "base_rate_harmful_B<0": 0.16666666666666666,
+      "mean_acc": {
+        "always_adapt": 0.46749999999999997,
+        "always_freeze": 0.44416666666666665
+      },
+      "kga": {
+        "n": 6,
+        "decision_counts": {
+          "ADAPT": 3,
+          "FREEZE": 0,
+          "ABSTAIN": 3
+        },
+        "coverage": 0.5,
+        "abstention_rate": 0.5,
+        "adapt_precision_B>0": 1.0,
+        "false_adapt_rate_B<0": 0.0,
+        "mean_acc": {
+          "always_adapt": 0.46749999999999997,
+          "always_freeze": 0.44416666666666665,
+          "K_Bound": 0.4575,
+          "oracle": 0.46916666666666673
+        },
+        "regret_vs_oracle": {
+          "always_adapt": 0.001666666666666668,
+          "always_freeze": 0.025000000000000005,
+          "K_Bound": 0.011666666666666667
+        },
+        "worst_case_acc": {
+          "always_adapt": 0.415,
+          "always_freeze": 0.415,
+          "K_Bound": 0.415
+        },
+        "beats_both": false,
+        "eps_conformal": 0.031392971266297434
+      }
+    },
+    "tent_episodic": {
+      "n_cells": 6,
+      "mean_B": 0.01833333333333334,
+      "base_rate_harmful_B<0": 0.16666666666666666,
+      "mean_acc": {
+        "always_adapt": 0.46249999999999997,
+        "always_freeze": 0.44416666666666665
+      },
+      "kga": {
+        "n": 6,
+        "decision_counts": {
+          "ADAPT": 0,
+          "FREEZE": 0,
+          "ABSTAIN": 6
+        },
+        "coverage": 0.0,
+        "abstention_rate": 1.0,
+        "adapt_precision_B>0": null,
+        "false_adapt_rate_B<0": null,
+        "mean_acc": {
+          "always_adapt": 0.46249999999999997,
+          "always_freeze": 0.44416666666666665,
+          "K_Bound": 0.44416666666666665,
+          "oracle": 0.465
+        },
+        "regret_vs_oracle": {
+          "always_adapt": 0.0025000000000000022,
+          "always_freeze": 0.020833333333333343,
+          "K_Bound": 0.020833333333333343
+        },
+        "worst_case_acc": {
+          "always_adapt": 0.41,
+          "always_freeze": 0.415,
+          "K_Bound": 0.415
+        },
+        "beats_both": false,
+        "eps_conformal": 0.03250381023558397
+      }
+    },
+    "tent_online": {
+      "n_cells": 6,
+      "mean_B": 0.02416666666666666,
+      "base_rate_harmful_B<0": 0.16666666666666666,
+      "mean_acc": {
+        "always_adapt": 0.4683333333333333,
+        "always_freeze": 0.44416666666666665
+      },
+      "kga": {
+        "n": 6,
+        "decision_counts": {
+          "ADAPT": 3,
+          "FREEZE": 0,
+          "ABSTAIN": 3
+        },
+        "coverage": 0.5,
+        "abstention_rate": 0.5,
+        "adapt_precision_B>0": 0.6666666666666666,
+        "false_adapt_rate_B<0": 0.3333333333333333,
+        "mean_acc": {
+          "always_adapt": 0.4683333333333333,
+          "always_freeze": 0.44416666666666665,
+          "K_Bound": 0.4491666666666667,
+          "oracle": 0.4691666666666667
+        },
+        "regret_vs_oracle": {
+          "always_adapt": 0.000833333333333334,
+          "always_freeze": 0.024999999999999994,
+          "K_Bound": 0.02
+        },
+        "worst_case_acc": {
+          "always_adapt": 0.42,
+          "always_freeze": 0.415,
+          "K_Bound": 0.42
+        },
+        "beats_both": false,
+        "eps_conformal": 0.03106217453245647
+      }
+    }
+  },
+  "routing_b_multicandidate": {
+    "n_conditions": 6,
+    "mean_acc": {
+      "router": 0.44416666666666665,
+      "always_freeze": 0.44416666666666665,
+      "best_fixed_always_adapt": 0.46916666666666657,
+      "per_condition_oracle": 0.4750000000000001
+    },
+    "regret_vs_oracle": {
+      "router": 0.030833333333333334,
+      "always_freeze": 0.030833333333333334,
+      "best_fixed_always_adapt": 0.005833333333333329
+    },
+    "coverage": 0.0,
+    "abstention_rate": 1.0,
+    "false_adapt_rate": null,
+    "mean_tau": 1.2874893525305386,
+    "gate_pass_rate": 0.0,
+    "fixed_best_candidate": "eata_online",
+    "routing_breakdown": {
+      "ABSTAIN": 6
+    },
+    "decisions_by_regime": {
+      "helpful": {
+        "ABSTAIN": 5
+      },
+      "marginal": {
+        "ABSTAIN": 1
+      }
+    },
+    "decisions_by_domain": {
+      "imagenet_r": {
+        "ABSTAIN": 6
+      }
+    },
+    "beats_both": false
+  },
+  "routing_c_smooth_drift": {
+    "implemented": true,
+    "theorem": "1B",
+    "view": "brier_squared_loss",
+    "gS_estimate": "f0_surrogate(conservative)",
+    "n_conditions": 6,
+    "decision_counts": {
+      "ABSTAIN": 6
+    },
+    "mean_center_c": -0.04306286908706653,
+    "mean_reach": 0.01013123776133383,
+    "mean_d_obs": 0.10024961004670592,
+    "bracket_coverage_trueB": 1.0,
+    "status": "DIAGNOSTIC (wired to val_smooth_drift.py; conservative g_S~f0 surrogate)",
+    "note": "DIAGNOSTIC: g_S~f0 makes center conservative; full 1B classification instantiation needs an f0-independent source-concept estimate."
+  },
+  "detectability": {
+    "n_cells": 36,
+    "n_harmful": 6,
+    "base_rate_harmful": 0.16666666666666666,
+    "mean_B": 0.020972222222222225,
+    "per_feature": {
+      "pre_entropy": {
+        "pearson_corr_B": 0.7743371354960773,
+        "harm_AUC": 1.0
+      },
+      "pre_conf": {
+        "pearson_corr_B": -0.7873526246560308,
+        "harm_AUC": 1.0
+      },
+      "pre_pbal": {
+        "pearson_corr_B": 0.7969584912487748,
+        "harm_AUC": 1.0
+      },
+      "post_entropy": {
+        "pearson_corr_B": 0.08011691305294502,
+        "harm_AUC": 0.6111111111111112
+      },
+      "post_conf": {
+        "pearson_corr_B": -0.08541085241011225,
+        "harm_AUC": 0.6222222222222222
+      },
+      "post_pbal": {
+        "pearson_corr_B": 0.01041556503867177,
+        "harm_AUC": 0.5944444444444444
+      },
+      "pbal_drop": {
+        "pearson_corr_B": 0.6949533647931468,
+        "harm_AUC": 1.0
+      },
+      "entropy_drop": {
+        "pearson_corr_B": 0.5314787021539041,
+        "harm_AUC": 0.9111111111111111
+      },
+      "frac_highconf": {
+        "pearson_corr_B": -0.08963611641810841,
+        "harm_AUC": 0.6444444444444445
+      },
+      "marginal_KL": {
+        "pearson_corr_B": -0.4774238430055932,
+        "harm_AUC": 0.9055555555555556
+      },
+      "update_norm": {
+        "pearson_corr_B": -0.1555551550591401,
+        "harm_AUC": 0.7666666666666667
+      }
+    },
+    "certificate_harm_AUC_negBhat": 1.0,
+    "certificate_eps": 0.014897588208027168,
+    "best_single_feature_harm_AUC": 1.0,
+    "detectability_verdict": "detectable"
+  },
+  "kbound_summary": {
+    "classification": "mixed+detectable",
+    "base_rate_harmful_B<0": 0.16666666666666666,
+    "mean_B": 0.020972222222222225,
+    "detectability_verdict": "detectable",
+    "best_single_feature_harm_AUC": 1.0,
+    "gamma_S_proxy_indist_advantage": null,
+    "gamma_T_proxy_oracle_advantage": null,
+    "delta": 0.05,
+    "abs_gammaT_minus_gammaS": null,
+    "gamma_gap_within_delta": null,
+    "real_data_multicandidate_tau_mean": 1.2874893525305386,
+    "_note": "gamma_S/gamma_T are operational debug-scale proxies (in-dist vs OOD adaptation advantage); final defs follow the paper. Classification honors the integrity policy: reported from measured B, never tuned to a target."
+  },
+  "tau_distribution": [
+    0.9829426057435794,
+    1.0939885967679719,
+    1.1170112988783953,
+    1.3920262449459224,
+    1.4674219866853995,
+    1.6715453821619626
+  ],
+  "records": [
+    {
+      "seed": 0,
+      "domain": "imagenet_r",
+      "comp": "iid",
+      "regime": "tiny",
+      "aggr": "mild",
+      "method": "tent",
+      "mode": "online",
+      "candidate": "tent_online",
+      "a0": 0.415,
+      "aa": 0.43,
+      "B": 0.015000000000000013,
+      "upd_norm": 2.7490633660333654,
+      "Z": [
+        3.287112236022949,
+        0.39074191451072693,
+        0.8230135755150442,
+        2.2560031414031982,
+        0.5949037075042725,
+        0.7140492216776247,
+        0.10896435383741943,
+        1.031109094619751,
+        0.375,
+        0.7931652665138245,
+        2.7490633660333654
+      ],
+      "regime_label": "marginal"
+    },
+    {
+      "seed": 0,
+      "domain": "imagenet_r",
+      "comp": "iid",
+      "regime": "tiny",
+      "aggr": "mild",
+      "method": "tent",
+      "mode": "episodic",
+      "candidate": "tent_episodic",
+      "a0": 0.415,
+      "aa": 0.44,
+      "B": 0.025000000000000022,
+      "upd_norm": 1.0324893388444185,
+      "Z": [
+        3.287112236022949,
+        0.39074191451072693,
+        0.8230135755150442,
+        3.240933895111084,
+        0.4100332260131836,
+        0.8238780948378426,
+        -0.0008645193227984072,
+        0.046178340911865234,
+        0.0,
+        0.4420265853404999,
+        1.0324893388444185
+      ],
+      "regime_label": "helpful"
+    },
+    {
+      "seed": 0,
+      "domain": "imagenet_r",
+      "comp": "iid",
+      "regime": "tiny",
+      "aggr": "mild",
+      "method": "eata",
+      "mode": "online",
+      "candidate": "eata_online",
+      "a0": 0.415,
+      "aa": 0.435,
+      "B": 0.020000000000000018,
+      "upd_norm": 0.0,
+      "Z": [
+        3.287112236022949,
+        0.39074191451072693,
+        0.8230135755150442,
+        4.244960784912109,
+        0.22266888618469238,
+        0.9236092095119077,
+        -0.10059563399686355,
+        -0.9578485488891602,
+        0.0,
+        0.33527863025665283,
+        0.0
+      ],
+      "regime_label": "helpful"
+    },
+    {
+      "seed": 0,
+      "domain": "imagenet_r",
+      "comp": "iid",
+      "regime": "tiny",
+      "aggr": "mild",
+      "method": "eata",
+      "mode": "episodic",
+      "candidate": "eata_episodic",
+      "a0": 0.415,
+      "aa": 0.43,
+      "B": 0.015000000000000013,
+      "upd_norm": 0.0,
+      "Z": [
+        3.287112236022949,
+        0.39074191451072693,
+        0.8230135755150442,
+        4.244960784912109,
+        0.22266888618469238,
+        0.9236092095119077,
+        -0.10059563399686355,
+        -0.9578485488891602,
+        0.0,
+        0.33527863025665283,
+        0.0
+      ],
+      "regime_label": "marginal"
+    },
+    {
+      "seed": 0,
+      "domain": "imagenet_r",
+      "comp": "iid",
+      "regime": "tiny",
+      "aggr": "mild",
+      "method": "sar",
+      "mode": "online",
+      "candidate": "sar_online",
+      "a0": 0.415,
+      "aa": 0.435,
+      "B": 0.020000000000000018,
+      "upd_norm": 0.0,
+      "Z": [
+        3.287112236022949,
+        0.39074191451072693,
+        0.8230135755150442,
+        4.244960784912109,
+        0.22266888618469238,
+        0.9236092095119077,
+        -0.10059563399686355,
+        -0.9578485488891602,
+        0.0,
+        0.33527863025665283,
+        0.0
+      ],
+      "regime_label": "helpful"
+    },
+    {
+      "seed": 0,
+      "domain": "imagenet_r",
+      "comp": "iid",
+      "regime": "tiny",
+      "aggr": "mild",
+      "method": "sar",
+      "mode": "episodic",
+      "candidate": "sar_episodic",
+      "a0": 0.415,
+      "aa": 0.425,
+      "B": 0.010000000000000009,
+      "upd_norm": 0.0,
+      "Z": [
+        3.287112236022949,
+        0.39074191451072693,
+        0.8230135755150442,
+        4.244960784912109,
+        0.22266888618469238,
+        0.9236092095119077,
+        -0.10059563399686355,
+        -0.9578485488891602,
+        0.0,
+        0.33527863025665283,
+        0.0
+      ],
+      "regime_label": "marginal"
+    },
+    {
+      "seed": 0,
+      "domain": "imagenet_r",
+      "comp": "iid",
+      "regime": "small",
+      "aggr": "mild",
+      "method": "tent",
+      "mode": "online",
+      "candidate": "tent_online",
+      "a0": 0.505,
+      "aa": 0.535,
+      "B": 0.030000000000000027,
+      "upd_norm": 2.9147894483671934,
+      "Z": [
+        4.128177165985107,
+        0.2501019239425659,
+        0.9288919031627115,
+        2.0815529823303223,
+        0.5923874378204346,
+        0.7822926994594552,
+        0.1465992037032563,
+        2.046624183654785,
+        0.375,
+        0.6443624496459961,
+        2.9147894483671934
+      ],
+      "regime_label": "helpful"
+    },
+    {
+      "seed": 0,
+      "domain": "imagenet_r",
+      "comp": "iid",
+      "regime": "small",
+      "aggr": "mild",
+      "method": "tent",
+      "mode": "episodic",
+      "candidate": "tent_episodic",
+      "a0": 0.505,
+      "aa": 0.54,
+      "B": 0.03500000000000003,
+      "upd_norm": 1.0505209545220495,
+      "Z": [
+        4.128177165985107,
+        0.2501019239425659,
+        0.9288919031627115,
+        3.19522762298584,
+        0.40243929624557495,
+        0.8748276762476533,
+        0.05406422691505819,
+        0.9329495429992676,
+        0.0,
+        0.3295907974243164,
+        1.0505209545220495
+      ],
+      "regime_label": "helpful"
+    },
+    {
+      "seed": 0,
+      "domain": "imagenet_r",
+      "comp": "iid",
+      "regime": "small",
+      "aggr": "mild",
+      "method": "eata",
+      "mode": "online",
+      "candidate": "eata_online",
+      "a0": 0.505,
+      "aa": 0.535,
+      "B": 0.030000000000000027,
+      "upd_norm": 2.1737068933652046,
+      "Z": [
+        4.128177165985107,
+        0.2501019239425659,
+        0.9288919031627115,
+        3.878587484359741,
+        0.29013004899024963,
+        0.9240503789602065,
+        0.004841524202505054,
+        0.2495896816253662,
+        0.0625,
+        0.22265776991844177,
+        2.1737068933652046
+      ],
+      "regime_label": "helpful"
+    },
+    {
+      "seed": 0,
+      "domain": "imagenet_r",
+      "comp": "iid",
+      "regime": "small",
+      "aggr": "mild",
+      "method": "eata",
+      "mode": "episodic",
+      "candidate": "eata_episodic",
+      "a0": 0.505,
+      "aa": 0.53,
+      "B": 0.025000000000000022,
+      "upd_norm": 0.9596301266451924,
+      "Z": [
+        4.128177165985107,
+        0.2501019239425659,
+        0.9288919031627115,
+        3.959834337234497,
+        0.26531484723091125,
+        0.9319865691458207,
+        -0.003094665983109146,
+        0.16834282875061035,
+        0.0,
+        0.18954074382781982,
+        0.9596301266451924
+      ],
+      "regime_label": "helpful"
+    },
+    {
+      "seed": 0,
+      "domain": "imagenet_r",
+      "comp": "iid",
+      "regime": "small",
+      "aggr": "mild",
+      "method": "sar",
+      "mode": "online",
+      "candidate": "sar_online",
+      "a0": 0.505,
+      "aa": 0.525,
+      "B": 0.020000000000000018,
+      "upd_norm": 11.616013756840308,
+      "Z": [
+        4.128177165985107,
+        0.2501019239425659,
+        0.9288919031627115,
+        4.204916954040527,
+        0.21713200211524963,
+        0.9449290695926579,
+        -0.016037166429946348,
+        -0.07673978805541992,
+        0.0,
+        0.12057570368051529,
+        11.616013756840308
+      ],
+      "regime_label": "helpful"
+    },
+    {
+      "seed": 0,
+      "domain": "imagenet_r",
+      "comp": "iid",
+      "regime": "small",
+      "aggr": "mild",
+      "method": "sar",
+      "mode": "episodic",
+      "candidate": "sar_episodic",
+      "a0": 0.505,
+      "aa": 0.53,
+      "B": 0.025000000000000022,
+      "upd_norm": 1.3417755221803602,
+      "Z": [
+        4.128177165985107,
+        0.2501019239425659,
+        0.9288919031627115,
+        4.096717357635498,
+        0.23420187830924988,
+        0.9418475432952794,
+        -0.012955640132567892,
+        0.031459808349609375,
+        0.0,
+        0.14386560022830963,
+        1.3417755221803602
+      ],
+      "regime_label": "helpful"
+    },
+    {
+      "seed": 0,
+      "domain": "imagenet_r",
+      "comp": "imbalanced",
+      "regime": "tiny",
+      "aggr": "mild",
+      "method": "tent",
+      "mode": "online",
+      "candidate": "tent_online",
+      "a0": 0.425,
+      "aa": 0.47,
+      "B": 0.044999999999999984,
+      "upd_norm": 2.6324724764353866,
+      "Z": [
+        4.166607856750488,
+        0.25443747639656067,
+        0.8938168620724686,
+        3.4990692138671875,
+        0.3704667091369629,
+        0.845485318045565,
+        0.04833154402690354,
+        0.6675386428833008,
+        0.125,
+        0.17217859625816345,
+        2.6324724764353866
+      ],
+      "regime_label": "helpful"
+    },
+    {
+      "seed": 0,
+      "domain": "imagenet_r",
+      "comp": "imbalanced",
+      "regime": "tiny",
+      "aggr": "mild",
+      "method": "tent",
+      "mode": "episodic",
+      "candidate": "tent_episodic",
+      "a0": 0.425,
+      "aa": 0.455,
+      "B": 0.030000000000000027,
+      "upd_norm": 1.0361638150747547,
+      "Z": [
+        4.166607856750488,
+        0.25443747639656067,
+        0.8938168620724686,
+        4.131425857543945,
+        0.25263410806655884,
+        0.9045683649226446,
+        -0.010751502850176009,
+        0.03518199920654297,
+        0.0,
+        0.13977251946926117,
+        1.0361638150747547
+      ],
+      "regime_label": "helpful"
+    },
+    {
+      "seed": 0,
+      "domain": "imagenet_r",
+      "comp": "imbalanced",
+      "regime": "tiny",
+      "aggr": "mild",
+      "method": "eata",
+      "mode": "online",
+      "candidate": "eata_online",
+      "a0": 0.425,
+      "aa": 0.475,
+      "B": 0.04999999999999999,
+      "upd_norm": 0.0,
+      "Z": [
+        4.166607856750488,
+        0.25443747639656067,
+        0.8938168620724686,
+        4.75173282623291,
+        0.13664638996124268,
+        0.9615487020914312,
+        -0.0677318400189626,
+        -0.5851249694824219,
+        0.0,
+        0.13465642929077148,
+        0.0
+      ],
+      "regime_label": "helpful"
+    },
+    {
+      "seed": 0,
+      "domain": "imagenet_r",
+      "comp": "imbalanced",
+      "regime": "tiny",
+      "aggr": "mild",
+      "method": "eata",
+      "mode": "episodic",
+      "candidate": "eata_episodic",
+      "a0": 0.425,
+      "aa": 0.465,
+      "B": 0.040000000000000036,
+      "upd_norm": 0.0,
+      "Z": [
+        4.166607856750488,
+        0.25443747639656067,
+        0.8938168620724686,
+        4.75173282623291,
+        0.13664638996124268,
+        0.9615487020914312,
+        -0.0677318400189626,
+        -0.5851249694824219,
+        0.0,
+        0.13465642929077148,
+        0.0
+      ],
+      "regime_label": "helpful"
+    },
+    {
+      "seed": 0,
+      "domain": "imagenet_r",
+      "comp": "imbalanced",
+      "regime": "tiny",
+      "aggr": "mild",
+      "method": "sar",
+      "mode": "online",
+      "candidate": "sar_online",
+      "a0": 0.425,
+      "aa": 0.475,
+      "B": 0.04999999999999999,
+      "upd_norm": 0.0,
+      "Z": [
+        4.166607856750488,
+        0.25443747639656067,
+        0.8938168620724686,
+        4.75173282623291,
+        0.13664638996124268,
+        0.9615487020914312,
+        -0.0677318400189626,
+        -0.5851249694824219,
+        0.0,
+        0.13465642929077148,
+        0.0
+      ],
+      "regime_label": "helpful"
+    },
+    {
+      "seed": 0,
+      "domain": "imagenet_r",
+      "comp": "imbalanced",
+      "regime": "tiny",
+      "aggr": "mild",
+      "method": "sar",
+      "mode": "episodic",
+      "candidate": "sar_episodic",
+      "a0": 0.425,
+      "aa": 0.46,
+      "B": 0.03500000000000003,
+      "upd_norm": 0.0,
+      "Z": [
+        4.166607856750488,
+        0.25443747639656067,
+        0.8938168620724686,
+        4.75173282623291,
+        0.13664638996124268,
+        0.9615487020914312,
+        -0.0677318400189626,
+        -0.5851249694824219,
+        0.0,
+        0.13465642929077148,
+        0.0
+      ],
+      "regime_label": "helpful"
+    },
+    {
+      "seed": 0,
+      "domain": "imagenet_r",
+      "comp": "imbalanced",
+      "regime": "small",
+      "aggr": "mild",
+      "method": "tent",
+      "mode": "online",
+      "candidate": "tent_online",
+      "a0": 0.425,
+      "aa": 0.42,
+      "B": -0.0050000000000000044,
+      "upd_norm": 2.9433026844843213,
+      "Z": [
+        2.5690560340881348,
+        0.5695422887802124,
+        0.6419617558346485,
+        3.120790481567383,
+        0.4411398470401764,
+        0.8582297332301204,
+        -0.21626797739547188,
+        -0.551734447479248,
+        0.25,
+        0.7574841380119324,
+        2.9433026844843213
+      ],
+      "regime_label": "marginal"
+    },
+    {
+      "seed": 0,
+      "domain": "imagenet_r",
+      "comp": "imbalanced",
+      "regime": "small",
+      "aggr": "mild",
+      "method": "tent",
+      "mode": "episodic",
+      "candidate": "tent_episodic",
+      "a0": 0.425,
+      "aa": 0.41,
+      "B": -0.015000000000000013,
+      "upd_norm": 1.030913517553238,
+      "Z": [
+        2.5690560340881348,
+        0.5695422887802124,
+        0.6419617558346485,
+        3.975160598754883,
+        0.2827576696872711,
+        0.9196572240337978,
+        -0.27769546819914925,
+        -1.406104564666748,
+        0.0,
+        0.5607762336730957,
+        1.030913517553238
+      ],
+      "regime_label": "marginal"
+    },
+    {
+      "seed": 0,
+      "domain": "imagenet_r",
+      "comp": "imbalanced",
+      "regime": "small",
+      "aggr": "mild",
+      "method": "eata",
+      "mode": "online",
+      "candidate": "eata_online",
+      "a0": 0.425,
+      "aa": 0.415,
+      "B": -0.010000000000000009,
+      "upd_norm": 1.629726866421654,
+      "Z": [
+        2.5690560340881348,
+        0.5695422887802124,
+        0.6419617558346485,
+        4.215251922607422,
+        0.22381533682346344,
+        0.9363574046060569,
+        -0.29439564877140834,
+        -1.646195888519287,
+        0.125,
+        0.4913732707500458,
+        1.629726866421654
+      ],
+      "regime_label": "marginal"
+    },
+    {
+      "seed": 0,
+      "domain": "imagenet_r",
+      "comp": "imbalanced",
+      "regime": "small",
+      "aggr": "mild",
+      "method": "eata",
+      "mode": "episodic",
+      "candidate": "eata_episodic",
+      "a0": 0.425,
+      "aa": 0.41,
+      "B": -0.015000000000000013,
+      "upd_norm": 0.881918383532368,
+      "Z": [
+        2.5690560340881348,
+        0.5695422887802124,
+        0.6419617558346485,
+        4.32012414932251,
+        0.2077680230140686,
+        0.9426414143078138,
+        -0.30067965847316525,
+        -1.751068115234375,
+        0.0625,
+        0.4994431734085083,
+        0.881918383532368
+      ],
+      "regime_label": "marginal"
+    },
+    {
+      "seed": 0,
+      "domain": "imagenet_r",
+      "comp": "imbalanced",
+      "regime": "small",
+      "aggr": "mild",
+      "method": "sar",
+      "mode": "online",
+      "candidate": "sar_online",
+      "a0": 0.425,
+      "aa": 0.415,
+      "B": -0.010000000000000009,
+      "upd_norm": 4.229182734346018,
+      "Z": [
+        2.5690560340881348,
+        0.5695422887802124,
+        0.6419617558346485,
+        4.477959632873535,
+        0.1812734305858612,
+        0.9536218716819539,
+        -0.31166011584730535,
+        -1.9089035987854004,
+        0.0,
+        0.5258588194847107,
+        4.229182734346018
+      ],
+      "regime_label": "marginal"
+    },
+    {
+      "seed": 0,
+      "domain": "imagenet_r",
+      "comp": "imbalanced",
+      "regime": "small",
+      "aggr": "mild",
+      "method": "sar",
+      "mode": "episodic",
+      "candidate": "sar_episodic",
+      "a0": 0.425,
+      "aa": 0.41,
+      "B": -0.015000000000000013,
+      "upd_norm": 1.3403691204944164,
+      "Z": [
+        2.5690560340881348,
+        0.5695422887802124,
+        0.6419617558346485,
+        4.502191066741943,
+        0.17807261645793915,
+        0.9551528250652689,
+        -0.31319106923062034,
+        -1.9331350326538086,
+        0.0,
+        0.5339664816856384,
+        1.3403691204944164
+      ],
+      "regime_label": "marginal"
+    },
+    {
+      "seed": 0,
+      "domain": "imagenet_r",
+      "comp": "single_class",
+      "regime": "tiny",
+      "aggr": "mild",
+      "method": "tent",
+      "mode": "online",
+      "candidate": "tent_online",
+      "a0": 0.44,
+      "aa": 0.48,
+      "B": 0.03999999999999998,
+      "upd_norm": 2.911807016381753,
+      "Z": [
+        4.185148239135742,
+        0.25387197732925415,
+        0.8574181326416345,
+        3.621750831604004,
+        0.3499099016189575,
+        0.8581363154644464,
+        -0.0007181828228118858,
+        0.5633974075317383,
+        0.125,
+        0.8363186120986938,
+        2.911807016381753
+      ],
+      "regime_label": "helpful"
+    },
+    {
+      "seed": 0,
+      "domain": "imagenet_r",
+      "comp": "single_class",
+      "regime": "tiny",
+      "aggr": "mild",
+      "method": "tent",
+      "mode": "episodic",
+      "candidate": "tent_episodic",
+      "a0": 0.44,
+      "aa": 0.47,
+      "B": 0.02999999999999997,
+      "upd_norm": 1.0133566025875034,
+      "Z": [
+        4.185148239135742,
+        0.25387197732925415,
+        0.8574181326416345,
+        4.712817192077637,
+        0.13330614566802979,
+        0.9601332159464204,
+        -0.10271508330478596,
+        -0.5276689529418945,
+        0.0,
+        0.3723466396331787,
+        1.0133566025875034
+      ],
+      "regime_label": "helpful"
+    },
+    {
+      "seed": 0,
+      "domain": "imagenet_r",
+      "comp": "single_class",
+      "regime": "tiny",
+      "aggr": "mild",
+      "method": "eata",
+      "mode": "online",
+      "candidate": "eata_online",
+      "a0": 0.44,
+      "aa": 0.465,
+      "B": 0.025000000000000022,
+      "upd_norm": 0.0,
+      "Z": [
+        4.185148239135742,
+        0.25387197732925415,
+        0.8574181326416345,
+        5.138606548309326,
+        0.03992721438407898,
+        0.9932406340974231,
+        -0.13582250145578867,
+        -0.953458309173584,
+        0.0,
+        0.29678022861480713,
+        0.0
+      ],
+      "regime_label": "helpful"
+    },
+    {
+      "seed": 0,
+      "domain": "imagenet_r",
+      "comp": "single_class",
+      "regime": "tiny",
+      "aggr": "mild",
+      "method": "eata",
+      "mode": "episodic",
+      "candidate": "eata_episodic",
+      "a0": 0.44,
+      "aa": 0.465,
+      "B": 0.025000000000000022,
+      "upd_norm": 0.0,
+      "Z": [
+        4.185148239135742,
+        0.25387197732925415,
+        0.8574181326416345,
+        5.138606548309326,
+        0.03992721438407898,
+        0.9932406340974231,
+        -0.13582250145578867,
+        -0.953458309173584,
+        0.0,
+        0.29678022861480713,
+        0.0
+      ],
+      "regime_label": "helpful"
+    },
+    {
+      "seed": 0,
+      "domain": "imagenet_r",
+      "comp": "single_class",
+      "regime": "tiny",
+      "aggr": "mild",
+      "method": "sar",
+      "mode": "online",
+      "candidate": "sar_online",
+      "a0": 0.44,
+      "aa": 0.465,
+      "B": 0.025000000000000022,
+      "upd_norm": 0.0,
+      "Z": [
+        4.185148239135742,
+        0.25387197732925415,
+        0.8574181326416345,
+        5.138606548309326,
+        0.03992721438407898,
+        0.9932406340974231,
+        -0.13582250145578867,
+        -0.953458309173584,
+        0.0,
+        0.29678022861480713,
+        0.0
+      ],
+      "regime_label": "helpful"
+    },
+    {
+      "seed": 0,
+      "domain": "imagenet_r",
+      "comp": "single_class",
+      "regime": "tiny",
+      "aggr": "mild",
+      "method": "sar",
+      "mode": "episodic",
+      "candidate": "sar_episodic",
+      "a0": 0.44,
+      "aa": 0.475,
+      "B": 0.034999999999999976,
+      "upd_norm": 0.0,
+      "Z": [
+        4.185148239135742,
+        0.25387197732925415,
+        0.8574181326416345,
+        5.138606548309326,
+        0.03992721438407898,
+        0.9932406340974231,
+        -0.13582250145578867,
+        -0.953458309173584,
+        0.0,
+        0.29678022861480713,
+        0.0
+      ],
+      "regime_label": "helpful"
+    },
+    {
+      "seed": 0,
+      "domain": "imagenet_r",
+      "comp": "single_class",
+      "regime": "small",
+      "aggr": "mild",
+      "method": "tent",
+      "mode": "online",
+      "candidate": "tent_online",
+      "a0": 0.455,
+      "aa": 0.475,
+      "B": 0.019999999999999962,
+      "upd_norm": 2.800227462364882,
+      "Z": [
+        4.470463752746582,
+        0.19246533513069153,
+        0.9206166010878297,
+        4.022943019866943,
+        0.2672246992588043,
+        0.9248868189545942,
+        -0.004270217866764514,
+        0.44752073287963867,
+        0.0625,
+        0.4053115248680115,
+        2.800227462364882
+      ],
+      "regime_label": "marginal"
+    },
+    {
+      "seed": 0,
+      "domain": "imagenet_r",
+      "comp": "single_class",
+      "regime": "small",
+      "aggr": "mild",
+      "method": "tent",
+      "mode": "episodic",
+      "candidate": "tent_episodic",
+      "a0": 0.455,
+      "aa": 0.46,
+      "B": 0.0050000000000000044,
+      "upd_norm": 1.0134805690476116,
+      "Z": [
+        4.470463752746582,
+        0.19246533513069153,
+        0.9206166010878297,
+        4.659909248352051,
+        0.13883846998214722,
+        0.9678710508762104,
+        -0.04725444978838067,
+        -0.18944549560546875,
+        0.0,
+        0.22988556325435638,
+        1.0134805690476116
+      ],
+      "regime_label": "marginal"
+    },
+    {
+      "seed": 0,
+      "domain": "imagenet_r",
+      "comp": "single_class",
+      "regime": "small",
+      "aggr": "mild",
+      "method": "eata",
+      "mode": "online",
+      "candidate": "eata_online",
+      "a0": 0.455,
+      "aa": 0.49,
+      "B": 0.034999999999999976,
+      "upd_norm": 0.0,
+      "Z": [
+        4.470463752746582,
+        0.19246533513069153,
+        0.9206166010878297,
+        5.101633071899414,
+        0.04596693441271782,
+        0.9946311908386847,
+        -0.07401458975085495,
+        -0.631169319152832,
+        0.0,
+        0.17118918895721436,
+        0.0
+      ],
+      "regime_label": "helpful"
+    },
+    {
+      "seed": 0,
+      "domain": "imagenet_r",
+      "comp": "single_class",
+      "regime": "small",
+      "aggr": "mild",
+      "method": "eata",
+      "mode": "episodic",
+      "candidate": "eata_episodic",
+      "a0": 0.455,
+      "aa": 0.46,
+      "B": 0.0050000000000000044,
+      "upd_norm": 0.0,
+      "Z": [
+        4.470463752746582,
+        0.19246533513069153,
+        0.9206166010878297,
+        5.101633071899414,
+        0.04596693441271782,
+        0.9946311908386847,
+        -0.07401458975085495,
+        -0.631169319152832,
+        0.0,
+        0.17118918895721436,
+        0.0
+      ],
+      "regime_label": "marginal"
+    },
+    {
+      "seed": 0,
+      "domain": "imagenet_r",
+      "comp": "single_class",
+      "regime": "small",
+      "aggr": "mild",
+      "method": "sar",
+      "mode": "online",
+      "candidate": "sar_online",
+      "a0": 0.455,
+      "aa": 0.49,
+      "B": 0.034999999999999976,
+      "upd_norm": 0.0,
+      "Z": [
+        4.470463752746582,
+        0.19246533513069153,
+        0.9206166010878297,
+        5.101633071899414,
+        0.04596693441271782,
+        0.9946311908386847,
+        -0.07401458975085495,
+        -0.631169319152832,
+        0.0,
+        0.17118918895721436,
+        0.0
+      ],
+      "regime_label": "helpful"
+    },
+    {
+      "seed": 0,
+      "domain": "imagenet_r",
+      "comp": "single_class",
+      "regime": "small",
+      "aggr": "mild",
+      "method": "sar",
+      "mode": "episodic",
+      "candidate": "sar_episodic",
+      "a0": 0.455,
+      "aa": 0.48,
+      "B": 0.024999999999999967,
+      "upd_norm": 0.0,
+      "Z": [
+        4.470463752746582,
+        0.19246533513069153,
+        0.9206166010878297,
+        5.101633071899414,
+        0.04596693441271782,
+        0.9946311908386847,
+        -0.07401458975085495,
+        -0.631169319152832,
+        0.0,
+        0.17118918895721436,
+        0.0
+      ],
+      "regime_label": "helpful"
+    }
+  ],
+  "conditions": [
+    {
+      "seed": 0,
+      "domain": "imagenet_r",
+      "comp": "iid",
+      "regime": "tiny",
+      "aggr": "mild",
+      "cand_names": [
+        "freeze_f0",
+        "tent_online",
+        "tent_episodic",
+        "eata_online",
+        "eata_episodic",
+        "sar_online",
+        "sar_episodic"
+      ],
+      "aa_all": [
+        0.415,
+        0.43,
+        0.44,
+        0.435,
+        0.43,
+        0.435,
+        0.425
+      ],
+      "a0": 0.415,
+      "oracle": 0.44,
+      "best_adapt": 0.44,
+      "true_best": "tent_episodic",
+      "route": {
+        "tau": 0.9829426057435794,
+        "tau_star": 0.52,
+        "gate_pass": false,
+        "overdet_residual": 0.2875654783095155,
+        "h_hat": 0.30184813485099315,
+        "margin": 0.9488775095989357,
+        "b_hat": [
+          -1.0447831368763607,
+          0.7715858505609876,
+          0.7308435032580305,
+          0.8395280124194926,
+          0.7487354905437192,
+          0.8395280124194926,
+          0.6631383203323535
+        ],
+        "b_tilde": [
+          1.0,
+          -0.8090951406834703,
+          -0.8126360553720011,
+          -0.8901981971385244,
+          -0.8711020054250934,
+          -0.8901981971385244,
+          -0.7283996414989845
+        ],
+        "anchor_b0": -1.0447831368763607,
+        "n_D": 106,
+        "M": 7,
+        "decision": "ABSTAIN",
+        "choice": null,
+        "reason": "tau=0.9829 > tau*=0.52 certifies Def-5 violated"
+      },
+      "route_c": {
+        "decision": "ABSTAIN",
+        "implemented": true,
+        "theorem": "1B",
+        "view": "brier_squared_loss",
+        "gS_estimate": "f0_surrogate(conservative)",
+        "center_c": -0.06571288196004943,
+        "U": -0.09570334508104765,
+        "T_S": -0.014995231560499107,
+        "W": 0.18565325042232872,
+        "d_obs": 0.08753440579043127,
+        "L": 0.6,
+        "reach": 0.019501256350536813,
+        "eps_n": 0.1414213562373095,
+        "bracket": [
+          -0.22663549454789575,
+          0.09520973062779689
+        ],
+        "note": "DIAGNOSTIC: g_S~f0 makes center conservative; full 1B classification instantiation needs an f0-independent source-concept estimate.",
+        "true_B_best": 0.025000000000000022,
+        "bracket_covers_trueB": true
+      },
+      "realized": 0.415,
+      "regime_label": "helpful"
+    },
+    {
+      "seed": 0,
+      "domain": "imagenet_r",
+      "comp": "iid",
+      "regime": "small",
+      "aggr": "mild",
+      "cand_names": [
+        "freeze_f0",
+        "tent_online",
+        "tent_episodic",
+        "eata_online",
+        "eata_episodic",
+        "sar_online",
+        "sar_episodic"
+      ],
+      "aa_all": [
+        0.505,
+        0.535,
+        0.54,
+        0.535,
+        0.53,
+        0.525,
+        0.53
+      ],
+      "a0": 0.505,
+      "oracle": 0.54,
+      "best_adapt": 0.54,
+      "true_best": "tent_episodic",
+      "route": {
+        "tau": 1.4674219866853995,
+        "tau_star": 0.52,
+        "gate_pass": false,
+        "overdet_residual": 0.29483871908114334,
+        "h_hat": 0.7333771887085233,
+        "margin": 2.0344505348231507,
+        "b_hat": [
+          -0.7364603200771086,
+          0.673552057977533,
+          0.7857222608403017,
+          0.6660809868097708,
+          0.8346470493339064,
+          -0.07686702242820016,
+          0.7435642692398442
+        ],
+        "b_tilde": [
+          0.6636956194480147,
+          -0.8299933065325822,
+          -0.8027729719194863,
+          -0.7977240352174657,
+          -0.9035763478811386,
+          -0.17986803666405038,
+          -0.7362659452178555
+        ],
+        "anchor_b0": -0.7364603200771086,
+        "n_D": 99,
+        "M": 7,
+        "decision": "ABSTAIN",
+        "choice": null,
+        "reason": "tau=1.4674 > tau*=0.52 certifies Def-5 violated"
+      },
+      "route_c": {
+        "decision": "ABSTAIN",
+        "implemented": true,
+        "theorem": "1B",
+        "view": "brier_squared_loss",
+        "gS_estimate": "f0_surrogate(conservative)",
+        "center_c": -0.06881319789292181,
+        "U": -0.12893424222626518,
+        "T_S": -0.030060522166671683,
+        "W": 0.18952665912453084,
+        "d_obs": 0.019801390970339467,
+        "L": 0.6,
+        "reach": 0.004503469771952509,
+        "eps_n": 0.1414213562373095,
+        "bracket": [
+          -0.21473802390218383,
+          0.0771116281163402
+        ],
+        "note": "DIAGNOSTIC: g_S~f0 makes center conservative; full 1B classification instantiation needs an f0-independent source-concept estimate.",
+        "true_B_best": 0.03500000000000003,
+        "bracket_covers_trueB": true
+      },
+      "realized": 0.505,
+      "regime_label": "helpful"
+    },
+    {
+      "seed": 0,
+      "domain": "imagenet_r",
+      "comp": "imbalanced",
+      "regime": "tiny",
+      "aggr": "mild",
+      "cand_names": [
+        "freeze_f0",
+        "tent_online",
+        "tent_episodic",
+        "eata_online",
+        "eata_episodic",
+        "sar_online",
+        "sar_episodic"
+      ],
+      "aa_all": [
+        0.425,
+        0.47,
+        0.455,
+        0.475,
+        0.465,
+        0.475,
+        0.46
+      ],
+      "a0": 0.425,
+      "oracle": 0.475,
+      "best_adapt": 0.475,
+      "true_best": "eata_online",
+      "route": {
+        "tau": 1.6715453821619626,
+        "tau_star": 0.52,
+        "gate_pass": false,
+        "overdet_residual": 0.4548086151956079,
+        "h_hat": 0.45805103622308385,
+        "margin": 1.3261990826427468,
+        "b_hat": [
+          -1.190464691492724,
+          0.6619266873604516,
+          0.6236279202135421,
+          0.7361718303337313,
+          0.669429225213482,
+          0.7361718303337313,
+          0.6549177604443117
+        ],
+        "b_tilde": [
+          1.0,
+          -0.6686507980379902,
+          -0.6639288043118023,
+          -1.0,
+          -0.8007282659678339,
+          -1.0,
+          -0.8409328826647808
+        ],
+        "anchor_b0": -1.190464691492724,
+        "n_D": 122,
+        "M": 7,
+        "decision": "ABSTAIN",
+        "choice": null,
+        "reason": "tau=1.6715 > tau*=0.52 certifies Def-5 violated"
+      },
+      "route_c": {
+        "decision": "ABSTAIN",
+        "implemented": true,
+        "theorem": "1B",
+        "view": "brier_squared_loss",
+        "gS_estimate": "f0_surrogate(conservative)",
+        "center_c": -0.039128251479993936,
+        "U": -0.003870382602068544,
+        "T_S": 0.017628934438962695,
+        "W": 0.12706142565235495,
+        "d_obs": 0.053717166036886185,
+        "L": 0.6,
+        "reach": 0.008190455638381224,
+        "eps_n": 0.1414213562373095,
+        "bracket": [
+          -0.18874006335568466,
+          0.11048356039569679
+        ],
+        "note": "DIAGNOSTIC: g_S~f0 makes center conservative; full 1B classification instantiation needs an f0-independent source-concept estimate.",
+        "true_B_best": 0.04999999999999999,
+        "bracket_covers_trueB": true
+      },
+      "realized": 0.425,
+      "regime_label": "helpful"
+    },
+    {
+      "seed": 0,
+      "domain": "imagenet_r",
+      "comp": "imbalanced",
+      "regime": "small",
+      "aggr": "mild",
+      "cand_names": [
+        "freeze_f0",
+        "tent_online",
+        "tent_episodic",
+        "eata_online",
+        "eata_episodic",
+        "sar_online",
+        "sar_episodic"
+      ],
+      "aa_all": [
+        0.425,
+        0.42,
+        0.41,
+        0.415,
+        0.41,
+        0.415,
+        0.41
+      ],
+      "a0": 0.425,
+      "oracle": 0.425,
+      "best_adapt": 0.42,
+      "true_best": "freeze_f0",
+      "route": {
+        "tau": 1.0939885967679719,
+        "tau_star": 0.52,
+        "gate_pass": false,
+        "overdet_residual": 0.265551214540513,
+        "h_hat": 0.3630892353443874,
+        "margin": 1.0934184265380205,
+        "b_hat": [
+          -1.1036487044938643,
+          0.5701819479276508,
+          0.7580524631900394,
+          0.6029782556766871,
+          0.7983349910310024,
+          0.5021985897560157,
+          0.7542717753037482
+        ],
+        "b_tilde": [
+          1.0,
+          -0.6198249015211693,
+          -0.8304547985373997,
+          -0.6017216678143156,
+          -0.8901332286522944,
+          -0.4840723280758541,
+          -0.8090174805402096
+        ],
+        "anchor_b0": -1.1036487044938643,
+        "n_D": 116,
+        "M": 7,
+        "decision": "ABSTAIN",
+        "choice": null,
+        "reason": "tau=1.0940 > tau*=0.52 certifies Def-5 violated"
+      },
+      "route_c": {
+        "decision": "ABSTAIN",
+        "implemented": true,
+        "theorem": "1B",
+        "view": "brier_squared_loss",
+        "gS_estimate": "f0_surrogate(conservative)",
+        "center_c": 0.0,
+        "U": 0.0,
+        "T_S": 0.0,
+        "W": 0.0,
+        "d_obs": 0.27295309369481796,
+        "L": 0.6,
+        "reach": 0.0,
+        "eps_n": 0.1414213562373095,
+        "bracket": [
+          -0.1414213562373095,
+          0.1414213562373095
+        ],
+        "note": "DIAGNOSTIC: g_S~f0 makes center conservative; full 1B classification instantiation needs an f0-independent source-concept estimate.",
+        "true_B_best": -0.0050000000000000044,
+        "bracket_covers_trueB": true
+      },
+      "realized": 0.425,
+      "regime_label": "marginal"
+    },
+    {
+      "seed": 0,
+      "domain": "imagenet_r",
+      "comp": "single_class",
+      "regime": "tiny",
+      "aggr": "mild",
+      "cand_names": [
+        "freeze_f0",
+        "tent_online",
+        "tent_episodic",
+        "eata_online",
+        "eata_episodic",
+        "sar_online",
+        "sar_episodic"
+      ],
+      "aa_all": [
+        0.44,
+        0.48,
+        0.47,
+        0.465,
+        0.465,
+        0.465,
+        0.475
+      ],
+      "a0": 0.44,
+      "oracle": 0.48,
+      "best_adapt": 0.48,
+      "true_best": "tent_online",
+      "route": {
+        "tau": 1.3920262449459224,
+        "tau_star": 0.52,
+        "gate_pass": false,
+        "overdet_residual": 0.37081930415263753,
+        "h_hat": 0.3932051724200125,
+        "margin": 1.1840204941018737,
+        "b_hat": [
+          -1.1081624341395906,
+          0.63039468601443,
+          0.6779678311031663,
+          0.7797928808435959,
+          0.6566368572966749,
+          0.7797928808435961,
+          0.674935229552258
+        ],
+        "b_tilde": [
+          1.0,
+          -0.6391935880867404,
+          -0.8468599159080072,
+          -0.9229582069908971,
+          -0.8238274568692637,
+          -0.9229582069908971,
+          -0.8354921531930375
+        ],
+        "anchor_b0": -1.1081624341395906,
+        "n_D": 99,
+        "M": 7,
+        "decision": "ABSTAIN",
+        "choice": null,
+        "reason": "tau=1.3920 > tau*=0.52 certifies Def-5 violated"
+      },
+      "route_c": {
+        "decision": "ABSTAIN",
+        "implemented": true,
+        "theorem": "1B",
+        "view": "brier_squared_loss",
+        "gS_estimate": "f0_surrogate(conservative)",
+        "center_c": -0.04347553121367704,
+        "U": -0.045360515417035376,
+        "T_S": -0.0009424921016791671,
+        "W": 0.14356329329311848,
+        "d_obs": 0.12551615059063329,
+        "L": 0.6,
+        "reach": 0.021623414328319573,
+        "eps_n": 0.1414213562373095,
+        "bracket": [
+          -0.2065203017793061,
+          0.11956923935195204
+        ],
+        "note": "DIAGNOSTIC: g_S~f0 makes center conservative; full 1B classification instantiation needs an f0-independent source-concept estimate.",
+        "true_B_best": 0.03999999999999998,
+        "bracket_covers_trueB": true
+      },
+      "realized": 0.44,
+      "regime_label": "helpful"
+    },
+    {
+      "seed": 0,
+      "domain": "imagenet_r",
+      "comp": "single_class",
+      "regime": "small",
+      "aggr": "mild",
+      "cand_names": [
+        "freeze_f0",
+        "tent_online",
+        "tent_episodic",
+        "eata_online",
+        "eata_episodic",
+        "sar_online",
+        "sar_episodic"
+      ],
+      "aa_all": [
+        0.455,
+        0.475,
+        0.46,
+        0.49,
+        0.46,
+        0.49,
+        0.48
+      ],
+      "a0": 0.455,
+      "oracle": 0.49,
+      "best_adapt": 0.49,
+      "true_best": "eata_online",
+      "route": {
+        "tau": 1.1170112988783953,
+        "tau_star": 0.52,
+        "gate_pass": false,
+        "overdet_residual": 0.31882257628949495,
+        "h_hat": 0.44794704766025584,
+        "margin": 1.3283820332077143,
+        "b_hat": [
+          -1.091926944853015,
+          0.7267265489359966,
+          0.8060993003069244,
+          0.7430026597124294,
+          0.8191837451628673,
+          0.7430026597124294,
+          0.635010628180108
+        ],
+        "b_tilde": [
+          1.0,
+          -0.8458888522202896,
+          -0.9519716382329885,
+          -0.7777627747825355,
+          -0.9682458365518543,
+          -0.7777627747825355,
+          -0.6150291615567651
+        ],
+        "anchor_b0": -1.091926944853015,
+        "n_D": 92,
+        "M": 7,
+        "decision": "ABSTAIN",
+        "choice": null,
+        "reason": "tau=1.1170 > tau*=0.52 certifies Def-5 violated"
+      },
+      "route_c": {
+        "decision": "ABSTAIN",
+        "implemented": true,
+        "theorem": "1B",
+        "view": "brier_squared_loss",
+        "gS_estimate": "f0_surrogate(conservative)",
+        "center_c": -0.041247351975757005,
+        "U": -0.038595983860239005,
+        "T_S": 0.001325684057758999,
+        "W": 0.1383513051085174,
+        "d_obs": 0.041975453197127345,
+        "L": 0.6,
+        "reach": 0.006968830478812868,
+        "eps_n": 0.1414213562373095,
+        "bracket": [
+          -0.18963753869187938,
+          0.10714283474036537
+        ],
+        "note": "DIAGNOSTIC: g_S~f0 makes center conservative; full 1B classification instantiation needs an f0-independent source-concept estimate.",
+        "true_B_best": 0.034999999999999976,
+        "bracket_covers_trueB": true
+      },
+      "realized": 0.455,
+      "regime_label": "helpful"
+    }
+  ]
+}

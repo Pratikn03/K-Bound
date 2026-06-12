@@ -7,7 +7,7 @@ exchangeability assumption to bounded non-stationarity. Each is numerically chec
 (\texttt{experiments/kbound/theory\_validation/}).
 
 \paragraph{(a) Closing Conjecture~\ref{conj:gen} under calibration transfer.}
-\begin{theorem}[Label-free bracketing under bounded calibration transfer]\label{thm:caltransfer}
+\begin{proposition}[Label-free bracketing under bounded calibration transfer]\label{thm:caltransfer}
 On the disagreement region $D$, let $\mathrm{conf}_h(x)\in[0,1]$ be a source-calibrated confidence
 map for predictor $h\in\{f_0,f_a\}$, and suppose its target miscalibration on $D$ is bounded by
 $\eta$: $|\Pr_T(h(X){=}Y\mid \mathrm{conf}_h{=}c,\,X\in D)-c|\le\eta$ for all $c$
@@ -18,12 +18,12 @@ confidence. Then $|q_h-p_h|\le\eta$, hence $p_a-p_0\in[(q_a-q_0)-2\eta,\,(q_a-q_
 \]
 so the multiclass/regression benefit sign is identified label-free; when $|q_a-q_0|\le2\eta$ the
 bracket contains $0$ and the rule must \textsc{abstain}.
-\end{theorem}
+\end{proposition}
 \begin{proof}
 $p_h=\E_T[\Pr_T(h{=}Y\mid \mathrm{conf}_h,D)\mid D]$; by the calibration-transfer bound the inner
 conditional is within $\eta$ of $\mathrm{conf}_h$ pointwise, so $|p_h-q_h|\le\eta$. Adding the two
 $\eta$-balls gives the bracket; if its half-width $2\eta$ does not straddle $0$ the sign of
-$q_a-q_0$ equals $\sign(p_a-p_0)=\sign\Delta$ (Theorem~\ref{thm:disagree-mc}). \qedhere
+$q_a-q_0$ equals $\sign(p_a-p_0)=\sign\Delta$ (Proposition~\ref{thm:disagree-mc}). \qedhere
 \end{proof}
 \noindent\emph{Tightness.} The threshold $2\eta$ is exact: when $|q_a-q_0|\le2\eta$ an adversary
 inside the $\eta$-balls can place $p_a,p_0$ on either side, re-entering the unknowable regime of
@@ -35,18 +35,20 @@ no-guard rule accrues errors as $\eta$ grows -- confirming both the guarantee an
 necessary.
 
 \paragraph{(b) Generalization of the benefit router.}
-\begin{theorem}[Router generalization and certificate survival]\label{thm:router-rad}
+\begin{proposition}[Router generalization and certificate survival]\label{thm:router-rad}
 Let $\mathcal H$ be the class of depth-$d$ gradient-boosted tree ensembles with $T$ members on $p$
 features and outputs bounded in $[-M,M]$. With probability $\ge1-\delta$ over $n$ calibration tasks,
 \[
-\sup_{h\in\mathcal H}\bigl|\widehat R_n(h)-R(h)\bigr|\;\le\;2\,\mathfrak R_n(\mathcal H)+3M\sqrt{\tfrac{\log(2/\delta)}{2n}},
-\qquad \mathfrak R_n(\mathcal H)=O\!\Bigl(\sqrt{\tfrac{T\,d\,\log p}{n}}\Bigr).
+\begin{aligned}
+\sup_{h\in\mathcal H}\bigl|\widehat R_n(h)-R(h)\bigr| &\;\le\;2\,\mathfrak R_n(\mathcal H)+3M\sqrt{\tfrac{\log(2/\delta)}{2n}},\\
+\mathfrak R_n(\mathcal H) &=O\!\Bigl(\sqrt{\tfrac{T\,d\,\log p}{n}}\Bigr).
+\end{aligned}
 \]
 Hence $\widehat\Delta$ converges at rate $O(n^{-1/2})$, and if the conformal radius $\varepsilon$
 dominates this estimation error the false-adapt guarantee of Theorem~\ref{thm:cert} survives router
 error; a calibration size $n=O\!\bigl((T d\log p/\Delta^2)\log(1/\delta)\bigr)$ suffices for the
 certificate to fire at margin $|\Delta|$.
-\end{theorem}
+\end{proposition}
 \begin{proof}[Proof sketch]
 Symmetrization with the bounded-difference (McDiarmid) inequality gives the uniform deviation
 bound; a depth-$d$ tree on $p$ features realizes $O(d\log p)$ effective decisions, so a $T$-term
@@ -60,7 +62,7 @@ stays below the $\sqrt{Td\log p/n}$ envelope, and grows with capacity (log--log 
 $Td\log p$).
 
 \paragraph{(c) Anytime validity under non-stationarity.}
-\begin{theorem}[$\beta$-bounded-drift anytime certificate]\label{thm:anytime-drift}
+\begin{proposition}[$\beta$-bounded-drift anytime certificate]\label{thm:anytime-drift}
 In the streaming setting of Appendix~\ref{app:anytime}, relax the constant-mean assumption to a
 slowly-varying mean $|\E[X_t\mid\mathcal F_{t-1}]-\Delta|\le\beta$. Under $H_0$ ($\Delta\le0$) the
 corrected wealth $\widetilde E_t^{+}=E_t^{+}/\prod_{i\le t}(1+\lambda_i\beta)$ is a nonnegative
@@ -69,7 +71,7 @@ $E_t^{+}\ge(1/\alpha)\prod_{i\le t}(1+\lambda_i\beta)$ controls the false-adapt 
 for every $\beta$-bounded-drift stream. The price is a threshold inflation
 $\prod_{i\le t}(1+\lambda_i\beta)\le\exp\!\bigl(\beta\textstyle\sum_{i\le t}\lambda_i\bigr)$ (a
 $\beta\!\cdot\!t$ term in log-threshold under capped bets).
-\end{theorem}
+\end{proposition}
 \begin{proof}
 Under $\Delta\le0$, $\E[1+\lambda_tX_t\mid\mathcal F_{t-1}]=1+\lambda_t\mu_t\le1+\lambda_t\beta$, so
 $\widetilde E_t^{+}$ has $\E[\widetilde E_t^{+}\mid\mathcal F_{t-1}]\le\widetilde E_{t-1}^{+}$ and unit
