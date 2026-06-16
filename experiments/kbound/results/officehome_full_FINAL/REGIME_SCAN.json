@@ -1,0 +1,558 @@
+{
+  "schema": "officehome_regime_scan_v1",
+  "deployed_adapter_source_chosen": "eata_online_mild",
+  "source_mean_acc_by_candidate": {
+    "conservative": 0.8397435897435895,
+    "eata_episodic_aggressive": 0.833974358974359,
+    "eata_episodic_mild": 0.8346153846153846,
+    "eata_online_aggressive": 0.8394230769230769,
+    "eata_online_mild": 0.8432692307692308,
+    "labelshift": 0.10480769230769231,
+    "sar_episodic_aggressive": 0.8326923076923075,
+    "sar_episodic_mild": 0.8323717948717948,
+    "sar_online_aggressive": 0.7583333333333333,
+    "sar_online_mild": 0.8323717948717949,
+    "tent_episodic_aggressive": 0.8352564102564103,
+    "tent_episodic_mild": 0.8346153846153846,
+    "tent_online_aggressive": 0.8185897435897437,
+    "tent_online_mild": 0.8394230769230768
+  },
+  "per_domain": {
+    "Art": {
+      "n_records": 168,
+      "regime_pooled": "mixed",
+      "detect_pooled": "detectable",
+      "base_rate_harmful": 0.20238095238095238,
+      "mean_B": -0.01936813186813185,
+      "frac_helpful": 0.44642857142857145,
+      "best_harm_AUC": 0.91900790166813,
+      "top_features": {
+        "prior_kl_source": 0.91900790166813,
+        "cand_disagree_mean": 0.9117647058823529,
+        "pbal_drop": 0.880377524143986,
+        "post_pbal": 0.8110184372256365,
+        "entropy_drop": 0.7816066725197541
+      },
+      "deployed_candidate": "eata_online_mild",
+      "deployed_regime": "helpful-dominated",
+      "deployed_mean_B": 0.03429487179487182,
+      "deployed_harm_AUC": null,
+      "deployed_detect": "undetectable",
+      "mixed_and_detectable": true,
+      "deployed_mixed_and_detectable": false
+    },
+    "Clipart": {
+      "n_records": 168,
+      "regime_pooled": "mixed",
+      "detect_pooled": "detectable",
+      "base_rate_harmful": 0.16666666666666666,
+      "mean_B": 0.006250000000000004,
+      "frac_helpful": 0.6607142857142857,
+      "best_harm_AUC": 0.9956632653061225,
+      "top_features": {
+        "cand_disagree_mean": 0.9956632653061225,
+        "pbal_drop": 0.9214285714285714,
+        "prior_kl_source": 0.9178571428571428,
+        "post_pbal": 0.8954081632653061,
+        "entropy_drop": 0.8872448979591837
+      },
+      "deployed_candidate": "eata_online_mild",
+      "deployed_regime": "helpful-dominated",
+      "deployed_mean_B": 0.03878205128205129,
+      "deployed_harm_AUC": null,
+      "deployed_detect": "undetectable",
+      "mixed_and_detectable": true,
+      "deployed_mixed_and_detectable": false
+    },
+    "Product": {
+      "n_records": 168,
+      "regime_pooled": "mixed",
+      "detect_pooled": "weak",
+      "base_rate_harmful": 0.4523809523809524,
+      "mean_B": -0.0493131868131868,
+      "frac_helpful": 0.08928571428571429,
+      "best_harm_AUC": 0.735483409610984,
+      "top_features": {
+        "cand_disagree_mean": 0.735483409610984,
+        "pre_conf": 0.6681922196796338,
+        "bn_kl": 0.6501716247139588,
+        "pre_entropy": 0.6321510297482837,
+        "pbal_drop": 0.6178489702517163
+      },
+      "deployed_candidate": "eata_online_mild",
+      "deployed_regime": "mixed",
+      "deployed_mean_B": 0.008653846153846179,
+      "deployed_harm_AUC": 0.9,
+      "deployed_detect": "detectable",
+      "mixed_and_detectable": false,
+      "deployed_mixed_and_detectable": true
+    }
+  },
+  "per_domain_candidate": {
+    "Art|conservative": {
+      "n": 12,
+      "mean_B": -0.007692307692307683,
+      "base_rate_harmful": 0.75,
+      "frac_helpful": 0.0,
+      "regime": "mixed",
+      "harm_AUC": 1.0,
+      "detect": "detectable"
+    },
+    "Art|eata_episodic_aggressive": {
+      "n": 12,
+      "mean_B": 0.017948717948717958,
+      "base_rate_harmful": 0.08333333333333333,
+      "frac_helpful": 0.25,
+      "regime": "helpful-dominated",
+      "harm_AUC": 1.0,
+      "detect": "detectable"
+    },
+    "Art|eata_episodic_mild": {
+      "n": 12,
+      "mean_B": 0.019230769230769246,
+      "base_rate_harmful": 0.08333333333333333,
+      "frac_helpful": 0.3333333333333333,
+      "regime": "helpful-dominated",
+      "harm_AUC": 1.0,
+      "detect": "detectable"
+    },
+    "Art|eata_online_aggressive": {
+      "n": 12,
+      "mean_B": 0.03237179487179489,
+      "base_rate_harmful": 0.0,
+      "frac_helpful": 0.75,
+      "regime": "helpful-dominated",
+      "harm_AUC": null,
+      "detect": "undetectable"
+    },
+    "Art|eata_online_mild": {
+      "n": 12,
+      "mean_B": 0.03429487179487182,
+      "base_rate_harmful": 0.0,
+      "frac_helpful": 0.9166666666666666,
+      "regime": "helpful-dominated",
+      "harm_AUC": null,
+      "detect": "undetectable"
+    },
+    "Art|labelshift": {
+      "n": 12,
+      "mean_B": -0.483974358974359,
+      "base_rate_harmful": 1.0,
+      "frac_helpful": 0.0,
+      "regime": "harmful-dominated",
+      "harm_AUC": null,
+      "detect": "undetectable"
+    },
+    "Art|sar_episodic_aggressive": {
+      "n": 12,
+      "mean_B": 0.02179487179487181,
+      "base_rate_harmful": 0.08333333333333333,
+      "frac_helpful": 0.5833333333333334,
+      "regime": "helpful-dominated",
+      "harm_AUC": 1.0,
+      "detect": "detectable"
+    },
+    "Art|sar_episodic_mild": {
+      "n": 12,
+      "mean_B": 0.020192307692307714,
+      "base_rate_harmful": 0.0,
+      "frac_helpful": 0.3333333333333333,
+      "regime": "helpful-dominated",
+      "harm_AUC": null,
+      "detect": "undetectable"
+    },
+    "Art|sar_online_aggressive": {
+      "n": 12,
+      "mean_B": -0.034935897435897416,
+      "base_rate_harmful": 0.3333333333333333,
+      "frac_helpful": 0.5833333333333334,
+      "regime": "mixed",
+      "harm_AUC": 1.0,
+      "detect": "detectable"
+    },
+    "Art|sar_online_mild": {
+      "n": 12,
+      "mean_B": 0.03076923076923079,
+      "base_rate_harmful": 0.08333333333333333,
+      "frac_helpful": 0.8333333333333334,
+      "regime": "helpful-dominated",
+      "harm_AUC": 1.0,
+      "detect": "detectable"
+    },
+    "Art|tent_episodic_aggressive": {
+      "n": 12,
+      "mean_B": 0.020833333333333353,
+      "base_rate_harmful": 0.08333333333333333,
+      "frac_helpful": 0.3333333333333333,
+      "regime": "helpful-dominated",
+      "harm_AUC": 1.0,
+      "detect": "detectable"
+    },
+    "Art|tent_episodic_mild": {
+      "n": 12,
+      "mean_B": 0.020512820512820534,
+      "base_rate_harmful": 0.08333333333333333,
+      "frac_helpful": 0.3333333333333333,
+      "regime": "helpful-dominated",
+      "harm_AUC": 1.0,
+      "detect": "detectable"
+    },
+    "Art|tent_online_aggressive": {
+      "n": 12,
+      "mean_B": 0.004487179487179499,
+      "base_rate_harmful": 0.25,
+      "frac_helpful": 0.08333333333333333,
+      "regime": "mixed",
+      "harm_AUC": 1.0,
+      "detect": "detectable"
+    },
+    "Art|tent_online_mild": {
+      "n": 12,
+      "mean_B": 0.03301282051282053,
+      "base_rate_harmful": 0.0,
+      "frac_helpful": 0.9166666666666666,
+      "regime": "helpful-dominated",
+      "harm_AUC": null,
+      "detect": "undetectable"
+    },
+    "Clipart|conservative": {
+      "n": 12,
+      "mean_B": -0.021794871794871797,
+      "base_rate_harmful": 1.0,
+      "frac_helpful": 0.0,
+      "regime": "harmful-dominated",
+      "harm_AUC": null,
+      "detect": "undetectable"
+    },
+    "Clipart|eata_episodic_aggressive": {
+      "n": 12,
+      "mean_B": 0.03717948717948719,
+      "base_rate_harmful": 0.0,
+      "frac_helpful": 0.9166666666666666,
+      "regime": "helpful-dominated",
+      "harm_AUC": null,
+      "detect": "undetectable"
+    },
+    "Clipart|eata_episodic_mild": {
+      "n": 12,
+      "mean_B": 0.0358974358974359,
+      "base_rate_harmful": 0.0,
+      "frac_helpful": 0.9166666666666666,
+      "regime": "helpful-dominated",
+      "harm_AUC": null,
+      "detect": "undetectable"
+    },
+    "Clipart|eata_online_aggressive": {
+      "n": 12,
+      "mean_B": 0.037500000000000006,
+      "base_rate_harmful": 0.0,
+      "frac_helpful": 0.75,
+      "regime": "helpful-dominated",
+      "harm_AUC": null,
+      "detect": "undetectable"
+    },
+    "Clipart|eata_online_mild": {
+      "n": 12,
+      "mean_B": 0.03878205128205129,
+      "base_rate_harmful": 0.0,
+      "frac_helpful": 0.75,
+      "regime": "helpful-dominated",
+      "harm_AUC": null,
+      "detect": "undetectable"
+    },
+    "Clipart|labelshift": {
+      "n": 12,
+      "mean_B": -0.3003205128205127,
+      "base_rate_harmful": 1.0,
+      "frac_helpful": 0.0,
+      "regime": "harmful-dominated",
+      "harm_AUC": null,
+      "detect": "undetectable"
+    },
+    "Clipart|sar_episodic_aggressive": {
+      "n": 12,
+      "mean_B": 0.0358974358974359,
+      "base_rate_harmful": 0.0,
+      "frac_helpful": 0.75,
+      "regime": "helpful-dominated",
+      "harm_AUC": null,
+      "detect": "undetectable"
+    },
+    "Clipart|sar_episodic_mild": {
+      "n": 12,
+      "mean_B": 0.03493589743589744,
+      "base_rate_harmful": 0.0,
+      "frac_helpful": 0.75,
+      "regime": "helpful-dominated",
+      "harm_AUC": null,
+      "detect": "undetectable"
+    },
+    "Clipart|sar_online_aggressive": {
+      "n": 12,
+      "mean_B": 0.0019230769230769277,
+      "base_rate_harmful": 0.25,
+      "frac_helpful": 0.5,
+      "regime": "mixed",
+      "harm_AUC": 1.0,
+      "detect": "detectable"
+    },
+    "Clipart|sar_online_mild": {
+      "n": 12,
+      "mean_B": 0.03685897435897437,
+      "base_rate_harmful": 0.0,
+      "frac_helpful": 0.75,
+      "regime": "helpful-dominated",
+      "harm_AUC": null,
+      "detect": "undetectable"
+    },
+    "Clipart|tent_episodic_aggressive": {
+      "n": 12,
+      "mean_B": 0.038141025641025644,
+      "base_rate_harmful": 0.0,
+      "frac_helpful": 0.8333333333333334,
+      "regime": "helpful-dominated",
+      "harm_AUC": null,
+      "detect": "undetectable"
+    },
+    "Clipart|tent_episodic_mild": {
+      "n": 12,
+      "mean_B": 0.03685897435897435,
+      "base_rate_harmful": 0.0,
+      "frac_helpful": 0.8333333333333334,
+      "regime": "helpful-dominated",
+      "harm_AUC": null,
+      "detect": "undetectable"
+    },
+    "Clipart|tent_online_aggressive": {
+      "n": 12,
+      "mean_B": 0.028525641025641025,
+      "base_rate_harmful": 0.08333333333333333,
+      "frac_helpful": 0.5833333333333334,
+      "regime": "helpful-dominated",
+      "harm_AUC": 1.0,
+      "detect": "detectable"
+    },
+    "Clipart|tent_online_mild": {
+      "n": 12,
+      "mean_B": 0.047115384615384615,
+      "base_rate_harmful": 0.0,
+      "frac_helpful": 0.9166666666666666,
+      "regime": "helpful-dominated",
+      "harm_AUC": null,
+      "detect": "undetectable"
+    },
+    "Product|conservative": {
+      "n": 12,
+      "mean_B": -0.006730769230769216,
+      "base_rate_harmful": 0.6666666666666666,
+      "frac_helpful": 0.0,
+      "regime": "mixed",
+      "harm_AUC": 0.75,
+      "detect": "detectable"
+    },
+    "Product|eata_episodic_aggressive": {
+      "n": 12,
+      "mean_B": 0.0016025641025641153,
+      "base_rate_harmful": 0.4166666666666667,
+      "frac_helpful": 0.16666666666666666,
+      "regime": "mixed",
+      "harm_AUC": 0.8857142857142857,
+      "detect": "detectable"
+    },
+    "Product|eata_episodic_mild": {
+      "n": 12,
+      "mean_B": -0.0006410256410256202,
+      "base_rate_harmful": 0.5833333333333334,
+      "frac_helpful": 0.16666666666666666,
+      "regime": "mixed",
+      "harm_AUC": 0.7714285714285715,
+      "detect": "detectable"
+    },
+    "Product|eata_online_aggressive": {
+      "n": 12,
+      "mean_B": 0.00865384615384617,
+      "base_rate_harmful": 0.16666666666666666,
+      "frac_helpful": 0.08333333333333333,
+      "regime": "mixed",
+      "harm_AUC": 0.9,
+      "detect": "detectable"
+    },
+    "Product|eata_online_mild": {
+      "n": 12,
+      "mean_B": 0.008653846153846179,
+      "base_rate_harmful": 0.16666666666666666,
+      "frac_helpful": 0.16666666666666666,
+      "regime": "mixed",
+      "harm_AUC": 0.9,
+      "detect": "detectable"
+    },
+    "Product|labelshift": {
+      "n": 12,
+      "mean_B": -0.6128205128205129,
+      "base_rate_harmful": 1.0,
+      "frac_helpful": 0.0,
+      "regime": "harmful-dominated",
+      "harm_AUC": null,
+      "detect": "undetectable"
+    },
+    "Product|sar_episodic_aggressive": {
+      "n": 12,
+      "mean_B": 0.00032051282051283786,
+      "base_rate_harmful": 0.5,
+      "frac_helpful": 0.16666666666666666,
+      "regime": "mixed",
+      "harm_AUC": 0.8055555555555556,
+      "detect": "detectable"
+    },
+    "Product|sar_episodic_mild": {
+      "n": 12,
+      "mean_B": 1.850371707708594e-17,
+      "base_rate_harmful": 0.5,
+      "frac_helpful": 0.16666666666666666,
+      "regime": "mixed",
+      "harm_AUC": 0.8055555555555556,
+      "detect": "detectable"
+    },
+    "Product|sar_online_aggressive": {
+      "n": 12,
+      "mean_B": -0.09391025641025641,
+      "base_rate_harmful": 0.5,
+      "frac_helpful": 0.0,
+      "regime": "mixed",
+      "harm_AUC": 1.0,
+      "detect": "detectable"
+    },
+    "Product|sar_online_mild": {
+      "n": 12,
+      "mean_B": 0.003846153846153851,
+      "base_rate_harmful": 0.25,
+      "frac_helpful": 0.08333333333333333,
+      "regime": "mixed",
+      "harm_AUC": 1.0,
+      "detect": "detectable"
+    },
+    "Product|tent_episodic_aggressive": {
+      "n": 12,
+      "mean_B": 0.00032051282051283786,
+      "base_rate_harmful": 0.4166666666666667,
+      "frac_helpful": 0.0,
+      "regime": "mixed",
+      "harm_AUC": 0.8,
+      "detect": "detectable"
+    },
+    "Product|tent_episodic_mild": {
+      "n": 12,
+      "mean_B": -0.0006410256410256202,
+      "base_rate_harmful": 0.5,
+      "frac_helpful": 0.16666666666666666,
+      "regime": "mixed",
+      "harm_AUC": 0.7777777777777778,
+      "detect": "detectable"
+    },
+    "Product|tent_online_aggressive": {
+      "n": 12,
+      "mean_B": -0.006410256410256397,
+      "base_rate_harmful": 0.5,
+      "frac_helpful": 0.0,
+      "regime": "mixed",
+      "harm_AUC": 0.8055555555555556,
+      "detect": "detectable"
+    },
+    "Product|tent_online_mild": {
+      "n": 12,
+      "mean_B": 0.007371794871794901,
+      "base_rate_harmful": 0.16666666666666666,
+      "frac_helpful": 0.08333333333333333,
+      "regime": "mixed",
+      "harm_AUC": 0.85,
+      "detect": "detectable"
+    }
+  },
+  "gradient_TTA_detectability_DECISIVE": {
+    "_def": "gradient-TTA only = Tent/EATA/SAR x {online,episodic} x {mild,aggressive}; labelshift + conservative EXCLUDED",
+    "per_domain": {
+      "Art": {
+        "n": 144,
+        "base_rate_harmful": 0.09027777777777778,
+        "mean_B": 0.01837606837606839,
+        "frac_helpful": 0.5208333333333334,
+        "best_harm_AUC": 0.9007633587786259,
+        "regime": "helpful-dominated",
+        "detect": "detectable",
+        "top_features": {
+          "disagreement": 0.9007633587786259,
+          "prior_kl_source": 0.8091603053435115,
+          "cand_disagree_mean": 0.7865531415149736,
+          "update_norm": 0.7425132119788609,
+          "pbal_drop": 0.7040516735173223,
+          "atc_acc_est": 0.6585437463300059
+        },
+        "certificate_transfer_AUC": 0.7105108631826189
+      },
+      "Clipart": {
+        "n": 144,
+        "base_rate_harmful": 0.027777777777777776,
+        "mean_B": 0.03413461538461539,
+        "frac_helpful": 0.7708333333333334,
+        "best_harm_AUC": 0.9875,
+        "regime": "helpful-dominated",
+        "detect": "detectable",
+        "top_features": {
+          "update_norm": 0.9875,
+          "cand_disagree_mean": 0.9696428571428571,
+          "disagreement": 0.9401785714285714,
+          "marginal_KL": 0.8821428571428571,
+          "post_conf": 0.7892857142857143,
+          "post_entropy": 0.7839285714285714
+        },
+        "certificate_transfer_AUC": 0.8517857142857143
+      },
+      "Product": {
+        "n": 144,
+        "base_rate_harmful": 0.3888888888888889,
+        "mean_B": -0.005902777777777761,
+        "frac_helpful": 0.10416666666666667,
+        "best_harm_AUC": 0.685064935064935,
+        "regime": "mixed",
+        "detect": "weak",
+        "top_features": {
+          "pre_conf": 0.685064935064935,
+          "bn_kl": 0.6826298701298701,
+          "cand_disagree_mean": 0.6709618506493507,
+          "update_norm": 0.6492491883116883,
+          "pre_entropy": 0.6436688311688312,
+          "prior_kl_source": 0.6178977272727273
+        },
+        "certificate_transfer_AUC": 0.533989448051948
+      }
+    },
+    "pooled_all_targets": {
+      "n": 432,
+      "base_rate_harmful": 0.16898148148148148,
+      "mean_B": 0.015535968660968673,
+      "frac_helpful": 0.4652777777777778,
+      "best_harm_AUC": 0.8120540313656657,
+      "regime": "mixed",
+      "detect": "detectable",
+      "top_features": {
+        "pre_conf": 0.8120540313656657,
+        "pre_entropy": 0.8047277444957454,
+        "pre_pbal": 0.8015224939901553,
+        "pbal_drop": 0.7948258098981188,
+        "atc_acc_est": 0.7882435990384249,
+        "energy_shift": 0.7818330980272447
+      },
+      "certificate_transfer_AUC": 0.32836646697447247
+    },
+    "per_domain_mixed_detectable": {
+      "Art": false,
+      "Clipart": false,
+      "Product": false
+    },
+    "ANY_domain_gradTTA_mixed_detectable": false
+  },
+  "ANY_domain_allcand_mixed_detectable": true,
+  "ANY_domain_deployed_mixed_detectable": true,
+  "ANY_domain_gradTTA_mixed_detectable": false,
+  "win_precondition_met": false
+}

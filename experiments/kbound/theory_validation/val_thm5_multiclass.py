@@ -460,6 +460,32 @@ def main():
     print()
     print(f"ALL CHECKS PASS: {all_ok}")
     print()
+
+    import os, json
+    out_dir = os.path.dirname(os.path.abspath(__file__))
+    out_path = os.path.join(out_dir, "results_thm5_multiclass.json")
+    with open(out_path, "w") as f:
+        json.dump({
+            "multiclass": {
+                "equality_ok": mc["equality_ok"],
+                "max_abs_err": mc["max_abs_err"],
+                "sign_ok": mc["sign_ok"],
+                "sign_matches": mc["sign_matches"],
+                "sign_eligible": mc["sign_eligible"],
+                "n_with_both_wrong": mc["n_with_both_wrong"]
+            },
+            "regression_identity": {
+                "identity_ok": reg_id["identity_ok"],
+                "max_pointwise_err": reg_id["max_pointwise_err"],
+                "sign_ok": reg_id["sign_ok"],
+                "sign_matches": reg_id["sign_matches"],
+                "sign_eligible": reg_id["sign_eligible"]
+            },
+            "regression_shift": reg_shift,
+            "all_ok": all_ok
+        }, f, indent=2)
+    print(f"Wrote machine-readable results to {out_path}\n")
+
     print("HONEST RESIDUAL (the only remaining open piece):")
     print("  The reductions above are EXACT. sign(Delta) equals an ordinal accuracy")
     print("  comparison on D (p_a vs p_0, multiclass) / the sign of E[(f0-fa)Y|D]")

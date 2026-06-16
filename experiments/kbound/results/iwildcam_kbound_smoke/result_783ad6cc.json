@@ -1,0 +1,377 @@
+{
+  "schema": "kbound_wilds_iwildcam_finder_v0.1",
+  "dataset": "wilds-iwildcam",
+  "created": "2026-06-14T23:31:00",
+  "host": {
+    "node": "Pratik-Ns-MacBook-Pro.local",
+    "platform": "macOS-26.2-arm64-arm-64bit",
+    "python": "3.12.13",
+    "torch": "2.5.1",
+    "mps": true
+  },
+  "config": {
+    "data_root": "/Volumes/T9/uav/AutoML_Flagship_V8/experiments/kbound/data/wilds",
+    "results_root": "experiments/kbound/results",
+    "run_name": "iwildcam_kbound_smoke",
+    "ckpt": "",
+    "retrain": false,
+    "backbone": "resnet18",
+    "trainable": "head",
+    "train_seed": 0,
+    "train_epochs": 1,
+    "max_train_batches": 8,
+    "train_bs": 16,
+    "train_lr": 0.001,
+    "workers": 0,
+    "log_every": 20,
+    "split": "val",
+    "seeds": [
+      0
+    ],
+    "max_locations": 2,
+    "compositions": [
+      "iid"
+    ],
+    "batch_regimes": [
+      "tiny"
+    ],
+    "aggressiveness": [
+      "mild"
+    ],
+    "candidates": [
+      "tent_online"
+    ],
+    "n_eval": 16,
+    "n_batches": 1,
+    "eval_bs": 64,
+    "episodic_steps": 3,
+    "episodic_batch": 32,
+    "tau_star": 0.52,
+    "kappa": 2.5,
+    "sd_L": 0.6,
+    "steps_override": 2,
+    "device": "mps",
+    "out": "",
+    "dry_run": false,
+    "smoke": true,
+    "ckpt_resolved": "experiments/kbound/results/iwildcam_kbound_smoke/f0_resnet18_seed0.pt"
+  },
+  "config_sha8": "783ad6cc",
+  "f0_checkpoint": "experiments/kbound/results/iwildcam_kbound_smoke/f0_resnet18_seed0.pt",
+  "f0_training": {
+    "loaded": false,
+    "backbone": "resnet18",
+    "trainable": "head",
+    "steps": 8,
+    "mean_loss_tail": 4.160595655441284,
+    "wall_sec": 3.6
+  },
+  "f0_quick_eval": {
+    "id_val": {
+      "n": 64,
+      "acc": 0.40625,
+      "balanced_acc": 0.0562962962962963
+    },
+    "val": {
+      "n": 64,
+      "acc": 0.109375,
+      "balanced_acc": 0.036458333333333336
+    }
+  },
+  "num_classes": 182,
+  "evidence_names": [
+    "pre_entropy",
+    "pre_conf",
+    "pre_pbal",
+    "post_entropy",
+    "post_conf",
+    "post_pbal",
+    "pbal_drop",
+    "entropy_drop",
+    "frac_highconf",
+    "marginal_KL",
+    "update_norm"
+  ],
+  "candidates": [
+    "tent_online"
+  ],
+  "data": {
+    "data_root": "/Volumes/T9/uav/AutoML_Flagship_V8/experiments/kbound/data/wilds",
+    "split": "val",
+    "target_locations": [
+      {
+        "location": 57,
+        "n": 1216,
+        "classes": 21
+      },
+      {
+        "location": 309,
+        "n": 2225,
+        "classes": 19
+      }
+    ],
+    "wall_sec": 1.4
+  },
+  "baselines": {
+    "always_freeze_mean_acc": 0.0625,
+    "per_candidate_always_adapt_mean_acc": {
+      "tent_online": 0.0625
+    },
+    "per_condition_oracle_mean_acc": 0.0625
+  },
+  "routing_a_single_candidate": {
+    "tent_online": {
+      "n_cells": 2,
+      "mean_B": 0.0,
+      "base_rate_harmful_B<0": 0.0,
+      "mean_acc": {
+        "always_adapt": 0.0625,
+        "always_freeze": 0.0625
+      },
+      "kga": {
+        "note": "need >=2 cells with B variation for the cross-cell certificate"
+      }
+    }
+  },
+  "routing_b_multicandidate": {
+    "n_conditions": 2,
+    "mean_acc": {
+      "router": 0.0625,
+      "always_freeze": 0.0625,
+      "best_fixed_always_adapt": 0.0625,
+      "per_condition_oracle": 0.0625
+    },
+    "regret_vs_oracle": {
+      "router": 0.0,
+      "always_freeze": 0.0,
+      "best_fixed_always_adapt": 0.0
+    },
+    "coverage": 0.0,
+    "abstention_rate": 1.0,
+    "false_adapt_rate": null,
+    "mean_tau": null,
+    "gate_pass_rate": 0.0,
+    "fixed_best_candidate": "tent_online",
+    "routing_breakdown": {
+      "ABSTAIN": 2
+    },
+    "decisions_by_regime": {
+      "marginal": {
+        "ABSTAIN": 2
+      }
+    },
+    "decisions_by_domain": {
+      "loc57": {
+        "ABSTAIN": 1
+      },
+      "loc309": {
+        "ABSTAIN": 1
+      }
+    },
+    "beats_both": false
+  },
+  "routing_c_smooth_drift": {
+    "implemented": true,
+    "theorem": "1B",
+    "view": "brier_squared_loss",
+    "gS_estimate": "f0_surrogate(conservative)",
+    "n_conditions": 2,
+    "decision_counts": {
+      "ABSTAIN": 2
+    },
+    "mean_center_c": 0.0,
+    "mean_reach": 0.0,
+    "mean_d_obs": 0.11300957046824936,
+    "bracket_coverage_trueB": 1.0,
+    "status": "DIAGNOSTIC (wired to val_smooth_drift.py; conservative g_S~f0 surrogate)",
+    "note": "DIAGNOSTIC: g_S~f0 makes center conservative; full 1B classification instantiation needs an f0-independent source-concept estimate."
+  },
+  "detectability": {
+    "note": "need>=4"
+  },
+  "kbound_summary": {
+    "classification": "mixed+undetectable",
+    "n_records": 2,
+    "n_conditions": 2,
+    "mean_B": 0.0,
+    "base_rate_harmful_B<0": 0.0,
+    "min_B": 0.0,
+    "max_B": 0.0,
+    "detectability_verdict": null,
+    "best_single_feature_harm_AUC": null
+  },
+  "records": [
+    {
+      "seed": 0,
+      "domain": "loc57",
+      "location": 57,
+      "location_n": 1216,
+      "location_classes": 21,
+      "split": "val",
+      "comp": "iid",
+      "regime": "tiny",
+      "aggr": "mild",
+      "method": "tent",
+      "mode": "online",
+      "candidate": "tent_online",
+      "a0": 0.0625,
+      "aa": 0.0625,
+      "B": 0.0,
+      "upd_norm": 0.18523573027221296,
+      "Z": [
+        3.480609893798828,
+        0.28644418716430664,
+        0.7037066507437592,
+        2.596287727355957,
+        0.43205976486206055,
+        0.5125015183994867,
+        0.1912051323442725,
+        0.8843221664428711,
+        0.0,
+        0.13607832789421082,
+        0.18523573027221296
+      ],
+      "regime_label": "marginal"
+    },
+    {
+      "seed": 0,
+      "domain": "loc309",
+      "location": 309,
+      "location_n": 2225,
+      "location_classes": 19,
+      "split": "val",
+      "comp": "iid",
+      "regime": "tiny",
+      "aggr": "mild",
+      "method": "tent",
+      "mode": "online",
+      "candidate": "tent_online",
+      "a0": 0.0625,
+      "aa": 0.0625,
+      "B": 0.0,
+      "upd_norm": 0.18522081555917844,
+      "Z": [
+        4.211615085601807,
+        0.15110528469085693,
+        0.832255699247769,
+        2.6675033569335938,
+        0.43297553062438965,
+        0.5304703944083586,
+        0.30178530483941035,
+        1.544111728668213,
+        0.0,
+        0.35605549812316895,
+        0.18522081555917844
+      ],
+      "regime_label": "marginal"
+    }
+  ],
+  "conditions": [
+    {
+      "seed": 0,
+      "domain": "loc57",
+      "location": 57,
+      "location_n": 1216,
+      "location_classes": 21,
+      "split": "val",
+      "comp": "iid",
+      "regime": "tiny",
+      "aggr": "mild",
+      "cand_names": [
+        "freeze_f0",
+        "tent_online"
+      ],
+      "aa_all": [
+        0.0625,
+        0.0625
+      ],
+      "a0": 0.0625,
+      "oracle": 0.0625,
+      "best_adapt": 0.0625,
+      "true_best": "freeze_f0",
+      "route": {
+        "decision": "ABSTAIN",
+        "reason": "need M>=4 candidates incl anchor for tau route; got M=2",
+        "choice": null,
+        "n_D": 0
+      },
+      "route_c": {
+        "decision": "ABSTAIN",
+        "implemented": true,
+        "theorem": "1B",
+        "view": "brier_squared_loss",
+        "gS_estimate": "f0_surrogate(conservative)",
+        "center_c": 0.0,
+        "U": 0.0,
+        "T_S": 0.0,
+        "W": 0.0,
+        "d_obs": 0.14894511983386013,
+        "L": 0.6,
+        "reach": 0.0,
+        "eps_n": 0.5,
+        "bracket": [
+          -0.5,
+          0.5
+        ],
+        "note": "DIAGNOSTIC: g_S~f0 makes center conservative; full 1B classification instantiation needs an f0-independent source-concept estimate.",
+        "true_B_best": 0.0,
+        "bracket_covers_trueB": true
+      },
+      "realized": 0.0625,
+      "regime_label": "marginal"
+    },
+    {
+      "seed": 0,
+      "domain": "loc309",
+      "location": 309,
+      "location_n": 2225,
+      "location_classes": 19,
+      "split": "val",
+      "comp": "iid",
+      "regime": "tiny",
+      "aggr": "mild",
+      "cand_names": [
+        "freeze_f0",
+        "tent_online"
+      ],
+      "aa_all": [
+        0.0625,
+        0.0625
+      ],
+      "a0": 0.0625,
+      "oracle": 0.0625,
+      "best_adapt": 0.0625,
+      "true_best": "freeze_f0",
+      "route": {
+        "decision": "ABSTAIN",
+        "reason": "need M>=4 candidates incl anchor for tau route; got M=2",
+        "choice": null,
+        "n_D": 0
+      },
+      "route_c": {
+        "decision": "ABSTAIN",
+        "implemented": true,
+        "theorem": "1B",
+        "view": "brier_squared_loss",
+        "gS_estimate": "f0_surrogate(conservative)",
+        "center_c": 0.0,
+        "U": 0.0,
+        "T_S": 0.0,
+        "W": 0.0,
+        "d_obs": 0.07707402110263857,
+        "L": 0.6,
+        "reach": 0.0,
+        "eps_n": 0.5,
+        "bracket": [
+          -0.5,
+          0.5
+        ],
+        "note": "DIAGNOSTIC: g_S~f0 makes center conservative; full 1B classification instantiation needs an f0-independent source-concept estimate.",
+        "true_B_best": 0.0,
+        "bracket_covers_trueB": true
+      },
+      "realized": 0.0625,
+      "regime_label": "marginal"
+    }
+  ]
+}

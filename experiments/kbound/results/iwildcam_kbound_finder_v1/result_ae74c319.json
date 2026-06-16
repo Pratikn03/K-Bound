@@ -1,0 +1,1812 @@
+{
+  "schema": "kbound_wilds_iwildcam_finder_v0.1",
+  "dataset": "wilds-iwildcam",
+  "created": "2026-06-14T23:33:19",
+  "host": {
+    "node": "Pratik-Ns-MacBook-Pro.local",
+    "platform": "macOS-26.2-arm64-arm-64bit",
+    "python": "3.12.13",
+    "torch": "2.5.1",
+    "mps": true
+  },
+  "config": {
+    "data_root": "/Volumes/T9/uav/AutoML_Flagship_V8/experiments/kbound/data/wilds",
+    "results_root": "experiments/kbound/results",
+    "run_name": "iwildcam_kbound_finder_v1",
+    "ckpt": "",
+    "retrain": false,
+    "backbone": "resnet18",
+    "trainable": "head",
+    "train_seed": 0,
+    "train_epochs": 1,
+    "max_train_batches": 120,
+    "train_bs": 32,
+    "train_lr": 0.001,
+    "workers": 0,
+    "log_every": 20,
+    "split": "val",
+    "seeds": [
+      0
+    ],
+    "max_locations": 4,
+    "compositions": [
+      "iid",
+      "single_class"
+    ],
+    "batch_regimes": [
+      "tiny"
+    ],
+    "aggressiveness": [
+      "mild"
+    ],
+    "candidates": [
+      "tent_online",
+      "eata_online",
+      "sar_online"
+    ],
+    "n_eval": 48,
+    "n_batches": 2,
+    "eval_bs": 64,
+    "episodic_steps": 3,
+    "episodic_batch": 32,
+    "tau_star": 0.52,
+    "kappa": 2.5,
+    "sd_L": 0.6,
+    "steps_override": 0,
+    "device": "mps",
+    "out": "",
+    "dry_run": false,
+    "smoke": false,
+    "ckpt_resolved": "experiments/kbound/results/iwildcam_kbound_finder_v1/f0_resnet18_seed0.pt"
+  },
+  "config_sha8": "ae74c319",
+  "f0_checkpoint": "experiments/kbound/results/iwildcam_kbound_finder_v1/f0_resnet18_seed0.pt",
+  "f0_training": {
+    "loaded": false,
+    "backbone": "resnet18",
+    "trainable": "head",
+    "steps": 120,
+    "mean_loss_tail": 2.2589919447898863,
+    "wall_sec": 89.6
+  },
+  "f0_quick_eval": {
+    "id_val": {
+      "n": 192,
+      "acc": 0.484375,
+      "balanced_acc": 0.11510270774976658
+    },
+    "val": {
+      "n": 192,
+      "acc": 0.2760416666666667,
+      "balanced_acc": 0.06486167268089793
+    }
+  },
+  "num_classes": 182,
+  "evidence_names": [
+    "pre_entropy",
+    "pre_conf",
+    "pre_pbal",
+    "post_entropy",
+    "post_conf",
+    "post_pbal",
+    "pbal_drop",
+    "entropy_drop",
+    "frac_highconf",
+    "marginal_KL",
+    "update_norm"
+  ],
+  "candidates": [
+    "tent_online",
+    "eata_online",
+    "sar_online"
+  ],
+  "data": {
+    "data_root": "/Volumes/T9/uav/AutoML_Flagship_V8/experiments/kbound/data/wilds",
+    "split": "val",
+    "target_locations": [
+      {
+        "location": 57,
+        "n": 1216,
+        "classes": 21
+      },
+      {
+        "location": 309,
+        "n": 2225,
+        "classes": 19
+      },
+      {
+        "location": 320,
+        "n": 944,
+        "classes": 18
+      },
+      {
+        "location": 260,
+        "n": 1779,
+        "classes": 13
+      }
+    ],
+    "wall_sec": 28.0
+  },
+  "baselines": {
+    "always_freeze_mean_acc": 0.1128843743975323,
+    "per_candidate_always_adapt_mean_acc": {
+      "eata_online": 0.09570601182443288,
+      "sar_online": 0.10265045626887731,
+      "tent_online": 0.08235131096973203
+    },
+    "per_condition_oracle_mean_acc": 0.11906569307885097
+  },
+  "routing_a_single_candidate": {
+    "eata_online": {
+      "n_cells": 8,
+      "mean_B": -0.017178362573099418,
+      "base_rate_harmful_B<0": 0.625,
+      "mean_acc": {
+        "always_adapt": 0.09570601182443288,
+        "always_freeze": 0.11288437439753228
+      },
+      "kga": {
+        "n": 8,
+        "decision_counts": {
+          "ADAPT": 0,
+          "FREEZE": 0,
+          "ABSTAIN": 8
+        },
+        "coverage": 0.0,
+        "abstention_rate": 1.0,
+        "adapt_precision_B>0": null,
+        "false_adapt_rate_B<0": null,
+        "mean_acc": {
+          "always_adapt": 0.09570601182443288,
+          "always_freeze": 0.11288437439753228,
+          "K_Bound": 0.11288437439753228,
+          "oracle": 0.11906569307885097
+        },
+        "regret_vs_oracle": {
+          "always_adapt": 0.023359681254418098,
+          "always_freeze": 0.00618131868131868,
+          "K_Bound": 0.00618131868131868
+        },
+        "worst_case_acc": {
+          "always_adapt": 0.05555555555555555,
+          "always_freeze": 0.07894736842105263,
+          "K_Bound": 0.07894736842105263
+        },
+        "beats_both": false,
+        "eps_conformal": 0.05722194155037741
+      }
+    },
+    "sar_online": {
+      "n_cells": 8,
+      "mean_B": -0.010233918128654972,
+      "base_rate_harmful_B<0": 0.5,
+      "mean_acc": {
+        "always_adapt": 0.10265045626887731,
+        "always_freeze": 0.11288437439753228
+      },
+      "kga": {
+        "n": 8,
+        "decision_counts": {
+          "ADAPT": 0,
+          "FREEZE": 0,
+          "ABSTAIN": 8
+        },
+        "coverage": 0.0,
+        "abstention_rate": 1.0,
+        "adapt_precision_B>0": null,
+        "false_adapt_rate_B<0": null,
+        "mean_acc": {
+          "always_adapt": 0.10265045626887731,
+          "always_freeze": 0.11288437439753228,
+          "K_Bound": 0.11288437439753228,
+          "oracle": 0.11906569307885097
+        },
+        "regret_vs_oracle": {
+          "always_adapt": 0.01641523680997365,
+          "always_freeze": 0.00618131868131868,
+          "K_Bound": 0.00618131868131868
+        },
+        "worst_case_acc": {
+          "always_adapt": 0.07894736842105263,
+          "always_freeze": 0.07894736842105263,
+          "K_Bound": 0.07894736842105263
+        },
+        "beats_both": false,
+        "eps_conformal": 0.04484397702471282
+      }
+    },
+    "tent_online": {
+      "n_cells": 8,
+      "mean_B": -0.03053306342780027,
+      "base_rate_harmful_B<0": 0.625,
+      "mean_acc": {
+        "always_adapt": 0.08235131096973203,
+        "always_freeze": 0.11288437439753228
+      },
+      "kga": {
+        "n": 8,
+        "decision_counts": {
+          "ADAPT": 0,
+          "FREEZE": 0,
+          "ABSTAIN": 8
+        },
+        "coverage": 0.0,
+        "abstention_rate": 1.0,
+        "adapt_precision_B>0": null,
+        "false_adapt_rate_B<0": null,
+        "mean_acc": {
+          "always_adapt": 0.08235131096973203,
+          "always_freeze": 0.11288437439753228,
+          "K_Bound": 0.11288437439753228,
+          "oracle": 0.11586056487372276
+        },
+        "regret_vs_oracle": {
+          "always_adapt": 0.033509253903990746,
+          "always_freeze": 0.002976190476190476,
+          "K_Bound": 0.002976190476190476
+        },
+        "worst_case_acc": {
+          "always_adapt": 0.027777777777777776,
+          "always_freeze": 0.07894736842105263,
+          "K_Bound": 0.07894736842105263
+        },
+        "beats_both": false,
+        "eps_conformal": 0.06740600016966004
+      }
+    }
+  },
+  "routing_b_multicandidate": {
+    "n_conditions": 8,
+    "mean_acc": {
+      "router": 0.09624019985862091,
+      "always_freeze": 0.11288437439753228,
+      "best_fixed_always_adapt": 0.10265045626887731,
+      "per_condition_oracle": 0.11906569307885097
+    },
+    "regret_vs_oracle": {
+      "router": 0.02282549322023006,
+      "always_freeze": 0.00618131868131868,
+      "best_fixed_always_adapt": 0.01641523680997365
+    },
+    "coverage": 0.75,
+    "abstention_rate": 0.25,
+    "false_adapt_rate": 0.6666666666666666,
+    "mean_tau": 0.35693946767480644,
+    "gate_pass_rate": 0.75,
+    "fixed_best_candidate": "sar_online",
+    "routing_breakdown": {
+      "eata_online": 2,
+      "tent_online": 4,
+      "ABSTAIN": 2
+    },
+    "decisions_by_regime": {
+      "helpful": {
+        "ADAPT": 2
+      },
+      "harmful": {
+        "ADAPT": 3,
+        "ABSTAIN": 1
+      },
+      "marginal": {
+        "ABSTAIN": 1,
+        "ADAPT": 1
+      }
+    },
+    "decisions_by_domain": {
+      "loc57": {
+        "ADAPT": 2
+      },
+      "loc309": {
+        "ADAPT": 1,
+        "ABSTAIN": 1
+      },
+      "loc320": {
+        "ADAPT": 1,
+        "ABSTAIN": 1
+      },
+      "loc260": {
+        "ADAPT": 2
+      }
+    },
+    "beats_both": false
+  },
+  "routing_c_smooth_drift": {
+    "implemented": true,
+    "theorem": "1B",
+    "view": "brier_squared_loss",
+    "gS_estimate": "f0_surrogate(conservative)",
+    "n_conditions": 8,
+    "decision_counts": {
+      "ABSTAIN": 8
+    },
+    "mean_center_c": -0.014370058705772003,
+    "mean_reach": 0.0048912744669037025,
+    "mean_d_obs": 0.09393694721006915,
+    "bracket_coverage_trueB": 1.0,
+    "status": "DIAGNOSTIC (wired to val_smooth_drift.py; conservative g_S~f0 surrogate)",
+    "note": "DIAGNOSTIC: g_S~f0 makes center conservative; full 1B classification instantiation needs an f0-independent source-concept estimate."
+  },
+  "detectability": {
+    "n_cells": 24,
+    "n_harmful": 14,
+    "base_rate_harmful": 0.5833333333333334,
+    "mean_B": -0.01931511470985155,
+    "per_feature": {
+      "pre_entropy": {
+        "pearson_corr_B": -0.4299480741706882,
+        "harm_AUC": 0.6071428571428571
+      },
+      "pre_conf": {
+        "pearson_corr_B": 0.5064451449044098,
+        "harm_AUC": 0.6071428571428571
+      },
+      "pre_pbal": {
+        "pearson_corr_B": -0.3157954423258266,
+        "harm_AUC": 0.6071428571428571
+      },
+      "post_entropy": {
+        "pearson_corr_B": 0.12415073402327961,
+        "harm_AUC": 0.6357142857142857
+      },
+      "post_conf": {
+        "pearson_corr_B": -0.14158843492126405,
+        "harm_AUC": 0.5928571428571429
+      },
+      "post_pbal": {
+        "pearson_corr_B": 0.2011659055403811,
+        "harm_AUC": 0.5071428571428571
+      },
+      "pbal_drop": {
+        "pearson_corr_B": -0.32324213391832446,
+        "harm_AUC": 0.5214285714285715
+      },
+      "entropy_drop": {
+        "pearson_corr_B": -0.29413778184565903,
+        "harm_AUC": 0.5428571428571428
+      },
+      "frac_highconf": {
+        "pearson_corr_B": -0.25328452388868594,
+        "harm_AUC": 0.5464285714285714
+      },
+      "marginal_KL": {
+        "pearson_corr_B": -0.5560731269895843,
+        "harm_AUC": 0.5857142857142857
+      },
+      "update_norm": {
+        "pearson_corr_B": 0.34157152411021313,
+        "harm_AUC": 0.65
+      }
+    },
+    "certificate_harm_AUC_negBhat": 0.8285714285714286,
+    "certificate_eps": 0.047564785522979804,
+    "best_single_feature_harm_AUC": 0.65,
+    "detectability_verdict": "weak"
+  },
+  "kbound_summary": {
+    "classification": "mixed+undetectable",
+    "n_records": 24,
+    "n_conditions": 8,
+    "mean_B": -0.01931511470985155,
+    "base_rate_harmful_B<0": 0.5833333333333334,
+    "min_B": -0.11111111111111112,
+    "max_B": 0.025641025641025633,
+    "detectability_verdict": "weak",
+    "best_single_feature_harm_AUC": 0.65
+  },
+  "records": [
+    {
+      "seed": 0,
+      "domain": "loc57",
+      "location": 57,
+      "location_n": 1216,
+      "location_classes": 21,
+      "split": "val",
+      "comp": "iid",
+      "regime": "tiny",
+      "aggr": "mild",
+      "method": "tent",
+      "mode": "online",
+      "candidate": "tent_online",
+      "a0": 0.09523809523809523,
+      "aa": 0.11904761904761904,
+      "B": 0.023809523809523808,
+      "upd_norm": 1.189517382650137,
+      "Z": [
+        2.9260876178741455,
+        0.3131188154220581,
+        0.6249562339475272,
+        1.0648703575134277,
+        0.7851088047027588,
+        0.3750888445323181,
+        0.24986738941520908,
+        1.8612172603607178,
+        0.375,
+        0.5908873081207275,
+        1.189517382650137
+      ],
+      "regime_label": "helpful"
+    },
+    {
+      "seed": 0,
+      "domain": "loc57",
+      "location": 57,
+      "location_n": 1216,
+      "location_classes": 21,
+      "split": "val",
+      "comp": "iid",
+      "regime": "tiny",
+      "aggr": "mild",
+      "method": "eata",
+      "mode": "online",
+      "candidate": "eata_online",
+      "a0": 0.09523809523809523,
+      "aa": 0.11904761904761904,
+      "B": 0.023809523809523808,
+      "upd_norm": 0.7578769932834118,
+      "Z": [
+        2.9260876178741455,
+        0.3131188154220581,
+        0.6249562339475272,
+        2.593554973602295,
+        0.3758695423603058,
+        0.6056247452815178,
+        0.019331488666009422,
+        0.3325326442718506,
+        0.25,
+        0.14888161420822144,
+        0.7578769932834118
+      ],
+      "regime_label": "helpful"
+    },
+    {
+      "seed": 0,
+      "domain": "loc57",
+      "location": 57,
+      "location_n": 1216,
+      "location_classes": 21,
+      "split": "val",
+      "comp": "iid",
+      "regime": "tiny",
+      "aggr": "mild",
+      "method": "sar",
+      "mode": "online",
+      "candidate": "sar_online",
+      "a0": 0.09523809523809523,
+      "aa": 0.11904761904761904,
+      "B": 0.023809523809523808,
+      "upd_norm": 2.2471041461833647,
+      "Z": [
+        2.9260876178741455,
+        0.3131188154220581,
+        0.6249562339475272,
+        2.5309271812438965,
+        0.3837548792362213,
+        0.5835763695267596,
+        0.041379864420767576,
+        0.395160436630249,
+        0.25,
+        0.15838029980659485,
+        2.2471041461833647
+      ],
+      "regime_label": "helpful"
+    },
+    {
+      "seed": 0,
+      "domain": "loc57",
+      "location": 57,
+      "location_n": 1216,
+      "location_classes": 21,
+      "split": "val",
+      "comp": "single_class",
+      "regime": "tiny",
+      "aggr": "mild",
+      "method": "tent",
+      "mode": "online",
+      "candidate": "tent_online",
+      "a0": 0.14285714285714285,
+      "aa": 0.11904761904761904,
+      "B": -0.023809523809523808,
+      "upd_norm": 1.1954598216238643,
+      "Z": [
+        2.1959075927734375,
+        0.45734360814094543,
+        0.4785407504911096,
+        1.6389827728271484,
+        0.6403129696846008,
+        0.42787027025716245,
+        0.05067048023394716,
+        0.5569248199462891,
+        0.375,
+        0.5454254150390625,
+        1.1954598216238643
+      ],
+      "regime_label": "harmful"
+    },
+    {
+      "seed": 0,
+      "domain": "loc57",
+      "location": 57,
+      "location_n": 1216,
+      "location_classes": 21,
+      "split": "val",
+      "comp": "single_class",
+      "regime": "tiny",
+      "aggr": "mild",
+      "method": "eata",
+      "mode": "online",
+      "candidate": "eata_online",
+      "a0": 0.14285714285714285,
+      "aa": 0.11904761904761904,
+      "B": -0.023809523809523808,
+      "upd_norm": 0.7881052140760662,
+      "Z": [
+        2.1959075927734375,
+        0.45734360814094543,
+        0.4785407504911096,
+        2.9099903106689453,
+        0.2920382618904114,
+        0.6158732491128343,
+        -0.13733249862172464,
+        -0.7140827178955078,
+        0.125,
+        0.44538748264312744,
+        0.7881052140760662
+      ],
+      "regime_label": "harmful"
+    },
+    {
+      "seed": 0,
+      "domain": "loc57",
+      "location": 57,
+      "location_n": 1216,
+      "location_classes": 21,
+      "split": "val",
+      "comp": "single_class",
+      "regime": "tiny",
+      "aggr": "mild",
+      "method": "sar",
+      "mode": "online",
+      "candidate": "sar_online",
+      "a0": 0.14285714285714285,
+      "aa": 0.11904761904761904,
+      "B": -0.023809523809523808,
+      "upd_norm": 0.8549549906653783,
+      "Z": [
+        2.1959075927734375,
+        0.45734360814094543,
+        0.4785407504911096,
+        2.925851821899414,
+        0.2868463397026062,
+        0.6107441408680234,
+        -0.1322033903769138,
+        -0.7299442291259766,
+        0.125,
+        0.4418763518333435,
+        0.8549549906653783
+      ],
+      "regime_label": "harmful"
+    },
+    {
+      "seed": 0,
+      "domain": "loc309",
+      "location": 309,
+      "location_n": 2225,
+      "location_classes": 19,
+      "split": "val",
+      "comp": "iid",
+      "regime": "tiny",
+      "aggr": "mild",
+      "method": "tent",
+      "mode": "online",
+      "candidate": "tent_online",
+      "a0": 0.10526315789473684,
+      "aa": 0.07894736842105263,
+      "B": -0.02631578947368421,
+      "upd_norm": 1.194749534158701,
+      "Z": [
+        2.8808722496032715,
+        0.26660609245300293,
+        0.601195040063533,
+        1.4741525650024414,
+        0.6661418676376343,
+        0.4320659553873032,
+        0.16912908467622978,
+        1.40671968460083,
+        0.375,
+        0.28176259994506836,
+        1.194749534158701
+      ],
+      "regime_label": "harmful"
+    },
+    {
+      "seed": 0,
+      "domain": "loc309",
+      "location": 309,
+      "location_n": 2225,
+      "location_classes": 19,
+      "split": "val",
+      "comp": "iid",
+      "regime": "tiny",
+      "aggr": "mild",
+      "method": "eata",
+      "mode": "online",
+      "candidate": "eata_online",
+      "a0": 0.10526315789473684,
+      "aa": 0.07894736842105263,
+      "B": -0.02631578947368421,
+      "upd_norm": 0.8060168378598527,
+      "Z": [
+        2.8808722496032715,
+        0.26660609245300293,
+        0.601195040063533,
+        2.947507858276367,
+        0.28661221265792847,
+        0.6233607007487689,
+        -0.022165660685235955,
+        -0.0666356086730957,
+        0.125,
+        0.1357957124710083,
+        0.8060168378598527
+      ],
+      "regime_label": "harmful"
+    },
+    {
+      "seed": 0,
+      "domain": "loc309",
+      "location": 309,
+      "location_n": 2225,
+      "location_classes": 19,
+      "split": "val",
+      "comp": "iid",
+      "regime": "tiny",
+      "aggr": "mild",
+      "method": "sar",
+      "mode": "online",
+      "candidate": "sar_online",
+      "a0": 0.10526315789473684,
+      "aa": 0.07894736842105263,
+      "B": -0.02631578947368421,
+      "upd_norm": 2.190096407779822,
+      "Z": [
+        2.8808722496032715,
+        0.26660609245300293,
+        0.601195040063533,
+        2.976548671722412,
+        0.280409574508667,
+        0.6417544597440673,
+        -0.04055941968053434,
+        -0.09567642211914062,
+        0.125,
+        0.13544729351997375,
+        2.190096407779822
+      ],
+      "regime_label": "harmful"
+    },
+    {
+      "seed": 0,
+      "domain": "loc309",
+      "location": 309,
+      "location_n": 2225,
+      "location_classes": 19,
+      "split": "val",
+      "comp": "single_class",
+      "regime": "tiny",
+      "aggr": "mild",
+      "method": "tent",
+      "mode": "online",
+      "candidate": "tent_online",
+      "a0": 0.07894736842105263,
+      "aa": 0.07894736842105263,
+      "B": 0.0,
+      "upd_norm": 1.2075169992671015,
+      "Z": [
+        2.4251441955566406,
+        0.4275661110877991,
+        0.5259558408734812,
+        1.2519290447235107,
+        0.7463921308517456,
+        0.3541325472493569,
+        0.17182329362412435,
+        1.1732151508331299,
+        0.0,
+        0.2038189172744751,
+        1.2075169992671015
+      ],
+      "regime_label": "marginal"
+    },
+    {
+      "seed": 0,
+      "domain": "loc309",
+      "location": 309,
+      "location_n": 2225,
+      "location_classes": 19,
+      "split": "val",
+      "comp": "single_class",
+      "regime": "tiny",
+      "aggr": "mild",
+      "method": "eata",
+      "mode": "online",
+      "candidate": "eata_online",
+      "a0": 0.07894736842105263,
+      "aa": 0.07894736842105263,
+      "B": 0.0,
+      "upd_norm": 0.7633069273042373,
+      "Z": [
+        2.4251441955566406,
+        0.4275661110877991,
+        0.5259558408734812,
+        2.8187971115112305,
+        0.34580379724502563,
+        0.6209337273475452,
+        -0.09497788647406391,
+        -0.39365291595458984,
+        0.125,
+        0.16336551308631897,
+        0.7633069273042373
+      ],
+      "regime_label": "marginal"
+    },
+    {
+      "seed": 0,
+      "domain": "loc309",
+      "location": 309,
+      "location_n": 2225,
+      "location_classes": 19,
+      "split": "val",
+      "comp": "single_class",
+      "regime": "tiny",
+      "aggr": "mild",
+      "method": "sar",
+      "mode": "online",
+      "candidate": "sar_online",
+      "a0": 0.07894736842105263,
+      "aa": 0.07894736842105263,
+      "B": 0.0,
+      "upd_norm": 2.214979315144017,
+      "Z": [
+        2.4251441955566406,
+        0.4275661110877991,
+        0.5259558408734812,
+        2.826172351837158,
+        0.32115399837493896,
+        0.614881641677185,
+        -0.08892580080370371,
+        -0.4010281562805176,
+        0.125,
+        0.16652525961399078,
+        2.214979315144017
+      ],
+      "regime_label": "marginal"
+    },
+    {
+      "seed": 0,
+      "domain": "loc320",
+      "location": 320,
+      "location_n": 944,
+      "location_classes": 18,
+      "split": "val",
+      "comp": "iid",
+      "regime": "tiny",
+      "aggr": "mild",
+      "method": "tent",
+      "mode": "online",
+      "candidate": "tent_online",
+      "a0": 0.1111111111111111,
+      "aa": 0.05555555555555555,
+      "B": -0.05555555555555555,
+      "upd_norm": 1.162476326028792,
+      "Z": [
+        3.126955032348633,
+        0.26051491498947144,
+        0.6393449874535633,
+        1.1746201515197754,
+        0.7291578650474548,
+        0.3555080795746173,
+        0.283836907878946,
+        1.9523348808288574,
+        0.625,
+        0.4333150088787079,
+        1.162476326028792
+      ],
+      "regime_label": "harmful"
+    },
+    {
+      "seed": 0,
+      "domain": "loc320",
+      "location": 320,
+      "location_n": 944,
+      "location_classes": 18,
+      "split": "val",
+      "comp": "iid",
+      "regime": "tiny",
+      "aggr": "mild",
+      "method": "eata",
+      "mode": "online",
+      "candidate": "eata_online",
+      "a0": 0.1111111111111111,
+      "aa": 0.05555555555555555,
+      "B": -0.05555555555555555,
+      "upd_norm": 0.6986320542259912,
+      "Z": [
+        3.126955032348633,
+        0.26051491498947144,
+        0.6393449874535633,
+        2.586514472961426,
+        0.39074766635894775,
+        0.5869312683115373,
+        0.05241371914202597,
+        0.540440559387207,
+        0.25,
+        0.0949988067150116,
+        0.6986320542259912
+      ],
+      "regime_label": "harmful"
+    },
+    {
+      "seed": 0,
+      "domain": "loc320",
+      "location": 320,
+      "location_n": 944,
+      "location_classes": 18,
+      "split": "val",
+      "comp": "iid",
+      "regime": "tiny",
+      "aggr": "mild",
+      "method": "sar",
+      "mode": "online",
+      "candidate": "sar_online",
+      "a0": 0.1111111111111111,
+      "aa": 0.1111111111111111,
+      "B": 0.0,
+      "upd_norm": 2.2320007550407075,
+      "Z": [
+        3.126955032348633,
+        0.26051491498947144,
+        0.6393449874535633,
+        2.334489345550537,
+        0.47194281220436096,
+        0.5403056521174446,
+        0.09903933533611864,
+        0.7924656867980957,
+        0.25,
+        0.16057801246643066,
+        2.2320007550407075
+      ],
+      "regime_label": "marginal"
+    },
+    {
+      "seed": 0,
+      "domain": "loc320",
+      "location": 320,
+      "location_n": 944,
+      "location_classes": 18,
+      "split": "val",
+      "comp": "single_class",
+      "regime": "tiny",
+      "aggr": "mild",
+      "method": "tent",
+      "mode": "online",
+      "candidate": "tent_online",
+      "a0": 0.1388888888888889,
+      "aa": 0.027777777777777776,
+      "B": -0.11111111111111112,
+      "upd_norm": 1.2198987145260656,
+      "Z": [
+        3.3106894493103027,
+        0.14152005314826965,
+        0.6530325053557345,
+        1.6233839988708496,
+        0.635291337966919,
+        0.42567429319166883,
+        0.2273582121640657,
+        1.6873054504394531,
+        0.5,
+        0.9319086670875549,
+        1.2198987145260656
+      ],
+      "regime_label": "harmful"
+    },
+    {
+      "seed": 0,
+      "domain": "loc320",
+      "location": 320,
+      "location_n": 944,
+      "location_classes": 18,
+      "split": "val",
+      "comp": "single_class",
+      "regime": "tiny",
+      "aggr": "mild",
+      "method": "eata",
+      "mode": "online",
+      "candidate": "eata_online",
+      "a0": 0.1388888888888889,
+      "aa": 0.08333333333333333,
+      "B": -0.055555555555555566,
+      "upd_norm": 0.0,
+      "Z": [
+        3.3106894493103027,
+        0.14152005314826965,
+        0.6530325053557345,
+        2.901407480239868,
+        0.35843104124069214,
+        0.5691708479408193,
+        0.08386165741491525,
+        0.40928196907043457,
+        0.0,
+        0.5315130949020386,
+        0.0
+      ],
+      "regime_label": "harmful"
+    },
+    {
+      "seed": 0,
+      "domain": "loc320",
+      "location": 320,
+      "location_n": 944,
+      "location_classes": 18,
+      "split": "val",
+      "comp": "single_class",
+      "regime": "tiny",
+      "aggr": "mild",
+      "method": "sar",
+      "mode": "online",
+      "candidate": "sar_online",
+      "a0": 0.1388888888888889,
+      "aa": 0.08333333333333333,
+      "B": -0.055555555555555566,
+      "upd_norm": 0.0,
+      "Z": [
+        3.3106894493103027,
+        0.14152005314826965,
+        0.6530325053557345,
+        2.901407480239868,
+        0.35843104124069214,
+        0.5691708479408193,
+        0.08386165741491525,
+        0.40928196907043457,
+        0.0,
+        0.5315130949020386,
+        0.0
+      ],
+      "regime_label": "harmful"
+    },
+    {
+      "seed": 0,
+      "domain": "loc260",
+      "location": 260,
+      "location_n": 1779,
+      "location_classes": 13,
+      "split": "val",
+      "comp": "iid",
+      "regime": "tiny",
+      "aggr": "mild",
+      "method": "tent",
+      "mode": "online",
+      "candidate": "tent_online",
+      "a0": 0.10256410256410256,
+      "aa": 0.10256410256410256,
+      "B": 0.0,
+      "upd_norm": 1.236434921176332,
+      "Z": [
+        2.530200481414795,
+        0.38804930448532104,
+        0.5240531677630341,
+        1.2333441972732544,
+        0.7863140106201172,
+        0.32830138887849375,
+        0.19575177888454037,
+        1.2968562841415405,
+        0.0,
+        0.38005176186561584,
+        1.236434921176332
+      ],
+      "regime_label": "marginal"
+    },
+    {
+      "seed": 0,
+      "domain": "loc260",
+      "location": 260,
+      "location_n": 1779,
+      "location_classes": 13,
+      "split": "val",
+      "comp": "iid",
+      "regime": "tiny",
+      "aggr": "mild",
+      "method": "eata",
+      "mode": "online",
+      "candidate": "eata_online",
+      "a0": 0.10256410256410256,
+      "aa": 0.1282051282051282,
+      "B": 0.025641025641025633,
+      "upd_norm": 0.7231748694331382,
+      "Z": [
+        2.530200481414795,
+        0.38804930448532104,
+        0.5240531677630341,
+        2.965989589691162,
+        0.2884204089641571,
+        0.6239719568200328,
+        -0.09991878905699869,
+        -0.4357891082763672,
+        0.125,
+        0.16405561566352844,
+        0.7231748694331382
+      ],
+      "regime_label": "helpful"
+    },
+    {
+      "seed": 0,
+      "domain": "loc260",
+      "location": 260,
+      "location_n": 1779,
+      "location_classes": 13,
+      "split": "val",
+      "comp": "iid",
+      "regime": "tiny",
+      "aggr": "mild",
+      "method": "sar",
+      "mode": "online",
+      "candidate": "sar_online",
+      "a0": 0.10256410256410256,
+      "aa": 0.1282051282051282,
+      "B": 0.025641025641025633,
+      "upd_norm": 2.2403816008320803,
+      "Z": [
+        2.530200481414795,
+        0.38804930448532104,
+        0.5240531677630341,
+        2.8060131072998047,
+        0.34399211406707764,
+        0.5861139389522699,
+        -0.06206077118923581,
+        -0.27581262588500977,
+        0.125,
+        0.1295783817768097,
+        2.2403816008320803
+      ],
+      "regime_label": "helpful"
+    },
+    {
+      "seed": 0,
+      "domain": "loc260",
+      "location": 260,
+      "location_n": 1779,
+      "location_classes": 13,
+      "split": "val",
+      "comp": "single_class",
+      "regime": "tiny",
+      "aggr": "mild",
+      "method": "tent",
+      "mode": "online",
+      "candidate": "tent_online",
+      "a0": 0.1282051282051282,
+      "aa": 0.07692307692307693,
+      "B": -0.051282051282051266,
+      "upd_norm": 1.2311187419079126,
+      "Z": [
+        2.5945498943328857,
+        0.4114322066307068,
+        0.5285998372105151,
+        1.2917535305023193,
+        0.7580032348632812,
+        0.3335889234083016,
+        0.19501091380221347,
+        1.3027963638305664,
+        0.125,
+        0.3203381299972534,
+        1.2311187419079126
+      ],
+      "regime_label": "harmful"
+    },
+    {
+      "seed": 0,
+      "domain": "loc260",
+      "location": 260,
+      "location_n": 1779,
+      "location_classes": 13,
+      "split": "val",
+      "comp": "single_class",
+      "regime": "tiny",
+      "aggr": "mild",
+      "method": "eata",
+      "mode": "online",
+      "candidate": "eata_online",
+      "a0": 0.1282051282051282,
+      "aa": 0.10256410256410256,
+      "B": -0.025641025641025633,
+      "upd_norm": 0.8017339135818529,
+      "Z": [
+        2.5945498943328857,
+        0.4114322066307068,
+        0.5285998372105151,
+        2.893153429031372,
+        0.32588398456573486,
+        0.6047197271109478,
+        -0.07611988990043272,
+        -0.29860353469848633,
+        0.125,
+        0.11410278081893921,
+        0.8017339135818529
+      ],
+      "regime_label": "harmful"
+    },
+    {
+      "seed": 0,
+      "domain": "loc260",
+      "location": 260,
+      "location_n": 1779,
+      "location_classes": 13,
+      "split": "val",
+      "comp": "single_class",
+      "regime": "tiny",
+      "aggr": "mild",
+      "method": "sar",
+      "mode": "online",
+      "candidate": "sar_online",
+      "a0": 0.1282051282051282,
+      "aa": 0.10256410256410256,
+      "B": -0.025641025641025633,
+      "upd_norm": 2.2481229325414165,
+      "Z": [
+        2.5945498943328857,
+        0.4114322066307068,
+        0.5285998372105151,
+        2.8084869384765625,
+        0.3570062220096588,
+        0.5847786316930094,
+        -0.0561787944824943,
+        -0.21393704414367676,
+        0.125,
+        0.09920662641525269,
+        2.2481229325414165
+      ],
+      "regime_label": "harmful"
+    }
+  ],
+  "conditions": [
+    {
+      "seed": 0,
+      "domain": "loc57",
+      "location": 57,
+      "location_n": 1216,
+      "location_classes": 21,
+      "split": "val",
+      "comp": "iid",
+      "regime": "tiny",
+      "aggr": "mild",
+      "cand_names": [
+        "freeze_f0",
+        "tent_online",
+        "eata_online",
+        "sar_online"
+      ],
+      "aa_all": [
+        0.09523809523809523,
+        0.11904761904761904,
+        0.11904761904761904,
+        0.11904761904761904
+      ],
+      "a0": 0.09523809523809523,
+      "oracle": 0.11904761904761904,
+      "best_adapt": 0.11904761904761904,
+      "true_best": "tent_online",
+      "route": {
+        "tau": 0.39798564525984775,
+        "tau_star": 0.52,
+        "gate_pass": true,
+        "overdet_residual": 0.29333333333333345,
+        "h_hat": 0.17125578422414828,
+        "margin": 0.7932878322304814,
+        "b_hat": [
+          -0.9424137235860142,
+          0.525683009535782,
+          0.8315742701182967,
+          0.7087554256556404
+        ],
+        "b_tilde": [
+          1.0,
+          -0.5443310539518174,
+          -0.9467292624062577,
+          -0.7659416862050705
+        ],
+        "anchor_b0": -0.9424137235860142,
+        "n_D": 30,
+        "M": 4,
+        "decision": "ADAPT",
+        "choice": 2,
+        "committed": [
+          1,
+          2,
+          3
+        ],
+        "reason": "candidate 2 commits (b_hat=0.832 > anchor -0.942+margin)"
+      },
+      "route_c": {
+        "decision": "ABSTAIN",
+        "implemented": true,
+        "theorem": "1B",
+        "view": "brier_squared_loss",
+        "gS_estimate": "f0_surrogate(conservative)",
+        "center_c": -0.09788942966227855,
+        "U": -0.1899685547647889,
+        "T_S": -0.04603956255125518,
+        "W": 0.24976926999769225,
+        "d_obs": 0.10374936592777496,
+        "L": 0.6,
+        "reach": 0.031096084068604556,
+        "eps_n": 0.3086066999241838,
+        "bracket": [
+          -0.43759221365506695,
+          0.24181335433050982
+        ],
+        "note": "DIAGNOSTIC: g_S~f0 makes center conservative; full 1B classification instantiation needs an f0-independent source-concept estimate.",
+        "true_B_best": 0.023809523809523808,
+        "bracket_covers_trueB": true
+      },
+      "realized": 0.11904761904761904,
+      "regime_label": "helpful"
+    },
+    {
+      "seed": 0,
+      "domain": "loc57",
+      "location": 57,
+      "location_n": 1216,
+      "location_classes": 21,
+      "split": "val",
+      "comp": "single_class",
+      "regime": "tiny",
+      "aggr": "mild",
+      "cand_names": [
+        "freeze_f0",
+        "tent_online",
+        "eata_online",
+        "sar_online"
+      ],
+      "aa_all": [
+        0.14285714285714285,
+        0.11904761904761904,
+        0.11904761904761904,
+        0.11904761904761904
+      ],
+      "a0": 0.14285714285714285,
+      "oracle": 0.14285714285714285,
+      "best_adapt": 0.11904761904761904,
+      "true_best": "freeze_f0",
+      "route": {
+        "tau": 0.17828736737947254,
+        "tau_star": 0.52,
+        "gate_pass": true,
+        "overdet_residual": 0.18359375,
+        "h_hat": 0.06979178828353216,
+        "margin": 0.5280328613021041,
+        "b_hat": [
+          -0.9689568729342959,
+          0.8868849955894119,
+          0.7815536577899314,
+          0.8538782277856062
+        ],
+        "b_tilde": [
+          0.9354143466934853,
+          -0.8660254037844386,
+          -0.7676494735787385,
+          -0.82915619758885
+        ],
+        "anchor_b0": -0.9689568729342959,
+        "n_D": 32,
+        "M": 4,
+        "decision": "ADAPT",
+        "choice": 1,
+        "committed": [
+          1,
+          2,
+          3
+        ],
+        "reason": "candidate 1 commits (b_hat=0.887 > anchor -0.969+margin)"
+      },
+      "route_c": {
+        "decision": "ABSTAIN",
+        "implemented": true,
+        "theorem": "1B",
+        "view": "brier_squared_loss",
+        "gS_estimate": "f0_surrogate(conservative)",
+        "center_c": 0.0,
+        "U": 0.0,
+        "T_S": 0.0,
+        "W": 0.0,
+        "d_obs": 0.22353122449182977,
+        "L": 0.6,
+        "reach": 0.0,
+        "eps_n": 0.3086066999241838,
+        "bracket": [
+          -0.3086066999241838,
+          0.3086066999241838
+        ],
+        "note": "DIAGNOSTIC: g_S~f0 makes center conservative; full 1B classification instantiation needs an f0-independent source-concept estimate.",
+        "true_B_best": -0.023809523809523808,
+        "bracket_covers_trueB": true
+      },
+      "realized": 0.11904761904761904,
+      "regime_label": "harmful"
+    },
+    {
+      "seed": 0,
+      "domain": "loc309",
+      "location": 309,
+      "location_n": 2225,
+      "location_classes": 19,
+      "split": "val",
+      "comp": "iid",
+      "regime": "tiny",
+      "aggr": "mild",
+      "cand_names": [
+        "freeze_f0",
+        "tent_online",
+        "eata_online",
+        "sar_online"
+      ],
+      "aa_all": [
+        0.10526315789473684,
+        0.07894736842105263,
+        0.07894736842105263,
+        0.07894736842105263
+      ],
+      "a0": 0.10526315789473684,
+      "oracle": 0.10526315789473684,
+      "best_adapt": 0.07894736842105263,
+      "true_best": "freeze_f0",
+      "route": {
+        "tau": 0.3601563413287122,
+        "tau_star": 0.52,
+        "gate_pass": true,
+        "overdet_residual": 0.125,
+        "h_hat": 0.2479291971242205,
+        "margin": 1.1198229928105512,
+        "b_hat": [
+          -1.0259308764885389,
+          0.4826317115521948,
+          0.10361811789569543,
+          0.01998494971568581
+        ],
+        "b_tilde": [
+          0.0,
+          -0.0,
+          -0.0,
+          0.0
+        ],
+        "anchor_b0": -1.0259308764885389,
+        "n_D": 16,
+        "M": 4,
+        "decision": "ADAPT",
+        "choice": 1,
+        "committed": [
+          1,
+          2
+        ],
+        "reason": "candidate 1 commits (b_hat=0.483 > anchor -1.026+margin)"
+      },
+      "route_c": {
+        "decision": "ABSTAIN",
+        "implemented": true,
+        "theorem": "1B",
+        "view": "brier_squared_loss",
+        "gS_estimate": "f0_surrogate(conservative)",
+        "center_c": 0.0,
+        "U": 0.0,
+        "T_S": 0.0,
+        "W": 0.0,
+        "d_obs": 0.010152729737872823,
+        "L": 0.6,
+        "reach": 0.0,
+        "eps_n": 0.3244428422615251,
+        "bracket": [
+          -0.3244428422615251,
+          0.3244428422615251
+        ],
+        "note": "DIAGNOSTIC: g_S~f0 makes center conservative; full 1B classification instantiation needs an f0-independent source-concept estimate.",
+        "true_B_best": -0.02631578947368421,
+        "bracket_covers_trueB": true
+      },
+      "realized": 0.07894736842105263,
+      "regime_label": "harmful"
+    },
+    {
+      "seed": 0,
+      "domain": "loc309",
+      "location": 309,
+      "location_n": 2225,
+      "location_classes": 19,
+      "split": "val",
+      "comp": "single_class",
+      "regime": "tiny",
+      "aggr": "mild",
+      "cand_names": [
+        "freeze_f0",
+        "tent_online",
+        "eata_online",
+        "sar_online"
+      ],
+      "aa_all": [
+        0.07894736842105263,
+        0.07894736842105263,
+        0.07894736842105263,
+        0.07894736842105263
+      ],
+      "a0": 0.07894736842105263,
+      "oracle": 0.07894736842105263,
+      "best_adapt": 0.07894736842105263,
+      "true_best": "freeze_f0",
+      "route": {
+        "tau": 0.8155308298222326,
+        "tau_star": 0.52,
+        "gate_pass": false,
+        "overdet_residual": 0.4489795918367347,
+        "h_hat": 0.47262242021597733,
+        "margin": 1.7160785343647922,
+        "b_hat": [
+          -1.315575898311646,
+          0.324570713124162,
+          0.3044210312801591,
+          0.48574423388729926
+        ],
+        "b_tilde": [
+          0.46291004988627577,
+          -0.0,
+          -0.23904572186687867,
+          -0.0
+        ],
+        "anchor_b0": -1.315575898311646,
+        "n_D": 14,
+        "M": 4,
+        "decision": "ABSTAIN",
+        "choice": null,
+        "reason": "tau=0.8155 > tau*=0.52 certifies Def-5 violated"
+      },
+      "route_c": {
+        "decision": "ABSTAIN",
+        "implemented": true,
+        "theorem": "1B",
+        "view": "brier_squared_loss",
+        "gS_estimate": "f0_surrogate(conservative)",
+        "center_c": 0.0,
+        "U": 0.0,
+        "T_S": 0.0,
+        "W": 0.0,
+        "d_obs": 0.12037064847545355,
+        "L": 0.6,
+        "reach": 0.0,
+        "eps_n": 0.3244428422615251,
+        "bracket": [
+          -0.3244428422615251,
+          0.3244428422615251
+        ],
+        "note": "DIAGNOSTIC: g_S~f0 makes center conservative; full 1B classification instantiation needs an f0-independent source-concept estimate.",
+        "true_B_best": 0.0,
+        "bracket_covers_trueB": true
+      },
+      "realized": 0.07894736842105263,
+      "regime_label": "marginal"
+    },
+    {
+      "seed": 0,
+      "domain": "loc320",
+      "location": 320,
+      "location_n": 944,
+      "location_classes": 18,
+      "split": "val",
+      "comp": "iid",
+      "regime": "tiny",
+      "aggr": "mild",
+      "cand_names": [
+        "freeze_f0",
+        "tent_online",
+        "eata_online",
+        "sar_online"
+      ],
+      "aa_all": [
+        0.1111111111111111,
+        0.05555555555555555,
+        0.05555555555555555,
+        0.1111111111111111
+      ],
+      "a0": 0.1111111111111111,
+      "oracle": 0.1111111111111111,
+      "best_adapt": 0.1111111111111111,
+      "true_best": "freeze_f0",
+      "route": {
+        "tau": 0.26250950182134103,
+        "tau_star": 0.52,
+        "gate_pass": true,
+        "overdet_residual": 0.11764705882352944,
+        "h_hat": 0.14608729248559743,
+        "margin": 0.8502894812866595,
+        "b_hat": [
+          -0.907415593917389,
+          0.48565600984846474,
+          0.5671470465047559,
+          0.15386444064484953
+        ],
+        "b_tilde": [
+          0.6416889479197478,
+          -0.4782867026529596,
+          -0.0,
+          -0.0
+        ],
+        "anchor_b0": -0.907415593917389,
+        "n_D": 17,
+        "M": 4,
+        "decision": "ADAPT",
+        "choice": 2,
+        "committed": [
+          1,
+          2,
+          3
+        ],
+        "reason": "candidate 2 commits (b_hat=0.567 > anchor -0.907+margin)"
+      },
+      "route_c": {
+        "decision": "ABSTAIN",
+        "implemented": true,
+        "theorem": "1B",
+        "view": "brier_squared_loss",
+        "gS_estimate": "f0_surrogate(conservative)",
+        "center_c": 0.0,
+        "U": 0.0,
+        "T_S": 0.0,
+        "W": 0.0,
+        "d_obs": 0.02123435305422159,
+        "L": 0.6,
+        "reach": 0.0,
+        "eps_n": 0.3333333333333333,
+        "bracket": [
+          -0.3333333333333333,
+          0.3333333333333333
+        ],
+        "note": "DIAGNOSTIC: g_S~f0 makes center conservative; full 1B classification instantiation needs an f0-independent source-concept estimate.",
+        "true_B_best": 0.0,
+        "bracket_covers_trueB": true
+      },
+      "realized": 0.05555555555555555,
+      "regime_label": "marginal"
+    },
+    {
+      "seed": 0,
+      "domain": "loc320",
+      "location": 320,
+      "location_n": 944,
+      "location_classes": 18,
+      "split": "val",
+      "comp": "single_class",
+      "regime": "tiny",
+      "aggr": "mild",
+      "cand_names": [
+        "freeze_f0",
+        "tent_online",
+        "eata_online",
+        "sar_online"
+      ],
+      "aa_all": [
+        0.1388888888888889,
+        0.027777777777777776,
+        0.08333333333333333,
+        0.08333333333333333
+      ],
+      "a0": 0.1388888888888889,
+      "oracle": 0.1388888888888889,
+      "best_adapt": 0.08333333333333333,
+      "true_best": "freeze_f0",
+      "route": {
+        "tau": 0.6133185961654061,
+        "tau_star": 0.52,
+        "gate_pass": false,
+        "overdet_residual": 0.5442176870748299,
+        "h_hat": 0.3042298435090883,
+        "margin": 1.1970103892447055,
+        "b_hat": [
+          -0.805478905044829,
+          0.6273211661410288,
+          0.9001562737559876,
+          0.9001562737559876
+        ],
+        "b_tilde": [
+          1.0,
+          -0.7486251134176308,
+          -1.0,
+          -1.0
+        ],
+        "anchor_b0": -0.805478905044829,
+        "n_D": 21,
+        "M": 4,
+        "decision": "ABSTAIN",
+        "choice": null,
+        "reason": "tau=0.6133 > tau*=0.52 certifies Def-5 violated"
+      },
+      "route_c": {
+        "decision": "ABSTAIN",
+        "implemented": true,
+        "theorem": "1B",
+        "view": "brier_squared_loss",
+        "gS_estimate": "f0_surrogate(conservative)",
+        "center_c": 0.0,
+        "U": 0.0,
+        "T_S": 0.0,
+        "W": 0.0,
+        "d_obs": 0.14860192392055813,
+        "L": 0.6,
+        "reach": 0.0,
+        "eps_n": 0.3333333333333333,
+        "bracket": [
+          -0.3333333333333333,
+          0.3333333333333333
+        ],
+        "note": "DIAGNOSTIC: g_S~f0 makes center conservative; full 1B classification instantiation needs an f0-independent source-concept estimate.",
+        "true_B_best": -0.055555555555555566,
+        "bracket_covers_trueB": true
+      },
+      "realized": 0.1388888888888889,
+      "regime_label": "harmful"
+    },
+    {
+      "seed": 0,
+      "domain": "loc260",
+      "location": 260,
+      "location_n": 1779,
+      "location_classes": 13,
+      "split": "val",
+      "comp": "iid",
+      "regime": "tiny",
+      "aggr": "mild",
+      "cand_names": [
+        "freeze_f0",
+        "tent_online",
+        "eata_online",
+        "sar_online"
+      ],
+      "aa_all": [
+        0.10256410256410256,
+        0.10256410256410256,
+        0.1282051282051282,
+        0.1282051282051282
+      ],
+      "a0": 0.10256410256410256,
+      "oracle": 0.1282051282051282,
+      "best_adapt": 0.1282051282051282,
+      "true_best": "eata_online",
+      "route": {
+        "tau": 0.0633013812747917,
+        "tau_star": 0.52,
+        "gate_pass": true,
+        "overdet_residual": 0.017777777777777774,
+        "h_hat": 0.02586971021407783,
+        "margin": 0.5810720550295168,
+        "b_hat": [
+          -1.0126026291508623,
+          0.45852652248698816,
+          0.458526522486988,
+          -0.08897403847287057
+        ],
+        "b_tilde": [
+          0.6831300510639732,
+          -0.44721359549995787,
+          -0.44721359549995787,
+          0.0975900072948533
+        ],
+        "anchor_b0": -1.0126026291508623,
+        "n_D": 15,
+        "M": 4,
+        "decision": "ADAPT",
+        "choice": 1,
+        "committed": [
+          1,
+          2
+        ],
+        "reason": "candidate 1 commits (b_hat=0.459 > anchor -1.013+margin)"
+      },
+      "route_c": {
+        "decision": "ABSTAIN",
+        "implemented": true,
+        "theorem": "1B",
+        "view": "brier_squared_loss",
+        "gS_estimate": "f0_surrogate(conservative)",
+        "center_c": -0.017071039983897474,
+        "U": -0.05032359455283551,
+        "T_S": -0.01662627728446902,
+        "W": 0.09839250877205184,
+        "d_obs": 0.06804474384357412,
+        "L": 0.6,
+        "reach": 0.008034111666625064,
+        "eps_n": 0.32025630761017426,
+        "bracket": [
+          -0.3453614592606968,
+          0.31121937929290183
+        ],
+        "note": "DIAGNOSTIC: g_S~f0 makes center conservative; full 1B classification instantiation needs an f0-independent source-concept estimate.",
+        "true_B_best": 0.025641025641025633,
+        "bracket_covers_trueB": true
+      },
+      "realized": 0.10256410256410256,
+      "regime_label": "helpful"
+    },
+    {
+      "seed": 0,
+      "domain": "loc260",
+      "location": 260,
+      "location_n": 1779,
+      "location_classes": 13,
+      "split": "val",
+      "comp": "single_class",
+      "regime": "tiny",
+      "aggr": "mild",
+      "cand_names": [
+        "freeze_f0",
+        "tent_online",
+        "eata_online",
+        "sar_online"
+      ],
+      "aa_all": [
+        0.1282051282051282,
+        0.07692307692307693,
+        0.10256410256410256,
+        0.10256410256410256
+      ],
+      "a0": 0.1282051282051282,
+      "oracle": 0.1282051282051282,
+      "best_adapt": 0.10256410256410256,
+      "true_best": "freeze_f0",
+      "route": {
+        "tau": 0.1644260783466476,
+        "tau_star": 0.52,
+        "gate_pass": true,
+        "overdet_residual": 0.1656804733727812,
+        "h_hat": 0.07433036023249923,
+        "margin": 0.7405260968064772,
+        "b_hat": [
+          -1.0447929455525895,
+          0.9228821999034281,
+          0.805736471811452,
+          0.5760334730604689
+        ],
+        "b_tilde": [
+          0.9999999999999999,
+          -0.9045340337332909,
+          -0.8320502943378437,
+          -0.5853694070049635
+        ],
+        "anchor_b0": -1.0447929455525895,
+        "n_D": 13,
+        "M": 4,
+        "decision": "ADAPT",
+        "choice": 1,
+        "committed": [
+          1,
+          2,
+          3
+        ],
+        "reason": "candidate 1 commits (b_hat=0.923 > anchor -1.045+margin)"
+      },
+      "route_c": {
+        "decision": "ABSTAIN",
+        "implemented": true,
+        "theorem": "1B",
+        "view": "brier_squared_loss",
+        "gS_estimate": "f0_surrogate(conservative)",
+        "center_c": 0.0,
+        "U": 0.0,
+        "T_S": 0.0,
+        "W": 0.0,
+        "d_obs": 0.055810588229268265,
+        "L": 0.6,
+        "reach": 0.0,
+        "eps_n": 0.32025630761017426,
+        "bracket": [
+          -0.32025630761017426,
+          0.32025630761017426
+        ],
+        "note": "DIAGNOSTIC: g_S~f0 makes center conservative; full 1B classification instantiation needs an f0-independent source-concept estimate.",
+        "true_B_best": -0.025641025641025633,
+        "bracket_covers_trueB": true
+      },
+      "realized": 0.07692307692307693,
+      "regime_label": "harmful"
+    }
+  ]
+}

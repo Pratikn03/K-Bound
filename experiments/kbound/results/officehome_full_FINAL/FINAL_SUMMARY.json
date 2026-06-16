@@ -1,0 +1,113 @@
+{
+  "dataset": "office-home",
+  "shift": "covariate (Real_World->Art/Clipart/Product)",
+  "source_f0": "resnet50 imagenet-v2 ft on Real_World, 86.1% RW-val",
+  "protocol": "tau*+candidates+certificate fixed on source/target-VAL; test evaluated ONCE; 2 seeds; n_eval=320; 14 candidates",
+  "deployed_adapter_source_chosen": "eata_online_mild",
+  "gradient_TTA_detectability_DECISIVE": {
+    "val": {
+      "per_domain": {
+        "Art": {
+          "regime": "helpful-dominated",
+          "base_rate_harmful": 0.09027777777777778,
+          "mean_B": 0.01837606837606839,
+          "best_harm_AUC": 0.9007633587786259,
+          "certificate_transfer_AUC": 0.7105108631826189
+        },
+        "Clipart": {
+          "regime": "helpful-dominated",
+          "base_rate_harmful": 0.027777777777777776,
+          "mean_B": 0.03413461538461539,
+          "best_harm_AUC": 0.9875,
+          "certificate_transfer_AUC": 0.8517857142857143
+        },
+        "Product": {
+          "regime": "mixed",
+          "base_rate_harmful": 0.3888888888888889,
+          "mean_B": -0.005902777777777761,
+          "best_harm_AUC": 0.685064935064935,
+          "certificate_transfer_AUC": 0.533989448051948
+        }
+      },
+      "pooled": {
+        "regime": "mixed",
+        "base_rate_harmful": 0.16898148148148148,
+        "mean_B": 0.015535968660968673,
+        "best_harm_AUC": 0.8120540313656657,
+        "certificate_transfer_AUC": 0.32836646697447247
+      }
+    },
+    "test": {
+      "per_domain": {
+        "Art": {
+          "regime": "helpful-dominated",
+          "base_rate_harmful": 0.0763888888888889,
+          "mean_B": 0.01789529914529917,
+          "best_harm_AUC": 0.9924812030075187,
+          "certificate_transfer_AUC": 0.6288448393711552
+        },
+        "Clipart": {
+          "regime": "helpful-dominated",
+          "base_rate_harmful": 0.06944444444444445,
+          "mean_B": 0.02737713675213675,
+          "best_harm_AUC": 0.9388059701492537,
+          "certificate_transfer_AUC": 0.8208955223880597
+        },
+        "Product": {
+          "regime": "mixed",
+          "base_rate_harmful": 0.22916666666666666,
+          "mean_B": 0.00106837606837608,
+          "best_harm_AUC": 0.7955227955227955,
+          "certificate_transfer_AUC": 0.6254436254436254
+        }
+      },
+      "pooled": {
+        "regime": "helpful-dominated",
+        "base_rate_harmful": 0.125,
+        "mean_B": 0.01544693732193733,
+        "best_harm_AUC": 0.7926954732510288,
+        "certificate_transfer_AUC": 0.4865275328238291
+      }
+    }
+  },
+  "router_val": {
+    "route_a_regret": {
+      "always_adapt": 0.0008547008547008517,
+      "always_freeze": 0.02809829059829061,
+      "K_Bound": 0.02809829059829061
+    },
+    "route_a_beats_both": false,
+    "route_b_regret": {
+      "router": 0.03472222222222224,
+      "always_freeze": 0.03472222222222224,
+      "best_fixed_always_adapt": 0.0055555555555555575
+    },
+    "route_b_beats_both": false
+  },
+  "router_test_HELDOUT": {
+    "route_a_regret": {
+      "always_adapt": 0.0,
+      "always_freeze": 0.026923076923076925,
+      "K_Bound": 0.026923076923076925
+    },
+    "route_a_beats_both": false,
+    "route_b_regret": {
+      "router": 0.032371794871794875,
+      "always_freeze": 0.032371794871794875,
+      "best_fixed_always_adapt": 0.005448717948717949
+    },
+    "route_b_beats_both": false,
+    "route_b_decisions": {
+      "ADAPT": 0,
+      "FREEZE": 8,
+      "ABSTAIN": 28
+    }
+  },
+  "VAL_beats_both": false,
+  "HELDOUT_TEST_beats_both": false,
+  "outcome": "NULL + regime: helpful-leaning deployed adapter; only-mixed domain (Product) has label-free-undetectable/non-transferable harm; certificate anti-transfers (pooled gradient cert-AUC 0.33 val / 0.49 test). Safety/abstention case, NOT beats-both.",
+  "new_candidates": {
+    "labelshift": "catastrophic (meanB ~ -0.47, 100% harm) - trivially detectable, excluded from decisive AUC",
+    "conservative": "mildly HARMFUL not helpful (meanB ~ -0.012, 81% harm) - no safe-helpful option for router"
+  }
+}

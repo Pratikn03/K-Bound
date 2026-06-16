@@ -1,0 +1,720 @@
+{
+  "schema": "kbound_imagenetr_v0.5",
+  "dataset": "imagenet-r",
+  "created": "2026-06-14T12:52:25",
+  "host": {
+    "platform": "macOS-26.2-arm64-arm-64bit",
+    "torch": "2.5.1",
+    "mps": true
+  },
+  "config": {
+    "imagenetr_dir": "/Users/pratik_n/kbound_inr/imagenet-r",
+    "panel": "diverse_backbones",
+    "f0_backbone": "resnet50",
+    "candidate_backbones": [
+      "resnet101",
+      "resnet152",
+      "resnext101_32x8d",
+      "efficientnet_b0",
+      "efficientnet_b3",
+      "convnext_tiny",
+      "convnext_base",
+      "vit_b_16",
+      "swin_t",
+      "swin_b"
+    ],
+    "seeds": [
+      0
+    ],
+    "compositions": [
+      "iid"
+    ],
+    "batch_regimes": [
+      "small"
+    ],
+    "aggressiveness": [
+      "mild"
+    ],
+    "n_eval": 500,
+    "n_batches": 4,
+    "tau_star": 0.52,
+    "kappa": 2.5,
+    "sd_L": 0.6,
+    "delta": 0.05,
+    "device": "auto",
+    "steps_override": 0,
+    "max_classes": 0,
+    "episodic_steps": 5,
+    "episodic_batch": 64,
+    "frozen_eval_batch": 32,
+    "smoke": false
+  },
+  "config_sha8": "3dc7a115",
+  "f0": "torchvision resnet50 ResNet50_Weights.IMAGENET1K_V2",
+  "num_classes": 200,
+  "candidates": [
+    "resnet101",
+    "resnet152",
+    "resnext101_32x8d",
+    "efficientnet_b0",
+    "efficientnet_b3",
+    "convnext_tiny",
+    "convnext_base",
+    "vit_b_16",
+    "swin_t",
+    "swin_b"
+  ],
+  "panel": "diverse_backbones",
+  "multiclass_caveat": "multi-candidate tau-route (b) uses prediction agreement on a 200-class label space; the binary-Y advantage recovery (Thm 1A) is heuristic here, so per-condition tau is stored for re-pick. (a) KGA and (c) smooth-drift (max-prob Brier) generalize directly.",
+  "data": {
+    "n_images": 30000,
+    "n_classes": 200,
+    "wall_sec": 220.0
+  },
+  "baselines": {
+    "always_freeze_mean_acc": 0.4725,
+    "per_candidate_always_adapt_mean_acc": {
+      "convnext_base": 0.5475,
+      "convnext_tiny": 0.49,
+      "efficientnet_b0": 0.42,
+      "efficientnet_b3": 0.5275,
+      "resnet101": 0.5225,
+      "resnet152": 0.53,
+      "resnext101_32x8d": 0.535,
+      "swin_b": 0.5025,
+      "swin_t": 0.445,
+      "vit_b_16": 0.4875
+    },
+    "per_condition_oracle_mean_acc": 0.5475
+  },
+  "routing_a_single_candidate": {
+    "convnext_base": {
+      "n_cells": 1,
+      "mean_B": 0.07500000000000001,
+      "base_rate_harmful_B<0": 0.0,
+      "mean_acc": {
+        "always_adapt": 0.5475,
+        "always_freeze": 0.4725
+      },
+      "kga": {
+        "note": "need >=2 cells with B variation for the cross-cell certificate"
+      }
+    },
+    "convnext_tiny": {
+      "n_cells": 1,
+      "mean_B": 0.017500000000000016,
+      "base_rate_harmful_B<0": 0.0,
+      "mean_acc": {
+        "always_adapt": 0.49,
+        "always_freeze": 0.4725
+      },
+      "kga": {
+        "note": "need >=2 cells with B variation for the cross-cell certificate"
+      }
+    },
+    "efficientnet_b0": {
+      "n_cells": 1,
+      "mean_B": -0.05249999999999999,
+      "base_rate_harmful_B<0": 1.0,
+      "mean_acc": {
+        "always_adapt": 0.42,
+        "always_freeze": 0.4725
+      },
+      "kga": {
+        "note": "need >=2 cells with B variation for the cross-cell certificate"
+      }
+    },
+    "efficientnet_b3": {
+      "n_cells": 1,
+      "mean_B": 0.05499999999999999,
+      "base_rate_harmful_B<0": 0.0,
+      "mean_acc": {
+        "always_adapt": 0.5275,
+        "always_freeze": 0.4725
+      },
+      "kga": {
+        "note": "need >=2 cells with B variation for the cross-cell certificate"
+      }
+    },
+    "resnet101": {
+      "n_cells": 1,
+      "mean_B": 0.04999999999999999,
+      "base_rate_harmful_B<0": 0.0,
+      "mean_acc": {
+        "always_adapt": 0.5225,
+        "always_freeze": 0.4725
+      },
+      "kga": {
+        "note": "need >=2 cells with B variation for the cross-cell certificate"
+      }
+    },
+    "resnet152": {
+      "n_cells": 1,
+      "mean_B": 0.05750000000000005,
+      "base_rate_harmful_B<0": 0.0,
+      "mean_acc": {
+        "always_adapt": 0.53,
+        "always_freeze": 0.4725
+      },
+      "kga": {
+        "note": "need >=2 cells with B variation for the cross-cell certificate"
+      }
+    },
+    "resnext101_32x8d": {
+      "n_cells": 1,
+      "mean_B": 0.06250000000000006,
+      "base_rate_harmful_B<0": 0.0,
+      "mean_acc": {
+        "always_adapt": 0.535,
+        "always_freeze": 0.4725
+      },
+      "kga": {
+        "note": "need >=2 cells with B variation for the cross-cell certificate"
+      }
+    },
+    "swin_b": {
+      "n_cells": 1,
+      "mean_B": 0.02999999999999997,
+      "base_rate_harmful_B<0": 0.0,
+      "mean_acc": {
+        "always_adapt": 0.5025,
+        "always_freeze": 0.4725
+      },
+      "kga": {
+        "note": "need >=2 cells with B variation for the cross-cell certificate"
+      }
+    },
+    "swin_t": {
+      "n_cells": 1,
+      "mean_B": -0.02749999999999997,
+      "base_rate_harmful_B<0": 1.0,
+      "mean_acc": {
+        "always_adapt": 0.445,
+        "always_freeze": 0.4725
+      },
+      "kga": {
+        "note": "need >=2 cells with B variation for the cross-cell certificate"
+      }
+    },
+    "vit_b_16": {
+      "n_cells": 1,
+      "mean_B": 0.015000000000000013,
+      "base_rate_harmful_B<0": 0.0,
+      "mean_acc": {
+        "always_adapt": 0.4875,
+        "always_freeze": 0.4725
+      },
+      "kga": {
+        "note": "need >=2 cells with B variation for the cross-cell certificate"
+      }
+    }
+  },
+  "routing_b_multicandidate": {
+    "n_conditions": 1,
+    "mean_acc": {
+      "router": 0.4725,
+      "always_freeze": 0.4725,
+      "best_fixed_always_adapt": 0.5475,
+      "per_condition_oracle": 0.5475
+    },
+    "regret_vs_oracle": {
+      "router": 0.07500000000000001,
+      "always_freeze": 0.07500000000000001,
+      "best_fixed_always_adapt": 0.0
+    },
+    "coverage": 0.0,
+    "abstention_rate": 1.0,
+    "false_adapt_rate": null,
+    "mean_tau": 2.0322627565585147,
+    "gate_pass_rate": 0.0,
+    "fixed_best_candidate": "convnext_base",
+    "routing_breakdown": {
+      "ABSTAIN": 1
+    },
+    "decisions_by_regime": {
+      "helpful": {
+        "ABSTAIN": 1
+      }
+    },
+    "decisions_by_domain": {
+      "imagenet_r": {
+        "ABSTAIN": 1
+      }
+    },
+    "beats_both": false
+  },
+  "routing_c_smooth_drift": {
+    "implemented": true,
+    "theorem": "1B",
+    "view": "brier_squared_loss",
+    "gS_estimate": "f0_surrogate(conservative)",
+    "n_conditions": 1,
+    "decision_counts": {
+      "ABSTAIN": 1
+    },
+    "mean_center_c": -0.08637214191824079,
+    "mean_reach": 0.013668493640862305,
+    "mean_d_obs": 0.05367047402255019,
+    "bracket_coverage_trueB": 0.0,
+    "status": "DIAGNOSTIC (wired to val_smooth_drift.py; conservative g_S~f0 surrogate)",
+    "note": "DIAGNOSTIC: g_S~f0 makes center conservative; full 1B classification instantiation needs an f0-independent source-concept estimate."
+  },
+  "detectability": {
+    "n_cells": 10,
+    "n_harmful": 2,
+    "base_rate_harmful": 0.2,
+    "mean_B": 0.028250000000000015,
+    "per_feature": {
+      "pre_entropy": {
+        "pearson_corr_B": 0.0,
+        "harm_AUC": 0.5
+      },
+      "pre_conf": {
+        "pearson_corr_B": 0.0,
+        "harm_AUC": 0.5
+      },
+      "pre_pbal": {
+        "pearson_corr_B": 0.0,
+        "harm_AUC": 0.5
+      },
+      "post_entropy": {
+        "pearson_corr_B": -0.3408564426263406,
+        "harm_AUC": 0.875
+      },
+      "post_conf": {
+        "pearson_corr_B": 0.5553641510325366,
+        "harm_AUC": 0.9375
+      },
+      "post_pbal": {
+        "pearson_corr_B": -0.42828506592671056,
+        "harm_AUC": 0.875
+      },
+      "pbal_drop": {
+        "pearson_corr_B": 0.42828506592671056,
+        "harm_AUC": 0.875
+      },
+      "entropy_drop": {
+        "pearson_corr_B": 0.34085644262634074,
+        "harm_AUC": 0.875
+      },
+      "frac_highconf": {
+        "pearson_corr_B": 0.2653517615334735,
+        "harm_AUC": 0.75
+      },
+      "marginal_KL": {
+        "pearson_corr_B": 0.06968165680853247,
+        "harm_AUC": 0.5
+      },
+      "update_norm": {
+        "pearson_corr_B": 0.0,
+        "harm_AUC": 0.5
+      }
+    },
+    "certificate_harm_AUC_negBhat": 0.875,
+    "certificate_eps": 0.04877040119554469,
+    "best_single_feature_harm_AUC": 0.9375,
+    "detectability_verdict": "detectable"
+  },
+  "kbound_summary": {
+    "classification": "mixed+detectable",
+    "base_rate_harmful_B<0": 0.2,
+    "mean_B": 0.028250000000000015,
+    "detectability_verdict": "detectable",
+    "best_single_feature_harm_AUC": 0.9375,
+    "gamma_S_proxy_indist_advantage": null,
+    "gamma_T_proxy_oracle_advantage": null,
+    "delta": 0.05,
+    "abs_gammaT_minus_gammaS": null,
+    "gamma_gap_within_delta": null,
+    "real_data_multicandidate_tau_mean": 2.0322627565585147,
+    "_note": "gamma_S/gamma_T are operational debug-scale proxies (in-dist vs OOD adaptation advantage); final defs follow the paper. Classification honors the integrity policy: reported from measured B, never tuned to a target."
+  },
+  "tau_distribution": [
+    2.0322627565585147
+  ],
+  "records": [
+    {
+      "seed": 0,
+      "domain": "imagenet_r",
+      "comp": "iid",
+      "regime": "small",
+      "aggr": "mild",
+      "method": "backbone",
+      "mode": "frozen",
+      "candidate": "resnet101",
+      "a0": 0.4725,
+      "aa": 0.5225,
+      "B": 0.04999999999999999,
+      "upd_norm": 0.0,
+      "Z": [
+        3.97456955909729,
+        0.2897486984729767,
+        0.9148398192544147,
+        2.7513279914855957,
+        0.5019811391830444,
+        0.8131193921598691,
+        0.10172042709454565,
+        1.2232415676116943,
+        0.125,
+        0.23761293292045593,
+        0.0
+      ],
+      "regime_label": "helpful"
+    },
+    {
+      "seed": 0,
+      "domain": "imagenet_r",
+      "comp": "iid",
+      "regime": "small",
+      "aggr": "mild",
+      "method": "backbone",
+      "mode": "frozen",
+      "candidate": "resnet152",
+      "a0": 0.4725,
+      "aa": 0.53,
+      "B": 0.05750000000000005,
+      "upd_norm": 0.0,
+      "Z": [
+        3.97456955909729,
+        0.2897486984729767,
+        0.9148398192544147,
+        2.5639443397521973,
+        0.5483081340789795,
+        0.799705842979373,
+        0.11513397627504174,
+        1.4106252193450928,
+        0.25,
+        0.3116317689418793,
+        0.0
+      ],
+      "regime_label": "helpful"
+    },
+    {
+      "seed": 0,
+      "domain": "imagenet_r",
+      "comp": "iid",
+      "regime": "small",
+      "aggr": "mild",
+      "method": "backbone",
+      "mode": "frozen",
+      "candidate": "resnext101_32x8d",
+      "a0": 0.4725,
+      "aa": 0.535,
+      "B": 0.06250000000000006,
+      "upd_norm": 0.0,
+      "Z": [
+        3.97456955909729,
+        0.2897486984729767,
+        0.9148398192544147,
+        3.280816078186035,
+        0.4091927409172058,
+        0.8597700463895723,
+        0.05506977286484238,
+        0.6937534809112549,
+        0.0,
+        0.2079107165336609,
+        0.0
+      ],
+      "regime_label": "helpful"
+    },
+    {
+      "seed": 0,
+      "domain": "imagenet_r",
+      "comp": "iid",
+      "regime": "small",
+      "aggr": "mild",
+      "method": "backbone",
+      "mode": "frozen",
+      "candidate": "efficientnet_b0",
+      "a0": 0.4725,
+      "aa": 0.42,
+      "B": -0.05249999999999999,
+      "upd_norm": 0.0,
+      "Z": [
+        3.97456955909729,
+        0.2897486984729767,
+        0.9148398192544147,
+        2.9617247581481934,
+        0.4068455696105957,
+        0.8486271429007486,
+        0.06621267635366612,
+        1.0128448009490967,
+        0.125,
+        0.2854013442993164,
+        0.0
+      ],
+      "regime_label": "harmful"
+    },
+    {
+      "seed": 0,
+      "domain": "imagenet_r",
+      "comp": "iid",
+      "regime": "small",
+      "aggr": "mild",
+      "method": "backbone",
+      "mode": "frozen",
+      "candidate": "efficientnet_b3",
+      "a0": 0.4725,
+      "aa": 0.5275,
+      "B": 0.05499999999999999,
+      "upd_norm": 0.0,
+      "Z": [
+        3.97456955909729,
+        0.2897486984729767,
+        0.9148398192544147,
+        2.092946767807007,
+        0.613355815410614,
+        0.7621096021901007,
+        0.152730217064314,
+        1.8816227912902832,
+        0.4375,
+        0.38021084666252136,
+        0.0
+      ],
+      "regime_label": "helpful"
+    },
+    {
+      "seed": 0,
+      "domain": "imagenet_r",
+      "comp": "iid",
+      "regime": "small",
+      "aggr": "mild",
+      "method": "backbone",
+      "mode": "frozen",
+      "candidate": "convnext_tiny",
+      "a0": 0.4725,
+      "aa": 0.49,
+      "B": 0.017500000000000016,
+      "upd_norm": 0.0,
+      "Z": [
+        3.97456955909729,
+        0.2897486984729767,
+        0.9148398192544147,
+        2.6445696353912354,
+        0.5040519833564758,
+        0.8102005819707165,
+        0.10463923728369817,
+        1.3299999237060547,
+        0.125,
+        0.2702028155326843,
+        0.0
+      ],
+      "regime_label": "marginal"
+    },
+    {
+      "seed": 0,
+      "domain": "imagenet_r",
+      "comp": "iid",
+      "regime": "small",
+      "aggr": "mild",
+      "method": "backbone",
+      "mode": "frozen",
+      "candidate": "convnext_base",
+      "a0": 0.4725,
+      "aa": 0.5475,
+      "B": 0.07500000000000001,
+      "upd_norm": 0.0,
+      "Z": [
+        3.97456955909729,
+        0.2897486984729767,
+        0.9148398192544147,
+        2.5567710399627686,
+        0.5161426663398743,
+        0.8076464430595133,
+        0.10719337619490144,
+        1.4177985191345215,
+        0.25,
+        0.29381227493286133,
+        0.0
+      ],
+      "regime_label": "helpful"
+    },
+    {
+      "seed": 0,
+      "domain": "imagenet_r",
+      "comp": "iid",
+      "regime": "small",
+      "aggr": "mild",
+      "method": "backbone",
+      "mode": "frozen",
+      "candidate": "vit_b_16",
+      "a0": 0.4725,
+      "aa": 0.4875,
+      "B": 0.015000000000000013,
+      "upd_norm": 0.0,
+      "Z": [
+        3.97456955909729,
+        0.2897486984729767,
+        0.9148398192544147,
+        2.918201208114624,
+        0.46188265085220337,
+        0.8355067167094629,
+        0.07933310254495185,
+        1.056368350982666,
+        0.25,
+        0.21529600024223328,
+        0.0
+      ],
+      "regime_label": "marginal"
+    },
+    {
+      "seed": 0,
+      "domain": "imagenet_r",
+      "comp": "iid",
+      "regime": "small",
+      "aggr": "mild",
+      "method": "backbone",
+      "mode": "frozen",
+      "candidate": "swin_t",
+      "a0": 0.4725,
+      "aa": 0.445,
+      "B": -0.02749999999999997,
+      "upd_norm": 0.0,
+      "Z": [
+        3.97456955909729,
+        0.2897486984729767,
+        0.9148398192544147,
+        3.015850782394409,
+        0.4220677614212036,
+        0.8397072762422854,
+        0.07513254301212935,
+        0.9587187767028809,
+        0.125,
+        0.27693456411361694,
+        0.0
+      ],
+      "regime_label": "harmful"
+    },
+    {
+      "seed": 0,
+      "domain": "imagenet_r",
+      "comp": "iid",
+      "regime": "small",
+      "aggr": "mild",
+      "method": "backbone",
+      "mode": "frozen",
+      "candidate": "swin_b",
+      "a0": 0.4725,
+      "aa": 0.5025,
+      "B": 0.02999999999999997,
+      "upd_norm": 0.0,
+      "Z": [
+        3.97456955909729,
+        0.2897486984729767,
+        0.9148398192544147,
+        2.1299026012420654,
+        0.5727987289428711,
+        0.770369874624455,
+        0.14446994462995966,
+        1.8446669578552246,
+        0.3125,
+        0.43346646428108215,
+        0.0
+      ],
+      "regime_label": "helpful"
+    }
+  ],
+  "conditions": [
+    {
+      "seed": 0,
+      "domain": "imagenet_r",
+      "comp": "iid",
+      "regime": "small",
+      "aggr": "mild",
+      "cand_names": [
+        "freeze_f0",
+        "resnet101",
+        "resnet152",
+        "resnext101_32x8d",
+        "efficientnet_b0",
+        "efficientnet_b3",
+        "convnext_tiny",
+        "convnext_base",
+        "vit_b_16",
+        "swin_t",
+        "swin_b"
+      ],
+      "aa_all": [
+        0.4725,
+        0.5225,
+        0.53,
+        0.535,
+        0.42,
+        0.5275,
+        0.49,
+        0.5475,
+        0.4875,
+        0.445,
+        0.5025
+      ],
+      "a0": 0.4725,
+      "oracle": 0.5475,
+      "best_adapt": 0.5475,
+      "true_best": "convnext_base",
+      "route": {
+        "tau": 2.0322627565585147,
+        "tau_star": 0.52,
+        "gate_pass": false,
+        "overdet_residual": 0.03751258124498883,
+        "h_hat": 0.3648592375287133,
+        "margin": 1.0291892410179138,
+        "b_hat": [
+          -0.08996029637645511,
+          -0.09131459850141868,
+          -0.08916160538132013,
+          -0.1142055283479512,
+          2.350145531082524,
+          -0.09665212674138243,
+          -0.09534922879548913,
+          -0.11349781579046306,
+          -0.08971268831374671,
+          -0.05687096855701598,
+          -0.14675450664644893
+        ],
+        "b_tilde": [
+          0.0,
+          -0.0,
+          -0.0,
+          -0.0,
+          -0.0,
+          -0.0,
+          -0.0,
+          -0.0,
+          -0.0,
+          -0.0,
+          -0.0
+        ],
+        "anchor_b0": -0.08996029637645511,
+        "n_D": 292,
+        "M": 11,
+        "decision": "ABSTAIN",
+        "choice": null,
+        "reason": "tau=2.0323 > tau*=0.52 certifies Def-5 violated"
+      },
+      "route_c": {
+        "decision": "ABSTAIN",
+        "implemented": true,
+        "theorem": "1B",
+        "view": "brier_squared_loss",
+        "gS_estimate": "f0_surrogate(conservative)",
+        "center_c": -0.08637214191824079,
+        "U": -0.17956629911460958,
+        "T_S": -0.0465970785981844,
+        "W": 0.21222863361705094,
+        "d_obs": 0.05367047402255019,
+        "L": 0.6,
+        "reach": 0.013668493640862305,
+        "eps_n": 0.1,
+        "bracket": [
+          -0.2000406355591031,
+          0.027296351722621515
+        ],
+        "note": "DIAGNOSTIC: g_S~f0 makes center conservative; full 1B classification instantiation needs an f0-independent source-concept estimate.",
+        "true_B_best": 0.07500000000000001,
+        "bracket_covers_trueB": false
+      },
+      "realized": 0.4725,
+      "regime_label": "helpful"
+    }
+  ]
+}

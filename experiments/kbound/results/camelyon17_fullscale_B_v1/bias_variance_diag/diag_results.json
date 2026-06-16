@@ -1,0 +1,56 @@
+{
+  "reused_estimator": "GradientBoostingRegressor {'n_estimators': 250, 'max_depth': 2, 'learning_rate': 0.05, 'subsample': 0.8, 'random_state': 0} (EXACT from eps_recal_camelyon.py)",
+  "alpha_FIXED": 0.1,
+  "n256_file": "/sessions/peaceful-blissful-ptolemy/mnt/uav/AutoML_Flagship_V8/experiments/kbound/results/wilds_kbound_debug_mps/result_73add410.json",
+  "n1024_file": "/sessions/peaceful-blissful-ptolemy/mnt/uav/AutoML_Flagship_V8/experiments/kbound/results/camelyon17_fullscale_B_v1/wilds_camelyon17_kga.json",
+  "n256_records": 432,
+  "seeds_256": [
+    0,
+    1,
+    2,
+    3
+  ],
+  "residual_method": "leave-one-seed cross-fit (held out by seed)",
+  "step1_model_error": {
+    "eps_256_observed": 0.11240208239414613,
+    "residual_abs_std": 0.04270534108118276,
+    "var_signed_residual": 0.004489571878577267,
+    "var_abs_residual": 0.001823746156860156
+  },
+  "step2_measurement_floor": {
+    "n_per_cell": 256,
+    "a0_times_n_integer": true,
+    "aa_times_n_integer": true,
+    "n_eff_note": "a0*256 and aa*256 are integers => balanced-acc equals raw acc over n=256 in this pool; no disagreement-region reduction => n_eff = 256.",
+    "mean_sigma_meas_sq": 0.0007190726421497486,
+    "mean_sigma_meas": 0.026815529868897774,
+    "eps_meas_256": 0.04410762156348204,
+    "eps_meas_256_perrec_q90": 0.05841163503762198
+  },
+  "step3_key_numbers": {
+    "eps_256_observed": 0.11240208239414613,
+    "eps_meas_256": 0.04410762156348204,
+    "ratio_obs_over_meas": 2.5483596351340565,
+    "eps_meas_1024_variance_limited_prediction": 0.02205381078174102,
+    "eps_bias_limited_prediction_1024": 0.11240208239414613
+  },
+  "step4_variance_decomposition": {
+    "frac_meas_signedvar": 0.16016508067972413,
+    "frac_meas_absvar": 0.39428329400169193,
+    "interpretation": "frac_meas near 1 => variance-limited; near 0 => bias-limited"
+  },
+  "n1024_crosscheck": {
+    "n_points": 10,
+    "n_eval_used": 1024,
+    "WEAK_n_warning": "n=10 points (5 seeds x 2 methods); underpowered.",
+    "B_std_256": 0.07987373076438478,
+    "B_std_1024": 0.05670831646451652,
+    "mean_absB_256": 0.0647243923611111,
+    "mean_absB_1024": 0.04539531425461539,
+    "eps_meas_1024_empirical": 0.031191692635262655,
+    "B_std_ratio_1024_over_256": 0.7099745551112083,
+    "note": "If B-spread at 1024 ~ B-spread at 256 (ratio ~1), the spread is NOT shrinking ~1/sqrt(4)=0.5 as variance-limited would require -> consistent with bias-limited."
+  },
+  "VERDICT": "BIAS-LIMITED",
+  "verdict_reason": "Observed eps_256 (0.1124) >> measurement floor eps_meas(256)=0.0441 (ratio 2.5x); only 16% of residual variance is measurement noise. The radius is dominated by B_hat(Z) model error (calibration-drift bias), which does NOT shrink with eval n. Protocol B's 1/sqrt(n) prediction for eps(1024) is therefore unattainable; a fair re-run at n_eval=1024 cannot close the radius."
+}

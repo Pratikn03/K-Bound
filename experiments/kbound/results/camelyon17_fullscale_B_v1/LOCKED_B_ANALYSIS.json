@@ -1,0 +1,157 @@
+{
+  "protocol": "research_lock/CAMELYON17_FULLSCALE_PROTOCOL_B_v1.yaml",
+  "alpha": 0.1,
+  "schema_note": "DEBUG run has 432 per-cell records (72 conditions x 6 TTA candidates, 4 seeds, Z dim 11). NEW n=1024 run serializes ONLY 5 per-seed aggregate records per method (tent, eata), Z dim 10. The pre-registered 72x6 composition grid was NOT written to the new output: the eps-recal can be run on the new run only at per-seed granularity (5 points, C(5,2)=10 CAL/TEST splits, 1 test-seed pair held out per split), NOT at the per-cell granularity of the debug analysis.",
+  "debug_n256": {
+    "eps": {
+      "mean": 0.02960747670128114,
+      "ci_lo": 0.027011357235016437,
+      "ci_hi": 0.032203596167545846,
+      "n": 6
+    },
+    "false_adapt": {
+      "mean": 0.13896608559681337,
+      "ci_lo": 0.10758578729428388,
+      "ci_hi": 0.17034638389934287,
+      "n": 6
+    },
+    "commit_rate": {
+      "mean": 0.5756172839506173,
+      "ci_lo": 0.5011336834953631,
+      "ci_hi": 0.6501008844058714,
+      "n": 6
+    },
+    "coverage": {
+      "mean": 0.6527777777777778,
+      "ci_lo": 0.5809453379919929,
+      "ci_hi": 0.7246102175635627,
+      "n": 6
+    },
+    "regret_kga": {
+      "mean": 0.01387984664351852,
+      "ci_lo": 0.008733428843531855,
+      "ci_hi": 0.019026264443505185,
+      "n": 6
+    },
+    "regret_adapt": {
+      "mean": 0.013011791087962965,
+      "ci_lo": 0.010466728584714886,
+      "ci_hi": 0.015556853591211044,
+      "n": 6
+    },
+    "regret_freeze": {
+      "mean": 0.05171260127314815,
+      "ci_lo": 0.04044958721869393,
+      "ci_hi": 0.06297561532760236,
+      "n": 6
+    }
+  },
+  "new_n1024": {
+    "tent": {
+      "eps": {
+        "mean": 0.0292287950174143,
+        "ci_lo": 0.014338191722710182,
+        "ci_hi": 0.04411939831211842,
+        "n": 10
+      },
+      "false_adapt": {
+        "mean": 0.3333333333333333,
+        "ci_lo": 0.3333333333333333,
+        "ci_hi": 0.3333333333333333,
+        "n": 6
+      },
+      "commit_rate": {
+        "mean": 0.6,
+        "ci_lo": 0.27993334027633143,
+        "ci_hi": 0.9200666597236685,
+        "n": 10
+      },
+      "coverage": {
+        "mean": 0.6,
+        "ci_lo": 0.27993334027633143,
+        "ci_hi": 0.9200666597236685,
+        "n": 10
+      },
+      "regret_kga": {
+        "mean": 0.019958876126307378,
+        "ci_lo": 0.010321785453799606,
+        "ci_hi": 0.02959596679881515,
+        "n": 10
+      },
+      "regret_adapt": {
+        "mean": 0.0062893081761006275,
+        "ci_lo": 0.002934311742938484,
+        "ci_hi": 0.009644304609262772,
+        "n": 10
+      },
+      "regret_freeze": {
+        "mean": 0.0273391359004135,
+        "ci_lo": 0.01641160422002405,
+        "ci_hi": 0.03826666758080295,
+        "n": 10
+      }
+    },
+    "eata": {
+      "eps": {
+        "mean": 0.03814224901233131,
+        "ci_lo": 0.019460858914622514,
+        "ci_hi": 0.05682363911004011,
+        "n": 10
+      },
+      "false_adapt": {
+        "mean": 0.3333333333333333,
+        "ci_lo": 0.3333333333333333,
+        "ci_hi": 0.3333333333333333,
+        "n": 6
+      },
+      "commit_rate": {
+        "mean": 0.6,
+        "ci_lo": 0.27993334027633143,
+        "ci_hi": 0.9200666597236685,
+        "n": 10
+      },
+      "coverage": {
+        "mean": 0.6,
+        "ci_lo": 0.27993334027633143,
+        "ci_hi": 0.9200666597236685,
+        "n": 10
+      },
+      "regret_kga": {
+        "mean": 0.037923646802264295,
+        "ci_lo": 0.03167920294522806,
+        "ci_hi": 0.04416809065930053,
+        "n": 10
+      },
+      "regret_adapt": {
+        "mean": 0.01868510917181192,
+        "ci_lo": 0.008717641706488711,
+        "ci_hi": 0.02865257663713513,
+        "n": 10
+      },
+      "regret_freeze": {
+        "mean": 0.038477075260904735,
+        "ci_lo": 0.03106310207765942,
+        "ci_hi": 0.045891048444150054,
+        "n": 10
+      }
+    }
+  },
+  "key_comparison": {
+    "tent": {
+      "false_adapt_256": 0.13896608559681337,
+      "false_adapt_1024": 0.3333333333333333,
+      "eps_256": 0.02960747670128114,
+      "eps_1024": 0.0292287950174143,
+      "radius_ratio": 0.9872099305291202,
+      "radius_ratio_predicted": 0.5
+    },
+    "eata": {
+      "false_adapt_256": 0.13896608559681337,
+      "false_adapt_1024": 0.3333333333333333,
+      "eps_256": 0.02960747670128114,
+      "eps_1024": 0.03814224901233131,
+      "radius_ratio": 1.2882640894109312,
+      "radius_ratio_predicted": 0.5
+    }
+  }
+}

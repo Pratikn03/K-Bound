@@ -1,0 +1,169 @@
+{
+  "schema": "kbound_iwildcam_RESULTS_v2",
+  "created": "2026-06-15T05:44:39",
+  "dataset": "wilds-iwildcam-v2.0",
+  "metric": "macro_f1 (WILDS-standard)",
+  "candidate_number": 5,
+  "prior_real_shift_nulls": [
+    "Camelyon17",
+    "scale-invariant tau_hat",
+    "ACDC",
+    "structural"
+  ],
+  "headline": {
+    "regime": "mixed+undetectable",
+    "beats_both": false,
+    "outcome": "5th NULL; detectability failure that does NOT transfer (entropy weak in-dist + anti-transfers OOD; AETTA accuracy-estimator PERFECT in-source AUC~1.0 but ANTI-transfers to OOD AUC~0.17). Detector improvement did not recover beats-both."
+  },
+  "f0_provenance": {
+    "checkpoint": "experiments/kbound/results/iwildcam_f0_erm/f0_resnet50_erm_seed0.pt",
+    "arch": "resnet50 ERM full-finetune from ImageNet, 2 epochs, model-selected on id_val macro-F1",
+    "best": {
+      "epoch": 1,
+      "gstep": 8946,
+      "train_loss": 1.1584477387976653,
+      "id_val": {
+        "n": 3000,
+        "acc": 0.7666666666666667,
+        "macro_f1": 0.40821249016911104
+      },
+      "val": {
+        "n": 3000,
+        "acc": 0.573,
+        "macro_f1": 0.25996786777821335
+      },
+      "wall_min": 79.1
+    },
+    "note": "finder's resnet18-head f0 was chance (id_val bal-acc ~0.10); this f0 is WILDS-grade."
+  },
+  "integrity": {
+    "calibration": "SOURCE=id_val: certificate Z->B, conformal eps, route-b tau*, deployed adapter, AND the AETTA detector+threshold ALL fit on source only. TARGET (val/test) labels touch ONLY final scoring. No test-set tuning.",
+    "metric_recompute": "all a0/aa/B recomputed offline from stored per-sample preds+eval_y; spot-check matched exactly (ALL_MATCH True).",
+    "tau_sensitivity": "route-b beats_both=False at every source tau* quantile {0.5,0.75,0.9,0.95} -> not a tau artifact."
+  },
+  "entropy_baseline_val_FULL": {
+    "n_conditions": 144,
+    "n_records": 864,
+    "seeds": "0,1",
+    "deployed_adapter": "tent_online",
+    "target_benefit": {
+      "mean_B": -0.027399031418910418,
+      "base_rate_harmful_B<0": 0.5891203703703703,
+      "frac_helpful_B>thr": 0.3148148148148148,
+      "thr": 0.02,
+      "B_range": [
+        -0.3698517628205127,
+        0.15299816345270895
+      ]
+    },
+    "detectability": {
+      "base_rate_harmful": 0.5891203703703703,
+      "best_single_feature_harm_AUC": 0.6187941005561859,
+      "certificate_harm_AUC_sourcefit_on_target": 0.43175240045380336,
+      "detectability_verdict": "weak"
+    },
+    "route_a_deployed_regret": {
+      "always_adapt": 0.051660151196793166,
+      "always_freeze": 0.023285434130991534,
+      "K_Bound": 0.024547608939719544
+    },
+    "route_b_regret": {
+      "router": 0.04167026483123573,
+      "always_freeze": 0.031047243772491406,
+      "best_fixed_always_adapt": 0.05457426759419913
+    },
+    "route_b_false_adapt": 55,
+    "beats_both": false,
+    "regime": "mixed+undetectable"
+  },
+  "aetta_detector_PREVIEW": {
+    "n_source_dep": 16,
+    "n_target_dep": 16,
+    "deployed_adapter": "tent_online",
+    "target_benefit": {
+      "target_base_rate_harmful": 0.5,
+      "target_frac_helpful_B>0.02": 0.375,
+      "target_mean_B": -0.004699592860045822,
+      "target_B_range": [
+        -0.10755471380471378,
+        0.12500738508803025
+      ]
+    },
+    "per_detector": {
+      "entropy_Z11": {
+        "srcAUC": 0.6666666666666666,
+        "tgtAUC": 0.375,
+        "harmful_recall": 1.0,
+        "regret": {
+          "always_adapt": 0.03003054678685454,
+          "always_freeze": 0.02533095392680872,
+          "K_Bound": 0.02533095392680872
+        },
+        "false_adapt": 0,
+        "beats_both": false
+      },
+      "entropy_marginalKL": {
+        "srcAUC": 0.5520833333333334,
+        "tgtAUC": 0.5078125,
+        "harmful_recall": 0.75,
+        "regret": {
+          "always_adapt": 0.03003054678685454,
+          "always_freeze": 0.02533095392680872,
+          "K_Bound": 0.02533095392680872
+        },
+        "false_adapt": 0,
+        "beats_both": false
+      },
+      "aetta_dacc": {
+        "srcAUC": 1.0,
+        "tgtAUC": 0.171875,
+        "harmful_recall": 0.375,
+        "regret": {
+          "always_adapt": 0.03003054678685454,
+          "always_freeze": 0.02533095392680872,
+          "K_Bound": 0.032350722247542985
+        },
+        "false_adapt": 3,
+        "beats_both": false
+      },
+      "frozen_ref_dacc": {
+        "srcAUC": 0.6041666666666666,
+        "tgtAUC": 0.3515625,
+        "harmful_recall": 0.25,
+        "regret": {
+          "always_adapt": 0.03003054678685454,
+          "always_freeze": 0.02533095392680872,
+          "K_Bound": 0.02665658079591385
+        },
+        "false_adapt": 1,
+        "beats_both": false
+      },
+      "aetta_plus_Z": {
+        "srcAUC": 1.0,
+        "tgtAUC": 0.234375,
+        "harmful_recall": 0.375,
+        "regret": {
+          "always_adapt": 0.03003054678685454,
+          "always_freeze": 0.02533095392680872,
+          "K_Bound": 0.04114307283676857
+        },
+        "false_adapt": 5,
+        "beats_both": false
+      }
+    },
+    "caveat": "PREVIEW: 16 source + 16 target deployed-adapter conditions, seed 0, online candidates. srcAUC=1.0 is small-n; DIRECTION (source-detectable, OOD-anti-transfer, no beats-both) is the robust read. Full validated grid would tighten magnitudes."
+  },
+  "artifacts": {
+    "f0_trainer": "experiments/kbound/wilds/train_iwildcam_f0.py",
+    "runner": "experiments/kbound/wilds/run_iwildcam_kbound.py",
+    "aetta": "experiments/kbound/wilds/aetta.py",
+    "aetta_runner": "experiments/kbound/wilds/run_iwildcam_aetta.py",
+    "analyzer_baseline": "experiments/kbound/wilds/analyze_iwildcam_kbound.py",
+    "analyzer_detector": "experiments/kbound/wilds/analyze_iwildcam_detector.py",
+    "source_manifest": "experiments/kbound/results/iwildcam_full_idval/result_489da28f.json",
+    "val_manifest": "experiments/kbound/results/iwildcam_full_val/result_f08e751c.json",
+    "val_verdict": "experiments/kbound/results/iwildcam_full_val/VERDICT_val.json",
+    "test_partial_65cond": "experiments/kbound/results/iwildcam_full_test/PARTIAL_test_57cond.json",
+    "aetta_preview_verdict": "experiments/kbound/results/iwildcam_aetta_prev_val/VERDICT_detector_preview.json"
+  }
+}

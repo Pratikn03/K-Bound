@@ -415,6 +415,14 @@ def main() -> None:
     assert rep.realized_all_within_4se, "Realized-loss check exceeded 4 SE somewhere"
     assert rep.corollary_zero_noise["regret_is_zero"], "Zero-noise regret not 0"
     assert rep.corollary_near_boundary["bounded_by_eps"], "Near-boundary regret exceeded eps"
+
+    import os
+    out_dir = os.path.dirname(os.path.abspath(__file__))
+    out_path = os.path.join(out_dir, "results_thm2_regret.json")
+    with open(out_path, "w") as f:
+        json.dump(asdict(rep), f, indent=2)
+    print(f"\nWrote machine-readable results to {out_path}")
+
     print("\nALL CHECKS PASSED.")
 
 

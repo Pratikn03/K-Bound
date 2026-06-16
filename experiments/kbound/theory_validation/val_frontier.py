@@ -90,7 +90,30 @@ for sd in [0.0, 0.05, 0.1, 0.2, 0.4]:
     print(f"     drift_sd={sd:<4}: ATC error={err:.4f}  frontier-event={event:.4f}  match={abs(err-event)<1e-9}")
 OUT["T4_atc_beta0"] = T4rows
 
-allpass = T1 and bad == 0 and T2 and all(v["sound_on_knowable"] and v["all_unknowable_flippable"]
+# ---- T5: UNCONDITIONAL family characterization (Theorem 3, restated) ---------
+# Theorem 3 is an UNCONDITIONAL statement about the whole family {C_beta}_{beta>=0}
+# (no assumption on the target beyond mu(D)>0): for EVERY beta, sign Delta is
+# identifiable over C_beta={|gamma|<=beta} IFF |M|>beta, and the abstain rule commits
+# exactly on {|M|>beta}. We check this non-circularly: identifiability = "sign(M+gamma)
+# constant for all |gamma|<=beta" = "the budget interval [M-beta, M+beta] excludes 0",
+# and verify that this event equals {|M|>beta} exactly, for a grid of beta.
+T5rows = []; T5ok = True
+Mg = rng.uniform(-0.6, 0.6, 200000)
+for beta in [0.0, 0.05, 0.1, 0.25, 0.4]:
+    lo, hi = Mg - beta, Mg + beta
+    identifiable_true = (lo > 0) | (hi < 0)              # sign constant over the budget
+    contains0 = (lo <= 0) & (hi >= 0)                    # within-budget drift can flip/zero the sign
+    iff_ok = bool(np.all(identifiable_true == (np.abs(Mg) > beta)))      # IFF |M|>beta
+    unknowable_ok = bool(np.all(contains0 == (np.abs(Mg) <= beta)))     # unknowable IFF |M|<=beta
+    T5rows.append(dict(beta=beta, identifiable_iff_absM_gt_beta=iff_ok,
+                       unknowable_iff_absM_le_beta=unknowable_ok))
+    T5ok = T5ok and iff_ok and unknowable_ok
+    print(f"[T5] beta={beta:<4}: identifiable(C_beta) == {{|M|>beta}}: {iff_ok}; "
+          f"unknowable == {{|M|<=beta}}: {unknowable_ok}")
+OUT["T5_unconditional_family"] = dict(rows=T5rows, pass_=bool(T5ok))
+print(f"[T5] unconditional family characterization (all beta) -> {'PASS' if T5ok else 'FAIL'}")
+
+allpass = T1 and bad == 0 and T2 and T5ok and all(v["sound_on_knowable"] and v["all_unknowable_flippable"]
                                          for v in T3.values()) and all(r["match"] for r in T4rows)
 OUT["ALL_PASS"] = bool(allpass)
 d = os.path.dirname(__file__); open(os.path.join(d, "results_frontier.json"), "w").write(json.dumps(OUT, indent=2))
