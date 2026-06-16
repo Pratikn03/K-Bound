@@ -14,7 +14,7 @@
 \usepackage{algpseudocode}
 \hypersetup{colorlinks=true,linkcolor=black,citecolor=black,urlcolor=blue}
 
-\newcommand{\systemu}{ELARA-U}
+\newcommand{\systemu}{ELARA}
 \newcommand{\system}{ELARA}
 \newcommand{\method}{RGA}
 \newcommand{\methodplus}{RGA+}
@@ -31,83 +31,79 @@
 \ifcsname c@slack\endcsname\else\newtheorem{slack}{Proposition}\fi
 
 
-\title{When Does Meta-Routing Help Cross-Domain Anomaly Detection?\\
-Stacking Beats Selection; Reliability Routing Helps Only Under Independent Modality Failure}
+\title{ELARA: When Reliability Routing Helps in Multimodal Anomaly Detection}
 \author{\IEEEauthorblockN{Pratik Niroula}\IEEEauthorblockA{Independent Researcher}}
 
 \begin{document}
 \maketitle
 
 \begin{abstract}
-No single anomaly detector wins across domains: a method that is excellent on
-tabular data can collapse on time series, vision, or network traffic, and
-choosing the wrong expert is the dominant source of error---negative transfer.
-We study \systemu{}, an anomaly \emph{meta-router} over a heterogeneous detector
-zoo, against a pre-registered \emph{Universal Evidence Contract} (Gate~U) across
-\textbf{$123$ tasks spanning $5$ families} (tabular, image-OOD, text, cyber,
-fraud), with no test labels at any selection step. Our central, honest finding is
-twofold. \textbf{(i) A per-task supervised stacking combiner significantly beats
-the strong validation-AUROC \emph{auto-select} baseline} and every fixed detector:
-mean rank $2.53$ vs auto-select $3.38$ (paired AUROC $+0.036$, CI
-$[+0.023,+0.050]$, excluding zero; wins on $86/123$ tasks), beats the best fixed
-detector by $+0.075$ AUROC (CI $[+0.052,+0.101]$; $100/123$ wins), and even exceeds
-the best-single-detector oracle ($0.784$ vs $0.756$ AUROC). \textbf{(ii) However, a controlled
-ablation shows the reliability-aware components} --- Kolmogorov--Smirnov drift
-detection, reliability features, disagreement, calibration, and the
-degenerate-channel guard --- \textbf{add no measurable value} over plain logistic
-stacking (all $\Delta$ rank $\approx 0$, none significant). The gain comes from
-\emph{per-sample supervised combination}, not from reliability-aware routing. We
-therefore claim a cross-domain benchmark result and a negative ablation, not a
-reliability-routing method win: stacking beats per-dataset selection across
-heterogeneous anomaly families, while the routing machinery is inert \emph{for single-input meta-routing}.
-\textbf{(iii) The exception that proves the rule:} in true multimodal detection
-where modalities fail \emph{independently} (pre-registered D23, validated on
-\emph{four} real datasets --- Real-IAD-D3 (RGB/PS/XYZ, 15 categories), MVTec-3D
-(RGB/depth, 7), 3D-ADAM (RGB/depth, 12), and MulSen-AD (RGB/infrared/point-cloud, 15),
-spanning two- and three-sensor regimes), reliability routing wins \emph{when the failure
-is drift-inducing} --- failing the deployment-best modality at test with garbage, a
-drift-aware gate beats equal-weight fusion ($+0.13$ to $+0.24$), stale selection
-($+0.28$ to $+0.39$), and validation-only fusion ($+0.12$ to $+0.25$; all twelve $95\%$
-CIs exclude zero, all four datasets pass H1--H3), while inert when nothing fails.
-\textbf{This advantage is failure-model-specific:} under a realistic stuck-sensor
-\emph{dropout} (MulSen) and \emph{real} natural degradation (D29) the gate still beats
-stale selection but \emph{not} plain fusion (n.s.) --- its extra value over fusion needs
-a detectable test-time drift signal, not merely a degraded modality. The advantage has a
-clear boundary, mapped on further fronts:
-two time-series families (NAB $+0.008$; SMD multivariate $+0.011$; both n.s.) and a
-hard near-chance fraud panel (BAF, $6$ variants, base detectors $\approx\!0.6$ AUROC;
-$+0.011$, n.s.) show stacking is marginal where the base detectors carry little
-individual signal --- it neither manufactures signal nor reliably hurts. The precise
-claim: \emph{reliability routing helps iff modalities can fail independently;
-otherwise plain stacking suffices where detectors are individually informative}.
-The stacking result is robust: random-forest and gradient-boosting stackers match
-logistic stacking and also beat auto-select (all CIs exclude zero), while a simple
-average \emph{loses} to selection ($-0.039$)---the gain is learned combination,
-not averaging. A validation-only isotonic layer makes the stack well-calibrated
-(ECE $0.39\!\to\!0.02$, Brier $0.25\!\to\!0.07$, NLL $0.74\!\to\!0.28$).
-Finally, two holdouts probe generalization. A \emph{feature-extractor-robustness}
-holdout (D24): the same $74$ datasets re-featurized with an untouched ViT/RoBERTa
-extractor (never loaded during development; protocol frozen, one-shot) --- the
-stacking advantage replicates ($+0.016$ vs auto-select, CI $[+0.004,+0.032]$). And a
-\emph{genuinely new-data} holdout of $20$ tasks from distinct sources (sklearn
-digits/wine/wdbc, HAR smartphones; one-shot, verifiably absent from development) ---
-the advantage is \emph{larger} still ($+0.111$ vs auto-select, CI $[+0.052,+0.176]$).
+This paper studies one question: \emph{``When does label-free reliability routing
+improve multimodal anomaly detection, and why does it fail when no independent
+modality is available?''} Reliability routing scores each input channel for
+validation-to-test drift (Kolmogorov--Smirnov, no test labels) and routes away from
+channels that look unreliable. Rather than a leaderboard claim, we deliver a
+\emph{characterization} of where this mechanism helps, where it is inert, and where
+it is actively harmful, tying each regime to a structural cause.
+\textbf{(i) It helps when an independent modality carries a \emph{detectable} drift
+signal.} On four real multimodal industrial datasets---Real-IAD-D3, MVTec-3D,
+3D-ADAM, and MulSen-AD---when the deployment-best modality fails at test, a
+drift-aware gate reaches mean AUROC $0.767$, $0.792$, $0.748$, and $0.763$ and beats
+validation-only fusion by up to $+0.248$ (all four pass H1--H3). We state plainly
+that these wins use the \emph{canonical uniform-noise} protocol: the failed
+modality's test scores are overwritten with injected uniform noise, \emph{not}
+natural sensor degradation.
+\textbf{(ii) It is inert or harmful on single-input data}, where the reliability
+estimate is entangled with the anomaly score---across $123$ cross-domain tasks the
+reliability gate does not improve a plain per-task stack and significantly
+\emph{hurts} it ($-0.037$ AUROC, $p_{\mathrm{Holm}}\!\approx\!5\!\times\!10^{-9}$);
+there the useful signal is ordinary learned stacking, which beats validation
+auto-selection by $+0.036$ (CI $[+0.023,+0.050]$), not reliability routing.
+\textbf{(iii) It does not yet hold under natural degradation.} Our one
+real-degradation test (Real-IAD-D3, no injection, D29) is a \emph{negative}: the gate
+beats plain validation-only fusion by only $+0.031$ (n.s.,
+\texttt{reliability\_validated:false}) versus $+0.248$ under injection, and the other
+three datasets were never tested under natural degradation. We foreground this
+injected-to-natural gap as the central limitation and the key open problem, rather
+than bury it.
 \end{abstract}
 
 \section{Introduction}
-Anomaly detection is fragmented: tabular, time-series, vision, out-of-distribution
-(OOD), multimodal/3D, network/cyber, and text settings each have their own strong
-detectors, and none dominates across all. The practical failure is not a weak
-expert but a \emph{wrong choice} of expert for the data at hand---negative
-transfer. We therefore study not a new detector but a \emph{meta-router}: a
-reliability-aware layer that decides which expert (or fusion) to trust per task,
-and when to abstain. \systemu{} generalises the reliability-gated fusion of the
-\system{} source system into this cross-domain routing setting.
+Multimodal anomaly detection fuses several input channels---RGB, depth,
+point-cloud, infrared---each scored by its own expert. A natural idea is
+\emph{reliability routing}: watch every channel for test-time drift away from its
+validation behaviour and down-weight the ones that look unreliable, all without test
+labels. The question this paper answers is narrow and precise:
+\begin{quote}\emph{When does label-free reliability routing improve multimodal
+anomaly detection, and why does it fail when no independent modality is
+available?}\end{quote}
+We answer it not with a leaderboard entry but with a \emph{characterization}: we map
+the regime where the mechanism helps, the regime where it is inert, and the regime
+where it actively hurts, and tie each to a structural cause. The reliability gate
+analysed here is ELARA's reliability-gated multimodal fusion, lifted into a
+cross-domain meta-router (the router we evaluate here, formerly tracked as ELARA-U)
+over a heterogeneous detector zoo so that the single-input and multimodal regimes can
+be compared under one pre-registered evidence contract (Gate~U), with no test labels
+at any selection step.
 
-\paragraph{Honest claim.} We do \emph{not} claim best-on-every-dataset or
-universal state-of-the-art. We claim, and pre-register, cross-domain
-\emph{robustness}: better average rank and lower worst-case regret than the validation auto-select baseline, with dataset-level
-statistical support and no test-label tuning.
+\paragraph{The answer, stated up front.} Reliability routing helps \emph{iff} an
+independent modality can fail with a \emph{detectable} drift signal.
+\textbf{(i)} On four real multimodal datasets it recovers large AUROC when the
+deployment-best modality is failed at test---but under the \emph{injected}
+uniform-noise protocol, not natural degradation.
+\textbf{(ii)} On single-input data, where the reliability estimate is entangled with
+the anomaly score, it is inert and even significantly harmful ($-0.037$ AUROC,
+$p_{\mathrm{Holm}}\!\approx\!5\!\times\!10^{-9}$); there it is ordinary learned
+stacking---not reliability---that beats per-dataset selection.
+\textbf{(iii)} Under \emph{natural} degradation the advantage does not yet hold: our
+one real-degradation test is a negative ($+0.031$, n.s., versus $+0.248$ injected),
+which we foreground as the central limitation rather than bury.
+
+\paragraph{Honest claim.} We do \emph{not} claim best-on-every-dataset or universal
+state-of-the-art. We claim, and pre-register, a precise characterization of
+\emph{when} reliability routing helps: cross-domain \emph{robustness} from learned
+stacking, a reliability win confined to independent and detectable modality failure,
+and an honest, unresolved injected-to-natural gap.
 
 \section{Related Work}
 
@@ -168,9 +164,9 @@ multimodal fusion methods such as M3DM~\cite{m3dm} target per-dataset accuracy; 
 of these datasets is orthogonal---a controlled \emph{reliability} test under
 independent modality failure, not a localisation-accuracy leaderboard entry.
 
-\section{Source-System Evidence (Foundation and Honest Negatives)}
-\systemu{} reuses the \system{}/\method{} program as foundation, pilot, and
-negative evidence---not as universal proof. Table~\ref{tab:source} summarises the
+\section{Foundation Evidence: Earlier Results and Honest Negatives}
+The cross-domain router builds on ELARA's earlier \method{} multimodal results as
+foundation, pilot, and negative evidence---not as universal proof. Table~\ref{tab:source} summarises the
 reusable results. The in-domain RGA+ win and the dead-modality stress mechanism
 are strong; the clean-transfer ties/failures (and Theorem~T9, which proves
 clean-transfer superiority over the confidence-weighted mean is unattainable on
@@ -301,7 +297,7 @@ We evaluate on \textbf{$123$ tasks across $5$ families} (tabular, image-OOD via
 ResNet-18 features, text via BERT features, cyber, fraud) under leave-family-out,
 with no test labels at any selection step. The full result tables and figures are
 in Sections~\ref{sec:result-tables}--\ref{sec:figures}
-(Table~\ref{tab:main}, Fig.~\ref{fig:rank}). The headline result is a significant
+(Table~\ref{tab:main}). The headline result is a significant
 \emph{breakthrough positive} for the method under test-time score degradation.
 
 We report two regimes. The \emph{main} regime is the clean $123$-task i.i.d.\
@@ -315,7 +311,7 @@ detector by stale validation metrics gives a poor average rank of \textbf{$4.43$
 blind to test-time covariate shift and the baseline keeps selecting degraded
 channels.
 
-\paragraph{ELARA-U meta-routing achieves the best average rank (main regime).} On
+\paragraph{ELARA meta-routing achieves the best average rank (main regime).} On
 the clean $123$-task evaluation, the rank-normalized stacking meta-router (fit on
 validation, applied to unlabeled test predictions) achieves a mean rank of
 \textbf{$2.53$} among the $11$ strategies, outperforming validation auto-select
@@ -364,7 +360,7 @@ learner.
 classical detectors preserves the win (stack $-$ auto-select $+0.038$, CI
 $[+0.025,+0.051]$); DeepSVDD is not stronger than the classical detectors here
 (mean AUROC $0.65$), consistent with ADBench, so it does not trivialise routing.
-\textbf{(iv) Calibration} (Table~\ref{tab:calib2}): a validation-only isotonic
+\textbf{(iv) Calibration} (Table~\ref{tab:calib}): a validation-only isotonic
 layer yields well-calibrated probabilities. \textbf{(v) Sealed external
 replication} (Table~\ref{tab:sealed}): the method, baselines, and pass condition
 were frozen (protocol D24) \emph{before} scoring the same $74$ ADBench datasets
@@ -428,20 +424,8 @@ Oracle best pair fusion & 0.749 & $+0.032\,[+0.018,+0.048]$ \\
 \end{tabular}
 \end{table}
 
-\begin{table}[t]\centering
-\caption{Calibration (lower better). A validation-only isotonic layer makes the
-stack well-calibrated, far better than auto-select.}
-\label{tab:calib2}\footnotesize
-\begin{tabular}{lccc}
-\toprule
-\textbf{Method} & ECE & Brier & NLL \\
-\midrule
-Auto-select & 0.393 & 0.249 & 0.743 \\
-Stack (raw) & 0.280 & 0.173 & 0.514 \\
-Stack + isotonic & \textbf{0.024} & \textbf{0.069} & \textbf{0.276} \\
-\bottomrule
-\end{tabular}
-\end{table}
+% [tab:calib2 removed in consolidation --- duplicate of the calibration table
+% (tab:calib) in ELARA_U_RESULT_TABLES.tex; Strengthening (iv) now points there.]
 
 \begin{table}[t]\centering
 \caption{Sealed external holdout (D24, \textbf{one-shot}): method frozen before
@@ -507,9 +491,16 @@ Validation-only fusion & 0.519 & 0.581 & 0.630 & 0.599 \\
 \end{tabular}
 \end{table}
 
-\paragraph{Failure-model dependence: real degradation.} The four-dataset wins above
-use the canonical \emph{uniform-noise} failure (the failed sensor emits garbage, which
-\emph{drifts} detectably). Two further checks locate the gate's true operating regime.
+\paragraph{Failure-model dependence: the headline win is on \emph{injected} failure.}
+The four-dataset wins above are obtained under the canonical \emph{uniform-noise}
+failure protocol: the deployment-best modality's test scores are \emph{overwritten
+with injected uniform noise} (\texttt{St[:,best]=rng.uniform(0,1)} in the harness), a
+controlled drift-inducing fault, not natural sensor degradation. This distinction is
+decisive. On the one dataset where we instead use \emph{real} degradation with no
+injection, the effect does not survive: the gate-vs-validation-only-fusion gain
+collapses from $+0.248$ (injected; CI excludes $0$;
+\texttt{reliability\_validated:true}) to $+0.031$ (natural; n.s.;
+\texttt{reliability\_validated:false}). Two checks locate this boundary.
 \textbf{(i) Real sensor dropout:} on MulSen-AD we replace noise with a stuck/constant
 sensor reading (a realistic outage): the gate still beats stale single-modality
 selection ($+0.28$) but \emph{not} plain fusion (vs equal-weight $-0.03$, n.s.; vs
@@ -590,6 +581,22 @@ confidence-weighted mean on clean near-ceiling data.}
 \end{table}
 
 \section{Scope, Limitations, and Honest Boundaries}
+\paragraph{The headline multimodal wins rest on injected failure.} Our central
+positive result---reliability routing recovering AUROC on Real-IAD-D3, MVTec-3D,
+3D-ADAM, and MulSen-AD---is obtained under the canonical \emph{uniform-noise} failure
+protocol, in which the deployment-best modality's test scores are replaced by
+injected uniform noise. This is a controlled, drift-\emph{inducing} fault, not real
+sensor degradation. \textbf{The one test we ran on genuine natural degradation is a
+negative:} on Real-IAD-D3 with no injection (D29), the gate beats plain
+validation-only fusion by only $+0.031$ (n.s.) versus $+0.248$ under injection, and
+does not validate (\texttt{reliability\_validated:false}); the other three datasets
+were \emph{never} tested under natural degradation. Whether the injected-noise win
+transfers to real-world degradation is therefore \emph{open}, and is the most
+important limitation of this work: the mechanism provably needs a detectable
+test-time drift signal (Proposition~\ref{prop:inert}), and a stuck sensor or mild
+natural drift may not supply one. This is a characterization with a clearly marked
+boundary, not a deployable multimodal method.
+
 This is a focused cross-domain study, not a universal-SOTA claim. The positive
 (stacking) is now supported by a comprehensive baseline sweep including oracle
 ceilings (D28), calibration, a representation-shift holdout (D24), and a fully
@@ -599,9 +606,10 @@ We do not claim universal superiority or per-dataset SOTA; the strict clean-tran
 gate of the source system remains closed by proof (T9) and is not relitigated here. We note that while \systemu{} significantly improves the mean rank on cyber, tabular, and image-OOD families, the rank-gain bootstrap interval on text tasks is directionally positive but does not exclude zero. The fraud family, previously $n=1$, is now expanded to $n=7$ with the BAF suite~\cite{baf} (Strengthening \S vi); on that hard near-chance panel stacking is \emph{not} significantly better than selection --- an honest boundary, not a win. Furthermore, beyond synthetic degradation we ran a sealed natural temporal-shift benchmark (D22, Results): there too plain stacking wins and the drift-aware router is worse (directionally; the $n{=}7$ negative does not survive Holm correction, while the 123-task stack-gate negative does), so the reliability/drift machinery does not help even under natural shift; native OOD and industrial sensor-drift families remain future work. Calibration is now reported with fitted Brier and NLL (Table~\ref{tab:calib}, reliability diagram Fig.~\ref{fig:reliability}); larger sealed natural-shift suites remain future work.
 
 \section{Conclusion}
-We asked when meta-routing helps cross-domain anomaly detection and answered it with
-a pre-registered evidence contract rather than a leaderboard claim. Three findings
-stand. \textbf{First, stacking beats selection.} A per-task logistic stack beats
+We asked \emph{when label-free reliability routing improves multimodal anomaly
+detection, and why it fails when no independent modality is available}, and answered
+it with a pre-registered evidence contract rather than a leaderboard claim. The
+answer is a characterization with three parts. \textbf{First, stacking beats selection.} A per-task logistic stack beats
 validation auto-selection ($+0.036$) across $123$ tasks and, in a comprehensive
 sweep (Table~\ref{tab:baselines}), beats every standard combiner, a learned
 MetaOD-style selector, an AutoML greedy ensemble, and even the test-label
@@ -611,12 +619,17 @@ combination, not a weak-baseline artefact. It replicates under representation sh
 well-calibrated after a validation-only isotonic layer. \textbf{Second, reliability
 routing does not help single-input meta-routing}: KS drift, disagreement, and a
 degenerate-channel guard add no value over plain stacking, and a reliability gate is
-Holm-significantly worse --- a clean negative. \textbf{Third, the exception that
-proves the rule}: when a modality fails \emph{independently and detectably} (D23,
-four real multimodal datasets across two- and three-sensor regimes), a drift-aware gate
-wins over both selection and fusion --- but this is failure-model-specific: under a
-realistic stuck-sensor dropout or real natural degradation the gate beats selection yet
-not plain fusion (n.s.), so its value needs a detectable drift signal. The advantage is
+Holm-significantly worse --- a clean negative. \textbf{Third, and most important for honest scope: the
+multimodal win is real but rests on injected failure}. When a modality fails
+\emph{independently and detectably} (D23, four real datasets), a drift-aware gate
+recovers large AUROC ($0.767$/$0.792$/$0.748$/$0.763$) and beats validation-only
+fusion by up to $+0.248$---but under the canonical \emph{uniform-noise} injection,
+not natural degradation. Our single test on genuine natural degradation
+(Real-IAD-D3, no injection) is a \emph{negative}: $+0.031$ (n.s.,
+\texttt{reliability\_validated:false}) over plain fusion, and the other three datasets
+were never tested this way. The gate provably needs a detectable test-time drift
+signal (Proposition~\ref{prop:inert}); supplying one from \emph{natural} degradation
+is the central open problem we leave. The advantage is
 also honestly bounded --- marginal on time-series (NAB, SMD) and on the near-chance BAF
 fraud panel, where the base detectors carry little individual signal. The practical
 takeaway: \emph{combine detectors by default; add reliability gating only where

@@ -8,7 +8,7 @@
 \toprule
 \textbf{Method} & rank & AUROC & regret & ECE \\
 \midrule
-ELARA-U Stack & \textbf{2.53} & \textbf{0.784} & --- & 0.271 \\
+ELARA Stack & \textbf{2.53} & \textbf{0.784} & --- & 0.271 \\
 Auto-select & 3.38 & 0.748 & 0.008 & 0.393 \\
 Stack + reliability gate & 4.00 & 0.746 & 0.010 & 0.325 \\
 KNN (best fixed) & 5.42 & 0.709 & 0.048 & -- \\
@@ -27,7 +27,7 @@ oracle (best single detector) & --- & 0.756 & 0.000 & --- \\
 \toprule
 \textbf{Method} & cyber & fraud & image\_ood & tabular & text \\
 \midrule
-ELARA-U Stack & 1.00 & 3.00 & 2.49 & 2.41 & 3.69 \\
+ELARA Stack & 1.00 & 3.00 & 2.49 & 2.41 & 3.69 \\
 Auto-select & 3.10 & 1.50 & 3.44 & 3.06 & 4.38 \\
 KNN (best fixed) & 7.30 & 8.00 & 4.07 & 6.74 & 6.42 \\
 \bottomrule
@@ -41,7 +41,7 @@ KNN (best fixed) & 7.30 & 8.00 & 4.07 & 6.74 & 6.42 \\
 \toprule
 \textbf{Method} & Wins & Ties & Losses & Neg.-transfer \\
 \midrule
-ELARA-U Stack & 94 & 8 & 21 & 0.098 \\
+ELARA Stack & 94 & 8 & 21 & 0.098 \\
 Auto-select & 70 & 39 & 14 & 0.106 \\
 Stack + reliability gate & 73 & 5 & 45 & 0.098 \\
 \bottomrule
@@ -55,7 +55,7 @@ Stack + reliability gate & 73 & 5 & 45 & 0.098 \\
 \toprule
 \textbf{Method} & Mean regret & Worst regret \\
 \midrule
-ELARA-U Stack & -0.0274 & 0.1643 \\
+ELARA Stack & -0.0274 & 0.1643 \\
 Auto-select & +0.0081 & 0.1648 \\
 KNN (best fixed) & +0.0476 & 1.0000 \\
 \bottomrule
@@ -69,7 +69,7 @@ KNN (best fixed) & +0.0476 & 1.0000 \\
 \toprule
 \textbf{Method} & Brier (raw$\to$cal) & NLL (raw$\to$cal) & ECE (raw$\to$cal) \\
 \midrule
-ELARA-U Stack & 0.175$\to$0.069 & 0.507$\to$0.277 & 0.271$\to$0.025 \\
+ELARA Stack & 0.175$\to$0.069 & 0.507$\to$0.277 & 0.271$\to$0.025 \\
 Auto-select & 0.248$\to$0.072 & 0.743$\to$0.285 & 0.393$\to$0.024 \\
 Rank-mean & 0.291$\to$0.075 & 0.842$\to$0.291 & 0.407$\to$0.020 \\
 \bottomrule
@@ -77,7 +77,7 @@ Rank-mean & 0.291$\to$0.075 & 0.842$\to$0.291 & 0.407$\to$0.020 \\
 \end{table}
 
 \begin{table}[t]\centering
-\caption{Leave-family-out: ELARA-U Stack minus auto-select mean rank on each held-out family (negative = Stack better), paired-bootstrap 95\% CI.}
+\caption{Leave-family-out: ELARA Stack minus auto-select mean rank on each held-out family (negative = Stack better), paired-bootstrap 95\% CI.}
 \label{tab:lfo}\footnotesize
 \begin{tabular}{lccc}
 \toprule
@@ -131,7 +131,7 @@ drift $-$ auto-select & $+0.008\ [-0.006,+0.024]$ (crosses 0) \\
 \end{table}
 
 \begin{table}[t]\centering
-\caption{ELARA-U action mix over tasks (the verified method is rank-normalized stacking).}
+\caption{ELARA action mix over tasks (the verified method is rank-normalized stacking).}
 \label{tab:abstain}\footnotesize
 \begin{tabular}{lcc}
 \toprule
@@ -144,7 +144,7 @@ select / fuse / fallback & 0 & 0.00 \\
 \end{table}
 
 \begin{table}[t]\centering
-\caption{Failure analysis: where ELARA-U does not improve, and why.}
+\caption{Failure analysis: where ELARA does not improve, and why.}
 \label{tab:failure}\footnotesize
 \begin{tabular}{p{0.20\linewidth}p{0.32\linewidth}p{0.34\linewidth}}
 \toprule

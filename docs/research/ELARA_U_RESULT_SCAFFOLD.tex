@@ -1,4 +1,4 @@
-% ELARA-U results: filled tables (emit_tables.py) + data figures (emit_figures.py)
+% ELARA results: filled tables (emit_tables.py) + data figures (emit_figures.py)
 % + conceptual figures. Regenerate tables/figures by running:
 %   src/scripts/elara_u/emit_tables.py ; src/scripts/elara_u/emit_figures.py
 
@@ -7,7 +7,7 @@
 All result tables below trace to the verified
 \texttt{experiments/elara\_u/honest\_benchmark.json} and the ablation result files
 ($123$ tasks, $5$ families, leakage-free). The headline is on the \emph{clean}
-benchmark: ELARA-U's rank-normalized stacking meta-router significantly improves
+benchmark: ELARA's rank-normalized stacking meta-router significantly improves
 average rank, AUROC, and regret over validation auto-selection and fixed detectors.
 The reliability/drift novelty, however, is decisively \emph{negative}
 (Table~\ref{tab:ablation}). This is not a sealed universal SOTA claim.
@@ -15,23 +15,18 @@ The reliability/drift novelty, however, is decisively \emph{negative}
 
 \section{Figures}
 \label{sec:figures}
-\begin{figure}[H]\centering\includegraphics[width=0.95\linewidth]{elara_u_rank.png}
-\caption{Cross-domain mean rank over $123$ tasks (lower better). ELARA-U Stack achieves the best average rank on the clean benchmark. (Illustrative; authoritative values in Table~\ref{tab:main}.)}\label{fig:rank}\end{figure}
+% [fig:rank removed in consolidation: re-plotted the data already in Table tab:main]
 
-\begin{figure}[H]\centering\includegraphics[width=0.95\linewidth]{elara_u_regret.png}
-\caption{Mean regret to the per-task oracle. ELARA-U Stack has the lowest regret in the current stress archive.}\label{fig:regret}\end{figure}
+% [fig:regret removed in consolidation: re-plotted the data already in Table tab:regret]
 
-\begin{figure}[H]\centering\includegraphics[width=0.95\linewidth]{elara_u_calib.png}
-\caption{Calibration error (ECE, lower better). ELARA-U Stack has the best raw ECE; fitted Brier/NLL in Table~\ref{tab:calib}.}\label{fig:calib}\end{figure}
+% [fig:calib removed in consolidation: re-plotted the data already in Table tab:calib]
 
 \begin{figure}[H]\centering\includegraphics[width=0.55\linewidth]{elara_u_reliability.png}
-\caption{Reliability diagram for the isotonic-calibrated ELARA-U Stack, pooled over 123 tasks (calibrator fit on validation only). Points near the diagonal indicate good calibration; Brier/NLL in Table~\ref{tab:calib}.}\label{fig:reliability}\end{figure}
+\caption{Reliability diagram for the isotonic-calibrated ELARA Stack, pooled over 123 tasks (calibrator fit on validation only). Points near the diagonal indicate good calibration; Brier/NLL in Table~\ref{tab:calib}.}\label{fig:reliability}\end{figure}
 
-\begin{figure}[H]\centering\includegraphics[width=0.95\linewidth]{elara_u_family_heatmap.png}
-\caption{Per-family mean rank (greener = better).}\label{fig:heatmap}\end{figure}
+% [fig:heatmap removed in consolidation: re-plotted the data already in Table tab:family]
 
-\begin{figure}[H]\centering\includegraphics[width=0.95\linewidth]{elara_u_ablation.png}
-\caption{Component ablation summary. The stack gain comes from rank-normalized per-task stacking; reliability/drift feature ablations are decisive and \emph{negative} (Table~\ref{tab:ablation}). (Illustrative; authoritative values in Table~\ref{tab:ablation}.)}\label{fig:ablation}\end{figure}
+% [fig:ablation removed in consolidation: re-plotted the data already in Table tab:ablation]
 
 \begin{figure}[H]\centering\includegraphics[width=0.98\linewidth]{elara_u_d23_multidataset.png}
 \caption{Multimodal independent-modality-failure regime (D23) on \emph{four} real
@@ -42,7 +37,7 @@ three pre-registered hypotheses pass --- all four do. Authoritative deltas and C
 Table~\ref{tab:d23}.}\label{fig:d23}\end{figure}
 
 \begin{figure}[H]\centering\includegraphics[width=0.95\linewidth]{elara_u_architecture.png}
-\caption{ELARA-U architecture: benchmark families feed a detector zoo and score archive; validation-only labels and unlabeled deployment scores drive the router.}\label{fig:arch}\end{figure}
+\caption{ELARA architecture: benchmark families feed a detector zoo and score archive; validation-only labels and unlabeled deployment scores drive the router.}\label{fig:arch}\end{figure}
 
 \begin{figure}[H]\centering\includegraphics[width=0.95\linewidth]{elara_u_coverage.png}
 \caption{Benchmark coverage map. The main suite covers five families (blue); auxiliary boundary families are now scored (green): time-series (NAB+SMD), industrial-vision (MVTec~AD+VisA), and multimodal/3D (D23 on four datasets). OpenOOD and MVTec~AD~2 remain planned (grey).}\label{fig:coverage}\end{figure}

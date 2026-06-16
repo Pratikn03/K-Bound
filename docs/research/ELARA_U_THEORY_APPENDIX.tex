@@ -9,7 +9,7 @@ Let detector $m$ produce scores $s_m(x)$, and let $h_m:\mathbb{R}\to\mathbb{R}$ 
 \[
 r_m(x)=\frac{1}{n}\sum_{i=1}^n \mathbf{1}\{s_m(x_i)\leq s_m(x)\}.
 \]
-Then replacing $s_m(x)$ with $h_m(s_m(x))$ leaves $r_m(x)$ unchanged for every sample $x$, up to tie-handling. Therefore, any ELARA-U stacker using only detector-wise rank-normalized features is invariant to monotone score rescaling, calibration drift, or sensor-scale drift.
+Then replacing $s_m(x)$ with $h_m(s_m(x))$ leaves $r_m(x)$ unchanged for every sample $x$, up to tie-handling. Therefore, any ELARA stacker using only detector-wise rank-normalized features is invariant to monotone score rescaling, calibration drift, or sensor-scale drift.
 \end{proposition}
 \begin{proof}
 For any two samples $(x_i,x_j)$,
@@ -148,7 +148,7 @@ Thus, with probability at least $1-\delta$, the stated bound holds for every $h\
 
 \medskip
 \noindent\textbf{Interpretation.}
-This explains why ELARA-U needs many tasks and leave-family-out evaluation. A high-capacity router trained on too few tasks can overfit meta-level structure and fail to generalize.
+This explains why ELARA needs many tasks and leave-family-out evaluation. A high-capacity router trained on too few tasks can overfit meta-level structure and fail to generalize.
 
 \subsection{Old ELARA/RGA Source-System Theory Stack}
 

@@ -18,10 +18,12 @@
 > - Theorem↔code map: [`docs/research/kbound/THEOREM_CODE_STATUS.md`](docs/research/kbound/THEOREM_CODE_STATUS.md)
 > - **Reproduce everything:** `PYTHON=.venv/bin/python bash scripts/rebuild_kbound.sh` (add `KBOUND_GPU=1` for the TTA experiments)
 >
-> Status: 5/5 core theorems proved (Thm 3 conditional, Thm 5 binary→multiclass), 33/33 theorem
-> tests pass, 9 real experiments (anomaly routing, regression, CIFAR-10-C, online continual-Tent,
-> non-identifiability witness). Honest scope: KGA's edge is safety + cross-regime robustness;
-> full ImageNet-C scale is pending.
+> Status: 5/5 core theorems proved (Thm 3 conditional, Thm 5 binary→multiclass), 39/39 theorem
+> tests pass, all experiments completed (anomaly routing, regression, CIFAR-10-C, online continual-TTA,
+> ImageNet-C noise, Camelyon17, ImageNet-R, RxRx1, CIFAR-10.1). Honest scope: KGA's edge is safety
+> and cross-regime robustness.
+>
+> - **Frontier validation (2026-06-14):** synthetic + real-ImageNet-C corroboration of the benefit-sign frontier, plus a Camelyon17 τ\* recalibration (debug-scale natural-shift win) — [`experiments/kbound/theory_validation/frontier_decisive/`](experiments/kbound/theory_validation/frontier_decisive/). Theorem↔validator crosswalk: [`docs/research/kbound/THEOREM_NUMBERING_CROSSWALK.md`](docs/research/kbound/THEOREM_NUMBERING_CROSSWALK.md). Paper + figure addendum: [`docs/research/kbound/K-Bound_paper_with_frontier.pdf`](docs/research/kbound/K-Bound_paper_with_frontier.pdf). Integrity fixes log: [`INTEGRITY_FIXES.md`](INTEGRITY_FIXES.md).
 
 ### Engineering & reproducibility
 

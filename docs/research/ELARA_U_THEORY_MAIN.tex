@@ -1,4 +1,4 @@
-\section{Theory Stack for ELARA-U: Shift-Aware Reliability Routing}
+\section{Theory Stack for ELARA: Shift-Aware Reliability Routing}
 \label{sec:theory}
 
 \subsection{Notation and Setup}
@@ -24,7 +24,7 @@ When $h$ outputs a fused or stacked score $g_h(x)$ instead of a single detector,
 \[
 A_T(h)=\mathrm{AUROC}_{T_\tau}(g_h).
 \]
-ELARA-U observes validation-only reliability features and unlabeled deployment-shift features, including score dispersion, entropy, inter-detector disagreement, calibration error, detector degeneracy flags, and train-validation/test-score drift statistics. It never observes test labels during routing.
+ELARA observes validation-only reliability features and unlabeled deployment-shift features, including score dispersion, entropy, inter-detector disagreement, calibration error, detector degeneracy flags, and train-validation/test-score drift statistics. It never observes test labels during routing.
 
 \subsection{Main Evidentiary Theorems}
 
@@ -52,7 +52,7 @@ Thus $h$ is optimal on $\tau_1$ but maximally suboptimal on $\tau_2$. Since this
 
 \medskip
 \noindent\textbf{Interpretation.}
-This theorem justifies the ELARA-U claim structure: the paper does not claim ``best on every dataset.'' The defensible claim is reduction of regret and negative transfer under specified reliability and shift conditions.
+This theorem justifies the ELARA claim structure: the paper does not claim ``best on every dataset.'' The defensible claim is reduction of regret and negative transfer under specified reliability and shift conditions.
 
 \begin{theorem}[Validation Auto-Selection Is Near-Oracle Under Stable Transfer]
 \label{thm:stable_transfer}
@@ -120,11 +120,11 @@ Since $\Delta$ can be made large subject only to the AUROC range $[0,1]$, stale 
 
 \medskip
 \noindent\textbf{Interpretation.}
-This theorem formalizes the main ELARA-U motivation: validation auto-selection can be near-oracle when validation and test match, but it can fail badly when deployment shift changes the detector ranking.
+This theorem formalizes the main ELARA motivation: validation auto-selection can be near-oracle when validation and test match, but it can fail badly when deployment shift changes the detector ranking.
 
 \begin{theorem}[Reliability-Separation Improvement Over Stale Auto-Selection]
 \label{thm:reliability_separation}
-Suppose ELARA-U constructs a reliability predictor $\widehat{A}_T(m)$ for deployment performance using validation-only reliability features and unlabeled deployment-shift features. Assume the predictor is uniformly accurate:
+Suppose ELARA constructs a reliability predictor $\widehat{A}_T(m)$ for deployment performance using validation-only reliability features and unlabeled deployment-shift features. Assume the predictor is uniformly accurate:
 \[
 \sup_{m\in\mathcal{D}} |\widehat{A}_T(m)-A_T(m)| \leq \eta.
 \]
@@ -174,11 +174,11 @@ Thus the reliability router strictly improves over stale validation auto-selecti
 
 \medskip
 \noindent\textbf{Interpretation.}
-This is the main positive theorem. ELARA-U can beat auto-select only when its reliability and drift features predict shifted deployment performance better than stale validation AUROC does.
+This is the main positive theorem. ELARA can beat auto-select only when its reliability and drift features predict shifted deployment performance better than stale validation AUROC does.
 
 \begin{theorem}[Safe Switching and Fallback Bound]
 \label{thm:safe_switching}
-Let $\Delta_{\mathrm{fired}} = A_T(h_{\mathrm{route}})-A_T(h_{\mathrm{default}})$ be the performance gain of routing over a default method on the subset of tasks or inputs where the router fires. Suppose ELARA-U switches away from the default only when a valid one-sided $(1-\alpha)$-confidence lower bound satisfies
+Let $\Delta_{\mathrm{fired}} = A_T(h_{\mathrm{route}})-A_T(h_{\mathrm{default}})$ be the performance gain of routing over a default method on the subset of tasks or inputs where the router fires. Suppose ELARA switches away from the default only when a valid one-sided $(1-\alpha)$-confidence lower bound satisfies
 \[
 \mathrm{LCB}_{1-\alpha}(\Delta_{\mathrm{fired}})>0.
 \]
@@ -186,14 +186,14 @@ Then, with probability at least $1-\alpha$, every admitted switch has non-negati
 \[
 \Delta_{\mathrm{fired}}>0.
 \]
-Equivalently, the probability that ELARA-U admits a harmful switch is at most $\alpha$.
+Equivalently, the probability that ELARA admits a harmful switch is at most $\alpha$.
 \end{theorem}
 \begin{proof}
 By validity of the one-sided confidence bound,
 \[
 \Pr\left(\mathrm{LCB}_{1-\alpha}(\Delta_{\mathrm{fired}})\leq \Delta_{\mathrm{fired}}\right)\geq 1-\alpha.
 \]
-ELARA-U admits a switch only if $\mathrm{LCB}_{1-\alpha}(\Delta_{\mathrm{fired}})>0$. On the event that the confidence bound covers the true value,
+ELARA admits a switch only if $\mathrm{LCB}_{1-\alpha}(\Delta_{\mathrm{fired}})>0$. On the event that the confidence bound covers the true value,
 \[
 \Delta_{\mathrm{fired}} \geq \mathrm{LCB}_{1-\alpha}(\Delta_{\mathrm{fired}}) > 0.
 \]
@@ -202,7 +202,7 @@ Thus, with probability at least $1-\alpha$, an admitted switch has positive true
 
 \medskip
 \noindent\textbf{Interpretation.}
-This theorem supports fallback/abstention. ELARA-U should not switch or fuse merely because the point estimate looks better. It should fire only when the benefit is statistically certified.
+This theorem supports fallback/abstention. ELARA should not switch or fuse merely because the point estimate looks better. It should fire only when the benefit is statistically certified.
 
 \subsection{Why Reliability Routing Is Inert for Shared Input but Strict for Independent Modality Failure}
 \label{sec:boundary-theory}
@@ -297,16 +297,16 @@ sensors were informative). The KS gate recovers it without labels. Propositions~
 and~\ref{prop:strict} together pin the operating boundary: the gate is inert exactly when
 no such signal exists and strict exactly when an independently-failing modality creates one.
 
-\begin{corollary}[Operating Boundary of ELARA-U]
+\begin{corollary}[Operating Boundary of ELARA]
 \label{cor:boundary}
-ELARA-U has no guaranteed advantage over validation-AUROC auto-selection under stable validation-to-test transfer. Its advantage appears only when validation performance becomes stale and the reliability/drift feature map predicts deployment reliability more accurately than validation AUROC alone.
+ELARA has no guaranteed advantage over validation-AUROC auto-selection under stable validation-to-test transfer. Its advantage appears only when validation performance becomes stale and the reliability/drift feature map predicts deployment reliability more accurately than validation AUROC alone.
 \end{corollary}
 \begin{proof}
 By Theorem 2, if validation and deployment detector performances are uniformly close, validation auto-selection has regret at most $2\varepsilon$, so little improvement is available.
 
-By Theorem 3, deployment shift can make validation auto-selection suffer regret $\Delta$. By Theorem 4, if ELARA-U predicts shifted deployment reliability with error $\eta$, then its regret is at most $2\eta$. Therefore, ELARA-U improves over auto-selection whenever
+By Theorem 3, deployment shift can make validation auto-selection suffer regret $\Delta$. By Theorem 4, if ELARA predicts shifted deployment reliability with error $\eta$, then its regret is at most $2\eta$. Therefore, ELARA improves over auto-selection whenever
 \[
 \Delta > 2\eta.
 \]
-Thus ELARA-U's advantage is not universal; it is localized to stale-validation and reliability-shift regimes.
+Thus ELARA's advantage is not universal; it is localized to stale-validation and reliability-shift regimes.
 \end{proof}
