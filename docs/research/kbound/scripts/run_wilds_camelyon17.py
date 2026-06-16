@@ -124,6 +124,103 @@ def softmax(x):
     return e / e.sum(axis=1, keepdims=True)
 
 
+# ─── Protocol F: RICH evidence panel (torch-free; from logged logits/stats) ───
+# Pre-registered in research_lock/RICH_EVIDENCE_CAMELYON_PROTOCOL_F_v1.yaml.
+# These are ADDITIVE: the OLD 10-dim Z (compute_Z_from_logits) is kept verbatim
+# and the rich features are APPENDED, so Z_full = [old_10 ... rich_panel].
+# All inputs are arrays already produced by the eval/adapt forward passes — no
+# extra heavy compute. Each fn is unit-callable on tiny synthetic tensors.
+
+def energy_score(logits_batch: "np.ndarray") -> np.ndarray:
+    """Per-sample (negative) free energy E(x) = -logsumexp(logits).  arXiv:2010.03759.
+    Lower energy = more in-distribution.  Returns (N,) array."""
+    L = np.asarray(logits_batch, float)
+    m = L.max(axis=1, keepdims=True)
+    lse = (m[:, 0] + np.log(np.exp(L - m).sum(axis=1)))
+    return -lse
+
+
+def energy_score_shift(logits_src: "np.ndarray", logits_tgt: "np.ndarray") -> float:
+    """Mean energy-score shift source->target (distribution-shift magnitude)."""
+    return float(energy_score(logits_tgt).mean() - energy_score(logits_src).mean())
+
+
+def disagreement_rate(logits_a: "np.ndarray", logits_b: "np.ndarray") -> float:
+    """Prediction-disagreement rate between two models on the SAME inputs
+    (the disagreement region D).  AETTA-style, arXiv:2404.01351."""
+    pa = np.asarray(logits_a, float).argmax(axis=1)
+    pb = np.asarray(logits_b, float).argmax(axis=1)
+    return float(np.mean(pa != pb))
+
+
+def entropy_gap(logits_frozen: "np.ndarray", logits_adapted: "np.ndarray") -> float:
+    """Mean softmax-entropy gap (frozen minus adapted) on the same inputs."""
+    def _ent(L):
+        p = softmax(np.asarray(L, float))
+        return -np.sum(p * np.log(p + 1e-12), axis=1)
+    return float(_ent(logits_frozen).mean() - _ent(logits_adapted).mean())
+
+
+def atc_threshold_acc(logits_src: "np.ndarray", y_src: "np.ndarray",
+                      logits_tgt: "np.ndarray") -> float:
+    """ATC accuracy estimate (arXiv:2201.04234): pick a SOURCE-calibrated threshold t
+    on the max-softmax score so that frac(score<t) == source error; estimated target
+    accuracy = frac(target score >= t).  Uses LABELS only on SOURCE (label-free on tgt)."""
+    ps = softmax(np.asarray(logits_src, float)); ss = ps.max(axis=1)
+    ys = np.asarray(y_src)
+    err = float(np.mean(ps.argmax(axis=1) != ys))
+    t = float(np.quantile(ss, err)) if 0.0 < err < 1.0 else (ss.min() - 1e-9 if err == 0 else ss.max() + 1e-9)
+    pt = softmax(np.asarray(logits_tgt, float)); st = pt.max(axis=1)
+    return float(np.mean(st >= t))
+
+
+def bn_stat_kl_drift(running_mean, running_var, batch_mean, batch_var) -> float:
+    """Mean per-channel KL( N(running) || N(batch) ) BN-drift.  arXiv:2104.11408.
+    Inputs are 1-D per-channel arrays (running vs test-batch BN stats). If BN stats
+    are unavailable the caller passes None and logs a note (feature set to 0.0)."""
+    if running_mean is None or batch_mean is None:
+        return 0.0
+    rm = np.asarray(running_mean, float); rv = np.asarray(running_var, float) + 1e-5
+    bm = np.asarray(batch_mean, float); bv = np.asarray(batch_var, float) + 1e-5
+    kl = 0.5 * (np.log(bv / rv) + (rv + (rm - bm) ** 2) / bv - 1.0)
+    return float(np.mean(kl))
+
+
+def agreement_on_the_line_slope(acc_src, acc_tgt) -> float:
+    """Agreement-on-the-line validity gate (Baek et al. NeurIPS 2022): slope of
+    target vs source accuracy across the available (src,tgt) accuracy pairs.
+    Returns 1.0 (neutral) if fewer than 2 pairs are available."""
+    xs = np.asarray(acc_src, float).ravel(); ys = np.asarray(acc_tgt, float).ravel()
+    if xs.size < 2 or np.allclose(xs.var(), 0):
+        return 1.0
+    return float(np.polyfit(xs, ys, 1)[0])
+
+
+# Number of rich features appended to the base 10-dim Z (keep in sync with builder).
+RICH_PANEL_DIM = 6
+
+def compute_rich_panel(logits_f0_tgt, logits_adapt, logits_src, y_src,
+                       bn_drift_kl):
+    """Assemble the Protocol-F rich evidence panel as a flat feature vector.
+    All args are numpy arrays already gathered during the forward passes:
+      logits_f0_tgt : frozen-f0 logits on the target EVAL pool   (Ne, C)
+      logits_adapt  : adapted-fa logits on the SAME target pool  (Ne, C)
+      logits_src    : frozen-f0 logits on a SOURCE pool          (Ns, C)
+      y_src         : source labels (for ATC)                    (Ns,)
+      bn_drift_kl   : pre-computed BN KL drift scalar (or None)
+    Returns (RICH_PANEL_DIM,) float vector."""
+    disagree = disagreement_rate(logits_f0_tgt, logits_adapt)
+    ent_gap  = entropy_gap(logits_f0_tgt, logits_adapt)
+    en_shift = energy_score_shift(logits_src, logits_f0_tgt)
+    bn_kl    = float(bn_drift_kl) if bn_drift_kl is not None else 0.0
+    atc      = atc_threshold_acc(logits_src, y_src, logits_f0_tgt) if logits_src is not None else 0.0
+    # source-vs-target mean max-softmax gap (cheap confidence-drift summary)
+    conf_drop = float(softmax(np.asarray(logits_src, float)).max(1).mean()
+                      - softmax(np.asarray(logits_f0_tgt, float)).max(1).mean()) \
+                if logits_src is not None else 0.0
+    return np.array([disagree, ent_gap, en_shift, bn_kl, atc, conf_drop], dtype=float)
+
+
 # ─── Smoke test (no torch needed) ────────────────────────────────────────────
 
 def smoke_test():
@@ -143,6 +240,18 @@ def smoke_test():
     print("  decide_kga: OK (eps={:.4f}, decisions={})".format(eps, dict(zip(*np.unique(dec, return_counts=True)))))
     print("  policy_metrics: OK (n={})".format(pm["n"]))
     print("  compute_Z_from_logits: OK (dim={})".format(len(Z_feat)))
+    # ── Protocol-F rich-panel self-test (5-line synthetic-tensor check) ──
+    lf = rng.normal(size=(32, 2)); la = rng.normal(size=(32, 2))
+    ls = rng.normal(size=(40, 2)); ysrc = rng.integers(0, 2, size=40)
+    bn_kl = bn_stat_kl_drift(rng.normal(size=8), rng.uniform(.5, 1.5, 8),
+                             rng.normal(size=8), rng.uniform(.5, 1.5, 8))
+    rich = compute_rich_panel(lf, la, ls, ysrc, bn_kl)
+    assert rich.shape == (RICH_PANEL_DIM,) and np.all(np.isfinite(rich)), rich
+    aotl = agreement_on_the_line_slope([0.7, 0.6, 0.5], [0.65, 0.55, 0.48])
+    print("  rich panel: OK (dim={}, vals={})".format(RICH_PANEL_DIM,
+          np.round(rich, 3).tolist()))
+    print("  bn_kl={:.4f}  aotl_slope={:.3f}  Z_full dim={}".format(
+          bn_kl, aotl, len(Z_feat) + RICH_PANEL_DIM))
     print("Smoke test PASSED")
 
 
@@ -175,6 +284,22 @@ def run_experiment(args):
               else torch.device("cuda") if torch.cuda.is_available()
               else torch.device("cpu"))
     print(f"Device: {device}")
+
+    # ── Startup banner (echo the eval-pool knobs + run config; flush for `python -u`) ──
+    _run_t0 = time.time()
+    print("=" * 70, flush=True)
+    print("K-Bound WILDS Camelyon17 — run config", flush=True)
+    print(f"  seeds       = {args.seeds}", flush=True)
+    print(f"  n_eval      = {getattr(args, 'n_eval', None)}   (per-cell eval-pool size)", flush=True)
+    print(f"  n_batches   = {getattr(args, 'n_batches', None)}   (per-cell adaptation-pool, x{64} = "
+          f"{(getattr(args, 'n_batches', 0) or 0) * 64} samples)", flush=True)
+    print(f"  alpha       = {ALPHA}   (FIXED)", flush=True)
+    print(f"  evidence    = {getattr(args,'evidence_panel','base')}   (Protocol F: 'rich' extends Z)", flush=True)
+    print(f"  f0_dir      = {getattr(args,'f0_dir',None)}   (reuse Protocol-B f0; no retrain)", flush=True)
+    print(f"  steps/lr    = {args.steps} / {args.lr}   (adaptation; UNCHANGED)", flush=True)
+    print(f"  epochs      = {args.epochs}   retrain={args.retrain}   frac={getattr(args,'frac',1.0)}", flush=True)
+    print(f"  output_dir  = {args.output_dir}", flush=True)
+    print("=" * 70, flush=True)
 
     # ── Load Camelyon17 ──────────────────────────────────────────────────────
     print("Loading Camelyon17 (auto-download if needed)...")
@@ -303,7 +428,42 @@ def run_experiment(args):
         preds  = np.concatenate(all_preds)
         labels = np.concatenate(all_labels)
         logits = np.concatenate(all_logits)
-        return balanced_accuracy(labels, preds), logits
+        return balanced_accuracy(labels, preds), logits, labels
+
+    # ── BN running-stat vs test-batch-stat KL drift (Protocol F evidence) ──────
+    # Aggregate per-channel running (mean,var) from BN layers, and per-channel
+    # batch (mean,var) measured on ONE target batch in eval-frozen mode.
+    @torch.no_grad()
+    def bn_running_stats(model):
+        rm, rv = [], []
+        for mod in model.modules():
+            if isinstance(mod, nn.BatchNorm2d) and mod.running_mean is not None:
+                rm.append(mod.running_mean.detach().cpu().numpy())
+                rv.append(mod.running_var.detach().cpu().numpy())
+        if not rm:
+            return None, None
+        return np.concatenate(rm), np.concatenate(rv)
+
+    @torch.no_grad()
+    def bn_batch_stats(model, x):
+        """Measure per-channel mean/var of BN INPUTS on batch x via forward hooks."""
+        feats = {"mean": [], "var": []}
+        hooks = []
+        def _mk():
+            def _h(mod, inp, out):
+                t = inp[0].detach()
+                feats["mean"].append(t.mean(dim=(0, 2, 3)).cpu().numpy())
+                feats["var"].append(t.var(dim=(0, 2, 3), unbiased=False).cpu().numpy())
+            return _h
+        for mod in model.modules():
+            if isinstance(mod, nn.BatchNorm2d):
+                hooks.append(mod.register_forward_hook(_mk()))
+        model.eval(); _ = model(x.to(device))
+        for h in hooks:
+            h.remove()
+        if not feats["mean"]:
+            return None, None
+        return np.concatenate(feats["mean"]), np.concatenate(feats["var"])
 
     # ── Per-seed run ─────────────────────────────────────────────────────────
     os.makedirs(args.output_dir, exist_ok=True)
@@ -324,9 +484,30 @@ def run_experiment(args):
                     continue
             raise RuntimeError("no readable samples in dataset")
 
-    source_loader = DataLoader(_RobustDS(source_data), batch_size=64, shuffle=True,  num_workers=0)
-    target_loader = DataLoader(_RobustDS(target_data), batch_size=64, shuffle=True,  num_workers=0)
-    test_loader   = DataLoader(_RobustDS(test_data),   batch_size=64, shuffle=False, num_workers=0)
+    # ── Evaluation-pool sizing (plumbing only; grid/lr/steps/alpha untouched) ──
+    # --n-eval caps the #target-test samples scored for balanced-accuracy (the per-cell
+    # eval pool — the ONLY manipulated variable in Protocol B). --n-batches caps the
+    # #distinct target batches the adaptation/Z loaders expose (batch_size=64 unchanged,
+    # so n_batches*64 adaptation samples). Pool is fixed across model seeds (rng=0) so the
+    # eval pool is identical for every seed. Capping is no-op when the pool is already smaller.
+    _EVAL_BS = 64
+    _pool_rng = np.random.default_rng(0)
+    def _cap_pool(_sub, _k):
+        _idx = np.asarray(_sub.indices)
+        if _k is not None and 0 < _k < len(_idx):
+            _sel = np.sort(_pool_rng.choice(len(_idx), size=int(_k), replace=False))
+            _sub.indices = _idx[_sel]
+        return len(_sub.indices)
+    _n_eval_used = _cap_pool(test_data,   getattr(args, "n_eval", None))
+    _n_adapt_cap = (getattr(args, "n_batches", None) or 0) * _EVAL_BS
+    _n_adapt_used = _cap_pool(target_data, _n_adapt_cap if _n_adapt_cap > 0 else None)
+    print(f"[eval-pool] n_eval={getattr(args,'n_eval',None)} -> test pool={_n_eval_used} samples; "
+          f"n_batches={getattr(args,'n_batches',None)} -> adapt/Z pool={_n_adapt_used} samples "
+          f"(batch_size={_EVAL_BS}); source/train pool unchanged={len(source_data)}", flush=True)
+
+    source_loader = DataLoader(_RobustDS(source_data), batch_size=_EVAL_BS, shuffle=True,  num_workers=0)
+    target_loader = DataLoader(_RobustDS(target_data), batch_size=_EVAL_BS, shuffle=True,  num_workers=0)
+    test_loader   = DataLoader(_RobustDS(test_data),   batch_size=_EVAL_BS, shuffle=False, num_workers=0)
 
     methods = {
         "tent": lambda m, ldr: tent_adapt(m, ldr, steps=args.steps, lr=args.lr),
@@ -335,17 +516,26 @@ def run_experiment(args):
 
     records = {method: [] for method in methods}
 
-    for seed in args.seeds:
+    _n_cond = len(args.seeds)
+    for _cond_i, seed in enumerate(args.seeds, start=1):
         torch.manual_seed(seed)
         np.random.seed(seed)
-        print(f"\n--- Seed {seed} ---")
+        # ONE progress line per condition (idx/total + elapsed); cosmetics only, flush for `python -u`.
+        print(f"\n[progress] condition {_cond_i}/{_n_cond} (seed={seed}) "
+              f"elapsed={time.time()-_run_t0:.1f}s", flush=True)
+        print(f"--- Seed {seed} ---")
 
-        # Train f0 on source (or load if checkpoint exists)
-        ckpt_path = os.path.join(args.output_dir, f"f0_seed{seed}.pt")
+        # Train f0 on source (or load if checkpoint exists).
+        # Protocol F: REUSE Protocol-B f0 from --f0-dir (do NOT retrain f0). Prefer
+        # the f0-dir checkpoint; only fall back to output-dir if f0-dir lacks it.
+        _f0_src = args.f0_dir or args.output_dir
+        ckpt_path = os.path.join(_f0_src, f"f0_seed{seed}.pt")
+        if not os.path.exists(ckpt_path):
+            ckpt_path = os.path.join(args.output_dir, f"f0_seed{seed}.pt")
         f0 = make_model()
 
         if os.path.exists(ckpt_path) and not args.retrain:
-            print(f"  Loading f0 from {ckpt_path}")
+            print(f"  Loading f0 from {ckpt_path}  (Protocol-F reuse; no retrain)")
             f0.load_state_dict(torch.load(ckpt_path, map_location=device))
         else:
             print(f"  Training f0 on source hospitals ({args.epochs} epochs)...")
@@ -361,30 +551,71 @@ def run_experiment(args):
             torch.save(f0.state_dict(), ckpt_path)
             print(f"  f0 saved to {ckpt_path}")
 
-        # Evaluate frozen f0
-        a0, logits_f0 = evaluate(f0, test_loader)
+        # Evaluate frozen f0 (on target test pool)
+        a0, logits_f0_tgt, _y_tgt = evaluate(f0, test_loader)
         print(f"  f0 balanced acc: {a0:.4f}")
 
-        # Collect label-free Z from target adaptation batch
+        # Collect label-free base-Z from target adaptation batch (UNCHANGED legacy)
         f0.eval()
         with torch.no_grad():
             for x_adapt, _, _ in target_loader:
-                logits_adapt = f0(x_adapt.to(device)).cpu().numpy()
+                _x_adapt = x_adapt
+                logits_adapt0 = f0(x_adapt.to(device)).cpu().numpy()
                 break
-        Z = compute_Z_from_logits(logits_adapt)
+        Z_base = compute_Z_from_logits(logits_adapt0)
+
+        # ── Protocol F: gather the rich-panel inputs (cheap, label-free on target) ──
+        rich_note = None
+        if args.evidence_panel == "rich":
+            # source logits + labels (for energy-shift / ATC) on the source EVAL pool
+            a_src, logits_src, y_src = evaluate(f0, source_loader)
+            # BN drift: running stats vs test-batch stats on one target batch
+            rm, rv = bn_running_stats(f0)
+            bm, bv = bn_batch_stats(f0, _x_adapt)
+            if rm is None or bm is None:
+                rich_note = "BN layers not accessible; bn_kl feature set to 0.0"
+                print(f"  [evidence] NOTE: {rich_note}", flush=True)
+            bn_kl = bn_stat_kl_drift(rm, rv, bm, bv)
+        else:
+            a_src = logits_src = y_src = None; bn_kl = None
 
         for method_name, adapt_fn in methods.items():
             import copy
             fa = copy.deepcopy(f0)
             adapt_fn(fa, target_loader)
-            aa, _ = evaluate(fa, test_loader)
+            aa, logits_fa_tgt, _ = evaluate(fa, test_loader)
             B = aa - a0
-            print(f"  [{method_name}] aa={aa:.4f}, B={B:+.4f}")
-            records[method_name].append({"Z": Z.tolist(), "a0": a0, "aa": aa, "B": B, "seed": seed})
+            # Z_full = legacy base-Z (kept) APPENDED with the rich panel (if enabled).
+            if args.evidence_panel == "rich":
+                rich = compute_rich_panel(logits_f0_tgt, logits_fa_tgt,
+                                          logits_src, y_src, bn_kl)
+                Z_full = np.concatenate([Z_base, rich])
+            else:
+                Z_full = Z_base
+            print(f"  [{method_name}] aa={aa:.4f}, B={B:+.4f}  (Z_full dim={len(Z_full)})")
+            rec = {"Z": Z_full.tolist(),
+                   "Z_base": Z_base.tolist(),
+                   "a0": a0, "aa": aa, "B": B, "seed": seed,
+                   "method": method_name,
+                   "cell": method_name,            # one cell per (method) composition
+                   "evidence_panel": args.evidence_panel,
+                   "n_eval": getattr(args, "n_eval", None),
+                   "n_eval_used": _n_eval_used,
+                   "n_batches": getattr(args, "n_batches", None)}
+            if args.evidence_panel == "rich":
+                rec["Z_rich"] = rich.tolist()
+                rec["a_src"] = a_src
+                rec["bn_kl"] = bn_kl
+                rec["rich_note"] = rich_note
+            records[method_name].append(rec)
 
     # ── Run KGA over seeds ────────────────────────────────────────────────────
     print("\n=== KGA Analysis ===")
-    output = {"device": str(device), "seeds": args.seeds, "alpha": ALPHA, "methods": {}}
+    output = {"device": str(device), "seeds": args.seeds, "alpha": ALPHA,
+              "evidence_panel": args.evidence_panel,
+              "n_eval": getattr(args, "n_eval", None), "n_eval_used": _n_eval_used,
+              "n_batches": getattr(args, "n_batches", None), "n_adapt_used": _n_adapt_used,
+              "methods": {}}
 
     for method_name, recs in records.items():
         entry = {"records": recs}  # always persist raw per-seed numbers (traceable)
@@ -394,6 +625,12 @@ def run_experiment(args):
             aa_arr = np.array([r["aa"] for r in recs])
             B_arr  = aa_arr - a0_arr
             Bhat, eps, dec = decide_kga(Z_mat, B_arr)
+            # Protocol F: serialize per-record B_hat / decision / eps so each
+            # cell x seed record is self-describing (FIX: B-run wrote only aggregates).
+            for _r, _bh, _d in zip(recs, Bhat.tolist(), list(dec)):
+                _r["B_hat"] = float(_bh)
+                _r["decision"] = str(_d)
+                _r["eps"] = float(eps)
             pm = policy_metrics(dec, a0_arr, aa_arr, B_arr)
             pm["eps_conformal"] = eps
             pm["base_rate_harmful_B<0"] = float(np.mean(B_arr < 0))
@@ -414,6 +651,51 @@ def run_experiment(args):
     with open(out_path, "w") as f:
         json.dump(output, f, indent=2)
     print(f"\nResults saved to {out_path}")
+
+    # ── Provenance manifest (git hash, seeds, n_eval, env, wall time) ──────────
+    _wall = time.time() - _run_t0
+    _git = None
+    try:
+        import subprocess
+        _git = subprocess.check_output(
+            ["git", "rev-parse", "HEAD"],
+            cwd=os.path.dirname(os.path.abspath(__file__)),
+            stderr=subprocess.DEVNULL).decode().strip()
+    except Exception:
+        _git = os.environ.get("GIT_COMMIT")
+    manifest = {
+        "script": os.path.basename(__file__),
+        "git_hash": _git,
+        "seeds": list(args.seeds),
+        "n_eval": getattr(args, "n_eval", None),
+        "n_eval_used": _n_eval_used,
+        "n_batches": getattr(args, "n_batches", None),
+        "n_adapt_used": _n_adapt_used,
+        "alpha": ALPHA,
+        "evidence_panel": args.evidence_panel,
+        "f0_dir": args.f0_dir,
+        "steps": args.steps,
+        "lr": args.lr,
+        "epochs": args.epochs,
+        "frac": getattr(args, "frac", 1.0),
+        "retrain": bool(args.retrain),
+        "device": str(device),
+        "output_dir": args.output_dir,
+        "wall_time_sec": round(_wall, 2),
+        "wall_time_human": f"{int(_wall // 3600)}h{int((_wall % 3600) // 60)}m{int(_wall % 60)}s",
+        "env": {
+            "python": sys.version.split()[0],
+            "numpy": np.__version__,
+            "platform": sys.platform,
+            "torch": (torch.__version__ if "torch" in dir() else None),
+        },
+        "result_json": os.path.basename(out_path),
+        "timestamp": time.strftime("%Y-%m-%dT%H:%M:%S%z"),
+    }
+    manifest_path = os.path.join(args.output_dir, "result_manifest.json")
+    with open(manifest_path, "w") as f:
+        json.dump(manifest, f, indent=2)
+    print(f"Manifest saved to {manifest_path}  (git={_git}, wall={manifest['wall_time_human']})", flush=True)
     return output
 
 
@@ -428,9 +710,24 @@ def parse_args():
     p.add_argument("--epochs",      type=int, default=5,   help="Training epochs for f0")
     p.add_argument("--steps",       type=int, default=10,  help="Adaptation steps (Tent/EATA)")
     p.add_argument("--lr",          type=float, default=1e-3, help="Adaptation learning rate")
+    p.add_argument("--n-eval",      type=int, default=256, dest="n_eval",
+                   help="Per-cell evaluation-pool size: cap on #target-test samples used for the "
+                        "balanced-accuracy eval (eval-pool plumbing only; does NOT touch grid/lr/steps/alpha)")
+    p.add_argument("--n-batches",   type=int, default=4, dest="n_batches",
+                   help="Per-cell adaptation-pool size: cap on #distinct target batches exposed to the "
+                        "Z-collection / adaptation loaders (pool plumbing only; adaptation lr/steps unchanged)")
     p.add_argument("--frac",        type=float, default=1.0, help="Fraction of each split to use (smoke test, e.g. 0.001)")
     p.add_argument("--retrain",     action="store_true",   help="Force retrain f0")
     p.add_argument("--smoke-test",  action="store_true",   help="Validate analysis core only (no torch)")
+    # ── Protocol F additions (additive; do NOT change grid/lr/steps/alpha/tau*) ──
+    p.add_argument("--evidence-panel", choices=["base", "rich"], default="rich",
+                   dest="evidence_panel",
+                   help="'base' = legacy 10-dim Z only; 'rich' (default for F) = base Z "
+                        "PLUS the pre-registered drift-aware panel "
+                        "(disagreement, entropy-gap, energy-shift, BN-KL, ATC, conf-drop)")
+    p.add_argument("--f0-dir", default=None, dest="f0_dir",
+                   help="Directory holding Protocol-B f0_seed*.pt checkpoints to REUSE "
+                        "(no retrain). If unset, falls back to --output-dir.")
     return p.parse_args()
 
 

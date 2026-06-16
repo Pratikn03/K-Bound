@@ -125,6 +125,8 @@ fi
 echo "=============================================================="
 echo " DONE. Outputs:"
 echo "   results : $REPO_ROOT/experiments/kbound/results/decisive_tta_results.json"
+echo "   per-cond: $REPO_ROOT/experiments/kbound/results/per_condition_*_seed*.json"
+echo "   manifest: $REPO_ROOT/experiments/kbound/results/result_manifest.json"
 echo "   table   : $REPO_ROOT/experiments/kbound/results/decisive_tta_table.md"
 echo "   figures : $SCRIPT_DIR/../figures/fig_decisive_*_cifar10c.png"
 echo ""

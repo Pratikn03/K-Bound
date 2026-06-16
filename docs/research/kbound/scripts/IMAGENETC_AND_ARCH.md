@@ -204,3 +204,32 @@ bash -n docs/research/kbound/scripts/run_wilds.sh && echo "shell OK"
 python docs/research/kbound/scripts/run_wilds_camelyon17.py --smoke-test
 python docs/research/kbound/scripts/cifar_tent_mps_v2.py --dry-run
 ```
+
+---
+
+## 6. Tier-2 Commands (SAR Protocol-E + true AETTA baseline)
+
+Official-gentle SAR schedule on ImageNet-C (Protocol-E: `lr=2.5e-4`, freeze final block):
+
+```bash
+python3 docs/research/kbound/scripts/cifar_tent_mps_v2.py \
+    --benchmarks imagenetc \
+    --methods sar \
+    --imagenetc-root /path/to/ImageNet-C \
+    --arch resnet50 \
+    --sar-lr 2.5e-4 \
+    --sar-freeze-layer4 \
+    --quick
+```
+
+True AETTA-style dropout baseline on the same ImageNet-C SAR grid:
+
+```bash
+python3 docs/research/kbound/scripts/run_aetta_dropout_imagenetc.py \
+    --imagenetc-root /path/to/ImageNet-C \
+    --arch resnet50 \
+    --quick \
+    --sar-lr 2.5e-4 \
+    --sar-freeze-layer4 \
+    --out experiments/kbound/results/decision_baselines_sarfix/aetta_dropout_imagenetc.json
+```

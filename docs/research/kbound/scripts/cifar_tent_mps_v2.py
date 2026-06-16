@@ -86,6 +86,11 @@ EVAL_POOL       = 2000       # balanced held-out eval images per corruption/seve
 HELP_THR        = 0.02       # |B| band for labeling regime (REPORTING ONLY)
 ALPHA           = 0.10       # conformal miscoverage -> false-adapt/false-freeze target
 SEED            = 0
+# Official-SAR (Protocol E) knobs. Defaults reproduce the matched-LR SAR exactly
+# (sar_lr=None -> shared lr; freeze_layer4=False -> all affine params adapted), so
+# every prior run stays byte-identical unless these are explicitly set from the CLI.
+SAR_LR          = None
+SAR_FREEZE_LAYER4 = False
 
 def set_global_seed(seed):
     """Set the run seed for ALL rng (protocol: 'seed sets ALL rng').
@@ -470,11 +475,25 @@ EVIDENCE_NAMES = ["pre_entropy", "pre_conf", "pre_pbal", "post_entropy", "post_c
                   "post_pbal", "pbal_drop", "entropy_drop", "frac_highconf", "marginal_KL", "update_norm"]
 
 # ---- TTA methods (BN- or LayerNorm-affine), return (adapted_model, update_norm) ----
-def _bn_affine_params(m):
+def _bn_affine_params(m, freeze_layer4=False):
     """TTA-adaptable affine params: BatchNorm affine (ResNet/CNN) OR LayerNorm affine
-    (ViT/transformers). Tent/EATA/SAR target whichever the backbone uses."""
+    (ViT/transformers). Tent/EATA/SAR target whichever the backbone uses.
+
+    freeze_layer4=False (DEFAULT) keeps the original behavior: every BN/LN-affine
+    param is adaptable, byte-identical to all prior runs. freeze_layer4=True is the
+    official-SAR (Niu et al. 2023) setting: exclude the final ResNet stage ('layer4')
+    / ViT top blocks from adaptation. Implemented by skipping any affine module whose
+    qualified name lies under 'layer4' (ResNet) or 'encoder_layer_11'/'encoder.layers.11'
+    (ViT-B/16 last block) -- only used when the caller opts in."""
+    def _in_layer4(name):
+        return (".layer4" in ("." + name)) or ("encoder_layer_11" in name) or \
+               ("encoder.layers.11" in name) or ("encoder.layers.encoder_layer_11" in name)
+    named = dict(m.named_modules())
+    mod_to_name = {id(mod): nm for nm, mod in named.items()}
     ps = []
     for mod in m.modules():
+        if freeze_layer4 and _in_layer4(mod_to_name.get(id(mod), "")):
+            continue  # official-SAR: do not adapt the final block
         if isinstance(mod, (nn.BatchNorm1d, nn.BatchNorm2d)):
             mod.track_running_stats = False; mod.running_mean = None; mod.running_var = None
             if mod.weight is not None: mod.weight.requires_grad_(True); ps.append(mod.weight)
@@ -484,10 +503,10 @@ def _bn_affine_params(m):
             if mod.bias is not None: mod.bias.requires_grad_(True); ps.append(mod.bias)
     return ps
 
-def _clone_for_tta(base):
+def _clone_for_tta(base, freeze_layer4=False):
     m = copy.deepcopy(base); m.train()
     for p in m.parameters(): p.requires_grad_(False)
-    ps = _bn_affine_params(m)
+    ps = _bn_affine_params(m, freeze_layer4=freeze_layer4)
     init = [p.detach().clone() for p in ps]
     return m, ps, init
 
@@ -524,7 +543,8 @@ def eata_adapt(base, stream, steps, lr, num_classes, e_margin=None, fisher_alpha
             opt.zero_grad(); loss.backward(); opt.step()
     return m, _upd_norm(ps, init)
 
-def sar_adapt(base, stream, steps, lr, num_classes, rho=0.05, margin_e0=None, reset_constant_em=0.2):
+def sar_adapt(base, stream, steps, lr, num_classes, rho=0.05, margin_e0=None,
+              reset_constant_em=0.2, sar_lr=None, freeze_layer4=False):
     """Faithful SAR (Niu et al., ICLR 2023; github.com/mr-eggplant/SAR), ported from
     sar.py/sam.py. Four components of the reference, all present here:
       (1) SAM optimizer wrapping SGD: first_step climbs to w+e(w) and SAVES the per-param
@@ -539,8 +559,11 @@ def sar_adapt(base, stream, steps, lr, num_classes, rho=0.05, margin_e0=None, re
     official repo is that it adapts the same affine params as tent/eata rather than excluding
     ResNet-layer4 / ViT top-blocks, to keep the candidate-method comparison controlled.)"""
     if margin_e0 is None: margin_e0 = 0.4 * math.log(num_classes)             # E_0, Eqn. (2)
-    m, ps, init = _clone_for_tta(base)
-    opt = torch.optim.SGD(ps, lr=lr, momentum=0.9)                            # SAM's base optimizer
+    # sar_lr=None (DEFAULT) -> use the shared matched lr (byte-identical to prior runs).
+    # Official SAR uses its own lr (2.5e-4) + frozen final block; opt in via flags.
+    eff_lr = lr if sar_lr is None else sar_lr
+    m, ps, init = _clone_for_tta(base, freeze_layer4=freeze_layer4)
+    opt = torch.optim.SGD(ps, lr=eff_lr, momentum=0.9)                        # SAM's base optimizer
     # snapshot for the recovery scheme (faithful copy_model_and_optimizer)
     model_state = copy.deepcopy(m.state_dict())
     opt_state = copy.deepcopy(opt.state_dict())
@@ -578,7 +601,25 @@ def sar_adapt(base, stream, steps, lr, num_classes, rho=0.05, margin_e0=None, re
                 opt.load_state_dict(opt_state); ema = None
     return m, _upd_norm(ps, init)
 
-TTA_METHODS = {"tent": tent_adapt, "eata": eata_adapt, "sar": sar_adapt}
+def shot_adapt(base, stream, steps, lr):
+    """SHOT-IM (Liang et al., ICML 2020): information maximization on the same BN/LN-affine
+    params as tent, so it slots in apples-to-apples as a candidate under the shared (steps,lr)
+    budget. Per-batch loss = conditional entropy (minimize: sharpen each prediction) MINUS the
+    marginal/diversity entropy (maximize: prevent collapse to a single class). This is the
+    label-free test-time variant (no source-clustering pseudo-labels), the standard SHOT TTA
+    baseline."""
+    m, ps, init = _clone_for_tta(base); opt = torch.optim.Adam(ps, lr=lr)
+    for _ in range(steps):
+        for xb in stream:
+            p = m(xb.contiguous()).softmax(1)
+            cond_ent = _entropy(p).mean()                 # minimize per-sample entropy
+            pbar = p.mean(0)                              # marginal (mean) prediction
+            div_ent = -(pbar * (pbar + 1e-6).log()).sum() # maximize diversity entropy
+            loss = cond_ent - div_ent
+            opt.zero_grad(); loss.backward(); opt.step()
+    return m, _upd_norm(ps, init)
+
+TTA_METHODS = {"tent": tent_adapt, "eata": eata_adapt, "sar": sar_adapt, "shot": shot_adapt}
 
 # ---- stream / eval construction ----
 def _norm_cifar(x):
@@ -670,6 +711,7 @@ def run_cifar_benchmark(which, data_root, dev, methods, corruptions, ckpt=None, 
                 fn = TTA_METHODS[mth]
                 kwargs = dict(steps=ag["steps"], lr=ag["lr"])
                 if mth in ("eata", "sar"): kwargs["num_classes"] = num_classes
+                if mth == "sar": kwargs.update(sar_lr=SAR_LR, freeze_layer4=SAR_FREEZE_LAYER4)
                 adapted, un = fn(model, stream, **kwargs)
                 aa = acc_on(adapted, ex, ey, train_mode=True)
                 Z = evidence_vector(model, adapted, ex, num_classes, un)
@@ -709,6 +751,7 @@ def run_cifar101_benchmark(data_root, dev, methods, ckpt=None, quick=False):
             for mth in methods:
                 fn = TTA_METHODS[mth]; kwargs = dict(steps=ag["steps"], lr=ag["lr"])
                 if mth in ("eata", "sar"): kwargs["num_classes"] = num_classes
+                if mth == "sar": kwargs.update(sar_lr=SAR_LR, freeze_layer4=SAR_FREEZE_LAYER4)
                 adapted, un = fn(model, stream, **kwargs)
                 aa = acc_on(adapted, ex, ey, train_mode=True)
                 Z = evidence_vector(model, adapted, ex, num_classes, un)
@@ -806,6 +849,7 @@ def run_imagenet_benchmark(ic_root, val_root, dev, methods, corruptions, quick=F
                 for mth in methods:
                     fn = TTA_METHODS[mth]; kw = dict(steps=ag["steps"], lr=ag["lr"])
                     if mth in ("eata", "sar"): kw["num_classes"] = num_classes
+                    if mth == "sar": kw.update(sar_lr=SAR_LR, freeze_layer4=SAR_FREEZE_LAYER4)
                     adapted, un = fn(model, stream, **kw)
                     aa = acc_on(adapted, X, Y, train_mode=True)
                     Z = evidence_vector(model, adapted, X[:1024], num_classes, un)
@@ -859,11 +903,24 @@ def main():
     ap.add_argument("--max-cells", type=int, default=0,
                     help="SMOKE-TEST ONLY: cap number of grid cells (0 = no cap = full grid). "
                          "Leave at 0 for any real/confirmatory run so the grid stays byte-identical.")
+    ap.add_argument("--sar-lr", type=float, default=None, dest="sar_lr",
+                    help="SAR-arm learning rate. DEFAULT None = use the shared matched lr "
+                         "(byte-identical to all prior runs). Set 2.5e-4 for the official "
+                         "gentle SAR schedule (Protocol E). Only affects the 'sar' method.")
+    ap.add_argument("--sar-freeze-layer4", action="store_true", dest="sar_freeze_layer4",
+                    help="SAR-arm only: freeze the final block (ResNet layer4 / ViT top block) "
+                         "during adaptation, per Niu et al. 2023 official SAR. DEFAULT off "
+                         "(adapts all affine params, identical to prior runs).")
     args = ap.parse_args()
 
     os.makedirs(args.out_results, exist_ok=True); os.makedirs(args.out_figs, exist_ok=True)
     dev = pick_device(); print("device:", dev)
     set_global_seed(args.seed); print("seed:", SEED)
+    global SAR_LR, SAR_FREEZE_LAYER4
+    SAR_LR = args.sar_lr; SAR_FREEZE_LAYER4 = args.sar_freeze_layer4
+    if SAR_LR is not None or SAR_FREEZE_LAYER4:
+        print(f"[SAR-official] sar_lr={SAR_LR} freeze_layer4={SAR_FREEZE_LAYER4} "
+              f"(non-default SAR arm; tent/eata unchanged)")
     _t_start = time.time()
 
     combined = {"alpha": args.alpha, "device": dev, "seed": SEED, "benchmarks": {},
@@ -890,37 +947,62 @@ def main():
             metrics, detail = summarize(rws, alpha=args.alpha)
             # ---- PER-CONDITION serialization (protocol serialization_contract) ----
             # Join each condition's raw record with its KGA outputs and write one
-            # JSON object per (condition x seed). Only fields this v2 runner actually
-            # computes are emitted; agreement/tau/n_D are not part of this runner's
-            # KGA machinery (it uses GB B_hat(Z)+split-conformal), so they are recorded
-            # as null rather than fabricated. See per_condition_fields_absent below.
+            # JSON object per (condition x seed), including condition-level audit fields.
+            # This v2 runner is single-candidate (frozen vs adapted), so tau is
+            # degenerate (0.0 by construction; no pairwise-agreement residual).
             _per_cond = []
             for i, r in enumerate(rws):
+                b_hat_i = float(detail["Bhat"][i])
+                eps_i = float(detail["eps"])
+                lb_i = b_hat_i - eps_i
+                ub_i = b_hat_i + eps_i
+                if lb_i > 0:
+                    zone_i = "CERTIFIED_ADAPT"
+                elif ub_i < 0:
+                    zone_i = "CERTIFIED_FREEZE"
+                else:
+                    zone_i = "BLIND"
+                kga_acc_i = float(r["aa"] if detail["dec"][i] == "ADAPT" else r["a0"])
                 _per_cond.append({
                     "seed": SEED, "benchmark": bench, "method": mth,
                     "condition": r["condition"],
                     "B": float(detail["B"][i]),            # true benefit aa - a0
                     "a0": float(r["a0"]),                  # frozen accuracy
                     "a_adapted": float(r["aa"]),           # adapted accuracy
+                    "a_kbound": kga_acc_i,
+                    "a_oracle": float(max(r["a0"], r["aa"])),
                     "regime": r["regime"],                 # helpful/harmful/marginal (oracle action proxy)
                     "oracle_action": ("ADAPT" if r["aa"] > r["a0"] else "FREEZE"),
                     "Z": [float(z) for z in r["Z"]],       # label-free evidence vector
                     "Z_names": EVIDENCE_NAMES,
                     "n_D": None,                           # not computed by v2 KGA
                     "c_ij": None,                          # pairwise agreements: not computed by v2 KGA
-                    "tau_hat": None,                       # route threshold: not computed by v2 KGA
-                    "b_hat": float(detail["Bhat"][i]),     # GB leave-one-out benefit estimate
-                    "eps_conformal": float(detail["eps"]), # split-conformal certificate radius
+                    "tau_hat": 0.0,                        # single-candidate route => identically zero
+                    "tau_star": 0.0,                       # same degenerate route convention
+                    "b_hat": b_hat_i,                      # GB leave-one-out benefit estimate
+                    "eps_conformal": eps_i,                # split-conformal certificate radius
+                    "benefit_ci": [float(lb_i), float(ub_i)],
+                    "zone": zone_i,                        # CERTIFIED_ADAPT / CERTIFIED_FREEZE / BLIND
+                    "gamma_hat": float(0.5 * b_hat_i),     # single-candidate proxy: gamma ~ b_hat/2
+                    "gamma_ci": [float(0.5 * lb_i), float(0.5 * ub_i)],
                     "kga_decision": str(detail["dec"][i]), # ADAPT/FREEZE/ABSTAIN
                 })
             _pc_path = os.path.join(args.out_results, f"per_condition_{bench}_{mth}_seed{SEED}.json")
             with open(_pc_path, "w") as _f:
                 json.dump({"seed": SEED, "benchmark": bench, "method": mth,
                            "alpha": args.alpha, "n_conditions": len(_per_cond),
-                           "per_condition_fields_absent": ["n_D", "c_ij", "tau_hat"],
+                           "per_condition_fields_absent": ["n_D", "c_ij"],
                            "per_condition_fields_absent_reason":
                                "v2 KGA = gradient-boosted B_hat(Z) + split-conformal eps; "
-                               "it does not compute pairwise agreements c_ij, tau_hat, or n_D.",
+                               "it does not compute pairwise agreements c_ij or n_D.",
+                           "per_condition_field_notes": {
+                               "tau_hat_tau_star":
+                                   "single-candidate route (frozen vs adapted), so tau is degenerate and set to 0.0.",
+                               "zone":
+                                   "computed from benefit_ci: lb>0 => CERTIFIED_ADAPT, ub<0 => CERTIFIED_FREEZE, else BLIND.",
+                               "gamma_hat":
+                                   "single-candidate proxy (b_hat/2) with gamma_ci = benefit_ci/2."
+                           },
                            "records": _per_cond}, _f, indent=2)
             print(f"  [serialize] wrote {len(_per_cond)} per-condition records -> {_pc_path}")
             per_method[mth] = {"metrics": metrics, "n_conditions": len(rws),
@@ -962,6 +1044,8 @@ def main():
         "seed": SEED, "alpha": args.alpha, "device": dev,
         "benchmarks": args.benchmarks, "methods": args.methods,
         "quick": args.quick, "max_cells": args.max_cells,
+        "sar_arm": {"sar_lr": SAR_LR, "freeze_layer4": SAR_FREEZE_LAYER4,
+                    "default_matched_lr_behavior": (SAR_LR is None and not SAR_FREEZE_LAYER4)},
         "grid": {"severities": SEVERITIES, "quick_severities": [1, 5],
                  "batch_regimes": BATCH_REGIMES, "compositions": COMPOSITIONS,
                  "aggressiveness": AGGRESSIVENESS, "n_repeats": N_REPEATS,

@@ -10,9 +10,12 @@ VENV="$HOME/.venv_wilds"
 IC=experiments/kbound/data/imagenet-c
 IC_FAST="$HOME/kbound_inc"            # fast internal-SSD copy of ImageNet-C noise (prep_internal_noise.sh)
 CAM_FAST="$HOME/kbound_cam/wilds"     # fast internal-SSD copy of Camelyon17 (prep_internal_camelyon.sh)
+INR_FAST="$HOME/kbound_inr/imagenet-r" # fast internal-SSD copy of ImageNet-R
 RES=experiments/kbound/results
 S2=docs/research/kbound/scripts/cifar_tent_mps_v2.py
 WILDS=docs/research/kbound/scripts/run_wilds_camelyon17.py
+RXRX1_9PLUS=docs/research/kbound/scripts/run_rxrx1_9plus.sh
+IMAGENETR=experiments/kbound/wilds/run_imagenetr_kbound.py
 
 cd "$REPO" || { echo "ERROR: repo not found at $REPO"; exit 1; }
 [ -d "$VENV" ] || { echo "ERROR: $VENV missing. Create it once with run_wilds.sh"; exit 1; }
@@ -97,6 +100,27 @@ case "${1:-}" in
     caffeinate -is python "$S2" --benchmarks cifar101 \
       --data-root experiments/kbound/cifar --methods tent eata sar \
       --out-results "$RES/cifar101_quick" --quick ;;
+  rxrx1-9plus)
+    bash "$RXRX1_9PLUS" ;;
+  rxrx1-9plus-dry-run)
+    bash "$RXRX1_9PLUS" --dry-run ;;
+  imagenetr-d)
+    [ -d "$INR_FAST" ] || { echo "ERROR: ImageNet-R internal copy not found at $INR_FAST"; exit 1; }
+    caffeinate -is python "$IMAGENETR" --panel diverse_backbones \
+      --imagenetr-dir "$INR_FAST" --seeds 0 1 2 3 \
+      --compositions iid imbalanced single_class --batch-regimes small tiny \
+      --aggressiveness mild aggressive --n-eval 500 --n-batches 4 \
+      --frozen-eval-batch 32 \
+      --tau-star 0.52 --kappa 2.5 --sd-L 0.6 --delta 0.05 \
+      --device auto --run-name imagenetr_protocol_d_size_diverse_panel_v2 ;;
+  imagenetr-d-dry-run)
+    python "$IMAGENETR" --panel diverse_backbones --dry-run \
+      --imagenetr-dir "$INR_FAST" --seeds 0 1 2 3 \
+      --compositions iid imbalanced single_class --batch-regimes small tiny \
+      --aggressiveness mild aggressive --n-eval 500 --n-batches 4 \
+      --frozen-eval-batch 32 \
+      --tau-star 0.52 --kappa 2.5 --sd-L 0.6 --delta 0.05 \
+      --device auto --run-name imagenetr_protocol_d_size_diverse_panel_v2 ;;
   *)
-    echo "usage: bash kbtrain.sh [noise|noise-fast|noise-fast-1pct|noise-fast-01pct|noise-full|noise-quick|noise-smoke|camelyon|camelyon-fast|camelyon-fast-1pct|camelyon-smoke|cifar101|cifar101-quick|noiseblur|vit|vit-fast]"; exit 1 ;;
+    echo "usage: bash kbtrain.sh [noise|noise-fast|noise-fast-1pct|noise-fast-01pct|noise-full|noise-quick|noise-smoke|camelyon|camelyon-fast|camelyon-fast-1pct|camelyon-smoke|cifar101|cifar101-quick|rxrx1-9plus|rxrx1-9plus-dry-run|imagenetr-d|imagenetr-d-dry-run|noiseblur|vit|vit-fast]"; exit 1 ;;
 esac
