@@ -1,0 +1,114 @@
+# PROTOCOL D - ImageNet-R size-diverse independent-backbone panel
+# Registered: 2026-06-13, BEFORE any result from this run is observed.
+# Amended before launch/results: expanded from 5 to 10 candidates to cover
+# small/base/large model-size tiers while preserving the frozen-grid protocol.
+#
+# Purpose:
+#   The existing ImageNet-R light run used six TTA candidates sharing one ResNet-50
+#   backbone. The multi-candidate CEI/tau diagnostic rejected every condition
+#   (tau >> tau_star), so the route abstained on 48/48. Protocol D tests the
+#   pre-stated follow-up in the paper: whether a non-co-adapted panel of genuinely
+#   different pretrained ImageNet backbones passes the structural diagnostic often
+#   enough for the multi-candidate route to commit safely.
+
+protocol: PROTOCOL D
+dataset: ImageNet-R
+panel: diverse_backbones
+panel_variant: size_diverse_v2
+
+design:
+  f0_backbone: resnet50
+  f0_weights: torchvision ResNet50_Weights.IMAGENET1K_V2
+  candidate_backbones:
+    - resnet101
+    - resnet152
+    - resnext101_32x8d
+    - efficientnet_b0
+    - efficientnet_b3
+    - convnext_tiny
+    - convnext_base
+    - vit_b_16
+    - swin_t
+    - swin_b
+  candidate_size_tiers:
+    small:
+      - efficientnet_b0
+      - convnext_tiny
+      - swin_t
+    base_medium:
+      - resnet101
+      - efficientnet_b3
+      - convnext_base
+      - vit_b_16
+      - swin_b
+    large:
+      - resnet152
+      - resnext101_32x8d
+  candidate_policy: frozen pretrained ImageNet-1K classifiers, logits masked to the same 200 ImageNet-R classes
+  no_base_training: true
+  no_tta_updates: true
+  rationale: >
+    Candidate diversity is architectural and training-procedure diversity from
+    independent torchvision pretrained models, not post-hoc tuning on ImageNet-R.
+    This is the clean test of whether the CEI/tau route was blocked by shared-backbone
+    correlation rather than by ImageNet-R itself.
+
+grid:
+  seeds: [0, 1, 2, 3]
+  compositions: [iid, imbalanced, single_class]
+  batch_regimes: [small, tiny]
+  aggressiveness: [mild, aggressive]
+  n_eval: 500
+  n_batches: 4
+  expected_conditions: 48
+  expected_candidate_records: 480
+  eval_metric: balanced accuracy on held-out class-balanced ImageNet-R eval pool
+
+certificate:
+  route: multi-candidate tau route only as the primary endpoint
+  tau_star: 0.52
+  kappa: 2.5
+  alpha: 0.10
+  adapt_action: choose one candidate backbone when certified; FREEZE/ABSTAIN realize f0
+  forbidden_tuning:
+    - do not change tau_star after observing results
+    - do not add/remove candidate backbones after observing results
+    - do not change seeds/grid/n_eval after observing results
+    - do not tune thresholds on ImageNet-R labels
+
+serialization_contract:
+  - per condition: a0, candidate accuracies, oracle, realized route accuracy
+  - per candidate record: Z, B, a0, aa, candidate name, seed, composition, regime, aggressiveness
+  - route fields: tau, tau_star, gate_pass, b_hat, b_tilde, n_D, decision, choice, reason
+  - manifest: config, candidate_backbones, data counts, baselines, route metrics, detectability, records, conditions
+
+analysis_plan_locked:
+  primary:
+    - KGA route regret vs best_fixed_always_adapt and always_freeze
+    - tau gate pass rate and abstention rate
+    - false-adapt rate among committed ADAPT decisions
+  secondary:
+    - detectability AUC from label-free Z versus true B sign
+    - tau distribution compared with the prior shared-backbone ImageNet-R run
+    - single-candidate KGA summaries, labeled diagnostic only
+  success_criteria_stated_in_advance:
+    - WIN: route regret is lower than both always-freeze and best fixed candidate, false-adapt <= 0.10, and coverage >= 0.20
+    - PARTIAL: tau gate pass rate improves and false-adapt <= 0.10, but route beats only one trivial policy
+    - FAIL: tau still rejects most conditions or route does not beat either trivial; report as evidence ImageNet-R remains outside the certifiable regime
+
+launch:
+  runner: experiments/kbound/wilds/run_imagenetr_kbound.py
+  command: >
+    python experiments/kbound/wilds/run_imagenetr_kbound.py
+    --panel diverse_backbones
+    --imagenetr-dir /Users/pratik_n/kbound_inr/imagenet-r
+    --seeds 0 1 2 3
+    --compositions iid imbalanced single_class
+    --batch-regimes small tiny
+    --aggressiveness mild aggressive
+    --n-eval 500
+    --n-batches 4
+    --tau-star 0.52
+    --run-name imagenetr_protocol_d_size_diverse_panel_v2
+  output_dir: experiments/kbound/results/imagenetr_protocol_d_size_diverse_panel_v2/
+  queue: DO NOT launch while any RxRx1/Camelyon/CIFAR/ImageNet GPU job is running.

@@ -1,0 +1,49 @@
+# PROTOCOL B — Camelyon17 full-scale: testing the 1/sqrt(n) certifiability prediction
+# Registered: 2026-06-12, BEFORE any result of this run is observed.
+# AMENDMENT v1.1 (pre-observation): seeds 4->5; n_eval fixed at 1024; runner patched to expose --n-eval/--n-batches (grid untouched)
+# THE PREDICTION (already timestamped in K-Bound_paper.pdf, eps-recalibration paragraph):
+#   At debug scale (n_eval=256/cell) harm was detectable (AUC 0.91) but NOT certifiable:
+#   recalibrated eps committed but false-adapt hit 0.185 ~ 1.9x alpha. The conformal
+#   radius shrinks ~ 1/sqrt(n). QUADRUPLING the per-cell eval pool (n_eval >= 1024)
+#   should halve the radius and move cells from blind/invalid to VALIDLY certified:
+#   false-adapt <= alpha = 0.10 at non-trivial commit rate.
+
+design:
+  dataset: WILDS Camelyon17 (hospital shift), official DenseNet-121 f0 (same checkpoint
+    as the debug run; --retrain forbidden)
+  grid: IDENTICAL to the debug composition-stress grid (72 conditions x 6 TTA candidates;
+    severity/composition/batch axes unchanged) — n_eval is the ONLY manipulated variable.
+  n_eval_per_cell: ">= 1024 (vs 256 debug); record exact value in manifest"
+  seeds: [0, 1, 2, 3, 4]         # AMENDMENT v1.1: was [0,1,2,3] (debug set); extended to 5 seeds pre-observation
+  alpha: 0.10 (FIXED; never tuned)
+  epsilon_rule: "eps = (1-alpha)-quantile of CAL-split residuals |Delta_hat - B|;
+    CAL/TEST split BY SEED (all 6 two-seed assignments), same fixed rule as the
+    eps-recalibration analysis — no per-dataset knob"
+  tau_star: UNTOUCHED (co-adapted panel; Route-2 guard stays as is)
+
+serialization_contract:
+  - per cell x seed: Z, Delta_hat (B_hat), TRUE B, a0, a_adapted, n_eval, decision,
+    eps used, seed — JSON arrays, not aggregates
+  - result_manifest.json: git hash, seed, env, n_eval, wall time
+
+analysis_plan_locked:
+  primary: on TEST splits with frozen CAL-eps — false-adapt rate vs alpha; commit rate;
+    KGA regret vs always-adapt / always-freeze, paired per-condition bootstrap 10^4,
+    Holm over the comparison family; mean +- 95% CI over the 6 seed-splits.
+  prediction_check: false-adapt(n=1024) vs false-adapt(n=256, archived debug numbers);
+    radius ratio vs sqrt(256/1024)=0.5 expected.
+  success_criteria_stated_in_advance:
+    - CONVERTS: false-adapt <= alpha AND commit rate >= 0.3 AND KGA regret < both
+      trivials (Holm) -> the precise negative becomes the natural-shift headline.
+    - PARTIAL: false-adapt <= alpha but commits too rare or beats only freeze ->
+      report as partial confirmation of 1/sqrt(n); scope honestly.
+    - FAILS: false-adapt > alpha persists at n>=1024 -> detectability-certifiability
+      gap is deeper than sample size; strengthen the open problem. All publishable.
+  forbidden: changing grid/alpha/eps-rule/tau after first result; peeking mid-run.
+
+launch:
+  runner: docs/research/kbound/scripts/run_wilds_camelyon17.py (native --seeds support)
+  preflight_required: confirm which flag/constant sets per-cell eval-pool size
+    (--frac vs internal EVAL_POOL const) and that per-condition records are written
+    to the new output dir; patch n_eval knob ONLY (grid constants untouched).
+  output_dir: experiments/kbound/results/camelyon17_fullscale_B_v1/

@@ -200,6 +200,59 @@ class KGA:
         self.last_certificate = cert
         return cert
 
+    def certify_probe(
+        self,
+        benefits: np.ndarray,
+        *,
+        k: int | None = None,
+        seed: int = 0,
+        method: str | None = None,
+        benefit_range: float | None = None,
+    ) -> Certificate:
+        """Target-label-light certificate from a labeled micro-probe.
+
+        Uses per-sample paired benefits (positive means adapt/fuse helps) on a
+        held-out probe set.  When ``k`` is smaller than the supplied pool,
+        ``k`` benefits are drawn without replacement (deterministic given
+        ``seed``) to simulate a fixed-size deployment probe.
+
+        Parameters
+        ----------
+        benefits : array-like
+            Per-sample benefits ``X_i = loss(f0_i) - loss(fa_i)`` or
+            placement-benefit differences for AUROC routing.
+        k : int, optional
+            Probe size.  ``None`` or ``k >= len(benefits)`` uses the full pool.
+        seed : int
+            RNG seed for subsampling when ``k < len(benefits)``.
+        method, benefit_range
+            Forwarded to the batch estimator (default ``self.method``).
+
+        Returns
+        -------
+        Certificate
+        """
+        pool = np.asarray(benefits, dtype=float).ravel()
+        if pool.size == 0:
+            raise ValueError("benefits must be non-empty")
+        if not np.all(np.isfinite(pool)):
+            raise ValueError("benefits must be finite")
+        if k is not None and 0 < k < pool.size:
+            rng = np.random.default_rng(seed)
+            idx = rng.choice(pool.size, size=k, replace=False)
+            pool = pool[idx]
+        if method is None:
+            method = self.method
+        if method not in _BATCH_ESTIMATORS:
+            raise ValueError(f"method must be one of {sorted(_BATCH_ESTIMATORS)}, got {method!r}")
+        estimator = _BATCH_ESTIMATORS[method]
+        if method in ("ebern", "hoeffding"):
+            cert = estimator(pool, alpha=self.alpha, benefit_range=benefit_range)  # type: ignore[call-arg]
+        else:
+            cert = estimator(pool, alpha=self.alpha)  # type: ignore[call-arg]
+        self.last_certificate = cert
+        return cert
+
     # ------------------------------------------------------------------
     # Stage 3: trichotomy decision
     # ------------------------------------------------------------------

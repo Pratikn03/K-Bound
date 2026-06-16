@@ -1,0 +1,48 @@
+# PROTOCOL F - Rich-evidence Camelyon17: debias B_hat to enable a VALID natural-shift certificate
+# Registered: 2026-06-13, BEFORE any result observed. Motivated by: bias-variance diag
+# (radius bias-limited, frac_meas~0.16) + estimator dry-run (estimator-only on logged Z = OVERFIT,
+# verdict NEEDS-NEW-EVIDENCE) + literature shortlist (verified arXiv ids below).
+#
+# HYPOTHESIS (timestamped): the abstain-radius is inflated by calibration-drift bias gamma in B_hat(Z)
+# because current Z is drift-blind. Adding drift-tracking evidence + PPI debias + conditional conformal
+# REDUCES that bias enough that the certificate VALIDLY fires (false-adapt <= alpha) on a non-trivial
+# fraction of natural-shift cells, held-out.
+#
+# SUCCESS CRITERIA (stated in advance; all publishable):
+#   WIN (partial is fine, and is the realistic best case): held-out false-adapt <= alpha=0.10 AND
+#     commit rate >= 0.3 AND KGA regret <= always-freeze. => first valid natural-shift certificate;
+#     natural-shift positive for the paper.
+#   PARTIAL: false-adapt <= alpha but commit < 0.3 (valid but conservative) -> honest partial win.
+#   FAILS: false-adapt still > alpha with richer Z -> the gamma bias is irreducible by observable
+#     evidence here, strengthening the one-bit / bias-limited finding (deeper negative).
+#   Note: the one-bit theorem implies the gamma SIGN bit is irreducible in principle; full
+#     beats-both everywhere is NOT expected. A VALID PARTIAL COMMIT is the target.
+#
+# DESIGN (only the evidence channel + estimator change; decision rule, alpha, grid fixed):
+design:
+  dataset: WILDS Camelyon17, official DenseNet-121 f0 (reuse f0_seed*.pt from Protocol B; --retrain forbidden)
+  grid: identical composition-stress grid; n_eval=1024; seeds [0,1,2,3,4]
+  alpha: 0.10 (FIXED, never tuned)
+  evidence_panel_NEW (cheap, from model outputs - the dry-run/lit "NEEDS-NEW-EVIDENCE" set):
+    - BN-statistic KL drift (running vs test-batch)        # arXiv:2104.11408 (NMD), BN-drift
+    - mean energy-score shift source->target              # arXiv:2010.03759
+    - prediction-disagreement rate on D                   # AETTA-style, arXiv:2404.01351
+    - agreement-on-the-line slope (validity gate)         # Baek et al. NeurIPS 2022
+    - ATC-threshold acc estimate                          # arXiv:2201.04234
+    (prefer ATC/energy/disagreement over nuclear-norm: class-imbalance on D, arXiv:2302.01094 caveat)
+  estimator_NEW:
+    - PPI / doubly-robust risk-difference debias using LABELED SOURCE on D  # arXiv:2301.09633
+    - conditional conformal radius: Mondrian (per-composition) OR CQR on Z  # arXiv:2305.12616 / 1905.03222
+  decision_rule: UNCHANGED (adapt if B_hat-eps>0; freeze if B_hat+eps<0; else abstain)
+  tau_star: UNTOUCHED
+analysis_plan_locked:
+  split: BY SEED, DEV={0,1} (estimator/panel finalized on DEV only), TEST={2,3,4} evaluated ONCE.
+  metrics: held-out false-adapt vs alpha; commit rate; regret vs always-adapt/always-freeze;
+    per-condition paired bootstrap 10^4 + Holm; eps stability across seeds.
+  cross-dataset guard: chosen panel/estimator must NOT raise CIFAR-10-C false-adapt above alpha
+    (re-run on stress_grid_multiseed_v1 logged data) - a real fix must not break the existing win.
+  forbidden: tuning alpha/tau/decision-rule; selecting features on TEST; per-dataset eps knob.
+preflight_required: patch run_wilds_camelyon17.py to COMPUTE + serialize the new evidence panel
+  per cell (needs model forward pass -> GPU re-run, ~7h like Protocol B); reuse Protocol B f0 checkpoints.
+output_dir: experiments/kbound/results/camelyon17_richZ_F_v1/
+queue: one MPS job at a time; do not overlap with other runs.

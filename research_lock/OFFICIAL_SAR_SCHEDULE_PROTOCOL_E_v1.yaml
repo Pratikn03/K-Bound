@@ -1,0 +1,35 @@
+# PROTOCOL E — Official gentle SAR schedule (closes the "bad implementation" attack)
+# Registered: 2026-06-12, BEFORE any result observed. QUEUED AFTER Protocol B completes
+# (one MPS job at a time).
+# GAP BEING CLOSED (paper admits at 3 places): SAR-collapse evidence uses the
+# mechanism-faithful matched-LR SAR; the official gentler schedule was never run.
+# A reviewer can attribute the harmful regime to implementation harshness.
+
+design:
+  benchmark: same ImageNet-C grid as the sarfix runs (identical corruptions/severities/
+    batch/composition axes — comparability is the point)
+  arms:
+    1_matched_lr_sar: ALREADY RUN (decision_baselines_sarfix / imagenetc_noise_sarfix)
+       — shows the harmful regime; reused, not re-run.
+    2_official_sar:  lr = 2.5e-4, layer4 (final block) FROZEN, official reset rule —
+       per Niu et al. ICLR 2023 reference implementation settings.
+  wrapper: SAME KGA certificate, alpha = 0.10 FIXED, same evidence Z, same eps rule.
+  seeds: [0, 1, 2]
+  serialization: per-condition records (B, a0, a_adapted, Z, decision, eps, seed)
+    + result_manifest.json — same contract as Protocols A/B.
+
+success_criteria_stated_in_advance (all publishable):
+  - If official-SAR still produces harmful cells and KGA routes them -> collapse is
+    not an implementation artifact; claim strengthens.
+  - If official-SAR is collapse-free (harmful fraction ~< p* = 0.1) and KGA correctly
+    ties near-oracle always-adapt with false-adapt <= alpha -> matches the paper's
+    p*-regime law (certificate value scales with harm rate); report as confirmation,
+    scope SAR text accordingly.
+  - Either way the "bad implementation" objection is closed by data.
+
+launch:
+  preflight_required: verify the imagenetc sarfix runner exposes lr / layer-freeze
+    flags for the SAR arm (patch plumbing only if absent; grid constants untouched);
+    confirm per-condition serialization to the new output dir.
+  output_dir: experiments/kbound/results/imagenetc_official_sar_E_v1/
+  queue: DO NOT launch while camelyon17_fullscale_B_v1 is running.
