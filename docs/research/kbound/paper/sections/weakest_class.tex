@@ -1,0 +1,94 @@
+\smallskip
+\noindent\emph{The weakest one-bit class (resolving the open piece of
+Conjecture~\ref{conj:gen}).}
+Theorem~\ref{thm:conj1-dichotomy} fixes the supplement at \emph{one bit}; what remained open is
+the \emph{weakest falsifiable class} on which that bit suffices. We settle it conditionally. On
+$D$ write $a(x):=2\eta_a(x)-1$ with $\eta_a(x)=\Pr_T(f_a{=}Y\mid x)$, so $\Delta=\int_D a\,d\mu$
+(Lemma~\ref{lem:reduction}). Let $m(x):=2s(x)-1$ be the observable relative (calibrated-score)
+margin, so $M=\tfrac12\E_{\mu\mid D}[m]$, and let the observable \emph{relative-calibration
+field} be $c(x):=w(x)\,(m(x)-m^\star)$ with observable nonnegative weight $w(x)$ and observable
+neutral anchor $m^\star$ (the margin at which $s=\tfrac12$). Put $T_E:=\int_D c\,d\mu$
+(observable), and let $E$ denote the law of all label-free observables; two targets are
+\emph{evidence-identical} when they share $E$ (equivalently $(\mu,m,s)$, since predictions and
+$s$ are fixed maps of $x$).
+
+\begin{definition}[Margin-monotone relative-calibration class]\label{def:cmono}
+$\mathcal C_{\mathrm{mono}}$ is the class of targets for which $a(x)=\sigma\,c(x)$ $\mu$-a.e.\ on
+$D$ for a single global orientation $\sigma\in\{\pm1\}$; equivalently the benefit is
+single-crossing in the observable margin at $m^\star$ ($\sign a(x)=\sigma\,\sign(m(x)-m^\star)$)
+with calibrated magnitude $|a(x)|=|c(x)|$. The class is \emph{falsifiable but not verifiable}: a
+finite labelled probe can reject ``$a=\pm c$'', yet $\sigma$ is never label-free identified.
+\end{definition}
+
+\begin{assumption}[General position]\label{asm:genpos}
+Within an evidence fibre the regions of $D$ whose benefit sign is free carry comparable,
+not-fully-$E$-pinned benefit mass: $T_E\neq0$ and no proper subcollection of free regions has an
+$E$-certifiable dominant total $\int|a|\,d\mu$.
+\end{assumption}
+
+\begin{lemma}[Structural sign-freedom $=$ bit complexity]\label{lem:bitcomplexity}
+Fix $E$ and a falsifiable class $\mathcal C$, and let $K(\mathcal C,E)$ be the number of disjoint
+$\mu$-positive regions of $D$ whose benefit signs are jointly free in $\mathcal C$ on the fibre
+$E$. Under Assumption~\ref{asm:genpos}, a falsifiable structural supplement of $b$ bits pins
+$\sign\Delta$ across the fibre \emph{iff} $b\ge K(\mathcal C,E)$.
+\end{lemma}
+\begin{proof}
+If $b\ge K$, declaring the orientation of each free region fixes the sign field; the rest of $a$
+being $E$-pinned, $\Delta=\int_D a\,d\mu$ then has $E$-computable sign. If $b<K$, some free region
+$R$ is undeclared; the two targets agreeing off $R$ and differing in $\sign a$ on $R$ are
+evidence-identical and share all $b$ declared bits, while by comparability of $\int_R|a|$ with the
+complement (Assumption~\ref{asm:genpos}) their benefits have opposite sign---no decoder of the $b$
+declared bits separates them.
+\end{proof}
+
+\begin{theorem}[Conditional resolution of Conjecture~\ref{conj:gen}: a weakest one-bit class]\label{thm:cmono-weakest}
+\textnormal{(i) Sufficiency \emph{(unconditional)}:} every target in $\mathcal C_{\mathrm{mono}}$ has
+$\sign\Delta=\sigma\,\sign(T_E)$ with $T_E$ observable, so $E$ and the single orientation bit
+$\sigma$ determine $\sign\Delta$.
+\textnormal{(ii) Necessity \emph{(unconditional)}:} $\sigma$ and $-\sigma$ are evidence-identical
+($\Law(E\mid\sigma)=\Law(E\mid-\sigma)$) yet give $\Delta$ and $-\Delta$, so by Le~Cam at least
+one bit is required. Thus \emph{exactly one bit certifies $\sign\Delta$ on
+$\mathcal C_{\mathrm{mono}}$, with no further assumption}.
+\textnormal{(iii) Minimality \emph{(under Assumption~\ref{asm:genpos})}:} every falsifiable
+$\mathcal C\supsetneq\mathcal C_{\mathrm{mono}}$ contains a non-margin-monotone target with
+$K(\mathcal C,E)\ge2$, so by Lemma~\ref{lem:bitcomplexity} at least two bits are required. Hence
+$\mathcal C_{\mathrm{mono}}$ is \emph{a} weakest falsifiable one-bit class---minimal in the
+single-crossing, calibrated-magnitude direction; it is not unique (Remark~\ref{rmk:genpos}).
+\end{theorem}
+\begin{proof}
+(i) $\Delta=\int_D a\,d\mu=\sigma\int_D c\,d\mu=\sigma T_E$. (ii) Sending $\sigma\mapsto-\sigma$ is
+the $D$-local label complement of Theorem~\ref{thm:conj1-dichotomy}: it fixes $(\mu,m,s)$, hence
+$E$, while negating $a$ and thus $\Delta$; the two-point bound of Theorem~\ref{thm:imp} gives
+minimax committal error $\tfrac12$. (iii) A target outside $\mathcal C_{\mathrm{mono}}$ violates
+$\sign a=\sigma\,\sign(m-m^\star)$ on a $\mu$-positive region, so its sign field is not one global
+orientation; in the swap-closed (falsifiable) fibre at least two regions are independently
+signable, i.e.\ $K\ge2$, and Lemma~\ref{lem:bitcomplexity} applies.
+\end{proof}
+
+\begin{proposition}[Explicit non-identifiability witness]\label{prop:cmono-witness}
+For \emph{each} candidate single structural bit there are two targets with identical evidence law
+($\TV=0$) sharing that bit's value but with opposite $\sign\Delta$. Take $D=R_1\cup R_2$,
+$\mu(R_1)=\mu(R_2)=\tfrac12$, with $R_1$ calibrated ($c_1{=}1$) and $R_2$ at the anchor
+($c_2{=}0$, no observable benefit signal). For $\beta=\sign a_1$: $a=(+1,-2)$ vs.\ $(+1,+2)$ give
+$\Delta=-\tfrac12$ vs.\ $+\tfrac32$. For $\beta=\sign a_2$: $a=(+1,+\tfrac15)$ vs.\
+$(-1,+\tfrac15)$ give $\Delta=+\tfrac35$ vs.\ $-\tfrac25$. No single bit certifies $\sign\Delta$,
+so two bits are necessary off $\mathcal C_{\mathrm{mono}}$.
+\end{proposition}
+
+\begin{remark}[What is unconditional, and what rests on general position]\label{rmk:genpos}
+Parts (i)--(ii)---that one declared bit certifies $\sign\Delta$ on $\mathcal C_{\mathrm{mono}}$---hold
+\emph{unconditionally}. Only minimality (iii) uses Assumption~\ref{asm:genpos}: if it fails (one
+region's benefit mass is $E$-certifiably dominant) that region's orientation alone certifies
+$\sign\Delta$ even outside $\mathcal C_{\mathrm{mono}}$, moving the boundary. Equivalently,
+Assumption~\ref{asm:genpos} is the requirement that the certificate be \emph{domination-free}
+(minimax-sound over the unobserved magnitudes); so we claim a \emph{conditional} resolution of
+Conjecture~\ref{conj:gen} and the unconditional weakest class remains open. Even under
+Assumption~\ref{asm:genpos}, $\mathcal C_{\mathrm{mono}}$ is only \emph{a} weakest one-bit class:
+any calibrated sign-aligned field $\{a=\sigma h:\,h\ \text{observable}\}$ is equally one-bit and
+is incomparable to $\mathcal C_{\mathrm{mono}}$. All six checks are machine-checked by
+\texttt{conj1\_validator.py} (deterministic): the unconditional core (sufficiency/necessity
+$20000/20000$, $|\Delta-\sigma T_E|=0$ exactly), the explicit minimality witnesses of~(iii), the
+general-position ablation, and the non-uniqueness check.\footnote{\texttt{python3
+experiments/kbound/conj1\_validator.py} $\to$ \texttt{results\_conj1\_validator.json}; exit code
+$0$ iff all checks pass.}
+\end{remark}

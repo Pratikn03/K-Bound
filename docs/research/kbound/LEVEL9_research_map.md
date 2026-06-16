@@ -30,7 +30,16 @@ The deep search **confirms the gap is real but reclassifies the contribution**. 
 | Exact M+γ frontier, ATC/AETTA/AGL = β=0 face | **Novel as formalization+unification** | Cite DIS²/SJS as checkable-condition prior art; do **not** claim "no checkable condition exists" |
 | Disagreement-region sign reduction (Thm 5) | Novel-ish, elementary | Keep, modest framing |
 
-## The sharpest Level-9 target (named)
+## The sharpest forward target (named)
+Per the limitations analysis and Camelyon17 bias--variance diagnostic, the actionable forward path is the **Target-Label-Light Multimodal Safety Guard** (see `TARGET_LABEL_LIGHT_MULTIMODAL_PLAN.md`, Protocol D24):
+
+1. **(a) Target-label-light probe certificate** — a micro-probe of k≈8–64 held-out target labels removes calibration-drift bias γ in B̂(Z) that caps label-free certifiability on natural shift. Prop. impossibility applies to unconditional label-free rules only; the probe is a distinct operating point (Prop. `prop:tll-escape` in `kbound.tex`).
+
+2. **(b) Multimodal fusion router guard** — apply the certificate to reliability-fusion systems where modality failure is structurally detectable (Real-IAD-D3 FREEZE, NatDeg ADAPT; `multimodal_guard.py` + Table `tab:multimodal`).
+
+The abstract Level-9 targets below remain open theory problems; (a)+(b) above are the **deployment-forward** path grounded in existing negative results.
+
+### Legacy Level-9 targets (theory, still open)
 Per both the advisor criteria and this search, the reachable 9 is **one** of:
 - **(A) An exact, tight frontier for sign(Δ) identifiability** that is genuinely *assumption-minimal* — i.e., removes the supplied drift-budget β, or proves (beyond Ben-David/Garg) an *exact* impossibility that no unlabeled-checkable functional can certify the sign, **distinguished from DIS²/SJS** by targeting the comparative benefit sign rather than an error bound. This is the closest extension of what you already have; risk: it may collapse to "β is irreducible," which is a sharper-8.
 - **(B) A general necessary-and-sufficient structural characterization of Agreement-on-the-Line** (when does a shift provably force AGL, for generic models). Highest payoff, highest risk; genuinely open; months.
@@ -42,4 +51,4 @@ Either is a real theorem, not assembly. (A) is reachable from K-Bound's existing
 2. **Reframe the headline** around *the sign of the adaptation benefit* and the *certified gate* (the two defensibly-novel pieces), not the impossibility.
 3. **Soften** the impossibility/calibration claims to "we formalize and sharpen a known obstruction."
 4. Add the **exact frontier** (validated: `val_frontier.py`, all pass) as the unification result, citing the heuristics it subsumes.
-5. State the **open Level-9 problem** (A or B) explicitly as the paper's forward pointer — reviewers reward a paper that names its own frontier.
+5. State the **forward deployment path** (Target-Label-Light Multimodal Guard, §Forward work in `kbound.tex`) explicitly — reviewers reward a paper that names its own frontier *and* the escape hatch.

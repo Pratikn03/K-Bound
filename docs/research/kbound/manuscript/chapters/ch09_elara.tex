@@ -133,6 +133,42 @@ threshold detectable modality failure places the system in the knowably-helpful
 region and gating recovers.
 
 % -----------------------------------------------------------------------
+\subsection{Controlled confirmation: a significant beats-both under detectable modality failure}\label{sec:elara-controlled}
+% -----------------------------------------------------------------------
+
+The routing wins above are real but per-dataset and small-$n$.  To test the mechanism
+\emph{cleanly} we ran a pre-registered controlled experiment (Protocol~D33) in which the named
+condition holds by construction.  MNIST is split into two views (left/right half) as two
+``sensors''; one view is degraded by Gaussian noise across $13$ severities $\times 10$ batches
+$=130$ conditions.  The \textsc{adapt} candidate is late fusion of the two views; the
+\textsc{freeze} default is the single clean view.  \KGA{} routes from \emph{label-free} evidence (the
+noisy view's confidence and entropy, and cross-view disagreement) under a leave-one-condition-out
+conformal certificate ($\alpha=0.10$).
+
+\begin{center}
+\begin{tabular}{lc}
+\toprule
+Policy & mean accuracy (130 conditions) \\
+\midrule
+always-fuse (adapt) & $0.583$ \\
+always-single view (freeze) & $0.854$ \\
+\KGA{}-routed & $\mathbf{0.857}$ \\
+oracle & $0.857$ \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\KGA{} \textbf{significantly beats both} trivial policies --- $+0.274$ over always-fuse and $+0.003$
+over always-single, each at $P{=}1.0$ by paired bootstrap over conditions --- with \textbf{zero
+false-adapt}: it adapts on the clean-view conditions where fusion helps and freezes where the degraded
+view would poison fusion.  \emph{Honest scope:} this is a \emph{controlled construction}, not a natural
+benchmark.  It shows the certificate routes correctly \emph{when} the named condition holds and is
+label-free detectable --- isolating the mechanism from the open empirical question of which natural
+benchmarks exhibit the condition (Chapter~\ref{ch:discussion}) --- and most of its margin over the safe
+single-view baseline is the safety half (avoiding fusion collapse), the gain being concentrated in the
+few clean conditions.
+
+% -----------------------------------------------------------------------
 \section{The T1--T9 + GDR Theorem Stack}\label{sec:elara-theorems}
 % -----------------------------------------------------------------------
 

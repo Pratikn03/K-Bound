@@ -490,6 +490,160 @@ ViT-based backbones is a primary direction for future work
 via the WILDS benchmark~\cite{koh2021wilds}.
 
 % -----------------------------------------------------------------------
+\section{Natural-Shift Safety Check: Office-Home}\label{sec:exp2-officehome}
+% -----------------------------------------------------------------------
+
+The synthetic-corruption experiments above leave open the question raised by the
+first threat to validity: does the gate behave correctly under a \emph{natural}
+distribution shift, where the corruption is a genuine change of visual domain
+rather than an additive Hendrycks--Dietterich function?  We ran one such check on
+Office-Home~\cite{venkateswara2017officehome}, a four-domain object-recognition
+benchmark.  We treat this as a \emph{safety} experiment, not a headline win, and
+report its null outcome in full.
+
+\paragraph{Protocol.}
+The source model $f_0$ is a ResNet-50 fine-tuned on the Real-World domain,
+reaching $86.1\%$ accuracy on a held-out Real-World validation split.  The
+deployment shift is covariate: Real-World $\rightarrow$ \{Art, Clipart, Product\}.
+The adaptation threshold $\tau^\star$, the fourteen-candidate adapter pool, and the
+certificate were all fixed on a source/target \emph{validation} split; the target
+\emph{test} split was scored \textbf{exactly once}, across two seeds, with
+$n_{\text{eval}}=320$ per condition.  The validation-chosen deployed adapter was
+\texttt{eata\_online} at the mild aggressiveness setting.
+
+\paragraph{The regime is helpful-leaning but contains an unidentifiable pocket.}
+On pooled target-test data the deployed adapter is mildly \emph{helpful}
+(mean per-sample benefit $+0.015$, harmful base rate $0.125$), and on the Art and
+Clipart domains it is clearly helpful (mean benefit $+0.018$ and $+0.027$; harmful
+base rates $0.08$ and $0.07$).  The Product domain is the exception: it is
+\emph{mixed} (harmful base rate $0.23$, mean benefit $\approx 0$), and crucially
+its harmful updates are \textbf{not separable by any label-free score}.  The
+certificate's harm-discriminating signal, fit on validation, does not transfer to
+test: the pooled label-free harm-detection AUC sits at $0.33$ on validation and
+$0.49$ on test --- at or below chance --- so the harm in the Product pocket is
+label-free \emph{unidentifiable} in precisely the sense of
+Theorem~\ref{thm:imp} and the minimax floor of
+Proposition~\ref{prop:t1-minimax}.
+
+\paragraph{What the certificate does: it refuses to gamble.}
+Faced with a candidate pool whose only residual harm lives in an unidentifiable
+pocket, the multi-candidate router on the held-out test split makes the following
+decisions across the $36$ conditions:
+
+\begin{center}
+\begin{tabular}{lccc}
+\toprule
+Held-out test routing & \textsc{adapt} & \textsc{freeze} & \textsc{abstain} \\
+\midrule
+\KGA{} multi-candidate router & $0$ & $8$ & $28$ \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+The gate \textbf{never adapts}: it freezes where it can certify the frozen model is
+safe and abstains where it cannot certify anything, yielding \textbf{zero
+false-adapts} under undetectable harm.
+
+\paragraph{This is a null on ``beats-both,'' and we say so.}
+Because the deployed adapter happens to be helpful on average \emph{here}, the best
+fixed oracle policy is always-adapt, with route-level regret $0.005$, whereas the
+abstaining router incurs regret $0.032$.  \KGA{} therefore does \textbf{not} beat
+both trivial policies on Office-Home; the \texttt{beats\_both} flag is false on both
+the validation and the held-out test split.  We report this plainly: in a
+helpful-dominated regime whose residual harm is unidentifiable, no label-free gate
+can beat always-adapt --- and our own impossibility result
+(Chapter~\ref{ch:theory1}) is exactly why.  Office-Home does not raise any headline
+number.
+
+\paragraph{Why it nonetheless belongs in the record.}
+The CIFAR-10-C suite stresses the \emph{detectable-harm} half of the guarantee
+(\KGA{} beats both when harm is identifiable and frequent).  Office-Home stresses
+the \emph{other} half: when harm is real but label-free unidentifiable, a
+responsible gate must decline to deploy rather than guess.  The certificate does
+exactly that on a natural shift it was never tuned for --- it abstains and freezes,
+never false-adapts, and makes no claim it cannot back.  A framework that predicts
+its own limits (Chapter~\ref{ch:theory1}) together with an algorithm that honours
+them on unseen real data is the strongest available evidence that the safety
+property is not an artifact of synthetic corruptions.
+
+% -----------------------------------------------------------------------
+\section{Multi-Seed Confirmation and the Pre-Registered Natural-Shift Battery}\label{sec:exp2-battery}
+% -----------------------------------------------------------------------
+
+To guard against two failure modes --- a single-seed fluke on CIFAR-10-C, and a
+synthetic-only story that does not transfer --- we pre-registered a battery of runs
+(sealed protocols, analysis plans locked before scoring, explicit forbidden-tuning
+clauses) and report every outcome regardless of sign.
+
+\paragraph{The core result replicates across seeds (positive).}
+Re-running the pre-registered stress grid (Section~\ref{sec:exp2-stress-grid}) over
+\textbf{five seeds} reproduces the knockout: for Tent, \KGA{} regret-to-oracle is
+$0.0016$ versus always-adapt $0.0079$ and always-freeze $0.124$, with between-seed
+variance ${\approx}10^{-5}$; the same holds for EATA.  Under the pre-registered
+decision rule (both Tent and EATA beat both trivial policies $\Rightarrow$ the claim
+\textsc{stands}; one $\Rightarrow$ rescope; none $\Rightarrow$ retract), the verdict
+is \textsc{stands}.  SAR ties rather than beats, as before.  The CIFAR-10-C knockout
+is therefore not a single-seed artifact.
+
+\paragraph{On natural shifts the gate does \emph{not} beat both --- and we report why.}
+We then applied the frozen, source-calibrated certificate to three natural
+distribution shifts.  None yields a beats-both win; each fails for a reason the
+theory predicts.
+
+\begin{itemize}
+\item \textbf{Camelyon17 full-scale}~\cite{koh2021wilds} (five seeds, $n{=}1024$):
+  the conformal radius did \emph{not} contract with sample size as the $m^{-1/2}$
+  theory predicts --- the $256{\to}1024$ radius ratio is $0.99$ against a predicted
+  $0.5$ --- and the committed false-adapt rate \emph{rose} ($0.14 \to 0.33$).
+  Always-adapt edges \KGA{} (regret $0.006$ vs $0.020$).  A genuine boundary: the
+  certificate band is loose on this histopathology shift, so the gate cannot
+  certify the helpful adaptations that do exist.  \emph{Resolved by richer evidence
+  (Protocol~F):} a pre-registered re-run with a $17$-feature label-free panel and a
+  dev/test seed split (dev $\{0,1\}$; test $\{2,3,4\}$ scored once) raises label-free
+  harm-AUC to $0.95$, and the gate now \emph{certifiably beats both} on held-out test
+  seeds --- regret-to-oracle $0.0019$ vs always-adapt $0.0045$ vs always-freeze
+  $0.065$, false-adapt $0.033\le\alpha$, $72\%$ commit, paired-bootstrap $P{\ge}0.99$
+  on both sides --- confirming the bottleneck was the \emph{evidence} (detectability),
+  not the shift or the sample size.  Honest scope: one real shift, a small (though
+  significant) margin over always-adapt, and a permitted in-domain labeled calibration
+  split (distinct from the globally-frozen $\tau^\star$).
+\item \textbf{ImageNet-R with ten diverse backbones}~\cite{hendrycks2021manyfaces}
+  (ResNet, ConvNeXt, ViT, Swin; 48 conditions): harmful adaptation is only weakly
+  detectable label-free (harm-AUC ${\approx}0.61$--$0.66$), so the multi-candidate
+  router \textbf{abstains on all 48 conditions} and ties always-freeze ($0.438$); it
+  does not reach best-fixed-always-adapt ($0.510$).  Architectural diversity in the
+  candidate pool did not manufacture certifiable signal.
+\item \textbf{iWildCam}~\cite{koh2021wilds} (144 conditions): a
+  \emph{harmful-dominated} regime (mean benefit $-0.027$; $59\%$ of conditions
+  harmful) with weak detectability (harm-AUC $0.62$).  The router abstains $89\%$ of
+  the time, so its regret ($0.0306$) merely \emph{ties} always-freeze ($0.0309$)
+  rather than beating it meaningfully; and among the few \textsc{adapt}
+  commitments the false-adapt rate is $0.50$, far above the $\alpha{=}0.10$ budget.
+  We flag this as a real limitation, not a win: when detectability is this weak the
+  certificate cannot honour its false-adapt guarantee on the commitments it does
+  make, and the honest reading is that it should abstain outright.
+\end{itemize}
+
+\noindent A parallel exploratory expansion to a tabular fraud panel (Bank Account
+Fraud~\cite{jesus2022baf}), run once and reported as-is, found the matching boundary
+in the fusion setting: reliability-weighted stacking is \emph{not} significantly
+better than validation-based selection on a near-chance detector zoo, and falls
+below the best fixed detector --- combination amplifies existing signal but cannot
+conjure it.
+
+\paragraph{What the battery establishes.}
+The detectability-gating thesis is confirmed from both sides.  Where harmful
+adaptation is frequent \emph{and} label-free detectable (CIFAR-10-C), \KGA{} beats
+both policies and the result survives multi-seed replication.  Where detectability
+is weak (Camelyon17, ImageNet-R, iWildCam), the gate's distinctive value collapses
+to \textsc{abstain}/\textsc{freeze}, and on the hardest case its false-adapt control
+itself degrades.  These are not tuning failures to be hidden: they are exactly the
+label-free-unidentifiable regime that the impossibility result of
+Chapter~\ref{ch:theory1} says is unwinnable, observed on real data under a
+pre-registered protocol.  The honest scope of the contribution is the
+\emph{detectable} regime; the boundary is where the theory says it must be.
+
+% -----------------------------------------------------------------------
 \section{Synthesis: When Does Deep TTA Need a Gate?}\label{sec:exp2-synthesis}
 % -----------------------------------------------------------------------
 

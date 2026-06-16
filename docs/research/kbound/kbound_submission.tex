@@ -1,3 +1,9 @@
+%% =====================================================================
+%% PROVENANCE 2026-06-16: TRIMMED CUT. Canonical source = kbound.tex.
+%% This shorter cut is internally honest (conservative on Camelyon, no
+%% micro-probe overclaim) but OMITS the Protocol-F Camelyon rich-evidence
+%% beats-both now in kbound.tex. Re-trim from kbound.tex before submitting.
+%% =====================================================================
 \documentclass[11pt]{article}
 \usepackage[T1]{fontenc}
 \usepackage{lmodern}
@@ -34,36 +40,31 @@
 \maketitle
 
 \begin{abstract}
-Test-time adaptation (TTA) improves models on unlabeled target data, yet the very
-unlabeled objective that recovers accuracy under one distribution shift can silently
-degrade it under another---and, without labels, a deployed system cannot tell which is
-happening. Existing methods propose increasingly robust
-\emph{adaptation mechanisms}; we instead study a prior question: \emph{can a system
-decide, without labels, whether adaptation should happen at all?} We formalize
-adaptation benefit as the excess risk between an adapted candidate and a frozen
-baseline conditioned on label-free observable evidence, and separate test-time
-regimes into \emph{knowably helpful}, \emph{knowably harmful}, and \emph{unknowable}.
-We prove (Theorem~\ref{thm:imp}, with an explicit witness) that when two target worlds
-induce the same observable evidence but opposite benefit, no label-free rule can
-certify the correct decision in both, so the worst-case-optimal action on such
-evidence is to abstain. Under an observable risk-alignment assumption we give a
-finite-sample adapt/freeze/abstain certificate (Theorem~\ref{thm:cert}) that controls
-the false-adapt and false-freeze rates at a chosen level, and we identify a provable
-positive regime (Theorem~\ref{thm:pos}, covariate shift). We instantiate the framework
-(\textsc{KGA}) on a 123-task anomaly-routing benchmark and a controlled mixed-regime
-study: \textsc{KGA} abstains where the true benefit is near zero, refuses a fusion
-path that hurts on 80\% of tasks (cutting regret-to-oracle $\approx 11\times$ versus
-always-adapt), and in the mixed regime beats an always-freeze policy by $\approx 0.10$
-AUROC. In \emph{online non-stationary} CIFAR-10 test-time adaptation, across a helpful-dominated
-and a harm-dominated stream, no fixed policy is robust---always-adapt collapses in the harm
-regime ($0.339$) and always-freeze forgoes gains in the helpful regime---while \textsc{KGA}
-is near-best in both, giving the highest mean accuracy across regimes ($0.490$ vs $0.456$/$0.444$).
-On a \emph{pre-registered} CIFAR-10-C stress grid (severity$\times$batch$\times$composition$\times$aggressiveness;
-harmful base rate $0.16$--$0.34$), \textsc{KGA} \emph{beats both} trivial policies for Tent and EATA---regret-to-oracle
-$0.0016$ vs always-adapt $0.009$ and always-freeze $0.12$, at a $0\%$ false-adapt rate---and ties the collapse-resistant SAR.
-We are explicit about scope: where harmful adaptation is mild, always-adapt is
-already strong, so the certificate's distinctive value is bounded by how often
-\emph{catastrophic, detectable} harm occurs---itself the quantity the theory characterizes.
+Test-time adaptation can improve models on unlabeled target data, but the same
+objective that helps under one distribution shift can silently hurt under another.
+Existing work mainly strengthens adaptation mechanisms; we study a prior decision
+problem: can a system decide, without target labels, whether it should adapt at all?
+
+We formalize adaptation benefit as the excess target risk of a frozen baseline over
+an adapted candidate and define three label-free regimes: \emph{knowably helpful},
+\emph{knowably harmful}, and \emph{unknowable}. We prove that when two target worlds
+induce identical observable evidence but opposite adaptation benefit, no label-free
+rule can be correct in both; abstention is then information-theoretically necessary.
+Under a risk-alignment assumption, we give a finite-sample adapt/freeze/abstain
+certificate controlling false adaptation and false freezing. Our main theoretical
+result is an exact benefit-sign frontier: adaptation benefit is identifiable from
+observables iff an observable margin exceeds the calibration-drift budget on the
+disagreement region.
+
+We instantiate the framework as \textsc{KGA}, a mechanism-agnostic wrapper around
+Tent, EATA, and SAR. Across anomaly routing, CIFAR-10, CIFAR-10-C stress tests, and
+natural-shift audits, \textsc{KGA} follows theory: adapt in helpful regimes, freeze
+in harmful regimes, and abstain when evidence is insufficient. On a CIFAR-10-C stress grid,
+\textsc{KGA} beats always-adapt and always-freeze for Tent and EATA with zero
+false-adapt decisions, while tying SAR. At ImageNet scale, it also beats both
+policies on a harmful SAR stream. On Camelyon17, ImageNet-R, and Office-Home,
+\textsc{KGA} is conservative and avoids overclaiming wins. K-Bound is not universal;
+value is highest when harmful adaptation is frequent, detectable, and costly.
 \end{abstract}
 
 \begin{center}\fbox{\parbox{0.95\textwidth}{\small
@@ -72,42 +73,75 @@ improvement; all numbers come from code in the public repository (\S\ref{sec:rep
 proof/experiment status note appears at the end of \S\ref{sec:intro}.}}\end{center}
 
 \section{Introduction}\label{sec:intro}
-Deployed models meet distribution shift, and TTA promises to use unlabeled target data
-to recover lost accuracy. But adaptation is double-edged: entropy minimization that
-sharpens a good boundary under mild covariate shift can collapse to a degenerate
-solution under label shift; a reliability gate that rescues a failed sensor can dilute
-a strong detector on clean data. The field has answered with sturdier mechanisms
-(sample selection, sharpness-aware updates, resets). We ask the prior question:
-\begin{quote}\emph{Can observable test-time evidence separate helpful, harmful, and
-unknowable regimes of label-free adaptation, yielding a computable rule for when a
-system should adapt, freeze, or abstain?}\end{quote}
-We treat adaptation as a decision constrained by \emph{identifiability}, not only as an
-optimization problem.
+Deployed models rarely encounter the same distribution they were trained on.
+Test-time adaptation (TTA) addresses this mismatch by updating a model on unlabeled
+target data, often through entropy minimization, sample filtering, or
+stability-aware updates. In favorable shifts, such updates can recover lost
+accuracy. In unfavorable shifts, however, the same unlabeled objective can
+silently degrade performance: the model may sharpen wrong predictions, adapt to
+label imbalance, or collapse under non-stationary streams. Because target labels
+are unavailable at deployment, the system often cannot tell whether adaptation is
+helping or hurting.
 
-\begin{figure}[t]\centering
-\includegraphics[width=0.98\textwidth]{figures/fig_architecture.pdf}
-\caption{K-Bound system architecture. Inputs (labelled source/validation, an unlabelled
-shifted target, a frozen $f_0$, a candidate adaptation $f_a$) feed the \textsc{KGA}
-pipeline---label-free evidence $Z=\phi(\cdot)$, a finite-sample certificate
-$\widehat\Delta(Z)\pm\varepsilon(Z)$, and a decision rule---which routes to one of three
-regimes: \textsc{adapt} (knowably helpful), \textsc{freeze} (knowably harmful), or
-\textsc{abstain} (unknowable). The theory layer (Thms~1--5) justifies the trichotomy;
-a reliability-gated fusion system is the worked reliability-gated-fusion instantiation that K-Bound generalises.}
-\label{fig:arch}
-\end{figure}
+Most work on TTA asks how to design a better adaptation mechanism. This paper asks
+a prior question: should the system adapt at all? We study label-free adaptation
+as a decision problem. Given a frozen baseline, an adapted candidate, and an
+unlabeled target batch, the system must choose one of three actions: adapt when
+adaptation is knowably helpful, freeze when adaptation is knowably harmful, and
+abstain when the available evidence cannot identify the sign of the benefit.
+
+This decision is constrained by identifiability. We show that there exist target
+worlds with identical label-free evidence but opposite adaptation benefit. In such
+cases, no label-free rule can certify the correct decision in both worlds;
+abstention is not merely conservative, but information-theoretically necessary.
+Conversely, when the label-free evidence is risk-aligned and the benefit estimate
+admits a valid uncertainty radius, a finite-sample certificate can safely route
+between adapt, freeze, and abstain while controlling false-adapt and false-freeze
+errors.
+
+Our main theoretical result is an exact benefit-sign frontier. The sign of the
+adaptation benefit is identifiable from label-free observables precisely when an
+observable margin on the disagreement region exceeds a calibration-drift budget.
+This characterizes why common label-free heuristics can work in benign regimes and
+fail under drift: they implicitly assume that this drift is zero or negligible. We
+further show that no label-free-checkable assumption can remove this obstruction in
+full generality; the remaining ambiguity is an irreducible one-bit orientation
+choice, which can only be supplied through structural assumptions that are
+falsifiable but not verifiable.
+
+We instantiate the framework as \textsc{KGA}, a mechanism-agnostic wrapper around
+existing adaptation candidates such as Tent, EATA, and SAR. \textsc{KGA} does not
+introduce a new adaptation objective. Instead, it estimates the label-free benefit
+of a candidate, attaches a calibrated uncertainty radius, and returns adapt,
+freeze, or abstain. This makes \textsc{KGA} a safety layer for TTA rather than a
+replacement for TTA methods.
+
+Empirically, \textsc{KGA} behaves according to the theory. On a pre-registered
+CIFAR-10-C stress grid, where harmful adaptation is frequent and detectable,
+\textsc{KGA} beats both always-adapt and always-freeze for Tent and EATA while
+making zero false-adapt decisions, and it ties the collapse-resistant SAR. In
+online non-stationary CIFAR-10 streams, always-adapt collapses in the harm-dominated
+regime and always-freeze forgoes gains in the helpful regime, while \textsc{KGA}
+remains near-best across both. At ImageNet scale, \textsc{KGA} also improves over
+both trivial policies on a harmful SAR stream. On natural-shift audits such as
+Camelyon17, ImageNet-R, and Office-Home, the certificate is conservative: it
+reports safety behavior and abstains when the evidence structure is not sufficient
+for a valid policy win.
 
 \paragraph{Contributions.}
-(1) a knowability formulation of label-free adaptation (\S\ref{sec:setup}--\ref{sec:def});
-(2) an impossibility theorem with an explicit witness establishing the unknowable
-regime (\S\ref{sec:imp}); (3) a finite-sample adapt/freeze/abstain certificate with
-false-adapt control (\S\ref{sec:cert}); (4) a provable positive regime and an open
-conjecture for the general case (\S\ref{sec:pos}); (5) \textsc{KGA} and real
-experiments on anomaly routing (\S\ref{sec:exp}); and (6) an explicit, honest scope
-(\S\ref{sec:limits}).
+\begin{itemize}
+\item We formalize label-free TTA as an adapt/freeze/abstain decision problem governed by the sign of adaptation benefit.
+\item We prove an impossibility result showing that some adaptation decisions are fundamentally unknowable from label-free evidence.
+\item We derive a finite-sample certificate that controls false adaptation and false freezing under risk-aligned evidence.
+\item We characterize an exact benefit-sign frontier based on observable disagreement margin and calibration drift.
+\item We validate the framework across anomaly routing, controlled mixed regimes, online TTA, CIFAR-10-C stress grids, ImageNet-scale corruptions, and natural-shift audits.
+\end{itemize}
 
-\noindent A per-result proof-and-validation status summary is in Appendix~\ref{app:status}; the
-honest empirical scope (where the certificate's value is large versus where always-adapt already
-suffices) is stated in \S\ref{sec:limits}.
+K-Bound does not claim universal improvement. When adaptation is already safe, a
+certificate can only tie or slightly trail always-adapt. When freezing is already
+optimal, it should match freeze rather than force an unnecessary update. Its
+distinctive value appears when harmful adaptation is frequent, detectable, and
+costly---the regime where blind adaptation is most dangerous.
 
 \section{Related work and positioning}
 We position K-Bound as a precise delta over five adjacent lines of work. In each case the
@@ -125,6 +159,10 @@ adaptation \emph{more robust}, and several detect or suppress instability, but a
 adapting: none emits a \emph{pre-adaptation} certificate separating helpful, harmful, and
 unknowable evidence, and none can \emph{abstain} on the adapt/freeze decision itself. K-Bound
 is mechanism-agnostic---it \emph{wraps} any such candidate (we evaluate Tent/EATA/SAR).
+Tempora (Sreeram et al., 2026; arXiv:2602.06136) shows that unconstrained TTA rankings are
+not stable under temporal pressure: no fixed method dominates across latency/budget scenarios.
+K-Bound is complementary to that result by certifying, per condition, whether to adapt, freeze,
+or abstain.
 
 \subsection{Protected and guarded adaptation}
 A second line guards adaptation \emph{during} the update---online entropy matching, or
@@ -240,16 +278,18 @@ clean labelled validation probe (\S\ref{sec:exp}) are target-label-free in this 
 \emph{target} labels---not unsupervised of all labels.}}\end{center}
 
 \section{Theory}
-The theory is organized as five results that together draw the helpful/harmful/unknowable
-map and supply its operational certificate: \textbf{(1)} a tight lower bound establishing the
-\emph{unknowable} regime (Thms~\ref{thm:imp}--\ref{thm:imp-quant}); \textbf{(2)} the
-Bayes-optimal gate and an exact plug-in regret identity (Thm~\ref{thm:gate}); \textbf{(3)} a
-finite-sample adapt/freeze/abstain certificate, with forced abstention and a sample-complexity
-bound (Thm~\ref{thm:cert}, Cors~\ref{cor:forced-abstain}--\ref{cor:samplecomp}); \textbf{(4)} a
-provably \emph{knowable} positive regime under covariate shift (Thm~\ref{thm:pos}); and
-\textbf{(5)} a sign-of-difference characterization on the observable disagreement region for
-binary, multiclass, and regression losses (Thms~\ref{thm:disagree}--\ref{thm:disagree-reg}). A
-sequential, anytime-valid version of the certificate is deferred to Appendix~\ref{app:anytime}.
+We present the theory as four pillars rather than a long theorem catalog.
+\textbf{Pillar I (impossibility floor)} combines non-identifiability and its quantitative Le Cam
+form (Thms~\ref{thm:imp}--\ref{thm:imp-quant}), plus the gate regret identity (Thm~\ref{thm:gate}),
+to formalize when abstention is forced. \textbf{Pillar II (certificate + audit)} gives the
+finite-sample adapt/freeze/abstain rule with forced-abstention and sample-complexity corollaries
+(Thm~\ref{thm:cert}, Cors~\ref{cor:forced-abstain}--\ref{cor:samplecomp}); the legacy budget
+proposition stack (Props 6/9/11/13 in prior drafts) is now treated as corollaries of one common
+audit framework. \textbf{Pillar III (identifiable regimes)} gives the positive covariate-shift
+regime and disagreement-region sign characterization (Thm~\ref{thm:pos},
+Thms~\ref{thm:disagree}--\ref{thm:disagree-reg}). \textbf{Pillar IV (rates and sequentiality)}
+is deferred to appendix-level companions, including the anytime certificate
+(Appendix~\ref{app:anytime}).
 
 \begin{figure}[h]\centering
 \includegraphics[width=0.82\textwidth]{figures/fig_phase_diagram.png}
@@ -497,6 +537,8 @@ certificate survives finite-sample training (Theorem~\ref{thm:router-rad}); and 
 $\beta$-bounded-drift anytime certificate whose false-adapt control degrades gracefully
 under non-stationarity (Theorem~\ref{thm:anytime-drift}). Every statement ships with a
 passing code validator (Appendix~\ref{app:status}).
+This keeps the main body at the four-pillar level and moves the former proposition survey into
+auditable corollaries and appendix companions.
 
 \noindent\emph{Extended results.} Beyond the core above, Appendix~\ref{app:ext} develops a quantitative (Le Cam) frontier with matching minimax rates, per-family knowability boundaries (covariate, bounded-drift, label-shift), their unification via the \emph{ambiguity reach}, and a multi-candidate identifiability regime with a checkable diagnostic; all proofs are in Appendix~\ref{app:proofs}.
 
@@ -897,7 +939,7 @@ but its finite-sample ($n{=}4$) caution costs $\approx\!0.02$ regret versus alwa
 does \emph{not} beat both here. This is the honest benign-regime behaviour: with no detectable
 harm to avoid, the certificate is insurance with a small cost, not a win (contrast the
 harmful-cell regimes of Tables~\ref{tab:decisive} and~\ref{tab:imagenetc}). From
-\texttt{results/wilds/wilds\_camelyon17\_kga.json}.}
+\texttt{experiments/kbound/results/wilds/wilds\_camelyon17\_kga.json}.}
 \label{tab:camelyon}
 \end{table}
 
@@ -920,7 +962,7 @@ SAR  & \textbf{K-Bound} & \textit{(pending)} & \textit{(pending)} & \textit{(pen
 adapt/freeze/abstain protocol and metrics as the CIFAR-10-C stress grid
 (Table~\ref{tab:decisive}). Tent cells are populated from the \emph{completed}
 $n{=}8$-condition smoke run
-(\texttt{results/imagenetc\_smoke/decisive\_tta\_results.json}): with only $8$
+(\texttt{experiments/kbound/results/imagenetc\_smoke/decisive\_tta\_results.json}): with only $8$
 calibration conditions the leave-one-out estimator certifies nothing, so \textsc{KGA}
 abstains throughout (coverage $0$), inherits the better trivial policy, and never adapts
 into harm --- Tent's worst cell collapses to $0.078$ accuracy while \textsc{KGA} holds
@@ -1025,47 +1067,14 @@ corruptions are the Hendrycks--Dietterich set, Zenodo DOI \texttt{10.5281/zenodo
 split-conformal radius at $\alpha=0.1$; the deep-TTA grid is \emph{pre-registered} (declared
 before any result is observed) and reported in full, with no condition dropped. Every theorem
 ships a numerical sanity-check script under \texttt{experiments/kbound/theory\_validation/}; all
-were re-run from a clean environment and pass. Result manifests (\texttt{result\_manifest.json},
+were re-run from a clean environment and pass. Result manifests
+(\texttt{docs/research/kbound/results/result\_manifest.json},
+\texttt{experiments/kbound/results/stress\_grid\_multiseed\_v1/seed\{0,\dots,4\}/result\_manifest.json},
 \texttt{decisive\_tta\_results.json}, \texttt{cifar10c\_65cells.csv}) back every reported number.
 
 \section*{References}
 \small
-\begin{enumerate}\setlength{\itemsep}{1pt}
-\item D.~Wang, E.~Shelhamer, S.~Liu, B.~Olshausen, T.~Darrell. Tent: Fully Test-Time Adaptation by Entropy Minimization. ICLR 2021.
-\item J.~Liang, D.~Hu, J.~Feng. Do We Really Need to Access the Source Data? Source Hypothesis Transfer for Unsupervised Domain Adaptation (SHOT). ICML 2020.
-\item Y.~Sun, X.~Wang, Z.~Liu, J.~Miller, A.~A.~Efros, M.~Hardt. Test-Time Training with Self-Supervision for Generalization under Distribution Shifts (TTT). ICML 2020.
-\item S.~Niu, J.~Wu, Y.~Zhang, Y.~Chen, S.~Zheng, P.~Zhao, M.~Tan. Efficient Test-Time Model Adaptation without Forgetting (EATA). ICML 2022.
-\item S.~Niu, J.~Wu, Y.~Zhang, Z.~Wen, Y.~Chen, P.~Zhao, M.~Tan. Towards Stable Test-Time Adaptation in Dynamic Wild World (SAR). ICLR 2023.
-\item T.~Lee, S.~Chottananurak, T.~Gong, S.-J.~Lee. AETTA: Label-Free Accuracy Estimation for Test-Time Adaptation. CVPR 2024.
-\item J.~Steinhardt, P.~Liang. Unsupervised Risk Estimation Using Only Conditional Independence Structure. NeurIPS 2016.
-\item S.~Ben-David, J.~Blitzer, K.~Crammer, A.~Kulesza, F.~Pereira, J.~Wortman~Vaughan. A Theory of Learning from Different Domains. Machine Learning 79(1--2):151--175, 2010.
-\item Z.~C.~Lipton, Y.-X.~Wang, A.~Smola. Detecting and Correcting for Label Shift with Black Box Predictors (BBSE). ICML 2018.
-\item S.~Garg, S.~Balakrishnan, Z.~C.~Lipton, B.~Neyshabur, H.~Sedghi. Leveraging Unlabeled Data to Predict Out-of-Distribution Performance (ATC). ICLR 2022.
-\item C.~Baek, Y.~Jiang, A.~Raghunathan, J.~Z.~Kolter. Agreement-on-the-Line: Predicting the Performance of Neural Networks under Distribution Shift. NeurIPS 2022.
-\item Y.~Geifman, R.~El-Yaniv. SelectiveNet: A Deep Neural Network with an Integrated Reject Option. ICML 2019.
-\item D.~Hendrycks, T.~Dietterich. Benchmarking Neural Network Robustness to Common Corruptions and Perturbations. ICLR 2019.
-\item H.~Shimodaira. Improving Predictive Inference under Covariate Shift by Weighting the Log-Likelihood Function. Journal of Statistical Planning and Inference 90(2):227--244, 2000.
-\item F.~Croce, M.~Andriushchenko, V.~Sehwag, E.~Debenedetti, N.~Flammarion, M.~Chiang, P.~Mittal, M.~Hein. RobustBench: A Standardized Adversarial Robustness Benchmark. NeurIPS 2021 (Datasets and Benchmarks Track).
-\item I.~Gulrajani, D.~Lopez-Paz. In Search of Lost Domain Generalization (DomainBed). ICLR 2021.
-\item V.~Vovk, A.~Gammerman, G.~Shafer. Algorithmic Learning in a Random World. Springer, 2005.
-\item A.~N.~Angelopoulos, S.~Bates. Conformal Prediction: A Gentle Introduction. Foundations and Trends in Machine Learning 16(4):494--591, 2023.
-\item G.~Shafer. Testing by Betting: A Strategy for Statistical and Scientific Communication. Journal of the Royal Statistical Society: Series A 184(2):407--431, 2021.
-\item A.~Ramdas, P.~Gr\"unwald, V.~Vovk, G.~Shafer. Game-Theoretic Statistics and Safe Anytime-Valid Inference. Statistical Science 38(4):576--601, 2023.
-\item A.~Maurer, M.~Pontil. Empirical Bernstein Bounds and Sample Variance Penalization. COLT 2009.
-\item A.~B.~Tsybakov. Introduction to Nonparametric Estimation. Springer Series in Statistics, 2009.
-\item P.~W.~Koh, S.~Sagawa, H.~Marklund, S.~M.~Xie, M.~Zhang, A.~Balsubramani, W.~Hu, M.~Yasunaga, et al. WILDS: A Benchmark of in-the-Wild Distribution Shifts. ICML 2021.
-\item P.~B\'andi, O.~Geessink, Q.~Manson, M.~van Dijk, M.~Balkenhol, M.~Hermsen, et al. From Detection of Individual Metastases to Classification of Lymph Node Status at the Patient Level: The CAMELYON17 Challenge. IEEE Transactions on Medical Imaging 38(2):550--560, 2019.
-\item A.~P.~Dawid, A.~M.~Skene. Maximum Likelihood Estimation of Observer Error-Rates Using the EM Algorithm. Journal of the Royal Statistical Society: Series C (Applied Statistics) 28(1):20--28, 1979.
-\item A.~Anandkumar, R.~Ge, D.~Hsu, S.~M.~Kakade, M.~Telgarsky. Tensor Decompositions for Learning Latent Variable Models. Journal of Machine Learning Research 15:2773--2832, 2014.
-\item F.~Parisi, F.~Strino, B.~Nadler, Y.~Kluger. Ranking and Combining Multiple Predictors without Labeled Data. Proceedings of the National Academy of Sciences 111(4):1253--1258, 2014.
-\item A.~Jaffe, B.~Nadler, Y.~Kluger. Estimating the Accuracies of Multiple Classifiers without Labeled Data. AISTATS 2015.
-\item M.~Schirmer, M.~Jazbec, C.~A.~Naesseth, E.~Nalisnick. Monitoring Risks in Test-Time Adaptation. arXiv:2507.08721, 2025.
-\item S.~Ben-David, T.~Lu, T.~Luu, D.~P\'al. Impossibility Theorems for Domain Adaptation. AISTATS 2010.
-\item Y.~Jiang, V.~Nagarajan, C.~Baek, J.~Z.~Kolter. Assessing Generalization of SGD via Disagreement (GDE). ICLR 2022.
-\item E.~Rosenfeld, S.~Garg. (Almost) Provable Error Bounds Under Distribution Shift via Disagreement Discrepancy. NeurIPS 2023.
-\item Y.~Lu, Z.~Wang, R.~Zhai, S.~Kolouri, J.~Campbell, K.~Sycara. Characterizing Out-of-Distribution Error via Optimal Transport (COT). NeurIPS 2023.
-\item J.~P.~Miller, R.~Taori, A.~Raghunathan, S.~Sagawa, P.~W.~Koh, V.~Shankar, P.~Liang, Y.~Carmon, L.~Schmidt. Accuracy on the Line: On the Strong Correlation Between OOD and ID Generalization. ICML 2021.
-\end{enumerate}
+\input{paper/references_kbound_expanded}
 
 \appendix
 \section{Deferred proofs}\label{app:proofs}
@@ -1157,7 +1166,7 @@ $\Pr[\exists t: E_t^{-}\ge1/\alpha \wedge \Delta\ge0]\le\alpha$.
 $\lambda_t=\mathrm{clip}(\widehat\mu_{t-1}/\widehat\sigma^2_{t-1},0,c/(-a))$ governs power;
 validity needs only predictability and boundedness. \emph{Numerical sanity check}
 (\texttt{val\_thm3\_evalue.py}): anytime false-adapt $0.06\le\alpha{=}0.1$ (and
-$0.028\le0.05$), power $\to1$ with mean stopping time shrinking as $|\Delta|$ grows. It
+$0.032\le0.05$), power $\to1$ with mean stopping time shrinking as $|\Delta|$ grows. It
 \emph{complements} (does not replace) the batch certificate: tighter at a fixed $n$, vs
 valid at any stopping time.
 
@@ -1208,8 +1217,10 @@ from a clean environment and pass: the Le Cam floor tracks the closed form, the 
 holds to ${\sim}10^{-17}$, the multiclass identity to $10^{-16}$ with $100\%$ sign agreement over
 $4000$ trials, calibration-transfer sign-recovery is $100\%$ when the confidence gap exceeds
 $2\eta$, the router generalization gap decays as ${\sim}n^{-0.66}$, and the drift-corrected anytime
-false-adapt rate stays $\le\alpha$. Experiments report multi-seed means $\pm$ std with paired
-$t$-tests, evidence/$\alpha$/batch ablations, a regression covariate-shift track, and a clean
+false-adapt rate stays $\le\alpha$. Where multi-seed runs are available, experiments report means
+$\pm$ std with paired $t$-tests; single-seed/scoping tracks are labeled explicitly in captions and
+discussed as regime-classification evidence. We also report evidence/$\alpha$/batch ablations, a
+regression covariate-shift track, and a clean
 non-identifiability witness.
 
 \end{document}

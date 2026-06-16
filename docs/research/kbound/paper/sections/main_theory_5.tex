@@ -6,16 +6,23 @@
 % Validation: experiments/kbound/theory_validation/ + docs/research/kbound/theory_v2/.
 % ============================================================================
 
-The theory is exactly five theorems: the impossibility floor (Thm~\ref{thm:imp}), the
-operational certificate (Thm~\ref{thm:cert}), the exact knowability frontier
-(Thm~\ref{thm:frontier}), the one-bit dichotomy that closes the paper's open conjecture
-(Thm~\ref{thm:conj1-dichotomy}), and the label-free rate (Thm~\ref{thm:ev-rate}).
-Supporting variants (multiclass/regression reductions, label-shift and drift boundaries,
-the ambiguity-reach unification, router capacity, anytime certificates, the
-$\gamma$-meter, and the agreement--accuracy law) are corollaries of these five and are
-developed, with full proofs and their own validators, in the companion manuscript; this
-section gives statements, proof sketches, and the validation hooks. Every numeric claim
-traces to a script in the public repository.
+The body is organized as four pillars, with five core theorems serving as the load-bearing
+statements inside that scaffold. \textbf{Pillar I (impossibility floor):}
+Theorem~\ref{thm:imp} plus the Le Cam lower bound and regret identity establish when
+abstention is information-theoretically forced. \textbf{Pillar II (certificate + audit):}
+Theorem~\ref{thm:cert} gives finite-sample false-adapt control, and the one-bit audit
+machinery of Theorem~\ref{thm:conj1-dichotomy}(iv) supplies a common falsifier for the
+legacy budget premises (formerly presented as separate propositions, now treated as
+corollaries of one audit framework). \textbf{Pillar III (identifiable regimes):}
+Theorem~\ref{thm:frontier} and Theorem~\ref{thm:conj1-dichotomy} characterize exactly what
+label-free evidence identifies and what one-bit supplement remains irreducible.
+\textbf{Pillar IV (rates):} Theorem~\ref{thm:ev-rate} gives matching evidence-channel rates.
+The open piece---a weakest falsifiable class on which one declared bit suffices---is settled
+conditionally in Appendix~\ref{app:weakest}. Supporting variants (multiclass/regression
+reductions, label-shift and drift boundaries, ambiguity-reach unification, router capacity,
+anytime certificates, the $\gamma$-meter, and the agreement--accuracy law) are presented as
+corollaries or companions in the companion manuscript, each with a validator; every numeric
+claim here traces to a script in the public repository.
 
 \begin{lemma}[Reduction to the disagreement region]\label{lem:reduction}\label{thm:disagree}
 Let $D=\{x:f_0(x)\neq f_a(x)\}$ (observable). For binary $Y$ and $0/1$ loss, with
@@ -82,12 +89,15 @@ complement has mass $\le\alpha$; commitment when $\varepsilon(n)<|\Delta|$ inver
 Bernstein radius. The residual burden --- a calibration sample exchangeable with
 deployment --- is exactly what Theorem~\ref{thm:conj1-dichotomy}(iv) makes auditable.
 Validated: \texttt{switching\_certificate.py} tests; e-process false-adapt
-$0.028\le0.05$ (\texttt{val\_thm3\_evalue.py}).
+$0.032\le0.05$ (\texttt{val\_thm3\_evalue.py}).
 \end{proof}
 
 \begin{theorem}[Exact benefit-sign frontier]\label{thm:frontier}
 Fix the observables $(\mu,P_S,f_0,f_a)$ with $\mu(D)>0$, so $M$ is determined, and let
-$\mathcal C_\beta=\{P_T:|\gamma|\le\beta\}$.
+$\mathcal C_\beta=\{P_T:|\gamma|\le\beta\}$. The statements below hold \emph{unconditionally}:
+for \emph{every} drift budget $\beta\ge0$ and every target with $\mu(D)>0$, with $\beta$ a free
+parameter of the frontier rather than an assumption (and (iii) shows every identifying class is
+of this form).
 \textnormal{(i)} $\gamma$ is a one-dimensional sufficient statistic for $\sign\Delta$
 given the observables.
 \textnormal{(ii)} $\sign\Delta$ is identifiable over $\mathcal C_\beta$ \emph{iff}
@@ -109,8 +119,9 @@ All from Lemma~\ref{lem:reduction}: (ii) a $\pm\beta$ perturbation crosses $0$ i
 $|M|\le\beta$, plus the two-point argument of Theorem~\ref{thm:imp}; (iii) constancy of
 $\sign(M+\gamma)$ is one-sidedness; (iv) each heuristic thresholds an observable
 surrogate, i.e.\ commits to $\sign M$. Validated: frontier law exact over $5\times10^5$
-draws; ATC error matches the predicted event to machine precision at drift
-$0.04$--$0.28$ (\texttt{val\_frontier.py}, \texttt{val\_agl.py}).
+draws; the unconditional family characterization (identifiable over $\mathcal C_\beta$ \emph{iff}
+$|M|>\beta$) holds for every tested $\beta$; ATC error matches the predicted event to machine
+precision at drift $0.04$--$0.28$ (\texttt{val\_frontier.py} checks T1--T5, \texttt{val\_agl.py}).
 \end{proof}
 
 \begin{corollary}[Knowable regimes]\label{thm:pos}\label{cor:irreducible}
@@ -186,8 +197,13 @@ Theorem~\ref{thm:conj1-dichotomy}(iii) no evidence-definable assumption identifi
 $\sign\Delta$, and the minimal untestable supplement is one bit. The conditional
 resolutions --- calibration transfer, the $\gamma$-meter under checkable agreement
 structure, H plus an anchor (all in the manuscript) --- are therefore of the minimal
-possible form: \emph{falsifiable structure plus one declared bit}. What remains open is
-the weakest falsifiable class on which the bit still suffices.
+possible form: \emph{falsifiable structure plus one declared bit}. On the
+\emph{margin-monotone relative-calibration} class $\mathcal C_{\mathrm{mono}}$
+(Definition~\ref{def:cmono}) one declared bit certifies $\sign\Delta$ \emph{unconditionally}
+(Theorem~\ref{thm:cmono-weakest}(i)--(ii)); and $\mathcal C_{\mathrm{mono}}$ is \emph{a} weakest
+such class under a general-position assumption (Theorem~\ref{thm:cmono-weakest}(iii)). The
+\emph{unconditional} weakest class (general position removed) remains open
+(Remark~\ref{rmk:genpos}).
 \end{conjecture}
 
 \begin{theorem}[The evidence-channel rate: labels buy constants and the bit, not the rate]\label{thm:ev-rate}\label{thm:agl}
@@ -212,6 +228,9 @@ KL$/\varepsilon^2\in[0.164,0.171]$; efficiency $2.15\to4.49\to\infty$ as
 $c_{\min}\,0.21\to0.067\to{\le}0.022$ (\texttt{theory\_v2}, Fig.~\ref{fig:evrate};
 AGL: $R^2=1.000$ under constant $w$, slope $1-2w$ exact, \texttt{val\_agl.py}).
 \end{proof}
+
+\smallskip
+\noindent\emph{The weakest one-bit class.} Theorem~\ref{thm:conj1-dichotomy} fixes the supplement at one bit; the \emph{weakest falsifiable class} on which that bit suffices is settled conditionally ---a margin-monotone relative-calibration class on which one declared bit certifies $\sign\Delta$ unconditionally, and \emph{a} weakest such class under a general-position assumption (Appendix~\ref{app:weakest}, Thm~\ref{thm:cmono-weakest}). The \emph{unconditional} weakest class remains open.
 
 \smallskip
 \begin{table}[t]\centering\small

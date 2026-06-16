@@ -161,7 +161,8 @@ trichotomy earns its advantage.
 \subsection{Setup and Protocol}
 
 The harmful-fusion experiment evaluates \KGA\ against a candidate that is \emph{adversarially
-bad}: the ELARA reliability-fusion candidate (\texttt{elara\_fuse}) that hurts on $79.7\%$
+bad}: the legacy reliability-fusion candidate (\texttt{legacy\_fuse}; artifact key
+\texttt{elara\_fuse}) that hurts on $79.7\%$
 of the 123 tasks.  The true harmful base rate, from field
 \texttt{base\_rate\_harmful\_B\textless{}0} in \texttt{kbound\_harmful\_results.json}, is
 $0.7967$.  The frozen candidate $f_0$ is again the auto-selected best-validation detector
@@ -182,7 +183,7 @@ Table~\ref{tab:exp1-harmful} gives the full policy comparison.
 Policy & Mean AUROC & Regret vs oracle & Source field \\
 \midrule
 Always-freeze ($f_0$) & 0.7481 & 0.0018 & \texttt{mean\_auc.always\_freeze(auto\_select)} \\
-Always-adapt (ELARA-fuse) & 0.7284 & 0.0214 & \texttt{mean\_auc.always\_adapt(elara\_fuse)} \\
+Always-adapt (legacy-fuse) & 0.7284 & 0.0214 & \texttt{mean\_auc.always\_adapt(elara\_fuse)} \\
 \KGA\ (trichotomy) & 0.7479 & 0.0019 & \texttt{mean\_auc.K-Bound\_trichotomy} \\
 Oracle & 0.7499 & 0.0000 & \texttt{mean\_auc.oracle} \\
 \bottomrule
@@ -205,7 +206,7 @@ refuses the harmful fusion candidate, correctly identifying the regime.
 \centering
 \includegraphics[width=0.70\textwidth]{fig_kbound_harmful.png}
 \caption{\KGA\ in the harmful-fusion regime.  The certificate almost entirely blocks the
-  ELARA-fuse candidate; regret-to-oracle falls from $0.0214$ (always-adapt) to $0.0019$
+  legacy-fuse candidate; regret-to-oracle falls from $0.0214$ (always-adapt) to $0.0019$
   (${\approx}11\times$ reduction).  Source: \texttt{kbound\_harmful\_results.json}.}
 \label{fig:exp1-harmful}
 \end{figure}
@@ -221,7 +222,7 @@ certificate's main job is to \emph{match} the safe baseline rather than to impro
 
 \subsection{Threats Specific to This Sub-experiment}
 
-The ELARA-fuse candidate is constructed to be harmful; a practitioner would not ordinarily
+The legacy-fuse candidate is constructed to be harmful; a practitioner would not ordinarily
 deploy a candidate with a known $79.7\%$ harmful rate.  This sub-experiment is a
 \emph{controlled stress test}, not a claim about typical real-world adaptation candidates.
 

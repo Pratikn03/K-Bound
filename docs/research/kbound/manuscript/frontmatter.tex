@@ -16,7 +16,7 @@
 
 \vspace{2.5cm}
 
-{\LARGE Pratik Niroula}\\[0.6em]
+{\LARGE Anonymous Author}\\[0.6em]
 {\large Independent Researcher}
 
 \vspace{3cm}
@@ -30,8 +30,7 @@
 Long-form companion to the working paper ``When Is Label-Free
 Adaptation Knowable?''\ (K-Bound, v0.4).
 Every theorem, number, table, and figure in this manuscript reproduces
-from the public repository at
-\url{https://github.com/Pratikn03/AutoML_Flagship_V8}.
+from the anonymized repository linked in supplementary material.
 Nothing has been added beyond the exposition; nothing has been rounded,
 selected, or otherwise adjusted from the verified artifact manifests.
 \end{minipage}
@@ -45,56 +44,31 @@ selected, or otherwise adjusted from the verified artifact manifests.
 \chapter*{Abstract}
 \addcontentsline{toc}{chapter}{Abstract}
 
-Test-time adaptation (TTA) improves models on unlabeled target data, yet the
-very unlabeled objective that recovers accuracy under one distribution shift can
-silently degrade it under another --- and, without labels, a deployed system
-cannot tell which is happening.
-Existing methods propose increasingly robust \emph{adaptation mechanisms}; we
-instead study a prior question: \emph{can a system decide, without labels,
-whether adaptation should happen at all?}
+Test-time adaptation can improve models on unlabeled target data, but the same
+objective that helps under one distribution shift can silently hurt under another.
+Existing work mainly strengthens adaptation mechanisms; we study a prior decision
+problem: can a system decide, without target labels, whether it should adapt at all?
 
-We formalize adaptation benefit as the excess risk between an adapted candidate
-and a frozen baseline conditioned on label-free observable evidence, and separate
-test-time regimes into \emph{knowably helpful}, \emph{knowably harmful}, and
-\emph{unknowable}.
-We prove (Theorem~\ref{thm:imp}, with an explicit witness) that when two target
-worlds induce the same observable evidence but opposite benefit, no label-free rule
-can certify the correct decision in both, so the worst-case-optimal action on such
-evidence is to abstain.
-Under an observable risk-alignment assumption we give a finite-sample
-adapt/freeze/abstain certificate (Theorem~\ref{thm:cert}) that controls the
-false-adapt and false-freeze rates at a chosen level, and we identify a provable
-positive regime (Theorem~\ref{thm:pos}, covariate shift).
-A quantitative strengthening via the Le~Cam two-point lower bound
-(Theorem~\ref{thm:imp}) makes the impossibility result a tight minimax statement:
-the optimal committal error equals $1 - \TV$ of the evidence distributions, which
-is~$1$ in the exact witness and decays to zero only as the evidence separates.
+We formalize adaptation benefit as the excess target risk of a frozen baseline over
+an adapted candidate and define three label-free regimes: \emph{knowably helpful},
+\emph{knowably harmful}, and \emph{unknowable}. We prove that when two target worlds
+induce identical observable evidence but opposite adaptation benefit, no label-free
+rule can be correct in both; abstention is then information-theoretically necessary.
+Under a risk-alignment assumption, we give a finite-sample adapt/freeze/abstain
+certificate controlling false adaptation and false freezing. Our main theoretical
+result is an exact benefit-sign frontier: adaptation benefit is identifiable from
+observables iff an observable margin exceeds the calibration-drift budget on the
+disagreement region.
 
-We instantiate the framework (\KGA) on a 123-task anomaly-routing benchmark and a
-controlled mixed-regime study.
-\KGA\ abstains where the true benefit is near zero, refuses a fusion path that
-hurts on~80\% of tasks (cutting regret-to-oracle $\approx 11{\times}$ versus
-always-adapt), and in the mixed regime beats an always-freeze policy by
-$\approx 0.10$ AUROC.
-In \emph{online non-stationary} CIFAR-10 test-time adaptation, across a
-helpful-dominated and a harm-dominated stream, no fixed policy is robust:
-always-adapt collapses in the harm regime ($0.339$) and always-freeze forgoes gains
-in the helpful regime --- while \KGA\ is near-best in both, giving the highest mean
-accuracy across regimes ($0.490$ vs.\ $0.456$ / $0.444$).
-On a \emph{pre-registered} CIFAR-10-C stress grid (severity $\times$ batch $\times$
-composition $\times$ aggressiveness; harmful base rate $0.16$--$0.34$), \KGA\
-\emph{beats both} trivial policies for Tent and EATA --- regret-to-oracle $0.0016$
-versus always-adapt $0.009$ and always-freeze $0.12$, at a $0\%$ false-adapt
-rate --- and ties the collapse-resistant SAR.
-
-We are explicit about scope: where harmful adaptation is mild, always-adapt is
-already strong, so the certificate's distinctive value is bounded by how often
-\emph{catastrophic, detectable} harm occurs --- itself the quantity the theory
-characterizes.
-The surviving open piece is the label-free \emph{bracketing} of the ordinal
-accuracy comparison on the observable disagreement region in the multiclass and
-regression cases (Conjecture~\ref{conj:gen}); every other element of the
-characterization is proved.
+We instantiate the framework as \KGA, a mechanism-agnostic wrapper around Tent,
+EATA, and SAR. Across anomaly routing, CIFAR-10, CIFAR-10-C stress tests, and
+natural-shift audits, \KGA\ follows theory: adapt in helpful regimes, freeze in
+harmful regimes, and abstain when evidence is insufficient. On a CIFAR-10-C stress
+grid, \KGA\ beats always-adapt and always-freeze for Tent and EATA with zero
+false-adapt decisions, while tying SAR. At ImageNet scale, it also beats both
+policies on a harmful SAR stream. On Camelyon17, ImageNet-R, and Office-Home,
+\KGA\ is conservative and avoids overclaiming wins. K-Bound is not universal; value
+is highest when harmful adaptation is frequent, detectable, and costly.
 
 % ---------------------------------------------------------------------------
 % How to Read This Manuscript
@@ -176,9 +150,9 @@ helpful-dominated protocol, and the pre-registered CIFAR-10-C stress grid.
 Breadth results on 62 additional harmful-dominated label-free tasks.
 
 \medskip
-\noindent\textbf{Chapter~\ref{ch:elara}: The ELARA/RGA Instantiation.}
+\noindent\textbf{Chapter~\ref{ch:elara}: The Multimodal Instantiation.}
 Reliability-gated multimodal fusion as the worked, code-validated special case:
-the ten-result ELARA theorem stack (T1--T9, GDR) and its mapping to the general
+the ten-result multimodal theorem stack (T1--T9, GDR) and its mapping to the general
 K-Bound theorems.
 
 \medskip

@@ -205,6 +205,39 @@ it is the honest falsifiability condition.
 \section{Future Work}\label{sec:disc-future}
 % -----------------------------------------------------------------------
 
+\paragraph{Beyond label-free: a target-label-light, multimodal safety guard.}
+The impossibility result is specific to the \emph{pure} label-free setting: with no
+target labels, a calibration-drift budget on the disagreement region can flip the
+benefit sign while leaving every observable unchanged, forcing abstention.  Two
+deliberate relaxations --- not better label-free heuristics --- address this where it
+binds.  \emph{(i)~A micro-probe.}  A small labeled probe of $k{\approx}8$--$64$ target
+examples gives a direct, low-bias estimate of the benefit sign on the disagreement
+region, eliminating the need to assume the drift budget is zero; the residual is
+sampling error that contracts at the $k^{-1/2}$ rate under a finite-sample radius.
+This is the correct lever precisely because our Camelyon17 bias--variance diagnostic
+shows the conformal radius is \emph{bias-limited} (observed $\varepsilon_{256}{=}0.112$
+against a measurement floor of $0.044$; only ${\approx}16\%$ of residual variance is
+measurement noise), so more \emph{unlabeled} data cannot close the certificate.
+\emph{(ii)~Multimodal fusion as a natural home.}  Single-model classifiers rarely
+flip between helpful and harmful in a label-free-detectable way --- the natural-shift
+battery of Section~\ref{sec:exp2-battery} bears this out --- whereas an independent
+modality failure (e.g.\ LiDAR degraded by rain alongside a clear camera) is often
+observable, supplying the structure the certificate needs to route
+\textsc{adapt}/\textsc{freeze}/drop-modality.  The reliability-gated instantiation of
+Chapter~\ref{ch:elara} shows fusion raises the attainable floor; pairing it with a
+micro-probe so the gate can \emph{commit} rather than abstain is the concrete route
+toward a certified multimodal beats-both.  We present this as a direction, not a
+result --- and a pre-registered real-label test is sobering: on $85$ real multimodal
+categories (Protocol~D25) a $k{\le}64$ probe does \emph{not} reproduce the
+simulated beats-both.  The debiasing is genuine, but the small-probe rectifier
+variance dominates, so the certified commit rate \emph{falls} (from $22\%$ label-free
+to ${\approx}3\%$) rather than rising.  Coupled with a fusion certificate that
+\emph{ties} the fused floor, the honest status is that \emph{neither} lever yet
+delivers a certified multimodal beats-both; whether a larger probe or a
+lower-variance rectifier closes the gap is open.  The framing remains a
+target-label-light operating point distinct from the label-free core --- it does not
+contradict the impossibility theorem, it steps outside its premise.
+
 \paragraph{Proving Conjecture~\ref{conj:gen}.}
 The unconditional label-free bracketing conjecture for multiclass is the one
 residual theoretical open problem.  The conditional version (Theorem~\ref{sec:t2-prop-caltransfer})
