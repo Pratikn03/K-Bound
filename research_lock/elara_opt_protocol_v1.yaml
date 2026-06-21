@@ -1,0 +1,255 @@
+# elara_opt_protocol_v1.yaml — LOCKED pre-registration for ELARA-Opt.
+# Frozen BEFORE any held-out evaluation. This task BUILDS + SMOKE-TESTS only;
+# the locked held-out run is NOT executed here (awaiting Pratik's review).
+# No headline/superiority/safety/publishability claim is asserted by this file.
+
+protocol: elara_opt_protocol_v1
+status: locked_preregistration
+created: 2026-06-21
+branch: feature/elara-opt
+
+# ---- relationship to the existing, untouched K-Bound / KGA work --------------
+relationship_to_kbound:
+  kga_certificate_unchanged: true
+  kga_guarantee: "false-adapt <= alpha (Thm 3) is a property of the GATE, not the candidate; ELARA-Opt is just a new candidate the same gate certifies."
+  does_not_modify:
+    - kga/                                   # certificate / policy / evidence
+    - packaging/kbound-tta/                  # frozen candidate+analysis package
+    - experiments/kbound/wilds/tta_methods.py
+    - experiments/kbound/wilds/analysis.py
+    - experiments/kbound/theory_validation/  # theorem validators
+    - research_lock/KBOUND_*                  # reconciled panel + verdicts
+    - experiments/kbound/results/*            # locked result manifests
+  reconciled_verdicts_invariant: research_lock/KBOUND_6_DATASET_PANEL_v2.yaml
+  headline_findings_invariant: research_lock/KBOUND_HEADLINE_FINDINGS.json
+
+# ---- what ELARA-Opt is -------------------------------------------------------
+method_summary:
+  type: label_free_test_time_PARAMETER_UPDATE_optimizer
+  explicitly_not: [prediction_router, renamed_kga_threshold, score_fusion]
+  distinct_from_existing_ELARA: "existing ELARA = reliability-gated score FUSION/router (src/elara, kga_elara_demo.py); ELARA-Opt updates parameters."
+  update_surface: bn_ln_affine_params           # identical surface to Tent/EATA/SAR
+  mixed_objectives: [entropy, reliability_filtered_entropy, augmentation_consistency]
+  stability_anchor: frozen_model_kl              # KL(p0 || p_t), function-space trust
+  constraint: trust_region_with_reliability_dependent_radius
+  gate: g_phi maps label-free reliability features -> nonneg objective weights (softmax)
+  reuses_validated_primitives:
+    - _clone_for_tta, _bn_affine_params, _entropy, _upd_norm   # kbound_tta._tta
+    - evidence_vector (11-dim label-free Z), bn_stat_kl_drift
+    - sar_adapt                                # faithful SAR/SAM, REFERENCED (never re-derived/faked)
+  implementation: experiments/kbound/elara_opt/
+
+# ---- FROZEN hyperparameters (must equal experiments/kbound/elara_opt/config.py;
+#      asserted by tests/elara_opt/test_integration_batch.py::test_code_matches_lock) -
+hyperparameters:
+  seed: 0
+  steps: 1
+  lr: 0.001
+  margin_frac: 0.4              # reliable-sample threshold = margin_frac * ln(C)
+  lambda_anchor: 1.0
+  gate_temperature: 1.0
+  optimizer: sgd                # manual SGD so the trust region is exact
+  momentum: 0.0
+  trust_region:
+    r_min: 0.05                 # radius at reliability ~ 0 (conservative)
+    r_max: 0.50                 # radius at reliability ~ 1 (trust the update)
+  reliability_coeffs:
+    bias: 0.0
+    conf_mean: 3.0
+    ent_mean: 3.0
+    frozen_div: 2.0
+    bn_drift: 2.0
+    aug_disagreement: 2.0
+  rule:
+    a_entropy: 0.0
+    a_filtered: 0.30
+    a_aug: 0.0
+    k_reliable: 2.0
+    k_unreliable: 2.0
+    k_disagree: 1.0
+  meta:
+    hidden: 16
+    checkpoint: experiments/kbound/elara_opt/meta/meta_gate_v1.pt
+    train_ids: experiments/kbound/elara_opt/meta/training_data_ids.json
+    presets:
+      uniform: [0.3333, 0.3333, 0.3333]
+      entropy_heavy: [0.7, 0.2, 0.1]
+      filtered_heavy: [0.2, 0.7, 0.1]
+      consistency_heavy: [0.1, 0.2, 0.7]
+  modes: [elara_uniform, elara_rule, elara_meta]
+
+# ---- label-free reliability features fed to the gate (canonical order) -------
+reliability_features:
+  - ent_mean             # mean predictive entropy / ln C
+  - ent_var              # entropy spread / (ln C)^2
+  - conf_mean            # mean top-1 prob
+  - conf_var             # top-1 prob spread
+  - pred_balance         # marginal entropy / ln C (class-collapse guard)
+  - pred_balance_drift   # KL(mean p_t || mean p_0)
+  - aug_disagreement     # frac argmax changes under augmentation
+  - frozen_div           # mean KL(p_0 || p_t)
+  - bn_drift             # BN running(f0) vs batch(f_t) KL, squashed
+  - grad_conflict        # min pairwise cosine of objective gradients
+  - update_norm          # cumulative L2 of affine-param delta
+
+# ---- modes ------------------------------------------------------------------
+modes:
+  elara_uniform: {weights: [0.3333, 0.3333, 0.3333], description: "uniform objective mixture"}
+  elara_rule:    {description: "deterministic reliability rule, fully specified by hyperparameters.rule + reliability_coeffs above; no learned params"}
+  elara_meta:
+    description: "tiny MLP gate trained ONLY on source/dev synthetic shift tasks"
+    train_manifest: experiments/kbound/elara_opt/meta/training_data_ids.json
+    checkpoint: experiments/kbound/elara_opt/meta/meta_gate_v1.pt
+    strict_no_overlap_with_eval: true
+    dev_task_id_prefix: dev_synth_shift_   # disjoint from the 9 eval datasets
+
+# ---- comparison set (arms) ---------------------------------------------------
+comparison_set:
+  - {id: frozen, role: trivial_policy_floor}
+  - {id: tent, role: baseline_candidate}
+  - {id: eata, role: baseline_candidate}
+  - {id: sar, role: baseline_candidate_where_faithful}        # sar_adapt exists (faithful SAM)
+  - {id: elara_uniform, role: elara_opt_mode}
+  - {id: elara_rule, role: elara_opt_mode}
+  - {id: elara_meta, role: elara_opt_mode}
+  - {id: kga_base, role: "gate_over_tent_eata_sar (the published KGA gate)"}
+  - {id: kga_elara_opt, role: gate_over_elara_opt_candidates}
+  - id: naive_uniform_no_gate_no_tr
+    role: ablation_floor
+    definition: "uniform weights, NO gate, NO trust region, NO frozen anchor (sanity floor; ~Tent-like)"
+
+# ---- 9-dataset panel: each dataset's regime + frozen bar + runner/protocol ---
+# frozen_bar: where a locked regret-vs-freeze exists it is cited from
+# KBOUND_HEADLINE_FINDINGS.json; otherwise the bar is defined by the cited protocol
+# artifact (NOT re-estimated here — no number is fabricated).
+panel:
+  cifar10c:
+    regime: controlled_corruption_stress (multiseed beats-both for Tent/EATA)
+    num_classes: 10
+    runner: src/scripts/kbound/cifar10c_suite.py
+    protocol: research_lock/STRESS_GRID_MULTISEED_PROTOCOL_A_v1.yaml
+    frozen_bar: defined_in_protocol_artifact (experiments/kbound/results/stress_grid_multiseed_v1/LOCKED_ANALYSIS_RESULTS.json)
+  imagenet_c:
+    regime: scale_breadth (honest Imagenette proxy; full ImageNet-C=1000 unavailable from host)
+    num_classes: 10_proxy
+    runner: src/scripts/kbound/imagenette_c_suite.py
+    protocol: in_paper_not_core_six
+    frozen_bar: defined_in_runner_output
+  officehome:
+    regime: robust_beats_both_CI_excludes_zero
+    num_classes: 65
+    runner: experiments/kbound/officehome/run_officehome_kbound.py
+    protocol: research_lock/OFFICEHOME_PROTOCOL_M_v2.yaml
+    frozen_bar: {regret_freeze: 0.01582, source: KBOUND_HEADLINE_FINDINGS.json}
+  iwildcam:
+    regime: no_harm_pareto (dominates adapt, ties freeze)
+    num_classes: 182
+    runner: experiments/kbound/wilds/run_iwildcam_kbound.py
+    protocol: research_lock/IWILDCAM_PROTOCOL_H_v2.yaml
+    frozen_bar: {regret_freeze: 0.004102, source: KBOUND_HEADLINE_FINDINGS.json}
+  camelyon17:
+    regime: robust_beats_both_CI_excludes_zero (biomedical shift)
+    num_classes: 2
+    runner: experiments/kbound/wilds/run_camelyon17_kbound.py
+    protocol: research_lock/CAMELYON17_PROTOCOL_G_v1.yaml
+    frozen_bar: {regret_freeze: 0.07492, source: KBOUND_HEADLINE_FINDINGS.json}
+  rxrx1:
+    regime: breadth_not_headline (single-seed win not robust)
+    num_classes: 1139
+    runner: experiments/kbound/wilds/run_rxrx1_kbound.py
+    protocol: research_lock/RXRX1_PROTOCOL_J_v1.yaml
+    frozen_bar: defined_in_protocol_artifact
+  imagenet_r:
+    regime: forced_abstention_frontier (undetectable harm AUC~0.66; NOT a win)
+    num_classes: 200
+    runner: experiments/kbound/wilds/run_imagenetr_kbound.py
+    protocol: research_lock/IMAGENETR_DIVERSE_PANEL_PROTOCOL_D_v1.yaml
+    frozen_bar: defined_in_protocol_artifact
+    expectation: KGA(ELARA-Opt) MUST mostly ABSTAIN here (mirror base KGA)
+  cifar101:
+    regime: low_margin_boundary (not cross-seed beats-both)
+    num_classes: 10
+    runner: protocol_K_pipeline (data/raw/adbench_cv/CIFAR10_1.npz + experiments/kbound/cifar/resnet18_cifar.pt)
+    protocol: research_lock/CIFAR101_PROTOCOL_K_v1.yaml
+    frozen_bar: defined_in_protocol_artifact
+  fmow:
+    regime: honest_null (base false-adapt 0.375; breadth)
+    num_classes: 62
+    runner: experiments/kbound/wilds/run_geoshift_kbound.py
+    protocol: research_lock/FMOW_PROTOCOL_L_v1.yaml
+    frozen_bar: defined_in_protocol_artifact
+    expectation: report null with equal visibility; no overclaim
+
+mixed_stream_capstone:
+  runner: experiments/kbound/poem_aetta/run_mixed_headtohead.py
+  base_manifest: research_lock/KBOUND_MIXED_STREAM_v1.json
+  claim_form: "pooled heterogeneous deployment; KGA(ELARA-Opt) vs always-adapt and always-freeze, paired bootstrap 95% CI"
+  pass_if: regret-gap CIs exclude zero AND false_adapt <= alpha (same bar as base capstone)
+
+# ---- metrics -----------------------------------------------------------------
+metrics:
+  alpha: 0.1
+  estimator: gbr                  # matches KBOUND_HEADLINE_FINDINGS bar
+  conformal: global
+  ci: paired_bootstrap_95
+  multiplicity: Holm-Bonferroni_across_panel
+  primary:
+    - regret_to_oracle_mean
+    - false_adapt_rate            # MUST be <= alpha for any ADAPT claim
+  beats_both_definition: "regret-gap CI excludes zero vs BOTH trivial policies AND false_adapt <= alpha (identical to analysis.policy_metrics.beats_both)"
+  secondary: [mean_balanced_acc, coverage, abstention_rate, worst_cell_acc, decision_counts]
+  telemetry_endpoints: [gate_weights, trust_radius, reliability_features, grad_conflict, update_norm, candidate_hash]   # label-free
+
+# ---- ablations ---------------------------------------------------------------
+ablations:
+  A1_no_gate: weights fixed uniform (isolates the gate)
+  A2_no_trust_region: r_max = +inf (isolates the TR constraint)
+  A3_no_frozen_anchor: lambda_anchor = 0 (isolates the stability anchor)
+  A4_single_objective: "each of {entropy, filtered_entropy, aug_consistency} alone (isolates the mixture)"
+  A5_gate_family: uniform vs rule vs meta (isolates learned gating)
+  A6_naive_floor: naive_uniform_no_gate_no_tr_no_anchor (Tent-like sanity floor)
+
+# ---- success criteria (ALL with headline mode selected on DEV only) ----------
+headline_mode_selection: dev_criteria_only   # choose {uniform|rule|meta} on DEV shift tasks; LOCK before any test
+success_criteria:
+  optimizer_value:
+    claim: "ELARA-Opt yields candidates KGA certifies at least as well as base candidates on DEV-helpful regimes"
+    pass_if: "on DEV: KGA(elara_opt headline) regret_to_oracle <= KGA(base) within CI AND elara_opt candidate is not Pareto-dominated by {tent,eata,sar}"
+    null_outcome_allowed: true
+  safety_value:
+    claim: "under the KGA gate, ELARA-Opt never exceeds the false-adapt budget"
+    pass_if: "false_adapt_rate <= alpha on EVERY panel incl null (fmow) and frontier (imagenet_r -> mostly ABSTAIN), and no-harm on iWildCam"
+  novelty_evidence:
+    claim: "the gate + trust-region + frozen-anchor each contribute beyond the naive uniform floor"
+    pass_if: ">=1 ablation delta has a 95% CI excluding zero on a DEV regime"
+    else: "reported as a NULL (no novelty overclaim)"
+  equal_visibility_of_nulls: true    # nulls / no-harm / negative ablations reported as prominently as wins
+
+# ---- leakage controls (restated from REPO_AUDIT §6) --------------------------
+leakage_controls:
+  L1_update_objective: unlabeled only (entropy / filtered / aug-consistency / frozen-KL)
+  L2_reliability_features: label-free; source labels only where used (ATC), never test
+  L3_gate: rule fully offline; meta trained on dev/source tasks only (saved IDs/seeds/ckpt)
+  L4_selection: steps/lr/radius/mode frozen here BEFORE eval; headline mode on DEV only
+  L5_calibration: split-conformal eps from dev/calibration residuals only
+  L6_reporting: held-out scored ONCE; this task does NOT run eval
+  L7_telemetry: no target labels (guarded + scanned)
+  L8_kga_benefit_B: from dev/calibration labels only; test side contributes label-free Z only
+
+# ---- evaluation protocol -----------------------------------------------------
+eval_protocol:
+  held_out_scored_once: true
+  no_test_driven_tuning: true
+  freeze_settings_before_eval: true
+  deterministic_seeds: true
+  environment_metadata_recorded: true
+  THIS_TASK_RUNS_EVAL: false        # STOP after smoke + pre-registration
+
+# ---- deliverable status ------------------------------------------------------
+status_phase0:
+  audit: docs/research/elara_opt/REPO_AUDIT.md
+  implementation: experiments/kbound/elara_opt/
+  tests: tests/elara_opt/   # 37 tests (36 passed + this lock-consistency test)
+  smoke: experiments/kbound/results/elara_opt_smoke/smoke_summary.json   # all_ok: true (9/9)
+  meta_gate: experiments/kbound/elara_opt/meta/   # checkpoint + training_data_ids.json (dev-only)
+  locked_run: PENDING_PRATIK_REVIEW
