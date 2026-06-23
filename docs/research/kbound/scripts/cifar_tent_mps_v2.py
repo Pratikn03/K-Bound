@@ -56,7 +56,7 @@ The analysis core (decide_kga, policy_metrics, mixing_pareto, summarize) imports
 WITHOUT torch so it can be unit-tested off-GPU.
 """
 from __future__ import annotations
-import os, sys, json, copy, math, time, argparse, glob, random
+import os, sys, io, json, copy, math, time, argparse, glob, random
 import numpy as np
 
 # torch is only needed for the actual TTA runs; guard it so the analysis core
@@ -115,6 +115,12 @@ CIFAR_C_ALL = ["gaussian_noise","shot_noise","impulse_noise","defocus_blur","gla
                "elastic_transform","pixelate","jpeg_compression"]
 CIFAR_C_QUICK = ["gaussian_noise","defocus_blur","fog","contrast","pixelate","jpeg_compression"]
 IMAGENET_C_QUICK = ["gaussian_noise","defocus_blur","snow","contrast","elastic_transform","jpeg_compression"]
+# Full ImageNet-C: standard 15 + 4 extra = 19 corruptions (Zenodo 2235448 grouping).
+IMAGENET_C_ALL = ["gaussian_noise","shot_noise","impulse_noise",
+                  "defocus_blur","glass_blur","motion_blur","zoom_blur",
+                  "snow","frost","fog","brightness",
+                  "contrast","elastic_transform","pixelate","jpeg_compression",
+                  "speckle_noise","gaussian_blur","spatter","saturate"]
 
 
 # =============================================================================
@@ -168,8 +174,15 @@ def policy_metrics(dec, a0, aa, B=None):
             "always_freeze": float(a0.min()),
             "K_Bound": float(kga.min()),
         },
+        "beats_both_regret_only": bool((oracle - kga).mean() < (oracle - aa).mean() - 1e-9 and
+                                       (oracle - kga).mean() < (oracle - a0).mean() - 1e-9),
+        # Integrity fix 2026-06-20: beats_both MUST enforce the pre-registered
+        # false-adapt budget FA<=ALPHA, not regret alone (regret-only over-counted
+        # "wins" on mixes where the router false-adapts above budget). The ungated
+        # regret comparison is preserved above as beats_both_regret_only.
         "beats_both": bool((oracle - kga).mean() < (oracle - aa).mean() - 1e-9 and
-                           (oracle - kga).mean() < (oracle - a0).mean() - 1e-9),
+                           (oracle - kga).mean() < (oracle - a0).mean() - 1e-9 and
+                           adapt.any() and float(np.mean(B[adapt] < 0)) <= ALPHA),
     }
     return out
 
@@ -448,6 +461,154 @@ def imagenet_c_loader(root, corruption, sev, transform, max_images, dev):
     return torch.utils.data.DataLoader(_ICSampledDS(samples, transform),
                                        batch_size=256, shuffle=False, num_workers=0)
 
+
+# ---- ImageNet-C TAR-STREAMING (no extraction; exFAT-128KB-slack-safe) ----
+# Standard Zenodo 2235448 grouping of the 19 corruptions into 5 tars. A corruption is
+# served from its extracted dir if that dir is present (byte-identical to all prior
+# runs); otherwise it is streamed DIRECTLY from its tar via python tarfile, reading
+# each image by its stored TarInfo offset (random access, no extraction to disk).
+CORRUPTION_TO_TAR = {
+    "gaussian_noise": "noise", "shot_noise": "noise", "impulse_noise": "noise",
+    "defocus_blur": "blur", "glass_blur": "blur", "motion_blur": "blur", "zoom_blur": "blur",
+    "snow": "weather", "frost": "weather", "fog": "weather", "brightness": "weather",
+    "contrast": "digital", "elastic_transform": "digital", "pixelate": "digital", "jpeg_compression": "digital",
+    "speckle_noise": "extra", "gaussian_blur": "extra", "spatter": "extra", "saturate": "extra",
+}
+
+def _ic_corruption_tar(ic_root, corruption):
+    """Path to the tar containing `corruption` if present under ic_root, else None."""
+    grp = CORRUPTION_TO_TAR.get(corruption)
+    if not grp:
+        return None
+    p = os.path.join(ic_root, f"{grp}.tar")
+    return p if os.path.isfile(p) else None
+
+def _ic_available(ic_root, corruption, sev=None):
+    """True if the corruption (optionally a given severity) is loadable from an
+    extracted dir OR from its tar (streaming)."""
+    if sev is None:
+        if os.path.isdir(os.path.join(ic_root, corruption)):
+            return True
+    elif os.path.isdir(os.path.join(ic_root, corruption, str(sev))):
+        return True
+    return _ic_corruption_tar(ic_root, corruption) is not None
+
+class _ICTarDS(torch.utils.data.Dataset):
+    """Streams (image, label) straight from an open ImageNet-C tar by stored TarInfo
+    offset. num_workers MUST be 0 (single shared handle; exFAT can't back DataLoader shm)."""
+    def __init__(self, tar_path, infos, labels, transform):
+        self.tar_path = tar_path; self.infos = infos; self.labels = labels
+        self.transform = transform; self._tf = None
+    def __len__(self):
+        return len(self.infos)
+    def _tar(self):
+        import tarfile
+        if self._tf is None:
+            self._tf = tarfile.open(self.tar_path, "r")
+        return self._tf
+    def __getitem__(self, i):
+        from PIL import Image, ImageFile
+        ImageFile.LOAD_TRUNCATED_IMAGES = True
+        try:
+            fobj = self._tar().extractfile(self.infos[i])
+            img = Image.open(io.BytesIO(fobj.read())).convert("RGB")
+        except Exception:
+            img = Image.new("RGB", (256, 256))
+        return self.transform(img), self.labels[i]
+
+def _imagenet_c_tar_loader(ic_root, corruption, sev, transform, max_images):
+    """Tar-streaming counterpart of imagenet_c_loader: scan the corruption's tar for
+    members under `<corruption>/<sev>/<wnid>/`, sample ~balanced across classes, and
+    return a DataLoader that reads image bytes directly from the tar (NO extraction).
+    Same (path-free) sampling discipline + SEED rng as the extracted-dir loader."""
+    import tarfile
+    tar_path = _ic_corruption_tar(ic_root, corruption)
+    if tar_path is None:
+        raise FileNotFoundError(f"no tar for corruption '{corruption}' under {ic_root}")
+    rng = np.random.default_rng(SEED)
+    prefix = f"{corruption}/{sev}/"
+    by_class = {}
+    seen_prefix = False
+    tfs = tarfile.open(tar_path, "r")          # 'r' = transparent; iterates headers, seeks past data
+    for m in tfs:
+        name = m.name[2:] if m.name.startswith("./") else m.name
+        if not name.startswith(prefix):
+            # tar members are corruption-major then severity-major: once this prefix
+            # has been collected and we have moved to a different corruption, stop.
+            if seen_prefix and not name.startswith(corruption + "/"):
+                break
+            continue
+        seen_prefix = True
+        if not m.isfile():
+            continue
+        parts = name.split("/")
+        if len(parts) < 4:
+            continue
+        wnid = parts[2]; base = parts[-1]
+        if base.startswith("._") or not base.lower().endswith((".jpeg", ".jpg", ".png")):
+            continue
+        by_class.setdefault(wnid, []).append(m)
+    classes = sorted(by_class)
+    if not classes:
+        raise RuntimeError(f"tar {os.path.basename(tar_path)} had 0 members under {prefix}")
+    cls_to_idx = {c: i for i, c in enumerate(classes)}
+    target = max_images if max_images else 10**9
+    per_class = max(1, target // max(1, len(classes)) + 1)
+    order = list(classes); rng.shuffle(order)
+    infos, labels = [], []
+    for c in order:
+        ms = by_class[c]
+        k = min(len(ms), per_class)
+        for j in rng.choice(len(ms), size=k, replace=False):
+            infos.append(ms[int(j)]); labels.append(cls_to_idx[c])
+        if max_images and len(infos) >= max_images * 2:
+            break
+    if max_images and len(infos) > max_images:
+        sub = rng.choice(len(infos), size=max_images, replace=False)
+        infos = [infos[int(i)] for i in sub]; labels = [labels[int(i)] for i in sub]
+    return torch.utils.data.DataLoader(_ICTarDS(tar_path, infos, labels, transform),
+                                       batch_size=256, shuffle=False, num_workers=0)
+
+def imagenet_c_any_loader(ic_root, corruption, sev, transform, max_images, dev):
+    """Dispatch: extracted dir (byte-identical legacy path) if present, else tar-stream."""
+    if os.path.isdir(os.path.join(ic_root, corruption, str(sev))):
+        return imagenet_c_loader(ic_root, corruption, sev, transform, max_images, dev)
+    return _imagenet_c_tar_loader(ic_root, corruption, sev, transform, max_images)
+
+def _ic_cell_key(corr, sev, brn, agn, comp):
+    """Cell key. comp=None reproduces the legacy key exactly (byte-identical checkpoints)."""
+    base = f"{corr}|s{sev}|{brn}|{agn}"
+    return base if comp is None else f"{base}|{comp}"
+
+def _ic_compose_stream(X, Y, comp, bs):
+    """Non-iid within-cell adaptation stream on preloaded (X,Y), mirroring the CIFAR
+    build_stream_and_eval compositions: 'imbalanced' (~85% one class) and 'single_class'
+    (label shift), the canonical Tent/SAR collapse triggers. 'iid' = uniform random.
+    Length = bs*8, matching the legacy iid stream."""
+    n_total = bs * 8
+    N = len(X)
+    if comp == "imbalanced":
+        classes = torch.unique(Y)
+        major = classes[torch.randint(len(classes), (1,)).item()]
+        maj = (Y == major).nonzero(as_tuple=True)[0]
+        oth = (Y != major).nonzero(as_tuple=True)[0]
+        if len(maj) == 0: maj = oth
+        nM = int(n_total * 0.85)
+        sel_maj = maj[torch.randint(len(maj), (nM,))]
+        nO = n_total - nM
+        sel_oth = oth[torch.randint(len(oth), (nO,))] if len(oth) > 0 else maj[torch.randint(len(maj), (nO,))]
+        idx = torch.cat([sel_maj, sel_oth])
+        idx = idx[torch.randperm(len(idx))]
+    elif comp == "single_class":
+        classes = torch.unique(Y)
+        major = classes[torch.randint(len(classes), (1,)).item()]
+        pool = (Y == major).nonzero(as_tuple=True)[0]
+        if len(pool) == 0: pool = torch.arange(N)
+        idx = pool[torch.randint(len(pool), (n_total,))]
+    else:  # "iid"
+        idx = torch.randperm(N)[:n_total]
+    return [X[idx[i:i + bs]] for i in range(0, len(idx), bs)]
+
 # ---- evidence (label-free) ----
 def _entropy(p):
     return -(p * (p + 1e-9).log()).sum(1)
@@ -719,6 +880,13 @@ def run_cifar_benchmark(which, data_root, dev, methods, corruptions, ckpt=None, 
                                       Z=Z, a0=a0, aa=aa, regime=label_regime(aa - a0)))
         if (ci + 1) % 10 == 0:
             print(f"   {ci+1}/{len(cells)} cells  ({time.time()-t0:.0f}s)")
+    try:  # per-cell evidence dump for scripts/gate_baseline_comparison.py (non-breaking)
+        import json as _json
+        _cand = "tent" if "tent" in rows else next(iter(rows))
+        _json.dump(rows[_cand], open(f"cifar10c_percell_{which}.json", "w"))
+        print(f"[{which}] per-cell dump ({_cand}, {len(rows[_cand])} cells) -> cifar10c_percell_{which}.json")
+    except Exception as _e:
+        print(f"[{which}] per-cell dump skipped: {_e}")
     return clean_acc, rows
 
 
@@ -763,13 +931,13 @@ def run_cifar101_benchmark(data_root, dev, methods, ckpt=None, quick=False):
     return clean_acc, rows
 
 
-def run_imagenet_benchmark(ic_root, val_root, dev, methods, corruptions, quick=False, max_images=4000, arch="resnet50", severities=None, batch_regimes=None, out_dir=None, cooldown=0.0):
+def run_imagenet_benchmark(ic_root, val_root, dev, methods, corruptions, quick=False, max_images=4000, arch="resnet50", severities=None, batch_regimes=None, out_dir=None, cooldown=0.0, compositions=None, max_cells=0):
     # Frozen pretrained ImageNet backbone; Tent/EATA/SAR adapt BN-affine (ResNet) or
     # LayerNorm-affine (ViT) params; eval on the corruption set itself.
     # Writes progress.log + checkpoint.json after EVERY cell, so the run is VISIBLE on disk
     # and RESUMABLE: if the Mac sleeps / overheats / shuts down, just relaunch -- finished
     # cells are skipped and it continues from where it stopped (no work lost).
-    present = [c for c in corruptions if os.path.isdir(os.path.join(ic_root, c))]
+    present = [c for c in corruptions if _ic_available(ic_root, c)]
     _missing = [c for c in corruptions if c not in present]
     if _missing:
         print(f"[imagenet-c] skipping {len(_missing)} absent corruption(s): {_missing}")
@@ -787,7 +955,8 @@ def run_imagenet_benchmark(ic_root, val_root, dev, methods, corruptions, quick=F
     rng = np.random.default_rng(SEED)
     sevs = [1, 5] if quick else (severities if severities else SEVERITIES)
     bregimes = batch_regimes if batch_regimes else [("large_iid", 64), ("tiny", 8)]
-    inner = [(brn, bs, agn, AGGRESSIVENESS[agn]) for (brn, bs) in bregimes for agn in AGGRESSIVENESS]
+    comps = list(compositions) if compositions else [None]   # None => legacy single iid random-perm stream
+    inner = [(brn, bs, agn, AGGRESSIVENESS[agn], comp) for (brn, bs) in bregimes for agn in AGGRESSIVENESS for comp in comps]
 
     rows = {m: [] for m in methods}
     done = set()
@@ -824,26 +993,30 @@ def run_imagenet_benchmark(ic_root, val_root, dev, methods, corruptions, quick=F
             os.replace(tmp, ckpt_path)
         except Exception as e:
             print(f"[imagenet-c] checkpoint write failed: {e}")
-    _log(f"START imagenet-c backbone={arch} | {len(corruptions)} corr x {len(sevs)} sev x {len(inner)} (batch x aggr) x {len(methods)} methods = {total} cells | {len(done)}/{total} already done")
+    _log(f"START imagenet-c backbone={arch} | {len(corruptions)} corr x {len(sevs)} sev x {len(inner)} (batch x aggr x comp) x {len(methods)} methods = {total} cells | {len(done)}/{total} already done")
 
     t0 = time.time()
+    _ran = 0   # cells processed THIS call (for --max-cells smoke cap)
     for corr in corruptions:
         for sev in sevs:
-            keys_here = [f"{corr}|s{sev}|{brn}|{agn}" for (brn, bs, agn, ag) in inner]
+            keys_here = [_ic_cell_key(corr, sev, brn, agn, comp) for (brn, bs, agn, ag, comp) in inner]
             if keys_here and all(k in done for k in keys_here):
                 continue  # whole (corruption,severity) finished -> don't even load its images
-            if not os.path.isdir(os.path.join(ic_root, corr, str(sev))):
-                _log(f"skip {corr} sev{sev} (folder absent)"); continue
-            loader = imagenet_c_loader(ic_root, corr, sev, tf, max_images, dev)
+            if not _ic_available(ic_root, corr, sev):
+                _log(f"skip {corr} sev{sev} (no extracted dir and no tar)"); continue
+            loader = imagenet_c_any_loader(ic_root, corr, sev, tf, max_images, dev)
             xs, ys = [], []
             for xb, yb in loader: xs.append(xb); ys.append(yb)
             X = torch.cat(xs).to(dev); Y = torch.cat(ys)
-            for (brn, bs, agn, ag) in inner:
-                key = f"{corr}|s{sev}|{brn}|{agn}"
+            for (brn, bs, agn, ag, comp) in inner:
+                key = _ic_cell_key(corr, sev, brn, agn, comp)
                 if key in done:
                     continue
-                perm = torch.randperm(len(X))[: bs * 8]
-                stream = [X[perm[i:i+bs]] for i in range(0, len(perm), bs)]
+                if comp is None:
+                    perm = torch.randperm(len(X))[: bs * 8]
+                    stream = [X[perm[i:i+bs]] for i in range(0, len(perm), bs)]
+                else:
+                    stream = _ic_compose_stream(X, Y, comp, bs)
                 a0 = acc_on(model, X, Y, train_mode=False)
                 cell_msg = []
                 for mth in methods:
@@ -858,7 +1031,12 @@ def run_imagenet_benchmark(ic_root, val_root, dev, methods, corruptions, quick=F
                     del adapted, un; _mps_free()
                 done.add(key)
                 _checkpoint()
+                _ran += 1
                 _log(f"[{len(done)}/{total}] {key} | " + " | ".join(cell_msg) + f" | {time.time()-t0:.0f}s")
+                if max_cells and _ran >= max_cells:
+                    _log(f"[smoke] --max-cells {max_cells} reached; stopping early (resumable)")
+                    del X, Y; _mps_free()
+                    return None, rows
                 if cooldown > 0:
                     time.sleep(cooldown)
             del X, Y; _mps_free()
@@ -911,10 +1089,18 @@ def main():
                     help="SAR-arm only: freeze the final block (ResNet layer4 / ViT top block) "
                          "during adaptation, per Niu et al. 2023 official SAR. DEFAULT off "
                          "(adapts all affine params, identical to prior runs).")
+    ap.add_argument("--device", default="auto", choices=["auto", "cpu", "mps", "cuda"],
+                    help="compute device. DEFAULT auto = pick_device() (mps>cuda>cpu). Use cpu "
+                         "for a no-GPU smoke that won't contend with another MPS job.")
+    ap.add_argument("--imagenetc-composition", nargs="+", default=None, dest="imagenetc_composition",
+                    choices=["iid", "imbalanced", "single_class"],
+                    help="ImageNet-C within-cell stream composition axis (sequential/non-iid). "
+                         "DEFAULT None = legacy single iid random-perm stream (byte-identical to "
+                         "prior runs). Protocol E (full): --imagenetc-composition iid imbalanced single_class.")
     args = ap.parse_args()
 
     os.makedirs(args.out_results, exist_ok=True); os.makedirs(args.out_figs, exist_ok=True)
-    dev = pick_device(); print("device:", dev)
+    dev = (pick_device() if args.device == "auto" else args.device); print("device:", dev)
     set_global_seed(args.seed); print("seed:", SEED)
     global SAR_LR, SAR_FREEZE_LAYER4
     SAR_LR = args.sar_lr; SAR_FREEZE_LAYER4 = args.sar_freeze_layer4
@@ -938,7 +1124,7 @@ def main():
             if not args.imagenetc_root: print("[skip] imagenetc needs --imagenetc-root"); continue
             corrs = args.corruptions if args.corruptions else IMAGENET_C_QUICK
             _bregimes = [("large_iid", 64), ("small", 16), ("tiny", 8)] if args.all_batch else None
-            clean_acc, rows = run_imagenet_benchmark(args.imagenetc_root, None, dev, args.methods, corrs, args.quick, max_images=args.max_images, arch=args.arch, severities=args.severities, batch_regimes=_bregimes, out_dir=args.out_results, cooldown=args.cooldown)
+            clean_acc, rows = run_imagenet_benchmark(args.imagenetc_root, None, dev, args.methods, corrs, args.quick, max_images=args.max_images, arch=args.arch, severities=args.severities, batch_regimes=_bregimes, out_dir=args.out_results, cooldown=args.cooldown, compositions=args.imagenetc_composition, max_cells=args.max_cells)
 
         per_method = {}
         for mth, rws in rows.items():

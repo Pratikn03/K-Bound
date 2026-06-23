@@ -1,0 +1,218 @@
+{
+  "description": "Generalization of the K-Bound knowability--capacity threshold beyond 1-D. Multivariate-Gaussian (exact lift + obstruction), exp-family/MLR (conditional matched tau + breaker), distribution-free converse.",
+  "tau": 1.0,
+  "seed": 20260619,
+  "stage1a": {
+    "dims": [
+      2,
+      3,
+      4
+    ],
+    "n_draws": 20000,
+    "n_tested": 20000,
+    "n_mismatch": 0,
+    "n_identifiable": 14840,
+    "exact_lift_holds": true
+  },
+  "stage1b": {
+    "band_median": 0.4225579223176128,
+    "pmed_vs_rho": [
+      [
+        0.0,
+        0.5005
+      ],
+      [
+        0.2425,
+        0.48
+      ],
+      [
+        0.7071,
+        0.4428
+      ],
+      [
+        0.9701,
+        0.4232
+      ],
+      [
+        0.9986,
+        0.4225
+      ],
+      [
+        1.0,
+        0.4226
+      ]
+    ],
+    "monotone_to_half": true,
+    "breaker": {
+      "K_parallel": 1.4000000000000001,
+      "sign_aligned": 1,
+      "delta_aligned": 0.14,
+      "worst_tilt_delta": -0.14063066666666668,
+      "sign_flipped_by_tilt": true
+    },
+    "obstruction_confirmed": true
+  },
+  "stage2a": {
+    "families": [
+      "laplace",
+      "logistic"
+    ],
+    "n_draws_each": 6000,
+    "n_mismatch": {
+      "laplace": 0,
+      "logistic": 0
+    },
+    "identity_max_err": {
+      "laplace": 0.0004374782237379776,
+      "logistic": 0.0004604990899558514
+    },
+    "matched_tau_holds": true
+  },
+  "stage2b": {
+    "description": "Bimodal (mixture-of-Gaussians) location family: NOT log-concave, NOT MLR. Delta(theta) is monotone in theta for any CDF, so the concept-location flip is unique; the failure is that the flip locus theta0(mu) as a function of the UNKNOWN shift mu becomes NON-monotone (it collapses as the band median crosses the antimode), so the label-free identifiable set {mu: K(mu)>1} fragments and no single scalar threshold tau separates the regimes. This is the exact regularity (MLR/unimodality) the scalar capacity needs.",
+    "a": 5.0,
+    "eps": 0.06,
+    "density_modes": 2,
+    "theta0_of_mu": [
+      [
+        -3.0,
+        0.1350471392259751
+      ],
+      [
+        -2.75,
+        0.16754971199080096
+      ],
+      [
+        -2.5,
+        0.21494227883138675
+      ],
+      [
+        -2.25,
+        0.28562796617031716
+      ],
+      [
+        -2.0,
+        0.39075462204646777
+      ],
+      [
+        -1.75,
+        0.5400781587751011
+      ],
+      [
+        -1.5,
+        0.7338187856451902
+      ],
+      [
+        -1.25,
+        0.9598037243874086
+      ],
+      [
+        -1.0,
+        1.2021603098501161
+      ],
+      [
+        -0.75,
+        1.450358699763378
+      ],
+      [
+        -0.5,
+        1.7000446207402842
+      ],
+      [
+        -0.25,
+        1.9500041269696093
+      ],
+      [
+        0.0,
+        2.1999999998617765
+      ],
+      [
+        0.25,
+        2.449995868920568
+      ],
+      [
+        0.5,
+        2.6999552889450253
+      ],
+      [
+        0.75,
+        2.9496398268847464
+      ],
+      [
+        1.0,
+        3.1978218276355355
+      ],
+      [
+        1.25,
+        3.4400348691004075
+      ],
+      [
+        1.5,
+        3.665087819128279
+      ],
+      [
+        1.75,
+        3.854266799286689
+      ],
+      [
+        2.0,
+        3.985701963039551
+      ],
+      [
+        2.25,
+        4.025008579624176
+      ],
+      [
+        2.5,
+        2.5
+      ],
+      [
+        2.75,
+        0.974991420375824
+      ],
+      [
+        3.0,
+        1.0142980369604493
+      ]
+    ],
+    "theta0_nonmonotone_events": 2,
+    "components_mixture": 2,
+    "components_gaussian": 1,
+    "scalar_tau_fails": true
+  },
+  "stage3a": {
+    "description": "Distribution-free converse: in every family/dimension, two admissible concepts with IDENTICAL Q_X and opposite benefit-sign exist whenever the calibrated boundary sits within eps (in mass) of a flip locus; unlabeled TV=0 => Le Cam minimax error=1/2 for all n. The converse needs NO distributional assumption.",
+    "cases": [
+      {
+        "family": "gaussian-1d",
+        "dim": 1,
+        "delta_plus": 0.12000000000000033,
+        "delta_minus": -0.12,
+        "TV_unlabeled": 0.0,
+        "minimax_lb": 0.5,
+        "opposite_sign": true
+      },
+      {
+        "family": "laplace-1d",
+        "dim": 1,
+        "delta_plus": 0.12000000000000022,
+        "delta_minus": -0.12,
+        "TV_unlabeled": 0.0,
+        "minimax_lb": 0.5,
+        "opposite_sign": true
+      },
+      {
+        "family": "gaussian-3d-aligned",
+        "dim": 3,
+        "delta_plus": 0.11999999999999988,
+        "delta_minus": -0.11999999999999988,
+        "TV_unlabeled": 0.0,
+        "minimax_lb": 0.5,
+        "opposite_sign": true
+      }
+    ],
+    "converse_universal": true
+  },
+  "verdict": "STRONG-BUT-BOUNDED generalization, NOT a paradigm-level general capacity. Stage 1 aligned: EXACT tau=1 lift (PROVEN). Stage 1 free halfspace: capacity K_free with worst-case-tilt to mass 1/2 (PROVEN, with breaker). Stage 2: matched tau=1 UNDER MLR+log-concavity (PROVEN-conditional) with an explicit non-log-concave breaker. Stage 3: distribution-free CONVERSE is universal (PROVEN); general single-threshold ACHIEVABILITY provably needs a regularity/identifiability condition (unimodal/MLR flip locus). The wall is exactly there: a computable scalar tau is a capacity iff the flip locus is a unique monotone observable threshold.",
+  "all_ok": true
+}

@@ -1,0 +1,67 @@
+# PROTOCOL M v2 — OfficeHome natural-shift win (G-bar dev-lock)
+# Registered: 2026-06-19 BEFORE held-out scoring.
+#
+# Replaces exploratory win-finder Protocol M with the same bar as Protocol G:
+#   - canonical KGA only (GBR + global eps, alpha=0.10 fixed)
+#   - adapter chosen on DEV ONLY from a pre-registered six-arm gradient-TTA panel
+#   - separate target-val calibration / target-test evaluation (no test search)
+#
+# DEV SCREEN (target-val):
+#   Panel: Tent/EATA/SAR x online x {mild, aggressive} only (no label-shift priors).
+#   Split: cal seed {0}, eval seed {1} on target-val records only.
+#   Rule: false_adapt <= alpha on dev; pick max margin; tie-break lowest regret_kga.
+#
+# HELD-OUT (target-test):
+#   Locked adapter; cal seeds {0,1} on target-val; test seeds {0,1} on target-test.
+#
+# NOTE: Protocol M v1 used a 14-candidate win-finder; v2 is the honest G-bar replacement.
+
+protocol: OFFICEHOME_PROTOCOL_M_v2
+status: preregistered_before_heldout
+created: 2026-06-19
+
+adapter_panel:
+  - tent_online_mild
+  - eata_online_mild
+  - sar_online_mild
+  - tent_online_aggressive
+  - eata_online_aggressive
+  - sar_online_aggressive
+
+dev_screen:
+  records: experiments/kbound/results/officehome_full_targetval/result_target_val_361a1e8c.json
+  cal_seeds: [0]
+  eval_seeds: [1]
+
+heldout:
+  mode: transfer
+  cal_records: experiments/kbound/results/officehome_full_targetval/result_target_val_361a1e8c.json
+  test_records: experiments/kbound/results/officehome_full_targettest/result_target_test_6605675d.json
+  cal_seeds: [0, 1]
+  test_seeds: [0, 1]
+
+method:
+  name: KGA
+  estimator: gbr
+  conformal: global
+  alpha: 0.10
+
+success_criteria:
+  dev_screen_pass: true
+  heldout_false_adapt_le_alpha: true
+  heldout_beats_both: true
+
+output_dir: experiments/kbound/results/officehome_protocol_M_v2/
+
+result:
+  locked_adapter: sar_online_aggressive
+  dev_screen_pass: true
+  heldout_verdict_win: true
+  regret_kga: 0.002198
+  regret_always_adapt: 0.046813
+  regret_always_freeze: 0.015824
+  false_adapt: 0.0
+  n_test: 35
+  artifact: experiments/kbound/results/officehome_protocol_M_v2/protocol_result.json
+
+supersedes: OFFICEHOME_PROTOCOL_M_v1

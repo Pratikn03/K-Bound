@@ -1,0 +1,42 @@
+# PROTOCOL K — CIFAR-10.1 v6 formal audit (canonical KGA, low-margin natural shift)
+# Registered: 2026-06-16. Re-scores existing cifar101_multiseed_v1 per_condition records; no new GPU.
+#
+# MOTIVATION: CIFAR-10.1 is a low-margin natural shift (Recht et al. v6). Paper reports
+# abstain-heavy KGA on Tent/EATA with 0% false-adapts and ties always-freeze — not beats-both.
+# Protocol K applies the same canonical G/H scoring template for a formal audit row.
+#
+# ADAPTER LOCK (before scoring): tent — primary low-margin probe in the multiseed grid;
+# EATA/SAR reported in appendix only; NOT chosen by held-out test regret.
+#
+# HYPOTHESIS (audit): Canonical KGA abstains heavily, false-adapt <= alpha, regret ties freeze;
+# does NOT beat both on held-out stream seeds.
+#
+# SUCCESS CRITERIA (Tier-B headline — expected NOT met):
+#   WIN: held-out false-adapt <= alpha=0.10 AND regret_kga < regret_adapt AND regret_kga < regret_freeze.
+#   AUDIT_PASS (expected): false-adapt <= alpha AND regret_kga <= regret_freeze (low-margin safety).
+#
+design:
+  dataset: CIFAR-10.1 v6 natural shift (ResNet-18, 24 conditions per seed)
+  records_source:
+    - experiments/kbound/results/cifar101_multiseed_v1/seed0/per_condition_cifar101_tent_seed0.json
+    - experiments/kbound/results/cifar101_multiseed_v1/seed1/per_condition_cifar101_tent_seed1.json
+    - experiments/kbound/results/cifar101_multiseed_v1/seed2/per_condition_cifar101_tent_seed2.json
+    - experiments/kbound/results/cifar101_multiseed_v1/seed3/per_condition_cifar101_tent_seed3.json
+    - experiments/kbound/results/cifar101_multiseed_v1/seed4/per_condition_cifar101_tent_seed4.json
+  deployed_adapter: tent
+  evidence_panel: standard_11dim
+  method:
+    name: KGA
+    algorithm: adapt if B_hat - eps > 0; freeze if B_hat + eps < 0; else abstain
+    B_hat: GradientBoostingRegressor (same spec as Protocol G)
+    eps: global (1-alpha) quantile of |B_hat - B| on DEV calibration residuals
+    alpha: 0.10
+  forbidden_in_headline:
+    - eps transplant from synthetic grids
+    - tuning alpha or decision rule on TEST
+analysis_plan_locked:
+  split: DEV stream seeds {0,1,2} fit B_hat and eps; TEST seeds {3,4} scored ONCE
+  script: docs/research/kbound/scripts/analyze_F.py
+  args: --candidate tent --estimator gbr --conformal global --dev-seeds 0 1 2 --test-seeds 3 4
+  expected_outcome: LOW_MARGIN_AUDIT_PASS_not_beats_both
+output_dir: experiments/kbound/results/cifar101_protocol_K_v1/

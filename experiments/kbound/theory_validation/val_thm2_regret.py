@@ -304,6 +304,12 @@ def validate_thm2(
         corollary_near_boundary=check_corollary_near_boundary(delta, a_adapt, eps_band=eps_band),
         corollary_minimax=check_corollary_minimax(delta, a_adapt),
         exact_identity_max_gap=float(exact_gap),
+        # NOTE: 1e-9 is a DELIBERATELY LOOSE pass gate, not the achieved precision.
+        # The identity in Lemma~\ref{thm:gate} is exact (it is an algebraic identity,
+        # not a Monte-Carlo estimate), so the realized max gap is at the float64 round-off
+        # floor: ~2.35e-17 with the default seed/n (see exact_identity_max_gap in
+        # results_thm2_regret.json). The paper quotes "machine precision" -- this gate
+        # confirms it while leaving slack for platform/BLAS round-off differences.
         exact_identity_holds=bool(exact_gap < 1e-9),
         realized_all_within_4se=bool(realized_ok),
     )
@@ -410,6 +416,11 @@ def main() -> None:
     print(json.dumps(asdict(rep), indent=2))
 
     # ---- hard assertions (this is a VALIDATION, so fail loudly) -----------
+    # The 1e-9 bound below is a LOOSE pass gate; the realized identity gap is at the
+    # float64 round-off floor (~2.35e-17 with the default seed/n), which is the
+    # "machine precision" the paper reports. We do NOT tighten the gate to 1e-16 so
+    # the validator stays robust to harmless cross-platform round-off; the achieved
+    # value is recorded verbatim in results_thm2_regret.json["exact_identity_max_gap"].
     assert rep.exact_identity_holds, (
         f"EXACT identity violated: max gap {rep.exact_identity_max_gap:.3e} >= 1e-9")
     assert rep.realized_all_within_4se, "Realized-loss check exceeded 4 SE somewhere"

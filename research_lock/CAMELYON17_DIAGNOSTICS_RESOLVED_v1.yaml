@@ -1,0 +1,60 @@
+# CAMELYON17 DIAGNOSTICS — resolved layers (2026-06-16)
+# Clarifies Protocol F vs G vs diagnostic ladder after CPU re-analysis + multicand fix.
+
+layers:
+  protocol_F_gpu:
+    role: DATA_SERIALIZATION
+    status: COMPLETE
+    artifact: experiments/kbound/results/camelyon17_richZ_F_v1/result_884129ba.json
+    note: Rich 17-dim Z, 540 records, 90 conditions. Not a policy-win claim by itself.
+
+  protocol_F_route_audit:
+    role: DIAGNOSTIC_AUDIT_ON_F_RECORDS
+    status: RESOLVED
+    artifacts:
+      - experiments/kbound/results/camelyon17_diagnostics_resolved_v1/protocol_F_audit_rerun/
+      - experiments/kbound/results/camelyon17_diagnostics_resolved_v1/VERDICT_camelyon_sourcecal.json
+    outcomes:
+      ppi_mondrian_pooled: WIN (FA 3.3%, beats both, appendix only)
+      multicandidate_frozen_tau052: FAIL (abstain-heavy / unsafe)
+      multicandidate_source_calibrated: FIXED_ROUTE commits 30/30; 0% FA on adapts; beats_both still false
+      gbr_global_pooled: WIN (appendix; superseded by G single-adapter)
+
+  protocol_G:
+    role: HEADLINE_NATURAL_SHIFT_WIN
+    status: VERIFIED
+    lock: research_lock/CAMELYON17_PROTOCOL_G_v1.yaml
+    method: canonical KGA, eata_online, GBR + global in-domain eps
+    outcome: regret≈0, FA 2.6%, beats both
+
+  protocol_B_sparse:
+    role: DIAGNOSTIC_NEGATIVE
+    status: INTEGRITY_FAIL_v1; v2_QUEUED
+    v1_issue: run_wilds_camelyon17.py wrote aggregates not full grid
+    scientific_issue: bias-limited eps (diag ratio 2.55x); more n cannot fix sparse Z
+    v2_launch: experiments/kbound/results/camelyon17_fullscale_B_v2/protocol_b_v2_launch.sh
+
+  eps_recal_sparse_debug:
+    role: CALIBRATION_DIAGNOSTIC
+    status: PRECISE_NEGATIVE_CONFIRMED
+    fix_attempted: in-domain eps by seed on sparse Z n=256
+    outcome: FA 0.185 > alpha; harm detectable but not certifiable at sparse panel
+
+  eps_recal_rich:
+    role: CALIBRATION_CONFIRMATION_OF_G
+    status: WIN
+    fix: rich Z + in-domain dev/test split (same as G)
+    outcome: FA 2.56%, beats both
+
+  bias_variance_diag:
+    role: EXPLAINS_PROTOCOL_B_FAILURE
+    status: BIAS_LIMITED_CONFIRMED
+    artifact: camelyon17_fullscale_B_v1/bias_variance_diag/diag_results.json
+
+headline_rule: >
+  Only Protocol G (Camelyon) and Protocol H (iWildCam) are natural-shift policy-win claims.
+  Protocol F is the GPU data source + route audit appendix. Protocol B / sparse eps-recal /
+  frozen-tau multicandidate are closed diagnostic negatives.
+
+rerun_command: >
+  python docs/research/kbound/scripts/run_camelyon_diagnostics_resolved.py

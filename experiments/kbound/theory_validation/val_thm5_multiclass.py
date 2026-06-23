@@ -198,6 +198,11 @@ def validate_multiclass(n_trials: int = 4000, seed: int = 0):
     print(f"  max |off-D contribution to Delta|: {max_offD:.3e}")
     print(f"  sign-match rate sign(Delta)=sign(pa-p0): "
           f"{sign_matches}/{sign_eligible} = {100.0*sign_rate:.4f}%")
+    # 1e-9 is a DELIBERATELY LOOSE pass gate, not the achieved precision. Delta ==
+    # P(D)(p_a - p_0) is an exact algebraic identity, so the realized max error sits at
+    # the float64 round-off floor: ~1.11e-16 with the default seed/n (recorded as
+    # multiclass.max_abs_err in results_thm5_multiclass.json). The paper quotes the
+    # multiclass identity "to 1e-16"; this gate confirms it with slack for round-off.
     equality_ok = max_abs_err < 1e-9
     sign_ok = (sign_matches == sign_eligible)
     print(f"  --> EQUALITY to numerical precision (<1e-9): {equality_ok}")
@@ -270,6 +275,12 @@ def validate_regression_identity(n_trials: int = 3000, seed: int = 1):
     print(f"  sign-match sign(Delta)=sign(E[delta|D]) : "
           f"{sign_matches}/{sign_eligible} = "
           f"{100.0*sign_matches/sign_eligible if sign_eligible else float('nan'):.4f}%")
+    # 1e-9 is a DELIBERATELY LOOSE pass gate. The squared-loss identity
+    # (f0-y)^2-(fa-y)^2 == (f0-fa)(f0+fa-2y) is exact; the realized max pointwise error
+    # is at the float64 round-off floor scaled by the (randomized) magnitudes here:
+    # ~5.6e-13 with the default seed/n (regression_identity.max_pointwise_err in
+    # results_thm5_multiclass.json), and the mean-decomposition gap is ~5.6e-17. Both are
+    # the "machine precision" the paper reports; the gate keeps slack for round-off.
     identity_ok = max_pointwise_err < 1e-9
     sign_ok = (sign_matches == sign_eligible)
     print(f"  --> POINTWISE IDENTITY (machine precision): {identity_ok}")

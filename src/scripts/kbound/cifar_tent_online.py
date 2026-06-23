@@ -130,6 +130,9 @@ out={"device":dev,"n_windows":len(SCHED),"n_streams":3,"schedule":"harsh (long t
      "kga_minus_adapt":float(np.mean(res["kga"])-np.mean(res["adapt"])),
      "kga_minus_freeze":float(np.mean(res["kga"])-np.mean(res["freeze"])),
      "adapt_minus_freeze":float(np.mean(res["adapt"])-np.mean(res["freeze"])),
+     # NOTE (integrity 2026-06-20): this 'beats_both' is an ACCURACY-DOMINANCE diagnostic for the
+     # harsh streaming sweep (mean KGA acc > mean adapt AND > mean freeze). It is NOT the
+     # FA<=alpha-gated decision verdict (see policy_metrics in cifar_tent_mps_v2.py / wilds/analysis.py).
      "beats_both":bool(np.mean(res["kga"])>np.mean(res["adapt"]) and np.mean(res["kga"])>np.mean(res["freeze"]))}
 json.dump(out,open(os.path.join(RES,"cifar_tent_online_results.json"),"w"),indent=2)
 print(json.dumps(out,indent=2),flush=True)

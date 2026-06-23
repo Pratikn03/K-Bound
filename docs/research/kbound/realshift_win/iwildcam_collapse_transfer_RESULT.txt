@@ -1,0 +1,37 @@
+source mean adapted metric by candidate: {'eata_episodic': 0.186, 'eata_online': 0.183, 'sar_episodic': 0.185, 'sar_online': 0.178, 'tent_episodic': 0.183, 'tent_online': 0.207}
+DEPLOYED (source-best, dev-locked): tent_online
+
+n_source=144 (harm 0.74, meanB -0.051)   n_target=144 (harm 0.57, meanB -0.028)
+
+feature                     srcAUC  OOD_AUC  note
+coll_negentropy              0.638    0.643
+coll_locnorm_negent          0.639    0.601    (NEW)
+pre_pbal                     0.798    0.532  ~chance
+post_conf                    0.554    0.530  ~chance
+post_entropy                 0.544    0.528  ~chance
+pbal_drop                    0.619    0.523  ~chance
+pre_conf                     0.815    0.518  ~chance
+post_pbal                    0.544    0.518  ~chance
+entropy_drop                 0.551    0.510  ~chance
+pre_entropy                  0.846    0.483  ~chance
+coll_locnorm_negdistinct     0.827    0.447  ~chance  (NEW)
+frac_highconf                0.606    0.446  ~chance
+update_norm                  0.577    0.422  ~chance
+upd_norm                     0.577    0.422  ~chance
+marginal_KL                  0.606    0.327  ~chance
+coll_topfrac                 0.517    0.323  ~chance
+
+SOURCE-selected best feature (dev-lock): pre_entropy  srcAUC 0.846 -> OOD 0.483
+
+LOCKED VERIFIER  (collapse-feature Z; fit B_hat+eps on id_val, val scored once):
+   n = 144
+   false_adapt = 0.0
+   regret_kga = 0.023285434130991534
+   regret_adapt = 0.051660151196793166
+   regret_freeze = 0.023285434130991534
+   gap_vs_adapt_CI = [0.013226637956047615, 0.04386836660509877]
+   gap_vs_freeze_CI = [0.0, 0.0]
+   beats_both_point = False
+   beats_both_CI_robust = False
+
+(For reference, prior documented detectors: best single-feature srcAUC ~0.62, certificate OOD transfer-AUC 0.43 -> NO win.)

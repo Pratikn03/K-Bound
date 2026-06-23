@@ -1,0 +1,346 @@
+{
+  "schema": "kbound_wilds_fmow_finder_v0.1",
+  "dataset": "wilds-fmow",
+  "metric": "accuracy",
+  "created": "2026-06-17T21:27:23",
+  "host": {
+    "node": "Pratik-Ns-MacBook-Pro.local",
+    "python": "3.12.13",
+    "torch": "2.5.1"
+  },
+  "config": {
+    "dataset": "fmow",
+    "data_root": "experiments/kbound/data/wilds",
+    "results_root": "/Volumes/T9/uav/AutoML_Flagship_V8/experiments/kbound/results",
+    "run_name": "fmow_protocol_L_val",
+    "ckpt": "experiments/kbound/results/fmow_protocol_L_dev_partial/f0_resnet18_seed0.pt",
+    "retrain": false,
+    "backbone": "resnet18",
+    "trainable": "head",
+    "train_seed": 0,
+    "train_epochs": 1,
+    "max_train_batches": 200,
+    "train_bs": 32,
+    "train_lr": 0.001,
+    "balanced_train": true,
+    "workers": 0,
+    "log_every": 25,
+    "split": "val",
+    "seeds": [
+      0
+    ],
+    "max_groups": 2,
+    "compositions": [
+      "iid"
+    ],
+    "batch_regimes": [
+      "tiny"
+    ],
+    "aggressiveness": [
+      "mild"
+    ],
+    "candidates": [
+      "sar_online"
+    ],
+    "n_eval": 48,
+    "n_batches": 2,
+    "eval_bs": 64,
+    "episodic_steps": 3,
+    "episodic_batch": 32,
+    "tau_star": 0.52,
+    "kappa": 2.5,
+    "steps_override": 0,
+    "device": "mps",
+    "out": "",
+    "dry_run": false,
+    "smoke": false,
+    "resume": true
+  },
+  "config_sha8": "58a708f8",
+  "f0_checkpoint": "experiments/kbound/results/fmow_protocol_L_dev_partial/f0_resnet18_seed0.pt",
+  "f0_training": {
+    "loaded": true
+  },
+  "f0_quick_eval": {
+    "id_val": {
+      "n": 128,
+      "acc": 0.1171875,
+      "balanced_acc": 0.11920289855072463
+    },
+    "val": {
+      "n": 128,
+      "acc": 0.0625,
+      "balanced_acc": 0.06453900709219859
+    }
+  },
+  "num_classes": 62,
+  "evidence_names": [
+    "pre_entropy",
+    "pre_conf",
+    "pre_pbal",
+    "post_entropy",
+    "post_conf",
+    "post_pbal",
+    "pbal_drop",
+    "entropy_drop",
+    "frac_highconf",
+    "marginal_KL",
+    "update_norm"
+  ],
+  "kbound_summary": {
+    "classification": "mixed+undetectable",
+    "n_records": 2,
+    "mean_B": 0.0,
+    "base_rate_harmful_B<0": 0.5,
+    "detectability_verdict": null,
+    "best_single_feature_harm_AUC": null
+  },
+  "detectability": {},
+  "records": [
+    {
+      "seed": 0,
+      "domain": "region1",
+      "location": 1,
+      "location_n": 3941,
+      "location_classes": 60,
+      "split": "val",
+      "comp": "iid",
+      "regime": "tiny",
+      "aggr": "mild",
+      "method": "sar",
+      "mode": "online",
+      "candidate": "sar_online",
+      "metric": "accuracy",
+      "a0": 0.10416666666666667,
+      "aa": 0.125,
+      "B": 0.02083333333333333,
+      "a0_bacc": 0.10416666666666667,
+      "aa_bacc": 0.125,
+      "upd_norm": 0.0,
+      "Z": [
+        3.761366844177246,
+        0.08963510394096375,
+        0.957195451776981,
+        3.828035593032837,
+        0.07576008886098862,
+        0.9685354763872298,
+        -0.011340024610248856,
+        -0.06666874885559082,
+        0.0,
+        0.04316135495901108,
+        0.0
+      ],
+      "preds": [
+        43,
+        27,
+        27,
+        7,
+        47,
+        16,
+        7,
+        55,
+        23,
+        7,
+        41,
+        27,
+        60,
+        5,
+        7,
+        52,
+        57,
+        27,
+        57,
+        14,
+        14,
+        14,
+        8,
+        14,
+        27,
+        27,
+        14,
+        26,
+        27,
+        14,
+        14,
+        14,
+        27,
+        23,
+        7,
+        44,
+        0,
+        14,
+        14,
+        27,
+        16,
+        33,
+        8,
+        52,
+        47,
+        11,
+        7,
+        60
+      ],
+      "regime_label": "helpful"
+    },
+    {
+      "seed": 0,
+      "domain": "region3",
+      "location": 3,
+      "location_n": 3257,
+      "location_classes": 60,
+      "split": "val",
+      "comp": "iid",
+      "regime": "tiny",
+      "aggr": "mild",
+      "method": "sar",
+      "mode": "online",
+      "candidate": "sar_online",
+      "metric": "accuracy",
+      "a0": 0.125,
+      "aa": 0.10416666666666667,
+      "B": -0.02083333333333333,
+      "a0_bacc": 0.125,
+      "aa_bacc": 0.10416666666666667,
+      "upd_norm": 0.0,
+      "Z": [
+        3.742017984390259,
+        0.07840302586555481,
+        0.9561605859287784,
+        3.839226722717285,
+        0.06874372810125351,
+        0.9702868455912018,
+        -0.014126259662423424,
+        -0.09720873832702637,
+        0.0,
+        0.04537848383188248,
+        0.0
+      ],
+      "preds": [
+        7,
+        27,
+        47,
+        27,
+        46,
+        23,
+        12,
+        27,
+        44,
+        14,
+        57,
+        27,
+        61,
+        23,
+        53,
+        14,
+        47,
+        42,
+        7,
+        47,
+        41,
+        60,
+        27,
+        46,
+        60,
+        14,
+        14,
+        5,
+        31,
+        5,
+        7,
+        28,
+        9,
+        44,
+        14,
+        47,
+        60,
+        8,
+        26,
+        4,
+        51,
+        49,
+        24,
+        57,
+        7,
+        7,
+        47,
+        23
+      ],
+      "regime_label": "harmful"
+    }
+  ],
+  "conditions": [
+    {
+      "seed": 0,
+      "domain": "region1",
+      "location": 1,
+      "location_n": 3941,
+      "split": "val",
+      "comp": "iid",
+      "regime": "tiny",
+      "aggr": "mild",
+      "cand_names": [
+        "freeze_f0",
+        "sar_online"
+      ],
+      "aa_all": [
+        0.10416666666666667,
+        0.125
+      ],
+      "a0": 0.10416666666666667,
+      "oracle": 0.125,
+      "best_adapt": 0.125,
+      "route": {
+        "decision": "ABSTAIN",
+        "reason": "need M>=4 candidates incl anchor for tau route; got M=2",
+        "choice": null,
+        "n_D": 0
+      },
+      "realized": 0.10416666666666667,
+      "regime_label": "helpful"
+    },
+    {
+      "seed": 0,
+      "domain": "region3",
+      "location": 3,
+      "location_n": 3257,
+      "split": "val",
+      "comp": "iid",
+      "regime": "tiny",
+      "aggr": "mild",
+      "cand_names": [
+        "freeze_f0",
+        "sar_online"
+      ],
+      "aa_all": [
+        0.125,
+        0.10416666666666667
+      ],
+      "a0": 0.125,
+      "oracle": 0.125,
+      "best_adapt": 0.10416666666666667,
+      "route": {
+        "decision": "ABSTAIN",
+        "reason": "need M>=4 candidates incl anchor for tau route; got M=2",
+        "choice": null,
+        "n_D": 0
+      },
+      "realized": 0.125,
+      "regime_label": "harmful"
+    }
+  ],
+  "data": {
+    "target_groups": [
+      [
+        1,
+        3941,
+        60
+      ],
+      [
+        3,
+        3257,
+        60
+      ]
+    ],
+    "wall_sec": 13.6
+  }
+}

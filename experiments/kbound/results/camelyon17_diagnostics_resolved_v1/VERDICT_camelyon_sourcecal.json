@@ -1,0 +1,224 @@
+{
+  "schema": "kbound_camelyon_sourcecalibrated_verdict_v1",
+  "manifest": "/Volumes/T9/uav/AutoML_Flagship_V8/experiments/kbound/results/camelyon17_richZ_F_v1/result_884129ba.json",
+  "source_domain": "id_val",
+  "target_domains": [
+    "test"
+  ],
+  "alpha": 0.1,
+  "n_source_records": 180,
+  "n_target_records": 180,
+  "deployed_adapter_source_chosen": "sar_online",
+  "source_mean_acc_by_candidate": {
+    "eata_episodic": 0.9847005208333334,
+    "eata_online": 0.98701171875,
+    "sar_episodic": 0.9865885416666667,
+    "sar_online": 0.99462890625,
+    "tent_episodic": 0.981640625,
+    "tent_online": 0.9595703125
+  },
+  "target_benefit": {
+    "mean_B": 0.1385525173611111,
+    "base_rate_harmful": 0.027777777777777776
+  },
+  "route_a_single_candidate_sourcecal": {
+    "eata_episodic": {
+      "n": 30,
+      "decision_counts": {
+        "ADAPT": 0,
+        "FREEZE": 30,
+        "ABSTAIN": 0
+      },
+      "regret_vs_oracle": {
+        "always_adapt": 0.0,
+        "always_freeze": 0.133984375,
+        "K_Bound": 0.133984375
+      },
+      "false_adapt_count": 0,
+      "false_adapt_rate_among_adapt": null,
+      "beats_both": false,
+      "eps_conformal_source": 0.005038738600112582,
+      "certificate_harm_AUC": null
+    },
+    "eata_online": {
+      "n": 30,
+      "decision_counts": {
+        "ADAPT": 0,
+        "FREEZE": 30,
+        "ABSTAIN": 0
+      },
+      "regret_vs_oracle": {
+        "always_adapt": 0.0,
+        "always_freeze": 0.15680338541666666,
+        "K_Bound": 0.15680338541666666
+      },
+      "false_adapt_count": 0,
+      "false_adapt_rate_among_adapt": null,
+      "beats_both": false,
+      "eps_conformal_source": 0.005977067594992034,
+      "certificate_harm_AUC": null
+    },
+    "sar_episodic": {
+      "n": 30,
+      "decision_counts": {
+        "ADAPT": 0,
+        "FREEZE": 30,
+        "ABSTAIN": 0
+      },
+      "regret_vs_oracle": {
+        "always_adapt": 0.0,
+        "always_freeze": 0.13870442708333333,
+        "K_Bound": 0.13870442708333333
+      },
+      "false_adapt_count": 0,
+      "false_adapt_rate_among_adapt": null,
+      "beats_both": false,
+      "eps_conformal_source": 0.003952822939140519,
+      "certificate_harm_AUC": null
+    },
+    "sar_online": {
+      "n": 30,
+      "decision_counts": {
+        "ADAPT": 0,
+        "FREEZE": 0,
+        "ABSTAIN": 30
+      },
+      "regret_vs_oracle": {
+        "always_adapt": 0.0,
+        "always_freeze": 0.16640625,
+        "K_Bound": 0.16640625
+      },
+      "false_adapt_count": 0,
+      "false_adapt_rate_among_adapt": null,
+      "beats_both": false,
+      "eps_conformal_source": 0.002710783719543729,
+      "certificate_harm_AUC": null
+    },
+    "tent_episodic": {
+      "n": 30,
+      "decision_counts": {
+        "ADAPT": 0,
+        "FREEZE": 30,
+        "ABSTAIN": 0
+      },
+      "regret_vs_oracle": {
+        "always_adapt": 0.0,
+        "always_freeze": 0.13466796875,
+        "K_Bound": 0.13466796875
+      },
+      "false_adapt_count": 0,
+      "false_adapt_rate_among_adapt": null,
+      "beats_both": false,
+      "eps_conformal_source": 0.008703140865174307,
+      "certificate_harm_AUC": null
+    },
+    "tent_online": {
+      "n": 30,
+      "decision_counts": {
+        "ADAPT": 0,
+        "FREEZE": 30,
+        "ABSTAIN": 0
+      },
+      "regret_vs_oracle": {
+        "always_adapt": 0.013053385416666667,
+        "always_freeze": 0.11380208333333333,
+        "K_Bound": 0.11380208333333333
+      },
+      "false_adapt_count": 0,
+      "false_adapt_rate_among_adapt": null,
+      "beats_both": false,
+      "eps_conformal_source": 0.032016592614649494,
+      "certificate_harm_AUC": 0.752
+    }
+  },
+  "route_b_multicandidate_frozen_tau052": {
+    "n_conditions": 30,
+    "decision_counts": {
+      "ADAPT": 2,
+      "FREEZE": 0,
+      "ABSTAIN": 28
+    },
+    "regret_vs_oracle": {
+      "router": 0.1552734375,
+      "always_freeze": 0.16979166666666667,
+      "best_fixed_always_adapt": 0.0033854166666666668
+    },
+    "false_adapt_count": 0,
+    "false_adapt_rate_among_adapt": 0.0,
+    "beats_both": false,
+    "tau_star": 0.52,
+    "tau_star_rule": "frozen tau_star=0.52"
+  },
+  "route_b_multicandidate_source_calibrated": {
+    "n_conditions": 30,
+    "decision_counts": {
+      "ADAPT": 23,
+      "FREEZE": 7,
+      "ABSTAIN": 0
+    },
+    "regret_vs_oracle": {
+      "router": 0.05237630208333333,
+      "always_freeze": 0.16979166666666667,
+      "best_fixed_always_adapt": 0.0033854166666666668
+    },
+    "false_adapt_count": 0,
+    "false_adapt_rate_among_adapt": 0.0,
+    "beats_both": false,
+    "tau_star": 1.8398747610954265,
+    "tau_star_rule": "(1-alpha) quantile of SOURCE tau"
+  },
+  "embedded_frozen_tau_from_gpu": {
+    "n_conditions": 90,
+    "mean_acc": {
+      "router": 0.8449652777777777,
+      "always_freeze": 0.84814453125,
+      "best_fixed_always_adapt": 0.9358940972222223,
+      "per_condition_oracle": 0.9381293402777777
+    },
+    "regret_vs_oracle": {
+      "router": 0.0931640625,
+      "always_freeze": 0.08998480902777778,
+      "best_fixed_always_adapt": 0.0022352430555555554
+    },
+    "coverage": 0.07777777777777778,
+    "abstention_rate": 0.9222222222222223,
+    "false_adapt_rate": 0.7142857142857143,
+    "mean_tau": 0.9920639688580061,
+    "gate_pass_rate": 0.07777777777777778,
+    "fixed_best_candidate": "sar_online",
+    "routing_breakdown": {
+      "ABSTAIN": 83,
+      "eata_online": 1,
+      "tent_episodic": 1,
+      "sar_episodic": 1,
+      "tent_online": 4
+    },
+    "decisions_by_regime": {
+      "helpful": {
+        "ABSTAIN": 58,
+        "ADAPT": 2
+      },
+      "marginal": {
+        "ABSTAIN": 25,
+        "ADAPT": 5
+      }
+    },
+    "decisions_by_domain": {
+      "test": {
+        "ABSTAIN": 28,
+        "ADAPT": 2
+      },
+      "val": {
+        "ABSTAIN": 30
+      },
+      "id_val": {
+        "ABSTAIN": 25,
+        "ADAPT": 5
+      }
+    },
+    "beats_both": false
+  },
+  "beats_both_route_a_deployed": false,
+  "beats_both_route_b_frozen": false,
+  "beats_both_route_b_sourcecal": false
+}

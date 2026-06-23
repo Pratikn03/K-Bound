@@ -1,0 +1,47 @@
+# PROTOCOL L — WILDS FMoW third natural-shift attempt (canonical KGA)
+# Registered: 2026-06-17 BEFORE any FMoW GPU scoring is cited as headline.
+#
+# DATASET: WILDS FMoW (satellite land-use, 62 classes). Natural shift = geographic
+# region within OOD val/test (time-based OOD split per WILDS official scheme).
+#
+# WORKFLOW:
+#   1. Free ~70 GB on T9; download via download_wilds_fmow_poverty.sh
+#   2. Dev screen: run_geoshift_kbound.py --dataset fmow --split id_val --smoke then dev
+#   3. screen_protocol_L.py -> PROCEED only if mixed harm + harm-AUC + FA ok
+#   4. Full GPU: id_val source cal, val/test targets, seeds 0-4
+#   5. analyze_F with locked adapter; DEV {0,1} TEST {2,3,4} ONCE
+#
+# ADAPTER LOCK (pre-declared): sar_online if dev screen best on SAR family;
+# else eata_online. Final lock recorded in result manifest before TEST scoring.
+
+design:
+  dataset: WILDS FMoW region shift
+  deployed_adapter: sar_online  # fixed before held-out TEST; dev may swap to eata_online only if sar fails dev FA
+  evidence_panel: standard_11dim
+  method:
+    name: KGA
+    algorithm: adapt if B_hat - eps > 0; freeze if B_hat + eps < 0; else abstain
+    B_hat: GradientBoostingRegressor
+    eps: global conformal on DEV residuals
+    alpha: 0.10
+  forbidden_in_headline:
+    - adapter search on TEST
+    - multicandidate CEI router
+    - PPI / Mondrian (appendix only)
+
+analysis_plan_locked:
+  split: DEV seeds {0, 1} fit B_hat and eps; TEST seeds {2, 3, 4} scored ONCE
+  script: docs/research/kbound/scripts/analyze_F.py
+  args: --candidate sar_online --estimator gbr --conformal global --dev-seeds 0 1 --test-seeds 2 3 4
+  success:
+    false_adapt_leq_alpha: true
+    beats_both_regret: true
+
+dev_screen:
+  script: docs/research/kbound/scripts/screen_protocol_L.py
+  gates:
+    base_rate_harmful_B_lt_0: [0.20, 0.80]
+    best_harm_auc_min: 0.65
+    dev_false_adapt_max: 0.15
+
+output_dir: experiments/kbound/results/fmow_protocol_L_v1/

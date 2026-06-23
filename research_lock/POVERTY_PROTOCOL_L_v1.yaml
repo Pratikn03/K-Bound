@@ -1,0 +1,33 @@
+# PROTOCOL L — WILDS PovertyMap third natural-shift attempt (canonical KGA)
+# Registered: 2026-06-17 BEFORE any PovertyMap GPU scoring is cited as headline.
+#
+# DATASET: WILDS PovertyMap. Natural shift = held-out African countries (fold A).
+# Labels: train-quantile binned wealth (5 classes) — classification proxy for TTA;
+# primary WILDS task is regression MSE; we document this caveat in the paper.
+#
+# WORKFLOW: same as FMOW_PROTOCOL_L_v1.yaml but --dataset poverty.
+
+design:
+  dataset: WILDS PovertyMap country shift (fold A, binned wealth)
+  deployed_adapter: sar_online
+  evidence_panel: standard_11dim
+  method:
+    name: KGA
+    B_hat: GradientBoostingRegressor
+    eps: global conformal
+    alpha: 0.10
+  caveat: binned_wealth_proxy_not_official_wilds_metric
+
+analysis_plan_locked:
+  split: DEV seeds {0, 1}; TEST seeds {2, 3, 4}
+  script: docs/research/kbound/scripts/analyze_F.py
+  args: --candidate sar_online --estimator gbr --conformal global --dev-seeds 0 1 --test-seeds 2 3 4
+
+dev_screen:
+  script: docs/research/kbound/scripts/screen_protocol_L.py
+  gates:
+    base_rate_harmful_B_lt_0: [0.20, 0.80]
+    best_harm_auc_min: 0.65
+    dev_false_adapt_max: 0.15
+
+output_dir: experiments/kbound/results/poverty_protocol_L_v1/

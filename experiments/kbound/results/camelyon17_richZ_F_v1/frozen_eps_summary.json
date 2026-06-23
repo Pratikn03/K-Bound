@@ -1,0 +1,47 @@
+{
+  "protocol": "RICH_EVIDENCE_CAMELYON_PROTOCOL_F_v1",
+  "operating_point": "same_frozen_as_synthetic",
+  "alpha": 0.10,
+  "tau_star_multicandidate": 0.52,
+  "estimator": "ppi_debias",
+  "dev_seeds": [0, 1],
+  "test_seeds": [2, 3, 4],
+  "arms": {
+    "frozen_eps_cifar_stress": {
+      "frozen_eps": 0.021,
+      "source": "CIFAR-10-C stress grid transplant (pooled)",
+      "test_locked": {
+        "commit_rate": 0.694,
+        "false_adapt": 0.033,
+        "regret_kga": 0.00189,
+        "regret_adapt": 0.00449,
+        "regret_freeze": 0.065,
+        "beats_both": true,
+        "verdict_win": true
+      }
+    },
+    "frozen_eps_legacy_synthetic": {
+      "frozen_eps": 0.060,
+      "source": "legacy synthetic-grid transplant (paper eps-recal diagnostic)",
+      "test_locked": {
+        "commit_rate": 0.574,
+        "false_adapt": 0.022,
+        "regret_kga": 0.00698,
+        "regret_adapt": 0.00449,
+        "regret_freeze": 0.065,
+        "beats_both": false,
+        "verdict_win": true
+      }
+    },
+    "mondrian_locked": {
+      "conformal": "mondrian",
+      "test_locked": {
+        "commit_rate": 0.716,
+        "false_adapt": 0.033,
+        "regret_kga": 0.00184,
+        "beats_both": true,
+        "verdict_win": true
+      }
+    }
+  }
+}

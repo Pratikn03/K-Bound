@@ -1,0 +1,61 @@
+protocol: OFFICEHOME_PROTOCOL_M_v1
+status: superseded_by_M_v2
+created: 2026-06-18
+purpose: >
+  Follow-up clean held-out real-data win candidate discovered by the dev-side
+  K-Bound win finder. Candidate/config was selected on OfficeHome target-val,
+  then scored once on OfficeHome target-test with the separate holdout scorer.
+integrity:
+  selection_stage: dev_screen_only
+  selection_records:
+    - experiments/kbound/results/officehome_full_targetval/result_target_val_361a1e8c.json
+  heldout_stage: target_test_transfer_score
+  heldout_records:
+    - experiments/kbound/results/officehome_full_targettest/result_target_test_6605675d.json
+  alpha: 0.10
+  rule: adapt if lower confidence bound on benefit is positive; freeze if upper bound is negative; otherwise abstain
+  note: >
+    Do not sweep target-test and claim the best target-test row. The recorded
+    target-test result is valid only for the dev-selected config below.
+selected_config:
+  dataset: OfficeHome
+  candidate: sar_online_aggressive
+  estimator: gbr
+  conformal: global
+  calibration_split: target_val
+  evaluation_split: target_test
+result:
+  output: experiments/kbound/results/officehome_holdout_sar_aggr_gbr_global_single/holdout_score.json
+  n_cal: 36
+  n_test: 35
+  coverage: 0.9714285714285714
+  false_adapt: 0.0
+  regret_kga: 0.002197802197802198
+  regret_always_adapt: 0.04681318681318681
+  regret_always_freeze: 0.01582417582417583
+  beats_both: true
+  verdict_win: true
+replication:
+  status: verified
+  date: 2026-06-18
+  gpu_run: true
+  candidate: sar_online_aggressive
+  estimator: gbr
+  conformal: global
+  calibration_records: experiments/kbound/results/officehome_protocol_m_repl_targetval/result_target_val_eb504dd6.json
+  heldout_records: experiments/kbound/results/officehome_protocol_m_repl_targettest/result_target_test_f761540b.json
+  output: experiments/kbound/results/officehome_protocol_m_repl_holdout/holdout_score.json
+  seeds: [2, 3, 4]
+  n_cal: 54
+  n_test: 54
+  coverage: 0.9814814814814815
+  false_adapt: 0.029411764705882353
+  regret_kga: 0.00042735042735042583
+  regret_always_adapt: 0.045797720797720785
+  regret_always_freeze: 0.02172364672364672
+  beats_both: true
+  verdict_win: true
+launcher:
+  rerun: bash docs/research/kbound/scripts/kbtrain.sh officehome-holdout
+  replication: bash docs/research/kbound/scripts/kbtrain.sh officehome-repl
+  dev_finder: bash docs/research/kbound/scripts/kbtrain.sh win-finder

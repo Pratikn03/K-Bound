@@ -93,12 +93,12 @@ PY_END = None
 
 # figure
 import matplotlib; matplotlib.use("Agg"); import matplotlib.pyplot as plt
-plt.figure(figsize=(5.5,4))
-labels=["always-adapt\n(elara_fuse)","always-freeze\n(auto_select)","K-Bound\ntrichotomy","oracle"]
+plt.figure(figsize=(7.6,4.2))
+labels=["always-adapt\n(reliability-fusion)","always-freeze\n(best-val model)","K-Bound\ncertificate","oracle"]
 vals=[auca.mean(),auc0.mean(),pol.mean(),oracle.mean()]
 plt.bar(labels,vals,color=["#e76f51","#457b9d","#2a9d8f","#999999"])
 for i,v in enumerate(vals): plt.text(i,v+.002,f"{v:.3f}",ha="center",fontsize=9)
 plt.ylim(min(vals)-0.02,max(vals)+0.02); plt.ylabel("mean test AUROC")
 plt.title("Harmful regime: K-Bound avoids the harmful adapt path")
-plt.tight_layout(); plt.savefig(os.path.join(FIG,"fig_kbound_harmful.png"),dpi=130)
+plt.tight_layout(); plt.savefig(os.path.join(FIG,"fig_kbound_harmful.png"),dpi=300)
 print("saved fig")

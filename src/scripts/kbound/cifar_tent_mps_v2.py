@@ -146,8 +146,15 @@ def policy_metrics(dec, a0, aa, B=None):
             "always_freeze": float(a0.min()),
             "K_Bound": float(kga.min()),
         },
+        "beats_both_regret_only": bool((oracle - kga).mean() < (oracle - aa).mean() - 1e-9 and
+                                       (oracle - kga).mean() < (oracle - a0).mean() - 1e-9),
+        # Integrity fix 2026-06-20: beats_both MUST enforce the pre-registered
+        # false-adapt budget FA<=ALPHA, not regret alone (regret-only over-counted
+        # "wins" on mixes where the router false-adapts above budget). The ungated
+        # regret comparison is preserved above as beats_both_regret_only.
         "beats_both": bool((oracle - kga).mean() < (oracle - aa).mean() - 1e-9 and
-                           (oracle - kga).mean() < (oracle - a0).mean() - 1e-9),
+                           (oracle - kga).mean() < (oracle - a0).mean() - 1e-9 and
+                           adapt.any() and float(np.mean(B[adapt] < 0)) <= ALPHA),
     }
     return out
 

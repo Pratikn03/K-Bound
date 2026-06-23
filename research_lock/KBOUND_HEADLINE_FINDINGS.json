@@ -1,0 +1,82 @@
+{
+  "manifest": "KBOUND_HEADLINE_FINDINGS",
+  "status": "locked",
+  "updated": "2026-06-15",
+  "bar": {
+    "estimator": "gbr",
+    "conformal": "global",
+    "alpha": 0.1,
+    "success_criteria": [
+      "dev_screen_pass (H/M v2) or fixed adapter (G)",
+      "held_out_test_scored_once",
+      "false_adapt_le_alpha",
+      "beats_both_trivial_policies"
+    ]
+  },
+  "headline_natural_wins": [
+    {
+      "protocol": "CAMELYON17_PROTOCOL_G_v1",
+      "dataset": "camelyon17",
+      "adapter": "eata_online",
+      "adapter_selection": "fixed_upfront",
+      "n_test": 54,
+      "regret_kga": 3.6e-5,
+      "regret_adapt": 0.00132,
+      "regret_freeze": 0.07492,
+      "false_adapt": 0.0256,
+      "artifact": "experiments/kbound/results/camelyon17_protocol_G_v1/analyze_F_results.json",
+      "lock": "research_lock/CAMELYON17_PROTOCOL_G_v1.yaml"
+    },
+    {
+      "protocol": "IWILDCAM_PROTOCOL_H_v2",
+      "dataset": "iwildcam",
+      "adapter": "tent_episodic",
+      "adapter_selection": "dev_locked_six_arm_panel",
+      "n_test": 72,
+      "regret_kga": 0.0036745149311371416,
+      "regret_adapt": 0.10282996048460004,
+      "regret_freeze": 0.004102369062102953,
+      "false_adapt": 0.0,
+      "artifact": "experiments/kbound/results/iwildcam_protocol_H_v2/protocol_result.json",
+      "lock": "research_lock/IWILDCAM_PROTOCOL_H_v2.yaml"
+    },
+    {
+      "protocol": "OFFICEHOME_PROTOCOL_M_v2",
+      "dataset": "officehome",
+      "adapter": "sar_online_aggressive",
+      "adapter_selection": "dev_locked_six_arm_panel",
+      "n_test": 35,
+      "regret_kga": 0.002197802197802198,
+      "regret_adapt": 0.04681318681318681,
+      "regret_freeze": 0.01582417582417583,
+      "false_adapt": 0.0,
+      "artifact": "experiments/kbound/results/officehome_protocol_M_v2/protocol_result.json",
+      "lock": "research_lock/OFFICEHOME_PROTOCOL_M_v2.yaml"
+    }
+  ],
+  "superseded": [
+    {
+      "protocol": "IWILDCAM_PROTOCOL_H_v1",
+      "reason": "fixed sar_online without dev-lock; superseded_by_H_v2"
+    },
+    {
+      "protocol": "OFFICEHOME_PROTOCOL_M_v1",
+      "reason": "14-candidate win-finder; superseded_by_M_v2"
+    }
+  ],
+  "honest_nulls": [
+    {
+      "protocol": "FMOW_PROTOCOL_L",
+      "false_adapt": 0.375,
+      "beats_both": false
+    },
+    {
+      "protocol": "POVERTY_PROTOCOL_L",
+      "status": "dev_screen_stop"
+    },
+    {
+      "track": "officehome_deployed_eata_online_mild",
+      "regime": "helpful_dominated"
+    }
+  ]
+}

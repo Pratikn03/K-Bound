@@ -1,0 +1,20 @@
+# CIFAR-10.1 v6 multi-seed quick grid — registered before scoring held-out aggregates.
+protocol: CIFAR101_MULTISEED_QUICK
+dataset: CIFAR-10.1 v6 (natural shift; Recht et al.)
+design:
+  benchmark: cifar101
+  quick: true
+  methods: [tent, eata, sar]
+  seeds: [0, 1, 2, 3, 4]
+  batch_regimes: [small, tiny]
+  compositions: [iid, imbalanced, single_class]
+  aggressiveness: [mild, aggressive]
+  n_repeats_per_cell: 2
+  expected_conditions_per_method_per_seed: 24
+  alpha: 0.10
+  model: ResNet-18 trained on CIFAR-10 (experiments/kbound/cifar/resnet18_cifar.pt)
+output_dir: experiments/kbound/results/cifar101_multiseed_v1/seed{0,1,2,3,4}
+success_criteria:
+  - all five seeds produce decisive_tta_results.json + result_manifest.json
+  - report pooled and per-seed harmful%, regret, false-adapt, beats-both
+  - compare to prior single-seed cifar101_quick baseline

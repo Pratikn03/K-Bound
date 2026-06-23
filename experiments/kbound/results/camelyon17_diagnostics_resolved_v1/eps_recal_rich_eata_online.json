@@ -1,0 +1,147 @@
+{
+  "data_file": "experiments/kbound/results/camelyon17_richZ_F_v1/result_884129ba.json",
+  "label": "rich_eata_online",
+  "candidate_filter": "eata_online",
+  "dev_seeds": [
+    0,
+    1
+  ],
+  "test_seeds": [
+    2,
+    3,
+    4
+  ],
+  "schema": "kbound_wilds_camelyon17_v0.6",
+  "config_sha8": "884129ba",
+  "alpha_FIXED": 0.1,
+  "estimator": "GradientBoostingRegressor {'n_estimators': 250, 'max_depth': 2, 'learning_rate': 0.05, 'subsample': 0.8, 'random_state': 0}",
+  "tau_star_left_alone": 0.52,
+  "split_design": "explicit dev/test",
+  "sanity_reproduction": {
+    "reproduced_harm_AUC_negBhat": 0.9819078947368421,
+    "reproduced_pooled_eps": 0.03686349728286609,
+    "n_harmful_B<0": 16,
+    "n_cells": 54
+  },
+  "per_split": [
+    {
+      "n_test": 54,
+      "eps": 0.0019072853515961496,
+      "decision_counts": {
+        "ADAPT": 39,
+        "FREEZE": 10,
+        "ABSTAIN": 5
+      },
+      "coverage_commit_frac": 0.9074074074074074,
+      "regret_KGA": 3.616898148148148e-05,
+      "regret_always_adapt": 0.001320167824074074,
+      "regret_always_freeze": 0.0749240451388889,
+      "false_adapt_rate": 0.02564102564102564,
+      "false_freeze_rate": 0.0,
+      "n_adapt": 39,
+      "n_freeze": 10,
+      "KGA_beats_both": true,
+      "cal_seeds": [
+        0,
+        1
+      ],
+      "test_seeds": [
+        2,
+        3,
+        4
+      ],
+      "split_mode": "explicit_dev_test"
+    }
+  ],
+  "aggregate_over_splits": {
+    "regret_KGA": {
+      "mean": 3.616898148148148e-05,
+      "ci95": [
+        3.616898148148148e-05,
+        3.616898148148148e-05
+      ],
+      "n": 1,
+      "sd": 0.0
+    },
+    "regret_always_adapt": {
+      "mean": 0.001320167824074074,
+      "ci95": [
+        0.001320167824074074,
+        0.001320167824074074
+      ],
+      "n": 1,
+      "sd": 0.0
+    },
+    "regret_always_freeze": {
+      "mean": 0.0749240451388889,
+      "ci95": [
+        0.0749240451388889,
+        0.0749240451388889
+      ],
+      "n": 1,
+      "sd": 0.0
+    },
+    "false_adapt_rate": {
+      "mean": 0.02564102564102564,
+      "ci95": [
+        0.02564102564102564,
+        0.02564102564102564
+      ],
+      "n": 1,
+      "sd": 0.0
+    },
+    "false_freeze_rate": {
+      "mean": 0.0,
+      "ci95": [
+        0.0,
+        0.0
+      ],
+      "n": 1,
+      "sd": 0.0
+    },
+    "coverage_commit_frac": {
+      "mean": 0.9074074074074074,
+      "ci95": [
+        0.9074074074074074,
+        0.9074074074074074
+      ],
+      "n": 1,
+      "sd": 0.0
+    },
+    "eps": {
+      "mean": 0.0019072853515961496,
+      "ci95": [
+        0.0019072853515961496,
+        0.0019072853515961496
+      ],
+      "n": 1,
+      "sd": 0.0
+    },
+    "eps_stability": {
+      "values": [
+        0.0019072853515961496
+      ],
+      "mean": 0.0019072853515961496,
+      "min": 0.0019072853515961496,
+      "max": 0.0019072853515961496,
+      "range": 0.0,
+      "cv": NaN
+    }
+  },
+  "per_candidate_robustness": {},
+  "verdict": {
+    "WIN": true,
+    "kga_ci_clear_of_always_adapt": true,
+    "kga_ci_clear_of_always_freeze": true,
+    "false_adapt_le_alpha": true,
+    "eps_stable_cv_le_0.25": true,
+    "commits_at_all": true,
+    "label": "WIN",
+    "precise_negative_reading": "harm is detectable (pooled cross-fit AUC ~0.91) but NOT certifiable at level alpha=0.10 at this debug-scale sample size:"
+  },
+  "fallback_used": false,
+  "synthetic_calibrated_eps_reference": {
+    "detectability_pooled_certificate_eps_reported": 0.03884734371673774,
+    "detectability_harm_AUC_negBhat_reported": 0.9519454524743292
+  }
+}

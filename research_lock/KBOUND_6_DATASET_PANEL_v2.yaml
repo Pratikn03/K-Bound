@@ -1,0 +1,114 @@
+protocol: KBOUND_6_DATASET_PANEL_v2
+status: locked_panel_manifest
+created: 2026-06-19
+supersedes: research_lock/KBOUND_6_DATASET_PANEL_v1.yaml
+purpose: >
+  Revised six-dataset core panel for the K-Bound paper, chosen to be the
+  STRONGEST honest six after bootstrap confidence intervals were computed
+  (research_lock/KBOUND_WIN_BOOTSTRAP_CIS.json). Change vs v1: Camelyon17 is
+  promoted INTO the core panel (it is a CI-robust beats-both win, reproducible
+  from local serialized rich-Z records), and RxRx1 is demoted OUT of the core
+  panel to supporting/breadth (its single-model-seed lead does not replicate).
+  RxRx1 remains in the paper as biomedical WILDS breadth, just not headline.
+
+rationale_for_change:
+  - "CI evidence: OfficeHome and Camelyon17 are the two statistically-robust beats-both wins (both regret-gap 95% CIs exclude zero); iWildCam dominates always-adapt but ties always-freeze (no-harm Pareto)."
+  - "RxRx1 beats-both on only 1 of 4 model seeds (Protocol J: 0 of 3); not robust."
+  - "ImageNet-R is retained NOT as a win but as the forced-abstention / unknowable frontier exemplar (undetectable harm, AUC 0.66) that the theory predicts."
+  - "Capstone: pooled mixed-stream deployment beats both policies with CIs that exclude zero (research_lock/KBOUND_MIXED_STREAM_v1.json)."
+
+datasets:
+  - id: officehome
+    name: OfficeHome
+    paper_role: primary_clean_heldout_real_win
+    claim_status: robust_beats_both_CI_excludes_zero
+    ci: {vs_freeze: "+0.0136 [0.0090, 0.0184]", vs_adapt: "+0.0445 [0.0195, 0.0728]"}
+    protocol: research_lock/OFFICEHOME_PROTOCOL_M_v2.yaml
+    key_artifact: experiments/kbound/results/officehome_protocol_M_v2/protocol_result.json
+
+  - id: camelyon17
+    name: WILDS Camelyon17 (hospital shift, rich-Z Protocol G)
+    paper_role: biomedical_natural_shift_robust_win
+    claim_status: robust_beats_both_CI_excludes_zero
+    ci: {vs_freeze: "+0.0749 [0.0565, 0.0954]", vs_adapt: "+0.0013 [0.0006, 0.0020]"}
+    protocol: research_lock/CAMELYON17_PROTOCOL_G_v1.yaml
+    key_artifacts:
+      - experiments/kbound/results/camelyon17_protocol_G_v1/analyze_F_results.json
+      - experiments/kbound/results/camelyon17_richZ_F_v1/result_884129ba.json
+    data_status: >
+      Locked result reproduces from the serialized rich-Z records
+      (result_884129ba.json); raw WILDS image folder is NOT currently mounted but
+      is only needed to regenerate Z, not to reproduce the certificate. This
+      removes the v1 exclusion reason ("data not mounted").
+    promoted_from: excluded_from_core_six (v1)
+
+  - id: iwildcam
+    name: iWildCam
+    paper_role: independent_wilds_natural_shift_no_harm
+    claim_status: dominates_adapt_ties_freeze_CI
+    ci: {vs_freeze: "+0.0004 [0.0000, 0.0013] (ties)", vs_adapt: "+0.0991 [0.0797, 0.1190]"}
+    protocol: research_lock/IWILDCAM_PROTOCOL_H_v2.yaml
+    key_artifact: experiments/kbound/results/iwildcam_protocol_H_v2/protocol_result.json
+    notes: no-harm Pareto win; report as dominate-adapt / tie-freeze, not a double beat.
+
+  - id: cifar10c_stress
+    name: CIFAR-10-C stress grid
+    paper_role: controlled_corruption_stress_grid
+    claim_status: verified_multiseed_beats_both_for_tent_and_eata
+    protocol: research_lock/STRESS_GRID_MULTISEED_PROTOCOL_A_v1.yaml
+    key_artifact: experiments/kbound/results/stress_grid_multiseed_v1/LOCKED_ANALYSIS_RESULTS.json
+
+  - id: cifar101
+    name: CIFAR-10.1
+    paper_role: low_margin_natural_shift_boundary_case
+    claim_status: not_cross_seed_beats_both
+    protocol: research_lock/CIFAR101_PROTOCOL_K_v1.yaml
+    key_artifact: experiments/kbound/results/cifar101_protocol_K_v1/analyze_F_results.json
+    headline_use: honest_regime_map_or_appendix_not_primary_win
+
+  - id: imagenet_r
+    name: ImageNet-R
+    paper_role: forced_abstention_unknowable_frontier_exemplar
+    claim_status: undetectable_harm_abstain_mandatory_not_a_win
+    protocol: research_lock/IMAGENETR_DIVERSE_PANEL_PROTOCOL_D_v1.yaml
+    key_artifact: experiments/kbound/results/imagenetr_protocol_d_size_diverse_panel_v2/result_fb5afb1e.json
+    headline_use: theory_frontier_case_correct_abstention_NOT_a_win
+    notes: >
+      Retained for narrative value: it is the unknowable-regime exemplar
+      (Corollary forced-abstention), not a beats-both win. One split-specific lead
+      does not replicate; never headline it as a win.
+
+core_claiming_policy:
+  robust_beats_both_CI_excludes_zero:
+    - officehome
+    - camelyon17
+    - cifar10c_stress   # multiseed Tent/EATA
+  no_harm_pareto_dominates_adapt:
+    - iwildcam
+  boundary_or_frontier_not_a_win:
+    - cifar101          # low-margin boundary
+    - imagenet_r        # forced-abstention frontier
+  capstone_mixed_stream:
+    manifest: research_lock/KBOUND_MIXED_STREAM_v1.json
+    claim: KGA beats both policies on pooled heterogeneous deployment, both CIs exclude zero
+  ci_manifest: research_lock/KBOUND_WIN_BOOTSTRAP_CIS.json
+  headline_findings_manifest: research_lock/KBOUND_HEADLINE_FINDINGS.json
+
+excluded_from_core_six:
+  rxrx1:
+    reason: >
+      DEMOTED from core panel (was #6 in v1). Single-model-seed beats-both does not
+      replicate (Protocol J: 0 of 3 seeds; 1 of 4 in hard_dataset_win_loop). Kept in
+      the paper as biomedical WILDS breadth / honest near-one-sided case, not headline.
+    protocol: research_lock/RXRX1_PROTOCOL_J_v1.yaml
+    still_in_paper: true
+  imagenet_c:
+    reason: large local data exists; CIFAR-10-C serves as the controlled corruption stress benchmark in the core six. Kept in paper.
+  fmow:
+    reason: cited honest null (false-adapt 0.375); supporting breadth, not core. Kept in paper.
+  poverty:
+    reason: cited honest null (dev-screen stop); supporting breadth, not core. Kept in paper.
+  acdc:
+    reason: dry-run/preview artifacts only; modality differs from current table path.
+  imagenette:
+    reason: convenience dataset, not a primary shift benchmark.

@@ -1,0 +1,68 @@
+# PROTOCOL H v2 — iWildCam natural-shift win (G-bar dev-lock)
+# Registered: 2026-06-19 BEFORE held-out scoring.
+#
+# Same integrity bar as Camelyon17 Protocol G:
+#   - canonical KGA only (GBR + global eps, alpha=0.10 fixed)
+#   - adapter chosen on DEV ONLY from a pre-registered panel
+#   - held-out TEST scored once (no test adapter search)
+#
+# DEV SCREEN (id_val geographic locations):
+#   Panel: six standard Tent/EATA/SAR x online/episodic adapters.
+#   Split: cal seed {0}, eval seed {1} on id_val records only.
+#   Rule: keep candidates with false_adapt <= alpha on dev; pick max margin
+#         min(regret_adapt, regret_freeze) - regret_kga; tie-break lowest regret_kga.
+#
+# HELD-OUT (test geographic grid):
+#   Same locked adapter; cal seed {0}, test seed {1} on test records only.
+#   In-domain seed holdout on the OOD test grid (eps fit on cal seed law).
+#
+# STOP: if dev screen finds no FA-ok candidate, do not claim a win.
+
+protocol: IWILDCAM_PROTOCOL_H_v2
+status: preregistered_before_heldout
+created: 2026-06-19
+
+adapter_panel:
+  - tent_online
+  - eata_online
+  - sar_online
+  - tent_episodic
+  - eata_episodic
+  - sar_episodic
+
+dev_screen:
+  records: experiments/kbound/results/iwildcam_full_idval/result_489da28f.json
+  cal_seeds: [0]
+  eval_seeds: [1]
+
+heldout:
+  mode: seed_split
+  records: experiments/kbound/results/iwildcam_full_test/result_e40faf29.json
+  cal_seeds: [0]
+  test_seeds: [1]
+
+method:
+  name: KGA
+  estimator: gbr
+  conformal: global
+  alpha: 0.10
+
+success_criteria:
+  dev_screen_pass: true
+  heldout_false_adapt_le_alpha: true
+  heldout_beats_both: true
+
+output_dir: experiments/kbound/results/iwildcam_protocol_H_v2/
+
+result:
+  locked_adapter: tent_episodic
+  dev_screen_pass: true
+  heldout_verdict_win: true
+  regret_kga: 0.003675
+  regret_always_adapt: 0.102830
+  regret_always_freeze: 0.004102
+  false_adapt: 0.0
+  n_test: 72
+  artifact: experiments/kbound/results/iwildcam_protocol_H_v2/protocol_result.json
+
+supersedes: IWILDCAM_PROTOCOL_H_v1

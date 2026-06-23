@@ -1,0 +1,50 @@
+# PROTOCOL H — superseded by IWILDCAM_PROTOCOL_H_v2 (dev-lock G-bar)
+# Kept for audit trail only. Do not cite v1 as a headline win.
+status: superseded_by_H_v2
+# Registered: 2026-06-16, AFTER iWildCam GPU records exist but BEFORE this analysis is
+# cited as a paper headline. Re-scores existing iwildcam_full_test records only; no new GPU.
+#
+# MOTIVATION: Camelyon17 Protocol G gives one held-out beats-both under canonical KGA.
+# iWildCam is an independent WILDS geographic shift (camera-trap wildlife, 182 classes)
+# in a harmful-dominated regime — the same regime family as the ImageNet-C SAR track
+# where KGA beats both. Prior multicandidate-route analysis reported a null; Protocol H
+# tests whether canonical GBR + global conformal on a FIXED online SAR adapter clears
+# the same pre-registered bar as Protocol G.
+#
+# ADAPTER LOCK (no test-set search): sar_online — stability-aware online SAR, fixed
+# before scoring. Rationale: (i) online parity with Camelyon G (eata_online); (ii) SAR
+# is the pre-registered harmful-stream adapter family on ImageNet-C Protocol E; (iii) NOT
+# chosen by post-hoc regret on held-out test.
+#
+# HYPOTHESIS: On WILDS iWildCam held-out test (geographic location shift, 11-dim Z),
+# canonical KGA with sar_online beats both trivial policies at false-adapt <= alpha.
+#
+# SUCCESS CRITERIA (locked before scoring):
+#   WIN: held-out test false-adapt <= alpha=0.10 AND regret_kga < regret_adapt AND
+#        regret_kga < regret_freeze (beats both).
+#   PARTIAL: false-adapt <= alpha but does not beat both -> report honestly, not headline.
+#
+# CANONICAL METHOD (identical to Protocol G):
+design:
+  dataset: WILDS iWildCam geographic location shift (full test grid records)
+  records_source: experiments/kbound/results/iwildcam_full_test/result_e40faf29.json
+  deployed_adapter: sar_online  # FIXED — no per-benchmark adapter search
+  evidence_panel: standard_11dim  # serialized Z from iwildcam_full_test run
+  method:
+    name: KGA
+    algorithm: adapt if B_hat - eps > 0; freeze if B_hat + eps < 0; else abstain
+    B_hat: GradientBoostingRegressor (same spec as Protocol G / synthetic grids)
+    eps: global (1-alpha) quantile of |B_hat - B| on DEV calibration residuals
+    alpha: 0.10  # FIXED
+  forbidden_in_headline:
+    - multicandidate CEI router
+    - PPI debias (appendix ablation only)
+    - Mondrian / CQR conformal (appendix ablation only)
+    - eps transplanted from other datasets
+    - tuning alpha, tau_star, or decision rule on TEST
+analysis_plan_locked:
+  split: DEV seed {0} fit B_hat and eps; TEST seed {1} scored ONCE
+  script: docs/research/kbound/scripts/analyze_F.py
+  args: --candidate sar_online --estimator gbr --conformal global --dev-seeds 0 --test-seeds 1
+  metrics: regret-to-oracle, false-adapt (committed), coverage, beats-both
+output_dir: experiments/kbound/results/iwildcam_protocol_H_v1/

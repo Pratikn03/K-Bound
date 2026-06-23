@@ -1,0 +1,46 @@
+{
+  "description": "Honest obstruction witness for Assumption~genpos / Thm cmono-weakest(iii). Confirms general position cannot be removed.",
+  "seed": 20260619,
+  "rho": 0.6,
+  "n_trials": 200000,
+  "c_dom_contains_non_mono": true,
+  "n_non_mono_witnessed": 200000,
+  "falsifiable_probe_rejects_outside": true,
+  "probe_reject_rate_outside": 1.0,
+  "probe_accept_rate_inside": 1.0,
+  "one_bit_certifies_on_C_dom": true,
+  "one_bit_error_rate_C_dom": 0.0,
+  "one_bit_fails_without_domination": true,
+  "one_bit_error_rate_no_domination": 0.250905,
+  "witness_dom_example": {
+    "a_plus": [
+      1.0,
+      0.5
+    ],
+    "delta_plus": 0.75,
+    "a_minus": [
+      1.0,
+      -0.5
+    ],
+    "delta_minus": 0.25,
+    "both_same_sign": true,
+    "one_bit_sigma": 1.0,
+    "note": "R0 dominates (|a_R1|<=0.5<1): sign(Delta)=sigma for BOTH -> 1 bit suffices, yet both are non-margin-monotone (a_R1 != 0). C_mono not minimal here."
+  },
+  "witness_nodom_example": {
+    "a_plus": [
+      1.0,
+      2.0
+    ],
+    "delta_plus": 1.5,
+    "a_minus": [
+      1.0,
+      -2.0
+    ],
+    "delta_minus": -0.5,
+    "both_same_sign": false,
+    "note": "Without domination the anchor region flips Delta's sign -> two bits necessary (K=2). This is exactly what general position rules out."
+  },
+  "conclusion": "General position is NECESSARY for minimality (iii): C_dom is a strictly larger, falsifiable, ONE-bit class, contradicting minimality when an E-certifiable dominant region is allowed. The UNCONDITIONAL weakest class therefore remains OPEN; the obstruction is exactly the dominant-region loophole excluded by Assumption~genpos.",
+  "obstruction_confirmed": true
+}

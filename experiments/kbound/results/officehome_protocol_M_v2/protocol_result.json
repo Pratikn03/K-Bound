@@ -1,0 +1,158 @@
+{
+  "protocol": "OFFICEHOME_PROTOCOL_M_v2",
+  "alpha": 0.1,
+  "estimator": "gbr",
+  "conformal": "global",
+  "adapter_panel": [
+    "tent_online_mild",
+    "eata_online_mild",
+    "sar_online_mild",
+    "tent_online_aggressive",
+    "eata_online_aggressive",
+    "sar_online_aggressive"
+  ],
+  "dev_screen": {
+    "records": "experiments/kbound/results/officehome_full_targetval/result_target_val_361a1e8c.json",
+    "cal_seeds": [
+      0
+    ],
+    "eval_seeds": [
+      1
+    ]
+  },
+  "dev_rows": [
+    {
+      "candidate": "tent_online_mild",
+      "dev": {
+        "commit_rate": 1.0,
+        "coverage": 1.0,
+        "adapt_rate": 1.0,
+        "false_adapt": 0.05555555555555555,
+        "regret_kga": 0.0010683760683760646,
+        "regret_adapt": 0.0010683760683760646,
+        "regret_freeze": 0.029059829059829068,
+        "n_test": 18,
+        "beats_both": false,
+        "fa_ok": true,
+        "margin": 0.0,
+        "verdict_win": false
+      }
+    },
+    {
+      "candidate": "eata_online_mild",
+      "dev": {
+        "commit_rate": 1.0,
+        "coverage": 1.0,
+        "adapt_rate": 1.0,
+        "false_adapt": 0.05555555555555555,
+        "regret_kga": 0.0012820512820512775,
+        "regret_adapt": 0.0012820512820512775,
+        "regret_freeze": 0.026495726495726502,
+        "n_test": 18,
+        "beats_both": false,
+        "fa_ok": true,
+        "margin": 0.0,
+        "verdict_win": false
+      }
+    },
+    {
+      "candidate": "sar_online_mild",
+      "dev": {
+        "commit_rate": 1.0,
+        "coverage": 1.0,
+        "adapt_rate": 0.9444444444444444,
+        "false_adapt": 0.058823529411764705,
+        "regret_kga": 0.00042735042735042583,
+        "regret_adapt": 0.002564102564102561,
+        "regret_freeze": 0.02521367521367522,
+        "n_test": 18,
+        "beats_both": true,
+        "fa_ok": true,
+        "margin": 0.0021367521367521352,
+        "verdict_win": true
+      }
+    },
+    {
+      "candidate": "tent_online_aggressive",
+      "dev": {
+        "commit_rate": 1.0,
+        "coverage": 1.0,
+        "adapt_rate": 0.7777777777777778,
+        "false_adapt": 0.21428571428571427,
+        "regret_kga": 0.0019230769230769193,
+        "regret_adapt": 0.0053418803418803324,
+        "regret_freeze": 0.010470085470085476,
+        "n_test": 18,
+        "beats_both": true,
+        "fa_ok": false,
+        "margin": 0.003418803418803413,
+        "verdict_win": false
+      }
+    },
+    {
+      "candidate": "eata_online_aggressive",
+      "dev": {
+        "commit_rate": 1.0,
+        "coverage": 1.0,
+        "adapt_rate": 1.0,
+        "false_adapt": 0.05555555555555555,
+        "regret_kga": 0.0006410256410256387,
+        "regret_adapt": 0.0006410256410256387,
+        "regret_freeze": 0.026068376068376076,
+        "n_test": 18,
+        "beats_both": false,
+        "fa_ok": true,
+        "margin": 0.0,
+        "verdict_win": false
+      }
+    },
+    {
+      "candidate": "sar_online_aggressive",
+      "dev": {
+        "commit_rate": 1.0,
+        "coverage": 1.0,
+        "adapt_rate": 0.6666666666666666,
+        "false_adapt": 0.0,
+        "regret_kga": 0.0,
+        "regret_adapt": 0.06004273504273505,
+        "regret_freeze": 0.016025641025641035,
+        "n_test": 18,
+        "beats_both": true,
+        "fa_ok": true,
+        "margin": 0.016025641025641035,
+        "verdict_win": true
+      }
+    }
+  ],
+  "locked_adapter": "sar_online_aggressive",
+  "dev_screen_pass": true,
+  "heldout": {
+    "mode": "transfer",
+    "cal_records": "experiments/kbound/results/officehome_full_targetval/result_target_val_361a1e8c.json",
+    "test_records": "experiments/kbound/results/officehome_full_targettest/result_target_test_6605675d.json",
+    "cal_seeds": [
+      0,
+      1
+    ],
+    "test_seeds": [
+      0,
+      1
+    ]
+  },
+  "test_locked": {
+    "commit_rate": 0.9714285714285714,
+    "coverage": 0.9714285714285714,
+    "adapt_rate": 0.6285714285714286,
+    "false_adapt": 0.0,
+    "regret_kga": 0.002197802197802198,
+    "regret_adapt": 0.04681318681318681,
+    "regret_freeze": 0.01582417582417583,
+    "n_test": 35,
+    "eps_global": 0.0010198695450704693,
+    "beats_both": true,
+    "fa_ok": true,
+    "verdict_win": true,
+    "margin": 0.013626373626373634
+  },
+  "verdict_win": true
+}

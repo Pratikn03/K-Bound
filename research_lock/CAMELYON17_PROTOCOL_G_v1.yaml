@@ -1,0 +1,42 @@
+# PROTOCOL G — Tier-B natural-shift headline (canonical KGA, single adapter)
+# Registered: 2026-06-16, AFTER Protocol F data exist but BEFORE this analysis is cited
+# as the paper's primary real-shift win. Re-scores existing Protocol F records only;
+# no new GPU forward passes.
+#
+# MOTIVATION: Reviewers should see ONE method (Algorithm 1 KGA), not PPI/Mondrian/
+# multicandidate variants. Re-analysis shows canonical GBR + global conformal eps on
+# dev seeds already beats both on held-out test; eata_online is the cleanest single-adapter arm.
+#
+# HYPOTHESIS: On WILDS Camelyon17 composition-stress (rich 17-dim Z from Protocol F),
+# canonical KGA with deployed adapter eata_online beats both trivial policies on held-out
+# test seeds at false-adapt <= alpha.
+#
+# SUCCESS CRITERIA (locked before scoring this arm):
+#   WIN: held-out test false-adapt <= alpha=0.10 AND regret_kga < regret_adapt AND
+#        regret_kga < regret_freeze (beats both).
+#   PARTIAL: false-adapt <= alpha but does not beat both -> report honestly, not headline.
+#
+# CANONICAL METHOD (the only headline KGA for natural shift):
+design:
+  dataset: WILDS Camelyon17 hospital shift (composition-stress grid; records from Protocol F)
+  records_source: experiments/kbound/results/camelyon17_richZ_F_v1/result_884129ba.json
+  deployed_adapter: eata_online  # FIXED — no per-benchmark adapter search
+  evidence_panel: rich_17dim  # fixed Z from Protocol F serialization (target-label-free at deploy)
+  method:
+    name: KGA
+    algorithm: adapt if B_hat - eps > 0; freeze if B_hat + eps < 0; else abstain
+    B_hat: GradientBoostingRegressor (same spec as synthetic grids)
+    eps: global (1-alpha) quantile of |B_hat - B| on DEV calibration residuals
+    alpha: 0.10  # FIXED
+  forbidden_in_headline:
+    - multicandidate CEI router
+    - PPI debias (appendix ablation only)
+    - Mondrian / CQR conformal (appendix ablation only)
+    - eps transplanted from CIFAR or other datasets
+    - tuning alpha, tau_star, or decision rule on TEST
+analysis_plan_locked:
+  split: DEV seeds {0,1} fit B_hat and eps; TEST seeds {2,3,4} scored ONCE
+  script: docs/research/kbound/scripts/analyze_F.py
+  args: --candidate eata_online --estimator gbr --conformal global
+  metrics: regret-to-oracle, false-adapt (committed), coverage, beats-both
+output_dir: experiments/kbound/results/camelyon17_protocol_G_v1/
