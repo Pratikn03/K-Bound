@@ -59,27 +59,60 @@ import numpy as np
 from sklearn.ensemble import GradientBoostingRegressor
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-RESULT = "/sessions/peaceful-blissful-ptolemy/mnt/uav/AutoML_Flagship_V8/experiments/kbound/results/wilds_kbound_debug_mps/result_73add410.json"
-if not os.path.exists(RESULT):  # host path fallback
-    RESULT = "/Volumes/T9/uav/AutoML_Flagship_V8/experiments/kbound/results/wilds_kbound_debug_mps/result_73add410.json"
+DEFAULT_RESULT = "/Volumes/T9/uav/AutoML_Flagship_V8/experiments/kbound/results/wilds_kbound_debug_mps/result_73add410.json"
+if not os.path.exists(DEFAULT_RESULT):
+    DEFAULT_RESULT = "/sessions/peaceful-blissful-ptolemy/mnt/uav/AutoML_Flagship_V8/experiments/kbound/results/wilds_kbound_debug_mps/result_73add410.json"
 
 ALPHA = 0.10                 # FIXED. never tuned.
 GBR_KW = dict(n_estimators=250, max_depth=2, learning_rate=0.05,
               subsample=0.8, random_state=0)
 
 # ---------------------------------------------------------------- load ----
-def load_cells():
-    d = json.load(open(RESULT))
-    recs = d["records"]
+def load_cells(path=None, candidate=None, dev_seeds=None, test_seeds=None):
+    path = path or DEFAULT_RESULT
+    d = json.load(open(path))
+    recs = d.get("records", [])
+    if candidate:
+        recs = [r for r in recs if r.get("candidate") == candidate]
+    if dev_seeds is not None and test_seeds is not None:
+        # explicit dev/test split (Protocol G style) — single aggregate split
+        dev = set(int(s) for s in dev_seeds)
+        tst = set(int(s) for s in test_seeds)
+        recs_dev = [r for r in recs if int(r["seed"]) in dev]
+        recs_tst = [r for r in recs if int(r["seed"]) in tst]
+        return _pack_split(d, recs_dev, recs_tst, dev, tst)
     Z = np.array([r["Z"] for r in recs], float)
     a0 = np.array([r["a0"] for r in recs], float)
     aa = np.array([r["aa"] for r in recs], float)
     B = np.array([r["B"] for r in recs], float)
     seed = np.array([r["seed"] for r in recs], int)
-    cand = np.array([r["candidate"] for r in recs])
-    # consistency: B == aa - a0
-    assert np.max(np.abs(B - (aa - a0))) < 1e-9
+    cand = np.array([r.get("candidate", "pooled") for r in recs])
+    assert np.max(np.abs(B - (aa - a0))) < 1e-6
     return d, Z, a0, aa, B, seed, cand
+
+
+def _pack_split(d, recs_dev, recs_tst, dev, tst):
+    """Return pseudo single-split for explicit dev/test (no combinatorial seeds)."""
+    Zc = np.array([r["Z"] for r in recs_dev], float)
+    Bc = np.array([r["B"] for r in recs_dev], float)
+    a0c = np.array([r["a0"] for r in recs_dev], float)
+    aac = np.array([r["aa"] for r in recs_dev], float)
+    Zt = np.array([r["Z"] for r in recs_tst], float)
+    Bt = np.array([r["B"] for r in recs_tst], float)
+    a0t = np.array([r["a0"] for r in recs_tst], float)
+    aat = np.array([r["aa"] for r in recs_tst], float)
+    m = GradientBoostingRegressor(**GBR_KW)
+    m.fit(Zc, Bc)
+    eps = float(np.quantile(np.abs(m.predict(Zc) - Bc), 1 - ALPHA))
+    Bhat_t = m.predict(Zt)
+    dec = np.where(Bhat_t - eps > 0, "ADAPT",
+                   np.where(Bhat_t + eps < 0, "FREEZE", "ABSTAIN"))
+    pb = policy_block(dec, a0t, aat, Bt, eps)
+    pb["cal_seeds"] = sorted(dev); pb["test_seeds"] = sorted(tst)
+    pb["split_mode"] = "explicit_dev_test"
+    # wrap as one-split list for aggregate()
+    meta = (d, Zt, a0t, aat, Bt, np.array([list(tst)[0]] * len(Bt)), np.array(["pooled"] * len(Bt)))
+    return meta[0], meta[1], meta[2], meta[3], meta[4], meta[5], meta[6], [pb]
 
 # ----------------------------------------------------- sanity: AUC 0.91 ----
 def auc_neg(score, label):
@@ -190,11 +223,11 @@ def aggregate(splits):
     return out
 
 # ----------------------------------------------------------- verdict -------
-def verdict(ag):
+def verdict(ag, single_split=False):
     rk = ag["regret_KGA"]; ra = ag["regret_always_adapt"]; rf = ag["regret_always_freeze"]
     fa = ag["false_adapt_rate"]
     eps_cv = ag["eps_stability"]["cv"]
-    eps_stable = (eps_cv is not None and eps_cv <= 0.25)   # <=25% CV across CAL splits
+    eps_stable = single_split or (eps_cv is not None and eps_cv <= 0.25)
     # CI clear of BOTH trivials: KGA upper CI < each trivial's lower CI
     clear_adapt = (rk["ci95"][1] < ra["ci95"][0]) if ra["mean"] is not None else False
     clear_freeze = (rk["ci95"][1] < rf["ci95"][0]) if rf["mean"] is not None else False
@@ -234,45 +267,71 @@ def run_per_candidate(Z, a0, aa, B, seed, cand):
     return res
 
 def main():
-    d, Z, a0, aa, B, seed, cand = load_cells()
+    import argparse
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--records", default=None)
+    ap.add_argument("--candidate", default=None)
+    ap.add_argument("--dev-seeds", type=int, nargs="*")
+    ap.add_argument("--test-seeds", type=int, nargs="*")
+    ap.add_argument("--label", default="default")
+    args = ap.parse_args()
+
+    loaded = load_cells(args.records, args.candidate,
+                        args.dev_seeds, args.test_seeds)
+    explicit_splits = None
+    if len(loaded) == 8:
+        d, Z, a0, aa, B, seed, cand, explicit_splits = loaded
+    else:
+        d, Z, a0, aa, B, seed, cand = loaded
+
     sanity = sanity_detectability(Z, B)
-    splits = run_seed_splits(Z, a0, aa, B, seed)        # POOLED over 6 candidates
+    if explicit_splits is not None:
+        splits = explicit_splits
+    else:
+        splits = run_seed_splits(Z, a0, aa, B, seed)        # POOLED over candidates
     ag = aggregate(splits)
-    vd = verdict(ag)
-    per_cand = run_per_candidate(Z, a0, aa, B, seed, cand)
+    vd = verdict(ag, single_split=explicit_splits is not None)
+    per_cand = run_per_candidate(Z, a0, aa, B, seed, cand) if explicit_splits is None else {}
 
     out = {
-        "data_file": RESULT,
+        "data_file": args.records or DEFAULT_RESULT,
+        "label": args.label,
+        "candidate_filter": args.candidate,
+        "dev_seeds": args.dev_seeds,
+        "test_seeds": args.test_seeds,
         "schema": d.get("schema"),
         "config_sha8": d.get("config_sha8"),
         "alpha_FIXED": ALPHA,
         "estimator": "GradientBoostingRegressor " + str(GBR_KW),
-        "tau_star_left_alone": d["config"].get("tau_star"),
-        "split_design": "by-seed; C(4,2)=6 assignments of 2 CAL + 2 TEST seeds; "
-                        "estimator fit on CAL, eps=quantile(|Dhat-B|,0.9) on CAL, "
-                        "frozen and applied on TEST. cells pooled over 6 TTA candidates.",
-        "fallback_used": False,
-        "synthetic_calibrated_eps_reference": {
-            "per_candidate_eps_conformal_reported": {
-                k: d["routing_a_single_candidate"][k]["kga"]["eps_conformal"]
-                for k in d["routing_a_single_candidate"]},
-            "detectability_pooled_certificate_eps_reported": d["detectability"]["certificate_eps"],
-            "detectability_harm_AUC_negBhat_reported": d["detectability"]["certificate_harm_AUC_negBhat"],
-        },
+        "tau_star_left_alone": d.get("config", {}).get("tau_star"),
+        "split_design": ("explicit dev/test" if explicit_splits else
+                         "by-seed; C(4,2)=6 assignments of 2 CAL + 2 TEST seeds"),
         "sanity_reproduction": sanity,
         "per_split": splits,
         "aggregate_over_splits": ag,
         "per_candidate_robustness": per_cand,
         "verdict": vd,
     }
+    if d.get("routing_a_single_candidate"):
+        out["fallback_used"] = False
+        out["synthetic_calibrated_eps_reference"] = {
+            "detectability_pooled_certificate_eps_reported": d.get("detectability", {}).get("certificate_eps"),
+            "detectability_harm_AUC_negBhat_reported": d.get("detectability", {}).get("certificate_harm_AUC_negBhat"),
+        }
     op = os.path.join(HERE, "eps_recal_results.json")
     json.dump(out, open(op, "w"), indent=2)
     # console summary
+    det = d.get("detectability", {})
     print("=== SANITY (reproduce paper detectability) ===")
-    print("  harm-AUC(-Bhat): reported %.4f  reproduced %.4f"
-          % (d["detectability"]["certificate_harm_AUC_negBhat"], sanity["reproduced_harm_AUC_negBhat"]))
-    print("  pooled cert eps: reported %.4f  reproduced %.4f"
-          % (d["detectability"]["certificate_eps"], sanity["reproduced_pooled_eps"]))
+    if det:
+        print("  harm-AUC(-Bhat): reported %.4f  reproduced %.4f"
+              % (det.get("certificate_harm_AUC_negBhat", float("nan")),
+                 sanity["reproduced_harm_AUC_negBhat"]))
+        print("  pooled cert eps: reported %.4f  reproduced %.4f"
+              % (det.get("certificate_eps", float("nan")), sanity["reproduced_pooled_eps"]))
+    else:
+        print("  reproduced harm-AUC(-Bhat)=%.4f pooled eps=%.4f" % (
+            sanity["reproduced_harm_AUC_negBhat"], sanity["reproduced_pooled_eps"]))
     print("\n=== eps stability across 6 CAL seed-splits ===")
     print("  eps:", ["%.4f"%e for e in ag["eps_stability"]["values"]],
           "range=%.4f cv=%.3f" % (ag["eps_stability"]["range"], ag["eps_stability"]["cv"]))

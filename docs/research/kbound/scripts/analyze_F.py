@@ -42,23 +42,35 @@ ALPHA = 0.10  # FIXED — never tuned
 
 # ─── record loading ──────────────────────────────────────────────────────────
 
-def load_records(path):
+def _one_record(r, candidate=None):
+    aa = r.get("aa", r.get("a_adapted"))
+    if aa is None:
+        raise KeyError("record missing aa / a_adapted")
+    return {
+        "seed": int(r["seed"]),
+        "Z": list(r["Z"]),
+        "B": float(r["B"]),
+        "a0": float(r["a0"]),
+        "aa": float(aa),
+        "comp": r.get("comp", r.get("condition", r.get("cell", r.get("method", "unknown")))),
+        "candidate": r.get("candidate", r.get("method", candidate or "unknown")),
+    }
+
+
+def load_records(path, candidate=None):
     """Read run_wilds_camelyon17.py output JSON -> flat list of cell x seed records.
-    Each record carries Z (the FULL rich Z), B, a0, aa, seed, method (cell)."""
+    Each record carries Z (the FULL rich Z), B, a0, aa, seed, method (cell).
+    Also accepts CIFAR-10.1 per_condition JSON (a_adapted field).
+    If candidate is set, keep only records with that adapter name (e.g. eata_online)."""
     d = json.load(open(path))
     recs = []
     if d.get("records"):
-        panel = d.get("evidence_panel", d.get("config", {}).get("evidence_panel", "unknown"))
+        panel = d.get("evidence_panel", d.get("config", {}).get("evidence_panel",
+                d.get("benchmark", "unknown")))
         for r in d.get("records", []):
-            recs.append({
-                "seed": int(r["seed"]),
-                "Z": list(r["Z"]),
-                "B": float(r["B"]),
-                "a0": float(r["a0"]),
-                "aa": float(r["aa"]),
-                "comp": r.get("comp", r.get("cell", r.get("method", "unknown"))),
-                "candidate": r.get("candidate", r.get("method", "unknown")),
-            })
+            recs.append(_one_record(r, candidate=candidate))
+        if candidate:
+            recs = [r for r in recs if r.get("candidate") == candidate]
         return recs, panel
     for method, entry in d.get("methods", {}).items():
         for r in entry.get("records", []):
@@ -70,6 +82,8 @@ def load_records(path):
                 "aa": float(r["aa"]),
                 "comp": r.get("cell", r.get("method", method)),
             })
+    if candidate:
+        recs = [r for r in recs if r.get("candidate") == candidate]
     return recs, d.get("evidence_panel", "unknown")
 
 
@@ -99,7 +113,7 @@ def metrics(dec, Bt, a0t, aat):
         "commit_rate": float(commit.mean()),
         "coverage": float(commit.mean()),
         "adapt_rate": float(adapt.mean()),
-        "false_adapt": float(np.mean(Bt[adapt] < 0)) if adapt.any() else None,
+        "false_adapt": float(np.mean(Bt[adapt] < 0)) if adapt.any() else 0.0,
         "regret_kga": float((oracle - kga).mean()),
         "regret_adapt": float((oracle - aat).mean()),
         "regret_freeze": float((oracle - a0t).mean()),
@@ -124,7 +138,8 @@ def ppi_debias(Bhat_c, Bc, Zc, Zt, Bhat_t):
     return Bhat_c + db.predict(Zc), Bhat_t + db.predict(Zt)
 
 
-def run_split(records, cal_seeds, test_seeds, estimator="ppi_debias", conformal="mondrian"):
+def run_split(records, cal_seeds, test_seeds, estimator="ppi_debias", conformal="mondrian",
+              frozen_eps=None):
     Z, B, a0, aa, sd, comp = arrays(records)
     cal = np.isin(sd, cal_seeds); tst = np.isin(sd, test_seeds)
     if cal.sum() < 2 or tst.sum() == 0:
@@ -170,6 +185,11 @@ def run_split(records, cal_seeds, test_seeds, estimator="ppi_debias", conformal=
             dec[mt] = decide_global(Bhat_t[mt], epsg)
         unseen = ~np.isin(compt, list(groups))
         dec[unseen] = decide_global(Bhat_t[unseen], eps_glob)
+    elif conformal == "frozen":
+        # Globally frozen eps (e.g. synthetic-grid transplant); alpha/tau* untouched.
+        if frozen_eps is None:
+            raise ValueError("conformal='frozen' requires frozen_eps")
+        dec = decide_global(Bhat_t, float(frozen_eps))
     else:
         raise ValueError(conformal)
     return metrics(dec, Bt, a0t, aat)
@@ -199,10 +219,14 @@ def self_test():
 
 def parse_args():
     p = argparse.ArgumentParser(description="Protocol F post-hoc estimator/analysis")
-    p.add_argument("--records", help="run_wilds_camelyon17.py output JSON (rich Z)")
+    p.add_argument("--records", nargs="+", help="One or more record JSON paths (wilds or per_condition)")
+    p.add_argument("--candidate", default=None,
+                   help="Optional adapter filter (e.g. eata_online for Protocol G)")
     p.add_argument("--output-dir", default=None)
     p.add_argument("--estimator", choices=["gbr", "ppi_debias"], default="ppi_debias")
-    p.add_argument("--conformal", choices=["global", "mondrian", "cqr"], default="mondrian")
+    p.add_argument("--conformal", choices=["global", "mondrian", "cqr", "frozen"], default="mondrian")
+    p.add_argument("--frozen-eps", type=float, default=None, dest="frozen_eps",
+                   help="When --conformal frozen: globally fixed eps (e.g. synthetic-grid transplant)")
     p.add_argument("--dev-seeds", type=int, nargs="+", default=[0, 1])
     p.add_argument("--test-seeds", type=int, nargs="+", default=[2, 3, 4])
     p.add_argument("--self-test", action="store_true",
@@ -217,9 +241,13 @@ def main():
     if not args.records:
         print("ERROR: --records required (or use --self-test)"); sys.exit(2)
 
-    recs, panel = load_records(args.records)
+    recs, panel = [], "unknown"
+    for rp in args.records:
+        part, panel = load_records(rp, candidate=args.candidate)
+        recs.extend(part)
     seeds = sorted(set(r["seed"] for r in recs))
     out = {"alpha": ALPHA, "evidence_panel": panel,
+           "candidate": args.candidate,
            "estimator": args.estimator, "conformal": args.conformal,
            "dev_seeds": args.dev_seeds, "test_seeds": args.test_seeds,
            "n_records": len(recs), "seeds_present": seeds,
@@ -227,10 +255,14 @@ def main():
 
     # held-out TEST (evaluated ONCE): fit on DEV, evaluate on TEST.
     out["test_locked"] = run_split(recs, args.dev_seeds, args.test_seeds,
-                                   estimator=args.estimator, conformal=args.conformal)
+                                   estimator=args.estimator, conformal=args.conformal,
+                                   frozen_eps=args.frozen_eps)
     # reference: legacy global-eps GBR on the SAME split (context, not the locked choice)
     out["test_baseline_gbr_global"] = run_split(recs, args.dev_seeds, args.test_seeds,
-                                                estimator="gbr", conformal="global")
+                                                estimator="gbr", conformal="global",
+                                                frozen_eps=args.frozen_eps)
+    if args.conformal == "frozen":
+        out["frozen_eps"] = args.frozen_eps
 
     print(f"=== Protocol F analysis  (panel={panel}, Z_dim={out['Z_dim']}) ===")
     print(f"  estimator={args.estimator}  conformal={args.conformal}  alpha={ALPHA} (FIXED)")
@@ -238,10 +270,14 @@ def main():
     print(f"  locked   : {out['test_locked']}")
     print(f"  baseline : {out['test_baseline_gbr_global']}")
     tl = out["test_locked"]
-    if tl and tl["false_adapt"] is not None:
-        win = tl["false_adapt"] <= ALPHA and tl["commit_rate"] >= 0.3
-        print(f"  VERDICT (FA<=alpha & commit>=0.3): {'WIN' if win else 'not-cleared'}")
-        out["verdict_win"] = bool(win)
+    if tl:
+        bb = (tl["regret_kga"] < tl["regret_adapt"] and tl["regret_kga"] < tl["regret_freeze"])
+        out["beats_both"] = bool(bb)
+        fa_ok = tl["false_adapt"] is not None and tl["false_adapt"] <= ALPHA
+        win = bool(fa_ok and bb)
+        print(f"  beats_both: {bb}  (FA<=alpha: {fa_ok})")
+        print(f"  VERDICT (Tier-B headline): {'WIN' if win else 'not-cleared'}")
+        out["verdict_win"] = win
 
     if args.output_dir:
         os.makedirs(args.output_dir, exist_ok=True)

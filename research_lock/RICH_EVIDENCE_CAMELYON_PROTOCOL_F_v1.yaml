@@ -46,3 +46,14 @@ preflight_required: patch run_wilds_camelyon17.py to COMPUTE + serialize the new
   per cell (needs model forward pass -> GPU re-run, ~7h like Protocol B); reuse Protocol B f0 checkpoints.
 output_dir: experiments/kbound/results/camelyon17_richZ_F_v1/
 queue: one MPS job at a time; do not overlap with other runs.
+
+# OUTCOME (2026-06-16, post-hoc layers — see CAMELYON17_DIAGNOSTICS_RESOLVED_v1.yaml)
+outcome_2026_06_16:
+  gpu_serialization: COMPLETE  # result_884129ba.json, 540 records, rich 17-dim Z
+  route_audit:
+    ppi_mondrian_pooled: WIN  # FA 3.3%, beats both — appendix ablation only
+    multicandidate_frozen_tau: FAIL  # tau scale mismatch; diagnostic
+    multicandidate_source_calibrated: ROUTE_FIXED  # commits; 0% FA on adapts; still no beats-both
+    gbr_global_single_adapter: superseded_by Protocol G headline
+  headline: Protocol G uses F records with canonical KGA (eata_online); see CAMELYON17_PROTOCOL_G_v1.yaml
+  diagnostics_rerun: docs/research/kbound/scripts/run_camelyon_diagnostics_resolved.py

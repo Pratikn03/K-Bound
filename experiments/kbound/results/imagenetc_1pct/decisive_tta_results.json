@@ -187,7 +187,7 @@
               "always_freeze": 0.05999999865889549,
               "K_Bound": 0.11999999731779099
             },
-            "beats_both": true,
+            "beats_both": false,
             "eps_conformal": 0.018222189195365567,
             "alpha": 0.1,
             "base_rate_harmful_B<0": 0.4166666666666667,
@@ -273,7 +273,10 @@
                 }
               ],
               "p_where_KGA_beats_both": 0.2
-            }
+            },
+            "beats_both_raw": true,
+            "beats_both_corrected": false,
+            "beats_both_correction_note": "Integrity pass 2026-06-20: original stored `beats_both` was regret-only and did NOT enforce the pre-registered false-adapt budget FA<=alpha (alpha=0.1). Re-derived from this node's own regret_vs_oracle + false-adapt rate: beats_both := (router_regret<freeze_regret) AND (router_regret<best_fixed_adapt_regret) AND (FA_rate<=alpha). See audits/integrity_2026-06-20/."
           },
           "n_conditions": 36,
           "conditions": [

@@ -136,6 +136,44 @@ local-only score caches is
 
 ---
 
+## 3b. Run TTA benchmark suite (vision / WILDS) — corrected `beats_both` verdicts
+
+The provenance table in §3 covers the tabular / score-cached tasks but **omitted the
+vision and WILDS benchmarks that were actually run** for the paper. They are listed
+here, each with its **re-derived** decision verdict. Per the pre-registered protocol a
+benchmark counts as a *win* only if the K-Bound router strictly beats **both** trivial
+policies on regret **and** stays within the false-adapt budget:
+
+> `beats_both := (router_regret < always-freeze_regret) AND (router_regret < best-fixed-adapt_regret) AND (false_adapt_rate ≤ α)  [α = 0.1]`, stable across seeds.
+
+These verdicts were recomputed in the 2026-06-20 integrity pass directly from the
+underlying numbers in each artifact (the historical stored `beats_both` flag was
+regret-only and did **not** enforce `false_adapt ≤ α`). Audit trail and the
+machine-extracted table: `audits/integrity_2026-06-20/` (`benchmark_verdicts.json`).
+
+| Benchmark | What ran | router vs freeze | router vs best-adapt | false-adapt | corrected verdict | canonical artifact |
+|-----------|----------|------------------|----------------------|-------------|-------------------|--------------------|
+| **CIFAR-10-C** | ResNet-18, 432-cell harmful/helpful mix (tent & eata) | 0.0016 < 0.1232 ✓ | 0.0016 < 0.0086 ✓ | 0.000 ✓ | **WIN (True)** — verified | `decisive_tta_results.json::benchmarks.cifar10c` |
+| **ImageNet-C** | ResNet-50 noise corruptions, 36 cells (sar) | 0.0086 < 0.0277 ✓ | 0.0086 < 0.0606 ✓ | 0.000 ✓ | **WIN (True)** — verified | `imagenetc_noise/decisive_tta_results.json` |
+| **Camelyon17** | Protocol G, eata_online, 5-seed dev→test held-out | 3.6e-5 < 0.0749 ✓ | 3.6e-5 < 0.0013 ✓ | 0.026 ✓ | **WIN (True)** — verified | `camelyon17_protocol_G_v1/analyze_F_results.json` |
+| **CIFAR-10.1** | 5-seed quick protocol (tent/eata/sar) | — | — | — | **False** — best adapter beats both in only **1/5** seeds (not stable) | `cifar101_multiseed_v1/pooled_summary.json` |
+| **ImageNet-R** | multiseed panel, 10 architectures | — | — | — | **False** — **0/10** candidates beat both at a realistic harmful fraction (only ≥0.83) | `imagenetr_protocol_d_multiseed_v1/MULTISEED_ANALYSIS_RESULTS.json` |
+| **RxRx1** | Protocol J, sar_online, 10-seed held-out | 0.0 = 0.0 (tie) | — | 0.000 | **False** — KGA correctly freezes (no win, no harm) | `rxrx1_protocol_J_v1/analyze_F_results.json` |
+| **iWildCam** | full-val route-b multicandidate; 5th-null headline | 0.0307 ≈ 0.0310 (tie) | 0.0307 < 0.0546 | **0.500 ✗** | **False** — false-adapt 0.5 ≫ α (stored flag was True; **patched**) | `iwildcam_full_val/result_f08e751c.json` |
+| **Office-Home** | val, route-a deployed (eata_online_mild) | 0.0281 = 0.0281 (tie) | — | 0.000 | **False (val)** — KGA freezes | `officehome_full_FINAL/VERDICT_val.json` |
+| **fMoW** | Protocol L, sar_online, 5-seed held-out | 0.0129 = 0.0129 (tie) | 0.0129 > 0.0092 | **0.375 ✗** | **False** — false-adapt 0.375 ≫ α | `fmow_protocol_L_v1/analyze_F_results.json` |
+| **PovertyMap** | Protocol L dev screen | — | — | — | **N/A** — stopped at dev screen (no held-out verdict) | honest null (headline manifest) |
+| **ACDC** | segmentation TTA pipeline coded | — | — | — | **N/A** — code-only, **not run** | `experiments/kbound/acdc/` (code present) |
+
+**Notes.** (1) iWildCam and Office-Home each also have a *dev-locked six-arm panel*
+sub-protocol (`IWILDCAM_PROTOCOL_H_v2`, `OFFICEHOME_PROTOCOL_M_v2`) whose **held-out
+test** row is a properly **gated** win (`verdict_win=True`, false-adapt 0.0). Those
+protocol wins are honest and survive the gate; the **dataset-level / val** verdicts in
+the table above remain **null** (no win on the main evaluation), which is the
+conservative figure recorded here. (2) The three confirmed wins (CIFAR-10-C, ImageNet-C,
+Camelyon17) were re-verified, not assumed: each satisfies `false_adapt ≤ α` and both
+regret bars. (3) See `INTEGRITY_FIXES.md` (2026-06-20 entry) for the full audit.
+
 ## 4. Verifying input integrity (the manifest)
 
 `data/MANIFEST.json` records the SHA-256, byte size, and mtime of every file

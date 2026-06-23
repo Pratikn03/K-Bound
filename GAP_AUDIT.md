@@ -135,3 +135,62 @@ Polish / wording:
 **Reported by sub-audit but not exhaustively re-run here (treat as high-confidence, not personally re-executed):** exact 10⁻¹⁷/10⁻¹⁶ magnitudes (no artifact persists them; tolerance is 1e-9), companion-appendix validators (`val_conj1_*`, `val_reach_unification.py`, etc.), and per-seed contents of multi-seed grids.
 
 **Limitations of this audit:** static only — no validators or tests were executed (heavy ML deps + slow external drive); the 166-page `manuscript.txt` and several `docs/research/kbound/` inventories were grepped, not read line-by-line; newer in-progress run dirs (`*_protocol_c/d_*`, `imagenetc_official_sar_E_v1_s{0,1,2}`) appear to post-date the paper tables and were not fully mapped. Findings about *missing* artifacts mean "not committed to the repo as inspected on 2026-06-14", not "never computed".
+
+---
+
+## Resolution log (2026-06-19) — multi-agent loop
+
+**Updated executive summary.** A four-agent gap-closure loop (cartographer → theory → experiment → integrity-verifier) re-walked every audit item. **No fabrication was found anywhere** — every theory validator was *executed this session* (not just inspected), all use fixed seeds with deterministic per-cell derivation, no hardcoded "computed" constants, and the new serialization module reshapes already-measured records only. **All research-integrity items (A1–A6) and all data-backed documentation items are now resolved or correctly reclassified.** The only work that genuinely remains is (i) the user's **Mac GPU re-runs** of two natural-shift tracks (ImageNet-R multi-seed; Camelyon17 `B_v2` full-scale completion) and (ii) one **honestly-open theory sub-conjecture** (the *unconditional* weakest one-bit class / general-position removal in Conjecture 1, which is explicitly left open in the paper, not force-closed).
+
+**Verification method this loop:** the integrity-verifier *ran* all seven main-theorem validators + the CPU pipeline harness + the torch-free K-Bound certificate test suite in the sandbox, and read every NEW source file for anti-fabrication. Real headline numbers and exit codes are recorded inline below.
+
+### Independent re-execution (real numbers, exit code 0 unless noted)
+- `val_thm1_lecam.py` — Le Cam floor `1−TV` tracks empirical `inf_M` across the μ/n sweep (e.g. μ=0.25,n=64: floor 0.0455 vs inf_M 0.0452). PASS.
+- `val_thm2_regret.py` — exact identity `max gap = 2.35e-17`; minimax ratio-to-floor 1.0004; `ALL CHECKS PASSED`.
+- `val_thm2_lecam_finite_n.py` **(NEW)** — floor constant in n per c; Bayes (optimal) label-free rule **meets** the floor; brute-force panel over 5 label-free statistics × both polarities **never beats** the floor; Bretagnolle–Huber `(Λ/4)e^{-2c²} ≤ floor` for all cells; `|Δ|=1` exact. `ALL CHECKS PASSED`. Re-run is bit-identical (seed 20260619), confirming determinism.
+- `val_thm3_evalue.py --alpha 0.05` — **worst-case anytime false-adapt = 0.0316 ≤ α=0.05** (verdict + `results_thm3_evalue_alpha005.json`). PASS.
+- `val_thm5_multiclass.py` — multiclass identity `max err 1.11e-16`, sign agreement 4000/4000; regression identity `max err 5.6e-13`; covariate certificate correct, concept-shift certificate honestly fails. `ALL CHECKS PASS`.
+- `val_conj1_genpos.py` **(NEW)** — general-position obstruction **CONFIRMED** (200,000 trials): `C_dom` strictly larger than `C_mono`, one bit certifies sign(Δ) on `C_dom` (error 0.0) but fails without domination (error 0.2509 ≈ ¼). Conclusion printed by the validator itself: **the unconditional weakest class remains OPEN**.
+- `val_conj1_caltransfer.py` — gap-sweep commit/recovery behaviour and bracket-containment 1.0 as designed. PASS.
+- `verify_runner_pipeline.py --smoke` — `ALL_ASSERTIONS_PASSED = True`; every metric explicitly labelled `SYNTHETIC` / `_pipeline_smoke_verify`; SAR column present; paired Holm-corrected CIs computable for both datasets. PASS.
+- **Torch-free certificate tests:** `pytest test_kga_package.py test_holm_bonferroni.py test_phase2_certificate_boundary.py test_gate_p_and_scope_guard.py test_holm_family_size_matches_registry.py` → **54 passed, 2 skipped** (skips are missing optional `PAPER_DRAFT_v1.tex`/`THESIS_CHAPTER_v1.tex`). The K-Bound certificate logic — decision boundaries, e-value false-adapt-≤-α, non-identifiability witness, conformal radius — all pass. `test_audit_gate_decision_rule_e2e.py` and `test_gate_decision_rule.py` could **not** run (transitively `import torch` via `uais.fusion.attention`); SKIPPED per torch-free policy — environmental, not a logic regression.
+
+### Item-by-item status
+
+**A1 (Thm 3 α-mismatch) — RECLASSIFIED (the 2026-06-14 fix instruction was a MISREAD).**
+The 2026-06-14 log said "paper digit `0.028` → `0.0316`". On direct inspection of `docs/research/kbound/kbound.tex`, the four `0.028`/`0.0283` occurrences are **Office-Home regret numbers** (L1155 `KGA=freeze 0.028/0.027`; L1181 `eata_online_mild: KGA/adapt/freeze regret 0.028/0.001/0.028`) and **anomaly-routing CI bounds** (L1407/L1417 `+0.0283 [0.020,0.037]`) — **none is the e-process false-adapt rate**, and `0.0316` appeared **nowhere** in the .tex. Editing those `0.028`s to `0.0316` would have *corrupted correct regret values* (a fabrication). **Action taken instead:** the verified e-value result (`worst-case anytime false-adapt 0.0316 ≤ α=0.05`, from `results_thm3_evalue_alpha005.json`) was added *conservatively and quantitatively* to the anytime e-process discussion in the companion-stack appendix (`kbound.tex`, App. "demoted theorem stack"), where it was previously only qualitative. The Thm-3 *mechanism* and *guarantee* were never in doubt; only the audit's pointer was wrong. **RESOLVED + reclassified.**
+
+**A2 (Thm 5 artifact) — ALREADY-CLOSED.** `results_thm5_multiclass.json` present and re-confirmed by re-execution (max err 1.11e-16).
+
+**A3 (Thm 2 artifact) — ALREADY-CLOSED.** `results_thm2_regret.json` present; re-execution gives max gap 2.35e-17.
+
+**A4 (over-precise tolerance) — CLOSED-THIS-LOOP (theory agent).** Both `val_thm2_regret.py` (comment at the `exact_identity_holds` gate) and `val_thm5_multiclass.py` (two comments at the equality gates) now explicitly state that `1e-9` is a *deliberately loose* pass gate and the realized error sits at the float64 round-off floor (~2.35e-17 / ~1.1e-16). Asserts unchanged (still `< 1e-9`), so the gates keep BLAS/platform slack. Verified by direct read.
+
+**A5 (theorem numbering crosswalk) — ALREADY-CLOSED, with a caveat.** `THEOREM_NUMBERING_CROSSWALK.md` was created 2026-06-14, and the paper now ships a consolidated "exactly five theorems" scheme with an in-paper consolidation table (`tab:consolidation`, App.) mapping each main theorem to its demoted results + validators. **Caveat (honest):** the standalone `docs/research/kbound/THEOREM_NUMBERING_CROSSWALK.md` shows as a *tracked deletion* (` D`) in the current working tree — it was removed as part of a broader `docs/research/kbound/*.md` cleanup, not lost to error. The crosswalk *content* survives in-paper; if a standalone file is still wanted it should be restored from git history. Not an integrity defect; flagged for the record.
+
+**A6 (AETTA / agreement-on-the-line are surrogates) — UNCHANGED / already honest.** The paper labels these as decision-style surrogates explicitly; no run claims them as executed methods. No change needed.
+
+**B1 (Camelyon17 missing SAR) — RECLASSIFIED (already done in the runner).** The experiment agent confirmed `run_camelyon17_kbound.py` **already runs SAR**; the SAR-less `results/wilds/wilds_camelyon17_kga.json` the 2026-06-14 audit flagged is a **stale older artifact**, not the current runner's behaviour. The CPU smoke harness shows the SAR column present for Camelyon17. No canonical result JSON was altered (mtimes preserved). **RESOLVED at the code level**; the SAR-bearing full-scale numbers come from the GPU re-run (see B2/B_v2).
+
+**B2 / B3 (per-condition serialization + certified natural-shift win + tight stress-grid CI) — INFRASTRUCTURE CLOSED-THIS-LOOP; numbers NEED-MAC-GPU.** New torch-free `experiments/kbound/wilds/per_condition_serialize.py` emits the exact `per_condition_<dataset>_<method>_seed<S>.json` schema the locked stress-grid analysis consumes, and `experiments/kbound/wilds/multiseed_paired_ci.py` computes the paired, Holm-corrected per-condition CIs. `verify_runner_pipeline.py --smoke` proves the full serialize→aggregate→paired-CI pipeline end-to-end on synthetic data (labelled SYNTHETIC). The *plumbing* that was missing is now in place and tested; the *real* certified-win numbers still require the GPU runs.
+
+**B4 (thin seed coverage on natural shifts) — PARTIALLY CLOSED (CIFAR-10.1) / NEEDS-MAC-GPU (ImageNet-R).**
+- **CIFAR-10.1: CLOSED-THIS-LOOP (data-backed doc fix).** `experiments/kbound/results/cifar101_multiseed_v1/pooled_summary.json` confirmed: **seeds [0,1,2,3,4]**, 24 conditions/seed, completed 2026-06-16. The stale `kbound.tex` caption ("single quick pass… single-seed quick protocol; a multi-seed re-run is future work") was updated to cite the real 5-seed pooled numbers (harmful-condition rate 0.675±0.017 Tent / 0.500±0.059 EATA / 0.050±0.031 SAR; KGA regret-to-oracle 0.0024±0.0007 / 0.0035±0.0011 / 0.0045±0.0014). Single-pass table body left unchanged (distinct artifact).
+- **ImageNet-R: OPEN / NEEDS-MAC-GPU.** Still single-split. `run_imagenetr_kbound.py` now has `--resume` + serialization wired; the multi-seed run itself is a GPU job.
+
+**B5 (stale README) — ALREADY-CLOSED / WITHDRAWN (false positive, per 2026-06-14).** README is accurate. No change.
+
+**B6 ("ImageNet-scale corruptions" over-reads) — CLOSED-THIS-LOOP (conservative wording).** The contributions bullet in `kbound.tex` (L160) read "ImageNet-scale corruptions"; softened to **"ImageNet-C noise corruptions (ResNet-50, 36 cells)"**, matching the paper's own table captions (which already say "ImageNet-C, ResNet-50… 36 cells, gaussian/shot/impulse × {1,3,5}") and the body text at L803.
+
+**B7 (results-dir clutter) — UNCHANGED (hygiene, out of scope this loop).** Canonical files still carry `smoke:false`; no table cites a smoke file. Left as a non-integrity polish item.
+
+**B8 (explicitly scoped-out future work) — UNCHANGED.** CIFAR-100-C, ViT-B, iWildCam, TTT/SHOT, SAR's official gentler schedule remain named future work.
+
+### Theory targets (this loop)
+
+**Thm 2 → STRENGTHENED.** New Proposition `prop:lecam-finite` (+ `cor:lecam-regret-floor`) with full proof in `docs/research/kbound/paper/sections/main_theory_5.tex` upgrades Thm 2 from an exact identity + asymptotic/plug-in minimax floor to a **genuine finite-n two-point Le Cam lower bound** on the expected regret of any label-free gate, with a closed-form Bretagnolle–Huber certificate `(Λ/4)e^{-2c²}>0`. Backed by NEW `val_thm2_lecam_finite_n.py` + `results_thm2_lecam_finite_n.json` (ALL CHECKS PASS, re-run deterministic).
+
+**Conjecture 1 (general position) → remains OPEN, now SHARPENED.** The theory agent could **not** remove the general-position assumption and (correctly) did not claim to. `weakest_class.tex` now states plainly "the unconditional weakest class remains open" and "We leave this open and do not claim it," with an explicit two-equal-mass-region counterexample (`rmk:genpos` / `thm:cmono-weakest`). NEW `val_conj1_genpos.py` + `results_conj1_genpos.json` machine-check the obstruction. **Honest open status verified — not force-closed.**
+
+### Loop-back decision
+**No closeable-here item remains undone.** Every integrity item (A1–A6) and every data-backed documentation item (CIFAR-10.1 staleness, B6 wording, the A1 e-value addition) is resolved or correctly reclassified, and all theory work is either strengthened (Thm 2) or honestly left open (Conj 1 general position). The **only** remaining work is outside this sandbox: the user's **Mac GPU runs** — ImageNet-R multi-seed and the Camelyon17 `B_v2` full-scale completion (see `docs/research/kbound/RUN_ON_MAC.md` and `scripts/run_remaining_gpu_experiments.sh`) — plus the standing **Conjecture 1 general-position** sub-case, which is a research-open problem, not a documentation gap.
