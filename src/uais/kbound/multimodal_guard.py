@@ -1,9 +1,8 @@
-"""Target-Label-Light Multimodal Safety Guard.
+"""Compatibility facade for the canonical KGA-ELARA integration.
 
-Composes ELARA-U reliability routing with the KGA adapt/freeze/abstain
-certificate.  When a labeled micro-probe is available, uses
-:meth:`kga.KGA.certify_probe`; otherwise falls back to label-free
-:meth:`kga.KGA.certify` on the full placement-benefit pool.
+New code should import :class:`kga.integrations.elara.ELARAKGAGuard`. This
+module retains the historical API used by experiment scripts. A full-target
+decision is explicitly retrospective; it is never labeled as label-free.
 """
 
 from __future__ import annotations
@@ -17,9 +16,9 @@ import numpy as np
 from scipy.stats import ks_2samp
 from sklearn.metrics import roc_auc_score
 
-from kga import KGA
+from kga.integrations.elara import ELARAKGAGuard, EvaluationMode
 from kga.policy import Decision
-from src.uais.elara_u.router import RouterPolicy, _rank_mean, _reliab_weights, reliability_features
+from src.uais.elara_u.router import RouterPolicy, reliability_features
 
 Action = Literal["adapt", "freeze", "abstain"]
 
@@ -85,6 +84,8 @@ class GuardResult:
     probe_k: int
     auroc_frozen: float
     auroc_adapt: float
+    evaluation_mode: str
+    labels_used_for_decision: int
 
 
 @dataclass
@@ -115,48 +116,40 @@ class MultimodalGuard:
         *,
         probe_k: int | None = None,
     ) -> GuardResult:
-        """Run certificate + routing for one category with labels on test (probe)."""
+        """Delegate one category to the canonical KGA-ELARA integration."""
         k_use = self.probe_k if probe_k is None else probe_k
-        frozen, _ = self._frozen_scores(s_val, y_val, s_test)
-        fused, mask = relgate_fuse(s_val, s_test, valauc, drift_threshold=self.policy.drift_threshold)
-
-        benefits = placement_benefits(y_test, frozen, fused)
-        kga = KGA(alpha=self.alpha)
-        br = float(min(2.0, max(float(np.max(benefits) - np.min(benefits)) + 0.05, 0.1))) if benefits.size >= 2 else 2.0
-        if benefits.size < 2:
-            cert = None
-            decision = Decision.ABSTAIN
-        elif k_use is not None and k_use > 0:
-            cert = kga.certify_probe(benefits, k=min(k_use, benefits.size), seed=self.probe_seed, benefit_range=br)
-            decision = kga.decide(cert)
+        if k_use is not None and k_use > 0:
+            rng = np.random.default_rng(self.probe_seed)
+            n_probe = min(int(k_use), len(y_test))
+            probe_indices = np.sort(rng.choice(len(y_test), size=n_probe, replace=False))
+            mode = EvaluationMode.TARGET_LABEL_LIGHT
         else:
-            cert = kga.certify(scores=benefits, benefit_range=br)
-            decision = kga.decide(cert)
-
-        action: Action
-        if decision == Decision.ADAPT:
-            action = "adapt"
-            scores = fused
-        elif decision == Decision.FREEZE:
-            action = "freeze"
-            scores = frozen
-        else:
-            action = "abstain"
-            scores = _rank_mean(s_test)
-
-        cert_dict = None if cert is None else {
-            "n": cert.n, "delta_hat": cert.delta_hat, "epsilon": cert.epsilon,
-            "lower": cert.lower, "upper": cert.upper, "method": cert.method,
-        }
+            probe_indices = None
+            mode = EvaluationMode.RETROSPECTIVE_AUDIT
+        canonical = ELARAKGAGuard(
+            alpha=self.alpha,
+            probe_seed=self.probe_seed,
+            policy=self.policy,
+        ).decide(
+            s_val=s_val,
+            y_val=y_val,
+            s_test=s_test,
+            y_test=y_test,
+            mode=mode,
+            probe_indices=probe_indices,
+        )
+        action = canonical.decision.value.lower()
         return GuardResult(
-            decision=decision,
+            decision=canonical.decision,
             action=action,
-            test_scores=scores,
-            certificate=cert_dict or {},
-            channel_mask=mask,
-            probe_k=0 if k_use is None else int(k_use),
-            auroc_frozen=auroc(y_test, frozen),
-            auroc_adapt=auroc(y_test, fused),
+            test_scores=canonical.deployed_scores,
+            certificate=canonical.certificate,
+            channel_mask=None,
+            probe_k=canonical.labels_used_for_decision if mode is EvaluationMode.TARGET_LABEL_LIGHT else 0,
+            auroc_frozen=auroc(y_test, canonical.frozen_scores),
+            auroc_adapt=auroc(y_test, canonical.candidate_scores),
+            evaluation_mode=mode.value,
+            labels_used_for_decision=canonical.labels_used_for_decision,
         )
 
     def guard_track(

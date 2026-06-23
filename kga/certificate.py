@@ -30,6 +30,16 @@ canonical code:
   ``kbound_pkg/kbound/eprocess.py``.
 
 All estimators are pure ``numpy``/``math``, deterministic, and torch-free.
+
+Provenance / attribution
+------------------------
+The empirical-Bernstein switching certificate (:func:`empirical_bernstein`,
+Maurer & Pontil 2009) is **shared with the companion ELARA work**: the identical
+Maurer-Pontil lower-confidence-bound underlies ELARA's Phase-2
+``switching_certificate``, which now *delegates* to this ``kga`` implementation as
+the single source of truth.  It is reproduced in the K-Bound tree so the package
+is fully self-contained, and the shared lineage is acknowledged openly rather than
+hidden.  K-Bound imports nothing from ``src/elara``.
 """
 
 from __future__ import annotations
@@ -102,6 +112,10 @@ def _as_1d(x: np.ndarray, name: str) -> np.ndarray:
 # ---------------------------------------------------------------------------
 # (1) Empirical-Bernstein  (batch Theorem 3 -- the default certificate)
 # ---------------------------------------------------------------------------
+# PROVENANCE (integrity pass 2026-06-20): the empirical-Bernstein certificate below
+# is shared with the ELARA companion work (same Maurer-Pontil 2009 LCB). ELARA's
+# certification.switching_certificate delegates to this function; it is vendored here
+# so the K-Bound package runs with zero dependency on src/elara. Honest attribution.
 def empirical_bernstein(
     paired_benefits: np.ndarray,
     *,

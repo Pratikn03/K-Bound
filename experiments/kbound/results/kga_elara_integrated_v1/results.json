@@ -1,0 +1,4608 @@
+{
+  "aggregate": {
+    "coverage": 0.10588235294117647,
+    "decisions": {
+      "ABSTAIN": 76,
+      "ADAPT": 7,
+      "FREEZE": 2
+    },
+    "false_adapt_rate_conditional": 0.0,
+    "false_adapt_rate_unconditional": 0.0,
+    "labels_used_for_decision": 6029,
+    "mean_auroc_candidate": 0.8219766099015411,
+    "mean_auroc_frozen": 0.7940717539607948,
+    "mean_auroc_kga": 0.7939305774902066,
+    "n_categories": 85,
+    "regret_always_adapt": 0.016646033283267896,
+    "regret_always_freeze": 0.04455088922401435,
+    "regret_kga": 0.04469206569460258
+  },
+  "alpha": 0.1,
+  "claim_eligibility": {
+    "claim_kind": "retrospective_only",
+    "eligible": false,
+    "reasons": [
+      "invalid_evaluation_mode",
+      "fewer_than_two_heldout_natural_datasets",
+      "configuration_not_frozen_before_scoring",
+      "fewer_than_three_independent_splits",
+      "does_not_beat_always_adapt_regret",
+      "does_not_beat_always_freeze_regret",
+      "coverage_below_20_percent",
+      "confidence_intervals_incomplete",
+      "strong_baselines_incomplete",
+      "integrity_failure"
+    ]
+  },
+  "claim_scope": "retrospective_multimodal_instantiation_not_headline",
+  "invalid_categories": [],
+  "missing_tracks": [],
+  "mode": "retrospective_audit",
+  "protocol": "research_lock/KGA_ELARA_INTEGRATION_v1.yaml",
+  "protocol_schema": "kga_elara_integration_protocol_v1",
+  "protocol_sha256": "9a5ebf4a15108d11dfa339ebe71fd6a1b2774b6d59d791908a94ad1e09414e17",
+  "protocol_status": "RETROSPECTIVE_OPENED_DATA",
+  "schema": "kga_elara_integrated_results_v1",
+  "tracks": [
+    {
+      "aggregate": {
+        "coverage": 0.0,
+        "decisions": {
+          "ABSTAIN": 23,
+          "ADAPT": 0,
+          "FREEZE": 0
+        },
+        "false_adapt_rate_conditional": 0.0,
+        "false_adapt_rate_unconditional": 0.0,
+        "labels_used_for_decision": 779,
+        "mean_auroc_candidate": 0.8660616805649283,
+        "mean_auroc_frozen": 0.7962500050210484,
+        "mean_auroc_kga": 0.7962500050210484,
+        "n_categories": 23,
+        "regret_always_adapt": 0.007262393955461292,
+        "regret_always_freeze": 0.07707406949934124,
+        "regret_kga": 0.07707406949934124
+      },
+      "cache": "experiments/fusion/3d_adam_score_cache",
+      "categories": [
+        {
+          "decision": {
+            "certificate": {
+              "alpha": 0.1,
+              "delta_hat": -0.030889411417944667,
+              "epsilon": 0.6448112104261385,
+              "lower": -0.6757006218440832,
+              "method": "ebern",
+              "n": 28,
+              "upper": 0.6139217990081939
+            },
+            "claim_eligible": false,
+            "claim_reasons": [
+              "uses_full_target_labels_for_decision",
+              "not_deployment_eligible"
+            ],
+            "claim_tier": "retrospective_only",
+            "decision": "ABSTAIN",
+            "deployed_action": "freeze",
+            "evidence": {
+              "best_val_auc": 0.86875,
+              "conf_shift": -0.030080999347703807,
+              "disagree": 0.43185550082101787,
+              "entropy_shift": -0.05216816240157529,
+              "ess_frac": 0.29160379195136904,
+              "ks_max": 0.35714285714285715,
+              "ks_mean": 0.25,
+              "n_experts": 2.0,
+              "val_disagreement": 0.23280423280423282,
+              "val_gap": 0.35
+            },
+            "frozen_expert": 1,
+            "labels_used_for_decision": 28,
+            "mode": "retrospective_audit",
+            "router_action": "stack"
+          },
+          "evaluation": {
+            "auroc_candidate": 0.525,
+            "auroc_frozen": 0.51875,
+            "auroc_kga": 0.51875,
+            "auroc_oracle": 0.525,
+            "brier_benefit": -0.030889411417944667,
+            "covered": false,
+            "false_adapt": false,
+            "harmful_candidate": true,
+            "regret_candidate": 0.0,
+            "regret_frozen": 0.006249999999999978,
+            "regret_kga": 0.006249999999999978
+          },
+          "file": "1m1.npz",
+          "input_sha256": "10a7fb9b4730bf3eeeba8cb2903dd23d09d27d88f42d7ca563fd035b7aa834ec"
+        },
+        {
+          "decision": {
+            "certificate": {
+              "alpha": 0.1,
+              "delta_hat": 0.1272377590508544,
+              "epsilon": 0.6477474154777669,
+              "lower": -0.5205096564269125,
+              "method": "ebern",
+              "n": 32,
+              "upper": 0.7749851745286214
+            },
+            "claim_eligible": false,
+            "claim_reasons": [
+              "uses_full_target_labels_for_decision",
+              "not_deployment_eligible"
+            ],
+            "claim_tier": "retrospective_only",
+            "decision": "ABSTAIN",
+            "deployed_action": "freeze",
+            "evidence": {
+              "best_val_auc": 0.96875,
+              "conf_shift": -0.007199874299612996,
+              "disagree": 0.29032258064516125,
+              "entropy_shift": -0.07047004219741493,
+              "ess_frac": 0.9724614574310038,
+              "ks_max": 0.15625,
+              "ks_mean": 0.15625,
+              "n_experts": 2.0,
+              "val_disagreement": 0.1431451612903226,
+              "val_gap": 0.046875
+            },
+            "frozen_expert": 0,
+            "labels_used_for_decision": 32,
+            "mode": "retrospective_audit",
+            "router_action": "stack"
+          },
+          "evaluation": {
+            "auroc_candidate": 1.0,
+            "auroc_frozen": 0.984375,
+            "auroc_kga": 0.984375,
+            "auroc_oracle": 1.0,
+            "brier_benefit": 0.1272377590508544,
+            "covered": false,
+            "false_adapt": false,
+            "harmful_candidate": false,
+            "regret_candidate": 0.0,
+            "regret_frozen": 0.015625,
+            "regret_kga": 0.015625
+          },
+          "file": "1m2.npz",
+          "input_sha256": "1194032d3a4c7c3e09e1d563b1ce375c8757f5df49146f87610b7644284c2608"
+        },
+        {
+          "decision": {
+            "certificate": {
+              "alpha": 0.1,
+              "delta_hat": 0.017603896212468956,
+              "epsilon": 0.4641062710825221,
+              "lower": -0.4465023748700532,
+              "method": "ebern",
+              "n": 41,
+              "upper": 0.48171016729499105
+            },
+            "claim_eligible": false,
+            "claim_reasons": [
+              "uses_full_target_labels_for_decision",
+              "not_deployment_eligible"
+            ],
+            "claim_tier": "retrospective_only",
+            "decision": "ABSTAIN",
+            "deployed_action": "freeze",
+            "evidence": {
+              "best_val_auc": 0.94140625,
+              "conf_shift": 0.033970027814872794,
+              "disagree": 1.4181184668989548,
+              "entropy_shift": -0.06050927136264095,
+              "ess_frac": 0.9895886353856514,
+              "ks_max": 0.16341463414634147,
+              "ks_mean": 0.14237804878048782,
+              "n_experts": 2.0,
+              "val_disagreement": 0.43589743589743585,
+              "val_gap": 0.9140625
+            },
+            "frozen_expert": 1,
+            "labels_used_for_decision": 41,
+            "mode": "retrospective_audit",
+            "router_action": "stack"
+          },
+          "evaluation": {
+            "auroc_candidate": 0.9507575757575758,
+            "auroc_frozen": 0.8939393939393939,
+            "auroc_kga": 0.8939393939393939,
+            "auroc_oracle": 0.9507575757575758,
+            "brier_benefit": 0.017603896212468956,
+            "covered": false,
+            "false_adapt": false,
+            "harmful_candidate": false,
+            "regret_candidate": 0.0,
+            "regret_frozen": 0.05681818181818188,
+            "regret_kga": 0.05681818181818188
+          },
+          "file": "1m3.npz",
+          "input_sha256": "6c659968441cc0da85f94304ae0da0affb78f68ee71218a685c9f4ede68d5587"
+        },
+        {
+          "decision": {
+            "certificate": {
+              "alpha": 0.1,
+              "delta_hat": 0.0706338708116976,
+              "epsilon": 0.8372492182318452,
+              "lower": -0.7666153474201476,
+              "method": "ebern",
+              "n": 24,
+              "upper": 0.9078830890435428
+            },
+            "claim_eligible": false,
+            "claim_reasons": [
+              "uses_full_target_labels_for_decision",
+              "not_deployment_eligible"
+            ],
+            "claim_tier": "retrospective_only",
+            "decision": "ABSTAIN",
+            "deployed_action": "freeze",
+            "evidence": {
+              "best_val_auc": 0.5546875,
+              "conf_shift": -0.09700121124490602,
+              "disagree": 1.2434782608695654,
+              "entropy_shift": 0.08626596475154891,
+              "ess_frac": 0.9391204085535428,
+              "ks_max": 0.25,
+              "ks_mean": 0.22916666666666669,
+              "n_experts": 2.0,
+              "val_disagreement": 0.3731884057971015,
+              "val_gap": 0.046875
+            },
+            "frozen_expert": 1,
+            "labels_used_for_decision": 24,
+            "mode": "retrospective_audit",
+            "router_action": "stack"
+          },
+          "evaluation": {
+            "auroc_candidate": 0.5859375,
+            "auroc_frozen": 0.5390625,
+            "auroc_kga": 0.5390625,
+            "auroc_oracle": 0.5859375,
+            "brier_benefit": 0.0706338708116976,
+            "covered": false,
+            "false_adapt": false,
+            "harmful_candidate": false,
+            "regret_candidate": 0.0,
+            "regret_frozen": 0.046875,
+            "regret_kga": 0.046875
+          },
+          "file": "2m1.npz",
+          "input_sha256": "8a24e937f280f1c29cfcf6bb021736d1de1ec95a754301f93a371268f4d736ad"
+        },
+        {
+          "decision": {
+            "certificate": {
+              "alpha": 0.1,
+              "delta_hat": 0.05381804198394822,
+              "epsilon": 0.7318302856434868,
+              "lower": -0.6780122436595386,
+              "method": "ebern",
+              "n": 25,
+              "upper": 0.7856483276274351
+            },
+            "claim_eligible": false,
+            "claim_reasons": [
+              "uses_full_target_labels_for_decision",
+              "not_deployment_eligible"
+            ],
+            "claim_tier": "retrospective_only",
+            "decision": "ABSTAIN",
+            "deployed_action": "freeze",
+            "evidence": {
+              "best_val_auc": 1.0,
+              "conf_shift": 0.03919574911120727,
+              "disagree": 0.75,
+              "entropy_shift": 0.019084730751428136,
+              "ess_frac": 0.09454006978370413,
+              "ks_max": 0.345,
+              "ks_mean": 0.26916666666666667,
+              "n_experts": 2.0,
+              "val_disagreement": 0.32608695652173914,
+              "val_gap": 0.5234375
+            },
+            "frozen_expert": 1,
+            "labels_used_for_decision": 25,
+            "mode": "retrospective_audit",
+            "router_action": "stack"
+          },
+          "evaluation": {
+            "auroc_candidate": 1.0,
+            "auroc_frozen": 1.0,
+            "auroc_kga": 1.0,
+            "auroc_oracle": 1.0,
+            "brier_benefit": 0.05381804198394822,
+            "covered": false,
+            "false_adapt": false,
+            "harmful_candidate": false,
+            "regret_candidate": 0.0,
+            "regret_frozen": 0.0,
+            "regret_kga": 0.0
+          },
+          "file": "2m2h.npz",
+          "input_sha256": "237423aa6835ea64274adf494f1701b472fca5b62e60d78366ffe68ddacef60e"
+        },
+        {
+          "decision": {
+            "certificate": {
+              "alpha": 0.1,
+              "delta_hat": 0.17410012582477422,
+              "epsilon": 0.8177268927685158,
+              "lower": -0.6436267669437417,
+              "method": "ebern",
+              "n": 24,
+              "upper": 0.99182701859329
+            },
+            "claim_eligible": false,
+            "claim_reasons": [
+              "uses_full_target_labels_for_decision",
+              "not_deployment_eligible"
+            ],
+            "claim_tier": "retrospective_only",
+            "decision": "ABSTAIN",
+            "deployed_action": "freeze",
+            "evidence": {
+              "best_val_auc": 1.0,
+              "conf_shift": -0.0629369715430963,
+              "disagree": 0.39826086956521745,
+              "entropy_shift": 0.10776107360464948,
+              "ess_frac": 0.9248959823213436,
+              "ks_max": 0.20833333333333334,
+              "ks_mean": 0.1875,
+              "n_experts": 2.0,
+              "val_disagreement": 0.18115942028985507,
+              "val_gap": 0.0
+            },
+            "frozen_expert": 0,
+            "labels_used_for_decision": 24,
+            "mode": "retrospective_audit",
+            "router_action": "stack"
+          },
+          "evaluation": {
+            "auroc_candidate": 0.9765625,
+            "auroc_frozen": 1.0,
+            "auroc_kga": 1.0,
+            "auroc_oracle": 1.0,
+            "brier_benefit": 0.17410012582477422,
+            "covered": false,
+            "false_adapt": false,
+            "harmful_candidate": false,
+            "regret_candidate": 0.0234375,
+            "regret_frozen": 0.0,
+            "regret_kga": 0.0
+          },
+          "file": "2m2m.npz",
+          "input_sha256": "759a833c36d1098362c9087de3f1d5d77dc8875a49f71b7e895ddce26c75f460"
+        },
+        {
+          "decision": {
+            "certificate": {
+              "alpha": 0.1,
+              "delta_hat": 0.08339525024769748,
+              "epsilon": 0.796185944676287,
+              "lower": -0.7127906944285896,
+              "method": "ebern",
+              "n": 20,
+              "upper": 0.8795811949239845
+            },
+            "claim_eligible": false,
+            "claim_reasons": [
+              "uses_full_target_labels_for_decision",
+              "not_deployment_eligible"
+            ],
+            "claim_tier": "retrospective_only",
+            "decision": "ABSTAIN",
+            "deployed_action": "freeze",
+            "evidence": {
+              "best_val_auc": 0.9479166666666667,
+              "conf_shift": -0.10032958175080597,
+              "disagree": 0.6180451127819548,
+              "entropy_shift": -0.23370648397239302,
+              "ess_frac": 0.987722422884123,
+              "ks_max": 0.3,
+              "ks_mean": 0.25,
+              "n_experts": 2.0,
+              "val_disagreement": 0.21052631578947367,
+              "val_gap": 0.02083333333333348
+            },
+            "frozen_expert": 0,
+            "labels_used_for_decision": 20,
+            "mode": "retrospective_audit",
+            "router_action": "stack"
+          },
+          "evaluation": {
+            "auroc_candidate": 1.0,
+            "auroc_frozen": 1.0,
+            "auroc_kga": 1.0,
+            "auroc_oracle": 1.0,
+            "brier_benefit": 0.08339525024769748,
+            "covered": false,
+            "false_adapt": false,
+            "harmful_candidate": false,
+            "regret_candidate": 0.0,
+            "regret_frozen": 0.0,
+            "regret_kga": 0.0
+          },
+          "file": "3m1.npz",
+          "input_sha256": "c1e2e5f7b3b29ffb7a3e556f2c36b16a04eff74d434dd7955efb2a82f6a01032"
+        },
+        {
+          "decision": {
+            "certificate": {
+              "alpha": 0.1,
+              "delta_hat": 0.09103424301251505,
+              "epsilon": 0.8094674433012792,
+              "lower": -0.7184332002887641,
+              "method": "ebern",
+              "n": 24,
+              "upper": 0.9005016863137942
+            },
+            "claim_eligible": false,
+            "claim_reasons": [
+              "uses_full_target_labels_for_decision",
+              "not_deployment_eligible"
+            ],
+            "claim_tier": "retrospective_only",
+            "decision": "ABSTAIN",
+            "deployed_action": "freeze",
+            "evidence": {
+              "best_val_auc": 0.9140625,
+              "conf_shift": 0.008332431884952363,
+              "disagree": 0.6408695652173915,
+              "entropy_shift": -0.11109601902927002,
+              "ess_frac": 0.9880371702005307,
+              "ks_max": 0.125,
+              "ks_mean": 0.125,
+              "n_experts": 2.0,
+              "val_disagreement": 0.21014492753623193,
+              "val_gap": 0.21875
+            },
+            "frozen_expert": 0,
+            "labels_used_for_decision": 24,
+            "mode": "retrospective_audit",
+            "router_action": "stack"
+          },
+          "evaluation": {
+            "auroc_candidate": 0.8671875,
+            "auroc_frozen": 0.8203125,
+            "auroc_kga": 0.8203125,
+            "auroc_oracle": 0.8671875,
+            "brier_benefit": 0.09103424301251505,
+            "covered": false,
+            "false_adapt": false,
+            "harmful_candidate": false,
+            "regret_candidate": 0.0,
+            "regret_frozen": 0.046875,
+            "regret_kga": 0.046875
+          },
+          "file": "3m2.npz",
+          "input_sha256": "366a7c1ee94a199b0048eb3ad6c7fabcec33cc7c9b0985344c1d3aa881d90902"
+        },
+        {
+          "decision": {
+            "certificate": {
+              "alpha": 0.1,
+              "delta_hat": -0.07286158496740203,
+              "epsilon": 0.41291605296274725,
+              "lower": -0.4857776379301493,
+              "method": "ebern",
+              "n": 49,
+              "upper": 0.3400544679953452
+            },
+            "claim_eligible": false,
+            "claim_reasons": [
+              "uses_full_target_labels_for_decision",
+              "not_deployment_eligible"
+            ],
+            "claim_tier": "retrospective_only",
+            "decision": "ABSTAIN",
+            "deployed_action": "freeze",
+            "evidence": {
+              "best_val_auc": 0.765625,
+              "conf_shift": 0.07333068499744422,
+              "disagree": 0.7714052442428628,
+              "entropy_shift": -0.46783953046602367,
+              "ess_frac": 0.9523576514908476,
+              "ks_max": 0.2937925170068027,
+              "ks_mean": 0.2423469387755102,
+              "n_experts": 2.0,
+              "val_disagreement": 0.23138297872340427,
+              "val_gap": 0.23750000000000004
+            },
+            "frozen_expert": 1,
+            "labels_used_for_decision": 49,
+            "mode": "retrospective_audit",
+            "router_action": "stack"
+          },
+          "evaluation": {
+            "auroc_candidate": 0.649390243902439,
+            "auroc_frozen": 0.6554878048780488,
+            "auroc_kga": 0.6554878048780488,
+            "auroc_oracle": 0.6554878048780488,
+            "brier_benefit": -0.07286158496740203,
+            "covered": false,
+            "false_adapt": false,
+            "harmful_candidate": true,
+            "regret_candidate": 0.0060975609756097615,
+            "regret_frozen": 0.0,
+            "regret_kga": 0.0
+          },
+          "file": "3m2c.npz",
+          "input_sha256": "33c477b17aff156b358fc315f346bd2a2b8c9317b8c6534bf6ab94729d3c2d52"
+        },
+        {
+          "decision": {
+            "certificate": {
+              "alpha": 0.1,
+              "delta_hat": 0.08088806069363326,
+              "epsilon": 0.43887450469172495,
+              "lower": -0.3579864439980917,
+              "method": "ebern",
+              "n": 44,
+              "upper": 0.5197625653853583
+            },
+            "claim_eligible": false,
+            "claim_reasons": [
+              "uses_full_target_labels_for_decision",
+              "not_deployment_eligible"
+            ],
+            "claim_tier": "retrospective_only",
+            "decision": "ABSTAIN",
+            "deployed_action": "freeze",
+            "evidence": {
+              "best_val_auc": 0.0035714285714285713,
+              "conf_shift": -0.03469286098139185,
+              "disagree": 0.32107117688513054,
+              "entropy_shift": -0.12579367568308308,
+              "ess_frac": 0.9829411169121975,
+              "ks_max": 0.23678646934460887,
+              "ks_mean": 0.19133192389006343,
+              "n_experts": 2.0,
+              "val_disagreement": 0.22148394241417496,
+              "val_gap": 0.0035714285714285713
+            },
+            "frozen_expert": 0,
+            "labels_used_for_decision": 44,
+            "mode": "retrospective_audit",
+            "router_action": "stack"
+          },
+          "evaluation": {
+            "auroc_candidate": 0.9895833333333334,
+            "auroc_frozen": 0.0,
+            "auroc_kga": 0.0,
+            "auroc_oracle": 0.9895833333333334,
+            "brier_benefit": 0.08088806069363326,
+            "covered": false,
+            "false_adapt": false,
+            "harmful_candidate": false,
+            "regret_candidate": 0.0,
+            "regret_frozen": 0.9895833333333334,
+            "regret_kga": 0.9895833333333334
+          },
+          "file": "4m1.npz",
+          "input_sha256": "4a3175ec245280d60d41d09018b704d968b0dbc13da882a8787dc6ffe1ba8fe9"
+        },
+        {
+          "decision": {
+            "certificate": {
+              "alpha": 0.1,
+              "delta_hat": -0.08498558506760114,
+              "epsilon": 0.4122155205303485,
+              "lower": -0.4972011055979496,
+              "method": "ebern",
+              "n": 48,
+              "upper": 0.32722993546274737
+            },
+            "claim_eligible": false,
+            "claim_reasons": [
+              "uses_full_target_labels_for_decision",
+              "not_deployment_eligible"
+            ],
+            "claim_tier": "retrospective_only",
+            "decision": "ABSTAIN",
+            "deployed_action": "freeze",
+            "evidence": {
+              "best_val_auc": 0.73125,
+              "conf_shift": -0.03725576172124956,
+              "disagree": 0.7503256621797655,
+              "entropy_shift": 0.06483435699439344,
+              "ess_frac": 0.9995996683232788,
+              "ks_max": 0.16666666666666666,
+              "ks_mean": 0.14583333333333331,
+              "n_experts": 2.0,
+              "val_disagreement": 0.2907801418439716,
+              "val_gap": 0.05624999999999991
+            },
+            "frozen_expert": 1,
+            "labels_used_for_decision": 48,
+            "mode": "retrospective_audit",
+            "router_action": "stack"
+          },
+          "evaluation": {
+            "auroc_candidate": 0.625,
+            "auroc_frozen": 0.715625,
+            "auroc_kga": 0.715625,
+            "auroc_oracle": 0.715625,
+            "brier_benefit": -0.08498558506760114,
+            "covered": false,
+            "false_adapt": false,
+            "harmful_candidate": true,
+            "regret_candidate": 0.09062499999999996,
+            "regret_frozen": 0.0,
+            "regret_kga": 0.0
+          },
+          "file": "4m2.npz",
+          "input_sha256": "567f56c2ae8b81dd43a2152d04e5b43f08732690b2affb2971fb424cee964dfb"
+        },
+        {
+          "decision": {
+            "certificate": {
+              "alpha": 0.1,
+              "delta_hat": 0.04655449305273278,
+              "epsilon": 0.5143254352862872,
+              "lower": -0.46777094223355437,
+              "method": "ebern",
+              "n": 40,
+              "upper": 0.5608799283390199
+            },
+            "claim_eligible": false,
+            "claim_reasons": [
+              "uses_full_target_labels_for_decision",
+              "not_deployment_eligible"
+            ],
+            "claim_tier": "retrospective_only",
+            "decision": "ABSTAIN",
+            "deployed_action": "freeze",
+            "evidence": {
+              "best_val_auc": 0.91015625,
+              "conf_shift": -0.044656635280304724,
+              "disagree": 0.43846153846153846,
+              "entropy_shift": 0.05304666658834423,
+              "ess_frac": 0.9876727719387685,
+              "ks_max": 0.25,
+              "ks_mean": 0.2,
+              "n_experts": 2.0,
+              "val_disagreement": 0.2935897435897436,
+              "val_gap": 0.08984375
+            },
+            "frozen_expert": 0,
+            "labels_used_for_decision": 40,
+            "mode": "retrospective_audit",
+            "router_action": "stack"
+          },
+          "evaluation": {
+            "auroc_candidate": 0.96875,
+            "auroc_frozen": 0.90234375,
+            "auroc_kga": 0.90234375,
+            "auroc_oracle": 0.96875,
+            "brier_benefit": 0.04655449305273278,
+            "covered": false,
+            "false_adapt": false,
+            "harmful_candidate": false,
+            "regret_candidate": 0.0,
+            "regret_frozen": 0.06640625,
+            "regret_kga": 0.06640625
+          },
+          "file": "4m2c.npz",
+          "input_sha256": "f3724ac0e51dc499b3fbed56581f3c609ea190c7cd4fbfff928298ce04da1c58"
+        },
+        {
+          "decision": {
+            "certificate": {
+              "alpha": 0.1,
+              "delta_hat": 0.07046725306165733,
+              "epsilon": 1.0156018503593591,
+              "lower": -0.9451345972977018,
+              "method": "ebern",
+              "n": 16,
+              "upper": 1.0860691034210164
+            },
+            "claim_eligible": false,
+            "claim_reasons": [
+              "uses_full_target_labels_for_decision",
+              "not_deployment_eligible"
+            ],
+            "claim_tier": "retrospective_only",
+            "decision": "ABSTAIN",
+            "deployed_action": "freeze",
+            "evidence": {
+              "best_val_auc": 1.0,
+              "conf_shift": -0.09284312114281867,
+              "disagree": 0.19705882352941184,
+              "entropy_shift": -0.2514746738178282,
+              "ess_frac": 0.9734011413244656,
+              "ks_max": 0.25,
+              "ks_mean": 0.21875,
+              "n_experts": 2.0,
+              "val_disagreement": 0.16666666666666669,
+              "val_gap": 0.015625
+            },
+            "frozen_expert": 0,
+            "labels_used_for_decision": 16,
+            "mode": "retrospective_audit",
+            "router_action": "stack"
+          },
+          "evaluation": {
+            "auroc_candidate": 1.0,
+            "auroc_frozen": 1.0,
+            "auroc_kga": 1.0,
+            "auroc_oracle": 1.0,
+            "brier_benefit": 0.07046725306165733,
+            "covered": false,
+            "false_adapt": false,
+            "harmful_candidate": false,
+            "regret_candidate": 0.0,
+            "regret_frozen": 0.0,
+            "regret_kga": 0.0
+          },
+          "file": "gripper_closed.npz",
+          "input_sha256": "382690b37197e4da167c249a804c7d7a7a5069eec30ad9f3e0aa82a7e9bd2d6d"
+        },
+        {
+          "decision": {
+            "certificate": {
+              "alpha": 0.1,
+              "delta_hat": 0.13412547598340893,
+              "epsilon": 0.651455051538185,
+              "lower": -0.517329575554776,
+              "method": "ebern",
+              "n": 28,
+              "upper": 0.7855805275215939
+            },
+            "claim_eligible": false,
+            "claim_reasons": [
+              "uses_full_target_labels_for_decision",
+              "not_deployment_eligible"
+            ],
+            "claim_tier": "retrospective_only",
+            "decision": "ABSTAIN",
+            "deployed_action": "freeze",
+            "evidence": {
+              "best_val_auc": 0.828125,
+              "conf_shift": -0.04036128944769657,
+              "disagree": 0.9485495347564313,
+              "entropy_shift": -0.058854229750076925,
+              "ess_frac": 0.9980802831710038,
+              "ks_max": 0.21428571428571427,
+              "ks_mean": 0.21428571428571427,
+              "n_experts": 2.0,
+              "val_disagreement": 0.3597883597883597,
+              "val_gap": 0.01041666666666663
+            },
+            "frozen_expert": 0,
+            "labels_used_for_decision": 28,
+            "mode": "retrospective_audit",
+            "router_action": "stack"
+          },
+          "evaluation": {
+            "auroc_candidate": 0.9895833333333334,
+            "auroc_frozen": 0.7708333333333334,
+            "auroc_kga": 0.7708333333333334,
+            "auroc_oracle": 0.9895833333333334,
+            "brier_benefit": 0.13412547598340893,
+            "covered": false,
+            "false_adapt": false,
+            "harmful_candidate": false,
+            "regret_candidate": 0.0,
+            "regret_frozen": 0.21875,
+            "regret_kga": 0.21875
+          },
+          "file": "gripper_open.npz",
+          "input_sha256": "78e758de492dd8301e771c8e8f757da41eaeca16277abac129d0e6aaf05b8e94"
+        },
+        {
+          "decision": {
+            "certificate": {
+              "alpha": 0.1,
+              "delta_hat": 0.10281913470787273,
+              "epsilon": 0.8455410169648118,
+              "lower": -0.742721882256939,
+              "method": "ebern",
+              "n": 24,
+              "upper": 0.9483601516726845
+            },
+            "claim_eligible": false,
+            "claim_reasons": [
+              "uses_full_target_labels_for_decision",
+              "not_deployment_eligible"
+            ],
+            "claim_tier": "retrospective_only",
+            "decision": "ABSTAIN",
+            "deployed_action": "freeze",
+            "evidence": {
+              "best_val_auc": 0.3984375,
+              "conf_shift": -0.0032438765581652707,
+              "disagree": 0.6486956521739131,
+              "entropy_shift": -0.0984820491502938,
+              "ess_frac": 0.9970088084652907,
+              "ks_max": 0.375,
+              "ks_mean": 0.2708333333333333,
+              "n_experts": 2.0,
+              "val_disagreement": 0.35144927536231885,
+              "val_gap": 0.296875
+            },
+            "frozen_expert": 0,
+            "labels_used_for_decision": 24,
+            "mode": "retrospective_audit",
+            "router_action": "stack"
+          },
+          "evaluation": {
+            "auroc_candidate": 0.671875,
+            "auroc_frozen": 0.640625,
+            "auroc_kga": 0.640625,
+            "auroc_oracle": 0.671875,
+            "brier_benefit": 0.10281913470787273,
+            "covered": false,
+            "false_adapt": false,
+            "harmful_candidate": false,
+            "regret_candidate": 0.0,
+            "regret_frozen": 0.03125,
+            "regret_kga": 0.03125
+          },
+          "file": "helicalgear1.npz",
+          "input_sha256": "12fd81e0d6326e64856c8aee7e0c7ba02cfb3e07cc53b27af04dbde4791c43d9"
+        },
+        {
+          "decision": {
+            "certificate": {
+              "alpha": 0.1,
+              "delta_hat": 0.004267116387442674,
+              "epsilon": 0.4786824950111942,
+              "lower": -0.47441537862375155,
+              "method": "ebern",
+              "n": 40,
+              "upper": 0.48294961139863685
+            },
+            "claim_eligible": false,
+            "claim_reasons": [
+              "uses_full_target_labels_for_decision",
+              "not_deployment_eligible"
+            ],
+            "claim_tier": "retrospective_only",
+            "decision": "ABSTAIN",
+            "deployed_action": "freeze",
+            "evidence": {
+              "best_val_auc": 0.8828125,
+              "conf_shift": 0.01762364259535454,
+              "disagree": 0.33208255159474687,
+              "entropy_shift": -0.15022117402808255,
+              "ess_frac": 0.691674248175546,
+              "ks_max": 0.1,
+              "ks_mean": 0.1,
+              "n_experts": 2.0,
+              "val_disagreement": 0.18076923076923074,
+              "val_gap": 0.015625
+            },
+            "frozen_expert": 1,
+            "labels_used_for_decision": 40,
+            "mode": "retrospective_audit",
+            "router_action": "stack"
+          },
+          "evaluation": {
+            "auroc_candidate": 0.94921875,
+            "auroc_frozen": 0.8828125,
+            "auroc_kga": 0.8828125,
+            "auroc_oracle": 0.94921875,
+            "brier_benefit": 0.004267116387442674,
+            "covered": false,
+            "false_adapt": false,
+            "harmful_candidate": false,
+            "regret_candidate": 0.0,
+            "regret_frozen": 0.06640625,
+            "regret_kga": 0.06640625
+          },
+          "file": "helicalgear2.npz",
+          "input_sha256": "1d99c9087b9c3e4654f59570c248d7729b4e48f1f9e2665b8383f72edeec382c"
+        },
+        {
+          "decision": {
+            "certificate": {
+              "alpha": 0.1,
+              "delta_hat": 0.009275400075669097,
+              "epsilon": 0.4880988418354201,
+              "lower": -0.47882344175975106,
+              "method": "ebern",
+              "n": 40,
+              "upper": 0.4973742419110892
+            },
+            "claim_eligible": false,
+            "claim_reasons": [
+              "uses_full_target_labels_for_decision",
+              "not_deployment_eligible"
+            ],
+            "claim_tier": "retrospective_only",
+            "decision": "ABSTAIN",
+            "deployed_action": "freeze",
+            "evidence": {
+              "best_val_auc": 0.9609375,
+              "conf_shift": -0.020001734860372156,
+              "disagree": 0.9054409005628519,
+              "entropy_shift": 0.023125185744703014,
+              "ess_frac": 0.9966949036793427,
+              "ks_max": 0.15,
+              "ks_mean": 0.1375,
+              "n_experts": 2.0,
+              "val_disagreement": 0.3064102564102564,
+              "val_gap": 0.31640625
+            },
+            "frozen_expert": 0,
+            "labels_used_for_decision": 40,
+            "mode": "retrospective_audit",
+            "router_action": "stack"
+          },
+          "evaluation": {
+            "auroc_candidate": 0.97265625,
+            "auroc_frozen": 0.984375,
+            "auroc_kga": 0.984375,
+            "auroc_oracle": 0.984375,
+            "brier_benefit": 0.009275400075669097,
+            "covered": false,
+            "false_adapt": false,
+            "harmful_candidate": false,
+            "regret_candidate": 0.01171875,
+            "regret_frozen": 0.0,
+            "regret_kga": 0.0
+          },
+          "file": "rackgear.npz",
+          "input_sha256": "15113c9356937d24942f385d14274c916c705021434296f7eaf76324efe9d18a"
+        },
+        {
+          "decision": {
+            "certificate": {
+              "alpha": 0.1,
+              "delta_hat": -0.07884643651426312,
+              "epsilon": 0.46830343795913865,
+              "lower": -0.5471498744734018,
+              "method": "ebern",
+              "n": 40,
+              "upper": 0.3894570014448755
+            },
+            "claim_eligible": false,
+            "claim_reasons": [
+              "uses_full_target_labels_for_decision",
+              "not_deployment_eligible"
+            ],
+            "claim_tier": "retrospective_only",
+            "decision": "ABSTAIN",
+            "deployed_action": "freeze",
+            "evidence": {
+              "best_val_auc": 0.6814516129032259,
+              "conf_shift": -0.005220666924398598,
+              "disagree": 0.8594746716697937,
+              "entropy_shift": -0.03218521578664557,
+              "ess_frac": 0.9949511746056119,
+              "ks_max": 0.19038461538461537,
+              "ks_mean": 0.1657051282051282,
+              "n_experts": 2.0,
+              "val_disagreement": 0.358974358974359,
+              "val_gap": 0.16532258064516137
+            },
+            "frozen_expert": 1,
+            "labels_used_for_decision": 40,
+            "mode": "retrospective_audit",
+            "router_action": "stack"
+          },
+          "evaluation": {
+            "auroc_candidate": 0.76171875,
+            "auroc_frozen": 0.76171875,
+            "auroc_kga": 0.76171875,
+            "auroc_oracle": 0.76171875,
+            "brier_benefit": -0.07884643651426312,
+            "covered": false,
+            "false_adapt": false,
+            "harmful_candidate": true,
+            "regret_candidate": 0.0,
+            "regret_frozen": 0.0,
+            "regret_kga": 0.0
+          },
+          "file": "spiralgear.npz",
+          "input_sha256": "9d3639ba580230d838cac8b5830c6d108f060e467805a53f515e3f56cffd536c"
+        },
+        {
+          "decision": {
+            "certificate": {
+              "alpha": 0.1,
+              "delta_hat": 0.04356060241481251,
+              "epsilon": 0.42657191715878545,
+              "lower": -0.38301131474397293,
+              "method": "ebern",
+              "n": 40,
+              "upper": 0.470132519573598
+            },
+            "claim_eligible": false,
+            "claim_reasons": [
+              "uses_full_target_labels_for_decision",
+              "not_deployment_eligible"
+            ],
+            "claim_tier": "retrospective_only",
+            "decision": "ABSTAIN",
+            "deployed_action": "freeze",
+            "evidence": {
+              "best_val_auc": 0.77734375,
+              "conf_shift": -0.048510023197003926,
+              "disagree": 0.8566604127579738,
+              "entropy_shift": -0.09089087348987768,
+              "ess_frac": 0.9987674172719878,
+              "ks_max": 0.125,
+              "ks_mean": 0.125,
+              "n_experts": 2.0,
+              "val_disagreement": 0.3551282051282051,
+              "val_gap": 0.7578125
+            },
+            "frozen_expert": 1,
+            "labels_used_for_decision": 40,
+            "mode": "retrospective_audit",
+            "router_action": "stack"
+          },
+          "evaluation": {
+            "auroc_candidate": 1.0,
+            "auroc_frozen": 0.80078125,
+            "auroc_kga": 0.80078125,
+            "auroc_oracle": 1.0,
+            "brier_benefit": 0.04356060241481251,
+            "covered": false,
+            "false_adapt": false,
+            "harmful_candidate": false,
+            "regret_candidate": 0.0,
+            "regret_frozen": 0.19921875,
+            "regret_kga": 0.19921875
+          },
+          "file": "spurgear.npz",
+          "input_sha256": "c786c1e2d9a639ff896e6babc6cf09992b1482da926ccc58e3a25384377641f3"
+        },
+        {
+          "decision": {
+            "certificate": {
+              "alpha": 0.1,
+              "delta_hat": -0.14166666666666666,
+              "epsilon": 0.5458578236615723,
+              "lower": -0.6875244903282389,
+              "method": "ebern",
+              "n": 40,
+              "upper": 0.40419115699490565
+            },
+            "claim_eligible": false,
+            "claim_reasons": [
+              "uses_full_target_labels_for_decision",
+              "not_deployment_eligible"
+            ],
+            "claim_tier": "retrospective_only",
+            "decision": "ABSTAIN",
+            "deployed_action": "freeze",
+            "evidence": {
+              "best_val_auc": 0.5,
+              "conf_shift": 0.03166666666666684,
+              "disagree": 1.0,
+              "entropy_shift": -0.34680556036590615,
+              "ess_frac": 0.9750004068615598,
+              "ks_max": 0.15,
+              "ks_mean": 0.075,
+              "n_experts": 2.0,
+              "val_disagreement": 0.24615384615384617,
+              "val_gap": 0.05859375
+            },
+            "frozen_expert": 0,
+            "labels_used_for_decision": 40,
+            "mode": "retrospective_audit",
+            "router_action": "fallback"
+          },
+          "evaluation": {
+            "auroc_candidate": 0.46484375,
+            "auroc_frozen": 0.5,
+            "auroc_kga": 0.5,
+            "auroc_oracle": 0.5,
+            "brier_benefit": -0.14166666666666666,
+            "covered": false,
+            "false_adapt": false,
+            "harmful_candidate": true,
+            "regret_candidate": 0.03515625,
+            "regret_frozen": 0.0,
+            "regret_kga": 0.0
+          },
+          "file": "tapa2m1.npz",
+          "input_sha256": "105ecfae8e2e4cc523a481d3be589bf66ad2d5e488b70e9b3d1f21a3588bb31a"
+        },
+        {
+          "decision": {
+            "certificate": {
+              "alpha": 0.1,
+              "delta_hat": 0.0026972323127788084,
+              "epsilon": 0.35294613813178943,
+              "lower": -0.35024890581901064,
+              "method": "ebern",
+              "n": 56,
+              "upper": 0.35564337044456823
+            },
+            "claim_eligible": false,
+            "claim_reasons": [
+              "uses_full_target_labels_for_decision",
+              "not_deployment_eligible"
+            ],
+            "claim_tier": "retrospective_only",
+            "decision": "ABSTAIN",
+            "deployed_action": "freeze",
+            "evidence": {
+              "best_val_auc": 0.9947916666666666,
+              "conf_shift": 0.061090309405079646,
+              "disagree": 0.5393028024606971,
+              "entropy_shift": -0.14574572325552415,
+              "ess_frac": 0.9433277313354903,
+              "ks_max": 0.21428571428571427,
+              "ks_mean": 0.19642857142857142,
+              "n_experts": 2.0,
+              "val_disagreement": 0.2409090909090909,
+              "val_gap": 0.17447916666666663
+            },
+            "frozen_expert": 0,
+            "labels_used_for_decision": 56,
+            "mode": "retrospective_audit",
+            "router_action": "stack"
+          },
+          "evaluation": {
+            "auroc_candidate": 0.9713541666666666,
+            "auroc_frozen": 0.9635416666666666,
+            "auroc_kga": 0.9635416666666666,
+            "auroc_oracle": 0.9713541666666666,
+            "brier_benefit": 0.0026972323127788084,
+            "covered": false,
+            "false_adapt": false,
+            "harmful_candidate": false,
+            "regret_candidate": 0.0,
+            "regret_frozen": 0.0078125,
+            "regret_kga": 0.0078125
+          },
+          "file": "tapa3m1.npz",
+          "input_sha256": "0ba631e6a56c49cd5d50ad44b1c36c182eaf344245679ae2cfb4f4bc8c93042b"
+        },
+        {
+          "decision": {
+            "certificate": {
+              "alpha": 0.1,
+              "delta_hat": 0.13961057322809026,
+              "epsilon": 0.6294569056072659,
+              "lower": -0.48984633237917563,
+              "method": "ebern",
+              "n": 32,
+              "upper": 0.7690674788353561
+            },
+            "claim_eligible": false,
+            "claim_reasons": [
+              "uses_full_target_labels_for_decision",
+              "not_deployment_eligible"
+            ],
+            "claim_tier": "retrospective_only",
+            "decision": "ABSTAIN",
+            "deployed_action": "freeze",
+            "evidence": {
+              "best_val_auc": 1.0,
+              "conf_shift": -0.0064921504311658,
+              "disagree": 0.5359237536656891,
+              "entropy_shift": 0.007192749161586853,
+              "ess_frac": 0.038145184589400326,
+              "ks_max": 0.15625,
+              "ks_mean": 0.125,
+              "n_experts": 2.0,
+              "val_disagreement": 0.25806451612903225,
+              "val_gap": 0.02083333333333337
+            },
+            "frozen_expert": 1,
+            "labels_used_for_decision": 32,
+            "mode": "retrospective_audit",
+            "router_action": "stack"
+          },
+          "evaluation": {
+            "auroc_candidate": 1.0,
+            "auroc_frozen": 0.9791666666666666,
+            "auroc_kga": 0.9791666666666666,
+            "auroc_oracle": 1.0,
+            "brier_benefit": 0.13961057322809026,
+            "covered": false,
+            "false_adapt": false,
+            "harmful_candidate": false,
+            "regret_candidate": 0.0,
+            "regret_frozen": 0.02083333333333337,
+            "regret_kga": 0.02083333333333337
+          },
+          "file": "tapa4m1.npz",
+          "input_sha256": "233417bc69061950529d454f95b6d99f045d3fbfc63d2ea415f214038fc55071"
+        },
+        {
+          "decision": {
+            "certificate": {
+              "alpha": 0.1,
+              "delta_hat": 0.11886518073295564,
+              "epsilon": 0.8027118967271234,
+              "lower": -0.6838467159941678,
+              "method": "ebern",
+              "n": 24,
+              "upper": 0.921577077460079
+            },
+            "claim_eligible": false,
+            "claim_reasons": [
+              "uses_full_target_labels_for_decision",
+              "not_deployment_eligible"
+            ],
+            "claim_tier": "retrospective_only",
+            "decision": "ABSTAIN",
+            "deployed_action": "freeze",
+            "evidence": {
+              "best_val_auc": 1.0,
+              "conf_shift": 0.01123733856003517,
+              "disagree": 0.213913043478261,
+              "entropy_shift": 0.07587383773362655,
+              "ess_frac": 0.9201249241875583,
+              "ks_max": 0.3333333333333333,
+              "ks_mean": 0.29166666666666663,
+              "n_experts": 2.0,
+              "val_disagreement": 0.2898550724637681,
+              "val_gap": 0.578125
+            },
+            "frozen_expert": 0,
+            "labels_used_for_decision": 24,
+            "mode": "retrospective_audit",
+            "router_action": "stack"
+          },
+          "evaluation": {
+            "auroc_candidate": 1.0,
+            "auroc_frozen": 1.0,
+            "auroc_kga": 1.0,
+            "auroc_oracle": 1.0,
+            "brier_benefit": 0.11886518073295564,
+            "covered": false,
+            "false_adapt": false,
+            "harmful_candidate": false,
+            "regret_candidate": 0.0,
+            "regret_frozen": 0.0,
+            "regret_kga": 0.0
+          },
+          "file": "tapatbb.npz",
+          "input_sha256": "73b244e3f8f0d978d8df9c2f60274e7f279f4b17e2afd6e06a2e0bdc33f23463"
+        }
+      ],
+      "invalid_categories": [],
+      "n_matched_files": 23,
+      "n_valid_categories": 23,
+      "name": "3D-ADAM",
+      "pattern": "*.npz"
+    },
+    {
+      "aggregate": {
+        "coverage": 0.35,
+        "decisions": {
+          "ABSTAIN": 13,
+          "ADAPT": 7,
+          "FREEZE": 0
+        },
+        "false_adapt_rate_conditional": 0.0,
+        "false_adapt_rate_unconditional": 0.0,
+        "labels_used_for_decision": 2300,
+        "mean_auroc_candidate": 0.8880000000000001,
+        "mean_auroc_frozen": 0.873423076923077,
+        "mean_auroc_kga": 0.8728230769230768,
+        "n_categories": 20,
+        "regret_always_adapt": 0.014861538461538464,
+        "regret_always_freeze": 0.029438461538461542,
+        "regret_kga": 0.03003846153846155
+      },
+      "cache": "experiments/fusion/realiad_d3_score_cache",
+      "categories": [
+        {
+          "decision": {
+            "certificate": {
+              "alpha": 0.1,
+              "delta_hat": 0.16181407264786926,
+              "epsilon": 0.1864513172391281,
+              "lower": -0.02463724459125885,
+              "method": "ebern",
+              "n": 115,
+              "upper": 0.3482653898869974
+            },
+            "claim_eligible": false,
+            "claim_reasons": [
+              "uses_full_target_labels_for_decision",
+              "not_deployment_eligible"
+            ],
+            "claim_tier": "retrospective_only",
+            "decision": "ABSTAIN",
+            "deployed_action": "freeze",
+            "evidence": {
+              "best_val_auc": 1.0,
+              "conf_shift": -0.10262459802514756,
+              "disagree": 0.17171745068564703,
+              "entropy_shift": 0.2999606059726019,
+              "ess_frac": 0.9188761433666672,
+              "ks_max": 0.29130434782608694,
+              "ks_mean": 0.26356107660455486,
+              "n_experts": 3.0,
+              "val_disagreement": 0.17198067632850242,
+              "val_gap": 0.0
+            },
+            "frozen_expert": 0,
+            "labels_used_for_decision": 115,
+            "mode": "retrospective_audit",
+            "router_action": "stack"
+          },
+          "evaluation": {
+            "auroc_candidate": 0.9790769230769231,
+            "auroc_frozen": 0.9910769230769231,
+            "auroc_kga": 0.9910769230769231,
+            "auroc_oracle": 0.9910769230769231,
+            "brier_benefit": 0.16181407264786926,
+            "covered": false,
+            "false_adapt": false,
+            "harmful_candidate": false,
+            "regret_candidate": 0.01200000000000001,
+            "regret_frozen": 0.0,
+            "regret_kga": 0.0
+          },
+          "file": "audio_jack_socket_70_90_130_4096_v2_binpcd.npz",
+          "input_sha256": "b02b105b41f4d3a45e07183f93c69ebd9bd5cabd9f1e3f21ba62636d5673c0f2"
+        },
+        {
+          "decision": {
+            "certificate": {
+              "alpha": 0.1,
+              "delta_hat": 0.2280857251737825,
+              "epsilon": 0.23344526351047862,
+              "lower": -0.0053595383366961125,
+              "method": "ebern",
+              "n": 115,
+              "upper": 0.4615309886842611
+            },
+            "claim_eligible": false,
+            "claim_reasons": [
+              "uses_full_target_labels_for_decision",
+              "not_deployment_eligible"
+            ],
+            "claim_tier": "retrospective_only",
+            "decision": "ABSTAIN",
+            "deployed_action": "freeze",
+            "evidence": {
+              "best_val_auc": 0.7200000000000001,
+              "conf_shift": -1.2862434720095628e-05,
+              "disagree": 0.624774289595819,
+              "entropy_shift": -0.11820023477836017,
+              "ess_frac": 0.9788248467421955,
+              "ks_max": 0.07639751552795031,
+              "ks_mean": 0.06832298136645963,
+              "n_experts": 3.0,
+              "val_disagreement": 0.2369910282953761,
+              "val_gap": 0.19644444444444453
+            },
+            "frozen_expert": 1,
+            "labels_used_for_decision": 115,
+            "mode": "retrospective_audit",
+            "router_action": "stack"
+          },
+          "evaluation": {
+            "auroc_candidate": 0.8033846153846154,
+            "auroc_frozen": 0.7169230769230769,
+            "auroc_kga": 0.7169230769230769,
+            "auroc_oracle": 0.8033846153846154,
+            "brier_benefit": 0.2280857251737825,
+            "covered": false,
+            "false_adapt": false,
+            "harmful_candidate": false,
+            "regret_candidate": 0.0,
+            "regret_frozen": 0.08646153846153848,
+            "regret_kga": 0.08646153846153848
+          },
+          "file": "common_mode_filter_70_90_130_4096_v2_binpcd.npz",
+          "input_sha256": "14cc1047fa6dec83b6fe459e51243264c46b947b27451347651257eab685d440"
+        },
+        {
+          "decision": {
+            "certificate": {
+              "alpha": 0.1,
+              "delta_hat": 0.12632227516530373,
+              "epsilon": 0.17795184945600961,
+              "lower": -0.05162957429070589,
+              "method": "ebern",
+              "n": 115,
+              "upper": 0.3042741246213133
+            },
+            "claim_eligible": false,
+            "claim_reasons": [
+              "uses_full_target_labels_for_decision",
+              "not_deployment_eligible"
+            ],
+            "claim_tier": "retrospective_only",
+            "decision": "ABSTAIN",
+            "deployed_action": "freeze",
+            "evidence": {
+              "best_val_auc": 0.9431111111111111,
+              "conf_shift": -0.07605287873853928,
+              "disagree": 0.5185667919798918,
+              "entropy_shift": 0.47904378882972853,
+              "ess_frac": 0.02745376746242906,
+              "ks_max": 0.3105590062111801,
+              "ks_mean": 0.23768115942028986,
+              "n_experts": 3.0,
+              "val_disagreement": 0.2623878536922015,
+              "val_gap": 0.20444444444444443
+            },
+            "frozen_expert": 2,
+            "labels_used_for_decision": 115,
+            "mode": "retrospective_audit",
+            "router_action": "stack"
+          },
+          "evaluation": {
+            "auroc_candidate": 0.9735384615384616,
+            "auroc_frozen": 0.9584615384615385,
+            "auroc_kga": 0.9584615384615385,
+            "auroc_oracle": 0.9735384615384616,
+            "brier_benefit": 0.12632227516530373,
+            "covered": false,
+            "false_adapt": false,
+            "harmful_candidate": false,
+            "regret_candidate": 0.0,
+            "regret_frozen": 0.015076923076923099,
+            "regret_kga": 0.015076923076923099
+          },
+          "file": "connector_housing_female_70_90_130_4096_v2_binpcd.npz",
+          "input_sha256": "5d54a713bd7e2b68db67a246df00068efc561b0e5c2b197ed6df3d7ec909aaa5"
+        },
+        {
+          "decision": {
+            "certificate": {
+              "alpha": 0.1,
+              "delta_hat": 0.19362220749683678,
+              "epsilon": 0.23656703343350222,
+              "lower": -0.04294482593666543,
+              "method": "ebern",
+              "n": 115,
+              "upper": 0.430189240930339
+            },
+            "claim_eligible": false,
+            "claim_reasons": [
+              "uses_full_target_labels_for_decision",
+              "not_deployment_eligible"
+            ],
+            "claim_tier": "retrospective_only",
+            "decision": "ABSTAIN",
+            "deployed_action": "freeze",
+            "evidence": {
+              "best_val_auc": 0.8533333333333334,
+              "conf_shift": -0.004931765678987676,
+              "disagree": 0.49161918194896104,
+              "entropy_shift": -0.01078743659015946,
+              "ess_frac": 0.9996399892557828,
+              "ks_max": 0.25527950310559006,
+              "ks_mean": 0.15300207039337474,
+              "n_experts": 3.0,
+              "val_disagreement": 0.26224982746721875,
+              "val_gap": 0.11688888888888904
+            },
+            "frozen_expert": 1,
+            "labels_used_for_decision": 115,
+            "mode": "retrospective_audit",
+            "router_action": "stack"
+          },
+          "evaluation": {
+            "auroc_candidate": 0.6658461538461539,
+            "auroc_frozen": 0.9009230769230769,
+            "auroc_kga": 0.9009230769230769,
+            "auroc_oracle": 0.9009230769230769,
+            "brier_benefit": 0.19362220749683678,
+            "covered": false,
+            "false_adapt": false,
+            "harmful_candidate": false,
+            "regret_candidate": 0.23507692307692307,
+            "regret_frozen": 0.0,
+            "regret_kga": 0.0
+          },
+          "file": "crimp_st_cable_mount_box_70_90_130_4096_v2_binpcd.npz",
+          "input_sha256": "9042ce6ec18245acb94dc7a73f9a1610127431cde0c476ed5c51177f45cbbc11"
+        },
+        {
+          "decision": {
+            "certificate": {
+              "alpha": 0.1,
+              "delta_hat": 0.135114245770678,
+              "epsilon": 0.18212428743273154,
+              "lower": -0.04701004166205355,
+              "method": "ebern",
+              "n": 115,
+              "upper": 0.31723853320340956
+            },
+            "claim_eligible": false,
+            "claim_reasons": [
+              "uses_full_target_labels_for_decision",
+              "not_deployment_eligible"
+            ],
+            "claim_tier": "retrospective_only",
+            "decision": "ABSTAIN",
+            "deployed_action": "freeze",
+            "evidence": {
+              "best_val_auc": 0.8515555555555556,
+              "conf_shift": -0.055245411234736475,
+              "disagree": 0.3954277566543335,
+              "entropy_shift": 0.1316927608460421,
+              "ess_frac": 0.020085366913816644,
+              "ks_max": 0.2204968944099379,
+              "ks_mean": 0.168944099378882,
+              "n_experts": 3.0,
+              "val_disagreement": 0.20441683919944786,
+              "val_gap": 0.009777777777777774
+            },
+            "frozen_expert": 2,
+            "labels_used_for_decision": 115,
+            "mode": "retrospective_audit",
+            "router_action": "stack"
+          },
+          "evaluation": {
+            "auroc_candidate": 0.9326153846153846,
+            "auroc_frozen": 0.8347692307692308,
+            "auroc_kga": 0.8347692307692308,
+            "auroc_oracle": 0.9326153846153846,
+            "brier_benefit": 0.135114245770678,
+            "covered": false,
+            "false_adapt": false,
+            "harmful_candidate": false,
+            "regret_candidate": 0.0,
+            "regret_frozen": 0.0978461538461538,
+            "regret_kga": 0.0978461538461538
+          },
+          "file": "dc_power_connector_70_90_130_4096_v2_binpcd.npz",
+          "input_sha256": "594e849ade986efa735a7757e8db9737ca30ca1bde024ee471d76020126110a4"
+        },
+        {
+          "decision": {
+            "certificate": {
+              "alpha": 0.1,
+              "delta_hat": 0.3075200154762508,
+              "epsilon": 0.2137253564650819,
+              "lower": 0.0937946590111689,
+              "method": "ebern",
+              "n": 115,
+              "upper": 0.5212453719413327
+            },
+            "claim_eligible": false,
+            "claim_reasons": [
+              "uses_full_target_labels_for_decision",
+              "not_deployment_eligible"
+            ],
+            "claim_tier": "retrospective_only",
+            "decision": "ADAPT",
+            "deployed_action": "adapt",
+            "evidence": {
+              "best_val_auc": 1.0,
+              "conf_shift": -0.04313914229430893,
+              "disagree": 0.42078483778472753,
+              "entropy_shift": 0.16333292096191743,
+              "ess_frac": 0.9663438386582388,
+              "ks_max": 0.11304347826086956,
+              "ks_mean": 0.08902691511387163,
+              "n_experts": 3.0,
+              "val_disagreement": 0.2249827467218772,
+              "val_gap": 0.0888888888888889
+            },
+            "frozen_expert": 1,
+            "labels_used_for_decision": 115,
+            "mode": "retrospective_audit",
+            "router_action": "stack"
+          },
+          "evaluation": {
+            "auroc_candidate": 0.9966153846153846,
+            "auroc_frozen": 1.0,
+            "auroc_kga": 0.9966153846153846,
+            "auroc_oracle": 1.0,
+            "brier_benefit": 0.3075200154762508,
+            "covered": true,
+            "false_adapt": false,
+            "harmful_candidate": false,
+            "regret_candidate": 0.0033846153846154303,
+            "regret_frozen": 0.0,
+            "regret_kga": 0.0033846153846154303
+          },
+          "file": "ethernet_connector_70_90_130_4096_v2_binpcd.npz",
+          "input_sha256": "4e3939207474f10eb9c1b0beecac2d4c72c0c44db9631764dd4438b66869b9e7"
+        },
+        {
+          "decision": {
+            "certificate": {
+              "alpha": 0.1,
+              "delta_hat": 0.18352489847035622,
+              "epsilon": 0.1974827922975577,
+              "lower": -0.013957893827201473,
+              "method": "ebern",
+              "n": 115,
+              "upper": 0.3810076907679139
+            },
+            "claim_eligible": false,
+            "claim_reasons": [
+              "uses_full_target_labels_for_decision",
+              "not_deployment_eligible"
+            ],
+            "claim_tier": "retrospective_only",
+            "decision": "ABSTAIN",
+            "deployed_action": "freeze",
+            "evidence": {
+              "best_val_auc": 0.9448888888888889,
+              "conf_shift": -0.031004516175830443,
+              "disagree": 0.7576707600638084,
+              "entropy_shift": 0.19001512133912035,
+              "ess_frac": 0.15566137021744078,
+              "ks_max": 0.2701863354037267,
+              "ks_mean": 0.20579710144927535,
+              "n_experts": 3.0,
+              "val_disagreement": 0.33002070393374744,
+              "val_gap": 0.4177777777777778
+            },
+            "frozen_expert": 2,
+            "labels_used_for_decision": 115,
+            "mode": "retrospective_audit",
+            "router_action": "stack"
+          },
+          "evaluation": {
+            "auroc_candidate": 0.9387692307692308,
+            "auroc_frozen": 0.9292307692307692,
+            "auroc_kga": 0.9292307692307692,
+            "auroc_oracle": 0.9387692307692308,
+            "brier_benefit": 0.18352489847035622,
+            "covered": false,
+            "false_adapt": false,
+            "harmful_candidate": false,
+            "regret_candidate": 0.0,
+            "regret_frozen": 0.009538461538461607,
+            "regret_kga": 0.009538461538461607
+          },
+          "file": "ferrite_bead_70_90_130_4096_v2_binpcd.npz",
+          "input_sha256": "6d7936e8b7c5a65fa0be6350811d2c2f11e092617a9e2cc0329e6b310330cf01"
+        },
+        {
+          "decision": {
+            "certificate": {
+              "alpha": 0.1,
+              "delta_hat": 0.10646794960383574,
+              "epsilon": 0.20150097103110887,
+              "lower": -0.09503302142727313,
+              "method": "ebern",
+              "n": 115,
+              "upper": 0.30796892063494463
+            },
+            "claim_eligible": false,
+            "claim_reasons": [
+              "uses_full_target_labels_for_decision",
+              "not_deployment_eligible"
+            ],
+            "claim_tier": "retrospective_only",
+            "decision": "ABSTAIN",
+            "deployed_action": "freeze",
+            "evidence": {
+              "best_val_auc": 0.6684444444444444,
+              "conf_shift": 0.06419003411786184,
+              "disagree": 0.5125407759059881,
+              "entropy_shift": -0.4685636150350727,
+              "ess_frac": 0.9307861113430526,
+              "ks_max": 0.30124223602484473,
+              "ks_mean": 0.2349896480331263,
+              "n_experts": 3.0,
+              "val_disagreement": 0.3037957211870255,
+              "val_gap": 0.1386666666666666
+            },
+            "frozen_expert": 2,
+            "labels_used_for_decision": 115,
+            "mode": "retrospective_audit",
+            "router_action": "stack"
+          },
+          "evaluation": {
+            "auroc_candidate": 0.7507692307692307,
+            "auroc_frozen": 0.6098461538461538,
+            "auroc_kga": 0.6098461538461538,
+            "auroc_oracle": 0.7507692307692307,
+            "brier_benefit": 0.10646794960383574,
+            "covered": false,
+            "false_adapt": false,
+            "harmful_candidate": false,
+            "regret_candidate": 0.0,
+            "regret_frozen": 0.14092307692307693,
+            "regret_kga": 0.14092307692307693
+          },
+          "file": "fork_crimp_terminal_70_90_130_4096_v2_binpcd.npz",
+          "input_sha256": "f9b0a27db20523334cf13652881686fb9cb71f94d06f8ae2bcd401315d47125f"
+        },
+        {
+          "decision": {
+            "certificate": {
+              "alpha": 0.1,
+              "delta_hat": 0.22995813012923907,
+              "epsilon": 0.2061757351724508,
+              "lower": 0.023782394956788272,
+              "method": "ebern",
+              "n": 115,
+              "upper": 0.43613386530168985
+            },
+            "claim_eligible": false,
+            "claim_reasons": [
+              "uses_full_target_labels_for_decision",
+              "not_deployment_eligible"
+            ],
+            "claim_tier": "retrospective_only",
+            "decision": "ADAPT",
+            "deployed_action": "adapt",
+            "evidence": {
+              "best_val_auc": 0.9777777777777779,
+              "conf_shift": -0.048078029369392206,
+              "disagree": 0.7377758489176465,
+              "entropy_shift": 0.15346865966416257,
+              "ess_frac": 0.9732068191050882,
+              "ks_max": 0.12111801242236025,
+              "ks_mean": 0.09544513457556936,
+              "n_experts": 3.0,
+              "val_disagreement": 0.2677708764665287,
+              "val_gap": 0.13333333333333341
+            },
+            "frozen_expert": 1,
+            "labels_used_for_decision": 115,
+            "mode": "retrospective_audit",
+            "router_action": "stack"
+          },
+          "evaluation": {
+            "auroc_candidate": 0.9790769230769231,
+            "auroc_frozen": 0.9861538461538462,
+            "auroc_kga": 0.9790769230769231,
+            "auroc_oracle": 0.9861538461538462,
+            "brier_benefit": 0.22995813012923907,
+            "covered": true,
+            "false_adapt": false,
+            "harmful_candidate": false,
+            "regret_candidate": 0.007076923076923092,
+            "regret_frozen": 0.0,
+            "regret_kga": 0.007076923076923092
+          },
+          "file": "fuse_holder_70_90_130_4096_v2_binpcd.npz",
+          "input_sha256": "a028aa72a76ee9ec713631f03daf2d967fc0ef7840fd2ae7d4cc219b024c660c"
+        },
+        {
+          "decision": {
+            "certificate": {
+              "alpha": 0.1,
+              "delta_hat": 0.1847425244643101,
+              "epsilon": 0.17923853077320637,
+              "lower": 0.005503993691103742,
+              "method": "ebern",
+              "n": 115,
+              "upper": 0.36398105523751645
+            },
+            "claim_eligible": false,
+            "claim_reasons": [
+              "uses_full_target_labels_for_decision",
+              "not_deployment_eligible"
+            ],
+            "claim_tier": "retrospective_only",
+            "decision": "ADAPT",
+            "deployed_action": "adapt",
+            "evidence": {
+              "best_val_auc": 1.0,
+              "conf_shift": -0.05387915317352965,
+              "disagree": 0.20271180199373973,
+              "entropy_shift": 0.2398682711082385,
+              "ess_frac": 0.9552314798851224,
+              "ks_max": 0.19503105590062111,
+              "ks_mean": 0.16459627329192547,
+              "n_experts": 3.0,
+              "val_disagreement": 0.13291925465838508,
+              "val_gap": 0.0
+            },
+            "frozen_expert": 0,
+            "labels_used_for_decision": 115,
+            "mode": "retrospective_audit",
+            "router_action": "stack"
+          },
+          "evaluation": {
+            "auroc_candidate": 1.0,
+            "auroc_frozen": 1.0,
+            "auroc_kga": 1.0,
+            "auroc_oracle": 1.0,
+            "brier_benefit": 0.1847425244643101,
+            "covered": true,
+            "false_adapt": false,
+            "harmful_candidate": false,
+            "regret_candidate": 0.0,
+            "regret_frozen": 0.0,
+            "regret_kga": 0.0
+          },
+          "file": "headphone_jack_socket_70_90_130_4096_v2_binpcd.npz",
+          "input_sha256": "1ede4b9ed7348a591c4a4d807c79152a65fa3c870b5530a3ba7b385c283e99a9"
+        },
+        {
+          "decision": {
+            "certificate": {
+              "alpha": 0.1,
+              "delta_hat": 0.14842523690747755,
+              "epsilon": 0.19248941526278568,
+              "lower": -0.044064178355308126,
+              "method": "ebern",
+              "n": 115,
+              "upper": 0.34091465217026323
+            },
+            "claim_eligible": false,
+            "claim_reasons": [
+              "uses_full_target_labels_for_decision",
+              "not_deployment_eligible"
+            ],
+            "claim_tier": "retrospective_only",
+            "decision": "ABSTAIN",
+            "deployed_action": "freeze",
+            "evidence": {
+              "best_val_auc": 0.9608888888888889,
+              "conf_shift": 0.058113011213774546,
+              "disagree": 0.5683390887147113,
+              "entropy_shift": -0.1888792375555146,
+              "ess_frac": 0.975292854694314,
+              "ks_max": 0.21490683229813665,
+              "ks_mean": 0.1919254658385093,
+              "n_experts": 3.0,
+              "val_disagreement": 0.2912353347135956,
+              "val_gap": 0.03555555555555556
+            },
+            "frozen_expert": 1,
+            "labels_used_for_decision": 115,
+            "mode": "retrospective_audit",
+            "router_action": "stack"
+          },
+          "evaluation": {
+            "auroc_candidate": 0.839076923076923,
+            "auroc_frozen": 0.831076923076923,
+            "auroc_kga": 0.831076923076923,
+            "auroc_oracle": 0.839076923076923,
+            "brier_benefit": 0.14842523690747755,
+            "covered": false,
+            "false_adapt": false,
+            "harmful_candidate": false,
+            "regret_candidate": 0.0,
+            "regret_frozen": 0.008000000000000007,
+            "regret_kga": 0.008000000000000007
+          },
+          "file": "humidity_sensor_70_90_130_4096_v2_binpcd.npz",
+          "input_sha256": "a20b10b3ad29973b0b1d9f5002504ae488ff93a5849091dea6d52aa647593ff6"
+        },
+        {
+          "decision": {
+            "certificate": {
+              "alpha": 0.1,
+              "delta_hat": 0.18570896598675357,
+              "epsilon": 0.2027619421421269,
+              "lower": -0.017052976155373323,
+              "method": "ebern",
+              "n": 115,
+              "upper": 0.38847090812888047
+            },
+            "claim_eligible": false,
+            "claim_reasons": [
+              "uses_full_target_labels_for_decision",
+              "not_deployment_eligible"
+            ],
+            "claim_tier": "retrospective_only",
+            "decision": "ABSTAIN",
+            "deployed_action": "freeze",
+            "evidence": {
+              "best_val_auc": 0.9262222222222223,
+              "conf_shift": 0.002152095442266133,
+              "disagree": 0.3829130250594658,
+              "entropy_shift": -0.046024355390326566,
+              "ess_frac": 0.008684379271964655,
+              "ks_max": 0.07267080745341616,
+              "ks_mean": 0.07101449275362319,
+              "n_experts": 3.0,
+              "val_disagreement": 0.19461697722567287,
+              "val_gap": 0.21200000000000008
+            },
+            "frozen_expert": 2,
+            "labels_used_for_decision": 115,
+            "mode": "retrospective_audit",
+            "router_action": "stack"
+          },
+          "evaluation": {
+            "auroc_candidate": 0.920923076923077,
+            "auroc_frozen": 0.9156923076923077,
+            "auroc_kga": 0.9156923076923077,
+            "auroc_oracle": 0.920923076923077,
+            "brier_benefit": 0.18570896598675357,
+            "covered": false,
+            "false_adapt": false,
+            "harmful_candidate": false,
+            "regret_candidate": 0.0,
+            "regret_frozen": 0.005230769230769261,
+            "regret_kga": 0.005230769230769261
+          },
+          "file": "knob_cap_70_90_130_4096_v2_binpcd.npz",
+          "input_sha256": "1098e09a47c563a726610645e919f18a33171d2fdaf4dda373a6802cfaca27d2"
+        },
+        {
+          "decision": {
+            "certificate": {
+              "alpha": 0.1,
+              "delta_hat": 0.23626016956809515,
+              "epsilon": 0.22866694600130194,
+              "lower": 0.007593223566793206,
+              "method": "ebern",
+              "n": 115,
+              "upper": 0.4649271155693971
+            },
+            "claim_eligible": false,
+            "claim_reasons": [
+              "uses_full_target_labels_for_decision",
+              "not_deployment_eligible"
+            ],
+            "claim_tier": "retrospective_only",
+            "decision": "ADAPT",
+            "deployed_action": "adapt",
+            "evidence": {
+              "best_val_auc": 0.8995555555555556,
+              "conf_shift": -0.014253294469694366,
+              "disagree": 0.8695389147531497,
+              "entropy_shift": 0.12546457228302899,
+              "ess_frac": 0.9974940724198118,
+              "ks_max": 0.08198757763975155,
+              "ks_mean": 0.07267080745341614,
+              "n_experts": 3.0,
+              "val_disagreement": 0.27936507936507937,
+              "val_gap": 0.21600000000000008
+            },
+            "frozen_expert": 1,
+            "labels_used_for_decision": 115,
+            "mode": "retrospective_audit",
+            "router_action": "stack"
+          },
+          "evaluation": {
+            "auroc_candidate": 0.8427692307692307,
+            "auroc_frozen": 0.8735384615384615,
+            "auroc_kga": 0.8427692307692307,
+            "auroc_oracle": 0.8735384615384615,
+            "brier_benefit": 0.23626016956809515,
+            "covered": true,
+            "false_adapt": false,
+            "harmful_candidate": false,
+            "regret_candidate": 0.03076923076923077,
+            "regret_frozen": 0.0,
+            "regret_kga": 0.03076923076923077
+          },
+          "file": "lattice_block_plug_70_90_130_4096_v2_binpcd.npz",
+          "input_sha256": "0288d059d5780127ea4e4566aa4a2274e4d9d763abf1c7041ed16b63024aa8b5"
+        },
+        {
+          "decision": {
+            "certificate": {
+              "alpha": 0.1,
+              "delta_hat": 0.3101345702921319,
+              "epsilon": 0.22735366316931027,
+              "lower": 0.0827809071228216,
+              "method": "ebern",
+              "n": 115,
+              "upper": 0.5374882334614421
+            },
+            "claim_eligible": false,
+            "claim_reasons": [
+              "uses_full_target_labels_for_decision",
+              "not_deployment_eligible"
+            ],
+            "claim_tier": "retrospective_only",
+            "decision": "ADAPT",
+            "deployed_action": "adapt",
+            "evidence": {
+              "best_val_auc": 0.9644444444444444,
+              "conf_shift": -0.017611933240106348,
+              "disagree": 0.6473471235997312,
+              "entropy_shift": 0.07515935722775513,
+              "ess_frac": 0.9926234428166728,
+              "ks_max": 0.11366459627329192,
+              "ks_mean": 0.09503105590062111,
+              "n_experts": 3.0,
+              "val_disagreement": 0.2781228433402347,
+              "val_gap": 0.1671111111111111
+            },
+            "frozen_expert": 1,
+            "labels_used_for_decision": 115,
+            "mode": "retrospective_audit",
+            "router_action": "stack"
+          },
+          "evaluation": {
+            "auroc_candidate": 0.9766153846153847,
+            "auroc_frozen": 0.9443076923076923,
+            "auroc_kga": 0.9766153846153847,
+            "auroc_oracle": 0.9766153846153847,
+            "brier_benefit": 0.3101345702921319,
+            "covered": true,
+            "false_adapt": false,
+            "harmful_candidate": false,
+            "regret_candidate": 0.0,
+            "regret_frozen": 0.03230769230769237,
+            "regret_kga": 0.0
+          },
+          "file": "lego_pin_connector_plate_70_90_130_4096_v2_binpcd.npz",
+          "input_sha256": "cdb98fe8accca801cbf780af4277c619ec9ba6f512e30b0f6c1a6d8582fb06fa"
+        },
+        {
+          "decision": {
+            "certificate": {
+              "alpha": 0.1,
+              "delta_hat": 0.39741833676517524,
+              "epsilon": 0.23308835105069853,
+              "lower": 0.1643299857144767,
+              "method": "ebern",
+              "n": 115,
+              "upper": 0.6305066878158738
+            },
+            "claim_eligible": false,
+            "claim_reasons": [
+              "uses_full_target_labels_for_decision",
+              "not_deployment_eligible"
+            ],
+            "claim_tier": "retrospective_only",
+            "decision": "ADAPT",
+            "deployed_action": "adapt",
+            "evidence": {
+              "best_val_auc": 1.0,
+              "conf_shift": 0.0073656236215357,
+              "disagree": 1.1963108670753873,
+              "entropy_shift": -0.10476640018360772,
+              "ess_frac": 0.9961435391780031,
+              "ks_max": 0.08385093167701864,
+              "ks_mean": 0.08157349896480331,
+              "n_experts": 3.0,
+              "val_disagreement": 0.3583160800552105,
+              "val_gap": 0.0
+            },
+            "frozen_expert": 0,
+            "labels_used_for_decision": 115,
+            "mode": "retrospective_audit",
+            "router_action": "stack"
+          },
+          "evaluation": {
+            "auroc_candidate": 1.0,
+            "auroc_frozen": 1.0,
+            "auroc_kga": 1.0,
+            "auroc_oracle": 1.0,
+            "brier_benefit": 0.39741833676517524,
+            "covered": true,
+            "false_adapt": false,
+            "harmful_candidate": false,
+            "regret_candidate": 0.0,
+            "regret_frozen": 0.0,
+            "regret_kga": 0.0
+          },
+          "file": "lego_propeller_70_90_130_4096_v2_binpcd.npz",
+          "input_sha256": "0ab6d06737ac26966e72e67b19e463a12a564daf80ae6f0be244fbc602d2f681"
+        },
+        {
+          "decision": {
+            "certificate": {
+              "alpha": 0.1,
+              "delta_hat": 0.17263798795563445,
+              "epsilon": 0.18574703637917755,
+              "lower": -0.013109048423543102,
+              "method": "ebern",
+              "n": 115,
+              "upper": 0.358385024334812
+            },
+            "claim_eligible": false,
+            "claim_reasons": [
+              "uses_full_target_labels_for_decision",
+              "not_deployment_eligible"
+            ],
+            "claim_tier": "retrospective_only",
+            "decision": "ABSTAIN",
+            "deployed_action": "freeze",
+            "evidence": {
+              "best_val_auc": 0.9991111111111111,
+              "conf_shift": 0.04124233117981102,
+              "disagree": 0.3402298850574711,
+              "entropy_shift": -0.06847200540462506,
+              "ess_frac": 0.9822553437907159,
+              "ks_max": 0.1484472049689441,
+              "ks_mean": 0.11594202898550725,
+              "n_experts": 3.0,
+              "val_disagreement": 0.16963423050379575,
+              "val_gap": 0.1617777777777778
+            },
+            "frozen_expert": 1,
+            "labels_used_for_decision": 115,
+            "mode": "retrospective_audit",
+            "router_action": "stack"
+          },
+          "evaluation": {
+            "auroc_candidate": 0.9929230769230769,
+            "auroc_frozen": 0.9987692307692307,
+            "auroc_kga": 0.9987692307692307,
+            "auroc_oracle": 0.9987692307692307,
+            "brier_benefit": 0.17263798795563445,
+            "covered": false,
+            "false_adapt": false,
+            "harmful_candidate": false,
+            "regret_candidate": 0.005846153846153834,
+            "regret_frozen": 0.0,
+            "regret_kga": 0.0
+          },
+          "file": "limit_switch_70_90_130_4096_v2_binpcd.npz",
+          "input_sha256": "7b4808c6025a83cf25e63bdf2195eda9c72be8213b6a1e814ef4daaf6c374ccb"
+        },
+        {
+          "decision": {
+            "certificate": {
+              "alpha": 0.1,
+              "delta_hat": 0.17505799857484802,
+              "epsilon": 0.2265873444193643,
+              "lower": -0.05152934584451627,
+              "method": "ebern",
+              "n": 115,
+              "upper": 0.4016453429942123
+            },
+            "claim_eligible": false,
+            "claim_reasons": [
+              "uses_full_target_labels_for_decision",
+              "not_deployment_eligible"
+            ],
+            "claim_tier": "retrospective_only",
+            "decision": "ABSTAIN",
+            "deployed_action": "freeze",
+            "evidence": {
+              "best_val_auc": 0.6862222222222222,
+              "conf_shift": -0.014896888184710244,
+              "disagree": 0.7022856992556354,
+              "entropy_shift": 0.002229865923038421,
+              "ess_frac": 0.99379711592103,
+              "ks_max": 0.12360248447204969,
+              "ks_mean": 0.08695652173913043,
+              "n_experts": 3.0,
+              "val_disagreement": 0.314975845410628,
+              "val_gap": 0.12444444444444436
+            },
+            "frozen_expert": 2,
+            "labels_used_for_decision": 115,
+            "mode": "retrospective_audit",
+            "router_action": "stack"
+          },
+          "evaluation": {
+            "auroc_candidate": 0.7221538461538461,
+            "auroc_frozen": 0.7083076923076923,
+            "auroc_kga": 0.7083076923076923,
+            "auroc_oracle": 0.7221538461538461,
+            "brier_benefit": 0.17505799857484802,
+            "covered": false,
+            "false_adapt": false,
+            "harmful_candidate": false,
+            "regret_candidate": 0.0,
+            "regret_frozen": 0.013846153846153841,
+            "regret_kga": 0.013846153846153841
+          },
+          "file": "miniature_lifting_motor_70_90_130_4096_v2_binpcd.npz",
+          "input_sha256": "6cacba36f53d2de4199720da541cc45112156c6d7f291bf9541f42f51ca3f12d"
+        },
+        {
+          "decision": {
+            "certificate": {
+              "alpha": 0.1,
+              "delta_hat": 0.1861385929612305,
+              "epsilon": 0.23638388273410504,
+              "lower": -0.05024528977287454,
+              "method": "ebern",
+              "n": 115,
+              "upper": 0.4225224756953355
+            },
+            "claim_eligible": false,
+            "claim_reasons": [
+              "uses_full_target_labels_for_decision",
+              "not_deployment_eligible"
+            ],
+            "claim_tier": "retrospective_only",
+            "decision": "ABSTAIN",
+            "deployed_action": "freeze",
+            "evidence": {
+              "best_val_auc": 0.3435555555555556,
+              "conf_shift": 0.013315675078402145,
+              "disagree": 0.9698573919849454,
+              "entropy_shift": -0.024018716190742362,
+              "ess_frac": 0.9590123934070363,
+              "ks_max": 0.32857142857142857,
+              "ks_mean": 0.29233954451345756,
+              "n_experts": 3.0,
+              "val_disagreement": 0.2080055210489993,
+              "val_gap": 0.1364444444444445
+            },
+            "frozen_expert": 1,
+            "labels_used_for_decision": 115,
+            "mode": "retrospective_audit",
+            "router_action": "stack"
+          },
+          "evaluation": {
+            "auroc_candidate": 0.6126153846153846,
+            "auroc_frozen": 0.49153846153846154,
+            "auroc_kga": 0.49153846153846154,
+            "auroc_oracle": 0.6126153846153846,
+            "brier_benefit": 0.1861385929612305,
+            "covered": false,
+            "false_adapt": false,
+            "harmful_candidate": false,
+            "regret_candidate": 0.0,
+            "regret_frozen": 0.12107692307692303,
+            "regret_kga": 0.12107692307692303
+          },
+          "file": "power_jack_70_90_130_4096_v2_binpcd.npz",
+          "input_sha256": "ba20a36eecbc8b40f8cb6daf5380c1ee8d47a3ec17f593da9e6fafdb6e2f6bb9"
+        },
+        {
+          "decision": {
+            "certificate": {
+              "alpha": 0.1,
+              "delta_hat": 0.24267449395218552,
+              "epsilon": 0.23029079177161146,
+              "lower": 0.012383702180574052,
+              "method": "ebern",
+              "n": 115,
+              "upper": 0.472965285723797
+            },
+            "claim_eligible": false,
+            "claim_reasons": [
+              "uses_full_target_labels_for_decision",
+              "not_deployment_eligible"
+            ],
+            "claim_tier": "retrospective_only",
+            "decision": "ADAPT",
+            "deployed_action": "adapt",
+            "evidence": {
+              "best_val_auc": 0.8222222222222222,
+              "conf_shift": 0.019604783219063338,
+              "disagree": 0.3298025619461429,
+              "entropy_shift": -0.1042822538271102,
+              "ess_frac": 0.9927055294631891,
+              "ks_max": 0.15031055900621118,
+              "ks_mean": 0.1285714285714286,
+              "n_experts": 3.0,
+              "val_disagreement": 0.1848171152518978,
+              "val_gap": 0.003555555555555534
+            },
+            "frozen_expert": 0,
+            "labels_used_for_decision": 115,
+            "mode": "retrospective_audit",
+            "router_action": "stack"
+          },
+          "evaluation": {
+            "auroc_candidate": 0.8446153846153847,
+            "auroc_frozen": 0.8476923076923077,
+            "auroc_kga": 0.8446153846153847,
+            "auroc_oracle": 0.8476923076923077,
+            "brier_benefit": 0.24267449395218552,
+            "covered": true,
+            "false_adapt": false,
+            "harmful_candidate": false,
+            "regret_candidate": 0.003076923076923088,
+            "regret_frozen": 0.0,
+            "regret_kga": 0.003076923076923088
+          },
+          "file": "purple_clay_pot_70_90_130_4096_v2_binpcd.npz",
+          "input_sha256": "d4d6922e036bdbb5fdced3d3cf51b352f55d3eb6c382cf31308a8f8ce15aab8d"
+        },
+        {
+          "decision": {
+            "certificate": {
+              "alpha": 0.1,
+              "delta_hat": 0.18372103437824344,
+              "epsilon": 0.18541544198652138,
+              "lower": -0.001694407608277937,
+              "method": "ebern",
+              "n": 115,
+              "upper": 0.3691364763647648
+            },
+            "claim_eligible": false,
+            "claim_reasons": [
+              "uses_full_target_labels_for_decision",
+              "not_deployment_eligible"
+            ],
+            "claim_tier": "retrospective_only",
+            "decision": "ABSTAIN",
+            "deployed_action": "freeze",
+            "evidence": {
+              "best_val_auc": 0.9342222222222223,
+              "conf_shift": -0.021518354414017282,
+              "disagree": 0.4321418238249297,
+              "entropy_shift": 0.06616752181525287,
+              "ess_frac": 0.999659770889696,
+              "ks_max": 0.19813664596273292,
+              "ks_mean": 0.1132505175983437,
+              "n_experts": 3.0,
+              "val_disagreement": 0.2409937888198758,
+              "val_gap": 0.08888888888888902
+            },
+            "frozen_expert": 2,
+            "labels_used_for_decision": 115,
+            "mode": "retrospective_audit",
+            "router_action": "stack"
+          },
+          "evaluation": {
+            "auroc_candidate": 0.9886153846153846,
+            "auroc_frozen": 0.9301538461538461,
+            "auroc_kga": 0.9301538461538461,
+            "auroc_oracle": 0.9886153846153846,
+            "brier_benefit": 0.18372103437824344,
+            "covered": false,
+            "false_adapt": false,
+            "harmful_candidate": false,
+            "regret_candidate": 0.0,
+            "regret_frozen": 0.058461538461538454,
+            "regret_kga": 0.058461538461538454
+          },
+          "file": "telephone_spring_switch_70_90_130_4096_v2_binpcd.npz",
+          "input_sha256": "a9d3286554597f37c08b84a80bd4383dc6e78604ef1f18b03cb8968f884cb977"
+        }
+      ],
+      "invalid_categories": [],
+      "n_matched_files": 20,
+      "n_valid_categories": 20,
+      "name": "Real-IAD-D3",
+      "pattern": "*_v2_binpcd.npz"
+    },
+    {
+      "aggregate": {
+        "coverage": 0.0,
+        "decisions": {
+          "ABSTAIN": 15,
+          "ADAPT": 0,
+          "FREEZE": 0
+        },
+        "false_adapt_rate_conditional": 0.0,
+        "false_adapt_rate_unconditional": 0.0,
+        "labels_used_for_decision": 325,
+        "mean_auroc_candidate": 0.919010582010582,
+        "mean_auroc_frozen": 0.9223148148148148,
+        "mean_auroc_kga": 0.9223148148148148,
+        "n_categories": 15,
+        "regret_always_adapt": 0.025952380952380956,
+        "regret_always_freeze": 0.022648148148148143,
+        "regret_kga": 0.022648148148148143
+      },
+      "cache": "experiments/fusion/mulsen_score_cache",
+      "categories": [
+        {
+          "decision": {
+            "certificate": {
+              "alpha": 0.1,
+              "delta_hat": -0.008519708479755988,
+              "epsilon": 0.8122640026716506,
+              "lower": -0.8207837111514066,
+              "method": "ebern",
+              "n": 21,
+              "upper": 0.8037442941918945
+            },
+            "claim_eligible": false,
+            "claim_reasons": [
+              "uses_full_target_labels_for_decision",
+              "not_deployment_eligible"
+            ],
+            "claim_tier": "retrospective_only",
+            "decision": "ABSTAIN",
+            "deployed_action": "freeze",
+            "evidence": {
+              "best_val_auc": 1.0,
+              "conf_shift": 0.02342417071994274,
+              "disagree": 0.8203463203463203,
+              "entropy_shift": -0.16635470216241943,
+              "ess_frac": 0.9931994872263634,
+              "ks_max": 0.4666666666666667,
+              "ks_mean": 0.38015873015873014,
+              "n_experts": 3.0,
+              "val_disagreement": 0.29473684210526313,
+              "val_gap": 0.17333333333333334
+            },
+            "frozen_expert": 0,
+            "labels_used_for_decision": 21,
+            "mode": "retrospective_audit",
+            "router_action": "stack"
+          },
+          "evaluation": {
+            "auroc_candidate": 1.0,
+            "auroc_frozen": 1.0,
+            "auroc_kga": 1.0,
+            "auroc_oracle": 1.0,
+            "brier_benefit": -0.008519708479755988,
+            "covered": false,
+            "false_adapt": false,
+            "harmful_candidate": true,
+            "regret_candidate": 0.0,
+            "regret_frozen": 0.0,
+            "regret_kga": 0.0
+          },
+          "file": "button_cell.npz",
+          "input_sha256": "9c66cf668f08d22a6267fbc8e49ddecfc44a29587bae095cea428b4451bcb5c1"
+        },
+        {
+          "decision": {
+            "certificate": {
+              "alpha": 0.1,
+              "delta_hat": -0.028137614442775096,
+              "epsilon": 0.5659249575004103,
+              "lower": -0.5940625719431853,
+              "method": "ebern",
+              "n": 29,
+              "upper": 0.5377873430576352
+            },
+            "claim_eligible": false,
+            "claim_reasons": [
+              "uses_full_target_labels_for_decision",
+              "not_deployment_eligible"
+            ],
+            "claim_tier": "retrospective_only",
+            "decision": "ABSTAIN",
+            "deployed_action": "freeze",
+            "evidence": {
+              "best_val_auc": 1.0,
+              "conf_shift": 0.06141630317556618,
+              "disagree": 0.2185550082101807,
+              "entropy_shift": -0.017390455824196405,
+              "ess_frac": 0.9862199194214701,
+              "ks_max": 0.41379310344827586,
+              "ks_mean": 0.28735632183908044,
+              "n_experts": 3.0,
+              "val_disagreement": 0.22742200328407225,
+              "val_gap": 0.008333333333333304
+            },
+            "frozen_expert": 0,
+            "labels_used_for_decision": 29,
+            "mode": "retrospective_audit",
+            "router_action": "stack"
+          },
+          "evaluation": {
+            "auroc_candidate": 1.0,
+            "auroc_frozen": 1.0,
+            "auroc_kga": 1.0,
+            "auroc_oracle": 1.0,
+            "brier_benefit": -0.028137614442775096,
+            "covered": false,
+            "false_adapt": false,
+            "harmful_candidate": true,
+            "regret_candidate": 0.0,
+            "regret_frozen": 0.0,
+            "regret_kga": 0.0
+          },
+          "file": "capsule.npz",
+          "input_sha256": "21a8f3010c69bdd0eb0b8cbf9db13f53ffd4f86d8e787c9b2c68aaf3a73fbab6"
+        },
+        {
+          "decision": {
+            "certificate": {
+              "alpha": 0.1,
+              "delta_hat": -0.021072182964485323,
+              "epsilon": 0.709284447982049,
+              "lower": -0.7303566309465344,
+              "method": "ebern",
+              "n": 25,
+              "upper": 0.6882122650175637
+            },
+            "claim_eligible": false,
+            "claim_reasons": [
+              "uses_full_target_labels_for_decision",
+              "not_deployment_eligible"
+            ],
+            "claim_tier": "retrospective_only",
+            "decision": "ABSTAIN",
+            "deployed_action": "freeze",
+            "evidence": {
+              "best_val_auc": 0.97,
+              "conf_shift": -0.07303726400973598,
+              "disagree": 0.7053846153846154,
+              "entropy_shift": 0.47152076322580827,
+              "ess_frac": 0.9539693531326361,
+              "ks_max": 0.56,
+              "ks_mean": 0.36000000000000004,
+              "n_experts": 3.0,
+              "val_disagreement": 0.23444444444444446,
+              "val_gap": 0.06999999999999995
+            },
+            "frozen_expert": 1,
+            "labels_used_for_decision": 25,
+            "mode": "retrospective_audit",
+            "router_action": "stack"
+          },
+          "evaluation": {
+            "auroc_candidate": 0.85,
+            "auroc_frozen": 0.92,
+            "auroc_kga": 0.92,
+            "auroc_oracle": 0.92,
+            "brier_benefit": -0.021072182964485323,
+            "covered": false,
+            "false_adapt": false,
+            "harmful_candidate": true,
+            "regret_candidate": 0.07000000000000006,
+            "regret_frozen": 0.0,
+            "regret_kga": 0.0
+          },
+          "file": "cotton.npz",
+          "input_sha256": "f859d661055d266c1748d4a3d4a1d4ab961fb30b81dbdecd4bf9b1e3a953698b"
+        },
+        {
+          "decision": {
+            "certificate": {
+              "alpha": 0.1,
+              "delta_hat": -0.05069251039382858,
+              "epsilon": 0.6272831214271949,
+              "lower": -0.6779756318210235,
+              "method": "ebern",
+              "n": 26,
+              "upper": 0.5765906110333663
+            },
+            "claim_eligible": false,
+            "claim_reasons": [
+              "uses_full_target_labels_for_decision",
+              "not_deployment_eligible"
+            ],
+            "claim_tier": "retrospective_only",
+            "decision": "ABSTAIN",
+            "deployed_action": "freeze",
+            "evidence": {
+              "best_val_auc": 1.0,
+              "conf_shift": -0.01261036690077244,
+              "disagree": 0.5327015108698188,
+              "entropy_shift": 0.3039662614473957,
+              "ess_frac": 0.9971421970539779,
+              "ks_max": 0.5246153846153846,
+              "ks_mean": 0.3882051282051282,
+              "n_experts": 3.0,
+              "val_disagreement": 0.2811111111111111,
+              "val_gap": 0.0
+            },
+            "frozen_expert": 0,
+            "labels_used_for_decision": 26,
+            "mode": "retrospective_audit",
+            "router_action": "stack"
+          },
+          "evaluation": {
+            "auroc_candidate": 1.0,
+            "auroc_frozen": 1.0,
+            "auroc_kga": 1.0,
+            "auroc_oracle": 1.0,
+            "brier_benefit": -0.05069251039382858,
+            "covered": false,
+            "false_adapt": false,
+            "harmful_candidate": true,
+            "regret_candidate": 0.0,
+            "regret_frozen": 0.0,
+            "regret_kga": 0.0
+          },
+          "file": "cube.npz",
+          "input_sha256": "db53bd9c2194c02444d54a17227eb4cf85223034de41b29760c13d29e5b9c622"
+        },
+        {
+          "decision": {
+            "certificate": {
+              "alpha": 0.1,
+              "delta_hat": -0.02267933219625512,
+              "epsilon": 0.8189823064085114,
+              "lower": -0.8416616386047666,
+              "method": "ebern",
+              "n": 20,
+              "upper": 0.7963029742122563
+            },
+            "claim_eligible": false,
+            "claim_reasons": [
+              "uses_full_target_labels_for_decision",
+              "not_deployment_eligible"
+            ],
+            "claim_tier": "retrospective_only",
+            "decision": "ABSTAIN",
+            "deployed_action": "freeze",
+            "evidence": {
+              "best_val_auc": 1.0,
+              "conf_shift": -0.08004962562042106,
+              "disagree": 0.8852130325814536,
+              "entropy_shift": -0.05608430558410449,
+              "ess_frac": 0.949991788022931,
+              "ks_max": 0.35,
+              "ks_mean": 0.2833333333333333,
+              "n_experts": 3.0,
+              "val_disagreement": 0.21403508771929822,
+              "val_gap": 0.10666666666666669
+            },
+            "frozen_expert": 1,
+            "labels_used_for_decision": 20,
+            "mode": "retrospective_audit",
+            "router_action": "stack"
+          },
+          "evaluation": {
+            "auroc_candidate": 0.48,
+            "auroc_frozen": 0.3466666666666667,
+            "auroc_kga": 0.3466666666666667,
+            "auroc_oracle": 0.48,
+            "brier_benefit": -0.02267933219625512,
+            "covered": false,
+            "false_adapt": false,
+            "harmful_candidate": true,
+            "regret_candidate": 0.0,
+            "regret_frozen": 0.1333333333333333,
+            "regret_kga": 0.1333333333333333
+          },
+          "file": "flat_pad.npz",
+          "input_sha256": "1f6f57054a4e05f51e9269f2d0f76323b333acbf08268981badbf467b341c025"
+        },
+        {
+          "decision": {
+            "certificate": {
+              "alpha": 0.1,
+              "delta_hat": 0.01664694926708752,
+              "epsilon": 0.7163689440388059,
+              "lower": -0.6997219947717184,
+              "method": "ebern",
+              "n": 23,
+              "upper": 0.7330158933058935
+            },
+            "claim_eligible": false,
+            "claim_reasons": [
+              "uses_full_target_labels_for_decision",
+              "not_deployment_eligible"
+            ],
+            "claim_tier": "retrospective_only",
+            "decision": "ABSTAIN",
+            "deployed_action": "freeze",
+            "evidence": {
+              "best_val_auc": 1.0,
+              "conf_shift": -0.06186829583707515,
+              "disagree": 0.7308959156785244,
+              "entropy_shift": -0.06075789017007738,
+              "ess_frac": 0.9980778995282985,
+              "ks_max": 0.21739130434782608,
+              "ks_mean": 0.20289855072463767,
+              "n_experts": 3.0,
+              "val_disagreement": 0.3465085638998682,
+              "val_gap": 0.07777777777777772
+            },
+            "frozen_expert": 1,
+            "labels_used_for_decision": 23,
+            "mode": "retrospective_audit",
+            "router_action": "stack"
+          },
+          "evaluation": {
+            "auroc_candidate": 0.9111111111111111,
+            "auroc_frozen": 0.8222222222222222,
+            "auroc_kga": 0.8222222222222222,
+            "auroc_oracle": 0.9111111111111111,
+            "brier_benefit": 0.01664694926708752,
+            "covered": false,
+            "false_adapt": false,
+            "harmful_candidate": false,
+            "regret_candidate": 0.0,
+            "regret_frozen": 0.0888888888888889,
+            "regret_kga": 0.0888888888888889
+          },
+          "file": "light.npz",
+          "input_sha256": "7b0b8542ec2ee639e0fe61fea924e6ee9179c73a6e2621af0bf829a5a6aacd3e"
+        },
+        {
+          "decision": {
+            "certificate": {
+              "alpha": 0.1,
+              "delta_hat": -0.014734136631269512,
+              "epsilon": 0.8184847074397101,
+              "lower": -0.8332188440709797,
+              "method": "ebern",
+              "n": 20,
+              "upper": 0.8037505708084406
+            },
+            "claim_eligible": false,
+            "claim_reasons": [
+              "uses_full_target_labels_for_decision",
+              "not_deployment_eligible"
+            ],
+            "claim_tier": "retrospective_only",
+            "decision": "ABSTAIN",
+            "deployed_action": "freeze",
+            "evidence": {
+              "best_val_auc": 0.9857142857142858,
+              "conf_shift": -0.04482061677356147,
+              "disagree": 0.9167919799498747,
+              "entropy_shift": -0.060179367870436984,
+              "ess_frac": 0.9618137531498083,
+              "ks_max": 0.28421052631578947,
+              "ks_mean": 0.2596491228070175,
+              "n_experts": 3.0,
+              "val_disagreement": 0.2768031189083821,
+              "val_gap": 0.2857142857142857
+            },
+            "frozen_expert": 0,
+            "labels_used_for_decision": 20,
+            "mode": "retrospective_audit",
+            "router_action": "stack"
+          },
+          "evaluation": {
+            "auroc_candidate": 1.0,
+            "auroc_frozen": 1.0,
+            "auroc_kga": 1.0,
+            "auroc_oracle": 1.0,
+            "brier_benefit": -0.014734136631269512,
+            "covered": false,
+            "false_adapt": false,
+            "harmful_candidate": true,
+            "regret_candidate": 0.0,
+            "regret_frozen": 0.0,
+            "regret_kga": 0.0
+          },
+          "file": "nut.npz",
+          "input_sha256": "cab9bcafe721831a4c75fefa4dfcb6b850f4b7291cf4375e31371533b33afe4d"
+        },
+        {
+          "decision": {
+            "certificate": {
+              "alpha": 0.1,
+              "delta_hat": -0.04434288077611774,
+              "epsilon": 0.805132270946031,
+              "lower": -0.8494751517221487,
+              "method": "ebern",
+              "n": 20,
+              "upper": 0.7607893901699133
+            },
+            "claim_eligible": false,
+            "claim_reasons": [
+              "uses_full_target_labels_for_decision",
+              "not_deployment_eligible"
+            ],
+            "claim_tier": "retrospective_only",
+            "decision": "ABSTAIN",
+            "deployed_action": "freeze",
+            "evidence": {
+              "best_val_auc": 1.0,
+              "conf_shift": -0.034148237321897534,
+              "disagree": 0.800501253132832,
+              "entropy_shift": 0.2973043700036855,
+              "ess_frac": 0.9709679993582542,
+              "ks_max": 0.55,
+              "ks_mean": 0.4166666666666667,
+              "n_experts": 3.0,
+              "val_disagreement": 0.2859649122807017,
+              "val_gap": 0.0
+            },
+            "frozen_expert": 0,
+            "labels_used_for_decision": 20,
+            "mode": "retrospective_audit",
+            "router_action": "stack"
+          },
+          "evaluation": {
+            "auroc_candidate": 1.0,
+            "auroc_frozen": 1.0,
+            "auroc_kga": 1.0,
+            "auroc_oracle": 1.0,
+            "brier_benefit": -0.04434288077611774,
+            "covered": false,
+            "false_adapt": false,
+            "harmful_candidate": true,
+            "regret_candidate": 0.0,
+            "regret_frozen": 0.0,
+            "regret_kga": 0.0
+          },
+          "file": "piggy.npz",
+          "input_sha256": "5b13c9ce7a810fc7303dbb134e3c6201aff4e160b34919227b68589620b814e9"
+        },
+        {
+          "decision": {
+            "certificate": {
+              "alpha": 0.1,
+              "delta_hat": -0.032363617482687505,
+              "epsilon": 0.835628617481253,
+              "lower": -0.8679922349639405,
+              "method": "ebern",
+              "n": 19,
+              "upper": 0.8032649999985656
+            },
+            "claim_eligible": false,
+            "claim_reasons": [
+              "uses_full_target_labels_for_decision",
+              "not_deployment_eligible"
+            ],
+            "claim_tier": "retrospective_only",
+            "decision": "ABSTAIN",
+            "deployed_action": "freeze",
+            "evidence": {
+              "best_val_auc": 1.0,
+              "conf_shift": -0.0712765902984589,
+              "disagree": 0.49717579919175003,
+              "entropy_shift": 0.7666706593713926,
+              "ess_frac": 0.8920585061381721,
+              "ks_max": 0.5263157894736842,
+              "ks_mean": 0.4385964912280702,
+              "n_experts": 3.0,
+              "val_disagreement": 0.22417153996101366,
+              "val_gap": 0.08571428571428563
+            },
+            "frozen_expert": 1,
+            "labels_used_for_decision": 19,
+            "mode": "retrospective_audit",
+            "router_action": "stack"
+          },
+          "evaluation": {
+            "auroc_candidate": 0.9857142857142858,
+            "auroc_frozen": 1.0,
+            "auroc_kga": 1.0,
+            "auroc_oracle": 1.0,
+            "brier_benefit": -0.032363617482687505,
+            "covered": false,
+            "false_adapt": false,
+            "harmful_candidate": true,
+            "regret_candidate": 0.014285714285714235,
+            "regret_frozen": 0.0,
+            "regret_kga": 0.0
+          },
+          "file": "plastic_cylinder.npz",
+          "input_sha256": "a94759eb69db714bdb12fdb68ae7d571943ce37bf443535c190f670ce1ac0576"
+        },
+        {
+          "decision": {
+            "certificate": {
+              "alpha": 0.1,
+              "delta_hat": -0.11835173084077409,
+              "epsilon": 0.7779419520588373,
+              "lower": -0.8962936828996114,
+              "method": "ebern",
+              "n": 21,
+              "upper": 0.6595902212180632
+            },
+            "claim_eligible": false,
+            "claim_reasons": [
+              "uses_full_target_labels_for_decision",
+              "not_deployment_eligible"
+            ],
+            "claim_tier": "retrospective_only",
+            "decision": "ABSTAIN",
+            "deployed_action": "freeze",
+            "evidence": {
+              "best_val_auc": 0.875,
+              "conf_shift": 0.04982068157458397,
+              "disagree": 1.0995670995670996,
+              "entropy_shift": -0.18609168448848923,
+              "ess_frac": 0.06000292913258657,
+              "ks_max": 0.6666666666666666,
+              "ks_mean": 0.42857142857142855,
+              "n_experts": 3.0,
+              "val_disagreement": 0.3238095238095238,
+              "val_gap": 0.0625
+            },
+            "frozen_expert": 2,
+            "labels_used_for_decision": 21,
+            "mode": "retrospective_audit",
+            "router_action": "stack"
+          },
+          "evaluation": {
+            "auroc_candidate": 0.725,
+            "auroc_frozen": 1.0,
+            "auroc_kga": 1.0,
+            "auroc_oracle": 1.0,
+            "brier_benefit": -0.11835173084077409,
+            "covered": false,
+            "false_adapt": false,
+            "harmful_candidate": true,
+            "regret_candidate": 0.275,
+            "regret_frozen": 0.0,
+            "regret_kga": 0.0
+          },
+          "file": "screen.npz",
+          "input_sha256": "9cf06f23dd0e75bb8c0b85eeb30726aa093bda1f40407d539528ba393d1e4f09"
+        },
+        {
+          "decision": {
+            "certificate": {
+              "alpha": 0.1,
+              "delta_hat": 0.0349303914991056,
+              "epsilon": 0.8258033690734987,
+              "lower": -0.7908729775743931,
+              "method": "ebern",
+              "n": 21,
+              "upper": 0.8607337605726043
+            },
+            "claim_eligible": false,
+            "claim_reasons": [
+              "uses_full_target_labels_for_decision",
+              "not_deployment_eligible"
+            ],
+            "claim_tier": "retrospective_only",
+            "decision": "ABSTAIN",
+            "deployed_action": "freeze",
+            "evidence": {
+              "best_val_auc": 0.9866666666666667,
+              "conf_shift": -0.003641801854160409,
+              "disagree": 0.5437229437229438,
+              "entropy_shift": 0.06510152640713862,
+              "ess_frac": 0.9020133253957651,
+              "ks_max": 0.46190476190476193,
+              "ks_mean": 0.3111111111111111,
+              "n_experts": 3.0,
+              "val_disagreement": 0.23684210526315788,
+              "val_gap": 0.039999999999999925
+            },
+            "frozen_expert": 0,
+            "labels_used_for_decision": 21,
+            "mode": "retrospective_audit",
+            "router_action": "stack"
+          },
+          "evaluation": {
+            "auroc_candidate": 0.95,
+            "auroc_frozen": 0.9125,
+            "auroc_kga": 0.9125,
+            "auroc_oracle": 0.95,
+            "brier_benefit": 0.0349303914991056,
+            "covered": false,
+            "false_adapt": false,
+            "harmful_candidate": false,
+            "regret_candidate": 0.0,
+            "regret_frozen": 0.03749999999999998,
+            "regret_kga": 0.03749999999999998
+          },
+          "file": "screw.npz",
+          "input_sha256": "cce349651c7d9fc8955e3f1680eb8142aba1db656303816eb5f6d25d408a6ce3"
+        },
+        {
+          "decision": {
+            "certificate": {
+              "alpha": 0.1,
+              "delta_hat": -0.035328397861136354,
+              "epsilon": 0.6551612918925975,
+              "lower": -0.6904896897537339,
+              "method": "ebern",
+              "n": 25,
+              "upper": 0.6198328940314611
+            },
+            "claim_eligible": false,
+            "claim_reasons": [
+              "uses_full_target_labels_for_decision",
+              "not_deployment_eligible"
+            ],
+            "claim_tier": "retrospective_only",
+            "decision": "ABSTAIN",
+            "deployed_action": "freeze",
+            "evidence": {
+              "best_val_auc": 0.8526315789473684,
+              "conf_shift": 0.04389944130899198,
+              "disagree": 1.1564102564102563,
+              "entropy_shift": 0.15367972761136794,
+              "ess_frac": 0.9761483732503589,
+              "ks_max": 0.33666666666666667,
+              "ks_mean": 0.26333333333333336,
+              "n_experts": 3.0,
+              "val_disagreement": 0.3031400966183575,
+              "val_gap": 0.06315789473684208
+            },
+            "frozen_expert": 1,
+            "labels_used_for_decision": 25,
+            "mode": "retrospective_audit",
+            "router_action": "stack"
+          },
+          "evaluation": {
+            "auroc_candidate": 0.98,
+            "auroc_frozen": 0.9,
+            "auroc_kga": 0.9,
+            "auroc_oracle": 0.98,
+            "brier_benefit": -0.035328397861136354,
+            "covered": false,
+            "false_adapt": false,
+            "harmful_candidate": true,
+            "regret_candidate": 0.0,
+            "regret_frozen": 0.07999999999999996,
+            "regret_kga": 0.07999999999999996
+          },
+          "file": "solar_panel.npz",
+          "input_sha256": "a4a35055c4f4382f5f0dae73c3ffc8ce154360970bd93ab31850a4faa08fce4b"
+        },
+        {
+          "decision": {
+            "certificate": {
+              "alpha": 0.1,
+              "delta_hat": 0.025452487207126822,
+              "epsilon": 1.0329043941415696,
+              "lower": -1.0074519069344428,
+              "method": "ebern",
+              "n": 17,
+              "upper": 1.0583568813486965
+            },
+            "claim_eligible": false,
+            "claim_reasons": [
+              "uses_full_target_labels_for_decision",
+              "not_deployment_eligible"
+            ],
+            "claim_tier": "retrospective_only",
+            "decision": "ABSTAIN",
+            "deployed_action": "freeze",
+            "evidence": {
+              "best_val_auc": 1.0,
+              "conf_shift": -0.11758855750894959,
+              "disagree": 0.5098039215686274,
+              "entropy_shift": 0.26213136282689176,
+              "ess_frac": 0.9368324183504658,
+              "ks_max": 0.5882352941176471,
+              "ks_mean": 0.411764705882353,
+              "n_experts": 3.0,
+              "val_disagreement": 0.2181372549019608,
+              "val_gap": 0.0
+            },
+            "frozen_expert": 1,
+            "labels_used_for_decision": 17,
+            "mode": "retrospective_audit",
+            "router_action": "stack"
+          },
+          "evaluation": {
+            "auroc_candidate": 0.9166666666666666,
+            "auroc_frozen": 0.9333333333333333,
+            "auroc_kga": 0.9333333333333333,
+            "auroc_oracle": 0.9333333333333333,
+            "brier_benefit": 0.025452487207126822,
+            "covered": false,
+            "false_adapt": false,
+            "harmful_candidate": false,
+            "regret_candidate": 0.01666666666666672,
+            "regret_frozen": 0.0,
+            "regret_kga": 0.0
+          },
+          "file": "spring_pad.npz",
+          "input_sha256": "a07e983bea42e42c53c2f2ec25ed1f214c55feb71b571b4480c9fdfe0ff7720b"
+        },
+        {
+          "decision": {
+            "certificate": {
+              "alpha": 0.1,
+              "delta_hat": 0.004981008284056602,
+              "epsilon": 0.906095394367085,
+              "lower": -0.9011143860830284,
+              "method": "ebern",
+              "n": 18,
+              "upper": 0.9110764026511415
+            },
+            "claim_eligible": false,
+            "claim_reasons": [
+              "uses_full_target_labels_for_decision",
+              "not_deployment_eligible"
+            ],
+            "claim_tier": "retrospective_only",
+            "decision": "ABSTAIN",
+            "deployed_action": "freeze",
+            "evidence": {
+              "best_val_auc": 1.0,
+              "conf_shift": -0.03752245493955331,
+              "disagree": 0.3102855177158581,
+              "entropy_shift": -0.16038106337327473,
+              "ess_frac": 0.9812191752240321,
+              "ks_max": 0.3137254901960784,
+              "ks_mean": 0.23965141612200436,
+              "n_experts": 3.0,
+              "val_disagreement": 0.2181372549019608,
+              "val_gap": 0.0
+            },
+            "frozen_expert": 0,
+            "labels_used_for_decision": 18,
+            "mode": "retrospective_audit",
+            "router_action": "stack"
+          },
+          "evaluation": {
+            "auroc_candidate": 1.0,
+            "auroc_frozen": 1.0,
+            "auroc_kga": 1.0,
+            "auroc_oracle": 1.0,
+            "brier_benefit": 0.004981008284056602,
+            "covered": false,
+            "false_adapt": false,
+            "harmful_candidate": false,
+            "regret_candidate": 0.0,
+            "regret_frozen": 0.0,
+            "regret_kga": 0.0
+          },
+          "file": "toothbrush.npz",
+          "input_sha256": "03a9292925165ad264cd9cae10765c15007aba63f7d2bc37fe2e766bbcebbb23"
+        },
+        {
+          "decision": {
+            "certificate": {
+              "alpha": 0.1,
+              "delta_hat": 0.031082414021126763,
+              "epsilon": 0.8847404214191448,
+              "lower": -0.853658007398018,
+              "method": "ebern",
+              "n": 20,
+              "upper": 0.9158228354402715
+            },
+            "claim_eligible": false,
+            "claim_reasons": [
+              "uses_full_target_labels_for_decision",
+              "not_deployment_eligible"
+            ],
+            "claim_tier": "retrospective_only",
+            "decision": "ABSTAIN",
+            "deployed_action": "freeze",
+            "evidence": {
+              "best_val_auc": 0.9866666666666667,
+              "conf_shift": -0.07577447017898753,
+              "disagree": 0.3924812030075189,
+              "entropy_shift": 0.17302924508400697,
+              "ess_frac": 0.92543335367942,
+              "ks_max": 0.25,
+              "ks_mean": 0.2333333333333333,
+              "n_experts": 3.0,
+              "val_disagreement": 0.20175438596491227,
+              "val_gap": 0.026666666666666616
+            },
+            "frozen_expert": 1,
+            "labels_used_for_decision": 20,
+            "mode": "retrospective_audit",
+            "router_action": "stack"
+          },
+          "evaluation": {
+            "auroc_candidate": 0.9866666666666667,
+            "auroc_frozen": 1.0,
+            "auroc_kga": 1.0,
+            "auroc_oracle": 1.0,
+            "brier_benefit": 0.031082414021126763,
+            "covered": false,
+            "false_adapt": false,
+            "harmful_candidate": false,
+            "regret_candidate": 0.013333333333333308,
+            "regret_frozen": 0.0,
+            "regret_kga": 0.0
+          },
+          "file": "zipper.npz",
+          "input_sha256": "7f19128c7e39767e8165b17e15210cda640b795426c41263a99703eeaa7d2247"
+        }
+      ],
+      "invalid_categories": [],
+      "n_matched_files": 15,
+      "n_valid_categories": 15,
+      "name": "MulSen-AD",
+      "pattern": "*.npz"
+    },
+    {
+      "aggregate": {
+        "coverage": 0.0,
+        "decisions": {
+          "ABSTAIN": 8,
+          "ADAPT": 0,
+          "FREEZE": 0
+        },
+        "false_adapt_rate_conditional": 0.0,
+        "false_adapt_rate_unconditional": 0.0,
+        "labels_used_for_decision": 524,
+        "mean_auroc_candidate": 0.8530204954286769,
+        "mean_auroc_frozen": 0.8455128955368825,
+        "mean_auroc_kga": 0.8455128955368825,
+        "n_categories": 8,
+        "regret_always_adapt": 0.0036712166788202827,
+        "regret_always_freeze": 0.011178816570614716,
+        "regret_kga": 0.011178816570614716
+      },
+      "cache": "experiments/fusion/mvtec3d_score_cache",
+      "categories": [
+        {
+          "decision": {
+            "certificate": {
+              "alpha": 0.1,
+              "delta_hat": 0.014354216185259332,
+              "epsilon": 0.253430288508931,
+              "lower": -0.23907607232367167,
+              "method": "ebern",
+              "n": 66,
+              "upper": 0.26778450469419035
+            },
+            "claim_eligible": false,
+            "claim_reasons": [
+              "uses_full_target_labels_for_decision",
+              "not_deployment_eligible"
+            ],
+            "claim_tier": "retrospective_only",
+            "decision": "ABSTAIN",
+            "deployed_action": "freeze",
+            "evidence": {
+              "best_val_auc": 0.8848283499446291,
+              "conf_shift": -0.0624370645914043,
+              "disagree": 0.3061893330550045,
+              "entropy_shift": -0.1346980467190817,
+              "ess_frac": 0.9424473845950725,
+              "ks_max": 0.22727272727272727,
+              "ks_mean": 0.16714015151515152,
+              "n_experts": 2.0,
+              "val_disagreement": 0.1388888888888889,
+              "val_gap": 0.04872646733111863
+            },
+            "frozen_expert": 0,
+            "labels_used_for_decision": 66,
+            "mode": "retrospective_audit",
+            "router_action": "stack"
+          },
+          "evaluation": {
+            "auroc_candidate": 0.8481404958677686,
+            "auroc_frozen": 0.8099173553719008,
+            "auroc_kga": 0.8099173553719008,
+            "auroc_oracle": 0.8481404958677686,
+            "brier_benefit": 0.014354216185259332,
+            "covered": false,
+            "false_adapt": false,
+            "harmful_candidate": false,
+            "regret_candidate": 0.0,
+            "regret_frozen": 0.038223140495867836,
+            "regret_kga": 0.038223140495867836
+          },
+          "file": "bagel.npz",
+          "input_sha256": "a2935e5d1c5bf4b2a535c09d064ee7076b0305751efcf7c194fa60a458d7dbfb"
+        },
+        {
+          "decision": {
+            "certificate": {
+              "alpha": 0.1,
+              "delta_hat": 0.006549443875106701,
+              "epsilon": 0.24510043159823772,
+              "lower": -0.23855098772313102,
+              "method": "ebern",
+              "n": 65,
+              "upper": 0.25164987547334444
+            },
+            "claim_eligible": false,
+            "claim_reasons": [
+              "uses_full_target_labels_for_decision",
+              "not_deployment_eligible"
+            ],
+            "claim_tier": "retrospective_only",
+            "decision": "ABSTAIN",
+            "deployed_action": "freeze",
+            "evidence": {
+              "best_val_auc": 0.8890063424947146,
+              "conf_shift": -0.0013981577487460761,
+              "disagree": 0.3408216783216783,
+              "entropy_shift": -0.07838414698412155,
+              "ess_frac": 0.9679276353557931,
+              "ks_max": 0.15384615384615385,
+              "ks_mean": 0.13076923076923078,
+              "n_experts": 2.0,
+              "val_disagreement": 0.13317307692307692,
+              "val_gap": 0.014799154334038
+            },
+            "frozen_expert": 0,
+            "labels_used_for_decision": 65,
+            "mode": "retrospective_audit",
+            "router_action": "stack"
+          },
+          "evaluation": {
+            "auroc_candidate": 0.7885835095137421,
+            "auroc_frozen": 0.7769556025369979,
+            "auroc_kga": 0.7769556025369979,
+            "auroc_oracle": 0.7885835095137421,
+            "brier_benefit": 0.006549443875106701,
+            "covered": false,
+            "false_adapt": false,
+            "harmful_candidate": false,
+            "regret_candidate": 0.0,
+            "regret_frozen": 0.011627906976744207,
+            "regret_kga": 0.011627906976744207
+          },
+          "file": "cable_gland.npz",
+          "input_sha256": "38ec1b14a4cd23b50f593dd2b46ec287bbd8efbf0f9165313f3881cb1511c3ef"
+        },
+        {
+          "decision": {
+            "certificate": {
+              "alpha": 0.1,
+              "delta_hat": 0.02590788185539252,
+              "epsilon": 0.25605261974387633,
+              "lower": -0.2301447378884838,
+              "method": "ebern",
+              "n": 66,
+              "upper": 0.28196050159926883
+            },
+            "claim_eligible": false,
+            "claim_reasons": [
+              "uses_full_target_labels_for_decision",
+              "not_deployment_eligible"
+            ],
+            "claim_tier": "retrospective_only",
+            "decision": "ABSTAIN",
+            "deployed_action": "freeze",
+            "evidence": {
+              "best_val_auc": 0.9778516057585825,
+              "conf_shift": 0.019637203714840734,
+              "disagree": 0.41206554639390447,
+              "entropy_shift": -0.034529765772490784,
+              "ess_frac": 0.9901030465279048,
+              "ks_max": 0.12121212121212122,
+              "ks_mean": 0.11363636363636365,
+              "n_experts": 2.0,
+              "val_disagreement": 0.20783730158730157,
+              "val_gap": 0.25470653377630126
+            },
+            "frozen_expert": 1,
+            "labels_used_for_decision": 66,
+            "mode": "retrospective_audit",
+            "router_action": "stack"
+          },
+          "evaluation": {
+            "auroc_candidate": 0.9473140495867769,
+            "auroc_frozen": 0.9597107438016529,
+            "auroc_kga": 0.9597107438016529,
+            "auroc_oracle": 0.9597107438016529,
+            "brier_benefit": 0.02590788185539252,
+            "covered": false,
+            "false_adapt": false,
+            "harmful_candidate": false,
+            "regret_candidate": 0.012396694214875992,
+            "regret_frozen": 0.0,
+            "regret_kga": 0.0
+          },
+          "file": "cookie.npz",
+          "input_sha256": "a75f7af986f26558b152bad985228f810baaed01086892f22a7984c4c230f835"
+        },
+        {
+          "decision": {
+            "certificate": {
+              "alpha": 0.1,
+              "delta_hat": 0.006491657724733049,
+              "epsilon": 0.2524073556915574,
+              "lower": -0.2459156979668244,
+              "method": "ebern",
+              "n": 66,
+              "upper": 0.25889901341629046
+            },
+            "claim_eligible": false,
+            "claim_reasons": [
+              "uses_full_target_labels_for_decision",
+              "not_deployment_eligible"
+            ],
+            "claim_tier": "retrospective_only",
+            "decision": "ABSTAIN",
+            "deployed_action": "freeze",
+            "evidence": {
+              "best_val_auc": 0.9713679745493107,
+              "conf_shift": 0.003071029880821863,
+              "disagree": 0.17008662978812217,
+              "entropy_shift": 0.02593864647049715,
+              "ess_frac": 0.999841596413286,
+              "ks_max": 0.11505681818181818,
+              "ks_mean": 0.10014204545454544,
+              "n_experts": 2.0,
+              "val_disagreement": 0.1443452380952381,
+              "val_gap": 0.0827147401908801
+            },
+            "frozen_expert": 0,
+            "labels_used_for_decision": 66,
+            "mode": "retrospective_audit",
+            "router_action": "stack"
+          },
+          "evaluation": {
+            "auroc_candidate": 0.9900793650793651,
+            "auroc_frozen": 0.9801587301587301,
+            "auroc_kga": 0.9801587301587301,
+            "auroc_oracle": 0.9900793650793651,
+            "brier_benefit": 0.006491657724733049,
+            "covered": false,
+            "false_adapt": false,
+            "harmful_candidate": false,
+            "regret_candidate": 0.0,
+            "regret_frozen": 0.009920634920634996,
+            "regret_kga": 0.009920634920634996
+          },
+          "file": "dowel.npz",
+          "input_sha256": "92064377030132d7b0e9d56873a39bc99a8da7774591b5e615d7fd19b83eddd6"
+        },
+        {
+          "decision": {
+            "certificate": {
+              "alpha": 0.1,
+              "delta_hat": -0.0259506682833111,
+              "epsilon": 0.2534813900954486,
+              "lower": -0.27943205837875973,
+              "method": "ebern",
+              "n": 64,
+              "upper": 0.22753072181213752
+            },
+            "claim_eligible": false,
+            "claim_reasons": [
+              "uses_full_target_labels_for_decision",
+              "not_deployment_eligible"
+            ],
+            "claim_tier": "retrospective_only",
+            "decision": "ABSTAIN",
+            "deployed_action": "freeze",
+            "evidence": {
+              "best_val_auc": 0.7336956521739131,
+              "conf_shift": -0.012135974052391474,
+              "disagree": 0.9391941391941392,
+              "entropy_shift": 0.08593899864688659,
+              "ess_frac": 0.9583074781792148,
+              "ks_max": 0.1817956349206349,
+              "ks_mean": 0.14322916666666666,
+              "n_experts": 2.0,
+              "val_disagreement": 0.3374295954941116,
+              "val_gap": 0.20108695652173925
+            },
+            "frozen_expert": 0,
+            "labels_used_for_decision": 64,
+            "mode": "retrospective_audit",
+            "router_action": "stack"
+          },
+          "evaluation": {
+            "auroc_candidate": 0.6520833333333333,
+            "auroc_frozen": 0.6635416666666667,
+            "auroc_kga": 0.6635416666666667,
+            "auroc_oracle": 0.6635416666666667,
+            "brier_benefit": -0.0259506682833111,
+            "covered": false,
+            "false_adapt": false,
+            "harmful_candidate": true,
+            "regret_candidate": 0.011458333333333348,
+            "regret_frozen": 0.0,
+            "regret_kga": 0.0
+          },
+          "file": "foam.npz",
+          "input_sha256": "e8840ba4a0a1e1f3eaa302c80ee110aae7ae22148b63cfcf25765b1345521ae1"
+        },
+        {
+          "decision": {
+            "certificate": {
+              "alpha": 0.1,
+              "delta_hat": 0.0034762858498276605,
+              "epsilon": 0.2452507065294543,
+              "lower": -0.24177442067962665,
+              "method": "ebern",
+              "n": 66,
+              "upper": 0.24872699237928195
+            },
+            "claim_eligible": false,
+            "claim_reasons": [
+              "uses_full_target_labels_for_decision",
+              "not_deployment_eligible"
+            ],
+            "claim_tier": "retrospective_only",
+            "decision": "ABSTAIN",
+            "deployed_action": "freeze",
+            "evidence": {
+              "best_val_auc": 0.75,
+              "conf_shift": -0.07487034866241582,
+              "disagree": 0.5541801482099988,
+              "entropy_shift": 0.09452623729269227,
+              "ess_frac": 0.9528034813259082,
+              "ks_max": 0.1737689393939394,
+              "ks_mean": 0.16098484848484848,
+              "n_experts": 2.0,
+              "val_disagreement": 0.1954365079365079,
+              "val_gap": 0.010121457489878583
+            },
+            "frozen_expert": 0,
+            "labels_used_for_decision": 66,
+            "mode": "retrospective_audit",
+            "router_action": "stack"
+          },
+          "evaluation": {
+            "auroc_candidate": 0.7559354226020892,
+            "auroc_frozen": 0.7321937321937322,
+            "auroc_kga": 0.7321937321937322,
+            "auroc_oracle": 0.7559354226020892,
+            "brier_benefit": 0.0034762858498276605,
+            "covered": false,
+            "false_adapt": false,
+            "harmful_candidate": false,
+            "regret_candidate": 0.0,
+            "regret_frozen": 0.023741690408357052,
+            "regret_kga": 0.023741690408357052
+          },
+          "file": "peach.npz",
+          "input_sha256": "12f2c5b6f7225b99f694a76efa0d76bec2baa54573a8246cb8a82b81fcd27f71"
+        },
+        {
+          "decision": {
+            "certificate": {
+              "alpha": 0.1,
+              "delta_hat": 0.0412889544516207,
+              "epsilon": 0.2610132368758345,
+              "lower": -0.2197242824242138,
+              "method": "ebern",
+              "n": 66,
+              "upper": 0.30230219132745517
+            },
+            "claim_eligible": false,
+            "claim_reasons": [
+              "uses_full_target_labels_for_decision",
+              "not_deployment_eligible"
+            ],
+            "claim_tier": "retrospective_only",
+            "decision": "ABSTAIN",
+            "deployed_action": "freeze",
+            "evidence": {
+              "best_val_auc": 0.906158357771261,
+              "conf_shift": -0.01221703764131954,
+              "disagree": 0.35031833837804005,
+              "entropy_shift": 0.01914395129668467,
+              "ess_frac": 0.9941984373820484,
+              "ks_max": 0.15293560606060605,
+              "ks_mean": 0.12026515151515152,
+              "n_experts": 2.0,
+              "val_disagreement": 0.20535714285714285,
+              "val_gap": 0.08015640273704783
+            },
+            "frozen_expert": 1,
+            "labels_used_for_decision": 66,
+            "mode": "retrospective_audit",
+            "router_action": "stack"
+          },
+          "evaluation": {
+            "auroc_candidate": 0.9889705882352942,
+            "auroc_frozen": 0.9944852941176471,
+            "auroc_kga": 0.9944852941176471,
+            "auroc_oracle": 0.9944852941176471,
+            "brier_benefit": 0.0412889544516207,
+            "covered": false,
+            "false_adapt": false,
+            "harmful_candidate": false,
+            "regret_candidate": 0.005514705882352922,
+            "regret_frozen": 0.0,
+            "regret_kga": 0.0
+          },
+          "file": "rope.npz",
+          "input_sha256": "81996e5a04f43c25a0195af09d4df8200e2641cdb792dd07fb093dccac6a93f0"
+        },
+        {
+          "decision": {
+            "certificate": {
+              "alpha": 0.1,
+              "delta_hat": 0.004367430125933825,
+              "epsilon": 0.24093871934063266,
+              "lower": -0.23657128921469883,
+              "method": "ebern",
+              "n": 65,
+              "upper": 0.24530614946656648
+            },
+            "claim_eligible": false,
+            "claim_reasons": [
+              "uses_full_target_labels_for_decision",
+              "not_deployment_eligible"
+            ],
+            "claim_tier": "retrospective_only",
+            "decision": "ABSTAIN",
+            "deployed_action": "freeze",
+            "evidence": {
+              "best_val_auc": 0.8126232741617357,
+              "conf_shift": 0.008200756519989916,
+              "disagree": 0.6102272727272727,
+              "entropy_shift": -0.01616177569686217,
+              "ess_frac": 0.9954435339983739,
+              "ks_max": 0.15384615384615385,
+              "ks_mean": 0.13846153846153847,
+              "n_experts": 2.0,
+              "val_disagreement": 0.2567307692307692,
+              "val_gap": 0.12228796844181467
+            },
+            "frozen_expert": 0,
+            "labels_used_for_decision": 65,
+            "mode": "retrospective_audit",
+            "router_action": "stack"
+          },
+          "evaluation": {
+            "auroc_candidate": 0.8530571992110454,
+            "auroc_frozen": 0.8471400394477318,
+            "auroc_kga": 0.8471400394477318,
+            "auroc_oracle": 0.8530571992110454,
+            "brier_benefit": 0.004367430125933825,
+            "covered": false,
+            "false_adapt": false,
+            "harmful_candidate": false,
+            "regret_candidate": 0.0,
+            "regret_frozen": 0.00591715976331364,
+            "regret_kga": 0.00591715976331364
+          },
+          "file": "tire.npz",
+          "input_sha256": "1ab7289ebd907505405662694f72f30533d60ee5fe1789936bb9207a0b9ec5c4"
+        }
+      ],
+      "invalid_categories": [],
+      "n_matched_files": 8,
+      "n_valid_categories": 8,
+      "name": "MVTec-3D",
+      "pattern": "*.npz"
+    },
+    {
+      "aggregate": {
+        "coverage": 0.10526315789473684,
+        "decisions": {
+          "ABSTAIN": 17,
+          "ADAPT": 0,
+          "FREEZE": 2
+        },
+        "false_adapt_rate_conditional": 0.0,
+        "false_adapt_rate_unconditional": 0.0,
+        "labels_used_for_decision": 2101,
+        "mean_auroc_candidate": 0.6094352892131318,
+        "mean_auroc_frozen": 0.5850032655897168,
+        "mean_auroc_kga": 0.5850032655897168,
+        "n_categories": 19,
+        "regret_always_adapt": 0.027999555323953443,
+        "regret_always_freeze": 0.052431578947368426,
+        "regret_kga": 0.052431578947368426
+      },
+      "cache": "experiments/fusion/realiad_natdeg_score_cache",
+      "categories": [
+        {
+          "decision": {
+            "certificate": {
+              "alpha": 0.1,
+              "delta_hat": 0.010607191119442212,
+              "epsilon": 0.1317895319143501,
+              "lower": -0.1211823407949079,
+              "method": "ebern",
+              "n": 126,
+              "upper": 0.14239672303379233
+            },
+            "claim_eligible": false,
+            "claim_reasons": [
+              "uses_full_target_labels_for_decision",
+              "not_deployment_eligible"
+            ],
+            "claim_tier": "retrospective_only",
+            "decision": "ABSTAIN",
+            "deployed_action": "freeze",
+            "evidence": {
+              "best_val_auc": 0.9325806451612902,
+              "conf_shift": 0.17808855915193417,
+              "disagree": 0.4776914449626416,
+              "entropy_shift": 0.0832402856285972,
+              "ess_frac": 0.6875808378085295,
+              "ks_max": 0.8443592201981464,
+              "ks_mean": 0.33631618195376584,
+              "n_experts": 3.0,
+              "val_disagreement": 0.3387750166273656,
+              "val_gap": 0.06612903225806444
+            },
+            "frozen_expert": 1,
+            "labels_used_for_decision": 126,
+            "mode": "retrospective_audit",
+            "router_action": "stack"
+          },
+          "evaluation": {
+            "auroc_candidate": 0.904950495049505,
+            "auroc_frozen": 0.9671287128712871,
+            "auroc_kga": 0.9671287128712871,
+            "auroc_oracle": 0.9671287128712871,
+            "brier_benefit": 0.010607191119442212,
+            "covered": false,
+            "false_adapt": false,
+            "harmful_candidate": false,
+            "regret_candidate": 0.06217821782178212,
+            "regret_frozen": 0.0,
+            "regret_kga": 0.0
+          },
+          "file": "audio_jack_socket.npz",
+          "input_sha256": "f1fbfc17d6073927de5f356c4d0fe64eff76c5fd9ff17c18664bd860d3dd09f4"
+        },
+        {
+          "decision": {
+            "certificate": {
+              "alpha": 0.1,
+              "delta_hat": 0.01110152394535096,
+              "epsilon": 0.18978559714171034,
+              "lower": -0.17868407319635937,
+              "method": "ebern",
+              "n": 100,
+              "upper": 0.2008871210870613
+            },
+            "claim_eligible": false,
+            "claim_reasons": [
+              "uses_full_target_labels_for_decision",
+              "not_deployment_eligible"
+            ],
+            "claim_tier": "retrospective_only",
+            "decision": "ABSTAIN",
+            "deployed_action": "freeze",
+            "evidence": {
+              "best_val_auc": 0.992,
+              "conf_shift": -0.08157728575404671,
+              "disagree": 0.6350682759307298,
+              "entropy_shift": 0.037254832060686915,
+              "ess_frac": 0.8324471116642148,
+              "ks_max": 0.7333333333333333,
+              "ks_mean": 0.7033333333333333,
+              "n_experts": 3.0,
+              "val_disagreement": 0.14794929157345263,
+              "val_gap": 0.016000000000000014
+            },
+            "frozen_expert": 0,
+            "labels_used_for_decision": 100,
+            "mode": "retrospective_audit",
+            "router_action": "stack"
+          },
+          "evaluation": {
+            "auroc_candidate": 0.7909333333333334,
+            "auroc_frozen": 0.7312,
+            "auroc_kga": 0.7312,
+            "auroc_oracle": 0.7909333333333334,
+            "brier_benefit": 0.01110152394535096,
+            "covered": false,
+            "false_adapt": false,
+            "harmful_candidate": false,
+            "regret_candidate": 0.0,
+            "regret_frozen": 0.059733333333333416,
+            "regret_kga": 0.059733333333333416
+          },
+          "file": "connector_housing_female.npz",
+          "input_sha256": "ce39ec7ac4f50995c29f88ae45127da8ff33ac86cc5ca246e2efdd1896280ca0"
+        },
+        {
+          "decision": {
+            "certificate": {
+              "alpha": 0.1,
+              "delta_hat": 0.08013406020857261,
+              "epsilon": 0.1981097104179863,
+              "lower": -0.1179756502094137,
+              "method": "ebern",
+              "n": 100,
+              "upper": 0.2782437706265589
+            },
+            "claim_eligible": false,
+            "claim_reasons": [
+              "uses_full_target_labels_for_decision",
+              "not_deployment_eligible"
+            ],
+            "claim_tier": "retrospective_only",
+            "decision": "ABSTAIN",
+            "deployed_action": "freeze",
+            "evidence": {
+              "best_val_auc": 1.0,
+              "conf_shift": -0.5258944125641964,
+              "disagree": 1.004904490449045,
+              "entropy_shift": 0.5846746805892911,
+              "ess_frac": 0.8910972587747703,
+              "ks_max": 0.848,
+              "ks_mean": 0.824,
+              "n_experts": 3.0,
+              "val_disagreement": 0.14180645161290326,
+              "val_gap": 0.0
+            },
+            "frozen_expert": 0,
+            "labels_used_for_decision": 100,
+            "mode": "retrospective_audit",
+            "router_action": "stack"
+          },
+          "evaluation": {
+            "auroc_candidate": 0.9077333333333333,
+            "auroc_frozen": 0.9994666666666666,
+            "auroc_kga": 0.9994666666666666,
+            "auroc_oracle": 0.9994666666666666,
+            "brier_benefit": 0.08013406020857261,
+            "covered": false,
+            "false_adapt": false,
+            "harmful_candidate": false,
+            "regret_candidate": 0.09173333333333333,
+            "regret_frozen": 0.0,
+            "regret_kga": 0.0
+          },
+          "file": "crimp_st_cable_mount_box.npz",
+          "input_sha256": "71be280fc57bbd39444ae7c9c5b9b778e7ab90f257ebff190b1a5c86ee21b0b1"
+        },
+        {
+          "decision": {
+            "certificate": {
+              "alpha": 0.1,
+              "delta_hat": -0.08426323850005911,
+              "epsilon": 0.19441763355460978,
+              "lower": -0.2786808720546689,
+              "method": "ebern",
+              "n": 125,
+              "upper": 0.11015439505455067
+            },
+            "claim_eligible": false,
+            "claim_reasons": [
+              "uses_full_target_labels_for_decision",
+              "not_deployment_eligible"
+            ],
+            "claim_tier": "retrospective_only",
+            "decision": "ABSTAIN",
+            "deployed_action": "freeze",
+            "evidence": {
+              "best_val_auc": 0.932,
+              "conf_shift": 0.050146154226401896,
+              "disagree": 0.6882484298969969,
+              "entropy_shift": -0.33885444510505636,
+              "ess_frac": 0.5635079027448286,
+              "ks_max": 1.0,
+              "ks_mean": 0.42933333333333334,
+              "n_experts": 3.0,
+              "val_disagreement": 0.25707526881720427,
+              "val_gap": 0.28200000000000003
+            },
+            "frozen_expert": 2,
+            "labels_used_for_decision": 125,
+            "mode": "retrospective_audit",
+            "router_action": "stack"
+          },
+          "evaluation": {
+            "auroc_candidate": 0.44,
+            "auroc_frozen": 0.24,
+            "auroc_kga": 0.24,
+            "auroc_oracle": 0.44,
+            "brier_benefit": -0.08426323850005911,
+            "covered": false,
+            "false_adapt": false,
+            "harmful_candidate": true,
+            "regret_candidate": 0.0,
+            "regret_frozen": 0.2,
+            "regret_kga": 0.2
+          },
+          "file": "dc_power_connector.npz",
+          "input_sha256": "9406cab18a499a59ae237d5208f14dee5d9c85d69eb0df040a6887f84d79c923"
+        },
+        {
+          "decision": {
+            "certificate": {
+              "alpha": 0.1,
+              "delta_hat": 0.01176210839154453,
+              "epsilon": 0.1623820997533895,
+              "lower": -0.15061999136184495,
+              "method": "ebern",
+              "n": 100,
+              "upper": 0.17414420814493403
+            },
+            "claim_eligible": false,
+            "claim_reasons": [
+              "uses_full_target_labels_for_decision",
+              "not_deployment_eligible"
+            ],
+            "claim_tier": "retrospective_only",
+            "decision": "ABSTAIN",
+            "deployed_action": "freeze",
+            "evidence": {
+              "best_val_auc": 0.9184,
+              "conf_shift": 0.013020848051549905,
+              "disagree": 0.8149845333365252,
+              "entropy_shift": 0.16490983985462693,
+              "ess_frac": 0.9852082238044407,
+              "ks_max": 0.28,
+              "ks_mean": 0.15666666666666665,
+              "n_experts": 3.0,
+              "val_disagreement": 0.2974410774410774,
+              "val_gap": 0.11839999999999995
+            },
+            "frozen_expert": 0,
+            "labels_used_for_decision": 100,
+            "mode": "retrospective_audit",
+            "router_action": "stack"
+          },
+          "evaluation": {
+            "auroc_candidate": 0.9813333333333333,
+            "auroc_frozen": 0.9973333333333333,
+            "auroc_kga": 0.9973333333333333,
+            "auroc_oracle": 0.9973333333333333,
+            "brier_benefit": 0.01176210839154453,
+            "covered": false,
+            "false_adapt": false,
+            "harmful_candidate": false,
+            "regret_candidate": 0.016000000000000014,
+            "regret_frozen": 0.0,
+            "regret_kga": 0.0
+          },
+          "file": "ethernet_connector.npz",
+          "input_sha256": "f103fdea225a2437b52a2d99f64409ff1cb1444b6357e9552737e756c7310ac8"
+        },
+        {
+          "decision": {
+            "certificate": {
+              "alpha": 0.1,
+              "delta_hat": 0.02400118163701921,
+              "epsilon": 0.21165299472562948,
+              "lower": -0.1876518130886103,
+              "method": "ebern",
+              "n": 75,
+              "upper": 0.23565417636264868
+            },
+            "claim_eligible": false,
+            "claim_reasons": [
+              "uses_full_target_labels_for_decision",
+              "not_deployment_eligible"
+            ],
+            "claim_tier": "retrospective_only",
+            "decision": "ABSTAIN",
+            "deployed_action": "freeze",
+            "evidence": {
+              "best_val_auc": 0.8490666666666666,
+              "conf_shift": 0.13868585733536198,
+              "disagree": 0.8478312659982244,
+              "entropy_shift": -0.009398982472616169,
+              "ess_frac": 0.9451432771878336,
+              "ks_max": 0.2733333333333333,
+              "ks_mean": 0.16,
+              "n_experts": 3.0,
+              "val_disagreement": 0.29609427609427613,
+              "val_gap": 0.11306666666666665
+            },
+            "frozen_expert": 1,
+            "labels_used_for_decision": 75,
+            "mode": "retrospective_audit",
+            "router_action": "stack"
+          },
+          "evaluation": {
+            "auroc_candidate": 0.9792,
+            "auroc_frozen": 0.9712,
+            "auroc_kga": 0.9712,
+            "auroc_oracle": 0.9792,
+            "brier_benefit": 0.02400118163701921,
+            "covered": false,
+            "false_adapt": false,
+            "harmful_candidate": false,
+            "regret_candidate": 0.0,
+            "regret_frozen": 0.008000000000000007,
+            "regret_kga": 0.008000000000000007
+          },
+          "file": "ferrite_bead.npz",
+          "input_sha256": "22d904299b333914473379014272c9b68211576379ab01d9d94652fe4a27ec3a"
+        },
+        {
+          "decision": {
+            "certificate": {
+              "alpha": 0.1,
+              "delta_hat": -0.0892418735701654,
+              "epsilon": 0.216113078258986,
+              "lower": -0.3053549518291514,
+              "method": "ebern",
+              "n": 100,
+              "upper": 0.12687120468882063
+            },
+            "claim_eligible": false,
+            "claim_reasons": [
+              "uses_full_target_labels_for_decision",
+              "not_deployment_eligible"
+            ],
+            "claim_tier": "retrospective_only",
+            "decision": "ABSTAIN",
+            "deployed_action": "freeze",
+            "evidence": {
+              "best_val_auc": 0.8092,
+              "conf_shift": -0.09809827866500787,
+              "disagree": 0.34070122522442847,
+              "entropy_shift": -0.04281292527245917,
+              "ess_frac": 0.8255447441944027,
+              "ks_max": 0.8,
+              "ks_mean": 0.7413333333333334,
+              "n_experts": 3.0,
+              "val_disagreement": 0.17088172043010755,
+              "val_gap": 0.13739999999999997
+            },
+            "frozen_expert": 2,
+            "labels_used_for_decision": 100,
+            "mode": "retrospective_audit",
+            "router_action": "stack"
+          },
+          "evaluation": {
+            "auroc_candidate": 0.38293333333333335,
+            "auroc_frozen": 0.3712,
+            "auroc_kga": 0.3712,
+            "auroc_oracle": 0.38293333333333335,
+            "brier_benefit": -0.0892418735701654,
+            "covered": false,
+            "false_adapt": false,
+            "harmful_candidate": true,
+            "regret_candidate": 0.0,
+            "regret_frozen": 0.011733333333333373,
+            "regret_kga": 0.011733333333333373
+          },
+          "file": "fork_crimp_terminal.npz",
+          "input_sha256": "e7a2ea4923f2e3cfcea7a81f051602b679947d08b388c41fd765cca73386bd1c"
+        },
+        {
+          "decision": {
+            "certificate": {
+              "alpha": 0.1,
+              "delta_hat": -0.06273687740612353,
+              "epsilon": 0.23683411985657465,
+              "lower": -0.2995709972626982,
+              "method": "ebern",
+              "n": 100,
+              "upper": 0.1740972424504511
+            },
+            "claim_eligible": false,
+            "claim_reasons": [
+              "uses_full_target_labels_for_decision",
+              "not_deployment_eligible"
+            ],
+            "claim_tier": "retrospective_only",
+            "decision": "ABSTAIN",
+            "deployed_action": "freeze",
+            "evidence": {
+              "best_val_auc": 0.6666666666666666,
+              "conf_shift": 0.11228268694756227,
+              "disagree": 0.7428069257775334,
+              "entropy_shift": 0.003943165559691764,
+              "ess_frac": 0.725167461612628,
+              "ks_max": 0.93,
+              "ks_mean": 0.7800000000000001,
+              "n_experts": 3.0,
+              "val_disagreement": 0.2762289562289562,
+              "val_gap": 0.020266666666666655
+            },
+            "frozen_expert": 2,
+            "labels_used_for_decision": 100,
+            "mode": "retrospective_audit",
+            "router_action": "stack"
+          },
+          "evaluation": {
+            "auroc_candidate": 0.19253333333333333,
+            "auroc_frozen": 0.3333333333333333,
+            "auroc_kga": 0.3333333333333333,
+            "auroc_oracle": 0.3333333333333333,
+            "brier_benefit": -0.06273687740612353,
+            "covered": false,
+            "false_adapt": false,
+            "harmful_candidate": true,
+            "regret_candidate": 0.14079999999999998,
+            "regret_frozen": 0.0,
+            "regret_kga": 0.0
+          },
+          "file": "fuse_holder.npz",
+          "input_sha256": "c11b6f93a697cfbcfc934acaabe0397cc11f8eb13975e9003bf92e52da2a7809"
+        },
+        {
+          "decision": {
+            "certificate": {
+              "alpha": 0.1,
+              "delta_hat": 0.007757745716571444,
+              "epsilon": 0.11054673694266909,
+              "lower": -0.10278899122609765,
+              "method": "ebern",
+              "n": 150,
+              "upper": 0.11830448265924053
+            },
+            "claim_eligible": false,
+            "claim_reasons": [
+              "uses_full_target_labels_for_decision",
+              "not_deployment_eligible"
+            ],
+            "claim_tier": "retrospective_only",
+            "decision": "ABSTAIN",
+            "deployed_action": "freeze",
+            "evidence": {
+              "best_val_auc": 0.79616,
+              "conf_shift": 0.12009283280857175,
+              "disagree": 0.33357227840866777,
+              "entropy_shift": -0.11666915566905134,
+              "ess_frac": 0.5887591877639723,
+              "ks_max": 0.8933333333333333,
+              "ks_mean": 0.38666666666666666,
+              "n_experts": 3.0,
+              "val_disagreement": 0.35224459358687543,
+              "val_gap": 0.20368000000000008
+            },
+            "frozen_expert": 1,
+            "labels_used_for_decision": 150,
+            "mode": "retrospective_audit",
+            "router_action": "stack"
+          },
+          "evaluation": {
+            "auroc_candidate": 0.67008,
+            "auroc_frozen": 0.7088,
+            "auroc_kga": 0.7088,
+            "auroc_oracle": 0.7088,
+            "brier_benefit": 0.007757745716571444,
+            "covered": false,
+            "false_adapt": false,
+            "harmful_candidate": false,
+            "regret_candidate": 0.03871999999999998,
+            "regret_frozen": 0.0,
+            "regret_kga": 0.0
+          },
+          "file": "headphone_jack_socket.npz",
+          "input_sha256": "46f33f22c8143d7469936f75e98ca491f59bfb92e3a1a3e669c2004dc571b8bb"
+        },
+        {
+          "decision": {
+            "certificate": {
+              "alpha": 0.1,
+              "delta_hat": -0.17606454334956936,
+              "epsilon": 0.16583458884492658,
+              "lower": -0.34189913219449597,
+              "method": "ebern",
+              "n": 125,
+              "upper": -0.010229954504642785
+            },
+            "claim_eligible": false,
+            "claim_reasons": [
+              "uses_full_target_labels_for_decision",
+              "not_deployment_eligible"
+            ],
+            "claim_tier": "retrospective_only",
+            "decision": "FREEZE",
+            "deployed_action": "freeze",
+            "evidence": {
+              "best_val_auc": 0.97,
+              "conf_shift": 0.2786651006740713,
+              "disagree": 0.7567633495958113,
+              "entropy_shift": -0.44482943369076056,
+              "ess_frac": 0.5598809159612337,
+              "ks_max": 0.872,
+              "ks_mean": 0.5306666666666667,
+              "n_experts": 3.0,
+              "val_disagreement": 0.3359569892473118,
+              "val_gap": 0.42879999999999996
+            },
+            "frozen_expert": 0,
+            "labels_used_for_decision": 125,
+            "mode": "retrospective_audit",
+            "router_action": "stack"
+          },
+          "evaluation": {
+            "auroc_candidate": 0.016,
+            "auroc_frozen": 0.0168,
+            "auroc_kga": 0.0168,
+            "auroc_oracle": 0.0168,
+            "brier_benefit": -0.17606454334956936,
+            "covered": true,
+            "false_adapt": false,
+            "harmful_candidate": true,
+            "regret_candidate": 0.0007999999999999986,
+            "regret_frozen": 0.0,
+            "regret_kga": 0.0
+          },
+          "file": "humidity_sensor.npz",
+          "input_sha256": "f77324d4cee3a4805814dc1efca9d533213792f01910bfa7bbaebf572be19faf"
+        },
+        {
+          "decision": {
+            "certificate": {
+              "alpha": 0.1,
+              "delta_hat": 0.024635056495829154,
+              "epsilon": 0.2556421244734683,
+              "lower": -0.23100706797763915,
+              "method": "ebern",
+              "n": 100,
+              "upper": 0.28027718096929743
+            },
+            "claim_eligible": false,
+            "claim_reasons": [
+              "uses_full_target_labels_for_decision",
+              "not_deployment_eligible"
+            ],
+            "claim_tier": "retrospective_only",
+            "decision": "ABSTAIN",
+            "deployed_action": "freeze",
+            "evidence": {
+              "best_val_auc": 0.8767999999999999,
+              "conf_shift": 0.4952030906119154,
+              "disagree": 0.8571017101710171,
+              "entropy_shift": -0.81018245213429,
+              "ess_frac": 0.6734078998004247,
+              "ks_max": 1.0,
+              "ks_mean": 0.6900000000000001,
+              "n_experts": 3.0,
+              "val_disagreement": 0.30552188552188553,
+              "val_gap": 0.21119999999999994
+            },
+            "frozen_expert": 2,
+            "labels_used_for_decision": 100,
+            "mode": "retrospective_audit",
+            "router_action": "stack"
+          },
+          "evaluation": {
+            "auroc_candidate": 0.6442666666666667,
+            "auroc_frozen": 0.5,
+            "auroc_kga": 0.5,
+            "auroc_oracle": 0.6442666666666667,
+            "brier_benefit": 0.024635056495829154,
+            "covered": false,
+            "false_adapt": false,
+            "harmful_candidate": false,
+            "regret_candidate": 0.0,
+            "regret_frozen": 0.14426666666666665,
+            "regret_kga": 0.14426666666666665
+          },
+          "file": "knob_cap.npz",
+          "input_sha256": "94d1b8ba65ec9b03ba42ab3262e569d5921b1efd989ad5b7495a29724e693a4a"
+        },
+        {
+          "decision": {
+            "certificate": {
+              "alpha": 0.1,
+              "delta_hat": 0.036705296696859305,
+              "epsilon": 0.14439617912709088,
+              "lower": -0.10769088243023157,
+              "method": "ebern",
+              "n": 125,
+              "upper": 0.1811014758239502
+            },
+            "claim_eligible": false,
+            "claim_reasons": [
+              "uses_full_target_labels_for_decision",
+              "not_deployment_eligible"
+            ],
+            "claim_tier": "retrospective_only",
+            "decision": "ABSTAIN",
+            "deployed_action": "freeze",
+            "evidence": {
+              "best_val_auc": 0.7456,
+              "conf_shift": 0.17715609158607604,
+              "disagree": 0.9294459805427547,
+              "entropy_shift": -0.3280882159259635,
+              "ess_frac": 0.5059049593523101,
+              "ks_max": 1.0,
+              "ks_mean": 0.41333333333333333,
+              "n_experts": 3.0,
+              "val_disagreement": 0.29178494623655915,
+              "val_gap": 0.01739999999999997
+            },
+            "frozen_expert": 0,
+            "labels_used_for_decision": 125,
+            "mode": "retrospective_audit",
+            "router_action": "stack"
+          },
+          "evaluation": {
+            "auroc_candidate": 0.778,
+            "auroc_frozen": 0.7836,
+            "auroc_kga": 0.7836,
+            "auroc_oracle": 0.7836,
+            "brier_benefit": 0.036705296696859305,
+            "covered": false,
+            "false_adapt": false,
+            "harmful_candidate": false,
+            "regret_candidate": 0.005599999999999938,
+            "regret_frozen": 0.0,
+            "regret_kga": 0.0
+          },
+          "file": "lattice_block_plug.npz",
+          "input_sha256": "8aadabd607497522212c46a086b3e25b719d9eb5551e2161ea241b79587f07c3"
+        },
+        {
+          "decision": {
+            "certificate": {
+              "alpha": 0.1,
+              "delta_hat": -0.1879815299282499,
+              "epsilon": 0.17432704543655295,
+              "lower": -0.3623085753648029,
+              "method": "ebern",
+              "n": 125,
+              "upper": -0.013654484491696955
+            },
+            "claim_eligible": false,
+            "claim_reasons": [
+              "uses_full_target_labels_for_decision",
+              "not_deployment_eligible"
+            ],
+            "claim_tier": "retrospective_only",
+            "decision": "FREEZE",
+            "deployed_action": "freeze",
+            "evidence": {
+              "best_val_auc": 0.9836,
+              "conf_shift": 0.3661281242225544,
+              "disagree": 0.8420454589406206,
+              "entropy_shift": -1.166754604957557,
+              "ess_frac": 0.7129670536400659,
+              "ks_max": 1.0,
+              "ks_mean": 0.6960000000000001,
+              "n_experts": 3.0,
+              "val_disagreement": 0.36116129032258065,
+              "val_gap": 0.23360000000000003
+            },
+            "frozen_expert": 0,
+            "labels_used_for_decision": 125,
+            "mode": "retrospective_audit",
+            "router_action": "stack"
+          },
+          "evaluation": {
+            "auroc_candidate": 0.1572,
+            "auroc_frozen": 0.02,
+            "auroc_kga": 0.02,
+            "auroc_oracle": 0.1572,
+            "brier_benefit": -0.1879815299282499,
+            "covered": true,
+            "false_adapt": false,
+            "harmful_candidate": true,
+            "regret_candidate": 0.0,
+            "regret_frozen": 0.13720000000000002,
+            "regret_kga": 0.13720000000000002
+          },
+          "file": "lego_pin_connector_plate.npz",
+          "input_sha256": "c8bc71ba3c0ae6f3f1f3419b99fc0f6f5476899fc3e61033f2c120dd53dcf3bd"
+        },
+        {
+          "decision": {
+            "certificate": {
+              "alpha": 0.1,
+              "delta_hat": 0.029851584165055713,
+              "epsilon": 0.21931558430122294,
+              "lower": -0.18946400013616724,
+              "method": "ebern",
+              "n": 100,
+              "upper": 0.24916716846627865
+            },
+            "claim_eligible": false,
+            "claim_reasons": [
+              "uses_full_target_labels_for_decision",
+              "not_deployment_eligible"
+            ],
+            "claim_tier": "retrospective_only",
+            "decision": "ABSTAIN",
+            "deployed_action": "freeze",
+            "evidence": {
+              "best_val_auc": 1.0,
+              "conf_shift": 0.41670692295342027,
+              "disagree": 1.1487957723518694,
+              "entropy_shift": -0.9894075168284631,
+              "ess_frac": 0.6991559691242586,
+              "ks_max": 1.0,
+              "ks_mean": 0.7166666666666667,
+              "n_experts": 3.0,
+              "val_disagreement": 0.21878787878787878,
+              "val_gap": 0.0
+            },
+            "frozen_expert": 0,
+            "labels_used_for_decision": 100,
+            "mode": "retrospective_audit",
+            "router_action": "stack"
+          },
+          "evaluation": {
+            "auroc_candidate": 0.5562666666666667,
+            "auroc_frozen": 0.5,
+            "auroc_kga": 0.5,
+            "auroc_oracle": 0.5562666666666667,
+            "brier_benefit": 0.029851584165055713,
+            "covered": false,
+            "false_adapt": false,
+            "harmful_candidate": false,
+            "regret_candidate": 0.0,
+            "regret_frozen": 0.05626666666666669,
+            "regret_kga": 0.05626666666666669
+          },
+          "file": "lego_propeller.npz",
+          "input_sha256": "d1465b58ca29b9f560278b81b370cf8d8bb4cd06e6013c219b11d0c1f3a93c03"
+        },
+        {
+          "decision": {
+            "certificate": {
+              "alpha": 0.1,
+              "delta_hat": 0.04130893296661793,
+              "epsilon": 0.13640187845731783,
+              "lower": -0.0950929454906999,
+              "method": "ebern",
+              "n": 125,
+              "upper": 0.17771081142393574
+            },
+            "claim_eligible": false,
+            "claim_reasons": [
+              "uses_full_target_labels_for_decision",
+              "not_deployment_eligible"
+            ],
+            "claim_tier": "retrospective_only",
+            "decision": "ABSTAIN",
+            "deployed_action": "freeze",
+            "evidence": {
+              "best_val_auc": 0.9904000000000001,
+              "conf_shift": 0.18234211890200724,
+              "disagree": 0.4956247291587458,
+              "entropy_shift": -0.6182842195312741,
+              "ess_frac": 0.5212009128984149,
+              "ks_max": 1.0,
+              "ks_mean": 0.4080000000000001,
+              "n_experts": 3.0,
+              "val_disagreement": 0.3325591397849462,
+              "val_gap": 0.2228000000000001
+            },
+            "frozen_expert": 2,
+            "labels_used_for_decision": 125,
+            "mode": "retrospective_audit",
+            "router_action": "stack"
+          },
+          "evaluation": {
+            "auroc_candidate": 0.9168,
+            "auroc_frozen": 0.9848,
+            "auroc_kga": 0.9848,
+            "auroc_oracle": 0.9848,
+            "brier_benefit": 0.04130893296661793,
+            "covered": false,
+            "false_adapt": false,
+            "harmful_candidate": false,
+            "regret_candidate": 0.06800000000000006,
+            "regret_frozen": 0.0,
+            "regret_kga": 0.0
+          },
+          "file": "limit_switch.npz",
+          "input_sha256": "1b19068db7ccf53ff1b9c74b2d2afabeec49550c391ddca8f988e47890fdc9b7"
+        },
+        {
+          "decision": {
+            "certificate": {
+              "alpha": 0.1,
+              "delta_hat": -0.006523120816705184,
+              "epsilon": 0.2348357149578741,
+              "lower": -0.24135883577457928,
+              "method": "ebern",
+              "n": 75,
+              "upper": 0.2283125941411689
+            },
+            "claim_eligible": false,
+            "claim_reasons": [
+              "uses_full_target_labels_for_decision",
+              "not_deployment_eligible"
+            ],
+            "claim_tier": "retrospective_only",
+            "decision": "ABSTAIN",
+            "deployed_action": "freeze",
+            "evidence": {
+              "best_val_auc": 0.6359999999999999,
+              "conf_shift": 0.2073984691981577,
+              "disagree": 0.7985016595542912,
+              "entropy_shift": -0.4170832072118493,
+              "ess_frac": 0.5150418555434624,
+              "ks_max": 1.0,
+              "ks_mean": 0.4177777777777778,
+              "n_experts": 3.0,
+              "val_disagreement": 0.36828828828828825,
+              "val_gap": 0.05279999999999985
+            },
+            "frozen_expert": 2,
+            "labels_used_for_decision": 75,
+            "mode": "retrospective_audit",
+            "router_action": "stack"
+          },
+          "evaluation": {
+            "auroc_candidate": 0.76,
+            "auroc_frozen": 0.7248,
+            "auroc_kga": 0.7248,
+            "auroc_oracle": 0.76,
+            "brier_benefit": -0.006523120816705184,
+            "covered": false,
+            "false_adapt": false,
+            "harmful_candidate": true,
+            "regret_candidate": 0.0,
+            "regret_frozen": 0.03520000000000001,
+            "regret_kga": 0.03520000000000001
+          },
+          "file": "miniature_lifting_motor.npz",
+          "input_sha256": "a707722b8c2633059ca87e56f0f6364a1f521df29c6c2c081b2852aba17354b4"
+        },
+        {
+          "decision": {
+            "certificate": {
+              "alpha": 0.1,
+              "delta_hat": 0.05534973541053247,
+              "epsilon": 0.23384657854052227,
+              "lower": -0.17849684312998979,
+              "method": "ebern",
+              "n": 75,
+              "upper": 0.2891963139510547
+            },
+            "claim_eligible": false,
+            "claim_reasons": [
+              "uses_full_target_labels_for_decision",
+              "not_deployment_eligible"
+            ],
+            "claim_tier": "retrospective_only",
+            "decision": "ABSTAIN",
+            "deployed_action": "freeze",
+            "evidence": {
+              "best_val_auc": 0.7448,
+              "conf_shift": -0.011497131741302014,
+              "disagree": 0.4234756477426843,
+              "entropy_shift": -0.3515108666423039,
+              "ess_frac": 0.8820040797110059,
+              "ks_max": 0.856,
+              "ks_mean": 0.42755555555555563,
+              "n_experts": 3.0,
+              "val_disagreement": 0.3698494623655914,
+              "val_gap": 0.08460000000000001
+            },
+            "frozen_expert": 2,
+            "labels_used_for_decision": 75,
+            "mode": "retrospective_audit",
+            "router_action": "stack"
+          },
+          "evaluation": {
+            "auroc_candidate": 0.8408,
+            "auroc_frozen": 0.7072,
+            "auroc_kga": 0.7072,
+            "auroc_oracle": 0.8408,
+            "brier_benefit": 0.05534973541053247,
+            "covered": false,
+            "false_adapt": false,
+            "harmful_candidate": false,
+            "regret_candidate": 0.0,
+            "regret_frozen": 0.13359999999999994,
+            "regret_kga": 0.13359999999999994
+          },
+          "file": "power_jack.npz",
+          "input_sha256": "f04db72d5db88dc51182749d2c20139c77bd68dfff3f71d5c148302a8d68b464"
+        },
+        {
+          "decision": {
+            "certificate": {
+              "alpha": 0.1,
+              "delta_hat": -0.04987159517452683,
+              "epsilon": 0.17198360649359748,
+              "lower": -0.2218552016681243,
+              "method": "ebern",
+              "n": 125,
+              "upper": 0.12211201131907065
+            },
+            "claim_eligible": false,
+            "claim_reasons": [
+              "uses_full_target_labels_for_decision",
+              "not_deployment_eligible"
+            ],
+            "claim_tier": "retrospective_only",
+            "decision": "ABSTAIN",
+            "deployed_action": "freeze",
+            "evidence": {
+              "best_val_auc": 0.9046000000000001,
+              "conf_shift": 0.2526953177780631,
+              "disagree": 0.8950155956035754,
+              "entropy_shift": -0.6266834356496855,
+              "ess_frac": 0.7112103378232434,
+              "ks_max": 1.0,
+              "ks_mean": 0.7200000000000001,
+              "n_experts": 3.0,
+              "val_disagreement": 0.2618064516129032,
+              "val_gap": 0.02220000000000011
+            },
+            "frozen_expert": 2,
+            "labels_used_for_decision": 125,
+            "mode": "retrospective_audit",
+            "router_action": "stack"
+          },
+          "evaluation": {
+            "auroc_candidate": 0.282,
+            "auroc_frozen": 0.0718,
+            "auroc_kga": 0.0718,
+            "auroc_oracle": 0.282,
+            "brier_benefit": -0.04987159517452683,
+            "covered": false,
+            "false_adapt": false,
+            "harmful_candidate": true,
+            "regret_candidate": 0.0,
+            "regret_frozen": 0.21019999999999997,
+            "regret_kga": 0.21019999999999997
+          },
+          "file": "purple_clay_pot.npz",
+          "input_sha256": "1d7a298506d3be48d61378a18a3da572219afb3757c783ff2ba05e1d21946361"
+        },
+        {
+          "decision": {
+            "certificate": {
+              "alpha": 0.1,
+              "delta_hat": -0.06708370259753581,
+              "epsilon": 0.14841011344077495,
+              "lower": -0.21549381603831075,
+              "method": "ebern",
+              "n": 150,
+              "upper": 0.08132641084323915
+            },
+            "claim_eligible": false,
+            "claim_reasons": [
+              "uses_full_target_labels_for_decision",
+              "not_deployment_eligible"
+            ],
+            "claim_tier": "retrospective_only",
+            "decision": "ABSTAIN",
+            "deployed_action": "freeze",
+            "evidence": {
+              "best_val_auc": 0.9070399999999998,
+              "conf_shift": 0.3279884127842565,
+              "disagree": 1.1362681273707076,
+              "entropy_shift": -0.6961869832150289,
+              "ess_frac": 0.812594411889851,
+              "ks_max": 1.0,
+              "ks_mean": 0.9088888888888889,
+              "n_experts": 3.0,
+              "val_disagreement": 0.3012080536912752,
+              "val_gap": 0.1044799999999998
+            },
+            "frozen_expert": 2,
+            "labels_used_for_decision": 150,
+            "mode": "retrospective_audit",
+            "router_action": "stack"
+          },
+          "evaluation": {
+            "auroc_candidate": 0.37824,
+            "auroc_frozen": 0.4864,
+            "auroc_kga": 0.4864,
+            "auroc_oracle": 0.4864,
+            "brier_benefit": -0.06708370259753581,
+            "covered": false,
+            "false_adapt": false,
+            "harmful_candidate": true,
+            "regret_candidate": 0.10815999999999998,
+            "regret_frozen": 0.0,
+            "regret_kga": 0.0
+          },
+          "file": "telephone_spring_switch.npz",
+          "input_sha256": "92e49b29460237179925196287134f0d715c771ecc040d0cb66b9cb61fe4124e"
+        }
+      ],
+      "invalid_categories": [],
+      "n_matched_files": 19,
+      "n_valid_categories": 19,
+      "name": "Real-IAD-NatDeg",
+      "pattern": "*.npz"
+    }
+  ]
+}

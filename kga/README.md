@@ -114,6 +114,49 @@ inequalities at the boundaries.
 
 ---
 
+## Optional ELARA-U integration
+
+ELARA-U can construct a validation-fitted multimodal detector candidate and KGA
+can certify whether to deploy it. This is composition, not a change to KGA's
+certificate: ELARA proposes the candidate; KGA returns `ADAPT`, `FREEZE`, or
+`ABSTAIN`. Tent, EATA, SAR, and other candidates remain independent alternatives.
+
+```python
+import numpy as np
+
+from kga.integrations.elara import ELARAKGAGuard, EvaluationMode
+
+guard = ELARAKGAGuard(alpha=0.1)
+probe = np.arange(32)  # fixed before scoring
+result = guard.decide(
+    s_val=Sval,
+    y_val=yval,
+    s_test=Stest,
+    y_test=ytest,
+    mode=EvaluationMode.TARGET_LABEL_LIGHT,
+    probe_indices=probe,
+)
+print(result.decision, result.router_action)
+```
+
+The information boundary is explicit:
+
+- `retrospective_audit` uses all target labels and is never claim-eligible.
+- `target_label_light` uses only fixed `probe_indices` for its decision.
+- `label_free` rejects `y_test` and requires a
+  `FrozenLinearBenefitEstimator(feature_names, weights, intercept, residuals,
+  protocol_hash)` calibrated on disjoint conditions.
+
+Run the current opened-cache audit with:
+
+```bash
+bash docs/research/kbound/scripts/kbtrain.sh kga-elara-integrated
+```
+
+Its result is retrospective evidence, not a label-free or headline win.
+
+---
+
 ## Notes
 
 - **Deterministic & torch-free.** Only `numpy`/`scipy` are required. No randomness

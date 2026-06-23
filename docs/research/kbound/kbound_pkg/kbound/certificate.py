@@ -1,5 +1,14 @@
 """kbound.certificate -- Finite-sample conformal + empirical-Bernstein certificates.
 
+FROZEN SNAPSHOT. The canonical, maintained implementation of these certificates
+lives in the top-level ``kga`` package (``kga/certificate.py``). This file is a
+frozen copy bundled with the K-Bound paper reproduction package and is kept
+byte-stable so published numbers reproduce. Do NOT edit the math here to "fix" or
+extend it -- edit ``kga/certificate.py`` and, if the reproduction package is
+re-released, re-vendor from there. ``empirical_bernstein_lcb`` below is
+numerically identical to ``kga.certificate.empirical_bernstein``
+(verified; see ``docs/research/kbound/ELARA_KGA_MERGE_PLAN.md``).
+
 Theorem thm:cert (K-Bound paper):
     Given calibration residuals r_i = |Bhat_i - B_i|, the split-conformal
     radius eps = quantile(r, 1 - alpha) guarantees that a new prediction Bhat

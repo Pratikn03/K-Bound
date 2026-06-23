@@ -83,6 +83,21 @@ class TestEvidenceIdentical:
         assert z.disagree == 0.0
         assert z.n_detectors == 1
 
+    def test_constant_multidetector_disagreement_is_finite(self):
+        calib = np.zeros((100, 2))
+        test = np.zeros((100, 2))
+        z = compute_evidence(calib, test)
+        assert np.isfinite(z.disagree)
+        assert z.disagree == 0.0
+
+    def test_constant_and_variable_detector_disagreement_is_finite(self):
+        variable = np.linspace(0.0, 1.0, 100)
+        calib = np.column_stack([np.zeros(100), variable])
+        test = np.column_stack([np.zeros(100), variable[::-1]])
+        z = compute_evidence(calib, test)
+        assert np.isfinite(z.disagree)
+        assert z.disagree == pytest.approx(1.0)
+
     def test_mismatched_detectors_raises(self):
         with pytest.raises(ValueError):
             compute_evidence(np.zeros((10, 2)), np.zeros((10, 3)))

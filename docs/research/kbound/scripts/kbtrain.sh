@@ -16,6 +16,13 @@ S2=docs/research/kbound/scripts/cifar_tent_mps_v2.py
 WILDS=docs/research/kbound/scripts/run_wilds_camelyon17.py
 RXRX1_9PLUS=docs/research/kbound/scripts/run_rxrx1_9plus.sh
 IMAGENETR=experiments/kbound/wilds/run_imagenetr_kbound.py
+WIN_FINDER=docs/research/kbound/scripts/find_kbound_wins.py
+HOLDOUT_SCORER=docs/research/kbound/scripts/score_kbound_holdout.py
+PROTO_DEV_LOCK=docs/research/kbound/scripts/run_protocol_dev_lock.py
+WIN_LOOP=docs/research/kbound/scripts/run_win_loop.py
+HARD_WIN_LOOP=docs/research/kbound/scripts/run_hard_dataset_win_loop.py
+OFFICEHOME_REPL=docs/research/kbound/scripts/run_officehome_protocol_m_replicate.sh
+KGA_ELARA=src/scripts/kbound/run_kga_elara_integration.py
 
 cd "$REPO" || { echo "ERROR: repo not found at $REPO"; exit 1; }
 [ -d "$VENV" ] || { echo "ERROR: $VENV missing. Create it once with run_wilds.sh"; exit 1; }
@@ -121,6 +128,30 @@ case "${1:-}" in
       --frozen-eval-batch 32 \
       --tau-star 0.52 --kappa 2.5 --sd-L 0.6 --delta 0.05 \
       --device auto --run-name imagenetr_protocol_d_size_diverse_panel_v2 ;;
+  win-finder)
+    "$VENV/bin/python" "$WIN_FINDER" --top 40 ;;
+  win-loop)
+    "$VENV/bin/python" "$WIN_LOOP" --refresh-finder --top 60 --top-per-dataset 4 ;;
+  hard-win-loop)
+    "$VENV/bin/python" "$HARD_WIN_LOOP" ;;
+  officehome-holdout)
+    "$VENV/bin/python" "$HOLDOUT_SCORER" \
+      --cal-records experiments/kbound/results/officehome_full_targetval/result_target_val_361a1e8c.json \
+      --test-records experiments/kbound/results/officehome_full_targettest/result_target_test_6605675d.json \
+      --candidate sar_online_aggressive --estimator gbr --conformal global \
+      --output-dir experiments/kbound/results/officehome_holdout_sar_aggr_gbr_global_single ;;
+  officehome-repl)
+    bash "$OFFICEHOME_REPL" ;;
+  protocol-h-v2)
+    "$VENV/bin/python" "$PROTO_DEV_LOCK" --protocol-yaml research_lock/IWILDCAM_PROTOCOL_H_v2.yaml ;;
+  protocol-m-v2)
+    "$VENV/bin/python" "$PROTO_DEV_LOCK" --protocol-yaml research_lock/OFFICEHOME_PROTOCOL_M_v2.yaml ;;
+  kga-elara-integrated)
+    "$VENV/bin/python" "$KGA_ELARA" \
+      --protocol research_lock/KGA_ELARA_INTEGRATION_v1.yaml ;;
+  kga-elara-integrated-dry-run)
+    "$VENV/bin/python" "$KGA_ELARA" \
+      --protocol research_lock/KGA_ELARA_INTEGRATION_v1.yaml --dry-run ;;
   *)
-    echo "usage: bash kbtrain.sh [noise|noise-fast|noise-fast-1pct|noise-fast-01pct|noise-full|noise-quick|noise-smoke|camelyon|camelyon-fast|camelyon-fast-1pct|camelyon-smoke|cifar101|cifar101-quick|rxrx1-9plus|rxrx1-9plus-dry-run|imagenetr-d|imagenetr-d-dry-run|noiseblur|vit|vit-fast]"; exit 1 ;;
+    echo "usage: bash kbtrain.sh [noise|...|officehome-holdout|officehome-repl|protocol-h-v2|protocol-m-v2|kga-elara-integrated|kga-elara-integrated-dry-run|noiseblur|vit|vit-fast]"; exit 1 ;;
 esac

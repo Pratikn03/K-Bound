@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import numpy as np
-import pytest
 
 from kga import KGA, Decision
 from src.uais.kbound.multimodal_guard import MultimodalGuard, placement_benefits
@@ -75,3 +74,18 @@ def test_multimodal_guard_synthetic_category():
     r = guard.guard_category(s_val, y_val, s_test, y_test, valauc)
     assert r.action in ("adapt", "freeze", "abstain")
     assert r.test_scores.shape == (n,)
+    assert r.evaluation_mode == "target_label_light"
+    assert r.labels_used_for_decision == 16
+
+
+def test_multimodal_guard_without_probe_is_retrospective() -> None:
+    rng = np.random.default_rng(8)
+    n = 60
+    y_val = np.array([0, 1] * (n // 2))
+    y_test = np.array([0, 1] * (n // 2))
+    s_val = rng.random((n, 2))
+    s_test = rng.random((n, 2))
+    guard = MultimodalGuard(alpha=0.1, probe_k=None)
+    result = guard.guard_category(s_val, y_val, s_test, y_test, np.array([0.7, 0.6]))
+    assert result.evaluation_mode == "retrospective_audit"
+    assert result.labels_used_for_decision == n

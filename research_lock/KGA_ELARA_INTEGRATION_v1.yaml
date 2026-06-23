@@ -1,0 +1,30 @@
+schema: kga_elara_integration_protocol_v1
+date_declared: 2026-06-23
+status: RETROSPECTIVE_OPENED_DATA
+mode: retrospective_audit
+alpha: 0.10
+router_action: hybrid
+abstain_fallback: freeze
+output_dir: experiments/kbound/results/kga_elara_integrated_v1
+claim_scope: retrospective_multimodal_instantiation_not_headline
+tracks:
+  - name: 3D-ADAM
+    cache: experiments/fusion/3d_adam_score_cache
+    pattern: "*.npz"
+  - name: Real-IAD-D3
+    cache: experiments/fusion/realiad_d3_score_cache
+    pattern: "*_v2_binpcd.npz"
+  - name: MulSen-AD
+    cache: experiments/fusion/mulsen_score_cache
+    pattern: "*.npz"
+  - name: MVTec-3D
+    cache: experiments/fusion/mvtec3d_score_cache
+    pattern: "*.npz"
+  - name: Real-IAD-NatDeg
+    cache: experiments/fusion/realiad_natdeg_score_cache
+    pattern: "*.npz"
+integrity:
+  data_previously_opened: true
+  frozen_before_target_scoring: false
+  label_free_claim_allowed: false
+  headline_claim_allowed: false

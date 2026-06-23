@@ -289,10 +289,21 @@ def compute_evidence(
     # --- Disagreement: 1 - mean pairwise rank correlation of test scores. ---
     if n_detectors >= 2:
         rt = _rank_norm(t)
-        corr = np.corrcoef(rt.T)
-        iu = np.triu_indices_from(corr, k=1)
-        off_diag = corr[iu]
-        mean_corr = float(np.nanmean(off_diag)) if off_diag.size else 0.0
+        correlations = []
+        for i in range(n_detectors):
+            for j in range(i + 1, n_detectors):
+                std_i = float(np.std(rt[:, i]))
+                std_j = float(np.std(rt[:, j]))
+                if std_i <= 1e-12 and std_j <= 1e-12:
+                    correlation = 1.0 if np.allclose(rt[:, i], rt[:, j]) else 0.0
+                elif std_i <= 1e-12 or std_j <= 1e-12:
+                    correlation = 0.0
+                else:
+                    correlation = float(np.corrcoef(rt[:, i], rt[:, j])[0, 1])
+                    if not np.isfinite(correlation):
+                        correlation = 0.0
+                correlations.append(correlation)
+        mean_corr = float(np.mean(correlations)) if correlations else 0.0
         disagree = float(1.0 - mean_corr)
     else:
         disagree = 0.0
