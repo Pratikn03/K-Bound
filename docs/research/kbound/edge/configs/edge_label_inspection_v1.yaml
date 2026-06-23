@@ -1,0 +1,82 @@
+# edge_label_inspection_v1 -- LOCKED protocol for the synthetic label-inspection
+# pilot.  This is the single source of truth for the Tier-0/1/2 synthetic chain.
+# Real recorded clips: copy this file, set source.kind=opencv and image_size=224.
+protocol: edge_label_inspection_v1
+seed: 7
+device: cpu
+
+# --- task ---
+num_classes: 4
+classes: [ok, defect, empty, misaligned]
+image_size: 64        # synthetic size for fast CPU runs; real clips use 224
+window_size: 16       # frames per decision window
+
+# --- certificate ---
+alpha: 0.10           # FIXED split-conformal miscoverage (do not change per-run)
+
+# --- source clip (what f0 is trained on) ---
+source:
+  kind: synthetic     # synthetic | opencv
+  n_per_class: 150
+  seed: 1
+  # for kind=opencv only:
+  camera_index: 0
+  video_path: null
+
+# --- source-model training ---
+training:
+  epochs: 30
+  lr: 0.002
+  batch_size: 64
+  bn_recal_passes: 5  # BN running-stat recalibration after training
+
+# --- episodic Tent adapter ---
+adapter:
+  lr: 0.001
+  steps: 1            # ONE Adam step per window (episodic)
+
+# --- synthetic calibration conditions: (regime, diversity, count) ---
+# Spans the three benefit bands so the certificate sees adapt/abstain/freeze:
+#   multi-class shifts  -> adaptation helps  (B>0)
+#   clean multi-class   -> ~neutral          (B~0)
+#   single/low diversity-> Tent collapses    (B<0)
+calibration_plan:
+  - [bright_up, multi, 10]
+  - [bright_down, multi, 10]
+  - [contrast_low, multi, 10]
+  - [noisy, multi, 10]
+  - [severe, multi, 8]
+  - [washed, multi, 8]
+  - [clean, multi, 14]
+  - [blurred, multi, 10]
+  - [clean, single, 12]
+  - [blurred, single, 10]
+  - [contrast_low, single, 6]
+  - [clean, low, 8]
+
+# --- synthetic held-out conditions for replay (different seeds) ---
+heldout_plan:
+  - [bright_up, multi, 4]
+  - [contrast_low, multi, 4]
+  - [noisy, multi, 4]
+  - [severe, multi, 3]
+  - [clean, multi, 6]
+  - [blurred, multi, 5]
+  - [clean, single, 5]
+  - [blurred, single, 4]
+  - [clean, low, 3]
+
+# --- artifact paths (resolved relative to edge/) ---
+paths:
+  artifacts: artifacts_synth
+  source_clip: artifacts_synth/source_clip.npz
+  manifest: artifacts_synth/manifest.json
+  model: artifacts_synth/f0.pt
+  model_meta: artifacts_synth/f0_meta.json
+  calibration: artifacts_synth/calibration.npz
+  kga_edge: artifacts_synth/kga_edge.joblib
+  kga_edge_meta: artifacts_synth/kga_edge_meta.json
+  heldout_log: artifacts_synth/heldout_windows.jsonl
+  heldout_metrics: artifacts_synth/heldout_metrics.json
+  shadow_log: artifacts_synth/shadow_windows.jsonl
+  report: artifacts_synth/REPORT.md
