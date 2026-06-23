@@ -10,6 +10,9 @@ __pycache__/
 .hypothesis/
 .ruff_cache/
 .cache/
+.idea/
+.torch_cache/
+tmp/
 # Heavy raw prediction-array payloads (index CSVs are committed explicitly)
 elara_master_c/predictions/confirmation/M2-CONFIRMATORY__*/
 .coverage
@@ -22,6 +25,8 @@ logs/
 data/raw/
 data/interim/
 data/processed/
+data/CIFAR-100-C/
+data/content
 creditcard.csv
 *.parquet
 *.zip
@@ -120,3 +125,22 @@ models/*
 !models/REGISTRY.md
 !models/*/MODEL_CARD.md
 models/**/*.pkl
+models/**/*.pt
+models/**/*.pth
+models/**/*.ckpt
+
+# Local K-Bound downloads and one-off paper QA output
+docs/research/kbound/DomainBed/
+docs/research/kbound/experiments/kbound/
+docs/research/kbound/docs/
+docs/research/kbound/_audit_renders/
+docs/research/kbound/_audit_verify_*/
+docs/research/kbound/_fix_pass*.py
+docs/research/kbound/_trim_layout_edits.py
+docs/research/kbound/**/*.blg
+docs/research/kbound/**/*.bbl
+experiments/kbound/results/_pipeline_smoke_verify/
+experiments/kbound/results/_simcheck/
+audits/integrity_2026-06-20/backups/
+audits/integrity_2026-06-20/backup_tex_*/
+pilot_run.log
