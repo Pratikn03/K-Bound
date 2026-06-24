@@ -1,6 +1,9 @@
-import time, numpy as np
-import sys; sys.argv=['x','--part','none']
-exec(open('theory_v2_validation.py').read().split('if __name__')[0])
+import time
+
+import numpy as np
+
+from theory_v2_validation import agreements, recover_b_up_to_flip, simulate_panel
+
 # time one bootstrap trial
 t=time.time()
 q=np.array([0.7,0.72,0.71])

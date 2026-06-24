@@ -1,6 +1,13 @@
-import json, numpy as np, sys
-sys.argv=['x']
-exec(open('theory_v2_validation.py').read().split('if __name__')[0])
+import numpy as np
+
+from theory_v2_validation import (
+    agreements,
+    load_results,
+    recover_b_up_to_flip,
+    save_results,
+    simulate_panel,
+)
+
 res=load_results()
 m=5000; reps=300
 configs=[("high",np.array([0.78,0.74,0.72])),("mid",np.array([0.70,0.64,0.62])),

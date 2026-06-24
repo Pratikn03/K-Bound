@@ -1,6 +1,7 @@
-import numpy as np, sys
-sys.argv=['x']
-exec(open('theory_v2_validation.py').read().split('if __name__')[0])
+import numpy as np
+
+from theory_v2_validation import agreements, recover_b_up_to_flip, simulate_panel
+
 # How does labeled-vs-evidence efficiency ratio grow as margins (c_min) shrink?
 print("c_min (min pairwise product) vs efficiency ratio sd_evidence/sd_labeled:")
 m=5000; reps=300

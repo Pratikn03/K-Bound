@@ -1,6 +1,7 @@
-import numpy as np, sys
-sys.argv=['x']
-exec(open('theory_v2_validation.py').read().split('if __name__')[0])
+import numpy as np
+
+from theory_v2_validation import agreements, recover_b_up_to_flip, simulate_panel
+
 alpha=0.05; beta=0.05; cmin=0.18; bmin2=0.20**2; K=3; delta=alpha
 q=np.random.default_rng(303).uniform(0.62,0.85,size=K)
 b_a=2*q[1]-1
