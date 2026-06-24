@@ -137,3 +137,40 @@ def calibrate_conformal(
         method=method,
         residuals=residuals,
     )
+
+
+class RealCertificateResult:
+    """Result object carrying fitted estimator, conformal radius, and split provenance."""
+    def __init__(self, fit_sessions, conformal_sessions, fit_source_hashes, conformal_source_hashes, estimator, conformal_radius):
+        self.fit_sessions = fit_sessions
+        self.conformal_sessions = conformal_sessions
+        self.fit_source_hashes = fit_source_hashes
+        self.conformal_source_hashes = conformal_source_hashes
+        self.estimator = estimator
+        self.conformal_radius = conformal_radius
+
+
+def fit_real_certificate(bundle: dict, estimator_kwargs: dict = None, alpha: float = ALPHA, conservative: bool = True) -> RealCertificateResult:
+    """Fit benefit estimator on fit split and calibrate radius on conformal split."""
+    from kbound_edge.benefit_estimator import EdgeBenefitEstimator
+    
+    fit_data = bundle["fit"]
+    conf_data = bundle["conformal"]
+    
+    if estimator_kwargs is None:
+        estimator_kwargs = {"random_state": 0}
+        
+    est = EdgeBenefitEstimator(**estimator_kwargs)
+    est.fit(fit_data["Z"], fit_data["B"])
+    
+    cr = calibrate_conformal(est, conf_data["Z"], conf_data["B"], alpha=alpha, conservative=conservative)
+    
+    return RealCertificateResult(
+        fit_sessions=fit_data["sessions"],
+        conformal_sessions=conf_data["sessions"],
+        fit_source_hashes=fit_data["source_hashes"],
+        conformal_source_hashes=conf_data["source_hashes"],
+        estimator=est,
+        conformal_radius=cr
+    )
+
