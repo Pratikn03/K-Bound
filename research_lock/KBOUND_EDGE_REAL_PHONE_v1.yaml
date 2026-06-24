@@ -1,0 +1,107 @@
+# edge_real_phone_v1 -- LOCKED protocol for physical camera-based validation.
+# This is the single source of truth for the physical two-phone validation.
+protocol: edge_real_phone_v1
+schema_version: kbound-edge-v1
+seed: 20260624
+num_classes: 4
+classes: [ok, missing_label, misaligned_label, damaged_label]
+image_size: 224
+window_size: 32
+alpha: 0.10
+
+# Object splits as defined by the protocol
+objects:
+  source_train_calib: [P01, P02, P03, P04, P05, P06]
+  source_val_calib: [P07, P08]
+  held_out_replication: [P09, P10]
+
+# Phone splits
+phones:
+  phone_a: { role: primary, model: "Phone A" }
+  phone_b: { role: replication, model: "Phone B" }
+
+# Shift vocabulary per session type
+shifts:
+  A_sessions: [mild_light, side_shadow, new_background, glare]
+  B_sessions: [motion_blur, viewpoint_45, distance_scale, batch_composition]
+
+# Ten-session schedule
+sessions:
+  S01:
+    split: source_train
+    phone_id: phone_a
+    objects: [P01, P02, P03, P04, P05, P06]
+    windows: 240
+  S02:
+    split: source_val
+    phone_id: phone_a
+    objects: [P07, P08]
+    windows: 80
+  S03:
+    split: calibration_fit_a
+    phone_id: phone_a
+    objects: [P01, P02, P03, P04, P05, P06, P07, P08]
+    windows: 128
+  S04:
+    split: calibration_fit_b
+    phone_id: phone_a
+    objects: [P01, P02, P03, P04, P05, P06, P07, P08]
+    windows: 128
+  S05:
+    split: calibration_conformal_a
+    phone_id: phone_a
+    objects: [P01, P02, P03, P04, P05, P06, P07, P08]
+    windows: 128
+  S06:
+    split: calibration_conformal_b
+    phone_id: phone_a
+    objects: [P01, P02, P03, P04, P05, P06, P07, P08]
+    windows: 128
+  S07:
+    split: heldout_a
+    phone_id: phone_a
+    objects: [P09, P10]
+    windows: 128
+  S08:
+    split: heldout_b
+    phone_id: phone_a
+    objects: [P09, P10]
+    windows: 128
+  S09:
+    split: replication_a
+    phone_id: phone_b
+    objects: [P09, P10]
+    windows: 128
+  S10:
+    split: replication_b
+    phone_id: phone_b
+    objects: [P09, P10]
+    windows: 128
+
+# Model training parameters
+training:
+  epochs: 20
+  lr: 0.001
+  batch_size: 32
+  bn_recal_passes: 5
+
+# Adapter configuration
+adapter:
+  lr: 0.001
+  steps: 1
+
+# Artifact paths (resolved relative to edge/ or workspace root where appropriate)
+paths:
+  artifacts: artifacts_real
+  protocol_lock: artifacts_real/protocol_lock.json
+  protocol_lock_sha: artifacts_real/protocol_lock.sha256
+  raw_dir: artifacts_real/raw
+  windows_dir: artifacts_real/windows
+  model: artifacts_real/models/f0.pt
+  calibration_fit: artifacts_real/calibration/calibration_fit.npz
+  calibration_conformal: artifacts_real/calibration/calibration_conformal.npz
+  kga_edge: artifacts_real/calibration/kga_edge.joblib
+  heldout_log: artifacts_real/logs/heldout_online.jsonl
+  replication_log: artifacts_real/logs/replication_online.jsonl
+
+  results_dir: ../../../experiments/kbound/results/edge_real_phone_v1
