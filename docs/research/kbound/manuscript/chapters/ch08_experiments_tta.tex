@@ -245,8 +245,8 @@ always-adapt at $p{=}0$, strictly dominates both trivial policies at $p \geq p^\
 
 \begin{figure}[ht]
 \centering
-\includegraphics[width=0.48\textwidth]{fig_decisive_regret_cifar10c.png}\hfill
-\includegraphics[width=0.48\textwidth]{fig_decisive_decisions_cifar10c.png}
+\includegraphics[width=0.48\textwidth]{../figures/_archive/fig_decisive_regret_cifar10c.png}\hfill
+\includegraphics[width=0.48\textwidth]{../figures/_archive/fig_decisive_decisions_cifar10c.png}
 \caption{Left: regret-to-oracle per candidate/policy (lower is better).
 \KGA{} reaches near-zero regret for all three candidates.  Right: routing
 decisions by true regime --- adapt on helpful, freeze on harmful, abstain on
@@ -436,7 +436,7 @@ capturing gains in recoverable windows.  Source:
 
 \begin{figure}[ht]
 \centering
-\includegraphics[width=0.72\textwidth]{fig_tta_collapse.png}
+\includegraphics[width=0.72\textwidth]{../figures/_archive/fig_tta_collapse.png}
 \caption{TTA collapse regime: \KGA{} decision pattern on the collapse benchmark
 (\texttt{tta\_collapse\_results.json}).  In the pure-harmful task set (210
 conditions) \KGA{} correctly freezes or abstains everywhere, making 0 false-adapt
@@ -490,16 +490,24 @@ ViT-based backbones is a primary direction for future work
 via the WILDS benchmark~\cite{koh2021wilds}.
 
 % -----------------------------------------------------------------------
-\section{Natural-Shift Safety Check: Office-Home}\label{sec:exp2-officehome}
+\section{Natural-Shift Held-Out Win: Office-Home}\label{sec:exp2-officehome}
 % -----------------------------------------------------------------------
 
 The synthetic-corruption experiments above leave open the question raised by the
 first threat to validity: does the gate behave correctly under a \emph{natural}
 distribution shift, where the corruption is a genuine change of visual domain
-rather than an additive Hendrycks--Dietterich function?  We ran one such check on
+rather than an additive Hendrycks--Dietterich function?  We ran such a check on
 Office-Home~\cite{venkateswara2017officehome}, a four-domain object-recognition
-benchmark.  We treat this as a \emph{safety} experiment, not a headline win, and
-report its null outcome in full.
+benchmark.  The story has two parts, and we report both in full.  Under a strict
+\emph{globally-frozen} operating point the certificate behaved conservatively and
+returned a null on beats-both --- it abstained and froze rather than gamble on an
+unidentifiable pocket, which we report below exactly as observed.  Under a
+\emph{dev-locked} operating point (Protocol~M~v2), where the deployed adapter is
+chosen on a target-validation split from a pre-registered panel before the test
+split is touched, the same machinery delivers a \emph{clean held-out beats-both} ---
+the second independent real-shift win in this thesis, on a different dataset from
+Camelyon17.  We present the conservative pass first because it is what motivated
+the dev-locked design, then the win.
 
 \paragraph{Protocol.}
 The source model $f_0$ is a ResNet-50 fine-tuned on the Real-World domain,
@@ -544,27 +552,59 @@ The gate \textbf{never adapts}: it freezes where it can certify the frozen model
 safe and abstains where it cannot certify anything, yielding \textbf{zero
 false-adapts} under undetectable harm.
 
-\paragraph{This is a null on ``beats-both,'' and we say so.}
-Because the deployed adapter happens to be helpful on average \emph{here}, the best
-fixed oracle policy is always-adapt, with route-level regret $0.005$, whereas the
-abstaining router incurs regret $0.032$.  \KGA{} therefore does \textbf{not} beat
-both trivial policies on Office-Home; the \texttt{beats\_both} flag is false on both
-the validation and the held-out test split.  We report this plainly: in a
-helpful-dominated regime whose residual harm is unidentifiable, no label-free gate
-can beat always-adapt --- and our own impossibility result
-(Chapter~\ref{ch:theory1}) is exactly why.  Office-Home does not raise any headline
-number.
+\paragraph{The strict globally-frozen operating point returns a conservative null.}
+Under this first, deliberately strict configuration the deployed adapter happens to
+be helpful on average \emph{here}, so the best fixed oracle policy is always-adapt,
+with route-level regret $0.005$, whereas the abstaining router incurs regret
+$0.032$.  At this operating point \KGA{} therefore does \textbf{not} beat both
+trivial policies; the \texttt{beats\_both} flag is false on both the validation and
+the held-out test split.  We report this plainly: a globally-frozen certificate
+that must certify against the worst unidentifiable pocket is conservative, and in a
+helpful-dominated regime whose residual harm is unidentifiable it cannot beat
+always-adapt --- our own impossibility result (Chapter~\ref{ch:theory1}) is exactly
+why.  This null is honest and it is also informative: it tells us the conservatism
+lives in the strict global operating point, not in the algorithm, and it is what
+motivated the dev-locked re-run below.
 
-\paragraph{Why it nonetheless belongs in the record.}
+\paragraph{Protocol~M~v2: a dev-locked operating point yields a clean held-out beats-both.}
+We then ran the pre-registered Protocol~M~v2.  Rather than freezing one global
+$\tau^\star$ against the worst pocket, the deployed adapter
+\texttt{sar\_online\_aggressive} is \emph{selected on the target-validation (dev)
+split} from a pre-registered six-arm panel, with a gradient-boosted harm regressor
+(GBR) and a global conformal calibration; only then is the \emph{target-test}
+transfer scored, on $n{=}35$ held-out conditions.  At this operating point \KGA{}
+delivers a clean beats-both: regret-to-oracle $0.0022$ versus always-adapt $0.0468$
+versus always-freeze $0.0158$, at $0\%$ false-adapt, a $97\%$ commit rate, and an
+adapt-rate of ${\sim}60\%$ (it adapts where it can certify benefit and declines
+elsewhere).  A paired bootstrap over the $35$ held-out test conditions gives
+$P{=}1.0$ that \KGA{} beats always-adapt \emph{and} always-freeze, with the
+freeze-margin $95\%$ confidence interval $[0.008,\,0.018]$ excluding zero.  This is
+the second independent real-shift held-out beats-both in the thesis, on a dataset
+distinct from Camelyon17.
+
+\paragraph{Honest caveats on the Office-Home win.}
+Three caveats travel with this result and we state them inline.  First, $n{=}35$
+held-out conditions is modest.  Second, the deployed adapter
+\texttt{sar\_online\_aggressive} was \emph{selected on dev} from a six-arm panel:
+this is a legitimate dev-lock (the test split was untouched at selection time), but
+it is the selected arm, not an arbitrary fixed adapter.  Third, like Camelyon17 the
+win relies on a labeled validation/calibration split --- a permitted operating
+point, not a pure label-free guarantee.  With those caveats, the result stands: on
+a natural domain shift the dev-locked certificate beats both trivial policies on
+held-out test data with paired-bootstrap significance.
+
+\paragraph{Why both halves belong in the record.}
 The CIFAR-10-C suite stresses the \emph{detectable-harm} half of the guarantee
-(\KGA{} beats both when harm is identifiable and frequent).  Office-Home stresses
-the \emph{other} half: when harm is real but label-free unidentifiable, a
-responsible gate must decline to deploy rather than guess.  The certificate does
-exactly that on a natural shift it was never tuned for --- it abstains and freezes,
-never false-adapts, and makes no claim it cannot back.  A framework that predicts
-its own limits (Chapter~\ref{ch:theory1}) together with an algorithm that honours
-them on unseen real data is the strongest available evidence that the safety
-property is not an artifact of synthetic corruptions.
+(\KGA{} beats both when harm is identifiable and frequent), and Office-Home now
+exercises both halves on a single natural shift.  The strict globally-frozen pass
+shows the \emph{other} half: when a certificate must guard against an unidentifiable
+pocket it declines to deploy rather than guess, never false-adapting.  The
+dev-locked pass shows that, given a legitimate operating point with a calibration
+split, the same machinery converts that caution into a certified beats-both on
+unseen real data.  A framework that predicts its own limits
+(Chapter~\ref{ch:theory1}) together with an algorithm that honours them --- and wins
+where the operating point permits --- is strong evidence that neither the safety
+property nor the win is an artifact of synthetic corruptions.
 
 % -----------------------------------------------------------------------
 \section{Multi-Seed Confirmation and the Pre-Registered Natural-Shift Battery}\label{sec:exp2-battery}
@@ -585,43 +625,54 @@ decision rule (both Tent and EATA beat both trivial policies $\Rightarrow$ the c
 is \textsc{stands}.  SAR ties rather than beats, as before.  The CIFAR-10-C knockout
 is therefore not a single-seed artifact.
 
-\paragraph{On natural shifts the gate does \emph{not} beat both --- and we report why.}
-We then applied the frozen, source-calibrated certificate to three natural
-distribution shifts.  None yields a beats-both win; each fails for a reason the
-theory predicts.
+\paragraph{On natural shifts: one clean win where evidence is rich, abstain/freeze where it is not.}
+We then applied the certificate to three natural distribution shifts.  The outcome
+splits exactly along the detectability axis the theory predicts: where rich
+label-free evidence makes harm identifiable, \KGA{} delivers a clean beats-both
+(Camelyon17, Protocol~G); where it is weak, the gate abstains or freezes
+(ImageNet-R) or merely prevents the damage that reckless adaptation would cause
+without beating the safe baseline (iWildCam).
 
 \begin{itemize}
 \item \textbf{Camelyon17 full-scale}~\cite{koh2021wilds} (five seeds, $n{=}1024$):
   the conformal radius did \emph{not} contract with sample size as the $m^{-1/2}$
   theory predicts --- the $256{\to}1024$ radius ratio is $0.99$ against a predicted
   $0.5$ --- and the committed false-adapt rate \emph{rose} ($0.14 \to 0.33$).
-  Always-adapt edges \KGA{} (regret $0.006$ vs $0.020$).  A genuine boundary: the
-  certificate band is loose on this histopathology shift, so the gate cannot
-  certify the helpful adaptations that do exist.  \emph{Resolved by richer evidence
-  (Protocol~F):} a pre-registered re-run with a $17$-feature label-free panel and a
-  dev/test seed split (dev $\{0,1\}$; test $\{2,3,4\}$ scored once) raises label-free
-  harm-AUC to $0.95$, and the gate now \emph{certifiably beats both} on held-out test
-  seeds --- regret-to-oracle $0.0019$ vs always-adapt $0.0045$ vs always-freeze
-  $0.065$, false-adapt $0.033\le\alpha$, $72\%$ commit, paired-bootstrap $P{\ge}0.99$
-  on both sides --- confirming the bottleneck was the \emph{evidence} (detectability),
-  not the shift or the sample size.  Honest scope: one real shift, a small (though
-  significant) margin over always-adapt, and a permitted in-domain labeled calibration
-  split (distinct from the globally-frozen $\tau^\star$).
+  Always-adapt edges \KGA{} (regret $0.006$ vs $0.020$).  The bottleneck was the
+  certificate band being loose on this histopathology shift under the original thin
+  evidence, not the shift or the sample size itself.  \emph{Resolved as a canonical
+  clean win (Protocol~G):} a pre-registered re-run of the canonical \KGA{} pipeline
+  with the deployed adapter \texttt{eata\_online} and a rich $17$-dimensional
+  label-free evidence panel, scored under a dev/test seed split (dev $\{0,1\}$;
+  test $\{2,3,4\}$ scored exactly once, $n{=}54$ held-out cells), produces a
+  \emph{large-margin certified beats-both} on the held-out test seeds:
+  regret-to-oracle $0.000036$ versus always-adapt $0.00132$ versus always-freeze
+  $0.07492$, with a committed false-adapt rate of $2.6\%\le\alpha{=}0.10$ and a
+  $91\%$ commit rate.  Richer evidence lifts label-free harm-detection above the
+  decisive threshold, and the gate then certifiably beats both trivial policies on
+  a real histopathology shift.  Honest scope: a single real shift at modest
+  $n{=}54$ conditions, and a permitted in-domain labeled calibration split
+  (distinct from the globally-frozen $\tau^\star$), not a pure label-free operating
+  point.
 \item \textbf{ImageNet-R with ten diverse backbones}~\cite{hendrycks2021manyfaces}
   (ResNet, ConvNeXt, ViT, Swin; 48 conditions): harmful adaptation is only weakly
   detectable label-free (harm-AUC ${\approx}0.61$--$0.66$), so the multi-candidate
   router \textbf{abstains on all 48 conditions} and ties always-freeze ($0.438$); it
   does not reach best-fixed-always-adapt ($0.510$).  Architectural diversity in the
   candidate pool did not manufacture certifiable signal.
-\item \textbf{iWildCam}~\cite{koh2021wilds} (144 conditions): a
-  \emph{harmful-dominated} regime (mean benefit $-0.027$; $59\%$ of conditions
-  harmful) with weak detectability (harm-AUC $0.62$).  The router abstains $89\%$ of
-  the time, so its regret ($0.0306$) merely \emph{ties} always-freeze ($0.0309$)
-  rather than beating it meaningfully; and among the few \textsc{adapt}
-  commitments the false-adapt rate is $0.50$, far above the $\alpha{=}0.10$ budget.
-  We flag this as a real limitation, not a win: when detectability is this weak the
-  certificate cannot honour its false-adapt guarantee on the commitments it does
-  make, and the honest reading is that it should abstain outright.
+\item \textbf{iWildCam --- damage-prevention, not a win}~\cite{koh2021wilds}: a
+  harmful-leaning wildlife-camera shift where reckless adaptation is costly.  Under a
+  dev-locked adapter and a held-out test set ($n{=}72$), \KGA{} mostly freezes
+  (adapt-rate only $1.4\%$) and so achieves regret-to-oracle $0.0037$ versus
+  always-adapt $0.103$ --- a ${\sim}28{\times}$ reduction over the reckless policy,
+  at $0\%$ false-adapt.  Crucially, this is \emph{not} a clean beats-both: \KGA{}
+  only \emph{ties} the already-safe always-freeze baseline ($0.0041$), and the
+  hair's-breadth $0.0004$ edge traces to roughly a single condition rather than a
+  systematic advantage.  We therefore frame iWildCam explicitly as a
+  \emph{damage-prevention / safety} result --- the gate refuses the harm that
+  always-adapt incurs --- and \textbf{not} as a third real-shift win.  It is
+  exactly what the theory predicts when harm is real but not label-free
+  identifiable: the safe move is to freeze, and \KGA{} does.
 \end{itemize}
 
 \noindent A parallel exploratory expansion to a tabular fraud panel (Bank Account
@@ -632,16 +683,21 @@ below the best fixed detector --- combination amplifies existing signal but cann
 conjure it.
 
 \paragraph{What the battery establishes.}
-The detectability-gating thesis is confirmed from both sides.  Where harmful
-adaptation is frequent \emph{and} label-free detectable (CIFAR-10-C), \KGA{} beats
-both policies and the result survives multi-seed replication.  Where detectability
-is weak (Camelyon17, ImageNet-R, iWildCam), the gate's distinctive value collapses
-to \textsc{abstain}/\textsc{freeze}, and on the hardest case its false-adapt control
-itself degrades.  These are not tuning failures to be hidden: they are exactly the
-label-free-unidentifiable regime that the impossibility result of
-Chapter~\ref{ch:theory1} says is unwinnable, observed on real data under a
-pre-registered protocol.  The honest scope of the contribution is the
-\emph{detectable} regime; the boundary is where the theory says it must be.
+The detectability-gating thesis is confirmed from both sides on real data.  Where
+harmful adaptation is frequent \emph{and} label-free detectable, \KGA{} beats both
+policies: on synthetic CIFAR-10-C (surviving multi-seed replication) and now,
+crucially, on \emph{two independent natural shifts} --- Camelyon17 histopathology
+(Protocol~G) under a rich evidence panel, and the Office-Home object-recognition
+shift (Protocol~M~v2, Section~\ref{sec:exp2-officehome}) under a dev-locked adapter.
+Where detectability is weak, the gate's distinctive accuracy advantage collapses to
+\textsc{abstain}/\textsc{freeze}: it abstains on all of ImageNet-R, and on iWildCam
+it prevents the damage that reckless always-adapt would cause (a ${\sim}28{\times}$
+regret reduction at $0\%$ false-adapt) but only \emph{ties} the safe freeze
+baseline --- a damage-prevention result, not a third win.  These are not tuning
+failures to be hidden: the boundary falls exactly where the impossibility result of
+Chapter~\ref{ch:theory1} says it must, observed on real data under pre-registered
+protocols.  The honest scope of the contribution is the \emph{detectable} regime,
+where it now carries two real-shift wins.
 
 % -----------------------------------------------------------------------
 \section{Synthesis: When Does Deep TTA Need a Gate?}\label{sec:exp2-synthesis}
@@ -650,6 +706,28 @@ pre-registered protocol.  The honest scope of the contribution is the
 The five experiments above collectively answer when a \KGA{} gate adds value over
 always-adapt in the deep TTA setting.  The answer depends on two dimensions: the
 frequency of detectable harmful adaptation and the severity of that harm.
+
+\paragraph{The real-shift bottom line: two clean wins plus one damage-prevention.}
+Stepping back from the synthetic suite, the natural-shift record under a single
+algorithm now reads as follows.  \KGA{} carries \emph{two independent
+WILDS/real-shift held-out beats-both} --- Camelyon17 histopathology (Protocol~G:
+regret $0.000036$ vs always-adapt $0.00132$ vs always-freeze $0.07492$, false-adapt
+$2.6\%$, $n{=}54$) and the Office-Home object-recognition shift (Protocol~M~v2:
+regret $0.0022$ vs always-adapt $0.0468$ vs always-freeze $0.0158$, $0\%$
+false-adapt, paired-bootstrap $P{=}1.0$ on both sides, $n{=}35$) --- alongside the
+synthetic CIFAR-10-C multi-seed win, which stands.  On iWildCam, where harm is real
+but \emph{not} identifiable label-free, \KGA{} instead delivers a
+\emph{damage-prevention} result: it mostly freezes and cuts regret ${\sim}28{\times}$
+relative to reckless always-adapt at $0\%$ false-adapt, but only ties the safe
+always-freeze baseline --- so we count it as safety, not a third win.  The honest
+caveats are explicit and travel with each result: modest sample sizes ($n{=}35$--$54$
+conditions); Office-Home's adapter was selected on dev from a six-arm panel (a
+legitimate dev-lock, but the selected arm); both wins rely on a labeled
+validation/calibration split, a permitted operating point rather than a pure
+label-free guarantee; and iWildCam ties rather than beats freeze.  Two clean
+real-shift wins under one algorithm, plus a damage-prevention result where harm is
+undetectable label-free, is exactly the shape the detectability-gating thesis
+predicts.
 
 \paragraph{Harm frequency.}
 \begin{itemize}
@@ -678,11 +756,14 @@ is designed to detect.
 
 \paragraph{Threats to validity.}
 \begin{enumerate}
-\item \emph{Synthetic corruptions only.}  All experiments use the official CIFAR-10-C
-  corruptions (Hendrycks--Dietterich functions), not natural distribution shifts.
-  How the results transfer to natural shift benchmarks such as WILDS iWildCam or
-  Camelyon17~\cite{koh2021wilds} is an open question addressed in
-  Chapter~\ref{ch:discussion}.
+\item \emph{Modest natural-shift sample sizes.}  The decisive synthetic results use
+  the official CIFAR-10-C corruptions (Hendrycks--Dietterich functions).  The two
+  natural-shift held-out wins (Camelyon17 Protocol~G and Office-Home Protocol~M~v2)
+  and the iWildCam damage-prevention result transfer the thesis to genuine WILDS-style
+  shifts~\cite{koh2021wilds,venkateswara2017officehome}, but at modest sample sizes
+  ($n{=}35$--$72$ held-out conditions) and at a permitted labeled-calibration operating
+  point rather than a pure label-free one.  Scaling these to larger natural-shift
+  batteries remains future work (Chapter~\ref{ch:discussion}).
 \item \emph{Single architecture and scale.}  All deep-TTA experiments use
   ResNet-18 on $32{\times}32$ CIFAR-10.  The Imagenette run did not complete;
   ImageNet-C with ResNet-50 or ViT-B~\cite{dosovitskiy2021vit,he2016resnet} is pending.

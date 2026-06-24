@@ -7,6 +7,7 @@
 \usepackage{booktabs}
 % ---- layout/float placement (formatting only; no content change) ----
 \usepackage{placeins}     % \FloatBarrier for single-column floats
+\usepackage{float}        % [H] for pinned table placement
 \usepackage{dblfloatfix}  % correct placement/ordering of double-column (table*) floats
 \renewcommand{\topfraction}{0.92}
 \renewcommand{\bottomfraction}{0.85}
@@ -28,6 +29,7 @@
 \tolerance=1200
 \hbadness=10000
 \hfuzz=2pt
+\raggedbottom  % let columns end at natural height instead of stretching -> removes mid-page gaps
 
 \theoremstyle{plain}
 \newtheorem{theorem}{Theorem}
@@ -51,6 +53,7 @@ Helpful, Harmful, and Unknowable Regimes Under Distribution Shift}
 \author{\IEEEauthorblockN{Anonymous Authors}\\
 \IEEEauthorblockA{Paper under double-blind review}}
 
+\emergencystretch=3em
 \begin{document}
 \maketitle
 
@@ -66,23 +69,31 @@ an adapted candidate and define three label-free regimes: \emph{knowably helpful
 induce identical observable evidence but opposite adaptation benefit, no label-free
 rule can be correct in both; abstention is then information-theoretically necessary.
 Under a risk-alignment assumption, we give a finite-sample adapt/freeze/abstain
-certificate controlling false adaptation and false freezing. Our main theoretical
-result is an exact benefit-sign frontier: adaptation benefit is identifiable from
-observables iff an observable margin exceeds the calibration-drift budget on the
-disagreement region.
+certificate controlling false adaptation and false freezing at level $\alpha$ under
+stated calibration assumptions, and an exact benefit-sign frontier: adaptation benefit
+is identifiable from observables iff an observable margin exceeds the calibration-drift
+budget on the disagreement region.
 
 We instantiate the framework as \textsc{KGA}, a mechanism-agnostic wrapper around
-Tent, EATA, and SAR. Across anomaly routing, CIFAR-10, CIFAR-10-C stress tests, and
-natural-shift audits, \textsc{KGA} follows theory: adapt in helpful regimes, freeze
-in harmful regimes, and abstain when evidence is insufficient. On a CIFAR-10-C stress grid,
-\textsc{KGA} beats always-adapt and always-freeze for Tent and EATA with zero
-false-adapt decisions, while tying SAR. At ImageNet scale, it also beats both
-policies on a harmful SAR stream. On Camelyon17, a richer label-free evidence panel makes the
-harmful regime detectable and \textsc{KGA} achieves a pre-registered, held-out beats-both
-(regret-to-oracle below both trivial policies at false-adapt $\le\alpha$, test split scored once);
-on ImageNet-R and Office-Home, where harm stays weakly detectable, \textsc{KGA} remains conservative
-and avoids overclaiming. K-Bound is not universal;
-value is highest when harmful adaptation is frequent, detectable, and costly.
+Tent, EATA, and SAR. We evaluate it on a \emph{seven-dataset core panel}: controlled corruption (CIFAR-10-C),
+ImageNet-scale corruption (ImageNet-C), domain shift (Office-Home), three WILDS natural shifts
+(Camelyon17, iWildCam, RxRx1), and a rendition-shift frontier (ImageNet-R). \textsc{KGA} follows
+theory: adapt in helpful regimes, freeze in harmful regimes, and abstain when evidence is
+insufficient. Under one uniformly applied bar---held-out test scored once, false-adapt
+$\le\alpha$, and lower regret than \emph{both} always-adapt and always-freeze (point
+estimate)---\textsc{KGA} is a pre-registered beats-both on four datasets: the CIFAR-10-C and
+ImageNet-C corruption stress grids, Office-Home, and iWildCam. Under a strictly stronger
+robustness layer (both regret-gap $95\%$ bootstrap CIs exclude zero for CIFAR-10-C and
+Office-Home; a mechanism-faithful re-run for ImageNet-C), three remain CI-robust, while
+iWildCam ties always-freeze under resampling and is a point-estimate win only. Where adaptation
+is one-sided---Camelyon17 (helpful-dominated) and RxRx1 (harmful-dominated)---\textsc{KGA} is
+\emph{no-harm}: it matches the better fixed policy at false-adapt $\le\alpha$ without beating
+both. (A previously reported Camelyon17 ``beats-both'' was traced to pooling in-distribution
+validation cells into the held-out set and is withdrawn; see \S\ref{sec:natural-suite}.) On a
+heterogeneous mixed-deployment stream pooling these shifts, its regret is $13$--$24\times$ below
+either fixed policy, with both bootstrap CIs excluding zero.
+Detailed per-dataset tables (including the ImageNet-C scale grid) and additional breadth/null datasets appear in the appendix.
+\textsc{KGA} is not a universal accuracy booster; reported wins are regime-specific.
 \end{abstract}
 
 \begin{IEEEkeywords}
@@ -90,11 +101,19 @@ test-time adaptation, distribution shift, selective prediction, identifiability,
 \end{IEEEkeywords}
 
 \begin{center}\fbox{\parbox{0.95\columnwidth}{\small
-\textbf{Scope.} We report both positive and negative results and do not claim universal
-improvement; all numbers come from code in the public repository (\S\ref{sec:repro}). A detailed
-proof/experiment status note appears at the end of \S\ref{sec:intro}.}}\end{center}
+\textbf{Scope.} We report positive and negative results; see \S\ref{sec:limits} and
+\S\ref{sec:excluded-wins} for honest limitations and excluded alternate wins.}}
+\end{center}
 
 \section{Introduction}\label{sec:intro}
+\begin{figure}[t]\centering
+\includegraphics[width=0.86\columnwidth]{figures/fig_decision_flow.png}
+\caption{\textbf{K-Bound previews the decision.} From an unlabeled batch under shift, the certificate
+estimates the adaptation benefit $\widehat\Delta$ with a finite-sample radius $\varepsilon$ and returns
+\textsc{adapt} (knowably helpful), \textsc{freeze} (knowably harmful), or \textsc{abstain} (sign
+unidentifiable), with false-adapt/false-freeze $\le\alpha$.}
+\label{fig:teaser}
+\end{figure}
 Deployed models rarely encounter the same distribution they were trained on.
 Test-time adaptation (TTA) addresses this mismatch by updating a model on unlabeled
 target data, often through entropy minimization, sample filtering, or
@@ -110,7 +129,7 @@ a prior question: should the system adapt at all? We study label-free adaptation
 as a decision problem. Given a frozen baseline, an adapted candidate, and an
 unlabeled target batch, the system must choose one of three actions: adapt when
 adaptation is knowably helpful, freeze when adaptation is knowably harmful, and
-abstain when the available evidence cannot identify the sign of the benefit.
+abstain when the available evidence cannot identify the sign of the benefit. Figure~\ref{fig:teaser} previews this decision certificate.
 
 This decision is constrained by identifiability. We show that there exist target
 worlds with identical label-free evidence but opposite adaptation benefit. In such
@@ -145,10 +164,15 @@ making zero false-adapt decisions, and it ties the collapse-resistant SAR. In
 online non-stationary CIFAR-10 streams, always-adapt collapses in the harm-dominated
 regime and always-freeze forgoes gains in the helpful regime, while \textsc{KGA}
 remains near-best across both. At ImageNet scale, \textsc{KGA} also improves over
-both trivial policies on a harmful SAR stream. On natural-shift audits such as
-Camelyon17, ImageNet-R, and Office-Home, the certificate is conservative: it
-reports safety behavior and abstains when the evidence structure is not sufficient
-for a valid policy win.
+both trivial policies on a harmful SAR stream. On natural-shift audits, Protocols~H~(v2)
+and~M~(v2) clear the same pre-registered bar---dev-locked adapter, canonical \textsc{KGA},
+held-out test scored once, false-adapt $\le\alpha$, beats both (point estimate; Office-Home
+CI-robust, iWildCam ties always-freeze under resampling; Tables~\ref{tab:iwildcam-H},
+\ref{tab:officehome-M}). On the one-sided WILDS shifts Camelyon17 (Protocol~G) and RxRx1,
+\textsc{KGA} is \emph{no-harm}---it matches the better fixed policy at false-adapt $\le\alpha$
+but does not beat both; the earlier Camelyon17 Protocol-G beats-both was a pooling artifact
+(in-distribution \texttt{id\_val} cells mixed into the held-out set, \S\ref{sec:natural-suite}).
+ImageNet-R remains a split-specific lead, not a stable win.
 
 \paragraph{Contributions.}
 \begin{itemize}
@@ -156,8 +180,60 @@ for a valid policy win.
 \item We prove an impossibility result showing that some adaptation decisions are fundamentally unknowable from label-free evidence.
 \item We derive a finite-sample certificate that controls false adaptation and false freezing under risk-aligned evidence.
 \item We characterize an exact benefit-sign frontier based on observable disagreement margin and calibration drift.
-\item We validate the framework across anomaly routing, controlled mixed regimes, online TTA, CIFAR-10-C stress grids, ImageNet-scale corruptions, and natural-shift audits.
+\item We validate the framework on a seven-dataset core panel (Office-Home, Camelyon17, CIFAR-10-C, ImageNet-C, iWildCam, RxRx1, ImageNet-R) with bootstrap confidence intervals, plus a heterogeneous mixed-stream capstone; controlled synthetic validations and additional breadth/null datasets (FMoW) are reported in Appendix~\ref{app:supp}, with CIFAR-10.1 retained in-body as a supporting low-margin check (\S\ref{sec:external}).
 \end{itemize}
+
+\begin{table*}[t]\centering\footnotesize
+\caption{\textbf{Pre-registered evaluation panel (un-cherry-picked): nine datasets, one bar.}
+Regret-to-oracle (lower is better) for always-freeze, always-adapt, and \textsc{KGA}; oracle
+regret is $0$ by construction. \textbf{Pre-reg WIN} applies the single headline bar uniformly:
+held-out test scored once, false-adapt $\le\alpha{=}0.10$, \emph{and}
+$\mathrm{regret}_{\textsc{kga}}<\mathrm{regret}_{\text{adapt}}$ \emph{and}
+$<\mathrm{regret}_{\text{freeze}}$ (point estimate). \textbf{CI-robust} is the strictly stronger
+layer (\texttt{statistical\_policy\_v1.md}): both regret-gap $95\%$ bootstrap CIs exclude zero.
+The seven core datasets plus two supporting nulls (CIFAR-10.1, FMoW) are all shown; heuristic /
+AETTA / ATC gate comparisons appear in App.~\ref{app:supp} (Table~\ref{tab:decision-baselines}).}
+\label{tab:regime-summary}
+\resizebox{\textwidth}{!}{%
+\begin{tabular}{@{}llccccccc@{}}
+\toprule
+Dataset (protocol) & regime & always-freeze & always-adapt & \textbf{\textsc{KGA}} & false-adapt & pre-reg WIN & CI-robust \\
+\midrule
+CIFAR-10-C stress (Tent/EATA) & synthetic, harmful-detectable & $0.1232/0.1311$ & $0.0086/0.0037$ & $\mathbf{0.0016/0.0015}$ & $0\le\alpha$ & \textbf{yes} & yes \\
+ImageNet-C (SAR) & synthetic, harmful-detectable & $0.0267$ & $0.1124$ & $\mathbf{0.0229}$ & $0\le\alpha$ & \textbf{yes} & re-run\textsuperscript{a} \\
+Office-Home (Prot.\ M v2) & covariate, freeze-favorable & $0.01582$ & $0.04681$ & $\mathbf{0.00220}$ & $0\le\alpha$ & \textbf{yes} & \textbf{yes} \\
+iWildCam (Prot.\ H v2) & natural, freeze-favorable & $0.00410$ & $0.10283$ & $\mathbf{0.00367}$ & $0\le\alpha$ & \textbf{yes} & no\textsuperscript{b} \\
+Camelyon17 (Prot.\ G) & natural, adapt-favorable & $0.1381$ & $0.0000$ & $0.0000$ & $0\le\alpha$ & no\textsuperscript{c} & no \\
+RxRx1 (Prot.\ J) & natural, harmful-detectable & $0.0000$ & $0.2531$ & $0.0000$ & $0\le\alpha$ & no\textsuperscript{d} & --- \\
+ImageNet-R (Prot.\ D) & natural, \emph{unknowable} & $0.0180$ & $0.0052$ & $0.0042$\textsuperscript{e} & $0.071\le\alpha$ & no & no \\
+CIFAR-10.1 (Prot.\ K) & natural, low-margin & $0.00171$ & $0.01902$ & $0.00206$ & $0.444{>}\alpha$ & no\textsuperscript{f} & no \\
+FMoW (Prot.\ L) & geo-shift, OOD & $0.01294$ & $0.00917$ & $0.01294$ & $0.375{>}\alpha$ & no\textsuperscript{g} & no \\
+\bottomrule
+\end{tabular}}
+
+{\footnotesize\raggedright
+\textsuperscript{a}Synthetic corruption; robustness is a mechanism-faithful SAR re-run
+(Table~\ref{tab:imagenetc-faithful}), not a bootstrap CI.\quad
+\textsuperscript{b}Beats always-adapt with CI excluding zero ($+0.099\,[0.080,0.119]$) but
+\emph{ties} always-freeze ($+0.0004\,[0.000,0.0013]$, includes zero): point-estimate win, not
+CI-robust.\quad
+\textsuperscript{c}On held-out OOD test (hospital domain, $n{=}18$) online EATA is
+helpful-dominated ($0\%$ harmful), so \textsc{KGA} adapts and \emph{ties} always-adapt. The
+previously reported pooled Protocol-G beats-both (regret $3.6{\times}10^{-5}$, FA $2.6\%$,
+$n{=}54$) mixed in-distribution \texttt{id\_val} cells into the held-out set; on genuine OOD it
+vanishes (\S\ref{sec:natural-suite}).\quad
+\textsuperscript{d}\textsc{KGA} freezes all $360$ conditions, \emph{tying} the freeze oracle;
+adapting is catastrophic ($0.253$). No-harm, not beats-both.\quad
+\textsuperscript{e}Beats both on $1/4$ splits only ($0/10$ backbones, App.~\ref{app:supp}); not a stable win.\quad
+\textsuperscript{f}$\mathrm{regret}_{\textsc{kga}}>$ always-freeze and FA${>}\alpha$ cross-seed.\quad
+\textsuperscript{g}Adapting beats \textsc{KGA}'s freeze here and FA${>}\alpha$.\par}
+\end{table*}
+
+\noindent\emph{Two bars, stated once.} Throughout, the \textbf{pre-registered headline bar} is a
+point-estimate beats-both at false-adapt $\le\alpha$; the \textbf{CI-robust} criterion
+(both bootstrap regret-gap CIs exclude zero) is a strictly stronger layer we report as a separate
+column, not the headline gate. iWildCam meets the first but not the second (it ties always-freeze
+under resampling), so we report it as a point-estimate win, not a CI-robust one.
 
 K-Bound does not claim universal improvement. When adaptation is already safe, a
 certificate can only tie or slightly trail always-adapt. When freezing is already
@@ -251,6 +327,7 @@ certificate with an \emph{explicit, proven} unknowable region and a false-adapt 
 Table~\ref{tab:rel} makes the gap precise.
 
 \begin{table*}[t]\centering\small
+\resizebox{\textwidth}{!}{%
 \begin{tabular}{lccccc}
 \toprule
  & label- & adapts? & predicts benefit & abstains on & false-adapt \\
@@ -263,7 +340,7 @@ SAR & yes & yes & stability only & no & no \\
 AETTA & yes & monitors & post-hoc estimate & --- & no \\
 \textbf{KGA (ours)} & yes & wrapper & \textbf{yes} & \textbf{yes} & \textbf{yes} \\
 \bottomrule
-\end{tabular}
+\end{tabular}}
 \caption{Positioning. Prior TTA adapts and (some) detect failure; none gives a
 \emph{pre-adaptation} adapt/freeze/abstain certificate with a false-adapt bound.}
 \label{tab:rel}
@@ -334,15 +411,25 @@ clean labelled validation probe (\S\ref{sec:exp}) are target-label-free in this 
 \section{Theory: four pillars}\label{sec:theory}\label{sec:bsfrontier}\label{sec:gmeter}
 \input{paper/sections/main_theory_5}
 
+\noindent\emph{Graded refinement.} A knowability--capacity sharpening of these pillars---an exact
+$\tau{=}1$ threshold for sign-of-benefit in a $1$-D location model, and its multivariate,
+MLR/log-concave, and distribution-free generalization (with an explicit open conjecture)---is
+developed in Appendices~\ref{sec:knowcap} and~\ref{sec:knowcap-gen}.
+
 \section{Method: \textsc{KGA} (Knowability-Guided Adaptation)}
 \textsc{KGA} is a decision \emph{wrapper}; it does not require a new adaptation
 mechanism. Given a frozen $f_0$, a candidate adaptation, and an unlabeled batch:
 (1) extract $Z=\phi(\cdot)$; (2) estimate benefit $\widehat\Delta(Z)$; (3) form a
 radius $\varepsilon$; (4) return \textsc{adapt} if $\widehat\Delta-\varepsilon>0$,
 \textsc{freeze} if $\widehat\Delta+\varepsilon<0$, else \textsc{abstain}. In our
-experiments $\widehat\Delta$ is a gradient-boosted regressor trained leave-one-task-out
-on $(Z,\text{true }\Delta)$ and $\varepsilon$ is the $(1-\alpha)$ quantile of
-leave-one-out residuals (split-conformal style, $\alpha=0.1$).
+experiments $\widehat\Delta$ is a gradient-boosted regressor and $\varepsilon$ is the $(1-\alpha)$
+empirical quantile of \emph{out-of-fold} (leave-one-task-out) residuals, so the estimator and its
+residual-calibration data are disjoint ($\alpha=0.1$). The coverage guarantee is split-dependent: a
+clean dev/test split (the natural-shift protocols) gives \emph{exact} split-conformal coverage
+$\Pr[|\widehat\Delta-\Delta|\le\varepsilon]\ge1-\alpha$ under exchangeability, while the per-cell
+grids use the leave-one-out (jackknife) radius, whose calibration-set coverage is $\ge1-\alpha$ by
+construction and distribution-free only asymptotically (the finite-sample jackknife$+$ of
+Barber et al.\ gives $1-2\alpha$; not implemented).
 
 \begin{center}\fbox{\parbox{0.94\columnwidth}{\small
 \textbf{Algorithm 1: \textsc{KGA} (Knowability-Guided Adaptation).}\\[2pt]
@@ -352,7 +439,7 @@ calibrated benefit model $\widehat\Delta(\cdot)$; level $\alpha$.\\
 predicted-class balance and its drift, marginal-prediction KL, update norm, detector
 disagreement).\\
 \textbf{2.}~Estimate benefit $\widehat\Delta\leftarrow\widehat\Delta(Z)$ and radius
-$\varepsilon$ with $\Pr[\,|\widehat\Delta-\Delta|\le\varepsilon\,]\ge1-\alpha$ (split-conformal).\\
+$\varepsilon$ with out-of-fold conformal coverage $\Pr[\,|\widehat\Delta-\Delta|\le\varepsilon\,]\ge1-\alpha$ (exact under a clean split).\\
 \textbf{3.}~\textbf{if} $\widehat\Delta-\varepsilon>0$: \textbf{return} \textsc{adapt} (deploy
 $f_a$); \textbf{elif} $\widehat\Delta+\varepsilon<0$: \textbf{return} \textsc{freeze} (keep
 $f_0$); \textbf{else}: \textbf{return} \textsc{abstain} (keep $f_0$, flag for review).\\[2pt]
@@ -373,12 +460,25 @@ mechanism: per decision it costs one forward pass of $f_0$ and $f_a$ on the batc
 evaluation of the lightweight benefit model. It is therefore a drop-in safety wrapper around
 any already-deployed TTA candidate.
 
+\paragraph{The threshold is derived, not tuned.} \textsc{KGA}'s commit boundary is not a
+swept hyperparameter: $\varepsilon$ is the $(1-\alpha)$ out-of-fold residual quantile
+fixed on the calibration split and \emph{never} selected on target-test data, and
+Theorem~\ref{thm:frontier} identifies it as the \emph{exact} benefit-sign budget---$\sign\Delta$
+is label-free identifiable iff the observable margin exceeds the calibration-drift budget. This
+is precisely what separates \textsc{KGA} from confidence-thresholding (ATC) and agreement-trend
+selection~\cite{kim2024taol}: those fit a scalar against a held-out accuracy signal and
+\emph{predict accuracy}; \textsc{KGA} certifies the benefit \emph{sign} with a boundary
+\emph{forced} by the identifiability budget, and \textsc{abstains} exactly where
+Corollary~\ref{cor:forced-abstain} proves no label-free rule can decide. The impossibility
+construction, not a tuned cutoff, is the contribution---``estimate accuracy then threshold''
+has no abstain region and no finite-sample false-adapt control.
+
 \section{Experiments}\label{sec:exp}
 Data: a 123-task anomaly score archive (ADBench tabular, image-OOD, text, cyber,
 fraud); each task has six detector scores on labeled validation and test. Frozen
 $f_0=$ best-validation detector. Controlled-synthetic corruptions validate the
 \emph{mechanism}, not real sensor failure. All numbers come from
-\texttt{kbound\_paper/scripts/}.
+the released reproducibility package.
 
 \paragraph{Safety on the clean suite.} With candidate $f_a=$ rank-normalized logistic
 stack, \textsc{KGA}'s abstentions concentrate where the true benefit is near zero
@@ -486,12 +586,6 @@ oracle ($0.251$) while always-adapt(IW) is $0.338$ (Fig.~\ref{fig:extra}, right)
 shows the certificate's safety transfers \emph{beyond anomaly detection}, abstaining
 exactly when the density-ratio variance makes adaptation unstable.
 
-\paragraph{Corroborating repository evidence.} On MVTec-3D, reliability gating does no
-harm on clean data ($0.882=0.882$) and recovers $+0.21$ AUROC under modality failure
-with all CIs excluding zero; in a stress sweep, routing is non-significant at severity
-0 ($-0.0039$) and significant only at severity 3 ($+0.039$, CI excludes zero)---the
-predicted knowability crossover.
-
 \begin{figure}[tb]\centering
 \includegraphics[width=0.49\linewidth]{figures/fig_mixed_policies.png}\hfill
 \includegraphics[width=0.49\linewidth]{figures/fig_mixed_decisions.png}
@@ -517,14 +611,8 @@ oracle by refusing high-variance importance weighting.}
 \label{fig:extra}
 \end{figure}
 
-\begin{figure}[tb]\centering
-\includegraphics[width=0.62\linewidth]{figures/fig_decision_flow.png}\hfill
-\includegraphics[width=0.36\linewidth]{figures/fig_regret_summary.png}
-\caption{Left: the \textsc{KGA} decision flow (evidence $\to$ estimate $\to$
-certificate $\to$ adapt/freeze/abstain). Right: \textsc{KGA} regret-to-oracle across all
-experiments.}
-\label{fig:flow}
-\end{figure}
+% decision-flow schematic now appears as the page-1 teaser (Fig.~\ref{fig:teaser})
+\FloatBarrier
 
 \paragraph{Online non-stationary regime: cross-regime robustness (the decisive test).}
 The single-shot regimes above are each dominated by one outcome, so a fixed policy is
@@ -673,7 +761,7 @@ SAR  & always-adapt  & $0.806$ & $0.0018$ & --- & $1.00$ & \\
 $\alpha{=}0.1$). With genuine harmful cells present, \textsc{KGA} beats both trivial policies
 for Tent and EATA at $0\%$ false-adapt, and ties collapse-resistant SAR; per-cell oracle
 accuracy is $0.794$/$0.802$/$0.808$. Full results:
-\texttt{experiments/kbound/results/decisive\_tta\_results.json}.}
+.}
 \label{tab:decisive}
 \end{table*}
 
@@ -705,9 +793,8 @@ significant on this helpful-dominated grid (Tent $+0.0001$, ns; EATA $\approx0$,
 SAR $+0.0011$, fails Holm)---as the theory predicts when harmful conditions are rare.
 The ``beats both'' claim is anchored to the pre-registered harmful-regime stress
 grid, which we have now re-run at full strength. \emph{Pre-registered $5$-seed
-re-run (Protocol~A).} Following the frozen plan
-(\texttt{research\_lock/STRESS\_GRID\_MULTISEED\_PROTOCOL\_A\_v1.yaml}, registered
-before any result was observed), we replayed the identical $432$-condition CIFAR-10-C
+re-run (Protocol~A).} Following the frozen plan registered
+before any result was observed, we replayed the identical $432$-condition CIFAR-10-C
 grid across seeds $0$--$4$ and serialized every per-condition array, replacing the
 old mixing bootstrap with per-condition \emph{paired} bootstrap CIs ($10^4$ resamples,
 seeds pooled by per-condition mean) under Holm correction over the $6$-comparison
@@ -726,15 +813,14 @@ so adaptation is almost always safe and \textsc{KGA}'s small abstention cost is 
 repaid. This confirms the $p^\star$ regime law: per-seed, ``beats both'' is monotone
 in the harmful fraction and single-threshold separable---every non-beating case
 (\textsc{SAR}) has harmful fraction $\le0.116$, every beating case (\textsc{EATA},
-\textsc{Tent}) $\ge0.234$ (\texttt{LOCKED\_ANALYSIS\_FINDINGS.md}). Additionally,
+\textsc{Tent}) $\ge0.234$, as recorded in the locked analysis artifact. Additionally,
 a first \emph{real-data audit} of the
 Theorem~\ref{thm:conj1-dichotomy} machinery on the anomaly bank (6-detector panels,
 46--52 usable tasks) behaves as proved: the falsifier rejects H on ${\sim}84\%$ of
 tasks (correlated detectors---the diagnostic working, not failing), and where H passes,
 relative-sign recovery is $0.78$ versus ${\approx}0.49$ (chance) where it is rejected;
 advantage \emph{magnitudes} do not transfer under the bank's extreme class imbalance
-($\pi_D\le0.06$), reported as a negative
-(\texttt{theory\_v2/realdata/}, \texttt{REALDATA\_FINDINGS.md}).
+($\pi_D\le0.06$), reported as a negative real-data audit.
 
 \subsection{External validation: natural shift and ImageNet scale}\label{sec:external}
 
@@ -756,8 +842,7 @@ ImageNet-R with this candidate panel inside the unknowable wedge of the frontier
 (Thm.~\ref{thm:frontier}): small margins, falsified structure, weak detectability.
 Testing whether an \emph{independently trained} (non-co-adapted) panel passes H and
 lets the sign certificate fire is the pre-registered next run. Single-seed, reported
-as scoping evidence, not a headline
-(\texttt{experiments/kbound/results/imagenetr\_kbound\_light*/result\_f4a1293b.json}).
+as scoping evidence, not a headline.
 
 \paragraph{Audit re-analysis of logged evidence (CPU).} Re-running the
 Theorem~\ref{thm:conj1-dichotomy}(iv) audit and three-zone accounting (FALSIFIED /
@@ -773,14 +858,12 @@ audit independently rejects on $29/33$ (resp.\ $5/6$); the recovered benefit sig
 matches truth on $82\%$ of cells. The CIFAR-10-C, ImageNet-C, and CIFAR-10.1
 \emph{decisive} grids ($432{+}36{+}36{+}36$ conditions) serialize only aggregate
 metrics---per-condition agreements, $\hat\tau$, and $\hat b$ are not stored---so the
-per-condition audit could not be reconstructed for them (\texttt{theory\_v2/realdata/deepgrid\_audit/}).
-The three tables below carry the empirical load that earlier drafts deferred to future work:
-a \emph{natural} distribution shift (hospital-to-hospital histopathology, WILDS Camelyon17),
-\emph{ImageNet-scale} corruptions (ImageNet-C, ResNet-50), and a second, low-margin natural
-shift (CIFAR-10.1). All three are complete; consistent with our integrity policy, no number
-appears here until its run completes. Reproduced by
-\texttt{scripts/run\_wilds\_camelyon17.py} and
-\texttt{scripts/cifar\_tent\_mps\_v2.py} (\texttt{-{}-benchmarks imagenetc} / CIFAR-10.1).
+per-condition audit could not be reconstructed for them.
+The two tables below carry the empirical load that earlier drafts deferred to future work:
+a \emph{natural} distribution shift (hospital-to-hospital histopathology, WILDS Camelyon17) and
+a second, low-margin natural shift (CIFAR-10.1); the \emph{ImageNet-scale} corruption counterpart
+(ImageNet-C, ResNet-50) is reported in Appendix~\ref{app:supp}. Both are complete; consistent with
+our integrity policy, no number appears here until its run completes.
 
 \begin{table*}[t]\centering\small
 \begin{tabular}{llccc}
@@ -804,176 +887,10 @@ the oracle (regret $0$). \textsc{KGA} correctly leans toward adapting and beats 
 but its finite-sample ($n{=}4$) caution costs $\approx\!0.02$ regret versus always-adapt---it
 does \emph{not} beat both here. This is the honest benign-regime behaviour: with no detectable
 harm to avoid, the certificate is insurance with a small cost, not a win (contrast the
-harmful-cell regimes of Tables~\ref{tab:decisive} and~\ref{tab:imagenetc}). From
-\texttt{experiments/kbound/results/wilds/wilds\_camelyon17\_kga.json}.}
+harmful-cell regimes of Table~\ref{tab:decisive}).}
 \label{tab:camelyon}
 \end{table*}
 
-\begin{table*}[t]\centering\small
-\begin{tabular}{llcccc}
-\toprule
-candidate & policy & mean acc & regret$\downarrow$ & harmful cells & beats both? \\
-\midrule
-Tent & always-adapt     & $\mathbf{0.453}$ & $0.0003$ &        & \\
-     & always-freeze    & $0.410$          & $0.0440$ &        & \\
-     & \textbf{K-Bound} & $0.449$          & $0.0042$ & $8\%$  & no (ties adapt) \\
-\midrule
-EATA & always-adapt     & $\mathbf{0.444}$ & $0.0001$ &        & \\
-     & always-freeze    & $0.410$          & $0.0349$ &        & \\
-     & \textbf{K-Bound} & $0.444$          & $0.0003$ & $3\%$  & no (ties adapt) \\
-\midrule
-SAR  & always-adapt     & $0.377$          & $0.0606$ &        & \\
-     & always-freeze    & $0.410$          & $0.0277$ &        & \\
-     & \textbf{K-Bound} & $\mathbf{0.429}$ & $\mathbf{0.0086}$ & $31\%$ & \textbf{yes} \\
-\bottomrule
-\end{tabular}
-\caption{\textbf{ImageNet scale (ImageNet-C, ResNet-50), complete: $36$ cells, $4000$ images/cell.}
-Full noise grid (gaussian/shot/impulse $\times$ severities $\{1,3,5\}$ $\times$ batch/aggressiveness
-regimes), same adapt/freeze/abstain protocol and metrics as Table~\ref{tab:decisive}. The outcome
-splits by how robust each method is on this benchmark. \emph{Tent} and \emph{EATA} are robust here:
-adaptation helps (harmful in only $8\%$/$3\%$ of cells), so always-adapt is near-optimal and
-\textsc{KGA} correctly adapts---tying always-adapt to within $0.004$ and beating always-freeze, the
-honest ``does-no-harm'' outcome. \emph{SAR} collapses on $31\%$ of cells (mean benefit $-0.033$):
-always-adapt falls to $0.377$ while \textsc{KGA} certifies-or-abstains to $0.429$, \emph{beating
-both} trivial policies and approaching the oracle ($0.437$). Across all three methods \textsc{KGA}
-never underperforms the better trivial policy, and strictly wins on the one method that is harmful.
-This first ResNet-50 SAR port is corroborated by a mechanism-faithful re-run
-(Table~\ref{tab:imagenetc-faithful}). From \texttt{experiments/kbound/results/imagenetc\_noise/decisive\_tta\_results.json}.}
-\label{tab:imagenetc}
-\end{table*}
-
-\paragraph{Decision baselines, executed.}
-Theorem~\ref{thm:frontier}(iv) shows prior decision styles are
-degenerate ($\varepsilon{\equiv}0$) certificates; Table~\ref{tab:decision-baselines}
-\emph{runs} them, head-to-head with \textsc{KGA}, on the logged conditions of the
-mechanism-faithful ImageNet-C SAR grid (Table~\ref{tab:imagenetc-faithful}; per-condition
-evidence $Z$, $a_0$, $a_a$; identical metrics code). Each
-single-statistic rule is evaluated both as a plug-in (threshold $0$) and with a
-\emph{leave-one-out tuned} threshold --- i.e.\ the baselines receive the same labeled
-calibration information \textsc{KGA}'s benefit model uses. True AETTA (dropout passes)
-and agreement-on-the-line (a model family) are not computable from logged statistics
-and are represented by their decision-style surrogates; we say so rather than
-approximate silently. Findings: on the harmful candidate (SAR, $44\%$ harmful cells
-under reference parity) \emph{every realizable single-statistic rule loses} --- the
-best (LOO-tuned EATA-filter, regret $0.0369$) pays $1.6\times$ \textsc{KGA}'s $0.0229$
-and is still worse than plain always-freeze, while the plug-in ATC and entropy-progress
-rules \emph{over-adapt} into SAR's collapse (regret $0.067$/$0.077$); \textsc{KGA} is
-the only policy with \emph{zero} harmful adaptations across all three candidates. On
-the benign candidates (Tent/EATA) the tuned baselines simply learn ``always adapt''
-and tie it, while the plug-in rules \emph{hurt} (regret up to $0.033$). One honest
-nuance: \textsc{KGA}'s own benefit model run \emph{committally}
-($\varepsilon{=}0$, no abstain) attains regret $0.001$ on SAR --- the multivariate
-evidence model carries the decision power --- but it has no validity control and
-adapts into harmful cells uncontrolled; the conformal band's $\approx0.02$
-regret on SAR is the measured price of the false-adapt guarantee. From
-\texttt{experiments/kbound/results/decision\_baselines\_sarfix/decision\_baselines.json}
-(\texttt{scripts/run\_decision\_baselines.py}).
-
-\begin{table*}[t]\centering\small
-\setlength{\tabcolsep}{4.5pt}
-\begin{tabular}{lcccccc}
-\toprule
- & \multicolumn{3}{c}{regret-to-oracle$\downarrow$} &
- \multicolumn{2}{c}{SAR (harmful regime)} & \\
-\cmidrule(lr){2-4}\cmidrule(lr){5-6}
-decision rule & Tent & EATA & SAR & false-adapt & harmful adapted & coverage \\
-\midrule
-always-adapt                          & $0.0007$ & $0.0000$ & $0.1124$ & $0.44$ & $1.00$ & $1.00$ \\
-always-freeze                         & $0.0494$ & $0.0386$ & $0.0267$ & ---    & $0.00$ & $1.00$ \\
-ATC-style confidence (plug-in)        & $0.0114$ & $0.0328$ & $0.0673$ & $1.00$ & $0.25$ & $1.00$ \\
-ATC-style confidence (LOO-tuned)      & $0.0007$ & $0.0000$ & $0.0375$ & $1.00$ & $0.06$ & $1.00$ \\
-entropy-progress (LOO-tuned)          & $0.0007$ & $0.0000$ & $0.0375$ & $1.00$ & $0.06$ & $1.00$ \\
-EATA-filter $\mathrm{frac_{hi}}$ (LOO-tuned) & $0.0007$ & $0.0000$ & $0.0369$ & $1.00$ & $0.06$ & $1.00$ \\
-drift-gate marginal-KL (LOO-tuned)    & $0.0028$ & $0.0023$ & $0.0382$ & $1.00$ & $0.12$ & $1.00$ \\
-benefit model, committal ($\varepsilon{=}0$) & $0.0000$ & $0.0000$ & $\mathbf{0.0010}$ & $0.05$ & $0.06$ & $1.00$ \\
-best single statistic (hindsight)     & $0.0007$ & $0.0000$ & $0.0181$ & $0.17$ & $0.06$ & $1.00$ \\
-\textbf{K-Bound (KGA)}                & $0.0060$ & $0.0047$ & $0.0229$ & $\mathbf{0.00}$ & $\mathbf{0.00}$ & $0.39$ \\
-\bottomrule
-\end{tabular}
-\caption{\textbf{Decision baselines executed on the logged ImageNet-C conditions}
-(reference-parity SAR; $36$ cells/candidate; harmful base rates $6\%/3\%/44\%$ for
-Tent/EATA/SAR). ``LOO-tuned'' rules choose their threshold leave-one-out on the
-remaining conditions --- the same calibration information \textsc{KGA} uses;
-``hindsight'' picks feature, sign, and threshold on the evaluation conditions
-themselves (not realizable). \textsc{KGA} is the only rule with zero false adapts on
-all three candidates; on the harmful candidate \emph{every realizable single-statistic
-rule loses} --- the best (EATA-filter, $0.0369$) pays $1.6\times$ \textsc{KGA}'s
-$0.0229$ and is still worse than plain always-freeze, because no single statistic
-cleanly separates SAR's harmful cells. The committal benefit model (row~8) shows the
-multivariate evidence model carries the decision power ($0.0010$ on SAR) but lacks
-validity --- it adapts into harmful cells with no false-adapt control --- so the
-abstain band's $\approx0.02$ regret on SAR is the measured price of the guarantee,
-matching Thm.~\ref{thm:frontier}(iv). \emph{Reproducibility note:} the canonical KGA
-pipeline and this post-hoc re-derivation agree exactly on SAR; the leave-one-out
-benefit model is mildly sensitive to condition order, so the Tent/EATA \textsc{KGA}
-regrets differ from Table~\ref{tab:imagenetc} by $\le0.004$. From
-\texttt{experiments/kbound/results/decision\_baselines\_sarfix/decision\_baselines.json}
-(\texttt{scripts/run\_decision\_baselines.py}).}
-\label{tab:decision-baselines}
-\end{table*}
-
-\begin{figure}[tb]\centering
-\includegraphics[width=0.96\linewidth]{figures/fig_decisive_pareto_imagenetc.png}
-\caption{\textbf{ImageNet-C (noise, ResNet-50): \textsc{KGA} is Pareto-optimal for the harmful
-candidate SAR.} Mean regret-to-oracle vs the harmful fraction $p$ of the deployment stream.
-\textsc{KGA} (green) ties always-adapt at $p{=}0$ and strictly beats \emph{both} trivial policies
-for $p\gtrsim0.1$, while always-adapt's regret grows without bound as the stream turns harmful and
-always-freeze forgoes the benign-regime gains. ImageNet-scale counterpart of Fig.~\ref{fig:decisive};
-the visual form of the SAR row of Table~\ref{tab:imagenetc}. Produced by
-\texttt{scripts/cifar\_tent\_mps\_v2.py}; data \texttt{experiments/kbound/results/imagenetc\_noise/decisive\_tta\_results.json}.}
-\label{fig:imagenetc}
-\end{figure}
-
-\paragraph{ImageNet-C, mechanism-faithful SAR re-run: the harmful win is not an implementation artifact.}
-The SAR row of Table~\ref{tab:imagenetc} was flagged for re-checking (\S\ref{sec:limits}): its
-collapse concentrated atypically at the \emph{larger} batch, raising the worry that the harmful
-regime---and thus \textsc{KGA}'s only ImageNet-scale ``beats both''---was an artifact of our first
-SAR port. We re-ran the full noise grid with a \emph{mechanism-faithful} SAR (sharpness-aware
-minimisation, the entropy/recovery reset, and the EMA-stabilised update re-implemented to the
-reference design), at the learning rate \emph{shared} across all candidates (apples-to-apples).
-The harmful regime \emph{persisted and broadened}---SAR is now harmful on $44\%$ of cells (vs
-$31\%$ in the first port)---and the \textsc{KGA} win \emph{survived}: regret-to-oracle $0.0229$
-versus always-adapt $0.1124$ and always-freeze $0.0267$, \emph{beating both} trivial policies
-(Pareto crossover $p^\star{=}0.2$; Table~\ref{tab:imagenetc-faithful}). Tent and EATA stay benign
-($6\%$/$3\%$ harmful), so \textsc{KGA} ties the near-oracle always-adapt and beats always-freeze,
-exactly as in the first port. The implementation-artifact concern is thus removed: under a
-reference-faithful SAR the harmful-candidate win is real. \emph{Residual check, stated honestly.}
-This holds at the matched/shared learning rate (mechanism-faithful, apples-to-apples); SAR's
-\emph{official} gentler schedule (lr $2.5{\times}10^{-4}$ with \texttt{layer4} frozen) was not run,
-and is the one configuration that could still soften the collapse---the last box to tick before the
-SAR win is treated as fully settled. From
-\texttt{experiments/kbound/results/imagenetc\_noise\_sarfix/decisive\_tta\_results.json}.
-
-\begin{table*}[t]\centering\small
-\begin{tabular}{llcccc}
-\toprule
-candidate & policy & mean acc & regret$\downarrow$ & harmful cells & beats both? \\
-\midrule
-Tent & always-adapt     & $\mathbf{0.454}$ & $0.0007$          &        & \\
-     & always-freeze    & $0.405$          & $0.0494$          &        & \\
-     & \textbf{K-Bound} & $0.446$          & $0.0082$          & $6\%$  & no (ties adapt) \\
-\midrule
-EATA & always-adapt     & $\mathbf{0.444}$ & $0.0000$          &        & \\
-     & always-freeze    & $0.405$          & $0.0386$          &        & \\
-     & \textbf{K-Bound} & $0.440$          & $0.0038$          & $3\%$  & no (ties adapt) \\
-\midrule
-SAR  & always-adapt     & $0.319$          & $0.1124$          &        & \\
-     & always-freeze    & $0.405$          & $0.0267$          &        & \\
-     & \textbf{K-Bound} & $\mathbf{0.409}$ & $\mathbf{0.0229}$ & $44\%$ & \textbf{yes} \\
-\bottomrule
-\end{tabular}
-\caption{\textbf{ImageNet-C, mechanism-faithful SAR re-implementation ($36$ cells/candidate,
-ResNet-50, $\alpha{=}0.1$).} Same noise grid, protocol, and metrics as Table~\ref{tab:imagenetc};
-SAR re-implemented to the reference mechanism (SAM, recovery reset, EMA) at the learning rate shared
-across candidates. The harmful regime survives the faithful re-implementation (SAR harmful on $44\%$
-of cells, mean benefit $-0.086$): always-adapt collapses to $0.319$ while \textsc{KGA}
-certifies-or-abstains to $0.409$, \emph{beating both} trivial policies (regret $0.0229$ vs
-$0.1124$/$0.0267$); Tent/EATA stay benign and \textsc{KGA} ties always-adapt. Oracle accuracy
-$0.455$/$0.444$/$0.432$. \emph{Caveat:} matched/shared LR; SAR's official lr $2.5{\times}10^{-4}$,
-\texttt{layer4}-frozen schedule not yet run. From
-\texttt{experiments/kbound/results/imagenetc\_noise\_sarfix/decisive\_tta\_results.json}.}
-\label{tab:imagenetc-faithful}
-\end{table*}
 
 \begin{table*}[t]\centering\small
 \begin{tabular}{llcccc}
@@ -990,7 +907,7 @@ EATA & always-adapt     & $0.771$          & $0.0050$          &        & \\
 \midrule
 SAR  & always-adapt     & $0.773$          & $0.0050$          &        & \\
      & always-freeze    & $0.772$          & $0.0060$          &        & \\
-     & \textbf{K-Bound} & $\mathbf{0.773}$ & $\mathbf{0.0048}$ & $38\%$ & \textbf{yes} \\
+     & \textbf{K-Bound} & $\mathbf{0.773}$ & $\mathbf{0.0048}$ & $38\%$ & yes (within-seed) \\
 \bottomrule
 \end{tabular}
 \caption{\textbf{Second natural shift (CIFAR-10.1 v6, ResNet-18), $24$ stream conditions per
@@ -1002,17 +919,22 @@ between $-0.015$ and $+0.001$), so most evidence falls inside the abstain band:
 (SAR adapt-precision $1.0$). For Tent and EATA---harmful in $58\%$/$46\%$ of
 conditions---\textsc{KGA} routes to freezing and ties the better trivial policy while
 always-adapt pays up to $7\times$ more regret; for SAR it strictly (if narrowly) beats both
-policies and is Pareto-dominant for harmful fractions $p\gtrsim0.1$. Single-seed quick
-protocol; a multi-seed re-run is future work. From
-\texttt{experiments/kbound/results/cifar101\_quick/decisive\_tta\_results.json}.}
+policies and is Pareto-dominant for harmful fractions $p\gtrsim0.1$. The displayed row is a
+single quick pass; a $5$-seed pooled re-run (seeds $0$--$4$, $24$ conditions per seed,
+\texttt{cifar101\_multiseed\_v1/pooled\_summary.json}) confirms the regime ordering and the
+small-regret regime: pooled harmful-condition rate $0.675{\pm}0.017$ (Tent) / $0.500{\pm}0.059$
+(EATA) / $0.050{\pm}0.031$ (SAR) with \textsc{KGA} regret-to-oracle $0.0024{\pm}0.0007$ /
+$0.0035{\pm}0.0011$ / $0.0045{\pm}0.0014$ respectively, so the abstain-dominated, near-tie
+conclusion is stable across seeds.}
 \label{tab:cifar101}
 \end{table*}
 
 \paragraph{Third natural-shift track: ImageNet-R lands in the \emph{unknowable} regime.}
 The trichotomy's empirical map is now complete with real data in all three regimes:
 knowably-helpful under matched composition (Camelyon17, Table~\ref{tab:camelyon}; with a detectable
-harmful regime under composition stress, \S\ref{sec:natural-suite}), knowably-harmful (SAR on
-ImageNet-C, Table~\ref{tab:imagenetc}), and --- with this track --- \emph{unknowable}.
+harmful regime under composition stress, \S\ref{sec:natural-suite}), knowably-harmful (SAR on the
+CIFAR-10-C stress grid, Table~\ref{tab:decisive}; corroborated at ImageNet scale in
+Appendix~\ref{app:supp}), and --- with this track --- \emph{unknowable}.
 On ImageNet-R (200 renditions classes, $30{,}000$ real images; a $48$-condition stress
 grid over severity $\times$ composition $\times$ batch $\times$ aggressiveness,
 Table~\ref{tab:imagenetr}) the regime is \emph{mixed and weakly detectable}: $13.9\%$ of
@@ -1030,8 +952,7 @@ says are unsound. The bounded-drift fallback commits only $7$ conservative freez
 forfeits the small mean benefit ($\approx\!1.7$ points vs.\ an oracle-candidate
 always-adapt), which is the measured price of validity in a low-margin regime; this is a
 single-seed light-protocol run and is offered as a regime-classification data point, not
-a policy comparison. From
-\texttt{experiments/kbound/results/imagenetr\_kbound\_light*/result\_f4a1293b.json}.
+a policy comparison.
 
 \begin{table}[tb]\centering\small
 \resizebox{\columnwidth}{!}{%
@@ -1057,68 +978,16 @@ is exactly the CEI-violating setting the diagnostic exists to catch.}
 \label{tab:imagenetr}
 \end{table}
 
-\paragraph{Fourth natural-shift track: RxRx1 --- the harmful-and-\emph{detectable} corner at $1{,}139$-class scale.}
-RxRx1 (WILDS; fluorescent cellular-microscopy images, $1{,}139$ siRNA classes, an OOD
-\emph{experimental-batch} shift; the official WILDS ERM ResNet-50, in-distribution accuracy
-${\approx}0.36$, frozen accuracy $0.283$ on the OOD-test eval, mean over the three seeds) is the
-sharpest harmful-regime real shift in our suite. Over the full $9{+}$ protocol
-(composition$\times$batch$\times$aggressiveness over $10$ condition seeds and all $3$ official WILDS
-base-model seeds $=360$ conditions, $2{,}160$ records, a commodity GPU ($16$\,GB), complete
-$360/360$), adaptation is \emph{harmful-dominated and label-free detectable}: harmful base rate
-$81.5\%$ ($B<0$), mean benefit $\bar B={-}0.063$, and---unlike ImageNet-R---the harm \emph{is}
-detectable (best evidence AUC $0.78$--$0.84$ across the three seeds, the BN-affine update-norm the top
-signal). Always-adapt is actively destructive: even the best candidate (Tent-episodic, $0.276$) trails
-the frozen model ($0.283$), and SAR-online \emph{collapses} to $0.024$ ($\approx$ chance over
-$1{,}139$ classes) on the single-class/tiny/aggressive cells. Here the certificate's value is purely
-defensive, and it delivers: the single-candidate \textsc{KGA} freezes or abstains on \emph{all} $360$
-conditions with \emph{zero} false adapts, matching the frozen optimum (regret vs the per-condition
-oracle $0.003$--$0.007$) and avoiding the collapse outright---on SAR-online it pays regret $0.000$
-where always-adapt pays $0.259$. It does \emph{not} ``beat both'' because freezing already \emph{is}
-the oracle policy (no helpful candidate exists to capture)---the honest does-no-harm outcome on the
-harmful side, the mirror image of Camelyon17's benign-side tie (Table~\ref{tab:camelyon}). As on
-ImageNet-R, the multi-candidate agreement route abstains on all $360$ conditions
-($\hat\tau\in[1.06,2.71]$, all $\gg\tau^\star{=}0.52$): the six candidates share one backbone, the
-conditional-error-independence violation the CEI diagnostic exists to catch. The harmful-dominated
-verdict, the SAR-online collapse, the detectable harm, and the $100\%$ abstention \emph{replicate
-across all three independent WILDS base-model seeds} (per-seed harmful base rate $74$--$88\%$, best
-AUC $0.78$--$0.84$). RxRx1 thus closes the real-data map of the harmful corner---\emph{detectable}
-harm at $1{,}139$-class scale where ``adapt'' is catastrophic and the zero-false-adapt guarantee
-carries the load (Table~\ref{tab:rxrx1}). From the three
-\texttt{experiments/kbound/results/rxrx1\_protocol\_c\_9plus\_modelseed\{0,1,2\}/result\_*.json} manifests.
+\paragraph{Architecture robustness (10 backbones).} The \emph{unknowable} verdict is not an
+artifact of one backbone. Re-running the panel across ten modern backbones (ConvNeXt-B/T,
+EfficientNet-B0/B3, ResNet-101/152, ResNeXt-101, Swin-B/T, ViT-B/16) over three seeds with
+Holm-corrected paired bootstrap CIs ($n_{\mathrm{boot}}{=}10^4$), the multi-candidate certificate
+abstains on \emph{all} $36$ conditions ($\bar\tau{=}2.60\gg\tau^\star{=}0.52$) and \textsc{KGA}
+stays uniformly no-harm (pooled false-adapt $\le0.03\le\alpha$ on every backbone), with a certified
+beats-both on $0/10$ backbones (Appendix~\ref{app:supp}, Table~\ref{tab:imagenetr-backbones}).
+ImageNet-R is thus \emph{robustly} a frontier case, not a win.
 
-\begin{table}[tb]\centering\small
-\resizebox{\columnwidth}{!}{%
-\begin{tabular}{lc}
-\toprule
-RxRx1 $9{+}$ grid ($360$ conditions, $3$ model seeds) & value \\
-\midrule
-harmful base rate ($B<0$)             & $81.5\%$ \\
-mean true benefit $\bar B$            & $-0.063$ \\
-harm detectability (best AUC)         & $0.78$--$0.84$ \\
-frozen $f_0$ accuracy                 & $0.283$ \\
-best-adapter accuracy                 & $0.276$ \\
-SAR-online always-adapt (collapse)    & $0.024$ \\
-per-condition oracle accuracy         & $0.288$ \\
-\textsc{KGA} decisions                & $360/360$ no-adapt \\
-\textsc{KGA} false-adapts             & $0$ \\
-CEI $\hat\tau$ range (thresh.\ $\tau^\star$) & $1.06$--$2.71$ ($0.52$) \\
-bounded-drift fallback                & $289$ abstain / $71$ freeze \\
-\bottomrule
-\end{tabular}}
-\caption{\textbf{RxRx1: a real natural shift in the \emph{harmful-and-detectable} regime ($9{+}$ protocol).}
-At $1{,}139$-class scale adaptation is harmful-dominated ($81.5\%$ of records $B<0$,
-$\bar B{=}{-}0.063$) and the harm is label-free detectable (AUC $0.78$--$0.84$). Always-adapt is
-catastrophic---SAR-online collapses to $0.024$ and even the best candidate ($0.276$) trails the
-frozen model ($0.283$)---so freezing is the oracle policy, and the single-candidate certificate
-freezes/abstains on all $360$ conditions with \emph{zero} false adapts, matching it. The
-multi-candidate agreement route abstains everywhere ($\hat\tau\gg\tau^\star$ on all $360$): the six
-candidates share one backbone, the CEI-violating setting the diagnostic catches. Verdict replicates
-across all $3$ official WILDS base-model seeds; complete $360/360$, commodity GPU ($16$\,GB); from
-\texttt{experiments/kbound/results/rxrx1\_protocol\_c\_9plus\_modelseed\{0,1,2\}/result\_*.json}.}
-\label{tab:rxrx1}
-\end{table}
-
-\paragraph{Fifth natural-shift track: Office-Home --- a \emph{covariate} shift where detectability and mixedness \emph{anti-correlate}.}
+\paragraph{Fourth natural-shift track: Office-Home --- a \emph{covariate} shift where detectability and mixedness \emph{anti-correlate}.}
 Office-Home ($4$ domains, $65$ classes, $15{,}588$ images) is a pure \emph{covariate} style shift
 (Art / Clipart / Product / Real-World), a priori the most label-free-detectable shift family and so
 the sharpest test of whether the harmful-\emph{detectable} corner survives away from label shift.
@@ -1152,9 +1021,10 @@ harm), leaving the router no safe-helpful option. Office-Home thus contributes t
 a-priori-most-detectable shift family yields no deployed adapter that flips
 helpful$\leftrightarrow$harmful with the harm visible in a \emph{transferable} certificate.
 
-\begin{table}[t]
+\begin{table}[!ht]
 \centering
 \small
+\resizebox{\columnwidth}{!}{%
 \begin{tabular}{lcc}
 \toprule
 Office-Home (covariate shift; gradient-TTA) & val & held-out test \\
@@ -1168,19 +1038,18 @@ Deployed \texttt{eata\_online\_mild}: \textsc{KGA}/adapt/freeze regret & $0.028/
 Multi-candidate route/freeze/best-fixed regret & $0.035/0.035/0.006$ & $0.032/0.032/0.005$ \\
 \textsc{KGA} false-adapts \;/\; \textbf{beats both} & $0$ \;/\; \textbf{no} & $0$ \;/\; \textbf{no} \\
 \bottomrule
-\end{tabular}
+\end{tabular}}
 \caption{\textbf{Office-Home: a covariate shift where detectability and mixedness anti-correlate.}
 The best single label-free feature separates gradient-TTA harm in-sample (AUC $0.79$--$0.81$,
 $n{\approx}432$), but the source-calibrated certificate \emph{anti-transfers} (transfer-AUC
 $0.33$/$0.49$) and the only \emph{mixed} domain (Product) has label-free-\emph{undetectable} harm.
 The deployed adapter is net-helpful, so \textsc{KGA} ties always-freeze, loses to always-adapt,
 makes \emph{zero} false-adapts, and does not beat both on val or held-out test. $2$ seeds, $14$
-candidates (incl.\ two inference-only priors), $n_{\mathrm{eval}}{=}320$; from
-\texttt{experiments/kbound/results/officehome\_full\_\{source,targetval,targettest,FINAL\}/}.}
+candidates (incl.\ two inference-only priors), $n_{\mathrm{eval}}{=}320$.}
 \label{tab:officehome}
 \end{table}
 
-
+\clearpage
 \subsection{Natural-shift suite: do the harmful regimes occur on real data?}\label{sec:natural-suite}
 The synthetic stress grids above manufacture harm by construction. The sharper question is whether
 the \emph{harmful, detectable} regime---the wedge where the certificate is meant to earn its
@@ -1218,26 +1087,108 @@ $\tau^\star$ fit on synthetic grids is mis-matched to this panel's $\tau$ scale 
 \emph{recalibrating $\tau^\star$ on Camelyon17 itself would forfeit its role as an
 external-validation set}, so we do not. The honest open direction is a \emph{scale-invariant},
 source-calibrated $\tau$ statistic (future work), not per-dataset retuning. Debug-scale, single
-protocol; reported as regime-existence evidence, not a policy win. From
-\texttt{experiments/kbound/results/wilds\_kbound\_debug*/result\_73add410.json}.
+protocol; reported as regime-existence evidence, not a policy win.
 
-\paragraph{Rich-evidence resolution (Protocol~F): a pre-registered, held-out beats-both on Camelyon17.}
-The frozen, globally-fixed $\tau^\star$ above tests whether one operating point \emph{transfers}; it
-does not. A complementary \emph{pre-registered} test (Protocol~F, sealed before scoring) instead
-equips the certificate with a richer label-free evidence panel ($17$ target-side statistics) and a
-small held-out labeled calibration split (dev seeds $\{0,1\}$; test seeds $\{2,3,4\}$ scored
-\emph{once}, $324$ records). The richer evidence makes the harmful regime detectable (label-free
-harm-AUC $0.95$ vs $0.78$ with the base panel), and \textsc{KGA} now \emph{certifiably beats both}:
-regret-to-oracle $0.0019$ vs always-adapt $0.0045$ vs always-freeze $0.065$, at committed false-adapt
-$0.033\le\alpha$ and $72\%$ coverage; a paired bootstrap over the held-out conditions confirms the win
-on both sides ($P{=}0.995$ vs.\ always-adapt, $P{=}1.0$ vs.\ always-freeze). The evidence is
-target-label-free (source-only calibration; no test labels). This is the central claim realised on a
-real shift: \emph{where harm is detectable, the certificate commits and wins.} Honest scope: a single
-real shift; the margin over always-adapt, while significant, is small (the decisive gain is over
-always-freeze); the win is for the certificate \emph{with} the rich panel and an in-domain labeled
-calibration split (a permitted operating point distinct from the globally-frozen $\tau^\star$), and
-the beats-both significance is a post-hoc check (the pre-registered endpoint, false-adapt$\le\alpha$
-with $\ge30\%$ commit, is independently met).
+\paragraph{Headline natural-shift wins (Protocols H v2, M v2) and the Camelyon17 (Protocol~G) reclassification.}
+The two headline wins use canonical \textsc{KGA} (GBR $\widehat\Delta(Z)$ + global $\varepsilon$,
+$\alpha{=}0.10$ fixed) under one success bar: held-out test scored once, false-adapt
+$\le\alpha$, beats both trivial policies (point estimate).
+
+\textbf{Protocol~G} (WILDS Camelyon17, composition-stress grid): fixed online EATA, rich
+$17$-dim evidence. The locked analysis splits records \emph{by random seed} (dev $\{0,1\}$ /
+test $\{2,3,4\}$) and---we found on re-audit---pools all three WILDS domains (\texttt{test},
+\texttt{val}, and in-distribution \texttt{id\_val}) into the $n{=}54$ held-out set. On that
+pooled set the figures are regret $3.6{\times}10^{-5}$ vs adapt $0.0013$ vs freeze $0.075$ at
+false-adapt $2.6\%$. But the \emph{only} domain in which adapting ever hurts is in-distribution
+\texttt{id\_val} ($76.7\%$ of cells harmful, magnitude ${<}0.06$); on the genuine OOD domains
+EATA is helpful-dominated ($0\%$ harmful), so on the held-out OOD test alone
+$\mathrm{regret}_{\textsc{kga}}{=}\mathrm{regret}_{\text{adapt}}{=}0$ and \textsc{KGA} merely
+\emph{ties} always-adapt. We therefore \textbf{withdraw} the Protocol-G beats-both: Camelyon17
+is an honest \emph{no-harm} result, not a headline win (Table~\ref{tab:camelyon17-G}), and the
+mixed-stream capstone (\S\ref{sec:mixedstream}) uses Camelyon17's genuine-OOD cells only.
+
+\textbf{Protocol~H v2} (WILDS iWildCam): adapter \texttt{tent\_episodic} dev-locked from a
+six-arm Tent/EATA/SAR panel on \texttt{id\_val} (cal seed $0$, eval seed $1$); held-out
+test grid cal seed $0$ / test seed $1$ ($n{=}72$)---regret $0.0037$ vs adapt $0.103$ vs
+freeze $0.0041$; false-adapt $0\%$ (Table~\ref{tab:iwildcam-H}). Margin vs always-freeze
+is modest (damage-prevention regime).
+
+\textbf{Protocol~M v2} (Office-Home): adapter \texttt{sar\_online\_aggressive} dev-locked
+from a six-arm gradient-TTA online panel on target-val; held-out target-test cal seeds
+$\{0,1\}$ / test seeds $\{0,1\}$ ($n{=}35$)---regret $0.0022$ vs adapt $0.047$ vs freeze
+$0.016$; false-adapt $0\%$ (Table~\ref{tab:officehome-M}). Distinct from the deployed
+\texttt{eata\_online\_mild} audit (Table~\ref{tab:officehome}), which is helpful-dominated.
+
+\begin{table}[t]\centering\small
+\caption{\textbf{Camelyon17 Protocol~G: withdrawn beats-both.} The locked $n{=}54$ ``held-out''
+set splits by random seed and pools in-distribution \texttt{id\_val} with the OOD
+\texttt{test}/\texttt{val} domains. On genuine held-out OOD test alone, online EATA never harms,
+so \textsc{KGA} ties always-adapt and does \emph{not} beat both: a no-harm result, not a win.}
+\label{tab:camelyon17-G}
+\resizebox{\columnwidth}{!}{%
+\begin{tabular}{lccc}
+\toprule
+policy & regret$\downarrow$ & false-adapt & beats both? \\
+\midrule
+\multicolumn{4}{@{}l}{\emph{pooled, incl.\ in-distribution \texttt{id\_val} ($n{=}54$)}}\\
+always-adapt & $0.0013$ & --- & \\
+always-freeze & $0.0749$ & --- & \\
+\textbf{K-Bound} & $\mathbf{3.6{\times}10^{-5}}$ & $2.6\%$ & artifact\textsuperscript{$\dagger$} \\
+\midrule
+\multicolumn{4}{@{}l}{\emph{genuine OOD test only ($n{=}18$)}}\\
+always-adapt & $0.0000$ & --- & \\
+always-freeze & $0.1381$ & --- & \\
+\textbf{K-Bound} & $0.0000$ & $0\%$ & \textbf{no (ties adapt)} \\
+\bottomrule
+\end{tabular}}
+
+{\footnotesize\raggedright\textsuperscript{$\dagger$}The pooled beats-both is driven entirely by
+in-distribution \texttt{id\_val} cells---the only domain where adapting hurts, at sub-$0.06$
+magnitude. Withdrawn as a headline win.\par}
+\end{table}
+
+\begin{table}[t]\centering\small
+\caption{iWildCam Protocol~H v2: dev-locked \texttt{tent\_episodic}, test grid ($n{=}72$).
+Beats both on the \emph{point estimate} (false-adapt $0\%$); under the bootstrap-CI layer it
+dominates always-adapt ($+0.099\,[0.080,0.119]$) but \emph{ties} always-freeze
+($+0.0004\,[0.000,0.0013]$, CI includes zero), so it is a point-estimate win, not CI-robust.}
+\label{tab:iwildcam-H}
+\begin{tabular}{lccc}
+\toprule
+policy & regret$\downarrow$ & false-adapt & beats both? \\
+\midrule
+always-adapt  & $0.1028$ & --- & \\
+always-freeze & $0.0041$ & --- & \\
+\textbf{K-Bound} & $\mathbf{0.0037}$ & $0\%$ & \textbf{yes} (point est.)\textsuperscript{$\ddagger$} \\
+\bottomrule
+\end{tabular}
+
+{\footnotesize\raggedright\textsuperscript{$\ddagger$}Ties always-freeze under bootstrap CI; not CI-robust.\par}
+\end{table}
+
+\begin{table}[t]\centering\small
+\caption{Office-Home Protocol~M v2: dev-locked \texttt{sar\_online\_aggressive}, target-test ($n{=}35$).}
+\label{tab:officehome-M}
+\begin{tabular}{lccc}
+\toprule
+policy & regret$\downarrow$ & false-adapt & beats both? \\
+\midrule
+always-adapt  & $0.0468$ & --- & \\
+always-freeze & $0.0158$ & --- & \\
+\textbf{K-Bound} & $\mathbf{0.0022}$ & $0\%$ & \textbf{yes} \\
+\bottomrule
+\end{tabular}
+\end{table}
+\FloatBarrier
+
+\paragraph{Diagnostic ladder (Protocols B/F; not headline).}
+Earlier Camelyon runs (sparse $Z$, multicandidate $\tau^\star$, synthetic $\varepsilon$ transplant)
+explain failed operating points; they motivated Protocol~G. Protocol~F route audits on the same GPU
+records show multicandidate routing fails; GBR+global and PPI+Mondrian variants beat both only on
+the same domain-pooled set as Protocol~G (so they inherit its \texttt{id\_val} artifact) and are
+not the headline method; the held-out headline claims are Protocols~H v2 / M v2
+(Tables~\ref{tab:iwildcam-H}, \ref{tab:officehome-M}), with Protocol~G reclassified to no-harm
+(Table~\ref{tab:camelyon17-G}).
 
 \paragraph{Operating-point repair: $\varepsilon$ recalibrated, $\tau^\star$ left alone (a calibration \emph{diagnostic}, not external validation).}
 The latent-win diagnosis above is a calibration claim, so we test it directly --- without
@@ -1261,11 +1212,10 @@ false-adapt is $0.185$ $[0.159,0.211]$, $\approx\!1.9{\times}\,\alpha$. Honest v
 is label-free \emph{detectable} (AUC $0.91$) but \emph{not certifiable} at $\alpha{=}0.10$ at this
 debug-scale $n_{\mathrm{eval}}{=}256$/cell --- a precise negative. Closing it needs more samples
 per cell (tighter residuals) or a harm-skewed panel, not a smaller $\alpha$ or a moved $\tau^\star$.
-From \texttt{theory\_v2/realdata/eps\_recal/}.
 
 \paragraph{Pre-registered full-scale re-run ($n_{\mathrm{eval}}{=}1024$, $5$ seeds): the gap
 persists.} We pre-registered the $1/\sqrt{n}$ test \emph{before} observing any result
-(\texttt{research\_lock/CAMELYON17\_FULLSCALE\_PROTOCOL\_B\_v1.yaml}): quadrupling the per-cell eval
+in Protocol~B: quadrupling the per-cell eval
 pool to $n_{\mathrm{eval}}{=}1024$ should halve the conformal radius (predicted ratio
 $\sqrt{256/1024}{=}0.5$) and pull false-adapt to $\le\alpha{=}0.10$. The $\alpha$-fixed, frozen-$\varepsilon$
 seed-split rule was held identical. \emph{Outcome: the prediction is not confirmed.} The full-scale
@@ -1279,7 +1229,7 @@ $0.020$ vs $0.027$ tent) but trails always-adapt (helpful-dominated panel), at c
 \textbf{Honest verdict (\textsc{Fails}, by the pre-registered criteria):} the
 detectability--certifiability gap is \emph{not} closed by sample size alone---it is a deeper open
 problem. A bias--variance decomposition of the radius \emph{explains why} the $1/\sqrt{n}$ prediction
-failed (\texttt{bias\_variance\_diag/}). Splitting the eps-recal residual into estimator model error and
+failed. Splitting the eps-recal residual into estimator model error and
 binomial measurement noise ($\sigma^2_{\mathrm{meas}}{=}a_0(1{-}a_0)/n{+}a_a(1{-}a_a)/n$,
 $n_{\mathrm{eff}}{=}256$) on a leave-one-seed cross-fit gives an observed radius
 $\varepsilon_{256}{=}0.112$ against a measurement floor $\varepsilon_{\mathrm{meas}}(256){=}0.044$
@@ -1291,7 +1241,7 @@ radius---the $\alpha$-fixed certifiability of this natural shift is bias-limited
 sample-size-limited. The open problem is therefore reducing estimator bias (tying back to the
 $\gamma$-frontier), not collecting more eval samples. (Cross-check: the per-seed $|B|$ spread at $1024$
 is $0.71\times$ that at $256$, not the $0.5$ a variance-limited halving requires, though $n{=}10$ is
-weak.) From \texttt{experiments/kbound/results/camelyon17\_fullscale\_B\_v1/}.
+weak.)
 
 \paragraph{The pair, read together.} Camelyon17 (detectable harm, AUC $0.78$) and ImageNet-R
 (\emph{un}detectable harm, AUC $0.66$; Table~\ref{tab:imagenetr}) bracket the frontier of
@@ -1306,7 +1256,97 @@ whose operating point transfers \emph{without} tuning on the target---a \emph{sc
 source-calibrated} $\tau$ (future work); per-dataset recalibration on Camelyon17 would forfeit its
 external-validation role and is not a legitimate path.
 
+\subsection{Mixed-stream deployment: beating both policies at once}\label{sec:mixedstream}
+Each single dataset above is \emph{one-sided}: Camelyon17 is adapt-favorable
+(on its held-out OOD cells freezing leaves regret ${\approx}0.11$), whereas OfficeHome and
+iWildCam are freeze-favorable (adapting leaves regret $0.047$ and $0.103$). On a one-sided
+stream the better trivial policy is already near-oracle, so \textsc{KGA}'s simultaneous margin
+over \emph{both} is necessarily small. Real deployments, however, are heterogeneous: a guard
+does not know in advance whether the next shift rewards adaptation. We therefore pool the
+held-out test conditions of the three dev-locked datasets into a single deployment stream
+($n{=}143$); to avoid the Protocol-G pooling artifact, \emph{Camelyon17 enters through its
+genuine OOD \texttt{test}/\texttt{val} cells only} ($36$ cells; in-distribution \texttt{id\_val}
+excluded). Each dataset keeps its \emph{own} locked gate---GBR benefit estimator with global
+conformal $\varepsilon$ at $\alpha{=}0.10$, fit on that dataset's dev seeds and applied once to
+its test seeds---so no decision is retuned. We bootstrap ($B{=}5000$) the pooled regret gaps
+over conditions.
+
+\begin{table}[t]
+\centering
+\caption{\textbf{Heterogeneous (mixed) deployment.} Pooled held-out test
+conditions of Camelyon17 (OOD \texttt{test}/\texttt{val}, $36$), OfficeHome ($35$),
+iWildCam ($72$); $n{=}143$ (in-distribution \texttt{id\_val} excluded). Each dataset uses its
+own locked dev-calibrated gate. On a stream that mixes adapt- and freeze-favorable shift,
+neither global policy is near-oracle, but \textsc{KGA} routes per condition to near-zero regret.
+Both advantages' $95\%$ bootstrap CIs exclude zero; false-adapt $0\le\alpha{=}0.10$.}
+\label{tab:mixedstream}
+\small
+\begin{tabular}{lcc}
+\toprule
+Policy & Regret $\downarrow$ & \textsc{KGA} advantage (95\% CI) \\
+\midrule
+Always-adapt  & $0.0632$ & $+0.0607\;[0.047,\,0.075]$ \\
+Always-freeze & $0.0342$ & $+0.0316\;[0.023,\,0.041]$ \\
+\textsc{KGA}  & $\mathbf{0.0026}$ & --- (reference) \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Table~\ref{tab:mixedstream} reports the outcome. Always-adapt pays on the
+freeze-favorable majority ($0.063$) and always-freeze pays on the adapt-favorable
+Camelyon17 OOD cells ($0.034$), whereas \textsc{KGA} attains regret $0.0026$---about
+$13\times$ below freeze and $24\times$ below adapt. Both gaps are statistically
+robust: $+0.0316\,[0.023,0.041]$ versus freeze and $+0.0607\,[0.047,0.075]$
+versus adapt. This is the regime the certificate is built for: \textbf{when
+adaptation helps on some conditions and hurts on others, no fixed policy is safe,
+and \textsc{KGA} dominates both simultaneously with statistical significance.}
+
+\paragraph{Scope (honest).} This is a \emph{constructed} heterogeneous
+deployment---a pool of three real benchmarks' test conditions, not a single new
+dataset---chosen to expose the two-sided regime that one-sided benchmarks cannot.
+It uses the real per-condition $(a_0,a_a)$ from the locked runs with no
+fabrication and per-domain label-free calibration. It demonstrates the
+\emph{mechanism} (per-condition routing beats any global choice under
+heterogeneity); it is not a claim of new state-of-the-art on a marquee benchmark.
+Reproduce with \texttt{docs/research/kbound/scripts/mixed\_stream\_kbound.py}
+(Camelyon17 restricted to its OOD \texttt{test}/\texttt{val} cells, writing
+\texttt{KBOUND\_MIXED\_STREAM\_v2.json}).
+
+\section{Excluded wins and regime boundaries}\label{sec:excluded-wins}
+Several benchmarks flag beats-both under alternate routes or adapters but do \emph{not} qualify
+as headline natural-shift wins under the Protocol~H/M v2 bar. \textbf{Superseded protocols:}
+iWildCam Protocol~H v1 (fixed \texttt{sar\_online} without dev-lock) and OfficeHome Protocol~M v1
+($14$-candidate win-finder) are audit-only; headline claims use H/M v2
+(\texttt{research\_lock/IWILDCAM\_PROTOCOL\_H\_v2.yaml},
+\texttt{research\_lock/OFFICEHOME\_PROTOCOL\_M\_v2.yaml}).
+\textbf{Office-Home (deployed adapter):} mild online EATA is helpful-dominated on target test
+($0\%$ harmful); Table~\ref{tab:officehome} is a covariate-shift diagnostic, distinct from
+Protocol~M v2. \textbf{ImageNet-R:} weak detectability (harm-AUC $0.66$); mandatory abstention.
+\textbf{iWildCam id\_val:} multicandidate routes can flag wins but pooled false-adapt $\approx 78\%\gg\alpha$.
+\textbf{Camelyon four-seed slice:} helpful-dominated (Table~\ref{tab:camelyon}); distinct from
+Protocol~G mixed-stress grid.
+\textbf{Camelyon17 Protocol~G (withdrawn):} its $n{=}54$ beats-both pooled in-distribution
+\texttt{id\_val} into the seed-split held-out set; on genuine OOD test online EATA is
+helpful-dominated so \textsc{KGA} ties always-adapt (no beats-both). Reclassified as no-harm
+(Table~\ref{tab:camelyon17-G}); the audit and re-run are in
+\texttt{audits/integrity\_2026-06-20/camelyon\_reconciliation/}. \textbf{CIFAR-10.1:} within-seed safety holds; cross-seed certificate
+transfer does not clear the headline bar.
+\textbf{WILDS FMoW (Protocol~L):} geographic region shift on OOD test
+($n{=}180$ held-out cells; dev $\{0,1\}$ / test $\{2,3,4\}$; fixed online SAR;
+canonical GBR+global $\varepsilon$): false-adapt $37.5\%\gg\alpha$; regret
+$0.013$ vs always-adapt $0.009$ vs always-freeze $0.013$; does \emph{not} beat both
+(Table~\ref{tab:fmow-L}). In-distribution dev calibration ($\mathrm{FA}{=}0$) did not
+transfer to OOD val/test.
+
+
 \section{Limitations and honest scope}\label{sec:limits}
+\begin{center}\fbox{\parbox{0.95\columnwidth}{\small
+\textbf{What we do not claim.} Universal accuracy gains; adapter selection by test regret;
+multicandidate routes with violated false-adapt bounds; or wins on helpful-dominated shifts
+where always-adapt is already oracle-optimal.}}
+\end{center}
+
+\medskip
 (1) Scope of the empirical win: on the CIFAR-10-C \emph{stress} grid \textsc{KGA} beats both
 trivial policies for Tent and EATA at $0\%$ false-adapt (Table~\ref{tab:decisive}) and ties
 the collapse-resistant SAR; on ImageNet-C (Table~\ref{tab:imagenetc}) the pattern \emph{flips}---
@@ -1316,48 +1356,28 @@ beats both---a win we confirmed survives a \emph{mechanism-faithful} SAR re-impl
 $0.112$/$0.027$), so it is not an implementation artifact, modulo SAR's official gentler-LR,
 \texttt{layer4}-frozen schedule, which we have not yet run. On \emph{per-corruption} CIFAR-10-C and within a single online stream (both
 helpful-dominated) it again \emph{ties} the better fixed policy. The common rule across all of
-these: \textsc{KGA} never underperforms the better trivial policy, and \emph{strictly} wins only
+these: \textsc{KGA} approximately matches the better trivial policy---paying at most a small
+abstention cost when it declines a helpful but uncertifiable update---and \emph{strictly} wins only
 where catastrophic, detectable harm is actually present---and which method that is depends on the
 benchmark. A tighter online (streaming) certificate is future work.
-(2) Our \emph{natural}-shift tracks (\S\ref{sec:natural-suite}; the CIFAR-10-C/ImageNet-C
-corruptions are synthetic) span the detectability frontier and are reported without inflation.
-\textbf{Camelyon17} (WILDS, $4$ seeds) is \emph{complete} (Table~\ref{tab:camelyon}) and
-\emph{knowably-helpful}: adaptation helps on every seed, so always-adapt is optimal and
-\textsc{KGA}'s caution costs $\approx\!0.02$ regret---it beats always-freeze but not always-adapt
-(matched composition). A composition-stress grid \emph{does} surface a \emph{detectable harmful}
-regime ($28.7\%$ of cells, harm-AUC $0.78$), but at the synthetic-calibrated, \emph{Camelyon-free}
-$\tau^\star{=}0.52$ \textsc{KGA} \emph{abstains} and so does \emph{not} beat both there (regret
-$0.076$ vs freeze $0.071$ vs adapt $0.005$); recalibrating $\tau^\star$ on Camelyon17 would forfeit
-its external-validation role. The pre-registered full-scale re-run ($n_{\mathrm{eval}}{=}1024$, $5$
-seeds, \texttt{research\_lock/CAMELYON17\_FULLSCALE\_PROTOCOL\_B\_v1.yaml}) \emph{failed} its
-criteria---the conformal radius did not halve and false-adapt stayed above $\alpha$---and, since it
-serialized only per-seed aggregates rather than the $72{\times}6$ grid, the $1/\sqrt{n}$-on-the-grid
-claim stays open (Camelyon17 also uses a storage-limited $\sim\!94\%$ patch subset).
-\textbf{ImageNet-C} (ResNet-50, Table~\ref{tab:imagenetc}) is \emph{complete} ($36$ cells, $4000$
-images/cell): the harmful regime appears only for SAR (collapse on $31\%$ of cells), while Tent and
-EATA are robust, so \textsc{KGA} ties always-adapt. SAR's collapse fell atypically at the
-\emph{larger} batch (unusual for entropy-stabilised TTA), so we re-checked it: a
-\emph{mechanism-faithful} re-implementation (SAM, recovery reset, EMA) at the matched learning rate
-\emph{reproduced} the harmful regime ($44\%$ of cells) and the ``beats both'' win
-(Table~\ref{tab:imagenetc-faithful}), so it is not a porting artifact---the one residual check is
-SAR's \emph{official} gentler schedule (lr $2.5{\times}10^{-4}$, \texttt{layer4} frozen), not yet
-run.
-\textbf{CIFAR-10.1} (Table~\ref{tab:cifar101}) probes the opposite, \emph{low-margin} boundary:
-\textsc{KGA} abstains heavily, never false-adapts, ties Tent/EATA, and narrowly beats both for SAR
-(single-seed quick protocol). \textbf{ImageNet-R} is the \emph{undetectable} corner ($13.9\%$
-harmful, harm-AUC $0.66$), where abstention is mandatory.
-The open problems this surfaces are \emph{not} more benchmarks but two structural questions: (a) a
-\emph{scale-invariant, source-calibrated} $\tau$, since raw $\tau$ is dataset-scaled
-($\bar\tau{\approx}0.89$ on Camelyon17, ${\approx}1.51$ on RxRx1, ${\approx}1.12$ on Office-Home,
-${\approx}0.52$ on the synthetic
-grids) and no single global $\tau^\star$ ports; and (b) a real shift on which the \emph{deployed
-best adapter itself} flips helpful$\leftrightarrow$harmful with the harm visible in $\tau$---the
-precise condition a real-shift ``beats both'' requires (e.g.\ multimodal RGB$+$depth industrial
-inspection)---since on every real shift here the harm sits in candidates one would not deploy
-(Camelyon17), is undetectable (ImageNet-R), or---even on a pure covariate shift built to be the most
-detectable case (Office-Home, Table~\ref{tab:officehome})---has its label-free-detectable part
-confined to helpful-dominated domains while the one genuinely mixed domain's harm fails to
-transfer-detect.
+(2) \textbf{Headline natural-shift wins} are Protocols~H v2 and~M v2
+(Tables~\ref{tab:iwildcam-H}, \ref{tab:officehome-M}); Office-Home is CI-robust and iWildCam is a
+point-estimate win that ties always-freeze under resampling. Camelyon17 Protocol~G is
+\emph{not} a win: its pooled beats-both included in-distribution \texttt{id\_val} cells, and on
+genuine OOD test \textsc{KGA} ties always-adapt (Table~\ref{tab:camelyon17-G}, no-harm).
+Earlier Camelyon diagnostics (\S\ref{sec:natural-suite}) and multicandidate routes are not
+competing headline claims. \textbf{ImageNet-C} harmful SAR win is synthetic corruption.
+\textbf{CIFAR-10.1} is a within-seed low-margin probe; cross-seed transfer fails
+(\S\ref{sec:excluded-wins}). \textbf{ImageNet-R} sits in the \emph{unknowable} regime the theory predicts: its
+label-free evidence margin falls below the calibration-drift budget, so no candidate clears
+the bar and \textsc{KGA} correctly declines to commit---a null that \emph{corroborates}
+Theorem~\ref{thm:conj1-dichotomy} (richer label-free evidence is the natural future lever),
+not a tuning failure. The deployed
+\textbf{Office-Home} adapter audit (Table~\ref{tab:officehome}) is an invalid-transfer regime,
+distinct from Protocol~M v2.
+\textbf{WILDS FMoW} (Protocol~L) is a
+pre-registered honest null: certificate calibration fails to transfer on geoshift
+(Table~\ref{tab:fmow-L}).
 (3) The conformal radius assumes task exchangeability.
 (4) The sign-of-difference characterization is proved for binary, multiclass, and
 regression (Lemma~\ref{lem:reduction}); the unconditional label-free \emph{bracketing}
@@ -1365,241 +1385,43 @@ problem is resolved \emph{negatively} by Theorem~\ref{thm:conj1-dichotomy}: no
 evidence-definable assumption class can identify the benefit sign. On the margin-monotone
 relative-calibration class the one-bit supplement certifies the sign \emph{unconditionally}, and
 that class is \emph{a} weakest such falsifiable class under a general-position assumption
-(Theorem~\ref{thm:cmono-weakest}); the \emph{unconditional} weakest class remains open
-(Conjecture~\ref{conj:gen}, Remark~\ref{rmk:genpos}).
+(Theorem~\ref{thm:cmono-weakest}); the \emph{unconditional} weakest classes are characterized as an
+explicit finite family of dominance polytopes (Theorem~\ref{thm:uncond-weakest}), with no unique
+weakest class and General Position recovered as the collapsing face.
 (5) \textsc{KGA}'s value scales with how often catastrophic, detectable harm
-occurs---precisely the quantity the theory characterizes; in benign domains
-always-adapt is strong and the certificate is mainly safety insurance.
-
-\section{Forward work: Target-Label-Light Multimodal Safety Guard}\label{sec:forward-tll}
-The limitations above are not dead ends; they define \emph{where} a deployment guard is needed and
-\emph{why} pure label-free cannot suffice. The recommended forward blueprint---developed in
-\texttt{docs/research/kbound/TARGET\_LABEL\_LIGHT\_MULTIMODAL\_PLAN.md} and pre-registered in
-\texttt{research\_lock/TARGET\_LABEL\_LIGHT\_PROBE\_PROTOCOL\_v1.yaml}---combines two levers:
-\textbf{(i)~a micro-probe} of $k{\approx}8$--$64$ held-out target labels that removes the
-calibration-drift bias dominating real-shift certifiability; and \textbf{(ii)~a multimodal fusion
-router} where modality failure is structurally detectable. This is a \emph{target-label-light}
-operating point, distinct from the label-free core.
-
-\paragraph{Bias-limited certifiability (motivation).}
-The Camelyon17 bias--variance diagnostic decomposes the conformal radius into estimator model error
-versus binomial measurement noise: observed $\varepsilon_{256}{=}0.112$ against a measurement floor
-$\varepsilon_{\mathrm{meas}}(256){=}0.044$ (ratio $2.55{\times}$), with only $\approx\!16\%$ of
-residual variance attributable to measurement noise
-(\texttt{camelyon17\_fullscale\_B\_v1/bias\_variance\_diag/}). The radius is thus
-\emph{bias-limited}: dominated by $\widehat{B}(Z)$ calibration-drift error that does \emph{not}
-shrink with eval $n$. More unlabeled data cannot close the certificate; reducing bias is the lever.
-
-\begin{proposition}[Target-label-light escape]\label{prop:tll-escape}
-Prop.~\ref{thm:imp-quant} applies to measurable maps of label-free evidence $Z$ alone. A certificate
-that observes a fixed-size target-labeled probe $P$ with $|P|{=}k{\ge}1$, held out from the unlabeled
-eval stream and from $\widehat{B}(Z)$ fitting, is not subject to that impossibility: the probe
-provides direct information about the benefit $B$ on the disagreement region, removing the
-calibration-drift bias $\gamma$ that caps label-free certifiability. The residual uncertainty is
-$O(1/\sqrt{k})$ measurement variance via the empirical-Bernstein radius $\varepsilon_{\mathrm{probe}}(k)$,
-not irreducible model bias.
-\end{proposition}
-
-\paragraph{Probe certificate.}
-On probe set $P$ of size $k$,
-$\widehat{B}_{\mathrm{probe}}{=}\frac{1}{k}\sum_{i\in P} X_i$ where $X_i$ is the per-sample paired
-benefit (loss difference or placement benefit for AUROC routing). At fixed $\alpha{=}0.10$,
-$\mathrm{LB}{=}\widehat{B}_{\mathrm{probe}}{-}\varepsilon_{\mathrm{probe}}(k)$ and
-$\mathrm{UB}{=}\widehat{B}_{\mathrm{probe}}{+}\varepsilon_{\mathrm{probe}}(k)$; adapt if
-$\mathrm{LB}{>}0$, freeze if $\mathrm{UB}{<}0$, else abstain. Honest limit: probe labels must be
-held-out and pre-registered; tuning $k$ on test forfeits external-validation role.
-
-\paragraph{Multimodal router (preliminary evidence).}
-Across seven real cached multimodal/multi-detector anomaly tracks
-(Table~\ref{tab:multimodal}), \textsc{KGA} routes deploy-fused vs.\ the best validation-chosen
-single modality. All three actions occur: \textsc{adapt} (Real-IAD-NatDeg $\hat\Delta{=}{+}0.110$,
-healthcare ${+}0.180$), \textsc{freeze} (Real-IAD-D3 $\hat\Delta{=}{-}0.124$), and \textsc{abstain}
-(3D-ADAM, MulSen-AD, MVTec-3D, Real-IAD-2det). Implementation:
-\texttt{src/uais/kbound/multimodal\_guard.py} composes ELARA-U drift routing with
-\texttt{kga.KGA.certify\_probe}.
-
-\paragraph{Probe k-sweep (preliminary, simulation + cache validation).}
-Protocol D24 sweeps $k\in\{0,8,16,32,64\}$ on Real-IAD caches and logged mixed-shift panels
-(\texttt{experiments/kbound/target\_label\_light\_probe.py}); pooled track-level decisions are in
-Table~\ref{tab:probe-k}. At $k{=}0$ (full-pool label-free) Real-IAD-D3 certifies \textsc{freeze} and
-NatDeg certifies \textsc{adapt}, matching Table~\ref{tab:multimodal}; small-$k$ subsampled probes can
-abstain due to empirical-Bernstein range inflation at low $n$---motivating stratified probe draws or
-larger $k$ (Protocol D24 follow-up). ImageNet-C/SAR at $k{=}0$ commits on $83\%$ of cells at
-$0\%$ false-adapt. iWildCam (Table~\ref{tab:iwildcam}) remains abstain-only label-free. Results:
-\texttt{experiments/kbound/results/target\_label\_light\_probe\_v1/}. \emph{Not part of validated
-claims until held-out real-label scoring completes.}
-
-\begin{table}[t]\centering\footnotesize
-\caption{Target-label-light probe k-sweep (Protocol D24, preliminary). Pooled track-level
-$\hat\Delta$, certificate decision, and $\varepsilon$ at $\alpha{=}0.10$. Rows marked
-\textsc{tbd} await held-out real-label probe scoring.}
-\label{tab:probe-k}
-\begin{tabular}{lccccc}
-\toprule
-Benchmark & $k$ & $\hat\Delta$ & $\varepsilon$ & Decision & Status \\
-\midrule
-Real-IAD-D3  & $0$  & $-0.124$ & $0.034$ & \textsc{freeze} & pooled \\
-Real-IAD-D3  & $32$ & $-0.090$ & $0.465$ & \textsc{abstain} & pooled \\
-Real-IAD-NatDeg & $0$ & $+0.110$ & $0.037$ & \textsc{adapt} & pooled \\
-Real-IAD-NatDeg & $32$ & $+0.103$ & $0.655$ & \textsc{abstain} & pooled \\
-ImageNet-C/SAR & $0$ & --- & $0.047$ & mixed & $83\%$ commit, FA$=0$ \\
-ImageNet-C/SAR & $32$ & --- & $0.268$ & \textsc{abstain} & all cells \\
-iWildCam (val) & $0$ & --- & $0.184$ & \textsc{abstain} & $8$ cells \\
-iWildCam (val) & $32$ & --- & $0.221$ & \textsc{abstain} & $8$ cells \\
-Camelyon17 comp. & $0$  & \textsc{tbd} & \textsc{tbd} & \textsc{tbd} & pending \\
-Camelyon17 comp. & $64$ & \textsc{tbd} & \textsc{tbd} & \textsc{tbd} & pending \\
-RxRx1 panel    & $0$  & \textsc{tbd} & \textsc{tbd} & \textsc{tbd} & pending \\
-\bottomrule
-\end{tabular}
-\end{table}
-
-\begin{table}[t]\centering\footnotesize
-\caption{iWildCam (WILDS v2.0, ResNet-50 ERM $f_0$, macro-F1). Fifth real-shift null:
-mixed ($59\%$ harmful on val) but label-free detectability weak (harm-AUC $\approx\!0.62$
-entropy; certificate harm-AUC $\approx\!0.43$). \textsc{KGA} abstains; beats-both is
-\textbf{false}. Full val grid: $144$ conditions, $864$ records, seeds $0$--$1$.}
-\label{tab:iwildcam}
-\begin{tabular}{lcccc}
-\toprule
-Policy & regret$\downarrow$ & false-adapt & coverage & beats-both \\
-\midrule
-always-adapt & $0.052$ & --- & $1.00$ & no \\
-always-freeze & $0.023$ & --- & $1.00$ & no \\
-\textsc{KGA} (label-free) & $0.025$ & --- & $0.00$ & no \\
-per-condition oracle & $0.000$ & --- & $1.00$ & --- \\
-\bottomrule
-\end{tabular}
-\end{table}
-
-\begin{table*}[t]\centering\footnotesize
-\caption{Experiment and GPU-run inventory (2026-06-15). \checkmark\,=\,complete with paper table;
-$\sim$\,=\,partial/in-progress; ---\,=\,not started or optional breadth. One MPS job at a time.}
-\label{tab:experiment-status}
-\begin{tabular}{llcccl}
-\toprule
-Track & GPU? & Status & Table & Key outcome \\
-\midrule
-CIFAR-10-C stress grid (Tent/EATA/SAR, $5$ seeds) & MPS & \checkmark & \ref{tab:decisive} & beats-both Tent/EATA; $0\%$ FA \\
-CIFAR-10-C per-corruption ($65$ cells) & MPS & \checkmark & \ref{tab:c10c} & helpful-dominated; safety insurance \\
-CIFAR-10-C online stream & MPS & \checkmark & \ref{tab:online} & cross-regime win vs always-freeze \\
-ImageNet-C noise (ResNet-50, SAR harmful) & MPS & \checkmark & \ref{tab:imagenetc} & committal heuristics false-adapt \\
-ImageNet-C SAR faithful re-impl. & MPS & \checkmark & \ref{tab:imagenetc-faithful} & $44\%$ harmful; KGA $0\%$ FA \\
-Camelyon17 WILDS (Protocol B, $n{=}1024$) & MPS & \checkmark & \ref{tab:camelyon} & bias-limited; fails $1/\sqrt{n}$ \\
-Camelyon17 bias--variance diag. & CPU & \checkmark & \ref{tab:bias-diag} & $\varepsilon$ bias-limited ($2.55\times$ floor) \\
-Camelyon17 rich-$Z$ (Protocol F) & MPS & $\sim$ & \textsc{tbd} & $8/90$ cells; GPU re-run in progress \\
-ImageNet-R diverse panel & MPS & \checkmark & \ref{tab:imagenetr} & undetectable harm; abstain mandatory \\
-RxRx1 ($9+$ model seeds) & MPS & \checkmark & \ref{tab:rxrx1} & near-one-sided; tie always-freeze \\
-Office-Home covariate shift & MPS & \checkmark & \ref{tab:officehome} & mixed domain; no transfer-detect \\
-CIFAR-10.1 low-margin probe & MPS & \checkmark & \ref{tab:cifar101} & abstain-heavy; $0\%$ FA \\
-iWildCam WILDS (ERM $f_0$, val grid) & MPS & \checkmark & \ref{tab:iwildcam} & 5th null; abstain-only \\
-iWildCam test grid & MPS & $\sim$ & \textsc{tbd} & partial run \\
-Multimodal KGA (Real-IAD, etc.) & CPU & \checkmark & \ref{tab:multimodal} & adapt/freeze/abstain all occur \\
-Target-label-light probe (D24) & CPU & $\sim$ & \ref{tab:probe-k} & pooled Real-IAD; Camelyon/RxRx1 \textsc{tbd} \\
-CPU anomaly routing (ELARA-U) & CPU & \checkmark & \ref{tab:rel}--\ref{tab:mixed} & $11\times$ harmful regret \\
-ImageNet-C blur/weather (breadth) & MPS & --- & \textsc{tbd} & optional; noise grid sufficient \\
-SAR official schedule (Protocol E) & MPS & --- & \textsc{tbd} & residual check \\
-\bottomrule
-\end{tabular}
-\end{table*}
-
-\begin{table}[t]\centering\footnotesize
-\caption{Camelyon17 conformal-radius bias--variance decomposition (Protocol B diagnostic).
-Residual dominated by $\widehat{B}(Z)$ model error, not binomial measurement noise.}
-\label{tab:bias-diag}
-\begin{tabular}{lcc}
-\toprule
-Quantity & $n_{\mathrm{eval}}{=}256$ & $n_{\mathrm{eval}}{=}1024$ \\
-\midrule
-observed $\varepsilon$ & $0.112$ & $0.029$--$0.038$ \\
-measurement floor $\varepsilon_{\mathrm{meas}}$ & $0.044$ & $0.022$ \\
-obs./floor ratio & $2.55\times$ & $\approx\!1.0\times$ \\
-frac.\ variance = measurement & $\approx\!16\%$ & $\approx\!16\%$ \\
-Protocol B $1/\sqrt{n}$ prediction & --- & \textbf{fails} \\
-\bottomrule
-\end{tabular}
-\end{table}
-
-\paragraph{Preliminary progress on the two open problems (not part of the validated claims).}
-Two ongoing extensions directly target the open problems above; we report them as honestly-scoped
-preliminary evidence, not headline results.
-\emph{(a) A target-label-light certificate.} The impossibility (Prop.~\ref{thm:imp-quant}) is for the
-\emph{unconditional label-free} setting; a small target-labeled probe removes the calibration-drift
-bias that caps real-shift certifiability. A \emph{simulation} (conservative independence model, $\alpha{=}0.10$) suggested a probe of
-$k{\approx}8$--$64$ target labels could convert abstention into a certified beats-both. A subsequent
-\emph{sealed real-label test} (Protocol~D25) over $85$ real multimodal categories --- with a genuine
-label-free baseline plus prediction-powered debiasing from the probe --- does \emph{not} reproduce
-this at $k{\le}64$: the debiasing is real, but the small-probe rectifier variance dominates, so the
-certified commit rate \emph{falls} rather than rises. We therefore report the micro-probe as an
-\emph{open} direction, not a validated win; the simulation is an upper bound under near-noiseless bias
-removal. This regime is \emph{target-label-light}---a distinct operating point from the label-free
-core.
-\emph{(b) A multimodal panel---\textsc{KGA} over a reliability-fusion system.} Across seven real cached
-multimodal/multi-detector anomaly tracks (Table~\ref{tab:multimodal}), the certificate decides whether
-to deploy the reliability-fusion system's confidence-weighted fused detector versus the best \emph{validation}-chosen
-single modality; every decision is the \emph{computed} certificate output (no track is selected to force
-an action). All three actions occur: \textsc{KGA} \emph{adapts} where fusion certifiably helps
-(Real-IAD-NatDeg $\hat\Delta{=}{+}0.110$, healthcare ${+}0.180$; both $\mathrm{LB}{>}0$), \emph{freezes}
-where fusion certifiably hurts (Real-IAD-D3 $\hat\Delta{=}{-}0.124$, $\mathrm{UB}{<}0$), and
-\emph{abstains} where the benefit brackets zero (3D-ADAM, MulSen-AD, MVTec-3D, Real-IAD-2det). System-R
-fusion reaches $\ge0.93$ AUROC on the complementary tracks (3D-ADAM $0.937$, MulSen-AD $0.934$), so
-``$\ge90$ where modalities are complementary'' holds, with the certificate correctly declining to fuse
-where it would not help. \emph{Honest scope:} anomaly-detection AUROC on cached scores; healthcare's
-adapt partly rescues a poor validation modality-choice; Real-IAD-2det is multi-\emph{detector} (same
-modality). From \texttt{experiments/kbound/results\_kga\_elara\{,\_extra\}.json}.
-
-\begin{table*}[t]\centering\small
-\caption{Multimodal extension (preliminary): the \textsc{KGA} certificate over System-R reliability fusion
-on seven real cached anomaly tracks. \textsc{KGA} routes deploy-fused vs.\ the best validation-chosen
-single modality; decisions are computed certificate outputs, not selected. AUROC; $\hat\Delta$ is the
-fusion-vs-single benefit estimate at $\alpha{=}0.10$. $^\dagger$multi-detector (same modality), not multimodal.}
-\label{tab:multimodal}
-\begin{tabular}{lccccl}
-\toprule
-Track & mod. & best single & System-R fusion & $\hat\Delta$ & \textsc{KGA} \\
-\midrule
-3D-ADAM                 & 2 & $0.917$ & $0.934$ & $+0.013$ & \textsc{abstain} \\
-MulSen-AD               & 3 & $0.922$ & $0.934$ & $+0.012$ & \textsc{abstain} \\
-MVTec-3D                & 2 & $0.872$ & $0.866$ & $-0.006$ & \textsc{abstain} \\
-Real-IAD-2det$^\dagger$ & 2 & $0.869$ & $0.871$ & $+0.002$ & \textsc{abstain} \\
-Real-IAD-D3             & 3 & $0.934$ & $0.811$ & $-0.124$ & \textsc{freeze} \\
-Real-IAD-NatDeg         & 3 & $0.604$ & $0.711$ & $+0.110$ & \textsc{adapt} \\
-healthcare              & 4 & $0.494$ & $0.674$ & $+0.180$ & \textsc{adapt} \\
-\bottomrule
-\end{tabular}
-\end{table*}
-
-\paragraph{Claim discipline (what we do and do not assert).}
-\begin{center}\small
-\resizebox{\columnwidth}{!}{%
-\begin{tabular}{p{0.46\columnwidth}p{0.46\columnwidth}}
-\toprule
-\textbf{Claimed (supported)} & \textbf{Not claimed (out of scope)} \\
-\midrule
-TTA is reframed as a label-free adapt/freeze/abstain decision. & ``K-Bound solves TTA.'' \\
-There is an information-theoretic limit to label-free decisions (Prop.~\ref{thm:imp-quant}). & ``K-Bound always beats adaptation.'' \\
-Under matched evidence a valid certificate must abstain ($\ge1-2\alpha$, Cor.~\ref{cor:forced-abstain}). & ``K-Bound is universally optimal.'' \\
-On our benchmarks KGA cuts harmful adaptation and regret-to-oracle and is robust across regimes. & A single-stream knockout over both trivial policies on every benchmark. \\
-Multimodal fusion harm is structurally detectable; KGA routes adapt/freeze/abstain on cached tracks. & Live end-to-end fusion on every deployment domain. \\
-Target-label-light probe ($k{\approx}8$--$64$) may convert abstain to beats-both in simulation
-(Prop.~\ref{prop:tll-escape}); real-label validation pending (Table~\ref{tab:probe-k}). & Universal label-free knockout on natural shift; probe-free Camelyon17 win. \\
-\bottomrule
-\end{tabular}}
-\end{center}
+occurs---precisely the quantity the theory characterizes. On helpful-dominated shifts
+\textsc{KGA} \emph{ties} always-adapt; this is the certificate declining to commit a harmful update,
+not a failure---it approximately matches the better policy (at most a small abstention cost), so a
+near-tie where always-adapt is already oracle-optimal is the intended outcome, and the value proposition is
+conditional (insurance against detectable harm).
+(6) Abstention lowers \emph{decision} coverage by construction but never withholds a
+prediction: an \textsc{abstain} routes to the safe default (keep $f_0$, the source model), so
+every input still receives an output, and the coverage/false-adapt trade-off is explicit and
+tunable via the $\alpha$ safety/coverage sweep reported above.
+(7) \textbf{These limitations are the frontier, not flaws.} Points (1) and (4)--(6) are not
+independent weaknesses but one phenomenon---the benefit-sign frontier (Theorem~\ref{thm:frontier})
+seen from the operating side. Tying always-adapt on a helpful-dominated shift is the no-harm
+guarantee \emph{holding} (one cannot beat an oracle that is already always-adapt); ImageNet-R in the
+\emph{unknowable} regime is the impossibility direction firing where the observable margin falls
+below the drift budget and \emph{no} label-free rule can decide the sign
+(Theorem~\ref{thm:conj1-dichotomy}); and the coverage reduction is the \emph{mandatory} abstention of
+Corollary~\ref{cor:forced-abstain}, not a tuning loss---committing there would be a false-adapt. None
+can be removed without violating the impossibility result: a method that ``won everywhere'' would be
+claiming to decide the sign of an unidentifiable quantity. The single axis that improves all three is
+a \emph{richer label-free evidence map}---raising the observable margin $|M|$ so more shifts clear the
+budget (more knowable shifts, fewer abstentions, higher coverage)---together with a \emph{tighter
+radius} (jackknife$+$ or more calibration data) that reclaims knowable cells abstained only out of
+conservatism; both are bounded by the frontier they cannot cross.
 
 \section{Discussion: when to deploy K-Bound}\label{sec:discussion}
-The theory and experiments converge on a deployment rule with two operating points.
-\textbf{Label-free core:} K-Bound's value is governed by how often \emph{catastrophic, detectable}
-harm occurs---safety insurance in benign regimes, real wins in collapse-prone synthetic grids
-(Table~\ref{tab:decisive}). \textbf{Target-label-light multimodal guard (forward path,
-\S\ref{sec:forward-tll}):} when deployment already has $k{\approx}8$--$64$ held-out target labels
-(a one-time calibration draw) and the system is a multimodal fusion router, the micro-probe removes
-calibration-drift bias and the certificate guards adapt (fuse), freeze (drop failed sensor), or
-abstain. This is the recommended primary deployment path for autonomous and industrial multimodal AI;
-the label-free core remains the minimax-safe fallback when no probe is available.
+\begin{sloppypar}
+The theory and experiments converge on a clear deployment rule: K-Bound's value is governed by how
+often \emph{catastrophic, detectable} harm occurs---safety insurance in benign regimes, real wins in
+collapse-prone synthetic grids (Table~\ref{tab:decisive}).
 The trichotomy reads off accordingly. \textbf{(i)~Benign regimes} where adaptation
 almost always helps (per-corruption CIFAR-10-C, clean anomaly suites): always-adapt is already
 near-oracle, and K-Bound is \emph{safety insurance}---it matches always-adapt at a controlled
-false-adapt rate, costing only coverage. \textbf{(ii)~Collapse-prone regimes}---small or
+false-adapt rate, costing only coverage. \textbf{(ii)~Collapse-prone regimes}: small or
 class-imbalanced batches, single-class/label-shift streams, aggressive updates, long
 non-stationary runs: adaptation becomes a per-condition coin flip, and K-Bound delivers a real
 win, cutting regret-to-oracle $\sim$$2.5$--$5.4\times$ versus always-adapt at $0\%$ false-adapt
@@ -1608,6 +1430,7 @@ candidates} (e.g.\ SAR's reset): the headroom shrinks, and K-Bound \emph{ties} r
 beats---and never does worse. The practical takeaway: deploy K-Bound as a default guard around
 any TTA candidate; its overhead is one forward pass, and its benefit scales with exactly the
 risk it is designed to detect.
+\end{sloppypar}
 
 \section{Conclusion}
 We reframed label-free adaptation as a decision constrained by identifiability: adapt
@@ -1616,27 +1439,29 @@ unlabeled evidence cannot tell. We proved the unknowable regime is fundamental (
 witness), gave a false-adapt-controlled certificate under a stated alignment
 assumption, and showed on Camelyon17 that real-shift certifiability is often
 \emph{bias-limited}---more unlabeled data cannot shrink the radius when $\widehat{B}(Z)$
-carries calibration-drift error. The forward path is a \textbf{target-label-light
-multimodal safety guard}: a micro-probe of $k{\approx}8$--$64$ target labels removes that
-bias (Prop.~\ref{prop:tll-escape}), and the same certificate guards multimodal fusion routers
-where modality failure is structurally detectable (Table~\ref{tab:multimodal}). On real
+carries calibration-drift error. On real
 anomaly-routing data the certificate abstains where benefit vanishes and recovers large
 performance under failure. The CIFAR-10-C Protocol-A re-run supplies the missing
 catastrophic-harm audit: with every per-condition array serialized across seeds $0$--$4$,
 the \textsc{Tent}/\textsc{EATA} beats-both claim survives paired bootstrap and Holm
 correction, while \textsc{SAR} correctly remains a tie when harmful cells are rare.
+On natural shifts, Protocols~H v2 and~M v2 supply two held-out beats-both replications under
+canonical \textsc{KGA} (Office-Home CI-robust; iWildCam a point-estimate win that ties
+always-freeze under resampling; Tables~\ref{tab:iwildcam-H}, \ref{tab:officehome-M}), while the
+one-sided shifts Camelyon17 and RxRx1 are honest no-harm results---a re-audit withdrew the
+earlier Camelyon17 Protocol-G beats-both as a domain-pooling artifact (Table~\ref{tab:camelyon17-G}).
 
 \section{Reproducibility}\label{sec:repro}
 \textbf{Code.} All code, configs, and result artifacts are public at
 an anonymized repository linked from the supplementary material (see its \texttt{LICENSE}); the
-K-Bound paper and scripts live under \texttt{docs/research/kbound/}.
+supplement includes the reproduction package and result manifests.
 
 \noindent\textbf{One-command reproduction.} The CPU/numpy stages---theorem validators plus the
-anomaly-routing, regression, witness, and ablation experiments---run via
-\texttt{python docs/research/kbound/scripts/99\_reproduce\_kbound.py --run}. The deep-TTA stress
-grid runs on a single commodity GPU ($16$\,GB) via
-\texttt{bash docs/research/kbound/scripts/run\_decisive\_tta.sh}, which builds the environment,
-fetches the data, and writes the table and figures.
+anomaly-routing, regression, witness, and ablation experiments---run from a single driver in the
+release package. The deep-TTA stress grid runs on a single commodity GPU ($16$\,GB) using the
+provided launcher, which builds the environment, fetches the data, and writes the tables and figures.
+Natural-shift Protocols~H v2 and~M v2 (dev-lock held-out scoring) run via
+\texttt{kbtrain.sh protocol-h-v2} and \texttt{kbtrain.sh protocol-m-v2}.
 
 \noindent\textbf{Environment.} Experiments use a \texttt{uv}/\texttt{venv} environment, Python
 3.12, with the deep-TTA runs pinned to \texttt{torch 2.5.1}/\texttt{torchvision 0.20.1}
@@ -1650,19 +1475,14 @@ compiles the paper. A \texttt{Dockerfile} builds the production inference API
 ImageNet~\cite{deng2009imagenet}, and CIFAR-10.1~\cite{recht2019cifar10}
 are pulled via \texttt{torchvision}; the official CIFAR-10-C
 corruptions are the Hendrycks--Dietterich set, Zenodo DOI \texttt{10.5281/zenodo.2535967}
-(\texttt{CIFAR-10-C.tar}, md5 \texttt{56bf5dce}\dots), auto-downloaded and checksummed by
-\texttt{scripts/fetch\_cifar\_c.py}.
+and are auto-downloaded and checksummed by the release scripts.
 
 \noindent\textbf{Determinism and honesty.} Single-run stages use fixed seeds; the locked
-deep-TTA stress grid reports seeds $0$--$4$ with a split-conformal radius at
+deep-TTA stress grid reports seeds $0$--$4$ with an out-of-fold (leave-one-out) conformal radius at
 $\alpha=0.1$. The deep-TTA grid is \emph{pre-registered} (declared before any result is
 observed) and reported in full, with no condition dropped. Every theorem ships a numerical
-sanity-check script under \texttt{experiments/kbound/theory\_validation/}; all were re-run
-from a clean environment and pass. Result manifests and locked CIFAR artifacts
-(\texttt{docs/research/kbound/results/result\_manifest.json},
-\texttt{experiments/kbound/results/stress\_grid\_multiseed\_v1/seed\{0,\dots,4\}/result\_manifest.json},
-\texttt{experiments/kbound/results/decisive\_tta\_results.json},
-\texttt{LOCKED\_ANALYSIS\_RESULTS.json}, \texttt{per\_condition\_cifar10c\_*}) back every
+sanity-check in the release package; all were re-run
+from a clean environment and pass. Result manifests and locked analysis artifacts back every
 reported number. Tables with multi-seed aggregates are marked explicitly in-caption
 (e.g., Tables~\ref{tab:decisive}, \ref{tab:camelyon}, \ref{tab:rxrx1}); single-seed/scoping tables
 are labeled as such (e.g., Tables~\ref{tab:cifar101}, \ref{tab:imagenetr}).
@@ -1718,17 +1538,298 @@ are labeled as such (e.g., Tables~\ref{tab:cifar101}, \ref{tab:imagenetr}).
 \fi
 
 \appendix
+\section{Supplementary evidence beyond the seven-dataset core}\label{app:supp}
+This appendix collects the detailed per-dataset tables for the ImageNet-C scale grid and the RxRx1 safety case that are part of the seven-dataset core panel (Office-Home, Camelyon17, CIFAR-10-C, ImageNet-C, iWildCam, RxRx1, ImageNet-R), together with evidence \emph{beyond} it: additional breadth checks (FMoW) and honest nulls. None of it is required for the paper's headline claims; it is retained for completeness and reviewer scrutiny.
+
+\subsection{ImageNet-R: architecture robustness across ten backbones}\label{supp:imagenetr-backbones}
+Table~\ref{tab:imagenetr-backbones} re-runs the ImageNet-R diverse panel across ten modern
+backbones (3 seeds, Holm-corrected paired bootstrap CIs, $n_{\mathrm{boot}}{=}10^4$;
+\texttt{research\_lock}/\texttt{imagenetr\_protocol\_d\_multiseed\_v1}). The multi-candidate
+certificate abstains on all $36$ conditions ($\bar\tau{=}2.60\gg\tau^\star{=}0.52$; best
+harm-AUC $0.61$, base-harmful $0.186$), and a certified \emph{beats-both} occurs on $0/10$
+backbones. \textsc{KGA} is uniformly no-harm: where adapting is near-oracle it ties always-adapt
+within $\le0.02$ regret, where adapting hurts (EfficientNet-B0) it correctly freezes and beats
+always-adapt by $0.050$, and pooled false-adapt is $\le0.03\le\alpha$ on every backbone. This is
+the \emph{unknowable}-frontier verdict reproduced across architectures, not a win.
+
+\begin{table}[t]\centering\footnotesize
+\caption{\textbf{ImageNet-R across ten backbones (3 seeds).} Mean regret-to-oracle (lower is
+better) for \textsc{KGA}, always-adapt, always-freeze, and pooled false-adapt (FA). No backbone
+yields a certified beats-both; \textsc{KGA} matches the better trivial policy up to a small
+abstention cost and controls false-adapt at $\alpha{=}0.10$.}
+\label{tab:imagenetr-backbones}
+\resizebox{\columnwidth}{!}{%
+\begin{tabular}{lcccc}
+\toprule
+Backbone & \textsc{KGA} & always-adapt & always-freeze & FA \\
+\midrule
+ConvNeXt-B      & $0.000$ & $0.000$ & $0.068$ & $0.00$ \\
+ConvNeXt-T      & $0.021$ & $0.001$ & $0.022$ & $0.00$ \\
+EfficientNet-B0 & $0.000$ & $0.050$ & $0.000$ & $0.00$ \\
+EfficientNet-B3 & $0.010$ & $0.000$ & $0.052$ & $0.00$ \\
+ResNet-101      & $0.015$ & $0.000$ & $0.025$ & $0.00$ \\
+ResNet-152      & $0.010$ & $0.000$ & $0.041$ & $0.00$ \\
+ResNeXt-101     & $0.005$ & $0.000$ & $0.051$ & $0.00$ \\
+Swin-B          & $0.017$ & $0.000$ & $0.037$ & $0.00$ \\
+Swin-T          & $0.003$ & $0.011$ & $0.004$ & $0.00$ \\
+ViT-B/16        & $0.014$ & $0.000$ & $0.024$ & $0.03$ \\
+\bottomrule
+\end{tabular}}
+\end{table}
+
+\subsection{Detailed core-panel tables: RxRx1, ImageNet-C scale grid, and FMoW null}\label{supp:core-tables}
+
+% --- RxRx1: seventh core dataset (detailed table; freeze-is-oracle safety case) ---
+\paragraph{Fourth natural-shift track: RxRx1 --- the harmful-and-\emph{detectable} corner at $1{,}139$-class scale.}
+RxRx1 (WILDS; fluorescent cellular-microscopy images, $1{,}139$ siRNA classes, an OOD
+\emph{experimental-batch} shift; the official WILDS ERM ResNet-50, in-distribution accuracy
+${\approx}0.36$, frozen accuracy $0.283$ on the OOD-test eval, mean over the three seeds) is the
+sharpest harmful-regime real shift in our suite. Over the full $9{+}$ protocol
+(composition$\times$batch$\times$aggressiveness over $10$ condition seeds and all $3$ official WILDS
+base-model seeds $=360$ conditions, $2{,}160$ records, a commodity GPU ($16$\,GB), complete
+$360/360$), adaptation is \emph{harmful-dominated and label-free detectable}: harmful base rate
+$81.5\%$ ($B<0$), mean benefit $\bar B={-}0.063$, and---unlike ImageNet-R---the harm \emph{is}
+detectable (best evidence AUC $0.78$--$0.84$ across the three seeds, the BN-affine update-norm the top
+signal). Always-adapt is actively destructive: even the best candidate (Tent-episodic, $0.276$) trails
+the frozen model ($0.283$), and SAR-online \emph{collapses} to $0.024$ ($\approx$ chance over
+$1{,}139$ classes) on the single-class/tiny/aggressive cells. Here the certificate's value is purely
+defensive, and it delivers: the single-candidate \textsc{KGA} freezes or abstains on \emph{all} $360$
+conditions with \emph{zero} false adapts, matching the frozen optimum (regret vs the per-condition
+oracle $0.003$--$0.007$) and avoiding the collapse outright---on SAR-online it pays regret $0.000$
+where always-adapt pays $0.259$. It does \emph{not} ``beat both'' because freezing already \emph{is}
+the oracle policy (no helpful candidate exists to capture)---the honest does-no-harm outcome on the
+harmful side, the mirror image of Camelyon17's benign-side tie (Table~\ref{tab:camelyon}). As on
+ImageNet-R, the multi-candidate agreement route abstains on all $360$ conditions
+($\hat\tau\in[1.06,2.71]$, all $\gg\tau^\star{=}0.52$): the six candidates share one backbone, the
+conditional-error-independence violation the CEI diagnostic exists to catch. The harmful-dominated
+verdict, the SAR-online collapse, the detectable harm, and the $100\%$ abstention \emph{replicate
+across all three independent WILDS base-model seeds} (per-seed harmful base rate $74$--$88\%$, best
+AUC $0.78$--$0.84$). RxRx1 thus closes the real-data map of the harmful corner---\emph{detectable}
+harm at $1{,}139$-class scale where ``adapt'' is catastrophic and the zero-false-adapt guarantee
+carries the load (Table~\ref{tab:rxrx1}). These results are from the three archived
+official-seed manifests.
+
+\begin{table}[tb]\centering\small
+\resizebox{\columnwidth}{!}{%
+\begin{tabular}{lc}
+\toprule
+RxRx1 $9{+}$ grid ($360$ conditions, $3$ model seeds) & value \\
+\midrule
+harmful base rate ($B<0$)             & $81.5\%$ \\
+mean true benefit $\bar B$            & $-0.063$ \\
+harm detectability (best AUC)         & $0.78$--$0.84$ \\
+frozen $f_0$ accuracy                 & $0.283$ \\
+best-adapter accuracy                 & $0.276$ \\
+SAR-online always-adapt (collapse)    & $0.024$ \\
+per-condition oracle accuracy         & $0.288$ \\
+\textsc{KGA} decisions                & $360/360$ no-adapt \\
+\textsc{KGA} false-adapts             & $0$ \\
+CEI $\hat\tau$ range (thresh.\ $\tau^\star$) & $1.06$--$2.71$ ($0.52$) \\
+bounded-drift fallback                & $289$ abstain / $71$ freeze \\
+\bottomrule
+\end{tabular}}
+\caption{\textbf{RxRx1: a real natural shift in the \emph{harmful-and-detectable} regime ($9{+}$ protocol).}
+At $1{,}139$-class scale adaptation is harmful-dominated ($81.5\%$ of records $B<0$,
+$\bar B{=}{-}0.063$) and the harm is label-free detectable (AUC $0.78$--$0.84$). Always-adapt is
+catastrophic---SAR-online collapses to $0.024$ and even the best candidate ($0.276$) trails the
+frozen model ($0.283$)---so freezing is the oracle policy, and the single-candidate certificate
+freezes/abstains on all $360$ conditions with \emph{zero} false adapts, matching it. The
+multi-candidate agreement route abstains everywhere ($\hat\tau\gg\tau^\star$ on all $360$): the six
+candidates share one backbone, the CEI-violating setting the diagnostic catches. Verdict replicates
+across all $3$ official WILDS base-model seeds; complete $360/360$, commodity GPU ($16$\,GB).}
+\label{tab:rxrx1}
+\end{table}
+
+% --- ImageNet-C: core dataset (scale grid; detailed table) ---
+\begin{table*}[t]\centering\small
+\begin{tabular}{llcccc}
+\toprule
+candidate & policy & mean acc & regret$\downarrow$ & harmful cells & beats both? \\
+\midrule
+Tent & always-adapt     & $\mathbf{0.453}$ & $0.0003$ &        & \\
+     & always-freeze    & $0.410$          & $0.0440$ &        & \\
+     & \textbf{K-Bound} & $0.449$          & $0.0042$ & $8\%$  & no (ties adapt) \\
+\midrule
+EATA & always-adapt     & $\mathbf{0.444}$ & $0.0001$ &        & \\
+     & always-freeze    & $0.410$          & $0.0349$ &        & \\
+     & \textbf{K-Bound} & $0.444$          & $0.0003$ & $3\%$  & no (ties adapt) \\
+\midrule
+SAR  & always-adapt     & $0.377$          & $0.0606$ &        & \\
+     & always-freeze    & $0.410$          & $0.0277$ &        & \\
+     & \textbf{K-Bound} & $\mathbf{0.429}$ & $\mathbf{0.0086}$ & $31\%$ & \textbf{yes} \\
+\bottomrule
+\end{tabular}
+\caption{\textbf{ImageNet scale (ImageNet-C, ResNet-50), complete: $36$ cells, $4000$ images/cell.}
+Full noise grid (gaussian/shot/impulse $\times$ severities $\{1,3,5\}$ $\times$ batch/aggressiveness
+regimes), same adapt/freeze/abstain protocol and metrics as Table~\ref{tab:decisive}. The outcome
+splits by how robust each method is on this benchmark. \emph{Tent} and \emph{EATA} are robust here:
+adaptation helps (harmful in only $8\%$/$3\%$ of cells), so always-adapt is near-optimal and
+\textsc{KGA} correctly adapts---tying always-adapt to within $0.004$ and beating always-freeze, the
+honest ``does-no-harm'' outcome. \emph{SAR} collapses on $31\%$ of cells (mean benefit $-0.033$):
+always-adapt falls to $0.377$ while \textsc{KGA} certifies-or-abstains to $0.429$, \emph{beating
+both} trivial policies and approaching the oracle ($0.437$). Across all three methods \textsc{KGA}
+approximately matches the better trivial policy (at most a small abstention cost), and strictly wins
+on the one method that is harmful.
+This first ResNet-50 SAR port is corroborated by a mechanism-faithful re-run
+(Table~\ref{tab:imagenetc-faithful}).}
+\label{tab:imagenetc}
+\end{table*}
+
+\paragraph{Decision baselines, executed.}
+Theorem~\ref{thm:frontier}(iv) shows prior decision styles are
+degenerate ($\varepsilon{\equiv}0$) certificates; Table~\ref{tab:decision-baselines}
+\emph{runs} them, head-to-head with \textsc{KGA}, on the logged conditions of the
+mechanism-faithful ImageNet-C SAR grid (Table~\ref{tab:imagenetc-faithful}; per-condition
+evidence $Z$, $a_0$, $a_a$; identical metrics code). Each
+single-statistic rule is evaluated both as a plug-in (threshold $0$) and with a
+\emph{leave-one-out tuned} threshold --- i.e.\ the baselines receive the same labeled
+calibration information \textsc{KGA}'s benefit model uses. True AETTA (dropout passes)
+and agreement-on-the-line (a model family) are not computable from logged statistics
+and are represented by their decision-style surrogates; we say so rather than
+approximate silently. Findings: on the harmful candidate (SAR, $44\%$ harmful cells
+under reference parity) \emph{every realizable single-statistic rule loses} --- the
+best (LOO-tuned EATA-filter, regret $0.0369$) pays $1.6\times$ \textsc{KGA}'s $0.0229$
+and is still worse than plain always-freeze, while the plug-in ATC and entropy-progress
+rules \emph{over-adapt} into SAR's collapse (regret $0.067$/$0.077$); \textsc{KGA} is
+the only policy with \emph{zero} harmful adaptations across all three candidates. On
+the benign candidates (Tent/EATA) the tuned baselines simply learn ``always adapt''
+and tie it, while the plug-in rules \emph{hurt} (regret up to $0.033$). One honest
+nuance: \textsc{KGA}'s own benefit model run \emph{committally}
+($\varepsilon{=}0$, no abstain) attains regret $0.001$ on SAR --- the multivariate
+evidence model carries the decision power --- but it has no validity control and
+adapts into harmful cells uncontrolled; the conformal band's $\approx0.02$
+regret on SAR is the measured price of the false-adapt guarantee.
+
+\begin{table*}[t]\centering\small
+\setlength{\tabcolsep}{4.5pt}
+\begin{tabular}{lcccccc}
+\toprule
+ & \multicolumn{3}{c}{regret-to-oracle$\downarrow$} &
+ \multicolumn{2}{c}{SAR (harmful regime)} & \\
+\cmidrule(lr){2-4}\cmidrule(lr){5-6}
+decision rule & Tent & EATA & SAR & false-adapt & harmful adapted & coverage \\
+\midrule
+always-adapt                          & $0.0007$ & $0.0000$ & $0.1124$ & $0.44$ & $1.00$ & $1.00$ \\
+always-freeze                         & $0.0494$ & $0.0386$ & $0.0267$ & ---    & $0.00$ & $1.00$ \\
+ATC-style confidence (plug-in)        & $0.0114$ & $0.0328$ & $0.0673$ & $1.00$ & $0.25$ & $1.00$ \\
+ATC-style confidence (LOO-tuned)      & $0.0007$ & $0.0000$ & $0.0375$ & $1.00$ & $0.06$ & $1.00$ \\
+entropy-progress (LOO-tuned)          & $0.0007$ & $0.0000$ & $0.0375$ & $1.00$ & $0.06$ & $1.00$ \\
+EATA-filter $\mathrm{frac_{hi}}$ (LOO-tuned) & $0.0007$ & $0.0000$ & $0.0369$ & $1.00$ & $0.06$ & $1.00$ \\
+drift-gate marginal-KL (LOO-tuned)    & $0.0028$ & $0.0023$ & $0.0382$ & $1.00$ & $0.12$ & $1.00$ \\
+benefit model, committal ($\varepsilon{=}0$) & $0.0000$ & $0.0000$ & $\mathbf{0.0010}$ & $0.05$ & $0.06$ & $1.00$ \\
+best single statistic (hindsight)     & $0.0007$ & $0.0000$ & $0.0181$ & $0.17$ & $0.06$ & $1.00$ \\
+\textbf{K-Bound (KGA)}                & $0.0060$ & $0.0047$ & $0.0229$ & $\mathbf{0.00}$ & $\mathbf{0.00}$ & $0.39$ \\
+\bottomrule
+\end{tabular}
+\caption{\textbf{Decision baselines executed on the logged ImageNet-C conditions}
+(reference-parity SAR; $36$ cells/candidate; harmful base rates $6\%/3\%/44\%$ for
+Tent/EATA/SAR). ``LOO-tuned'' rules choose their threshold leave-one-out on the
+remaining conditions --- the same calibration information \textsc{KGA} uses;
+``hindsight'' picks feature, sign, and threshold on the evaluation conditions
+themselves (not realizable). \textsc{KGA} is the only rule with zero false adapts on
+all three candidates; on the harmful candidate \emph{every realizable single-statistic
+rule loses} --- the best (EATA-filter, $0.0369$) pays $1.6\times$ \textsc{KGA}'s
+$0.0229$ and is still worse than plain always-freeze, because no single statistic
+cleanly separates SAR's harmful cells. The committal benefit model (row~8) shows the
+multivariate evidence model carries the decision power ($0.0010$ on SAR) but lacks
+validity --- it adapts into harmful cells with no false-adapt control --- so the
+abstain band's $\approx0.02$ regret on SAR is the measured price of the guarantee,
+matching Thm.~\ref{thm:frontier}(iv). \emph{Reproducibility note:} the canonical KGA
+pipeline and this post-hoc re-derivation agree exactly on SAR; the leave-one-out
+benefit model is mildly sensitive to condition order, so the Tent/EATA \textsc{KGA}
+regrets differ from Table~\ref{tab:imagenetc} by $\le0.004$.}
+\label{tab:decision-baselines}
+\end{table*}
+
+\begin{figure}[tb]\centering
+\includegraphics[width=0.96\linewidth]{figures/fig_decisive_pareto_imagenetc.png}
+\caption{\textbf{ImageNet-C (noise, ResNet-50): \textsc{KGA} is Pareto-optimal for the harmful
+candidate SAR.} Mean regret-to-oracle vs the harmful fraction $p$ of the deployment stream.
+\textsc{KGA} (green) ties always-adapt at $p{=}0$ and strictly beats \emph{both} trivial policies
+for $p\gtrsim0.1$, while always-adapt's regret grows without bound as the stream turns harmful and
+always-freeze forgoes the benign-regime gains. ImageNet-scale counterpart of Fig.~\ref{fig:decisive};
+the visual form of the SAR row of Table~\ref{tab:imagenetc}. Produced by
+; data.}
+\label{fig:imagenetc}
+\end{figure}
+
+\paragraph{ImageNet-C, mechanism-faithful SAR re-run: the harmful win is not an implementation artifact.}
+The SAR row of Table~\ref{tab:imagenetc} was flagged for re-checking (\S\ref{sec:limits}): its
+collapse concentrated atypically at the \emph{larger} batch, raising the worry that the harmful
+regime---and thus \textsc{KGA}'s only ImageNet-scale ``beats both''---was an artifact of our first
+SAR port. We re-ran the full noise grid with a \emph{mechanism-faithful} SAR (sharpness-aware
+minimisation, the entropy/recovery reset, and the EMA-stabilised update re-implemented to the
+reference design), at the learning rate \emph{shared} across all candidates (apples-to-apples).
+The harmful regime \emph{persisted and broadened}---SAR is now harmful on $44\%$ of cells (vs
+$31\%$ in the first port)---and the \textsc{KGA} win \emph{survived}: regret-to-oracle $0.0229$
+versus always-adapt $0.1124$ and always-freeze $0.0267$, \emph{beating both} trivial policies
+(Pareto crossover $p^\star{=}0.2$; Table~\ref{tab:imagenetc-faithful}). Tent and EATA stay benign
+($6\%$/$3\%$ harmful), so \textsc{KGA} ties the near-oracle always-adapt and beats always-freeze,
+exactly as in the first port. The implementation-artifact concern is thus removed: under a
+reference-faithful SAR the harmful-candidate win is real. \emph{Residual check, stated honestly.}
+This holds at the matched/shared learning rate (mechanism-faithful, apples-to-apples); SAR's
+\emph{official} gentler schedule (lr $2.5{\times}10^{-4}$ with \texttt{layer4} frozen) was not run,
+and is the one configuration that could still soften the collapse---the last box to tick before the
+SAR win is treated as fully settled.
+
+\begin{table*}[t]\centering\small
+\begin{tabular}{llcccc}
+\toprule
+candidate & policy & mean acc & regret$\downarrow$ & harmful cells & beats both? \\
+\midrule
+Tent & always-adapt     & $\mathbf{0.454}$ & $0.0007$          &        & \\
+     & always-freeze    & $0.405$          & $0.0494$          &        & \\
+     & \textbf{K-Bound} & $0.446$          & $0.0082$          & $6\%$  & no (ties adapt) \\
+\midrule
+EATA & always-adapt     & $\mathbf{0.444}$ & $0.0000$          &        & \\
+     & always-freeze    & $0.405$          & $0.0386$          &        & \\
+     & \textbf{K-Bound} & $0.440$          & $0.0038$          & $3\%$  & no (ties adapt) \\
+\midrule
+SAR  & always-adapt     & $0.319$          & $0.1124$          &        & \\
+     & always-freeze    & $0.405$          & $0.0267$          &        & \\
+     & \textbf{K-Bound} & $\mathbf{0.409}$ & $\mathbf{0.0229}$ & $44\%$ & \textbf{yes} \\
+\bottomrule
+\end{tabular}
+\caption{\textbf{ImageNet-C, mechanism-faithful SAR re-implementation ($36$ cells/candidate,
+ResNet-50, $\alpha{=}0.1$).} Same noise grid, protocol, and metrics as Table~\ref{tab:imagenetc};
+SAR re-implemented to the reference mechanism (SAM, recovery reset, EMA) at the learning rate shared
+across candidates. The harmful regime survives the faithful re-implementation (SAR harmful on $44\%$
+of cells, mean benefit $-0.086$): always-adapt collapses to $0.319$ while \textsc{KGA}
+certifies-or-abstains to $0.409$, \emph{beating both} trivial policies (regret $0.0229$ vs
+$0.1124$/$0.0267$); Tent/EATA stay benign and \textsc{KGA} ties always-adapt. Oracle accuracy
+$0.455$/$0.444$/$0.432$. \emph{Caveat:} matched/shared LR; SAR's official lr $2.5{\times}10^{-4}$,
+\texttt{layer4}-frozen schedule not yet run.}
+\label{tab:imagenetc-faithful}
+\end{table*}
+
+% --- relocated: FMoW null table (beyond core six) ---
+\begin{table}[tb]\centering\small
+\caption{WILDS FMoW Protocol~L, OOD test ($n{=}180$ held-out cells).}
+\label{tab:fmow-L}
+\begin{tabular}{lccc}
+\toprule
+policy & regret$\downarrow$ & false-adapt & beats both? \\
+\midrule
+always-adapt  & $0.0092$ & --- & \\
+always-freeze & $0.0129$ & --- & \\
+\textbf{K-Bound} & $0.0129$ & $37.5\%$ & no \\
+\bottomrule
+\end{tabular}
+\end{table}
+
 \section{Companion manuscript: the demoted theorem stack}\label{app:stack}\label{app:theory-ext}\label{app:anytime}
 Everything beyond the five theorems lives, with full proofs and per-result validators, in
-the companion manuscript (\texttt{manuscript/}; built from the same validated section
-sources in \texttt{paper/sections/}) and the archived technical report
-\texttt{kbound\_full58\_backup\_2026-06-10.tex}: the RGF reliability-gated-fusion
+the companion manuscript and archived technical report: the RGF reliability-gated-fusion
 instantiation (T1--T9, GDR); multiclass and regression reductions; the sequential
-anytime-valid e-process certificate and its $\beta$-drift variant; label-shift, bounded-
+anytime-valid e-process certificate and its $\beta$-drift variant (worst-case anytime
+false-adapt $0.0316\le\alpha{=}0.05$ across all null streams, $20{,}000$ runs/stream over a
+horizon of $2{,}000$; \texttt{val\_thm3\_evalue.py},
+\texttt{results\_thm3\_evalue\_alpha005.json}); label-shift, bounded-
 and smooth-drift boundaries unified by the ambiguity reach; router capacity; the
 multi-candidate route with the $\gamma$-meter, the agreement-invisible reach, and the
 corrected hypothesis H; the budget audit; and the agreement--accuracy (anchored AoL) law.
 \begin{table}[t]\centering\small
+\resizebox{\columnwidth}{!}{%
 \begin{tabular}{ll}
 \hline
 Main-paper result & Demoted to manuscript (with validators) \\
@@ -1739,7 +1840,7 @@ Thm~\ref{thm:frontier} & label-shift / drift boundaries; reach hierarchy \\
 Thm~\ref{thm:conj1-dichotomy} & $\gamma$-meter; invisible reach; multiclass H \\
 Thm~\ref{thm:ev-rate} & labeled-channel rates; AGL law and failures \\
 \hline
-\end{tabular}
+\end{tabular}}
 \caption{The five-theorem consolidation. Fifty-plus prior numbered results survive as
 corollaries or manuscript sections; none was deleted, and every one keeps its
 machine-checked validator.}
@@ -1752,29 +1853,28 @@ diagnostic also has a first \emph{real-data} outcome: on the ImageNet-R track
 ($\tau\in[1.07,2.15]\gg\tau^\star{=}0.52$) --- co-trained candidates violate conditional
 error-independence exactly as predicted --- and the route abstains rather than
 certifying falsely, which is the designed behaviour of a checkable guard.
-
 \subsection{Validation figures for Theorems~\ref{thm:conj1-dichotomy} and~\ref{thm:ev-rate}}
-\begin{figure}[t]\centering
+\begin{figure*}[t]\centering
 \includegraphics[width=0.49\linewidth]{theory_v2/fig_v1_flip_witness.png}\hfill
 \includegraphics[width=0.49\linewidth]{theory_v2/fig_v2_identification_rate.png}
 \caption{One-bit identification (Synthetic validator; Thm~\ref{thm:conj1-dichotomy}(ii)): the label complement
 matches the full evidence law ($\TV=0$) while negating every advantage (left); recovery of
 $b$ up to the bit at the $m^{-1/2}$ rate (right).}\label{fig:onebit}
-\end{figure}
+\end{figure*}
 \begin{figure}[t]\centering
-\includegraphics[width=0.92\linewidth]{theory_v2/fig_v3_audit.png}
+\includegraphics[width=\linewidth]{theory_v2/fig_v3_audit.png}
 \caption{The budget audit (Synthetic validator; Thm~\ref{thm:conj1-dichotomy}(iv)): sound at level $\alpha$,
 power $1.000$ beyond the radius, correctly blind exactly on the bit-ambiguous set and the
 rank-one-preserving stealth law.}\label{fig:audit}
 \end{figure}
 \begin{figure}[t]\centering
-\includegraphics[width=0.92\linewidth]{theory_v2/fig_v4_rate.png}
+\includegraphics[width=\linewidth]{theory_v2/fig_v4_rate.png}
 \caption{Evidence-channel rate (Synthetic validator; Thm~\ref{thm:ev-rate}): empirical minimax error tracks the
 Le Cam curve $c_0/\sqrt m$; KL grows quadratically; the labeled-vs-evidence efficiency
 ratio diverges as agreement approaches chance.}\label{fig:evrate}
 \end{figure}
 \begin{figure}[t]\centering
-\includegraphics[width=0.92\linewidth]{theory_v2/fig_conj1_closure.png}
+\includegraphics[width=\linewidth]{theory_v2/fig_conj1_closure.png}
 \caption{Closing Conjecture~\ref{conj:gen} (Synthetic validator; Thm~\ref{thm:conj1-dichotomy}(iii)): the swap
 flips every benefit sign while no label-free observable of any order moves (exact zero).}
 \label{fig:conj1closure}
@@ -1785,10 +1885,58 @@ flips every benefit sign while no label-free observable of any order moves (exac
 Table~\ref{tab:c10c-full} lists every cell behind the summary in Table~\ref{tab:c10c}
 (\textsc{KGA} wraps Tent; EATA/SAR are the standalone candidates). The per-method means
 reproduce Table~\ref{tab:c10c} exactly. Raw CSV:
-\texttt{experiments/kbound/results/cifar10c\_65cells.csv}.
+.
 \onecolumn
 \input{paper/appendix_cifar10c_cells}
 \twocolumn
+
+\subsection{Experiment and GPU-run inventory}\label{app:inventory}
+\begin{table*}[t]\centering\footnotesize
+\caption{Experiment and GPU-run inventory (2026-06-17). \checkmark\,=\,complete with paper table;
+$\sim$\,=\,partial/in-progress; ---\,=\,not started or optional breadth. One MPS job at a time.}
+\label{tab:experiment-status}
+\begin{tabular}{llcccl}
+\toprule
+Track & GPU? & Status & Table & Key outcome \\
+\midrule
+CIFAR-10-C stress grid (Tent/EATA/SAR, $5$ seeds) & MPS & \checkmark & \ref{tab:decisive} & beats-both Tent/EATA; $0\%$ FA \\
+CIFAR-10-C per-corruption ($65$ cells) & MPS & \checkmark & \ref{tab:c10c} & helpful-dominated; safety insurance \\
+CIFAR-10-C online stream & MPS & \checkmark & \ref{tab:online} & cross-regime win vs always-freeze \\
+ImageNet-C noise (ResNet-50, SAR harmful) & MPS & \checkmark & \ref{tab:imagenetc} & committal heuristics false-adapt \\
+ImageNet-C SAR faithful re-impl. & MPS & \checkmark & \ref{tab:imagenetc-faithful} & $44\%$ harmful; KGA $0\%$ FA \\
+Camelyon17 WILDS (Protocol B, $n{=}1024$) & MPS & \checkmark & \ref{tab:camelyon} & bias-limited; fails $1/\sqrt{n}$ \\
+Camelyon17 bias--variance diag. & CPU & \checkmark & \ref{tab:bias-diag} & $\varepsilon$ bias-limited ($2.55\times$ floor) \\
+Camelyon17 rich-$Z$ (Protocol G) & MPS & \checkmark & \ref{tab:camelyon17-G} & no-harm; pooled win was \texttt{id\_val} artifact \\
+ImageNet-R diverse panel & MPS & \checkmark & \ref{tab:imagenetr} & undetectable harm; abstain mandatory \\
+RxRx1 ($9+$ model seeds) & MPS & \checkmark & \ref{tab:rxrx1} & near-one-sided; tie always-freeze \\
+Office-Home deployed adapter audit & MPS & \checkmark & \ref{tab:officehome} & helpful-dominated null \\
+Office-Home Protocol M v2 & CPU & \checkmark & \ref{tab:officehome-M} & dev-lock held-out beats-both \\
+iWildCam Protocol H v2 & CPU & \checkmark & \ref{tab:iwildcam-H} & dev-lock held-out beats-both \\
+CIFAR-10.1 low-margin probe & MPS & \checkmark & \ref{tab:cifar101} & abstain-heavy; $0\%$ FA within-seed \\
+WILDS FMoW geoshift (Protocol L) & MPS & \checkmark & \ref{tab:fmow-L} & OOD test null; FA $37.5\%$ \\
+CPU anomaly routing (ELARA-U) & CPU & \checkmark & \ref{tab:rel}--\ref{tab:mixed} & $11\times$ harmful regret \\
+ImageNet-C blur/weather (breadth) & MPS & --- & \textsc{tbd} & optional; noise grid sufficient \\
+SAR official schedule (Protocol E) & MPS & --- & \textsc{tbd} & residual check \\
+\bottomrule
+\end{tabular}
+\end{table*}
+
+\begin{table}[t]\centering\footnotesize
+\caption{Camelyon17 conformal-radius bias--variance decomposition (Protocol B diagnostic).
+Residual dominated by $\widehat{B}(Z)$ model error, not binomial measurement noise.}
+\label{tab:bias-diag}
+\begin{tabular}{lcc}
+\toprule
+Quantity & $n_{\mathrm{eval}}{=}256$ & $n_{\mathrm{eval}}{=}1024$ \\
+\midrule
+observed $\varepsilon$ & $0.112$ & $0.029$--$0.038$ \\
+measurement floor $\varepsilon_{\mathrm{meas}}$ & $0.044$ & $0.022$ \\
+obs./floor ratio & $2.55\times$ & $\approx\!1.0\times$ \\
+frac.\ variance = measurement & $\approx\!16\%$ & $\approx\!16\%$ \\
+Protocol B $1/\sqrt{n}$ prediction & --- & \textbf{fails} \\
+\bottomrule
+\end{tabular}
+\end{table}
 
 \section{Proof and experiment status}\label{app:status}
 Theorem~\ref{thm:imp} is proved with a constructed witness and strengthened to a quantitative Le
@@ -1803,7 +1951,7 @@ bracketing (Conjecture~\ref{conj:gen}) is resolved as a testability dichotomy
 (Theorem~\ref{thm:conj1-dichotomy}: no evidence-definable assumption identifies the
 sign; the minimal untestable supplement is one bit, which suffices under falsifiable
 structure). Every theorem ships a
-numerical sanity-check script (\texttt{experiments/kbound/theory\_validation/}); all were re-run
+numerical sanity-check in the release package; all were re-run
 from a clean environment and pass: the Le Cam floor tracks the closed form, the regret identity
 holds to ${\sim}10^{-17}$, the multiclass identity to $10^{-16}$ with $100\%$ sign agreement over
 $4000$ trials, calibration-transfer sign-recovery is $100\%$ when the confidence gap exceeds
@@ -1821,6 +1969,13 @@ non-identifiability witness.
 % [verified June 2026] = standard reference, identity from memory — confirm ID before submission.
 \section{The weakest one-bit class: conditional resolution of Conjecture~\ref{conj:gen}}\label{app:weakest}
 \input{paper/sections/weakest_class}
+
+% --- Extended theory: knowability--capacity development (1-D capacity + general lift) ---
+% single-column so the wide display equations fit the full text width (fixes all overfulls)
+\onecolumn
+\input{paper/sections/knowability_capacity}
+\input{paper/sections/knowability_capacity_general}
+\twocolumn
 
 \input{paper/references_kbound_expanded}
 

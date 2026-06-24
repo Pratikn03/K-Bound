@@ -103,13 +103,20 @@ This is not a failure of the framework: Theorem~\ref{thm:cert} predicts exactly
 this.  The certificate's value scales with how often catastrophic, detectable harm
 occurs; in benign domains it is primarily a safety guarantee, not a knockout win.
 
-\paragraph{(2) Corruptions are synthetic.}
-All CIFAR-10-C experiments use the official Hendrycks--Dietterich corruption
-functions.  Natural-shift benchmarks --- WILDS iWildCam, Camelyon17~\cite{koh2021wilds}
---- ImageNet-C at full scale, and TTT/SHOT baselines are not yet run and are the
-primary empirical future work.  Whether the stress-grid $0\%$ false-adapt and
-$5.4{\times}$ regret reduction replicate on natural shifts is an open empirical
-question.
+\paragraph{(2) The decisive synthetic win; natural shifts at modest scale.}
+The decisive multi-seed knockout uses the official Hendrycks--Dietterich CIFAR-10-C
+corruption functions.  The thesis now also carries \emph{two independent
+natural-shift held-out beats-both} under a single algorithm --- Camelyon17
+histopathology (Protocol~G) and the Office-Home object-recognition shift
+(Protocol~M~v2)~\cite{koh2021wilds,venkateswara2017officehome} --- plus a
+\emph{damage-prevention} result on WILDS iWildCam, where harm is undetectable
+label-free so \KGA{} mostly freezes, cuts regret ${\sim}28{\times}$ relative to
+reckless always-adapt, and ties (does not beat) the safe always-freeze baseline.
+These transfer the thesis to genuine natural shift, but the honest residuals remain:
+sample sizes are modest ($n{=}35$--$72$ held-out conditions), both wins use a
+permitted labeled-calibration operating point rather than a pure label-free one, and
+ImageNet-C at full scale plus TTT/SHOT baselines are not yet run.  Whether the wins
+scale to larger natural-shift batteries is the primary empirical future work.
 
 \paragraph{(3) Architecture and scale.}
 All deep-TTA experiments use ResNet-18 on $32{\times}32$ CIFAR-10.  The Imagenette
@@ -218,12 +225,14 @@ This is the correct lever precisely because our Camelyon17 bias--variance diagno
 shows the conformal radius is \emph{bias-limited} (observed $\varepsilon_{256}{=}0.112$
 against a measurement floor of $0.044$; only ${\approx}16\%$ of residual variance is
 measurement noise), so more \emph{unlabeled} data cannot close the certificate.
-\emph{(ii)~Multimodal fusion as a natural home.}  Single-model classifiers rarely
-flip between helpful and harmful in a label-free-detectable way --- the natural-shift
-battery of Section~\ref{sec:exp2-battery} bears this out --- whereas an independent
+\emph{(ii)~Multimodal fusion as a natural home.}  Single-model classifiers flip
+between helpful and harmful in a label-free-detectable way only when the evidence is
+rich enough --- the natural-shift battery of Section~\ref{sec:exp2-battery} shows both
+faces: detectable flips that the gate certifies (Camelyon17, Office-Home) and
+undetectable harm on which it must freeze (iWildCam) --- whereas an independent
 modality failure (e.g.\ LiDAR degraded by rain alongside a clear camera) is often
-observable, supplying the structure the certificate needs to route
-\textsc{adapt}/\textsc{freeze}/drop-modality.  The reliability-gated instantiation of
+observable by construction, supplying additional structure the certificate can use to
+route \textsc{adapt}/\textsc{freeze}/drop-modality.  The reliability-gated instantiation of
 Chapter~\ref{ch:elara} shows fusion raises the attainable floor; pairing it with a
 micro-probe so the gate can \emph{commit} rather than abstain is the concrete route
 toward a certified multimodal beats-both.  We present this as a direction, not a
@@ -244,11 +253,15 @@ residual theoretical open problem.  The conditional version (Theorem~\ref{sec:t2
 is a stepping stone; proving the unconditional version would close the theory
 completely.
 
-\paragraph{Natural distribution shifts.}
-Running \KGA{} on WILDS iWildCam and Camelyon17~\cite{koh2021wilds} --- which
-feature genuine covariate shift from wildlife cameras and hospital imaging
-respectively --- would test whether the certificate's safety guarantees hold on
-natural (non-synthetic-corruption) distribution shifts.
+\paragraph{Scaling the natural-shift evidence.}
+The thesis already establishes that the certificate transfers to genuine covariate
+shift: Camelyon17 hospital imaging and the Office-Home object-recognition shift each
+yield a clean held-out beats-both under one algorithm, and WILDS iWildCam yields a
+damage-prevention result where harm is undetectable label-free~\cite{koh2021wilds,venkateswara2017officehome}.
+What remains is scale and breadth: larger held-out batteries than the present
+$n{=}35$--$72$ conditions, additional WILDS shifts, and pushing toward
+operating points that lean less on a labeled calibration split would test how far the
+natural-shift wins generalise.
 
 \paragraph{ImageNet-C and foundation-model adapters.}
 Scaling to ImageNet-C~\cite{hendrycks2019benchmarking} with ResNet-50 and
@@ -325,7 +338,11 @@ The evidence proceeds in four steps:
   stream shows always-adapt collapses ($0.339$) while \KGA{} achieves cross-regime
   mean $0.490$ vs.\ $0.456$ (always-freeze) vs.\ $0.444$ (always-adapt); 65-cell
   helpful-dominated control confirms the certificate matches always-adapt at equal
-  safety when harm is rare.
+  safety when harm is rare.  On \emph{natural} shifts the same algorithm carries two
+  independent held-out beats-both --- Camelyon17 (Protocol~G) and Office-Home
+  (Protocol~M~v2) --- plus an iWildCam damage-prevention result (${\sim}28{\times}$
+  regret reduction over reckless always-adapt, ties safe always-freeze), at modest
+  sample sizes and a permitted labeled-calibration operating point.
 \end{enumerate}
 
 \paragraph{The honest frontier.}
@@ -333,8 +350,11 @@ The paper's own framing identifies its frontier: the certificate's value is
 bounded by how often catastrophic, detectable harm occurs.  In the CIFAR-10-C
 per-corruption suite (false-adapt $1.5\%$, always-adapt near-oracle), the
 certificate is safety insurance, not a knockout win.  In the stress grid and
-online non-stationary stream, it delivers a real advantage.  ImageNet-C scale,
-natural shifts (WILDS), and foundation-model adapters are empirically open.
+online non-stationary stream, it delivers a real advantage, and on two natural
+shifts (Camelyon17 Protocol~G, Office-Home Protocol~M~v2) it delivers a clean
+held-out beats-both --- with iWildCam standing as a damage-prevention result where
+harm is undetectable label-free.  Scaling those natural-shift wins beyond modest
+sample sizes, ImageNet-C scale, and foundation-model adapters are empirically open.
 
 \paragraph{Final statement.}
 We reframed label-free adaptation as a decision constrained by identifiability:

@@ -1,0 +1,108 @@
+% related_work_positioning.tex
+% Positioning of K-Bound against concurrent label-free TTA-safety work.
+% Drafted 2026-06-19 from primary abstracts (AETTA CVPR'24; Monitoring Risks in TTA,
+% Schirmer et al. 2025; Suitability Filter 2025) + ATC (Garg et al. ICLR'22) and
+% agreement-on-the-line (Baek et al. NeurIPS'22).
+% \input this where the discussion of related work belongs. References are given as
+% footnotes so the file compiles without .bib edits; suggested \citep keys are noted
+% in comments for later wiring.
+
+\section{Positioning vs.\ concurrent label-free TTA-safety work}\label{sec:positioning}
+
+K-Bound sits at the intersection of three active, label-free research lines. None of
+them, individually, answers the question we pose---\emph{when is the adapt-or-not
+decision knowable without target labels, and what guarantee can accompany it?}---but
+each is close enough that the distinction must be made precisely. We do \emph{not}
+claim to be the first to observe that test-time adaptation (TTA) can hurt, nor the
+first to apply anytime-valid sequential statistics in this setting; our contribution
+is the \emph{decision-theoretic knowability boundary} (Theorem~\ref{thm:imp} and the
+one-bit dichotomy) together with a \emph{pre-commitment} adapt/freeze/abstain rule
+carrying a controlled false-adapt rate.
+
+\paragraph{(A) Unsupervised accuracy estimation.}
+ATC\footnote{Garg et al., \emph{Leveraging unlabeled data to predict out-of-distribution
+performance}, ICLR 2022.} and agreement-on-the-line\footnote{Baek et al., \emph{Agreement-on-the-line:
+predicting the performance of neural networks under distribution shift}, NeurIPS
+2022.}---and more recent gradient- and dispersity-based
+estimators---predict a model's accuracy on unlabeled shifted data from heuristic
+signals (thresholded confidence, cross-model agreement). They estimate a
+\emph{scalar} (accuracy), rely on covariate-shift--type regularity, and are known to
+degrade under concept shift. K-Bound differs on two axes. First, our
+Theorem~\ref{thm:imp} supplies the \emph{decision-theoretic reason} these estimators
+are fundamentally limited: by a Le Cam two-point construction, the sign of the
+adaptation benefit is \emph{undecidable} from label-free observations without exactly
+one bit of structural supplement. Second, K-Bound targets a \emph{decision}
+(adapt/freeze/abstain), not an accuracy number; the estimator is a means, and the
+certificate, not the point estimate, is what is reported.
+
+\paragraph{(B) Label-free accuracy estimation \emph{for} TTA / failure detection.}
+AETTA\footnote{Lee et al., \emph{AETTA: Label-Free Accuracy Estimation for Test-Time
+Adaptation}, CVPR 2024; arXiv:2404.01351.} estimates a TTA model's accuracy via
+prediction disagreement between the target model and its dropout inferences, and uses
+that estimate to trigger model recovery. This is a heuristic point estimate with no
+coverage guarantee. K-Bound differs in kind: it issues a \emph{certified} decision
+with a controlled false-adapt rate, and---via the knowability boundary---characterizes
+exactly when \emph{any} such label-free estimate can be trusted (it cannot, in
+general, under concept shift). We include AETTA-style disagreement as a
+\emph{surrogate} decision baseline; the paper is explicit that the true dropout-pass
+AETTA and agreement-on-the-line are not computable from our logged statistics, so the
+corresponding column is an honest surrogate, not an apples-to-apples re-run.
+
+\paragraph{(C) Anytime-valid risk monitoring for TTA (the nearest neighbor).}
+``Monitoring Risks in Test-Time Adaptation''\footnote{Schirmer, Jazbec, Naesseth,
+Nalisnick, \emph{Monitoring Risks in Test-Time Adaptation}, arXiv:2507.08721, 2025.}
+extends sequential testing with \emph{confidence sequences} to the TTA setting---model
+updated at test time, no labels---raising an alarm when a predefined performance
+criterion is violated, i.e.\ detecting the point at which a degraded model should be
+taken offline and retrained. This shares our anytime-valid machinery (a confidence
+sequence is the interval dual of the e-process underlying
+Theorem~\ref{thm:cert}), so we state the distinction head-on:
+\begin{itemize}
+  \item \textbf{Decision object.} Their framework is a \emph{post-hoc} degradation
+  alarm---``has the running adapter failed enough to retrain?'' K-Bound is a
+  \emph{pre-commitment} trichotomy---``should this adaptation be applied at all; if
+  not, freeze or abstain?''---evaluated before the update is trusted.
+  \item \textbf{Theoretical core.} Monitoring provides anytime-valid \emph{tracking}
+  of a metric (an upper-confidence guarantee). K-Bound additionally provides the
+  \emph{impossibility lower bound}---the knowability boundary itself---which no
+  monitoring framework supplies and which is the part that explains \emph{why}
+  abstention is sometimes the only correct action.
+  \item \textbf{Complementarity.} The two compose: K-Bound decides at commit time,
+  confidence-sequence monitoring watches afterward. A deployed system could run both.
+\end{itemize}
+The Suitability Filter\footnote{\emph{Suitability Filter: A Statistical Framework for
+Classifier Evaluation in Real-World Deployment Settings}, arXiv:2505.22356, 2025.}
+is adjacent: it gates a \emph{fixed} model by hypothesis-testing covariate-shift
+``suitability signals'' against a labeled reference, certifying that accuracy has not
+dropped beyond a margin. It does not address \emph{adaptation}, nor the concept-shift
+impossibility; K-Bound's decision is about whether to \emph{change} the model and is
+accompanied by the undecidability characterization.
+
+\paragraph{Summary of the delta.}
+\begin{center}
+\small
+\begin{tabular}{lllll}
+\hline
+\textbf{Line / method} & \textbf{Decision object} & \textbf{Guarantee} & \textbf{Impossibility?} & \textbf{Role} \\
+\hline
+ATC / agreement-on-line & accuracy scalar & none (empirical) & not characterized & monitor (static) \\
+AETTA (CVPR'24) & accuracy for TTA & none (heuristic) & mitigated heuristically & monitor (post-hoc) \\
+Monitoring Risks (2025) & degradation alarm & anytime-valid \emph{upper} & detects, no lower bnd & monitor (post-hoc) \\
+Suitability Filter (2025) & fixed-model gate & cov.-shift hyp.\ test & covariate only & monitor (static) \\
+\textbf{K-Bound (ours)} & \textbf{adapt/freeze/abstain} & \textbf{false-adapt $\le\alpha$ + lower bnd} & \textbf{characterized (1 bit)} & \textbf{decide (pre-commit)} \\
+\hline
+\end{tabular}
+\end{center}
+
+\paragraph{What is, and is not, novel here (honest scope).}
+The anytime-valid certificate machinery is \emph{not} our novel contribution:
+confidence-sequence risk monitoring for TTA already exists\footnotemark[\value{footnote}]
+and unsupervised accuracy estimation already states the
+no-assumption impossibility informally. K-Bound's defensible core is (i) the
+\emph{formal} knowability boundary---a Le Cam impossibility tied to the
+sign-of-benefit decision, with the exact one-bit supplement that closes it---and (ii)
+the \emph{pre-commitment} adapt/freeze/abstain rule with a controlled false-adapt
+rate and an honest map of where reliability/drift routing helps. The paper should
+therefore lead with the boundary, present the certificate as the operational
+instantiation, and cite (A)--(C) as the cluster K-Bound organizes rather than
+competes with on machinery.

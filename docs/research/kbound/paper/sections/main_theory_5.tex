@@ -18,7 +18,8 @@ Theorem~\ref{thm:frontier} and Theorem~\ref{thm:conj1-dichotomy} characterize ex
 label-free evidence identifies and what one-bit supplement remains irreducible.
 \textbf{Pillar IV (rates):} Theorem~\ref{thm:ev-rate} gives matching evidence-channel rates.
 The open piece---a weakest falsifiable class on which one declared bit suffices---is settled
-conditionally in Appendix~\ref{app:weakest}. Supporting variants (multiclass/regression
+in Appendix~\ref{app:weakest}: conditionally for the single class $\mathcal C_{\mathrm{mono}}$, and
+unconditionally as an explicit finite family of dominance polytopes (Theorem~\ref{thm:uncond-weakest}). Supporting variants (multiclass/regression
 reductions, label-shift and drift boundaries, ambiguity-reach unification, router capacity,
 anytime certificates, the $\gamma$-meter, and the agreement--accuracy law) are presented as
 corollaries or companions in the companion manuscript, each with a validator; every numeric
@@ -37,20 +38,65 @@ to one moment on $D$; both extend the identity verbatim (manuscript, App.~C).
 \end{lemma}
 \begin{proof}[Proof sketch]
 Off $D$ the losses coincide; on $D$ exactly one of $f_0,f_a$ is correct (binary), giving
-$\E[\delta\mid D]=2\bar a-1$; linearity splits $\bar a-\tfrac12=M+\gamma$. Validated:
-identity exact over $2\times10^4$ draws (\texttt{val\_frontier.py}); multiclass to
-$10^{-16}$ over $4000$ trials (\texttt{val\_thm5\_multiclass.py}).
+$\E[\delta\mid D]=2\bar a-1$; linearity splits $\bar a-\tfrac12=M+\gamma$. Validated on synthetic draws (identity exact to machine precision; multiclass to
+$10^{-16}$ over $4000$ trials).
 \end{proof}
 
 \begin{lemma}[Plug-in regret identity]\label{thm:gate}
 For any estimator $\hat\Delta$, the gate $\hat g=\mathbf 1[\hat\Delta>0]$ satisfies
 $R(\hat g)-R(g^\star)=\E\big[|\Delta(Z)|\,\mathbf 1\{\sign\hat\Delta\neq\sign\Delta\}\big]$
 with $g^\star=\mathbf 1[\Delta>0]$ Bayes; on $\{|\Delta|<\varepsilon\}$ committal regret
-is $\le\varepsilon$, justifying abstention in the low-margin band. Validated to
-$10^{-17}$ (\texttt{val\_thm2\_regret.py}).
+is $\le\varepsilon$, justifying abstention in the low-margin band. Validated to machine precision on synthetic regret identities.
 \end{lemma}
 
+\begin{proposition}[Finite-sample minimax regret floor for label-free gating]\label{prop:lecam-finite}\label{cor:lecam-regret-floor}
+\emph{Intuition.} The identity of Lemma~\ref{thm:gate} is an equality, not a hardness
+statement; pairing it with Le Cam's two-point method turns it into a finite-$n$ lower bound
+on the regret of \emph{any} label-free gate, which does not vanish as $n\to\infty$ when the
+two worlds are rescaled to stay equally hard.
+Let $\{P_\theta\}_{\theta\in\{-1,+1\}}$ be two target worlds sharing the same disagreement
+structure with constant benefit magnitude $|\Delta(P_\theta)|\equiv\Lambda>0$ and opposite
+signs $\sign\Delta(P_\theta)=\theta$, and let $Q^{(n)}_\theta$ denote the law of \emph{any}
+label-free evidence $Z$ computed from $n$ unlabeled observations under $P_\theta$. Then for
+every label-free committal gate $\hat g:Z\mapsto\{\textsc{adapt},\textsc{freeze}\}$ and every
+finite $n$,
+\begin{multline*}
+\inf_{\hat g}\ \max_{\theta\in\{\pm1\}}\big[R_{P_\theta}(\hat g)-R_{P_\theta}(g^\star)\big]\\
+\ge\ \tfrac{\Lambda}{2}\Big(1-\TV\big(Q^{(n)}_{-1},Q^{(n)}_{+1}\big)\Big)\\
+\ge\ \tfrac{\Lambda}{4}\,e^{-\mathrm{KL}(Q^{(n)}_{-1}\|Q^{(n)}_{+1})}.
+\end{multline*}
+In particular there is an explicit Gaussian two-point family ($X\sim\mathcal N(\theta d_n,1)$ on
+$D$, $f_0=\mathbf1[x>0]$, $f_a=\mathbf1[x<0]$, with the target label rule giving $\Delta=\theta$,
+so $\Lambda=1$) for which, taking $d_n=c/\sqrt n$, both bounds are \emph{constant in $n$}:
+$\TV(Q^{(n)}_{-1},Q^{(n)}_{+1})=2\Phi(c)-1$ and the floor equals $\Lambda\,\Phi(-c)$, with the
+Bretagnolle--Huber certificate $\tfrac{\Lambda}{4}e^{-2c^2}>0$. Theorem~\ref{thm:imp} is the
+$c\to0$ (TV${}\to0$) face, where the floor saturates at $\Lambda/2$.
+\end{proposition}
+\begin{proof}
+By Lemma~\ref{thm:gate}, since $|\Delta|\equiv\Lambda$ and $g^\star$ is the constant correct
+action $\sign\theta$ in world $\theta$,
+$R_{P_\theta}(\hat g)-R_{P_\theta}(g^\star)=\Lambda\,Q^{(n)}_\theta(\hat g\text{ commits to the
+wrong sign})$. Averaging over the uniform prior on $\theta$ gives
+$\tfrac12\sum_\theta\big[R_{P_\theta}(\hat g)-R_{P_\theta}(g^\star)\big]
+=\tfrac{\Lambda}{2}M(\hat g)$, where
+$M(\hat g)=Q^{(n)}_{+1}(\hat g{=}\textsc{freeze})+Q^{(n)}_{-1}(\hat g{=}\textsc{adapt})$ is the
+mixed committal error of Theorem~\ref{thm:imp}(ii). Le Cam's testing-affinity identity yields
+$\inf_{\hat g}M(\hat g)=1-\TV(Q^{(n)}_{-1},Q^{(n)}_{+1})$, and $\max\ge\mathrm{avg}$ gives the
+minimax form; Bretagnolle--Huber ($1-\TV\ge\tfrac12 e^{-\mathrm{KL}}$) gives the closed-form
+certificate. For the Gaussian family the sufficient statistic $\bar X\sim\mathcal N(\theta
+d_n,1/n)$ has $\TV=2\Phi(\sqrt n\,d_n)-1$ and per-observation
+$\mathrm{KL}=2d_n^2$, so $d_n=c/\sqrt n$ makes both $n$-independent; $|\Delta|=1$ exactly because
+each label rule makes one of $f_0,f_a$ correct on a probability-one event.
+Validated (\texttt{val\_thm2\_lecam\_finite\_n.py}, seeds fixed): across $c\in\{0.25,0.5,1,1.5\}$
+and $n\in\{10,50,200,1000\}$ the empirical floor is constant in $n$, the Bayes (sample-mean
+threshold) gate \emph{meets} it (so it is tight), and a brute-force minimax over a panel of
+label-free rules (all thresholds/polarities on five statistics) never beats it within
+Monte-Carlo error.
+\end{proof}
+
 \begin{theorem}[The unknowable regime is real and tight]\label{thm:imp}\label{thm:imp-quant}\label{cor:forced-abstain}
+\emph{Intuition.} Identical label-free evidence can support opposite adaptation benefits; any
+valid rule must then abstain rather than guess.
 \textnormal{(i)} There exist target worlds $P_T^1,P_T^2$ with identical evidence laws,
 $\Law(Z\mid P_T^1)=\Law(Z\mid P_T^2)$, and $\sign\Delta_1=-\sign\Delta_2\neq0$
 (explicit witness: $X\sim\mathcal N(0,1)$, $f_a=1-f_0$, flipped labels). No label-free
@@ -68,10 +114,12 @@ not conservative.
 rule is a test between the two evidence laws; Le Cam's testing affinity plus data
 processing. (iii) Matched evidence forces common action probabilities $q_a,q_f$;
 validity caps each at $\alpha$. Validated: empirical $\inf_g M$ tracks $1-\TV$ across
-all $n$, $100\%$ abstention on the witness (\texttt{val\_thm1\_lecam.py}).
+all $n$, $100\%$ abstention on the witness.
 \end{proof}
 
 \begin{theorem}[The adapt/freeze/abstain certificate]\label{thm:cert}\label{cor:samplecomp}
+\emph{Intuition.} When a benefit estimate carries a valid uncertainty radius, committing only
+outside the abstain band controls false-adapt and false-freeze at level $\alpha$.
 Suppose $\hat\Delta(z)$ admits a radius $\varepsilon(z)$ with
 $\Pr[|\hat\Delta-\Delta|\le\varepsilon]\ge1-\alpha$. The rule
 \textsc{adapt} if $\hat\Delta-\varepsilon>0$, \textsc{freeze} if
@@ -88,11 +136,12 @@ On the good event, \textsc{adapt} implies $\Delta\ge\hat\Delta-\varepsilon>0$; t
 complement has mass $\le\alpha$; commitment when $\varepsilon(n)<|\Delta|$ inverts the
 Bernstein radius. The residual burden --- a calibration sample exchangeable with
 deployment --- is exactly what Theorem~\ref{thm:conj1-dichotomy}(iv) makes auditable.
-Validated: \texttt{switching\_certificate.py} tests; e-process false-adapt
-$0.032\le0.05$ (\texttt{val\_thm3\_evalue.py}).
+Validated on synthetic e-process tests (false-adapt $\le\alpha$ at nominal level).
 \end{proof}
 
 \begin{theorem}[Exact benefit-sign frontier]\label{thm:frontier}
+\emph{Intuition.} On the disagreement region, the benefit sign is knowable iff an observable
+margin $|M|$ exceeds a calibration-drift budget $\beta$; otherwise abstention is forced.
 Fix the observables $(\mu,P_S,f_0,f_a)$ with $\mu(D)>0$, so $M$ is determined, and let
 $\mathcal C_\beta=\{P_T:|\gamma|\le\beta\}$. The statements below hold \emph{unconditionally}:
 for \emph{every} drift budget $\beta\ge0$ and every target with $\mu(D)>0$, with $\beta$ a free
@@ -121,7 +170,7 @@ $\sign(M+\gamma)$ is one-sidedness; (iv) each heuristic thresholds an observable
 surrogate, i.e.\ commits to $\sign M$. Validated: frontier law exact over $5\times10^5$
 draws; the unconditional family characterization (identifiable over $\mathcal C_\beta$ \emph{iff}
 $|M|>\beta$) holds for every tested $\beta$; ATC error matches the predicted event to machine
-precision at drift $0.04$--$0.28$ (\texttt{val\_frontier.py} checks T1--T5, \texttt{val\_agl.py}).
+precision at drift $0.04$--$0.28$ (synthetic validators for Theorems T1--T5 and AGL).
 \end{proof}
 
 \begin{corollary}[Knowable regimes]\label{thm:pos}\label{cor:irreducible}
@@ -137,6 +186,8 @@ ambiguity-reach hierarchy: manuscript, App.~C.)
 \end{corollary}
 
 \begin{theorem}[One-bit dichotomy; Conjecture~\ref{conj:gen} resolved]\label{thm:conj1-dichotomy}\label{thm:H-deficit}\label{sec:conj1-closure}
+\emph{Intuition.} Label-free observables fix every adaptation statistic except one global
+orientation bit; no testable assumption class removes that bit in full generality.
 Consider a panel $f_0,f_1,\dots$ on $D$ with correctness indicators conditionally
 independent given $Y$ (CEI) and per-class symmetric accuracies (jointly,
 hypothesis~\textbf{H}; advantages $b_j=2a_j-1$, agreements $c_{ij}=2A_{ij}-1$; the
@@ -184,10 +235,8 @@ Validated (machine-checked, seeds fixed): deficit matches theory to $5.7\times10
 flip $\TV=0$ with $\max_j|b'_j+b_j|=1.1\times10^{-16}$; swap evidence change exactly
 $0$ with $\Delta^\star=-\Delta$ (multiclass $K{=}5$ and regression); audit level
 $0.000\le\alpha{=}0.05$, power $1.000$; stealth $\tau=2\times10^{-17}$ with recovery
-bias $0.229$ (\texttt{theory\_v2/validation\_results.json},
-\texttt{theory\_v2/conj1\_closure\_results.json}; Figs.~\ref{fig:onebit}--\ref{fig:conj1closure}).
-Full proofs: \texttt{theory\_v2/THEORY\_V2\_PROOFS.md},
-\texttt{theory\_v2/CONJ1\_CLOSURE\_PROOFS.md}; manuscript Ch.~4--5.
+bias $0.229$ (Figs.~\ref{fig:onebit}--\ref{fig:conj1closure}).
+Full proofs appear in the supplementary theory appendix.
 \end{proof}
 
 \begin{conjecture}[Label-free bracketing --- \textbf{resolved}]\label{conj:gen}
@@ -202,11 +251,14 @@ possible form: \emph{falsifiable structure plus one declared bit}. On the
 (Definition~\ref{def:cmono}) one declared bit certifies $\sign\Delta$ \emph{unconditionally}
 (Theorem~\ref{thm:cmono-weakest}(i)--(ii)); and $\mathcal C_{\mathrm{mono}}$ is \emph{a} weakest
 such class under a general-position assumption (Theorem~\ref{thm:cmono-weakest}(iii)). The
-\emph{unconditional} weakest class (general position removed) remains open
-(Remark~\ref{rmk:genpos}).
+\emph{unconditional} weakest classes (general position removed) are characterized as an explicit
+finite family of dominance polytopes (Theorem~\ref{thm:uncond-weakest}); there is no unique weakest
+class, consistent with the bracketing non-existence above.
 \end{conjecture}
 
 \begin{theorem}[The evidence-channel rate: labels buy constants and the bit, not the rate]\label{thm:ev-rate}\label{thm:agl}
+\emph{Intuition.} Unlabeled agreement statistics and labeled paired benefits share the same
+$1/\sqrt{m}$ rate; labels change constants and supply the missing bit, not the exponent.
 Within audited H with margins ($\min_{i\ne j}|c_{ij}|\ge c_{\min}$,
 $\min_j|b_j|\ge b_{\min}$) and a declared bit, $m$ unlabeled samples on $D$ give
 $|\hat b_j-b_j|\le C\,\sqrt{\log(K/\delta)/m}$ with
@@ -225,28 +277,9 @@ between $K$-bit pattern laws differing by $\varepsilon$ in one coordinate
 (KL$\,\le C'\varepsilon^2$), tensorized; Bretagnolle--Huber finishes. Validated:
 recovery slope $-0.51$; minimax slope $-0.525$ tracking $c_0/\sqrt m$;
 KL$/\varepsilon^2\in[0.164,0.171]$; efficiency $2.15\to4.49\to\infty$ as
-$c_{\min}\,0.21\to0.067\to{\le}0.022$ (\texttt{theory\_v2}, Fig.~\ref{fig:evrate};
-AGL: $R^2=1.000$ under constant $w$, slope $1-2w$ exact, \texttt{val\_agl.py}).
+$c_{\min}\,0.21\to0.067\to{\le}0.022$ (Fig.~\ref{fig:evrate};
+AGL: $R^2=1.000$ under constant $w$, slope $1-2w$ exact on synthetic checks).
 \end{proof}
 
 \smallskip
-\noindent\emph{The weakest one-bit class.} Theorem~\ref{thm:conj1-dichotomy} fixes the supplement at one bit; the \emph{weakest falsifiable class} on which that bit suffices is settled conditionally ---a margin-monotone relative-calibration class on which one declared bit certifies $\sign\Delta$ unconditionally, and \emph{a} weakest such class under a general-position assumption (Appendix~\ref{app:weakest}, Thm~\ref{thm:cmono-weakest}). The \emph{unconditional} weakest class remains open.
-
-\smallskip
-\begin{table}[t]\centering\small
-\begin{tabular}{ll}
-\hline
-Main-paper result & Demoted to manuscript (with validators) \\
-\hline
-Thm~\ref{thm:imp} & forced-abstention, minimax-floor variants \\
-Thm~\ref{thm:cert} & anytime e-process; $\beta$-drift; router capacity \\
-Thm~\ref{thm:frontier} & label-shift / drift boundaries; reach hierarchy \\
-Thm~\ref{thm:conj1-dichotomy} & $\gamma$-meter; invisible reach; multiclass H \\
-Thm~\ref{thm:ev-rate} & labeled-channel rates; AGL law and failures \\
-\hline
-\end{tabular}
-\caption{The five-theorem consolidation. Fifty-plus prior numbered results survive as
-corollaries or manuscript sections; none was deleted, and every one keeps its
-machine-checked validator.}
-\label{tab:consolidation}
-\end{table}
+\noindent\emph{The weakest one-bit class.} Theorem~\ref{thm:conj1-dichotomy} fixes the supplement at one bit; the \emph{weakest falsifiable class} on which that bit suffices is settled conditionally ---a margin-monotone relative-calibration class on which one declared bit certifies $\sign\Delta$ unconditionally, and \emph{a} weakest such class under a general-position assumption (Appendix~\ref{app:weakest}, Thm~\ref{thm:cmono-weakest}). The \emph{unconditional} weakest classes form an explicit finite family of dominance polytopes (Thm~\ref{thm:uncond-weakest}).

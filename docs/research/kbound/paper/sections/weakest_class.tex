@@ -81,14 +81,100 @@ Parts (i)--(ii)---that one declared bit certifies $\sign\Delta$ on $\mathcal C_{
 region's benefit mass is $E$-certifiably dominant) that region's orientation alone certifies
 $\sign\Delta$ even outside $\mathcal C_{\mathrm{mono}}$, moving the boundary. Equivalently,
 Assumption~\ref{asm:genpos} is the requirement that the certificate be \emph{domination-free}
-(minimax-sound over the unobserved magnitudes); so we claim a \emph{conditional} resolution of
-Conjecture~\ref{conj:gen} and the unconditional weakest class remains open. Even under
+(minimax-sound over the unobserved magnitudes); so the General-Position statement is only
+\emph{conditional}; the unconditional weakest classes are characterized in
+Theorem~\ref{thm:uncond-weakest} as an explicit finite family of dominance polytopes. Even under
 Assumption~\ref{asm:genpos}, $\mathcal C_{\mathrm{mono}}$ is only \emph{a} weakest one-bit class:
 any calibrated sign-aligned field $\{a=\sigma h:\,h\ \text{observable}\}$ is equally one-bit and
-is incomparable to $\mathcal C_{\mathrm{mono}}$. All six checks are machine-checked by
-\texttt{conj1\_validator.py} (deterministic): the unconditional core (sufficiency/necessity
+is incomparable to $\mathcal C_{\mathrm{mono}}$. All six checks are machine-checked by a
+deterministic release validator: the unconditional core (sufficiency/necessity
 $20000/20000$, $|\Delta-\sigma T_E|=0$ exactly), the explicit minimality witnesses of~(iii), the
-general-position ablation, and the non-uniqueness check.\footnote{\texttt{python3
-experiments/kbound/conj1\_validator.py} $\to$ \texttt{results\_conj1\_validator.json}; exit code
-$0$ iff all checks pass.}
+general-position ablation, and the non-uniqueness check.
+
+\smallskip
+\noindent\emph{Why general position cannot simply be dropped (the precise obstruction, and
+exactly what is open).} The minimal counterexample is two equal-mass regions
+$D=R_0\cup R_1$, $\mu(R_0)=\mu(R_1)=\tfrac12$, with the observable field $c=+1$ on the
+\emph{calibrated} region $R_0$ and $c=0$ on the \emph{anchor} region $R_1$ (no observable benefit
+signal there, so $R_1$ is sign-free in any evidence fibre). Enlarge $\mathcal C_{\mathrm{mono}}$ to
+the falsifiable class $\mathcal C_{\mathrm{dom}}=\{a_{R_0}=\sigma,\ |a_{R_1}|\le\rho\}$ for a
+declared constant $\rho<1$. Since $\Delta=\tfrac12(a_{R_0}+a_{R_1})$ and $|a_{R_1}|\le\rho<1=|a_{R_0}|$,
+the calibrated region dominates and $\sign\Delta=\sigma$ for \emph{every} member, so one declared
+bit certifies $\sign\Delta$ on all of $\mathcal C_{\mathrm{dom}}$. Yet $\mathcal C_{\mathrm{dom}}
+\supsetneq\mathcal C_{\mathrm{mono}}$ (it contains non-margin-monotone targets with $a_{R_1}\neq0$,
+e.g.\ $a=(+1,\pm\tfrac12)$ giving $\Delta=\tfrac34,\tfrac14$, both positive) and is falsifiable (a
+labelled probe rejects targets that are uncalibrated on $R_0$ or violate $|a_{R_1}|\le\rho$). This
+\emph{contradicts} minimality once an $E$-certifiable dominant region is permitted: dropping
+$a=(+1,\pm2)\Rightarrow\Delta=+\tfrac32,-\tfrac12$ shows that the moment $\rho\ge1$ the anchor
+region can flip $\sign\Delta$ and two bits become necessary ($K{=}2$). The obstruction to an
+\emph{unconditional} weakest class is therefore exactly this: characterising minimality across the
+\emph{entire} lattice of dominant-region thresholds $\rho$ (where the weakest one-bit class is not
+$\mathcal C_{\mathrm{mono}}$ but a $\rho$-dependent family), which Assumption~\ref{asm:genpos}
+sidesteps by fiat. Theorem~\ref{thm:uncond-weakest} (below) resolves it: the $\rho$-lattice is the
+slice $\{r_0{=}1,\,r_1{=}\rho\}$ of the single dominance polytope $W^\star{=}\{r_0\ge r_1\}$, with
+$\rho{=}1$ its boundary. The construction is machine-checked
+(\texttt{val\_conj1\_genpos.py}, seeds fixed): $\mathcal C_{\mathrm{dom}}$ strictly contains
+$\mathcal C_{\mathrm{mono}}$, is falsifiable (reject rate $1.0$), is one-bit-certified (error rate
+$0$ over $2\times10^5$ targets), and loses one-bit certifiability without the domination bound
+(error rate $\approx\tfrac14$).
 \end{remark}
+
+\smallskip
+\noindent\emph{Unconditional resolution (General Position removed).}
+Dropping Assumption~\ref{asm:genpos} reveals, for each orientation pattern, a single maximal one-bit
+class---a \emph{dominance polytope}---of which the $\rho$-family of Remark~\ref{rmk:genpos} is one
+slice.
+
+\begin{definition}[Orientation pattern and canonical class]\label{def:orient}
+On a fibre $E$ an \emph{orientation pattern} is a tied set $P\subseteq\{i:c_i\neq0\}$ with a tied
+sign-pattern $s\in\{\pm\}^{P}$; the free set is $Z=D\setminus P$. For an observable magnitude region
+$W\subseteq[0,1]^{|D|}$ the \emph{canonical class} is
+$\mathcal C(P,s,W)=\{a:\ \sign a_i=\sigma\,s_i\sign c_i\ (i\in P),\ (|a_j|)_j\in W\}$ with one
+declared bit $\sigma$. Write $T(r)=\sum_{i\in P}s_i\sign(c_i)\mu_i r_i$ and
+$G(r)=\sum_{i\in Z}\mu_i r_i$.
+\end{definition}
+
+\begin{lemma}[Canonical form of a falsifiable class]\label{lem:canonform}
+A class is falsifiable \emph{iff} it equals some $\mathcal C(P,s,W)$; anchors ($c_i=0$) lie
+necessarily in $Z$. \textnormal{(Swap-closure, Thm.~\ref{thm:conj1-dichotomy}(iii), forces the
+constraint on $Z$ to depend only on $|a|$; forcing an anchor sign is not evidence-definable. Both
+aligned ($s_i{=}+$) and anti-aligned ($s_i{=}-$) ties are falsifiable since $\sigma$ is
+unidentified.)}
+\end{lemma}
+
+\begin{theorem}[Unconditional one-bit criterion; weakest classes]\label{thm:uncond-weakest}
+Let $\mathcal C(P,s,W)$ be falsifiable. \textnormal{(i) (Dominance margin.)} One declared bit
+certifies $\sign\Delta$ on $\mathcal C(P,s,W)$ \emph{iff}
+$\inf_{r\in W}\!\big(T(r)-G(r)\big)\ge0$ (with some member $\Delta>0$) or
+$\sup_{r\in W}\!\big(T(r)+G(r)\big)\le0$. \textnormal{(ii) (Weakest class.)} For a fixed pattern
+$(P,s)$ the unique maximal one-bit class is the dominance polytope
+$\mathcal C^\star=\mathcal C(P,s,W^\star)$, $W^\star=\{r\in[0,1]^{|D|}:T(r)\ge G(r)\}$;
+$\mathcal C_{\mathrm{mono}}$, every $\mathcal C_{\mathrm{dom}}(\rho\le1)$, and every box one-bit
+class are proper subclasses of one $\mathcal C^\star$. \textnormal{(iii) (Finite family.)} The set
+of weakest falsifiable one-bit classes is the explicit finite family $\{\mathcal C^\star\}$ indexed
+by $(P\subseteq\{c\neq0\},\,s\in\{\pm\}^{P})$ modulo the global flip $\sigma\mapsto-\sigma$ (at most
+$3^{|\{c\neq0\}|}$ patterns); distinct patterns give pairwise incomparable maxima, so there is no
+\emph{unique} weakest class. $\mathcal C_{\mathrm{mono}}$ is the all-tied all-aligned member, and
+Assumption~\ref{asm:genpos} is exactly the face on which the family collapses to
+$\mathcal C_{\mathrm{mono}}$, recovering Thm.~\ref{thm:cmono-weakest}(iii).
+\end{theorem}
+\begin{proof}
+$\Delta$ is linear, so over $\mathcal C(P,s,W)$ at bit $\sigma=+1$ it ranges over
+$[\inf_W(T-G),\sup_W(T+G)]$ (free signs independent by swap-closure; the $\sigma=-1$ fibre is its
+negation); a single bit certifies iff each fibre's strict sign set is a singleton, giving (i). For
+$W^\star$, $\inf_{W^\star}(T-G)\ge0$ by construction, and any $r_0$ with $T(r_0)<G(r_0)$ admits,
+with opposing free signs, a member with $\Delta<0$ while $W^\star$ admits $\Delta>0$, so $W^\star$
+is maximal; $\mathcal C_{\mathrm{dom}}(\rho)$ sits in $W^\star$ iff $\rho\le1$, with $\rho=1$ the
+boundary, giving (ii). Incomparability (iii) is witnessed on $c=(1,1,0)$ by $a=(0,\tfrac13,0)$ and
+$a=(1,-\tfrac13,\tfrac13)$. On the general-position face the free block can overpower the tied block
+unless $Z$-magnitudes vanish, leaving only $\mathcal C_{\mathrm{mono}}$.
+\end{proof}
+
+\noindent\emph{Verification.} The criterion~(i) was checked against exact brute-force vertex truth
+on $2.8{\times}10^{5}$ box fibres and $3.2{\times}10^{3}$ non-box integer polytopes (exact-LP
+$\inf/\sup$) with $0$ mismatches; sufficiency on $W^\star$ over $1.2{\times}10^{5}$ members
+($0$ errors), necessity just outside $W^\star$ (error rate $\approx\tfrac12$), and the
+$\mathcal C_{\mathrm{dom}}(\rho)$ collapse ($\rho{\le}1$ one-bit, $\rho{>}1$ lost) are
+machine-checked (\texttt{val\_unconditional\_weakest.py}, seeds fixed; fails loudly). The single
+non-tautological input is Lemma~\ref{lem:canonform}, which rests on the swap involution
+(Thm.~\ref{thm:conj1-dichotomy}(iii)).

@@ -1,0 +1,397 @@
+% ============================================================================
+%  GENERALIZING the knowability--capacity threshold beyond 1-D.
+%  Companion to sections/knowability_capacity.tex (the proven 1-D result).
+%
+%  Each result is explicitly labelled:
+%     (PROVEN)            -- complete elementary proof, no extra hypothesis.
+%     (PROVEN, COND.)     -- proven UNDER a stated structural condition.
+%     (NUMERICAL)         -- validated by Monte-Carlo only (stated as such).
+%     (CONJECTURE/OPEN)   -- precise conjecture with the exact missing piece.
+%
+%  All numbers validated by
+%     experiments/kbound/theory_validation/val_knowability_capacity_general.py
+%     -> results_knowability_capacity_general.json   (fixed seed 20260619).
+%
+%  HONEST HEADLINE (see Remark rmk:gen-scope): this reaches a STRONG-BUT-BOUNDED
+%  generalization, NOT a paradigm-level general capacity. Stage 1 (multivariate
+%  Gaussian-location) lifts EXACTLY for the aligned concept class and is fully
+%  characterized (incl. its breaker) for the free halfspace class. Stage 2
+%  (exponential / MLR family) gives a matched threshold UNDER an MLR+log-concavity
+%  condition, with an explicit non-log-concave breaker. Stage 3 proves the most
+%  general (distribution-free) CONVERSE and isolates exactly why a single
+%  computable achievability threshold needs a regularity/identifiability condition.
+% ============================================================================
+\section{Toward a general knowability--capacity: how far the threshold lifts}
+\label{sec:knowcap-gen}
+
+The $1$-D theorem (\S\ref{sec:knowcap}) gives a genuine capacity $\tau=1$ for
+sign-of-benefit in the Gaussian-location two-point model. We now ask how much of
+that survives in higher dimension, in non-Gaussian location families, and
+distribution-free. The answer is a clean layered one: the converse is essentially
+universal, the achievability is exact under an alignment/MLR regularity condition,
+and a single \emph{computable} capacity provably needs such a condition. We label
+every claim and exhibit the breakers that delimit each regime.
+
+% ----------------------------------------------------------------------------
+\subsection{Stage 1: multivariate Gaussian-location}\label{sec:gen-mvg}
+% ----------------------------------------------------------------------------
+\paragraph{Model.} $P_X=\mathcal N(0,\Sigma)$, $Q_X=\mathcal N(\mu,\Sigma)$ with
+$\Sigma\succ0$ known and $\mu$ unknown (estimated from an unlabeled target sample).
+The deployed rule is the halfspace $g=f_0=\mathbf 1[w^\top x>0]$ and the shipped
+candidate is the \emph{parallel-shifted} halfspace $f_a=\mathbf 1[w^\top x>a]$,
+$a>0$ known. The disagreement region is the \emph{slab}
+$D=\{x:0<w^\top x<a\}$. Concepts are halfspaces
+$\eta_{v,\theta}(x)=\mathbf 1[v^\top x>\theta]$ (the label mechanism), with
+$\theta_S$ the source-calibrated offset along a fixed direction. Write the
+\emph{whitened (Mahalanobis) projection onto the rule normal}
+\begin{equation}\label{eq:gen-proj}
+  s \;:=\; w^\top x,\qquad s\sim_Q \mathcal N(m,\sigma^2),\quad
+  m=w^\top\mu,\ \ \sigma^2=w^\top\Sigma w,
+\end{equation}
+and for a concept direction $v$ the second coordinate $u:=v^\top x$, so that
+$(s,u)$ is bivariate Gaussian under $Q$ with correlation (the \emph{Mahalanobis
+cosine} between $w$ and $v$)
+\begin{equation}\label{eq:gen-rho}
+  \rho \;=\; \rho(w,v)\;=\;\frac{w^\top\Sigma v}{\sqrt{w^\top\Sigma w}\,\sqrt{v^\top\Sigma v}}
+  \;=\;\cos\angle_\Sigma(w,v).
+\end{equation}
+Because $f_0,f_a$ and $\eta_{v,\theta}$ depend on $x$ only through $(s,u)$, the
+entire benefit is a functional of this bivariate Gaussian:
+\begin{equation}\label{eq:gen-delta}
+  \Delta \;=\; R_Q(f_0)-R_Q(f_a)\;=\;\mathbb E_Q\big[\mathbf 1_D\,(1-2\eta_{v,\theta})\big]
+        \;=\; Q(D)\;-\;2\,Q\big(D\cap\{u>\theta\}\big).
+\end{equation}
+
+\begin{lemma}[Whitened reduction; PROVEN]\label{lem:gen-reduce}
+$\Delta$ in \eqref{eq:gen-delta} depends on the dimension $d$, on $\mu$ and on
+$\Sigma$ only through the bivariate law of $(s,u)$ under $Q$, i.e.\ through the four
+scalars $(m,\sigma^2,\ v^\top\mu,\ v^\top\Sigma v)$ and the correlation $\rho$
+of \eqref{eq:gen-rho}. In particular the deployed and candidate rules depend on $x$
+only through $s$, whose $Q$-law is the one-dimensional Gaussian
+$\mathcal N(w^\top\mu,\,w^\top\Sigma w)$.
+\end{lemma}
+\begin{proof}
+$f_0=\mathbf 1[s>0]$, $f_a=\mathbf 1[s>a]$, $\eta_{v,\theta}=\mathbf 1[u>\theta]$ are
+$\sigma(s,u)$-measurable, and the $0/1$ excess loss of $f_0$ over $f_a$ is supported
+on $D=\{0<s<a\}$ where it equals $1-2\eta_{v,\theta}$ (exactly as in
+Lemma~\ref{lem:knowcap-identity}: on $D$, $f_0{=}1,f_a{=}0$, and the conditional mean
+of $\mathbf 1[Y{=}0]-\mathbf 1[Y{=}1]$ is $1-2\eta$). Taking $Q$-expectation gives
+\eqref{eq:gen-delta}, a functional of the $Q$-law of $(s,u)$. A non-degenerate affine
+image of a Gaussian is Gaussian with the stated moments.
+\end{proof}
+
+\paragraph{(a) Aligned concept class --- exact lift.}
+Take the concept normal \emph{parallel to the rule normal}, $v=w$ (the concept
+``reads the same direction'' the deployed rule acts on). Then $u=s$, the problem
+collapses onto the single whitened line $\mathrm{span}(w)$, and \eqref{eq:gen-delta}
+becomes literally the $1$-D identity of Lemma~\ref{lem:knowcap-identity} in the
+standardized variable $z=(s-m)/\sigma$. Define the admissible aligned class and the
+lifted invariant in Mahalanobis units:
+\begin{equation}\label{eq:gen-Cpar}
+  \mathcal C_\varepsilon^{\parallel}=\Big\{\theta_T:\ \big|\Phi(\tfrac{\theta_T-m}{\sigma})
+  -\Phi(\tfrac{\theta_S-m}{\sigma})\big|\le\varepsilon\Big\},\quad
+  K_\parallel=\frac{\big|\tfrac12[\Phi(\tfrac{-m}{\sigma})+\Phi(\tfrac{a-m}{\sigma})]
+  -\Phi(\tfrac{\theta_S-m}{\sigma})\big|}{\varepsilon}.
+\end{equation}
+
+\begin{theorem}[Stage 1, aligned: exact Mahalanobis lift; PROVEN]\label{thm:gen-aligned}
+With $v=w$ and $Q_X$ known, the population knowability--capacity
+Theorem~\ref{thm:knowcap} holds verbatim with $(\mu,a,\theta_S)$ replaced by their
+whitened images $(m,\sigma)$ in \eqref{eq:gen-proj}: with $\tau=1$,
+$K_\parallel>1$ $\Rightarrow$ every admissible aligned concept has
+$\sign\Delta=\sign(\theta_S-\theta_0)$ (achievability, error $0$); $K_\parallel<1$
+$\Rightarrow$ two admissible aligned concepts share $Q_X$ and have opposite
+$\sign\Delta$, so the minimax label-free error is $\tfrac12$. The flip locus is the
+$Q$-median of the slab along $w$, $\theta_0=m+\sigma\,\Phi^{-1}\!\big(\tfrac12[\Phi(\tfrac{-m}{\sigma})+\Phi(\tfrac{a-m}{\sigma})]\big)$.
+The finite-$n$ Le Cam boundary layer (Proposition~\ref{prop:knowcap-finiten}) carries
+over with $\mu$ replaced by $m=w^\top\mu$ and the noise scale by $\sigma/\sqrt n$,
+since $\bar s=w^\top\bar x\sim\mathcal N(m,\sigma^2/n)$ is sufficient for $m$.
+\end{theorem}
+\begin{proof}
+By Lemma~\ref{lem:gen-reduce} with $v=w$, $\Delta$ is the $1$-D benefit of
+Lemma~\ref{lem:knowcap-identity} for the standardized location problem
+$z\sim\mathcal N(m/\sigma,1)$ with boundaries $0,a,\theta$ rescaled by $\sigma$;
+\eqref{eq:gen-Cpar} is exactly \eqref{eq:knowcap-class} in $z$. Apply
+Theorem~\ref{thm:knowcap}. The converse two worlds again share the \emph{same}
+$Q_X=\mathcal N(\mu,\Sigma)$ (the concept lives in the unobserved $P(Y\mid X)$
+channel), so $\TV=0$ for every unlabeled statistic and every $n$. The sufficiency of
+$\bar s$ for $m$ is standard. \emph{(Validated: $20{,}000$ random draws in
+$d\in\{2,3,4\}$, equivalence $K_\parallel>1\iff$ identifiable with $0$ mismatches off
+a $10^{-6}$ shell; \texttt{val\_knowability\_capacity\_general.py} Stage~1a.)}
+\end{proof}
+
+\paragraph{(b) Free halfspace concept class --- exact obstruction and its capacity.}
+If the concept normal $v$ is \emph{not} constrained to be parallel to $w$, the flip
+locus moves. For a fixed $v$, $\Delta(\theta)$ in \eqref{eq:gen-delta} is still
+nondecreasing in $\theta$ with a single root $\theta_0(v)$ characterized by
+$Q\big(D\cap\{u>\theta_0\}\big)=\tfrac12 Q(D)$: \emph{$\theta_0(v)$ is the
+$Q$-conditional median of $u=v^\top x$ given $x\in D$.} Its level in the concept's
+own Mahalanobis mass coordinate,
+\begin{equation}\label{eq:gen-pmed}
+  p_{\mathrm{med}}(v)\;:=\;\Phi\!\Big(\tfrac{\theta_0(v)-v^\top\mu}{\sqrt{v^\top\Sigma v}}\Big),
+\end{equation}
+interpolates between the two extremes set by $\rho=\rho(w,v)$. In standardized
+coordinates write $z=(s-m)/\sigma\sim\mathcal N(0,1)$, the slab as $z\in(\alpha,\beta)$
+with $\alpha=-m/\sigma,\ \beta=(a-m)/\sigma$, and
+$t=(u-v^\top\mu)/\sqrt{v^\top\Sigma v}=\rho\,z+\sqrt{1-\rho^2}\,\omega$ with
+$\omega\perp z$ standard normal. Then $p_{\mathrm{med}}(v)=\Phi(\operatorname{med}(t\mid z\in(\alpha,\beta)))$ and
+\begin{equation}\label{eq:gen-pmed-range}
+  \rho=\pm1\ (v\parallel w):\ p_{\mathrm{med}}=
+  \tfrac12[\Phi(\alpha)+\Phi(\beta)]\ (\text{band median, since }t=\pm z),
+  \qquad
+  \rho=0\ (v\perp_\Sigma w):\ p_{\mathrm{med}}=\tfrac12.
+\end{equation}
+Both endpoints are \textbf{proven exactly}. The $\rho=0$ case is structural: when $v$ is
+$\Sigma$-orthogonal to $w$, $t=\omega$ is independent of $z$, so conditioning on the
+slab does not move its law and $\operatorname{med}(t\mid z\in(\alpha,\beta))=0$, i.e.\
+$p_{\mathrm{med}}=\tfrac12$. The $\rho=\pm1$ case is immediate since then $t=\pm z$. That
+$p_{\mathrm{med}}$ is \emph{monotone} in $|\rho|$ between these endpoints (so the
+achievable flip range is exactly the interval between $\tfrac12$ and the band median) is
+\textbf{verified numerically} (Lemma~\ref{lem:gen-pmed-mono}, stated as a numerically
+confirmed monotone-interpolation fact with a proof sketch); the \emph{worst case}
+relevant to the converse --- mass $\tfrac12$, reached at $\rho=0$ --- is proven outright.
+
+\begin{lemma}[Monotone flip interpolation; NUMERICAL, proof sketch]\label{lem:gen-pmed-mono}
+With the notation above, $p_{\mathrm{med}}(v)$ is monotone in $|\rho|$, sweeping the full
+interval between $\tfrac12$ (at $\rho=0$) and the band median (at $|\rho|=1$).
+\emph{Sketch:} the conditional median solves
+$\mathbb E[\sign(t-m_t)\mid z\in(\alpha,\beta)]=0$; since the slab's $z$-median $z^\star$
+has a fixed sign relative to $0$, increasing $\rho$ tilts $t=\rho z+\sqrt{1-\rho^2}\,\omega$
+monotonically toward $\pm z$, dragging $m_t$ monotonically from $0$ toward $z^\star$ by a
+sign-coherent shift of the conditional law. A full proof would verify single-crossing of
+the conditional-median equation in $\rho$. \emph{(Validated: $p_{\mathrm{med}}$ rises
+monotonically $0.50\to$ band median as $\rho:0\to1$ across four slabs;
+\texttt{val\_knowability\_capacity\_general.py} Stage~1b.)}
+\end{lemma}
+
+\begin{theorem}[Stage 1, free halfspace: the obstruction; converse PROVEN, exact $K_{\mathrm{free}}$ CONDITIONAL]\label{thm:gen-free}
+Let $p_S=\Phi(\tfrac{\theta_S-m}{\sigma})$ be the calibrated boundary mass along $w$
+and let the admissible free class be the halfspaces with own-normal boundary-mass
+drift $\le\varepsilon$ and arbitrary direction $v$. Then the aligned invariant
+$K_\parallel$ of \eqref{eq:gen-Cpar} is \emph{not} a capacity for this class. Precisely:
+\begin{enumerate}\itemsep1pt
+\item[\textnormal{(i)}] \textbf{(Breaker / converse; PROVEN.)} Whenever $p_S$ lies
+strictly between $\tfrac12$ and $b:=\tfrac12[\Phi(\tfrac{-m}{\sigma})+\Phi(\tfrac{a-m}{\sigma})]$,
+there is a regime $K_\parallel>1$ in which the aligned theorem predicts identifiability
+but a tilted admissible concept (own-normal boundary mass $=p_S$, taken with
+$\rho\to0$, which reaches flip mass $\tfrac12$) produces the \emph{opposite} benefit
+sign. The two concepts share $Q_X$, so $\TV=0$ and the minimax error is $\tfrac12$: the
+aligned $K_\parallel$ is therefore \emph{not} a capacity for the free class.
+\item[\textnormal{(ii)}] \textbf{(Exact free capacity; CONDITIONAL on
+Lemma~\ref{lem:gen-pmed-mono}.)} Under the monotone interpolation, the achievable flip
+range is exactly the interval between $\tfrac12$ and $b$, so $\sign\Delta$ is identifiable
+over the free class iff $[p_S-\varepsilon,p_S+\varepsilon]$ misses it; the governing
+capacity is
+\[
+  K_{\mathrm{free}}\;=\;\frac{\operatorname{dist}\!\big(p_S,\ [\,\tfrac12\wedge b,\ \tfrac12\vee b\,]\big)}{\varepsilon},
+  \qquad \tau=1 .
+\]
+\end{enumerate}
+\end{theorem}
+\begin{proof}
+For fixed $v$, \eqref{eq:gen-delta} is nondecreasing in $\theta$ (raising $\theta$
+only shrinks $\{u>\theta\}$), with unique root the conditional median $\theta_0(v)$;
+hence $\sign\Delta=\sign(\theta-\theta_0(v))$. \emph{Part (i)} uses only the proven
+endpoint $\rho=0\Rightarrow p_{\mathrm{med}}=\tfrac12$ of \eqref{eq:gen-pmed-range}: for
+$p_S$ strictly on the $\tfrac12$-side of the aligned flip $b$, take $v$ with $\rho\to0$
+and own-normal boundary mass $=p_S$; its flip sits at $\tfrac12$, on the opposite side of
+$p_S$ from $b$, so $\sign\Delta$ is reversed relative to the aligned prediction. The two
+concepts share $Q_X$, giving $\TV=0$ and minimax error $\tfrac12$ (Le Cam); thus
+$K_\parallel$ is not a capacity. \emph{Part (ii)} additionally invokes
+Lemma~\ref{lem:gen-pmed-mono} (numerically confirmed): the achievable flip levels then
+fill exactly the interval between $\tfrac12$ and $b$, so a sign-flip witness exists iff
+the admissible mass band $[p_S-\varepsilon,p_S+\varepsilon]$ meets that interval, i.e.\
+iff $K_{\mathrm{free}}<1$. \emph{(Validated:
+$p_{\mathrm{med}}$ vs $|\rho|$ traced from $0.5005$ at $\rho{=}0$ to the band median
+$0.4226$ at $\rho{=}1$; an explicit breaker with $K_\parallel=1.40$ where the aligned
+prediction is $\Delta=+0.14$ but a worst-case tilt of the same own-normal boundary
+mass yields $\Delta=-0.14$ (opposite sign);
+\texttt{val\_knowability\_capacity\_general.py} Stage~1b.)}
+\end{proof}
+
+\begin{remark}[What Stage 1 establishes]\label{rmk:gen-stage1}
+The $1$-D capacity lifts to $d$ dimensions \emph{exactly} in Mahalanobis geometry
+\emph{when the concept is aligned with the rule normal} (Thm~\ref{thm:gen-aligned}):
+$K$ and $\tau=1$ are intact, with $\theta_0$ the slab's $Q$-median along $w$. The lift
+is therefore not vacuous --- it is a genuine $d$-dimensional capacity. But the
+unconstrained halfspace concept class is \emph{strictly harder}: an adversary can tilt
+the concept normal toward $\Sigma$-orthogonality with $w$, dragging the flip locus to
+the unconditional median (mass $\tfrac12$) and defeating any margin measured along
+$w$. The honest Stage-1 statement is a capacity $K_{\mathrm{free}}$ that prices in the
+worst-case tilt (Thm~\ref{thm:gen-free}); the clean closed-form $\tau=1$ survives, but
+the invariant is the distance to mass $\tfrac12$, not to the band median, once the
+concept direction is free.
+\end{remark}
+
+% ----------------------------------------------------------------------------
+\subsection{Stage 2: MLR / log-concave location families}\label{sec:gen-mlr}
+% ----------------------------------------------------------------------------
+We now leave the Gaussian and ask which \emph{non-Gaussian} location families keep
+the matched threshold.
+
+\emph{Scope note.} Here ``exponential family'' abbreviates one-parameter \emph{location}
+families with monotone likelihood ratio (Gaussian, Laplace, logistic location). Genuine
+\emph{scale}/natural-parameter exponential families---e.g.\ the exponential or Gamma rate
+family---are not location families; their capacity is not governed by the mass-coordinate
+threshold below and falls under Conjecture~\ref{conj:gen-capacity}.
+
+Let $Q_X$ have a density $q_0(x-\mu)$ for a fixed base density
+$q_0$ with continuous CDF $F$; deployed $f_0=\mathbf 1[x>0]$, candidate
+$f_a=\mathbf 1[x>a]$, hard-threshold concept $\eta_\theta=\mathbf 1[x>\theta]$. The
+benefit identity is \emph{family-agnostic}: exactly as in
+Lemma~\ref{lem:knowcap-identity} (the proof used only that on $D$ the conditional
+contrast is $1-2\eta$ and that $Q$ has a CDF),
+\begin{equation}\label{eq:gen-fam-delta}
+  \Delta(\theta)=2F(\theta'-\mu)-F(-\mu)-F(a-\mu),\qquad\theta'=\operatorname{clip}(\theta,0,a),
+\end{equation}
+and the admissible class / invariant are \eqref{eq:knowcap-class},
+Def.~\ref{def:knowcap-K} with $\Phi$ replaced by $F$. So far \emph{no} condition is
+needed and $\Delta$ is monotone in $\theta$ for \emph{any} CDF $F$.
+
+\begin{theorem}[Stage 2, MLR/log-concave: matched $\tau=1$; PROVEN UNDER CONDITION]
+\label{thm:gen-mlr}
+Assume the base family is a one-parameter \emph{location} family with strictly
+\textbf{monotone likelihood ratio} in the location (equivalently here, $q_0$ strictly
+positive and log-concave, hence unimodal). Then with the mass-coordinate drift class
+\eqref{eq:knowcap-class}$_F$ and $\tau=1$, the population knowability--capacity holds
+verbatim: $K>1\Rightarrow$ every admissible concept shares $\sign\Delta=\sign(\theta_S-\theta_0)$
+(achievability), $K<1\Rightarrow$ two admissible concepts share $Q_X$ with opposite
+$\sign\Delta$ (converse, $\TV=0$). Moreover the flip locus
+$\theta_0(\mu)=\mu+F^{-1}\!\big(\tfrac12[F(-\mu)+F(a-\mu)]\big)$ is the band's $Q$-median
+and is \textbf{strictly increasing in the unknown shift} $\mu$, so a single label-free
+estimate $\hat\mu$ pins the flip side through one threshold and $K$ is a genuine scalar
+capacity (the finite-$n$ Le Cam layer of Prop.~\ref{prop:knowcap-finiten} carries over
+with $\Phi\to F$).
+\end{theorem}
+\begin{proof}
+The converse and achievability are exactly Theorem~\ref{thm:knowcap} with $\Phi\to F$:
+the admissible set is the interval $[p_S-\varepsilon,p_S+\varepsilon]$ in the mass
+coordinate $u=F(\theta_T-\mu)$, the flip is at the band-median mass
+$u_0=\tfrac12[F(-\mu)+F(a-\mu)]$, and $K\gtrless1\iff u_0$ lies outside/inside the
+admissible band; identical-$Q_X$ gives $\TV=0$. The only place a hypothesis is used is
+the claim that $\theta_0(\mu)$ is monotone in $\mu$ (needed for $K(\mu)$ to be a single
+threshold rather than a fragmented set): for an MLR/log-concave location family the map
+$\mu\mapsto\theta_0(\mu)$ is strictly increasing because $F(a-\mu)$ and $F(-\mu)$ are
+decreasing in $\mu$ and $F^{-1}$ is increasing, with no antimode to reverse the band
+median's motion. \emph{(Validated: Laplace and logistic location families, $0$
+mismatches over $6{,}000$ draws each, benefit identity matched to
+$\le4.6\times10^{-4}$ MC error; \texttt{val\_knowability\_capacity\_general.py}
+Stage~2a.)}
+\end{proof}
+
+\begin{theorem}[Stage 2, non-log-concave breaker; PROVEN]\label{thm:gen-breaker}
+There is a location family for which the scalar capacity \emph{fails}. Take $q_0$ a
+balanced mixture of two well-separated Gaussians (bimodal, hence not log-concave and
+not MLR) and the band $D=(0,a)$ wide enough to span the antimode. Then although
+$\Delta(\theta)$ in \eqref{eq:gen-fam-delta} is still monotone in $\theta$ (so the
+concept-location flip is unique), the flip locus $\theta_0(\mu)$ is \textbf{non-monotone
+in the unknown shift} $\mu$: as $\mu$ moves the band median across the antimode,
+$\theta_0(\mu)$ collapses. Consequently the label-free identifiable set
+$\{\mu:K(\mu)>1\}$ \textbf{fragments} into more components than in the unimodal case, and
+no single scalar threshold $\tau$ separates the identifiable from the
+non-identifiable regime.
+\end{theorem}
+\begin{proof}[Proof (by exhibited witness)]
+The benefit identity \eqref{eq:gen-fam-delta} holds for the mixture CDF $F$, monotone
+in $\theta$. The density $q_0$ has two modes (verified: two local maxima), so the
+hypothesis of Theorem~\ref{thm:gen-mlr} fails. Tracing $\theta_0(\mu)$ over
+$\mu\in[-3,3]$ exhibits two strict decreases (non-monotone events) where the band
+median crosses the antimode, and the set $\{\mu:K(\mu)>1\}$ has $2$ components for the
+mixture versus $1$ for the matched unimodal Gaussian baseline at the same
+$(p_S,\varepsilon,a)$. Hence the achievability certificate ``estimate $\hat\mu$, read
+off $\sign(\theta_S-\theta_0(\hat\mu))$'' is not governed by a single threshold in $K$.
+\emph{(Validated: density modes $=2$, $\theta_0(\mu)$ non-monotone events $=2$,
+components mixture$=2$ vs Gaussian$=1$; \texttt{val\_knowability\_capacity\_general.py}
+Stage~2b.)}
+\end{proof}
+
+% ----------------------------------------------------------------------------
+\subsection{Stage 3: a distribution-free converse, and the general obstruction}
+\label{sec:gen-df}
+% ----------------------------------------------------------------------------
+The converse needs none of the above structure. It is a pure two-point Le Cam bound
+that uses only the defining feature of the problem: the concept lives in the
+unobserved $P(Y\mid X)$ channel, so any two concepts induce the \emph{same} observable
+covariate law.
+
+\begin{theorem}[Distribution-free sign-of-benefit converse; PROVEN]\label{thm:gen-df-conv}
+Let $X$ take values in any measurable space, let $g$ and $f$ be any two fixed
+classifiers, and let $\mathcal H$ be a class of admissible concepts $\eta:\,
+\mathcal X\to[0,1]$. Suppose there exist $\eta^+,\eta^-\in\mathcal H$ that induce the
+\textbf{same observable marginal} $Q_X$ (automatic under covariate shift, where the
+concept does not affect $Q_X$) and have \textbf{opposite benefit sign},
+$\sign\big(R_Q^{\eta^+}(g)-R_Q^{\eta^+}(f)\big)=-\sign\big(R_Q^{\eta^-}(g)-R_Q^{\eta^-}(f)\big)\neq0$.
+Then for \emph{every} sample size $n$ and \emph{every} label-free decision rule
+$\hat T$ that observes only $\{X_i\}_{i=1}^n\sim Q_X^{\otimes n}$,
+\[
+  \inf_{\hat T}\ \max_{\eta\in\{\eta^+,\eta^-\}}\ \Pr\big[\hat T\ \text{outputs the wrong }\sign\Delta\big]
+  \;\ge\;\tfrac12\big(1-\TV(Q_X^{\otimes n},Q_X^{\otimes n})\big)\;=\;\tfrac12 .
+\]
+No distributional, dimensional, or parametric assumption is used.
+\end{theorem}
+\begin{proof}
+The two worlds $\eta^\pm$ generate identical laws for the unlabeled sample
+($Q_X^{\otimes n}$ in both), so the total variation between the observed data
+distributions is $0$. A label-free sign decision is a test between the two worlds,
+which have opposite correct answers; Le Cam's two-point inequality gives minimax error
+$\ge\tfrac12(1-\TV)=\tfrac12$, attained by a constant guess.
+\emph{(Validated across Gaussian-1d, Laplace-1d, and aligned Gaussian-3d: opposite
+$\Delta$ signs with unlabeled $\TV=0$ and minimax lower bound $\tfrac12$;
+\texttt{val\_knowability\_capacity\_general.py} Stage~3a.)}
+\end{proof}
+
+\noindent\textbf{The general obstruction (why achievability needs a condition).}
+Theorem~\ref{thm:gen-df-conv} is fully general, but a matching \emph{achievability}
+(a single computable $K$ with the property $K>1\Rightarrow$ identifiable) provably
+cannot be. The achievability side requires the observer to (a) locate the
+sign-flip set of $\Delta$ over the admissible class and (b) certify that the whole
+admissible class lies on one side of it from $Q_X$ alone. Stage~1b shows step~(a)
+already fails to be captured by an alignment-blind margin once the concept direction is
+free (the flip locus depends on the Mahalanobis geometry between concept and rule), and
+Stage~2b shows that, even in one dimension, when the family is not MLR/unimodal the
+flip locus is non-monotone in the unknown shift, so step~(b) has no single-threshold
+certificate. We record the general statement as a conjecture with the precise missing
+piece.
+
+\begin{conjecture}[General knowability--capacity; OPEN, with the exact gap]
+\label{conj:gen-capacity}
+Fix observables $(Q_X\text{-family},g,f)$ and an admissible concept class $\mathcal H$
+defined by a mass-drift budget $\varepsilon$. Suppose a \textbf{regularity/identifiability
+condition} holds: \textnormal{(R1)} the benefit $\Delta$ has, over $\mathcal H$, a
+\emph{unique} flip locus expressible in the observable mass coordinate; and
+\textnormal{(R2)} that flip locus is a \emph{monotone, observable} function of the
+unknown nuisance (e.g.\ the shift) --- guaranteed by MLR/log-concavity in the location
+case and by Mahalanobis-alignment in the multivariate case. Then the scalar
+\[
+  K\;=\;\frac{\operatorname{dist}_{\text{mass}}\!\big(\text{calibrated boundary},\ \text{worst-case flip locus over }\mathcal H\big)}{\varepsilon}
+\]
+is a capacity at $\tau=1$: $K>1\iff$ the sign of $\Delta$ is label-free identifiable,
+and the finite-$n$ price is an $O(1/\sqrt n)$ Le Cam layer around the threshold
+\emph{location}. The \textbf{open part} is precisely the removal (or sharp
+characterization) of \textnormal{(R1)--(R2)}: without them the flip set need not be a
+single observable threshold, the worst-case-flip distance need not be computable from
+$Q_X$, and no scalar $\tau$ is simultaneously necessary and sufficient. Stages~1--2
+prove the conjecture in its two leading regularity classes and exhibit explicit
+breakers (free-direction tilt; non-log-concave bimodality) on the boundary of each.
+\end{conjecture}
+
+\begin{remark}[Honest scope of the generalization]\label{rmk:gen-scope}
+This section reaches a \emph{strong but bounded} generalization, \textbf{not} a
+paradigm-level general capacity. What is \emph{proven}: (i) an \emph{exact}
+$d$-dimensional lift of $\tau=1$ in Mahalanobis geometry for aligned concepts
+(Thm~\ref{thm:gen-aligned}); (ii) the \emph{exact} obstruction and worst-case capacity
+$K_{\mathrm{free}}$ for free halfspace concepts (Thm~\ref{thm:gen-free}); (iii) a
+matched $\tau=1$ for MLR/log-concave location families (Thm~\ref{thm:gen-mlr}) with an
+explicit non-log-concave breaker (Thm~\ref{thm:gen-breaker}); and (iv) a fully
+\emph{distribution-free converse} in any dimension and any family
+(Thm~\ref{thm:gen-df-conv}). What is \emph{not} proven, and is stated as
+Conjecture~\ref{conj:gen-capacity}: a single computable capacity \emph{without} a
+regularity/identifiability condition. The wall is sharp and named: a scalar $\tau$ is a
+capacity \emph{iff} the benefit's flip locus is a unique, monotone, observable
+threshold; alignment (multivariate) and MLR/unimodality (location) are the two
+sufficient regularity conditions we can currently prove, and each has a concrete
+counterexample just outside it. The value of the result is therefore (a) the converse
+is essentially universal, and (b) the achievability is pinned to an explicit,
+checkable regularity hypothesis whose failure modes are exhibited --- a precise map of
+how far the $1$-D capacity travels and exactly where it stops.
+\end{remark}
