@@ -189,3 +189,36 @@ def recalibrate_bn(model, X, passes: int = 5):
             model(X)
     model.eval()
     return model
+
+
+class ClipRecord:
+    """Represents a metadata record for a captured physical clip."""
+    def __init__(self, record_dict):
+        self.clip_id = record_dict.get("clip_id")
+        self.session_id = record_dict.get("session_id")
+        self.phone_id = record_dict.get("phone_id")
+        self.object_id = record_dict.get("object_id")
+        self.class_id = record_dict.get("class_id")
+        self.shift_id = record_dict.get("shift_id")
+        self.repetition = record_dict.get("repetition")
+        self.sha256 = record_dict.get("sha256")
+        self.frame_count = record_dict.get("frame_count")
+        self.captured_at = record_dict.get("captured_at")
+
+
+def source_datasets(manifest_or_path) -> tuple[list[ClipRecord], list[ClipRecord]]:
+    """Filter train (S01) and val (S02) datasets from a manifest path or dictionary."""
+    import json
+    from pathlib import Path
+    
+    if isinstance(manifest_or_path, (str, Path)):
+        with open(manifest_or_path) as f:
+            manifest = json.load(f)
+    else:
+        manifest = manifest_or_path
+        
+    clips = [ClipRecord(c) for c in manifest.get("clips", [])]
+    train = [c for c in clips if c.session_id == "S01"]
+    val = [c for c in clips if c.session_id == "S02"]
+    return train, val
+
