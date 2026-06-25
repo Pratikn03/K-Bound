@@ -127,3 +127,132 @@ def format_comparison_table(comparison: Dict[str, Dict[str, float]]) -> str:
         ]
         lines.append("  ".join(row))
     return "\n".join(lines)
+
+
+def emitted_predictions(decision: str, p0, pa):
+    """Return pa if decision is adapt, else p0."""
+    if decision == "adapt":
+        return pa
+    return p0
+
+
+def bootstrap_real_metrics(
+    outcomes: List[Any],
+    true_labels: List[np.ndarray],
+    window_metadata: List[Dict[str, str]],
+    policy_decisions: Dict[str, List[str]],
+    latencies_ms: List[float],
+    n_boot: int = 2000,
+    seed: int = 20260619,
+) -> Dict[str, Dict[str, Any]]:
+    """Compute point estimates and 95% bootstrap confidence intervals for all policies."""
+    from sklearn.metrics import balanced_accuracy_score, f1_score
+    import warnings
+    warnings.filterwarnings("ignore", category=UserWarning)
+
+    n = len(outcomes)
+    policies = list(policy_decisions.keys())
+    
+    window_blocks = []
+    for meta in window_metadata:
+        window_blocks.append((meta["session_id"], meta["object_id"], meta["shift_id"]))
+        
+    unique_blocks = list(sorted(set(window_blocks)))
+    n_blocks = len(unique_blocks)
+    
+    block_to_indices = {b: [] for b in unique_blocks}
+    for idx, b in enumerate(window_blocks):
+        block_to_indices[b].append(idx)
+        
+    def calc_metrics_for_indices(indices_list: List[int]) -> Dict[str, Dict[str, float]]:
+        res = {p: {} for p in policies}
+        
+        for p in policies:
+            preds_all = []
+            labels_all = []
+            regrets = []
+            lats = []
+            adapt_cnt = 0
+            abstain_cnt = 0
+            freeze_cnt = 0
+            false_adapt_cnt = 0
+            
+            for idx in indices_list:
+                o = outcomes[idx]
+                dec = policy_decisions[p][idx]
+                lbls = true_labels[idx]
+                
+                p_frame = emitted_predictions(dec, o.p0, o.pa).argmax(1)
+                preds_all.extend(p_frame.tolist())
+                labels_all.extend(lbls.tolist())
+                
+                froz_acc = float((o.p0.argmax(1) == lbls).mean())
+                cand_acc = float((o.pa.argmax(1) == lbls).mean())
+                B = cand_acc - froz_acc
+                oracle = max(B, 0.0)
+                realised = B if dec == "adapt" else 0.0
+                regrets.append(oracle - realised)
+                
+                if dec == "adapt":
+                    adapt_cnt += 1
+                    if B < 0.0:
+                        false_adapt_cnt += 1
+                elif dec == "abstain":
+                    abstain_cnt += 1
+                else:
+                    freeze_cnt += 1
+                lats.append(latencies_ms[idx])
+                
+            n_wind = len(indices_list)
+            res[p]["balanced_acc"] = float(balanced_accuracy_score(labels_all, preds_all)) if len(labels_all) > 0 else 0.0
+            res[p]["macro_f1"] = float(f1_score(labels_all, preds_all, average="macro")) if len(labels_all) > 0 else 0.0
+            res[p]["mean_regret"] = float(np.mean(regrets)) if regrets else 0.0
+            res[p]["false_adapt_uncond"] = float(false_adapt_cnt / n_wind)
+            res[p]["false_adapt_cond"] = float(false_adapt_cnt / adapt_cnt) if adapt_cnt > 0 else 0.0
+            res[p]["adapt_rate"] = float(adapt_cnt / n_wind)
+            res[p]["abstain_rate"] = float(abstain_cnt / n_wind)
+            res[p]["mean_latency"] = float(np.mean(lats)) if lats else 0.0
+            
+        return res
+
+    point_indices = list(range(n))
+    point_est = calc_metrics_for_indices(point_indices)
+    
+    rng = np.random.default_rng(seed)
+    
+    bootstrap_results = {p: {m: [] for m in [
+        "balanced_acc", "macro_f1", "mean_regret", "false_adapt_uncond", 
+        "false_adapt_cond", "adapt_rate", "abstain_rate", "mean_latency"
+    ]} for p in policies}
+    
+    for _ in range(n_boot):
+        boot_block_indices = rng.choice(n_blocks, size=n_blocks, replace=True)
+        boot_indices = []
+        for idx in boot_block_indices:
+            b = unique_blocks[idx]
+            boot_indices.extend(block_to_indices[b])
+            
+        if not boot_indices:
+            continue
+            
+        boot_metrics = calc_metrics_for_indices(boot_indices)
+        for p in policies:
+            for m in bootstrap_results[p].keys():
+                bootstrap_results[p][m].append(boot_metrics[p][m])
+                
+    compiled = {}
+    for p in policies:
+        compiled[p] = {}
+        for m in bootstrap_results[p].keys():
+            val = point_est[p][m]
+            arr = np.asarray(bootstrap_results[p][m])
+            lower = float(np.quantile(arr, 0.025))
+            upper = float(np.quantile(arr, 0.975))
+            compiled[p][m] = {
+                "val": val,
+                "ci": [lower, upper]
+            }
+            
+    return compiled
+
+

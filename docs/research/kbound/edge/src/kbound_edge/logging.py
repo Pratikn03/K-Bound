@@ -130,6 +130,11 @@ class WindowLogger:
 
     def close(self) -> None:
         if not self._fh.closed:
+            try:
+                self._fh.flush()
+                os.fsync(self._fh.fileno())
+            except Exception:
+                pass
             self._fh.close()
 
     def __enter__(self) -> "WindowLogger":

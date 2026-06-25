@@ -8,6 +8,7 @@ and leakage audit trails.
 
 import argparse
 import csv
+import datetime
 import hashlib
 import json
 import os
@@ -21,7 +22,7 @@ if _SRC not in sys.path:
 import cv2
 import numpy as np
 
-from kbound_edge.real_manifest import load_real_protocol, expected_windows, ProtocolError
+from kbound_edge.real_manifest import load_real_protocol, expected_windows, ProtocolError, canonical_protocol_hash
 from kbound_edge.real_dataset import audit_dataset, SESSION_SPLIT_MAP
 
 def get_file_sha256(path: str) -> str:

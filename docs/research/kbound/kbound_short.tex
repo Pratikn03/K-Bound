@@ -30,42 +30,27 @@
 
 \title{When Is Label-Free Adaptation Knowable? \\
 Helpful, Harmful, and Unknowable Regimes Under Distribution Shift}
-\author{\IEEEauthorblockN{Anonymous Authors}\\
-\IEEEauthorblockA{Paper under double-blind review}}
+\author{\IEEEauthorblockN{Pratik Niroula}\\
+\IEEEauthorblockA{Minnesota State University, Mankato, MN 56001\\}}
 
 \emergencystretch=3em
 \begin{document}
 \maketitle
 
 \begin{abstract}
-Test-time adaptation (TTA) can recover accuracy on unlabeled target data, but the same
-objective that helps under one distribution shift can silently hurt under another---and
-without target labels the system cannot tell which. We show this is not merely an
-engineering gap but a \emph{fundamental information-theoretic limit}. Defining adaptation
-benefit as the excess target risk of a frozen baseline over an adapted candidate, we prove
-an exact \emph{benefit-sign frontier}: the sign of the benefit is label-free identifiable
-\emph{if and only if} an observable margin exceeds the calibration-drift budget on the
-disagreement region. Below the frontier, two target worlds induce identical observable
-evidence yet opposite benefit, so \emph{no} label-free rule---however sophisticated the
-adapter---can decide correctly in both, and abstention is information-theoretically forced.
+Test-time adaptation (TTA) can improve a model on unlabeled target data, but the same update objective that helps under one distribution shift can silently harm under another. Because target labels are unavailable at deployment, a system must decide not only how to adapt, but whether a proposed adaptation should be committed at all.
 
-The frontier is also constructive. On its identifiable side we give a finite-sample
-adapt/freeze/abstain certificate that controls false adaptation and false freezing at level
-$\alpha$ under stated calibration assumptions, sorting deployments into \emph{knowably
-helpful}, \emph{knowably harmful}, and \emph{unknowable} regimes.
+We formalize this as a label-free \emph{adapt/freeze/abstain} decision problem. Given a frozen baseline ($f_0$), an adapted candidate ($f_a$), and unlabeled deployment evidence ($Z$), adaptation benefit is
+\[
+\Delta = R_T(f_0)-R_T(f_a).
+\]
+We prove an exact benefit-sign frontier: over a declared target class, the sign of ($\Delta$) is identifiable from label-free evidence if and only if an observable disagreement-region margin exceeds the admitted calibration-drift budget. Below this frontier, two target worlds can induce identical observable evidence while requiring opposite adaptation decisions; therefore, no label-free rule can be correct in both worlds and abstention is information-theoretically necessary.
 
-We instantiate the framework as \textsc{KGA}, a mechanism-agnostic wrapper around
-Tent, EATA, and SAR, and evaluate it on a \emph{six-dataset core panel} (Office-Home,
-Camelyon17, CIFAR-10-C, iWildCam, CIFAR-10.1, ImageNet-R). \textsc{KGA} beats both
-always-adapt and always-freeze exactly in harmful-detectable regimes, with bootstrap $95\%$
-confidence intervals that exclude zero on the CIFAR-10-C stress grid (with ImageNet-C corroboration
-under a mechanism-faithful re-run). On every natural shift evaluated (Office-Home, iWildCam,
-Camelyon17, RxRx1)---each one-sided---\textsc{KGA} is \emph{no-harm} under a valid out-of-fold
-conformal radius: it matches the better fixed policy and strictly beats the worse one at false-adapt
-$\le\alpha$, without beating both (Table~\ref{tab:regime-summary}). \textsc{KGA} is not a universal
-accuracy booster; reported wins are
-regime-specific.
+On the identifiable side of the frontier, we give an adapt/freeze/abstain certificate that controls unconditional false-adapt and false-freeze probabilities under stated risk-alignment, coverage, and calibration assumptions. We instantiate the certificate as Knowability-Guided Adaptation (KGA), a mechanism-agnostic wrapper around existing adaptation methods including Tent, EATA, and SAR.
+
+Experiments separate the regimes predicted by the theory. On controlled harmful-detectable stress tracks, KGA beats both always-adapt and always-freeze for Tent and EATA on CIFAR-10-C, and for a harmful SAR operating point on ImageNet-C, while maintaining zero observed unconditional false-adapt decisions. On held-out natural shifts, KGA is uniformly no-harm: it matches the better fixed policy, beats the worse policy, and avoids harmful committed updates under the valid out-of-fold calibration protocol. On weak or split-specific evidence regimes, it abstains or freezes conservatively rather than claiming universal improvement. K-Bound therefore reframes TTA as an identifiability-limited deployment decision: adapt when benefit is certifiable, freeze when harm is certifiable, and abstain when label-free evidence cannot support a valid commitment.
 \end{abstract}
+
 
 \begin{IEEEkeywords}
 test-time adaptation, distribution shift, selective prediction, identifiability, label-free risk estimation
@@ -679,6 +664,17 @@ null (Appendix~\ref{sec:excluded-wins}), distinct from Protocol~M v2.
 \textbf{CIFAR-10.1} is low-margin: within-seed calibration ties freeze with $0\%$
 false-adapts on Tent/EATA, but cross-seed certificate transfer does not clear the
 headline bar.
+
+\subsection{Real-camera deployment protocol (pre-registered; results pending)}
+We additionally pre-register a two-phone physical package-inspection study. The main-paper
+tables are intentionally outcome-free until the source, calibration-fit, conformal,
+held-out, and external-device replication sessions are recorded and pass the audit in
+Table~\ref{tab:camera-s2}. Table~\ref{tab:camera-r1} fixes the deployment protocol;
+Table~\ref{tab:camera-r2} is the only primary result table. The physical-shift breakdown,
+recording inventory, audit trail, runtime profile, and ablations remain in the supplement
+(Tables~\ref{tab:camera-r3}--\ref{tab:camera-s5}). No placeholder is used as evidence.
+
+\input{edge/kbound_camera_main_tables}
 
 \section{Limitations and honest scope}\label{sec:limits}
 

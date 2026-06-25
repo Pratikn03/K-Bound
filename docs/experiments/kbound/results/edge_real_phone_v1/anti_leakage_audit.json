@@ -1,0 +1,68 @@
+{
+  "checks": [
+    {
+      "check": "Frozen checkpoint unchanged after candidate adaptation?",
+      "passed": true,
+      "expected": "70fa847746b50885",
+      "observed": "70fa847746b50885",
+      "evidence_artifact": "f0.pt",
+      "evidence_hash": "34ce2999441d0b9797853b3462267b6d877a3c0ea98b766647c2b7128ffbed50"
+    },
+    {
+      "check": "Held-out labels inaccessible to the live runtime?",
+      "passed": true,
+      "expected": "0 forbidden keys in log",
+      "observed": "0 forbidden keys",
+      "evidence_artifact": "heldout_online.jsonl",
+      "evidence_hash": "1838b7a54876024a7c30bbc6e375afe7e213f1984a38f0a1f516020610fa86d0"
+    },
+    {
+      "check": "Feature schema unchanged after protocol lock?",
+      "passed": true,
+      "expected": "['entropy_drop', 'frac_highconf', 'marginal_KL', 'mean_js_div', 'pbal_drop', 'post_conf', 'post_entropy', 'post_pbal', 'post_top2_margin', 'pre_conf', 'pre_entropy', 'pre_pbal', 'pred_flip_rate', 'update_norm']",
+      "observed": "['entropy_drop', 'frac_highconf', 'marginal_KL', 'mean_js_div', 'pbal_drop', 'post_conf', 'post_entropy', 'post_pbal', 'post_top2_margin', 'pre_conf', 'pre_entropy', 'pre_pbal', 'pred_flip_rate', 'update_norm']",
+      "evidence_artifact": "heldout_online.jsonl",
+      "evidence_hash": "1838b7a54876024a7c30bbc6e375afe7e213f1984a38f0a1f516020610fa86d0"
+    },
+    {
+      "check": "Epsilon calibrated only from the conformal split?",
+      "passed": true,
+      "expected": "fit=['S03', 'S04'], conformal=['S05', 'S06']",
+      "observed": "fit=['S03', 'S04'], conformal=['S05', 'S06']",
+      "evidence_artifact": "calibration_summary.json",
+      "evidence_hash": "e2115d562fb083b306f3a577528a69270dc42ceaab16af77fa1ac43c1ab4b076"
+    },
+    {
+      "check": "Held-out sessions excluded from adapter, feature, and threshold tuning?",
+      "passed": true,
+      "expected": "0 overlapping sessions",
+      "observed": "0 overlaps: []",
+      "evidence_artifact": "calibration_summary.json",
+      "evidence_hash": "e2115d562fb083b306f3a577528a69270dc42ceaab16af77fa1ac43c1ab4b076"
+    },
+    {
+      "check": "Identical held-out stream replayed for every policy?",
+      "passed": true,
+      "expected": "all policies processed 256 windows",
+      "observed": "observed window counts: [256, 256, 256, 256, 256, 256]",
+      "evidence_artifact": "heldout_metrics.json",
+      "evidence_hash": "7709eee28a8d690d841d648653206e6fd3e52f530fb945d7ff057bd1a23414cd"
+    },
+    {
+      "check": "Config hash stored in every log row?",
+      "passed": true,
+      "expected": "config_hash matches 0c43e8aeea06cce8 on all rows",
+      "observed": "0 mismatches",
+      "evidence_artifact": "heldout_online.jsonl",
+      "evidence_hash": "1838b7a54876024a7c30bbc6e375afe7e213f1984a38f0a1f516020610fa86d0"
+    },
+    {
+      "check": "Model hash stored in every log row?",
+      "passed": true,
+      "expected": "model_version matches 70fa847746b50885 on all rows",
+      "observed": "0 mismatches",
+      "evidence_artifact": "heldout_online.jsonl",
+      "evidence_hash": "1838b7a54876024a7c30bbc6e375afe7e213f1984a38f0a1f516020610fa86d0"
+    }
+  ]
+}

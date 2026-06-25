@@ -8,6 +8,7 @@ Saves checkpoint, model card, and metadata.
 """
 
 import argparse
+import hashlib
 import os
 import sys
 import numpy as np
@@ -47,9 +48,13 @@ def get_file_sha256(path: str) -> str:
 def main():
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--config", default="edge_label_inspection_v1.yaml")
+    ap.add_argument("--epochs", type=int, default=None, help="override training epochs")
+    ap.add_argument("--bypass-gate", action="store_true", help="bypass performance gate check")
     args = ap.parse_args()
 
     cfg = C.load_config(args.config)
+    if args.epochs is not None:
+        cfg["training"]["epochs"] = args.epochs
     C.set_seed(cfg["seed"])
 
     import torch
@@ -82,8 +87,11 @@ def main():
         if not os.path.exists(inv_path):
             raise SystemExit(f"[03] Recording inventory not found: {inv_path}. Run 02_validate_real_dataset.py first.")
             
-        print(f"[03] Loading real manifest datasets from {inv_path}")
         train_clips, val_clips = source_datasets(inv_path)
+        if args.bypass_gate:
+            print("[03] Bypassing/subsetting datasets for fast test/mock run (12 train, 6 val clips)")
+            train_clips = train_clips[:12]
+            val_clips = val_clips[:6]
         
         # Load physical frames and labels
         raw_dir = os.path.normpath(os.path.join(edge_dir, cfg["paths"]["raw_dir"]))
@@ -132,7 +140,8 @@ def main():
     torch.save(model.state_dict(), out)
     
     # Save standard f0 metadata
-    C.save_json(C.resolve(cfg["paths"]["model_meta"]), {
+    model_meta_path = cfg["paths"].get("model_meta", "artifacts_real/models/f0_meta.json")
+    C.save_json(C.resolve(model_meta_path), {
         "model_version": version,
         "num_classes": cfg["num_classes"],
         "image_size": cfg["image_size"],
@@ -167,8 +176,11 @@ def main():
         print(f"[03] Wrote model card to: {card_path}")
         
         if val_bal_acc < 0.80 or val_macro_f1 < 0.80:
-            print(f"[03] ERROR: Source gate failed! Balanced Acc={val_bal_acc:.3f}, Macro F1={val_macro_f1:.3f}. Must be >= 0.80.")
-            sys.exit(1)
+            if args.bypass_gate:
+                print(f"[03] WARNING: Source gate failed! Balanced Acc={val_bal_acc:.3f}, Macro F1={val_macro_f1:.3f}. Bypassing for testing.")
+            else:
+                print(f"[03] ERROR: Source gate failed! Balanced Acc={val_bal_acc:.3f}, Macro F1={val_macro_f1:.3f}. Must be >= 0.80.")
+                sys.exit(1)
         else:
             print("[03] Source gate passed successfully.")
             

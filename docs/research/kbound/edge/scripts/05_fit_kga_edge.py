@@ -78,7 +78,8 @@ def main():
         conf_tau = cal["policies"]["conf_tau"]
         entropy_tau = cal["policies"]["entropy_tau"]
 
-        C.save_json(C.resolve(cfg["paths"]["kga_edge_meta"]), {
+        kga_meta_path = cfg["paths"].get("kga_edge_meta", "artifacts_synth/kga_edge_meta.json")
+        C.save_json(C.resolve(kga_meta_path), {
             "eps": cr.eps,
             "alpha": cfg["alpha"],
             "method": cr.method,
@@ -135,8 +136,8 @@ def main():
         results_dir = os.path.normpath(os.path.join(edge_dir, cfg["paths"]["results_dir"]))
         summary_path = os.path.join(results_dir, "calibration_summary.json")
         
-        # Save to kga_edge_meta.json
-        C.save_json(C.resolve(cfg["paths"]["kga_edge_meta"]), {
+        kga_meta_path = cfg["paths"].get("kga_edge_meta", "artifacts_real/calibration/kga_edge_meta.json")
+        C.save_json(C.resolve(kga_meta_path), {
             "eps": result.conformal_radius.eps,
             "alpha": cfg["alpha"],
             "method": result.conformal_radius.method,

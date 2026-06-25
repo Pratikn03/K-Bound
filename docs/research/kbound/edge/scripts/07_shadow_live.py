@@ -44,7 +44,9 @@ def main():
     adapter = EpisodicTentAdapter(f0, lr=cfg["adapter"]["lr"], steps=cfg["adapter"]["steps"],
                                   device=cfg.get("device", "cpu"))
     est = EdgeBenefitEstimator.load(C.resolve(cfg["paths"]["kga_edge"]))
-    eps = float(C.load_json(C.resolve(cfg["paths"]["kga_edge_meta"]))["eps"])
+    is_real = cfg.get("protocol", "edge_label_inspection_v1") == "edge_real_phone_v1"
+    meta_path = cfg["paths"].get("kga_edge_meta", "artifacts_real/calibration/kga_edge_meta.json" if is_real else "artifacts_synth/kga_edge_meta.json")
+    eps = float(C.load_json(C.resolve(meta_path))["eps"])
 
     src_cfg = dict(sh["source"])
     if args.camera is not None:
@@ -74,7 +76,7 @@ def main():
     else:
         raise SystemExit(f"[07] unknown source.kind={src_cfg['kind']!r}")
 
-    log_path = C.resolve(cfg["paths"]["shadow_log"])
+    log_path = C.resolve(cfg["paths"].get("shadow_log", "artifacts_real/logs/shadow_live.jsonl" if is_real else "artifacts_synth/shadow_live.jsonl"))
     logger = WindowLogger(log_path, model_version=version, config_hash=config_hash(C.clean_config(cfg)))
     class_names = cfg.get("class_names")
     dash = build_dashboard(
