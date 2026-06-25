@@ -42,6 +42,7 @@ def main():
     ap.add_argument("--camera", type=int, default=None, help="override: use OpenCV camera index")
     ap.add_argument("--video", default=None, help="override: use OpenCV video path (e.g. pilot video file)")
     ap.add_argument("--loop", action="store_true", help="loop the video / simulated stream infinitely")
+    ap.add_argument("--eps", type=float, default=None, help="override: K-Bound conformal safety radius")
     # --- live-demo dashboard options -----------------------------------------
     ap.add_argument("--view", choices=["console", "window"], default="console",
                     help="console = headless status lines (default); "
@@ -71,6 +72,9 @@ def main():
     is_real = cfg.get("protocol", "edge_label_inspection_v1") == "edge_real_phone_v1"
     meta_path = cfg["paths"].get("kga_edge_meta", "artifacts_real/calibration/kga_edge_meta.json" if is_real else "artifacts_synth/kga_edge_meta.json")
     eps = float(C.load_json(C.resolve(meta_path))["eps"])
+    if args.eps is not None:
+        eps = args.eps
+        print(f"[07] safety radius override: eps={eps:.4f}")
 
     src_cfg = dict(sh["source"])
     if args.camera is not None:
