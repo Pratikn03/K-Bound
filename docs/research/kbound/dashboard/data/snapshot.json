@@ -1,0 +1,505 @@
+{
+  "meta": {
+    "generated_at": "2026-06-25T21:21:24.447276+00:00",
+    "commit": "980068f",
+    "paper": "docs/research/kbound/K-Bound_paper.pdf",
+    "paper_pages": 20,
+    "build_id": "20260625-212124",
+    "artifact_root": "docs/research/kbound/results"
+  },
+  "evidence_strip": {
+    "proven_theorems": {
+      "value": 5,
+      "sub": "Thm 3 finite-sample is conditional"
+    },
+    "theorem_validators": {
+      "value": "pass",
+      "sub": "pytest theory_validation suite"
+    },
+    "controlled_beats_both": {
+      "value": 2,
+      "sub": "Decisive CIFAR-10-C + ImageNet-C SAR where artifact marks beats_both"
+    },
+    "natural_shift_no_harm": {
+      "value": 4,
+      "sub": "Office-Home, iWildCam, Camelyon17, RxRx1 audit"
+    },
+    "open_theory": {
+      "value": 1,
+      "sub": "Conjecture 1 bracketing"
+    },
+    "reproducibility": {
+      "value": "ready",
+      "sub": "bash scripts/rebuild_kbound.sh"
+    }
+  },
+  "research_status": {
+    "theory": "verified",
+    "controlled": "verified",
+    "natural_shifts": "verified",
+    "edge_study": "pending"
+  },
+  "regime_map": [
+    {
+      "id": "helpful",
+      "title": "Helpful + detectable",
+      "action": "KGA may adapt",
+      "status": "verified",
+      "examples": "CIFAR-10-C decisive Tent; helpful-dominated corruptions",
+      "artifact": "docs/research/kbound/results/tta/cifar_tent_results.json"
+    },
+    {
+      "id": "harmful",
+      "title": "Harmful + detectable",
+      "action": "KGA freezes or abstains",
+      "status": "verified",
+      "examples": "Harmful fusion; ImageNet-C SAR noise; online Tent collapse",
+      "artifact": "docs/research/kbound/results/main/kbound_harmful_results.json"
+    },
+    {
+      "id": "unknowable",
+      "title": "Unknowable / weak evidence",
+      "action": "KGA abstains",
+      "status": "open",
+      "examples": "ImageNet-R; clean non-identifiability witness",
+      "artifact": "docs/research/kbound/results/witness/witness_clean.json"
+    }
+  ],
+  "theory_ledger": [
+    {
+      "id": "1",
+      "name": "Non-identifiability + Le Cam minimax (witness)",
+      "status": "verified",
+      "artifact": "docs/research/kbound/results/witness/witness_clean.json",
+      "implication": "Identical label-free evidence can hide opposite adaptation truth \u2014 abstain is required.",
+      "evidence": "100% abstain; all KS p>0.05 (True)"
+    },
+    {
+      "id": "2",
+      "name": "Plug-in regret decomposition + minimax floor",
+      "status": "verified",
+      "artifact": "experiments/kbound/theory_validation/val_thm2_regret.py",
+      "implication": "Policy regret decomposes into estimation + irreducible switching cost.",
+      "evidence": "Numerical identity check in validator"
+    },
+    {
+      "id": "3",
+      "name": "Finite-sample certificate (false-adapt \u2264 \u03b1)",
+      "status": "conditional",
+      "artifact": "src/scripts/kbound/switching_certificate.py",
+      "implication": "Commit-to-adapt only when certificate radius supports positive benefit.",
+      "evidence": "Conditional on disagreement-region sign structure (Thm 5)"
+    },
+    {
+      "id": "3b",
+      "name": "Anytime-valid e-value certificate",
+      "status": "verified",
+      "artifact": "experiments/kbound/theory_validation/val_thm3_evalue.py",
+      "implication": "Sequential false-adapt control without fixed calibration size.",
+      "evidence": "Validator: false-adapt \u2264 \u03b1"
+    },
+    {
+      "id": "4",
+      "name": "Covariate-shift identifiability",
+      "status": "verified",
+      "artifact": "docs/research/kbound/results/regression/regression_covariate.json",
+      "implication": "Under explicit covariate shift, benefit sign can be identified from unlabeled evidence.",
+      "evidence": "Decisions {'ADAPT': 0, 'FREEZE': 11, 'ABSTAIN': 61}"
+    },
+    {
+      "id": "5",
+      "name": "Sign-of-difference on disagreement region",
+      "status": "verified",
+      "artifact": "experiments/kbound/theory_validation/val_thm5_multiclass.py",
+      "implication": "Binary sign certificate lifts to multiclass and regression routing.",
+      "evidence": "100% sign recovery in validator"
+    },
+    {
+      "id": "C1",
+      "name": "Label-free bracketing (Conjecture 1)",
+      "status": "open",
+      "artifact": null,
+      "implication": "Universal label-free upper/lower benefit bounds without extra structure remain open.",
+      "evidence": "Requires reliability-model assumption"
+    }
+  ],
+  "headline_controlled": [
+    {
+      "name": "Mixed regime (369 inst, AUROC)",
+      "status": "verified",
+      "artifact": "docs/research/kbound/results/main/mixed_regime_results.json",
+      "framing": "Beats freeze; near adapt on AUROC.",
+      "freeze": 0.5862,
+      "adapt": 0.6971,
+      "kga": 0.6899,
+      "oracle": 0.7189,
+      "regret_kga": 0.0291,
+      "regret_adapt": null,
+      "regret_freeze": 0.1327,
+      "false_adapt": null
+    },
+    {
+      "name": "Mixed regime \u2014 8 seeds (mean AUROC)",
+      "status": "verified",
+      "artifact": "docs/research/kbound/results/main/rigor_multiseed.json",
+      "framing": "Paired t vs freeze p=7.261976392007134e-11",
+      "freeze": 0.5842,
+      "adapt": 0.697,
+      "kga": 0.686,
+      "oracle": 0.718,
+      "regret_kga": null,
+      "regret_adapt": null,
+      "regret_freeze": null,
+      "false_adapt": null
+    }
+  ],
+  "evidence_board": {
+    "controlled_wins": [
+      {
+        "name": "CIFAR-10-C + Tent (decisive grid)",
+        "status": "verified",
+        "artifact": "experiments/kbound/results/decisive_tta_results.json",
+        "framing": "Beats both trivial policies on decisive CIFAR-10-C Tent grid.",
+        "freeze": 0.6711,
+        "adapt": 0.7857,
+        "kga": 0.7927,
+        "oracle": 0.7942,
+        "regret_kga": 0.0016,
+        "regret_adapt": 0.0086,
+        "regret_freeze": 0.1232,
+        "false_adapt": 0.0,
+        "beats_both_artifact": true
+      },
+      {
+        "name": "ImageNet-C noise + SAR (faithful)",
+        "status": "verified",
+        "artifact": "experiments/kbound/results/imagenetc_noise_sarfix/decisive_tta_results.json",
+        "framing": "Harmful-dominated noise panel \u2014 KGA beats both freeze and adapt on regret.",
+        "freeze": 0.4052,
+        "adapt": 0.3195,
+        "kga": 0.409,
+        "oracle": 0.4319,
+        "regret_kga": 0.0229,
+        "regret_adapt": 0.1124,
+        "regret_freeze": 0.0267,
+        "false_adapt": 0.0,
+        "beats_both_artifact": true
+      },
+      {
+        "name": "Harmful fusion (ELARA fuse)",
+        "status": "verified",
+        "artifact": "docs/research/kbound/results/main/kbound_harmful_results.json",
+        "framing": "Harmful + detectable \u2014 KGA matches freeze, cuts adapt regret ~11\u00d7.",
+        "freeze": 0.7481,
+        "adapt": 0.7284,
+        "kga": 0.7479,
+        "oracle": 0.7499,
+        "regret_kga": 0.0019,
+        "regret_adapt": 0.0214,
+        "regret_freeze": 0.0018,
+        "false_adapt": 1.0
+      },
+      {
+        "name": "Online continual-Tent (harsh)",
+        "status": "verified",
+        "artifact": "docs/research/kbound/results/tta/cifar_tent_online_results.json",
+        "framing": "Adapt collapses under harsh schedule; KGA avoids worst-case collapse.",
+        "freeze": 0.4398,
+        "adapt": 0.3393,
+        "kga": 0.4257,
+        "oracle": 0.6305,
+        "regret_kga": 0.2048,
+        "regret_adapt": 0.2912,
+        "regret_freeze": 0.1907,
+        "false_adapt": null
+      }
+    ],
+    "helpful_dominated": [
+      {
+        "name": "CIFAR-10-C suite (65 cells, mean acc)",
+        "status": "conditional",
+        "artifact": "experiments/kbound/results/cifar10c_suite_results.json",
+        "framing": "Helpful-dominated per-corruption panel \u2014 KGA ties adapt; large regret vs freeze.",
+        "freeze": 0.4121,
+        "adapt": 0.6259,
+        "kga": 0.6257,
+        "oracle": 0.6289,
+        "regret_kga": 0.0032,
+        "regret_adapt": 0.003,
+        "regret_freeze": 0.2168,
+        "false_adapt": 0.0154
+      }
+    ],
+    "natural_shift_no_harm": [
+      {
+        "name": "Office-Home",
+        "status": "no_harm",
+        "artifact": "experiments/kbound/results/officehome_protocol_M_v2/protocol_result.json",
+        "protocol": "OFFICEHOME_PROTOCOL_M_v2",
+        "regret_kga": 0.0022,
+        "regret_adapt": 0.0468,
+        "regret_freeze": 0.0158,
+        "false_adapt": 0.0,
+        "framing": "Matches the safer fixed policy on regret; avoids the worse always-adapt policy."
+      },
+      {
+        "name": "iWildCam",
+        "status": "no_harm",
+        "artifact": "experiments/kbound/results/iwildcam_protocol_H_v2/protocol_result.json",
+        "protocol": "IWILDCAM_PROTOCOL_H_v2",
+        "regret_kga": 0.0037,
+        "regret_adapt": 0.1028,
+        "regret_freeze": 0.0041,
+        "false_adapt": 0.0,
+        "framing": "Matches the safer fixed policy on regret; avoids the worse always-adapt policy."
+      },
+      {
+        "name": "Camelyon17",
+        "status": "no_harm",
+        "artifact": "experiments/kbound/results/camelyon17_protocol_G_v1/analyze_F_results.json",
+        "protocol": "CAMELYON17_PROTOCOL_G_v1",
+        "regret_kga": 0.0,
+        "regret_adapt": 0.0013,
+        "regret_freeze": 0.0749,
+        "false_adapt": 0.0256,
+        "framing": "Natural geo-shift \u2014 KGA near freeze regret, far below adapt regret."
+      },
+      {
+        "name": "RxRx1 (Protocol J audit)",
+        "status": "no_harm",
+        "artifact": "experiments/kbound/results/rxrx1_protocol_J_v1/VERIFIED_FINDINGS.md",
+        "protocol": "RXRX1_PROTOCOL_J_v1",
+        "regret_kga": 0.0,
+        "regret_adapt": 0.2531,
+        "regret_freeze": 0.0,
+        "false_adapt": 0.0,
+        "framing": "Harmful-dominated SAR stream \u2014 KGA freeze-oracle audit (not beats-both headline)."
+      }
+    ],
+    "boundary_negative": [
+      {
+        "name": "ImageNet-R (sar_online routing)",
+        "status": "open",
+        "artifact": "experiments/kbound/results/imagenetr_kbound_light_mps_internal/result_f4a1293b.json",
+        "framing": "Evidence insufficient for a valid commitment \u2014 75% abstention on held routing.",
+        "freeze": 0.4383,
+        "adapt": 0.4206,
+        "kga": 0.4385,
+        "oracle": 0.4606,
+        "regret_kga": 0.0221,
+        "abstention_rate": 0.75,
+        "false_adapt": 0.5,
+        "note": "multi-candidate tau-route (b) uses prediction agreement on a 200-class label space; the binary-Y advantage recovery (Thm 1A) is heuristic here, so per-condition tau is stored for re-pick. (a) KGA and "
+      },
+      {
+        "name": "CIFAR-10.1 (multiseed quick)",
+        "status": "diagnostic",
+        "artifact": "experiments/kbound/results/cifar101_multiseed_v1/pooled_summary.json",
+        "framing": "Transfer-failure probe \u2014 high harmful rates; certificate abstains or freezes.",
+        "pooled": {
+          "tent": {
+            "harmful_rate_mean": 0.675,
+            "harmful_rate_std": 0.017,
+            "regret_mean": 0.0024,
+            "regret_std": 0.0007,
+            "beats_both_count": 0
+          },
+          "eata": {
+            "harmful_rate_mean": 0.5,
+            "harmful_rate_std": 0.059,
+            "regret_mean": 0.0035,
+            "regret_std": 0.0011,
+            "beats_both_count": 1
+          },
+          "sar": {
+            "harmful_rate_mean": 0.05,
+            "harmful_rate_std": 0.031,
+            "regret_mean": 0.0045,
+            "regret_std": 0.0014,
+            "beats_both_count": 0
+          }
+        }
+      }
+    ]
+  },
+  "edge_validation": {
+    "study_status": "pending",
+    "study_label": "Pre-registered / Development Output",
+    "phases": [
+      {
+        "id": "protocol_locked",
+        "label": "Protocol locked",
+        "status": "verified",
+        "detail": "Hash 0c43e8aeea06cce8\u2026 sealed 2026-06-24",
+        "artifact": "docs/experiments/kbound/results/edge_real_phone_v1/split_audit.json"
+      },
+      {
+        "id": "source_model_gate",
+        "label": "Source model gate",
+        "status": "failed",
+        "detail": "Trained with --bypass-gate; held-out at chance level \u2014 gate blocked.",
+        "artifact": "docs/experiments/kbound/results/edge_real_phone_v1/model_card.json"
+      },
+      {
+        "id": "calibration_fit",
+        "label": "Calibration-fit",
+        "status": "verified",
+        "detail": "Sessions ['S03', 'S04'] \u00b7 n=20",
+        "artifact": "docs/experiments/kbound/results/edge_real_phone_v1/calibration_summary.json"
+      },
+      {
+        "id": "conformal_calibration",
+        "label": "Conformal calibration",
+        "status": "verified",
+        "detail": "Sessions ['S05', 'S06'] \u00b7 \u03b5=0.0",
+        "artifact": "docs/experiments/kbound/results/edge_real_phone_v1/calibration_summary.json"
+      },
+      {
+        "id": "heldout_phone_a",
+        "label": "Held-out Phone A",
+        "status": "diagnostic",
+        "detail": "Development replay \u2014 100% abstain, ~25% balanced acc (4-class chance). Not a publication claim.",
+        "artifact": "docs/experiments/kbound/results/edge_real_phone_v1/heldout_metrics.json"
+      },
+      {
+        "id": "replication_phone_b",
+        "label": "External Phone B",
+        "status": "diagnostic",
+        "detail": "Replication stream logged; awaits passing source-model gate.",
+        "artifact": "docs/experiments/kbound/results/edge_real_phone_v1/replication_metrics.json"
+      },
+      {
+        "id": "audit_export",
+        "label": "Audit + table export",
+        "status": "verified",
+        "detail": "8/8 anti-leakage checks passed.",
+        "artifact": "docs/experiments/kbound/results/edge_real_phone_v1/anti_leakage_audit.json"
+      }
+    ],
+    "development_metrics": {
+      "label": "Raw development metrics (non-headline)",
+      "phone_a_balanced_acc": 0.25,
+      "phone_a_macro_f1": 0.10124610591900311,
+      "kga_abstain_rate": 1.0,
+      "latency_ms_mean": 1715.1193297977443,
+      "latency_ms_p95": 1761.3984865984094,
+      "note": "Chance-level accuracy with full abstention \u2014 pipeline/debug output only."
+    },
+    "unblock": {
+      "gate_thresholds": {
+        "balanced_acc": 0.8,
+        "macro_f1": 0.8
+      },
+      "current": {
+        "bypass_gate": true,
+        "val_balanced_acc": 1.0,
+        "val_macro_f1": 1.0,
+        "heldout_balanced_acc": 0.25,
+        "kga_abstain_rate": 1.0
+      },
+      "gaps": [
+        {
+          "check": "Source val balanced acc \u2265 0.80",
+          "passed": false,
+          "detail": "current 1.0 (bypass-gate)"
+        },
+        {
+          "check": "Source val macro-F1 \u2265 0.80",
+          "passed": false,
+          "detail": "current 1.0"
+        },
+        {
+          "check": "Held-out balanced acc > 0.30 (above chance)",
+          "passed": false,
+          "detail": "current 0.25 on 4-class stream"
+        },
+        {
+          "check": "KGA abstain rate < 95%",
+          "passed": false,
+          "detail": "current 1.0"
+        }
+      ],
+      "all_pass": false,
+      "commands": {
+        "capture_runbook": "See docs/research/kbound/edge/PHYSICAL_STUDY_RUNBOOK.md",
+        "retrain_source": "cd AutoML_Flagship_V8\n.venv/bin/python docs/research/kbound/edge/scripts/03_train_source_model.py --config docs/research/kbound/edge/configs/edge_real_phone_v1.yaml --epochs 30",
+        "full_pipeline": "cd AutoML_Flagship_V8\nbash docs/research/kbound/edge/scripts/run_edge_publication_pipeline.sh",
+        "replay_heldout": "cd AutoML_Flagship_V8\n.venv/bin/python docs/research/kbound/edge/scripts/06_replay_heldout.py --config docs/research/kbound/edge/configs/edge_real_phone_v1.yaml",
+        "refresh_dashboard": "cd AutoML_Flagship_V8\nbash docs/research/kbound/scripts/build_dashboard.sh"
+      }
+    },
+    "protocol_hash": "0c43e8aeea06cce8ac9e2f49afa7c484079f4f874eb7676bf8a4d10530bf8a84",
+    "audit_pass": true
+  },
+  "safety": {
+    "metrics": [
+      {
+        "label": "Clean suite \u2014 adapt precision",
+        "value": 0.9,
+        "meaning": "When KGA adapts on the 123-task suite, benefit is positive ~90% of the time."
+      },
+      {
+        "label": "Clean suite \u2014 abstain |\u0394| vs acted |\u0394|",
+        "value": "0.0215 / 0.1324",
+        "meaning": "Abstention concentrates on near-zero benefit instances."
+      },
+      {
+        "label": "Mixed regime \u2014 false-adapt rate",
+        "value": 0.0652,
+        "meaning": "Rate of adapting when true benefit is negative under mixed helpful/harmful shifts."
+      },
+      {
+        "label": "Non-identifiability witness \u2014 abstain rate",
+        "value": 1.0,
+        "meaning": "Identical Z-law with opposite truth \u2192 certificate refuses to commit."
+      },
+      {
+        "label": "Regression covariate-shift decisions",
+        "value": "0/11/61",
+        "meaning": "Adapt / freeze / abstain counts match oracle MSE routing."
+      }
+    ],
+    "prose": {
+      "false_adapt": "FA_u: unconditional rate of choosing ADAPT when true benefit B<0.",
+      "abstain": "Abstention is not 'failure' \u2014 it is the correct response when the certificate cannot justify adapt or freeze.",
+      "unknowable": "When label-free evidence is insufficient (witness) or sign structure is weak (ImageNet-R), KGA withholds commitment.",
+      "certificate_scope": "Claims apply under pre-registered protocol locks, conformal calibration splits, and stated theorem conditions."
+    }
+  },
+  "reproduce": {
+    "primary": "cd AutoML_Flagship_V8 && PYTHON=.venv/bin/python bash scripts/rebuild_kbound.sh",
+    "gpu": "KBOUND_GPU=1 PYTHON=.venv/bin/python bash scripts/rebuild_kbound.sh",
+    "validators": ".venv/bin/python experiments/kbound/theory_validation/val_thm1_lecam.py  # + thm2, thm3, thm5",
+    "dashboard": "bash docs/research/kbound/scripts/build_dashboard.sh",
+    "runtime_estimate": "~2 min CPU core experiments + paper compile",
+    "inputs": [
+      "experiments/elara_u/score_archive",
+      "CIFAR-10 cache"
+    ],
+    "outputs": [
+      "experiments/kbound/results/*.json",
+      "docs/research/kbound/figures/*.png",
+      "docs/research/kbound/K-Bound_paper.pdf",
+      "docs/research/kbound/dashboard/data/snapshot.json"
+    ]
+  },
+  "provenance": {
+    "snapshot_path": "docs/research/kbound/dashboard/data/snapshot.json",
+    "manifest": "docs/research/kbound/results/result_manifest.json",
+    "headline_lock": "research_lock/KBOUND_HEADLINE_FINDINGS.json",
+    "edge_protocol_lock": "docs/research/kbound/edge/artifacts_real/protocol_lock.json",
+    "commit": "980068f",
+    "local_clips_note": "Physical-camera raw clips remain local; only manifests and SHA-256 hashes are versioned."
+  },
+  "headline_lock_summary": {
+    "estimator": "gbr",
+    "conformal": "global",
+    "alpha": 0.1,
+    "success_criteria": [
+      "dev_screen_pass (H/M v2) or fixed adapter (G)",
+      "held_out_test_scored_once",
+      "false_adapt_le_alpha",
+      "beats_both_trivial_policies"
+    ]
+  }
+}

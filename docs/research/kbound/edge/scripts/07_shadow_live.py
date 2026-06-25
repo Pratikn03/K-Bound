@@ -39,7 +39,9 @@ def main():
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--config", default="edge_label_inspection_v1.yaml")
     ap.add_argument("--shadow-config", default="edge_shadow_v1.yaml")
-    ap.add_argument("--camera", type=int, default=None, help="override: use OpenCV camera index")
+    ap.add_argument("--camera", default=None,
+                    help="OpenCV camera index (int), or 'auto' to pick the live feed "
+                         "(iPhone Continuity Camera is often index 1)")
     ap.add_argument("--video", default=None, help="override: use OpenCV video path (e.g. pilot video file)")
     ap.add_argument("--loop", action="store_true", help="loop the video / simulated stream infinitely")
     ap.add_argument("--eps", type=float, default=None, help="override: K-Bound conformal safety radius")
@@ -79,8 +81,16 @@ def main():
     src_cfg = dict(sh["source"])
     if args.camera is not None:
         src_cfg["kind"] = "opencv"
-        src_cfg["camera_index"] = args.camera
         src_cfg["video_path"] = None
+        cam = str(args.camera).strip().lower()
+        if cam == "auto":
+            from kbound_edge.capture import pick_live_camera_index
+
+            idx = pick_live_camera_index()
+            src_cfg["camera_index"] = idx
+            print(f"[07] auto-selected camera index {idx} (highest motion — use index 1 for iPhone if wrong)")
+        else:
+            src_cfg["camera_index"] = int(cam)
     if args.video is not None:
         src_cfg["kind"] = "opencv"
         src_cfg["video_path"] = args.video

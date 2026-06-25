@@ -197,13 +197,20 @@ def _index_rows(rows, src):
 
 def collect(doc, dataset, src):
     """Build an ordered structure: for each METHOD, its two TRIVIAL comparisons.
-    Raises if any of the 6 expected (method, trivial) rows is absent -- we never
+    Raises if any of the expected (method, trivial) rows is absent -- we never
     silently drop or zero-fill a cell."""
     rows, is_synth = _comparisons_for_dataset(doc, dataset, src)
     idx = _index_rows(rows, src)
     out = []
     missing = []
-    for m in METHODS:
+    
+    if dataset == "imagenet-r":
+        methods = ("convnext_base", "convnext_tiny", "efficientnet_b0", "efficientnet_b3",
+                   "resnet101", "resnet152", "resnext101_32x8d", "swin_b", "swin_t", "vit_b_16")
+    else:
+        methods = ("tent", "eata", "sar")
+        
+    for m in methods:
         cell = {"method": m, "rows": {}}
         for t in TRIVIALS:
             key = (m, t)
@@ -213,9 +220,10 @@ def collect(doc, dataset, src):
             cell["rows"][t] = idx[key]
         out.append(cell)
     if missing:
+        expected_str = "{" + ",".join(methods) + "}"
         raise SchemaError(
             f"required comparison(s) absent from {src} for dataset '{dataset}': "
-            f"{missing}. Expected all of {{tent,eata,sar}} x {{always-adapt,"
+            f"{missing}. Expected all of {expected_str} x {{always-adapt,"
             f"always-freeze}}. Refusing to emit a partial/placeholder table.")
     return out, is_synth
 

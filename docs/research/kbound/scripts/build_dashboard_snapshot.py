@@ -18,7 +18,7 @@ from typing import Any
 
 SCRIPT = Path(__file__).resolve()
 KBOUND = SCRIPT.parents[1]
-REPO = SCRIPT.parents[3]
+REPO = SCRIPT.parents[4]
 OUT = KBOUND / "dashboard" / "data" / "snapshot.json"
 DOCS_RESULTS = KBOUND / "results"
 EDGE_RESULTS = REPO / "docs" / "experiments" / "kbound" / "results" / "edge_real_phone_v1"
@@ -207,6 +207,63 @@ def edge_phase_status() -> dict[str, Any]:
             "note": "Chance-level accuracy with full abstention — pipeline/debug output only.",
         }
 
+    gaps = [
+        {
+            "check": "Source val balanced acc ≥ 0.80",
+            "passed": val_bal is not None and val_bal >= gate_threshold["balanced_acc"] and not bypass,
+            "detail": f"current {fmt4(val_bal)}" + (" (bypass-gate)" if bypass else ""),
+        },
+        {
+            "check": "Source val macro-F1 ≥ 0.80",
+            "passed": val_f1 is not None and val_f1 >= gate_threshold["macro_f1"] and not bypass,
+            "detail": f"current {fmt4(val_f1)}",
+        },
+        {
+            "check": "Held-out balanced acc > 0.30 (above chance)",
+            "passed": held_bal is not None and held_bal > 0.30,
+            "detail": f"current {fmt4(held_bal)} on 4-class stream",
+        },
+        {
+            "check": "KGA abstain rate < 95%",
+            "passed": held_abstain is not None and held_abstain < 0.95,
+            "detail": f"current {fmt4(held_abstain)}",
+        },
+    ]
+
+    unblock = {
+        "gate_thresholds": gate_threshold,
+        "current": {
+            "bypass_gate": bypass,
+            "val_balanced_acc": fmt4(val_bal),
+            "val_macro_f1": fmt4(val_f1),
+            "heldout_balanced_acc": fmt4(held_bal),
+            "kga_abstain_rate": fmt4(held_abstain),
+        },
+        "gaps": gaps,
+        "all_pass": study_validated,
+        "commands": {
+            "capture_runbook": "See docs/research/kbound/edge/PHYSICAL_STUDY_RUNBOOK.md",
+            "retrain_source": (
+                "cd AutoML_Flagship_V8\n"
+                ".venv/bin/python docs/research/kbound/edge/scripts/03_train_source_model.py "
+                "--config docs/research/kbound/edge/configs/edge_real_phone_v1.yaml --epochs 30"
+            ),
+            "full_pipeline": (
+                "cd AutoML_Flagship_V8\n"
+                "bash docs/research/kbound/edge/scripts/run_edge_publication_pipeline.sh"
+            ),
+            "replay_heldout": (
+                "cd AutoML_Flagship_V8\n"
+                ".venv/bin/python docs/research/kbound/edge/scripts/06_replay_heldout.py "
+                "--config docs/research/kbound/edge/configs/edge_real_phone_v1.yaml"
+            ),
+            "refresh_dashboard": (
+                "cd AutoML_Flagship_V8\n"
+                "bash docs/research/kbound/scripts/build_dashboard.sh"
+            ),
+        },
+    }
+
     return {
         "study_status": "pending" if not study_validated else "verified",
         "study_label": (
@@ -216,6 +273,7 @@ def edge_phase_status() -> dict[str, Any]:
         ),
         "phases": phases,
         "development_metrics": dev_metrics,
+        "unblock": unblock,
         "protocol_hash": protocol_lock.get("protocol_hash") or split.get("protocol_hash"),
         "audit_pass": audit_pass,
     }
@@ -240,6 +298,7 @@ def build_snapshot() -> dict[str, Any]:
     iwild_vf = load(EXP / "iwildcam_protocol_H_v2" / "VERIFIED_FINDINGS.json") or {}
     camelyon = load(EXP / "camelyon17_protocol_G_v1" / "analyze_F_results.json") or {}
     cifar101_ms = load(EXP / "cifar101_multiseed_v1" / "pooled_summary.json") or {}
+    cifar10c_suite = load(EXP / "cifar10c_suite_results.json") or {}
     imagenetr = load(EXP / "imagenetr_kbound_light_mps_internal" / "result_f4a1293b.json") or {}
 
     cifar10c_dec = (
@@ -400,6 +459,31 @@ def build_snapshot() -> dict[str, Any]:
             )
         )
 
+    helpful_dominated = []
+    if cifar10c_suite:
+        summ = cifar10c_suite.get("summary", cifar10c_suite)
+        aa = summ.get("avg_accuracy", {})
+        fa = summ.get("false_adapt_rate", {})
+        rg = summ.get("regret_to_oracle", {})
+        helpful_dominated.append(
+            policy_row(
+                "CIFAR-10-C suite (65 cells, mean acc)",
+                "conditional",
+                rel(EXP / "cifar10c_suite_results.json"),
+                {
+                    "freeze": fmt4(aa.get("frozen")),
+                    "adapt": fmt4(aa.get("tent")),
+                    "kga": fmt4(aa.get("kga")),
+                    "oracle": fmt4(aa.get("oracle")),
+                    "regret_kga": rg.get("kga"),
+                    "regret_adapt": rg.get("tent"),
+                    "regret_freeze": rg.get("frozen"),
+                    "false_adapt": fa.get("kga"),
+                },
+                "Helpful-dominated per-corruption panel — KGA ties adapt; large regret vs freeze.",
+            )
+        )
+
     natural_no_harm = []
     for vf, proto_path, dataset in (
         (office_vf, EXP / "officehome_protocol_M_v2" / "protocol_result.json", "Office-Home"),
@@ -452,25 +536,25 @@ def build_snapshot() -> dict[str, Any]:
     boundary = []
     if imagenetr:
         pooled = imagenetr.get("routing_a_single_candidate", {})
-        # pick sar_online as representative harmful-heavy candidate
         sar = pooled.get("sar_online", {}) if isinstance(pooled, dict) else {}
-        summ = sar.get("summary", sar) if sar else {}
-        ma = summ.get("mean_acc", imagenetr.get("baselines", {}))
-        if isinstance(ma, dict) and "always_freeze_mean_acc" in imagenetr.get("baselines", {}):
+        kga_block = sar.get("kga", {}) if isinstance(sar.get("kga"), dict) else {}
+        ma = kga_block.get("mean_acc", {})
+        rg = kga_block.get("regret_vs_oracle", {})
+        if ma or imagenetr.get("baselines"):
             boundary.append(
                 {
-                    "name": "ImageNet-R",
+                    "name": "ImageNet-R (sar_online routing)",
                     "status": "open",
                     "artifact": rel(EXP / "imagenetr_kbound_light_mps_internal" / "result_f4a1293b.json"),
-                    "framing": "Evidence insufficient for a valid commitment — high abstention / weak sign structure.",
-                    "freeze": fmt4(imagenetr["baselines"].get("always_freeze_mean_acc")),
-                    "adapt": fmt4(
-                        imagenetr["baselines"]["per_candidate_always_adapt_mean_acc"].get("sar_online")
-                    ),
-                    "kga": fmt4(summ.get("mean_acc", {}).get("K_Bound"))
-                    if isinstance(summ.get("mean_acc"), dict)
-                    else None,
-                    "note": imagenetr.get("multiclass_caveat", "")[:160],
+                    "framing": "Evidence insufficient for a valid commitment — 75% abstention on held routing.",
+                    "freeze": fmt4(ma.get("always_freeze") or imagenetr["baselines"].get("always_freeze_mean_acc")),
+                    "adapt": fmt4(ma.get("always_adapt") or imagenetr["baselines"]["per_candidate_always_adapt_mean_acc"].get("sar_online")),
+                    "kga": fmt4(ma.get("K_Bound")),
+                    "oracle": fmt4(ma.get("oracle")),
+                    "regret_kga": fmt4(rg.get("K_Bound")),
+                    "abstention_rate": fmt4(kga_block.get("abstention_rate")),
+                    "false_adapt": fmt4(kga_block.get("false_adapt_rate_B<0")),
+                    "note": imagenetr.get("multiclass_caveat", "")[:200],
                 }
             )
     if cifar101_ms:
@@ -620,6 +704,7 @@ def build_snapshot() -> dict[str, Any]:
         ],
         "evidence_board": {
             "controlled_wins": controlled_wins,
+            "helpful_dominated": helpful_dominated,
             "natural_shift_no_harm": natural_no_harm,
             "boundary_negative": boundary,
         },
@@ -637,6 +722,7 @@ def build_snapshot() -> dict[str, Any]:
             "primary": "cd AutoML_Flagship_V8 && PYTHON=.venv/bin/python bash scripts/rebuild_kbound.sh",
             "gpu": "KBOUND_GPU=1 PYTHON=.venv/bin/python bash scripts/rebuild_kbound.sh",
             "validators": ".venv/bin/python experiments/kbound/theory_validation/val_thm1_lecam.py  # + thm2, thm3, thm5",
+            "dashboard": "bash docs/research/kbound/scripts/build_dashboard.sh",
             "runtime_estimate": "~2 min CPU core experiments + paper compile",
             "inputs": [
                 "experiments/elara_u/score_archive",

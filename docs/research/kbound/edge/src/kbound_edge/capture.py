@@ -196,9 +196,7 @@ class OpenCVCameraSource(FrameSource):
     """Wrap a real ``cv2.VideoCapture`` (camera index, file path, or device)."""
 
     def __init__(self, index_or_path):
-        import cv2
-
-        self.cap = cv2.VideoCapture(index_or_path)
+        self.cap = _opencv_capture(index_or_path)
 
     def isOpened(self) -> bool:
         return bool(self.cap.isOpened())
@@ -208,6 +206,58 @@ class OpenCVCameraSource(FrameSource):
 
     def release(self) -> None:
         self.cap.release()
+
+
+def _opencv_capture(index_or_path):
+    """Open VideoCapture with AVFoundation on macOS for indexed cameras."""
+    import sys
+
+    import cv2
+
+    if isinstance(index_or_path, int) and sys.platform == "darwin":
+        api = getattr(cv2, "CAP_AVFOUNDATION", None)
+        if api is not None:
+            return cv2.VideoCapture(index_or_path, api)
+    return cv2.VideoCapture(index_or_path)
+
+
+def probe_camera_motion(index: int, n_frames: int = 12, delay_s: float = 0.04) -> Optional[float]:
+    """Temporal variance of frame means; higher usually means a live (non-frozen) feed."""
+    import time
+
+    cap = _opencv_capture(index)
+    if not cap.isOpened():
+        cap.release()
+        return None
+    means: List[float] = []
+    for _ in range(n_frames):
+        ok, frame = cap.read()
+        if ok and frame is not None:
+            means.append(float(frame.mean()))
+        time.sleep(delay_s)
+    cap.release()
+    if len(means) < 3:
+        return None
+    return float(np.var(means))
+
+
+def pick_live_camera_index(max_index: int = 3) -> int:
+    """Pick the camera with the most motion — Continuity/iPhone is often index 1."""
+    best_idx, best_var = 0, -1.0
+    for idx in range(max_index + 1):
+        var = probe_camera_motion(idx)
+        if var is not None and var > best_var:
+            best_var = var
+            best_idx = idx
+    return best_idx
+
+
+def list_camera_probe(max_index: int = 3) -> List[Tuple[int, Optional[float]]]:
+    """Return [(index, motion_var), ...] for each readable camera index."""
+    out: List[Tuple[int, Optional[float]]] = []
+    for idx in range(max_index + 1):
+        out.append((idx, probe_camera_motion(idx)))
+    return out
 
 
 def open_opencv_source(index_or_path) -> OpenCVCameraSource:

@@ -45,4 +45,6 @@ echo "[4/4] compile paper"
   && pdflatex -interaction=nonstopmode kbound.tex >/dev/null 2>&1 \
   && pdflatex -interaction=nonstopmode kbound.tex >/dev/null 2>&1 \
   && cp -f kbound.pdf K-Bound_paper.pdf )
+echo "[dashboard] build"
+bash docs/research/kbound/scripts/build_dashboard.sh
 echo "DONE -> docs/research/kbound/K-Bound_paper.pdf"
