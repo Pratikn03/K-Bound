@@ -13,11 +13,35 @@ import argparse
 import _common as C
 
 
+class LoopingFrameSource:
+    """Wraps a FrameSource and loops it infinitely when it reaches the end."""
+
+    def __init__(self, source, is_fake: bool = False) -> None:
+        self.source = source
+        self.is_fake = is_fake
+
+    def read(self):
+        ok, frame = self.source.read()
+        if not ok or frame is None:
+            if self.is_fake:
+                self.source._src.reset()
+            else:
+                import cv2
+                self.source.cap.set(cv2.CAP_PROP_POS_FRAMES, 0)
+            ok, frame = self.source.read()
+        return ok, frame
+
+    def release(self) -> None:
+        self.source.release()
+
+
 def main():
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--config", default="edge_label_inspection_v1.yaml")
     ap.add_argument("--shadow-config", default="edge_shadow_v1.yaml")
     ap.add_argument("--camera", type=int, default=None, help="override: use OpenCV camera index")
+    ap.add_argument("--video", default=None, help="override: use OpenCV video path (e.g. pilot video file)")
+    ap.add_argument("--loop", action="store_true", help="loop the video / simulated stream infinitely")
     # --- live-demo dashboard options -----------------------------------------
     ap.add_argument("--view", choices=["console", "window"], default="console",
                     help="console = headless status lines (default); "
@@ -52,6 +76,10 @@ def main():
     if args.camera is not None:
         src_cfg["kind"] = "opencv"
         src_cfg["camera_index"] = args.camera
+        src_cfg["video_path"] = None
+    if args.video is not None:
+        src_cfg["kind"] = "opencv"
+        src_cfg["video_path"] = args.video
 
     max_frames = None
     if src_cfg["kind"] == "fake":
@@ -85,6 +113,8 @@ def main():
     )
     if args.view == "window":
         print("[07] live window open -- press 'q' in the window to stop early")
+    if args.loop:
+        source = LoopingFrameSource(source, is_fake=(src_cfg["kind"] == "fake"))
     ctrl = ShadowController(
         f0, adapter, est, eps,
         window_size=sh["window_size"], image_size=cfg["image_size"],
