@@ -38,6 +38,13 @@ repos:
       - id: check-merge-conflict
       - id: debug-statements
 
+  # --- Secret scanning (gitleaks) ---------------------------------------------
+  # Blocks commits that contain API keys, tokens, or other credentials.
+  - repo: https://github.com/gitleaks/gitleaks
+    rev: v8.18.4
+    hooks:
+      - id: gitleaks
+
   # --- Static typing for the kga/ package only --------------------------------
   # The rest of the repo carries optional/heavy deps and is not yet fully typed;
   # `kga/` is pure numpy/scipy and type-clean, so we gate it here.
