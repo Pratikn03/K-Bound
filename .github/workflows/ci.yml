@@ -24,19 +24,23 @@ jobs:
 
   tests:
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.11", "3.12"]
     env:
       PYTHONPATH: "${{ github.workspace }}/src"
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
-          python-version: "3.11"
+          python-version: ${{ matrix.python-version }}
       - name: Install minimal deps
         run: |
           python -m pip install --upgrade pip
           python -m pip install -r requirements-api.txt
-          python -m pip install pandas==3.0.3 pytest==9.0.3 pytest-cov==7.1.0 httpx2==2.2.0 matplotlib==3.10.9 pyarrow==24.0.0 pypdf==6.11.0 tifffile==2026.3.3
-          python -m pip install torch==2.12.0 torchvision==0.27.0 --index-url https://download.pytorch.org/whl/cpu
+          python -m pip install pandas pytest pytest-cov httpx matplotlib pyarrow pypdf tifffile
+          python -m pip install torch torchvision --index-url https://download.pytorch.org/whl/cpu
       - name: Run tests with coverage
         run: |
           pytest tests --cov=src/uais --cov-report=xml --cov-report=term --cov-report=html -v
@@ -109,13 +113,17 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           python -m pip install -r requirements-api.txt
-          python -m pip install bandit[toml] pytest httpx2==2.2.0
+          python -m pip install bandit[toml] pip-audit pytest httpx
       - name: API security regression tests
         run: |
           pytest -q tests/test_api_production_security.py
-      - name: Deploy Bandit scan
+      - name: Dependency vulnerability audit (pip-audit, informational)
+        run: |
+          pip-audit -r requirements-api.txt --desc || true
+      - name: Bandit scan (deploy gating; src informational)
         run: |
           bandit -r deploy -x '*/._*,*/.__*'
+          bandit -r src -ll --exit-zero -x '*/._*,*/.__*'
       - name: Compose config validates with required production env
         run: |
           docker compose config >/tmp/uais-compose-config.yml
@@ -170,3 +178,35 @@ jobs:
           assert app.title == "UAIS-V Enhanced API"
           assert CORS_ORIGINS == ["https://ci.example"]
           PY
+
+  kbound-core:
+    name: KGA core (hermetic smoke + theorem validators)
+    runs-on: ubuntu-latest
+    env:
+      PYTHONPATH: "${{ github.workspace }}:${{ github.workspace }}/src"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install core deps (numpy/scipy + lint/type)
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install numpy scipy ruff mypy
+      - name: Ruff + mypy on the typed kga core
+        run: |
+          ruff check kga
+          mypy kga --ignore-missing-imports
+      - name: Certificate single-source drift guard
+        run: |
+          python -m pip install pytest
+          pytest tests/test_certificate_drift_guard.py -q
+      - name: Hermetic KGA trichotomy smoke (no data, no torch)
+        run: bash scripts/smoke_kbound.sh
+      - name: Per-theorem validators
+        run: |
+          shopt -s nullglob
+          for v in experiments/kbound/theory_validation/val_*.py; do
+            echo "== $v =="
+            python "$v" || exit 1
+          done
