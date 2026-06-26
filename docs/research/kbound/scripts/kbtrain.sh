@@ -149,9 +149,52 @@ case "${1:-}" in
   kga-elara-integrated)
     "$VENV/bin/python" "$KGA_ELARA" \
       --protocol research_lock/KGA_ELARA_INTEGRATION_v1.yaml ;;
-  kga-elara-integrated-dry-run)
-    "$VENV/bin/python" "$KGA_ELARA" \
-      --protocol research_lock/KGA_ELARA_INTEGRATION_v1.yaml --dry-run ;;
+  cifar10c)
+    # CIFAR-10-C stress grid (decide_kga, out-of-fold LOO radius). Seed via 2nd arg: kbtrain.sh cifar10c 0
+    S="${2:-0}"
+    caffeinate -is python "$S2" --benchmarks cifar10c \
+      --data-root experiments/kbound/cifar --methods tent eata sar \
+      --device "${KB_DEVICE:-mps}" --seed "$S" \
+      --out-results "$RES/cifar10c_stress/seed$S" ;;
+  pacs)
+    caffeinate -is python docs/research/kbound/scripts/pacs_vlcs_runner.py --dataset PACS \
+      --root experiments/kbound/domainbed --device "${KB_DEVICE:-mps}" \
+      --out "$RES/pacs_result.json" ;;
+  final-all)
+    # ── FINAL multi-seed end-to-end rerun of ALL 9 datasets on the OUT-OF-FOLD code. ──
+    # CIFAR-10-C, ImageNet-C, CIFAR-10.1, Camelyon17, RxRx1, ImageNet-R, PACS, iWildCam, Office-Home.
+    SEEDS="${KB_SEEDS:-0 1 2 3 4}"; export KB_DEVICE="${KB_DEVICE:-mps}"
+    STAMP=$(date +%Y%m%d_%H%M%S)
+    # (A) INTEGRITY GUARD: refuse to run if any in-sample-eps pattern is back in a scorer.
+    if grep -REn "predict\(Zc\) - Bc|abs\(Bhat_c - Bc\)" \
+         docs/research/kbound/scripts/analyze_F.py docs/research/kbound/scripts/score_kbound_holdout.py \
+         docs/research/kbound/scripts/mixed_stream_kbound.py "$PROTO_DEV_LOCK" 2>/dev/null \
+       | grep -vE "resid_c|_loo|out-of-fold"; then
+      echo "ABORT: in-sample-eps pattern detected in a scorer -- fix before the final run."; exit 1; fi
+    echo ">> FINAL-ALL  seeds=[$SEEDS]  device=$KB_DEVICE  stamp=$STAMP  (caffeinated; expect many hours)"
+    for s in $SEEDS; do
+      echo "==== seed $s : per-seed TTA generation ===="
+      bash "$0" cifar10c "$s"                                                          # 1 CIFAR-10-C
+      caffeinate -is python "$S2" --benchmarks imagenetc --imagenetc-root "$IC_FAST" \
+        --corruptions gaussian_noise shot_noise impulse_noise --arch resnet50 \
+        --methods tent eata sar --device "$KB_DEVICE" --seed "$s" \
+        --out-results "$RES/imagenetc_noise/seed$s"                                    # 2 ImageNet-C
+      caffeinate -is python "$S2" --benchmarks cifar101 --data-root experiments/kbound/cifar \
+        --methods tent eata sar --device "$KB_DEVICE" --seed "$s" \
+        --out-results "$RES/cifar101/seed$s"                                           # 3 CIFAR-10.1
+      caffeinate -is python docs/research/kbound/scripts/pacs_vlcs_runner.py --dataset PACS \
+        --root experiments/kbound/domainbed --device "$KB_DEVICE" --seed "$s" \
+        --out "$RES/pacs_seed$s.json"                                                  # 7 PACS
+    done
+    bash "$0" camelyon-fast      # 4 Camelyon17  (runner does 4 training seeds in one call)
+    bash "$0" rxrx1-9plus        # 5 RxRx1       (9+ pre-set configs)
+    bash "$0" imagenetr-d        # 6 ImageNet-R  (runner does 4 training seeds in one call)
+    # 8/9 pre-registered LOCKED-protocol scoring -- NOT seed-redrawn (that would be p-hacking);
+    #     their multi-seed robustness is the condition-bootstrap (bootstrap_win_cis.py).
+    bash "$0" protocol-h-v2      # 8 iWildCam (out-of-fold scoring of locked logs)
+    bash "$0" protocol-m-v2      # 9 Office-Home (out-of-fold scoring of locked logs)
+    "$VENV/bin/python" docs/research/kbound/scripts/collate_final.py --results "$RES" --stamp "$STAMP"
+    echo ">> FINAL-ALL done -> $RES/final_manifest_$STAMP.{json,md}  (re-run for multi-time; each stamps a new manifest)" ;;
   *)
     echo "usage: bash kbtrain.sh [noise|...|officehome-holdout|officehome-repl|protocol-h-v2|protocol-m-v2|kga-elara-integrated|kga-elara-integrated-dry-run|noiseblur|vit|vit-fast]"; exit 1 ;;
 esac

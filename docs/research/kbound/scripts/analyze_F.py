@@ -169,17 +169,28 @@ def run_split(records, cal_seeds, test_seeds, estimator="ppi_debias", conformal=
     elif estimator != "gbr":
         raise ValueError(estimator)
 
+    # Out-of-fold (leave-one-out) residuals for the conformal radius -> no in-sample leakage.
+    # (The in-sample radius was ~10x too small on small dev sets; see audit 2026-06.)
+    if estimator == "gbr":
+        _loo = np.empty(len(Bc))
+        for _i in range(len(Bc)):
+            _tr = np.arange(len(Bc)) != _i
+            _loo[_i] = fit_point(Zc[_tr], Bc[_tr]).predict(Zc[_i:_i + 1])[0]
+        resid_c = np.abs(_loo - Bc)
+    else:
+        resid_c = np.abs(Bhat_c - Bc)  # ppi_debias variant (non-headline)
+
     if conformal == "global":
-        eps = float(np.quantile(np.abs(Bhat_c - Bc), 1 - ALPHA))
+        eps = float(np.quantile(resid_c, 1 - ALPHA))
         dec = decide_global(Bhat_t, eps)
     elif conformal == "mondrian":
         # per-composition (cell) eps; fall back to global eps for tiny/unseen groups
-        eps_glob = float(np.quantile(np.abs(Bhat_c - Bc), 1 - ALPHA))
+        eps_glob = float(np.quantile(resid_c, 1 - ALPHA))
         dec = np.array(["ABSTAIN"] * len(Bhat_t), dtype=object)
         groups = set(compc.tolist())
         for g in groups:
             mc = compc == g
-            epsg = (float(np.quantile(np.abs(Bhat_c[mc] - Bc[mc]), 1 - ALPHA))
+            epsg = (float(np.quantile(resid_c[mc], 1 - ALPHA))
                     if mc.sum() >= 5 else eps_glob)
             mt = compt == g
             dec[mt] = decide_global(Bhat_t[mt], epsg)
