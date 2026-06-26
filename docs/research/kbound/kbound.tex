@@ -31,6 +31,8 @@
 \hfuzz=2pt
 \raggedbottom  % let columns end at natural height instead of stretching -> removes mid-page gaps
 
+\usepackage[ruled,vlined,linesnumbered]{algorithm2e}
+
 \theoremstyle{plain}
 \newtheorem{theorem}{Theorem}
 \newtheorem{lemma}{Lemma}
@@ -388,9 +390,8 @@ observable disagreement region. \emph{Regret-to-oracle} denotes $R(g)-R(g^\star)
 per-condition oracle $g^\star=\mathbf1[\Delta>0]$.
 
 \section{Definitions}\label{sec:def}
-\begin{definition}[Observable risk alignment]
-$Z$ is \emph{risk-aligned} if it identifies or bounds $\sign\Delta(z)$ (it need not
-reveal the label, only whether adaptation helps).
+\begin{definition}[Observable risk alignment / Identifiability]
+$Z$ is \emph{risk-aligned} if the sign of adaptation benefit $\sign\Delta$ is identifiable from its law (identifiability)—specifically, no two admissible worlds with opposite benefit signs induce the same evidence distribution. We treat conformal coverage of the benefit estimator separately as a property of the calibration sample (see Theorem~\ref{thm:cert}).
 \end{definition}
 \begin{definition}[Regimes]
 At evidence $z$: \emph{knowably helpful} if $Z$ certifies $\Delta(z)>0$ (\textbf{adapt});
@@ -431,20 +432,25 @@ grids use the leave-one-out (jackknife) radius, whose calibration-set coverage i
 construction and distribution-free only asymptotically (the finite-sample jackknife$+$ of
 Barber et al.\ gives $1-2\alpha$; not implemented).
 
-\begin{center}\fbox{\parbox{0.94\columnwidth}{\small
-\textbf{Algorithm 1: \textsc{KGA} (Knowability-Guided Adaptation).}\\[2pt]
-\textbf{Input:} frozen $f_0$; candidate adaptation $f_a$; unlabeled target batch $X_{1:m}$;
-calibrated benefit model $\widehat\Delta(\cdot)$; level $\alpha$.\\
-\textbf{1.}~Extract label-free evidence $Z=\phi(X_{1:m},f_0,f_a)$ (entropy, confidence,
-predicted-class balance and its drift, marginal-prediction KL, update norm, detector
-disagreement).\\
-\textbf{2.}~Estimate benefit $\widehat\Delta\leftarrow\widehat\Delta(Z)$ and radius
-$\varepsilon$ with out-of-fold conformal coverage $\Pr[\,|\widehat\Delta-\Delta|\le\varepsilon\,]\ge1-\alpha$ (exact under a clean split).\\
-\textbf{3.}~\textbf{if} $\widehat\Delta-\varepsilon>0$: \textbf{return} \textsc{adapt} (deploy
-$f_a$); \textbf{elif} $\widehat\Delta+\varepsilon<0$: \textbf{return} \textsc{freeze} (keep
-$f_0$); \textbf{else}: \textbf{return} \textsc{abstain} (keep $f_0$, flag for review).\\[2pt]
-\textbf{Guarantee (Thm~\ref{thm:cert}):} the false-adapt and false-freeze rates are each
-$\le\alpha$.}}\end{center}
+\begin{algorithm}[t]
+\caption{\textsc{KGA} (Knowability-Guided Adaptation)}
+\label{alg:kga}
+\SetKwInOut{Input}{Input}
+\SetKwInOut{Guarantee}{Guarantee}
+\Input{frozen $f_0$; candidate adaptation $f_a$; unlabeled target batch $X_{1:m}$; calibrated benefit model $\widehat\Delta(\cdot)$; level $\alpha$.}
+Extract label-free evidence $Z=\phi(X_{1:m},f_0,f_a)$ (entropy, confidence, predicted-class balance and its drift, marginal-prediction KL, update norm, detector disagreement)\;
+Estimate benefit $\widehat\Delta\leftarrow\widehat\Delta(Z)$ and radius $\varepsilon$ with out-of-fold conformal coverage $\Pr[\,|\widehat\Delta-\Delta|\le\varepsilon\,]\ge1-\alpha$ (exact under a clean split)\;
+\eIf{$\widehat\Delta-\varepsilon>0$}{
+  \Return \textsc{adapt} (deploy $f_a$)\;
+}{
+  \eIf{$\widehat\Delta+\varepsilon<0$}{
+    \Return \textsc{freeze} (keep $f_0$)\;
+  }{
+    \Return \textsc{abstain} (keep $f_0$, flag for review)\;
+  }
+}
+\Guarantee{the false-adapt and false-freeze rates are each $\le\alpha$ (Thm~\ref{thm:cert}).}
+\end{algorithm}
 
 \paragraph{Assumptions.} \textsc{KGA} inherits exactly the assumptions of
 Theorem~\ref{thm:cert}: (i) a labeled validation/calibration sample of paired benefits that is

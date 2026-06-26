@@ -123,8 +123,8 @@ outside the abstain band controls false-adapt and false-freeze at level $\alpha$
 Suppose $\hat\Delta(z)$ admits a radius $\varepsilon(z)$ with
 $\Pr[|\hat\Delta-\Delta|\le\varepsilon]\ge1-\alpha$. The rule
 \textsc{adapt} if $\hat\Delta-\varepsilon>0$, \textsc{freeze} if
-$\hat\Delta+\varepsilon<0$, else \textsc{abstain}, has false-adapt and false-freeze
-rates $\le\alpha$ each. With $\hat\Delta$ an empirical-Bernstein mean of $n$ bounded
+$\hat\Delta+\varepsilon<0$, else \textsc{abstain}, has marginal, unconditional false-adapt and false-freeze
+rates $\le\alpha$ each (over the calibration draw under exchangeability). With $\hat\Delta$ an empirical-Bernstein mean of $n$ bounded
 paired benefits (variance proxy $\sigma^2$, range $b-a$), the certificate commits once
 $n\gtrsim\big(2\sigma^2/\Delta^2\big)\log(2/\alpha)+3(b-a)|\Delta|^{-1}\log(2/\alpha)$:
 sample complexity scales as $\Delta^{-2}$, logarithmically in $1/\alpha$. A sequential,
@@ -134,7 +134,7 @@ variant included) is Theorem~B.1 of the manuscript.
 \begin{proof}[Proof sketch]
 On the good event, \textsc{adapt} implies $\Delta\ge\hat\Delta-\varepsilon>0$; the
 complement has mass $\le\alpha$; commitment when $\varepsilon(n)<|\Delta|$ inverts the
-Bernstein radius. The residual burden --- a calibration sample exchangeable with
+Bernstein radius. Note that this marginal conformal guarantee applies to the radius and decision rather than the accuracy of the benefit model itself, and relies on calibration-deployment exchangeability at the locked-protocol granularity, degrading under task shift. The residual burden --- a calibration sample exchangeable with
 deployment --- is exactly what Theorem~\ref{thm:conj1-dichotomy}(iv) makes auditable.
 Validated on synthetic e-process tests (false-adapt $\le\alpha$ at nominal level).
 \end{proof}
@@ -143,7 +143,7 @@ Validated on synthetic e-process tests (false-adapt $\le\alpha$ at nominal level
 \emph{Intuition.} On the disagreement region, the benefit sign is knowable iff an observable
 margin $|M|$ exceeds a calibration-drift budget $\beta$; otherwise abstention is forced.
 Fix the observables $(\mu,P_S,f_0,f_a)$ with $\mu(D)>0$, so $M$ is determined, and let
-$\mathcal C_\beta=\{P_T:|\gamma|\le\beta\}$. The statements below hold \emph{unconditionally}:
+$\mathcal C_\beta=\{P_T:|\gamma|\le\beta\}$. Under the location/alignment regularity of Appendix~\ref{app:theory-ext}, and noting that $\gamma$ is a population quantity not observed at deploy, the statements below hold \emph{unconditionally}
 for \emph{every} drift budget $\beta\ge0$ and every target with $\mu(D)>0$, with $\beta$ a free
 parameter of the frontier rather than an assumption (and (iii) shows every identifying class is
 of this form).
@@ -231,7 +231,7 @@ the swap is $v\mapsto-v$. (iv) Empirical-Bernstein for $\hat M$, a product-ratio
 perturbation bound for $\hat b_a$, and the flip-min for bit-robust soundness; the
 stealth construction is a strictly interior LP on the $2^4$ correctness patterns
 matching all pairwise moments to a rank-one target with a shifted first moment.
-Validated (machine-checked, seeds fixed): deficit matches theory to $5.7\times10^{-4}$;
+Validated (machine-checked, seeds fixed; note that the 0-mismatch verifies the band-vs-frontier identity given the analytic frontier, not the geometry independently, and C3/C4 are nominal/logical SCM witnesses): deficit matches theory to $5.7\times10^{-4}$;
 flip $\TV=0$ with $\max_j|b'_j+b_j|=1.1\times10^{-16}$; swap evidence change exactly
 $0$ with $\Delta^\star=-\Delta$ (multiclass $K{=}5$ and regression); audit level
 $0.000\le\alpha{=}0.05$, power $1.000$; stealth $\tau=2\times10^{-17}$ with recovery
