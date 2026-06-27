@@ -186,6 +186,16 @@ only under structure. K-Bound differs by certifying the \emph{sign} of adaptatio
 before committing, with an explicit abstain region and false-adapt control at level $\alpha$.
 
 \section{Problem setup and theory}\label{sec:setup}\label{sec:theory}
+
+\begin{figure}[t]\centering
+\includegraphics[width=0.95\linewidth]{figures/fig_frontier_schematic.png}
+\caption{\textbf{The benefit-sign frontier.} The sign of the adaptation benefit is identifiable from
+label-free evidence iff the observable margin $|\widehat{M}|$ exceeds the calibration-drift budget
+$\beta$. Outside the band KGA \textsc{adapt}s (knowably helpful) or \textsc{freeze}s (knowably harmful);
+inside the band---the unknowable region---abstention is information-theoretically forced.}
+\label{fig:frontier}
+\end{figure}
+
 Source $P_S(X,Y)$ has labels at train/validation; target $P_T(X,Y)$ exposes only $P_T(X)$
 at test time. Fix loss $\ell$, frozen $f_0$, and candidate $f_a$. Target risk
 $R_T(f)=\E_{P_T}[\ell(f(X),Y)]$. The \emph{adaptation benefit} is
@@ -415,6 +425,15 @@ Protocol~A).}
 \end{figure}
 
 \subsection{Decision-baseline comparison: a finite-sample false-adapt guarantee}
+
+\begin{figure}[t]\centering
+\includegraphics[width=0.92\linewidth]{figures/fig_alpha_coverage.png}
+\caption{\textbf{The safety knob.} Sweeping the level $\alpha$ trades decision coverage against the
+false-adapt rate: the certificate holds false-adapt at or below target while coverage grows with
+$\alpha$, so a deployer chooses the operating point rather than accepting a fixed one.}
+\label{fig:alpha-coverage}
+\end{figure}
+
 \textsc{KGA}'s claim is not merely ``better than always-adapt/always-freeze''---it is better than
 \emph{simple label-free decision rules} under the same locked protocol. On the CIFAR-10-C stress grid
 (Tent candidate, identical cells), we score six rules from the same evidence
@@ -495,7 +514,17 @@ SAR  & always-adapt     & $0.319$          & $0.1124$ & $44\%$ & \\
 \label{tab:imagenetc-faithful}
 \end{table}
 
-\subsection{Natural-shift results: uniformly no-harm under a valid out-of-fold radius}\label{sec:nat-shift-headline}
+\subsection{Natural-shift results: one CI-robust beats-both, otherwise no-harm}\label{sec:nat-shift-headline}
+
+\begin{figure}[t]\centering
+\includegraphics[width=0.95\linewidth]{figures/fig_natural_forest.png}
+\caption{\textbf{Natural-shift safety at a glance.} Regret reduction of KGA over each fixed policy
+(positive $\rightarrow$ KGA better) with $95\%$ bootstrap CIs. On Office-Home KGA beats \emph{both}
+always-adapt and always-freeze (both CIs exclude zero); on iWildCam it beats always-adapt and
+\emph{ties} always-freeze under resampling (damage-prevention).}
+\label{fig:forest}
+\end{figure}
+
 On real shifts we separate two layers that must not be conflated:
 \textbf{Headline} = canonical \textsc{KGA} only (Algorithm~\ref{alg:kga}; dev-locked adapter
 from a pre-registered panel, or fixed adapter for~G; GBR $\widehat\Delta$ + global
