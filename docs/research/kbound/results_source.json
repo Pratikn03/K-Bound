@@ -1,0 +1,22 @@
+{
+  "_README": "Single source of truth for the K-Bound paper's result-table numbers. These are the HONEST OUT-OF-FOLD values (NOT protocol_result.json::test_locked, which uses an in-sample radius and overstates Office-Home/iWildCam as beats-both). After a multi-seed/tuning re-run, refresh these fields from the out-of-fold evaluation, then run scripts/make_tables.py to regenerate paper/generated/kbound_numbers.tex, then rebuild the PDFs. Numbers below match the current committed PDFs exactly.",
+  "alpha": 0.10,
+  "natural_shifts": {
+    "officehome_M_v2": {
+      "regret_adapt": 0.0468, "regret_freeze": 0.0158, "regret_kga": 0.0157,
+      "false_adapt": 0.0, "n_test": 35, "verdict": "no-harm",
+      "gap_vs_adapt": 0.031, "ci_vs_adapt": [0.004, 0.062],
+      "gap_vs_freeze": 0.0001, "ci_vs_freeze": [0.0, 0.0003]
+    },
+    "iwildcam_H_v2": {
+      "regret_adapt": 0.1028, "regret_freeze": 0.0041, "regret_kga": 0.0041,
+      "false_adapt": 0.0, "n_test": 72, "verdict": "no-harm",
+      "gap_vs_adapt": 0.099, "ci_vs_adapt": [0.080, 0.119],
+      "gap_vs_freeze": 0.0004, "ci_vs_freeze": [0.0, 0.0013]
+    }
+  },
+  "corruption_grids": {
+    "cifar10c_stress": {"regret_kga": 0.0016, "regret_adapt": 0.0086, "regret_freeze": 0.1232, "false_adapt": 0.0, "verdict": "beats-both-CI-robust"},
+    "imagenetc_sar":   {"regret_kga": 0.0086, "regret_adapt": 0.0606, "regret_freeze": 0.0277, "false_adapt": 0.0, "verdict": "beats-both"}
+  }
+}
