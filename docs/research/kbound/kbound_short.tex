@@ -45,7 +45,7 @@ We prove an exact benefit-sign frontier: over a declared target class, the sign 
 
 On the identifiable side of the frontier, we give an adapt/freeze/abstain certificate that controls unconditional false-adapt and false-freeze probabilities under stated risk-alignment, coverage, and calibration assumptions. We instantiate the certificate as Knowability-Guided Adaptation (KGA), a mechanism-agnostic wrapper around existing adaptation methods including Tent, EATA, and SAR.
 
-Experiments separate the regimes predicted by the theory. On controlled harmful-detectable stress tracks, KGA beats both always-adapt and always-freeze for Tent and EATA on CIFAR-10-C, and for a harmful SAR operating point on ImageNet-C, while maintaining zero observed unconditional false-adapt decisions. On held-out natural shifts the picture is regime-dependent: KGA delivers a confidence-interval-robust beats-both on Office-Home (it beats both always-adapt and always-freeze with bootstrap CIs excluding zero, at zero false-adapt), prevents damage on iWildCam (beats always-adapt, ties always-freeze), and does no harm on the one-sided Camelyon17 and RxRx1 shifts. On weak or split-specific evidence regimes, it abstains or freezes conservatively rather than claiming universal improvement. K-Bound therefore reframes TTA as an identifiability-limited deployment decision: adapt when benefit is certifiable, freeze when harm is certifiable, and abstain when label-free evidence cannot support a valid commitment.
+Experiments separate the regimes predicted by the theory. On controlled harmful-detectable stress tracks, KGA beats both always-adapt and always-freeze for Tent and EATA on CIFAR-10-C, and for a harmful SAR operating point on ImageNet-C, while maintaining zero observed unconditional false-adapt decisions. On held-out natural shifts KGA is uniformly no-harm under a valid out-of-fold radius: it beats the worse fixed policy and ties the better at zero false-adapt (on Office-Home and iWildCam it beats always-adapt and ties always-freeze; Camelyon17 and RxRx1 are one-sided), and no natural shift is a beats-both once the conformal radius is held out of sample. On weak or split-specific evidence regimes, it abstains or freezes conservatively rather than claiming universal improvement. K-Bound therefore reframes TTA as an identifiability-limited deployment decision: adapt when benefit is certifiable, freeze when harm is certifiable, and abstain when label-free evidence cannot support a valid commitment.
 \end{abstract}
 
 
@@ -113,17 +113,17 @@ mechanism-agnostic wrapper around Tent/EATA/SAR (Algorithm~\ref{alg:kga}).
 WILDS natural shifts (Camelyon17, iWildCam, RxRx1, FMoW), a rendition shift (ImageNet-R), and a
 reproduction shift (CIFAR-10.1)---
 \textsc{KGA} beats both fixed policies with bootstrap $95\%$ CIs excluding zero on the CIFAR-10-C
-stress grid (ImageNet-C SAR corroboration), and adds a CI-robust beats-both on the Office-Home natural shift (Protocol~M~v2; beats always-adapt and
-always-freeze, both $95\%$ CIs excluding zero, false-adapt $0\%$), damage-prevention on iWildCam (beats
-always-adapt, ties always-freeze under resampling), and no-harm on the one-sided Camelyon17 and RxRx1
-shifts (Table~\ref{tab:regime-summary}).
+stress grid (ImageNet-C SAR corroboration), and is \emph{uniformly no-harm} on the held-out natural
+shifts (Office-Home, iWildCam, Camelyon17, RxRx1): under a valid out-of-fold radius it beats the worse
+fixed policy and ties the better at false-adapt $0\%$, with no natural-shift beats-both
+(Table~\ref{tab:regime-summary}).
 \end{enumerate}
 
 Empirically, \textsc{KGA} follows the regime map: synthetic stress grids supply the policy
 \emph{wins} (CIFAR-10-C, ImageNet-C SAR), where harmful adaptation is frequent and detectable; on
-held-out real shifts \textsc{KGA} is regime-dependent: a CI-robust beats-both on Office-Home
-(Protocol~M~v2), damage-prevention on iWildCam (beats always-adapt, ties always-freeze), and no-harm on
-the one-sided Camelyon17 and RxRx1 shifts; elsewhere
+held-out real shifts \textsc{KGA} is \emph{uniformly no-harm}: under a valid out-of-fold radius it
+beats the worse fixed policy and ties the better at false-adapt $\le\alpha$ (Office-Home, iWildCam,
+Camelyon17, RxRx1), with no natural-shift beats-both; elsewhere
 weak evidence correctly forces abstention or conservative freeze (Appendix).
 
 \begin{table}[t]\centering\footnotesize
@@ -140,7 +140,7 @@ Dataset / regime & \textsc{KGA} result & Evidence \\
 \midrule
 CIFAR-10-C stress & beats both & CI-robust, Holm corrected \\
 ImageNet-C SAR & beats both & mechanism-faithful operating point \\
-Office-Home M v2 & beats both & CI-robust (beats adapt and freeze) \\
+Office-Home M v2 & no-harm & beats adapt (CI), ties freeze \\
 iWildCam H v2 & no-harm & beats adapt (CI), ties freeze \\
 Camelyon17 genuine OOD & ties adapt & no-harm \\
 RxRx1 & ties freeze & no-harm \\
@@ -515,14 +515,14 @@ SAR  & always-adapt     & $0.319$          & $0.1124$ & $44\%$ & \\
 \label{tab:imagenetc-faithful}
 \end{table}
 
-\subsection{Natural-shift results: one CI-robust beats-both, otherwise no-harm}\label{sec:nat-shift-headline}
+\subsection{Natural-shift results: uniformly no-harm under a valid out-of-fold radius}\label{sec:nat-shift-headline}
 
 \begin{figure}[t]\centering
 \includegraphics[width=0.95\linewidth]{figures/fig_natural_forest.png}
 \caption{\textbf{Natural-shift safety at a glance.} Regret reduction of KGA over each fixed policy
-(positive $\rightarrow$ KGA better) with $95\%$ bootstrap CIs. On Office-Home KGA beats \emph{both}
-always-adapt and always-freeze (both CIs exclude zero); on iWildCam it beats always-adapt and
-\emph{ties} always-freeze under resampling (damage-prevention).}
+(positive $\rightarrow$ KGA better) with $95\%$ bootstrap CIs under a valid out-of-fold radius. On both
+Office-Home and iWildCam, KGA beats always-adapt (CI excludes zero) and \emph{ties} always-freeze
+(CI includes zero): no-harm / damage-prevention, not a beats-both.}
 \label{fig:forest}
 \end{figure}
 
@@ -548,7 +548,7 @@ zero; point = point-estimate beats-both that ties the better fixed policy under 
 \toprule
 Dataset & Adapter lock & Calibration & Held-out test & Candidate & Status \\
 \midrule
-Office-Home M v2 & target-val panel & dev seeds $\{0,1\}$ & target-test $\{0,1\}$ & SAR aggressive & beats-both (CI) \\
+Office-Home M v2 & target-val panel & dev seeds $\{0,1\}$ & target-test $\{0,1\}$ & SAR aggressive & no-harm \\
 iWildCam H v2 & \texttt{id\_val} panel & cal seed $\{0\}$ & test seed $\{1\}$ & Tent episodic & no-harm \\
 Camelyon17 G & dev hospitals & dev seeds $\{0,1\}$ & genuine OOD $\{2,3,4\}$ & EATA online & no-harm \\
 RxRx1 (Prot.\ J) & locked protocol & protocol cal & OOD test & fixed online adapter & no-harm \\

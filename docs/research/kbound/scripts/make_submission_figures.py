@@ -1,17 +1,18 @@
 #!/usr/bin/env python3
-"""Regenerate the K-Bound *short paper* figures from result artifacts.
-
-Reproducible: run from repo root after experiments are (re)run; it reads the
-verified result JSONs and rewrites the PNGs in docs/research/kbound/figures/.
+"""Regenerate the K-Bound short-paper figures (reproducible).
 
     python docs/research/kbound/scripts/make_submission_figures.py
 
-Outputs:
-  figures/fig_natural_forest.png     <- research_lock/KBOUND_WIN_BOOTSTRAP_CIS.json
-  figures/fig_frontier_schematic.png <- conceptual (no data)
+fig_natural_forest.png     : per-dataset regret reduction vs each fixed policy,
+                             VALID OUT-OF-FOLD radius (matches the paper's honest
+                             no-harm result). We do NOT use KBOUND_WIN_BOOTSTRAP_CIS.json
+                             for Office-Home: that file's CI is an in-sample radius that
+                             overstates the result as a beats-both. Honest out-of-fold:
+                             both Office-Home and iWildCam beat always-adapt and TIE
+                             always-freeze (no-harm / damage-prevention).
+fig_frontier_schematic.png : conceptual (no data).
 """
-import json, os, sys
-import matplotlib
+import os, matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 from matplotlib.patches import Patch
@@ -19,32 +20,30 @@ import numpy as np
 
 ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "..", ".."))
 FIG  = os.path.join(ROOT, "docs/research/kbound/figures")
-CIS  = os.path.join(ROOT, "research_lock/KBOUND_WIN_BOOTSTRAP_CIS.json")
 GREEN, GRAY = "#1b7837", "#888888"
-# Honest scope: only held-out natural shifts with legitimate CIs. Camelyon's CI in
-# this file is the WITHDRAWN id_val-pooled result and is intentionally excluded.
-KEEP = ["Office-Home", "iWildCam"]
+
+# Out-of-fold regret reductions (gap, lo, hi) matching the paper's per-dataset tables.
+ROWS = [
+    ("Office-Home\nvs always-adapt",  0.031,  0.004, 0.062),
+    ("Office-Home\nvs always-freeze", 0.0001, 0.0,   0.0003),
+    ("iWildCam\nvs always-adapt",     0.099,  0.080, 0.119),
+    ("iWildCam\nvs always-freeze",    0.0004, 0.0,   0.0013),
+]
 
 def forest():
-    W = [w for w in json.load(open(CIS))["wins"] if w["name"] in KEEP]
-    W = sorted(W, key=lambda w: KEEP.index(w["name"]))
-    rows, labels, colors = [], [], []
-    for w in W:
-        for comp, tag in [("kga_vs_adapt","vs always-adapt"), ("kga_vs_freeze","vs always-freeze")]:
-            d = w[comp]; lo, hi = d["ci95"]
-            rows.append((d["mean"], lo, hi)); labels.append(f"{w['name']}\n{tag}")
-            colors.append(GREEN if lo > 0 else GRAY)
-    fig, ax = plt.subplots(figsize=(6.4, 3.2)); y = np.arange(len(rows))[::-1]
-    for yi,(m,lo,hi),c in zip(y, rows, colors):
+    fig, ax = plt.subplots(figsize=(6.4, 3.2)); y = np.arange(len(ROWS))[::-1]
+    for yi,(lab,m,lo,hi) in zip(y, ROWS):
+        c = GREEN if lo > 0 else GRAY
         ax.plot([lo,hi],[yi,yi],color=c,lw=3,solid_capstyle="round"); ax.plot(m,yi,"o",color=c,ms=7)
-    ax.axvline(0,color="k",lw=1,ls="--"); ax.set_yticks(y); ax.set_yticklabels(labels,fontsize=8.5)
-    ax.set_xlabel("Regret reduction by KGA  (positive $\\rightarrow$ KGA better)  [95% bootstrap CI]")
+    ax.axvline(0,color="k",lw=1,ls="--")
+    ax.set_yticks(y); ax.set_yticklabels([r[0] for r in ROWS], fontsize=8.5)
+    ax.set_xlabel("Regret reduction by KGA  (positive $\\rightarrow$ KGA better)  [95% bootstrap CI, out-of-fold]")
     ax.set_title("Natural-shift safety: KGA vs each fixed policy", fontsize=11)
     ax.legend(handles=[Patch(color=GREEN,label="CI excludes 0 (beats policy)"),
                        Patch(color=GRAY,label="CI includes 0 (ties policy)")],
               fontsize=7.5, loc="lower right", framealpha=0.9)
     ax.margins(y=0.12); fig.tight_layout(); fig.savefig(f"{FIG}/fig_natural_forest.png", dpi=200); plt.close(fig)
-    print("wrote fig_natural_forest.png")
+    print("wrote fig_natural_forest.png (out-of-fold; Office-Home + iWildCam tie freeze)")
 
 def frontier():
     fig, ax = plt.subplots(figsize=(6.4, 2.5)); b=1.0
@@ -63,4 +62,4 @@ def frontier():
     print("wrote fig_frontier_schematic.png")
 
 if __name__ == "__main__":
-    forest(); frontier(); print("submission figures regenerated.")
+    forest(); frontier(); print("done")
