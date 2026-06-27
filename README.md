@@ -1,456 +1,106 @@
-# K-Bound — The Knowability Boundary of Label-Free Adaptation
+# K-Bound / KGA — Knowability-Guided Adaptation
 
 [![kbound-ci](https://github.com/Pratikn03/AutoML_Flagship_V8/actions/workflows/kbound-ci.yml/badge.svg)](https://github.com/Pratikn03/AutoML_Flagship_V8/actions/workflows/kbound-ci.yml)
 [![CI](https://github.com/Pratikn03/AutoML_Flagship_V8/actions/workflows/ci.yml/badge.svg)](https://github.com/Pratikn03/AutoML_Flagship_V8/actions/workflows/ci.yml)
 [![Ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json)](https://github.com/astral-sh/ruff)
-[![pre-commit](https://img.shields.io/badge/pre--commit-enabled-brightgreen?logo=pre-commit)](https://github.com/pre-commit/pre-commit)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 
-> **Current paper.** *When Is Label-Free Adaptation Knowable?* — a theory + certificate
-> (KGA: Knowability-Guided Adaptation) for deciding, without target labels, whether to
-> **adapt, freeze, or abstain** under distribution shift. ELARA (below) is the worked
-> reliability-gated-fusion instantiation that K-Bound generalises.
->
-> - Paper: [`docs/research/kbound/K-Bound_paper.pdf`](docs/research/kbound/K-Bound_paper.pdf) (20 pp)
-> - **Manuscript (long-form, 166 pp):** [`docs/research/kbound/manuscript/K-Bound_Manuscript.pdf`](docs/research/kbound/manuscript/K-Bound_Manuscript.pdf)
-> - Reproduction dashboard: [`docs/research/kbound/kbound_dashboard.html`](docs/research/kbound/kbound_dashboard.html)
-> - Reproduction notebooks (10, executed): [`notebooks/`](notebooks/) (`00`–`09`)
-> - Importable algorithm: [`kga/`](kga/) — `from kga import KGA` · `python -m kga decide`
-> - Theorem↔code map: [`docs/research/kbound/THEOREM_CODE_STATUS.md`](docs/research/kbound/THEOREM_CODE_STATUS.md)
-> - **Reproduce everything:** `PYTHON=.venv/bin/python bash scripts/rebuild_kbound.sh` (add `KBOUND_GPU=1` for the TTA experiments)
->
-> Status: 5/5 core theorems proved (Thm 3 conditional, Thm 5 binary→multiclass), 39/39 theorem
-> tests pass, all experiments completed (anomaly routing, regression, CIFAR-10-C, online continual-TTA,
-> ImageNet-C noise, Camelyon17, ImageNet-R, RxRx1, CIFAR-10.1). Honest scope: KGA's edge is safety
-> and cross-regime robustness.
->
-> - **Frontier validation (2026-06-14):** synthetic + real-ImageNet-C corroboration of the benefit-sign frontier, plus a Camelyon17 τ\* recalibration (debug-scale natural-shift win) — [`experiments/kbound/theory_validation/frontier_decisive/`](experiments/kbound/theory_validation/frontier_decisive/). Theorem↔validator crosswalk: [`docs/research/kbound/THEOREM_NUMBERING_CROSSWALK.md`](docs/research/kbound/THEOREM_NUMBERING_CROSSWALK.md). Paper + figure addendum: [`docs/research/kbound/K-Bound_paper_with_frontier.pdf`](docs/research/kbound/K-Bound_paper_with_frontier.pdf). Integrity fixes log: [`INTEGRITY_FIXES.md`](INTEGRITY_FIXES.md).
+**Should a model adapt to new data it has no labels for — or would adapting make it worse?**
+K-Bound answers that *before* adapting. It formalizes label-free test-time adaptation (TTA)
+as an **adapt / freeze / abstain** decision governed by the sign of the adaptation benefit,
+and ships a finite-sample certificate, **KGA** (Knowability-Guided Adaptation), that controls
+the false-adapt rate at a chosen level α.
 
-### Engineering & reproducibility
+It is a **safety layer for TTA**, not a new adaptation method: KGA wraps existing adapters
+(Tent, EATA, SAR) and decides *whether* to trust them on this batch.
 
-Contributor + engineering guide: [`docs/ENGINEERING.md`](docs/ENGINEERING.md). Data provenance + integrity: [`DATA.md`](DATA.md).
+## Why it exists
 
-- **The decision rule, importable:** the pure-numpy [`kga/`](kga/) package — `python -m kga decide --calib calib.npy --test test.npy --alpha 0.1`, or `from kga import KGA`. Served at `POST /decide` ([`deploy/api/kga_routes.py`](deploy/api/kga_routes.py)).
-- **Hermetic smoke (zero external data, < 60s):** `bash scripts/smoke_kbound.sh`.
-- **Full rebuild:** `bash scripts/rebuild_kbound.sh` (`KBOUND_GPU=1` adds the TTA experiments).
-- **Pipelines:** real Prefect flows — `python -m src.orchestration.runner list`.
-- **Model registry + integrity:** `python -m uais.registry.build_manifest`; model cards under [`models/`](models/).
-- **Training harness:** `python -m uais.training.cli --list` (configs in [`configs/training/`](configs/training/)).
-- **Quality gates:** `ruff check . && pytest -q`, or `pre-commit run --all-files`; CI in [`.github/workflows/kbound-ci.yml`](.github/workflows/kbound-ci.yml).
+The same unlabeled objective that recovers accuracy under one shift can silently destroy it
+under another, and with no target labels the system can't tell which it's facing. K-Bound
+proves this is partly **fundamental**: when two target worlds produce identical label-free
+evidence but opposite adaptation benefit, no label-free rule can be right in both —
+abstention is information-theoretically necessary. It also gives the exact frontier: the
+benefit sign is recoverable **iff** an observable margin exceeds the calibration-drift budget.
 
----
+## Install
 
-# ELARA-U — Cross-Domain Anomaly Meta-Routing Benchmark  *(superseded foundation)*
-
-**ELARA-U** studies anomaly detection as a *meta-routing* problem: given a
-heterogeneous detector zoo and a labelled validation slice, decide when to
-**select, fuse, stack, or fall back** — without using test labels. It is a
-benchmark + an honest result, not a new detector.
-
-### The precise claim (verified)
-> **Stacking beats selection; reliability routing helps *iff* modalities can fail independently.**
-
-- On **123 tasks / 5 families** (tabular, image-OOD, text, cyber, fraud), a
-  rank-normalized logistic **stack** beats validation auto-selection
-  (**+0.036 AUROC**, CI [0.023, 0.050]; 86/123 wins) and the best fixed
-  detector (**+0.075**, CI [0.052, 0.101]) — leakage-free, all **Holm-robust**.
-- **Reliability/drift routing adds no value** on single-input data across
-  4 deployment regimes + a sealed natural temporal-shift benchmark (D22), and a
-  reliability gate significantly *hurts* the stack (Holm p < 10⁻⁸).
-- **But it wins where it structurally should:** on **two** real multimodal datasets
-  with independent modality failure (**D23**) — Real-IAD-D3 (15 categories) and
-  MVTec-3D (7 categories) — drift-gated fusion recovers performance (e.g. Real-IAD-D3
-  0.517 → 0.715). Real-IAD-D3: H1 +0.241, H2 +0.386, H3 +0.248; MVTec-3D: H1 +0.207,
-  H2 +0.317, H3 +0.211; all CIs exclude zero on **both**.
-
-**Hardening (Path 1).** The stacking result survives every standard reviewer attack:
-- **Comprehensive baselines (D28)** — the headline stack beats *all nine* non-oracle
-  baselines (best-fixed, auto-select, MetaOD-style, rank/CW/raw/calibrated averages,
-  AutoML greedy ensemble, per-family specialist) **and both test-label oracles**
-  (best single +0.025, best pair +0.032; CIs exclude 0). Not a weak-baseline win.
-- **Stacker family** — RF/GBM/HistGBM stackers match logistic; the simple average *loses*.
-- **Learned selection (D25)** — a MetaOD-style meta-selector (LOO, 28 meta-features)
-  scores **below** naive auto-select (−0.011, CI [−0.017, −0.006]); stacking beats it
-  by **+0.044** (CI [+0.030, +0.060]). *Combining, not selecting, is the winning move.*
-- **Calibration** — a validation-only isotonic layer: ECE 0.39→0.02, Brier 0.25→0.07, NLL 0.74→0.28.
-- **Sealed external (D24)** — method frozen *before* scoring **74 untouched** ADBench
-  tasks under a different feature extractor (ViT/RoBERTa); one-shot, the stack still
-  wins **+0.016** vs auto-select (CI [+0.004, +0.032]) and **+0.043** vs best fixed.
-- **Fully independent external (D27)** — the hardest test: a different *source*, not
-  the same suite re-extracted. Method + 20-task list frozen, scored once on sources
-  absent from the archive (sklearn digits/wine/wdbc + HAR smartphones). The advantage
-  is *larger* there: **+0.111** vs auto-select (CI [+0.052, +0.176]), **+0.209** vs
-  best fixed. Stacking generalises to genuinely new data.
-- **Boundaries (honest negatives)** — the significant win holds only where base
-  detectors are *individually informative*. It is marginal/n.s. on **time-series**
-  (NAB +0.008, SMD +0.011) and on the **near-chance BAF fraud panel** (D26; 6 Feedzai
-  variants, detectors ≈0.6 AUROC; +0.011 n.s., and *below* the best fixed detector).
-  Stacking amplifies signal that exists but cannot conjure it where the zoo is weak.
-
-We do **not** claim universal/per-dataset SOTA. The contribution is a
-cross-domain benchmark, a strong stacking baseline, a Holm-robust negative
-result for reliability routing on single-input data, and a positive result that
-pins its exact operating boundary.
-
-> **Canonical paper + thesis:**
-> [docs/research/ELARA_U_PAPER_v0.tex](docs/research/ELARA_U_PAPER_v0.tex) and
-> [docs/research/ELARA_U_THESIS_CHAPTER.tex](docs/research/ELARA_U_THESIS_CHAPTER.tex).
-> Rebuild both (regenerating all tables/figures from verified data) with
-> `bash scripts/rebuild_paper.sh` → `output/pdf/`.
-
-### Reproduce the evidence
 ```bash
-PYTHONPATH=src python src/scripts/elara_u/honest_benchmark.py             # main 123-task result
-PYTHONPATH=src python src/scripts/elara_u/path1_stacking_strength.py      # stronger stackers + calibration
-PYTHONPATH=src python -m scripts.elara_u.baselines_suite                  # D28 comprehensive baselines + oracle ceilings
-PYTHONPATH=src python -m scripts.elara_u.metaod_baseline                  # D25 MetaOD-style learned selection
-PYTHONPATH=src python -m scripts.elara_u.sealed_external_eval             # D24 sealed external (ViT/RoBERTa, one-shot)
-PYTHONPATH=src python -m scripts.elara_u.build_indep_suite               # D27 build fully-independent suite
-PYTHONPATH=src python -m scripts.elara_u.openml_indep_eval               # D27 fully-independent external (one-shot)
-PYTHONPATH=src python src/scripts/elara_u/timeseries_benchmark.py         # NAB univariate time-series
-PYTHONPATH=src python src/scripts/elara_u/smd_benchmark.py                # SMD multivariate time-series
-PYTHONPATH=src python -m scripts.elara_u.baf_benchmark                    # D26 BAF fraud panel (Kaggle creds req.)
-PYTHONPATH=src python src/scripts/elara_u/multimodal_reliability_test.py  # D23 (Real-IAD-D3)
-PYTHONPATH=src python -m scripts.elara_u.multimodal_reliability_test \
-  --cache experiments/fusion/mvtec3d_score_cache --glob "*.npz" --tag MVTec-3D \
-  --out experiments/elara_u/multimodal_reliability_results_mvtec3d.json     # D23 (MVTec-3D, 2nd dataset)
-PYTHONPATH=src python src/scripts/elara_u/natural_shift_benchmark.py      # D22 sealed natural shift
-PYTHONPATH=src python src/scripts/elara_u/statistical_audit.py            # Holm correction
-PYTHONPATH=src python -m pytest tests/elara_u/                            # no-leakage + schema + smoke
-bash scripts/rebuild_paper.sh                                            # paper + thesis PDFs
+# Today (lightweight, numpy + scikit-learn only):
+pip install "git+https://github.com/Pratikn03/AutoML_Flagship_V8.git#subdirectory=docs/research/kbound/kbound_pkg"
+# After the PyPI release:  pip install kbound
 ```
-Curated results live in `experiments/elara_u/` (`honest_benchmark.json`,
-`statistical_audit.json`, `path1_stacking_strength.json`, `deep_zoo_results.json`,
-`metaod_baseline_results.json`, `baselines_suite_results.json`,
-`sealed_external_results.json`,
-`timeseries_results.json`, `smd_results.json`, `baf_fraud_results.json`,
-`indep_external_results.json`,
-`multimodal_reliability_results.json`, `natural_shift_results.json`,
-`calibration_results.json`, `manifest.json`, `sha256sums.txt`); the Real-IAD-D3
-score cache is in `experiments/fusion/realiad_d3_score_cache/`. Pre-registered
-protocols (D19–D25) are under `research_lock/`.
 
----
+## 30-second quickstart
 
-### Legacy: ELARA / RGA source system
-ELARA-U reuses the earlier **ELARA** (Evidence-Layered Anomaly Reliability Architecture) **/ RGA** (Reliability-Gated Attention) program
-as *foundation and honest-negative evidence*, not as universal proof: the
-in-domain MVTec-3D RGA+ win and the dead-modality stress mechanism are strong,
-while the clean-transfer ties/failures (and Theorem T9) are exactly what motivate
-the cross-domain routing framing. The RGA source code remains under
-`src/uais/fusion/attention/`; its evidence is summarised in the paper's
-source-system table. The legacy RGA manuscripts have been superseded by the
-ELARA-U paper/thesis above.
+```python
+import numpy as np
+from kbound.certificate import conformal_radius, decide
 
----
+# calibration residuals r_i = |Δ̂_i − Δ_i| from a held-out split
+residuals = np.abs(np.random.default_rng(0).standard_normal(200)) * 0.05
+eps = conformal_radius(residuals, alpha=0.10)        # finite-sample radius
 
-## What's in this repo
+decide(Bhat=0.12,  eps=eps)   # -> 'adapt'    (benefit certified positive)
+decide(Bhat=-0.12, eps=eps)   # -> 'freeze'   (benefit certified negative)
+decide(Bhat=0.01,  eps=eps)   # -> 'abstain'  (sign not identifiable)
+```
 
-| Top-level | Purpose |
+## Results — honest scope
+
+KGA's value is **regime-specific**: it wins where harmful adaptation is frequent, detectable,
+and costly, and it *ties* (does no harm) where adapting is already the right call. It is **not**
+a universal accuracy booster. Every number below is from a pre-registered protocol
+(`research_lock/`) scored once on held-out test, with bootstrap confidence intervals.
+
+| Setting | Result | Reading |
+|---|---|---|
+| **Office-Home** (Protocol M v2) | **beats-both, CI-robust**, false-adapt 0% | protects against harm *and* preserves useful adaptation |
+| **CIFAR-10-C / ImageNet-C** (collapse-prone) | **beats-both** (Tent/EATA; SAR-collapse cells) | real win where adaptation is a coin-flip |
+| **iWildCam** (Protocol H v2) | beats always-adapt; **ties always-freeze** | damage-prevention (point-estimate win) |
+| **Camelyon17 / RxRx1** | **no-harm** — matches the better fixed policy | one-sided shifts; nothing to beat |
+| Mixed-deployment stream | **13–24× lower regret** than either fixed policy (CIs exclude 0) | the case KGA is built for |
+| **fMoW / PovertyMap / ImageNet-R** | honest nulls | evidence-poor / *unknowable* regime the theory predicts |
+
+> A previously reported Camelyon17 "beats-both" was traced to pooling in-distribution
+> validation cells into the held-out set and **withdrawn** — see the paper's natural-shift section.
+
+## Reproduce
+
+```bash
+bash scripts/smoke_kbound.sh                              # hermetic, no data, no torch, <60s
+python -m pytest tests/test_certificate_drift_guard.py    # paper's certificate ≡ kga core
+python -m pytest tests/test_kga_package.py -q             # the importable certificate
+```
+Raw datasets are not committed; re-download via the scripts referenced in [`DATA.md`](DATA.md).
+Headline numbers reproduce from the cached result JSONs in `experiments/kbound/results/`.
+
+## Papers
+
+- Conference paper: [`docs/research/kbound/kbound.pdf`](docs/research/kbound/kbound.pdf)
+- Short version: [`docs/research/kbound/kbound_short.pdf`](docs/research/kbound/kbound_short.pdf)
+- Long-form thesis: [`docs/research/kbound/manuscript/`](docs/research/kbound/manuscript/)
+
+## Repository layout
+
+| Path | What |
 |---|---|
-| `src/uais/` | Primary research package — `fusion/attention/`, `supervised/`, `anomaly/`, `sequence/`, `nlp/`, `vision/`, `explainability/`, `utils/` |
-| `src/uais_v/` | 30-sequence behavior dataset builder + model definitions used by `tests/test_multi_sequence_30_*.py` |
-| `src/scripts/` | Experiment runners (`run_breakthrough_experiment.py`, prep scripts, asset generators) |
-| `configs/` | YAML configs for each fusion benchmark and baseline |
-| `data/raw/` | Datasets (Credit Card Fraud, UNSW-NB15, Online Shoppers, news text, MVTec 3D-AD) |
-| `experiments/fusion/` | Result JSONs and benchmark metadata that feed the paper |
-| `docs/research/` | Manuscripts, table sources, figures, and the audit / review folder |
-| `tests/` | 240 passing tests (2 skipped) |
-| `deploy/api/` + `dashboard/` | FastAPI service and Streamlit dashboard for demo use |
-| `scripts/rebuild_paper.sh` | One-command paper-and-thesis rebuild from current JSON artifacts |
+| [`kga/`](kga/) | The KGA certificate core — pure-numpy, typed, the maintained source of truth |
+| [`docs/research/kbound/kbound_pkg/`](docs/research/kbound/kbound_pkg/) | The pip-installable `kbound` package (frozen copy, drift-guarded) |
+| [`experiments/kbound/`](experiments/kbound/) | Experiment drivers + cached result JSONs (`results/`) + theorem validators |
+| [`research_lock/`](research_lock/) | Pre-registered protocols + decision log (the integrity backbone) |
+| [`tests/`](tests/) | Test suite incl. anti-leakage + manuscript-claim-consistency guards |
+| [`deploy/api/`](deploy/api/) | Hardened FastAPI service exposing `POST /decide` |
+| [`docs/dev-notes/`](docs/dev-notes/) | Archived development notes / audit trail |
 
-## Quick start
+`src/uais/` and the ELARA-U anomaly meta-routing benchmark (a worked instantiation K-Bound
+generalizes) remain in the tree as foundation and breadth evidence.
 
-```bash
-# 1. Install
-python -m venv .venv && source .venv/bin/activate
-pip install -r requirements.txt
-# For exact reproduction of headline numbers, prefer the pinned lockfile:
-# pip install -r requirements.lock.txt
+## Cite
 
-# 2. Run the regression suite
-PYTHONPATH=src pytest tests/ -q
-
-# 3. Smoke-test the fusion pipeline
-PYTHONPATH=src python scripts/ci_smoke.py
-
-# 4. Rebuild the paper + thesis from the current JSON artifacts
-bash scripts/rebuild_paper.sh
-# → output/pdf/ELARA_U_PAPER_v0.pdf
-# → output/pdf/ELARA_U_THESIS_CHAPTER.pdf
-```
-
-> **Note on exFAT volumes**: If the repo lives on an exFAT-formatted external
-> drive (as on the author's setup), unix execute bits are pinned by the
-> filesystem and `./scripts/X.sh` may fail. Invoke shell scripts via
-> `bash scripts/X.sh` instead — this works on every filesystem.
-
-## Data acquisition (~88 GB total)
-
-```bash
-# Acquire all raw datasets in one pass (verifies SHA256 anchors where available)
-bash scripts/download_all_datasets.sh
-bash scripts/download_all_datasets.sh --verify-only   # re-check anchors anytime
-bash scripts/download_all_datasets.sh --only eyecandies,mvtec3d
-```
-
-## One union research system
-
-The older standalone domain pipelines and the newer paper-grade research
-pipeline are now joined by one orchestrator:
-
-```bash
-# Preview every step without running training.
-PYTHONPATH=src .venv/bin/python src/scripts/run_union_research_system.py \
-  --mode full \
-  --with-tests \
-  --dry-run
-
-# Run the full union system: legacy fraud/cyber/behavior, paper fusion,
-# healthcare audits, tables, figures, PDFs, and focused verification.
-PYTHONPATH=src .venv/bin/python src/scripts/run_union_research_system.py \
-  --mode full \
-  --with-tests \
-  --continue-on-error
-```
-
-The runner writes per-step logs and a machine-readable summary under
-`experiments/union_research_system/`. By default it runs the legacy standalone
-fraud/cyber/behavior experiments plus the current research evidence pipeline,
-but keeps deprecated dashboard fusion and optional standalone NLP/vision
-training opt-in:
-
-```bash
-PYTHONPATH=src .venv/bin/python src/scripts/run_union_research_system.py \
-  --mode full \
-  --include-deprecated-dashboard \
-  --include-optional-nlp-vision
-```
-
-This does not blur the evidence boundary: legacy-domain outputs are retained for
-system continuity, while paper claims still come from the disciplined fusion
-benchmarks, healthcare replay audits, and regenerated manuscript assets.
-
-## Local quality gates
-
-Use the same commands before treating a research run or manuscript rebuild as
-current:
-
-```bash
-PYTHONPATH=src ./.venv/bin/python -m pytest -q
-PYTHONPATH=src ./.venv/bin/python -m ruff check --select E9,F63,F7,F82 .
-./scripts/rebuild_paper.sh
-```
-
-The benchmark harness selects classification thresholds from the validation
-split (`evaluation.decision_threshold: val_f1`) and applies those fixed
-thresholds to the held-out test split. Do not tune thresholds on test labels.
-
-## Reproducing the headline experiments
-
-```bash
-# A. Build the naturally paired MVTec 3D-AD fusion inputs (requires
-#    data/raw/mvtec3d/<category>/{train,validation,test}/...)
-PYTHONPATH=src python src/scripts/prepare_mvtec3d_fusion_benchmark.py
-
-# B. Build the label-aligned secondary benchmark (RealFusion)
-PYTHONPATH=src python src/scripts/prepare_realfusion_la_benchmark.py
-
-# C. Run the 5-seed breakthrough experiment on each benchmark
-PYTHONPATH=src python src/scripts/run_breakthrough_experiment.py \
-  --config configs/attention_mvtec3d_fusion.yaml \
-  --output experiments/fusion/mvtec3d_results.json
-
-PYTHONPATH=src python src/scripts/run_breakthrough_experiment.py \
-  --config configs/attention_real_fusion.yaml \
-  --output experiments/fusion/craf_real_results.json
-
-# Optional hard-mode RealFusion rerun: first build inputs with
-# --scorer-train-fraction 0.05, then run the hard config.
-PYTHONPATH=src python src/scripts/prepare_real_fusion_benchmark.py \
-  --scorer-train-fraction 0.05 \
-  --output experiments/fusion/real_domain_fusion_hard_inputs.csv \
-  --metadata experiments/fusion/real_domain_fusion_hard_metadata.json
-
-PYTHONPATH=src python src/scripts/run_breakthrough_experiment.py \
-  --config configs/attention_real_fusion_hard.yaml \
-  --output experiments/fusion/craf_real_results_hard.json
-
-# D. Build and run the public MVTec PatchCore supervised-paired protocol
-PYTHONPATH=src python src/scripts/prepare_mvtec3d_fusion_benchmark.py \
-  --dataset-root data/raw/mvtec3d \
-  --feature-mode patchcore \
-  --embedding-dim 16 \
-  --supervised-paired \
-  --output experiments/fusion/mvtec3d_patchcore_supervised_paired_inputs.csv \
-  --metadata experiments/fusion/mvtec3d_patchcore_supervised_paired_metadata.json
-
-PYTHONPATH=src python src/scripts/run_breakthrough_experiment.py \
-  --config configs/attention_mvtec3d_patchcore_supervised_paired.yaml \
-  --output experiments/fusion/mvtec3d_patchcore_supervised_paired_results.json
-
-# E. Regenerate the paper assets and recompile the PDFs
-./scripts/rebuild_paper.sh
-```
-
-The benchmark configs honor disciplined train / validation / test boundaries via
-the `split_column` setting: MVTec variants use `split`, and RealFusion uses
-`fusion_split`. The fusion train fold is therefore disjoint from held-out
-benchmark rows.
-
-## Headline numbers (current, under disciplined splits)
-
-**Naturally paired MVTec 3D-AD (3,226 paired samples, 8 categories, 22.4% positive):**
-
-| Method | Clean ROC-AUC |
-|---|---|
-| **RGA attention** | **0.561 ± 0.017** |
-| Early fusion MLP | 0.545 ± 0.025 |
-| Static attention | 0.542 ± 0.025 |
-| Random forest | 0.500 ± 0.000 |
-| Late fusion / Tent / TTT | 0.500 ± 0.000 |
-| Conf.-weighted mean | 0.446 ± 0.000 |
-
-These numbers follow MVTec's canonical one-class protocol: train and
-validation are normal-only, while test is mixed. That makes the supervised
-fusion table a protocol diagnostic rather than a normal two-class leaderboard.
-The repo also includes held-out-category, M3DM-style, PatchCore, and
-PatchCore supervised-paired variants to probe this boundary. In the public
-PatchCore supervised-paired protocol, RGA+ boosted fusion reaches ROC-AUC
-`0.738`, the auxiliary RGA+ router reaches `0.740`, Tent reaches `0.735`, TTT
-`0.724`, random forest `0.702`, static attention `0.632`, and base RGA
-`0.628`. That result is included with the negative controls: canonical
-PatchCore is still led by confidence-weighted mean, and held-out-category ROC
-is only a marginal RGA+ win (`0.517` vs TTT `0.516`) with PR-AUC still favoring
-TTT.
-
-**Label-aligned stress-only secondary benchmark (RealFusion, 8,000 composite samples):**
-
-The clean split is near-saturated. Under all-domain coherent attacks,
-the same gate *improves* ROC-AUC by $+0.0506$ (zero attack) and
-$+0.0319$ (max attack). Removing the ECE term further improves the
-attack gain.
-
-The paper's central claim is now sharper: reliability gating is diagnostically
-useful for coherent score-collapse stress when two-class fusion training exists,
-but this does not transfer into a general SOTA claim on naturally paired
-one-class anomaly protocols.
-
-## Engineering gap-closure utilities
-
-The repo now includes local engineering prerequisites for the four enterprise
-readiness gaps, without claiming the external evidence is complete:
-
-- `validate_incident_protocol` checks shared incident IDs, temporal split order,
-  incident-level split isolation, and multi-domain coverage before a dataset is
-  treated as naturally co-observed.
-- `CategoryAwareReliabilityEstimator` uses category-conditional drift references
-  so legitimate category-mix changes do not automatically trigger the global KS
-  gate.
-- The long-format fusion schema remains the plug-in boundary for stronger
-  domain experts, including future RGB-3D anomaly scorers.
-- `calibration_monitor_report` and `bounded_switching_certificate` provide
-  deployment calibration alerts and the finite-sample switching condition for
-  preferring the reliability path.
-
-After copying the local GridPulse healthcare data, the clinical audit can be
-run with:
-
-```bash
-PYTHONPATH=src .venv/bin/python src/scripts/validate_healthcare_gap_closure.py \
-  --data-root data/raw/healthcare/gridpulse
-```
-
-The generated `experiments/fusion/healthcare_gap_validation.json` is a
-Retrospective local healthcare replay, not clinical deployment evidence. It
-projects 146,688 co-observed vital-sign incidents into four fusion domains
-(heart rate, oxygenation, respiration, shock index) with hashed patient and
-incident identifiers. The structural checks pass: four domains per incident, no
-incident split leakage, no patient overlap, temporal ordering preserved, and no
-score/confidence range violations. The provided validation and test windows are
-single-class positive, so this time-forward surface remains a temporal-reference
-audit rather than supervised clinical-performance evidence.
-
-For Gap 1 specifically, the stricter time-forward replay cannot close the
-supervised detection claim because its validation and test windows are
-single-class positive. A second audit therefore uses:
-
-```bash
-PYTHONPATH=src .venv/bin/python src/scripts/validate_healthcare_gap_closure.py \
-  --data-root data/raw/healthcare/gridpulse \
-  --split-strategy patient_stratified \
-  --report experiments/fusion/healthcare_gap1_patient_stratified_validation.json \
-  --fusion-output experiments/fusion/healthcare_gap1_patient_stratified_fusion_inputs.csv
-```
-
-This patient-disjoint stratified replay closes Gap 1 locally: every split has
-both labels, patient overlap is zero, each incident has all four domains, and
-the held-out multimodal score reaches ROC-AUC 0.806 versus 0.770 for the best
-single domain. The tradeoff is explicit: `temporal_order_valid is false`, so
-this is local two-class incident-detection evidence, not time-forward clinical
-deployment evidence.
-
-The same replay now closes Gap 2 locally through a reliability stress audit:
-
-```bash
-PYTHONPATH=src .venv/bin/python src/scripts/validate_healthcare_gap_closure.py \
-  --data-root data/raw/healthcare/gridpulse \
-  --split-strategy patient_stratified \
-  --report experiments/fusion/healthcare_gap2_reliability_stress_validation.json \
-  --fusion-output experiments/fusion/healthcare_gap2_reliability_stress_fusion_inputs.csv
-```
-
-The audit calibrates a conservative category-aware gate threshold from the
-validation natural replay, then evaluates held-out natural replay and injected
-score-collapse episodes. Gap 2 locally closes because the held-out natural fire
-rate is 0.0 while the mean collapse fire rate is 1.0 across the four domains.
-
-Gap 3 and Gap 4 are now closed locally on the same patient-disjoint replay:
-
-```bash
-PYTHONPATH=src .venv/bin/python src/scripts/validate_healthcare_gap_closure.py \
-  --data-root data/raw/healthcare/gridpulse \
-  --split-strategy patient_stratified \
-  --report experiments/fusion/healthcare_gap4_deployment_audit_validation.json \
-  --no-fusion-output
-
-PYTHONPATH=src .venv/bin/python src/scripts/generate_healthcare_gap_assets.py \
-  --report experiments/fusion/healthcare_gap4_deployment_audit_validation.json
-```
-
-Gap 3 closes through the schema-integration report: 586,752 fusion rows,
-four complete domains per incident, a `146688 x 4 x 4` tensor, no raw
-`patient_id` column, hashed patient keys, and no missing schema columns. Gap 4
-closes as a local deployment-replay audit: the provided split remains the
-time-forward temporal reference, manifest review records PhysioNet access and
-citation requirements, calibration monitoring is active, leave-one-domain-out
-CDA-style attribution is emitted, and the diagnostic switching certificate is
-true (`static_loss=0.800`, `policy_loss=0.000`). This is still local replay
-readiness, not prospective clinical deployment or regulated clinical use.
-
-## Layout caveats
-
-- `mlflow_config.yaml`, `prefect` in `requirements.txt`, and the FastAPI /
-  Docker / Streamlit surface are **demo-grade scaffolding**, not
-  production tooling. MLflow is opt-in per config (`mlflow.enabled: true`)
-  and is off by default. Prefect flow files under `src/orchestration/`
-  are thin function wrappers, not real `@flow`-decorated tasks.
-- `reports/metrics_*.csv` files are legacy dashboard placeholders, not
-  research metrics — the research metrics live in `experiments/fusion/`
-  and the rendered tables under `docs/research/tables/`.
-
-## Status and roadmap (Scenario C / Flagship)
-
-Governance and gates:
-
-- [research_lock/SCENARIO_C_CLAIM_CONTRACT.md](research_lock/SCENARIO_C_CLAIM_CONTRACT.md) — claim contract
-- [elara_master_c/audits/FINAL_CHECKLIST_VERDICT.md](elara_master_c/audits/FINAL_CHECKLIST_VERDICT.md) — checklist verdict
-- [docs/research/scenario_c/WIN_VS_SAR_VALIDATION.md](docs/research/scenario_c/WIN_VS_SAR_VALIDATION.md) — Flagship / ELARA deploy validation
-- [docs/research/scenario_c/MASTER_C_TRAINING_EXECUTION.md](docs/research/scenario_c/MASTER_C_TRAINING_EXECUTION.md) — Master C runbook
+See [`CITATION.cff`](CITATION.cff) (GitHub renders a "Cite this repository" button). A Zenodo
+DOI is minted at release — see [`docs/research/kbound/RELEASE_CHECKLIST.md`](docs/research/kbound/RELEASE_CHECKLIST.md).
 
 ## License
 
-MIT. See [LICENSE](LICENSE).
-
-## Author
-
-Pratik Niroula — independent researcher.
+MIT — see [`LICENSE`](LICENSE). Author: **Pratik Niroula**.

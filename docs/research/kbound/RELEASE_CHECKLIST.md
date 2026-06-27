@@ -15,10 +15,16 @@ git push origin main
 ## 1. Build the package wheel (verifies it installs)
 ```bash
 python -m pip install build twine
-# Build the importable certificate package (the pip-installable artifact):
-python -m build docs/research/kbound/kbound_pkg
-ls docs/research/kbound/kbound_pkg/dist/   # -> kbound-*.whl + .tar.gz
-python -m pip install docs/research/kbound/kbound_pkg/dist/kbound-*.whl  # smoke install
+# IMPORTANT (macOS): build from a CLEAN copy with COPYFILE_DISABLE=1. Otherwise the
+# AppleDouble ._* sidecar files on the drive get swept into the sdist and break the
+# build ("No distribution was found"). Verified fix:
+rm -rf /tmp/kbpkg && mkdir -p /tmp/kbpkg
+( cd docs/research/kbound/kbound_pkg && COPYFILE_DISABLE=1 tar cf - \
+    --exclude='._*' --exclude='__pycache__' --exclude='dist' --exclude='build' --exclude='*.egg-info' . \
+    | ( cd /tmp/kbpkg && tar xf - ) )
+( cd /tmp/kbpkg && COPYFILE_DISABLE=1 python -m build )          # -> /tmp/kbpkg/dist/*.whl + *.tar.gz
+mkdir -p docs/research/kbound/kbound_pkg/dist && cp /tmp/kbpkg/dist/* docs/research/kbound/kbound_pkg/dist/
+python -m pip install docs/research/kbound/kbound_pkg/dist/kbound-*.whl   # smoke install
 python -c "import kbound; print('import OK')"
 ```
 
