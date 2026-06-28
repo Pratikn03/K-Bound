@@ -55,12 +55,17 @@ a universal accuracy booster. Every number below is from a pre-registered protoc
 
 | Setting | Result | Reading |
 |---|---|---|
-| **Office-Home** (Protocol M v2) | **beats-both, CI-robust**, false-adapt 0% | protects against harm *and* preserves useful adaptation |
-| **CIFAR-10-C / ImageNet-C** (collapse-prone) | **beats-both** (Tent/EATA; SAR-collapse cells) | real win where adaptation is a coin-flip |
-| **iWildCam** (Protocol H v2) | beats always-adapt; **ties always-freeze** | damage-prevention (point-estimate win) |
+| **CIFAR-10-C / ImageNet-C** (collapse-prone) | **beats-both, CI-robust** (Tent/EATA; SAR-collapse cells) | the headline win — harmful adaptation is frequent *and* detectable |
+| **Office-Home** (Protocol M v2) | **no-harm** — beats always-adapt (CI excl. 0), ties always-freeze; false-adapt 0% | damage-prevention: blocks harm, keeps useful adaptation |
+| **iWildCam** (Protocol H v2) | **no-harm** — beats always-adapt, ties always-freeze; false-adapt 0% | damage-prevention on a natural shift |
 | **Camelyon17 / RxRx1** | **no-harm** — matches the better fixed policy | one-sided shifts; nothing to beat |
-| Mixed-deployment stream | **13–24× lower regret** than either fixed policy (CIs exclude 0) | the case KGA is built for |
-| **fMoW / PovertyMap / ImageNet-R** | honest nulls | evidence-poor / *unknowable* regime the theory predicts |
+| **PACS** (leave-one-domain-out) | **no-harm on 3/4 domains**; safe partial-adapt on the 4th | domain-generalization breadth check |
+| **CIFAR-10.1 / ImageNet-R** | honest nulls | evidence-poor / *unknowable* regime the theory predicts |
+| Mixed-deployment stream | *withdrawn* — pending a corrected out-of-fold re-run | not currently claimed |
+
+> Under a valid out-of-fold conformal radius, the only **beats-both** rows are the synthetic
+> corruption grids (CIFAR-10-C, ImageNet-C SAR); **every natural shift is no-harm**, not a win.
+> An earlier in-sample-radius Office-Home/iWildCam "beats-both" was a calibration bug and is corrected here.
 
 > A previously reported Camelyon17 "beats-both" was traced to pooling in-distribution
 > validation cells into the held-out set and **withdrawn** — see the paper's natural-shift section.
