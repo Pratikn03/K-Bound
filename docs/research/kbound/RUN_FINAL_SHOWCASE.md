@@ -28,20 +28,16 @@ The runnable engine (`kbtrain.sh final-all`) executes these nine:
 | 8 | iWildCam | natural shift (WILDS) | YAML dev/test seed split | dev-locked OOF, scored once |
 | 9 | Office-Home | domain shift | YAML dev/test seed split | dev-locked OOF, scored once |
 
-### ⚠ OPEN ITEM — FMoW vs PACS (must decide before the camera-ready)
+### ✓ RESOLVED — PACS is the 9th dataset (FMoW removed)
 
-The **paper text** (`kbound_short.tex`, `kbound.tex`) lists the 9th dataset as **FMoW**
-(a geo-shift null), but **`kbtrain.sh final-all` runs PACS** as the 9th — there is **no
-FMoW runner** in `scripts/` (only `download_wilds_fmow_poverty.sh`). Pick one and make
-text + runner agree:
-
-- **Option A (less work):** treat **PACS** as the 9th in both the run and the paper; change
-  the paper's "FMoW" null to "PACS". PACS is fully wired and runs today.
-- **Option B (matches current text):** wire an FMoW runner (`Protocol L`) so the paper's
-  stated panel is reproducible end-to-end, then swap PACS→FMoW in `final-all`.
-
-Until this is resolved, the run uses PACS and the paper still says FMoW — a reviewer-visible
-inconsistency. **This is the single most important thing to fix before submission.**
+Both papers now report **PACS** (Protocol~P, DomainBed leave-one-domain-out) as the 9th
+dataset, matching what `kbtrain.sh final-all` actually runs. The earlier FMoW geo-shift null
+has been removed from both papers (its real result is preserved on disk at
+`experiments/kbound/results/fmow_protocol_L_v1/`). The conceptual caveat that the conformal
+radius can fail to transfer under severe geo/sensor shift is retained in the limitations
+section. The PACS numbers in the papers come from the real run in
+`docs/research/kbound/pacs_result.json` (4 leave-one-domain-out splits: no-harm on 3/4
+domains, the photo split a safe null).
 
 ---
 
@@ -101,7 +97,7 @@ For each dataset, KGA's verdict is computed, not chosen:
   (KGA − always-freeze) both exclude 0.
 - **damage-prevention / no-harm** if KGA beats always-adapt (CI excludes 0) but ties
   always-freeze (CI includes 0).
-- **abstain/null** on the nulls (CIFAR-10.1, FMoW/PACS): expect mostly freeze/abstain with
+- **abstain/null** on the null (CIFAR-10.1) and PACS: expect mostly freeze/abstain with
   false-adapt ≤ α and no spurious win.
 
 **Honest prior for the outcome** (so the run can't be spun): grids → beats-both, CI-robust

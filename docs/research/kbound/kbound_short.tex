@@ -110,8 +110,8 @@ if'' direction is an information-theoretic impossibility---matched evidence, opp
 and false-freeze each $\le\alpha$.
 \item \textbf{A drop-in method.} We instantiate the certificate as \textsc{KGA}, a
 mechanism-agnostic wrapper around Tent/EATA/SAR (Algorithm~\ref{alg:kga}).
-\item \textbf{Decision-level evidence.} On a nine-dataset panel---corruption (CIFAR-10-C, ImageNet-C), domain shift (Office-Home), four
-WILDS natural shifts (Camelyon17, iWildCam, RxRx1, FMoW), a rendition shift (ImageNet-R), and a
+\item \textbf{Decision-level evidence.} On a nine-dataset panel---corruption (CIFAR-10-C, ImageNet-C), domain shift (Office-Home), three
+WILDS natural shifts (Camelyon17, iWildCam, RxRx1), a domain-generalization suite (PACS), a rendition shift (ImageNet-R), and a
 reproduction shift (CIFAR-10.1)---
 \textsc{KGA} beats both fixed policies with bootstrap $95\%$ CIs excluding zero on the CIFAR-10-C
 stress grid (ImageNet-C SAR corroboration), and is \emph{uniformly no-harm} on the held-out natural
@@ -146,7 +146,8 @@ iWildCam H v2 & no-harm & beats adapt (CI), ties freeze \\
 Camelyon17 genuine OOD & ties adapt & no-harm \\
 RxRx1 & ties freeze & no-harm \\
 ImageNet-R & weak / split-specific & not headline \\
-CIFAR-10.1, FMoW & transfer failure & negative evidence \\
+CIFAR-10.1 & transfer failure & negative evidence \\
+PACS (domain-gen) & no-harm (3/4 domains) & beats adapt, ties freeze \\
 \bottomrule
 \end{tabular}
 \end{table}

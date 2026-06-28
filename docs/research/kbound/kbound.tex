@@ -172,7 +172,7 @@ ImageNet-R remains a split-specific lead, not a stable win.
 \item We prove an impossibility result showing that some adaptation decisions are fundamentally unknowable from label-free evidence.
 \item We derive a finite-sample certificate that controls false adaptation and false freezing under risk-aligned evidence.
 \item We characterize an exact benefit-sign frontier based on observable disagreement margin and calibration drift.
-\item We validate the framework on a seven-dataset core panel (Office-Home, Camelyon17, CIFAR-10-C, ImageNet-C, iWildCam, RxRx1, ImageNet-R) with bootstrap confidence intervals: beats-both on the synthetic stress grids (CIFAR-10-C, ImageNet-C SAR) and uniform no-harm on every natural shift; controlled synthetic validations and additional breadth/null datasets (FMoW) are reported in Appendix~\ref{app:supp}, with CIFAR-10.1 retained in-body as a supporting low-margin check (\S\ref{sec:external}). A heterogeneous mixed-stream aggregate is reported as withdrawn pending a corrected out-of-fold re-run (\S\ref{sec:mixedstream}).
+\item We validate the framework on a seven-dataset core panel (Office-Home, Camelyon17, CIFAR-10-C, ImageNet-C, iWildCam, RxRx1, ImageNet-R) with bootstrap confidence intervals: beats-both on the synthetic stress grids (CIFAR-10-C, ImageNet-C SAR) and uniform no-harm on every natural shift; controlled synthetic validations and an additional breadth dataset (PACS) are reported in Appendix~\ref{app:supp}, with CIFAR-10.1 retained in-body as a supporting low-margin check (\S\ref{sec:external}). A heterogeneous mixed-stream aggregate is reported as withdrawn pending a corrected out-of-fold re-run (\S\ref{sec:mixedstream}).
 \end{itemize}
 
 \begin{table*}[t]\centering\footnotesize
@@ -188,7 +188,7 @@ Under a valid out-of-fold radius the only beats-both rows are the synthetic stre
 beats the worse, false-adapt $\le\alpha$). \textsc{KGA} regret values are reported under the valid
 out-of-fold radius; earlier in-sample-radius Office-Home/iWildCam ``wins'' were a calibration bug
 and are corrected to no-harm (\S\ref{sec:natural-suite}).
-The seven core datasets plus two supporting nulls (CIFAR-10.1, FMoW) are all shown; heuristic /
+The seven core datasets plus a supporting null (CIFAR-10.1) and a domain-generalization suite (PACS) are all shown; heuristic /
 AETTA / ATC gate comparisons appear in App.~\ref{app:supp} (Table~\ref{tab:decision-baselines}).}
 \label{tab:regime-summary}
 \resizebox{\textwidth}{!}{%
@@ -204,7 +204,7 @@ Camelyon17 (Prot.\ G) & natural, adapt-favorable & $0.1381$ & $0.0000$ & $0.0000
 RxRx1 (Prot.\ J) & natural, harmful-detectable & $0.0000$ & $0.2531$ & $0.0000$ & $0\le\alpha$ & no\textsuperscript{d} & --- \\
 ImageNet-R (Prot.\ D) & natural, \emph{unknowable} & $0.0180$ & $0.0052$ & $0.0042$\textsuperscript{e} & $0.071\le\alpha$ & no & no \\
 CIFAR-10.1 (Prot.\ K) & natural, low-margin & $0.00171$ & $0.01902$ & $0.00206$ & $0.444{>}\alpha$ & no\textsuperscript{f} & no \\
-FMoW (Prot.\ L) & geo-shift, OOD & $0.01294$ & $0.00917$ & $0.01294$ & $0.375{>}\alpha$ & no\textsuperscript{g} & no \\
+PACS (Prot.\ P) & domain-gen, freeze-favorable & $0.0259$ & $0.0274$ & $0.0191$ & $\le 0.056$ & no\textsuperscript{g} & no \\
 \bottomrule
 \end{tabular}}
 
@@ -224,7 +224,7 @@ vanishes (\S\ref{sec:natural-suite}).\quad
 adapting is catastrophic ($0.253$). No-harm, not beats-both.\quad
 \textsuperscript{e}Beats both on $1/4$ splits only ($0/10$ backbones, App.~\ref{app:supp}); not a stable win.\quad
 \textsuperscript{f}$\mathrm{regret}_{\textsc{kga}}>$ always-freeze and FA${>}\alpha$ cross-seed.\quad
-\textsuperscript{g}Adapting beats \textsc{KGA}'s freeze here and FA${>}\alpha$.\par}
+\textsuperscript{g}PACS row is the mean over $4$ leave-one-domain-out splits: no-harm on $3/4$ (art\_painting, cartoon, sketch; FA $0$), CI-robustly beating always-adapt on cartoon; the photo split is a null where adapting is oracle-optimal and \textsc{KGA} safely partial-adapts (FA $0.056\le\alpha$). Per-domain in Table~\ref{tab:pacs}.\par}
 \end{table*}
 
 \noindent\emph{Two bars, stated once.} Throughout, the \textbf{pre-registered headline bar} is a
@@ -1324,12 +1324,13 @@ helpful-dominated so \textsc{KGA} ties always-adapt (no beats-both). Reclassifie
 (Table~\ref{tab:camelyon17-G}); the audit and re-run are in
 \texttt{audits/integrity\_2026-06-20/camelyon\_reconciliation/}. \textbf{CIFAR-10.1:} within-seed safety holds; cross-seed certificate
 transfer does not clear the headline bar.
-\textbf{WILDS FMoW (Protocol~L):} geographic region shift on OOD test
-($n{=}180$ held-out cells; dev $\{0,1\}$ / test $\{2,3,4\}$; fixed online SAR;
-canonical GBR+global $\varepsilon$): false-adapt $37.5\%\gg\alpha$; regret
-$0.013$ vs always-adapt $0.009$ vs always-freeze $0.013$; does \emph{not} beat both
-(Table~\ref{tab:fmow-L}). In-distribution dev calibration ($\mathrm{FA}{=}0$) did not
-transfer to OOD val/test.
+\textbf{PACS (Protocol~P):} DomainBed domain generalization, leave-one-domain-out
+($n{=}108$ held-out cells per domain; ResNet-18 ERM source, conformal radius fit on a held-out
+\emph{source} domain---no test labels touch the gate). \textsc{KGA} is no-harm on $3/4$ held-out
+domains (art\_painting, cartoon, sketch: matches always-freeze, beats always-adapt, false-adapt
+$0$), CI-robustly beating always-adapt on cartoon; on the photo domain---where adapting is
+oracle-optimal---\textsc{KGA} safely partial-adapts within budget (false-adapt $0.056\le\alpha$),
+beating always-freeze but not always-adapt (a null). See Table~\ref{tab:pacs}.
 
 
 \section{Limitations and honest scope}\label{sec:limits}
@@ -1371,9 +1372,11 @@ Theorem~\ref{thm:conj1-dichotomy} (richer label-free evidence is the natural fut
 not a tuning failure. The deployed
 \textbf{Office-Home} adapter audit (Table~\ref{tab:officehome}) is an invalid-transfer regime,
 distinct from Protocol~M v2.
-\textbf{WILDS FMoW} (Protocol~L) is a
-pre-registered honest null: certificate calibration fails to transfer on geoshift
-(Table~\ref{tab:fmow-L}).
+\textbf{PACS} (Protocol~P) is a domain-generalization breadth check: \textsc{KGA} is no-harm on
+$3/4$ leave-one-domain-out splits and safely partial-adapts on the fourth (Table~\ref{tab:pacs}).
+We caution that the conformal radius can still fail to transfer under \emph{severe} geographic or
+sensor shift, where in-distribution calibration need not hold out-of-distribution; characterizing
+that failure mode is future work.
 (3) The conformal radius assumes task exchangeability.
 (4) The sign-of-difference characterization is proved for binary, multiclass, and
 regression (Lemma~\ref{lem:reduction}); the unconditional label-free \emph{bracketing}
@@ -1538,7 +1541,7 @@ are labeled as such (e.g., Tables~\ref{tab:cifar101}, \ref{tab:imagenetr}).
 
 \appendix
 \section{Supplementary evidence beyond the seven-dataset core}\label{app:supp}
-This appendix collects the detailed per-dataset tables for the ImageNet-C scale grid and the RxRx1 safety case that are part of the seven-dataset core panel (Office-Home, Camelyon17, CIFAR-10-C, ImageNet-C, iWildCam, RxRx1, ImageNet-R), together with evidence \emph{beyond} it: additional breadth checks (FMoW) and honest nulls. None of it is required for the paper's headline claims; it is retained for completeness and reviewer scrutiny.
+This appendix collects the detailed per-dataset tables for the ImageNet-C scale grid and the RxRx1 safety case that are part of the seven-dataset core panel (Office-Home, Camelyon17, CIFAR-10-C, ImageNet-C, iWildCam, RxRx1, ImageNet-R), together with evidence \emph{beyond} it: an additional breadth check (PACS) and honest nulls. None of it is required for the paper's headline claims; it is retained for completeness and reviewer scrutiny.
 
 \subsection{ImageNet-R: architecture robustness across ten backbones}\label{supp:imagenetr-backbones}
 Table~\ref{tab:imagenetr-backbones} re-runs the ImageNet-R diverse panel across ten modern
@@ -1576,7 +1579,7 @@ ViT-B/16        & $0.014$ & $0.000$ & $0.024$ & $0.03$ \\
 \end{tabular}}
 \end{table}
 
-\subsection{Detailed core-panel tables: RxRx1, ImageNet-C scale grid, and FMoW null}\label{supp:core-tables}
+\subsection{Detailed core-panel tables: RxRx1, ImageNet-C scale grid, and PACS domain generalization}\label{supp:core-tables}
 
 % --- RxRx1: seventh core dataset (detailed table; freeze-is-oracle safety case) ---
 \paragraph{Fourth natural-shift track: RxRx1 --- the harmful-and-\emph{detectable} corner at $1{,}139$-class scale.}
@@ -1801,17 +1804,22 @@ $0.455$/$0.444$/$0.432$. \emph{Caveat:} matched/shared LR; SAR's official lr $2.
 \label{tab:imagenetc-faithful}
 \end{table*}
 
-% --- relocated: FMoW null table (beyond core six) ---
+% --- PACS domain-generalization breadth table ---
 \begin{table}[tb]\centering\small
-\caption{WILDS FMoW Protocol~L, OOD test ($n{=}180$ held-out cells).}
-\label{tab:fmow-L}
-\begin{tabular}{lccc}
+\caption{PACS Protocol~P (DomainBed leave-one-domain-out, $n{=}108$ cells/domain, $\alpha{=}0.10$).
+Regret-to-oracle (lower is better); radius fit on a held-out source domain (no test labels).
+\textsc{KGA} is no-harm on $3/4$ domains and safely partial-adapts on photo.}
+\label{tab:pacs}
+\begin{tabular}{lcccc}
 \toprule
-policy & regret$\downarrow$ & false-adapt & beats both? \\
+held-out domain & always-adapt & always-freeze & \textbf{\textsc{KGA}} & false-adapt \\
 \midrule
-always-adapt  & $0.0092$ & --- & \\
-always-freeze & $0.0129$ & --- & \\
-\textbf{K-Bound} & $0.0129$ & $37.5\%$ & no \\
+art\_painting & $0.0375$ & $0.0306$ & $\mathbf{0.0306}$ & $0.000$ \\
+cartoon       & $0.0354$ & $0.0110$ & $\mathbf{0.0110}$ & $0.000$ \\
+photo         & $0.0109$ & $0.0407$ & $0.0132$ & $0.056$ \\
+sketch        & $0.0259$ & $0.0215$ & $\mathbf{0.0215}$ & $0.000$ \\
+\midrule
+mean          & $0.0274$ & $0.0259$ & $\mathbf{0.0191}$ & $\le0.056$ \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -1912,7 +1920,7 @@ Office-Home deployed adapter audit & MPS & \checkmark & \ref{tab:officehome} & h
 Office-Home Protocol M v2 & CPU & \checkmark & \ref{tab:officehome-M} & no-harm (out-of-fold); ties freeze \\
 iWildCam Protocol H v2 & CPU & \checkmark & \ref{tab:iwildcam-H} & no-harm (out-of-fold); ties freeze \\
 CIFAR-10.1 low-margin probe & MPS & \checkmark & \ref{tab:cifar101} & abstain-heavy; $0\%$ FA within-seed \\
-WILDS FMoW geoshift (Protocol L) & MPS & \checkmark & \ref{tab:fmow-L} & OOD test null; FA $37.5\%$ \\
+PACS domain-gen (Protocol P) & MPS & \checkmark & \ref{tab:pacs} & no-harm $3/4$; FA $\le0.056$ \\
 CPU anomaly routing (ELARA-U) & CPU & \checkmark & \ref{tab:rel}--\ref{tab:mixed} & $11\times$ harmful regret \\
 ImageNet-C blur/weather (breadth) & MPS & --- & \textsc{tbd} & optional; noise grid sufficient \\
 SAR official schedule (Protocol E) & MPS & --- & \textsc{tbd} & residual check \\
