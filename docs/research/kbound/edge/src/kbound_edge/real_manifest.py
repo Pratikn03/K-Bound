@@ -81,21 +81,24 @@ def validate_protocol(config: dict) -> None:
         if phone_id == "phone_b" and s_id not in ["S09", "S10"]:
             raise ProtocolError(f"phone_b cannot be used in session {s_id} (outside replication)")
             
+        expected_n = len(expected_windows(config, s_id))
+        if windows != expected_n:
+            raise ProtocolError(f"{s_id} windows={windows} != expected {expected_n} from protocol generator")
         if s_id == "S01":
-            if split != "source_train" or phone_id != "phone_a" or objects != ["P01", "P02", "P03", "P04", "P05", "P06"] or windows != 240:
+            if split != "source_train" or phone_id != "phone_a" or objects != ["P01", "P02", "P03", "P04", "P05", "P06"]:
                 raise ProtocolError(f"S01 configuration mismatch: {sess}")
         elif s_id == "S02":
-            if split != "source_val" or phone_id != "phone_a" or objects != ["P07", "P08"] or windows != 80:
+            if split != "source_val" or phone_id != "phone_a" or objects != ["P07", "P08"]:
                 raise ProtocolError(f"S02 configuration mismatch: {sess}")
         elif s_id in ["S03", "S04", "S05", "S06"]:
-            expected_objs = ["P01", "P02", "P03", "P04", "P05", "P06", "P07", "P08"]
-            if phone_id != "phone_a" or objects != expected_objs or windows != 128:
+            expected_objs = ["P01", "P02", "P03", "P04"]
+            if phone_id != "phone_a" or objects != expected_objs:
                 raise ProtocolError(f"{s_id} configuration mismatch: {sess}")
         elif s_id in ["S07", "S08"]:
-            if phone_id != "phone_a" or objects != ["P09", "P10"] or windows != 128:
+            if phone_id != "phone_a" or objects != ["P09", "P10"]:
                 raise ProtocolError(f"{s_id} configuration mismatch: {sess}")
         elif s_id in ["S09", "S10"]:
-            if phone_id != "phone_b" or objects != ["P09", "P10"] or windows != 128:
+            if phone_id != "phone_b" or objects != ["P09", "P10"]:
                 raise ProtocolError(f"{s_id} configuration mismatch: {sess}")
         else:
             raise ProtocolError(f"Unknown session {s_id}")
@@ -135,7 +138,7 @@ def expected_windows(config: dict, session_id: str) -> list[dict]:
         # source_train: 6 objects, 4 classes, 10 repetitions, stable shift
         for obj in objects:
             for cls in classes:
-                for rep in range(1, 11):
+                for rep in range(1, 6):
                     wins.append({
                         "object_id": obj,
                         "class_id": cls,
@@ -147,7 +150,7 @@ def expected_windows(config: dict, session_id: str) -> list[dict]:
         # source_val: 2 objects, 4 classes, 10 repetitions, stable shift
         for obj in objects:
             for cls in classes:
-                for rep in range(1, 11):
+                for rep in range(1, 6):
                     wins.append({
                         "object_id": obj,
                         "class_id": cls,
@@ -159,7 +162,7 @@ def expected_windows(config: dict, session_id: str) -> list[dict]:
         # S03, S05, S07, S09
         # odd sessions use A_sessions shifts: [mild_light, side_shadow, new_background, glare]
         shifts = ["mild_light", "side_shadow", "new_background", "glare"]
-        reps = 1 if session_id in ["S03", "S05"] else 4
+        reps = 1 if session_id in ["S03", "S05"] else 2
         for obj in objects:
             for cls in classes:
                 for shift in shifts:
@@ -176,7 +179,7 @@ def expected_windows(config: dict, session_id: str) -> list[dict]:
         # 96 physical windows with [motion_blur, viewpoint_45, distance_scale]
         # plus 32 derived batch_composition windows.
         shifts = ["motion_blur", "viewpoint_45", "distance_scale"]
-        reps = 1 if session_id in ["S04", "S06"] else 4
+        reps = 1 if session_id in ["S04", "S06"] else 2
         
         # 96 physical windows
         for obj in objects:

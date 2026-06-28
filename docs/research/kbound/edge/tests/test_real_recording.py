@@ -18,8 +18,8 @@ def test_checklist_is_deterministic_and_balanced(real_protocol):
     a = build_session_checklist(real_protocol, "S03")
     b = build_session_checklist(real_protocol, "S03")
     assert a == b
-    assert len(a) == 128
-    assert set(Counter(x["class_id"] for x in a).values()) == {32}
+    assert len(a) == 64
+    assert set(Counter(x["class_id"] for x in a).values()) == {16}
 
 def test_clip_metadata_has_reproducibility_fields():
     row = make_clip_record(
