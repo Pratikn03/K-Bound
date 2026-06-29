@@ -83,23 +83,31 @@ continuously and stop for any data-dependent reason). Then:
 null $H_0:\ \Delta_t\le0$ for all $t$,
 \[
    \Pr\!\big(\exists\,t\ge1:\ \textsc{decision}_t=\textsc{adapt}\big)
-   \;=\;\Pr\!\Big(\sup_{t\ge1} E_t^{+}\ge 1/\alpha\Big)\;\le\;\alpha .
+   \;\le\;\Pr\!\Big(\sup_{t\ge1} E_t^{+}\ge 1/\alpha\Big)\;\le\;\alpha .
 \]
-Equivalently, the realized decision $\textsc{decision}_\tau$ at any stopping time
+In particular, the realized decision $\textsc{decision}_\tau$ at any stopping time
 satisfies $\Pr(\textsc{decision}_\tau=\textsc{adapt})\le\alpha$ under $H_0$.
 
 \textnormal{(ii)} \emph{(Time-uniform false-freeze.)} Symmetrically, on
 $H_0':\ \Delta_t\ge0$ for all $t$,
 $\Pr(\exists t:\ \textsc{decision}_t=\textsc{freeze})\le\alpha$.
 
-\textnormal{(iii)} \emph{(Anytime confidence sequence on cumulative benefit.)}
-The same construction yields, for the running average benefit, a
-$(1-2\alpha)$ confidence sequence $(\mathrm{CI}_t)_{t\ge1}$ with
-$\Pr(\exists t:\ \overline{\Delta}_t\notin\mathrm{CI}_t)\le2\alpha$, where
-$\overline{\Delta}_t:=\frac1t\sum_{i\le t}\Delta_i$; the committal rule above is
-its decision-theoretic projection.
+\textnormal{(iii)} \emph{(Anytime confidence sequence, common-mean case.)}
+If the windows share a common conditional benefit $\Delta_t\equiv\Delta^\star$,
+inverting the two one-sided betting supermartingales over a grid of candidate
+means yields a $(1-2\alpha)$ confidence sequence $(\mathrm{CI}_t)_{t\ge1}$ for
+$\Delta^\star$ with $\Pr(\exists t:\ \Delta^\star\notin\mathrm{CI}_t)\le2\alpha$
+(the betting confidence sequence of Waudby-Smith \& Ramdas
+\cite{waudbysmith2024betting}); the committal rule above is its
+decision-theoretic projection. For genuinely time-varying means, a time-uniform
+confidence sequence for the running average
+$\overline{\Delta}_t:=\frac1t\sum_{i\le t}\Delta_i$ is obtained instead from the
+additive sub-$\psi$ supermartingale of Howard et al.~\cite{howard2021timeuniform}:
+the multiplicative betting process certifies the \emph{uniform} one-sided null
+$\{\Delta_t\le m\ \forall t\}$, a different functional from $\overline{\Delta}_t$,
+and we do not conflate the two. Parts \textnormal{(i)--(ii)} do not depend on this part.
 
-\textnormal{(iv)} \emph{(Strict generalization of the batch certificate.)} Run
+\textnormal{(iv)} \emph{(Generalization of the batch certificate.)} Run
 on a single window ($t=1$) with the calibrated bet that matches the conformal
 radius, the rule specializes to a level-$\alpha$ single-window decision of the same
 adapt/freeze/abstain form as the batch certificate (Theorem~\ref{thm:cert})---the $T{=}1$ slice, of
@@ -121,9 +129,10 @@ $W_t=E_t^{+}$ and $\lambda=1/\alpha$,
 \[
    \Pr\!\Big(\sup_{t\ge1}E_t^{+}\ge 1/\alpha\Big)\le\alpha .
 \]
-Because the rule is absorbing at the first crossing, the event
-$\{\exists t:\textsc{decision}_t=\textsc{adapt}\}$ is exactly
-$\{\sup_t E_t^{+}\ge1/\alpha\}$, giving the displayed equality and bound. For the
+Because the rule is absorbing at the first crossing of \emph{either} threshold, the event
+$\{\exists t:\textsc{decision}_t=\textsc{adapt}\}$ is \emph{contained in}
+$\{\sup_t E_t^{+}\ge1/\alpha\}$---a prior \textsc{freeze} crossing can pre-empt an
+\textsc{adapt}, and for the one-sided adapt-only process the two events coincide---giving the displayed bound. For the
 stopping-time form, $\{\textsc{decision}_\tau=\textsc{adapt}\}\subseteq\{\exists
 t\le\tau:E_t^{+}\ge1/\alpha\}\subseteq\{\sup_t E_t^{+}\ge1/\alpha\}$, so the same
 $\alpha$ bound holds; this is the optional-stopping content (no per-look
@@ -133,19 +142,25 @@ batch rule under continuous monitoring).
 \textbf{(ii)} Identical, with $(E_t^{-})$ the supermartingale under $H_0'$ from
 Lemma~\ref{lem:smg}.
 
-\textbf{(iii)} For a nonnegative supermartingale $W_t$, the running intersection
-$\bigcap_{t}\{W_t<1/\alpha\}$ has probability $\ge1-\alpha$ by part (i). Inverting
-the family of betting supermartingales indexed by a candidate mean $m$ --- i.e.\
-betting on $X_i-m$ --- yields the predictable-plug-in / hedged-capital confidence
-sequence of Waudby-Smith \& Ramdas \cite{waudbysmith2024betting} (the betting supermartingale
-$\prod_i(1+\lambda_i(X_i-m))$ has conditional increment mean $\lambda_i(\Delta_i-m)$, so its
-non-crossing certifies the running average $\overline{\Delta}_t$, not any single $\Delta_i$): the set
+\textbf{(iii)} Under the common-mean hypothesis $\Delta_t\equiv\Delta^\star$, for
+each fixed $m$ the process $\prod_{i\le t}(1+\lambda_i(X_i-m))$ has conditional
+increment factor $1+\lambda_i(\Delta^\star-m)$, hence is a nonnegative
+supermartingale whenever $m\ge\Delta^\star$ (and the mirrored process when
+$m\le\Delta^\star$); by Ville each one-sided process crosses $1/\alpha$ with
+probability $\le\alpha$, so
 $\mathrm{CI}_t=\{m:\ \text{neither one-sided e-process for }X_i-m\text{ has crossed
-}1/\alpha\text{ by }t\}$ satisfies $\Pr(\exists t:\overline{\Delta}_t\notin
-\mathrm{CI}_t)\le2\alpha$ by a union bound over the two one-sided exceedance
-events (each $\le\alpha$ by Ville). The committal rule of the theorem is the
-projection ``commit \textsc{adapt} once $\mathrm{CI}_t\subset(0,\infty)$'',
-``\textsc{freeze} once $\mathrm{CI}_t\subset(-\infty,0)$'', recovering (i)--(ii).
+}1/\alpha\text{ by }t\}$ covers $\Delta^\star$ with
+$\Pr(\exists t:\Delta^\star\notin\mathrm{CI}_t)\le2\alpha$ by a union bound over the
+two one-sided exceedance events (each $\le\alpha$ by Ville)---the betting
+confidence sequence of \cite{waudbysmith2024betting}. The committal rule of the
+theorem is the projection ``commit \textsc{adapt} once
+$\mathrm{CI}_t\subset(0,\infty)$'', ``\textsc{freeze} once
+$\mathrm{CI}_t\subset(-\infty,0)$'', recovering (i)--(ii). For time-varying
+$\Delta_t$ the multiplicative process is \emph{not} a supermartingale at
+$m=\overline{\Delta}_t$ (a window with $\Delta_i>m$ makes the increment factor
+exceed $1$), so the running-average claim does not follow from betting; the
+correct object is then the sub-$\psi$ confidence sequence of
+\cite{howard2021timeuniform}, which we cite rather than reprove.
 
 \textbf{(iv)} For $T=1$, $E_1^{+}=1+\lambda_1 X_1$ with $\lambda_1$ a fixed
 (deterministic, hence predictable) constant, and $E_1^{+}\ge1/\alpha\iff
@@ -183,9 +198,9 @@ boundaries are deliberately \emph{not} over-claimed. (a) The guarantee does not
 assert per-window conditional coverage of the form ``$\Pr(\textsc{adapt at }t\mid
 \Delta_t\le0,\,\text{benefit was positive earlier})\le\alpha$'': once some early
 window is genuinely beneficial ($\Delta_s>0$), wealth may legitimately accumulate
-and a later \textsc{adapt} is then a \emph{true} positive for the
-\emph{cumulative} benefit, not a false adapt --- the certificate is a statement
-about the sign of the accumulated benefit, consistent with (iii). A controller
+and a later \textsc{adapt} then \emph{rejects the global never-beneficial null}
+$\{\Delta_t\le0\ \forall t\}$, certifying that some window was genuinely
+beneficial---a true positive against that null, not a false adapt. A controller
 needing to react to \emph{regime reversals} (benefit turning negative after being
 positive) must add a change-detection layer (e.g.\ the CUSUM/Page detector of the
 companion $T6$ analysis); that is a detection-delay question with its own

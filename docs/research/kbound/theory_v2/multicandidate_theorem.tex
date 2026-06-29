@@ -53,9 +53,11 @@ for the Bonferroni level $\delta_K=\alpha/K$ \emph{under arbitrary dependence} a
 $K$ per-candidate coverage events and \emph{for every} selector $\sigma$; and for the
 \v Sid\'ak level $\delta_K=1-(1-\alpha)^{1/K}$ when the $K$ under-coverage events in
 \eqref{eq:percand-cov} are mutually independent. (Mutual independence generally \emph{fails} under
-the shared exchangeable calibration sample assumed above; the \v Sid\'ak branch therefore applies
-only with disjoint per-candidate calibration draws, and Bonferroni---valid under arbitrary
-dependence---is the assumption-light default we recommend.)
+the shared exchangeable calibration sample assumed above, and also when the $K$ adapters are scored
+on a common deployment input so the estimates $\hat\Delta_k$ are coupled; the \v Sid\'ak branch
+therefore applies only with disjoint per-candidate calibration draws \emph{and} independent
+deployment estimates, while Bonferroni---valid under arbitrary dependence---is the assumption-light
+default we recommend.)
 \end{theorem}
 
 \begin{proof}
