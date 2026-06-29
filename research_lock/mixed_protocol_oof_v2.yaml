@@ -1,0 +1,35 @@
+# mixed_protocol_oof_v2 — cross-protocol aggregate under strict OOF calibration
+# Registered: 2026-06-25. Replaces withdrawn KBOUND_MIXED_STREAM_v1 headline.
+
+protocol_id: mixed_protocol_oof_v2
+status: locked_pre_registration
+
+members:
+  - dataset: officehome
+    protocol: OFFICEHOME_PROTOCOL_M_v2
+    weight: 35
+  - dataset: iwildcam
+    protocol: IWILDCAM_PROTOCOL_H_v2
+    weight: 72
+  - dataset: camelyon17
+    protocol: CAMELYON17_PROTOCOL_G_v1
+    weight: 36
+    note: "genuine OOD test+val only; id_val excluded"
+
+calibration: per_dataset_dev_lock_oof  # NOT one universal transferred gate
+
+aggregation:
+  rule: weighted_mean_regret_gap
+  bootstrap_replicates: 10000
+  holm_family: [vs_always_adapt, vs_always_freeze]
+
+forbidden:
+  - in_sample_radius
+  - pooling_id_val_into_ood
+
+outputs:
+  dir: experiments/kbound/results/mixed_protocol_oof_v2/
+
+success_criteria:
+  beats_both: both regret gaps CI exclude 0
+  otherwise: report no-harm, negative, or abstain-heavy honestly

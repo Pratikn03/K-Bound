@@ -1,0 +1,39 @@
+# assumption_audit_v1 — pre-registered falsification-oriented audit bundle
+# Does NOT claim to verify exchangeability or risk alignment.
+
+protocol_id: assumption_audit_v1
+alpha: 0.10
+
+stress_conditions:
+  - id: benign_transfer
+    description: "Calibration and deployment from same protocol family"
+    expected: not_falsified
+  - id: evidence_support_shift
+    description: "Z outside calibration feature envelope"
+    expected: warning
+  - id: residual_drift
+    description: "Conformal residual distribution shift across folds"
+    expected: warning
+  - id: concept_shift_witness
+    description: "Matched evidence, opposite benefit (non-identifiability)"
+    expected: abstain_or_unresolved
+  - id: mild_helpful_shift
+    description: "Small beneficial shift with adequate margin"
+    expected: not_falsified_or_adapt
+  - id: low_margin_shift
+    description: "Benefit sign near zero"
+    expected: abstain_increases
+
+safeguard_policy:
+  on_strong_warning: abstain  # retain frozen fallback
+  on_falsified_stress: abstain_or_freeze
+  guarantee_wording: does_not_apply
+
+forbidden:
+  - claiming verified exchangeability from this audit
+  - tuning audit thresholds on held-out test labels
+  - using deployment labels in online audit path
+
+outputs:
+  report: reports/assumption_audit_v1.md
+  json: results/assumption_audit_v1.json

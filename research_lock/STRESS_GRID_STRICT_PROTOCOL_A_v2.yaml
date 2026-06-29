@@ -1,0 +1,47 @@
+# STRESS_GRID_STRICT_PROTOCOL_A_v2 — group-level calibration/test separation
+# Registered: 2026-06-25 BEFORE any v2 result is observed.
+# Supersedes nothing automatically; v1 remains historical comparison.
+
+protocol_id: STRESS_GRID_STRICT_PROTOCOL_A_v2
+parent: STRESS_GRID_MULTISEED_PROTOCOL_A_v1
+status: locked_pre_registration
+
+design:
+  grid: identical_to_v1  # same 432-condition stress grid
+  candidates: [tent, eata, sar_fixed]
+  seeds: [0, 1, 2, 3, 4]
+
+exchangeability_unit: condition  # entire condition = severity x batch x composition x update
+# Do NOT split frames or repeats randomly across fit/conformal/test.
+
+splits:
+  calibration_fit_groups:
+    description: "Fit benefit estimator GBR on Z -> B"
+    rule: "all conditions from seeds {0,1} within each candidate"
+  conformal_residual_groups:
+    description: "Estimate epsilon from |Bhat - B| residuals"
+    rule: "all conditions from seed 2 within each candidate"
+  held_out_test_groups:
+    description: "Score KGA once; no retuning"
+    rule: "all conditions from seeds {3,4} within each candidate"
+
+forbidden:
+  - tuning alpha on test
+  - tuning epsilon on test
+  - selecting adapter on test labels
+  - selecting evidence features on test
+  - modifying this file after first test evaluation
+
+outputs:
+  dir: experiments/kbound/results/stress_grid_strict_v2/
+  required:
+    - run_manifest.json
+    - per_condition.csv
+    - summary.json
+    - bootstrap.json
+    - claim_eligibility.json
+
+claim_eligibility_rules:
+  beats_both: regret_kga < regret_adapt AND regret_kga < regret_freeze with Holm CI excluding 0
+  no_harm: regret_kga <= min(regret_adapt, regret_freeze)
+  negative: otherwise

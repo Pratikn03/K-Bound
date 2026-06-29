@@ -1,0 +1,62 @@
+{
+  "manifest": "KBOUND_HEADLINE_FINDINGS_v3",
+  "status": "current",
+  "updated": "2026-06-25",
+  "supersedes": "KBOUND_HEADLINE_FINDINGS.json (2026-06-15, stale Camelyon beats-both)",
+  "note": "Honest headline framing after OOF conformal audit. Natural shifts are no-harm, not beats-both.",
+  "headline_empirical_wins": [
+    {
+      "claim": "CIFAR-10-C stress grid beats-both (Tent/EATA)",
+      "artifact": "experiments/kbound/results/stress_grid_multiseed_v1/LOCKED_ANALYSIS_RESULTS.json",
+      "protocol": "STRESS_GRID_MULTISEED_PROTOCOL_A_v1"
+    },
+    {
+      "claim": "Mixed head-to-head beats POEM and AETTA (pre-registered WIN)",
+      "artifact": "experiments/kbound/results/mixed_headtohead_v1/HEADTOHEAD_RESULTS_cifar10c_tent_primary.json",
+      "protocol": "MIXED_HEADTOHEAD_PROTOCOL_v1"
+    },
+    {
+      "claim": "ImageNet-C SAR harmful point beats-both",
+      "artifact": "experiments/kbound/results/imagenetc_official_sar_E_v1/",
+      "protocol": "imagenetc_protocol_E_v1"
+    },
+    {
+      "claim": "Controlled multimodal D33 beats-both (mechanism confirmation)",
+      "artifact": "experiments/kbound/results/controlled_multimodal_d33/results.json",
+      "protocol": "CONTROLLED_MULTIMODAL_PROTOCOL_D33_v1"
+    },
+    {
+      "claim": "Cross-protocol mixed aggregate OOF beats-both (constructed)",
+      "artifact": "experiments/kbound/results/mixed_protocol_oof_v2/mixed_protocol_oof_v2_result.json",
+      "protocol": "mixed_protocol_oof_v2"
+    }
+  ],
+  "headline_natural_shift": [
+    {
+      "dataset": "officehome",
+      "status": "no-harm",
+      "protocol": "OFFICEHOME_PROTOCOL_M_v2"
+    },
+    {
+      "dataset": "iwildcam",
+      "status": "no-harm",
+      "protocol": "IWILDCAM_PROTOCOL_H_v2"
+    },
+    {
+      "dataset": "camelyon17",
+      "status": "no-harm",
+      "note": "Protocol-G pooled beats-both withdrawn; genuine OOD ties always-adapt",
+      "protocol": "CAMELYON17_PROTOCOL_G_v1"
+    },
+    {
+      "dataset": "rxrx1",
+      "status": "no-harm",
+      "protocol": "RXRX1_PROTOCOL_J_v1"
+    }
+  ],
+  "pending": [
+    "edge_real_phone_v1 R2",
+    "stress_grid_strict_v2",
+    "official-repo POEM/AETTA arm (camera-ready)"
+  ]
+}
