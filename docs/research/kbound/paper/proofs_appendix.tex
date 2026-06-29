@@ -124,11 +124,14 @@ Since $\mu(D)>0$, $\sign\Delta=\sign(M+\gamma)$.
 (i) Immediate from Lemma~\ref{lem:reduction}: $\sign\Delta$ is a function of $M+\gamma$, and
 $M$ is fixed by the observables. (ii) If $|M|>\beta$ then for all $|\gamma|\le\beta$,
 $\sign(M+\gamma)=\sign M$ (the perturbation cannot cross $0$), so the sign is constant on
-$\mathcal C_\beta$ and equals $\sign M$. Conversely if $|M|\le\beta$, choose
-$\gamma=+\beta$ and $\gamma=-\beta$: both lie in $\mathcal C_\beta$ and give
-$M+\gamma\ge 0\ge M-\beta$ wait— $M+\beta\ge0$ (as $M\ge-\beta$) and $M-\beta\le0$ (as
-$M\le\beta$), so the two admissible targets have $\Delta\ge0$ and $\Delta\le0$
-respectively; the sign is not constant, hence not identifiable.
+$\mathcal C_\beta$ and equals $\sign M$. Conversely if $|M|\le\beta$, recall
+$\gamma=\bar a-\tfrac12-M\in[-(M+\tfrac12),\,\tfrac12-M]$, so the admissible-and-budgeted
+range is $\gamma\in[\,\max(-\beta,-(M+\tfrac12)),\ \min(\beta,\tfrac12-M)\,]$. Its upper
+endpoint gives $M+\gamma=\min(M+\beta,\tfrac12)\ge0$ (as $M\ge-\beta$) and its lower
+endpoint gives $M+\gamma=\max(M-\beta,-\tfrac12)\le0$ (as $M\le\beta$), so the two
+admissible targets have $\Delta\ge0$ and $\Delta\le0$
+respectively; the sign is not constant, hence not identifiable (at $|M|=\beta$ one
+endpoint gives $\Delta=0$, consistent with the strict criterion $|M|>\beta$).
 (iii) $\sign\Delta=\sign(M+\gamma)$ with $M$ fixed; constancy of $\sign(M+\gamma)$ on
 $\mathcal C$ is, by definition, the statement that $M+\gamma$ does not change sign on
 $\mathcal C$, i.e.\ $\gamma$ stays on one side of $-M$.
@@ -294,12 +297,16 @@ $\psi=\mathbf1[\textsc{adapt}]$; its two error probabilities are each at most
 $\alpha+\beta$. Bretagnolle--Huber gives
 $2(\alpha+\beta)\ge\tfrac12 e^{-8n\kappa^2/\sigma^2}$, i.e.\
 $\kappa\ge\tfrac{\sigma}{2\sqrt2}\sqrt{\log\frac{1}{4(\alpha+\beta)}/n}$.
-\emph{Spike branch.} Let world$_-$ be the point mass at $-\kappa$ and world$_+$ place
+\emph{Spike branch (range-limited $1/n$ regime).} Let world$_-$ be the point mass at $-\kappa$ and world$_+$ place
 mass $p$ at $R/2$ and $1-p$ at $-\kappa$ with $p(R/2+\kappa)=2\kappa$, so the means are
 $\mp\kappa$. On the no-spike event --- probability $(1-p)^n$ --- the two worlds generate
 identical samples, hence identical action laws. Reliability in world$_+$ forces commit
 probability $\ge1-\alpha-\beta$ overall, so adapting in world$_-$ has probability at
 least $(1-p)^n-(\alpha+\beta)$; validity caps this by $\alpha$. Therefore
-$(1-p)^n\le2(\alpha+\beta)$, giving $np\ge\log\frac{1}{2(\alpha+\beta)}$ and
-$\kappa=\tfrac{p}{2}(R/2+\kappa)\ge\tfrac{R}{4}\,\log\frac{1}{2(\alpha+\beta)}/n$.
+$(1-p)^n\le2(\alpha+\beta)$, i.e.\ $n\log\frac{1}{1-p}\ge\log\frac{1}{2(\alpha+\beta)}$;
+since $\log\frac{1}{1-p}\le \frac{p}{1-p}$ this gives $np\ge(1-p)\log\frac{1}{2(\alpha+\beta)}$, and
+$\kappa=\tfrac{p}{2}(R/2+\kappa)\ge\tfrac{R}{4}(1-p)\,\log\frac{1}{2(\alpha+\beta)}/n$.
+This branch certifies the separate range-limited $1/n$ regime; the headline $m^{-1/2}$
+minimax rate is supplied by the dense branch above (matching the Maurer--Pontil upper
+bound), the overall lower bound being the maximum of the two constructions.
 \end{proof}
