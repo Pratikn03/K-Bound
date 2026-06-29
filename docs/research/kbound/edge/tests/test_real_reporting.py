@@ -34,13 +34,19 @@ def test_compile_latex_macros():
 
     from kbound_edge.logging import read_jsonl
     log_path = C.resolve(cfg["paths"]["heldout_log"])
+    if not os.path.exists(log_path):
+        pytest.skip(f"Missing generated held-out log: {log_path}")
     records = read_jsonl(log_path)
     
     # Load true labels
     from kbound_edge.real_dataset import load_window
     windows_dir = C.resolve(cfg["paths"]["windows_dir"])
     split_dir = os.path.join(windows_dir, "heldout")
+    if not os.path.isdir(split_dir):
+        pytest.skip(f"Missing generated held-out windows: {split_dir}")
     files = sorted([f for f in os.listdir(split_dir) if not f.startswith(".") and f.endswith(".npz") and (f.startswith("S07_") or f.startswith("S08_"))])
+    if not files:
+        pytest.skip(f"No generated held-out window NPZs in: {split_dir}")
     
     true_labels = []
     for fname in files:

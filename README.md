@@ -98,8 +98,9 @@ Headline numbers reproduce from the cached result JSONs in `experiments/kbound/r
 | [`deploy/api/`](deploy/api/) | Hardened FastAPI service exposing `POST /decide` |
 | [`docs/dev-notes/`](docs/dev-notes/) | Archived development notes / audit trail |
 
-`src/uais/` and the ELARA-U anomaly meta-routing benchmark (a worked instantiation K-Bound
-generalizes) remain in the tree as foundation and breadth evidence.
+`src/uais/` and the ELARA-U anomaly meta-routing benchmark (ELARA =
+Evidence-Layered Anomaly Reliability Architecture; RGA = Reliability-Gated Attention)
+remain in the tree as foundation and breadth evidence.
 
 ## Cite
 

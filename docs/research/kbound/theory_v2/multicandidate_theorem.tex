@@ -1,0 +1,160 @@
+% ============================================================================
+% MULTICANDIDATE CERTIFIED ROUTING  (theory_v2, June 2026)
+% Extends the single-candidate certificate (Theorem~\ref{thm:cert}) to K candidate
+% adapters with a JOINT (family-wise) false-adapt guarantee, closing the
+% "multicandidate routes with violated false-adapt bounds" non-claim.
+%
+% Macros assumed (as in main_theory_5.tex): \E \Pr \sign \TV, environments
+% theorem/lemma/corollary, \textsc{adapt}/\textsc{freeze}/\textsc{abstain}, \boxed.
+% Numeric claims validated by theory_v2/val_multicandidate.py (seed 20260628).
+% ============================================================================
+
+\begin{theorem}[Multicandidate certified routing: family-wise false-adapt control]
+\label{thm:multicand}\label{thm:routing}
+\emph{Intuition.} Selecting the best of $K$ adapters by its own certified lower bound and
+then committing inflates false-adapt by a multiple-comparisons effect; running each
+per-candidate certificate at the corrected level $\alpha/K$ and committing \emph{any} one
+candidate whose corrected lower bound is positive restores the joint guarantee, for an
+\emph{arbitrary} (even data-dependent or adversarial) tie-break.
+
+\textbf{Setup.} Fix $f_0$ and candidate adapters $f_a^{(1)},\dots,f_a^{(K)}$ with benefits
+$\Delta_k=R_T(f_0)-R_T(f_a^{(k)})$. Call $k$ \emph{harmful} if $\Delta_k\le0$. Suppose each
+candidate admits a label-free lower-confidence bound at any target level: an estimate
+$\hat\Delta_k(z)$ and a radius $\varepsilon_k(z;\delta)$ such that, for every $\delta\in(0,1)$,
+\begin{equation}\label{eq:percand-cov}
+\Pr\!\big[\,\Delta_k<\hat\Delta_k-\varepsilon_k(\,\cdot\,;\delta)\,\big]\ \le\ \delta
+\qquad(k=1,\dots,K),
+\end{equation}
+i.e.\ the one-sided lower bound $L_k(\delta):=\hat\Delta_k-\varepsilon_k(\,\cdot\,;\delta)$
+under-covers $\Delta_k$ with probability at most $\delta$. (This is exactly the one-sided
+half of the split-conformal coverage of Theorem~\ref{thm:cert}, instantiable per candidate
+on a shared exchangeable calibration sample; the two-sided radius
+$\Pr[|\hat\Delta_k-\Delta_k|\le\varepsilon_k(\,\cdot\,;\delta)]\ge1-\delta$ implies
+\eqref{eq:percand-cov} at level $\delta$, in fact $\delta/2$.)
+
+\textbf{Rule (\textsc{cert-route}$_\alpha$).} Set the corrected level
+\[
+\delta_K \;=\; \tfrac{\alpha}{K}\quad\text{(Bonferroni)}\qquad\text{or}\qquad
+\delta_K \;=\; 1-(1-\alpha)^{1/K}\quad\text{(\v Sid\'ak)},
+\]
+form the \emph{certified-helpful set}
+$S=\{k: L_k(\delta_K)>0\}=\{k:\hat\Delta_k-\varepsilon_k(\,\cdot\,;\delta_K)>0\}$, and:
+\textsc{commit} any $\sigma\in S$ if $S\neq\varnothing$ (e.g.\ $\sigma=\arg\max_{k\in S}L_k$);
+else \textsc{abstain} (keep $f_0$). The selector $\sigma$ may depend on the data and on
+$\{L_k\}$ arbitrarily.
+
+\textbf{Guarantee.} The family-wise false-adapt event
+$\mathrm{FA}^{\mathrm{fw}}:=\{\,\sigma\in S\ \wedge\ \Delta_\sigma\le0\,\}$
+(``a harmful candidate is committed'') satisfies
+\begin{equation}
+\boxed{\ \Pr\big[\mathrm{FA}^{\mathrm{fw}}\big]\ \le\ \alpha\ }
+\end{equation}
+for the Bonferroni level $\delta_K=\alpha/K$ \emph{under arbitrary dependence} among the
+$K$ per-candidate coverage events and \emph{for every} selector $\sigma$; and for the
+\v Sid\'ak level $\delta_K=1-(1-\alpha)^{1/K}$ when the $K$ under-coverage events in
+\eqref{eq:percand-cov} are mutually independent. (Mutual independence generally \emph{fails} under
+the shared exchangeable calibration sample assumed above; the \v Sid\'ak branch therefore applies
+only with disjoint per-candidate calibration draws, and Bonferroni---valid under arbitrary
+dependence---is the assumption-light default we recommend.)
+\end{theorem}
+
+\begin{proof}
+The argument is a containment of the false-adapt event in a union of per-candidate
+under-coverage events, followed by a union (resp.\ independence) bound; the selector
+drops out of the containment.
+
+\emph{Step 1 (selection-proof containment).} Suppose $\mathrm{FA}^{\mathrm{fw}}$ occurs:
+the committed index $\sigma$ lies in $S$ and is harmful, $\Delta_\sigma\le0$. By definition
+of $S$, $L_\sigma(\delta_K)>0$, i.e.\ $\hat\Delta_\sigma-\varepsilon_\sigma(\,\cdot\,;\delta_K)>0$.
+Combining, $\Delta_\sigma\le0<\hat\Delta_\sigma-\varepsilon_\sigma(\,\cdot\,;\delta_K)=L_\sigma(\delta_K)$,
+so candidate $\sigma$ is one whose lower bound \emph{strictly exceeds its true benefit}.
+Hence, whatever index $\sigma$ the (possibly adversarial) selector returned, that index
+belongs to the set of candidates whose one-sided bound under-covers. Therefore
+\begin{equation}\label{eq:containment}
+\mathrm{FA}^{\mathrm{fw}}\ \subseteq\ \bigcup_{k=1}^{K}\big\{\,L_k(\delta_K)>0,\ \Delta_k\le0\,\big\}
+\ \subseteq\ \bigcup_{k:\,\Delta_k\le0}\big\{\,\Delta_k<L_k(\delta_K)\,\big\}.
+\end{equation}
+Crucially the right-hand side does not reference $\sigma$: a harmful candidate can be
+committed only if \emph{that specific} candidate's bound under-covers, an event already in
+the union. Selection cannot create a false-adapt outside the union it could not create
+inside it. Note also that only \emph{harmful} candidates ($\Delta_k\le0$) can contribute,
+because $\{L_k>0,\ \Delta_k>0\}$ is excluded from $\mathrm{FA}^{\mathrm{fw}}$.
+
+\emph{Step 2 (per-candidate control).} On $\{\Delta_k\le0\}$, the event
+$\{\Delta_k<L_k(\delta_K)\}=\{\Delta_k<\hat\Delta_k-\varepsilon_k(\,\cdot\,;\delta_K)\}$ is
+exactly the under-coverage event of \eqref{eq:percand-cov} at level $\delta_K$, so
+\[
+\Pr\big[\,\Delta_k<L_k(\delta_K)\,\big]\ \le\ \delta_K\qquad\text{for each harmful }k.
+\]
+
+\emph{Step 3a (Bonferroni; any dependence).} Let $H=\{k:\Delta_k\le0\}$, $|H|\le K$.
+By \eqref{eq:containment} and the union bound,
+\[
+\Pr\big[\mathrm{FA}^{\mathrm{fw}}\big]\ \le\
+\sum_{k\in H}\Pr\big[\Delta_k<L_k(\delta_K)\big]\ \le\ |H|\,\delta_K\ \le\ K\cdot\tfrac{\alpha}{K}\ =\ \alpha .
+\]
+No assumption on the joint law of the $K$ coverage events is used.
+
+\emph{Step 3b (\v Sid\'ak; independence).} If the under-coverage events
+$E_k=\{\Delta_k<L_k(\delta_K)\}$ are mutually independent, then writing $p_k=\Pr[E_k]\le\delta_K$
+on $H$ and bounding the probability that \emph{no} harmful candidate under-covers,
+\[
+\Pr\big[\mathrm{FA}^{\mathrm{fw}}\big]\ \le\ \Pr\!\Big[\bigcup_{k\in H}E_k\Big]
+\ =\ 1-\prod_{k\in H}(1-p_k)\ \le\ 1-(1-\delta_K)^{|H|}\ \le\ 1-(1-\delta_K)^{K}\ =\ \alpha,
+\]
+using $\delta_K=1-(1-\alpha)^{1/K}$. Since $1-(1-\alpha)^{1/K}\ge\alpha/K$, the \v Sid\'ak
+radius is no larger than the Bonferroni radius, giving (weakly) higher power. \qed
+\end{proof}
+
+\begin{corollary}[The price: abstention and power]\label{cor:multicand-price}
+\textnormal{(i)} \emph{Per-candidate validity is preserved at the family level only by
+shrinking each level from $\alpha$ to $\delta_K=\alpha/K$ (resp.\ \v Sid\'ak);} the radius
+$\varepsilon_k(\,\cdot\,;\delta_K)$ is wider than $\varepsilon_k(\,\cdot\,;\alpha)$, so
+\textsc{cert-route}$_\alpha$ commits on a subset of the naive committal region and its
+\textsc{abstain} rate is at least that of the single-candidate certificate at level $\alpha$.
+Concretely, for an empirical-Bernstein / sub-Gaussian radius
+$\varepsilon_k(\,\cdot\,;\delta)\asymp\sqrt{2\sigma_k^2\log(1/\delta)/n}$, the family-wise
+correction enlarges the radius only by the factor $\sqrt{\log(K/\alpha)/\log(1/\alpha)}$,
+i.e.\ \emph{logarithmically} in $K$ --- the sample-size penalty to certify any of $K$
+candidates at family level $\alpha$ is $O(\log K)$.
+\textnormal{(ii)} \emph{Tightness.} The bound is not vacuous: in the least-favorable
+configuration $\Delta_1=\dots=\Delta_K=0$ with independent symmetric noise and an adversary
+that commits a harmful candidate whenever \emph{any} clears, $\Pr[\mathrm{FA}^{\mathrm{fw}}]$
+equals $1-(1-\delta_K/2)^{K}$ (the factor $1/2$ from a two-sided radius), which approaches
+$1-e^{-\alpha/2}\approx\alpha/2$ as $K\to\infty$; with a one-sided radius it approaches
+$1-e^{-\alpha}\approx\alpha$. Hence $\alpha$ is
+attained up to the standard one-/two-sided factor.
+\end{corollary}
+
+\begin{remark}[Why the naive rule fails, and what does \emph{not} fix it]\label{rem:naive-fail}
+The naive rule $\hat k=\arg\max_k(\hat\Delta_k-\varepsilon_k(\,\cdot\,;\alpha))$, commit iff
+its bound is positive, uses each radius at level $\alpha$, so the union in
+\eqref{eq:containment} contributes up to $K\alpha$: the family-wise false-adapt can be as
+large as $\min(1,K\alpha)$. This is the multiple-comparisons inflation disclaimed by the
+single-candidate paper. Two non-fixes are worth flagging. (a) Taking a single conformal
+score on $\max_k(\hat\Delta_k-\varepsilon_k)$ does \emph{not} by itself control
+$\mathrm{FA}^{\mathrm{fw}}$ unless the calibration distribution of that maximum is itself
+certified under selection, which reintroduces the same correction. (b) Picking the
+empirically-best candidate \emph{before} forming one level-$\alpha$ bound is post-selection
+inference and is anti-conservative for the same reason. The correction in
+Theorem~\ref{thm:multicand} is the minimal device --- a per-candidate level reduction to
+$\alpha/K$ --- that makes the containment \eqref{eq:containment} hold simultaneously for all
+$k$, hence for any selector.
+\end{remark}
+
+\begin{remark}[Provenance and relation to closed testing / e-values]\label{rem:closure}
+The construction is the confidence-set face of the closure principle for family-wise error
+control. Equivalently: define the conformal p-values $p_k=\inf\{\delta:L_k(\delta)>0\}$ (or
+per-candidate e-values $e_k=\mathbf 1\{L_k(\alpha/K)>0\}/(\alpha/K)$); then
+\textsc{cert-route}$_\alpha$ is Bonferroni's (e-)closed test of the harmful nulls
+$H_k:\Delta_k\le0$, and committing a rejected null is a discovery, so
+$\Pr[\text{a true null is committed}]\le\alpha$ is exactly strong FWER control. The
+\v Sid\'ak refinement and the union bound are the independent and arbitrary-dependence local
+tests respectively; e-value averaging (Vovk--Wang $e$-merging; Wang--Ramdas $e$-BH; Hartog--Lei
+$e$-value FWER, arXiv:2501.09015) gives strictly more powerful local tests when partial
+dependence is known, but Bonferroni at $\alpha/K$ is the assumption-light default used here.
+The benefit of phrasing as confidence bounds rather than tests is that the same object
+certifies \emph{which} candidate to commit, not merely that some candidate is helpful.
+See the game-theoretic / e-value foundations \cite{ramdas2023,vovk2005algorithmic} for the
+underlying machinery.
+\end{remark}

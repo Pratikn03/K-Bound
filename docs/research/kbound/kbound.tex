@@ -415,6 +415,17 @@ $\tau{=}1$ threshold for sign-of-benefit in a $1$-D location model, and its mult
 MLR/log-concave, and distribution-free generalization (with an explicit open conjecture)---is
 developed in Appendices~\ref{sec:knowcap} and~\ref{sec:knowcap-gen}.
 
+\noindent\emph{Certificate extensions.} The batch certificate (Theorem~\ref{thm:cert}) admits two
+verified extensions, stated and proved in Appendix~\ref{app:extensions}. (i)~An \emph{anytime-valid}
+sequential form (Theorem~\ref{thm:anytime}): under continuous monitoring of a stream of windows the
+false-adapt guarantee holds \emph{time-uniformly} for an arbitrary stopping time---the natural
+object for a streaming deployment---via a one-sided betting supermartingale and Ville's inequality.
+(ii)~A \emph{multicandidate} form (Theorem~\ref{thm:multicand}): routing among $K$ candidate adapters
+with a joint, family-wise false-adapt bound that holds for an arbitrary (even adversarial) selector,
+closing the multicandidate gap left open by the single-candidate certificate. Both are
+machine-validated (\texttt{theory\_v2/val\_sequential\_anytime.py}, \texttt{val\_multicandidate.py}),
+with the full written proofs in Appendix~\ref{app:extensions}.
+
 \section{Method: \textsc{KGA} (Knowability-Guided Adaptation)}
 \textsc{KGA} is a decision \emph{wrapper}; it does not require a new adaptation
 mechanism. Given a frozen $f_0$, a candidate adaptation, and an unlabeled batch:
@@ -1540,6 +1551,21 @@ are labeled as such (e.g., Tables~\ref{tab:cifar101}, \ref{tab:imagenetr}).
 \fi
 
 \appendix
+\onecolumn
+\section{Theory extensions: anytime-valid streaming and multicandidate routing}\label{app:extensions}
+The batch certificate of Theorem~\ref{thm:cert} extends in two directions that match how the
+controller is deployed: a \emph{stream} of decisions over time, and a \emph{panel} of candidate
+adapters to choose among. Both preserve the false-adapt guarantee and are machine-validated by
+\texttt{theory\_v2/val\_sequential\_anytime\_results.json} and
+\texttt{theory\_v2/val\_multicandidate\_results.json}.
+
+\subsection{Anytime-valid sequential certificate}\label{app:anytime-seq}
+\input{theory_v2/sequential_anytime_theorem}
+
+\subsection{Multicandidate certified routing}\label{app:multicand}
+\input{theory_v2/multicandidate_theorem}
+\twocolumn
+
 \section{Supplementary evidence beyond the seven-dataset core}\label{app:supp}
 This appendix collects the detailed per-dataset tables for the ImageNet-C scale grid and the RxRx1 safety case that are part of the seven-dataset core panel (Office-Home, Camelyon17, CIFAR-10-C, ImageNet-C, iWildCam, RxRx1, ImageNet-R), together with evidence \emph{beyond} it: an additional breadth check (PACS) and honest nulls. None of it is required for the paper's headline claims; it is retained for completeness and reviewer scrutiny.
 

@@ -149,6 +149,9 @@ case "${1:-}" in
   kga-elara-integrated)
     "$VENV/bin/python" "$KGA_ELARA" \
       --protocol research_lock/KGA_ELARA_INTEGRATION_v1.yaml ;;
+  kga-elara-integrated-dry-run)
+    "$VENV/bin/python" "$KGA_ELARA" \
+      --protocol research_lock/KGA_ELARA_INTEGRATION_v1.yaml --dry-run ;;
   cifar10c)
     # CIFAR-10-C stress grid (decide_kga, out-of-fold LOO radius). Seed via 2nd arg: kbtrain.sh cifar10c 0
     S="${2:-0}"

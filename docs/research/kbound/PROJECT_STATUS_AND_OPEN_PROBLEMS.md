@@ -18,6 +18,7 @@ out-of-fold conformal audit.
 | `thm:cmono-weakest` (iii) | `C_mono` is *a* weakest one-bit class **under** General Position. | **Proven (conditional)** |
 | `thm:uncond-weakest` | **Unconditional** weakest one-bit classes = explicit finite family of *dominance polytopes* `W*={T(r)≥G(r)}`; no unique weakest class; GP recovered as the collapsing face. | **Proven + machine-verified** (`val_unconditional_weakest.py`; 2.8e5 box + 3.2e3 polytope fibres, 0 mismatches; independently reproduced) |
 | `conj:gen` (**label-free bracketing**) | Universal label-free benefit bracketing **does not exist** (negative resolution = the impossibility); minimal supplement one bit; weakest class characterized by `thm:uncond-weakest`. | **RESOLVED (negatively).** *Not* an open problem. |
+| `thm:anytime` + `thm:multicand` (certificate **extensions**) | (a) Anytime-valid streaming: false-adapt ≤ α **time-uniformly** under optional stopping (Ville + one-sided betting supermartingale). (b) Multicandidate routing: **family-wise** false-adapt ≤ α for an arbitrary/adversarial selector (Bonferroni selection-proof containment). | **Proven (core guarantees) + machine-validated + line-by-line proof-audited (2026-06-29).** No fatal flaw; audit found only fixable expository gaps, now fixed (T=1 "specializes to," not "reproduces"; Šidák needs disjoint per-candidate calibration — Bonferroni is the default; CS centering made explicit). Folded into `kbound.tex` App.\ *Theory extensions*. Validators `val_sequential_anytime.py`, `val_multicandidate.py`. |
 
 > **Note on "C1 / label-free bracketing":** any ledger marking this "Open" is **stale**.
 > It is resolved negatively — universal label-free bounds without structure provably cannot
@@ -29,6 +30,8 @@ out-of-fold conformal audit.
 | `conj:gen-capacity` | General knowability–capacity: scalar capacity `K>1 ⟺ identifiable` is proven only under regularity R1 (unique flip locus) + R2 (monotone-in-nuisance). Removing R1/R2 (non-monotone flip loci; multiclass `K≥3`) is open. | `knowability_capacity_general.tex` |
 | `conj:dich-compute` | "Computability is free" for integral-functional families: whether the frontier margin `m(O)` is always a *computable* functional of `Q_X`. Constructive-measurability question; no probabilistic content. | `knowability_dichotomy.tex` |
 | Tight finite-sample rate | A tight (non-conservative) radius / exact evidence-channel rate constants; only conservative bounds proven. | `onebit_audit_rate.tex`, `knowability_rates.tex` |
+| Certificate minimax-optimality (GDR) | Whether the certificate is minimax-*optimal* (not merely valid) on the identifiable side. | **NOT attempted** (Wave 2). |
+| General/multiclass extension of the two new theorems | Anytime + multicandidate proved for the binary benefit-sign decision; multiclass/general-loss versions not done. | **NOT attempted.** |
 | Fully-general-drift bracketing | General-drift / regression extension characterization (the unknowable regime). | `regression_conjecture.tex`, `benefit_sign_frontier.tex` |
 
 ---
