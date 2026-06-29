@@ -1,0 +1,184 @@
+{
+  "protocol": "MIXED_BENCHMARK_PROTOCOL.md (pre-registered 2026-06-19)",
+  "dataset": "cifar10c",
+  "adapters": [
+    "eata"
+  ],
+  "set_name": "cifar10c_eata_secondary",
+  "seeds": [
+    0,
+    1,
+    2,
+    3,
+    4
+  ],
+  "n_conditions_per_seed": 432,
+  "device": "cpu",
+  "recompute_kga": false,
+  "policy_mean_regret": {
+    "always_adapt": 0.003268287358460603,
+    "always_freeze": 0.13137893428405126,
+    "aetta": 0.002341898199584749,
+    "poem": 0.0038493055988241126,
+    "kga": 0.0012675924985497084,
+    "oracle": 0.0
+  },
+  "policy_false_adapt_rate": {
+    "always_adapt": 0.2490740740740741,
+    "always_freeze": 0.0,
+    "aetta": 0.10324074074074074,
+    "poem": 0.10972222222222222,
+    "kga": 0.0,
+    "oracle": 0.0
+  },
+  "policy_coverage_decisive_correct": {
+    "always_adapt": 0.7416666666666667,
+    "always_freeze": 0.25833333333333336,
+    "aetta": 0.7935185185185185,
+    "poem": 0.7523148148148148,
+    "kga": 1.0,
+    "oracle": 1.0
+  },
+  "policy_decisive_rate": {
+    "always_adapt": 1.0,
+    "always_freeze": 1.0,
+    "aetta": 1.0,
+    "poem": 1.0,
+    "kga": 0.6370370370370371,
+    "oracle": 1.0
+  },
+  "harmful_base_rate_range": [
+    0.04398148148148148,
+    0.05787037037037037
+  ],
+  "headtohead": {
+    "set_name": "cifar10c_eata_secondary",
+    "metric": "mean regret-to-oracle (primary); false-adapt rate (secondary)",
+    "win_criterion": "KGA beats X iff 95% paired-bootstrap CI of (regret_KGA - regret_X) entirely below 0 AND survives Holm (family-wise alpha=0.05); WIN needs beats POEM and AETTA AND KGA false-adapt <= 0.10; LOSE if any CI entirely above 0.",
+    "nboot": 10000,
+    "boot_seed": 20260619,
+    "holm_alpha": 0.05,
+    "alpha_false_adapt": 0.1,
+    "kga_false_adapt_rate": 0.0,
+    "kga_false_adapt_le_alpha": true,
+    "comparisons": [
+      {
+        "competitor": "poem",
+        "label": "KGA vs poem",
+        "kga_mean_regret": 0.0012675924985497084,
+        "competitor_mean_regret": 0.0038493055988241126,
+        "mean_diff_kga_minus_competitor": -0.002581713100274404,
+        "ci95_lo": -0.003510653975385207,
+        "ci95_hi": -0.0017300870373017259,
+        "p_raw": 9.999000099990002e-05,
+        "p_holm": 0.00039996000399960006,
+        "ci_entirely_below_0": true,
+        "ci_entirely_above_0": false,
+        "kga_beats": true,
+        "kga_loses": false
+      },
+      {
+        "competitor": "aetta",
+        "label": "KGA vs aetta",
+        "kga_mean_regret": 0.0012675924985497084,
+        "competitor_mean_regret": 0.002341898199584749,
+        "mean_diff_kga_minus_competitor": -0.0010743057010350404,
+        "ci95_lo": -0.0016182986281260293,
+        "ci95_hi": -0.0005622511895166505,
+        "p_raw": 9.999000099990002e-05,
+        "p_holm": 0.00039996000399960006,
+        "ci_entirely_below_0": true,
+        "ci_entirely_above_0": false,
+        "kga_beats": true,
+        "kga_loses": false
+      },
+      {
+        "competitor": "always_adapt",
+        "label": "KGA vs always_adapt",
+        "kga_mean_regret": 0.0012675924985497084,
+        "competitor_mean_regret": 0.003268287358460603,
+        "mean_diff_kga_minus_competitor": -0.002000694859910894,
+        "ci95_lo": -0.0027960706398718893,
+        "ci95_hi": -0.0012506659522100736,
+        "p_raw": 9.999000099990002e-05,
+        "p_holm": 0.00039996000399960006,
+        "ci_entirely_below_0": true,
+        "ci_entirely_above_0": false,
+        "kga_beats": true,
+        "kga_loses": false
+      },
+      {
+        "competitor": "always_freeze",
+        "label": "KGA vs always_freeze",
+        "kga_mean_regret": 0.0012675924985497084,
+        "competitor_mean_regret": 0.13137893428405126,
+        "mean_diff_kga_minus_competitor": -0.13011134178550154,
+        "ci95_lo": -0.14542910179347487,
+        "ci95_hi": -0.115658842141878,
+        "p_raw": 9.999000099990002e-05,
+        "p_holm": 0.00039996000399960006,
+        "ci_entirely_below_0": true,
+        "ci_entirely_above_0": false,
+        "kga_beats": true,
+        "kga_loses": false
+      }
+    ],
+    "beats_poem": true,
+    "beats_aetta": true,
+    "loses_to_poem": false,
+    "loses_to_aetta": false,
+    "beats_always_adapt": true,
+    "beats_always_freeze": true,
+    "legacy_beats_both_trivials": true,
+    "VERDICT": "WIN",
+    "verdict_legend": {
+      "WIN": "KGA dominates the no-harm SOTA on mixed regret (both, Holm, FA<=alpha)",
+      "TIE": "KGA matches the no-harm SOTA on regret; differentiator is the anytime false-adapt certificate they lack",
+      "LOSE": "KGA is beaten by POEM and/or AETTA on mixed regret; rescope to the certificate / regimes KGA does win"
+    }
+  },
+  "serialized_per_condition_files": {
+    "always_adapt": [
+      "/Volumes/T9/uav/AutoML_Flagship_V8/experiments/kbound/results/mixed_headtohead_v1/per_condition_cifar10c_eata_secondary_always_adapt_seed0.json",
+      "/Volumes/T9/uav/AutoML_Flagship_V8/experiments/kbound/results/mixed_headtohead_v1/per_condition_cifar10c_eata_secondary_always_adapt_seed1.json",
+      "/Volumes/T9/uav/AutoML_Flagship_V8/experiments/kbound/results/mixed_headtohead_v1/per_condition_cifar10c_eata_secondary_always_adapt_seed2.json",
+      "/Volumes/T9/uav/AutoML_Flagship_V8/experiments/kbound/results/mixed_headtohead_v1/per_condition_cifar10c_eata_secondary_always_adapt_seed3.json",
+      "/Volumes/T9/uav/AutoML_Flagship_V8/experiments/kbound/results/mixed_headtohead_v1/per_condition_cifar10c_eata_secondary_always_adapt_seed4.json"
+    ],
+    "always_freeze": [
+      "/Volumes/T9/uav/AutoML_Flagship_V8/experiments/kbound/results/mixed_headtohead_v1/per_condition_cifar10c_eata_secondary_always_freeze_seed0.json",
+      "/Volumes/T9/uav/AutoML_Flagship_V8/experiments/kbound/results/mixed_headtohead_v1/per_condition_cifar10c_eata_secondary_always_freeze_seed1.json",
+      "/Volumes/T9/uav/AutoML_Flagship_V8/experiments/kbound/results/mixed_headtohead_v1/per_condition_cifar10c_eata_secondary_always_freeze_seed2.json",
+      "/Volumes/T9/uav/AutoML_Flagship_V8/experiments/kbound/results/mixed_headtohead_v1/per_condition_cifar10c_eata_secondary_always_freeze_seed3.json",
+      "/Volumes/T9/uav/AutoML_Flagship_V8/experiments/kbound/results/mixed_headtohead_v1/per_condition_cifar10c_eata_secondary_always_freeze_seed4.json"
+    ],
+    "aetta": [
+      "/Volumes/T9/uav/AutoML_Flagship_V8/experiments/kbound/results/mixed_headtohead_v1/per_condition_cifar10c_eata_secondary_aetta_seed0.json",
+      "/Volumes/T9/uav/AutoML_Flagship_V8/experiments/kbound/results/mixed_headtohead_v1/per_condition_cifar10c_eata_secondary_aetta_seed1.json",
+      "/Volumes/T9/uav/AutoML_Flagship_V8/experiments/kbound/results/mixed_headtohead_v1/per_condition_cifar10c_eata_secondary_aetta_seed2.json",
+      "/Volumes/T9/uav/AutoML_Flagship_V8/experiments/kbound/results/mixed_headtohead_v1/per_condition_cifar10c_eata_secondary_aetta_seed3.json",
+      "/Volumes/T9/uav/AutoML_Flagship_V8/experiments/kbound/results/mixed_headtohead_v1/per_condition_cifar10c_eata_secondary_aetta_seed4.json"
+    ],
+    "poem": [
+      "/Volumes/T9/uav/AutoML_Flagship_V8/experiments/kbound/results/mixed_headtohead_v1/per_condition_cifar10c_eata_secondary_poem_seed0.json",
+      "/Volumes/T9/uav/AutoML_Flagship_V8/experiments/kbound/results/mixed_headtohead_v1/per_condition_cifar10c_eata_secondary_poem_seed1.json",
+      "/Volumes/T9/uav/AutoML_Flagship_V8/experiments/kbound/results/mixed_headtohead_v1/per_condition_cifar10c_eata_secondary_poem_seed2.json",
+      "/Volumes/T9/uav/AutoML_Flagship_V8/experiments/kbound/results/mixed_headtohead_v1/per_condition_cifar10c_eata_secondary_poem_seed3.json",
+      "/Volumes/T9/uav/AutoML_Flagship_V8/experiments/kbound/results/mixed_headtohead_v1/per_condition_cifar10c_eata_secondary_poem_seed4.json"
+    ],
+    "kga": [
+      "/Volumes/T9/uav/AutoML_Flagship_V8/experiments/kbound/results/mixed_headtohead_v1/per_condition_cifar10c_eata_secondary_kga_seed0.json",
+      "/Volumes/T9/uav/AutoML_Flagship_V8/experiments/kbound/results/mixed_headtohead_v1/per_condition_cifar10c_eata_secondary_kga_seed1.json",
+      "/Volumes/T9/uav/AutoML_Flagship_V8/experiments/kbound/results/mixed_headtohead_v1/per_condition_cifar10c_eata_secondary_kga_seed2.json",
+      "/Volumes/T9/uav/AutoML_Flagship_V8/experiments/kbound/results/mixed_headtohead_v1/per_condition_cifar10c_eata_secondary_kga_seed3.json",
+      "/Volumes/T9/uav/AutoML_Flagship_V8/experiments/kbound/results/mixed_headtohead_v1/per_condition_cifar10c_eata_secondary_kga_seed4.json"
+    ],
+    "oracle": [
+      "/Volumes/T9/uav/AutoML_Flagship_V8/experiments/kbound/results/mixed_headtohead_v1/per_condition_cifar10c_eata_secondary_oracle_seed0.json",
+      "/Volumes/T9/uav/AutoML_Flagship_V8/experiments/kbound/results/mixed_headtohead_v1/per_condition_cifar10c_eata_secondary_oracle_seed1.json",
+      "/Volumes/T9/uav/AutoML_Flagship_V8/experiments/kbound/results/mixed_headtohead_v1/per_condition_cifar10c_eata_secondary_oracle_seed2.json",
+      "/Volumes/T9/uav/AutoML_Flagship_V8/experiments/kbound/results/mixed_headtohead_v1/per_condition_cifar10c_eata_secondary_oracle_seed3.json",
+      "/Volumes/T9/uav/AutoML_Flagship_V8/experiments/kbound/results/mixed_headtohead_v1/per_condition_cifar10c_eata_secondary_oracle_seed4.json"
+    ]
+  }
+}

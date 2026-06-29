@@ -122,13 +122,23 @@ def main():
     )
     out["beats_both_robust"] = bool(out["kga_vs_freeze"]["ci_excludes_zero"]
                                     and out["kga_vs_adapt"]["ci_excludes_zero"])
+    out["protocol_id"] = "mixed_protocol_oof_v2"
+    out["calibration"] = "per_dataset_dev_lock_oof"
+    out["note"] = ("constructed cross-protocol aggregate; not a universal transferred gate; "
+                   "each dataset keeps its own dev-calibrated LOO conformal radius")
     print("\nPOOLED MIXED STREAM  n=%d  comp=%s" % (n, out["composition"]))
     print(f"  regret: KGA={rk.mean():.4f}  always-adapt={ra.mean():.4f}  always-freeze={rf.mean():.4f}  FA={fa_pool:.3f}")
     print(f"  KGA vs FREEZE +{gap_f.mean():.4f} 95%CI{ci(cf)} excl0={out['kga_vs_freeze']['ci_excludes_zero']}")
     print(f"  KGA vs ADAPT  +{gap_a.mean():.4f} 95%CI{ci(ca)} excl0={out['kga_vs_adapt']['ci_excludes_zero']}")
     print(f"  beats_both_robust = {out['beats_both_robust']}")
-    Path(ROOT / "research_lock/KBOUND_MIXED_STREAM_v2.json").write_text(json.dumps(out, indent=2))
-    print("saved research_lock/KBOUND_MIXED_STREAM_v2.json")
+    lock_path = ROOT / "research_lock/KBOUND_MIXED_STREAM_v2.json"
+    lock_path.write_text(json.dumps(out, indent=2))
+    print(f"saved {lock_path.relative_to(ROOT)}")
+    out_dir = ROOT / "experiments/kbound/results/mixed_protocol_oof_v2"
+    out_dir.mkdir(parents=True, exist_ok=True)
+    result_path = out_dir / "mixed_protocol_oof_v2_result.json"
+    result_path.write_text(json.dumps(out, indent=2))
+    print(f"saved {result_path.relative_to(ROOT)}")
 
 
 if __name__ == "__main__":
