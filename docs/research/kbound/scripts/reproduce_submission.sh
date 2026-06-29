@@ -34,6 +34,8 @@ if [[ -d "${ROOT}/experiments/kbound/theory_validation" ]]; then
   ls "${ROOT}/experiments/kbound/theory_validation"/results_thm*.json >/dev/null
   echo "theory JSON artifacts: present"
 fi
+echo "=== [2b] Full theory audit (artifacts + claim ledger cross-check) ==="
+"${PY}" "${KBOUND}/scripts/theory_audit_full.py" --write-report
 
 echo "=== [3] Gate baseline (CPU selftest) ==="
 cd "${KBOUND}"

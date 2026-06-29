@@ -12,7 +12,12 @@
       "candidate_adapter": "n/a",
       "calibration_method": "n/a",
       "test_split": "n/a",
-      "supporting_artifacts": ["experiments/kbound/theory_validation/results_thm2_regret.json", "experiments/kbound/theory_validation/results_thm5_multiclass.json"],
+      "supporting_artifacts": [
+        "experiments/kbound/theory_validation/results_thm2_regret.json",
+        "experiments/kbound/theory_validation/results_thm5_multiclass.json",
+        "experiments/kbound/theory_validation/results_frontier.json",
+        "experiments/kbound/theory_validation/results_benefit_frontier.json"
+      ],
       "assumptions": ["declared target class", "risk alignment on identifiable region"],
       "status": "supported",
       "allowed_wording": "iff identifiability on declared drift class",
@@ -28,7 +33,11 @@
       "candidate_adapter": "n/a",
       "calibration_method": "n/a",
       "test_split": "n/a",
-      "supporting_artifacts": ["docs/research/kbound/results/witness/witness_clean.json"],
+      "supporting_artifacts": [
+        "docs/research/kbound/results/witness/witness_clean.json",
+        "experiments/kbound/theory_validation/results_thm1_lecam.json",
+        "experiments/kbound/theory_validation/results_knowability_dichotomy.json"
+      ],
       "assumptions": ["non-identifiability construction"],
       "status": "supported",
       "allowed_wording": "information-theoretically necessary abstention",
@@ -207,7 +216,11 @@
       "candidate_adapter": "n/a",
       "calibration_method": "n/a",
       "test_split": "n/a",
-      "supporting_artifacts": ["docs/research/kbound/paper/sections/main_theory_5.tex"],
+      "supporting_artifacts": [
+        "docs/research/kbound/paper/sections/main_theory_5.tex",
+        "docs/research/kbound/theory_v2/conj1_closure_results.json",
+        "experiments/kbound/theory_validation/results_conj1_genpos.json"
+      ],
       "assumptions": ["thm:conj1-dichotomy"],
       "status": "supported",
       "allowed_wording": "resolved negatively; impossibility not open problem",
@@ -279,6 +292,79 @@
       "status": "supported",
       "allowed_wording": "audit triggered warnings under designed shifts; does not verify exchangeability",
       "forbidden_wording": ["verified exchangeability", "proved risk alignment"]
+    },
+    {
+      "claim_id": "KB-CLAIM-028",
+      "claim_text": "Under General Position, C_mono is a weakest one-bit class (conditional).",
+      "claim_type": "theorem",
+      "claim_tier": "A",
+      "protocol": "theory_validation",
+      "dataset": "synthetic",
+      "candidate_adapter": "n/a",
+      "calibration_method": "n/a",
+      "test_split": "n/a",
+      "supporting_artifacts": ["experiments/kbound/theory_validation/results_conj1_genpos.json"],
+      "assumptions": ["General Position"],
+      "status": "supported",
+      "allowed_wording": "weakest one-bit class under GP",
+      "forbidden_wording": ["unique weakest class unconditionally"]
+    },
+    {
+      "claim_id": "KB-CLAIM-029",
+      "claim_text": "Unconditional weakest one-bit classes are explicit dominance polytopes W* (machine-verified).",
+      "claim_type": "theorem",
+      "claim_tier": "A",
+      "protocol": "theory_validation",
+      "dataset": "synthetic enumeration",
+      "candidate_adapter": "n/a",
+      "calibration_method": "n/a",
+      "test_split": "n/a",
+      "supporting_artifacts": [
+        "docs/research/kbound/theory_v2/unconditional_weakest_results.json",
+        "docs/research/kbound/theory_v2/val_unconditional_weakest.py"
+      ],
+      "assumptions": ["finite polytope enumeration"],
+      "status": "supported",
+      "allowed_wording": "explicit finite family W*; GP as collapsing face",
+      "forbidden_wording": ["unique weakest class"]
+    },
+    {
+      "claim_id": "KB-CLAIM-031",
+      "claim_text": "Anytime-valid streaming certificate controls false-adapt time-uniformly under optional stopping.",
+      "claim_type": "theorem",
+      "claim_tier": "A",
+      "protocol": "theory_v2",
+      "dataset": "synthetic stream",
+      "candidate_adapter": "n/a",
+      "calibration_method": "e-process",
+      "test_split": "n/a",
+      "supporting_artifacts": [
+        "docs/research/kbound/theory_v2/val_sequential_anytime_results.json",
+        "docs/research/kbound/kbound_pkg/kbound/eprocess.py"
+      ],
+      "assumptions": ["bounded benefits", "valid e-process"],
+      "status": "supported",
+      "allowed_wording": "time-uniform FA_u extension (binary spine)",
+      "forbidden_wording": ["multiclass anytime closed"]
+    },
+    {
+      "claim_id": "KB-CLAIM-032",
+      "claim_text": "Multicandidate Bonferroni routing controls family-wise false-adapt at level alpha.",
+      "claim_type": "theorem",
+      "claim_tier": "A",
+      "protocol": "theory_v2",
+      "dataset": "synthetic K candidates",
+      "candidate_adapter": "n/a",
+      "calibration_method": "Bonferroni per-candidate",
+      "test_split": "n/a",
+      "supporting_artifacts": [
+        "docs/research/kbound/theory_v2/val_multicandidate_results.json",
+        "docs/research/kbound/kbound_pkg/kbound/router.py"
+      ],
+      "assumptions": ["independent per-candidate calibration or Bonferroni"],
+      "status": "supported",
+      "allowed_wording": "family-wise FA <= alpha under Bonferroni selection-proof",
+      "forbidden_wording": ["naive argmax L_k has FA <= alpha"]
     },
     {
       "claim_id": "KB-CLAIM-050",

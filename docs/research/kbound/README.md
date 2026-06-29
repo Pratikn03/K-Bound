@@ -6,7 +6,8 @@ implementation, locked experiment artifacts, and a small notebook curriculum.
 | If you want… | Open this |
 |--------------|-----------|
 | **Complete picture (theory → proof → results)** | [`THEORY_TO_CODE_MAP.md`](THEORY_TO_CODE_MAP.md) |
-| **Run the tour in a terminal** | `bash docs/research/kbound/scripts/kbound_tour.sh` |
+| **Full theory audit** | `bash docs/research/kbound/scripts/theory_audit_full.sh` |
+| **Re-run all 25 validators (~6 min)** | `bash docs/research/kbound/scripts/theory_audit_full.sh --run-validators` |
 | **Run the tour in Jupyter** | [`../../notebooks/00_KBound_Master_Guide.ipynb`](../../notebooks/00_KBound_Master_Guide.ipynb) |
 | **Canonical project status** | [`PROJECT_STATUS_AND_OPEN_PROBLEMS.md`](PROJECT_STATUS_AND_OPEN_PROBLEMS.md) |
 | **Reviewer reproduction** | [`REVIEWER_REPRO_PACKET.md`](REVIEWER_REPRO_PACKET.md) |
