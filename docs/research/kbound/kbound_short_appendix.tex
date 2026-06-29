@@ -277,6 +277,15 @@ Protocol~H v2 canonical \textsc{KGA} on test (Table~\ref{tab:iwildcam-H} in main
 \label{tab:iwildcam}
 \end{table}
 
+\subsection{Controlled multimodal corruption (Protocol D33)}
+Pre-registered MNIST two-view fusion ($130$ conditions; one modality corrupted across
+$13$ severities). When fusion flips from helpful to harmful, \textsc{KGA} routes correctly:
+mean accuracy $0.857$ vs.\ always-fuse $0.583$ and always-single-A $0.854$ (both gaps
+$P{=}1.0$), false-adapt $0/9$ commits ($\le\alpha$). This is a \emph{controlled} mechanism
+confirmation---not a natural benchmark---but shows the certificate dominates both trivial
+policies when detectable multimodal harm is present
+(\texttt{CONTROLLED\_MULTIMODAL\_PROTOCOL\_D33\_v1}).
+
 \subsection{CIFAR-10.1 (low-margin natural shift, Protocol~K audit)}
 Over five seeds, \textsc{KGA} abstains heavily on Tent/EATA ($59$--$86\%$), makes zero false
 adapts there under \emph{within-seed} calibration, and ties always-freeze while always-adapt
@@ -291,7 +300,7 @@ ablations appear in the frontier appendix (App.~\ref{app:frontier}).
 \section{Reproducibility}\label{sec:repro}
 All experiments are reproducible from the anonymized submission repository: theory validators,
 pre-registered Protocols A/G/H v2/M v2, and locked result JSONs
-(\texttt{experiments/kbound/results/}, \texttt{research\_lock/KBOUND\_HEADLINE\_FINDINGS.json}).
+(\texttt{experiments/kbound/results/}, \texttt{research\_lock/KBOUND\_HEADLINE\_FINDINGS\_v3.json}).
 Environment: Python~3.12 and PyTorch~2.5.1 for GPU runs; \texttt{kbtrain.sh} wraps venv activation
 and natural-shift protocol scorers. Core certificate code:
 \texttt{pip install -e docs/research/kbound/kbound\_pkg/}.
@@ -303,6 +312,9 @@ and natural-shift protocol scorers. Core certificate code:
 Track & Repro command / artifact & Status \\
 \midrule
 CIFAR-10-C stress (5 seeds) & \texttt{kbtrain.sh} stress targets & locked JSON \\
+POEM/AETTA head-to-head & \texttt{poem\_aetta/run\_all\_headtohead.sh} & WIN \\
+Mixed OOF aggregate & \texttt{mixed\_stream\_kbound.py} & locked \\
+Assumption audit v1 & \texttt{run\_assumption\_audit\_v1.py} & cached arm \\
 ImageNet-C SAR faithful & result JSON + Table~\ref{tab:imagenetc-faithful} & locked \\
 Camelyon17 Protocol G & \texttt{analyze\_F} on protocol G bundle & locked \\
 iWildCam Protocol H v2 & \texttt{kbtrain.sh protocol-h-v2} & locked \\

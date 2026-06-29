@@ -77,9 +77,10 @@ false-freeze rates at a chosen level $\alpha$. We package this as \textsc{KGA}, 
 wrapper around existing adapters (Tent, EATA, SAR) that decides \emph{whether} to trust them
 rather than how to adapt. On a pre-registered, un-cherry-picked panel of natural and
 corruption shifts---each scored once on held-out test with bootstrap confidence
-intervals---\textsc{KGA} behaves as the theory predicts: it strictly beats both always-adapt
-and always-freeze on the synthetic stress grids where harmful adaptation is frequent and
-detectable (CIFAR-10-C, ImageNet-C SAR), prevents damage where adaptation mostly hurts, and
+intervals---\textsc{KGA} behaves as the theory predicts: on pre-registered mixed harmful+helpful
+streams it \textbf{beats POEM and AETTA} (the no-harm SOTA) with Holm-corrected regret gaps at
+$\mathrm{FA}_{\mathrm u}{=}0$; it strictly beats both always-adapt and always-freeze on synthetic
+stress grids where harmful adaptation is frequent and detectable (CIFAR-10-C, ImageNet-C SAR), prevents damage where adaptation mostly hurts, and
 is uniformly no-harm on every natural shift, where adapting is already near-optimal. \textsc{KGA} is a safety layer, not a universal accuracy booster: its wins are
 regime-specific, and we report---rather than hide---the regimes and honest nulls where it
 only ties. Full per-dataset tables and the complete benchmark battery appear in the body and
@@ -150,7 +151,9 @@ replacement for TTA methods.
 Empirically, \textsc{KGA} behaves according to the theory. On a pre-registered
 CIFAR-10-C stress grid, where harmful adaptation is frequent and detectable,
 \textsc{KGA} beats both always-adapt and always-freeze for Tent and EATA while
-making zero false-adapt decisions, and it ties the collapse-resistant SAR. In
+making zero false-adapt decisions, and it ties the collapse-resistant SAR; on the same
+mixed stream it \textbf{beats POEM and AETTA} (Table~\ref{tab:headtohead-poem-aetta}) with
+Holm-corrected paired-bootstrap CIs. In
 online non-stationary CIFAR-10 streams, always-adapt collapses in the harm-dominated
 regime and always-freeze forgoes gains in the helpful regime, while \textsc{KGA}
 remains near-best across both. At ImageNet scale, \textsc{KGA} also improves over
@@ -172,7 +175,7 @@ ImageNet-R remains a split-specific lead, not a stable win.
 \item We prove an impossibility result showing that some adaptation decisions are fundamentally unknowable from label-free evidence.
 \item We derive a finite-sample certificate that controls false adaptation and false freezing under risk-aligned evidence.
 \item We characterize an exact benefit-sign frontier based on observable disagreement margin and calibration drift.
-\item We validate the framework on a seven-dataset core panel (Office-Home, Camelyon17, CIFAR-10-C, ImageNet-C, iWildCam, RxRx1, ImageNet-R) with bootstrap confidence intervals: beats-both on the synthetic stress grids (CIFAR-10-C, ImageNet-C SAR) and uniform no-harm on every natural shift; controlled synthetic validations and an additional breadth dataset (PACS) are reported in Appendix~\ref{app:supp}, with CIFAR-10.1 retained in-body as a supporting low-margin check (\S\ref{sec:external}). A heterogeneous mixed-stream aggregate is reported as withdrawn pending a corrected out-of-fold re-run (\S\ref{sec:mixedstream}).
+\item We validate the framework on a seven-dataset core panel (Office-Home, Camelyon17, CIFAR-10-C, ImageNet-C, iWildCam, RxRx1, ImageNet-R) with bootstrap confidence intervals: beats-both on the synthetic stress grids (CIFAR-10-C, ImageNet-C SAR), a pre-registered mixed head-to-head win over POEM and AETTA (Table~\ref{tab:headtohead-poem-aetta}), and uniform no-harm on every natural shift; controlled synthetic validations and an additional breadth dataset (PACS) are reported in Appendix~\ref{app:supp}, with CIFAR-10.1 retained in-body as a supporting low-margin check (\S\ref{sec:external}). A constructed cross-protocol aggregate ($n{=}143$) beats both fixed policies under out-of-fold calibration, demonstrating per-condition routing under heterogeneity without claiming a universal mixed-deployment win (\S\ref{sec:mixedstream}).
 \end{itemize}
 
 \begin{table*}[t]\centering\footnotesize
@@ -781,6 +784,38 @@ accuracy is $0.794$/$0.802$/$0.808$. Full results:
 \label{tab:decisive}
 \end{table*}
 
+\paragraph{Mixed head-to-head vs.\ POEM and AETTA (pre-registered).}
+Beating the trivial policies is necessary but not sufficient: POEM~\cite{bar2024poem} and
+AETTA~\cite{lee2024aetta} are the closest no-harm SOTA competitors. We pre-registered the
+benchmark, metrics, and WIN/TIE/LOSE criterion before computing any KGA-vs-POEM/AETTA number
+(\texttt{MIXED\_BENCHMARK\_PROTOCOL.md}). All six policies consume the \emph{same} logged
+per-condition signals on the Tent stress grid ($432$ conditions/seed, five seeds; harmful
+fraction ${\approx}16$--$18\%$). \textbf{Verdict: WIN.} \textsc{KGA} lowers mean regret vs.\
+both POEM and AETTA with paired-bootstrap $95\%$ CIs entirely below zero (Holm $\alpha{=}0.05$),
+at $\mathrm{FA}_{\mathrm u}{=}0$ (Table~\ref{tab:headtohead-poem-aetta}). POEM and AETTA
+false-adapt at ${\sim}24$--$25\%$ on the same stream. Secondary arms (EATA alone, Tent+EATA
+pooled) yield the same WIN verdict (\texttt{mixed\_headtohead\_v1/}).
+
+\begin{table*}[t]\centering\small
+\caption{\textbf{Pre-registered mixed head-to-head} (CIFAR-10-C stress, Tent, $432$ cond./seed,
+$5$ seeds). Regret-to-oracle$\downarrow$; $\mathrm{FA}_{\mathrm u}$ = unconditional false-adapt.
+KGA vs.\ $X$: mean$(\mathrm{regret}_{\textsc{kga}}-\mathrm{regret}_X)$ with $95\%$ paired-bootstrap CI.}
+\label{tab:headtohead-poem-aetta}
+\resizebox{\textwidth}{!}{%
+\begin{tabular}{lccccc}
+\toprule
+policy & mean regret$\downarrow$ & $\mathrm{FA}_{\mathrm u}$ & decisive rate & KGA gap & Holm beats? \\
+\midrule
+always-adapt  & $0.0079$ & $0.329$ & $1.00$ & $-0.0064$ & yes \\
+always-freeze & $0.1241$ & $0.000$ & $1.00$ & $-0.1225$ & yes \\
+POEM          & $0.0088$ & $0.245$ & $1.00$ & $-0.0072\,[-0.0088,-0.0057]$ & yes \\
+AETTA         & $0.0073$ & $0.240$ & $1.00$ & $-0.0058\,[-0.0071,-0.0044]$ & yes \\
+\textbf{\textsc{KGA}} & $\mathbf{0.0016}$ & $\mathbf{0.000}$ & $0.68$ & --- & \textbf{WIN} \\
+oracle        & $0.0000$ & $0.000$ & $1.00$ & --- & ceiling \\
+\bottomrule
+\end{tabular}}
+\end{table*}
+
 \begin{figure}[tb]\centering
 \includegraphics[width=0.96\linewidth]{figures/fig_decisive_pareto_cifar10c.png}
 \caption{CIFAR-10-C stress grid, mixing-ratio Pareto: mean regret-to-oracle vs the harmful
@@ -1286,7 +1321,7 @@ whose operating point transfers \emph{without} tuning on the target---a \emph{sc
 source-calibrated} $\tau$ (future work); per-dataset recalibration on Camelyon17 would forfeit its
 external-validation role and is not a legitimate path.
 
-\subsection{Cross-protocol aggregate (withdrawn pending a corrected out-of-fold re-run)}\label{sec:mixedstream}
+\subsection{Cross-protocol aggregate (out-of-fold re-run)}\label{sec:mixedstream}
 Each single dataset above is \emph{one-sided}: Camelyon17 is adapt-favorable
 (on its held-out OOD cells freezing leaves regret ${\approx}0.11$), whereas OfficeHome and
 iWildCam are freeze-favorable (adapting leaves regret $0.047$ and $0.103$). On a one-sided
@@ -1302,18 +1337,19 @@ Because this aggregate genuinely mixes helpful conditions (Camelyon) with harmfu
 iWildCam), it is the one setting in our suite where per-condition routing could in principle beat
 both fixed policies.
 
-\emph{Status: withdrawn pending a corrected re-run.} The earlier figures for this aggregate
-(regret $0.0026$; ${\sim}24\times$ below always-adapt, ${\sim}13\times$ below always-freeze, both
-bootstrap CIs reported as excluding zero) used the \emph{same in-sample conformal radius} as the
-natural-shift scorer---the calibration bug that manufactured the Office-Home/iWildCam false wins
-(\S\ref{sec:natural-suite}). They are therefore \textbf{withdrawn pending} the corrected
-out-of-fold re-run (\texttt{scripts/mixed\_stream\_kbound.py}, now fixed). Under a valid radius
-\textsc{KGA} abstains more, so the magnitude shrinks; whether any beats-both survives here is left
-to that re-run and is \emph{not} claimed as a current result. We do not present the old magnitudes
-as findings. This is a \emph{constructed} heterogeneous aggregate---a pool of three real benchmarks'
-test conditions, not a single new dataset---and even when re-run it demonstrates only the
-\emph{mechanism} (per-condition routing under heterogeneity); it is not a claim of new
-state-of-the-art on a marquee benchmark.
+\paragraph{Out-of-fold re-run (\texttt{mixed\_protocol\_oof\_v2}).}
+The earlier figures for this aggregate (regret $0.0026$; ${\sim}24\times$ below always-adapt,
+${\sim}13\times$ below always-freeze) used an \emph{in-sample} conformal radius---the calibration bug
+corrected in \S\ref{sec:natural-suite}---and are \textbf{withdrawn}. Under leave-one-out conformal
+calibration per dataset (\texttt{scripts/mixed\_stream\_kbound.py}), the pooled stream yields mean
+regret $\mathrm{regret}_{\textsc{kga}}{=}0.0059$ vs.\ $0.0632$ (always-adapt) and $0.0342$
+(always-freeze), with pooled false-adapt $0$. Bootstrap regret gaps: vs.\ always-freeze
+$+0.0283$ $[0.019,\,0.038]$; vs.\ always-adapt $+0.0573$ $[0.043,\,0.072]$; both $95\%$ CIs exclude
+zero (\texttt{research\_lock/KBOUND\_MIXED\_STREAM\_v2.json}). This is a \textbf{beats-both} on a
+\emph{constructed} heterogeneous aggregate---not a natural-shift headline and not a universal
+cross-dataset gate. Magnitudes are smaller than the withdrawn in-sample-radius multipliers; we do
+not report those ratios as findings. The result demonstrates only the \emph{mechanism} of
+per-condition routing under heterogeneity.
 
 \section{Excluded wins and regime boundaries}\label{sec:excluded-wins}
 Several benchmarks flag beats-both under alternate routes or adapters but do \emph{not} survive the
@@ -1539,7 +1575,7 @@ are labeled as such (e.g., Tables~\ref{tab:cifar101}, \ref{tab:imagenetr}).
 \item F.~Parisi, F.~Strino, B.~Nadler, Y.~Kluger. Ranking and Combining Multiple Predictors without Labeled Data. Proceedings of the National Academy of Sciences 111(4):1253--1258, 2014.
 \item A.~Jaffe, B.~Nadler, Y.~Kluger. Estimating the Accuracies of Multiple Classifiers without Labeled Data. AISTATS 2015.
 \item E.~Kim, M.~Sun, A.~Raghunathan, J.~Z.~Kolter. Reliable Test-Time Adaptation via Agreement-on-the-Line. ICLR 2024.
-\item Bar et al. Protected Test-Time Adaptation via Online Entropy Matching: A Betting Approach (POEM). NeurIPS 2024. % TODO: verify author initials before submission
+\item Y.~Bar, S.~Shaer, Y.~Romano. Protected Test-Time Adaptation via Online Entropy Matching: A Betting Approach (POEM). NeurIPS 2024.
 \item M.~Schirmer, M.~Jazbec, C.~A.~Naesseth, E.~Nalisnick. Monitoring Risks in Test-Time Adaptation. NeurIPS 2025 (arXiv:2507.08721).
 \item A.~Podkopaev, A.~Ramdas. Tracking the Risk of a Deployed Model and Detecting Harmful Distribution Shifts. ICLR 2022.
 \item T.~Bonald, R.~Combes. A Minimax Optimal Algorithm for Crowdsourcing. NeurIPS 2017.
@@ -1568,6 +1604,13 @@ adapters to choose among. Both preserve the false-adapt guarantee and are machin
 
 \section{Supplementary evidence beyond the seven-dataset core}\label{app:supp}
 This appendix collects the detailed per-dataset tables for the ImageNet-C scale grid and the RxRx1 safety case that are part of the seven-dataset core panel (Office-Home, Camelyon17, CIFAR-10-C, ImageNet-C, iWildCam, RxRx1, ImageNet-R), together with evidence \emph{beyond} it: an additional breadth check (PACS) and honest nulls. None of it is required for the paper's headline claims; it is retained for completeness and reviewer scrutiny.
+
+\subsection{Controlled multimodal corruption (Protocol D33)}
+Pre-registered MNIST two-view fusion ($130$ conditions; modality B corrupted across
+$13$ severities). \textsc{KGA} mean accuracy $0.857$ vs.\ always-fuse $0.583$ and
+always-single-A $0.854$ (both superiority probabilities $1.0$), false-adapt $0/9$
+commits. Controlled construction confirming routing when fusion harm is detectable---not
+a natural benchmark (\texttt{CONTROLLED\_MULTIMODAL\_PROTOCOL\_D33\_v1}).
 
 \subsection{ImageNet-R: architecture robustness across ten backbones}\label{supp:imagenetr-backbones}
 Table~\ref{tab:imagenetr-backbones} re-runs the ImageNet-R diverse panel across ten modern

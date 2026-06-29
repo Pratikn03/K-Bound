@@ -46,7 +46,7 @@ We prove an exact benefit-sign frontier: over a declared target class, the sign 
 
 On the identifiable side of the frontier, we give an adapt/freeze/abstain certificate that controls unconditional false-adapt and false-freeze probabilities under stated risk-alignment, coverage, and calibration assumptions. We instantiate the certificate as Knowability-Guided Adaptation (KGA), a mechanism-agnostic wrapper around existing adaptation methods including Tent, EATA, and SAR.
 
-Experiments separate the regimes predicted by the theory. On controlled harmful-detectable stress tracks, KGA beats both always-adapt and always-freeze for Tent and EATA on CIFAR-10-C, and for a harmful SAR operating point on ImageNet-C, while maintaining zero observed unconditional false-adapt decisions. On held-out natural shifts KGA is uniformly no-harm under a valid out-of-fold radius: it beats the worse fixed policy and ties the better at zero false-adapt (on Office-Home and iWildCam it beats always-adapt and ties always-freeze; Camelyon17 and RxRx1 are one-sided), and no natural shift is a beats-both once the conformal radius is held out of sample. On weak or split-specific evidence regimes, it abstains or freezes conservatively rather than claiming universal improvement. K-Bound therefore reframes TTA as an identifiability-limited deployment decision: adapt when benefit is certifiable, freeze when harm is certifiable, and abstain when label-free evidence cannot support a valid commitment.
+Experiments separate the regimes predicted by the theory. On the pre-registered mixed harmful+helpful CIFAR-10-C stress grid, \textsc{KGA} \textbf{beats POEM and AETTA} (the no-harm SOTA baselines) on regret-to-oracle with Holm-corrected paired-bootstrap CIs, while maintaining zero unconditional false-adapt; it also beats both always-adapt and always-freeze for Tent and EATA and for a harmful SAR operating point on ImageNet-C. On held-out natural shifts \textsc{KGA} is uniformly no-harm under a valid out-of-fold radius: it beats the worse fixed policy and ties the better at zero false-adapt (on Office-Home and iWildCam it beats always-adapt and ties always-freeze; Camelyon17 and RxRx1 are one-sided), and no natural shift is a beats-both once the conformal radius is held out of sample. On weak or split-specific evidence regimes, it abstains or freezes conservatively rather than claiming universal improvement. K-Bound therefore reframes TTA as an identifiability-limited deployment decision: adapt when benefit is certifiable, freeze when harm is certifiable, and abstain when label-free evidence cannot support a valid commitment.
 \end{abstract}
 
 
@@ -114,7 +114,8 @@ mechanism-agnostic wrapper around Tent/EATA/SAR (Algorithm~\ref{alg:kga}).
 WILDS natural shifts (Camelyon17, iWildCam, RxRx1), a domain-generalization suite (PACS), a rendition shift (ImageNet-R), and a
 reproduction shift (CIFAR-10.1)---
 \textsc{KGA} beats both fixed policies with bootstrap $95\%$ CIs excluding zero on the CIFAR-10-C
-stress grid (ImageNet-C SAR corroboration), and is \emph{uniformly no-harm} on the held-out natural
+stress grid (ImageNet-C SAR corroboration), \textbf{beats POEM and AETTA} on the pre-registered mixed
+head-to-head (Table~\ref{tab:headtohead-poem-aetta}), and is \emph{uniformly no-harm} on the held-out natural
 shifts (Office-Home, iWildCam, Camelyon17, RxRx1): under a valid out-of-fold radius it beats the worse
 fixed policy and ties the better at false-adapt $0\%$, with no natural-shift beats-both
 (Table~\ref{tab:regime-summary}).
@@ -478,6 +479,45 @@ ATC-style gate & $0.0045$ & $0.116$ & $0.172$ & $0.67$ & $1.00$ & $0.336$ \\
 (adapt-rate $0$), so its ``$0$ false-adapt'' is just always-freeze (regret $0.123$).}
 \end{table}
 
+\subsection{Mixed head-to-head vs.\ POEM and AETTA (pre-registered)}
+The stress-grid wins above beat the \emph{trivial} policies always-adapt and always-freeze. A harder
+question is whether \textsc{KGA} dominates the \emph{no-harm SOTA}---POEM~\cite{bar2024poem} (betting
+martingale entropy protection) and AETTA~\cite{lee2024aetta} (label-free accuracy gate)---on a
+\emph{mixed} harmful+helpful stream. We pre-registered the benchmark, metrics, and WIN/TIE/LOSE
+criterion \emph{before} computing any number (\texttt{MIXED\_BENCHMARK\_PROTOCOL.md}).
+All six policies consume the \emph{same} logged per-condition signals $Z$ and benefit $B$ from the
+locked CIFAR-10-C stress grid (Tent, $432$ conditions/seed, five seeds; harmful fraction
+${\approx}16$--$18\%$); only the decision rule differs. POEM and AETTA are faithful ports of their
+published protectors (documented simplifications: batch-summary entropy rather than per-sample streams).
+
+\textbf{Verdict: WIN.} \textsc{KGA} lowers mean regret-to-oracle vs.\ both POEM and AETTA with
+paired-bootstrap $95\%$ CIs entirely below zero and Holm correction ($\alpha{=}0.05$), at
+$\mathrm{FA}_{\mathrm u}{=}0\le\alpha$ (Table~\ref{tab:headtohead-poem-aetta}). POEM and AETTA
+false-adapt at ${\sim}24$--$25\%$ on the same stream---they lack the certificate's marginal
+false-adapt control. Secondary pooled sets (Tent+EATA, EATA alone) yield the same WIN verdict
+(\texttt{experiments/kbound/results/mixed\_headtohead\_v1/}).
+
+\begin{table}[t]\centering\small
+\caption{\textbf{Pre-registered mixed head-to-head} (CIFAR-10-C stress, Tent, $432$ cond./seed,
+$5$ seeds). Regret-to-oracle$\downarrow$; $\mathrm{FA}_{\mathrm u}$ = unconditional false-adapt.
+KGA vs.\ $X$: mean$(\mathrm{regret}_{\textsc{kga}}-\mathrm{regret}_X)$ with $95\%$ paired-bootstrap CI;
+WIN iff both CIs exclude $0$ and survive Holm.}
+\label{tab:headtohead-poem-aetta}
+\resizebox{\columnwidth}{!}{%
+\begin{tabular}{lccccc}
+\toprule
+policy & mean regret$\downarrow$ & $\mathrm{FA}_{\mathrm u}$ & decisive rate & KGA gap & Holm beats? \\
+\midrule
+always-adapt  & $0.0079$ & $0.329$ & $1.00$ & $-0.0064$ & yes \\
+always-freeze & $0.1241$ & $0.000$ & $1.00$ & $-0.1225$ & yes \\
+POEM          & $0.0088$ & $0.245$ & $1.00$ & $-0.0072\,[-0.0088,-0.0057]$ & yes \\
+AETTA         & $0.0073$ & $0.240$ & $1.00$ & $-0.0058\,[-0.0071,-0.0044]$ & yes \\
+\textbf{\textsc{KGA}} & $\mathbf{0.0016}$ & $\mathbf{0.000}$ & $0.68$ & --- & \textbf{WIN} \\
+oracle        & $0.0000$ & $0.000$ & $1.00$ & --- & ceiling \\
+\bottomrule
+\end{tabular}}
+\end{table}
+
 \subsection{ImageNet-C SAR (mechanism-faithful)}
 On ImageNet-C noise (ResNet-50, $36$ cells), SAR is harmful on $44\%$ of cells under a
 mechanism-faithful re-implementation (SAM, recovery reset, EMA) at the learning rate
@@ -675,14 +715,20 @@ Table~\ref{tab:camelyon17-G} uses the $n{=}18$ OOD \texttt{test} split alone; bo
 in-distribution \texttt{id\_val}.) Because this aggregate genuinely mixes helpful conditions
 (Camelyon) with harmful ones (Office-Home, iWildCam), it is the one setting where per-condition
 routing can in principle beat both fixed policies. The earlier figures (regret $0.0026$;
-${\sim}24\times$ vs always-adapt, ${\sim}13\times$ vs always-freeze) used the same in-sample conformal
-radius as the natural-shift scorer and are \emph{withdrawn pending} the corrected out-of-fold re-run
-(\texttt{scripts/mixed\_stream\_kbound.py}, now fixed); under a valid radius \textsc{KGA} abstains
-more, so the magnitude shrinks, and whether a beats-both survives here is reported from that re-run.
+${\sim}24\times$ vs always-adapt, ${\sim}13\times$ vs always-freeze) used an in-sample conformal
+radius and are \textbf{withdrawn}. The corrected out-of-fold re-run
+(\texttt{mixed\_protocol\_oof\_v2}) yields $\mathrm{regret}_{\textsc{kga}}{=}0.0059$ vs.\
+$0.0632$ (always-adapt) and $0.0342$ (always-freeze), with regret gaps vs.\ always-freeze
+$+0.0283$ $[0.019,\,0.038]$ and vs.\ always-adapt $+0.0573$ $[0.043,\,0.072]$ (both CIs exclude
+zero; pooled false-adapt $0$). This is a \textbf{beats-both} on a \emph{constructed}
+cross-protocol aggregate---not a universal mixed-deployment win and not a natural-shift headline.
 
 \paragraph{Supporting and negative regimes.}
 These tracks support Table~\ref{tab:regime-summary} but are not headline policy wins
 (details: Appendix~\ref{app:supp-exp}).
+\textbf{Controlled multimodal D33} ($130$ conditions): injected two-view corruption;
+\textsc{KGA} beats both trivial fusion policies at $\mathrm{FA}_{\mathrm u}{=}0$ (mechanism
+confirmation; Appendix).
 \textbf{CIFAR-10-C per-corruption} ($65$ cells) is helpful-dominated; \textsc{KGA} ties
 always-adapt.
 \textbf{RxRx1} is harmful-dominated at $1{,}139$-class scale; always-adapt is destructive
@@ -706,6 +752,26 @@ recording inventory, audit trail, runtime profile, and ablations remain in the s
 (Tables~\ref{tab:camera-r3}--\ref{tab:camera-s5}). No placeholder is used as evidence.
 
 \input{edge/kbound_camera_main_tables}
+
+\subsection{What exactly is guaranteed?}\label{sec:guarantees}
+\begin{center}
+\footnotesize
+\renewcommand{\arraystretch}{1.12}
+\begin{tabular}{@{}p{0.46\linewidth}p{0.14\linewidth}p{0.32\linewidth}@{}}
+\toprule
+Statement & Status & Requirement \\
+\midrule
+Abstention necessary in matched-evidence opposite-benefit worlds & theorem & stated model class \\
+$\mathrm{FA}_u \le \alpha$ (unconditional false-adapt) & theorem & valid coverage + exchangeability + risk alignment \\
+$\mathrm{FA}_c \le \alpha$ (conditional false-adapt) & \textbf{not claimed} & report $\mathrm{FA}_c$ descriptively only \\
+Stress-grid beats-both (Tent/EATA) & empirical & locked Protocol~A v1 stress grid \\
+Mixed vs POEM/AETTA (mixed harmful+helpful) & empirical & pre-registered WIN (\S\ref{tab:headtohead-poem-aetta}) \\
+Natural-shift no-harm & empirical & dev lock + held-out OOF radius \\
+Universal improvement & \textbf{not claimed} & impossible in general \\
+$\varepsilon$ estimates population drift budget $\beta$ & \textbf{false} & $\beta$ is declared; $\varepsilon$ is empirical \\
+\bottomrule
+\end{tabular}
+\end{center}
 
 \section{Limitations and honest scope}\label{sec:limits}
 
@@ -760,8 +826,9 @@ bounded by the frontier they cannot cross.
 
 \textbf{Missing baselines and independent validation.} ImageNet-C committal gates
 (ATC-style confidence; Appendix~\ref{app:frontier}, Table~\ref{tab:app-imagenetc}) false-adapt at
-$100\%$ on harmful SAR cells, while \textsc{KGA} abstains there. Direct POEM-style sequential
-monitors and additional simple gates on the CIFAR-10-C stress grid remain future checks.
+$100\%$ on harmful SAR cells, while \textsc{KGA} abstains there. The pre-registered mixed
+head-to-head vs.\ POEM/AETTA (Table~\ref{tab:headtohead-poem-aetta}) is complete; an optional
+official-repo arm (per-sample POEM, dropout-AETTA) remains a camera-ready faithfulness check.
 Independent replication of ImageNet-R and Office-Home M v2 across more seeds would strengthen
 stability claims. Abstention lowers \emph{decision} coverage by construction but never withholds a prediction---an \textsc{abstain} keeps the safe default $f_0$ (the source model), so every input still receives an output, and the coverage/false-adapt trade-off is tunable via~$\alpha$.
 
