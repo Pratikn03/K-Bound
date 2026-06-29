@@ -125,7 +125,7 @@ EMPIRICAL_CLAIMS: list[dict[str, Any]] = [
         "claim_id": "KB-CLAIM-027",
         "headline": "Controlled multimodal D33",
         "artifact": "experiments/kbound/results/controlled_multimodal_d33/results.json",
-        "runner": "experiments/kbound/controlled_multimodal_d33/run_d33.py",
+        "runner": "experiments/kbound/controlled_multimodal_d33.py",
         "notebook": "notebooks/08_ELARA_Multimodal_Instantiation.ipynb",
     },
 ]
