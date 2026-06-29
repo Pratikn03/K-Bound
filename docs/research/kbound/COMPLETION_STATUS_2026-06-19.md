@@ -1,5 +1,9 @@
 # K-Bound — Completion Status (2026-06-19)
 
+> **DEPRECATED (2026-06-25).** Superseded by `PROJECT_STATUS_AND_OPEN_PROBLEMS.md` and
+> `FREEZE_COMPLETION_PLAN.md`. This file incorrectly lists Conjecture 1 (`conj:gen`) as open;
+> it is **resolved negatively** via `thm:conj1-dichotomy`.
+
 Honest, component-by-component "how far to 100%" ledger, written after the positioning
 + calibration + fold-in push. Companion docs: `RELATED_WORK_POSITIONING.md`,
 `CLAIMS_CALIBRATION.md`, `RESULTS_PENDING.md`, and the resolution logs appended to

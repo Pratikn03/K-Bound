@@ -182,7 +182,31 @@ mixing-ratio CI. Expected:
 
 ---
 
-## Part C — Deeper reproduction (optional, GPU/MPS)
+## Part C — Mixed head-to-head vs POEM and AETTA (CPU, ~10 s)
+
+Pre-registered: `docs/research/kbound/MIXED_BENCHMARK_PROTOCOL.md`.
+
+```bash
+cd /path/to/AutoML_Flagship_V8
+PY=.venv/bin/python bash experiments/kbound/poem_aetta/run_all_headtohead.sh
+```
+
+**Pass criteria (PRIMARY = Tent, 5 seeds):**
+- `HEADTOHEAD_RESULTS_cifar10c_tent_primary.json` → `headtohead.VERDICT == "WIN"`
+- KGA regret ≈ 0.0016; POEM ≈ 0.0088; AETTA ≈ 0.0073
+- `kga_false_adapt_rate == 0.0`
+- Both `KGA vs poem` and `KGA vs aetta` have `kga_beats: true` and Holm `p_holm < 0.05`
+
+Secondary arms (`eata_secondary`, `tent_eata_pooled`) should also report WIN.
+
+Also verify cached artifacts:
+```bash
+bash docs/research/kbound/scripts/reproduce_submission.sh
+```
+
+---
+
+## Part D — Deeper reproduction (optional, GPU/MPS)
 
 To regenerate the per-cell dump itself (and the headline regret numbers in Table II), re-run the full
 grid. This needs CIFAR-10-C and a few hours on MPS/CUDA.
@@ -204,7 +228,7 @@ fraction.
 
 ---
 
-## Part D — Sign-off form
+## Part E — Sign-off form
 
 ### Theory reviewer
 - Name / affiliation: ____________________

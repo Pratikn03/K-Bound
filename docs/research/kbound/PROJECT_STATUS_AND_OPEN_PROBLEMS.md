@@ -1,8 +1,8 @@
 # K-Bound / KGA — Canonical Status & Open-Problem Ledger
 
 **This is the single source of truth.** It supersedes all dated `*_2026-06-*` status/report
-MD files (see "Deprecated files" at the end). Last reconciled: 2026-06-26, after the
-out-of-fold conformal audit.
+MD files (see "Deprecated files" at the end). Last reconciled: 2026-06-25, after mixed-protocol
+OOF re-run and freeze-plan implementation (`FREEZE_COMPLETION_PLAN.md`).
 
 ---
 
@@ -43,6 +43,7 @@ out-of-fold conformal audit.
 |---|---|---|
 | CIFAR-10-C stress grid, Tent | beats both, CI excludes 0, FA_u=0 | LOO (`decide_kga`) ✓ |
 | CIFAR-10-C stress grid, EATA | beats both, CI excludes 0, FA_u=0 | LOO ✓ |
+| CIFAR-10-C mixed head-to-head | **beats POEM and AETTA** (pre-registered WIN), FA_u=0 | cached stress-grid records ✓ |
 | ImageNet-C SAR (mechanism-faithful) | beats both (regret 0.023 vs 0.112/0.027) | LOO ✓ |
 | Gate-baseline comparison (Table III) | only the certificate keeps FA_u=0 across 432 cells | LOO (`_kga_bhat`) ✓ |
 
@@ -56,7 +57,7 @@ out-of-fold conformal audit.
 | PACS (4 domains, DomainBed) | 3 no-harm + 1 null; 0 beats-both; FA_u ≤ α (photo 0.056) | clean (out-of-fold) ✓ |
 
 ### Pending / non-headline
-- **Mixed-stream cross-protocol aggregate:** scorer fixed to out-of-fold; **needs re-run** (`scripts/mixed_stream_kbound.py`). Earlier 13–24× was in-sample-ε; withdrawn pending re-run.
+- **Mixed-stream cross-protocol aggregate:** **re-run complete** (`mixed_protocol_oof_v2`, OOF LOO conformal). Beats-both on constructed aggregate ($n{=}143$); not a natural-shift headline. Earlier 13–24× in-sample figures withdrawn.
 - **ELARA-U integration:** retrospective (uses labels), no-harm null, **non-headline**. Correctly labeled.
 - **Edge / real-camera deployment:** pipeline built + integrity-clean (proper 3-way split-conformal in `edge/conformal.py`, anti-leakage tests). **Result tables are placeholders** — no camera win yet; present as a feasibility / no-harm study unless a real held-out run clears the bar.
 
@@ -68,10 +69,10 @@ out-of-fold conformal audit.
 
 ## 3. Freeze gate (must all be green before production freeze)
 1. ✅ All scorers compute ε out-of-fold (audit complete, 2026-06-26).
-2. ⬜ Mixed-stream re-run folded in (`mixed_stream_kbound.py`).
-3. ⬜ Long paper `kbound.tex` reclassified (natural shifts → no-harm; mixed-stream pending) — short paper already done.
-4. ⬜ Edge section framed as feasibility/no-harm (or real camera run populated).
-5. ⬜ Recompile both PDFs clean (`kbound_short.tex`, `kbound.tex`).
+2. ✅ Mixed-stream re-run folded in (`mixed_protocol_oof_v2`; `scripts/mixed_stream_kbound.py`).
+3. ✅ Long paper `kbound.tex` reclassified (natural shifts → no-harm; mixed-stream OOF results in §`sec:mixedstream`).
+4. ✅ Edge section framed as feasibility/no-harm (camera tables RESULT PENDING; real R2 still open).
+5. ✅ Recompile both PDFs clean (`kbound_short.tex`, `kbound.tex`) — 2026-06-25.
 6. ⬜ External sign-off: theory/stats reviewer on `thm:uncond-weakest`+Lemma 1 and the coverage theorem; one independent reproducer (`REVIEWER_REPRO_PACKET.md`).
 
 **Honest headline at freeze:** an impossibility/frontier theorem + a certificate that provably
