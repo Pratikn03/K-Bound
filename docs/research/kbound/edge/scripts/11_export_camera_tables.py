@@ -24,6 +24,46 @@ def main():
     cfg = C.load_config(args.config)
 
     results_dir = os.path.normpath(os.path.join(C.EDGE_ROOT, cfg["paths"]["results_dir"]))
+
+    def _write_pending_tex(reason: str):
+        tex_path = os.path.join(results_dir, "camera_tables_values.tex")
+        elig_path = os.path.join(results_dir, "claim_eligibility.json")
+        C.save_json(elig_path, {
+            "publication_ready": False,
+            "reason": reason,
+            "headline_claim": "pending",
+        })
+        pending = "\\providecommand{\\CamPending}{RESULT PENDING --- NO MEASURED DATA AVAILABLE}\n"
+        macros = [
+            "CameraRTwoBalAccKgaFull", "CameraRTwoRegretKgaFull", "CameraRTwoFAuKgaFull",
+            "CameraRTwoAbstainRateKgaFull",
+        ]
+        with open(tex_path, "w", encoding="utf-8") as fh:
+            fh.write("% Automated physical-camera evaluation macro definitions.\n")
+            fh.write(f"% {reason}\n\n")
+            fh.write(pending)
+            for m in macros:
+                fh.write(f"\\def\\{m}{{\\CamPending}}\n")
+        print(f"[11] Publication not ready ({reason}). Wrote pending macros -> {tex_path}")
+        return
+
+    model_card_path = os.path.join(results_dir, "model_card.json")
+    heldout_path = os.path.join(results_dir, "heldout_metrics.json")
+    if os.path.exists(model_card_path) and os.path.exists(heldout_path):
+        mc = C.load_json(model_card_path)
+        held = C.load_json(heldout_path)
+        bypass = "--bypass-gate" in (mc.get("training_command") or "")
+        val_bal = (mc.get("metrics") or {}).get("val_balanced_acc", 0.0)
+        val_f1 = (mc.get("metrics") or {}).get("val_macro_f1", 0.0)
+        abstain = (held.get("kga_full_metrics") or {}).get("abstain_rate", 1.0)
+        held_bs = (held.get("bootstrap_results") or {}).get("kga_full", {})
+        held_bal = ((held_bs.get("balanced_acc") or {}).get("val"))
+        if bypass or val_bal < 0.80 or val_f1 < 0.80:
+            _write_pending_tex("source model gate not met or bypass-gate used")
+            return
+        if held_bal is not None and held_bal <= 0.30 and abstain >= 0.95:
+            _write_pending_tex("helpful-dominated development replay; not publication evidence")
+            return
     
     # 1. Load results JSONs
     heldout_metrics = C.load_json(os.path.join(results_dir, "heldout_metrics.json"))
