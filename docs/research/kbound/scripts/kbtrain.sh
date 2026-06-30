@@ -178,10 +178,11 @@ case "${1:-}" in
     for s in $SEEDS; do
       echo "==== seed $s : per-seed TTA generation ===="
       bash "$0" cifar10c "$s"                                                          # 1 CIFAR-10-C
-      caffeinate -is python "$S2" --benchmarks imagenetc --imagenetc-root "$IC_FAST" \
+      caffeinate -is python "$S2" --benchmarks imagenetc --imagenetc-root "$IC" \
         --corruptions gaussian_noise shot_noise impulse_noise --arch resnet50 \
         --methods tent eata sar --device "$KB_DEVICE" --seed "$s" \
-        --out-results "$RES/imagenetc_noise/seed$s"                                    # 2 ImageNet-C
+        --max-images "${KB_IC_MAXIMG:-2000}" \
+        --out-results "$RES/imagenetc_noise/seed$s"                                    # 2 ImageNet-C (T9 path; pre-reg image cap; resumable via checkpoint.json)
       caffeinate -is python "$S2" --benchmarks cifar101 --data-root experiments/kbound/cifar \
         --methods tent eata sar --device "$KB_DEVICE" --seed "$s" \
         --out-results "$RES/cifar101/seed$s"                                           # 3 CIFAR-10.1
@@ -189,7 +190,8 @@ case "${1:-}" in
         --root experiments/kbound/domainbed --device "$KB_DEVICE" --seed "$s" \
         --out "$RES/pacs_seed$s.json"                                                  # 7 PACS
     done
-    bash "$0" camelyon-fast      # 4 Camelyon17  (runner does 4 training seeds in one call)
+    caffeinate -is python "$WILDS" --wilds-root experiments/kbound/data/wilds \
+      --output-dir "$RES/wilds" --seeds 0 1 2 3 --epochs 4 --steps 10 --lr 1e-3   # 4 Camelyon17 (T9 data; reuse f0_seed*.pt, no --retrain -> resumable)
     bash "$0" rxrx1-9plus        # 5 RxRx1       (9+ pre-set configs)
     bash "$0" imagenetr-d        # 6 ImageNet-R  (runner does 4 training seeds in one call)
     # 8/9 pre-registered LOCKED-protocol scoring -- NOT seed-redrawn (that would be p-hacking);
