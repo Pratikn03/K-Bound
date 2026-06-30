@@ -181,8 +181,8 @@ case "${1:-}" in
       caffeinate -is python "$S2" --benchmarks imagenetc --imagenetc-root "$IC" \
         --corruptions gaussian_noise shot_noise impulse_noise --arch resnet50 \
         --methods tent eata sar --device "$KB_DEVICE" --seed "$s" \
-        --max-images "${KB_IC_MAXIMG:-2000}" \
-        --out-results "$RES/imagenetc_noise/seed$s"                                    # 2 ImageNet-C (T9 path; pre-reg image cap; resumable via checkpoint.json)
+        --max-images "${KB_IC_MAXIMG:-2000}" --cooldown "${KB_IC_COOLDOWN:-2}" \
+        --out-results "$RES/imagenetc_noise/seed$s"                                    # 2 ImageNet-C (T9 path; pre-reg image cap; --cooldown gives the USB drive breathing room; resumable via checkpoint.json)
       caffeinate -is python "$S2" --benchmarks cifar101 --data-root experiments/kbound/cifar \
         --methods tent eata sar --device "$KB_DEVICE" --seed "$s" \
         --out-results "$RES/cifar101/seed$s"                                           # 3 CIFAR-10.1
