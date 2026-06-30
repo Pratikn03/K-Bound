@@ -1,15 +1,27 @@
 \chapter{Experiments I: The Anomaly-Routing Benchmark}\label{ch:exp1}
 
-This chapter presents the primary empirical evaluation of the \KGA\ certificate
-on a 123-task anomaly-detection routing benchmark.  The benchmark is purpose-built to
-interrogate the adapt/freeze/abstain trichotomy of Chapter~\ref{ch:kga} in a domain
-where ground-truth benefit is computable, where controlled-corruption can inject known
-regime changes, and where six classical detectors supply the label-free evidence vector
-$Z$ without any neural retraining.  Sections~\ref{sec:exp1-archive}--\ref{sec:exp1-threats}
-proceed from data provenance through seven experimental protocols to a cross-experiment
-synthesis and a threats-to-validity audit.  Every number is drawn directly from
-the named JSON result files in \texttt{experiments/kbound/results/}; discrepancies with
-\texttt{kbound.tex} are flagged explicitly in Section~\ref{sec:exp1-threats}.
+This chapter is \emph{breadth} evidence, not the headline. Its job is to show that the
+knowability trichotomy of Chapters~\ref{ch:theory1}--\ref{ch:theory2} --- helpful,
+harmful, unknowable, with a valid certificate that commits or abstains accordingly ---
+is not an artifact of one architecture or one kind of shift, but holds across a wide
+span of modalities and detectors where ground-truth benefit is exactly computable. The
+deep test-time-adaptation safety certificate of Chapter~\ref{ch:exp2} (CIFAR-10-C,
+ImageNet-C, and the natural-shift battery) is the headline application; this chapter
+lays the foundation underneath it. We therefore read the results that follow as
+\emph{coverage}: a low-cost, high-diversity testbed on which the trichotomy can be
+exercised end to end and falsified if it fails, before the deep-network experiments
+stress it where it matters most.
+
+Concretely, this chapter evaluates the \KGA\ certificate on a 123-task
+anomaly-detection routing benchmark, purpose-built to interrogate the
+adapt/freeze/abstain trichotomy of Chapter~\ref{ch:kga} in a domain where ground-truth
+benefit is computable, where controlled corruption can inject known regime changes, and
+where six classical detectors supply the label-free evidence vector $Z$ without any
+neural retraining.  Sections~\ref{sec:exp1-archive}--\ref{sec:exp1-threats} proceed from
+data provenance through seven experimental protocols to a cross-experiment synthesis and
+a threats-to-validity audit.  Every number is drawn directly from the named JSON result
+files in \texttt{experiments/kbound/results/}; discrepancies with \texttt{kbound.tex}
+are flagged explicitly in Section~\ref{sec:exp1-threats}.
 
 % ============================================================
 \section{The 123-Task Score Archive}
@@ -190,9 +202,12 @@ Oracle & 0.7499 & 0.0000 & \texttt{mean\_auc.oracle} \\
 \end{tabular}
 \end{table}
 
-The headline finding is stark: \KGA\ reduces regret-to-oracle from $0.0214$ (always-adapt)
-to $0.0019$---a factor of $0.0214 / 0.0019 \approx 11.3$.  The \KGA\ AUROC ($0.7479$) is
-essentially indistinguishable from always-freeze ($0.7481$) and the oracle ($0.7499$).
+The finding is clean: \KGA\ cuts regret-to-oracle from $0.0214$ (always-adapt) to
+$0.0019$, a factor of $0.0214 / 0.0019 \approx 11.3$, and its AUROC ($0.7479$) is
+indistinguishable from both always-freeze ($0.7481$) and the oracle ($0.7499$).  The
+certificate's job here is to \emph{match} the safe baseline by refusing a dangerous
+candidate, not to beat both policies --- always-freeze is already near-oracle when
+adaptation almost always hurts.
 
 The decision distribution reinforces the picture: of 123 tasks, \KGA\ issues
 \textbf{ADAPT} on 1, \textbf{FREEZE} on 13, and \textbf{ABSTAIN} on 109
@@ -233,8 +248,14 @@ deploy a candidate with a known $79.7\%$ harmful rate.  This sub-experiment is a
 
 \subsection{Construction}
 
-The mixed-regime benchmark is the central stress test of \KGA.  It is designed to place
-three qualitatively different conditions in the same evaluation:
+The mixed-regime benchmark is this chapter's heterogeneity probe: a single evaluation that
+deliberately places three qualitatively different conditions side by side to ask whether
+the trichotomy routes by true regime.  We read its AUROC contrast as a diagnostic rather
+than a beats-both --- the conference mixed-stream comparison was withdrawn pending an
+out-of-fold re-run, as the Policy AUROC Comparison below makes explicit --- while the
+decision-distribution and false-adapt findings are what it contributes to the safety
+story.  It is built to place three qualitatively different conditions in the same
+evaluation:
 \begin{enumerate}
   \item \textbf{Clean} ($n_\text{clean} = 123$ instances): the best-validation detector is
     used as $f_a$; adaptation is mildly \emph{harmful} (mean $B = -0.041$, field
@@ -306,23 +327,28 @@ Oracle        & 0.7189 & 0.0000 & \texttt{oracle} \\
 \end{tabular}
 \end{table}
 
-\KGA\ beats always-freeze by $0.6899 - 0.5862 = 0.1037$ AUROC---a large and practically
-meaningful margin---and comes within $0.0072$ of always-adapt.  Given the mild nature of
-the clean-condition harm and the genuine difficulty of the covert condition, tying
-always-adapt is consistent with the theory: \KGA\ is designed to approach the oracle, not
-to exceed a fixed policy that happens to be near-oracle in a particular regime.
-
-Safety: adapt precision $= 0.935$ and false-adapt rate $= 0.065$
-(fields \texttt{safety.adapt\_precision\_B>0} and \texttt{safety.false\_adapt\_rate\_B\textless{}0}).
+In this single in-fold run \KGA\ records a mean AUROC of $0.6899$, above always-freeze
+($0.5862$) and within $0.0072$ of always-adapt.  We treat this contrast as a
+\emph{diagnostic} observation rather than a claimed beats-both: the conference version of
+this work withdrew the mixed-stream result pending a corrected out-of-fold re-run, and we
+preserve that caution here.  The gap to always-freeze is consistent with the trichotomy
+routing away from the mildly harmful clean condition, but the figure is computed in-fold
+on a constructed stream, so we do not advance it as a clean win over both trivial
+policies.  The load-bearing safety reading is the same regardless of the AUROC contrast,
+and it does not depend on the withdrawn comparison: adapt precision $= 0.935$ and
+false-adapt rate $= 0.065$ (fields \texttt{safety.adapt\_precision\_B>0} and
+\texttt{safety.false\_adapt\_rate\_B\textless{}0}), against the budget $\alpha = 0.1$.
 
 \begin{figure}[ht]
 \centering
 \includegraphics[width=0.49\textwidth]{fig_mixed_policies.png}\hfill
 \includegraphics[width=0.49\textwidth]{fig_mixed_decisions.png}
-\caption{Mixed regime.  \textbf{Left}: policy AUROC comparison---\KGA\ beats always-freeze
-  by $0.104$ and ties always-adapt.  \textbf{Right}: \KGA\ decision map by true
-  condition---adapt concentrated on detectable-failure instances, abstain dominant on
-  clean.  Source: \texttt{mixed\_regime\_results.json}.}
+\caption{Mixed regime (in-fold, single run; the conference mixed-stream comparison was
+  withdrawn pending an out-of-fold re-run, so the AUROC contrast is read as a diagnostic,
+  not a beats-both).  \textbf{Left}: policy AUROC comparison---\KGA\ sits above
+  always-freeze and within $0.0072$ of always-adapt.  \textbf{Right}: \KGA\ decision map
+  by true condition---adapt concentrated on detectable-failure instances, abstain
+  dominant on clean.  Source: \texttt{mixed\_regime\_results.json}.}
 \label{fig:exp1-mixed}
 \end{figure}
 
@@ -346,12 +372,17 @@ identification problem.
 
 \subsection{Interpretation}
 
-The mixed regime is the experiment that most directly tests whether \KGA\ can
-\emph{route by true regime} when conditions are heterogeneous.  The answer is
-affirmative: \KGA\ substantially outperforms the safe baseline (always-freeze) while
-matching the aggressive baseline (always-adapt).  The false-adapt rate of $0.065$---only
-$8$ of 138 adapt decisions on truly harmful clean instances---is a material safety
-improvement over always-adapt's implicit $100\%$ false-adapt rate on the clean condition.
+The mixed regime probes whether \KGA\ can \emph{route by true regime} when conditions are
+heterogeneous, and the decision distribution by condition (Table~\ref{tab:exp1-mixed-decisions})
+is the part of the picture we stand behind: the trichotomy abstains on the mildly harmful
+clean condition, concentrates adaptation on the detectable-failure instances, and hedges
+on the covert condition.  The accompanying AUROC contrast we treat only as a diagnostic,
+for the reason given above --- the mixed-stream comparison was withdrawn pending an
+out-of-fold re-run --- and we do not claim it as a beats-both.  What does not rest on that
+contrast is the safety result: the false-adapt rate of $0.065$ --- only $8$ of 138 adapt
+decisions land on truly harmful clean instances --- is a material improvement over
+always-adapt's implicit $100\%$ false-adapt rate on the clean condition, and it is the
+property the certificate is built to deliver.
 
 % ============================================================
 \section{Statistical Rigor: Eight Seeds and Paired $t$-Tests}
@@ -403,18 +434,24 @@ per policy).  Results from field \texttt{paired\_ttest\_KBound\_vs\_always\_free
 
 \begin{itemize}
   \item \textbf{\KGA\ vs always-freeze}: $t = 62.24$, $p = 7.26 \times 10^{-11}$.
-    \KGA\ is significantly higher than always-freeze; the improvement is highly
-    replicable.
+    Across the eight in-fold seeds \KGA\ scores above always-freeze with low
+    between-seed variance.
   \item \textbf{\KGA\ vs always-adapt}: $t = -8.76$, $p = 5.08 \times 10^{-5}$.
-    \KGA\ is significantly lower than always-adapt; in this mild-harm domain the
-    aggressive policy remains ahead.
+    \KGA\ scores below always-adapt; in this mild-harm domain the aggressive policy
+    remains ahead.
 \end{itemize}
 
-Both signs are reported honestly.  The first test confirms the primary claim: routing
-reliably beats freezing.  The second test confirms the honest caveat: in the mixed regime
-as constructed---where clean-condition harm is mild ($B = -0.041$) and covert-failure
-provides genuine benefit---always-adapt is not dominated by \KGA.  The harmful-fusion
-experiment (Section~\ref{sec:exp1-harmful}) is the setting where those signs reverse.
+Both signs are reported honestly, and both inherit the caveat of
+Section~\ref{sec:exp1-mixed}: these are in-fold seeds of the mixed-stream construction
+whose headline comparison the conference version withdrew pending an out-of-fold re-run,
+so we read the first test as a stable diagnostic --- the seed-to-seed variance is small
+--- rather than as a confirmed beats-freeze claim.  The second test stands on its own
+terms: in the mixed regime as constructed, where clean-condition harm is mild
+($B = -0.041$) and covert-failure provides genuine benefit, always-adapt is not dominated
+by \KGA.  The deep-TTA stress grid of Chapter~\ref{ch:exp2} is the setting that carries
+the corruption-grid beats-both claim; this chapter's contribution to the safety story is
+the controlled false-adapt rate, which the multi-seed run confirms is stable
+($0.0642 \pm 0.0101$).
 
 % ============================================================
 \section{Ablations}
@@ -739,14 +776,19 @@ Chapters~\ref{ch:theory1}--\ref{ch:theory2}: no fixed policy is universally best
     where adaptation would have helped.
   \item \textbf{Harmful-dominated (harmful fusion, regression)}: \KGA\ matches
     always-freeze and the oracle; always-adapt pays large regret ($0.0214$, $0.086$).
-  \item \textbf{Mixed}: \KGA\ substantially outperforms always-freeze ($0.029$ vs
-    $0.133$) while remaining competitive with always-adapt ($0.022$).
+  \item \textbf{Mixed}: \KGA\ records lower regret than always-freeze ($0.029$ vs
+    $0.133$) in-fold while remaining competitive with always-adapt ($0.022$); we read this
+    row as a diagnostic, not a beats-both, since the mixed-stream comparison was withdrawn
+    pending an out-of-fold re-run (Section~\ref{sec:exp1-mixed}).
 \end{itemize}
 
-The $11\times$ regret reduction in the harmful-fusion experiment
-(Section~\ref{sec:exp1-harmful}) and the matched oracle performance in the regression
-experiment (Section~\ref{sec:exp1-regression}) represent the strongest evidence that the
-certificate works as intended.
+The certificate's clearest evidence in this chapter is the suppression of harmful
+adaptation: the $11\times$ regret reduction over always-adapt in the harmful-fusion
+experiment (Section~\ref{sec:exp1-harmful}) and the matched oracle performance in the
+regression experiment (Section~\ref{sec:exp1-regression}), in both of which \KGA\
+\emph{matches} the safe baseline rather than beating both policies.  The corruption-grid
+beats-both result --- where \KGA\ exceeds both trivial policies --- is the headline of
+Chapter~\ref{ch:exp2}, to which this breadth chapter hands off.
 
 % ============================================================
 \section{Threats to Validity}
@@ -771,11 +813,13 @@ non-identifiability than the permutation construction.
 \paragraph{Mild benefit in the clean condition.}
 The clean condition has mean $B = -0.041$ (field
 \texttt{true\_mean\_benefit\_B\_by\_condition.clean}): adaptation is mildly harmful, not
-catastrophically so.  This makes always-adapt near-competitive in the mixed regime.
-The harmful-fusion experiment (Section~\ref{sec:exp1-harmful}) covers the severely harmful
-case, but the mixed regime does not.  The continual TTA experiments of
-Chapter~\ref{ch:exp2} address the catastrophically harmful case with real neural
-networks.
+catastrophically so.  This makes always-adapt near-competitive in the mixed regime, and is
+one reason the mixed-stream AUROC comparison is read here as a diagnostic rather than a
+win.  The harmful-fusion experiment (Section~\ref{sec:exp1-harmful}) covers the severely
+harmful case, but the mixed regime does not.  The decisive test --- catastrophically
+harmful adaptation in a real neural network, and the corruption-grid setting where the
+certificate exceeds both trivial policies --- is the headline application of the next
+chapter, Chapter~\ref{ch:exp2}, to which this breadth chapter now hands off.
 
 \paragraph{Certificate width vs coverage.}
 At the canonical $\alpha = 0.10$, the conformal band is wide enough that only $35\%$ of

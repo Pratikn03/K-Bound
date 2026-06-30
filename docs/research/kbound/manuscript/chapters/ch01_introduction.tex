@@ -151,98 +151,112 @@ The regime at evidence value $z$ is:
 
 The key quantity is the \emph{sign} of $\Delta(z)$, not its magnitude.
 Estimating the sign requires strictly less information than estimating the
-risk $R_T(f)$ itself, which means the knowability boundary lies strictly
-outside the identifiability boundary for risk estimation --- but it is not
-everywhere: there exist situations where even the sign is unrecoverable from
-label-free evidence.
+risk $R_T(f)$ itself, so the knowability boundary lies strictly outside the
+identifiability boundary for risk estimation --- but not everywhere: there are
+situations where even the sign is unrecoverable from label-free evidence. The
+rest of this chapter pins down exactly where that boundary falls, and the next
+section states the three results that do it.
 
 \section{Contributions}\label{sec:intro-contributions}
 
-This work makes six contributions, which we enumerate in detail.
+The work makes three contributions. They answer, in turn, when the
+adapt/freeze question is fundamentally unanswerable from unlabeled evidence,
+when it provably is answerable and how to act on it, and what happens when the
+resulting rule meets real deployment streams. The manuscript opens on these
+three and closes on them (Chapter~\ref{ch:discussion}); the paragraphs below
+state each and the formal machinery it rests on.
 
-\paragraph{Contribution 1: Formalization of the knowability trichotomy.}
-We introduce the adapt/freeze/abstain trichotomy as the natural decision
-space for label-free TTA, formalize the notion of risk alignment for
-observable evidence, and define the three regimes precisely
-(Chapter~\ref{ch:formulation}).
-The formalization connects the TTA literature to the identifiability
-literature: TTA methods have focused on designing the adaptation
-mechanism~$f_a$; we instead ask when the sign of $R_T(f_0) - R_T(f_a)$ is
-recoverable from label-free observations.
+\subsection*{Contribution I: The unknowable floor.}
 
-\paragraph{Contribution 2: Impossibility theorem with explicit witness
-(Theorem~\ref{thm:imp}).}
-We prove that for any (possibly randomized) label-free decision rule
-$g(Z)$, there exist two target worlds $P_T^1$ and $P_T^2$ with identical
-observable-evidence laws and opposite-sign benefits.
-Since the rule cannot distinguish the worlds, its actions are identically
-distributed in both, and the worst-case-optimal action is to abstain.
-The construction is non-vacuous: we exhibit it explicitly as $X \sim
-\mathcal{N}(0,1)$ under both worlds, $f_0(x) = \ind[x>0]$, $f_a(x) =
-\ind[x<0]$, and labels flipped between the worlds.
-A Le~Cam two-point quantitative strengthening
-(Chapter~\ref{ch:theory1}) shows that the optimal committal error equals
-$1 - \TV$ of the evidence laws, which is $1$ in the witness and decays to
-zero as the worlds become separable.
-Numerically, the KGA validator confirms $100\%$ abstention on the witness
-and exact tracking of the Le~Cam floor across the total-variation sweep.
+\emph{We prove when a label-free system fundamentally cannot decide.} For any
+(possibly randomized) label-free decision rule $g(Z)$, there exist two target
+worlds $P_T^1$ and $P_T^2$ with identical observable-evidence laws and
+opposite-sign benefits (Theorem~\ref{thm:imp}). Since the rule cannot
+distinguish the worlds, its actions are identically distributed in both, and
+the worst-case-optimal action is to abstain. The construction is non-vacuous:
+we exhibit it explicitly as $X \sim \mathcal{N}(0,1)$ under both worlds,
+$f_0(x) = \ind[x>0]$, $f_a(x) = \ind[x<0]$, and labels flipped between the
+worlds. A Le~Cam two-point quantitative strengthening (Chapter~\ref{ch:theory1})
+shows that the optimal committal error equals $1 - \TV$ of the evidence laws,
+which is $1$ in the witness and decays to zero as the worlds become separable.
+Numerically, the KGA validator confirms $100\%$ abstention on the witness and
+exact tracking of the Le~Cam floor across the total-variation sweep. This is the
+result that turns abstention from a heuristic fallback into a forced, principled
+action.
 
-\paragraph{Contribution 3: Finite-sample adapt/freeze/abstain certificate
-with false-adapt control (Theorem~\ref{thm:cert}).}
-Under a label-free estimator $\widehat{\Delta}(z)$ with a calibrated radius
-$\varepsilon(z)$ satisfying $\Pr[|\widehat{\Delta}(z) - \Delta(z)| \leq
-\varepsilon(z)] \geq 1 - \alpha$, the rule
+This contribution rests on a prior formalization, developed in full in
+Chapter~\ref{ch:formulation}: we cast label-free TTA as the adapt/freeze/abstain
+trichotomy, define risk alignment for observable evidence, and define the three
+regimes precisely. Where the TTA literature designs the adaptation
+mechanism~$f_a$, we ask when the sign of $R_T(f_0) - R_T(f_a)$ is recoverable
+from label-free observations at all.
+
+\subsection*{Contribution II: The finite-sample certificate and the exact frontier.}
+
+\emph{We prove when a label-free system provably can decide, and locate exactly
+where the boundary lies.} Two results do this work. The first is operational: a
+finite-sample adapt/freeze/abstain certificate with false-adapt control
+(Theorem~\ref{thm:cert}). Under a label-free estimator $\widehat{\Delta}(z)$
+with a calibrated radius $\varepsilon(z)$ satisfying
+$\Pr[|\widehat{\Delta}(z) - \Delta(z)| \leq \varepsilon(z)] \geq 1 - \alpha$,
+the rule
 \[
 \textsc{adapt}\ \text{if}\ \widehat{\Delta} - \varepsilon > 0,\quad
 \textsc{freeze}\ \text{if}\ \widehat{\Delta} + \varepsilon < 0,\quad
 \textsc{abstain}\ \text{otherwise}
 \]
-controls the false-adapt and false-freeze rates at $\alpha$.
-A corollary shows that in the unknowable two-point regime the certificate
-\emph{must} abstain with probability at least $1 - 2\alpha$, making
-abstention mandatory rather than merely conservative.
-A sample-complexity corollary shows the certificate commits once $n \gtrsim
-(\sigma^2 / \Delta^2) \log(1/\alpha)$ paired benefit samples are available,
-with an empirical-Bernstein discharge for bounded benefits.
-An anytime-valid e-process variant (Appendix~\ref{app:repro}) extends the
-certificate to streaming TTA with no multiplicity correction.
+controls the false-adapt and false-freeze rates at $\alpha$. A corollary shows
+that in the unknowable two-point regime the certificate \emph{must} abstain with
+probability at least $1 - 2\alpha$, joining this contribution to the floor of
+Contribution~I: where the evidence cannot tell, the certificate is forced to
+abstain, not merely inclined to. A sample-complexity corollary shows the
+certificate commits once $n \gtrsim (\sigma^2 / \Delta^2) \log(1/\alpha)$ paired
+benefit samples are available, with an empirical-Bernstein discharge for bounded
+benefits; an anytime-valid e-process variant (Appendix~\ref{app:repro}) extends
+it to streaming TTA with no multiplicity correction.
 
-\paragraph{Contribution 4: Covariate-shift positive regime and the
-sign-of-difference characterization
-(Theorems~\ref{thm:pos}, \ref{thm:disagree}--\ref{thm:disagree-reg}).}
-Under covariate shift ($P_S(Y \mid X) = P_T(Y \mid X)$), importance
-weighting of the source labels yields a consistent estimator of the target
-risk, so $\sign\Delta$ is identifiable.
-Separately, restricting to the \emph{observable disagreement region} $D =
-\{x : f_0(x) \neq f_a(x)\}$ --- observable without labels, since $f_0$ and
-$f_a$ are known maps of $X$ --- we prove that $\sign\Delta$ equals an
-ordinal accuracy comparison on $D$: adapting helps if and only if the
-adapted model exceeds chance accuracy on $D$.
-This characterization holds for binary, multiclass ($0/1$ loss), and
-regression (squared loss) in three theorems.
-Ablations confirm that detector disagreement is the single most important
-evidence feature, directly supporting the theoretical prediction.
-Conjecture~\ref{conj:gen} states the remaining open piece: the label-free
-\emph{bracketing} of the ordinal comparison in the multiclass and regression
-cases.
+The second result pins the boundary itself. Restricting to the \emph{observable
+disagreement region} $D = \{x : f_0(x) \neq f_a(x)\}$ --- observable without
+labels, since $f_0$ and $f_a$ are known maps of $X$ --- we prove that
+$\sign\Delta$ equals an ordinal accuracy comparison on $D$: adapting helps if
+and only if the adapted model exceeds chance accuracy on $D$
+(Theorems~\ref{thm:disagree}--\ref{thm:disagree-reg}, for binary, multiclass,
+and regression losses). This is the benefit-sign frontier: the sign is
+identifiable from observables exactly when an observable margin clears the
+calibration-drift budget on $D$. A companion positive regime
+(Theorem~\ref{thm:pos}) shows that under covariate shift ($P_S(Y \mid X) =
+P_T(Y \mid X)$) importance weighting yields a consistent target-risk estimator,
+so $\sign\Delta$ is identifiable outright. Ablations confirm that detector
+disagreement is the single most important evidence feature, directly supporting
+the theory. Conjecture~\ref{conj:gen} states the one remaining open piece: the
+label-free \emph{bracketing} of the ordinal comparison in the multiclass and
+regression cases.
 
-\paragraph{Contribution 5: \KGA\ and open-source implementation.}
-We instantiate the framework as \KGA\ (Knowability-Guided Adaptation), a
-decision wrapper that can be placed around any TTA candidate without
-modifying it.
-The algorithm extracts label-free evidence $Z$, estimates the benefit
-$\widehat{\Delta}$ with a gradient-boosted regressor trained leave-one-task-out,
-forms a split-conformal radius $\varepsilon$, and returns the three-way
-decision.
-\KGA\ is released as a pure-numpy package (\texttt{kga/}) importable as
-\texttt{from kga import KGA} and served at a \texttt{POST /decide} endpoint;
-all code, configs, and result artifacts are public at
+\subsection*{Contribution III: \KGA, a deployable safety layer.}
+
+\emph{We make the theory a deployable rule and report its honest empirical
+story.} We instantiate the framework as \KGA\ (Knowability-Guided Adaptation), a
+decision wrapper placed around any TTA candidate without modifying it: it
+extracts label-free evidence $Z$, estimates the benefit $\widehat{\Delta}$ with a
+gradient-boosted regressor trained leave-one-task-out, forms a split-conformal
+radius $\varepsilon$, and returns the three-way decision with false-adapt at most
+$\alpha$. \KGA\ is released as a pure-numpy package (\texttt{kga/}) importable as
+\texttt{from kga import KGA} and served at a \texttt{POST /decide} endpoint; all
+code, configs, and result artifacts are public at
 \url{https://github.com/Pratikn03/AutoML_Flagship_V8} \cite{kbound2026repo}.
-Chapters~\ref{ch:kga} and~\ref{ch:exp1}--\ref{ch:exp2} present the
-algorithmic details and the complete experimental evaluation.
+Chapters~\ref{ch:kga} and~\ref{ch:exp1}--\ref{ch:exp2} give the algorithm and the
+complete evaluation.
 
-\paragraph{Contribution 6: Experiments.}
-We evaluate \KGA\ on nine real experiments spanning multiple regimes.
+The empirical finding is deliberately modest and we state it plainly: \KGA\ is a
+\emph{safety layer, not an accuracy booster}. It is the only policy that stays
+near-oracle in both helpful and harmful regimes, which is exactly what the
+trichotomy predicts --- but it earns a clean beats-both over both trivial
+policies only where catastrophic, detectable harm is common. On the
+pre-registered CIFAR-10-C stress grid it beats always-adapt and always-freeze for
+Tent and EATA at $0\%$ false-adapt and ties collapse-resistant SAR; on
+natural-shift audits it does no harm rather than winning outright. The nine
+experiments below substantiate this, regime by regime.
+
 \begin{enumerate}
 \item \emph{123-task anomaly-routing benchmark} (ADBench tabular,
     image-OOD, text, cyber, fraud): \KGA\ abstains where the true benefit
@@ -284,7 +298,8 @@ We evaluate \KGA\ on nine real experiments spanning multiple regimes.
 
 \section{Honest Scope}\label{sec:intro-scope}
 
-We are explicit about the limits of this work in both theory and experiment.
+A safety claim is only as good as its stated limits, so we draw them in both
+theory and experiment before any reader has to.
 
 On the theory side, the impossibility result (Theorem~\ref{thm:imp}) is
 close to known non-identifiability of target risk without labels; its
@@ -336,7 +351,12 @@ Chapter~\ref{ch:elara} presents the anonymized reliability-gated multimodal
 instantiation as a fully code-validated worked example of the general
 framework.
 Chapter~\ref{ch:discussion} synthesizes the deployment implications,
-states the limitations, and outlines future work.
+states the limitations, specifies what would falsify the framework, and
+returns to the three contributions of this chapter against the verified
+evidence chain.
 Appendix~\ref{app:repro} gives the full reproducibility specification.
 Appendix~\ref{app:tables} contains extended tables.
 Appendix~\ref{app:notation} is a notation reference.
+
+The next chapter places K-Bound among its neighbours, building from the five
+adjacent lines of work to the precise gap none of them closes.

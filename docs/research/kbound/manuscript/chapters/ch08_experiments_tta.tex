@@ -1,16 +1,25 @@
 \chapter{Experiments II: Deep Test-Time Adaptation}\label{ch:exp2}
 
-This chapter reports the full battery of deep test-time adaptation (TTA)
-experiments that evaluate \KGA{} on the neural-network distribution-shift
-setting.  All runs use the CIFAR-10 benchmark~\cite{krizhevsky2009cifar} with
-corruptions drawn from the official CIFAR-10-C
-suite~\cite{hendrycks2019benchmarking}; the adaptation candidates are
-Tent~\cite{wang2021tent}, EATA~\cite{niu2022eata}, and
-SAR~\cite{niu2023sar}.  The chapter is organized as follows: Section~\ref{sec:exp2-setup}
-describes the experimental setup; Sections~\ref{sec:exp2-cifar-tent}--\ref{sec:exp2-online}
-report the successive experiments in order of increasing adversity;
-Section~\ref{sec:exp2-imagenette} reports the Imagenette/ImageNet-scale status
-honestly; and Section~\ref{sec:exp2-synthesis} synthesizes the findings.
+This is the headline chapter.  Where Chapters~\ref{ch:exp1} and~\ref{ch:elara} establish
+breadth, this chapter delivers the deep test-time-adaptation safety certificate that is
+the central empirical contribution of \KBound: a label-free gate that, on real neural
+networks under distribution shift, never falsely commits to a harmful update, and matches
+the better trivial policy when one is already near-optimal.  Its decisive win --- strictly
+beating both trivial policies --- arrives where the theory says it must: where harmful
+adaptation is frequent and label-free detectable, the corruption grids that anchor this
+chapter, with two pre-registered natural-shift extensions reported under their own honest
+caveats.  The reader should hold the spine in view throughout: adapt, freeze, or abstain;
+false-adapt held at $\alpha$; value that scales with the frequency of detectable harm.
+
+All runs use the CIFAR-10 benchmark~\cite{krizhevsky2009cifar} with corruptions drawn from
+the official CIFAR-10-C suite~\cite{hendrycks2019benchmarking}; the adaptation candidates
+are Tent~\cite{wang2021tent}, EATA~\cite{niu2022eata}, and SAR~\cite{niu2023sar}.  The
+chapter is organized as follows: Section~\ref{sec:exp2-setup} describes the experimental
+setup; Sections~\ref{sec:exp2-cifar-tent}--\ref{sec:exp2-online} report the successive
+experiments in order of increasing adversity; Section~\ref{sec:exp2-imagenette} reports
+the Imagenette/ImageNet-scale status honestly; Sections~\ref{sec:exp2-officehome}
+and~\ref{sec:exp2-battery} carry the certificate onto natural distribution shifts; and
+Section~\ref{sec:exp2-synthesis} synthesizes the findings.
 
 % -----------------------------------------------------------------------
 \section{Experimental Setup}\label{sec:exp2-setup}
@@ -85,10 +94,11 @@ reported number under
 \section{The Decisive CIFAR\,+\,Tent Run}\label{sec:exp2-cifar-tent}
 % -----------------------------------------------------------------------
 
-Before the full stress grid we ran a targeted harmful-regime experiment on
-the CIFAR-10-C stress-grid subset (Tent candidate only, 432 conditions, all
-results from \texttt{decisive\_tta\_results.json}).  The four-policy
-comparison for Tent is the headline decisive result.
+We open with the single most decisive run, then build out the full grid around it.  On the
+CIFAR-10-C stress-grid subset --- Tent candidate, 432 conditions, all results from
+\texttt{decisive\_tta\_results.json} --- the four-policy comparison for Tent is the
+clearest demonstration in the thesis that the certificate beats both trivial policies at
+once.
 
 \paragraph{Numbers.}
 Table~\ref{tab:exp2-decisive-tent-single} reports the four-policy comparison
@@ -753,6 +763,14 @@ SAR's entropy-reset already suppresses most harmful updates (harmful base rate $
 or mildly-mixed regimes, \KGA{}'s incremental value is small; its value is as a
 universal default guard that never does worse and scales its benefit with the risk it
 is designed to detect.
+
+\paragraph{Handoff.}
+This chapter has carried the headline as far as the corruption grids and two pre-registered
+natural shifts allow.  The next chapter changes domain rather than scale: it instantiates
+the same trichotomy in multimodal sensor fusion (ELARA), where every general theorem maps
+to a runnable, machine-checked module.  Read as breadth confirmation, it asks whether the
+boundary observed here on images recurs intact when the candidate is a fused detector zoo
+rather than an adapted network --- and reports, with its honest negatives, that it does.
 
 \paragraph{Threats to validity.}
 \begin{enumerate}

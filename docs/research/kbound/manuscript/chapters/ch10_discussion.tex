@@ -293,7 +293,21 @@ estimator is a natural route toward a fully sequential certificate for continual
 This monograph has developed and validated the K-Bound framework for label-free
 adaptation: the thesis that test-time decisions --- adapt, freeze, or abstain ---
 are governed by an information-theoretic boundary on what is knowable from
-unlabeled evidence alone.
+unlabeled evidence alone.  We opened on three contributions, and we close on the
+same three.  \emph{First}, the unknowable floor: when opposite-benefit worlds
+share an evidence law, no label-free rule can be correct in both, so abstention
+is information-theoretically forced (Theorem~\ref{thm:imp}, with a Le~Cam bound
+and a closed-form witness).  \emph{Second}, the certificate and the frontier:
+where the question \emph{is} answerable, a finite-sample adapt/freeze/abstain
+certificate controls the false-adapt and false-freeze rates at $\alpha$
+(Theorem~\ref{thm:cert}), and an exact benefit-sign frontier on the disagreement
+region pins the boundary itself (Theorems~\ref{thm:pos},
+\ref{thm:disagree}--\ref{thm:disagree-reg}).  \emph{Third}, \KGA: the framework
+made deployable as a mechanism-agnostic wrapper, and --- honestly --- a
+\emph{safety layer rather than an accuracy booster}, which beats both trivial
+policies only where catastrophic, detectable harm is common and otherwise does
+no harm.  The remainder of this section restates each against the verified
+evidence.
 
 \paragraph{The trichotomy thesis.}
 The core contribution is a \emph{trichotomy} of regimes:
@@ -362,9 +376,10 @@ adapt when benefit is certifiable, freeze when harm is certifiable, abstain when
 the unlabelled evidence cannot tell.  The unknowable regime is proved fundamental
 with a constructed witness; a finite-sample certificate with false-adapt control is
 proved conditional on a valid estimator; a covariate-shift positive regime and
-sign-of-difference identifiability are proved; and the label-free bracketing
-conjecture is the one remaining open piece.  On real anomaly-routing data and
-pre-registered CIFAR-10-C stress tests, the certificate abstains where benefit
+sign-of-difference identifiability fix the frontier; and the label-free bracketing
+conjecture is the one remaining open piece.  Instantiated as \KGA, the framework
+acts as a safety layer rather than an accuracy booster: on real anomaly-routing
+data and pre-registered CIFAR-10-C stress tests it abstains where benefit
 vanishes, avoids all harmful adaptations, and recovers large performance gains in
-the collapse-prone regime.  The trichotomy thesis is supported by a complete,
-machine-verified evidence chain.
+the collapse-prone regime, while on natural shifts it does no harm.  The trichotomy
+thesis is supported by a complete, machine-verified evidence chain.

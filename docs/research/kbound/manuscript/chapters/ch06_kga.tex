@@ -1,14 +1,17 @@
 \chapter{\KGA: Knowability-Guided Adaptation in Practice}\label{ch:kga}
 
-The preceding chapters establish when label-free adaptation is theoretically
-knowable---and when it is not.  This chapter describes \KGA{}
-(Knowability-Guided Adaptation), the concrete decision algorithm that
-operationalises those results.  We present the design goals, the four families
-of label-free evidence, the four certificate estimators with their exact
-formulas, the decision policy and its false-adapt guarantee, the public
-\texttt{kga} package API, a full deployment pseudocode, operational guidance,
-the served HTTP interface, and an honest account of what \KGA{} does not
-guarantee.
+The preceding chapters settled the question in principle: they proved when label-free
+adaptation is knowable, when it is not, and where the boundary lies.  This chapter turns
+that theory into a running system.  \KGA{} (Knowability-Guided Adaptation) is the concrete
+decision algorithm that operationalises the trichotomy --- adapt, freeze, or abstain ---
+with the false-adapt rate held at the user's level $\alpha$ by the certificate of
+Chapter~\ref{ch:theory2}.  It is the bridge between the impossibility and certificate
+theorems and the experiments that test them: every guarantee \KGA{} claims is one of those
+theorems, stated as an assumption of the algorithm and no stronger.  We present, in turn,
+the design goals, the four families of label-free evidence, the four certificate
+estimators with their exact formulas, the decision policy and its false-adapt guarantee,
+the public \texttt{kga} package API, a full deployment pseudocode, operational guidance,
+the served HTTP interface, and an honest account of what \KGA{} does not guarantee.
 
 % -----------------------------------------------------------------------
 \section{Design goals and mechanism-agnostic wrapper architecture}
@@ -654,3 +657,15 @@ when the harmful-adaptation distribution has an observable fingerprint (large KS
 drift, low ESS), \KGA{} can and does refuse it; when it does not
 (covert failure), the Conjecture~\ref{conj:gen} bound suggests fundamentally
 limited discriminability.
+
+With the algorithm specified and its scope stated, the burden shifts to evidence.  The
+next three chapters put \KGA{} to the test against worlds built to reward it, to punish
+it, and --- on the constructed witness --- to defeat it.  Chapter~\ref{ch:exp1} exercises
+the trichotomy across a 123-task anomaly-routing benchmark for breadth; Chapter~\ref{ch:exp2}
+delivers the headline, a deep test-time-adaptation safety certificate on CIFAR-10-C,
+ImageNet-C, and a natural-shift battery; and Chapter~\ref{ch:elara} grounds the framework
+in a fully implemented multimodal-fusion special case.  The verdict they return is the one
+the theory predicts: \KGA{} is foremost a \emph{safety layer} --- it beats both trivial
+policies only where harmful adaptation is frequent and label-free detectable, chiefly the
+corruption grids, and elsewhere it does no harm, matching the better fixed policy rather
+than exceeding it.

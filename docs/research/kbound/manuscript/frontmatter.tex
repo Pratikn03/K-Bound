@@ -44,31 +44,40 @@ selected, or otherwise adjusted from the verified artifact manifests.
 \chapter*{Abstract}
 \addcontentsline{toc}{chapter}{Abstract}
 
-Test-time adaptation can improve models on unlabeled target data, but the same
-objective that helps under one distribution shift can silently hurt under another.
-Existing work mainly strengthens adaptation mechanisms; we study a prior decision
-problem: can a system decide, without target labels, whether it should adapt at all?
+Test-time adaptation can improve a model on unlabeled target data, yet the same
+objective that helps under one distribution shift silently hurts under another ---
+and without labels the deployed system often cannot tell which case it is in. The
+field has poured its effort into stronger adaptation mechanisms; we ask the prior
+question those mechanisms skip: should the system adapt at all? We answer it by
+locating, exactly, the boundary between the shifts where that question is
+answerable from unlabeled evidence and the shifts where it is not.
 
-We formalize adaptation benefit as the excess target risk of a frozen baseline over
-an adapted candidate and define three label-free regimes: \emph{knowably helpful},
-\emph{knowably harmful}, and \emph{unknowable}. We prove that when two target worlds
-induce identical observable evidence but opposite adaptation benefit, no label-free
-rule can be correct in both; abstention is then information-theoretically necessary.
-Under a risk-alignment assumption, we give a finite-sample adapt/freeze/abstain
-certificate controlling false adaptation and false freezing. Our main theoretical
-result is an exact benefit-sign frontier: adaptation benefit is identifiable from
-observables iff an observable margin exceeds the calibration-drift budget on the
-disagreement region.
+The contribution is threefold. \emph{First}, we prove an unknowable floor: when two
+target worlds induce identical observable evidence but opposite-sign adaptation
+benefit, no label-free rule --- however clever, at any sample size --- can be
+correct in both, so abstention is information-theoretically forced. We make this
+quantitative with a Le~Cam two-point bound and a closed-form witness on which the
+optimal committal error is exactly one. \emph{Second}, we prove where the question
+\emph{is} answerable and supply the machinery to act on it: a finite-sample
+adapt/freeze/abstain certificate that controls the false-adapt and false-freeze
+rates at a user-chosen $\alpha$, and an exact benefit-sign frontier that pins the
+boundary itself --- adaptation benefit is identifiable from observables if and only
+if an observable margin exceeds the calibration-drift budget on the disagreement
+region. \emph{Third}, we make the theory deployable as \KGA\ (Knowability-Guided
+Adaptation), a mechanism-agnostic wrapper that reads label-free evidence and returns
+\textsc{adapt}, \textsc{freeze}, or \textsc{abstain} around any candidate.
 
-We instantiate the framework as \KGA, a mechanism-agnostic wrapper around Tent,
-EATA, and SAR. Across anomaly routing, CIFAR-10, CIFAR-10-C stress tests, and
-natural-shift audits, \KGA\ follows theory: adapt in helpful regimes, freeze in
-harmful regimes, and abstain when evidence is insufficient. On a CIFAR-10-C stress
-grid, \KGA\ beats always-adapt and always-freeze for Tent and EATA with zero
-false-adapt decisions, while tying SAR. At ImageNet scale, it also beats both
-policies on a harmful SAR stream. On Camelyon17, ImageNet-R, and Office-Home,
-\KGA\ is conservative and avoids overclaiming wins. K-Bound is not universal; value
-is highest when harmful adaptation is frequent, detectable, and costly.
+Empirically, \KGA\ behaves as a \emph{safety layer}, not an accuracy booster, and we
+report it as such. On a pre-registered CIFAR-10-C stress grid --- where catastrophic,
+detectable harm is common --- \KGA\ beats both always-adapt and always-freeze for
+Tent and EATA with zero false-adapt decisions, and ties the collapse-resistant SAR.
+On natural shifts (Camelyon17, Office-Home) it does no harm and avoids overclaiming;
+on undetectable-harm streams (iWildCam) it freezes and prevents damage rather than
+winning. Across anomaly routing, online CIFAR-10, and these audits, \KGA\ tracks the
+theory: adapt where benefit is certified, freeze where harm is certified, abstain
+where the evidence cannot tell. K-Bound is not universal. Its value scales with how
+often harmful adaptation is frequent, detectable, and costly --- exactly the quantity
+the theory characterizes.
 
 % ---------------------------------------------------------------------------
 % How to Read This Manuscript
@@ -90,10 +99,12 @@ experiments.
 
 \medskip
 \noindent\textbf{Chapter~\ref{ch:intro}: Introduction.}
-Sets up the TTA double-edge problem and the central question of knowability.
-Introduces the adapt/freeze/abstain trichotomy, previews all five theoretical
-results and the headline experimental numbers, and gives an honest statement of
-scope.
+Sets up the TTA double-edge problem and the central question of knowability,
+introduces the adapt/freeze/abstain trichotomy, and states the three contributions
+that the manuscript opens and closes on: the unknowable floor, the certificate and
+its exact benefit-sign frontier, and \KGA\ as a deployable safety layer. Previews
+the theoretical results and the headline experimental numbers, and gives an honest
+statement of scope.
 
 \medskip
 \noindent\textbf{Chapter~\ref{ch:related}: Background and Related Work.}
@@ -157,8 +168,11 @@ K-Bound theorems.
 
 \medskip
 \noindent\textbf{Chapter~\ref{ch:discussion}: Discussion, Limitations, and Conclusion.}
-When to deploy K-Bound; honest scope; limitations; and the research frontier
-(ImageNet-C / ViT scale, natural-shift benchmarks, the open conjecture).
+When to deploy K-Bound; honest scope and limitations; what would falsify the
+framework; and the research frontier (ImageNet-C / ViT scale, natural-shift
+benchmarks, the open conjecture). Closes by restating the same three contributions
+the book opened on --- the unknowable floor, the certificate and its frontier, and
+\KGA\ as a safety layer --- against the verified evidence chain.
 
 \medskip
 \noindent\textbf{Appendix~\ref{app:repro}: Reproducibility.}

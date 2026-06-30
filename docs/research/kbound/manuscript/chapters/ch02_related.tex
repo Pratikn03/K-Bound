@@ -6,12 +6,20 @@
 
 \chapter{Background and Related Work}\label{ch:related}
 
-We position K-Bound as a precise delta over five adjacent lines of work.
-In each case the distinction is the one the theory formalizes: between
-\emph{improving} an unlabeled objective and \emph{certifying the sign} of
-its benefit before acting.
-We survey each line in enough depth to make the gap concrete, then close
-with a positioning table and a synthetic statement of what K-Bound adds.
+Five lines of work surround K-Bound, and each comes within reach of its
+question without asking it. The recurring distinction --- the one the theory
+formalizes --- is between \emph{improving} an unlabeled objective and
+\emph{certifying the sign} of its benefit before acting. We walk the five lines
+in that order, and the gap widens as we go: TTA mechanisms adapt without asking
+whether they should; the failure literature shows that they often should not;
+guarded adaptation reacts to harm once it has begun; label-free estimation and
+identifiability theory ask the right question but answer a harder one or stop at
+asymptotics; selective prediction and conformal inference supply the abstention
+and interval machinery but not the decision. By the final section every piece K-Bound
+needs has appeared in isolation; what no prior work assembles is the single
+pre-adaptation adapt/freeze/abstain certificate with a proven unknowable region
+and a false-adapt bound. We close with a positioning table and a precise
+statement of that gap.
 
 \section{Test-Time Adaptation: Mechanisms and Methods}\label{sec:rel-tta}
 
@@ -120,8 +128,13 @@ the adaptation mechanism executes.
 
 \section{TTA Failure, Collapse, and Evaluation}\label{sec:rel-failure}
 
-The recognition that TTA can fail destructively has generated a parallel line
-of work on understanding and measuring when failure occurs.
+If the previous section's methods all commit to adapting, the next question is
+how often that commitment backfires. A parallel line of work answers it: by
+cataloguing the conditions under which TTA fails destructively and showing that
+those conditions are not exotic but the realistic ones. This literature supplies
+the empirical motivation for K-Bound's central premise --- that harmful adaptation
+is common enough to be worth certifying against --- and the stress-test design
+that our experiments inherit.
 
 \paragraph{Pitfalls and failure modes.}
 \textbf{Zhao et al.}~\cite{zhao2023pitfalls} systematically catalogued the
@@ -177,8 +190,13 @@ Extending K-Bound to WILDS benchmarks is an explicit item of future work
 
 \section{Guarded and Protected Adaptation}\label{sec:rel-guarded}
 
-A line of work distinct from both TTA mechanisms and TTA failure analysis
-guards adaptation against specific failure modes \emph{during} the update.
+Given that adaptation can collapse, a natural response is to guard it. The
+methods in this section --- distinct from both the mechanisms above and the
+failure analyses just surveyed --- protect adaptation against specific failure
+modes \emph{during} the update. They are the closest prior work to K-Bound in
+spirit, which makes the one structural difference between them and us worth
+stating precisely: a guard acts while adapting, whereas K-Bound decides before
+adapting at all.
 
 \paragraph{Entropy thresholding and filtering.}
 EATA's entropy filter is the most direct example: high-entropy samples are
@@ -220,8 +238,12 @@ meaningfully bound the false-adapt rate; one that fires before can.
 
 \section{Label-Free Accuracy Estimation}\label{sec:rel-estimation}
 
-A third line of work predicts target performance from unlabeled data, without
-the explicit goal of making an adapt/freeze decision.
+Guarding adaptation presumes one can tell when it is going wrong, which raises a
+sharper question: can target performance be read off unlabeled data directly? A
+third line of work does exactly this --- predicting accuracy from unlabeled
+inputs --- but stops short of turning the prediction into an adapt/freeze
+decision, and estimates an absolute risk where K-Bound needs only the sign of a
+difference between two models.
 
 \paragraph{ATC.}
 \textbf{Garg et al.}~\cite{garg2022atc} introduced Average Threshold
@@ -268,9 +290,15 @@ adaptation from occurring.
 
 \section{Unsupervised Risk Estimation and Identifiability}\label{sec:rel-ident}
 
-The hardness of K-Bound's problem is inherited from the broader problem of
-unsupervised risk estimation, and the impossibility results in that literature
-are directly relevant.
+The estimators above succeed in some shift regimes and fail in others, and the
+reason is not engineering but identifiability: whether the target risk is a
+function of what unlabeled data can reveal at all. This is the line that gives
+K-Bound both its hardness and its escape route. The impossibility results here
+are the ancestors of our unknowable floor; the covariate-shift and label-shift
+identifiability results are the ancestors of our positive regimes. K-Bound's move
+within this line is to ask for the sign of a risk difference rather than a risk,
+which is identifiable on a strictly larger set --- and then to make that
+asymptotic fact a finite-sample certificate.
 
 \paragraph{Steinhardt and Liang.}
 Steinhardt and Liang showed that unsupervised risk estimation is possible only
@@ -356,8 +384,12 @@ decision procedure.
 
 \section{Selective Prediction and Abstention}\label{sec:rel-selective}
 
-Abstention is not new to machine learning; it has been studied in the context
-of individual predictions for decades.
+Identifiability theory tells us that some conditions are undecidable; acting on
+that fact requires a principled way to decline. Abstention is not new to machine
+learning --- it has been studied for decades --- but always at the granularity of
+the individual prediction. K-Bound borrows the decision-theoretic logic of the
+reject option and relocates it one level up, from the per-sample label to the
+per-episode adaptation decision.
 
 \paragraph{Chow's reject option.}
 \textbf{Chow}~\cite{chow1970optimum} introduced the reject option for
@@ -404,8 +436,12 @@ policy --- an expectation over the entire deployed batch.
 
 \section{Conformal Prediction and Anytime-Valid Inference}\label{sec:rel-conformal}
 
-The certificate construction connects to several recent developments in
-sequential and anytime-valid inference.
+The reject option says \emph{when} to abstain; it does not say how to build the
+calibrated interval whose width triggers the abstention. That interval is the
+last component K-Bound draws from prior work. The conformal and anytime-valid
+literature provides it --- finite-sample coverage for the batch certificate, and
+valid-at-any-stopping-time coverage for its streaming extension --- with no claim
+on the adapt/freeze/abstain framing itself.
 
 \paragraph{Game-theoretic probability.}
 \textbf{Ville}~\cite{ville1939etude} introduced the concept of e-processes
@@ -458,6 +494,10 @@ convergence-of-estimates theory.
 references for nonparametric estimation theory and testing, respectively.
 
 \section{Benchmarks, Robustness, and Distribution Shift}\label{sec:rel-bench}
+
+The five lines above frame the problem; this section names the datasets and
+backbones on which we test it, grouped by the role each plays in the evaluation
+of Chapters~\ref{ch:exp1} and~\ref{ch:exp2}.
 
 \paragraph{Robustness benchmarks.}
 \textbf{Hendrycks and Dietterich}~\cite{hendrycks2019benchmarking} introduced
@@ -512,13 +552,14 @@ the literature: \textbf{Isolation Forest}~\cite{liu2008isolation},
 
 \section{Positioning: The Gap K-Bound Fills}\label{sec:rel-gap}
 
-Table~\ref{tab:rel} reproduces and expands the positioning table from the
-working paper.
-The six columns characterize each method along the five dimensions that are
-jointly required for K-Bound's contribution: label-free operation, the
-distinction between adapting and wrapping, benefit prediction before acting,
-abstention on the adaptation decision itself, and a formal false-adapt
-guarantee.
+Each line of work supplies one ingredient and lacks the rest; the gap is the
+combination none of them holds at once. Table~\ref{tab:rel} makes this concrete,
+reproducing and expanding the positioning table from the working paper. Its
+columns are the five properties jointly required for K-Bound's contribution:
+label-free operation, the distinction between adapting and merely wrapping a
+candidate, benefit prediction \emph{before} acting, abstention on the adaptation
+decision itself, and a formal false-adapt guarantee. No prior row carries all
+five checks.
 
 \begin{table}[h]
 \centering
@@ -581,3 +622,8 @@ action is to abstain) into a single coherent decision framework.
 The result is a method that is simultaneously label-free, mechanism-agnostic,
 pre-adaptive, three-way, and formally guaranteed --- a combination no prior
 work achieves.
+Closing the gap demands precise objects: a benefit whose sign is the decision,
+an evidence map that sees only covariates, and a trichotomy of regimes that
+classifies what such evidence can and cannot certify. The next chapter fixes
+exactly these, and with them the impossibility theorem and the certificate that
+the rest of the manuscript proves.

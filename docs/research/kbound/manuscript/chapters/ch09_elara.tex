@@ -1,15 +1,26 @@
 \chapter{A Worked Instantiation: Reliability-Gated Multimodal Fusion (ELARA)}\label{ch:elara}
 
-This chapter presents a fully worked, machine-checked instantiation of the K-Bound
-trichotomy in the domain of multimodal anomaly detection.  The instantiation is
+This chapter is \emph{breadth and foundation} evidence, not the headline. It carries the
+knowability trichotomy into one more modality --- multimodal sensor fusion --- to show
+that helpful, harmful, and unknowable regimes, and a certificate that routes among them,
+recur outside the image-corruption and anomaly-routing settings of the preceding
+chapters. The deep test-time-adaptation safety certificate of Chapter~\ref{ch:exp2}
+(CIFAR-10-C, ImageNet-C, the natural-shift battery) remains the headline application of
+\KBound; ELARA is a worked special case that grounds the abstract theory in fully
+implemented, machine-checked code and tests the trichotomy's reach across detector zoos
+and fused modalities. We present it in that spirit: a foundation that the deep-network
+headline rests on, and an independent stress of the framework's calibration, rather than
+a competing centerpiece.
+
+Concretely, this chapter presents a fully worked, machine-checked instantiation of the
+K-Bound trichotomy in the domain of multimodal anomaly detection.  The instantiation is
 called \textbf{ELARA} (Evidence-Layered Anomaly Reliability Architecture) and its
-meta-routing variant \textbf{ELARA-U}.  Its purpose in this monograph is not to
-present a new anomaly-detection system but to show that the abstract boundary
-$\{$adapt, freeze, abstain$\}$ has a concrete, fully implemented, and empirically
-validated special case --- one where every theorem in the general theory maps to a
-runnable code module, a validator script, and a generated artifact.  The honest
-negatives in the ELARA evidence are as instructive as the positives; both are
-reported without omission.
+meta-routing variant \textbf{ELARA-U}.  Its purpose in this monograph is not to present a
+new anomaly-detection system but to show that the abstract boundary $\{$adapt, freeze,
+abstain$\}$ has a concrete, fully implemented, and empirically validated special case ---
+one where every theorem in the general theory maps to a runnable code module, a validator
+script, and a generated artifact.  The honest negatives in the ELARA evidence are as
+instructive as the positives; both are reported without omission.
 
 % -----------------------------------------------------------------------
 \section{The Fusion and Routing Problem}\label{sec:elara-problem}
@@ -340,3 +351,14 @@ not support adaptation and recommends abstention, which in this domain means
 maintaining the stack without the gate.  A framework that overclaims would not
 survive this test; the fact that ELARA passes both the positive and negative halves
 is evidence for the theory's calibration.
+
+With this breadth case in hand, the empirical arc is complete: the trichotomy has been
+exercised on a 123-task anomaly-routing benchmark (Chapter~\ref{ch:exp1}), on the
+deep-TTA corruption grids and natural-shift battery that form the headline application
+(Chapter~\ref{ch:exp2}), and now on a fully implemented multimodal-fusion special case.
+Across all three the same boundary appears in the same place --- commit where the evidence
+separates the regimes, abstain where it does not --- and the certificate's value tracks
+the frequency of detectable harm exactly as the theory predicts.
+Chapter~\ref{ch:discussion} steps back to draw the consequences for practice, the limits
+the impossibility result imposes on any label-free system, and the open problems that
+remain.
