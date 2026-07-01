@@ -294,19 +294,26 @@ This monograph has developed and validated the K-Bound framework for label-free
 adaptation: the thesis that test-time decisions --- adapt, freeze, or abstain ---
 are governed by an information-theoretic boundary on what is knowable from
 unlabeled evidence alone.  We opened on three contributions, and we close on the
-same three.  \emph{First}, the unknowable floor: when opposite-benefit worlds
-share an evidence law, no label-free rule can be correct in both, so abstention
-is information-theoretically forced (Theorem~\ref{thm:imp}, with a Le~Cam bound
-and a closed-form witness).  \emph{Second}, the certificate and the frontier:
-where the question \emph{is} answerable, a finite-sample adapt/freeze/abstain
-certificate controls the false-adapt and false-freeze rates at $\alpha$
-(Theorem~\ref{thm:cert}), and an exact benefit-sign frontier on the disagreement
-region pins the boundary itself (Theorems~\ref{thm:pos},
-\ref{thm:disagree}--\ref{thm:disagree-reg}).  \emph{Third}, \KGA: the framework
-made deployable as a mechanism-agnostic wrapper, and --- honestly --- a
-\emph{safety layer rather than an accuracy booster}, which beats both trivial
-policies only where catastrophic, detectable harm is common and otherwise does
-no harm.  The remainder of this section restates each against the verified
+same three --- each a \emph{specialization or sharpening} of a picture the
+literature already owns, not a fresh claim to the general impossibility, which is
+due to Garg et al.\ \cite{garg2022atc} and, for the abstention decision theory,
+Kalai and Kanade \cite{kalai2021abstain}.  \emph{First}, the benefit-sign
+specialization of the impossibility: when opposite-benefit worlds share an evidence
+law, no label-free rule can be correct in both, so abstention is forced
+(Theorem~\ref{thm:imp}), and we sharpen the general hardness to an exact Le~Cam
+identity with a closed-form witness.  \emph{Second}, the certificate and the exact
+computable frontier: where the question \emph{is} answerable, a finite-sample
+adapt/freeze/abstain certificate controls the false-adapt and false-freeze rates at
+$\alpha$ (Theorem~\ref{thm:cert}), and the benefit-sign frontier on the
+disagreement region gives the observable-versus-budget threshold of
+\cite{kalai2021abstain} an exact computable form --- identifiable iff $|M|>\beta$,
+with the three-way rule the unique maximal sound certificate
+(Theorems~\ref{thm:pos}, \ref{thm:disagree}--\ref{thm:disagree-reg}) --- and
+unifies the label-free accuracy estimators as its zero-budget face.  \emph{Third},
+\KGA: the framework made deployable as a mechanism-agnostic wrapper, and ---
+honestly --- a \emph{safety layer rather than an accuracy booster}, which beats both
+trivial policies only where catastrophic, detectable harm is common and otherwise
+does no harm.  The remainder of this section restates each against the verified
 evidence.
 
 \paragraph{The trichotomy thesis.}

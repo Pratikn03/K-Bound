@@ -16,10 +16,13 @@ guarded adaptation reacts to harm once it has begun; label-free estimation and
 identifiability theory ask the right question but answer a harder one or stop at
 asymptotics; selective prediction and conformal inference supply the abstention
 and interval machinery but not the decision. By the final section every piece K-Bound
-needs has appeared in isolation; what no prior work assembles is the single
-pre-adaptation adapt/freeze/abstain certificate with a proven unknowable region
-and a false-adapt bound. We close with a positioning table and a precise
-statement of that gap.
+needs has appeared in isolation --- including the general label-free impossibility
+and the abstain-under-shift decision theory, which are due to prior work
+\cite{garg2022atc,kalai2021abstain} and which we specialize rather than rediscover.
+What no prior work assembles is the single pre-adaptation adapt/freeze/abstain
+certificate that couples an unknowable region --- made exact for the sign of the
+adaptation benefit --- to a computable frontier and a false-adapt bound. We close
+with a positioning table and a precise statement of that gap.
 
 \section{Test-Time Adaptation: Mechanisms and Methods}\label{sec:rel-tta}
 
@@ -253,6 +256,14 @@ ATC achieves strong empirical accuracy on standard benchmarks and has become
 a reference method for label-free performance estimation.
 Its training requires a labeled source set to calibrate the confidence
 threshold; given that calibration, it requires only unlabeled target data.
+The same work also carries the \emph{negative} result that anchors the present
+one: identifying out-of-distribution accuracy from unlabeled data is provably as
+hard as identifying the optimal predictor, so it cannot be done without
+assumptions on the shift \cite{garg2022atc}. K-Bound does not re-derive this
+impossibility; it inherits it and specializes it to the sign of a
+\emph{difference} of risks (\S\ref{sec:rel-ident}), where the required
+assumption becomes a computable observable-margin-versus-budget condition rather
+than a global identifiability premise.
 
 \paragraph{Agreement-on-the-Line.}
 \textbf{Baek et al.}~\cite{baek2022agreement} exploited the empirical
@@ -293,12 +304,39 @@ adaptation from occurring.
 The estimators above succeed in some shift regimes and fail in others, and the
 reason is not engineering but identifiability: whether the target risk is a
 function of what unlabeled data can reveal at all. This is the line that gives
-K-Bound both its hardness and its escape route. The impossibility results here
-are the ancestors of our unknowable floor; the covariate-shift and label-shift
-identifiability results are the ancestors of our positive regimes. K-Bound's move
-within this line is to ask for the sign of a risk difference rather than a risk,
-which is identifiable on a strictly larger set --- and then to make that
-asymptotic fact a finite-sample certificate.
+K-Bound both its hardness and its escape route --- and it is the line that
+\emph{owns} the impossibility K-Bound builds on, so we are explicit about
+attribution before stating our delta. The general impossibility results here are
+the source of our unknowable floor, not a consequence of it; the covariate-shift
+and label-shift identifiability results are the ancestors of our positive regimes.
+K-Bound's move within this line is narrow and specific: to ask for the sign of a
+risk difference rather than a risk, which is identifiable on a strictly larger set,
+and then to make that asymptotic fact a finite-sample certificate with a computable
+frontier.
+
+\paragraph{The general impossibility and abstention decision theory (the sources).}
+Two prior results own the general picture that K-Bound specializes, and we cite
+them as the foundation rather than restating them as our own. \textbf{Garg et
+al.}~\cite{garg2022atc} prove that identifying out-of-distribution accuracy from
+unlabeled data is as hard as identifying the optimal predictor: point
+identification of target performance is impossible without assumptions that
+constrain the shift. \textbf{Kalai and Kanade}~\cite{kalai2021abstain} develop the
+matching decision theory of \emph{optimally abstaining from prediction with
+out-of-distribution test examples}: they characterize when a learner should predict
+versus abstain under a shift, with a decision threshold that compares an
+\emph{observable} quantity to a \emph{shift budget}, and a minimax certificate for
+the abstain-or-predict choice. Between them, these two works establish (i) that the
+general label-free question needs an assumption on the shift, and (ii) the
+observable-versus-budget form of the optimal abstention rule. K-Bound takes both as
+given. Its contribution is to specialize (i) to the sign of the adaptation benefit
+--- where the required assumption sharpens to the computable criterion $|M|>\beta$
+on the disagreement region (Chapter~\ref{ch:theory2}) --- and to specialize (ii) to
+the three-way adapt/freeze/abstain certificate, giving the observable margin an
+explicit closed form and proving the resulting rule the unique maximal sound
+certificate. The impossibility, the necessity of an assumption, and the
+observable-versus-budget threshold are not claimed as new; the benefit-sign
+specialization, the exact computable frontier, and the finite-sample certificate
+are.
 
 \paragraph{Steinhardt and Liang.}
 Steinhardt and Liang showed that unsupervised risk estimation is possible only
@@ -370,26 +408,39 @@ importance-weighted estimator $\widehat{R}_T(f) = n^{-1} \sum_i r(x_i)
 positive result.
 
 \paragraph{The K-Bound delta over this line.}
-The identifiability literature establishes when risk is identifiable and when
-it is not.
-K-Bound's contribution within this line is twofold.
+The identifiability literature, and specifically \cite{garg2022atc,kalai2021abstain},
+establishes when a shift-dependent quantity is identifiable and when it is not, and
+the observable-versus-budget form of the optimal abstention rule. K-Bound's
+contribution over this line is threefold, and each item is a specialization or
+sharpening rather than a new impossibility.
 First, we target the \emph{sign} of a risk difference, which is identifiable
 on a strictly larger set than the risk itself: the unknowable regime in
 K-Bound is strictly smaller than the non-identifiable regime for risk
 estimation.
-Second, we instantiate the identifiability result as a \emph{finite-sample,
-false-adapt-controlled certificate} (Theorem~\ref{thm:cert}), going from an
-asymptotic identifiability statement to an operational, finite-sample
-decision procedure.
+Second, we instantiate the specialized identifiability result as a
+\emph{finite-sample, false-adapt-controlled certificate} (Theorem~\ref{thm:cert}),
+turning the observable-versus-budget threshold of \cite{kalai2021abstain} into an
+operational, finite-sample decision procedure with an explicit computable margin.
+Third, we \emph{unify} the label-free accuracy estimators of
+\S\ref{sec:rel-estimation} (ATC, difference-of-confidence, generalized disagreement
+equality, agreement-on-the-line) as the zero-budget ($\beta=0$) face of this
+frontier: each reads the benefit sign off an observable and is sound exactly when
+the calibration drift vanishes, which is the special case our budgeted criterion
+recovers.
 
 \section{Selective Prediction and Abstention}\label{sec:rel-selective}
 
 Identifiability theory tells us that some conditions are undecidable; acting on
 that fact requires a principled way to decline. Abstention is not new to machine
-learning --- it has been studied for decades --- but always at the granularity of
-the individual prediction. K-Bound borrows the decision-theoretic logic of the
-reject option and relocates it one level up, from the per-sample label to the
-per-episode adaptation decision.
+learning --- it has been studied for decades --- but classically at the granularity
+of the individual prediction, and, most relevant here, Kalai and
+Kanade~\cite{kalai2021abstain} give the decision theory of abstaining specifically
+\emph{under distribution shift}, with an observable-versus-shift-budget threshold
+that is the direct antecedent of our certificate. K-Bound borrows the
+decision-theoretic logic of the reject option --- Chow's per-sample form and
+Kalai--Kanade's under-shift form --- and relocates it one level up, from the
+per-sample label to the per-episode adaptation decision, specializing the
+under-shift threshold to the sign of the adaptation benefit.
 
 \paragraph{Chow's reject option.}
 \textbf{Chow}~\cite{chow1970optimum} introduced the reject option for
@@ -607,6 +658,11 @@ To state this more carefully:
 \item Identifiability theory (Ben-David et al., BBSE) shows when risk is
     identifiable but does not yield a finite-sample, false-adapt-controlled
     operational certificate.
+\item The general label-free impossibility (Garg et al.) and the
+    abstain-under-shift decision theory (Kalai and Kanade) supply the negative
+    result and the observable-versus-budget threshold K-Bound specializes; they do
+    not target the benefit sign, give the computable frontier, or build the
+    finite-sample certificate.
 \item Selective prediction (Geifman and El-Yaniv) abstains on individual
     predictions, not on the adaptation decision as a whole.
 \item Conformal prediction (Vovk et al., Angelopoulos and Bates) provides the

@@ -7,39 +7,49 @@
 \chapter{Certificates: When the Boundary Can Be Crossed Safely}
 \label{ch:theory2}
 
-Chapter~\ref{ch:theory1} ended on deliberately negative ground. Theorem~\ref{thm:imp}
-exhibited two target worlds that induce \emph{exactly} the same label-free evidence yet
-assign \emph{opposite} signs to the adaptation benefit
-$\Delta = R_T(f_0) - R_T(f_a)$, and its quantitative strengthening showed that the best
-achievable committal error against such a pair equals $1-\TV$ of the evidence laws ---
-which is $1$ in the witness. Theorem~\ref{thm:gate} then priced the failure: a gate's
-regret over the oracle is precisely the benefit magnitude $|\Delta(Z)|$ it forfeits on
-each sign mistake, and on evidence compatible with both signs no estimator can beat the
-floor $\E[|\Delta(Z)|]/2$, attained by abstaining. The unknowable regime is not a
-deficiency of any particular detector or drift statistic; it is a property of the
-information available.
+Chapter~\ref{ch:theory1} ended on deliberately negative ground --- the benefit-sign
+specialization of an impossibility the literature already owns \cite{garg2022atc,
+kalai2021abstain}. Theorem~\ref{thm:imp} exhibited two target worlds that induce
+\emph{exactly} the same label-free evidence yet assign \emph{opposite} signs to the
+adaptation benefit $\Delta = R_T(f_0) - R_T(f_a)$, and its quantitative strengthening
+showed that the best achievable committal error against such a pair equals $1-\TV$ of
+the evidence laws --- which is $1$ in the witness. Theorem~\ref{thm:gate} then priced
+the failure: a gate's regret over the oracle is precisely the benefit magnitude
+$|\Delta(Z)|$ it forfeits on each sign mistake, and on evidence compatible with both
+signs no estimator can beat the floor $\E[|\Delta(Z)|]/2$, attained by abstaining. The
+unknowable regime is not a deficiency of any particular detector or drift statistic; it
+is a property of the information available --- and the general reason for it, that a
+shift-dependent quantity is unidentifiable without an assumption on the shift, is due to
+\cite{garg2022atc}.
 
 This chapter is the constructive half of the theory. It asks the question the
 impossibility result leaves open: \emph{when the evidence does separate the worlds, how
 should a system cross the boundary --- and what guarantee can it carry across?} The
-answer is a \emph{certificate}: a label-free benefit estimate $\widehat\Delta(Z)$
-equipped with a finite-sample confidence radius $\varepsilon(Z)$, together with the
-three-way rule that commits only when the certified interval clears zero. We develop
-the batch certificate and its error guarantee (Theorem~\ref{thm:cert}), discharge the
-radius two ways --- by empirical-Bernstein concentration and by split-conformal
-calibration --- and derive both the mandatory-abstention consequence on matched
-evidence and the sample complexity of certification. We then build the streaming
-complement: an anytime-valid certificate by testing-by-betting
-(Theorem~\ref{thm:evalue}), valid at every stopping time simultaneously. The second
-half of the chapter maps the regimes where the boundary genuinely opens: the
-covariate-shift regime where the benefit sign becomes fully identifiable
-(Theorem~\ref{thm:pos}), and the disagreement-region characterization that reduces
-$\sign\Delta$ to an ordinal accuracy comparison on an observable set for binary,
-multiclass, and regression losses
-(Theorems~\ref{thm:disagree}--\ref{thm:disagree-reg}). The chapter closes with the one
-piece the program leaves open --- the label-free \emph{bracketing} of that ordinal
-comparison (Conjecture~\ref{conj:gen}) --- stated precisely, with an honest account of
-why current techniques do not resolve it and which partial results are proved.
+general shape of the answer --- commit when an observable quantity beats the shift
+budget, else abstain --- is the decision rule of Kalai and Kanade
+\cite{kalai2021abstain}; our task is to give that rule, for the benefit-sign question,
+an explicit computable form and a finite-sample certificate. The answer is a
+\emph{certificate}: a label-free benefit estimate $\widehat\Delta(Z)$ equipped with a
+finite-sample confidence radius $\varepsilon(Z)$, together with the three-way rule that
+commits only when the certified interval clears zero. We develop the batch certificate
+and its error guarantee (Theorem~\ref{thm:cert}), discharge the radius two ways --- by
+empirical-Bernstein concentration and by split-conformal calibration --- and derive
+both the mandatory-abstention consequence on matched evidence and the sample complexity
+of certification. We then build the streaming complement: an anytime-valid certificate
+by testing-by-betting (Theorem~\ref{thm:evalue}), valid at every stopping time
+simultaneously. The second half of the chapter maps the regimes where the boundary
+genuinely opens: the covariate-shift regime where the benefit sign becomes fully
+identifiable (Theorem~\ref{thm:pos}), and the disagreement-region characterization that
+reduces $\sign\Delta$ to an ordinal accuracy comparison on an observable set for binary,
+multiclass, and regression losses (Theorems~\ref{thm:disagree}--\ref{thm:disagree-reg}).
+That characterization is what turns the observable-versus-budget threshold into the
+exact, computable frontier $|M|>\beta$ on the disagreement region, and it is what lets us
+place the label-free accuracy estimators (ATC, difference-of-confidence, generalized
+disagreement equality, agreement-on-the-line) as the zero-budget ($\beta=0$) face of the
+same frontier. The chapter closes with the one piece the program leaves open --- the
+label-free \emph{bracketing} of that ordinal comparison (Conjecture~\ref{conj:gen}) ---
+stated precisely, with an honest account of why current techniques do not resolve it and
+which partial results are proved.
 
 \section{From Impossibility to Conditional Possibility}
 \label{sec:t2-idea}
@@ -842,9 +852,11 @@ label-shift row follows the black-box shift estimation conditions of
 The covariate-shift result buys identifiability with a global assumption on the shift.
 The fifth result of the theory takes the opposite route: no assumption on the shift at
 all, but a sharper look at \emph{where} in input space the decision is actually
-decided. The observation is elementary and, once made, structural. Wherever the frozen
-and candidate models agree, their losses are identical and the per-sample benefit is
-exactly zero --- those points contribute \emph{nothing} to $\Delta$, under any label
+decided. It is here that the observable-versus-budget threshold of
+\cite{kalai2021abstain} acquires, for the benefit-sign question, an \emph{exact and
+computable} form. The observation is elementary and, once made, structural. Wherever the
+frozen and candidate models agree, their losses are identical and the per-sample benefit
+is exactly zero --- those points contribute \emph{nothing} to $\Delta$, under any label
 law whatsoever. The entire benefit, sign and magnitude alike, is carried by the
 \emph{disagreement region}
 \[
@@ -854,7 +866,14 @@ and $D$ is \emph{observable}: membership requires evaluating two known functions
 labels. Restricted to $D$, the question ``does adapting help?'' collapses to an
 above-chance check --- is the candidate right more often than the incumbent on the
 points where they differ? --- which is an \emph{ordinal} comparison, not a risk
-estimate.
+estimate. This is what makes the general threshold concrete: writing $M$ for the
+observable margin on $D$ and $\beta$ for the calibration-drift budget, the
+disagreement-region identity below reduces $\sign\Delta$ to this ordinal comparison,
+from which the sign is identifiable exactly when $|M|>\beta$ and the three-way rule
+built on it is the unique maximal sound certificate. The same reduction exhibits the
+label-free accuracy estimators (ATC, difference-of-confidence, generalized disagreement
+equality, agreement-on-the-line) as the zero-budget ($\beta=0$) face of this criterion
+--- sound precisely when the calibration drift $\gamma$ vanishes.
 
 \begin{theorem}[Sign-of-difference identifiability on the disagreement region; binary case]
 \label{thm:disagree}

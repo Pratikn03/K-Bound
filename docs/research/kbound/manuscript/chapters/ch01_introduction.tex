@@ -159,45 +159,88 @@ section states the three results that do it.
 
 \section{Contributions}\label{sec:intro-contributions}
 
-The work makes three contributions. They answer, in turn, when the
-adapt/freeze question is fundamentally unanswerable from unlabeled evidence,
-when it provably is answerable and how to act on it, and what happens when the
-resulting rule meets real deployment streams. The manuscript opens on these
-three and closes on them (Chapter~\ref{ch:discussion}); the paragraphs below
-state each and the formal machinery it rests on.
+The starting point is a fact we do not claim as ours. That the general
+label-free question is unanswerable without assumptions on the shift is already
+established: Garg et al.\ prove that identifying out-of-distribution accuracy is
+as hard as identifying the optimal predictor, and therefore requires assumptions
+on the shift \cite{garg2022atc}; and Kalai and Kanade give the decision theory of
+optimally abstaining versus predicting under a shift, with a threshold comparing an
+observable quantity to a shift budget and a minimax certificate for the
+abstain-or-predict choice \cite{kalai2021abstain}. These two results own the
+general impossibility and the general abstention decision theory. Our three
+contributions \emph{specialize and sharpen} that picture to the benefit-sign
+adapt/freeze question; they answer, in turn, when the adapt/freeze question is
+fundamentally unanswerable from unlabeled evidence, when it provably is answerable
+and how to act on it, and what happens when the resulting rule meets real
+deployment streams. The manuscript opens on these three and closes on them
+(Chapter~\ref{ch:discussion}); the paragraphs below state each and the formal
+machinery it rests on.
 
-\subsection*{Contribution I: The unknowable floor.}
+\subsection*{Contribution I: The benefit-sign specialization of the impossibility.}
 
-\emph{We prove when a label-free system fundamentally cannot decide.} For any
-(possibly randomized) label-free decision rule $g(Z)$, there exist two target
-worlds $P_T^1$ and $P_T^2$ with identical observable-evidence laws and
-opposite-sign benefits (Theorem~\ref{thm:imp}). Since the rule cannot
-distinguish the worlds, its actions are identically distributed in both, and
-the worst-case-optimal action is to abstain. The construction is non-vacuous:
-we exhibit it explicitly as $X \sim \mathcal{N}(0,1)$ under both worlds,
-$f_0(x) = \ind[x>0]$, $f_a(x) = \ind[x<0]$, and labels flipped between the
-worlds. A Le~Cam two-point quantitative strengthening (Chapter~\ref{ch:theory1})
-shows that the optimal committal error equals $1 - \TV$ of the evidence laws,
-which is $1$ in the witness and decays to zero as the worlds become separable.
-Numerically, the KGA validator confirms $100\%$ abstention on the witness and
-exact tracking of the Le~Cam floor across the total-variation sweep. This is the
-result that turns abstention from a heuristic fallback into a forced, principled
-action.
+\emph{We make the general label-free impossibility exact for the adapt/freeze
+decision.} The general fact --- that no label-free rule can identify a
+shift-dependent quantity without assumptions on the shift --- is due to
+\cite{garg2022atc,kalai2021abstain}; what we add is its exact form for the sign of
+$\Delta = R_T(f_0) - R_T(f_a)$. For any (possibly randomized) label-free decision
+rule $g(Z)$, there exist two target worlds $P_T^1$ and $P_T^2$ with identical
+observable-evidence laws and opposite-sign benefits (Theorem~\ref{thm:imp}). Since
+the rule cannot distinguish the worlds, its actions are identically distributed in
+both, and the worst-case-optimal action is to abstain --- the specialization, to
+the benefit-sign question, of the abstain-under-shift decision theory of
+\cite{kalai2021abstain}. The construction is non-vacuous: we exhibit it explicitly
+as $X \sim \mathcal{N}(0,1)$ under both worlds, $f_0(x) = \ind[x>0]$,
+$f_a(x) = \ind[x<0]$, and labels flipped between the worlds. A Le~Cam two-point
+quantitative strengthening (Chapter~\ref{ch:theory1}) sharpens the general hardness
+to an exact identity: the optimal committal error equals $1 - \TV$ of the evidence
+laws, which is $1$ in the witness and decays to zero as the worlds become
+separable. Numerically, the KGA validator confirms $100\%$ abstention on the
+witness and exact tracking of the Le~Cam floor across the total-variation sweep.
+This is the result that turns abstention, in this specific setting, from a heuristic
+fallback into a forced, principled action.
 
 This contribution rests on a prior formalization, developed in full in
 Chapter~\ref{ch:formulation}: we cast label-free TTA as the adapt/freeze/abstain
 trichotomy, define risk alignment for observable evidence, and define the three
 regimes precisely. Where the TTA literature designs the adaptation
 mechanism~$f_a$, we ask when the sign of $R_T(f_0) - R_T(f_a)$ is recoverable
-from label-free observations at all.
+from label-free observations at all --- an instance of the general question
+\cite{garg2022atc,kalai2021abstain} for which the answer turns out to have a clean
+computable form.
 
-\subsection*{Contribution II: The finite-sample certificate and the exact frontier.}
+\subsection*{Contribution II: The exact benefit-sign frontier, its certificate, and the unification.}
 
-\emph{We prove when a label-free system provably can decide, and locate exactly
-where the boundary lies.} Two results do this work. The first is operational: a
-finite-sample adapt/freeze/abstain certificate with false-adapt control
-(Theorem~\ref{thm:cert}). Under a label-free estimator $\widehat{\Delta}(z)$
-with a calibrated radius $\varepsilon(z)$ satisfying
+\emph{We prove when a label-free system provably can decide, and locate the
+boundary with a clean computable criterion.} The general threshold ---
+commit when an observable quantity beats the shift budget, else abstain --- is
+that of \cite{kalai2021abstain}; our sharpening is to give that threshold, for the
+benefit-sign question, an explicit computable form and to prove it exact. The
+key object is the \emph{observable disagreement region} $D = \{x : f_0(x) \neq
+f_a(x)\}$, observable without labels since $f_0$ and $f_a$ are known maps of $X$.
+On $D$ we prove that $\sign\Delta$ equals an ordinal accuracy comparison ---
+adapting helps if and only if the adapted model exceeds chance accuracy on $D$
+(Theorems~\ref{thm:disagree}--\ref{thm:disagree-reg}, for binary, multiclass, and
+regression losses). This yields the exact benefit-sign frontier: writing $M$ for the
+observable margin and $\beta$ for the calibration-drift budget on $D$, the sign is
+\emph{identifiable from observables if and only if $|M| > \beta$}. The three-way
+rule --- \textsc{adapt} above the frontier on the helpful side, \textsc{freeze}
+above it on the harmful side, \textsc{abstain} within $|M| \le \beta$ --- is the
+\emph{unique maximal sound certificate}: any rule that commits anywhere inside
+$|M| \le \beta$ is unsound (some consistent world flips the sign), and any rule that
+abstains anywhere with $|M| > \beta$ forfeits coverage it could soundly claim.
+
+This frontier also \emph{unifies} the label-free accuracy-estimation literature.
+ATC \cite{garg2022atc}, difference-of-confidence, generalized disagreement
+equality, confidence-optimal transport, test-time-accuracy estimation, and
+agreement-on-the-line \cite{baek2022agreement} all implicitly read the benefit sign
+off an observable at \emph{zero budget}: they are the $\beta = 0$ face of the
+frontier, sound exactly when the calibration drift $\gamma$ vanishes and silently
+unsound otherwise. Our criterion is the same object with the budget restored,
+which is what converts an estimator into a certificate.
+
+The operational counterpart is a finite-sample adapt/freeze/abstain certificate
+with false-adapt control (Theorem~\ref{thm:cert}). Under a label-free estimator
+$\widehat{\Delta}(z)$ with a calibrated radius $\varepsilon(z)$ satisfying
 $\Pr[|\widehat{\Delta}(z) - \Delta(z)| \leq \varepsilon(z)] \geq 1 - \alpha$,
 the rule
 \[
@@ -207,23 +250,13 @@ the rule
 \]
 controls the false-adapt and false-freeze rates at $\alpha$. A corollary shows
 that in the unknowable two-point regime the certificate \emph{must} abstain with
-probability at least $1 - 2\alpha$, joining this contribution to the floor of
-Contribution~I: where the evidence cannot tell, the certificate is forced to
-abstain, not merely inclined to. A sample-complexity corollary shows the
-certificate commits once $n \gtrsim (\sigma^2 / \Delta^2) \log(1/\alpha)$ paired
-benefit samples are available, with an empirical-Bernstein discharge for bounded
-benefits; an anytime-valid e-process variant (Appendix~\ref{app:repro}) extends
-it to streaming TTA with no multiplicity correction.
-
-The second result pins the boundary itself. Restricting to the \emph{observable
-disagreement region} $D = \{x : f_0(x) \neq f_a(x)\}$ --- observable without
-labels, since $f_0$ and $f_a$ are known maps of $X$ --- we prove that
-$\sign\Delta$ equals an ordinal accuracy comparison on $D$: adapting helps if
-and only if the adapted model exceeds chance accuracy on $D$
-(Theorems~\ref{thm:disagree}--\ref{thm:disagree-reg}, for binary, multiclass,
-and regression losses). This is the benefit-sign frontier: the sign is
-identifiable from observables exactly when an observable margin clears the
-calibration-drift budget on $D$. A companion positive regime
+probability at least $1 - 2\alpha$, joining this contribution to Contribution~I:
+where the evidence cannot tell, the certificate is forced to abstain, not merely
+inclined to. A sample-complexity corollary shows the certificate commits once
+$n \gtrsim (\sigma^2 / \Delta^2) \log(1/\alpha)$ paired benefit samples are
+available, with an empirical-Bernstein discharge for bounded benefits; an
+anytime-valid e-process variant (Appendix~\ref{app:repro}) extends it to streaming
+TTA with no multiplicity correction. A companion positive regime
 (Theorem~\ref{thm:pos}) shows that under covariate shift ($P_S(Y \mid X) =
 P_T(Y \mid X)$) importance weighting yields a consistent target-risk estimator,
 so $\sign\Delta$ is identifiable outright. Ablations confirm that detector
@@ -231,6 +264,36 @@ disagreement is the single most important evidence feature, directly supporting
 the theory. Conjecture~\ref{conj:gen} states the one remaining open piece: the
 label-free \emph{bracketing} of the ordinal comparison in the multiclass and
 regression cases.
+
+\paragraph{The one-bit quantification, honestly scoped.}
+Our freshest result quantifies exactly \emph{how much} label-free evidence falls short.
+In the TTA/panel setting, under a stated structural hypothesis~$H$ (conditional
+error-independence plus per-class symmetric accuracy on a panel of predictors),
+label-free evidence identifies everything about the decision problem \emph{except a
+single global sign bit}: a label-complement twin shares the entire evidence law at every
+moment order yet reverses every benefit sign, and every published label-free
+identifying device (ATC-style confidence thresholds, majority-above-chance,
+agreement-on-the-line slopes) is exactly a selector of that one bit. We are deliberate
+about the scope of this count. It is a theorem \emph{in this setting under~$H$}; we do
+\emph{not} claim ``one bit'' universally. Outside~$H$, or for a general
+split-observable functional, the irreducible supplement is problem-dependent --- under
+affine sign--budget ambiguity it is an interval rather than a single bit --- and we say
+so rather than over-generalize.
+
+\paragraph{Split-observability: the general form of what specializes.}
+The pieces above are the benefit-sign instance of a world-agnostic pattern, which we
+name and prove at that level of generality. Call a benefit functional $\Delta$
+\emph{split-observable} if its sign factors as $\sign(\Delta) = \sign(M + \gamma)$ with
+$M$ observable from label-free evidence and the residual $\gamma$ bounded by a budget,
+$|\gamma| \le \beta$. For \emph{any} split-observable functional, the impossibility
+(matched-evidence worlds force abstention), the finite-$n$ floor, the maximal sound
+certificate, and the minimax/necessity statements all hold --- these are properties of
+the split, not of TTA, and they are world-agnostic. Our benefit-sign setting, with
+disagreement-region reduction supplying $M$, is the canonical instance. We are careful
+about the reach of the sharper claims: the exact $|M| > \beta$ criterion and the
+one-bit count are proved for the benefit-sign functional (the latter under~$H$),
+\emph{not} asserted for arbitrary split-observable functionals, where the residual
+structure can differ.
 
 \subsection*{Contribution III: \KGA, a deployable safety layer.}
 
@@ -301,10 +364,13 @@ experiments below substantiate this, regime by regime.
 A safety claim is only as good as its stated limits, so we draw them in both
 theory and experiment before any reader has to.
 
-On the theory side, the impossibility result (Theorem~\ref{thm:imp}) is
-close to known non-identifiability of target risk without labels; its
-purpose here is to \emph{justify the abstain action} and to make the
-boundary quantitative via the Le~Cam two-point lower bound.
+On the theory side, the impossibility result (Theorem~\ref{thm:imp}) is a
+\emph{specialization}, not a discovery: the general fact that label-free
+identification of a shift-dependent quantity requires assumptions on the shift is
+due to Garg et al.\ \cite{garg2022atc}, and the accompanying abstain-versus-predict
+decision theory to Kalai and Kanade \cite{kalai2021abstain}. Our purpose here is to
+\emph{make it exact for the benefit-sign question} --- to justify the abstain action
+and to sharpen the boundary quantitatively via the Le~Cam two-point lower bound.
 The certificate (Theorem~\ref{thm:cert}) is proved conditional on a valid
 label-free interval estimator; the empirical-Bernstein discharge requires
 exchangeability of the paired benefit sample.

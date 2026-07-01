@@ -9,8 +9,14 @@
 
 \chapter{The Unknowable Regime: Non-Identifiability and the Minimax Floor}\label{ch:theory1}
 
-The first half of the theory draws the boundary of the possible. This
-chapter proves two results. The first
+The first half of the theory draws the boundary of the possible. It does so on
+ground the literature already owns: that label-free identification of a
+shift-dependent quantity is impossible without an assumption on the shift is due to
+Garg et al.\ \cite{garg2022atc}, and the decision theory of abstaining versus
+predicting under shift --- with an observable-quantity-versus-shift-budget threshold
+--- to Kalai and Kanade \cite{kalai2021abstain}. This chapter does not re-derive
+that general impossibility; it \emph{specializes and sharpens} it to the sign of the
+adaptation benefit, and proves two results in that specialized form. The first
 (Theorem~\ref{thm:imp}, with its quantitative Le~Cam strengthening,
 Theorem~\ref{thm:t1-impquant}) shows that the unknowable regime of
 Definition~\ref{def:form-regimes} is not an artifact of weak evidence
@@ -18,8 +24,9 @@ features or small batches: there exist pairs of target worlds whose
 label-free evidence laws coincide \emph{exactly} --- for every evidence map
 and every unlabeled sample size --- while their adaptation benefits have
 opposite signs, and on such pairs the optimal committal error admits a
-closed-form floor, $1-\TV$, which equals $1$ at the witness. The second
-(Theorem~\ref{thm:gate}) prices every violation of the boundary: the
+closed-form floor, $1-\TV$, which equals $1$ at the witness. That closed form is our
+sharpening of the general hardness to an exact identity for this question. The
+second (Theorem~\ref{thm:gate}) prices every violation of the boundary: the
 regret-to-oracle of any plug-in gate equals, \emph{exactly}, the expected
 benefit forfeited on the evidence values where the estimated sign is wrong,
 which yields the matching minimax floor $\E[|\Delta(Z)|]/2$ for the
@@ -39,19 +46,25 @@ Chapter~\ref{ch:formulation}: arbitrary evidence maps, arbitrary
 source data.
 
 We emphasize the chapter's intellectual posture at the outset, because the
-paper does. Non-identifiability of unlabeled target \emph{risk} is, by
-itself, close to folklore --- it is the reason the unsupervised risk
-estimation, domain adaptation, and label-shift literatures all carry
-structural assumptions \cite{bendavid2010theory, mansour2009domain,
-lipton2018detecting}. What this chapter contributes is (i) the statement at
-the level of the \emph{decision}, where it justifies a specific third
-action; (ii) an explicit, maximally separated witness pair on which every
-later experiment can be run; (iii) the exact minimax form of the floor via
+paper does. The general impossibility is not ours: label-free identification of
+target performance is as hard as identifying the optimal predictor and needs an
+assumption on the shift \cite{garg2022atc}, and the abstain-versus-predict decision
+theory under shift is already established \cite{kalai2021abstain}; more broadly,
+non-identifiability of unlabeled target \emph{risk} is close to folklore --- it is
+the reason the unsupervised risk estimation, domain adaptation, and label-shift
+literatures all carry structural assumptions \cite{bendavid2010theory,
+mansour2009domain, lipton2018detecting}. What this chapter contributes is not the
+impossibility but its \emph{specialization} to the adapt/freeze decision: (i) the
+statement at the level of the \emph{decision}, where it justifies a specific third
+action --- the benefit-sign instance of the under-shift abstention rule of
+\cite{kalai2021abstain}; (ii) an explicit, maximally separated witness pair on which
+every later experiment can be run; (iii) the exact minimax form of the floor via
 the Le~Cam two-point method \cite{lecam1973convergence,
-tsybakov2009introduction}; and (iv) the exact regret identity that converts
-the floor into a deployment-relevant quantity. Each component is validated
-numerically by a machine-checked script in the public repository
-\cite{kbound2026repo}, and we quote those checks where they occur.
+tsybakov2009introduction}, sharpening the general hardness to an identity for this
+question; and (iv) the exact regret identity that converts the floor into a
+deployment-relevant quantity. Each component is validated numerically by a
+machine-checked script in the public repository \cite{kbound2026repo}, and we quote
+those checks where they occur.
 
 \section{The non-identifiability theorem}\label{sec:t1-imp}
 

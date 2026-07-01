@@ -52,20 +52,33 @@ question those mechanisms skip: should the system adapt at all? We answer it by
 locating, exactly, the boundary between the shifts where that question is
 answerable from unlabeled evidence and the shifts where it is not.
 
-The contribution is threefold. \emph{First}, we prove an unknowable floor: when two
-target worlds induce identical observable evidence but opposite-sign adaptation
-benefit, no label-free rule --- however clever, at any sample size --- can be
-correct in both, so abstention is information-theoretically forced. We make this
-quantitative with a Le~Cam two-point bound and a closed-form witness on which the
-optimal committal error is exactly one. \emph{Second}, we prove where the question
-\emph{is} answerable and supply the machinery to act on it: a finite-sample
-adapt/freeze/abstain certificate that controls the false-adapt and false-freeze
-rates at a user-chosen $\alpha$, and an exact benefit-sign frontier that pins the
-boundary itself --- adaptation benefit is identifiable from observables if and only
-if an observable margin exceeds the calibration-drift budget on the disagreement
-region. \emph{Third}, we make the theory deployable as \KGA\ (Knowability-Guided
-Adaptation), a mechanism-agnostic wrapper that reads label-free evidence and returns
-\textsc{adapt}, \textsc{freeze}, or \textsc{abstain} around any candidate.
+That the general question is unanswerable without assumptions is not ours to claim:
+identifying out-of-distribution accuracy is provably as hard as identifying the optimal
+predictor and needs assumptions on the shift \cite{garg2022atc}, and the decision theory
+of optimal abstain-versus-predict under shift is already established with an
+observable-quantity-versus-shift-budget threshold and a minimax certificate
+\cite{kalai2021abstain}. Our contribution is to \emph{specialize and sharpen} that
+general picture to the adapt/freeze benefit-sign question, and it is threefold.
+\emph{First}, we make the impossibility exact for this question: when two target worlds
+induce identical observable evidence but opposite-sign adaptation benefit, no label-free
+rule --- at any sample size --- can be correct in both, so abstention is forced
+\cite{garg2022atc,kalai2021abstain}; we sharpen the general bound to a Le~Cam two-point
+identity and a closed-form witness on which the optimal committal error is exactly one.
+\emph{Second}, we give a clean computable frontier and the machinery to act on it: a
+finite-sample adapt/freeze/abstain certificate that controls the false-adapt and
+false-freeze rates at a user-chosen $\alpha$, and an exact benefit-sign criterion ---
+adaptation benefit is identifiable from observables if and only if an observable margin
+$|M|$ exceeds the calibration-drift budget $\beta$ on the disagreement region ---
+specializing the observable-versus-budget threshold of \cite{kalai2021abstain} to a
+form with a computable margin, with the three-way adapt/freeze/abstain rule as the
+unique maximal sound certificate. This face also \emph{unifies} the label-free accuracy
+estimators (ATC, difference-of-confidence, generalized disagreement equality,
+confidence-optimal transport, test-time-accuracy estimation, agreement-on-the-line): they
+are the zero-budget ($\beta=0$) special case, sound exactly when the calibration drift
+$\gamma$ vanishes. \emph{Third}, we make the theory deployable as \KGA\
+(Knowability-Guided Adaptation), a mechanism-agnostic wrapper that reads label-free
+evidence and returns \textsc{adapt}, \textsc{freeze}, or \textsc{abstain} around any
+candidate.
 
 Empirically, \KGA\ behaves as a \emph{safety layer}, not an accuracy booster, and we
 report it as such. On a pre-registered CIFAR-10-C stress grid --- where catastrophic,
@@ -100,11 +113,12 @@ experiments.
 \medskip
 \noindent\textbf{Chapter~\ref{ch:intro}: Introduction.}
 Sets up the TTA double-edge problem and the central question of knowability,
-introduces the adapt/freeze/abstain trichotomy, and states the three contributions
-that the manuscript opens and closes on: the unknowable floor, the certificate and
-its exact benefit-sign frontier, and \KGA\ as a deployable safety layer. Previews
-the theoretical results and the headline experimental numbers, and gives an honest
-statement of scope.
+introduces the adapt/freeze/abstain trichotomy, credits the general impossibility and
+abstention decision theory to prior work \cite{garg2022atc,kalai2021abstain}, and
+states the three contributions that the manuscript opens and closes on --- the
+benefit-sign specialization of that impossibility, the exact computable frontier and its
+certificate, and \KGA\ as a deployable safety layer. Previews the theoretical results
+and the headline experimental numbers, and gives an honest statement of scope.
 
 \medskip
 \noindent\textbf{Chapter~\ref{ch:related}: Background and Related Work.}
@@ -123,9 +137,11 @@ Includes the ``label-free'' clarification box and the knowability phase diagram.
 
 \medskip
 \noindent\textbf{Chapter~\ref{ch:theory1}: Impossibility and the Unknowable Regime.}
-The first two theoretical results.
+The first two theoretical results, specializing to the benefit-sign question the general
+label-free impossibility already established in the literature
+\cite{garg2022atc,kalai2021abstain}.
 Theorem~\ref{thm:imp} (non-identifiability with explicit witness) and its Le~Cam
-quantitative strengthening establish the unknowable regime as fundamental.
+quantitative strengthening make the unknowable regime exact for adapt/freeze.
 Theorem~\ref{thm:gate} gives the Bayes-optimal gate and the plug-in regret
 decomposition, which justifies abstaining in the low-margin band.
 
