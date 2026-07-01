@@ -66,14 +66,21 @@ under another---and with no target labels, the system cannot tell which case it 
 study the decision that comes \emph{before} adaptation---should the model adapt at all?---and
 cast it as a three-way choice: \emph{adapt} when adaptation is knowably helpful,
 \emph{freeze} when it is knowably harmful, and \emph{abstain} when the unlabeled evidence
-cannot decide. Our central result is that this question is sometimes \emph{provably
-unanswerable}: two target worlds can induce identical label-free evidence yet opposite
-adaptation benefit, so no label-free rule is correct in both and abstention becomes
-necessary, not merely cautious. When the evidence \emph{is} informative, we give an exact
-success condition---the sign of the benefit is recoverable iff an observable confidence
-margin exceeds how far calibration can drift (the ``calibration-drift budget'')---together
-with a finite-sample certificate that acts on it while holding the false-adapt and
-false-freeze rates at a chosen level $\alpha$. We package this as \textsc{KGA}, a drop-in
+cannot decide. That some such decisions are \emph{provably unanswerable} without extra
+assumptions is not new: identifying out-of-distribution accuracy is already known to be as
+hard as identifying the optimal predictor~\cite{garg2022atc}, and the optimal predict-versus-abstain
+trade-off under shift has a known decision-theoretic form~\cite{kalai2021abstain}. Our
+contribution \emph{specializes and sharpens} this landscape for the adaptation-benefit sign.
+We prove an \emph{exact} success condition---the sign of the benefit is recoverable over the
+declared drift-budget class \emph{iff} an observable confidence margin exceeds how far
+calibration can drift (the ``calibration-drift budget''), a clean computable geometric
+criterion in observable quantities---together with a finite-sample certificate that realizes
+the unique maximal sound adapt/freeze/abstain rule while holding the false-adapt and
+false-freeze rates at a chosen level $\alpha$. We further pin the minimal untestable
+supplement at exactly \emph{one bit} of orientation in this test-time-adaptation setting, and
+show that the standard label-free accuracy estimators (ATC, DoC, GDE, COT, AETTA,
+agreement-on-the-line) are the zero-budget face of this frontier---sound precisely when
+calibration does not drift. We package this as \textsc{KGA}, a drop-in
 wrapper around existing adapters (Tent, EATA, SAR) that decides \emph{whether} to trust them
 rather than how to adapt. \textbf{Our headline empirical result} is uniform \emph{no-harm} on every
 held-out natural shift in a pre-registered, un-cherry-picked panel (Office-Home, iWildCam,
@@ -122,24 +129,35 @@ adaptation is knowably helpful, freeze when knowably harmful, and abstain when t
 available evidence cannot identify the sign of the benefit. Figure~\ref{fig:teaser}
 previews this decision certificate.
 
-This decision is constrained by identifiability. We show that there exist target
-worlds with identical label-free evidence but opposite adaptation benefit. In such
-cases, no label-free rule can certify the correct decision in both worlds;
-abstention is not merely conservative, but information-theoretically necessary.
-Conversely, when the label-free evidence is risk-aligned and the benefit estimate
-admits a valid uncertainty radius, a finite-sample certificate can safely route
-between adapt, freeze, and abstain while controlling false-adapt and false-freeze
-errors.
+This decision is constrained by identifiability. That label-free deployment quantities
+cannot in general pin down a target risk---and hence cannot in general decide adaptation
+without some assumption on the shift---is established: Garg et al.~\cite{garg2022atc} show
+identifying out-of-distribution accuracy is as hard as identifying the optimal predictor,
+and Kalai and Kanade~\cite{kalai2021abstain} characterize the optimal predict-versus-abstain
+trade-off under shift against a shift budget. We do not re-derive this general impossibility;
+we \emph{specialize} it to the adaptation-benefit sign and make its boundary exact. Concretely,
+two target worlds in the declared drift-budget class can carry identical label-free evidence
+yet opposite adaptation benefit, so no label-free rule is correct in both and abstention is
+information-theoretically necessary, not merely conservative. Conversely, when the label-free
+evidence is risk-aligned and the benefit estimate admits a valid uncertainty radius, a
+finite-sample certificate can safely route between adapt, freeze, and abstain while
+controlling false-adapt and false-freeze errors.
 
-Our main theoretical result is an exact benefit-sign frontier. The sign of the
-adaptation benefit is identifiable from label-free observables precisely when an
-observable margin on the disagreement region exceeds a calibration-drift budget. Intuitively, the margin is how confidently the label-free evidence points toward "adapt" or "freeze," and the budget is how far that signal can be thrown off by calibration drift; the decision is trustworthy exactly when confidence outweighs drift.
-This characterizes why common label-free heuristics can work in benign regimes and
-fail under drift: they implicitly assume that this drift is zero or negligible. We
-further show that no label-free-checkable assumption can remove this obstruction in
-full generality; the remaining ambiguity is an irreducible one-bit orientation
-choice, which can only be supplied through structural assumptions that are
-falsifiable but not verifiable.
+Our main theoretical contribution is an \emph{exact} benefit-sign frontier that sharpens this
+known landscape into a computable criterion. The sign of the adaptation benefit is identifiable
+from label-free observables precisely when an observable margin on the disagreement region
+exceeds a calibration-drift budget ($|M|>\beta$). Intuitively, the margin is how confidently the
+label-free evidence points toward ``adapt'' or ``freeze,'' and the budget is how far that signal
+can be thrown off by calibration drift; the decision is trustworthy exactly when confidence
+outweighs drift. This makes precise why common label-free heuristics can work in benign regimes and
+fail under drift: they implicitly assume that this drift is zero or negligible---i.e., they live on
+the $\beta{=}0$ face of the frontier. In the test-time-adaptation setting studied here, we further
+quantify \emph{how much} untestable information the decision needs: the minimal supplement that no
+label-free-checkable assumption can remove is exactly \emph{one bit} of orientation, which can only
+be supplied through structural assumptions that are falsifiable but not verifiable. (In full
+generality the irreducible supplement is problem-dependent---an interval under affine
+ambiguity---so we state the one-bit count for the TTA/panel setting under our stated hypothesis,
+not for arbitrary functionals.)
 
 We instantiate the framework as \textsc{KGA}, a mechanism-agnostic wrapper around
 existing adaptation candidates such as Tent, EATA, and SAR. \textsc{KGA} does not
@@ -171,10 +189,12 @@ stream. ImageNet-R remains a split-specific lead, not a stable win.
 
 \paragraph{Contributions.}
 \begin{itemize}
-\item We formalize label-free TTA as an adapt/freeze/abstain decision problem governed by the sign of adaptation benefit.
-\item We prove an impossibility result showing that some adaptation decisions are fundamentally unknowable from label-free evidence.
+\item We formalize label-free TTA as an adapt/freeze/abstain decision problem governed by the sign of adaptation benefit. The underlying impossibility---that deciding without labels needs an assumption on the shift---is inherited from prior work~\cite{garg2022atc,kalai2021abstain}, which we \emph{specialize} to the benefit sign rather than re-derive.
+\item \textbf{Exact benefit-sign frontier.} We characterize the sign as identifiable over the declared drift-budget class \emph{iff} $|M|>\beta$---a clean, computable geometric criterion in observable quantities---with the three-way adapt/freeze/abstain rule as the unique maximal sound certificate.
+\item \textbf{One-bit quantification.} In the TTA/panel setting under our stated hypothesis, the minimal untestable supplement is exactly one bit of orientation; in general the irreducible supplement is problem-dependent (an interval under affine ambiguity).
+\item \textbf{Unification.} We show ATC, DoC, GDE, COT, AETTA, and agreement-on-the-line are the $\beta{=}0$ face of the frontier (sound iff the drift budget vanishes), organizing these label-free estimators as a single limiting case.
+\item \textbf{Split-observability (honest generality).} We isolate the structural property our proofs actually use---a benefit functional is \emph{split-observable} if $\sign(\Delta)=\sign(M+\gamma)$ with $M$ observable and $|\gamma|\le\beta$---and show the impossibility, finite-$n$ floor, certificate, and minimax/necessity results hold for \emph{any} split-observable functional, with TTA (via the disagreement-region reduction) as the demonstrated instance. The $|M|>\beta$ criterion and the one-bit count are stated for split-observable functionals (TTA is the demonstrated case), not for arbitrary functionals.
 \item We derive a finite-sample certificate that controls false adaptation and false freezing under risk-aligned evidence.
-\item We characterize an exact benefit-sign frontier based on observable disagreement margin and calibration drift.
 \item We validate the framework on a seven-dataset core panel with bootstrap confidence intervals.
 \textbf{Headline:} uniform no-harm on every held-out natural shift (Office-Home, iWildCam,
 Camelyon17, RxRx1, PACS) under a valid out-of-fold radius. \textbf{Confirmatory:} beats-both on
@@ -303,29 +323,44 @@ A third line predicts target \emph{performance} without labels: \textbf{ATC}~\ci
 softmax confidence calibrated on source; \textbf{Agreement-on-the-Line}~\cite{baek2022aol,miller2021aol} exploits the linear
 correlation between in- and out-of-distribution model \emph{agreement} to extrapolate
 accuracy; \textbf{AETTA}~\cite{lee2024aetta} estimates TTA accuracy from dropout-prediction disagreement.
+Crucially, Garg et al.~\cite{garg2022atc} also establish the governing limit for this entire
+line: identifying OOD accuracy is \emph{as hard as} identifying the optimal predictor, so any
+label-free accuracy estimate is sound only under an assumption on the shift. Our frontier
+\emph{organizes} these estimators rather than competing with them: ATC, DoC, GDE, COT, AETTA,
+and agreement-on-the-line are all the zero-budget ($\beta{=}0$) face of the benefit-sign frontier
+(Thm.~\ref{thm:frontier}(iv))---each is sound precisely when calibration does not drift
+($\gamma{=}0$), and each silently fails exactly where our budget is positive.
 Closest in spirit, \textbf{Kim et al.}~\cite{kim2024taol}\ use agreement-on-the-line to decide \emph{when} TTA
 helps and to select TTA hyperparameters without labels---a genuine decision use of an
-accuracy estimate, but a plug-in one: it is exactly the $\beta{=}0$ face of our frontier
-(Thm.~\ref{thm:frontier}(iv)), sound only when calibration transfers, with no finite-sample
-false-adapt control and no abstain region.
+accuracy estimate, but a plug-in one on that same $\beta{=}0$ face, sound only when calibration
+transfers, with no finite-sample false-adapt control and no abstain region.
 Estimating $R_T(f)$---or detecting that TTA has failed \emph{post hoc}---is strictly different
 from certifying $\sign\big(R_T(f_0)-R_T(f_a)\big)$ \emph{before} adapting with a controlled
 false-adapt rate, the object K-Bound bounds.
 
-\subsection{Unsupervised risk estimation and identifiability}
-The hardness of our problem is inherited from unsupervised risk estimation.
+\subsection{Impossibility, abstention under shift, and identifiability}
+The general impossibility our work specializes is \emph{owned by prior work}, and we cite it as
+such. \textbf{Garg et al.}~\cite{garg2022atc} prove that identifying out-of-distribution accuracy
+from unlabeled target data is as hard as identifying the optimal predictor---so point
+identification provably requires an assumption on the shift---and \textbf{Kalai \&
+Kanade}~\cite{kalai2021abstain} give the matching decision theory, characterizing the optimal
+abstain-versus-predict rule under shift via an observable-quantity-versus-shift-budget threshold
+with a minimax certificate. These are the sources of both the impossibility and the
+abstention-under-budget decision we build on; K-Bound does not re-derive them but
+\emph{specializes} them to the sign of the adaptation benefit and makes the boundary exact.
+This hardness is also visible across unsupervised risk estimation.
 \textbf{Steinhardt \& Liang}~\cite{steinhardt2016} estimate risk without labels only under a conditional-independence
 structure; \textbf{Ben-David et al.}~\cite{bendavid2010theory,bendavid2010impossibility} bound target risk by source risk plus an
 $\mathcal{H}$-divergence; \textbf{Lipton et al.}~\cite{lipton2018bbse} (BBSE) correct label shift under an invertible
 confusion matrix; \textbf{Rosenfeld \& Garg}~\cite{rosenfeld2023dis2} bound target error under an explicit,
-unverifiable assumption (their Remark~3.9 asserts informally the impossibility our
-Theorem~\ref{thm:conj1-dichotomy} proves); the rank-one agreement algebra underlying our
+unverifiable assumption (their Remark~3.9 states informally the same obstruction our
+Theorem~\ref{thm:conj1-dichotomy} makes exact for the benefit sign); the rank-one agreement algebra underlying our
 Theorem~\ref{thm:conj1-dichotomy} is classical~\cite{parisi2014,jaffe2015,platanios2014,ibrahim2019},
 its dependent-classifier diagnostics appear in~\cite{jaffe2016}, and label-free
 algebraic evaluation with consistency alarms is developed in the NTQR
 program~\cite{corradaemmanuel2024}. Each shows risk is identifiable only under structural assumptions and
-impossible in general---precisely the boundary our Theorem~\ref{thm:imp}(ii) makes
-quantitative. We weaken the target from a \emph{risk} to the \emph{sign of a difference} of
+impossible in general---the landscape our Theorem~\ref{thm:imp}(ii) specializes and makes
+quantitative for the benefit sign. We weaken the target from a \emph{risk} to the \emph{sign of a difference} of
 risks, which is identifiable on a strictly larger set (the observable disagreement region,
 Lemma~\ref{lem:reduction}).
 
@@ -427,6 +462,19 @@ clean labelled validation probe (\S\ref{sec:exp}) are target-label-free in this 
 \emph{target} labels---not unsupervised of all labels.}}\end{center}
 
 \section{Theory: four pillars}\label{sec:theory}\label{sec:bsfrontier}\label{sec:gmeter}
+\noindent\emph{What we specialize, and how general it is.} The general fact that deciding
+adaptation label-free needs an assumption on the shift is due to Garg et
+al.~\cite{garg2022atc} and Kalai \& Kanade~\cite{kalai2021abstain}; we do not re-derive it.
+What follows \emph{specializes} that landscape to the benefit sign and makes its boundary
+exact. The structural property our proofs actually use is \emph{split-observability}: a benefit
+functional is split-observable if $\sign(\Delta)=\sign(M+\gamma)$ with $M$ an observable margin
+and an unobservable calibration term $|\gamma|\le\beta$ bounded by the declared drift budget.
+The impossibility, finite-$n$ floor, certificate, and minimax/necessity results below are
+world-agnostic---they hold for \emph{any} split-observable functional---and test-time adaptation
+is the canonical instance via the disagreement-region reduction (Lemma~\ref{lem:reduction}). The
+sharper statements---the $|M|>\beta$ identifiability criterion and the exactly-one-bit
+supplement---are established for split-observable functionals, with TTA as the demonstrated case;
+we do not claim them for arbitrary functionals.
 \input{paper/sections/main_theory_5}
 
 \noindent\emph{Graded refinement.} A knowability--capacity sharpening of these pillars---an exact
