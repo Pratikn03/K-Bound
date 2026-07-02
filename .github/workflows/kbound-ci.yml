@@ -222,7 +222,9 @@ jobs:
       - name: Install research-test deps
         run: |
           python -m pip install --upgrade pip
-          python -m pip install numpy scipy scikit-learn pandas pyyaml joblib pytest psutil
+          python -m pip install numpy scipy scikit-learn pandas pyyaml joblib pytest psutil \
+            opencv-python-headless
+          python -m pip install torch torchvision --index-url https://download.pytorch.org/whl/cpu
       - name: K-Bound research tests (pkg + integrity + edge)
         run: |
           pytest \
