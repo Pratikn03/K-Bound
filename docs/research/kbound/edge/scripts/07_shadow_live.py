@@ -45,6 +45,13 @@ def main():
     ap.add_argument("--video", default=None, help="override: use OpenCV video path (e.g. pilot video file)")
     ap.add_argument("--loop", action="store_true", help="loop the video / simulated stream infinitely")
     ap.add_argument("--eps", type=float, default=None, help="override: K-Bound conformal safety radius")
+    ap.add_argument("--demo", action="store_true",
+                    help="use the synthetic KGA calibrator (varied ADAPT/FREEZE/ABSTAIN) until "
+                         "real S03–S06 calibration is captured")
+    ap.add_argument("--kga-edge", default=None, metavar="PATH",
+                    help="override path to kga_edge.joblib benefit estimator")
+    ap.add_argument("--kga-meta", default=None, metavar="PATH",
+                    help="override path to kga_edge_meta.json (eps + policies)")
     # --- live-demo dashboard options -----------------------------------------
     ap.add_argument("--view", choices=["console", "window"], default="console",
                     help="console = headless status lines (default); "
@@ -70,13 +77,42 @@ def main():
     f0, version = C.load_f0(cfg)
     adapter = EpisodicTentAdapter(f0, lr=cfg["adapter"]["lr"], steps=cfg["adapter"]["steps"],
                                   device=cfg.get("device", "cpu"))
-    est = EdgeBenefitEstimator.load(C.resolve(cfg["paths"]["kga_edge"]))
     is_real = cfg.get("protocol", "edge_label_inspection_v1") == "edge_real_phone_v1"
-    meta_path = cfg["paths"].get("kga_edge_meta", "artifacts_real/calibration/kga_edge_meta.json" if is_real else "artifacts_synth/kga_edge_meta.json")
-    eps = float(C.load_json(C.resolve(meta_path))["eps"])
+    default_meta = (
+        "artifacts_real/calibration/kga_edge_meta.json" if is_real
+        else "artifacts_synth/kga_edge_meta.json"
+    )
+    meta_path = args.kga_meta or cfg["paths"].get("kga_edge_meta", default_meta)
+    kga_path = args.kga_edge or cfg["paths"]["kga_edge"]
+    meta = C.load_json(C.resolve(meta_path))
+    use_demo_calibrator = bool(args.demo)
+    if not use_demo_calibrator and is_real and C.is_placeholder_kga_meta(meta):
+        if args.camera is not None or args.video is not None:
+            use_demo_calibrator = True
+            print("[07] NOTE: real-phone calibrator is still a placeholder (eps=0, n_fit<=20).")
+            print("[07]       Auto-switching to synthetic KGA calibrator for a watchable live demo.")
+            print("[07]       After S03–S06 capture + pipeline 03–05, decisions will use real calibration.")
+    if use_demo_calibrator and not args.demo:
+        meta_path = "artifacts_synth/kga_edge_meta.json"
+        kga_path = "artifacts_synth/kga_edge.joblib"
+        meta = C.load_json(C.resolve(meta_path))
+    elif args.demo:
+        meta_path = args.kga_meta or "artifacts_synth/kga_edge_meta.json"
+        kga_path = args.kga_edge or "artifacts_synth/kga_edge.joblib"
+        meta = C.load_json(C.resolve(meta_path))
+        print("[07] DEMO mode: synthetic KGA calibrator (not certified for physical-phone protocol)")
+    est = EdgeBenefitEstimator.load(C.resolve(kga_path))
+    eps = float(meta["eps"])
     if args.eps is not None:
         eps = args.eps
         print(f"[07] safety radius override: eps={eps:.4f}")
+    elif use_demo_calibrator and (args.camera is not None or args.video is not None):
+        demo_eps = 0.12
+        if eps > demo_eps:
+            print(f"[07] demo: capping eps {eps:.4f} -> {demo_eps:.4f} so live webcam verdicts are visible")
+            eps = demo_eps
+    else:
+        print(f"[07] calibrator: {C.resolve(kga_path)}  eps={eps:.4f}  (meta: {C.resolve(meta_path)})")
 
     src_cfg = dict(sh["source"])
     if args.camera is not None:
@@ -109,10 +145,13 @@ def main():
         source = FakeVideoCapture(source=ListFrameSource(frames, image_size=cfg["image_size"]))
         print(f"[07] FAKE source: {len(frames)} frames across {len(conds)} conditions (no camera)")
     elif src_cfg["kind"] == "opencv":
-        from kbound_edge.capture import open_opencv_source
+        from kbound_edge.capture import CameraOpenError, open_opencv_source
 
         target = src_cfg.get("video_path") or src_cfg.get("camera_index", 0)
-        source = open_opencv_source(target)
+        try:
+            source = open_opencv_source(target)
+        except CameraOpenError as exc:
+            raise SystemExit(f"[07] {exc}") from exc
         max_frames = src_cfg.get("max_frames")
         print(f"[07] OPENCV source: '{target}' (max_frames={max_frames})")
     else:
@@ -120,7 +159,7 @@ def main():
 
     log_path = C.resolve(cfg["paths"].get("shadow_log", "artifacts_real/logs/shadow_live.jsonl" if is_real else "artifacts_synth/shadow_live.jsonl"))
     logger = WindowLogger(log_path, model_version=version, config_hash=config_hash(C.clean_config(cfg)))
-    class_names = cfg.get("class_names")
+    class_names = cfg.get("class_names") or cfg.get("classes")
     dash = build_dashboard(
         view=args.view, record_path=args.record, sample_dir=args.sample_dir,
         class_names=class_names, every=sh.get("log_every", 1), fps=args.fps,

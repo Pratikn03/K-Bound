@@ -36,6 +36,8 @@ from starlette.middleware.base import BaseHTTPMiddleware
 from . import scope_guard
 from .auth import API_KEYS, authenticate
 from .kga_routes import router as kga_router
+from .model_governance import router as model_governance_router
+from .rate_limit import REDIS_URL, RateLimitMiddleware
 
 logger = logging.getLogger(__name__)
 
@@ -136,32 +138,6 @@ app = FastAPI(
 )
 
 
-class RateLimitMiddleware(BaseHTTPMiddleware):
-    """Small fixed-window limiter for direct API deployments."""
-
-    def __init__(self, app, limit: int, window_seconds: int):
-        super().__init__(app)
-        self.limit = limit
-        self.window_seconds = window_seconds
-        self.requests: dict[tuple[str, str], deque[float]] = defaultdict(deque)
-
-    async def dispatch(self, request: Request, call_next):
-        client = request.client.host if request.client else "unknown"
-        key = (client, request.url.path)
-        now = time.monotonic()
-        bucket = self.requests[key]
-        while bucket and now - bucket[0] >= self.window_seconds:
-            bucket.popleft()
-        if len(bucket) >= self.limit:
-            return JSONResponse(
-                status_code=status.HTTP_429_TOO_MANY_REQUESTS,
-                content={"detail": "Rate limit exceeded"},
-                headers={"Retry-After": str(self.window_seconds)},
-            )
-        bucket.append(now)
-        return await call_next(request)
-
-
 class TimeoutMiddleware(BaseHTTPMiddleware):
     """Bound per-request wall-clock so a slow inference can't pin a worker (P14)."""
 
@@ -231,8 +207,9 @@ app.add_middleware(
 if MONITORING_AVAILABLE:
     app.add_middleware(MetricsMiddleware)
 
-# KGA (Knowability-Guided Adaptation) certificate routes (POST /decide, GET /kga/health)
+# KGA certificate routes + model governance (model_version / rollback)
 app.include_router(kga_router)
+app.include_router(model_governance_router)
 
 # Model paths
 project_root = Path(__file__).resolve().parents[2]

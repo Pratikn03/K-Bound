@@ -112,9 +112,11 @@ case "${1:-}" in
   rxrx1-9plus-dry-run)
     bash "$RXRX1_9PLUS" --dry-run ;;
   imagenetr-d)
-    [ -d "$INR_FAST" ] || { echo "ERROR: ImageNet-R internal copy not found at $INR_FAST"; exit 1; }
+    _INR="${INR_FAST:-}"
+    [ -d "$_INR" ] || _INR=experiments/kbound/data/imagenet-r
+    [ -d "$_INR" ] || { echo "ERROR: ImageNet-R not found at $INR_FAST or experiments/kbound/data/imagenet-r"; exit 1; }
     caffeinate -is python "$IMAGENETR" --panel diverse_backbones \
-      --imagenetr-dir "$INR_FAST" --seeds 0 1 2 3 \
+      --imagenetr-dir "$_INR" --seeds 0 1 2 3 \
       --compositions iid imbalanced single_class --batch-regimes small tiny \
       --aggressiveness mild aggressive --n-eval 500 --n-batches 4 \
       --frozen-eval-batch 32 \
@@ -152,17 +154,140 @@ case "${1:-}" in
   kga-elara-integrated-dry-run)
     "$VENV/bin/python" "$KGA_ELARA" \
       --protocol research_lock/KGA_ELARA_INTEGRATION_v1.yaml --dry-run ;;
+  theory-v2)
+    bash docs/research/kbound/scripts/run_theory_v2_validators.sh ;;
+  multicandidate-panel)
+    "$VENV/bin/python" docs/research/kbound/scripts/multicandidate_decide_kga.py --selftest ;;
   cifar10c)
-    # CIFAR-10-C stress grid (decide_kga, out-of-fold LOO radius). Seed via 2nd arg: kbtrain.sh cifar10c 0
+    # CIFAR-10-C Protocol A stress grid (matches stress_grid_multiseed_v1 / LOCKED_ANALYSIS).
     S="${2:-0}"
-    caffeinate -is python "$S2" --benchmarks cifar10c \
+    caffeinate -is python "$S2" --benchmarks cifar10c --quick \
       --data-root experiments/kbound/cifar --methods tent eata sar \
       --device "${KB_DEVICE:-mps}" --seed "$S" \
-      --out-results "$RES/cifar10c_stress/seed$S" ;;
+      --out-results "$RES/stress_grid_multiseed_v1/seed$S" ;;
   pacs)
     caffeinate -is python docs/research/kbound/scripts/pacs_vlcs_runner.py --dataset PACS \
       --root experiments/kbound/domainbed --device "${KB_DEVICE:-mps}" \
       --out "$RES/pacs_result.json" ;;
+  smoke-all)
+    # ~0.5% smoke across all 9 datasets (separate output dirs; does NOT overwrite final-all).
+    export KB_DEVICE="${KB_DEVICE:-mps}"
+    STAMP=$(date +%Y%m%d_%H%M%S)
+    SMOKE_ROOT="$RES/smoke05_${STAMP}"
+    mkdir -p "$SMOKE_ROOT"
+    echo ">> SMOKE-ALL (~0.5%)  device=$KB_DEVICE  out=$SMOKE_ROOT"
+    # 1 CIFAR-10-C
+    caffeinate -is python "$S2" --benchmarks cifar10c \
+      --data-root experiments/kbound/cifar --methods tent \
+      --device "$KB_DEVICE" --seed 0 --quick --max-cells 8 \
+      --out-results "$SMOKE_ROOT/cifar10c_stress/seed0"
+    # 2 ImageNet-C (~20 imgs/cell ≈ 0.5% of 4000)
+    caffeinate -is python "$S2" --benchmarks imagenetc --imagenetc-root "$IC" \
+      --corruptions gaussian_noise shot_noise impulse_noise --arch resnet50 \
+      --methods tent --device "$KB_DEVICE" --seed 0 --quick --max-images 20 \
+      --out-results "$SMOKE_ROOT/imagenetc_noise/seed0"
+    # 3 CIFAR-10.1
+    caffeinate -is python "$S2" --benchmarks cifar101 \
+      --data-root experiments/kbound/cifar --methods tent \
+      --device "$KB_DEVICE" --seed 0 --quick \
+      --out-results "$SMOKE_ROOT/cifar101/seed0"
+    # 4 Camelyon17 (0.5% of patches)
+    caffeinate -is python "$WILDS" --wilds-root experiments/kbound/data/wilds \
+      --output-dir "$SMOKE_ROOT/wilds" --seeds 0 --epochs 1 --steps 5 --lr 1e-3 \
+      --frac 0.005 --retrain
+    # 5 RxRx1 (minimal grid)
+    if [ -d "${RXRX1_DATA_ROOT:-$HOME/kbound_rxrx1_data}/rxrx1_v1.0" ]; then
+      RXRX1_MODEL_SEEDS=0 RXRX1_CONDITION_SEEDS=0 RXRX1_N_EVAL=3 RXRX1_N_BATCHES=2 \
+        RXRX1_RESULTS_ROOT="$SMOKE_ROOT" RXRX1_RUN_TAG=rxrx1_smoke05 \
+        bash "$RXRX1_9PLUS"
+    else
+      echo ">> SKIP RxRx1 smoke: data not at ${RXRX1_DATA_ROOT:-$HOME/kbound_rxrx1_data}/rxrx1_v1.0"
+    fi
+    # 6 ImageNet-R
+    [ -d "$INR_FAST" ] || INR_FAST=experiments/kbound/data/imagenet-r
+    caffeinate -is python "$IMAGENETR" --panel diverse_backbones --smoke \
+      --imagenetr-dir "$INR_FAST" --results-root "$SMOKE_ROOT" \
+      --run-name imagenetr_smoke05
+    # 7 PACS
+    caffeinate -is python docs/research/kbound/scripts/pacs_vlcs_runner.py --dataset PACS \
+      --root experiments/kbound/domainbed --device "$KB_DEVICE" --seed 0 --smoke \
+      --out "$SMOKE_ROOT/pacs_smoke.json"
+    # 8 iWildCam + 9 Office-Home (OOF scoring of locked logs — fast, no retrain)
+    "$VENV/bin/python" "$PROTO_DEV_LOCK" \
+      --protocol-yaml research_lock/IWILDCAM_PROTOCOL_H_v2.yaml \
+      --output-dir "$SMOKE_ROOT/iwildcam_protocol_H_v2"
+    "$VENV/bin/python" "$PROTO_DEV_LOCK" \
+      --protocol-yaml research_lock/OFFICEHOME_PROTOCOL_M_v2.yaml \
+      --output-dir "$SMOKE_ROOT/officehome_protocol_M_v2"
+    "$VENV/bin/python" docs/research/kbound/scripts/collate_final.py \
+      --results "$SMOKE_ROOT" --stamp "smoke05_${STAMP}"
+    echo ">> SMOKE-ALL done -> $SMOKE_ROOT/final_manifest_smoke05_${STAMP}.{json,md}" ;;
+  smoke-all-v2)
+    # Multiseed smoke (~1%): Protocol-A CIFAR, 3 adapters, theory+routing preflight, separate output dir.
+    bash "$0" theory-v2
+    bash "$0" multicandidate-panel
+    export KB_DEVICE="${KB_DEVICE:-mps}"
+    SMOKE_SEEDS="${KB_SMOKE_SEEDS:-0 1}"
+    STAMP=$(date +%Y%m%d_%H%M%S)
+    SMOKE_ROOT="$RES/smoke_ms_${STAMP}"
+    mkdir -p "$SMOKE_ROOT"
+    echo ">> SMOKE-ALL-V2 (multiseed)  device=$KB_DEVICE  seeds=[$SMOKE_SEEDS]  out=$SMOKE_ROOT"
+    for s in $SMOKE_SEEDS; do
+      echo "==== smoke seed $s ===="
+      caffeinate -is python "$S2" --benchmarks cifar10c --quick \
+        --data-root experiments/kbound/cifar --methods tent eata sar \
+        --device "$KB_DEVICE" --seed "$s" \
+        --out-results "$SMOKE_ROOT/stress_grid_multiseed_v1/seed$s"
+      caffeinate -is python "$S2" --benchmarks imagenetc --imagenetc-root "$IC" \
+        --corruptions gaussian_noise shot_noise impulse_noise --arch resnet50 \
+        --methods tent eata sar --device "$KB_DEVICE" --seed "$s" --quick \
+        --max-images "${KB_SMOKE_IC_IMG:-40}" \
+        --out-results "$SMOKE_ROOT/imagenetc_noise/seed$s"
+      caffeinate -is python "$S2" --benchmarks cifar101 \
+        --data-root experiments/kbound/cifar --methods tent eata sar \
+        --device "$KB_DEVICE" --seed "$s" --quick \
+        --out-results "$SMOKE_ROOT/cifar101/seed$s"
+      caffeinate -is python docs/research/kbound/scripts/pacs_vlcs_runner.py --dataset PACS \
+        --root experiments/kbound/domainbed --device "$KB_DEVICE" --seed "$s" --smoke \
+        --out "$SMOKE_ROOT/pacs_seed$s.json"
+    done
+    # Camelyon: need >=2 seeds for cross-seed KGA certificate
+    caffeinate -is python "$WILDS" --wilds-root experiments/kbound/data/wilds \
+      --output-dir "$SMOKE_ROOT/wilds" --seeds $SMOKE_SEEDS --epochs 1 --steps 8 --lr 1e-3 \
+      --frac "${KB_SMOKE_CAM_FRAC:-0.01}" --retrain
+    if [ -d "${RXRX1_DATA_ROOT:-$HOME/kbound_rxrx1_data}/rxrx1_v1.0" ]; then
+      RXRX1_MODEL_SEEDS="$SMOKE_SEEDS" RXRX1_CONDITION_SEEDS=0 RXRX1_N_EVAL=8 RXRX1_N_BATCHES=2 \
+        RXRX1_RESULTS_ROOT="$SMOKE_ROOT" RXRX1_RUN_TAG=rxrx1_smoke_ms \
+        bash "$RXRX1_9PLUS"
+    else
+      echo ">> SKIP RxRx1 smoke: data not at ${RXRX1_DATA_ROOT:-$HOME/kbound_rxrx1_data}/rxrx1_v1.0"
+    fi
+    _INR="${INR_FAST:-}"; [ -d "$_INR" ] || _INR=experiments/kbound/data/imagenet-r
+    caffeinate -is python "$IMAGENETR" --panel diverse_backbones --smoke \
+      --imagenetr-dir "$_INR" --results-root "$SMOKE_ROOT" --run-name imagenetr_smoke_ms
+    "$VENV/bin/python" "$PROTO_DEV_LOCK" \
+      --protocol-yaml research_lock/IWILDCAM_PROTOCOL_H_v2.yaml \
+      --output-dir "$SMOKE_ROOT/iwildcam_protocol_H_v2"
+    "$VENV/bin/python" "$PROTO_DEV_LOCK" \
+      --protocol-yaml research_lock/OFFICEHOME_PROTOCOL_M_v2.yaml \
+      --output-dir "$SMOKE_ROOT/officehome_protocol_M_v2"
+    mkdir -p "$SMOKE_ROOT/stress_grid_multiseed_v1"
+    cp "$RES/stress_grid_multiseed_v1/_locked_analysis_script.py" \
+      "$SMOKE_ROOT/stress_grid_multiseed_v1/_locked_analysis_script.py"
+    "$VENV/bin/python" docs/research/kbound/scripts/collate_final.py \
+      --results "$SMOKE_ROOT" --stamp "smoke_ms_${STAMP}"
+    echo ">> SMOKE-ALL-V2 done -> $SMOKE_ROOT/final_manifest_smoke_ms_${STAMP}.{json,md}"
+    echo ">> Analyze: python docs/research/kbound/scripts/smoke_pipeline_report.py --smoke-root $SMOKE_ROOT" ;;
+  final-all-v2)
+    # Full 9-dataset rerun + Wave 4 theory/routing preflight (does not change headline protocol path).
+    bash "$0" theory-v2
+    bash "$0" multicandidate-panel
+    RXRX1_DATA="${RXRX1_DATA_ROOT:-$HOME/kbound_rxrx1_data}"
+    if [ ! -d "$RXRX1_DATA/rxrx1_v1.0" ]; then
+      echo ">> WARN: RxRx1 data missing at $RXRX1_DATA/rxrx1_v1.0"
+      echo ">>       Download WILDS RxRx1 to that path before step 5, or set RXRX1_DATA_ROOT."
+    fi
+    bash "$0" final-all ;;
   final-all)
     # ── FINAL multi-seed end-to-end rerun of ALL 9 datasets on the OUT-OF-FOLD code. ──
     # CIFAR-10-C, ImageNet-C, CIFAR-10.1, Camelyon17, RxRx1, ImageNet-R, PACS, iWildCam, Office-Home.
@@ -201,5 +326,5 @@ case "${1:-}" in
     "$VENV/bin/python" docs/research/kbound/scripts/collate_final.py --results "$RES" --stamp "$STAMP"
     echo ">> FINAL-ALL done -> $RES/final_manifest_$STAMP.{json,md}  (re-run for multi-time; each stamps a new manifest)" ;;
   *)
-    echo "usage: bash kbtrain.sh [noise|...|officehome-holdout|officehome-repl|protocol-h-v2|protocol-m-v2|kga-elara-integrated|kga-elara-integrated-dry-run|noiseblur|vit|vit-fast]"; exit 1 ;;
+    echo "usage: bash kbtrain.sh [noise|...|smoke-all|smoke-all-v2|final-all|final-all-v2|theory-v2|multicandidate-panel|...]"; exit 1 ;;
 esac

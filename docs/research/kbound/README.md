@@ -5,15 +5,20 @@ implementation, locked experiment artifacts, and a small notebook curriculum.
 
 | If you want… | Open this |
 |--------------|-----------|
+| **Doc map (what to read)** | [`DOCS_INDEX.md`](DOCS_INDEX.md) |
 | **Complete picture (theory → proof → results)** | [`THEORY_TO_CODE_MAP.md`](THEORY_TO_CODE_MAP.md) |
 | **Full theory audit** | `bash docs/research/kbound/scripts/theory_audit_full.sh` |
 | **Re-run all 25 validators (~6 min)** | `bash docs/research/kbound/scripts/theory_audit_full.sh --run-validators` |
 | **Run the tour in Jupyter** | [`../../notebooks/00_KBound_Master_Guide.ipynb`](../../notebooks/00_KBound_Master_Guide.ipynb) |
 | **Canonical project status** | [`PROJECT_STATUS_AND_OPEN_PROBLEMS.md`](PROJECT_STATUS_AND_OPEN_PROBLEMS.md) |
+| **Theory 100% closure gate** | [`THEORY_100_PERCENT_CLOSURE_PLAN.md`](THEORY_100_PERCENT_CLOSURE_PLAN.md) + `cd formal && python3 formal_audit.py --strict-100` |
+| **Wave 4 validators** | `cd theory_v2 && .venv/bin/python val_*.py` (see `THEORY_100_PERCENT_CLOSURE_PLAN.md`) |
 | **Reviewer reproduction** | [`REVIEWER_REPRO_PACKET.md`](REVIEWER_REPRO_PACKET.md) |
 | **Short paper PDF** | [`kbound_short.pdf`](kbound_short.pdf) |
 | **Long paper PDF** | [`kbound.pdf`](kbound.pdf) |
 | **One-command integrity check** | `bash docs/research/kbound/scripts/reproduce_submission.sh` |
+| **Monorepo health (all kbound tests)** | `bash scripts/monorepo_health.sh` |
+| **Architecture / SSoT map** | [`../../../MONOREPO.md`](../../../MONOREPO.md) |
 
 ---
 
@@ -36,9 +41,10 @@ docs/research/kbound/
   claim_ledger.json                 # every claim → artifact → allowed wording
   PROJECT_STATUS_AND_OPEN_PROBLEMS.md
   THEORY_TO_CODE_MAP.md             # theory ↔ code ↔ results (this guide's deep dive)
-  kbound_pkg/kbound/                # certificate + router (production code)
-  scripts/                          # scorers, kbtrain.sh, reproduce_submission.sh
-  theory_v2/                        # unconditional weakest class + anytime validators
+  kbound_pkg/kbound/                # frozen repro snapshot (edit kga/, re-vendor here)
+  scripts/                          # CANONICAL scorers, kbtrain.sh, reproduce_submission.sh
+  theory_v2/                        # Wave 4 closures + validators (strict-100)
+  formal/                           # Lean 4 mechanization + formal_audit.py
   edge/                             # physical camera protocol (R2 pending)
 
 experiments/kbound/
@@ -75,12 +81,12 @@ Legacy `notebooks/legacy_elara/` is the superseded ELARA fraud/cyber EDA stack �
 
 ## Theory: what is proven vs open
 
-**Proven (in paper):** frontier identifiability, impossibility / one-bit dichotomy,
+**Proven (in paper + Wave 4):** frontier identifiability, impossibility / one-bit dichotomy,
 certificate FA_u control, unconditional weakest one-bit class, `conj:gen` resolved
-negatively, anytime + multicandidate extensions.
+negatively, anytime + multicandidate extensions, tight constants, minimax optimality,
+multiclass capacity impossibility, margin-computability dichotomy, regression bracketing closure.
 
-**Open (future work, not blocking):** gen-capacity without R1/R2, tight rates, minimax
-optimality, multiclass anytime, physical camera R2.
+**Open (not blocking submission):** physical camera R2 (KB-CLAIM-030), external reviewer sign-off.
 
 See [`PROJECT_STATUS_AND_OPEN_PROBLEMS.md`](PROJECT_STATUS_AND_OPEN_PROBLEMS.md) §1.
 
@@ -102,4 +108,18 @@ PY=.venv/bin/python bash experiments/kbound/poem_aetta/run_all_headtohead.sh
 .venv/bin/python docs/research/kbound/scripts/mixed_stream_kbound.py
 ```
 
-Optional full 9-dataset GPU verification: `bash docs/research/kbound/scripts/kbtrain.sh final-all`
+Optional GPU refresh (9 datasets):
+
+```bash
+# ~0.5% smoke, single seed (separate output dir; ~1h)
+bash docs/research/kbound/scripts/kbtrain.sh smoke-all
+
+# ~1% multiseed smoke + pipeline report (recommended pre-flight; ~2–3h)
+KB_SMOKE_SEEDS="0 1" KB_DEVICE=mps \
+  bash docs/research/kbound/scripts/run_smoke_showcase.sh
+
+# Full multi-seed rerun + paper rebuild (many hours)
+KB_SEEDS="0 1 2 3 4" KB_DEVICE=mps \
+  caffeinate -is bash docs/research/kbound/scripts/run_final_showcase.sh \
+    --device mps --seeds "0 1 2 3 4"
+```

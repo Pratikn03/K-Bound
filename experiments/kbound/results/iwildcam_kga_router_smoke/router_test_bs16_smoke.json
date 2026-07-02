@@ -1,0 +1,477 @@
+{
+  "schema": "iwildcam_kga_router_v1",
+  "created": "2026-06-30T17:09:21",
+  "host": {
+    "node": "Pratik-Ns-MacBook-Pro.local",
+    "platform": "macOS-26.5.1-arm64-arm-64bit",
+    "torch": "2.5.1",
+    "device": "mps"
+  },
+  "config": {
+    "data_root": "/Volumes/T9/uav/AutoML_Flagship_V8/experiments/kbound/data/wilds",
+    "results_root": "/Volumes/T9/uav/AutoML_Flagship_V8/experiments/kbound/results",
+    "run_name": "iwildcam_kga_router_smoke",
+    "ckpt": "/Volumes/T9/uav/AutoML_Flagship_V8/experiments/kbound/results/iwildcam_f0_erm/f0_resnet50_erm_seed0.pt",
+    "split": "test",
+    "batch_size": 16,
+    "window": 6,
+    "lr": 0.001,
+    "steps": 1,
+    "episodic_steps": 3,
+    "lame_knn": 5,
+    "lame_iter": 50,
+    "alpha": 0.1,
+    "workers": 0,
+    "n_boot": 300,
+    "device": "mps",
+    "seed": 0,
+    "max_batches": 96,
+    "frac": 0.0
+  },
+  "source_model": {
+    "ckpt": "/Volumes/T9/uav/AutoML_Flagship_V8/experiments/kbound/results/iwildcam_f0_erm/f0_resnet50_erm_seed0.pt",
+    "backbone": "resnet50",
+    "epoch": 1,
+    "id_val_macro_f1": 0.40821249016911104,
+    "val_macro_f1": 0.25996786777821335,
+    "selection": "id_val_macro_f1"
+  },
+  "stream_meta": {
+    "N_full": 35370,
+    "n_used": 1536,
+    "n_batches": 96,
+    "dev_cams": [
+      7,
+      24,
+      69,
+      76,
+      86,
+      104,
+      115,
+      125,
+      127,
+      156,
+      163,
+      176,
+      187,
+      188,
+      191,
+      207,
+      237,
+      240,
+      241,
+      245,
+      270,
+      282,
+      287,
+      311
+    ],
+    "test_cams": [
+      21,
+      29,
+      49,
+      56,
+      58,
+      59,
+      62,
+      73,
+      78,
+      95,
+      101,
+      120,
+      146,
+      169,
+      184,
+      193,
+      263,
+      268,
+      280,
+      288,
+      289,
+      301,
+      302,
+      315
+    ],
+    "n_windows": 19,
+    "n_dev_windows": 4,
+    "n_test_windows": 15,
+    "pass1_wall_sec": 182.8
+  },
+  "metric": "macro_f1",
+  "policies": [
+    "frozen",
+    "online_tent",
+    "episodic_tent",
+    "lame",
+    "kga_router"
+  ],
+  "candidates": [
+    "episodic_tent",
+    "lame"
+  ],
+  "certificate": {
+    "alpha": 0.1,
+    "K": 2,
+    "delta_K": 0.05,
+    "znames": [
+      "fr_entropy",
+      "cand_entropy",
+      "entropy_drop",
+      "fr_conf",
+      "cand_conf",
+      "conf_drop",
+      "disagreement",
+      "cand_div_H",
+      "cand_nuniq_frac",
+      "marginal_KL",
+      "grad_l2"
+    ],
+    "candidates": {
+      "episodic_tent": {
+        "eps": 0.25897302737124617,
+        "delta_K": 0.05,
+        "dev_n": 4,
+        "dev_mean_B": -0.22969658963032433,
+        "dev_frac_B_gt0": 0.0,
+        "dev_loo_mae": 0.14824318038010312
+      },
+      "lame": {
+        "eps": 0.15903565575561426,
+        "delta_K": 0.05,
+        "dev_n": 4,
+        "dev_mean_B": 0.11364060637276487,
+        "dev_frac_B_gt0": 1.0,
+        "dev_loo_mae": 0.09166757929981706
+      }
+    }
+  },
+  "test_scores": {
+    "frozen": 0.33998645916950904,
+    "online_tent": 0.11572338347612819,
+    "episodic_tent": 0.13324211939096728,
+    "lame": 0.40592899978191727,
+    "kga_router": 0.3530885968436204
+  },
+  "bootstrap": {
+    "n_boot": 300,
+    "n_test_cameras": 5,
+    "per_policy_ci": {
+      "frozen": {
+        "mean": 0.3286896390105701,
+        "lo": 0.26777792875875434,
+        "hi": 0.3916631796655315,
+        "excludes_zero": true
+      },
+      "online_tent": {
+        "mean": 0.10623678636232996,
+        "lo": 0.03901803718431999,
+        "hi": 0.18731683114438183,
+        "excludes_zero": true
+      },
+      "episodic_tent": {
+        "mean": 0.1160848217334739,
+        "lo": 0.04301363486711167,
+        "hi": 0.19201395326998455,
+        "excludes_zero": true
+      },
+      "lame": {
+        "mean": 0.39617221360593774,
+        "lo": 0.27495714048286296,
+        "hi": 0.49231217908228875,
+        "excludes_zero": true
+      },
+      "kga_router": {
+        "mean": 0.34385937976337877,
+        "lo": 0.2959591566099679,
+        "hi": 0.4267588885235605,
+        "excludes_zero": true
+      }
+    },
+    "delta_kga_minus_online_tent": {
+      "mean": 0.23762259340104877,
+      "lo": 0.1666239492106491,
+      "hi": 0.3030646884898106,
+      "excludes_zero": true
+    },
+    "delta_kga_minus_frozen": {
+      "mean": 0.015169740752808601,
+      "lo": 0.0,
+      "hi": 0.045007481142104115,
+      "excludes_zero": false
+    }
+  },
+  "verdict": {
+    "verdict": "NO-HARM",
+    "beats_online_tent": true,
+    "beats_freeze": false,
+    "ties_freeze": true,
+    "harms_freeze": false
+  },
+  "leading_indicator": {
+    "dev": {
+      "tag": "dev",
+      "n_windows": 4,
+      "episodic_tent": {
+        "ever_beats_frozen": false,
+        "frac_windows_B_gt0": 0.0,
+        "frac_windows_B_gt_margin": 0.0,
+        "max_window_B": -0.011201644837039289,
+        "mean_window_B": -0.22969658963032433,
+        "n_windows_B_gt0": 0
+      },
+      "lame": {
+        "ever_beats_frozen": true,
+        "frac_windows_B_gt0": 1.0,
+        "frac_windows_B_gt_margin": 1.0,
+        "max_window_B": 0.24527768734612487,
+        "mean_window_B": 0.11364060637276487,
+        "n_windows_B_gt0": 4
+      }
+    },
+    "test": {
+      "tag": "test",
+      "n_windows": 15,
+      "episodic_tent": {
+        "ever_beats_frozen": false,
+        "frac_windows_B_gt0": 0.0,
+        "frac_windows_B_gt_margin": 0.0,
+        "max_window_B": -0.10555555555555557,
+        "mean_window_B": -0.316964002391979,
+        "n_windows_B_gt0": 0
+      },
+      "lame": {
+        "ever_beats_frozen": true,
+        "frac_windows_B_gt0": 0.8,
+        "frac_windows_B_gt_margin": 0.8,
+        "max_window_B": 0.7566844919786097,
+        "mean_window_B": 0.11322945982362359,
+        "n_windows_B_gt0": 12
+      }
+    }
+  },
+  "router_decision_counts": {
+    "freeze": 12,
+    "episodic_tent": 0,
+    "lame": 3
+  },
+  "router_decisions": [
+    {
+      "camera": 29,
+      "n": 16,
+      "lower_bounds": {
+        "episodic_tent": -0.34720548048793387,
+        "lame": -0.1202102848893071
+      },
+      "b_hat": {
+        "episodic_tent": -0.08823245311668769,
+        "lame": 0.038825370866307156
+      },
+      "certified_set": [],
+      "action": "freeze"
+    },
+    {
+      "camera": 49,
+      "n": 96,
+      "lower_bounds": {
+        "episodic_tent": -0.4496593069167143,
+        "lame": -0.014298189439886422
+      },
+      "b_hat": {
+        "episodic_tent": -0.1906862795454681,
+        "lame": 0.14473746631572784
+      },
+      "certified_set": [],
+      "action": "freeze"
+    },
+    {
+      "camera": 49,
+      "n": 96,
+      "lower_bounds": {
+        "episodic_tent": -0.49991873305117496,
+        "lame": -0.013616169361527125
+      },
+      "b_hat": {
+        "episodic_tent": -0.24094570567992882,
+        "lame": 0.14541948639408714
+      },
+      "certified_set": [],
+      "action": "freeze"
+    },
+    {
+      "camera": 49,
+      "n": 16,
+      "lower_bounds": {
+        "episodic_tent": -0.4315126090600745,
+        "lame": -0.07984014274658405
+      },
+      "b_hat": {
+        "episodic_tent": -0.1725395816888283,
+        "lame": 0.07919551300903022
+      },
+      "certified_set": [],
+      "action": "freeze"
+    },
+    {
+      "camera": 56,
+      "n": 96,
+      "lower_bounds": {
+        "episodic_tent": -0.6141920883500538,
+        "lame": -0.022357532286834597
+      },
+      "b_hat": {
+        "episodic_tent": -0.3552190609788077,
+        "lame": 0.13667812346877967
+      },
+      "certified_set": [],
+      "action": "freeze"
+    },
+    {
+      "camera": 56,
+      "n": 96,
+      "lower_bounds": {
+        "episodic_tent": -0.4683135863100987,
+        "lame": -0.02139536282664667
+      },
+      "b_hat": {
+        "episodic_tent": -0.2093405589388525,
+        "lame": 0.1376402929289676
+      },
+      "certified_set": [],
+      "action": "freeze"
+    },
+    {
+      "camera": 56,
+      "n": 48,
+      "lower_bounds": {
+        "episodic_tent": -0.6447414245571372,
+        "lame": -0.1160508274075572
+      },
+      "b_hat": {
+        "episodic_tent": -0.3857683971858911,
+        "lame": 0.042984828348057065
+      },
+      "certified_set": [],
+      "action": "freeze"
+    },
+    {
+      "camera": 58,
+      "n": 96,
+      "lower_bounds": {
+        "episodic_tent": -0.5942832054210818,
+        "lame": 0.06975755942794615
+      },
+      "b_hat": {
+        "episodic_tent": -0.33531017804983565,
+        "lame": 0.2287932151835604
+      },
+      "certified_set": [
+        "lame"
+      ],
+      "action": "lame"
+    },
+    {
+      "camera": 58,
+      "n": 96,
+      "lower_bounds": {
+        "episodic_tent": -0.6141920883500538,
+        "lame": 0.017198787997831477
+      },
+      "b_hat": {
+        "episodic_tent": -0.3552190609788077,
+        "lame": 0.17623444375344574
+      },
+      "certified_set": [
+        "lame"
+      ],
+      "action": "lame"
+    },
+    {
+      "camera": 58,
+      "n": 96,
+      "lower_bounds": {
+        "episodic_tent": -0.6285576002317588,
+        "lame": -0.014298189439886422
+      },
+      "b_hat": {
+        "episodic_tent": -0.36958457286051266,
+        "lame": 0.14473746631572784
+      },
+      "certified_set": [],
+      "action": "freeze"
+    },
+    {
+      "camera": 58,
+      "n": 96,
+      "lower_bounds": {
+        "episodic_tent": -0.621235166586798,
+        "lame": 0.08073234065012067
+      },
+      "b_hat": {
+        "episodic_tent": -0.36226213921555184,
+        "lame": 0.23976799640573493
+      },
+      "certified_set": [
+        "lame"
+      ],
+      "action": "lame"
+    },
+    {
+      "camera": 58,
+      "n": 80,
+      "lower_bounds": {
+        "episodic_tent": -0.5105032182780148,
+        "lame": -0.01941543383982952
+      },
+      "b_hat": {
+        "episodic_tent": -0.25153019090676865,
+        "lame": 0.13962022191578474
+      },
+      "certified_set": [],
+      "action": "freeze"
+    },
+    {
+      "camera": 59,
+      "n": 96,
+      "lower_bounds": {
+        "episodic_tent": -0.3430100366576455,
+        "lame": -0.014298189439886422
+      },
+      "b_hat": {
+        "episodic_tent": -0.08403700928639934,
+        "lame": 0.14473746631572784
+      },
+      "certified_set": [],
+      "action": "freeze"
+    },
+    {
+      "camera": 59,
+      "n": 96,
+      "lower_bounds": {
+        "episodic_tent": -0.33375345499014564,
+        "lame": -0.014298189439886422
+      },
+      "b_hat": {
+        "episodic_tent": -0.07478042761889948,
+        "lame": 0.14473746631572784
+      },
+      "certified_set": [],
+      "action": "freeze"
+    },
+    {
+      "camera": 59,
+      "n": 80,
+      "lower_bounds": {
+        "episodic_tent": -0.3430100366576455,
+        "lame": -0.014298189439886422
+      },
+      "b_hat": {
+        "episodic_tent": -0.08403700928639934,
+        "lame": 0.14473746631572784
+      },
+      "certified_set": [],
+      "action": "freeze"
+    }
+  ],
+  "route_signal_doc": "route_decision() reads ONLY label-free Z (entropy, predicted-class diversity, confidence drop, frozen-vs-candidate disagreement, marginal-KL, episodic grad L2) and the DEV-fit GBR + DEV split-conformal radius at level alpha/K. It never reads TEST labels. Bonferroni multicandidate correction per thm:multicand.",
+  "wall_sec": 189.2
+}

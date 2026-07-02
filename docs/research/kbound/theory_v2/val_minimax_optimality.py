@@ -17,13 +17,20 @@ rule certifies sign(Delta) with two-sided error <= alpha
 
 with matching upper and lower bounds up to universal constants:
 
-  UPPER (the deployed empirical-Bernstein certificate, thm:cert):
-        n_UB = (2 sigma^2 / Delta^2) * log(2/alpha)            (sub-Gaussian / bounded)
+  UPPER (the deployed adapt/freeze/abstain certificate, thm:cert):
+        n_cert <= (8 sigma^2 / Delta^2) * log(2/alpha) + 1      (sub-Gaussian / bounded)
+        [CORRECTED constant: the symmetric abstain band requires the whole (1-alpha) ball to
+         clear 0, i.e. eps_n < Delta/2 (NOT eps_n < Delta), giving a 2x in eps => 4x in n over
+         the naive value. n_UB_certificate() returns this TRUE bound (8 sigma^2/Delta^2)log(2/alpha).]
   LOWER (Le Cam two-point at the decision boundary + Bretagnolle-Huber):
         n_LB = (sigma^2 / (2 Delta^2)) * log(1/(4 alpha)).
+  SEPARATE (the abstract optimal likelihood-ratio test, NOT the certificate):
+        n_opt = (sigma/Delta)^2 z_{1-alpha}^2   (exact Gaussian frontier; best any rule can do).
 
-The ORDER (sigma^2/Delta^2 and log(1/alpha)) matches; the leading-constant ratio
-n_UB/n_LB -> 4 as alpha->0.  TIGHT CONSTANTS ARE NOT CLAIMED (separate open problem).
+The ORDER (sigma^2/Delta^2 and log(1/alpha)) matches.  The CERTIFICATE-to-LB leading-constant
+ratio is n_cert_bound/n_LB -> 16 as alpha->0.  The OPTIMAL-TEST-to-LB ratio is n_opt/n_LB
+-> ~3.3-3.6 (genuine Bretagnolle-Huber looseness); the certificate sits a further ~4x above n_opt
+(abstain-band penalty).  TIGHT CONSTANTS ARE NOT CLAIMED (separate open problem).
 
 The MINIMAX RISK bounded is the two-sided committal-error of a label-free DECISION rule;
 the CLASS is the Gaussian (and, for robustness, the bounded two-point) location family on
@@ -86,10 +93,26 @@ def bh_certificate_mixed(n, Delta, sigma):
     return 0.5 * np.exp(-KL)
 
 def n_UB_certificate(Delta, sigma, alpha):
-    """Certificate (thm:cert) leading-order sample complexity, sub-Gaussian/bounded form:
-       n_UB = (2 sigma^2 / Delta^2) log(2/alpha)  (Maurer-Pontil / sub-Gaussian variance term;
-       the additive O(R/Delta * log) range term is lower-order and shown separately in C)."""
-    return 2.0 * sigma**2 / Delta**2 * np.log(2.0 / alpha)
+    """TRUE certificate (thm:cert) leading-order certifying sample complexity, sub-Gaussian/bounded:
+       n_cert <= (8 sigma^2 / Delta^2) log(2/alpha).
+       DERIVATION (corrected): the adapt/freeze/abstain certificate commits ADAPT iff
+       xbar - eps_n > 0. Certifying in world P_+ means the whole (1-alpha) ball
+       {|xbar-Delta|<=eps_n} is contained in {xbar-eps_n>0}; the worst point xbar=Delta-eps_n
+       has commit margin Delta-2 eps_n, so containment needs Delta-2 eps_n>0, i.e. eps_n<Delta/2
+       (NOT eps_n<Delta). With eps_n=sigma sqrt(2 log(2/alpha)/n), eps_n<Delta/2
+       <=> n > (8 sigma^2/Delta^2) log(2/alpha). The naive eps_n<Delta gives the WRONG
+       (4x too small) 2 sigma^2/Delta^2; at eps_n=Delta the worst commit rate is Phi(0)=1/2 > alpha.
+       The additive O(R/Delta * log) Maurer-Pontil range term is lower-order (shown separately in C)."""
+    return 8.0 * sigma**2 / Delta**2 * np.log(2.0 / alpha)
+
+def n_opt_lrt(Delta, sigma, alpha):
+    """SEPARATE quantity: the ABSTRACT optimal (likelihood-ratio) test frontier, NOT the certificate.
+       Smallest n at which the Bayes LRT (threshold at 0) has both errors <= alpha:
+       Phi(-sqrt(n) Delta/sigma) <= alpha <=> n >= (sigma/Delta)^2 z_{1-alpha}^2.
+       This is the best ANY rule can do; n_LB <= n_opt, and the certificate sits ~4x above n_opt."""
+    from scipy.stats import norm
+    z = norm.ppf(1.0 - alpha)
+    return (sigma / Delta)**2 * z**2
 
 def n_LB_twopoint(Delta, sigma, alpha):
     """Le Cam two-point + Bretagnolle-Huber lower bound on the certifying-n for any
@@ -160,6 +183,9 @@ def check_B(res):
         # so n_opt is asymptotically LINEAR in log(1/alpha). Fit slope on the small-alpha tail.
         slope = float(np.polyfit(x[3:], n_opt[3:], 1)[0])
         slopes_logalpha[str(D)] = slope
+        # n_opt is the OPTIMAL-TEST frontier; the certificate bound n_ub=(8 sigma^2/Delta^2)log(2/alpha)
+        # sits above it. Sandwich: n_LB <= n_opt <= n_cert_bound (the optimal test is between the
+        # information floor and the certificate's certifying-n bound).
         sandwich_ok = bool(np.all(n_lb <= n_opt + 1e-9) and np.all(n_opt <= n_ub + 1e-9))
         # The clean order-statement: n_opt / [(sigma^2/D^2) log(1/alpha)] is BOUNDED by universal
         # constants over any fixed alpha-range (it equals z_{1-alpha}^2/log(1/alpha), a function of
@@ -168,12 +194,20 @@ def check_B(res):
         # The TIGHT order-match is n_opt/n_LB (both carry the log(1/alpha)-type factor): bounded near 1-4.
         norm_const = n_opt / ((sigma**2 / D**2) * x)
         ratio_opt_lb = n_opt / np.maximum(n_lb, 1e-9)
+        ratio_certbound_lb = n_ub / np.maximum(n_lb, 1e-9)
         out["per_Delta"][str(D)] = {
             "alphas": alphas,
-            "n_opt_exact": [round(v, 2) for v in n_opt.tolist()],
+            "n_opt_exact_LRT": [round(v, 2) for v in n_opt.tolist()],
             "n_LB_twopoint": [round(v, 2) for v in n_lb.tolist()],
-            "n_UB_certificate": [round(v, 2) for v in n_ub.tolist()],
-            "LB<=opt<=UB (sandwich)": sandwich_ok,
+            "n_UB_certificate_8sig2": [round(v, 2) for v in n_ub.tolist()],
+            "LB<=opt<=cert_bound (sandwich)": sandwich_ok,
+            "n_cert_bound_over_n_LB": [round(v, 3) for v in ratio_certbound_lb.tolist()],
+            # ratio = 16*log(2/alpha)/log(1/(4alpha)): a function of alpha alone, monotically
+            # DECREASING toward its alpha->0 limit 16. At the tested tail alpha in {0.05..0.001}
+            # it is ~37 down to ~22; bounded in [16,40] and -> 16. (NOT 4: that was the bug.)
+            "n_cert_bound_over_n_LB_limit_as_alpha_to_0": 16.0,
+            "n_cert_bound_over_n_LB_alpha_le_0.05_in_[16,40]":
+                bool(np.all(ratio_certbound_lb[2:] >= 16.0) and np.all(ratio_certbound_lb[2:] <= 40.0)),
             "slope_n_opt_vs_log(1/alpha)_tail": round(slope, 4),
             "predicted_slope_2sigma2/D2_asymptote": round(2.0 * sigma**2 / D**2, 4),
             "n_opt_over_(sigma2/D2 log(1/alpha))": [round(v, 4) for v in norm_const.tolist()],
@@ -195,16 +229,20 @@ def check_B(res):
                                "n_opt": [round(v, 2) for v in n_opt_D.tolist()],
                                "loglog_slope_in_1overDelta": round(slope_D, 4),
                                "predicted_slope": 2.0}
-    # ratio UB/LB -> 4
+    # certificate-bound / LB ratio -> 16 (CORRECTED; was wrongly 4). Also n_opt/LB -> ~3.3-3.6.
     ratios = [n_UB_certificate(0.5, sigma, a) / n_LB_twopoint(0.5, sigma, a) for a in alphas]
-    out["UB_over_LB_ratio"] = {"alphas": alphas, "ratio": [round(r, 3) for r in ratios],
-                               "limit_as_alpha_to_0": 4.0}
+    ratios_opt = [n_opt_lrt(0.5, sigma, a) / n_LB_twopoint(0.5, sigma, a) for a in alphas]
+    out["cert_bound_over_LB_ratio"] = {"alphas": alphas, "ratio": [round(r, 3) for r in ratios],
+                                       "limit_as_alpha_to_0": 16.0}
+    out["n_opt_over_LB_ratio"] = {"alphas": alphas, "ratio": [round(r, 3) for r in ratios_opt],
+                                  "limit_range_as_alpha_to_0": "3.3-3.6 (Bretagnolle-Huber looseness)"}
     res["B_lower_bound_inversion"] = out
-    print(f"[B] sandwich LB<=opt<=UB holds for all Delta: "
-          f"{all(out['per_Delta'][str(D)]['LB<=opt<=UB (sandwich)'] for D in Deltas)}")
+    print(f"[B] sandwich LB<=opt<=cert_bound holds for all Delta: "
+          f"{all(out['per_Delta'][str(D)]['LB<=opt<=cert_bound (sandwich)'] for D in Deltas)}")
     print(f"[B] slope n_opt vs log(1/alpha): {slopes_logalpha} (predicted 2 sigma^2/D^2)")
     print(f"[B] loglog slope n_opt vs 1/Delta: {slope_D:.3f} (predicted 2.0)")
-    print(f"[B] UB/LB ratio -> {ratios[-1]:.3f} (limit 4.0)")
+    print(f"[B] cert_bound/LB ratio -> {ratios[-1]:.3f} (limit 16.0);  "
+          f"n_opt/LB -> {ratios_opt[-1]:.3f} (~3.3-3.6, BH looseness)")
     return res
 
 # ----------------------------------------------------------------------------- certificate sim
@@ -215,8 +253,9 @@ def eb_radius(x, alpha, R, kind="mp"):
                     Captures BOTH the variance term AND the lower-order O(R/n) range term.
        kind='subg': variance-only sub-Gaussian / studentized radius
                     sqrt(2 Vhat log(2/alpha)/n)  [valid for sub-Gaussian benefits; this is the
-                    FIRST/leading term of the certificate, exactly what n_UB=(2 sigma^2/Delta^2)
-                    log(2/alpha) inverts]. Use this to isolate the variance-regime RATE."""
+                    FIRST/leading term of the certificate. The certifying-n is obtained by inverting
+                    the CONTAINMENT condition eps_n<Delta/2 (NOT eps_n<Delta), giving
+                    n_UB=(8 sigma^2/Delta^2) log(2/alpha)]. Use this to isolate the variance-regime RATE."""
     n = len(x)
     if n < 2:
         return np.inf
@@ -243,8 +282,9 @@ def _certificate_certifying_n(Delta, alpha, n_trials, rng, criterion="half",
     """Smallest n at which the DEPLOYED certificate commits CORRECTLY with the target power while
        keeping false-adapt<=alpha. Benefits are (truncated) Gaussians X=clip(N(±Delta,sigma^2),-T,T),
        FIXED sigma (decoupled from Delta) so the Delta-exponent is a clean 2 (matching [B]/[D]).
-       kind='subg' isolates the certificate's VARIANCE-TERM rate n_UB=(2 sigma^2/Delta^2)log(2/alpha)
-       (the headline term); kind='mp' adds the lower-order O(R/Delta) Maurer-Pontil range term.
+       kind='subg' isolates the certificate's VARIANCE-TERM rate n_UB=(8 sigma^2/Delta^2)log(2/alpha)
+       (the headline term, CORRECTED constant from the eps_n<Delta/2 containment); kind='mp' adds the
+       lower-order O(R/Delta) Maurer-Pontil range term.
        criterion='half' => correct-commit>=1/2 (isolates the RATE, matching [D]); 'hi' =>
        correct-commit>=1-alpha (full two-sided {alpha,alpha}). Returns (cert_n, max_false_adapt)."""
     R = 2.0 * T
@@ -312,42 +352,73 @@ def check_C(res):
     out["scaling_in_Delta"] = {
         "alpha": alpha0, "sigma": sigma, "Delta_grid": Dgrid, "cert_n": cert_nD,
         "n_LB": [round(n_LB_twopoint(D, sigma, alpha0), 1) for D in Dgrid],
-        "n_UB": [round(n_UB_certificate(D, sigma, alpha0), 1) for D in Dgrid],
+        "n_UB_cert_8sig2": [round(n_UB_certificate(D, sigma, alpha0), 1) for D in Dgrid],
         "loglog_slope_cert_n_vs_1overDelta": (round(slope_D, 3) if slope_D else None),
         "predicted_slope": 2.0, "max_false_adapt": round(max(faD), 4)}
 
-    # ---- (3) full two-sided {alpha,alpha} certifying-n vs n_UB / n_LB at one operating point.
-    #          Report BOTH the variance-regime (sub-Gaussian) certificate and the full
-    #          bounded Maurer-Pontil certificate (which adds the lower-order range term).
+    # ---- (3) CERTIFICATE-ATTAINMENT CHECK (the corrected bound is a TRUE upper bound).
+    #          The certificate's FULL two-sided certifying-n (criterion='hi': correct-commit>=1-alpha
+    #          AND false-adapt<=alpha, i.e. miss<=alpha) must satisfy
+    #              n_LB <= n_cert <= n_UB := (8 sigma^2/Delta^2) log(2/alpha).
+    #          Against the OLD wrong bound (2 sigma^2/Delta^2) the simulated cert_n/old_UB was ~2.67
+    #          (>1, i.e. the old bound was NOT a real upper bound); against the corrected 8 sigma^2/Delta^2
+    #          it must be <= 1. We test this at several operating points to make the PASS robust.
+    attain_points = []
+    attain_ok = True
+    for (Dop, aop) in [(0.4, 0.05), (0.5, 0.05), (0.4, 0.02), (0.3, 0.1)]:
+        nUBop = n_UB_certificate(Dop, sigma, aop)          # CORRECTED: 8 sigma^2/Delta^2 log(2/alpha)
+        nLBop = n_LB_twopoint(Dop, sigma, aop)
+        old_wrong_UB = 2.0 * sigma**2 / Dop**2 * np.log(2.0 / aop)
+        cn_subg, fam_subg = _certificate_certifying_n(Dop, aop, n_trials, rng, criterion="hi",
+                                                      sigma=sigma, kind="subg")
+        lb_ok = (cn_subg is not None) and (cn_subg >= nLBop - 1e-9)
+        ub_ok = (cn_subg is not None) and (cn_subg <= nUBop + 1e-9)
+        fa_ok = (fam_subg <= aop + 0.02)                    # validity (MC tolerance)
+        point_ok = bool(lb_ok and ub_ok and fa_ok)
+        attain_ok = attain_ok and point_ok
+        attain_points.append({
+            "Delta": Dop, "alpha": aop,
+            "n_LB": round(nLBop, 1),
+            "n_UB_corrected_8sig2": round(nUBop, 1),
+            "old_WRONG_UB_2sig2": round(old_wrong_UB, 1),
+            "cert_n (full two-sided, miss<=alpha)": cn_subg,
+            "cert_n/n_UB_corrected": (round(cn_subg / nUBop, 3) if cn_subg else None),
+            "cert_n/old_WRONG_UB": (round(cn_subg / old_wrong_UB, 3) if cn_subg else None),
+            "cert_n/n_LB": (round(cn_subg / nLBop, 3) if cn_subg else None),
+            "max_false_adapt": round(fam_subg, 4),
+            "n_LB<=cert_n": bool(lb_ok), "cert_n<=n_UB_corrected": bool(ub_ok),
+            "PASS": point_ok})
+    # also keep one bounded Maurer-Pontil point for the range-term illustration
     Dop, aop = 0.4, 0.05
     nUBop = n_UB_certificate(Dop, sigma, aop); nLBop = n_LB_twopoint(Dop, sigma, aop)
-    cn_subg, fam_subg = _certificate_certifying_n(Dop, aop, n_trials, rng, criterion="hi",
-                                                  sigma=sigma, kind="subg")
     cn_mp, fam_mp = _certificate_certifying_n(Dop, aop, n_trials, rng, criterion="hi",
                                               sigma=sigma, T=1.5, kind="mp")
-    out["full_two_sided_operating_point"] = {
-        "Delta": Dop, "alpha": aop, "sigma": sigma,
-        "n_LB": round(nLBop, 1), "n_UB_variance_term": round(nUBop, 1),
-        "subgaussian_certificate": {
-            "empirical_certifying_n_cc>=1-alpha": cn_subg,
-            "cert_n_over_n_UB": (round(cn_subg / nUBop, 2) if cn_subg else None),
-            "cert_n_over_n_LB": (round(cn_subg / nLBop, 2) if cn_subg else None),
-            "max_false_adapt": round(fam_subg, 4)},
-        "bounded_MaurerPontil_certificate_T1.5": {
-            "empirical_certifying_n_cc>=1-alpha": cn_mp,
-            "cert_n_over_n_LB": (round(cn_mp / nLBop, 2) if cn_mp else None),
+    out["certificate_attainment_check"] = {
+        "claim": "n_LB <= n_cert <= (8 sigma^2/Delta^2) log(2/alpha)  for the FULL two-sided "
+                 "(miss<=alpha) certifying-n of the deployed certificate",
+        "points": attain_points,
+        "ALL_POINTS_PASS": bool(attain_ok),
+        "bounded_MaurerPontil_T1.5_at_(0.4,0.05)": {
+            "cert_n": cn_mp, "n_LB": round(nLBop, 1), "n_UB_corrected": round(nUBop, 1),
+            "cert_n/n_UB_corrected": (round(cn_mp / nUBop, 3) if cn_mp else None),
             "max_false_adapt": round(fam_mp, 4),
-            "note": "larger than the variance-term n because MP adds the proven lower-order "
-                    "O(R/Delta) range term; still O((sigma^2/Delta^2)log(1/alpha)) in the leading rate."},
-        "note": "variance-regime certifying-n is a small bounded constant x n_UB (and x n_LB); ORDER matches."}
+            "note": "MP adds the proven lower-order O(R/Delta) range term; the sub-Gaussian "
+                    "variance-term certificate is the one the (8 sigma^2/Delta^2) bound governs."},
+        "note": "Against the OLD WRONG 2 sigma^2/Delta^2 bound cert_n/old_UB>1 (~2.67) => that bound "
+                "was FALSE; against the corrected 8 sigma^2/Delta^2 it is <=1 => the corrected "
+                "constant is a genuine upper bound on the certificate."}
     res["C_certificate_upper_bound"] = out
     print(f"[C] (1) slope cert_n vs log(1/alpha) = {slope_alpha} "
-          f"(LB coeff {round(sigma**2/(2*Dfix**2),2)} .. UB coeff {round(2*sigma**2/Dfix**2,2)}); "
+          f"(LB coeff {round(sigma**2/(2*Dfix**2),2)} .. UB coeff {round(8*sigma**2/Dfix**2,2)}); "
           f"false-adapt valid: {max(fa_maxes)<=0.06}")
     print(f"[C] (2) loglog slope cert_n vs 1/Delta = {slope_D} (predicted 2.0)")
-    print(f"[C] (3) subg certifying-n={cn_subg} (n_LB={nLBop:.1f}, n_UB={nUBop:.1f}, "
-          f"cert_n/n_UB={out['full_two_sided_operating_point']['subgaussian_certificate']['cert_n_over_n_UB']}); "
-          f"MP(T=1.5) certifying-n={cn_mp}; max FA(subg)={fam_subg:.4f}")
+    print(f"[C] (3) CERTIFICATE-ATTAINMENT (n_LB <= cert_n <= 8 sigma^2/Delta^2 log(2/alpha)): "
+          f"ALL PASS = {attain_ok}")
+    for p in attain_points:
+        print(f"      Delta={p['Delta']}, alpha={p['alpha']}: cert_n={p['cert_n (full two-sided, miss<=alpha)']} "
+              f"in [n_LB={p['n_LB']}, n_UB_corrected={p['n_UB_corrected_8sig2']}] "
+              f"(old WRONG UB={p['old_WRONG_UB_2sig2']}, cert_n/old_UB={p['cert_n/old_WRONG_UB']}, "
+              f"cert_n/UB_corr={p['cert_n/n_UB_corrected']}); PASS={p['PASS']}")
     return res
 
 # ----------------------------------------------------------------------------- [D] no rule beats LB
@@ -501,12 +572,17 @@ if __name__ == "__main__":
         except Exception:
             res = {}
     res["_meta"] = {
-        "claim": "n*(Delta,sigma,alpha) ASYMP (sigma^2/Delta^2) log(1/alpha); "
-                 "certificate UB and two-point LB match up to universal constants (ratio->4).",
+        "claim": "n*(Delta,sigma,alpha) ASYMP (sigma^2/Delta^2) log(1/alpha); the deployed CERTIFICATE "
+                 "(n_cert <= (8 sigma^2/Delta^2)log(2/alpha)) and the two-point LB match up to a "
+                 "universal constant (certificate-to-LB ratio -> 16).",
         "minimax_risk": "two-sided committal error (false-adapt<=alpha AND false-freeze<=alpha) "
                         "of a label-free decision rule",
         "class": "Gaussian (and bounded two-point) location family on the identifiable side, means +/-Delta",
-        "honest": "ORDER-optimal (matched rate + bounded constant ratio). Tight constants NOT claimed."}
+        "constants": "certificate n_cert <= (8 sigma^2/Delta^2)log(2/alpha) [eps_n<Delta/2 containment]; "
+                     "n_LB = (sigma^2/2Delta^2)log(1/(4alpha)); cert/LB -> 16. SEPARATELY the abstract "
+                     "optimal LRT n_opt=(sigma/Delta)^2 z_{1-alpha}^2 has n_opt/LB -> ~3.3-3.6 (BH "
+                     "looseness); certificate sits a further ~4x above n_opt (abstain-band penalty).",
+        "honest": "ORDER-optimal (matched rate + bounded constant ratio ~16). Tight constants NOT claimed."}
     if args.part in ("A", "all"): res = check_A(res)
     if args.part in ("B", "all"): res = check_B(res)
     if args.part in ("C", "all"): res = check_C(res)

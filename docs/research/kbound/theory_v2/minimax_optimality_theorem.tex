@@ -5,8 +5,10 @@
 %  Target: a matching minimax LOWER bound on the sample complexity to certify
 %  sign(Delta) at false-adapt <= alpha over ALL valid label-free rules, pairing
 %  with the certificate's upper bound (thm:cert).  RESULT: ORDER-OPTIMAL
-%  (matched rate n ASYMP (sigma^2/Delta^2) log(1/alpha); leading-constant ratio
-%  -> 4 as alpha -> 0).  Tight constants are NOT claimed (a separate open problem).
+%  (matched rate n ASYMP (sigma^2/Delta^2) log(1/alpha); the deployed CERTIFICATE
+%  sits at a universal-constant factor (-> 16 as alpha -> 0) above the two-point
+%  lower bound, and the ABSTRACT optimal LRT test sits at -> 3.3-3.6 above it
+%  (Bretagnolle-Huber looseness)).  Tight constants are NOT claimed (separate open problem).
 %
 %  Macros required (already in kbound.tex / main_theory_5.tex):
 %    \E \Pr \sign \TV \Law \R ; theorem/lemma/proposition/corollary/remark envs;
@@ -71,7 +73,7 @@ complexity} is
 \begin{remark}[Why the miss bound, and why it is the right comparison class]\label{rmk:miss-bound}
 The guarantee ``$\mathrm{miss}_\pm\le\alpha$ and $\mathrm{FA},\mathrm{FF}\le\alpha$'' is precisely
 what Theorem~\ref{thm:cert} delivers on the identifiable side: once the radius
-$\varepsilon_n<\Delta$, the certificate commits to the correct sign with probability $\ge1-\alpha$
+$\varepsilon_n<\Delta/2$, the certificate commits to the correct sign with probability $\ge1-\alpha$
 (so $\mathrm{miss}\le\alpha$) and never wrong-commits beyond the calibration's $\alpha$-event. The
 minimax statement is therefore a comparison among \emph{all label-free rules that achieve the
 certificate's own two-sided $\alpha$-guarantee}: we ask whether any of them needs fewer samples.
@@ -103,7 +105,8 @@ complexity of Definition~\ref{def:certifying} obeys
    \;\le\;
    n^\star(\Delta,\sigma,\alpha)
    \;\le\;
-   \frac{2\sigma^2}{\Delta^2}\,\log\!\frac{2}{\alpha}\;+\;1 .
+   n_{\mathrm{cert}}\;\le\;
+   \frac{8\sigma^2}{\Delta^2}\,\log\!\frac{2}{\alpha}\;+\;1 .
    \;}
 \]
 Consequently
@@ -111,8 +114,13 @@ Consequently
    n^\star(\Delta,\sigma,\alpha)\;\asymp\;\frac{\sigma^2}{\Delta^2}\,\log\frac1\alpha ,
 \]
 and the deployed empirical-Bernstein certificate of Theorem~\ref{thm:cert}
-attains this rate: it is \emph{minimax order-optimal} on the identifiable side, with the ratio
-of the upper to the lower leading constant tending to $4$ as $\alpha\to0$. The lower bound holds
+attains this rate: it is \emph{minimax order-optimal} on the identifiable side. The certificate's
+certifying sample complexity $n_{\mathrm{cert}}\le\tfrac{8\sigma^2}{\Delta^2}\log(2/\alpha)+1$
+sits at a universal-constant factor above the two-point lower bound, the ratio of these leading
+constants tending to $16$ as $\alpha\to0$. (The \emph{abstract} optimal likelihood-ratio test sits
+at a smaller universal factor, $n_{\mathrm{opt}}/n_{\mathrm{LB}}\to3.3$--$3.6$, the genuine
+Bretagnolle--Huber looseness; the certificate's further $\approx4\times$ over $n_{\mathrm{opt}}$ is
+the abstain-band penalty --- see Remark~\ref{rmk:opt-delicate}.) The lower bound holds
 over the Gaussian location family $X_i\sim\mathcal N(\pm\Delta,\sigma^2)$ and, with the
 constant degraded only by an absolute factor, over the bounded family
 $X_i\in\{-1,+1\}$ with $\E X_i=\pm\Delta$ (variance proxy $\sigma^2=1-\Delta^2$).
@@ -123,8 +131,11 @@ $X_i\in\{-1,+1\}$ with $\E X_i=\pm\Delta$ (variance proxy $\sigma^2=1-\Delta^2$)
 rule, not estimation risk; the certified estimand is $\sign\Delta$, on the identifiable side
 $|M|>\beta$. (ii) The match is to \emph{order} (rate $\sigma^2/\Delta^2$ \emph{and} dependence
 $\log(1/\alpha)$, with a bounded constant ratio), not to a tight constant; closing the residual
-factor (here $\to4$) is the separately-listed tight-constants open problem
-(\S\ref{sec:consolidation}; \texttt{knowability\_rates.tex}, \texttt{onebit\_audit\_rate.tex}).
+factor (the certificate-to-lower-bound constant $\to16$, decomposing as the $\to3.3$--$3.6$
+Bretagnolle--Huber looseness of the optimal test times the certificate's $\approx4\times$
+abstain-band penalty) is the separately-listed tight-constants open problem
+(\texttt{knowability\_rates.tex}, \texttt{onebit\_audit\_rate.tex}, and
+\texttt{theory\_v2/wave3\_tight\_and\_computability.tex}).
 (iii) The lower bound is information-theoretic: it binds \emph{every} $\alpha$-valid label-free
 rule with nontrivial power, certificate or not. (iv) The $\log(1/\alpha)$ factor is genuinely a
 \emph{two-sided} effect: it appears precisely because both error probabilities are constrained
@@ -188,21 +199,29 @@ $(1-\alpha)$ event $\{|\bar X_n-\Delta|\le\varepsilon_n\}$, committing \textsc{a
 $\Delta\ge\bar X_n-\varepsilon_n>0$, so a wrong commit lives in the complementary $\alpha$-event.
 For the certifying (power) side, the leading (variance) term of the radius is
 $\varepsilon_n(\alpha)=\sigma\sqrt{2\log(2/\alpha)/n}\,(1+o(1))$
-(sub-Gaussian concentration; the Maurer--Pontil empirical-Bernstein radius of
-Proposition~\ref{thm:rate-ub} self-normalizes to the same leading term and adds only a
-lower-order $O\!\big(R\log(1/\alpha)/n\big)$ range term). Whenever
-$\varepsilon_n(\alpha)<\Delta$, i.e.\
+(sub-Gaussian concentration; the Maurer--Pontil empirical-Bernstein radius
+self-normalizes to the same leading term and adds only a
+lower-order $O\!\big(R\log(1/\alpha)/n\big)$ range term). The certifying condition is the
+\emph{containment} of the $(1-\alpha)$ ball $\{|\bar X_n-\Delta|\le\varepsilon_n\}$ in the
+commit region $\{\bar X_n-\varepsilon_n>0\}$ (world $P_+$). At the worst point of that ball,
+$\bar X_n=\Delta-\varepsilon_n$, the commit margin is $\bar X_n-\varepsilon_n=\Delta-2\varepsilon_n$,
+so containment holds iff $\Delta-2\varepsilon_n>0$, i.e.\ $\varepsilon_n<\Delta/2$ --- \emph{not}
+$\varepsilon_n<\Delta$. (At $\varepsilon_n=\Delta$ the worst-case mean $\bar X_n=0$ has commit
+probability $\Phi(0)=\tfrac12$, far above $\alpha$; the abstain band has full width $2\varepsilon_n$,
+so the safe distance from the boundary is $\varepsilon_n$, which the margin $\Delta$ must exceed by
+a further $\varepsilon_n$.) Whenever $\varepsilon_n(\alpha)<\Delta/2$, i.e.\
 \[
-   \sigma\sqrt{\tfrac{2\log(2/\alpha)}{n}}<\Delta
+   \sigma\sqrt{\tfrac{2\log(2/\alpha)}{n}}<\frac{\Delta}{2}
    \quad\Longleftrightarrow\quad
-   n>\frac{2\sigma^2}{\Delta^2}\log\frac2\alpha ,
+   n>\frac{8\sigma^2}{\Delta^2}\log\frac2\alpha ,
 \]
 the event $\{|\bar X_n-\Delta|\le\varepsilon_n\}$ (probability $\ge1-\alpha\ge\tfrac12$) is
 contained in $\{\bar X_n-\varepsilon_n>0\}$ in world $P_+$, so the correct action is committed
 with probability $\ge1-\alpha\ge\tfrac12$; world $P_-$ is symmetric. Hence the certificate is
-$\alpha$-certifying once $n>\tfrac{2\sigma^2}{\Delta^2}\log(2/\alpha)$, which gives
-$n^\star\le\tfrac{2\sigma^2}{\Delta^2}\log(2/\alpha)+1$. (The bounded-benefit version is
-identical with $\sigma^2=1-\Delta^2$ and the extra $O(R/\Delta)$ range term, which is
+$\alpha$-certifying once $n>\tfrac{8\sigma^2}{\Delta^2}\log(2/\alpha)$, which gives its certifying
+sample complexity $n_{\mathrm{cert}}\le\tfrac{8\sigma^2}{\Delta^2}\log(2/\alpha)+1$, hence
+$n^\star\le n_{\mathrm{cert}}\le\tfrac{8\sigma^2}{\Delta^2}\log(2/\alpha)+1$. (The bounded-benefit
+version is identical with $\sigma^2=1-\Delta^2$ and the extra $O(R/\Delta)$ range term, which is
 lower-order in the regime $\sigma/\Delta\gg1$.) \hfill$\square$
 
 \paragraph{Lower bound (the two-point obstruction).}
@@ -249,10 +268,14 @@ variance proxy $\sigma^2=1-\Delta^2$ the same $n\gtrsim(\sigma^2/\Delta^2)\log(1
 holds up to the absolute constant. \hfill$\square$
 
 \medskip
-\noindent Combining the two displays yields the boxed sandwich, and the ratio of leading
-constants is $\big(\tfrac{2\sigma^2}{\Delta^2}\log\tfrac2\alpha\big)\big/\big(\tfrac{\sigma^2}{2
-\Delta^2}\log\tfrac1{4\alpha}\big)=4\cdot\log(2/\alpha)/\log(1/(4\alpha))\to4$ as $\alpha\to0$.
-This proves Theorem~\ref{thm:minimax-opt}.\qed
+\noindent Combining the two displays yields the boxed sandwich, and the ratio of the
+certificate's leading constant to the lower bound's is
+$\big(\tfrac{8\sigma^2}{\Delta^2}\log\tfrac2\alpha\big)\big/\big(\tfrac{\sigma^2}{2
+\Delta^2}\log\tfrac1{4\alpha}\big)=16\cdot\log(2/\alpha)/\log(1/(4\alpha))\to16$ as $\alpha\to0$.
+(The \emph{abstract} optimal LRT frontier $n_{\mathrm{opt}}=(\sigma/\Delta)^2 z_{1-\alpha}^2$ sits at
+the smaller ratio $n_{\mathrm{opt}}/n_{\mathrm{LB}}\to3.3$--$3.6$; the certificate's extra
+$\approx4\times$ over $n_{\mathrm{opt}}$ is the abstain-band penalty, i.e.\ the $2\times$ in
+$\varepsilon$ from requiring $\varepsilon_n<\Delta/2$.) This proves Theorem~\ref{thm:minimax-opt}.\qed
 
 \begin{remark}[Where the proof is delicate, and the honest gap]\label{rmk:opt-delicate}
 The single subtle point is the three-way-to-two-way reduction: a rule may \emph{abstain}, so
@@ -272,38 +295,71 @@ $\log(1/\alpha)$ --- it collapses to the constant floor of Theorem~\ref{thm:imp}
 $\log(1/\alpha)$ rate is \emph{exactly} the price of the small power-side ($\mathrm{miss}$) error
 and binds only rules that demand the certificate's two-sided confidence; against the weaker
 consistency benchmark the certificate is \emph{not} claimed order-optimal in $\alpha$. The
-factor-$4$ gap between the boxed leading constants is likewise genuine and not claimed tight
-(Remark~\ref{rmk:opt-scope}(ii)): it is the known looseness of Bretagnolle--Huber against the
+constant gap between the boxed leading constants is likewise genuine and not claimed tight
+(Remark~\ref{rmk:opt-scope}(ii)), and it factors cleanly into two distinct sources:
+\emph{(a)} the known looseness of Bretagnolle--Huber against the
 exact Gaussian frontier $n_{\mathrm{opt}}=(\sigma/\Delta)^2 z_{1-\alpha}^2$, which the validator
-confirms satisfies $n_{\mathrm{LB}}\le n_{\mathrm{opt}}\le n_{\mathrm{UB}}$ with
+confirms satisfies $n_{\mathrm{LB}}\le n_{\mathrm{opt}}$ with
 $n_{\mathrm{opt}}/n_{\mathrm{LB}}\approx3.3$--$3.6$ throughout (so the lower bound never exceeds
-the true frontier --- the bound is sound, not optimistic).
+the true frontier --- the bound is sound, not optimistic); and \emph{(b)} the certificate's
+\emph{abstain-band penalty}, an additional factor $\approx4$ of $n_{\mathrm{opt}}$. Source (b) is
+the direct cost of the symmetric abstain band: certifying \textsc{adapt} requires the whole
+$(1-\alpha)$ confidence ball to clear $0$, i.e.\ $\varepsilon_n<\Delta/2$, which is a factor $2$
+smaller radius --- hence a factor $4$ larger $n$ --- than merely placing the optimal test's
+threshold at $0$ ($\varepsilon_n<\Delta$ would be the naive, and \emph{wrong}, requirement: at
+$\varepsilon_n=\Delta$ the worst-case commit rate is $\Phi(0)=\tfrac12\not\le\alpha$). Multiplying,
+the certificate-to-lower-bound ratio is $\approx3.4\times4\approx14$ at moderate $\alpha$, tending to
+the clean $16$ as $\alpha\to0$; the validator confirms
+$n_{\mathrm{LB}}\le n_{\mathrm{cert}}\le\tfrac{8\sigma^2}{\Delta^2}\log(2/\alpha)$, i.e.\ the
+corrected constant is a true upper bound on the simulated certificate. We keep these two factors
+distinct: only the $\to3.3$--$3.6$ belongs to the \emph{optimal test} ($n_{\mathrm{opt}}$); the
+$\to16$ belongs to the \emph{certificate}.
 \end{remark}
 
-\subsection{Relation to the existing rate propositions}
+\begin{remark}[The constant gap, decomposed exactly (machine-checked)]\label{rmk:opt-decomp}
+The certificate-to-lower-bound constant ($\to16$) factors into two parts that are now pinned down
+exactly. \textbf{(a) The two-point lower bound is tight against the optimal test.} Replacing the
+Bretagnolle--Huber surrogate by the \emph{exact} Gaussian two-point affinity
+$1-\TV(P^n_+,P^n_-)=2\Phi(-\sqrt n\,\Delta/\sigma)$ and inverting $2\alpha\ge1-\TV$ gives the
+optimal-test frontier $n_{\mathrm{opt}}=(\sigma/\Delta)^2 z_{1-\alpha}^2$ \emph{with equality}
+(the threshold test $\sign(\bar X)$ attains both errors $=\alpha$ there). So the
+$n_{\mathrm{opt}}/n_{\mathrm{LB}}$ gap is \emph{pure surrogate looseness}, not information loss;
+the ratio $2z_{1-\alpha}^2/\log(1/4\alpha)$ stays near $3.3$--$3.7$ for every practical $\alpha$
+and rises to $4$ only as $\alpha\to0$ (extremely slowly). \textbf{(b) The remaining factor is the
+certificate's confidence-ball choice, not a universal abstention penalty.} In the two-world
+problem a vanishing band ($\tau\to0$, the bare sign test) already certifies at $n_{\mathrm{opt}}$;
+the certificate pays its extra $\approx4\times$ because it abstains over its full $(1-\alpha)$ ball
+($\tau=\varepsilon_n$, forcing $\varepsilon_n<\Delta/2$). That $4\times$ becomes an \emph{exact
+all-rules floor} $4\,n_{\mathrm{opt}}$ only once a third, on-frontier world ($\mu=0$, required to
+abstain at level $\alpha$) is added (pairwise Le~Cam at half-separation $\Delta/2$); among
+threshold rules the symmetric band then achieves $\kappa(\alpha)\,n_{\mathrm{opt}}$ with
+$\kappa(\alpha)=(1+z_{1-\alpha/2}/z_{1-\alpha})^2\in[4,5.2]\downarrow4$, leaving a residual
+$\kappa/4\in[1,1.30]$ open for arbitrary randomized rules. Both facts are machine-checked
+(\texttt{theory\_v2/val\_tight\_constants.py}); the tight constant itself remains open.
+\end{remark}
 
-Theorem~\ref{thm:minimax-opt} is the \emph{decision-theoretic} counterpart of the
-margin-rate propositions of \texttt{knowability\_rates.tex}
-(Propositions~\ref{thm:rate-ub}--\ref{thm:rate-lb}). Those bound the smallest
-\emph{$(\alpha,\beta)$-reliable margin} $\kappa_n$ as a function of $n$; inverting
-$\kappa_n\asymp\sigma\sqrt{\log(1/\bar\alpha)/n}$ for a fixed margin $\Delta$ recovers exactly the
-sample-complexity statement here. The present formulation makes three things explicit that the
-margin form leaves implicit: (i) the minimax object is the two-sided committal error of a
-\emph{decision} rule on the identifiable side, not a margin; (ii) the $\log(1/\alpha)$ factor is a
-\emph{two-sided} (power-side) effect, distinguishing it cleanly from the one-sided constant floor
-of Theorem~\ref{thm:imp} and Proposition~\ref{prop:lecam-finite}, which carry \emph{no}
-logarithm; and (iii) the certificate \emph{already deployed} is the achiever, so optimality is a
-property of the shipped rule, adaptively in $\sigma$ (Proposition~\ref{thm:rate-ub}). The dense
-branch of Proposition~\ref{thm:rate-lb} and the bound here are the same Bretagnolle--Huber
-two-point estimate viewed through margin vs.\ sample-size duality.
+\subsection{Relation to the margin-rate view}
+
+Theorem~\ref{thm:minimax-opt} is the \emph{decision-theoretic} counterpart of the margin-rate
+view: bounding the smallest \emph{$(\alpha,\beta)$-reliable margin} $\kappa_n$ as a function of
+$n$ and inverting $\kappa_n\asymp\sigma\sqrt{\log(1/\bar\alpha)/n}$ for a fixed margin $\Delta$
+recovers exactly the sample-complexity statement here. The present formulation makes three things
+explicit that the margin form leaves implicit: (i) the minimax object is the two-sided committal
+error of a \emph{decision} rule on the identifiable side, not a margin; (ii) the $\log(1/\alpha)$
+factor is a \emph{two-sided} (power-side) effect, distinguishing it cleanly from the one-sided
+constant floor of Theorem~\ref{thm:imp} and Proposition~\ref{prop:lecam-finite}, which carry
+\emph{no} logarithm; and (iii) the certificate \emph{already deployed} is the achiever, so
+optimality is a property of the shipped rule, adaptively in $\sigma$. The lower bound here and the
+margin-rate two-point estimate are the same Bretagnolle--Huber object viewed through margin vs.\
+sample-size duality.
 
 \begin{corollary}[Minimax order-optimality of the certificate]\label{cor:cert-minimax}
 On the identifiable side $|M|>\beta$ of the benefit-sign frontier
 (Theorem~\ref{thm:frontier}), the adapt/freeze/abstain certificate of Theorem~\ref{thm:cert} is
 minimax order-optimal for certifying $\sign\Delta$ at two-sided level $\alpha$: its sample
-complexity $\tfrac{2\sigma^2}{\Delta^2}\log(2/\alpha)+O(R/\Delta\cdot\log(1/\alpha))$ matches the
+complexity $\tfrac{8\sigma^2}{\Delta^2}\log(2/\alpha)+O(R/\Delta\cdot\log(1/\alpha))$ matches the
 information-theoretic floor $\tfrac{\sigma^2}{2\Delta^2}\log\tfrac1{4\alpha}$ over all
-$\alpha$-valid label-free rules, up to a universal constant ($\to4$ on the leading term). No
+$\alpha$-valid label-free rules, up to a universal constant ($\to16$ on the leading term). No
 valid label-free procedure --- certificate or otherwise --- certifies the sign from
 asymptotically fewer samples.
 \end{corollary}
@@ -315,14 +371,18 @@ $<\!40$\,s) certifies all components against
 \textbf{[A]} the Bretagnolle--Huber bound $\tfrac12 e^{-\mathrm{KL}}$ lower-bounds the
 \emph{exact} optimal mixed error $\Phi(-\sqrt n\,\Delta/\sigma)$ at every tested
 $(\Delta,\sigma,n)$, and the analytic optimum matches Monte-Carlo to $<\!5\times10^{-3}$;
-\textbf{[B]} the exact frontier $n_{\mathrm{opt}}=(\sigma/\Delta)^2 z_{1-\alpha}^2$ satisfies the
-sandwich $n_{\mathrm{LB}}\le n_{\mathrm{opt}}\le n_{\mathrm{UB}}$ for every $(\Delta,\alpha)$, has
-log--log slope $2.00$ in $1/\Delta$ (theory $2$), and $n_{\mathrm{opt}}/n_{\mathrm{LB}}$ is a
-universal constant $\approx 3.3$--$3.5$ for $\alpha\le0.1$; the upper/lower leading-constant ratio
-$\to4$;
+\textbf{[B]} the exact optimal-test frontier $n_{\mathrm{opt}}=(\sigma/\Delta)^2 z_{1-\alpha}^2$
+satisfies $n_{\mathrm{LB}}\le n_{\mathrm{opt}}\le n_{\mathrm{cert}}^{\mathrm{bound}}$ for every
+$(\Delta,\alpha)$ (where $n_{\mathrm{cert}}^{\mathrm{bound}}=\tfrac{8\sigma^2}{\Delta^2}\log(2/\alpha)$),
+has log--log slope $2.00$ in $1/\Delta$ (theory $2$), and $n_{\mathrm{opt}}/n_{\mathrm{LB}}$ is a
+universal constant $\approx 3.3$--$3.5$ for $\alpha\le0.1$; the certificate-bound-to-lower-bound
+leading-constant ratio $\to16$;
 \textbf{[C]} the deployed empirical-Bernstein certificate keeps false-adapt $\le\alpha$ at
-\emph{every} $n$ (validity), and its empirical certifying-$n$ grows linearly in $\log(1/\alpha)$
-at the upper-bound slope and as $1/\Delta^2$ (log--log slope $2.14$), i.e.\ at the predicted rate;
+\emph{every} $n$ (validity), its full two-sided certifying-$n$ satisfies
+$n_{\mathrm{LB}}\le n_{\mathrm{cert}}\le\tfrac{8\sigma^2}{\Delta^2}\log(2/\alpha)$ (the corrected
+bound is a true upper bound on the simulated certificate), and its empirical certifying-$n$ grows
+linearly in $\log(1/\alpha)$ at the upper-bound slope and as $1/\Delta^2$ (log--log slope $2.14$),
+i.e.\ at the predicted rate;
 \textbf{[D]} a brute-force panel of label-free rules (sign-thresholds and polarities on the
 sample mean, median, $20\%$-trimmed mean, sign-count, and clipped mean) finds \emph{no} rule with
 both wrong-commit rates $\le\alpha$ \emph{and} nontrivial power (correct-commit $\ge\tfrac12$) at
@@ -335,9 +395,12 @@ which $n_{\mathrm{LB}}$ correctly lower-bounds, $n_{\mathrm{LB}}\le n_{\mathrm{o
 \begin{figure}[t]\centering
 \includegraphics[width=0.92\linewidth]{theory_v2/fig_minimax_optimality.png}
 \caption{Minimax order-optimality on the identifiable side (Theorem~\ref{thm:minimax-opt}).
-Left: the exact certifying frontier $n_{\mathrm{opt}}$, the certificate upper bound
-$n_{\mathrm{UB}}$, and the two-point lower bound $n_{\mathrm{LB}}$ are parallel and linear in
-$\log(1/\alpha)$ (matched rate; the bounded vertical gaps are universal constants). Right: all
-three lie on slope-$1$ log--log lines in $1/\Delta^2$, i.e.\ $n\asymp\sigma^2/\Delta^2$.}
+Left: the optimal-test frontier $n_{\mathrm{opt}}=(\sigma/\Delta)^2 z_{1-\alpha}^2$, the
+certificate bound $n_{\mathrm{cert}}^{\mathrm{bound}}=\tfrac{8\sigma^2}{\Delta^2}\log(2/\alpha)$,
+and the two-point lower bound $n_{\mathrm{LB}}=\tfrac{\sigma^2}{2\Delta^2}\log\tfrac1{4\alpha}$
+are parallel and linear in $\log(1/\alpha)$ (matched rate; the bounded vertical gaps are universal
+constants: $n_{\mathrm{opt}}/n_{\mathrm{LB}}\to3.3$--$3.6$, and
+$n_{\mathrm{cert}}^{\mathrm{bound}}/n_{\mathrm{LB}}\to16$). Right: all three lie on slope-$1$
+log--log lines in $1/\Delta^2$, i.e.\ $n\asymp\sigma^2/\Delta^2$.}
 \label{fig:minimax-opt}
 \end{figure}

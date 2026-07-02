@@ -1,5 +1,16 @@
 # Physical Edge study — capture & publication pipeline
 
+## Start here (R2 kickoff)
+
+```bash
+cd /Volumes/T9/uav/AutoML_Flagship_V8
+bash scripts/start_r2_physical_capture.sh preflight   # fast status
+bash scripts/start_r2_physical_capture.sh pilot       # 4-clip warm-up (real camera)
+bash scripts/start_r2_physical_capture.sh session S01   # full session (interactive)
+```
+
+Tracker: `edge/R2_SESSION_TRACKER.md`
+
 ## Current blocker (read first)
 
 `artifacts_real/raw/` currently holds **1,216 clips** generated with `01_capture_real_session.py --mock`

@@ -52,7 +52,7 @@
     ]
   },
   "B_lower_bound_inversion": {
-    "UB_over_LB_ratio": {
+    "cert_bound_over_LB_ratio": {
       "alphas": [
         0.2,
         0.1,
@@ -62,20 +62,41 @@
         0.005,
         0.001
       ],
-      "limit_as_alpha_to_0": 4.0,
+      "limit_as_alpha_to_0": 16.0,
       "ratio": [
-        41.275,
-        13.078,
-        9.168,
-        7.293,
-        6.584,
-        6.126,
-        5.506
+        165.102,
+        52.311,
+        36.672,
+        29.173,
+        26.336,
+        24.505,
+        22.026
+      ]
+    },
+    "n_opt_over_LB_ratio": {
+      "alphas": [
+        0.2,
+        0.1,
+        0.05,
+        0.02,
+        0.01,
+        0.005,
+        0.001
+      ],
+      "limit_range_as_alpha_to_0": "3.3-3.6 (Bretagnolle-Huber looseness)",
+      "ratio": [
+        6.349,
+        3.585,
+        3.362,
+        3.34,
+        3.363,
+        3.392,
+        3.459
       ]
     },
     "per_Delta": {
       "0.25": {
-        "LB<=opt<=UB (sandwich)": true,
+        "LB<=opt<=cert_bound (sandwich)": true,
         "alphas": [
           0.2,
           0.1,
@@ -94,16 +115,27 @@
           31.3,
           44.17
         ],
-        "n_UB_certificate": [
-          73.68,
-          95.86,
-          118.04,
-          147.37,
-          169.55,
-          191.73,
-          243.23
+        "n_UB_certificate_8sig2": [
+          294.73,
+          383.45,
+          472.18,
+          589.46,
+          678.18,
+          766.91,
+          972.92
         ],
-        "n_opt_exact": [
+        "n_cert_bound_over_n_LB": [
+          165.102,
+          52.311,
+          36.672,
+          29.173,
+          26.336,
+          24.505,
+          22.026
+        ],
+        "n_cert_bound_over_n_LB_alpha_le_0.05_in_[16,40]": true,
+        "n_cert_bound_over_n_LB_limit_as_alpha_to_0": 16.0,
+        "n_opt_exact_LRT": [
           11.33,
           26.28,
           43.29,
@@ -137,7 +169,7 @@
         "this_is_function_of_alpha_only_independent_of_D": true
       },
       "0.5": {
-        "LB<=opt<=UB (sandwich)": true,
+        "LB<=opt<=cert_bound (sandwich)": true,
         "alphas": [
           0.2,
           0.1,
@@ -156,16 +188,27 @@
           7.82,
           11.04
         ],
-        "n_UB_certificate": [
-          18.42,
-          23.97,
-          29.51,
-          36.84,
-          42.39,
-          47.93,
-          60.81
+        "n_UB_certificate_8sig2": [
+          73.68,
+          95.86,
+          118.04,
+          147.37,
+          169.55,
+          191.73,
+          243.23
         ],
-        "n_opt_exact": [
+        "n_cert_bound_over_n_LB": [
+          165.102,
+          52.311,
+          36.672,
+          29.173,
+          26.336,
+          24.505,
+          22.026
+        ],
+        "n_cert_bound_over_n_LB_alpha_le_0.05_in_[16,40]": true,
+        "n_cert_bound_over_n_LB_limit_as_alpha_to_0": 16.0,
+        "n_opt_exact_LRT": [
           2.83,
           6.57,
           10.82,
@@ -199,7 +242,7 @@
         "this_is_function_of_alpha_only_independent_of_D": true
       },
       "1.0": {
-        "LB<=opt<=UB (sandwich)": true,
+        "LB<=opt<=cert_bound (sandwich)": true,
         "alphas": [
           0.2,
           0.1,
@@ -218,16 +261,27 @@
           1.96,
           2.76
         ],
-        "n_UB_certificate": [
-          4.61,
-          5.99,
-          7.38,
-          9.21,
-          10.6,
-          11.98,
-          15.2
+        "n_UB_certificate_8sig2": [
+          18.42,
+          23.97,
+          29.51,
+          36.84,
+          42.39,
+          47.93,
+          60.81
         ],
-        "n_opt_exact": [
+        "n_cert_bound_over_n_LB": [
+          165.102,
+          52.311,
+          36.672,
+          29.173,
+          26.336,
+          24.505,
+          22.026
+        ],
+        "n_cert_bound_over_n_LB_alpha_le_0.05_in_[16,40]": true,
+        "n_cert_bound_over_n_LB_limit_as_alpha_to_0": 16.0,
+        "n_opt_exact_LRT": [
           0.71,
           1.64,
           2.71,
@@ -285,25 +339,80 @@
     "sigma": 1.0
   },
   "C_certificate_upper_bound": {
-    "full_two_sided_operating_point": {
-      "Delta": 0.4,
-      "alpha": 0.05,
-      "bounded_MaurerPontil_certificate_T1.5": {
-        "cert_n_over_n_LB": 51.89,
-        "empirical_certifying_n_cc>=1-alpha": 261,
+    "certificate_attainment_check": {
+      "ALL_POINTS_PASS": true,
+      "bounded_MaurerPontil_T1.5_at_(0.4,0.05)": {
+        "cert_n": 315,
+        "cert_n/n_UB_corrected": 1.708,
         "max_false_adapt": 0.0,
-        "note": "larger than the variance-term n because MP adds the proven lower-order O(R/Delta) range term; still O((sigma^2/Delta^2)log(1/alpha)) in the leading rate."
+        "n_LB": 5.0,
+        "n_UB_corrected": 184.4,
+        "note": "MP adds the proven lower-order O(R/Delta) range term; the sub-Gaussian variance-term certificate is the one the (8 sigma^2/Delta^2) bound governs."
       },
-      "n_LB": 5.0,
-      "n_UB_variance_term": 46.1,
-      "note": "variance-regime certifying-n is a small bounded constant x n_UB (and x n_LB); ORDER matches.",
-      "sigma": 1.0,
-      "subgaussian_certificate": {
-        "cert_n_over_n_LB": 24.46,
-        "cert_n_over_n_UB": 2.67,
-        "empirical_certifying_n_cc>=1-alpha": 123,
-        "max_false_adapt": 0.005
-      }
+      "claim": "n_LB <= n_cert <= (8 sigma^2/Delta^2) log(2/alpha)  for the FULL two-sided (miss<=alpha) certifying-n of the deployed certificate",
+      "note": "Against the OLD WRONG 2 sigma^2/Delta^2 bound cert_n/old_UB>1 (~2.67) => that bound was FALSE; against the corrected 8 sigma^2/Delta^2 it is <=1 => the corrected constant is a genuine upper bound on the certificate.",
+      "points": [
+        {
+          "Delta": 0.4,
+          "PASS": true,
+          "alpha": 0.05,
+          "cert_n (full two-sided, miss<=alpha)": 152,
+          "cert_n/n_LB": 30.222,
+          "cert_n/n_UB_corrected": 0.824,
+          "cert_n/old_WRONG_UB": 3.296,
+          "cert_n<=n_UB_corrected": true,
+          "max_false_adapt": 0.0047,
+          "n_LB": 5.0,
+          "n_LB<=cert_n": true,
+          "n_UB_corrected_8sig2": 184.4,
+          "old_WRONG_UB_2sig2": 46.1
+        },
+        {
+          "Delta": 0.5,
+          "PASS": true,
+          "alpha": 0.05,
+          "cert_n (full two-sided, miss<=alpha)": 94,
+          "cert_n/n_LB": 29.203,
+          "cert_n/n_UB_corrected": 0.796,
+          "cert_n/old_WRONG_UB": 3.185,
+          "cert_n<=n_UB_corrected": true,
+          "max_false_adapt": 0.0047,
+          "n_LB": 3.2,
+          "n_LB<=cert_n": true,
+          "n_UB_corrected_8sig2": 118.0,
+          "old_WRONG_UB_2sig2": 29.5
+        },
+        {
+          "Delta": 0.4,
+          "PASS": true,
+          "alpha": 0.02,
+          "cert_n (full two-sided, miss<=alpha)": 172,
+          "cert_n/n_LB": 21.792,
+          "cert_n/n_UB_corrected": 0.747,
+          "cert_n/old_WRONG_UB": 2.988,
+          "cert_n<=n_UB_corrected": true,
+          "max_false_adapt": 0.002,
+          "n_LB": 7.9,
+          "n_LB<=cert_n": true,
+          "n_UB_corrected_8sig2": 230.3,
+          "old_WRONG_UB_2sig2": 57.6
+        },
+        {
+          "Delta": 0.3,
+          "PASS": true,
+          "alpha": 0.1,
+          "cert_n (full two-sided, miss<=alpha)": 186,
+          "cert_n/n_LB": 36.539,
+          "cert_n/n_UB_corrected": 0.698,
+          "cert_n/old_WRONG_UB": 2.794,
+          "cert_n<=n_UB_corrected": true,
+          "max_false_adapt": 0.0107,
+          "n_LB": 5.1,
+          "n_LB<=cert_n": true,
+          "n_UB_corrected_8sig2": 266.3,
+          "old_WRONG_UB_2sig2": 66.6
+        }
+      ]
     },
     "scaling_in_Delta": {
       "Delta_grid": [
@@ -314,24 +423,24 @@
       ],
       "alpha": 0.05,
       "cert_n": [
-        148,
-        66,
-        33,
+        146,
+        64,
+        30,
         16
       ],
-      "loglog_slope_cert_n_vs_1overDelta": 2.137,
-      "max_false_adapt": 0.0113,
+      "loglog_slope_cert_n_vs_1overDelta": 2.145,
+      "max_false_adapt": 0.0083,
       "n_LB": [
         12.9,
         6.6,
         3.2,
         1.6
       ],
-      "n_UB": [
+      "n_UB_cert_8sig2": [
+        472.2,
+        240.9,
         118.0,
-        60.2,
-        29.5,
-        15.1
+        60.2
       ],
       "predicted_slope": 2.0,
       "sigma": 1.0
@@ -348,11 +457,11 @@
         0.01
       ],
       "cert_n": [
-        32,
-        43,
-        48,
-        65,
-        70
+        30,
+        42,
+        57,
+        63,
+        86
       ],
       "false_adapt_valid": true,
       "max_false_adapt": 0.0083,
@@ -364,14 +473,14 @@
         10.1
       ],
       "n_UB": [
-        28.8,
-        37.4,
-        46.1,
-        57.6,
-        66.2
+        115.1,
+        149.8,
+        184.4,
+        230.3,
+        264.9
       ],
       "sigma": 1.0,
-      "slope_cert_n_vs_log(1/alpha)": 12.952
+      "slope_cert_n_vs_log(1/alpha)": 17.372
     }
   },
   "D_no_rule_beats_LB": {
@@ -408,12 +517,13 @@
   },
   "E_figure": {
     "made": true,
-    "path": "/sessions/cool-gifted-allen/mnt/kbound/theory_v2/fig_minimax_optimality.png"
+    "path": "/Volumes/T9/uav/AutoML_Flagship_V8/docs/research/kbound/theory_v2/fig_minimax_optimality.png"
   },
   "_meta": {
-    "claim": "n*(Delta,sigma,alpha) ASYMP (sigma^2/Delta^2) log(1/alpha); certificate UB and two-point LB match up to universal constants (ratio->4).",
+    "claim": "n*(Delta,sigma,alpha) ASYMP (sigma^2/Delta^2) log(1/alpha); the deployed CERTIFICATE (n_cert <= (8 sigma^2/Delta^2)log(2/alpha)) and the two-point LB match up to a universal constant (certificate-to-LB ratio -> 16).",
     "class": "Gaussian (and bounded two-point) location family on the identifiable side, means +/-Delta",
-    "honest": "ORDER-optimal (matched rate + bounded constant ratio). Tight constants NOT claimed.",
+    "constants": "certificate n_cert <= (8 sigma^2/Delta^2)log(2/alpha) [eps_n<Delta/2 containment]; n_LB = (sigma^2/2Delta^2)log(1/(4alpha)); cert/LB -> 16. SEPARATELY the abstract optimal LRT n_opt=(sigma/Delta)^2 z_{1-alpha}^2 has n_opt/LB -> ~3.3-3.6 (BH looseness); certificate sits a further ~4x above n_opt (abstain-band penalty).",
+    "honest": "ORDER-optimal (matched rate + bounded constant ratio ~16). Tight constants NOT claimed.",
     "minimax_risk": "two-sided committal error (false-adapt<=alpha AND false-freeze<=alpha) of a label-free decision rule"
   }
 }

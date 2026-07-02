@@ -228,6 +228,48 @@ fraction.
 
 ---
 
+## Part F — 85+ strong-accept path (physical R2 + full panel)
+
+Scorecard (run anytime):
+```bash
+bash docs/research/kbound/scripts/run_85plus_readiness.sh
+```
+
+### F1. Multiseed smoke preflight (~2–3 h MPS)
+```bash
+KB_SMOKE_SEEDS="0 1" KB_DEVICE=mps \
+  bash docs/research/kbound/scripts/run_smoke_showcase.sh
+```
+Exit `0` ⇒ all 9 datasets collated (RxRx1 may skip if data missing).
+
+### F2. Physical camera R2 (human recording required)
+```bash
+# Phase 1 — source gate only (stop if balanced-acc < 0.80)
+bash docs/research/kbound/edge/scripts/run_edge_source_gate.sh
+
+# Phase 2 — after gate passes: calibration + held-out + export
+bash docs/research/kbound/edge/scripts/run_edge_heldout_capture.sh
+```
+See `edge/STAGING_GUIDE.md` and `edge/EDGE_COMPLETION_CHECKLIST.md`.
+
+### F3. Full 9-dataset 5-seed refresh
+```bash
+bash docs/research/kbound/scripts/prepare_rxrx1_data.sh   # once
+KB_SEEDS="0 1 2 3 4" KB_DEVICE=mps KB_IC_MAXIMG=2000 \
+  caffeinate -is bash docs/research/kbound/scripts/run_final_showcase.sh \
+    --device mps --seeds "0 1 2 3 4"
+```
+
+### F4. Macro / table drift check
+```bash
+python docs/research/kbound/scripts/refresh_results_source_locked.py
+python docs/research/kbound/scripts/make_tables.py
+cd docs/research/kbound && latexmk -pdf kbound_short.tex
+```
+Tables `tab:decisive` and `tab:headtohead-poem-aetta` read from `paper/generated/kbound_numbers.tex`.
+
+---
+
 ## Part E — Sign-off form
 
 ### Theory reviewer

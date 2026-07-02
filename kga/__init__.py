@@ -29,11 +29,25 @@ from kga.certificate import Certificate
 from kga.evidence import Evidence
 from kga.kga import KGA
 from kga.policy import Decision
+from kga.routing import (
+    AnytimeMulticandidatePanel,
+    CandidateCertificate,
+    RoutingDecision,
+    bonferroni_multicandidate_route,
+    multiclass_benefit,
+    route_panel,
+)
 
 __all__ = [
     "KGA",
     "Decision",
     "Certificate",
     "Evidence",
+    "AnytimeMulticandidatePanel",
+    "CandidateCertificate",
+    "RoutingDecision",
+    "bonferroni_multicandidate_route",
+    "multiclass_benefit",
+    "route_panel",
     "__version__",
 ]

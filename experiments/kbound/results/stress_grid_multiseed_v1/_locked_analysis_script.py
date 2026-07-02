@@ -5,8 +5,9 @@ Holm over 6 comparisons, secondary metrics, p* regime-law check. No post-hoc met
 import json, os
 import numpy as np
 
-RES = "/sessions/peaceful-blissful-ptolemy/mnt/uav/AutoML_Flagship_V8/experiments/kbound/results/stress_grid_multiseed_v1"
-SEEDS = [0, 1, 2, 3, 4]
+RES = os.environ.get("KBOUND_STRESS_GRID_ROOT", os.path.join(os.path.dirname(__file__)))
+_SEEDS_ENV = os.environ.get("KBOUND_STRESS_SEEDS", "0 1 2 3 4")
+SEEDS = [int(x) for x in _SEEDS_ENV.split()]
 CANDS = ["tent", "eata", "sar"]
 NBOOT = 10000
 RNG = np.random.default_rng(20260611)  # registration date; fixed for reproducibility

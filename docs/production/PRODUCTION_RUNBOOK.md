@@ -70,6 +70,36 @@ answer a basic request.
 
 Use `/ready` for load balancer readiness and deployment promotion.
 
+## Distributed rate limiting (Gate P P5)
+
+For multi-replica deployments, set `UAIS_REDIS_URL` to a shared Redis instance and
+start the optional Redis service:
+
+```bash
+docker compose --profile distributed up -d redis
+export UAIS_REDIS_URL=redis://127.0.0.1:6379/0
+```
+
+Without Redis, rate limiting is in-memory (single-instance only).
+
+## Model governance (Gate P P11)
+
+- `GET /models/versions` — active `model_version` per model type (auth required)
+- `POST /models/rollback` — switch active version using `models/MANIFEST.json`
+- After rollback, update checksum env vars and restart the API (see runbook Rollback)
+
+## KGA decision API
+
+- `GET /kga/health` — liveness (no auth)
+- `POST /decide` — ADAPT/FREEZE/ABSTAIN (`cert_mode`: `proxy` or `full`)
+
+## Load testing (Gate P P15)
+
+```bash
+python deploy/loadtest/run_baseline.py
+# Optional: locust -f deploy/loadtest/locustfile.py --host http://127.0.0.1:8000
+```
+
 ## Monitoring
 
 Authenticated operational endpoints:

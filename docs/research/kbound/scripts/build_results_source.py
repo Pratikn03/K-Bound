@@ -154,6 +154,10 @@ def main():
     ap.add_argument("--alpha", type=float, default=0.10)
     ap.add_argument("--eps-floor", type=float, default=0.005)
     ap.add_argument("--check-only", action="store_true")
+    ap.add_argument("--locked-analysis",
+                    default="experiments/kbound/results/stress_grid_multiseed_v1/LOCKED_ANALYSIS_RESULTS.json")
+    ap.add_argument("--headtohead",
+                    default="experiments/kbound/results/mixed_headtohead_v1/HEADTOHEAD_RESULTS_cifar10c_tent_primary.json")
     a = ap.parse_args()
 
     g1_integrity()
@@ -187,6 +191,33 @@ def main():
             "eps_floor": a.eps_floor,
         },
     }
+
+    locked_path = os.path.join(ROOT, a.locked_analysis) if a.locked_analysis else ""
+    if locked_path and os.path.exists(locked_path):
+        out["locked_analysis"] = json.load(open(locked_path))
+        out["_provenance"]["locked_analysis"] = a.locked_analysis
+        # Prefer Holm-locked tent regret for corruption grid when available
+        tent = out["locked_analysis"].get("candidates", {}).get("tent", {})
+        if tent:
+            out["corruption_grids"]["cifar10c_stress"] = {
+                "regret_kga": round(float(tent["kga_mean_regret"]), 4),
+                "regret_adapt": round(float(tent["adapt_mean_regret"]), 4),
+                "regret_freeze": round(float(tent["freeze_mean_regret"]), 4),
+                "false_adapt": float(tent.get("false_adapt_rate_pooled", 0.0)),
+                "verdict": "beats-both-CI-robust",
+                "_source": a.locked_analysis,
+            }
+
+    h2h_path = os.path.join(ROOT, a.headtohead) if a.headtohead else ""
+    if h2h_path and os.path.exists(h2h_path):
+        h2h = json.load(open(h2h_path))
+        hh = h2h.get("headtohead", h2h)
+        out["headtohead"] = {
+            "verdict": hh.get("VERDICT", "—"),
+            "kga_regret": float(h2h.get("policy_mean_regret", {}).get("kga", 0)),
+            "_source": a.headtohead,
+        }
+        out["_provenance"]["headtohead"] = a.headtohead
 
     # diff vs previous
     if os.path.exists(os.path.join(ROOT, a.prev)):

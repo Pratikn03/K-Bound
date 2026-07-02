@@ -322,10 +322,10 @@ Theorem~\ref{thm:uncond-weakest}), with General Position recovered as the collap
 certificate is, moreover, \emph{minimax order-optimal} on the identifiable side---its sample
 complexity matches a two-point information-theoretic lower bound up to a universal constant---and its
 false-adapt guarantee extends to anytime-valid streaming and to family-wise selection over a
-candidate panel (extended version). Two pieces of the knowability program remain open: tight
-(constant-sharp) evidence-channel rates, and a computable general-capacity characterization---though
-the latter is now partly delimited, since the binary observable margin is provably insufficient once
-$K\!\ge\!3$, so regularity conditions on the contrast are necessary.
+candidate panel (extended long version). Wave~4 closes the remaining theory frontier within
+stated dichotomies: exact $3$-world minimax constant, margin-computability dichotomy,
+multiclass capacity impossibility without R1/R2, and regression bracketing (see
+Appendix~\ref{app:theory-full} and the long paper \texttt{kbound.tex}).
 
 \section{Method: \textsc{KGA}}\label{sec:method}
 \textsc{KGA} turns the frontier certificate into a deployable rule. It is the only headline
@@ -442,17 +442,17 @@ $p^\star{\approx}0.1$ (Tent/SAR) or $0$ (EATA).
 \toprule
 candidate & policy & mean acc & regret$\downarrow$ & $\mathrm{FA}_{\mathrm c}$ & coverage & beats both? \\
 \midrule
-Tent & always-adapt  & $0.786$ & $0.0086$ & --- & $1.00$ & \\
-     & always-freeze & $0.671$ & $0.1232$ & --- & $0.00$ & \\
-     & \textbf{K-Bound} & $\mathbf{0.793}$ & $\mathbf{0.0016}$ & $\mathbf{0.00}$ & $0.67$ & \textbf{yes} \\
+Tent & always-adapt  & $0.786$ & $\CIFARtentAdapt$ & --- & $1.00$ & \\
+     & always-freeze & $0.671$ & $\CIFARtentFreeze$ & --- & $0.00$ & \\
+     & \textbf{K-Bound} & $\mathbf{0.793}$ & $\mathbf{\CIFARtentKga}$ & $\mathbf{\CIFARtentFA}$ & $0.67$ & \textbf{yes} \\
 \midrule
-EATA & always-adapt  & $0.798$ & $0.0037$ & --- & $1.00$ & \\
-     & always-freeze & $0.671$ & $0.1311$ & --- & $0.00$ & \\
-     & \textbf{K-Bound} & $\mathbf{0.801}$ & $\mathbf{0.0015}$ & $\mathbf{0.00}$ & $0.63$ & \textbf{yes} \\
+EATA & always-adapt  & $0.798$ & $\CIFAReataAdapt$ & --- & $1.00$ & \\
+     & always-freeze & $0.671$ & $\CIFAReataFreeze$ & --- & $0.00$ & \\
+     & \textbf{K-Bound} & $\mathbf{0.801}$ & $\mathbf{\CIFAReataKga}$ & $\mathbf{\CIFAReataFA}$ & $0.63$ & \textbf{yes} \\
 \midrule
-SAR  & always-adapt  & $0.806$ & $0.0018$ & --- & $1.00$ & \\
-     & always-freeze & $0.671$ & $0.1372$ & --- & $0.00$ & \\
-     & \textbf{K-Bound} & $0.806$ & $0.0018$ & $0.00$ & --- & ties adapt \\
+SAR  & always-adapt  & $0.806$ & $\CIFARsarAdapt$ & --- & $1.00$ & \\
+     & always-freeze & $0.671$ & $\CIFARsarFreeze$ & --- & $0.00$ & \\
+     & \textbf{K-Bound} & $0.806$ & $\CIFARsarKga$ & $\CIFARsarFA$ & --- & ties adapt \\
 \bottomrule
 \end{tabular}
 }
@@ -548,11 +548,11 @@ WIN iff both CIs exclude $0$ and survive Holm.}
 \toprule
 policy & mean regret$\downarrow$ & $\mathrm{FA}_{\mathrm u}$ & decisive rate & KGA gap & Holm beats? \\
 \midrule
-always-adapt  & $0.0079$ & $0.329$ & $1.00$ & $-0.0064$ & yes \\
-always-freeze & $0.1241$ & $0.000$ & $1.00$ & $-0.1225$ & yes \\
-POEM          & $0.0088$ & $0.245$ & $1.00$ & $-0.0072\,[-0.0088,-0.0057]$ & yes \\
-AETTA         & $0.0073$ & $0.240$ & $1.00$ & $-0.0058\,[-0.0071,-0.0044]$ & yes \\
-\textbf{\textsc{KGA}} & $\mathbf{0.0016}$ & $\mathbf{0.000}$ & $0.68$ & --- & \textbf{WIN} \\
+always-adapt  & $\HeadToHeadAdapt$ & $0.329$ & $1.00$ & $-0.0064$ & yes \\
+always-freeze & $\HeadToHeadFreeze$ & $0.000$ & $1.00$ & $-0.1225$ & yes \\
+POEM          & $\HeadToHeadPoem$ & $0.245$ & $1.00$ & $-0.0072\,[-0.0088,-0.0057]$ & yes \\
+AETTA         & $\HeadToHeadAetta$ & $0.240$ & $1.00$ & $-0.0058\,[-0.0071,-0.0044]$ & yes \\
+\textbf{\textsc{KGA}} & $\mathbf{\HeadToHeadKga}$ & $\mathbf{\HeadToHeadKgaFA}$ & $\HeadToHeadKgaDec$ & --- & \textbf{\HeadToHeadVerdict} \\
 oracle        & $0.0000$ & $0.000$ & $1.00$ & --- & ceiling \\
 \bottomrule
 \end{tabular}}

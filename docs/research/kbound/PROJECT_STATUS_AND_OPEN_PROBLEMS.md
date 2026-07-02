@@ -1,8 +1,6 @@
 # K-Bound / KGA — Canonical Status & Open-Problem Ledger
 
-**This is the single source of truth.** It supersedes all dated `*_2026-06-*` status/report
-MD files (see "Deprecated files" at the end). Last reconciled: 2026-06-25, after mixed-protocol
-OOF re-run and freeze-plan implementation (`FREEZE_COMPLETION_PLAN.md`).
+**This is the single source of truth.** Last reconciled: 2026-07-01 (Wave 4 strict-100 closure).
 
 ---
 
@@ -19,20 +17,20 @@ OOF re-run and freeze-plan implementation (`FREEZE_COMPLETION_PLAN.md`).
 | `thm:uncond-weakest` | **Unconditional** weakest one-bit classes = explicit finite family of *dominance polytopes* `W*={T(r)≥G(r)}`; no unique weakest class; GP recovered as the collapsing face. | **Proven + machine-verified** (`val_unconditional_weakest.py`; 2.8e5 box + 3.2e3 polytope fibres, 0 mismatches; independently reproduced) |
 | `conj:gen` (**label-free bracketing**) | Universal label-free benefit bracketing **does not exist** (negative resolution = the impossibility); minimal supplement one bit; weakest class characterized by `thm:uncond-weakest`. | **RESOLVED (negatively).** *Not* an open problem. |
 | `thm:anytime` + `thm:multicand` (certificate **extensions**) | (a) Anytime-valid streaming: false-adapt ≤ α **time-uniformly** under optional stopping (Ville + one-sided betting supermartingale). (b) Multicandidate routing: **family-wise** false-adapt ≤ α for an arbitrary/adversarial selector (Bonferroni selection-proof containment). | **Proven (core guarantees) + machine-validated + line-by-line proof-audited (2026-06-29).** No fatal flaw; audit found only fixable expository gaps, now fixed (T=1 "specializes to," not "reproduces"; Šidák needs disjoint per-candidate calibration — Bonferroni is the default; CS centering made explicit). Folded into `kbound.tex` App.\ *Theory extensions*. Validators `val_sequential_anytime.py`, `val_multicandidate.py`. |
+| `thm:minimax-opt` + `thm:t1c-exact` | On the identifiable side, minimax order-optimality + exact 3-world constant `κ(α)n_opt`. | **Proven + validated** (`val_minimax_optimality.py`, `val_tight_constants.py`). |
+| `thm:multiclass-multicand` + `thm:anytime-multicand` | Multiclass routing + anytime multicandidate Bonferroni FWER on `D`. | **Proven + validated** (`val_multiclass_multicandidate.py`, `val_anytime_multicandidate.py`). |
+| `thm:mc-cap-impossibility` | No single scalar multiclass capacity in the general vector-concept regime. | **Closed (impossibility)** + `val_multiclass_capacity.py` Block D. |
+| `thm:margin-compute-dichotomy` | Frontier margin computability dichotomy (`conj:dich-compute`). | **Closed** + `val_margin_computability.py`. |
+| `thm:reg-bracket-dichotomy` | Regression/general drift: bounded-drift iff + general impossibility. | **Closed** + `val_regression_bracketing_closure.py`. |
 
-> **Note on "C1 / label-free bracketing":** any ledger marking this "Open" is **stale**.
-> It is resolved negatively — universal label-free bounds without structure provably cannot
-> exist; proving they *do* would contradict `thm:conj1-dichotomy`.
+> **Note:** Section B of `THEORY_100_PERCENT_CLOSURE_PLAN.md` is **fully closed** as of Wave 4 (2026-07-01).
 
-### GENUINELY OPEN (honest frontier — none are claimed as solved)
-| Conjecture | What is open | File |
-|---|---|---|
-| `conj:gen-capacity` | General knowability–capacity: scalar capacity `K>1 ⟺ identifiable` is proven only under regularity R1 (unique flip locus) + R2 (monotone-in-nuisance). Removing R1/R2 (non-monotone flip loci; multiclass `K≥3`) is open. | `knowability_capacity_general.tex` |
-| `conj:dich-compute` | "Computability is free" for integral-functional families: whether the frontier margin `m(O)` is always a *computable* functional of `Q_X`. Constructive-measurability question; no probabilistic content. | `knowability_dichotomy.tex` |
-| Tight finite-sample rate | A tight (non-conservative) radius / exact evidence-channel rate constants; only conservative bounds proven. | `onebit_audit_rate.tex`, `knowability_rates.tex` |
-| Certificate minimax-optimality (GDR) | Whether the certificate is minimax-*optimal* (not merely valid) on the identifiable side. | **NOT attempted** (Wave 2). |
-| General/multiclass extension of the two new theorems | Anytime + multicandidate proved for the binary benefit-sign decision; multiclass/general-loss versions not done. | **NOT attempted.** |
-| Fully-general-drift bracketing | General-drift / regression extension characterization (the unknowable regime). | `regression_conjecture.tex`, `benefit_sign_frontier.tex` |
+### GENUINELY OPEN (outside closure-plan scope)
+
+| Item | Note |
+|---|---|
+| External reviewer sign-off | `REVIEWER_REPRO_PACKET.md` — process, not theory |
+| Real-camera held-out R2 tables | Empirical, not theory |
 
 ---
 
@@ -74,6 +72,9 @@ OOF re-run and freeze-plan implementation (`FREEZE_COMPLETION_PLAN.md`).
 4. ✅ Edge section framed as feasibility/no-harm (camera tables RESULT PENDING; real R2 still open).
 5. ✅ Recompile both PDFs clean (`kbound_short.tex`, `kbound.tex`) — 2026-06-25.
 6. ⬜ External sign-off: theory/stats reviewer on `thm:uncond-weakest`+Lemma 1 and the coverage theorem; one independent reproducer (`REVIEWER_REPRO_PACKET.md`).
+7. ⬜ **85+ path:** real camera R2 (`run_edge_source_gate.sh` → S03–S10 → `run_edge_publication_pipeline.sh`); full 5-seed panel with RxRx1; `run_85plus_readiness.sh` score ≥ 85.
+
+**85+ readiness command:** `bash docs/research/kbound/scripts/run_85plus_readiness.sh`
 
 **Honest headline at freeze:** an impossibility/frontier theorem + a certificate that provably
 controls false-adapt (gate table) + beats-both on synthetic stress grids + uniform no-harm on
@@ -81,22 +82,24 @@ five real benchmarks. *No* real-shift or camera beats-both is claimed.
 
 ---
 
-## 4. Deprecated files (safe to `git rm` — superseded by this doc or the live papers)
-Stale dated process/status notes and editor backups. Reversible via git history.
+## 4. Documentation hygiene (2026-07-01)
 
-- Backups: `kbound_full58_backup_2026-06-10.tex`, `kbound_pre6trim_20260619_1430.bak.tex`,
-  `kbound_short_pre6edit_2229.bak.tex`, `kbound_short_preIEEE_2301.bak.tex`
-- Superseded status/process MD: `COMPLETION_STATUS_2026-06-19.md`,
-  `LAYOUT_TRIM_REPORT_2026-06-20.md`, `LAYOUT_VERIFY_REPORT_2026-06-21.md`,
-  `NEW_MATH_ROADMAP_2026-06-19.md`, `PAPER_BLUEPRINT_80.md`,
-  `WINNING_PAPER_ANATOMY_AND_RESTRUCTURE.md`, `WINNING_PAPER_RUBRIC.md`,
-  `RESULTS_PENDING.md`, `ELARA_KGA_MERGE_PLAN.md`, `HEADTOHEAD_VERIFICATION.md`,
-  `RUN_ON_MAC_POEM_AETTA.md`, `PUBLICATION_POLISH_OPTIONS.md`
+**Canonical index:** [`DOCS_INDEX.md`](DOCS_INDEX.md)
 
-**Review before removing (not obviously stale):** `kbound_submission.tex` (old frozen snapshot),
+Stale dated process/status MDs listed below were **removed** (recoverable from git history).
+Do not recreate them; update `PROJECT_STATUS_AND_OPEN_PROBLEMS.md` and `claim_ledger.json` instead.
+
+**Removed (superseded):** `COMPLETION_STATUS_2026-06-19.md`, `LAYOUT_TRIM_REPORT_2026-06-20.md`,
+`LAYOUT_VERIFY_REPORT_2026-06-21.md`, `NEW_MATH_ROADMAP_2026-06-19.md`, `PAPER_BLUEPRINT_80.md`,
+`WINNING_PAPER_ANATOMY_AND_RESTRUCTURE.md`, `WINNING_PAPER_RUBRIC.md`, `RESULTS_PENDING.md`,
+`ELARA_KGA_MERGE_PLAN.md`, `HEADTOHEAD_VERIFICATION.md`, `RUN_ON_MAC_POEM_AETTA.md`,
+`PUBLICATION_POLISH_OPTIONS.md`, `FREEZE_COMPLETION_PLAN.md`, `AI_SLOP_RISK_CLEANUP_PLAN.md`,
+`CLAIMS_CALIBRATION.md`, `DICHOTOMY_VERIFICATION_2026-06-19.md`.
+
+**Review before removing (not done):** `kbound_submission.tex` (old frozen snapshot),
 `manuscript/` (parallel book-style document; still contains a stale "open" `conj:gen`).
 
-**Keep (current):** this file, `REVIEWER_REPRO_PACKET.md`, `THEORY_AUDIT_senior_review.md`,
+**Keep (current):** this file, `DOCS_INDEX.md`, `REVIEWER_REPRO_PACKET.md`, `THEORY_AUDIT_senior_review.md`,
 `gate_comparison.md`, `MIXED_BENCHMARK_PROTOCOL.md`, `theory_v2/UNCONDITIONAL_WEAKEST_CLASS_ATTEMPT.md`,
 `realshift_win/PROTOCOL_realshift_win.md`, `edge/` docs, all `paper/sections/*`, the live
 `kbound.tex` / `kbound_short.tex`.

@@ -43,8 +43,8 @@ echo "K-Bound final showcase   device=$DEVICE   seeds=[$SEEDS]   skip_train=$SKI
 
 # -- Stage A: the 9-dataset multi-seed engine (integrity-guarded inside kbtrain) -----------
 if [ "$SKIP_TRAIN" = 0 ]; then
-  say "A. final-all: 9 datasets x seeds (out-of-fold, caffeinated; ImageNet-C is the slow one)"
-  run "KB_SEEDS='$SEEDS' KB_DEVICE='$DEVICE' bash '$HERE/kbtrain.sh' final-all"
+  say "A. final-all-v2: theory validators + routing selftest + 9 datasets x seeds"
+  run "KB_SEEDS='$SEEDS' KB_DEVICE='$DEVICE' bash '$HERE/kbtrain.sh' final-all-v2"
 else
   say "A. SKIP-TRAIN: reusing the most recent existing run artifacts"
 fi
@@ -60,10 +60,20 @@ echo "manifest: ${MAN:-<none yet>}"
 say "B. condition-bootstrap CIs for the natural-shift wins (dev fixed, test resampled)"
 run "$PY '$HERE/bootstrap_win_cis.py'"
 
+# -- Stage H/I before collation: locked CIFAR + POEM/AETTA feed results_source.json --------
+say "H. LOCKED_ANALYSIS on stress_grid_multiseed_v1 (if all seeds present)"
+run "$PY '$RES/stress_grid_multiseed_v1/_locked_analysis_script.py' || echo 'WARN: locked analysis skipped (incomplete seeds?)'"
+
+say "I. mixed head-to-head vs POEM/AETTA (pre-registered WIN table)"
+run "bash '$ROOT/experiments/kbound/poem_aetta/run_all_headtohead.sh' || echo 'WARN: head-to-head skipped'"
+
 # -- Stage C: honest collation -> results_source.json (guardrails inside) ------------------
-say "C. build results_source.json (OOF; verdict-from-CI; refuses in-sample radii)"
+say "C. build results_source.json (OOF; verdict-from-CI; merges locked CIFAR + head-to-head)"
 CHECK=""; [ "$DRY" = 1 ] && CHECK="--check-only"
-run "cd '$ROOT' && $PY '$HERE/build_results_source.py' --manifest '${MAN:-MANIFEST}' $CHECK"
+LOCKED="$RES/stress_grid_multiseed_v1/LOCKED_ANALYSIS_RESULTS.json"
+H2H="$RES/mixed_headtohead_v1/HEADTOHEAD_RESULTS_cifar10c_tent_primary.json"
+run "cd '$ROOT' && $PY '$HERE/build_results_source.py' --manifest '${MAN:-MANIFEST}' \
+  --locked-analysis '$LOCKED' --headtohead '$H2H' $CHECK"
 
 # -- Stage D/E: regenerate macros + figures from the source of truth -----------------------
 say "D. tables -> paper/generated/kbound_numbers.tex"
@@ -76,7 +86,10 @@ say "F. rebuild PDFs (kbound_short.tex, kbound.tex)"
 run "cd '$KBDIR' && COPYFILE_DISABLE=1 latexmk -pdf -interaction=nonstopmode -halt-on-error kbound_short.tex >/dev/null"
 run "cd '$KBDIR' && COPYFILE_DISABLE=1 latexmk -pdf -interaction=nonstopmode -halt-on-error kbound.tex >/dev/null"
 
-# -- Stage G: verification -----------------------------------------------------------------
+# -- Stage J: mixed-stream OOF aggregate (fast CPU; tier-B claim) ------------------------
+say "J. mixed_protocol_oof_v2 aggregate (constructed cross-protocol)"
+run "$PY '$HERE/mixed_stream_kbound.py' || echo 'WARN: mixed-stream skipped'"
+
 say "G. verify results + macro consistency"
 run "$PY '$HERE/02_verify_results.py' || true"
 # macros must be a pure function of results_source.json: regenerate and assert no drift

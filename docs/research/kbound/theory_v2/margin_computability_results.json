@@ -1,0 +1,144 @@
+{
+  "NEGATIVE_counterexample": {
+    "N1_continuous_integrals_have_computable_modulus": true,
+    "N1_meaning": "Q* is a COMPUTABLE POINT of P (weak topology): every continuous test integral is computable with the Specker-tail modulus. Construction is non-circular.",
+    "N1_table": [
+      {
+        "f": "x",
+        "int_f_dQ(o=0.8)": 0.11776579,
+        "modulus_at_t=5_(M0*L*tail)": 7.276845819708387e-12
+      },
+      {
+        "f": "x^2",
+        "int_f_dQ(o=0.8)": 0.19440423,
+        "modulus_at_t=5_(M0*L*tail)": 2.910738327883355e-11
+      },
+      {
+        "f": "|x|",
+        "int_f_dQ(o=0.8)": 0.36776579,
+        "modulus_at_t=5_(M0*L*tail)": 7.276845819708387e-12
+      }
+    ],
+    "N2_Phi_holds_nonzero_both_sides": true,
+    "N2_atom_on_discontinuity_strict_sign_change": true,
+    "N2_table": [
+      {
+        "Delta": -0.5,
+        "o_minus_s": -0.05,
+        "sign": -1
+      },
+      {
+        "Delta": -0.5,
+        "o_minus_s": -0.001,
+        "sign": -1
+      },
+      {
+        "Delta": 0.5,
+        "o_minus_s": 0.001,
+        "sign": 1
+      },
+      {
+        "Delta": 0.5,
+        "o_minus_s": 0.05,
+        "sign": 1
+      }
+    ],
+    "N3_left_ce_fingerprint": true,
+    "N3_meaning": "frontier s = sup_t s_lower(t) is left-c.e.; with K=halting it is non-computable, so m(O)=|o*-s| is non-computable for a computable o*.",
+    "N3_s_lower_ladder": [
+      0.5,
+      0.5625,
+      0.56445312,
+      0.56446841,
+      0.56446841,
+      0.56446841
+    ],
+    "N3_sign_near_crossing": [
+      {
+        "o_minus_s": -0.06,
+        "sign(o - s_lower(t))_over_t": [
+          1,
+          -1,
+          -1,
+          -1,
+          -1,
+          -1
+        ]
+      },
+      {
+        "o_minus_s": -0.005,
+        "sign(o - s_lower(t))_over_t": [
+          1,
+          -1,
+          -1,
+          -1,
+          -1,
+          -1
+        ]
+      },
+      {
+        "o_minus_s": 0.005,
+        "sign(o - s_lower(t))_over_t": [
+          1,
+          1,
+          1,
+          1,
+          1,
+          1
+        ]
+      },
+      {
+        "o_minus_s": 0.06,
+        "sign(o - s_lower(t))_over_t": [
+          1,
+          1,
+          1,
+          1,
+          1,
+          1
+        ]
+      }
+    ],
+    "N4_first_draft_defect": {
+      "int_x_dQ_bad_equals_(o-s)/2": true,
+      "meaning": "drifting MASS between off-zero atoms makes int x dQ = (o-s)/2 NON-computable => Q NOT a computable point => that construction is CIRCULAR. The repaired family (atom ON the jump, continuous integrals computable) avoids this.",
+      "values_over_t": [
+        0.15,
+        0.11875,
+        0.11777344,
+        0.11776579,
+        0.11776579
+      ]
+    }
+  },
+  "POSITIVE_regular_regime": {
+    "Delta_o": "2 Phi(o) - 1 (strictly increasing, analytic)",
+    "computable_root_by_bisection": -0.0,
+    "family": "N(o,1) atomless, c=sign, transversal crossing",
+    "margin_at_o*=0.3_computable": 0.3,
+    "margin_correct": true,
+    "meaning": "no atom on disc(c) + transversal => Delta computable & strictly monotone => root & margin computable. ALL the paper's concrete families (location, location-scale, aligned-Gaussian, Gaussian mixture) live here, so the conjecture holds for every example actually treated.",
+    "root_correct": true,
+    "slope_lower_bound_on_[-1,1]": 0.483941,
+    "transversal_crossing": true
+  },
+  "REFUTATION_LOGIC": {
+    "fact": "A computable functional maps every computable point to a computable real (Weihrauch 2000; Pour-El & Richards 1989).",
+    "instance": "Q* (atom-on-jump family) is a computable point of P (N1). IF m were a computable functional of Q_X, m(Q*) would be a computable real. But m(Q*) = |o* - s| with s left-c.e. NON-computable (Specker, K=halting). Contradiction => m is NOT a computable functional of Q_X.",
+    "representation_sensitivity": "The refutation is for the standard weak/computable-measure representation of Q_X. The conjecture is RESCUED by any of: (a) Q presented strongly enough to yield a modulus for Delta across the crossing; (b) c continuous / Q charges no atom on disc(c); (c) transversal crossing with a presented |Delta'| lower bound.",
+    "supporting_theorems": [
+      "Hoyrup-Rojas 2009: mu computable iff mu(open) lower-semicomputable uniformly; half-line mass computable IFF boundary mu-null (the located switch).",
+      "Mori-Tsujii-Yasugi 2009/2013: a computable measure can have a non-computable CDF/half-line value at a jump (Lemma 2.7 'these quantities may not be computable').",
+      "Specker 1949: computable monotone bounded rationals with non-computable (left-c.e.) sup; s = sum_{k in K} 2^{-k} over the halting set.",
+      "Brattka-Gherardi 2011: IVT root-SELECTION is Weihrauch-equivalent to CC[0,1] (non-computable as an operator) -- the operator-level analogue.",
+      "Turing 1937 / Specker 1959: a SINGLE fixed computable function with a modulus and a strict sign change has a computable root -- so the non-computability MUST be an OPERATOR fact (the map Q_X |-> margin), not a single-function root; the repaired construction realizes exactly that."
+    ]
+  },
+  "_meta": {
+    "note": "Specker non-computability uses K=halting in the THEOREM; this executable witness uses a toy c.e. set and verifies the construction's computability STRUCTURE (moduli, sidedness, Phi-faithfulness), identical for K and the toy set.",
+    "object": "conj:dich-compute (computability of frontier margin m)",
+    "target": 2,
+    "verdict": "DICHOTOMY (closed characterization): FALSE as a universal implication (counterexample: computable atom-on-discontinuity family => m non-computable, left-c.e.); TRUE under no-atom-on-disc(c) + transversal-crossing regularity (all concrete families in the paper). Dividing line = Hoyrup-Rojas located/Q-null switch + transversality.",
+    "wave": 3
+  }
+}

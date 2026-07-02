@@ -44,8 +44,9 @@ def test_gate_p_audit_runs_and_is_scoped_ready():
     from scripts.audit_gate_p_production import grade
     rep = grade()
     assert rep["verdict"] in ("PRODUCTION_READY", "SCOPED_PRODUCTION_READY", "CONDITIONAL_SCOPED")
-    # the two critical fixes (drift monitor P12, scope contract P13) must be PASS
     by = {c["id"]: c["status"] for c in rep["criteria"]}
     assert by["P12"] == "PASS", "live drift monitoring must be wired"
     assert by["P13"] == "PASS", "scope contract must exist"
     assert by["P4"] == "PASS", "safe model loading must hold"
+    if rep["verdict"] == "PRODUCTION_READY":
+        assert all(c["status"] == "PASS" for c in rep["criteria"])

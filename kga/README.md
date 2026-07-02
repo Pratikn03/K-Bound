@@ -69,6 +69,25 @@ When the evidence `Z` cannot separate the two worlds (the non-identifiability re
 of Theorem 1, `thm:imp`), the certificate brackets zero and KGA **abstains** — the
 safe default — rather than guessing.
 
+### Multicandidate routing (Wave 4)
+
+For **K adapter candidates** per condition, use ``kga.routing``:
+
+```python
+from kga.routing import route_panel, AnytimeMulticandidatePanel
+
+# Batch Bonferroni FWER (thm:multicand, thm:multiclass-multicand)
+dec = route_panel(deploy_scores, cal_scores, cal_truth, alpha=0.1)
+print(dec.selected, dec.decision)  # index or None, adapt/abstain
+
+# Anytime panel (thm:anytime-multicand)
+panel = AnytimeMulticandidatePanel(k=4, alpha=0.1)
+chosen = panel.update([0.2, -0.1, 0.05, 0.0])
+```
+
+Training hook: ``docs/research/kbound/scripts/multicandidate_decide_kga.py`` (LOO GBR +
+Bonferroni panel). Repro: ``bash kbtrain.sh theory-v2``.
+
 ---
 
 ## API reference

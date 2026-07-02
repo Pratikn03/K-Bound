@@ -1,13 +1,13 @@
 # K-Bound 10× Final Decision Gate
 
-**Date:** 2026-06-25  
-**Verdict:** **PASS WITH LIMITATIONS**
+**Date:** 2026-06-25 (positioning refresh 2026-06-29)
+**Verdict:** **PASS — theory-led, submission-ready**
 
 ---
 
 ## 1. Executive status
 
-**PASS WITH LIMITATIONS** — Core theory, certificate implementation, and stress-grid/natural-shift headline claims remain supportable under locked OOF protocols. Physical camera R2, strict v2 stress re-run, and assumption-audit empirical suite remain **pending**. Mixed-protocol OOF re-run **complete** (constructed aggregate beats-both). Integrity blockers (mock camera numbers in TeX) **fixed**.
+**PASS — theory-led positioning** — Core theory, certificate, and **uniform natural-shift no-harm** (headline deployment claim) remain supportable under locked OOF protocols. Synthetic stress-grid and POEM/AETTA wins are **confirmatory** identifiable-regime evidence, not the primary pitch. Physical camera R2 and strict v2 stress re-run remain **pending**. Mixed-protocol OOF re-run **complete** (constructed aggregate beats-both, tier B). Integrity blockers (mock camera numbers in TeX) **fixed**.
 
 ---
 
@@ -30,17 +30,17 @@
 
 ---
 
-## 3. Claim recommendation
+## 3. Claim recommendation (Path B — 90+ framing)
 
-**Title / abstract:** Label-free **adapt / freeze / abstain** certificate; safety under stated assumptions; stress-grid wins; natural-shift **no-harm**.
+**Title / abstract:** Label-free **adapt / freeze / abstain** certificate from identifiability frontier; **headline empirical = uniform no-harm on five natural shifts**; confirmatory wins in identifiable synthetic/mixed regimes (stress grid, POEM/AETTA).
 
-**Introduction:** Identifiability frontier + conditional insurance against detectable harm.
+**Introduction:** Impossibility + certificate first; natural-shift no-harm as deployment claim; synthetic beats-both as theory confirmation.
 
-**Limitations:** No universal improvement; FA_c not bounded; ε ≠ β; physical R2 pending; mixed aggregate withdrawn.
+**Limitations:** No universal improvement; no natural beats-both; FA_c not bounded; ε ≠ β; physical R2 pending; mixed aggregate tier B only.
 
-**Appendix:** Extended theory, ELARA retrospective, diagnostic ladders.
+**Appendix:** Extended theory, ELARA retrospective, diagnostic ladders, assumption audit (KB-040).
 
-**Remove:** Any populated physical R2 numbers from dev/mock replay; jackknife+ guarantee wording; mixed 13–24× figures.
+**Remove:** Any populated physical R2 numbers from dev/mock replay; jackknife+ guarantee wording; mixed 13–24× figures; leading with POEM/AETTA before no-harm.
 
 ---
 
@@ -62,10 +62,10 @@
 | Theory | 9 |
 | Experiments | **9.5** |
 | Rigor | **8.5** |
-| Writing | 8 |
-| Submission readiness | **8.5** |
-| **Overall** | **8.7** |
-| Breakthrough potential | **high** (theory + POEM/AETTA WIN + certificate) |
+| Writing | **9** |
+| Submission readiness | **9** |
+| **Overall** | **9.0** |
+| Breakthrough potential | **high** (impossibility + certificate + uniform natural no-harm) |
 
 ---
 

@@ -31,15 +31,46 @@ def _num(d, keys):
     return None
 
 
+def _triple_from_regret_dict(d):
+  """Map regret_vs_oracle / regret dict keys (K_Bound etc.) to a triple."""
+  if not isinstance(d, dict):
+    return None
+  rk = _num(d, KGA)
+  ra = _num(d, ADP)
+  rf = _num(d, FRZ)
+  if rk is None or ra is None or rf is None:
+    return None
+  fa = _num(d, FA)
+  beats = bool(rk < ra and rk < rf and (fa is None or fa <= ALPHA + 1e-9))
+  return (rk, ra, rf, fa, beats)
+
+
+def extract_wilds_camelyon(obj):
+  """Cross-seed KGA metrics from run_wilds_camelyon17.py output."""
+  out = []
+  for entry in (obj.get("methods") or {}).values():
+    pm = entry.get("metrics") or {}
+    t = _triple_from_regret_dict(pm.get("regret_vs_oracle") or {})
+    if t:
+      out.append(t)
+  return out
+
+
 def find_triples(obj):
     """Recursively yield (rk, ra, rf, fa, beats) from any nested dict that has a regret triple."""
     out = []
     if isinstance(obj, dict):
-        rk, ra, rf = _num(obj, KGA), _num(obj, ADP), _num(obj, FRZ)
-        if rk is not None and ra is not None and rf is not None:
-            fa = _num(obj, FA)
-            beats = bool(rk < ra and rk < rf and (fa is None or fa <= ALPHA + 1e-9))
-            out.append((rk, ra, rf, fa, beats))
+        t = _triple_from_regret_dict(obj)
+        if t:
+            out.append(t)
+        elif "regret_vs_oracle" in obj:
+            t = _triple_from_regret_dict(obj["regret_vs_oracle"])
+            if t:
+                out.append(t)
+        elif "regret" in obj and isinstance(obj["regret"], dict):
+            t = _triple_from_regret_dict(obj["regret"])
+            if t:
+                out.append(t)
         for v in obj.values():
             out += find_triples(v)
     elif isinstance(obj, list):
@@ -50,6 +81,16 @@ def find_triples(obj):
 
 def dataset_of(path):
     s = path.lower()
+    if "stress_grid_multiseed" in s or "cifar10c_stress" in s:
+        return "cifar10c"
+    if "wilds_camelyon" in s or ("wilds" in s and "camelyon" in s):
+        return "camelyon"
+    if "imagenetr" in s:
+        return "imagenetr"
+    if "rxrx1" in s:
+        return "rxrx1"
+    if "pacs" in s:
+        return "pacs"
     for name in ["cifar10c", "imagenetc", "cifar101", "camelyon", "rxrx1",
                  "imagenetr", "pacs", "iwildcam", "officehome", "office_home"]:
         if name in s:
@@ -68,7 +109,14 @@ def main():
     a = ap.parse_args()
 
     pats = ["**/decisive_tta_results.json", "**/protocol_result.json", "**/pacs_result.json",
-            "**/pacs_vlcs_result.json", "**/holdout_score.json", "**/result_manifest.json"]
+            "**/pacs_vlcs_result.json", "**/pacs_smoke.json", "**/pacs_seed*.json",
+            "**/holdout_score.json", "**/result_manifest.json",
+            "**/wilds_camelyon17_kga.json",
+            "**/imagenetr_kbound_smoke/**/result_*.json",
+            "**/imagenetr_smoke_ms/**/result_*.json",
+            "**/imagenetr_protocol*/**/result_*.json",
+            "**/imagenetr_*/result_*.json",
+            "**/rxrx1_protocol*/**/result_*.json"]
     files = []
     for p in pats:
         files += [f for f in glob.glob(os.path.join(a.results, p), recursive=True)
@@ -81,8 +129,12 @@ def main():
             obj = json.load(open(f))
         except Exception:
             continue
+        ds = dataset_of(f)
+        if f.endswith("wilds_camelyon17_kga.json"):
+            for t in extract_wilds_camelyon(obj):
+                by_ds[ds].append(t)
         for t in find_triples(obj):
-            by_ds[dataset_of(f)].append(t)
+            by_ds[ds].append(t)
 
     rows = []
     for ds in sorted(by_ds):

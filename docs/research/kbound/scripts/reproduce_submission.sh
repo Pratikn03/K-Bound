@@ -27,6 +27,7 @@ echo "=== [1] Unit tests (leakage + claim semantics + edge) ==="
   "${KBOUND}/edge/tests/test_no_live_labels.py" \
   "${KBOUND}/edge/tests/test_conformal.py" \
   "${KBOUND}/edge/tests/test_policy.py" \
+  "${ROOT}/tests/test_kga_routing.py" \
   -q --tb=short
 
 echo "=== [2] Theory validators (lightweight) ==="
@@ -37,11 +38,15 @@ fi
 echo "=== [2b] Full theory audit (artifacts + claim ledger cross-check) ==="
 "${PY}" "${KBOUND}/scripts/theory_audit_full.py" --write-report
 
+echo "=== [2c] Wave 4 theory_v2 validators + routing selftest ==="
+bash "${KBOUND}/scripts/run_theory_v2_validators.sh"
+
 echo "=== [3] Gate baseline (CPU selftest) ==="
 cd "${KBOUND}"
 "${PY}" scripts/gate_baseline_comparison.py --selftest
 
 echo "=== [4] Regenerate paper table macros from results_source.json ==="
+"${PY}" scripts/refresh_results_source_locked.py
 "${PY}" scripts/make_tables.py
 
 echo "=== [5] Validate claim ledger ==="

@@ -95,6 +95,15 @@ def clean_config(cfg: Dict[str, Any]) -> Dict[str, Any]:
     return {k: v for k, v in cfg.items() if not str(k).startswith("_")}
 
 
+def is_placeholder_kga_meta(meta: Dict[str, Any]) -> bool:
+    """True when the edge calibrator was bootstrapped before real S03–S06 captures."""
+    eps = float(meta.get("eps", 0.0))
+    n_fit = int(meta.get("n_fit", 0))
+    n_conf = int(meta.get("n_conformal", 0))
+    # Placeholder bootstrap from 00_prepare_real_protocol: tiny splits, zero radius.
+    return eps == 0.0 and n_fit <= 20 and n_conf <= 20
+
+
 def load_f0(cfg: Dict[str, Any]):
     """Build the MobileNetV3 head and load the trained f0 checkpoint -> (model, version)."""
     import torch

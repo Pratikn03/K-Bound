@@ -1,22 +1,478 @@
 {
   "_README": "Single source of truth for the K-Bound paper's result-table numbers. These are the HONEST OUT-OF-FOLD values (NOT protocol_result.json::test_locked, which uses an in-sample radius and overstates Office-Home/iWildCam as beats-both). After a multi-seed/tuning re-run, refresh these fields from the out-of-fold evaluation, then run scripts/make_tables.py to regenerate paper/generated/kbound_numbers.tex, then rebuild the PDFs. Numbers below match the current committed PDFs exactly.",
-  "alpha": 0.10,
+  "alpha": 0.1,
   "natural_shifts": {
     "officehome_M_v2": {
-      "regret_adapt": 0.0468, "regret_freeze": 0.0158, "regret_kga": 0.0157,
-      "false_adapt": 0.0, "n_test": 35, "verdict": "no-harm",
-      "gap_vs_adapt": 0.031, "ci_vs_adapt": [0.004, 0.062],
-      "gap_vs_freeze": 0.0001, "ci_vs_freeze": [0.0, 0.0003]
+      "regret_adapt": 0.0468,
+      "regret_freeze": 0.0158,
+      "regret_kga": 0.0157,
+      "false_adapt": 0.0,
+      "n_test": 35,
+      "verdict": "no-harm",
+      "gap_vs_adapt": 0.031,
+      "ci_vs_adapt": [
+        0.004,
+        0.062
+      ],
+      "gap_vs_freeze": 0.0001,
+      "ci_vs_freeze": [
+        0.0,
+        0.0003
+      ]
     },
     "iwildcam_H_v2": {
-      "regret_adapt": 0.1028, "regret_freeze": 0.0041, "regret_kga": 0.0041,
-      "false_adapt": 0.0, "n_test": 72, "verdict": "no-harm",
-      "gap_vs_adapt": 0.099, "ci_vs_adapt": [0.080, 0.119],
-      "gap_vs_freeze": 0.0004, "ci_vs_freeze": [0.0, 0.0013]
+      "regret_adapt": 0.1028,
+      "regret_freeze": 0.0041,
+      "regret_kga": 0.0041,
+      "false_adapt": 0.0,
+      "n_test": 72,
+      "verdict": "no-harm",
+      "gap_vs_adapt": 0.099,
+      "ci_vs_adapt": [
+        0.08,
+        0.119
+      ],
+      "gap_vs_freeze": 0.0004,
+      "ci_vs_freeze": [
+        0.0,
+        0.0013
+      ]
     }
   },
   "corruption_grids": {
-    "cifar10c_stress": {"regret_kga": 0.0016, "regret_adapt": 0.0086, "regret_freeze": 0.1232, "false_adapt": 0.0, "verdict": "beats-both-CI-robust"},
-    "imagenetc_sar":   {"regret_kga": 0.0086, "regret_adapt": 0.0606, "regret_freeze": 0.0277, "false_adapt": 0.0, "verdict": "beats-both"}
+    "cifar10c_stress": {
+      "regret_kga": 0.0016,
+      "regret_adapt": 0.0079,
+      "regret_freeze": 0.1241,
+      "false_adapt": 0.0,
+      "verdict": "beats-both-CI-robust",
+      "_source": "experiments/kbound/results/stress_grid_multiseed_v1/LOCKED_ANALYSIS_RESULTS.json"
+    },
+    "imagenetc_sar": {
+      "regret_kga": 0.0086,
+      "regret_adapt": 0.0606,
+      "regret_freeze": 0.0277,
+      "false_adapt": 0.0,
+      "verdict": "beats-both"
+    }
+  },
+  "_provenance": {
+    "locked_analysis": "experiments/kbound/results/stress_grid_multiseed_v1/LOCKED_ANALYSIS_RESULTS.json",
+    "headtohead": "experiments/kbound/results/mixed_headtohead_v1/HEADTOHEAD_RESULTS_cifar10c_tent_primary.json",
+    "locked_refresh_utc": "2026-07-02T12:22:49.577799Z",
+    "git_sha": "5f5783a"
+  },
+  "locked_analysis": {
+    "protocol": "STRESS_GRID_MULTISEED_PROTOCOL_A_v1.yaml",
+    "nboot": 10000,
+    "n_conditions": 432,
+    "seeds": [
+      0,
+      1,
+      2,
+      3,
+      4
+    ],
+    "alpha_falseadapt": 0.1,
+    "regret_def": "oracle=max(a0,a_adapted); KGA ABSTAIN/FREEZE->freeze; verified vs seed0 summary",
+    "holm_alpha": 0.05,
+    "candidates": {
+      "tent": {
+        "kga_mean_regret": 0.001573610885275735,
+        "adapt_mean_regret": 0.007923379871580337,
+        "freeze_mean_regret": 0.1240979162355264,
+        "between_seed_var_mean": {
+          "kga": 1.1449647648008887e-05,
+          "adapt": 4.879526099517633e-05,
+          "freeze": 9.872228690756033e-05
+        },
+        "between_seed_var_max": {
+          "kga": 0.0004664242820268782,
+          "adapt": 0.0011802997949843074,
+          "freeze": 0.001295548967194904
+        },
+        "between_seed_std_of_seedmeanregret": {
+          "kga": 0.00020937334875651065,
+          "adapt": 0.00031490240503491646,
+          "freeze": 0.00046582651481942854
+        },
+        "false_adapt_rate_pooled": 0.0,
+        "false_adapt_num": 0,
+        "false_adapt_den": 2160,
+        "harmful_base_rate_per_seed": [
+          0.33796,
+          0.33565,
+          0.32176,
+          0.33333,
+          0.31713
+        ],
+        "harmful_base_rate_range": [
+          0.31712962962962965,
+          0.33796296296296297
+        ],
+        "coverage_action_correct_among_decisive_pooled": 0.9993238674780257,
+        "eps_conformal_per_seed": [
+          0.021129,
+          0.019934,
+          0.020939,
+          0.020959,
+          0.021424
+        ],
+        "eps_range": [
+          0.019934344818493304,
+          0.021423560970937415
+        ],
+        "eps_cv": 0.02689810726697673
+      },
+      "eata": {
+        "kga_mean_regret": 0.0012675924985497084,
+        "adapt_mean_regret": 0.003268287358460603,
+        "freeze_mean_regret": 0.13137893428405126,
+        "between_seed_var_mean": {
+          "kga": 7.320600968923146e-06,
+          "adapt": 1.8766211620237894e-05,
+          "freeze": 7.300707151742145e-05
+        },
+        "between_seed_var_max": {
+          "kga": 0.00015124971151365686,
+          "adapt": 0.0005539504347325418,
+          "freeze": 0.0006591750736955504
+        },
+        "between_seed_std_of_seedmeanregret": {
+          "kga": 0.00018762363423494214,
+          "adapt": 0.00027651365742705994,
+          "freeze": 0.0004725171963625489
+        },
+        "false_adapt_rate_pooled": 0.0,
+        "false_adapt_num": 0,
+        "false_adapt_den": 2160,
+        "harmful_base_rate_per_seed": [
+          0.26852,
+          0.23611,
+          0.26157,
+          0.24537,
+          0.2338
+        ],
+        "harmful_base_rate_range": [
+          0.2337962962962963,
+          0.26851851851851855
+        ],
+        "coverage_action_correct_among_decisive_pooled": 1.0,
+        "eps_conformal_per_seed": [
+          0.016828,
+          0.016791,
+          0.018064,
+          0.017542,
+          0.015024
+        ],
+        "eps_range": [
+          0.015023616390650443,
+          0.018063716608196383
+        ],
+        "eps_cv": 0.06826094511643925
+      },
+      "sar": {
+        "kga_mean_regret": 0.0015402777051484143,
+        "adapt_mean_regret": 0.0003356482419702742,
+        "freeze_mean_regret": 0.1404754626530188,
+        "between_seed_var_mean": {
+          "kga": 6.755435865167269e-06,
+          "adapt": 1.2604725385774503e-06,
+          "freeze": 5.6175113568177164e-05
+        },
+        "between_seed_var_max": {
+          "kga": 0.00010580001754760814,
+          "adapt": 3.2374881625329976e-05,
+          "freeze": 0.00038582495074273026
+        },
+        "between_seed_std_of_seedmeanregret": {
+          "kga": 0.00025808199360165994,
+          "adapt": 6.231228500885337e-05,
+          "freeze": 0.0003502052567061354
+        },
+        "false_adapt_rate_pooled": 0.0,
+        "false_adapt_num": 0,
+        "false_adapt_den": 2160,
+        "harmful_base_rate_per_seed": [
+          0.11574,
+          0.10185,
+          0.08796,
+          0.07407,
+          0.09954
+        ],
+        "harmful_base_rate_range": [
+          0.07407407407407407,
+          0.11574074074074074
+        ],
+        "coverage_action_correct_among_decisive_pooled": 1.0,
+        "eps_conformal_per_seed": [
+          0.012405,
+          0.012707,
+          0.012713,
+          0.013698,
+          0.013083
+        ],
+        "eps_range": [
+          0.012405486633701801,
+          0.01369818995032309
+        ],
+        "eps_cv": 0.038403547952396186
+      }
+    },
+    "comparisons": [
+      {
+        "candidate": "tent",
+        "trivial": "always-adapt",
+        "label": "tent vs always-adapt",
+        "kga_mean_regret": 0.001573610885275735,
+        "trivial_mean_regret": 0.007923379871580337,
+        "mean_diff_kga_minus_trivial": -0.006349768986304603,
+        "ci95_lo": -0.007872720522185168,
+        "ci95_hi": -0.004886522483494547,
+        "p_raw": 9.999000099990002e-05,
+        "p_holm": 0.0005999400059994001,
+        "kga_lower": true,
+        "survives_holm": true
+      },
+      {
+        "candidate": "tent",
+        "trivial": "always-freeze",
+        "label": "tent vs always-freeze",
+        "kga_mean_regret": 0.001573610885275735,
+        "trivial_mean_regret": 0.1240979162355264,
+        "mean_diff_kga_minus_trivial": -0.12252430535025066,
+        "ci95_lo": -0.13750631872029906,
+        "ci95_hi": -0.10805562478714381,
+        "p_raw": 9.999000099990002e-05,
+        "p_holm": 0.0005999400059994001,
+        "kga_lower": true,
+        "survives_holm": true
+      },
+      {
+        "candidate": "eata",
+        "trivial": "always-adapt",
+        "label": "eata vs always-adapt",
+        "kga_mean_regret": 0.0012675924985497084,
+        "trivial_mean_regret": 0.003268287358460603,
+        "mean_diff_kga_minus_trivial": -0.002000694859910894,
+        "ci95_lo": -0.002778964302744027,
+        "ci95_hi": -0.001252303101398327,
+        "p_raw": 9.999000099990002e-05,
+        "p_holm": 0.0005999400059994001,
+        "kga_lower": true,
+        "survives_holm": true
+      },
+      {
+        "candidate": "eata",
+        "trivial": "always-freeze",
+        "label": "eata vs always-freeze",
+        "kga_mean_regret": 0.0012675924985497084,
+        "trivial_mean_regret": 0.13137893428405126,
+        "mean_diff_kga_minus_trivial": -0.13011134178550154,
+        "ci95_lo": -0.14510131804720947,
+        "ci95_hi": -0.11525719266212375,
+        "p_raw": 9.999000099990002e-05,
+        "p_holm": 0.0005999400059994001,
+        "kga_lower": true,
+        "survives_holm": true
+      },
+      {
+        "candidate": "sar",
+        "trivial": "always-adapt",
+        "label": "sar vs always-adapt",
+        "kga_mean_regret": 0.0015402777051484143,
+        "trivial_mean_regret": 0.0003356482419702742,
+        "mean_diff_kga_minus_trivial": 0.0012046294631781402,
+        "ci95_lo": 0.0009425923676678427,
+        "ci95_hi": 0.001476400676010935,
+        "p_raw": 9.999000099990002e-05,
+        "p_holm": 0.0005999400059994001,
+        "kga_lower": false,
+        "survives_holm": false
+      },
+      {
+        "candidate": "sar",
+        "trivial": "always-freeze",
+        "label": "sar vs always-freeze",
+        "kga_mean_regret": 0.0015402777051484143,
+        "trivial_mean_regret": 0.1404754626530188,
+        "mean_diff_kga_minus_trivial": -0.1389351849478704,
+        "ci95_lo": -0.15448524258737625,
+        "ci95_hi": -0.1240949816375764,
+        "p_raw": 9.999000099990002e-05,
+        "p_holm": 0.0005999400059994001,
+        "kga_lower": true,
+        "survives_holm": true
+      }
+    ],
+    "secondary": {},
+    "pstar_law": {
+      "per_seed_cand": [
+        {
+          "candidate": "tent",
+          "seed": 0,
+          "harmful_frac": 0.338,
+          "regret_kga": 0.0013055555798389294,
+          "regret_adapt": 0.00833217661689829,
+          "regret_freeze": 0.1239907401441424,
+          "beats_both": true
+        },
+        {
+          "candidate": "tent",
+          "seed": 1,
+          "harmful_frac": 0.3356,
+          "regret_kga": 0.0016307859785026973,
+          "regret_adapt": 0.008165508646655965,
+          "regret_freeze": 0.12373379445462315,
+          "beats_both": true
+        },
+        {
+          "candidate": "tent",
+          "seed": 2,
+          "harmful_frac": 0.3218,
+          "regret_kga": 0.001638888622875567,
+          "regret_adapt": 0.0075659724297346895,
+          "regret_freeze": 0.12393171322980413,
+          "beats_both": true
+        },
+        {
+          "candidate": "tent",
+          "seed": 3,
+          "harmful_frac": 0.3333,
+          "regret_kga": 0.0014398147662480671,
+          "regret_adapt": 0.007769675856387174,
+          "regret_freeze": 0.12392013930474166,
+          "beats_both": true
+        },
+        {
+          "candidate": "tent",
+          "seed": 4,
+          "harmful_frac": 0.3171,
+          "regret_kga": 0.0018530094789134131,
+          "regret_adapt": 0.007783565808225561,
+          "regret_freeze": 0.12491319404432068,
+          "beats_both": true
+        },
+        {
+          "candidate": "eata",
+          "seed": 0,
+          "harmful_frac": 0.2685,
+          "regret_kga": 0.0012581017282274035,
+          "regret_adapt": 0.0036250013444158766,
+          "regret_freeze": 0.1312708325546097,
+          "beats_both": true
+        },
+        {
+          "candidate": "eata",
+          "seed": 1,
+          "harmful_frac": 0.2361,
+          "regret_kga": 0.0013275456925233204,
+          "regret_adapt": 0.0033900461815021656,
+          "regret_freeze": 0.1308124986373716,
+          "beats_both": true
+        },
+        {
+          "candidate": "eata",
+          "seed": 2,
+          "harmful_frac": 0.2616,
+          "regret_kga": 0.001317129228953962,
+          "regret_adapt": 0.0033483803272247314,
+          "regret_freeze": 0.13122453523316868,
+          "beats_both": true
+        },
+        {
+          "candidate": "eata",
+          "seed": 3,
+          "harmful_frac": 0.2454,
+          "regret_kga": 0.0014722223083178203,
+          "regret_adapt": 0.002962962344840721,
+          "regret_freeze": 0.1314826390740496,
+          "beats_both": true
+        },
+        {
+          "candidate": "eata",
+          "seed": 4,
+          "harmful_frac": 0.2338,
+          "regret_kga": 0.0009629635347260369,
+          "regret_adapt": 0.00301504659431952,
+          "regret_freeze": 0.1321041659210567,
+          "beats_both": true
+        },
+        {
+          "candidate": "sar",
+          "seed": 0,
+          "harmful_frac": 0.1157,
+          "regret_kga": 0.001305555717812644,
+          "regret_adapt": 0.0004386577617239069,
+          "regret_freeze": 0.14039120416122455,
+          "beats_both": false
+        },
+        {
+          "candidate": "sar",
+          "seed": 1,
+          "harmful_frac": 0.1019,
+          "regret_kga": 0.001342591726117664,
+          "regret_adapt": 0.00030671308437983197,
+          "regret_freeze": 0.14005555288383253,
+          "beats_both": false
+        },
+        {
+          "candidate": "sar",
+          "seed": 2,
+          "harmful_frac": 0.088,
+          "regret_kga": 0.0016643516719341278,
+          "regret_adapt": 0.00031018505493799847,
+          "regret_freeze": 0.14097106536091478,
+          "beats_both": false
+        },
+        {
+          "candidate": "sar",
+          "seed": 3,
+          "harmful_frac": 0.0741,
+          "regret_kga": 0.001928241440543422,
+          "regret_adapt": 0.0002777779267893897,
+          "regret_freeze": 0.14030439941281522,
+          "beats_both": false
+        },
+        {
+          "candidate": "sar",
+          "seed": 4,
+          "harmful_frac": 0.0995,
+          "regret_kga": 0.0014606479693342138,
+          "regret_adapt": 0.00034490738202024387,
+          "regret_freeze": 0.14065509144630697,
+          "beats_both": false
+        }
+      ],
+      "note": "single-seed beats-both = KGA regret < both trivials on that seed's 432 conds",
+      "min_harmful_frac_when_beats_both": 0.2338,
+      "max_harmful_frac_when_NOT_beats_both": 0.1157,
+      "monotone_separable_by_single_threshold": true,
+      "empirical_threshold_band": [
+        0.1157,
+        0.2338
+      ],
+      "threshold_midpoint": 0.17475000000000002,
+      "not_beats_all_at_or_below_pstar": true,
+      "law_confirmed": true
+    },
+    "verdict": {
+      "label": "STANDS",
+      "tent_beats_both": true,
+      "eata_beats_both": true,
+      "sar_beats_both": false,
+      "rule": "tent&eata->STANDS; one->RESCOPE; none->RETRACT to beats-freeze/ties-adapt"
+    }
+  },
+  "headtohead": {
+    "verdict": "WIN",
+    "kga_regret": 0.001573610885275735,
+    "adapt_regret": 0.007923379871580337,
+    "freeze_regret": 0.1240979162355264,
+    "poem_regret": 0.00880462990866767,
+    "aetta_regret": 0.007329861212659766,
+    "kga_fa": 0.0,
+    "kga_decisive": 0.6847222222222222,
+    "_source": "experiments/kbound/results/mixed_headtohead_v1/HEADTOHEAD_RESULTS_cifar10c_tent_primary.json"
   }
 }

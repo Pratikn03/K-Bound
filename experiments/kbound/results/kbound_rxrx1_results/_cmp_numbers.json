@@ -1,0 +1,140 @@
+{
+  "rxrx1": {
+    "name": "RxRx1",
+    "schema": "kbound_rxrx1_v0.5",
+    "cfg": {
+      "n_eval": 256,
+      "batch_regimes": [
+        "small",
+        "tiny"
+      ],
+      "seeds": [
+        0,
+        1,
+        2,
+        3
+      ],
+      "compositions": [
+        "iid",
+        "imbalanced",
+        "single_class"
+      ],
+      "aggressiveness": [
+        "mild",
+        "aggressive"
+      ],
+      "episodic_steps": 5,
+      "episodic_batch": 64,
+      "tau_star": 0.52,
+      "max_classes": null
+    },
+    "n_cells": 48,
+    "n_records": 288,
+    "classification": "harmful-dominated",
+    "mean_B": -0.060492621527777776,
+    "base_harmful": 0.4791666666666667,
+    "helpful_rate": 0.041666666666666664,
+    "marginal_rate": 0.4791666666666667,
+    "always_freeze": 0.282470703125,
+    "oracle": 0.2923177083333333,
+    "router_realized": 0.282470703125,
+    "best_fixed_adapt": 0.2777506510416667,
+    "worst_fixed_adapt": 0.0283203125,
+    "worst_cand": "sar_online",
+    "best_cand": "tent_episodic",
+    "per_cand": {
+      "eata_episodic": 0.2758,
+      "eata_online": 0.2764,
+      "sar_episodic": 0.2498,
+      "sar_online": 0.0283,
+      "tent_episodic": 0.2778,
+      "tent_online": 0.2239
+    },
+    "abstain_rate": 1.0,
+    "detect_verdict": "detectable",
+    "best_harm_auc": 0.7561815336463223,
+    "top_feats": [
+      [
+        "update_norm",
+        0.7561815336463223
+      ],
+      [
+        "frac_highconf",
+        0.6527073552425665
+      ],
+      [
+        "pbal_drop",
+        0.6354929577464788
+      ]
+    ]
+  },
+  "imagenetr": {
+    "name": "ImageNet-R",
+    "schema": "kbound_imagenetr_v0.5",
+    "cfg": {
+      "n_eval": 500,
+      "batch_regimes": [
+        "small",
+        "tiny"
+      ],
+      "seeds": [
+        0,
+        1,
+        2,
+        3
+      ],
+      "compositions": [
+        "iid",
+        "imbalanced",
+        "single_class"
+      ],
+      "aggressiveness": [
+        "mild",
+        "aggressive"
+      ],
+      "episodic_steps": 5,
+      "episodic_batch": 32,
+      "tau_star": 0.52,
+      "max_classes": 0
+    },
+    "n_cells": 48,
+    "n_records": 288,
+    "classification": "mixed+undetectable",
+    "mean_B": 0.01667534722222222,
+    "base_harmful": 0.0625,
+    "helpful_rate": 0.5833333333333334,
+    "marginal_rate": 0.3541666666666667,
+    "always_freeze": 0.4383333333333333,
+    "oracle": 0.47531249999999997,
+    "router_realized": 0.4383333333333333,
+    "best_fixed_adapt": 0.47036458333333336,
+    "worst_fixed_adapt": 0.4205729166666667,
+    "worst_cand": "sar_online",
+    "best_cand": "eata_online",
+    "per_cand": {
+      "eata_episodic": 0.4616,
+      "eata_online": 0.4704,
+      "sar_episodic": 0.4583,
+      "sar_online": 0.4206,
+      "tent_episodic": 0.4636,
+      "tent_online": 0.4556
+    },
+    "abstain_rate": 1.0,
+    "detect_verdict": "weak",
+    "best_harm_auc": 0.6620463709677419,
+    "top_feats": [
+      [
+        "update_norm",
+        0.6620463709677419
+      ],
+      [
+        "frac_highconf",
+        0.5426915322580645
+      ],
+      [
+        "pre_conf",
+        0.5423387096774194
+      ]
+    ]
+  }
+}

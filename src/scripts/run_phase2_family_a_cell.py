@@ -33,10 +33,6 @@ ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT / "src"))
 sys.path.insert(0, str(ROOT))
 
-# Reuse the exact training path from the pilot driver — same code path.
-from elara.evaluation.prediction_archive import PredictionArchive  # noqa: E402
-from scripts.run_phase2_powered_audited_pilot import run_one_seed  # noqa: E402
-
 REGISTRY_V2 = ROOT / "docs" / "research" / "phase2" / "PHASE_2_EXPERIMENT_REGISTRY_v2.csv"
 
 # Locked map from registry (benchmark, protocol) -> config path. The map
@@ -130,6 +126,13 @@ def run_cell(
     if int(seeds) <= 0:
         print(f"[v2-family-a {experiment_id}] validation-only invocation (seeds=0); exiting OK")
         return 0
+
+    # Reuse the exact training path from the pilot driver, but import it only
+    # after validation-only calls return. The training module imports torch and
+    # the full breakthrough runner; cold imports can exceed the registry-test
+    # timeout even though no training would run.
+    from elara.evaluation.prediction_archive import PredictionArchive
+    from scripts.run_phase2_powered_audited_pilot import run_one_seed
 
     cfg = yaml.safe_load(cfg_path.read_text())
     archive = PredictionArchive(root=archive_root)

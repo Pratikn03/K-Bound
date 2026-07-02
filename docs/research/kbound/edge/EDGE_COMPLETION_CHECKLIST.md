@@ -57,6 +57,15 @@ anti-leakage guarantee: you must not see the held-out data while tuning.
 **Capture (one session at a time), from `edge/scripts/`:**
 ```bash
 cd AutoML_Flagship_V8/docs/research/kbound/edge/scripts
+# Phase 1 — source gate only (recommended):
+bash run_edge_source_gate.sh
+
+# Phase 2 — after gate passes (calibration + held-out + publication):
+bash run_edge_heldout_capture.sh
+```
+
+Or manually per session:
+```bash
 PY=../../../../../.venv/bin/python
 CFG=../configs/edge_real_phone_v1.yaml
 $PY 01_capture_real_session.py --config $CFG --session S01 --phone-id phone_a --camera 1

@@ -15,12 +15,27 @@ services:
       UAIS_REQUIRED_MODELS: ${UAIS_REQUIRED_MODELS:-fraud,cyber,fusion}
       UAIS_TRUSTED_MODEL_ARTIFACTS: ${UAIS_TRUSTED_MODEL_ARTIFACTS:-false}
       UAIS_REQUIRE_MODEL_CHECKSUMS: ${UAIS_REQUIRE_MODEL_CHECKSUMS:-true}
+      # Set for multi-replica rate limiting (Gate P P5): UAIS_REDIS_URL=redis://redis:6379/0
+      UAIS_REDIS_URL: ${UAIS_REDIS_URL:-}
     security_opt:
       - no-new-privileges:true
     read_only: true
     tmpfs:
       - /tmp
     restart: unless-stopped
+
+  redis:
+    image: redis:7-alpine
+    profiles:
+      - distributed
+    ports:
+      - "127.0.0.1:6379:6379"
+    security_opt:
+      - no-new-privileges:true
+    read_only: true
+    tmpfs:
+      - /data
+    command: ["redis-server", "--save", "", "--appendonly", "no"]
 
   streamlit:
     profiles:

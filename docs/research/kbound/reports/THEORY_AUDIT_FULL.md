@@ -1,6 +1,6 @@
 # K-Bound Full Theory Audit
 
-Generated: 2026-06-29T17:06:53.019344+00:00
+Generated: 2026-07-01T18:05:09.069137+00:00
 Verdict: **PASS**
 
 ## Closed spine (paper claims)
@@ -16,16 +16,21 @@ Verdict: **PASS**
 | ✓ `thm:uncond-weakest` | closed | 1/1 | 1/1 | KB-CLAIM-029 |
 | ✓ `thm:anytime` | extension | 1/1 | 1/1 | KB-CLAIM-031 |
 | ✓ `thm:multicand` | extension | 1/1 | 1/1 | KB-CLAIM-032 |
+| ✓ `thm:multiclass-multicand` | extension | 1/1 | 1/1 | KB-CLAIM-034 |
+| ✓ `thm:anytime-multicand` | extension | 1/1 | 1/1 | — |
 | ✓ `thm:ev-rate` | extension | 1/1 | 1/1 | — |
+| ✓ `thm:minimax-opt` | extension | 1/1 | 1/1 | — |
+| ✓ `thm:t1c-exact` | extension | 1/1 | 1/1 | — |
+| ✓ `thm:multiclass-multicand` | extension | 1/1 | 1/1 | KB-CLAIM-034 |
+| ✓ `thm:anytime-multicand` | extension | 1/1 | 1/1 | — |
+| ✓ `thm:mc-cap-impossibility` | extension | 1/1 | 1/1 | — |
+| ✓ `thm:margin-compute-dichotomy` | extension | 1/1 | 1/1 | — |
+| ✓ `thm:reg-bracket-dichotomy` | extension | 1/1 | 1/1 | — |
 
 ## Open frontier (not claimed closed)
 
-- `conj:dich-compute`: Constructive measurability; partial via val_knowability_dichotomy only.
-- `thm:reg-iff`: Regression bracketing open; val_thm9prime_drift is partial probe.
 - `conj:gen-capacity`: Exploratory validators; full removal of R1/R2 not closed.
-- `thm:minimax-opt`: Wave 2 draft; not claimed solved in PROJECT_STATUS.
 
 ## Documentation drift (not failures)
 
 - **docs/research/kbound/manuscript/**: Parallel book manuscript still marks conj:gen as open (resolved negatively in live kbound.tex). → Do not cite manuscript/ for submission status; use kbound_short.tex + PROJECT_STATUS.
-- **docs/research/kbound/COMPLETION_STATUS_2026-06-19.md**: Superseded; banner added but file retained. → Use PROJECT_STATUS_AND_OPEN_PROBLEMS.md only.

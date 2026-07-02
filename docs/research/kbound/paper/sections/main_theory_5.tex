@@ -125,16 +125,23 @@ $\Pr[|\hat\Delta-\Delta|\le\varepsilon]\ge1-\alpha$. The rule
 \textsc{adapt} if $\hat\Delta-\varepsilon>0$, \textsc{freeze} if
 $\hat\Delta+\varepsilon<0$, else \textsc{abstain}, has marginal, unconditional false-adapt and false-freeze
 rates $\le\alpha$ each (over the calibration draw under exchangeability). With $\hat\Delta$ an empirical-Bernstein mean of $n$ bounded
-paired benefits (variance proxy $\sigma^2$, range $b-a$), the certificate commits once
-$n\gtrsim\big(2\sigma^2/\Delta^2\big)\log(2/\alpha)+3(b-a)|\Delta|^{-1}\log(2/\alpha)$:
-sample complexity scales as $\Delta^{-2}$, logarithmically in $1/\alpha$. A sequential,
+paired benefits (variance proxy $\sigma^2$, range $b-a$), the certificate \emph{begins}
+committing (one-sided, radius $\varepsilon<|\Delta|$) once
+$n\gtrsim\big(2\sigma^2/\Delta^2\big)\log(2/\alpha)+3(b-a)|\Delta|^{-1}\log(2/\alpha)$, and
+\emph{certifies the sign two-sided} --- both the miss and the wrong-commit probability
+$\le\alpha$, which requires the whole $(1-\alpha)$ ball to clear $0$, i.e.\ $\varepsilon<|\Delta|/2$
+--- once $n\gtrsim\big(8\sigma^2/\Delta^2\big)\log(2/\alpha)+O\!\big((b-a)|\Delta|^{-1}\log(1/\alpha)\big)$:
+sample complexity scales as $\Delta^{-2}$, logarithmically in $1/\alpha$, and is
+\emph{minimax order-optimal} in the extended theory appendix. A sequential,
 anytime-valid e-process version (valid at any stopping time; $\beta$-drift-robust
 variant included) is Theorem~B.1 of the manuscript.
 \end{theorem}
 \begin{proof}[Proof sketch]
 On the good event, \textsc{adapt} implies $\Delta\ge\hat\Delta-\varepsilon>0$; the
-complement has mass $\le\alpha$; commitment when $\varepsilon(n)<|\Delta|$ inverts the
-Bernstein radius. Note that this marginal conformal guarantee applies to the radius and decision rather than the accuracy of the benefit model itself, and relies on calibration-deployment exchangeability at the locked-protocol granularity, degrading under task shift. The residual burden --- a calibration sample exchangeable with
+complement has mass $\le\alpha$; the one-sided commit threshold $\varepsilon(n)<|\Delta|$
+inverts the Bernstein radius, while two-sided certification of the sign (miss $\le\alpha$)
+requires $\varepsilon(n)<|\Delta|/2$, hence the $8\sigma^2/\Delta^2$ rate proved
+in the minimax extension. Note that this marginal conformal guarantee applies to the radius and decision rather than the accuracy of the benefit model itself, and relies on calibration-deployment exchangeability at the locked-protocol granularity, degrading under task shift. The residual burden --- a calibration sample exchangeable with
 deployment --- is exactly what Theorem~\ref{thm:conj1-dichotomy}(iv) makes auditable.
 Validated on synthetic e-process tests (false-adapt $\le\alpha$ at nominal level).
 \end{proof}
@@ -148,7 +155,7 @@ for \emph{every} drift budget $\beta\ge0$ and every target with $\mu(D)>0$ --- t
 of Lemma~\ref{lem:reduction} is an algebraic identity requiring no regularity --- with $\beta$ a free
 parameter of the frontier rather than an assumption (and (iii) shows every identifying class is
 of this form). The location/alignment regularity invoked elsewhere is required only for the
-separate graded \emph{capacity} statement (Appendix~\ref{sec:knowcap}), not for the sign frontier here.
+separate graded \emph{capacity} statement in the appendix, not for the sign frontier here.
 \textnormal{(i)} $\gamma$ is a one-dimensional sufficient statistic for $\sign\Delta$
 given the observables.
 \textnormal{(ii)} $\sign\Delta$ is identifiable over $\mathcal C_\beta$ \emph{iff}

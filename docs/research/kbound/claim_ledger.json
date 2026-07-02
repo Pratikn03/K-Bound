@@ -1,6 +1,6 @@
 {
   "schema_version": "kbound-claim-ledger-v1",
-  "generated_at": "2026-06-25",
+  "generated_at": "2026-07-01",
   "claims": [
     {
       "claim_id": "KB-CLAIM-001",
@@ -344,8 +344,8 @@
       ],
       "assumptions": ["bounded benefits", "valid e-process"],
       "status": "supported",
-      "allowed_wording": "time-uniform FA_u extension (binary spine)",
-      "forbidden_wording": ["multiclass anytime closed"]
+      "allowed_wording": "time-uniform FA_u extension; multiclass anytime FWER closed (Wave 4)",
+      "forbidden_wording": ["multiclass anytime open"]
     },
     {
       "claim_id": "KB-CLAIM-032",
@@ -364,7 +364,126 @@
       "assumptions": ["independent per-candidate calibration or Bonferroni"],
       "status": "supported",
       "allowed_wording": "family-wise FA <= alpha under Bonferroni selection-proof",
-      "forbidden_wording": ["naive argmax L_k has FA <= alpha"]
+      "forbidden_wording": ["naive argmax L_k has FA <= alpha", "multiclass routing open"]
+    },
+    {
+      "claim_id": "KB-CLAIM-033",
+      "claim_text": "Exact 3-world minimax certifying sample complexity n*_3 = kappa(alpha) n_opt (thm:t1c-exact).",
+      "claim_type": "theorem",
+      "claim_tier": "A",
+      "protocol": "theory_v2",
+      "dataset": "analytic Gaussian validators",
+      "candidate_adapter": "n/a",
+      "calibration_method": "n/a",
+      "test_split": "n/a",
+      "supporting_artifacts": [
+        "docs/research/kbound/theory_v2/tight_constants_closure.tex",
+        "docs/research/kbound/theory_v2/tight_constants_results.json",
+        "docs/research/kbound/formal/KBound/Probability/Rates.lean"
+      ],
+      "assumptions": ["Gaussian 3-world location model", "honest frontier abstention"],
+      "status": "supported",
+      "allowed_wording": "kappa(alpha) is exact; 4 n_opt is pairwise floor only",
+      "forbidden_wording": ["tight constants open", "kappa/4 still open"]
+    },
+    {
+      "claim_id": "KB-CLAIM-034",
+      "claim_text": "Multiclass multicandidate routing with Bonferroni family-wise false-adapt and false-harm control on D.",
+      "claim_type": "theorem",
+      "claim_tier": "A",
+      "protocol": "theory_v2",
+      "dataset": "synthetic multiclass",
+      "candidate_adapter": "n/a",
+      "calibration_method": "Bonferroni per-candidate LCB",
+      "test_split": "n/a",
+      "supporting_artifacts": [
+        "docs/research/kbound/theory_v2/multiclass_multicandidate_theorem.tex",
+        "docs/research/kbound/theory_v2/val_multiclass_multicandidate_results.json",
+        "kga/routing.py",
+        "docs/research/kbound/scripts/multicandidate_decide_kga.py"
+      ],
+      "assumptions": ["per-candidate LCB eq:mc-percand", "0/1 multiclass on D"],
+      "status": "supported",
+      "allowed_wording": "FWER <= alpha for multiclass routing on D",
+      "forbidden_wording": ["multiclass certs not attempted"]
+    },
+    {
+      "claim_id": "KB-CLAIM-035",
+      "claim_text": "No universal scalar multiclass capacity without R1/R2 (impossibility; thm:mc-cap-impossibility).",
+      "claim_type": "theorem",
+      "claim_tier": "A",
+      "protocol": "theory_v2",
+      "dataset": "synthetic K>=3",
+      "candidate_adapter": "n/a",
+      "calibration_method": "n/a",
+      "test_split": "n/a",
+      "supporting_artifacts": [
+        "docs/research/kbound/theory_v2/multiclass_capacity_impossibility.tex",
+        "docs/research/kbound/theory_v2/val_multiclass_capacity.py"
+      ],
+      "assumptions": ["vector-concept regime", "multi-conflict-pair"],
+      "status": "supported",
+      "allowed_wording": "closed negatively; per-component orientation minimal supplement",
+      "forbidden_wording": ["general multiclass capacity exists", "conj:gen-capacity open"]
+    },
+    {
+      "claim_id": "KB-CLAIM-036",
+      "claim_text": "Frontier margin computability dichotomy (conj:dich-compute closed).",
+      "claim_type": "theorem",
+      "claim_tier": "A",
+      "protocol": "theory_v2",
+      "dataset": "structural validators",
+      "candidate_adapter": "n/a",
+      "calibration_method": "n/a",
+      "test_split": "n/a",
+      "supporting_artifacts": [
+        "docs/research/kbound/theory_v2/margin_computability_closure.tex",
+        "docs/research/kbound/theory_v2/margin_computability_results.json"
+      ],
+      "assumptions": ["integral-functional families", "atomless vs atom dichotomy"],
+      "status": "supported",
+      "allowed_wording": "dichotomy not unconditional computability",
+      "forbidden_wording": ["conj:dich-compute open", "margin always computable"]
+    },
+    {
+      "claim_id": "KB-CLAIM-037",
+      "claim_text": "Regression bracketing dichotomy: bounded-drift iff (thm:reg-iff) plus general impossibility.",
+      "claim_type": "theorem",
+      "claim_tier": "A",
+      "protocol": "theory_v2",
+      "dataset": "regression synthetic",
+      "candidate_adapter": "n/a",
+      "calibration_method": "n/a",
+      "test_split": "n/a",
+      "supporting_artifacts": [
+        "docs/research/kbound/theory_v2/regression_bracketing_closure.tex",
+        "docs/research/kbound/theory_v2/val_regression_bracketing_closure_results.json",
+        "docs/research/kbound/scripts/regression_conjecture_validation.py"
+      ],
+      "assumptions": ["squared loss", "known drift budget B"],
+      "status": "supported",
+      "allowed_wording": "complete iff under bounded drift; no universal bracket",
+      "forbidden_wording": ["regression bracketing open", "universal drift bracket"]
+    },
+    {
+      "claim_id": "KB-CLAIM-038",
+      "claim_text": "K-Bound theory closure plan: strict-100 formal audit passes (Lean + validators).",
+      "claim_type": "protocol",
+      "claim_tier": "A",
+      "protocol": "formal_audit",
+      "dataset": "n/a",
+      "candidate_adapter": "n/a",
+      "calibration_method": "n/a",
+      "test_split": "n/a",
+      "supporting_artifacts": [
+        "docs/research/kbound/THEORY_100_PERCENT_CLOSURE_PLAN.md",
+        "docs/research/kbound/formal/formal_audit.py",
+        "docs/research/kbound/formal/KBound/TheoremMap.lean"
+      ],
+      "assumptions": ["algebraic/finite-sample Lean scope as documented"],
+      "status": "supported",
+      "allowed_wording": "closure plan complete within stated scopes",
+      "forbidden_wording": ["100% full Mathlib measure theory", "all open problems closed"]
     },
     {
       "claim_id": "KB-CLAIM-050",

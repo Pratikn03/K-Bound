@@ -103,10 +103,13 @@ jobs:
         run: |
           pytest \
             tests/test_kga_package.py \
+            tests/test_kga_routing.py \
             tests/test_model_registry.py \
             tests/test_training_harness.py \
             tests/test_data_manifest.py \
             tests/test_smoke_trichotomy.py \
+            tests/test_kga_api_routes.py \
+            tests/test_model_governance.py \
             --cov=kga --cov=src/uais \
             --cov-report=term-missing --cov-report=xml
       - name: Upload coverage.xml
@@ -157,6 +160,39 @@ jobs:
             python "$script"
             echo "::endgroup::"
           done
+      - name: Run theory_v2 Wave 4 validators
+        run: |
+          set -euo pipefail
+          shopt -s nullglob
+          cd docs/research/kbound/theory_v2
+          scripts=(val_tight_constants.py val_multiclass_multicandidate.py val_anytime_multicandidate.py val_multiclass_capacity.py val_margin_computability.py val_regression_bracketing_closure.py val_minimax_optimality.py)
+          for script in "${scripts[@]}"; do
+            echo "::group::theory_v2/$script"
+            if [[ "$script" == val_minimax_optimality.py ]]; then
+              python "$script"
+            else
+              python "$script" --fast
+            fi
+            echo "::endgroup::"
+          done
+
+  lean-formal:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install elan (Lean toolchain)
+        run: |
+          curl -sSfL https://raw.githubusercontent.com/leanprover/elan/master/elan-init.sh | sh -s -- -y --default-toolchain none
+          echo "$HOME/.elan/bin" >> "$GITHUB_PATH"
+      - name: Build KBound Lean package
+        run: |
+          cd docs/research/kbound/formal
+          bash build.sh
+      - name: Strict-100 formal audit
+        run: |
+          cd docs/research/kbound/formal
+          python3 formal_audit.py --build --strict-100
 
   orchestration-import:
     runs-on: ubuntu-latest
@@ -172,3 +208,36 @@ jobs:
       - name: Import orchestration and list flows (no prefect)
         run: |
           python -c "import src.orchestration as o; print(o.PREFECT, sorted(o.FLOWS.keys()))"
+
+  kbound-research-tests:
+    runs-on: ubuntu-latest
+    env:
+      PYTHONPATH: >-
+        ${{ github.workspace }}:${{ github.workspace }}/src:${{ github.workspace }}/docs/research/kbound/kbound_pkg:${{ github.workspace }}/docs/research/kbound/edge/src
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install research-test deps
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install numpy scipy scikit-learn pandas pyyaml joblib pytest
+      - name: K-Bound research tests (pkg + integrity + edge)
+        run: |
+          pytest \
+            docs/research/kbound/kbound_pkg/tests \
+            docs/research/kbound/tests \
+            docs/research/kbound/edge/tests \
+            -q --tb=short
+      - name: Certificate drift guard
+        run: pytest tests/test_certificate_drift_guard.py -q
+      - name: Canonical script wrappers resolve
+        run: |
+          python -c "
+          from src.scripts.kbound._canonical import canonical_script
+          for name in ('cifar_tent_mps_v2.py', 'cifar_tent_online.py'):
+              p = canonical_script(name)
+              assert p.is_file(), p
+              print('OK', name)
+          "

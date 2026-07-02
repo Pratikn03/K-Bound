@@ -54,7 +54,7 @@ THEOREM_REGISTRY: list[dict[str, Any]] = [
             "experiments/kbound/theory_validation/results_thm2_regret.json",
             "experiments/kbound/theory_validation/results_thm5_multiclass.json",
         ],
-        "code": "docs/research/kbound/scripts/analysis_F.py",
+        "code": "docs/research/kbound/scripts/analyze_F.py",
         "claim_ids": ["KB-CLAIM-001"],
     },
     {
@@ -155,6 +155,28 @@ THEOREM_REGISTRY: list[dict[str, Any]] = [
         "claim_ids": ["KB-CLAIM-032"],
     },
     {
+        "labels": ["thm:multiclass-multicand"],
+        "name": "Multiclass multicandidate routing (FWER + false-harm)",
+        "status": "extension",
+        "proof": "theory_v2/multiclass_multicandidate_theorem.tex",
+        "paper": "kbound.tex App. theory extensions",
+        "validators": ["docs/research/kbound/theory_v2/val_multiclass_multicandidate.py"],
+        "artifacts": ["docs/research/kbound/theory_v2/val_multiclass_multicandidate_results.json"],
+        "code": "kga/routing.py",
+        "claim_ids": ["KB-CLAIM-034"],
+    },
+    {
+        "labels": ["thm:anytime-multicand"],
+        "name": "Anytime multicandidate Bonferroni e-process routing",
+        "status": "extension",
+        "proof": "theory_v2/anytime_multicandidate_theorem.tex",
+        "paper": "kbound.tex App. theory extensions",
+        "validators": ["docs/research/kbound/theory_v2/val_anytime_multicandidate.py"],
+        "artifacts": ["docs/research/kbound/theory_v2/val_anytime_multicandidate_results.json"],
+        "code": "kga/routing.py",
+        "claim_ids": [],
+    },
+    {
         "labels": ["thm:ev-rate", "thm:agl"],
         "name": "Evidence-channel rate (matching m^{-1/2})",
         "status": "extension",
@@ -187,15 +209,87 @@ THEOREM_REGISTRY: list[dict[str, Any]] = [
     },
     {
         "labels": ["thm:minimax-opt"],
-        "name": "Certificate minimax optimality",
-        "status": "open",
+        "name": "Certificate minimax order-optimality in rate",
+        "status": "extension",
         "proof": "theory_v2/minimax_optimality_theorem.tex",
-        "paper": "not in main spine",
+        "paper": "kbound.tex App. theory extensions",
         "validators": ["docs/research/kbound/theory_v2/val_minimax_optimality.py"],
         "artifacts": ["docs/research/kbound/theory_v2/minimax_optimality_results.json"],
         "code": None,
         "claim_ids": [],
-        "note": "Wave 2 draft; not claimed solved in PROJECT_STATUS.",
+        "note": "Order-optimality plus exact 3-world constant thm:t1c-exact.",
+    },
+    {
+        "labels": ["thm:t1c-exact"],
+        "name": "Exact minimax 3-world sample complexity kappa(alpha)n_opt",
+        "status": "extension",
+        "proof": "theory_v2/tight_constants_closure.tex",
+        "paper": "kbound.tex App. theory extensions",
+        "validators": ["docs/research/kbound/theory_v2/val_tight_constants.py"],
+        "artifacts": ["docs/research/kbound/theory_v2/tight_constants_results.json"],
+        "code": None,
+        "claim_ids": [],
+        "note": "Closes kappa/4 gap: kappa is exact; kappa/4>1 is impossibility at finite alpha.",
+    },
+    {
+        "labels": ["thm:multiclass-multicand"],
+        "name": "Multiclass multicandidate routing + Bonferroni FWER",
+        "status": "extension",
+        "proof": "theory_v2/multiclass_multicandidate_theorem.tex",
+        "paper": "kbound.tex App. theory extensions",
+        "validators": ["docs/research/kbound/theory_v2/val_multiclass_multicandidate.py"],
+        "artifacts": ["docs/research/kbound/theory_v2/val_multiclass_multicandidate_results.json"],
+        "code": "kga/routing.py",
+        "claim_ids": ["KB-CLAIM-034"],
+        "note": "Wave 4 closure: multiclass 0/1 routing on D with per-candidate LCB.",
+    },
+    {
+        "labels": ["thm:anytime-multicand"],
+        "name": "Anytime multicandidate Bonferroni e-value FWER",
+        "status": "extension",
+        "proof": "theory_v2/anytime_multicandidate_theorem.tex",
+        "paper": "kbound.tex App. theory extensions",
+        "validators": ["docs/research/kbound/theory_v2/val_anytime_multicandidate.py"],
+        "artifacts": ["docs/research/kbound/theory_v2/val_anytime_multicandidate_results.json"],
+        "code": None,
+        "claim_ids": [],
+        "note": "Wave 4 closure: anytime FWER for multicandidate screening.",
+    },
+    {
+        "labels": ["thm:mc-cap-impossibility"],
+        "name": "No universal scalar multiclass capacity (impossibility)",
+        "status": "extension",
+        "proof": "theory_v2/multiclass_capacity_impossibility.tex",
+        "paper": "kbound.tex App. theory extensions",
+        "validators": ["docs/research/kbound/theory_v2/val_multiclass_capacity.py"],
+        "artifacts": ["docs/research/kbound/theory_v2/results_multiclass_capacity.json"],
+        "code": None,
+        "claim_ids": [],
+        "note": "Closes conj:gen-capacity open core via Block D impossibility.",
+    },
+    {
+        "labels": ["thm:margin-compute-dichotomy"],
+        "name": "Frontier margin computability dichotomy",
+        "status": "extension",
+        "proof": "theory_v2/margin_computability_closure.tex",
+        "paper": "kbound.tex App. theory extensions",
+        "validators": ["docs/research/kbound/theory_v2/val_margin_computability.py"],
+        "artifacts": ["docs/research/kbound/theory_v2/margin_computability_results.json"],
+        "code": None,
+        "claim_ids": [],
+        "note": "Closes conj:dich-compute as dichotomy (POS atomless+transversal; NEG N1).",
+    },
+    {
+        "labels": ["thm:reg-bracket-dichotomy"],
+        "name": "Regression bracketing dichotomy (bounded drift iff + general imp)",
+        "status": "extension",
+        "proof": "theory_v2/regression_bracketing_closure.tex",
+        "paper": "kbound.tex App. theory extensions",
+        "validators": ["docs/research/kbound/theory_v2/val_regression_bracketing_closure.py"],
+        "artifacts": ["docs/research/kbound/theory_v2/val_regression_bracketing_closure_results.json"],
+        "code": None,
+        "claim_ids": [],
+        "note": "Wraps regression_conjecture_validation (reg1+reg2).",
     },
 ]
 
@@ -205,21 +299,23 @@ DOC_DRIFT = [
         "issue": "Parallel book manuscript still marks conj:gen as open (resolved negatively in live kbound.tex).",
         "action": "Do not cite manuscript/ for submission status; use kbound_short.tex + PROJECT_STATUS.",
     },
-    {
-        "path": "docs/research/kbound/COMPLETION_STATUS_2026-06-19.md",
-        "issue": "Superseded; banner added but file retained.",
-        "action": "Use PROJECT_STATUS_AND_OPEN_PROBLEMS.md only.",
-    },
 ]
 
 OPEN_NO_VALIDATOR = [
-    {"labels": ["conj:dich-compute"], "note": "Constructive measurability; partial via val_knowability_dichotomy only."},
-    {"labels": ["thm:reg-iff"], "note": "Regression bracketing open; val_thm9prime_drift is partial probe."},
 ]
 
 
 def _exists(rel: str) -> bool:
-    return (ROOT / rel).exists()
+    p = Path(rel)
+    if p.is_absolute():
+        return p.exists()
+    return (ROOT / p).exists() or (KBOUND / p).exists()
+
+
+def _first_existing(rel: str) -> Path | None:
+    p = Path(rel)
+    candidates = [p] if p.is_absolute() else [ROOT / p, KBOUND / p]
+    return next((c for c in candidates if c.exists()), None)
 
 
 def _run_validator(script: str) -> tuple[bool, str]:
@@ -251,10 +347,16 @@ def audit(*, run_validators: bool = False) -> dict[str, Any]:
         row = dict(thm)
         row["validators_ok"] = {v: _exists(v) for v in thm["validators"]}
         row["artifacts_ok"] = {a: _exists(a) for a in thm["artifacts"]}
-        row["proof_ok"] = _exists(thm["proof"].split(";")[0].strip())
+        proof_paths = [p.strip() for p in thm["proof"].split(";")]
+        row["proof_ok"] = {p: _exists(p) for p in proof_paths}
         row["code_ok"] = _exists(thm["code"]) if thm.get("code") else None
 
         if thm["status"] in ("closed", "extension"):
+            for p, ok in row["proof_ok"].items():
+                if not ok:
+                    issues.append(f"{thm['labels'][0]}: missing proof {p}")
+            if thm.get("code") and not row["code_ok"]:
+                issues.append(f"{thm['labels'][0]}: missing code {thm['code']}")
             for v, ok in row["validators_ok"].items():
                 if not ok:
                     issues.append(f"{thm['labels'][0]}: missing validator {v}")

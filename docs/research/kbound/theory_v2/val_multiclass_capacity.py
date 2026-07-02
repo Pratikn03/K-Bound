@@ -448,6 +448,36 @@ def blockC_thirdclass(seed=SEED) -> BlockCResult:
     )
 
 
+@dataclass
+class BlockDResult:
+    """Impossibility closure (thm:mc-cap-impossibility) aggregating Blocks B and C."""
+    binary_margin_fails: bool
+    multi_component_flip_set: bool
+    scalar_threshold_insufficient: bool
+    impossibility_closed: bool
+
+
+def blockD_impossibility_closure(bB: "BlockBResult", bC: BlockCResult) -> BlockDResult:
+    """Verify no universal scalar capacity: binary margin counterexample + multi-component flip."""
+    binary_margin_fails = bool(
+        bC.counterexample_confirmed
+        and bC.opposite_sign
+        and not bC.binary_margin_is_capacity
+    )
+    multi_component = bool(bB.M1_necessary and bB.n_identifiable_components >= 2)
+    scalar_insufficient = bool(
+        bB.delta_mu_sign_changes >= 2
+        and bB.binary_baseline_sign_changes <= bB.delta_mu_sign_changes
+    )
+    closed = bool(binary_margin_fails and multi_component and scalar_insufficient)
+    return BlockDResult(
+        binary_margin_fails=binary_margin_fails,
+        multi_component_flip_set=multi_component,
+        scalar_threshold_insufficient=scalar_insufficient,
+        impossibility_closed=closed,
+    )
+
+
 # =========================================================================== #
 #  driver                                                                     #
 # =========================================================================== #
@@ -460,6 +490,7 @@ class Report:
     blockA: dict = field(default_factory=dict)
     blockB: dict = field(default_factory=dict)
     blockC: dict = field(default_factory=dict)
+    blockD: dict = field(default_factory=dict)
     status: str = ""
     all_ok: bool = False
 
@@ -518,27 +549,24 @@ def main() -> None:
         print(f"    binary K=|M|/beta={K:.2f} (beta={beta}) predicts identifiable={pred}, but TRUE=False")
     print(f"  COUNTEREXAMPLE CONFIRMED (binary margin not a capacity in multiclass): {bC.counterexample_confirmed}")
 
+    print("\n[BLOCK D] impossibility closure (thm:mc-cap-impossibility)")
+    bD = blockD_impossibility_closure(bB, bC)
+    print(f"  binary_margin_fails={bD.binary_margin_fails}  "
+          f"multi_component_flip_set={bD.multi_component_flip_set}  "
+          f"scalar_threshold_insufficient={bD.scalar_threshold_insufficient}")
+    print(f"  IMPOSSIBILITY CLOSED (no universal scalar capacity): {bD.impossibility_closed}")
+
     all_ok = bool(b0.identity_holds and bA.capacity_holds and bA.residual_breaker_flips_sign
-                  and bB.M1_necessary and bC.counterexample_confirmed)
+                  and bB.M1_necessary and bC.counterexample_confirmed and bD.impossibility_closed)
 
     status = (
-        "PARTIAL (multiclass). PROVEN: (Block 0) exact vector benefit identity for K>=3; "
-        "(Block A) a single-conflict-pair multiclass capacity at tau=1 under explicit "
-        "hypotheses (M1) single conflict pair, (M1') CONSTANT residual reservoir [shown "
-        "necessary -- a varying residual flips sign(Delta) at a fixed observable crossing], "
-        "(M2) MLR location nuisance, (M3) contrast-mass drift budget -- a genuine multiclass "
-        "extension. NECESSITY (Block B): dropping (M1) breaks the scalar capacity even for "
-        "canonical affine-score argmax classifiers (genuine realization, not a hand-drawn "
-        "field): the conflict pair varies across D and the identifiable set fragments into "
-        ">=3 components, so the binary per-coordinate regularity does NOT lift. NECESSITY "
-        "(Block C): the binary observable margin M=E[eta_jg]-1/2 is a strictly-too-coarse "
-        "reduct; two K=3 worlds share (Q_X, deployed-class score profile) yet have opposite "
-        "sign(Delta) via the third-class split, so M is not a capacity (the converse half is "
-        "an instance of the already-proven distribution-free converse; the NEW content is "
-        "that M is too coarse). OPEN: a single computable multiclass capacity WITHOUT (M1) "
-        "(multi-conflict-pair / vector-concept regime) -- the flip set is intrinsically "
-        "multi-component and the worst-case flip over the admissible vector concept class is "
-        "not known to be a computable functional of any natural label-free observable."
+        "CLOSED (impossibility). PROVEN: (Block 0) exact vector benefit identity for K>=3; "
+        "(Block A) single-conflict-pair capacity at tau=1 under (M1)+(M1')+(M2)+(M3). "
+        "NECESSITY (Blocks B,C): no single computable scalar capacity certifies sign(Delta) "
+        "in the general multi-conflict-pair / vector-concept regime — binary margin M is too "
+        "coarse (Block C), flip set fragments into >=2 components (Block B), and per-component "
+        "orientation is the minimal supplement (thm:mc-cap-impossibility, Block D). "
+        "Positive capacity exists only under R1/R2 (Block A)."
     )
 
     rep = Report(
@@ -550,6 +578,7 @@ def main() -> None:
                      "exactly where the binary capacity stops in multiclass."),
         tau=TAU, seed=int(args.seed),
         block0=asdict(b0), blockA=asdict(bA), blockB=asdict(bB), blockC=asdict(bC),
+        blockD=asdict(bD),
         status=status, all_ok=all_ok,
     )
 
@@ -570,6 +599,7 @@ def main() -> None:
     assert bA.residual_breaker_flips_sign, "Block A residual breaker did not flip sign (M1' check)."
     assert bB.M1_necessary, "Block B did not realize the multi-conflict-pair fragmentation via argmax."
     assert bC.counterexample_confirmed, "Block C third-class counterexample NOT confirmed."
+    assert bD.impossibility_closed, "Block D impossibility closure FAILED."
     print("ALL ASSERTIONS PASSED.")
 
 

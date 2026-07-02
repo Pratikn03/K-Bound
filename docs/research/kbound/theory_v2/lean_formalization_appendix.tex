@@ -1,0 +1,40 @@
+\section{Lean~4 mechanization (Mathlib)}\label{app:lean-formal}
+
+Wave~4 closure includes a kernel-checked Lean~4 package under
+\texttt{docs/research/kbound/formal/}. The audit gate
+\texttt{formal\_audit.py --build --strict-100} must exit~$0$ before a release freeze:
+Lean build succeeds, no \texttt{sorry}/\texttt{admit}/\texttt{axiom}, and every name in
+\texttt{VERIFIED\_THEOREMS} is \texttt{\#check}-able in \texttt{KBound/TheoremMap.lean}.
+
+\paragraph{Reproduce.}
+\begin{verbatim}
+cd docs/research/kbound/formal
+python3 formal_audit.py --build --strict-100
+\end{verbatim}
+
+\paragraph{Mechanized spine (representative).}
+\begin{table}[h]\centering\small
+\caption{Lean files backing paper labels (no \texttt{sorry}; index in \texttt{TheoremMap.lean}).}
+\label{tab:lean-map}
+\begin{tabular}{ll}
+\toprule
+Paper label & Lean module \\
+\midrule
+\texttt{thm:cert} & \texttt{KBound/Certificate.lean} \\
+\texttt{thm:frontier} & \texttt{KBound/Frontier.lean} \\
+\texttt{thm:imp} & \texttt{KBound/Impossibility.lean} \\
+\texttt{thm:disagree} & \texttt{KBound/Disagreement.lean} \\
+\texttt{thm:conj1-dichotomy} & \texttt{KBound/Dichotomy.lean} \\
+exchangeability $\to$ coverage & \texttt{KBound/Probability/ConformalExchangeability.lean} \\
+anytime betting core & \texttt{KBound/Probability/EProcess.lean} \\
+Le Cam / rates & \texttt{KBound/Probability/LeCam.lean}, \texttt{Rates.lean} \\
+multicandidate algebra & \texttt{KBound/Multicandidate.lean} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\paragraph{Scope.}
+The Lean layer certifies the \emph{algebraic and finite-probability cores} named in
+Table~\ref{tab:lean-map}; continuous measure-theoretic hypotheses in the main text remain
+stated assumptions bridged by validators (\texttt{val\_*.py}) and this appendix index.
+Full file-level map: \texttt{formal/README.md} and \texttt{THEORY\_TO\_CODE\_MAP.md}.

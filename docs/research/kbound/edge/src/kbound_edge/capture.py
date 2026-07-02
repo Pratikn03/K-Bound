@@ -192,11 +192,36 @@ class ListFrameSource(FrameSource):
         self._i = 0
 
 
+class CameraOpenError(RuntimeError):
+    """Raised when OpenCV cannot open a camera index or video path."""
+
+
+def _camera_open_help(index_or_path) -> str:
+    import sys
+
+    lines = [
+        f"OpenCV could not open camera/video source {index_or_path!r}.",
+        "If this is a webcam on macOS:",
+        "  1. System Settings → Privacy & Security → Camera",
+        "  2. Enable Terminal and/or Cursor (whichever runs this script)",
+        "  3. Quit and reopen the terminal, then retry",
+        "Try another index: CAMERA_INDEX=1 bash edge/scripts/run_live_mac_camera.sh",
+        "Or run without a camera (synthetic stream): omit --camera",
+    ]
+    if sys.platform == "darwin":
+        lines.insert(2, "  (AVFoundation backend is used on macOS)")
+    return "\n".join(lines)
+
+
 class OpenCVCameraSource(FrameSource):
     """Wrap a real ``cv2.VideoCapture`` (camera index, file path, or device)."""
 
-    def __init__(self, index_or_path):
+    def __init__(self, index_or_path, *, require_open: bool = True):
+        self.index_or_path = index_or_path
         self.cap = _opencv_capture(index_or_path)
+        if require_open and not self.cap.isOpened():
+            self.cap.release()
+            raise CameraOpenError(_camera_open_help(index_or_path))
 
     def isOpened(self) -> bool:
         return bool(self.cap.isOpened())

@@ -42,10 +42,11 @@ else
 fi
 
 echo "Starting live shadow window (press 'q' in the OpenCV window to quit)..."
+echo "Uses --demo calibrator until real S03–S06 calibration exists." >&2
 exec "$PY" "$SCRIPT" \
   --config "$CFG" \
   --shadow-config "$SHADOW" \
   --camera "$CAMERA" \
   --view window \
-  --eps 0.05 \
+  --demo \
   "$@"

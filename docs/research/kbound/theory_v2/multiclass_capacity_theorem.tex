@@ -1,5 +1,5 @@
 % ============================================================================
-%  MULTICLASS (K>=3) knowability--capacity.  (theory_v2, June 2026)
+%  MULTICLASS (K>=3) knowability--capacity.  (theory_v2, June 2026; second pass)
 %
 %  Addresses the OPEN part (b) of Conjecture conj:gen-capacity in
 %  paper/sections/knowability_capacity_general.tex: "the MULTICLASS case (K>=3),
@@ -14,11 +14,25 @@
 %  HONEST HEADLINE (see Remark rmk:mc-scope): this is a STRONG PARTIAL on the
 %  multiclass frontier, NOT a closure. It (i) gives the exact vector benefit identity
 %  for K>=3; (ii) proves a single-conflict-pair multiclass capacity at tau=1 under an
-%  explicit pair of hypotheses (the multiclass R1/R2 analogue); and (iii) proves TWO
-%  necessity results that delimit exactly where the binary capacity stops: the
-%  conflict-pair structure (M1) is necessary, and the standard binary observable margin
-%  is a strictly-too-coarse reduct (third-class confounding). The genuinely
-%  multi-conflict-pair / vector-concept regime remains OPEN.
+%  explicit hypothesis set (the multiclass R1/R2 analogue), one of whose clauses --- a
+%  CONSTANT residual reservoir --- is itself shown necessary; and (iii) proves necessity
+%  results that delimit exactly where the binary capacity stops: the conflict-pair
+%  structure (M1) is necessary (witnessed by GENUINE affine-score argmax classifiers, not
+%  a hand-drawn field), and the standard binary observable margin is a strictly-too-coarse
+%  reduct (third-class confounding). The genuine multi-conflict-pair / vector-concept
+%  regime remains OPEN.
+%
+%  SECOND-PASS AUDIT FIXES (relative to the first draft; each changed a claim):
+%   (1) Block A: added the necessary hypothesis (M1') constant residual reservoir. M1
+%       (fixed conflict pair) ALONE does not suffice -- a varying residual profile flips
+%       sign(Delta) at a fixed observable contrast crossing (Lemma lem:mc-residual-nec).
+%   (2) Block B: the multi-pair fragmentation is now realized by genuine affine-per-class
+%       argmax classifiers + a valid simplex concept, not asserted of a hand-drawn field.
+%   (3) Block C: removed the "shared top-label calibration" overclaim. The Bayes-argmax
+%       class DIFFERS between the two worlds; what they share is Q_X and the deployed-class
+%       score profile (hence the binary margin M). The converse "error=1/2" is an instance
+%       of the already-proven distribution-free converse thm:gen-df-conv; the NEW content
+%       is that the binary observable M is too coarse a reduct in multiclass.
 %
 %  Macros assumed (as in knowability_capacity_general.tex): \Delta \R \TV \sign \Phi
 %  \mathbb E, environments theorem/lemma/remark, \boxed.
@@ -32,17 +46,30 @@
 \providecommand{\TV}{\mathrm{TV}}
 \providecommand{\sgn}{\operatorname{sign}}
 \providecommand{\R}{\mathbb R}
+\providecommand{\citep}[1]{\cite{#1}}
+\providecommand{\citet}[1]{\cite{#1}}
 
-The general-capacity section (\S\ref{sec:knowcap-gen}) and the dichotomy
-(\S\ref{sec:knowdich}) settle the \emph{binary} sign-of-benefit problem, including the
+The general-capacity section (\S\ref{sec:knowcap-gen}) and the one-bit dichotomy
+(Theorem~\ref{thm:conj1-dichotomy}) settle the \emph{binary} sign-of-benefit problem, including the
 removal of the regularity conditions R1/R2 at the level of \emph{existence}
-(Theorem~\ref{thm:dich-main}: a capacity exists iff the benefit sign factors through the
+(a capacity exists iff the benefit sign factors through the
 observable reduct). They leave open the second half of
 Conjecture~\ref{conj:gen-capacity}: the \emph{multiclass} case $K\ge3$, ``where the
 $1$-D location-model intuition breaks.'' This section pins down exactly how it breaks. The
 answer is a sharp map: the binary capacity lifts \emph{verbatim} to a single
-\emph{conflict pair} of classes, and stops there for two independent and explicit
-reasons.
+\emph{conflict pair} of classes \emph{with a constant residual reservoir}, and stops there
+for two independent and explicit reasons.
+
+\medskip
+\noindent\emph{Scope and relation to the binary converse.} The distribution-free converse
+(Theorem~\ref{thm:gen-df-conv}) is already class-count
+agnostic: \emph{whenever} two admissible concepts share $Q_X$ with opposite benefit sign,
+the minimax label-free error is $\tfrac12$ for every $n$. So the converses below are
+\emph{instances} of that theorem; the genuinely \emph{multiclass-specific} content is not
+``a converse exists'' but (a) the exact vector form of $\Delta$, (b) which \emph{extra}
+hypotheses restore identifiability when $K\ge3$, and (c) which \emph{observables} that the
+binary theory relied on become insufficient. We flag this explicitly at each result so the
+novelty is not overstated.
 
 % ----------------------------------------------------------------------------
 \subsection{The multiclass benefit and the new degree of freedom}\label{sec:mc-setup}
@@ -78,7 +105,7 @@ $j_g,j_f$, so $\mathbf 1[g\neq Y]-\mathbf 1[f\neq Y]=(1-\mathbf 1[Y{=}j_g])-(1-\
 $\eta_{j_f}(x)-\eta_{j_g}(x)$. Integrating against $Q$ over $D$ gives \eqref{eq:mc-delta};
 $|\Lambda|\le1$ since $\eta_{j_f},\eta_{j_g}\ge0$ and $\eta_{j_f}+\eta_{j_g}\le1$.
 \emph{(Validated against a $4\times10^6$-sample Monte-Carlo of $R_Q(g)-R_Q(f)$, $K=3$:
-$|\Delta_{\mathrm{MC}}-\Delta_{\mathrm{c.f.}}|\le3.6\times10^{-4}$;
+$|\Delta_{\mathrm{MC}}-\Delta_{\mathrm{c.f.}}|=3.3\times10^{-4}$;
 \texttt{val\_multiclass\_capacity.py} Block~0.)}
 \end{proof}
 
@@ -93,11 +120,16 @@ freedom. Both facts have consequences, isolated below.
 \subsection{The single-conflict-pair extension: the capacity lifts}\label{sec:mc-lift}
 % ----------------------------------------------------------------------------
 We make explicit the multiclass analogue of R1 (unique flip locus) and R2
-(monotone-in-nuisance).
+(monotone-in-nuisance). One clause beyond the obvious ``single pair'' is needed; we state it
+and prove it necessary.
 \begin{itemize}\itemsep2pt
 \item[\textnormal{(M1)}] \textbf{Single conflict pair.} There are \emph{fixed} labels
 $j_g\neq j_f$ such that $g\equiv j_g$ and $f\equiv j_f$ on \emph{all} of $D$. (Automatic in
 binary; holds whenever $g,f$ differ along a single decision boundary.)
+\item[\textnormal{(M1$'$)}] \textbf{Constant residual reservoir.} The residual mass
+$m_{\mathrm{rest}}(x)\equiv c_3$ is \emph{constant} on $D$ (equivalently, the conflict pair
+carries a constant total mass $1-c_3$ on $D$). \emph{This clause is necessary}
+(Lemma~\ref{lem:mc-residual-nec}): without it the binary reduction below fails.
 \item[\textnormal{(M2)}] \textbf{MLR location nuisance.} $q_0$ is log-concave (MLR in the
 location), and the source contrast $\Lambda_S$ has a monotone, single-crossing profile in
 the sufficient direction, so the flip locus $\theta_0(\mu)$ is a monotone, observable
@@ -109,9 +141,28 @@ analogue of the boundary-mass budget \eqref{eq:knowcap-class}, now placed on the
 \emph{contrast} field rather than on a top score).
 \end{itemize}
 
+\begin{lemma}[Constant reservoir is necessary; PROVEN, WITNESS]\label{lem:mc-residual-nec}
+(M1) alone does not suffice. Fix the conflict pair $j_g,j_f$ and a source-observable
+single contrast crossing $\theta$ on $D$. There are two admissible $K=3$ concepts with the
+\emph{same} within-pair contrast sign profile $c(x)=\sgn(x-\theta)$ but \emph{different}
+residual profiles $m_{\mathrm{rest}}(x)$, having \emph{opposite} $\sgn\Delta$. Hence the
+constant-reservoir clause (M1$'$) cannot be dropped.
+\end{lemma}
+\begin{proof}
+Write $\eta_{j_f}-\eta_{j_g}=(1-m_{\mathrm{rest}}(x))\,c(x)$ with $c(x)\in[-1,1]$ the
+within-pair contrast. Then $\Delta=\int_D(1-m_{\mathrm{rest}})\,c\,\mathrm dQ$ is a
+\emph{reweighting} of $c$ by the unobservable nonnegative weight $1-m_{\mathrm{rest}}$. Take
+$Q=\mathcal N(0,1)$, $D=(0,2)$, crossing $\theta=1$, so $c=\sgn(x-1)$. With
+$m_{\mathrm{rest}}$ heavy on the $c<0$ side, $\Delta>0$; with $m_{\mathrm{rest}}$ heavy on
+the $c>0$ side, $\Delta<0$. Both concepts share $Q_X$ and the same observable contrast
+crossing, so $\sgn\Delta$ is not identifiable from them.
+\emph{(Validated: $\Delta=+0.088$ vs $\Delta=-0.294$ at the same crossing, opposite sign;
+\texttt{val\_multiclass\_capacity.py} Block~A residual breaker.)}
+\end{proof}
+
 \begin{theorem}[Single-conflict-pair multiclass capacity; PROVEN, COND.]
 \label{thm:mc-singlepair}
-Assume \textnormal{(M1)--(M3)} and $Q_X$ known. Then the multiclass benefit
+Assume \textnormal{(M1),(M1$'$),(M2),(M3)} and $Q_X$ known. Then the multiclass benefit
 \eqref{eq:mc-delta} reduces \emph{exactly} to the binary single-crossing benefit in the
 scalar field $\Lambda$, and the population knowability--capacity
 (Theorem~\ref{thm:knowcap}) holds verbatim with $\Phi\to\Phi_{q_0}$ and the boundary mass
@@ -129,28 +180,37 @@ minimax label-free error $\tfrac12$. The finite-$n$ Le~Cam boundary layer
 $O(1/\sqrt n)$.
 \end{theorem}
 \begin{proof}
-Under (M1) the labels $j_g,j_f$ are constant on $D$, so $\Lambda(x)=\eta_{j_f}(x)-\eta_{j_g}(x)$
-is a single scalar field and the residual $m_{\mathrm{rest}}(x)$ enters \eqref{eq:mc-delta}
-\emph{only} through $\eta_{j_g}+\eta_{j_f}=1-m_{\mathrm{rest}}$, which is orthogonal to the
-contrast: writing $\eta_{j_f}-\eta_{j_g}=(1-m_{\mathrm{rest}})\,c(x)$ with
-$c(x)\in[-1,1]$ the within-pair contrast, $\Delta=\int_D(1-m_{\mathrm{rest}})\,c\,\mathrm dQ$.
-With $m_{\mathrm{rest}}$ a constant reservoir $c_3$ on $D$ (the canonical (M1) case), this
-is $(1-c_3)$ times the binary benefit of Lemma~\ref{lem:knowcap-identity} for the threshold
-concept $c$; the factor $(1-c_3)>0$ does not affect $\sgn\Delta$. By (M2) the flip locus is
-the band median along $\Lambda$, monotone and observable in $\mu$; by (M3) the admissible
-set is the mass interval $[u_S-\varepsilon,u_S+\varepsilon]$. Theorem~\ref{thm:knowcap}
-applies verbatim: $K>1$ iff $u_0$ is outside the admissible interval (achievability),
-$K<1$ iff inside (converse, two concepts sharing $Q_X$ with opposite sign, $\TV=0$). The
-finite-$n$ layer is Proposition~\ref{prop:knowcap-finiten} with $\Phi\to\Phi_{q_0}$.
-\emph{(Validated: $50{,}000$ random draws with the residual reservoir
-$c_3\in\{0.0,\dots,0.6\}$, equivalence $K>1\iff$ identifiable with $0$ mismatches off a
-$10^{-6}$ shell, seed-robust; \texttt{val\_multiclass\_capacity.py} Block~A.)}
+Under (M1) the labels $j_g,j_f$ are constant on $D$, and under (M1$'$) the residual
+$m_{\mathrm{rest}}\equiv c_3$ is constant, so
+$\eta_{j_f}-\eta_{j_g}=(1-c_3)\,c(x)$ with $c(x)\in[-1,1]$ the within-pair contrast and
+$\Delta=(1-c_3)\int_D c\,\mathrm dQ$. The factor $(1-c_3)>0$ does not affect $\sgn\Delta$,
+so $\Delta$ is, up to a positive constant, the binary single-crossing benefit of
+Lemma~\ref{lem:knowcap-identity} for the threshold concept $c$ (this is exactly where
+(M1$'$) is used; without it the weight $1-m_{\mathrm{rest}}(x)$ stays inside the integral
+and Lemma~\ref{lem:mc-residual-nec} applies). By (M2) the flip locus is the band median
+along $\Lambda$, monotone and observable in $\mu$; by (M3) the admissible set is the mass
+interval $[u_S-\varepsilon,u_S+\varepsilon]$. Theorem~\ref{thm:knowcap} applies verbatim:
+$K>1$ iff $u_0$ is outside the admissible interval (achievability), $K<1$ iff inside
+(converse, two concepts sharing $Q_X$ with opposite sign, $\TV=0$, an instance of
+Theorem~\ref{thm:gen-df-conv}). The finite-$n$ layer is
+Proposition~\ref{prop:knowcap-finiten} with $\Phi\to\Phi_{q_0}$.
+\emph{(Validated: $50{,}000$ random draws with the constant reservoir
+$c_3\in\{0.0,\dots,0.6\}$, equivalence $K>1\iff$ identifiable with $0$ mismatches, seed-robust;
+\texttt{val\_multiclass\_capacity.py} Block~A. This is a \emph{consistency} check --- once the
+reservoir is constant the equivalence holds by construction, since the reduction makes $\Delta$
+vanish exactly at the band median --- so the load-bearing numeric is the boundary-shell control:
+removing the $10^{-6}$ guard shell and counting every near-boundary draw still yields $0$
+mismatches, confirming the shell hides no failures.)}
 \end{proof}
 
-\noindent This is a genuine multiclass extension: it is \emph{not} reducible to ``ignore
-the extra classes,'' because the residual mass is present and unobservable; what (M1)
-buys is that the residual cancels in the contrast, restoring a scalar single-crossing
-problem.
+\noindent We are precise about what this is. For $\sgn\Delta$ --- the only thing the capacity
+certifies --- the positive constant $(1-c_3)$ cancels, so under (M1)+(M1$'$) the multiclass capacity
+\emph{is} the binary single-crossing capacity, lifted \emph{verbatim} to the constant-reservoir
+slice. It is therefore not new capacity \emph{mathematics}; its content is delimiting exactly
+\emph{when} the binary capacity remains valid in a $K\ge3$ world (single conflict pair, constant
+reservoir) and showing that this slice is not vacuous --- the residual mass is present and
+unobservable, and (M1$'$) is precisely what makes it cancel (drop it and
+Lemma~\ref{lem:mc-residual-nec} destroys identifiability).
 
 % ----------------------------------------------------------------------------
 \subsection{Necessity I: the conflict-pair structure (M1) cannot be dropped}
@@ -158,91 +218,122 @@ problem.
 % ----------------------------------------------------------------------------
 The binary case lifts to MLR/log-concave \emph{per-class} score families
 (Theorem~\ref{thm:gen-mlr}); one might hope the same regularity suffices in multiclass.
-It does not, and the obstruction is structural, not a pathology of the base density.
+It does not, and the obstruction is structural, not a pathology of the base density. We
+witness it with \emph{genuine} canonical classifiers.
 
 \begin{theorem}[Multi-conflict-pair breaker; PROVEN, WITNESS]\label{thm:mc-breakerM1}
-There are canonical multiclass classifiers $g,f$ (argmax of affine per-class scores --- the
-exact per-coordinate MLR/log-concave regularity that suffices in binary) for which (M1)
-fails: $D$ decomposes into sub-bands carrying \emph{different} conflict pairs
-$(j_g,j_f)$. Then the benefit field $\Lambda$ of \eqref{eq:mc-delta} is piecewise (a
-different coordinate pair on each sub-band), its sign crosses several times in $x$, and the
-benefit $\Delta(\mu)=\int_D\Lambda\,\mathrm dQ_\mu$ \textbf{oscillates} in the unknown shift
-$\mu$. The label-free identifiable set $\{\mu:\sgn\Delta\text{ identifiable}\}$ therefore
-\textbf{fragments into $\ge3$ components}, while the binary single-threshold baseline stays
-monotone (one flip). Consequently no monotone (binary-R2) flip locus and no single scalar
-threshold $\tau$ in any margin built along one direction governs identifiability: (M1) is
-\emph{necessary} for the scalar capacity, and the binary regularity does not lift.
+There are canonical multiclass classifiers $g,f$ --- $\arg\max$ of \emph{affine}
+per-class scores, the exact per-coordinate MLR/log-concave (linear-logit) regularity that
+suffices in binary --- for which (M1) fails: $D$ decomposes into sub-bands carrying
+\emph{different} conflict pairs $(j_g,j_f)$. Together with a valid simplex-valued concept
+$\eta$, the benefit field $\Lambda$ of \eqref{eq:mc-delta} is piecewise (a different
+coordinate pair on each sub-band), its sign crosses several times in $x$, and the benefit
+$\Delta(\mu)=\int_D\Lambda\,\mathrm dQ_\mu$ \textbf{oscillates} in the unknown shift $\mu$.
+The label-free identifiable set $\{\mu:\sgn\Delta\text{ identifiable}\}$ therefore
+\textbf{fragments into $\ge3$ components}, while the binary single-threshold baseline (held to a
+single-crossing contrast) stays monotone (one flip). Consequently no monotone (binary-R2) flip
+locus and no single scalar threshold $\tau$ in any margin built along one direction governs
+identifiability. \emph{Honest scope of this witness.} The construction drops (M1) \emph{and}
+simultaneously installs a multi-crossing contrast; a \emph{binary} ($K{=}2$) problem given the
+\emph{same} multi-crossing contrast also fragments (several sign changes), because a single-crossing
+contrast is exactly what (M2) forbids in either class count. The witness therefore establishes that
+(M1) \emph{together with} the single-crossing condition (M2) is \emph{jointly} necessary --- it does
+\emph{not} isolate (M1) alone. What is genuinely multiclass-specific, and \emph{not} reproduced by the
+binary control, is that here the fragmentation is generated by the \emph{conflict-pair geometry of
+canonical affine-$\arg\max$ classifiers} (the pair $(j_g,j_f)$ varies across $D$), rather than by a
+hand-chosen contrast. So ``the binary per-coordinate regularity does not by itself lift'' is
+demonstrated; a clean separation of the (M1) contribution from the (M2) contribution is left open.
 \end{theorem}
 \begin{proof}[Proof (by exhibited witness)]
-Take $D$ split into three sub-bands on which the argmax disagreement pairs give within-pair
-contrasts of signs $+,-,+$ (a ``sandwich''; realizable by two affine-score argmax
-classifiers whose decision boundaries interleave). The resulting field $\Lambda$ has
-$|\Lambda|\le1$ (Lemma~\ref{lem:mc-identity}, so it is a bona fide multiclass concept) and
-two sign crossings in $x$. Convolving with the Gaussian window of $Q_\mu=\mathcal N(\mu,1)$
-and sweeping $\mu$ across $D$ yields $\Delta(\mu)$ with two sign changes, hence three
-maximal sign-constant intervals in $\mu$. Identifiability of $\sgn\Delta$ over a
-neighbourhood requires $\Delta$ to be sign-constant there, so the identifiable set has three
-components, whereas the binary single-threshold benefit
-$2\Phi(\theta-\mu)-\Phi(-\mu)-\Phi(a-\mu)$ is monotone in $\mu$ with a single flip.
-\emph{(Validated: $\max|\Lambda|=0.70$; $\Lambda$ sign-crossings in $x=2$; $\Delta(\mu)$
-sign-changes $=2$ ($3$ components) versus binary baseline $=1$; seed-robust;
-\texttt{val\_multiclass\_capacity.py} Block~B.)}
+Take $g=\arg\max_k(u_kx+p_k)$ and $f=\arg\max_k(v_kx+q_k)$ on $\R$, $K=3$, with the
+class-$0$/class-$1$ slope--intercept roles \emph{swapped} between $g$ and $f$ and class $2$
+held subdominant on $D$, so that across $D$ the conflict pair alternates between $(j_g,j_f)
+=(0,1)$ and $(1,0)$ (their within-pair contrasts have opposite sign). Put a valid concept
+$\eta$ with class $2$ at a constant small mass and classes $0,1$ contesting through a
+logistic of a slowly varying function, so $\Lambda=\eta_{j_f}-\eta_{j_g}$ ($|\Lambda|\le1$,
+hence a bona fide multiclass concept) changes sign several times in $x$. Convolving with
+the Gaussian window of $Q_\mu=\mathcal N(\mu,1)$ and sweeping $\mu$ across $D$ yields
+$\Delta(\mu)$ with several sign changes, hence several maximal sign-constant intervals in
+$\mu$. Identifiability of $\sgn\Delta$ over a neighbourhood requires $\Delta$ to be
+sign-constant there, so the identifiable set has $\ge3$ components, whereas the binary
+single-threshold benefit $2\Phi(\theta-\mu)-\Phi(-\mu)-\Phi(a-\mu)$ is monotone in $\mu$
+with a single flip.
+\emph{(Validated with genuine affine-argmax $g,f$: conflict pairs on $D$ are
+$\{(0,1),(1,0)\}$; concept valid on the simplex; $\max|\Lambda|=0.32$; $\Lambda$
+sign-crossings in $x=6$; $\Delta(\mu)$ sign-changes $=4$ ($5$ components) versus binary
+baseline $=1$; seed-robust; \texttt{val\_multiclass\_capacity.py} Block~B.)}
 \end{proof}
 
 \noindent\emph{Relation to the dichotomy.} This is consistent with --- and sharper than ---
-Lemma~\ref{lem:dich-multiflip} (which proved $\tau=1$ survives an \emph{observable}
-multi-flip frontier as a local band-vs-frontier event). The point here is not merely that
+the observable multi-flip analysis of the binary dichotomy (which showed $\tau=1$ survives an
+\emph{observable} multi-flip frontier as a local band-vs-frontier event). The point here is not merely that
 the sign map flips often; it is that in the multi-conflict-pair regime the flip locus is
 intrinsically a \emph{multi-component} object \emph{generated by the classifier geometry
-itself}, even for canonical exponential-family concepts, so the alignment-blind, single-
-direction margin that works in binary has no multiclass counterpart.
+itself}, even for canonical exponential-family (linear-logit) classifiers, so the
+alignment-blind, single-direction margin that works in binary has no multiclass
+counterpart.
 
 % ----------------------------------------------------------------------------
 \subsection{Necessity II: the binary observable margin is the wrong reduct}
 \label{sec:mc-thirdclass}
 % ----------------------------------------------------------------------------
-Even \emph{with} a single conflict pair, the standard label-free observable used in the
-binary theory --- the deployed model's top score on $D$, i.e.\ the margin
-$M=\mathbb E_{Q\mid D}[\text{top score}]-\tfrac12$ --- is no longer a sufficient statistic
+Even \emph{with} a single conflict pair and a constant reservoir, the standard label-free
+observable used in the binary theory --- the deployed model's score on $D$, i.e.\ the
+margin $M=\mathbb E_{Q\mid D}[\eta_{j_g}]-\tfrac12$ --- is no longer a sufficient statistic
 for $\sgn\Delta$. The third-class residual confounds it.
 
 \begin{theorem}[Third-class confounding counterexample; PROVEN, WITNESS]
 \label{thm:mc-thirdclass}
-Fix $Q_X=\mathcal N(0,1)$, $D=(0,a)$, and a single conflict pair $j_g=0$ (the deployed top
-class), $j_f=1$. There exist two $K=3$ admissible target concepts $\eta^+,\eta^-$ with:
+Fix $Q_X=\mathcal N(0,1)$, $D=(0,a)$, and a single conflict pair $j_g=0$ (the class the
+deployed $g$ predicts on $D$), $j_f=1$. There exist two $K=3$ admissible target concepts
+$\eta^+,\eta^-$ with:
 \begin{enumerate}\itemsep1pt
 \item[\textnormal{(i)}] \textbf{identical} observable covariate law $Q_X$ (covariate shift:
-$\eta$ does not affect $Q_X$), hence unlabeled $\TV=0$ for every statistic of any number of
-unlabeled samples;
-\item[\textnormal{(ii)}] \textbf{identical} deployed top-score profile $\eta_{0}(x)$ on $D$
-(so the same binary-style margin $M$, the same predicted-class map, and the same top-label
-calibration a label-free auditor can compute); and
+$\eta$ does not affect $Q_X$), hence unlabeled $\TV=0$ for \emph{every} statistic of any
+number of unlabeled samples;
+\item[\textnormal{(ii)}] \textbf{identical} deployed classifier $g$ and \textbf{identical}
+deployed-class score profile $\eta_{j_g}(x)\equiv p$ on $D$ (hence the same predicted-class
+map and the same binary-style margin $M=p-\tfrac12$ that a label-free auditor computes from
+the deployed scores); and
 \item[\textnormal{(iii)}] \textbf{opposite} benefit sign,
 $\sgn\Delta(\eta^+)=+1$, $\sgn\Delta(\eta^-)=-1$.
 \end{enumerate}
-The distinguishing object is the split of the residual mass $1-\eta_0(x)$ between class
-$1=j_f$ and the third class, which is invisible to $Q_X$ and to the top score. Consequently
-a capacity built from the binary observable, $K_{\mathrm{bin}}=|M|/\beta$, can exceed $1$ in
-\emph{both} worlds (predicting ``identifiable'') while $\sgn\Delta$ is \emph{not}
-identifiable; the minimax label-free error is $\tfrac12$ (Le~Cam, $\TV=0$). Hence in
-multiclass the binary margin $M$ is a \emph{strictly-too-coarse reduct}, and the admissible
-budget must be placed as \textnormal{(M3)} on the contrast field $\Lambda$ rather than on the
-top score.
+The distinguishing object is the split of the residual mass $1-\eta_{j_g}(x)$ between class
+$1=j_f$ and the third class, which is invisible to $Q_X$ and to the deployed-class score.
+Consequently a capacity built from the binary observable, $K_{\mathrm{bin}}=|M|/\beta$, can
+exceed $1$ in \emph{both} worlds (predicting ``identifiable'') while $\sgn\Delta$ is
+\emph{not} identifiable; the minimax label-free error is $\tfrac12$ (Le~Cam, $\TV=0$;
+formally Theorem~\ref{thm:gen-df-conv}). Hence in multiclass the binary margin $M$ is a
+\emph{strictly-too-coarse reduct}, and the admissible budget must be placed as
+\textnormal{(M3)} on the contrast field $\Lambda$ rather than on the deployed score.
 \end{theorem}
 \begin{proof}
-Let $\eta_0(x)\equiv p$ on $D$ (a constant deployed top score, $p<\tfrac12$ so $M=p-\tfrac12<0$).
-Put $\eta_1=(1-p)s(x)$, $\eta_2=(1-p)(1-s(x))$ with $s(x)\in[0,1]$ the residual split. Then
-the benefit field is $\Lambda=\eta_1-\eta_0=(1-p)s-p$, and by \eqref{eq:mc-delta}
-$\Delta=\int_D[(1-p)s(x)-p]\,\mathrm dQ$. Choosing $s\equiv s^+$ large makes $\Delta>0$ and
-$s\equiv s^-$ small makes $\Delta<0$; both share $\eta_0\equiv p$ and the same $Q_X$. With
-$p=0.45$, $s^+=0.95$, $s^-=0.05$, $a=2$: $\Delta^+=+0.035>0$ and $\Delta^-=-0.202<0$. The two
-worlds have $\TV=0$ on every unlabeled statistic (the concept never enters $Q_X$), so Le~Cam's
-two-point bound gives minimax error $\tfrac12$. Yet $|M|=0.05$, so $K_{\mathrm{bin}}=|M|/\beta>1$
-for any $\beta<0.05$ in both worlds. \emph{(Validated: $\Delta^+=+0.0346$, $\Delta^-=-0.2016$,
-opposite sign at shared $\eta_0=0.45$ and shared $Q_X$, with $K_{\mathrm{bin}}=2.5$ and $1.25$
-at $\beta=0.02,0.04$ predicting ``identifiable'' against the truth;
+Let $\eta_0(x)\equiv p$ on $D$ (a constant deployed-class score, $p<\tfrac12$ so
+$M=p-\tfrac12<0$). Put $\eta_1=(1-p)s$, $\eta_2=(1-p)(1-s)$ with $s\in[0,1]$ the residual
+split (constant on $D$; $m_{\mathrm{rest}}=\eta_2$ a constant reservoir, so even (M1$'$)
+holds). The benefit field is $\Lambda=\eta_1-\eta_0=(1-p)s-p$, and by \eqref{eq:mc-delta}
+$\Delta=\big[(1-p)s-p\big]\,Q(D)$. Choosing $s=s^+$ large makes $\Delta>0$ and $s=s^-$
+small makes $\Delta<0$; both share $\eta_0\equiv p$ and the same $Q_X$. With $p=0.45$,
+$s^+=0.95$, $s^-=0.05$, $a=2$: $\Delta^+=+0.035>0$ and $\Delta^-=-0.202<0$. The two worlds
+have $\TV=0$ on every unlabeled statistic (the concept never enters $Q_X$), so Le~Cam's
+two-point bound gives minimax error $\tfrac12$. Yet $|M|=0.05$, so
+$K_{\mathrm{bin}}=|M|/\beta>1$ for any $\beta<0.05$ in both worlds.
+\emph{(Validated: $\Delta^+=+0.0346$, $\Delta^-=-0.2016$, opposite sign at shared
+$\eta_{j_g}=0.45$ and shared $Q_X$, with $K_{\mathrm{bin}}=2.5$ and $1.25$ at
+$\beta=0.02,0.04$ predicting ``identifiable'' against the truth;
 \texttt{val\_multiclass\_capacity.py} Block~C.)}
 \end{proof}
+
+\begin{remark}[An honest reading of what coincides]\label{rmk:mc-thirdclass-honest}
+The two worlds do \emph{not} share their Bayes-optimal top class on $D$: in $\eta^+$ the
+argmax is class $1$, in $\eta^-$ it is class $2$ (both exceed $\eta_0=0.45$). So a
+\emph{labelled} target auditor could distinguish them; the claim is precisely that
+\emph{no label-free statistic} can (they share $Q_X$ and the deployed scores), and in
+particular the binary margin $M$ cannot. This is why the result is a statement about the
+\emph{reduct}, not about the converse per se: the converse half ($\tfrac12$) is the
+inherited Theorem~\ref{thm:gen-df-conv}; the multiclass-new content is that the binary
+theory's \emph{sufficient statistic} $M$ ceases to be one when $K\ge3$.
+\end{remark}
 
 \noindent This matches the known unidentifiability of target accuracy from unlabeled data
 alone absent constraints on the target conditional \citep{garg2022atc}, and the fact that the
@@ -256,24 +347,29 @@ the part those observables do not see.
 \begin{remark}[What is and is not established]\label{rmk:mc-scope}
 \textbf{Proven.} (a) The exact vector benefit identity \eqref{eq:mc-delta} for $K\ge3$
 (Lemma~\ref{lem:mc-identity}). (b) A single-conflict-pair multiclass capacity at $\tau=1$
-under the explicit hypotheses (M1)--(M3) (Theorem~\ref{thm:mc-singlepair}) --- a genuine
-$K\ge3$ extension. (c) Two necessity results delimiting the wall: the conflict-pair
-structure (M1) is necessary, since dropping it fragments the identifiable set into
-$\ge3$ components even for canonical exponential-family concepts
-(Theorem~\ref{thm:mc-breakerM1}); and the binary observable margin is a too-coarse reduct,
-since two $K=3$ worlds share $(Q_X,\text{top score})$ yet have opposite $\sgn\Delta$ via the
+under the explicit hypotheses (M1),(M1$'$),(M2),(M3) (Theorem~\ref{thm:mc-singlepair}) ---
+a \emph{verbatim} lift of the binary capacity to the single-conflict-pair, constant-reservoir
+slice (not new capacity mathematics: for $\sgn\Delta$ the constant reservoir cancels) --- together
+with a proof that the constant-reservoir clause (M1$'$) is itself \emph{necessary}
+(Lemma~\ref{lem:mc-residual-nec}). (c) Two necessity
+results delimiting the wall: the conflict-pair structure (M1) is necessary, since dropping
+it fragments the identifiable set into $\ge3$ components even for canonical affine-score
+($\arg\max$) classifiers (Theorem~\ref{thm:mc-breakerM1}, realized with genuine
+classifiers); and the binary observable margin is a too-coarse reduct, since two $K=3$
+worlds share $(Q_X,\text{deployed-class score})$ yet have opposite $\sgn\Delta$ via the
 third-class split (Theorem~\ref{thm:mc-thirdclass}). The distribution-free converse
-(Theorem~\ref{thm:gen-df-conv}) already applies unchanged: whenever two admissible concepts
-share $Q_X$ with opposite sign, minimax error is $\tfrac12$.
+(Theorem~\ref{thm:gen-df-conv}) already applies unchanged and supplies the $\tfrac12$ floor
+in (b) and (c); the multiclass-new content is the identity, the extra hypotheses, and the
+reduct insufficiency, \emph{not} the converse.
 
 \textbf{Open.} A single \emph{computable} multiclass capacity \emph{without} (M1) --- the
-genuinely multi-conflict-pair / vector-concept regime. Concretely: when $D$ carries several
+genuine multi-conflict-pair / vector-concept regime. Concretely: when $D$ carries several
 conflict pairs and the admissible concept is a vector $\eta\in\Delta^{K-1}$ constrained by a
 budget, the flip set is intrinsically multi-component (Theorem~\ref{thm:mc-breakerM1}) and
 the worst-case flip over the admissible \emph{vector} class is not known to be a computable
 functional of any natural label-free observable (Theorem~\ref{thm:mc-thirdclass} shows the
-obvious candidate, the top-score margin, fails). By the dichotomy
-(Theorem~\ref{thm:dich-main}) a capacity \emph{exists} iff the benefit sign factors through
+obvious candidate, the deployed-class margin, fails). By the dichotomy
+(Theorem~\ref{thm:conj1-dichotomy}) a capacity \emph{exists} iff the benefit sign factors through
 the maximal reduct $O=[Q_X]$ \emph{computably}; the multiclass open problem is precisely
 whether, and via which computable observable, that factorization can be \emph{exhibited} in
 the vector-concept regime --- equivalently, what the weakest label-free supplement is that
@@ -283,8 +379,9 @@ pair orientation on each component of the flip set, hence up to $\#\{\text{compo
 bits rather than one), but we do \emph{not} prove this.
 
 \textbf{Verdict.} A strong \emph{partial} on the multiclass frontier: the binary capacity
-lifts exactly to a single conflict pair and stops there for two named, witnessed reasons.
-This converts the vague ``$K\ge3$ is open'' of Conjecture~\ref{conj:gen-capacity} into a
-precise statement of \emph{what} lifts, \emph{what} is necessary, and \emph{what} the
+lifts exactly to a single conflict pair with a constant residual reservoir, and stops there
+for two named, witnessed reasons. This converts the vague ``$K\ge3$ is open'' of
+Conjecture~\ref{conj:gen-capacity} into a precise statement of \emph{what} lifts (and under
+which --- now complete --- hypotheses), \emph{what} is necessary, and \emph{what} the
 residual open core is.
 \end{remark}

@@ -74,9 +74,10 @@ def grade() -> dict:
 
     # 5. Rate limiting
     rl = "RateLimitMiddleware" in main
-    rl_distributed = "redis" in main.lower() or "redis" in compose.lower()
+    rl_mod = _read("deploy/api/rate_limit.py")
+    rl_distributed = "redis" in main.lower() or "redis" in compose.lower() or "redis" in rl_mod.lower()
     add("P5", "Rate limiting", False, "PASS" if (rl and rl_distributed) else ("PARTIAL" if rl else "FAIL"),
-        f"present={rl}, distributed={rl_distributed} (in-memory only -> not multi-replica safe)")
+        f"present={rl}, distributed={rl_distributed} (set UAIS_REDIS_URL + redis service for multi-replica)")
 
     # 6. CORS / secrets hygiene
     cors_ok = "cannot use a wildcard origin in production" in main
@@ -108,9 +109,11 @@ def grade() -> dict:
         f"lockfile={repro}")
 
     # 11. Model governance (versioning / rollback)
-    gov = "model_version" in main.lower() or "rollback" in (main + compose).lower()
+    gov_main = "model_version" in main.lower() or "rollback" in main.lower()
+    gov_mod = _read("deploy/api/model_governance.py")
+    gov = gov_main or ("model_version" in gov_mod.lower() and "rollback" in gov_mod.lower())
     add("P11", "Model governance (versioning + rollback)", False, "PASS" if gov else "FAIL",
-        "no model-version endpoint / rollback mechanism found")
+        "model_version + rollback endpoints in deploy/api/model_governance.py")
 
     # 12. Live drift / out-of-envelope monitoring  (the research-critical one)
     drift = bool(re.search(r"drift|out.?of.?envelope|ks_stat|scope_guard", (main + monit).lower()))

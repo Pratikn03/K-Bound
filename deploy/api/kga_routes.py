@@ -1,87 +1,66 @@
 """FastAPI routes serving the KGA (Knowability-Guided Adaptation) certificate.
 
-Exposes the label-free K-Bound decision over HTTP:
+* ``GET  /kga/health``  — liveness probe (no auth).
+* ``POST /decide``      — ADAPT/FREEZE/ABSTAIN from label-free scores (auth).
 
-* ``POST /decide``      -- given calibration and test detector scores (and an
-                          optional ``alpha``), return the ADAPT/FREEZE/ABSTAIN
-                          decision, the certificate ``delta_hat +/- epsilon``,
-                          and the label-free evidence ``Z``.  Auth-protected.
-* ``GET  /kga/health``  -- liveness probe for the KGA subsystem (no auth).
-
-The decision math lives entirely in the importable :mod:`kga` package; this
-module is a thin, validated transport layer over it, following the request /
-response and validation style of :mod:`deploy.api.main`.
-
-Because labels are unavailable at request time, the benefit point estimate is
-reported conservatively as ``delta_hat = 0`` and the certificate radius is the
-split-conformal radius of the calibration scores' own dispersion (a deterministic,
-label-free residual proxy).  Callers with a real per-sample benefit estimate
-should use the :class:`kga.KGA` API directly server-side.
+``cert_mode``:
+  * ``proxy`` (default) — score-only conservative certificate (deployment API).
+  * ``full`` — paper-style certificate when ``benefit_scores`` or ``calib_residuals`` supplied.
 """
 
 from __future__ import annotations
 
+from typing import Literal
+
 import numpy as np
 from fastapi import APIRouter, Depends, HTTPException, status
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, Field, field_validator, model_validator
 
 from kga import __version__ as kga_version
-from kga.certificate import conformal_split
-from kga.evidence import compute_evidence
-from kga.policy import decide
 
 from .auth import authenticate
+from .kga_service import perform_kga_decide
 
-# Bound request sizes so a single call cannot exhaust memory (mirrors the
-# MAX_* limits in deploy/api/main.py).
 MAX_KGA_SCORES = 200_000
 
 router = APIRouter()
 
 
 class KGADecideRequest(BaseModel):
-    """Request body for ``POST /decide``.
-
-    Attributes
-    ----------
-    calib_scores : list[float]
-        Detector scores on the calibration / source split.
-    test_scores : list[float]
-        Detector scores on the unlabelled test / target split.
-    alpha : float
-        Miscoverage level in ``(0, 1)``; bounds the false-adapt probability.
-    """
-
-    calib_scores: list[float] = Field(
-        ...,
-        min_length=2,
-        max_length=MAX_KGA_SCORES,
-        description="Calibration detector scores (label-free).",
+    calib_scores: list[float] = Field(..., min_length=2, max_length=MAX_KGA_SCORES)
+    test_scores: list[float] = Field(..., min_length=2, max_length=MAX_KGA_SCORES)
+    alpha: float = Field(0.1, gt=0.0, lt=1.0)
+    cert_mode: Literal["proxy", "full"] = Field(
+        "proxy",
+        description="proxy=score-only API cert; full=paper cert with benefit/residual inputs.",
     )
-    test_scores: list[float] = Field(
-        ...,
-        min_length=2,
-        max_length=MAX_KGA_SCORES,
-        description="Unlabelled test detector scores.",
+    benefit_scores: list[float] | None = Field(
+        None,
+        description="Paired per-sample benefits for cert_mode=full (Theorem 3 path).",
     )
-    alpha: float = Field(
-        0.1,
-        gt=0.0,
-        lt=1.0,
-        description="Miscoverage level in (0, 1). Default 0.1.",
+    calib_residuals: list[float] | None = Field(
+        None,
+        description="Held-out |Delta_hat - Delta| residuals for conformal full cert.",
     )
+    method: str = Field("ebern", description="Batch estimator for full+benefit_scores.")
 
-    @field_validator("calib_scores", "test_scores")
+    @field_validator("calib_scores", "test_scores", "benefit_scores", "calib_residuals")
     @classmethod
-    def _validate_finite(cls, v: list[float]) -> list[float]:
+    def _validate_finite(cls, v: list[float] | None) -> list[float] | None:
+        if v is None:
+            return v
         if any(not np.isfinite(x) for x in v):
             raise ValueError("scores must be finite numbers")
         return v
 
+    @model_validator(mode="after")
+    def _full_mode_inputs(self) -> KGADecideRequest:
+        if self.cert_mode == "full" and self.benefit_scores is None and self.calib_residuals is None:
+            raise ValueError("cert_mode='full' requires benefit_scores or calib_residuals")
+        return self
+
 
 class KGAEvidenceModel(BaseModel):
-    """Label-free evidence ``Z`` summary returned to the caller."""
-
     ks_mean: float
     ks_max: float
     disagree: float
@@ -94,18 +73,16 @@ class KGAEvidenceModel(BaseModel):
 
 
 class KGADecideResponse(BaseModel):
-    """Response body for ``POST /decide``."""
-
-    decision: str = Field(..., description="One of ADAPT, FREEZE, ABSTAIN.")
-    delta_hat: float = Field(..., description="Estimated benefit of adapting over freezing.")
-    epsilon: float = Field(..., description="Certificate radius at the requested alpha.")
-    method: str = Field(..., description="Certificate estimator identifier.")
+    decision: str
+    delta_hat: float
+    epsilon: float
+    method: str
+    cert_mode: str
     evidence: KGAEvidenceModel
 
 
 @router.get("/kga/health")
 async def kga_health() -> dict:
-    """Liveness probe for the KGA subsystem."""
     return {"status": "ok", "component": "kga", "version": kga_version}
 
 
@@ -114,23 +91,22 @@ async def kga_decide(
     req: KGADecideRequest,
     authenticated: bool = Depends(authenticate),
 ) -> KGADecideResponse:
-    """Decide ADAPT/FREEZE/ABSTAIN from label-free calibration and test scores."""
     try:
-        calib = np.asarray(req.calib_scores, dtype=float)
-        test = np.asarray(req.test_scores, dtype=float)
-        evidence = compute_evidence(calib, test)
-
-        # Conservative, label-free certificate: point estimate 0 with a
-        # split-conformal radius from the calibration dispersion (deterministic).
-        residual_proxy = np.abs(calib - float(np.median(calib)))
-        certificate = conformal_split(0.0, residual_proxy, alpha=req.alpha)
-        decision = decide(certificate, alpha=req.alpha)
-
+        decision, certificate, evidence = perform_kga_decide(
+            np.asarray(req.calib_scores, dtype=float),
+            np.asarray(req.test_scores, dtype=float),
+            alpha=req.alpha,
+            cert_mode=req.cert_mode,
+            benefit_scores=req.benefit_scores,
+            calib_residuals=req.calib_residuals,
+            method=req.method,
+        )
         return KGADecideResponse(
             decision=decision.value,
             delta_hat=certificate.delta_hat,
             epsilon=certificate.epsilon,
             method=certificate.method,
+            cert_mode=req.cert_mode,
             evidence=KGAEvidenceModel(
                 ks_mean=evidence.ks_mean,
                 ks_max=evidence.ks_max,
@@ -144,10 +120,8 @@ async def kga_decide(
             ),
         )
     except ValueError as err:
-        # Input that passes pydantic but fails the evidence/certificate
-        # preconditions (e.g. all-identical scores) -> 400.
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(err)) from err
-    except Exception as err:  # pragma: no cover - defensive
+    except Exception as err:  # pragma: no cover
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="KGA decision failed",

@@ -147,10 +147,35 @@ bash docs/research/kbound/scripts/reproduce_submission.sh
 | `val_knowability_dichotomy.py` | Dichotomy numerics |
 | `theory_v2/val_unconditional_weakest.py` | Polytope weakest-class enumeration |
 | `theory_v2/val_sequential_anytime.py` | Anytime FA_u |
-| `theory_v2/val_multicandidate.py` | Family-wise FA_u |
+| `theory_v2/val_multicandidate.py` | Family-wise FA_u (binary K) |
+| `theory_v2/val_multiclass_multicandidate.py` | Multiclass multicandidate FWER |
+| `theory_v2/val_anytime_multicandidate.py` | Anytime multicandidate FWER |
+| `theory_v2/val_tight_constants.py` | Exact 3-world κ(α)n_opt |
+| `theory_v2/val_multiclass_capacity.py` | Multiclass capacity + impossibility |
+| `theory_v2/val_margin_computability.py` | Margin computability dichotomy |
+| `theory_v2/val_regression_bracketing_closure.py` | Regression bracketing |
+| `scripts/run_theory_v2_validators.sh` | All Wave 4 validators + routing selftest |
+| `scripts/multicandidate_decide_kga.py` | LOO GBR + Bonferroni panel (training hook) |
 | `scripts/theory_extensions_validation.py` | Le Cam + forced abstention + multiclass Δ |
 
-CI job `.github/workflows/kbound-ci.yml` runs `val_thm*.py` on push.
+CI: `.github/workflows/kbound-ci.yml` runs `val_thm*.py` and `theory_v2` Wave 4 validators + `lean-formal`.
+
+---
+
+## 5b. Wave 4 theory → code map
+
+| Label | Implementation | Training / repro hook |
+|-------|----------------|----------------------|
+| `thm:multicand` | `kga/routing.py` → `route_panel` | `multicandidate_decide_kga.py` |
+| `thm:multiclass-multicand` | `kga/routing.py` → `multiclass_benefit`, `route_panel` | same |
+| `thm:anytime-multicand` | `kga/routing.py` → `AnytimeMulticandidatePanel` | `kga.certificate.evalue_anytime` + panel |
+| `thm:t1c-exact` | theory only (sample complexity) | `val_tight_constants.py` |
+| `thm:mc-cap-impossibility` | theory only (negative) | `val_multiclass_capacity.py` Block D |
+| `thm:margin-compute-dichotomy` | theory only | `val_margin_computability.py` |
+| `thm:reg-bracket-dichotomy` | `scripts/regression_conjecture_validation.py` | wrapper validator |
+| strict-100 Lean | `formal/KBound/*.lean` | `formal_audit.py --strict-100` |
+
+Canonical package: **`kga/`**. Frozen paper mirror: **`kbound_pkg/kbound/`** (including `routing.py`).
 
 ---
 
@@ -166,9 +191,17 @@ CI job `.github/workflows/kbound-ci.yml` runs `val_thm*.py` on push.
 
 ---
 
-## 7. Genuinely open (not in scope of current paper)
+## 7. Closure status (Wave 4, 2026-07-01)
 
-Listed in `PROJECT_STATUS_AND_OPEN_PROBLEMS.md` §1 — gen-capacity without R1/R2, tight rates,
-minimax optimality, multiclass anytime, physical R2 data collection.
+Section B of `THEORY_100_PERCENT_CLOSURE_PLAN.md` is **closed** (dichotomies + impossibility).
+`formal_audit.py --strict-100` passes locally.
 
-These are **research frontier**, not missing implementation for submission.
+**Still outside theory scope:** physical camera R2 (KB-CLAIM-030), external reviewer sign-off.
+
+**Documentation:** see [`DOCS_INDEX.md`](DOCS_INDEX.md) — stale June 2026 status MDs removed 2026-07-01.
+
+**Engineering note:** Wave 4 **characterization** theorems (impossibility, dichotomies, tight
+constants) intentionally do not change the default `decide_kga` binary spine; they bound what
+claims are allowed. **Routing** theorems (`multicand`, `multiclass-multicand`, `anytime-multicand`)
+are implemented in `kga/routing.py` and exercised via `multicandidate_decide_kga.py` /
+`kbtrain.sh theory-v2`.
