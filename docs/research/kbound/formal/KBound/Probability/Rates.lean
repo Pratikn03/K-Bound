@@ -3,7 +3,11 @@ import KBound.Conformal
 import Mathlib.Data.Real.Basic
 
 /-!
-# Finite-sample rates (`thm:ev-rate`, `cor:samplecomp`)
+# Deterministic finite-sample rate corollaries (`thm:ev-rate`, `cor:samplecomp`)
+
+These lemmas connect a certified radius bound to the adapt/freeze decision. Concentration,
+martingale, and stopping-time rate theory remain paper/validator arguments rather than a full
+Mathlib development here.
 -/
 
 namespace KBound

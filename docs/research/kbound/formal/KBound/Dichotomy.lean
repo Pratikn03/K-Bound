@@ -23,7 +23,7 @@ theorem signReal_neg_eq (x : ℝ) : signReal (-x) = -signReal x := by
     simp [signReal, hx, hnx, not_lt.mpr (le_of_lt hx)]
   · by_cases hx0 : x < 0
     · have hnx : 0 < -x := neg_pos.mpr hx0
-      simp [signReal, hx, hx0, hnx, not_lt.mpr (le_of_lt hnx)]
+      simp [signReal, hx, hx0, hnx]
     · have hxz : x = 0 := le_antisymm (le_of_not_gt hx) (le_of_not_gt hx0)
       simp [hxz, signReal]
 

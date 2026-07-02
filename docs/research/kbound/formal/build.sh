@@ -17,9 +17,10 @@ lake update || true
 echo "Building KBound (first run compiles Mathlib from source; expect 15–40 min) ..."
 lake build KBound
 
-echo "Auditing mechanized vs not-yet-mechanized theorem coverage ..."
+echo "Auditing mechanized theorem coverage and documented probability-layer limits ..."
 python3 formal_audit.py
 
 echo ""
-echo "OK: all mechanized K-Bound theorems typechecked."
+echo "OK: all currently mechanized K-Bound theorems typechecked."
+echo "NOTE: this is a strict-core audit, not a full foundational Mathlib probability development."
 echo "See KBound/TheoremMap.lean for paper-label → Lean-name mapping."

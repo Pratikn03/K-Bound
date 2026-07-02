@@ -2,7 +2,10 @@ import Mathlib.Data.Real.Basic
 import Mathlib.Tactic.Linarith
 
 /-!
-# Discrete betting e-process core (`thm:evalue`, `thm:anytime`)
+# One-step betting algebra core (`thm:evalue`, `thm:anytime`)
+
+This is the finite deterministic update lemma used by the paper proof. It is not the full
+Mathlib formalization of nonnegative supermartingales or optional stopping.
 -/
 
 namespace KBound

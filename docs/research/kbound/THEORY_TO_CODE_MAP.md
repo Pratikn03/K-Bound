@@ -173,7 +173,7 @@ CI: `.github/workflows/kbound-ci.yml` runs `val_thm*.py` and `theory_v2` Wave 4 
 | `thm:mc-cap-impossibility` | theory only (negative) | `val_multiclass_capacity.py` Block D |
 | `thm:margin-compute-dichotomy` | theory only | `val_margin_computability.py` |
 | `thm:reg-bracket-dichotomy` | `scripts/regression_conjecture_validation.py` | wrapper validator |
-| strict-100 Lean | `formal/KBound/*.lean` | `formal_audit.py --strict-100` |
+| strict-core Lean | `formal/KBound/*.lean` | `formal_audit.py --strict-core` (`--strict-100` is legacy alias) |
 
 Canonical package: **`kga/`**. Frozen paper mirror: **`kbound_pkg/kbound/`** (including `routing.py`).
 
@@ -194,7 +194,11 @@ Canonical package: **`kga/`**. Frozen paper mirror: **`kbound_pkg/kbound/`** (in
 ## 7. Closure status (Wave 4, 2026-07-01)
 
 Section B of `THEORY_100_PERCENT_CLOSURE_PLAN.md` is **closed** (dichotomies + impossibility).
-`formal_audit.py --strict-100` passes locally.
+`formal_audit.py --strict-core` passes locally.
+
+The Lean package is a strict-core mechanization: algebraic theorem spine plus finite-sample bridge
+lemmas. It is not a full foundational Mathlib development of measure-theoretic exchangeability,
+optional stopping, product KL/TV, martingale rates, or the complete swap-involution construction.
 
 **Still outside theory scope:** physical camera R2 (KB-CLAIM-030), external reviewer sign-off.
 

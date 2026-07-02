@@ -1,6 +1,6 @@
 # K-Bound / KGA — Canonical Status & Open-Problem Ledger
 
-**This is the single source of truth.** Last reconciled: 2026-07-01 (Wave 4 strict-100 closure).
+**This is the single source of truth.** Last reconciled: 2026-07-02 (Wave 4 strict-core closure).
 
 ---
 
@@ -24,6 +24,10 @@
 | `thm:reg-bracket-dichotomy` | Regression/general drift: bounded-drift iff + general impossibility. | **Closed** + `val_regression_bracketing_closure.py`. |
 
 > **Note:** Section B of `THEORY_100_PERCENT_CLOSURE_PLAN.md` is **fully closed** as of Wave 4 (2026-07-01).
+> The Lean `formal/` package kernel-checks the algebraic theorem spine and finite-sample bridge
+> lemmas. It does **not** claim a full foundational Mathlib probability development of
+> exchangeability, optional stopping, product KL/TV, martingale rates, or the full swap
+> involution construction.
 
 ### GENUINELY OPEN (outside closure-plan scope)
 

@@ -45,15 +45,48 @@ VERIFIED_THEOREMS = [
     "rate_conformal_miss",
 ]
 
-# Wave 4: all mechanization gaps closed in Lean (see KBound/Probability/*).
-NOT_YET_MECHANIZED: list[dict[str, str]] = []
+# Scope boundary: the current Lean package mechanizes the K-Bound algebraic theorem
+# spine plus finite-sample probability cores. It does not claim a full foundational
+# Mathlib development of exchangeability, optional stopping, KL/TV product
+# experiments, or martingale-rate theory.
+FOUNDATIONAL_PROBABILITY_LIMITS = [
+    {
+        "item": "full measure-theoretic conformal exchangeability",
+        "current": "finite uniform-rank algebra plus deterministic certificate soundness",
+        "needed": "exchangeability/order-statistic coverage as a theorem over probability measures",
+    },
+    {
+        "item": "anytime/e-process optional stopping",
+        "current": "one-step non-increase algebra for a bounded betting update",
+        "needed": "nonnegative supermartingale/e-process construction and optional-stopping layer",
+    },
+    {
+        "item": "full KL/TV probabilistic Le Cam layer",
+        "current": "finite two-point TV algebra and regret identity",
+        "needed": "probability measures, KL/TV inequalities, and product-experiment reductions",
+    },
+    {
+        "item": "rate/martingale concentration theory",
+        "current": "deterministic radius-implies-commit corollary",
+        "needed": "finite-sample concentration and stopping-time rate machinery",
+    },
+    {
+        "item": "full one-bit swap involution",
+        "current": "finite-dimensional sign-flip algebra",
+        "needed": "formal evidence-preserving swap construction and dichotomy proof",
+    },
+]
 
-# Wave 4: all research-frontier items closed (paper + validators).
+# Wave 4 paper/validator frontier items that remain outside the Lean package.
 OPEN_RESEARCH_FRONTIER: list[dict[str, str]] = []
 
 CLOSURE_RECORD = {
     "wave": 4,
-    "date": "2026-07-01",
+    "date": "2026-07-02",
+    "scope": (
+        "kernel-checked algebraic theorem spine plus finite-sample bridge lemmas; "
+        "not a full foundational Mathlib probability development"
+    ),
     "mechanized_modules": [
         "KBound/Probability/ConformalExchangeability.lean",
         "KBound/Probability/EProcess.lean",
@@ -69,6 +102,7 @@ CLOSURE_RECORD = {
         "theory_v2/margin_computability_closure.tex",
         "theory_v2/regression_bracketing_closure.tex",
     ],
+    "documented_foundational_probability_limits": FOUNDATIONAL_PROBABILITY_LIMITS,
 }
 
 
@@ -137,8 +171,26 @@ def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--build", action="store_true")
     parser.add_argument("--json-out", type=Path, default=None)
-    parser.add_argument("--strict-100", action="store_true")
+    parser.add_argument(
+        "--strict-core",
+        action="store_true",
+        help="Check the current Lean theorem spine and documented Wave 4 core scope.",
+    )
+    parser.add_argument(
+        "--strict-100",
+        action="store_true",
+        help=(
+            "Legacy alias for --strict-core. This does not mean full foundational "
+            "Mathlib probability/martingale/KL mechanization."
+        ),
+    )
+    parser.add_argument(
+        "--full-foundations",
+        action="store_true",
+        help="Fail unless the documented deep probability-foundation limits are closed.",
+    )
     args = parser.parse_args()
+    strict_core = args.strict_core or args.strict_100
 
     build_ok = None
     build_tail = ""
@@ -154,8 +206,9 @@ def main() -> int:
     forbidden_hits = scan_for_forbidden_tokens()
     missing_checks = theorem_map_checks()
     strict_blockers = []
-    if args.strict_100:
-        strict_blockers.extend([row["item"] for row in NOT_YET_MECHANIZED])
+    foundation_blockers = [row["item"] for row in FOUNDATIONAL_PROBABILITY_LIMITS]
+    if args.full_foundations:
+        strict_blockers.extend(foundation_blockers)
         strict_blockers.extend([row["item"] for row in OPEN_RESEARCH_FRONTIER])
 
     ok = not forbidden_hits and not missing_checks and (build_ok is not False) and not strict_blockers
@@ -168,8 +221,11 @@ def main() -> int:
         "closure_record": CLOSURE_RECORD,
         "forbidden_token_hits": forbidden_hits,
         "missing_theorem_map_checks": missing_checks,
-        "strict_100_checked": bool(args.strict_100),
-        "strict_100_blockers": strict_blockers,
+        "strict_core_checked": bool(strict_core),
+        "legacy_strict_100_alias_used": bool(args.strict_100),
+        "full_foundations_checked": bool(args.full_foundations),
+        "foundational_probability_limits": FOUNDATIONAL_PROBABILITY_LIMITS,
+        "strict_blockers": strict_blockers,
     }
     if args.json_out is not None:
         out = args.json_out if args.json_out.is_absolute() else ROOT / args.json_out
@@ -180,8 +236,13 @@ def main() -> int:
         print("Lean build: PASS")
     print(f"Kernel-checked theorem checks: {len(VERIFIED_THEOREMS)}")
     print("Forbidden proof-hole scan: PASS" if not forbidden_hits else "Forbidden proof-hole scan: FAIL")
+    if args.strict_100:
+        print("NOTE: --strict-100 is a legacy alias for strict-core scope, not full Mathlib probability foundations.")
+    print(f"Documented foundational probability limits: {len(FOUNDATIONAL_PROBABILITY_LIMITS)}")
+    if args.full_foundations:
+        print("Full foundational probability gate: FAIL" if foundation_blockers else "Full foundational probability gate: PASS")
     if strict_blockers:
-        print("Strict 100% closure blockers:")
+        print("Strict/full-foundation blockers:")
         for item in strict_blockers:
             print(f"- {item}")
     if forbidden_hits:

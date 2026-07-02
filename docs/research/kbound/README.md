@@ -11,7 +11,7 @@ implementation, locked experiment artifacts, and a small notebook curriculum.
 | **Re-run all 25 validators (~6 min)** | `bash docs/research/kbound/scripts/theory_audit_full.sh --run-validators` |
 | **Run the tour in Jupyter** | [`../../notebooks/00_KBound_Master_Guide.ipynb`](../../notebooks/00_KBound_Master_Guide.ipynb) |
 | **Canonical project status** | [`PROJECT_STATUS_AND_OPEN_PROBLEMS.md`](PROJECT_STATUS_AND_OPEN_PROBLEMS.md) |
-| **Theory 100% closure gate** | [`THEORY_100_PERCENT_CLOSURE_PLAN.md`](THEORY_100_PERCENT_CLOSURE_PLAN.md) + `cd formal && python3 formal_audit.py --strict-100` |
+| **Theory core closure gate** | [`THEORY_100_PERCENT_CLOSURE_PLAN.md`](THEORY_100_PERCENT_CLOSURE_PLAN.md) + `cd formal && python3 formal_audit.py --strict-core` |
 | **Wave 4 validators** | `cd theory_v2 && .venv/bin/python val_*.py` (see `THEORY_100_PERCENT_CLOSURE_PLAN.md`) |
 | **Reviewer reproduction** | [`REVIEWER_REPRO_PACKET.md`](REVIEWER_REPRO_PACKET.md) |
 | **Short paper PDF** | [`kbound_short.pdf`](kbound_short.pdf) |
@@ -43,7 +43,7 @@ docs/research/kbound/
   THEORY_TO_CODE_MAP.md             # theory ↔ code ↔ results (this guide's deep dive)
   kbound_pkg/kbound/                # frozen repro snapshot (edit kga/, re-vendor here)
   scripts/                          # CANONICAL scorers, kbtrain.sh, reproduce_submission.sh
-  theory_v2/                        # Wave 4 closures + validators (strict-100)
+  theory_v2/                        # Wave 4 closures + validators (strict core)
   formal/                           # Lean 4 mechanization + formal_audit.py
   edge/                             # physical camera protocol (R2 pending)
 
@@ -85,6 +85,10 @@ Legacy `notebooks/legacy_elara/` is the superseded ELARA fraud/cyber EDA stack �
 certificate FA_u control, unconditional weakest one-bit class, `conj:gen` resolved
 negatively, anytime + multicandidate extensions, tight constants, minimax optimality,
 multiclass capacity impossibility, margin-computability dichotomy, regression bracketing closure.
+
+**Lean scope:** `formal/` kernel-checks the algebraic theorem spine and finite-sample bridge
+lemmas. It does not claim a full foundational Mathlib probability development of exchangeability,
+optional stopping, product KL/TV, or martingale rates.
 
 **Open (not blocking submission):** physical camera R2 (KB-CLAIM-030), external reviewer sign-off.
 

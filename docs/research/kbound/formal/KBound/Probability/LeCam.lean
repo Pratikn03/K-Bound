@@ -2,7 +2,10 @@ import KBound.FiniteTesting
 import Mathlib.Data.Real.Basic
 
 /-!
-# Probabilistic Le Cam layer (`prop:lecam-finite`, `thm:minimax-opt` finite case)
+# Finite Le Cam TV algebra (`prop:lecam-finite`, `thm:minimax-opt` finite case)
+
+This module records the finite two-point TV identity used by the paper proof. It does not
+mechanize KL, absolute continuity, or product-experiment probability measures.
 -/
 
 namespace KBound

@@ -17,7 +17,7 @@ import KBound.Probability.LeCam
 import KBound.Probability.Rates
 
 /-!
-# K-Bound paper theorem index (Wave 4 — strict-100 closure)
+# K-Bound paper theorem index (Wave 4 — strict-core closure)
 -/
 
 namespace KBoundTheoremMap
