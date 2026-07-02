@@ -17,6 +17,7 @@ fallback : if no expert is reliable (negative-transfer guard), use rank-mean.
 from __future__ import annotations
 
 from dataclasses import dataclass
+from typing import cast
 
 import numpy as np
 from scipy.stats import ks_2samp
@@ -45,7 +46,8 @@ def _reliab_weights(auc: np.ndarray, floor: float = 0.5) -> np.ndarray:
 
 
 def _rank_mean(S: np.ndarray) -> np.ndarray:
-    return (np.argsort(np.argsort(S, axis=0), axis=0) / max(S.shape[0] - 1, 1)).mean(1)
+    ranked = np.argsort(np.argsort(S, axis=0), axis=0) / max(S.shape[0] - 1, 1)
+    return cast(np.ndarray, ranked.mean(1))
 
 
 def fuse(S: np.ndarray, auc: np.ndarray, floor: float = 0.55) -> np.ndarray:
@@ -54,7 +56,7 @@ def fuse(S: np.ndarray, auc: np.ndarray, floor: float = 0.55) -> np.ndarray:
     if not keep.any():
         return _rank_mean(S)                            # fallback: all weak
     w = _reliab_weights(auc[keep], floor=0.5)
-    return S[:, keep] @ w
+    return cast(np.ndarray, S[:, keep] @ w)
 
 
 def select(S: np.ndarray, auc: np.ndarray) -> np.ndarray:

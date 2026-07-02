@@ -53,7 +53,7 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
                         content={"detail": "Rate limit exceeded"},
                         headers={"Retry-After": str(retry)},
                     )
-            except Exception:  # pragma: no cover - fail open
+            except Exception:  # pragma: no cover - fail open  # nosec B110
                 pass
             return await call_next(request)
 

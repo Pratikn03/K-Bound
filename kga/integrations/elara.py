@@ -135,7 +135,7 @@ def _load_router_api():
 
 
 def _brier_benefits(y: np.ndarray, frozen: np.ndarray, candidate: np.ndarray) -> np.ndarray:
-    return (frozen - y) ** 2 - (candidate - y) ** 2
+    return np.asarray((frozen - y) ** 2 - (candidate - y) ** 2, dtype=float)
 
 
 def _certificate_record(cert) -> dict[str, float | int | str]:
@@ -224,6 +224,7 @@ class ELARAKGAGuard:
             "n_experts": float(s_val.shape[1]),
         }
 
+        claim_reasons: tuple[str, ...]
         if mode is EvaluationMode.LABEL_FREE:
             if y_test is not None:
                 raise ValueError("label_free mode must not receive y_test")

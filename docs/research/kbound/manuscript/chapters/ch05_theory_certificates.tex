@@ -1075,22 +1075,29 @@ disagreement is the single most important evidence feature in the ablation, dire
 supporting that the disagreement region carries the decision. The theory says where
 the information lives; the ablation confirms the estimator starves without it.
 
-\section{The Open Problem: Label-Free Bracketing}
+\section{Label-Free Bracketing: Resolved Negatively (Wave~4)}
 \label{sec:t2-open}
 
 Everything proved so far reduces the label-free adapt/freeze decision to a single
-remaining object: an ordinal comparison on the observable region $D$. The paper is
-exact about what is closed and what is not, and states the open piece as a conjecture.
-We reproduce it verbatim, and then spend an honest page on why it is genuinely open.
+remaining object: an ordinal comparison on the observable region $D$. As of Wave~4
+(2026-07-01), Conjecture~\ref{conj:gen} is \textbf{no longer open}: universal
+label-free benefit bracketing does not exist (Theorem~\ref{thm:conj1-dichotomy} and
+\texttt{thm:uncond-weakest}); the minimal untestable supplement is exactly one bit,
+and the unconditional weakest one-bit classes are explicit dominance polytopes. The
+main paper (\texttt{kbound.tex}) and \texttt{PROJECT\_STATUS\_AND\_OPEN\_PROBLEMS.md}
+are canonical; this section preserves the historical conjecture statement and the
+proof roadmap that led to the negative resolution.
 
-\begin{conjecture}[Label-free bracketing; \textbf{the remaining open piece}]
+\begin{conjecture}[Label-free bracketing; \textbf{resolved negatively in Wave~4}]
 \label{conj:gen}
 Theorems~\ref{thm:disagree-mc}--\ref{thm:disagree-reg} \emph{close the characterization}:
 $\sign\Delta$ equals an ordinal accuracy comparison on the observable region $D$. What
-remains open is the label-free \emph{bracketing} of that comparison ($p_a$ vs $p_0$ for
-$K\ge3$, where $p_0\neq1-p_a$ makes it a two-sided test; or the sign of
-$\E[(f_0-f_a)Y\mid D]$ for regression) without target labels---a reliability-model
-assumption, as in the binary case.
+remained open at the time of drafting was the label-free \emph{bracketing} of that
+comparison ($p_a$ vs $p_0$ for $K\ge3$, where $p_0\neq1-p_a$ makes it a two-sided test;
+or the sign of $\E[(f_0-f_a)Y\mid D]$ for regression) without target labels---a
+reliability-model assumption, as in the binary case. \textbf{Resolution (2026-07-01):}
+no such universal bracket exists; one bit is necessary and sufficient under the
+characterized weakest classes.
 \end{conjecture}
 
 \subsection{Why Current Techniques Do Not Resolve It}
@@ -1208,9 +1215,10 @@ whenever the gap exceeds $2\eta$ --- the guarantee, observed.
 \subsection{What a Resolution Would Buy}
 \label{sec:t2-open-payoff}
 
-We state plainly that the conjecture is \emph{not} solved here, and that
-Proposition~\ref{sec:t2-prop-caltransfer} does not solve it: it trades the open
-assumption for a quantified one, which is progress in precision, not in kind. A
+We state plainly that the conjecture is \emph{resolved negatively} as of Wave~4:
+universal label-free bracketing does not exist, and Proposition~\ref{sec:t2-prop-caltransfer}
+remains a \emph{conditional} closure under bounded calibration transfer rather than a
+full unconditional resolution. A
 genuine resolution would change the system's standing in either direction. A
 \emph{positive} resolution --- a bracketing scheme whose premise is label-free
 verifiable, or a proof that some natural observable (margin spectra on $D$, agreement

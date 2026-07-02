@@ -98,7 +98,7 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           python -m pip install numpy scipy scikit-learn pandas pyyaml joblib \
-            pytest pytest-cov httpx fastapi
+            pytest pytest-cov httpx fastapi 'python-jose[cryptography]' passlib
       - name: Run unit tests with coverage
         run: |
           pytest \
@@ -222,7 +222,7 @@ jobs:
       - name: Install research-test deps
         run: |
           python -m pip install --upgrade pip
-          python -m pip install numpy scipy scikit-learn pandas pyyaml joblib pytest
+          python -m pip install numpy scipy scikit-learn pandas pyyaml joblib pytest psutil
       - name: K-Bound research tests (pkg + integrity + edge)
         run: |
           pytest \

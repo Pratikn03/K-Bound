@@ -28,6 +28,8 @@ True
 
 from __future__ import annotations
 
+from typing import cast
+
 import numpy as np
 
 from kga.certificate import (
@@ -174,13 +176,13 @@ class KGA:
                 raise ValueError(f"method must be one of {sorted(_BATCH_ESTIMATORS)}, got {method!r}")
             estimator = _BATCH_ESTIMATORS[method]
             if method in ("ebern", "hoeffding"):
-                cert = estimator(  # type: ignore[call-arg]
+                cert = estimator(  # type: ignore[operator]
                     np.asarray(scores), alpha=self.alpha, benefit_range=benefit_range
                 )
             else:  # evalue
-                cert = estimator(np.asarray(scores), alpha=self.alpha)  # type: ignore[call-arg]
+                cert = estimator(np.asarray(scores), alpha=self.alpha)  # type: ignore[operator]
             self.last_certificate = cert
-            return cert
+            return cast(Certificate, cert)
 
         # Conformal conventions (2 or 3): need a point estimate + residuals.
         if delta_hat is None:
@@ -247,11 +249,11 @@ class KGA:
             raise ValueError(f"method must be one of {sorted(_BATCH_ESTIMATORS)}, got {method!r}")
         estimator = _BATCH_ESTIMATORS[method]
         if method in ("ebern", "hoeffding"):
-            cert = estimator(pool, alpha=self.alpha, benefit_range=benefit_range)  # type: ignore[call-arg]
+            cert = estimator(pool, alpha=self.alpha, benefit_range=benefit_range)  # type: ignore[operator]
         else:
-            cert = estimator(pool, alpha=self.alpha)  # type: ignore[call-arg]
+            cert = estimator(pool, alpha=self.alpha)  # type: ignore[operator]
         self.last_certificate = cert
-        return cert
+        return cast(Certificate, cert)
 
     # ------------------------------------------------------------------
     # Stage 3: trichotomy decision

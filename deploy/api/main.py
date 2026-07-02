@@ -378,8 +378,12 @@ def _load_nlp():
     if state is None:
         _nlp_artifacts_loaded = True
         return None, None
-    tokenizer = AutoTokenizer.from_pretrained(str(nlp_model_dir))
-    model = AutoModelForSequenceClassification.from_pretrained(str(nlp_model_dir), num_labels=2)
+    tokenizer = AutoTokenizer.from_pretrained(  # nosec B615
+        str(nlp_model_dir), local_files_only=True
+    )
+    model = AutoModelForSequenceClassification.from_pretrained(  # nosec B615
+        str(nlp_model_dir), num_labels=2, local_files_only=True
+    )
     model.load_state_dict(state)
     model.eval()
     _nlp_model, _nlp_tokenizer = model, tokenizer

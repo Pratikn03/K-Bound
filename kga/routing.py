@@ -14,8 +14,9 @@ parallel betting e-processes with wealth threshold ``K / alpha``.
 from __future__ import annotations
 
 import math
+from collections.abc import Sequence
 from dataclasses import dataclass
-from typing import Literal, Sequence
+from typing import Literal
 
 import numpy as np
 
@@ -142,9 +143,7 @@ def route_panel(
     certs: list[CandidateCertificate] = []
     lcbs: list[float] = []
     for i in range(k):
-        dh, eps, lcb = candidate_lcb_from_calibration(
-            deploy_scores[i], cal_scores[i], cal_truth[i], alpha=bonf
-        )
+        dh, eps, lcb = candidate_lcb_from_calibration(deploy_scores[i], cal_scores[i], cal_truth[i], alpha=bonf)
         certs.append(CandidateCertificate(index=i, delta_hat=dh, epsilon=eps))
         lcbs.append(lcb)
     selected = bonferroni_multicandidate_route(lcbs, alpha=alpha, selector=selector)

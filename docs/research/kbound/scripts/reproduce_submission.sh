@@ -5,9 +5,18 @@ ROOT="$(cd "$(dirname "$0")/../../../.." && pwd)"
 KBOUND="${ROOT}/docs/research/kbound"
 cd "${ROOT}"
 
-PY="${ROOT}/.venv/bin/python"
-if [[ ! -x "${PY}" ]]; then
-  PY="${HOME}/.venv_wilds/bin/python"
+PY="${PYTHON:-}"
+if [[ -z "${PY}" || ! -x "${PY}" ]]; then
+  if [[ -x "${ROOT}/.venv/bin/python" ]]; then
+    PY="${ROOT}/.venv/bin/python"
+  elif [[ -x "${HOME}/.venv_wilds/bin/python" ]]; then
+    PY="${HOME}/.venv_wilds/bin/python"
+  elif command -v python3 >/dev/null 2>&1; then
+    PY="$(command -v python3)"
+  else
+    echo "No Python interpreter found. Set PYTHON or install python3." >&2
+    exit 1
+  fi
 fi
 
 MANIFEST="${KBOUND}/RELEASE_MANIFEST.json"
