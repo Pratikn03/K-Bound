@@ -18,7 +18,39 @@ from dataclasses import dataclass
 
 import numpy as np
 
-from uais.fusion.attention.gate_decision_rule import drift_coherence
+# Vendored inline from ELARA's uais.fusion.attention.gate_decision_rule so this
+# certificate is self-contained (K-Bound must not import from the ELARA tree).
+def per_sample_mean_reliability(
+    reliability_weights: np.ndarray,
+    masks: np.ndarray,
+) -> np.ndarray:
+    """Mean reliability over each sample's *present* domains (nan if none)."""
+    weights = np.asarray(reliability_weights, dtype=float)
+    masks = np.asarray(masks, dtype=bool)
+    if weights.shape != masks.shape:
+        raise ValueError("reliability_weights and masks must have the same shape.")
+    if weights.ndim != 2:
+        raise ValueError("reliability_weights must be a 2-D [N, D] array.")
+    present = ~masks
+    present_counts = present.sum(axis=1)
+    masked_weights = np.where(present, weights, 0.0)
+    sums = masked_weights.sum(axis=1)
+    out = np.full(weights.shape[0], np.nan, dtype=float)
+    nonempty = present_counts > 0
+    out[nonempty] = sums[nonempty] / present_counts[nonempty]
+    return out
+
+
+def drift_coherence(
+    reliability_weights: np.ndarray,
+    masks: np.ndarray,
+) -> float:
+    """Coherence of the drift signal across a batch, in [0, 1]."""
+    r = per_sample_mean_reliability(reliability_weights, masks)
+    r = r[np.isfinite(r)]
+    if r.size < 2:
+        return float("nan")
+    return float(np.clip(1.0 - 2.0 * float(np.std(r)), 0.0, 1.0))
 
 
 @dataclass

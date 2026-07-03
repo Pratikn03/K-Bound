@@ -5,7 +5,25 @@ from __future__ import annotations
 import numpy as np
 
 from kga import KGA, Decision
-from src.uais.kbound.multimodal_guard import MultimodalGuard, placement_benefits
+
+
+# placements / placement_benefits vendored inline from the former ELARA
+# src/uais/kbound/multimodal_guard during the ELARA separation, so this test
+# keeps KGA probe-certificate coverage without importing the ELARA tree.
+def placements(y: np.ndarray, s: np.ndarray) -> np.ndarray:
+    y = np.asarray(y).astype(int)
+    s = np.asarray(s, dtype=float)
+    pos, neg = s[y == 1], s[y == 0]
+    if len(pos) == 0 or len(neg) == 0:
+        return np.array([])
+    ns = np.sort(neg)
+    below = np.searchsorted(ns, pos, side="left")
+    ties = np.searchsorted(ns, pos, side="right") - below
+    return (below + 0.5 * ties) / len(neg)
+
+
+def placement_benefits(y: np.ndarray, s_frozen: np.ndarray, s_adapt: np.ndarray) -> np.ndarray:
+    return placements(y, s_adapt) - placements(y, s_frozen)
 
 
 def test_certify_probe_subsample():
@@ -61,31 +79,6 @@ def test_placement_benefits_positive_when_fusion_improves():
     assert float(np.mean(pb)) > 0.0
 
 
-def test_multimodal_guard_synthetic_category():
-    rng = np.random.default_rng(7)
-    n = 80
-    y_val = rng.integers(0, 2, n)
-    y_test = rng.integers(0, 2, n)
-    s_val = rng.random((n, 3))
-    s_test = s_val + rng.normal(0, 0.05, (n, 3))
-    s_test[:, 0] = rng.random(n)  # degrade modality 0 on test
-    valauc = np.array([0.7, 0.65, 0.6])
-    guard = MultimodalGuard(alpha=0.1, probe_k=16, probe_seed=0)
-    r = guard.guard_category(s_val, y_val, s_test, y_test, valauc)
-    assert r.action in ("adapt", "freeze", "abstain")
-    assert r.test_scores.shape == (n,)
-    assert r.evaluation_mode == "target_label_light"
-    assert r.labels_used_for_decision == 16
-
-
-def test_multimodal_guard_without_probe_is_retrospective() -> None:
-    rng = np.random.default_rng(8)
-    n = 60
-    y_val = np.array([0, 1] * (n // 2))
-    y_test = np.array([0, 1] * (n // 2))
-    s_val = rng.random((n, 2))
-    s_test = rng.random((n, 2))
-    guard = MultimodalGuard(alpha=0.1, probe_k=None)
-    result = guard.guard_category(s_val, y_val, s_test, y_test, np.array([0.7, 0.6]))
-    assert result.evaluation_mode == "retrospective_audit"
-    assert result.labels_used_for_decision == n
+# NOTE: the two MultimodalGuard tests were removed during the ELARA separation —
+# MultimodalGuard lived in the ELARA src/uais tree. The certify_probe coverage
+# above (the K-Bound feature under test) is unchanged.

@@ -3,13 +3,13 @@ requires = ["setuptools>=62", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "universal-anomaly-intelligence"
+name = "kbound-kga"
 version = "0.1.0"
-description = "Universal Anomaly Intelligence System (UAIS) toolkit."
+description = "K-Bound / KGA: Knowability-Guided Adaptation — a finite-sample certificate for safe test-time adaptation."
 readme = "README.md"
 requires-python = ">=3.11"
-authors = [{ name = "UAIS Team" }]
-keywords = ["anomaly detection", "fraud", "cyber", "mlops", "streamlit"]
+authors = [{ name = "Pratik Niroula" }]
+keywords = ["test-time adaptation", "distribution shift", "certificate", "kga", "kbound"]
 classifiers = [
     "Programming Language :: Python :: 3",
     "License :: OSI Approved :: MIT License",
@@ -22,7 +22,7 @@ package-dir = {"" = "src", "kga" = "kga"}
 
 [tool.setuptools.packages.find]
 where = ["src", "."]
-include = ["uais*", "kga*"]
+include = ["kga*"]
 
 [tool.setuptools.package-data]
 kga = ["py.typed"]
@@ -48,7 +48,7 @@ pythonpath = [
 
 [tool.coverage.run]
 branch = true
-source = ["kga", "src/uais"]
+source = ["kga"]
 
 [tool.black]
 line-length = 120
@@ -71,7 +71,7 @@ extend-exclude = '''
 profile = "black"
 line_length = 120
 skip_gitignore = true
-known_first_party = ["uais", "kga", "kbound", "kbound_edge"]
+known_first_party = ["kga", "kbound", "kbound_edge"]
 
 [tool.ruff]
 line-length = 120
