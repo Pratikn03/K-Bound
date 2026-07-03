@@ -88,19 +88,18 @@ Headline numbers reproduce from the cached result JSONs in `experiments/kbound/r
 
 ## Repository layout
 
+See **[`docs/REPO_LAYOUT.md`](docs/REPO_LAYOUT.md)** for the canonical tree (K-Bound only).
+
 | Path | What |
 |---|---|
 | [`kga/`](kga/) | The KGA certificate core — pure-numpy, typed, the maintained source of truth |
 | [`docs/research/kbound/kbound_pkg/`](docs/research/kbound/kbound_pkg/) | The pip-installable `kbound` package (frozen copy, drift-guarded) |
+| [`docs/research/kbound/notebooks/`](docs/research/kbound/notebooks/) | Jupyter curriculum (theory → experiments → reproducibility) |
 | [`experiments/kbound/`](experiments/kbound/) | Experiment drivers + cached result JSONs (`results/`) + theorem validators |
 | [`research_lock/`](research_lock/) | Pre-registered protocols + decision log (the integrity backbone) |
 | [`tests/`](tests/) | Test suite incl. anti-leakage + manuscript-claim-consistency guards |
 | [`deploy/api/`](deploy/api/) | Hardened FastAPI service exposing `POST /decide` |
-| [`docs/dev-notes/`](docs/dev-notes/) | Archived development notes / audit trail |
-
-`src/uais/` and the ELARA-U anomaly meta-routing benchmark (ELARA =
-Evidence-Layered Anomaly Reliability Architecture; RGA = Reliability-Gated Attention)
-remain in the tree as foundation and breadth evidence.
+| [`archive/legacy_elara/`](archive/legacy_elara/) | Archived ELARA/UAIS-V code (provenance only; not maintained) |
 
 ## Cite
 

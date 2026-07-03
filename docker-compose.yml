@@ -4,17 +4,16 @@ services:
       context: .
       dockerfile: Dockerfile
     volumes:
-      - ./models:/app/models:ro
-      - ./experiments:/app/experiments:ro
+      - ./experiments/kbound:/app/experiments/kbound:ro
     ports:
       - "127.0.0.1:8000:8000"
     environment:
       UAIS_API_KEYS: ${UAIS_API_KEYS:?Set UAIS_API_KEYS before starting the API}
       UAIS_CORS_ORIGINS: ${UAIS_CORS_ORIGINS:?Set UAIS_CORS_ORIGINS before starting the API}
-      UAIS_PRODUCTION_MODE: ${UAIS_PRODUCTION_MODE:-true}
-      UAIS_REQUIRED_MODELS: ${UAIS_REQUIRED_MODELS:-fraud,cyber,fusion}
+      UAIS_PRODUCTION_MODE: ${UAIS_PRODUCTION_MODE:-false}
+      UAIS_REQUIRED_MODELS: ${UAIS_REQUIRED_MODELS:-}
       UAIS_TRUSTED_MODEL_ARTIFACTS: ${UAIS_TRUSTED_MODEL_ARTIFACTS:-false}
-      UAIS_REQUIRE_MODEL_CHECKSUMS: ${UAIS_REQUIRE_MODEL_CHECKSUMS:-true}
+      UAIS_REQUIRE_MODEL_CHECKSUMS: ${UAIS_REQUIRE_MODEL_CHECKSUMS:-false}
       # Set for multi-replica rate limiting (Gate P P5): UAIS_REDIS_URL=redis://redis:6379/0
       UAIS_REDIS_URL: ${UAIS_REDIS_URL:-}
     security_opt:
@@ -39,18 +38,12 @@ services:
 
   streamlit:
     profiles:
-      - research
+      - legacy
     image: python:3.11-slim-bookworm@sha256:8dca233de9f3d9bb410665f00a4da6dd06f331083137e0e98ccf227236fcc438
     working_dir: /app
     volumes:
-      - ./:/app:ro
-    command: bash -c "pip install --no-cache-dir -r requirements.txt && streamlit run dashboard/app_streamlit.py --server.port 8501 --server.address 0.0.0.0"
-    ports:
-      - "127.0.0.1:8501:8501"
-    environment:
-      - PYTHONPATH=/app/src
-    depends_on:
-      - api
+      - ./archive/legacy_elara:/app/legacy:ro
+    command: bash -c "echo 'ELARA Streamlit dashboard archived under archive/legacy_elara/dashboard'; exit 1"
 
   mlflow:
     profiles:
