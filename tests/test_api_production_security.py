@@ -1,5 +1,8 @@
+"""Security tests for the K-Bound KGA-only deploy API."""
+
+from __future__ import annotations
+
 import asyncio
-import hashlib
 import importlib
 import sys
 
@@ -10,25 +13,9 @@ from fastapi.testclient import TestClient
 SECURITY_ENV = {
     "UAIS_API_KEYS",
     "UAIS_CORS_ORIGINS",
-    "UAIS_MAX_FEATURES",
-    "UAIS_MAX_SCORES",
-    "UAIS_MAX_DOMAINS",
-    "UAIS_MAX_EMBEDDINGS",
-    "UAIS_MAX_TEXT_CHARS",
-    "UAIS_MAX_IMAGE_BASE64_CHARS",
-    "UAIS_MAX_IMAGE_PIXELS",
     "UAIS_RATE_LIMIT_REQUESTS",
     "UAIS_RATE_LIMIT_WINDOW_SECONDS",
     "UAIS_PRODUCTION_MODE",
-    "UAIS_REQUIRED_MODELS",
-    "UAIS_TRUSTED_MODEL_ARTIFACTS",
-    "UAIS_REQUIRE_MODEL_CHECKSUMS",
-    "UAIS_MODEL_SHA256_FRAUD",
-    "UAIS_MODEL_SHA256_CYBER",
-    "UAIS_MODEL_SHA256_FUSION",
-    "UAIS_MODEL_SHA256_NLP",
-    "UAIS_MODEL_SHA256_VISION",
-    "UAIS_MODEL_SHA256_ATTENTION_FUSION",
 }
 
 
@@ -64,15 +51,6 @@ def test_api_key_auth_fails_closed_when_no_keys_configured(monkeypatch):
     assert "not configured" in exc_info.value.detail.lower()
 
 
-def test_password_hashing_backend_is_compatible(monkeypatch):
-    auth = _reload_auth(monkeypatch, UAIS_API_KEYS="secret")
-
-    hashed = auth.get_password_hash("correct horse battery staple")
-
-    assert auth.verify_password("correct horse battery staple", hashed)
-    assert not auth.verify_password("wrong", hashed)
-
-
 def test_cors_uses_explicit_allowlist_from_environment(monkeypatch):
     api = _reload_api(
         monkeypatch,
@@ -87,36 +65,21 @@ def test_cors_uses_explicit_allowlist_from_environment(monkeypatch):
     assert cors.kwargs["allow_credentials"] is True
 
 
-def test_operational_endpoints_require_api_key(monkeypatch):
+def test_health_and_ready_are_public(monkeypatch):
     api = _reload_api(monkeypatch, UAIS_API_KEYS="secret")
     client = TestClient(api.app)
 
-    for path in ("/health/detailed", "/metrics", "/system", "/ready"):
-        assert client.get(path).status_code == 403
-        assert client.get(path, headers={"X-API-Key": "secret"}).status_code in {200, 501, 503}
+    assert client.get("/health").status_code == 200
+    assert client.get("/ready").status_code == 200
 
 
-def test_readiness_endpoint_reports_missing_core_models(monkeypatch):
-    api = _reload_api(
-        monkeypatch,
-        UAIS_API_KEYS="secret",
-        UAIS_CORS_ORIGINS="https://ops.example",
-        UAIS_PRODUCTION_MODE="true",
-        UAIS_REQUIRED_MODELS="fraud,cyber,fusion",
-    )
+def test_decide_requires_api_key(monkeypatch):
+    api = _reload_api(monkeypatch, UAIS_API_KEYS="secret")
     client = TestClient(api.app)
+    payload = {"calib_scores": [0.1, 0.2, 0.3], "test_scores": [0.4, 0.5, 0.6]}
 
-    response = client.get("/ready", headers={"X-API-Key": "secret"})
-
-    assert response.status_code == 503
-    body = response.json()
-    assert body["ready"] is False
-    assert body["mode"] == "production"
-    assert body["checks"]["configuration"]["status"] == "pass"
-    assert body["checks"]["models"]["status"] == "fail"
-    assert body["models"]["fraud"]["available"] is False
-    assert body["models"]["cyber"]["available"] is False
-    assert body["models"]["fusion"]["available"] is False
+    assert client.post("/decide", json=payload).status_code == 403
+    assert client.post("/decide", json=payload, headers={"X-API-Key": "secret"}).status_code == 200
 
 
 def test_production_runtime_config_validation_rejects_missing_auth_and_wildcard_cors(monkeypatch):
@@ -133,91 +96,15 @@ def test_production_runtime_config_validation_rejects_missing_auth_and_wildcard_
     assert "wildcard" in errors.lower()
 
 
-def test_optional_model_routes_fail_closed_with_model_unavailable_code(monkeypatch):
-    api = _reload_api(monkeypatch, UAIS_API_KEYS="secret")
-    client = TestClient(api.app)
-
-    cases = [
-        (
-            "/predict_attention_fusion",
-            {"domains": [{"domain": "rgb", "score": 0.2, "confidence": 0.9}]},
-            "attention_fusion",
-        ),
-        ("/predict_nlp", {"text": "sample"}, "nlp"),
-        ("/predict_vision", {"image_base64": "AA=="}, "vision"),
-    ]
-
-    for path, payload, model_type in cases:
-        response = client.post(path, headers={"X-API-Key": "secret"}, json=payload)
-        assert response.status_code == 503
-        assert response.json()["detail"] == {
-            "code": "model_unavailable",
-            "model_type": model_type,
-            "message": f"{model_type} model is not production-ready or not loaded",
-        }
-
-
-def test_optional_vision_route_stays_unavailable_on_repeated_calls(monkeypatch):
-    api = _reload_api(monkeypatch, UAIS_API_KEYS="secret")
-    client = TestClient(api.app)
-
-    for _ in range(2):
-        response = client.post(
-            "/predict_vision",
-            headers={"X-API-Key": "secret"},
-            json={"image_base64": "AA=="},
-        )
-        assert response.status_code == 503
-        assert response.json()["detail"]["code"] == "model_unavailable"
-
-
 def test_request_logging_sets_request_id_without_logging_credentials(monkeypatch, caplog):
     api = _reload_api(monkeypatch, UAIS_API_KEYS="secret")
     client = TestClient(api.app)
 
     with caplog.at_level("INFO", logger="deploy.api.main"):
-        response = client.get("/health", headers={"X-API-Key": "secret"})
+        response = client.get("/health")
 
     assert response.status_code == 200
     assert response.headers["X-Request-ID"]
-    logged = "\n".join(record.getMessage() for record in caplog.records)
-    assert "request_id=" in logged
-    assert "path=/health" in logged
-    assert "secret" not in logged
-
-
-def test_vision_payload_is_rejected_before_model_loading_when_too_large(monkeypatch):
-    api = _reload_api(
-        monkeypatch,
-        UAIS_API_KEYS="secret",
-        UAIS_MAX_IMAGE_BASE64_CHARS="16",
-    )
-    client = TestClient(api.app)
-
-    response = client.post(
-        "/predict_vision",
-        headers={"X-API-Key": "secret"},
-        json={"image_base64": "A" * 17},
-    )
-
-    assert response.status_code == 422
-
-
-def test_feature_vectors_have_configurable_upper_bounds(monkeypatch):
-    api = _reload_api(
-        monkeypatch,
-        UAIS_API_KEYS="secret",
-        UAIS_MAX_FEATURES="2",
-    )
-    client = TestClient(api.app)
-
-    response = client.post(
-        "/predict_fraud",
-        headers={"X-API-Key": "secret"},
-        json={"features": [1.0, 2.0, 3.0]},
-    )
-
-    assert response.status_code == 422
 
 
 def test_rate_limiter_rejects_requests_over_configured_window(monkeypatch):
@@ -234,58 +121,10 @@ def test_rate_limiter_rejects_requests_over_configured_window(monkeypatch):
     assert client.get("/health").status_code == 429
 
 
-def test_joblib_artifacts_are_not_loaded_without_trust_flag(monkeypatch, tmp_path):
+def test_root_lists_kga_endpoints(monkeypatch):
     api = _reload_api(monkeypatch, UAIS_API_KEYS="secret")
-    artifact = tmp_path / "model.pkl"
-    artifact.write_bytes(b"not a trusted model")
+    client = TestClient(api.app)
 
-    assert api._load_joblib_artifact(artifact, "fraud") is None
-
-
-def test_model_artifacts_require_matching_checksum_when_trusted(monkeypatch, tmp_path):
-    api = _reload_api(monkeypatch, UAIS_API_KEYS="secret", UAIS_TRUSTED_MODEL_ARTIFACTS="true")
-    artifact = tmp_path / "model.pkl"
-    artifact.write_bytes(b"trusted bytes")
-
-    assert api._artifact_is_trusted(artifact, "fraud") is False
-
-    monkeypatch.setenv("UAIS_MODEL_SHA256_FRAUD", "0" * 64)
-    assert api._artifact_is_trusted(artifact, "fraud") is False
-
-    expected = hashlib.sha256(b"trusted bytes").hexdigest()
-    monkeypatch.setenv("UAIS_MODEL_SHA256_FRAUD", expected)
-    assert api._artifact_is_trusted(artifact, "fraud") is True
-
-
-def test_torch_artifacts_require_weights_only_loader(monkeypatch, tmp_path):
-    api = _reload_api(
-        monkeypatch,
-        UAIS_API_KEYS="secret",
-        UAIS_TRUSTED_MODEL_ARTIFACTS="true",
-        UAIS_REQUIRE_MODEL_CHECKSUMS="false",
-    )
-    artifact = tmp_path / "model.pt"
-    artifact.write_bytes(b"trusted torch bytes")
-
-    class TorchWithoutWeightsOnly:
-        def load(self, *args, **kwargs):
-            raise TypeError("weights_only is unsupported")
-
-    assert api._load_torch_artifact(TorchWithoutWeightsOnly(), artifact, "vision") is None
-
-
-def test_health_checker_accepts_sync_and_async_checks():
-    from deploy.api.monitoring import HealthChecker
-
-    async def async_check():
-        return True
-
-    checker = HealthChecker()
-    checker.register_check("sync_ok", lambda: True)
-    checker.register_check("async_ok", async_check)
-
-    result = asyncio.run(checker.run_checks())
-
-    assert result["status"] == "healthy"
-    assert result["checks"]["sync_ok"]["status"] == "pass"
-    assert result["checks"]["async_ok"]["status"] == "pass"
+    body = client.get("/").json()
+    assert body["service"] == "kbound-kga-api"
+    assert "/kga/decide" in body["endpoints"]

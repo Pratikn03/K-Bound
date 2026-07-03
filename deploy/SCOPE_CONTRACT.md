@@ -1,18 +1,16 @@
 # Deployment Scope Contract (Gate P / P13)
 
-This contract declares the **validated operating envelope** of the ELARA/UAIS-V
-serving API. Deploying or claiming performance **outside** this envelope is not
-supported by the evidence and is forbidden by decisions D12/D15/D16.
+This contract declares the **validated operating envelope** of the K-Bound
+**KGA certificate API** (`deploy/api/`). Deploying or claiming performance
+outside this envelope is not supported by the evidence.
 
 ## What is validated (deploy within this)
 
-- **In-domain reliability-gated fusion**: significant superiority over the
-  strongest frozen baseline on the supervised-paired in-domain protocol
-  (Gate D/T5: Δ≈+0.024, 30/30 splits).
-- **Differential-reliability STRESS regime**: when a modality genuinely degrades
-  and the drift signal can detect it, reliability gating beats the
-  confidence-weighted mean (bounded stress evidence; natural-degradation
-  development evidence on Real-IAD-3D, +0.045 dev — held-out confirmation pending).
+- **KGA certificate decisions** (`POST /decide`): adapt / freeze / abstain from
+  label-free calibration and test scores with finite-sample false-adapt control
+  at level α (see `kga/` and the K-Bound paper).
+- **Scope-guard drift telemetry** on certificate traffic (advisory / reference
+  envelope modes via `deploy/api/scope_guard.py`).
 
 ## What is NOT validated (do NOT claim/deploy as superiority)
 
@@ -33,8 +31,8 @@ supported by the evidence and is forbidden by decisions D12/D15/D16.
 - **Reference envelope**: set `UAIS_SCOPE_REFERENCE` to per-domain validated score
   quantiles to enable full envelope checking; otherwise the guard runs in advisory
   (disagreement-only) mode and says so.
-- Mandatory auth, no-wildcard CORS in production, rate limiting, request timeout,
-  checksum-gated `weights_only` model loading.
+- Mandatory auth on `/decide`, no-wildcard CORS in production, rate limiting,
+  request timeout. **No pickle/torch model loading** in the KGA-only service.
 
 ## Honest status
 
