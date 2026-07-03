@@ -1,0 +1,133 @@
+{
+  "seed": 1,
+  "benchmark": "imagenet-r",
+  "method": "efficientnet_b3",
+  "alpha": 0.1,
+  "n_conditions": 2,
+  "kga_backend": "numpy_knn_fallback",
+  "per_condition_fields_absent": [
+    "n_D",
+    "c_ij"
+  ],
+  "per_condition_fields_absent_reason": "single-candidate KGA = B_hat(Z) + split-conformal eps; it does not compute pairwise agreements c_ij or n_D.",
+  "per_condition_field_notes": {
+    "tau_hat_tau_star": "single-candidate route (frozen vs adapted), so tau is degenerate and set to 0.0.",
+    "zone": "computed from benefit_ci: lb>0 => CERTIFIED_ADAPT, ub<0 => CERTIFIED_FREEZE, else BLIND.",
+    "gamma_hat": "single-candidate proxy (b_hat/2) with gamma_ci = benefit_ci/2.",
+    "kga_backend": "sklearn_gradient_boost = production certificate; numpy_knn_fallback = torch/sklearn-free verification estimator (decision rule + conformal radius identical, estimator differs)."
+  },
+  "records": [
+    {
+      "seed": 1,
+      "benchmark": "imagenet-r",
+      "method": "efficientnet_b3",
+      "condition": "imagenet_r|iid|tiny|mild|frozen",
+      "B": -0.025000000000000022,
+      "a0": 0.725,
+      "a_adapted": 0.7,
+      "a_kbound": 0.725,
+      "a_oracle": 0.725,
+      "regime": "harmful",
+      "oracle_action": "FREEZE",
+      "Z": [
+        0.8625260591506958,
+        0.7829771041870117,
+        0.7905071728012483,
+        0.7234681844711304,
+        0.7880770564079285,
+        0.8183732825956416,
+        -0.0278661097943933,
+        0.13905787467956543,
+        0.625,
+        0.06199027597904205,
+        0.0
+      ],
+      "Z_names": [
+        "pre_entropy",
+        "pre_conf",
+        "pre_pbal",
+        "post_entropy",
+        "post_conf",
+        "post_pbal",
+        "pbal_drop",
+        "entropy_drop",
+        "frac_highconf",
+        "marginal_KL",
+        "update_norm"
+      ],
+      "n_D": null,
+      "c_ij": null,
+      "tau_hat": 0.0,
+      "tau_star": 0.0,
+      "b_hat": -0.050000000000000044,
+      "eps_conformal": 0.025000000000000022,
+      "benefit_ci": [
+        -0.07500000000000007,
+        -0.025000000000000022
+      ],
+      "zone": "CERTIFIED_FREEZE",
+      "gamma_hat": -0.025000000000000022,
+      "gamma_ci": [
+        -0.03750000000000003,
+        -0.012500000000000011
+      ],
+      "kga_decision": "FREEZE"
+    },
+    {
+      "seed": 1,
+      "benchmark": "imagenet-r",
+      "method": "efficientnet_b3",
+      "condition": "imagenet_r|single_class|tiny|mild|frozen",
+      "B": -0.050000000000000044,
+      "a0": 0.625,
+      "a_adapted": 0.575,
+      "a_kbound": 0.625,
+      "a_oracle": 0.625,
+      "regime": "harmful",
+      "oracle_action": "FREEZE",
+      "Z": [
+        2.1981711387634277,
+        0.37779831886291504,
+        0.8374765673927147,
+        1.856543779373169,
+        0.48992639780044556,
+        0.7663955361847178,
+        0.07108103120799691,
+        0.3416273593902588,
+        0.125,
+        0.09085945785045624,
+        0.0
+      ],
+      "Z_names": [
+        "pre_entropy",
+        "pre_conf",
+        "pre_pbal",
+        "post_entropy",
+        "post_conf",
+        "post_pbal",
+        "pbal_drop",
+        "entropy_drop",
+        "frac_highconf",
+        "marginal_KL",
+        "update_norm"
+      ],
+      "n_D": null,
+      "c_ij": null,
+      "tau_hat": 0.0,
+      "tau_star": 0.0,
+      "b_hat": -0.025000000000000022,
+      "eps_conformal": 0.025000000000000022,
+      "benefit_ci": [
+        -0.050000000000000044,
+        0.0
+      ],
+      "zone": "BLIND",
+      "gamma_hat": -0.012500000000000011,
+      "gamma_ci": [
+        -0.025000000000000022,
+        0.0
+      ],
+      "kga_decision": "ABSTAIN"
+    }
+  ]
+}

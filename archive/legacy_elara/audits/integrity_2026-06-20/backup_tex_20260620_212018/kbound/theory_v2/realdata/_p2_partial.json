@@ -1,0 +1,132 @@
+{
+  "P2": {
+    "source_csv": "/Volumes/T9/uav/AutoML_Flagship_V8/experiments/kbound/results/cifar10c_65cells.csv",
+    "n_cells": 65,
+    "n_boot": 10000,
+    "alpha": 0.05,
+    "method": "per-condition paired bootstrap over the 65 real CIFAR-10-C cells (corruption x severity); Holm across the 6-comparison family. Replaces decisive_tta_cis.json pareto_bootstrap_curve.",
+    "mean_regret_to_oracle_per_method": {
+      "frozen": 0.21679,
+      "tent": 0.00302,
+      "eata": 0.00316,
+      "sar": 0.00207,
+      "kga": 0.00315
+    },
+    "comparisons": {
+      "tent: KGA vs always-adapt": {
+        "n_cells": 65,
+        "mean_regret_KGA": 0.00315,
+        "mean_diff_KGA_minus_baseline": 0.00014,
+        "boot95_CI": [
+          -0.00021,
+          0.00048
+        ],
+        "p_boot": 0.4254,
+        "p_paired_t": 0.44471,
+        "t_stat": 0.769,
+        "direction": "KGA worse",
+        "holm": {
+          "p": 0.44470638432023496,
+          "holm_threshold": 0.025,
+          "reject_holm": false
+        }
+      },
+      "tent: KGA vs always-freeze": {
+        "n_cells": 65,
+        "mean_regret_KGA": 0.00315,
+        "mean_diff_KGA_minus_baseline": -0.21363,
+        "boot95_CI": [
+          -0.24517,
+          -0.18274
+        ],
+        "p_boot": 0.0,
+        "p_paired_t": 0.0,
+        "t_stat": -13.478,
+        "direction": "KGA better",
+        "holm": {
+          "p": 2.3328535468781506e-20,
+          "holm_threshold": 0.008333333333333333,
+          "reject_holm": true
+        }
+      },
+      "eata: KGA vs always-adapt": {
+        "n_cells": 65,
+        "mean_regret_KGA": 0.00315,
+        "mean_diff_KGA_minus_baseline": -0.0,
+        "boot95_CI": [
+          -0.00057,
+          0.00055
+        ],
+        "p_boot": 0.9936,
+        "p_paired_t": 0.99147,
+        "t_stat": -0.011,
+        "direction": "KGA better",
+        "holm": {
+          "p": 0.9914679973174845,
+          "holm_threshold": 0.05,
+          "reject_holm": false
+        }
+      },
+      "eata: KGA vs always-freeze": {
+        "n_cells": 65,
+        "mean_regret_KGA": 0.00315,
+        "mean_diff_KGA_minus_baseline": -0.21363,
+        "boot95_CI": [
+          -0.24529,
+          -0.18303
+        ],
+        "p_boot": 0.0,
+        "p_paired_t": 0.0,
+        "t_stat": -13.478,
+        "direction": "KGA better",
+        "holm": {
+          "p": 2.3328535468781506e-20,
+          "holm_threshold": 0.01,
+          "reject_holm": true
+        }
+      },
+      "sar: KGA vs always-adapt": {
+        "n_cells": 65,
+        "mean_regret_KGA": 0.00315,
+        "mean_diff_KGA_minus_baseline": 0.00109,
+        "boot95_CI": [
+          0.00015,
+          0.00203
+        ],
+        "p_boot": 0.0242,
+        "p_paired_t": 0.02881,
+        "t_stat": 2.237,
+        "direction": "KGA worse",
+        "holm": {
+          "p": 0.02880920092169808,
+          "holm_threshold": 0.016666666666666666,
+          "reject_holm": false
+        }
+      },
+      "sar: KGA vs always-freeze": {
+        "n_cells": 65,
+        "mean_regret_KGA": 0.00315,
+        "mean_diff_KGA_minus_baseline": -0.21363,
+        "boot95_CI": [
+          -0.24409,
+          -0.18365
+        ],
+        "p_boot": 0.0,
+        "p_paired_t": 0.0,
+        "t_stat": -13.478,
+        "direction": "KGA better",
+        "holm": {
+          "p": 2.3328535468781506e-20,
+          "holm_threshold": 0.0125,
+          "reject_holm": true
+        }
+      }
+    },
+    "n_survive_holm": 3,
+    "survivors_holm": [
+      "tent: KGA vs always-freeze",
+      "eata: KGA vs always-freeze",
+      "sar: KGA vs always-freeze"
+    ]
+  }
+}

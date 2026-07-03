@@ -1,0 +1,187 @@
+--- /sessions/relaxed-sleepy-newton/mnt/T9/uav/AutoML_Flagship_V8/docs/research/kbound/kbound.tex.bak_prepdf_20260611_054006	2026-06-11 05:40:07.810000000 +0000
++++ /sessions/relaxed-sleepy-newton/mnt/T9/uav/AutoML_Flagship_V8/docs/research/kbound/kbound.tex	2026-06-11 05:50:58.800000000 +0000
+@@ -78,6 +78,15 @@
+ On a \emph{pre-registered} CIFAR-10-C stress grid (severity$\times$batch$\times$composition$\times$aggressiveness;
+ harmful base rate $0.16$--$0.34$), \textsc{KGA} \emph{beats both} trivial policies for Tent and EATA---regret-to-oracle
+ $0.0016$ vs always-adapt $0.009$ and always-freeze $0.12$, at a $0\%$ false-adapt rate---and ties the collapse-resistant SAR.
++At ImageNet scale the harmful-candidate win survives a \emph{mechanism-faithful} SAR
++re-implementation---\textsc{KGA} \emph{beats both} trivial policies on the SAR stream
++(regret-to-oracle $0.023$ vs.\ $0.112$/$0.027$), confirming it is not an implementation
++artifact---while it ties near-oracle always-adapt for the benign Tent/EATA candidates. On two
++\emph{natural} shifts (WILDS Camelyon17, ImageNet-R) the harmful regime is real and brackets the
++detectability frontier (harmful base rate $0.29$/$0.14$, label-free harm-AUC $0.78$/$0.66$), but at
++our current operating point the certificate \emph{abstains}---correctly where harm is undetectable,
++conservatively where it is detectable, pending operating-point recalibration---so we report these as
++regime-existence evidence, not a natural-shift policy win.
+ We are explicit about scope: where harmful adaptation is mild, always-adapt is
+ already strong, so the certificate's distinctive value is bounded by how often
+ \emph{catastrophic, detectable} harm occurs---itself the quantity the theory characterizes.
+@@ -129,7 +138,7 @@
+ establishing the unknowable regime (Thm.~\ref{thm:imp}); (4) a finite-sample
+ adapt/freeze/abstain certificate with false-adapt control (Thm.~\ref{thm:cert}); (5) a
+ provable positive regime and an open conjecture for the general case (Cor.~\ref{thm:pos}; resolved by Thm.~\ref{thm:conj1-dichotomy});
+-(6) \textsc{KGA} and real experiments on anomaly routing and deep TTA (\S\ref{sec:exp});
++(6) \textsc{KGA} and real experiments on anomaly routing, deep TTA, ImageNet-scale corruptions, and two natural shifts (Camelyon17, ImageNet-R) (\S\ref{sec:exp});
+ and (7) an explicit, honest scope (\S\ref{sec:limits}).
+ 
+ \noindent A per-result proof-and-validation status summary is in Appendix~\ref{app:status}; the
+@@ -851,6 +860,57 @@
+ \label{fig:imagenetc}
+ \end{figure}
+ 
++\paragraph{ImageNet-C, mechanism-faithful SAR re-run: the harmful win is not an implementation artifact.}
++The SAR row of Table~\ref{tab:imagenetc} was flagged for re-checking (\S\ref{sec:limits}): its
++collapse concentrated atypically at the \emph{larger} batch, raising the worry that the harmful
++regime---and thus \textsc{KGA}'s only ImageNet-scale ``beats both''---was an artifact of our first
++SAR port. We re-ran the full noise grid with a \emph{mechanism-faithful} SAR (sharpness-aware
++minimisation, the entropy/recovery reset, and the EMA-stabilised update re-implemented to the
++reference design), at the learning rate \emph{shared} across all candidates (apples-to-apples).
++The harmful regime \emph{persisted and broadened}---SAR is now harmful on $44\%$ of cells (vs
++$31\%$ in the first port)---and the \textsc{KGA} win \emph{survived}: regret-to-oracle $0.0229$
++versus always-adapt $0.1124$ and always-freeze $0.0267$, \emph{beating both} trivial policies
++(Pareto crossover $p^\star{=}0.2$; Table~\ref{tab:imagenetc-faithful}). Tent and EATA stay benign
++($6\%$/$3\%$ harmful), so \textsc{KGA} ties the near-oracle always-adapt and beats always-freeze,
++exactly as in the first port. The implementation-artifact concern is thus removed: under a
++reference-faithful SAR the harmful-candidate win is real. \emph{Residual check, stated honestly.}
++This holds at the matched/shared learning rate (mechanism-faithful, apples-to-apples); SAR's
++\emph{official} gentler schedule (lr $2.5{\times}10^{-4}$ with \texttt{layer4} frozen) was not run,
++and is the one configuration that could still soften the collapse---the last box to tick before the
++SAR win is treated as fully settled. From
++\texttt{results/imagenetc\_noise\_sarfix/decisive\_tta\_results.json}.
++
++\begin{table*}[t]\centering\small
++\begin{tabular}{llcccc}
++\toprule
++candidate & policy & mean acc & regret$\downarrow$ & harmful cells & beats both? \\
++\midrule
++Tent & always-adapt     & $\mathbf{0.454}$ & $0.0007$          &        & \\
++     & always-freeze    & $0.405$          & $0.0494$          &        & \\
++     & \textbf{K-Bound} & $0.446$          & $0.0082$          & $6\%$  & no (ties adapt) \\
++\midrule
++EATA & always-adapt     & $\mathbf{0.444}$ & $0.0000$          &        & \\
++     & always-freeze    & $0.405$          & $0.0386$          &        & \\
++     & \textbf{K-Bound} & $0.440$          & $0.0038$          & $3\%$  & no (ties adapt) \\
++\midrule
++SAR  & always-adapt     & $0.319$          & $0.1124$          &        & \\
++     & always-freeze    & $0.405$          & $0.0267$          &        & \\
++     & \textbf{K-Bound} & $\mathbf{0.409}$ & $\mathbf{0.0229}$ & $44\%$ & \textbf{yes} \\
++\bottomrule
++\end{tabular}
++\caption{\textbf{ImageNet-C, mechanism-faithful SAR re-implementation ($36$ cells/candidate,
++ResNet-50, $\alpha{=}0.1$).} Same noise grid, protocol, and metrics as Table~\ref{tab:imagenetc};
++SAR re-implemented to the reference mechanism (SAM, recovery reset, EMA) at the learning rate shared
++across candidates. The harmful regime survives the faithful re-implementation (SAR harmful on $44\%$
++of cells, mean benefit $-0.086$): always-adapt collapses to $0.319$ while \textsc{KGA}
++certifies-or-abstains to $0.409$, \emph{beating both} trivial policies (regret $0.0229$ vs
++$0.1124$/$0.0267$); Tent/EATA stay benign and \textsc{KGA} ties always-adapt. Oracle accuracy
++$0.455$/$0.444$/$0.432$. \emph{Caveat:} matched/shared LR; SAR's official lr $2.5{\times}10^{-4}$,
++\texttt{layer4}-frozen schedule not yet run. From
++\texttt{results/imagenetc\_noise\_sarfix/decisive\_tta\_results.json}.}
++\label{tab:imagenetc-faithful}
++\end{table*}
++
+ \begin{table*}[t]\centering\small
+ \begin{tabular}{llcccc}
+ \toprule
+@@ -886,7 +946,8 @@
+ 
+ \paragraph{Third natural-shift track: ImageNet-R lands in the \emph{unknowable} regime.}
+ The trichotomy's empirical map is now complete with real data in all three regimes:
+-knowably-helpful (Camelyon17, Table~\ref{tab:camelyon}), knowably-harmful (SAR on
++knowably-helpful under matched composition (Camelyon17, Table~\ref{tab:camelyon}; with a detectable
++harmful regime under composition stress, \S\ref{sec:natural-suite}), knowably-harmful (SAR on
+ ImageNet-C, Table~\ref{tab:imagenetc}), and --- with this track --- \emph{unknowable}.
+ On ImageNet-R (200 renditions classes, $30{,}000$ real images; a $48$-condition stress
+ grid over severity $\times$ composition $\times$ batch $\times$ aggressiveness,
+@@ -931,12 +992,56 @@
+ \label{tab:imagenetr}
+ \end{table}
+ 
++\subsection{Natural-shift suite: do the harmful regimes occur on real data?}\label{sec:natural-suite}
++The synthetic stress grids above manufacture harm by construction. The sharper question is whether
++the \emph{harmful, detectable} regime---the wedge where the certificate is meant to earn its
++keep---arises on \emph{natural} shift, and whether the operating point we calibrated on synthetic
++data fires there. We probe this with two real shifts that bracket the detectability frontier.
++
++\paragraph{Camelyon17 composition-stress grid: real harm that is label-free \emph{detectable}.}
++Re-running the hospital-shift candidates over a composition stress grid (iid / class-imbalanced /
++single-class $\times$ \{test, val, id-val\} domains $\times$ mild/aggressive updates $\times$ $4$
++seeds; $72$ conditions $\times$ $6$ TTA variants ${=}\,432$ cells, debug-scale
++$n_{\mathrm{eval}}{=}256$/cell) turns the benign picture of Table~\ref{tab:camelyon} into a
++\emph{mixed} one: $28.7\%$ of cells are harmful ($\bar B{=}{+}0.039$), and---crucially---the harm is
++label-free \emph{detectable}: the best single evidence feature reaches harm-AUC $0.78$, and the
++conformal certificate's own $-\widehat B$ score reaches $0.91$. This is the first natural-shift
++confirmation that the harmful-and-detectable regime the theory targets is not a synthetic artifact.
++\emph{Yet at our current operating point \textsc{KGA} abstains rather than commits.} The
++multi-candidate route's gate passes on only $2.8\%$ of conditions---the real multi-candidate
++statistic $\bar\tau{=}0.89$ exceeds the synthetic-calibrated threshold $\tau^\star{=}0.52$, so the
++router \textsc{abstain}s on $61/72$ conditions, \textsc{freeze}s $10$, and commits a single adapt
++(the six hospital-TTA variants are co-trained on one backbone---the very correlation the gate is
++built to catch). The smooth-drift fallback likewise stays conservative ($21$ freeze / $51$ abstain,
++bracket coverage $0.44$): its source-concept term is a conservative $f_0$ surrogate, so the
++smooth-drift hypothesis is not cleanly satisfied here. Honest reading: Camelyon17 supplies the
++missing \emph{harmful-and-detectable} natural-shift data point, but the win is \emph{latent}---the
++$\tau^\star$ operating point, fit on synthetic grids, is mis-matched to this panel, and
++\emph{recalibrating $\tau^\star$ on the stored per-condition values is the pending step} that would
++convert detectability into a committed decision. Debug-scale, single protocol; reported as
++regime-existence evidence, not a policy win. From
++\texttt{results/wilds\_kbound\_debug\_mps/result\_73add410.json}.
++
++\paragraph{The pair, read together.} Camelyon17 (detectable harm, AUC $0.78$) and ImageNet-R
++(\emph{un}detectable harm, AUC $0.66$; Table~\ref{tab:imagenetr}) bracket the frontier of
++Theorem~\ref{thm:frontier}: real harm exists on both ($28.7\%$ / $13.9\%$ of cells), but only on
++Camelyon17 is it label-free separable. \textsc{KGA} abstains on both---\emph{correctly} on
++ImageNet-R, where Corollary~\ref{cor:forced-abstain} makes abstention mandatory for any valid
++certificate, and \emph{conservatively} on Camelyon17, where the harm is detectable but the
++operating point is not yet tuned to it. Two honest conclusions follow: (i) the harmful regimes the
++theory characterises do occur on natural shift, on both sides of the detectability frontier; and
++(ii) turning the detectable side into a committed natural-shift win is an operating-point
++calibration task (recalibrate $\tau^\star$), not a new-data task---the next concrete step.
++
+ \section{Limitations and honest scope}\label{sec:limits}
+ (1) Scope of the empirical win: on the CIFAR-10-C \emph{stress} grid \textsc{KGA} beats both
+ trivial policies for Tent and EATA at $0\%$ false-adapt (Table~\ref{tab:decisive}) and ties
+ the collapse-resistant SAR; on ImageNet-C (Table~\ref{tab:imagenetc}) the pattern \emph{flips}---
+ Tent and EATA are robust so \textsc{KGA} ties always-adapt, while SAR collapses and \textsc{KGA}
+-beats both. On \emph{per-corruption} CIFAR-10-C and within a single online stream (both
++beats both---a win we confirmed survives a \emph{mechanism-faithful} SAR re-implementation
++(Table~\ref{tab:imagenetc-faithful}; SAR harmful on $44\%$ of cells, regret-to-oracle $0.023$ vs
++$0.112$/$0.027$), so it is not an implementation artifact, modulo SAR's official gentler-LR,
++\texttt{layer4}-frozen schedule, which we have not yet run. On \emph{per-corruption} CIFAR-10-C and within a single online stream (both
+ helpful-dominated) it again \emph{ties} the better fixed policy. The common rule across all of
+ these: \textsc{KGA} never underperforms the better trivial policy, and \emph{strictly} wins only
+ where catastrophic, detectable harm is actually present---and which method that is depends on the
+@@ -946,17 +1051,27 @@
+ (WILDS Camelyon17, 4 seeds) is \emph{complete} (Table~\ref{tab:camelyon}) and is, candidly, a
+ \emph{knowably-helpful} regime: adaptation helps on every seed, so always-adapt is optimal and
+ \textsc{KGA}'s caution costs $\approx\!0.02$ regret---it beats always-freeze but not
+-always-adapt. The ImageNet-C / ResNet-50 track (Table~\ref{tab:imagenetc}) is now \emph{complete}
++always-adapt (under matched composition; a composition-stress grid surfaces a detectable harmful
++regime---$28.7\%$ of cells, harm-AUC $0.78$---where \textsc{KGA} currently abstains pending
++$\tau^\star$ recalibration, \S\ref{sec:natural-suite}). The ImageNet-C / ResNet-50 track (Table~\ref{tab:imagenetc}) is now \emph{complete}
+ ($36$ cells, $4000$ images/cell): it confirms a harmful regime at ImageNet scale, but only for
+ SAR (which collapses on $31\%$ of cells); Tent and EATA are robust here, so \textsc{KGA} ties
+-always-adapt rather than beating it. We flag one caveat for scrutiny: SAR's collapse in our runs
+-concentrates at the \emph{larger} batch size, which is atypical for entropy-stabilised TTA, so the
+-SAR row warrants re-checking against the reference implementation before the SAR win is treated as
+-load-bearing. Camelyon17 uses a $\sim\!94\%$ patch subset (storage-limited extraction). A second
++always-adapt rather than beating it. We flagged the SAR row for re-checking---its collapse
++concentrated atypically at the \emph{larger} batch size, which is unusual for entropy-stabilised
++TTA---and have since done that re-check: a \emph{mechanism-faithful} SAR re-implementation (SAM,
++recovery reset, EMA), at the matched learning rate, \emph{reproduced} the harmful regime ($44\%$ of
++cells) and the \textsc{KGA} ``beats both'' win (Table~\ref{tab:imagenetc-faithful}), so the win is
++not an artifact of our first port; the one residual check is SAR's \emph{official} gentler schedule
++(lr $2.5{\times}10^{-4}$, \texttt{layer4} frozen), which we have not run. Camelyon17 uses a $\sim\!94\%$ patch subset (storage-limited extraction). A second
+ natural-shift track (CIFAR-10.1, Table~\ref{tab:cifar101}) probes the opposite boundary---a
+ \emph{low-margin} real shift where most conditions are marginal: \textsc{KGA} abstains heavily,
+ never false-adapts, ties the better trivial policy for Tent/EATA, and narrowly beats both for SAR
+-(single-seed quick protocol). WILDS
++(single-seed quick protocol). The natural-shift suite (\S\ref{sec:natural-suite}) confirms the
++harmful regime occurs on real data across the detectability frontier---Camelyon17 detectable
++($28.7\%$ harmful, harm-AUC $0.78$) and ImageNet-R undetectable ($13.9\%$ harmful, AUC $0.66$)---but
++at our synthetic-calibrated $\tau^\star{=}0.52$ operating point \textsc{KGA} \emph{abstains} on both
++rather than committing on the detectable side; recalibrating $\tau^\star$ on the stored Camelyon17
++per-condition values is the pending step before a natural-shift ``beats both'' can be claimed. WILDS
+ iWildCam, ViT-B scale, and TTT/SHOT baselines remain future work.
+ (3) The conformal radius assumes task exchangeability.
+ (4) The sign-of-difference characterization is proved for binary, multiclass, and

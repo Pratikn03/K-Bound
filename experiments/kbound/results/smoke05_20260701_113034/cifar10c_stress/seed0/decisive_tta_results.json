@@ -1,0 +1,147 @@
+{
+  "alpha": 0.1,
+  "device": "mps",
+  "seed": 0,
+  "benchmarks": {
+    "cifar10c": {
+      "clean_acc": 0.8669999837875366,
+      "methods": {
+        "tent": {
+          "metrics": {
+            "n": 16,
+            "decision_counts": {
+              "ADAPT": 12,
+              "FREEZE": 0,
+              "ABSTAIN": 4
+            },
+            "coverage": 0.75,
+            "adapt_precision_B>0": 1.0,
+            "false_adapt_rate_B<0": 0.0,
+            "mean_acc": {
+              "always_adapt": 0.8115312568843365,
+              "always_freeze": 0.7744374983012676,
+              "K_Bound": 0.8107812516391277,
+              "oracle": 0.8127812519669533
+            },
+            "regret_vs_oracle": {
+              "always_adapt": 0.001249995082616806,
+              "always_freeze": 0.038343753665685654,
+              "K_Bound": 0.0020000003278255463
+            },
+            "worst_case_acc": {
+              "always_adapt": 0.7565000057220459,
+              "always_freeze": 0.7574999928474426,
+              "K_Bound": 0.7574999928474426
+            },
+            "beats_both_regret_only": false,
+            "beats_both": false,
+            "eps_conformal": 0.01394721051093845,
+            "alpha": 0.1,
+            "base_rate_harmful_B<0": 0.1875,
+            "mean_true_B": 0.03709375858306885,
+            "decisions_by_regime": {
+              "helpful": {
+                "ADAPT": 11,
+                "FREEZE": 0,
+                "ABSTAIN": 1
+              },
+              "harmful": {
+                "ADAPT": 0,
+                "FREEZE": 0,
+                "ABSTAIN": 0
+              },
+              "marginal": {
+                "ADAPT": 1,
+                "FREEZE": 0,
+                "ABSTAIN": 3
+              }
+            },
+            "pareto": {
+              "note": "need both harmful and non-harmful conditions for the sweep",
+              "n_harmful": 0,
+              "n_nonharmful": 16
+            }
+          },
+          "n_conditions": 16,
+          "per_condition_file": "per_condition_cifar10c_tent_seed0.json",
+          "conditions": [
+            "gaussian_noise|s1|large_iid|iid|mild|r0",
+            "gaussian_noise|s1|large_iid|iid|mild|r1",
+            "gaussian_noise|s1|large_iid|iid|aggressive|r0",
+            "gaussian_noise|s1|large_iid|iid|aggressive|r1",
+            "gaussian_noise|s1|large_iid|imbalanced|mild|r0",
+            "gaussian_noise|s1|large_iid|imbalanced|mild|r1",
+            "gaussian_noise|s1|large_iid|imbalanced|aggressive|r0",
+            "gaussian_noise|s1|large_iid|imbalanced|aggressive|r1",
+            "gaussian_noise|s1|large_iid|single_class|mild|r0",
+            "gaussian_noise|s1|large_iid|single_class|mild|r1",
+            "gaussian_noise|s1|large_iid|single_class|aggressive|r0",
+            "gaussian_noise|s1|large_iid|single_class|aggressive|r1",
+            "gaussian_noise|s1|small|iid|mild|r0",
+            "gaussian_noise|s1|small|iid|mild|r1",
+            "gaussian_noise|s1|small|iid|aggressive|r0",
+            "gaussian_noise|s1|small|iid|aggressive|r1"
+          ],
+          "detail": {
+            "Bhat": [
+              0.05228591833131317,
+              0.04840733272566724,
+              0.04415747777720535,
+              0.04704912060033357,
+              0.052010447392654625,
+              0.061680309312449104,
+              -0.005823907779065093,
+              -0.0007832183966224061,
+              0.05310598206884724,
+              0.0497863345689834,
+              0.0017306243843286677,
+              0.013429081663311937,
+              0.05576709150175194,
+              0.057231876583975015,
+              0.04205805051363398,
+              0.0288382950596317
+            ],
+            "eps": 0.01394721051093845,
+            "dec": [
+              "ADAPT",
+              "ADAPT",
+              "ADAPT",
+              "ADAPT",
+              "ADAPT",
+              "ADAPT",
+              "ABSTAIN",
+              "ABSTAIN",
+              "ADAPT",
+              "ADAPT",
+              "ABSTAIN",
+              "ABSTAIN",
+              "ADAPT",
+              "ADAPT",
+              "ADAPT",
+              "ADAPT"
+            ],
+            "B": [
+              0.06550002098083496,
+              0.0559999942779541,
+              0.04799997806549072,
+              0.03700000047683716,
+              0.052500009536743164,
+              0.046999990940093994,
+              -0.004999995231628418,
+              -0.010999977588653564,
+              0.05849999189376831,
+              0.03750002384185791,
+              -0.003999948501586914,
+              0.03200000524520874,
+              0.05349999666213989,
+              0.06000000238418579,
+              0.047500014305114746,
+              0.018500030040740967
+            ]
+          }
+        }
+      }
+    }
+  },
+  "generated": "2026-07-01 11:30"
+}

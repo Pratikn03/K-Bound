@@ -1,0 +1,84 @@
+% =============================================================================
+% K-Bound — long-form manuscript (monograph edition)
+% Built from the verified paper (../kbound.tex) and real experiment artifacts
+% (../../../../experiments/kbound/results/*.json). Compile:
+%   cd manuscript && pdflatex main && pdflatex main && pdflatex main
+% Figures resolve via \graphicspath to ../figures/.
+% =============================================================================
+\documentclass[11pt,oneside]{book}
+\usepackage[T1]{fontenc}
+\usepackage{lmodern}
+\usepackage{microtype}
+\usepackage[margin=1.05in]{geometry}
+\usepackage{amsmath,amssymb,amsthm}
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{longtable}
+\usepackage{xcolor}
+\usepackage{setspace}
+\usepackage[colorlinks=true,linkcolor=black,citecolor=blue,urlcolor=blue,
+            pdftitle={When Is Label-Free Adaptation Knowable? (Manuscript Edition)},
+            pdfauthor={Anonymous}]{hyperref}
+\onehalfspacing
+
+% ---------- theorem environments (numbered within chapters) ----------
+\theoremstyle{plain}
+\newtheorem{theorem}{Theorem}[chapter]
+\newtheorem{proposition}{Proposition}[chapter]
+\newtheorem{corollary}{Corollary}[chapter]
+\newtheorem{lemma}{Lemma}[chapter]
+\newtheorem{conjecture}{Conjecture}[chapter]
+\theoremstyle{definition}
+\newtheorem{definition}{Definition}[chapter]
+\newtheorem{assumption}{Assumption}[chapter]
+\newtheorem{example}{Example}[chapter]
+\theoremstyle{remark}
+\newtheorem{remark}{Remark}[chapter]
+
+% ---------- macros (identical to the paper, plus a few manuscript helpers) ----------
+\newcommand{\R}{\mathbb{R}}
+\newcommand{\E}{\mathbb{E}}
+\renewcommand{\Pr}{\mathbb{P}}
+\newcommand{\TV}{\mathrm{TV}}
+\newcommand{\sign}{\operatorname{sign}}
+\newcommand{\Law}{\mathrm{Law}}
+\newcommand{\ind}{\mathbf{1}}
+\DeclareMathOperator*{\argmax}{arg\,max}
+\DeclareMathOperator*{\argmin}{arg\,min}
+\newcommand{\KGA}{\textsc{KGA}}
+\newcommand{\KBound}{K\mbox{-}Bound}
+
+\graphicspath{{../}{../figures/}{../figures/final/}{../theory_v2/}}
+
+\begin{document}
+
+\frontmatter
+\input{frontmatter}
+\tableofcontents
+\listoffigures
+\listoftables
+
+\mainmatter
+\input{chapters/ch01_introduction}
+\input{chapters/ch02_related}
+\input{chapters/ch03_formulation}
+\input{chapters/ch04_theory_impossibility}
+\input{chapters/ch05_theory_certificates}
+\input{chapters/ch06_kga}
+\input{chapters/ch07_experiments_anomaly}
+\input{chapters/ch08_experiments_tta}
+\input{chapters/ch09_elara}
+\input{chapters/ch10_discussion}
+
+\appendix
+\input{chapters/appA_reproducibility}
+\input{chapters/appB_tables}
+\input{chapters/appC_notation}
+
+% ---- extended (demoted) theorem stack, validated sources cut from main paper ----
+\input{extended_theory_includes}
+
+\backmatter
+\input{references}
+
+\end{document}

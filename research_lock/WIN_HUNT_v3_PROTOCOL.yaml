@@ -1,0 +1,74 @@
+# WIN_HUNT_v3 — pre-registered BEFORE any arm was scored (2026-07-03).
+# Four CPU arms on LOGGED data (no new GPU). Report-all-arms rule applies.
+registered: 2026-07-03
+status: EXECUTED_2026-07-03 — D DEMO, E CI_ROBUST_WIN, F REPLICATED 3/3, G PASS (all final)
+author: Pratik (+ Claude session)
+
+outcomes:
+  arm_D: >
+    DEMO (per frozen bar). Real 35,370-image native iWildCam stream, 45 windows,
+    75.6% harmful (continual Tent collapse: always-adapt 0.329 vs freeze 0.700).
+    E-process FREEZE side fired at window 6; anytime false-adapt = 0; gate value
+    0.6995 ties the oracle policy exactly. First real-data anytime-valid TTA gate.
+    beats_both structurally impossible (freeze is the oracle on this stream).
+    research_lock/WIN_HUNT_v3_ARM_D_result.json
+  arm_E: >
+    CI_ROBUST_WIN. One universal gate (single eps = 0.096), SEVEN natural
+    sources, n = 359 held-out conditions: regret 0.0183 vs adapt 0.0404 /
+    freeze 0.0282; both CIs exclude zero; FA_u = 0.000.
+    research_lock/WIN_HUNT_v3_ARM_E_result.json
+  arm_F: >
+    REPLICATED_WIN on all three configs (tent_primary n=432, eata_secondary
+    n=432, tent_eata_pooled n=864): KGA beats POEM and AETTA with CIs below
+    zero everywhere; KGA FA 0.000 in every config vs competitors 11-33%.
+    research_lock/WIN_HUNT_v3_ARM_F_result.json
+  arm_G: >
+    PASS_priced_validity. False-spend <= alpha at every lambda in [0,2] on
+    both real datasets (max observed 0.0023; 6,912 records). Report medians/q90
+    for lambda* (means are cost->0 artifacts from upd_norm=0 SAR records).
+    research_lock/WIN_HUNT_v3_ARM_G_result.json
+
+arm_D_anytime_stream:
+  name: First real-data anytime-valid gate (iWildCam native stream)
+  data: experiments/kbound/results/iwildcam_streaming_pilot/pilot_test_native_bs16.json
+    (native-order test stream, N=35370, window=50, logged 2026-06-30)
+  method: one-sided truncated-aGRAPA betting e-process on per-window benefit
+    (adapted minus frozen window accuracy), reject-to-SPEND when wealth >= 1/alpha,
+    symmetric process for FREEZE; alpha = 0.10; identical construction to the
+    validated kga e-value certificate (val_thm3_evalue: FA controlled).
+  bar (frozen): time-uniform false-adapt <= alpha over the stream (any-time,
+    counted at every window); report final policy value vs always-adapt /
+    always-freeze on the SAME stream. WIN iff e-gate value beats both fixed
+    policies AND anytime FA <= alpha; DEMO iff FA holds without beating both.
+  schema_guard: if the pilot lacks per-window frozen accuracies the script
+    exits 3 listing available keys (no fabrication).
+arm_E_universal_gate_7sources:
+  name: One universal gate across SEVEN natural sources
+  data: the Arm-A trio (Camelyon OOD / OfficeHome / iWildCam, identical splits)
+    PLUS the four PACS leave-one-domain percell files
+    (docs/research/kbound/pacs_{art_painting,cartoon,photo,sketch}_percell.json,
+    base-11 Z; repeat r0 = calibration, r1 = held-out test, frozen here).
+  method: identical to Arm A (single pooled GBR + single pooled LOO conformal
+    radius on base-11 Z), applied once to the pooled held-out conditions.
+  bar (frozen): FA_u <= 0.10 AND beats both pooled fixed policies; CI-ROBUST
+    iff both 95% bootstrap CIs (5000) exclude zero.
+arm_F_headtohead_replication:
+  name: Verify + report ALL mixed head-to-head configurations
+  data: experiments/kbound/results/mixed_headtohead_v1/per_condition_cifar10c_*_seed*.json
+  method: independent recompute (per-condition paired bootstrap 10^4) of KGA vs
+    POEM and AETTA for EVERY config present (tent_primary already verified);
+    compare to stored HEADTOHEAD_RESULTS files.
+  bar (frozen): replication = recomputed CIs exclude zero in the same direction
+    as stored verdicts, per config.
+arm_G_lambda_star_real:
+  name: Real-data certified willingness-to-pay (TTC Prop 1 demonstration)
+  data: stress_grid_multiseed_v1 seeds 0-4 per_condition (cifar10c) and
+    natural_win_v1_camelyon per_condition files; cost proxy c = upd_norm
+    (normalized per dataset to mean 1; observable compute proxy).
+  method: per condition, certified spend price
+    lambda*(cond) = max{ lambda >= 0 : b_hat - lambda*c - eps_conformal > 0 }
+    (0 if never certified); sweep lambda in [0, 2]; at each lambda report
+    spend rate and realized false-spend FA(lambda) = spend & (B - lambda*c <= 0).
+  bar (frozen): FA(lambda) <= 0.10 for ALL lambda on both datasets (validity of
+    the priced certificate); the lambda* distributions are descriptive output.
+prohibited_after_unblinding: any re-tuning; all four arms reported together.

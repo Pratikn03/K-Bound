@@ -1,0 +1,155 @@
+{
+  "severity_0.0": {
+    "n_tasks": 49,
+    "mean_auroc": {
+      "val_select": 0.7732620163015378,
+      "learned_norel": 0.7688548445247416,
+      "learned_rel": 0.769325145510606,
+      "oracle": 0.7767389151253805
+    },
+    "contrasts": {
+      "rel_vs_val_select": {
+        "mean": -0.003936870790931858,
+        "ci95": [
+          -0.007461560635261434,
+          -0.0010922232427382115
+        ],
+        "ci_low_gt_0": false,
+        "win_rate": 0.04081632653061224
+      },
+      "rel_vs_norel_ABLATION": {
+        "mean": 0.0004703009858643692,
+        "ci95": [
+          -0.0030699208840440115,
+          0.004353632898426165
+        ],
+        "ci_low_gt_0": false,
+        "win_rate": 0.16326530612244897
+      },
+      "norel_vs_val_select": {
+        "mean": -0.004407171776796227,
+        "ci95": [
+          -0.008325828291249882,
+          -0.0012654287552826353
+        ],
+        "ci_low_gt_0": false,
+        "win_rate": 0.061224489795918366
+      }
+    }
+  },
+  "severity_1.0": {
+    "n_tasks": 49,
+    "mean_auroc": {
+      "val_select": 0.7231756659850043,
+      "learned_norel": 0.7232069370193173,
+      "learned_rel": 0.7291954891088368,
+      "oracle": 0.7542719501398902
+    },
+    "contrasts": {
+      "rel_vs_val_select": {
+        "mean": 0.006019823123832487,
+        "ci95": [
+          -0.010922941669500943,
+          0.024036111345966258
+        ],
+        "ci_low_gt_0": false,
+        "win_rate": 0.1836734693877551
+      },
+      "rel_vs_norel_ABLATION": {
+        "mean": 0.005988552089519473,
+        "ci95": [
+          -0.0021729041080805946,
+          0.015273720397419276
+        ],
+        "ci_low_gt_0": false,
+        "win_rate": 0.20408163265306123
+      },
+      "norel_vs_val_select": {
+        "mean": 3.12710343130144e-05,
+        "ci95": [
+          -0.015298304375433574,
+          0.01676916279908298
+        ],
+        "ci_low_gt_0": false,
+        "win_rate": 0.12244897959183673
+      }
+    }
+  },
+  "severity_2.0": {
+    "n_tasks": 49,
+    "mean_auroc": {
+      "val_select": 0.6708338715457183,
+      "learned_norel": 0.6959487405484988,
+      "learned_rel": 0.6915469409414834,
+      "oracle": 0.7307156819899868
+    },
+    "contrasts": {
+      "rel_vs_val_select": {
+        "mean": 0.020713069395765147,
+        "ci95": [
+          -0.008579372572676023,
+          0.054588603422944436
+        ],
+        "ci_low_gt_0": false,
+        "win_rate": 0.2653061224489796
+      },
+      "rel_vs_norel_ABLATION": {
+        "mean": -0.004401799607015278,
+        "ci95": [
+          -0.020029163008279158,
+          0.011907461222812513
+        ],
+        "ci_low_gt_0": false,
+        "win_rate": 0.24489795918367346
+      },
+      "norel_vs_val_select": {
+        "mean": 0.025114869002780427,
+        "ci95": [
+          -0.005239626736397591,
+          0.059872568419087654
+        ],
+        "ci_low_gt_0": false,
+        "win_rate": 0.30612244897959184
+      }
+    }
+  },
+  "severity_3.0": {
+    "n_tasks": 49,
+    "mean_auroc": {
+      "val_select": 0.6397685803162138,
+      "learned_norel": 0.6771053385986395,
+      "learned_rel": 0.679090310826134,
+      "oracle": 0.7145064594267221
+    },
+    "contrasts": {
+      "rel_vs_val_select": {
+        "mean": 0.03932173050992025,
+        "ci95": [
+          0.003071020235131428,
+          0.08180950547019884
+        ],
+        "ci_low_gt_0": true,
+        "win_rate": 0.3469387755102041
+      },
+      "rel_vs_norel_ABLATION": {
+        "mean": 0.001984972227494334,
+        "ci95": [
+          -0.010216618802021429,
+          0.014048933675724242
+        ],
+        "ci_low_gt_0": false,
+        "win_rate": 0.2653061224489796
+      },
+      "norel_vs_val_select": {
+        "mean": 0.03733675828242593,
+        "ci95": [
+          0.0016872088199787775,
+          0.07903486908608545
+        ],
+        "ci_low_gt_0": true,
+        "win_rate": 0.2653061224489796
+      }
+    }
+  },
+  "verdict": "NEGATIVE even under drift: reliability routing does not significantly beat val-selection at any tested severity (directionally positive at [1.0, 2.0, 3.0] but CI crosses 0). The honest headline is the strong validation-selection baseline + the negative reliability result."
+}

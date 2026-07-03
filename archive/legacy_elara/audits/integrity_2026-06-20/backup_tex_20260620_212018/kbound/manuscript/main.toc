@@ -1,0 +1,370 @@
+\contentsline {chapter}{Abstract}{i}{chapter*.1}%
+\contentsline {chapter}{How to Read This Manuscript}{ii}{chapter*.2}%
+\contentsline {chapter}{\numberline {1}Introduction}{1}{chapter.1}%
+\contentsline {section}{\numberline {1.1}The Deployment Problem}{1}{section.1.1}%
+\contentsline {section}{\numberline {1.2}The Double-Edged Nature of Test-Time Adaptation}{1}{section.1.2}%
+\contentsline {section}{\numberline {1.3}The Central Question}{2}{section.1.3}%
+\contentsline {section}{\numberline {1.4}The Trichotomy and Its Formalization}{3}{section.1.4}%
+\contentsline {section}{\numberline {1.5}Contributions}{3}{section.1.5}%
+\contentsline {paragraph}{Contribution 1: Formalization of the knowability trichotomy.}{3}{section*.6}%
+\contentsline {paragraph}{Contribution 2: Impossibility theorem with explicit witness (Theorem~\ref {thm:imp}).}{4}{section*.7}%
+\contentsline {paragraph}{Contribution 3: Finite-sample adapt/freeze/abstain certificate with false-adapt control (Theorem~\ref {thm:cert}).}{4}{section*.8}%
+\contentsline {paragraph}{Contribution 4: Covariate-shift positive regime and the sign-of-difference characterization (Theorems~\ref {thm:pos}, \ref {thm:disagree}--\ref {thm:disagree-reg}).}{4}{section*.9}%
+\contentsline {paragraph}{Contribution 5: \textsc {KGA}\ and open-source implementation.}{4}{section*.10}%
+\contentsline {paragraph}{Contribution 6: Experiments.}{5}{section*.11}%
+\contentsline {section}{\numberline {1.6}Honest Scope}{6}{section.1.6}%
+\contentsline {section}{\numberline {1.7}Chapter Roadmap}{6}{section.1.7}%
+\contentsline {chapter}{\numberline {2}Background and Related Work}{8}{chapter.2}%
+\contentsline {section}{\numberline {2.1}Test-Time Adaptation: Mechanisms and Methods}{8}{section.2.1}%
+\contentsline {paragraph}{Entropy minimization.}{8}{section*.12}%
+\contentsline {paragraph}{Batch-normalization statistics adaptation.}{9}{section*.13}%
+\contentsline {paragraph}{Filtering and Fisher regularization.}{9}{section*.14}%
+\contentsline {paragraph}{Sharpness-aware updates and resets.}{9}{section*.15}%
+\contentsline {paragraph}{Source-free and continual adaptation.}{9}{section*.16}%
+\contentsline {paragraph}{Parameter-free approaches.}{10}{section*.17}%
+\contentsline {paragraph}{What all TTA methods share.}{10}{section*.18}%
+\contentsline {section}{\numberline {2.2}TTA Failure, Collapse, and Evaluation}{10}{section.2.2}%
+\contentsline {paragraph}{Pitfalls and failure modes.}{10}{section*.19}%
+\contentsline {paragraph}{Robustness benchmarks.}{10}{section*.20}%
+\contentsline {paragraph}{Standardized benchmarks.}{10}{section*.21}%
+\contentsline {paragraph}{DomainBed.}{11}{section*.22}%
+\contentsline {section}{\numberline {2.3}Guarded and Protected Adaptation}{11}{section.2.3}%
+\contentsline {paragraph}{Entropy thresholding and filtering.}{11}{section*.23}%
+\contentsline {paragraph}{Betting-style monitors.}{11}{section*.24}%
+\contentsline {paragraph}{NOTE's class-conditional normalization.}{11}{section*.25}%
+\contentsline {paragraph}{The structural gap.}{12}{section*.26}%
+\contentsline {section}{\numberline {2.4}Label-Free Accuracy Estimation}{12}{section.2.4}%
+\contentsline {paragraph}{ATC.}{12}{section*.27}%
+\contentsline {paragraph}{Agreement-on-the-Line.}{12}{section*.28}%
+\contentsline {paragraph}{Predicting with confidence.}{12}{section*.29}%
+\contentsline {paragraph}{The distinction from K-Bound.}{12}{section*.30}%
+\contentsline {section}{\numberline {2.5}Unsupervised Risk Estimation and Identifiability}{13}{section.2.5}%
+\contentsline {paragraph}{Steinhardt and Liang.}{13}{section*.31}%
+\contentsline {paragraph}{Ben-David et al.}{13}{section*.32}%
+\contentsline {paragraph}{Mansour et al.}{13}{section*.33}%
+\contentsline {paragraph}{Label-shift correction.}{13}{section*.34}%
+\contentsline {paragraph}{Dataset shift taxonomy.}{13}{section*.35}%
+\contentsline {paragraph}{Importance weighting.}{14}{section*.36}%
+\contentsline {paragraph}{The K-Bound delta over this line.}{14}{section*.37}%
+\contentsline {section}{\numberline {2.6}Selective Prediction and Abstention}{14}{section.2.6}%
+\contentsline {paragraph}{Chow's reject option.}{14}{section*.38}%
+\contentsline {paragraph}{Selective classification.}{14}{section*.39}%
+\contentsline {paragraph}{Conformal prediction.}{14}{section*.40}%
+\contentsline {paragraph}{K-Bound's abstention is over a decision, not a prediction.}{15}{section*.41}%
+\contentsline {section}{\numberline {2.7}Conformal Prediction and Anytime-Valid Inference}{15}{section.2.7}%
+\contentsline {paragraph}{Game-theoretic probability.}{15}{section*.42}%
+\contentsline {paragraph}{Testing by betting and e-values.}{15}{section*.43}%
+\contentsline {paragraph}{Anytime-valid confidence sequences.}{15}{section*.44}%
+\contentsline {paragraph}{Connection to K-Bound.}{15}{section*.45}%
+\contentsline {paragraph}{Classical concentration.}{16}{section*.46}%
+\contentsline {section}{\numberline {2.8}Benchmarks, Robustness, and Distribution Shift}{16}{section.2.8}%
+\contentsline {paragraph}{Robustness benchmarks.}{16}{section*.47}%
+\contentsline {paragraph}{Anomaly detection benchmarks.}{16}{section*.48}%
+\contentsline {paragraph}{Standard vision.}{16}{section*.49}%
+\contentsline {paragraph}{Label-free performance prediction and accuracy estimation.}{16}{section*.50}%
+\contentsline {paragraph}{Anomaly/outlier detection methods.}{17}{section*.51}%
+\contentsline {section}{\numberline {2.9}Positioning: The Gap K-Bound Fills}{17}{section.2.9}%
+\contentsline {chapter}{\numberline {3}Problem Formulation and the Knowability Trichotomy}{19}{chapter.3}%
+\contentsline {section}{\numberline {3.1}The deployment protocol}{19}{section.3.1}%
+\contentsline {section}{\numberline {3.2}The adaptation benefit}{20}{section.3.2}%
+\contentsline {section}{\numberline {3.3}Label-free observable evidence}{21}{section.3.3}%
+\contentsline {section}{\numberline {3.4}The knowability trichotomy}{22}{section.3.4}%
+\contentsline {section}{\numberline {3.5}Decision rules, the oracle, and error rates}{23}{section.3.5}%
+\contentsline {section}{\numberline {3.6}Three worked environments}{24}{section.3.6}%
+\contentsline {section}{\numberline {3.7}Standing assumptions, and what each one buys}{26}{section.3.7}%
+\contentsline {section}{\numberline {3.8}A reader's map from questions to results}{27}{section.3.8}%
+\contentsline {chapter}{\numberline {4}The Unknowable Regime: Non-Identifiability and the Minimax Floor}{30}{chapter.4}%
+\contentsline {section}{\numberline {4.1}The non-identifiability theorem}{31}{section.4.1}%
+\contentsline {section}{\numberline {4.2}The explicit witness, in full}{33}{section.4.2}%
+\contentsline {subsection}{\numberline {4.2.1}Construction and verification}{33}{subsection.4.2.1}%
+\contentsline {subsection}{\numberline {4.2.2}Empirical realization}{34}{subsection.4.2.2}%
+\contentsline {section}{\numberline {4.3}The quantitative floor: a Le Cam two-point bound}{34}{section.4.3}%
+\contentsline {subsection}{\numberline {4.3.1}Numerical validation of the floor}{38}{subsection.4.3.1}%
+\contentsline {section}{\numberline {4.4}The Bayes gate and the plug-in regret identity}{38}{section.4.4}%
+\contentsline {subsection}{\numberline {4.4.1}Numerical validation of the identity}{41}{subsection.4.4.1}%
+\contentsline {section}{\numberline {4.5}Remarks: scope, mechanism, and what abstention buys}{42}{section.4.5}%
+\contentsline {chapter}{\numberline {5}Certificates: When the Boundary Can Be Crossed Safely}{45}{chapter.5}%
+\contentsline {section}{\numberline {5.1}From Impossibility to Conditional Possibility}{46}{section.5.1}%
+\contentsline {section}{\numberline {5.2}The Finite-Sample Certificate}{47}{section.5.2}%
+\contentsline {subsection}{\numberline {5.2.1}Discharging the Radius I: Empirical-Bernstein Concentration}{48}{subsection.5.2.1}%
+\contentsline {subsection}{\numberline {5.2.2}Mandatory Abstention and the Cost of Certainty}{50}{subsection.5.2.2}%
+\contentsline {subsection}{\numberline {5.2.3}Discharging the Radius II: The Split-Conformal Variant}{51}{subsection.5.2.3}%
+\contentsline {section}{\numberline {5.3}The Anytime-Valid Certificate: Testing by Betting}{53}{section.5.3}%
+\contentsline {subsection}{\numberline {5.3.1}Wealth, Supermartingales, and Ville's Inequality}{54}{subsection.5.3.1}%
+\contentsline {subsection}{\numberline {5.3.2}The Anytime Certificate}{54}{subsection.5.3.2}%
+\contentsline {subsection}{\numberline {5.3.3}The Validator: Measured Anytime Error and Power}{56}{subsection.5.3.3}%
+\contentsline {section}{\numberline {5.4}A Provably Knowable Regime: Covariate Shift}{57}{section.5.4}%
+\contentsline {paragraph}{Why this escapes the impossibility theorem.}{58}{section*.52}%
+\contentsline {paragraph}{The price: weight boundedness and effective sample size.}{59}{section*.53}%
+\contentsline {paragraph}{The caveat that keeps the theorem honest.}{59}{section*.54}%
+\contentsline {section}{\numberline {5.5}The Disagreement Region: Where the Sign of Benefit Lives}{60}{section.5.5}%
+\contentsline {subsection}{\numberline {5.5.1}Numerical Validation of the Identities}{62}{subsection.5.5.1}%
+\contentsline {subsection}{\numberline {5.5.2}Disagreement as the Decisive Evidence Coordinate}{63}{subsection.5.5.2}%
+\contentsline {section}{\numberline {5.6}The Open Problem: Label-Free Bracketing}{63}{section.5.6}%
+\contentsline {subsection}{\numberline {5.6.1}Why Current Techniques Do Not Resolve It}{64}{subsection.5.6.1}%
+\contentsline {subsection}{\numberline {5.6.2}What Is Actually Proved}{64}{subsection.5.6.2}%
+\contentsline {subsection}{\numberline {5.6.3}What a Resolution Would Buy}{66}{subsection.5.6.3}%
+\contentsline {section}{\numberline {5.7}Synthesis: The Certified Map of Regimes}{66}{section.5.7}%
+\contentsline {chapter}{\numberline {6}\textsc {KGA}: Knowability-Guided Adaptation in Practice}{68}{chapter.6}%
+\contentsline {section}{\numberline {6.1}Design goals and mechanism-agnostic wrapper architecture}{68}{section.6.1}%
+\contentsline {section}{\numberline {6.2}Label-free evidence computation}{69}{section.6.2}%
+\contentsline {paragraph}{Drift (KS distance).}{70}{section*.55}%
+\contentsline {paragraph}{Disagreement.}{70}{section*.56}%
+\contentsline {paragraph}{Entropy and confidence shift.}{70}{section*.57}%
+\contentsline {paragraph}{Importance-weight effective sample size (ESS).}{71}{section*.58}%
+\contentsline {section}{\numberline {6.3}Certificate estimators}{71}{section.6.3}%
+\contentsline {subsection}{\numberline {6.3.1}Empirical Bernstein (\texttt {ebern}) --- the default}{71}{subsection.6.3.1}%
+\contentsline {subsection}{\numberline {6.3.2}Hoeffding (\texttt {hoeffding}) --- distribution-free baseline}{72}{subsection.6.3.2}%
+\contentsline {subsection}{\numberline {6.3.3}Split-conformal (\texttt {conformal}) --- cross-task estimator}{72}{subsection.6.3.3}%
+\contentsline {subsection}{\numberline {6.3.4}Anytime e-value (\texttt {evalue}) --- Theorem~3b}{73}{subsection.6.3.4}%
+\contentsline {section}{\numberline {6.4}Decision policy and the false-adapt guarantee}{73}{section.6.4}%
+\contentsline {section}{\numberline {6.5}The \texttt {kga} package API}{74}{section.6.5}%
+\contentsline {paragraph}{Constructor.}{74}{section*.59}%
+\contentsline {paragraph}{Methods.}{74}{section*.60}%
+\contentsline {paragraph}{Quickstart.}{75}{section*.61}%
+\contentsline {paragraph}{Command-line interface.}{75}{section*.62}%
+\contentsline {section}{\numberline {6.6}Full deployment pseudocode}{76}{section.6.6}%
+\contentsline {section}{\numberline {6.7}Operational guidance}{76}{section.6.7}%
+\contentsline {paragraph}{Choosing $\alpha $.}{76}{section*.63}%
+\contentsline {paragraph}{Batch size.}{76}{section*.64}%
+\contentsline {paragraph}{Calibration data.}{77}{section*.65}%
+\contentsline {paragraph}{When \textsc {abstain} should trigger operational action.}{77}{section*.66}%
+\contentsline {paragraph}{Complexity.}{77}{section*.67}%
+\contentsline {section}{\numberline {6.8}The served HTTP interface}{77}{section.6.8}%
+\contentsline {paragraph}{\texttt {GET /kga/health} (no authentication).}{77}{section*.68}%
+\contentsline {paragraph}{\texttt {POST /decide} (authentication required).}{77}{section*.69}%
+\contentsline {section}{\numberline {6.9}Threats, limitations, and what \textsc {KGA}{} does not guarantee}{78}{section.6.9}%
+\contentsline {paragraph}{The false-adapt bound is not a guarantee that $f_a$ is good.}{78}{section*.70}%
+\contentsline {paragraph}{Non-identifiability is permanent, not a data problem.}{78}{section*.71}%
+\contentsline {paragraph}{The calibration exchangeability assumption.}{79}{section*.72}%
+\contentsline {paragraph}{Covert failures are not detectable.}{79}{section*.73}%
+\contentsline {paragraph}{The benefit estimator $\setbox \z@ \hbox {\mathsurround \z@ $\textstyle \Delta $}\mathaccent "0362{\Delta }$ must be calibrated.}{79}{section*.74}%
+\contentsline {paragraph}{Label-free adaptation in the helpful-dominated regime.}{79}{section*.75}%
+\contentsline {chapter}{\numberline {7}Experiments I: The Anomaly-Routing Benchmark}{80}{chapter.7}%
+\contentsline {section}{\numberline {7.1}The 123-Task Score Archive}{80}{section.7.1}%
+\contentsline {subsection}{\numberline {7.1.1}Provenance and Construction}{80}{subsection.7.1.1}%
+\contentsline {subsection}{\numberline {7.1.2}Evaluation Methodology}{81}{subsection.7.1.2}%
+\contentsline {subsection}{\numberline {7.1.3}Why Anomaly Routing Is a Clean Testbed for the Trichotomy}{81}{subsection.7.1.3}%
+\contentsline {section}{\numberline {7.2}The Knowability Trichotomy Suite}{81}{section.7.2}%
+\contentsline {subsection}{\numberline {7.2.1}Setup and Protocol}{81}{subsection.7.2.1}%
+\contentsline {subsection}{\numberline {7.2.2}Decision Distribution}{82}{subsection.7.2.2}%
+\contentsline {subsection}{\numberline {7.2.3}Adapt Precision and Safety}{82}{subsection.7.2.3}%
+\contentsline {subsection}{\numberline {7.2.4}Abstain-Where-Benefit-Is-Small: Safety Concentration}{82}{subsection.7.2.4}%
+\contentsline {subsection}{\numberline {7.2.5}Interpretation: Helpful-Dominated Regime}{83}{subsection.7.2.5}%
+\contentsline {section}{\numberline {7.3}The Harmful-Fusion Regime}{83}{section.7.3}%
+\contentsline {subsection}{\numberline {7.3.1}Setup and Protocol}{83}{subsection.7.3.1}%
+\contentsline {subsection}{\numberline {7.3.2}Results}{83}{subsection.7.3.2}%
+\contentsline {subsection}{\numberline {7.3.3}Interpretation}{84}{subsection.7.3.3}%
+\contentsline {subsection}{\numberline {7.3.4}Threats Specific to This Sub-experiment}{84}{subsection.7.3.4}%
+\contentsline {section}{\numberline {7.4}The Mixed Regime}{84}{section.7.4}%
+\contentsline {subsection}{\numberline {7.4.1}Construction}{84}{subsection.7.4.1}%
+\contentsline {subsection}{\numberline {7.4.2}Decision Distribution by True Regime}{85}{subsection.7.4.2}%
+\contentsline {subsection}{\numberline {7.4.3}Policy AUROC Comparison}{85}{subsection.7.4.3}%
+\contentsline {subsection}{\numberline {7.4.4}Non-identifiability on the Clean/Covert Boundary}{86}{subsection.7.4.4}%
+\contentsline {subsection}{\numberline {7.4.5}Interpretation}{86}{subsection.7.4.5}%
+\contentsline {section}{\numberline {7.5}Statistical Rigor: Eight Seeds and Paired $t$-Tests}{87}{section.7.5}%
+\contentsline {subsection}{\numberline {7.5.1}Protocol}{87}{subsection.7.5.1}%
+\contentsline {subsection}{\numberline {7.5.2}Per-Seed Aggregate Results}{87}{subsection.7.5.2}%
+\contentsline {subsection}{\numberline {7.5.3}Paired $t$-Tests}{87}{subsection.7.5.3}%
+\contentsline {section}{\numberline {7.6}Ablations}{88}{section.7.6}%
+\contentsline {subsection}{\numberline {7.6.1}Evidence-Component Knockout}{88}{subsection.7.6.1}%
+\contentsline {paragraph}{Disagreement is the most informative feature.}{88}{section*.76}%
+\contentsline {subsection}{\numberline {7.6.2}Alpha Sweep: Safety-Coverage Tradeoff}{89}{subsection.7.6.2}%
+\contentsline {subsection}{\numberline {7.6.3}Batch-Size Sweep}{89}{subsection.7.6.3}%
+\contentsline {subsection}{\numberline {7.6.4}Interpretation}{90}{subsection.7.6.4}%
+\contentsline {section}{\numberline {7.7}Regression Under Covariate Shift}{90}{section.7.7}%
+\contentsline {subsection}{\numberline {7.7.1}Setup}{90}{subsection.7.7.1}%
+\contentsline {subsection}{\numberline {7.7.2}Results}{90}{subsection.7.7.2}%
+\contentsline {subsection}{\numberline {7.7.3}Connection to Theorem~\ref {thm:pos}}{91}{subsection.7.7.3}%
+\contentsline {subsection}{\numberline {7.7.4}Interpretation}{91}{subsection.7.7.4}%
+\contentsline {section}{\numberline {7.8}The Clean Non-identifiability Witness}{92}{section.7.8}%
+\contentsline {subsection}{\numberline {7.8.1}Setup}{92}{subsection.7.8.1}%
+\contentsline {subsection}{\numberline {7.8.2}Results}{92}{subsection.7.8.2}%
+\contentsline {subsection}{\numberline {7.8.3}Interpretation: Empirical Realization of Theorem~\ref {thm:imp}}{93}{subsection.7.8.3}%
+\contentsline {section}{\numberline {7.9}Cross-Experiment Regret Synthesis}{93}{section.7.9}%
+\contentsline {subsection}{\numberline {7.9.1}Summary Table}{93}{subsection.7.9.1}%
+\contentsline {subsection}{\numberline {7.9.2}Interpretation}{93}{subsection.7.9.2}%
+\contentsline {section}{\numberline {7.10}Threats to Validity}{94}{section.7.10}%
+\contentsline {paragraph}{Testbed specificity.}{94}{section*.77}%
+\contentsline {paragraph}{Controlled corruption vs real sensor failure.}{94}{section*.78}%
+\contentsline {paragraph}{Mild benefit in the clean condition.}{94}{section*.79}%
+\contentsline {paragraph}{Certificate width vs coverage.}{95}{section*.80}%
+\contentsline {paragraph}{Regression experiment scale.}{95}{section*.81}%
+\contentsline {paragraph}{Discrepancies with kbound.tex.}{95}{section*.82}%
+\contentsline {chapter}{\numberline {8}Experiments II: Deep Test-Time Adaptation}{97}{chapter.8}%
+\contentsline {section}{\numberline {8.1}Experimental Setup}{97}{section.8.1}%
+\contentsline {paragraph}{Datasets.}{97}{section*.83}%
+\contentsline {paragraph}{Architecture.}{97}{section*.84}%
+\contentsline {paragraph}{Adaptation candidates.}{97}{section*.85}%
+\contentsline {paragraph}{The \textsc {KGA}{} wrapper.}{98}{section*.86}%
+\contentsline {paragraph}{Policies compared.}{98}{section*.87}%
+\contentsline {paragraph}{Hardware and reproducibility.}{98}{section*.88}%
+\contentsline {section}{\numberline {8.2}The Decisive CIFAR\,+\,Tent Run}{98}{section.8.2}%
+\contentsline {paragraph}{Numbers.}{98}{section*.89}%
+\contentsline {paragraph}{Routing by true regime.}{99}{section*.90}%
+\contentsline {section}{\numberline {8.3}The Pre-Registered Stress Grid}{99}{section.8.3}%
+\contentsline {subsection}{\numberline {8.3.1}Grid design}{99}{subsection.8.3.1}%
+\contentsline {subsection}{\numberline {8.3.2}Per-method outcomes}{100}{subsection.8.3.2}%
+\contentsline {paragraph}{\textsc {KGA}{} beats both trivial policies for Tent and EATA.}{100}{section*.91}%
+\contentsline {paragraph}{SAR: a tie, not a win.}{100}{section*.92}%
+\contentsline {paragraph}{Zero false adaptations.}{101}{section*.93}%
+\contentsline {subsection}{\numberline {8.3.3}Bootstrap confidence intervals}{101}{subsection.8.3.3}%
+\contentsline {subsection}{\numberline {8.3.4}The Pareto front}{101}{subsection.8.3.4}%
+\contentsline {section}{\numberline {8.4}The 65-Cell Per-Corruption Suite}{101}{section.8.4}%
+\contentsline {subsection}{\numberline {8.4.1}A helpful-dominated control}{101}{subsection.8.4.1}%
+\contentsline {subsection}{\numberline {8.4.2}Interpretation: certificate value in helpful regimes}{102}{subsection.8.4.2}%
+\contentsline {section}{\numberline {8.5}Online Continual Adaptation}{103}{section.8.5}%
+\contentsline {subsection}{\numberline {8.5.1}Motivation and stream design}{103}{subsection.8.5.1}%
+\contentsline {subsection}{\numberline {8.5.2}Results: always-adapt collapses; \textsc {KGA}{} does not}{104}{subsection.8.5.2}%
+\contentsline {paragraph}{No fixed policy is robust.}{104}{section*.94}%
+\contentsline {paragraph}{\textsc {KGA}{} is near-best in both regimes.}{105}{section*.95}%
+\contentsline {paragraph}{Honest statement of advantage.}{105}{section*.96}%
+\contentsline {paragraph}{Supplementary collapse result.}{105}{section*.97}%
+\contentsline {section}{\numberline {8.6}Imagenette and ImageNet-Scale Status}{106}{section.8.6}%
+\contentsline {paragraph}{What the log actually shows.}{106}{section*.98}%
+\contentsline {paragraph}{Implications.}{106}{section*.99}%
+\contentsline {section}{\numberline {8.7}Natural-Shift Held-Out Win: Office-Home}{107}{section.8.7}%
+\contentsline {paragraph}{Protocol.}{107}{section*.100}%
+\contentsline {paragraph}{The regime is helpful-leaning but contains an unidentifiable pocket.}{107}{section*.101}%
+\contentsline {paragraph}{What the certificate does: it refuses to gamble.}{107}{section*.102}%
+\contentsline {paragraph}{The strict globally-frozen operating point returns a conservative null.}{108}{section*.103}%
+\contentsline {paragraph}{Protocol~M~v2: a dev-locked operating point yields a clean held-out beats-both.}{108}{section*.104}%
+\contentsline {paragraph}{Honest caveats on the Office-Home win.}{108}{section*.105}%
+\contentsline {paragraph}{Why both halves belong in the record.}{109}{section*.106}%
+\contentsline {section}{\numberline {8.8}Multi-Seed Confirmation and the Pre-Registered Natural-Shift Battery}{109}{section.8.8}%
+\contentsline {paragraph}{The core result replicates across seeds (positive).}{109}{section*.107}%
+\contentsline {paragraph}{On natural shifts: one clean win where evidence is rich, abstain/freeze where it is not.}{109}{section*.108}%
+\contentsline {paragraph}{What the battery establishes.}{110}{section*.109}%
+\contentsline {section}{\numberline {8.9}Synthesis: When Does Deep TTA Need a Gate?}{111}{section.8.9}%
+\contentsline {paragraph}{The real-shift bottom line: two clean wins plus one damage-prevention.}{111}{section*.110}%
+\contentsline {paragraph}{Harm frequency.}{111}{section*.111}%
+\contentsline {paragraph}{Harm severity.}{112}{section*.112}%
+\contentsline {paragraph}{Self-protective candidates.}{112}{section*.113}%
+\contentsline {paragraph}{Threats to validity.}{112}{section*.114}%
+\contentsline {chapter}{\numberline {9}A Worked Instantiation: Reliability-Gated Multimodal Fusion (ELARA)}{113}{chapter.9}%
+\contentsline {section}{\numberline {9.1}The Fusion and Routing Problem}{113}{section.9.1}%
+\contentsline {paragraph}{Setting.}{113}{section*.115}%
+\contentsline {paragraph}{Reliability-Gated Attention (RGA).}{113}{section*.116}%
+\contentsline {paragraph}{The cross-domain meta-routing benchmark (ELARA-U).}{114}{section*.117}%
+\contentsline {section}{\numberline {9.2}The Verified ELARA Claim}{114}{section.9.2}%
+\contentsline {subsection}{\numberline {9.2.1}Stacking beats selection (positive result)}{114}{subsection.9.2.1}%
+\contentsline {subsection}{\numberline {9.2.2}Reliability routing adds nothing on single-input data (honest negative)}{115}{subsection.9.2.2}%
+\contentsline {subsection}{\numberline {9.2.3}Routing wins where it structurally should: independent modality failure}{115}{subsection.9.2.3}%
+\contentsline {subsection}{\numberline {9.2.4}Controlled confirmation: a significant beats-both under detectable modality failure}{116}{subsection.9.2.4}%
+\contentsline {section}{\numberline {9.3}The T1--T9 + GDR Theorem Stack}{116}{section.9.3}%
+\contentsline {paragraph}{How the theorems partition the trichotomy.}{116}{section*.118}%
+\contentsline {paragraph}{Scope caveats.}{117}{section*.119}%
+\contentsline {section}{\numberline {9.4}How ELARA Instantiates the Evidence $Z$}{118}{section.9.4}%
+\contentsline {section}{\numberline {9.5}What Generalises and What Is Domain-Specific}{118}{section.9.5}%
+\contentsline {paragraph}{What generalises.}{118}{section*.120}%
+\contentsline {paragraph}{What is domain-specific.}{119}{section*.121}%
+\contentsline {paragraph}{Summary.}{119}{section*.122}%
+\contentsline {chapter}{\numberline {10}Discussion, Limitations, and Conclusion}{120}{chapter.10}%
+\contentsline {section}{\numberline {10.1}When to Deploy K\mbox {-}Bound{}}{120}{section.10.1}%
+\contentsline {paragraph}{The deployment decision checklist.}{120}{section*.123}%
+\contentsline {paragraph}{The practical rule.}{120}{section*.124}%
+\contentsline {section}{\numberline {10.2}Limitations and Honest Scope}{121}{section.10.2}%
+\contentsline {paragraph}{(1) Scope of the empirical win.}{121}{section*.125}%
+\contentsline {paragraph}{(2) The decisive synthetic win; natural shifts at modest scale.}{121}{section*.126}%
+\contentsline {paragraph}{(3) Architecture and scale.}{122}{section*.127}%
+\contentsline {paragraph}{(4) Conformal exchangeability.}{122}{section*.128}%
+\contentsline {paragraph}{(5) The certificate is conditional.}{122}{section*.129}%
+\contentsline {paragraph}{(6) Conjecture~\ref {conj:gen} is open.}{122}{section*.130}%
+\contentsline {paragraph}{(7) Single-machine GPU scale.}{122}{section*.131}%
+\contentsline {paragraph}{Claim discipline.}{122}{section*.132}%
+\contentsline {section}{\numberline {10.3}What Would Falsify the Framework}{123}{section.10.3}%
+\contentsline {paragraph}{Falsifying the information-theoretic bound.}{123}{section*.133}%
+\contentsline {paragraph}{Falsifying the stress-grid results.}{123}{section*.134}%
+\contentsline {paragraph}{Falsifying the trichotomy structure.}{123}{section*.135}%
+\contentsline {paragraph}{Falsifying the ELARA instantiation.}{124}{section*.136}%
+\contentsline {section}{\numberline {10.4}Future Work}{124}{section.10.4}%
+\contentsline {paragraph}{Beyond label-free: a target-label-light, multimodal safety guard.}{124}{section*.137}%
+\contentsline {paragraph}{Proving Conjecture~\ref {conj:gen}.}{124}{section*.138}%
+\contentsline {paragraph}{Scaling the natural-shift evidence.}{125}{section*.139}%
+\contentsline {paragraph}{ImageNet-C and foundation-model adapters.}{125}{section*.140}%
+\contentsline {paragraph}{Richer evidence features.}{125}{section*.141}%
+\contentsline {paragraph}{Anytime-valid extension.}{125}{section*.142}%
+\contentsline {section}{\numberline {10.5}Conclusion}{125}{section.10.5}%
+\contentsline {paragraph}{The trichotomy thesis.}{125}{section*.143}%
+\contentsline {paragraph}{The verified evidence chain.}{126}{section*.144}%
+\contentsline {paragraph}{The honest frontier.}{126}{section*.145}%
+\contentsline {paragraph}{Final statement.}{127}{section*.146}%
+\contentsline {chapter}{\numberline {A}Reproducibility and Engineering}{128}{appendix.A}%
+\contentsline {section}{\numberline {A.1}Repository layout}{128}{section.A.1}%
+\contentsline {section}{\numberline {A.2}Full reproduction path}{129}{section.A.2}%
+\contentsline {paragraph}{Stage [1/4] Dependencies.}{129}{section*.147}%
+\contentsline {paragraph}{Stage [2/4] Core experiments (CPU).}{129}{section*.148}%
+\contentsline {paragraph}{Stage [3/4] GPU experiment (optional).}{130}{section*.149}%
+\contentsline {paragraph}{Stage [4/4] Compile PDF.}{130}{section*.150}%
+\contentsline {section}{\numberline {A.3}Hermetic smoke path}{130}{section.A.3}%
+\contentsline {paragraph}{Phase 1: synthetic archive generation.}{130}{section*.151}%
+\contentsline {paragraph}{Phase 2: real \texttt {kga} pipeline.}{130}{section*.152}%
+\contentsline {section}{\numberline {A.4}Integrity manifests}{131}{section.A.4}%
+\contentsline {subsection}{\numberline {A.4.1}Model artifact manifest (\texttt {models/MANIFEST.json})}{131}{subsection.A.4.1}%
+\contentsline {subsection}{\numberline {A.4.2}Score-archive manifest (\texttt {data/MANIFEST.json})}{131}{subsection.A.4.2}%
+\contentsline {section}{\numberline {A.5}The \texttt {kga} package: install and test}{132}{section.A.5}%
+\contentsline {paragraph}{Test suite.}{132}{section*.153}%
+\contentsline {paragraph}{Theorem validators.}{133}{section*.154}%
+\contentsline {section}{\numberline {A.6}CI workflow (\texttt {.github/workflows/kbound-ci.yml})}{133}{section.A.6}%
+\contentsline {section}{\numberline {A.7}Executed notebooks (00--09)}{134}{section.A.7}%
+\contentsline {section}{\numberline {A.8}Environment notes}{136}{section.A.8}%
+\contentsline {paragraph}{Python version.}{136}{section*.155}%
+\contentsline {paragraph}{Apple M5 / MPS.}{136}{section*.156}%
+\contentsline {paragraph}{Determinism.}{136}{section*.157}%
+\contentsline {paragraph}{Legacy lint debt.}{136}{section*.158}%
+\contentsline {section}{\numberline {A.9}How to reproduce: checklist}{136}{section.A.9}%
+\contentsline {chapter}{\numberline {B}Complete Result Tables}{137}{appendix.B}%
+\contentsline {section}{\numberline {B.1}Per-Seed Rigor Table (Mixed Regime, 8 Seeds)}{137}{section.B.1}%
+\contentsline {paragraph}{Notes.}{138}{section*.159}%
+\contentsline {section}{\numberline {B.2}Full Ablation Grid}{138}{section.B.2}%
+\contentsline {subsection}{\numberline {B.2.1}Evidence-Drop Ablation (Full Grid)}{138}{subsection.B.2.1}%
+\contentsline {subsection}{\numberline {B.2.2}Alpha Sweep (Full Grid)}{138}{subsection.B.2.2}%
+\contentsline {subsection}{\numberline {B.2.3}Batch-Size Sweep (Full Grid)}{138}{subsection.B.2.3}%
+\contentsline {section}{\numberline {B.3}Regression Covariate-Shift Decision Summary}{138}{section.B.3}%
+\contentsline {section}{\numberline {B.4}Mixed-Regime Full Metrics}{139}{section.B.4}%
+\contentsline {section}{\numberline {B.5}Harmful-Fusion Regime Full Metrics}{139}{section.B.5}%
+\contentsline {paragraph}{Note on the adapt decision.}{139}{section*.160}%
+\contentsline {section}{\numberline {B.6}Clean Non-identifiability Witness: Full Metrics}{139}{section.B.6}%
+\contentsline {section}{\numberline {B.7}Knowability Trichotomy Suite: Full Metrics}{139}{section.B.7}%
+\contentsline {paragraph}{Note on naive rule.}{140}{section*.161}%
+\contentsline {section}{\numberline {B.8}All 65 CIFAR-10-C Cells}{140}{section.B.8}%
+\contentsline {chapter}{\numberline {C}Notation and Glossary}{147}{appendix.C}%
+\contentsline {section}{\numberline {C.1}Notation table}{147}{section.C.1}%
+\contentsline {section}{\numberline {C.2}Glossary}{149}{section.C.2}%
+\contentsline {section}{\numberline {C.3}The exact benefit-sign frontier}{151}{section.C.3}%
+\contentsline {paragraph}{Setup.}{151}{section*.162}%
+\contentsline {paragraph}{Multiclass and regression.}{153}{section*.163}%
+\contentsline {paragraph}{What this is, and is not.}{153}{section*.164}%
+\contentsline {subsection}{\numberline {C.3.1}A shared quantity: agreement-on-the-line is the same drift}{154}{subsection.C.3.1}%
+\contentsline {subsection}{\numberline {C.3.2}Further results: bracketing, router generalization, and non-stationarity}{154}{subsection.C.3.2}%
+\contentsline {paragraph}{(a) Closing Conjecture~\ref {conj:gen} under calibration transfer.}{155}{section*.165}%
+\contentsline {paragraph}{(b) Generalization of the benefit router.}{155}{section*.166}%
+\contentsline {paragraph}{(c) Anytime validity under non-stationarity.}{156}{section*.167}%
+\contentsline {paragraph}{Weight (honest).}{157}{section*.168}%
+\contentsline {subsection}{\numberline {C.3.3}Making the drift radius observable: a smooth source--target drift bracket}{158}{subsection.C.3.3}%
+\contentsline {paragraph}{Setup (inherited from Prop.~\ref {thm:reg-iff}).}{158}{section*.169}%
+\contentsline {paragraph}{Validated.}{159}{section*.170}%
+\contentsline {paragraph}{Positioning and honest scope.}{159}{section*.171}%
+\contentsline {paragraph}{Weight (honest).}{161}{section*.172}%
+\contentsline {paragraph}{Weight (honest).}{162}{section*.173}%
+\contentsline {subsection}{\numberline {C.3.4}Two new rows, one reach: where v0.5 leaves Conjecture~\ref {conj:gen}}{163}{subsection.C.3.4}%
+\contentsline {paragraph}{Conjecture~\ref {conj:gen}, sharpened.}{164}{section*.174}%
+\contentsline {paragraph}{Honest scope.}{164}{section*.175}%
+\contentsline {paragraph}{Weight (honest).}{166}{section*.176}%
+\contentsline {subsection}{\numberline {C.3.5}Relaxing Definition~\ref {def:cei}: bounded-residual sign identifiability with an observable diagnostic}{167}{subsection.C.3.5}%
+\contentsline {paragraph}{Objects.}{167}{section*.177}%
+\contentsline {paragraph}{Validated.}{169}{section*.178}%
+\contentsline {paragraph}{Positioning and honest scope.}{169}{section*.179}%
+\contentsline {paragraph}{Setting.}{170}{section*.180}%
+\contentsline {paragraph}{What this resolves, and what it does not.}{172}{section*.181}%
+\contentsline {paragraph}{Prior decision styles as degenerate points on the frontier.}{174}{section*.182}%
+\contentsline {paragraph}{Weight (honest).}{175}{section*.183}%
+\contentsline {paragraph}{Weight (honest).}{177}{section*.184}%
+\contentsline {section}{\numberline {C.4}One bit, audited: what label-free evidence can and cannot supply}{178}{section.C.4}%
+\contentsline {paragraph}{Positioning (deltas, not firsts).}{178}{section*.185}%
+\contentsline {subsection}{\numberline {C.4.1}The corrected structural hypothesis}{179}{subsection.C.4.1}%
+\contentsline {subsection}{\numberline {C.4.2}The one-bit theorem}{180}{subsection.C.4.2}%
+\contentsline {subsection}{\numberline {C.4.3}The budget audit: falsifiable, never verifiable}{182}{subsection.C.4.3}%
+\contentsline {subsection}{\numberline {C.4.4}The evidence-channel rate}{183}{subsection.C.4.4}%
+\contentsline {subsection}{\numberline {C.4.5}Consolidation and what remains open}{184}{subsection.C.4.5}%
+\contentsline {subsection}{\numberline {C.4.6}Closing Conjecture~\ref {conj:gen}: the testability dichotomy}{185}{subsection.C.4.6}%

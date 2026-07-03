@@ -1,0 +1,41 @@
+<svg viewBox="0 0 980 660" xmlns="http://www.w3.org/2000/svg" font-family="Helvetica, Arial, sans-serif">
+<style>
+  .t{fill:#1f2937} .s{fill:#6b7280}
+  .box{fill:#f4f4f5;stroke:#d4d4d8;stroke-width:1.2}
+  .hdr{fill:#9ca3af;font-size:12px;font-weight:700;letter-spacing:1px}
+  .lbl{font-size:13.5px;font-weight:600} .sub{font-size:11px}
+  .arr{stroke:#9ca3af;stroke-width:1.6;fill:none;marker-end:url(#a)}
+</style>
+<defs><marker id="a" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0L10 5L0 10z" fill="#9ca3af"/></marker></defs>
+<text x="490" y="30" text-anchor="middle" class="t" font-size="21" font-weight="800">K-Bound — System Architecture</text>
+<text x="490" y="50" text-anchor="middle" class="s" font-size="13">Is label-free adaptation knowable? -&gt; decide: adapt . freeze . abstain</text>
+<text x="30" y="80" class="hdr">INPUTS</text>
+<rect x="30" y="88" width="216" height="52" rx="8" class="box"/><text x="138" y="110" text-anchor="middle" class="t lbl">Labelled source + val</text><text x="138" y="127" text-anchor="middle" class="s sub">no target labels</text>
+<rect x="262" y="88" width="216" height="52" rx="8" class="box"/><text x="370" y="110" text-anchor="middle" class="t lbl">Unlabelled target</text><text x="370" y="127" text-anchor="middle" class="s sub">under distribution shift</text>
+<rect x="494" y="88" width="216" height="52" rx="8" class="box"/><text x="602" y="110" text-anchor="middle" class="t lbl">Frozen model f0</text><text x="602" y="127" text-anchor="middle" class="s sub">the safe baseline</text>
+<rect x="726" y="88" width="224" height="52" rx="8" class="box"/><text x="838" y="110" text-anchor="middle" class="t lbl">Adapt candidate fa</text><text x="838" y="127" text-anchor="middle" class="s sub">Tent / RGA fusion / IW</text>
+<path class="arr" d="M490 142 L490 168"/>
+<text x="30" y="190" class="hdr">KGA  —  KNOWABILITY-GUIDED ADAPTATION</text>
+<rect x="30" y="198" width="920" height="96" rx="10" fill="none" stroke="#d4d4d8" stroke-dasharray="5 4"/>
+<rect x="48" y="216" width="262" height="62" rx="8" class="box"/><text x="179" y="240" text-anchor="middle" class="t lbl">(1) Evidence  Z = phi(.)</text><text x="179" y="258" text-anchor="middle" class="s sub">drift . confidence . disagreement</text>
+<rect x="360" y="216" width="262" height="62" rx="8" class="box"/><text x="491" y="240" text-anchor="middle" class="t lbl">(2) Certificate  D-hat +/- eps</text><text x="491" y="258" text-anchor="middle" class="s sub">Bernstein / conformal / e-value</text>
+<rect x="672" y="216" width="262" height="62" rx="8" class="box"/><text x="803" y="240" text-anchor="middle" class="t lbl">(3) Decision rule</text><text x="803" y="258" text-anchor="middle" class="s sub">compare D-hat +/- eps to 0</text>
+<path class="arr" d="M310 247 L356 247"/><path class="arr" d="M622 247 L668 247"/><path class="arr" d="M490 294 L490 320"/>
+<text x="30" y="342" class="hdr">DECISION  ->  THREE REGIMES</text>
+<rect x="48" y="350" width="276" height="58" rx="8" fill="#e7f5f1" stroke="#2a9d8f" stroke-width="1.4"/><text x="186" y="373" text-anchor="middle" class="t lbl">ADAPT -&gt; use fa</text><text x="186" y="391" text-anchor="middle" class="s sub">knowably helpful</text>
+<rect x="352" y="350" width="276" height="58" rx="8" fill="#e8eef4" stroke="#457b9d" stroke-width="1.4"/><text x="490" y="373" text-anchor="middle" class="t lbl">FREEZE -&gt; keep f0</text><text x="490" y="391" text-anchor="middle" class="s sub">knowably harmful</text>
+<rect x="656" y="350" width="278" height="58" rx="8" fill="#f0f0f1" stroke="#9aa0a6" stroke-width="1.4"/><text x="795" y="373" text-anchor="middle" class="t lbl">ABSTAIN -&gt; safe default</text><text x="795" y="391" text-anchor="middle" class="s sub">unknowable</text>
+<path class="arr" d="M470 320 L220 348"/><path class="arr" d="M490 322 L490 348"/><path class="arr" d="M512 320 L770 348"/>
+<text x="30" y="438" class="hdr">THEORY FOUNDATION</text>
+<rect x="30" y="446" width="920" height="46" rx="8" class="box"/>
+<text x="490" y="474" text-anchor="middle" class="t" font-size="12.5">Thm 1 impossibility =&gt; abstain . Thm 2 regret . Thm 3 finite-sample certificate . Thm 4 covariate identifiable . Thm 5 disagreement-region sign</text>
+<rect x="30" y="504" width="450" height="50" rx="8" class="box"/>
+<text x="255" y="525" text-anchor="middle" class="t lbl">ELARA / RGA — worked instantiation</text>
+<text x="255" y="542" text-anchor="middle" class="s sub">reliability-gated multimodal fusion (T1-T9, GDR)</text>
+<rect x="500" y="504" width="450" height="50" rx="8" class="box"/>
+<text x="725" y="525" text-anchor="middle" class="t lbl">K-Bound generalises it</text>
+<text x="725" y="542" text-anchor="middle" class="s sub">any frozen f0 + candidate fa, any task</text>
+<path class="arr" d="M480 529 L498 529"/>
+<text x="30" y="582" class="hdr">VALIDATED ON</text>
+<text x="30" y="602" class="s" font-size="12">anomaly routing (123 tasks) . regression covariate-shift . CIFAR-10-C . online continual-Tent collapse . ImageNet-scale ResNet-50/ViT-B (running)</text>
+</svg>

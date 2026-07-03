@@ -1,0 +1,76 @@
+{
+  "A_recovery": {
+    "trials": 50,
+    "max_abs_acc_error": 0.01229204706217879,
+    "mean_abs_acc_error": 0.0028652868258377184,
+    "ordering_correct_rate": 0.96,
+    "verdict": "label-free accuracy ordering recovered exactly under conditional independence"
+  },
+  "B_breakdown": {
+    "rows": [
+      {
+        "rho": 0.0,
+        "ordering_flip_rate": 0.0
+      },
+      {
+        "rho": 0.1,
+        "ordering_flip_rate": 0.0
+      },
+      {
+        "rho": 0.2,
+        "ordering_flip_rate": 0.0
+      },
+      {
+        "rho": 0.3,
+        "ordering_flip_rate": 0.0
+      },
+      {
+        "rho": 0.5,
+        "ordering_flip_rate": 0.0
+      },
+      {
+        "rho": 0.7,
+        "ordering_flip_rate": 0.0
+      },
+      {
+        "rho": 0.9,
+        "ordering_flip_rate": 0.0
+      }
+    ],
+    "ordering_breaks_at_rho": null,
+    "verdict": "ordering is exact at rho=0 and degrades as error-correlation grows -> the condition is the crux, as predicted"
+  },
+  "C_diagnostic": {
+    "rows": [
+      {
+        "rho": 0.0,
+        "mean_residual": 0.0005765177612499971
+      },
+      {
+        "rho": 0.05,
+        "mean_residual": 0.0005344219312499959
+      },
+      {
+        "rho": 0.1,
+        "mean_residual": 0.0005415387312499943
+      },
+      {
+        "rho": 0.2,
+        "mean_residual": 0.0014556114012500058
+      },
+      {
+        "rho": 0.3,
+        "mean_residual": 0.0025645525199999852
+      },
+      {
+        "rho": 0.5,
+        "mean_residual": 0.0035720460525000067
+      }
+    ],
+    "residual_at_CI": 0.0005765177612499971,
+    "pearson_corr_residual_rho": 0.977355080971733,
+    "monotone": true,
+    "verdict": "overdetermination yields a label-free residual ~0 under CI and rising with correlation -> a checkable diagnostic exists (Step-2 seed)"
+  },
+  "honest_note": "Feasibility only. Binary, symmetric accuracy, population-scale agreements. The theorem needs: multiclass + asymmetric confusions, the WEAKEST checkable condition (not full CI), a soundness guarantee for the diagnostic, a matching converse, and real-shift validation. None of those are shown here."
+}

@@ -1,0 +1,14 @@
+experiment: mixed_regime
+generating_script: src/scripts/kbound/mixed_regime_experiment.py
+result_file: ../../results/main/mixed_regime_results.json + rigor_multiseed.json
+claim_status: used
+kga:
+  estimator: GradientBoostingRegressor
+  n_estimators: 250
+  max_depth: 2
+  learning_rate: 0.05
+  subsample: 0.8
+  cv: leave_one_out
+  conformal_alpha: 0.10
+  conformal_quantile: 0.90
+seed: 0

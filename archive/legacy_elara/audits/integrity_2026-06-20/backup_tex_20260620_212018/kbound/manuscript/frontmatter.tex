@@ -1,0 +1,184 @@
+% =============================================================================
+% frontmatter.tex  —  Title page, Abstract, How to Read This Manuscript
+% Part of the K-Bound long-form monograph.
+% NO \documentclass or \usepackage here; this file is \input by main.tex.
+% =============================================================================
+
+% ---------------------------------------------------------------------------
+% Title page
+% ---------------------------------------------------------------------------
+\begin{titlepage}
+\centering
+\vspace*{2.5cm}
+
+{\Huge\bfseries When Is Label-Free Adaptation Knowable?}\\[1.2em]
+{\large\itshape The Knowability Boundary of Label-Free Adaptation --- Manuscript Edition}
+
+\vspace{2.5cm}
+
+{\LARGE Anonymous Author}\\[0.6em]
+{\large Independent Researcher}
+
+\vspace{3cm}
+
+{\large 2026}
+
+\vspace{3.5cm}
+
+\begin{minipage}{0.78\textwidth}
+\small\itshape
+Long-form companion to the working paper ``When Is Label-Free
+Adaptation Knowable?''\ (K-Bound, v0.4).
+Every theorem, number, table, and figure in this manuscript reproduces
+from the anonymized repository linked in supplementary material.
+Nothing has been added beyond the exposition; nothing has been rounded,
+selected, or otherwise adjusted from the verified artifact manifests.
+\end{minipage}
+
+\vfill
+\end{titlepage}
+
+% ---------------------------------------------------------------------------
+% Abstract
+% ---------------------------------------------------------------------------
+\chapter*{Abstract}
+\addcontentsline{toc}{chapter}{Abstract}
+
+Test-time adaptation can improve models on unlabeled target data, but the same
+objective that helps under one distribution shift can silently hurt under another.
+Existing work mainly strengthens adaptation mechanisms; we study a prior decision
+problem: can a system decide, without target labels, whether it should adapt at all?
+
+We formalize adaptation benefit as the excess target risk of a frozen baseline over
+an adapted candidate and define three label-free regimes: \emph{knowably helpful},
+\emph{knowably harmful}, and \emph{unknowable}. We prove that when two target worlds
+induce identical observable evidence but opposite adaptation benefit, no label-free
+rule can be correct in both; abstention is then information-theoretically necessary.
+Under a risk-alignment assumption, we give a finite-sample adapt/freeze/abstain
+certificate controlling false adaptation and false freezing. Our main theoretical
+result is an exact benefit-sign frontier: adaptation benefit is identifiable from
+observables iff an observable margin exceeds the calibration-drift budget on the
+disagreement region.
+
+We instantiate the framework as \KGA, a mechanism-agnostic wrapper around Tent,
+EATA, and SAR. Across anomaly routing, CIFAR-10, CIFAR-10-C stress tests, and
+natural-shift audits, \KGA\ follows theory: adapt in helpful regimes, freeze in
+harmful regimes, and abstain when evidence is insufficient. On a CIFAR-10-C stress
+grid, \KGA\ beats always-adapt and always-freeze for Tent and EATA with zero
+false-adapt decisions, while tying SAR. At ImageNet scale, it also beats both
+policies on a harmful SAR stream. On Camelyon17, ImageNet-R, and Office-Home,
+\KGA\ is conservative and avoids overclaiming wins. K-Bound is not universal; value
+is highest when harmful adaptation is frequent, detectable, and costly.
+
+% ---------------------------------------------------------------------------
+% How to Read This Manuscript
+% ---------------------------------------------------------------------------
+\chapter*{How to Read This Manuscript}
+\addcontentsline{toc}{chapter}{How to Read This Manuscript}
+
+This monograph presents the K-Bound research program at a depth that the
+20-page working paper cannot sustain.
+Theorems and experiments are stated faithfully from the paper; the additional
+length is entirely expository --- motivation, worked examples, proof commentary,
+and explicit connections between the abstract theory and its empirical realizations.
+A reader who has the paper in hand can use the chapter headings as an index;
+a reader coming to K-Bound fresh should read Chapters~\ref{ch:intro}
+and~\ref{ch:related} first to orient on the problem and its neighbours, then
+follow Chapters~\ref{ch:formulation} through~\ref{ch:theory2} for the theory,
+and Chapters~\ref{ch:kga} through~\ref{ch:exp2} for the instantiation and
+experiments.
+
+\medskip
+\noindent\textbf{Chapter~\ref{ch:intro}: Introduction.}
+Sets up the TTA double-edge problem and the central question of knowability.
+Introduces the adapt/freeze/abstain trichotomy, previews all five theoretical
+results and the headline experimental numbers, and gives an honest statement of
+scope.
+
+\medskip
+\noindent\textbf{Chapter~\ref{ch:related}: Background and Related Work.}
+A thorough review of the five lines of work adjacent to K-Bound: TTA mechanisms,
+TTA failure and collapse studies, guarded/protected adaptation, label-free
+accuracy estimation, unsupervised risk and identifiability, selective prediction
+and abstention, conformal and anytime-valid inference, and covariate-shift theory.
+Closes with a positioning table and a precise statement of the gap K-Bound fills.
+
+\medskip
+\noindent\textbf{Chapter~\ref{ch:formulation}: Problem Formulation.}
+The formal setup: source and target distributions, the adaptation benefit
+$\Delta = R_T(f_0) - R_T(f_a)$, observable evidence $Z$, the three regimes, and
+the key definitions of risk alignment and knowability.
+Includes the ``label-free'' clarification box and the knowability phase diagram.
+
+\medskip
+\noindent\textbf{Chapter~\ref{ch:theory1}: Impossibility and the Unknowable Regime.}
+The first two theoretical results.
+Theorem~\ref{thm:imp} (non-identifiability with explicit witness) and its Le~Cam
+quantitative strengthening establish the unknowable regime as fundamental.
+Theorem~\ref{thm:gate} gives the Bayes-optimal gate and the plug-in regret
+decomposition, which justifies abstaining in the low-margin band.
+
+\medskip
+\noindent\textbf{Chapter~\ref{ch:theory2}: Certificates and Positive Regimes.}
+The remaining three theoretical results.
+Theorem~\ref{thm:cert} is the finite-sample adapt/freeze/abstain certificate with
+a controlled false-adapt rate; Corollaries give forced abstention and sample
+complexity.
+Theorem~\ref{thm:pos} proves a knowable positive regime under covariate shift.
+Theorems~\ref{thm:disagree}, \ref{thm:disagree-mc}, and~\ref{thm:disagree-reg}
+reduce sign-of-difference identifiability to an ordinal accuracy comparison on the
+observable disagreement region for binary, multiclass, and regression losses.
+Conjecture~\ref{conj:gen} states the remaining open piece.
+
+\medskip
+\noindent\textbf{Chapter~\ref{ch:kga}: The \KGA\ Algorithm.}
+The \KGA\ (Knowability-Guided Adaptation) wrapper: evidence extraction,
+benefit estimation, conformal radius, and the three-way decision.
+Assumptions, computational cost, and the relationship to any underlying TTA
+candidate.
+
+\medskip
+\noindent\textbf{Chapter~\ref{ch:exp1}: Experiments I --- Anomaly Routing.}
+The 123-task clean suite, the harmful-regime refusal experiment, the controlled
+mixed-regime study, and the non-identifiability witness (both empirical and exact).
+Evidence ablations and the $\alpha$-sweep safety/coverage tradeoff.
+
+\medskip
+\noindent\textbf{Chapter~\ref{ch:exp2}: Experiments II --- Online TTA and CIFAR-10-C.}
+The online non-stationary CIFAR-10 cross-regime test, the per-corruption CIFAR-10-C
+helpful-dominated protocol, and the pre-registered CIFAR-10-C stress grid.
+Breadth results on 62 additional harmful-dominated label-free tasks.
+
+\medskip
+\noindent\textbf{Chapter~\ref{ch:elara}: The Multimodal Instantiation.}
+Reliability-gated multimodal fusion as the worked, code-validated special case:
+the ten-result multimodal theorem stack (T1--T9, GDR) and its mapping to the general
+K-Bound theorems.
+
+\medskip
+\noindent\textbf{Chapter~\ref{ch:discussion}: Discussion, Limitations, and Conclusion.}
+When to deploy K-Bound; honest scope; limitations; and the research frontier
+(ImageNet-C / ViT scale, natural-shift benchmarks, the open conjecture).
+
+\medskip
+\noindent\textbf{Appendix~\ref{app:repro}: Reproducibility.}
+One-command reproduction; data provenance and checksums; environment and
+determinism notes.
+
+\medskip
+\noindent\textbf{Appendix~\ref{app:tables}: Extended Tables.}
+The full 65-cell CIFAR-10-C per-corruption-by-severity breakdown and
+auxiliary result tables referenced from the main chapters.
+
+\medskip
+\noindent\textbf{Appendix~\ref{app:notation}: Notation Reference.}
+A single-page glossary of all symbols used in the monograph.
+
+\medskip\noindent
+Readers interested primarily in the \emph{theory} can read
+Chapters~\ref{ch:formulation}--\ref{ch:theory2} as a self-contained unit.
+Readers interested primarily in the \emph{practical algorithm} can read
+Chapter~\ref{ch:kga} with only the informal summaries of
+Theorems~\ref{thm:imp} and~\ref{thm:cert}.
+Both paths converge at Chapter~\ref{ch:discussion}, which synthesizes the
+implications for deployment.

@@ -1,0 +1,1125 @@
+\relax 
+\providecommand\hyper@newdestlabel[2]{}
+\providecommand\HyField@AuxAddToFields[1]{}
+\providecommand\HyField@AuxAddToCoFields[2]{}
+\@writefile{toc}{\contentsline {chapter}{Abstract}{i}{chapter*.1}\protected@file@percent }
+\@writefile{toc}{\contentsline {chapter}{How to Read This Manuscript}{ii}{chapter*.2}\protected@file@percent }
+\citation{lipton2018detecting}
+\citation{kbound2026repo}
+\citation{wang2021tent}
+\citation{sun2020ttt}
+\citation{shimodaira2000improving}
+\citation{zhao2023pitfalls}
+\citation{press2023rdumb}
+\citation{niu2023sar}
+\@writefile{toc}{\contentsline {chapter}{\numberline {1}Introduction}{1}{chapter.1}\protected@file@percent }
+\@writefile{lof}{\addvspace {10\p@ }}
+\@writefile{lot}{\addvspace {10\p@ }}
+\newlabel{ch:intro}{{1}{1}{Introduction}{chapter.1}{}}
+\@writefile{toc}{\contentsline {section}{\numberline {1.1}The Deployment Problem}{1}{section.1.1}\protected@file@percent }
+\newlabel{sec:intro-deploy}{{1.1}{1}{The Deployment Problem}{section.1.1}{}}
+\@writefile{toc}{\contentsline {section}{\numberline {1.2}The Double-Edged Nature of Test-Time Adaptation}{1}{section.1.2}\protected@file@percent }
+\newlabel{sec:intro-doubleedge}{{1.2}{1}{The Double-Edged Nature of Test-Time Adaptation}{section.1.2}{}}
+\citation{niu2022eata}
+\citation{niu2023sar}
+\citation{boudiaf2022lame}
+\citation{niu2023sar}
+\citation{wang2022cotta}
+\@writefile{toc}{\contentsline {section}{\numberline {1.3}The Central Question}{2}{section.1.3}\protected@file@percent }
+\newlabel{sec:intro-question}{{1.3}{2}{The Central Question}{section.1.3}{}}
+\@writefile{toc}{\contentsline {section}{\numberline {1.4}The Trichotomy and Its Formalization}{3}{section.1.4}\protected@file@percent }
+\newlabel{sec:intro-trichotomy}{{1.4}{3}{The Trichotomy and Its Formalization}{section.1.4}{}}
+\@writefile{toc}{\contentsline {section}{\numberline {1.5}Contributions}{3}{section.1.5}\protected@file@percent }
+\newlabel{sec:intro-contributions}{{1.5}{3}{Contributions}{section.1.5}{}}
+\@writefile{toc}{\contentsline {paragraph}{Contribution 1: Formalization of the knowability trichotomy.}{3}{section*.6}\protected@file@percent }
+\citation{kbound2026repo}
+\@writefile{toc}{\contentsline {paragraph}{Contribution 2: Impossibility theorem with explicit witness (Theorem~\ref {thm:imp}).}{4}{section*.7}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{Contribution 3: Finite-sample adapt/freeze/abstain certificate with false-adapt control (Theorem~\ref {thm:cert}).}{4}{section*.8}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{Contribution 4: Covariate-shift positive regime and the sign-of-difference characterization (Theorems~\ref {thm:pos}, \ref {thm:disagree}--\ref {thm:disagree-reg}).}{4}{section*.9}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{Contribution 5: \textsc  {KGA}\ and open-source implementation.}{4}{section*.10}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{Contribution 6: Experiments.}{5}{section*.11}\protected@file@percent }
+\citation{koh2021wilds}
+\@writefile{toc}{\contentsline {section}{\numberline {1.6}Honest Scope}{6}{section.1.6}\protected@file@percent }
+\newlabel{sec:intro-scope}{{1.6}{6}{Honest Scope}{section.1.6}{}}
+\@writefile{toc}{\contentsline {section}{\numberline {1.7}Chapter Roadmap}{6}{section.1.7}\protected@file@percent }
+\newlabel{sec:intro-roadmap}{{1.7}{6}{Chapter Roadmap}{section.1.7}{}}
+\citation{wang2021tent}
+\citation{hendrycks2019benchmarking}
+\citation{schneider2020bn}
+\citation{gong2022note}
+\@writefile{toc}{\contentsline {chapter}{\numberline {2}Background and Related Work}{8}{chapter.2}\protected@file@percent }
+\@writefile{lof}{\addvspace {10\p@ }}
+\@writefile{lot}{\addvspace {10\p@ }}
+\newlabel{ch:related}{{2}{8}{Background and Related Work}{chapter.2}{}}
+\@writefile{toc}{\contentsline {section}{\numberline {2.1}Test-Time Adaptation: Mechanisms and Methods}{8}{section.2.1}\protected@file@percent }
+\newlabel{sec:rel-tta}{{2.1}{8}{Test-Time Adaptation: Mechanisms and Methods}{section.2.1}{}}
+\@writefile{toc}{\contentsline {paragraph}{Entropy minimization.}{8}{section*.12}\protected@file@percent }
+\citation{niu2022eata}
+\citation{niu2023sar}
+\citation{wang2022cotta}
+\citation{sun2020ttt}
+\citation{zhang2022memo}
+\citation{boudiaf2022lame}
+\@writefile{toc}{\contentsline {paragraph}{Batch-normalization statistics adaptation.}{9}{section*.13}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{Filtering and Fisher regularization.}{9}{section*.14}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{Sharpness-aware updates and resets.}{9}{section*.15}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{Source-free and continual adaptation.}{9}{section*.16}\protected@file@percent }
+\citation{zhao2023pitfalls}
+\citation{press2023rdumb}
+\citation{hendrycks2019benchmarking}
+\@writefile{toc}{\contentsline {paragraph}{Parameter-free approaches.}{10}{section*.17}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{What all TTA methods share.}{10}{section*.18}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {2.2}TTA Failure, Collapse, and Evaluation}{10}{section.2.2}\protected@file@percent }
+\newlabel{sec:rel-failure}{{2.2}{10}{TTA Failure, Collapse, and Evaluation}{section.2.2}{}}
+\@writefile{toc}{\contentsline {paragraph}{Pitfalls and failure modes.}{10}{section*.19}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{Robustness benchmarks.}{10}{section*.20}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{Standardized benchmarks.}{10}{section*.21}\protected@file@percent }
+\citation{gulrajani2021domainbed}
+\citation{koh2021wilds}
+\citation{gong2022note}
+\@writefile{toc}{\contentsline {paragraph}{DomainBed.}{11}{section*.22}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {2.3}Guarded and Protected Adaptation}{11}{section.2.3}\protected@file@percent }
+\newlabel{sec:rel-guarded}{{2.3}{11}{Guarded and Protected Adaptation}{section.2.3}{}}
+\@writefile{toc}{\contentsline {paragraph}{Entropy thresholding and filtering.}{11}{section*.23}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{Betting-style monitors.}{11}{section*.24}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{NOTE's class-conditional normalization.}{11}{section*.25}\protected@file@percent }
+\citation{garg2022atc}
+\citation{baek2022agreement}
+\citation{guillory2021predicting}
+\@writefile{toc}{\contentsline {paragraph}{The structural gap.}{12}{section*.26}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {2.4}Label-Free Accuracy Estimation}{12}{section.2.4}\protected@file@percent }
+\newlabel{sec:rel-estimation}{{2.4}{12}{Label-Free Accuracy Estimation}{section.2.4}{}}
+\@writefile{toc}{\contentsline {paragraph}{ATC.}{12}{section*.27}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{Agreement-on-the-Line.}{12}{section*.28}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{Predicting with confidence.}{12}{section*.29}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{The distinction from K-Bound.}{12}{section*.30}\protected@file@percent }
+\citation{bendavid2010theory}
+\citation{mansour2009domain}
+\citation{lipton2018detecting}
+\citation{quinonero2009dataset}
+\@writefile{toc}{\contentsline {section}{\numberline {2.5}Unsupervised Risk Estimation and Identifiability}{13}{section.2.5}\protected@file@percent }
+\newlabel{sec:rel-ident}{{2.5}{13}{Unsupervised Risk Estimation and Identifiability}{section.2.5}{}}
+\@writefile{toc}{\contentsline {paragraph}{Steinhardt and Liang.}{13}{section*.31}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{Ben-David et al.}{13}{section*.32}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{Mansour et al.}{13}{section*.33}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{Label-shift correction.}{13}{section*.34}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{Dataset shift taxonomy.}{13}{section*.35}\protected@file@percent }
+\citation{shimodaira2000improving}
+\citation{sugiyama2007covariate}
+\citation{chow1970optimum}
+\citation{elyaniv2010selective}
+\citation{geifman2017selective}
+\citation{vovk2005algorithmic}
+\citation{angelopoulos2023conformal}
+\@writefile{toc}{\contentsline {paragraph}{Importance weighting.}{14}{section*.36}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{The K-Bound delta over this line.}{14}{section*.37}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {2.6}Selective Prediction and Abstention}{14}{section.2.6}\protected@file@percent }
+\newlabel{sec:rel-selective}{{2.6}{14}{Selective Prediction and Abstention}{section.2.6}{}}
+\@writefile{toc}{\contentsline {paragraph}{Chow's reject option.}{14}{section*.38}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{Selective classification.}{14}{section*.39}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{Conformal prediction.}{14}{section*.40}\protected@file@percent }
+\citation{ville1939etude}
+\citation{shafer2019game}
+\citation{shafer2019game}
+\citation{ramdas2023gametheoretic}
+\citation{howard2021timeuniform}
+\citation{waudbysmith2024betting}
+\citation{grunwald2024safe}
+\citation{maurer2009empirical}
+\@writefile{toc}{\contentsline {paragraph}{K-Bound's abstention is over a decision, not a prediction.}{15}{section*.41}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {2.7}Conformal Prediction and Anytime-Valid Inference}{15}{section.2.7}\protected@file@percent }
+\newlabel{sec:rel-conformal}{{2.7}{15}{Conformal Prediction and Anytime-Valid Inference}{section.2.7}{}}
+\@writefile{toc}{\contentsline {paragraph}{Game-theoretic probability.}{15}{section*.42}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{Testing by betting and e-values.}{15}{section*.43}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{Anytime-valid confidence sequences.}{15}{section*.44}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{Connection to K-Bound.}{15}{section*.45}\protected@file@percent }
+\citation{hoeffding1963probability}
+\citation{lecam1973convergence}
+\citation{tsybakov2009introduction}
+\citation{lehmann2005testing}
+\citation{hendrycks2019benchmarking}
+\citation{recht2019imagenet}
+\citation{taori2020measuring}
+\citation{miller2021accuracy}
+\citation{han2022adbench}
+\citation{bergmann2019mvtec}
+\citation{bergmann2022mvtec3d}
+\citation{wang2024realiad}
+\citation{zhao2019pyod}
+\citation{krizhevsky2009cifar}
+\citation{deng2009imagenet}
+\citation{he2016resnet}
+\citation{dosovitskiy2021vit}
+\citation{howard2019imagenette}
+\citation{deng2021labels}
+\citation{garg2022atc}
+\citation{baek2022agreement}
+\@writefile{toc}{\contentsline {paragraph}{Classical concentration.}{16}{section*.46}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {2.8}Benchmarks, Robustness, and Distribution Shift}{16}{section.2.8}\protected@file@percent }
+\newlabel{sec:rel-bench}{{2.8}{16}{Benchmarks, Robustness, and Distribution Shift}{section.2.8}{}}
+\@writefile{toc}{\contentsline {paragraph}{Robustness benchmarks.}{16}{section*.47}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{Anomaly detection benchmarks.}{16}{section*.48}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{Standard vision.}{16}{section*.49}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{Label-free performance prediction and accuracy estimation.}{16}{section*.50}\protected@file@percent }
+\citation{liu2008isolation}
+\citation{breunig2000lof}
+\citation{scholkopf2001estimating}
+\citation{li2022ecod}
+\citation{zhao2019pyod}
+\citation{wang2021tent}
+\citation{niu2022eata}
+\citation{niu2023sar}
+\citation{wang2022cotta}
+\citation{sun2020ttt}
+\citation{zhang2022memo}
+\citation{boudiaf2022lame}
+\citation{gong2022note}
+\citation{garg2022atc}
+\citation{baek2022agreement}
+\citation{lipton2018detecting}
+\@writefile{toc}{\contentsline {paragraph}{Anomaly/outlier detection methods.}{17}{section*.51}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {2.9}Positioning: The Gap K-Bound Fills}{17}{section.2.9}\protected@file@percent }
+\newlabel{sec:rel-gap}{{2.9}{17}{Positioning: The Gap K-Bound Fills}{section.2.9}{}}
+\@writefile{lot}{\contentsline {table}{\numberline {2.1}{\ignorespaces Positioning of K-Bound against adjacent methods. Prior TTA methods adapt (some with internal guards); performance estimators operate post-hoc. No prior method provides a single pre-adaptation adapt/freeze/abstain certificate with an explicit, proven unknowable region and a false-adapt bound. \textsc  {KGA}\ wraps any TTA candidate without modifying it.}}{17}{table.2.1}\protected@file@percent }
+\newlabel{tab:rel}{{2.1}{17}{Positioning of K-Bound against adjacent methods. Prior TTA methods adapt (some with internal guards); performance estimators operate post-hoc. No prior method provides a single pre-adaptation adapt/freeze/abstain certificate with an explicit, proven unknowable region and a false-adapt bound. \KGA \ wraps any TTA candidate without modifying it}{table.2.1}{}}
+\citation{kbound2026repo}
+\citation{wang2021tent}
+\citation{quinonero2009dataset}
+\citation{quinonero2009dataset}
+\citation{shimodaira2000improving}
+\citation{lipton2018detecting}
+\@writefile{toc}{\contentsline {chapter}{\numberline {3}Problem Formulation and the Knowability Trichotomy}{19}{chapter.3}\protected@file@percent }
+\@writefile{lof}{\addvspace {10\p@ }}
+\@writefile{lot}{\addvspace {10\p@ }}
+\newlabel{ch:formulation}{{3}{19}{Problem Formulation and the Knowability Trichotomy}{chapter.3}{}}
+\@writefile{toc}{\contentsline {section}{\numberline {3.1}The deployment protocol}{19}{section.3.1}\protected@file@percent }
+\newlabel{sec:form-protocol}{{3.1}{19}{The deployment protocol}{section.3.1}{}}
+\citation{wang2021tent}
+\@writefile{toc}{\contentsline {section}{\numberline {3.2}The adaptation benefit}{20}{section.3.2}\protected@file@percent }
+\newlabel{sec:form-benefit}{{3.2}{20}{The adaptation benefit}{section.3.2}{}}
+\newlabel{def:form-benefit}{{3.1}{20}{Adaptation benefit}{definition.3.1}{}}
+\newlabel{eq:form-benefit}{{3.1}{20}{Adaptation benefit}{equation.3.1}{}}
+\citation{bendavid2010theory}
+\citation{lipton2018detecting}
+\citation{garg2022atc}
+\newlabel{eq:form-condbenefit}{{3.2}{21}{The adaptation benefit}{equation.3.2}{}}
+\@writefile{toc}{\contentsline {section}{\numberline {3.3}Label-free observable evidence}{21}{section.3.3}\protected@file@percent }
+\newlabel{sec:form-evidence}{{3.3}{21}{Label-free observable evidence}{section.3.3}{}}
+\newlabel{def:form-evidence}{{3.2}{21}{Observable evidence}{definition.3.2}{}}
+\@writefile{toc}{\contentsline {section}{\numberline {3.4}The knowability trichotomy}{22}{section.3.4}\protected@file@percent }
+\newlabel{sec:form-trichotomy}{{3.4}{22}{The knowability trichotomy}{section.3.4}{}}
+\newlabel{def:form-alignment}{{3.3}{22}{Observable risk alignment}{definition.3.3}{}}
+\newlabel{def:form-regimes}{{3.4}{22}{Regimes}{definition.3.4}{}}
+\newlabel{rem:form-labelfree}{{3.1}{22}{What ``label-free'' means here}{remark.3.1}{}}
+\citation{chow1970optimum}
+\citation{elyaniv2010selective}
+\citation{geifman2017selective}
+\@writefile{toc}{\contentsline {section}{\numberline {3.5}Decision rules, the oracle, and error rates}{23}{section.3.5}\protected@file@percent }
+\newlabel{sec:form-decisions}{{3.5}{23}{Decision rules, the oracle, and error rates}{section.3.5}{}}
+\newlabel{def:form-rule}{{3.5}{23}{Label-free decision rule}{definition.3.5}{}}
+\newlabel{def:form-regret}{{3.6}{23}{Oracle and regret-to-oracle}{definition.3.6}{}}
+\newlabel{def:form-errors}{{3.7}{23}{False-adapt and false-freeze rates}{definition.3.7}{}}
+\citation{shimodaira2000improving}
+\@writefile{toc}{\contentsline {section}{\numberline {3.6}Three worked environments}{24}{section.3.6}\protected@file@percent }
+\newlabel{sec:form-examples}{{3.6}{24}{Three worked environments}{section.3.6}{}}
+\newlabel{ex:form-gauss}{{3.1}{24}{A knowable Gaussian location shift}{example.3.1}{}}
+\citation{lipton2018detecting}
+\citation{lipton2018detecting}
+\newlabel{ex:form-flip}{{3.2}{25}{A posterior flip to which all evidence is blind}{example.3.2}{}}
+\newlabel{ex:form-band}{{3.3}{25}{The low-margin band}{example.3.3}{}}
+\citation{maurer2009empirical}
+\citation{hoeffding1963probability}
+\citation{vovk2005algorithmic}
+\@writefile{toc}{\contentsline {section}{\numberline {3.7}Standing assumptions, and what each one buys}{26}{section.3.7}\protected@file@percent }
+\newlabel{sec:form-assumptions}{{3.7}{26}{Standing assumptions, and what each one buys}{section.3.7}{}}
+\newlabel{asm:form-triple}{{3.1}{26}{Fixed decision triple}{assumption.3.1}{}}
+\newlabel{asm:form-protocol}{{3.2}{26}{Label-free protocol}{assumption.3.2}{}}
+\newlabel{asm:form-measurable}{{3.3}{26}{Evidence-measurable rules}{assumption.3.3}{}}
+\@writefile{lot}{\contentsline {table}{\numberline {3.1}{\ignorespaces Map from formulation questions to results}}{27}{table.3.1}\protected@file@percent }
+\newlabel{tab:form-map}{{3.1}{27}{Map from formulation questions to results}{table.3.1}{}}
+\@writefile{toc}{\contentsline {section}{\numberline {3.8}A reader's map from questions to results}{27}{section.3.8}\protected@file@percent }
+\newlabel{sec:form-map}{{3.8}{27}{A reader's map from questions to results}{section.3.8}{}}
+\@writefile{lof}{\contentsline {figure}{\numberline {3.1}{\ignorespaces The knowability phase diagram}}{28}{figure.3.1}\protected@file@percent }
+\newlabel{fig:form-phase}{{3.1}{28}{The knowability phase diagram}{figure.3.1}{}}
+\@writefile{lof}{\contentsline {figure}{\numberline {3.2}{\ignorespaces The KGA decision flow}}{29}{figure.3.2}\protected@file@percent }
+\newlabel{fig:form-flow}{{3.2}{29}{The KGA decision flow}{figure.3.2}{}}
+\citation{bendavid2010theory}
+\citation{mansour2009domain}
+\citation{lipton2018detecting}
+\citation{lecam1973convergence}
+\citation{tsybakov2009introduction}
+\citation{kbound2026repo}
+\@writefile{toc}{\contentsline {chapter}{\numberline {4}The Unknowable Regime: Non-Identifiability and the Minimax Floor}{30}{chapter.4}\protected@file@percent }
+\@writefile{lof}{\addvspace {10\p@ }}
+\@writefile{lot}{\addvspace {10\p@ }}
+\newlabel{ch:theory1}{{4}{30}{The Unknowable Regime: Non-Identifiability and the Minimax Floor}{chapter.4}{}}
+\citation{lecam1973convergence}
+\citation{tsybakov2009introduction}
+\@writefile{toc}{\contentsline {section}{\numberline {4.1}The non-identifiability theorem}{31}{section.4.1}\protected@file@percent }
+\newlabel{sec:t1-imp}{{4.1}{31}{The non-identifiability theorem}{section.4.1}{}}
+\newlabel{thm:imp}{{4.1}{31}{Non-identifiability; with witness}{theorem.4.1}{}}
+\newlabel{rem:t1-weight}{{4.1}{32}{Weight of the result}{remark.4.1}{}}
+\newlabel{rem:t1-hypotheses}{{4.2}{32}{Both hypotheses are necessary}{remark.4.2}{}}
+\citation{quinonero2009dataset}
+\@writefile{toc}{\contentsline {section}{\numberline {4.2}The explicit witness, in full}{33}{section.4.2}\protected@file@percent }
+\newlabel{sec:t1-witness}{{4.2}{33}{The explicit witness, in full}{section.4.2}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {4.2.1}Construction and verification}{33}{subsection.4.2.1}\protected@file@percent }
+\newlabel{sec:t1-witness-algebra}{{4.2.1}{33}{Construction and verification}{subsection.4.2.1}{}}
+\citation{kbound2026repo}
+\citation{lecam1973convergence}
+\@writefile{toc}{\contentsline {subsection}{\numberline {4.2.2}Empirical realization}{34}{subsection.4.2.2}\protected@file@percent }
+\newlabel{sec:t1-witness-empirical}{{4.2.2}{34}{Empirical realization}{subsection.4.2.2}{}}
+\@writefile{toc}{\contentsline {section}{\numberline {4.3}The quantitative floor: a Le Cam two-point bound}{34}{section.4.3}\protected@file@percent }
+\newlabel{sec:t1-lecam}{{4.3}{34}{The quantitative floor: a Le Cam two-point bound}{section.4.3}{}}
+\@writefile{lof}{\contentsline {figure}{\numberline {4.1}{\ignorespaces Clean non-identifiability witness}}{35}{figure.4.1}\protected@file@percent }
+\newlabel{fig:t1-witness}{{4.1}{35}{Clean non-identifiability witness}{figure.4.1}{}}
+\newlabel{lem:t1-affinity}{{4.1}{35}{Testing affinity identity}{lemma.4.1}{}}
+\citation{lecam1973convergence}
+\citation{tsybakov2009introduction}
+\citation{lehmann2005testing}
+\citation{lehmann2005testing}
+\newlabel{lem:t1-dpi}{{4.2}{36}{Data-processing inequality for total variation}{lemma.4.2}{}}
+\newlabel{thm:t1-impquant}{{4.2}{36}{Quantitative non-identifiability; Le Cam two-point lower bound}{theorem.4.2}{}}
+\citation{kbound2026repo}
+\citation{kbound2026repo}
+\citation{kbound2026repo}
+\newlabel{rem:t1-tightness}{{4.3}{38}{Where the bound is and is not tight}{remark.4.3}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {4.3.1}Numerical validation of the floor}{38}{subsection.4.3.1}\protected@file@percent }
+\newlabel{sec:t1-lecam-val}{{4.3.1}{38}{Numerical validation of the floor}{subsection.4.3.1}{}}
+\@writefile{toc}{\contentsline {section}{\numberline {4.4}The Bayes gate and the plug-in regret identity}{38}{section.4.4}\protected@file@percent }
+\newlabel{sec:t1-gate}{{4.4}{38}{The Bayes gate and the plug-in regret identity}{section.4.4}{}}
+\@writefile{lof}{\contentsline {figure}{\numberline {4.2}{\ignorespaces Le Cam floor versus optimal committal regret}}{39}{figure.4.2}\protected@file@percent }
+\newlabel{fig:t1-lecam}{{4.2}{39}{Le Cam floor versus optimal committal regret}{figure.4.2}{}}
+\newlabel{thm:gate}{{4.3}{39}{Plug-in regret decomposition}{theorem.4.3}{}}
+\newlabel{prop:t1-minimax}{{4.1}{40}{Label-free minimax floor}{proposition.4.1}{}}
+\citation{kbound2026repo}
+\newlabel{rem:t1-floor}{{4.4}{41}{Reading the floor}{remark.4.4}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {4.4.1}Numerical validation of the identity}{41}{subsection.4.4.1}\protected@file@percent }
+\newlabel{sec:t1-gate-val}{{4.4.1}{41}{Numerical validation of the identity}{subsection.4.4.1}{}}
+\citation{kbound2026repo}
+\citation{kbound2026repo}
+\citation{chow1970optimum}
+\citation{elyaniv2010selective}
+\citation{geifman2017selective}
+\citation{hoeffding1963probability}
+\citation{maurer2009empirical}
+\@writefile{lof}{\contentsline {figure}{\numberline {4.3}{\ignorespaces Regret decomposition across policies}}{42}{figure.4.3}\protected@file@percent }
+\newlabel{fig:t1-regret}{{4.3}{42}{Regret decomposition across policies}{figure.4.3}{}}
+\@writefile{toc}{\contentsline {section}{\numberline {4.5}Remarks: scope, mechanism, and what abstention buys}{42}{section.4.5}\protected@file@percent }
+\newlabel{sec:t1-remarks}{{4.5}{42}{Remarks: scope, mechanism, and what abstention buys}{section.4.5}{}}
+\newlabel{rem:t1-selective}{{4.5}{42}{Relation to selective prediction}{remark.4.5}{}}
+\newlabel{rem:t1-measurability}{{4.6}{42}{The impossibility is about evidence-measurability, not sample size}{remark.4.6}{}}
+\citation{shimodaira2000improving}
+\newlabel{rem:t1-necessity}{{4.7}{43}{What breaks without each hypothesis}{remark.4.7}{}}
+\newlabel{rem:t1-buys}{{4.8}{43}{What abstention buys, and what comes next}{remark.4.8}{}}
+\@writefile{toc}{\contentsline {chapter}{\numberline {5}Certificates: When the Boundary Can Be Crossed Safely}{45}{chapter.5}\protected@file@percent }
+\@writefile{lof}{\addvspace {10\p@ }}
+\@writefile{lot}{\addvspace {10\p@ }}
+\newlabel{ch:theory2}{{5}{45}{Certificates: When the Boundary Can Be Crossed Safely}{chapter.5}{}}
+\@writefile{toc}{\contentsline {section}{\numberline {5.1}From Impossibility to Conditional Possibility}{46}{section.5.1}\protected@file@percent }
+\newlabel{sec:t2-idea}{{5.1}{46}{From Impossibility to Conditional Possibility}{section.5.1}{}}
+\newlabel{sec:t2-ass-align}{{5.1}{46}{Observable risk alignment, certificate form}{assumption.5.1}{}}
+\newlabel{sec:t2-rem-meaning}{{5.1}{46}{What the guarantee means --- and what it does not}{remark.5.1}{}}
+\@writefile{toc}{\contentsline {section}{\numberline {5.2}The Finite-Sample Certificate}{47}{section.5.2}\protected@file@percent }
+\newlabel{sec:t2-cert}{{5.2}{47}{The Finite-Sample Certificate}{section.5.2}{}}
+\newlabel{thm:cert}{{5.1}{47}{Certificate}{theorem.5.1}{}}
+\newlabel{sec:t2-rem-union}{{5.2}{47}{One bad event covers both errors}{remark.5.2}{}}
+\citation{hoeffding1963probability}
+\citation{maurer2009empirical}
+\citation{maurer2009empirical}
+\@writefile{toc}{\contentsline {subsection}{\numberline {5.2.1}Discharging the Radius I: Empirical-Bernstein Concentration}{48}{subsection.5.2.1}\protected@file@percent }
+\newlabel{sec:t2-eb}{{5.2.1}{48}{Discharging the Radius I: Empirical-Bernstein Concentration}{subsection.5.2.1}{}}
+\newlabel{sec:t2-lem-hoeffding}{{5.1}{48}{Hoeffding lower confidence bound \cite {hoeffding1963probability}}{lemma.5.1}{}}
+\newlabel{sec:t2-lem-eb}{{5.2}{48}{Empirical-Bernstein lower confidence bound \cite {maurer2009empirical}}{lemma.5.2}{}}
+\citation{kbound2026repo}
+\newlabel{sec:t2-rem-variance}{{5.3}{49}{Why empirical Bernstein, and why it is the right bound for this problem}{remark.5.3}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {5.2.2}Mandatory Abstention and the Cost of Certainty}{50}{subsection.5.2.2}\protected@file@percent }
+\newlabel{sec:t2-forced}{{5.2.2}{50}{Mandatory Abstention and the Cost of Certainty}{subsection.5.2.2}{}}
+\newlabel{sec:t2-cor-abstain}{{5.1}{50}{Forced abstention under matched evidence}{corollary.5.1}{}}
+\newlabel{sec:t2-cor-n}{{5.2}{50}{Sample complexity of certification}{corollary.5.2}{}}
+\citation{vovk2005algorithmic}
+\citation{angelopoulos2023conformal}
+\@writefile{toc}{\contentsline {subsection}{\numberline {5.2.3}Discharging the Radius II: The Split-Conformal Variant}{51}{subsection.5.2.3}\protected@file@percent }
+\newlabel{sec:t2-conformal}{{5.2.3}{51}{Discharging the Radius II: The Split-Conformal Variant}{subsection.5.2.3}{}}
+\newlabel{sec:t2-prop-conformal}{{5.1}{51}{Split-conformal radius}{proposition.5.1}{}}
+\citation{angelopoulos2023conformal}
+\citation{kbound2026repo}
+\citation{kbound2026repo}
+\@writefile{lof}{\contentsline {figure}{\numberline {5.1}{\ignorespaces The batch certificate on the 123-task anomaly-routing suite (Chapter~\ref {ch:exp1}). Each point is one task: label-free estimated benefit $\setbox \z@ \hbox {\mathsurround \z@ $\textstyle \Delta $}\mathaccent "0362{\Delta }(Z)$ (horizontal) against the oracle true benefit (vertical), with the split-conformal band $\pm 0.049$ at $\alpha =0.1$ shaded around the ideal diagonal. Green points are certified \textsc  {adapt}, red \textsc  {freeze}, grey \textsc  {abstain}: commitments concentrate where the certified interval clears zero, and abstentions cluster in the near-zero-benefit band where Theorem~\ref {thm:gate} prices commitment errors as cheap but Theorem~\ref {thm:cert} declines to make them.}}{52}{figure.5.1}\protected@file@percent }
+\newlabel{fig:t2-certificate}{{5.1}{52}{The batch certificate on the 123-task anomaly-routing suite (Chapter~\ref {ch:exp1}). Each point is one task: label-free estimated benefit $\widehat \Delta (Z)$ (horizontal) against the oracle true benefit (vertical), with the split-conformal band $\pm 0.049$ at $\alpha =0.1$ shaded around the ideal diagonal. Green points are certified \textsc {adapt}, red \textsc {freeze}, grey \textsc {abstain}: commitments concentrate where the certified interval clears zero, and abstentions cluster in the near-zero-benefit band where Theorem~\ref {thm:gate} prices commitment errors as cheap but Theorem~\ref {thm:cert} declines to make them}{figure.5.1}{}}
+\citation{ramdas2023gametheoretic}
+\citation{howard2021timeuniform}
+\citation{grunwald2024safe}
+\citation{shafer2019game}
+\citation{waudbysmith2024betting}
+\citation{grunwald2024safe}
+\citation{ramdas2023gametheoretic}
+\citation{ville1939etude}
+\@writefile{lof}{\contentsline {figure}{\numberline {5.2}{\ignorespaces Suppression of harmful adaptation on the 123-task suite (produced by the knowability experiment of Chapter~\ref {ch:exp1}; same data as Figure~\ref {fig:t2-certificate}). Each bar is the fraction of adaptation decisions whose true benefit was negative: adapting always inherits the suite's harmful base rate $0.358$; a naive validation-threshold rule false-adapts on $0.180$ of its commitments; the certificate trichotomy on $0.100$ --- the complement of its $0.90$ adapt precision, in line with its calibrated level $\alpha =0.1$.}}{53}{figure.5.2}\protected@file@percent }
+\newlabel{fig:t2-false-adapt}{{5.2}{53}{Suppression of harmful adaptation on the 123-task suite (produced by the knowability experiment of Chapter~\ref {ch:exp1}; same data as Figure~\ref {fig:t2-certificate}). Each bar is the fraction of adaptation decisions whose true benefit was negative: adapting always inherits the suite's harmful base rate $0.358$; a naive validation-threshold rule false-adapts on $0.180$ of its commitments; the certificate trichotomy on $0.100$ --- the complement of its $0.90$ adapt precision, in line with its calibrated level $\alpha =0.1$}{figure.5.2}{}}
+\@writefile{toc}{\contentsline {section}{\numberline {5.3}The Anytime-Valid Certificate: Testing by Betting}{53}{section.5.3}\protected@file@percent }
+\newlabel{sec:t2-evalue}{{5.3}{53}{The Anytime-Valid Certificate: Testing by Betting}{section.5.3}{}}
+\citation{ville1939etude}
+\citation{howard2021timeuniform}
+\@writefile{toc}{\contentsline {subsection}{\numberline {5.3.1}Wealth, Supermartingales, and Ville's Inequality}{54}{subsection.5.3.1}\protected@file@percent }
+\newlabel{sec:t2-betting}{{5.3.1}{54}{Wealth, Supermartingales, and Ville's Inequality}{subsection.5.3.1}{}}
+\newlabel{sec:t2-lem-ville}{{5.3}{54}{Ville's inequality \cite {ville1939etude}}{lemma.5.3}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {5.3.2}The Anytime Certificate}{54}{subsection.5.3.2}\protected@file@percent }
+\newlabel{sec:t2-evalue-thm}{{5.3.2}{54}{The Anytime Certificate}{subsection.5.3.2}{}}
+\newlabel{thm:evalue}{{5.2}{54}{Anytime-valid adapt/freeze/abstain certificate}{theorem.5.2}{}}
+\citation{waudbysmith2024betting}
+\citation{shafer2019game}
+\citation{ramdas2023gametheoretic}
+\newlabel{sec:t2-rem-bets}{{5.4}{55}{Validity is free; power is bought by the bet}{remark.5.4}{}}
+\citation{kbound2026repo}
+\citation{kbound2026repo}
+\@writefile{lot}{\contentsline {table}{\numberline {5.1}{\ignorespaces Anytime-valid certificate validation, exactly as recorded in \texttt  {experiments/kbound/theory\_validation/val\_thm3\_evalue\_results.json} ($\alpha =0.1$, wealth threshold $1/\alpha =10$, horizon $2000$, $20{,}000$ Monte Carlo runs per cell, seed $0$, bet cap $c=0.5$; power rounded to three decimals, mean stopping times to integers). The worst-case anytime false-adapt rate across all nine null settings is $0.0626\le \alpha =0.1$; the results file's verdict field records \texttt  {controlled:\,true}.}}{56}{table.5.1}\protected@file@percent }
+\newlabel{sec:t2-tab-evalue}{{5.1}{56}{Anytime-valid certificate validation, exactly as recorded in \texttt {experiments/kbound/theory\_validation/val\_thm3\_evalue\_results.json} ($\alpha =0.1$, wealth threshold $1/\alpha =10$, horizon $2000$, $20{,}000$ Monte Carlo runs per cell, seed $0$, bet cap $c=0.5$; power rounded to three decimals, mean stopping times to integers). The worst-case anytime false-adapt rate across all nine null settings is $0.0626\le \alpha =0.1$; the results file's verdict field records \texttt {controlled:\,true}}{table.5.1}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {5.3.3}The Validator: Measured Anytime Error and Power}{56}{subsection.5.3.3}\protected@file@percent }
+\newlabel{sec:t2-evalue-validation}{{5.3.3}{56}{The Validator: Measured Anytime Error and Power}{subsection.5.3.3}{}}
+\newlabel{sec:t2-rem-drift}{{5.5}{56}{Bounded non-stationarity}{remark.5.5}{}}
+\@writefile{lof}{\contentsline {figure}{\numberline {5.3}{\ignorespaces The level $\alpha $ as the safety--coverage dial, measured on the anomaly-routing benchmark of Chapter~\ref {ch:exp1} with the split-conformal batch certificate: $\alpha =0.01$ yields a $0\%$ observed false-adapt rate at $11\%$ coverage; $\alpha =0.1$ yields $0.065$ at $35\%$ coverage; $\alpha =0.2$ yields $0.072$ at $49\%$ coverage. The $\alpha =0.05$ point sits at $0.073$, slightly above its nominal budget --- an honest finite-sample fluctuation on $369$ instances under approximate cross-task exchangeability, and a reminder that the guarantee is marginal, not per-configuration.}}{57}{figure.5.3}\protected@file@percent }
+\newlabel{fig:t2-alpha}{{5.3}{57}{The level $\alpha $ as the safety--coverage dial, measured on the anomaly-routing benchmark of Chapter~\ref {ch:exp1} with the split-conformal batch certificate: $\alpha =0.01$ yields a $0\%$ observed false-adapt rate at $11\%$ coverage; $\alpha =0.1$ yields $0.065$ at $35\%$ coverage; $\alpha =0.2$ yields $0.072$ at $49\%$ coverage. The $\alpha =0.05$ point sits at $0.073$, slightly above its nominal budget --- an honest finite-sample fluctuation on $369$ instances under approximate cross-task exchangeability, and a reminder that the guarantee is marginal, not per-configuration}{figure.5.3}{}}
+\@writefile{toc}{\contentsline {section}{\numberline {5.4}A Provably Knowable Regime: Covariate Shift}{57}{section.5.4}\protected@file@percent }
+\newlabel{sec:t2-pos}{{5.4}{57}{A Provably Knowable Regime: Covariate Shift}{section.5.4}{}}
+\citation{shimodaira2000improving}
+\citation{sugiyama2007covariate}
+\citation{quinonero2009dataset}
+\newlabel{thm:pos}{{5.3}{58}{Covariate-shift identifiability}{theorem.5.3}{}}
+\@writefile{toc}{\contentsline {paragraph}{Why this escapes the impossibility theorem.}{58}{section*.52}\protected@file@percent }
+\citation{lipton2018detecting}
+\citation{lipton2018detecting}
+\citation{lipton2018detecting}
+\@writefile{lot}{\contentsline {table}{\numberline {5.2}{\ignorespaces Knowability hierarchy of distribution shifts for label-free adapt/freeze decisions, as drawn in the paper. The boundary is evidence-identifiability: some shifts are knowable, some are not, and a valid certificate abstains across the boundary. The label-shift row follows the black-box shift estimation conditions of \cite  {lipton2018detecting}.}}{59}{table.5.2}\protected@file@percent }
+\newlabel{sec:t2-tab-shift}{{5.2}{59}{Knowability hierarchy of distribution shifts for label-free adapt/freeze decisions, as drawn in the paper. The boundary is evidence-identifiability: some shifts are knowable, some are not, and a valid certificate abstains across the boundary. The label-shift row follows the black-box shift estimation conditions of \cite {lipton2018detecting}}{table.5.2}{}}
+\@writefile{toc}{\contentsline {paragraph}{The price: weight boundedness and effective sample size.}{59}{section*.53}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{The caveat that keeps the theorem honest.}{59}{section*.54}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {5.5}The Disagreement Region: Where the Sign of Benefit Lives}{60}{section.5.5}\protected@file@percent }
+\newlabel{sec:t2-disagree}{{5.5}{60}{The Disagreement Region: Where the Sign of Benefit Lives}{section.5.5}{}}
+\newlabel{thm:disagree}{{5.4}{60}{Sign-of-difference identifiability on the disagreement region; binary case}{theorem.5.4}{}}
+\newlabel{sec:t2-rem-ordinal}{{5.6}{61}{Ordinal, not cardinal --- and exactly one residual unknown}{remark.5.6}{}}
+\newlabel{thm:disagree-mc}{{5.5}{61}{Multiclass $0/1$ loss}{theorem.5.5}{}}
+\citation{kbound2026repo}
+\newlabel{thm:disagree-reg}{{5.6}{62}{Squared-error regression}{theorem.5.6}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {5.5.1}Numerical Validation of the Identities}{62}{subsection.5.5.1}\protected@file@percent }
+\newlabel{sec:t2-disagree-validation}{{5.5.1}{62}{Numerical Validation of the Identities}{subsection.5.5.1}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {5.5.2}Disagreement as the Decisive Evidence Coordinate}{63}{subsection.5.5.2}\protected@file@percent }
+\newlabel{sec:t2-disagree-evidence}{{5.5.2}{63}{Disagreement as the Decisive Evidence Coordinate}{subsection.5.5.2}{}}
+\@writefile{toc}{\contentsline {section}{\numberline {5.6}The Open Problem: Label-Free Bracketing}{63}{section.5.6}\protected@file@percent }
+\newlabel{sec:t2-open}{{5.6}{63}{The Open Problem: Label-Free Bracketing}{section.5.6}{}}
+\newlabel{conj:gen}{{5.1}{63}{Label-free bracketing; \textbf {the remaining open piece}}{conjecture.5.1}{}}
+\citation{lecam1973convergence}
+\citation{tsybakov2009introduction}
+\citation{lipton2018detecting}
+\@writefile{toc}{\contentsline {subsection}{\numberline {5.6.1}Why Current Techniques Do Not Resolve It}{64}{subsection.5.6.1}\protected@file@percent }
+\newlabel{sec:t2-open-why}{{5.6.1}{64}{Why Current Techniques Do Not Resolve It}{subsection.5.6.1}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {5.6.2}What Is Actually Proved}{64}{subsection.5.6.2}\protected@file@percent }
+\newlabel{sec:t2-open-partial}{{5.6.2}{64}{What Is Actually Proved}{subsection.5.6.2}{}}
+\citation{kbound2026repo}
+\newlabel{sec:t2-prop-caltransfer}{{5.2}{65}{Label-free bracketing under bounded calibration transfer}{proposition.5.2}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {5.6.3}What a Resolution Would Buy}{66}{subsection.5.6.3}\protected@file@percent }
+\newlabel{sec:t2-open-payoff}{{5.6.3}{66}{What a Resolution Would Buy}{subsection.5.6.3}{}}
+\@writefile{toc}{\contentsline {section}{\numberline {5.7}Synthesis: The Certified Map of Regimes}{66}{section.5.7}\protected@file@percent }
+\newlabel{sec:t2-synthesis}{{5.7}{66}{Synthesis: The Certified Map of Regimes}{section.5.7}{}}
+\@writefile{lot}{\contentsline {table}{\numberline {5.3}{\ignorespaces The certified map of regimes assembled by Chapters~\ref {ch:theory1} and~\ref {ch:theory2}: each row pairs a regime with its governing result, the exact form of its guarantee, and the machine-checked validator or experiment that exercises it.}}{67}{table.5.3}\protected@file@percent }
+\newlabel{sec:t2-tab-map}{{5.3}{67}{The certified map of regimes assembled by Chapters~\ref {ch:theory1} and~\ref {ch:theory2}: each row pairs a regime with its governing result, the exact form of its guarantee, and the machine-checked validator or experiment that exercises it}{table.5.3}{}}
+\citation{wang2021tent}
+\citation{niu2022eata}
+\citation{niu2023sar}
+\@writefile{toc}{\contentsline {chapter}{\numberline {6}\textsc  {KGA}: Knowability-Guided Adaptation in Practice}{68}{chapter.6}\protected@file@percent }
+\@writefile{lof}{\addvspace {10\p@ }}
+\@writefile{lot}{\addvspace {10\p@ }}
+\newlabel{ch:kga}{{6}{68}{\KGA : Knowability-Guided Adaptation in Practice}{chapter.6}{}}
+\@writefile{toc}{\contentsline {section}{\numberline {6.1}Design goals and mechanism-agnostic wrapper architecture}{68}{section.6.1}\protected@file@percent }
+\newlabel{sec:kga-design}{{6.1}{68}{Design goals and mechanism-agnostic wrapper architecture}{section.6.1}{}}
+\@writefile{lof}{\contentsline {figure}{\numberline {6.1}{\ignorespaces \textsc  {KGA}{} system architecture. Labelled calibration scores and an unlabelled test batch enter the pipeline. The label-free evidence $Z$ is computed first; then a finite-sample certificate $\setbox \z@ \hbox {\mathsurround \z@ $\textstyle \Delta $}\mathaccent "0362{\Delta }\pm \varepsilon $ is formed at level $\alpha $; finally the trichotomy maps the certificate to one of three actions. The adaptation mechanism (Tent, EATA, SAR, or any other) is a plug-in; \textsc  {KGA}{} wraps it without modification. }}{69}{figure.6.1}\protected@file@percent }
+\newlabel{fig:kga-arch}{{6.1}{69}{\KGA {} system architecture. Labelled calibration scores and an unlabelled test batch enter the pipeline. The label-free evidence $Z$ is computed first; then a finite-sample certificate $\widehat \Delta \pm \varepsilon $ is formed at level $\alpha $; finally the trichotomy maps the certificate to one of three actions. The adaptation mechanism (Tent, EATA, SAR, or any other) is a plug-in; \KGA {} wraps it without modification}{figure.6.1}{}}
+\@writefile{toc}{\contentsline {section}{\numberline {6.2}Label-free evidence computation}{69}{section.6.2}\protected@file@percent }
+\newlabel{sec:kga-evidence}{{6.2}{69}{Label-free evidence computation}{section.6.2}{}}
+\@writefile{toc}{\contentsline {paragraph}{Drift (KS distance).}{70}{section*.55}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{Disagreement.}{70}{section*.56}\protected@file@percent }
+\newlabel{eq:kga-disagree}{{6.1}{70}{Disagreement}{equation.6.1}{}}
+\@writefile{toc}{\contentsline {paragraph}{Entropy and confidence shift.}{70}{section*.57}\protected@file@percent }
+\citation{maurer2009empirical}
+\@writefile{toc}{\contentsline {paragraph}{Importance-weight effective sample size (ESS).}{71}{section*.58}\protected@file@percent }
+\newlabel{eq:kga-ess}{{6.2}{71}{Importance-weight effective sample size (ESS)}{equation.6.2}{}}
+\@writefile{toc}{\contentsline {section}{\numberline {6.3}Certificate estimators}{71}{section.6.3}\protected@file@percent }
+\newlabel{sec:kga-certificates}{{6.3}{71}{Certificate estimators}{section.6.3}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {6.3.1}Empirical Bernstein (\texttt  {ebern}) --- the default}{71}{subsection.6.3.1}\protected@file@percent }
+\newlabel{sec:kga-ebern}{{6.3.1}{71}{Empirical Bernstein (\texttt {ebern}) --- the default}{subsection.6.3.1}{}}
+\citation{vovk2005algorithmic}
+\citation{angelopoulos2023conformal}
+\citation{ville1939etude}
+\citation{waudbysmith2024betting}
+\newlabel{eq:ebern}{{6.3}{72}{Empirical Bernstein (\texttt {ebern}) --- the default}{equation.6.3}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {6.3.2}Hoeffding (\texttt  {hoeffding}) --- distribution-free baseline}{72}{subsection.6.3.2}\protected@file@percent }
+\newlabel{sec:kga-hoeffding}{{6.3.2}{72}{Hoeffding (\texttt {hoeffding}) --- distribution-free baseline}{subsection.6.3.2}{}}
+\newlabel{eq:hoeff}{{6.4}{72}{Hoeffding (\texttt {hoeffding}) --- distribution-free baseline}{equation.6.4}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {6.3.3}Split-conformal (\texttt  {conformal}) --- cross-task estimator}{72}{subsection.6.3.3}\protected@file@percent }
+\newlabel{sec:kga-conformal}{{6.3.3}{72}{Split-conformal (\texttt {conformal}) --- cross-task estimator}{subsection.6.3.3}{}}
+\newlabel{eq:conformal}{{6.5}{72}{Split-conformal (\texttt {conformal}) --- cross-task estimator}{equation.6.5}{}}
+\citation{ville1939etude}
+\@writefile{toc}{\contentsline {subsection}{\numberline {6.3.4}Anytime e-value (\texttt  {evalue}) --- Theorem~3b}{73}{subsection.6.3.4}\protected@file@percent }
+\newlabel{sec:kga-evalue}{{6.3.4}{73}{Anytime e-value (\texttt {evalue}) --- Theorem~3b}{subsection.6.3.4}{}}
+\newlabel{eq:eplus}{{6.6}{73}{Anytime e-value (\texttt {evalue}) --- Theorem~3b}{equation.6.6}{}}
+\newlabel{eq:eminus}{{6.7}{73}{Anytime e-value (\texttt {evalue}) --- Theorem~3b}{equation.6.7}{}}
+\@writefile{toc}{\contentsline {section}{\numberline {6.4}Decision policy and the false-adapt guarantee}{73}{section.6.4}\protected@file@percent }
+\newlabel{sec:kga-policy}{{6.4}{73}{Decision policy and the false-adapt guarantee}{section.6.4}{}}
+\newlabel{thm:kga-false-adapt}{{6.1}{74}{False-adapt guarantee; Theorem~\ref {thm:cert}}{theorem.6.1}{}}
+\@writefile{toc}{\contentsline {section}{\numberline {6.5}The \texttt  {kga} package API}{74}{section.6.5}\protected@file@percent }
+\newlabel{sec:kga-api}{{6.5}{74}{The \texttt {kga} package API}{section.6.5}{}}
+\@writefile{toc}{\contentsline {paragraph}{Constructor.}{74}{section*.59}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{Methods.}{74}{section*.60}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{Quickstart.}{75}{section*.61}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{Command-line interface.}{75}{section*.62}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {6.6}Full deployment pseudocode}{76}{section.6.6}\protected@file@percent }
+\newlabel{sec:kga-pseudocode}{{6.6}{76}{Full deployment pseudocode}{section.6.6}{}}
+\@writefile{toc}{\contentsline {section}{\numberline {6.7}Operational guidance}{76}{section.6.7}\protected@file@percent }
+\newlabel{sec:kga-ops}{{6.7}{76}{Operational guidance}{section.6.7}{}}
+\@writefile{toc}{\contentsline {paragraph}{Choosing $\alpha $.}{76}{section*.63}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{Batch size.}{76}{section*.64}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{Calibration data.}{77}{section*.65}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{When \textsc  {abstain} should trigger operational action.}{77}{section*.66}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{Complexity.}{77}{section*.67}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {6.8}The served HTTP interface}{77}{section.6.8}\protected@file@percent }
+\newlabel{sec:kga-http}{{6.8}{77}{The served HTTP interface}{section.6.8}{}}
+\@writefile{toc}{\contentsline {paragraph}{\texttt  {GET /kga/health} (no authentication).}{77}{section*.68}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{\texttt  {POST /decide} (authentication required).}{77}{section*.69}\protected@file@percent }
+\@writefile{lof}{\contentsline {figure}{\numberline {6.2}{\ignorespaces Decision flow for an incoming \texttt  {POST /decide} request. Pydantic validates and coerces the inputs; \texttt  {compute\_evidence} produces $Z$; \texttt  {conformal\_split} builds $\setbox \z@ \hbox {\mathsurround \z@ $\textstyle \Delta $}\mathaccent "0362{\Delta }\pm \varepsilon $; and \texttt  {decide} applies the trichotomy. Any \texttt  {ValueError} from precondition checks (e.g., all-identical scores) is returned as \texttt  {HTTP 400}; uncaught exceptions return \texttt  {HTTP 500}. }}{78}{figure.6.2}\protected@file@percent }
+\newlabel{fig:kga-flow}{{6.2}{78}{Decision flow for an incoming \texttt {POST /decide} request. Pydantic validates and coerces the inputs; \texttt {compute\_evidence} produces $Z$; \texttt {conformal\_split} builds $\widehat \Delta \pm \varepsilon $; and \texttt {decide} applies the trichotomy. Any \texttt {ValueError} from precondition checks (e.g., all-identical scores) is returned as \texttt {HTTP 400}; uncaught exceptions return \texttt {HTTP 500}}{figure.6.2}{}}
+\@writefile{toc}{\contentsline {section}{\numberline {6.9}Threats, limitations, and what \textsc  {KGA}{} does not guarantee}{78}{section.6.9}\protected@file@percent }
+\newlabel{sec:kga-threats}{{6.9}{78}{Threats, limitations, and what \KGA {} does not guarantee}{section.6.9}{}}
+\@writefile{toc}{\contentsline {paragraph}{The false-adapt bound is not a guarantee that $f_a$ is good.}{78}{section*.70}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{Non-identifiability is permanent, not a data problem.}{78}{section*.71}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{The calibration exchangeability assumption.}{79}{section*.72}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{Covert failures are not detectable.}{79}{section*.73}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{The benefit estimator $\setbox \z@ \hbox {\mathsurround \z@ $\textstyle \Delta $}\mathaccent "0362{\Delta }$ must be calibrated.}{79}{section*.74}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{Label-free adaptation in the helpful-dominated regime.}{79}{section*.75}\protected@file@percent }
+\citation{han2022adbench}
+\citation{zhao2019pyod}
+\citation{liu2008isolation}
+\citation{breunig2000lof}
+\citation{scholkopf2001estimating}
+\citation{li2022ecod}
+\citation{kbound2026repo}
+\@writefile{toc}{\contentsline {chapter}{\numberline {7}Experiments I: The Anomaly-Routing Benchmark}{80}{chapter.7}\protected@file@percent }
+\@writefile{lof}{\addvspace {10\p@ }}
+\@writefile{lot}{\addvspace {10\p@ }}
+\newlabel{ch:exp1}{{7}{80}{Experiments I: The Anomaly-Routing Benchmark}{chapter.7}{}}
+\@writefile{toc}{\contentsline {section}{\numberline {7.1}The 123-Task Score Archive}{80}{section.7.1}\protected@file@percent }
+\newlabel{sec:exp1-archive}{{7.1}{80}{The 123-Task Score Archive}{section.7.1}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {7.1.1}Provenance and Construction}{80}{subsection.7.1.1}\protected@file@percent }
+\citation{kbound2026repo}
+\@writefile{toc}{\contentsline {subsection}{\numberline {7.1.2}Evaluation Methodology}{81}{subsection.7.1.2}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {7.1.3}Why Anomaly Routing Is a Clean Testbed for the Trichotomy}{81}{subsection.7.1.3}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {7.2}The Knowability Trichotomy Suite}{81}{section.7.2}\protected@file@percent }
+\newlabel{sec:exp1-trichotomy}{{7.2}{81}{The Knowability Trichotomy Suite}{section.7.2}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {7.2.1}Setup and Protocol}{81}{subsection.7.2.1}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {7.2.2}Decision Distribution}{82}{subsection.7.2.2}\protected@file@percent }
+\@writefile{lot}{\contentsline {table}{\numberline {7.1}{\ignorespaces \textsc  {KGA}\ decisions and safety on the clean 123-task suite (source: \texttt  {knowability\_results.json}, field \texttt  {metrics}).}}{82}{table.7.1}\protected@file@percent }
+\newlabel{tab:exp1-trichotomy}{{7.1}{82}{\KGA \ decisions and safety on the clean 123-task suite (source: \texttt {knowability\_results.json}, field \texttt {metrics})}{table.7.1}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {7.2.3}Adapt Precision and Safety}{82}{subsection.7.2.3}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {7.2.4}Abstain-Where-Benefit-Is-Small: Safety Concentration}{82}{subsection.7.2.4}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {7.2.5}Interpretation: Helpful-Dominated Regime}{83}{subsection.7.2.5}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {7.3}The Harmful-Fusion Regime}{83}{section.7.3}\protected@file@percent }
+\newlabel{sec:exp1-harmful}{{7.3}{83}{The Harmful-Fusion Regime}{section.7.3}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {7.3.1}Setup and Protocol}{83}{subsection.7.3.1}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {7.3.2}Results}{83}{subsection.7.3.2}\protected@file@percent }
+\@writefile{lot}{\contentsline {table}{\numberline {7.2}{\ignorespaces Harmful-fusion regime: AUROC and regret-to-oracle for four policies across 123 tasks. Source: \texttt  {kbound\_harmful\_results.json}.}}{83}{table.7.2}\protected@file@percent }
+\newlabel{tab:exp1-harmful}{{7.2}{83}{Harmful-fusion regime: AUROC and regret-to-oracle for four policies across 123 tasks. Source: \texttt {kbound\_harmful\_results.json}}{table.7.2}{}}
+\@writefile{lof}{\contentsline {figure}{\numberline {7.1}{\ignorespaces \textsc  {KGA}\ in the harmful-fusion regime. The certificate almost entirely blocks the legacy-fuse candidate; regret-to-oracle falls from $0.0214$ (always-adapt) to $0.0019$ (${\approx }11\times $ reduction). Source: \texttt  {kbound\_harmful\_results.json}.}}{84}{figure.7.1}\protected@file@percent }
+\newlabel{fig:exp1-harmful}{{7.1}{84}{\KGA \ in the harmful-fusion regime. The certificate almost entirely blocks the legacy-fuse candidate; regret-to-oracle falls from $0.0214$ (always-adapt) to $0.0019$ (${\approx }11\times $ reduction). Source: \texttt {kbound\_harmful\_results.json}}{figure.7.1}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {7.3.3}Interpretation}{84}{subsection.7.3.3}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {7.3.4}Threats Specific to This Sub-experiment}{84}{subsection.7.3.4}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {7.4}The Mixed Regime}{84}{section.7.4}\protected@file@percent }
+\newlabel{sec:exp1-mixed}{{7.4}{84}{The Mixed Regime}{section.7.4}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {7.4.1}Construction}{84}{subsection.7.4.1}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {7.4.2}Decision Distribution by True Regime}{85}{subsection.7.4.2}\protected@file@percent }
+\@writefile{lot}{\contentsline {table}{\numberline {7.3}{\ignorespaces \textsc  {KGA}\ decisions by true regime in the controlled mixed benchmark. Source: \texttt  {mixed\_regime\_results.json}, field \texttt  {decision\_distribution\_by\_condition}.}}{85}{table.7.3}\protected@file@percent }
+\newlabel{tab:exp1-mixed-decisions}{{7.3}{85}{\KGA \ decisions by true regime in the controlled mixed benchmark. Source: \texttt {mixed\_regime\_results.json}, field \texttt {decision\_distribution\_by\_condition}}{table.7.3}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {7.4.3}Policy AUROC Comparison}{85}{subsection.7.4.3}\protected@file@percent }
+\@writefile{lot}{\contentsline {table}{\numberline {7.4}{\ignorespaces Policy mean AUROC in the mixed regime (369 instances). Source: \texttt  {mixed\_regime\_results.json}, field \texttt  {mean\_auc\_policies}.}}{86}{table.7.4}\protected@file@percent }
+\newlabel{tab:exp1-mixed-auroc}{{7.4}{86}{Policy mean AUROC in the mixed regime (369 instances). Source: \texttt {mixed\_regime\_results.json}, field \texttt {mean\_auc\_policies}}{table.7.4}{}}
+\@writefile{lof}{\contentsline {figure}{\numberline {7.2}{\ignorespaces Mixed regime. \textbf  {Left}: policy AUROC comparison---\textsc  {KGA}\ beats always-freeze by $0.104$ and ties always-adapt. \textbf  {Right}: \textsc  {KGA}\ decision map by true condition---adapt concentrated on detectable-failure instances, abstain dominant on clean. Source: \texttt  {mixed\_regime\_results.json}.}}{86}{figure.7.2}\protected@file@percent }
+\newlabel{fig:exp1-mixed}{{7.2}{86}{Mixed regime. \textbf {Left}: policy AUROC comparison---\KGA \ beats always-freeze by $0.104$ and ties always-adapt. \textbf {Right}: \KGA \ decision map by true condition---adapt concentrated on detectable-failure instances, abstain dominant on clean. Source: \texttt {mixed\_regime\_results.json}}{figure.7.2}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {7.4.4}Non-identifiability on the Clean/Covert Boundary}{86}{subsection.7.4.4}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {7.4.5}Interpretation}{86}{subsection.7.4.5}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {7.5}Statistical Rigor: Eight Seeds and Paired $t$-Tests}{87}{section.7.5}\protected@file@percent }
+\newlabel{sec:exp1-rigor}{{7.5}{87}{Statistical Rigor: Eight Seeds and Paired $t$-Tests}{section.7.5}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {7.5.1}Protocol}{87}{subsection.7.5.1}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {7.5.2}Per-Seed Aggregate Results}{87}{subsection.7.5.2}\protected@file@percent }
+\@writefile{lot}{\contentsline {table}{\numberline {7.5}{\ignorespaces Multi-seed statistics (8 seeds, mixed regime). Values are mean $\pm $ std. Source: \texttt  {rigor\_multiseed.json}, field \texttt  {mean\_std}.}}{87}{table.7.5}\protected@file@percent }
+\newlabel{tab:exp1-rigor-agg}{{7.5}{87}{Multi-seed statistics (8 seeds, mixed regime). Values are mean $\pm $ std. Source: \texttt {rigor\_multiseed.json}, field \texttt {mean\_std}}{table.7.5}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {7.5.3}Paired $t$-Tests}{87}{subsection.7.5.3}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {7.6}Ablations}{88}{section.7.6}\protected@file@percent }
+\newlabel{sec:exp1-ablations}{{7.6}{88}{Ablations}{section.7.6}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {7.6.1}Evidence-Component Knockout}{88}{subsection.7.6.1}\protected@file@percent }
+\@writefile{lot}{\contentsline {table}{\numberline {7.6}{\ignorespaces Evidence-drop ablation: regret and false-adapt rate when each $Z$ feature is removed. Source: \texttt  {ablations.json}, field \texttt  {evidence\_drop}. Baseline (all features): regret $0.0365$, false-adapt $0.065$. The most important feature is \texttt  {disagree}; removing it raises regret from $0.0365$ to $0.0940$ ($2.6\times $) and false-adapt from $0.065$ to $0.250$.}}{88}{table.7.6}\protected@file@percent }
+\newlabel{tab:exp1-abl-drop}{{7.6}{88}{Evidence-drop ablation: regret and false-adapt rate when each $Z$ feature is removed. Source: \texttt {ablations.json}, field \texttt {evidence\_drop}. Baseline (all features): regret $0.0365$, false-adapt $0.065$. The most important feature is \texttt {disagree}; removing it raises regret from $0.0365$ to $0.0940$ ($2.6\times $) and false-adapt from $0.065$ to $0.250$}{table.7.6}{}}
+\@writefile{toc}{\contentsline {paragraph}{Disagreement is the most informative feature.}{88}{section*.76}\protected@file@percent }
+\@writefile{lof}{\contentsline {figure}{\numberline {7.3}{\ignorespaces Evidence-component ablation: regret when each feature of $Z$ is removed. The \texttt  {disagree} feature dominates: removing it raises regret $2.6\times $. Source: \texttt  {ablations.json}.}}{89}{figure.7.3}\protected@file@percent }
+\newlabel{fig:exp1-ablation}{{7.3}{89}{Evidence-component ablation: regret when each feature of $Z$ is removed. The \texttt {disagree} feature dominates: removing it raises regret $2.6\times $. Source: \texttt {ablations.json}}{figure.7.3}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {7.6.2}Alpha Sweep: Safety-Coverage Tradeoff}{89}{subsection.7.6.2}\protected@file@percent }
+\@writefile{lot}{\contentsline {table}{\numberline {7.7}{\ignorespaces $\alpha $ sweep: coverage and false-adapt rate at four conformal levels. Source: \texttt  {ablations.json}, field \texttt  {alpha\_sweep}.}}{89}{table.7.7}\protected@file@percent }
+\newlabel{tab:exp1-alpha}{{7.7}{89}{$\alpha $ sweep: coverage and false-adapt rate at four conformal levels. Source: \texttt {ablations.json}, field \texttt {alpha\_sweep}}{table.7.7}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {7.6.3}Batch-Size Sweep}{89}{subsection.7.6.3}\protected@file@percent }
+\@writefile{lot}{\contentsline {table}{\numberline {7.8}{\ignorespaces Batch-size sweep: $\varepsilon $ and coverage at five batch sizes. Source: \texttt  {ablations.json}, field \texttt  {batchsize\_sweep}.}}{90}{table.7.8}\protected@file@percent }
+\newlabel{tab:exp1-batch}{{7.8}{90}{Batch-size sweep: $\varepsilon $ and coverage at five batch sizes. Source: \texttt {ablations.json}, field \texttt {batchsize\_sweep}}{table.7.8}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {7.6.4}Interpretation}{90}{subsection.7.6.4}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {7.7}Regression Under Covariate Shift}{90}{section.7.7}\protected@file@percent }
+\newlabel{sec:exp1-regression}{{7.7}{90}{Regression Under Covariate Shift}{section.7.7}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {7.7.1}Setup}{90}{subsection.7.7.1}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {7.7.2}Results}{90}{subsection.7.7.2}\protected@file@percent }
+\@writefile{lot}{\contentsline {table}{\numberline {7.9}{\ignorespaces Regression covariate-shift experiment: MSE and \textsc  {KGA}\ decision distribution. Source: \texttt  {regression\_covariate.json}. Lower MSE is better; benefit $B = \text  {MSE}(f_0) - \text  {MSE}(f_a)$.}}{91}{table.7.9}\protected@file@percent }
+\newlabel{tab:exp1-regression}{{7.9}{91}{Regression covariate-shift experiment: MSE and \KGA \ decision distribution. Source: \texttt {regression\_covariate.json}. Lower MSE is better; benefit $B = \text {MSE}(f_0) - \text {MSE}(f_a)$}{table.7.9}{}}
+\@writefile{lof}{\contentsline {figure}{\numberline {7.4}{\ignorespaces Regression covariate shift: \textsc  {KGA}\ matches always-freeze and the oracle (MSE $0.2513$) by refusing the harmful IW candidate on all 72 instances. Always-adapt (IW) reaches MSE $0.3376$. Source: \texttt  {regression\_covariate.json}.}}{91}{figure.7.4}\protected@file@percent }
+\newlabel{fig:exp1-regression}{{7.4}{91}{Regression covariate shift: \KGA \ matches always-freeze and the oracle (MSE $0.2513$) by refusing the harmful IW candidate on all 72 instances. Always-adapt (IW) reaches MSE $0.3376$. Source: \texttt {regression\_covariate.json}}{figure.7.4}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {7.7.3}Connection to Theorem~\ref {thm:pos}}{91}{subsection.7.7.3}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {7.7.4}Interpretation}{91}{subsection.7.7.4}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {7.8}The Clean Non-identifiability Witness}{92}{section.7.8}\protected@file@percent }
+\newlabel{sec:exp1-witness}{{7.8}{92}{The Clean Non-identifiability Witness}{section.7.8}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {7.8.1}Setup}{92}{subsection.7.8.1}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {7.8.2}Results}{92}{subsection.7.8.2}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {7.8.3}Interpretation: Empirical Realization of Theorem~\ref {thm:imp}}{93}{subsection.7.8.3}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {7.9}Cross-Experiment Regret Synthesis}{93}{section.7.9}\protected@file@percent }
+\newlabel{sec:exp1-synthesis}{{7.9}{93}{Cross-Experiment Regret Synthesis}{section.7.9}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {7.9.1}Summary Table}{93}{subsection.7.9.1}\protected@file@percent }
+\@writefile{lot}{\contentsline {table}{\numberline {7.10}{\ignorespaces Cross-experiment regret-to-oracle synthesis. All figures from the named JSON files; the ``vs always-freeze'' column expresses always-freeze's regret for comparison.}}{93}{table.7.10}\protected@file@percent }
+\newlabel{tab:exp1-regret-summary}{{7.10}{93}{Cross-experiment regret-to-oracle synthesis. All figures from the named JSON files; the ``vs always-freeze'' column expresses always-freeze's regret for comparison}{table.7.10}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {7.9.2}Interpretation}{93}{subsection.7.9.2}\protected@file@percent }
+\@writefile{lof}{\contentsline {figure}{\numberline {7.5}{\ignorespaces Regret-to-oracle across all sub-experiments of this chapter. \textsc  {KGA}\ (blue) dominates always-adapt (orange) in the harmful and mixed regimes while remaining within range in the helpful regime. Always-freeze (grey) is safe only in harmful-dominated regimes. Source: aggregated from \texttt  {knowability\_results.json}, \texttt  {kbound\_harmful\_results.json}, \texttt  {mixed\_regime\_results.json}, \texttt  {rigor\_multiseed.json}, \texttt  {regression\_covariate.json}.}}{94}{figure.7.5}\protected@file@percent }
+\newlabel{fig:exp1-regret-summary}{{7.5}{94}{Regret-to-oracle across all sub-experiments of this chapter. \KGA \ (blue) dominates always-adapt (orange) in the harmful and mixed regimes while remaining within range in the helpful regime. Always-freeze (grey) is safe only in harmful-dominated regimes. Source: aggregated from \texttt {knowability\_results.json}, \texttt {kbound\_harmful\_results.json}, \texttt {mixed\_regime\_results.json}, \texttt {rigor\_multiseed.json}, \texttt {regression\_covariate.json}}{figure.7.5}{}}
+\@writefile{toc}{\contentsline {section}{\numberline {7.10}Threats to Validity}{94}{section.7.10}\protected@file@percent }
+\newlabel{sec:exp1-threats}{{7.10}{94}{Threats to Validity}{section.7.10}{}}
+\@writefile{toc}{\contentsline {paragraph}{Testbed specificity.}{94}{section*.77}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{Controlled corruption vs real sensor failure.}{94}{section*.78}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{Mild benefit in the clean condition.}{94}{section*.79}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{Certificate width vs coverage.}{95}{section*.80}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{Regression experiment scale.}{95}{section*.81}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{Discrepancies with kbound.tex.}{95}{section*.82}\protected@file@percent }
+\citation{krizhevsky2009cifar}
+\citation{hendrycks2019benchmarking}
+\citation{wang2021tent}
+\citation{niu2022eata}
+\citation{niu2023sar}
+\citation{krizhevsky2009cifar}
+\citation{hendrycks2019benchmarking}
+\citation{wang2021tent}
+\@writefile{toc}{\contentsline {chapter}{\numberline {8}Experiments II: Deep Test-Time Adaptation}{97}{chapter.8}\protected@file@percent }
+\@writefile{lof}{\addvspace {10\p@ }}
+\@writefile{lot}{\addvspace {10\p@ }}
+\newlabel{ch:exp2}{{8}{97}{Experiments II: Deep Test-Time Adaptation}{chapter.8}{}}
+\@writefile{toc}{\contentsline {section}{\numberline {8.1}Experimental Setup}{97}{section.8.1}\protected@file@percent }
+\newlabel{sec:exp2-setup}{{8.1}{97}{Experimental Setup}{section.8.1}{}}
+\@writefile{toc}{\contentsline {paragraph}{Datasets.}{97}{section*.83}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{Architecture.}{97}{section*.84}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{Adaptation candidates.}{97}{section*.85}\protected@file@percent }
+\citation{niu2022eata}
+\citation{niu2023sar}
+\citation{kbound2026repo}
+\@writefile{toc}{\contentsline {paragraph}{The \textsc  {KGA}{} wrapper.}{98}{section*.86}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{Policies compared.}{98}{section*.87}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{Hardware and reproducibility.}{98}{section*.88}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {8.2}The Decisive CIFAR\,+\,Tent Run}{98}{section.8.2}\protected@file@percent }
+\newlabel{sec:exp2-cifar-tent}{{8.2}{98}{The Decisive CIFAR\,+\,Tent Run}{section.8.2}{}}
+\@writefile{toc}{\contentsline {paragraph}{Numbers.}{98}{section*.89}\protected@file@percent }
+\@writefile{lot}{\contentsline {table}{\numberline {8.1}{\ignorespaces \textsc  {KGA}{} vs.\ trivial policies on the CIFAR-10-C Tent stress grid (432 conditions, ResNet-18, MPS, $\alpha {=}0.1$). Source: \texttt  {decisive\_tta\_results.json}.}}{99}{table.8.1}\protected@file@percent }
+\newlabel{tab:exp2-decisive-tent-single}{{8.1}{99}{\KGA {} vs.\ trivial policies on the CIFAR-10-C Tent stress grid (432 conditions, ResNet-18, MPS, $\alpha {=}0.1$). Source: \texttt {decisive\_tta\_results.json}}{table.8.1}{}}
+\@writefile{lof}{\contentsline {figure}{\numberline {8.1}{\ignorespaces Policy comparison on the CIFAR-10-C Tent stress grid (432 conditions). \textsc  {KGA}{} (green) achieves higher mean accuracy than always-adapt while eliminating false adaptations; always-freeze pays large regret-to-oracle; the oracle is closely tracked by \textsc  {KGA}{}. Source: \texttt  {decisive\_tta\_results.json}.}}{99}{figure.8.1}\protected@file@percent }
+\newlabel{fig:exp2-cifar-tent}{{8.1}{99}{Policy comparison on the CIFAR-10-C Tent stress grid (432 conditions). \KGA {} (green) achieves higher mean accuracy than always-adapt while eliminating false adaptations; always-freeze pays large regret-to-oracle; the oracle is closely tracked by \KGA {}. Source: \texttt {decisive\_tta\_results.json}}{figure.8.1}{}}
+\@writefile{toc}{\contentsline {paragraph}{Routing by true regime.}{99}{section*.90}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {8.3}The Pre-Registered Stress Grid}{99}{section.8.3}\protected@file@percent }
+\newlabel{sec:exp2-stress-grid}{{8.3}{99}{The Pre-Registered Stress Grid}{section.8.3}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {8.3.1}Grid design}{99}{subsection.8.3.1}\protected@file@percent }
+\newlabel{sec:exp2-grid-design}{{8.3.1}{99}{Grid design}{subsection.8.3.1}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {8.3.2}Per-method outcomes}{100}{subsection.8.3.2}\protected@file@percent }
+\newlabel{sec:exp2-grid-results}{{8.3.2}{100}{Per-method outcomes}{subsection.8.3.2}{}}
+\@writefile{lot}{\contentsline {table}{\numberline {8.2}{\ignorespaces CIFAR-10-C pre-registered stress grid (432 conditions per candidate, ResNet-18, MPS, $\alpha {=}0.1$). Source: \texttt  {decisive\_tta\_results.json} and \texttt  {decisive\_tta\_table.md}.}}{100}{table.8.2}\protected@file@percent }
+\newlabel{tab:exp2-decisive}{{8.2}{100}{CIFAR-10-C pre-registered stress grid (432 conditions per candidate, ResNet-18, MPS, $\alpha {=}0.1$). Source: \texttt {decisive\_tta\_results.json} and \texttt {decisive\_tta\_table.md}}{table.8.2}{}}
+\@writefile{toc}{\contentsline {paragraph}{\textsc  {KGA}{} beats both trivial policies for Tent and EATA.}{100}{section*.91}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{SAR: a tie, not a win.}{100}{section*.92}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{Zero false adaptations.}{101}{section*.93}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {8.3.3}Bootstrap confidence intervals}{101}{subsection.8.3.3}\protected@file@percent }
+\newlabel{sec:exp2-cis}{{8.3.3}{101}{Bootstrap confidence intervals}{subsection.8.3.3}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {8.3.4}The Pareto front}{101}{subsection.8.3.4}\protected@file@percent }
+\newlabel{sec:exp2-pareto}{{8.3.4}{101}{The Pareto front}{subsection.8.3.4}{}}
+\@writefile{toc}{\contentsline {section}{\numberline {8.4}The 65-Cell Per-Corruption Suite}{101}{section.8.4}\protected@file@percent }
+\newlabel{sec:exp2-c10c}{{8.4}{101}{The 65-Cell Per-Corruption Suite}{section.8.4}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {8.4.1}A helpful-dominated control}{101}{subsection.8.4.1}\protected@file@percent }
+\newlabel{sec:exp2-c10c-finding}{{8.4.1}{101}{A helpful-dominated control}{subsection.8.4.1}{}}
+\citation{press2023rdumb}
+\citation{wang2022cotta}
+\citation{gong2022note}
+\@writefile{lof}{\contentsline {figure}{\numberline {8.2}{\ignorespaces CIFAR-10-C stress grid: regret-to-oracle vs.\ harmful fraction $p$ of the deployment stream, per candidate. \textsc  {KGA}{} (green) stays on the Pareto front: ties always-adapt at $p{=}0$, strictly dominates both trivial policies at $p \geq p^\star $ (Tent/SAR: $p^\star {=}0.1$; EATA: $p^\star {=}0.0$), and never collapses. Source: \texttt  {decisive\_tta\_results.json} (Pareto curves).}}{102}{figure.8.2}\protected@file@percent }
+\newlabel{fig:exp2-pareto}{{8.2}{102}{CIFAR-10-C stress grid: regret-to-oracle vs.\ harmful fraction $p$ of the deployment stream, per candidate. \KGA {} (green) stays on the Pareto front: ties always-adapt at $p{=}0$, strictly dominates both trivial policies at $p \geq p^\star $ (Tent/SAR: $p^\star {=}0.1$; EATA: $p^\star {=}0.0$), and never collapses. Source: \texttt {decisive\_tta\_results.json} (Pareto curves)}{figure.8.2}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {8.4.2}Interpretation: certificate value in helpful regimes}{102}{subsection.8.4.2}\protected@file@percent }
+\newlabel{sec:exp2-c10c-interp}{{8.4.2}{102}{Interpretation: certificate value in helpful regimes}{subsection.8.4.2}{}}
+\citation{press2023rdumb}
+\citation{wang2022cotta}
+\citation{gong2022note}
+\@writefile{lof}{\contentsline {figure}{\numberline {8.3}{\ignorespaces Left: regret-to-oracle per candidate/policy (lower is better). \textsc  {KGA}{} reaches near-zero regret for all three candidates. Right: routing decisions by true regime --- adapt on helpful, freeze on harmful, abstain on marginal. Source: \texttt  {decisive\_tta\_results.json}.}}{103}{figure.8.3}\protected@file@percent }
+\newlabel{fig:exp2-regret-decisions}{{8.3}{103}{Left: regret-to-oracle per candidate/policy (lower is better). \KGA {} reaches near-zero regret for all three candidates. Right: routing decisions by true regime --- adapt on helpful, freeze on harmful, abstain on marginal. Source: \texttt {decisive\_tta\_results.json}}{figure.8.3}{}}
+\@writefile{lot}{\contentsline {table}{\numberline {8.3}{\ignorespaces CIFAR-10-C per-corruption suite: 13 corruptions $\times $ 5 severities ($=65$ cells), ResNet-18, $N{=}800$/cell. Adaptation is overwhelmingly helpful (false-adapt $0.015$); \textsc  {KGA}{} matches always-adapt at equal safety. This is the helpful-dominated control. Source: \texttt  {cifar10c\_suite\_results.json}.}}{103}{table.8.3}\protected@file@percent }
+\newlabel{tab:exp2-c10c}{{8.3}{103}{CIFAR-10-C per-corruption suite: 13 corruptions $\times $ 5 severities ($=65$ cells), ResNet-18, $N{=}800$/cell. Adaptation is overwhelmingly helpful (false-adapt $0.015$); \KGA {} matches always-adapt at equal safety. This is the helpful-dominated control. Source: \texttt {cifar10c\_suite\_results.json}}{table.8.3}{}}
+\@writefile{toc}{\contentsline {section}{\numberline {8.5}Online Continual Adaptation}{103}{section.8.5}\protected@file@percent }
+\newlabel{sec:exp2-online}{{8.5}{103}{Online Continual Adaptation}{section.8.5}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {8.5.1}Motivation and stream design}{103}{subsection.8.5.1}\protected@file@percent }
+\newlabel{sec:exp2-online-design}{{8.5.1}{103}{Motivation and stream design}{subsection.8.5.1}{}}
+\@writefile{lof}{\contentsline {figure}{\numberline {8.4}{\ignorespaces CIFAR-10-C per-corruption suite. \emph  {Left}: severity-5 accuracy by corruption type --- online Tent and \textsc  {KGA}{} both recover over the frozen baseline; no per-corruption collapse is observed. \emph  {Right}: knowability crossover map --- adaptation headroom (oracle gain over frozen) by corruption $\times $ severity; headroom is large on noise/blur corruptions and small on easier corruptions such as brightness, matching where the true benefit $\Delta $ is large. Source: \texttt  {cifar10c\_suite\_results.json}.}}{104}{figure.8.4}\protected@file@percent }
+\newlabel{fig:exp2-c10c-figures}{{8.4}{104}{CIFAR-10-C per-corruption suite. \emph {Left}: severity-5 accuracy by corruption type --- online Tent and \KGA {} both recover over the frozen baseline; no per-corruption collapse is observed. \emph {Right}: knowability crossover map --- adaptation headroom (oracle gain over frozen) by corruption $\times $ severity; headroom is large on noise/blur corruptions and small on easier corruptions such as brightness, matching where the true benefit $\Delta $ is large. Source: \texttt {cifar10c\_suite\_results.json}}{figure.8.4}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {8.5.2}Results: always-adapt collapses; \textsc  {KGA}{} does not}{104}{subsection.8.5.2}\protected@file@percent }
+\newlabel{sec:exp2-online-results}{{8.5.2}{104}{Results: always-adapt collapses; \KGA {} does not}{subsection.8.5.2}{}}
+\@writefile{lot}{\contentsline {table}{\numberline {8.4}{\ignorespaces Online non-stationary CIFAR-10 TTA, 3 seeds per regime. Always-adapt collapses in the harm-dominated stream; always-freeze forgoes gains in the helpful stream; \textsc  {KGA}{} is near-best in both and achieves the highest cross-regime mean. Harm-regime standard deviations: freeze $0.009$, adapt $0.025$, \textsc  {KGA}{} $0.009$. Source: \texttt  {cifar\_tent\_online\_results.json} (harsh stream) and \texttt  {kbound.tex} Table~10.}}{104}{table.8.4}\protected@file@percent }
+\newlabel{tab:exp2-online}{{8.4}{104}{Online non-stationary CIFAR-10 TTA, 3 seeds per regime. Always-adapt collapses in the harm-dominated stream; always-freeze forgoes gains in the helpful stream; \KGA {} is near-best in both and achieves the highest cross-regime mean. Harm-regime standard deviations: freeze $0.009$, adapt $0.025$, \KGA {} $0.009$. Source: \texttt {cifar\_tent\_online\_results.json} (harsh stream) and \texttt {kbound.tex} Table~10}{table.8.4}{}}
+\@writefile{toc}{\contentsline {paragraph}{No fixed policy is robust.}{104}{section*.94}\protected@file@percent }
+\citation{howard2019imagenette}
+\citation{deng2009imagenet}
+\citation{dosovitskiy2021vit}
+\citation{he2016resnet}
+\@writefile{toc}{\contentsline {paragraph}{\textsc  {KGA}{} is near-best in both regimes.}{105}{section*.95}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{Honest statement of advantage.}{105}{section*.96}\protected@file@percent }
+\@writefile{lof}{\contentsline {figure}{\numberline {8.5}{\ignorespaces Per-window accuracy on the \emph  {harm-dominated} non-stationary stream (pink shading $=$ catastrophic ``trap'' windows). Continual Tent (always-adapt) accumulates damage through the long trap runs and collapses; \textsc  {KGA}{} freezes or abstains on trap windows and never collapses, staying near always-freeze while capturing gains in recoverable windows. Source: \texttt  {cifar\_tent\_online\_results.json}.}}{105}{figure.8.5}\protected@file@percent }
+\newlabel{fig:exp2-online}{{8.5}{105}{Per-window accuracy on the \emph {harm-dominated} non-stationary stream (pink shading $=$ catastrophic ``trap'' windows). Continual Tent (always-adapt) accumulates damage through the long trap runs and collapses; \KGA {} freezes or abstains on trap windows and never collapses, staying near always-freeze while capturing gains in recoverable windows. Source: \texttt {cifar\_tent\_online\_results.json}}{figure.8.5}{}}
+\@writefile{toc}{\contentsline {paragraph}{Supplementary collapse result.}{105}{section*.97}\protected@file@percent }
+\citation{koh2021wilds}
+\@writefile{lof}{\contentsline {figure}{\numberline {8.6}{\ignorespaces TTA collapse regime: \textsc  {KGA}{} decision pattern on the collapse benchmark (\texttt  {tta\_collapse\_results.json}). In the pure-harmful task set (210 conditions) \textsc  {KGA}{} correctly freezes or abstains everywhere, making 0 false-adapt decisions (adapt-precision $1.0$, false-adapt $0.0$).}}{106}{figure.8.6}\protected@file@percent }
+\newlabel{fig:exp2-collapse}{{8.6}{106}{TTA collapse regime: \KGA {} decision pattern on the collapse benchmark (\texttt {tta\_collapse\_results.json}). In the pure-harmful task set (210 conditions) \KGA {} correctly freezes or abstains everywhere, making 0 false-adapt decisions (adapt-precision $1.0$, false-adapt $0.0$)}{figure.8.6}{}}
+\@writefile{toc}{\contentsline {section}{\numberline {8.6}Imagenette and ImageNet-Scale Status}{106}{section.8.6}\protected@file@percent }
+\newlabel{sec:exp2-imagenette}{{8.6}{106}{Imagenette and ImageNet-Scale Status}{section.8.6}{}}
+\@writefile{toc}{\contentsline {paragraph}{What the log actually shows.}{106}{section*.98}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{Implications.}{106}{section*.99}\protected@file@percent }
+\citation{venkateswara2017officehome}
+\@writefile{toc}{\contentsline {section}{\numberline {8.7}Natural-Shift Held-Out Win: Office-Home}{107}{section.8.7}\protected@file@percent }
+\newlabel{sec:exp2-officehome}{{8.7}{107}{Natural-Shift Held-Out Win: Office-Home}{section.8.7}{}}
+\@writefile{toc}{\contentsline {paragraph}{Protocol.}{107}{section*.100}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{The regime is helpful-leaning but contains an unidentifiable pocket.}{107}{section*.101}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{What the certificate does: it refuses to gamble.}{107}{section*.102}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{The strict globally-frozen operating point returns a conservative null.}{108}{section*.103}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{Protocol~M~v2: a dev-locked operating point yields a clean held-out beats-both.}{108}{section*.104}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{Honest caveats on the Office-Home win.}{108}{section*.105}\protected@file@percent }
+\citation{koh2021wilds}
+\@writefile{toc}{\contentsline {paragraph}{Why both halves belong in the record.}{109}{section*.106}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {8.8}Multi-Seed Confirmation and the Pre-Registered Natural-Shift Battery}{109}{section.8.8}\protected@file@percent }
+\newlabel{sec:exp2-battery}{{8.8}{109}{Multi-Seed Confirmation and the Pre-Registered Natural-Shift Battery}{section.8.8}{}}
+\@writefile{toc}{\contentsline {paragraph}{The core result replicates across seeds (positive).}{109}{section*.107}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{On natural shifts: one clean win where evidence is rich, abstain/freeze where it is not.}{109}{section*.108}\protected@file@percent }
+\citation{hendrycks2021manyfaces}
+\citation{koh2021wilds}
+\citation{jesus2022baf}
+\@writefile{toc}{\contentsline {paragraph}{What the battery establishes.}{110}{section*.109}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {8.9}Synthesis: When Does Deep TTA Need a Gate?}{111}{section.8.9}\protected@file@percent }
+\newlabel{sec:exp2-synthesis}{{8.9}{111}{Synthesis: When Does Deep TTA Need a Gate?}{section.8.9}{}}
+\@writefile{toc}{\contentsline {paragraph}{The real-shift bottom line: two clean wins plus one damage-prevention.}{111}{section*.110}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{Harm frequency.}{111}{section*.111}\protected@file@percent }
+\citation{koh2021wilds}
+\citation{venkateswara2017officehome}
+\citation{dosovitskiy2021vit}
+\citation{he2016resnet}
+\citation{wang2021tent}
+\@writefile{toc}{\contentsline {paragraph}{Harm severity.}{112}{section*.112}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{Self-protective candidates.}{112}{section*.113}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{Threats to validity.}{112}{section*.114}\protected@file@percent }
+\@writefile{toc}{\contentsline {chapter}{\numberline {9}A Worked Instantiation: Reliability-Gated Multimodal Fusion (ELARA)}{113}{chapter.9}\protected@file@percent }
+\@writefile{lof}{\addvspace {10\p@ }}
+\@writefile{lot}{\addvspace {10\p@ }}
+\newlabel{ch:elara}{{9}{113}{A Worked Instantiation: Reliability-Gated Multimodal Fusion (ELARA)}{chapter.9}{}}
+\@writefile{toc}{\contentsline {section}{\numberline {9.1}The Fusion and Routing Problem}{113}{section.9.1}\protected@file@percent }
+\newlabel{sec:elara-problem}{{9.1}{113}{The Fusion and Routing Problem}{section.9.1}{}}
+\@writefile{toc}{\contentsline {paragraph}{Setting.}{113}{section*.115}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{Reliability-Gated Attention (RGA).}{113}{section*.116}\protected@file@percent }
+\citation{han2022adbench}
+\citation{kbound2026repo}
+\@writefile{toc}{\contentsline {paragraph}{The cross-domain meta-routing benchmark (ELARA-U).}{114}{section*.117}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {9.2}The Verified ELARA Claim}{114}{section.9.2}\protected@file@percent }
+\newlabel{sec:elara-claim}{{9.2}{114}{The Verified ELARA Claim}{section.9.2}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {9.2.1}Stacking beats selection (positive result)}{114}{subsection.9.2.1}\protected@file@percent }
+\newlabel{sec:elara-stacking}{{9.2.1}{114}{Stacking beats selection (positive result)}{subsection.9.2.1}{}}
+\citation{wang2024realiad}
+\citation{bergmann2022mvtec3d}
+\citation{bergmann2019mvtec}
+\@writefile{toc}{\contentsline {subsection}{\numberline {9.2.2}Reliability routing adds nothing on single-input data (honest negative)}{115}{subsection.9.2.2}\protected@file@percent }
+\newlabel{sec:elara-routing-neg}{{9.2.2}{115}{Reliability routing adds nothing on single-input data (honest negative)}{subsection.9.2.2}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {9.2.3}Routing wins where it structurally should: independent modality failure}{115}{subsection.9.2.3}\protected@file@percent }
+\newlabel{sec:elara-routing-pos}{{9.2.3}{115}{Routing wins where it structurally should: independent modality failure}{subsection.9.2.3}{}}
+\citation{kbound2026repo}
+\citation{kbound2026repo}
+\citation{kbound2026repo}
+\@writefile{toc}{\contentsline {subsection}{\numberline {9.2.4}Controlled confirmation: a significant beats-both under detectable modality failure}{116}{subsection.9.2.4}\protected@file@percent }
+\newlabel{sec:elara-controlled}{{9.2.4}{116}{Controlled confirmation: a significant beats-both under detectable modality failure}{subsection.9.2.4}{}}
+\@writefile{toc}{\contentsline {section}{\numberline {9.3}The T1--T9 + GDR Theorem Stack}{116}{section.9.3}\protected@file@percent }
+\newlabel{sec:elara-theorems}{{9.3}{116}{The T1--T9 + GDR Theorem Stack}{section.9.3}{}}
+\@writefile{toc}{\contentsline {paragraph}{How the theorems partition the trichotomy.}{116}{section*.118}\protected@file@percent }
+\@writefile{lot}{\contentsline {table}{\numberline {9.1}{\ignorespaces ELARA theorem stack (T1--T9, GDR): one-line statements and K-Bound roles. Source: \texttt  {THEOREM\_CODE\_STATUS.md} Part 2 and \texttt  {kbound.tex} Appendix~A~\cite  {kbound2026repo}.}}{117}{table.9.1}\protected@file@percent }
+\newlabel{tab:elara-stack}{{9.1}{117}{ELARA theorem stack (T1--T9, GDR): one-line statements and K-Bound roles. Source: \texttt {THEOREM\_CODE\_STATUS.md} Part 2 and \texttt {kbound.tex} Appendix~A~\cite {kbound2026repo}}{table.9.1}{}}
+\@writefile{toc}{\contentsline {paragraph}{Scope caveats.}{117}{section*.119}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {9.4}How ELARA Instantiates the Evidence $Z$}{118}{section.9.4}\protected@file@percent }
+\newlabel{sec:elara-z}{{9.4}{118}{How ELARA Instantiates the Evidence $Z$}{section.9.4}{}}
+\@writefile{toc}{\contentsline {section}{\numberline {9.5}What Generalises and What Is Domain-Specific}{118}{section.9.5}\protected@file@percent }
+\newlabel{sec:elara-generalize}{{9.5}{118}{What Generalises and What Is Domain-Specific}{section.9.5}{}}
+\@writefile{toc}{\contentsline {paragraph}{What generalises.}{118}{section*.120}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{What is domain-specific.}{119}{section*.121}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{Summary.}{119}{section*.122}\protected@file@percent }
+\@writefile{toc}{\contentsline {chapter}{\numberline {10}Discussion, Limitations, and Conclusion}{120}{chapter.10}\protected@file@percent }
+\@writefile{lof}{\addvspace {10\p@ }}
+\@writefile{lot}{\addvspace {10\p@ }}
+\newlabel{ch:discussion}{{10}{120}{Discussion, Limitations, and Conclusion}{chapter.10}{}}
+\@writefile{toc}{\contentsline {section}{\numberline {10.1}When to Deploy K\mbox  {-}Bound{}}{120}{section.10.1}\protected@file@percent }
+\newlabel{sec:disc-when}{{10.1}{120}{When to Deploy \KBound {}}{section.10.1}{}}
+\@writefile{toc}{\contentsline {paragraph}{The deployment decision checklist.}{120}{section*.123}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{The practical rule.}{120}{section*.124}\protected@file@percent }
+\citation{koh2021wilds}
+\citation{venkateswara2017officehome}
+\@writefile{lot}{\contentsline {table}{\numberline {10.1}{\ignorespaces Deployment decision checklist: when K\mbox  {-}Bound{}/\textsc  {KGA}{} adds value over trivial policies. Harm frequency is the empirically observed harmful base rate of the intended adaptation candidate over the intended deployment stream.}}{121}{table.10.1}\protected@file@percent }
+\newlabel{tab:disc-checklist}{{10.1}{121}{Deployment decision checklist: when \KBound {}/\KGA {} adds value over trivial policies. Harm frequency is the empirically observed harmful base rate of the intended adaptation candidate over the intended deployment stream}{table.10.1}{}}
+\@writefile{toc}{\contentsline {section}{\numberline {10.2}Limitations and Honest Scope}{121}{section.10.2}\protected@file@percent }
+\newlabel{sec:disc-limitations}{{10.2}{121}{Limitations and Honest Scope}{section.10.2}{}}
+\@writefile{toc}{\contentsline {paragraph}{(1) Scope of the empirical win.}{121}{section*.125}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{(2) The decisive synthetic win; natural shifts at modest scale.}{121}{section*.126}\protected@file@percent }
+\citation{dosovitskiy2021vit}
+\citation{he2016resnet}
+\@writefile{toc}{\contentsline {paragraph}{(3) Architecture and scale.}{122}{section*.127}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{(4) Conformal exchangeability.}{122}{section*.128}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{(5) The certificate is conditional.}{122}{section*.129}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{(6) Conjecture~\ref {conj:gen} is open.}{122}{section*.130}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{(7) Single-machine GPU scale.}{122}{section*.131}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{Claim discipline.}{122}{section*.132}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {10.3}What Would Falsify the Framework}{123}{section.10.3}\protected@file@percent }
+\newlabel{sec:disc-falsify}{{10.3}{123}{What Would Falsify the Framework}{section.10.3}{}}
+\@writefile{toc}{\contentsline {paragraph}{Falsifying the information-theoretic bound.}{123}{section*.133}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{Falsifying the stress-grid results.}{123}{section*.134}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{Falsifying the trichotomy structure.}{123}{section*.135}\protected@file@percent }
+\citation{koh2021wilds}
+\citation{venkateswara2017officehome}
+\@writefile{toc}{\contentsline {paragraph}{Falsifying the ELARA instantiation.}{124}{section*.136}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {10.4}Future Work}{124}{section.10.4}\protected@file@percent }
+\newlabel{sec:disc-future}{{10.4}{124}{Future Work}{section.10.4}{}}
+\@writefile{toc}{\contentsline {paragraph}{Beyond label-free: a target-label-light, multimodal safety guard.}{124}{section*.137}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{Proving Conjecture~\ref {conj:gen}.}{124}{section*.138}\protected@file@percent }
+\citation{hendrycks2019benchmarking}
+\citation{dosovitskiy2021vit}
+\citation{he2016resnet}
+\@writefile{toc}{\contentsline {paragraph}{Scaling the natural-shift evidence.}{125}{section*.139}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{ImageNet-C and foundation-model adapters.}{125}{section*.140}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{Richer evidence features.}{125}{section*.141}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{Anytime-valid extension.}{125}{section*.142}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {10.5}Conclusion}{125}{section.10.5}\protected@file@percent }
+\newlabel{sec:disc-conclusion}{{10.5}{125}{Conclusion}{section.10.5}{}}
+\@writefile{toc}{\contentsline {paragraph}{The trichotomy thesis.}{125}{section*.143}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{The verified evidence chain.}{126}{section*.144}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{The honest frontier.}{126}{section*.145}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{Final statement.}{127}{section*.146}\protected@file@percent }
+\@writefile{toc}{\contentsline {chapter}{\numberline {A}Reproducibility and Engineering}{128}{appendix.A}\protected@file@percent }
+\@writefile{lof}{\addvspace {10\p@ }}
+\@writefile{lot}{\addvspace {10\p@ }}
+\newlabel{app:repro}{{A}{128}{Reproducibility and Engineering}{appendix.A}{}}
+\@writefile{toc}{\contentsline {section}{\numberline {A.1}Repository layout}{128}{section.A.1}\protected@file@percent }
+\newlabel{sec:app-repro-layout}{{A.1}{128}{Repository layout}{section.A.1}{}}
+\@writefile{toc}{\contentsline {section}{\numberline {A.2}Full reproduction path}{129}{section.A.2}\protected@file@percent }
+\newlabel{sec:app-repro-rebuild}{{A.2}{129}{Full reproduction path}{section.A.2}{}}
+\@writefile{toc}{\contentsline {paragraph}{Stage [1/4] Dependencies.}{129}{section*.147}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{Stage [2/4] Core experiments (CPU).}{129}{section*.148}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{Stage [3/4] GPU experiment (optional).}{130}{section*.149}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{Stage [4/4] Compile PDF.}{130}{section*.150}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {A.3}Hermetic smoke path}{130}{section.A.3}\protected@file@percent }
+\newlabel{sec:app-repro-smoke}{{A.3}{130}{Hermetic smoke path}{section.A.3}{}}
+\@writefile{toc}{\contentsline {paragraph}{Phase 1: synthetic archive generation.}{130}{section*.151}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{Phase 2: real \texttt  {kga} pipeline.}{130}{section*.152}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {A.4}Integrity manifests}{131}{section.A.4}\protected@file@percent }
+\newlabel{sec:app-repro-manifests}{{A.4}{131}{Integrity manifests}{section.A.4}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {A.4.1}Model artifact manifest (\texttt  {models/MANIFEST.json})}{131}{subsection.A.4.1}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {A.4.2}Score-archive manifest (\texttt  {data/MANIFEST.json})}{131}{subsection.A.4.2}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {A.5}The \texttt  {kga} package: install and test}{132}{section.A.5}\protected@file@percent }
+\newlabel{sec:app-repro-kgapkg}{{A.5}{132}{The \texttt {kga} package: install and test}{section.A.5}{}}
+\@writefile{toc}{\contentsline {paragraph}{Test suite.}{132}{section*.153}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{Theorem validators.}{133}{section*.154}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {A.6}CI workflow (\texttt  {.github/workflows/kbound-ci.yml})}{133}{section.A.6}\protected@file@percent }
+\newlabel{sec:app-repro-ci}{{A.6}{133}{CI workflow (\texttt {.github/workflows/kbound-ci.yml})}{section.A.6}{}}
+\@writefile{toc}{\contentsline {section}{\numberline {A.7}Executed notebooks (00--09)}{134}{section.A.7}\protected@file@percent }
+\newlabel{sec:app-repro-notebooks}{{A.7}{134}{Executed notebooks (00--09)}{section.A.7}{}}
+\gdef \LT@i {\LT@entry 
+    {5}{22.95pt}\LT@entry 
+    {5}{241.94936pt}\LT@entry 
+    {1}{282.30118pt}}
+\@writefile{lot}{\contentsline {table}{\numberline {A.1}{The 10 executed K-Bound notebooks.}}{135}{table.A.1}\protected@file@percent }
+\newlabel{tab:app-notebooks}{{A.1}{135}{The 10 executed K-Bound notebooks}{table.A.1}{}}
+\@writefile{toc}{\contentsline {section}{\numberline {A.8}Environment notes}{136}{section.A.8}\protected@file@percent }
+\newlabel{sec:app-repro-env}{{A.8}{136}{Environment notes}{section.A.8}{}}
+\@writefile{toc}{\contentsline {paragraph}{Python version.}{136}{section*.155}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{Apple M5 / MPS.}{136}{section*.156}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{Determinism.}{136}{section*.157}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{Legacy lint debt.}{136}{section*.158}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {A.9}How to reproduce: checklist}{136}{section.A.9}\protected@file@percent }
+\newlabel{sec:app-repro-checklist}{{A.9}{136}{How to reproduce: checklist}{section.A.9}{}}
+\@writefile{toc}{\contentsline {chapter}{\numberline {B}Complete Result Tables}{137}{appendix.B}\protected@file@percent }
+\@writefile{lof}{\addvspace {10\p@ }}
+\@writefile{lot}{\addvspace {10\p@ }}
+\newlabel{app:tables}{{B}{137}{Complete Result Tables}{appendix.B}{}}
+\@writefile{toc}{\contentsline {section}{\numberline {B.1}Per-Seed Rigor Table (Mixed Regime, 8 Seeds)}{137}{section.B.1}\protected@file@percent }
+\newlabel{sec:app-rigor}{{B.1}{137}{Per-Seed Rigor Table (Mixed Regime, 8 Seeds)}{section.B.1}{}}
+\@writefile{lot}{\contentsline {table}{\numberline {B.1}{\ignorespaces Multi-seed aggregate statistics for the mixed regime (8 seeds, split-conformal, $\alpha = 0.1$). Source: \texttt  {rigor\_multiseed.json}, fields \texttt  {mean\_std} and \texttt  {paired\_ttest\_*}. Mean and standard deviation are across all 8 seeds.}}{137}{table.B.1}\protected@file@percent }
+\newlabel{tab:full-rigor}{{B.1}{137}{Multi-seed aggregate statistics for the mixed regime (8 seeds, split-conformal, $\alpha = 0.1$). Source: \texttt {rigor\_multiseed.json}, fields \texttt {mean\_std} and \texttt {paired\_ttest\_*}. Mean and standard deviation are across all 8 seeds}{table.B.1}{}}
+\gdef \LT@ii {\LT@entry 
+    {5}{125.45412pt}\LT@entry 
+    {5}{59.57162pt}\LT@entry 
+    {1}{66.96317pt}\LT@entry 
+    {5}{59.57162pt}}
+\@writefile{toc}{\contentsline {paragraph}{Notes.}{138}{section*.159}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {B.2}Full Ablation Grid}{138}{section.B.2}\protected@file@percent }
+\newlabel{sec:app-ablations}{{B.2}{138}{Full Ablation Grid}{section.B.2}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {B.2.1}Evidence-Drop Ablation (Full Grid)}{138}{subsection.B.2.1}\protected@file@percent }
+\@writefile{lot}{\contentsline {table}{\numberline {B.2}{Evidence-drop ablation: complete grid. Each row drops one feature of $Z$ and reports regret, false-adapt rate, and coverage on the mixed-regime benchmark. Baseline uses all nine features. Source: \texttt  {ablations.json}, fields \texttt  {baseline} and \texttt  {evidence\_drop}.}}{138}{table.B.2}\protected@file@percent }
+\newlabel{tab:full-abl-drop}{{B.2}{138}{Evidence-drop ablation: complete grid. Each row drops one feature of $Z$ and reports regret, false-adapt rate, and coverage on the mixed-regime benchmark. Baseline uses all nine features. Source: \texttt {ablations.json}, fields \texttt {baseline} and \texttt {evidence\_drop}}{table.B.2}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {B.2.2}Alpha Sweep (Full Grid)}{138}{subsection.B.2.2}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {B.2.3}Batch-Size Sweep (Full Grid)}{138}{subsection.B.2.3}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {B.3}Regression Covariate-Shift Decision Summary}{138}{section.B.3}\protected@file@percent }
+\newlabel{sec:app-regression}{{B.3}{138}{Regression Covariate-Shift Decision Summary}{section.B.3}{}}
+\@writefile{lot}{\contentsline {table}{\numberline {B.3}{\ignorespaces $\alpha $ sweep: complete grid of conformal level, band width $\varepsilon $, coverage, and false-adapt rate. Source: \texttt  {ablations.json}, field \texttt  {alpha\_sweep}.}}{139}{table.B.3}\protected@file@percent }
+\newlabel{tab:full-alpha}{{B.3}{139}{$\alpha $ sweep: complete grid of conformal level, band width $\varepsilon $, coverage, and false-adapt rate. Source: \texttt {ablations.json}, field \texttt {alpha\_sweep}}{table.B.3}{}}
+\@writefile{lot}{\contentsline {table}{\numberline {B.4}{\ignorespaces Batch-size sweep: complete grid of test-batch size, certificate width $\varepsilon $, and coverage. Source: \texttt  {ablations.json}, field \texttt  {batchsize\_sweep}.}}{139}{table.B.4}\protected@file@percent }
+\newlabel{tab:full-batch}{{B.4}{139}{Batch-size sweep: complete grid of test-batch size, certificate width $\varepsilon $, and coverage. Source: \texttt {ablations.json}, field \texttt {batchsize\_sweep}}{table.B.4}{}}
+\@writefile{toc}{\contentsline {section}{\numberline {B.4}Mixed-Regime Full Metrics}{139}{section.B.4}\protected@file@percent }
+\newlabel{sec:app-mixed}{{B.4}{139}{Mixed-Regime Full Metrics}{section.B.4}{}}
+\@writefile{toc}{\contentsline {section}{\numberline {B.5}Harmful-Fusion Regime Full Metrics}{139}{section.B.5}\protected@file@percent }
+\newlabel{sec:app-harmful}{{B.5}{139}{Harmful-Fusion Regime Full Metrics}{section.B.5}{}}
+\@writefile{toc}{\contentsline {paragraph}{Note on the adapt decision.}{139}{section*.160}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {B.6}Clean Non-identifiability Witness: Full Metrics}{139}{section.B.6}\protected@file@percent }
+\newlabel{sec:app-witness}{{B.6}{139}{Clean Non-identifiability Witness: Full Metrics}{section.B.6}{}}
+\@writefile{toc}{\contentsline {section}{\numberline {B.7}Knowability Trichotomy Suite: Full Metrics}{139}{section.B.7}\protected@file@percent }
+\newlabel{sec:app-trichotomy}{{B.7}{139}{Knowability Trichotomy Suite: Full Metrics}{section.B.7}{}}
+\gdef \LT@iii {\LT@entry 
+    {3}{84.84401pt}\LT@entry 
+    {1}{24.64516pt}\LT@entry 
+    {1}{36.43379pt}\LT@entry 
+    {3}{36.25826pt}\LT@entry 
+    {1}{37.30531pt}\LT@entry 
+    {3}{36.25826pt}\LT@entry 
+    {3}{36.25826pt}\LT@entry 
+    {3}{36.25826pt}}
+\@writefile{lot}{\contentsline {table}{\numberline {B.5}{\ignorespaces Regression covariate-shift experiment: full metrics. Source: \texttt  {regression\_covariate.json}. Benefit $B = \text  {MSE}(f_0) - \text  {MSE}(f_a)$; positive $B$ means adaptation hurts (higher MSE for $f_a$). No adapt decisions were issued; adapt precision and false-adapt rate are undefined (\texttt  {null} in the JSON).}}{140}{table.B.5}\protected@file@percent }
+\newlabel{tab:full-regression}{{B.5}{140}{Regression covariate-shift experiment: full metrics. Source: \texttt {regression\_covariate.json}. Benefit $B = \text {MSE}(f_0) - \text {MSE}(f_a)$; positive $B$ means adaptation hurts (higher MSE for $f_a$). No adapt decisions were issued; adapt precision and false-adapt rate are undefined (\texttt {null} in the JSON)}{table.B.5}{}}
+\@writefile{toc}{\contentsline {paragraph}{Note on naive rule.}{140}{section*.161}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {B.8}All 65 CIFAR-10-C Cells}{140}{section.B.8}\protected@file@percent }
+\newlabel{sec:app-cifar10c}{{B.8}{140}{All 65 CIFAR-10-C Cells}{section.B.8}{}}
+\newlabel{tab:c10c}{{B.8}{140}{All 65 CIFAR-10-C Cells}{section.B.8}{}}
+\@writefile{lot}{\contentsline {table}{\numberline {B.10}{All 65 CIFAR-10-C cells (13 official corruptions $\times $ severities 1--5), ResNet-18, $N{=}800$ balanced held-out eval per cell. Online TTA accuracy; \textsc  {KGA} wraps Tent. Mean row matches Table~\ref {tab:c10c}.}}{140}{table.B.10}\protected@file@percent }
+\newlabel{tab:c10c-full}{{B.10}{140}{All 65 CIFAR-10-C cells (13 official corruptions $\times $ severities 1--5), ResNet-18, $N{=}800$ balanced held-out eval per cell. Online TTA accuracy; \textsc {KGA} wraps Tent. Mean row matches Table~\ref {tab:c10c}}{table.B.10}{}}
+\@writefile{lot}{\contentsline {table}{\numberline {B.6}{\ignorespaces Mixed-regime benchmark: complete metrics from a single run ($n = 369$). Source: \texttt  {mixed\_regime\_results.json}.}}{143}{table.B.6}\protected@file@percent }
+\newlabel{tab:full-mixed}{{B.6}{143}{Mixed-regime benchmark: complete metrics from a single run ($n = 369$). Source: \texttt {mixed\_regime\_results.json}}{table.B.6}{}}
+\@writefile{lot}{\contentsline {table}{\numberline {B.7}{\ignorespaces Harmful-fusion regime: complete metrics ($n = 123$ tasks, candidate $= \texttt  {elara\_fuse}$, base rate harmful $= 79.7\%$). Source: \texttt  {kbound\_harmful\_results.json}.}}{144}{table.B.7}\protected@file@percent }
+\newlabel{tab:full-harmful}{{B.7}{144}{Harmful-fusion regime: complete metrics ($n = 123$ tasks, candidate $= \texttt {elara\_fuse}$, base rate harmful $= 79.7\%$). Source: \texttt {kbound\_harmful\_results.json}}{table.B.7}{}}
+\@writefile{lot}{\contentsline {table}{\numberline {B.8}{\ignorespaces Clean non-identifiability witness: complete metrics ($M = 300$ instances). Source: \texttt  {witness\_clean.json}. All five KS $p$-values exceed $0.05$; \textsc  {KGA}\ abstains on $100\%$ of instances.}}{145}{table.B.8}\protected@file@percent }
+\newlabel{tab:full-witness}{{B.8}{145}{Clean non-identifiability witness: complete metrics ($M = 300$ instances). Source: \texttt {witness\_clean.json}. All five KS $p$-values exceed $0.05$; \KGA \ abstains on $100\%$ of instances}{table.B.8}{}}
+\@writefile{lot}{\contentsline {table}{\numberline {B.9}{\ignorespaces Knowability trichotomy suite (clean, 123 tasks): complete metrics. Source: \texttt  {knowability\_results.json}.}}{146}{table.B.9}\protected@file@percent }
+\newlabel{tab:full-trichotomy}{{B.9}{146}{Knowability trichotomy suite (clean, 123 tasks): complete metrics. Source: \texttt {knowability\_results.json}}{table.B.9}{}}
+\citation{kbound2026repo}
+\gdef \LT@iv {\LT@entry 
+    {5}{93.42519pt}\LT@entry 
+    {1}{324.9803pt}}
+\@writefile{toc}{\contentsline {chapter}{\numberline {C}Notation and Glossary}{147}{appendix.C}\protected@file@percent }
+\@writefile{lof}{\addvspace {10\p@ }}
+\@writefile{lot}{\addvspace {10\p@ }}
+\newlabel{app:notation}{{C}{147}{Notation and Glossary}{appendix.C}{}}
+\@writefile{toc}{\contentsline {section}{\numberline {C.1}Notation table}{147}{section.C.1}\protected@file@percent }
+\newlabel{sec:app-notation-table}{{C.1}{147}{Notation table}{section.C.1}{}}
+\@writefile{lot}{\contentsline {table}{\numberline {C.1}{Mathematical notation used throughout the monograph.}}{147}{table.C.1}\protected@file@percent }
+\newlabel{tab:notation}{{C.1}{147}{Mathematical notation used throughout the monograph}{table.C.1}{}}
+\citation{wang2021tent}
+\citation{niu2022eata}
+\citation{niu2023sar}
+\@writefile{toc}{\contentsline {section}{\numberline {C.2}Glossary}{149}{section.C.2}\protected@file@percent }
+\newlabel{sec:app-notation-glossary}{{C.2}{149}{Glossary}{section.C.2}{}}
+\citation{maurer2009empirical}
+\citation{vovk2005algorithmic}
+\citation{angelopoulos2023conformal}
+\citation{ville1939etude}
+\citation{waudbysmith2024betting}
+\@writefile{toc}{\contentsline {section}{\numberline {C.3}The exact benefit-sign frontier}{151}{section.C.3}\protected@file@percent }
+\newlabel{sec:bsfrontier}{{C.3}{151}{The exact benefit-sign frontier}{section.C.3}{}}
+\@writefile{toc}{\contentsline {paragraph}{Setup.}{151}{section*.162}\protected@file@percent }
+\newlabel{lem:reduction}{{C.1}{151}{Reduction}{lemma.C.1}{}}
+\newlabel{thm:frontier}{{C.1}{152}{Exact benefit-sign frontier: sufficiency and necessity \textnormal {(main result)}}{theorem.C.1}{}}
+\newlabel{thm:minimax}{{C.1}{152}{Tight minimax impossibility}{proposition.C.1}{}}
+\newlabel{cor:irreducible}{{C.1}{153}{Irreducibility of the drift budget}{corollary.C.1}{}}
+\newlabel{prop:beta0}{{C.2}{153}{The heuristics are the $\beta {=}0$ face}{proposition.C.2}{}}
+\@writefile{toc}{\contentsline {paragraph}{Multiclass and regression.}{153}{section*.163}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{What this is, and is not.}{153}{section*.164}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {C.3.1}A shared quantity: agreement-on-the-line is the same drift}{154}{subsection.C.3.1}\protected@file@percent }
+\newlabel{sec:agl}{{C.3.1}{154}{A shared quantity: agreement-on-the-line is the same drift}{subsection.C.3.1}{}}
+\newlabel{thm:agl}{{C.2}{154}{Agreement--accuracy law and the shared drift}{theorem.C.2}{}}
+\newlabel{cor:unify-agl}{{C.2}{154}{One scalar governs both problems}{corollary.C.2}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {C.3.2}Further results: bracketing, router generalization, and non-stationarity}{154}{subsection.C.3.2}\protected@file@percent }
+\newlabel{sec:theory-ext}{{C.3.2}{154}{Further results: bracketing, router generalization, and non-stationarity}{subsection.C.3.2}{}}
+\@writefile{toc}{\contentsline {paragraph}{(a) Closing Conjecture~\ref {conj:gen} under calibration transfer.}{155}{section*.165}\protected@file@percent }
+\newlabel{thm:caltransfer}{{C.3}{155}{Label-free bracketing under bounded calibration transfer}{proposition.C.3}{}}
+\@writefile{toc}{\contentsline {paragraph}{(b) Generalization of the benefit router.}{155}{section*.166}\protected@file@percent }
+\newlabel{thm:router-rad}{{C.4}{155}{Router generalization and certificate survival}{proposition.C.4}{}}
+\@writefile{toc}{\contentsline {paragraph}{(c) Anytime validity under non-stationarity.}{156}{section*.167}\protected@file@percent }
+\newlabel{thm:anytime-drift}{{C.5}{156}{$\beta $-bounded-drift anytime certificate}{proposition.C.5}{}}
+\newlabel{thm:reg-noise}{{C.6}{156}{Noise-invariance of the regression decision}{proposition.C.6}{}}
+\newlabel{thm:reg-iff}{{C.7}{156}{Bounded-drift knowability boundary; exact characterization}{proposition.C.7}{}}
+\@writefile{toc}{\contentsline {paragraph}{Weight (honest).}{157}{section*.168}\protected@file@percent }
+\@writefile{lof}{\contentsline {figure}{\numberline {C.1}{\ignorespaces The bounded-drift knowability boundary (Proposition~\ref {thm:reg-iff}). Left: the decision target $\Delta $ is invariant to unknown label noise while cardinal risks are confounded (Proposition~\ref {thm:reg-noise}). Right: identifiability holds exactly while the observable margin $|U-2T_S|$ exceeds the tight drift reach $2BW$; the crossing defines the computable boundary $B^\star $.}}{158}{figure.C.1}\protected@file@percent }
+\newlabel{fig:regboundary}{{C.1}{158}{The bounded-drift knowability boundary (Proposition~\ref {thm:reg-iff}). Left: the decision target $\Delta $ is invariant to unknown label noise while cardinal risks are confounded (Proposition~\ref {thm:reg-noise}). Right: identifiability holds exactly while the observable margin $|U-2T_S|$ exceeds the tight drift reach $2BW$; the crossing defines the computable boundary $B^\star $}{figure.C.1}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {C.3.3}Making the drift radius observable: a smooth source--target drift bracket}{158}{subsection.C.3.3}\protected@file@percent }
+\newlabel{sec:smooth-drift}{{C.3.3}{158}{Making the drift radius observable: a smooth source--target drift bracket}{subsection.C.3.3}{}}
+\@writefile{toc}{\contentsline {paragraph}{Setup (inherited from Prop.~\ref {thm:reg-iff}).}{158}{section*.169}\protected@file@percent }
+\newlabel{def:drift-smooth}{{C.1}{158}{Drift smoothness}{definition.C.1}{}}
+\newlabel{thm:smooth-drift}{{C.8}{158}{Smooth-drift sign bracket}{proposition.C.8}{}}
+\@writefile{toc}{\contentsline {paragraph}{Validated.}{159}{section*.170}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{Positioning and honest scope.}{159}{section*.171}\protected@file@percent }
+\newlabel{def:lsreach}{{C.2}{160}{Evidence operator and label-shift reach}{definition.C.2}{}}
+\newlabel{thm:ls-iff}{{C.9}{160}{Label-shift knowability boundary}{proposition.C.9}{}}
+\newlabel{prop:reach-mono}{{C.10}{160}{Reach is monotone in evidence}{proposition.C.10}{}}
+\@writefile{lof}{\contentsline {figure}{\numberline {C.2}{\ignorespaces The label-shift boundary (Proposition~\ref {thm:ls-iff}). Left: injective evidence operator, reach $0$ --- always identifiable. Right: singular evidence; the benefit $\Delta (\pi +tv)$ sweeps the reach interval along the unobservable null segment and crosses zero --- identifiable exactly when the margin clears the reach.}}{161}{figure.C.2}\protected@file@percent }
+\newlabel{fig:lsboundary}{{C.2}{161}{The label-shift boundary (Proposition~\ref {thm:ls-iff}). Left: injective evidence operator, reach $0$ --- always identifiable. Right: singular evidence; the benefit $\Delta (\pi +tv)$ sweeps the reach interval along the unobservable null segment and crosses zero --- identifiable exactly when the margin clears the reach}{figure.C.2}{}}
+\@writefile{toc}{\contentsline {paragraph}{Weight (honest).}{161}{section*.172}\protected@file@percent }
+\newlabel{def:reach}{{C.3}{161}{Evidence class, benefit interval, reach}{definition.C.3}{}}
+\newlabel{thm:unify}{{C.11}{161}{Knowability $=$ margin beyond reach}{proposition.C.11}{}}
+\@writefile{lof}{\contentsline {figure}{\numberline {C.3}{\ignorespaces One quantity decides every family (Proposition~\ref {thm:unify}): identifiable iff the margin $|c|$ exceeds the reach $\rho $. Bars: closed forms; diamonds: brute-force empirical reach over admissible equivalent worlds.}}{162}{figure.C.3}\protected@file@percent }
+\newlabel{fig:reachtable}{{C.3}{162}{One quantity decides every family (Proposition~\ref {thm:unify}): identifiable iff the margin $|c|$ exceeds the reach $\rho $. Bars: closed forms; diamonds: brute-force empirical reach over admissible equivalent worlds}{figure.C.3}{}}
+\newlabel{prop:reach-table}{{C.12}{162}{The reach table}{proposition.C.12}{}}
+\@writefile{toc}{\contentsline {paragraph}{Weight (honest).}{162}{section*.173}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {C.3.4}Two new rows, one reach: where v0.5 leaves Conjecture~\ref {conj:gen}}{163}{subsection.C.3.4}\protected@file@percent }
+\newlabel{sec:reach-unification}{{C.3.4}{163}{Two new rows, one reach: where v0.5 leaves Conjecture~\ref {conj:gen}}{subsection.C.3.4}{}}
+\newlabel{prop:reach-table-v05}{{C.13}{163}{Reach-table extension}{proposition.C.13}{}}
+\@writefile{toc}{\contentsline {paragraph}{Conjecture~\ref {conj:gen}, sharpened.}{164}{section*.174}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{Honest scope.}{164}{section*.175}\protected@file@percent }
+\newlabel{def:cei}{{C.4}{164}{Conditional error-independence on $D$, with per-class symmetry}{definition.C.4}{}}
+\newlabel{thm:multicand}{{C.14}{164}{Multi-candidate ordering identifiability}{proposition.C.14}{}}
+\newlabel{prop:cei-test}{{C.15}{165}{A sound checkable diagnostic, $M\ge 4$}{proposition.C.15}{}}
+\@writefile{lof}{\contentsline {figure}{\numberline {C.4}{\ignorespaces Multi-candidate identifiability (Proposition~\ref {thm:multicand}, Proposition~\ref {prop:cei-test}). Left: the label-free ordering estimator is exact under conditional error-independence and degrades as it fails. Right: the overdetermination residual is a checkable diagnostic --- $\approx \!0$ under independence, rising with error-correlation.}}{166}{figure.C.4}\protected@file@percent }
+\newlabel{fig:multicand}{{C.4}{166}{Multi-candidate identifiability (Proposition~\ref {thm:multicand}, Proposition~\ref {prop:cei-test}). Left: the label-free ordering estimator is exact under conditional error-independence and degrades as it fails. Right: the overdetermination residual is a checkable diagnostic --- $\approx \!0$ under independence, rising with error-correlation}{figure.C.4}{}}
+\@writefile{toc}{\contentsline {paragraph}{Weight (honest).}{166}{section*.176}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {C.3.5}Relaxing Definition~\ref {def:cei}: bounded-residual sign identifiability with an observable diagnostic}{167}{subsection.C.3.5}\protected@file@percent }
+\newlabel{sec:multicand-residual}{{C.3.5}{167}{Relaxing Definition~\ref {def:cei}: bounded-residual sign identifiability with an observable diagnostic}{subsection.C.3.5}{}}
+\@writefile{toc}{\contentsline {paragraph}{Objects.}{167}{section*.177}\protected@file@percent }
+\newlabel{def:approx-cei}{{C.5}{167}{Approximate conditional error-independence}{definition.C.5}{}}
+\newlabel{thm:multicand-residual}{{C.3}{167}{Multi-candidate sign identifiability under bounded error correlation}{theorem.C.3}{}}
+\@writefile{toc}{\contentsline {paragraph}{Validated.}{169}{section*.178}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{Positioning and honest scope.}{169}{section*.179}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{Setting.}{170}{section*.180}\protected@file@percent }
+\newlabel{thm:gmeter}{{C.4}{170}{Finite-sample $\gamma $-meter}{theorem.C.4}{}}
+\newlabel{cor:measured-frontier}{{C.3}{171}{The measured frontier}{corollary.C.3}{}}
+\newlabel{thm:invisible-reach}{{C.5}{171}{Agreement-invisible reach}{theorem.C.5}{}}
+\newlabel{prop:third-order}{{C.16}{171}{The spoof is visible at third order}{proposition.C.16}{}}
+\newlabel{thm:conj1-multiclass}{{C.6}{172}{Multiclass bracketing under checkable structure}{theorem.C.6}{}}
+\@writefile{toc}{\contentsline {paragraph}{What this resolves, and what it does not.}{172}{section*.181}\protected@file@percent }
+\@writefile{lof}{\contentsline {figure}{\numberline {C.5}{\ignorespaces The $\gamma $-meter and the agreement-invisible reach. Left: $|\hat  \gamma -\gamma |$ decays at the proven $n^{-1/2}$ rate (Theorem~\ref {thm:gmeter}). Right: the constructive invisible reach $t_{\max }$ (closed form) versus the exact LP reach over all pairwise-agreement-preserving couplings; the LP reach does not shrink with $M$ --- only richer (third-order) evidence shrinks it (Proposition~\ref {prop:third-order}).}}{173}{figure.C.5}\protected@file@percent }
+\newlabel{fig:gmeter}{{C.5}{173}{The $\gamma $-meter and the agreement-invisible reach. Left: $|\hat \gamma -\gamma |$ decays at the proven $n^{-1/2}$ rate (Theorem~\ref {thm:gmeter}). Right: the constructive invisible reach $t_{\max }$ (closed form) versus the exact LP reach over all pairwise-agreement-preserving couplings; the LP reach does not shrink with $M$ --- only richer (third-order) evidence shrinks it (Proposition~\ref {prop:third-order})}{figure.C.5}{}}
+\newlabel{def:margin}{{C.6}{173}{Knowability margin}{definition.C.6}{}}
+\newlabel{prop:kfrontier}{{C.17}{173}{Knowability frontier}{proposition.C.17}{}}
+\@writefile{lof}{\contentsline {figure}{\numberline {C.6}{\ignorespaces The knowability frontier (Proposition~\ref {prop:kfrontier}). Left: synthetic stream with planted ambiguous mass --- false-adapt stays below $\alpha $, coverage dominates the $\mathbb  {P}[\kappa _\alpha >0]-\alpha $ bound, and commits on ambiguous evidence respect the $2\alpha $ converse cap. Right: the same certificate on the \emph  {real} 123-task archive. Produced by \texttt  {scripts/knowability\_frontier\_validation.py}.}}{174}{figure.C.6}\protected@file@percent }
+\newlabel{fig:kfrontier}{{C.6}{174}{The knowability frontier (Proposition~\ref {prop:kfrontier}). Left: synthetic stream with planted ambiguous mass --- false-adapt stays below $\alpha $, coverage dominates the $\Pr [\kappa _\alpha >0]-\alpha $ bound, and commits on ambiguous evidence respect the $2\alpha $ converse cap. Right: the same certificate on the \emph {real} 123-task archive. Produced by \texttt {scripts/knowability\_frontier\_validation.py}}{figure.C.6}{}}
+\newlabel{prop:sandwich}{{C.18}{174}{Frontier sandwich}{proposition.C.18}{}}
+\@writefile{toc}{\contentsline {paragraph}{Prior decision styles as degenerate points on the frontier.}{174}{section*.182}\protected@file@percent }
+\newlabel{prop:s1}{{C.19}{175}{Always-adapt is the $\varepsilon \equiv 0$ certificate}{proposition.C.19}{}}
+\newlabel{prop:s2}{{C.20}{175}{Confidence filters lack false-adapt control}{proposition.C.20}{}}
+\newlabel{prop:s3}{{C.21}{175}{The decision is ordinal: it survives symmetric label noise}{proposition.C.21}{}}
+\@writefile{toc}{\contentsline {paragraph}{Weight (honest).}{175}{section*.183}\protected@file@percent }
+\@writefile{lof}{\contentsline {figure}{\numberline {C.7}{\ignorespaces Prior decision styles as degenerate certificates (Propositions~\ref {prop:s1}--\ref {prop:s2}). Left: always-adapt pays the full false-adapt regret mass; the certificate's committal regret is zero. Right: in a confidently-wrong world an entropy/confidence filter adapts blindly while the certificate holds $\mathrm  {FA}\le \alpha $.}}{176}{figure.C.7}\protected@file@percent }
+\newlabel{fig:subsume}{{C.7}{176}{Prior decision styles as degenerate certificates (Propositions~\ref {prop:s1}--\ref {prop:s2}). Left: always-adapt pays the full false-adapt regret mass; the certificate's committal regret is zero. Right: in a confidently-wrong world an entropy/confidence filter adapts blindly while the certificate holds $\mathrm {FA}\le \alpha $}{figure.C.7}{}}
+\newlabel{thm:rate-ub}{{C.22}{176}{Knowability rate: adaptive achievability}{proposition.C.22}{}}
+\newlabel{thm:rate-lb}{{C.23}{177}{Knowability rate: two-point lower bound}{proposition.C.23}{}}
+\newlabel{prop:rate-opt}{{C.24}{177}{The deployed certificate is rate-optimal and adaptive}{proposition.C.24}{}}
+\@writefile{toc}{\contentsline {paragraph}{Weight (honest).}{177}{section*.184}\protected@file@percent }
+\@writefile{lof}{\contentsline {figure}{\numberline {C.8}{\ignorespaces The knowability rate (Propositions~\ref {thm:rate-ub}--\ref {thm:rate-lb}). Achieved certifiable margin of the deployed empirical-Bernstein certificate versus the two-point lower bound, in the dense ($n^{-1/2}$) and spike ($n^{-1}$) regimes; slopes match and the offset is a bounded universal constant.}}{178}{figure.C.8}\protected@file@percent }
+\newlabel{fig:krates}{{C.8}{178}{The knowability rate (Propositions~\ref {thm:rate-ub}--\ref {thm:rate-lb}). Achieved certifiable margin of the deployed empirical-Bernstein certificate versus the two-point lower bound, in the dense ($n^{-1/2}$) and spike ($n^{-1}$) regimes; slopes match and the offset is a bounded universal constant}{figure.C.8}{}}
+\@writefile{toc}{\contentsline {section}{\numberline {C.4}One bit, audited: what label-free evidence can and cannot supply}{178}{section.C.4}\protected@file@percent }
+\newlabel{sec:onebit}{{C.4}{178}{One bit, audited: what label-free evidence can and cannot supply}{section.C.4}{}}
+\@writefile{toc}{\contentsline {paragraph}{Positioning (deltas, not firsts).}{178}{section*.185}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {C.4.1}The corrected structural hypothesis}{179}{subsection.C.4.1}\protected@file@percent }
+\newlabel{sec:H}{{C.4.1}{179}{The corrected structural hypothesis}{subsection.C.4.1}{}}
+\newlabel{thm:H-deficit}{{C.7}{179}{Exact rank-one deficit; the minimal hypothesis}{theorem.C.7}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {C.4.2}The one-bit theorem}{180}{subsection.C.4.2}\protected@file@percent }
+\newlabel{sec:onebit-thm}{{C.4.2}{180}{The one-bit theorem}{subsection.C.4.2}{}}
+\newlabel{thm:onebit-id}{{C.8}{180}{Identification up to one global bit}{theorem.C.8}{}}
+\newlabel{thm:flip-witness}{{C.9}{180}{The flip witness: the bit is free at every moment order}{theorem.C.9}{}}
+\newlabel{thm:bit-necessity}{{C.10}{180}{Necessity: every identifying assumption is a bit-selector}{theorem.C.10}{}}
+\@writefile{lof}{\contentsline {figure}{\numberline {C.9}{\ignorespaces The one-bit theorem, validated. Left (Thm~\ref {thm:flip-witness}): the flip witness $P'$ matches the full evidence law of $P$ (TV $=0$; identical agreement products) while every advantage and benefit sign is negated. Right (Thm~\ref {thm:onebit-id}): label-free recovery of $b$ up to the bit at the $m^{-1/2}$ rate (log-log slope $-0.51$).}}{181}{figure.C.9}\protected@file@percent }
+\newlabel{fig:onebit}{{C.9}{181}{The one-bit theorem, validated. Left (Thm~\ref {thm:flip-witness}): the flip witness $P'$ matches the full evidence law of $P$ (TV $=0$; identical agreement products) while every advantage and benefit sign is negated. Right (Thm~\ref {thm:onebit-id}): label-free recovery of $b$ up to the bit at the $m^{-1/2}$ rate (log-log slope $-0.51$)}{figure.C.9}{}}
+\newlabel{thm:bit-dictionary}{{C.11}{181}{The dictionary: published devices select the same bit}{theorem.C.11}{}}
+\@writefile{lof}{\contentsline {figure}{\numberline {C.10}{\ignorespaces The budget audit (Thms~\ref {thm:audit},~\ref {thm:no-verify}). Sound at level $\alpha $ under a true budget; power $1.000$ against violations beyond the radius (bootstrap); correctly blind on the bit-ambiguous set $\mathcal  B_\beta $ and on the rank-one-preserving stealth law ($\tau \approx 0$) --- the two provably irreducible blind zones; $\tau $ rises with overt error-correlation $\rho $ (Pearson $0.914$).}}{182}{figure.C.10}\protected@file@percent }
+\newlabel{fig:audit}{{C.10}{182}{The budget audit (Thms~\ref {thm:audit},~\ref {thm:no-verify}). Sound at level $\alpha $ under a true budget; power $1.000$ against violations beyond the radius (bootstrap); correctly blind on the bit-ambiguous set $\mathcal B_\beta $ and on the rank-one-preserving stealth law ($\tau \approx 0$) --- the two provably irreducible blind zones; $\tau $ rises with overt error-correlation $\rho $ (Pearson $0.914$)}{figure.C.10}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {C.4.3}The budget audit: falsifiable, never verifiable}{182}{subsection.C.4.3}\protected@file@percent }
+\newlabel{sec:audit}{{C.4.3}{182}{The budget audit: falsifiable, never verifiable}{subsection.C.4.3}{}}
+\newlabel{lem:gamma-id}{{C.2}{182}{Label-free identification of the drift, up to the bit}{lemma.C.2}{}}
+\newlabel{thm:audit}{{C.12}{182}{Bit-robust budget falsification}{theorem.C.12}{}}
+\newlabel{lem:prod-ratio}{{C.3}{182}{Product-ratio perturbation}{lemma.C.3}{}}
+\newlabel{thm:no-verify}{{C.13}{183}{Verification impossibility; the audit's exact blind set}{theorem.C.13}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {C.4.4}The evidence-channel rate}{183}{subsection.C.4.4}\protected@file@percent }
+\newlabel{sec:evrate}{{C.4.4}{183}{The evidence-channel rate}{subsection.C.4.4}{}}
+\newlabel{thm:ev-rate}{{C.14}{183}{Matching $m^{-1/2}$ bounds for the label-free channel}{theorem.C.14}{}}
+\@writefile{lof}{\contentsline {figure}{\numberline {C.11}{\ignorespaces The evidence-channel rate (Thm~\ref {thm:ev-rate}). Empirical minimax error tracks the Le Cam curve $c_0/\sqrt  m$ (slope $-0.525$); per-sample KL grows quadratically in the separation (KL$/\varepsilon ^2$ constant); the labeled-vs-evidence efficiency ratio is constant in $m$ but grows as $c_{\min }\to 0$.}}{184}{figure.C.11}\protected@file@percent }
+\newlabel{fig:evrate}{{C.11}{184}{The evidence-channel rate (Thm~\ref {thm:ev-rate}). Empirical minimax error tracks the Le Cam curve $c_0/\sqrt m$ (slope $-0.525$); per-sample KL grows quadratically in the separation (KL$/\varepsilon ^2$ constant); the labeled-vs-evidence efficiency ratio is constant in $m$ but grows as $c_{\min }\to 0$}{figure.C.11}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {C.4.5}Consolidation and what remains open}{184}{subsection.C.4.5}\protected@file@percent }
+\newlabel{sec:consolidation}{{C.4.5}{184}{Consolidation and what remains open}{subsection.C.4.5}{}}
+\newlabel{cor:unify-budgets}{{C.4}{184}{The budget propositions, unified}{corollary.C.4}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {C.4.6}Closing Conjecture~\ref {conj:gen}: the testability dichotomy}{185}{subsection.C.4.6}\protected@file@percent }
+\newlabel{sec:conj1-closure}{{C.4.6}{185}{Closing Conjecture~\ref {conj:gen}: the testability dichotomy}{subsection.C.4.6}{}}
+\newlabel{def:evdef}{{C.7}{185}{Evidence-definable class}{definition.C.7}{}}
+\newlabel{lem:swap}{{C.4}{185}{The swap}{lemma.C.4}{}}
+\newlabel{thm:conj1-dichotomy}{{C.15}{185}{Resolution of Conjecture~\ref {conj:gen}; testability dichotomy}{theorem.C.15}{}}
+\@writefile{lof}{\contentsline {figure}{\numberline {C.12}{\ignorespaces Closing Conjecture~\ref {conj:gen} (Thm~\ref {thm:conj1-dichotomy}): the swap flips every benefit sign (multiclass $K{=}5$, left; regression, middle) while no label-free observable of any order moves (right, exact zero) --- so no testable assumption can bracket the sign, and the residual is exactly one bit.}}{186}{figure.C.12}\protected@file@percent }
+\newlabel{fig:conj1closure}{{C.12}{186}{Closing Conjecture~\ref {conj:gen} (Thm~\ref {thm:conj1-dichotomy}): the swap flips every benefit sign (multiclass $K{=}5$, left; regression, middle) while no label-free observable of any order moves (right, exact zero) --- so no testable assumption can bracket the sign, and the residual is exactly one bit}{figure.C.12}{}}
+\bibcite{angelopoulos2023conformal}{1}
+\bibcite{baek2022agreement}{2}
+\bibcite{bendavid2010theory}{3}
+\bibcite{bergmann2019mvtec}{4}
+\bibcite{bergmann2022mvtec3d}{5}
+\bibcite{boudiaf2022lame}{6}
+\bibcite{breunig2000lof}{7}
+\bibcite{chow1970optimum}{8}
+\bibcite{deng2009imagenet}{9}
+\bibcite{deng2021labels}{10}
+\bibcite{dosovitskiy2021vit}{11}
+\bibcite{elyaniv2010selective}{12}
+\bibcite{garg2022atc}{13}
+\bibcite{geifman2017selective}{14}
+\bibcite{gong2022note}{15}
+\bibcite{grunwald2024safe}{16}
+\bibcite{guillory2021predicting}{17}
+\bibcite{gulrajani2021domainbed}{18}
+\bibcite{han2022adbench}{19}
+\bibcite{he2016resnet}{20}
+\bibcite{hendrycks2019benchmarking}{21}
+\bibcite{hoeffding1963probability}{22}
+\bibcite{hendrycks2021manyfaces}{23}
+\bibcite{howard2019imagenette}{24}
+\bibcite{howard2021timeuniform}{25}
+\bibcite{jesus2022baf}{26}
+\bibcite{kbound2026repo}{27}
+\bibcite{koh2021wilds}{28}
+\bibcite{krizhevsky2009cifar}{29}
+\bibcite{lecam1973convergence}{30}
+\bibcite{lehmann2005testing}{31}
+\bibcite{li2022ecod}{32}
+\bibcite{lipton2018detecting}{33}
+\bibcite{liu2008isolation}{34}
+\bibcite{mansour2009domain}{35}
+\bibcite{maurer2009empirical}{36}
+\bibcite{miller2021accuracy}{37}
+\bibcite{niu2022eata}{38}
+\bibcite{niu2023sar}{39}
+\bibcite{press2023rdumb}{40}
+\bibcite{quinonero2009dataset}{41}
+\bibcite{ramdas2023gametheoretic}{42}
+\bibcite{recht2019imagenet}{43}
+\bibcite{schneider2020bn}{44}
+\bibcite{scholkopf2001estimating}{45}
+\bibcite{shafer2019game}{46}
+\bibcite{shimodaira2000improving}{47}
+\bibcite{sugiyama2007covariate}{48}
+\bibcite{sun2020ttt}{49}
+\bibcite{taori2020measuring}{50}
+\bibcite{tsybakov2009introduction}{51}
+\bibcite{venkateswara2017officehome}{52}
+\bibcite{ville1939etude}{53}
+\bibcite{vovk2005algorithmic}{54}
+\bibcite{wang2021tent}{55}
+\bibcite{wang2022cotta}{56}
+\bibcite{wang2024realiad}{57}
+\bibcite{waudbysmith2024betting}{58}
+\bibcite{zhang2022memo}{59}
+\bibcite{zhao2019pyod}{60}
+\bibcite{zhao2023pitfalls}{61}
+\gdef \@abspage@last{209}

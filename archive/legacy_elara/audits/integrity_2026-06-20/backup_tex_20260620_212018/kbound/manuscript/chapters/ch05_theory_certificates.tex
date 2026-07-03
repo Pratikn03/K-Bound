@@ -1,0 +1,1292 @@
+% =============================================================================
+% ch05_theory_certificates.tex — Certificates: When the Boundary Can Be Crossed Safely
+% Part of the K-Bound long-form monograph. NO preamble here; \input by main.tex.
+% Faithful to docs/research/kbound/kbound.tex §5.3–§5.5 and the anytime appendix.
+% =============================================================================
+
+\chapter{Certificates: When the Boundary Can Be Crossed Safely}
+\label{ch:theory2}
+
+Chapter~\ref{ch:theory1} ended on deliberately negative ground. Theorem~\ref{thm:imp}
+exhibited two target worlds that induce \emph{exactly} the same label-free evidence yet
+assign \emph{opposite} signs to the adaptation benefit
+$\Delta = R_T(f_0) - R_T(f_a)$, and its quantitative strengthening showed that the best
+achievable committal error against such a pair equals $1-\TV$ of the evidence laws ---
+which is $1$ in the witness. Theorem~\ref{thm:gate} then priced the failure: a gate's
+regret over the oracle is precisely the benefit magnitude $|\Delta(Z)|$ it forfeits on
+each sign mistake, and on evidence compatible with both signs no estimator can beat the
+floor $\E[|\Delta(Z)|]/2$, attained by abstaining. The unknowable regime is not a
+deficiency of any particular detector or drift statistic; it is a property of the
+information available.
+
+This chapter is the constructive half of the theory. It asks the question the
+impossibility result leaves open: \emph{when the evidence does separate the worlds, how
+should a system cross the boundary --- and what guarantee can it carry across?} The
+answer is a \emph{certificate}: a label-free benefit estimate $\widehat\Delta(Z)$
+equipped with a finite-sample confidence radius $\varepsilon(Z)$, together with the
+three-way rule that commits only when the certified interval clears zero. We develop
+the batch certificate and its error guarantee (Theorem~\ref{thm:cert}), discharge the
+radius two ways --- by empirical-Bernstein concentration and by split-conformal
+calibration --- and derive both the mandatory-abstention consequence on matched
+evidence and the sample complexity of certification. We then build the streaming
+complement: an anytime-valid certificate by testing-by-betting
+(Theorem~\ref{thm:evalue}), valid at every stopping time simultaneously. The second
+half of the chapter maps the regimes where the boundary genuinely opens: the
+covariate-shift regime where the benefit sign becomes fully identifiable
+(Theorem~\ref{thm:pos}), and the disagreement-region characterization that reduces
+$\sign\Delta$ to an ordinal accuracy comparison on an observable set for binary,
+multiclass, and regression losses
+(Theorems~\ref{thm:disagree}--\ref{thm:disagree-reg}). The chapter closes with the one
+piece the program leaves open --- the label-free \emph{bracketing} of that ordinal
+comparison (Conjecture~\ref{conj:gen}) --- stated precisely, with an honest account of
+why current techniques do not resolve it and which partial results are proved.
+
+\section{From Impossibility to Conditional Possibility}
+\label{sec:t2-idea}
+
+The structure of the impossibility theorem dictates the structure of its escape. The
+witness of Theorem~\ref{thm:imp} succeeds because the evidence law $\Law(Z)$ carries no
+information about $\sign\Delta$: both worlds produce it identically. A certificate can
+therefore exist only \emph{conditionally} --- under an explicit assumption that the
+evidence at hand is not of the witness kind, i.e.\ that it constrains the benefit sign.
+The paper names this property at the definition stage (Chapter~\ref{ch:formulation})
+and invokes it as the standing assumption of the certificate result. We restate it
+here, in the paper's own words, as the assumption the entire chapter trades under.
+
+\begin{assumption}[Observable risk alignment, certificate form]
+\label{sec:t2-ass-align}
+The evidence is \emph{risk-aligned} in the sense of Chapter~\ref{ch:formulation}:
+$Z$ identifies or bounds $\sign\Delta(z)$ (it need not reveal the label, only whether
+adaptation helps). Operationally, a label-free estimator $\widehat\Delta(z)$ admits a
+radius $\varepsilon(z)$ with
+\[
+\Pr\bigl[\,|\widehat\Delta(z)-\Delta(z)|\le \varepsilon(z)\,\bigr]\;\ge\;1-\alpha .
+\]
+\end{assumption}
+
+The first sentence is the paper's definition of risk alignment, verbatim; the second is
+the exact premise of the certificate theorem below. The two are the qualitative and
+quantitative faces of the same requirement: a radius $\varepsilon(z)$ with valid
+$1-\alpha$ coverage is precisely a device that \emph{bounds} $\sign\Delta(z)$ whenever
+the interval $[\widehat\Delta-\varepsilon,\widehat\Delta+\varepsilon]$ excludes zero.
+
+Given the assumption, the decision rule is forced by the geometry of the interval.
+Estimate the benefit, attach the radius, and act on the \emph{certified} part of the
+interval only:
+\[
+\textsc{adapt}\ \text{if}\ \widehat\Delta-\varepsilon>0,\qquad
+\textsc{freeze}\ \text{if}\ \widehat\Delta+\varepsilon<0,\qquad
+\textsc{abstain}\ \text{otherwise.}
+\]
+Adapting requires the entire interval to sit above zero; freezing requires it to sit
+below; an interval that straddles zero is exactly the evidence state in which both
+signs remain consistent with what has been observed, and the rule declines to commit.
+The three outputs of the rule are the three regimes of the knowability map: knowably
+helpful, knowably harmful, unknowable.
+
+Before stating the theorem we are explicit about what its guarantee can and cannot
+mean, because the certificate is easy to over-read.
+
+\begin{remark}[What the guarantee means --- and what it does not]
+\label{sec:t2-rem-meaning}
+First, the guarantee is \emph{conditional} on
+Assumption~\ref{sec:t2-ass-align}. Theorem~\ref{thm:imp} shows that the assumption
+itself cannot be verified from $Z$ alone: on matched-evidence worlds no label-free
+procedure can detect that the radius has lost its meaning. The certificate does not
+contradict the impossibility theorem --- it relocates the burden into the validity of
+$\varepsilon$, which in practice is purchased with a labeled validation or calibration
+sample assumed exchangeable with deployment (the ``validation labels allowed'' sense of
+label-free fixed in Chapter~\ref{ch:formulation}; no \emph{target} labels are ever
+used). The paper is explicit that this residual assumption ``is not proved in full
+generality,'' and we preserve that honesty here. Second, the guarantee bounds the
+probability of the \emph{joint} event $\{\text{commit} \wedge \text{wrong sign}\}$; it
+is not a posterior statement of the form ``given that we adapted, the chance of harm is
+at most $\alpha$.'' Third, the certificate controls \emph{sign} errors, not magnitudes:
+by Theorem~\ref{thm:gate} the regret of a wrong commitment is $|\Delta|$, so the
+certificate's value concentrates exactly where $|\Delta|$ is large --- which is also
+where the interval clears zero soonest. Fourth, abstention is not free; its price is
+coverage, the benefit forgone when $\Delta>0$ but the interval straddles zero. The
+level $\alpha$ is the dial that trades these two costs, and we will see the trade
+measured on real tasks (Figure~\ref{fig:t2-alpha}).
+\end{remark}
+
+\section{The Finite-Sample Certificate}
+\label{sec:t2-cert}
+
+We now state the certificate theorem exactly as the paper does, and then expand its
+proof to full length.
+
+\begin{theorem}[Certificate]\label{thm:cert}
+Suppose a label-free estimator $\widehat\Delta(z)$ admits a radius $\varepsilon(z)$ with
+$\Pr[\,|\widehat\Delta(z)-\Delta(z)|\le \varepsilon(z)\,]\ge 1-\alpha$. Define
+\[
+\textsc{adapt}\ \text{if}\ \widehat\Delta-\varepsilon>0,\quad
+\textsc{freeze}\ \text{if}\ \widehat\Delta+\varepsilon<0,\quad
+\textsc{abstain}\ \text{otherwise.}
+\]
+Then $\Pr[\textsc{adapt}\wedge \Delta\le 0]\le\alpha$ and
+$\Pr[\textsc{freeze}\wedge \Delta\ge 0]\le\alpha$.
+\end{theorem}
+
+\begin{proof}
+Write $G:=\{\,|\widehat\Delta-\Delta|\le\varepsilon\,\}$ for the coverage event, so
+that $\Pr[G]\ge 1-\alpha$ by hypothesis, and let $G^c$ denote its complement, of
+probability at most $\alpha$. The argument is a containment of error events in $G^c$.
+
+\emph{False adapt.} Suppose the rule outputs \textsc{adapt} and the coverage event $G$
+holds. The decision \textsc{adapt} means $\widehat\Delta-\varepsilon>0$; the event $G$
+means $\Delta\ge\widehat\Delta-\varepsilon$. Chaining the two inequalities,
+\[
+\Delta\;\ge\;\widehat\Delta-\varepsilon\;>\;0 ,
+\]
+so on $G$ an \textsc{adapt} decision is necessarily correct: $\Delta>0$. Contrapositively,
+the false-adapt event $\{\textsc{adapt}\wedge\Delta\le0\}$ is disjoint from $G$, i.e.
+\[
+\{\textsc{adapt}\wedge\Delta\le0\}\;\subseteq\;G^c ,
+\qquad\text{hence}\qquad
+\Pr[\textsc{adapt}\wedge\Delta\le0]\;\le\;\Pr[G^c]\;\le\;\alpha .
+\]
+
+\emph{False freeze.} The argument is symmetric. On $G$ we also have
+$\Delta\le\widehat\Delta+\varepsilon$, and the decision \textsc{freeze} means
+$\widehat\Delta+\varepsilon<0$; chaining gives $\Delta<0$, so on $G$ a \textsc{freeze}
+decision is necessarily correct. Hence
+$\{\textsc{freeze}\wedge\Delta\ge0\}\subseteq G^c$ and its probability is at most
+$\alpha$.
+
+\emph{Abstention.} The third branch incurs no error event by construction: abstaining
+asserts nothing about $\sign\Delta$, so there is nothing to be wrong about. Its cost is
+accounted separately, as coverage. \qedhere
+\end{proof}
+
+\begin{remark}[One bad event covers both errors]
+\label{sec:t2-rem-union}
+Because both error events were shown to be subsets of the \emph{same} bad event $G^c$,
+the proof in fact yields the slightly stronger statement
+$\Pr[(\textsc{adapt}\wedge\Delta\le0)\,\cup\,(\textsc{freeze}\wedge\Delta\ge0)]\le\alpha$
+when the radius is two-sided as assumed: there is no need to spend $\alpha$ twice. The
+paper states the two one-sided bounds, which is the form the deployment guarantees
+quote, and we keep that convention.
+\end{remark}
+
+The theorem is short because it is an exercise in honest bookkeeping: every gram of
+statistical content lives in the premise, the validity of $(\widehat\Delta,\varepsilon)$.
+The rest of this section discharges that premise in the two ways the system actually
+uses --- a concentration-of-measure radius when $\widehat\Delta$ is a sample mean of
+bounded paired benefits, and a split-conformal radius when $\widehat\Delta$ is an
+arbitrary learned predictor of the benefit.
+
+\subsection{Discharging the Radius I: Empirical-Bernstein Concentration}
+\label{sec:t2-eb}
+
+The paper's first instantiation applies when $\Delta$ is a mean of bounded
+\emph{paired benefits}
+\[
+X_i \;=\; \ell(f_0(x_i),y_i)-\ell(f_a(x_i),y_i)\;\in\;[a,b]
+\]
+over a validated stress bank --- a calibration collection of conditions with held-out
+labels (validation labels, never target labels) on which both the frozen and the
+candidate model are evaluated. Then $\Delta=\E[X_i]$, the estimator
+$\widehat\Delta=\tfrac1n\sum_iX_i$ is a bounded sample mean, and a lower confidence
+bound on a bounded mean is a classical object. Two inequalities are relevant: the
+distribution-free Hoeffding bound, and the variance-adaptive empirical-Bernstein bound
+that the implementation uses.
+
+\begin{lemma}[Hoeffding lower confidence bound \cite{hoeffding1963probability}]
+\label{sec:t2-lem-hoeffding}
+Let $X_1,\dots,X_n$ be independent with values in $[a,b]$, mean $\mu$, sample mean
+$\widehat\mu$, and range $R=b-a$. For any $\alpha\in(0,1)$, with probability at least
+$1-\alpha$,
+\[
+\mu\;\ge\;\widehat\mu - R\,\sqrt{\frac{\log(1/\alpha)}{2n}} .
+\]
+\end{lemma}
+
+\begin{proof}
+By Hoeffding's lemma, a bounded centered variable satisfies
+$\E[e^{s(X_i-\mu)}]\le e^{s^2R^2/8}$ for all $s\in\R$. The Chernoff method applied to
+$-\sum_i(X_i-\mu)$ gives
+$\Pr[\widehat\mu-\mu\le -t]\le\exp(-2nt^2/R^2)$ for every $t>0$; setting the right side
+equal to $\alpha$ and solving for $t$ yields
+$t=R\sqrt{\log(1/\alpha)/(2n)}$, which is the displayed bound. \qedhere
+\end{proof}
+
+\begin{lemma}[Empirical-Bernstein lower confidence bound \cite{maurer2009empirical}]
+\label{sec:t2-lem-eb}
+Let $X_1,\dots,X_n$ ($n\ge2$) be i.i.d.\ with values in an interval of length $R=b-a$,
+mean $\mu$, sample mean $\widehat\mu$, and unbiased sample variance $\widehat V$. For
+any $\alpha\in(0,1)$, with probability at least $1-\alpha$,
+\[
+\mu\;\ge\;\widehat\mu
+\;-\;\sqrt{\frac{2\widehat V\,\log(2/\alpha)}{n}}
+\;-\;\frac{7R\,\log(2/\alpha)}{3(n-1)} .
+\]
+\end{lemma}
+
+\begin{proof}[Proof sketch]
+The result is Maurer and Pontil's empirical Bernstein bound, stated there for variables
+in $[0,1]$; applying it to the rescaled variables $(X_i-a)/R$ and multiplying through
+by $R$ gives the form above (the mean and radius scale by $R$, the variance by $R^2$).
+The argument has two halves, each run at level $\alpha/2$ and combined by a union
+bound. First, Bernstein's inequality with the \emph{true} variance $\sigma^2$ gives,
+with probability at least $1-\alpha/2$,
+$\mu\ge\widehat\mu-\sqrt{2\sigma^2\log(2/\alpha)/n}-R\log(2/\alpha)/(3n)$. Second, the
+sample standard deviation concentrates around the true one: a self-bounding
+concentration argument (the entropy method applied to the variance statistic) gives
+$\sigma\le\sqrt{\widehat V}+R\sqrt{2\log(2/\alpha)/(n-1)}$ with probability at least
+$1-\alpha/2$. Substituting the second display into the first and collecting the
+$1/n$- and $1/(n-1)$-order terms produces the stated constant $7/3$; the bookkeeping is
+exactly that of \cite{maurer2009empirical}. \qedhere
+\end{proof}
+
+Applying Lemma~\ref{sec:t2-lem-eb} to the paired benefits and to their negatives gives
+a two-sided radius
+\[
+\varepsilon_{\mathrm{EB}}
+\;=\;\sqrt{\frac{2\widehat V\,\log(2/\alpha)}{n}}
+\;+\;\frac{7(b-a)\,\log(2/\alpha)}{3(n-1)} ,
+\]
+which satisfies the premise of Theorem~\ref{thm:cert} whenever the paired benefits are
+independent or exchangeable draws from the deployment-relevant distribution. This is
+the certificate implemented in the repository's
+\texttt{switching\_certificate.py} and re-exported as
+\texttt{kga/certificate.py::empirical\_bernstein} \cite{kbound2026repo}; the
+implementation takes the range explicitly ($R=2$ for paired $|p-y|$ losses, since each
+loss lies in $[0,1]$), and returns an \emph{infinite} radius when $n<2$ --- a
+deliberate safety default under which the rule of Theorem~\ref{thm:cert} can only
+abstain. The paper's analytic statements use the streamlined radius
+$\varepsilon(n)=\sigma\sqrt{2\log(2/\alpha)/n}+3(b-a)\log(2/\alpha)/n$ with a variance
+proxy $\sigma^2$ in place of $\widehat V$; the two differ only in constants and in the
+empirical-versus-proxy variance, and we will use whichever form the quoted statement
+uses.
+
+\begin{remark}[Why empirical Bernstein, and why it is the right bound for this problem]
+\label{sec:t2-rem-variance}
+The Hoeffding radius scales with the \emph{range} $R$; the empirical-Bernstein radius
+scales, in its leading term, with the \emph{standard deviation}. For paired benefits
+this distinction is not a refinement but the essence of the problem. Under $0/1$ loss
+the per-sample benefit $\delta=\ind[f_0\neq Y]-\ind[f_a\neq Y]$ takes values in
+$\{-1,0,+1\}$ and vanishes identically off the disagreement region
+$D=\{x:f_0(x)\neq f_a(x)\}$ --- the two losses cancel wherever the models agree, a fact
+we exploit structurally in Section~\ref{sec:t2-disagree}. Consequently
+$\E[\delta^2]\le P_T(D)$ (with equality in the binary case, where exactly one model is
+correct on $D$), so the variance obeys $\mathrm{Var}(\delta)=\E[\delta^2]-\Delta^2\le P_T(D)$.
+The empirical-Bernstein leading term is therefore on the order of
+$\sqrt{2P_T(D)\log(2/\alpha)/n}$, while the Hoeffding radius is
+$2\sqrt{\log(1/\alpha)/(2n)}$ regardless: when the candidate adaptation touches only a
+small fraction of predictions --- the common case --- the variance-adaptive radius is
+smaller by a factor of order $\sqrt{P_T(D)}$. All of the certificate's statistical
+information is concentrated on the disagreement region, and the empirical-Bernstein
+bound is the concentration inequality that knows it.
+\end{remark}
+
+We restate the paper's own honesty note before moving on. The empirical-Bernstein
+radius is valid \emph{under independence or exchangeability of the calibrated benefit
+sample with deployment}; in the paper's words, this assumption ``is the residual burden
+and is not proved in full generality.'' Theorem~\ref{thm:cert} is proved; what remains
+an assumption is that the world supplies data satisfying its premise. Chapter~\ref{ch:kga}
+carries the same caveat into the algorithm's stated assumptions.
+
+\subsection{Mandatory Abstention and the Cost of Certainty}
+\label{sec:t2-forced}
+
+Two corollaries calibrate expectations about the certificate, in opposite directions.
+The first says that on genuinely unknowable evidence a valid certificate does not
+merely \emph{tend} to abstain --- it \emph{must}. The second quantifies how much
+calibration data the certificate needs before it can commit at all.
+
+\begin{corollary}[Forced abstention under matched evidence]
+\label{sec:t2-cor-abstain}
+Fix evidence $z$ in the unknowable two-point regime of Theorem~\ref{thm:imp}
+($\Law(Z\mid P_T^1)=\Law(Z\mid P_T^2)$, $\Delta^1<0<\Delta^2$). Any rule whose
+false-adapt and false-freeze probabilities are each at most $\alpha$ (e.g.\ the
+certificate of Theorem~\ref{thm:cert}) must abstain there with probability
+$\Pr[\textsc{abstain}\mid z]\ge 1-2\alpha$.
+\end{corollary}
+
+\begin{proof}
+A label-free rule observes only $Z$ (and independent internal randomness), so at the
+fixed evidence value $z$ its action distribution is a single triple
+$(q_a,q_f,1-q_a-q_f)$ --- the probabilities of \textsc{adapt}, \textsc{freeze}, and
+\textsc{abstain} --- and, crucially, this triple is \emph{the same} in both worlds,
+because the two evidence laws coincide. Now read the triple against each world in
+turn. In world~$1$ the benefit is negative ($\Delta^1<0$), so every \textsc{adapt} the
+rule emits at $z$ is a false adapt; the false-adapt constraint forces $q_a\le\alpha$.
+In world~$2$ the benefit is positive ($\Delta^2>0$), so every \textsc{freeze} is a
+false freeze; the false-freeze constraint forces $q_f\le\alpha$. The same $q_a$ and
+$q_f$ must satisfy both constraints simultaneously, since the rule cannot tell the
+worlds apart. Hence
+$\Pr[\textsc{abstain}\mid z]=1-q_a-q_f\ge1-2\alpha$. \qedhere
+\end{proof}
+
+The paper's gloss deserves repeating: this makes abstention \emph{mandatory, not merely
+conservative} --- on genuinely unknowable evidence a valid certificate cannot commit on
+more than a $2\alpha$ fraction of decisions. The corollary is also the precise sense in
+which the certificate and the impossibility theorem are two sides of one boundary: the
+same $\alpha$ that licenses commitment where evidence separates \emph{caps} commitment
+where it does not. Empirically, on the clean non-identifiability witness of
+Chapter~\ref{ch:exp1} --- a constructed matched-evidence pair --- \KGA\ abstains on
+$100\%$ of instances, while a rule forced to commit pays near-chance regret $0.51$;
+Corollary~\ref{sec:t2-cor-abstain} is the theorem that says it had no valid
+alternative.
+
+\begin{corollary}[Sample complexity of certification]
+\label{sec:t2-cor-n}
+Let $\widehat\Delta$ be a mean of $n$ bounded paired benefits in $[a,b]$ with variance
+proxy $\sigma^2$, and let
+$\varepsilon(n)=\sigma\sqrt{2\log(2/\alpha)/n}+\tfrac{3(b-a)\log(2/\alpha)}{n}$
+be the empirical-Bernstein radius of Theorem~\ref{thm:cert}. Then the certificate is
+non-abstaining (commits \textsc{adapt} or \textsc{freeze}) once
+\[
+n\;\gtrsim\;\frac{2\sigma^2}{\Delta^2}\,\log\frac{2}{\alpha}\;+\;\frac{3(b-a)}{|\Delta|}\,\log\frac{2}{\alpha}
+\;=\;O\!\Big(\tfrac{\sigma^2}{\Delta^2}\log\tfrac1\alpha\Big),
+\]
+so the unlabeled paired-benefit sample size needed to certify scales inversely with the
+squared benefit margin and logarithmically with the confidence level.
+\end{corollary}
+
+\begin{proof}
+The rule of Theorem~\ref{thm:cert} commits precisely when the interval clears zero,
+i.e.\ when $\varepsilon(n)<|\widehat\Delta|$; since $\widehat\Delta\to\Delta$, the
+asymptotically operative condition is $\varepsilon(n)<|\Delta|$. The radius is a sum of
+two decreasing terms, so (up to the constant absorbed in $\gtrsim$) it suffices to make
+each term smaller than $|\Delta|$. For the variance term,
+\[
+\sigma\sqrt{\frac{2\log(2/\alpha)}{n}}\;<\;|\Delta|
+\quad\Longleftrightarrow\quad
+n\;>\;\frac{2\sigma^2}{\Delta^2}\,\log\frac{2}{\alpha},
+\]
+which is the dominant requirement when $\sigma\gg|\Delta|$. Retaining the Bernstein
+$1/n$ term adds the second requirement
+$3(b-a)\log(2/\alpha)/n<|\Delta|$, i.e.\ $n>3(b-a)|\Delta|^{-1}\log(2/\alpha)$, the
+stated summand. The asymptotic form follows because the first term dominates whenever
+$\sigma^2/|\Delta|\gtrsim(b-a)$, which holds in the small-margin regime where the bound
+bites. \qedhere
+\end{proof}
+
+The corollary answers what the paper calls the reviewer question --- \emph{when does
+the certificate actually fire?} Certification is cheap where it matters most: large
+benefit margins (precisely the decisions whose regret content is large, by
+Theorem~\ref{thm:gate}) are certified from few samples, while margins near zero demand
+$n\sim\sigma^2/\Delta^2$ and below that threshold the rule abstains --- which, by
+Theorem~\ref{thm:gate} again, is exactly the band where committal regret is bounded by
+the small $|\Delta|$ itself. The prediction is directly visible in the batch-size
+ablation of Chapter~\ref{ch:exp1}: growing the test batch from $16$ to $256$ samples
+shrinks the radius from $0.44$ to $0.18$ and raises coverage from $2\%$ to $26\%$,
+the empirical shadow of the $n^{-1/2}$ term.
+
+\subsection{Discharging the Radius II: The Split-Conformal Variant}
+\label{sec:t2-conformal}
+
+The empirical-Bernstein route requires $\widehat\Delta$ to be a sample mean of bounded
+benefits. In the deployed system the benefit estimator is richer: \KGA\ trains a
+gradient-boosted regressor mapping the evidence vector $Z$ to a predicted benefit,
+leave-one-task-out across a bank of calibration tasks (Chapter~\ref{ch:kga}). For an
+arbitrary learned $\widehat\Delta$, concentration inequalities no longer apply --- but
+a conformal wrapper restores a finite-sample radius under a single exchangeability
+assumption, with no further conditions on the estimator
+\cite{vovk2005algorithmic,angelopoulos2023conformal}.
+
+\begin{proposition}[Split-conformal radius]
+\label{sec:t2-prop-conformal}
+Let $(\widehat\Delta_1,\Delta_1),\dots,(\widehat\Delta_n,\Delta_n)$ be calibration
+pairs and $(\widehat\Delta_{n+1},\Delta_{n+1})$ a deployment pair such that the
+residuals $r_i=|\widehat\Delta_i-\Delta_i|$, $i=1,\dots,n+1$, are exchangeable. Let
+$\varepsilon$ be the $\lceil(1-\alpha)(n+1)\rceil$-th smallest of $r_1,\dots,r_n$
+(setting $\varepsilon=+\infty$ if $\lceil(1-\alpha)(n+1)\rceil>n$). Then
+\[
+\Pr\bigl[\,|\widehat\Delta_{n+1}-\Delta_{n+1}|\le\varepsilon\,\bigr]\;\ge\;1-\alpha ,
+\]
+so the rule of Theorem~\ref{thm:cert}, run with $(\widehat\Delta_{n+1},\varepsilon)$,
+has false-adapt and false-freeze probabilities at most $\alpha$.
+\end{proposition}
+
+\begin{proof}
+Set $k=\lceil(1-\alpha)(n+1)\rceil$ and let $r_{(1)}\le\dots\le r_{(n)}$ denote the
+ordered calibration residuals, so $\varepsilon=r_{(k)}$ when $k\le n$. By
+exchangeability of $(r_1,\dots,r_{n+1})$, the rank of $r_{n+1}$ within the full set of
+$n+1$ residuals is stochastically dominated by the uniform distribution on
+$\{1,\dots,n+1\}$ (uniform under almost-sure distinctness; ties only push the rank
+down, which helps). The event $r_{n+1}\le r_{(k)}$ contains the event that the rank of
+$r_{n+1}$ is at most $k$, whence
+\[
+\Pr\bigl[r_{n+1}\le r_{(k)}\bigr]\;\ge\;\frac{k}{n+1}
+\;=\;\frac{\lceil(1-\alpha)(n+1)\rceil}{n+1}\;\ge\;1-\alpha .
+\]
+If $k>n$ the radius is infinite and the coverage statement is trivial. The premise of
+Theorem~\ref{thm:cert} is thus satisfied at level $\alpha$ for the deployment pair, and
+its conclusion follows. \qedhere
+\end{proof}
+
+The guarantee is marginal over the calibration draw --- the standard split-conformal
+semantics \cite{angelopoulos2023conformal} --- which matches exactly the marginal
+reading of Theorem~\ref{thm:cert} discussed in Remark~\ref{sec:t2-rem-meaning}. Two
+implementation notes keep the record straight. First, the experiments use the empirical
+$(1-\alpha)$-quantile of leave-one-task-out residuals
+(\texttt{kga/certificate.py::conformal\_split}, mirroring the knowability and
+mixed-regime experiment scripts \cite{kbound2026repo}); this differs from the
+$\lceil(1-\alpha)(n+1)\rceil$ order statistic by an index shift of order $1/n$, the
+usual practical simplification. Second, the exchangeability here is \emph{across
+tasks}: the calibration bank of tasks and the deployment task are assumed exchangeable.
+The paper lists this as a standing limitation, and Chapter~\ref{ch:exp1} probes it
+empirically rather than assuming it away. Altogether the repository ships four
+interchangeable radius constructions behind one interface --- empirical-Bernstein,
+Hoeffding, split-conformal, and the anytime e-value process of the next section ---
+all pure \texttt{numpy} and deterministic \cite{kbound2026repo}.
+
+\begin{figure}[t]\centering
+\includegraphics[width=0.78\textwidth]{fig_certificate.png}
+\caption{The batch certificate on the 123-task anomaly-routing suite
+(Chapter~\ref{ch:exp1}). Each point is one task: label-free estimated benefit
+$\widehat\Delta(Z)$ (horizontal) against the oracle true benefit (vertical), with the
+split-conformal band $\pm0.049$ at $\alpha=0.1$ shaded around the ideal diagonal.
+Green points are certified \textsc{adapt}, red \textsc{freeze}, grey \textsc{abstain}:
+commitments concentrate where the certified interval clears zero, and abstentions
+cluster in the near-zero-benefit band where Theorem~\ref{thm:gate} prices commitment
+errors as cheap but Theorem~\ref{thm:cert} declines to make them.}
+\label{fig:t2-certificate}
+\end{figure}
+
+\begin{figure}[t]\centering
+\includegraphics[width=0.55\textwidth]{fig_false_adapt.png}
+\caption{Suppression of harmful adaptation on the 123-task suite (produced by the
+knowability experiment of Chapter~\ref{ch:exp1}; same data as
+Figure~\ref{fig:t2-certificate}). Each bar is the fraction of adaptation decisions
+whose true benefit was negative: adapting always inherits the suite's harmful base
+rate $0.358$; a naive validation-threshold rule false-adapts on $0.180$ of its
+commitments; the certificate trichotomy on $0.100$ --- the complement of its $0.90$
+adapt precision, in line with its calibrated level $\alpha=0.1$.}
+\label{fig:t2-false-adapt}
+\end{figure}
+
+Figures~\ref{fig:t2-certificate} and~\ref{fig:t2-false-adapt} show the certificate
+doing on real tasks what the theorem promises on paper. On the 123-task suite the
+conformal band has half-width $0.049$; tasks whose interval clears zero are committed,
+and the adapt precision is $0.90$ there and $0.935$ in the controlled mixed regime ---
+in the latter, an observed false-adapt rate of $0.065$ against the budget
+$\alpha=0.1$. The bar chart makes the comparative point on the same 123 tasks: an
+uncertified always-adapt policy inherits the suite's $35.8\%$ harmful base rate, a
+naive validation threshold false-adapts on $18.0\%$ of its commitments, and the
+trichotomy holds the line at $10.0\%$ --- the level it was asked to hold.
+
+\section{The Anytime-Valid Certificate: Testing by Betting}
+\label{sec:t2-evalue}
+
+Theorem~\ref{thm:cert} fixes the sample size $n$ in advance. Streaming test-time
+adaptation does not: evidence arrives one batch at a time, the system looks at the
+accumulating benefit sample after every batch, and it wants to commit \emph{the moment}
+the evidence suffices --- without scheduling $n$ beforehand and without paying a
+multiple-testing tax for the repeated looks. Classical fixed-$n$ confidence intervals
+are unsound under this regime: stopping the first time a fixed-$n$ interval clears zero
+inflates the error probability well above $\alpha$, because the analyst's stopping rule
+correlates with the noise. What is needed is a certificate whose guarantee holds
+\emph{simultaneously over all stopping times}. The paper supplies one in its appendix,
+via the modern theory of safe anytime-valid inference
+\cite{ramdas2023gametheoretic,howard2021timeuniform,grunwald2024safe}, in the
+testing-by-betting form popularized by Shafer \cite{shafer2019game} with the betting
+strategies of Waudby-Smith and Ramdas \cite{waudbysmith2024betting}.
+
+\subsection{Wealth, Supermartingales, and Ville's Inequality}
+\label{sec:t2-betting}
+
+Testing by betting replaces the $p$-value with a gambler's wealth. To test the null
+hypothesis $H_0:\Delta\le0$ (``adapting does not help''), imagine a skeptic who starts
+with capital $1$ and, before each benefit observation $X_t$, stakes a fraction of
+current wealth on the proposition that the benefits are drifting positive. If the bet
+at round $t$ is $\lambda_t\ge0$, the wealth multiplies by $(1+\lambda_tX_t)$: it grows
+when $X_t>0$, shrinks when $X_t<0$. Under the null, every such bet is fair or
+unfavorable --- the conditional expected multiplier is
+$1+\lambda_t\E[X_t\mid\mathcal F_{t-1}]\le1$ --- so no betting system can be expected
+to multiply the skeptic's capital. Large realized wealth is therefore quantitative
+evidence against the null: wealth $E^+_t\ge1/\alpha$ is the event that a gambler
+playing a fair-or-losing game has multiplied capital ten-fold (at $\alpha=0.1$), and
+the probability that this \emph{ever} happens is at most $\alpha$. The wealth process
+is an \emph{e-process} --- a nonnegative process whose value at any stopping time has
+expectation at most one under the null \cite{grunwald2024safe,ramdas2023gametheoretic}
+--- and the ``ever'' quantifier is exactly what frees the certificate from fixed-$n$
+scheduling. The inequality that delivers the quantifier is Ville's
+\cite{ville1939etude}.
+
+\begin{lemma}[Ville's inequality \cite{ville1939etude}]
+\label{sec:t2-lem-ville}
+Let $(M_t)_{t\ge0}$ be a nonnegative supermartingale with respect to a filtration
+$(\mathcal F_t)$, with $\E[M_0]\le1$. Then for any $u\ge1$,
+\[
+\Pr\Bigl[\,\exists\,t\ge0:\;M_t\ge u\,\Bigr]\;\le\;\frac{1}{u} .
+\]
+\end{lemma}
+
+\begin{proof}
+Let $\tau:=\inf\{t\ge0:M_t\ge u\}$, a stopping time. Fix a horizon $T$; then
+$\tau\wedge T$ is a bounded stopping time, and the optional stopping theorem for
+nonnegative supermartingales gives $\E[M_{\tau\wedge T}]\le\E[M_0]\le1$. On the event
+$\{\tau\le T\}$ we have $M_{\tau\wedge T}=M_\tau\ge u$, while on its complement
+$M_{\tau\wedge T}\ge0$; hence
+\[
+1\;\ge\;\E[M_{\tau\wedge T}]\;\ge\;u\,\Pr[\tau\le T] ,
+\qquad\text{so}\qquad \Pr[\tau\le T]\;\le\;\frac1u .
+\]
+Letting $T\to\infty$ and using continuity from below,
+$\Pr[\tau<\infty]\le1/u$, which is the claim. \qedhere
+\end{proof}
+
+Markov's inequality bounds $\Pr[M_t\ge u]$ at one preselected $t$; Ville's inequality
+bounds the supremum over the whole trajectory at no extra cost. That uniformity over
+time is the entire content of ``anytime-valid'': the guarantee survives optional
+stopping, optional continuation, and continuous monitoring
+\cite{howard2021timeuniform}.
+
+\subsection{The Anytime Certificate}
+\label{sec:t2-evalue-thm}
+
+We state the theorem as the paper's appendix does. Two wealth processes run in
+parallel: $E^+_t$ bets that the mean benefit is positive (its growth rejects
+$H_0:\Delta\le0$ and certifies \textsc{adapt}), and $E^-_t$ bets that it is negative
+(its growth rejects $H_0':\Delta\ge0$ and certifies \textsc{freeze}); while neither has
+grown past $1/\alpha$, the system abstains --- which in the streaming reading means
+``keep sampling.''
+
+\begin{theorem}[Anytime-valid adapt/freeze/abstain certificate]
+\label{thm:evalue}
+Let paired benefits $X_i=\ell(f_0(x_i),y_i)-\ell(f_a(x_i),y_i)\in[a,b]$ ($a<0<b$) be
+adapted to $(\mathcal F_t)$ with $\E[X_t\mid\mathcal F_{t-1}]=\Delta$. With predictable
+bets $\lambda_t\in[0,c/(-a)]$, $\nu_t\in[0,c/b]$, $c\in(0,1)$, set
+$E_t^{+}=\prod_{i\le t}(1+\lambda_i X_i)$ and $E_t^{-}=\prod_{i\le t}(1-\nu_i X_i)$.
+Decide \textsc{adapt} the first time $E_t^{+}\ge1/\alpha$, \textsc{freeze} the first time
+$E_t^{-}\ge1/\alpha$, else \textsc{abstain}. Then simultaneously over all $t$,
+$\Pr[\exists t: E_t^{+}\ge1/\alpha \wedge \Delta\le0]\le\alpha$ and
+$\Pr[\exists t: E_t^{-}\ge1/\alpha \wedge \Delta\ge0]\le\alpha$.
+\end{theorem}
+
+\begin{proof}
+We prove the \textsc{adapt} direction in full; the \textsc{freeze} direction is its
+mirror image.
+
+\emph{Step 1: the wealth stays positive.} Each factor of $E^+_t$ is
+$1+\lambda_iX_i$ with $\lambda_i\ge0$ and $X_i\ge a$, so the worst case is $X_i=a<0$,
+where the factor is at least $1+\lambda_ia\ge1+\tfrac{c}{-a}\,a=1-c>0$ by the bet cap.
+A product of strictly positive factors is strictly positive, so $E^+_t>0$ for all $t$;
+in particular $E^+_t$ is a legitimate candidate for Lemma~\ref{sec:t2-lem-ville}.
+
+\emph{Step 2: under the null, the wealth is a supermartingale.} Fix any distribution in
+$H_0$, i.e.\ with $\Delta\le0$. Because $\lambda_t$ is \emph{predictable} --- it is
+$\mathcal F_{t-1}$-measurable, a function of the past only --- it factors out of the
+conditional expectation:
+\[
+\E\bigl[E^+_t\,\big|\,\mathcal F_{t-1}\bigr]
+=E^+_{t-1}\,\E\bigl[1+\lambda_tX_t\,\big|\,\mathcal F_{t-1}\bigr]
+=E^+_{t-1}\,\bigl(1+\lambda_t\,\E[X_t\mid\mathcal F_{t-1}]\bigr)
+=E^+_{t-1}\,(1+\lambda_t\Delta)
+\;\le\;E^+_{t-1},
+\]
+since $\lambda_t\ge0$ and $\Delta\le0$ make the multiplier at most one. With
+$E^+_0=1$, the process $(E^+_t)$ is a nonnegative supermartingale with unit initial
+value under every null distribution.
+
+\emph{Step 3: Ville closes the bound.} Lemma~\ref{sec:t2-lem-ville} with $u=1/\alpha$
+gives, under every $\Delta\le0$,
+\[
+\Pr\bigl[\exists t:\,E^+_t\ge1/\alpha\bigr]\;\le\;\alpha .
+\]
+The false-adapt event $\{\exists t:E^+_t\ge1/\alpha\wedge\Delta\le0\}$ is exactly this
+crossing event evaluated under a null distribution, so its probability is at most
+$\alpha$ --- uniformly over all stopping times, since the bound already quantifies over
+the whole trajectory.
+
+\emph{The freeze direction.} The process $E^-_t=\prod_{i\le t}(1-\nu_iX_i)$ has factors
+$1-\nu_iX_i$ with $\nu_i\in[0,c/b]$; the worst case is now $X_i=b>0$, where the factor
+is at least $1-\nu_ib\ge1-c>0$, so $E^-_t>0$. Under $H_0':\Delta\ge0$, predictability
+of $\nu_t$ gives
+$\E[E^-_t\mid\mathcal F_{t-1}]=E^-_{t-1}(1-\nu_t\Delta)\le E^-_{t-1}$, and Ville's
+inequality bounds the crossing probability by $\alpha$ exactly as before. \qedhere
+\end{proof}
+
+\begin{remark}[Validity is free; power is bought by the bet]
+\label{sec:t2-rem-bets}
+Nothing in the proof used the \emph{values} of the bets beyond nonnegativity,
+predictability, and the cap --- any such betting sequence yields a valid certificate.
+The specific bets govern power and stopping time. The implementation uses a truncated
+growth-optimal (aGRAPA-style) plug-in
+\[
+\lambda_t=\mathrm{clip}\Bigl(\widehat\mu_{t-1}\,/\,\widehat\sigma^2_{t-1},\;0,\;c/(-a)\Bigr),
+\]
+the running-mean-over-running-second-moment approximation to the log-optimal bet
+$\lambda^\star=\Delta/\E[X^2]$ \cite{waudbysmith2024betting}, with a small prior
+stabilizing the early variance estimate; the symmetric rule drives $\nu_t$. This
+separation --- validity from the supermartingale property, power from the betting
+strategy --- is the signature design freedom of game-theoretic statistics
+\cite{shafer2019game,ramdas2023gametheoretic}. The anytime certificate
+\emph{complements} rather than replaces the batch certificate: at a pre-fixed $n$ the
+empirical-Bernstein interval is tighter, while the e-process is valid at any stopping
+time; the paper states exactly this trade.
+\end{remark}
+
+\subsection{The Validator: Measured Anytime Error and Power}
+\label{sec:t2-evalue-validation}
+
+Theorem~\ref{thm:evalue} ships with a machine-checked numerical validator,
+\texttt{experiments/kbound/theory\_validation/val\_thm3\_evalue.py}
+\cite{kbound2026repo}, which runs the betting certificate over $20{,}000$ independent
+streams per configuration (horizon $2000$, $\alpha=0.1$, bet cap $c=0.5$, seed $0$) and
+three bounded benefit distributions chosen to stress different shapes within
+$[a,b]=[-1,1]$: a two-point distribution massing on the endpoints (the worst case for
+the positivity argument), a smooth Beta-shaped law, and a clipped Gaussian. It measures
+the \emph{anytime} false-adapt rate --- the fraction of null streams in which $E^+_t$
+\emph{ever} crosses $1/\alpha$ within the horizon --- together with detection power and
+stopping times under alternatives. Table~\ref{sec:t2-tab-evalue} reproduces the
+machine-readable results file.
+
+\begin{table}[t]\centering\small
+\begin{tabular}{lcccccc}
+\toprule
+& \multicolumn{3}{c}{anytime false-adapt ($H_0:\Delta\le0$)}
+& \multicolumn{3}{c}{power / mean stop ($H_1:\Delta>0$)}\\
+\cmidrule(lr){2-4}\cmidrule(lr){5-7}
+stream & $\Delta=-0.20$ & $\Delta=-0.05$ & $\Delta=0$
+& $\Delta=0.05$ & $\Delta=0.10$ & $\Delta=0.40$\\
+\midrule
+two-point        & $0.00505$ & $0.0268$  & $0.0626$ & $0.375\,/\,810$ & $0.948\,/\,676$ & $1.000\,/\,39$\\
+Beta             & $0.0000$  & $0.0038$  & $0.0584$ & $0.988\,/\,521$ & $1.000\,/\,127$ & $1.000\,/\,16$\\
+clipped Gaussian & $0.0000$  & $0.00465$ & $0.0559$ & $0.976\,/\,588$ & $1.000\,/\,148$ & $1.000\,/\,17$\\
+\bottomrule
+\end{tabular}
+\caption{Anytime-valid certificate validation, exactly as recorded in
+\texttt{experiments/kbound/theory\_validation/val\_thm3\_evalue\_results.json}
+($\alpha=0.1$, wealth threshold $1/\alpha=10$, horizon $2000$, $20{,}000$ Monte Carlo
+runs per cell, seed $0$, bet cap $c=0.5$; power rounded to three decimals, mean
+stopping times to integers). The worst-case anytime false-adapt rate across all nine
+null settings is $0.0626\le\alpha=0.1$; the results file's verdict field records
+\texttt{controlled:\,true}.}
+\label{sec:t2-tab-evalue}
+\end{table}
+
+Three features of the table are worth reading off. First, the headline: the worst-case
+anytime false-adapt rate over every null configuration is $\mathbf{0.0626}$, against
+the budget $\alpha=0.1$ --- the guarantee of Theorem~\ref{thm:evalue} holds with room
+to spare, and the worst case occurs exactly where theory says it must, at the boundary
+$\Delta=0$ of the null (rates collapse to $0.00505$ and below by $\Delta=-0.20$). The
+paper's appendix additionally records a run at $\alpha=0.05$ with anytime false-adapt
+$0.032\le0.05$. The slack between $0.0626$ and $0.1$ is the familiar conservatism of
+time-uniform bounds: the certificate pays for validity at \emph{every} stopping time,
+and the plug-in bet is not the oracle log-optimal one. Second, the supermartingale
+property itself is checked directly: at $\Delta=0$ the Monte Carlo mean of $E^+_t$
+stays at or below $1$ (within three standard errors) at every recorded time
+$t\in\{1,5,25,100,500,2000\}$ for all three streams --- the results file flags
+\texttt{all\_leq\_one\_within\_3sem:\,true} in each case. Third, power behaves as a
+sequential test should: it rises to $1$ as the margin grows, and the mean stopping time
+falls steeply --- from roughly $810$ samples at $\Delta=0.05$ (two-point stream) to
+$16$--$39$ samples at $\Delta=0.40$. Large benefits are certified almost immediately;
+marginal ones take evidence; null ones, with probability at least $1-\alpha$, are never
+falsely certified no matter how long the system watches.
+
+\begin{remark}[Bounded non-stationarity]
+\label{sec:t2-rem-drift}
+The constant-mean premise $\E[X_t\mid\mathcal F_{t-1}]=\Delta$ can be relaxed. The
+paper's theory-extensions section proves a $\beta$-bounded-drift variant: if the
+conditional mean wanders within $\pm\beta$ of $\Delta$, dividing the wealth by
+$\prod_{i\le t}(1+\lambda_i\beta)$ restores the supermartingale property under the
+null, at the price of an inflated decision threshold
+$(1/\alpha)\prod_{i\le t}(1+\lambda_i\beta)\le\exp(\beta\sum_{i\le t}\lambda_i)$.
+Its validator (\texttt{val\_thm9prime\_drift.py} \cite{kbound2026repo}) reports that
+under worst-case upward drift the corrected certificate holds the anytime false-adapt
+rate at $0.05/0.04/0.01$ for $\beta=0.1/0.2/0.4$ --- all within $\alpha=0.1$ --- while
+the uncorrected threshold's rate inflates to $0.69$ and beyond, confirming both that
+the correction works and that it is needed.
+\end{remark}
+
+\begin{figure}[t]\centering
+\includegraphics[width=0.6\textwidth]{fig_alpha_coverage.png}
+\caption{The level $\alpha$ as the safety--coverage dial, measured on the
+anomaly-routing benchmark of Chapter~\ref{ch:exp1} with the split-conformal batch
+certificate: $\alpha=0.01$ yields a $0\%$ observed false-adapt rate at $11\%$ coverage;
+$\alpha=0.1$ yields $0.065$ at $35\%$ coverage; $\alpha=0.2$ yields $0.072$ at $49\%$
+coverage. The $\alpha=0.05$ point sits at $0.073$, slightly above its nominal budget
+--- an honest finite-sample fluctuation on $369$ instances under approximate cross-task
+exchangeability, and a reminder that the guarantee is marginal, not per-configuration.}
+\label{fig:t2-alpha}
+\end{figure}
+
+Both certificates --- batch and anytime --- expose the same single dial, the level
+$\alpha$, and Figure~\ref{fig:t2-alpha} shows what the dial buys on real tasks.
+Tightening $\alpha$ to $0.01$ drives observed false adaptation to zero at the cost of
+committing on only $11\%$ of decisions; loosening it to $0.2$ roughly quadruples
+coverage while the observed false-adapt rate stays near $0.07$. The certificate makes
+the safety--coverage trade explicit and tunable, rather than implicit in a mechanism's
+hyperparameters.
+
+\section{A Provably Knowable Regime: Covariate Shift}
+\label{sec:t2-pos}
+
+The impossibility theorem and the certificate bracket the problem from both sides, but
+neither yet exhibits a natural class of shifts on which the label-free decision is
+\emph{provably} available. The paper's fourth result identifies one: covariate shift.
+The motivating picture is a new scanner --- image statistics change, disease prevalence
+and the disease-given-image relationship do not. Under that premise, reweighting
+labeled \emph{source} data by the density ratio of the two covariate laws reconstructs
+every target risk, and with it the benefit and its sign.
+
+\begin{theorem}[Covariate-shift identifiability]
+\label{thm:pos}
+Assume covariate shift $P_S(Y\mid X)=P_T(Y\mid X)$, and a density ratio
+$r(x)=p_T(x)/p_S(x)$ that is bounded ($r\le B<\infty$) with $\E_S[r(X)^2]<\infty$.
+Then $R_T(f)=\E_S[r(X)\,\ell(f(X),Y)]$, the importance-weighted estimator
+$\widehat R_T(f)=\tfrac1n\sum_i r(x_i)\ell(f(x_i),y_i)$ is unbiased and consistent, and
+hence $\Delta$ and $\sign\Delta$ are identifiable from labeled source plus unlabeled
+target whenever $|\Delta|>0$.
+\end{theorem}
+
+\begin{proof}
+\emph{Change of measure.} Write the target risk as an integral over the target joint
+and factor the joint through the covariate-shift premise:
+\[
+R_T(f)=\E_{P_T}\bigl[\ell(f(X),Y)\bigr]
+=\!\int\!\!\int \ell(f(x),y)\,p_T(y\mid x)\,p_T(x)\,dy\,dx
+=\!\int\!\!\int \ell(f(x),y)\,p_S(y\mid x)\,\frac{p_T(x)}{p_S(x)}\,p_S(x)\,dy\,dx ,
+\]
+where the second equality substitutes $p_T(y\mid x)=p_S(y\mid x)$ (the premise) and
+multiplies and divides by $p_S(x)$; boundedness of $r$ ensures the manipulation is
+legitimate wherever $p_S$ has mass, and the target law places no mass where $p_S$
+vanishes (else $r$ would be unbounded). The right-hand side is
+$\E_S[r(X)\,\ell(f(X),Y)]$, the first claim.
+
+\emph{Unbiasedness and consistency.} Unbiasedness of $\widehat R_T(f)$ is immediate
+from the identity just proved, since each summand $r(x_i)\ell(f(x_i),y_i)$ has
+source-expectation $R_T(f)$. For consistency, the summands are i.i.d.\ with finite
+second moment: with $\ell$ bounded in $[0,1]$,
+$\E_S[(r\,\ell)^2]\le\E_S[r^2]<\infty$, so the strong law of large numbers gives
+$\widehat R_T(f)\to R_T(f)$ almost surely, with variance
+$\mathrm{Var}(\widehat R_T(f))\le\E_S[r^2]/n=O(1/n)$.
+
+\emph{Sign identifiability.} Apply the estimator to both models and difference:
+$\widehat\Delta=\widehat R_T(f_0)-\widehat R_T(f_a)
+=\tfrac1n\sum_ir(x_i)\bigl(\ell(f_0(x_i),y_i)-\ell(f_a(x_i),y_i)\bigr)$ is unbiased
+and consistent for $\Delta$ by linearity. If $|\Delta|>0$, then almost surely
+$\sign\widehat\Delta=\sign\Delta$ for all large $n$, so the sign --- and indeed the
+value --- of the benefit is identified from labeled source data plus the unlabeled
+target sample needed to estimate $r$. \qedhere
+\end{proof}
+
+\paragraph{Why this escapes the impossibility theorem.}
+It is worth dwelling on \emph{where} the witness of Theorem~\ref{thm:imp} dies under
+the covariate-shift premise, because the mechanism is the template for every positive
+result in this theory. The witness constructed two worlds agreeing on $P_T(X)$ and
+differing only in $P_T(Y\mid X)$ --- the one coordinate of the target joint that
+label-free evidence cannot see. Covariate shift removes exactly that degree of freedom:
+it pins $P_T(Y\mid X)$ to $P_S(Y\mid X)$, an object estimable from \emph{labeled
+source} data. The accessible data then determine the entire target joint,
+$p_T(x,y)=p_T(x)\,p_S(y\mid x)$, with $p_T(x)$ read off the unlabeled target stream and
+$p_S(y\mid x)$ off the source. The evidence has become \emph{sufficient} for $\Delta$.
+Equivalently: the two witness worlds have different conditionals, so at most one of
+them can satisfy the covariate-shift premise with respect to any fixed source ---
+inside the assumption class, matched-evidence pairs with opposite benefit simply do not
+exist. Identifiability results of this shape are the classical core of the
+covariate-shift literature \cite{shimodaira2000improving,sugiyama2007covariate,
+quinonero2009dataset}; the delta here is only the target of inference, the \emph{sign
+of a risk difference} rather than a risk.
+
+\paragraph{The price: weight boundedness and effective sample size.}
+The premise buys identifiability; the moment conditions buy a usable certificate. The
+weighted paired benefits $r(x_i)\bigl(\ell(f_0)-\ell(f_a)\bigr)$ are bounded in
+$[-B,B]$ when $r\le B$, so they can be fed directly to the empirical-Bernstein
+certificate of Section~\ref{sec:t2-eb}, and the radius inherits the weight
+distribution's second moment. Since $\E_S[r]=1$, the variance inflation relative to
+unweighted estimation is governed by $\E_S[r^2]\ge1$, with equality only under no
+shift; the corresponding \emph{effective sample size} is $n/\E_S[r^2]$ (empirically,
+$(\sum_iw_i)^2/\sum_iw_i^2$), and the certificate radius scales like
+$\sqrt{\E_S[r^2]/n}$. Heavy-tailed weights therefore do not silently corrupt the
+decision --- they \emph{visibly inflate the radius}, and the certificate responds by
+abstaining or freezing. This is not a hypothetical failure mode: in the regression
+covariate-shift experiment of Chapter~\ref{ch:exp1}, a $4\sigma$ shift makes the
+importance-weighted candidate \emph{hurt} on $79\%$ of instances through sheer weight
+variance, and \KGA\ refuses it wholesale ($0$ adapt, $11$ freeze, $61$ abstain),
+matching the oracle's mean squared error of $0.251$ while always-adapt degrades to
+$0.338$. Identifiability in principle and certifiability at a given $n$ are different
+currencies, and the certificate trades only in the second.
+
+\paragraph{The caveat that keeps the theorem honest.}
+The paper attaches a caveat tying the result back to Theorem~\ref{thm:imp}, and it is
+load-bearing: the premise $P_S(Y\mid X)=P_T(Y\mid X)$ is \emph{not} testable from
+unlabeled data; when it fails, the regime can re-enter the unknowable region. Covariate
+shift is an assumption about precisely the coordinate that label-free evidence cannot
+observe, so adopting it is an act of modeling, not of inference. The knowability
+hierarchy of Table~\ref{sec:t2-tab-shift} situates this regime among its neighbors:
+label shift is similarly identifiable under its own structural premises (stable
+class-conditionals and an invertible confusion matrix, the BBSE conditions
+\cite{lipton2018detecting}); concept shift --- a change in $P(Y\mid X)$ itself --- is
+non-identifiable and lands back in Theorem~\ref{thm:imp}; and the mixed or unknown case
+is exactly where the certify-or-abstain machinery of this chapter operates.
+
+\begin{table}[t]\centering\small
+\begin{tabular}{lll}
+\toprule
+Shift type & Label-free status & Mechanism / theorem \\
+\midrule
+Covariate ($P(Y\!\mid\!X)$ fixed) & identifiable & importance weighting (Thm~\ref{thm:pos}) \\
+Label / prior ($P(Y)$) & identifiable$^\dagger$ & stable class-conditionals, invertible confusion ($^\dagger$BBSE-type) \\
+Disagreement-local & ordinal-identifiable & sign $=$ accuracy gap on $D$ (Thms~\ref{thm:disagree}--\ref{thm:disagree-reg}) \\
+Concept ($P(Y\!\mid\!X)$ changes) & non-identifiable & re-enters Thm~\ref{thm:imp} \\
+Mixed / unknown & certify-or-abstain & commit where $Z$ separates, else abstain \\
+\bottomrule
+\end{tabular}
+\caption{Knowability hierarchy of distribution shifts for label-free adapt/freeze
+decisions, as drawn in the paper. The boundary is evidence-identifiability: some shifts
+are knowable, some are not, and a valid certificate abstains across the boundary. The
+label-shift row follows the black-box shift estimation conditions of
+\cite{lipton2018detecting}.}
+\label{sec:t2-tab-shift}
+\end{table}
+
+\section{The Disagreement Region: Where the Sign of Benefit Lives}
+\label{sec:t2-disagree}
+
+The covariate-shift result buys identifiability with a global assumption on the shift.
+The fifth result of the theory takes the opposite route: no assumption on the shift at
+all, but a sharper look at \emph{where} in input space the decision is actually
+decided. The observation is elementary and, once made, structural. Wherever the frozen
+and candidate models agree, their losses are identical and the per-sample benefit is
+exactly zero --- those points contribute \emph{nothing} to $\Delta$, under any label
+law whatsoever. The entire benefit, sign and magnitude alike, is carried by the
+\emph{disagreement region}
+\[
+D \;=\; \{x : f_0(x)\neq f_a(x)\},
+\]
+and $D$ is \emph{observable}: membership requires evaluating two known functions, no
+labels. Restricted to $D$, the question ``does adapting help?'' collapses to an
+above-chance check --- is the candidate right more often than the incumbent on the
+points where they differ? --- which is an \emph{ordinal} comparison, not a risk
+estimate.
+
+\begin{theorem}[Sign-of-difference identifiability on the disagreement region; binary case]
+\label{thm:disagree}
+Let $Y\in\{0,1\}$ with $0/1$ loss, and let $D=\{x: f_0(x)\neq f_a(x)\}$ be the
+\emph{disagreement region} (observable, since $f_0,f_a$ are known maps of $X$). Then
+\[
+\Delta \;=\; P_T(D)\,\bigl(2\,a_a^D-1\bigr),\qquad a_a^D:=P_T\!\left(f_a(X)=Y \mid X\in D\right),
+\]
+so $\sign\Delta=\sign\!\left(a_a^D-\tfrac12\right)$. Consequently $\sign\Delta$ is
+identifiable from label-free evidence \emph{if and only if} the evidence determines
+whether $f_a$ exceeds chance accuracy on $D$; in particular, if a label-free
+reliability signal brackets $a_a^D$ relative to $\tfrac12$, the sign is certified.
+\end{theorem}
+
+\begin{proof}
+Let $\delta(x,y)=\ell(f_0(x),y)-\ell(f_a(x),y)=\ind[f_0(x)\neq y]-\ind[f_a(x)\neq y]$
+denote the per-sample benefit, so that $\Delta=\E_{P_T}[\delta]$.
+
+\emph{Off $D$, the benefit vanishes identically.} If $x\notin D$ then
+$f_0(x)=f_a(x)$, so the two indicators coincide for every $y$ and $\delta(x,y)=0$
+pointwise --- not merely in expectation, but for each realization of the label.
+
+\emph{On $D$, the benefit is a fair-coin score for $f_a$.} If $x\in D$ the two
+predictions differ, and since $Y$ is binary, exactly one of $f_0(x),f_a(x)$ equals
+$y$. If $f_a(x)=y$ then $f_0(x)\neq y$, so $\delta=1-0=+1$; if $f_0(x)=y$ then
+$\delta=0-1=-1$. Hence, conditionally on $D$, $\delta$ is a $\pm1$ variable equal to
+$+1$ with probability $a_a^D$, and
+\[
+\E[\delta\mid D]
+=P_T(f_a{=}Y\mid D)-P_T(f_0{=}Y\mid D)
+=a_a^D-\bigl(1-a_a^D\bigr)
+=2a_a^D-1 ,
+\]
+using that on $D$ the two correctness events are complementary,
+$P_T(f_0{=}Y\mid D)=1-a_a^D$.
+
+\emph{Total expectation.} Splitting $\Delta$ over the partition $\{D,D^c\}$ and using
+$\delta\equiv0$ off $D$,
+\[
+\Delta=\E\bigl[\delta\,\ind\{X\in D\}\bigr]+\E\bigl[\delta\,\ind\{X\notin D\}\bigr]
+=P_T(D)\,\E[\delta\mid D]
+=P_T(D)\,(2a_a^D-1).
+\]
+Since $P_T(D)\ge0$, the sign of $\Delta$ equals the sign of $2a_a^D-1$, i.e.\ of
+$a_a^D-\tfrac12$, whenever $P_T(D)>0$ (and $\Delta=0$ when $P_T(D)=0$, in which case
+the decision is moot).
+
+\emph{The identifiability equivalence.} ($\Leftarrow$) If the evidence determines the
+event $\{a_a^D>\tfrac12\}$ --- for instance, a label-free reliability signal brackets
+$a_a^D$ strictly on one side of $\tfrac12$ --- then by the identity it determines
+$\sign\Delta$. ($\Rightarrow$) Conversely, if two target worlds are compatible with the
+same evidence yet place $a_a^D$ on opposite sides of $\tfrac12$, the identity forces
+their benefits to have opposite signs, which is precisely the unknowable configuration
+of Theorem~\ref{thm:imp}; so identifiability of $\sign\Delta$ requires the evidence to
+settle the above-chance question. \qedhere
+\end{proof}
+
+\begin{remark}[Ordinal, not cardinal --- and exactly one residual unknown]
+\label{sec:t2-rem-ordinal}
+The theorem changes the problem's type. Estimating either absolute risk $R_T(f_0)$ or
+$R_T(f_a)$ without labels is the unsupervised-risk-estimation problem, known --- from
+the conditional-independence analyses of Steinhardt and Liang and the divergence-based
+bounds reviewed in the related-work discussion --- to be impossible without structural
+assumptions.
+The identity shows the adapt/freeze decision never needed those cardinal objects: it
+needs one \emph{ordinal} bit --- is $f_a$ above chance on $D$ --- a strictly weaker
+requirement. Everything else in the formula is label-free: $P_T(D)$ is an observable
+mass, and the per-sample benefits off $D$ are identically zero. The residual burden is
+exactly the bracketing of $a_a^D$ around $\tfrac12$, and the witness of
+Theorem~\ref{thm:imp} shows that burden is real: there $f_0=\ind[x>0]$ and
+$f_a=\ind[x<0]$ disagree almost everywhere, so $D$ is essentially the whole line, and
+the two worlds set $a_a^D=0$ and $a_a^D=1$ respectively --- maximal disagreement about
+the ordinal bit, with identical evidence. The witness is thus precisely a failure of
+label-free bracketing on $D$, which is why the open problem of
+Section~\ref{sec:t2-open} has the shape it has.
+\end{remark}
+
+The binary identity generalizes in both directions the deployment cares about ---
+multiclass classification and regression --- and the generalizations are the results
+that close the characterization half of the program.
+
+\begin{theorem}[Multiclass $0/1$ loss]
+\label{thm:disagree-mc}
+For $Y\in\{1,\dots,K\}$ with $0/1$ loss, with $p_a=P_T(f_a{=}Y\mid D)$,
+$p_0=P_T(f_0{=}Y\mid D)$, off $D$ $\delta=0$ and on $D$ $\E[\delta\mid D]=p_a-p_0$, so
+$\Delta=P_T(D)(p_a-p_0)$ and $\sign\Delta=\sign(p_a-p_0)$.
+\end{theorem}
+
+\begin{proof}
+As before $\delta=\ind[f_0\neq Y]-\ind[f_a\neq Y]$, and off $D$ the two indicators
+coincide pointwise, so $\delta=0$ there. On $D$ the predictions differ, and --- this is
+the multiclass novelty --- the conditional space splits into \emph{three} disjoint
+events rather than two: $\{f_a=Y\}$ (the candidate is right, the incumbent necessarily
+wrong since it predicts something different, $\delta=1-0=+1$), $\{f_0=Y\}$ (the
+incumbent is right, the candidate wrong, $\delta=0-1=-1$), and $\{f_0\neq Y, f_a\neq
+Y\}$ (both wrong, predicting two \emph{different} wrong classes, where
+$\delta=1-1=0$). The two correctness events are still disjoint on $D$ --- the models
+cannot both be right while disagreeing --- but they are no longer complementary:
+$p_a+p_0\le1$ with strict inequality whenever both-wrong has mass. Taking the
+conditional expectation over the three cells,
+\[
+\E[\delta\mid D]
+=(+1)\,p_a+(-1)\,p_0+0\cdot\bigl(1-p_a-p_0\bigr)
+=p_a-p_0 ,
+\]
+which one can equally read off the complement form
+$\E[\delta\mid D]=(1-p_0)-(1-p_a)$. Total expectation over $\{D,D^c\}$ gives
+$\Delta=P_T(D)\,\E[\delta\mid D]=P_T(D)(p_a-p_0)$, and nonnegativity of $P_T(D)$ gives
+the sign identity. For $K=2$, exactly one predictor is correct on $D$, so
+$p_0=1-p_a$, the both-wrong cell is empty, and the formula reduces to
+$\Delta=P_T(D)(2a_a^D-1)$ --- Theorem~\ref{thm:disagree}. For $K\ge3$ both may err,
+and the identity holds regardless, because the benefit counts only who is
+\emph{correct}, not whether the other is wrong. \qedhere
+\end{proof}
+
+\begin{theorem}[Squared-error regression]
+\label{thm:disagree-reg}
+For $Y\in\R$ with squared loss, $\delta=(f_0-f_a)(f_0+f_a-2Y)$, so on $D$
+$\E[\delta\mid D]=\E[(f_0-f_a)(f_0+f_a)\mid D]-2\,\E[(f_0-f_a)Y\mid D]$. The first term is
+observable from unlabeled target; thus $\sign\Delta$ is label-free identifiable iff the
+sign contribution of $\E[(f_0-f_a)Y\mid D]$ is certifiable---which holds under covariate
+shift (importance-weighted source estimate of $\E[Y\mid X]$) and fails under concept
+shift (re-entering Theorem~\ref{thm:imp}).
+\end{theorem}
+
+\begin{proof}
+The pointwise identity is the difference of squares:
+\[
+\delta=(f_0-Y)^2-(f_a-Y)^2
+=\bigl[(f_0-Y)-(f_a-Y)\bigr]\bigl[(f_0-Y)+(f_a-Y)\bigr]
+=(f_0-f_a)\,(f_0+f_a-2Y).
+\]
+Off $D$ we have $f_0(x)=f_a(x)$, so the first factor vanishes and $\delta=0$; the
+disagreement region again carries the whole benefit, and
+$\Delta=P_T(D)\,\E[\delta\mid D]$ by total expectation. On $D$, expanding by linearity,
+\[
+\E[\delta\mid D]
+=\E\bigl[(f_0-f_a)(f_0+f_a)\,\big|\,D\bigr]\;-\;2\,\E\bigl[(f_0-f_a)\,Y\,\big|\,D\bigr].
+\]
+The first term is a functional of the two \emph{known} maps $f_0,f_a$ and of
+$\Law(X\mid D)$ only --- estimable from the unlabeled target stream to arbitrary
+precision. The second term is the unique label-coupled object, so $\sign\Delta$ is
+label-free identifiable exactly when that term's sign contribution can be certified
+without target labels. Under covariate shift it can: writing $m(X)=\E[Y\mid X]$ (the
+same function in source and target by the premise), the tower property and
+$\sigma(X)$-measurability of $f_0-f_a$ give
+\[
+\E\bigl[(f_0-f_a)\,Y\,\big|\,D\bigr]
+=\E\bigl[(f_0-f_a)\,\E[Y\mid X]\,\big|\,D\bigr]
+=\E\bigl[(f_0-f_a)\,m(X)\,\big|\,D\bigr],
+\]
+where $m$ is estimable from \emph{labeled source} data (importance-weighted as in
+Theorem~\ref{thm:pos}) and the remaining ingredients are target-observable. Under
+concept shift the source regression function $m_S$ is the wrong $m$, the plug-in can
+carry the wrong sign, and no label-free correction is available --- the configuration
+re-enters Theorem~\ref{thm:imp}. \qedhere
+\end{proof}
+
+\subsection{Numerical Validation of the Identities}
+\label{sec:t2-disagree-validation}
+
+Algebraic identities invite the most direct kind of machine checking, and the
+repository's validator
+\texttt{experiments/kbound/theory\_validation/val\_thm5\_multiclass.py}
+\cite{kbound2026repo} performs it at scale. For the multiclass identity it draws
+$4000$ random trials --- class counts $K$ ranging over $\{3,\dots,11\}$, sample sizes
+between $2000$ and $8000$, predictors of independently random accuracies so that
+$\Delta$ takes both signs across trials --- and computes $\Delta$ two ways: directly
+with labels (the mean per-sample benefit), and through the decomposition
+$P_T(D)(p_a-p_0)$. As recorded in the paper, the identity holds to $10^{-16}$ with
+$100\%$ sign agreement over the $4000$ trials --- and, decisively for the
+beyond-binary claim, the both-wrong-on-$D$ event occurs in \emph{every} trial, so the
+regime genuinely exercised is the one where $p_0\neq1-p_a$. The script additionally
+verifies that the off-$D$ contribution to $\Delta$ is exactly zero, sample by sample.
+For regression it checks the pointwise difference-of-squares identity to machine
+precision over $3000$ trials (tolerance $10^{-9}$, with $100\%$ sign agreement between
+$\Delta$ and $\E[\delta\mid D]$), and then runs the shift demonstration of
+Theorem~\ref{thm:disagree-reg} end to end: with $40{,}000$ source and target points, a
+$2.0$-standard-deviation covariate shift, and a source-only kernel-regression plug-in
+for $m(X)$, the label-free certificate recovers the correct $\sign\Delta$ under
+covariate shift and \emph{flips} sign under concept shift --- the predicted failure,
+observed on cue. The validation does not, of course, prove the theorems (the proofs
+above do); what it certifies is that the implemented quantities are the theorems'
+quantities, with no sign conventions or conditioning slips between paper and code.
+
+\subsection{Disagreement as the Decisive Evidence Coordinate}
+\label{sec:t2-disagree-evidence}
+
+The theorems of this section make a falsifiable prediction about \emph{evidence
+design}: if the entire benefit is carried by $D$, then among the components of the
+evidence vector $Z$, the ones measuring disagreement between the frozen and candidate
+models should be the most decision-relevant --- not marginally, but structurally. The
+ablation study of Chapter~\ref{ch:exp1} tests exactly this by deleting evidence
+features one at a time and re-measuring the wrapper's regret-to-oracle: removing the
+detector-disagreement feature raises regret from $0.037$ to $0.094$, a $2.6\times$
+degradation and by far the largest of any feature (the next-largest deletions move
+regret to $0.043$ and $0.039$). The paper draws the connection explicitly: detector
+disagreement is the single most important evidence feature in the ablation, directly
+supporting that the disagreement region carries the decision. The theory says where
+the information lives; the ablation confirms the estimator starves without it.
+
+\section{The Open Problem: Label-Free Bracketing}
+\label{sec:t2-open}
+
+Everything proved so far reduces the label-free adapt/freeze decision to a single
+remaining object: an ordinal comparison on the observable region $D$. The paper is
+exact about what is closed and what is not, and states the open piece as a conjecture.
+We reproduce it verbatim, and then spend an honest page on why it is genuinely open.
+
+\begin{conjecture}[Label-free bracketing; \textbf{the remaining open piece}]
+\label{conj:gen}
+Theorems~\ref{thm:disagree-mc}--\ref{thm:disagree-reg} \emph{close the characterization}:
+$\sign\Delta$ equals an ordinal accuracy comparison on the observable region $D$. What
+remains open is the label-free \emph{bracketing} of that comparison ($p_a$ vs $p_0$ for
+$K\ge3$, where $p_0\neq1-p_a$ makes it a two-sided test; or the sign of
+$\E[(f_0-f_a)Y\mid D]$ for regression) without target labels---a reliability-model
+assumption, as in the binary case.
+\end{conjecture}
+
+\subsection{Why Current Techniques Do Not Resolve It}
+\label{sec:t2-open-why}
+
+To see the precise difficulty, fix the multiclass case and ask for the object the
+conjecture demands: a label-free functional of the observables --- the unlabeled target
+stream on $D$, the two prediction maps, and whatever source-side calibration data one
+allows --- that outputs an interval $[L,U]\ni p_a-p_0$ with $1-\alpha$ coverage, such
+that committing when $0\notin[L,U]$ is valid \emph{without} a premise that is itself
+unverifiable from the same observables. Every known route founders on one of two
+obstructions.
+
+\emph{The information obstruction.} Unconditionally --- over all label laws on $D$
+consistent with the observed unlabeled data --- the task is hopeless, and this is a
+theorem, not a suspicion: the witness of Theorem~\ref{thm:imp}, restricted to $D$,
+exhibits two worlds with identical evidence laws and $(p_a,p_0)$ equal to $(1,0)$ and
+$(0,1)$ respectively. Any bracket with valid coverage in both worlds must contain both
+$+1$ and $-1$, hence $0$, hence never commits. This is the two-point method of Le~Cam
+in its simplest form \cite{lecam1973convergence,tsybakov2009introduction}: the
+unlabeled likelihood does not separate the hypotheses, so additional structure is
+\emph{necessary}, and the conjecture is properly read as a question about the
+\emph{weakest} usable structure rather than about removing structure altogether. The
+binary case already had this character --- there the residual assumption is a
+reliability signal bracketing $a_a^D$ against $\tfrac12$ --- but the multiclass case is
+strictly harder in a concrete sense the paper flags in the conjecture itself: since
+$p_0\neq1-p_a$, one scalar no longer determines the comparison, and the test becomes
+two-sided in two unknown conditional accuracies linked only by the inequality
+$p_a+p_0\le1$.
+
+\emph{The technique obstruction.} Each available tool discharges the bracketing only by
+importing a premise of the same epistemic type as the one being discharged.
+Importance weighting (Theorem~\ref{thm:pos}) certifies the regression term
+$\E[(f_0-f_a)Y\mid D]$ --- but only under covariate shift, which fixes the unobservable
+conditional $P(Y\mid X)$ by fiat and is untestable from unlabeled data. Confidence-based
+bracketing (the route formalized below) bounds $p_h$ by the mean calibrated confidence
+$q_h$ --- but only under a calibration-transfer premise, a bound $\eta$ on the
+\emph{target-side} miscalibration on $D$, which is again a quantity no label-free
+procedure can estimate; assuming $\eta$ small is assuming a reliability model.
+Label-shift machinery \cite{lipton2018detecting} identifies shifted class priors under
+stable class-conditionals and an invertible confusion matrix --- structural premises
+once more, and even granted them, priors do not by themselves yield the
+\emph{conditional-on-$D$} accuracies the comparison needs. Empirical regularities such
+as agreement-based accuracy extrapolation are calibrated correlations, not guarantees,
+and nothing prevents the adversarial pairs of Theorem~\ref{thm:imp} from sitting
+exactly where the regularity breaks. In every case the assumption is doing the work
+precisely on the coordinate the data cannot see; the open question is whether some
+premise exists that is weaker, or --- more interestingly --- \emph{self-certifying}, in
+the sense that its failure is itself label-free detectable, so that the bracket could
+widen automatically where the premise degrades.
+
+\subsection{What Is Actually Proved}
+\label{sec:t2-open-partial}
+
+The honest ledger has four entries on the proved side. First, the
+\emph{characterization} is closed unconditionally: Theorems~\ref{thm:disagree}
+through~\ref{thm:disagree-reg} are exact identities requiring no assumptions beyond
+the loss structure, and they localize the entire decision to $D$. Second, the binary
+case needs only a \emph{one-sided} bracket of a single scalar against the fixed
+threshold $\tfrac12$ --- a structurally easier object than the multiclass two-sided
+comparison, which is why the binary instantiation is the one deployed throughout the
+experiments. Third, the regression term is certified under covariate shift
+(Theorem~\ref{thm:disagree-reg} with Theorem~\ref{thm:pos}). Fourth, the paper proves
+a \emph{conditional} closure of the conjecture under a quantitative reliability model
+--- bounded calibration transfer --- with an exact and provably tight threshold. We
+restate it faithfully.
+
+\begin{proposition}[Label-free bracketing under bounded calibration transfer]
+\label{sec:t2-prop-caltransfer}
+On the disagreement region $D$, let $\mathrm{conf}_h(x)\in[0,1]$ be a source-calibrated
+confidence map for predictor $h\in\{f_0,f_a\}$, and suppose its target miscalibration
+on $D$ is bounded by $\eta$:
+$|\Pr_T(h(X){=}Y\mid \mathrm{conf}_h{=}c,\,X\in D)-c|\le\eta$ for all $c$
+(\emph{calibration transfer}). Let $q_h:=\E_T[\mathrm{conf}_h(X)\mid D]$ be the
+label-free mean confidence. Then $|q_h-p_h|\le\eta$, hence
+$p_a-p_0\in[(q_a-q_0)-2\eta,\,(q_a-q_0)+2\eta]$, and
+\[
+|q_a-q_0|>2\eta \;\Longrightarrow\; \sign\Delta=\sign(q_a-q_0),
+\]
+so the multiclass/regression benefit sign is identified label-free; when
+$|q_a-q_0|\le2\eta$ the bracket contains $0$ and the rule must \textsc{abstain}.
+\end{proposition}
+
+\begin{proof}
+By the tower property,
+$p_h=\E_T\bigl[\Pr_T(h{=}Y\mid \mathrm{conf}_h,D)\mid D\bigr]$; the
+calibration-transfer bound says the inner conditional probability is within $\eta$ of
+$\mathrm{conf}_h$ pointwise, so integrating preserves the bound and $|p_h-q_h|\le\eta$
+for each $h$. Differencing the two $\eta$-balls gives
+$|(p_a-p_0)-(q_a-q_0)|\le2\eta$, the stated bracket. If $|q_a-q_0|>2\eta$, the bracket
+lies strictly on one side of $0$, so $\sign(p_a-p_0)=\sign(q_a-q_0)$; by
+Theorem~\ref{thm:disagree-mc} this equals $\sign\Delta$. If $|q_a-q_0|\le2\eta$ the
+bracket straddles $0$ and certifies nothing, so the certificate logic of
+Theorem~\ref{thm:cert} mandates abstention. \qedhere
+\end{proof}
+
+The threshold $2\eta$ is \emph{exact}, as the paper notes: when $|q_a-q_0|\le2\eta$ an
+adversary inside the two $\eta$-balls can place $p_a,p_0$ on either side of equality,
+re-entering the unknowable regime of Theorem~\ref{thm:imp} --- so the proposition's
+abstention region cannot be shrunk under its own premise. The validator
+(\texttt{val\_conj1\_caltransfer.py}, results in
+\texttt{results\_conj1\_caltransfer.json} \cite{kbound2026repo}) sweeps both $\eta$ and
+the true gap: with a true gap of $0.2$ ($p_a=0.6$, $p_0=0.4$), every committed decision
+is sign-correct ($100\%$ recovery among committed, $0$ wrong commitments) for all
+$\eta\in\{0,0.02,0.05,0.08\}$ where the gap exceeds $2\eta$; at the knife edge
+$\eta=0.1$ (gap exactly $2\eta$) the finite-sample rule still commits on $52.45\%$ of
+trials --- all of them sign-correct, with the wrong-commit rate still $0$ --- and for
+$\eta\ge0.15$ commitment falls to $0$, full abstention. The dual gap sweep at
+$\eta=0.05$ shows the same wall from the other side (no commitments below gap $0.10$,
+full commitment from gap $0.12$ up), and the bracket
+$[(q_a-q_0)-2\eta,(q_a-q_0)+2\eta]$ contains the true gap on $100\%$ of trials. The
+headline fields record minimum sign recovery $1.0$ and maximum wrong-commit rate $0.0$
+whenever the gap exceeds $2\eta$ --- the guarantee, observed.
+
+\subsection{What a Resolution Would Buy}
+\label{sec:t2-open-payoff}
+
+We state plainly that the conjecture is \emph{not} solved here, and that
+Proposition~\ref{sec:t2-prop-caltransfer} does not solve it: it trades the open
+assumption for a quantified one, which is progress in precision, not in kind. A
+genuine resolution would change the system's standing in either direction. A
+\emph{positive} resolution --- a bracketing scheme whose premise is label-free
+verifiable, or a proof that some natural observable (margin spectra on $D$, agreement
+geometry among auxiliary predictors, weight diagnostics) suffices --- would make the
+entire trichotomy assumption-free given evidence: \KGA's residual reliability-model
+assumption would vanish, the knowable region of the phase diagram would extend to
+every shift with nonvacuous brackets, and evidence design would reduce to estimating
+two scalars on an observable set. A \emph{negative} resolution --- a lower bound
+showing every label-free bracket valid over a natural shift class must contain $0$
+unless a premise of calibration-transfer strength holds --- would be just as valuable:
+it would certify that the conditional results of this chapter are the strongest
+possible, closing the program with matching upper and lower bounds the way
+Theorem~\ref{thm:imp} closed the unconditional question. Either outcome turns the last
+assumption in the stack into a theorem. Until then, the honest summary is the paper's
+own: the characterization is closed; the label-free estimability of the ordinal
+comparison is the standing assumption; the unconditional bracketing is the one residual
+open piece.
+
+\section{Synthesis: The Certified Map of Regimes}
+\label{sec:t2-synthesis}
+
+Chapters~\ref{ch:theory1} and~\ref{ch:theory2} together draw one map. The
+impossibility theorem fences off the region where no label-free rule may commit; the
+certificate gives the safe-passage protocol everywhere else; the covariate-shift and
+disagreement-region results chart where the passage provably opens; and the conjecture
+marks the one stretch of coastline still unsurveyed. Table~\ref{sec:t2-tab-map}
+assembles the chapter's results with their guarantees and the machine-checked evidence
+behind each, with the experimental chapters and Appendix~\ref{app:tables} holding the
+full per-condition records.
+
+\begin{table}[t]\centering\small
+\begin{tabular}{p{0.20\textwidth}p{0.15\textwidth}p{0.27\textwidth}p{0.28\textwidth}}
+\toprule
+Regime & Result & Guarantee & Validator / evidence \\
+\midrule
+Matched evidence (unknowable) & Thm~\ref{thm:imp}; Cor.~\ref{sec:t2-cor-abstain} &
+no label-free rule certifies both worlds; any valid certificate abstains with
+probability $\ge1-2\alpha$ &
+clean witness: $100\%$ abstention, forced-commit regret $0.51$
+(Ch.~\ref{ch:exp1}) \\
+\addlinespace
+Risk-aligned evidence, batch & Thm~\ref{thm:cert}; Cor.~\ref{sec:t2-cor-n} &
+false-adapt $\le\alpha$ and false-freeze $\le\alpha$; commits once
+$n\gtrsim\sigma^2\Delta^{-2}\log(1/\alpha)$ &
+mixed regime: false-adapt $0.065$ at $\alpha=0.1$; stress grid: $0\%$ false-adapt
+(Chs.~\ref{ch:exp1}--\ref{ch:exp2}) \\
+\addlinespace
+Risk-aligned evidence, streaming & Thm~\ref{thm:evalue} &
+anytime-valid: error $\le\alpha$ simultaneously over all stopping times &
+worst anytime false-adapt $0.0626\le0.1$
+(\texttt{val\_thm3\_evalue\_results.json}) \\
+\addlinespace
+Covariate shift & Thm~\ref{thm:pos} &
+$\Delta$ and $\sign\Delta$ identifiable from labeled source $+$ unlabeled target &
+regression demo: sign correct under covariate shift, flips under concept shift
+(\texttt{val\_thm5\_multiclass.py}) \\
+\addlinespace
+Disagreement region & Thms~\ref{thm:disagree}--\ref{thm:disagree-reg} &
+$\sign\Delta$ $=$ ordinal accuracy comparison on observable $D$ (exact identity) &
+identity to $10^{-16}$, $100\%$ sign agreement over $4000$ trials
+(\texttt{val\_thm5\_multiclass.py}) \\
+\addlinespace
+Multiclass / regression bracketing & Conj.~\ref{conj:gen} (open);
+Prop.~\ref{sec:t2-prop-caltransfer} (conditional) &
+sign certified iff $|q_a-q_0|>2\eta$ under calibration transfer; unconditional case
+open &
+$100\%$ sign recovery, $0$ wrong commitments when gap $>2\eta$
+(\texttt{results\_conj1\_caltransfer.json}) \\
+\bottomrule
+\end{tabular}
+\caption{The certified map of regimes assembled by Chapters~\ref{ch:theory1}
+and~\ref{ch:theory2}: each row pairs a regime with its governing result, the exact form
+of its guarantee, and the machine-checked validator or experiment that exercises it.}
+\label{sec:t2-tab-map}
+\end{table}
+
+Three through-lines deserve a final statement. First, every positive result in this
+chapter is \emph{conditional in a way the theory itself prices}. The certificate is
+valid given a valid radius; the radius is valid given exchangeability of the
+calibration bank; covariate-shift identifiability is valid given an untestable premise
+on $P(Y\mid X)$; the bracketing is valid given calibration transfer. None of this is a
+defect to be hidden --- it is the content of Theorem~\ref{thm:imp} propagating through
+the constructions, and the certificate's distinctive virtue is that where its premises
+fail detectably (heavy importance weights, wide residual quantiles, sub-threshold
+confidence gaps) the failure surfaces as a \emph{wider radius}, and the rule degrades
+to abstention rather than to silent error. Second, the disagreement region is the
+load-bearing structure connecting theory to practice: it is where the benefit lives
+(Theorems~\ref{thm:disagree}--\ref{thm:disagree-reg}), why the empirical-Bernstein
+radius is tight (Remark~\ref{sec:t2-rem-variance}), and which evidence coordinate the
+deployed estimator cannot do without (the $2.6\times$ ablation of
+Chapter~\ref{ch:exp1}). Third, the guarantees proved here are exactly the ones the
+deployed system claims --- no more. Chapter~\ref{ch:kga} assembles
+$Z\to\widehat\Delta\to\varepsilon\to\{\textsc{adapt},\textsc{freeze},\textsc{abstain}\}$
+into the \KGA\ wrapper with the assumptions of this chapter stated as the algorithm's
+assumptions, and Chapters~\ref{ch:exp1} and~\ref{ch:exp2} then measure the certificate
+against worlds engineered to reward it, punish it, and --- on the constructed witness
+--- defeat it, which is the only honest order of business after a chapter of
+conditional guarantees.

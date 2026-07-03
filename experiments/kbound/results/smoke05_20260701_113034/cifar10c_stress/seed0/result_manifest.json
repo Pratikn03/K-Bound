@@ -1,0 +1,81 @@
+{
+  "seed": 0,
+  "alpha": 0.1,
+  "device": "mps",
+  "benchmarks": [
+    "cifar10c"
+  ],
+  "methods": [
+    "tent"
+  ],
+  "quick": true,
+  "max_cells": 8,
+  "sar_arm": {
+    "sar_lr": null,
+    "freeze_layer4": false,
+    "default_matched_lr_behavior": true
+  },
+  "grid": {
+    "severities": [
+      1,
+      3,
+      5
+    ],
+    "quick_severities": [
+      1,
+      5
+    ],
+    "batch_regimes": {
+      "large_iid": 200,
+      "small": 16,
+      "tiny": 8
+    },
+    "compositions": [
+      "iid",
+      "imbalanced",
+      "single_class"
+    ],
+    "aggressiveness": {
+      "mild": {
+        "steps": 10,
+        "lr": 0.001
+      },
+      "aggressive": {
+        "steps": 50,
+        "lr": 0.0025
+      }
+    },
+    "n_repeats": 2,
+    "eval_pool": 2000,
+    "help_thr": 0.02
+  },
+  "n_conditions_per_method": {
+    "cifar10c": {
+      "tent": 16
+    }
+  },
+  "git_hash": "5f5783a3d154b7fd95c0ff813b53c9f6ab671d17",
+  "python": "3.12.13",
+  "torch": "2.5.1",
+  "numpy": "2.4.6",
+  "argv": [
+    "docs/research/kbound/scripts/cifar_tent_mps_v2.py",
+    "--benchmarks",
+    "cifar10c",
+    "--data-root",
+    "experiments/kbound/cifar",
+    "--methods",
+    "tent",
+    "--device",
+    "mps",
+    "--seed",
+    "0",
+    "--quick",
+    "--max-cells",
+    "8",
+    "--out-results",
+    "experiments/kbound/results/smoke05_20260701_113034/cifar10c_stress/seed0"
+  ],
+  "wall_time_sec": 344.3,
+  "finished": "2026-07-01 11:36:21"
+}

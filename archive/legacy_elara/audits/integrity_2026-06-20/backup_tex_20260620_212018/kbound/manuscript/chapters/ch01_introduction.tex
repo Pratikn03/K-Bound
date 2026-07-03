@@ -1,0 +1,342 @@
+% =============================================================================
+% ch01_introduction.tex  —  Chapter 1: Introduction
+% K-Bound long-form monograph.
+% NO \documentclass or \usepackage. Begins with \chapter.
+% =============================================================================
+
+\chapter{Introduction}\label{ch:intro}
+
+\section{The Deployment Problem}\label{sec:intro-deploy}
+
+A model trained on one distribution is deployed into a world that has moved.
+The training images came from one hospital's scanner; the deployed scanner is
+newer, slightly sharper, with different noise characteristics.
+The training network saw balanced classes; the test stream is skewed toward
+one pathology.
+The training corpus covered one domain; the production queries drift slowly
+toward a neighbouring domain as user behaviour changes.
+This pattern --- a mismatch between the distribution under which a model was
+optimized and the distribution under which it operates --- is the central
+operational reality of deployed machine learning.
+
+Test-time adaptation (TTA) is the field's answer.
+Rather than retraining from scratch whenever the deployment distribution
+shifts, TTA updates the model on the unlabeled target data that arrives at
+inference time.
+The appeal is immediate: labels are expensive or unavailable in deployment,
+yet the raw inputs carry information about how the distribution has moved.
+Entropy minimization over batch-normalization parameters
+\cite{wang2021tent}, self-supervised auxiliary objectives that continue
+training at test time \cite{sun2020ttt}, source-free adaptation by
+information maximization, and importance-weighted empirical risk
+minimization \cite{shimodaira2000improving} are all instances of the same
+basic idea: use the unlabeled stream to close the performance gap.
+
+\section{The Double-Edged Nature of Test-Time Adaptation}\label{sec:intro-doubleedge}
+
+Adaptation is, however, double-edged in a precise sense.
+The same unlabeled objective that recovers accuracy under one kind of
+distribution shift can degrade it under another --- and, critically, without
+labels the deployed system cannot in general determine which situation it is in.
+
+Consider entropy minimization.
+Under mild covariate shift --- the scanner statistics change, but the
+decision boundary between pathologies does not --- minimizing the entropy of
+predictions sharpens the boundary toward where the new data lives.
+The adaptation is helpful.
+But now suppose the distribution shift is a label shift: the prevalence of
+one class has collapsed to near zero in the target stream.
+A model that minimizes entropy on this stream will be rewarded for making
+all-or-nearly-all predictions of the dominant class; it converges to a
+degenerate solution.
+The adaptation is harmful, and in the worst case the model collapses
+entirely.
+The recent literature on TTA failure modes \cite{zhao2023pitfalls,
+press2023rdumb, niu2023sar} documents exactly these collapse phenomena:
+Tent's continual entropy minimization catastrophically fails on adversarial
+or highly non-stationary streams; EATA's Fisher penalty slows but does not
+eliminate accumulation of damage; SAR's sharpness-aware resets abort
+incipient collapses but cannot prevent them in every regime.
+
+The field's response has been to propose sturdier mechanisms.
+If entropy minimization is fragile, add sample selection to filter
+high-entropy inputs \cite{niu2022eata}.
+If selection is not enough, add sharpness-aware updates that are less
+likely to collapse \cite{niu2023sar}.
+If batch normalization updates are the failure mode, use a fully
+parameter-free approach \cite{boudiaf2022lame}.
+If a single method is fragile, reset after detecting instability
+\cite{niu2023sar} or continually re-anchor to the source
+\cite{wang2022cotta}.
+
+Each of these improvements is genuine within its scope.
+But they all share a common architecture: they commit to adapting, and they
+try to make that commitment safer.
+None of them poses the prior question: \emph{given the available evidence,
+should the system adapt at all?}
+
+\section{The Central Question}\label{sec:intro-question}
+
+This monograph studies that prior question.
+
+\begin{quote}
+\itshape
+Can observable test-time evidence separate helpful, harmful, and
+unknowable regimes of label-free adaptation, yielding a computable rule
+for when a system should adapt, freeze, or abstain?
+\end{quote}
+
+The question is not rhetorical.
+It has a substantive, partly negative answer that we make precise.
+In some regimes --- covariate shift, certain kinds of label shift, situations
+where the frozen and adapted models disagree on inputs whose label
+orientation is detectable from label-free signals --- the answer is yes.
+In others, the same observable evidence is compatible with both helpful and
+harmful adaptation, and no label-free rule can certify the correct choice
+in both worlds.
+The boundary between these cases is what we call the \emph{knowability
+boundary} of label-free adaptation, and the central mathematical object is
+a trichotomy: at any given evidence value, adaptation is either
+\emph{knowably helpful}, \emph{knowably harmful}, or \emph{unknowable}.
+
+Why does this matter for deployment?
+Consider a safety-critical setting: an autonomous vehicle's perception stack
+or a medical imaging pipeline.
+In such settings, the cost of silent degradation is high and the cost of
+abstaining --- falling back to the frozen model and flagging for human review
+--- is manageable.
+A system that can identify when it is in an unknowable regime and refuse to
+adapt is strictly safer than one that always adapts or always freezes,
+even if its average-case performance is identical.
+The value of the knowability boundary is not primarily about improving mean
+accuracy; it is about converting the adapt/freeze decision from an
+irreducible coin flip into a certified, controlled action.
+
+The same logic applies to model monitoring.
+A production team that can determine, from unlabeled deployment data alone,
+whether a proposed update will help or hurt does not need ground-truth labels
+to make a safe deployment decision.
+The knowability boundary tells them exactly when that label-free determination
+is possible and when it is not.
+
+\section{The Trichotomy and Its Formalization}\label{sec:intro-trichotomy}
+
+We formalize the trichotomy as follows.
+Fix a loss $\ell$, a frozen model $f_0$, and an adapted/gated
+candidate~$f_a$.
+The \emph{adaptation benefit} is
+\[
+\Delta \;=\; R_T(f_0) - R_T(f_a),
+\]
+where $R_T(f) = \E_{P_T}[\ell(f(X), Y)]$ is the target risk.
+A positive $\Delta$ means adapting helps; a negative $\Delta$ means it
+hurts.
+\emph{Observable evidence} $Z = \phi(X_{1:m}, f_0, f_a)$ is any statistic
+computable without target labels: prediction entropy, softmax confidence,
+score-distribution drift, detector disagreement, predicted-class balance,
+update norm, or density-ratio diagnostics.
+The conditional benefit $\Delta(z) = \E[\ell(f_0(X),Y) - \ell(f_a(X),Y)
+\mid Z = z]$ is the benefit conditioned on evidence $Z = z$.
+
+The regime at evidence value $z$ is:
+\begin{description}
+\item[Knowably helpful] if $Z$ certifies $\Delta(z) > 0$; the correct
+    action is \textsc{adapt}.
+\item[Knowably harmful] if $Z$ certifies $\Delta(z) < 0$; the correct
+    action is \textsc{freeze}.
+\item[Unknowable] if the same $z$ is compatible with both $\Delta(z) > 0$
+    and $\Delta(z) < 0$; the worst-case-optimal action is
+    \textsc{abstain}.
+\end{description}
+
+The key quantity is the \emph{sign} of $\Delta(z)$, not its magnitude.
+Estimating the sign requires strictly less information than estimating the
+risk $R_T(f)$ itself, which means the knowability boundary lies strictly
+outside the identifiability boundary for risk estimation --- but it is not
+everywhere: there exist situations where even the sign is unrecoverable from
+label-free evidence.
+
+\section{Contributions}\label{sec:intro-contributions}
+
+This work makes six contributions, which we enumerate in detail.
+
+\paragraph{Contribution 1: Formalization of the knowability trichotomy.}
+We introduce the adapt/freeze/abstain trichotomy as the natural decision
+space for label-free TTA, formalize the notion of risk alignment for
+observable evidence, and define the three regimes precisely
+(Chapter~\ref{ch:formulation}).
+The formalization connects the TTA literature to the identifiability
+literature: TTA methods have focused on designing the adaptation
+mechanism~$f_a$; we instead ask when the sign of $R_T(f_0) - R_T(f_a)$ is
+recoverable from label-free observations.
+
+\paragraph{Contribution 2: Impossibility theorem with explicit witness
+(Theorem~\ref{thm:imp}).}
+We prove that for any (possibly randomized) label-free decision rule
+$g(Z)$, there exist two target worlds $P_T^1$ and $P_T^2$ with identical
+observable-evidence laws and opposite-sign benefits.
+Since the rule cannot distinguish the worlds, its actions are identically
+distributed in both, and the worst-case-optimal action is to abstain.
+The construction is non-vacuous: we exhibit it explicitly as $X \sim
+\mathcal{N}(0,1)$ under both worlds, $f_0(x) = \ind[x>0]$, $f_a(x) =
+\ind[x<0]$, and labels flipped between the worlds.
+A Le~Cam two-point quantitative strengthening
+(Chapter~\ref{ch:theory1}) shows that the optimal committal error equals
+$1 - \TV$ of the evidence laws, which is $1$ in the witness and decays to
+zero as the worlds become separable.
+Numerically, the KGA validator confirms $100\%$ abstention on the witness
+and exact tracking of the Le~Cam floor across the total-variation sweep.
+
+\paragraph{Contribution 3: Finite-sample adapt/freeze/abstain certificate
+with false-adapt control (Theorem~\ref{thm:cert}).}
+Under a label-free estimator $\widehat{\Delta}(z)$ with a calibrated radius
+$\varepsilon(z)$ satisfying $\Pr[|\widehat{\Delta}(z) - \Delta(z)| \leq
+\varepsilon(z)] \geq 1 - \alpha$, the rule
+\[
+\textsc{adapt}\ \text{if}\ \widehat{\Delta} - \varepsilon > 0,\quad
+\textsc{freeze}\ \text{if}\ \widehat{\Delta} + \varepsilon < 0,\quad
+\textsc{abstain}\ \text{otherwise}
+\]
+controls the false-adapt and false-freeze rates at $\alpha$.
+A corollary shows that in the unknowable two-point regime the certificate
+\emph{must} abstain with probability at least $1 - 2\alpha$, making
+abstention mandatory rather than merely conservative.
+A sample-complexity corollary shows the certificate commits once $n \gtrsim
+(\sigma^2 / \Delta^2) \log(1/\alpha)$ paired benefit samples are available,
+with an empirical-Bernstein discharge for bounded benefits.
+An anytime-valid e-process variant (Appendix~\ref{app:repro}) extends the
+certificate to streaming TTA with no multiplicity correction.
+
+\paragraph{Contribution 4: Covariate-shift positive regime and the
+sign-of-difference characterization
+(Theorems~\ref{thm:pos}, \ref{thm:disagree}--\ref{thm:disagree-reg}).}
+Under covariate shift ($P_S(Y \mid X) = P_T(Y \mid X)$), importance
+weighting of the source labels yields a consistent estimator of the target
+risk, so $\sign\Delta$ is identifiable.
+Separately, restricting to the \emph{observable disagreement region} $D =
+\{x : f_0(x) \neq f_a(x)\}$ --- observable without labels, since $f_0$ and
+$f_a$ are known maps of $X$ --- we prove that $\sign\Delta$ equals an
+ordinal accuracy comparison on $D$: adapting helps if and only if the
+adapted model exceeds chance accuracy on $D$.
+This characterization holds for binary, multiclass ($0/1$ loss), and
+regression (squared loss) in three theorems.
+Ablations confirm that detector disagreement is the single most important
+evidence feature, directly supporting the theoretical prediction.
+Conjecture~\ref{conj:gen} states the remaining open piece: the label-free
+\emph{bracketing} of the ordinal comparison in the multiclass and regression
+cases.
+
+\paragraph{Contribution 5: \KGA\ and open-source implementation.}
+We instantiate the framework as \KGA\ (Knowability-Guided Adaptation), a
+decision wrapper that can be placed around any TTA candidate without
+modifying it.
+The algorithm extracts label-free evidence $Z$, estimates the benefit
+$\widehat{\Delta}$ with a gradient-boosted regressor trained leave-one-task-out,
+forms a split-conformal radius $\varepsilon$, and returns the three-way
+decision.
+\KGA\ is released as a pure-numpy package (\texttt{kga/}) importable as
+\texttt{from kga import KGA} and served at a \texttt{POST /decide} endpoint;
+all code, configs, and result artifacts are public at
+\url{https://github.com/Pratikn03/AutoML_Flagship_V8} \cite{kbound2026repo}.
+Chapters~\ref{ch:kga} and~\ref{ch:exp1}--\ref{ch:exp2} present the
+algorithmic details and the complete experimental evaluation.
+
+\paragraph{Contribution 6: Experiments.}
+We evaluate \KGA\ on nine real experiments spanning multiple regimes.
+\begin{enumerate}
+\item \emph{123-task anomaly-routing benchmark} (ADBench tabular,
+    image-OOD, text, cyber, fraud): \KGA\ abstains where the true benefit
+    is near zero (mean $|\Delta| = 0.021$ on abstained vs.\ $0.132$ on
+    acted tasks) and correctly identifies that the suite is helpful-dominated
+    (adapt precision $0.90$, coverage $17\%$).
+\item \emph{Harmful-regime refusal}: with a fusion candidate that hurts on
+    80\% of tasks, \KGA\ refuses it almost everywhere, cutting regret-to-oracle
+    by $\approx 11{\times}$ (from $0.0214$ to $0.0019$) while matching the
+    safe baseline AUROC ($0.748$).
+\item \emph{Controlled mixed-regime study} (369 instances, three conditions):
+    \KGA\ achieves adapt precision $0.935$ and beats always-freeze by
+    $0.10$ AUROC while tying always-adapt in a mild-harm domain.
+\item \emph{Clean non-identifiability witness}: the exact Theorem~\ref{thm:imp}
+    construction; \KGA\ abstains on $100\%$ of instances while a forced-commit
+    rule pays regret $0.51$.
+\item \emph{Statistical rigor over 8 seeds}: multi-seed mean AUROC
+    $0.686 \pm 0.003$ with paired $t$-tests confirming \KGA\ is significantly
+    above always-freeze ($p = 7.3 \times 10^{-11}$) and significantly below
+    always-adapt ($p = 5.1 \times 10^{-5}$) in the mild-harm domain.
+\item \emph{Regression under covariate shift}: synthetic regression with
+    importance weighting hurting on 79\% of instances; \KGA\ refuses it
+    entirely and matches the oracle MSE ($0.251$) vs.\ always-adapt ($0.338$).
+\item \emph{Online non-stationary CIFAR-10 TTA}: across a helpful-dominated
+    and a harm-dominated continual stream, \KGA\ achieves the highest mean
+    accuracy across regimes ($0.490$ vs.\ always-freeze $0.456$ vs.\
+    always-adapt $0.444$), with always-adapt collapsing to $0.339$ in the
+    harm regime.
+\item \emph{Per-corruption CIFAR-10-C helpful-dominated control} (65 cells,
+    13 corruptions $\times$ 5 severities): adaptation is overwhelmingly
+    helpful (false-adapt rate $0.015$); \KGA\ matches always-adapt at equal
+    safety, confirming that the certificate does not impose unnecessary cost
+    in benign regimes.
+\item \emph{Pre-registered CIFAR-10-C stress grid} (432 conditions/method,
+    harmful base rate $0.16$--$0.34$): \KGA\ beats both trivial policies for
+    Tent and EATA (regret $0.0016$ vs.\ $0.009$ / $0.12$) at $0\%$
+    false-adapt, and ties collapse-resistant SAR.
+\end{enumerate}
+
+\section{Honest Scope}\label{sec:intro-scope}
+
+We are explicit about the limits of this work in both theory and experiment.
+
+On the theory side, the impossibility result (Theorem~\ref{thm:imp}) is
+close to known non-identifiability of target risk without labels; its
+purpose here is to \emph{justify the abstain action} and to make the
+boundary quantitative via the Le~Cam two-point lower bound.
+The certificate (Theorem~\ref{thm:cert}) is proved conditional on a valid
+label-free interval estimator; the empirical-Bernstein discharge requires
+exchangeability of the paired benefit sample.
+The sign-of-difference characterization is complete for binary, multiclass,
+and regression losses; the label-free bracketing of the ordinal comparison
+in the multiclass and regression cases remains an open conjecture.
+
+On the experimental side, the stress-grid knockout (beating both trivial
+policies at $0\%$ false-adapt) holds for Tent and EATA on the CIFAR-10-C
+pre-registered grid; \KGA\ ties collapse-resistant SAR rather than beating
+it.
+In per-corruption CIFAR-10-C (helpful-dominated by construction) and within
+a single-stream online regime, \KGA\ ties the better fixed policy rather
+than strictly beating it.
+The decisive advantage is \emph{robustness}: it is the only policy that is
+near-oracle in both the helpful and harm regimes, which is exactly what
+the trichotomy predicts.
+Larger-scale corroboration on CIFAR-100-C, ImageNet-C, and natural-shift
+benchmarks such as WILDS \cite{koh2021wilds} is future work.
+
+The practical implication is direct.
+\KGA's value scales with how often catastrophic, detectable harm occurs in
+the deployment stream --- precisely the quantity the theory characterizes.
+In genuinely benign domains where adaptation almost always helps, the
+certificate is safety insurance at controlled cost.
+In collapse-prone regimes --- small or class-imbalanced batches,
+single-class label-shift streams, aggressive update schedules, long
+non-stationary runs --- the certificate delivers a real win.
+
+\section{Chapter Roadmap}\label{sec:intro-roadmap}
+
+Chapter~\ref{ch:related} reviews the five adjacent lines of work and
+positions K-Bound precisely against each.
+Chapter~\ref{ch:formulation} develops the formal setup: distribution
+families, the adaptation-benefit definition, observable evidence, and the
+three regime definitions.
+Chapters~\ref{ch:theory1} and~\ref{ch:theory2} present the five core
+theoretical results.
+Chapter~\ref{ch:kga} describes the \KGA\ algorithm, its assumptions, and
+its cost structure.
+Chapters~\ref{ch:exp1} and~\ref{ch:exp2} present the experimental
+evaluation across anomaly-routing and online TTA benchmarks.
+Chapter~\ref{ch:elara} presents the anonymized reliability-gated multimodal
+instantiation as a fully code-validated worked example of the general
+framework.
+Chapter~\ref{ch:discussion} synthesizes the deployment implications,
+states the limitations, and outlines future work.
+Appendix~\ref{app:repro} gives the full reproducibility specification.
+Appendix~\ref{app:tables} contains extended tables.
+Appendix~\ref{app:notation} is a notation reference.

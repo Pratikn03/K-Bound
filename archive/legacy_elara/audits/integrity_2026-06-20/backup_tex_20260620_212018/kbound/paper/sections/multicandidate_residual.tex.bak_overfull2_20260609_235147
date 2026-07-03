@@ -1,0 +1,211 @@
+% =====================================================================
+% v0.5 extension, Part 1A: bounded-residual relaxation of Definition 5.
+% \input from kbound.tex inside Appendix C, immediately AFTER
+% \input{paper/sections/multicandidate} (which defines def:cei,
+% thm:multicand, prop:cei-test).  Uses host macros \E \Pr \sign \R and the
+% amsthm environments.  Numbers in the "Validated" paragraph are produced by
+% experiments/kbound/theory_validation/val_multicandidate_residual.py
+% (results_multicandidate_residual.json), seed 20260609, CPU only.  Does NOT
+% modify any other part of the paper.
+% =====================================================================
+
+\subsection{Relaxing Definition~\ref{def:cei}: bounded-residual sign
+identifiability with an observable diagnostic}\label{sec:multicand-residual}
+
+Proposition~\ref{thm:multicand} recovers the advantages \emph{exactly} but only
+under \emph{exact} conditional error-independence (Definition~\ref{def:cei}), and
+Proposition~\ref{prop:cei-test} uses the overdetermination residual only as a
+\emph{binary} detector ($\tau{=}0$ vs.\ $\tau{>}0$). Real candidates
+(co-trained Tent/EATA/SAR) violate Definition~\ref{def:cei} slightly but not
+exactly, so the operative question is \emph{quantitative}: if the agreements are
+\emph{near} rank-one, how wrong can the recovered ordering be, and can the error
+be bounded by an \emph{observable} quantity? This subsection answers both,
+turning Definition~\ref{def:cei} from an untestable premise into a measurable,
+bracketed condition.
+
+\paragraph{Objects.} Binary $Y$ on $D$, $M\ge3$ candidates with accuracies
+$a_j=\Pr(f_a^{(j)}{=}Y\mid D)$, advantages $b_j=2a_j-1$, and a \emph{margin}
+$|b_j|\ge\beta>0$ (no candidate is exactly at chance; this is the quantitative
+form of the $a_j\neq\tfrac12$ hypothesis of Prop.~\ref{thm:multicand}). An
+\emph{anchor} fixes the global sign: candidate $1$ is a designated reference
+known to exceed chance ($b_1>0$); this is the parity-robust form of the
+``majority exceeds chance'' anchor, which is ill-defined for even $M$ (a balanced
+$M/2$--$M/2$ split has no majority). The observable centered agreements are
+$c_{ij}=2A_{ij}-1$ ($i\neq j$), and we write
+\[
+c_{ij}=b_ib_j+E_{ij},\qquad
+\eta:=\Bigl(\textstyle\sum_{i\neq j}E_{ij}^2\Bigr)^{1/2},\qquad
+\eta_\infty:=\max_{i\neq j}|E_{ij}|,
+\]
+so $E$ is the \emph{error-correlation} matrix and Definition~\ref{def:cei}
+$\iff E=0$. Let $b\mapsto\mathrm{off}(bb^\top)$ denote the off-diagonal of
+$bb^\top$. Two estimators: the \emph{best rank-one fit}
+$\widehat b=\arg\min_\beta\sum_{i\neq j}(c_{ij}-\beta_i\beta_j)^2$ with
+\emph{observable residual}
+\[
+\tau:=\Bigl(\textstyle\min_\beta\sum_{i\neq j}(c_{ij}-\beta_i\beta_j)^2\Bigr)^{1/2},
+\]
+and the constructive \emph{median-of-minors} estimator $\widetilde b$ defined by
+$\widetilde b_i^{\,2}=\operatorname{median}_{\,k<l,\;k,l\neq
+i}\,(c_{ik}c_{il}/c_{kl})$, with $\widetilde b_i=\operatorname{sign}(c_{1i})\,
+|\widetilde b_i|$ ($\widetilde b_1>0$ by the anchor).
+
+\begin{definition}[Approximate conditional error-independence]\label{def:approx-cei}
+The candidates are \emph{$\varepsilon$-conditionally-independent on $D$} if
+$\eta\le\varepsilon$. This is observable up to the rank-one fit: $\tau\le\eta$
+always, and $\tau$ is a statistic of the unlabeled agreements alone.
+\end{definition}
+
+\begin{theorem}[Multi-candidate sign identifiability under bounded error
+correlation]\label{thm:multicand-residual}
+Assume the margin $|b_j|\ge\beta$ and the anchor $b_1>0$.
+\begin{enumerate}
+\item[\textup{(a)}] \textbf{(Observable, sound, $M$-dependent).} $\tau$ is
+computable from $\{A_{ij}\}$ without target labels, $\tau\le\eta$, and $\tau=0$
+iff $\mathrm{off}(C)$ is rank-one. For $M{=}3$ the off-diagonal is \emph{always}
+rank-one-fittable (three entries, three unknowns), so $\tau\equiv0$ and the
+residual carries \emph{no} information; the diagnostic is informative only for
+$M\ge4$, sharpening Proposition~\ref{prop:cei-test}.
+\item[\textup{(b)}] \textbf{(Recovery, $O(\varepsilon\cdot\mathrm{poly}\,M)$).}
+If $\eta_\infty\le\beta^4/14$ then for every $i$,
+\[
+\bigl|\widetilde b_i^{\,2}-b_i^2\bigr|\le 7\,\eta_\infty/\beta^2,
+\qquad
+\bigl|\widetilde b_i-b_i\bigr|\le 5\,\eta_\infty/\beta^3,
+\]
+hence $\|\widetilde b-b^\star\|_\infty\le5\eta_\infty/\beta^3$ and
+$\|\widetilde b-b^\star\|_2\le 5\sqrt{M}\,\eta_\infty/\beta^3
+=O(\varepsilon\cdot\mathrm{poly}\,M)$, where $\varepsilon=\eta$ since
+$\eta_\infty\le\eta$.
+\item[\textup{(c)}] \textbf{(Ordering / sign bracket, $O(\varepsilon\log M)$).}
+With $w:=\tfrac52\,\eta_\infty/\beta^3$, the estimated accuracies
+$\widetilde a_i=(1+\widetilde b_i)/2$ satisfy $|\widetilde a_i-a_i|\le w$, so the
+ordering is recovered on every pair with $|a_i-a_j|>2w$ and, by
+Theorem~\ref{thm:disagree}/Proposition~\ref{thm:disagree-mc},
+$\sign\Delta^{(i)}=\sign\widetilde b_i$ on every candidate with $|b_i|>2w$. When
+each $A_{ij}$ is estimated from $n$ i.i.d.\ points of $D$, certifying all $M$
+candidates simultaneously adds, with probability $1-\delta$, a union term
+$O\!\bigl(\beta^{-3}\sqrt{\log(M/\delta)/n}\bigr)$; thus the simultaneous
+bracket half-width is
+$O\!\bigl(\eta_\infty/\beta^3+\beta^{-3}\sqrt{\log M/n}\bigr)$, the $\log M$
+being the cost of joint certification.
+\item[\textup{(d)}] \textbf{(Converse and abstention).} \emph{(Sound, observable)}
+$\tau>\tau^\star\Rightarrow\eta\ge\tau>\tau^\star$, certifying
+Definition~\ref{def:cei} fails ($M\ge4$); the rule
+``commit $\sign\widetilde b_i$ iff $\tau\le\tau^\star$ \emph{and}
+$|\widetilde b_i|>\kappa\,\widehat h$'' (with
+$\widehat h=\max_{k\neq l}|c_{kl}-\widehat b_k\widehat b_l|$) otherwise abstains.
+\emph{(Worst-case necessity)} For any $u$, the error-correlation
+$E=\mathrm{off}\!\bigl(b^\star u^\top+u b^{\star\top}+uu^\top\bigr)$ makes
+$C=\mathrm{off}\!\bigl((b^\star{+}u)(b^\star{+}u)^\top\bigr)$ exactly rank-one, so
+$\tau=0$ while the advantages shift by $u$; such \emph{tangential}
+perturbations are invisible to \emph{every} agreement-only statistic and
+re-instantiate the two-world ambiguity of Theorem~\ref{thm:imp}. Hence small
+$\tau$ is \emph{necessary but not sufficient} for recovery: $\tau$ certifies only
+the component of the misspecification normal to the rank-one variety.
+\end{enumerate}
+\end{theorem}
+
+\begin{proof}
+\textbf{(a)} $A_{ij}=\Pr(f_a^{(i)}{=}f_a^{(j)}\mid D)$ is a function of the
+unlabeled batch, and the rank-one fit is a deterministic map of $\{c_{ij}\}$, so
+$\tau$ is observable. Because $b^\star$ achieves squared off-diagonal residual
+$\sum_{i\neq j}E_{ij}^2=\eta^2$, the minimiser satisfies $\tau\le\eta$. For
+$M{=}3$ the equations $b_ib_j=c_{ij}$, $b_ib_k=c_{ik}$, $b_jb_k=c_{jk}$ have the
+closed-form real solution $b_i^2=c_{ij}c_{ik}/c_{jk}$ whenever
+$c_{ij}c_{ik}c_{jk}>0$, which holds for any $\eta_\infty<\beta^2$ (no off-diagonal
+entry changes sign), giving residual $0$; with $M(M{-}1)/2$ off-diagonal entries
+against $M$ parameters there are $M(M{-}3)/2$ independent constraints, zero at
+$M{=}3$ and $\ge2$ for $M\ge4$ (Prop.~\ref{prop:cei-test}).
+
+\textbf{(b)} Write $c_{ij}=b_ib_j(1+\epsilon_{ij})$, $\epsilon_{ij}=E_{ij}/(b_ib_j)$,
+so $|\epsilon_{ij}|\le\eta_\infty/\beta^2=:t\le1/2$ under $\eta_\infty\le\beta^4/14
+\le\beta^2/2$. For distinct $i,k,l$,
+$c_{ik}c_{il}/c_{kl}=b_i^2\,(1+\epsilon_{ik})(1+\epsilon_{il})/(1+\epsilon_{kl})$,
+and $\bigl|(1{+}a)(1{+}b)/(1{+}c)-1\bigr|=\bigl|(a{+}b{-}c{+}ab)/(1{+}c)\bigr|
+\le(3t+t^2)/(1-t)\le7t$ for $t\le\tfrac12$. Hence each minor estimate obeys
+$|c_{ik}c_{il}/c_{kl}-b_i^2|\le b_i^2\cdot7t\le7\eta_\infty/\beta^2$; as every
+term lies within $7\eta_\infty/\beta^2$ of $b_i^2$, so does their median, giving
+the first bound. Since $b_i^2\ge\beta^2$ and $7\eta_\infty/\beta^2\le\beta^2/2$,
+$\widetilde b_i^{\,2}\ge\beta^2/2$, so $x\mapsto\sqrt x$ is
+$(\beta\sqrt2)^{-1}$-Lipschitz between $\widetilde b_i^{\,2}$ and $b_i^2$ and
+$\bigl|\,|\widetilde b_i|-|b_i|\,\bigr|\le(7\eta_\infty/\beta^2)/(\beta\sqrt2)
+\le5\eta_\infty/\beta^3$; the anchor $b_1>0$ and $\sign(c_{1i})=\sign(b_i)$ (valid
+since $|b_1b_i|\ge\beta^2>\eta_\infty$) fix the signs, yielding
+$|\widetilde b_i-b_i|\le5\eta_\infty/\beta^3$. The $\ell_2$ bound follows from
+$\|\cdot\|_2\le\sqrt M\|\cdot\|_\infty$ and $\eta_\infty\le\eta$.
+
+\textbf{(c)} $|\widetilde a_i-a_i|=\tfrac12|\widetilde b_i-b_i|\le\tfrac52
+\eta_\infty/\beta^3=w$. If $|a_i-a_j|>2w$ then
+$|(\widetilde a_i-\widetilde a_j)-(a_i-a_j)|\le2w<|a_i-a_j|$, so the sign of the
+estimated gap matches; the per-candidate sign claim is the case $j$ ``at chance''
+and invokes Theorem~\ref{thm:disagree}. For the finite-sample term, each
+$\widehat A_{ij}$ is a mean of $n$ i.i.d.\ Bernoulli draws, so by Hoeffding and a
+union bound over the $\binom M2$ pairs,
+$\max_{i\neq j}|\widehat A_{ij}-A_{ij}|\le\sqrt{\log(M(M{-}1)/\delta)/2n}$ w.p.\
+$1-\delta$; the minor map is locally Lipschitz with constant
+$O(\beta^{-3})$ (part (b)), propagating this to
+$O(\beta^{-3}\sqrt{\log M/n})$.
+
+\textbf{(d)} If $\tau>\tau^\star$ then $\eta\ge\tau>\tau^\star>0$, so $E\neq0$ and
+Definition~\ref{def:cei} fails; under Definition~\ref{def:cei}, $\eta=0\Rightarrow
+\tau=0\le\tau^\star$, so the test never falsely rejects (one-sided soundness,
+exact for $M\ge4$). For necessity, expand
+$(b^\star{+}u)(b^\star{+}u)^\top=b^\star b^{\star\top}+b^\star u^\top+ub^{\star\top}
++uu^\top$; taking off-diagonals shows the displayed $E$ makes $\mathrm{off}(C)$
+exactly rank-one with factor $b^\star+u$, so $\tau=0$ and any rank-one method
+returns $b^\star+u$. The two worlds $b^\star$ and $b^\star+u$ have identical
+label-free agreements yet can carry opposite $\sign\Delta^{(i)}$ for a candidate
+with $|b_i^\star|<|u_i|$; this is precisely the indistinguishable pair of
+Theorem~\ref{thm:imp}. \qedhere
+\end{proof}
+
+\paragraph{Validated.} \texttt{val\_multicandidate\_residual.py}
+(\texttt{results\_multicandidate\_residual.json}, seed $20260609$, CPU only;
+$M{\in}\{3,4,5\}$, margin $\beta{=}0.25$, single-factor Gaussian-copula error
+correlation $\rho\in[0,0.5]$, $n_D{=}4000$). Under exact independence
+($\rho{=}0$, Definition~\ref{def:cei}) recovery is essentially exact: sign
+accuracy $1.00$ and $\|\widetilde b-b^\star\|_\infty\approx0.03$ for every $M$.
+The recovery error grows \emph{linearly} in the true misspecification, log--log
+slope $\mathbf{0.86}$ ($R^2{=}0.96$), confirming the $O(\varepsilon)$ rate of
+(b). The observable residual $\tau$ is \emph{monotone} in $\rho$ for $M\ge4$
+(Spearman $\rho{=}\mathbf{1.00}$, range $0.019\!\to\!0.24$ for $M{=}4$,
+$0.030\!\to\!0.41$ for $M{=}5$) while for $M{=}3$ it stays $\le0.007$ over the
+operational range and is $\mathbf{17\times}$ smaller than $M{=}4$ at
+$\rho{=}0.2$, empirically confirming the $M{\ge}4$ requirement of (a). The
+$\tau$-gated commit rule ($\tau^\star{=}0.08$, $\kappa{=}2.5$) makes
+\textbf{zero} false commitments for $\rho\le0.2$ and $\le0.14\%$ across
+\emph{all} $\rho$ (the residual leakage being exactly the tangential component of
+(d)), while the commit rate falls from $1.00$ to $0.19$ as $\rho{:}0\to0.5$
+(abstention engages). Committed-sign accuracy stays $\ge99\%$ up to an empirical
+threshold $\tau^\star\!\approx\!\mathbf{0.069}$, then degrades smoothly
+($0.97$ at $\tau{\approx}0.10$, $0.84$ at $\tau{\approx}0.27$), so $\tau$ is a
+genuine \emph{quantitative} risk dial, not merely a binary detector. The
+simultaneous bracket width is empirically \emph{flat} in $M$
+($0.069\!\to\!0.049$ for $M{:}4\to12$), so the $\log M$ factor in (c) is a loose
+upper bound---median aggregation over $\Theta(M^2)$ triples offsets the
+union-bound cost.
+
+\paragraph{Positioning and honest scope.} The \emph{exact}-independence recovery
+(part of (a)) is classical: estimating classifier accuracies from unlabeled
+agreements under conditional independence is the Dawid--Skene model and the
+spectral ``rank-one off-diagonal'' construction of Parisi et al.\ and
+Jaffe--Nadler; the multiclass tensor case is Anandkumar et al.\ (already cited in
+\S\ref{sec:multicand}). Our \emph{delta} is three-fold and lives entirely in the
+\emph{approximate} regime: (i) a quantitative perturbation bound
+(Theorem~\ref{thm:multicand-residual}(b,c)) showing the recovered ordering is
+$O(\varepsilon)$-stable, (ii) the identification of an \emph{observable} residual
+$\tau$ that controls the \emph{detectable} part of the violation---the
+verifiability that ATC, Agreement-on-the-Line and AETTA rely on but never
+establish---and (iii) a precise converse (d) proving $\tau$ \emph{cannot}
+certify the tangential component, which we tie to Theorem~\ref{thm:imp}. This
+\emph{enlarges} the reach-table view (Prop.~\ref{thm:unify}): the
+``multi-view (cond.\ indep.)'' row's reach $\rho{=}0$ becomes $\rho=O(\tau)$ on
+the normal directions with an irreducible blind spot along the tangent. It is a
+solid relaxation of one assumption into a checkable, bracketed one---\emph{not} an
+assumption-free resolution of Conjecture~\ref{conj:gen}, which still demands the
+weakest checkable condition with a tight matching converse. The validation is
+synthetic (it tests the theory under a controlled, generic error-correlation
+model); whether real co-trained adaptors (Tent/EATA/SAR) fall in the $\tau$-small
+regime on a given shift is an empirical question deferred to the experimental
+track.

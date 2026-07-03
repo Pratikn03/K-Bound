@@ -1,0 +1,14 @@
+experiment: multimodal_instantiation
+generating_script: src/scripts/kbound/experiments/elara_u multimodal suite (vendored evidence)
+result_file: ../../results/multimodal/*.json
+claim_status: corroborating
+kga:
+  estimator: GradientBoostingRegressor
+  n_estimators: 250
+  max_depth: 2
+  learning_rate: 0.05
+  subsample: 0.8
+  cv: leave_one_out
+  conformal_alpha: 0.10
+  conformal_quantile: 0.90
+seed: 0

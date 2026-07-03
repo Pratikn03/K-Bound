@@ -1,0 +1,2160 @@
+{
+  "schema": "kbound_imagenetr_v0.5",
+  "dataset": "imagenet-r",
+  "created": "2026-07-01T11:54:12",
+  "host": {
+    "platform": "macOS-26.5.1-arm64-arm-64bit",
+    "torch": "2.5.1",
+    "mps": true
+  },
+  "config": {
+    "imagenetr_dir": "experiments/kbound/data/imagenet-r",
+    "panel": "diverse_backbones",
+    "f0_backbone": "resnet50",
+    "candidate_backbones": [
+      "resnet101",
+      "resnet152",
+      "resnext101_32x8d",
+      "efficientnet_b0",
+      "efficientnet_b3",
+      "convnext_tiny",
+      "convnext_base",
+      "vit_b_16",
+      "swin_t",
+      "swin_b"
+    ],
+    "seeds": [
+      0,
+      1
+    ],
+    "compositions": [
+      "iid",
+      "single_class"
+    ],
+    "batch_regimes": [
+      "tiny"
+    ],
+    "aggressiveness": [
+      "mild"
+    ],
+    "n_eval": 40,
+    "n_batches": 2,
+    "tau_star": 0.52,
+    "kappa": 2.5,
+    "sd_L": 0.6,
+    "delta": 0.05,
+    "device": "cpu",
+    "steps_override": 4,
+    "max_classes": 20,
+    "episodic_steps": 5,
+    "episodic_batch": 64,
+    "frozen_eval_batch": 32,
+    "smoke": true
+  },
+  "config_sha8": "a4dd11ad",
+  "f0": "torchvision resnet50 ResNet50_Weights.IMAGENET1K_V2",
+  "num_classes": 20,
+  "candidates": [
+    "resnet101",
+    "resnet152",
+    "resnext101_32x8d",
+    "efficientnet_b0",
+    "efficientnet_b3",
+    "convnext_tiny",
+    "convnext_base",
+    "vit_b_16",
+    "swin_t",
+    "swin_b"
+  ],
+  "panel": "diverse_backbones",
+  "multiclass_caveat": "multi-candidate tau-route (b) uses prediction agreement on a 200-class label space; the binary-Y advantage recovery (Thm 1A) is heuristic here, so per-condition tau is stored for re-pick. (a) KGA and (c) smooth-drift (max-prob Brier) generalize directly.",
+  "data": {
+    "n_images": 3231,
+    "n_classes": 20,
+    "wall_sec": 733.4
+  },
+  "baselines": {
+    "always_freeze_mean_acc": 0.6125,
+    "per_candidate_always_adapt_mean_acc": {
+      "convnext_base": 0.68125,
+      "convnext_tiny": 0.6312500000000001,
+      "efficientnet_b0": 0.60625,
+      "efficientnet_b3": 0.6375,
+      "resnet101": 0.63125,
+      "resnet152": 0.6625000000000001,
+      "resnext101_32x8d": 0.64375,
+      "swin_b": 0.625,
+      "swin_t": 0.59375,
+      "vit_b_16": 0.6125
+    },
+    "per_condition_oracle_mean_acc": 0.70625
+  },
+  "routing_a_single_candidate": {
+    "convnext_base": {
+      "n_cells": 4,
+      "mean_B": 0.06875000000000002,
+      "base_rate_harmful_B<0": 0.0,
+      "mean_acc": {
+        "always_adapt": 0.68125,
+        "always_freeze": 0.6125
+      },
+      "kga": {
+        "n": 4,
+        "decision_counts": {
+          "ADAPT": 2,
+          "FREEZE": 0,
+          "ABSTAIN": 2
+        },
+        "coverage": 0.5,
+        "abstention_rate": 0.5,
+        "adapt_precision_B>0": 1.0,
+        "false_adapt_rate_B<0": 0.0,
+        "mean_acc": {
+          "always_adapt": 0.68125,
+          "always_freeze": 0.6125,
+          "K_Bound": 0.625,
+          "oracle": 0.68125
+        },
+        "regret_vs_oracle": {
+          "always_adapt": 0.0,
+          "always_freeze": 0.06875000000000002,
+          "K_Bound": 0.05625000000000001
+        },
+        "worst_case_acc": {
+          "always_adapt": 0.55,
+          "always_freeze": 0.45,
+          "K_Bound": 0.45
+        },
+        "alpha_false_adapt_budget": 0.1,
+        "beats_both_regret_only": false,
+        "beats_both": false,
+        "eps_conformal": 0.07917911654079175
+      }
+    },
+    "convnext_tiny": {
+      "n_cells": 4,
+      "mean_B": 0.01875000000000003,
+      "base_rate_harmful_B<0": 0.25,
+      "mean_acc": {
+        "always_adapt": 0.6312500000000001,
+        "always_freeze": 0.6125
+      },
+      "kga": {
+        "n": 4,
+        "decision_counts": {
+          "ADAPT": 0,
+          "FREEZE": 0,
+          "ABSTAIN": 4
+        },
+        "coverage": 0.0,
+        "abstention_rate": 1.0,
+        "adapt_precision_B>0": null,
+        "false_adapt_rate_B<0": null,
+        "mean_acc": {
+          "always_adapt": 0.6312500000000001,
+          "always_freeze": 0.6125,
+          "K_Bound": 0.6125,
+          "oracle": 0.64375
+        },
+        "regret_vs_oracle": {
+          "always_adapt": 0.012499999999999983,
+          "always_freeze": 0.031250000000000014,
+          "K_Bound": 0.031250000000000014
+        },
+        "worst_case_acc": {
+          "always_adapt": 0.55,
+          "always_freeze": 0.45,
+          "K_Bound": 0.45
+        },
+        "alpha_false_adapt_budget": 0.1,
+        "beats_both_regret_only": false,
+        "beats_both": false,
+        "eps_conformal": 0.13018475669038213
+      }
+    },
+    "efficientnet_b0": {
+      "n_cells": 4,
+      "mean_B": -0.006250000000000019,
+      "base_rate_harmful_B<0": 0.5,
+      "mean_acc": {
+        "always_adapt": 0.60625,
+        "always_freeze": 0.6125
+      },
+      "kga": {
+        "n": 4,
+        "decision_counts": {
+          "ADAPT": 0,
+          "FREEZE": 0,
+          "ABSTAIN": 4
+        },
+        "coverage": 0.0,
+        "abstention_rate": 1.0,
+        "adapt_precision_B>0": null,
+        "false_adapt_rate_B<0": null,
+        "mean_acc": {
+          "always_adapt": 0.60625,
+          "always_freeze": 0.6125,
+          "K_Bound": 0.6125,
+          "oracle": 0.63125
+        },
+        "regret_vs_oracle": {
+          "always_adapt": 0.025000000000000022,
+          "always_freeze": 0.018750000000000003,
+          "K_Bound": 0.018750000000000003
+        },
+        "worst_case_acc": {
+          "always_adapt": 0.525,
+          "always_freeze": 0.45,
+          "K_Bound": 0.45
+        },
+        "alpha_false_adapt_budget": 0.1,
+        "beats_both_regret_only": false,
+        "beats_both": false,
+        "eps_conformal": 0.08284427723261724
+      }
+    },
+    "efficientnet_b3": {
+      "n_cells": 4,
+      "mean_B": 0.02499999999999998,
+      "base_rate_harmful_B<0": 0.5,
+      "mean_acc": {
+        "always_adapt": 0.6375,
+        "always_freeze": 0.6125
+      },
+      "kga": {
+        "n": 4,
+        "decision_counts": {
+          "ADAPT": 0,
+          "FREEZE": 0,
+          "ABSTAIN": 4
+        },
+        "coverage": 0.0,
+        "abstention_rate": 1.0,
+        "adapt_precision_B>0": null,
+        "false_adapt_rate_B<0": null,
+        "mean_acc": {
+          "always_adapt": 0.6375,
+          "always_freeze": 0.6125,
+          "K_Bound": 0.6125,
+          "oracle": 0.65625
+        },
+        "regret_vs_oracle": {
+          "always_adapt": 0.018750000000000017,
+          "always_freeze": 0.04375,
+          "K_Bound": 0.04375
+        },
+        "worst_case_acc": {
+          "always_adapt": 0.575,
+          "always_freeze": 0.45,
+          "K_Bound": 0.45
+        },
+        "alpha_false_adapt_budget": 0.1,
+        "beats_both_regret_only": false,
+        "beats_both": false,
+        "eps_conformal": 0.1600993776827276
+      }
+    },
+    "resnet101": {
+      "n_cells": 4,
+      "mean_B": 0.018750000000000003,
+      "base_rate_harmful_B<0": 0.25,
+      "mean_acc": {
+        "always_adapt": 0.63125,
+        "always_freeze": 0.6125
+      },
+      "kga": {
+        "n": 4,
+        "decision_counts": {
+          "ADAPT": 0,
+          "FREEZE": 0,
+          "ABSTAIN": 4
+        },
+        "coverage": 0.0,
+        "abstention_rate": 1.0,
+        "adapt_precision_B>0": null,
+        "false_adapt_rate_B<0": null,
+        "mean_acc": {
+          "always_adapt": 0.63125,
+          "always_freeze": 0.6125,
+          "K_Bound": 0.6125,
+          "oracle": 0.6375
+        },
+        "regret_vs_oracle": {
+          "always_adapt": 0.0062500000000000056,
+          "always_freeze": 0.02500000000000001,
+          "K_Bound": 0.02500000000000001
+        },
+        "worst_case_acc": {
+          "always_adapt": 0.5,
+          "always_freeze": 0.45,
+          "K_Bound": 0.45
+        },
+        "alpha_false_adapt_budget": 0.1,
+        "beats_both_regret_only": false,
+        "beats_both": false,
+        "eps_conformal": 0.037133462207269444
+      }
+    },
+    "resnet152": {
+      "n_cells": 4,
+      "mean_B": 0.05,
+      "base_rate_harmful_B<0": 0.0,
+      "mean_acc": {
+        "always_adapt": 0.6625000000000001,
+        "always_freeze": 0.6125
+      },
+      "kga": {
+        "n": 4,
+        "decision_counts": {
+          "ADAPT": 4,
+          "FREEZE": 0,
+          "ABSTAIN": 0
+        },
+        "coverage": 1.0,
+        "abstention_rate": 0.0,
+        "adapt_precision_B>0": 1.0,
+        "false_adapt_rate_B<0": 0.0,
+        "mean_acc": {
+          "always_adapt": 0.6625000000000001,
+          "always_freeze": 0.6125,
+          "K_Bound": 0.6625000000000001,
+          "oracle": 0.6625000000000001
+        },
+        "regret_vs_oracle": {
+          "always_adapt": 0.0,
+          "always_freeze": 0.05,
+          "K_Bound": 0.0
+        },
+        "worst_case_acc": {
+          "always_adapt": 0.5,
+          "always_freeze": 0.45,
+          "K_Bound": 0.5
+        },
+        "alpha_false_adapt_budget": 0.1,
+        "beats_both_regret_only": false,
+        "beats_both": false,
+        "eps_conformal": 7.979727989493313e-17
+      }
+    },
+    "resnext101_32x8d": {
+      "n_cells": 4,
+      "mean_B": 0.031249999999999986,
+      "base_rate_harmful_B<0": 0.25,
+      "mean_acc": {
+        "always_adapt": 0.64375,
+        "always_freeze": 0.6125
+      },
+      "kga": {
+        "n": 4,
+        "decision_counts": {
+          "ADAPT": 0,
+          "FREEZE": 0,
+          "ABSTAIN": 4
+        },
+        "coverage": 0.0,
+        "abstention_rate": 1.0,
+        "adapt_precision_B>0": null,
+        "false_adapt_rate_B<0": null,
+        "mean_acc": {
+          "always_adapt": 0.64375,
+          "always_freeze": 0.6125,
+          "K_Bound": 0.6125,
+          "oracle": 0.65
+        },
+        "regret_vs_oracle": {
+          "always_adapt": 0.0062500000000000056,
+          "always_freeze": 0.03749999999999999,
+          "K_Bound": 0.03749999999999999
+        },
+        "worst_case_acc": {
+          "always_adapt": 0.525,
+          "always_freeze": 0.45,
+          "K_Bound": 0.45
+        },
+        "alpha_false_adapt_budget": 0.1,
+        "beats_both_regret_only": false,
+        "beats_both": false,
+        "eps_conformal": 0.08772294604435579
+      }
+    },
+    "swin_b": {
+      "n_cells": 4,
+      "mean_B": 0.012499999999999997,
+      "base_rate_harmful_B<0": 0.25,
+      "mean_acc": {
+        "always_adapt": 0.625,
+        "always_freeze": 0.6125
+      },
+      "kga": {
+        "n": 4,
+        "decision_counts": {
+          "ADAPT": 0,
+          "FREEZE": 0,
+          "ABSTAIN": 4
+        },
+        "coverage": 0.0,
+        "abstention_rate": 1.0,
+        "adapt_precision_B>0": null,
+        "false_adapt_rate_B<0": null,
+        "mean_acc": {
+          "always_adapt": 0.625,
+          "always_freeze": 0.6125,
+          "K_Bound": 0.6125,
+          "oracle": 0.63125
+        },
+        "regret_vs_oracle": {
+          "always_adapt": 0.0062500000000000056,
+          "always_freeze": 0.018750000000000003,
+          "K_Bound": 0.018750000000000003
+        },
+        "worst_case_acc": {
+          "always_adapt": 0.5,
+          "always_freeze": 0.45,
+          "K_Bound": 0.45
+        },
+        "alpha_false_adapt_budget": 0.1,
+        "beats_both_regret_only": false,
+        "beats_both": false,
+        "eps_conformal": 0.05510770844854261
+      }
+    },
+    "swin_t": {
+      "n_cells": 4,
+      "mean_B": -0.018750000000000003,
+      "base_rate_harmful_B<0": 0.75,
+      "mean_acc": {
+        "always_adapt": 0.59375,
+        "always_freeze": 0.6125
+      },
+      "kga": {
+        "n": 4,
+        "decision_counts": {
+          "ADAPT": 0,
+          "FREEZE": 0,
+          "ABSTAIN": 4
+        },
+        "coverage": 0.0,
+        "abstention_rate": 1.0,
+        "adapt_precision_B>0": null,
+        "false_adapt_rate_B<0": null,
+        "mean_acc": {
+          "always_adapt": 0.59375,
+          "always_freeze": 0.6125,
+          "K_Bound": 0.6125,
+          "oracle": 0.625
+        },
+        "regret_vs_oracle": {
+          "always_adapt": 0.03125,
+          "always_freeze": 0.012499999999999997,
+          "K_Bound": 0.012499999999999997
+        },
+        "worst_case_acc": {
+          "always_adapt": 0.5,
+          "always_freeze": 0.45,
+          "K_Bound": 0.45
+        },
+        "alpha_false_adapt_budget": 0.1,
+        "beats_both_regret_only": false,
+        "beats_both": false,
+        "eps_conformal": 0.08464031241301942
+      }
+    },
+    "vit_b_16": {
+      "n_cells": 4,
+      "mean_B": 1.3877787807814457e-17,
+      "base_rate_harmful_B<0": 0.5,
+      "mean_acc": {
+        "always_adapt": 0.6125,
+        "always_freeze": 0.6125
+      },
+      "kga": {
+        "n": 4,
+        "decision_counts": {
+          "ADAPT": 0,
+          "FREEZE": 0,
+          "ABSTAIN": 4
+        },
+        "coverage": 0.0,
+        "abstention_rate": 1.0,
+        "adapt_precision_B>0": null,
+        "false_adapt_rate_B<0": null,
+        "mean_acc": {
+          "always_adapt": 0.6125,
+          "always_freeze": 0.6125,
+          "K_Bound": 0.6125,
+          "oracle": 0.63125
+        },
+        "regret_vs_oracle": {
+          "always_adapt": 0.01874999999999999,
+          "always_freeze": 0.018750000000000003,
+          "K_Bound": 0.018750000000000003
+        },
+        "worst_case_acc": {
+          "always_adapt": 0.525,
+          "always_freeze": 0.45,
+          "K_Bound": 0.45
+        },
+        "alpha_false_adapt_budget": 0.1,
+        "beats_both_regret_only": false,
+        "beats_both": false,
+        "eps_conformal": 0.10122031368578219
+      }
+    }
+  },
+  "routing_b_multicandidate": {
+    "n_conditions": 4,
+    "mean_acc": {
+      "router": 0.6125,
+      "always_freeze": 0.6125,
+      "best_fixed_always_adapt": 0.68125,
+      "per_condition_oracle": 0.70625
+    },
+    "regret_vs_oracle": {
+      "router": 0.09375000000000001,
+      "always_freeze": 0.09375000000000001,
+      "best_fixed_always_adapt": 0.024999999999999994
+    },
+    "coverage": 0.0,
+    "abstention_rate": 1.0,
+    "false_adapt_rate": null,
+    "mean_tau": 2.226303239211745,
+    "gate_pass_rate": 0.0,
+    "fixed_best_candidate": "convnext_base",
+    "routing_breakdown": {
+      "ABSTAIN": 4
+    },
+    "decisions_by_regime": {
+      "helpful": {
+        "ABSTAIN": 4
+      }
+    },
+    "decisions_by_domain": {
+      "imagenet_r": {
+        "ABSTAIN": 4
+      }
+    },
+    "alpha_false_adapt_budget": 0.1,
+    "beats_both_regret_only": false,
+    "beats_both": false
+  },
+  "routing_c_smooth_drift": {
+    "implemented": true,
+    "theorem": "1B",
+    "view": "brier_squared_loss",
+    "gS_estimate": "f0_surrogate(conservative)",
+    "n_conditions": 4,
+    "decision_counts": {
+      "ABSTAIN": 4
+    },
+    "mean_center_c": -0.06291244713100409,
+    "mean_reach": 0.02172427108401259,
+    "mean_d_obs": 0.10873186652382563,
+    "bracket_coverage_trueB": 1.0,
+    "status": "DIAGNOSTIC (wired to val_smooth_drift.py; conservative g_S~f0 surrogate)",
+    "note": "DIAGNOSTIC: g_S~f0 makes center conservative; full 1B classification instantiation needs an f0-independent source-concept estimate."
+  },
+  "detectability": {
+    "n_cells": 40,
+    "n_harmful": 13,
+    "base_rate_harmful": 0.325,
+    "mean_B": 0.02,
+    "per_feature": {
+      "pre_entropy": {
+        "pearson_corr_B": -0.09769994563800127,
+        "harm_AUC": 0.5712250712250713
+      },
+      "pre_conf": {
+        "pearson_corr_B": 0.06532890011130789,
+        "harm_AUC": 0.5712250712250713
+      },
+      "pre_pbal": {
+        "pearson_corr_B": 0.40393543081735667,
+        "harm_AUC": 0.5712250712250713
+      },
+      "post_entropy": {
+        "pearson_corr_B": -0.020817469548004522,
+        "harm_AUC": 0.5612535612535613
+      },
+      "post_conf": {
+        "pearson_corr_B": 0.0014351855362622118,
+        "harm_AUC": 0.5698005698005698
+      },
+      "post_pbal": {
+        "pearson_corr_B": 0.35550429428147573,
+        "harm_AUC": 0.6182336182336182
+      },
+      "pbal_drop": {
+        "pearson_corr_B": -0.05548019305361844,
+        "harm_AUC": 0.5042735042735043
+      },
+      "entropy_drop": {
+        "pearson_corr_B": -0.2706195466046318,
+        "harm_AUC": 0.6153846153846154
+      },
+      "frac_highconf": {
+        "pearson_corr_B": 0.07234238006146362,
+        "harm_AUC": 0.594017094017094
+      },
+      "marginal_KL": {
+        "pearson_corr_B": -0.17349842636905705,
+        "harm_AUC": 0.5783475783475783
+      },
+      "update_norm": {
+        "pearson_corr_B": 0.0,
+        "harm_AUC": 0.5
+      }
+    },
+    "certificate_harm_AUC_negBhat": 0.6780626780626781,
+    "certificate_eps": 0.09349299336351853,
+    "best_single_feature_harm_AUC": 0.6182336182336182,
+    "detectability_verdict": "weak"
+  },
+  "kbound_summary": {
+    "classification": "mixed+undetectable",
+    "base_rate_harmful_B<0": 0.325,
+    "mean_B": 0.02,
+    "detectability_verdict": "weak",
+    "best_single_feature_harm_AUC": 0.6182336182336182,
+    "gamma_S_proxy_indist_advantage": null,
+    "gamma_T_proxy_oracle_advantage": null,
+    "delta": 0.05,
+    "abs_gammaT_minus_gammaS": null,
+    "gamma_gap_within_delta": null,
+    "real_data_multicandidate_tau_mean": 2.226303239211745,
+    "_note": "gamma_S/gamma_T are operational debug-scale proxies (in-dist vs OOD adaptation advantage); final defs follow the paper. Classification honors the integrity policy: reported from measured B, never tuned to a target."
+  },
+  "tau_distribution": [
+    1.395386900055821,
+    2.2692618266624707,
+    2.4005460677304282,
+    2.8400181623982608
+  ],
+  "records": [
+    {
+      "seed": 0,
+      "domain": "imagenet_r",
+      "comp": "iid",
+      "regime": "tiny",
+      "aggr": "mild",
+      "method": "backbone",
+      "mode": "frozen",
+      "candidate": "resnet101",
+      "a0": 0.45,
+      "aa": 0.5,
+      "B": 0.04999999999999999,
+      "upd_norm": 0.0,
+      "Z": [
+        1.4764220714569092,
+        0.5743193030357361,
+        0.8921172639367871,
+        1.4908808469772339,
+        0.5272172093391418,
+        0.8775947149679757,
+        0.014522548968811444,
+        -0.014458775520324707,
+        0.375,
+        0.06180780380964279,
+        0.0
+      ],
+      "regime_label": "helpful"
+    },
+    {
+      "seed": 0,
+      "domain": "imagenet_r",
+      "comp": "iid",
+      "regime": "tiny",
+      "aggr": "mild",
+      "method": "backbone",
+      "mode": "frozen",
+      "candidate": "resnet152",
+      "a0": 0.45,
+      "aa": 0.5,
+      "B": 0.04999999999999999,
+      "upd_norm": 0.0,
+      "Z": [
+        1.4764220714569092,
+        0.5743193030357361,
+        0.8921172639367871,
+        1.3953648805618286,
+        0.5896347165107727,
+        0.8797132963351131,
+        0.01240396760167406,
+        0.08105719089508057,
+        0.5,
+        0.09404505789279938,
+        0.0
+      ],
+      "regime_label": "helpful"
+    },
+    {
+      "seed": 0,
+      "domain": "imagenet_r",
+      "comp": "iid",
+      "regime": "tiny",
+      "aggr": "mild",
+      "method": "backbone",
+      "mode": "frozen",
+      "candidate": "resnext101_32x8d",
+      "a0": 0.45,
+      "aa": 0.525,
+      "B": 0.07500000000000001,
+      "upd_norm": 0.0,
+      "Z": [
+        1.4764220714569092,
+        0.5743193030357361,
+        0.8921172639367871,
+        1.4565403461456299,
+        0.5906864404678345,
+        0.8839269015906248,
+        0.008190362346162328,
+        0.019881725311279297,
+        0.375,
+        0.025984952226281166,
+        0.0
+      ],
+      "regime_label": "helpful"
+    },
+    {
+      "seed": 0,
+      "domain": "imagenet_r",
+      "comp": "iid",
+      "regime": "tiny",
+      "aggr": "mild",
+      "method": "backbone",
+      "mode": "frozen",
+      "candidate": "efficientnet_b0",
+      "a0": 0.45,
+      "aa": 0.525,
+      "B": 0.07500000000000001,
+      "upd_norm": 0.0,
+      "Z": [
+        1.4764220714569092,
+        0.5743193030357361,
+        0.8921172639367871,
+        1.084066390991211,
+        0.6529910564422607,
+        0.8203134319783641,
+        0.07180383195842299,
+        0.39235568046569824,
+        0.5,
+        0.11790628731250763,
+        0.0
+      ],
+      "regime_label": "helpful"
+    },
+    {
+      "seed": 0,
+      "domain": "imagenet_r",
+      "comp": "iid",
+      "regime": "tiny",
+      "aggr": "mild",
+      "method": "backbone",
+      "mode": "frozen",
+      "candidate": "efficientnet_b3",
+      "a0": 0.45,
+      "aa": 0.6,
+      "B": 0.14999999999999997,
+      "upd_norm": 0.0,
+      "Z": [
+        1.4764220714569092,
+        0.5743193030357361,
+        0.8921172639367871,
+        1.3947110176086426,
+        0.5767256617546082,
+        0.8506739285950271,
+        0.041443335341760035,
+        0.0817110538482666,
+        0.375,
+        0.1376219391822815,
+        0.0
+      ],
+      "regime_label": "helpful"
+    },
+    {
+      "seed": 0,
+      "domain": "imagenet_r",
+      "comp": "iid",
+      "regime": "tiny",
+      "aggr": "mild",
+      "method": "backbone",
+      "mode": "frozen",
+      "candidate": "convnext_tiny",
+      "a0": 0.45,
+      "aa": 0.55,
+      "B": 0.10000000000000003,
+      "upd_norm": 0.0,
+      "Z": [
+        1.4764220714569092,
+        0.5743193030357361,
+        0.8921172639367871,
+        1.1948223114013672,
+        0.6582948565483093,
+        0.856546346451412,
+        0.03557091748537511,
+        0.281599760055542,
+        0.5,
+        0.05345571041107178,
+        0.0
+      ],
+      "regime_label": "helpful"
+    },
+    {
+      "seed": 0,
+      "domain": "imagenet_r",
+      "comp": "iid",
+      "regime": "tiny",
+      "aggr": "mild",
+      "method": "backbone",
+      "mode": "frozen",
+      "candidate": "convnext_base",
+      "a0": 0.45,
+      "aa": 0.55,
+      "B": 0.10000000000000003,
+      "upd_norm": 0.0,
+      "Z": [
+        1.4764220714569092,
+        0.5743193030357361,
+        0.8921172639367871,
+        1.0881874561309814,
+        0.6827679872512817,
+        0.8513677600134608,
+        0.040749503923326325,
+        0.38823461532592773,
+        0.625,
+        0.051152922213077545,
+        0.0
+      ],
+      "regime_label": "helpful"
+    },
+    {
+      "seed": 0,
+      "domain": "imagenet_r",
+      "comp": "iid",
+      "regime": "tiny",
+      "aggr": "mild",
+      "method": "backbone",
+      "mode": "frozen",
+      "candidate": "vit_b_16",
+      "a0": 0.45,
+      "aa": 0.525,
+      "B": 0.07500000000000001,
+      "upd_norm": 0.0,
+      "Z": [
+        1.4764220714569092,
+        0.5743193030357361,
+        0.8921172639367871,
+        1.2623416185379028,
+        0.6534836292266846,
+        0.8662018884733445,
+        0.02591537546344269,
+        0.21408045291900635,
+        0.375,
+        0.09837695956230164,
+        0.0
+      ],
+      "regime_label": "helpful"
+    },
+    {
+      "seed": 0,
+      "domain": "imagenet_r",
+      "comp": "iid",
+      "regime": "tiny",
+      "aggr": "mild",
+      "method": "backbone",
+      "mode": "frozen",
+      "candidate": "swin_t",
+      "a0": 0.45,
+      "aa": 0.5,
+      "B": 0.04999999999999999,
+      "upd_norm": 0.0,
+      "Z": [
+        1.4764220714569092,
+        0.5743193030357361,
+        0.8921172639367871,
+        1.3858379125595093,
+        0.5996345281600952,
+        0.8821923230445406,
+        0.009924940892246492,
+        0.0905841588973999,
+        0.375,
+        0.06080101057887077,
+        0.0
+      ],
+      "regime_label": "helpful"
+    },
+    {
+      "seed": 0,
+      "domain": "imagenet_r",
+      "comp": "iid",
+      "regime": "tiny",
+      "aggr": "mild",
+      "method": "backbone",
+      "mode": "frozen",
+      "candidate": "swin_b",
+      "a0": 0.45,
+      "aa": 0.5,
+      "B": 0.04999999999999999,
+      "upd_norm": 0.0,
+      "Z": [
+        1.4764220714569092,
+        0.5743193030357361,
+        0.8921172639367871,
+        1.4803800582885742,
+        0.5728759765625,
+        0.88863831775716,
+        0.0034789461796271848,
+        -0.003957986831665039,
+        0.375,
+        0.062381040304899216,
+        0.0
+      ],
+      "regime_label": "helpful"
+    },
+    {
+      "seed": 0,
+      "domain": "imagenet_r",
+      "comp": "single_class",
+      "regime": "tiny",
+      "aggr": "mild",
+      "method": "backbone",
+      "mode": "frozen",
+      "candidate": "resnet101",
+      "a0": 0.65,
+      "aa": 0.65,
+      "B": 0.0,
+      "upd_norm": 0.0,
+      "Z": [
+        2.2880890369415283,
+        0.3031667172908783,
+        0.9045747133821396,
+        2.220353126525879,
+        0.3278569281101227,
+        0.8972722928959753,
+        0.007302420486164252,
+        0.06773591041564941,
+        0.25,
+        0.02178683876991272,
+        0.0
+      ],
+      "regime_label": "marginal"
+    },
+    {
+      "seed": 0,
+      "domain": "imagenet_r",
+      "comp": "single_class",
+      "regime": "tiny",
+      "aggr": "mild",
+      "method": "backbone",
+      "mode": "frozen",
+      "candidate": "resnet152",
+      "a0": 0.65,
+      "aa": 0.7,
+      "B": 0.04999999999999993,
+      "upd_norm": 0.0,
+      "Z": [
+        2.2880890369415283,
+        0.3031667172908783,
+        0.9045747133821396,
+        2.221989631652832,
+        0.3267579674720764,
+        0.909101967366723,
+        -0.004527253984583424,
+        0.06609940528869629,
+        0.125,
+        0.02793441340327263,
+        0.0
+      ],
+      "regime_label": "helpful"
+    },
+    {
+      "seed": 0,
+      "domain": "imagenet_r",
+      "comp": "single_class",
+      "regime": "tiny",
+      "aggr": "mild",
+      "method": "backbone",
+      "mode": "frozen",
+      "candidate": "resnext101_32x8d",
+      "a0": 0.65,
+      "aa": 0.725,
+      "B": 0.07499999999999996,
+      "upd_norm": 0.0,
+      "Z": [
+        2.2880890369415283,
+        0.3031667172908783,
+        0.9045747133821396,
+        2.369605302810669,
+        0.30128252506256104,
+        0.9043416853489699,
+        0.0002330280331697132,
+        -0.08151626586914062,
+        0.0,
+        0.026902660727500916,
+        0.0
+      ],
+      "regime_label": "helpful"
+    },
+    {
+      "seed": 0,
+      "domain": "imagenet_r",
+      "comp": "single_class",
+      "regime": "tiny",
+      "aggr": "mild",
+      "method": "backbone",
+      "mode": "frozen",
+      "candidate": "efficientnet_b0",
+      "a0": 0.65,
+      "aa": 0.6,
+      "B": -0.050000000000000044,
+      "upd_norm": 0.0,
+      "Z": [
+        2.2880890369415283,
+        0.3031667172908783,
+        0.9045747133821396,
+        1.937363862991333,
+        0.39916837215423584,
+        0.8605599518956685,
+        0.0440147614864711,
+        0.3507251739501953,
+        0.125,
+        0.29883715510368347,
+        0.0
+      ],
+      "regime_label": "harmful"
+    },
+    {
+      "seed": 0,
+      "domain": "imagenet_r",
+      "comp": "single_class",
+      "regime": "tiny",
+      "aggr": "mild",
+      "method": "backbone",
+      "mode": "frozen",
+      "candidate": "efficientnet_b3",
+      "a0": 0.65,
+      "aa": 0.675,
+      "B": 0.025000000000000022,
+      "upd_norm": 0.0,
+      "Z": [
+        2.2880890369415283,
+        0.3031667172908783,
+        0.9045747133821396,
+        2.1411187648773193,
+        0.3711848258972168,
+        0.8528748019656814,
+        0.05169991141645813,
+        0.14697027206420898,
+        0.0,
+        0.07398010045289993,
+        0.0
+      ],
+      "regime_label": "helpful"
+    },
+    {
+      "seed": 0,
+      "domain": "imagenet_r",
+      "comp": "single_class",
+      "regime": "tiny",
+      "aggr": "mild",
+      "method": "backbone",
+      "mode": "frozen",
+      "candidate": "convnext_tiny",
+      "a0": 0.65,
+      "aa": 0.65,
+      "B": 0.0,
+      "upd_norm": 0.0,
+      "Z": [
+        2.2880890369415283,
+        0.3031667172908783,
+        0.9045747133821396,
+        2.091604709625244,
+        0.3524216115474701,
+        0.8940537523599723,
+        0.010520961022167263,
+        0.19648432731628418,
+        0.125,
+        0.125790536403656,
+        0.0
+      ],
+      "regime_label": "marginal"
+    },
+    {
+      "seed": 0,
+      "domain": "imagenet_r",
+      "comp": "single_class",
+      "regime": "tiny",
+      "aggr": "mild",
+      "method": "backbone",
+      "mode": "frozen",
+      "candidate": "convnext_base",
+      "a0": 0.65,
+      "aa": 0.775,
+      "B": 0.125,
+      "upd_norm": 0.0,
+      "Z": [
+        2.2880890369415283,
+        0.3031667172908783,
+        0.9045747133821396,
+        2.1652801036834717,
+        0.3258037269115448,
+        0.8734069751874572,
+        0.031167738194682326,
+        0.12280893325805664,
+        0.125,
+        0.07761456817388535,
+        0.0
+      ],
+      "regime_label": "helpful"
+    },
+    {
+      "seed": 0,
+      "domain": "imagenet_r",
+      "comp": "single_class",
+      "regime": "tiny",
+      "aggr": "mild",
+      "method": "backbone",
+      "mode": "frozen",
+      "candidate": "vit_b_16",
+      "a0": 0.65,
+      "aa": 0.625,
+      "B": -0.025000000000000022,
+      "upd_norm": 0.0,
+      "Z": [
+        2.2880890369415283,
+        0.3031667172908783,
+        0.9045747133821396,
+        2.2348246574401855,
+        0.30520591139793396,
+        0.9229626785200155,
+        -0.018387965137875883,
+        0.05326437950134277,
+        0.125,
+        0.09064854681491852,
+        0.0
+      ],
+      "regime_label": "harmful"
+    },
+    {
+      "seed": 0,
+      "domain": "imagenet_r",
+      "comp": "single_class",
+      "regime": "tiny",
+      "aggr": "mild",
+      "method": "backbone",
+      "mode": "frozen",
+      "candidate": "swin_t",
+      "a0": 0.65,
+      "aa": 0.625,
+      "B": -0.025000000000000022,
+      "upd_norm": 0.0,
+      "Z": [
+        2.2880890369415283,
+        0.3031667172908783,
+        0.9045747133821396,
+        1.6758131980895996,
+        0.5346254110336304,
+        0.7833078162846725,
+        0.12126689709746707,
+        0.6122758388519287,
+        0.25,
+        0.12258651852607727,
+        0.0
+      ],
+      "regime_label": "harmful"
+    },
+    {
+      "seed": 0,
+      "domain": "imagenet_r",
+      "comp": "single_class",
+      "regime": "tiny",
+      "aggr": "mild",
+      "method": "backbone",
+      "mode": "frozen",
+      "candidate": "swin_b",
+      "a0": 0.65,
+      "aa": 0.625,
+      "B": -0.025000000000000022,
+      "upd_norm": 0.0,
+      "Z": [
+        2.2880890369415283,
+        0.3031667172908783,
+        0.9045747133821396,
+        1.8170040845870972,
+        0.44667917490005493,
+        0.7878778079925524,
+        0.11669690538958721,
+        0.47108495235443115,
+        0.25,
+        0.08563708513975143,
+        0.0
+      ],
+      "regime_label": "harmful"
+    },
+    {
+      "seed": 1,
+      "domain": "imagenet_r",
+      "comp": "iid",
+      "regime": "tiny",
+      "aggr": "mild",
+      "method": "backbone",
+      "mode": "frozen",
+      "candidate": "resnet101",
+      "a0": 0.725,
+      "aa": 0.775,
+      "B": 0.050000000000000044,
+      "upd_norm": 0.0,
+      "Z": [
+        0.8625260591506958,
+        0.7829771041870117,
+        0.7905071728012483,
+        0.8259124755859375,
+        0.7851105332374573,
+        0.8071221193178963,
+        -0.016614946516648077,
+        0.0366135835647583,
+        0.625,
+        0.029838554561138153,
+        0.0
+      ],
+      "regime_label": "helpful"
+    },
+    {
+      "seed": 1,
+      "domain": "imagenet_r",
+      "comp": "iid",
+      "regime": "tiny",
+      "aggr": "mild",
+      "method": "backbone",
+      "mode": "frozen",
+      "candidate": "resnet152",
+      "a0": 0.725,
+      "aa": 0.775,
+      "B": 0.050000000000000044,
+      "upd_norm": 0.0,
+      "Z": [
+        0.8625260591506958,
+        0.7829771041870117,
+        0.7905071728012483,
+        0.7125685214996338,
+        0.796800971031189,
+        0.7998308408824985,
+        -0.00932366808125018,
+        0.149957537651062,
+        0.75,
+        0.061537858098745346,
+        0.0
+      ],
+      "regime_label": "helpful"
+    },
+    {
+      "seed": 1,
+      "domain": "imagenet_r",
+      "comp": "iid",
+      "regime": "tiny",
+      "aggr": "mild",
+      "method": "backbone",
+      "mode": "frozen",
+      "candidate": "resnext101_32x8d",
+      "a0": 0.725,
+      "aa": 0.725,
+      "B": 0.0,
+      "upd_norm": 0.0,
+      "Z": [
+        0.8625260591506958,
+        0.7829771041870117,
+        0.7905071728012483,
+        0.5697907209396362,
+        0.8671950697898865,
+        0.7711407764339364,
+        0.019366396367311856,
+        0.29273533821105957,
+        0.875,
+        0.17726042866706848,
+        0.0
+      ],
+      "regime_label": "marginal"
+    },
+    {
+      "seed": 1,
+      "domain": "imagenet_r",
+      "comp": "iid",
+      "regime": "tiny",
+      "aggr": "mild",
+      "method": "backbone",
+      "mode": "frozen",
+      "candidate": "efficientnet_b0",
+      "a0": 0.725,
+      "aa": 0.725,
+      "B": 0.0,
+      "upd_norm": 0.0,
+      "Z": [
+        0.8625260591506958,
+        0.7829771041870117,
+        0.7905071728012483,
+        0.5477179288864136,
+        0.8468122482299805,
+        0.7680332584752119,
+        0.022473914326036404,
+        0.3148081302642822,
+        0.75,
+        0.14016176760196686,
+        0.0
+      ],
+      "regime_label": "marginal"
+    },
+    {
+      "seed": 1,
+      "domain": "imagenet_r",
+      "comp": "iid",
+      "regime": "tiny",
+      "aggr": "mild",
+      "method": "backbone",
+      "mode": "frozen",
+      "candidate": "efficientnet_b3",
+      "a0": 0.725,
+      "aa": 0.7,
+      "B": -0.025000000000000022,
+      "upd_norm": 0.0,
+      "Z": [
+        0.8625260591506958,
+        0.7829771041870117,
+        0.7905071728012483,
+        0.7234681844711304,
+        0.7880770564079285,
+        0.8183732825956416,
+        -0.0278661097943933,
+        0.13905787467956543,
+        0.625,
+        0.06199027597904205,
+        0.0
+      ],
+      "regime_label": "harmful"
+    },
+    {
+      "seed": 1,
+      "domain": "imagenet_r",
+      "comp": "iid",
+      "regime": "tiny",
+      "aggr": "mild",
+      "method": "backbone",
+      "mode": "frozen",
+      "candidate": "convnext_tiny",
+      "a0": 0.725,
+      "aa": 0.675,
+      "B": -0.04999999999999993,
+      "upd_norm": 0.0,
+      "Z": [
+        0.8625260591506958,
+        0.7829771041870117,
+        0.7905071728012483,
+        0.7636004090309143,
+        0.8098278641700745,
+        0.7821655173228947,
+        0.008341655478353527,
+        0.0989256501197815,
+        0.5,
+        0.04497676342725754,
+        0.0
+      ],
+      "regime_label": "harmful"
+    },
+    {
+      "seed": 1,
+      "domain": "imagenet_r",
+      "comp": "iid",
+      "regime": "tiny",
+      "aggr": "mild",
+      "method": "backbone",
+      "mode": "frozen",
+      "candidate": "convnext_base",
+      "a0": 0.725,
+      "aa": 0.75,
+      "B": 0.025000000000000022,
+      "upd_norm": 0.0,
+      "Z": [
+        0.8625260591506958,
+        0.7829771041870117,
+        0.7905071728012483,
+        0.6635791063308716,
+        0.8271942734718323,
+        0.762243848897036,
+        0.028263323904212267,
+        0.19894695281982422,
+        0.75,
+        0.06686995923519135,
+        0.0
+      ],
+      "regime_label": "helpful"
+    },
+    {
+      "seed": 1,
+      "domain": "imagenet_r",
+      "comp": "iid",
+      "regime": "tiny",
+      "aggr": "mild",
+      "method": "backbone",
+      "mode": "frozen",
+      "candidate": "vit_b_16",
+      "a0": 0.725,
+      "aa": 0.675,
+      "B": -0.04999999999999993,
+      "upd_norm": 0.0,
+      "Z": [
+        0.8625260591506958,
+        0.7829771041870117,
+        0.7905071728012483,
+        0.7208974361419678,
+        0.795722484588623,
+        0.792902236199544,
+        -0.0023950633982957603,
+        0.14162862300872803,
+        0.75,
+        0.07155467569828033,
+        0.0
+      ],
+      "regime_label": "harmful"
+    },
+    {
+      "seed": 1,
+      "domain": "imagenet_r",
+      "comp": "iid",
+      "regime": "tiny",
+      "aggr": "mild",
+      "method": "backbone",
+      "mode": "frozen",
+      "candidate": "swin_t",
+      "a0": 0.725,
+      "aa": 0.7,
+      "B": -0.025000000000000022,
+      "upd_norm": 0.0,
+      "Z": [
+        0.8625260591506958,
+        0.7829771041870117,
+        0.7905071728012483,
+        0.6019280552864075,
+        0.841497004032135,
+        0.7704693087031123,
+        0.020037864098136016,
+        0.26059800386428833,
+        0.625,
+        0.15025444328784943,
+        0.0
+      ],
+      "regime_label": "harmful"
+    },
+    {
+      "seed": 1,
+      "domain": "imagenet_r",
+      "comp": "iid",
+      "regime": "tiny",
+      "aggr": "mild",
+      "method": "backbone",
+      "mode": "frozen",
+      "candidate": "swin_b",
+      "a0": 0.725,
+      "aa": 0.725,
+      "B": 0.0,
+      "upd_norm": 0.0,
+      "Z": [
+        0.8625260591506958,
+        0.7829771041870117,
+        0.7905071728012483,
+        0.7375645637512207,
+        0.8062575459480286,
+        0.7828590303970209,
+        0.007648142404227398,
+        0.1249614953994751,
+        0.625,
+        0.0531768873333931,
+        0.0
+      ],
+      "regime_label": "marginal"
+    },
+    {
+      "seed": 1,
+      "domain": "imagenet_r",
+      "comp": "single_class",
+      "regime": "tiny",
+      "aggr": "mild",
+      "method": "backbone",
+      "mode": "frozen",
+      "candidate": "resnet101",
+      "a0": 0.625,
+      "aa": 0.6,
+      "B": -0.025000000000000022,
+      "upd_norm": 0.0,
+      "Z": [
+        2.1981711387634277,
+        0.37779831886291504,
+        0.8374765673927147,
+        2.0689198970794678,
+        0.39686205983161926,
+        0.8250705305530412,
+        0.012406036839673451,
+        0.12925124168395996,
+        0.25,
+        0.0174068883061409,
+        0.0
+      ],
+      "regime_label": "harmful"
+    },
+    {
+      "seed": 1,
+      "domain": "imagenet_r",
+      "comp": "single_class",
+      "regime": "tiny",
+      "aggr": "mild",
+      "method": "backbone",
+      "mode": "frozen",
+      "candidate": "resnet152",
+      "a0": 0.625,
+      "aa": 0.675,
+      "B": 0.050000000000000044,
+      "upd_norm": 0.0,
+      "Z": [
+        2.1981711387634277,
+        0.37779831886291504,
+        0.8374765673927147,
+        1.8940491676330566,
+        0.46689289808273315,
+        0.7650835597069845,
+        0.0723930076857302,
+        0.3041219711303711,
+        0.375,
+        0.022443853318691254,
+        0.0
+      ],
+      "regime_label": "helpful"
+    },
+    {
+      "seed": 1,
+      "domain": "imagenet_r",
+      "comp": "single_class",
+      "regime": "tiny",
+      "aggr": "mild",
+      "method": "backbone",
+      "mode": "frozen",
+      "candidate": "resnext101_32x8d",
+      "a0": 0.625,
+      "aa": 0.6,
+      "B": -0.025000000000000022,
+      "upd_norm": 0.0,
+      "Z": [
+        2.1981711387634277,
+        0.37779831886291504,
+        0.8374765673927147,
+        2.1781251430511475,
+        0.3709850013256073,
+        0.8590157432455344,
+        -0.021539175852819725,
+        0.020045995712280273,
+        0.125,
+        0.016673030331730843,
+        0.0
+      ],
+      "regime_label": "harmful"
+    },
+    {
+      "seed": 1,
+      "domain": "imagenet_r",
+      "comp": "single_class",
+      "regime": "tiny",
+      "aggr": "mild",
+      "method": "backbone",
+      "mode": "frozen",
+      "candidate": "efficientnet_b0",
+      "a0": 0.625,
+      "aa": 0.575,
+      "B": -0.050000000000000044,
+      "upd_norm": 0.0,
+      "Z": [
+        2.1981711387634277,
+        0.37779831886291504,
+        0.8374765673927147,
+        1.8403617143630981,
+        0.4402145445346832,
+        0.7886846516401872,
+        0.048791915752527504,
+        0.3578094244003296,
+        0.125,
+        0.11422772705554962,
+        0.0
+      ],
+      "regime_label": "harmful"
+    },
+    {
+      "seed": 1,
+      "domain": "imagenet_r",
+      "comp": "single_class",
+      "regime": "tiny",
+      "aggr": "mild",
+      "method": "backbone",
+      "mode": "frozen",
+      "candidate": "efficientnet_b3",
+      "a0": 0.625,
+      "aa": 0.575,
+      "B": -0.050000000000000044,
+      "upd_norm": 0.0,
+      "Z": [
+        2.1981711387634277,
+        0.37779831886291504,
+        0.8374765673927147,
+        1.856543779373169,
+        0.48992639780044556,
+        0.7663955361847178,
+        0.07108103120799691,
+        0.3416273593902588,
+        0.125,
+        0.09085945785045624,
+        0.0
+      ],
+      "regime_label": "harmful"
+    },
+    {
+      "seed": 1,
+      "domain": "imagenet_r",
+      "comp": "single_class",
+      "regime": "tiny",
+      "aggr": "mild",
+      "method": "backbone",
+      "mode": "frozen",
+      "candidate": "convnext_tiny",
+      "a0": 0.625,
+      "aa": 0.65,
+      "B": 0.025000000000000022,
+      "upd_norm": 0.0,
+      "Z": [
+        2.1981711387634277,
+        0.37779831886291504,
+        0.8374765673927147,
+        1.7074352502822876,
+        0.541642963886261,
+        0.6840049255185293,
+        0.15347164187418538,
+        0.49073588848114014,
+        0.125,
+        0.07259935140609741,
+        0.0
+      ],
+      "regime_label": "helpful"
+    },
+    {
+      "seed": 1,
+      "domain": "imagenet_r",
+      "comp": "single_class",
+      "regime": "tiny",
+      "aggr": "mild",
+      "method": "backbone",
+      "mode": "frozen",
+      "candidate": "convnext_base",
+      "a0": 0.625,
+      "aa": 0.65,
+      "B": 0.025000000000000022,
+      "upd_norm": 0.0,
+      "Z": [
+        2.1981711387634277,
+        0.37779831886291504,
+        0.8374765673927147,
+        1.7923132181167603,
+        0.49569061398506165,
+        0.7330119624369236,
+        0.10446460495579113,
+        0.4058579206466675,
+        0.25,
+        0.051952850073575974,
+        0.0
+      ],
+      "regime_label": "helpful"
+    },
+    {
+      "seed": 1,
+      "domain": "imagenet_r",
+      "comp": "single_class",
+      "regime": "tiny",
+      "aggr": "mild",
+      "method": "backbone",
+      "mode": "frozen",
+      "candidate": "vit_b_16",
+      "a0": 0.625,
+      "aa": 0.625,
+      "B": 0.0,
+      "upd_norm": 0.0,
+      "Z": [
+        2.1981711387634277,
+        0.37779831886291504,
+        0.8374765673927147,
+        2.005847454071045,
+        0.43322524428367615,
+        0.8205110442073124,
+        0.016965523185402342,
+        0.1923236846923828,
+        0.25,
+        0.02459878847002983,
+        0.0
+      ],
+      "regime_label": "marginal"
+    },
+    {
+      "seed": 1,
+      "domain": "imagenet_r",
+      "comp": "single_class",
+      "regime": "tiny",
+      "aggr": "mild",
+      "method": "backbone",
+      "mode": "frozen",
+      "candidate": "swin_t",
+      "a0": 0.625,
+      "aa": 0.55,
+      "B": -0.07499999999999996,
+      "upd_norm": 0.0,
+      "Z": [
+        2.1981711387634277,
+        0.37779831886291504,
+        0.8374765673927147,
+        1.7612074613571167,
+        0.4931771755218506,
+        0.7550674927566849,
+        0.08240907463602976,
+        0.43696367740631104,
+        0.25,
+        0.042239960283041,
+        0.0
+      ],
+      "regime_label": "harmful"
+    },
+    {
+      "seed": 1,
+      "domain": "imagenet_r",
+      "comp": "single_class",
+      "regime": "tiny",
+      "aggr": "mild",
+      "method": "backbone",
+      "mode": "frozen",
+      "candidate": "swin_b",
+      "a0": 0.625,
+      "aa": 0.65,
+      "B": 0.025000000000000022,
+      "upd_norm": 0.0,
+      "Z": [
+        2.1981711387634277,
+        0.37779831886291504,
+        0.8374765673927147,
+        1.677061676979065,
+        0.5530400276184082,
+        0.7029226951703433,
+        0.13455387222237136,
+        0.5211094617843628,
+        0.125,
+        0.06241779774427414,
+        0.0
+      ],
+      "regime_label": "helpful"
+    }
+  ],
+  "conditions": [
+    {
+      "seed": 0,
+      "domain": "imagenet_r",
+      "comp": "iid",
+      "regime": "tiny",
+      "aggr": "mild",
+      "cand_names": [
+        "freeze_f0",
+        "resnet101",
+        "resnet152",
+        "resnext101_32x8d",
+        "efficientnet_b0",
+        "efficientnet_b3",
+        "convnext_tiny",
+        "convnext_base",
+        "vit_b_16",
+        "swin_t",
+        "swin_b"
+      ],
+      "aa_all": [
+        0.45,
+        0.5,
+        0.5,
+        0.525,
+        0.525,
+        0.6,
+        0.55,
+        0.55,
+        0.525,
+        0.5,
+        0.5
+      ],
+      "a0": 0.45,
+      "oracle": 0.6,
+      "best_adapt": 0.6,
+      "true_best": "efficientnet_b3",
+      "route": {
+        "tau": 2.4005460677304282,
+        "tau_star": 0.52,
+        "gate_pass": false,
+        "overdet_residual": 0.09022881880024737,
+        "h_hat": 0.6082090986671348,
+        "margin": 1.8984872196770644,
+        "b_hat": [
+          -0.2181518007168684,
+          -0.20102937040854435,
+          -0.24904312465126102,
+          -0.0412793932056195,
+          -0.14768738261723832,
+          -0.04331212619263261,
+          -0.003634685292726904,
+          0.055810333919818614,
+          -0.0870910534509086,
+          2.012479704466701,
+          0.011602326274384836
+        ],
+        "b_tilde": [
+          0.0,
+          -0.0,
+          -0.0,
+          0.0,
+          -0.0,
+          -0.0,
+          -0.0,
+          -0.0,
+          -0.0,
+          -0.0,
+          -0.0
+        ],
+        "anchor_b0": -0.2181518007168684,
+        "n_D": 28,
+        "M": 11,
+        "decision": "ABSTAIN",
+        "choice": null,
+        "reason": "tau=2.4005 > tau*=0.52 certifies Def-5 violated"
+      },
+      "route_c": {
+        "decision": "ABSTAIN",
+        "implemented": true,
+        "theorem": "1B",
+        "view": "brier_squared_loss",
+        "gS_estimate": "f0_surrogate(conservative)",
+        "center_c": -0.08658565760219178,
+        "U": -0.1664791341094723,
+        "T_S": -0.03994673825364026,
+        "W": 0.1888785008341074,
+        "d_obs": 0.14283592648925594,
+        "L": 0.6,
+        "reach": 0.03237436279264972,
+        "eps_n": 0.31622776601683794,
+        "bracket": [
+          -0.43518778641167943,
+          0.2620164712072959
+        ],
+        "note": "DIAGNOSTIC: g_S~f0 makes center conservative; full 1B classification instantiation needs an f0-independent source-concept estimate.",
+        "true_B_best": 0.14999999999999997,
+        "bracket_covers_trueB": true
+      },
+      "realized": 0.45,
+      "regime_label": "helpful"
+    },
+    {
+      "seed": 0,
+      "domain": "imagenet_r",
+      "comp": "single_class",
+      "regime": "tiny",
+      "aggr": "mild",
+      "cand_names": [
+        "freeze_f0",
+        "resnet101",
+        "resnet152",
+        "resnext101_32x8d",
+        "efficientnet_b0",
+        "efficientnet_b3",
+        "convnext_tiny",
+        "convnext_base",
+        "vit_b_16",
+        "swin_t",
+        "swin_b"
+      ],
+      "aa_all": [
+        0.65,
+        0.65,
+        0.7,
+        0.725,
+        0.6,
+        0.675,
+        0.65,
+        0.775,
+        0.625,
+        0.625,
+        0.625
+      ],
+      "a0": 0.65,
+      "oracle": 0.775,
+      "best_adapt": 0.775,
+      "true_best": "convnext_base",
+      "route": {
+        "tau": 1.395386900055821,
+        "tau_star": 0.52,
+        "gate_pass": false,
+        "overdet_residual": 0.053451178451178444,
+        "h_hat": 0.2896716256884004,
+        "margin": 1.132427354684864,
+        "b_hat": [
+          -0.29116096162023897,
+          -0.3075741504522891,
+          -0.19009693010176215,
+          -0.2874560132571176,
+          0.9688622213621192,
+          -0.34807261144392726,
+          -0.4281575705182086,
+          -0.3699784584872806,
+          -0.22632835153327174,
+          -0.25780369139529663,
+          0.29898123727143816
+        ],
+        "b_tilde": [
+          0.0,
+          0.0,
+          -0.0,
+          0.0,
+          -0.5400617248673217,
+          0.28867513459481275,
+          0.3535533905932736,
+          0.1443375672974064,
+          -0.16666666666666652,
+          -0.14433756729740643,
+          -0.18633899812498253
+        ],
+        "anchor_b0": -0.29116096162023897,
+        "n_D": 24,
+        "M": 11,
+        "decision": "ABSTAIN",
+        "choice": null,
+        "reason": "tau=1.3954 > tau*=0.52 certifies Def-5 violated"
+      },
+      "route_c": {
+        "decision": "ABSTAIN",
+        "implemented": true,
+        "theorem": "1B",
+        "view": "brier_squared_loss",
+        "gS_estimate": "f0_surrogate(conservative)",
+        "center_c": -0.07641607792625038,
+        "U": -0.1335956030133139,
+        "T_S": -0.028589762543531766,
+        "W": 0.1735656775534153,
+        "d_obs": 0.15734513958345503,
+        "L": 0.6,
+        "reach": 0.03277165891384689,
+        "eps_n": 0.31622776601683794,
+        "bracket": [
+          -0.4254155028569352,
+          0.27258334700443443
+        ],
+        "note": "DIAGNOSTIC: g_S~f0 makes center conservative; full 1B classification instantiation needs an f0-independent source-concept estimate.",
+        "true_B_best": 0.125,
+        "bracket_covers_trueB": true
+      },
+      "realized": 0.65,
+      "regime_label": "helpful"
+    },
+    {
+      "seed": 1,
+      "domain": "imagenet_r",
+      "comp": "iid",
+      "regime": "tiny",
+      "aggr": "mild",
+      "cand_names": [
+        "freeze_f0",
+        "resnet101",
+        "resnet152",
+        "resnext101_32x8d",
+        "efficientnet_b0",
+        "efficientnet_b3",
+        "convnext_tiny",
+        "convnext_base",
+        "vit_b_16",
+        "swin_t",
+        "swin_b"
+      ],
+      "aa_all": [
+        0.725,
+        0.775,
+        0.775,
+        0.725,
+        0.725,
+        0.7,
+        0.675,
+        0.75,
+        0.675,
+        0.7,
+        0.725
+      ],
+      "a0": 0.725,
+      "oracle": 0.775,
+      "best_adapt": 0.775,
+      "true_best": "resnet101",
+      "route": {
+        "tau": 2.2692618266624707,
+        "tau_star": 0.52,
+        "gate_pass": false,
+        "overdet_residual": 0.09663986806843954,
+        "h_hat": 0.5199516777076043,
+        "margin": 1.7363149747409956,
+        "b_hat": [
+          -1.1685855524548447,
+          -0.030487857388796613,
+          -0.24361937685278862,
+          -0.17744121153925455,
+          -0.05201238000666354,
+          -0.019328039986653184,
+          0.19959841269903786,
+          0.3642157198282483,
+          0.5497150069706498,
+          0.30379186445262957,
+          0.4062366413738157
+        ],
+        "b_tilde": [
+          0.0,
+          -0.0,
+          0.12598815766974245,
+          -0.0,
+          -0.0,
+          -0.0,
+          -0.0,
+          -0.1428571428571429,
+          -0.0,
+          -0.14285714285714296,
+          -0.0
+        ],
+        "anchor_b0": -1.1685855524548447,
+        "n_D": 21,
+        "M": 11,
+        "decision": "ABSTAIN",
+        "choice": null,
+        "reason": "tau=2.2693 > tau*=0.52 certifies Def-5 violated"
+      },
+      "route_c": {
+        "decision": "ABSTAIN",
+        "implemented": true,
+        "theorem": "1B",
+        "view": "brier_squared_loss",
+        "gS_estimate": "f0_surrogate(conservative)",
+        "center_c": -0.04632704346116776,
+        "U": -0.10010820708514934,
+        "T_S": -0.026890581811990787,
+        "W": 0.13638798631727694,
+        "d_obs": 0.03664320115230697,
+        "L": 0.6,
+        "reach": 0.005997230900858483,
+        "eps_n": 0.31622776601683794,
+        "bracket": [
+          -0.3685520403788642,
+          0.2758979534565287
+        ],
+        "note": "DIAGNOSTIC: g_S~f0 makes center conservative; full 1B classification instantiation needs an f0-independent source-concept estimate.",
+        "true_B_best": 0.050000000000000044,
+        "bracket_covers_trueB": true
+      },
+      "realized": 0.725,
+      "regime_label": "helpful"
+    },
+    {
+      "seed": 1,
+      "domain": "imagenet_r",
+      "comp": "single_class",
+      "regime": "tiny",
+      "aggr": "mild",
+      "cand_names": [
+        "freeze_f0",
+        "resnet101",
+        "resnet152",
+        "resnext101_32x8d",
+        "efficientnet_b0",
+        "efficientnet_b3",
+        "convnext_tiny",
+        "convnext_base",
+        "vit_b_16",
+        "swin_t",
+        "swin_b"
+      ],
+      "aa_all": [
+        0.625,
+        0.6,
+        0.675,
+        0.6,
+        0.575,
+        0.575,
+        0.65,
+        0.65,
+        0.625,
+        0.55,
+        0.65
+      ],
+      "a0": 0.625,
+      "oracle": 0.675,
+      "best_adapt": 0.675,
+      "true_best": "resnet152",
+      "route": {
+        "tau": 2.8400181623982608,
+        "tau_star": 0.52,
+        "gate_pass": false,
+        "overdet_residual": 0.1002510310202618,
+        "h_hat": 0.6211540781972307,
+        "margin": 1.9451174657694448,
+        "b_hat": [
+          0.1817460346994984,
+          0.11694726323982305,
+          0.13404864353985277,
+          0.19464295606387097,
+          0.08937185551230924,
+          -2.9631462715118326,
+          0.06455570133956288,
+          0.13435090299070027,
+          0.10721829429865012,
+          0.20420421685239734,
+          0.1291632855795406
+        ],
+        "b_tilde": [
+          0.0,
+          -0.0,
+          0.0,
+          -0.0,
+          -0.0,
+          -0.0,
+          -0.0,
+          0.0,
+          0.0,
+          -0.0,
+          -0.0
+        ],
+        "anchor_b0": 0.1817460346994984,
+        "n_D": 26,
+        "M": 11,
+        "decision": "ABSTAIN",
+        "choice": null,
+        "reason": "tau=2.8400 > tau*=0.52 certifies Def-5 violated"
+      },
+      "route_c": {
+        "decision": "ABSTAIN",
+        "implemented": true,
+        "theorem": "1B",
+        "view": "brier_squared_loss",
+        "gS_estimate": "f0_surrogate(conservative)",
+        "center_c": -0.04232100953440644,
+        "U": -0.08145651621101829,
+        "T_S": -0.019567753338305925,
+        "W": 0.13382023479789495,
+        "d_obs": 0.09810319887028454,
+        "L": 0.6,
+        "reach": 0.01575383172869527,
+        "eps_n": 0.31622776601683794,
+        "bracket": [
+          -0.37430260727993964,
+          0.2896605882111268
+        ],
+        "note": "DIAGNOSTIC: g_S~f0 makes center conservative; full 1B classification instantiation needs an f0-independent source-concept estimate.",
+        "true_B_best": 0.050000000000000044,
+        "bracket_covers_trueB": true
+      },
+      "realized": 0.625,
+      "regime_label": "helpful"
+    }
+  ]
+}

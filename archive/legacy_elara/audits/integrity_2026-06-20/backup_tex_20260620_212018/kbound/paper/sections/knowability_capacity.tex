@@ -1,0 +1,268 @@
+% ============================================================================
+%  The Knowability--Capacity threshold for sign-of-benefit
+%  (graded refinement of the binary impossibility, Thm 1 / Thm 2).
+%  1-D Gaussian-location covariate-shift two-point model.
+%
+%  Status of claims (read this first):
+%   * Lemma (benefit identity)               : PROVEN (exact, elementary).
+%   * Theorem (population capacity, tau=1)    : PROVEN. Converse AND achievability
+%       meet EXACTLY at the single threshold tau=1 for the population/identifiability
+%       problem (Q_X known). This is a true capacity for that problem.
+%   * Proposition (finite-n Le Cam boundary)  : PROVEN (finite-n lower bound). It
+%       adds an O(1/sqrt n) layer around the threshold LOCATION, not a gap in the
+%       threshold VALUE.
+%   * Honest scope: the capacity is for THIS model and for sign-of-benefit; it is
+%       NOT a general-distribution capacity, and tau=1 is an artifact of measuring
+%       the drift budget eps in target-mass units (which is the natural,
+%       label-free-meaningful choice). See Remark (scope).
+%
+%  All numbers validated by experiments/kbound/theory_validation/
+%  val_knowability_capacity.py  ->  results_knowability_capacity.json (fixed seed).
+% ============================================================================
+\section{A knowability--capacity threshold for sign-of-benefit}\label{sec:knowcap}
+
+Theorem~\ref{thm:imp} is \emph{binary}: it certifies a regime in which no
+label-free rule beats chance. This section sharpens that dichotomy into a
+\emph{graded, computable invariant} $K$ with an explicit threshold $\tau$, in a
+single fully specified model, and proves that for the population (identifiability)
+problem the converse and the achievability meet \emph{exactly} at $\tau$. Thus, in
+this model, $K$ is a genuine \emph{capacity} for label-free sign recovery, not
+merely a sufficient or a necessary condition. A finite-sample Le Cam analysis then
+locates the threshold up to an $O(1/\sqrt n)$ boundary layer.
+
+\subsection{Model (the concept mechanism is explicit)}\label{sec:knowcap-model}
+Binary $Y\in\{0,1\}$, $0/1$ loss. Source covariates $P_X=\mathcal N(0,1)$ (known);
+target covariates $Q_X=\mathcal N(\mu,1)$ (covariate shift; $\mu$ unknown, to be
+estimated from an unlabeled target sample). The deployed classifier is
+$g=f_0=\mathbf 1[x>0]$ (boundary at the origin). We are handed a \emph{fixed}
+candidate adapted rule $f_a=\mathbf 1[x>a]$ with $a>0$ known --- the shipped
+``adapted boundary'' --- and ask whether switching $g\to f_a$ helps. The
+disagreement region is the interval $D=(0,a)$.
+
+The label/concept mechanism must be explicit, because $\sign\Delta$ depends on
+$P(Y\mid X)$, which $Q_X$ alone does not identify. We take \emph{hard-threshold
+concepts} $\eta_\theta(x)=P(Y=1\mid x)=\mathbf 1[x>\theta]$. The
+source-calibrated threshold $\theta_S$ is known (it is what a source-fit model
+reports). The \emph{admissible target concepts} are those whose target
+\emph{boundary mass} drifts from the source boundary by at most a budget
+$\varepsilon\ge0$:
+\begin{equation}\label{eq:knowcap-class}
+  \mathcal C_\varepsilon \;=\;
+  \Big\{\,\theta_T:\ \big|\,\Phi(\theta_T-\mu)-\Phi(\theta_S-\mu)\,\big|\le\varepsilon\,\Big\}.
+\end{equation}
+Here $\varepsilon$ is the $1$-D analogue of the calibration-drift budget $\beta$ of
+the benefit-sign frontier (\S\ref{sec:bsfrontier}); by
+Theorem~\ref{thm:conj1-dichotomy} some such untestable supplement is unavoidable,
+and \eqref{eq:knowcap-class} fixes it in the natural label-free-meaningful unit of
+\emph{target probability mass}. The label-free observer sees only
+$(P_X,g,f_a,\theta_S,\varepsilon)$ and the unlabeled sample $\{x_i\}\sim Q_X$, and
+must output a guess of $\sign\Delta$, where
+\(
+  \Delta=R_Q(f_0)-R_Q(f_a)
+\)
+($\Delta>0\iff$ adapting to $f_a$ helps).
+
+\begin{lemma}[Exact benefit identity and the sign-flip locus]\label{lem:knowcap-identity}
+On $D=(0,a)$ exactly one of $f_0,f_a$ is correct, so for the concept $\eta_\theta$,
+\[
+  \Delta(\theta)
+  \;=\; Q\!\big((0,a)\cap\{x<\theta\}\big)-Q\!\big((0,a)\cap\{x>\theta\}\big)
+  \;=\; 2\,\Phi(\theta'-\mu)-\Phi(-\mu)-\Phi(a-\mu),
+\]
+with $\theta'=\operatorname{clip}(\theta,0,a)$. $\Delta(\cdot)$ is nondecreasing in
+$\theta$ with a single root
+\[
+  \boxed{\ \theta_0\;=\;\mu+\Phi^{-1}\!\Big(\tfrac12\big[\Phi(-\mu)+\Phi(a-\mu)\big]\Big)\ }
+  \qquad(\text{the $Q$-median of the band }D),
+\]
+so $\sign\Delta=\sign(\theta-\theta_0)$. Both $\theta_0$ and the plug-in sign
+$\sign(\theta_S-\theta_0)$ are \emph{observable}.
+\end{lemma}
+\begin{proof}
+Off $D$, $f_0=f_a$, so the pointwise excess loss vanishes. On $D=(0,a)$ we have
+$f_0=1,f_a=0$; for $0/1$ loss the excess loss of $f_0$ over $f_a$ is
+$\mathbf 1[f_a{=}Y]-\mathbf 1[f_0{=}Y]=\mathbf 1[Y{=}0]-\mathbf 1[Y{=}1]=1-2Y$, with
+conditional mean $1-2\eta_\theta(x)$, which is $+1$ for $x<\theta$ and $-1$ for
+$x>\theta$. Integrating against $Q$ over $(0,a)$ gives the displayed difference of
+band masses, hence
+$\Delta(\theta)=\Phi(\theta'\!-\mu)-\Phi(-\mu)-\big(\Phi(a-\mu)-\Phi(\theta'\!-\mu)\big)
+=2\Phi(\theta'\!-\mu)-\Phi(-\mu)-\Phi(a-\mu)$. This is nondecreasing in $\theta'$
+(hence in $\theta$); setting it to zero gives $\Phi(\theta_0-\mu)=\tfrac12[\Phi(-\mu)+\Phi(a-\mu)]$,
+the $Q$-median of $D$. (Validated to $4\times10^{-4}$ Monte-Carlo error against the
+empirical $R_Q(f_0)-R_Q(f_a)$, \texttt{val\_knowability\_capacity.py} part (D).)
+\end{proof}
+
+\subsection{The computable invariant and the threshold}\label{sec:knowcap-K}
+\begin{definition}[Knowability invariant]\label{def:knowcap-K}
+\[
+  K \;:=\; \frac{\big|\,\Phi(\theta_0-\mu)-\Phi(\theta_S-\mu)\,\big|}{\varepsilon}
+       \;=\; \frac{\big|\,\tfrac12[\Phi(-\mu)+\Phi(a-\mu)]-\Phi(\theta_S-\mu)\,\big|}{\varepsilon}.
+\]
+$K$ is the \emph{mass margin} between the calibrated boundary $\theta_S$ and the
+sign-flip locus $\theta_0$, measured in target probability mass, normalised by the
+drift budget $\varepsilon$. It is a margin-weighted SNR of the covariate shift
+relative to $g$'s boundary, computable from $(\mu,a,\theta_S,\varepsilon)$ alone
+(with $\mu$ estimable label-free from $\{x_i\}$).
+\end{definition}
+
+\begin{theorem}[Population knowability--capacity, $\tau=1$]\label{thm:knowcap}
+Assume $Q_X$ (equivalently $\mu$) is known. With threshold $\tau=1$:
+\begin{enumerate}\itemsep1pt
+\item[\textnormal{(i)}] \textbf{Achievability.} If $K>1$ then for \emph{every}
+admissible target concept $\theta_T\in\mathcal C_\varepsilon$,
+$\sign\Delta=\sign(\theta_S-\theta_0)$; the plug-in certificate
+$\hat g=\sign(\theta_S-\theta_0)$ recovers the sign with error $0$.
+\item[\textnormal{(ii)}] \textbf{Converse.} If $K<1$ there exist
+$\theta_T^+,\theta_T^-\in\mathcal C_\varepsilon$ with \emph{identical} $Q_X$ (hence
+$\TV=0$ between the laws of \emph{any} statistic of any number $n$ of unlabeled
+observations) and $\sign\Delta(\theta_T^+)=-\sign\Delta(\theta_T^-)\neq0$.
+Consequently the minimax label-free error equals $\tfrac12$ for every $n$.
+\end{enumerate}
+The converse and the achievability therefore meet at the \emph{single} threshold
+$\tau=1$, \emph{exactly} (not asymptotically): $\{K>1\}$ is precisely the
+identifiable set.
+\end{theorem}
+\begin{proof}
+By Lemma~\ref{lem:knowcap-identity}, $\sign\Delta(\theta_T)=\sign(\theta_T-\theta_0)$
+with $\theta_0$ fixed by the observables. The map $\theta\mapsto\Phi(\theta-\mu)$ is
+a strictly increasing bijection, so the admissible set \eqref{eq:knowcap-class} is
+exactly the interval
+$\theta_T\in[\,\mu+\Phi^{-1}(p_S-\varepsilon),\,\mu+\Phi^{-1}(p_S+\varepsilon)\,]$ with
+$p_S=\Phi(\theta_S-\mu)$, i.e.\ in mass coordinates $u=\Phi(\theta_T-\mu)$ it is the
+interval $[\,p_S-\varepsilon,\,p_S+\varepsilon\,]$ (clipped to $[0,1]$). The sign of
+$\Delta$ flips exactly at the mass level $u_0=\Phi(\theta_0-\mu)=\tfrac12[\Phi(-\mu)+\Phi(a-\mu)]$.
+
+\emph{(i)} If $K>1$ then $|u_0-p_S|>\varepsilon$, so $u_0$ lies strictly outside
+$[p_S-\varepsilon,p_S+\varepsilon]$. Hence every admissible $u\in[p_S-\varepsilon,p_S+\varepsilon]$
+is on one side of $u_0$, so $\theta_T-\theta_0$ has constant sign over
+$\mathcal C_\varepsilon$, equal to $\sign(\theta_S-\theta_0)=\sign(p_S-u_0)$. The
+plug-in certificate is correct for all admissible concepts.
+
+\emph{(ii)} If $K<1$ then $|u_0-p_S|<\varepsilon$, so $u_0\in(p_S-\varepsilon,p_S+\varepsilon)$
+lies strictly interior to the admissible mass interval. Pick
+$u^\pm=\Phi(\theta_T^\pm-\mu)$ with $u^+\in(u_0,p_S+\varepsilon]$ and
+$u^-\in[p_S-\varepsilon,u_0)$ (both nonempty and admissible); then
+$\sign\Delta(\theta_T^+)=+1$, $\sign\Delta(\theta_T^-)=-1$. Both worlds share the
+\emph{same} $Q_X=\mathcal N(\mu,1)$ (the concept lives in the unobserved
+$P(Y\mid X)$ channel), so the law of any unlabeled statistic is identical across
+the two worlds: $\TV=0$ for every $n$. By Le Cam's two-point inequality the minimax
+error of any label-free rule is $\ge\tfrac12(1-\TV)=\tfrac12$, and the constant
+rules achieve $\tfrac12$, so it equals $\tfrac12$.
+
+Finally, $K=1$ is the single boundary $|u_0-p_S|=\varepsilon$, where $u_0$ is an
+endpoint of the admissible interval; the sign is constant on the (closed) interval
+but not on its interior-plus-the-flip, so the transition is exactly at $\tau=1$.
+(Validated: over $40{,}000$ random draws of $(\mu,a,\theta_S,\varepsilon)$, the
+equivalence ``$K>1\iff$ identifiable over $\mathcal C_\varepsilon$'' holds with
+\emph{zero} mismatches off a $10^{-6}$ shell; a boundary stress-test confirms the
+flip at $K=1$ to $10^{-3}$. \texttt{val\_knowability\_capacity.py} part (A).)
+\end{proof}
+
+\smallskip\noindent\emph{Relation to the frontier.}
+Theorem~\ref{thm:knowcap} is the \emph{graded} reading of
+Proposition~\ref{thm:minimax}: the frontier's qualitative ``$|M|>\beta$'' becomes a
+\emph{scalar} $K=|M|/\beta$-type ratio with the explicit value $\tau=1$ in a fully
+specified location model, and the $0$-vs-$\tfrac12$ minimax dichotomy is recovered
+as the two faces $K>1$ and $K<1$. The novelty here is that $K$ is shown to be
+\emph{both} necessary and sufficient at the \emph{same} threshold --- a capacity ---
+for the population problem, with $\theta_0$ (the flip locus) given in closed form by
+the covariate shift $\mu$ and the candidate boundary $a$.
+
+\subsection{Finite-$n$: a Le Cam boundary layer around the threshold}\label{sec:knowcap-finiten}
+With only $n$ unlabeled samples, $\mu$ --- hence $K$ --- must be estimated, and the
+deployable rule is the finite-$n$ \emph{three-way certificate}: estimate
+$\hat\mu=\bar x$, form a $z$-confidence interval $[\hat\mu\pm z/\sqrt n]$, and commit
+to $\sign(\theta_S-\hat\theta_0)$ only if $K$ stays above $1$ across the whole
+interval (a lower-confidence bound $\hat K_{\mathrm{lcb}}>1$); otherwise abstain.
+The next proposition shows the price of estimating $\mu$ is exactly an
+$O(1/\sqrt n)$ layer around the threshold \emph{location}, with the same Le
+Cam/Bretagnolle--Huber form as Proposition~\ref{prop:lecam-finite}.
+
+\begin{proposition}[Finite-$n$ Le Cam boundary layer]\label{prop:knowcap-finiten}
+Let $\mu^\star$ be the flip locus, $\theta_0(\mu^\star)=\theta_S$ (so $K=0$ there),
+and fix the concept to transfer ($\theta_T=\theta_S$, i.e.\ $\varepsilon$ irrelevant;
+the only noise is in estimating $\mu$). For $c>0$ consider the two worlds
+$\mu^\pm=\mu^\star\pm\tfrac{c}{2}\sqrt{1/n}$, which straddle the flip and hence have
+\emph{opposite} $\sign\Delta$. The unlabeled laws satisfy
+\[
+  \TV\big(\mathcal N(\mu^-,1)^{\otimes n},\mathcal N(\mu^+,1)^{\otimes n}\big)=2\Phi(c/2)-1,
+  \qquad
+  \mathrm{KL}=\tfrac{n}{2}\,(\mu^+-\mu^-)^2=\tfrac{c^2}{2},
+\]
+so every label-free sign test has minimax error
+\[
+  \inf_{\hat g}\max_{\pm}\Pr\!\big[\hat g\ \text{wrong}\big]
+  \;\ge\;\tfrac12\big(1-\TV\big)=\Phi(-c/2)
+  \;\ge\;\tfrac14\,e^{-c^2/2}\quad(\text{Bretagnolle--Huber}),
+\]
+\emph{constant in $n$}. Hence sign recovery is impossible below error $\Phi(-c/2)$
+inside a window of half-width $\tfrac{c}{2}\sqrt{1/n}=\Theta(1/\sqrt n)$ around
+$\mu^\star$, \emph{even when the concept transfers}.
+\end{proposition}
+\begin{proof}
+The sample mean $\bar X\sim\mathcal N(\mu^\pm,1/n)$ is sufficient; the TV of two
+equal-variance Gaussians with mean gap $\mu^+-\mu^-=c/\sqrt n$ and standard
+deviation $1/\sqrt n$ is $2\Phi\big(\tfrac{c/\sqrt n}{2/\sqrt n}\big)-1=2\Phi(c/2)-1$,
+and the per-sample $\mathrm{KL}\big(\mathcal N(\mu^+,1)\|\mathcal N(\mu^-,1)\big)=\tfrac12(\mu^+-\mu^-)^2$
+tensorises to $\tfrac{c^2}{2}$. A sign test is a test between the two worlds; Le
+Cam's testing affinity gives the $\tfrac12(1-\TV)$ floor and Bretagnolle--Huber
+gives the $\tfrac14 e^{-\mathrm{KL}}$ certificate. That the two worlds straddle the
+flip (so the signs are genuinely opposite) is Lemma~\ref{lem:knowcap-identity}.
+(Validated: the empirical Bayes-optimal sign-test error meets $\Phi(-c/2)$ to
+$\le1.5\times10^{-2}$, exceeds $\tfrac14 e^{-c^2/2}$, and is constant across
+$n\in\{100,1000,10000\}$ for $c\in\{0.5,1,2\}$;
+\texttt{val\_knowability\_capacity.py} part (C).)
+\end{proof}
+
+\noindent The finite-$n$ certificate \emph{matches} this: numerically its minimax
+sign-recovery accuracy $\to1$ wherever $K_{\mathrm{pop}}>1$ and $=\tfrac12$ wherever
+$K_{\mathrm{pop}}<1$, with the transition pinned at $K=1$, across
+$n\in\{200,2000,20000\}$ (Table~\ref{tab:knowcap-phase};
+\texttt{val\_knowability\_capacity.py} part (B)). The boundary layer is therefore an
+$O(1/\sqrt n)$ blur of the threshold \emph{location} $\mu^\star$, not a gap in the
+threshold \emph{value} $\tau=1$.
+
+\begin{table}[t]\centering\small
+\begin{tabular}{rrccc}
+\hline
+$\mu$ & $K_{\mathrm{pop}}$ & acc $n{=}200$ & acc $n{=}2000$ & acc $n{=}20000$\\
+\hline
+$-0.807$ & $1.416$ & $0.994$ & $1.000$ & $1.000$\\
+$\ \ 0.366$ & $1.679$ & $0.995$ & $1.000$ & $1.000$\\
+$\ \ 1.633$ & $1.677$ & $0.995$ & $1.000$ & $1.000$\\
+$\ \ 2.806$ & $1.417$ & $0.994$ & $1.000$ & $1.000$\\[2pt]
+$-1.407$ & $0.640$ & $0.500$ & $0.500$ & $0.500$\\
+$\ \ 0.980$ & $0.063$ & $0.500$ & $0.500$ & $0.500$\\
+$\ \ 1.000$ & $0.000$ & $0.500$ & $0.500$ & $0.500$\\
+$\ \ 3.406$ & $0.641$ & $0.500$ & $0.500$ & $0.500$\\
+\hline
+\end{tabular}
+\caption{Phase transition of the finite-$n$ three-way certificate
+($a{=}2,\theta_S{=}1,\varepsilon{=}0.05$; minimax over the admissible concept). Above
+$\tau{=}1$ the minimax accuracy $\to1$; below it the certificate abstains and the
+accuracy is exactly $\tfrac12$. (Real numbers, seed fixed;
+\texttt{results\_knowability\_capacity.json}.)}
+\label{tab:knowcap-phase}
+\end{table}
+
+\begin{remark}[Honest scope --- what is and is not claimed]\label{rmk:knowcap-scope}
+\textnormal{(1)} Theorem~\ref{thm:knowcap} is a capacity \emph{for this $1$-D
+Gaussian-location model and for sign-of-benefit only}; it is not a
+general-distribution capacity. \textnormal{(2)} The clean value $\tau=1$ is a
+consequence of measuring the drift budget $\varepsilon$ in target-\emph{mass} units
+\eqref{eq:knowcap-class}; this is the natural label-free-meaningful unit (it makes
+$\theta_0$ the $Q$-median and the flip condition a mass comparison), but a different
+budget parametrisation would rescale $\tau$. \textnormal{(3)} The same equivalence
+$K>1\iff$ identifiable holds for \emph{soft} (logistic) concepts of fixed known
+slope, with $\theta_0$ the (numerically computed) root of $\Delta(\cdot)$ rather than
+the band median --- verified with zero mismatches over $1{,}496$ draws --- so the
+result is not an artifact of the hard-threshold concept; only the closed form for
+$\theta_0$ is special to it. \textnormal{(4)} Relative to the existing five
+theorems, this is a \emph{refinement}, not a new pillar: it converts the
+$0$-vs-$\tfrac12$ frontier of Proposition~\ref{thm:minimax} into a scalar capacity
+with an explicit closed-form flip locus, and supplies the finite-$n$ boundary layer
+that Proposition~\ref{prop:lecam-finite} left implicit for the location family. Its
+value is a sharpened, fully worked \emph{instance}, useful pedagogically and as the
+tight test-bed for the graded invariant; it does not enlarge the set of
+\emph{distribution-free} guarantees.
+\end{remark}

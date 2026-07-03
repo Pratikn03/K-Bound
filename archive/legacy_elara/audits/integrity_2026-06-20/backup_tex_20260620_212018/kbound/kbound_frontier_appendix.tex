@@ -1,0 +1,102 @@
+% =====================================================================================
+% Frontier-validation appendix (reproducible source).
+% Rebuilt 2026-06-14 to replace the source-less PDF-only appendix that previously shipped
+% inside K-Bound_paper_with_frontier.pdf. Every number below traces to a result JSON cited
+% in its caption; nothing is transcribed from the old PDF. The earlier appendix's invalid
+% Camelyon17 content (a "recalibrated K-Bound beats both" claim obtained by tuning the
+% operating point ON the Camelyon17 external-validation set) has been REMOVED entirely;
+% it is replaced by the honest frozen-threshold finding in App.~\ref{app:cam-honest}.
+% (No \appendix here: kbound.tex already issues \appendix before this is \input.)
+% =====================================================================================
+\section{Frontier validation: committal heuristics false-adapt exactly where K-Bound abstains}
+\label{app:frontier}
+
+The benefit-sign frontier (Thm.~\ref{thm:frontier}) predicts that on the low-margin band any
+\emph{committal} label-free rule must commit sign errors, whereas a valid certificate must
+\emph{abstain} there. This appendix demonstrates that prediction on the two
+\emph{synthetic-corruption} streams whose operating point the certificate is calibrated on
+(CIFAR-10-C, ImageNet-C); it makes \emph{no} external-validation claim. The honest natural-shift
+(Camelyon17) finding---a limitation, not a win---closes the appendix
+(App.~\ref{app:cam-honest}).
+
+\subsection{CIFAR-10-C: K-Bound beats both trivial policies at zero false-adapt}
+\label{app:cifar10c}
+On the pre-registered CIFAR-10-C stress grid ($432$ conditions/candidate), \textsc{KGA} adapts the
+helpful conditions and freezes the harmful ones with a \emph{zero} false-adapt rate, so it strictly
+beats both always-adapt and always-freeze for the two benign candidates (Tent, EATA) and ties the
+collapse-resistant SAR (Table~\ref{tab:app-cifar10c}).
+
+\begin{table}[tb]\centering\footnotesize
+\resizebox{\columnwidth}{!}{%
+\begin{tabular}{lcccc}
+\toprule
+ & \multicolumn{3}{c}{regret-to-oracle $\downarrow$} & \\
+\cmidrule(lr){2-4}
+candidate (harmful base) & \textsc{KGA} & always-adapt & always-freeze & false-adapt \\
+\midrule
+Tent \,($34.5\%$) & $\mathbf{0.0016}$ & $0.0086$ & $0.1232$ & $0.00$ \\
+EATA \,($27.1\%$) & $\mathbf{0.0015}$ & $0.0037$ & $0.1311$ & $0.00$ \\
+SAR \,($15.7\%$)  & $0.0018$ & $0.0018$ & $0.1372$ & $0.00$ \\
+\bottomrule
+\end{tabular}}
+\caption{\textbf{CIFAR-10-C stress grid ($432$ conditions/candidate, $\alpha{=}0.1$).} \textsc{KGA}
+\emph{beats both} for Tent and EATA at a $0\%$ false-adapt rate, and ties always-adapt for SAR.}
+\label{tab:app-cifar10c}
+\end{table}
+
+\begin{figure}[tb]\centering
+\includegraphics[width=0.72\linewidth]{figures/app_frontier_cifar10c.png}
+\caption{\textbf{CIFAR-10-C frontier (regret-to-oracle, log scale).} \textsc{KGA} is below
+\emph{both} always-adapt and always-freeze for Tent and EATA at $0\%$ false-adapt, and ties
+always-adapt for SAR (Table~\ref{tab:app-cifar10c}).}
+\label{fig:app-cifar10c}
+\end{figure}
+
+\subsection{ImageNet-C/SAR: the frontier on real corruptions---committal rules fail, K-Bound does not}
+\label{app:imagenetc}
+On the logged ImageNet-C conditions ($36$ cells/candidate; SAR is harmful on $44.4\%$ of cells),
+every \emph{committal} label-free heuristic must place its commits somewhere on the low-margin band
+and therefore false-adapts: a plug-in \textbf{ATC}~\cite{garg2022atc} confidence rule adapts into
+harmful cells on $100\%$ of its commits (false-adapt $1.00$, harmful-cells-adapted $0.25$), and even
+its leave-one-out-tuned variant keeps false-adapt $=1.00$. Among the rules compared,
+\textsc{KGA} reaches zero false-adapt and zero harmful-cells-adapted by
+\emph{abstaining} on the band (coverage $0.39$), consistent with the frontier prediction
+(Table~\ref{tab:app-imagenetc}).
+
+\begin{table}[tb]\centering\footnotesize
+\resizebox{\columnwidth}{!}{%
+\begin{tabular}{lcccc}
+\toprule
+decision rule (SAR, harmful regime) & false-adapt & harmful-adapted & regret $\downarrow$ & coverage \\
+\midrule
+always-adapt                  & $0.44$ & $1.00$ & $0.1124$ & $1.00$ \\
+always-freeze                 & ---    & $0.00$ & $0.0267$ & $1.00$ \\
+ATC-style confidence (plug-in)& $1.00$ & $0.25$ & $0.0673$ & $1.00$ \\
+ATC-style confidence (LOO)    & $1.00$ & $0.06$ & $0.0375$ & $1.00$ \\
+\textbf{K-Bound (KGA)}        & $\mathbf{0.00}$ & $\mathbf{0.00}$ & $0.0229$ & $0.39$ \\
+\bottomrule
+\end{tabular}}
+\caption{\textbf{Committal label-free heuristics false-adapt exactly where \textsc{KGA} abstains}
+(ImageNet-C, reference-parity SAR, $36$ cells, $\alpha{=}0.1$). ATC commits onto the low-margin band
+and false-adapts on $100\%$ of its commits; \textsc{KGA} abstains there ($22/36$ abstain) for $0$
+false-adapts. On the benign candidates \textsc{KGA} also keeps $0$ false-adapts at higher coverage
+(Tent: regret $0.0060$, coverage $0.69$; EATA: regret $0.0047$, coverage $0.75$).}
+\label{tab:app-imagenetc}
+\end{table}
+
+\begin{figure}[tb]\centering
+\includegraphics[width=0.92\linewidth]{figures/app_frontier_imagenetc.png}
+\caption{\textbf{ImageNet-C/SAR frontier.} Committal label-free rules false-adapt on the harmful
+regime; \textsc{KGA} reaches zero false-adapt by abstaining the low-margin band (coverage $0.39$;
+Table~\ref{tab:app-imagenetc}).}
+\label{fig:app-imagenetc}
+\end{figure}
+
+\subsection{Historical note (Camelyon17, frozen synthetic threshold)}
+\label{app:cam-honest}
+Under a \textbf{frozen, Camelyon-free} multicandidate threshold $\tau^\star{=}0.52$
+(calibrated only on synthetic grids), the certificate does \emph{not} beat both trivial policies
+on an early Camelyon17 composition grid (regret \textsc{KGA} $0.076$ vs always-freeze $0.071$).
+That failure motivated in-domain calibration and rich evidence; the headline result is
+Protocol~G (main text, Table~\ref{tab:camelyon17-G}), which uses dev-hospital calibration and
+does not transplant $\tau^\star$ from synthetic runs.

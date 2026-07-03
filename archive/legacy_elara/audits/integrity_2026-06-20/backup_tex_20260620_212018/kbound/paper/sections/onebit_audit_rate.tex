@@ -1,0 +1,477 @@
+% ============================================================================
+%  THEORY V2 (June 2026): The one-bit theorem, the falsifiable budget audit,
+%  and the evidence-channel rate.
+%  Replaces the scattered budget propositions with three pillars; corrects the
+%  multi-candidate hypothesis (CEI alone is insufficient -> H).
+%  All numerics: docs/research/kbound/theory_v2/theory_v2_validation.py
+%  -> validation_results.json (keys cited inline); figures fig_v1..v4.
+% ============================================================================
+\section{One bit, audited: what label-free evidence can and cannot supply}\label{sec:onebit}
+
+The budget quantities of the preceding sections ($\beta$ on the calibration drift
+$\gamma$, the transfer level $\eta$, the drift radius $B$, the majority-above-chance
+anchor) share an uncomfortable epistemic status: each is user-supplied and none is
+verifiable from unlabeled data---the same status as the calibration ``crutches'' this
+paper criticizes. This section resolves that tension, in both directions, with three
+results. First, the \emph{one-bit theorem}: within a corrected and falsifiable structural
+class, label-free evidence identifies \emph{everything about the decision problem except
+a single global sign bit}---and every identifying assumption in this literature is
+exactly a selector of that bit. Second, the \emph{budget audit}: budgets can never be
+verified label-free, but they can be \emph{falsified} at level $\alpha$, because the
+drift $\gamma$ becomes point-estimable up to the bit; the blind set of the audit is
+characterized exactly and is provably irreducible. Third, the \emph{evidence-channel
+rate}: within the audited class the label-free channel attains the same $m^{-1/2}$ rate
+as labeled paired benefits---labels buy a margin-dependent constant and the bit, not the
+rate. Together these convert the critique ``the central guarantee is conditional on an
+untestable premise'' into a precise accounting of \emph{which part} is untestable (one
+bit, provably), \emph{which part} is testable (everything else, with explicit tests and
+radii), and \emph{what it costs} (constants, not rates).
+
+\paragraph{Positioning (deltas, not firsts).} The rank-one agreement algebra below is
+classical: \textbf{Parisi, Strino, Nadler \& Kluger} (PNAS 2014) and \textbf{Jaffe,
+Nadler \& Kluger} (AISTATS 2015) estimate classifier accuracies from agreement structure
+under conditional independence, resolving the residual sign by \emph{assuming}
+better-than-chance behavior; \textbf{Ibrahim, Fu \& Sidiropoulos} (NeurIPS 2019) prove
+pairwise-co-occurrence identifiability up to label permutation; \textbf{Platanios et
+al.} (UAI 2014; ICML 2016; NeurIPS 2017) estimate accuracies from agreement rates;
+\textbf{Steinhardt \& Liang} (NeurIPS 2016) estimate risk under conditional-independence
+structure; \textbf{Jaffe et al.} (AISTATS 2016) detect strong conditional-independence
+violations; \textbf{Corrada-Emmanuel} (NeurIPS 2024; the NTQR program) develops
+purely algebraic label-free evaluation with logical-consistency alarms; \textbf{Vovk et
+al.} test exchangeability online by martingale (falsify-not-verify); \textbf{Rosenfeld
+\& Garg} (NeurIPS 2023) bound target error under an explicit, unverifiable assumption.
+Our contributions relative to this body are: (i) the \emph{exact insufficiency} of plain
+conditional error-independence for the rank-one law, with the minimal fix
+(Theorem~\ref{thm:H-deficit}); (ii) the \emph{information-theoretic necessity} statement
+that the residual indeterminacy is exactly one bit at \emph{every} moment order, and that
+each published identifying device is a bit-selector (Theorems~\ref{thm:onebit-id}--\ref{thm:bit-dictionary});
+(iii) a \emph{statistical} level-$\alpha$ budget-falsification test with a proven
+finite-sample radius, its exact blind set, and a constructive proof that the
+overdetermination diagnostic is sound but not complete
+(Theorems~\ref{thm:audit}--\ref{thm:no-verify}); and (iv) matching $m^{-1/2}$ bounds for
+the evidence channel (Theorem~\ref{thm:ev-rate}). None of (i)--(iv) appears in the works
+above; conversely, we claim none of their estimators or algebra as new.
+
+\subsection{The corrected structural hypothesis}\label{sec:H}
+
+Condition throughout on the observable region $D$ and write $\pi:=P(Y{=}1\mid D)$. For a
+panel $f_0,f_1,\dots,f_{K-1}$ of fixed predictors let $C_j:=\mathbf 1[f_j{=}Y]$,
+$q_j(y):=P(C_j{=}1\mid Y{=}y)$, $a_j:=P(C_j{=}1)$, $b_j:=2a_j-1$,
+$\delta_j:=2\big(q_j(1)-q_j(0)\big)$, and $c_{ij}:=2P(f_i{=}f_j)-1$ (observable). Recall
+(\S\ref{sec:bsfrontier}) $\sign\Delta_a=\sign(b_a-b_0)$ on $D$.
+
+The multi-candidate route (Proposition~\ref{thm:multicand}) used the identity
+$c_{ij}=b_ib_j$ under conditional error-independence (CEI) alone. That is insufficient,
+and the failure is exactly quantifiable:
+
+\begin{theorem}[Exact rank-one deficit; the minimal hypothesis]\label{thm:H-deficit}
+Under CEI (the $C_j$ mutually independent given $Y$ on $D$), for every $i\neq j$,
+\[
+  \boxed{\;c_{ij}-b_ib_j \;=\; \pi(1-\pi)\,\delta_i\,\delta_j\;}
+\]
+so $c=bb^\top+\pi(1-\pi)\,\delta\delta^\top$ off-diagonal: rank $\le 2$, not rank one.
+For a panel with $K\ge3$ and all $b_j\neq0$ the rank-one law $c_{ij}=b_ib_j$ holds for
+all pairs iff at most one $\delta_j\neq0$; uniformly in the panel iff $\delta_j=0$ for
+all $j$. We call
+\[
+  \textbf{H}:\quad \text{CEI} \;+\; \text{per-class symmetric accuracy } q_j(0)=q_j(1)\ \forall j
+\]
+the minimal hypothesis, and state every result below under H.
+\end{theorem}
+
+\begin{proof}
+$f_i{=}f_j\iff C_i{=}C_j$ in the binary setting, so
+$c_{ij}=\E[(2C_i-1)(2C_j-1)]=(1-\pi)d_i(0)d_j(0)+\pi\,d_i(1)d_j(1)$ with $d_j(y):=2q_j(y)-1$,
+using CEI to factorize given $Y$. Parametrize $d_i(0)=b_i-\pi\delta_i$,
+$d_i(1)=b_i+(1-\pi)\delta_i$ (consistent with $(1-\pi)d_i(0)+\pi d_i(1)=b_i$); expanding,
+the cross terms cancel and the $\delta_i\delta_j$ coefficient is
+$(1-\pi)\pi^2+\pi(1-\pi)^2=\pi(1-\pi)$. The iff claims follow since $\pi(1-\pi)>0$ and
+$\delta_i\delta_j=0$ for all pairs forces all but one $\delta_j$ to vanish when $K\ge3$.
+\end{proof}
+
+\noindent\emph{Validated} (\texttt{validation\_results.json:H\_hypothesis\_check}): under H the
+off-diagonal error is Monte-Carlo noise ($5.5\times10^{-4}$ at $\pi{=}0.5$;
+$4.8\times10^{-4}$ at $\pi{=}0.25$ --- the identity does \emph{not} require class
+balance); under plain CEI with asymmetric accuracies the identity fails by $0.052$ while
+the deficit matches $\pi(1-\pi)\delta_i\delta_j$ to $5.7\times10^{-4}$, and a $2\times2$
+minor of $c$ is $-0.025\neq0$ (rank one fails). \emph{This corrects the hypothesis of
+Proposition~\ref{thm:multicand} and is load-bearing for everything below; it also makes
+precise the ``per-class symmetric-accuracy'' gap a referee identified.} Under H the
+deficit vanishes identically, and departures from H re-enter through the residual
+$\tau$ (Theorem~\ref{thm:no-verify}(b)).
+
+\subsection{The one-bit theorem}\label{sec:onebit-thm}
+
+\begin{theorem}[Identification up to one global bit]\label{thm:onebit-id}
+Assume H, $K\ge3$, all $b_j\neq0$, and $\min_{i\ne j}|c_{ij}|\ge c_{\min}>0$. The full
+label-free evidence law---the joint law of the prediction vector
+$(f_0,\dots,f_{K-1})$ on $D$---determines (i) every magnitude $|b_j|$ via
+$b_i^2=c_{ik}c_{il}/c_{kl}$, (ii) every product $b_ib_j=c_{ij}$ and hence every relative
+sign $\sign(b_ib_j)$, and (iii) every benefit magnitude $|b_j-b_0|$. All are determined
+exactly up to the global flip $b\mapsto-b$; the decision direction $\sign(b_j-b_0)$ is
+not determined.
+\end{theorem}
+
+\begin{theorem}[The flip witness: the bit is free at every moment order]\label{thm:flip-witness}
+For any H-target $P$, let $P'$ complement the label ($Y'=1-Y$) leaving $P^X$ and all
+predictors unchanged. Then $P'$ satisfies H; the full evidence law is \emph{identical},
+$\mathrm{TV}\big(\mathrm{Law}(f_{0:K-1}\mid P),\mathrm{Law}(f_{0:K-1}\mid P')\big)=0$;
+and $b'=-b$, so $\sign(b'_j-b'_0)=-\sign(b_j-b_0)$ for every candidate. Consequently no
+label-free statistic of the prediction channel---of \emph{any} order, not merely
+pairwise---can recover the bit, even inside the fully audited class H.
+\end{theorem}
+
+\begin{proof}[Proof of both]
+Identification: ratios and products of the observable $c$ as displayed; well-defined by
+$|c_{kl}|\ge c_{\min}$; $|b_j-b_0|^2=b_j^2-2c_{j0}+b_0^2$ is a function of $c$.
+Flip-invariance of $c=bb^\top$ and of all magnitudes is immediate; $\sign(b_j-b_0)$
+flips. Witness: predictions are maps of $X$ whose law is unchanged, so the evidence law
+is identical (TV $=0$); $C'_j=1-C_j$ gives $b'_j=-b_j$; H is preserved since
+$q'_j(y)=1-q_j(1-y)$ and per-class symmetry carries over; CEI is a relabeling.
+\end{proof}
+
+\noindent\emph{Remark (why third moments do not rescue the sign).} Spectral and tensor
+methods (\textbf{Jaffe et al.} 2015; the Dawid--Skene line) are sometimes read as fixing
+the sign via third-order statistics. Theorem~\ref{thm:flip-witness} shows what they can
+and cannot do: observable moments of every order are flip-invariant, so third-order
+structure identifies the latent class-conditional geometry only \emph{up to the label
+permutation}---and for binary $Y$ that permutation \emph{is} the bit. The
+better-than-chance anchors those works adopt are not estimators of the bit; they are
+selections of it.
+
+\begin{theorem}[Necessity: every identifying assumption is a bit-selector]\label{thm:bit-necessity}
+Let $\mathcal C$ be any class of H-targets on which $\sign(b_a-b_0)$ is identifiable
+from the evidence law. Then $\mathcal C$ contains at most one member of each flip-pair
+$\{P,P'\}$ with $b_a\neq b_0$. Conversely, selecting one member of each flip-pair
+suffices. Identifiability of the decision direction is therefore \emph{exactly} a
+one-bit selection.
+\end{theorem}
+
+\begin{proof}
+If both $P,P'\in\mathcal C$, Theorem~\ref{thm:flip-witness} puts opposite decision signs
+on one evidence law, contradicting identifiability; sufficiency holds because on each
+evidence-fiber the surviving member determines the sign.
+\end{proof}
+
+\begin{theorem}[The dictionary: published devices select the same bit]\label{thm:bit-dictionary}
+Under H: (i) the $\gamma$-budget certificate with $|M|>\beta$ selects the bit
+$\sign(M)$ (the flip sends $\gamma\to-\gamma$, fixes the observable $M$); (ii)
+majority-above-chance (Proposition~\ref{thm:multicand}; \textbf{Parisi et al.} 2014)
+selects $\sign(\mathrm{median}_j\,b_j)$; (iii) the anchored agreement-law slope
+(Theorem~\ref{thm:agl}) selects $\sign(1-2\bar w)$, since the flip sends $w\mapsto1-w$
+pointwise and hence negates the slope. Each device is sound iff its selected bit equals
+the true bit; none is testable from the evidence channel
+(Theorem~\ref{thm:flip-witness}).
+\end{theorem}
+
+\begin{proof}
+(i) $\sign\Delta=\sign(M+\gamma)=\sign M$ when $|M|>\beta\ge|\gamma|$;
+$\gamma=\E[\eta_a-s]\mapsto\E[(1-\eta_a)-s]=-\gamma-2(\E[s]-\tfrac12)+\dots$ --- computed
+cleanly via $\gamma=b_a/2-M$ (Lemma~\ref{lem:gamma-id}): the flip negates $b_a$ and fixes
+$M$. (ii) $b'_j=-b_j$ reverses every $\sign b_j$, hence the majority count. (iii) on
+$D_\theta$ exactly one of $f_0,f_\theta$ is correct, so $w'(\theta)=1-w(\theta)$ and
+$1-2\bar w\mapsto-(1-2\bar w)$.
+\end{proof}
+
+\noindent\emph{Validated} (\texttt{V1\_flip\_witness}; Fig.~\ref{fig:onebit}):
+$\max_j|b'_j+b_j|=1.1\times10^{-16}$, evidence TV $=0$ exactly, agreement products
+invariant to MC precision, all benefit signs opposite.
+
+\begin{figure}[t]\centering
+\includegraphics[width=0.49\linewidth]{theory_v2/fig_v1_flip_witness.png}\hfill
+\includegraphics[width=0.49\linewidth]{theory_v2/fig_v2_identification_rate.png}
+\caption{The one-bit theorem, validated. Left (Thm~\ref{thm:flip-witness}): the flip
+witness $P'$ matches the full evidence law of $P$ (TV $=0$; identical agreement
+products) while every advantage and benefit sign is negated. Right
+(Thm~\ref{thm:onebit-id}): label-free recovery of $b$ up to the bit at the $m^{-1/2}$
+rate (log-log slope $-0.51$).}
+\label{fig:onebit}
+\end{figure}
+
+\smallskip\noindent\emph{Honest scope.} Theorem~\ref{thm:onebit-id} packages classical
+product-ratio identifiability (\textbf{Parisi et al.}; \textbf{Jaffe et al.};
+\textbf{Ibrahim et al.}) and is not claimed as new; the new content is the exact-deficit
+correction (Theorem~\ref{thm:H-deficit}), the all-orders TV-zero witness inside H
+(Theorem~\ref{thm:flip-witness}), the necessity statement
+(Theorem~\ref{thm:bit-necessity}), and the dictionary
+(Theorem~\ref{thm:bit-dictionary}). The one-bit reduction sharpens
+Corollary~\ref{cor:irreducible}: the irreducible content of \emph{every} budget
+assumption in this paper is the same single bit.
+
+\subsection{The budget audit: falsifiable, never verifiable}\label{sec:audit}
+
+\begin{lemma}[Label-free identification of the drift, up to the bit]\label{lem:gamma-id}
+Under H, the calibration drift of \S\ref{sec:bsfrontier} satisfies
+$\gamma=\bar a_a-\tfrac12-M=b_a/2-M$. Hence, given the evidence law,
+$\gamma\in\{+|b_a|/2-M,\,-|b_a|/2-M\}$: the unobservable budgeted quantity is
+\emph{point-identified up to the bit}, with $M$ observable and $|b_a|$ given by
+Theorem~\ref{thm:onebit-id}.
+\end{lemma}
+
+\begin{theorem}[Bit-robust budget falsification]\label{thm:audit}
+From $m$ samples on $D$ build $\hat M$ with an empirical-Bernstein radius
+$r^{(M)}_m(\alpha/2)$ and $\hat b_a$ from agreement estimates with the product-ratio
+radius $r^{(b)}_m(\alpha/2)$ of Lemma~\ref{lem:prod-ratio}; set
+$r_m=r^{(M)}_m+\tfrac12 r^{(b)}_m$ and
+\[
+  \begin{aligned}
+  &\texttt{reject } \big(|\gamma|\le\beta\big) \iff\\
+  &\min\Big(\big|{+}\tfrac{|\hat b_a|}{2}-\hat M\big|,\;
+           \big|{-}\tfrac{|\hat b_a|}{2}-\hat M\big|\Big) \;>\; \beta+r_m .
+  \end{aligned}
+\]
+Then (soundness) if the budget truly holds the audit rejects with probability $\le\alpha$;
+(power) if $\min_{\mathrm{flip}}|\gamma|>\beta+2r_m$ it rejects with probability
+$\ge1-\alpha$. The $\min$ over flips is what makes soundness hold for the unknown true
+bit.
+\end{theorem}
+
+\begin{lemma}[Product-ratio perturbation]\label{lem:prod-ratio}
+If all $|\hat c-c|\le e_c\le c_{\min}/2$ entrywise with $|c|\in[c_{\min},1]$, then
+$|\hat b_i^2-b_i^2|\le C_2 e_c$ with $C_2=(4c_{\min}+2)/c_{\min}^2$, and
+$|\hat b_i-b_i|\le C_2e_c/\big(2\sqrt{b_{\min}^2-C_2e_c}\big)$ when $C_2e_c<b_{\min}^2$.
+\end{lemma}
+
+\begin{figure}[t]\centering
+\includegraphics[width=0.92\linewidth]{theory_v2/fig_v3_audit.png}
+\caption{The budget audit (Thms~\ref{thm:audit},~\ref{thm:no-verify}). Sound at level
+$\alpha$ under a true budget; power $1.000$ against violations beyond the radius
+(bootstrap); correctly blind on the bit-ambiguous set $\mathcal B_\beta$ and on the
+rank-one-preserving stealth law ($\tau\approx0$) --- the two provably irreducible blind
+zones; $\tau$ rises with overt error-correlation $\rho$ (Pearson $0.914$).}
+\label{fig:audit}
+\end{figure}
+
+\noindent\emph{Validated} (\texttt{V3\_audit}; Fig.~\ref{fig:audit}): level
+$0.000\le\alpha{=}0.05$ over 600 trials at $m{=}6000$; power $1.000$ at
+$\min_{\mathrm{flip}}|\gamma|=0.216>\beta{=}0.05$ (bootstrap radius). \emph{Honest
+caveat, proven and reported:} the worst-case constant $C_2$ is large at small $c_{\min}$
+($C_2\approx84$ at $c_{\min}{=}0.18$), making the worst-case radius sound but nearly
+powerless at realistic $m$ (rejection $0.000$ in the same sweep); the deployable test
+uses a bootstrap radius and the worst-case version supplies the guarantee. Closing this
+gap (a tight finite-sample radius) is stated as an open problem below.
+
+\begin{theorem}[Verification impossibility; the audit's exact blind set]\label{thm:no-verify}
+\textnormal{(a) Within H.} No label-free test can accept ``$|\gamma|\le\beta$'' with
+power: verification fails exactly on the bit-ambiguous set
+\[
+  \mathcal B_\beta=\Big\{\;\big|\,|M|-\tfrac{|b_a|}{2}\big|\;\le\;\beta\;<\;|M|+\tfrac{|b_a|}{2}\;\Big\},
+\]
+on which one bit satisfies the budget, the other violates it, and both share one
+evidence law (Theorem~\ref{thm:flip-witness}); a sound procedure must abstain there, and
+the audit of Theorem~\ref{thm:audit} correctly does not reject.
+\textnormal{(b) Outside H.} The overdetermination residual $\tau$
+(Proposition~\ref{prop:cei-test}) is \emph{sound but not complete}: there exist
+strictly interior $K{=}4$ correctness laws with every pairwise $c_{ij}$ exactly rank-one
+($\tau=0$) that violate CEI and leave $b$ unidentified---including witnesses whose
+fitted decision sign is wrong. What $\tau=0$ pins down is precisely that $c$ is
+rank-one, i.e.\ \emph{pairwise-realizability by some H-model}; higher-order moments
+remain free.
+\end{theorem}
+
+\begin{proof}[Proof sketch]
+(a) is Lemma~\ref{lem:gamma-id} plus Theorem~\ref{thm:flip-witness}: the two flip values
+of $\gamma$ straddle the budget exactly on $\mathcal B_\beta$. (b) is a linear-program
+construction on the $2^4$ correctness-pattern probabilities: impose the six pairwise
+second-moment equations $\E[S_iS_j]=b^{\mathrm{fit}}_ib^{\mathrm{fit}}_j$, total mass,
+nonnegativity, and a first-moment constraint $\E[S_1]\neq b^{\mathrm{fit}}_1$; the
+Chebyshev center is strictly interior, realizes $\tau=0$, and its third moment
+$\E[S_1S_2S_3]\neq\prod_i\E[S_i]$ certifies the CEI violation. Full details and the
+cached witnesses: \texttt{theory\_v2/THEORY\_V2\_PROOFS.md},
+\texttt{stealth\_law.json}, \texttt{stealth\_flip.json}.
+\end{proof}
+
+\noindent\emph{Validated} (\texttt{V3\_audit.stealth\_tau0},
+\texttt{V3\_audit.bit\_ambiguous\_blind}): design $\tau=2.1\times10^{-17}$ with recovery
+bias $0.229$; a second witness flips the recovered decision sign ($+1$ vs.\ true $-1$)
+at $\tau\approx0$; on $\mathcal B_\beta$ the audit rejects at rate $0.000$ (correctly
+blind). Against \emph{overt} dependence the residual is informative: $\tau$ rises from
+$2\times10^{-4}$ to $0.119$ as error-correlation $\rho$ goes $0\to0.6$ (Pearson
+$0.914$).
+
+\smallskip\noindent\emph{Honest scope.} Falsify-not-verify is the classical epistemic
+position of exchangeability testing (\textbf{Vovk et al.}) and assumption-alarms appear
+in the algebraic-evaluation program (\textbf{Corrada-Emmanuel}, NeurIPS 2024) and in
+dependent-classifier diagnostics (\textbf{Jaffe et al.} 2016); \textbf{Rosenfeld \&
+Garg} (2023) bound error under an explicitly unverifiable assumption. The new content
+here is the \emph{statistical} level-$\alpha$ rejection test for a \emph{continuous
+budget} on a quantity that is unobservable yet point-identified up to a provably
+irreducible bit; the exact blind set $\mathcal B_\beta$; and the constructive
+incompleteness of $\tau$. Within this framework the earlier budget devices
+(Propositions on $\eta$-transfer, $\beta$-drift, $B$-drift) stop being unexaminable:
+each budget premise acquires a sound falsifier, and what no falsifier can ever reach is
+characterized exactly ($\mathcal B_\beta$ within H; rank-one-preserving violations
+outside H, Theorem~\ref{thm:no-verify}(b)).
+
+\subsection{The evidence-channel rate}\label{sec:evrate}
+
+\begin{theorem}[Matching $m^{-1/2}$ bounds for the label-free channel]\label{thm:ev-rate}
+Within audited H with margins ($c_{\min}$, $b_{\min}$) and given the bit:
+\textnormal{(a)} the product-ratio estimator satisfies, with probability $\ge1-\delta$,
+$|\hat b_j-b_j|\le C(c_{\min},b_{\min})\sqrt{\log(K/\delta)/m}$ with
+$C=\Theta\big(1/(b_{\min}c_{\min}^2)\big)$, so $\sign(b_j-b_0)$ is certified at sample
+complexity $m\asymp C^2(b_j-b_0)^{-2}\log(K/\delta)$;
+\textnormal{(b)} a Le Cam two-point argument inside H (two models differing by
+$\varepsilon$ in one coordinate; the per-sample KL between prediction-pattern laws is
+$\le C'\varepsilon^2$) shows no estimator can beat $m^{-1/2}$;
+\textnormal{(c)} consequently labels buy \emph{constants and the bit, not the rate}: the
+labeled-vs-evidence efficiency ratio is constant in $m$ but scales like $1/c_{\min}$ and
+diverges as pairwise agreement approaches chance.
+\end{theorem}
+
+\begin{figure}[t]\centering
+\includegraphics[width=0.92\linewidth]{theory_v2/fig_v4_rate.png}
+\caption{The evidence-channel rate (Thm~\ref{thm:ev-rate}). Empirical minimax error
+tracks the Le Cam curve $c_0/\sqrt m$ (slope $-0.525$); per-sample KL grows
+quadratically in the separation (KL$/\varepsilon^2$ constant); the labeled-vs-evidence
+efficiency ratio is constant in $m$ but grows as $c_{\min}\to0$.}
+\label{fig:evrate}
+\end{figure}
+
+\noindent\emph{Validated} (\texttt{V2\_identification\_rate}, \texttt{V4\_rate};
+Figs.~\ref{fig:onebit},~\ref{fig:evrate}): recovery slope $-0.510$ (theory $-0.5$);
+empirical minimax error tracks $c_0/\sqrt m$; KL$/\varepsilon^2\in[0.164,0.171]$ across
+$\varepsilon$ (quadratic separation, as required); efficiency ratio $2.15$ at
+$c_{\min}{=}0.21$, $4.49$ at $0.067$, divergent at $\le0.022$.
+
+\smallskip\noindent\emph{Honest scope.} The tools are classical
+(Hoeffding/Bernstein/Le Cam; cf.\ \textbf{Jaffe et al.} 2015 for asymptotics of the
+same estimator); the contribution is the two-sided minimax statement \emph{for the
+evidence channel within a falsifiable class}, answering the open question left by the
+knowability-rate propositions (Props.~\ref{thm:rate-ub}ff.): those concerned mean estimation
+from \emph{labeled} paired benefits, whereas Theorem~\ref{thm:ev-rate} is the genuinely
+label-free rate. The constant's $1/c_{\min}^2$ dependence is real and reported, not
+optimized; tightening it is open.
+
+\subsection{Consolidation and what remains open}\label{sec:consolidation}
+
+\begin{corollary}[The budget propositions, unified]\label{cor:unify-budgets}
+Under H, the calibration-transfer premise (Prop.~9), the $\beta$-drift premise
+(Prop.~11), the bounded-drift premise (Prop.~13), and the majority anchor
+(Prop.~\ref{thm:multicand}) each decompose as
+\emph{(testable structure)} $+$ \emph{(one bit)}: the structure is falsifiable by the
+audit of Theorem~\ref{thm:audit} together with the residual $\tau$, and the bit is
+irreducible by Theorem~\ref{thm:bit-necessity}. In this precise sense the paper's
+trichotomy is complete: \textsc{adapt}/\textsc{freeze} when the audited structure plus a
+declared bit certify the sign with margin; \textsc{abstain} when the audit rejects, or
+when the margin falls inside the blind set $\mathcal B_\beta$.
+\end{corollary}
+
+\subsection{Closing Conjecture~\ref{conj:gen}: the testability dichotomy}\label{sec:conj1-closure}
+
+Conjecture~\ref{conj:gen} asks for a label-free bracketing of the ordinal comparison on
+$D$ ``without target labels.'' The $\gamma$-meter section (\S\ref{sec:gmeter}) resolves
+it \emph{relative to checkable agreement structure} and leaves the unconditional
+question open. We now close the unconditional question --- negatively, with an exact
+characterization. Validated: \texttt{theory\_v2/val\_conj1\_closure.py} $\to$
+\texttt{conj1\_closure\_results.json}; Fig.~\ref{fig:conj1closure}.
+
+\begin{definition}[Evidence-definable class]\label{def:evdef}
+Let $L(P)$ denote the joint law of \emph{all} label-free observables under target $P$
+(labeled source, fixed predictor maps, the unlabeled target stream --- hence every
+label-free statistic of every order). A class $\mathcal C$ of targets is
+\emph{evidence-definable} (label-free testable in the population limit) if membership
+depends on $P$ only through $L(P)$.
+\end{definition}
+
+\begin{lemma}[The swap]\label{lem:swap}
+In each output space there is an involution $P\mapsto P^\star$ with
+$\TV(L(P),L(P^\star))=0$ and $\Delta(P^\star)=-\Delta(P)$:
+\textnormal{(a)} multiclass (binary included): on $D$ swap, pointwise in $x$, the
+conditional masses of the two disagreeing predicted values,
+$P^\star(Y{=}f_a(x)\mid x)=P(Y{=}f_0(x)\mid x)$ and vice versa;
+\textnormal{(b)} regression: reflect $Y$ about the prediction midpoint on $D$,
+$Y^\star=f_0(X)+f_a(X)-Y$;
+\textnormal{(c)} for binary the swap is the $D$-local label complement and preserves H,
+mapping $b\mapsto-b$.
+\end{lemma}
+\begin{proof}
+Each $P^\star$ is a valid law preserving the $X$-marginal; predictions are fixed maps of
+$X$ and the source is untouched, so $L(P^\star)=L(P)$ exactly, at every moment order.
+(a) exchanges $p_a(x)\leftrightarrow p_0(x)$ pointwise on $D$, so
+$\Delta^\star=P(D)(p_0-p_a)=-\Delta$ (off $D$, $\delta=0$). (b) negates
+$f_0{+}f_a{-}2Y$ pointwise on $D$, so the benefit density negates. (c) is (a) with
+$K{=}2$: $q_j\mapsto1-q_j$ preserves CEI and per-class symmetry.
+\end{proof}
+
+\begin{theorem}[Resolution of Conjecture~\ref{conj:gen}; testability dichotomy]\label{thm:conj1-dichotomy}
+\textnormal{(i) \textbf{No testable bracketing.}} If $\mathcal C$ is evidence-definable
+and contains any target with $\Delta\neq0$, then $\sign\Delta$ is not identifiable on
+$\mathcal C$: by Lemma~\ref{lem:swap}, $P^\star\in\mathcal C$ shares $P$'s evidence law
+with the opposite sign. The unconditional label-free bracketing sought by
+Conjecture~\ref{conj:gen} therefore \emph{does not exist} --- in any output space, at
+any evidence order, with unlimited labeled source data.
+\textnormal{(ii) \textbf{The minimal supplement is one bit, and it suffices.}} The swap
+pairs each $\Delta\neq0$ target with an opposite-sign twin on the same evidence fiber;
+identifying $\sign\Delta$ on a class is exactly selecting one member per pair --- one
+bit, irreducible by (i). Conversely, falsifiable structure plus one declared bit
+identifies $\sign\Delta$ at the minimax $m^{-1/2}$ rate: binary under H by
+Theorems~\ref{thm:onebit-id} and~\ref{thm:ev-rate}; multiclass one-coin/tensor-regular
+families by Theorem~\ref{thm:conj1-multiclass}. Hence every conditional resolution in
+this paper (calibration transfer, $\gamma$-meter, H$+$anchor) is of the \emph{minimal
+possible form}: falsifiable structure $+$ one bit.
+\end{theorem}
+\begin{proof}
+(i) Any decision rule with asymptotic guarantees on $\mathcal C$ is a functional of
+$L$; on the fiber $\{L(P)\}$ it outputs one (possibly randomized) action while
+$P,P^\star\in\mathcal C$ demand opposite committal actions; the committal-regret
+argument of Theorem~\ref{thm:imp} applies with the pair constructed \emph{inside}
+$\mathcal C$. (ii) The swap is an involution reversing the sign, so $\{\Delta\neq0\}$
+partitions into orbits of size two with opposite signs; meeting each orbit at most once
+is a one-bit selection; sufficiency is the cited theorems.
+\end{proof}
+
+\noindent\emph{Remark (the algebraic heart).} For binary $Y$ write $v=2Y{-}1$ (latent)
+and $u_j=2g_j{-}1$ (observable); correctness signs are $s_j=u_jv$. Label-free
+observables generate the \emph{even} subalgebra ($s_is_j=u_iu_j$, \dots); the decision
+target $\sign\Delta\propto\sign\E[s_a{-}s_0]$ is \emph{odd}. The swap is $v\mapsto-v$ on
+$D$: it fixes every observable and negates every odd element. Odd-order correctness
+moments (e.g.\ $\E[s_1s_2s_3]$, \S\ref{sec:gmeter}) are label-carrying --- estimating
+them presupposes an anchored frame --- so the reach hierarchy $r_2>r_3>\cdots$ of
+\S\ref{sec:gmeter} measures residual \emph{magnitude} ambiguity within a declared
+frame, while the raw observable channel retains the sign bit at every order. This
+answers the question \S\ref{sec:gmeter} leaves open: however fast $r_k$ shrinks, its
+limit cannot break the swap orbit. \emph{What is observable is even; what is decided is
+odd; the quotient is one bit.}
+
+\smallskip\noindent\emph{Honest scope and positioning.} The swap constructions are
+elementary; the value is the characterization, which upgrades
+Corollary~\ref{cor:irreducible} from ``some supplied bound is needed'' to ``no testable
+condition suffices, and the untestable content is exactly one bit.'' \textbf{Rosenfeld
+\& Garg} (NeurIPS 2023, Remark 3.9) assert the impossibility informally; (i) is its
+formalization, with the mechanism and the minimal residual. \textbf{Ben-David et al.}
+(AISTATS 2010) build observably indistinguishable tasks for learnability, not
+benefit-sign identification over testable classes; the testable-learning-with-shift
+line (\textbf{Klivans et al.}) certifies agnostic \emph{learning}, a different
+estimand; \textbf{Manski}-style partial identification (sign of a treatment effect
+requires untestable monotonicity) is the conceptual precedent from causal inference ---
+this is its exact analogue for label-free adaptation, with the supplement quantified.
+A targeted live search (June 2026) found no prior statement of the dichotomy as a
+theorem over testable classes.
+
+\noindent\emph{Validated} (\texttt{conj1\_closure\_results.json}): multiclass $K{=}5$
+swap --- evidence statistics (pairwise $+$ triple agreements, marginals) change by
+exactly $0$, accuracies exchange exactly ($p^\star_a=p_0$, $p^\star_0=p_a$),
+$\Delta^\star=-\Delta$ to $0$; regression reflection --- $\Delta^\star=-\Delta$ exactly;
+binary H-swap --- agreement matrix invariant ($0$ change), $b^\star=-b$ to
+$1.1\times10^{-16}$, $\tau$ unchanged ($\approx0$).
+
+\begin{figure}[t]\centering
+\includegraphics[width=0.92\linewidth]{theory_v2/fig_conj1_closure.png}
+\caption{Closing Conjecture~\ref{conj:gen} (Thm~\ref{thm:conj1-dichotomy}): the swap
+flips every benefit sign (multiclass $K{=}5$, left; regression, middle) while no
+label-free observable of any order moves (right, exact zero) --- so no testable
+assumption can bracket the sign, and the residual is exactly one bit.}
+\label{fig:conj1closure}
+\end{figure}
+
+\noindent\textbf{Open problems (the honest frontier).} (1) A tight (non-conservative)
+finite-sample radius for the audit---the proven $C_2$ constant is loose; the bootstrap
+version is powerful but its validity is empirical. (2) With
+Conjecture~\ref{conj:gen} resolved as a dichotomy (Theorem~\ref{thm:conj1-dichotomy}),
+the surviving structural question: the weakest \emph{falsifiable} class beyond H on
+which one bit still suffices --- any such class must exclude the rank-one-preserving
+stealth laws of Theorem~\ref{thm:no-verify}(b), and the $r_k$ reach hierarchy of
+\S\ref{sec:gmeter} measures its magnitude side. (3) Per-class
+asymmetric panels: quantitative recovery when $\delta\neq0$ but $\|\delta\|$ is small,
+via the exact deficit of Theorem~\ref{thm:H-deficit}.

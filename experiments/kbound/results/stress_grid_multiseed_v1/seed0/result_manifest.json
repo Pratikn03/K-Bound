@@ -12,6 +12,11 @@
   ],
   "quick": true,
   "max_cells": 0,
+  "sar_arm": {
+    "sar_lr": null,
+    "freeze_layer4": false,
+    "default_matched_lr_behavior": true
+  },
   "grid": {
     "severities": [
       1,
@@ -53,28 +58,28 @@
       "sar": 432
     }
   },
-  "git_hash": "6a237ed489c305a4b8f6f84665a1e9991f6ffc97",
-  "python": "3.14.3",
-  "torch": "2.12.0",
-  "numpy": "2.4.4",
+  "git_hash": "4896181799ad5de704420de12839d2c9ee0b9a11",
+  "python": "3.12.13",
+  "torch": "2.5.1",
+  "numpy": "2.4.6",
   "argv": [
     "docs/research/kbound/scripts/cifar_tent_mps_v2.py",
     "--benchmarks",
     "cifar10c",
     "--quick",
+    "--data-root",
+    "experiments/kbound/cifar",
     "--methods",
     "tent",
     "eata",
     "sar",
+    "--device",
+    "mps",
     "--seed",
     "0",
-    "--data-root",
-    "experiments/kbound/cifar",
     "--out-results",
-    "experiments/kbound/results/stress_grid_multiseed_v1/seed0",
-    "--out-figs",
     "experiments/kbound/results/stress_grid_multiseed_v1/seed0"
   ],
-  "wall_time_sec": 16629.6,
-  "finished": "2026-06-11 18:56:21"
+  "wall_time_sec": 19834.4,
+  "finished": "2026-07-02 13:11:55"
 }

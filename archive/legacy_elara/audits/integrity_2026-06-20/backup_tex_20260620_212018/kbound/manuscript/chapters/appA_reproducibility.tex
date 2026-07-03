@@ -1,0 +1,465 @@
+\chapter{Reproducibility and Engineering}\label{app:repro}
+
+This appendix is the complete, authoritative record of how every result in
+this monograph was produced and how it can be reproduced from scratch.  We
+describe the full rebuild script, the hermetic smoke path that exercises the
+core algorithm with zero external data, the integrity manifests for model
+artifacts and the score archive, the \texttt{kga} package install and test
+loop, the CI workflow, and the 10 executed notebooks.  Every claim here is
+verified against the real files in the repository.
+
+% -----------------------------------------------------------------------
+\section{Repository layout}
+\label{sec:app-repro-layout}
+% -----------------------------------------------------------------------
+
+The repository root is \texttt{AutoML\_Flagship\_V8/}.  The files most relevant
+to reproducing the K-Bound paper are:
+
+\begin{center}
+\begin{tabular}{ll}
+\toprule
+Path & Contents \\
+\midrule
+\texttt{kga/} & Importable \KGA{} package (pure \texttt{numpy}/\texttt{scipy}) \\
+\texttt{src/scripts/kbound/} & Per-experiment scripts \\
+\texttt{experiments/kbound/theory\_validation/} & Theorem validators \\
+\texttt{experiments/elara\_u/score\_archive/} & 123-task score archive \\
+\texttt{experiments/kbound/results/} & Experiment outputs and manifests \\
+\texttt{docs/research/kbound/} & Paper source, figures, kbound.tex \\
+\texttt{models/MANIFEST.json} & SHA-256 manifest for 5 model artifacts \\
+\texttt{data/MANIFEST.json} & SHA-256 manifest for 123 score-archive entries \\
+\texttt{scripts/rebuild\_kbound.sh} & One-command full rebuild \\
+\texttt{scripts/smoke\_kbound.sh} & Hermetic CPU smoke ($< 60\,\mathrm{s}$) \\
+\texttt{.github/workflows/kbound-ci.yml} & CI workflow (6 jobs) \\
+\texttt{notebooks/} & 10 executed K-Bound notebooks (00--09) \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+% -----------------------------------------------------------------------
+\section{Full reproduction path}
+\label{sec:app-repro-rebuild}
+% -----------------------------------------------------------------------
+
+The complete paper-grade rebuild is a single shell script:
+
+\begin{verbatim}
+bash scripts/rebuild_kbound.sh                  # CPU + compile
+KBOUND_GPU=1 bash scripts/rebuild_kbound.sh     # + CIFAR-10 / Tent on GPU
+KBOUND_SKIP_DEPS=1 bash scripts/rebuild_kbound.sh
+PYTHON=.venv/bin/python bash scripts/rebuild_kbound.sh
+\end{verbatim}
+
+The script (\texttt{scripts/rebuild\_kbound.sh}) executes four numbered stages
+from the repository root.
+
+\paragraph{Stage [1/4] Dependencies.}
+Unless \texttt{KBOUND\_SKIP\_DEPS=1} is set, the script installs
+\texttt{docs/research/kbound/requirements.txt} via \texttt{pip install -q}.
+This covers \texttt{numpy}, \texttt{scipy}, \texttt{scikit-learn},
+\texttt{matplotlib}, and \texttt{pandas}; the \texttt{pdflatex} binary must be
+present separately.
+
+\paragraph{Stage [2/4] Core experiments (CPU).}
+Five experiment scripts run in order under the Python interpreter (default
+\texttt{python3}, overridable via \texttt{PYTHON=}):
+
+\begin{enumerate}
+  \item \texttt{src/scripts/kbound/knowability\_experiment.py} --- the
+    123-task anomaly-routing trichotomy and ablation;
+  \item \texttt{src/scripts/kbound/kbound\_harmful\_regime.py} --- the
+    reliability-fusion harmful-regime evaluation;
+  \item \texttt{src/scripts/kbound/mixed\_regime\_experiment.py} --- the
+    controlled mixed-regime (clean/detectable/covert, 369 instances);
+  \item \texttt{src/scripts/kbound/kbound\_full\_experiments.py rigor} ---
+    multi-seed statistical rigor pass;
+  \item \texttt{src/scripts/kbound/kbound\_full\_experiments.py ablation} ---
+    evidence-component and $\alpha$-level ablations;
+  \item \texttt{src/scripts/kbound/kbound\_full\_experiments.py regression} ---
+    regression covariate-shift certificate;
+  \item \texttt{src/scripts/kbound/kbound\_full\_experiments.py witness} ---
+    clean non-identifiability witness.
+\end{enumerate}
+
+All scripts consume the 123-task score archive at
+\texttt{experiments/elara\_u/score\_archive/} and write results to
+\texttt{experiments/kbound/results/}.  Figures are written to
+\texttt{docs/research/kbound/figures/}.
+
+\paragraph{Stage [3/4] GPU experiment (optional).}
+When \texttt{KBOUND\_GPU=1}, the script additionally runs:
+
+\begin{verbatim}
+src/scripts/kbound/cifar_tent_mps.py
+\end{verbatim}
+
+This requires PyTorch with Metal Performance Shaders (Apple M5 / MPS) or a
+CUDA-capable GPU.  It runs the CIFAR-10-C corruption grid with Tent adaptation
+and writes the decisive stress results to \texttt{experiments/kbound/cifar/}.
+The GPU stage is skipped silently when the flag is absent; all anomaly-routing
+and theory results are CPU-only.
+
+\paragraph{Stage [4/4] Compile PDF.}
+Two \texttt{pdflatex} passes compile
+\texttt{docs/research/kbound/kbound.tex}; the resulting PDF is copied to
+\texttt{docs/research/kbound/K-Bound\_paper.pdf}.
+
+% -----------------------------------------------------------------------
+\section{Hermetic smoke path}
+\label{sec:app-repro-smoke}
+% -----------------------------------------------------------------------
+
+The hermetic smoke is the fastest signal that the K-Bound algorithm works on
+any machine with no downloaded data:
+
+\begin{verbatim}
+bash scripts/smoke_kbound.sh
+\end{verbatim}
+
+The wrapper (\texttt{scripts/smoke\_kbound.sh}) resolves the repository root as
+the parent of its own directory, sets \texttt{PYTHON} (default
+\texttt{python3}, overridable via \texttt{PYTHON=python3.11}), and runs:
+
+\begin{verbatim}
+python src/scripts/kbound/smoke_trichotomy.py
+\end{verbatim}
+
+\texttt{smoke\_trichotomy.py} proceeds in two phases.
+
+\paragraph{Phase 1: synthetic archive generation.}
+The companion script \texttt{make\_synth\_archive.py} writes a tiny,
+deterministic (fixed seed) score archive to
+\texttt{experiments/kbound/\_smoke/score\_archive/}, using the exact five-key
+\texttt{.npz} schema (\texttt{Sval}, \texttt{yval}, \texttt{Stest},
+\texttt{ytest}, \texttt{det\_names}, \texttt{val\_auc}, \texttt{domain}) of the
+real 123-task archive.  Three synthetic tasks are created:
+\begin{itemize}
+  \item \texttt{synth\_helpful} --- $f_0$ degrades on test while the ensemble
+    $f_a$ is far more accurate; true benefit clearly positive;
+  \item \texttt{synth\_harmful} --- $f_0$ stays excellent while $f_a$ is
+    corrupted; true benefit clearly negative;
+  \item \texttt{synth\_unknowable} --- $f_0$ and $f_a$ are statistically tied;
+    benefit $\approx 0$.
+\end{itemize}
+
+\paragraph{Phase 2: real \texttt{kga} pipeline.}
+\texttt{smoke\_trichotomy.py} loads the synthetic archive and runs the
+\emph{real} \texttt{kga} package: \texttt{compute\_evidence} (label-free $Z$),
+\texttt{KGA.certify} (empirical-Bernstein certificate $\widehat\Delta \pm
+\varepsilon$), and \texttt{KGA.decide} (trichotomy).  It then asserts:
+\begin{itemize}
+  \item \texttt{synth\_helpful} $\Rightarrow$ \texttt{ADAPT};
+  \item \texttt{synth\_harmful} $\Rightarrow$ \texttt{FREEZE};
+  \item \texttt{synth\_unknowable} $\Rightarrow$ \texttt{ABSTAIN}.
+\end{itemize}
+The separations are large relative to the certificate radius, so the result is
+deterministic, not chance.  On success the script writes
+\texttt{experiments/kbound/\_smoke/smoke\_result.json} and prints
+\texttt{SMOKE PASS} with a one-line metrics summary.  On any failure it exits
+non-zero.
+
+The same logic is covered by \texttt{pytest tests/test\_smoke\_trichotomy.py}
+and \texttt{tests/test\_data\_manifest.py}; both are pure
+\texttt{numpy}/\texttt{kga} suites with no external dependencies and complete
+in a few seconds.  The hermetic smoke schema identity with the real archive is
+additionally checked in
+\texttt{test\_smoke\_trichotomy.py::test\_synth\_archive\_schema\_matches\_real}.
+
+% -----------------------------------------------------------------------
+\section{Integrity manifests}
+\label{sec:app-repro-manifests}
+% -----------------------------------------------------------------------
+
+\subsection{Model artifact manifest (\texttt{models/MANIFEST.json})}
+
+Five serialised model artifacts are registered in
+\texttt{models/MANIFEST.json}, each with its repository-relative path, a
+real SHA-256 digest, size in bytes, and mtime:
+
+\begin{center}
+\begin{tabular}{lll}
+\toprule
+Artifact name & Path & SHA-256 (first 16 hex) \\
+\midrule
+\texttt{behavior\_\_behavior\_autoencoder} &
+  \texttt{models/behavior/} & \texttt{d044f4440633ed4d\ldots} \\
+\texttt{behavior\_\_behavior\_lof} &
+  \texttt{models/behavior/} & \texttt{df74fb53d40dd272\ldots} \\
+\texttt{cyber\_\_supervised\_\_cyber\_model} &
+  \texttt{models/cyber/supervised/} & \texttt{e89c5d1b742c1fee\ldots} \\
+\texttt{fraud\_\_supervised\_\_fraud\_model} &
+  \texttt{models/fraud/supervised/} & \texttt{331df4269f51e34c\ldots} \\
+\texttt{fusion\_\_fusion\_meta\_model} &
+  \texttt{models/fusion/} & \texttt{c1c8033c53bfc1f9\ldots} \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+The manifest is produced by:
+
+\begin{verbatim}
+PYTHONPATH=src python -m uais.registry.build_manifest
+\end{verbatim}
+
+Loading any artifact through \texttt{src/uais/registry/ModelRegistry} fails
+closed (\texttt{IntegrityError}) on a SHA-256 mismatch.  The manifest and
+loader are covered by \texttt{tests/test\_model\_registry.py} (20 tests).
+
+\subsection{Score-archive manifest (\texttt{data/MANIFEST.json})}
+
+\texttt{data/MANIFEST.json} records the SHA-256, byte size, and mtime of every
+\texttt{.npz} file under \texttt{experiments/elara\_u/score\_archive/}, covering
+all 123 real score-archive entries.  It is produced by:
+
+\begin{verbatim}
+python -m uais.data.manifest build
+\end{verbatim}
+
+Verification is:
+
+\begin{verbatim}
+python -m uais.data.manifest verify
+# exit 0 = all match; exit 1 = drift (missing/changed); prints JSON report
+\end{verbatim}
+
+The manifest is format-versioned (\texttt{"version": "kbound-data-manifest/1"})
+and handles three failure modes: a missing recorded file, a size mismatch, and
+a content (SHA-256) change even at identical size.  These are exercised by
+\texttt{tests/test\_data\_manifest.py}.
+
+% -----------------------------------------------------------------------
+\section{The \texttt{kga} package: install and test}
+\label{sec:app-repro-kgapkg}
+% -----------------------------------------------------------------------
+
+The \texttt{kga} package lives at the repository root (top-level package, not
+under \texttt{src/}):
+
+\begin{verbatim}
+# Minimal install: put repo root on PYTHONPATH
+export PYTHONPATH="$PWD:$PWD/src"
+pip install numpy scipy pytest
+
+# Verify
+python -c "import kga; print(kga.__version__)"  # -> kga 0.1.0
+\end{verbatim}
+
+The package is pure \texttt{numpy}/\texttt{scipy}, deterministic, and
+torch-free.  It exposes \texttt{KGA}, \texttt{Evidence}, \texttt{Certificate},
+and \texttt{Decision} (a \texttt{str} enum).  The CLI entry point:
+
+\begin{verbatim}
+python -m kga decide --calib calib.npy --test test.npy --alpha 0.1
+\end{verbatim}
+
+\paragraph{Test suite.}
+The \texttt{kga} unit tests live in \texttt{tests/test\_kga\_package.py}.  To
+run the complete new-package suite (88 tests, $< 2\,\mathrm{s}$):
+
+\begin{verbatim}
+PYTHONPATH="$PWD:$PWD/src" pytest \
+  tests/test_kga_package.py \
+  tests/test_model_registry.py \
+  tests/test_training_harness.py \
+  tests/test_data_manifest.py \
+  tests/test_smoke_trichotomy.py \
+  --cov=kga --cov=src/uais --cov-report=term-missing
+\end{verbatim}
+
+The \texttt{kga} tests are fixed-seed and check the following behavioural
+contract: (a) identical distributions $\Rightarrow$ \texttt{ABSTAIN}; (b) the
+certificate radius shrinks as $n$ grows; (c) trichotomy boundaries are hit
+exactly; (d) the non-identifiability witness (identical $Z$, opposite truth)
+$\Rightarrow$ \texttt{ABSTAIN}; and (e) the empirical false-adapt rate remains
+$\leq \alpha$ over at least 2\,000 synthetic trials.
+
+\paragraph{Theorem validators.}
+Each theorem in the paper has a standalone numerical validator under
+\texttt{experiments/kbound/theory\_validation/}:
+
+\begin{center}
+\begin{tabular}{ll}
+\toprule
+Script & Validates \\
+\midrule
+\texttt{val\_thm1\_lecam.py} & Thm.~\ref{thm:imp} --- Le Cam two-point minimax \\
+\texttt{val\_thm2\_regret.py} & Thm.~\ref{thm:gate} --- regret identity \\
+\texttt{val\_thm3\_evalue.py} & Thm.~\ref{thm:evalue} --- anytime e-value \\
+\texttt{val\_thm5\_multiclass.py} & Thm.~\ref{thm:disagree} --- multiclass extension \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+All validators are pure \texttt{numpy}/\texttt{scipy} with no labels or GPU,
+and have been re-run from a clean environment: all four pass.
+
+% -----------------------------------------------------------------------
+\section{CI workflow (\texttt{.github/workflows/kbound-ci.yml})}
+\label{sec:app-repro-ci}
+% -----------------------------------------------------------------------
+
+The \texttt{kbound-ci} GitHub Actions workflow (\texttt{kbound-ci.yml}) runs
+six jobs on \texttt{ubuntu-latest} / Python 3.11, triggered on pushes and
+pull requests to \texttt{main}/\texttt{master}.  A
+\texttt{concurrency.cancel-in-progress} key drops superseded runs.
+
+\begin{center}
+\begin{tabular}{lp{9cm}}
+\toprule
+Job & What it does \\
+\midrule
+\texttt{lint} &
+  (a) Repo-wide critical-error gate: \texttt{ruff check --select E9,F63,F7,F82 .};
+  (b) full ruff lint on the maintained A$+$ surfaces (\texttt{kga/},
+  \texttt{src/orchestration/}, \texttt{src/uais/registry/},
+  \texttt{src/uais/training/}, the K-Bound scripts, and the test suite);
+  (c) ruff format check on the same surfaces. \\[4pt]
+\texttt{kga-package} &
+  Installs \texttt{numpy scipy pytest}; imports \texttt{kga} and prints
+  the version; runs \texttt{pytest tests/test\_kga\_package.py}. \\[4pt]
+\texttt{unit-tests} &
+  Installs the full minimal dependency set; runs the five new package test
+  modules with \texttt{-{}-cov=kga -{}-cov=src/uais}; uploads
+  \texttt{coverage.xml} as an artifact. \\[4pt]
+\texttt{hermetic-smoke} &
+  Installs only \texttt{numpy scipy}; runs
+  \texttt{bash scripts/smoke\_kbound.sh}; asserts \texttt{SMOKE PASS}. \\[4pt]
+\texttt{theorem-validators} &
+  Glob-runs every \texttt{experiments/kbound/theory\_validation/val\_thm*.py};
+  fails if any exits non-zero. \\[4pt]
+\texttt{orchestration-import} &
+  Imports \texttt{src.orchestration} \emph{without} Prefect installed and
+  checks that the six flows are registered (\texttt{PREFECT=False}). \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+Every job sets \texttt{PYTHONPATH=\$\{\{ github.workspace \}\}:\$\{\{
+github.workspace \}\}/src} so both the top-level \texttt{kga} package and the
+\texttt{src/}-rooted \texttt{uais} package are importable without \texttt{pip
+install -e}.
+
+% -----------------------------------------------------------------------
+\section{Executed notebooks (00--09)}
+\label{sec:app-repro-notebooks}
+% -----------------------------------------------------------------------
+
+The \texttt{notebooks/} directory contains 10 notebooks that reproduce the
+K-Bound paper interactively.  Each notebook auto-locates the repository root and
+loads only real result artifacts; outputs are saved in the files so they are
+readable without re-running.  Table~\ref{tab:app-notebooks} lists the notebooks
+in order.
+
+\begin{longtable}{clp{9.5cm}}
+\caption{The 10 executed K-Bound notebooks.}
+\label{tab:app-notebooks}\\
+\toprule
+\# & Filename & Contents \\
+\midrule
+\endfirsthead
+\toprule
+\# & Filename & Contents \\
+\midrule
+\endhead
+\midrule
+\multicolumn{3}{r}{\textit{continued on next page}}\\
+\endfoot
+\bottomrule
+\endlastfoot
+00 & \texttt{00\_KBound\_Reproduction.ipynb} &
+  One-page overview, live trichotomy on a synthetic example, all result
+  figures, and the top-level reproduction commands. \\
+01 & \texttt{01\_Problem\_and\_Theory.ipynb} &
+  Problem formulation, the adapt/freeze/abstain trichotomy, live runs of
+  the four theorem validators (Thms~1--5 / 3b), and the architecture
+  diagram. \\
+02 & \texttt{02\_Knowability\_Trichotomy.ipynb} &
+  Live 123-task anomaly-routing suite: evidence $Z$, empirical-Bernstein
+  certificate, decisions, adapt precision, false-adapt rate, and
+  component ablations. \\
+03 & \texttt{03\_Harmful\_Mixed\_Rigor.ipynb} &
+  Harmful-fusion regime, controlled mixed-regime (clean/detectable/covert),
+  and 8-seed paired $t$-test statistical rigor. \\
+04 & \texttt{04\_Regression\_and\_Witness.ipynb} &
+  Regression covariate-shift certificate and the clean non-identifiability
+  witness (live Gaussian/flipped-label construction). \\
+05 & \texttt{05\_TTA\_CIFAR\_and\_Online.ipynb} &
+  CIFAR-10-C pre-registered stress grid, decisive CIFAR+Tent experiment,
+  and online continual-Tent collapse analysis. \\
+06 & \texttt{06\_Evidence\_and\_Drift.ipynb} &
+  The label-free evidence $Z$ computed live on synthetic and real tasks:
+  KS drift, ESS, disagreement, and their correlation with true benefit. \\
+07 & \texttt{07\_Certificate\_and\_Calibration.ipynb} &
+  Conformal, empirical-Bernstein, and e-value certificates; $\alpha$--coverage
+  calibration curves; certificate width vs.\ batch size. \\
+08 & \texttt{08\_ELARA\_Multimodal\_Instantiation.ipynb} &
+  ELARA/RGA worked instantiation: MVTec-3D domain D23, T1--T9 gating, and
+  the full GDR map. \\
+09 & \texttt{09\_Conclusions\_and\_Reproducibility.ipynb} &
+  Cross-experiment regret-to-oracle summary, reproduction commands, honest
+  scope statement, and open items (Conjecture~\ref{conj:gen}, full
+  ImageNet-C). \\
+\end{longtable}
+
+Legacy notebooks (25 superseded ELARA-era EDA notebooks) live under
+\texttt{notebooks/legacy\_elara/} and are not part of the K-Bound paper.
+
+% -----------------------------------------------------------------------
+\section{Environment notes}
+\label{sec:app-repro-env}
+% -----------------------------------------------------------------------
+
+\paragraph{Python version.}
+Python 3.11 is the supported CI interpreter; the code targets Python 3.9+.
+CPU-only K-Bound experiments need only \texttt{numpy}, \texttt{scipy},
+\texttt{scikit-learn}, \texttt{matplotlib}, and \texttt{pandas}.  The GPU
+(Tent/CIFAR-10-C) runs additionally require \texttt{torch 2.5.1} and
+\texttt{torchvision 0.20.1}.
+
+\paragraph{Apple M5 / MPS.}
+The decisive CIFAR-10-C and online continual-Tent experiments were run on an
+Apple M-series chip using Metal Performance Shaders (\texttt{device="mps"}
+in \texttt{cifar\_tent\_mps.py}).  The same scripts run on CUDA without
+modification.
+
+\paragraph{Determinism.}
+All CPU experiments use \texttt{SEED=0}.  \texttt{src/uais/training/set\_seed}
+seeds \texttt{PYTHONHASHSEED}, \texttt{random}, NumPy, and (when importable)
+PyTorch with \texttt{torch.backends.cudnn.deterministic=True}.  The \texttt{kga}
+package itself has no global RNG state.
+
+\paragraph{Legacy lint debt.}
+Approximately 1\,973 \texttt{ruff} findings exist in pre-existing ELARA-era
+code.  Mass-reformatting was intentionally not performed (high churn, out of
+scope); the CI enforces the full rule set on the maintained A$+$ surfaces and a
+critical-error gate across the whole repository.  A clean \texttt{ruff check kga}
+passes with no findings.
+
+% -----------------------------------------------------------------------
+\section{How to reproduce: checklist}
+\label{sec:app-repro-checklist}
+% -----------------------------------------------------------------------
+
+\begin{enumerate}
+  \item \textbf{Clone} the repository and \texttt{cd AutoML\_Flagship\_V8}.
+  \item \textbf{Install minimal deps}:
+    \texttt{pip install numpy scipy scikit-learn pandas matplotlib pytest ruff}.
+  \item \textbf{Hermetic smoke} (no data required, $< 60\,\mathrm{s}$):
+    \texttt{bash scripts/smoke\_kbound.sh} $\Rightarrow$ \texttt{SMOKE PASS}.
+  \item \textbf{Unit tests}: \texttt{PYTHONPATH="\$PWD:\$PWD/src" pytest
+    tests/test\_kga\_package.py -q} $\Rightarrow$ all pass.
+  \item \textbf{Theorem validators}:
+    \texttt{for v in val\_thm1\_lecam val\_thm2\_regret val\_thm3\_evalue}
+    \texttt{val\_thm5\_multiclass; do python}
+    \texttt{experiments/kbound/theory\_validation/\$v.py; done}
+    $\Rightarrow$ 4/4 pass.
+  \item \textbf{Full rebuild} (requires score archive):
+    \texttt{bash scripts/rebuild\_kbound.sh}
+    $\Rightarrow$ \texttt{DONE -> docs/research/kbound/K-Bound\_paper.pdf}.
+  \item \textbf{GPU rebuild} (requires score archive + PyTorch + MPS/CUDA):
+    \texttt{KBOUND\_GPU=1 bash scripts/rebuild\_kbound.sh}.
+  \item \textbf{Manifest verification}:
+    \texttt{python -m uais.data.manifest verify}
+    $\Rightarrow$ all 123 entries match.
+\end{enumerate}

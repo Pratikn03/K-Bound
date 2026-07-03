@@ -1,0 +1,84 @@
+% Theory extensions: \input from kbound.tex inside the Theory section.
+% Uses the host doc's amsthm environments and macros (\E \Pr \TV \sign \Law \R).
+\subsection{Further results: bracketing, router generalization, and non-stationarity}\label{sec:theory-ext}
+Three results sharpen the certificate: a conditional resolution of the open bracketing
+conjecture, a generalization guarantee for the learned benefit router, and a relaxation of the
+exchangeability assumption to bounded non-stationarity. Each is numerically checked
+(\texttt{experiments/kbound/theory\_validation/}).
+
+\paragraph{(a) Closing Conjecture~\ref{conj:gen} under calibration transfer.}
+\begin{proposition}[Label-free bracketing under bounded calibration transfer]\label{thm:caltransfer}
+On the disagreement region $D$, let $\mathrm{conf}_h(x)\in[0,1]$ be a source-calibrated confidence
+map for predictor $h\in\{f_0,f_a\}$, and suppose its target miscalibration on $D$ is bounded by
+$\eta$: $|\Pr_T(h(X){=}Y\mid \mathrm{conf}_h{=}c,\,X\in D)-c|\le\eta$ for all $c$
+(\emph{calibration transfer}). Let $q_h:=\E_T[\mathrm{conf}_h(X)\mid D]$ be the label-free mean
+confidence. Then $|q_h-p_h|\le\eta$, hence $p_a-p_0\in[(q_a-q_0)-2\eta,\,(q_a-q_0)+2\eta]$, and
+\[
+|q_a-q_0|>2\eta \;\Longrightarrow\; \sign\Delta=\sign(q_a-q_0),
+\]
+so the multiclass/regression benefit sign is identified label-free; when $|q_a-q_0|\le2\eta$ the
+bracket contains $0$ and the rule must \textsc{abstain}.
+\end{proposition}
+\begin{proof}
+$p_h=\E_T[\Pr_T(h{=}Y\mid \mathrm{conf}_h,D)\mid D]$; by the calibration-transfer bound the inner
+conditional is within $\eta$ of $\mathrm{conf}_h$ pointwise, so $|p_h-q_h|\le\eta$. Adding the two
+$\eta$-balls gives the bracket; if its half-width $2\eta$ does not straddle $0$ the sign of
+$q_a-q_0$ equals $\sign(p_a-p_0)=\sign\Delta$ (Proposition~\ref{thm:disagree-mc}). \qedhere
+\end{proof}
+\noindent\emph{Tightness.} The threshold $2\eta$ is exact: when $|q_a-q_0|\le2\eta$ an adversary
+inside the $\eta$-balls can place $p_a,p_0$ on either side, re-entering the unknowable regime of
+Theorem~\ref{thm:imp}. \emph{Numerical sanity check} (\texttt{val\_conj1\_caltransfer.py}): across
+an $\eta$/gap sweep, committed decisions are sign-correct on $100\%$ of trials with $0$ wrong
+commitments whenever $|q_a-q_0|>2\eta$; the bracket contains the true accuracy gap on $100\%$ of
+trials; coverage falls to $0$ (full abstention) once $\eta$ exceeds $\tfrac12|q_a-q_0|$, and a
+no-guard rule accrues errors as $\eta$ grows -- confirming both the guarantee and that the guard is
+necessary.
+
+\paragraph{(b) Generalization of the benefit router.}
+\begin{proposition}[Router generalization and certificate survival]\label{thm:router-rad}
+Let $\mathcal H$ be the class of depth-$d$ gradient-boosted tree ensembles with $T$ members on $p$
+features and outputs bounded in $[-M,M]$. With probability $\ge1-\delta$ over $n$ calibration tasks,
+\[
+\begin{aligned}
+\sup_{h\in\mathcal H}\bigl|\widehat R_n(h)-R(h)\bigr| &\;\le\;2\,\mathfrak R_n(\mathcal H)+3M\sqrt{\tfrac{\log(2/\delta)}{2n}},\\
+\mathfrak R_n(\mathcal H) &=O\!\Bigl(\sqrt{\tfrac{T\,d\,\log p}{n}}\Bigr).
+\end{aligned}
+\]
+Hence $\widehat\Delta$ converges at rate $O(n^{-1/2})$, and if the conformal radius $\varepsilon$
+dominates this estimation error the false-adapt guarantee of Theorem~\ref{thm:cert} survives router
+error; a calibration size $n=O\!\bigl((T d\log p/\Delta^2)\log(1/\delta)\bigr)$ suffices for the
+certificate to fire at margin $|\Delta|$.
+\end{proposition}
+\begin{proof}[Proof sketch]
+Symmetrization with the bounded-difference (McDiarmid) inequality gives the uniform deviation
+bound; a depth-$d$ tree on $p$ features realizes $O(d\log p)$ effective decisions, so a $T$-term
+ensemble has Rademacher complexity $O(\sqrt{Td\log p/n})$. Setting the deviation $\le\varepsilon$
+(resp.\ $\le|\Delta|$) yields the radius-domination (resp.\ sample-complexity) claim. \qedhere
+\end{proof}
+\noindent\emph{Numerical sanity check} (\texttt{val\_rademacher\_router.py}): the empirical
+generalization gap of a gradient-boosted router decays as
+$\widehat{\mathrm{gap}}\approx 12.8\,n^{-0.66}$ ($R^2=0.99$, i.e.\ at least the $n^{-1/2}$ rate),
+stays below the $\sqrt{Td\log p/n}$ envelope, and grows with capacity (log--log slope $0.54$ vs
+$Td\log p$).
+
+\paragraph{(c) Anytime validity under non-stationarity.}
+\begin{proposition}[$\beta$-bounded-drift anytime certificate]\label{thm:anytime-drift}
+In the streaming setting of Appendix~\ref{app:anytime}, relax the constant-mean assumption to a
+slowly-varying mean $|\E[X_t\mid\mathcal F_{t-1}]-\Delta|\le\beta$. Under $H_0$ ($\Delta\le0$) the
+corrected wealth $\widetilde E_t^{+}=E_t^{+}/\prod_{i\le t}(1+\lambda_i\beta)$ is a nonnegative
+supermartingale, so declaring \textsc{adapt} the first time
+$E_t^{+}\ge(1/\alpha)\prod_{i\le t}(1+\lambda_i\beta)$ controls the false-adapt rate at $\le\alpha$
+for every $\beta$-bounded-drift stream. The price is a threshold inflation
+$\prod_{i\le t}(1+\lambda_i\beta)\le\exp\!\bigl(\beta\textstyle\sum_{i\le t}\lambda_i\bigr)$ (a
+$\beta\!\cdot\!t$ term in log-threshold under capped bets).
+\end{proposition}
+\begin{proof}
+Under $\Delta\le0$, $\E[1+\lambda_tX_t\mid\mathcal F_{t-1}]=1+\lambda_t\mu_t\le1+\lambda_t\beta$, so
+$\widetilde E_t^{+}$ has $\E[\widetilde E_t^{+}\mid\mathcal F_{t-1}]\le\widetilde E_{t-1}^{+}$ and unit
+initial value; Ville's inequality gives $\Pr[\exists t:\widetilde E_t^{+}\ge1/\alpha]\le\alpha$,
+i.e.\ the inflated threshold on $E_t^{+}$. \qedhere
+\end{proof}
+\noindent\emph{Numerical sanity check} (\texttt{val\_thm9prime\_drift.py}): under worst-case upward
+drift the corrected certificate holds false-adapt $\le\alpha{=}0.1$ ($0.05/0.04/0.01$ at
+$\beta=0.1/0.2/0.4$) while the uncorrected $1/\alpha$ threshold inflates to $0.69\!\to\!1.0$;
+detection power under the alternative ($\Delta{=}0.3$) is $0.997$ with mean stopping time $\approx57$.

@@ -1,0 +1,102 @@
+% =====================================================================
+% v0.5 extension, Part 1B: smooth source->target drift bracket.
+% \input from kbound.tex inside Appendix C, immediately AFTER
+% \input{paper/sections/regression_conjecture} (which defines thm:reg-noise,
+% thm:reg-iff and the objects U, T_S, W).  Uses host macros \E \sign and the
+% amsthm environments.  Numbers in "Validated" are produced by
+% experiments/kbound/theory_validation/val_smooth_drift.py
+% (results_smooth_drift.json), seed 20260609, CPU only.  Modifies nothing else.
+% =====================================================================
+
+\subsection{Making the drift radius observable: a smooth source--target drift
+bracket}\label{sec:smooth-drift}
+
+Proposition~\ref{thm:reg-iff} gives an exact knowability boundary
+$|U-2T_S|>2BW$, but it leaves the drift radius $B=\|g_T-g_S\|_{\infty,D}$ as an
+\emph{assumed} constant. This subsection removes that free parameter under a
+mild smoothness coupling, making the entire boundary computable from observables,
+and recasts the static two-point drift as a path that can be accumulated online.
+
+\paragraph{Setup (inherited from Prop.~\ref{thm:reg-iff}).} Squared loss,
+$Y=g(X)+\epsilon$, $\E[\epsilon\mid X]{=}0$ (so the decision is noise-invariant,
+Prop.~\ref{thm:reg-noise}). With $U=\E_T[(f_0{-}f_a)(f_0{+}f_a)]$,
+$T_S=\E_T[(f_0{-}f_a)\,g_S]$, $W=\E_T|f_0{-}f_a|$ and concept drift
+$b=g_T-g_S$,
+\[
+\Delta=U-2T_S-2\,\E_T[(f_0-f_a)\,b],\quad |\E_T[(f_0-f_a)b]|\le \|b\|_{\infty,D}\,W .
+\]
+$U,W$ are label-free on the target; $T_S$ is importance-weighted estimable from
+labeled source with a confidence radius $\varepsilon_n$ (Thm.~\ref{thm:pos}).
+
+\begin{definition}[Drift smoothness]\label{def:drift-smooth}
+There is a known modulus $L$ and an \emph{observable} covariate discrepancy
+$d=d(P_S(X),P_T(X))$ (an integral probability metric, e.g.\ $W_2$, estimable
+from unlabeled source and target) with
+$\;\|g_T-g_S\|_{\infty,D}\le L\,d$ \;---\; the labeling function does not change
+faster than the inputs move.
+\end{definition}
+
+\begin{proposition}[Smooth-drift sign bracket]\label{thm:smooth-drift}
+Under Definition~\ref{def:drift-smooth}, with center $c=U-2T_S$ and reach
+$\rho=2LdW$,
+\[
+\Delta\in[\,c-\rho,\ c+\rho\,],
+\]
+so the rule ``commit $\sign(U-2\widehat T_S)$ iff $|U-2\widehat T_S|>2LdW+
+\varepsilon_n$'' wrong-commits with probability $\le\alpha$ against every drift
+admissible under Definition~\ref{def:drift-smooth}, and abstains otherwise. The
+boundary is now \emph{fully observable} (given $L$), at the computable drift
+distance $d^\star=|U-2T_S|/(2LW)$. \textup{(Converse)} If $|U-2T_S|<2LdW$ the
+admissible drifts $b=t\cdot(-Ld)\sign(f_0{-}f_a)$, $t\in[-1,1]$, sweep
+$\E_T[(f_0{-}f_a)b]$ across $[-LdW,LdW]$, giving two worlds of opposite
+$\sign\Delta$ with identical observables (Theorem~\ref{thm:imp}). \textup{(Online
+form)} Along a path $P_0\!\to\!\cdots\!\to\!P_K$ the reach accumulates as
+$2LW\sum_{k}d(P_{k-1},P_k)$; the certificate fires while the spent budget stays
+below $|U-2T_S|$.
+\end{proposition}
+\begin{proof}
+By Definition~\ref{def:drift-smooth}, $\|b\|_{\infty,D}\le Ld$, so substituting
+$B=Ld$ into the H\"older bound of Proposition~\ref{thm:reg-iff} gives
+$|\E_T[(f_0{-}f_a)b]|\le LdW$ and hence $\Delta\in[c-2LdW,\,c+2LdW]$; the
+adversary $b^\star=-Ld\,\sign(f_0{-}f_a)$ attains it (an admissible member of the
+family), so the bracket is tight. Achievability and the converse are
+Proposition~\ref{thm:reg-iff}(i)--(ii) with $B=Ld$; the substitution is licensed
+because $d$ is observable, turning the assumed radius into a measured one. The
+online form is the triangle decomposition
+$\Delta_K-\Delta_0=\sum_k(\Delta_k-\Delta_{k-1})$ with each step bracketed by its
+own $2LW\,d(P_{k-1},P_k)$. \qedhere
+\end{proof}
+
+\paragraph{Validated.} \texttt{val\_smooth\_drift.py}
+(\texttt{results\_smooth\_drift.json}, seed $20260609$, CPU only; scalar $X$,
+affine $f_0,f_a$, linear source concept, Gaussian--$W_2$ discrepancy, $L{=}0.6$,
+labeled source $n_{\mathrm{src}}{=}2{\times}10^4$, $\varepsilon_n$ the
+data-driven $3\sigma$ radius of the center). The decision $\Delta$ is invariant
+to the unknown noise scale (max deviation $\mathbf{3.1\times10^{-3}}$ across
+$\sigma{:}0\to4$ while the absolute risk grows $0.08\to16$, Prop.~\ref{thm:reg-noise}).
+Sweeping covariate shift, the observable bracket covers the true $\Delta$ on
+$\ge\mathbf{99.8\%}$ of within-budget drifts (including the adversarial
+$b^\star$) at every shift, with \textbf{zero} false commitments; the commit rate
+falls from $1.0$ to $0$ as the reach $2LdW$ overtakes the margin $|U-2T_S|$
+(abstention engages exactly at the computable boundary). A no-guard rule that
+commits $\sign(U-2T_S)$ regardless drops to a $\mathbf{100\%}$ false-commit rate
+once drift is present, while the guarded rule abstains and stays safe; and
+\emph{over-budget} drifts (violating Definition~\ref{def:drift-smooth}) do flip
+the committed sign, so the smoothness assumption is necessary, not decorative.
+
+\paragraph{Positioning and honest scope.} The H\"older inequality, the objects
+$U,T_S,W$, and the center/reach split are all Proposition~\ref{thm:reg-iff}'s;
+this is an \emph{incremental refinement}, not a new hard theorem, and we say so.
+The contribution is (i) replacing the assumed radius $B$ by an \emph{observable}
+$Ld$ under a smoothness coupling (Definition~\ref{def:drift-smooth}), so the
+boundary is checkable up to the single modulus $L$; (ii) the online
+accumulation form; and (iii) the validated demonstration that the guard is
+necessary. In the reach table (Prop.~\ref{thm:unify}) this turns the
+``bounded drift'' row's reach $2BW$ into the observable $2LdW$. The price is now
+the modulus $L$ and the validity of the covariate-shift transfer for $T_S$ (a
+bounded density ratio); when the target leaves source support the radius
+$\varepsilon_n$ grows and the rule abstains rather than misfires---which is the
+honest behavior, but also means the committable region is narrow when the benefit
+margin $|U-2T_S|$ is small (as in our synthetic). Validation is synthetic; real
+shift sequences are deferred to the experimental track. This does \emph{not}
+resolve the general case of Conjecture~\ref{conj:gen}.

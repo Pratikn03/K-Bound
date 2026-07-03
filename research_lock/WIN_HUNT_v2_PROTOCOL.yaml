@@ -1,0 +1,72 @@
+# WIN_HUNT_v2 — pre-registered BEFORE any arm was scored (2026-07-03).
+# Three independent attempts at a certified natural-deployment win, each fixing a
+# located failure mechanism from NATURAL_WIN_v1. WIN / NO-WIN are both final per
+# arm; no re-tuning after unblinding. Analysis scripts committed with this file.
+
+registered: 2026-07-03
+status: REGISTERED_NOT_RUN
+author: Pratik (+ Claude session)
+
+# ------------------------------------------------------------------ ARM A
+arm_A_universal_gate:
+  name: Universal single gate on a heterogeneous natural deployment (CPU, logged data)
+  upgrade_over: mixed_protocol_oof_v2 (which used per-dataset gates and was
+    therefore labeled non-headline). Here ONE gate — one GBR benefit model +
+    one OOF conformal radius — is fit on the POOLED dev records of all three
+    datasets and applied once to the pooled held-out test conditions.
+  evidence: the SHARED base-11 evidence vector (EVIDENCE_NAMES order); Camelyon
+    rich-Z records are sliced to their first 11 dims (base panel) so the gate is
+    one function on one feature space.
+  data (logged, no GPU): identical sources/splits to mixed_protocol_oof_v2 —
+    Camelyon17 richZ_F_v1 eata_online OOD test+val (dev seeds 0,1 / test 2,3,4);
+    OfficeHome M v2 sar_online_aggressive (target-val dev / target-test);
+    iWildCam tent_episodic (dev seed 0 / test seed 1). id_val excluded.
+  script: docs/research/kbound/gapclose_wave5/win_hunt_A_universal_gate.py
+  bar (frozen): on the pooled held-out stream (n≈143): FA_u <= 0.10 AND
+    regret_KGA < regret_always-adapt AND < regret_always-freeze; CI-ROBUST iff
+    both paired-bootstrap 95% CIs (5000, per-condition) exclude zero.
+  claim_if_win: one calibrated certificate transfers across three natural
+    datasets and beats both fixed policies on a mixed real deployment —
+    strictly stronger than the per-dataset-gate aggregate; headline-eligible.
+
+# ------------------------------------------------------------------ ARM C
+arm_C_panel_select:
+  name: Certified per-candidate selection on the tau'-passing 10-backbone panel
+    (CPU, logged natural_win_v1_imagenetr data)
+  located_failure_fixed: NATURAL_WIN_v1 secondary lost via (a) agreement-only
+    b-hat ranking and (b) an unbeatable oracle baseline. Fix (a): select with
+    per-candidate BENEFIT certificates — leave-one-seed cross-fitted GBR per
+    backbone + signed conformal LOWER bound at alpha/K (K=10, Bonferroni; the
+    paper's multicandidate theorem) — commit set {b: LCB_b > 0}, choose argmax
+    B-hat within it, else freeze. Fix (b): baselines must be IMPLEMENTABLE.
+  baselines (frozen):
+    always_freeze: keep f0 everywhere.
+    best_fixed_backbone: leave-one-seed — the single backbone with highest mean
+      accuracy on the OTHER seeds' conditions, deployed unchanged (the honest
+      "always-adapt with one model" a practitioner could actually run).
+    oracle_per_cell: reported as ceiling only, NOT a bar.
+  script: docs/research/kbound/gapclose_wave5/win_hunt_C_panel_select.py
+  bar (frozen): FA_u <= 0.10 (false-adapt = committing to a backbone whose true
+    accuracy <= a0) AND regret < both implementable baselines; CI-ROBUST iff
+    both 95% CIs (5000, paired by (seed,condition)) exclude zero.
+
+# ------------------------------------------------------------------ ARM B
+arm_B_persample_evidence:
+  name: Per-sample distributional evidence (GPU rerun, Camelyon)
+  located_failure_fixed: NATURAL_WIN_v1 primary was evidence-limited — 11–22
+    condition-level MEANS. Fix: extend ev2 with per-sample distributional
+    statistics from the logits the runner already holds (entropy q10/q50/q90,
+    top1-top2 margin q10/q50/q90, energy mean/q10) -> 13 ev2 dims, no new
+    forward passes.
+  code: kga/evidence_v2.py + panel_capture.py extended (committed with this file).
+  run: run_camelyon17_kbound.py, seeds 0-3, evidence-panel rich, device mps,
+    run_name natural_win_v2_camelyon (fresh dir; no resume from v1).
+  scoring: the SAME frozen natural_win_analysis.py, once:
+    --run-dir .../natural_win_v2_camelyon --dataset camelyon17
+  bar (frozen): identical to NATURAL_WIN_v1 primary (WIN / NO_HARM / FAIL).
+
+prohibited_after_unblinding: changing alpha, features, estimators, baselines,
+  bars, or data slices; re-running any arm's scoring.
+honest_note: three arms = three chances at a win, all pre-registered with the
+  multiplicity visible here; any win must be reported alongside the other arms'
+  outcomes, not cherry-picked.

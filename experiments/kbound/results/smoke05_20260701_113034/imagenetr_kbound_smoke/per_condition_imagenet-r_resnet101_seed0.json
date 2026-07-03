@@ -1,0 +1,133 @@
+{
+  "seed": 0,
+  "benchmark": "imagenet-r",
+  "method": "resnet101",
+  "alpha": 0.1,
+  "n_conditions": 2,
+  "kga_backend": "numpy_knn_fallback",
+  "per_condition_fields_absent": [
+    "n_D",
+    "c_ij"
+  ],
+  "per_condition_fields_absent_reason": "single-candidate KGA = B_hat(Z) + split-conformal eps; it does not compute pairwise agreements c_ij or n_D.",
+  "per_condition_field_notes": {
+    "tau_hat_tau_star": "single-candidate route (frozen vs adapted), so tau is degenerate and set to 0.0.",
+    "zone": "computed from benefit_ci: lb>0 => CERTIFIED_ADAPT, ub<0 => CERTIFIED_FREEZE, else BLIND.",
+    "gamma_hat": "single-candidate proxy (b_hat/2) with gamma_ci = benefit_ci/2.",
+    "kga_backend": "sklearn_gradient_boost = production certificate; numpy_knn_fallback = torch/sklearn-free verification estimator (decision rule + conformal radius identical, estimator differs)."
+  },
+  "records": [
+    {
+      "seed": 0,
+      "benchmark": "imagenet-r",
+      "method": "resnet101",
+      "condition": "imagenet_r|iid|tiny|mild|frozen",
+      "B": 0.04999999999999999,
+      "a0": 0.45,
+      "a_adapted": 0.5,
+      "a_kbound": 0.45,
+      "a_oracle": 0.5,
+      "regime": "helpful",
+      "oracle_action": "ADAPT",
+      "Z": [
+        1.4764220714569092,
+        0.5743193030357361,
+        0.8921172639367871,
+        1.4908808469772339,
+        0.5272172093391418,
+        0.8775947149679757,
+        0.014522548968811444,
+        -0.014458775520324707,
+        0.375,
+        0.06180780380964279,
+        0.0
+      ],
+      "Z_names": [
+        "pre_entropy",
+        "pre_conf",
+        "pre_pbal",
+        "post_entropy",
+        "post_conf",
+        "post_pbal",
+        "pbal_drop",
+        "entropy_drop",
+        "frac_highconf",
+        "marginal_KL",
+        "update_norm"
+      ],
+      "n_D": null,
+      "c_ij": null,
+      "tau_hat": 0.0,
+      "tau_star": 0.0,
+      "b_hat": 0.0,
+      "eps_conformal": 0.04999999999999999,
+      "benefit_ci": [
+        -0.04999999999999999,
+        0.04999999999999999
+      ],
+      "zone": "BLIND",
+      "gamma_hat": 0.0,
+      "gamma_ci": [
+        -0.024999999999999994,
+        0.024999999999999994
+      ],
+      "kga_decision": "ABSTAIN"
+    },
+    {
+      "seed": 0,
+      "benchmark": "imagenet-r",
+      "method": "resnet101",
+      "condition": "imagenet_r|single_class|tiny|mild|frozen",
+      "B": 0.0,
+      "a0": 0.65,
+      "a_adapted": 0.65,
+      "a_kbound": 0.65,
+      "a_oracle": 0.65,
+      "regime": "marginal",
+      "oracle_action": "FREEZE",
+      "Z": [
+        2.2880890369415283,
+        0.3031667172908783,
+        0.9045747133821396,
+        2.220353126525879,
+        0.3278569281101227,
+        0.8972722928959753,
+        0.007302420486164252,
+        0.06773591041564941,
+        0.25,
+        0.02178683876991272,
+        0.0
+      ],
+      "Z_names": [
+        "pre_entropy",
+        "pre_conf",
+        "pre_pbal",
+        "post_entropy",
+        "post_conf",
+        "post_pbal",
+        "pbal_drop",
+        "entropy_drop",
+        "frac_highconf",
+        "marginal_KL",
+        "update_norm"
+      ],
+      "n_D": null,
+      "c_ij": null,
+      "tau_hat": 0.0,
+      "tau_star": 0.0,
+      "b_hat": 0.04999999999999999,
+      "eps_conformal": 0.04999999999999999,
+      "benefit_ci": [
+        0.0,
+        0.09999999999999998
+      ],
+      "zone": "BLIND",
+      "gamma_hat": 0.024999999999999994,
+      "gamma_ci": [
+        0.0,
+        0.04999999999999999
+      ],
+      "kga_decision": "ABSTAIN"
+    }
+  ]
+}

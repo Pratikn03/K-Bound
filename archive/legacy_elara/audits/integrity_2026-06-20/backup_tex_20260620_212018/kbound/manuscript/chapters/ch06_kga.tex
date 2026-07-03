@@ -1,0 +1,656 @@
+\chapter{\KGA: Knowability-Guided Adaptation in Practice}\label{ch:kga}
+
+The preceding chapters establish when label-free adaptation is theoretically
+knowable---and when it is not.  This chapter describes \KGA{}
+(Knowability-Guided Adaptation), the concrete decision algorithm that
+operationalises those results.  We present the design goals, the four families
+of label-free evidence, the four certificate estimators with their exact
+formulas, the decision policy and its false-adapt guarantee, the public
+\texttt{kga} package API, a full deployment pseudocode, operational guidance,
+the served HTTP interface, and an honest account of what \KGA{} does not
+guarantee.
+
+% -----------------------------------------------------------------------
+\section{Design goals and mechanism-agnostic wrapper architecture}
+\label{sec:kga-design}
+% -----------------------------------------------------------------------
+
+\KGA{} is a \emph{decision wrapper}, not a new adaptation mechanism.  Its
+single responsibility is to answer, \emph{before} any irreversible update, the
+three-way question: should this candidate adaptation $f_a$ replace the frozen
+model $f_0$ on this unlabelled target batch?  The adapting mechanism
+itself---entropy-minimising Tent \cite{wang2021tent}, sample-filtered EATA
+\cite{niu2022eata}, sharpness-aware SAR \cite{niu2023sar}, or any other
+algorithm---is a black box that supplies $f_a$; \KGA{} wraps it uniformly.
+
+This design is dictated by three requirements.
+
+\begin{enumerate}
+  \item \textbf{Label-free.}  The gate must decide from evidence $Z =
+    \phi(X_{1:m}, f_0, f_a)$ that is computable without any target label.  No
+    target-label signals may enter at any step---neither for benefit estimation,
+    nor for certificate construction.
+
+  \item \textbf{Mechanism-agnostic.}  A laboratory may wish to evaluate several
+    candidate adaptation strategies (Tent vs.\ EATA vs.\ SAR) under the same
+    safety envelope.  By treating $f_a$ as an input, \KGA{} provides that
+    shared envelope at the cost of one forward pass of $f_0$ and $f_a$ per
+    decision.
+
+  \item \textbf{Finite-sample valid.}  The false-adapt probability---the chance
+    of deploying an $f_a$ that actually hurts---must be bounded at a
+    user-specified level $\alpha$ even for small batches.  This is
+    Theorem~\ref{thm:cert} from Chapter~\ref{ch:theory1}.
+\end{enumerate}
+
+The overall architecture (Figure~\ref{fig:kga-arch}) places \KGA{} between the
+adaptation candidate and the live deployment loop.  Calibration data (labelled
+validation scores) flows in once to build the calibration residuals needed for
+the split-conformal path; thereafter each incoming unlabelled batch is processed
+in three stages: evidence computation, certificate estimation, and the trichotomy
+decision.
+
+\begin{figure}[htbp]
+  \centering
+  \includegraphics[width=\textwidth]{fig_architecture.pdf}
+  \caption{%
+    \KGA{} system architecture.  Labelled calibration scores and an unlabelled
+    test batch enter the pipeline.  The label-free evidence $Z$ is computed
+    first; then a finite-sample certificate $\widehat\Delta \pm \varepsilon$ is
+    formed at level $\alpha$; finally the trichotomy maps the certificate to one
+    of three actions.  The adaptation mechanism (Tent, EATA, SAR, or any other)
+    is a plug-in; \KGA{} wraps it without modification.
+  }
+  \label{fig:kga-arch}
+\end{figure}
+
+% -----------------------------------------------------------------------
+\section{Label-free evidence computation}
+\label{sec:kga-evidence}
+% -----------------------------------------------------------------------
+
+The evidence $Z$ is a vector of statistics computable from the calibration
+scores $S_\mathrm{val}$ and the unlabelled test scores $S_\mathrm{test}$,
+without any target labels.  The implementation lives in
+\texttt{kga/evidence.py}: the dataclass \texttt{Evidence} and the function
+\texttt{compute\_evidence(calib\_scores, test\_scores)}.  The signals fall into
+four families, each tied to a theoretical result.
+
+\paragraph{Drift (KS distance).}
+For each detector column $j$, a two-sample Kolmogorov--Smirnov test
+(\texttt{scipy.stats.ks\_2samp}) compares the calibration and test score
+marginals.  The implementation stores:
+\begin{itemize}
+  \item \texttt{ks\_mean} --- mean per-detector KS statistic;
+  \item \texttt{ks\_max} --- maximum per-detector KS statistic.
+\end{itemize}
+Large KS drift is the observable signature of a covariate shift to which
+the gate can react (Theorem~\ref{thm:pos}).  When the marginal is
+preserved but the informative signal is destroyed---the ``covert failure''
+regime of the mixed-regime experiment---both statistics remain near zero and
+the distribution is non-identifiable in the sense of
+Theorem~\ref{thm:imp}.
+
+\paragraph{Disagreement.}
+The disagreement signal measures the heterogeneity of the test scores
+across detectors:
+\begin{equation}
+  \texttt{disagree} \;=\; 1 - \overline{\rho},
+  \label{eq:kga-disagree}
+\end{equation}
+where $\overline{\rho}$ is the mean pairwise Spearman rank correlation of the
+test score columns (computed via \texttt{\_rank\_norm} then \texttt{np.corrcoef}
+on the rank-normalised test matrix).  For a single detector, \texttt{disagree}
+is defined to be zero.  A larger value indicates a bigger disagreement region
+$D = \{x : f_0(x) \neq f_a(x)\}$, and thus greater potential for the
+sign-of-difference to be identifiable
+(Theorems~\ref{thm:disagree}--\ref{conj:gen}).
+
+\paragraph{Entropy and confidence shift.}
+The entropy signals measure the spread of the pooled score distributions.
+\texttt{\_hist\_entropy} computes the Shannon entropy (in nats) of the
+20-bin normalised histogram of a flattened score array:
+\[
+  H(S) \;=\; -\sum_k p_k \ln p_k.
+\]
+The confidence (decisiveness) signal \texttt{\_decisiveness} measures the mean
+distance of the min-max-normalised scores from the indecision point $0.5$:
+\[
+  \texttt{conf}(S) \;=\; 2\,\E\!\left[\,\left|\frac{S - S_{\min}}{S_{\max} -
+  S_{\min}} - 0.5\right|\right].
+\]
+The \texttt{Evidence} dataclass stores:
+\begin{itemize}
+  \item \texttt{calib\_entropy}, \texttt{test\_entropy} --- per-split entropies;
+  \item \texttt{calib\_conf}, \texttt{test\_conf} --- per-split decisiveness;
+  \item \texttt{entropy\_shift} = \texttt{test\_entropy} $-$
+    \texttt{calib\_entropy};
+  \item \texttt{conf\_shift} = \texttt{test\_conf} $-$ \texttt{calib\_conf}.
+\end{itemize}
+A large positive \texttt{conf\_shift} with a collapsing marginal is the
+entropy-collapse warning sign familiar from online TTA monitoring.
+
+\paragraph{Importance-weight effective sample size (ESS).}
+The function \texttt{\_importance\_ess} models the calibration and test score
+laws as univariate Gaussians and forms the Gaussian-ratio importance weight for
+each test point $t_i$:
+\[
+  w_i \;=\; \frac{\mathcal{N}(t_i;\,\mu_c, \sigma_c^2)}
+                  {\mathcal{N}(t_i;\,\mu_t, \sigma_t^2)},
+\]
+where $(\mu_c, \sigma_c)$ and $(\mu_t, \sigma_t)$ are the empirical moments of
+the pooled calibration and test scores respectively.  The effective sample size
+is then the standard self-normalised estimator,
+\begin{equation}
+  \mathrm{ESS} \;=\; \frac{(\sum_i w_i)^2}{\sum_i w_i^2},
+  \label{eq:kga-ess}
+\end{equation}
+capped in $[1, n_\mathrm{test}]$.  The dataclass stores \texttt{ess} and the
+scale-free ratio \texttt{ess\_frac} $= \mathrm{ESS}/n_\mathrm{test}$.  Low
+\texttt{ess\_frac} indicates poor source-to-target support overlap, which
+undermines importance-weighted certificates and is a quantitative diagnostic for
+the support-overlap condition of Theorem~\ref{thm:pos}.
+
+The fixed-order feature vector \texttt{Evidence.to\_vector()} concatenates
+$[\texttt{ks\_mean},\ \texttt{ks\_max},\ \texttt{disagree},\
+\texttt{entropy\_shift},\ \texttt{conf\_shift},\ \texttt{calib\_entropy},\
+\texttt{test\_entropy},\ \texttt{calib\_conf},\ \texttt{test\_conf},\
+\texttt{ess\_frac}]$ and can be passed directly to a downstream benefit
+regressor as the feature vector $Z$.
+
+\begin{remark}[Provenance]
+  Every field of \texttt{Evidence} mirrors a quantity computed in the K-Bound
+  experiment scripts: \texttt{kga/evidence.py} is a clean, importable API over
+  the same mathematics, not a re-derivation.  The KS drift and disagreement
+  fields match the $Z = \mathrm{dict}(\ldots)$ block in
+  \texttt{src/scripts/kbound/knowability\_experiment.py} (lines~74--96); the
+  entropy and importance-weight fields match the \texttt{evidence} helper in
+  \texttt{mixed\_regime\_experiment.py}.
+\end{remark}
+
+% -----------------------------------------------------------------------
+\section{Certificate estimators}
+\label{sec:kga-certificates}
+% -----------------------------------------------------------------------
+
+A \emph{certificate} is a frozen dataclass \texttt{Certificate(delta\_hat,}
+\texttt{epsilon, method, alpha, n)} implemented in \texttt{kga/certificate.py}.
+It carries a point estimate $\widehat\Delta$ of the benefit
+$\Delta = R(f_0) - R(f_a)$ and a confidence radius $\varepsilon$ such that, with
+probability at least $1 - \alpha$,
+\[
+  \Delta \;\geq\; \widehat\Delta - \varepsilon \qquad \text{(certified lower bound)}.
+\]
+The two derived properties \texttt{lower} $= \widehat\Delta - \varepsilon$ and
+\texttt{upper} $= \widehat\Delta + \varepsilon$ are the bounds consumed by the
+decision policy.
+
+The module provides four estimators, each linked to a theoretical result.
+
+\subsection{Empirical Bernstein (\texttt{ebern}) --- the default}
+\label{sec:kga-ebern}
+
+The default estimator implements the Maurer--Pontil (2009) empirical-Bernstein
+lower confidence bound \cite{maurer2009empirical}.  Given $n$ i.i.d.\ paired
+benefits $X_i = \ell(f_0(x_i), y_i) - \ell(f_a(x_i), y_i)$ with empirical
+mean $\widehat\mu$, unbiased sample variance $\widehat{V}$ (denominator $n-1$),
+and range $R = b - a$, the certificate is:
+
+\begin{equation}
+  \varepsilon_{\mathrm{ebern}} \;=\;
+  \sqrt{\frac{2\,\widehat{V}\,\ln(2/\alpha)}{n}}
+  \;+\;
+  \frac{7R\,\ln(2/\alpha)}{3(n-1)},
+  \label{eq:ebern}
+\end{equation}
+
+so that $\Pr[\Delta \geq \widehat\mu - \varepsilon_{\mathrm{ebern}}] \geq 1 -
+\alpha$.  The estimate is $\widehat\Delta = \widehat\mu$ and \texttt{epsilon} is
+the sum of the two terms in~\eqref{eq:ebern}.  When $n = 1$ the variance is
+undefined and \texttt{epsilon} is set to $+\infty$, forcing \textsc{abstain}.
+When \texttt{benefit\_range} is not supplied, $R$ is estimated from the observed
+range \texttt{max(X) - min(X)}.
+
+This estimator is strictly tighter than Hoeffding whenever $\widehat{V} \ll R^2$
+--- the usual regime in which most paired benefits agree in sign --- and is
+deterministic, streamable, and finite-sample valid.  It is the batch Theorem~3
+certificate of Theorem~\ref{thm:cert}.
+
+\subsection{Hoeffding (\texttt{hoeffding}) --- distribution-free baseline}
+\label{sec:kga-hoeffding}
+
+The Hoeffding estimator replaces the variance term by the worst-case
+variance-free bound:
+\begin{equation}
+  \varepsilon_{\mathrm{hoeff}} \;=\; R \sqrt{\frac{\ln(1/\alpha)}{2n}}.
+  \label{eq:hoeff}
+\end{equation}
+This radius is always at least as large as the empirical-Bernstein one in the
+low-variance regime, so it is provided as a conservative baseline and sanity
+comparator.  The \texttt{method} field is set to \texttt{'hoeffding'}.
+
+\subsection{Split-conformal (\texttt{conformal}) --- cross-task estimator}
+\label{sec:kga-conformal}
+
+The split-conformal estimator is the radius used in the main K-Bound experiments
+(Theorem~\ref{thm:cert}, conformal variant; \cite{vovk2005algorithmic,
+angelopoulos2023conformal}).  It takes a point estimate $\widehat\Delta$ (e.g.,
+from a leave-one-out benefit regressor) and a vector of held-out calibration
+residuals $r_i = |\widehat\Delta_i - \Delta_i|$ from $n_\mathrm{cal}$ tasks:
+\begin{equation}
+  \varepsilon_{\mathrm{conf}} \;=\; \mathrm{quantile}\!\left(r_{1:n},\, 1 -
+  \alpha\right).
+  \label{eq:conformal}
+\end{equation}
+By the exchangeability of the calibration split, $\Pr[|\widehat\Delta -
+\Delta| \leq \varepsilon_{\mathrm{conf}}] \geq 1 - \alpha$ for a fresh query.
+The function \texttt{conformal\_split(delta\_hat, calib\_residuals, alpha)} is
+called in \texttt{knowability\_experiment.py} (\texttt{eps = np.quantile(resid,}
+\texttt{1 - alpha)}) and in \texttt{mixed\_regime\_experiment.py}.
+
+\subsection{Anytime e-value (\texttt{evalue}) --- Theorem~3b}
+\label{sec:kga-evalue}
+
+The anytime estimator implements two one-sided betting e-processes over an
+ordered benefit stream \cite{ville1939etude,waudbysmith2024betting}:
+\begin{align}
+  E_t^+ &= \prod_{i \leq t} (1 + \lambda_i X_i), \qquad
+  \text{tests } H_0^+: \Delta \leq 0,
+  \label{eq:eplus}\\
+  E_t^- &= \prod_{i \leq t} (1 + \nu_i(-X_i)), \qquad
+  \text{tests } H_0^-: \Delta \geq 0,
+  \label{eq:eminus}
+\end{align}
+with predictable truncated-aGRAPA bets
+$\lambda_i = \mathrm{clip}(\widehat\mu_{i-1}/\widehat\sigma^2_{i-1},\;0,\;
+\delta_{\mathrm{cap}}/|a|)$ (and symmetrically $\nu_i$) formed from
+the running mean and second moment up to step $i-1$.  Each process is a
+nonnegative supermartingale under its null; by \textbf{Ville's inequality}
+\cite{ville1939etude}, $\Pr(\exists t: E_t \geq 1/\alpha) \leq \alpha$
+simultaneously over all sample sizes with no multiplicity correction.
+
+The returned certificate encodes the current anytime decision in the standard
+$\widehat\Delta \pm \varepsilon$ form:
+\begin{itemize}
+  \item If $\log E_t^+ \geq \log(1/\alpha)$: emit $\varepsilon = 0$ with
+    $\widehat\Delta > 0$, forcing \textsc{adapt};
+  \item If $\log E_t^- \geq \log(1/\alpha)$: emit $\varepsilon = 0$ with
+    $\widehat\Delta < 0$, forcing \textsc{freeze};
+  \item Otherwise: emit $\varepsilon = |\bar{X}| + \epsilon_0$ (brackets zero
+    around the running mean), forcing \textsc{abstain}.
+\end{itemize}
+This is Theorem~\ref{thm:evalue} (anytime certificate).  The implementation
+mirrors \texttt{experiments/kbound/theory\_validation/val\_thm3\_evalue.py} and
+\texttt{kga/kbound\_pkg/kbound/eprocess.py}.
+
+% -----------------------------------------------------------------------
+\section{Decision policy and the false-adapt guarantee}
+\label{sec:kga-policy}
+% -----------------------------------------------------------------------
+
+The decision rule is a deterministic threshold on the certificate bounds,
+implemented as the \texttt{decide(certificate, alpha)} function in
+\texttt{kga/policy.py}.  The \texttt{Decision} enum has three members:
+\texttt{ADAPT}, \texttt{FREEZE}, \texttt{ABSTAIN}.  As a \texttt{str} subclass,
+each member compares equal to its string value and serialises cleanly to JSON.
+
+The rule applies strict inequalities at the boundaries:
+
+\begin{center}
+\begin{tabular}{ll}
+\toprule
+Condition & Decision \\
+\midrule
+$\widehat\Delta - \varepsilon > 0$ & \textsc{adapt} \\
+$\widehat\Delta + \varepsilon < 0$ & \textsc{freeze} \\
+otherwise & \textsc{abstain} \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+A certificate with $\widehat\Delta = \varepsilon$ (lower bound exactly zero)
+\textsc{abstain}s rather than \textsc{adapt}s; this is the conservative choice
+and matches the reference experiment scripts.  An infinite $\varepsilon$
+(e.g., from a single-sample empirical-Bernstein certificate) always
+\textsc{abstain}s.
+
+\begin{theorem}[False-adapt guarantee; Theorem~\ref{thm:cert}]
+  \label{thm:kga-false-adapt}
+  The certificate is constructed so that $\Pr[\Delta \geq \widehat\Delta -
+  \varepsilon] \geq 1 - \alpha$.  The \textsc{adapt} branch fires only when
+  $\widehat\Delta - \varepsilon > 0$, which on the good event forces $\Delta >
+  0$.  Therefore
+  \[
+    \Pr\!\left(\text{\textsc{adapt}} \text{ and } \Delta \leq 0\right) \;\leq\;
+    \alpha.
+  \]
+  The symmetric statement bounds the false-freeze probability.  The anytime
+  e-value variant (Theorem~\ref{thm:evalue}) upgrades this to hold
+  simultaneously over all stream prefixes via Ville's inequality.
+\end{theorem}
+
+The proof follows identically from the non-identifiability regime (via
+Theorem~\ref{thm:imp}): when evidence $Z$ cannot separate the two opposite-benefit
+worlds, the certificate radius brackets zero and \KGA{} \textsc{abstain}s.  This
+is mandatory, not merely conservative (see Conjecture~\ref{conj:gen} and the
+discussion in Chapter~\ref{ch:theory1} on forced abstention).
+
+% -----------------------------------------------------------------------
+\section{The \texttt{kga} package API}
+\label{sec:kga-api}
+% -----------------------------------------------------------------------
+
+The \texttt{kga} Python package (top-level directory \texttt{kga/}) exposes the
+three-stage pipeline through the \texttt{KGA} facade class in \texttt{kga/kga.py}.
+
+\paragraph{Constructor.}
+
+\begin{verbatim}
+KGA(alpha=0.1, method='ebern')
+\end{verbatim}
+
+\texttt{alpha} is the operating miscoverage level in $(0, 1)$; it bounds the
+false-adapt probability via Theorem~\ref{thm:cert}.  \texttt{method} selects the
+default batch certificate estimator when per-sample paired benefits are supplied:
+\texttt{'ebern'} (empirical Bernstein; the default), \texttt{'hoeffding'}, or
+\texttt{'evalue'} (anytime Theorem~3b).  A \texttt{KGA} instance carries no
+learned state, so a single instance is reusable and thread-safe.
+
+\paragraph{Methods.}
+
+\begin{itemize}
+  \item \textbf{\texttt{.evidence(calib, test, **kwargs) -> Evidence}} ---
+    computes the label-free evidence $Z$ by delegating to
+    \texttt{compute\_evidence}; stores the result in \texttt{last\_evidence}.
+
+  \item \textbf{\texttt{.certify(...) -> Certificate}} --- builds $\widehat\Delta
+    \pm \varepsilon$.  Three calling conventions are supported:
+    \begin{enumerate}
+      \item \texttt{certify(scores=benefits)} --- per-sample paired benefits,
+        processed by the batch estimator selected at construction (or overridden
+        via \texttt{method=});
+      \item \texttt{certify(adapt\_risk=..., freeze\_risk=...,}
+        \texttt{calib\_residuals=...)} --- two scalar risks plus held-out
+        residuals; uses the split-conformal radius;
+      \item \texttt{certify(delta\_hat=..., calib\_residuals=...)} --- explicit
+        point estimate plus residuals for split-conformal.
+    \end{enumerate}
+    The result is stored in \texttt{last\_certificate}.
+
+  \item \textbf{\texttt{.decide(certificate=None) -> Decision}} --- applies the
+    trichotomy to a certificate (defaults to \texttt{last\_certificate}); stores
+    the result in \texttt{last\_decision}.
+
+  \item \textbf{\texttt{.explain() -> dict}} --- returns all intermediate
+    quantities (\texttt{alpha}, \texttt{method}, \texttt{evidence},
+    \texttt{certificate}, \texttt{decision}) as a JSON-serialisable dict.
+\end{itemize}
+
+\paragraph{Quickstart.}
+The following usage snippet is taken directly from \texttt{kga/README.md}:
+
+\begin{verbatim}
+import numpy as np
+from kga import KGA
+
+rng = np.random.default_rng(0)
+kga = KGA(alpha=0.1, method="ebern")
+
+# (1) Label-free evidence Z.
+calib = rng.normal(0.0, 1.0, size=(500, 3))
+test  = rng.normal(0.0, 1.0, size=(500, 3))
+z = kga.evidence(calib, test)
+print(z.ks_mean, z.disagree, z.ess_frac)
+
+# (2) Certificate from per-sample paired benefits.
+benefits = rng.normal(0.3, 0.1, size=400)
+cert = kga.certify(scores=benefits, benefit_range=2.0)
+print(cert.delta_hat, cert.epsilon, cert.lower)
+
+# (3) Trichotomy decision.
+print(kga.decide(cert))     # -> Decision.ADAPT
+
+# (4) Audit.
+import json; print(json.dumps(kga.explain(), indent=2))
+\end{verbatim}
+
+\paragraph{Command-line interface.}
+The \texttt{kga.cli} module (entry point \texttt{python -m kga}) exposes a
+\texttt{decide} subcommand:
+
+\begin{verbatim}
+python -m kga decide --calib calib.npy --test test.npy --alpha 0.1
+\end{verbatim}
+
+This loads calibration and test scores from \texttt{.npy} files, computes the
+evidence $Z$, constructs a split-conformal certificate with a label-free
+residual proxy (\texttt{delta\_hat = 0}, radius from the calibration's own
+dispersion), and prints the decision and certificate as JSON to stdout.  Because
+labels are unavailable at the command line, it should be used for pipeline
+integration testing rather than live deployment decisions; real benefit estimates
+require the \texttt{KGA} API with paired benefits or held-out residuals.
+
+% -----------------------------------------------------------------------
+\section{Full deployment pseudocode}
+\label{sec:kga-pseudocode}
+% -----------------------------------------------------------------------
+
+Algorithm~1 below gives the complete deployment loop, including the one-time
+calibration phase and the per-batch inference phase.
+
+\begin{center}
+\fbox{\parbox{0.95\textwidth}{\small
+\textbf{Algorithm 1: \KGA{} Deployment Loop.}\\[4pt]
+\textbf{Inputs:} frozen model $f_0$; adaptation candidate $f_a$; calibration
+split $(S_\mathrm{val}, y_\mathrm{val})$; unlabelled stream of target batches
+$\mathcal{B}_1, \mathcal{B}_2, \ldots$; miscoverage level $\alpha$; certificate
+method $m \in \{\texttt{ebern}, \texttt{hoeffding}, \texttt{evalue}\}$.\\[4pt]
+
+\textbf{Calibration phase (once):}
+\begin{enumerate}
+  \item Compute paired benefits $X_i = \ell(f_0(x_i), y_i) - \ell(f_a(x_i), y_i)$
+    on the calibration split.
+  \item Fit a benefit estimator $\widehat\Delta(\cdot)$ (e.g., a leave-one-task-out
+    gradient-boosted regressor) on $(Z_i, X_i)$ pairs.
+  \item Record calibration residuals $r_i = |\widehat\Delta(Z_i) - \bar X_i|$
+    for the split-conformal path, or retain $\{X_i\}$ for the batch path.
+\end{enumerate}
+
+\textbf{Per-batch inference phase (for each $\mathcal{B}_t$):}
+\begin{enumerate}
+  \setcounter{enumi}{3}
+  \item \textbf{Evidence:} compute $Z_t = \phi(S_\mathrm{val}, S_t, f_0, f_a)$
+    via \texttt{kga.evidence(calib, test)}.  Extract
+    $[\texttt{ks\_mean},\, \texttt{ks\_max},\, \texttt{disagree},\,
+    \texttt{entropy\_shift},\, \texttt{conf\_shift},\, \texttt{ess\_frac}]$.
+  \item \textbf{Certify:} obtain $\widehat\Delta_t$ from the benefit estimator;
+    call \texttt{kga.certify(scores=\ldots)} or
+    \texttt{kga.certify(delta\_hat=}$\widehat\Delta_t$\texttt{,
+    calib\_residuals=r)} to form $\varepsilon_t$ at level $\alpha$.
+  \item \textbf{Decide (trichotomy):}
+    \begin{itemize}
+      \item \textbf{if} $\widehat\Delta_t - \varepsilon_t > 0$:
+        $\Rightarrow$ \textbf{\textsc{adapt}} --- deploy $f_a$ on $\mathcal{B}_t$;
+      \item \textbf{elif} $\widehat\Delta_t + \varepsilon_t < 0$:
+        $\Rightarrow$ \textbf{\textsc{freeze}} --- keep $f_0$ on $\mathcal{B}_t$;
+      \item \textbf{else}:
+        $\Rightarrow$ \textbf{\textsc{abstain}} --- keep $f_0$, log for human
+        review.
+    \end{itemize}
+  \item \textbf{Log:} write $(Z_t, \widehat\Delta_t, \varepsilon_t,
+    \texttt{decision}_t, t)$ to the audit trail (\texttt{kga.explain()}).
+\end{enumerate}
+\textbf{Guarantee (Theorem~\ref{thm:cert}):} $\Pr(\textsc{adapt}\ \text{and}\ \Delta \leq 0)
+\leq \alpha$; similarly for false-freeze.
+}}
+\end{center}
+
+% -----------------------------------------------------------------------
+\section{Operational guidance}
+\label{sec:kga-ops}
+% -----------------------------------------------------------------------
+
+\paragraph{Choosing $\alpha$.}
+The miscoverage level $\alpha$ directly bounds the false-adapt probability.  The
+paper reports all results at $\alpha = 0.10$; production deployments in
+safety-critical contexts should lower $\alpha$ (e.g., $0.05$), accepting a
+higher abstention rate in exchange for stronger false-adapt control.  At very
+small $\alpha$, the empirical-Bernstein radius grows as $\sqrt{\ln(2/\alpha)/n}$,
+so the batch size should be increased proportionally to maintain coverage.
+
+\paragraph{Batch size.}
+The empirical-Bernstein and Hoeffding radii shrink as $O(1/\sqrt{n})$;
+the split-conformal radius is independent of the batch size (it is a quantile
+over the calibration tasks).  For the batch certificate to commit to
+\textsc{adapt} or \textsc{freeze} rather than \textsc{abstain}, the benefit
+$|\widehat\Delta|$ must exceed the radius.  In the 123-task anomaly-routing
+benchmark, batch sizes of 200--500 samples provide useful separation at
+$\alpha = 0.10$.
+
+\paragraph{Calibration data.}
+The calibration split must be exchangeable with deployment in the sense that the
+per-task benefit distribution is representative (Theorem~\ref{thm:cert}
+assumption~(i)).  In the cross-task anomaly-routing setting, a leave-one-task-out
+procedure provides unbiased residuals.  In single-task streaming settings, a
+held-out validation probe with the same label distribution as the deployment
+stream is sufficient.
+
+\paragraph{When \textsc{abstain} should trigger operational action.}
+\textsc{abstain} means the evidence $Z$ is insufficient to certify the sign of
+$\Delta$ at level $\alpha$; it does not mean that adapting is dangerous.  The
+correct operational response is to (a) continue with the safer $f_0$ for the
+current batch, (b) log the evidence vector and certificate for monitoring, and
+(c) consider collecting more data or lowering the adaptation aggressiveness.
+Repeated \textsc{abstain} outcomes on a stable stream may indicate that the
+benefit estimator $\widehat\Delta$ is poorly calibrated for that domain, which
+requires recalibration.
+
+\paragraph{Complexity.}
+\KGA{} is $O(n)$ per batch in the sample size $n$ and $O(k^2)$ in the number of
+detectors $k$ (due to the pairwise rank-correlation in the disagreement
+computation).  The implementation is pure \texttt{numpy}/\texttt{scipy},
+deterministic (no random state), and torch-free, so it adds negligible overhead
+to any deployment that already runs $f_0$ and $f_a$ forward passes.
+
+% -----------------------------------------------------------------------
+\section{The served HTTP interface}
+\label{sec:kga-http}
+% -----------------------------------------------------------------------
+
+The production API serves \KGA{} decisions over HTTP through the routes defined
+in \texttt{deploy/api/kga\_routes.py}, wired into the main FastAPI application.
+Two endpoints are available.
+
+\paragraph{\texttt{GET /kga/health} (no authentication).}
+A liveness probe that returns the \texttt{kga} package version and component
+status:
+
+\begin{verbatim}
+{"status": "ok", "component": "kga", "version": "0.1.0"}
+\end{verbatim}
+
+\paragraph{\texttt{POST /decide} (authentication required).}
+Accepts a JSON body with three fields:
+\begin{itemize}
+  \item \texttt{calib\_scores} (\texttt{list[float]}, 2--200\,000 entries) ---
+    calibration detector scores (label-free);
+  \item \texttt{test\_scores} (\texttt{list[float]}, 2--200\,000 entries) ---
+    unlabelled test detector scores;
+  \item \texttt{alpha} (\texttt{float} in $(0,1)$, default $0.10$) ---
+    miscoverage level.
+\end{itemize}
+All non-finite inputs are rejected with \texttt{HTTP 400}.  The response carries
+the decision (\texttt{ADAPT}/\texttt{FREEZE}/\texttt{ABSTAIN}),
+\texttt{delta\_hat}, \texttt{epsilon}, \texttt{method}, and the full
+\texttt{Evidence} summary (\texttt{ks\_mean}, \texttt{ks\_max},
+\texttt{disagree}, \texttt{entropy\_shift}, \texttt{conf\_shift},
+\texttt{ess\_frac}, \texttt{n\_calib}, \texttt{n\_test}, \texttt{n\_detectors}).
+
+Because target labels are unavailable at request time, the route reports a
+conservative $\widehat\Delta = 0$ with a split-conformal radius derived from the
+calibration scores' own dispersion (the same conservative proxy used in the
+\texttt{kga.cli} entry point).  Callers with a real per-sample benefit estimate
+should use the \texttt{KGA} Python API server-side rather than the HTTP route.
+
+Request sizes are bounded at \texttt{MAX\_KGA\_SCORES = 200\,000} per array (the
+same limit as \texttt{MAX\_*} in \texttt{deploy/api/main.py}).  The decision
+math is entirely in the importable \texttt{kga} package; the route is a thin,
+validated transport layer.
+
+Figure~\ref{fig:kga-flow} shows the decision flow from an incoming HTTP request
+to the returned decision.
+
+\begin{figure}[htbp]
+  \centering
+  \includegraphics[width=\textwidth]{fig_decision_flow.png}
+  \caption{%
+    Decision flow for an incoming \texttt{POST /decide} request.  Pydantic
+    validates and coerces the inputs; \texttt{compute\_evidence} produces $Z$;
+    \texttt{conformal\_split} builds $\widehat\Delta \pm \varepsilon$; and
+    \texttt{decide} applies the trichotomy.  Any \texttt{ValueError} from
+    precondition checks (e.g., all-identical scores) is returned as \texttt{HTTP
+    400}; uncaught exceptions return \texttt{HTTP 500}.
+  }
+  \label{fig:kga-flow}
+\end{figure}
+
+% -----------------------------------------------------------------------
+\section{Threats, limitations, and what \KGA{} does not guarantee}
+\label{sec:kga-threats}
+% -----------------------------------------------------------------------
+
+We state explicitly the situations in which \KGA{}'s guarantees do not apply,
+to prevent misuse.
+
+\paragraph{The false-adapt bound is not a guarantee that $f_a$ is good.}
+Theorem~\ref{thm:cert} bounds $\Pr(\textsc{adapt}\ \text{and}\ \Delta \leq 0)
+\leq \alpha$.  It says nothing about the magnitude of $\Delta$ when
+$\Delta > 0$.  A deployment that \textsc{adapt}s on an $f_a$ with tiny
+positive benefit has not violated the certificate; it has simply not gained much.
+The certificate is about safety, not about optimality.
+
+\paragraph{Non-identifiability is permanent, not a data problem.}
+When two target worlds induce the same evidence distribution $Z$ but opposite
+benefits (Theorem~\ref{thm:imp}), no amount of additional \emph{unlabelled}
+data can resolve the ambiguity.  \KGA{} is forced to \textsc{abstain} in such
+worlds by Corollary~\ref{sec:t2-cor-abstain}.  Gathering labelled target data
+would resolve it, but that is outside the label-free scope.  The general
+bracketing conjecture (Conjecture~\ref{conj:gen}) remains open.
+
+\paragraph{The calibration exchangeability assumption.}
+The split-conformal certificate (Section~\ref{sec:kga-conformal}) requires the
+calibration tasks to be exchangeable with the deployment task.  If the
+deployment stream is drawn from a radically different domain---e.g., calibrating
+on anomaly-routing benchmarks and deploying on medical imaging---the certificate
+radius $\varepsilon$ may be miscalibrated and the false-adapt bound may not hold.
+This is the standard limitation of any conformal method.
+
+\paragraph{Covert failures are not detectable.}
+In the covert-failure regime of the mixed-regime experiment (the ``permuted
+detector'' condition), the observable evidence $Z$ is nearly unchanged while the
+true benefit reverses sign.  \KGA{} responds by widening the certificate radius
+and \textsc{abstain}ing more frequently, which is correct given the theory, but
+it means that under truly covert failures neither \textsc{adapt} nor
+\textsc{freeze} can be certified.  Operational systems should treat an unusual
+increase in \textsc{abstain} frequency as a sensor-quality warning.
+
+\paragraph{The benefit estimator $\widehat\Delta$ must be calibrated.}
+The false-adapt bound passes through the certificate; the certificate is valid
+only insofar as $\varepsilon$ covers the estimation error $|\widehat\Delta -
+\Delta|$.  If the benefit regressor is overfit to the calibration tasks or
+trained on a distribution that does not include the deployment domain, the
+effective coverage will be lower than $1 - \alpha$.  Regular recalibration
+with fresh held-out data is therefore an operational requirement.
+
+\paragraph{Label-free adaptation in the helpful-dominated regime.}
+Where adaptation almost always helps---e.g., the clean 123-task suite where
+$\text{mean}|\Delta| = 0.132$ on acted tasks---always-adapt is already a strong
+baseline and the certificate's distinctive value is bounded by the frequency of
+detectable harmful regimes.  We are explicit about this scope following the
+honest-results principle articulated in the paper's scope note and in the
+experimental discussion (Chapter~\ref{ch:exp1}).
+Theorem~\ref{thm:imp} characterizes precisely the regime where this matters:
+when the harmful-adaptation distribution has an observable fingerprint (large KS
+drift, low ESS), \KGA{} can and does refuse it; when it does not
+(covert failure), the Conjecture~\ref{conj:gen} bound suggests fundamentally
+limited discriminability.
