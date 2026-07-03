@@ -195,8 +195,12 @@ def build_per_condition_records(records, method, seed, dataset, alpha=ALPHA,
             "oracle_action": ("ADAPT" if aa_i > a0_i else "FREEZE"),
             "Z": [float(z) for z in r["Z"]],
             "Z_names": list(z_names),
-            "n_D": None,                     # single-candidate KGA does not compute n_D
-            "c_ij": None,                    # ... nor pairwise agreements
+            # Wave-5 pass-through: the runners now attach the panel agreement
+            # matrix + disagreement count (panel_capture.py). None if absent.
+            "n_D": r.get("n_D"),
+            "c_ij": r.get("c_ij"),
+            "Z_ev2": r.get("Z_ev2"),
+            "Z_ev2_names": r.get("Z_ev2_names"),
             "tau_hat": 0.0,                  # single-candidate route => degenerate
             "tau_star": 0.0,
             "b_hat": b_hat_i,
@@ -208,6 +212,75 @@ def build_per_condition_records(records, method, seed, dataset, alpha=ALPHA,
             "kga_decision": str(dec[i]),
         })
     return per_cond, backend
+
+
+def _match_imagenetr_cell(r, c):
+    return (int(r.get("seed", -1)) == int(c["seed"])
+            and r.get("comp") == c["comp"]
+            and r.get("regime") == c["regime"]
+            and r.get("aggr") == c["aggr"])
+
+
+def build_panel_records(records, conditions, dataset, candidate_order,
+                        condition_key_fn=None):
+    """One record per panel condition (diverse-backbone / multicandidate grid).
+
+    Each row carries aa_all (anchor + candidates), shared c_ij/n_D, and Z from
+    the best-scoring candidate (for the V3 fallback path).
+    """
+    if condition_key_fn is None:
+        condition_key_fn = CONDITION_KEYS.get(dataset, _condition_key_imagenetr)
+    rows = []
+    for c in conditions:
+        rs = [r for r in records if _match_imagenetr_cell(r, c)]
+        if not rs:
+            continue
+        a0 = float(c.get("a0", rs[0]["a0"]))
+        aa_all = [float(x) for x in c.get("aa_all", [a0])]
+        if len(aa_all) < 2:
+            by = {r.get("candidate", r.get("method")): r for r in rs}
+            aa_all = [a0] + [float(by[n]["aa"]) for n in candidate_order if n in by]
+        best_aa = float(max(aa_all))
+        best_r = max(rs, key=lambda r: float(r["aa"]))
+        key_r = rs[0]
+        rows.append({
+            "seed": int(c["seed"]),
+            "condition": condition_key_fn(key_r),
+            "a0": a0,
+            "a_adapted": best_aa,
+            "B": float(best_aa - a0),
+            "aa_all": aa_all,
+            "cand_names": list(c.get("cand_names", ["freeze_f0"] + list(candidate_order))),
+            "Z": [float(z) for z in best_r["Z"]],
+            "n_D": key_r.get("n_D"),
+            "c_ij": key_r.get("c_ij"),
+            "Z_ev2": best_r.get("Z_ev2"),
+            "Z_ev2_names": best_r.get("Z_ev2_names"),
+        })
+    return rows
+
+
+def serialize_panel_run(records, conditions, dataset, out_dir, seeds,
+                        candidate_order, alpha=ALPHA):
+    """Write per_panel_<dataset>_seed<S>.json for NATURAL_WIN panel scoring."""
+    os.makedirs(out_dir, exist_ok=True)
+    all_rows = build_panel_records(records, conditions, dataset, candidate_order)
+    written = []
+    for seed in seeds:
+        per = [r for r in all_rows if int(r["seed"]) == int(seed)]
+        if not per:
+            continue
+        fname = f"per_panel_{dataset}_seed{int(seed)}.json"
+        path = os.path.join(out_dir, fname)
+        payload = {
+            "seed": int(seed), "benchmark": dataset, "alpha": float(alpha),
+            "n_conditions": len(per), "panel": "diverse_backbones",
+            "records": per,
+        }
+        with open(path, "w") as f:
+            json.dump(payload, f, indent=2)
+        written.append(path)
+    return {"written": written, "n_conditions": len(all_rows)}
 
 
 def serialize_run(records, dataset, out_dir, seeds=None, methods=None, alpha=ALPHA,
@@ -241,10 +314,13 @@ def serialize_run(records, dataset, out_dir, seeds=None, methods=None, alpha=ALP
                 "seed": int(seed), "benchmark": dataset, "method": method,
                 "alpha": float(alpha), "n_conditions": len(per_cond),
                 "kga_backend": backend,
-                "per_condition_fields_absent": ["n_D", "c_ij"],
+                "per_condition_fields_absent": [
+                    k for k in ("n_D", "c_ij")
+                    if all(pcr.get(k) is None for pcr in per_cond)],
                 "per_condition_fields_absent_reason":
-                    "single-candidate KGA = B_hat(Z) + split-conformal eps; it does not "
-                    "compute pairwise agreements c_ij or n_D.",
+                    "n_D/c_ij are attached by the runner via panel_capture.py "
+                    "(Wave-5); absent means the runner predates the patch or the "
+                    "panel capture was skipped.",
                 "per_condition_field_notes": {
                     "tau_hat_tau_star":
                         "single-candidate route (frozen vs adapted), so tau is degenerate "

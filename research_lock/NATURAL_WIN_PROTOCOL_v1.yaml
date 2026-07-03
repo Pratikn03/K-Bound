@@ -1,0 +1,106 @@
+# NATURAL_WIN_PROTOCOL_v1 — pre-registered BEFORE execution (2026-07-02).
+# The decisive test of a certified natural-shift beats-both with the Wave-5
+# instruments. WIN / NO-HARM / FAIL are all publishable; nothing may be
+# re-tuned after unblinding. Companion code: docs/research/kbound/gapclose_wave5/.
+
+registered: 2026-07-02
+status: EXECUTED_2026-07-03 — PRIMARY FAIL, SECONDARY FAIL (both final; no re-tuning)
+author: Pratik (+ Claude session, Wave-5)
+
+outcome:
+  primary_camelyon17: >
+    FAIL. FA_u=4.9% <= alpha (guarantee held); beats always-freeze CI-robustly
+    (-0.0199 [-0.0240,-0.0159]) but loses to always-adapt (+0.0185
+    [+0.0118,+0.0252]); 57% abstention cost on an adapt-favorable stream.
+    tau' rejected H on 83% of gated cells (co-adapted tent/eata/sar panel) —
+    honest diagnosis with a calibrated threshold.
+    Verdict file: natural_win_v1_camelyon/NATURAL_WIN_v1_camelyon17_all.json
+  secondary_imagenetr_panel: >
+    FAIL (panel scoring, amended unit: one decision per (seed,condition)).
+    KEY POSITIVE FINDING: tau' gate PASSES H on 53/54 cells of the
+    independently-trained 10-backbone panel (vs 100% rejection under the old
+    fixed tau*=0.52) — the paper's ImageNet-R "mandatory abstention" was
+    partly a threshold-scale artifact; the calibrated gate certifies the
+    panel structure. FA_u=0.000. But the agreement-algebra selection then
+    underperforms: regret 0.0803 vs always-freeze 0.0713 (+0.0089
+    [-0.00004,+0.0176], Holm p=0.0506, borderline) — and note always-adapt
+    in panel mode = per-cell best backbone = oracle by construction
+    (regret 0), so beats-both was structurally unattainable in this scoring;
+    the meaningful bar (beat freeze) was missed at the boundary.
+    Verdict file: natural_win_v1_imagenetr/NATURAL_WIN_v1_imagenet-r_panel.json
+  paper_implications: >
+    (1) Fold both pre-registered negatives into kbound.tex. (2) REVISE the
+    ImageNet-R narrative: with the self-normalized gate the CEI route is
+    permitted on the diverse panel; the remaining obstruction is selection
+    margin quality, not falsified structure. (3) The tau' transferability
+    result (83% reject on co-adapted vs 2% on independent panels) is a real
+    empirical validation of the Wave-5 instrument and belongs in the paper.
+
+instruments_frozen:
+  gate: >
+    Self-normalized tau (tau_prime = tau_obs / Q_{0.95} of the smoothed
+    parametric-bootstrap null under fitted H; reject iff tau_prime > 1),
+    gapclose_wave5/tau_selfnorm.py @ Wave-5 (validated: 27/27 level cells,
+    power 1.00). Applied to the runner-serialized c_ij / n_D (panel_capture.py).
+    NO fixed tau* constant anywhere.
+  radius: >
+    V3 = leave-one-seed cross-fitted GBR (n_est 250, depth 2, lr 0.05,
+    subsample 0.8, rs 0) + SIGNED asymmetric rank-corrected conformal
+    quantiles at alpha=0.10 per direction + Mondrian terciles of B_hat
+    (min bin 30), gapclose_wave5/radius_v2.py @ Wave-5.
+  evidence: >
+    Z = runner evidence (base or rich) CONCATENATED with Z_ev2
+    (ev2_entropy, ev2_msp, ev2_mano, ev2_nuclear, ev2_gdscore) where present
+    (Camelyon rich mode). kga/evidence_v2.py @ Wave-5 (validated uplift +0.064).
+
+arms:
+  primary:
+    dataset: camelyon17 (WILDS)
+    runner: experiments/kbound/wilds/run_camelyon17_kbound.py
+    config: seeds 0-3, evidence-panel rich, batch-regimes small,
+      aggressiveness mild+aggressive, all compositions, all domains,
+      n_eval 256 (dev hardware) -- record actual n_eval in results
+    run_name: natural_win_v1_camelyon
+    # AMENDMENT 2026-07-02 (pre-unblinding, before any analysis ran):
+    # seeds 0-4 -> 0-3. Reason: f0_seed4.pt never existed (only seeds 0-3
+    # were ever trained; the Camelyon f0 training script is not in the repo,
+    # so a reconstructed seed-4 model could not be guaranteed recipe-identical
+    # and would break seed exchangeability). All historical Camelyon runs
+    # used seeds 0-3. Discovered when the run crashed at cell 73/90 with
+    # FileNotFoundError: f0_seed4.pt; seeds 0-3 (72 cells) completed intact.
+  secondary:
+    dataset: imagenet-r
+    runner: experiments/kbound/wilds/run_imagenetr_kbound.py
+    config: panel diverse_backbones (10 independently-trained backbones),
+      seeds 0-2 (extend 3-4 if wall-clock allows), defaults otherwise
+    run_name: natural_win_v1_imagenetr
+
+decision_rule (frozen):
+  per condition: multicandidate routing is PERMITTED only where the
+  self-normalized gate does NOT reject H (tau_prime <= 1); otherwise fall back
+  to the single-candidate V3-radius decision (ADAPT / FREEZE / ABSTAIN;
+  ABSTAIN keeps f0).
+
+bar (frozen, identical to the paper's headline bar):
+  - held-out scoring exactly once, per pre-registered analysis script
+    (gapclose_wave5/natural_win_analysis.py, committed before the run)
+  - false-adapt (unconditional) <= alpha = 0.10
+  - WIN iff regret_KGA' < regret_always_adapt AND < regret_always_freeze
+    (point estimates), CI-ROBUST iff both paired-bootstrap 95% CIs
+    (10^4 resamples, per-condition pairing, Holm over the 2-comparison family)
+    exclude zero
+  - NO-HARM iff KGA' ties the better trivial and beats the worse at FA <= alpha
+  - FAIL otherwise; reported without re-tuning
+
+prohibited_after_unblinding:
+  - changing alpha, the gate, the radius variant, Mondrian binning, or the
+    evidence set
+  - excluding conditions, seeds, or domains post hoc
+  - swapping primary/secondary arms
+
+integrity:
+  - runners write per_condition files via per_condition_serialize.py with
+    c_ij / n_D / Z_ev2 pass-through (Wave-5 patch); analysis consumes ONLY
+    those files
+  - an honest negative closes the question for this instrument set and is
+    folded into the paper as such

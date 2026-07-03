@@ -1,0 +1,358 @@
+PY=/Volumes/T9/uav/AutoML_Flagship_V8/.venv/bin/python
+CPY=/Users/pratik_n/.venv_wilds/bin/python (Camelyon arm)
+== [0/4] wiring self-check (no GPU work)
+wiring OK: panel_capture + evidence_v2 + tau_selfnorm + radius_v2 + analysis
+WILDS_DATA_ROOT=/Users/pratik_n/datasets/wilds
+IMAGENETR_DIR=/Volumes/T9/uav/AutoML_Flagship_V8/experiments/kbound/data/imagenet-r
+== [1/4] PRIMARY ARM: Camelyon17, seeds 0-4, rich evidence (long: hours)
+[device] mps
+[disk-filter] 455954/455954 patches present (0 dropped, 0.00%)
+[domain] test: 85054 present patches
+[domain] val: 34904 present patches
+[domain] id_val: 33560 present patches
+[source] train: 302436 present patches for source-calibrated rich evidence
+  [1/90] s0/test/iid/small/mild  a0=0.809 best_aa=0.938 oracle=0.938 route=ABSTAIN->None tau=1.0749 sd_c=FREEZE
+  [2/90] s0/test/iid/small/aggressive  a0=0.797 best_aa=0.852 oracle=0.852 route=ABSTAIN->None tau=0.7148 sd_c=FREEZE
+  [3/90] s0/test/imbalanced/small/mild  a0=0.840 best_aa=0.934 oracle=0.934 route=ABSTAIN->None tau=1.2366 sd_c=ABSTAIN
+  [4/90] s0/test/imbalanced/small/aggressive  a0=0.773 best_aa=0.898 oracle=0.898 route=ABSTAIN->None tau=0.8146 sd_c=FREEZE
+  [5/90] s0/test/single_class/small/mild  a0=0.812 best_aa=0.906 oracle=0.906 route=ABSTAIN->None tau=1.2264 sd_c=ABSTAIN
+  [6/90] s0/test/single_class/small/aggressive  a0=0.848 best_aa=0.930 oracle=0.930 route=ABSTAIN->None tau=1.2124 sd_c=ABSTAIN
+  [7/90] s0/val/iid/small/mild  a0=0.855 best_aa=0.934 oracle=0.934 route=ABSTAIN->None tau=0.9916 sd_c=ABSTAIN
+  [8/90] s0/val/iid/small/aggressive  a0=0.883 best_aa=0.938 oracle=0.938 route=ABSTAIN->None tau=0.6115 sd_c=ABSTAIN
+  [9/90] s0/val/imbalanced/small/mild  a0=0.879 best_aa=0.934 oracle=0.934 route=ABSTAIN->None tau=1.3353 sd_c=ABSTAIN
+  [10/90] s0/val/imbalanced/small/aggressive  a0=0.875 best_aa=0.941 oracle=0.941 route=ABSTAIN->None tau=0.8888 sd_c=ABSTAIN
+  [11/90] s0/val/single_class/small/mild  a0=0.832 best_aa=0.926 oracle=0.926 route=ABSTAIN->None tau=1.6355 sd_c=ABSTAIN
+  [12/90] s0/val/single_class/small/aggressive  a0=0.871 best_aa=0.945 oracle=0.945 route=ABSTAIN->None tau=1.1548 sd_c=ABSTAIN
+  [13/90] s0/id_val/iid/small/mild  a0=0.992 best_aa=0.992 oracle=0.992 route=FREEZE->None tau=nan sd_c=ABSTAIN
+  [14/90] s0/id_val/iid/small/aggressive  a0=1.000 best_aa=1.000 oracle=1.000 route=ABSTAIN->None tau=0.5214 sd_c=ABSTAIN
+  [15/90] s0/id_val/imbalanced/small/mild  a0=0.996 best_aa=0.992 oracle=0.996 route=ABSTAIN->None tau=1.0907 sd_c=ABSTAIN
+  [16/90] s0/id_val/imbalanced/small/aggressive  a0=0.992 best_aa=0.992 oracle=0.992 route=ABSTAIN->None tau=1.0605 sd_c=ABSTAIN
+  [17/90] s0/id_val/single_class/small/mild  a0=0.980 best_aa=0.988 oracle=0.988 route=FREEZE->None tau=nan sd_c=ABSTAIN
+  [18/90] s0/id_val/single_class/small/aggressive  a0=0.992 best_aa=0.992 oracle=0.992 route=ABSTAIN->None tau=0.6012 sd_c=ABSTAIN
+  [19/90] s1/test/iid/small/mild  a0=0.781 best_aa=0.918 oracle=0.918 route=ABSTAIN->None tau=0.9135 sd_c=FREEZE
+  [20/90] s1/test/iid/small/aggressive  a0=0.777 best_aa=0.883 oracle=0.883 route=ABSTAIN->None tau=0.8284 sd_c=ABSTAIN
+  [21/90] s1/test/imbalanced/small/mild  a0=0.750 best_aa=0.941 oracle=0.941 route=ABSTAIN->None tau=0.7433 sd_c=ABSTAIN
+  [22/90] s1/test/imbalanced/small/aggressive  a0=0.762 best_aa=0.938 oracle=0.938 route=ABSTAIN->None tau=0.8395 sd_c=FREEZE
+  [23/90] s1/test/single_class/small/mild  a0=0.801 best_aa=0.941 oracle=0.941 route=ABSTAIN->None tau=1.0791 sd_c=ABSTAIN
+  [24/90] s1/test/single_class/small/aggressive  a0=0.781 best_aa=0.902 oracle=0.902 route=ABSTAIN->None tau=1.1474 sd_c=ABSTAIN
+  [25/90] s1/val/iid/small/mild  a0=0.891 best_aa=0.949 oracle=0.949 route=ABSTAIN->None tau=0.9771 sd_c=ABSTAIN
+  [26/90] s1/val/iid/small/aggressive  a0=0.840 best_aa=0.941 oracle=0.941 route=ABSTAIN->None tau=0.5521 sd_c=ABSTAIN
+  [27/90] s1/val/imbalanced/small/mild  a0=0.844 best_aa=0.941 oracle=0.941 route=ABSTAIN->None tau=1.5043 sd_c=ABSTAIN
+  [28/90] s1/val/imbalanced/small/aggressive  a0=0.883 best_aa=0.953 oracle=0.953 route=ABSTAIN->None tau=0.7448 sd_c=ABSTAIN
+  [29/90] s1/val/single_class/small/mild  a0=0.879 best_aa=0.930 oracle=0.930 route=ABSTAIN->None tau=0.9793 sd_c=ABSTAIN
+  [30/90] s1/val/single_class/small/aggressive  a0=0.879 best_aa=0.930 oracle=0.930 route=ABSTAIN->None tau=1.0475 sd_c=ABSTAIN
+  [31/90] s1/id_val/iid/small/mild  a0=0.992 best_aa=0.992 oracle=0.992 route=ABSTAIN->None tau=0.5427 sd_c=ABSTAIN
+  [32/90] s1/id_val/iid/small/aggressive  a0=0.992 best_aa=0.992 oracle=0.992 route=ABSTAIN->None tau=0.9495 sd_c=ABSTAIN
+  [33/90] s1/id_val/imbalanced/small/mild  a0=0.992 best_aa=0.992 oracle=0.992 route=ABSTAIN->None tau=1.2370 sd_c=ABSTAIN
+  [34/90] s1/id_val/imbalanced/small/aggressive  a0=1.000 best_aa=1.000 oracle=1.000 route=ABSTAIN->None tau=0.8955 sd_c=ABSTAIN
+  [35/90] s1/id_val/single_class/small/mild  a0=0.992 best_aa=0.992 oracle=0.992 route=FREEZE->None tau=nan sd_c=ABSTAIN
+  [36/90] s1/id_val/single_class/small/aggressive  a0=0.996 best_aa=0.996 oracle=0.996 route=ABSTAIN->None tau=0.6841 sd_c=ABSTAIN
+  [37/90] s2/test/iid/small/mild  a0=0.828 best_aa=0.855 oracle=0.855 route=ABSTAIN->None tau=0.8366 sd_c=FREEZE
+  [38/90] s2/test/iid/small/aggressive  a0=0.840 best_aa=0.902 oracle=0.902 route=ABSTAIN->None tau=0.5143 sd_c=FREEZE
+  [39/90] s2/test/imbalanced/small/mild  a0=0.824 best_aa=0.887 oracle=0.887 route=ABSTAIN->None tau=1.0776 sd_c=ABSTAIN
+  [40/90] s2/test/imbalanced/small/aggressive  a0=0.852 best_aa=0.871 oracle=0.871 route=ABSTAIN->None tau=1.2338 sd_c=ABSTAIN
+  [41/90] s2/test/single_class/small/mild  a0=0.863 best_aa=0.922 oracle=0.922 route=ABSTAIN->None tau=0.8135 sd_c=ABSTAIN
+  [42/90] s2/test/single_class/small/aggressive  a0=0.855 best_aa=0.883 oracle=0.883 route=ABSTAIN->None tau=1.0970 sd_c=ABSTAIN
+  [43/90] s2/val/iid/small/mild  a0=0.867 best_aa=0.941 oracle=0.941 route=ABSTAIN->None tau=0.8992 sd_c=FREEZE
+  [44/90] s2/val/iid/small/aggressive  a0=0.805 best_aa=0.898 oracle=0.898 route=ABSTAIN->None tau=0.6829 sd_c=FREEZE
+  [45/90] s2/val/imbalanced/small/mild  a0=0.793 best_aa=0.922 oracle=0.922 route=ABSTAIN->None tau=0.7158 sd_c=ABSTAIN
+  [46/90] s2/val/imbalanced/small/aggressive  a0=0.812 best_aa=0.922 oracle=0.922 route=ABSTAIN->None tau=0.5838 sd_c=ABSTAIN
+  [47/90] s2/val/single_class/small/mild  a0=0.820 best_aa=0.926 oracle=0.926 route=ABSTAIN->None tau=0.6139 sd_c=ABSTAIN
+  [48/90] s2/val/single_class/small/aggressive  a0=0.824 best_aa=0.918 oracle=0.918 route=ABSTAIN->None tau=0.7856 sd_c=ABSTAIN
+  [49/90] s2/id_val/iid/small/mild  a0=0.992 best_aa=0.988 oracle=0.992 route=ABSTAIN->None tau=1.5208 sd_c=ABSTAIN
+  [50/90] s2/id_val/iid/small/aggressive  a0=0.984 best_aa=0.980 oracle=0.984 route=ABSTAIN->None tau=0.9305 sd_c=ABSTAIN
+  [51/90] s2/id_val/imbalanced/small/mild  a0=1.000 best_aa=0.996 oracle=1.000 route=ABSTAIN->None tau=1.8212 sd_c=ABSTAIN
+  [52/90] s2/id_val/imbalanced/small/aggressive  a0=0.992 best_aa=0.992 oracle=0.992 route=ABSTAIN->None tau=0.3953 sd_c=ABSTAIN
+  [53/90] s2/id_val/single_class/small/mild  a0=0.996 best_aa=0.996 oracle=0.996 route=FREEZE->None tau=nan sd_c=ABSTAIN
+  [54/90] s2/id_val/single_class/small/aggressive  a0=1.000 best_aa=1.000 oracle=1.000 route=ABSTAIN->None tau=0.3618 sd_c=ABSTAIN
+  [55/90] s3/test/iid/small/mild  a0=0.711 best_aa=0.863 oracle=0.863 route=ABSTAIN->None tau=0.8617 sd_c=FREEZE
+  [56/90] s3/test/iid/small/aggressive  a0=0.684 best_aa=0.844 oracle=0.844 route=ABSTAIN->None tau=0.8724 sd_c=FREEZE
+  [57/90] s3/test/imbalanced/small/mild  a0=0.770 best_aa=0.867 oracle=0.867 route=ABSTAIN->None tau=0.6064 sd_c=FREEZE
+  [58/90] s3/test/imbalanced/small/aggressive  a0=0.719 best_aa=0.887 oracle=0.887 route=ABSTAIN->None tau=0.4259 sd_c=FREEZE
+  [59/90] s3/test/single_class/small/mild  a0=0.711 best_aa=0.867 oracle=0.867 route=ABSTAIN->None tau=0.5772 sd_c=FREEZE
+  [60/90] s3/test/single_class/small/aggressive  a0=0.762 best_aa=0.836 oracle=0.836 route=ABSTAIN->None tau=0.9817 sd_c=FREEZE
+  [61/90] s3/val/iid/small/mild  a0=0.781 best_aa=0.949 oracle=0.949 route=ABSTAIN->None tau=1.0184 sd_c=FREEZE
+  [62/90] s3/val/iid/small/aggressive  a0=0.746 best_aa=0.934 oracle=0.934 route=ABSTAIN->None tau=0.7264 sd_c=FREEZE
+  [63/90] s3/val/imbalanced/small/mild  a0=0.688 best_aa=0.848 oracle=0.848 route=ABSTAIN->None tau=0.8340 sd_c=FREEZE
+  [64/90] s3/val/imbalanced/small/aggressive  a0=0.688 best_aa=0.918 oracle=0.918 route=ABSTAIN->None tau=0.9587 sd_c=FREEZE
+  [65/90] s3/val/single_class/small/mild  a0=0.746 best_aa=0.898 oracle=0.898 route=ABSTAIN->None tau=0.5292 sd_c=ABSTAIN
+  [66/90] s3/val/single_class/small/aggressive  a0=0.738 best_aa=0.934 oracle=0.934 route=ABSTAIN->None tau=0.9302 sd_c=FREEZE
+  [67/90] s3/id_val/iid/small/mild  a0=1.000 best_aa=1.000 oracle=1.000 route=FREEZE->None tau=nan sd_c=ABSTAIN
+  [68/90] s3/id_val/iid/small/aggressive  a0=0.992 best_aa=0.992 oracle=0.992 route=ABSTAIN->None tau=0.2609 sd_c=ABSTAIN
+  [69/90] s3/id_val/imbalanced/small/mild  a0=0.980 best_aa=0.988 oracle=0.988 route=ABSTAIN->None tau=1.2290 sd_c=ABSTAIN
+  [70/90] s3/id_val/imbalanced/small/aggressive  a0=0.988 best_aa=0.992 oracle=0.992 route=ABSTAIN->None tau=0.4400 sd_c=ABSTAIN
+  [71/90] s3/id_val/single_class/small/mild  a0=0.980 best_aa=0.992 oracle=0.992 route=FREEZE->None tau=nan sd_c=ABSTAIN
+  [72/90] s3/id_val/single_class/small/aggressive  a0=0.980 best_aa=0.988 oracle=0.988 route=ABSTAIN->None tau=0.3810 sd_c=ABSTAIN
+Traceback (most recent call last):
+  File "/Volumes/T9/uav/AutoML_Flagship_V8/experiments/kbound/wilds/run_camelyon17_kbound.py", line 507, in <module>
+    main()
+  File "/Volumes/T9/uav/AutoML_Flagship_V8/experiments/kbound/wilds/run_camelyon17_kbound.py", line 475, in main
+    records, conditions, meta = run(args, partial_path=partial)
+                                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Volumes/T9/uav/AutoML_Flagship_V8/experiments/kbound/wilds/run_camelyon17_kbound.py", line 114, in run
+    raise FileNotFoundError(f"f0 checkpoint missing: {f0_ckpt}")
+FileNotFoundError: f0 checkpoint missing: /Volumes/T9/uav/AutoML_Flagship_V8/experiments/kbound/results/wilds/f0_seed4.pt
+PY=/Volumes/T9/uav/AutoML_Flagship_V8/.venv/bin/python
+CPY=/Users/pratik_n/.venv_wilds/bin/python (Camelyon arm)
+== [0/4] wiring self-check (no GPU work)
+wiring OK: panel_capture + evidence_v2 + tau_selfnorm + radius_v2 + analysis
+WILDS_DATA_ROOT=/Users/pratik_n/datasets/wilds
+IMAGENETR_DIR=/Volumes/T9/uav/AutoML_Flagship_V8/experiments/kbound/data/imagenet-r
+== [1/4] PRIMARY ARM: Camelyon17, seeds 0-3, rich evidence
+   (protocol amended pre-unblinding: f0_seed4.pt never existed; see YAML)
+[device] mps
+[disk-filter] 455954/455954 patches present (0 dropped, 0.00%)
+[domain] test: 85054 present patches
+[domain] val: 34904 present patches
+[domain] id_val: 33560 present patches
+[source] train: 302436 present patches for source-calibrated rich evidence
+[resume] 72 cells loaded from /Volumes/T9/uav/AutoML_Flagship_V8/experiments/kbound/results/natural_win_v1_camelyon/_partial.json
+  [1/72] s0/test/iid/small/mild  SKIP (resume)
+  [2/72] s0/test/iid/small/aggressive  SKIP (resume)
+  [3/72] s0/test/imbalanced/small/mild  SKIP (resume)
+  [4/72] s0/test/imbalanced/small/aggressive  SKIP (resume)
+  [5/72] s0/test/single_class/small/mild  SKIP (resume)
+  [6/72] s0/test/single_class/small/aggressive  SKIP (resume)
+  [7/72] s0/val/iid/small/mild  SKIP (resume)
+  [8/72] s0/val/iid/small/aggressive  SKIP (resume)
+  [9/72] s0/val/imbalanced/small/mild  SKIP (resume)
+  [10/72] s0/val/imbalanced/small/aggressive  SKIP (resume)
+  [11/72] s0/val/single_class/small/mild  SKIP (resume)
+  [12/72] s0/val/single_class/small/aggressive  SKIP (resume)
+  [13/72] s0/id_val/iid/small/mild  SKIP (resume)
+  [14/72] s0/id_val/iid/small/aggressive  SKIP (resume)
+  [15/72] s0/id_val/imbalanced/small/mild  SKIP (resume)
+  [16/72] s0/id_val/imbalanced/small/aggressive  SKIP (resume)
+  [17/72] s0/id_val/single_class/small/mild  SKIP (resume)
+  [18/72] s0/id_val/single_class/small/aggressive  SKIP (resume)
+  [19/72] s1/test/iid/small/mild  SKIP (resume)
+  [20/72] s1/test/iid/small/aggressive  SKIP (resume)
+  [21/72] s1/test/imbalanced/small/mild  SKIP (resume)
+  [22/72] s1/test/imbalanced/small/aggressive  SKIP (resume)
+  [23/72] s1/test/single_class/small/mild  SKIP (resume)
+  [24/72] s1/test/single_class/small/aggressive  SKIP (resume)
+  [25/72] s1/val/iid/small/mild  SKIP (resume)
+  [26/72] s1/val/iid/small/aggressive  SKIP (resume)
+  [27/72] s1/val/imbalanced/small/mild  SKIP (resume)
+  [28/72] s1/val/imbalanced/small/aggressive  SKIP (resume)
+  [29/72] s1/val/single_class/small/mild  SKIP (resume)
+  [30/72] s1/val/single_class/small/aggressive  SKIP (resume)
+  [31/72] s1/id_val/iid/small/mild  SKIP (resume)
+  [32/72] s1/id_val/iid/small/aggressive  SKIP (resume)
+  [33/72] s1/id_val/imbalanced/small/mild  SKIP (resume)
+  [34/72] s1/id_val/imbalanced/small/aggressive  SKIP (resume)
+  [35/72] s1/id_val/single_class/small/mild  SKIP (resume)
+  [36/72] s1/id_val/single_class/small/aggressive  SKIP (resume)
+  [37/72] s2/test/iid/small/mild  SKIP (resume)
+  [38/72] s2/test/iid/small/aggressive  SKIP (resume)
+  [39/72] s2/test/imbalanced/small/mild  SKIP (resume)
+  [40/72] s2/test/imbalanced/small/aggressive  SKIP (resume)
+  [41/72] s2/test/single_class/small/mild  SKIP (resume)
+  [42/72] s2/test/single_class/small/aggressive  SKIP (resume)
+  [43/72] s2/val/iid/small/mild  SKIP (resume)
+  [44/72] s2/val/iid/small/aggressive  SKIP (resume)
+  [45/72] s2/val/imbalanced/small/mild  SKIP (resume)
+  [46/72] s2/val/imbalanced/small/aggressive  SKIP (resume)
+  [47/72] s2/val/single_class/small/mild  SKIP (resume)
+  [48/72] s2/val/single_class/small/aggressive  SKIP (resume)
+  [49/72] s2/id_val/iid/small/mild  SKIP (resume)
+  [50/72] s2/id_val/iid/small/aggressive  SKIP (resume)
+  [51/72] s2/id_val/imbalanced/small/mild  SKIP (resume)
+  [52/72] s2/id_val/imbalanced/small/aggressive  SKIP (resume)
+  [53/72] s2/id_val/single_class/small/mild  SKIP (resume)
+  [54/72] s2/id_val/single_class/small/aggressive  SKIP (resume)
+  [55/72] s3/test/iid/small/mild  SKIP (resume)
+  [56/72] s3/test/iid/small/aggressive  SKIP (resume)
+  [57/72] s3/test/imbalanced/small/mild  SKIP (resume)
+  [58/72] s3/test/imbalanced/small/aggressive  SKIP (resume)
+  [59/72] s3/test/single_class/small/mild  SKIP (resume)
+  [60/72] s3/test/single_class/small/aggressive  SKIP (resume)
+  [61/72] s3/val/iid/small/mild  SKIP (resume)
+  [62/72] s3/val/iid/small/aggressive  SKIP (resume)
+  [63/72] s3/val/imbalanced/small/mild  SKIP (resume)
+  [64/72] s3/val/imbalanced/small/aggressive  SKIP (resume)
+  [65/72] s3/val/single_class/small/mild  SKIP (resume)
+  [66/72] s3/val/single_class/small/aggressive  SKIP (resume)
+  [67/72] s3/id_val/iid/small/mild  SKIP (resume)
+  [68/72] s3/id_val/iid/small/aggressive  SKIP (resume)
+  [69/72] s3/id_val/imbalanced/small/mild  SKIP (resume)
+  [70/72] s3/id_val/imbalanced/small/aggressive  SKIP (resume)
+  [71/72] s3/id_val/single_class/small/mild  SKIP (resume)
+  [72/72] s3/id_val/single_class/small/aggressive  SKIP (resume)
+[serialize] wrote 12 per-condition files (methods=['eata', 'sar', 'tent'], seeds=[0, 1, 2, 3], kga_backend=['sklearn_gradient_boost']) -> /Volumes/T9/uav/AutoML_Flagship_V8/experiments/kbound/results/natural_win_v1_camelyon
+
+======================================================================
+records=432  conditions=72  wall=31.7s
+classification        : mixed+detectable
+base_rate_harmful B<0 : 0.301   mean_B=+0.0384
+detectability verdict : detectable (best harm-AUC=0.8381049414161997)
+multicand route       : mean_tau=0.8841315682023863  abstain=0.9166666666666666  breakdown={'ABSTAIN': 66, 'FREEZE': 6}
+gamma_S=0.0009765625  gamma_T=0.10555013020833333  |dT-dS|<=delta: False
+smooth-drift (c)      : implemented=True decisions={'FREEZE': 20, 'ABSTAIN': 52} bracket_cov=0.4444444444444444
+
+manifest -> /Volumes/T9/uav/AutoML_Flagship_V8/experiments/kbound/results/natural_win_v1_camelyon/result_a4929009.json
+== [2/4] SECONDARY ARM: ImageNet-R diverse 10-backbone panel, seeds 0-2
+Python(7831) MallocStackLogging: can't turn off malloc stack logging because it was not enabled.
+Python(7853) MallocStackLogging: can't turn off malloc stack logging because it was not enabled.
+[imagenet-r:D] classes=200 images=30000 device=mps panel=diverse_backbones
+[imagenet-r:D] f0=resnet50 candidates=resnet101,resnet152,resnext101_32x8d,efficientnet_b0,efficientnet_b3,convnext_tiny,convnext_base,vit_b_16,swin_t,swin_b
+  [1/54] s0/iid/large_iid/mild a0=0.424 best_aa=0.492 oracle=0.492 route=ABSTAIN tau=2.461 sd_c=FREEZE
+  [2/54] s0/iid/large_iid/aggressive a0=0.422 best_aa=0.508 oracle=0.508 route=ABSTAIN tau=2.762 sd_c=FREEZE
+  [3/54] s0/iid/small/mild a0=0.434 best_aa=0.503 oracle=0.503 route=ABSTAIN tau=2.595 sd_c=FREEZE
+  [4/54] s0/iid/small/aggressive a0=0.409 best_aa=0.478 oracle=0.478 route=ABSTAIN tau=2.717 sd_c=FREEZE
+  [5/54] s0/iid/tiny/mild a0=0.459 best_aa=0.507 oracle=0.507 route=ABSTAIN tau=2.442 sd_c=FREEZE
+  [6/54] s0/iid/tiny/aggressive a0=0.433 best_aa=0.512 oracle=0.512 route=ABSTAIN tau=2.401 sd_c=ABSTAIN
+  [7/54] s0/imbalanced/large_iid/mild a0=0.430 best_aa=0.508 oracle=0.508 route=ABSTAIN tau=2.522 sd_c=FREEZE
+  [8/54] s0/imbalanced/large_iid/aggressive a0=0.428 best_aa=0.503 oracle=0.503 route=ABSTAIN tau=2.929 sd_c=ABSTAIN
+  [9/54] s0/imbalanced/small/mild a0=0.452 best_aa=0.518 oracle=0.518 route=ABSTAIN tau=2.441 sd_c=ABSTAIN
+  [10/54] s0/imbalanced/small/aggressive a0=0.435 best_aa=0.515 oracle=0.515 route=ABSTAIN tau=2.685 sd_c=FREEZE
+  [11/54] s0/imbalanced/tiny/mild a0=0.434 best_aa=0.497 oracle=0.497 route=ABSTAIN tau=2.622 sd_c=ABSTAIN
+  [12/54] s0/imbalanced/tiny/aggressive a0=0.425 best_aa=0.482 oracle=0.482 route=ABSTAIN tau=2.579 sd_c=FREEZE
+  [13/54] s0/single_class/large_iid/mild a0=0.424 best_aa=0.500 oracle=0.500 route=ABSTAIN tau=2.538 sd_c=ABSTAIN
+  [14/54] s0/single_class/large_iid/aggressive a0=0.448 best_aa=0.510 oracle=0.510 route=ABSTAIN tau=2.613 sd_c=FREEZE
+  [15/54] s0/single_class/small/mild a0=0.421 best_aa=0.522 oracle=0.522 route=ABSTAIN tau=2.702 sd_c=ABSTAIN
+  [16/54] s0/single_class/small/aggressive a0=0.436 best_aa=0.514 oracle=0.514 route=ABSTAIN tau=2.419 sd_c=FREEZE
+  [17/54] s0/single_class/tiny/mild a0=0.438 best_aa=0.510 oracle=0.510 route=ABSTAIN tau=2.432 sd_c=ABSTAIN
+  [18/54] s0/single_class/tiny/aggressive a0=0.434 best_aa=0.496 oracle=0.496 route=ABSTAIN tau=2.366 sd_c=ABSTAIN
+  [19/54] s1/iid/large_iid/mild a0=0.447 best_aa=0.511 oracle=0.511 route=ABSTAIN tau=2.632 sd_c=FREEZE
+  [20/54] s1/iid/large_iid/aggressive a0=0.415 best_aa=0.502 oracle=0.502 route=ABSTAIN tau=2.618 sd_c=FREEZE
+  [21/54] s1/iid/small/mild a0=0.449 best_aa=0.529 oracle=0.529 route=ABSTAIN tau=2.492 sd_c=FREEZE
+  [22/54] s1/iid/small/aggressive a0=0.430 best_aa=0.498 oracle=0.498 route=ABSTAIN tau=2.593 sd_c=FREEZE
+  [23/54] s1/iid/tiny/mild a0=0.437 best_aa=0.514 oracle=0.514 route=ABSTAIN tau=2.624 sd_c=FREEZE
+  [24/54] s1/iid/tiny/aggressive a0=0.454 best_aa=0.503 oracle=0.503 route=ABSTAIN tau=2.609 sd_c=FREEZE
+  [25/54] s1/imbalanced/large_iid/mild a0=0.441 best_aa=0.501 oracle=0.501 route=ABSTAIN tau=2.592 sd_c=FREEZE
+  [26/54] s1/imbalanced/large_iid/aggressive a0=0.423 best_aa=0.506 oracle=0.506 route=ABSTAIN tau=2.542 sd_c=ABSTAIN
+  [27/54] s1/imbalanced/small/mild a0=0.422 best_aa=0.519 oracle=0.519 route=ABSTAIN tau=2.644 sd_c=ABSTAIN
+  [28/54] s1/imbalanced/small/aggressive a0=0.441 best_aa=0.499 oracle=0.499 route=ABSTAIN tau=2.349 sd_c=ABSTAIN
+  [29/54] s1/imbalanced/tiny/mild a0=0.442 best_aa=0.516 oracle=0.516 route=ABSTAIN tau=2.698 sd_c=FREEZE
+  [30/54] s1/imbalanced/tiny/aggressive a0=0.434 best_aa=0.511 oracle=0.511 route=ABSTAIN tau=2.567 sd_c=ABSTAIN
+  [31/54] s1/single_class/large_iid/mild a0=0.437 best_aa=0.532 oracle=0.532 route=ABSTAIN tau=2.679 sd_c=FREEZE
+  [32/54] s1/single_class/large_iid/aggressive a0=0.421 best_aa=0.502 oracle=0.502 route=ABSTAIN tau=2.822 sd_c=FREEZE
+  [33/54] s1/single_class/small/mild a0=0.454 best_aa=0.523 oracle=0.523 route=ABSTAIN tau=2.685 sd_c=ABSTAIN
+  [34/54] s1/single_class/small/aggressive a0=0.445 best_aa=0.503 oracle=0.503 route=ABSTAIN tau=2.490 sd_c=FREEZE
+  [35/54] s1/single_class/tiny/mild a0=0.466 best_aa=0.538 oracle=0.538 route=ABSTAIN tau=2.358 sd_c=FREEZE
+  [36/54] s1/single_class/tiny/aggressive a0=0.447 best_aa=0.520 oracle=0.520 route=ABSTAIN tau=2.563 sd_c=FREEZE
+  [37/54] s2/iid/large_iid/mild a0=0.453 best_aa=0.514 oracle=0.514 route=ABSTAIN tau=2.654 sd_c=FREEZE
+  [38/54] s2/iid/large_iid/aggressive a0=0.438 best_aa=0.498 oracle=0.498 route=ABSTAIN tau=2.661 sd_c=FREEZE
+  [39/54] s2/iid/small/mild a0=0.443 best_aa=0.514 oracle=0.514 route=ABSTAIN tau=2.407 sd_c=FREEZE
+  [40/54] s2/iid/small/aggressive a0=0.415 best_aa=0.478 oracle=0.478 route=ABSTAIN tau=2.682 sd_c=FREEZE
+  [41/54] s2/iid/tiny/mild a0=0.460 best_aa=0.521 oracle=0.521 route=ABSTAIN tau=2.262 sd_c=FREEZE
+  [42/54] s2/iid/tiny/aggressive a0=0.435 best_aa=0.518 oracle=0.518 route=ABSTAIN tau=2.518 sd_c=FREEZE
+  [43/54] s2/imbalanced/large_iid/mild a0=0.440 best_aa=0.514 oracle=0.514 route=ABSTAIN tau=2.539 sd_c=ABSTAIN
+  [44/54] s2/imbalanced/large_iid/aggressive a0=0.442 best_aa=0.528 oracle=0.528 route=ABSTAIN tau=2.546 sd_c=FREEZE
+  [45/54] s2/imbalanced/small/mild a0=0.471 best_aa=0.528 oracle=0.528 route=ABSTAIN tau=2.307 sd_c=ABSTAIN
+  [46/54] s2/imbalanced/small/aggressive a0=0.439 best_aa=0.507 oracle=0.507 route=ABSTAIN tau=2.592 sd_c=FREEZE
+  [47/54] s2/imbalanced/tiny/mild a0=0.460 best_aa=0.527 oracle=0.527 route=ABSTAIN tau=2.543 sd_c=ABSTAIN
+  [48/54] s2/imbalanced/tiny/aggressive a0=0.429 best_aa=0.494 oracle=0.494 route=ABSTAIN tau=2.402 sd_c=FREEZE
+  [49/54] s2/single_class/large_iid/mild a0=0.449 best_aa=0.502 oracle=0.502 route=ABSTAIN tau=2.472 sd_c=ABSTAIN
+  [50/54] s2/single_class/large_iid/aggressive a0=0.452 best_aa=0.517 oracle=0.517 route=ABSTAIN tau=2.646 sd_c=ABSTAIN
+  [51/54] s2/single_class/small/mild a0=0.441 best_aa=0.522 oracle=0.522 route=ABSTAIN tau=2.564 sd_c=ABSTAIN
+  [52/54] s2/single_class/small/aggressive a0=0.424 best_aa=0.524 oracle=0.524 route=ABSTAIN tau=2.444 sd_c=FREEZE
+  [53/54] s2/single_class/tiny/mild a0=0.427 best_aa=0.492 oracle=0.492 route=ABSTAIN tau=2.895 sd_c=ABSTAIN
+  [54/54] s2/single_class/tiny/aggressive a0=0.468 best_aa=0.529 oracle=0.529 route=ABSTAIN tau=2.466 sd_c=ABSTAIN
+[serialize] wrote 30 per-condition files (panel=diverse_backbones, methods=['convnext_base', 'convnext_tiny', 'efficientnet_b0', 'efficientnet_b3', 'resnet101', 'resnet152', 'resnext101_32x8d', 'swin_b', 'swin_t', 'vit_b_16'], seeds=[0, 1, 2], kga_backend=['sklearn_gradient_boost']) -> /Volumes/T9/uav/AutoML_Flagship_V8/experiments/kbound/results/natural_win_v1_imagenetr
+
+======================================================================
+records=540 conditions=54 wall=14480.1s
+classification        : mixed+undetectable  base_harmful=0.172 mean_B=+0.0280
+detectability         : weak (best harm-AUC=0.6110990834957062)
+multicand route       : mean_tau=2.562598626063653 abstain=1.0 breakdown={'ABSTAIN': 54}
+tau range             : [2.262..2.929] (tau*=0.52)
+smooth-drift (c)      : impl=True decisions={'FREEZE': 33, 'ABSTAIN': 21} bracket_cov=0.0
+
+manifest -> /Volumes/T9/uav/AutoML_Flagship_V8/experiments/kbound/results/natural_win_v1_imagenetr/result_9d6c97f5.json
+== [3/4] locate per_condition outputs
+camelyon: experiments/kbound/results/natural_win_v1_camelyon
+imagenetr: experiments/kbound/results/natural_win_v1_imagenetr
+== [4/4] pre-committed analysis (held-out scoring, ONCE)
+{
+ "protocol": "NATURAL_WIN_PROTOCOL_v1",
+ "dataset": "camelyon17",
+ "run_dir": "experiments/kbound/results/natural_win_v1_camelyon",
+ "method": null,
+ "alpha": 0.1,
+ "n_records": 432,
+ "n_seeds": 4,
+ "evidence_dims": 22,
+ "used_ev2": true,
+ "gate": {
+  "n_gated": 354,
+  "n_reject_H": 294,
+  "note": ""
+ },
+ "decisions": {
+  "adapt": 0.33101851851851855,
+  "freeze": 0.0787037037037037,
+  "abstain": 0.5902777777777778
+ },
+ "regret": {
+  "kga": 0.032280815972222224,
+  "adapt": 0.012939453125,
+  "freeze": 0.05136899594907408
+ },
+ "FA_u": 0.04861111111111111,
+ "vs_adapt": {
+  "mean": 0.019341362847222224,
+  "ci": [
+   0.012486888744212962,
+   0.026041892722800924
+  ],
+  "p_holm": 0.0002
+ },
+ "vs_freeze": {
+  "mean": -0.019088179976851853,
+  "ci": [
+   -0.023157190393518517,
+   -0.01514576099537037
+  ],
+  "p_holm": 0.0001
+ },
+ "VERDICT": "FAIL"
+}
+{
+ "protocol": "NATURAL_WIN_PROTOCOL_v1",
+ "dataset": "imagenet-r",
+ "run_dir": "experiments/kbound/results/natural_win_v1_imagenetr",
+ "method": null,
+ "alpha": 0.1,
+ "n_records": 540,
+ "n_seeds": 3,
+ "evidence_dims": 11,
+ "used_ev2": false,
+ "gate": {
+  "n_gated": 540,
+  "n_reject_H": 10,
+  "note": ""
+ },
+ "decisions": {
+  "adapt": 0.5425925925925926,
+  "freeze": 0.0,
+  "abstain": 0.45740740740740743
+ },
+ "regret": {
+  "kga": 0.013590740740740738,
+  "adapt": 0.005496296296296296,
+  "freeze": 0.03352037037037036
+ },
+ "FA_u": 0.037037037037037035,
+ "vs_adapt": {
+  "mean": 0.008094444444444439,
+  "ci": [
+   0.005799907407407402,
+   0.010475925925925918
+  ],
+  "p_holm": 0.0002
+ },
+ "vs_freeze": {
+  "mean": -0.019929629629629624,
+  "ci": [
+   -0.022081481481481476,
+   -0.01777958333333333
+  ],
+  "p_holm": 0.0001
+ },
+ "VERDICT": "FAIL"
+}
+
+Done. Verdict JSONs: NATURAL_WIN_v1_*.json inside the run dirs.
+Per protocol: WIN / NO-HARM / FAIL are all final — no re-tuning.

@@ -31,6 +31,7 @@ import tta_methods as tm            # noqa: E402
 import analysis as an              # noqa: E402
 import run_camelyon17_kbound as rc  # noqa: E402  (reuse aggregations: AGGR, CANDIDATES, aggregate_*, kbound_summary, route_realized)
 import per_condition_serialize as pcs  # noqa: E402  (torch-free per-condition serializer)
+import panel_capture as pc          # noqa: E402  (Wave-5: c_ij/n_D capture)
 assert list(pcs.EVIDENCE_NAMES) == list(tm.EVIDENCE_NAMES), "EVIDENCE_NAMES drift"
 
 NUM_CLASSES = 200
@@ -281,6 +282,13 @@ def run_diverse_backbones(args, partial_path=None):
                                     del cand
                                 tm.mps_free()
                         preds_mat = np.stack(preds_all, 0)
+                        # Wave-5 (Gap B): panel agreements + n_D on the DIVERSE-BACKBONE
+                        # panel (the decisive independently-trained candidate set).
+                        try:
+                            pc.attach_to_last(records, len(cand_names) - 1,
+                                              pc.panel_fields(preds_mat))
+                        except Exception as _e:
+                            print(f"  panel_capture skipped: {_e!r}")
                         route = an.multicandidate_route(preds_mat, tau_star=args.tau_star, kappa=args.kappa)
                         realized = rc.route_realized(route, aa_all)
                         oracle = float(max(aa_all)); best_adapt = float(max(aa_all[1:]))
@@ -365,6 +373,12 @@ def run(args, partial_path=None):
                                 best_aa_c = float(aa); best_pa = pa_pos
                             tm.mps_free()
                         preds_mat = np.stack(preds_all, 0)
+                        # Wave-5 (Gap B): panel agreements + n_D for the tau' gate
+                        try:
+                            pc.attach_to_last(records, len(cand_names) - 1,
+                                              pc.panel_fields(preds_mat))
+                        except Exception as _e:
+                            print(f"  panel_capture skipped: {_e!r}")
                         route = an.multicandidate_route(preds_mat, tau_star=args.tau_star, kappa=args.kappa)
                         realized = rc.route_realized(route, aa_all)
                         oracle = float(max(aa_all)); best_adapt = float(max(aa_all[1:]))
@@ -532,6 +546,12 @@ def main(argv=None):
         print(f"[serialize] wrote {len(ser['written'])} per-condition files "
               f"(panel={a.panel}, methods={methods}, seeds={seeds}, "
               f"kga_backend={ser['kga_backend']}) -> {out_dir}")
+        if a.panel == "diverse_backbones" and conditions:
+            pan = pcs.serialize_panel_run(
+                records, conditions, dataset="imagenet-r", out_dir=out_dir,
+                seeds=seeds, candidate_order=list(a.candidate_backbones))
+            print(f"[serialize] wrote {len(pan['written'])} per-panel files "
+                  f"({pan['n_conditions']} conditions) -> {out_dir}")
     ks = man["kbound_summary"]; mb = man["routing_b_multicandidate"]; rcd = man["routing_c_smooth_drift"]
     td = man["tau_distribution"]
     print("\n" + "=" * 70)

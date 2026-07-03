@@ -32,6 +32,7 @@ import tta_methods as tm        # noqa: E402
 import analysis as an           # noqa: E402
 import cam_data as cd           # noqa: E402
 import per_condition_serialize as pcs  # noqa: E402  (torch-free per-condition serializer)
+import panel_capture as pc      # noqa: E402  (Wave-5: c_ij/n_D + ev2 evidence capture)
 # integrity: the duplicated EVIDENCE_NAMES in the serializer must stay in lock-step
 assert list(pcs.EVIDENCE_NAMES) == list(tm.EVIDENCE_NAMES), "EVIDENCE_NAMES drift"
 
@@ -180,6 +181,14 @@ def run(args, partial_path=None):
                                     "bn_kl": float(bn_kl),
                                     "rich_note": rich_note,
                                 })
+                                # Wave-5 (Gap C): logits-only ev2 evidence, kept in a
+                                # SEPARATE field so locked consumers of Z are untouched.
+                                try:
+                                    rec["Z_ev2"] = pc.ev2_vector(details["logits_eval"])
+                                    rec["Z_ev2_names"] = list(pc.EV2_NAMES)
+                                except Exception as _e:  # capture failure, never crash a cell
+                                    rec["Z_ev2"] = None
+                                    rec["Z_ev2_note"] = repr(_e)
                             records.append(rec)
                             preds_all.append(preds); aa_all.append(float(aa))
                             cand_names.append(f"{method}_{mode}")
@@ -187,6 +196,14 @@ def run(args, partial_path=None):
                                 best_aa_c = float(aa); best_pa = pa_pos
                             tm.mps_free()
                         preds_mat = np.stack(preds_all, 0)
+                        # Wave-5 (Gap B): serialize the panel agreement matrix + n_D so
+                        # the self-normalized tau gate is applicable post hoc. Attached
+                        # to this condition's just-appended candidate records.
+                        try:
+                            pc.attach_to_last(records, len(CANDIDATES),
+                                              pc.panel_fields(preds_mat))
+                        except Exception as _e:
+                            print(f"  panel_capture skipped: {_e!r}")
                         route = an.multicandidate_route(preds_mat, tau_star=args.tau_star, kappa=args.kappa)
                         realized = route_realized(route, aa_all)
                         oracle = float(max(aa_all)); best_adapt = float(max(aa_all[1:]))
