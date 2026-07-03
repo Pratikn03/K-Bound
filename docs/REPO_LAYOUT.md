@@ -15,7 +15,7 @@ one experiment tree, one paper tree, one lock folder, one test suite.**
 | [`scripts/`](../scripts/) | Thin launchers (`smoke_kbound.sh`, `run_natural_win_v1.sh`, …) |
 | [`src/scripts/kbound/`](../src/scripts/kbound/) | Canonical experiment scripts (imported by runners) |
 | [`tests/`](../tests/) | Hermetic tests + anti-leakage / drift guards |
-| [`deploy/api/`](../deploy/api/) | Optional `POST /decide` service (KGA routes) |
+| [`deploy/api/`](../deploy/api/) | KGA-only FastAPI (`POST /decide`, `/kga/health`) |
 | [`.github/workflows/`](../.github/workflows/) | `kbound-ci.yml` (primary) + slim `ci.yml` |
 | [`archive/legacy_elara/`](../archive/legacy_elara/) | **Read-only** ELARA/UAIS-V artifacts (not maintained) |
 
