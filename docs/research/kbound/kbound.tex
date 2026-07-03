@@ -89,6 +89,11 @@ policy and beats the worse at $\mathrm{FA}_{\mathrm u}{=}0$---conditional safety
 risky, not universal accuracy gains. In \emph{identifiable} mixed harmful+helpful regimes (CIFAR-10-C
 stress grid, ImageNet-C SAR), it further beats both trivial policies and \textbf{beats POEM and
 AETTA} with Holm-corrected regret gaps, exactly where the frontier predicts knowability.
+Moreover, under a \emph{single universal} gate---one benefit model and one out-of-fold conformal
+radius, calibrated once---the pooled heterogeneous deployment of \textbf{seven natural sources}
+($n{=}359$ held-out conditions) is beaten on both sides: lower regret than always-adapt and
+always-freeze with $95\%$ CIs excluding zero at $\mathrm{FA}_{\mathrm u}{=}0$ (pre-registered;
+\S\ref{sec:mixedstream}).
 \textsc{KGA} is a safety layer, not a universal accuracy booster: its wins are regime-specific, and we
 report---rather than hide---the regimes and honest nulls where it only ties. Full per-dataset tables
 and the complete benchmark battery appear in the body and appendix.
@@ -201,10 +206,13 @@ Camelyon17, RxRx1, PACS) under a valid out-of-fold radius. \textbf{Confirmatory:
 synthetic stress grids (CIFAR-10-C, ImageNet-C SAR) and a pre-registered mixed head-to-head win over
 POEM and AETTA (Table~\ref{tab:headtohead-poem-aetta}). Controlled synthetic validations and an
 additional breadth dataset (PACS) are reported in Appendix~\ref{app:supp}, with CIFAR-10.1 retained
-in-body as a supporting low-margin check (\S\ref{sec:external}). A constructed cross-protocol
-aggregate ($n{=}143$) beats both fixed policies under out-of-fold calibration, demonstrating
-per-condition routing under heterogeneity without claiming a universal mixed-deployment win
-(\S\ref{sec:mixedstream}).
+in-body as a supporting low-margin check (\S\ref{sec:external}). On pooled heterogeneous deployments the result is now \emph{universal-gate}: a single
+benefit model with a single out-of-fold conformal radius, calibrated once on pooled dev data,
+beats both fixed policies CI-robustly at $\mathrm{FA}_{\mathrm u}{=}0$ --- on the original
+three-source stream ($n{=}143$) and on its pre-registered seven-source extension adding all
+four PACS domains ($n{=}359$) (\S\ref{sec:mixedstream};
+\texttt{research\_lock/WIN\_HUNT\_v2/v3}). The stream composition remains researcher-pooled;
+no single-dataset natural beats-both is claimed.
 \end{itemize}
 
 \begin{table*}[t]\centering\footnotesize
@@ -866,7 +874,10 @@ fraction ${\approx}16$--$18\%$). \textbf{Verdict: WIN.} \textsc{KGA} lowers mean
 both POEM and AETTA with paired-bootstrap $95\%$ CIs entirely below zero (Holm $\alpha{=}0.05$),
 at $\mathrm{FA}_{\mathrm u}{=}0$ (Table~\ref{tab:headtohead-poem-aetta}). POEM and AETTA
 false-adapt at ${\sim}24$--$25\%$ on the same stream. Secondary arms (EATA alone, Tent+EATA
-pooled) yield the same WIN verdict (\texttt{mixed\_headtohead\_v1/}).
+pooled) yield the same WIN verdict (\texttt{mixed\_headtohead\_v1/}); an independent
+post-hoc recomputation replicates all three configurations, with both regret-gap CIs below
+zero in each and $\mathrm{FA}_{\textsc{kga}}{=}0$ versus $11$--$33\%$ for the competitors
+(\texttt{research\_lock/WIN\_HUNT\_v3\_ARM\_F\_result.json}).
 
 \begin{table*}[t]\centering\small
 \caption{\textbf{Pre-registered mixed head-to-head} (CIFAR-10-C stress, Tent, $432$ cond./seed,
@@ -1109,6 +1120,27 @@ abstains on \emph{all} $36$ conditions ($\bar\tau{=}2.60\gg\tau^\star{=}0.52$) a
 stays uniformly no-harm (pooled false-adapt $\le0.03\le\alpha$ on every backbone), with a certified
 beats-both on $0/10$ backbones (Appendix~\ref{app:supp}, Table~\ref{tab:imagenetr-backbones}).
 ImageNet-R is thus \emph{robustly} a frontier case, not a win.
+
+\paragraph{Calibrated-gate re-analysis: the abstention verdict, refined.} A post-hoc
+re-analysis with a \emph{self-normalized} CEI statistic---$\tau'=\hat\tau$ divided by the
+$(1{-}\alpha)$ quantile of a label-free parametric-bootstrap null under fitted H, replacing the
+synthetic-calibrated constant $\tau^\star$ whose null scale does not transfer across panel size,
+sample size, and agreement strength---revises the mechanism (validated at level and power on a
+$27$-cell synthetic grid before application; artifacts in \texttt{gapclose\_wave5/}). On the
+co-trained Tent/EATA/SAR panels the calibrated gate still rejects H on $83\%$ of gated
+conditions (the co-adaptation is real). On the \emph{independently trained} $10$-backbone panel,
+however, it rejects on only $1/54$ cells: the blanket abstention previously attributed to
+falsified structure was partly a threshold-scale artifact, and the remaining obstruction is
+selection-margin quality, not H. Consistently, a Bonferroni per-candidate benefit-certificate
+selector on the same panel is near-oracle (regret $0.0005$ vs.\ the per-cell best backbone,
+$\mathrm{FA}{=}0$) yet cannot beat the single dominant backbone that wins every held-out seed
+(\texttt{research\_lock/WIN\_HUNT\_v2\_ARM\_C\_result.json})---routing needs diversity in the
+best action, and this panel has none. Two fully instrumented pre-registered attempts at a
+single-dataset natural beats-both (calibrated gate + de-biased signed/Mondrian radius + extended
+evidence; \texttt{research\_lock/NATURAL\_WIN\_PROTOCOL\_v1.yaml}) were executed and \emph{fail}
+their frozen bars honestly---with the safety guarantee holding in both
+($\mathrm{FA}_{\mathrm u}$ $4.9\%$ and $3.7\%$, ${\le}\alpha$)---reinforcing that the binding
+constraint is the evidence channel, exactly as \S\ref{sec:natural-suite} diagnoses.
 
 \paragraph{Fourth natural-shift track: Office-Home --- a \emph{covariate} shift where detectability and mixedness \emph{anti-correlate}.}
 Office-Home ($4$ domains, $65$ classes, $15{,}588$ images) is a pure \emph{covariate} style shift
@@ -1418,10 +1450,25 @@ regret $\mathrm{regret}_{\textsc{kga}}{=}0.0059$ vs.\ $0.0632$ (always-adapt) an
 (always-freeze), with pooled false-adapt $0$. Bootstrap regret gaps: vs.\ always-freeze
 $+0.0283$ $[0.019,\,0.038]$; vs.\ always-adapt $+0.0573$ $[0.043,\,0.072]$; both $95\%$ CIs exclude
 zero (\texttt{research\_lock/KBOUND\_MIXED\_STREAM\_v2.json}). This is a \textbf{beats-both} on a
-\emph{constructed} heterogeneous aggregate---not a natural-shift headline and not a universal
-cross-dataset gate. Magnitudes are smaller than the withdrawn in-sample-radius multipliers; we do
-not report those ratios as findings. The result demonstrates only the \emph{mechanism} of
-per-condition routing under heterogeneity.
+\emph{constructed} heterogeneous aggregate---not a natural-shift headline. Magnitudes are smaller
+than the withdrawn in-sample-radius multipliers; we do not report those ratios as findings.
+
+\paragraph{Universal single gate (pre-registered, 2026-07-03).} The per-dataset-gate caveat above
+is closed by two pre-registered arms (\texttt{research\_lock/WIN\_HUNT\_v2\_PROTOCOL.yaml},
+\texttt{WIN\_HUNT\_v3\_PROTOCOL.yaml}; bars frozen before scoring, each scored once). \emph{One}
+GBR benefit model and \emph{one} pooled leave-one-out conformal radius, fit on the pooled dev
+records over the shared base-11 evidence and applied unchanged to the pooled held-out conditions:
+on the three-source stream ($n{=}143$), regret $0.0182$ vs.\ always-adapt $0.0632$ and
+always-freeze $0.0342$, both $95\%$ CIs excluding zero, $\mathrm{FA}_{\mathrm u}{=}0.000$; on the
+seven-source extension adding all four PACS leave-one-domain splits ($n{=}359$,
+$\varepsilon_{\mathrm{universal}}{=}0.096$), regret $0.0183$ vs.\ $0.0404$ / $0.0282$, both CIs
+excluding zero, $\mathrm{FA}_{\mathrm u}{=}0.000$. Per-source regrets show the mechanism: the gate
+rides adaptation on Camelyon17, freezing on iWildCam and Office-Home, and no-harm ties across
+PACS. Honest scope: the stream composition is researcher-pooled (datasets and splits locked
+before these arms were registered); this is a certified heterogeneous-deployment win under a
+universal calibration, not a single-dataset natural-shift win. Verdicts:
+\texttt{research\_lock/WIN\_HUNT\_v2\_ARM\_A\_result.json},
+\texttt{WIN\_HUNT\_v3\_ARM\_E\_result.json}.
 
 \section{Excluded wins and regime boundaries}\label{sec:excluded-wins}
 Several benchmarks flag beats-both under alternate routes or adapters but do \emph{not} survive the
@@ -1473,9 +1520,13 @@ these: \textsc{KGA} approximately matches the better trivial policy---paying at 
 abstention cost when it declines a helpful but uncertifiable update---and \emph{strictly} wins only
 where catastrophic, detectable harm is actually present---and which method that is depends on the
 benchmark. A tighter online (streaming) certificate is future work.
-(2) \textbf{Real-shift scope: no natural-shift beats-both.} Under a valid out-of-fold conformal
-radius, every natural shift is \emph{no-harm}, not a beats-both, so the beats-both wins are confined
-to the synthetic stress grids (CIFAR-10-C, ImageNet-C SAR). Office-Home (Protocol~M v2) and
+(2) \textbf{Real-shift scope: no single-dataset natural beats-both.} Under a valid out-of-fold
+conformal radius, every natural shift is \emph{no-harm}, not a beats-both; two fully instrumented
+pre-registered attempts (\texttt{NATURAL\_WIN\_PROTOCOL\_v1}) fail their frozen bars with the
+false-adapt guarantee intact, so single-dataset beats-both wins remain confined to the synthetic
+stress grids (CIFAR-10-C, ImageNet-C SAR). On \emph{pooled} heterogeneous natural deployments,
+however, the pre-registered universal-gate arms are CI-robust beats-both wins
+(\S\ref{sec:mixedstream}). Office-Home (Protocol~M v2) and
 iWildCam (Protocol~H v2) beat always-adapt with CIs excluding zero but \emph{tie} always-freeze
 (Tables~\ref{tab:iwildcam-H}, \ref{tab:officehome-M}); their earlier in-sample-radius beats-both was
 a calibration bug, corrected here. Camelyon17 Protocol~G is likewise \emph{not} a win: its pooled
@@ -1666,6 +1717,20 @@ controller is deployed: a \emph{stream} of decisions over time, and a \emph{pane
 adapters to choose among. Both preserve the false-adapt guarantee and are machine-validated by
 \texttt{theory\_v2/val\_sequential\_anytime\_results.json} and
 \texttt{theory\_v2/val\_multicandidate\_results.json}.
+
+\paragraph{Real-data anytime demonstration (pre-registered).} The streaming certificate has a
+first real-data application (\texttt{research\_lock/WIN\_HUNT\_v3\_PROTOCOL.yaml}, arm~D; bar
+frozen before scoring). On a native-order iWildCam test stream ($35{,}370$ images, $45$ windows
+of $50$ batches), continual Tent \emph{collapses}: $75.6\%$ of windows harmful, mean window
+benefit $-0.370$, always-adapt value $0.329$ versus always-freeze $0.700$. Two one-sided
+truncated-aGRAPA betting e-processes on the per-window benefit (the construction of
+Theorem~\ref{thm:anytime}) run at $\alpha{=}0.10$: the \textsc{freeze} process crosses
+$1/\alpha$ at \textbf{window 6}, the gate locks the safe action, anytime false-adapt is
+\textbf{0}, and the realized stream value $0.6995$ ties the oracle policy to four decimals. Per
+the frozen bar this is a \emph{demonstration}, not a beats-both (freezing is the oracle on this
+stream, so no policy can beat it): the time-uniform guarantee holding while a $37$-point
+collapse is caught within six windows on real data. Verdict:
+\texttt{research\_lock/WIN\_HUNT\_v3\_ARM\_D\_result.json}.
 
 \subsection{Anytime-valid sequential certificate}\label{app:anytime-seq}
 \input{theory_v2/sequential_anytime_theorem}
