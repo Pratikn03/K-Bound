@@ -39,14 +39,9 @@ Helpful, Harmful, and Unknowable Regimes Under Distribution Shift}
 \maketitle
 
 \begin{abstract}
-Test-time adaptation (TTA) can improve a model on unlabeled target data, but the same update that helps under one distribution shift can silently harm under another---and with no target labels, the system cannot tell which case it faces. The decision that matters therefore comes \emph{before} adaptation: not how to adapt, but whether to commit the update at all.
+Test-time adaptation (TTA) can improve a model on unlabeled target data, but the same update can also silently harm performance. We study the decision that comes \emph{before} adaptation: should a model adapt, freeze, or abstain? We define the adaptation benefit as the target-risk difference between a frozen baseline and an adapted candidate. Our central result is an exact \emph{benefit-sign frontier}: over a declared calibration-drift class, the sign of the adaptation benefit is identifiable from label-free evidence \emph{if and only if} an observable disagreement-region margin exceeds the admitted drift budget, $|M|>\beta$. Below this frontier, two target worlds can produce identical label-free evidence while requiring opposite actions, making abstention necessary.
 
-We cast this as a label-free \emph{adapt/freeze/abstain} decision problem. The adaptation benefit is the drop in target risk from replacing the frozen baseline $f_0$ with the adapted candidate $f_a$ ($\Delta = R_T(f_0)-R_T(f_a)$), and the system must recover its sign from unlabeled evidence $Z$ alone.
-That deciding adaptation label-free requires an assumption on the shift is already known: identifying OOD accuracy is as hard as identifying the optimal predictor~\cite{garg2022atc}, and the optimal abstain-versus-predict rule under a shift budget has a known decision-theoretic form~\cite{kalai2021abstain}. We \emph{specialize and sharpen} this to the benefit sign. Our central result is an \emph{exact} benefit-sign frontier: over a declared target class, $\sign\Delta$ is identifiable from label-free evidence \emph{if and only if} an observable disagreement-region margin exceeds the admitted calibration-drift budget ($|M|>\beta$)---a clean, computable geometric criterion. Below this frontier two target worlds can induce identical evidence yet demand opposite decisions, so no label-free rule is correct in both and abstention is information-theoretically necessary. Standard label-free accuracy estimators (ATC, DoC, GDE, COT, AETTA, agreement-on-the-line) are the zero-budget face of this frontier, sound precisely when calibration does not drift.
-
-On the identifiable side of the frontier, we give an adapt/freeze/abstain certificate that controls the unconditional false-adapt and false-freeze probabilities under stated risk-alignment, coverage, and calibration assumptions. We instantiate it as Knowability-Guided Adaptation (\textsc{KGA}), a mechanism-agnostic wrapper around Tent, EATA, and SAR.
-
-\textbf{Headline empirical result:} on five held-out natural shifts (Office-Home, iWildCam, Camelyon17, RxRx1, PACS), \textsc{KGA} is \emph{uniformly no-harm} under a valid out-of-fold radius---it beats the worse fixed policy and ties the better at $\mathrm{FA}_{\mathrm u}{=}0$. This is the deployment claim the theory targets when real shifts are one-sided or near-oracle: conditional insurance against detectable harm, not a universal accuracy gain. In \emph{identifiable} mixed harmful+helpful regimes (pre-registered CIFAR-10-C stress grid, ImageNet-C SAR), \textsc{KGA} further beats both trivial policies and the no-harm SOTA baselines POEM and AETTA on regret-to-oracle (Holm-corrected CIs; Table~\ref{tab:headtohead-poem-aetta}), confirming the certificate exactly where the frontier says the benefit sign is knowable. Where evidence is weak, it abstains or freezes conservatively. K-Bound thus reframes TTA as an identifiability-limited deployment decision: adapt when benefit is certifiable, freeze when harm is certifiable, abstain when label-free evidence cannot support a valid commitment.
+We instantiate the framework as Knowability-Guided Adaptation (\textsc{KGA}), a mechanism-agnostic wrapper around existing TTA methods. Under stated coverage, exchangeability, and risk-alignment assumptions, \textsc{KGA} controls the unconditional false-adapt and false-freeze probabilities. Across held-out natural shifts, \textsc{KGA} is uniformly no-harm: it matches the better fixed policy and beats the worse. In identifiable mixed regimes, it beats fixed adapt/freeze policies and protocol-matched POEM-style and AETTA-style baselines; in a pre-registered pooled heterogeneous deployment, a single universal gate beats both fixed policies across seven natural sources. K-Bound is therefore a safety layer for adaptation, not a universal accuracy booster.
 \end{abstract}
 
 
@@ -63,108 +58,79 @@ estimates the adaptation benefit $\widehat\Delta$ with a finite-sample radius $\
 unidentifiable), with false-adapt/false-freeze $\le\alpha$.}
 \label{fig:teaser}
 \end{figure}
-Should a model adapt to unlabeled target data, or would adapting make it worse?
-Test-time adaptation (TTA) updates a model on the test stream---through entropy
-minimization or stability-aware updates---and in favorable shifts recovers accuracy;
-in unfavorable shifts the same objective silently degrades it. With no target labels,
-the system usually cannot tell which case it faces. The decision that matters therefore
-comes \emph{before} the update: not how to adapt, but whether to commit it at all.
-Given a frozen baseline $f_0$, an adapted candidate $f_a$, and an unlabeled batch, the
-system must choose one of three actions---\textbf{adapt} when adaptation is knowably
-helpful, \textbf{freeze} when knowably harmful, or \textbf{abstain} when label-free
-evidence cannot identify the sign of the benefit.
+Test-time adaptation (TTA) updates a model on the unlabeled test stream and, under favorable
+distribution shift, recovers accuracy; under unfavorable shift the same objective silently
+degrades it. With no target labels, the system usually cannot tell which case it faces.
+The decision that matters therefore comes \emph{before} the update: given a frozen
+baseline $f_0$ and an adapted candidate $f_a$, choose
+\textbf{adapt} when adaptation is knowably helpful, \textbf{freeze} when knowably harmful, or
+\textbf{abstain} when label-free evidence cannot identify the sign of the benefit.
 
-\emph{This is a fundamental limit, not an engineering gap---and one already charted in the
-literature that we specialize.} That label-free deployment quantities cannot in general decide
-adaptation without an assumption on the shift is established: identifying OOD accuracy is as
-hard as identifying the optimal predictor~\cite{garg2022atc}, and the optimal
-predict-versus-abstain rule under a shift budget has a known form~\cite{kalai2021abstain}. We do
-not re-derive this general impossibility; we \emph{sharpen} it for the benefit sign into a
-computable criterion. Whether adaptation helps or hurts is label-free identifiable \emph{if and
-only if} an observable margin exceeds the calibration-drift budget on the disagreement region
-(our spine theorem, $|M|>\beta$). On the unidentifiable side of this frontier, two target worlds
-carry identical label-free evidence but opposite benefit, so no label-free rule---however the
-adapter is built---can be correct in both, and abstention is information-theoretically forced.
-K-Bound supplies the constructive companion: when evidence is risk-aligned and the benefit
-estimate carries a valid uncertainty radius, a finite-sample certificate adapts on the
-identifiable-helpful side, freezes on the identifiable-harmful side, and abstains exactly where
-the frontier makes knowing impossible---holding false-adapt and false-freeze at level $\alpha$
-under exchangeable calibration.
+Some cases are information-theoretically unknowable. That label-free quantities
+cannot decide adaptation without an assumption on the shift is established: identifying OOD
+accuracy is as hard as identifying the optimal predictor~\cite{garg2022atc}, and the optimal
+predict-versus-abstain rule under a shift budget has a known form~\cite{kalai2021abstain}. We
+sharpen this landscape, for the benefit sign, into a computable criterion: whether
+adaptation helps or hurts is label-free identifiable \emph{if and only if} an observable margin
+exceeds the calibration-drift budget on the disagreement region---$|M|>\beta$
+(Theorem~\ref{thm:headline}). On the unidentifiable side, two target worlds carry identical
+label-free evidence but opposite benefit, so no label-free rule can be correct in both
+(Theorem~\ref{lem:nonid}) and abstention is forced. \textsc{KGA}
+(Algorithm~\ref{alg:kga})---a benefit estimator plus a conformal radius, wrapped around any
+adapter (Tent, EATA, SAR)---operationalizes the frontier as a finite-sample certificate holding
+false-adapt and false-freeze at level $\alpha$ (Theorem~\ref{thm:certificate}).
 
-We instantiate \textbf{one} method, \textsc{KGA} (Algorithm~\ref{alg:kga}): a gradient-boosted
-benefit estimator $\widehat\Delta(Z)$ plus a conformal radius $\varepsilon$ fit on a labeled
-calibration split, then adapt/freeze/abstain. The wrapper is mechanism-agnostic (Tent, EATA, SAR),
-and the headline experiments use no separate multicandidate or alternate certificate.
-K-Bound does \emph{not} claim universal improvement. When adaptation is already safe a
-certificate can only tie always-adapt; its value is highest precisely when harmful adaptation
-is frequent, detectable, and costly. \textsc{KGA} is, in short, a safety layer for TTA---not
-an accuracy booster---and the experiments are organized to show exactly that.
+The evidence follows the regime map the theory draws, summarized in
+Table~\ref{tab:regime-summary}: held-out \emph{natural} shifts are uniformly \textbf{no-harm}
+(\textsc{KGA} matches the better fixed policy and beats the worse; no single-dataset natural
+beats-both is claimed); \emph{identifiable mixed} harmful+helpful regimes supply the
+\textbf{beats-both} policy wins, including a pre-registered head-to-head over protocol-matched
+POEM-style and AETTA-style baselines; and a pre-registered \emph{pooled heterogeneous}
+deployment shows one universal gate beating both fixed policies across seven natural sources.
+K-Bound does \emph{not} claim universal improvement: when adaptation is already safe, a valid
+certificate can only tie always-adapt. It is a safety layer for TTA, not an accuracy booster.
 
 \paragraph{Contributions.}
 \begin{enumerate}
-\item \textbf{A new problem framing.} We recast test-time adaptation as a label-free
-\emph{adapt/freeze/abstain} decision---whether to adapt at all, not how to adapt. The underlying
-impossibility (deciding label-free needs an assumption on the shift) is inherited from prior
-work~\cite{garg2022atc,kalai2021abstain}, which we \emph{specialize} to the benefit sign.
-\item \textbf{One exact result (the spine).} We sharpen that known landscape into the
-\emph{benefit-sign frontier}: the sign of the adaptation benefit is label-free identifiable
-\emph{if and only if} an observable margin exceeds the calibration-drift budget on the
-disagreement region, i.e.\ $|M|>\beta$ (Theorem~\ref{thm:headline})---a clean, computable
-geometric criterion. The ``only if'' direction is an information-theoretic impossibility for the
-benefit sign---matched evidence, opposite benefit (Lemma~\ref{lem:nonid}); the ``if'' direction
-yields a finite-sample certificate with false-adapt and false-freeze each $\le\alpha$. The same
-proofs hold for any \emph{split-observable} functional ($\sign\Delta=\sign(M+\gamma)$, $M$
-observable, $|\gamma|\le\beta$), with TTA the demonstrated instance.
+\item \textbf{Problem framing.} TTA as a label-free \emph{adapt/freeze/abstain} decision---whether
+to adapt at all, not how to adapt---specializing the known impossibility
+landscape~\cite{garg2022atc,kalai2021abstain} to the benefit sign.
+\item \textbf{One exact result (the spine).} The \emph{benefit-sign frontier}: $\sign\Delta$ is
+label-free identifiable over the declared drift class \emph{if and only if} $|M|>\beta$
+(Theorem~\ref{thm:headline}); the ``only if'' is a matched-evidence impossibility
+(Theorem~\ref{lem:nonid}), the ``if'' yields a finite-sample certificate
+(Theorem~\ref{thm:certificate}). The proofs hold for any \emph{split-observable} functional
+($\sign\Delta=\sign(M+\gamma)$, $M$ observable, $|\gamma|\le\beta$), with TTA the demonstrated
+instance.
 \item \textbf{Unification.} ATC, DoC, GDE, COT, AETTA, and agreement-on-the-line are the
 zero-budget ($\beta{=}0$) face of the frontier---sound precisely when calibration does not drift.
-\item \textbf{A drop-in method.} We instantiate the certificate as \textsc{KGA}, a
-mechanism-agnostic wrapper around Tent/EATA/SAR (Algorithm~\ref{alg:kga}).
-\item \textbf{Headline empirical evidence (natural shifts).} On five held-out natural
-benchmarks (Office-Home, iWildCam, Camelyon17, RxRx1, PACS), \textsc{KGA} is \emph{uniformly
-no-harm} under a valid out-of-fold radius: it beats the worse fixed policy and ties the better at
-$\mathrm{FA}_{\mathrm u}{=}0$ (Table~\ref{tab:regime-summary}). This is the primary deployment
-claim---conditional safety when adaptation is risky, not universal improvement.
-\item \textbf{Confirmatory identifiable regimes.} On pre-registered mixed harmful+helpful stress
-grids (CIFAR-10-C, ImageNet-C SAR), \textsc{KGA} beats both trivial policies and \textbf{beats
-POEM and AETTA} on regret-to-oracle (Table~\ref{tab:headtohead-poem-aetta}), where the theory
-predicts the benefit sign is knowable.
+\item \textbf{A drop-in method.} \textsc{KGA}, a mechanism-agnostic certificate wrapper around
+Tent/EATA/SAR (Algorithm~\ref{alg:kga}).
+\item \textbf{Regime-mapped evidence.} Uniform no-harm on five held-out natural benchmarks at
+$\mathrm{FA}_{\mathrm u}{=}0$ (the primary deployment claim); beats-both plus a pre-registered
+win over protocol-matched POEM-style/AETTA-style baselines in identifiable mixed regimes; and a
+pre-registered universal-gate win on a pooled seven-source heterogeneous deployment
+(Table~\ref{tab:regime-summary}).
 \end{enumerate}
 
-Empirically, \textsc{KGA} follows the regime map the theory draws. \textbf{Natural shifts}
-(Office-Home, iWildCam, Camelyon17, RxRx1, PACS) are uniformly no-harm: \textsc{KGA} matches the
-better fixed policy and prevents damage from always-adapt where it is harmful
-(Table~\ref{tab:regime-summary}). \textbf{Identifiable synthetic/mixed regimes} (CIFAR-10-C stress,
-ImageNet-C SAR) supply the policy wins where harmful adaptation is frequent and detectable, including
-the pre-registered head-to-head over POEM/AETTA. \textbf{Unknowable regimes} (e.g.\ ImageNet-R,
-CIFAR-10.1) correctly force abstention or conservative freeze (Appendix).
-
 \begin{table}[t]\centering\footnotesize
-\caption{\textbf{Dataset/regime evidence summary.} \textsc{KGA}'s status per dataset and the
-strength of evidence behind it. \textbf{Headline} rows are held-out natural shifts (uniform no-harm).
-\textbf{Confirmatory} rows are identifiable synthetic/mixed regimes where the frontier predicts
-knowability. ``CI-robust'' = both regret-gap bootstrap CIs exclude zero;
-``no-harm'' = matches the better fixed policy without beating both. Per-dataset numbers are in
-Tables~\ref{tab:decisive}--\ref{tab:officehome-M}; direct committal-gate baselines on controlled
-tracks are in Appendix~\ref{app:frontier} (Table~\ref{tab:app-imagenetc}).}
+\caption{\textbf{Regime map: expected behavior vs.\ result.} Each regime, an example dataset, the
+behavior the frontier predicts for a valid certificate, and what was measured. ``No-harm'' =
+matches the better fixed policy and beats the worse, without beating both; ``beats both'' = lower
+regret than always-adapt \emph{and} always-freeze with CIs excluding zero. Per-dataset numbers:
+Tables~\ref{tab:decisive}--\ref{tab:officehome-M}; committal-gate baselines:
+Appendix~\ref{app:frontier} (Table~\ref{tab:app-imagenetc}).}
 \label{tab:regime-summary}
-\begin{tabular}{@{}p{0.34\linewidth}p{0.24\linewidth}p{0.34\linewidth}@{}}
+\begin{tabular}{@{}p{0.22\linewidth}p{0.24\linewidth}p{0.22\linewidth}p{0.2\linewidth}@{}}
 \toprule
-Dataset / regime & \textsc{KGA} result & Evidence \\
+Regime & Example & Expected & Result \\
 \midrule
-\multicolumn{3}{@{}l}{\textit{Headline: natural / held-out shifts}} \\
-Office-Home M v2 & no-harm & beats adapt (CI), ties freeze \\
-iWildCam H v2 & no-harm & beats adapt (CI), ties freeze \\
-Camelyon17 genuine OOD & ties adapt & no-harm \\
-RxRx1 & ties freeze & no-harm \\
-PACS (domain-gen) & no-harm (3/4 domains) & beats adapt, ties freeze \\
-\midrule
-\multicolumn{3}{@{}l}{\textit{Confirmatory: identifiable synthetic/mixed}} \\
-CIFAR-10-C stress & beats both & CI-robust, Holm corrected \\
-ImageNet-C SAR & beats both & mechanism-faithful operating point \\
-\midrule
-\multicolumn{3}{@{}l}{\textit{Unknowable / diagnostic (not headline)}} \\
-ImageNet-R & weak / split-specific & not headline \\
-CIFAR-10.1 & transfer failure & negative evidence \\
+Helpful-dominated & Camelyon17 OOD & tie always-adapt & no-harm \\
+Harmful-dominated & iWildCam, RxRx1, Office-Home (aggr.\ SAR) & tie always-freeze, beat always-adapt & no-harm \\
+Domain-gen.\ natural & PACS (4 splits) & no-harm & no-harm (ties) \\
+Mixed + detectable & CIFAR-10-C stress, ImageNet-C SAR & beat both fixed policies & confirmed (CI-robust / operating point) \\
+Weak evidence & ImageNet-R, CIFAR-10.1 & abstain / conservative & diagnostic, not headline \\
+Heterogeneous deployment & pooled seven-source stream & route per condition, beat both & universal-gate win (pre-reg.) \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -249,7 +215,7 @@ is a property of the calibrator: the benefit interval
 $[\widehat\Delta-\varepsilon,\widehat\Delta+\varepsilon]$ has marginal coverage $\ge1-\alpha$.
 Risk-alignment makes $\sign\Delta$ recoverable in principle; coverage makes the finite-sample
 certificate valid. When $Z$ is \emph{not} risk-aligned, no label-free rule can recover $\sign\Delta$
-(Lemma~\ref{lem:nonid}) and the certificate must abstain.
+(Theorem~\ref{lem:nonid}) and the certificate must abstain.
 
 \begin{center}\fbox{\parbox{0.95\linewidth}{\small
 \textbf{What ``label-free'' means.} No target/test labels at deploy; labeled source and
@@ -259,22 +225,96 @@ unlabeled batches, predictions, entropy, drift, and update statistics. The metho
 source/validation calibration split, never in the deployment batch or held-out test decision.}}
 \end{center}
 
+\begin{center}\fbox{\parbox{0.95\linewidth}{\small
+\textbf{K-Bound in one sentence.} The true adaptation-benefit sign is recoverable only when
+label-free evidence exceeds the uncertainty created by calibration drift; otherwise the correct
+action is abstention.}}
+\end{center}
+
+\paragraph{Four quantities that must not be confused.}
+\begin{center}\footnotesize
+\begin{tabular}{@{}lp{0.3\linewidth}lp{0.26\linewidth}@{}}
+\toprule
+Symbol & Meaning & At deploy? & Role \\
+\midrule
+$M$ & observable evidence margin & yes & evidence toward adapt/freeze \\
+$\gamma$ & realized calibration drift & no & can reverse the benefit sign \\
+$\beta$ & declared bound on $|\gamma|$ & externally supplied & population frontier \\
+$\varepsilon$ & uncertainty radius from held-out residuals & estimated pre-deploy & finite-sample certificate \\
+\bottomrule
+\end{tabular}
+\end{center}
+\noindent $\varepsilon$ is an operational radius calibrated from residuals; it is \emph{not} an
+estimate of the worst-case drift $\beta$.
+
 \begin{definition}[Regimes]
 \emph{Knowably helpful}: evidence certifies $\Delta>0$ (adapt).
 \emph{Knowably harmful}: evidence certifies $\Delta<0$ (freeze).
 \emph{Unknowable}: the same $Z$ is compatible with both signs (abstain).
 \end{definition}
 
-\begin{lemma}[Non-identifiability forces abstention]\label{lem:nonid}
-There exist worlds $P_T^1,P_T^2$ with $\Law(Z\mid P_T^1)=\Law(Z\mid P_T^2)$ but
-$\sign\Delta_1=-\sign\Delta_2\neq0$. No label-free rule can be correct in both; any
-valid rule must abstain on matched evidence with probability at least $1-2\alpha$
-when false-adapt and false-freeze are each controlled at $\alpha$.
-\end{lemma}
+\begin{theorem}[Matched evidence forces abstention]\label{lem:nonid}
+There exist worlds $P_T^1,P_T^2$ in the declared class with
+$\Law(Z\mid P_T^1)=\Law(Z\mid P_T^2)$ but $\sign\Delta_1=-\sign\Delta_2\neq0$. No label-free rule
+can be correct in both; any rule with false-adapt and false-freeze each controlled at $\alpha$
+must abstain on matched evidence with probability at least $1-2\alpha$.
+\end{theorem}
 
-\begin{theorem}[K-Bound certificate and benefit-sign frontier]\label{thm:headline}
-Suppose $\widehat\Delta(z)$ satisfies $\Pr[|\widehat\Delta-\Delta|\le\varepsilon]\ge1-\alpha$.
-The rule
+\noindent\emph{Intuition.} Two target worlds can induce identical label-free evidence while
+adaptation helps in one and harms in the other; a rule that controls false adaptation and false
+freezing must abstain there. \emph{Why it is true:} (1)~a swap construction on the disagreement
+region produces two admissible worlds with the same evidence law and opposite benefit signs;
+(2)~any label-free rule sees the same $Z$-law in both, so its action distribution is identical;
+(3)~each committed action is a false commitment in one of the two worlds, so control at level
+$\alpha$ in both forces abstention with probability $\ge1-2\alpha$. \emph{Scope:} an
+impossibility over the declared class $\mathcal C_\beta$, not a statement about any single fixed
+target.
+
+\begin{theorem}[Exact benefit-sign frontier]\label{thm:headline}
+On the disagreement region $D=\{x:f_0(x)\neq f_a(x)\}$, write $M=\E[s\mid D]-\tfrac12$ for a
+source-calibrated score $s$ of $f_a$ and $\gamma=\E[\eta_a-s\mid D]$ for the \emph{(unobserved)}
+calibration drift. Then
+\[
+\sign\Delta=\sign(M+\gamma),\qquad |\gamma|\le\beta,
+\]
+and over the declared target class $\mathcal C_\beta=\{P_T:|\gamma|\le\beta\}$ with supplied
+drift budget $\beta\ge0$, the benefit sign is label-free identifiable \emph{if and only if}
+\[
+|M|>\beta .
+\]
+\end{theorem}
+
+\begin{center}\footnotesize
+\begin{tabular}{@{}lll@{}}
+\toprule
+Region & Meaning & Action \\
+\midrule
+$M>\beta$ & allowed drift cannot flip the positive sign & \textsc{adapt} \\
+$M<-\beta$ & allowed drift cannot flip the negative sign & \textsc{freeze} \\
+$|M|\le\beta$ & drift can flip the sign & \textsc{abstain} \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\noindent\emph{Intuition.} The decision is safe exactly when the observable margin clears the
+admitted drift, and impossible when drift can dominate it. \emph{Why it is true:} (1)~the
+disagreement-region reduction confines the benefit to $D$ and yields the split-observable
+decomposition $\sign\Delta=\sign(M+\gamma)$; (2)~if $|M|>\beta$, every admissible drift leaves
+the sign of $M+\gamma$ equal to that of $M$, so the sign is a function of observables; (3)~if
+$|M|\le\beta$, two admissible drifts realize opposite signs on matched evidence and
+Theorem~\ref{lem:nonid} applies. \emph{Scope:} population-level and exact in both directions;
+$\beta$ must be externally justified for the deployment class (full dichotomy:
+Appendix~\ref{app:theory-full}). \emph{Worked example.} (A)~$M{=}0.18$, $\beta{=}0.10$:
+$M-\beta=0.08>0$, so adaptation stays beneficial under every allowed drift---\textsc{adapt}.
+(B)~$M{=}0.07$, $\beta{=}0.10$: $M+\gamma$ may be negative or positive, so the sign is not
+identifiable---\textsc{abstain}.
+
+\begin{theorem}[Finite-sample adapt/freeze/abstain certificate]\label{thm:certificate}
+Suppose the benefit estimate satisfies coverage
+\[
+\Pr\!\left[\,|\widehat\Delta-\Delta|\le\varepsilon\,\right]\ \ge\ 1-\alpha .
+\]
+Then the rule
 \[
 g(Z)=\begin{cases}
 \textsc{adapt} & \widehat\Delta-\varepsilon>0,\\
@@ -282,26 +322,29 @@ g(Z)=\begin{cases}
 \textsc{abstain} & \text{otherwise},
 \end{cases}
 \]
-controls the \emph{marginal, unconditional} false-adapt and false-freeze probabilities at level
-$\alpha$---$\mathrm{FA}_{\mathrm u}=\Pr[\text{adapt},\,\Delta\le0]\le\alpha$ under the conformal coverage
-assumption (\S\ref{sec:method}; the conditional rate $\mathrm{FA}_{\mathrm c}$ is \emph{not}
-$\alpha$-bounded and is reported empirically).
-On the disagreement region $D=\{x:f_0(x)\neq f_a(x)\}$, write
-$M=\E[s\mid D]-\tfrac12$ for a source-calibrated score $s$ of $f_a$ and
-$\gamma=\E[\eta_a-s\mid D]$ for the \emph{(unobserved)} calibration drift, so that
-$\sign\Delta=\sign(M+\gamma)$. Over a declared target class
-$\mathcal C_\beta=\{P_T:|\gamma|\le\beta\}$ with a supplied drift budget $\beta\ge0$, the
-benefit sign is label-free identifiable \emph{if and only if} $|M|>\beta$ (exact frontier).
-Here $\beta$ is the externally justified worst-case drift the deployment class admits,
-$\gamma$ is the unknown population-drift realization it bounds, and the empirical radius
-$\varepsilon$ that \textsc{KGA} uses is an operational uncertainty radius calibrated from held-out
-residuals---under the stated exchangeability and risk-alignment assumptions it provides
-finite-sample coverage for the deployment class, but it is \emph{not} a direct estimate of the
-worst-case drift $\beta$.
-Intuitively, the decision is safe when the observable margin clears the admitted drift and
-impossible when drift can dominate it---the obstruction no checkable assumption removes in
-full generality (Lemma~\ref{lem:nonid}; full dichotomy: Appendix~\ref{app:theory-full}).
+controls both marginal error probabilities:
+\[
+\Pr[\textsc{adapt},\,\Delta\le0]\le\alpha,
+\qquad
+\Pr[\textsc{freeze},\,\Delta\ge0]\le\alpha .
+\]
 \end{theorem}
+
+\begin{center}\fbox{\parbox{0.95\linewidth}{\small
+\textbf{Warning.} This theorem controls the \emph{marginal, unconditional} false-adapt and
+false-freeze probabilities ($\mathrm{FA}_{\mathrm u}$). It does \emph{not} bound the conditional
+false-adapt rate among committed \textsc{adapt} decisions,
+$\mathrm{FA}_{\mathrm c}=\Pr[\Delta\le0\mid\textsc{adapt}]$, which is reported empirically.}}
+\end{center}
+
+\noindent\emph{Intuition.} A valid uncertainty radius turns the population frontier into an
+operational rule: commit only when the entire benefit interval lies on one side of zero.
+\emph{Why it is true:} (1)~on the coverage event, $\widehat\Delta-\varepsilon>0$ implies
+$\Delta>0$; (2)~a false adapt therefore requires the coverage event to fail; (3)~that failure has
+probability at most $\alpha$, and symmetrically for freeze. \emph{Scope:} requires exchangeable
+calibration pairs, risk-aligned evidence, and bounded benefits (\S\ref{sec:method});
+$\varepsilon$ is an operational surrogate valid under these assumptions---not the frontier budget
+$\beta$.
 
 \begin{corollary}[Unjustified assumptions $\Rightarrow$ abstain]\label{cor:abstain-valid}
 The certificate's false-adapt guarantee holds only under the stated coverage/exchangeability and
@@ -314,18 +357,27 @@ unobservable, so this is a statement about \emph{assumptions}, not about observi
 $|\widehat\Delta-\Delta|$.)
 \end{corollary}
 
-Full proofs, rate theorems, one-bit dichotomy, and validators are in
-Appendix~\ref{app:theory-full}. One previously open piece is now settled: the weakest label-free
-class on which one declared bit certifies the benefit sign is characterized \emph{unconditionally} as
-an explicit finite family of dominance polytopes (Appendix~\ref{app:weakest},
-Theorem~\ref{thm:uncond-weakest}), with General Position recovered as the collapsing face. The
-certificate is, moreover, \emph{minimax order-optimal} on the identifiable side---its sample
-complexity matches a two-point information-theoretic lower bound up to a universal constant---and its
-false-adapt guarantee extends to anytime-valid streaming and to family-wise selection over a
-candidate panel (extended long version). Wave~4 closes the remaining theory frontier within
-stated dichotomies: exact $3$-world minimax constant, margin-computability dichotomy,
-multiclass capacity impossibility without R1/R2, and regression bracketing (see
-Appendix~\ref{app:theory-full} and the long paper \texttt{kbound.tex}).
+\paragraph{How the pieces fit.}
+\begin{center}\small
+disagreement-region reduction $\rightarrow$ matched-evidence ambiguity $\rightarrow$
+\textbf{Thm.~\ref{lem:nonid}} (abstention necessity) \\[2pt]
+$\rightarrow$ split-observable decomposition $\sign\Delta=\sign(M+\gamma)$ $\rightarrow$
+\textbf{Thm.~\ref{thm:headline}} ($|M|>\beta$ frontier) \\[2pt]
+$\rightarrow$ coverage condition $\rightarrow$ \textbf{Thm.~\ref{thm:certificate}}
+(finite-sample certificate)
+\end{center}
+
+\paragraph{Extensions.} One-bit orientation---with the weakest one-bit class characterized
+unconditionally as a finite family of dominance polytopes (Appendix~\ref{app:weakest},
+Theorem~\ref{thm:uncond-weakest})---minimax order-optimality on the identifiable side,
+multicandidate family-wise routing, anytime-valid streaming, and the Wave-4 dichotomies (exact
+three-world minimax constant, margin computability, multiclass capacity, regression bracketing)
+are proved and validated in Appendix~\ref{app:theory-full} and the long manuscript
+(\texttt{kbound.tex}). They strengthen the framework but are not required to understand the main
+K-Bound result. The streaming form is demonstrated on real data: on the native
+$35{,}370$-image iWildCam stream ($45$ windows, $75.6\%$ harmful), the betting e-process detects
+continual-Tent collapse at window~$6$ with anytime false-adapt $0$, and the resulting gate value
+($0.6995$) ties the oracle policy exactly (pre-registered).
 
 \section{Method: \textsc{KGA}}\label{sec:method}
 \textsc{KGA} turns the frontier certificate into a deployable rule. It is the only headline
@@ -372,7 +424,7 @@ empirical coverage meets.
 \end{algorithm}
 
 On the good event $|\widehat\Delta-\Delta|\le\varepsilon$, committing adapt only when
-$L>0$ implies $\Delta>0$ (Theorem~\ref{thm:headline}). Assumptions: exchangeable
+$L>0$ implies $\Delta>0$ (Theorem~\ref{thm:certificate}). Assumptions: exchangeable
 calibration pairs, bounded benefits, and risk-aligned $Z$; no target labels at deploy.
 Overhead: one forward pass of $f_0$ and $f_a$ plus lightweight $\widehat\Delta$ evaluation.
 
@@ -391,7 +443,7 @@ risk-alignment assumptions---not the frontier itself. Confidence-thresholding (A
 agreement-trend selection (AGL) fit a scalar against a labeled or held-out signal and
 predict \emph{accuracy}; \textsc{KGA} certifies the benefit \emph{sign} with a boundary
 \emph{forced} by the identifiability budget, and---unlike any thresholded estimator---%
-\textsc{abstains} on the region where Lemma~\ref{lem:nonid} \emph{proves} no label-free
+\textsc{abstains} on the region where Theorem~\ref{lem:nonid} \emph{proves} no label-free
 rule can decide. The impossibility construction, not a tuned cutoff, is what separates
 \textsc{KGA} from ``estimate accuracy, then threshold.''
 
@@ -405,7 +457,7 @@ $g^\star=\mathbf1[\Delta>0]$; \emph{adapt rate} $\Pr[\text{adapt}]$ and \emph{co
 $\Pr[\text{adapt or freeze}]$ (one minus the abstain rate); and two false-adapt measures, reported
 separately---the \emph{unconditional} false-adapt probability
 $\mathrm{FA}_{\mathrm u}=\Pr[\text{adapt and }\Delta\le0]$ and the \emph{conditional} false-adapt
-rate $\mathrm{FA}_{\mathrm c}=\Pr[\Delta\le0\mid\text{adapt}]$. Theorem~\ref{thm:headline} bounds the
+rate $\mathrm{FA}_{\mathrm c}=\Pr[\Delta\le0\mid\text{adapt}]$. Theorem~\ref{thm:certificate} bounds the
 \emph{unconditional} probability, $\mathrm{FA}_{\mathrm u}\le\alpha$, under its coverage and
 risk-alignment assumptions; the per-dataset tables additionally list the empirical
 $\mathrm{FA}_{\mathrm c}$ among committed adapt decisions. The two false-adapt measures coincide
@@ -527,19 +579,26 @@ martingale entropy protection) and AETTA~\cite{lee2024aetta} (label-free accurac
 criterion \emph{before} computing any number (\texttt{MIXED\_BENCHMARK\_PROTOCOL.md}).
 All six policies consume the \emph{same} logged per-condition signals $Z$ and benefit $B$ from the
 locked CIFAR-10-C stress grid (Tent, $432$ conditions/seed, five seeds; harmful fraction
-${\approx}16$--$18\%$); only the decision rule differs. POEM and AETTA are faithful ports of their
-published protectors (documented simplifications: batch-summary entropy rather than per-sample streams).
+${\approx}16$--$18\%$); only the decision rule differs. The competitors are
+\emph{protocol-matched POEM-style and AETTA-style baselines}: ports of the published protectors
+onto this protocol with documented simplifications (batch-summary entropy rather than per-sample
+streams). Official per-sample POEM and dropout-based AETTA reproduction remains a camera-ready
+faithfulness check.
 
-\textbf{Verdict: WIN.} \textsc{KGA} lowers mean regret-to-oracle vs.\ both POEM and AETTA with
+\textbf{Verdict: WIN.} \textsc{KGA} lowers mean regret-to-oracle vs.\ both ported baselines with
 paired-bootstrap $95\%$ CIs entirely below zero and Holm correction ($\alpha{=}0.05$), at
 $\mathrm{FA}_{\mathrm u}{=}0\le\alpha$ (Table~\ref{tab:headtohead-poem-aetta}). POEM and AETTA
 false-adapt at ${\sim}24$--$25\%$ on the same stream---they lack the certificate's marginal
 false-adapt control. Secondary pooled sets (Tent+EATA, EATA alone) yield the same WIN verdict
-(\texttt{experiments/kbound/results/mixed\_headtohead\_v1/}).
+(\texttt{experiments/kbound/results/mixed\_headtohead\_v1/}). An independent post-hoc recomputation
+(paired bootstrap $10^4$, pre-registered) replicates all three configurations, with both regret-gap
+CIs below zero in each and $\mathrm{FA}_{\textsc{kga}}{=}0$ versus $11$--$33\%$ for the competitors
+(\texttt{research\_lock/WIN\_HUNT\_v3\_ARM\_F\_result.json}).
 
 \begin{table}[t]\centering\small
 \caption{\textbf{Pre-registered mixed head-to-head} (CIFAR-10-C stress, Tent, $432$ cond./seed,
-$5$ seeds). Regret-to-oracle$\downarrow$; $\mathrm{FA}_{\mathrm u}$ = unconditional false-adapt.
+$5$ seeds). POEM/AETTA rows are protocol-matched \emph{-style} ports, not official reproductions.
+Regret-to-oracle$\downarrow$; $\mathrm{FA}_{\mathrm u}$ = unconditional false-adapt.
 KGA vs.\ $X$: mean$(\mathrm{regret}_{\textsc{kga}}-\mathrm{regret}_X)$ with $95\%$ paired-bootstrap CI;
 WIN iff both CIs exclude $0$ and survive Holm.}
 \label{tab:headtohead-poem-aetta}
@@ -764,7 +823,20 @@ radius and are \textbf{withdrawn}. The corrected out-of-fold re-run
 $0.0632$ (always-adapt) and $0.0342$ (always-freeze), with regret gaps vs.\ always-freeze
 $+0.0283$ $[0.019,\,0.038]$ and vs.\ always-adapt $+0.0573$ $[0.043,\,0.072]$ (both CIs exclude
 zero; pooled false-adapt $0$). This is a \textbf{beats-both} on a \emph{constructed}
-cross-protocol aggregate---not a universal mixed-deployment win and not a natural-shift headline.
+cross-protocol aggregate.
+
+\paragraph{Universal single gate (pre-registered, 2026-07-03).} The per-dataset-gate caveat is
+closed by two subsequently pre-registered arms (bars frozen before scoring, each scored once;
+\texttt{research\_lock/WIN\_HUNT\_v2/v3\_PROTOCOL.yaml}): \emph{one} benefit model with
+\emph{one} pooled leave-one-out conformal radius, fit once on pooled dev records over the shared
+base-11 evidence and applied unchanged to the pooled held-out conditions. Three-source stream
+($n{=}143$): regret $0.0182$ vs.\ always-adapt $0.0632$ / always-freeze $0.0342$, both $95\%$
+CIs excluding zero, $\mathrm{FA}_{\mathrm u}{=}0.000$. Seven-source extension adding all four
+PACS leave-one-domain splits ($n{=}359$): regret $0.0183$ vs.\ $0.0404$ / $0.0282$, both CIs
+excluding zero, $\mathrm{FA}_{\mathrm u}{=}0.000$. The gate rides adaptation on Camelyon17,
+freezing on iWildCam/Office-Home, and no-harm ties across PACS. Honest scope: the stream
+composition is researcher-pooled; this is a certified heterogeneous-deployment win under a
+universal calibration, not a single-dataset natural-shift win.
 
 \paragraph{Supporting and negative regimes.}
 These tracks support Table~\ref{tab:regime-summary} but are not headline policy wins
@@ -809,7 +881,8 @@ $\mathrm{FA}_u \le \alpha$ (unconditional false-adapt) & theorem & valid coverag
 $\mathrm{FA}_c \le \alpha$ (conditional false-adapt) & \textbf{not claimed} & report $\mathrm{FA}_c$ descriptively only \\
 Natural-shift no-harm (5 benchmarks) & \textbf{headline empirical} & dev lock + held-out OOF radius \\
 Stress-grid beats-both (Tent/EATA) & confirmatory empirical & locked Protocol~A v1 stress grid \\
-Mixed vs POEM/AETTA (mixed harmful+helpful) & confirmatory empirical & pre-registered WIN (\S\ref{tab:headtohead-poem-aetta}) \\
+Mixed vs protocol-matched POEM-style/AETTA-style ports & confirmatory empirical & pre-registered WIN (\S\ref{tab:headtohead-poem-aetta}) \\
+Pooled 7-source beats-both, one universal gate & confirmatory empirical & pre-registered; researcher-pooled stream \\
 Universal improvement & \textbf{not claimed} & impossible in general \\
 $\varepsilon$ estimates population drift budget $\beta$ & \textbf{false} & $\beta$ is declared; $\varepsilon$ is empirical \\
 \bottomrule
@@ -825,18 +898,22 @@ are robust while SAR collapses and \textsc{KGA} beats both under a mechanism-fai
 (Table~\ref{tab:imagenetc-faithful}). Per-corruption CIFAR-10-C and helpful natural shifts are
 insurance regimes, not policy wins.
 
-\textbf{Real-shift scope.} Under a valid out-of-fold conformal radius, no natural shift is a
-beats-both: Office-Home and iWildCam are \emph{no-harm} (they beat always-adapt and tie always-freeze;
-Tables~\ref{tab:officehome-M}, \ref{tab:iwildcam-H}), so the beats-both wins are on the synthetic
-stress grids (CIFAR-10-C, ImageNet-C SAR). Camelyon17 Protocol~G is reclassified to an
+\textbf{Real-shift scope.} Under a valid out-of-fold conformal radius, no \emph{single-dataset}
+natural shift is a beats-both: Office-Home and iWildCam are \emph{no-harm} (they beat always-adapt
+and tie always-freeze; Tables~\ref{tab:officehome-M}, \ref{tab:iwildcam-H}), so the single-dataset
+beats-both wins are on the synthetic stress grids (CIFAR-10-C, ImageNet-C SAR). The exception is
+the pooled heterogeneous deployment: a single universal gate calibrated once beats both fixed
+policies across seven natural sources ($n{=}359$, pre-registered; \S\ref{sec:nat-shift-headline}),
+because pooling restores the mixed harmful+helpful composition the frontier requires; the stream
+composition is researcher-pooled. Camelyon17 Protocol~G is reclassified to an
 honest \emph{no-harm} result---its earlier $n{=}54$ beats-both pooled in-distribution
 \texttt{id\_val} into the held-out set and is withdrawn (Table~\ref{tab:camelyon17-G}). Earlier
 Camelyon Protocol~B/F runs and multicandidate routes are \textbf{diagnostics}, not alternate
 headline wins.
 
 \textbf{Theory and calibration.} The conformal radius assumes exchangeable calibration pairs;
-sign bracketing without structure is impossible (Theorem~\ref{thm:headline} and
-Appendix~\ref{app:theory-full}). \textsc{KGA}'s value scales with how often catastrophic,
+sign bracketing without structure is impossible (Theorems~\ref{lem:nonid}
+and~\ref{thm:headline}; Appendix~\ref{app:theory-full}). \textsc{KGA}'s value scales with how often catastrophic,
 detectable harm occurs---not with universal accuracy gains. On helpful-dominated shifts the
 resulting near-\emph{tie} with always-adapt reflects the certificate abstaining rather than
 committing harmful updates---\textsc{KGA} approximately matches the better policy, at most paying a
@@ -848,7 +925,12 @@ evidence regime (Appendix~\ref{sec:excluded-wins})---an instance of the \emph{un
 region Theorem~\ref{thm:headline} predicts, where the label-free margin falls below the
 calibration-drift budget; \textsc{KGA} correctly declines to commit, so this is the theory
 operating as designed, not a tuning failure, and richer label-free evidence is the natural
-future lever. iWildCam H v2 clears the certificate bar
+future lever. A calibrated-gate re-analysis refines this verdict: the self-normalized gate
+$\tau'$ rejects $83\%$ of co-adapted backbone panels but only $1/54$ independent panels, and
+under independent panels a certified selection arm reaches near-oracle regret ($0.0005$)---so
+part of the earlier ``mandatory abstention'' was a fixed-threshold artifact of co-adapted
+panels rather than pure unknowability (pre-registered; v1 fixed-$\tau^*$ arms still FAIL,
+FA $3.7$--$4.9\%$). iWildCam H v2 clears the certificate bar
 despite modest margin over always-freeze; intermediate-domain multicandidate routes do not
 (pooled false-adapt $\gg\alpha$).
 
@@ -858,7 +940,7 @@ seen from the operating side. Tying always-adapt on a helpful-dominated shift is
 guarantee \emph{holding}: one cannot beat an oracle that is already always-adapt. Declining
 ImageNet-R is the \emph{unknowable} branch firing, where the observable margin falls below the drift
 budget and \emph{no} label-free rule---however good the adapter---can decide the benefit sign
-(Lemma~\ref{lem:nonid}). The coverage drop is mandatory abstention, not a tuning loss: committing in
+(Theorem~\ref{lem:nonid}). The coverage drop is mandatory abstention, not a tuning loss: committing in
 the unknowable region would be a false-adapt. None can be removed without violating the impossibility
 result---a method that ``won everywhere'' would be claiming to decide the sign of an unidentifiable
 quantity. The one axis that genuinely improves all three is a \emph{richer label-free evidence map},
@@ -888,6 +970,10 @@ headline runs are reproduced via \texttt{bash docs/research/kbound/scripts/kbtra
 (\texttt{protocol-h-v2}, \texttt{protocol-m-v2}, stress-grid targets); theory validators and
 CPU experiments run from the bundled reproduction driver. The core certificate module is
 packaged as an installable module in the anonymized repository (\texttt{docs/research/kbound/kbound\_pkg/}).
+A kernel-checked Lean~4 formalization of the \emph{algebraic and finite-testing core} of K-Bound
+accompanies the repository ($52$ theorems, no \texttt{sorry}/\texttt{admit}/project-defined
+axioms); deployment-facing assumptions---exchangeability, calibration transfer, risk
+alignment---remain explicit assumptions outside the formalization.
 
 \section{Conclusion}
 K-Bound reframes test-time adaptation as an identifiability-limited decision problem: adapt
@@ -896,8 +982,10 @@ decision. The theory shows that this abstention region is not merely conservativ
 label-free evidence with opposite adaptation benefit, no valid label-free rule can safely commit.
 \textbf{Our headline empirical result is uniform no-harm on five held-out natural shifts} under a
 valid out-of-fold radius---\textsc{KGA} prevents harmful adaptation without sacrificing the
-near-oracle policy on helpful-dominated shifts. Wins over trivial policies and POEM/AETTA appear only
-in identifiable mixed harmful+helpful regimes, exactly where the frontier predicts knowability.
+near-oracle policy on helpful-dominated shifts. Wins over trivial policies and protocol-matched
+POEM-style/AETTA-style baselines appear only in identifiable mixed harmful+helpful regimes---and,
+under a single pre-registered universal gate, on the pooled seven-source heterogeneous
+deployment---exactly where the frontier predicts knowability.
 These results suggest that future TTA systems should expose not only an adaptation objective, but
 also a validity layer that decides whether adaptation is knowable before deployment.
 

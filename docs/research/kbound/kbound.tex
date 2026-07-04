@@ -1470,6 +1470,24 @@ universal calibration, not a single-dataset natural-shift win. Verdicts:
 \texttt{research\_lock/WIN\_HUNT\_v2\_ARM\_A\_result.json},
 \texttt{WIN\_HUNT\_v3\_ARM\_E\_result.json}.
 
+\paragraph{Report-all-arms: the rich-evidence Camelyon re-run FAILs (pre-registered, scored once).}
+The companion GPU arm (\texttt{WIN\_HUNT\_v2} Arm~B) asked whether \emph{richer evidence} unlocks
+the single-dataset Camelyon17 win that v1 could not produce: a fresh $4$-seed run
+(Tent/EATA/SAR, $n{=}432$ records) logging the full $30$-dimensional evidence (base panel $+$
+$13$-dim \texttt{ev2}: MaNo, nuclear norm, per-sample quantiles) with the self-normalized
+$\tau'$ gate. \textbf{Verdict: FAIL.} Validity holds
+($\mathrm{FA}_{\mathrm u}{=}0.044\le\alpha{=}0.10$) and \textsc{KGA} beats always-freeze
+(gap $-0.0223$, CI $[-0.0264,-0.0183]$), but the $\tau'$ gate rejects risk-alignment on $77\%$
+of gated records, driving abstention to $59.5\%$; on this helpful-dominated dataset the
+abstention premium costs real accuracy, and \textsc{KGA}'s regret ($0.0292$) is \emph{worse}
+than always-adapt ($0.0129$; gap CI $[0.0095,0.0231]$ excludes zero). Richer evidence therefore
+does not move Camelyon17 across the frontier---the v1 mechanism (evidence-limited, not
+gate-limited) stands, and off the identifiable regime the certificate behaves exactly as the
+theory prescribes: it stays valid and pays abstention cost rather than committing uncertifiable
+adaptations. The headline Camelyon17 claim is unchanged (Protocol~G no-harm under the canonical
+dev-locked gate); this arm is reported because its bar was frozen before scoring
+(\texttt{experiments/kbound/results/natural\_win\_v2\_camelyon/result\_a4929009.json}).
+
 \section{Excluded wins and regime boundaries}\label{sec:excluded-wins}
 Several benchmarks flag beats-both under alternate routes or adapters but do \emph{not} survive the
 canonical Protocol~H/M v2 analysis under a valid out-of-fold radius, where the natural-shift results

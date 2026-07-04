@@ -15,15 +15,25 @@ import KBound.Probability.ConformalExchangeability
 import KBound.Probability.EProcess
 import KBound.Probability.LeCam
 import KBound.Probability.Rates
+import KBound.Probability.MeasureCertificate
+import KBound.Probability.RankCounting
+import KBound.Probability.UniformConformal
 
 /-!
-# K-Bound paper theorem index (Wave 4 — strict-core closure)
+# K-Bound paper theorem index (Wave 4 — strict-core closure; Wave 5 — measure layer)
 -/
 
 namespace KBoundTheoremMap
 
 #check KBound.cert_false_adapt_sound
 #check KBound.cert_false_freeze_sound
+-- Wave 5: measure-theoretic certificate + uniform-index conformal coverage
+#check KBound.measure_false_adapt_le_alpha
+#check KBound.measure_false_freeze_le_alpha
+#check KBound.card_high_strictRank_le
+#check KBound.uniformIndex_miss_le
+#check KBound.uniformIndex_coverage_ge
+#check KBound.uniformIndex_false_adapt_le
 #check KBound.gate_regret_identity
 #check KBound.forced_abstention_probability
 #check KBound.matched_opposite_worlds_force_abstain
