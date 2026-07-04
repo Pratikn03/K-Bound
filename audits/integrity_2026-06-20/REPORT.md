@@ -1,5 +1,9 @@
 # K-Bound Integrity Cleanup Pass — 2026-06-20
 
+> Redaction note (2026-07-03): the name of the legacy companion project is redacted as
+> "legacy-project" throughout this audit trail for the standalone public release.
+> No verdict, number, or finding was altered.
+
 Production-readiness integrity pass on `/Volumes/T9/uav/AutoML_Flagship_V8`.
 Run on the host (desktop-commander). Every changed verdict was **re-derived from the
 underlying numbers**, nothing fabricated, every file backed up before editing, full
@@ -89,29 +93,29 @@ both on regret but false-adapting 25% returns `beats_both_regret_only=True`,
 
 ---
 
-## TASK 2 — K-Bound made self-contained from `src/elara` + provenance
+## TASK 2 — K-Bound made self-contained from `src/legacy-project` + provenance
 
-**Live cross-imports into `src/elara/` from `kga/` + `experiments/kbound/`:** exactly **one**
+**Live cross-imports into `src/legacy-project/` from `kga/` + `experiments/kbound/`:** exactly **one**
 (found by runtime import trace — `rg` missed it because the file is git-ignored):
 
-* `experiments/kbound/vendored_from_elara/theory/__init__.py:3` did
-  `from elara.theory.theorem_registry import …`, reaching back into the real ELARA package
+* `experiments/kbound/vendored_from_legacy-project/theory/__init__.py:3` did
+  `from legacy-project.theory.theorem_registry import …`, reaching back into the real LEGACY-PROJECT package
   while an **identical** vendored sibling (`theorem_registry.py`, 259 lines, stdlib-only,
   same symbols) sat unused. **Fix:** switched to `from .theorem_registry import …`.
 
-All other vendored `__init__`s already use relative imports; the remaining `elara` strings
+All other vendored `__init__`s already use relative imports; the remaining `legacy-project` strings
 in the vendored tree are provenance *path literals* in the registry data, not imports.
 
-**Standalone proof:** with an import hook that raises on any `import elara*`, the full `kga`
+**Standalone proof:** with an import hook that raises on any `import legacy-project*`, the full `kga`
 package + the vendored `theory`/`certification`/`drift` trees import cleanly, the registry
 loads (10 theorems), and `kga.certificate.empirical_bernstein` runs →
-**"K-Bound imports/runs with src/elara BLOCKED (zero dependency)" PASS**.
+**"K-Bound imports/runs with src/legacy-project BLOCKED (zero dependency)" PASS**.
 
 **Provenance note** added where the certificate is defined (`kga/certificate.py`): a
 paper-ready acknowledgment in the module docstring plus a one-line comment at
 `empirical_bernstein`, stating the empirical-Bernstein (Maurer-Pontil 2009) certificate is
-**shared with the ELARA companion work** (ELARA's `switching_certificate` delegates to this
-`kga` function as the single source of truth) — honest attribution, not hidden. **No ELARA
+**shared with the LEGACY-PROJECT companion work** (LEGACY-PROJECT's `switching_certificate` delegates to this
+`kga` function as the single source of truth) — honest attribution, not hidden. **No LEGACY-PROJECT
 file was modified.**
 
 ---
@@ -139,11 +143,11 @@ file was modified.**
   gate-consistency violations; the 154 still-regret-only-True nodes all carry a by-design gate.
 * All 4 patched JSON files re-validate as well-formed JSON.
 * Edited code files `py_compile` clean; gate behavioral test PASS.
-* Standalone import (elara blocked) PASS.
+* Standalone import (legacy-project blocked) PASS.
 * Every edited file diffed against its pre-edit backup → only the intended changes; the
   large `git diff` vs HEAD is **pre-existing** uncommitted work, not from this pass.
 
 Files changed by this pass: 4 result JSONs (verdicts corrected), 4 Python writers (gate /
 clarifying comment), 1 vendored `__init__.py` (self-containment), `kga/certificate.py`
 (provenance), `DATA.md` (§3b), `CLAIMS_CALIBRATION.md` (rename). No paper claims/numbers
-touched beyond these three integrity fixes; no `src/elara` file touched.
+touched beyond these three integrity fixes; no `src/legacy-project` file touched.
