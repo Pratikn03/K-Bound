@@ -83,7 +83,7 @@ exceeds the calibration-drift budget on the disagreement region, i.e.\ $|M|>\bet
 label-free evidence but opposite benefit, so no label-free rule can be correct in both
 (Theorem~\ref{lem:nonid}) and abstention is forced. \textsc{KGA}
 (Algorithm~\ref{alg:kga}), a benefit estimator plus a conformal radius wrapped around any
-adapter (Tent, EATA, SAR), operationalizes the frontier as a finite-sample certificate holding
+adapter (Tent, EATA, SAR), realizes the three-way decision as a finite-sample certificate---a direct benefit estimate with a calibrated radius, not a numerical $|M|{>}\beta$ test---holding
 false-adapt and false-freeze at level $\alpha$ (Theorem~\ref{thm:certificate}).
 
 The evidence follows the regime map in Table~\ref{tab:regime-summary}. \emph{Identifiable mixed}
@@ -105,7 +105,7 @@ dominance.
 \begin{enumerate}
 \item \textbf{Problem framing.} Label-free TTA as a certified \emph{adapt/freeze/abstain} decision on the sign of the adaptation benefit.
 \item \textbf{Exact frontier.} The benefit sign is label-free identifiable \emph{iff} $|M|>\beta$; below the frontier, matched evidence forces abstention (Theorems~\ref{lem:nonid},~\ref{thm:headline}; \S\ref{sec:theory}).
-\item \textbf{Finite-sample certificate.} \textsc{KGA} controls the unconditional false-adapt/false-freeze rate at level $\alpha$ under stated coverage (Theorem~\ref{thm:certificate}); existing label-free estimators are its $\beta{=}0$ face.
+\item \textbf{Finite-sample certificate.} \textsc{KGA} controls the unconditional false-adapt/false-freeze rate at level $\alpha$ under stated coverage (Theorem~\ref{thm:certificate}); existing label-free estimators can be read as its $\beta{=}0$ plug-in, committing under an implicit negligible-drift assumption.
 \item \textbf{Drop-in method.} \textsc{KGA} wraps Tent/EATA/SAR without changing their adaptation objectives (Algorithm~\ref{alg:kga}; \S\ref{sec:method}).
 \item \textbf{Uniform empirical accounting.} A nine-track panel reports the same metrics, split logic, and evidence tier for every benchmark; only locked or reconciled results are promoted to empirical claims (\S\ref{sec:exp}).
 \end{enumerate}
@@ -188,7 +188,7 @@ Offline evaluation & no & no & yes, after decisions \\
 \end{table}
 
 \subsection{Assumptions and Validity Scope}
-The theory and the finite-sample certificate rely on distinct assumptions. \emph{Risk alignment} determines whether the evidence can identify or bound the benefit sign over the declared target class. \emph{Coverage} determines whether the empirical interval contains the true benefit at the stated rate. \emph{Exchangeability} (or an explicit shift correction) connects calibration residuals to deployment residuals. The adapter, evidence schema, estimator, and calibration protocol must be fixed before held-out scoring. If these conditions cannot be justified, the theorem does not license a commitment; the operational fallback is freeze or abstain.
+The theory and the finite-sample certificate rely on distinct assumptions. \emph{Risk alignment} determines whether the evidence can identify or bound the benefit sign over the declared target class. \emph{Coverage} determines whether the empirical interval contains the true benefit at the stated rate. \emph{Exchangeability} (or an explicit shift correction) connects calibration residuals to deployment residuals. The adapter, evidence schema, estimator, and calibration protocol must be fixed before held-out scoring. If these conditions cannot be justified, the theorem does not license a commitment; the operational fallback is freeze or abstain. Risk alignment is an assumption on the deployment class, not a property certified by fitting a benefit regressor: support and residual diagnostics may reject implausible evidence maps, but they do not verify it universally.
 
 \begin{table}[t]\centering\scriptsize
 \caption{Assumptions, their role, and the safe response when they are unsupported.}
@@ -235,22 +235,27 @@ The binary $0$--$1$ loss case gives the cleanest frontier because, on $D=\{x:f_0
 \]
 so the decision becomes an ordinal comparison of the two disagreement-region accuracies. For squared-loss regression, the risk difference reduces to a disagreement-local moment. The main theorem uses a split-observable decomposition $\sign(\Delta)=\sign(M+\gamma)$; complete multiclass and regression statements remain in the appendix.
 
+\begin{proposition}[Multiclass benefit decomposition]\label{prop:multiclass}
+For multiclass $0/1$ loss, $\Delta=\mu_T(D)(p_a-p_0)$ with $p_j=\Pr_T(f_j(X){=}Y\mid D)$. If the
+disagreement-region accuracy gap admits a split-observable decomposition
+$p_a-p_0=M_{\mathrm{mc}}+\gamma_{\mathrm{mc}}$ with $|\gamma_{\mathrm{mc}}|\le\beta_{\mathrm{mc}}$, then
+$\sign\Delta$ is label-free identifiable over the declared class if and only if
+$|M_{\mathrm{mc}}|>\beta_{\mathrm{mc}}$.
+\end{proposition}
+\noindent In the multiclass experiments \textsc{KGA} estimates $\Delta$ directly through the benefit
+proxy $\widehat\Delta=h_\theta(Z)$ (not $M_{\mathrm{mc}}$ itself); the binary frontier is the
+identifiability backbone, and the multiclass results are evaluated through this benefit-estimation route.
+
 \begin{figure}[t]\centering
 \includegraphics[width=0.95\linewidth]{figures/fig_frontier_schematic.png}
 \caption{\textbf{The benefit-sign frontier.} The sign of the adaptation benefit is identifiable from
-label-free evidence iff the observable margin $|\widehat{M}|$ exceeds the calibration-drift budget
+label-free evidence iff the population margin $|M|$ exceeds the calibration-drift budget
 $\beta$. Outside the band \textsc{KGA} \textsc{adapt}s (knowably helpful) or \textsc{freeze}s (knowably harmful);
 inside the band (the unknowable region), abstention is information-theoretically forced.
-($\widehat M$ is the finite-sample estimate of the population margin $M$ of
-Theorem~\ref{thm:headline}.)}
+(This is the \emph{population} identifiability frontier of Theorem~\ref{thm:headline}; the deployed
+finite-sample rule instead thresholds $\widehat\Delta\pm\varepsilon$, Fig.~\ref{fig:certificate}.)}
 \label{fig:frontier}
 \end{figure}
-
-Source $P_S(X,Y)$ has labels at train/validation; target $P_T(X,Y)$ exposes only $P_T(X)$
-at test time. The central question is when $\sign\Delta$ is recoverable from label-free
-evidence $Z$ alone. Risk alignment (Definition~\ref{def:risk-align}) governs identifiability;
-coverage governs the finite-sample certificate (Theorem~\ref{thm:certificate}). When $Z$ is not
-risk-aligned, Theorem~\ref{lem:nonid} forces abstention.
 
 \subsection{Formal Setup}
 \input{paper/sections/theory_setup}
@@ -271,14 +276,11 @@ $\rightarrow$ coverage condition $\rightarrow$ \textbf{Thm.~\ref{thm:certificate
 (finite-sample certificate)
 \end{center}
 
-\subsection{Extensions and Deferred Results} One-bit orientation (with the weakest one-bit class characterized
-unconditionally as a finite family of dominance polytopes; Appendix~\ref{app:weakest},
-Theorem~\ref{thm:uncond-weakest}), minimax order-optimality on the identifiable side,
-multicandidate family-wise routing, anytime-valid streaming, and the Wave-4 dichotomies (exact
-three-world minimax constant, margin computability, multiclass capacity, regression bracketing)
-are proved and validated in Appendix~\ref{app:theory-full} and the long manuscript
-(\texttt{kbound.tex}). They strengthen the framework but are not required to understand the main
-K-Bound result. The streaming form is demonstrated on real data: on the native
+\subsection{Extensions and Deferred Results}
+Additional results---minimax lower bounds on the identifiable side, anytime-valid sequential and
+multicandidate-routing certificates, and structural limits on the missing orientation
+information---are stated and proved in the long manuscript (\texttt{kbound.tex}). They strengthen
+the framework but are not required to understand the main K-Bound result. The streaming form is demonstrated on real data: on the native
 iWildCam stream (raw stream artifact offline; replay pending), the betting e-process detects
 continual-Tent collapse with anytime false-adapt $0$, and the gate ties the oracle policy
 (pre-registered). \drafttodo{Streaming window/gate figures ($35{,}370$-image run) withheld: no saved result artifact was found on T9; re-run \texttt{gapclose\_wave5/win\_hunt\_D\_anytime\_stream.py} to produce and lock one.}
@@ -496,7 +498,7 @@ For every track, the source checkpoint, candidate adapter, update mode, learning
 
 \begin{table}[t]\centering\scriptsize
 \caption{Per-track calibration and scoring configuration ($\alpha{=}0.10$ throughout; benefit
-estimator identical across tracks, \S\ref{sec:method}). Backbones: ResNet-18 (CIFAR), ResNet-50
+estimator family and calibration recipe are used across tracks, with parameters refit per dataset and candidate adapter, \S\ref{sec:method}). Backbones: ResNet-18 (CIFAR), ResNet-50
 (ImageNet-C); the natural-shift backbones follow the WILDS/DomainBed defaults per track.}
 \label{tab:config-table}
 \begin{tabular}{@{}p{0.24\linewidth}p{0.24\linewidth}p{0.20\linewidth}p{0.19\linewidth}@{}}
@@ -640,8 +642,9 @@ $\alpha$, so a deployer chooses the operating point rather than accepting a fixe
 (Table~\ref{tab:gates}): a confidence gate (adapt iff adaptation raised mean confidence), an entropy
 gate (adapt iff it lowered entropy---Tent's own objective), a drift/KL threshold, an ATC-style
 accuracy-prediction gate, \textsc{KGA} \emph{without} its conformal radius (adapt iff
-$\widehat\Delta>0$), and the full certificate. Only the certificate provides a finite-sample
-false-adapt \emph{guarantee}, and it attains zero observed $\mathrm{FA}_{\mathrm u}$ on this grid while
+$\widehat\Delta>0$), and the full certificate. Only KGA is derived from a coverage-based false-adapt certificate; on this stress grid the
+leave-one-cell-out radius provides strong \emph{empirical} coverage, not the exact distribution-free
+validity of clean split conformal or jackknife$+$. It attains zero observed $\mathrm{FA}_{\mathrm u}$ on this grid while
 staying near-oracle on regret (the radius-free variant keeps $\mathrm{FA}_{\mathrm u}{=}0.049{<}\alpha$
 empirically, but with no such guarantee). The
 confidence/entropy gates false-adapt on ${\sim}74\%$ of harmful cells; the drift threshold, tuned to
@@ -1151,8 +1154,8 @@ Tent/EATA/SAR). The certificate is a genuine safety knob, not one tuned point.
 \textbf{(ii) Estimator.} Swapping the benefit regressor (Table~\ref{tab:abl-estimator}) leaves the
 false-adapt guarantee intact: gradient boosting ($0.0017$), random forest ($0.0015$), and ridge
 linear ($0.0041$) all keep $\mathrm{FA}_{\mathrm u}{\le}0.002$; a small MLP over-abstains
-(regret $0.014$, coverage $0.36$) on this small calibration set. Safety is a property of the radius,
-not of the specific estimator.
+(regret $0.014$, coverage $0.36$) on this small calibration set. On this locked stress grid the calibrated radius preserves low false-adapt across the tested
+estimator families, while estimator choice mainly changes coverage and regret.
 
 \textbf{(iii) Evidence family.} Dropping any single evidence family (frozen, adapted, change, drift,
 or update) keeps regret within $[0.0013,0.0019]$ at $\mathrm{FA}_{\mathrm u}{=}0$: no single family
@@ -1284,7 +1287,7 @@ cross-seed certificate bar ($\mathrm{FA}_{\mathrm u}=0.444$). These are useful b
 not failed headline experiments: they show that a low-margin signal should not be promoted merely
 because one split or one candidate looks favorable.
 
-\textbf{The limitations are the frontier, not flaws.} The regime dependencies above are not three
+\textbf{Many limitations are the frontier, not flaws.} Several no-harm and abstention outcomes are theorem-imposed, whereas others---baseline faithfulness, seed count, and replay status---are ordinary empirical limitations requiring further validation. The regime dependencies above are not three
 independent weaknesses but one phenomenon: the benefit-sign frontier (Theorem~\ref{thm:headline})
 seen from the operating side. Tying always-adapt on a helpful-dominated shift is the no-harm
 guarantee \emph{holding}: one cannot beat an oracle that is already always-adapt. Declining
@@ -1326,8 +1329,8 @@ axioms). The certificate's probability layer is machine-checked as well: coverag
 unconditional false-adapt/false-freeze bound over an \emph{arbitrary probability measure}
 (\texttt{measure\_false\_adapt\_le\_alpha}), and split-conformal coverage holds in the
 conditional-on-the-bag uniform-rank model
-(\texttt{uniformIndex\_false\_adapt\_le}); we are not aware of a prior machine-checked
-conformal-coverage guarantee in a proof assistant (kernel-checked generalization bounds exist,
+(\texttt{uniformIndex\_false\_adapt\_le}); to our knowledge, machine-checked
+conformal-coverage guarantees remain uncommon in a proof assistant (kernel-checked generalization bounds exist,
 e.g.~\cite{zhang2025leanrademacher}, but not conformal coverage). General exchangeable-process
 coverage, and the remaining deployment-facing assumptions (calibration transfer and risk
 alignment) remain explicit assumptions outside the formalization.

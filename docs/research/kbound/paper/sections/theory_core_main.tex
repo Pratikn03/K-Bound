@@ -12,8 +12,12 @@ assume $|\gamma|\le\beta$.
 \end{lemma}
 \begin{proof}
 On $D$ exactly one of $f_0,f_a$ is correct under $0/1$ loss, so the benefit equals
-$2\mu_T(D)(\bar a-\tfrac12)$. By definition of $M$ and $\gamma$,
-$\bar a-\tfrac12=\E_{\mu_T\mid D}[\eta_a-s]=M+\gamma$.
+$2\mu_T(D)(\bar a-\tfrac12)$. By the definitions of $M$ and $\gamma$,
+\[
+M+\gamma=\Bigl(\E_{\mu_T\mid D}[s]-\tfrac12\Bigr)+\E_{\mu_T\mid D}[\eta_a-s]
+=\E_{\mu_T\mid D}[\eta_a]-\tfrac12=\bar a-\tfrac12,
+\]
+so $\sign\Delta=\sign(\bar a-\tfrac12)=\sign(M+\gamma)$.
 \end{proof}
 
 \begin{theorem}[Matched evidence forces abstention]\label{lem:nonid}

@@ -109,3 +109,20 @@ Extracted the exact feature formulas and adapter configs from code and wrote the
   This is the **only** remaining DRAFT TODO.
 - Long companion `kbound.tex` reviewed; not folded into the short paper (already 21pp; the two are a short/long pair).
 - Build: latexmk exit 0, 0 undefined refs, 21 pages. Committed to `main` and pushed to origin.
+
+## Phase 9 — External-review response (math + framing fixes)
+Addressed the reviewer's concrete issues (outside the DRAFT-TODO markers):
+- **Lemma 1 proof corrected** — the line `ā−½ = E[η_a−s|D] = M+γ` was wrong (that expectation is γ);
+  now `M+γ = (E[s|D]−½) + E[η_a−s|D] = E[η_a|D]−½ = ā−½`.
+- **Invalid one-bit witness removed** — the weakest-class appendix used `a=(+1,±2)` while `a=2η−1∈[−1,1]`
+  (impossible). Guarded the one-bit / dominance-polytope material out of the short paper (deferred to
+  `kbound.tex`) and fixed the dangling references.
+- **Multiclass Proposition added** (`prop:multiclass`), stating exactly what KGA estimates.
+- **Softened overclaims**: stress-grid radius no longer called an exact finite-sample guarantee (empirical
+  coverage vs split-conformal/jackknife+); β=0 "face" → "β=0 plug-in under an implicit negligible-drift
+  assumption"; "limitations are the frontier" now separates theorem-imposed from empirical; Lean novelty
+  softened; "safety is a property of the radius" localized to the tested grid.
+- **Theory↔KGA bridge** clarified (intro + Fig 2 caption now population-only `|M|>β`; deployed rule uses
+  `Δ̂±ε`, Fig 3); **risk alignment** stated as a class assumption with falsification-only diagnostics.
+- **Structure**: removed the duplicated §III setup paragraph; fixed the config-table caption.
+- Build: exit 0, 0 undefined refs, **20 pages** (down from 21). Only remaining DRAFT TODO: streaming.

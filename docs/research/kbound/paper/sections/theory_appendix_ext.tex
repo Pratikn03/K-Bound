@@ -1,0 +1,82 @@
+% Extended theory for the short-paper appendix (no duplicate core labels).
+% Core spine is in the main text via theory_core_main.tex.
+
+\paragraph{Extensions beyond the main-text spine.}
+The lemmas and theorems below strengthen the three load-bearing results
+(Lemmas~\ref{lem:reduction},~\ref{lem:nonid}; Theorems~\ref{thm:headline},~\ref{thm:certificate})
+with minimax floors, one-bit structure, and rate statements. Full proofs and validators are in
+\texttt{kbound.tex} and \texttt{theory\_v2/}.
+
+\begin{lemma}[Plug-in regret identity]\label{lem:gate}
+For any estimator $\hat\Delta$ and gate $\hat g=\mathbf 1[\hat\Delta>0]$,
+\[
+R(\hat g)-R(g^\star)=\E\bigl[|\Delta(Z)|\,\mathbf 1\{\sign\hat\Delta\neq\sign\Delta\}\bigr],
+\qquad g^\star=\mathbf 1[\Delta>0].
+\]
+On $\{|\Delta|<\varepsilon\}$, committal regret is at most $\varepsilon$.
+\end{lemma}
+\begin{proof}
+Wrong-sign commits pay $|\Delta|$ pointwise; averaging gives the identity.
+\end{proof}
+
+\begin{proposition}[Finite-sample minimax regret floor]\label{prop:lecam-finite}
+Let two target worlds share evidence laws at TV distance $\delta$ and have opposite benefit
+signs with magnitude $\Lambda>0$. For every label-free committal gate and finite $n$,
+\[
+\inf_{\hat g}\ \max_{\theta=\pm1}\bigl[R_{P_\theta}(\hat g)-R_{P_\theta}(g^\star)\bigr]
+\ \ge\ \tfrac{\Lambda}{2}(1-\delta)
+\ \ge\ \tfrac{\Lambda}{4}\,e^{-\mathrm{KL}}.
+\]
+A Gaussian family with $d_n=c/\sqrt n$ realizes a constant floor in $n$
+(\texttt{val\_thm2\_lecam\_finite\_n.py}).
+\end{proposition}
+
+\begin{theorem}[Matched evidence impossibility (full form)]\label{thm:imp}
+Theorem~\ref{lem:nonid} is part~(iii) of the following. Fix $\alpha\in(0,\tfrac12)$.
+\begin{enumerate}
+\item[\textnormal{(i)}] Witness worlds with $\Law(Z\mid P_T^1)=\Law(Z\mid P_T^2)$ and
+$\sign\Delta_1=-\sign\Delta_2\neq0$.
+\item[\textnormal{(ii)}] Le Cam identity: $\inf_g M(g)=1-\TV$ between the evidence laws.
+\item[\textnormal{(iii)}] Forced abstention at rate $\ge 1-2\alpha$ under dual error control.
+\end{enumerate}
+\end{theorem}
+
+\begin{corollary}[Abstention is mandatory, not conservative]\label{cor:forced-abstain}
+In the $|M|\le\beta$ wedge of Theorem~\ref{thm:headline}, Theorem~\ref{thm:imp}(iii) implies
+any label-free rule with false-adapt and false-freeze $\le\alpha$ must abstain with probability at
+least $1-2\alpha$ on matched evidence.
+\end{corollary}
+
+\begin{proposition}[Certificate sample complexity]\label{prop:cert-sample}
+With empirical-Bernstein paired benefits, one-sided certification requires
+$n=\tilde O(\sigma^2/\Delta^2)$; two-sided sign certification requires the same exponent with a
+larger constant (\texttt{val\_minimax\_optimality.py}).
+\end{proposition}
+
+\begin{remark}[$\beta=0$ face]\label{rem:beta-zero}
+ATC, DoC, GDE, COT, AETTA, and agreement-on-the-line are the $\beta=0$ face of
+Theorem~\ref{thm:headline}: sound iff $\gamma=0$.
+\end{remark}
+
+\begin{theorem}[One-bit dichotomy]\label{thm:conj1-dichotomy}
+Under the CEI panel hypothesis \textbf{H}: \textnormal{(i)}~rank-one agreement law;
+\textnormal{(ii)}~evidence fixes magnitudes but not global orientation $b\mapsto-b$;
+\textnormal{(iii)}~no evidence-definable assumption identifies $\sign\Delta$; the minimal
+untestable supplement is one bit; \textnormal{(iv)}~drift budgets are auditable but not
+verifiable on a blind set. Conjecture~\ref{conj:gen} is resolved negatively by~(iii).
+\end{theorem}
+
+\begin{conjecture}[Label-free bracketing --- \textbf{resolved}]\label{conj:gen}
+Unconditional label-free bracketing does not exist; the weakest one-bit classes (an explicit finite
+family of dominance polytopes) are characterized in the long manuscript (\texttt{kbound.tex}).
+\end{conjecture}
+
+\begin{theorem}[Evidence-channel rate]\label{thm:ev-rate}
+Under audited H, unlabeled agreement statistics and labeled paired benefits both converge at
+rate $m^{-1/2}$; labels change constants and supply the missing bit, not the exponent.
+\end{theorem}
+
+\smallskip
+\noindent\emph{Validator map.} \texttt{val\_thm2\_lecam\_finite\_n.py} (Prop.~\ref{prop:lecam-finite});
+\texttt{val\_conj1\_*.py} (Thm.~\ref{thm:conj1-dichotomy});
+\texttt{val\_ev\_rate.py} (Thm.~\ref{thm:ev-rate}).

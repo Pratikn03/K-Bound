@@ -68,3 +68,11 @@ All the above run from logged evidence via `scripts/ablation_sweep.py` — no T9
 ## Compile QC
 - **P3** Five overfull `\hbox` warnings (max 71.8pt), mostly long bibliography lines and two wide
   table cells; cosmetic, non-blocking.
+
+## External-review — remaining polish (not blocking; math items already fixed)
+- **P2** Figures: the regime-map figure is visually overloaded, and the appendix validation figures
+  are small — simplify or move to the long paper.
+- **P2** Independent audit of the one-bit theorems before any re-inclusion (now deferred to `kbound.tex`).
+- **P3** Soften the appendix per-estimator `β=0 face` phrasing (the compiled contributions line is already softened).
+- Reviewer's math-critical items (Lemma 1 proof, invalid `a=±2` witness, multiclass bridge, finite-sample
+  wording) are **fixed** — see CHANGELOG Phase 9.
