@@ -21,17 +21,22 @@ so $\sign\Delta=\sign(\bar a-\tfrac12)=\sign(M+\gamma)$.
 \end{proof}
 
 \begin{theorem}[Matched evidence forces abstention]\label{lem:nonid}
-Fix $\alpha\in(0,\tfrac12)$ and $\beta\ge0$. There exist $P_T^1,P_T^2\in\mathcal{C}_\beta$ such
+Fix $\alpha\in(0,\tfrac12)$ and $\beta>0$. For any margin with $|M|<\beta$ there exist
+$P_T^1,P_T^2\in\mathcal{C}_\beta$ such
 that $\Law(Z\mid P_T^1)=\Law(Z\mid P_T^2)$, $\sign\Delta_1=-\sign\Delta_2\neq0$, and
-$|M(P_T^1)|<\beta$. Consequently, any label-free rule $g$ with
+$|M(P_T^1)|<\beta$. (For $\beta=0$ the class $\mathcal{C}_0$ forces $\gamma=0$, so $\sign\Delta=\sign M$
+is determined and no such pair exists: matched-evidence ambiguity is a strictly-positive-drift
+phenomenon.) Consequently, any label-free rule $g$ with
 $\Pr[g=\textsc{adapt},\Delta\le0]\le\alpha$ and $\Pr[g=\textsc{freeze},\Delta\ge0]\le\alpha$
 must satisfy $\Pr[g=\textsc{abstain}]\ge 1-2\alpha$ on this shared evidence law.
 \end{theorem}
 \begin{proof}
 Take $|M|<\beta$ and choose $\gamma_1,\gamma_2\in[-\beta,\beta]$ with
-$\sign(M+\gamma_1)\neq\sign(M+\gamma_2)$, both nonzero (possible because $|M|<\beta$; at the boundary
-$|M|=\beta$ the admissible drift $\gamma=-\sign(M)\beta$ instead gives $\Delta=0$, still uncertifiable
-as a strict sign, so abstention persists on the closed region $|M|\le\beta$). Lemma~\ref{lem:reduction}
+$\sign(M+\gamma_1)\neq\sign(M+\gamma_2)$, both nonzero (possible because $|M|<\beta$). At the boundary
+$|M|=\beta$, instead take two evidence-identical worlds with benefits $0$ (drift $\gamma=-\sign(M)\beta$)
+and a strict benefit of sign $M$ (drift $\gamma=0$): the zero world caps the probability of the
+$\sign M$ commitment and the strict world caps the opposite, again forcing
+$\Pr[\textsc{abstain}]\ge1-2\alpha$, so abstention persists on the closed region $|M|\le\beta$. Lemma~\ref{lem:reduction}
 gives opposite benefit signs at the same observables $(M,\mu_T(D),Z\text{-law})$. A label-free
 rule sees identical $\Law(Z)$ in both worlds, so its action probabilities coincide; each committed
 action is a false adapt in one world or a false freeze in the other, forcing abstention with
@@ -47,13 +52,15 @@ determined, and let $\beta\ge0$.
 (Lemma~\ref{lem:reduction}).
 \item[\textnormal{(ii)}] \textbf{Sufficiency.} If $|M|>\beta$ and $P_T\in\mathcal{C}_\beta$, then
 $\sign\Delta=\sign M$.
-\item[\textnormal{(iii)}] \textbf{Necessity.} If $|M|<\beta$, there exist
+\item[\textnormal{(iii)}] \textbf{Necessity.} If $|M|<\beta$ (which requires $\beta>0$), there exist
 $P_T^1,P_T^2\in\mathcal{C}_\beta$ with the same evidence law and opposite \emph{nonzero} benefit
-signs; at $|M|=\beta$ the admissible drift $\gamma=-\sign(M)\beta$ yields $\Delta=0$, so the sign is
-still undetermined. Hence $\sign\Delta$ is not a function of $\Law(Z)$ over $\mathcal{C}_\beta$
-whenever $|M|\le\beta$.
-\item[\textnormal{(iv)}] \textbf{Iff.} $\sign\Delta$ is label-free identifiable over
-$\mathcal{C}_\beta$ if and only if $|M|>\beta$.
+signs; at $|M|=\beta>0$ the admissible drift $\gamma=-\sign(M)\beta$ yields $\Delta=0$, and in the
+degenerate case $M=\beta=0$ the class $\mathcal{C}_0$ forces $\Delta\equiv0$. Hence no \emph{strict}
+benefit sign is a function of $\Law(Z)$ over $\mathcal{C}_\beta$ whenever $|M|\le\beta$.
+\item[\textnormal{(iv)}] \textbf{Iff (strict commitment).} A strict action in
+$\{\textsc{adapt},\textsc{freeze}\}$ is uniformly sound over $\mathcal{C}_\beta$ if and only if
+$|M|>\beta$; on the closed band $|M|\le\beta$ (including $M=\beta=0$, where $\Delta\equiv0$) abstention
+is the maximal sound action.
 \end{enumerate}
 The population rule $M>\beta\Rightarrow\textsc{adapt}$, $M<-\beta\Rightarrow\textsc{freeze}$,
 $|M|\le\beta\Rightarrow\textsc{abstain}$ is the maximal sound certificate on
@@ -116,8 +123,11 @@ identifiability claim; coverage alone certifies the \emph{interval} rule above.
 \end{remark}
 
 \begin{corollary}[Unjustified assumptions $\Rightarrow$ abstain]\label{cor:abstain-valid}
-If exchangeability, coverage, or risk alignment cannot be justified on the deployment batch,
-Theorem~\ref{thm:certificate} does not apply. Committing to \textsc{adapt} without a valid
-positive certified lower bound is not protected at level $\alpha$; the conservative action is
-\textsc{abstain} or \textsc{freeze} (cf.\ Theorem~\ref{lem:nonid}).
+If interval coverage---or the calibration assumptions supporting it (exchangeability, or an explicit
+shift correction)---cannot be justified on the deployment batch, Theorem~\ref{thm:certificate} does
+not apply, and committing to \textsc{adapt} is not protected at level $\alpha$; the conservative
+action is \textsc{abstain} or \textsc{freeze}. If instead \emph{risk alignment}
+(Definition~\ref{def:risk-align}) cannot be justified, the population-frontier interpretation and the
+transferability of the benefit estimator are unsupported, even though the interval implication of
+Theorem~\ref{thm:certificate} remains valid \emph{conditional on coverage} (cf.\ Theorem~\ref{lem:nonid}).
 \end{corollary}

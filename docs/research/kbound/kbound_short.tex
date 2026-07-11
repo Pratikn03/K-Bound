@@ -207,6 +207,7 @@ Frozen protocol & Prevents target-test leakage and selection bias & rerun with a
 \end{table}
 
 \subsection{Notation and Observability}
+Table~\ref{tab:notation-main} lists the core quantities and marks which are observable at deployment.
 \begin{table}[t]\centering\scriptsize
 \caption{Core quantities. The population drift budget $\beta$ and empirical radius $\varepsilon$ are related but not interchangeable.}
 \label{tab:notation-main}
@@ -305,19 +306,18 @@ extract $Z$ from an unlabeled batch and return adapt, freeze, or abstain (Algori
 Labels enter only through the calibration split; the deployment batch and held-out test scorer never
 use target labels for the adapter, $\varepsilon$, evidence, or rule selection. The coverage
 guarantee is split-dependent. The natural-shift protocols use a clean dev/test split:
-\emph{split-conformal} coverage $\Pr[|\widehat\Delta-\Delta|\le\varepsilon]\ge1-\alpha$, exact in
-finite samples under exchangeability of the calibration and test cells. The per-cell grids set
+\emph{split-conformal} coverage $\Pr[|\widehat\Delta-\Delta|\le\varepsilon]\ge1-\alpha$: with the order-statistic radius $\varepsilon=r_{(k)}$, $k=\lceil(n_{\mathrm{cal}}{+}1)(1-\alpha)\rceil$, this is exact in finite samples under exchangeability of the calibration and test cells (the released code uses the interpolated empirical quantile, a close approximation). The per-cell grids set
 $\varepsilon$ to the $(1-\alpha)$ empirical quantile of the leave-one-out residuals, so the
-\emph{calibration-set} coverage is $\ge1-\alpha$ by construction (realized $0.898$ at nominal
-$0.90$, $\alpha{=}0.10$); this is the standard jackknife radius, which is distribution-free only
+\emph{calibration-set} coverage is approximately nominal (realized $0.898$ at nominal
+$0.90$, $\alpha{=}0.10$)---empirical calibration evidence, not an exact finite-sample statement; this is the standard jackknife radius, which is distribution-free only
 asymptotically under estimator stability; its formal finite-sample counterpart is the jackknife$+$
 of Barber et al.\ (2021) at level $1-2\alpha$, which we note but do not implement. The decision
 rule's false-adapt guarantee is stated under the coverage hypothesis (\S\ref{sec:method}), which the
-empirical coverage meets. This construction sits in a known landscape: weighted conformal corrects
+empirical coverage approximately meets. This construction sits in a known landscape: weighted conformal corrects
 coverage under known covariate shift~\cite{tibshirani2019conformal}, adaptive conformal tracks
 coverage online~\cite{gibbs2021adaptive}, and beyond exchangeability the coverage gap is bounded by
-the total-variation drift of the calibration pairs~\cite{barber2023beyond}---the population
-counterpart of our declared budget $\beta$. The certificate's marginal false-adapt control is risk
+the total-variation drift of the calibration pairs~\cite{barber2023beyond}, which is conceptually
+related to but mathematically distinct from our disagreement-region calibration budget $\beta$. The certificate's marginal false-adapt control is risk
 control in the RCPS/Learn-then-Test lineage~\cite{bates2021rcps,angelopoulos2025ltt}, specialized
 to the adapt/freeze/abstain loss; PAC prediction sets give set-valued analogues under covariate
 shift~\cite{park2022pac}.
@@ -338,7 +338,7 @@ the entropy gap; a free-energy source$\to$target shift; a batch-vs-running Batch
 $\mathrm{KL}$; an ATC-style threshold-accuracy estimate (its threshold fixed on \emph{source}
 labels only, never target labels); and a source$\to$target confidence drop. The source-calibrated
 correctness score $s$ of \S\ref{sec:theory} is operationalized by the adapted-confidence and
-ATC-style features, and the observable margin $M$ is their disagreement-region summary.
+ATC-style features. \textsc{KGA} does not explicitly estimate the theoretical margin $M$; it learns the benefit $\widehat\Delta=h_\theta(Z)$ directly from the full evidence vector $Z$.
 
 The benefit model predicts $\widehat\Delta=h_\theta(Z)$ from labeled development conditions;
 $h_\theta$ is a gradient-boosted regression tree (scikit-learn
@@ -423,8 +423,9 @@ risk-alignment assumptions, and is not the frontier itself. Confidence-threshold
 agreement-trend selection (AGL) fit a scalar against a labeled or held-out signal and
 predict \emph{accuracy}; \textsc{KGA} certifies the benefit \emph{sign} with a boundary
 \emph{forced} by the identifiability budget, and, unlike any thresholded estimator,
-\textsc{abstains} on the region where Theorem~\ref{lem:nonid} \emph{proves} no label-free
-rule can decide. The impossibility construction, not a tuned cutoff, is what separates
+\textsc{abstains} where its calibrated interval crosses zero---consistent with the structural region
+Theorem~\ref{lem:nonid} identifies, though finite-sample abstentions may also reflect sampling
+uncertainty, estimator inadequacy, or calibration conservatism. The impossibility construction, not a tuned cutoff, is what separates
 \textsc{KGA} from ``estimate accuracy, then threshold.''
 
 
@@ -533,15 +534,18 @@ The results are organized by regime rather than by dataset prestige. Controlled 
 \caption{\textbf{Regime geometry for K-Bound.} The important axis is not dataset name but where the
 deployment sits relative to the frontier. Helpful- or harmful-dominated regimes usually produce
 no-harm ties with the better fixed policy; low-margin regimes force abstention; mixed and detectable
-regimes are where a valid adapt/freeze/abstain router can beat both fixed policies. This is the visual
-map behind Table~\ref{tab:regime-summary} and the experiment split below.}
+regimes are where a valid adapt/freeze/abstain router can beat both fixed policies. This is a \emph{conceptual schematic}: axis positions are illustrative regime
+categories, not measured coordinates (the actual per-track verdicts are in
+Table~\ref{tab:regime-summary}).}
 \label{fig:regime-map}
 \end{figure*}
 
 \subsection{Synthetic validation of the frontier}\label{sec:synthetic}
 Before the real-data tracks we validate the theory directly on synthetic ground truth, where the
 observable margin $M$, the unobserved drift $\gamma\sim\mathrm{U}(-\beta,\beta)$, and hence the true
-benefit sign $\sign\Delta=\sign(M+\gamma)$ are all controlled. Evidence is fed to the exact deployed
+benefit sign $\sign\Delta=\sign(M+\gamma)$ are all controlled. In the real-data tracks that follow,
+$\beta$ is \emph{not} numerically supplied to \textsc{KGA}: the empirical decision uses
+$\widehat\Delta\pm\varepsilon$, and the $\beta$-frontier is evaluated directly only in this synthetic study. Evidence is fed to the exact deployed
 rule (leave-one-out gradient-boosted $\widehat\Delta$ with a split-conformal radius,
 \S\ref{sec:method}); nothing is hand-tuned. Three predictions hold
 (Fig.~\ref{fig:frontier-measured}; $\alpha{=}0.10$). \textbf{(i) Recovery:} $\widehat\Delta$ tracks
@@ -592,21 +596,22 @@ $p^\star{\approx}0.1$ (Tent/SAR) or $0$ (EATA).
 candidate & policy & mean acc & regret$\downarrow$ & $\mathrm{FA}_{\mathrm c}$ & coverage & beats both? \\
 \midrule
 Tent & always-adapt  & $0.786$ & $\CIFARtentAdapt$ & --- & $1.00$ & \\
-     & always-freeze & $0.671$ & $\CIFARtentFreeze$ & --- & $0.00$ & \\
+     & always-freeze & $0.671$ & $\CIFARtentFreeze$ & --- & $1.00$ & \\
      & \textbf{K-Bound} & $\mathbf{0.793}$ & $\mathbf{\CIFARtentKga}$ & $\mathbf{\CIFARtentFA}$ & $0.67$ & \textbf{yes} \\
 \midrule
 EATA & always-adapt  & $0.798$ & $\CIFAReataAdapt$ & --- & $1.00$ & \\
-     & always-freeze & $0.671$ & $\CIFAReataFreeze$ & --- & $0.00$ & \\
+     & always-freeze & $0.671$ & $\CIFAReataFreeze$ & --- & $1.00$ & \\
      & \textbf{K-Bound} & $\mathbf{0.801}$ & $\mathbf{\CIFAReataKga}$ & $\mathbf{\CIFAReataFA}$ & $0.63$ & \textbf{yes} \\
 \midrule
 SAR  & always-adapt  & $0.806$ & $\CIFARsarAdapt$ & --- & $1.00$ & \\
-     & always-freeze & $0.671$ & $\CIFARsarFreeze$ & --- & $0.00$ & \\
+     & always-freeze & $0.671$ & $\CIFARsarFreeze$ & --- & $1.00$ & \\
      & \textbf{K-Bound} & $0.806$ & $\CIFARsarKga$ & $\CIFARsarFA$ & --- & ties adapt \\
 \bottomrule
 \end{tabular}
 }
 \caption{CIFAR-10-C stress grid ($432$ conditions/method, five seeds, $\alpha{=}0.1$,
-Protocol~A).}
+Protocol~A). ``coverage'' is decision coverage $\Pr[\textsc{adapt}\lor\textsc{freeze}]$; both fixed
+policies commit on every cell.}
 \label{tab:decisive}
 \end{table}
 
@@ -695,9 +700,9 @@ faithfulness check.
 \textbf{Verdict: WIN.} \textsc{KGA} lowers mean regret-to-oracle vs.\ both ported baselines with
 paired-bootstrap $95\%$ CIs entirely below zero and Holm correction ($\alpha{=}0.05$), at
 $\mathrm{FA}_{\mathrm u}{=}0\le\alpha$ (Table~\ref{tab:headtohead-poem-aetta}). The ported POEM-/AETTA-style baselines
-false-adapt at ${\sim}24$--$25\%$ on the same stream, since they lack the certificate's marginal
-false-adapt control. Secondary pooled sets (Tent+EATA, EATA alone) yield the same WIN verdict
-(\path{experiments/kbound/results/mixed_headtohead_v1/}). An independent post-hoc recomputation
+false-adapt at ${\sim}24$--$25\%$ on the same stream, consistent with the absence of an explicit marginal
+false-adapt certificate under this ported protocol. Secondary pooled sets (Tent+EATA, EATA alone) yield the same WIN verdict
+(\path{experiments/kbound/results/mixed_headtohead_v1/}). A separate recomputation pipeline
 (paired bootstrap $10^4$, pre-registered) replicates all three configurations, with both regret-gap
 CIs below zero in each and $\mathrm{FA}_{\textsc{kga}}{=}0$ versus $11$--$33\%$ for the competitors
 (\path{research_lock/WIN_HUNT_v3_ARM_F_result.json}).
@@ -750,7 +755,7 @@ AETTA-style & dropout/disagreement-based label-free accuracy estimation & protoc
 
 \subsection{ImageNet-C SAR (mechanism-faithful)}
 On ImageNet-C noise (ResNet-50, $27$ cells: three noise corruptions $\times$ severities
-$\{1,3,5\}$ $\times$ label regimes, seed~0, full-scale), SAR is harmful on $14.8\%$ of cells under a
+$\{1,3,5\}$ $\times$ three batch-composition regimes (iid, imbalanced, single-class), seed~0, full-scale), SAR is harmful on $14.8\%$ of cells under a
 mechanism-faithful re-implementation (SAM, recovery reset, EMA) at the learning rate
 shared across candidates. Always-adapt drops to $0.379$ accuracy while \textsc{KGA}
 reaches $0.431$, \textbf{beating both} trivial policies (regret $0.0108$ vs $0.0625$/$0.0319$).
@@ -1173,7 +1178,9 @@ $\beta\in\{0.05,\ldots,0.20\}$), kept distinct from the empirical radius $\varep
 
 \begin{table}[t]\centering\footnotesize
 \caption{Ablation (i): safety-level $\alpha$ sweep, CIFAR-10-C Tent ($n{=}432$).
-$\mathrm{FA}_{\mathrm u}{=}0$ at every certified $\alpha$; only the radius-free row breaks it.}
+$\mathrm{FA}_{\mathrm u}{=}0$ at every certified $\alpha$; only the radius-free row breaks it.
+Computed by $8$-fold cross-fitting; the leave-one-cell-out locked gate (Table~\ref{tab:gates}) shows
+the same pattern with $\mathrm{FA}_{\mathrm u}{=}0.049$ and coverage $0.68$ (small cross-fit-vs-LOCO differences).}
 \label{tab:abl-alpha}
 \begin{tabular}{lcccc}
 \toprule
@@ -1228,9 +1235,10 @@ SAR $\to$ EATA & $0.0028$ & $0.123$ & $0.76$ & $0.76$ \\
 A single natural benchmark is often one-sided: adaptation helps almost everywhere or harms almost everywhere. In the first case, always-adapt is already near-oracle; in the second, always-freeze is near-oracle. A three-way router gains a strict margin over both fixed policies only when helpful and harmful conditions coexist and the evidence distinguishes them. Natural no-harm results and mixed-regime wins are therefore different operating points of the same decision geometry.
 
 \subsection{Four Sources of Abstention}
-Not every abstention has the same interpretation. \emph{Structural non-identifiability} means opposite-benefit worlds share the same admissible evidence law. \emph{Finite-sample uncertainty} means the sign is identifiable in principle but the interval still crosses zero. \emph{Estimator inadequacy} means the chosen model fails to extract an available signal. \emph{Calibration failure} means a development relationship does not transfer to deployment. The paper should diagnose these separately rather than labeling every null result ``unknowable.''
+Not every abstention has the same interpretation. \emph{Structural non-identifiability} means opposite-benefit worlds share the same admissible evidence law. \emph{Finite-sample uncertainty} means the sign is identifiable in principle but the interval still crosses zero. \emph{Estimator inadequacy} means the chosen model fails to extract an available signal. \emph{Calibration failure} means a development relationship does not transfer to deployment. We distinguish these causes throughout the evaluation rather than treating every null result as evidence of structural unknowability.
 
 \subsection{Operational Failure Modes}
+Table~\ref{tab:failure-modes} maps each deployment failure to a diagnostic and a safe response.
 \begin{table}[t]\centering\scriptsize
 \caption{Deployment failures, diagnostics, and safe responses.}
 \label{tab:failure-modes}
@@ -1291,15 +1299,16 @@ because one split or one candidate looks favorable.
 independent weaknesses but one phenomenon: the benefit-sign frontier (Theorem~\ref{thm:headline})
 seen from the operating side. Tying always-adapt on a helpful-dominated shift is the no-harm
 guarantee \emph{holding}: one cannot beat an oracle that is already always-adapt. Declining
-ImageNet-R is the \emph{unknowable} branch firing: the observable margin falls below the drift
-budget, so no label-free rule can decide the benefit sign, however good the adapter
-(Theorem~\ref{lem:nonid}). The coverage drop is mandatory abstention, not a tuning loss: committing in
-the unknowable region would be a false-adapt. None can be removed without violating the impossibility
+ImageNet-R is consistent with a weak-evidence, low-margin regime; the null result does not by itself
+establish structural non-identifiability under Theorem~\ref{thm:headline} (it could also reflect weak
+evidence, poor benefit estimation, or calibration-transfer failure). Abstention in the structurally
+unknowable region is mandatory---committing there would be a false-adapt---though some empirical
+abstention may instead stem from an overly wide radius or a weak estimator. None can be removed without violating the impossibility
 result, since a method that ``won everywhere'' would be claiming to decide the sign of an unidentifiable
 quantity. The one axis that genuinely improves all three is a \emph{richer label-free evidence map},
 which raises the observable margin $|M|$ so more shifts clear the budget (more knowable shifts, fewer
-abstentions, higher coverage), together with a \emph{tighter radius} (jackknife$+$ or more
-calibration data) that reclaims coverage on knowable cells abstained only out of conservatism; both remain
+abstentions, higher coverage), together with a \emph{better-justified or more data-efficient calibration} (more calibration data
+where available) that reclaims coverage on knowable cells abstained only out of conservatism; both remain
 bounded by the frontier they cannot cross.
 
 \textbf{Baselines and independent validation.} On the ImageNet-C SAR configuration, the

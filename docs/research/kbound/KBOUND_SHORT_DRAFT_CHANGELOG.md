@@ -126,3 +126,26 @@ Addressed the reviewer's concrete issues (outside the DRAFT-TODO markers):
   `Δ̂±ε`, Fig 3); **risk alignment** stated as a class assumption with falsification-only diagnostics.
 - **Structure**: removed the duplicated §III setup paragraph; fixed the config-table caption.
 - Build: exit 0, 0 undefined refs, **20 pages** (down from 21). Only remaining DRAFT TODO: streaming.
+
+## Phase 10 — Second external-review response (edge-cases, tables, figures)
+- **Theorem 1** now requires β>0 (|M|<β is vacuous at β=0), with an explicit β=0 note.
+- **Theorem 2** reframed as *strict-commitment* identifiability (adapt/freeze uniformly sound iff |M|>β),
+  fixing the M=β=0 edge where Δ≡0 is known exactly.
+- **Corollary 1** separates risk alignment from Theorem 3's coverage (interval implication holds under
+  coverage alone; risk alignment only supports the population-frontier interpretation).
+- **|M|=β boundary** given its own zero-vs-strict-sign abstention argument.
+- **Calibration wording**: split-conformal now states the order-statistic radius ε=r_(k),
+  k=⌈(n+1)(1−α)⌉ (code uses the interpolated quantile — a close approximation); the "0.898 ≥ 0.90 by
+  construction" contradiction fixed to "approximately nominal, empirical not exact"; TV drift is
+  "conceptually related to but distinct from" β.
+- **Tables**: `tab:decisive` coverage column clarified (both fixed policies commit → always-freeze
+  0.00→1.00); `tab:abl-alpha` footnote reconciles 8-fold cross-fit vs the locked LOCO gate; ImageNet-C
+  27 cells defined as 3 corruptions × 3 severities × 3 compositions (iid/imbalanced/single-class, verified).
+- **Figures**: Figure 7 (`fig_alpha_coverage`) regenerated from `ablation_alpha.json` to match Table XVI
+  (coverage 0.49/0.64/0.69/0.74, FA_u=0); Figure 4 relabeled a conceptual schematic (axes illustrative).
+- **Wording**: real-data KGA "does not numerically use β" (stated in §Synthetic); "KGA does not estimate
+  M, learns Δ̂ directly"; ImageNet-R no longer claimed to *prove* unknowability; POEM/AETTA causal claim
+  softened; "independent recomputation"→"separate recomputation pipeline"; jackknife+ "tighter radius"
+  reworded; two empty subsection headings filled; editing-instruction sentence rewritten as prose.
+- Build: exit 0, 0 undefined refs, 20 pages. (The numbering-typo and appendix β=0-face items the review
+  cited live in the long `kbound.tex`, not the compiled short paper.)
