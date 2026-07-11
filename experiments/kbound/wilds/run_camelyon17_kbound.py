@@ -106,6 +106,10 @@ def run(args, partial_path=None):
     n_cells_total = (len(args.seeds) * len(args.domains) * len(args.compositions)
                      * len(args.batch_regimes) * len(args.aggressiveness))
     cell_i = 0
+    # WIN_HUNT_v5: restrict the candidate pool to online (no-episodic-reset) adapters when
+    # --online-only is set (the aggressive-regime "continual" operating point). Default: all six.
+    _cands = [(m, md) for (m, md) in CANDIDATES
+              if (not getattr(args, "online_only", False)) or md == "online"]
     for seed in args.seeds:
         torch.manual_seed(seed); np.random.seed(seed)
         rng = np.random.default_rng(seed)
@@ -127,7 +131,7 @@ def run(args, partial_path=None):
                     bs = cd.BATCH_REGIMES[regime]
                     for aggr in args.aggressiveness:
                         steps = args.steps_override or AGGR[aggr]["steps"]
-                        lr = AGGR[aggr]["lr"]
+                        lr = args.adapt_lr if getattr(args, "adapt_lr", None) is not None else AGGR[aggr]["lr"]
                         cell_i += 1
                         tag = f"s{seed}/{dom}/{comp}/{regime}/{aggr}"
                         if _cell_key(seed, dom, comp, regime, aggr) in done:
@@ -153,7 +157,7 @@ def run(args, partial_path=None):
                         stream_f0_pos = tm._predict_prob(f0, torch.cat(stream, 0), train_mode=False, bs=256)
                         preds_all = [p0]; aa_all = [a0]; cand_names = ["freeze_f0"]
                         best_pa = p0_pos; best_aa_c = float(a0)
-                        for (method, mode) in CANDIDATES:
+                        for (method, mode) in _cands:
                             cand_out = tm.run_candidate(
                                 method, mode, f0, stream, eval_x, eval_y, NUM_CLASSES,
                                 steps, lr, eval_bs=min(bs, 64),
@@ -200,7 +204,7 @@ def run(args, partial_path=None):
                         # the self-normalized tau gate is applicable post hoc. Attached
                         # to this condition's just-appended candidate records.
                         try:
-                            pc.attach_to_last(records, len(CANDIDATES),
+                            pc.attach_to_last(records, len(_cands),
                                               pc.panel_fields(preds_mat))
                         except Exception as _e:
                             print(f"  panel_capture skipped: {_e!r}")
@@ -386,7 +390,8 @@ def build_manifest(args, records, conditions, meta):
     cfg = {k: getattr(args, k) for k in (
         "data_root", "f0_template", "seeds", "domains", "compositions", "batch_regimes",
         "aggressiveness", "n_eval", "n_batches", "tau_star", "kappa", "device",
-        "steps_override", "delta", "sd_L", "evidence_panel", "smoke")}
+        "steps_override", "delta", "sd_L", "evidence_panel", "smoke",
+        "adapt_lr", "online_only")}   # WIN_HUNT_v5 operating-point overrides enter the config hash
     cfg_sha = hashlib.sha256(json.dumps(cfg, sort_keys=True).encode()).hexdigest()[:8]
     evidence_names = list(tm.EVIDENCE_NAMES)
     if args.evidence_panel == "rich":
@@ -404,7 +409,8 @@ def build_manifest(args, records, conditions, meta):
         "data": {"data_root": args.data_root, "n_present": meta["n_present"],
                  "n_total": meta["n_total"], "n_dropped_disk_filter": meta["n_total"] - meta["n_present"],
                  "wall_sec": round(meta["wall_sec"], 1)},
-        "candidates": [f"{m}_{md}" for (m, md) in CANDIDATES],
+        "candidates": [f"{m}_{md}" for (m, md) in CANDIDATES
+                       if (not getattr(args, "online_only", False)) or md == "online"],
         "baselines": {
             "always_freeze_mean_acc": float(np.mean([r["a0"] for r in records])) if records else None,
             "per_candidate_always_adapt_mean_acc": {
@@ -455,6 +461,15 @@ def parse_args(argv=None):
                    default=True, dest="serialize_per_condition",
                    help="also write per_condition_camelyon17_<method>_seed<S>.json files "
                         "(stress_grid_multiseed schema; default: on)")
+    # ---- WIN_HUNT_v5 aggressive-regime wave operating-point overrides (opt-in) ----
+    p.add_argument("--adapt-lr", type=float, default=None, dest="adapt_lr",
+                   help="WIN_HUNT_v5: absolute adapter LR override for tent/eata/sar (the AGGR "
+                        "cell lr is ignored when set). DEFAULT None = per-cell lr (byte-identical). "
+                        "The v5 aggressive wave sets 0.004 (= 4x the 1e-3 shared-baseline lr).")
+    p.add_argument("--online-only", action="store_true", dest="online_only",
+                   help="WIN_HUNT_v5: restrict the candidate pool to the online (no-episodic-reset) "
+                        "adapters -- the 'continual' operating point. DEFAULT off (all six "
+                        "online+episodic candidates, byte-identical to prior runs).")
     args = p.parse_args(argv)
     if args.smoke:
         args.domains = ["test"]; args.compositions = ["iid", "single_class"]

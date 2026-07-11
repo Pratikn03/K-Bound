@@ -1,0 +1,765 @@
+{
+  "seed": 2,
+  "benchmark": "camelyon17",
+  "method": "sar",
+  "alpha": 0.1,
+  "n_conditions": 9,
+  "kga_backend": "sklearn_gradient_boost",
+  "per_condition_fields_absent": [],
+  "per_condition_fields_absent_reason": "n_D/c_ij are attached by the runner via panel_capture.py (Wave-5); absent means the runner predates the patch or the panel capture was skipped.",
+  "per_condition_field_notes": {
+    "tau_hat_tau_star": "single-candidate route (frozen vs adapted), so tau is degenerate and set to 0.0.",
+    "zone": "computed from benefit_ci: lb>0 => CERTIFIED_ADAPT, ub<0 => CERTIFIED_FREEZE, else BLIND.",
+    "gamma_hat": "single-candidate proxy (b_hat/2) with gamma_ci = benefit_ci/2.",
+    "kga_backend": "sklearn_gradient_boost = production certificate; numpy_knn_fallback = torch/sklearn-free verification estimator (decision rule + conformal radius identical, estimator differs)."
+  },
+  "records": [
+    {
+      "seed": 2,
+      "benchmark": "camelyon17",
+      "method": "sar",
+      "condition": "test|iid|small|aggressive|online",
+      "B": 0.0078125,
+      "a0": 0.828125,
+      "a_adapted": 0.8359375,
+      "a_kbound": 0.828125,
+      "a_oracle": 0.8359375,
+      "regime": "marginal",
+      "oracle_action": "ADAPT",
+      "Z": [
+        0.10196442902088165,
+        0.9578191041946411,
+        0.9348532325749798,
+        0.04095427319407463,
+        0.9907945394515991,
+        0.9538223170258695,
+        -0.01896908445088974,
+        0.06101015582680702,
+        1.0,
+        0.1559881865978241,
+        0.0
+      ],
+      "Z_names": [
+        "pre_entropy",
+        "pre_conf",
+        "pre_pbal",
+        "post_entropy",
+        "post_conf",
+        "post_pbal",
+        "pbal_drop",
+        "entropy_drop",
+        "frac_highconf",
+        "marginal_KL",
+        "update_norm"
+      ],
+      "n_D": 110,
+      "c_ij": [
+        [
+          1.0,
+          0.3515625,
+          0.4375,
+          0.5
+        ],
+        [
+          0.3515625,
+          1.0,
+          0.6484375,
+          0.6015625
+        ],
+        [
+          0.4375,
+          0.6484375,
+          1.0,
+          0.640625
+        ],
+        [
+          0.5,
+          0.6015625,
+          0.640625,
+          1.0
+        ]
+      ],
+      "Z_ev2": null,
+      "Z_ev2_names": null,
+      "tau_hat": 0.0,
+      "tau_star": 0.0,
+      "b_hat": 0.045100303315820454,
+      "eps_conformal": 0.09098447368774502,
+      "benefit_ci": [
+        -0.04588417037192457,
+        0.13608477700356547
+      ],
+      "zone": "BLIND",
+      "gamma_hat": 0.022550151657910227,
+      "gamma_ci": [
+        -0.022942085185962285,
+        0.06804238850178274
+      ],
+      "kga_decision": "ABSTAIN"
+    },
+    {
+      "seed": 2,
+      "benchmark": "camelyon17",
+      "method": "sar",
+      "condition": "test|imbalanced|small|aggressive|online",
+      "B": 0.03515625,
+      "a0": 0.83984375,
+      "a_adapted": 0.875,
+      "a_kbound": 0.83984375,
+      "a_oracle": 0.875,
+      "regime": "helpful",
+      "oracle_action": "ADAPT",
+      "Z": [
+        0.013086419552564621,
+        0.9975373148918152,
+        0.3405809411306135,
+        0.23006053268909454,
+        0.8681036233901978,
+        0.9880833248695513,
+        -0.6475023837389378,
+        -0.21697411313652992,
+        0.6875,
+        0.5545419454574585,
+        0.0
+      ],
+      "Z_names": [
+        "pre_entropy",
+        "pre_conf",
+        "pre_pbal",
+        "post_entropy",
+        "post_conf",
+        "post_pbal",
+        "pbal_drop",
+        "entropy_drop",
+        "frac_highconf",
+        "marginal_KL",
+        "update_norm"
+      ],
+      "n_D": 102,
+      "c_ij": [
+        [
+          1.0,
+          0.40625,
+          0.609375,
+          0.6015625
+        ],
+        [
+          0.40625,
+          1.0,
+          0.578125,
+          0.5390625
+        ],
+        [
+          0.609375,
+          0.578125,
+          1.0,
+          0.6484375
+        ],
+        [
+          0.6015625,
+          0.5390625,
+          0.6484375,
+          1.0
+        ]
+      ],
+      "Z_ev2": null,
+      "Z_ev2_names": null,
+      "tau_hat": 0.0,
+      "tau_star": 0.0,
+      "b_hat": 0.028898951014579437,
+      "eps_conformal": 0.09098447368774502,
+      "benefit_ci": [
+        -0.06208552267316558,
+        0.11988342470232446
+      ],
+      "zone": "BLIND",
+      "gamma_hat": 0.014449475507289719,
+      "gamma_ci": [
+        -0.03104276133658279,
+        0.05994171235116223
+      ],
+      "kga_decision": "ABSTAIN"
+    },
+    {
+      "seed": 2,
+      "benchmark": "camelyon17",
+      "method": "sar",
+      "condition": "test|single_class|small|aggressive|online",
+      "B": 0.0390625,
+      "a0": 0.82421875,
+      "a_adapted": 0.86328125,
+      "a_kbound": 0.82421875,
+      "a_oracle": 0.86328125,
+      "regime": "helpful",
+      "oracle_action": "ADAPT",
+      "Z": [
+        0.16994518041610718,
+        0.9191972017288208,
+        0.9083929278178078,
+        0.09961743652820587,
+        0.9642817974090576,
+        0.7568575522900547,
+        0.1515353755277531,
+        0.0703277438879013,
+        0.875,
+        0.027290083467960358,
+        0.0
+      ],
+      "Z_names": [
+        "pre_entropy",
+        "pre_conf",
+        "pre_pbal",
+        "post_entropy",
+        "post_conf",
+        "post_pbal",
+        "pbal_drop",
+        "entropy_drop",
+        "frac_highconf",
+        "marginal_KL",
+        "update_norm"
+      ],
+      "n_D": 128,
+      "c_ij": [
+        [
+          1.0,
+          0.375,
+          0.2578125,
+          0.578125
+        ],
+        [
+          0.375,
+          1.0,
+          0.4453125,
+          0.375
+        ],
+        [
+          0.2578125,
+          0.4453125,
+          1.0,
+          0.5703125
+        ],
+        [
+          0.578125,
+          0.375,
+          0.5703125,
+          1.0
+        ]
+      ],
+      "Z_ev2": null,
+      "Z_ev2_names": null,
+      "tau_hat": 0.0,
+      "tau_star": 0.0,
+      "b_hat": 0.024821722526459592,
+      "eps_conformal": 0.09098447368774502,
+      "benefit_ci": [
+        -0.06616275116128544,
+        0.11580619621420461
+      ],
+      "zone": "BLIND",
+      "gamma_hat": 0.012410861263229796,
+      "gamma_ci": [
+        -0.03308137558064272,
+        0.057903098107102306
+      ],
+      "kga_decision": "ABSTAIN"
+    },
+    {
+      "seed": 2,
+      "benchmark": "camelyon17",
+      "method": "sar",
+      "condition": "val|iid|small|aggressive|online",
+      "B": 0.078125,
+      "a0": 0.8359375,
+      "a_adapted": 0.9140625,
+      "a_kbound": 0.8359375,
+      "a_oracle": 0.9140625,
+      "regime": "helpful",
+      "oracle_action": "ADAPT",
+      "Z": [
+        0.04854235425591469,
+        0.9851288795471191,
+        0.9633597869121174,
+        0.04760585352778435,
+        0.9769406318664551,
+        0.9954897577289582,
+        -0.03212997081684077,
+        0.0009365007281303406,
+        0.9375,
+        0.010920949280261993,
+        0.0
+      ],
+      "Z_names": [
+        "pre_entropy",
+        "pre_conf",
+        "pre_pbal",
+        "post_entropy",
+        "post_conf",
+        "post_pbal",
+        "pbal_drop",
+        "entropy_drop",
+        "frac_highconf",
+        "marginal_KL",
+        "update_norm"
+      ],
+      "n_D": 75,
+      "c_ij": [
+        [
+          1.0,
+          0.546875,
+          0.671875,
+          0.671875
+        ],
+        [
+          0.546875,
+          1.0,
+          0.703125,
+          0.65625
+        ],
+        [
+          0.671875,
+          0.703125,
+          1.0,
+          0.859375
+        ],
+        [
+          0.671875,
+          0.65625,
+          0.859375,
+          1.0
+        ]
+      ],
+      "Z_ev2": null,
+      "Z_ev2_names": null,
+      "tau_hat": 0.0,
+      "tau_star": 0.0,
+      "b_hat": 0.04908441827632293,
+      "eps_conformal": 0.09098447368774502,
+      "benefit_ci": [
+        -0.041900055411422096,
+        0.14006889196406797
+      ],
+      "zone": "BLIND",
+      "gamma_hat": 0.024542209138161464,
+      "gamma_ci": [
+        -0.020950027705711048,
+        0.07003444598203398
+      ],
+      "kga_decision": "ABSTAIN"
+    },
+    {
+      "seed": 2,
+      "benchmark": "camelyon17",
+      "method": "sar",
+      "condition": "val|imbalanced|small|aggressive|online",
+      "B": 0.09375,
+      "a0": 0.80078125,
+      "a_adapted": 0.89453125,
+      "a_kbound": 0.80078125,
+      "a_oracle": 0.89453125,
+      "regime": "helpful",
+      "oracle_action": "ADAPT",
+      "Z": [
+        0.07326774299144745,
+        0.9645936489105225,
+        0.46232337508843774,
+        0.04381928592920303,
+        0.9897927045822144,
+        0.9999810846562405,
+        -0.5376577095678028,
+        0.029448457062244415,
+        1.0,
+        0.5145763754844666,
+        0.0
+      ],
+      "Z_names": [
+        "pre_entropy",
+        "pre_conf",
+        "pre_pbal",
+        "post_entropy",
+        "post_conf",
+        "post_pbal",
+        "pbal_drop",
+        "entropy_drop",
+        "frac_highconf",
+        "marginal_KL",
+        "update_norm"
+      ],
+      "n_D": 103,
+      "c_ij": [
+        [
+          1.0,
+          0.5078125,
+          0.4140625,
+          0.609375
+        ],
+        [
+          0.5078125,
+          1.0,
+          0.546875,
+          0.6328125
+        ],
+        [
+          0.4140625,
+          0.546875,
+          1.0,
+          0.7265625
+        ],
+        [
+          0.609375,
+          0.6328125,
+          0.7265625,
+          1.0
+        ]
+      ],
+      "Z_ev2": null,
+      "Z_ev2_names": null,
+      "tau_hat": 0.0,
+      "tau_star": 0.0,
+      "b_hat": 0.00010984278870250002,
+      "eps_conformal": 0.09098447368774502,
+      "benefit_ci": [
+        -0.09087463089904252,
+        0.09109431647644753
+      ],
+      "zone": "BLIND",
+      "gamma_hat": 5.492139435125001e-05,
+      "gamma_ci": [
+        -0.04543731544952126,
+        0.045547158238223764
+      ],
+      "kga_decision": "ABSTAIN"
+    },
+    {
+      "seed": 2,
+      "benchmark": "camelyon17",
+      "method": "sar",
+      "condition": "val|single_class|small|aggressive|online",
+      "B": 0.09375,
+      "a0": 0.828125,
+      "a_adapted": 0.921875,
+      "a_kbound": 0.828125,
+      "a_oracle": 0.921875,
+      "regime": "helpful",
+      "oracle_action": "ADAPT",
+      "Z": [
+        0.01699291542172432,
+        0.9964244365692139,
+        0.6926088325243419,
+        0.10987745970487595,
+        0.9475007057189941,
+        0.8568368286554092,
+        -0.1642279961310673,
+        -0.09288454428315163,
+        0.8125,
+        0.026850126683712006,
+        0.0
+      ],
+      "Z_names": [
+        "pre_entropy",
+        "pre_conf",
+        "pre_pbal",
+        "post_entropy",
+        "post_conf",
+        "post_pbal",
+        "pbal_drop",
+        "entropy_drop",
+        "frac_highconf",
+        "marginal_KL",
+        "update_norm"
+      ],
+      "n_D": 108,
+      "c_ij": [
+        [
+          1.0,
+          0.3125,
+          0.6484375,
+          0.609375
+        ],
+        [
+          0.3125,
+          1.0,
+          0.4453125,
+          0.578125
+        ],
+        [
+          0.6484375,
+          0.4453125,
+          1.0,
+          0.6953125
+        ],
+        [
+          0.609375,
+          0.578125,
+          0.6953125,
+          1.0
+        ]
+      ],
+      "Z_ev2": null,
+      "Z_ev2_names": null,
+      "tau_hat": 0.0,
+      "tau_star": 0.0,
+      "b_hat": 0.003429447193143098,
+      "eps_conformal": 0.09098447368774502,
+      "benefit_ci": [
+        -0.08755502649460192,
+        0.09441392088088812
+      ],
+      "zone": "BLIND",
+      "gamma_hat": 0.001714723596571549,
+      "gamma_ci": [
+        -0.04377751324730096,
+        0.04720696044044406
+      ],
+      "kga_decision": "ABSTAIN"
+    },
+    {
+      "seed": 2,
+      "benchmark": "camelyon17",
+      "method": "sar",
+      "condition": "id_val|iid|small|aggressive|online",
+      "B": 0.00390625,
+      "a0": 0.9921875,
+      "a_adapted": 0.99609375,
+      "a_kbound": 0.9921875,
+      "a_oracle": 0.99609375,
+      "regime": "marginal",
+      "oracle_action": "ADAPT",
+      "Z": [
+        0.04605028033256531,
+        0.9768840074539185,
+        0.8458956363728192,
+        0.04608860984444618,
+        0.9804489612579346,
+        0.8776487932016195,
+        -0.03175315682880031,
+        -3.8329511880874634e-05,
+        0.9375,
+        0.0014177076518535614,
+        0.0
+      ],
+      "Z_names": [
+        "pre_entropy",
+        "pre_conf",
+        "pre_pbal",
+        "post_entropy",
+        "post_conf",
+        "post_pbal",
+        "pbal_drop",
+        "entropy_drop",
+        "frac_highconf",
+        "marginal_KL",
+        "update_norm"
+      ],
+      "n_D": 28,
+      "c_ij": [
+        [
+          1.0,
+          0.8203125,
+          0.953125,
+          0.9921875
+        ],
+        [
+          0.8203125,
+          1.0,
+          0.7890625,
+          0.828125
+        ],
+        [
+          0.953125,
+          0.7890625,
+          1.0,
+          0.9609375
+        ],
+        [
+          0.9921875,
+          0.828125,
+          0.9609375,
+          1.0
+        ]
+      ],
+      "Z_ev2": null,
+      "Z_ev2_names": null,
+      "tau_hat": 0.0,
+      "tau_star": 0.0,
+      "b_hat": 0.06338075905443102,
+      "eps_conformal": 0.09098447368774502,
+      "benefit_ci": [
+        -0.027603714633314,
+        0.15436523274217606
+      ],
+      "zone": "BLIND",
+      "gamma_hat": 0.03169037952721551,
+      "gamma_ci": [
+        -0.013801857316657,
+        0.07718261637108803
+      ],
+      "kga_decision": "ABSTAIN"
+    },
+    {
+      "seed": 2,
+      "benchmark": "camelyon17",
+      "method": "sar",
+      "condition": "id_val|imbalanced|small|aggressive|online",
+      "B": 0.0,
+      "a0": 0.99609375,
+      "a_adapted": 0.99609375,
+      "a_kbound": 0.99609375,
+      "a_oracle": 0.99609375,
+      "regime": "marginal",
+      "oracle_action": "FREEZE",
+      "Z": [
+        0.041900720447301865,
+        0.9805517792701721,
+        0.40900647455084316,
+        0.19435732066631317,
+        0.9125044345855713,
+        0.9771503877542026,
+        -0.5681439132033594,
+        -0.1524566002190113,
+        0.6875,
+        0.40183329582214355,
+        0.0
+      ],
+      "Z_names": [
+        "pre_entropy",
+        "pre_conf",
+        "pre_pbal",
+        "post_entropy",
+        "post_conf",
+        "post_pbal",
+        "pbal_drop",
+        "entropy_drop",
+        "frac_highconf",
+        "marginal_KL",
+        "update_norm"
+      ],
+      "n_D": 113,
+      "c_ij": [
+        [
+          1.0,
+          0.1171875,
+          0.953125,
+          1.0
+        ],
+        [
+          0.1171875,
+          1.0,
+          0.1640625,
+          0.1171875
+        ],
+        [
+          0.953125,
+          0.1640625,
+          1.0,
+          0.953125
+        ],
+        [
+          1.0,
+          0.1171875,
+          0.953125,
+          1.0
+        ]
+      ],
+      "Z_ev2": null,
+      "Z_ev2_names": null,
+      "tau_hat": 0.0,
+      "tau_star": 0.0,
+      "b_hat": 0.06716369450338476,
+      "eps_conformal": 0.09098447368774502,
+      "benefit_ci": [
+        -0.023820779184360263,
+        0.15814816819112978
+      ],
+      "zone": "BLIND",
+      "gamma_hat": 0.03358184725169238,
+      "gamma_ci": [
+        -0.011910389592180132,
+        0.07907408409556489
+      ],
+      "kga_decision": "ABSTAIN"
+    },
+    {
+      "seed": 2,
+      "benchmark": "camelyon17",
+      "method": "sar",
+      "condition": "id_val|single_class|small|aggressive|online",
+      "B": -0.00390625,
+      "a0": 0.9921875,
+      "a_adapted": 0.98828125,
+      "a_kbound": 0.9921875,
+      "a_oracle": 0.9921875,
+      "regime": "marginal",
+      "oracle_action": "FREEZE",
+      "Z": [
+        4.5671225734622567e-07,
+        1.0,
+        6.602901889586123e-07,
+        0.09688691049814224,
+        0.9608983397483826,
+        0.7311605925287373,
+        -0.7311599322385484,
+        -0.0968864537858849,
+        0.8125,
+        3.0578911304473877,
+        0.0
+      ],
+      "Z_names": [
+        "pre_entropy",
+        "pre_conf",
+        "pre_pbal",
+        "post_entropy",
+        "post_conf",
+        "post_pbal",
+        "pbal_drop",
+        "entropy_drop",
+        "frac_highconf",
+        "marginal_KL",
+        "update_norm"
+      ],
+      "n_D": 128,
+      "c_ij": [
+        [
+          1.0,
+          0.0390625,
+          0.6640625,
+          0.9921875
+        ],
+        [
+          0.0390625,
+          1.0,
+          0.296875,
+          0.046875
+        ],
+        [
+          0.6640625,
+          0.296875,
+          1.0,
+          0.65625
+        ],
+        [
+          0.9921875,
+          0.046875,
+          0.65625,
+          1.0
+        ]
+      ],
+      "Z_ev2": null,
+      "Z_ev2_names": null,
+      "tau_hat": 0.0,
+      "tau_star": 0.0,
+      "b_hat": 0.05855978954687473,
+      "eps_conformal": 0.09098447368774502,
+      "benefit_ci": [
+        -0.0324246841408703,
+        0.14954426323461975
+      ],
+      "zone": "BLIND",
+      "gamma_hat": 0.029279894773437364,
+      "gamma_ci": [
+        -0.01621234207043515,
+        0.07477213161730988
+      ],
+      "kga_decision": "ABSTAIN"
+    }
+  ]
+}

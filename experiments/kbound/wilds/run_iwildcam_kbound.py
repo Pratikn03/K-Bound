@@ -98,9 +98,18 @@ def present_jpgs(data_dir: Path):
     if cache.exists():
         try:
             with cache.open() as f:
-                names = set(json.load(f)["names"])
-            _PRESENT_CACHE[key] = names
-            return names
+                cached = json.load(f)
+            # Older cache files were created before a partial iWildCam extract was
+            # repaired and can list images that are no longer present. Trust only
+            # v2 caches tied to this exact train directory mtime.
+            if (
+                cached.get("scan_version") == 2
+                and cached.get("data_dir") == key
+                and cached.get("data_dir_mtime_ns") == data_dir.stat().st_mtime_ns
+            ):
+                names = set(cached["names"])
+                _PRESENT_CACHE[key] = names
+                return names
         except Exception:
             pass
     names = {
@@ -110,7 +119,14 @@ def present_jpgs(data_dir: Path):
     }
     tmp = cache.with_suffix(cache.suffix + ".tmp")
     with tmp.open("w") as f:
-        json.dump({"created": time.strftime("%Y-%m-%dT%H:%M:%S"), "count": len(names), "names": sorted(names)}, f)
+        json.dump({
+            "scan_version": 2,
+            "created": time.strftime("%Y-%m-%dT%H:%M:%S"),
+            "data_dir": key,
+            "data_dir_mtime_ns": data_dir.stat().st_mtime_ns,
+            "count": len(names),
+            "names": sorted(names),
+        }, f)
     os.replace(tmp, cache)
     _PRESENT_CACHE[key] = names
     print(f"[iwildcam] present image cache: {len(names)} files -> {cache}", flush=True)
@@ -393,7 +409,7 @@ def run_scan(args, f0, device, out_dir: Path):
                                 sub, y, locations, loc, comp, bs, args.n_eval, args.n_batches, rng, device
                             )
                             steps = args.steps_override or AGGR[aggr]["steps"]
-                            lr = AGGR[aggr]["lr"]
+                            lr = args.adapt_lr if getattr(args, "adapt_lr", None) is not None else AGGR[aggr]["lr"]
                             a0_bacc, p0, p0_pos = tm.eval_frozen(f0, eval_x, eval_y, prob_mode="max", bs=args.eval_bs)
                             a0 = macro_f1(eval_y, p0)            # headline metric = WILDS macro-F1
                             a0_acc = float((np.asarray(p0) == np.asarray(eval_y)).mean())
@@ -638,6 +654,12 @@ def parse_args(argv=None):
     p.add_argument("--smoke", action="store_true")
     p.add_argument("--resume", action=argparse.BooleanOptionalAction, default=True,
                    help="skip cells already in _partial.json (default: on)")
+    # ---- WIN_HUNT_v5: absolute adapter LR override (enters config hash via vars(args)) ----
+    p.add_argument("--adapt-lr", type=float, default=None, dest="adapt_lr",
+                   help="WIN_HUNT_v5: absolute adapter LR override for tent/eata/sar (AGGR cell lr "
+                        "ignored when set). DEFAULT None = per-cell lr (byte-identical). v5 aggressive "
+                        "wave sets 0.004 (= 4x the 1e-3 shared-baseline lr). The 'continual' no-reset "
+                        "op-point is selected via --candidates tent_online eata_online sar_online.")
     args = p.parse_args(argv)
     if args.smoke:
         args.run_name = "iwildcam_kbound_smoke"

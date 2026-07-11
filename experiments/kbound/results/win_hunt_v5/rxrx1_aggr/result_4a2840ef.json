@@ -1,0 +1,2230 @@
+{
+  "schema": "kbound_rxrx1_v0.5",
+  "dataset": "wilds-rxrx1",
+  "created": "2026-07-06T08:39:38",
+  "host": {
+    "node": "Pratik-Ns-MacBook-Pro.local",
+    "platform": "macOS-26.5.1-arm64-arm-64bit",
+    "python": "3.12.13",
+    "torch": "2.5.1",
+    "mps": true
+  },
+  "config": {
+    "data_root": "/Volumes/T9/uav/AutoML_Flagship_V8/experiments/kbound/data/wilds",
+    "ckpt": "/Volumes/T9/uav/AutoML_Flagship_V8/experiments/kbound/results/rxrx1_internal_backup/rxrx1_seed:0_epoch:best_model.pth",
+    "split": "test",
+    "seeds": [
+      0,
+      1,
+      2,
+      3
+    ],
+    "compositions": [
+      "iid",
+      "imbalanced",
+      "single_class"
+    ],
+    "batch_regimes": [
+      "small"
+    ],
+    "aggressiveness": [
+      "aggressive"
+    ],
+    "n_eval": 256,
+    "n_batches": 4,
+    "tau_star": 0.52,
+    "kappa": 2.5,
+    "sd_L": 0.6,
+    "delta": 0.05,
+    "device": "auto",
+    "steps_override": 0,
+    "episodic_steps": 5,
+    "episodic_batch": 64,
+    "smoke": false,
+    "adapt_lr": 0.004,
+    "online_only": true
+  },
+  "config_sha8": "4a2840ef",
+  "f0": "torchvision resnet50(num_classes=1139) <- official WILDS RxRx1 ERM checkpoint (rxrx1_seed:0_epoch:best_model.pth, 'model.'-stripped, 0 missing/0 unexpected); frozen; WILDS rxrx1 eval transform (ToTensor + per-image standardize); in-dist acc ~35.9%",
+  "num_classes": 1139,
+  "candidates": [
+    "tent_online",
+    "eata_online",
+    "sar_online"
+  ],
+  "domain": "rxrx1 (OOD 'test' split = 14 unseen experiments)",
+  "multiclass_caveat": "multi-candidate tau-route (b) uses prediction agreement on a 1139-class label space; the binary-Y advantage recovery (Thm 1A) is heuristic here, so per-condition tau is stored for re-pick. (a) KGA and (c) smooth-drift (max-prob Brier) generalize directly.",
+  "eval_pool_note": "eval pool is class-balanced then CAPPED at n_eval (1139 classes >> n_eval), so balanced_acc over the sampled singleton-classes equals standard accuracy.",
+  "data": {
+    "data_root": "/Volumes/T9/uav/AutoML_Flagship_V8/experiments/kbound/data/wilds",
+    "split": "test",
+    "n_present": 34432,
+    "n_total": 34432,
+    "n_dropped_disk_filter": 0,
+    "n_classes": 1139,
+    "wall_sec": 2050.9,
+    "cells_done": 12,
+    "cells_total": 12
+  },
+  "baselines": {
+    "always_freeze_mean_acc": 0.2724609375,
+    "per_candidate_always_adapt_mean_acc": {
+      "eata_online": 0.24348958333333334,
+      "sar_online": 0.0006510416666666666,
+      "tent_online": 0.103515625
+    },
+    "per_condition_oracle_mean_acc": 0.2724609375
+  },
+  "routing_a_single_candidate": {
+    "eata_online": {
+      "n_cells": 12,
+      "mean_B": -0.028971354166666668,
+      "base_rate_harmful_B<0": 0.9166666666666666,
+      "mean_acc": {
+        "always_adapt": 0.24348958333333334,
+        "always_freeze": 0.2724609375
+      },
+      "kga": {
+        "n": 12,
+        "decision_counts": {
+          "ADAPT": 0,
+          "FREEZE": 2,
+          "ABSTAIN": 10
+        },
+        "coverage": 0.16666666666666666,
+        "abstention_rate": 0.8333333333333334,
+        "adapt_precision_B>0": null,
+        "false_adapt_rate_B<0": null,
+        "mean_acc": {
+          "always_adapt": 0.24348958333333334,
+          "always_freeze": 0.2724609375,
+          "K_Bound": 0.2724609375,
+          "oracle": 0.2724609375
+        },
+        "regret_vs_oracle": {
+          "always_adapt": 0.028971354166666668,
+          "always_freeze": 0.0,
+          "K_Bound": 0.0
+        },
+        "worst_case_acc": {
+          "always_adapt": 0.203125,
+          "always_freeze": 0.23046875,
+          "K_Bound": 0.23046875
+        },
+        "alpha_false_adapt_budget": 0.1,
+        "beats_both_regret_only": false,
+        "beats_both": false,
+        "eps_conformal": 0.04149835236869129
+      }
+    },
+    "sar_online": {
+      "n_cells": 12,
+      "mean_B": -0.2718098958333333,
+      "base_rate_harmful_B<0": 1.0,
+      "mean_acc": {
+        "always_adapt": 0.0006510416666666666,
+        "always_freeze": 0.2724609375
+      },
+      "kga": {
+        "n": 12,
+        "decision_counts": {
+          "ADAPT": 0,
+          "FREEZE": 12,
+          "ABSTAIN": 0
+        },
+        "coverage": 1.0,
+        "abstention_rate": 0.0,
+        "adapt_precision_B>0": null,
+        "false_adapt_rate_B<0": null,
+        "mean_acc": {
+          "always_adapt": 0.0006510416666666666,
+          "always_freeze": 0.2724609375,
+          "K_Bound": 0.2724609375,
+          "oracle": 0.2724609375
+        },
+        "regret_vs_oracle": {
+          "always_adapt": 0.2718098958333333,
+          "always_freeze": 0.0,
+          "K_Bound": 0.0
+        },
+        "worst_case_acc": {
+          "always_adapt": 0.0,
+          "always_freeze": 0.23046875,
+          "K_Bound": 0.23046875
+        },
+        "alpha_false_adapt_budget": 0.1,
+        "beats_both_regret_only": false,
+        "beats_both": false,
+        "eps_conformal": 0.04320784467835203
+      }
+    },
+    "tent_online": {
+      "n_cells": 12,
+      "mean_B": -0.1689453125,
+      "base_rate_harmful_B<0": 1.0,
+      "mean_acc": {
+        "always_adapt": 0.103515625,
+        "always_freeze": 0.2724609375
+      },
+      "kga": {
+        "n": 12,
+        "decision_counts": {
+          "ADAPT": 0,
+          "FREEZE": 12,
+          "ABSTAIN": 0
+        },
+        "coverage": 1.0,
+        "abstention_rate": 0.0,
+        "adapt_precision_B>0": null,
+        "false_adapt_rate_B<0": null,
+        "mean_acc": {
+          "always_adapt": 0.103515625,
+          "always_freeze": 0.2724609375,
+          "K_Bound": 0.2724609375,
+          "oracle": 0.2724609375
+        },
+        "regret_vs_oracle": {
+          "always_adapt": 0.1689453125,
+          "always_freeze": 0.0,
+          "K_Bound": 0.0
+        },
+        "worst_case_acc": {
+          "always_adapt": 0.0546875,
+          "always_freeze": 0.23046875,
+          "K_Bound": 0.23046875
+        },
+        "alpha_false_adapt_budget": 0.1,
+        "beats_both_regret_only": false,
+        "beats_both": false,
+        "eps_conformal": 0.0496148988534118
+      }
+    }
+  },
+  "routing_b_multicandidate": {
+    "n_conditions": 12,
+    "mean_acc": {
+      "router": 0.2724609375,
+      "always_freeze": 0.2724609375,
+      "best_fixed_always_adapt": 0.24348958333333334,
+      "per_condition_oracle": 0.2724609375
+    },
+    "regret_vs_oracle": {
+      "router": 0.0,
+      "always_freeze": 0.0,
+      "best_fixed_always_adapt": 0.028971354166666668
+    },
+    "coverage": 0.0,
+    "abstention_rate": 1.0,
+    "false_adapt_rate": null,
+    "mean_tau": 1.5631448027397494,
+    "gate_pass_rate": 0.0,
+    "fixed_best_candidate": "eata_online",
+    "routing_breakdown": {
+      "ABSTAIN": 12
+    },
+    "decisions_by_regime": {
+      "marginal": {
+        "ABSTAIN": 6
+      },
+      "harmful": {
+        "ABSTAIN": 6
+      }
+    },
+    "decisions_by_domain": {
+      "rxrx1": {
+        "ABSTAIN": 12
+      }
+    },
+    "alpha_false_adapt_budget": 0.1,
+    "beats_both_regret_only": false,
+    "beats_both": false
+  },
+  "routing_c_smooth_drift": {
+    "implemented": true,
+    "theorem": "1B",
+    "view": "brier_squared_loss",
+    "gS_estimate": "f0_surrogate(conservative)",
+    "n_conditions": 12,
+    "decision_counts": {
+      "ABSTAIN": 12
+    },
+    "mean_center_c": 0.0,
+    "mean_reach": 0.0,
+    "mean_d_obs": 0.08249763043761617,
+    "bracket_coverage_trueB": 1.0,
+    "status": "DIAGNOSTIC (wired to val_smooth_drift.py; conservative g_S~f0 surrogate)",
+    "note": "DIAGNOSTIC: g_S~f0 makes center conservative; full 1B classification instantiation needs an f0-independent source-concept estimate."
+  },
+  "detectability": {
+    "n_cells": 36,
+    "n_harmful": 35,
+    "base_rate_harmful": 0.9722222222222222,
+    "mean_B": -0.15657552083333334,
+    "per_feature": {
+      "pre_entropy": {
+        "pearson_corr_B": 0.0020592027331531025,
+        "harm_AUC": 0.9714285714285714
+      },
+      "pre_conf": {
+        "pearson_corr_B": -0.029350868116536692,
+        "harm_AUC": 0.9714285714285714
+      },
+      "pre_pbal": {
+        "pearson_corr_B": -0.0050850355387676485,
+        "harm_AUC": 0.8857142857142857
+      },
+      "post_entropy": {
+        "pearson_corr_B": -0.680728750652318,
+        "harm_AUC": 0.5428571428571428
+      },
+      "post_conf": {
+        "pearson_corr_B": 0.6604054064098283,
+        "harm_AUC": 0.5428571428571428
+      },
+      "post_pbal": {
+        "pearson_corr_B": -0.6503793341030146,
+        "harm_AUC": 0.5428571428571428
+      },
+      "pbal_drop": {
+        "pearson_corr_B": 0.6185607196264183,
+        "harm_AUC": 0.5714285714285714
+      },
+      "entropy_drop": {
+        "pearson_corr_B": 0.6833486562389471,
+        "harm_AUC": 0.5714285714285714
+      },
+      "frac_highconf": {
+        "pearson_corr_B": 0.6613914821247542,
+        "harm_AUC": 0.5142857142857142
+      },
+      "marginal_KL": {
+        "pearson_corr_B": -0.157343120251577,
+        "harm_AUC": 1.0
+      },
+      "update_norm": {
+        "pearson_corr_B": -0.7779973257849015,
+        "harm_AUC": 0.9428571428571428
+      }
+    },
+    "certificate_harm_AUC_negBhat": 0.8285714285714286,
+    "certificate_eps": 0.045484014161136954,
+    "best_single_feature_harm_AUC": 1.0,
+    "detectability_verdict": "detectable"
+  },
+  "kbound_summary": {
+    "classification": "harmful-dominated",
+    "base_rate_harmful_B<0": 0.9722222222222222,
+    "mean_B": -0.15657552083333334,
+    "detectability_verdict": "detectable",
+    "best_single_feature_harm_AUC": 1.0,
+    "gamma_S_proxy_indist_advantage": null,
+    "gamma_T_proxy_oracle_advantage": null,
+    "delta": 0.05,
+    "abs_gammaT_minus_gammaS": null,
+    "gamma_gap_within_delta": null,
+    "real_data_multicandidate_tau_mean": 1.5631448027397494,
+    "_note": "gamma_S/gamma_T are operational debug-scale proxies (in-dist vs OOD adaptation advantage); final defs follow the paper. Classification honors the integrity policy: reported from measured B, never tuned to a target."
+  },
+  "tau_distribution": [
+    1.3582870137080418,
+    1.3982614668410742,
+    1.4162106032296398,
+    1.4685026053572867,
+    1.4703198263436241,
+    1.4725816765973403,
+    1.540145195474183,
+    1.5668693892862091,
+    1.6538466761527297,
+    1.7030139374770354,
+    1.8058931455286187,
+    1.9038060968812114
+  ],
+  "records": [
+    {
+      "seed": 0,
+      "domain": "rxrx1",
+      "comp": "iid",
+      "regime": "small",
+      "aggr": "aggressive",
+      "method": "tent",
+      "mode": "online",
+      "candidate": "tent_online",
+      "a0": 0.26953125,
+      "aa": 0.109375,
+      "B": -0.16015625,
+      "upd_norm": 9.378428689697607,
+      "Z": [
+        1.3758759498596191,
+        0.5911136865615845,
+        0.5730545369344023,
+        0.003602334763854742,
+        0.9996815323829651,
+        0.394450550370463,
+        0.17860398656393933,
+        1.3722736150957644,
+        1.0,
+        2.6021242141723633,
+        9.378428689697607
+      ],
+      "regime_label": "harmful"
+    },
+    {
+      "seed": 0,
+      "domain": "rxrx1",
+      "comp": "iid",
+      "regime": "small",
+      "aggr": "aggressive",
+      "method": "eata",
+      "mode": "online",
+      "candidate": "eata_online",
+      "a0": 0.26953125,
+      "aa": 0.265625,
+      "B": -0.00390625,
+      "upd_norm": 8.286744472459878,
+      "Z": [
+        1.3758759498596191,
+        0.5911136865615845,
+        0.5730545369344023,
+        0.5106555223464966,
+        0.8938393592834473,
+        0.4612838161160802,
+        0.11177072081832212,
+        0.8652204275131226,
+        0.875,
+        2.545262098312378,
+        8.286744472459878
+      ],
+      "regime_label": "marginal"
+    },
+    {
+      "seed": 0,
+      "domain": "rxrx1",
+      "comp": "iid",
+      "regime": "small",
+      "aggr": "aggressive",
+      "method": "sar",
+      "mode": "online",
+      "candidate": "sar_online",
+      "a0": 0.26953125,
+      "aa": 0.0,
+      "B": -0.26953125,
+      "upd_norm": 1875.748638148542,
+      "Z": [
+        1.3758759498596191,
+        0.5911136865615845,
+        0.5730545369344023,
+        6.474340438842773,
+        0.01436916459351778,
+        0.9199242604929077,
+        -0.3468697235585053,
+        -5.098464488983154,
+        0.0,
+        5.337294578552246,
+        1875.748638148542
+      ],
+      "regime_label": "harmful"
+    },
+    {
+      "seed": 0,
+      "domain": "rxrx1",
+      "comp": "imbalanced",
+      "regime": "small",
+      "aggr": "aggressive",
+      "method": "tent",
+      "mode": "online",
+      "candidate": "tent_online",
+      "a0": 0.30078125,
+      "aa": 0.0546875,
+      "B": -0.24609375,
+      "upd_norm": 10.04458827314608,
+      "Z": [
+        1.0977332592010498,
+        0.6717659831047058,
+        0.48069289930095466,
+        0.0024460689164698124,
+        0.9997907876968384,
+        0.3650254833519003,
+        0.11566741594905433,
+        1.09528719028458,
+        1.0,
+        9.054344177246094,
+        10.04458827314608
+      ],
+      "regime_label": "harmful"
+    },
+    {
+      "seed": 0,
+      "domain": "rxrx1",
+      "comp": "imbalanced",
+      "regime": "small",
+      "aggr": "aggressive",
+      "method": "eata",
+      "mode": "online",
+      "candidate": "eata_online",
+      "a0": 0.30078125,
+      "aa": 0.296875,
+      "B": -0.00390625,
+      "upd_norm": 7.903518930196039,
+      "Z": [
+        1.0977332592010498,
+        0.6717659831047058,
+        0.48069289930095466,
+        0.8548098802566528,
+        0.8159162998199463,
+        0.4810718062970272,
+        -0.00037890699607256995,
+        0.24292337894439697,
+        0.75,
+        6.852545738220215,
+        7.903518930196039
+      ],
+      "regime_label": "marginal"
+    },
+    {
+      "seed": 0,
+      "domain": "rxrx1",
+      "comp": "imbalanced",
+      "regime": "small",
+      "aggr": "aggressive",
+      "method": "sar",
+      "mode": "online",
+      "candidate": "sar_online",
+      "a0": 0.30078125,
+      "aa": 0.0,
+      "B": -0.30078125,
+      "upd_norm": 1514.804187938192,
+      "Z": [
+        1.0977332592010498,
+        0.6717659831047058,
+        0.48069289930095466,
+        1.744131326675415,
+        0.6866632699966431,
+        0.5681009673768957,
+        -0.08740806807594109,
+        -0.6463980674743652,
+        0.5625,
+        8.025121688842773,
+        1514.804187938192
+      ],
+      "regime_label": "harmful"
+    },
+    {
+      "seed": 0,
+      "domain": "rxrx1",
+      "comp": "single_class",
+      "regime": "small",
+      "aggr": "aggressive",
+      "method": "tent",
+      "mode": "online",
+      "candidate": "tent_online",
+      "a0": 0.25390625,
+      "aa": 0.1171875,
+      "B": -0.13671875,
+      "upd_norm": 7.176105121806454,
+      "Z": [
+        1.2165882587432861,
+        0.6523325443267822,
+        0.42547312451587366,
+        0.0012303285766392946,
+        0.9998996257781982,
+        0.3103442409330746,
+        0.11512888358279905,
+        1.2153579301666468,
+        1.0,
+        7.853496551513672,
+        7.176105121806454
+      ],
+      "regime_label": "harmful"
+    },
+    {
+      "seed": 0,
+      "domain": "rxrx1",
+      "comp": "single_class",
+      "regime": "small",
+      "aggr": "aggressive",
+      "method": "eata",
+      "mode": "online",
+      "candidate": "eata_online",
+      "a0": 0.25390625,
+      "aa": 0.2109375,
+      "B": -0.04296875,
+      "upd_norm": 7.882700716953673,
+      "Z": [
+        1.2165882587432861,
+        0.6523325443267822,
+        0.42547312451587366,
+        1.7918283939361572,
+        0.677088737487793,
+        0.5611932404596712,
+        -0.13572011594379757,
+        -0.5752401351928711,
+        0.625,
+        5.8965744972229,
+        7.882700716953673
+      ],
+      "regime_label": "harmful"
+    },
+    {
+      "seed": 0,
+      "domain": "rxrx1",
+      "comp": "single_class",
+      "regime": "small",
+      "aggr": "aggressive",
+      "method": "sar",
+      "mode": "online",
+      "candidate": "sar_online",
+      "a0": 0.25390625,
+      "aa": 0.0,
+      "B": -0.25390625,
+      "upd_norm": 1625.2476190258453,
+      "Z": [
+        1.2165882587432861,
+        0.6523325443267822,
+        0.42547312451587366,
+        6.528738975524902,
+        0.00845714658498764,
+        0.9276536244492689,
+        -0.5021804999333952,
+        -5.312150716781616,
+        0.0,
+        7.540355682373047,
+        1625.2476190258453
+      ],
+      "regime_label": "harmful"
+    },
+    {
+      "seed": 1,
+      "domain": "rxrx1",
+      "comp": "iid",
+      "regime": "small",
+      "aggr": "aggressive",
+      "method": "tent",
+      "mode": "online",
+      "candidate": "tent_online",
+      "a0": 0.23046875,
+      "aa": 0.11328125,
+      "B": -0.1171875,
+      "upd_norm": 8.217937461952307,
+      "Z": [
+        1.3946068286895752,
+        0.5572785139083862,
+        0.581339405309324,
+        0.0024166726507246494,
+        0.9997951984405518,
+        0.3942903491022979,
+        0.18704905620702617,
+        1.3921901560388505,
+        1.0,
+        2.599327564239502,
+        8.217937461952307
+      ],
+      "regime_label": "harmful"
+    },
+    {
+      "seed": 1,
+      "domain": "rxrx1",
+      "comp": "iid",
+      "regime": "small",
+      "aggr": "aggressive",
+      "method": "eata",
+      "mode": "online",
+      "candidate": "eata_online",
+      "a0": 0.23046875,
+      "aa": 0.2109375,
+      "B": -0.01953125,
+      "upd_norm": 8.413015075953206,
+      "Z": [
+        1.3946068286895752,
+        0.5572785139083862,
+        0.581339405309324,
+        0.28927552700042725,
+        0.9388128519058228,
+        0.43408029250283237,
+        0.14725911280649168,
+        1.105331301689148,
+        0.9375,
+        2.718663215637207,
+        8.413015075953206
+      ],
+      "regime_label": "marginal"
+    },
+    {
+      "seed": 1,
+      "domain": "rxrx1",
+      "comp": "iid",
+      "regime": "small",
+      "aggr": "aggressive",
+      "method": "sar",
+      "mode": "online",
+      "candidate": "sar_online",
+      "a0": 0.23046875,
+      "aa": 0.0,
+      "B": -0.23046875,
+      "upd_norm": 1934.878643027097,
+      "Z": [
+        1.3946068286895752,
+        0.5572785139083862,
+        0.581339405309324,
+        6.484491348266602,
+        0.015769286081194878,
+        0.9213665800516726,
+        -0.34002717474234856,
+        -5.089884519577026,
+        0.0,
+        4.917176246643066,
+        1934.878643027097
+      ],
+      "regime_label": "harmful"
+    },
+    {
+      "seed": 1,
+      "domain": "rxrx1",
+      "comp": "imbalanced",
+      "regime": "small",
+      "aggr": "aggressive",
+      "method": "tent",
+      "mode": "online",
+      "candidate": "tent_online",
+      "a0": 0.23828125,
+      "aa": 0.109375,
+      "B": -0.12890625,
+      "upd_norm": 7.6623813127272085,
+      "Z": [
+        1.054093360900879,
+        0.6956795454025269,
+        0.3525144045712534,
+        0.0006753517664037645,
+        0.9999467134475708,
+        0.3447950680150563,
+        0.007719336556197054,
+        1.0534180091344751,
+        1.0,
+        8.38961410522461,
+        7.6623813127272085
+      ],
+      "regime_label": "harmful"
+    },
+    {
+      "seed": 1,
+      "domain": "rxrx1",
+      "comp": "imbalanced",
+      "regime": "small",
+      "aggr": "aggressive",
+      "method": "eata",
+      "mode": "online",
+      "candidate": "eata_online",
+      "a0": 0.23828125,
+      "aa": 0.203125,
+      "B": -0.03515625,
+      "upd_norm": 8.363859845964479,
+      "Z": [
+        1.054093360900879,
+        0.6956795454025269,
+        0.3525144045712534,
+        0.5509366989135742,
+        0.8830685615539551,
+        0.42225927501051785,
+        -0.06974487043926447,
+        0.5031566619873047,
+        0.875,
+        8.464008331298828,
+        8.363859845964479
+      ],
+      "regime_label": "harmful"
+    },
+    {
+      "seed": 1,
+      "domain": "rxrx1",
+      "comp": "imbalanced",
+      "regime": "small",
+      "aggr": "aggressive",
+      "method": "sar",
+      "mode": "online",
+      "candidate": "sar_online",
+      "a0": 0.23828125,
+      "aa": 0.0,
+      "B": -0.23828125,
+      "upd_norm": 1682.2167532950818,
+      "Z": [
+        1.054093360900879,
+        0.6956795454025269,
+        0.3525144045712534,
+        6.4884185791015625,
+        0.012265369296073914,
+        0.921924591320274,
+        -0.5694101867490207,
+        -5.434325218200684,
+        0.0,
+        6.148752212524414,
+        1682.2167532950818
+      ],
+      "regime_label": "harmful"
+    },
+    {
+      "seed": 1,
+      "domain": "rxrx1",
+      "comp": "single_class",
+      "regime": "small",
+      "aggr": "aggressive",
+      "method": "tent",
+      "mode": "online",
+      "candidate": "tent_online",
+      "a0": 0.26953125,
+      "aa": 0.12890625,
+      "B": -0.140625,
+      "upd_norm": 6.9771775940204,
+      "Z": [
+        1.8604011535644531,
+        0.5094097256660461,
+        0.5732268320601981,
+        0.0009286556160077453,
+        0.9999287128448486,
+        0.3325268149248741,
+        0.24070001713532396,
+        1.8594724979484454,
+        1.0,
+        6.244144916534424,
+        6.9771775940204
+      ],
+      "regime_label": "harmful"
+    },
+    {
+      "seed": 1,
+      "domain": "rxrx1",
+      "comp": "single_class",
+      "regime": "small",
+      "aggr": "aggressive",
+      "method": "eata",
+      "mode": "online",
+      "candidate": "eata_online",
+      "a0": 0.26953125,
+      "aa": 0.25,
+      "B": -0.01953125,
+      "upd_norm": 8.893564802642604,
+      "Z": [
+        1.8604011535644531,
+        0.5094097256660461,
+        0.5732268320601981,
+        0.6406561136245728,
+        0.8471317887306213,
+        0.4210543948022646,
+        0.1521724372579335,
+        1.2197450399398804,
+        0.8125,
+        5.692329406738281,
+        8.893564802642604
+      ],
+      "regime_label": "marginal"
+    },
+    {
+      "seed": 1,
+      "domain": "rxrx1",
+      "comp": "single_class",
+      "regime": "small",
+      "aggr": "aggressive",
+      "method": "sar",
+      "mode": "online",
+      "candidate": "sar_online",
+      "a0": 0.26953125,
+      "aa": 0.0,
+      "B": -0.26953125,
+      "upd_norm": 1448.4691896297647,
+      "Z": [
+        1.8604011535644531,
+        0.5094097256660461,
+        0.5732268320601981,
+        6.491218090057373,
+        0.01061935629695654,
+        0.9223223674443585,
+        -0.3490955353841604,
+        -4.63081693649292,
+        0.0,
+        6.20448112487793,
+        1448.4691896297647
+      ],
+      "regime_label": "harmful"
+    },
+    {
+      "seed": 2,
+      "domain": "rxrx1",
+      "comp": "iid",
+      "regime": "small",
+      "aggr": "aggressive",
+      "method": "tent",
+      "mode": "online",
+      "candidate": "tent_online",
+      "a0": 0.2890625,
+      "aa": 0.1328125,
+      "B": -0.15625,
+      "upd_norm": 8.584681427291,
+      "Z": [
+        1.3305511474609375,
+        0.642756998538971,
+        0.5709219528291936,
+        0.0020199937280267477,
+        0.9998278617858887,
+        0.3942339449763738,
+        0.17668800785281974,
+        1.3285311537329108,
+        1.0,
+        3.0247600078582764,
+        8.584681427291
+      ],
+      "regime_label": "harmful"
+    },
+    {
+      "seed": 2,
+      "domain": "rxrx1",
+      "comp": "iid",
+      "regime": "small",
+      "aggr": "aggressive",
+      "method": "eata",
+      "mode": "online",
+      "candidate": "eata_online",
+      "a0": 0.2890625,
+      "aa": 0.23828125,
+      "B": -0.05078125,
+      "upd_norm": 9.127865109603666,
+      "Z": [
+        1.3305511474609375,
+        0.642756998538971,
+        0.5709219528291936,
+        0.5156139135360718,
+        0.8885778188705444,
+        0.4651844409036335,
+        0.10573751192556008,
+        0.8149372339248657,
+        0.875,
+        2.580073833465576,
+        9.127865109603666
+      ],
+      "regime_label": "harmful"
+    },
+    {
+      "seed": 2,
+      "domain": "rxrx1",
+      "comp": "iid",
+      "regime": "small",
+      "aggr": "aggressive",
+      "method": "sar",
+      "mode": "online",
+      "candidate": "sar_online",
+      "a0": 0.2890625,
+      "aa": 0.00390625,
+      "B": -0.28515625,
+      "upd_norm": 1682.7117247901965,
+      "Z": [
+        1.3305511474609375,
+        0.642756998538971,
+        0.5709219528291936,
+        6.551755428314209,
+        0.011224520392715931,
+        0.9309239797096045,
+        -0.36000202688041094,
+        -5.2212042808532715,
+        0.0,
+        4.937569618225098,
+        1682.7117247901965
+      ],
+      "regime_label": "harmful"
+    },
+    {
+      "seed": 2,
+      "domain": "rxrx1",
+      "comp": "imbalanced",
+      "regime": "small",
+      "aggr": "aggressive",
+      "method": "tent",
+      "mode": "online",
+      "candidate": "tent_online",
+      "a0": 0.27734375,
+      "aa": 0.05859375,
+      "B": -0.21875,
+      "upd_norm": 9.533248159579255,
+      "Z": [
+        1.4027268886566162,
+        0.5700365304946899,
+        0.533311580033962,
+        0.0024612173438072205,
+        0.9997895359992981,
+        0.3403991370862803,
+        0.19291244294768167,
+        1.400265671312809,
+        1.0,
+        3.3038783073425293,
+        9.533248159579255
+      ],
+      "regime_label": "harmful"
+    },
+    {
+      "seed": 2,
+      "domain": "rxrx1",
+      "comp": "imbalanced",
+      "regime": "small",
+      "aggr": "aggressive",
+      "method": "eata",
+      "mode": "online",
+      "candidate": "eata_online",
+      "a0": 0.27734375,
+      "aa": 0.23046875,
+      "B": -0.046875,
+      "upd_norm": 7.878635355054323,
+      "Z": [
+        1.4027268886566162,
+        0.5700365304946899,
+        0.533311580033962,
+        0.2191033661365509,
+        0.9505739808082581,
+        0.37090648579554714,
+        0.16240509423841482,
+        1.1836235225200653,
+        0.9375,
+        3.394906759262085,
+        7.878635355054323
+      ],
+      "regime_label": "harmful"
+    },
+    {
+      "seed": 2,
+      "domain": "rxrx1",
+      "comp": "imbalanced",
+      "regime": "small",
+      "aggr": "aggressive",
+      "method": "sar",
+      "mode": "online",
+      "candidate": "sar_online",
+      "a0": 0.27734375,
+      "aa": 0.0,
+      "B": -0.27734375,
+      "upd_norm": 1664.3634739745412,
+      "Z": [
+        1.4027268886566162,
+        0.5700365304946899,
+        0.533311580033962,
+        6.570425987243652,
+        0.011306516826152802,
+        0.9335768368273911,
+        -0.40026525679342917,
+        -5.167699098587036,
+        0.0,
+        6.412449836730957,
+        1664.3634739745412
+      ],
+      "regime_label": "harmful"
+    },
+    {
+      "seed": 2,
+      "domain": "rxrx1",
+      "comp": "single_class",
+      "regime": "small",
+      "aggr": "aggressive",
+      "method": "tent",
+      "mode": "online",
+      "candidate": "tent_online",
+      "a0": 0.265625,
+      "aa": 0.1171875,
+      "B": -0.1484375,
+      "upd_norm": 8.91461269469783,
+      "Z": [
+        0.8547796010971069,
+        0.7331077456474304,
+        0.35503473740038227,
+        0.0005925282021053135,
+        0.9999544620513916,
+        0.35709746846796014,
+        -0.002062731067577872,
+        0.8541870728950016,
+        1.0,
+        10.93358039855957,
+        8.91461269469783
+      ],
+      "regime_label": "harmful"
+    },
+    {
+      "seed": 2,
+      "domain": "rxrx1",
+      "comp": "single_class",
+      "regime": "small",
+      "aggr": "aggressive",
+      "method": "eata",
+      "mode": "online",
+      "candidate": "eata_online",
+      "a0": 0.265625,
+      "aa": 0.265625,
+      "B": 0.0,
+      "upd_norm": 7.412063517466582,
+      "Z": [
+        0.8547796010971069,
+        0.7331077456474304,
+        0.35503473740038227,
+        0.47682300209999084,
+        0.902790904045105,
+        0.4229255212234601,
+        -0.06789078382307784,
+        0.3779565989971161,
+        0.875,
+        11.418278694152832,
+        7.412063517466582
+      ],
+      "regime_label": "marginal"
+    },
+    {
+      "seed": 2,
+      "domain": "rxrx1",
+      "comp": "single_class",
+      "regime": "small",
+      "aggr": "aggressive",
+      "method": "sar",
+      "mode": "online",
+      "candidate": "sar_online",
+      "a0": 0.265625,
+      "aa": 0.00390625,
+      "B": -0.26171875,
+      "upd_norm": 1717.4429133009137,
+      "Z": [
+        0.8547796010971069,
+        0.7331077456474304,
+        0.35503473740038227,
+        3.3024773597717285,
+        0.48585572838783264,
+        0.7131782398625068,
+        -0.35814350246212456,
+        -2.4476977586746216,
+        0.25,
+        8.80469799041748,
+        1717.4429133009137
+      ],
+      "regime_label": "harmful"
+    },
+    {
+      "seed": 3,
+      "domain": "rxrx1",
+      "comp": "iid",
+      "regime": "small",
+      "aggr": "aggressive",
+      "method": "tent",
+      "mode": "online",
+      "candidate": "tent_online",
+      "a0": 0.296875,
+      "aa": 0.11328125,
+      "B": -0.18359375,
+      "upd_norm": 8.416893675984818,
+      "Z": [
+        1.523741364479065,
+        0.5519242882728577,
+        0.5992207666522776,
+        0.003026665188372135,
+        0.9997209906578064,
+        0.3943762934070843,
+        0.20484447324519334,
+        1.5207146992906928,
+        1.0,
+        3.180361270904541,
+        8.416893675984818
+      ],
+      "regime_label": "harmful"
+    },
+    {
+      "seed": 3,
+      "domain": "rxrx1",
+      "comp": "iid",
+      "regime": "small",
+      "aggr": "aggressive",
+      "method": "eata",
+      "mode": "online",
+      "candidate": "eata_online",
+      "a0": 0.296875,
+      "aa": 0.28125,
+      "B": -0.015625,
+      "upd_norm": 8.175506013478453,
+      "Z": [
+        1.523741364479065,
+        0.5519242882728577,
+        0.5992207666522776,
+        0.2934529185295105,
+        0.9406843185424805,
+        0.43461547111024895,
+        0.16460529554202868,
+        1.2302884459495544,
+        0.9375,
+        2.956721305847168,
+        8.175506013478453
+      ],
+      "regime_label": "marginal"
+    },
+    {
+      "seed": 3,
+      "domain": "rxrx1",
+      "comp": "iid",
+      "regime": "small",
+      "aggr": "aggressive",
+      "method": "sar",
+      "mode": "online",
+      "candidate": "sar_online",
+      "a0": 0.296875,
+      "aa": 0.0,
+      "B": -0.296875,
+      "upd_norm": 1765.2442536860144,
+      "Z": [
+        1.523741364479065,
+        0.5519242882728577,
+        0.5992207666522776,
+        6.477993011474609,
+        0.0184988621622324,
+        0.920443246204113,
+        -0.32122247955183536,
+        -4.954251646995544,
+        0.0,
+        5.357754707336426,
+        1765.2442536860144
+      ],
+      "regime_label": "harmful"
+    },
+    {
+      "seed": 3,
+      "domain": "rxrx1",
+      "comp": "imbalanced",
+      "regime": "small",
+      "aggr": "aggressive",
+      "method": "tent",
+      "mode": "online",
+      "candidate": "tent_online",
+      "a0": 0.28515625,
+      "aa": 0.125,
+      "B": -0.16015625,
+      "upd_norm": 7.451862271597856,
+      "Z": [
+        1.6872161626815796,
+        0.5562294125556946,
+        0.5444002246744131,
+        0.0014800222124904394,
+        0.9998704791069031,
+        0.33561715125117936,
+        0.2087830734232337,
+        1.6857361404690892,
+        1.0,
+        5.701131820678711,
+        7.451862271597856
+      ],
+      "regime_label": "harmful"
+    },
+    {
+      "seed": 3,
+      "domain": "rxrx1",
+      "comp": "imbalanced",
+      "regime": "small",
+      "aggr": "aggressive",
+      "method": "eata",
+      "mode": "online",
+      "candidate": "eata_online",
+      "a0": 0.28515625,
+      "aa": 0.23828125,
+      "B": -0.046875,
+      "upd_norm": 7.829167555585586,
+      "Z": [
+        1.6872161626815796,
+        0.5562294125556946,
+        0.5444002246744131,
+        0.4173762798309326,
+        0.9127374887466431,
+        0.3940778766231412,
+        0.15032234805127187,
+        1.269839882850647,
+        0.875,
+        3.844104528427124,
+        7.829167555585586
+      ],
+      "regime_label": "harmful"
+    },
+    {
+      "seed": 3,
+      "domain": "rxrx1",
+      "comp": "imbalanced",
+      "regime": "small",
+      "aggr": "aggressive",
+      "method": "sar",
+      "mode": "online",
+      "candidate": "sar_online",
+      "a0": 0.28515625,
+      "aa": 0.0,
+      "B": -0.28515625,
+      "upd_norm": 2063.322353397491,
+      "Z": [
+        1.6872161626815796,
+        0.5562294125556946,
+        0.5444002246744131,
+        6.573835372924805,
+        0.009852793999016285,
+        0.9340612686596519,
+        -0.3896610439852388,
+        -4.886619210243225,
+        0.0,
+        4.609936714172363,
+        2063.322353397491
+      ],
+      "regime_label": "harmful"
+    },
+    {
+      "seed": 3,
+      "domain": "rxrx1",
+      "comp": "single_class",
+      "regime": "small",
+      "aggr": "aggressive",
+      "method": "tent",
+      "mode": "online",
+      "candidate": "tent_online",
+      "a0": 0.29296875,
+      "aa": 0.0625,
+      "B": -0.23046875,
+      "upd_norm": 9.739178782002522,
+      "Z": [
+        1.1304709911346436,
+        0.7148200273513794,
+        0.3988427549005294,
+        0.0020493613556027412,
+        0.9998222589492798,
+        0.3449954805129343,
+        0.05384727438759507,
+        1.1284216297790408,
+        1.0,
+        6.454030990600586,
+        9.739178782002522
+      ],
+      "regime_label": "harmful"
+    },
+    {
+      "seed": 3,
+      "domain": "rxrx1",
+      "comp": "single_class",
+      "regime": "small",
+      "aggr": "aggressive",
+      "method": "eata",
+      "mode": "online",
+      "candidate": "eata_online",
+      "a0": 0.29296875,
+      "aa": 0.23046875,
+      "B": -0.0625,
+      "upd_norm": 8.56999893012544,
+      "Z": [
+        1.1304709911346436,
+        0.7148200273513794,
+        0.3988427549005294,
+        0.9952744245529175,
+        0.7853090763092041,
+        0.48337739693142173,
+        -0.08453464203089234,
+        0.13519656658172607,
+        0.75,
+        6.129079341888428,
+        8.56999893012544
+      ],
+      "regime_label": "harmful"
+    },
+    {
+      "seed": 3,
+      "domain": "rxrx1",
+      "comp": "single_class",
+      "regime": "small",
+      "aggr": "aggressive",
+      "method": "sar",
+      "mode": "online",
+      "candidate": "sar_online",
+      "a0": 0.29296875,
+      "aa": 0.0,
+      "B": -0.29296875,
+      "upd_norm": 1590.6453884304046,
+      "Z": [
+        1.1304709911346436,
+        0.7148200273513794,
+        0.3988427549005294,
+        6.4563117027282715,
+        0.0404089093208313,
+        0.917362598514453,
+        -0.5185198436139236,
+        -5.325840711593628,
+        0.0,
+        6.185615062713623,
+        1590.6453884304046
+      ],
+      "regime_label": "harmful"
+    }
+  ],
+  "conditions": [
+    {
+      "seed": 0,
+      "domain": "rxrx1",
+      "comp": "iid",
+      "regime": "small",
+      "aggr": "aggressive",
+      "cand_names": [
+        "freeze_f0",
+        "tent_online",
+        "eata_online",
+        "sar_online"
+      ],
+      "aa_all": [
+        0.26953125,
+        0.109375,
+        0.265625,
+        0.0
+      ],
+      "a0": 0.26953125,
+      "oracle": 0.26953125,
+      "best_adapt": 0.265625,
+      "true_best": "freeze_f0",
+      "route": {
+        "tau": 1.6538466761527297,
+        "tau_star": 0.52,
+        "gate_pass": false,
+        "overdet_residual": 0.7578125,
+        "h_hat": 0.8155063812746478,
+        "margin": 2.1637659531866196,
+        "b_hat": [
+          -0.3138134474603279,
+          -0.28342915829281684,
+          -0.31407449436860224,
+          2.910512941940445
+        ],
+        "b_tilde": [
+          0.1767766952966369,
+          -0.0,
+          0.1758237142555681,
+          -0.0
+        ],
+        "anchor_b0": -0.3138134474603279,
+        "n_D": 256,
+        "M": 4,
+        "decision": "ABSTAIN",
+        "choice": null,
+        "reason": "tau=1.6538 > tau*=0.52 certifies Def-5 violated"
+      },
+      "route_c": {
+        "decision": "ABSTAIN",
+        "implemented": true,
+        "theorem": "1B",
+        "view": "brier_squared_loss",
+        "gS_estimate": "f0_surrogate(conservative)",
+        "center_c": 0.0,
+        "U": 0.0,
+        "T_S": 0.0,
+        "W": 0.0,
+        "d_obs": 0.018018766692597065,
+        "L": 0.6,
+        "reach": 0.0,
+        "eps_n": 0.125,
+        "bracket": [
+          -0.125,
+          0.125
+        ],
+        "note": "DIAGNOSTIC: g_S~f0 makes center conservative; full 1B classification instantiation needs an f0-independent source-concept estimate.",
+        "true_B_best": -0.00390625,
+        "bracket_covers_trueB": true
+      },
+      "realized": 0.26953125,
+      "regime_label": "marginal"
+    },
+    {
+      "seed": 0,
+      "domain": "rxrx1",
+      "comp": "imbalanced",
+      "regime": "small",
+      "aggr": "aggressive",
+      "cand_names": [
+        "freeze_f0",
+        "tent_online",
+        "eata_online",
+        "sar_online"
+      ],
+      "aa_all": [
+        0.30078125,
+        0.0546875,
+        0.296875,
+        0.0
+      ],
+      "a0": 0.30078125,
+      "oracle": 0.30078125,
+      "best_adapt": 0.296875,
+      "true_best": "freeze_f0",
+      "route": {
+        "tau": 1.9038060968812114,
+        "tau_star": 0.52,
+        "gate_pass": false,
+        "overdet_residual": 0.73529052734375,
+        "h_hat": 0.9329134902180685,
+        "margin": 2.457283725545171,
+        "b_hat": [
+          -0.30106645811028476,
+          -0.27064573586584006,
+          -0.3005810897327214,
+          2.974678555003048
+        ],
+        "b_tilde": [
+          0.0,
+          -0.0,
+          -0.0,
+          -0.0
+        ],
+        "anchor_b0": -0.30106645811028476,
+        "n_D": 256,
+        "M": 4,
+        "decision": "ABSTAIN",
+        "choice": null,
+        "reason": "tau=1.9038 > tau*=0.52 certifies Def-5 violated"
+      },
+      "route_c": {
+        "decision": "ABSTAIN",
+        "implemented": true,
+        "theorem": "1B",
+        "view": "brier_squared_loss",
+        "gS_estimate": "f0_surrogate(conservative)",
+        "center_c": 0.0,
+        "U": 0.0,
+        "T_S": 0.0,
+        "W": 0.0,
+        "d_obs": 0.04544587752229389,
+        "L": 0.6,
+        "reach": 0.0,
+        "eps_n": 0.125,
+        "bracket": [
+          -0.125,
+          0.125
+        ],
+        "note": "DIAGNOSTIC: g_S~f0 makes center conservative; full 1B classification instantiation needs an f0-independent source-concept estimate.",
+        "true_B_best": -0.00390625,
+        "bracket_covers_trueB": true
+      },
+      "realized": 0.30078125,
+      "regime_label": "marginal"
+    },
+    {
+      "seed": 0,
+      "domain": "rxrx1",
+      "comp": "single_class",
+      "regime": "small",
+      "aggr": "aggressive",
+      "cand_names": [
+        "freeze_f0",
+        "tent_online",
+        "eata_online",
+        "sar_online"
+      ],
+      "aa_all": [
+        0.25390625,
+        0.1171875,
+        0.2109375,
+        0.0
+      ],
+      "a0": 0.25390625,
+      "oracle": 0.25390625,
+      "best_adapt": 0.2109375,
+      "true_best": "freeze_f0",
+      "route": {
+        "tau": 1.4162106032296398,
+        "tau_star": 0.52,
+        "gate_pass": false,
+        "overdet_residual": 0.4453125,
+        "h_hat": 0.6776106018530385,
+        "margin": 1.8190265046325962,
+        "b_hat": [
+          -0.3118405672612164,
+          -0.29423550795940095,
+          -0.3115636942965008,
+          2.9078075266904766
+        ],
+        "b_tilde": [
+          0.0,
+          -0.0,
+          -0.0,
+          -0.0
+        ],
+        "anchor_b0": -0.3118405672612164,
+        "n_D": 256,
+        "M": 4,
+        "decision": "ABSTAIN",
+        "choice": null,
+        "reason": "tau=1.4162 > tau*=0.52 certifies Def-5 violated"
+      },
+      "route_c": {
+        "decision": "ABSTAIN",
+        "implemented": true,
+        "theorem": "1B",
+        "view": "brier_squared_loss",
+        "gS_estimate": "f0_surrogate(conservative)",
+        "center_c": 0.0,
+        "U": 0.0,
+        "T_S": 0.0,
+        "W": 0.0,
+        "d_obs": 0.05748630599026176,
+        "L": 0.6,
+        "reach": 0.0,
+        "eps_n": 0.125,
+        "bracket": [
+          -0.125,
+          0.125
+        ],
+        "note": "DIAGNOSTIC: g_S~f0 makes center conservative; full 1B classification instantiation needs an f0-independent source-concept estimate.",
+        "true_B_best": -0.04296875,
+        "bracket_covers_trueB": true
+      },
+      "realized": 0.25390625,
+      "regime_label": "harmful"
+    },
+    {
+      "seed": 1,
+      "domain": "rxrx1",
+      "comp": "iid",
+      "regime": "small",
+      "aggr": "aggressive",
+      "cand_names": [
+        "freeze_f0",
+        "tent_online",
+        "eata_online",
+        "sar_online"
+      ],
+      "aa_all": [
+        0.23046875,
+        0.11328125,
+        0.2109375,
+        0.0
+      ],
+      "a0": 0.23046875,
+      "oracle": 0.23046875,
+      "best_adapt": 0.2109375,
+      "true_best": "freeze_f0",
+      "route": {
+        "tau": 1.4725816765973403,
+        "tau_star": 0.52,
+        "gate_pass": false,
+        "overdet_residual": 0.63543701171875,
+        "h_hat": 0.7553957748373861,
+        "margin": 2.0134894370934653,
+        "b_hat": [
+          -0.31244905386568317,
+          -0.29231413476018653,
+          -0.3151990235823295,
+          2.8883706420918145
+        ],
+        "b_tilde": [
+          0.0,
+          -0.0,
+          -0.0,
+          -0.0
+        ],
+        "anchor_b0": -0.31244905386568317,
+        "n_D": 256,
+        "M": 4,
+        "decision": "ABSTAIN",
+        "choice": null,
+        "reason": "tau=1.4726 > tau*=0.52 certifies Def-5 violated"
+      },
+      "route_c": {
+        "decision": "ABSTAIN",
+        "implemented": true,
+        "theorem": "1B",
+        "view": "brier_squared_loss",
+        "gS_estimate": "f0_surrogate(conservative)",
+        "center_c": 0.0,
+        "U": 0.0,
+        "T_S": 0.0,
+        "W": 0.0,
+        "d_obs": 0.02362666495809161,
+        "L": 0.6,
+        "reach": 0.0,
+        "eps_n": 0.125,
+        "bracket": [
+          -0.125,
+          0.125
+        ],
+        "note": "DIAGNOSTIC: g_S~f0 makes center conservative; full 1B classification instantiation needs an f0-independent source-concept estimate.",
+        "true_B_best": -0.01953125,
+        "bracket_covers_trueB": true
+      },
+      "realized": 0.23046875,
+      "regime_label": "marginal"
+    },
+    {
+      "seed": 1,
+      "domain": "rxrx1",
+      "comp": "imbalanced",
+      "regime": "small",
+      "aggr": "aggressive",
+      "cand_names": [
+        "freeze_f0",
+        "tent_online",
+        "eata_online",
+        "sar_online"
+      ],
+      "aa_all": [
+        0.23828125,
+        0.109375,
+        0.203125,
+        0.0
+      ],
+      "a0": 0.23828125,
+      "oracle": 0.23828125,
+      "best_adapt": 0.203125,
+      "true_best": "freeze_f0",
+      "route": {
+        "tau": 1.540145195474183,
+        "tau_star": 0.52,
+        "gate_pass": false,
+        "overdet_residual": 0.59375,
+        "h_hat": 0.7613520900742173,
+        "margin": 2.0283802251855434,
+        "b_hat": [
+          -0.3115643366109865,
+          -0.28817530015331044,
+          -0.31049534788934097,
+          2.91853274223655
+        ],
+        "b_tilde": [
+          0.0,
+          -0.0,
+          -0.0,
+          -0.0
+        ],
+        "anchor_b0": -0.3115643366109865,
+        "n_D": 256,
+        "M": 4,
+        "decision": "ABSTAIN",
+        "choice": null,
+        "reason": "tau=1.5401 > tau*=0.52 certifies Def-5 violated"
+      },
+      "route_c": {
+        "decision": "ABSTAIN",
+        "implemented": true,
+        "theorem": "1B",
+        "view": "brier_squared_loss",
+        "gS_estimate": "f0_surrogate(conservative)",
+        "center_c": 0.0,
+        "U": 0.0,
+        "T_S": 0.0,
+        "W": 0.0,
+        "d_obs": 0.17061233125558214,
+        "L": 0.6,
+        "reach": 0.0,
+        "eps_n": 0.125,
+        "bracket": [
+          -0.125,
+          0.125
+        ],
+        "note": "DIAGNOSTIC: g_S~f0 makes center conservative; full 1B classification instantiation needs an f0-independent source-concept estimate.",
+        "true_B_best": -0.03515625,
+        "bracket_covers_trueB": true
+      },
+      "realized": 0.23828125,
+      "regime_label": "harmful"
+    },
+    {
+      "seed": 1,
+      "domain": "rxrx1",
+      "comp": "single_class",
+      "regime": "small",
+      "aggr": "aggressive",
+      "cand_names": [
+        "freeze_f0",
+        "tent_online",
+        "eata_online",
+        "sar_online"
+      ],
+      "aa_all": [
+        0.26953125,
+        0.12890625,
+        0.25,
+        0.0
+      ],
+      "a0": 0.26953125,
+      "oracle": 0.26953125,
+      "best_adapt": 0.25,
+      "true_best": "freeze_f0",
+      "route": {
+        "tau": 1.3982614668410742,
+        "tau_star": 0.52,
+        "gate_pass": false,
+        "overdet_residual": 0.6796875,
+        "h_hat": 0.6975560458991943,
+        "margin": 1.8688901147479857,
+        "b_hat": [
+          -0.3251645418245972,
+          -0.29598686074422537,
+          -0.3243169161557694,
+          2.8505856503368
+        ],
+        "b_tilde": [
+          0.2740094320113248,
+          -0.0,
+          0.2795084971874737,
+          -0.0
+        ],
+        "anchor_b0": -0.3251645418245972,
+        "n_D": 256,
+        "M": 4,
+        "decision": "ABSTAIN",
+        "choice": null,
+        "reason": "tau=1.3983 > tau*=0.52 certifies Def-5 violated"
+      },
+      "route_c": {
+        "decision": "ABSTAIN",
+        "implemented": true,
+        "theorem": "1B",
+        "view": "brier_squared_loss",
+        "gS_estimate": "f0_surrogate(conservative)",
+        "center_c": 0.0,
+        "U": 0.0,
+        "T_S": 0.0,
+        "W": 0.0,
+        "d_obs": 0.11981139886679136,
+        "L": 0.6,
+        "reach": 0.0,
+        "eps_n": 0.125,
+        "bracket": [
+          -0.125,
+          0.125
+        ],
+        "note": "DIAGNOSTIC: g_S~f0 makes center conservative; full 1B classification instantiation needs an f0-independent source-concept estimate.",
+        "true_B_best": -0.01953125,
+        "bracket_covers_trueB": true
+      },
+      "realized": 0.26953125,
+      "regime_label": "marginal"
+    },
+    {
+      "seed": 2,
+      "domain": "rxrx1",
+      "comp": "iid",
+      "regime": "small",
+      "aggr": "aggressive",
+      "cand_names": [
+        "freeze_f0",
+        "tent_online",
+        "eata_online",
+        "sar_online"
+      ],
+      "aa_all": [
+        0.2890625,
+        0.1328125,
+        0.23828125,
+        0.00390625
+      ],
+      "a0": 0.2890625,
+      "oracle": 0.2890625,
+      "best_adapt": 0.23828125,
+      "true_best": "freeze_f0",
+      "route": {
+        "tau": 1.4703198263436241,
+        "tau_star": 0.52,
+        "gate_pass": false,
+        "overdet_residual": 0.52630615234375,
+        "h_hat": 0.7231656620750518,
+        "margin": 1.9329141551876297,
+        "b_hat": [
+          -0.30918102791100294,
+          -0.29223384981131445,
+          -0.310277397017755,
+          2.9057503567628573
+        ],
+        "b_tilde": [
+          0.0,
+          -0.0,
+          -0.0,
+          -0.0
+        ],
+        "anchor_b0": -0.30918102791100294,
+        "n_D": 256,
+        "M": 4,
+        "decision": "ABSTAIN",
+        "choice": null,
+        "reason": "tau=1.4703 > tau*=0.52 certifies Def-5 violated"
+      },
+      "route_c": {
+        "decision": "ABSTAIN",
+        "implemented": true,
+        "theorem": "1B",
+        "view": "brier_squared_loss",
+        "gS_estimate": "f0_surrogate(conservative)",
+        "center_c": 0.0,
+        "U": 0.0,
+        "T_S": 0.0,
+        "W": 0.0,
+        "d_obs": 0.07537856053249341,
+        "L": 0.6,
+        "reach": 0.0,
+        "eps_n": 0.125,
+        "bracket": [
+          -0.125,
+          0.125
+        ],
+        "note": "DIAGNOSTIC: g_S~f0 makes center conservative; full 1B classification instantiation needs an f0-independent source-concept estimate.",
+        "true_B_best": -0.05078125,
+        "bracket_covers_trueB": true
+      },
+      "realized": 0.2890625,
+      "regime_label": "harmful"
+    },
+    {
+      "seed": 2,
+      "domain": "rxrx1",
+      "comp": "imbalanced",
+      "regime": "small",
+      "aggr": "aggressive",
+      "cand_names": [
+        "freeze_f0",
+        "tent_online",
+        "eata_online",
+        "sar_online"
+      ],
+      "aa_all": [
+        0.27734375,
+        0.05859375,
+        0.23046875,
+        0.0
+      ],
+      "a0": 0.27734375,
+      "oracle": 0.27734375,
+      "best_adapt": 0.23046875,
+      "true_best": "freeze_f0",
+      "route": {
+        "tau": 1.7030139374770354,
+        "tau_star": 0.52,
+        "gate_pass": false,
+        "overdet_residual": 0.718994140625,
+        "h_hat": 0.836271771876293,
+        "margin": 2.2156794296907325,
+        "b_hat": [
+          -0.30989741981539737,
+          -0.27861759562796257,
+          -0.30964222371472716,
+          2.92930327513422
+        ],
+        "b_tilde": [
+          0.0,
+          -0.0,
+          -0.0,
+          -0.0
+        ],
+        "anchor_b0": -0.30989741981539737,
+        "n_D": 256,
+        "M": 4,
+        "decision": "ABSTAIN",
+        "choice": null,
+        "reason": "tau=1.7030 > tau*=0.52 certifies Def-5 violated"
+      },
+      "route_c": {
+        "decision": "ABSTAIN",
+        "implemented": true,
+        "theorem": "1B",
+        "view": "brier_squared_loss",
+        "gS_estimate": "f0_surrogate(conservative)",
+        "center_c": 0.0,
+        "U": 0.0,
+        "T_S": 0.0,
+        "W": 0.0,
+        "d_obs": 0.13374621825344588,
+        "L": 0.6,
+        "reach": 0.0,
+        "eps_n": 0.125,
+        "bracket": [
+          -0.125,
+          0.125
+        ],
+        "note": "DIAGNOSTIC: g_S~f0 makes center conservative; full 1B classification instantiation needs an f0-independent source-concept estimate.",
+        "true_B_best": -0.046875,
+        "bracket_covers_trueB": true
+      },
+      "realized": 0.27734375,
+      "regime_label": "harmful"
+    },
+    {
+      "seed": 2,
+      "domain": "rxrx1",
+      "comp": "single_class",
+      "regime": "small",
+      "aggr": "aggressive",
+      "cand_names": [
+        "freeze_f0",
+        "tent_online",
+        "eata_online",
+        "sar_online"
+      ],
+      "aa_all": [
+        0.265625,
+        0.1171875,
+        0.265625,
+        0.00390625
+      ],
+      "a0": 0.265625,
+      "oracle": 0.265625,
+      "best_adapt": 0.265625,
+      "true_best": "freeze_f0",
+      "route": {
+        "tau": 1.4685026053572867,
+        "tau_star": 0.52,
+        "gate_pass": false,
+        "overdet_residual": 0.7038216070742022,
+        "h_hat": 0.7254678071240094,
+        "margin": 1.9389143760270535,
+        "b_hat": [
+          -0.31800773316188413,
+          -0.2936335158459198,
+          -0.320451355266191,
+          2.8567583991389105
+        ],
+        "b_tilde": [
+          0.28518401651154507,
+          -0.0,
+          0.2881130679281042,
+          -0.0
+        ],
+        "anchor_b0": -0.31800773316188413,
+        "n_D": 255,
+        "M": 4,
+        "decision": "ABSTAIN",
+        "choice": null,
+        "reason": "tau=1.4685 > tau*=0.52 certifies Def-5 violated"
+      },
+      "route_c": {
+        "decision": "ABSTAIN",
+        "implemented": true,
+        "theorem": "1B",
+        "view": "brier_squared_loss",
+        "gS_estimate": "f0_surrogate(conservative)",
+        "center_c": 0.0,
+        "U": 0.0,
+        "T_S": 0.0,
+        "W": 0.0,
+        "d_obs": 0.14698494459132025,
+        "L": 0.6,
+        "reach": 0.0,
+        "eps_n": 0.125,
+        "bracket": [
+          -0.125,
+          0.125
+        ],
+        "note": "DIAGNOSTIC: g_S~f0 makes center conservative; full 1B classification instantiation needs an f0-independent source-concept estimate.",
+        "true_B_best": 0.0,
+        "bracket_covers_trueB": true
+      },
+      "realized": 0.265625,
+      "regime_label": "marginal"
+    },
+    {
+      "seed": 3,
+      "domain": "rxrx1",
+      "comp": "iid",
+      "regime": "small",
+      "aggr": "aggressive",
+      "cand_names": [
+        "freeze_f0",
+        "tent_online",
+        "eata_online",
+        "sar_online"
+      ],
+      "aa_all": [
+        0.296875,
+        0.11328125,
+        0.28125,
+        0.0
+      ],
+      "a0": 0.296875,
+      "oracle": 0.296875,
+      "best_adapt": 0.28125,
+      "true_best": "freeze_f0",
+      "route": {
+        "tau": 1.3582870137080418,
+        "tau_star": 0.52,
+        "gate_pass": false,
+        "overdet_residual": 0.547607421875,
+        "h_hat": 0.670430365388804,
+        "margin": 1.80107591347201,
+        "b_hat": [
+          -0.31816652967227255,
+          -0.29011651691924695,
+          -0.32175587057319477,
+          2.8573294412240218
+        ],
+        "b_tilde": [
+          0.0,
+          -0.0,
+          -0.0,
+          -0.0
+        ],
+        "anchor_b0": -0.31816652967227255,
+        "n_D": 256,
+        "M": 4,
+        "decision": "ABSTAIN",
+        "choice": null,
+        "reason": "tau=1.3583 > tau*=0.52 certifies Def-5 violated"
+      },
+      "route_c": {
+        "decision": "ABSTAIN",
+        "implemented": true,
+        "theorem": "1B",
+        "view": "brier_squared_loss",
+        "gS_estimate": "f0_surrogate(conservative)",
+        "center_c": 0.0,
+        "U": 0.0,
+        "T_S": 0.0,
+        "W": 0.0,
+        "d_obs": 0.026907913105487576,
+        "L": 0.6,
+        "reach": 0.0,
+        "eps_n": 0.125,
+        "bracket": [
+          -0.125,
+          0.125
+        ],
+        "note": "DIAGNOSTIC: g_S~f0 makes center conservative; full 1B classification instantiation needs an f0-independent source-concept estimate.",
+        "true_B_best": -0.015625,
+        "bracket_covers_trueB": true
+      },
+      "realized": 0.296875,
+      "regime_label": "marginal"
+    },
+    {
+      "seed": 3,
+      "domain": "rxrx1",
+      "comp": "imbalanced",
+      "regime": "small",
+      "aggr": "aggressive",
+      "cand_names": [
+        "freeze_f0",
+        "tent_online",
+        "eata_online",
+        "sar_online"
+      ],
+      "aa_all": [
+        0.28515625,
+        0.125,
+        0.23828125,
+        0.0
+      ],
+      "a0": 0.28515625,
+      "oracle": 0.28515625,
+      "best_adapt": 0.23828125,
+      "true_best": "freeze_f0",
+      "route": {
+        "tau": 1.5668693892862091,
+        "tau_star": 0.52,
+        "gate_pass": false,
+        "overdet_residual": 0.6796875,
+        "h_hat": 0.7775555243381731,
+        "margin": 2.068888810845433,
+        "b_hat": [
+          -0.3136696359109606,
+          -0.2871030983813065,
+          -0.31446855532998014,
+          2.90660901068997
+        ],
+        "b_tilde": [
+          0.0,
+          -0.0,
+          -0.0,
+          -0.0
+        ],
+        "anchor_b0": -0.3136696359109606,
+        "n_D": 256,
+        "M": 4,
+        "decision": "ABSTAIN",
+        "choice": null,
+        "reason": "tau=1.5669 > tau*=0.52 certifies Def-5 violated"
+      },
+      "route_c": {
+        "decision": "ABSTAIN",
+        "implemented": true,
+        "theorem": "1B",
+        "view": "brier_squared_loss",
+        "gS_estimate": "f0_surrogate(conservative)",
+        "center_c": 0.0,
+        "U": 0.0,
+        "T_S": 0.0,
+        "W": 0.0,
+        "d_obs": 0.1557713931061171,
+        "L": 0.6,
+        "reach": 0.0,
+        "eps_n": 0.125,
+        "bracket": [
+          -0.125,
+          0.125
+        ],
+        "note": "DIAGNOSTIC: g_S~f0 makes center conservative; full 1B classification instantiation needs an f0-independent source-concept estimate.",
+        "true_B_best": -0.046875,
+        "bracket_covers_trueB": true
+      },
+      "realized": 0.28515625,
+      "regime_label": "harmful"
+    },
+    {
+      "seed": 3,
+      "domain": "rxrx1",
+      "comp": "single_class",
+      "regime": "small",
+      "aggr": "aggressive",
+      "cand_names": [
+        "freeze_f0",
+        "tent_online",
+        "eata_online",
+        "sar_online"
+      ],
+      "aa_all": [
+        0.29296875,
+        0.0625,
+        0.23046875,
+        0.0
+      ],
+      "a0": 0.29296875,
+      "oracle": 0.29296875,
+      "best_adapt": 0.23046875,
+      "true_best": "freeze_f0",
+      "route": {
+        "tau": 1.8058931455286187,
+        "tau_star": 0.52,
+        "gate_pass": false,
+        "overdet_residual": 0.6875,
+        "h_hat": 0.8806021912148048,
+        "margin": 2.326505478037012,
+        "b_hat": [
+          -0.30273432186744853,
+          -0.27679778994761434,
+          -0.30248504235041285,
+          2.966632535959882
+        ],
+        "b_tilde": [
+          0.0,
+          -0.0,
+          -0.0,
+          -0.0
+        ],
+        "anchor_b0": -0.30273432186744853,
+        "n_D": 256,
+        "M": 4,
+        "decision": "ABSTAIN",
+        "choice": null,
+        "reason": "tau=1.8059 > tau*=0.52 certifies Def-5 violated"
+      },
+      "route_c": {
+        "decision": "ABSTAIN",
+        "implemented": true,
+        "theorem": "1B",
+        "view": "brier_squared_loss",
+        "gS_estimate": "f0_surrogate(conservative)",
+        "center_c": 0.0,
+        "U": 0.0,
+        "T_S": 0.0,
+        "W": 0.0,
+        "d_obs": 0.01618119037691186,
+        "L": 0.6,
+        "reach": 0.0,
+        "eps_n": 0.125,
+        "bracket": [
+          -0.125,
+          0.125
+        ],
+        "note": "DIAGNOSTIC: g_S~f0 makes center conservative; full 1B classification instantiation needs an f0-independent source-concept estimate.",
+        "true_B_best": -0.0625,
+        "bracket_covers_trueB": true
+      },
+      "realized": 0.29296875,
+      "regime_label": "harmful"
+    }
+  ]
+}

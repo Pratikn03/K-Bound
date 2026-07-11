@@ -1,5 +1,7 @@
 import Mathlib.Data.Real.Basic
 import Mathlib.Data.Fintype.Card
+import Mathlib.Data.Finset.Lattice.Fold
+import Mathlib.Data.Finset.Max
 import Mathlib.Order.MinMax
 import Mathlib.Tactic.Linarith
 
@@ -33,8 +35,14 @@ all have scores below every member of `S`, hence lie outside `S`, so `|Sᶜ| ≥
 theorem card_high_strictRank_le {m : ℕ} (R : Fin m → ℝ) (k : ℕ) :
     (Finset.univ.filter fun j => k ≤ strictRank R j).card ≤ m - k := by
   by_cases hne : (Finset.univ.filter fun j => k ≤ strictRank R j).Nonempty
-  · obtain ⟨jstar, hjS, hmin⟩ :=
-      Finset.exists_min_image (Finset.univ.filter fun j => k ≤ strictRank R j) R hne
+  · have himg : ((Finset.univ.filter fun j => k ≤ strictRank R j).image R).Nonempty :=
+      hne.image R
+    obtain ⟨jstar, hjS, hR⟩ := Finset.mem_image.mp (Finset.min'_mem _ himg)
+    have hmin : ∀ i ∈ (Finset.univ.filter fun j => k ≤ strictRank R j), R jstar ≤ R i := by
+      intro i hi
+      have hle := Finset.min'_le _ (R i) (Finset.mem_image_of_mem R hi)
+      rw [hR]
+      exact hle
     -- the ≥ k strict witnesses of jstar
     have hWcard : k ≤ (Finset.univ.filter fun i => R i < R jstar).card :=
       (Finset.mem_filter.mp hjS).2
@@ -50,7 +58,7 @@ theorem card_high_strictRank_le {m : ℕ} (R : Fin m → ℝ) (k : ℕ) :
       Finset.card_le_card hWsub
     have hcard2 : (Finset.univ \ (Finset.univ.filter fun j => k ≤ strictRank R j)).card
         = m - (Finset.univ.filter fun j => k ≤ strictRank R j).card := by
-      rw [Finset.card_sdiff (Finset.subset_univ _), Finset.card_univ, Fintype.card_fin]
+      rw [Finset.card_sdiff, Finset.inter_univ, Finset.card_univ, Fintype.card_fin]
     have hle : (Finset.univ.filter fun j => k ≤ strictRank R j).card ≤ m := by
       calc (Finset.univ.filter fun j => k ≤ strictRank R j).card
           ≤ Fintype.card (Fin m) := Finset.card_le_univ _
@@ -68,7 +76,7 @@ theorem card_low_strictRank_ge {m : ℕ} (R : Fin m → ℝ) (k : ℕ) (hk : k �
       (Finset.univ.filter fun j => strictRank R j < k).card
         + (Finset.univ.filter fun j => ¬ strictRank R j < k).card
         = Fintype.card (Fin m) := by
-    simpa using Finset.filter_card_add_filter_neg_card_eq_card
+    simpa using Finset.card_filter_add_card_filter_not
       (s := (Finset.univ : Finset (Fin m))) (p := fun j => strictRank R j < k)
   have hhigh : (Finset.univ.filter fun j => ¬ strictRank R j < k).card ≤ m - k := by
     have hfilter : (Finset.univ.filter fun j => ¬ strictRank R j < k)

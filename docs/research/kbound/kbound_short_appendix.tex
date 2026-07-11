@@ -1,0 +1,444 @@
+% Appendix for kbound_short.tex — full theory, calibration protocol, supplementary experiments.
+
+\section{Calibration and held-out evaluation}\label{app:calib-eval}
+Algorithm~\ref{alg:calib-eval} gives the shared evaluation protocol behind the uniform
+nine-track panel (Table~\ref{tab:uniform-panel}) and the primary numeric evidence
+(Table~\ref{tab:primary-numeric}).
+
+\begin{algorithm}[t]
+\caption{Calibration and held-out evaluation for K-Bound}
+\label{alg:calib-eval}
+\begin{algorithmic}[1]
+\Require Conditions $\mathcal{C}$; frozen $f_0$; adapters $\mathcal{A}_1,\ldots,\mathcal{A}_K$;
+  calibration split $\mathcal{C}_{\mathrm{cal}}$; test split $\mathcal{C}_{\mathrm{test}}$; level $\alpha$
+\Ensure Regret-to-oracle, false-adapt rate, coverage, beats-both verdict
+\ForAll{$c \in \mathcal{C}_{\mathrm{cal}}$}
+  \ForAll{adapters $\mathcal{A}_k$}
+    \State $f_a^{(k,c)} \leftarrow \mathcal{A}_k(f_0, X_c)$
+    \State $Z_{k,c} \leftarrow \phi(X_c, f_0, f_a^{(k,c)})$
+    \State $\Delta_{k,c} \leftarrow R_c(f_0) - R_c(f_a^{(k,c)})$
+  \EndFor
+\EndFor
+\State \textbf{Calibrate without test leakage:} on stress grids, form leave-one-cell-out
+  residuals $\rho_i=|\widehat\Delta_{-i}(Z_i)-\Delta_i|$; on semantic shifts, reserve a
+  development calibration split disjoint from the declared test split
+\State $\varepsilon \leftarrow (1-\alpha)$ empirical quantile of the calibration residuals
+\State Fit deployment estimator $\widehat\Delta(Z)$ on \emph{all} calibration pairs \Comment{scores the held-out test split}
+\ForAll{$c \in \mathcal{C}_{\mathrm{test}}$}
+  \ForAll{adapters $\mathcal{A}_k$}
+    \State Run Algorithm~\ref{alg:kga} with $(f_0,\mathcal{A}_k,X_c,\widehat\Delta,\varepsilon)$
+    \State Record decision, regret-to-oracle, coverage, false-adapt indicator
+  \EndFor
+\EndFor
+\State Aggregate metrics vs.\ always-adapt, always-freeze, per-condition oracle
+\end{algorithmic}
+\end{algorithm}
+
+\section{Evidence feature schema and adapter hyperparameters}\label{app:evidence-schema}
+Two label-free evidence panels are used, matched to the two calibration regimes of
+\S\ref{sec:method}. Notation: $p_0,p_a$ are the frozen and adapted softmax rows on the adaptation
+batch; $\bar m_0=\mathrm{mean}_n\,p_{0,n}$ and $\bar m_a$ are the predicted-class marginals;
+$H(p)=-\sum_c p_c\log p_c$; $C$ is the number of classes. The stress-grid tracks (CIFAR-10-C,
+ImageNet-C, PACS) use the $11$-dimensional base panel of Table~\ref{tab:schema-base}
+(\texttt{kbound\_pkg/kbound/evidence.py}). The natural-shift tracks (Camelyon17, iWildCam,
+Office-Home, RxRx1) use the $16$-dimensional panel of Table~\ref{tab:schema-rich}: a $10$-statistic
+frozen-logit summary plus a $6$-feature rich panel (\texttt{scripts/run\_wilds\_camelyon17.py}). All
+features are target-label-free; the ATC feature calibrates its threshold on \emph{source} labels
+only.
+
+\begin{table}[t]\centering\scriptsize
+\caption{Base $11$-dim evidence panel (stress grids).}
+\label{tab:schema-base}
+\begin{tabular}{@{}llp{0.30\linewidth}@{}}
+\toprule
+Feature & Definition & Family \\
+\midrule
+\texttt{pre\_entropy}  & $\mathrm{mean}_n H(p_{0,n})$ & frozen output \\
+\texttt{pre\_conf}     & $\mathrm{mean}_n \max_c p_{0,n}$ & frozen output \\
+\texttt{pre\_pbal}     & $H(\bar m_0)/\log C$ & frozen marginal \\
+\texttt{post\_entropy} & $\mathrm{mean}_n H(p_{a,n})$ & adapted output \\
+\texttt{post\_conf}    & $\mathrm{mean}_n \max_c p_{a,n}$ & adapted output \\
+\texttt{post\_pbal}    & $H(\bar m_a)/\log C$ & adapted marginal \\
+\texttt{pbal\_drop}    & \texttt{pre\_pbal}$-$\texttt{post\_pbal} & change \\
+\texttt{entropy\_drop} & \texttt{pre\_entropy}$-$\texttt{post\_entropy} & change \\
+\texttt{frac\_highconf}& $\mathrm{frac}_n(\max_c p_{a,n}{>}0.9)$ & collapse \\
+\texttt{marginal\_KL}  & $\sum_c \bar m_{a,c}\log(\bar m_{a,c}/\bar m_{0,c})$ & drift \\
+\texttt{update\_norm}  & $\lVert\Delta\theta_{\mathrm{aff}}\rVert_2$ & update \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{table}[t]\centering\scriptsize
+\caption{Rich $16$-dim panel (natural shift): $10$ frozen-logit statistics $+$ $6$ rich features.
+$H$ is softmax entropy, $s=\max_c\mathrm{softmax}$ the confidence, $E(x)=-\log\sum_c e^{z_c}$ the
+free energy; subscripts $s,t$ denote source/target pools.}
+\label{tab:schema-rich}
+\begin{tabular}{@{}llp{0.26\linewidth}@{}}
+\toprule
+Feature & Definition & Family \\
+\midrule
+\multicolumn{3}{@{}l}{\emph{Frozen-logit summary (10)}}\\
+ent mean/std     & $\mathrm{mean}/\mathrm{std}\,H$ & frozen \\
+ent p25/p75      & $25/75$ pct.\ of $H$ & frozen \\
+conf mean/std    & $\mathrm{mean}/\mathrm{std}\,s$ & frozen \\
+frac hi-conf     & $\mathrm{frac}(s{>}0.9)$ & frozen \\
+frac hi-ent      & $\mathrm{frac}(H{>}\log 2)$ & frozen \\
+marg.\ max       & $\max_c \mathrm{mean}_n\,p$ & frozen marginal \\
+marg.\ std       & $\mathrm{std}_c \mathrm{mean}_n\,p$ & frozen marginal \\
+\midrule
+\multicolumn{3}{@{}l}{\emph{Rich features (6)}}\\
+\texttt{disagree} & $\mathrm{frac}(\arg\max f_0\!\neq\!\arg\max f_a)$ & disagreement \\
+\texttt{ent\_gap} & $\mathrm{mean}\,H(f_0)-\mathrm{mean}\,H(f_a)$ & change \\
+\texttt{en\_shift}& $\mathrm{mean}\,E_t-\mathrm{mean}\,E_s$ & drift \\
+\texttt{bn\_kl}   & $\mathrm{mean}_{\mathrm{ch}}\,\mathrm{KL}(\mathcal N_{\mathrm{run}}\!\parallel\!\mathcal N_{\mathrm{batch}})$ & drift \\
+\texttt{atc}      & $\mathrm{frac}_t(s\!\ge\! t)$, $t$ src-calib. & accuracy proxy \\
+\texttt{conf\_drop}& $\mathrm{mean}\,s_s-\mathrm{mean}\,s_t$ & drift \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{table}[t]\centering\footnotesize
+\caption{Per-track adapter hyperparameters (from the run configs). Adapted parameters are
+BN/LayerNorm-affine only; TTA optimizer is Adam. ``Aggressiveness'' cells use
+mild $=(10$ steps, lr $10^{-3})$ or aggressive $=(50$ steps, lr $2.5\!\times\!10^{-3})$. EATA uses
+an entropy filter $e_{\mathrm{thr}}{=}0.4\ln 2{\approx}0.28$; SAR adds SAM $+$ entropy reset.
+Backbones for CIFAR-10-C, ImageNet-C, PACS, and Camelyon17 are verified from the run code; the
+remaining WILDS/DomainBed tracks use the standard baseline.}
+\label{tab:adapter-hparams}
+\resizebox{\columnwidth}{!}{%
+\begin{tabular}{@{}llll@{}}
+\toprule
+Track & Backbone & Adapter(s) & Steps / lr \\
+\midrule
+CIFAR-10-C stress & ResNet-18 & Tent/EATA/SAR & mild \& aggressive (per cell) \\
+ImageNet-C & ResNet-50 & Tent/EATA/SAR (SAM+reset) & mild \& aggressive (per cell) \\
+PACS (LODO) & ResNet-18 & mild/aggressive & $10$/$10^{-3}$ \,\&\, $50$/$2.5{\times}10^{-3}$ \\
+Camelyon17 & DenseNet-121 & EATA online & $10$ / $10^{-3}$ \\
+iWildCam & ResNet-50 & Tent episodic & $10$ / $10^{-3}$ \\
+Office-Home & ResNet (DomainBed) & SAR online aggr. & $50$ / $2.5{\times}10^{-3}$ \\
+RxRx1 & ResNet-50 & episodic & $5$ / (batch $64$) \\
+\bottomrule
+\end{tabular}}
+\end{table}
+
+\section{Full theory stack}\label{app:theory-full}\label{app:theory-ext}
+This appendix is not required for the main empirical claim; it preserves the full theorem stack
+and validator mapping behind the three main-paper theorems: matched-evidence impossibility
+(Theorem~\ref{lem:nonid}), the benefit-sign frontier (Theorem~\ref{thm:headline}), and the
+finite-sample certificate (Theorem~\ref{thm:certificate}).
+Below we give the full five-theorem stack, lemmas, and proof sketches with validator references.
+
+\input{paper/sections/theory_appendix_ext}
+
+\subsection{Validation figures}
+\begin{figure}[t]\centering
+\includegraphics[width=0.49\linewidth]{theory_v2/fig_v1_flip_witness.png}\hfill
+\includegraphics[width=0.49\linewidth]{theory_v2/fig_v2_identification_rate.png}
+\caption{One-bit identification (Synthetic validator; Thm.~\ref{thm:conj1-dichotomy}(ii)).}
+\label{fig:onebit}
+\end{figure}
+\begin{figure}[t]\centering
+\includegraphics[width=0.92\linewidth]{theory_v2/fig_v3_audit.png}
+\caption{Budget audit (Synthetic validator; Thm.~\ref{thm:conj1-dichotomy}(iv)).}
+\label{fig:audit}
+\end{figure}
+\begin{figure}[t]\centering
+\includegraphics[width=0.92\linewidth]{theory_v2/fig_v4_rate.png}
+\caption{Evidence-channel rate (Synthetic validator; Thm.~\ref{thm:ev-rate}).}
+\label{fig:evrate}
+\end{figure}
+\begin{figure}[t]\centering
+\includegraphics[width=0.92\linewidth]{theory_v2/fig_conj1_closure.png}
+\caption{Conjecture~\ref{conj:gen} closure validator.}
+\label{fig:conj1closure}
+\end{figure}
+
+\section{Superseded supplementary experiments and diagnostics}\label{app:superseded}
+\iffalse
+This appendix holds \textbf{non-headline} tracks: helpful-dominated controls, honest nulls, and the
+Camelyon/iWildCam \textbf{diagnostic ladder} (Protocols B/F, multicandidate routes, sparse-$Z$
+failures) that motivated the headline Protocols~G / H v2 / M v2 in the main text.
+
+\subsection{ELARA-U as a KGA instantiation (retrospective audit)}
+K-Bound supplies the framework, \textsc{KGA} supplies the adapt/freeze/abstain
+certificate, and ELARA-U supplies a validation-fitted multimodal routing candidate.
+We execute this composition through one canonical runner on five previously opened
+multimodal score caches ($85$ valid categories). Because full target labels construct
+the per-category Brier-benefit certificates in this audit, it is \textbf{retrospective---not
+a label-free or headline claim}. At $\alpha{=}0.10$, \textsc{KGA} returns $7$ adapt,
+$2$ freeze, and $76$ abstain decisions, with $0$ observed Brier-defined false-adapts
+and $10.6\%$ coverage. Mean AUROC is $0.7941$ (freeze), $0.8220$ (ELARA-U candidate),
+and $0.7939$ (\textsc{KGA}); thus this opened-data audit does not beat both fixed
+policies and cannot support promotion. The table is generated directly from the
+versioned result artifact.
+
+\IfFileExists{../../../experiments/kbound/results/kga_elara_integrated_v1/results_table.tex}{%
+  \input{../../../experiments/kbound/results/kga_elara_integrated_v1/results_table.tex}%
+}{%
+  \noindent\emph{Integrated retrospective table unavailable in this build.}%
+}
+
+\subsection{Online non-stationary CIFAR-10}
+\begin{table}[h]\centering\small
+\resizebox{\columnwidth}{!}{%
+\begin{tabular}{lcccc}
+\toprule
+regime & always-freeze & always-adapt & \textbf{K-Bound} & oracle \\
+\midrule
+helpful-dominated stream & $0.472$ & $0.548$ & $\mathbf{0.553}$ & $0.704$ \\
+harm-dominated stream & $0.440$ & $0.339$ & $0.426$ & $0.630$ \\
+mean across regimes & $0.456$ & $0.444$ & $\mathbf{0.490}$ & $0.667$ \\
+\bottomrule
+\end{tabular}
+}
+\caption{Online CIFAR-10 TTA ($3$ seeds/regime). \textsc{KGA} is near-best in both regimes.}
+\label{tab:online}
+\end{table}
+
+\subsection{CIFAR-10-C per-corruption (helpful-dominated control)}
+\begin{table}[h]\centering\small
+\resizebox{\columnwidth}{!}{%
+\begin{tabular}{lccc}
+\toprule
+method & mean acc (65 cells) & false-adapt & regret-to-oracle \\
+\midrule
+frozen & $0.412$ & $0.000$ & $0.217$ \\
+Tent (online) & $0.626$ & $0.015$ & $0.0030$ \\
+\textbf{K-Bound (KGA)} & $0.626$ & $0.015$ & $0.0032$ \\
+oracle (per-cell) & $0.629$ & --- & --- \\
+\bottomrule
+\end{tabular}
+}
+\caption{Per-corruption CIFAR-10-C: \textsc{KGA} ties always-adapt (safety insurance).}
+\label{tab:c10c}
+\end{table}
+
+\subsection{Excluded wins and regime boundaries}\label{sec:excluded-wins}
+Several benchmarks flag beats-both under alternate routes or adapters but do \emph{not}
+qualify as headline natural-shift wins under the Protocol~G/H/M v2 bar (canonical
+\textsc{KGA}, dev-locked adapter from pre-registered panel, in-domain calibration,
+held-out test, false-adapt $\le\alpha$).
+
+\paragraph{Superseded protocols.}
+iWildCam Protocol~H v1 (fixed \texttt{sar\_online}) and OfficeHome Protocol~M v1
+($14$-candidate win-finder) are audit-only; headline claims use H/M v2.
+
+\paragraph{Office-Home (deployed adapter).}
+The source-selected deployed adapter (mild online EATA) is \emph{helpful-dominated} on target
+test ($0\%$ harmful cells; always-adapt is oracle). \textsc{KGA} has $0\%$ false-adapts but
+does not beat both (regret $0.015$ vs always-adapt $0$). An aggressive online SAR arm can beat
+both on the same test split, but that arm was not the deployed adapter; reporting it as a win
+would be adapter shopping. The multicandidate deploy route abstains on $100\%$ of target-test
+cells (certificate transfer-AUC $\approx 0.49$). Protocol~M v2 (main text) uses a separate
+dev-lock panel and held-out target-test scorer.
+
+\paragraph{ImageNet-R.}
+The diverse-backbone panel is helpful-leaning (mean $\bar B{=}{+}0.017$, harmful rate
+$13.9\%$, best harm-AUC $0.662$). The multicandidate route abstains on all $48$ conditions;
+single-candidate \textsc{KGA} often ties always-adapt (oracle) on helpful backbones. This is
+the weak-detectability / unknowable regime predicted by Corollary~\ref{cor:forced-abstain}.
+
+\paragraph{iWildCam intermediate domains.}
+On id\_val, a multicandidate router can flag beats-both on subsets, but pooled false-adapt
+on committed adapts is $\approx 78\%\gg\alpha$---disqualified. Headline claim: Protocol~H v2 on
+held-out test only (Table~\ref{tab:iwildcam-H}).
+
+\paragraph{Camelyon17 four-seed hospital slice.}
+The original four held-out hospital seeds are helpful-dominated ($0\%$ harmful); \textsc{KGA}
+beats always-freeze but not always-adapt (Table~\ref{tab:camelyon}). Protocol~G uses a
+composition-stress grid with rich evidence where harmful cells are mixed ($30\%$) and
+detectable---a different regime on the same benchmark family.
+
+\paragraph{CIFAR-10.1.}
+Within each seed, Tent/EATA abstain heavily with $0\%$ false-adapts and tie always-freeze.
+Cross-seed calibration (fit on seeds $0$--$2$, test on $3$--$4$) does \emph{not} clear the
+headline bar (false-adapt $44\%$); low-margin benefits do not transfer across independent stream
+seeds. Report CIFAR-10.1 as a within-seed safety probe, not a fourth natural headline win.
+
+\subsection{Camelyon17 diagnostic ladder}\label{sec:camelyon-diag-short}
+\begin{table}[h]\centering\small
+\resizebox{\columnwidth}{!}{%
+\begin{tabular}{llccc}
+\toprule
+candidate & policy & mean balanced acc & regret$\downarrow$ & beats both? \\
+\midrule
+Tent & always-adapt    & $0.817$ & $\mathbf{0.000}$ & \\
+     & always-freeze   & $0.786$ & $0.031$ & \\
+     & \textbf{K-Bound} & $0.797$ & $0.020$ & no \\
+EATA & always-adapt    & $0.836$ & $\mathbf{0.000}$ & \\
+     & always-freeze   & $0.786$ & $0.050$ & \\
+     & \textbf{K-Bound} & $0.818$ & $0.018$ & no \\
+\bottomrule
+\end{tabular}
+}
+\caption{WILDS Camelyon17 ($4$ seeds): helpful-dominated; \textsc{KGA} beats freeze, not adapt.}
+\label{tab:camelyon}
+\end{table}
+
+\paragraph{Protocol~F route audit (\textbf{diagnostic only}---not headline).}
+Protocol~G (main-text headline) uses canonical GBR + global $\varepsilon$ on EATA-online only.
+The table below audits \emph{alternate routes} on the same GPU records: multicandidate routing
+\textbf{fails}; pooled GBR+global and PPI+Mondrian \emph{can} beat both but are not the headline
+method. Sparse-evidence Protocol~B also fails (false-adapt $0.33\gg\alpha$). These negatives motivated G.
+
+\begin{table}[h]\centering\footnotesize
+\caption{\textbf{Diagnostic only.} Protocol~F route audit (same records as Protocol~G).}
+\label{tab:camelyon17-F}
+\resizebox{\columnwidth}{!}{%
+\begin{tabular}{lccc}
+\toprule
+variant & regret$\downarrow$ & false-adapt & beats both? \\
+\midrule
+multicandidate router & $0.093$ & $71\%$ & no \\
+GBR + global $\varepsilon$ & $0.0019$ & $3.3\%$ & yes \\
+PPI + Mondrian & $0.0018$ & $3.3\%$ & yes \\
+\bottomrule
+\end{tabular}
+}
+\end{table}
+
+\subsection{RxRx1 (harmful, freeze-oracle)}
+\begin{table}[h]\centering\footnotesize
+\resizebox{\columnwidth}{!}{%
+\begin{tabular}{lc}
+\toprule
+RxRx1 $9{+}$ grid ($360$ conditions) & value \\
+\midrule
+harmful base rate & $81.5\%$ \\
+mean benefit $\bar B$ & $-0.063$ \\
+harm detectability (best AUC) & $0.78$--$0.84$ \\
+SAR-online always-adapt (collapse) & $0.024$ \\
+\textsc{KGA} false-adapts & $0$ \\
+\bottomrule
+\end{tabular}}
+\caption{RxRx1: \textsc{KGA} matches freeze-oracle; damage prevention, not beats-both.}
+\label{tab:rxrx1}
+\end{table}
+
+\subsection{ImageNet-R (unknowable regime)}
+\begin{table}[h]\centering\footnotesize
+\resizebox{\columnwidth}{!}{%
+\begin{tabular}{lc}
+\toprule
+ImageNet-R ($48$ condition--seed pairs) & value \\
+\midrule
+harmful base rate & $13.9\%$ \\
+mean benefit $\bar B$ & $+0.017$ \\
+harm detectability (best AUC) & $0.662$ \\
+\textsc{KGA} decisions & $48/48$ abstain \\
+\bottomrule
+\end{tabular}}
+\caption{ImageNet-R: mandatory abstention (Corollary~\ref{cor:forced-abstain}).}
+\label{tab:imagenetr}
+\end{table}
+
+\subsection{Office-Home and iWildCam}
+\begin{table}[h]\centering\footnotesize
+\resizebox{\columnwidth}{!}{%
+\begin{tabular}{lcc}
+\toprule
+Office-Home (gradient-TTA) & val & test \\
+\midrule
+Harmful base rate & $0.17$ & $0.12$ \\
+Certificate transfer-AUC & $0.33$ & $0.49$ \\
+\textsc{KGA} false-adapts / beats both & $0$ / no & $0$ / no \\
+\bottomrule
+\end{tabular}
+}
+\caption{Office-Home: zero false-adapts; no beats-both (invalid transfer evidence).}
+\label{tab:officehome}
+\end{table}
+
+\begin{table}[h]\centering\footnotesize
+\resizebox{\columnwidth}{!}{%
+\begin{tabular}{lcc}
+\toprule
+iWildCam & val (multicand) & test \\
+\midrule
+Harmful base rate & $59\%$ & $83\%$ \\
+Best harm-AUC & $\approx 0.62$ & $0.69$ \\
+Multicandidate beats both? & no & no \\
+Protocol~H v2 canonical \textsc{KGA} (\texttt{tent\_episodic}) & --- & \textbf{yes} ($0\%$ FA) \\
+\bottomrule
+\end{tabular}
+}
+\caption{iWildCam: \textbf{diagnostic} multicandidate route on val/test vs \textbf{headline}
+Protocol~H v2 canonical \textsc{KGA} on test (Table~\ref{tab:iwildcam-H} in main text).}
+\label{tab:iwildcam}
+\end{table}
+
+\subsection{Controlled multimodal corruption (Protocol D33)}
+Pre-registered MNIST two-view fusion ($130$ conditions; one modality corrupted across
+$13$ severities). When fusion flips from helpful to harmful, \textsc{KGA} routes correctly:
+mean accuracy $0.857$ vs.\ always-fuse $0.583$ and always-single-A $0.854$ (both gaps
+$P{=}1.0$), false-adapt $0/9$ commits ($\le\alpha$). This is a \emph{controlled} mechanism
+confirmation---not a natural benchmark---but shows the certificate dominates both trivial
+policies when detectable multimodal harm is present
+(\texttt{CONTROLLED\_MULTIMODAL\_PROTOCOL\_D33\_v1}).
+
+\subsection{CIFAR-10.1 (low-margin natural shift, Protocol~K audit)}
+Over five seeds, \textsc{KGA} abstains heavily on Tent/EATA ($59$--$86\%$), makes zero false
+adapts there under \emph{within-seed} calibration, and ties always-freeze while always-adapt
+overpays; SAR is mostly helpful ($5\%$ harmful). Cross-seed transfer of the certificate
+(Protocol~K) does not meet the headline bar; see \S\ref{sec:excluded-wins}.
+
+\subsection{ImageNet-C diagnostics}
+An earlier ImageNet-C SAR port ($31\%$ harmful) motivated the mechanism-faithful re-run
+(Table~\ref{tab:imagenetc-faithful} in the main text). Decision baselines and $\alpha$/evidence
+ablations appear in the frontier appendix (App.~\ref{app:imagenetc}).
+
+\section{Reproducibility}\label{sec:repro}
+All experiments are reproducible from the anonymized submission repository: theory validators,
+pre-registered Protocols A/G/H v2/M v2, and locked result JSONs
+(\texttt{experiments/kbound/results/}, \texttt{research\_lock/KBOUND\_HEADLINE\_FINDINGS\_v3.json}).
+Environment: Python~3.12 and PyTorch~2.5.1 for GPU runs; \texttt{kbtrain.sh} wraps venv activation
+and natural-shift protocol scorers. Core certificate code:
+\texttt{pip install -e docs/research/kbound/kbound\_pkg/}.
+
+\begin{table}[h]\centering\footnotesize
+\resizebox{\columnwidth}{!}{%
+\begin{tabular}{lll}
+\toprule
+Track & Repro command / artifact & Status \\
+\midrule
+CIFAR-10-C stress (5 seeds) & \texttt{kbtrain.sh} stress targets & locked JSON \\
+POEM/AETTA head-to-head & \texttt{poem\_aetta/run\_all\_headtohead.sh} & WIN \\
+Mixed OOF aggregate & \texttt{mixed\_stream\_kbound.py} & locked \\
+Assumption audit v1 & \texttt{run\_assumption\_audit\_v1.py} & cached arm \\
+ImageNet-C SAR faithful & result JSON + Table~\ref{tab:imagenetc-faithful} & locked \\
+Camelyon17 Protocol G & \texttt{analyze\_F} on protocol G bundle & locked \\
+iWildCam Protocol H v2 & \texttt{kbtrain.sh protocol-h-v2} & locked \\
+Office-Home Protocol M v2 & \texttt{kbtrain.sh protocol-m-v2} & locked \\
+Theory validators & \texttt{theory\_validation/} suite & pass \\
+\bottomrule
+\end{tabular}
+}
+\caption{Reproducibility status for headline tables (June 2026 lock).}
+\label{tab:repro-status}
+\end{table}
+
+\subsection{Real-camera deployment supplement (pre-registered templates)}
+Tables~\ref{tab:camera-r3}--\ref{tab:camera-s5} define the physical-shift breakdown,
+recording inventory, anti-leakage audit, per-condition release, runtime profile, and
+ablations. Measured cells remain blank until populated directly from locked real-camera
+artifacts; the synthetic dashboard smoke test is not admissible evidence for these tables.
+
+\input{edge/kbound_camera_supp_tables}
+
+\fi
+
+\section{Supplementary protocol notes}\label{app:supp-exp}
+The main text contains the complete empirical accounting in the uniform nine-track panel.
+Historical route studies, superseded per-dataset tables, and outcome-free camera templates are
+deliberately excluded from this short-paper build. Their raw logs remain in the repository for
+audit, but they are not independent empirical claims. The declared evaluation unit is a condition
+or held-out cell, never an arbitrary pool of frames or domains; all policies replay the same unit
+stream, and labels are revealed only after the KGA decision for offline scoring.
+
+\section{Proof and experiment status}\label{app:status}
+The theory-validation suite supplies numerical sanity checks. Multi-seed experiments use pooled
+means with paired bootstrap where this was pre-registered; a point estimate or a single locked
+configuration is labeled as such in Table~\ref{tab:uniform-panel}.
+
+\subsection{Weakest one-bit class}\label{app:weakest}
+\input{paper/sections/weakest_class}

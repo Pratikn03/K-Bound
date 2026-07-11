@@ -1,8 +1,11 @@
 # Lean upgrade: coverage → FA_u ≤ α with an actual probability measure
 
-Date: 2026-07-03. Status: Layers 1–3 drafted (this commit), iterate on `lake build`.
-Prior-art check (web, Loogle, GitHub, Zulip, arXiv, AFP): **no existing formalization of
-conformal-prediction coverage in Lean/Isabelle/Coq** — this is a first, citable on its own.
+Date: 2026-07-03. Status: **Layers 1–3 BUILT GREEN 2026-07-04** (`lake build` completed, 2544
+jobs; 5 fix iterations, all API-name drift at the pinned Mathlib). Capstone
+`uniformIndex_false_adapt_le` kernel-checked. L4 (general exchangeability) remains open.
+Informal prior-art check (web, Loogle, GitHub, Zulip, arXiv, AFP): we did not find an
+existing Lean formalization of this exact conformal-coverage route. Treat this as a
+motivation note, not a novelty claim, unless a separate citation audit is archived.
 
 ## What exists vs what this adds
 

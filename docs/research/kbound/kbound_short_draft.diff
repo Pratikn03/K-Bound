@@ -1,0 +1,526 @@
+% kbound_short_draft.diff — baseline: pre-revision snapshot
+--- /Users/pratik_n/kbound_phase1_backup_20260711_014958/kbound_short.tex	2026-07-11 01:34:55
++++ docs/research/kbound/kbound_short.tex	2026-07-11 13:07:09
+@@ -28,7 +28,7 @@
+ \newcommand{\sign}{\operatorname{sign}}
+ \newcommand{\Law}{\mathrm{Law}}
+ \newcommand{\drafttodo}[1]{\textcolor{red}{\textbf{[DRAFT TODO: #1]}}}
+-\renewcommand{\drafttodo}[1]{}  % hide draft TODOs in the build; comment out this line to show them again
++%\renewcommand{\drafttodo}[1]{}  % draft build SHOWS DRAFT TODOs (faculty-review draft); uncomment this line for a clean TODO-hidden build
+ 
+ \title{K-Bound: When Is Label-Free Adaptation Knowable? \\
+ Helpful, Harmful, and Unknowable Regimes Under Distribution Shift}
+@@ -279,9 +279,9 @@
+ are proved and validated in Appendix~\ref{app:theory-full} and the long manuscript
+ (\texttt{kbound.tex}). They strengthen the framework but are not required to understand the main
+ K-Bound result. The streaming form is demonstrated on real data: on the native
+-$35{,}370$-image iWildCam stream ($45$ windows, $75.6\%$ harmful), the betting e-process detects
+-continual-Tent collapse at window~$6$ with anytime false-adapt $0$, and the resulting gate value
+-($0.6995$) ties the oracle policy exactly (pre-registered).
++iWildCam stream (raw stream artifact offline; replay pending), the betting e-process detects
++continual-Tent collapse with anytime false-adapt $0$, and the gate ties the oracle policy
++(pre-registered). \drafttodo{Streaming window/gate figures ($35{,}370$-image run) withheld: no saved result artifact was found on T9; re-run \texttt{gapclose\_wave5/win\_hunt\_D\_anytime\_stream.py} to produce and lock one.}
+ 
+ \subsection{Claim Scope}
+ The population theorem is conditional on the declared class $\mathcal C_\beta$, and the finite-sample guarantee is conditional on valid interval coverage. The theorem controls the marginal probabilities $\Pr(\textsc{adapt},\Delta\le0)$ and $\Pr(\textsc{freeze},\Delta\ge0)$; it does not automatically control the conditional error among committed actions. The framework does not claim that $\beta$ is identifiable from unlabeled deployment data, that the empirical radius $\varepsilon$ estimates $\beta$, or that calibration coverage transfers to arbitrary unseen domains without an assumption or correction.
+@@ -321,25 +321,47 @@
+ shift~\cite{park2022pac}.
+ 
+ \subsection{Evidence Map and Benefit Estimator}
+-The evidence map is organized into feature families rather than one benchmark-specific score:
+-\[
+-Z=[Z_{0},Z_{a},Z_{\rm change},Z_{\rm disagree},Z_{\rm drift},Z_{\rm update},Z_{\rm batch}].
+-\]
+-$Z_0$ and $Z_a$ summarize frozen and candidate predictions; $Z_{\rm change}$ records changes in entropy and confidence; $Z_{\rm disagree}$ measures prediction and logit disagreement; $Z_{\rm drift}$ summarizes output-distribution shift; $Z_{\rm update}$ records adaptation magnitude and adapter diagnostics; and $Z_{\rm batch}$ captures batch size and predicted-class concentration. The benefit model $h_\theta$ predicts $\widehat\Delta=h_\theta(Z)$ from labeled development conditions. In the current implementation, $h_\theta$ is gradient boosting trained out of fold. \drafttodo{Insert the exact feature list, preprocessing, gradient-boosting hyperparameters, and whether a common or adapter-specific estimator is used in each benchmark.}
++The evidence map uses only unlabeled batches and model outputs, and is instantiated as two
++label-free panels matched to the two calibration regimes below. On the controlled stress grids
++(CIFAR-10-C, ImageNet-C, PACS) the base panel is an $11$-dimensional vector computed from the
++frozen softmax $p_0$ and the adapted softmax $p_a$ on the adaptation batch: the mean predictive
++entropy and mean confidence of $f_0$ and of $f_a$; the normalized marginal (predicted-class)
++entropy of each; the entropy and marginal-balance drops between them; the fraction of adapted
++predictions above confidence $0.9$ (a collapse indicator); the $\mathrm{KL}$ divergence between
++the adapted and frozen predicted-class marginals; and the $\ell_2$ norm of the adapter's
++parameter update. On the natural-shift protocols (Camelyon17, iWildCam, Office-Home, RxRx1) a
++$16$-dimensional panel adds distribution- and disagreement-oriented statistics computed from the
++frozen logits: entropy and confidence quantiles; the frozen/adapted prediction-disagreement rate;
++the entropy gap; a free-energy source$\to$target shift; a batch-vs-running BatchNorm-statistic
++$\mathrm{KL}$; an ATC-style threshold-accuracy estimate (its threshold fixed on \emph{source}
++labels only, never target labels); and a source$\to$target confidence drop. The source-calibrated
++correctness score $s$ of \S\ref{sec:theory} is operationalized by the adapted-confidence and
++ATC-style features, and the observable margin $M$ is their disagreement-region summary.
+ 
+-\begin{table}[t]\centering\scriptsize
+-\caption{Evidence families used by KGA. Exact formulas and benchmark-specific subsets belong in the appendix/configuration files.}
+-\label{tab:evidence-map}
+-\begin{tabular}{@{}p{0.25\linewidth}p{0.65\linewidth}@{}}
++The benefit model predicts $\widehat\Delta=h_\theta(Z)$ from labeled development conditions;
++$h_\theta$ is a gradient-boosted regression tree (scikit-learn
++\texttt{GradientBoostingRegressor}, squared error, $250$ trees, depth $2$, learning rate $0.05$,
++subsample $0.8$, seed $0$), refit \emph{per dataset and per candidate adapter} rather than shared,
++so the estimator itself implies no cross-dataset transfer.
++The complete schema for both panels---exact per-feature formulas and families---is given in
++Appendix~\ref{app:evidence-schema} (Tables~\ref{tab:schema-base} and~\ref{tab:schema-rich}), with
++per-adapter update hyperparameters in Table~\ref{tab:adapter-hparams}.
++
++\begin{table}[t]\centering\scriptsize
++\caption{Label-free evidence \emph{actually computed} by KGA. The $11$-dim base panel drives the
++stress grids; the natural-shift protocols use a $16$-dim panel that adds the rows marked
++\emph{(nat.)}. Exact formulas and per-track subsets are in the configuration files.}
++\label{tab:evidence-map}
++\begin{tabular}{@{}p{0.27\linewidth}p{0.63\linewidth}@{}}
+ \toprule
+-Family & Examples \\
++Family & Statistics \\
+ \midrule
+-Frozen/candidate outputs & confidence moments, entropy, class-frequency vector \\
+-Output changes & confidence delta, entropy delta, logit movement \\
+-Disagreement & label disagreement rate, predictive divergence \\
+-Distribution drift & marginal KL/JS, score-distribution shift \\
+-Update behavior & gradient/parameter norm, accepted samples, reset signal \\
+-Batch structure & batch size, concentration, imbalance proxy \\
++Frozen output $Z_0$ & mean entropy, mean confidence, normalized marginal-class entropy; entropy/confidence quantiles \emph{(nat.)} \\
++Adapted output $Z_a$ & mean entropy, mean confidence, normalized marginal entropy, frac.\ confidence $>0.9$ \\
++Change $Z_{\rm change}$ & entropy drop, marginal-balance drop, entropy gap \\
++Disagreement & frozen/adapted prediction-disagreement rate \emph{(nat.)} \\
++Distribution drift & adapted-vs-frozen marginal $\mathrm{KL}$; free-energy shift, BN-statistic $\mathrm{KL}$, ATC/confidence drop \emph{(nat.)} \\
++Update behavior & $\ell_2$ norm of the adapter parameter update \\
+ \bottomrule
+ \end{tabular}
+ \end{table}
+@@ -408,17 +430,46 @@
+ The drift budget $\beta$ is part of the declared deployment class, not a target-test-tuned hyperparameter. It may be justified from historical domain calibration gaps, a documented domain assumption, or an explicit stress envelope. Sensitivity analysis should report how decisions change over a pre-specified range of budgets. A smaller $\beta$ asserts stronger calibration transfer and increases commitment; a larger $\beta$ widens the abstention region. When no credible upper bound is available, the population frontier does not provide a robust sign certificate. Reporting $\beta=0$ is then only a zero-drift plug-in analysis, not an assumption-free or conservative guarantee.
+ 
+ \subsection{Deployment Semantics and Failure-Safe Behavior}
+-The candidate update is evaluated in a temporary or shadow state. \textsc{Adapt} commits the candidate; \textsc{freeze} rolls it back; and \textsc{abstain} also retains the frozen state but records that the evidence was insufficient rather than certifiably harmful. The implementation should automatically freeze or abstain when evidence is missing, the batch is too small, a checkpoint or adapter configuration differs from calibration, the evidence lies outside calibration support, numerical values are invalid, or no valid radius is available. \drafttodo{Document the minimum batch size, support diagnostic, checkpoint hash policy, rollback semantics, and continual-state behavior.}
++The candidate update is evaluated in a temporary or shadow state. \textsc{Adapt} commits the candidate; \textsc{freeze} rolls it back; and \textsc{abstain} also retains the frozen state but records that the evidence was insufficient rather than certifiably harmful. The implementation should automatically freeze or abstain when evidence is missing, the batch is too small, a checkpoint or adapter configuration differs from calibration, the evidence lies outside calibration support, numerical values are invalid, or no valid radius is available. In the reference implementation (\texttt{kbound\_pkg}), the gate is applied per batch
++(\texttt{KGA.decide\_from\_batch}); on \textsc{abstain} or \textsc{freeze} the adaptation optimizer
++scales the candidate update by $\texttt{abstain\_scale}{=}0$, i.e.\ the update is skipped and the
++frozen state $f_0$ is served---this is the rollback mechanism. The failure-safe defaults instantiate
++the diagnostics of Table~\ref{tab:failure-modes}: abstain when the batch is smaller than the
++calibration batch size, when $Z$ lies outside calibration support, when a checkpoint or
++adapter-configuration hash differs from the calibrated one, or when the radius or evidence is
++missing or numerically invalid. In continual operation the last certified state replaces $f_0$ as
++the fallback.
+ 
+ \subsection{Computational Cost}
+-KGA may not avoid the cost of \emph{proposing} an update because $f_a$ must be evaluated before commitment. Its deployment value is preventing harmful state changes and their accumulation. The cost analysis must therefore separate candidate-adaptation time, evidence extraction, benefit-model evaluation, model-copy/rollback memory, and total latency. \drafttodo{Add a runtime and peak-memory table for frozen, Tent/EATA/SAR, and each adapter wrapped by KGA.}
++KGA may not avoid the cost of \emph{proposing} an update because $f_a$ must be evaluated before commitment. Its deployment value is preventing harmful state changes and their accumulation. The cost analysis must therefore separate candidate-adaptation time, evidence extraction, benefit-model evaluation, model-copy/rollback memory, and total latency. Table~\ref{tab:cost} reports the \emph{added}
++controller cost, since $f_a$ must be evaluated regardless: on ResNet-18/CIFAR the decision layer
++adds $0.20$\,ms per batch decision (evidence assembly $0.073$\,ms $+$ benefit-model evaluation
++$0.125$\,ms) and one model copy ($44.8$\,MB) for rollback; the benefit model itself is $195$\,KB.
++The adaptation step (forward$+$backward) dominates end-to-end latency and is unchanged by KGA.
+ 
++\begin{table}[t]\centering\footnotesize
++\caption{KGA controller overhead (\emph{added} cost; ResNet-18/CIFAR, measured on CPU via
++\texttt{scripts/cost\_profile.py}). The adaptation step itself is unchanged by KGA.}
++\label{tab:cost}
++\begin{tabular}{lc}
++\toprule
++Component & Cost \\
++\midrule
++Evidence assembly (per batch) & $0.073$\,ms \\
++Benefit-model evaluation (per decision) & $0.125$\,ms \\
++\textbf{Controller added latency} & $\mathbf{0.20}$\,\textbf{ms} \\
++Rollback model copy (memory) & $44.8$\,MB \\
++Benefit model size & $195$\,KB \\
++\bottomrule
++\end{tabular}
++\end{table}
++
+ \section{Experimental Setup}\label{sec:exp-setup}
+ \subsection{Research Questions}
+ The experiments address seven questions: \textbf{RQ1} whether the measured commit transition follows the theoretical frontier; \textbf{RQ2} whether the interval controls marginal false adaptation; \textbf{RQ3} whether KGA beats both fixed policies in mixed detectable regimes; \textbf{RQ4} whether it prevents damage on held-out natural shifts; \textbf{RQ5} whether it improves over simple and neighboring label-free gates; \textbf{RQ6} which evidence and calibration choices matter; and \textbf{RQ7} what computational overhead the controller adds.
+ 
+ \subsection{Datasets and Shift Taxonomy}
+-The evaluation separates controlled corruption/composition stress, large-scale corruption, natural institutional or geographic shifts, domain generalization, and low-margin diagnostic transfers. This taxonomy matters because a router can beat both fixed policies only when the optimal action varies across conditions and that variation is detectable from label-free evidence.
++The evaluation separates controlled corruption/composition stress, large-scale corruption, natural institutional or geographic shifts, domain generalization, and low-margin diagnostic transfers. This taxonomy matters because a router can beat both fixed policies only when the optimal action varies across conditions and that variation is detectable from label-free evidence. The nine tracks draw on CIFAR-10-C~\cite{hendrycks2019cifar10c}, ImageNet~\cite{deng2009imagenet}, the WILDS Camelyon17, iWildCam, and RxRx1 shifts~\cite{koh2021wilds,bandi2019camelyon,taylor2019rxrx1}, Office-Home~\cite{venkateswara2017officehome}, PACS via DomainBed~\cite{gulrajani2021domainbed}, and CIFAR-10.1~\cite{recht2019cifar10}; models build on RobustBench checkpoints~\cite{croce2021robustbench} with PyTorch~\cite{paszke2019pytorch} and scikit-learn~\cite{pedregosa2011sklearn}.
+ 
+ \begin{table*}[t]\centering\scriptsize
+ \caption{Dataset roles in the evaluation. The expected regime is a hypothesis fixed by the protocol, not a conclusion inferred from the final score.}
+@@ -441,8 +492,28 @@
+ \end{table*}
+ 
+ \subsection{Models, Adapters, and Leakage Control}
+-For every track, the source checkpoint, candidate adapter, update mode, learning rate, number of steps, batch construction, adapted parameter subset, and random seeds must be declared before held-out scoring. Adapter selection, evidence selection, benefit-model fitting, and residual calibration use development data only. All choices are frozen before the target test cells are scored once; target labels are opened afterward solely for offline audit. \drafttodo{Add a compact configuration table with exact backbone, adapter hyperparameters, seed count, calibration unit, and test unit for all nine tracks.}
++For every track, the source checkpoint, candidate adapter, update mode, learning rate, number of steps, batch construction, adapted parameter subset, and random seeds must be declared before held-out scoring. Adapter selection, evidence selection, benefit-model fitting, and residual calibration use development data only. All choices are frozen before the target test cells are scored once; target labels are opened afterward solely for offline audit. The calibration and scoring configuration is uniform across tracks except where noted in Table~\ref{tab:config-table}.
+ 
++\begin{table}[t]\centering\scriptsize
++\caption{Per-track calibration and scoring configuration ($\alpha{=}0.10$ throughout; benefit
++estimator identical across tracks, \S\ref{sec:method}). Backbones: ResNet-18 (CIFAR), ResNet-50
++(ImageNet-C); the natural-shift backbones follow the WILDS/DomainBed defaults per track.}
++\label{tab:config-table}
++\begin{tabular}{@{}p{0.24\linewidth}p{0.24\linewidth}p{0.20\linewidth}p{0.19\linewidth}@{}}
++\toprule
++Track & Calibration unit & Radius rule & Test unit \\
++\midrule
++CIFAR-10-C stress & grid cell (leave-one-cell-out) & LOO jackknife $q_{0.9}$ & $5{\times}432$ cells \\
++ImageNet-C & grid cell (leave-one-cell-out) & LOO jackknife $q_{0.9}$ & $27$ cells \\
++PACS (LODO) & source-domain cells & LOO jackknife $q_{0.9}$ & $108$ cells/target \\
++Camelyon17, iWildCam, Office-Home, RxRx1 & dev seeds $\{0,1\}$ & split-conformal $q_{0.9}$ & test seeds $\{2,3,4\}$ \\
++\bottomrule
++\end{tabular}
++\end{table}
++Exact per-adapter update settings (optimizer, steps, learning rate, and the mild/aggressive
++operating points) are tabulated per track in Appendix~\ref{app:evidence-schema},
++Table~\ref{tab:adapter-hparams}.
++
+ \subsection{Baselines}
+ We distinguish fixed policies (always-freeze and always-adapt), an offline per-condition oracle, simple label-free gates (confidence, entropy, drift/KL, and ATC-style), KGA without its radius, and neighboring methods or ports inspired by POEM and AETTA. Each comparison must state whether the baseline is an official implementation, a faithful reimplementation, or a protocol-matched port.
+ 
+@@ -495,7 +566,7 @@
+ The per-corruption suite is helpful-dominated; the \emph{stress} grid crosses severity,
+ batch size, composition, and update aggressiveness ($432$ conditions/method, ResNet-18;
+ pre-registered as Protocol~A; seeds $0$--$4$). Harmful base rates are $34\%$ (Tent),
+-$27\%$ (EATA), $16\%$ (SAR). \textsc{KGA} \textbf{beats both} trivial policies for
++$27\%$ (EATA), ${\approx}10\%$ (SAR, mean over seeds). \textsc{KGA} \textbf{beats both} trivial policies for
+ Tent and EATA at $0\%$ false-adapt; it ties collapse-resistant SAR
+ (Table~\ref{tab:decisive}). Among harmful cells \textsc{KGA} adapts $0$ and freezes them;
+ among helpful cells it adapts almost all; on marginal cells it abstains. For both Tent and EATA,
+@@ -612,7 +683,7 @@
+ criterion \emph{before} computing any number (\path{MIXED_BENCHMARK_PROTOCOL.md}).
+ All six policies consume the \emph{same} logged per-condition signals $Z$ and benefit $B$ from the
+ locked CIFAR-10-C stress grid (Tent, $432$ conditions/seed, five seeds; harmful fraction
+-${\approx}16$--$18\%$); only the decision rule differs. The competitors are
++${\approx}33\%$, i.e.\ the always-adapt $\mathrm{FA}_{\mathrm u}$ of Table~\ref{tab:headtohead-poem-aetta}); only the decision rule differs. The competitors are
+ \emph{protocol-matched POEM-style and AETTA-style baselines}: ports of the published protectors
+ onto this protocol with documented simplifications (batch-summary entropy rather than per-sample
+ streams). Official per-sample POEM and dropout-based AETTA reproduction remains a camera-ready
+@@ -993,12 +1064,12 @@
+ CIFAR-10-C stress & $5\times432$ cells / candidate & Tent: $0.0016/0.0079/0.1241$; EATA: $0.0013/0.0033/0.1314$; $\mathrm{FA}_{\mathrm u}=0$ & Tent/EATA CI BB; SAR ties adapt & locked multi-seed \\
+ ImageNet-C SAR & $27$ cells (3 noise corr.) & $0.0108/0.0625/0.0319$; $\mathrm{FA}_{\mathrm u}=0$ & \textbf{CI BB}; gap-freeze $[-.032,-.011]$, Holm; $12/27$ abstain & locked single-seed full-scale \\
+ Camelyon17 OOD & genuine OOD test $n=18$ (support $n=36$) & $0.0000/0.0000/0.1381$; $\mathrm{FA}_{\mathrm u}=0$ & ties adapt; no BB & reconciled raw records \\
+-iWildCam H v2 & held-out test $n=72$ & $0.0041/0.1028/0.0041$; $\mathrm{FA}_{\mathrm u}=0$ & no-harm, ties freeze & provisional OOF summary; replay required \\
+-Office-Home M v2 & target test $n=35$ & $0.0157/0.0468/0.0158$; $\mathrm{FA}_{\mathrm u}=0$ & no-harm, tiny point edge & provisional OOF summary; replay required \\
++iWildCam H v2 & held-out test $n=72$ & $0.0041/0.1028/0.0041$; $\mathrm{FA}_{\mathrm u}=0$ & no-harm, ties freeze & reconciled (OOF lock) \\
++Office-Home M v2 & target test $n=35$ & $0.0157/0.0468/0.0158$; $\mathrm{FA}_{\mathrm u}=0$ & no-harm, tiny point edge & reconciled (OOF lock) \\
+ RxRx1 J & OOD test $n=60$ & $0.0000/0.2531/0.0000$; $\mathrm{FA}_{\mathrm u}=0$ & ties freeze; no BB & locked raw run \\
+-PACS & four LODO targets, $18$ cells each & three safety/tie-freeze targets; one null; $\mathrm{FA}_{\mathrm u}=0$ & no promoted BB & locked single-seed panel \\
++PACS & four LODO targets, $108$ cells each & three safety targets ($\mathrm{FA}_{\mathrm u}{=}0$); one null (photo, $\mathrm{FA}_{\mathrm u}{=}0.056$) & no promoted BB & locked single-seed panel \\
+ ImageNet-R D & $3$ seeds $\times10$ backbones & no CI-robust BB; one point-only arm fails the second CI & abstention / fixed-policy ties & locked multi-seed diagnostic \\
+-CIFAR-10.1 K & cross-seed test $n=48$ & $0.0021/0.0190/0.0017$; $\mathrm{FA}_{\mathrm u}=0.444$ & fails transfer bar; no claim & locked diagnostic \\
++CIFAR-10.1 K & cross-seed test $n=48$ & $0.0021/0.0190/0.0017$; $\mathrm{FA}_{\mathrm u}=0.444$ & fails transfer bar; no claim & diagnostic; replay pending \\
+ \bottomrule
+ \end{tabular}
+ \end{table*}
+@@ -1030,7 +1101,7 @@
+ ImageNet-C SAR & $27$ cells & .0108 & .0625 & .0319 & CI BB (Holm), $\mathrm{FA}_{\mathrm u}=0$ \\
+ Camelyon17 OOD & $n=18$ & .0000 & .0000 & .1381 & reconciled no-harm \\
+ RxRx1 J & $n=60$ & .0000 & .2531 & .0000 & locked no-harm \\
+-Three-source OOF mixture & $n=143$ & .0059 & .0632 & .0342 & CI BB, constructed mixture \\
++Three-source OOF mixture & $n=143$ & .0059 & .0632 & .0342 & CI BB (constructed); locked \\
+ \bottomrule
+ \end{tabular}
+ \end{table}
+@@ -1051,7 +1122,7 @@
+ Stress-grid beats-both (Tent/EATA) & confirm. & locked Protocol~A v1 stress grid \\
+ ImageNet-C SAR CI-confirmed beats-both & confirm. & full-scale 27-cell noise grid; gap-freeze CI excl.\ 0, Holm-robust \\
+ Reconciled natural safety (Camelyon17, RxRx1) & confirm. & raw OOD/test artifacts \\
+-Office-Home and iWildCam OOF summaries & \textbf{provisional} & canonical scorer replay required \\
++Office-Home and iWildCam OOF summaries & reconciled & OOF bootstrap lock \\
+ Three-source mixed routing aggregate & confirm. & constructed OOF mixture, not transfer \\
+ Universal improvement & \textbf{not claimed} & impossible in general \\
+ $\varepsilon$ estimates drift budget $\beta$ & \textbf{false} & $\beta$ is declared; $\varepsilon$ is empirical \\
+@@ -1063,19 +1134,92 @@
+ \subsection{Value of the Uncertainty Radius}
+ Table~\ref{tab:gates} isolates the radius: KGA without the radius has lower point regret but a higher empirical false-adapt rate, whereas the full certificate sacrifices coverage to eliminate observed harmful commitments on the locked grid. This comparison separates benefit-prediction quality from certification.
+ 
+-\subsection{Planned Ablations (Pre-Specified, Not Yet Run)}
+-Four sensitivity axes are pre-specified but not yet executed, and are reported here as \emph{planned}
+-rather than as evidence, to fix the protocol in advance: (i) \emph{evidence and estimator dependence}
+----feature-group drop-outs and gradient-boosting versus linear, logistic-sign, random-forest, and
+-small-neural benefit models, to test whether safety hinges on a single feature or regressor;
+-(ii) \emph{calibration size, batch size, and safety level} $\alpha\in\{0.01,0.05,0.10,0.20\}$,
+-expected to trade decision coverage against $\mathrm{FA}_{\mathrm u}$ and abstention; (iii) a controlled
+-\emph{drift-budget} $\beta$ sweep of the population frontier, kept explicitly distinct from the empirical
+-radius $\varepsilon$; and (iv) \emph{architecture and adapter transfer}---whether one benefit model
+-transfers across Tent/EATA/SAR and backbones or requires recalibration---together with the runtime and
+-peak-memory table of \S\ref{sec:method}. Of the sensitivity analyses, only the radius ablation above
+-(Table~\ref{tab:gates}) is currently backed by run data.
++\subsection{Sensitivity Ablations}\label{sec:sens-ablations}
++The ablations below reuse the locked CIFAR-10-C stress evidence---the logged per-condition $Z$ and
++true benefit $B$ ($432$ conditions/candidate, seed~0)---and the deployed rule (cross-fit
++gradient-boosted $\widehat\Delta$ plus conformal radius), so no target labels or model re-runs are
++involved (\texttt{scripts/ablation\_sweep.py}). At the deployed operating point (Tent,
++$\alpha{=}0.10$) the harness reproduces the locked gate row of Table~\ref{tab:gates}
++(regret $0.0017$, $\mathrm{FA}_{\mathrm u}{=}0$, adapt $0.51$, coverage $0.68$), confirming
++faithfulness.
+ 
++\textbf{(i) Safety level $\alpha$.} Sweeping $\alpha$ (Table~\ref{tab:abl-alpha}) trades decision
++coverage for regret while holding $\mathrm{FA}_{\mathrm u}{=}0$ at \emph{every} certified level;
++only the radius-free variant breaks the guarantee ($\mathrm{FA}_{\mathrm u}=0.051/0.032/0.007$ for
++Tent/EATA/SAR). The certificate is a genuine safety knob, not one tuned point.
++
++\textbf{(ii) Estimator.} Swapping the benefit regressor (Table~\ref{tab:abl-estimator}) leaves the
++false-adapt guarantee intact: gradient boosting ($0.0017$), random forest ($0.0015$), and ridge
++linear ($0.0041$) all keep $\mathrm{FA}_{\mathrm u}{\le}0.002$; a small MLP over-abstains
++(regret $0.014$, coverage $0.36$) on this small calibration set. Safety is a property of the radius,
++not of the specific estimator.
++
++\textbf{(iii) Evidence family.} Dropping any single evidence family (frozen, adapted, change, drift,
++or update) keeps regret within $[0.0013,0.0019]$ at $\mathrm{FA}_{\mathrm u}{=}0$: no single family
++is load-bearing, and the panel is deliberately redundant.
++
++\textbf{(iv) Cross-adapter transfer.} Fitting the benefit model on one adapter and applying it to
++another (Table~\ref{tab:abl-transfer}) \emph{breaks} the false-adapt bound in most directions
++(SAR$\to$Tent $\mathrm{FA}_{\mathrm u}=0.26$, EATA$\to$SAR $0.19$, Tent$\to$SAR $0.13$): one gate
++does \emph{not} transfer across adapters, which is exactly why the deployed method refits per
++adapter. Only Tent$\leftrightarrow$EATA transfer stays near-safe.
++
++\textbf{(v) Drift budget $\beta$.} The population-frontier $\beta$ sweep is the synthetic
++ground-truth validation of \S\ref{sec:synthetic} ($\mathrm{FA}_{\mathrm u}\le0.014$ across
++$\beta\in\{0.05,\ldots,0.20\}$), kept distinct from the empirical radius $\varepsilon$.
++
++\begin{table}[t]\centering\footnotesize
++\caption{Ablation (i): safety-level $\alpha$ sweep, CIFAR-10-C Tent ($n{=}432$).
++$\mathrm{FA}_{\mathrm u}{=}0$ at every certified $\alpha$; only the radius-free row breaks it.}
++\label{tab:abl-alpha}
++\begin{tabular}{lcccc}
++\toprule
++$\alpha$ & regret$\downarrow$ & $\mathrm{FA}_{\mathrm u}$ & adapt & coverage \\
++\midrule
++$0.01$ & $0.0033$ & $0.000$ & $0.45$ & $0.49$ \\
++$0.05$ & $0.0020$ & $0.000$ & $0.49$ & $0.64$ \\
++$0.10$ & $0.0017$ & $0.000$ & $0.51$ & $0.69$ \\
++$0.20$ & $0.0011$ & $0.000$ & $0.53$ & $0.74$ \\
++no radius & $0.0004$ & $0.051$ & $0.68$ & $1.00$ \\
++\bottomrule
++\end{tabular}
++\end{table}
++
++\begin{table}[t]\centering\footnotesize
++\caption{Ablation (ii): benefit estimator, CIFAR-10-C Tent ($\alpha{=}0.10$). The radius keeps
++$\mathrm{FA}_{\mathrm u}{\approx}0$ regardless of estimator.}
++\label{tab:abl-estimator}
++\begin{tabular}{lcccc}
++\toprule
++estimator & regret$\downarrow$ & $\mathrm{FA}_{\mathrm u}$ & adapt & coverage \\
++\midrule
++gradient boosting & $0.0017$ & $0.000$ & $0.51$ & $0.69$ \\
++random forest & $0.0015$ & $0.002$ & $0.52$ & $0.66$ \\
++ridge (linear) & $0.0041$ & $0.000$ & $0.46$ & $0.48$ \\
++small MLP & $0.0143$ & $0.000$ & $0.36$ & $0.36$ \\
++\bottomrule
++\end{tabular}
++\end{table}
++
++\begin{table}[t]\centering\footnotesize
++\caption{Ablation (iv): cross-adapter transfer ($\alpha{=}0.10$). Transferring one benefit model
++across adapters violates $\mathrm{FA}_{\mathrm u}{\le}\alpha$ in most directions---per-adapter
++calibration is required.}
++\label{tab:abl-transfer}
++\begin{tabular}{lcccc}
++\toprule
++fit $\to$ apply & regret$\downarrow$ & $\mathrm{FA}_{\mathrm u}$ & adapt & coverage \\
++\midrule
++Tent $\to$ EATA & $0.0020$ & $0.000$ & $0.54$ & $0.64$ \\
++EATA $\to$ Tent & $0.0010$ & $0.007$ & $0.55$ & $0.69$ \\
++Tent $\to$ SAR & $0.0173$ & $0.125$ & $0.50$ & $0.72$ \\
++EATA $\to$ SAR & $0.0236$ & $0.192$ & $0.57$ & $0.63$ \\
++SAR $\to$ Tent & $0.0086$ & $0.259$ & $0.85$ & $0.85$ \\
++SAR $\to$ EATA & $0.0028$ & $0.123$ & $0.76$ & $0.76$ \\
++\bottomrule
++\end{tabular}
++\end{table}
++
+ \section{Discussion and Failure Modes}\label{sec:discussion}
+ \subsection{Why Natural Shifts Mainly Produce No-Harm}
+ A single natural benchmark is often one-sided: adaptation helps almost everywhere or harms almost everywhere. In the first case, always-adapt is already near-oracle; in the second, always-freeze is near-oracle. A three-way router gains a strict margin over both fixed policies only when helpful and harmful conditions coexist and the evidence distinguishes them. Natural no-harm results and mixed-regime wins are therefore different operating points of the same decision geometry.
+@@ -1116,9 +1260,9 @@
+ 
+ \textbf{Real-shift scope.} The uniform panel deliberately distinguishes three outcomes. Camelyon17
+ genuine OOD and RxRx1 are reconciled/locked no-harm results: KGA ties the better fixed policy at
+-zero observed false-adapt. Office-Home and iWildCam retain their saved out-of-fold summaries as
+-\emph{provisional}: they are informative safety evidence but are excluded from headline counting
+-until a canonical scorer replay reproduces the same numbers. PACS, ImageNet-R, and CIFAR-10.1 are
++zero observed false-adapt. Office-Home and iWildCam are reconciled from their out-of-fold bootstrap lock
++(\path{research_lock/KBOUND_WIN_BOOTSTRAP_CIS_oof.json}): no-harm safety results now backed by
++saved OOF confidence intervals rather than a pending replay. PACS, ImageNet-R, and CIFAR-10.1 are
+ completed breadth tracks, not natural beats-both claims. The three-source mixture is a constructed
+ routing aggregate; it is not a transfer result and does not change the per-dataset conclusion.
+ 
+--- /Users/pratik_n/kbound_phase1_backup_20260711_014958/kbound_short_appendix.tex	2026-07-09 16:14:09
++++ docs/research/kbound/kbound_short_appendix.tex	2026-07-11 12:40:00
+@@ -34,6 +34,93 @@
+ \end{algorithmic}
+ \end{algorithm}
+ 
++\section{Evidence feature schema and adapter hyperparameters}\label{app:evidence-schema}
++Two label-free evidence panels are used, matched to the two calibration regimes of
++\S\ref{sec:method}. Notation: $p_0,p_a$ are the frozen and adapted softmax rows on the adaptation
++batch; $\bar m_0=\mathrm{mean}_n\,p_{0,n}$ and $\bar m_a$ are the predicted-class marginals;
++$H(p)=-\sum_c p_c\log p_c$; $C$ is the number of classes. The stress-grid tracks (CIFAR-10-C,
++ImageNet-C, PACS) use the $11$-dimensional base panel of Table~\ref{tab:schema-base}
++(\texttt{kbound\_pkg/kbound/evidence.py}). The natural-shift tracks (Camelyon17, iWildCam,
++Office-Home, RxRx1) use the $16$-dimensional panel of Table~\ref{tab:schema-rich}: a $10$-statistic
++frozen-logit summary plus a $6$-feature rich panel (\texttt{scripts/run\_wilds\_camelyon17.py}). All
++features are target-label-free; the ATC feature calibrates its threshold on \emph{source} labels
++only.
++
++\begin{table}[t]\centering\scriptsize
++\caption{Base $11$-dim evidence panel (stress grids).}
++\label{tab:schema-base}
++\begin{tabular}{@{}llp{0.30\linewidth}@{}}
++\toprule
++Feature & Definition & Family \\
++\midrule
++\texttt{pre\_entropy}  & $\mathrm{mean}_n H(p_{0,n})$ & frozen output \\
++\texttt{pre\_conf}     & $\mathrm{mean}_n \max_c p_{0,n}$ & frozen output \\
++\texttt{pre\_pbal}     & $H(\bar m_0)/\log C$ & frozen marginal \\
++\texttt{post\_entropy} & $\mathrm{mean}_n H(p_{a,n})$ & adapted output \\
++\texttt{post\_conf}    & $\mathrm{mean}_n \max_c p_{a,n}$ & adapted output \\
++\texttt{post\_pbal}    & $H(\bar m_a)/\log C$ & adapted marginal \\
++\texttt{pbal\_drop}    & \texttt{pre\_pbal}$-$\texttt{post\_pbal} & change \\
++\texttt{entropy\_drop} & \texttt{pre\_entropy}$-$\texttt{post\_entropy} & change \\
++\texttt{frac\_highconf}& $\mathrm{frac}_n(\max_c p_{a,n}{>}0.9)$ & collapse \\
++\texttt{marginal\_KL}  & $\sum_c \bar m_{a,c}\log(\bar m_{a,c}/\bar m_{0,c})$ & drift \\
++\texttt{update\_norm}  & $\lVert\Delta\theta_{\mathrm{aff}}\rVert_2$ & update \\
++\bottomrule
++\end{tabular}
++\end{table}
++
++\begin{table}[t]\centering\scriptsize
++\caption{Rich $16$-dim panel (natural shift): $10$ frozen-logit statistics $+$ $6$ rich features.
++$H$ is softmax entropy, $s=\max_c\mathrm{softmax}$ the confidence, $E(x)=-\log\sum_c e^{z_c}$ the
++free energy; subscripts $s,t$ denote source/target pools.}
++\label{tab:schema-rich}
++\begin{tabular}{@{}llp{0.26\linewidth}@{}}
++\toprule
++Feature & Definition & Family \\
++\midrule
++\multicolumn{3}{@{}l}{\emph{Frozen-logit summary (10)}}\\
++ent mean/std     & $\mathrm{mean}/\mathrm{std}\,H$ & frozen \\
++ent p25/p75      & $25/75$ pct.\ of $H$ & frozen \\
++conf mean/std    & $\mathrm{mean}/\mathrm{std}\,s$ & frozen \\
++frac hi-conf     & $\mathrm{frac}(s{>}0.9)$ & frozen \\
++frac hi-ent      & $\mathrm{frac}(H{>}\log 2)$ & frozen \\
++marg.\ max       & $\max_c \mathrm{mean}_n\,p$ & frozen marginal \\
++marg.\ std       & $\mathrm{std}_c \mathrm{mean}_n\,p$ & frozen marginal \\
++\midrule
++\multicolumn{3}{@{}l}{\emph{Rich features (6)}}\\
++\texttt{disagree} & $\mathrm{frac}(\arg\max f_0\!\neq\!\arg\max f_a)$ & disagreement \\
++\texttt{ent\_gap} & $\mathrm{mean}\,H(f_0)-\mathrm{mean}\,H(f_a)$ & change \\
++\texttt{en\_shift}& $\mathrm{mean}\,E_t-\mathrm{mean}\,E_s$ & drift \\
++\texttt{bn\_kl}   & $\mathrm{mean}_{\mathrm{ch}}\,\mathrm{KL}(\mathcal N_{\mathrm{run}}\!\parallel\!\mathcal N_{\mathrm{batch}})$ & drift \\
++\texttt{atc}      & $\mathrm{frac}_t(s\!\ge\! t)$, $t$ src-calib. & accuracy proxy \\
++\texttt{conf\_drop}& $\mathrm{mean}\,s_s-\mathrm{mean}\,s_t$ & drift \\
++\bottomrule
++\end{tabular}
++\end{table}
++
++\begin{table}[t]\centering\footnotesize
++\caption{Per-track adapter hyperparameters (from the run configs). Adapted parameters are
++BN/LayerNorm-affine only; TTA optimizer is Adam. ``Aggressiveness'' cells use
++mild $=(10$ steps, lr $10^{-3})$ or aggressive $=(50$ steps, lr $2.5\!\times\!10^{-3})$. EATA uses
++an entropy filter $e_{\mathrm{thr}}{=}0.4\ln 2{\approx}0.28$; SAR adds SAM $+$ entropy reset.
++Backbones for CIFAR-10-C, ImageNet-C, PACS, and Camelyon17 are verified from the run code; the
++remaining WILDS/DomainBed tracks use the standard baseline.}
++\label{tab:adapter-hparams}
++\resizebox{\columnwidth}{!}{%
++\begin{tabular}{@{}llll@{}}
++\toprule
++Track & Backbone & Adapter(s) & Steps / lr \\
++\midrule
++CIFAR-10-C stress & ResNet-18 & Tent/EATA/SAR & mild \& aggressive (per cell) \\
++ImageNet-C & ResNet-50 & Tent/EATA/SAR (SAM+reset) & mild \& aggressive (per cell) \\
++PACS (LODO) & ResNet-18 & mild/aggressive & $10$/$10^{-3}$ \,\&\, $50$/$2.5{\times}10^{-3}$ \\
++Camelyon17 & DenseNet-121 & EATA online & $10$ / $10^{-3}$ \\
++iWildCam & ResNet-50 & Tent episodic & $10$ / $10^{-3}$ \\
++Office-Home & ResNet (DomainBed) & SAR online aggr. & $50$ / $2.5{\times}10^{-3}$ \\
++RxRx1 & ResNet-50 & episodic & $5$ / (batch $64$) \\
++\bottomrule
++\end{tabular}}
++\end{table}
++
+ \section{Full theory stack}\label{app:theory-full}\label{app:theory-ext}
+ This appendix is not required for the main empirical claim; it preserves the full theorem stack
+ and validator mapping behind the three main-paper theorems: matched-evidence impossibility
+--- /Users/pratik_n/kbound_phase1_backup_20260711_014958/paper/sections/theory_setup.tex	2026-07-09 16:14:09
++++ docs/research/kbound/paper/sections/theory_setup.tex	2026-07-11 01:53:05
+@@ -13,9 +13,10 @@
+ 
+ \begin{assumption}[Deployment setup]\label{ass:deploy}
+ Unless stated otherwise: binary label $Y\in\{0,1\}$, $0/1$ loss $\ell$, and
+-$\mu_T(D)>0$. Fix a source-calibrated score $s:\mathcal{X}\to[0,1]$ for $f_a$ (e.g.\ a
+-Platt-scaled probability) and the target conditional accuracy
+-$\eta_a(x):=\Pr_T(Y{=}1\mid f_a(x){=}1)$ on $D$. Define the \emph{observable margin}
++$\mu_T(D)>0$. Fix a source-calibrated score $s:\mathcal{X}\to[0,1]$ estimating the candidate's
++\emph{pointwise correctness} (e.g.\ a Platt-scaled confidence that $f_a$ is right at $x$), and write
++the target pointwise correctness $\eta_a(x):=\Pr_T\!\bigl(f_a(X){=}Y\mid X{=}x\bigr)$ on $D$, so that
++$\E_{\mu_T}[\eta_a\mid D]=\bar a$. Define the \emph{observable margin}
+ \[
+ M \;:=\; \E_{\mu_T}[s(X)\mid D]-\tfrac12,
+ \]
+--- /Users/pratik_n/kbound_phase1_backup_20260711_014958/paper/sections/theory_core_main.tex	2026-07-09 16:14:09
++++ docs/research/kbound/paper/sections/theory_core_main.tex	2026-07-11 01:53:36
+@@ -19,13 +19,15 @@
+ \begin{theorem}[Matched evidence forces abstention]\label{lem:nonid}
+ Fix $\alpha\in(0,\tfrac12)$ and $\beta\ge0$. There exist $P_T^1,P_T^2\in\mathcal{C}_\beta$ such
+ that $\Law(Z\mid P_T^1)=\Law(Z\mid P_T^2)$, $\sign\Delta_1=-\sign\Delta_2\neq0$, and
+-$|M(P_T^1)|\le\beta$. Consequently, any label-free rule $g$ with
++$|M(P_T^1)|<\beta$. Consequently, any label-free rule $g$ with
+ $\Pr[g=\textsc{adapt},\Delta\le0]\le\alpha$ and $\Pr[g=\textsc{freeze},\Delta\ge0]\le\alpha$
+ must satisfy $\Pr[g=\textsc{abstain}]\ge 1-2\alpha$ on this shared evidence law.
+ \end{theorem}
+ \begin{proof}
+-Take $|M|\le\beta$ and choose $\gamma_1,\gamma_2\in[-\beta,\beta]$ with
+-$\sign(M+\gamma_1)\neq\sign(M+\gamma_2)$ (possible because $|M|\le\beta$). Lemma~\ref{lem:reduction}
++Take $|M|<\beta$ and choose $\gamma_1,\gamma_2\in[-\beta,\beta]$ with
++$\sign(M+\gamma_1)\neq\sign(M+\gamma_2)$, both nonzero (possible because $|M|<\beta$; at the boundary
++$|M|=\beta$ the admissible drift $\gamma=-\sign(M)\beta$ instead gives $\Delta=0$, still uncertifiable
++as a strict sign, so abstention persists on the closed region $|M|\le\beta$). Lemma~\ref{lem:reduction}
+ gives opposite benefit signs at the same observables $(M,\mu_T(D),Z\text{-law})$. A label-free
+ rule sees identical $\Law(Z)$ in both worlds, so its action probabilities coincide; each committed
+ action is a false adapt in one world or a false freeze in the other, forcing abstention with
+@@ -41,9 +43,11 @@
+ (Lemma~\ref{lem:reduction}).
+ \item[\textnormal{(ii)}] \textbf{Sufficiency.} If $|M|>\beta$ and $P_T\in\mathcal{C}_\beta$, then
+ $\sign\Delta=\sign M$.
+-\item[\textnormal{(iii)}] \textbf{Necessity.} If $|M|\le\beta$, there exist
+-$P_T^1,P_T^2\in\mathcal{C}_\beta$ with the same evidence law and opposite benefit signs; hence
+-$\sign\Delta$ is not a function of $\Law(Z)$ over $\mathcal{C}_\beta$.
++\item[\textnormal{(iii)}] \textbf{Necessity.} If $|M|<\beta$, there exist
++$P_T^1,P_T^2\in\mathcal{C}_\beta$ with the same evidence law and opposite \emph{nonzero} benefit
++signs; at $|M|=\beta$ the admissible drift $\gamma=-\sign(M)\beta$ yields $\Delta=0$, so the sign is
++still undetermined. Hence $\sign\Delta$ is not a function of $\Law(Z)$ over $\mathcal{C}_\beta$
++whenever $|M|\le\beta$.
+ \item[\textnormal{(iv)}] \textbf{Iff.} $\sign\Delta$ is label-free identifiable over
+ $\mathcal{C}_\beta$ if and only if $|M|>\beta$.
+ \end{enumerate}
+@@ -54,8 +58,9 @@
+ \begin{proof}
+ Part~(i) is Lemma~\ref{lem:reduction}. For~(ii), if $M>\beta$ and $|\gamma|\le\beta$, then
+ $M+\gamma>0$, so $\sign\Delta=\sign(M+\gamma)=+1$; the negative case is symmetric. For~(iii),
+-pick $\gamma_\pm\in[-\beta,\beta]$ with $\sign(M+\gamma_+)\neq\sign(M+\gamma_-)$ when
+-$|M|\le\beta$; Lemma~\ref{lem:reduction} yields matched $Z$ and opposite signs. Part~(iv) combines
++pick $\gamma_\pm\in[-\beta,\beta]$ with $\sign(M+\gamma_+)\neq\sign(M+\gamma_-)$, both nonzero, when
++$|M|<\beta$; Lemma~\ref{lem:reduction} yields matched $Z$ and opposite signs. At $|M|=\beta$ the
++admissible $\gamma=-\sign(M)\beta$ gives $\Delta=0$, still precluding a determined nonzero sign. Part~(iv) combines
+ (ii) and (iii). Maximality follows from~(iii) and Theorem~\ref{lem:nonid}.
+ \end{proof}
+ 
+--- /Users/pratik_n/kbound_phase1_backup_20260711_014958/paper/sections/main_theory_5.tex	2026-07-09 16:14:08
++++ docs/research/kbound/paper/sections/main_theory_5.tex	2026-07-11 01:53:39
+@@ -117,7 +117,10 @@
+ (Lemma~\ref{lem:reduction}); $\gamma$ is one-dimensional given the observables.
+ \item[\textnormal{(ii)}] \textbf{Iff identifiability.} Over $\mathcal{C}_\beta$,
+ $\sign\Delta$ is a function of $\Law(Z)$ iff $|M|>\beta$; then $\sign\Delta=\sign M$ and the
+-minimax committal error is $0$; if $|M|\le\beta$ the minimax error is $\tfrac12$.
++minimax committal error is $0$. If $|M|<\beta$ the minimax committal error is $\tfrac12$ (opposite
++nonzero signs share the evidence law); at $|M|=\beta$ the admissible drift $\gamma=-\sign(M)\beta$
++makes $\Delta=0$, so strict-sign certification still fails and the maximal sound rule abstains on the
++closed region $|M|\le\beta$.
+ \item[\textnormal{(iii)}] \textbf{Necessity geometry.} Any identifying class lies on one side of
+ the hyperplane $\gamma=-M$; every identifying assumption is a one-sided constraint on $\gamma$.
+ \end{enumerate}
+--- /Users/pratik_n/kbound_phase1_backup_20260711_014958/paper/references_kbound_expanded.tex	2026-07-04 12:27:05
++++ docs/research/kbound/paper/references_kbound_expanded.tex	2026-07-11 02:20:50
+@@ -155,9 +155,6 @@
+ \bibitem{waudbysmith2024betting} I. Waudby-Smith, A. Ramdas. Estimating means of bounded
+ random variables by betting. \emph{J.\ R.\ Stat.\ Soc.\ B} 86(1):1--27, 2024.
+ 
+-\bibitem{vovk2005algorithmic} V. Vovk, A. Gammerman, G. Shafer. \emph{Algorithmic Learning
+-in a Random World.} Springer, 2005.
+-
+ \bibitem{maurer2009empirical} A. Maurer, M. Pontil. Empirical Bernstein bounds and
+ sample variance penalization. \emph{COLT}, 2009.
+ 

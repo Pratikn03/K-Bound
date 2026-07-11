@@ -227,6 +227,10 @@ def run(args, out_dir):
     f0 = load_f0(args.ckpt, device)
     n_cells = (len(args.seeds) * len(args.compositions) * len(args.batch_regimes) * len(args.aggressiveness))
     ci = 0
+    # WIN_HUNT_v5: online-only candidate pool (the "continual" no-episodic-reset op-point) when
+    # --online-only is set; default keeps all six online+episodic candidates (byte-identical).
+    _cands = [(m, md) for (m, md) in rc.CANDIDATES
+              if (not getattr(args, "online_only", False)) or md == "online"]
     for seed in args.seeds:
         for comp in args.compositions:
             for regime in args.batch_regimes:
@@ -240,7 +244,7 @@ def run(args, out_dir):
                     torch.manual_seed(cell_seed); np.random.seed(cell_seed % (2 ** 31))
                     rng = np.random.default_rng(cell_seed)         # per-cell -> resume is bit-identical
                     bs = BATCH_REGIMES[regime]
-                    steps = args.steps_override or rc.AGGR[aggr]["steps"]; lr = rc.AGGR[aggr]["lr"]
+                    steps = args.steps_override or rc.AGGR[aggr]["steps"]; lr = args.adapt_lr if getattr(args, "adapt_lr", None) is not None else rc.AGGR[aggr]["lr"]
                     try:
                         stream, eval_x, eval_y = build_condition(
                             sub, y, comp, bs, args.n_eval, rng, device, n_batches=args.n_batches)
@@ -250,7 +254,7 @@ def run(args, out_dir):
                         a0, p0, p0_pos = tm.eval_frozen(f0, eval_x, eval_y, prob_mode="max")
                         stream_f0_pos = tm._predict_prob(f0, torch.cat(stream, 0), train_mode=False, bs=128, mode="max")
                         preds_all = [p0]; aa_all = [a0]; cand_names = ["freeze_f0"]; best_pa = p0_pos; best_aa_c = float(a0)
-                        for (method, mode) in rc.CANDIDATES:
+                        for (method, mode) in _cands:
                             aa, Z, upd, preds, pa_pos = tm.run_candidate(
                                 method, mode, f0, stream, eval_x, eval_y, NUM_CLASSES, steps, lr,
                                 eval_bs=args.episodic_batch, prob_mode="max", episodic_steps=args.episodic_steps)
@@ -315,7 +319,8 @@ def build_manifest(args, records, conditions, meta):
     cfg = {k: getattr(args, k) for k in (
         "data_root", "ckpt", "split", "seeds", "compositions", "batch_regimes", "aggressiveness",
         "n_eval", "n_batches", "tau_star", "kappa", "sd_L", "delta", "device", "steps_override",
-        "episodic_steps", "episodic_batch", "smoke")}
+        "episodic_steps", "episodic_batch", "smoke",
+        "adapt_lr", "online_only")}   # WIN_HUNT_v5 operating-point overrides enter the config hash
     sha = hashlib.sha256(json.dumps(cfg, sort_keys=True, default=str).encode()).hexdigest()[:8]
     return {
         "schema": "kbound_rxrx1_v0.5", "dataset": "wilds-rxrx1",
@@ -327,7 +332,9 @@ def build_manifest(args, records, conditions, meta):
         "f0": ("torchvision resnet50(num_classes=1139) <- official WILDS RxRx1 ERM checkpoint "
                "(rxrx1_seed:0_epoch:best_model.pth, 'model.'-stripped, 0 missing/0 unexpected); frozen; "
                "WILDS rxrx1 eval transform (ToTensor + per-image standardize); in-dist acc ~35.9%"),
-        "num_classes": NUM_CLASSES, "candidates": [f"{m}_{md}" for (m, md) in rc.CANDIDATES],
+        "num_classes": NUM_CLASSES,
+        "candidates": [f"{m}_{md}" for (m, md) in rc.CANDIDATES
+                       if (not getattr(args, "online_only", False)) or md == "online"],
         "domain": f"{DOMAIN} (OOD '{args.split}' split = 14 unseen experiments)",
         "multiclass_caveat": ("multi-candidate tau-route (b) uses prediction agreement on a 1139-class "
                               "label space; the binary-Y advantage recovery (Thm 1A) is heuristic here, so "
@@ -381,6 +388,14 @@ def parse_args(argv=None):
     p.add_argument("--out", default="")
     p.add_argument("--resume", action="store_true")
     p.add_argument("--smoke", action="store_true")
+    # ---- WIN_HUNT_v5 aggressive-regime wave operating-point overrides (opt-in) ----
+    p.add_argument("--adapt-lr", type=float, default=None, dest="adapt_lr",
+                   help="WIN_HUNT_v5: absolute adapter LR override for tent/eata/sar (rc.AGGR cell "
+                        "lr ignored when set). DEFAULT None = per-cell lr (byte-identical). v5 sets "
+                        "0.004 (= 4x the 1e-3 shared-baseline lr).")
+    p.add_argument("--online-only", action="store_true", dest="online_only",
+                   help="WIN_HUNT_v5: restrict the candidate pool to online (no-episodic-reset) "
+                        "adapters -- the 'continual' operating point. DEFAULT off (byte-identical).")
     a = p.parse_args(argv)
     if a.smoke:
         a.compositions = ["iid", "single_class"]; a.batch_regimes = ["tiny"]; a.aggressiveness = ["mild"]

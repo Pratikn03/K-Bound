@@ -1,0 +1,267 @@
+{
+  "seed": 0,
+  "benchmark": "imagenet-r",
+  "method": "eata",
+  "alpha": 0.1,
+  "n_conditions": 3,
+  "kga_backend": "sklearn_gradient_boost",
+  "per_condition_fields_absent": [],
+  "per_condition_fields_absent_reason": "n_D/c_ij are attached by the runner via panel_capture.py (Wave-5); absent means the runner predates the patch or the panel capture was skipped.",
+  "per_condition_field_notes": {
+    "tau_hat_tau_star": "single-candidate route (frozen vs adapted), so tau is degenerate and set to 0.0.",
+    "zone": "computed from benefit_ci: lb>0 => CERTIFIED_ADAPT, ub<0 => CERTIFIED_FREEZE, else BLIND.",
+    "gamma_hat": "single-candidate proxy (b_hat/2) with gamma_ci = benefit_ci/2.",
+    "kga_backend": "sklearn_gradient_boost = production certificate; numpy_knn_fallback = torch/sklearn-free verification estimator (decision rule + conformal radius identical, estimator differs)."
+  },
+  "records": [
+    {
+      "seed": 0,
+      "benchmark": "imagenet-r",
+      "method": "eata",
+      "condition": "imagenet_r|iid|small|aggressive|online",
+      "B": 0.02699999999999997,
+      "a0": 0.42400000000000004,
+      "a_adapted": 0.451,
+      "a_kbound": 0.451,
+      "a_oracle": 0.451,
+      "regime": "helpful",
+      "oracle_action": "ADAPT",
+      "Z": [
+        3.632753372192383,
+        0.34341180324554443,
+        0.8928468652724352,
+        3.7056164741516113,
+        0.30346179008483887,
+        0.9017049034096863,
+        -0.008858038137251167,
+        -0.07286310195922852,
+        0.25,
+        0.169024258852005,
+        9.262814916618643
+      ],
+      "Z_names": [
+        "pre_entropy",
+        "pre_conf",
+        "pre_pbal",
+        "post_entropy",
+        "post_conf",
+        "post_pbal",
+        "pbal_drop",
+        "entropy_drop",
+        "frac_highconf",
+        "marginal_KL",
+        "update_norm"
+      ],
+      "n_D": 825,
+      "c_ij": [
+        [
+          1.0,
+          -0.040000000000000036,
+          0.02200000000000002,
+          -0.54
+        ],
+        [
+          -0.040000000000000036,
+          1.0,
+          0.3400000000000001,
+          -0.512
+        ],
+        [
+          0.02200000000000002,
+          0.3400000000000001,
+          1.0,
+          -0.508
+        ],
+        [
+          -0.54,
+          -0.512,
+          -0.508,
+          1.0
+        ]
+      ],
+      "Z_ev2": null,
+      "Z_ev2_names": null,
+      "tau_hat": 0.0,
+      "tau_star": 0.0,
+      "b_hat": 0.028557336810284693,
+      "eps_conformal": 0.01772642479082689,
+      "benefit_ci": [
+        0.010830912019457802,
+        0.046283761601111584
+      ],
+      "zone": "CERTIFIED_ADAPT",
+      "gamma_hat": 0.014278668405142346,
+      "gamma_ci": [
+        0.005415456009728901,
+        0.023141880800555792
+      ],
+      "kga_decision": "ADAPT"
+    },
+    {
+      "seed": 0,
+      "benchmark": "imagenet-r",
+      "method": "eata",
+      "condition": "imagenet_r|imbalanced|small|aggressive|online",
+      "B": 0.017000000000000015,
+      "a0": 0.441,
+      "a_adapted": 0.458,
+      "a_kbound": 0.458,
+      "a_oracle": 0.458,
+      "regime": "marginal",
+      "oracle_action": "ADAPT",
+      "Z": [
+        4.484870433807373,
+        0.16546420753002167,
+        0.9462080290030565,
+        4.624843597412109,
+        0.13045066595077515,
+        0.9689496750781403,
+        -0.022741646075083888,
+        -0.13997316360473633,
+        0.0625,
+        0.10324513167142868,
+        7.904018152395156
+      ],
+      "Z_names": [
+        "pre_entropy",
+        "pre_conf",
+        "pre_pbal",
+        "post_entropy",
+        "post_conf",
+        "post_pbal",
+        "pbal_drop",
+        "entropy_drop",
+        "frac_highconf",
+        "marginal_KL",
+        "update_norm"
+      ],
+      "n_D": 743,
+      "c_ij": [
+        [
+          1.0,
+          0.03600000000000003,
+          0.1299999999999999,
+          -0.41000000000000003
+        ],
+        [
+          0.03600000000000003,
+          1.0,
+          0.3520000000000001,
+          -0.32399999999999995
+        ],
+        [
+          0.1299999999999999,
+          0.3520000000000001,
+          1.0,
+          -0.30400000000000005
+        ],
+        [
+          -0.41000000000000003,
+          -0.32399999999999995,
+          -0.30400000000000005,
+          1.0
+        ]
+      ],
+      "Z_ev2": null,
+      "Z_ev2_names": null,
+      "tau_hat": 0.0,
+      "tau_star": 0.0,
+      "b_hat": 0.03353240776233482,
+      "eps_conformal": 0.01772642479082689,
+      "benefit_ci": [
+        0.01580598297150793,
+        0.051258832553161715
+      ],
+      "zone": "CERTIFIED_ADAPT",
+      "gamma_hat": 0.01676620388116741,
+      "gamma_ci": [
+        0.007902991485753965,
+        0.025629416276580858
+      ],
+      "kga_decision": "ADAPT"
+    },
+    {
+      "seed": 0,
+      "benchmark": "imagenet-r",
+      "method": "eata",
+      "condition": "imagenet_r|single_class|small|aggressive|online",
+      "B": 0.040000000000000036,
+      "a0": 0.475,
+      "a_adapted": 0.515,
+      "a_kbound": 0.515,
+      "a_oracle": 0.515,
+      "regime": "helpful",
+      "oracle_action": "ADAPT",
+      "Z": [
+        3.920588254928589,
+        0.28870639204978943,
+        0.8613065796394305,
+        4.9364013671875,
+        0.08434189856052399,
+        0.9875611399371234,
+        -0.12625456029769289,
+        -1.0158131122589111,
+        0.0,
+        0.31881099939346313,
+        0.0
+      ],
+      "Z_names": [
+        "pre_entropy",
+        "pre_conf",
+        "pre_pbal",
+        "post_entropy",
+        "post_conf",
+        "post_pbal",
+        "pbal_drop",
+        "entropy_drop",
+        "frac_highconf",
+        "marginal_KL",
+        "update_norm"
+      ],
+      "n_D": 506,
+      "c_ij": [
+        [
+          1.0,
+          0.08600000000000008,
+          0.18599999999999994,
+          0.18599999999999994
+        ],
+        [
+          0.08600000000000008,
+          1.0,
+          0.3740000000000001,
+          0.3740000000000001
+        ],
+        [
+          0.18599999999999994,
+          0.3740000000000001,
+          1.0,
+          1.0
+        ],
+        [
+          0.18599999999999994,
+          0.3740000000000001,
+          1.0,
+          1.0
+        ]
+      ],
+      "Z_ev2": null,
+      "Z_ev2_names": null,
+      "tau_hat": 0.0,
+      "tau_star": 0.0,
+      "b_hat": 0.021975070952050122,
+      "eps_conformal": 0.01772642479082689,
+      "benefit_ci": [
+        0.004248646161223231,
+        0.03970149574287701
+      ],
+      "zone": "CERTIFIED_ADAPT",
+      "gamma_hat": 0.010987535476025061,
+      "gamma_ci": [
+        0.0021243230806116155,
+        0.019850747871438507
+      ],
+      "kga_decision": "ADAPT"
+    }
+  ]
+}

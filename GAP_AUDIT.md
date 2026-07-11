@@ -54,7 +54,7 @@ This violates the paper's own standard ("every numeric claim traces to a script 
 
 **A4 — Over-precise phrasing vs committed tolerance.** Thm 2/Thm 5 scripts check `< 1e-9`; the paper quotes `10⁻¹⁶`/`10⁻¹⁷` (`primary.txt:392,402,1696`). These are exact float64 algebraic identities so the claims are *plausibly* true, but the committed evidence only certifies `< 1e-9`. Either tighten the asserted tolerance or quote `< 10⁻⁹`.
 
-**A5 — Theorem numbering is inconsistent across the project (traceability hazard).** The published paper uses a consolidated "exactly five theorems" scheme; `docs/research/kbound/THEOREM_CODE_STATUS.md` uses an older scheme (there, Thm 4 = covariate, Thm 5 = binary sign-of-difference). Published Thm 4 (one-bit dichotomy) maps to `theory_v2/`; published Thm 3 ↔ repo "T5 switching_certificate"; published Cor. 1 (covariate) ↔ repo "T4 risk_dominance". Separately, `tests/test_theorem_registry.py` and `tests/test_novel_theorem_bounds.py` operate on a *different* (ELARA) theorem set and are **not** tests of the paper's five theorems — easy for an auditor to mistake. **Fix:** add a one-page numbering crosswalk and rename/annotate the registry tests.
+**A5 — Theorem numbering is inconsistent across the project (traceability hazard).** The published paper uses a consolidated "exactly five theorems" scheme; `docs/research/kbound/THEOREM_CODE_STATUS.md` uses an older scheme (there, Thm 4 = covariate, Thm 5 = binary sign-of-difference). Published Thm 4 (one-bit dichotomy) maps to `theory_v2/`; published Thm 3 ↔ repo "T5 switching_certificate"; published Cor. 1 (covariate) ↔ repo "T4 risk_dominance". Separately, `tests/test_theorem_registry.py` and `tests/test_novel_theorem_bounds.py` operate on a *different* (LEGACY-PROJECT) theorem set and are **not** tests of the paper's five theorems — easy for an auditor to mistake. **Fix:** add a one-page numbering crosswalk and rename/annotate the registry tests.
 
 **A6 — Two named label-free baselines are surrogates, not the real methods.** In the Thm 3 frontier discussion and Table X, **AETTA** and **agreement-on-the-line** appear as decision-style surrogates; grep of the decision-baselines JSON confirms no `aetta`/`agreement` keys are actually run. The paper says so explicitly, but a reader skimming the baseline list would over-count. (Also a coverage item — see B-minor.)
 
@@ -110,7 +110,7 @@ Do first (integrity, cheap, blocks a clean submission):
 1. **A1** — Re-run `val_thm3_evalue.py` at α=0.05 and commit the artifact, *or* correct `primary.txt:453` to the committed (0.0626 ≤ 0.10). *(highest priority — concrete claim/evidence mismatch)*
 2. **A2 + A3** — Make `val_thm5_multiclass.py` and `val_thm2_regret.py` persist `results_*.json`; re-state precision as the actually-certified tolerance (A4).
 3. **B5** — Refresh README status block; mark EXECUTION_STATUS / CHECKLIST as historical.
-4. **A5** — Add a theorem-numbering crosswalk; annotate the ELARA registry tests so they aren't mistaken for K-Bound theorem tests.
+4. **A5** — Add a theorem-numbering crosswalk; annotate the LEGACY-PROJECT registry tests so they aren't mistaken for K-Bound theorem tests.
 
 Do next (coverage / reviewer-facing):
 
@@ -128,7 +128,7 @@ Polish / wording:
 
 ## Appendix — Audit method, coverage, and limitations
 
-**Files examined (primary):** `primary.txt`; `README.md`; `docs/research/kbound/{THEOREM_CODE_STATUS,EXECUTION_STATUS,CHECKLIST_8PLUS_GAP_ANALYSIS}.md`; `research_lock/{README.md,M2_FINAL_AUDIT_PENDING_v1.yaml}`; `audits/training_truth_audit/{11_audit_summary.csv,12_training_critical_fixes.md}`; validators `experiments/kbound/theory_validation/val_*.py` + their `results_*.json`; `vendored_from_elara/certification/switching_certificate.py`; ~25 experiment result JSONs across `experiments/kbound/results/**`; theorem/boundary tests under `tests/`.
+**Files examined (primary):** `primary.txt`; `README.md`; `docs/research/kbound/{THEOREM_CODE_STATUS,EXECUTION_STATUS,CHECKLIST_8PLUS_GAP_ANALYSIS}.md`; `research_lock/{README.md,M2_FINAL_AUDIT_PENDING_v1.yaml}`; `audits/training_truth_audit/{11_audit_summary.csv,12_training_critical_fixes.md}`; validators `experiments/kbound/theory_validation/val_*.py` + their `results_*.json`; `vendored_from_legacy-project/certification/switching_certificate.py`; ~25 experiment result JSONs across `experiments/kbound/results/**`; theorem/boundary tests under `tests/`.
 
 **Independently re-verified during this audit (✅ items):** A1 (Thm 3 α/false-adapt), A2 (Thm 5 no artifact), B1 (Camelyon17 baselines), B5 (README text).
 

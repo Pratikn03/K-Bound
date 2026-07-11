@@ -24,7 +24,7 @@ namespace KBound
 
 open Decision MeasureTheory
 
-variable {Ω : Type*} [MeasurableSpace Ω]
+variable {Ω : Type*}
 
 /-- The coverage event: the benefit estimate is within `eps` of the true benefit. -/
 def coverageEvent (dhat delta : Ω → ℝ) (eps : ℝ) : Set Ω :=
@@ -40,11 +40,20 @@ is nonnegative. -/
 def falseFreezeEvent (dhat delta : Ω → ℝ) (eps : ℝ) : Set Ω :=
   {ω | certificate (dhat ω) eps = freeze ∧ 0 ≤ delta ω}
 
-/-- Measurability of the coverage event from measurability of the two maps. -/
+/-- Measurability of the coverage event from measurability of the two maps.
+(Stated without `Measurable.abs`: the event splits into two half-space events.) -/
 lemma measurableSet_coverageEvent {dhat delta : Ω → ℝ}
+    [MeasurableSpace Ω]
     (hdhat : Measurable dhat) (hdelta : Measurable delta) (eps : ℝ) :
-    MeasurableSet (coverageEvent dhat delta eps) :=
-  measurableSet_le ((hdhat.sub hdelta).abs) measurable_const
+    MeasurableSet (coverageEvent dhat delta eps) := by
+  have hsub : Measurable fun ω => dhat ω - delta ω := hdhat.sub hdelta
+  have hset : coverageEvent dhat delta eps
+      = {ω | -eps ≤ dhat ω - delta ω} ∩ {ω | dhat ω - delta ω ≤ eps} := by
+    ext ω
+    simp [coverageEvent, abs_le, Set.mem_inter_iff]
+  rw [hset]
+  exact (measurableSet_le measurable_const hsub).inter
+    (measurableSet_le hsub measurable_const)
 
 /-- Pointwise: a false adapt lies outside the coverage event. -/
 lemma falseAdaptEvent_subset_compl_coverage (dhat delta : Ω → ℝ) (eps : ℝ) :
@@ -61,12 +70,13 @@ lemma falseFreezeEvent_subset_compl_coverage (dhat delta : Ω → ℝ) (eps : �
 /-- `1 - (1 - α) ≤ α` in `ℝ≥0∞` (truncated subtraction), unconditionally. -/
 lemma one_tsub_one_tsub_le (alpha : ENNReal) : 1 - (1 - alpha) ≤ alpha := by
   by_cases h : alpha ≤ 1
-  · rw [tsub_tsub_cancel_of_le h]
+  · rw [ENNReal.sub_sub_cancel ENNReal.one_ne_top h]
   · calc (1 : ENNReal) - (1 - alpha) ≤ 1 := tsub_le_self
-      _ ≤ alpha := le_of_not_ge h
+      _ ≤ alpha := (not_le.mp h).le
 
 /-- Any event contained in the complement of a `≥ 1 − α` event has probability `≤ α`. -/
-theorem measure_le_alpha_of_subset_compl {μ : Measure Ω} [IsProbabilityMeasure μ]
+theorem measure_le_alpha_of_subset_compl [MeasurableSpace Ω]
+    {μ : Measure Ω} [IsProbabilityMeasure μ]
     {s t : Set Ω} {alpha : ENNReal}
     (hs : MeasurableSet s) (hsub : t ⊆ sᶜ) (hcov : 1 - alpha ≤ μ s) :
     μ t ≤ alpha := by
@@ -78,7 +88,8 @@ theorem measure_le_alpha_of_subset_compl {μ : Measure Ω} [IsProbabilityMeasure
 /-- **Paper `thm:certificate`, false-adapt direction, measure form.**
 If the coverage event has probability at least `1 − α`, the unconditional
 false-adapt probability is at most `α`. -/
-theorem measure_false_adapt_le_alpha {μ : Measure Ω} [IsProbabilityMeasure μ]
+theorem measure_false_adapt_le_alpha [MeasurableSpace Ω]
+    {μ : Measure Ω} [IsProbabilityMeasure μ]
     {dhat delta : Ω → ℝ} {eps : ℝ} {alpha : ENNReal}
     (hs : MeasurableSet (coverageEvent dhat delta eps))
     (hcov : 1 - alpha ≤ μ (coverageEvent dhat delta eps)) :
@@ -87,7 +98,8 @@ theorem measure_false_adapt_le_alpha {μ : Measure Ω} [IsProbabilityMeasure μ]
     (falseAdaptEvent_subset_compl_coverage dhat delta eps) hcov
 
 /-- **Paper `thm:certificate`, false-freeze direction, measure form.** -/
-theorem measure_false_freeze_le_alpha {μ : Measure Ω} [IsProbabilityMeasure μ]
+theorem measure_false_freeze_le_alpha [MeasurableSpace Ω]
+    {μ : Measure Ω} [IsProbabilityMeasure μ]
     {dhat delta : Ω → ℝ} {eps : ℝ} {alpha : ENNReal}
     (hs : MeasurableSet (coverageEvent dhat delta eps))
     (hcov : 1 - alpha ≤ μ (coverageEvent dhat delta eps)) :
@@ -97,6 +109,7 @@ theorem measure_false_freeze_le_alpha {μ : Measure Ω} [IsProbabilityMeasure μ
 
 /-- Convenience form with measurable maps instead of a measurable-set hypothesis. -/
 theorem measure_false_adapt_le_alpha_of_measurable
+    [MeasurableSpace Ω]
     {μ : Measure Ω} [IsProbabilityMeasure μ]
     {dhat delta : Ω → ℝ} {eps : ℝ} {alpha : ENNReal}
     (hdhat : Measurable dhat) (hdelta : Measurable delta)

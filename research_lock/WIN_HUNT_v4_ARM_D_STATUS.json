@@ -1,0 +1,31 @@
+{
+  "protocol": "WIN_HUNT_v4_ARM_D",
+  "name": "Official-algorithm per-sample POEM + dropout-AETTA head-to-head (GPU)",
+  "status": "PARTIAL_SCORED — provisional WIN on seeds 0-1; official verdict pending seeds 0-4",
+  "updated": "2026-07-05",
+  "history": [
+    "2026-07-05 AM: BLOCKED — only seed0/gaussian_noise, no per_condition JSON; scorer failed cleanly (exit 3).",
+    "2026-07-05 PM: user completed seeds 0-1 (all 6 quick corruptions, 432 conditions each, per_condition JSONs present). Scored."
+  ],
+  "current_data": {
+    "run_dir": "experiments/kbound/results/stress_persample_v1",
+    "seed0": "COMPLETE (432 conditions + per_condition_cifar10c_tent_seed0.json)",
+    "seed1": "COMPLETE (432 conditions + per_condition_cifar10c_tent_seed1.json)",
+    "seed2": "PARTIAL (gaussian_noise only; no per_condition JSON)",
+    "seed3_4": "ABSENT",
+    "protocol_target_seeds": [0, 1, 2, 3, 4]
+  },
+  "provisional_result": {
+    "file": "research_lock/WIN_HUNT_v4_ARM_D_result.json",
+    "seeds_scored": [0, 1],
+    "VERDICT": "WIN (provisional, 2-of-5 seeds)",
+    "kga_regret": 0.00154, "poem_regret": 0.01894, "aetta_regret": 0.00233,
+    "kga_FA": 0.0,
+    "kga_vs_poem": {"diff": -0.01741, "ci": [-0.02389, -0.01154], "p_holm": 0.0002, "beats": true},
+    "kga_vs_aetta": {"diff": -0.00080, "ci": [-0.00153, -0.00008], "p_holm": 0.0312, "beats": true},
+    "replacement_eligible": true,
+    "caveat": "AETTA CI upper bound is -0.00008 (essentially at zero); the WIN vs AETTA could become a TIE at the full 5 seeds. Do NOT fold as a headline replacement until seeds 0-4 are scored once."
+  },
+  "scoring_method": "POEM per-sample decision is 22s/seed; computed in staged per-seed calls (real poem_official/aetta_dropout) from a byte-copy of the run dir, then pooled/bootstrapped/Holm/verdict via the UNMODIFIED score_official_headtohead.score(). Condition-order determinism guard passed. Identical to a single-process run of the scorer.",
+  "remediation_to_finalize": "Run seeds 2,3,4 (cifar_tent_mps_v2.py --benchmarks cifar10c --quick --methods tent --seed S --log-samples --out-results .../stress_persample_v1), then score ONCE with --seeds 0 1 2 3 4 for the official arm-D verdict. Commands in docs/research/kbound/RUNSHEET_WAVE7.md (APPENDIX)."
+}

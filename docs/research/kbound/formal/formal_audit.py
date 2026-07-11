@@ -16,12 +16,26 @@ ROOT = Path(__file__).resolve().parent
 VERIFIED_THEOREMS = [
     "cert_false_adapt_sound",
     "cert_false_freeze_sound",
+    "measure_false_adapt_le_alpha",
+    "measure_false_freeze_le_alpha",
+    "measure_false_adapt_le_alpha_of_measurable",
+    "card_high_strictRank_le",
+    "card_low_strictRank_ge",
+    "uniformIndex_miss_eq",
+    "uniformIndex_miss_le",
+    "uniformIndex_coverage_ge",
+    "uniformIndex_false_adapt_le",
+    "uniformIndex_false_freeze_le",
     "gate_regret_identity",
     "forced_abstention_probability",
     "matched_opposite_worlds_force_abstain",
     "lecam_regret_floor_two_point",
     "lecam_testing_two_point",
     "frontier_identifiable_positive",
+    "frontier_identifiable_negative",
+    "frontier_decision_adapt",
+    "frontier_decision_freeze",
+    "frontier_decision_abstain",
     "binary_sign_reduction",
     "multiclass_sign_reduction",
     "multiclass_harm_iff_nonpos",
@@ -52,7 +66,10 @@ VERIFIED_THEOREMS = [
 FOUNDATIONAL_PROBABILITY_LIMITS = [
     {
         "item": "full measure-theoretic conformal exchangeability",
-        "current": "finite uniform-rank algebra plus deterministic certificate soundness",
+        "current": (
+            "measure-level false-adapt/false-freeze bound plus uniform-index "
+            "conditional conformal coverage"
+        ),
         "needed": "exchangeability/order-statistic coverage as a theorem over probability measures",
     },
     {

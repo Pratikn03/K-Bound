@@ -1,0 +1,109 @@
+{
+ "protocol": "WIN_HUNT_v4_ARM_C",
+ "registered": "research_lock/WIN_HUNT_v4_PROTOCOL.yaml",
+ "dataset": "camelyon17",
+ "run_dir": "experiments/kbound/results/natural_win_v2_camelyon",
+ "files": [
+  "per_condition_camelyon17_eata_seed0.json",
+  "per_condition_camelyon17_eata_seed1.json",
+  "per_condition_camelyon17_eata_seed2.json",
+  "per_condition_camelyon17_eata_seed3.json",
+  "per_condition_camelyon17_sar_seed0.json",
+  "per_condition_camelyon17_sar_seed1.json",
+  "per_condition_camelyon17_sar_seed2.json",
+  "per_condition_camelyon17_sar_seed3.json",
+  "per_condition_camelyon17_tent_seed0.json",
+  "per_condition_camelyon17_tent_seed1.json",
+  "per_condition_camelyon17_tent_seed2.json",
+  "per_condition_camelyon17_tent_seed3.json"
+ ],
+ "used_ev2": true,
+ "nsim": 250,
+ "field_notes": {
+  "a_adapted_key": "r['a_adapted'] else r['aa']",
+  "benefit_key": "r['B'] else (a_adapted - a0)",
+  "incumbent_kga": "global tau_selfnorm gate + single-GBR signed LOO radius; reject => ABSTAIN",
+  "arm_C_calibration": "terciles frozen per held-out seed on other seeds",
+  "gate_min_panel": 20,
+  "camelyon_abstention_bar": 0.595
+ },
+ "n_records": 432,
+ "n_seeds": 4,
+ "n_gated": 354,
+ "regret": {
+  "v2": 0.048746744791666664,
+  "incumbent": 0.04819516782407408,
+  "always_adapt": 0.012885199652777778,
+  "always_freeze": 0.05154079861111111
+ },
+ "FA_u": 0.0,
+ "alpha": 0.1,
+ "abstention": {
+  "v2": 0.9398148148148148,
+  "incumbent": 0.9328703703703703
+ },
+ "improvement_vs_incumbent": {
+  "mean": -0.0005515769675925925,
+  "ci95": [
+   -0.001247829861111111,
+   0.0
+  ]
+ },
+ "improvement_vs_always_adapt": {
+  "mean": -0.03586154513888889,
+  "ci95": [
+   -0.04317694769965277,
+   -0.028157552083333332
+  ]
+ },
+ "abstention_below_0p595": false,
+ "WIN": false,
+ "CI_ROBUST_IMPROVEMENT": false,
+ "VERDICT": "NO_WIN",
+ "calib_frozen_per_heldout_seed": {
+  "0": {
+   "cuts": [
+    0.7202380952380952,
+    0.7827380952380952
+   ],
+   "mult": {
+    "0": 0.9957730029902838,
+    "1": 0.9935484387456732,
+    "2": 0.9907880239682617
+   }
+  },
+  "1": {
+   "cuts": [
+    0.7237103174603174,
+    0.7901785714285714
+   ],
+   "mult": {
+    "0": 0.9940485871720203,
+    "1": 0.9940934703439666,
+    "2": 0.9940450410761036
+   }
+  },
+  "2": {
+   "cuts": [
+    0.7202380952380952,
+    0.7909226190476191
+   ],
+   "mult": {
+    "0": 0.9935949947032224,
+    "1": 0.9928193794165187,
+    "2": 0.9912967511883526
+   }
+  },
+  "3": {
+   "cuts": [
+    0.7388392857142857,
+    0.7938988095238095
+   ],
+   "mult": {
+    "0": 0.9957638958103837,
+    "1": 0.9946023919447112,
+    "2": 0.9927926837933895
+   }
+  }
+ }
+}

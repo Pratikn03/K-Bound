@@ -40,6 +40,12 @@ fi
 say "Locked artifacts -> results_source"
 $PY "$HERE/refresh_results_source_locked.py"
 $PY "$HERE/make_tables.py" >/tmp/kbound_tables.txt
+if $PY "$HERE/unified_result_audit.py" --strict-explicit >/tmp/kbound_unified_result_audit.tsv 2>&1; then
+  pass_note "unified point-vs-CI beats-both audit" 5
+else
+  fail_note "unified point-vs-CI beats-both audit"
+  tail -20 /tmp/kbound_unified_result_audit.tsv >&2 || true
+fi
 
 say "Smoke manifest (latest)"
 SMOKE="$(ls -td "$ROOT"/experiments/kbound/results/smoke_ms_* 2>/dev/null | head -1 || true)"

@@ -9,6 +9,8 @@
       "false_adapt": 0.0,
       "n_test": 35,
       "verdict": "no-harm",
+      "point_beats_both": true,
+      "ci_robust_beats_both": false,
       "gap_vs_adapt": 0.031,
       "ci_vs_adapt": [
         0.004,
@@ -27,6 +29,8 @@
       "false_adapt": 0.0,
       "n_test": 72,
       "verdict": "no-harm",
+      "point_beats_both": false,
+      "ci_robust_beats_both": false,
       "gap_vs_adapt": 0.099,
       "ci_vs_adapt": [
         0.08,
@@ -49,18 +53,34 @@
       "_source": "experiments/kbound/results/stress_grid_multiseed_v1/LOCKED_ANALYSIS_RESULTS.json"
     },
     "imagenetc_sar": {
-      "regret_kga": 0.0086,
-      "regret_adapt": 0.0606,
-      "regret_freeze": 0.0277,
+      "regret_kga": 0.0108,
+      "regret_adapt": 0.0625,
+      "regret_freeze": 0.0319,
       "false_adapt": 0.0,
-      "verdict": "beats-both"
+      "verdict": "beats-both-CI-robust",
+      "point_beats_both": true,
+      "ci_robust_beats_both": true,
+      "n_cells": 27,
+      "better_policy": "always_freeze",
+      "gap_vs_freeze": -0.0211,
+      "ci_vs_freeze": [-0.0319, -0.0111],
+      "gap_vs_adapt": -0.0517,
+      "ci_vs_adapt": [-0.1153, -0.0011],
+      "holm_p_wave": 0.0003,
+      "harmful_base_rate": 0.1481,
+      "abstain_frac": "12/27",
+      "decisive_coverage": 0.5556,
+      "nboot": 5000,
+      "_source": "experiments/kbound/results/win_hunt_v5/imagenetc_aggr/decisive_tta_results.json",
+      "_scored_utc": "2026-07-09T21:32:10Z",
+      "_note": "Full-scale 3-noise-corruption run (gaussian/impulse/shot, s1/s3/s5), seed 0, completed 2026-07-09; supersedes prior 36-cell provisional config. CI via canonical scripts/percondition_bootstrap.py; survives wave-level Holm (p_holm=0.0003)."
     }
   },
   "_provenance": {
     "locked_analysis": "experiments/kbound/results/stress_grid_multiseed_v1/LOCKED_ANALYSIS_RESULTS.json",
     "headtohead": "experiments/kbound/results/mixed_headtohead_v1/HEADTOHEAD_RESULTS_cifar10c_tent_primary.json",
-    "locked_refresh_utc": "2026-07-02T13:26:22.651260Z",
-    "git_sha": "2734212"
+    "locked_refresh_utc": "2026-07-08T17:53:30.432399Z",
+    "git_sha": "87bf90a"
   },
   "locked_analysis": {
     "protocol": "STRESS_GRID_MULTISEED_PROTOCOL_A_v1.yaml",

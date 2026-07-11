@@ -1,0 +1,132 @@
+{
+  "dataset": "PACS",
+  "alpha": 0.1,
+  "n_classes": 7,
+  "win_hunt_v5_override": {
+    "adapt_lr": 0.004,
+    "batch_regimes": [
+      "tiny"
+    ],
+    "aggressiveness": [
+      "aggressive"
+    ]
+  },
+  "per_domain": {
+    "art_painting": {
+      "calibration_domain": "sketch",
+      "n_test_cells": 18,
+      "eps": 0.040202747553771526,
+      "regret": {
+        "always_adapt": 0.04056437975830502,
+        "always_freeze": 0.03086419900258382,
+        "K_Bound": 0.03086419900258382
+      },
+      "FA_u": 0.0,
+      "FA_c": 0.0,
+      "coverage": 1.0,
+      "adapt_rate": 0.0,
+      "base_rate_harmful": 0.4444444444444444,
+      "cis": {
+        "vs_adapt_mean": 0.009700180755721198,
+        "vs_adapt_ci": [
+          -0.028218693203396268,
+          0.05291006134616004
+        ],
+        "vs_freeze_mean": 0.0,
+        "vs_freeze_ci": [
+          0.0,
+          0.0
+        ]
+      },
+      "verdict": "SAFETY (no-harm)",
+      "wall_sec": 1369.3
+    },
+    "cartoon": {
+      "calibration_domain": "sketch",
+      "n_test_cells": 18,
+      "eps": 0.053802198812740724,
+      "regret": {
+        "always_adapt": 0.043209873967700534,
+        "always_freeze": 0.0052910049756368,
+        "K_Bound": 0.0052910049756368
+      },
+      "FA_u": 0.0,
+      "FA_c": 0.0,
+      "coverage": 0.7777777777777778,
+      "adapt_rate": 0.0,
+      "base_rate_harmful": 0.6111111111111112,
+      "cis": {
+        "vs_adapt_mean": 0.03791886899206373,
+        "vs_adapt_ci": [
+          0.013227512439092001,
+          0.06437389387024774
+        ],
+        "vs_freeze_mean": 0.0,
+        "vs_freeze_ci": [
+          0.0,
+          0.0
+        ]
+      },
+      "verdict": "SAFETY (no-harm)",
+      "wall_sec": 1271.8
+    },
+    "photo": {
+      "calibration_domain": "sketch",
+      "n_test_cells": 18,
+      "eps": 0.03148677349402294,
+      "regret": {
+        "always_adapt": 0.0052910049756368,
+        "always_freeze": 0.0502645472685496,
+        "K_Bound": 0.0502645472685496
+      },
+      "FA_u": 0.0,
+      "FA_c": 0.0,
+      "coverage": 0.9444444444444444,
+      "adapt_rate": 0.0,
+      "base_rate_harmful": 0.16666666666666666,
+      "cis": {
+        "vs_adapt_mean": -0.0449735422929128,
+        "vs_adapt_ci": [
+          -0.06701939635806614,
+          -0.022927688227759466
+        ],
+        "vs_freeze_mean": 0.0,
+        "vs_freeze_ci": [
+          0.0,
+          0.0
+        ]
+      },
+      "verdict": "NULL",
+      "wall_sec": 1359.7
+    },
+    "sketch": {
+      "calibration_domain": "photo",
+      "n_test_cells": 18,
+      "eps": 0.06815217908140496,
+      "regret": {
+        "always_adapt": 0.028218693203396268,
+        "always_freeze": 0.019400351577334933,
+        "K_Bound": 0.019400351577334933
+      },
+      "FA_u": 0.0,
+      "FA_c": 0.0,
+      "coverage": 1.0,
+      "adapt_rate": 0.0,
+      "base_rate_harmful": 0.4444444444444444,
+      "cis": {
+        "vs_adapt_mean": 0.008818341626061333,
+        "vs_adapt_ci": [
+          -0.017636683252122667,
+          0.03615520066685147
+        ],
+        "vs_freeze_mean": 0.0,
+        "vs_freeze_ci": [
+          0.0,
+          0.0
+        ]
+      },
+      "verdict": "SAFETY (no-harm)",
+      "wall_sec": 741.2
+    }
+  }
+}

@@ -1,5 +1,8 @@
 # Integrity Fixes Log — 2026-06-14
 
+> Redaction note (2026-07-03): the name of the legacy companion project is redacted as
+> "legacy-project" throughout, for the standalone public release. No finding altered.
+
 Resolution of the research-integrity items raised in `GAP_AUDIT.md`. Every change below is backed by a real run this session; no numbers were invented.
 
 ## Resolved
@@ -15,7 +18,7 @@ The paper cited "false-adapt 0.028 ≤ 0.05", but the only committed artifact ha
 Ran `val_thm2_regret.py` → **`results_thm2_regret.json`** now present: exact identity `max gap = 2.35e-17`, minimax ratio-to-floor 1.0004, all checks passed. The paper's "to 10⁻¹⁷" now traces to a committed file.
 
 **4. Theorem-numbering ambiguity (was A5 / MINOR).**
-Added `docs/research/kbound/THEOREM_NUMBERING_CROSSWALK.md` mapping published Thm 1–5 ↔ validator scripts ↔ internal `THEOREM_CODE_STATUS.md` numbering, and flagging that `test_theorem_registry.py` / `test_novel_theorem_bounds.py` test the *ELARA* theorem set, not the K-Bound five.
+Added `docs/research/kbound/THEOREM_NUMBERING_CROSSWALK.md` mapping published Thm 1–5 ↔ validator scripts ↔ internal `THEOREM_CODE_STATUS.md` numbering, and flagging that `test_theorem_registry.py` / `test_novel_theorem_bounds.py` test the *LEGACY-PROJECT* theorem set, not the K-Bound five.
 
 **5. Camelyon17 natural-shift win (was B1/B2/B3).**
 Recalibrated τ\* on the **stored debug-scale** composition grid (`wilds_kbound_debug_mps`, 432 cells incl. SAR): recalibrated K-Bound reaches **57% coverage at false-adapt 0.097 ≤ α**, beating both trivial policies overall (regret 0.0104 vs always-adapt 0.0130, always-freeze 0.0517) and 32× better on the harmful subset. See `experiments/kbound/theory_validation/frontier_decisive/camelyon_recal/`. This also confirms SAR *is* present in this grid. *Remaining for a publishable headline:* full-scale (`n_eval=1024`) re-run with **per-condition arrays serialized** and a **pre-registered held-out τ\***.
@@ -111,15 +114,15 @@ already gated (the stale JSONs were written by older code); annotated the `cifar
 accuracy-dominance flag. Verifier (`verify_after_patch.py`): 0 ungated bugs remain, 0
 gate-consistency violations. Summary table: `audits/integrity_2026-06-20/benchmark_verdicts.json`.
 
-## 2. K-Bound self-contained from `src/elara` + provenance
+## 2. K-Bound self-contained from `src/legacy-project` + provenance
 Exactly one live cross-import found (runtime import-trace; `rg` missed it — the file is
-git-ignored): `experiments/kbound/vendored_from_elara/theory/__init__.py` did
-`from elara.theory.theorem_registry import …`. Repointed to the byte-identical local sibling
-`.theorem_registry`. Standalone proof: with `import elara*` blocked, the `kga` package + the
+git-ignored): `experiments/kbound/vendored_from_legacy-project/theory/__init__.py` did
+`from legacy-project.theory.theorem_registry import …`. Repointed to the byte-identical local sibling
+`.theorem_registry`. Standalone proof: with `import legacy-project*` blocked, the `kga` package + the
 vendored `theory`/`certification`/`drift` trees import and run (registry=10,
-`empirical_bernstein` OK) → zero `src/elara` dependency. Added a paper-ready provenance note to
+`empirical_bernstein` OK) → zero `src/legacy-project` dependency. Added a paper-ready provenance note to
 `kga/certificate.py` (empirical-Bernstein / Maurer-Pontil 2009 certificate is shared with the
-ELARA companion work, which delegates to this `kga` function). **No ELARA file modified.**
+LEGACY-PROJECT companion work, which delegates to this `kga` function). **No LEGACY-PROJECT file modified.**
 
 ## 3. Manifest completeness + Conjecture-1 disambiguation
 `DATA.md` §3b added: the full vision/WILDS benchmark suite (CIFAR-10-C, ImageNet-C, CIFAR-10.1,

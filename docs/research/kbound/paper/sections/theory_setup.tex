@@ -1,0 +1,83 @@
+% Shared K-Bound theory setup (main text + appendix).
+% Included by kbound_short.tex and main_theory_5.tex.
+
+\noindent
+Source law $P_S(X,Y)$ supplies labels at train/validation; target law $P_T(X,Y)$ exposes only
+$P_T(X)$ at deployment. Fix loss $\ell$, frozen predictor $f_0$, candidate $f_a$, and target
+measure $\mu_T$ on inputs. Write target risk $R_T(f)=\E_{P_T}[\ell(f(X),Y)]$ and the
+\emph{adaptation benefit}
+\[
+\Delta \;:=\; R_T(f_0)-R_T(f_a)\qquad(\Delta>0\ \Leftrightarrow\ \text{adapting helps}).
+\]
+The \emph{disagreement region} $D:=\{x:f_0(x)\neq f_a(x)\}$ is observable from $(f_0,f_a)$.
+
+\begin{assumption}[Deployment setup]\label{ass:deploy}
+Unless stated otherwise: binary label $Y\in\{0,1\}$, $0/1$ loss $\ell$, and
+$\mu_T(D)>0$. Fix a source-calibrated score $s:\mathcal{X}\to[0,1]$ estimating the candidate's
+\emph{pointwise correctness} (e.g.\ a Platt-scaled confidence that $f_a$ is right at $x$), and write
+the target pointwise correctness $\eta_a(x):=\Pr_T\!\bigl(f_a(X){=}Y\mid X{=}x\bigr)$ on $D$, so that
+$\E_{\mu_T}[\eta_a\mid D]=\bar a$. Define the \emph{observable margin}
+\[
+M \;:=\; \E_{\mu_T}[s(X)\mid D]-\tfrac12,
+\]
+the \emph{calibration drift} (unobserved at deploy)
+\[
+\gamma \;:=\; \E_{\mu_T}[\eta_a(X)-s(X)\mid D],
+\]
+and label-free evidence $Z=\phi(X_{1:m},f_0,f_a)$ for any measurable
+$\phi$ using only unlabeled batches and model outputs (entropy, confidence, drift,
+disagreement, update norms). A \emph{label-free rule} is any measurable map
+$g:\mathcal{Z}\to\{\textsc{adapt},\textsc{freeze},\textsc{abstain}\}$ that does not use target
+labels on the deployment batch.
+\end{assumption}
+
+\begin{definition}[Risk alignment]\label{def:risk-align}
+Evidence $Z$ is \emph{risk-aligned on a class $\mathcal{P}$} if no two laws
+$P_T^1,P_T^2\in\mathcal{P}$ with $\sign\Delta_1\neq\sign\Delta_2$ satisfy
+$\Law(Z\mid P_T^1)=\Law(Z\mid P_T^2)$.
+\end{definition}
+
+\begin{definition}[Regimes]\label{def:regimes}
+At evidence $z$: \emph{knowably helpful} if the population frontier certifies $\Delta>0$
+(\textsc{adapt}); \emph{knowably harmful} if it certifies $\Delta<0$ (\textsc{freeze});
+\emph{unknowable} if the same $Z$-law is compatible with both signs (\textsc{abstain}).
+\end{definition}
+
+\begin{remark}[Four quantities]\label{rem:four-quantities}
+Do not confuse $M$ (observable margin, deploy-time), $\gamma$ (realized drift, latent),
+$\beta$ (declared bound $|\gamma|\le\beta$ on the deployment class), and $\varepsilon$
+(finite-sample radius from held-out residuals). The radius $\varepsilon$ operationalizes
+coverage; it is \emph{not} an estimate of $\beta$.
+\begin{center}\footnotesize
+\begin{tabular}{@{}lp{0.28\linewidth}lp{0.24\linewidth}@{}}
+\toprule
+Symbol & Meaning & At deploy? & Role \\
+\midrule
+$M$ & observable evidence margin & yes & evidence toward adapt/freeze \\
+$\gamma$ & realized calibration drift & no & can reverse the benefit sign \\
+$\beta$ & declared bound on $|\gamma|$ & externally supplied & population frontier \\
+$\varepsilon$ & residual quantile radius & estimated pre-deploy & finite-sample certificate \\
+\bottomrule
+\end{tabular}
+\end{center}
+\end{remark}
+
+\begin{center}\fbox{\parbox{0.95\linewidth}{\small
+\textbf{What ``label-free'' means.} No target/test labels at deploy; labeled source and
+held-out validation may calibrate $\widehat\Delta$ and $\varepsilon$. Evidence $Z$ uses only
+unlabeled batches, predictions, entropy, drift, and update statistics. The method is
+\textbf{target-label-free}, not label-free of all supervision: labels may be used only in the
+source/validation calibration split, never in the deployment batch or held-out test decision.}}
+\end{center}
+
+\begin{center}\fbox{\parbox{0.95\linewidth}{\small
+\textbf{K-Bound in one sentence.} The true adaptation-benefit sign is recoverable only when
+label-free evidence exceeds the uncertainty created by calibration drift; otherwise the correct
+action is abstention.}}
+\end{center}
+
+For a supplied drift budget $\beta\ge0$, the \emph{declared deployment class} is
+\[
+\mathcal{C}_\beta \;:=\; \bigl\{P_T:\ |\gamma(P_T)|\le\beta\bigr\}.
+\]
+Identifiability statements below are \emph{over $\mathcal{C}_\beta$}, not over arbitrary shifts.

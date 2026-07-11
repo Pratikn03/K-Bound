@@ -32,6 +32,7 @@ echo "=== [1] Unit tests (leakage + claim semantics + edge) ==="
   "${KBOUND}/tests/test_no_leakage_protocols.py" \
   "${KBOUND}/tests/test_calibration_split_integrity.py" \
   "${KBOUND}/tests/test_claim_metric_semantics.py" \
+  "${KBOUND}/tests/test_unified_result_audit.py" \
   "${KBOUND}/kbound_pkg/tests/" \
   "${KBOUND}/edge/tests/test_no_live_labels.py" \
   "${KBOUND}/edge/tests/test_conformal.py" \
@@ -58,10 +59,14 @@ echo "=== [4] Regenerate paper table macros from results_source.json ==="
 "${PY}" scripts/refresh_results_source_locked.py
 "${PY}" scripts/make_tables.py
 
-echo "=== [5] Validate claim ledger ==="
+echo "=== [5] Unified result verdict audit ==="
+"${PY}" scripts/unified_result_audit.py --strict-explicit > /tmp/kbound_unified_result_audit.tsv
+tail -n +1 /tmp/kbound_unified_result_audit.tsv
+
+echo "=== [6] Validate claim ledger ==="
 "${PY}" -c "import json; json.load(open('claim_ledger.json')); print('claim_ledger.json OK')"
 
-echo "=== [6] Mixed head-to-head (POEM/AETTA) results present ==="
+echo "=== [7] Mixed head-to-head (POEM/AETTA) results present ==="
 H2H="${ROOT}/experiments/kbound/results/mixed_headtohead_v1/HEADTOHEAD_RESULTS_cifar10c_tent_primary.json"
 if [[ -f "${H2H}" ]]; then
   "${PY}" -c "
@@ -76,7 +81,7 @@ else
   echo "WARN: run bash experiments/kbound/poem_aetta/run_all_headtohead.sh" >&2
 fi
 
-echo "=== [7] Cached headline artifacts ==="
+echo "=== [8] Cached headline artifacts ==="
 for f in \
   "${ROOT}/experiments/kbound/results/stress_grid_multiseed_v1/LOCKED_ANALYSIS_RESULTS.json" \
   "${ROOT}/experiments/kbound/results/mixed_protocol_oof_v2/mixed_protocol_oof_v2_result.json" \
@@ -91,13 +96,13 @@ for f in \
   fi
 done
 
-echo "=== [8] Write manifest ==="
+echo "=== [9] Write manifest ==="
 cat > "${MANIFEST}" <<EOF
 {
   "generated_at": "$(date -u +%Y-%m-%dT%H:%M:%SZ)",
   "git_commit": "${COMMIT}",
   "python": "$(${PY} --version 2>&1)",
-  "steps_completed": ["unit_tests", "theory_artifacts_present", "gate_selftest", "make_tables", "claim_ledger", "mixed_headtohead_check", "cached_artifacts"],
+  "steps_completed": ["unit_tests", "theory_artifacts_present", "gate_selftest", "make_tables", "unified_result_audit", "claim_ledger", "mixed_headtohead_check", "cached_artifacts"],
   "note": "Full GPU protocol re-runs are not executed by this script; see RELEASE_10X_TRACK.md"
 }
 EOF

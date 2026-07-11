@@ -1,0 +1,197 @@
+% ============================================================================
+% FULL THEORY STACK — long paper (June 2026, reviewer-grade writing).
+% Setup: paper/sections/theory_setup.tex (included from kbound.tex §\ref{sec:def}).
+% ============================================================================
+
+The body below expands the core spine into five load-bearing pillars.
+\emph{Reproducibility:} numeric checks cited as ``validated'' are in the public
+\texttt{theory\_v2/} scripts; they audit the algebra, not replace the written proofs.
+
+\begin{lemma}[Disagreement-region reduction]\label{lem:reduction}\label{thm:disagree}
+Under Assumption~\ref{ass:deploy}, with $\bar a:=\Pr_T(f_a{=}Y\mid D)$,
+\[
+\Delta = 2\,\mu_T(D)\bigl(\bar a-\tfrac12\bigr),
+\qquad
+\sign\Delta = \sign(\bar a-\tfrac12) = \sign(M+\gamma).
+\]
+For $K$-class $0/1$ loss, $\Delta=\mu_T(D)(p_a-p_0)$ on $D$; for squared loss the sign reduces
+to one moment on $D$ (manuscript App.~C).
+\end{lemma}
+\begin{proof}
+On $D$ exactly one predictor is correct under $0/1$ loss, giving
+$\Delta=2\mu_T(D)(\bar a-\tfrac12)$. Linear expectation yields $\bar a-\tfrac12=M+\gamma$.
+Multiclass and regression extensions are algebraic identities on $D$.
+\end{proof}
+
+\begin{lemma}[Plug-in regret identity]\label{lem:gate}\label{thm:gate}
+For any estimator $\hat\Delta$ and gate $\hat g=\mathbf 1[\hat\Delta>0]$,
+\[
+R(\hat g)-R(g^\star)=\E\bigl[|\Delta(Z)|\,\mathbf 1\{\sign\hat\Delta\neq\sign\Delta\}\bigr],
+\qquad g^\star=\mathbf 1[\Delta>0].
+\]
+On $\{|\Delta|<\varepsilon\}$, committal regret is at most $\varepsilon$.
+\end{lemma}
+\begin{proof}
+Wrong-sign commits pay $|\Delta|$ pointwise; averaging gives the identity. On the low-margin
+band, $|\Delta|\le\varepsilon$ bounds regret.
+\end{proof}
+
+\begin{proposition}[Finite-sample minimax regret floor]\label{prop:lecam-finite}\label{thm:imp-quant}
+Let $\{P_\theta\}_{\theta\in\{-1,+1\}}$ be two target worlds with
+$|\Delta(P_\theta)|\equiv\Lambda>0$, $\sign\Delta(P_\theta)=\theta$, and let $Q^{(n)}_\theta$
+be the law of any label-free evidence from $n$ unlabeled observations. Then for every
+label-free committal gate $\hat g$ and every finite $n$,
+\[
+\inf_{\hat g}\ \max_{\theta=\pm1}\bigl[R_{P_\theta}(\hat g)-R_{P_\theta}(g^\star)\bigr]
+\ \ge\ \tfrac{\Lambda}{2}\Bigl(1-\TV\bigl(Q^{(n)}_{-1},Q^{(n)}_{+1}\bigr)\Bigr)
+\ \ge\ \tfrac{\Lambda}{4}\,e^{-\mathrm{KL}(Q^{(n)}_{-1}\|Q^{(n)}_{+1})}.
+\]
+A Gaussian two-point family with $d_n=c/\sqrt n$ realizes a floor constant in $n$
+(\texttt{val\_thm2\_lecam\_finite\_n.py}).
+\end{proposition}
+\begin{proof}
+Lemma~\ref{lem:gate} with constant $|\Delta|=\Lambda$ reduces regret to the mixed committal
+error $M(\hat g)$. Le Cam's testing affinity gives $\inf_{\hat g}M(\hat g)=1-\TV$; Bretagnolle--Huber
+yields the KL bound.
+\end{proof}
+
+\begin{theorem}[Matched evidence impossibility]\label{thm:imp}\label{lem:nonid}
+Fix $\alpha\in(0,\tfrac12)$.
+\begin{enumerate}
+\item[\textnormal{(i)}] \textbf{Witness.} There exist $P_T^1,P_T^2$ with
+$\Law(Z\mid P_T^1)=\Law(Z\mid P_T^2)$, $\sign\Delta_1=-\sign\Delta_2\neq0$
+(e.g.\ $X\sim\mathcal N(0,1)$, $f_a=1-f_0$, opposite label rules on $D$).
+\item[\textnormal{(ii)}] \textbf{Le Cam floor.} For committal rules,
+$\inf_g M(g)=1-\TV(P^{1,(n)}_{T,Z},P^{2,(n)}_{T,Z})$, equal to $1$ in the witness for all $n$.
+\item[\textnormal{(iii)}] \textbf{Forced abstention.} Any rule with false-adapt and false-freeze
+$\le\alpha$ must abstain on matched evidence with probability $\ge 1-2\alpha$.
+\end{enumerate}
+\end{theorem}
+\begin{proof}
+(i)~Construct worlds with common $X$-marginal and $Z$ a function of $X$ only, but opposite
+benefit signs on $D$. (ii)~A committal rule is a test between the two evidence laws; apply Le Cam.
+(iii)~Matched laws force identical action probabilities; each commit is wrong in one world.
+\end{proof}
+
+\begin{corollary}[Abstention is mandatory, not conservative]\label{cor:forced-abstain}
+In the $|M|\le\beta$ wedge of Theorem~\ref{thm:frontier}, Theorem~\ref{thm:imp}(iii) applies:
+any label-free rule with false-adapt and false-freeze $\le\alpha$ must abstain with probability at
+least $1-2\alpha$ on matched evidence.
+\end{corollary}
+
+\begin{theorem}[Finite-sample certificate]\label{thm:cert}\label{thm:certificate}
+Under Assumption~\ref{ass:deploy}, if calibration and deployment are exchangeable and
+$\Pr[|\widehat\Delta-\Delta|\le\varepsilon]\ge1-\alpha$, then the three-way rule
+(\textsc{adapt} if $\widehat\Delta-\varepsilon>0$, \textsc{freeze} if
+$\widehat\Delta+\varepsilon<0$, else \textsc{abstain}) has marginal false-adapt and
+false-freeze probabilities each at most $\alpha$.
+\end{theorem}
+\begin{proof}
+On the coverage event $\{|\widehat\Delta-\Delta|\le\varepsilon\}$, the condition
+$\widehat\Delta-\varepsilon>0$ implies $\Delta>0$; a false adapt requires the complement,
+which has probability at most $\alpha$. The freeze case is symmetric.
+\end{proof}
+
+\begin{proposition}[Certificate sample complexity]\label{prop:cert-sample}
+If $\widehat\Delta$ is an empirical-Bernstein mean of $n$ bounded paired benefits with variance
+proxy $\sigma^2$ and range $b-a$, then one-sided certification ($\varepsilon<|\Delta|$) requires
+$n=\tilde O(\sigma^2/\Delta^2)$; two-sided sign certification ($\varepsilon<|\Delta|/2$) requires
+$n=\tilde O(\sigma^2/\Delta^2)$ with a larger constant. These rates are minimax order-optimal
+(appendix; \texttt{val\_minimax\_optimality.py}).
+\end{proposition}
+\begin{proof}
+Invert the empirical-Bernstein radius at level $\alpha$; the $8\sigma^2/\Delta^2$ constant
+comes from requiring $\varepsilon<|\Delta|/2$.
+\end{proof}
+
+\begin{remark}[Sequential and multicandidate extensions]\label{rem:cert-ext}
+Theorem~\ref{thm:cert} extends to anytime-valid streaming (Ville + betting supermartingale;
+Theorem~\ref{thm:anytime}) and family-wise multicandidate routing (Bonferroni;
+Theorem~\ref{thm:multicand}); proofs in Appendix~\ref{app:extensions}.
+\end{remark}
+
+\begin{theorem}[Exact benefit-sign frontier]\label{thm:frontier}\label{thm:headline}
+Under Assumption~\ref{ass:deploy}, fix observables determining $M$ and budget $\beta\ge0$.
+\begin{enumerate}
+\item[\textnormal{(i)}] \textbf{Reduction.} $\sign\Delta=\sign(M+\gamma)$ for every $P_T$
+(Lemma~\ref{lem:reduction}); $\gamma$ is one-dimensional given the observables.
+\item[\textnormal{(ii)}] \textbf{Iff identifiability.} Over $\mathcal{C}_\beta$,
+$\sign\Delta$ is a function of $\Law(Z)$ iff $|M|>\beta$; then $\sign\Delta=\sign M$ and the
+minimax committal error is $0$. If $|M|<\beta$ the minimax committal error is $\tfrac12$ (opposite
+nonzero signs share the evidence law); at $|M|=\beta$ the admissible drift $\gamma=-\sign(M)\beta$
+makes $\Delta=0$, so strict-sign certification still fails and the maximal sound rule abstains on the
+closed region $|M|\le\beta$.
+\item[\textnormal{(iii)}] \textbf{Necessity geometry.} Any identifying class lies on one side of
+the hyperplane $\gamma=-M$; every identifying assumption is a one-sided constraint on $\gamma$.
+\end{enumerate}
+The three-way rule $M>\beta\Rightarrow\textsc{adapt}$, $M<-\beta\Rightarrow\textsc{freeze}$,
+else \textsc{abstain}, is the unique maximal sound certificate on $\mathcal{C}_\beta$.
+\end{theorem}
+\begin{proof}
+Same as Theorem~\ref{thm:headline}: sufficiency from $|M|>\beta$ and $|\gamma|\le\beta$;
+necessity from opposite drifts when $|M|\le\beta$ plus Theorem~\ref{thm:imp}; (iii) is
+constancy of $\sign(M+\gamma)$ on an identifying class.
+\end{proof}
+
+\begin{remark}[$\beta=0$ face: prior label-free heuristics]\label{rem:beta-zero}
+ATC~\cite{garg2022atc}, DoC, GDE~\cite{jiang2022gde}, COT~\cite{lu2023cot},
+AETTA~\cite{lee2024aetta}, and agreement-on-the-line~\cite{baek2022aol,kim2024taol} threshold
+observable surrogates of $M$ and commit to $\sign M$. They are sound on $\mathcal{C}_0$
+($\gamma=0$) and share the failure mode $\gamma\neq0$ (Theorem~\ref{thm:frontier}(ii) at
+$\beta=0$).
+\end{remark}
+
+\begin{corollary}[Knowable regimes]\label{cor:knowable-regimes}\label{thm:pos}
+\textnormal{(a)} Under covariate shift with bounded density ratio, importance weighting
+identifies $\sign\Delta$ from labeled source plus unlabeled target ($\beta=0$ on the weighted
+score; premise not label-free testable). \textnormal{(b)} Conversely, no label-free certificate
+identifies $\sign\Delta$ without a supplied bound on $|\gamma|$ (Theorem~\ref{thm:imp}).
+\end{corollary}
+
+\begin{theorem}[One-bit dichotomy]\label{thm:conj1-dichotomy}
+Under the CEI panel hypothesis \textbf{H} on $D$ (conditionally independent correctness
+indicators; manuscript for definitions):
+\begin{enumerate}
+\item[\textnormal{(i)}] \textbf{Rank-one law.} Under CEI alone, agreement statistics are
+rank-one iff every per-class accuracy gap vanishes.
+\item[\textnormal{(ii)}] \textbf{One global bit.} Under H, the evidence law fixes every
+magnitude $|b_j|$ and product $b_ib_j$ but not the global orientation $b\mapsto -b$; the label
+complement preserves $\Law(Z)$ while negating every benefit sign.
+\item[\textnormal{(iii)}] \textbf{No evidence-definable bracketing.} A swap involution on $D$
+fixes all label-free observable laws and negates $\Delta$; hence no testable assumption class
+identifies $\sign\Delta$ without a bit-selector; the minimal untestable supplement is one bit.
+\item[\textnormal{(iv)}] \textbf{Auditable budgets.} The bit-robust test of $|\gamma|\le\beta$
+is level-$\alpha$ with power beyond $2r_n$; verification fails on an explicit blind set.
+\end{enumerate}
+Conjecture~\ref{conj:gen} (unconditional label-free bracketing) is resolved negatively by~(iii).
+\end{theorem}
+\begin{proof}[Proof sketch]
+(i)~Algebraic expansion of agreements. (ii)--(iii)~Complement and swap involution on $D$;
+observables span the even subalgebra while $\sign\Delta$ is odd. (iv)~Empirical-Bernstein
+testing plus flip-minimization; full proofs in the supplementary appendix
+(\texttt{val\_conj1\_*.py}).
+\end{proof}
+
+\begin{conjecture}[Label-free bracketing --- \textbf{resolved}]\label{conj:gen}
+Unconditional label-free bracketing of the ordinal comparison on $D$ does not exist
+(Theorem~\ref{thm:conj1-dichotomy}(iii)). The minimal supplement is one declared bit; weakest
+one-bit classes are characterized in Appendix~\ref{app:weakest}
+(Theorems~\ref{thm:cmono-weakest},~\ref{thm:uncond-weakest}).
+\end{conjecture}
+
+\begin{theorem}[Evidence-channel rate]\label{thm:ev-rate}
+Under audited H with margin lower bounds, $m$ unlabeled samples on $D$ estimate agreement
+statistics at rate $m^{-1/2}$ with constant $\Theta(1/(b_{\min}c_{\min}^2))$; labeled paired
+benefits share the same exponent with efficiency ratio $\Theta(1/c_{\min})$. Labels buy constants
+and the missing bit, not the rate (\texttt{val\_ev\_rate.py}).
+\end{theorem}
+\begin{proof}[Proof sketch]
+Hoeffding on agreements, product-ratio perturbation, and a tensorized $\chi^2$/KL bound between
+pattern laws differing in one coordinate; Bretagnolle--Huber finishes.
+\end{proof}
+
+\smallskip
+\noindent\emph{Legacy cross-references.} Lemma~\ref{lem:reduction} is the disagreement-region
+characterization formerly labeled \texttt{thm:disagree}; Lemma~\ref{lem:gate} is
+\texttt{thm:gate}; Proposition~\ref{prop:lecam-finite} is \texttt{thm:imp-quant};
+Corollary~\ref{cor:knowable-regimes} is \texttt{thm:pos}.

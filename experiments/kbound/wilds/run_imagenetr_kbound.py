@@ -340,13 +340,17 @@ def run(args, partial_path=None):
     records, conditions = [], []
     n_total = (len(args.seeds) * len(args.compositions) * len(args.batch_regimes) * len(args.aggressiveness))
     ci = 0
+    # WIN_HUNT_v5: online-only candidate pool (the "continual" no-episodic-reset op-point) when
+    # --online-only is set; default keeps all six online+episodic candidates (byte-identical).
+    _cands = [(m, md) for (m, md) in rc.CANDIDATES
+              if (not getattr(args, "online_only", False)) or md == "online"]
     for seed in args.seeds:
         torch.manual_seed(seed); np.random.seed(seed); rng = np.random.default_rng(seed)
         for comp in args.compositions:
             for regime in args.batch_regimes:
                 bs = BATCH_REGIMES[regime]
                 for aggr in args.aggressiveness:
-                    steps = args.steps_override or rc.AGGR[aggr]["steps"]; lr = rc.AGGR[aggr]["lr"]
+                    steps = args.steps_override or rc.AGGR[aggr]["steps"]; lr = args.adapt_lr if getattr(args, "adapt_lr", None) is not None else rc.AGGR[aggr]["lr"]
                     ci += 1; tag = f"s{seed}/{comp}/{regime}/{aggr}"
                     try:
                         stream, eval_x, eval_y = build_condition(
@@ -358,7 +362,7 @@ def run(args, partial_path=None):
                         stream_f0_pos = tm._predict_prob(f0, torch.cat(stream, 0), train_mode=False, bs=128, mode="max")
                         preds_all = [p0]; aa_all = [a0]; cand_names = ["freeze_f0"]
                         best_pa = p0_pos; best_aa_c = float(a0)
-                        for (method, mode) in rc.CANDIDATES:
+                        for (method, mode) in _cands:
                             aa, Z, upd, preds, pa_pos = tm.run_candidate(
                                 method, mode, f0, stream, eval_x, eval_y, num,
                                 steps, lr, eval_bs=args.episodic_batch, prob_mode="max",
@@ -416,7 +420,8 @@ def build_manifest(args, records, conditions, meta):
         "seeds", "compositions", "batch_regimes", "aggressiveness",
         "n_eval", "n_batches", "tau_star", "kappa", "sd_L", "delta", "device",
         "steps_override", "max_classes", "episodic_steps", "episodic_batch",
-        "frozen_eval_batch", "smoke")}
+        "frozen_eval_batch", "smoke",
+        "adapt_lr", "online_only")}   # WIN_HUNT_v5 operating-point overrides enter the config hash
     sha = hashlib.sha256(json.dumps(cfg, sort_keys=True, default=str).encode()).hexdigest()[:8]
     candidate_names = meta.get("candidate_names", [f"{m}_{md}" for (m, md) in rc.CANDIDATES])
     return {
@@ -498,6 +503,14 @@ def parse_args(argv=None):
                    help="OOM-resilience: skip cells already in _partial.json while keeping "
                         "the per-seed RNG in lock-step (default: on)")
     p.add_argument("--smoke", action="store_true")
+    # ---- WIN_HUNT_v5 aggressive-regime wave operating-point overrides (opt-in; shared_tta panel) ----
+    p.add_argument("--adapt-lr", type=float, default=None, dest="adapt_lr",
+                   help="WIN_HUNT_v5: absolute adapter LR override for tent/eata/sar (rc.AGGR cell "
+                        "lr ignored when set). DEFAULT None = per-cell lr (byte-identical). v5 sets "
+                        "0.004 (= 4x the 1e-3 shared-baseline lr). No effect on diverse_backbones.")
+    p.add_argument("--online-only", action="store_true", dest="online_only",
+                   help="WIN_HUNT_v5: restrict the shared_tta candidate pool to online (no-episodic-"
+                        "reset) adapters -- the 'continual' operating point. DEFAULT off (byte-identical).")
     a = p.parse_args(argv)
     if a.smoke:
         a.compositions = ["iid", "single_class"]; a.batch_regimes = ["tiny"]
@@ -515,7 +528,8 @@ def main(argv=None):
     os.makedirs(out_dir, exist_ok=True)
     if a.dry_run:
         n_conditions = len(a.seeds) * len(a.compositions) * len(a.batch_regimes) * len(a.aggressiveness)
-        n_records = n_conditions * (len(a.candidate_backbones) if a.panel == "diverse_backbones" else len(rc.CANDIDATES))
+        _n_shared = len([1 for (m, md) in rc.CANDIDATES if (not getattr(a, "online_only", False)) or md == "online"])
+        n_records = n_conditions * (len(a.candidate_backbones) if a.panel == "diverse_backbones" else _n_shared)
         print("DRY RUN ImageNet-R")
         print(f"  --panel {a.panel}")
         print(f"  run_name={a.run_name}")

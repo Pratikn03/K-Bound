@@ -13,7 +13,7 @@ a0/aa arrays.  The per-condition Z, a0, aa vectors were used during the run but
 only the aggregate metrics were serialised.
 
 CI METHOD USED: Pareto-bootstrap distribution over mixing ratios.
-  The pareto.curve contains, for each p_harmful in {0.0, 0.1, ..., 1.0},
+  The pareto.curve contains, for each p_harmful in {0.0, 0.1, ..., 0.8, 1.0} (ten points; 0.9 is not sampled),
   the mean regret of each policy over 200 bootstrap resamples of a synthetic
   stream of length 200.  From these we extract the distribution of
   (regret_KBound - regret_adapt) and (regret_KBound - regret_freeze)
@@ -110,7 +110,7 @@ def analyse_method(method_data: dict, method_name: str) -> dict:
         "method": method_name,
         "ci_method": (
             "pareto-bootstrap: CIs derived from the stored mixing-ratio Pareto curve "
-            "(11 p-values x bootstrap-averaged regret), resampled with N_boot=5000. "
+            "(10 p-values x bootstrap-averaged regret), resampled with N_boot=5000. "
             "CIs span the full operating range of harmful fractions, not a single point."
         ),
         "n_pareto_points": len(curve),
@@ -188,7 +188,7 @@ def main():
             "(K-Bound vs always-adapt, K-Bound vs always-freeze) for Table 7. "
             "Per-condition a0/aa arrays are NOT stored in decisive_tta_results.json; "
             "CIs are derived from the pareto-bootstrap distribution stored in the "
-            "results file (regret at 11 mixing-ratio values, each averaged over 200 "
+            "results file (regret at 10 mixing-ratio values, each averaged over 200 "
             "bootstrap resamples). This is explicitly noted in the paper."
         ),
         "ci_source": "pareto_bootstrap_curve",
@@ -233,7 +233,7 @@ def build_markdown(output, results):
         "",
         "**CI Source**: Pareto-bootstrap distribution from `decisive_tta_results.json`.  ",
         "Per-condition a0/aa arrays are **not** stored in the JSON; CIs are derived from  ",
-        "the 11-point mixing-ratio Pareto curve (each point is the mean over 200 bootstrap  ",
+        "the ten-point mixing-ratio Pareto curve (each point is the mean over 200 bootstrap  ",
         "resamples of a 200-condition synthetic stream), resampled N=5000 times.  ",
         "This spans the full operating range of harmful fractions — CIs are consequently wide.  ",
         "A future re-run that serialises per-condition arrays would allow tighter paired t-tests.",

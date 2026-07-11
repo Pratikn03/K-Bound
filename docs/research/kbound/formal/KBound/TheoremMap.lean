@@ -30,16 +30,24 @@ namespace KBoundTheoremMap
 -- Wave 5: measure-theoretic certificate + uniform-index conformal coverage
 #check KBound.measure_false_adapt_le_alpha
 #check KBound.measure_false_freeze_le_alpha
+#check KBound.measure_false_adapt_le_alpha_of_measurable
 #check KBound.card_high_strictRank_le
+#check KBound.card_low_strictRank_ge
+#check KBound.uniformIndex_miss_eq
 #check KBound.uniformIndex_miss_le
 #check KBound.uniformIndex_coverage_ge
 #check KBound.uniformIndex_false_adapt_le
+#check KBound.uniformIndex_false_freeze_le
 #check KBound.gate_regret_identity
 #check KBound.forced_abstention_probability
 #check KBound.matched_opposite_worlds_force_abstain
 #check KBound.lecam_regret_floor_two_point
 #check KBound.lecam_testing_two_point
 #check KBound.frontier_identifiable_positive
+#check KBound.frontier_identifiable_negative
+#check KBound.frontier_decision_adapt
+#check KBound.frontier_decision_freeze
+#check KBound.frontier_decision_abstain
 #check KBound.binary_sign_reduction
 #check KBound.multiclass_sign_reduction
 #check KBound.multiclass_harm_iff_nonpos

@@ -1,0 +1,119 @@
+% Core load-bearing theory for the short-paper main text (with proofs).
+
+\begin{lemma}[Disagreement-region reduction]\label{lem:reduction}
+Under Assumption~\ref{ass:deploy}, with $\bar a:=\Pr_T(f_a{=}Y\mid D)$,
+\[
+\Delta \;=\; 2\,\mu_T(D)\bigl(\bar a-\tfrac12\bigr),
+\qquad\text{so}\qquad
+\sign\Delta \;=\; \sign(\bar a-\tfrac12) \;=\; \sign(M+\gamma).
+\]
+The identity $\sign\Delta=\sign(M+\gamma)$ holds for \emph{every} target law; it does not
+assume $|\gamma|\le\beta$.
+\end{lemma}
+\begin{proof}
+On $D$ exactly one of $f_0,f_a$ is correct under $0/1$ loss, so the benefit equals
+$2\mu_T(D)(\bar a-\tfrac12)$. By definition of $M$ and $\gamma$,
+$\bar a-\tfrac12=\E_{\mu_T\mid D}[\eta_a-s]=M+\gamma$.
+\end{proof}
+
+\begin{theorem}[Matched evidence forces abstention]\label{lem:nonid}
+Fix $\alpha\in(0,\tfrac12)$ and $\beta\ge0$. There exist $P_T^1,P_T^2\in\mathcal{C}_\beta$ such
+that $\Law(Z\mid P_T^1)=\Law(Z\mid P_T^2)$, $\sign\Delta_1=-\sign\Delta_2\neq0$, and
+$|M(P_T^1)|<\beta$. Consequently, any label-free rule $g$ with
+$\Pr[g=\textsc{adapt},\Delta\le0]\le\alpha$ and $\Pr[g=\textsc{freeze},\Delta\ge0]\le\alpha$
+must satisfy $\Pr[g=\textsc{abstain}]\ge 1-2\alpha$ on this shared evidence law.
+\end{theorem}
+\begin{proof}
+Take $|M|<\beta$ and choose $\gamma_1,\gamma_2\in[-\beta,\beta]$ with
+$\sign(M+\gamma_1)\neq\sign(M+\gamma_2)$, both nonzero (possible because $|M|<\beta$; at the boundary
+$|M|=\beta$ the admissible drift $\gamma=-\sign(M)\beta$ instead gives $\Delta=0$, still uncertifiable
+as a strict sign, so abstention persists on the closed region $|M|\le\beta$). Lemma~\ref{lem:reduction}
+gives opposite benefit signs at the same observables $(M,\mu_T(D),Z\text{-law})$. A label-free
+rule sees identical $\Law(Z)$ in both worlds, so its action probabilities coincide; each committed
+action is a false adapt in one world or a false freeze in the other, forcing abstention with
+probability at least $1-2\alpha$. An explicit Gaussian witness appears in
+Appendix~\ref{app:theory-full} (Theorem~\ref{thm:imp}).
+\end{proof}
+
+\begin{theorem}[Exact benefit-sign frontier]\label{thm:headline}\label{thm:frontier}
+Under Assumption~\ref{ass:deploy}, fix the observables $(\mu_T,P_S,f_0,f_a,s)$ so $M$ is
+determined, and let $\beta\ge0$.
+\begin{enumerate}
+\item[\textnormal{(i)}] \textbf{Reduction.} For every $P_T$, $\sign\Delta=\sign(M+\gamma)$
+(Lemma~\ref{lem:reduction}).
+\item[\textnormal{(ii)}] \textbf{Sufficiency.} If $|M|>\beta$ and $P_T\in\mathcal{C}_\beta$, then
+$\sign\Delta=\sign M$.
+\item[\textnormal{(iii)}] \textbf{Necessity.} If $|M|<\beta$, there exist
+$P_T^1,P_T^2\in\mathcal{C}_\beta$ with the same evidence law and opposite \emph{nonzero} benefit
+signs; at $|M|=\beta$ the admissible drift $\gamma=-\sign(M)\beta$ yields $\Delta=0$, so the sign is
+still undetermined. Hence $\sign\Delta$ is not a function of $\Law(Z)$ over $\mathcal{C}_\beta$
+whenever $|M|\le\beta$.
+\item[\textnormal{(iv)}] \textbf{Iff.} $\sign\Delta$ is label-free identifiable over
+$\mathcal{C}_\beta$ if and only if $|M|>\beta$.
+\end{enumerate}
+The population rule $M>\beta\Rightarrow\textsc{adapt}$, $M<-\beta\Rightarrow\textsc{freeze}$,
+$|M|\le\beta\Rightarrow\textsc{abstain}$ is the maximal sound certificate on
+$\mathcal{C}_\beta$.
+\end{theorem}
+\begin{proof}
+Part~(i) is Lemma~\ref{lem:reduction}. For~(ii), if $M>\beta$ and $|\gamma|\le\beta$, then
+$M+\gamma>0$, so $\sign\Delta=\sign(M+\gamma)=+1$; the negative case is symmetric. For~(iii),
+pick $\gamma_\pm\in[-\beta,\beta]$ with $\sign(M+\gamma_+)\neq\sign(M+\gamma_-)$, both nonzero, when
+$|M|<\beta$; Lemma~\ref{lem:reduction} yields matched $Z$ and opposite signs. At $|M|=\beta$ the
+admissible $\gamma=-\sign(M)\beta$ gives $\Delta=0$, still precluding a determined nonzero sign. Part~(iv) combines
+(ii) and (iii). Maximality follows from~(iii) and Theorem~\ref{lem:nonid}.
+\end{proof}
+
+\begin{center}\footnotesize
+\begin{tabular}{@{}lll@{}}
+\toprule
+Region & Meaning & Action \\
+\midrule
+$M>\beta$ & allowed drift cannot flip the positive sign & \textsc{adapt} \\
+$M<-\beta$ & allowed drift cannot flip the negative sign & \textsc{freeze} \\
+$|M|\le\beta$ & drift can flip the sign & \textsc{abstain} \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\begin{theorem}[Finite-sample adapt/freeze/abstain certificate]\label{thm:certificate}\label{thm:cert}
+Under Assumption~\ref{ass:deploy}, suppose calibration and deployment pairs are exchangeable and
+the benefit estimator satisfies marginal coverage
+\[
+\Pr\!\bigl[\,|\widehat\Delta-\Delta|\le\varepsilon\,\bigr]\ \ge\ 1-\alpha .
+\]
+Define
+\[
+g(Z)=\begin{cases}
+\textsc{adapt} & \widehat\Delta-\varepsilon>0,\\
+\textsc{freeze} & \widehat\Delta+\varepsilon<0,\\
+\textsc{abstain} & \text{otherwise}.
+\end{cases}
+\]
+Then, marginally over the calibration randomness,
+\[
+\Pr\bigl[g(Z)=\textsc{adapt},\,\Delta\le0\bigr]\le\alpha,
+\qquad
+\Pr\bigl[g(Z)=\textsc{freeze},\,\Delta\ge0\bigr]\le\alpha .
+\]
+\end{theorem}
+\begin{proof}
+On the event $\{|\widehat\Delta-\Delta|\le\varepsilon\}$, the condition
+$\widehat\Delta-\varepsilon>0$ implies $\Delta>0$, so a false adapt requires the complement of
+this event, which has probability at most $\alpha$. The freeze case is symmetric.
+\end{proof}
+
+\begin{remark}[Marginal vs.\ conditional error]\label{rem:fa-marginal}
+Theorem~\ref{thm:certificate} bounds the \emph{marginal, unconditional} false-adapt and
+false-freeze probabilities ($\mathrm{FA}_{\mathrm u}$). It does \emph{not} bound the conditional
+rate $\mathrm{FA}_{\mathrm c}=\Pr[\Delta\le0\mid\textsc{adapt}]$, which we report empirically.
+Risk alignment (Definition~\ref{def:risk-align}) is required for the \emph{frontier}
+identifiability claim; coverage alone certifies the \emph{interval} rule above.
+\end{remark}
+
+\begin{corollary}[Unjustified assumptions $\Rightarrow$ abstain]\label{cor:abstain-valid}
+If exchangeability, coverage, or risk alignment cannot be justified on the deployment batch,
+Theorem~\ref{thm:certificate} does not apply. Committing to \textsc{adapt} without a valid
+positive certified lower bound is not protected at level $\alpha$; the conservative action is
+\textsc{abstain} or \textsc{freeze} (cf.\ Theorem~\ref{lem:nonid}).
+\end{corollary}

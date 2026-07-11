@@ -137,12 +137,15 @@ def _adapt(mth, m, stream, a, nC):
     raise ValueError(f"unknown method {mth}")
 
 
-def gen_cells(f0, samples, nC, dev, rng, methods, cell_cfgs):
-    """Per-cell (Z, a0, aa, B, regime, method) for one domain's data."""
+def gen_cells(f0, samples, nC, dev, rng, methods, cell_cfgs, adapt_lr=None):
+    """Per-cell (Z, a0, aa, B, regime, method) for one domain's data.
+    WIN_HUNT_v5: adapt_lr overrides the AGGR cell lr (None = per-cell lr, byte-identical)."""
     cls_idx = class_indices(samples, nC)
     rows = []
     for (brn, comp, agn, rep) in cell_cfgs:
-        bs = BATCH_REGIMES[brn]; a = AGGR[agn]
+        bs = BATCH_REGIMES[brn]; a = dict(AGGR[agn])
+        if adapt_lr is not None:
+            a["lr"] = adapt_lr   # WIN_HUNT_v5 aggressive op-point (0.004 = 4x the 1e-3 baseline)
         s_idx, e_idx = sample_cell_idx(cls_idx, comp, bs, rng)
         ex, ey = load_batch(samples, e_idx, dev)
         stream = []
@@ -150,7 +153,7 @@ def gen_cells(f0, samples, nC, dev, rng, methods, cell_cfgs):
             sx, _ = load_batch(samples, s_idx[i:i + bs], dev); stream.append(sx)
         a0 = acc_on(f0, ex, ey, train_mode=False)
         for mth in methods:
-            adapted, un = _adapt(mth, f0, stream, AGGR[agn], nC)
+            adapted, un = _adapt(mth, f0, stream, a, nC)
             aa = acc_on(adapted, ex, ey, train_mode=True)
             Z = evidence_vector(f0, adapted, ex, nC, un)
             rows.append(dict(condition=f"{comp}|{brn}|{agn}|r{rep}|{mth}",
@@ -199,15 +202,30 @@ def main():
     ap.add_argument("--seed", type=int, default=SEED)
     ap.add_argument("--smoke", action="store_true", help="tiny: 1 test domain, few cells, few ERM steps")
     ap.add_argument("--out", default="pacs_vlcs_result.json")
+    # ---- WIN_HUNT_v5 aggressive-regime wave operating-point overrides (opt-in) ----
+    ap.add_argument("--adapt-lr", type=float, default=None, dest="adapt_lr",
+                    help="WIN_HUNT_v5: absolute adapter LR override for tent/eata/sar (AGGR cell lr "
+                         "ignored when set). DEFAULT None = per-cell lr (byte-identical). v5 sets 0.004 "
+                         "(= 4x the 1e-3 shared-baseline lr).")
+    ap.add_argument("--batch-regimes", nargs="+", default=None, dest="batch_regimes",
+                    choices=list(BATCH_REGIMES.keys()),
+                    help="WIN_HUNT_v5: restrict the batch-regime sweep (DEFAULT None = all; v5 uses "
+                         "'tiny' = 16). Ignored under --smoke.")
+    ap.add_argument("--aggressiveness", nargs="+", default=None, dest="aggressiveness",
+                    choices=list(AGGR.keys()),
+                    help="WIN_HUNT_v5: restrict the aggressiveness sweep (DEFAULT None = all; v5 uses "
+                         "'aggressive' = 50 steps with --adapt-lr 0.004). Ignored under --smoke.")
     args = ap.parse_args()
     dev = pick_device(args.device); print("device:", dev, "dataset:", args.dataset, flush=True)
 
     domains = DOMAINS[args.dataset]
     # cell grid (held back in smoke)
     reps = [0] if args.smoke else [0, 1]
-    cell_cfgs = [(b, c, a, r) for b in (["small"] if args.smoke else BATCH_REGIMES)
-                 for c in (["iid", "single_class"] if args.smoke else COMPS)
-                 for a in AGGR for r in reps]
+    # WIN_HUNT_v5: optional batch/aggr subsetting (None -> full sweep, byte-identical). Smoke unchanged.
+    _brs = (["small"] if args.smoke else (args.batch_regimes or list(BATCH_REGIMES)))
+    _ags = (list(AGGR) if args.smoke else (args.aggressiveness or list(AGGR)))
+    _comps = (["iid", "single_class"] if args.smoke else COMPS)
+    cell_cfgs = [(b, c, a, r) for b in _brs for c in _comps for a in _ags for r in reps]
     erm_steps = 30 if args.smoke else args.erm_steps
     test_domains = domains[:1] if args.smoke else domains
 
@@ -216,7 +234,11 @@ def main():
     print(f"classes={nC} domains={domains}", flush=True)
     cache = {d: load_domain(args.root, args.dataset, d)[0] for d in domains}
 
-    results = {"dataset": args.dataset, "alpha": args.alpha, "n_classes": nC, "per_domain": {}}
+    results = {"dataset": args.dataset, "alpha": args.alpha, "n_classes": nC,
+               "win_hunt_v5_override": {"adapt_lr": args.adapt_lr,
+                                        "batch_regimes": args.batch_regimes,
+                                        "aggressiveness": args.aggressiveness},
+               "per_domain": {}}
     for d_test in test_domains:
         t0 = time.time()
         src = [d for d in domains if d != d_test]
@@ -225,8 +247,8 @@ def main():
         rng = np.random.default_rng(args.seed)
         # calibration cells: a held-out SOURCE domain (last source) -- no test labels used
         cal_dom = src[-1]
-        cal = gen_cells(f0, cache[cal_dom], nC, dev, rng, args.methods, cell_cfgs)
-        test = gen_cells(f0, cache[d_test], nC, dev, rng, args.methods, cell_cfgs)
+        cal = gen_cells(f0, cache[cal_dom], nC, dev, rng, args.methods, cell_cfgs, adapt_lr=args.adapt_lr)
+        test = gen_cells(f0, cache[d_test], nC, dev, rng, args.methods, cell_cfgs, adapt_lr=args.adapt_lr)
         dec, eps = decide_transfer(cal, test, args.alpha)
         a0 = np.array([r["a0"] for r in test]); aa = np.array([r["aa"] for r in test])
         B = aa - a0
@@ -252,6 +274,9 @@ def main():
         # per-cell dump for the gate-baseline comparison
         json.dump(test, open(f"{args.dataset.lower()}_{d_test}_percell.json", "w"))
 
+    _outdir = os.path.dirname(os.path.abspath(args.out))
+    if _outdir:
+        os.makedirs(_outdir, exist_ok=True)
     json.dump(results, open(args.out, "w"), indent=2)
     nwin = sum(v["verdict"].startswith("WIN") for v in results["per_domain"].values())
     print(f"\n==== {args.dataset}: {nwin}/{len(results['per_domain'])} domains are CI-robust beats-both."

@@ -1,0 +1,26 @@
+{
+ "protocol": "WIN_HUNT_v4",
+ "arm": "arm_A_jackknife_plus_radius",
+ "bar": "(i)",
+ "alpha": 0.05,
+ "n_reps": 500,
+ "n_cal": 60,
+ "cover_target": 0.9,
+ "validator_learner": "GBR(n_estimators=25,max_depth=2,lr=0.1,subsample=1.0) surrogate; coverage is base-learner-agnostic",
+ "results": {
+  "coverage": 0.942,
+  "median_width_jkplus": 1.576086330326034,
+  "median_width_existing": 1.9645932758056666,
+  "median_width_loo_strict": 1.5682940121247784,
+  "n_grid": 800,
+  "n_harmful": 433,
+  "n_adapt": 164,
+  "FA_u": 0.0
+ },
+ "bars": {
+  "coverage_ge_1m2alpha": true,
+  "jkplus_width_le_existing": true,
+  "FA_u_le_alpha": true
+ },
+ "ALL_PASS": true
+}

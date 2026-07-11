@@ -1,0 +1,61 @@
+{
+ "protocol": "WIN_HUNT_v4_ARM_B",
+ "registered": "research_lock/WIN_HUNT_v4_PROTOCOL.yaml",
+ "dataset": "camelyon17",
+ "run_dir": "experiments/kbound/results/natural_win_v2_camelyon",
+ "files": [
+  "per_condition_camelyon17_eata_seed0.json",
+  "per_condition_camelyon17_eata_seed1.json",
+  "per_condition_camelyon17_eata_seed2.json",
+  "per_condition_camelyon17_eata_seed3.json",
+  "per_condition_camelyon17_sar_seed0.json",
+  "per_condition_camelyon17_sar_seed1.json",
+  "per_condition_camelyon17_sar_seed2.json",
+  "per_condition_camelyon17_sar_seed3.json",
+  "per_condition_camelyon17_tent_seed0.json",
+  "per_condition_camelyon17_tent_seed1.json",
+  "per_condition_camelyon17_tent_seed2.json",
+  "per_condition_camelyon17_tent_seed3.json"
+ ],
+ "used_ev2": true,
+ "nsim": 250,
+ "field_notes": {
+  "a_adapted_key": "r['a_adapted'] else r['aa']",
+  "benefit_key": "r['B'] else (a_adapted - a0)",
+  "incumbent_kga": "global tau_selfnorm gate + single-GBR signed LOO radius; reject => ABSTAIN",
+  "arm_C_calibration": "terciles frozen per held-out seed on other seeds",
+  "gate_min_panel": 20,
+  "camelyon_abstention_bar": 0.595
+ },
+ "n_records": 432,
+ "n_seeds": 4,
+ "n_gated": 354,
+ "regret": {
+  "v2": 0.05154079861111111,
+  "incumbent": 0.04819516782407408,
+  "always_adapt": 0.012885199652777778,
+  "always_freeze": 0.05154079861111111
+ },
+ "FA_u": 0.0,
+ "alpha": 0.1,
+ "abstention": {
+  "v2": 0.9953703703703703,
+  "incumbent": 0.9328703703703703
+ },
+ "improvement_vs_incumbent": {
+  "mean": -0.003345630787037037,
+  "ci95": [
+   -0.004909939236111111,
+   -0.001980251736111111
+  ]
+ },
+ "improvement_vs_always_adapt": {
+  "mean": -0.038655598958333336,
+  "ci95": [
+   -0.04594387478298611,
+   -0.030906394675925927
+  ]
+ },
+ "CI_ROBUST_IMPROVEMENT": false,
+ "VERDICT": "FAIL"
+}

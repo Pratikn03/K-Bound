@@ -91,6 +91,20 @@ SEED            = 0
 # every prior run stays byte-identical unless these are explicitly set from the CLI.
 SAR_LR          = None
 SAR_FREEZE_LAYER4 = False
+# WIN_HUNT_v4 arm_D: per-sample stream logging for the OFFICIAL per-sample POEM +
+# dropout-AETTA head-to-head. ALL of these are OFF by default; when --log-samples is
+# absent NOTHING below runs and every existing computation/output is byte-identical.
+LOG_SAMPLES       = False
+LOG_SAMPLES_DIR   = None
+AETTA_MC_IMAGES   = 2048   # cap on eval-pool images used for the MC-dropout estimate
+# WIN_HUNT_v5 aggressive-regime wave: operating-point overrides. ALL default to "unset"
+# so with NONE of the v5 flags set the run is byte-identical to every prior protocol.
+#   ADAPT_LR  : absolute adapter LR override (None -> per-cell AGGRESSIVENESS lr).
+#   SEL_BATCH : subset of BATCH_REGIMES keys to run (None -> all three, byte-identical grid).
+#   SEL_AGGR  : subset of AGGRESSIVENESS keys to run (None -> all).
+ADAPT_LR          = None
+SEL_BATCH         = None
+SEL_AGGR          = None
 
 def set_global_seed(seed):
     """Set the run seed for ALL rng (protocol: 'seed sets ALL rng').
@@ -837,11 +851,157 @@ def _mps_free():
         pass
 
 
+# ============================================================================= #
+#  WIN_HUNT_v4 arm_D  --  PER-SAMPLE STREAM LOGGING (behind --log-samples)
+#  ---------------------------------------------------------------------------
+#  Emits, per condition, ONE compressed .npz that the OFFICIAL per-sample POEM
+#  (Bar-Shaer-Romano, NeurIPS'24, arXiv:2408.07511) and dropout-AETTA
+#  (Lee et al., CVPR'24, arXiv:2404.01351) baselines consume. Schema:
+#    adapted_entropy  fp16[N]  per-sample entropy of the ADAPTED model on the
+#                              balanced eval pool  (the stream POEM's martingale bets on)
+#    frozen_entropy   fp16[N]  per-sample entropy of the FROZEN/source model, same pool
+#                              (POEM's pre-adaptation drift signal / source-mismatch test)
+#    max_softmax      fp16[N]  per-sample max-softmax of the ADAPTED model
+#    frozen_correct   u8[N]    1{argmax(frozen)==y}   (mean == a0 by construction)
+#    adapted_correct  u8[N]    1{argmax(adapted)==y}  (mean == a_adapted by construction)
+#    aetta_acc_est    float    AETTA label-free accuracy estimate of the ADAPTED model,
+#                              N=10 MC-dropout, paper's improved estimate + EMA (below)
+#    aetta_acc_est_frozen float same estimate for the FROZEN model (reference the AETTA gate needs)
+#  Plus a per-run source reference (frozen entropy on the CLEAN eval pool) written once
+#  per benchmark as samples_source_<bench>_seed<k>.npz -> POEM's source-entropy CDF.
+#  NOTHING here alters the existing rows/JSON/figures; it is purely additive.
+# ============================================================================= #
+def _persample_stats(net, x, y, train_mode):
+    """Per-sample (entropy, max-softmax, correct-uint8) over x, using acc_on's 512
+    batching + BN mode so that correct.mean() reproduces a0 / a_adapted EXACTLY
+    (adapted has track_running_stats=False -> batch stats in both modes)."""
+    net.train() if train_mode else net.eval()
+    ent, mxp, cor = [], [], []
+    with torch.no_grad():
+        for i in range(0, len(x), 512):
+            p = net(x[i:i + 512]).softmax(1)
+            ent.append((-(p * (p + 1e-9).log()).sum(1)).float().cpu().numpy())
+            mxp.append(p.max(1).values.float().cpu().numpy())
+            cor.append((p.argmax(1).cpu() == y[i:i + 512]).numpy().astype(np.uint8))
+    return np.concatenate(ent), np.concatenate(mxp), np.concatenate(cor)
+
+
+# Official AETTA dropout rate is dataset-specific (taeckyung/AETTA
+# learner/dnn.py::evaluate_dropout defaults): CIFAR-10 0.4, CIFAR-100 0.3,
+# ImageNet 0.2, ImageNet-R 0.3. Keyed by num_classes so each benchmark uses the paper's rate.
+_AETTA_DROPOUT_RATE = {10: 0.4, 100: 0.3, 200: 0.3, 1000: 0.2}
+_AETTA_N_ITER = 10     # N=10 dropout passes (paper's adopted value; ablation N in {5,10,15})
+_AETTA_ALPHA  = 3.0    # entropy-ratio exponent (paper's adopted alpha=3)
+_AETTA_EMA    = 0.6    # weight on the previous estimate (official EMA is 0.6 old / 0.4 new)
+
+
+def _aetta_accuracy_estimate(net, x, num_classes, mc_images):
+    """Faithful port of taeckyung/AETTA (learner/dnn.py evaluate_dropout + aetta):
+    head MC-dropout at the paper's per-dataset rate, N=10 passes; per-batch prediction
+    disagreement est_err=1-agreement, corrected by (E_avg/E_max)^(-alpha), alpha=3,
+    clipped to [0, 1-1/K], then EMA-accumulated (0.6/0.4) over the eval stream.
+    Returns the final estimated ACCURACY as a fraction in [0,1].
+
+    Pinned deviation (A1): the base backbone has no in-network dropout, so we inject a
+    single nn.Dropout before the classifier head (exactly as the repo's own AETTA
+    baseline run_aetta_dropout_imagenetc.py). AETTA's paper uses backbone-wide
+    ResNetDropout; swapping that in would require the dropout-architecture weights.
+    m.eval() is used for the passes: the ADAPTED model still uses batch stats
+    (running stats are None), the FROZEN model uses its running stats -- both consistent
+    with how a_adapted / a0 were measured."""
+    p = _AETTA_DROPOUT_RATE.get(int(num_classes), 0.3)
+    m = copy.deepcopy(net)
+    if hasattr(m, "fc") and isinstance(getattr(m, "fc"), nn.Module):
+        m.fc = nn.Sequential(nn.Dropout(p=p), m.fc)
+    elif hasattr(m, "heads") and hasattr(m.heads, "head"):
+        m.heads.head = nn.Sequential(nn.Dropout(p=p), m.heads.head)
+    m.eval()
+    drop_mods = [mod for mod in m.modules() if "dropout" in mod.__class__.__name__.lower()]
+
+    def _set_dropout(active):
+        for mod in drop_mods:
+            mod.train() if active else mod.eval()
+
+    E_MAX = math.log(num_classes)
+    N = min(len(x), mc_images) if mc_images else len(x)
+    est_ema = None
+    with torch.no_grad():
+        for i in range(0, N, 256):
+            xb = x[i:i + 256]
+            _set_dropout(False)
+            curr_pred = m(xb).argmax(1)                                    # deterministic (dropout off)
+            _set_dropout(True)
+            softs = torch.stack([m(xb).softmax(1) for _ in range(_AETTA_N_ITER)], dim=1)  # [B,N,K]
+            preds = softs.argmax(2)                                        # [B,N]
+            mean = softs.mean(1)                                           # [B,K]
+            total_avg = mean.mean(0)                                       # [K]
+            e_avg = float((-(total_avg * (total_avg + 1e-6).log()).sum()).item())
+            match = (curr_pred.unsqueeze(1) == preds).float().mean(1)      # [B]
+            est_err = float((1.0 - match.mean()).item())
+            if est_ema is None:
+                est_ema = est_err
+            ratio = max(e_avg / E_MAX, 1e-6)
+            upd = est_err / (ratio ** _AETTA_ALPHA)
+            upd = float(min(max(upd, 0.0), 1.0 - 1.0 / num_classes))
+            est_ema = est_ema * _AETTA_EMA + upd * (1.0 - _AETTA_EMA)
+    return float("nan") if est_ema is None else (1.0 - float(est_ema))
+
+
+def _log_condition_samples(bench_tag, method, condition, model_frozen, model_adapted,
+                           ex, ey, num_classes):
+    """Write one compressed .npz of per-sample streams + AETTA estimates for a condition
+    (arm D). No-op unless --log-samples. Never raises into the run (best-effort)."""
+    if not LOG_SAMPLES:
+        return
+    try:
+        fe, _fm, fc = _persample_stats(model_frozen, ex, ey, train_mode=False)
+        ae, am, ac = _persample_stats(model_adapted, ex, ey, train_mode=True)
+        aetta_ad = _aetta_accuracy_estimate(model_adapted, ex, num_classes, AETTA_MC_IMAGES)
+        aetta_fr = _aetta_accuracy_estimate(model_frozen, ex, num_classes, AETTA_MC_IMAGES)
+        out_dir = LOG_SAMPLES_DIR or "."
+        os.makedirs(out_dir, exist_ok=True)
+        safe = str(condition).replace("|", "_").replace("/", "_").replace(":", "_")
+        path = os.path.join(out_dir, f"samples_{bench_tag}_{method}_seed{SEED}__{safe}.npz")
+        np.savez_compressed(
+            path,
+            condition=str(condition), benchmark=str(bench_tag), method=str(method),
+            seed=int(SEED), num_classes=int(num_classes),
+            adapted_entropy=ae.astype(np.float16), frozen_entropy=fe.astype(np.float16),
+            max_softmax=am.astype(np.float16),
+            frozen_correct=fc.astype(np.uint8), adapted_correct=ac.astype(np.uint8),
+            a0=float(fc.mean()), a_adapted=float(ac.mean()),
+            aetta_acc_est=float(aetta_ad), aetta_acc_est_frozen=float(aetta_fr),
+        )
+        _mps_free()
+    except Exception as _e:
+        print(f"[log-samples] {bench_tag}/{method}/{condition}: skipped ({_e})")
+
+
+def _log_source_reference(bench_tag, model_frozen, clean_x, clean_y, num_classes):
+    """Write frozen per-sample entropy on the CLEAN eval pool once per benchmark
+    (POEM's source-domain entropy CDF). No-op unless --log-samples."""
+    if not LOG_SAMPLES:
+        return
+    try:
+        se, _sm, sc = _persample_stats(model_frozen, clean_x, clean_y, train_mode=False)
+        out_dir = LOG_SAMPLES_DIR or "."
+        os.makedirs(out_dir, exist_ok=True)
+        path = os.path.join(out_dir, f"samples_source_{bench_tag}_seed{SEED}.npz")
+        np.savez_compressed(path, benchmark=str(bench_tag), seed=int(SEED),
+                            num_classes=int(num_classes),
+                            source_entropy=se.astype(np.float16),
+                            source_correct=sc.astype(np.uint8), clean_acc=float(sc.mean()))
+        print(f"[log-samples] wrote source reference -> {path}")
+    except Exception as _e:
+        print(f"[log-samples] source ref {bench_tag}: skipped ({_e})")
+
+
 # =============================================================================
 #  RUN ONE BENCHMARK
 # =============================================================================
 def run_cifar_benchmark(which, data_root, dev, methods, corruptions, ckpt=None, quick=False, max_cells=0):
     num_classes = 10 if which == "10" else 100
+    bench_tag = "cifar10c" if which == "10" else "cifar100c"   # arm-D npz tag (matches per_condition JSON tag)
     model = get_cifar_model(which, data_root, dev, ckpt)
     rng = np.random.default_rng(SEED)
     # clean acc
@@ -850,10 +1010,13 @@ def run_cifar_benchmark(which, data_root, dev, methods, corruptions, ckpt=None, 
     ev = build_stream_and_eval(Xclean, yclean, Xclean, yclean, "iid", 200, num_classes, rng, dev)[1:]
     clean_acc = acc_on(model, ev[0], ev[1], train_mode=False)
     print(f"[{which}] clean acc = {clean_acc:.3f}")
+    _log_source_reference(bench_tag, model, ev[0], ev[1], num_classes)  # arm-D: POEM source CDF (no-op unless --log-samples)
 
     rows = {m: [] for m in methods}
+    _brs = SEL_BATCH if SEL_BATCH else list(BATCH_REGIMES)   # WIN_HUNT_v5: subset or full grid
+    _ags = SEL_AGGR if SEL_AGGR else list(AGGRESSIVENESS)
     cells = [(c, s, br, comp, ag) for c in corruptions for s in SEVERITIES
-             for br in BATCH_REGIMES for comp in COMPOSITIONS for ag in AGGRESSIVENESS]
+             for br in _brs for comp in COMPOSITIONS for ag in _ags]
     if quick:
         cells = [c for c in cells if c[1] in (1, 5)]  # only mild & severe in quick mode
     if max_cells and max_cells > 0:
@@ -870,14 +1033,16 @@ def run_cifar_benchmark(which, data_root, dev, methods, corruptions, ckpt=None, 
             a0 = acc_on(model, ex, ey, train_mode=False)
             for mth in methods:
                 fn = TTA_METHODS[mth]
-                kwargs = dict(steps=ag["steps"], lr=ag["lr"])
+                kwargs = dict(steps=ag["steps"], lr=(ADAPT_LR if ADAPT_LR is not None else ag["lr"]))
                 if mth in ("eata", "sar"): kwargs["num_classes"] = num_classes
                 if mth == "sar": kwargs.update(sar_lr=SAR_LR, freeze_layer4=SAR_FREEZE_LAYER4)
                 adapted, un = fn(model, stream, **kwargs)
                 aa = acc_on(adapted, ex, ey, train_mode=True)
                 Z = evidence_vector(model, adapted, ex, num_classes, un)
-                rows[mth].append(dict(condition=f"{corr}|s{sev}|{brn}|{comp}|{agn}|r{rep}",
+                _cond = f"{corr}|s{sev}|{brn}|{comp}|{agn}|r{rep}"
+                rows[mth].append(dict(condition=_cond,
                                       Z=Z, a0=a0, aa=aa, regime=label_regime(aa - a0)))
+                _log_condition_samples(bench_tag, mth, _cond, model, adapted, ex, ey, num_classes)  # arm-D (no-op unless --log-samples)
         if (ci + 1) % 10 == 0:
             print(f"   {ci+1}/{len(cells)} cells  ({time.time()-t0:.0f}s)")
     try:  # per-cell evidence dump for scripts/gate_baseline_comparison.py (non-breaking)
@@ -903,11 +1068,13 @@ def run_cifar101_benchmark(data_root, dev, methods, ckpt=None, quick=False):
     # base (no-adapt) accuracy on the whole natural set
     Xt = _norm_cifar((torch.tensor(X).permute(0, 3, 1, 2).float() / 255.0).to(dev))
     clean_acc = acc_on(model, Xt, torch.tensor(y), train_mode=False)
+    _log_source_reference("cifar101", model, Xt, torch.tensor(y), num_classes)  # arm-D (no-op unless --log-samples)
     del Xt; _mps_free()
     print(f"[cifar101] base (no-adapt) acc on CIFAR-10.1 = {clean_acc:.3f}")
     ep = max(num_classes * 10, len(y) // 2)     # ~half eval, ~half adaptation stream
-    bkeys = ["small", "tiny"] if quick else list(BATCH_REGIMES.keys())
-    cells = [(br, comp, agn) for br in bkeys for comp in COMPOSITIONS for agn in AGGRESSIVENESS]
+    bkeys = SEL_BATCH if SEL_BATCH else (["small", "tiny"] if quick else list(BATCH_REGIMES.keys()))
+    _ags = SEL_AGGR if SEL_AGGR else list(AGGRESSIVENESS)   # WIN_HUNT_v5 operating-point subset
+    cells = [(br, comp, agn) for br in bkeys for comp in COMPOSITIONS for agn in _ags]
     rows = {m: [] for m in methods}
     print(f"[cifar101] {len(cells)} cells x {N_REPEATS} repeats x {len(methods)} methods")
     t0 = time.time()
@@ -917,14 +1084,16 @@ def run_cifar101_benchmark(data_root, dev, methods, ckpt=None, quick=False):
             stream, ex, ey = build_stream_and_eval(X, y, X, y, comp, bs, num_classes, rng, dev, eval_pool=ep)
             a0 = acc_on(model, ex, ey, train_mode=False)
             for mth in methods:
-                fn = TTA_METHODS[mth]; kwargs = dict(steps=ag["steps"], lr=ag["lr"])
+                fn = TTA_METHODS[mth]; kwargs = dict(steps=ag["steps"], lr=(ADAPT_LR if ADAPT_LR is not None else ag["lr"]))
                 if mth in ("eata", "sar"): kwargs["num_classes"] = num_classes
                 if mth == "sar": kwargs.update(sar_lr=SAR_LR, freeze_layer4=SAR_FREEZE_LAYER4)
                 adapted, un = fn(model, stream, **kwargs)
                 aa = acc_on(adapted, ex, ey, train_mode=True)
                 Z = evidence_vector(model, adapted, ex, num_classes, un)
-                rows[mth].append(dict(condition=f"cifar101|{brn}|{comp}|{agn}|r{rep}",
+                _cond = f"cifar101|{brn}|{comp}|{agn}|r{rep}"
+                rows[mth].append(dict(condition=_cond,
                                       Z=Z, a0=a0, aa=aa, regime=label_regime(aa - a0)))
+                _log_condition_samples("cifar101", mth, _cond, model, adapted, ex, ey, num_classes)  # arm-D (no-op unless --log-samples)
                 del adapted, un; _mps_free()
         if (ci + 1) % 10 == 0:
             print(f"   {ci+1}/{len(cells)} cells  ({time.time()-t0:.0f}s)")
@@ -956,7 +1125,8 @@ def run_imagenet_benchmark(ic_root, val_root, dev, methods, corruptions, quick=F
     sevs = [1, 5] if quick else (severities if severities else SEVERITIES)
     bregimes = batch_regimes if batch_regimes else [("large_iid", 64), ("tiny", 8)]
     comps = list(compositions) if compositions else [None]   # None => legacy single iid random-perm stream
-    inner = [(brn, bs, agn, AGGRESSIVENESS[agn], comp) for (brn, bs) in bregimes for agn in AGGRESSIVENESS for comp in comps]
+    _ags = SEL_AGGR if SEL_AGGR else list(AGGRESSIVENESS)     # WIN_HUNT_v5 operating-point subset
+    inner = [(brn, bs, agn, AGGRESSIVENESS[agn], comp) for (brn, bs) in bregimes for agn in _ags for comp in comps]
 
     rows = {m: [] for m in methods}
     done = set()
@@ -1020,7 +1190,7 @@ def run_imagenet_benchmark(ic_root, val_root, dev, methods, corruptions, quick=F
                 a0 = acc_on(model, X, Y, train_mode=False)
                 cell_msg = []
                 for mth in methods:
-                    fn = TTA_METHODS[mth]; kw = dict(steps=ag["steps"], lr=ag["lr"])
+                    fn = TTA_METHODS[mth]; kw = dict(steps=ag["steps"], lr=(ADAPT_LR if ADAPT_LR is not None else ag["lr"]))
                     if mth in ("eata", "sar"): kw["num_classes"] = num_classes
                     if mth == "sar": kw.update(sar_lr=SAR_LR, freeze_layer4=SAR_FREEZE_LAYER4)
                     adapted, un = fn(model, stream, **kw)
@@ -1097,6 +1267,30 @@ def main():
                     help="ImageNet-C within-cell stream composition axis (sequential/non-iid). "
                          "DEFAULT None = legacy single iid random-perm stream (byte-identical to "
                          "prior runs). Protocol E (full): --imagenetc-composition iid imbalanced single_class.")
+    ap.add_argument("--log-samples", action="store_true", dest="log_samples",
+                    help="WIN_HUNT_v4 arm_D: ALSO write per-sample streams (one compressed .npz "
+                         "per condition: adapted/frozen per-sample entropy, max-softmax, per-sample "
+                         "frozen+adapted correctness, and online AETTA MC-dropout accuracy estimates) "
+                         "into --out-results, plus a per-benchmark source-entropy reference for the "
+                         "official per-sample POEM + dropout-AETTA head-to-head. OFF by default: with "
+                         "this flag absent the run is byte-identical (CIFAR benchmarks only).")
+    ap.add_argument("--aetta-mc-images", type=int, default=None, dest="aetta_mc_images",
+                    help="arm_D only: cap on eval-pool images used for the AETTA MC-dropout estimate "
+                         "(default 2048 covers the full CIFAR eval pool). Ignored without --log-samples.")
+    # ---- WIN_HUNT_v5 aggressive-regime wave operating-point overrides (all opt-in) ----
+    ap.add_argument("--adapt-lr", type=float, default=None, dest="adapt_lr",
+                    help="WIN_HUNT_v5: absolute adapter learning-rate override for tent/eata/sar "
+                         "(the per-cell AGGRESSIVENESS lr is IGNORED when this is set). DEFAULT None "
+                         "= per-cell lr (byte-identical to all prior runs). The v5 aggressive wave "
+                         "sets 0.004 (= 4x the 1e-3 shared-baseline mild lr).")
+    ap.add_argument("--batch-regimes", nargs="+", default=None, dest="batch_regimes",
+                    choices=list(BATCH_REGIMES.keys()),
+                    help="WIN_HUNT_v5: restrict the CIFAR/CIFAR-10.1/ImageNet-C grid to these batch "
+                         "regimes (DEFAULT None = all three, byte-identical). v5 uses 'small' (16).")
+    ap.add_argument("--aggressiveness", nargs="+", default=None, dest="aggressiveness",
+                    choices=list(AGGRESSIVENESS.keys()),
+                    help="WIN_HUNT_v5: restrict to these aggressiveness cells (DEFAULT None = all, "
+                         "byte-identical). v5 uses 'aggressive' (steps=50) together with --adapt-lr 0.004.")
     args = ap.parse_args()
 
     os.makedirs(args.out_results, exist_ok=True); os.makedirs(args.out_figs, exist_ok=True)
@@ -1104,6 +1298,21 @@ def main():
     set_global_seed(args.seed); print("seed:", SEED)
     global SAR_LR, SAR_FREEZE_LAYER4
     SAR_LR = args.sar_lr; SAR_FREEZE_LAYER4 = args.sar_freeze_layer4
+    global LOG_SAMPLES, LOG_SAMPLES_DIR, AETTA_MC_IMAGES
+    LOG_SAMPLES = args.log_samples
+    LOG_SAMPLES_DIR = args.out_results
+    if args.aetta_mc_images is not None:
+        AETTA_MC_IMAGES = args.aetta_mc_images
+    global ADAPT_LR, SEL_BATCH, SEL_AGGR                       # WIN_HUNT_v5 operating-point overrides
+    ADAPT_LR = args.adapt_lr
+    SEL_BATCH = args.batch_regimes
+    SEL_AGGR = args.aggressiveness
+    if ADAPT_LR is not None or SEL_BATCH or SEL_AGGR:
+        print(f"[WIN_HUNT_v5] operating-point override: adapt_lr={ADAPT_LR} "
+              f"batch_regimes={SEL_BATCH or 'ALL'} aggressiveness={SEL_AGGR or 'ALL'}")
+    if LOG_SAMPLES:
+        print(f"[arm-D] --log-samples ON: per-sample .npz streams + AETTA MC-dropout(N={_AETTA_N_ITER}) "
+              f"-> {LOG_SAMPLES_DIR} (CIFAR benchmarks; imagenetc unaffected)")
     if SAR_LR is not None or SAR_FREEZE_LAYER4:
         print(f"[SAR-official] sar_lr={SAR_LR} freeze_layer4={SAR_FREEZE_LAYER4} "
               f"(non-default SAR arm; tent/eata unchanged)")
@@ -1123,7 +1332,13 @@ def main():
         else:
             if not args.imagenetc_root: print("[skip] imagenetc needs --imagenetc-root"); continue
             corrs = args.corruptions if args.corruptions else IMAGENET_C_QUICK
-            _bregimes = [("large_iid", 64), ("small", 16), ("tiny", 8)] if args.all_batch else None
+            _IMAGENET_BR = {"large_iid": 64, "small": 16, "tiny": 8}   # ImageNet-C regime sizes
+            if SEL_BATCH:                                              # WIN_HUNT_v5: pin batch regime(s)
+                _bregimes = [(k, _IMAGENET_BR[k]) for k in SEL_BATCH]
+            elif args.all_batch:
+                _bregimes = [("large_iid", 64), ("small", 16), ("tiny", 8)]
+            else:
+                _bregimes = None
             clean_acc, rows = run_imagenet_benchmark(args.imagenetc_root, None, dev, args.methods, corrs, args.quick, max_images=args.max_images, arch=args.arch, severities=args.severities, batch_regimes=_bregimes, out_dir=args.out_results, cooldown=args.cooldown, compositions=args.imagenetc_composition, max_cells=args.max_cells)
 
         per_method = {}
@@ -1232,6 +1447,9 @@ def main():
         "quick": args.quick, "max_cells": args.max_cells,
         "sar_arm": {"sar_lr": SAR_LR, "freeze_layer4": SAR_FREEZE_LAYER4,
                     "default_matched_lr_behavior": (SAR_LR is None and not SAR_FREEZE_LAYER4)},
+        "win_hunt_v5_override": {"adapt_lr": ADAPT_LR, "batch_regimes": SEL_BATCH,
+                                 "aggressiveness": SEL_AGGR,
+                                 "default_grid_behavior": (ADAPT_LR is None and not SEL_BATCH and not SEL_AGGR)},
         "grid": {"severities": SEVERITIES, "quick_severities": [1, 5],
                  "batch_regimes": BATCH_REGIMES, "compositions": COMPOSITIONS,
                  "aggressiveness": AGGRESSIVENESS, "n_repeats": N_REPEATS,
