@@ -44,14 +44,24 @@ python3 docs/research/kbound/gapclose_wave5/win_hunt_D_anytime_stream.py   # any
 ```
 
 ## 4. Strengthening harnesses (for camera-ready)
-- **Official baselines.** Run the authors' released POEM / AETTA code on the locked stream, then:
+- **Official baselines.** Run the authors' released code on the same conditions —
+  POEM <https://github.com/yarinbar/poem> (Bar et al., NeurIPS 2024) and
+  AETTA <https://github.com/taeckyung/AETTA> (Lee et al., CVPR 2024; estimator `learner/dnn.py::aetta`) —
+  convert their per-condition output to the decisions format, then score:
   ```
+  python3 docs/research/kbound/scripts/baseline_decisions_adapter.py --method aetta --input aetta_out.csv --out aetta_decisions.json
+  python3 docs/research/kbound/scripts/baseline_decisions_adapter.py --method poem  --input poem_out.json  --out poem_decisions.json
   python3 docs/research/kbound/scripts/official_baselines_headtohead.py \
       --decisions poem=poem_decisions.json aetta=aetta_decisions.json
   ```
   (Without `--decisions` it uses clearly-labelled protocol-matched ports.) Produces the head-to-head
   table with a paired-bootstrap CI on the KGA gap and Holm correction.
-- **Multi-seed no-harm.** After re-running a WILDS protocol at seeds 0–4:
+- **Multi-seed no-harm.** One command runs seeds 0–4 and aggregates (Camelyon17 fully wired; other
+  tracks are templated in the script):
+  ```
+  bash docs/research/kbound/scripts/run_multiseed.sh camelyon
+  ```
+  or aggregate existing per-seed runs manually:
   ```
   python3 docs/research/kbound/scripts/multiseed_aggregate.py --track iWildCam \
       --glob "experiments/kbound/results/iwildcam_*seed*/*.json"
