@@ -1,0 +1,49 @@
+schema: controlled_multimodal_corruption_protocol_v1
+decision: D33_controlled_multimodal_kga
+date_locked: 2026-06-15
+status_at_lock: SEALED_BEFORE_ANY_RESULT
+
+purpose: >
+  Decisive in-session test of whether the KGA certificate significantly beats both trivial policies
+  WHEN the paper's named condition genuinely holds and is label-free detectable. This is a CONTROLLED
+  construction (not a natural benchmark): one modality is degraded across severities so fusion
+  provably flips helpful<->harmful, and the degradation is label-free observable. A significant
+  beats-both here isolates that the METHOD works when the condition holds (leaving "do natural
+  benchmarks exhibit the condition?" as the separate open question). A tie here is a deeper negative.
+
+honest_scope: >
+  A win does NOT claim a natural benchmark has the condition; it shows the mechanism works when it does.
+  Reported regardless of sign.
+
+data:
+  base: MNIST (torchvision), train 12000 / test pool 10000, seed 20260615
+  modalities: "A = left half (14x28), B = right half (14x28) -- two 'sensor views'"
+  models: "LogisticRegression per view, fit on CLEAN train (max_iter=200). Fusion = mean of A,B class-probabilities (late fusion)."
+  corruption: "additive Gaussian noise on modality-B pixels at TEST only; A stays clean. sigma grid = [0,0.25,0.5,...,3.0] (13 levels)."
+  conditions: "13 severities x 10 random test batches (n=500 each) = 130 conditions."
+
+candidates:
+  frozen_default: "A-only (the robust single modality that does not use the failing sensor)."
+  adapt: "late-fusion of A and (corrupted) B."
+
+label_free_evidence_z: "[mean max-prob of B, mean predictive entropy of B, A-vs-fused disagreement rate]  (NO labels)."
+
+certificate:
+  method: "leave-one-condition-out. Fit benefit predictor (GradientBoostingRegressor, fixed config) on OTHER conditions' (z -> true benefit acc_fuse-acc_A); predict B_hat for held-out condition from its z; conformal radius eps = (1-alpha) quantile of |resid| over the other conditions."
+  alpha: 0.10
+  decision_rule: "ADAPT(fusion) if B_hat-eps>0; FREEZE(A) if B_hat+eps<0; else ABSTAIN->A."
+
+metrics: "per-condition accuracy of {always-adapt=fusion, always-freeze=A, KGA-routed, oracle}. false-adapt = ADAPT when true benefit<0."
+
+success_criteria_stated_in_advance:
+  primary: "paired bootstrap (10k) over conditions: P(KGA>always-fuse)>=0.95 AND P(KGA>always-A)>=0.95 AND false-adapt<=alpha => STRONG (significant beats-both)."
+  secondary: "P(KGA>always-fuse)>=0.95 and ties always-A => STANDS."
+  else: "HONEST_NEGATIVE."
+
+integrity:
+  pre_registered: true
+  forbidden:
+    - changing sigma grid / models / evidence features / decision rule / alpha after observing results
+    - reporting only favorable severities or batches
+    - presenting a controlled win as a natural-benchmark result
+  reported_regardless_of_sign: true

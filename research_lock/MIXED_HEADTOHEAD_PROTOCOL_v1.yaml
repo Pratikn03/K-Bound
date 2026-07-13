@@ -1,0 +1,33 @@
+# MIXED_HEADTOHEAD_PROTOCOL_v1 — KGA vs POEM vs AETTA on mixed harmful+helpful stream
+# Pre-registered: 2026-06-19 (MIXED_BENCHMARK_PROTOCOL.md)
+# Executed: 2026-06-25
+
+protocol_id: MIXED_HEADTOHEAD_PROTOCOL_v1
+status: complete
+
+primary:
+  set_name: cifar10c_tent_primary
+  records: experiments/kbound/results/stress_grid_multiseed_v1/
+  adapter: tent
+  n_conditions_per_seed: 432
+  seeds: [0, 1, 2, 3, 4]
+  harmful_fraction_range: [0.16, 0.18]
+
+policies: [always_adapt, always_freeze, poem, aetta, kga, oracle]
+
+win_criterion:
+  metric: mean_regret_to_oracle
+  holm_alpha: 0.05
+  requires: [beats_poem, beats_aetta, kga_fa_u_le_alpha]
+
+outputs:
+  dir: experiments/kbound/results/mixed_headtohead_v1/
+  headline: HEADTOHEAD_RESULTS_cifar10c_tent_primary.json
+
+result:
+  verdict: WIN
+  kga_regret: 0.00157
+  poem_regret: 0.00880
+  aetta_regret: 0.00733
+  kga_fa_u: 0.0
+  claim_id: KB-CLAIM-026

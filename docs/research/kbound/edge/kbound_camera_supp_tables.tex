@@ -1,0 +1,134 @@
+% Supplementary templates for the pre-registered real-camera deployment.
+% Populate measured cells only from locked result artifacts.
+\providecommand{\CamPending}{\textemdash}
+
+\begin{table*}[!t]
+\centering
+\caption{\textbf{R3 -- Held-out physical-shift breakdown (results pending).}
+This table is promoted to the main paper only if the locked result supports a clear,
+non-cherry-picked regime analysis.}
+\label{tab:camera-r3}
+\footnotesize
+\setlength{\tabcolsep}{3pt}
+\renewcommand{\arraystretch}{1.08}
+\begin{tabular}{@{}p{0.18\textwidth}cccp{0.20\textwidth}p{0.22\textwidth}@{}}
+\toprule
+Held-out shift family & Windows & Always-adapt regret & KGA regret & KGA decision pattern & Interpretation \\
+\midrule
+Mild lighting shift & \CameraRThreeWindowsMildLight & \CameraRThreeAlwaysAdaptRegretMildLight & \CameraRThreeKgaRegretMildLight & \CameraRThreeDecisionPatternMildLight & \CameraRThreeInterpretationMildLight \\
+Strong side shadow & \CameraRThreeWindowsSideShadow & \CameraRThreeAlwaysAdaptRegretSideShadow & \CameraRThreeKgaRegretSideShadow & \CameraRThreeDecisionPatternSideShadow & \CameraRThreeInterpretationSideShadow \\
+Blur / vibration & \CameraRThreeWindowsMotionBlur & \CameraRThreeAlwaysAdaptRegretMotionBlur & \CameraRThreeKgaRegretMotionBlur & \CameraRThreeDecisionPatternMotionBlur & \CameraRThreeInterpretationMotionBlur \\
+Background / viewpoint shift & \CameraRThreeWindowsNewBackground & \CameraRThreeAlwaysAdaptRegretNewBackground & \CameraRThreeKgaRegretNewBackground & \CameraRThreeDecisionPatternNewBackground & \CameraRThreeInterpretationNewBackground \\
+Batch-composition shift & \CameraRThreeWindowsBatchComposition & \CameraRThreeAlwaysAdaptRegretBatchComposition & \CameraRThreeKgaRegretBatchComposition & \CameraRThreeDecisionPatternBatchComposition & \CameraRThreeInterpretationBatchComposition \\
+\bottomrule
+\end{tabular}
+\end{table*}
+
+\begin{table*}[!t]
+\centering
+\caption{\textbf{S1 -- Dataset and recording inventory (results pending).}
+No frame-level random split is permitted across recording sessions.}
+\label{tab:camera-s1}
+\footnotesize
+\setlength{\tabcolsep}{4pt}
+\renewcommand{\arraystretch}{1.08}
+\resizebox{\textwidth}{!}{%
+\begin{tabular}{@{}lcccccc@{}}
+\toprule
+Split & Recording day/session & Object IDs & Conditions & Windows & Frames & Label distribution \\
+\midrule
+Source train & \CameraSOneSessionSourceTrain & \CameraSOneObjectsSourceTrain & Stable bright conditions & \CameraSOneWindowsSourceTrain & \CameraSOneFramesSourceTrain & \CameraSOneLabelsSourceTrain \\
+Source validation & \CameraSOneSessionSourceVal & \CameraSOneObjectsSourceVal & Stable source conditions & \CameraSOneWindowsSourceVal & \CameraSOneFramesSourceVal & \CameraSOneLabelsSourceVal \\
+Calibration-fit & \CameraSOneSessionCalibrationFit & \CameraSOneObjectsCalibrationFit & Moderate physical shifts & \CameraSOneWindowsCalibrationFit & \CameraSOneFramesCalibrationFit & \CameraSOneLabelsCalibrationFit \\
+Calibration-conformal & \CameraSOneSessionCalibrationConformal & \CameraSOneObjectsCalibrationConformal & Disjoint moderate shifts & \CameraSOneWindowsCalibrationConformal & \CameraSOneFramesCalibrationConformal & \CameraSOneLabelsCalibrationConformal \\
+Held-out test & \CameraSOneSessionHeldoutTest & \CameraSOneObjectsHeldoutTest & Hard physical shifts & \CameraSOneWindowsHeldoutTest & \CameraSOneFramesHeldoutTest & \CameraSOneLabelsHeldoutTest \\
+External-device replication & \CameraSOneSessionReplication & \CameraSOneObjectsReplication & Second phone; hard shifts & \CameraSOneWindowsReplication & \CameraSOneFramesReplication & \CameraSOneLabelsReplication \\
+\bottomrule
+\end{tabular}%
+}
+\end{table*}
+
+\begin{table*}[!t]
+\centering
+\caption{\textbf{S2 -- Calibration and anti-leakage audit (results pending).}}
+\label{tab:camera-s2}
+\footnotesize
+\renewcommand{\arraystretch}{1.08}
+\begin{tabular}{@{}p{0.68\textwidth}p{0.24\textwidth}@{}}
+\toprule
+Check & Audited result \\
+\midrule
+Frozen checkpoint unchanged after candidate adaptation? & \CameraSTwoCheckOne \\
+Held-out labels inaccessible to the live runtime? & \CameraSTwoCheckTwo \\
+Feature schema unchanged after protocol lock? & \CameraSTwoCheckThree \\
+$\varepsilon$ calibrated only from the conformal split? & \CameraSTwoCheckFour \\
+Held-out sessions excluded from adapter, feature, and threshold tuning? & \CameraSTwoCheckFive \\
+Identical held-out stream replayed for every policy? & \CameraSTwoCheckSix \\
+Config hash stored in every log row? & \CameraSTwoCheckSeven \\
+Model hash stored in every log row? & \CameraSTwoCheckEight \\
+\bottomrule
+\end{tabular}
+\end{table*}
+
+\begin{table*}[!t]
+\centering
+\caption{\textbf{S3 -- Per-condition held-out audit trail (results pending).}
+The released CSV/JSON contains one row for every locked held-out condition.}
+\label{tab:camera-s3}
+\scriptsize
+\setlength{\tabcolsep}{3.5pt}
+\renewcommand{\arraystretch}{1.08}
+\resizebox{\textwidth}{!}{%
+\begin{tabular}{@{}llccccccc@{}}
+\toprule
+Condition ID & Shift & True $\Delta$ & Oracle action & Freeze result & Adapt result & KGA action & Correct decision? & Regret \\
+\midrule
+H01 & Dim light & \CameraSThreeHOneDelta & \CameraSThreeHOneOracle & \CameraSThreeHOneFreeze & \CameraSThreeHOneAdapt & \CameraSThreeHOneKga & \CameraSThreeHOneCorrect & \CameraSThreeHOneRegret \\
+H02 & Strong shadow & \CameraSThreeHTwoDelta & \CameraSThreeHTwoOracle & \CameraSThreeHTwoFreeze & \CameraSThreeHTwoAdapt & \CameraSThreeHTwoKga & \CameraSThreeHTwoCorrect & \CameraSThreeHTwoRegret \\
+H03 & Lens blur & \CameraSThreeHThreeDelta & \CameraSThreeHThreeOracle & \CameraSThreeHThreeFreeze & \CameraSThreeHThreeAdapt & \CameraSThreeHThreeKga & \CameraSThreeHThreeCorrect & \CameraSThreeHThreeRegret \\
+H04 & Background shift & \CameraSThreeHFourDelta & \CameraSThreeHFourOracle & \CameraSThreeHFourFreeze & \CameraSThreeHFourAdapt & \CameraSThreeHFourKga & \CameraSThreeHFourCorrect & \CameraSThreeHFourRegret \\
+\bottomrule
+\end{tabular}%
+}
+\end{table*}
+
+\begin{table*}[!t]
+\centering
+\caption{\textbf{S4 -- Resource and live-runtime profile (results pending).}}
+\label{tab:camera-s4}
+\footnotesize
+\renewcommand{\arraystretch}{1.08}
+\begin{tabular}{@{}p{0.30\textwidth}cccp{0.31\textwidth}@{}}
+\toprule
+Component & Mean (ms) & p95 (ms) & Memory (MB) & Notes \\
+\midrule
+Frozen inference & \CameraSFourMeanFrozenInference & \CameraSFourPNinetyFiveFrozenInference & \CameraSFourMemoryFrozenInference & Official prediction \\
+Candidate Tent update & \CameraSFourMeanTentUpdate & \CameraSFourPNinetyFiveTentUpdate & \CameraSFourMemoryTentUpdate & One step per window \\
+Candidate inference & \CameraSFourMeanCandidateInference & \CameraSFourPNinetyFiveCandidateInference & \CameraSFourMemoryCandidateInference & Shadow candidate \\
+Evidence extraction & \CameraSFourMeanEvidenceExtraction & \CameraSFourPNinetyFiveEvidenceExtraction & \CameraSFourMemoryEvidenceExtraction & 14 label-free features \\
+Benefit estimator and KGA gate & \CameraSFourMeanGate & \CameraSFourPNinetyFiveGate & \CameraSFourMemoryGate & Certificate decision \\
+Full decision window & \CameraSFourMeanFullWindow & \CameraSFourPNinetyFiveFullWindow & \CameraSFourMemoryFullWindow & End-to-end \\
+Video capture / preprocessing & \CameraSFourMeanVideoCapture & \CameraSFourPNinetyFiveVideoCapture & \CameraSFourMemoryVideoCapture & Phone-to-Mac stream \\
+\bottomrule
+\end{tabular}
+\end{table*}
+
+\begin{table*}[!t]
+\centering
+\caption{\textbf{S5 -- Locked physical evidence and conformal gate ablations (results pending).}}
+\label{tab:camera-s5}
+\footnotesize
+\renewcommand{\arraystretch}{1.08}
+\begin{tabular}{lccccc}
+\toprule
+Ablation variant & Regret $\downarrow$ & Uncond. false adapt ($\mathrm{FA}_u$) $\downarrow$ & Adapt rate & Abstain rate & Conformal threshold $\varepsilon$ \\
+\midrule
+Full KGA & \CameraSFiveRegretFullKga & \CameraSFiveFAuFullKga & \CameraSFiveAdaptFullKga & \CameraSFiveAbstainFullKga & \CameraSFiveEpsFullKga \\
+No radius ($\varepsilon=0$) & \CameraSFiveRegretNoRadius & \CameraSFiveFAuNoRadius & \CameraSFiveAdaptNoRadius & \CameraSFiveAbstainNoRadius & \CameraSFiveEpsNoRadius \\
+No blur/brightness features & \CameraSFiveRegretNoBlurBrightness & \CameraSFiveFAuNoBlurBrightness & \CameraSFiveAdaptNoBlurBrightness & \CameraSFiveAbstainNoBlurBrightness & \CameraSFiveEpsNoBlurBrightness \\
+No disagreement features & \CameraSFiveRegretNoDisagreement & \CameraSFiveFAuNoDisagreement & \CameraSFiveAdaptNoDisagreement & \CameraSFiveAbstainNoDisagreement & \CameraSFiveEpsNoDisagreement \\
+Confidence features only & \CameraSFiveRegretConfidenceOnly & \CameraSFiveFAuConfidenceOnly & \CameraSFiveAdaptConfidenceOnly & \CameraSFiveAbstainConfidenceOnly & \CameraSFiveEpsConfidenceOnly \\
+Entropy features only & \CameraSFiveRegretEntropyOnly & \CameraSFiveFAuEntropyOnly & \CameraSFiveAdaptEntropyOnly & \CameraSFiveAbstainEntropyOnly & \CameraSFiveEpsEntropyOnly \\
+\bottomrule
+\end{tabular}
+\end{table*}

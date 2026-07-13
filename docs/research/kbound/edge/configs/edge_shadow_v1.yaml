@@ -1,0 +1,22 @@
+# edge_shadow_v1 -- Tier-2 live shadow-mode protocol.
+# Consumed by scripts/07_shadow_live.py on top of edge_label_inspection_v1.yaml.
+shadow: edge_shadow_v1
+
+window_size: 16
+log_every: 1
+latency_budget_ms: 250     # advisory: warn if a window decision exceeds this
+
+source:
+  kind: fake               # fake | opencv
+  # for kind=fake (synthetic, NO camera) -- a mix that exercises all 3 verdicts:
+  regime_plan:
+    - [bright_up, multi, 3]
+    - [clean, multi, 3]
+    - [clean, single, 3]
+    - [noisy, multi, 3]
+  n_frames_per_condition: 16
+  seed: 21
+  # for kind=opencv (real camera / phone-as-camera):
+  camera_index: 0          # 0 = default webcam; iPhone Continuity Camera usually 0/1
+  video_path: null         # set to a file path to replay a recording instead
+  max_frames: null

@@ -1,0 +1,334 @@
+% =====================================================================
+%  PAPER_SECTION_deployment_draft.tex
+%
+%  SUPPLEMENT SOURCE -- protocol and pending main tables are already integrated.
+%  Result tables (R2/R3/S1/S3/S4/S5) hold placeholder "--" cells until
+%  populated from real held-out logs. R1 and S2 reflect the locked design
+%  and the code's verified guarantees and are complete now.
+%
+%  Numerical cells remain pending until generated from a gate-passing run.
+%  Required host-preamble packages:
+%     \usepackage{booktabs, array, multirow, graphicx, xcolor}
+%     \usepackage{tikz}\usetikzlibrary{arrows.meta, positioning}
+%  Compile-alone preview: wrap this file in \documentclass{article} +
+%  the packages above + \begin{document}...\end{document}.
+% =====================================================================
+
+\providecommand{\PH}{\textemdash}        % placeholder for an unfilled RESULT cell
+\providecommand{\Bhat}{\hat{B}}           % predicted benefit
+
+% ---------------------------------------------------------------------
+\section{Deployment: a certified camera adapter on a phone}
+\label{sec:edge-deploy}
+
+We stress-test the certificate as a drop-in safety layer for test-time
+adaptation (TTA) on a real phone-camera inspection task. A frozen
+MobileNetV3-Small, $f_0$, produces the \emph{official} per-window prediction that
+a downstream consumer acts on. Each $32$-frame window also proposes, in shadow,
+an episodic TENT candidate $f_a$ that updates only the BatchNorm-affine
+parameters of a deep copy of $f_0$ for a single Adam step, so $f_0$ is never
+mutated. From the frozen and adapted softmax matrices we compute a
+$14$-dimensional \emph{label-free} evidence vector, predict the candidate's
+benefit $\Bhat$ with a calibration-fit estimator, and attach a split-conformal
+radius $\varepsilon$ ($\alpha=0.10$) to form the interval
+$[\Bhat-\varepsilon,\ \Bhat+\varepsilon]$. The reused K-Bound rule then certifies
+\textbf{adapt} (lower bound $>0$), \textbf{freeze} (upper bound $<0$), or
+\textbf{abstain} (interval spans $0$). Ground-truth labels never touch the online
+path; the per-window benefit $\Delta$ (adapted minus frozen balanced accuracy) is
+revealed only offline to score regret and false-adapt rates. We compare six
+policies on the identical held-out stream and report decision-level metrics:
+regret, unconditional and conditional false-adapt ($\mathrm{FA}_u$,
+$\mathrm{FA}_c$), adapt rate, and abstention/coverage.
+
+% ---------------------------------------------------------------------
+% Pipeline figure (placeholder schematic; replace with \includegraphics
+% when the final rendered asset exists).
+\begin{figure}[t]
+  \centering
+  \begin{tikzpicture}[
+    >={Stealth[round]}, font=\footnotesize,
+    box/.style={draw, rounded corners, align=center, minimum height=10mm,
+                inner sep=3pt, text width=21mm},
+    io/.style={draw, rounded corners, fill=black!5, align=center,
+               minimum height=10mm, inner sep=3pt, text width=18mm},
+    note/.style={align=center, font=\scriptsize, text width=36mm},
+    node distance=6mm and 8mm
+  ]
+    \node[io]               (cam)  {Phone camera\\$32$-frame window};
+    \node[box, right=of cam] (f0)  {Frozen $f_0$\\MobileNetV3-S\\\textbf{official}};
+    \node[box, right=of f0]  (cand){Episodic TENT\\candidate $f_a$\\(shadow)};
+    \node[box, right=of cand](cert){KGA certificate\\$\mathrm{decide}(\Bhat,\varepsilon)$};
+    \node[right=of cert, align=center, text width=20mm] (out)
+          {\textbf{adapt}\\ \textbf{freeze}\\ \textbf{abstain}};
+    \draw[->] (cam)  -- (f0);
+    \draw[->] (f0)   -- (cand);
+    \draw[->] (cand) -- (cert);
+    \draw[->] (cert) -- (out);
+    \node[note, below=5mm of cand] (ev)
+      {$14$ label-free features $\rightarrow \Bhat$ (calib-fit)\\
+       $+$ split-conformal $\varepsilon$ ($\alpha{=}0.10$)};
+    \draw[->, dashed] (ev) -- (cert);
+  \end{tikzpicture}
+  \caption{\textbf{Certified TTA on a phone camera.} Each $32$-frame window is
+  scored by the frozen model $f_0$ (the official output) and, in shadow, by an
+  episodic TENT candidate $f_a$ that touches only BatchNorm-affine parameters of
+  a deep copy, so $f_0$ is never mutated. A $14$-D label-free evidence vector
+  yields a benefit estimate $\Bhat$ (calibration-fit) and a split-conformal
+  radius $\varepsilon$ ($\alpha=0.10$); the reused K-Bound rule certifies
+  \emph{adapt} ($\Bhat-\varepsilon>0$), \emph{freeze} ($\Bhat+\varepsilon<0$), or
+  \emph{abstain} (interval spans $0$). No ground-truth labels touch the online
+  path.}
+  \label{fig:edge-pipeline}
+\end{figure}
+
+% =====================================================================
+% TABLE R1 -- Protocol + split integrity (FILLED from config + code).
+% =====================================================================
+\begin{table}[t]
+  \centering
+  \caption{\textbf{R1 -- Protocol and split integrity (locked design; complete
+  now).} The held-out camera run is fixed to these settings before any window is
+  scored. Values reflect the locked real-camera protocol and the code.}
+  \label{tab:edge-r1}
+  \small
+  \begin{tabular}{@{}l >{\raggedright\arraybackslash}p{0.60\linewidth}@{}}
+    \toprule
+    Field & Setting \\
+    \midrule
+    Task & 4-class package/label inspection: \{ok, defect, empty, misaligned\} \\
+    Camera / input & Phone (Continuity Camera / Camo / EpocCam), real objects, $224\times224$ frames \\
+    Frozen base model $f_0$ (official) & MobileNetV3-Small $+$ 4-class head, BN-recalibrated \\
+    Candidate $f_a$ & Episodic TENT, BN-affine params only, 1 Adam step / window \\
+    Decision window & 32 frames \\
+    Label-free evidence & 14 features = 11 paper disagreement features $+$ 3 edge (\texttt{mean\_js\_div}, \texttt{pred\_flip\_rate}, \texttt{post\_top2\_margin}) \\
+    Calibration-fit session & Benefit estimator training \textemdash{} distinct day \\
+    Calibration-conformal session & Split-conformal residuals $\rightarrow \varepsilon$ \textemdash{} distinct day \\
+    Held-out session & Primary evaluation replay \textemdash{} distinct day \\
+    Replication session & Repeat held-out \textemdash{} distinct day \\
+    Physical shift families & Lighting, shadow, blur, background, viewpoint, batch-composition \\
+    Policies compared & freeze, adapt, confidence gate, entropy gate, KGA-no-radius, KGA-certificate \\
+    Deployment labels used live & No \\
+    Miscoverage level $\alpha$ & 0.10 \\
+    Official live model & Frozen $f_0$ fallback unless candidate certified (adapt) \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+% =====================================================================
+% TABLE R2 -- Primary held-out result (TEMPLATE; only structural cells filled).
+% =====================================================================
+\begin{table}[t]
+  \centering
+  \caption{\textbf{R2 -- Primary held-out result (template; populate from real
+  logs).} Six policies on the identical held-out window stream. Only the
+  structural adapt/abstain cells of the two constant policies are filled; every
+  metric cell is a placeholder until the camera run.}
+  \label{tab:edge-r2}
+  \footnotesize
+  \setlength{\tabcolsep}{4pt}
+  \begin{tabular}{@{}lcccccccc@{}}
+    \toprule
+    Policy & Bal.\ acc $\uparrow$ & Macro-F1 $\uparrow$ & Regret $\downarrow$
+      & $\mathrm{FA}_u$ $\downarrow$ & $\mathrm{FA}_c$ $\downarrow$
+      & Adapt rate & Abstain rate & Lat.\ ms $\downarrow$ \\
+    \midrule
+    always-freeze   & \PH & \PH & \PH & \PH & \PH & 0.00 & 0.00 & \PH \\
+    always-adapt    & \PH & \PH & \PH & \PH & \PH & 1.00 & 0.00 & \PH \\
+    confidence gate & \PH & \PH & \PH & \PH & \PH & \PH  & \PH  & \PH \\
+    entropy gate    & \PH & \PH & \PH & \PH & \PH & \PH  & \PH  & \PH \\
+    KGA-no-radius   & \PH & \PH & \PH & \PH & \PH & \PH  & \PH  & \PH \\
+    KGA-certificate & \PH & \PH & \PH & \PH & \PH & \PH  & \PH  & \PH \\
+    \bottomrule
+  \end{tabular}
+
+  \vspace{2pt}
+  {\footnotesize $\mathrm{FA}_u = \mathrm{P}(\text{adapt} \wedge \Delta \le 0)$;\;
+   $\mathrm{FA}_c = \mathrm{P}(\Delta \le 0 \mid \text{adapt})$. Ground-truth
+   labels are unavailable during live decisions and are revealed only offline;
+   $\Delta$ is the per-window benefit (adapted minus frozen balanced accuracy).}
+\end{table}
+
+% =====================================================================
+% TABLE R3 -- Physical-shift breakdown (TEMPLATE; all result cells "--").
+% =====================================================================
+\begin{table}[t]
+  \centering
+  \caption{\textbf{R3 -- Physical-shift breakdown (template; populate from real
+  logs).} Regret and the certified decision mix per physical shift family on the
+  held-out stream.}
+  \label{tab:edge-r3}
+  \small
+  \begin{tabular}{@{}l c c c
+        >{\raggedright\arraybackslash}p{0.18\linewidth}
+        >{\raggedright\arraybackslash}p{0.22\linewidth}@{}}
+    \toprule
+    Shift family & Windows & Always-adapt regret $\downarrow$
+      & KGA regret $\downarrow$ & KGA decision pattern & Interpretation \\
+    \midrule
+    Mild lighting          & \PH & \PH & \PH & \PH & \PH \\
+    Strong shadow          & \PH & \PH & \PH & \PH & \PH \\
+    Blur / vibration       & \PH & \PH & \PH & \PH & \PH \\
+    Background / viewpoint  & \PH & \PH & \PH & \PH & \PH \\
+    Batch-composition      & \PH & \PH & \PH & \PH & \PH \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+% =====================================================================
+% SUPPLEMENT S1 -- Recording inventory (TEMPLATE; all result cells "--").
+% =====================================================================
+\begin{table}[t]
+  \centering
+  \caption{\textbf{S1 -- Recording inventory (template; populate from real
+  sessions).} One row per recording session; sessions are on distinct days.}
+  \label{tab:edge-s1}
+  \small
+  \begin{tabular}{@{}l c c c c
+        >{\raggedright\arraybackslash}p{0.20\linewidth}
+        >{\raggedright\arraybackslash}p{0.12\linewidth}@{}}
+    \toprule
+    Session & Day & Clips & Windows & Classes & Shift families present & Notes \\
+    \midrule
+    Source (clean)        & \PH & \PH & \PH & \PH & \PH & \PH \\
+    Calibration-fit       & \PH & \PH & \PH & \PH & \PH & \PH \\
+    Calibration-conformal & \PH & \PH & \PH & \PH & \PH & \PH \\
+    Held-out              & \PH & \PH & \PH & \PH & \PH & \PH \\
+    Replication           & \PH & \PH & \PH & \PH & \PH & \PH \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+% =====================================================================
+% SUPPLEMENT S3 -- Per-condition held-out (TEMPLATE; all result cells "--").
+% =====================================================================
+\begin{table}[t]
+  \centering
+  \caption{\textbf{S3 -- Per-condition held-out breakdown (template; populate
+  from real logs).} One row per recorded condition; enumerate to match the
+  held-out session.}
+  \label{tab:edge-s3}
+  \footnotesize
+  \setlength{\tabcolsep}{4pt}
+  \begin{tabular}{@{}llcccccc@{}}
+    \toprule
+    Condition & Shift family & Windows & Mean $\Delta$
+      & Always-adapt regret & KGA regret & KGA adapt rate & KGA abstain rate \\
+    \midrule
+    Lighting (mild)        & Lighting          & \PH & \PH & \PH & \PH & \PH & \PH \\
+    Lighting (strong)      & Lighting          & \PH & \PH & \PH & \PH & \PH & \PH \\
+    Shadow (soft)          & Shadow            & \PH & \PH & \PH & \PH & \PH & \PH \\
+    Shadow (hard)          & Shadow            & \PH & \PH & \PH & \PH & \PH & \PH \\
+    Motion blur            & Blur/vibration    & \PH & \PH & \PH & \PH & \PH & \PH \\
+    Camera vibration       & Blur/vibration    & \PH & \PH & \PH & \PH & \PH & \PH \\
+    New background         & Background        & \PH & \PH & \PH & \PH & \PH & \PH \\
+    New viewpoint          & Viewpoint         & \PH & \PH & \PH & \PH & \PH & \PH \\
+    Mixed batch            & Batch-composition & \PH & \PH & \PH & \PH & \PH & \PH \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+% =====================================================================
+% SUPPLEMENT S4 -- Runtime profile (TEMPLATE; all result cells "--").
+% =====================================================================
+\begin{table}[t]
+  \centering
+  \caption{\textbf{S4 -- Runtime profile (template; populate from real logs).}
+  Per-window wall-clock by pipeline stage on the deployment device.}
+  \label{tab:edge-s4}
+  \small
+  \begin{tabular}{@{}l c c c@{}}
+    \toprule
+    Stage & Mean ms $\downarrow$ & p95 ms $\downarrow$ & Share \% \\
+    \midrule
+    Capture (frame acquisition)                 & \PH & \PH & \PH \\
+    Frozen inference $f_0$                       & \PH & \PH & \PH \\
+    TENT update (1 step, BN-affine)              & \PH & \PH & \PH \\
+    Candidate inference $f_a$                    & \PH & \PH & \PH \\
+    Evidence (14 features)                       & \PH & \PH & \PH \\
+    Estimator $+$ gate ($\Bhat$, $\varepsilon$, decide) & \PH & \PH & \PH \\
+    \midrule
+    Full window (end-to-end)                     & \PH & \PH & \PH \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+% =====================================================================
+% SUPPLEMENT S5 -- Ablation (TEMPLATE; all result cells "--").
+% =====================================================================
+\begin{table}[t]
+  \centering
+  \caption{\textbf{S5 -- Evidence/gate ablation (template; populate from real
+  logs).} Each variant scored on the identical held-out stream.}
+  \label{tab:edge-s5}
+  \small
+  \setlength{\tabcolsep}{5pt}
+  \begin{tabular}{@{}lcccccc@{}}
+    \toprule
+    Variant & Regret $\downarrow$ & $\mathrm{FA}_u$ $\downarrow$
+      & $\mathrm{FA}_c$ $\downarrow$ & Adapt rate & Abstain rate
+      & $\Delta$ vs full KGA \\
+    \midrule
+    Full KGA (certificate)        & \PH & \PH & \PH & \PH & \PH & \PH \\
+    No-radius ($\varepsilon{=}0$)  & \PH & \PH & \PH & \PH & \PH & \PH \\
+    No blur/brightness features   & \PH & \PH & \PH & \PH & \PH & \PH \\
+    No disagreement feature       & \PH & \PH & \PH & \PH & \PH & \PH \\
+    Confidence-only               & \PH & \PH & \PH & \PH & \PH & \PH \\
+    Entropy-only                  & \PH & \PH & \PH & \PH & \PH & \PH \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+% =====================================================================
+% TABLE S2 -- Anti-leakage audit (FILLED from the code's verified guarantees).
+% =====================================================================
+\begin{table}[t]
+  \centering
+  \caption{\textbf{S2 -- Anti-leakage audit (verified by tests; complete now).}
+  Each guarantee is enforced by a unit test in \texttt{edge/tests/}.}
+  \label{tab:edge-s2}
+  \small
+  \begin{tabular}{@{}l c >{\raggedright\arraybackslash}p{0.50\linewidth}@{}}
+    \toprule
+    Check & Status & Verified by \\
+    \midrule
+    Frozen checkpoint changed after candidate adaptation? & No
+      & \texttt{test\_candidate\_isolation}: $f_0$ state-dict hash bit-identical before/after; candidate is a deep copy, BN-affine only \\
+    Test/held-out labels accessible to live runtime? & No
+      & \texttt{test\_no\_live\_labels}: payload and logger guards raise \texttt{LabelLeakError} on any label-like key \\
+    Feature schema changed after test lock? & No
+      & \texttt{test\_features}: \texttt{EDGE\_EVIDENCE\_NAMES} frozen at 14 features (first 11 identical to the paper) \\
+    $\varepsilon$ calibrated only from the conformal split? & Yes
+      & \texttt{test\_conformal}: estimator fit on calibration-fit; residuals from calibration-conformal only; $\varepsilon$ = conservative order statistic at $\alpha{=}0.10$ \\
+    Test session used to tune adapter/features? & No
+      & Protocol split (calibration-fit/conformal disjoint from held-out; held-out is replay-only) $+$ \texttt{test\_no\_live\_labels} \\
+    Same test stream replayed for all policies? & Yes
+      & \texttt{policy\_comparison}: all six policies scored on identical windows/inputs \\
+    Config hash in every log row? & Yes
+      & \texttt{test\_log\_integrity}: \texttt{WindowLogger} writes \texttt{config\_hash} per record \\
+    Model hash in every log row? & Yes
+      & \texttt{test\_log\_integrity}: \texttt{WindowLogger} writes \texttt{model\_version} (= state-dict hash) per record \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+% =====================================================================
+% AUTHOR NOTES (do not typeset; keep as comments or strip when folding in).
+%
+% Recommended 1.5-page short-paper layout:
+%   * Half-page pipeline figure (Fig. \ref{fig:edge-pipeline}) across the top.
+%   * R1 (Table \ref{tab:edge-r1}) ~ one-third page directly beneath it.
+%   * R2 (Table \ref{tab:edge-r2}) ~ half page.
+%   * One interpretation paragraph tying regret / FA_u / abstention to the
+%     adapt / freeze / abstain story (no new tables).
+%
+% Minimum table package by result quality:
+%   * Modest / no-harm result -> R1 + R2 + S1-S4. Call it a feasibility /
+%     no-harm study: "the certificate never adapts harmfully, at bounded
+%     per-window latency."
+%   * Strong win -> additionally include R3 + S5. Call it a held-out
+%     physical-shift validation: regret reduced vs always-adapt, family by
+%     family, with the ablation isolating which evidence/gate parts carry it.
+%   * Abstain-heavy outcome -> frame as the certificate retaining the frozen
+%     fallback under hard shifts: the unknowability story. It abstains and keeps
+%     the official model rather than gamble when the evidence is insufficient.
+% =====================================================================

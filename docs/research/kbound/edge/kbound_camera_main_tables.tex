@@ -1,0 +1,72 @@
+% Main-paper tables for the pre-registered real-camera deployment.
+% Populate measured cells only from the locked held-out evaluation artifacts.
+\providecommand{\CamPending}{\textemdash}
+\IfFileExists{../../../experiments/kbound/results/edge_real_phone_v1/camera_tables_values.tex}{\input{../../../experiments/kbound/results/edge_real_phone_v1/camera_tables_values.tex}}{}
+\input{edge/camera_placeholders}
+
+\begin{table*}[!t]
+\centering
+\caption{\textbf{R1 -- Pre-registered real-world deployment protocol.}
+The split and online-label constraints are fixed before physical held-out capture.
+Session identifiers are populated from the signed recording manifest.}
+\label{tab:camera-r1}
+\footnotesize
+\renewcommand{\arraystretch}{1.08}
+\begin{tabular}{@{}p{0.22\textwidth}p{0.72\textwidth}@{}}
+\toprule
+Item & Locked design \\
+\midrule
+Task & Four-class package/label inspection: correct, missing label, misaligned label, damaged label \\
+Camera & Two phone cameras and real physical objects; the second phone is reserved for external-device replication \\
+Base model & MobileNetV3-Small \\
+Candidate adaptation & Episodic Tent; one update step per decision window \\
+Decision window & 32 frames \\
+Evidence & 14 label-free frozen/candidate disagreement and shift features \\
+Calibration-fit sessions & \CameraROneFitSessions{} (distinct recorded session; IDs locked in manifest) \\
+Conformal calibration sessions & \CameraROneConformalSessions{} (different day/session from calibration-fit) \\
+Held-out physical test sessions & \CameraROneHeldoutSessions{} (different day/session; inaccessible during tuning) \\
+Physical shifts & Lighting, shadow, blur, background, viewpoint, distance, and batch composition \\
+Policies compared & Always-freeze, always-adapt, confidence gate, entropy gate, KGA without radius, KGA certificate \\
+Deployment labels used live? & No; labels are joined only during offline evaluation \\
+Miscoverage level & $\alpha=0.10$ \\
+Official live model & Frozen fallback unless the candidate is certified for adaptation \\
+\bottomrule
+\end{tabular}
+\end{table*}
+
+\begin{table*}[!t]
+\centering
+\caption{\textbf{R2 -- Primary held-out real-world result (RESULT PENDING).}
+All policies will be scored on the identical locked physical stream after real
+captures pass the source-model gate ($\ge 0.80$ balanced accuracy and macro-F1 on S02).
+Until then every metric cell reads \emph{RESULT PENDING --- NO MEASURED DATA AVAILABLE};
+development replays on mock clips are audit-only and must not be cited.}
+\label{tab:camera-r2}
+\footnotesize
+\setlength{\tabcolsep}{3.6pt}
+\renewcommand{\arraystretch}{1.08}
+\resizebox{\textwidth}{!}{%
+\begin{tabular}{@{}lcccccccc@{}}
+\toprule
+Policy & Balanced acc. $\uparrow$ & Macro-F1 $\uparrow$ & Regret $\downarrow$ &
+$\mathrm{FA}_u$ $\downarrow$ & $\mathrm{FA}_c$ $\downarrow$ & Adapt rate & Abstain rate &
+Mean latency (ms) $\downarrow$ \\
+\midrule
+Always-freeze   & \CameraRTwoBalAccAlwaysFreeze & \CameraRTwoMacroFAlwaysFreeze & \CameraRTwoRegretAlwaysFreeze & \CameraRTwoFAuAlwaysFreeze & \CameraRTwoFAcAlwaysFreeze & \CameraRTwoAdaptRateAlwaysFreeze & \CameraRTwoAbstainRateAlwaysFreeze & \CameraRTwoLatencyAlwaysFreeze \\
+Always-adapt    & \CameraRTwoBalAccAlwaysAdapt & \CameraRTwoMacroFAlwaysAdapt & \CameraRTwoRegretAlwaysAdapt & \CameraRTwoFAuAlwaysAdapt & \CameraRTwoFAcAlwaysAdapt & \CameraRTwoAdaptRateAlwaysAdapt & \CameraRTwoAbstainRateAlwaysAdapt & \CameraRTwoLatencyAlwaysAdapt \\
+Confidence gate & \CameraRTwoBalAccConfidenceGate & \CameraRTwoMacroFConfidenceGate & \CameraRTwoRegretConfidenceGate & \CameraRTwoFAuConfidenceGate & \CameraRTwoFAcConfidenceGate & \CameraRTwoAdaptRateConfidenceGate & \CameraRTwoAbstainRateConfidenceGate & \CameraRTwoLatencyConfidenceGate \\
+Entropy gate    & \CameraRTwoBalAccEntropyGate & \CameraRTwoMacroFEntropyGate & \CameraRTwoRegretEntropyGate & \CameraRTwoFAuEntropyGate & \CameraRTwoFAcEntropyGate & \CameraRTwoAdaptRateEntropyGate & \CameraRTwoAbstainRateEntropyGate & \CameraRTwoLatencyEntropyGate \\
+KGA, no radius  & \CameraRTwoBalAccKgaNoRadius & \CameraRTwoMacroFKgaNoRadius & \CameraRTwoRegretKgaNoRadius & \CameraRTwoFAuKgaNoRadius & \CameraRTwoFAcKgaNoRadius & \CameraRTwoAdaptRateKgaNoRadius & \CameraRTwoAbstainRateKgaNoRadius & \CameraRTwoLatencyKgaNoRadius \\
+KGA certificate & \CameraRTwoBalAccKgaFull & \CameraRTwoMacroFKgaFull & \CameraRTwoRegretKgaFull & \CameraRTwoFAuKgaFull & \CameraRTwoFAcKgaFull & \CameraRTwoAdaptRateKgaFull & \CameraRTwoAbstainRateKgaFull & \CameraRTwoLatencyKgaFull \\
+\bottomrule
+\end{tabular}%
+}
+\vspace{2pt}
+
+\parbox{0.98\textwidth}{\footnotesize
+$\mathrm{FA}_u=\Pr(\text{adapt}\wedge\Delta\leq0)$ is the certificate-aligned
+unconditional false-adapt rate; $\mathrm{FA}_c=\Pr(\Delta\leq0\mid\text{adapt})$
+is descriptive. Ground-truth labels are unavailable during live decisions and are
+revealed only for offline evaluation. Latency reporting includes candidate adaptation,
+the KGA decision, and full end-to-end window latency.}
+\end{table*}

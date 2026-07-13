@@ -1,0 +1,292 @@
+{
+  "config": {
+    "protocol": "8-fold cross-fitted empirical residual calibration",
+    "validity": "not exact split-conformal coverage",
+    "radius": "exact_rank eps=r_(ceil((n+1)(1-alpha)))",
+    "crossfit_folds": 8,
+    "gbr": {
+      "n_estimators": 250,
+      "max_depth": 2,
+      "learning_rate": 0.05,
+      "subsample": 0.8,
+      "random_state": 0
+    },
+    "software": {
+      "numpy": "2.4.6",
+      "scikit_learn": "1.9.0"
+    },
+    "input_sha256": {
+      "tent": "1507d404ad8b623b5cbdfdc71feb36fad83e427e0d0486df857143ba0dc01f01",
+      "eata": "7a867d10a08af7928f4792086e4c52878adcd4c09a29b182fa12c0c5306b784f",
+      "sar": "d1487773bf5ebd8356567b604fc2ca0ff4e8481f834b3095ac7b942a7a6ea1e9"
+    }
+  },
+  "alpha": {
+    "tent": {
+      "alpha=0.01": {
+        "regret": 0.0036,
+        "FA_u": 0.0,
+        "FA_c": 0.0,
+        "adapt_rate": 0.449,
+        "coverage": 0.477,
+        "n": 432
+      },
+      "alpha=0.05": {
+        "regret": 0.0021,
+        "FA_u": 0.0,
+        "FA_c": 0.0,
+        "adapt_rate": 0.493,
+        "coverage": 0.63,
+        "n": 432
+      },
+      "alpha=0.1": {
+        "regret": 0.0017,
+        "FA_u": 0.0,
+        "FA_c": 0.0,
+        "adapt_rate": 0.507,
+        "coverage": 0.683,
+        "n": 432
+      },
+      "alpha=0.2": {
+        "regret": 0.0011,
+        "FA_u": 0.0,
+        "FA_c": 0.0,
+        "adapt_rate": 0.53,
+        "coverage": 0.738,
+        "n": 432
+      },
+      "no_radius": {
+        "regret": 0.0004,
+        "FA_u": 0.0509,
+        "FA_c": 0.0751,
+        "adapt_rate": 0.678,
+        "coverage": 1.0,
+        "n": 432
+      }
+    },
+    "eata": {
+      "alpha=0.01": {
+        "regret": 0.004,
+        "FA_u": 0.0,
+        "FA_c": 0.0,
+        "adapt_rate": 0.479,
+        "coverage": 0.493,
+        "n": 432
+      },
+      "alpha=0.05": {
+        "regret": 0.0015,
+        "FA_u": 0.0,
+        "FA_c": 0.0,
+        "adapt_rate": 0.558,
+        "coverage": 0.602,
+        "n": 432
+      },
+      "alpha=0.1": {
+        "regret": 0.0013,
+        "FA_u": 0.0,
+        "FA_c": 0.0,
+        "adapt_rate": 0.567,
+        "coverage": 0.644,
+        "n": 432
+      },
+      "alpha=0.2": {
+        "regret": 0.0006,
+        "FA_u": 0.0,
+        "FA_c": 0.0,
+        "adapt_rate": 0.613,
+        "coverage": 0.722,
+        "n": 432
+      },
+      "no_radius": {
+        "regret": 0.0002,
+        "FA_u": 0.0324,
+        "FA_c": 0.0444,
+        "adapt_rate": 0.729,
+        "coverage": 1.0,
+        "n": 432
+      }
+    },
+    "sar": {
+      "alpha=0.01": {
+        "regret": 0.0045,
+        "FA_u": 0.0,
+        "FA_c": 0.0,
+        "adapt_rate": 0.299,
+        "coverage": 0.669,
+        "n": 432
+      },
+      "alpha=0.05": {
+        "regret": 0.0025,
+        "FA_u": 0.0,
+        "FA_c": 0.0,
+        "adapt_rate": 0.338,
+        "coverage": 0.725,
+        "n": 432
+      },
+      "alpha=0.1": {
+        "regret": 0.0016,
+        "FA_u": 0.0,
+        "FA_c": 0.0,
+        "adapt_rate": 0.35,
+        "coverage": 0.738,
+        "n": 432
+      },
+      "alpha=0.2": {
+        "regret": 0.0009,
+        "FA_u": 0.0,
+        "FA_c": 0.0,
+        "adapt_rate": 0.373,
+        "coverage": 0.764,
+        "n": 432
+      },
+      "no_radius": {
+        "regret": 0.0002,
+        "FA_u": 0.0069,
+        "FA_c": 0.0157,
+        "adapt_rate": 0.442,
+        "coverage": 1.0,
+        "n": 432
+      }
+    }
+  },
+  "estimator": {
+    "GBR": {
+      "regret": 0.0017,
+      "FA_u": 0.0,
+      "FA_c": 0.0,
+      "adapt_rate": 0.507,
+      "coverage": 0.683,
+      "n": 432
+    },
+    "Ridge_linear": {
+      "regret": 0.0043,
+      "FA_u": 0.0,
+      "FA_c": 0.0,
+      "adapt_rate": 0.454,
+      "coverage": 0.47,
+      "n": 432
+    },
+    "RandomForest": {
+      "regret": 0.0017,
+      "FA_u": 0.0023,
+      "FA_c": 0.0045,
+      "adapt_rate": 0.512,
+      "coverage": 0.653,
+      "n": 432
+    },
+    "MLP": {
+      "regret": 0.0143,
+      "FA_u": 0.0,
+      "FA_c": 0.0,
+      "adapt_rate": 0.361,
+      "coverage": 0.361,
+      "n": 432
+    }
+  },
+  "dropout": {
+    "full_11": {
+      "regret": 0.0017,
+      "FA_u": 0.0,
+      "FA_c": 0.0,
+      "adapt_rate": 0.507,
+      "coverage": 0.683,
+      "n": 432
+    },
+    "drop_frozen": {
+      "regret": 0.0018,
+      "FA_u": 0.0,
+      "FA_c": 0.0,
+      "adapt_rate": 0.502,
+      "coverage": 0.676,
+      "n": 432
+    },
+    "drop_adapted": {
+      "regret": 0.0017,
+      "FA_u": 0.0,
+      "FA_c": 0.0,
+      "adapt_rate": 0.505,
+      "coverage": 0.678,
+      "n": 432
+    },
+    "drop_change": {
+      "regret": 0.0013,
+      "FA_u": 0.0,
+      "FA_c": 0.0,
+      "adapt_rate": 0.521,
+      "coverage": 0.683,
+      "n": 432
+    },
+    "drop_drift": {
+      "regret": 0.0019,
+      "FA_u": 0.0,
+      "FA_c": 0.0,
+      "adapt_rate": 0.5,
+      "coverage": 0.669,
+      "n": 432
+    },
+    "drop_update": {
+      "regret": 0.0018,
+      "FA_u": 0.0,
+      "FA_c": 0.0,
+      "adapt_rate": 0.502,
+      "coverage": 0.662,
+      "n": 432
+    }
+  },
+  "transfer": {
+    "tent->eata": {
+      "regret": 0.0021,
+      "FA_u": 0.0,
+      "FA_c": 0.0,
+      "adapt_rate": 0.539,
+      "coverage": 0.632,
+      "n": 432
+    },
+    "tent->sar": {
+      "regret": 0.0173,
+      "FA_u": 0.125,
+      "FA_c": 0.2488,
+      "adapt_rate": 0.502,
+      "coverage": 0.718,
+      "n": 432
+    },
+    "eata->tent": {
+      "regret": 0.001,
+      "FA_u": 0.0069,
+      "FA_c": 0.0127,
+      "adapt_rate": 0.549,
+      "coverage": 0.688,
+      "n": 432
+    },
+    "eata->sar": {
+      "regret": 0.0236,
+      "FA_u": 0.1921,
+      "FA_c": 0.336,
+      "adapt_rate": 0.572,
+      "coverage": 0.62,
+      "n": 432
+    },
+    "sar->tent": {
+      "regret": 0.0085,
+      "FA_u": 0.2546,
+      "FA_c": 0.3022,
+      "adapt_rate": 0.843,
+      "coverage": 0.843,
+      "n": 432
+    },
+    "sar->eata": {
+      "regret": 0.0027,
+      "FA_u": 0.1157,
+      "FA_c": 0.1543,
+      "adapt_rate": 0.75,
+      "coverage": 0.75,
+      "n": 432
+    }
+  },
+  "archived_reference_comparison": {
+    "status": "minor_version_sensitive_drift",
+    "changed_scalars": 28,
+    "max_absolute_change": 0.007,
+    "reference": "experiments/kbound/results/ablation_exactrank/archived_reference.json"
+  }
+}

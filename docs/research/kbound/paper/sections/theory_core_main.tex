@@ -1,0 +1,146 @@
+% Core load-bearing theory for the short-paper main text (with proofs).
+
+\begin{lemma}[Disagreement-region reduction]\label{lem:reduction}
+Under Assumption~\ref{ass:deploy}, with $\bar a:=\Pr_T(f_a{=}Y\mid D)$,
+\begin{align*}
+\Delta &= 2\,\mu_T(D)\bigl(\bar a-\tfrac12\bigr),\\
+\sign\Delta &= \sign(\bar a-\tfrac12)=\sign(M+\gamma).
+\end{align*}
+The identity $\sign\Delta=\sign(M+\gamma)$ holds for \emph{every} target law; it does not
+assume $|\gamma|\le\beta$.
+\end{lemma}
+\begin{proof}
+On $D$ exactly one of $f_0,f_a$ is correct under $0/1$ loss, so the benefit equals
+$2\mu_T(D)(\bar a-\tfrac12)$. By the definitions of $M$ and $\gamma$,
+\begin{align*}
+M+\gamma
+&=\Bigl(\E_{\mu_T\mid D}[s]-\tfrac12\Bigr)
+  +\E_{\mu_T\mid D}[\eta_a-s]\\
+&=\E_{\mu_T\mid D}[\eta_a]-\tfrac12
+ =\bar a-\tfrac12,
+\end{align*}
+so $\sign\Delta=\sign(\bar a-\tfrac12)=\sign(M+\gamma)$.
+\end{proof}
+
+\begin{theorem}[Interior matched-evidence impossibility]\label{lem:nonid}
+Fix $\alpha\in(0,\tfrac12)$ and $\beta>0$. For any margin with $|M|<\beta$ there exist
+$P_T^1,P_T^2\in\mathcal{C}_\beta$ such
+that $\Law(Z\mid P_T^1)=\Law(Z\mid P_T^2)$, $\sign\Delta_1=-\sign\Delta_2\neq0$, and
+$|M(P_T^1)|<\beta$. (For $\beta=0$ the class $\mathcal{C}_0$ forces $\gamma=0$, so $\sign\Delta=\sign M$
+is determined and no such pair exists: matched-evidence ambiguity is a strictly-positive-drift
+phenomenon.) Consequently, any label-free rule $g$ with
+$\Pr[g=\textsc{adapt},\Delta\le0]\le\alpha$ and $\Pr[g=\textsc{freeze},\Delta\ge0]\le\alpha$
+must satisfy $\Pr[g=\textsc{abstain}]\ge 1-2\alpha$ on this shared evidence law.
+\end{theorem}
+\begin{proof}
+Choose $0<\delta<\min\{\beta-|M|,\tfrac12\}$. Keep the input law, $f_0,f_a,s$, and hence
+$\widetilde Z=(Z,M)$ fixed, but set the conditional target labels so that
+$\bar a_\pm=\tfrac12\pm\delta$. Then $\gamma_\pm=\pm\delta-M\in[-\beta,\beta]$ and
+Lemma~\ref{lem:reduction} gives opposite nonzero benefit signs at the same augmented-evidence law.
+A label-free rule therefore has the same action probabilities in both worlds. Its adapt probability
+is at most $\alpha$ in the negative world and its freeze probability is at most $\alpha$ in the
+positive world, so its abstention probability is at least $1-2\alpha$. An explicit Gaussian witness
+appears in Appendix~\ref{app:theory-full} (Theorem~\ref{thm:imp}).
+\end{proof}
+
+\begin{proposition}[Boundary case and closed-band abstention]\label{prop:closed-band}
+Fix $\alpha\in(0,\tfrac12)$. If $|M|=\beta>0$, the declared class contains an
+augmented-evidence-identical zero-benefit world ($\gamma=-M$) and a strict-benefit world of sign
+$M$ ($\gamma=0$). In the zero-benefit world both strict actions are errors under the events used in
+Theorem~\ref{lem:nonid}, so any rule controlling both marginal errors at level $\alpha$ abstains with
+probability at least $1-2\alpha$. If $M=\beta=0$, every admissible world has $\Delta=0$ and the same
+conclusion holds directly. Thus abstention is the maximal sound three-way action throughout the
+closed band $|M|\le\beta$, although opposite nonzero signs are asserted only in the interior.
+\end{proposition}
+
+\begin{theorem}[Exact strict-commitment frontier]\label{thm:headline}\label{thm:frontier}
+Under Assumption~\ref{ass:deploy}, fix the observables $(\mu_T,P_S,f_0,f_a,s)$ so $M$ is
+determined, and let $\beta\ge0$.
+\begin{enumerate}
+\item[\textnormal{(i)}] \textbf{Reduction.} For every $P_T$, $\sign\Delta=\sign(M+\gamma)$
+(Lemma~\ref{lem:reduction}).
+\item[\textnormal{(ii)}] \textbf{Sufficiency.} If $|M|>\beta$ and $P_T\in\mathcal{C}_\beta$, then
+$\sign\Delta=\sign M$.
+\item[\textnormal{(iii)}] \textbf{Necessity.} If $|M|<\beta$ (which requires $\beta>0$), there exist
+$P_T^1,P_T^2\in\mathcal{C}_\beta$ with the same augmented-evidence law and opposite \emph{nonzero} benefit
+signs; at $|M|=\beta>0$ the admissible drift $\gamma=-\sign(M)\beta$ yields $\Delta=0$, and in the
+degenerate case $M=\beta=0$ the class $\mathcal{C}_0$ forces $\Delta\equiv0$. Hence no \emph{strict}
+benefit direction is uniformly supported by $\Law(\widetilde Z)$ over $\mathcal{C}_\beta$
+whenever $|M|\le\beta$.
+\item[\textnormal{(iv)}] \textbf{Strict-commitment iff.} A strict action in
+$\{\textsc{adapt},\textsc{freeze}\}$ is uniformly sound over $\mathcal{C}_\beta$ if and only if
+$|M|>\beta$; on the closed band $|M|\le\beta$ (including $M=\beta=0$, where $\Delta\equiv0$) abstention
+is the maximal sound action.
+\end{enumerate}
+The population rule $M>\beta\Rightarrow\textsc{adapt}$, $M<-\beta\Rightarrow\textsc{freeze}$,
+$|M|\le\beta\Rightarrow\textsc{abstain}$ is the maximal sound certificate on
+$\mathcal{C}_\beta$.
+\end{theorem}
+\begin{proof}
+Part~(i) is Lemma~\ref{lem:reduction}. For~(ii), if $M>\beta$ and $|\gamma|\le\beta$, then
+$M+\gamma>0$, so $\sign\Delta=\sign(M+\gamma)=+1$; the negative case is symmetric. For~(iii),
+pick $\gamma_\pm\in[-\beta,\beta]$ with $\sign(M+\gamma_+)\neq\sign(M+\gamma_-)$, both nonzero, when
+$|M|<\beta$; Lemma~\ref{lem:reduction} yields matched $Z$ and opposite signs. At $|M|=\beta$ the
+admissible $\gamma=-\sign(M)\beta$ gives $\Delta=0$, still precluding a determined nonzero sign. Part~(iv) combines
+(ii), (iii), and Proposition~\ref{prop:closed-band}. Maximality follows from
+Theorem~\ref{lem:nonid} in the interior and Proposition~\ref{prop:closed-band} on the boundary.
+\end{proof}
+
+\begin{center}\footnotesize
+\begin{tabular}{@{}lll@{}}
+\toprule
+Region & Meaning & Action \\
+\midrule
+$M>\beta$ & allowed drift cannot flip the positive sign & \textsc{adapt} \\
+$M<-\beta$ & allowed drift cannot flip the negative sign & \textsc{freeze} \\
+$|M|<\beta$ & drift can reverse the strict sign & \textsc{abstain} \\
+$|M|=\beta>0$ & drift can reduce benefit to zero & \textsc{abstain} \\
+$M=\beta=0$ & benefit is identically zero & \textsc{abstain} \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\begin{theorem}[Finite-sample adapt/freeze/abstain certificate]\label{thm:certificate}\label{thm:cert}
+For any real-valued target benefit $\Delta$, suppose the benefit interval satisfies marginal coverage
+\[
+\Pr\!\bigl[\,|\widehat\Delta-\Delta|\le\varepsilon\,\bigr]\ \ge\ 1-\alpha .
+\]
+Define
+\[
+g(Z)=\begin{cases}
+\textsc{adapt} & \widehat\Delta-\varepsilon>0,\\
+\textsc{freeze} & \widehat\Delta+\varepsilon<0,\\
+\textsc{abstain} & \text{otherwise}.
+\end{cases}
+\]
+Then, marginally over the calibration randomness,
+\begin{align*}
+\Pr\bigl[g(Z)=\textsc{adapt},\Delta\le0\bigr]&\le\alpha,\\
+\Pr\bigl[g(Z)=\textsc{freeze},\Delta\ge0\bigr]&\le\alpha.
+\end{align*}
+\end{theorem}
+\begin{proof}
+On the event $\{|\widehat\Delta-\Delta|\le\varepsilon\}$, the condition
+$\widehat\Delta-\varepsilon>0$ implies $\Delta>0$, so a false adapt requires the complement of
+this event, which has probability at most $\alpha$. The freeze case is symmetric.
+\end{proof}
+Exchangeability, or an explicit shift correction, is one route to this coverage assumption. Risk
+alignment is not required for the conditional-on-coverage implication.
+
+\begin{remark}[Marginal vs.\ conditional error]\label{rem:fa-marginal}
+Theorem~\ref{thm:certificate} bounds the \emph{marginal, unconditional} false-adapt and
+false-freeze probabilities ($\mathrm{FA}_{\mathrm u}$). It does \emph{not} bound the conditional
+rate $\mathrm{FA}_{\mathrm c}=\Pr[\Delta\le0\mid\textsc{adapt}]$, which we report empirically.
+Risk alignment (Definition~\ref{def:risk-align}) is required for the \emph{frontier}
+identifiability claim; coverage alone certifies the \emph{interval} rule above.
+\end{remark}
+
+\begin{corollary}[Unjustified assumptions $\Rightarrow$ abstain]\label{cor:abstain-valid}
+If interval coverage---or the calibration assumptions supporting it (exchangeability, or an explicit
+shift correction)---cannot be justified on the deployment batch, Theorem~\ref{thm:certificate} does
+not apply, and committing to \textsc{adapt} is not protected at level $\alpha$; the conservative
+action is \textsc{abstain} or \textsc{freeze}. If instead \emph{risk alignment}
+(Definition~\ref{def:risk-align}) cannot be justified, the population-frontier interpretation and the
+transferability of the benefit estimator are unsupported, even though the interval implication of
+Theorem~\ref{thm:certificate} remains valid \emph{conditional on coverage} (cf.\ Theorem~\ref{lem:nonid}).
+\end{corollary}

@@ -1,0 +1,35 @@
+name: lean-formal
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - "docs/research/kbound/formal/**"
+      - ".github/workflows/formal.yml"
+  pull_request:
+    branches: [main]
+    paths:
+      - "docs/research/kbound/formal/**"
+      - ".github/workflows/formal.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  kernel-check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install elan
+        run: |
+          curl -sSfL https://raw.githubusercontent.com/leanprover/elan/master/elan-init.sh \
+            | sh -s -- -y --default-toolchain none
+          echo "$HOME/.elan/bin" >> "$GITHUB_PATH"
+      - name: Build the K-Bound Lean package
+        working-directory: docs/research/kbound/formal
+        run: bash build.sh
+      - name: Run the formal coverage audit
+        working-directory: docs/research/kbound/formal
+        run: python3 formal_audit.py --strict-100

@@ -1,0 +1,193 @@
+% Appendix for kbound_short.tex — full theory, calibration protocol, supplementary experiments.
+
+\section{Calibration and held-out evaluation}\label{app:calib-eval}
+Algorithm~\ref{alg:calib-eval} gives the shared evaluation protocol behind the uniform
+nine-track panel (Table~\ref{tab:uniform-panel}) and the primary numeric evidence
+(Table~\ref{tab:primary-numeric}).
+
+\begin{algorithm}[t]
+\caption{Calibration and held-out evaluation for K-Bound}
+\label{alg:calib-eval}
+\begin{algorithmic}[1]
+\Require Conditions $\mathcal{C}$; frozen $f_0$; adapters $\mathcal{A}_1,\ldots,\mathcal{A}_K$;
+  calibration split $\mathcal{C}_{\mathrm{cal}}$; test split $\mathcal{C}_{\mathrm{test}}$; level $\alpha$
+\Ensure Regret-to-oracle, false-adapt rate, coverage, beats-both verdict
+\ForAll{$c \in \mathcal{C}_{\mathrm{cal}}$}
+  \ForAll{adapters $\mathcal{A}_k$}
+    \State $f_a^{(k,c)} \leftarrow \mathcal{A}_k(f_0, X_c)$
+    \State $Z_{k,c} \leftarrow \phi(X_c, f_0, f_a^{(k,c)})$
+    \State $\Delta_{k,c} \leftarrow R_c(f_0) - R_c(f_a^{(k,c)})$
+  \EndFor
+\EndFor
+\State \textbf{Calibrate without test leakage:} on stress grids, form leave-one-cell-out
+  residuals $\rho_i=|\widehat\Delta_{-i}(Z_i)-\Delta_i|$; on semantic shifts, reserve a
+  development calibration split disjoint from the declared test split
+\State $\varepsilon \leftarrow (1-\alpha)$ empirical quantile of the calibration residuals
+\State Fit deployment estimator $\widehat\Delta(Z)$ on \emph{all} calibration pairs \Comment{scores the held-out test split}
+\ForAll{$c \in \mathcal{C}_{\mathrm{test}}$}
+  \ForAll{adapters $\mathcal{A}_k$}
+    \State Run Algorithm~\ref{alg:kga} with $(f_0,\mathcal{A}_k,X_c,\widehat\Delta,\varepsilon)$
+    \State Record decision, regret-to-oracle, coverage, false-adapt indicator
+  \EndFor
+\EndFor
+\State Aggregate metrics vs.\ always-adapt, always-freeze, per-condition oracle
+\end{algorithmic}
+\end{algorithm}
+
+\section{Evidence feature schema and adapter hyperparameters}\label{app:evidence-schema}
+Two label-free evidence panels are used, matched to the two calibration regimes of
+\S\ref{sec:method}. Notation: $p_0,p_a$ are the frozen and adapted softmax rows on the adaptation
+batch; $\bar m_0=\mathrm{mean}_n\,p_{0,n}$ and $\bar m_a$ are the predicted-class marginals;
+$H(p)=-\sum_c p_c\log p_c$; $C$ is the number of classes. The stress-grid tracks (CIFAR-10-C,
+ImageNet-C, PACS) use the $11$-dimensional base panel of Table~\ref{tab:schema-base}
+(\texttt{kbound\_pkg/kbound/evidence.py}). The natural-shift tracks (Camelyon17, iWildCam,
+Office-Home, RxRx1) use the $16$-dimensional panel of Table~\ref{tab:schema-rich}: a $10$-statistic
+frozen-logit summary plus a $6$-feature rich panel (\texttt{scripts/run\_wilds\_camelyon17.py}). All
+features are target-label-free; the ATC feature calibrates its threshold on \emph{source} labels
+only.
+
+\begin{table}[t]\centering\scriptsize
+\caption{Base $11$-dim evidence panel (stress grids).}
+\label{tab:schema-base}
+\begin{tabular}{@{}llp{0.30\linewidth}@{}}
+\toprule
+Feature & Definition & Family \\
+\midrule
+\texttt{pre\_entropy}  & $\mathrm{mean}_n H(p_{0,n})$ & frozen output \\
+\texttt{pre\_conf}     & $\mathrm{mean}_n \max_c p_{0,n}$ & frozen output \\
+\texttt{pre\_pbal}     & $H(\bar m_0)/\log C$ & frozen marginal \\
+\texttt{post\_entropy} & $\mathrm{mean}_n H(p_{a,n})$ & adapted output \\
+\texttt{post\_conf}    & $\mathrm{mean}_n \max_c p_{a,n}$ & adapted output \\
+\texttt{post\_pbal}    & $H(\bar m_a)/\log C$ & adapted marginal \\
+\texttt{pbal\_drop}    & \texttt{pre\_pbal}$-$\texttt{post\_pbal} & change \\
+\texttt{entropy\_drop} & \texttt{pre\_entropy}$-$\texttt{post\_entropy} & change \\
+\texttt{frac\_highconf}& $\mathrm{frac}_n(\max_c p_{a,n}{>}0.9)$ & collapse \\
+\texttt{marginal\_KL}  & $\sum_c \bar m_{a,c}\log(\bar m_{a,c}/\bar m_{0,c})$ & drift \\
+\texttt{update\_norm}  & $\lVert\Delta\theta_{\mathrm{aff}}\rVert_2$ & update \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{table}[t]\centering\scriptsize
+\caption{Rich $16$-dim panel (natural shift): $10$ frozen-logit statistics $+$ $6$ rich features.
+$H$ is softmax entropy, $s=\max_c\mathrm{softmax}$ the confidence, $E(x)=-\log\sum_c e^{z_c}$ the
+free energy; subscripts $s,t$ denote source/target pools.}
+\label{tab:schema-rich}
+\begin{tabular}{@{}llp{0.26\linewidth}@{}}
+\toprule
+Feature & Definition & Family \\
+\midrule
+\multicolumn{3}{@{}l}{\emph{Frozen-logit summary (10)}}\\
+ent mean/std     & $\mathrm{mean}/\mathrm{std}\,H$ & frozen \\
+ent p25/p75      & $25/75$ pct.\ of $H$ & frozen \\
+conf mean/std    & $\mathrm{mean}/\mathrm{std}\,s$ & frozen \\
+frac hi-conf     & $\mathrm{frac}(s{>}0.9)$ & frozen \\
+frac hi-ent      & $\mathrm{frac}(H{>}\log 2)$ & frozen \\
+marg.\ max       & $\max_c \mathrm{mean}_n\,p$ & frozen marginal \\
+marg.\ std       & $\mathrm{std}_c \mathrm{mean}_n\,p$ & frozen marginal \\
+\midrule
+\multicolumn{3}{@{}l}{\emph{Rich features (6)}}\\
+\texttt{disagree} & $\mathrm{frac}(\arg\max f_0\!\neq\!\arg\max f_a)$ & disagreement \\
+\texttt{ent\_gap} & $\mathrm{mean}\,H(f_0)-\mathrm{mean}\,H(f_a)$ & change \\
+\texttt{en\_shift}& $\mathrm{mean}\,E_t-\mathrm{mean}\,E_s$ & drift \\
+\texttt{bn\_kl}   & $\mathrm{mean}_{\mathrm{ch}}\,\mathrm{KL}(\mathcal N_{\mathrm{run}}\!\parallel\!\mathcal N_{\mathrm{batch}})$ & drift \\
+\texttt{atc}      & $\mathrm{frac}_t(s\!\ge\! t)$, $t$ src-calib. & accuracy proxy \\
+\texttt{conf\_drop}& $\mathrm{mean}\,s_s-\mathrm{mean}\,s_t$ & drift \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{table}[t]\centering\footnotesize
+\caption{Per-track adapter hyperparameters (from the run configs). Adapted parameters are
+BN/LayerNorm-affine only; TTA optimizer is Adam. ``Aggressiveness'' cells use
+mild $=(10$ steps, lr $10^{-3})$ or aggressive $=(50$ steps, lr $2.5\!\times\!10^{-3})$. EATA uses
+an entropy filter $e_{\mathrm{thr}}{=}0.4\ln 2{\approx}0.28$; SAR adds SAM $+$ entropy reset.
+Backbones for CIFAR-10-C, ImageNet-C, PACS, and Camelyon17 are verified from the run code; the
+remaining WILDS/DomainBed tracks use the standard baseline.}
+\label{tab:adapter-hparams}
+\resizebox{\columnwidth}{!}{%
+\begin{tabular}{@{}llll@{}}
+\toprule
+Track & Backbone & Adapter(s) & Steps / lr \\
+\midrule
+CIFAR-10-C stress & ResNet-18 & Tent/EATA/SAR & mild \& aggressive (per cell) \\
+ImageNet-C & ResNet-50 & Tent/EATA/SAR (SAM+reset) & mild \& aggressive (per cell) \\
+PACS (LODO) & ResNet-18 & mild/aggressive & $10$/$10^{-3}$ \,\&\, $50$/$2.5{\times}10^{-3}$ \\
+Camelyon17 & DenseNet-121 & EATA online & $10$ / $10^{-3}$ \\
+iWildCam & ResNet-50 & Tent episodic & $10$ / $10^{-3}$ \\
+Office-Home & ResNet (DomainBed) & SAR online aggr. & $50$ / $2.5{\times}10^{-3}$ \\
+RxRx1 & ResNet-50 & episodic & $5$ / (batch $64$) \\
+\bottomrule
+\end{tabular}}
+\end{table}
+
+\section{Complete core proofs}\label{app:theory-full}
+This appendix is not required for the main empirical claim; it preserves the full theorem stack
+and validator mapping behind the three main-paper theorems: matched-evidence impossibility
+(Theorem~\ref{lem:nonid}), the benefit-sign frontier (Theorem~\ref{thm:headline}), and the
+finite-sample certificate (Theorem~\ref{thm:certificate}).
+The main text contains the complete algebraic proofs; the material below records only the supporting
+matched-evidence form and zero-drift interpretation used by those proofs.
+
+\input{paper/sections/theory_appendix_ext}
+
+
+\section{Multiclass and regression derivations}\label{app:regression}
+For multiclass $0/1$ loss, errors cancel outside $D=\{f_0\neq f_a\}$, giving
+$\Delta=\mu_T(D)(p_a-p_0)$ with $p_j=\Pr_T(f_j=Y\mid D)$. In contrast to binary classification,
+$p_0$ need not equal $1-p_a$. If $p_a-p_0=M_{\rm mc}+\gamma_{\rm mc}$ and
+$|\gamma_{\rm mc}|\le\beta_{\rm mc}$, then $|M_{\rm mc}|>\beta_{\rm mc}$ is sufficient for a
+strict commitment; necessity additionally needs the declared class to realize the admissible
+evidence-identical drifts.
+
+For squared-loss regression, let $m_T(x)=\E_T[Y\mid X=x]$. Direct expansion gives
+\[
+\Delta=\E_T\!\left[(f_a-f_0)(2m_T-f_0-f_a)\right].
+\]
+The integrand vanishes where $f_a=f_0$, so the comparison is again disagreement-local. For an
+observable proxy $u(x)$, define
+\begin{align*}
+M_{\rm reg}&=\E_T[(f_a-f_0)(2u-f_0-f_a)],\\
+\gamma_{\rm reg}&=2\E_T[(f_a-f_0)(m_T-u)].
+\end{align*}
+Then $\Delta=M_{\rm reg}+\gamma_{\rm reg}$. A declared bound
+$|\gamma_{\rm reg}|\le\beta_{\rm reg}$ yields the same sufficient strict-commitment rule
+$|M_{\rm reg}|>\beta_{\rm reg}$; a converse again requires a richness assumption on the target class.
+
+\section{Historical protocol reconciliation}\label{app:supp-exp}
+The main text contains the complete empirical accounting in the uniform nine-track panel.
+Historical route studies and superseded per-dataset tables are deliberately excluded from this
+short-paper build. Their raw logs remain in the repository for
+audit, but they are not independent empirical claims. The declared evaluation unit is a condition
+or held-out cell, never an arbitrary pool of frames or domains; all policies replay the same unit
+stream, and labels are revealed only after the KGA decision for offline scoring.
+
+\section{Physical-study pre-registration}\label{app:edge-physical}
+The two-phone package-inspection protocol is locked before fresh capture. Table~\ref{tab:camera-r1}
+records the split and deployment design; Table~\ref{tab:camera-r2} fixes the primary endpoint layout.
+Every result cell remains blank until the exact physical inventory, source-model gate, development
+seal, held-out chronology, replication replay, and anti-leakage audit pass the machine-readable
+publication gate. Browser previews, mock clips, and reconstructed media are software diagnostics,
+not evidence.
+
+\input{edge/kbound_camera_main_tables}
+
+\section{Runtime details}\label{app:runtime}
+The adapter update requires forward and backward computation before the controller can decide.
+The saved controller microbenchmark reports evidence extraction, benefit-model evaluation, rollback
+copy memory, and benefit-model size; these are the added-cost quantities reported in
+Table~\ref{tab:cost}. A complete end-to-end profile separating frozen inference, candidate
+adaptation, candidate inference, rollback time, and total window latency remains pending and is not
+inferred from the controller-only microbenchmark.
+
+\section{Formalization inventory}\label{app:formal}
+Lean checks the indexed algebraic, finite-decision, measure-containment, and conditional
+uniform-rank results listed in \texttt{formal/KBound/TheoremMap.lean}. It does not formalize the
+target-law witness construction, frontier necessity/maximality, risk alignment, calibration
+transfer, or the lift from a conditional uniform-index model to general exchangeable processes.
+
+\section{Claim-to-artifact map}\label{app:claim-artifact}
+The machine-readable manifest \texttt{paper/generated/kbound\_result\_manifest.json} is the
+authoritative index for every promoted number, seed count, protocol, quantile convention, and known
+replay caveat. Table~\ref{tab:claim-status} gives the reader-facing summary; the external manifest
+retains exact repository paths and pending work.

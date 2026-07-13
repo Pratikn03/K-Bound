@@ -1,0 +1,33 @@
+% Active theory material for the short-paper appendix.
+% The core spine is in the main text via theory_core_main.tex.
+
+\paragraph{Core-theory inventory.}
+The main text gives complete proofs of disagreement reduction, interior impossibility, boundary
+abstention, the strict-commitment frontier, and the coverage-based certificate. This appendix records
+the matched-evidence full form and the zero-drift interpretation. Minimax, one-bit, capacity, and
+rate extensions are deferred and are not part of the short-paper claim stack.
+
+\begin{theorem}[Matched evidence impossibility (full form)]\label{thm:imp}
+Theorem~\ref{lem:nonid} is part~(iii) of the following. Fix $\alpha\in(0,\tfrac12)$.
+\begin{enumerate}
+\item[\textnormal{(i)}] Witness worlds with $\Law(Z\mid P_T^1)=\Law(Z\mid P_T^2)$ and
+$\sign\Delta_1=-\sign\Delta_2\neq0$.
+\item[\textnormal{(ii)}] Le Cam identity: $\inf_g M(g)=1-\TV$ between the evidence laws.
+\item[\textnormal{(iii)}] Forced abstention at rate $\ge 1-2\alpha$ under dual error control.
+\end{enumerate}
+\end{theorem}
+
+\begin{corollary}[Closed-band abstention under dual error control]\label{cor:forced-abstain}
+In the $|M|\le\beta$ wedge of Theorem~\ref{thm:headline}, Theorem~\ref{thm:imp}(iii) implies
+any label-free rule with false-adapt and false-freeze $\le\alpha$ must abstain with probability at
+least $1-2\alpha$ on matched evidence. Opposite nonzero signs are required only for $|M|<\beta$;
+at $|M|=\beta>0$ zero-versus-strict ambiguity suffices, and at $M=\beta=0$ the benefit is
+identically zero so neither strict action is sound.
+\end{corollary}
+
+\begin{remark}[$\beta=0$ face]\label{rem:beta-zero}
+The $\beta=0$ face assumes $\gamma=0$. Under the stated disagreement-score decomposition, strict
+commitment is sound for $M\neq0$, while $M=0$ yields $\Delta=0$. Existing estimators may be
+interpreted as $\beta=0$ plug-ins only when their estimand realizes this decomposition; $\gamma=0$
+alone does not establish their soundness.
+\end{remark}

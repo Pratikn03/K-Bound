@@ -1,0 +1,44 @@
+# CAMELYON17 PROTOCOL G — RECONCILED (supersedes the G "beats-both" headline claim)
+# Dated: 2026-06-20. Does NOT edit v1 in place (per change-control convention).
+# Supersedes the headline-win status recorded in:
+#   - research_lock/CAMELYON17_PROTOCOL_G_v1.yaml  (success criteria)
+#   - research_lock/KBOUND_HEADLINE_FINDINGS.json  (headline_natural_wins[0])
+#   - research_lock/CAMELYON17_DIAGNOSTICS_RESOLVED_v1.yaml (protocol_G: VERIFIED)
+
+verdict: NOT_A_BEATS_BOTH_WIN
+reclassification: no_harm_safety_abstention   # on genuine OOD, KGA ties always-adapt
+conservative_reading_applied: true
+
+finding: >
+  The reported Protocol-G beats-both (regret_kga 3.616898e-05, regret_adapt 1.320168e-03,
+  regret_freeze 7.49240e-02, false_adapt 0.025641, n_test 54) is a DOMAIN-POOLING ARTIFACT.
+  analyze_F.py splits records BY RANDOM SEED (dev {0,1} / test {2,3,4}) and never filters by
+  WILDS domain. For eata_online the n=54 "held-out test" set is 18 OOD test + 18 OOD val +
+  18 in-distribution id_val cells. The only domain where adapting ever hurts is id_val
+  (76.7% of cells harmful, |B|<0.06). On genuine OOD (test, or test+val) eata is
+  helpful-dominated (0% harmful), so regret_kga == regret_adapt == 0 and KGA only TIES
+  always-adapt -> no beats-both. The win exists only because id_val is pooled in.
+
+evidence:
+  harm_profile_eata_online:
+    OOD_test:   {n: 30, mean_B: +0.1568, frac_harm: 0.000, min_B: +0.0244}
+    OOD_val:    {n: 30, mean_B: +0.0829, frac_harm: 0.000, min_B: +0.0244}
+    id_val:     {n: 30, mean_B: -0.0075, frac_harm: 0.767, min_B: -0.0596}
+  rerun_locked_decision_gbr_global:
+    POOLED_test_val_idval: {n_test: 54, regret_kga: 3.616898e-05, regret_adapt: 1.320168e-03, beats_both: true}
+    OOD_test_only:         {n_test: 18, regret_kga: 0.0, regret_adapt: 0.0, regret_freeze: 0.1381, beats_both: false}
+    OOD_test_plus_val:     {n_test: 36, regret_kga: 0.0, regret_adapt: 0.0, regret_freeze: 0.1123, beats_both: false}
+    idval_only:            {n_test: 18, false_adapt: 0.80, beats_both: false}
+
+artifacts:
+  - audits/integrity_2026-06-20/camelyon_reconciliation/camelyon_G_reconciliation.py
+  - audits/integrity_2026-06-20/camelyon_reconciliation/recon_results.json
+  - audits/integrity_2026-06-20/camelyon_reconciliation/VERDICT_phase1.md
+
+downstream_effects:
+  mixed_stream: >
+    KBOUND_MIXED_STREAM_v1.json pooled the contaminated Camelyon n=54. Recomputed with
+    Camelyon OOD test/val only (KBOUND_MIXED_STREAM_v2.json, n=143): KGA 0.0026 vs adapt
+    0.0632 vs freeze 0.0342, FA 0.0, both regret-gap 95% CIs exclude zero -> capstone
+    beats-both SURVIVES and is cleaner (no id_val). Paper cites v2.
+  paper: docs/research/kbound/kbound_short.tex (Camelyon = genuine-OOD no-harm).

@@ -1,0 +1,40 @@
+# PROTOCOL J — RxRx1 formal audit (canonical KGA, freeze-oracle regime)
+# Registered: 2026-06-16. Re-scores existing rxrx1_protocol_c_9plus records only; no new GPU.
+#
+# MOTIVATION: RxRx1 is the harmful-and-detectable corner at 1,139-class scale. Paper claims
+# damage prevention (0% false-adapts) and freeze-oracle matching — NOT beats-both. Protocol J
+# locks the same canonical KGA bar as G/H to document an honest null on the headline criterion.
+#
+# ADAPTER LOCK (before scoring): sar_online — harmful-stream SAR family (Protocol E/H precedent);
+# exhibits catastrophic always-adapt collapse on this shift; NOT chosen by test regret.
+#
+# HYPOTHESIS (audit): Canonical KGA with sar_online achieves false-adapt <= alpha and matches
+# always-freeze regret, but does NOT beat both (freeze-oracle tie).
+#
+# SUCCESS CRITERIA (Tier-B headline — expected NOT met):
+#   WIN: held-out false-adapt <= alpha=0.10 AND regret_kga < regret_adapt AND regret_kga < regret_freeze.
+#   AUDIT_PASS (expected): false-adapt <= alpha AND regret_kga == regret_freeze (freeze-oracle safety).
+#
+design:
+  dataset: WILDS RxRx1 OOD test split (9+ protocol grid, model seed 0 primary)
+  records_source: experiments/kbound/results/rxrx1_protocol_c_9plus_modelseed0/result_3f579e72.json
+  robustness_sources:
+    - experiments/kbound/results/rxrx1_protocol_c_9plus_modelseed1/result_eef46aea.json
+    - experiments/kbound/results/rxrx1_protocol_c_9plus_modelseed2/result_6585f5b7.json
+  deployed_adapter: sar_online
+  evidence_panel: standard_11dim
+  method:
+    name: KGA
+    algorithm: adapt if B_hat - eps > 0; freeze if B_hat + eps < 0; else abstain
+    B_hat: GradientBoostingRegressor (same spec as Protocol G)
+    eps: global (1-alpha) quantile of |B_hat - B| on DEV calibration residuals
+    alpha: 0.10
+  forbidden_in_headline:
+    - multicandidate CEI router
+    - per-benchmark adapter search on TEST
+analysis_plan_locked:
+  split: DEV stream seeds {0,1,2,3,4} fit B_hat and eps; TEST seeds {5,6,7,8,9} scored ONCE
+  script: docs/research/kbound/scripts/analyze_F.py
+  args: --candidate sar_online --estimator gbr --conformal global --dev-seeds 0 1 2 3 4 --test-seeds 5 6 7 8 9
+  expected_outcome: FREEZE_ORACLE_AUDIT_PASS_not_beats_both
+output_dir: experiments/kbound/results/rxrx1_protocol_J_v1/

@@ -1,0 +1,50 @@
+# PROTOCOL A — CIFAR-10-C stress grid, multi-seed re-run (pre-registered)
+# Registered: 2026-06-11, BEFORE any result of this run is observed.
+# AMENDMENT v1.1 (2026-06-11, still before any result observed): seeds 3 -> 5;
+# added OPTIONAL exploratory arm (extended adaptation budget). Confirmatory grid
+# remains byte-identical to the original — that is what the printed claim is tested on.
+# Purpose: replace the mixing-bootstrap interval behind the "beats both" headline
+# with per-condition, multi-seed, Holm-corrected CIs. Fixes the one weak interval
+# flagged in the earlier draft's corrected-uncertainty discussion.
+
+design:
+  grid: identical to original 432-condition stress grid (NO changes):
+    severity: [1, 5]
+    batch: [large_iid_200, small_16, tiny_8]
+    composition: [iid, class_imbalanced, single_class]
+    update: [mild_10step, aggressive_50step_lr2.5e-3]
+    repeats_within_seed: 2
+  candidates: [tent, eata, sar_fixed]   # sar = mechanism-faithful re-implementation
+  model: resnet18_cifar (0.874 clean), same checkpoint experiments/kbound/cifar/resnet18_cifar.pt
+  seeds: [0, 1, 2, 3, 4]                # 5 full grid replicates; seed sets ALL rng
+  eval: benefit B on class-balanced held-out eval set (unchanged definition)
+
+serialization_contract:           # the P2/E lesson — REQUIRED per condition x seed:
+  - B (true benefit), a0, a_adapted, oracle action
+  - evidence Z vector; n_D; pairwise agreements c_ij; tau_hat; b_hat (route fields)
+  - KGA decision + certificate radius; per-policy accuracies
+  - arrays saved per-condition (JSON/CSV), not aggregates only
+  - manifest: result_manifest.json with git hash, seed, env, wall time
+
+analysis_plan_locked:
+  primary: per-condition paired bootstrap (10^4) on regret, KGA vs always-adapt and
+    vs always-freeze, per candidate; Holm correction over the 6-comparison family;
+    seeds pooled via per-condition mean, seed-variance reported.
+  secondary: three-zone accounting (certified/falsified/blind) per condition;
+    false-certification count (claim: 0); audit level/power at alpha=0.05, beta=0.05.
+  success_criteria_stated_in_advance:
+    - "beats both" survives Holm for tent AND eata -> claim stands as printed
+    - survives for one -> rescope claim to that candidate
+    - survives for none -> claim retracted to "beats always-freeze; ties always-adapt";
+      paper updated accordingly. All three outcomes publishable; no peeking mid-run.
+
+exploratory_arm_optional:        # NOT part of the confirmatory claim test; analyzed
+  update_extended: [5_epoch_continual]   # separately, labeled exploratory in the paper;
+  seeds: [0, 1, 2]                       # run only if compute remains after confirmatory
+  note: tests whether longer adaptation shifts the harmful base rate; any finding here
+        feeds a NEW pre-registration, not the printed "beats both" claim.
+
+launch:
+  runner: same script/queue that produced decisive_tta results (see _train_queue.log);
+  output_dir: experiments/kbound/results/stress_grid_multiseed_v1/seed{0,1,2}/
+  forbidden: changing grid, thresholds, alpha, or eval set after first result is seen

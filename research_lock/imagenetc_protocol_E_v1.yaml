@@ -1,0 +1,118 @@
+# =============================================================================
+# PROTOCOL E (FULL ImageNet-C, tar-streaming) - Official gentle SAR schedule
+# =============================================================================
+# Registered: 2026-06-21, BEFORE any full-data result is observed.
+# Queue discipline: launch only when no other MPS job is active.
+#
+# RELATION TO PRIOR REGISTRATION:
+#   research_lock/OFFICIAL_SAR_SCHEDULE_PROTOCOL_E_v1.yaml registered Protocol E on the
+#   NOISE-only sarfix grid (3 corruptions, iid stream, extracted dirs). THIS file is the
+#   FULL-DATA extension: all 19 ImageNet-C corruptions, severities 4-5, sequential/non-iid
+#   deployment stream, served by TAR-STREAMING (no extraction, exFAT-slack-safe). The
+#   official-SAR arm config (lr, layer4-freeze, reset) is UNCHANGED for comparability.
+
+scientific_question: >
+  Does the harmful ImageNet-C SAR stream that KGA wins on (paper headline, shown with
+  mechanism-faithful matched-LR SAR) SURVIVE SAR's OFFICIAL gentler-LR + layer4-frozen +
+  official-reset schedule, on the full 19-corruption suite at severities 4-5 under a
+  sequential (non-iid) deployment stream? i.e. is the ImageNet-C harm real, or a
+  config/implementation artifact?
+
+design:
+  benchmark: >
+    ImageNet-C FULL (Hendrycks & Dietterich 2019), all 19 corruptions, served by
+    TAR-STREAMING (python tarfile, NO extraction). Reads are byte-identical to extraction
+    (same JPEGs decoded), so results are comparable to extracted-dir runs.
+  corruptions_19:
+    noise:   [gaussian_noise, shot_noise, impulse_noise]                 # extracted dirs (present)
+    blur:    [defocus_blur, glass_blur, motion_blur, zoom_blur]          # blur.tar (present)
+    weather: [snow, frost, fog, brightness]                             # weather.tar
+    digital: [contrast, elastic_transform, pixelate, jpeg_compression]  # digital.tar
+    extra:   [speckle_noise, gaussian_blur, spatter, saturate]          # extra.tar
+  severities: [4, 5]                       # high-severity (harm most likely to surface)
+  stream:
+    composition: [iid, imbalanced, single_class]   # 'sequential, not iid' = imbalanced + single_class (label-shift) INCLUDED
+    note: >
+      The deployment stream KGA routes over is the heterogeneous sequence of all
+      (corruption x severity x batch-regime x aggressiveness x composition) cells - a
+      non-iid mix of helpful and harmful conditions. The non-iid within-cell streams
+      (imbalanced, single_class = label-shift) are the canonical Tent/SAR collapse triggers
+      and are SAR's claimed home turf (Niu et al. 2023 'dynamic wild' streams). iid is
+      retained so the panel is NOT cherry-picked to the harshest stream.
+    batch_regimes: [large_iid=64, tiny=8]   # add --all-batch for small=16 too
+    aggressiveness: {mild: {steps: 10, lr: 1.0e-3}, aggressive: {steps: 50, lr: 2.5e-3}}
+  arms:
+    matched_lr_sar: "REFERENCE - already run (imagenetc_noise_sarfix); the harmful regime; reused, not re-run."
+    official_sar:
+      lr: 2.5e-4
+      freeze_final_block: "layer4 (ResNet50 final block) FROZEN"
+      reset_rule: "official EMA-entropy reset (reset_constant_em=0.2), per Niu et al. ICLR 2023 reference SAR"
+      flags: "--sar-lr 2.5e-4 --sar-freeze-layer4   (tent/eata unchanged at matched lr)"
+  methods: [tent, eata, sar]
+  arch: resnet50                           # ResNet50_Weights.IMAGENET1K_V2 (BN-affine adaptation)
+  wrapper: >
+    SAME KGA certificate - alpha = 0.10 FIXED, same 11-feature label-free evidence Z,
+    same leave-one-out gradient-boosted B_hat + split-conformal eps rule. Gate unchanged.
+  seeds: [0, 1, 2]
+  serialization: >
+    per_condition_imagenetc_<method>_seed<S>.json (B, a0, a_adapted, Z, kga_decision, eps,
+    benefit_ci, zone, seed) + result_manifest.json + checkpoint.json (resumable) +
+    decisive_tta_results.json - same contract as Protocols A/B and Protocol-E-noise.
+
+win_criterion:   # the EXISTING pre-registered beats-both bar - no new bar invented
+  held_out: >
+    KGA (GBR benefit estimator + global split-conformal eps, alpha=0.10) is FIT on dev
+    seeds [0, 1] and applied ONCE to held-out test seed [2]; scored a single time, no
+    recalibration on test.
+  beats_both: >
+    regret_kga < regret(always-adapt) AND regret_kga < regret(always-freeze) (point
+    estimate), AND false-adapt rate (fraction of ADAPT decisions with true B<0) <= alpha=0.10.
+    Identical to policy_metrics.beats_both in cifar_tent_mps_v2.py (FA-gated per the
+    2026-06-20 integrity fix; regret-only comparison kept separately as beats_both_regret_only).
+  ci_robust: >
+    stricter layer - paired condition-bootstrap 95% CIs of BOTH regret gaps (vs always-adapt,
+    vs always-freeze) exclude 0 (KBOUND_WIN_BOOTSTRAP_CIS convention).
+  scored_once: true
+
+success_criteria_stated_in_advance:   # all publishable; declared before any result
+  official_sar_still_harmful: >
+    if official-SAR STILL produces harmful cells and KGA routes them (regret < both, FA <= alpha)
+    -> the ImageNet-C harm is NOT an implementation artifact; the headline claim strengthens.
+  official_sar_collapse_free: >
+    if official-SAR is collapse-free (harmful fraction < p*=0.10) and KGA correctly ties
+    near-oracle always-adapt with FA <= alpha -> matches the paper's p*-regime law (certificate
+    value scales with harm rate); report as CONFIRMATION and scope the SAR text accordingly.
+    The ImageNet-C harm is then CONFIG-DEPENDENT and that MUST be reported honestly.
+  either_way: the 'bad SAR implementation' objection is closed by data.
+
+integrity:
+  - ADVERSARIAL robustness check. If SAR's official schedule does NOT collapse, the ImageNet-C
+    harm is config-dependent -> REPORT THAT HONESTLY. Do NOT tune anything (lr, freeze, reset,
+    severities, composition, seeds, eval pool, p*) to manufacture collapse.
+  - All knobs are FIXED in this file before any full-data result is seen.
+  - Runner DEFAULTS stay byte-identical to prior runs; the official-SAR arm, the tar-streaming
+    path, the non-iid composition axis, and CPU device are explicit OPT-IN flags only.
+  - tar-streaming returns the identical image bytes extraction would; no scientific change.
+
+launch:
+  env: ~/.venv_wilds/bin/python   # torch 2.5.1, torchvision 0.20.1, sklearn 1.9.0, numpy 2.4.6
+  device: mps (real run)          # one accelerator job at a time
+  data_root: experiments/kbound/data/imagenet-c
+  output_dir: experiments/kbound/results/imagenetc_protocol_E_full_v1/
+  runner: docs/research/kbound/scripts/cifar_tent_mps_v2.py   # --benchmarks imagenetc
+  launcher: experiments/kbound/results/imagenetc_protocol_E_full_v1/run_protocol_E_full.sh
+  preflight:
+    - all tars present + md5-verified vs Zenodo 2235448 (noise served from extracted dirs).
+    - runner imports clean; tar-streaming enumerates all 19 corruptions x severities {4,5}.
+    - 1-cell CPU smoke green before the full accelerator run.
+  queue: launch only after the accelerator is idle.
+
+data_source:
+  zenodo_record: 2235448          # Hendrycks & Dietterich, ICLR 2019
+  served_as: tar-streaming (no extraction)
+  md5:
+    noise.tar:   e80562d7f6c3f8834afb1ecf27252745   # 22565673785 B; noise served from extracted dirs, tar optional
+    blur.tar:    2d8e81fdd8e07fef67b9334fa635e45c   # 7112704951 B (present, size-verified)
+    weather.tar: 33ffea4db4d93fe4a428c40a6ce0c25d   # 12797438995 B
+    digital.tar: 89157860d7b10d5797849337ca2e5c03   # 7757510705 B
+    extra.tar:   d492dfba5fc162d8ec2c3cd8ee672984   # 15789490144 B
