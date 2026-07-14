@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Emit paper result-table numbers as LaTeX macros from results_source.json.
+"""Emit paper result-table numbers from the canonical result manifest.
 
 Falls back to canonical locked JSON artifacts when results_source.json lacks
 locked_analysis / headtohead blocks (so PDF macros stay current before a full rerun).
@@ -11,9 +11,12 @@ Single source of truth -> docs/research/kbound/paper/generated/kbound_numbers.te
 import json
 import os
 
-ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "..", ".."))
-SRC = os.path.join(ROOT, "docs/research/kbound/results_source.json")
-OUT = os.path.join(ROOT, "docs/research/kbound/paper/generated/kbound_numbers.tex")
+HERE = os.path.abspath(os.path.dirname(__file__))
+REPO_ROOT = os.path.abspath(os.path.join(HERE, "..", "..", "..", ".."))
+ROOT = REPO_ROOT if os.path.isdir(os.path.join(REPO_ROOT, "docs/research/kbound")) else os.path.dirname(HERE)
+KBOUND = os.path.join(ROOT, "docs/research/kbound") if ROOT == REPO_ROOT else ROOT
+SRC = os.path.join(KBOUND, "paper/generated/kbound_result_manifest.json")
+OUT = os.path.join(KBOUND, "paper/generated/kbound_numbers.tex")
 LOCKED_DEFAULT = os.path.join(
     ROOT, "experiments/kbound/results/stress_grid_multiseed_v1/LOCKED_ANALYSIS_RESULTS.json"
 )
@@ -61,7 +64,13 @@ def _headtohead():
 
 
 d = _load_json(SRC)
+tracks = d.get("tracks", {})
 ns = d.get("natural_shifts", {})
+if tracks:
+    ns = {
+        "officehome_M_v2": dict(zip(("regret_kga", "regret_adapt", "regret_freeze"), tracks["officehome_M_v2"]["regret"])) | {"false_adapt": tracks["officehome_M_v2"]["false_adapt"]},
+        "iwildcam_H_v2": dict(zip(("regret_kga", "regret_adapt", "regret_freeze"), tracks["iwildcam_H_v2"]["regret"])) | {"false_adapt": tracks["iwildcam_H_v2"]["false_adapt"]},
+    }
 oh = ns.get("officehome_M_v2", {})
 iw = ns.get("iwildcam_H_v2", {})
 M = {}
@@ -81,8 +90,18 @@ if iw:
     })
 
 cg = d.get("corruption_grids", {})
+if tracks:
+    cg = {
+        "cifar10c_stress": {"candidates": {
+            "tent": dict(zip(("regret_kga", "regret_adapt", "regret_freeze"), tracks["cifar10c_tent"]["regret"])) | {"false_adapt": tracks["cifar10c_tent"]["false_adapt"]},
+            "eata": dict(zip(("regret_kga", "regret_adapt", "regret_freeze"), tracks["cifar10c_eata"]["regret"])) | {"false_adapt": tracks["cifar10c_eata"]["false_adapt"]},
+        }},
+        "imagenetc_sar": dict(zip(("regret_kga", "regret_adapt", "regret_freeze"), tracks["imagenetc_sar"]["regret"]))
+    }
 if "cifar10c_stress" in cg:
     c10 = cg["cifar10c_stress"]
+    if "candidates" in c10:
+        c10 = c10["candidates"]["tent"]
     M["CIFARkga"] = f(c10["regret_kga"])
     M["CIFARadapt"] = f(c10["regret_adapt"])
     M["CIFARfreeze"] = f(c10["regret_freeze"])
@@ -93,13 +112,14 @@ if "imagenetc_sar" in cg:
     M["ICfreeze"] = f(ic["regret_freeze"])
 
 la = _locked()
-for cand, tag in [("tent", "Tent"), ("eata", "Eata"), ("sar", "Sar")]:
-    c = la.get("candidates", {}).get(cand, {})
+manifest_candidates = cg.get("cifar10c_stress", {}).get("candidates", {})
+for cand in ("tent", "eata"):
+    c = manifest_candidates.get(cand) or la.get("candidates", {}).get(cand, {})
     if c:
-        M[f"CIFAR{cand}Kga"] = f(c["kga_mean_regret"])
-        M[f"CIFAR{cand}Adapt"] = f(c["adapt_mean_regret"])
-        M[f"CIFAR{cand}Freeze"] = f(c["freeze_mean_regret"])
-        M[f"CIFAR{cand}FA"] = pct(c.get("false_adapt_rate_pooled", 0))
+        M[f"CIFAR{cand}Kga"] = f(c.get("regret_kga", c.get("kga_mean_regret")))
+        M[f"CIFAR{cand}Adapt"] = f(c.get("regret_adapt", c.get("adapt_mean_regret")))
+        M[f"CIFAR{cand}Freeze"] = f(c.get("regret_freeze", c.get("freeze_mean_regret")))
+        M[f"CIFAR{cand}FA"] = pct(c.get("false_adapt", c.get("false_adapt_rate_pooled", 0)))
 
 hh = _headtohead()
 if hh:

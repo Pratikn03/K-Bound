@@ -1,17 +1,16 @@
 """kbound.certificate -- Finite-sample conformal + empirical-Bernstein certificates.
 
-FROZEN SNAPSHOT. The canonical, maintained implementation of these certificates
+REPRODUCTION MIRROR. The canonical, maintained implementation of these certificates
 lives in the top-level ``kga`` package (``kga/certificate.py``). This file is a
-frozen copy bundled with the K-Bound paper reproduction package and is kept
-byte-stable so published numbers reproduce. Do NOT edit the math here to "fix" or
-extend it -- edit ``kga/certificate.py`` and, if the reproduction package is
-re-released, re-vendor from there. ``empirical_bernstein_lcb`` below is
+copy bundled with the K-Bound paper reproduction package. It mirrors the current
+release rule; archived result JSONs preserve the historical quantile convention
+used to generate them. ``empirical_bernstein_lcb`` below is
 numerically identical to ``kga.certificate.empirical_bernstein``
 (verified; see ``docs/research/kbound/ELARA_KGA_MERGE_PLAN.md``).
 
 Theorem thm:cert (K-Bound paper):
     Given calibration residuals r_i = |Bhat_i - B_i|, the split-conformal
-    radius eps = quantile(r, 1 - alpha) guarantees that a new prediction Bhat
+    radius eps = r_(k), k=min(n,ceil((n+1)(1-alpha))), guarantees that a new prediction Bhat
     deviates from the true B by at most eps with probability >= 1 - alpha over
     the random calibration split.
 
@@ -30,7 +29,7 @@ import numpy as np
 def conformal_radius(residuals: np.ndarray, alpha: float = 0.1) -> float:
     """Split-conformal radius from calibration residuals.
 
-    Implements Thm thm:cert: eps = quantile(|Bhat - B|, 1 - alpha).
+    Implements Thm thm:cert using the exact finite-sample residual rank.
     The resulting interval [Bhat - eps, Bhat + eps] covers the true B with
     probability >= 1 - alpha over the random calibration split.
 
@@ -44,7 +43,7 @@ def conformal_radius(residuals: np.ndarray, alpha: float = 0.1) -> float:
     Returns
     -------
     eps : float
-        The (1 - alpha)-quantile of the residuals.
+        The exact split-conformal order statistic of the residuals.
 
     Examples
     --------
@@ -58,7 +57,13 @@ def conformal_radius(residuals: np.ndarray, alpha: float = 0.1) -> float:
         raise ValueError("residuals must be a non-empty 1-D array")
     if not (0.0 < alpha < 1.0):
         raise ValueError(f"alpha must be in (0, 1), got {alpha}")
-    return float(np.quantile(r, 1.0 - alpha))
+    if not np.all(np.isfinite(r)):
+        raise ValueError("residuals must contain only finite values")
+    if np.any(r < 0.0):
+        raise ValueError("residuals must be non-negative")
+    n = len(r)
+    k = min(n, int(math.ceil((n + 1) * (1.0 - alpha))))
+    return float(np.sort(r)[k - 1])
 
 
 def empirical_bernstein_lcb(x: np.ndarray, alpha: float = 0.1) -> float:

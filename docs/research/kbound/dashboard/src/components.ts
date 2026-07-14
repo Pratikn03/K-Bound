@@ -18,7 +18,7 @@ export function researchHeader(data: Snapshot): string {
     <header class="page-header editorial-header">
       <div class="eyebrow">K-BOUND / LABEL-FREE ADAPTATION</div>
       <h1>Can an unlabeled model update be trusted?</h1>
-      <p class="lede">K-Bound decides whether a proposed test-time adaptation is certifiably helpful, certifiably harmful, or unknowable.</p>
+      <p class="lede">K-Bound studies when a strict adaptation decision is supportable. KGA is the finite-sample wrapper that commits only when a calibrated benefit interval excludes zero.</p>
       <div class="status-row">
         ${statusChip("Theory", rs.theory)}
         ${statusChip("Controlled evidence", rs.controlled)}
@@ -26,7 +26,7 @@ export function researchHeader(data: Snapshot): string {
         ${statusChip("Edge study", rs.edge_study)}
       </div>
       <div class="callout">
-        <strong>Claim boundary.</strong> K-Bound does not promise universal accuracy gains. Its role is to prevent harmful adaptation when label-free evidence can justify a decision.
+        <strong>Claim boundary.</strong> K-Bound is not a universal accuracy booster. Real-data KGA estimates benefit directly; it does not numerically apply the population drift budget.
       </div>
     </header>`;
 }
@@ -133,39 +133,13 @@ export function evidenceBoard(
       <h2 class="section-title">Experiment evidence board</h2>
 
       <div class="evidence-group">
-        <h3 class="evidence-group-title">Core controlled suite</h3>
-        <p class="evidence-group-desc">123-task anomaly routing and multiseed rigor from locked CPU experiments.</p>
+        <h3 class="evidence-group-title">Headline controlled suite</h3>
+        <p class="evidence-group-desc">Regret-to-oracle from the canonical paper manifest. Lower is better.</p>
         <div class="panel comparison-matrix">
           <div class="panel-body panel-scroll-x">
             <table class="data-table">
-              <thead><tr><th>Experiment</th><th class="num">Freeze</th><th class="num">Adapt</th><th class="num">KGA</th><th class="num">Oracle</th><th>Status</th><th class="num">Regret</th></tr></thead>
+              <thead><tr><th>Experiment</th><th class="num">Regret freeze</th><th class="num">Regret adapt</th><th class="num">Regret KGA</th><th class="num">Oracle</th><th>Status</th><th class="num">KGA</th></tr></thead>
               <tbody>${policyTableRows(headline)}</tbody>
-            </table>
-          </div>
-        </div>
-      </div>
-
-      <div class="evidence-group">
-        <h3 class="evidence-group-title">Helpful-dominated regimes</h3>
-        <p class="evidence-group-desc">Per-corruption panels where adapt is strong; KGA matches adapt safely (not beats-both).</p>
-        <div class="panel comparison-matrix">
-          <div class="panel-body panel-scroll-x">
-            <table class="data-table">
-              <thead><tr><th>Benchmark</th><th class="num">Freeze</th><th class="num">Adapt</th><th class="num">KGA</th><th class="num">Oracle</th><th>Status</th><th class="num">Regret</th></tr></thead>
-              <tbody>${policyTableRows(b.helpful_dominated)}</tbody>
-            </table>
-          </div>
-        </div>
-      </div>
-
-      <div class="evidence-group" id="experiments">
-        <h3 class="evidence-group-title">Controlled policy wins</h3>
-        <p class="evidence-group-desc">Report “beats both” only where artifact <code>beats_both</code> is true.</p>
-        <div class="panel comparison-matrix">
-          <div class="panel-body panel-scroll-x">
-            <table class="data-table">
-              <thead><tr><th>Benchmark</th><th class="num">Freeze</th><th class="num">Adapt</th><th class="num">KGA</th><th class="num">Oracle</th><th>Status</th><th class="num">Regret</th></tr></thead>
-              <tbody>${policyTableRows(b.controlled_wins)}</tbody>
             </table>
           </div>
         </div>
@@ -198,8 +172,8 @@ export function evidenceBoard(
       </div>
 
       <div class="evidence-group">
-        <h3 class="evidence-group-title">Boundary / negative evidence</h3>
-        <p class="evidence-group-desc">Scientifically useful nulls — evidence insufficient for a valid commitment.</p>
+        <h3 class="evidence-group-title">Diagnostic, incomplete, and constructed evidence</h3>
+        <p class="evidence-group-desc">These rows are retained for scope and failure analysis, not promoted as natural-shift wins.</p>
         <div class="panel">
           <div class="panel-body panel-pad">
             ${(b.boundary_negative ?? []).map(boundaryCard).join("")}
@@ -246,6 +220,7 @@ function edgeUnblockPanel(edge: EdgeValidation): string {
       <div class="section-label">Gate unblock playbook</div>
       <p class="cell-muted">Study remains <strong>pending</strong> until all checks pass without <code>--bypass-gate</code>. Capture guide: <code>edge/PHYSICAL_STUDY_RUNBOOK.md</code></p>
       <ul class="gap-list">${gaps}</ul>
+      ${cmdBlock("Researcher preflight", u.commands.preflight ?? "python docs/research/kbound/edge/scripts/preflight_r2.py")}
       ${cmdBlock("Full publication pipeline (validate → train → calibrate → replay → audit → TeX)", u.commands.full_pipeline ?? "")}
       ${cmdBlock("Retrain source model only (no bypass)", u.commands.retrain_source ?? "")}
       ${cmdBlock("Replay held-out Phone A", u.commands.replay_heldout ?? "")}
@@ -266,6 +241,17 @@ export function edgeStudyStatus(edge?: EdgeValidation): string {
         <div class="timeline-detail timeline-detail-sub">${esc(p.detail)}</div>
       </div>`;
     })
+    .join("");
+
+  const sessionRows = (edge.session_progress ?? [])
+    .map(
+      (s) => `<tr>
+        <td><code>${esc(s.session)}</code></td>
+        <td class="num">${esc(s.captured_clips)}</td>
+        <td class="num">${esc(s.expected_clips || "not prepared")}</td>
+        <td>${badge(s.complete ? "verified" : "pending", s.complete ? "complete" : "pending")}</td>
+      </tr>`
+    )
     .join("");
 
   const dev = edge.development_metrics;
@@ -297,14 +283,23 @@ export function edgeStudyStatus(edge?: EdgeValidation): string {
           </div>
           ${badge(edge.study_status, isDev ? "Not publication-ready" : "Study complete")}
         </div>
-        ${isDev ? `<div class="callout callout--warning callout-inset">Pipeline and audit infrastructure exist, but source-model and held-out gates are not met. Metrics at chance level with full abstention must not be read as deployment success.</div>` : ""}
+        ${isDev ? `<div class="callout callout--warning callout-inset">The implementation is ready for collection, but the physical study is not evidence until fresh S01-S10 captures, the source-model gate, held-out replay, replication, and the strict publication gate all pass.</div>` : ""}
         ${edgeUnblockPanel(edge)}
         <div class="timeline">${phases}</div>
+        <div class="evidence-group">
+          <h3 class="evidence-group-title">Session capture ledger</h3>
+          <div class="panel comparison-matrix"><div class="panel-body panel-scroll-x">
+            <table class="data-table">
+              <thead><tr><th>Session</th><th class="num">Captured</th><th class="num">Expected physical clips</th><th>Status</th></tr></thead>
+              <tbody>${sessionRows}</tbody>
+            </table>
+          </div></div>
+        </div>
         ${shadowDiagram()}
         <div class="demo-row">
           <div>
             <div class="section-label">Live camera (this browser)</div>
-            <p class="cell-muted">Uses your Mac/iPhone camera via the browser — for checking Continuity Camera before running the Python shadow window.</p>
+            <p class="cell-muted">Connectivity check only. Browser preview frames are never written to the study and are not evidence.</p>
             <div class="live-camera-wrap">
               <video id="live-camera-preview" class="live-camera-preview" autoplay playsinline muted></video>
               <div class="live-camera-controls">
@@ -314,26 +309,17 @@ export function edgeStudyStatus(edge?: EdgeValidation): string {
               </div>
               <p id="live-camera-status" class="cell-muted live-camera-status">Requesting camera…</p>
             </div>
-            <div class="section-label" style="margin-top:16px">Recorded demos (not live)</div>
-            <div class="video-wrap">
-              <div class="video-tabs">
-                <button type="button" class="video-tab is-active" data-video="edge/artifacts/laptop_live_demo.mp4">Phone A capture (demo)</button>
-                <button type="button" class="video-tab" data-video="edge/artifacts/dashboard_demo.mp4">Synthetic shadow stream</button>
-              </div>
-              <video id="demo-player" controls loop muted playsinline>
-                <source src="edge/artifacts/laptop_live_demo.mp4" type="video/mp4">
-              </video>
+            <div class="callout" style="margin-top:12px">
+              <strong>Evidence boundary.</strong> Use the locked capture script for S01-S10. Pilot, mock, browser-preview, and screen-recorded clips are rejected by the publication gate.
             </div>
           </div>
           <div>
             <div class="section-label">Live shadow demo (OpenCV window)</div>
             <p class="cell-muted">Frozen model is official output; Tent candidate + KGA run in shadow only. The KGA overlay opens in a separate Python window — not inside this page.</p>
-            ${cmdBlock("Looping simulation (shows adapt/freeze/abstain cycle)", `cd AutoML_Flagship_V8\n.venv/bin/python docs/research/kbound/edge/scripts/07_shadow_live.py \\\n  --config docs/research/kbound/edge/configs/edge_label_inspection_v1.yaml \\\n  --shadow-config docs/research/kbound/edge/configs/edge_shadow_v1.yaml \\\n  --view window \\\n  --loop`)}
-            ${cmdBlock("Looping recorded video with safety radius override (ADAPT)", `cd AutoML_Flagship_V8\n.venv/bin/python docs/research/kbound/edge/scripts/07_shadow_live.py \\\n  --config docs/research/kbound/edge/configs/edge_label_inspection_v1.yaml \\\n  --shadow-config docs/research/kbound/edge/configs/edge_shadow_v1.yaml \\\n  --video docs/research/kbound/edge/artifacts_real/pilot/PILOT_item_01.mp4 \\\n  --view window \\\n  --loop \\\n  --eps 0.05`)}
-            ${cmdBlock("Mac/iPhone camera (Continuity auto or index 1/2)", `cd AutoML_Flagship_V8\n.venv/bin/python docs/research/kbound/edge/scripts/07_shadow_live.py \\\n  --config docs/research/kbound/edge/configs/edge_label_inspection_v1.yaml \\\n  --shadow-config docs/research/kbound/edge/configs/edge_shadow_v1.yaml \\\n  --camera auto \\\n  --view window`)}
-            ${cmdBlock("Synthetic / fake source (no camera)", `cd AutoML_Flagship_V8\n.venv/bin/python docs/research/kbound/edge/scripts/07_shadow_live.py \\\n  --config docs/research/kbound/edge/configs/edge_real_phone_v1.yaml \\\n  --shadow-config docs/research/kbound/edge/configs/edge_shadow_v1.yaml \\\n  --view window`)}
+            ${cmdBlock("Looping simulation (interface check only)", `.venv/bin/python docs/research/kbound/edge/scripts/07_shadow_live.py \\\n  --config docs/research/kbound/edge/configs/edge_label_inspection_v1.yaml \\\n  --shadow-config docs/research/kbound/edge/configs/edge_shadow_v1.yaml \\\n  --view window \\\n  --loop`)}
+            ${cmdBlock("Mac/iPhone camera (Continuity auto or index 1/2)", `.venv/bin/python docs/research/kbound/edge/scripts/07_shadow_live.py \\\n  --config docs/research/kbound/edge/configs/edge_label_inspection_v1.yaml \\\n  --shadow-config docs/research/kbound/edge/configs/edge_shadow_v1.yaml \\\n  --camera auto \\\n  --view window`)}
             <div class="callout" style="margin-top:12px">
-              <strong>Physical capture (Phone A/B study).</strong> Point the camera at real labeled packages on a desk — not at a laptop screen. See the inspection guide: good lighting, full box in frame, label visible (ok / missing / damaged / rotated).
+              <strong>Research sequence.</strong> Prepare lock and checklists; capture S01-S02; pass the source gate; capture and seal S03-S06; open S07-S08 once; then replicate on Phone B with S09-S10 and run the strict publication pipeline.
             </div>
           </div>
         </div>
@@ -458,31 +444,19 @@ export function architectureSection(): string {
 }
 
 export function experimentsPage(board: Snapshot["evidence_board"], headline?: PolicyRow[]): string {
-  const b = board ?? {};
+  void board;
   return `
     <div class="page-section">
       <div class="section-label">Experiments</div>
       <h2 class="section-title">Controlled and natural-shift benchmarks</h2>
       <div class="evidence-group">
-        <h3 class="evidence-group-title">Core suite</h3>
+        <h3 class="evidence-group-title">Controlled beats-both tracks</h3>
+        <p class="evidence-group-desc">Regret-to-oracle from the canonical paper manifest. Lower is better.</p>
         <div class="panel"><div class="panel-body panel-scroll-x"><table class="data-table">
-          <thead><tr><th>Experiment</th><th class="num">Freeze</th><th class="num">Adapt</th><th class="num">KGA</th><th class="num">Oracle</th><th>Status</th><th class="num">Regret</th></tr></thead>
+          <thead><tr><th>Experiment</th><th class="num">Regret freeze</th><th class="num">Regret adapt</th><th class="num">Regret KGA</th><th class="num">Oracle</th><th>Status</th><th class="num">KGA</th></tr></thead>
           <tbody>${policyTableRows(headline)}</tbody>
         </table></div></div>
       </div>
-      <div class="evidence-group">
-        <h3 class="evidence-group-title">Helpful-dominated</h3>
-        <div class="panel"><div class="panel-body panel-scroll-x"><table class="data-table">
-          <thead><tr><th>Benchmark</th><th class="num">Freeze</th><th class="num">Adapt</th><th class="num">KGA</th><th class="num">Oracle</th><th>Status</th><th class="num">Regret</th></tr></thead>
-          <tbody>${policyTableRows(b.helpful_dominated)}</tbody>
-        </table></div></div>
-      </div>
-      <div class="evidence-group">
-        <h3 class="evidence-group-title">Controlled wins</h3>
-        <div class="panel"><div class="panel-body panel-scroll-x"><table class="data-table">
-          <thead><tr><th>Benchmark</th><th class="num">Freeze</th><th class="num">Adapt</th><th class="num">KGA</th><th class="num">Oracle</th><th>Status</th><th class="num">Regret</th></tr></thead>
-          <tbody>${policyTableRows(b.controlled_wins)}</tbody>
-        </table></div></div>
-      </div>
+      <div class="callout"><strong>Scope.</strong> Natural datasets are no-harm results, not clean single-dataset CI-robust beats-both wins. Constructed heterogeneous routing is labeled separately.</div>
     </div>`;
 }

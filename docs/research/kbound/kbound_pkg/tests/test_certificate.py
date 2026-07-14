@@ -44,12 +44,13 @@ class TestConformalRadius:
         )
 
     def test_quantile_identity(self):
-        """eps is the exact (1-alpha)-quantile of the residuals."""
+        """eps is the exact finite-sample residual order statistic."""
         rng = np.random.default_rng(0)
         r = rng.standard_normal(200) ** 2   # chi-squared-like residuals
         alpha = 0.15
         eps = conformal_radius(r, alpha)
-        assert abs(eps - float(np.quantile(r, 1 - alpha))) < 1e-12
+        k = min(len(r), int(np.ceil((len(r) + 1) * (1 - alpha))))
+        assert abs(eps - float(np.sort(r)[k - 1])) < 1e-12
 
     def test_output_positive(self):
         r = np.abs(np.random.default_rng(1).standard_normal(100))

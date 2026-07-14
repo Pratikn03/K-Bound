@@ -40,6 +40,17 @@ from sklearn.preprocessing import StandardScaler
 ALPHA = 0.10  # FIXED — never tuned
 
 
+def conformal_rank_radius(residuals, alpha=ALPHA):
+    """Exact split-conformal order statistic; no quantile interpolation."""
+    r = np.asarray(residuals, dtype=float).ravel()
+    if r.size == 0 or not np.all(np.isfinite(r)):
+        raise ValueError("residuals must be non-empty and finite")
+    if not (0.0 < alpha < 1.0):
+        raise ValueError("alpha must lie in (0, 1)")
+    k = min(r.size, int(np.ceil((r.size + 1) * (1.0 - alpha))))
+    return float(np.sort(r)[k - 1])
+
+
 # ─── record loading ──────────────────────────────────────────────────────────
 
 def _one_record(r, candidate=None):
@@ -107,13 +118,16 @@ def decide_global(Bhat_t, eps):
 def metrics(dec, Bt, a0t, aat):
     adapt = dec == "ADAPT"
     commit = dec != "ABSTAIN"
+    harmful = Bt <= 0
     kga = np.where(adapt, aat, a0t)
     oracle = np.maximum(a0t, aat)
     return {
         "commit_rate": float(commit.mean()),
         "coverage": float(commit.mean()),
         "adapt_rate": float(adapt.mean()),
-        "false_adapt": float(np.mean(Bt[adapt] < 0)) if adapt.any() else 0.0,
+        "false_adapt": float(np.mean(adapt & harmful)),
+        "false_adapt_unconditional": float(np.mean(adapt & harmful)),
+        "false_adapt_conditional": float(np.mean(harmful[adapt])) if adapt.any() else 0.0,
         "regret_kga": float((oracle - kga).mean()),
         "regret_adapt": float((oracle - aat).mean()),
         "regret_freeze": float((oracle - a0t).mean()),
@@ -155,7 +169,7 @@ def run_split(records, cal_seeds, test_seeds, estimator="ppi_debias", conformal=
         qhi = QuantileRegressor(quantile=1 - ALPHA, alpha=1e-3, solver="highs").fit(Zcs, Bc)
         # conformity score E = max(qlo - B, B - qhi) on CAL; widen by its (1-alpha) quantile
         e = np.maximum(qlo.predict(Zcs) - Bc, Bc - qhi.predict(Zcs))
-        q = float(np.quantile(e, 1 - ALPHA))
+        q = conformal_rank_radius(e, ALPHA)
         Blo_t = qlo.predict(Zts) - q; Bhi_t = qhi.predict(Zts) + q
         # decision rule UNCHANGED in spirit: adapt if lower bound > 0; freeze if upper < 0
         dec = np.where(Blo_t > 0, "ADAPT", np.where(Bhi_t < 0, "FREEZE", "ABSTAIN"))
@@ -181,16 +195,16 @@ def run_split(records, cal_seeds, test_seeds, estimator="ppi_debias", conformal=
         resid_c = np.abs(Bhat_c - Bc)  # ppi_debias variant (non-headline)
 
     if conformal == "global":
-        eps = float(np.quantile(resid_c, 1 - ALPHA))
+        eps = conformal_rank_radius(resid_c, ALPHA)
         dec = decide_global(Bhat_t, eps)
     elif conformal == "mondrian":
         # per-composition (cell) eps; fall back to global eps for tiny/unseen groups
-        eps_glob = float(np.quantile(resid_c, 1 - ALPHA))
+        eps_glob = conformal_rank_radius(resid_c, ALPHA)
         dec = np.array(["ABSTAIN"] * len(Bhat_t), dtype=object)
         groups = set(compc.tolist())
         for g in groups:
             mc = compc == g
-            epsg = (float(np.quantile(resid_c[mc], 1 - ALPHA))
+            epsg = (conformal_rank_radius(resid_c[mc], ALPHA)
                     if mc.sum() >= 5 else eps_glob)
             mt = compt == g
             dec[mt] = decide_global(Bhat_t[mt], epsg)

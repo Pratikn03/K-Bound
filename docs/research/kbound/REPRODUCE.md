@@ -32,7 +32,7 @@ Exits 0 iff all checks PASS. It:
 | ImageNet-C SAR beats-both | `experiments/kbound/results/win_hunt_v5/imagenetc_aggr/decisive_tta_results.json` |
 | Decision-gate comparison | `gate_comparison.json` |
 | Three-source mixture (constructed) | `research_lock/KBOUND_MIXED_STREAM_v2.json` |
-| Anytime streaming (safety DEMO) | `research_lock/WIN_HUNT_v3_ARM_D_result.json` |
+| Anytime streaming | label-informed offline diagnostic only; not promoted as label-free evidence |
 | Exact-rank ablations | `experiments/kbound/results/ablation_exactrank.json` (input SHAs inside) |
 | Controller cost profile | `experiments/kbound/results/cost_profile.json` |
 
@@ -40,7 +40,8 @@ Exits 0 iff all checks PASS. It:
 ```
 python3 docs/research/kbound/scripts/ablation_exactrank.py        # alpha/estimator/dropout/transfer
 python3 docs/research/kbound/scripts/cost_profile.py              # controller overhead
-python3 docs/research/kbound/gapclose_wave5/win_hunt_D_anytime_stream.py   # anytime e-process
+# The historical anytime script uses target-label window accuracies and is
+# intentionally excluded from the label-free reproduction path.
 ```
 
 ## 4. Strengthening harnesses (for camera-ready)

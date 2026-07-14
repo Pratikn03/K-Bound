@@ -1,0 +1,84 @@
+{
+  "description": "Multiclass (K>=3) knowability--capacity: exact benefit identity; a single-conflict-pair extension at tau=1 with explicit hypotheses (incl. the necessary constant-residual reservoir); and necessity results (conflict-pair structure via genuine argmax; residual-profile constancy; third-class confounding of the binary observable) delimiting exactly where the binary capacity stops in multiclass.",
+  "tau": 1.0,
+  "seed": 20260629,
+  "block0": {
+    "K": 3,
+    "mu": 0.4,
+    "a": 2.0,
+    "delta_mc": -0.12038725,
+    "delta_closed_form": -0.12072120130768406,
+    "abs_err": 0.0003339513076840578,
+    "identity_holds": true
+  },
+  "blockA": {
+    "n_tested": 50000,
+    "n_identifiable": 28789,
+    "n_mismatch": 0,
+    "c3_values": [
+      0.0,
+      0.1,
+      0.2,
+      0.3,
+      0.4,
+      0.5,
+      0.6
+    ],
+    "capacity_holds": true,
+    "residual_breaker_flips_sign": true,
+    "residual_breaker_delta_const": -0.1438077381358737,
+    "residual_breaker_delta_varA": 0.08818013404151423,
+    "residual_breaker_delta_varB": -0.29361975994990525
+  },
+  "blockB": {
+    "conflict_pairs_on_D": [
+      [
+        0,
+        1
+      ],
+      [
+        1,
+        0
+      ]
+    ],
+    "n_conflict_pairs": 2,
+    "benefit_field_sign_crossings_in_x": 6,
+    "delta_mu_sign_changes": 4,
+    "n_identifiable_components": 5,
+    "binary_baseline_sign_changes": 1,
+    "max_abs_lambda": 0.3229566179149785,
+    "realizable_by_affine_argmax": true,
+    "concept_valid_simplex": true,
+    "M1_necessary": true
+  },
+  "blockC": {
+    "a": 2.0,
+    "eta_jg_shared": 0.45,
+    "bayes_top_class_Wplus": 1,
+    "bayes_top_class_Wminus": 2,
+    "delta_plus": 0.0346006152705777,
+    "delta_minus": -0.20163806830095293,
+    "opposite_sign": true,
+    "shared_QX": true,
+    "shared_deployed_score_profile": true,
+    "tv_unlabeled": 0.0,
+    "minimax_lb": 0.5,
+    "binary_M": -0.04999999999999999,
+    "binary_K_examples": [
+      [
+        0.02,
+        2.4999999999999996,
+        true
+      ],
+      [
+        0.04,
+        1.2499999999999998,
+        true
+      ]
+    ],
+    "binary_margin_is_capacity": false,
+    "counterexample_confirmed": true
+  },
+  "status": "PARTIAL (multiclass). PROVEN: (Block 0) exact vector benefit identity for K>=3; (Block A) a single-conflict-pair multiclass capacity at tau=1 under explicit hypotheses (M1) single conflict pair, (M1') CONSTANT residual reservoir [shown necessary -- a varying residual flips sign(Delta) at a fixed observable crossing], (M2) MLR location nuisance, (M3) contrast-mass drift budget -- a genuine multiclass extension. NECESSITY (Block B): dropping (M1) breaks the scalar capacity even for canonical affine-score argmax classifiers (genuine realization, not a hand-drawn field): the conflict pair varies across D and the identifiable set fragments into >=3 components, so the binary per-coordinate regularity does NOT lift. NECESSITY (Block C): the binary observable margin M=E[eta_jg]-1/2 is a strictly-too-coarse reduct; two K=3 worlds share (Q_X, deployed-class score profile) yet have opposite sign(Delta) via the third-class split, so M is not a capacity (the converse half is an instance of the already-proven distribution-free converse; the NEW content is that M is too coarse). OPEN: a single computable multiclass capacity WITHOUT (M1) (multi-conflict-pair / vector-concept regime) -- the flip set is intrinsically multi-component and the worst-case flip over the admissible vector concept class is not known to be a computable functional of any natural label-free observable.",
+  "all_ok": true
+}

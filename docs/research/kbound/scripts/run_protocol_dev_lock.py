@@ -77,7 +77,7 @@ def run_holdout_same_file(path: str, candidate: str, cal_seeds: list[int], test_
     for _i in range(len(Bc)):
         _tr = _np.arange(len(Bc)) != _i
         _loo[_i] = af.fit_point(Zc[_tr], Bc[_tr]).predict(Zc[_i:_i + 1])[0]
-    eps = float(_np.quantile(_np.abs(_loo - Bc), 1 - af.ALPHA))
+    eps = af.conformal_rank_radius(_np.abs(_loo - Bc), af.ALPHA)
     out = dict(m)
     out["eps_global"] = eps
     out["beats_both"] = bool(out["regret_kga"] < out["regret_adapt"] and out["regret_kga"] < out["regret_freeze"])

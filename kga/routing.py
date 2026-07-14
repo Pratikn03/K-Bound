@@ -20,6 +20,8 @@ from typing import Literal
 
 import numpy as np
 
+from kga.certificate import split_conformal_rank_radius as _split_conformal_rank_radius
+
 Selector = Literal["argmax_lcb", "first_positive"]
 
 
@@ -54,16 +56,8 @@ class RoutingDecision:
 
 
 def split_conformal_rank_radius(cal_errors: np.ndarray, level: float) -> float:
-    """Finite-sample conformal radius (rank form, matches theory validators)."""
-    errs = np.asarray(cal_errors, dtype=float).ravel()
-    if errs.size == 0:
-        raise ValueError("cal_errors must be non-empty")
-    if not (0.0 < level < 1.0):
-        raise ValueError(f"level must be in (0, 1), got {level}")
-    n = errs.size
-    k = int(np.ceil((1.0 - level) * (n + 1)))
-    k = min(max(k, 1), n)
-    return float(np.sort(np.abs(errs))[k - 1])
+    """Exact rank radius for signed or absolute calibration errors."""
+    return _split_conformal_rank_radius(np.abs(np.asarray(cal_errors, dtype=float).ravel()), level)
 
 
 def candidate_lcb_from_calibration(
@@ -78,7 +72,7 @@ def candidate_lcb_from_calibration(
     cal_truth = np.asarray(cal_truth, dtype=float).ravel()
     if cal_scores.shape != cal_truth.shape:
         raise ValueError("cal_scores and cal_truth must have the same shape")
-    residuals = cal_scores - cal_truth
+    residuals = np.abs(cal_scores - cal_truth)
     eps = split_conformal_rank_radius(residuals, alpha)
     delta_hat = float(deploy_score)
     return delta_hat, eps, delta_hat - eps

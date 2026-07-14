@@ -17,8 +17,9 @@ theorem binary_sign_reduction {muD aBar : ℝ} (hmu : 0 < muD) :
   have hpos : 0 < 2 * muD := by nlinarith
   exact signReal_pos_mul hpos
 
-theorem binary_margin_split (M gamma : ℝ) :
-    M + gamma - 1 / 2 = (M - 1 / 2) + gamma := by ring
+theorem binary_margin_split (scoreMean aBar : ℝ) :
+    (scoreMean - 1 / 2) + (aBar - scoreMean) = aBar - 1 / 2 := by
+  ring
 
 def multiclassBenefit (muD pa p0 : ℝ) : ℝ :=
   muD * (pa - p0)

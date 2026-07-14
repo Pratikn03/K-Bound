@@ -11,6 +11,8 @@ from typing import Literal, Sequence
 
 import numpy as np
 
+from kbound.certificate import conformal_radius
+
 Selector = Literal["argmax_lcb", "first_positive"]
 
 
@@ -41,15 +43,7 @@ class RoutingDecision:
 
 
 def split_conformal_rank_radius(cal_errors: np.ndarray, level: float) -> float:
-    errs = np.asarray(cal_errors, dtype=float).ravel()
-    if errs.size == 0:
-        raise ValueError("cal_errors must be non-empty")
-    if not (0.0 < level < 1.0):
-        raise ValueError(f"level must be in (0, 1), got {level}")
-    n = errs.size
-    k = int(np.ceil((1.0 - level) * (n + 1)))
-    k = min(max(k, 1), n)
-    return float(np.sort(np.abs(errs))[k - 1])
+    return conformal_radius(np.abs(np.asarray(cal_errors, dtype=float).ravel()), alpha=level)
 
 
 def candidate_lcb_from_calibration(

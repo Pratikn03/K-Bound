@@ -138,7 +138,8 @@ class TestCertificateRadius:
         rng = np.random.default_rng(12)
         r = np.abs(rng.standard_normal(500))
         cert = conformal_split(0.2, r, alpha=0.1)
-        assert cert.epsilon == pytest.approx(float(np.quantile(r, 0.9)))
+        k = min(len(r), int(np.ceil((len(r) + 1) * 0.9)))
+        assert cert.epsilon == pytest.approx(float(np.sort(r)[k - 1]))
 
     def test_conformal_radius_shrinks_with_smaller_residuals(self):
         rng = np.random.default_rng(13)

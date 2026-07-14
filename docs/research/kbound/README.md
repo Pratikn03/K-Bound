@@ -1,129 +1,135 @@
-# K-Bound / KGA — Repository Guide
+# K-Bound Research Guide
 
-**Start here if you are new.** This repo couples a theory paper, a Python certificate
-implementation, locked experiment artifacts, and a small notebook curriculum.
+This directory is the maintained research surface for K-Bound and KGA. It
+contains the conference draft, historical extended manuscript, formalization, canonical
+result manifest, dashboard, and physical-camera validation package.
 
-| If you want… | Open this |
-|--------------|-----------|
-| **Doc map (what to read)** | [`DOCS_INDEX.md`](DOCS_INDEX.md) |
-| **Complete picture (theory → proof → results)** | [`THEORY_TO_CODE_MAP.md`](THEORY_TO_CODE_MAP.md) |
-| **Full theory audit** | `bash docs/research/kbound/scripts/theory_audit_full.sh` |
-| **Re-run all 25 validators (~6 min)** | `bash docs/research/kbound/scripts/theory_audit_full.sh --run-validators` |
-| **Run the tour in Jupyter** | [`../../notebooks/00_KBound_Master_Guide.ipynb`](../../notebooks/00_KBound_Master_Guide.ipynb) |
-| **Canonical project status** | [`PROJECT_STATUS_AND_OPEN_PROBLEMS.md`](PROJECT_STATUS_AND_OPEN_PROBLEMS.md) |
-| **Theory core closure gate** | [`THEORY_100_PERCENT_CLOSURE_PLAN.md`](THEORY_100_PERCENT_CLOSURE_PLAN.md) + `cd formal && python3 formal_audit.py --strict-core` |
-| **Wave 4 validators** | `cd theory_v2 && .venv/bin/python val_*.py` (see `THEORY_100_PERCENT_CLOSURE_PLAN.md`) |
-| **Reviewer reproduction** | [`REVIEWER_REPRO_PACKET.md`](REVIEWER_REPRO_PACKET.md) |
-| **Short paper PDF** | [`kbound_short.pdf`](kbound_short.pdf) |
-| **Long paper PDF** | [`kbound.pdf`](kbound.pdf) |
-| **One-command integrity check** | `bash docs/research/kbound/scripts/reproduce_submission.sh` |
-| **Monorepo health (all kbound tests)** | `bash scripts/monorepo_health.sh` |
-| **Architecture / SSoT map** | [`../../../MONOREPO.md`](../../../MONOREPO.md) |
+## Start Here
 
----
+| Goal | Entry point |
+|---|---|
+| Read the claim-controlled short paper | [kbound_short_final_draft.pdf](kbound_short_final_draft.pdf) |
+| Edit the short paper | [kbound_short.tex](kbound_short.tex) and [kbound_short_appendix.tex](kbound_short_appendix.tex) |
+| Inspect every promoted number | [paper/generated/kbound_result_manifest.json](paper/generated/kbound_result_manifest.json) |
+| Audit claim-to-artifact links | [KBOUND_SHORT_CLAIM_MANIFEST.md](KBOUND_SHORT_CLAIM_MANIFEST.md) |
+| Reproduce the submission | [REVIEWER_REPRO_PACKET.md](REVIEWER_REPRO_PACKET.md) |
+| Inspect theory-to-code mapping | [THEORY_TO_CODE_MAP.md](THEORY_TO_CODE_MAP.md) |
+| Build the research dashboard | [dashboard/README.md](dashboard/README.md) |
+| Start the physical study | [edge/PHYSICAL_STUDY_RUNBOOK.md](edge/PHYSICAL_STUDY_RUNBOOK.md) |
+| Verify Lean files | [formal/README.md](formal/README.md) |
 
-## What this project is (one paragraph)
+## Fixed Terminology
 
-Label-free test-time adaptation can help or hurt. **K-Bound** proves when the **sign of
-adaptation benefit** is identifiable from evidence alone, proves an **impossibility** when
-it is not (minimal supplement = one bit), and implements a **certificate** that controls
-**false adaptation** (FA_u ≤ α). Empirically: **beats-both** on synthetic CIFAR stress
-grids and vs **POEM/AETTA** on a pre-registered mixed benchmark; **no-harm** on five
-natural shifts (Office-Home, iWildCam, Camelyon, RxRx1, PACS).
+- **K-Bound**: population theory and the adapt/freeze/abstain framework.
+- **KGA**: finite-sample empirical wrapper around a candidate adapter.
+- **Population frontier**: M, gamma, and beta.
+- **Empirical certificate**: Delta_hat and epsilon.
+- **Abstain**: do not commit the update; continue prediction with the frozen fallback.
 
----
+The population frontier and empirical certificate are related but distinct.
+Real-data KGA does not receive beta, and empirical abstention does not by itself
+prove structural non-identifiability.
 
-## Directory map
+## Evidence Tiers
 
-```
-docs/research/kbound/
-  kbound_short.tex / kbound.tex     # papers (source of truth for claims)
-  claim_ledger.json                 # every claim → artifact → allowed wording
-  PROJECT_STATUS_AND_OPEN_PROBLEMS.md
-  THEORY_TO_CODE_MAP.md             # theory ↔ code ↔ results (this guide's deep dive)
-  kbound_pkg/kbound/                # frozen repro snapshot (edit kga/, re-vendor here)
-  scripts/                          # CANONICAL scorers, kbtrain.sh, reproduce_submission.sh
-  theory_v2/                        # Wave 4 closures + validators (strict core)
-  formal/                           # Lean 4 mechanization + formal_audit.py
-  edge/                             # physical camera protocol (R2 pending)
+### Promoted controlled results
 
-experiments/kbound/
-  results/                          # locked JSON results (headline numbers)
-  theory_validation/                # numeric theorem checks (val_thm*.py)
-  poem_aetta/                       # POEM/AETTA head-to-head harness
+- CIFAR-10-C Tent: five seeds, 432 cells per seed, archived CI beats-both.
+- CIFAR-10-C EATA: five seeds, 432 cells per seed, archived CI beats-both.
+- ImageNet-C SAR: 27 cells, seed 0, paired-bootstrap beats-both with a
+  single-seed caveat.
 
-notebooks/
-  00_KBound_Master_Guide.ipynb      # START HERE (2026-06, current)
-  01–09_*.ipynb                     # topic notebooks (some predate POEM/AETTA integration)
-```
+### Natural no-harm results
 
----
+Office-Home M v2, iWildCam H v2, Camelyon17 genuine OOD reconciliation,
+and RxRx1 J. These are not described as clean single-dataset natural beats-both
+wins.
 
-## Notebook curriculum (11 files)
+### Diagnostic or incomplete tracks
 
-| # | Notebook | Role |
-|---|----------|------|
-| **00** | `00_KBound_Master_Guide.ipynb` | **Master map** — theory spine, claim ledger, headline numbers |
-| 00b | `00_KBound_Reproduction.ipynb` | Older 123-task ELARA reproduction (partially stale) |
-| 01 | `01_Problem_and_Theory.ipynb` | Theorem validators + Le Cam / regret JSON |
-| 02 | `02_Knowability_Trichotomy.ipynb` | Adapt / freeze / abstain demos |
-| 03 | `03_Harmful_Mixed_Rigor.ipynb` | Harmful + mixed regimes |
-| 04 | `04_Regression_and_Witness.ipynb` | Witness / regression constructions |
-| 05 | `05_TTA_CIFAR_and_Online.ipynb` | CIFAR TTA stress grid |
-| 06 | `06_Evidence_and_Drift.ipynb` | Natural-shift evidence |
-| 07 | `07_Certificate_and_Calibration.ipynb` | Certificate + conformal |
-| 08 | `08_ELARA_Multimodal_Instantiation.ipynb` | Multimodal D33 |
-| 09 | `09_Conclusions_and_Reproducibility.ipynb` | Artifact inventory |
+- CIFAR-10.1 fails the declared transfer bar.
+- ImageNet-R has three of four planned seeds and no stable CI-robust win.
+- PACS has one of three planned seeds.
+- The three-source OOF stream is researcher-constructed routing evidence, not
+  unseen-domain transfer.
 
-Legacy `notebooks/legacy_elara/` is the superseded ELARA fraud/cyber EDA stack — not K-Bound.
+## Canonical Build
 
----
+~~~bash
+bash scripts/reproduce_submission.sh
+bash scripts/build_dashboard.sh
+~~~
 
-## Theory: what is proven vs open
+Paper-only build:
 
-**Proven (in paper + Wave 4):** frontier identifiability, impossibility / one-bit dichotomy,
-certificate FA_u control, unconditional weakest one-bit class, `conj:gen` resolved
-negatively, anytime + multicandidate extensions, tight constants, minimax optimality,
-multiclass capacity impossibility, margin-computability dichotomy, regression bracketing closure.
+~~~bash
+bash scripts/build_pdfs.sh
+~~~
 
-**Lean scope:** `formal/` kernel-checks the algebraic theorem spine and finite-sample bridge
-lemmas. It does not claim a full foundational Mathlib probability development of exchangeability,
-optional stopping, product KL/TV, or martingale rates.
+The generated result manifest is authoritative for repeated headline values.
+Historical notes and archived runs are provenance, not automatic evidence.
 
-**Open (not blocking submission):** physical camera R2 (KB-CLAIM-030), external reviewer sign-off.
+## Dashboard
 
-See [`PROJECT_STATUS_AND_OPEN_PROBLEMS.md`](PROJECT_STATUS_AND_OPEN_PROBLEMS.md) §1.
+~~~bash
+bash scripts/build_dashboard.sh
+python3 -m http.server 8765 --directory .
+~~~
 
----
+Open http://127.0.0.1:8765/kbound_dashboard.html.
 
-## Quick reproduce
+The dashboard reads the canonical paper manifest and the active
+experiments/kbound/results/edge_real_phone_v1 tree. It never reads
+archive/legacy_elara.
 
-```bash
-cd /Volumes/T9/uav/AutoML_Flagship_V8
+## Physical Validation
 
-# Integrity + tables + artifact checks (~2 min, CPU)
-bash docs/research/kbound/scripts/reproduce_submission.sh
+The edge code is a maintained, tested module rather than an informal demo. The
+publication workflow is:
 
-# Human-readable complete map (macOS: use bash wrapper or python3 — not bare `python`)
-bash docs/research/kbound/scripts/kbound_tour.sh
+1. Prepare the protocol lock and deterministic checklists.
+2. Capture S01-S02 and pass the source-model quality gate.
+3. Capture S03-S06 and seal development plus conformal calibration.
+4. Open S07-S08 once for held-out Phone A evaluation.
+5. Capture S09-S10 on Phone B for replication.
+6. Run the strict anti-leakage and publication gates.
+7. Export camera tables and refresh the dashboard.
 
-# Headline empirics (cached, seconds)
-PY=.venv/bin/python bash experiments/kbound/poem_aetta/run_all_headtohead.sh
-.venv/bin/python docs/research/kbound/scripts/mixed_stream_kbound.py
-```
+Start with:
 
-Optional GPU refresh (9 datasets):
+~~~bash
+python edge/scripts/preflight_r2.py
+~~~
 
-```bash
-# ~0.5% smoke, single seed (separate output dir; ~1h)
-bash docs/research/kbound/scripts/kbtrain.sh smoke-all
+Browser preview, simulation, pilot data, and mock captures are connectivity or
+software tests only. They cannot satisfy the publication gate.
 
-# ~1% multiseed smoke + pipeline report (recommended pre-flight; ~2–3h)
-KB_SMOKE_SEEDS="0 1" KB_DEVICE=mps \
-  bash docs/research/kbound/scripts/run_smoke_showcase.sh
+## Formalization
 
-# Full multi-seed rerun + paper rebuild (many hours)
-KB_SEEDS="0 1 2 3 4" KB_DEVICE=mps \
-  caffeinate -is bash docs/research/kbound/scripts/run_final_showcase.sh \
-    --device mps --seeds "0 1 2 3 4"
-```
+~~~bash
+cd formal
+bash build.sh
+~~~
+
+The theorem map reports exactly which Lean declarations correspond to paper
+statements. Do not describe the repository as a full foundational Mathlib
+development: several measure-theoretic and deployment assumptions remain
+external.
+
+## Manuscript Policy
+
+Use the 20-page short draft as the submission core. The 59-page `kbound.tex`
+predates the current claim corrections and is not submission-ready; use it only
+as a source inventory for proofs, diagnostics, and background.
+A balanced version should retain:
+
+- problem and validity boundary;
+- three core theory results plus the multiclass bridge;
+- KGA architecture and calibration protocol;
+- controlled beats-both evidence;
+- natural no-harm and negative evidence;
+- concise limitations and reproducibility.
+
+Keep extended minimax, one-bit, martingale, historical ELARA, and large
+diagnostic ladders in the supplement unless a venue explicitly allows them.
+The detailed keep/move policy is in [KBOUND_MANUSCRIPT_STRATEGY.md](KBOUND_MANUSCRIPT_STRATEGY.md).

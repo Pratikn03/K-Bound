@@ -1,0 +1,52 @@
+# Item 13 pre-registration DRAFT — single-dataset natural mixed-regime held-out test.
+# SEAL a copy into research_lock/ (with git hash + date) BEFORE computing any number.
+# Status: DRAFT — not evidence. No result cell below may be filled until sealed.
+
+prereg_id: NATURAL_MIXED_REGIME_v1
+sealed: false            # flip only when copied to research_lock/ and committed
+goal: >
+  Test whether a single natural-shift dataset with heterogeneous per-condition
+  operating points yields a CI-robust beats-both result for KGA — the claim the
+  paper currently reports as absent.
+
+dataset: iwildcam (WILDS)
+unit: per-camera condition (camera x operating point)
+operating_points:
+  - {name: mild,       adapter: tent, steps: 10, lr: 1.0e-3}
+  - {name: aggressive, adapter: sar-style, steps: 50, lr: 2.5e-3}
+hypothesis: >
+  Mild conditions are mostly helpful or neutral; aggressive conditions on
+  low-frequency cameras are harmful; the 16-dim natural-shift evidence panel
+  separates them. This makes the stream mixed AND detectable (regime map,
+  Table I), the only regime where beats-both is theoretically available.
+
+splits:
+  calibration_cameras: locked list, disjoint from test (reuse Protocol H v2 split discipline)
+  test_cameras: untouched; scored exactly once after (estimator, radius, alpha) frozen
+alpha: 0.10
+radius: exact-rank r_(k), k = ceil((n_cal+1)(1-alpha))   # released scorer rule only
+estimator: GradientBoostingRegressor(250, depth2, lr .05, subsample .8, seed 0), refit per adapter
+
+primary_endpoint: >
+  Regret-to-oracle lower than BOTH always-adapt and always-freeze on held-out
+  cameras, paired bootstrap 95% CIs excluding zero for both gaps, Holm over the
+  2-comparison family, and FA_u <= alpha.
+secondary: adapt/freeze/abstain composition; FA_c (descriptive only).
+
+fail_honest_branch: >
+  If either CI includes zero: report as no-harm or diagnostic per the evidence-tier
+  policy; the paper's "no single-dataset natural beats-both" statements remain
+  verbatim. A win under any deviation from this file is NOT promotable.
+forbidden:
+  - target-test labels before decisions are frozen
+  - operating-point or camera-list changes after seeing any test number
+  - promoting a pooled cross-dataset stream as a single-dataset result
+
+results:            # leave blank until sealed run completes
+  kga_regret: null
+  adapt_regret: null
+  freeze_regret: null
+  ci_vs_adapt: null
+  ci_vs_freeze: null
+  fa_u: null
+  verdict: null

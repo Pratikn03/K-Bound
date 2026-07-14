@@ -1,17 +1,16 @@
 #!/usr/bin/env python3
-"""Aggregate K-Bound result artifacts into dashboard/data/snapshot.json.
+"""Build the researcher-facing K-Bound dashboard snapshot.
 
-Reads only real JSON artifacts; never fabricates metrics. Run from repo root or
-any cwd:
-
-  python docs/research/kbound/scripts/build_dashboard_snapshot.py
+The paper's generated result manifest is the only source for promoted benchmark
+numbers. Physical-study files are read only from the active edge result tree.
+Archived or legacy ELARA outputs are intentionally ignored.
 """
 
 from __future__ import annotations
 
+import csv
 import json
 import subprocess
-import sys
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
@@ -19,18 +18,24 @@ from typing import Any
 SCRIPT = Path(__file__).resolve()
 KBOUND = SCRIPT.parents[1]
 REPO = SCRIPT.parents[4]
+MANIFEST = KBOUND / "paper" / "generated" / "kbound_result_manifest.json"
+EDGE = KBOUND / "edge"
+EDGE_RESULTS = REPO / "experiments" / "kbound" / "results" / "edge_real_phone_v1"
 OUT = KBOUND / "dashboard" / "data" / "snapshot.json"
-DOCS_RESULTS = KBOUND / "results"
-EDGE_RESULTS = REPO / "docs" / "experiments" / "kbound" / "results" / "edge_real_phone_v1"
-EXP = REPO / "experiments" / "kbound" / "results"
-LOCK = REPO / "research_lock"
 
 
 def load(path: Path) -> dict[str, Any] | None:
     if not path.is_file():
         return None
-    with path.open(encoding="utf-8") as f:
-        return json.load(f)
+    with path.open(encoding="utf-8") as fh:
+        return json.load(fh)
+
+
+def rel(path: Path) -> str:
+    try:
+        return str(path.relative_to(REPO))
+    except ValueError:
+        return str(path)
 
 
 def git_short_hash() -> str | None:
@@ -41,721 +46,410 @@ def git_short_hash() -> str | None:
             text=True,
             stderr=subprocess.DEVNULL,
         ).strip()
-    except (subprocess.CalledProcessError, FileNotFoundError):
+    except (FileNotFoundError, subprocess.CalledProcessError):
         return None
 
 
-def rel(p: Path) -> str:
-    try:
-        return str(p.relative_to(REPO))
-    except ValueError:
-        return str(p)
-
-
-def fmt4(x: float | None) -> float | None:
-    if x is None:
-        return None
-    return round(float(x), 4)
-
-
-def policy_row(
+def regret_row(
+    manifest: dict[str, Any],
+    key: str,
     name: str,
     status: str,
-    artifact: str,
-    metrics: dict[str, Any],
     framing: str,
-    *,
-    beats_both: bool | None = None,
 ) -> dict[str, Any]:
-    row: dict[str, Any] = {
+    track = manifest["tracks"][key]
+    kga, adapt, freeze = track["regret"]
+    return {
         "name": name,
         "status": status,
-        "artifact": artifact,
+        "artifact": track.get("source", rel(MANIFEST)),
         "framing": framing,
-        "freeze": metrics.get("freeze"),
-        "adapt": metrics.get("adapt"),
-        "kga": metrics.get("kga"),
-        "oracle": metrics.get("oracle"),
-        "regret_kga": fmt4(metrics.get("regret_kga")),
-        "regret_adapt": fmt4(metrics.get("regret_adapt")),
-        "regret_freeze": fmt4(metrics.get("regret_freeze")),
-        "false_adapt": fmt4(metrics.get("false_adapt")),
+        "freeze": freeze,
+        "adapt": adapt,
+        "kga": kga,
+        "oracle": 0.0,
+        "regret_kga": kga,
+        "regret_adapt": adapt,
+        "regret_freeze": freeze,
+        "false_adapt": track.get("false_adapt", track.get("false_adapt_unconditional")),
+        "beats_both_artifact": "beats-both" in track.get("verdict", ""),
     }
-    if beats_both is not None:
-        row["beats_both_artifact"] = beats_both
-    return row
 
 
-def edge_phase_status() -> dict[str, Any]:
-    split = load(EDGE_RESULTS / "split_audit.json") or {}
-    model_card = load(EDGE_RESULTS / "model_card.json") or {}
-    cal = load(EDGE_RESULTS / "calibration_summary.json") or {}
-    held = load(EDGE_RESULTS / "heldout_metrics.json") or {}
-    repl = load(EDGE_RESULTS / "replication_metrics.json") or {}
+def session_progress() -> list[dict[str, Any]]:
+    rows: list[dict[str, Any]] = []
+    raw = EDGE / "artifacts_real" / "raw"
+    checklists = EDGE / "artifacts_real" / "checklists"
+    for number in range(1, 11):
+        sid = f"S{number:02d}"
+        checklist = checklists / f"{sid}_checklist.csv"
+        expected = 0
+        if checklist.is_file():
+            with checklist.open(encoding="utf-8") as fh:
+                expected = sum(1 for _ in csv.DictReader(fh))
+        captured = len(list((raw / sid).glob("*.mp4"))) if (raw / sid).is_dir() else 0
+        rows.append(
+            {
+                "session": sid,
+                "expected_clips": expected,
+                "captured_clips": captured,
+                "complete": expected > 0 and captured >= expected,
+            }
+        )
+    return rows
+
+
+def edge_status() -> dict[str, Any]:
+    lock = load(EDGE / "artifacts_real" / "protocol_lock.json") or {}
+    model = load(EDGE_RESULTS / "model_card.json") or {}
+    heldout = load(EDGE_RESULTS / "heldout_metrics.json") or {}
+    replication = load(EDGE_RESULTS / "replication_metrics.json") or {}
     audit = load(EDGE_RESULTS / "anti_leakage_audit.json") or {}
-    runtime = load(EDGE_RESULTS / "runtime_profile.json") or {}
-    protocol_lock = load(KBOUND / "edge" / "artifacts_real" / "protocol_lock.json") or {}
+    inventory = load(EDGE_RESULTS / "recording_inventory.json") or {}
+    gate = load(EDGE_RESULTS / "publication_gate.json") or {}
 
-    bypass = "bypass-gate" in (model_card.get("training_command") or "")
-    val_bal = (model_card.get("metrics") or {}).get("val_balanced_acc")
-    val_f1 = (model_card.get("metrics") or {}).get("val_macro_f1")
-    gate_threshold = {"balanced_acc": 0.80, "macro_f1": 0.80}
-    gate_pass = (
-        val_bal is not None
-        and val_f1 is not None
-        and val_bal >= gate_threshold["balanced_acc"]
-        and val_f1 >= gate_threshold["macro_f1"]
-        and not bypass
+    progress = session_progress()
+    all_sessions = bool(progress) and all(row["complete"] for row in progress)
+    clips = inventory.get("clips") or []
+    physical_only = bool(clips) and all(row.get("capture_mode") == "physical" for row in clips)
+    audit_pass = bool(audit.get("checks")) and all(
+        bool(row.get("passed")) for row in audit.get("checks", [])
     )
-
-    held_bs = (held.get("bootstrap_results") or {}).get("kga_full", {})
-    held_bal = ((held_bs.get("balanced_acc") or {}).get("val"))
-    held_abstain = (held.get("kga_full_metrics") or {}).get("abstain_rate", 0)
-
-    # Chance-level on 4-class + full abstention => development pipeline, not headline.
-    study_validated = (
-        gate_pass
-        and held_bal is not None
-        and held_bal > 0.30
-        and held_abstain < 0.95
+    metrics = model.get("metrics") or {}
+    source_gate = (
+        float(metrics.get("val_balanced_acc", 0.0)) >= 0.80
+        and float(metrics.get("val_macro_f1", 0.0)) >= 0.80
     )
-
-    audit_pass = all(c.get("passed") for c in audit.get("checks", [])) if audit else False
-
-    def phase(pid: str, label: str, status: str, detail: str, artifact: str | None = None) -> dict:
-        return {
-            "id": pid,
-            "label": label,
-            "status": status,
-            "detail": detail,
-            "artifact": artifact,
-        }
+    heldout_present = bool(heldout.get("n_windows"))
+    replication_present = bool(replication.get("n_windows"))
+    publication_pass = bool(gate.get("passed")) and all(
+        (all_sessions, physical_only, audit_pass, source_gate, heldout_present, replication_present)
+    )
 
     phases = [
-        phase(
-            "protocol_locked",
-            "Protocol locked",
-            "verified" if split.get("protocol_hash") else "pending",
-            f"Hash {str(split.get('protocol_hash', '—'))[:16]}… sealed {split.get('sealed_at', '—')[:10]}",
-            rel(EDGE_RESULTS / "split_audit.json"),
-        ),
-        phase(
-            "source_model_gate",
-            "Source model gate",
-            "failed" if bypass else ("verified" if gate_pass else "pending"),
-            (
-                "Trained with --bypass-gate; held-out at chance level — gate blocked."
-                if bypass
-                else f"Val bal-acc {fmt4(val_bal)} / macro-F1 {fmt4(val_f1)} (need ≥0.80 each)."
-            ),
-            rel(EDGE_RESULTS / "model_card.json"),
-        ),
-        phase(
-            "calibration_fit",
-            "Calibration-fit",
-            "verified" if cal.get("fit_sessions") else "pending",
-            f"Sessions {cal.get('fit_sessions', [])} · n={cal.get('n_fit', '—')}",
-            rel(EDGE_RESULTS / "calibration_summary.json"),
-        ),
-        phase(
-            "conformal_calibration",
-            "Conformal calibration",
-            "verified" if cal.get("conformal_sessions") else "pending",
-            f"Sessions {cal.get('conformal_sessions', [])} · ε={cal.get('epsilon', '—')}",
-            rel(EDGE_RESULTS / "calibration_summary.json"),
-        ),
-        phase(
-            "heldout_phone_a",
-            "Held-out Phone A",
-            "diagnostic" if not study_validated else "verified",
-            (
-                "Development replay — 100% abstain, ~25% balanced acc (4-class chance). "
-                "Not a publication claim."
-                if not study_validated
-                else "Held-out metrics meet protocol gate."
-            ),
-            rel(EDGE_RESULTS / "heldout_metrics.json"),
-        ),
-        phase(
-            "replication_phone_b",
-            "External Phone B",
-            "diagnostic" if not study_validated else "verified",
-            "Replication stream logged; awaits passing source-model gate."
-            if not study_validated
-            else "Replication metrics available.",
-            rel(EDGE_RESULTS / "replication_metrics.json"),
-        ),
-        phase(
-            "audit_export",
-            "Audit + table export",
-            "verified" if audit_pass else "pending",
-            f"{sum(1 for c in audit.get('checks', []) if c.get('passed'))}/"
-            f"{len(audit.get('checks', []))} anti-leakage checks passed.",
-            rel(EDGE_RESULTS / "anti_leakage_audit.json"),
-        ),
+        {
+            "id": "protocol",
+            "label": "Protocol lock",
+            "status": "verified" if lock else "pending",
+            "detail": "Configuration and hash are frozen before capture.",
+            "artifact": rel(EDGE / "artifacts_real" / "protocol_lock.json"),
+        },
+        {
+            "id": "capture",
+            "label": "Fresh physical sessions S01-S10",
+            "status": "verified" if all_sessions and physical_only else "pending",
+            "detail": "Raw clips must be physical, complete, hashed, and split by day/device.",
+            "artifact": rel(EDGE / "PHYSICAL_STUDY_RUNBOOK.md"),
+        },
+        {
+            "id": "source",
+            "label": "Source-model quality gate",
+            "status": "verified" if source_gate else "pending",
+            "detail": "S02 balanced accuracy and macro-F1 must both be at least 0.80.",
+            "artifact": rel(EDGE_RESULTS / "model_card.json"),
+        },
+        {
+            "id": "heldout",
+            "label": "Held-out Phone A replay",
+            "status": "verified" if heldout_present and audit_pass else "pending",
+            "detail": "S07-S08 are opened only after development and conformal calibration are sealed.",
+            "artifact": rel(EDGE_RESULTS / "heldout_metrics.json"),
+        },
+        {
+            "id": "replication",
+            "label": "Phone B replication and publication gate",
+            "status": "verified" if publication_pass else "pending",
+            "detail": "S09-S10, strict anti-leakage audit, report, and table export.",
+            "artifact": rel(EDGE_RESULTS / "publication_gate.json"),
+        },
     ]
 
-    dev_metrics = None
-    if held_bs:
-        dev_metrics = {
-            "label": "Raw development metrics (non-headline)",
-            "phone_a_balanced_acc": held_bal,
-            "phone_a_macro_f1": ((held_bs.get("macro_f1") or {}).get("val")),
-            "kga_abstain_rate": held_abstain,
-            "latency_ms_mean": (runtime.get("end_to_end") or {}).get("mean_ms"),
-            "latency_ms_p95": (runtime.get("end_to_end") or {}).get("p95_ms"),
-            "note": "Chance-level accuracy with full abstention — pipeline/debug output only.",
+    held_metrics = heldout.get("kga_full_metrics") or {}
+    bootstrap = (heldout.get("bootstrap_results") or {}).get("kga_full") or {}
+    development_metrics = None
+    if model or heldout:
+        development_metrics = {
+            "note": (
+                "Diagnostic only until publication_gate.json passes. Browser previews, pilots, "
+                "mock captures, and chance-level replays are not physical-study evidence."
+            ),
+            "phone_a_balanced_acc": (bootstrap.get("balanced_acc") or {}).get("val"),
+            "phone_a_macro_f1": (bootstrap.get("macro_f1") or {}).get("val"),
+            "kga_abstain_rate": held_metrics.get("abstain_rate"),
+            "latency_ms_mean": held_metrics.get("latency_ms_mean"),
+            "latency_ms_p95": held_metrics.get("latency_ms_p95"),
         }
 
-    gaps = [
-        {
-            "check": "Source val balanced acc ≥ 0.80",
-            "passed": val_bal is not None and val_bal >= gate_threshold["balanced_acc"] and not bypass,
-            "detail": f"current {fmt4(val_bal)}" + (" (bypass-gate)" if bypass else ""),
-        },
-        {
-            "check": "Source val macro-F1 ≥ 0.80",
-            "passed": val_f1 is not None and val_f1 >= gate_threshold["macro_f1"] and not bypass,
-            "detail": f"current {fmt4(val_f1)}",
-        },
-        {
-            "check": "Held-out balanced acc > 0.30 (above chance)",
-            "passed": held_bal is not None and held_bal > 0.30,
-            "detail": f"current {fmt4(held_bal)} on 4-class stream",
-        },
-        {
-            "check": "KGA abstain rate < 95%",
-            "passed": held_abstain is not None and held_abstain < 0.95,
-            "detail": f"current {fmt4(held_abstain)}",
-        },
+    checks = [
+        ("Fresh physical S01-S10 captures", all_sessions and physical_only, "no mock or pilot clips"),
+        ("Source-model gate", source_gate, "balanced accuracy and macro-F1 >= 0.80"),
+        ("Strict anti-leakage audit", audit_pass, "all eight checks pass"),
+        ("Phone A held-out replay", heldout_present, "S07-S08 metrics exist"),
+        ("Phone B replication", replication_present, "S09-S10 metrics exist"),
+        ("Publication gate", bool(gate.get("passed")), "machine-readable final gate passes"),
     ]
-
-    unblock = {
-        "gate_thresholds": gate_threshold,
-        "current": {
-            "bypass_gate": bypass,
-            "val_balanced_acc": fmt4(val_bal),
-            "val_macro_f1": fmt4(val_f1),
-            "heldout_balanced_acc": fmt4(held_bal),
-            "kga_abstain_rate": fmt4(held_abstain),
-        },
-        "gaps": gaps,
-        "all_pass": study_validated,
-        "commands": {
-            "capture_runbook": "See docs/research/kbound/edge/PHYSICAL_STUDY_RUNBOOK.md",
-            "retrain_source": (
-                "cd AutoML_Flagship_V8\n"
-                ".venv/bin/python docs/research/kbound/edge/scripts/03_train_source_model.py "
-                "--config docs/research/kbound/edge/configs/edge_real_phone_v1.yaml --epochs 30"
-            ),
-            "full_pipeline": (
-                "cd AutoML_Flagship_V8\n"
-                "bash docs/research/kbound/edge/scripts/run_edge_publication_pipeline.sh"
-            ),
-            "replay_heldout": (
-                "cd AutoML_Flagship_V8\n"
-                ".venv/bin/python docs/research/kbound/edge/scripts/06_replay_heldout.py "
-                "--config docs/research/kbound/edge/configs/edge_real_phone_v1.yaml"
-            ),
-            "refresh_dashboard": (
-                "cd AutoML_Flagship_V8\n"
-                "bash docs/research/kbound/scripts/build_dashboard.sh"
-            ),
-        },
-    }
-
     return {
-        "study_status": "pending" if not study_validated else "verified",
-        "study_label": (
-            "Pre-registered / Development Output"
-            if not study_validated
-            else "Physical study complete"
-        ),
+        "study_status": "verified" if publication_pass else "pending",
+        "study_label": "Physical study complete" if publication_pass else "Pre-registered / awaiting fresh physical sessions",
         "phases": phases,
-        "development_metrics": dev_metrics,
-        "unblock": unblock,
-        "protocol_hash": protocol_lock.get("protocol_hash") or split.get("protocol_hash"),
+        "session_progress": progress,
+        "development_metrics": development_metrics,
+        "unblock": {
+            "all_pass": publication_pass,
+            "gate_thresholds": {"balanced_acc": 0.80, "macro_f1": 0.80},
+            "current": {
+                "sessions_complete": all_sessions,
+                "physical_only": physical_only,
+                "source_gate": source_gate,
+                "audit_pass": audit_pass,
+            },
+            "gaps": [
+                {"check": label, "passed": passed, "detail": detail}
+                for label, passed, detail in checks
+            ],
+            "commands": {
+                "preflight": "python docs/research/kbound/edge/scripts/preflight_r2.py",
+                "full_pipeline": "bash docs/research/kbound/edge/scripts/run_edge_publication_pipeline.sh",
+                "retrain_source": "bash docs/research/kbound/edge/scripts/run_edge_source_gate.sh",
+                "replay_heldout": (
+                    "python docs/research/kbound/edge/scripts/06_replay_heldout.py "
+                    "--config docs/research/kbound/edge/configs/edge_real_phone_v1.yaml"
+                ),
+                "refresh_dashboard": "bash docs/research/kbound/scripts/build_dashboard.sh",
+            },
+        },
+        "protocol_hash": lock.get("protocol_hash"),
         "audit_pass": audit_pass,
     }
 
 
 def build_snapshot() -> dict[str, Any]:
-    mixed = load(DOCS_RESULTS / "main" / "mixed_regime_results.json") or {}
-    rigor = load(DOCS_RESULTS / "main" / "rigor_multiseed.json") or {}
-    harmful = load(DOCS_RESULTS / "main" / "kbound_harmful_results.json") or {}
-    clean = load(DOCS_RESULTS / "main" / "knowability_results.json") or {}
-    witness = load(DOCS_RESULTS / "witness" / "witness_clean.json") or {}
-    regression = load(DOCS_RESULTS / "regression" / "regression_covariate.json") or {}
-    cifar_tent = load(DOCS_RESULTS / "tta" / "cifar_tent_results.json") or {}
-    cifar_online = load(DOCS_RESULTS / "tta" / "cifar_tent_online_results.json") or {}
+    manifest = load(MANIFEST)
+    if not manifest:
+        raise FileNotFoundError(f"Canonical result manifest is missing: {MANIFEST}")
 
-    decisive = load(EXP / "decisive_tta_results.json") or {}
-    ic_sar = load(EXP / "imagenetc_noise_sarfix" / "decisive_tta_results.json") or {}
-    headline_lock = load(LOCK / "KBOUND_HEADLINE_FINDINGS.json") or {}
-
-    office_vf = load(EXP / "officehome_protocol_M_v2" / "VERIFIED_FINDINGS.json") or {}
-    office_proto = load(EXP / "officehome_protocol_M_v2" / "protocol_result.json") or {}
-    iwild_vf = load(EXP / "iwildcam_protocol_H_v2" / "VERIFIED_FINDINGS.json") or {}
-    camelyon = load(EXP / "camelyon17_protocol_G_v1" / "analyze_F_results.json") or {}
-    cifar101_ms = load(EXP / "cifar101_multiseed_v1" / "pooled_summary.json") or {}
-    cifar10c_suite = load(EXP / "cifar10c_suite_results.json") or {}
-    imagenetr = load(EXP / "imagenetr_kbound_light_mps_internal" / "result_f4a1293b.json") or {}
-
-    cifar10c_dec = (
-        (decisive.get("benchmarks") or {}).get("cifar10c", {}).get("methods", {}).get("tent", {}).get("metrics", {})
+    controlled = [
+        regret_row(
+            manifest,
+            "cifar10c_tent",
+            "CIFAR-10-C stress / Tent",
+            "verified",
+            "Five seeds x 432 cross-fitted cells; archived CI beats both fixed policies.",
+        ),
+        regret_row(
+            manifest,
+            "cifar10c_eata",
+            "CIFAR-10-C stress / EATA",
+            "verified",
+            "Five seeds x 432 cross-fitted cells; archived CI beats both fixed policies.",
+        ),
+        regret_row(
+            manifest,
+            "imagenetc_sar",
+            "ImageNet-C / SAR",
+            "conditional",
+            "Twenty-seven cells, seed 0; paired-bootstrap beats both with a single-seed caveat.",
+        ),
+    ]
+    constructed = regret_row(
+        manifest,
+        "three_source_oof",
+        "Constructed three-source OOF stream",
+        "conditional",
+        "Researcher-constructed heterogeneous stream; routing evidence, not unseen-domain transfer.",
     )
-    ic_sar_m = (
-        (ic_sar.get("benchmarks") or {}).get("imagenetc", {}).get("methods", {}).get("sar", {}).get("metrics", {})
-    )
 
-    edge = edge_phase_status()
+    natural = [
+        regret_row(manifest, "officehome_M_v2", "Office-Home M v2", "no_harm", "No-harm; ties the safer fixed policy within the declared criterion."),
+        regret_row(manifest, "iwildcam_H_v2", "iWildCam H v2", "no_harm", "No-harm; ties always-freeze and avoids harmful adaptation."),
+        regret_row(manifest, "camelyon17_ood", "Camelyon17 OOD", "no_harm", "Reconciled genuine OOD result; no natural beats-both claim."),
+        regret_row(manifest, "rxrx1_J", "RxRx1 J", "no_harm", "Locked no-harm result; always-freeze is already optimal."),
+    ]
 
-    theory_ledger = [
+    c101 = manifest["tracks"]["cifar10_1_K"]
+    boundary = [
         {
-            "id": "1",
-            "name": "Non-identifiability + Le Cam minimax (witness)",
-            "status": "verified",
-            "artifact": "docs/research/kbound/results/witness/witness_clean.json",
-            "implication": "Identical label-free evidence can hide opposite adaptation truth — abstain is required.",
-            "evidence": f"100% abstain; all KS p>0.05 ({witness.get('all_Z_features_p>0.05', '—')})",
+            "name": "CIFAR-10.1",
+            "status": "diagnostic",
+            "artifact": rel(MANIFEST),
+            "framing": "Transfer bar fails; not promoted as a policy win.",
+            "regret_kga": c101["regret"][0],
+            "false_adapt": c101["false_adapt_unconditional"],
+            "note": "Consistent with weak evidence, low margin, estimator inadequacy, or calibration failure.",
         },
         {
-            "id": "2",
-            "name": "Plug-in regret decomposition + minimax floor",
-            "status": "verified",
-            "artifact": "experiments/kbound/theory_validation/val_thm2_regret.py",
-            "implication": "Policy regret decomposes into estimation + irreducible switching cost.",
-            "evidence": "Numerical identity check in validator",
+            "name": "ImageNet-R Protocol D",
+            "status": "diagnostic",
+            "artifact": rel(MANIFEST),
+            "framing": "Three of four planned seeds complete; no stable CI-robust beats-both result.",
+            "note": "A diagnostic null, not proof of structural non-identifiability.",
         },
         {
-            "id": "3",
-            "name": "Finite-sample certificate (false-adapt ≤ α)",
+            "name": "PACS",
+            "status": "pending",
+            "artifact": rel(MANIFEST),
+            "framing": "One of three planned seeds complete; breadth evidence remains incomplete.",
+        },
+        {
+            **constructed,
+            "name": "Constructed three-source OOF stream",
             "status": "conditional",
-            "artifact": "src/scripts/kbound/switching_certificate.py",
-            "implication": "Commit-to-adapt only when certificate radius supports positive benefit.",
-            "evidence": "Conditional on disagreement-region sign structure (Thm 5)",
-        },
-        {
-            "id": "3b",
-            "name": "Anytime-valid e-value certificate",
-            "status": "verified",
-            "artifact": "experiments/kbound/theory_validation/val_thm3_evalue.py",
-            "implication": "Sequential false-adapt control without fixed calibration size.",
-            "evidence": "Validator: false-adapt ≤ α",
-        },
-        {
-            "id": "4",
-            "name": "Covariate-shift identifiability",
-            "status": "verified",
-            "artifact": "docs/research/kbound/results/regression/regression_covariate.json",
-            "implication": "Under explicit covariate shift, benefit sign can be identified from unlabeled evidence.",
-            "evidence": f"Decisions {regression.get('decision_counts', {})}",
-        },
-        {
-            "id": "5",
-            "name": "Sign-of-difference on disagreement region",
-            "status": "verified",
-            "artifact": "experiments/kbound/theory_validation/val_thm5_multiclass.py",
-            "implication": "Binary sign certificate lifts to multiclass and regression routing.",
-            "evidence": "100% sign recovery in validator",
-        },
-        {
-            "id": "C1",
-            "name": "Label-free bracketing (Conjecture 1)",
-            "status": "open",
-            "artifact": None,
-            "implication": "Universal label-free upper/lower benefit bounds without extra structure remain open.",
-            "evidence": "Requires reliability-model assumption",
+            "note": "CI beats both, but the stream is researcher-constructed and does not establish transfer.",
         },
     ]
 
-    controlled_wins = []
-    if cifar10c_dec:
-        ma = cifar10c_dec.get("mean_acc", {})
-        rg = cifar10c_dec.get("regret_vs_oracle", {})
-        controlled_wins.append(
-            policy_row(
-                "CIFAR-10-C + Tent (decisive grid)",
-                "verified" if cifar10c_dec.get("beats_both") else "conditional",
-                rel(EXP / "decisive_tta_results.json"),
-                {
-                    "freeze": fmt4(ma.get("always_freeze")),
-                    "adapt": fmt4(ma.get("always_adapt")),
-                    "kga": fmt4(ma.get("K_Bound")),
-                    "oracle": fmt4(ma.get("oracle")),
-                    "regret_kga": rg.get("K_Bound"),
-                    "regret_adapt": rg.get("always_adapt"),
-                    "regret_freeze": rg.get("always_freeze"),
-                    "false_adapt": cifar10c_dec.get("false_adapt_rate_B<0"),
-                },
-                "Beats both trivial policies on decisive CIFAR-10-C Tent grid."
-                if cifar10c_dec.get("beats_both")
-                else "Strong regret vs freeze; ties adapt on mean accuracy.",
-                beats_both=bool(cifar10c_dec.get("beats_both")),
-            )
-        )
-    if ic_sar_m:
-        ma = ic_sar_m.get("mean_acc", {})
-        rg = ic_sar_m.get("regret_vs_oracle", {})
-        controlled_wins.append(
-            policy_row(
-                "ImageNet-C noise + SAR (faithful)",
-                "verified" if ic_sar_m.get("beats_both") else "conditional",
-                rel(EXP / "imagenetc_noise_sarfix" / "decisive_tta_results.json"),
-                {
-                    "freeze": fmt4(ma.get("always_freeze")),
-                    "adapt": fmt4(ma.get("always_adapt")),
-                    "kga": fmt4(ma.get("K_Bound")),
-                    "oracle": fmt4(ma.get("oracle")),
-                    "regret_kga": rg.get("K_Bound"),
-                    "regret_adapt": rg.get("always_adapt"),
-                    "regret_freeze": rg.get("always_freeze"),
-                    "false_adapt": ic_sar_m.get("false_adapt_rate_B<0"),
-                },
-                "Harmful-dominated noise panel — KGA beats both freeze and adapt on regret."
-                if ic_sar_m.get("beats_both")
-                else "Mixed helpful/harmful cells — see artifact.",
-                beats_both=bool(ic_sar_m.get("beats_both")),
-            )
-        )
-    if harmful:
-        ma = harmful.get("mean_auc", {})
-        rg = harmful.get("regret_vs_oracle", {})
-        controlled_wins.append(
-            policy_row(
-                "Harmful fusion (ELARA fuse)",
-                "verified",
-                rel(DOCS_RESULTS / "main" / "kbound_harmful_results.json"),
-                {
-                    "freeze": fmt4(ma.get("always_freeze(auto_select)")),
-                    "adapt": fmt4(ma.get("always_adapt(elara_fuse)")),
-                    "kga": fmt4(ma.get("K-Bound_trichotomy")),
-                    "oracle": fmt4(ma.get("oracle")),
-                    "regret_kga": rg.get("K-Bound"),
-                    "regret_adapt": rg.get("always_adapt"),
-                    "regret_freeze": rg.get("always_freeze"),
-                    "false_adapt": harmful.get("false_adapt_rate_B<0"),
-                },
-                "Harmful + detectable — KGA matches freeze, cuts adapt regret ~11×.",
-            )
-        )
-    if cifar_online:
-        ms = cifar_online.get("mean_stream_accuracy", {})
-        controlled_wins.append(
-            policy_row(
-                "Online continual-Tent (harsh)",
-                "verified",
-                rel(DOCS_RESULTS / "tta" / "cifar_tent_online_results.json"),
-                {
-                    "freeze": fmt4(ms.get("freeze", [None])[0]),
-                    "adapt": fmt4(ms.get("adapt", [None])[0]),
-                    "kga": fmt4(ms.get("kga", [None])[0]),
-                    "oracle": fmt4(ms.get("oracle", [None])[0]),
-                    "regret_kga": cifar_online.get("regret_vs_oracle", {}).get("kga"),
-                    "regret_adapt": cifar_online.get("regret_vs_oracle", {}).get("adapt"),
-                    "regret_freeze": cifar_online.get("regret_vs_oracle", {}).get("freeze"),
-                },
-                "Adapt collapses under harsh schedule; KGA avoids worst-case collapse.",
-            )
-        )
-
-    helpful_dominated = []
-    if cifar10c_suite:
-        summ = cifar10c_suite.get("summary", cifar10c_suite)
-        aa = summ.get("avg_accuracy", {})
-        fa = summ.get("false_adapt_rate", {})
-        rg = summ.get("regret_to_oracle", {})
-        helpful_dominated.append(
-            policy_row(
-                "CIFAR-10-C suite (65 cells, mean acc)",
-                "conditional",
-                rel(EXP / "cifar10c_suite_results.json"),
-                {
-                    "freeze": fmt4(aa.get("frozen")),
-                    "adapt": fmt4(aa.get("tent")),
-                    "kga": fmt4(aa.get("kga")),
-                    "oracle": fmt4(aa.get("oracle")),
-                    "regret_kga": rg.get("kga"),
-                    "regret_adapt": rg.get("tent"),
-                    "regret_freeze": rg.get("frozen"),
-                    "false_adapt": fa.get("kga"),
-                },
-                "Helpful-dominated per-corruption panel — KGA ties adapt; large regret vs freeze.",
-            )
-        )
-
-    natural_no_harm = []
-    for vf, proto_path, dataset in (
-        (office_vf, EXP / "officehome_protocol_M_v2" / "protocol_result.json", "Office-Home"),
-        (iwild_vf, EXP / "iwildcam_protocol_H_v2" / "protocol_result.json", "iWildCam"),
-    ):
-        if not vf:
-            continue
-        natural_no_harm.append(
-            {
-                "name": dataset,
-                "status": "no_harm",
-                "artifact": rel(proto_path),
-                "protocol": vf.get("protocol"),
-                "regret_kga": fmt4(vf.get("regret_kga")),
-                "regret_adapt": fmt4(vf.get("regret_adapt")),
-                "regret_freeze": fmt4(vf.get("regret_freeze")),
-                "false_adapt": fmt4(vf.get("false_adapt")),
-                "framing": "Matches the safer fixed policy on regret; avoids the worse always-adapt policy.",
-            }
-        )
-    if camelyon:
-        tl = camelyon.get("test_locked", {})
-        natural_no_harm.append(
-            {
-                "name": "Camelyon17",
-                "status": "no_harm",
-                "artifact": rel(EXP / "camelyon17_protocol_G_v1" / "analyze_F_results.json"),
-                "protocol": "CAMELYON17_PROTOCOL_G_v1",
-                "regret_kga": fmt4(tl.get("regret_kga")),
-                "regret_adapt": fmt4(tl.get("regret_adapt")),
-                "regret_freeze": fmt4(tl.get("regret_freeze")),
-                "false_adapt": fmt4(tl.get("false_adapt")),
-                "framing": "Natural geo-shift — KGA near freeze regret, far below adapt regret.",
-            }
-        )
-    natural_no_harm.append(
+    theory_ledger = [
         {
-            "name": "RxRx1 (Protocol J audit)",
-            "status": "no_harm",
-            "artifact": rel(EXP / "rxrx1_protocol_J_v1" / "VERIFIED_FINDINGS.md"),
-            "protocol": "RXRX1_PROTOCOL_J_v1",
-            "regret_kga": 0.0,
-            "regret_adapt": 0.2531,
-            "regret_freeze": 0.0,
-            "false_adapt": 0.0,
-            "framing": "Harmful-dominated SAR stream — KGA freeze-oracle audit (not beats-both headline).",
-        }
-    )
-
-    boundary = []
-    if imagenetr:
-        pooled = imagenetr.get("routing_a_single_candidate", {})
-        sar = pooled.get("sar_online", {}) if isinstance(pooled, dict) else {}
-        kga_block = sar.get("kga", {}) if isinstance(sar.get("kga"), dict) else {}
-        ma = kga_block.get("mean_acc", {})
-        rg = kga_block.get("regret_vs_oracle", {})
-        if ma or imagenetr.get("baselines"):
-            boundary.append(
-                {
-                    "name": "ImageNet-R (sar_online routing)",
-                    "status": "open",
-                    "artifact": rel(EXP / "imagenetr_kbound_light_mps_internal" / "result_f4a1293b.json"),
-                    "framing": "Evidence insufficient for a valid commitment — 75% abstention on held routing.",
-                    "freeze": fmt4(ma.get("always_freeze") or imagenetr["baselines"].get("always_freeze_mean_acc")),
-                    "adapt": fmt4(ma.get("always_adapt") or imagenetr["baselines"]["per_candidate_always_adapt_mean_acc"].get("sar_online")),
-                    "kga": fmt4(ma.get("K_Bound")),
-                    "oracle": fmt4(ma.get("oracle")),
-                    "regret_kga": fmt4(rg.get("K_Bound")),
-                    "abstention_rate": fmt4(kga_block.get("abstention_rate")),
-                    "false_adapt": fmt4(kga_block.get("false_adapt_rate_B<0")),
-                    "note": imagenetr.get("multiclass_caveat", "")[:200],
-                }
-            )
-    if cifar101_ms:
-        boundary.append(
-            {
-                "name": "CIFAR-10.1 (multiseed quick)",
-                "status": "diagnostic",
-                "artifact": rel(EXP / "cifar101_multiseed_v1" / "pooled_summary.json"),
-                "framing": "Transfer-failure probe — high harmful rates; certificate abstains or freezes.",
-                "pooled": cifar101_ms.get("pooled", {}),
-            }
-        )
-
-    safety_metrics = []
-    m = (clean.get("metrics") or {})
-    if m:
-        safety_metrics.append(
-            {
-                "label": "Clean suite — adapt precision",
-                "value": fmt4(m.get("adapt_precision_(B>0|ADAPT)")),
-                "meaning": "When KGA adapts on the 123-task suite, benefit is positive ~90% of the time.",
-            }
-        )
-        safety_metrics.append(
-            {
-                "label": "Clean suite — abstain |Δ| vs acted |Δ|",
-                "value": f"{fmt4(m.get('abstain_mean_|B|'))} / {fmt4(m.get('nonabstain_mean_|B|'))}",
-                "meaning": "Abstention concentrates on near-zero benefit instances.",
-            }
-        )
-    if mixed.get("safety"):
-        safety_metrics.append(
-            {
-                "label": "Mixed regime — false-adapt rate",
-                "value": fmt4(mixed["safety"].get("false_adapt_rate_B<0")),
-                "meaning": "Rate of adapting when true benefit is negative under mixed helpful/harmful shifts.",
-            }
-        )
-    if witness:
-        safety_metrics.append(
-            {
-                "label": "Non-identifiability witness — abstain rate",
-                "value": fmt4(witness.get("abstain_rate")),
-                "meaning": "Identical Z-law with opposite truth → certificate refuses to commit.",
-            }
-        )
-    if regression:
-        dc = regression.get("decision_counts", {})
-        safety_metrics.append(
-            {
-                "label": "Regression covariate-shift decisions",
-                "value": f"{dc.get('ADAPT', 0)}/{dc.get('FREEZE', 0)}/{dc.get('ABSTAIN', 0)}",
-                "meaning": "Adapt / freeze / abstain counts match oracle MSE routing.",
-            }
-        )
-
-    proven_count = sum(1 for t in theory_ledger if t["status"] == "verified")
-    open_count = sum(1 for t in theory_ledger if t["status"] == "open")
-    beats_both_count = sum(1 for r in controlled_wins if r.get("beats_both_artifact"))
+            "id": "T1",
+            "name": "Interior matched-evidence impossibility",
+            "status": "verified",
+            "artifact": "docs/research/kbound/paper/sections/theory_core_main.tex",
+            "implication": "For beta > 0 and |M| < beta, evidence-identical target laws can have opposite nonzero benefit.",
+            "evidence": "Paper proof; Lean covers supporting algebra, not the full target-law construction.",
+        },
+        {
+            "id": "P1",
+            "name": "Closed-band abstention",
+            "status": "verified",
+            "artifact": "docs/research/kbound/kbound_short.tex",
+            "implication": "Under strict-action semantics, abstention is maximal on |M| <= beta.",
+            "evidence": "Boundary distinguishes zero-versus-strict ambiguity from the interior construction.",
+        },
+        {
+            "id": "T2",
+            "name": "Strict-commitment frontier",
+            "status": "verified",
+            "artifact": "docs/research/kbound/formal/KBound/Frontier.lean",
+            "implication": "A uniform strict action is supportable exactly outside the declared drift band.",
+            "evidence": "Lean checks the sufficiency spine; richness/necessity assumptions remain paper-level.",
+        },
+        {
+            "id": "T3",
+            "name": "Marginal false-adapt certificate",
+            "status": "conditional",
+            "artifact": "docs/research/kbound/formal/KBound/Certificate.lean",
+            "implication": "Interval coverage controls FA_u, not conditional FA_c.",
+            "evidence": "Coverage is the premise; exchangeability or shift correction is external support for coverage.",
+        },
+        {
+            "id": "M1",
+            "name": "Multiclass bridge",
+            "status": "conditional",
+            "artifact": "docs/research/kbound/kbound_short.tex",
+            "implication": "Delta = P(D)(p_a-p_0); empirical KGA estimates Delta directly.",
+            "evidence": "The converse frontier requires declared-class richness.",
+        },
+    ]
 
     return {
         "meta": {
+            "build_id": datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ"),
             "generated_at": datetime.now(timezone.utc).isoformat(),
             "commit": git_short_hash(),
-            "paper": "docs/research/kbound/K-Bound_paper.pdf",
+            "paper": "docs/research/kbound/kbound_short_final_draft.pdf",
             "paper_pages": 20,
-            "build_id": datetime.now(timezone.utc).strftime("%Y%m%d-%H%M%S"),
-            "artifact_root": "docs/research/kbound/results",
-        },
-        "evidence_strip": {
-            "proven_theorems": {"value": proven_count, "sub": "Thm 3 finite-sample is conditional"},
-            "theorem_validators": {"value": "pass", "sub": "pytest theory_validation suite"},
-            "controlled_beats_both": {
-                "value": beats_both_count,
-                "sub": "Decisive CIFAR-10-C + ImageNet-C SAR where artifact marks beats_both",
-            },
-            "natural_shift_no_harm": {
-                "value": len(natural_no_harm),
-                "sub": "Office-Home, iWildCam, Camelyon17, RxRx1 audit",
-            },
-            "open_theory": {"value": open_count, "sub": "Conjecture 1 bracketing"},
-            "reproducibility": {
-                "value": "ready",
-                "sub": "bash scripts/rebuild_kbound.sh",
-            },
         },
         "research_status": {
             "theory": "verified",
             "controlled": "verified",
-            "natural_shifts": "verified",
-            "edge_study": edge["study_status"],
+            "natural_shifts": "no_harm",
+            "edge_study": "pending",
+        },
+        "evidence_strip": {
+            "proven_theorems": {"value": "3 core", "sub": "plus multiclass/regression bridges"},
+            "theorem_validators": {"value": "Lean partial", "sub": "kernel-checked spine; external assumptions disclosed"},
+            "controlled_beats_both": {"value": "3 tracks", "sub": "2 CIFAR adapter tracks + ImageNet-C SAR"},
+            "natural_shift_no_harm": {"value": "4 tracks", "sub": "no clean natural CI beats-both claim"},
+            "open_theory": {"value": "foundations", "sub": "full probability mechanization remains incomplete"},
+            "reproducibility": {"value": "manifest-backed", "sub": "one promoted-number source"},
         },
         "regime_map": [
             {
-                "id": "helpful",
-                "title": "Helpful + detectable",
-                "action": "KGA may adapt",
+                "id": "mixed",
+                "title": "Mixed and detectable",
+                "action": "Route by certificate",
                 "status": "verified",
-                "examples": "CIFAR-10-C decisive Tent; helpful-dominated corruptions",
-                "artifact": rel(DOCS_RESULTS / "tta" / "cifar_tent_results.json"),
+                "examples": "CIFAR-10-C stress; ImageNet-C SAR",
+                "artifact": rel(MANIFEST),
             },
             {
-                "id": "harmful",
-                "title": "Harmful + detectable",
-                "action": "KGA freezes or abstains",
-                "status": "verified",
-                "examples": "Harmful fusion; ImageNet-C SAR noise; online Tent collapse",
-                "artifact": rel(DOCS_RESULTS / "main" / "kbound_harmful_results.json"),
+                "id": "one-sided",
+                "title": "Natural one-sided shifts",
+                "action": "Prevent damage; often tie",
+                "status": "no_harm",
+                "examples": "Office-Home, iWildCam, Camelyon17, RxRx1",
+                "artifact": rel(MANIFEST),
             },
             {
-                "id": "unknowable",
-                "title": "Unknowable / weak evidence",
-                "action": "KGA abstains",
-                "status": "open",
-                "examples": "ImageNet-R; clean non-identifiability witness",
-                "artifact": rel(DOCS_RESULTS / "witness" / "witness_clean.json"),
+                "id": "weak",
+                "title": "Weak or non-transferable evidence",
+                "action": "Abstain or report diagnostic failure",
+                "status": "diagnostic",
+                "examples": "CIFAR-10.1, ImageNet-R, incomplete PACS",
+                "artifact": rel(MANIFEST),
             },
         ],
         "theory_ledger": theory_ledger,
-        "headline_controlled": [
-            policy_row(
-                "Mixed regime (369 inst, AUROC)",
-                "verified",
-                rel(DOCS_RESULTS / "main" / "mixed_regime_results.json"),
-                {
-                    "freeze": fmt4((mixed.get("mean_auc_policies") or {}).get("always_freeze")),
-                    "adapt": fmt4((mixed.get("mean_auc_policies") or {}).get("always_adapt")),
-                    "kga": fmt4((mixed.get("mean_auc_policies") or {}).get("K_Bound")),
-                    "oracle": fmt4((mixed.get("mean_auc_policies") or {}).get("oracle")),
-                    "regret_kga": (mixed.get("regret_vs_oracle") or {}).get("K_Bound"),
-                    "regret_freeze": (mixed.get("regret_vs_oracle") or {}).get("always_freeze"),
-                },
-                "Beats freeze; near adapt on AUROC.",
-            ),
-            policy_row(
-                "Mixed regime — 8 seeds (mean AUROC)",
-                "verified",
-                rel(DOCS_RESULTS / "main" / "rigor_multiseed.json"),
-                {
-                    "freeze": fmt4((rigor.get("mean_std") or {}).get("always_freeze", [None])[0]),
-                    "adapt": fmt4((rigor.get("mean_std") or {}).get("always_adapt", [None])[0]),
-                    "kga": fmt4((rigor.get("mean_std") or {}).get("K_Bound", [None])[0]),
-                    "oracle": fmt4((rigor.get("mean_std") or {}).get("oracle", [None])[0]),
-                },
-                f"Paired t vs freeze p={(rigor.get('paired_ttest_KBound_vs_always_freeze') or {}).get('p', '—')}",
-            ),
-        ],
+        "headline_controlled": controlled,
         "evidence_board": {
-            "controlled_wins": controlled_wins,
-            "helpful_dominated": helpful_dominated,
-            "natural_shift_no_harm": natural_no_harm,
+            "controlled_wins": controlled,
+            "helpful_dominated": [],
+            "natural_shift_no_harm": natural,
             "boundary_negative": boundary,
         },
-        "edge_validation": edge,
+        "edge_validation": edge_status(),
         "safety": {
-            "metrics": safety_metrics,
+            "metrics": [
+                {
+                    "label": "FA_u",
+                    "value": "P(adapt and Delta <= 0)",
+                    "meaning": "The marginal false-adapt quantity controlled under valid interval coverage.",
+                },
+                {
+                    "label": "FA_c",
+                    "value": "P(Delta <= 0 | adapt)",
+                    "meaning": "Descriptive unless separately proved; not theorem-controlled here.",
+                },
+                {
+                    "label": "Abstain",
+                    "value": "retain f0",
+                    "meaning": "Do not commit the update; prediction continues from the frozen fallback.",
+                },
+            ],
             "prose": {
-                "false_adapt": "FA_u: unconditional rate of choosing ADAPT when true benefit B<0.",
-                "abstain": "Abstention is not 'failure' — it is the correct response when the certificate cannot justify adapt or freeze.",
-                "unknowable": "When label-free evidence is insufficient (witness) or sign structure is weak (ImageNet-R), KGA withholds commitment.",
-                "certificate_scope": "Claims apply under pre-registered protocol locks, conformal calibration splits, and stated theorem conditions.",
+                "false_adapt": "The empirical certificate is Delta_hat +/- epsilon; epsilon is not beta.",
+                "abstain": "Empirical abstention may reflect structural ambiguity, finite data, model inadequacy, transfer failure, or conservative width.",
+                "unknowable": "A benchmark null alone does not establish structural non-identifiability.",
+                "certificate_scope": "Every claim is limited to its saved protocol, calibration unit, adapter, and artifact lineage.",
             },
         },
         "reproduce": {
-            "primary": "cd AutoML_Flagship_V8 && PYTHON=.venv/bin/python bash scripts/rebuild_kbound.sh",
-            "gpu": "KBOUND_GPU=1 PYTHON=.venv/bin/python bash scripts/rebuild_kbound.sh",
-            "validators": ".venv/bin/python experiments/kbound/theory_validation/val_thm1_lecam.py  # + thm2, thm3, thm5",
+            "primary": "bash docs/research/kbound/scripts/reproduce_submission.sh",
+            "gpu": "bash docs/research/kbound/scripts/kbtrain.sh smoke-all",
+            "validators": "cd docs/research/kbound/formal && bash build.sh",
             "dashboard": "bash docs/research/kbound/scripts/build_dashboard.sh",
-            "runtime_estimate": "~2 min CPU core experiments + paper compile",
-            "inputs": [
-                "experiments/elara_u/score_archive",
-                "CIFAR-10 cache",
-            ],
-            "outputs": [
-                "experiments/kbound/results/*.json",
-                "docs/research/kbound/figures/*.png",
-                "docs/research/kbound/K-Bound_paper.pdf",
-                "docs/research/kbound/dashboard/data/snapshot.json",
-            ],
+            "runtime_estimate": "Cached audit is CPU-friendly; dataset refreshes require the documented data and accelerator.",
+            "inputs": [rel(MANIFEST), "research_lock/", "experiments/kbound/results/"],
+            "outputs": [rel(OUT), "docs/research/kbound/kbound_short_final_draft.pdf"],
         },
         "provenance": {
-            "snapshot_path": "docs/research/kbound/dashboard/data/snapshot.json",
-            "manifest": rel(DOCS_RESULTS / "result_manifest.json"),
-            "headline_lock": rel(LOCK / "KBOUND_HEADLINE_FINDINGS.json"),
-            "edge_protocol_lock": rel(KBOUND / "edge" / "artifacts_real" / "protocol_lock.json"),
+            "snapshot_path": rel(OUT),
+            "manifest": rel(MANIFEST),
+            "headline_lock": "research_lock/",
+            "edge_protocol_lock": rel(EDGE / "artifacts_real" / "protocol_lock.json"),
             "commit": git_short_hash(),
-            "local_clips_note": "Physical-camera raw clips remain local; only manifests and SHA-256 hashes are versioned.",
+            "local_clips_note": "Raw physical clips remain local; manifests and hashes are release artifacts after privacy review.",
         },
-        "headline_lock_summary": headline_lock.get("bar", {}),
     }
 
 
 def main() -> int:
-    snap = build_snapshot()
+    snapshot = build_snapshot()
     OUT.parent.mkdir(parents=True, exist_ok=True)
-    with OUT.open("w", encoding="utf-8") as f:
-        json.dump(snap, f, indent=2)
-        f.write("\n")
-    print(f"[build_dashboard_snapshot] wrote {OUT} ({OUT.stat().st_size} bytes)")
+    OUT.write_text(json.dumps(snapshot, indent=2) + "\n", encoding="utf-8")
+    print(f"[dashboard] wrote {OUT}")
     return 0
 
 
 if __name__ == "__main__":
-    sys.exit(main())
+    raise SystemExit(main())

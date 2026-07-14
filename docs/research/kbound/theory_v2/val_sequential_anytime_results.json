@@ -1,0 +1,85 @@
+{
+  "checks": {
+    "drifting_null": {
+      "ever_adapt": 0.00575,
+      "mc_bound": 0.11423024947075772,
+      "passed": true
+    },
+    "negative_control_naive_per_batch": {
+      "anytime_ever_adapt_same_null": 0.053,
+      "batch_threshold": 0.399999999,
+      "horizon_sweep": {
+        "100": {
+          "anytime_eprocess": 0.050666666666666665,
+          "n_batches": 5,
+          "naive": 0.26
+        },
+        "1000": {
+          "anytime_eprocess": 0.056,
+          "n_batches": 50,
+          "naive": 0.95
+        },
+        "250": {
+          "anytime_eprocess": 0.04466666666666667,
+          "n_batches": 12,
+          "naive": 0.498
+        },
+        "500": {
+          "anytime_eprocess": 0.06,
+          "n_batches": 25,
+          "naive": 0.77
+        }
+      },
+      "inflated": true,
+      "n_batches": 25,
+      "naive_ever_adapt": 0.778,
+      "passed": true,
+      "per_batch_reject_exact": 0.057659149169921875,
+      "predicted_familywise": 0.7734310151026618,
+      "window": 20
+    },
+    "power_under_positive_benefit": {
+      "delta_+0.15": 0.7566666666666667,
+      "delta_+0.30": 1.0,
+      "passed": true
+    },
+    "scalar_vectorized_crosscheck": {
+      "ever_adapt_mismatches": 0,
+      "passed": true,
+      "streams_checked": 32
+    },
+    "supermartingale_null_wealth": {
+      "mean_wealth": {
+        "1": 1.0,
+        "100": 0.6152340956820291,
+        "25": 0.8558059172979635,
+        "250": 0.4457577638201774,
+        "5": 0.9609326923076922,
+        "500": 0.45294933162892614
+      },
+      "passed": true
+    },
+    "time_uniform_false_adapt": {
+      "iid_delta_0": 0.053,
+      "iid_delta_minus_0_10": 0.01475,
+      "mc_bound": 0.11423024947075772,
+      "optional_stop_attack": 0.05375,
+      "passed": true
+    },
+    "time_uniform_false_freeze": {
+      "ever_freeze": 0.0565,
+      "mc_bound": 0.11423024947075772,
+      "passed": true
+    }
+  },
+  "config": {
+    "a": -1.0,
+    "alpha": 0.1,
+    "b": 1.0,
+    "horizon": 500,
+    "n_runs": 4000,
+    "seed": 20260628
+  },
+  "failures": [],
+  "pass": true
+}

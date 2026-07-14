@@ -87,16 +87,16 @@ def score_transfer(cal_records, test_records, estimator: str, conformal: str, fr
         resid_c = np.abs(Bhat_c - Bc)  # ppi_debias variant (non-headline); unchanged
 
     if conformal == "global":
-        eps = float(np.quantile(resid_c, 1 - af.ALPHA))
+        eps = af.conformal_rank_radius(resid_c, af.ALPHA)
         dec = af.decide_global(Bhat_t, eps)
     elif conformal == "mondrian":
-        eps_glob = float(np.quantile(resid_c, 1 - af.ALPHA))
+        eps_glob = af.conformal_rank_radius(resid_c, af.ALPHA)
         dec = np.array(["ABSTAIN"] * len(Bhat_t), dtype=object)
         groups = set(compc.tolist())
         for g in groups:
             mc = compc == g
             epsg = (
-                float(np.quantile(resid_c[mc], 1 - af.ALPHA))
+                af.conformal_rank_radius(resid_c[mc], af.ALPHA)
                 if mc.sum() >= 5 else eps_glob
             )
             mt = compt == g

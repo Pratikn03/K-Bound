@@ -1,0 +1,147 @@
+% ============================================================================
+%  WAVE 4, TARGET 1c: EXACT MINIMAX SAMPLE COMPLEXITY FOR THE 3-WORLD PROBLEM
+%  Closes the residual κ/4 gap from wave3_tight_and_computability.tex (T1b).
+%
+%  Resolution: κ(α) is EXACTLY optimal among all (possibly randomized) rules;
+%  the floor 4 n_opt is a valid but LOOSE pairwise bound; κ/4 > 1 at every
+%  finite α is an IMPOSSIBILITY theorem (certification at 4 n_opt cannot hold).
+%
+%  Validator: theory_v2/val_tight_constants.py  (section T1c)
+% ============================================================================
+\providecommand{\TV}{\mathrm{TV}}
+\section{Exact minimax sample complexity for honest frontier abstention}\label{sec:t1c-closure}
+
+Wave~3 (Theorem~\ref{thm:minimax-opt}, Prop.~\ref{prop:t1b-3world}--\ref{prop:t1b-achieve})
+established: (i)~$4n_{\mathrm{opt}}$ is a valid \emph{all-rules} lower bound once a third
+frontier world $\mu=0$ must abstain at level $\alpha$; (ii)~the symmetric band certifies at
+$n=\kappa(\alpha)\,n_{\mathrm{opt}}$ with
+$\kappa(\alpha)=\bigl(1+z_{1-\alpha/2}/z_{1-\alpha}\bigr)^2\in[4,\approx5.2]\downarrow4$;
+(iii)~the residual $\kappa/4\in[1,1.30]$ was left open for arbitrary randomized rules.
+This section closes (iii).
+
+\subsection{The three-world certifying problem}
+
+Fix $\sigma>0$, $\Delta>0$, $\alpha\in(0,\tfrac14)$, and write $v=\sigma^2/n$,
+$z_\alpha:=\Phi^{-1}(1-\alpha)$, $n_{\mathrm{opt}}=(\sigma/\Delta)^2 z_\alpha^2$.  Observe
+$\bar X\sim\mathcal N(\mu,v)$ under world $\mu\in\{-\Delta,0,+\Delta\}$ (sufficient statistic
+for the $n$-sample Gaussian location model).  A (possibly randomized) \emph{certifying rule} maps
+$\bar X$ to $\{\textsc{adapt},\textsc{freeze},\textsc{abstain}\}$ and is
+\emph{$\alpha$-certifying} if
+\[
+  \mathrm{miss}_+:=\Pr_{+\Delta}(\text{not \textsc{adapt}})\le\alpha,\quad
+  \mathrm{miss}_-:=\Pr_{-\Delta}(\text{not \textsc{freeze}})\le\alpha,\quad
+  \mathrm{commit}_0:=\Pr_{0}(\text{not \textsc{abstain}})\le\alpha,
+\]
+with the usual wrong-commit rates subsumed by the miss bounds.  The \emph{minimax certifying
+sample complexity} is
+\[
+  n^\star_{3}(\Delta,\sigma,\alpha)
+  \;=\;\min\bigl\{\,n\in\mathbb N:\ \exists\ \text{an $\alpha$-certifying rule on }
+  \{\pm\Delta,0\}\bigr\}.
+\]
+
+\begin{theorem}[Exact minimax for the three-world problem]\label{thm:t1c-exact}
+For every $\sigma>0$, $\Delta>0$, and $\alpha\in(0,\tfrac14)$,
+\[
+  \boxed{\;
+  n^\star_{3}(\Delta,\sigma,\alpha)
+  \;=\;\kappa(\alpha)\,n_{\mathrm{opt}}(\Delta,\sigma,\alpha)
+  \;=\;\Bigl(\tfrac{\sigma\,(z_\alpha+z_{1-\alpha/2})}{\Delta}\Bigr)^2\; }.
+\]
+The symmetric band ``\textsc{adapt} iff $\bar X>\tau$; \textsc{freeze} iff $\bar X<-\tau$;
+else \textsc{abstain}'' with $\tau=z_{1-\alpha/2}\,\sigma/\sqrt n$ attains this with equality
+(all three constraints bind).  Consequently:
+\begin{enumerate}
+\item[(a)] \textbf{Optimality of $\kappa$.}  No $\alpha$-certifying rule --- deterministic or
+randomized --- exists at any $n<\kappa(\alpha)\,n_{\mathrm{opt}}$.
+\item[(b)] \textbf{Impossibility of closing $\kappa/4$.}  For every finite $\alpha$,
+$\kappa(\alpha)>4$ strictly, so certification at $n=4n_{\mathrm{opt}}$ is \emph{impossible}
+even though $n\ge4n_{\mathrm{opt}}$ is a valid \emph{necessary} condition from the
+world-$0$ vs.\ world-$+$ pairwise reduction.  The gap $\kappa/4>1$ is intrinsic, not a proof
+artifact.
+\item[(c)] \textbf{Randomization does not help.}  Every $\alpha$-certifying rule at
+$n=\kappa(\alpha)\,n_{\mathrm{opt}}$ may be taken non-randomized and monotone in $\bar X$.
+\end{enumerate}
+\end{theorem}
+
+\begin{proof}
+Write $t=\sqrt v=\sigma/\sqrt n$.
+
+\emph{Achievability (upper bound).}  Take the symmetric band with half-width
+$\tau=z_{1-\alpha/2}\,t$.  Then
+$\mathrm{commit}_0=2\Phi(-\tau/t)=2\Phi(-z_{1-\alpha/2})=\alpha$ exactly.  In world $+\Delta$,
+$\mathrm{miss}_+=\Phi\bigl((\tau-\Delta)/t\bigr)$; feasibility requires
+$(\Delta-\tau)/t\ge z_\alpha$, i.e.\ $\Delta/t\ge z_\alpha+z_{1-\alpha/2}$.  The smallest $n$
+satisfying this is $n=\kappa(\alpha)\,n_{\mathrm{opt}}$, at which $\mathrm{miss}_+=\alpha$ and,
+by symmetry, $\mathrm{miss}_-=\alpha$.  Hence $n^\star_{3}\le\kappa(\alpha)\,n_{\mathrm{opt}}$.
+
+\emph{Lower bound (all rules).}  Let $g$ be any $\alpha$-certifying rule at sample size $n$.
+By the standard sufficiency of $\bar X$ for $\mu$ in $\mathcal N(\mu,v)$, we may assume $g$
+depends only on $\bar X$ (randomization included: a randomized rule is a mixture of
+$\bar X$-measurable rules, and all error constraints are linear in the mixture weights).
+
+Define the \emph{commit region} $C\subseteq\mathbb R$ (the set where $g$ outputs
+\textsc{adapt} or \textsc{freeze}, possibly with randomization averaged out).  Then
+\[
+  \mathrm{commit}_0=\Pr_0(\bar X\in C)\le\alpha,\qquad
+  \mathrm{miss}_+=\Pr_{+\Delta}(\bar X\notin A_+)\le\alpha,
+\]
+where $A_+$ is the \textsc{adapt} region.  Since wrong \textsc{freeze} in world $+\Delta$ is a
+subset of $\bar X\notin A_+$, the miss bound is the operative constraint on the high side; by
+symmetry the low side is identical.
+
+\emph{Step 1 (necessary abstention width).}  Among all Borel sets $C$ with
+$\Pr_0(\bar X\in C)\le\alpha$, the one \emph{maximizing} $\Pr_{+\Delta}(\bar X\in C)$ under a
+fixed $\Pr_0(C)$ is an interval $(-\infty,-\tau]\cup[\tau,\infty)$ by the monotone likelihood
+ratio (MLR) property of the Gaussian location family (Karlin--Rubin): mass under $P_0$ is
+pushed toward the tails where $P_{+\Delta}$ has higher density.  Thus any rule that certifies in
+world $+\Delta$ with $\mathrm{miss}_+\le\alpha$ while committing at $0$ with rate $\alpha$ must
+obey, for some $\tau\ge0$,
+\[
+  2\Phi(-\tau/t)\le\alpha\quad\Longrightarrow\quad \tau\ge z_{1-\alpha/2}\,t,
+\]
+and simultaneously $\Phi\bigl((\tau-\Delta)/t\bigr)\le\alpha$, i.e.\
+$(\Delta-\tau)/t\ge z_\alpha$.  Combining,
+\[
+  \Delta/t\;\ge\;z_\alpha+z_{1-\alpha/2}
+  \quad\Longleftrightarrow\quad
+  n\;\ge\;\Bigl(\tfrac{\sigma\,(z_\alpha+z_{1-\alpha/2})}{\Delta}\Bigr)^2
+  \;=\;\kappa(\alpha)\,n_{\mathrm{opt}}.
+\]
+Hence $n^\star_{3}\ge\kappa(\alpha)\,n_{\mathrm{opt}}$.
+
+\emph{Step 2 (randomization).}  Step~1 used only that $\mathrm{commit}_0\le\alpha$ and
+$\mathrm{miss}_+\le\alpha$; the MLR argument applies to the \emph{averaged} commit indicator
+$\Pr(g=\textsc{adapt or freeze}\mid\bar X=x)$, which is a measurable function in $[0,1]$.
+The extremal commit profile at fixed $\Pr_0(C)=\alpha$ is a symmetric interval complement; any
+randomized mixture of commit regions has the same or larger $\mathrm{miss}_+$ at fixed
+$\mathrm{commit}_0$ by convexity of the Gaussian tail probabilities.  Thus no randomized rule
+beats the symmetric band.
+
+\emph{Step 3 (impossibility at $4n_{\mathrm{opt}}$).}  At $n=4n_{\mathrm{opt}}$ one has
+$\Delta/t=2z_\alpha$.  Step~1 requires $z_\alpha+z_{1-\alpha/2}\le2z_\alpha$, i.e.\
+$z_{1-\alpha/2}\le z_\alpha$.  But $z_{1-\alpha/2}>z_\alpha$ for every $\alpha\in(0,\tfrac12)$,
+so the inequality fails: no $\alpha$-certifying rule exists at $n=4n_{\mathrm{opt}}$.  Since
+$\kappa(\alpha)=(1+z_{1-\alpha/2}/z_\alpha)^2>4$ for every finite $\alpha$, the ratio
+$\kappa(\alpha)/4>1$ cannot be closed to $1$ --- it is a theorem of impossibility, not an open
+constant gap.
+\end{proof}
+
+\begin{corollary}[Status of the Wave~3 residual]\label{cor:t1c-status}
+The tight-constants program is \textbf{closed} for the three-world Gaussian certifying problem:
+the exact minimax constant is $\kappa(\alpha)$, not $4$ and not $16$.  The certificate's
+two-world $4\times$ penalty (Remark~\ref{rmk:opt-delicate}) and the three-world floor
+$4n_{\mathrm{opt}}$ (Prop.~\ref{prop:t1b-3world}) address \emph{distinct} constraints; only the
+former is about the deployed certificate's CI width, while the latter is a loose pairwise bound
+subsumed by Theorem~\ref{thm:t1c-exact}.
+\end{corollary}
+
+\begin{remark}[Numerical confirmation]\label{rmk:t1c-val}
+\texttt{theory\_v2/val\_tight\_constants.py} (section \texttt{T1c}) verifies:
+\textbf{[C1]} no two-threshold (symmetric or asymmetric) rule certifies at any
+$n<(1-\varepsilon)\kappa(\alpha)n_{\mathrm{opt}}$ on a dense grid;
+\textbf{[C2]} randomized mixture search over threshold rules does not beat $\kappa$;
+\textbf{[C3]} at $n=4n_{\mathrm{opt}}$ the three-world LP is infeasible for every tested $\alpha$;
+\textbf{[C4]} at $n=\kappa(\alpha)n_{\mathrm{opt}}$ the symmetric band binds all three errors at
+$\alpha$.
+\end{remark}

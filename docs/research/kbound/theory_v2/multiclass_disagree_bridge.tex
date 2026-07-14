@@ -1,0 +1,12 @@
+% Bridge label for multiclass multicandidate theorems (thm:disagree-mc).
+\begin{proposition}[Multiclass benefit sign on the disagreement region]\label{thm:disagree-mc}
+Let $D=\{x:f_0(x)\neq f_a(x)\}$ and write $p_0=P_T(f_0{=}Y\mid D)$, $p_a=P_T(f_a{=}Y\mid D)$
+for $K$-class $0/1$ loss. Then
+$\Delta=P_T(D)(p_a-p_0)=\mu_D(p_a-p_0)$ with $\mu_D:=P_T(D)$; for $\mu_D>0$,
+$\sign\Delta=\sign(p_a-p_0)$ and harmful adaptation ($\Delta\le0$) iff $p_a\le p_0$.
+\end{proposition}
+\begin{proof}
+On $D$ the pointwise excess is $\mathbf 1\{Y{=}f_a\}-\mathbf 1\{Y{=}f_0\}$ with conditional mean
+$p_a-p_0$; off $D$ both predictors agree. Validated in \texttt{val\_multiclass\_capacity.py}
+(Block~0).
+\end{proof}

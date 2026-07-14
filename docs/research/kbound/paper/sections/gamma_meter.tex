@@ -1,0 +1,227 @@
+% A gamma-meter and the agreement-invisible reach: Conjecture 1 relative to
+% checkable structure. Numbers from
+% experiments/kbound/theory_validation/val_conj1_gamma_meter.py
+% (results/theory/gamma_meter_validation.json). \input from kbound.tex (App. C).
+
+The unconditional form of Conjecture~\ref{conj:gen} is foreclosed by
+Corollary~\ref{cor:irreducible}: no label-free certificate can identify
+$\sign\Delta$ without \emph{some} supplied structure. This subsection asks the
+sharpest question that survives: \emph{relative to the checkable agreement
+structure of \S\ref{sec:multicand}, how far can the program be pushed --- and
+where exactly does it provably stop?} Three results: a finite-sample
+\emph{$\gamma$-meter} that turns the frontier of Theorem~\ref{thm:frontier}
+from an assumed budget into a measured quantity; an \emph{agreement-invisible
+reach} theorem showing that pairwise-agreement evidence has an exact,
+constructive blind spot that no diagnostic computed from it (including
+$\tau$ of Proposition~\ref{prop:cei-test}) can see; and a conditional
+multiclass resolution of the bracketing in Conjecture~\ref{conj:gen}.
+\emph{Attribution.} All estimation machinery below is classical ---
+the rank-one agreement identity and triple-product recovery appear in
+Platanios et al.\ (UAI 2014), Parisi et al.\ (PNAS 2014), and Jaffe et al.\
+(AISTATS 2015); the agreement-inversion estimator with a better-than-chance
+anchor is Bonald \& Combes (NeurIPS 2017); the explicit multiclass
+co-occurrence form is Ibrahim et al.\ (NeurIPS 2019). What is new here is the
+\emph{finite-sample drift estimate}, the \emph{invisible-reach impossibility
+with its evidence-hierarchy}, and the \emph{decision wiring}; we are aware of
+detection-side results (Parisi et al.'s rank-two cartels; Jaffe et al.\ 2016;
+Ma \& Olshevsky 2020) but of no prior statement of the undetectability
+converse below.
+
+\paragraph{Setting.} Binary $Y$ on the disagreement region $D$ unless stated;
+$M$ candidate predictors $g_1,\dots,g_M$ with accuracies
+$a_j=\Pr(g_j{=}Y\mid D)$ and advantages $b_j=2a_j-1$; $g_1=f_a$ is the
+candidate being certified. Assumptions \textbf{(S)}: conditional
+error-independence on $D$ (Definition~\ref{def:cei}) with label-symmetric
+accuracies (the one-coin model --- the symmetry is an assumption, stated, not
+hidden); $|b_j|\ge b_{\min}>0$; and a sign anchor for $g_1$ (e.g.\ majority of
+candidates above chance). Observables: $n$ unlabeled points on $D$, the
+pairwise agreement rates $\hat A_{ij}$, and a source-calibrated confidence
+$s\in[0,1]$ with $q_a=\E_{\mu|D}[s]$.
+
+\begin{theorem}[Finite-sample $\gamma$-meter]\label{thm:gmeter}
+Under \textnormal{\textbf{(S)}}, let $\hat c_{ij}=2\hat A_{ij}-1$,
+$\hat b_1^2=\mathrm{med}_{k\ne l\ne 1}\,\hat c_{1k}\hat c_{1l}/\hat c_{kl}$,
+$\hat p_a=(1+\hat b_1)/2$ with the anchored root, and
+$\hat\gamma=\hat p_a-\hat q_a$. Then with probability at least $1-\delta$,
+\[
+|\hat\gamma-\gamma|\;\le\;\varepsilon_\gamma(n,\delta)
+\;:=\;\frac{4}{b_{\min}^{5}}\sqrt{\frac{2\log(8/\delta)}{n}}
+\;+\;\sqrt{\frac{\log(8/\delta)}{2n}} .
+\]
+\end{theorem}
+\begin{proof}
+By Hoeffding and a union bound over the three agreement rates of a triple and
+$\hat q_a$ (each a bounded mean; $\delta/4$ each), every
+$|\hat c_{ij}-c_{ij}|\le\varepsilon_c:=\sqrt{2\log(8/\delta)/n}$ and
+$|\hat q_a-q_a|\le\sqrt{\log(8/\delta)/(2n)}$. For a triple with
+$|c_{kl}|=|b_kb_l|\ge b_{\min}^2$ and $\varepsilon_c\le b_{\min}^2/2$, writing
+$R=c_{1k}c_{1l}/c_{kl}=b_1^2$,
+\[
+\resizebox{\columnwidth}{!}{$\displaystyle
+|\hat R-R|
+=\frac{|c_{kl}(\hat c_{1k}\hat c_{1l}-c_{1k}c_{1l})
+        -c_{1k}c_{1l}(\hat c_{kl}-c_{kl})|}{|\hat c_{kl}c_{kl}|}
+\le \frac{(2\varepsilon_c+\varepsilon_c^2)+\varepsilon_c}{b_{\min}^4/2}
+\le \frac{8\varepsilon_c}{b_{\min}^4},
+$}
+\]
+and the median over triples inherits the bound. Since
+$\hat b_1+b_1\ge b_{\min}$ on this event (anchored, clamped root),
+$|\hat b_1-b_1|\le|\hat b_1^2-b_1^2|/b_{\min}\le 8\varepsilon_c/b_{\min}^5$,
+so $|\hat p_a-p_a|\le 4\varepsilon_c/b_{\min}^5$. Add the $\hat q_a$ term and
+use $\gamma=p_a-q_a$ on $D$ (Lemma~\ref{lem:reduction} with $s$ the
+confidence of $f_a$).
+\end{proof}
+
+\begin{corollary}[The measured frontier]\label{cor:measured-frontier}
+Under \textnormal{\textbf{(S)}}, the rule \textsc{commit}
+$\sign(\hat M+\hat\gamma)$ iff $|\hat M+\hat\gamma|>
+\varepsilon_M+\varepsilon_\gamma$ (else \textsc{abstain}) has false-commit
+probability at most $\delta$. The frontier $|M|>\beta$ of
+Theorem~\ref{thm:frontier} is thereby replaced, on this family, by a
+\emph{measured} drift with a confidence radius: the budget $\beta$ no longer
+needs to be assumed.
+\end{corollary}
+
+\noindent\emph{Honest conservatism.} $\varepsilon_\gamma$ is valid (empirical
+coverage $1.000$ at target $0.9$ across $n\in[2{\times}10^3,1.3{\times}10^5]$,
+error rate slope $-0.50$) but conservative: with margin $m$ it commits only
+once $n\gtrsim 32\log(8/\delta)/(m^2b_{\min}^{10})$ ($\approx2\times10^8$ at
+$m=0.1$, $b_{\min}=0.38$). A bootstrap-calibrated radius commits at
+$n=6{,}000$ on $97/120$ trials with empirical false-commit $0.000\le\delta$
+(asymptotic calibration, reported as such). Tightening the
+$b_{\min}^{-5}$ propagation is open.
+
+\begin{theorem}[Agreement-invisible reach]\label{thm:invisible-reach}
+Fix aux candidates with advantages $b_j>0$ and a base accuracy $a_1$. For
+$|t|\le t_{\max}$ with
+\[
+t_{\max}\;=\;\frac{1-a_1}{\,1+\sum_{j\ge2} b_j/\bigl(2(1-a_j)\bigr)}
+\]
+(and the symmetric lower form),
+there exists a joint law of $(Y,g_1,\dots,g_M)$ on $D$ in which the
+\emph{true} accuracy of $g_1$ is $a_1+t$, yet \emph{every} pairwise agreement
+rate equals its one-coin CEI value at the \emph{original} $a_1$, and the
+agreement matrix is \emph{exactly} rank-one ($\tau\equiv0$ in
+Proposition~\ref{prop:cei-test}). Consequently, for any margin
+$m<t_{\max}/2$ there are two worlds --- one CEI with $p_a=\tfrac12+m$, one
+dependent with $p_a=\tfrac12-m$ --- with \emph{identical} pairwise-agreement
+evidence and anchors; any decision rule that is a function of pairwise
+agreements commits falsely in one of them
+(Theorem~\ref{thm:imp} instantiated \emph{inside} the rank-one class).
+\end{theorem}
+\begin{proof}
+Let $C_j=\mathbf1[g_j{=}Y]$. Take $C_2,\dots,C_M$ independent
+Bernoulli$(a_j)$ and define
+$\Pr(C_1{=}1\mid C_2,\dots,C_M)=(a_1+t)+\sum_{j\ge2}\beta_j(C_j-a_j)$ with
+$\beta_j=-t\,b_j/(2a_j(1-a_j))$. This is a valid kernel iff the affine
+expression lies in $[0,1]$ at the extreme patterns, which is exactly
+$|t|\le t_{\max}$ (all-ones and all-zeros patterns give the two displayed
+constraints). Then $\E[C_1]=a_1+t$ and
+$\mathrm{Cov}(C_1,C_j)=\beta_j\mathrm{Var}(C_j)=-t\,b_j/2$, so with
+$s_i=2C_i-1$,
+$\E[s_1s_j]=(2(a_1{+}t){-}1)(2a_j{-}1)+4\mathrm{Cov}(C_1,C_j)
+=(b_1+2t)b_j-2tb_j=b_1b_j$: every pairwise product equals its original CEI
+value, hence so does every agreement rate
+($A_{ij}=(1+\E[s_is_j])/2$ on $D$ for binary $Y$), and the product matrix is
+exactly $b\,b^\top$ --- rank-one, all minors zero, $\tau=0$. Aux pairs are
+untouched. The two-world statement follows by taking the CEI world at
+$a_1=\tfrac12+m$ and the spoofed world with base $a_1=\tfrac12+m$,
+$t=-2m\ge-t_{\max}$: identical evidence laws, opposite $\sign(p_a-\tfrac12)$;
+the committal-regret argument of Theorem~\ref{thm:imp} applies verbatim.
+\end{proof}
+
+\begin{proposition}[The spoof is visible at third order]\label{prop:third-order}
+The coupling of Theorem~\ref{thm:invisible-reach} satisfies, for distinct aux
+$j,k$,
+$\;\E[s_1s_js_k]-b_1b_jb_k=-2t\,b_jb_k$ exactly: the third-order CEI residual
+is nonzero with known signal proportional to the spoof. More generally,
+adding third-order agreement constraints strictly shrinks the invisible
+reach: on the validated instance ($a_1{=}0.74$, three aux at $0.70$) the
+exact LP reach over all couplings drops from $r_2=0.156$ (pairwise
+constraints) to $r_3=0.094$ (pairwise $+$ triple). Echoing
+Proposition~\ref{prop:reach-mono}: it is the \emph{order} of the
+agreement evidence, not the number of witnesses, that shrinks the blind spot
+--- the pairwise LP reach is numerically $M$-independent for $M\in\{3,4,5\}$,
+while the constructive lower bound $t_{\max}$ does decrease in $M$.
+\end{proposition}
+\begin{proof}
+$\E[s_1s_js_k]=\E[\E[s_1\mid C_{\ge2}]\,s_js_k]$; the affine kernel gives
+$\E[s_1\mid C_{\ge2}]=b_1+2t+2\sum_m\beta_m(C_m-a_m)$, and
+$\E[(C_j-a_j)s_js_k]=2a_j(1-a_j)b_k$, so the correction terms contribute
+$4\beta_ja_j(1-a_j)b_k+4\beta_ka_k(1-a_k)b_j=-4t\,b_jb_k$, giving
+$(b_1+2t)b_jb_k-4tb_jb_k=(b_1-2t)b_jb_k$. The LP statements are computed
+exactly (\texttt{val\_conj1\_gamma\_meter.py}, \texttt{scipy.linprog}, all
+$2^M$ pattern variables).
+\end{proof}
+
+\begin{theorem}[Multiclass bracketing under checkable structure]\label{thm:conj1-multiclass}
+Let $Y\in\{1,\dots,K\}$, $K\ge3$, on $D$, with $f_a$, $f_0$, and $M{-}2\ge2$
+auxiliary candidates satisfying \textnormal{\textbf{(S)}} in the one-coin form
+(correct w.p.\ $a_j$, else uniform over wrong labels), where conditional
+independence is required only within triples $\{f_a,\mathrm{aux},\mathrm{aux}\}$
+and $\{f_0,\mathrm{aux},\mathrm{aux}\}$ --- the $(f_a,f_0)$ pair, which is
+deterministically dependent on $D$, is never used. With
+$b_j=(Ka_j-1)/(K-1)$, the known identity $K A_{ij}-1=(K-1)\,b_ib_j$
+{\rm(}Bonald \& Combes 2017; Ibrahim et al.\ 2019{\rm)} holds, the
+triple-product recovery and anchor identify $b_{f_a}$ and $b_{f_0}$
+label-free, and since $a\mapsto b$ is increasing,
+$\sign\Delta=\sign(p_a-p_0)=\sign(b_{f_a}-b_{f_0})$
+(Proposition~\ref{thm:disagree-mc}) is identified, with the finite-sample
+radius of Theorem~\ref{thm:gmeter} applied to each advantage. For general
+(non-one-coin) confusion matrices the same conclusion holds under the tensor
+conditions of Anandkumar et al.\ (2014, Thm.~3.6 and Cond.~4.1: full-column-rank
+per-view confusions, strictly positive prior) with the diagonal-dominance
+anchor of Zhang et al.\ (2016, $\kappa>0$); we cite rather than re-prove that
+machinery.
+\end{theorem}
+\begin{proof}
+For one-coin candidates, $\Pr(g_i{=}g_j)=a_ia_j+(1-a_i)(1-a_j)/(K-1)$
+(agree iff both correct, or both wrong on the same of $K{-}1$ uniform wrong
+labels, independently). Substituting $a=((K{-}1)b+1)/K$ yields
+$A_{ij}=\bigl((K{-}1)b_ib_j+1\bigr)/K$, i.e.\ the displayed identity (exact;
+validated to $9{\times}10^{-16}$). Triple products over aux-only denominators
+recover $b_{f_a}^2$ and $b_{f_0}^2$ exactly as in
+Proposition~\ref{thm:multicand}; the anchor fixes signs; monotonicity of
+$a\mapsto b$ transfers the ordering; Proposition~\ref{thm:disagree-mc} turns the
+ordering into $\sign\Delta$. The error propagation of
+Theorem~\ref{thm:gmeter} is unchanged.
+\end{proof}
+
+\paragraph{What this resolves, and what it does not.}
+Relative to checkable agreement structure, Conjecture~\ref{conj:gen}'s
+bracketing is now \emph{resolved on both sides}: achievable (multiclass
+included, Theorem~\ref{thm:conj1-multiclass}; drift measured rather than
+assumed, Corollary~\ref{cor:measured-frontier}) \emph{and} exactly bounded
+(Theorem~\ref{thm:invisible-reach}: below the constructive reach, pairwise
+evidence cannot certify, and the $\tau$-diagnostic provably cannot help,
+because the spoof is rank-one). The unconditional conjecture remains open
+\emph{and must}: Corollary~\ref{cor:irreducible} forbids an assumption-free
+resolution. What our analysis adds to its statement is a precise shape for
+the answer: \emph{each} evidence class carries a computable reach
+($r_2>r_3>\cdots$), and "the weakest checkable condition" is exactly the
+question of how fast $r_k$ shrinks --- which we leave open beyond third
+order. The one-coin symmetry and the sign anchor are assumptions of this
+family; dependence between $f_a$ and the auxiliaries that is rank-one-preserving
+is undetectable by construction, which is the honest price of the route.
+
+\noindent\emph{Numerically validated}
+(\texttt{val\_conj1\_gamma\_meter.py}; Fig.~\ref{fig:gmeter}): identity exact
+to $9{\times}10^{-16}$ ($K\in\{2,3,5\}$); $\gamma$-meter error slope $-0.50$
+with bound coverage $1.000$; bootstrap certificate $97/120$ commits, $0$
+false; spoof invariances exact to $8{\times}10^{-17}$ with the two-world
+instance ($p_a$ $0.54$ vs $0.460$, identical pairwise evidence); LP reach
+$0.156\to0.094$ under third-order constraints; multiclass sign recovery
+$1.000$ over $147$ trials.
+
+\begin{figure}[t]\centering
+\includegraphics[width=0.92\linewidth]{figures/fig_gamma_meter.png}
+\caption{The $\gamma$-meter and the agreement-invisible reach. Left:
+$|\hat\gamma-\gamma|$ decays at the proven $n^{-1/2}$ rate
+(Theorem~\ref{thm:gmeter}). Right: the constructive invisible reach
+$t_{\max}$ (closed form) versus the exact LP reach over all
+pairwise-agreement-preserving couplings; the LP reach does not shrink with
+$M$ --- only richer (third-order) evidence shrinks it
+(Proposition~\ref{prop:third-order}).}
+\label{fig:gmeter}
+\end{figure}

@@ -49,6 +49,7 @@ namespace KBoundTheoremMap
 #check KBound.frontier_decision_freeze
 #check KBound.frontier_decision_abstain
 #check KBound.binary_sign_reduction
+#check KBound.binary_margin_split
 #check KBound.multiclass_sign_reduction
 #check KBound.multiclass_harm_iff_nonpos
 #check KBound.multiclass_benefit_pos_of_pa_gt

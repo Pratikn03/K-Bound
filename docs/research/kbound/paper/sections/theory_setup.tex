@@ -36,11 +36,18 @@ Evidence $Z$ is \emph{risk-aligned on a class $\mathcal{P}$} if no two laws
 $P_T^1,P_T^2\in\mathcal{P}$ with $\sign\Delta_1\neq\sign\Delta_2$ satisfy
 $\Law(Z\mid P_T^1)=\Law(Z\mid P_T^2)$.
 \end{definition}
+All frontier claims stated in terms of $M$ additionally require $M$ to be determined on each
+evidence-law fibre; equivalently, take the population evidence to be $\widetilde Z=(Z,M)$. Without
+this requirement, $|M|>\beta$ proves sign stability \emph{given $M$}, not identifiability from
+$\Law(Z)$ alone. Fitting a benefit regressor does not certify risk alignment: support, dependence,
+and residual diagnostics may falsify a proposed evidence map but cannot verify the assumption
+uniformly over the declared deployment class.
 
 \begin{definition}[Regimes]\label{def:regimes}
 At evidence $z$: \emph{knowably helpful} if the population frontier certifies $\Delta>0$
 (\textsc{adapt}); \emph{knowably harmful} if it certifies $\Delta<0$ (\textsc{freeze});
-\emph{unknowable} if the same $Z$-law is compatible with both signs (\textsc{abstain}).
+\emph{unsupported for strict commitment} if the same augmented-evidence law is compatible with
+distinct signs, including zero versus a strict sign (\textsc{abstain}).
 \end{definition}
 
 \begin{remark}[Four quantities]\label{rem:four-quantities}
@@ -49,6 +56,7 @@ $\beta$ (declared bound $|\gamma|\le\beta$ on the deployment class), and $\varep
 (finite-sample radius from held-out residuals). The radius $\varepsilon$ operationalizes
 coverage; it is \emph{not} an estimate of $\beta$.
 \begin{center}\footnotesize
+\resizebox{\columnwidth}{!}{%
 \begin{tabular}{@{}lp{0.28\linewidth}lp{0.24\linewidth}@{}}
 \toprule
 Symbol & Meaning & At deploy? & Role \\
@@ -59,6 +67,7 @@ $\beta$ & declared bound on $|\gamma|$ & externally supplied & population fronti
 $\varepsilon$ & residual quantile radius & estimated pre-deploy & finite-sample certificate \\
 \bottomrule
 \end{tabular}
+}
 \end{center}
 \end{remark}
 
@@ -71,9 +80,9 @@ source/validation calibration split, never in the deployment batch or held-out t
 \end{center}
 
 \begin{center}\fbox{\parbox{0.95\linewidth}{\small
-\textbf{K-Bound in one sentence.} The true adaptation-benefit sign is recoverable only when
-label-free evidence exceeds the uncertainty created by calibration drift; otherwise the correct
-action is abstention.}}
+\textbf{K-Bound in one sentence.} A strict adapt/freeze commitment is uniformly supportable only
+when the population evidence margin exceeds the declared drift budget; otherwise abstention is the
+maximal sound three-way action.}}
 \end{center}
 
 For a supplied drift budget $\beta\ge0$, the \emph{declared deployment class} is

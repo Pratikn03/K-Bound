@@ -20,8 +20,8 @@ canonical code:
   ``vendored_from_elara/certification/switching_certificate.py::
   empirical_bernstein_lcb`` and ``kbound_pkg/kbound/certificate.py``.
 * :func:`hoeffding` -- the distribution-free Hoeffding LCB (looser baseline).
-* :func:`conformal_split` -- the split-conformal radius
-  ``quantile(|Delta_hat - Delta|, 1 - alpha)`` over calibration residuals, the
+* :func:`conformal_split` -- the exact split-conformal order-statistic radius
+  over ``|Delta_hat - Delta|`` calibration residuals, the
   cross-task estimator used in ``knowability_experiment.py`` /
   ``mixed_regime_experiment.py``.
 * :func:`evalue_anytime` -- the anytime-valid testing-by-betting e-process
@@ -245,6 +245,23 @@ def hoeffding(
 # ---------------------------------------------------------------------------
 # (3) Split-conformal  (cross-task estimator used in the main experiments)
 # ---------------------------------------------------------------------------
+def split_conformal_rank_radius(calib_residuals: np.ndarray, alpha: float = 0.1) -> float:
+    """Return the exact finite-sample split-conformal residual radius.
+
+    For sorted residuals ``r_(1) <= ... <= r_(n)``, this uses
+    ``k = min(n, ceil((n + 1) * (1 - alpha)))`` and returns ``r_(k)``.
+    Unlike ``numpy.quantile``'s default interpolation, this is an observed
+    order statistic and matches the finite-sample rank argument.
+    """
+    _check_alpha(alpha)
+    arr = _as_1d(calib_residuals, "calib_residuals")
+    if np.any(arr < 0.0):
+        raise ValueError("calib_residuals must be non-negative (they are |Delta_hat - Delta|)")
+    n = arr.size
+    k = min(n, int(math.ceil((n + 1) * (1.0 - alpha))))
+    return float(np.sort(arr)[k - 1])
+
+
 def conformal_split(
     delta_hat: float,
     calib_residuals: np.ndarray,
@@ -256,13 +273,13 @@ def conformal_split(
     Given calibration residuals ``r_i = |Delta_hat_i - Delta_i|`` from held-out
     tasks/instances, the radius
 
-        epsilon = quantile(r, 1 - alpha)
+        k = min(n, ceil((n + 1) * (1 - alpha)))
+        epsilon = r_(k)
 
     guarantees that a fresh ``Delta_hat`` deviates from the true ``Delta`` by at
     most ``epsilon`` with probability at least ``1 - alpha`` over the exchangeable
-    calibration split (split-conformal coverage).  This is exactly the radius
-    used by ``knowability_experiment.py`` (``eps = np.quantile(resid, 1 -
-    alpha)``) and ``mixed_regime_experiment.py``.
+    calibration split (split-conformal coverage). The returned radius is an
+    observed residual order statistic; it does not use interpolated quantiles.
 
     Parameters
     ----------
@@ -285,16 +302,15 @@ def conformal_split(
     >>> import numpy as np
     >>> r = np.abs(np.random.default_rng(0).standard_normal(200))
     >>> cert = conformal_split(0.2, r, alpha=0.1)
-    >>> cert.epsilon == float(np.quantile(r, 0.9))
+    >>> k = min(len(r), int(np.ceil((len(r) + 1) * 0.9)))
+    >>> cert.epsilon == float(np.sort(r)[k - 1])
     True
     """
     _check_alpha(alpha)
     if not math.isfinite(float(delta_hat)):
         raise ValueError(f"delta_hat must be finite, got {delta_hat}")
     arr = _as_1d(calib_residuals, "calib_residuals")
-    if np.any(arr < 0.0):
-        raise ValueError("calib_residuals must be non-negative (they are |Delta_hat - Delta|)")
-    epsilon = float(np.quantile(arr, 1.0 - alpha))
+    epsilon = split_conformal_rank_radius(arr, alpha)
     return Certificate(delta_hat=float(delta_hat), epsilon=epsilon, method="conformal", alpha=alpha, n=arr.size)
 
 

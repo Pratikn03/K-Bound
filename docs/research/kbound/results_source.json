@@ -1,5 +1,5 @@
 {
-  "_README": "Single source of truth for the K-Bound paper's result-table numbers. These are the HONEST OUT-OF-FOLD values (NOT protocol_result.json::test_locked, which uses an in-sample radius and overstates Office-Home/iWildCam as beats-both). After a multi-seed/tuning re-run, refresh these fields from the out-of-fold evaluation, then run scripts/make_tables.py to regenerate paper/generated/kbound_numbers.tex, then rebuild the PDFs. Numbers below match the current committed PDFs exactly.",
+  "_README": "Legacy expanded result snapshot retained for traceability. The final short paper uses paper/generated/kbound_result_manifest.json as its canonical promoted-number manifest.",
   "alpha": 0.1,
   "natural_shifts": {
     "officehome_M_v2": {
@@ -31,15 +31,15 @@
       "verdict": "no-harm",
       "point_beats_both": false,
       "ci_robust_beats_both": false,
-      "gap_vs_adapt": 0.099,
+      "gap_vs_adapt": 0.09869502829291957,
       "ci_vs_adapt": [
-        0.08,
-        0.119
+        0.07950342107753679,
+        0.11821226156948114
       ],
-      "gap_vs_freeze": 0.0004,
+      "gap_vs_freeze": 0.0,
       "ci_vs_freeze": [
         0.0,
-        0.0013
+        0.0
       ]
     }
   },
@@ -66,14 +66,13 @@
       "ci_vs_freeze": [-0.0319, -0.0111],
       "gap_vs_adapt": -0.0517,
       "ci_vs_adapt": [-0.1153, -0.0011],
-      "holm_p_wave": 0.0003,
       "harmful_base_rate": 0.1481,
       "abstain_frac": "12/27",
       "decisive_coverage": 0.5556,
       "nboot": 5000,
       "_source": "experiments/kbound/results/win_hunt_v5/imagenetc_aggr/decisive_tta_results.json",
       "_scored_utc": "2026-07-09T21:32:10Z",
-      "_note": "Full-scale 3-noise-corruption run (gaussian/impulse/shot, s1/s3/s5), seed 0, completed 2026-07-09; supersedes prior 36-cell provisional config. CI via canonical scripts/percondition_bootstrap.py; survives wave-level Holm (p_holm=0.0003)."
+      "_note": "Full-scale 3-noise-corruption run (gaussian/impulse/shot, s1/s3/s5), seed 0, completed 2026-07-09; supersedes prior 36-cell provisional config. CI regenerated from saved per-condition cells; no multiple-comparison correction is claimed for this isolated table."
     }
   },
   "_provenance": {

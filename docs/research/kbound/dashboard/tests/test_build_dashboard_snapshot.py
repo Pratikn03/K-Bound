@@ -40,17 +40,15 @@ def test_snapshot_has_required_sections():
     controlled = data["evidence_board"]["controlled_wins"]
     assert any("CIFAR-10-C" in r["name"] for r in controlled)
 
-    # Edge development metrics must not be promoted as verified study.
-    dev = edge.get("development_metrics")
-    assert dev is not None
-    assert dev.get("phone_a_balanced_acc") == 0.25
-
-    helpful = data["evidence_board"].get("helpful_dominated") or []
-    assert any("65 cells" in r["name"] for r in helpful)
+    assert edge.get("session_progress")
+    assert not edge["unblock"]["all_pass"]
+    assert edge.get("development_metrics") is None
 
     boundary = data["evidence_board"].get("boundary_negative") or []
     inr = next((b for b in boundary if b["name"].startswith("ImageNet-R")), None)
     assert inr is not None
-    assert inr.get("kga") is not None
+    assert inr["status"] == "diagnostic"
 
     assert data["edge_validation"].get("unblock") is not None
+    assert data["provenance"]["manifest"].endswith("kbound_result_manifest.json")
+    assert "legacy_elara" not in json.dumps(data)

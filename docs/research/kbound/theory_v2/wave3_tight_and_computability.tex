@@ -1,0 +1,394 @@
+% ============================================================================
+%  WAVE 3 (hard targets): TIGHT FINITE-SAMPLE CONSTANTS, and COMPUTABILITY OF
+%  THE FRONTIER MARGIN.  Two genuinely open targets, resolved as sharp
+%  characterizations.  (K-Bound / KGA, theory_v2.)
+%
+%  Status labels:
+%    (CLOSED)        complete elementary proof, no extra hypothesis.
+%    (CLOSED, COND.) proven, with an explicitly-stated regularity hypothesis;
+%                    the unconditional statement is FALSE and a counterexample
+%                    is exhibited (so the conditional form is exact).
+%    (CAVEAT)        a flagged gap in one direction (stated precisely).
+%
+%  Validators (RUN; exit 0 = all checks pass):
+%    theory_v2/val_tight_constants.py        -> tight_constants_results.json
+%    theory_v2/val_margin_computability.py   -> margin_computability_results.json
+%
+%  External refs: thm:cert, thm:minimax-opt, n_opt notation (minimax_optimality_theorem.tex);
+%    conj:dich-compute, def:dich-phi, thm:dich-main, rmk:dich-compute (knowability_dichotomy.tex).
+% ============================================================================
+% ----------------------------------------------------------------------------
+% *** INDEPENDENT ADVERSARIAL VERIFICATION (2026-06-29) — READ BEFORE USING ***
+%   TARGET 1 (tight constants): SURVIVES an independent break. Verified results.
+%   TARGET 2 (computability NEG / "dichotomy"): *** RETRACTED — FATALLY CIRCULAR ***
+%     The exhibited family Q_o is NOT a computable point of the space of measures:
+%     a bounded Lipschitz test function separates the non-computable atom LOCATION,
+%     so int f dQ is non-computable. The "repair" merely moved the Specker real s
+%     from atom-mass to atom-location (int x dQ is identical to the condemned N4),
+%     and the validator's N1 check is structurally blind (it substitutes a DECIDABLE
+%     stand-in set, so it can never fail). conj:dich-compute therefore REMAINS OPEN.
+%     Only the POSITIVE direction (atomless on disc(c) + transversal => margin
+%     computable) stands. *** DO NOT fold the T2 NEG / "dichotomy" claim into the paper. ***
+% ----------------------------------------------------------------------------
+\section{Wave 3: tight constants and the computability of the margin}\label{sec:wave3}
+
+\providecommand{\TV}{\mathrm{TV}}
+\providecommand{\KL}{\mathrm{KL}}
+\providecommand{\sgn}{\operatorname{sign}}
+\providecommand{\Nrm}{\mathcal N}
+
+This section attacks the two hardest open targets left by Wave~2: (T1) whether the
+certificate's sample-complexity constant can be made \emph{tight}, and (T2) whether the
+frontier margin $m(O)$ of the knowability dichotomy is \emph{always computable}
+(Conjecture~\ref{conj:dich-compute}). Both resolve not as one-line yes/no answers but as
+\emph{sharp characterizations}: T1 splits the residual constant into a fully-removable
+surrogate part and an exact structural part that only appears once abstention is honestly
+forced. For T2 only the \emph{positive} half stands: under a regularity hypothesis (atomless on
+the discontinuity set of the contrast, transversal crossing) that every concrete family in the
+paper satisfies, the margin is computable. The attempted \emph{unconditional refutation} (a
+computable family with non-computable margin) was found, on independent adversarial review, to
+be \textbf{circular} --- the constructed measure is not a computable point of the space of
+measures --- so the unconditional direction of Conjecture~\ref{conj:dich-compute} remains
+\textbf{open}, exactly where Remark~\ref{rmk:dich-compute} left it. The T2 negative/``dichotomy''
+material below is retained only as a record of the failed attempt and must not be cited as a
+result (see the verification banner above).
+
+% ===========================================================================
+\subsection{Target 1: tight finite-sample constants}\label{sec:wave3-t1}
+% ===========================================================================
+Throughout, the two-point Gaussian location problem of Theorem~\ref{thm:minimax-opt}: certify
+$\sgn\Delta$ from the sample mean $\bar X\sim\Nrm(\pm\Delta,\sigma^2/n)$, at two-sided level
+$\alpha\in(0,\tfrac14)$. Write $z_\alpha:=\Phi^{-1}(1-\alpha)$ and recall the optimal-test
+frontier
+\[
+   n_{\mathrm{opt}}(\Delta,\sigma,\alpha)\;=\;\Big(\tfrac{\sigma}{\Delta}\Big)^2 z_\alpha^2 ,
+\]
+the smallest $n$ at which the threshold-at-$0$ test $\sgn(\bar X)$ has each error $\le\alpha$.
+
+\subsubsection*{T1a. The two-point lower bound is tight against the optimal test (CLOSED).}
+
+\begin{proposition}[The exact two-point bound equals $n_{\mathrm{opt}}$; the Bretagnolle--Huber
+gap is fully removable]\label{prop:t1a}
+For $P^n_\pm=\Nrm(\pm\Delta,\sigma^2)^{\otimes n}$,
+\begin{equation}\label{eq:exact-affinity}
+   1-\TV\big(P^n_+,P^n_-\big)\;=\;2\,\Phi\!\Big(-\tfrac{\sqrt n\,\Delta}{\sigma}\Big)
+   \qquad\text{(exactly).}
+\end{equation}
+Consequently the \emph{exact} two-point (Le~Cam) lower bound on the certifying sample size ---
+every label-free rule with both errors $\le\alpha$ obeys $2\alpha\ge e_0+e_1\ge 1-\TV$ ---
+inverts to
+\[
+   n\;\ge\;\Big(\tfrac{\sigma}{\Delta}\Big)^2 z_\alpha^2\;=\;n_{\mathrm{opt}},
+\]
+with \emph{equality}: the threshold-at-$0$ test attains both errors $=\alpha$ at
+$n=n_{\mathrm{opt}}$. Hence the best two-point lower bound \emph{coincides} with the
+optimal-test frontier; there is \emph{no} structural gap between the two-point method and the
+optimal test. The previously-reported factor $\approx 3.4$ is \emph{entirely} the looseness of
+the Bretagnolle--Huber surrogate $\tfrac12 e^{-\KL}\le 1-\TV$, and is removed by using the
+exact Gaussian affinity \eqref{eq:exact-affinity} in place of the surrogate.
+\end{proposition}
+
+\begin{proof}
+By sufficiency of $\bar X$, $\TV(P^n_+,P^n_-)=\TV\big(\Nrm(+\Delta,\sigma^2/n),
+\Nrm(-\Delta,\sigma^2/n)\big)$. Two Gaussians with common variance $t=\sigma^2/n$ and means
+separated by $2\Delta$ have $\TV=2\Phi(\Delta/\sqrt t)-1=2\Phi(\sqrt n\,\Delta/\sigma)-1$,
+whence $1-\TV=2-2\Phi(\sqrt n\,\Delta/\sigma)=2\Phi(-\sqrt n\,\Delta/\sigma)$, which is
+\eqref{eq:exact-affinity}. The chain $2\alpha\ge e_0+e_1\ge 1-\TV=2\Phi(-\sqrt n\,\Delta/\sigma)$
+gives $\Phi(-\sqrt n\,\Delta/\sigma)\le\alpha\iff\sqrt n\,\Delta/\sigma\ge z_\alpha\iff
+n\ge(\sigma/\Delta)^2z_\alpha^2$. At $n=n_{\mathrm{opt}}$ the per-error of $\sgn(\bar X)$ is
+$\Phi(-\sqrt{n_{\mathrm{opt}}}\,\Delta/\sigma)=\Phi(-z_\alpha)=\alpha$, so the bound is achieved
+with equality.
+\end{proof}
+
+\begin{remark}[Correction to the Bretagnolle--Huber ratio: the limit is $4$, not
+``$3.3$--$3.6$'']\label{rmk:t1a-limit}
+The surrogate lower bound is $n_{\mathrm{LB}}^{\mathrm{BH}}=\tfrac{\sigma^2}{2\Delta^2}
+\log\tfrac1{4\alpha}$ (Theorem~\ref{thm:minimax-opt}). The ratio
+$R(\alpha)=n_{\mathrm{opt}}/n_{\mathrm{LB}}^{\mathrm{BH}}=2z_\alpha^2/\log\tfrac1{4\alpha}$ is
+\emph{U-shaped} in $\alpha$: it dips to a minimum $\approx 3.336$ near $\alpha\approx 0.027$,
+then rises \emph{monotonically} toward the \emph{exact limit}
+\[
+   \lim_{\alpha\to0}R(\alpha)
+   \;=\;\lim_{\alpha\to0}\frac{2z_\alpha^2}{\log\frac1{4\alpha}}\;=\;4,
+\]
+since $z_\alpha^2\sim 2\log\tfrac1\alpha$ and $\log\tfrac1{4\alpha}\sim\log\tfrac1\alpha$.
+The value ``$3.3$--$3.6$'' quoted in Theorem~\ref{thm:minimax-opt} and
+Remark~\ref{rmk:opt-delicate} is therefore only the value over a \emph{bounded moderate-$\alpha$
+window}; the validator confirms $R$ passes through $3.6,3.7,3.77,\dots$ as $\alpha\downarrow0$
+toward the limit $4$. (This does not change any rate or order statement; it sharpens the
+constant.)
+\end{remark}
+
+\subsubsection*{T1b. The $4\times$ abstain-band penalty: not structural in two worlds, exact
+($=4n_{\mathrm{opt}}$) with a frontier-abstention world (CLOSED, with an achievability caveat).}
+
+\begin{proposition}[Exact band law; the $4\times$ is the certificate's own CI choice]
+\label{prop:t1b-band}
+A symmetric-band rule ``$\textsc{adapt}$ iff $\bar X>\tau$; $\textsc{freeze}$ iff
+$\bar X<-\tau$'' certifies \emph{both} $\mathrm{miss}\le\alpha$ and $\mathrm{wrong\text-commit}
+\le\alpha$ iff
+\begin{equation}\label{eq:band-law}
+   n\;\ge\;n_{\mathrm{opt}}\cdot\Big(1-\tfrac{\tau}{\Delta}\Big)^{-2}.
+\end{equation}
+In particular $\tau=0$ (the degenerate $\sgn(\bar X)$ rule, which never abstains) certifies at
+$n_{\mathrm{opt}}$, so under the certificate's own two-world $\{\mathrm{miss},
+\mathrm{wrong\text-commit}\}$ definition the \emph{optimal} symmetric-band penalty is $1$, not
+$4$. The deployed certificate pays $4\times$ because it sets the band half-width equal to its
+$\alpha$-confidence radius, $\tau=\varepsilon_n=z_\alpha\sigma/\sqrt n$, which forces
+$2z_\alpha\sigma/\sqrt n\le\Delta$, i.e.\ $n\ge 4n_{\mathrm{opt}}$ exactly; equivalently
+$\tau=\Delta/2$ in \eqref{eq:band-law} gives $(1-\tfrac12)^{-2}=4$.
+\end{proposition}
+
+\begin{proof}
+The binding constraints are $\mathrm{miss}_+=\Phi\big((\tau-\Delta)\sqrt n/\sigma\big)\le\alpha$
+(world $+$) and $\mathrm{FA}=\Phi\big(-(\tau+\Delta)\sqrt n/\sigma\big)\le\alpha$ (world $-$); the
+latter is dominated by the former since $\tau+\Delta>\Delta-\tau$. Thus
+$\mathrm{miss}_+\le\alpha\iff(\Delta-\tau)\sqrt n/\sigma\ge z_\alpha\iff
+n\ge(\sigma z_\alpha/(\Delta-\tau))^2=n_{\mathrm{opt}}(1-\tau/\Delta)^{-2}$. The certificate's
+$\tau=z_\alpha\sigma/\sqrt n$ substituted into $z_\alpha\sigma/\sqrt n\le\Delta-z_\alpha\sigma/
+\sqrt n$ gives $n\ge 4(\sigma z_\alpha/\Delta)^2=4n_{\mathrm{opt}}$.
+\end{proof}
+
+So the original framing in Theorem~\ref{thm:minimax-opt}/Remark~\ref{rmk:opt-delicate} ---
+``factor $4$ over the optimal \emph{non-abstaining} test is a provable price of an honest
+abstain band'' --- is \textbf{imprecise}: with no further constraint the band penalty is $1$.
+The $4$ becomes real only once abstention is genuinely \emph{forced} by a third world on the
+frontier, and there it is \emph{exact}:
+
+\begin{proposition}[Exact all-rules lower bound for honest frontier-abstention]
+\label{prop:t1b-3world}
+Add a third world $\mu=0$ (on the frontier, where $\sgn\Delta$ is undefined) and require any
+rule to \emph{abstain} there with probability $\ge1-\alpha$ (commit with probability $\le\alpha$),
+in addition to $\mathrm{miss}_\pm\le\alpha$ in worlds $\pm\Delta$. Then \emph{every} (possibly
+randomized) rule needs
+\[
+   n\;\ge\;4\,n_{\mathrm{opt}}\qquad\text{exactly, for every }\alpha\in(0,\tfrac14).
+\]
+\end{proposition}
+
+\begin{proof}
+Collapse the rule to $\varphi=\mathbf 1[\textsc{adapt}]$ and test world $0$ ($Q_0=\Nrm(0,
+\sigma^2/n)$) against world $+$ ($Q_1=\Nrm(\Delta,\sigma^2/n)$). Abstaining at $0$ with
+probability $\ge1-\alpha$ gives $\Pr_0(\textsc{commit})\le\alpha$, and $\textsc{adapt}\subseteq
+\textsc{commit}$, so $e_0:=\Pr_0(\varphi=1)\le\alpha$; and $e_1:=\Pr_+(\varphi=0)=
+\mathrm{miss}_+\le\alpha$. The two means differ by $\Delta$ (half-separation $\Delta/2$), so
+$1-\TV(Q_0,Q_1)=2\Phi\big(-\tfrac{\sqrt n\,\Delta}{2\sigma}\big)$. Le~Cam gives
+$2\alpha\ge e_0+e_1\ge 1-\TV=2\Phi(-\sqrt n\,\Delta/(2\sigma))$, hence $\sqrt n\,\Delta/(2\sigma)
+\ge z_\alpha$, i.e.\ $n\ge 4(\sigma/\Delta)^2z_\alpha^2=4n_{\mathrm{opt}}$. The factor $4$ is the
+$(\Delta/2)^{-2}$ from the halved separation and is exact (not asymptotic).
+\end{proof}
+
+\begin{proposition}[The symmetric band achieves $\kappa(\alpha)\,n_{\mathrm{opt}}$, $\kappa\to4$]
+\label{prop:t1b-achieve}
+In the three-world problem the symmetric band --- which is optimal among threshold rules by
+Karlin--Rubin/MLR --- certifies at
+\[
+   n\;=\;\kappa(\alpha)\,n_{\mathrm{opt}},\qquad
+   \kappa(\alpha)=\Big(1+\tfrac{z_{\alpha/2}}{z_\alpha}\Big)^2,
+\]
+with $\kappa(\alpha)\in[4,\approx5.2]$ for $\alpha\le\tfrac1{10}$ and $\kappa(\alpha)\to4$ as
+$\alpha\to0$ (e.g.\ $\kappa=4.80$ at $\alpha=0.05$, $4.44$ at $\alpha=0.01$). Thus
+$4n_{\mathrm{opt}}\le(\text{band})=\kappa\,n_{\mathrm{opt}}$ with band-to-floor gap
+$\kappa/4\in[1,1.30]$.
+\end{proposition}
+
+\begin{proof}
+World $0$ forces $2\Phi(-\tau\sqrt n/\sigma)\le\alpha$, i.e.\ $\tau\ge z_{\alpha/2}\sigma/\sqrt
+n$; world $+$ forces $\tau\le\Delta-z_\alpha\sigma/\sqrt n$. Feasibility requires
+$(z_\alpha+z_{\alpha/2})\sigma/\sqrt n\le\Delta$, i.e.\ $n\ge(\sigma(z_\alpha+z_{\alpha/2})/
+\Delta)^2=\kappa(\alpha)\,n_{\mathrm{opt}}$. Optimality among threshold rules: the three
+constraints are monotone in the thresholds and, by the monotone likelihood ratio of the
+Gaussian location family (Karlin--Rubin), the optimal commit/abstain regions are intervals; the
+symmetric problem makes the symmetric band optimal. (The validator confirms a free
+\emph{asymmetric} two-threshold search bottoms out at the symmetric formula.)
+\end{proof}
+
+\begin{remark}[The honest caveat]\label{rmk:t1b-caveat}
+The lower bound $4n_{\mathrm{opt}}$ (Prop.~\ref{prop:t1b-3world}) holds for \emph{all} rules,
+including randomized; the achievability $\kappa(\alpha)n_{\mathrm{opt}}$
+(Prop.~\ref{prop:t1b-achieve}) is proven only within \emph{threshold/band} rules via MLR. The
+residual band-to-floor gap $\kappa/4\in[1,1.30]$ is genuine: $\kappa>4$ \emph{strictly} at every
+finite $\alpha$ (because $z_{\alpha/2}>z_\alpha$ always), and whether some exotic randomized rule
+closes part of it toward the $4n_{\mathrm{opt}}$ floor is \emph{not} settled here. The clean
+``$4$'' is the floor, not the band's price. This is the exact missing piece of T1b.
+\end{remark}
+
+\paragraph{Verdict T1.} \textbf{CLOSED} as a characterization (extended by
+Theorem~\ref{thm:t1c-exact}). (T1a) The two-point lower bound
+\emph{can} be lifted to the optimal-test constant $n_{\mathrm{opt}}$ --- the bound is tight
+against the optimal test with equality, and the $\approx3.4$ is pure, removable
+Bretagnolle--Huber surrogate looseness (true limit $4$, Rmk.~\ref{rmk:t1a-limit}). (T1b) The
+``$4\times$ abstain-band penalty'' is \emph{not} structural under the certificate's two-world
+definition (optimal band penalty $1$); it is the certificate's own CI choice
+$\tau=\varepsilon_n$. It becomes an \emph{exact, all-rules} lower bound $4n_{\mathrm{opt}}$
+\emph{only} when honest frontier-abstention is added (Prop.~\ref{prop:t1b-3world}), and the band
+then pays $\kappa(\alpha)\in[4,5.2]\to4$ (Prop.~\ref{prop:t1b-achieve}). \textbf{(T1c, closed.)}
+Theorem~\ref{thm:t1c-exact} proves the exact minimax is $\kappa(\alpha)\,n_{\mathrm{opt}}$ among
+\emph{all} randomized rules; $\kappa/4>1$ at finite $\alpha$ is an impossibility theorem, not a
+residual gap. The former ``missing piece'' (Remark~\ref{rmk:t1b-caveat}) is resolved. \texttt{theory\_v2/val\_tight\_constants.py}
+$\to$ \texttt{tight\_constants\_results.json} (exit $0$): exact affinity identity to
+$1.7\times10^{-16}$; exact LB $=n_{\mathrm{opt}}$ with equality; BH ratio U-shaped (min
+$3.336$) $\to4$; exact band law \eqref{eq:band-law} to machine precision; $4n_{\mathrm{opt}}$
+all-rules floor exact $\forall\alpha$; $\kappa(\alpha)\in[4,5.22]$, $>4$ strictly, $\to4$;
+symmetric band optimal among threshold rules; Monte-Carlo confirms the $\tau=0$ rule certifies
+the two-world problem at $n_{\mathrm{opt}}$ and the band certifies the three-world problem at
+$\kappa\,n_{\mathrm{opt}}$.
+
+% ===========================================================================
+\subsection{Target 2: computability of the frontier margin (Conj.~\ref{conj:dich-compute})}
+\label{sec:wave3-t2}
+% ===========================================================================
+Conjecture~\ref{conj:dich-compute} asks whether the frontier margin $m(O)$ is \emph{always} a
+computable functional of $Q_X$ for integral-functional concept families ($\Delta=\int_D(1-2\eta)
+c_{gf}\,\mathrm dQ_\vartheta$, $\vartheta\mapsto Q_\vartheta$ continuous, mass-drift concept
+budget) --- equivalently whether ``$\Phi\Rightarrow\Phi$-computably'' holds unconditionally. We
+work in Type-2 / Weihrauch computable analysis: a measure is a \emph{computable point} of the
+space $\mathcal P$ of Borel probability measures (weak / L\'evy--Prokhorov topology) iff the
+integrals $\int f\,\mathrm dQ$ of a dense effective set of continuous test functions are
+uniformly computable; $m$ is a \emph{computable functional} iff it maps every computable point
+to a computable real. The answer is a dichotomy.
+
+\begin{theorem}[Margin-computability dichotomy; CLOSED as a characterization]
+\label{thm:t2-dichotomy}
+\textnormal{(NEG --- the unconditional conjecture is FALSE.)} There is a single
+\emph{computable} covariate-shift family for which $\Phi$ holds (the benefit sign factors
+through the observable reduct and is nonzero on the definite region) yet the frontier margin
+$m(O)$ is \emph{not} a computable functional of $Q_X$: it is left-c.e.\ but non-computable.
+
+\textnormal{(POS --- the conjecture holds under regularity.)} If $Q_\vartheta$ is
+\emph{atomless on the discontinuity set of $c_{gf}$} (the boundary is $Q_\vartheta$-null) and
+the benefit crossing is \emph{transversal} (a computable lower bound on $|\Delta'|$ across the
+frontier), then $\Delta=\int c_{gf}\,\mathrm dQ_\vartheta$ is a computable, strictly-monotone
+function of $O$ with a computable modulus, so the frontier and the margin $m$ are computable.
+
+Hence the dividing line is exactly: \emph{atom on $\operatorname{disc}(c_{gf})$ $+$
+non-transversal crossing} $\Rightarrow$ $m$ non-computable; \emph{no atom on
+$\operatorname{disc}(c_{gf})$ $+$ transversal crossing} $\Rightarrow$ $m$ computable. The
+literal conjecture (``$m$ always computable'') is false; its restriction to the regular regime
+--- which contains \emph{every} concrete family treated in the paper (location, location--scale,
+aligned-Gaussian, Gaussian mixture) --- is true.
+\end{theorem}
+
+\begin{proof}
+\emph{(NEG).} Take the concept fixed, $\eta\equiv0$ on $D$ (so $\Phi$ holds trivially and the
+mass-drift budget may be taken arbitrarily small), and $c_{gf}=\sgn$ on $D=\R\setminus\{0\}$,
+the fixed $\pm1$ weight whose single discontinuity is at $0$. Let the observable coordinate be
+$o\in[0,1]$ and define the family
+\[
+   Q_o\;=\;(1-m_0)\,\mathrm{Unif}[-1,1]\;+\;m_0\,\delta_{\,o-s},\qquad m_0=\tfrac12,
+\]
+where $s=\sum_{k\in K}2^{-k}$ is the left-c.e.\ real of the halting set $K$ (a Specker real,
+non-computable). The atom sits at $x(o)=o-s$, which is \emph{on} the discontinuity $\{0\}$ of
+$\sgn$ exactly when $o=s$.
+
+\emph{$Q_o$ is a computable point of $\mathcal P$ (weak topology).} For a continuous test
+function $f$ Lipschitz with constant $L$, $\int f\,\mathrm dQ_o=(1-m_0)\!\int f\,\mathrm
+d\mathrm{Unif}+m_0\,f(o-s)$, and truncating $K$'s enumeration at $t$ steps (lower approximation
+$s_{\downarrow}(t)\uparrow s$) changes this by at most $m_0L\,(s-s_{\downarrow}(t))\le
+m_0L\cdot 2^{-(\text{tail})}$, a \emph{computable} modulus. Thus every continuous test integral
+is computable: $Q_o$ is a computable point. (This is the crux: because the schedule moves the
+atom \emph{location} and $f$ is continuous, $f(o-s)$ is computable; moving \emph{mass} between
+off-zero atoms would instead make $\int x\,\mathrm dQ=(o-s)/2$ non-computable and the
+construction circular --- see the recorded defect \texttt{N4}.)
+
+\emph{$\Phi$ holds, but the margin is non-computable.} The benefit is $\Delta(o)=\int\sgn\,
+\mathrm dQ_o=m_0\,\sgn(o-s)$, i.e.\ $-\tfrac12$ strictly for $o<s$ and $+\tfrac12$ strictly for
+$o>s$: the sign is nonzero on both sides, so $\Phi$ holds on the definite region $\{o\neq s\}$,
+with frontier $\Gamma=\{o=s\}$ (a single point, measure zero). Now $\int\sgn\,\mathrm dQ_o$
+integrates the function \emph{discontinuous at $0$} against a measure that \emph{charges} $0$
+(the atom $m_0\delta_{o-s}$ hits $0$ at the crossing), so it is a difference of two
+\emph{lower}-semicomputable half-line masses (Hoyrup--Rojas: $Q(\{x>0\})$ is lower-semicomputable;
+computable iff the boundary is $Q$-null --- which fails here). Its zero-crossing is the Specker
+real $s$. For any \emph{computable} admissible point $o^\star$ in the definite region,
+$m(O)=|o^\star-s|$; if $m$ were a computable functional, it would map the computable point
+$Q_{o^\star}$ to a computable real, but $|o^\star-s|$ is non-computable since $s$ is. (Weihrauch;
+Pour-El--Richards: computable functionals preserve computable points.) Contradiction. The
+non-computability is genuinely an \emph{operator} fact --- each fixed presented $\Delta$ has a
+computable zero (Turing/Specker), but the map $Q_X\mapsto$ frontier-distance is non-computable,
+in the same way root-\emph{selection} for the IVT is Weihrauch-equivalent to $\mathrm{CC}[0,1]$
+(Brattka--Gherardi).
+
+\emph{(POS).} If $Q_\vartheta$ has no atom on $\operatorname{disc}(c_{gf})$, the boundary is
+$Q_\vartheta$-null, so $\int c_{gf}\,\mathrm dQ_\vartheta$ is a \emph{computable} real
+(integration of a function discontinuous only on a $Q$-null set against a computable measure is
+computable; Hoyrup--Rojas). With a transversal crossing ($\Delta$ strictly monotone through the
+frontier with a computable lower bound on $|\Delta'|$), $\Delta$ is a computable, strictly
+monotone function of $O$ with a computable modulus, so for rationals $q$ off the root the sign
+of $\Delta(q)$ is decidable and bisection computes the root, hence the margin $m$, with a
+computable modulus. The concrete location/location--scale/aligned-Gaussian/Gaussian-mixture
+families are atomless with transversal benefit crossings, so $m$ is computable there.
+\end{proof}
+
+\begin{remark}[What the dichotomy says about Conjecture~\ref{conj:dich-compute} and
+Remark~\ref{rmk:dich-compute}]\label{rmk:t2-resolution}
+Remark~\ref{rmk:dich-compute} conjectured that no admissible family makes $m$ non-computable
+``for families with $\Delta$ a fixed integral functional,'' while noting no natural example.
+Theorem~\ref{thm:t2-dichotomy} shows the \emph{literal} conjecture is false: $\Delta=\int\sgn\,
+\mathrm dQ_o$ \emph{is} a fixed integral functional, and $m$ is non-computable for it. But the
+counterexample is non-regular precisely where it must be (an atom on the discontinuity of the
+$\pm1$ weight, a non-transversal crossing), and the conjecture is \emph{rescued} by any one of:
+(a) presenting $Q_X$ strongly enough to yield a modulus for $\Delta$ across the crossing;
+(b) $c_{gf}$ continuous, or $Q$ charging no atom on $\operatorname{disc}(c_{gf})$; (c) a
+transversal crossing with a presented lower bound on $|\Delta'|$. The cleanest single
+sufficient hypothesis is \emph{(b)} --- ``$Q$ assigns zero mass to the discontinuity set of
+$c_{gf}$'' --- exactly the Hoyrup--Rojas located/$Q$-null condition; it is satisfied by every
+concrete family in the paper, so Remark~\ref{rmk:dich-compute}'s operational claim (``automatically
+discharged for every concrete family we treat'') is \emph{correct}, even though the unconditional
+implication is not. The refutation is \emph{representation-sensitive}: it is a statement about the
+standard weak/computable-measure presentation of $Q_X$.
+\end{remark}
+
+\paragraph{Verdict T2.} \textbf{CLOSED as a dichotomy.} Conjecture~\ref{conj:dich-compute} is
+\emph{false} as an unconditional implication (NEG counterexample), and \emph{true} under the
+no-atom-on-$\operatorname{disc}(c_{gf})$ $+$ transversal-crossing regularity (POS), which holds
+for every concrete family treated. The dividing line is the exact located/$Q$-null switch of
+Hoyrup--Rojas plus transversality. \emph{Validated:}
+\texttt{theory\_v2/val\_margin\_computability.py} $\to$
+\texttt{margin\_computability\_results.json} (exit $0$): continuous test integrals of the
+counterexample family converge with a computable modulus (so $Q^\star$ is a computable point,
+the construction is non-circular); the atom sits on $\operatorname{disc}(c)$ with a strict sign
+change ($\Phi$ nonzero both sides); the left-c.e.\ fingerprint (lower approximations to $s$
+increase, the crossing sign does not decidably stabilize); the first-draft mass-drift defect is
+recorded as broken; and the positive side (atomless transversal $\Nrm(o,1)$) has a computable
+root and margin by bisection. (The Specker non-computability uses $K=$ halting in the theorem;
+the executable witness uses a toy c.e.\ set and checks the construction's computability
+\emph{structure}, which is identical for $K$.)
+
+% ===========================================================================
+\subsection*{Auditor checklist (Wave 3)}
+% ===========================================================================
+\noindent\textbf{T1a.} (i) Re-derive \eqref{eq:exact-affinity} from $\TV$ of two equal-variance
+Gaussians; confirm $1-\TV=2\Phi(-\sqrt n\Delta/\sigma)$, \emph{not} a mis-stated variant.
+(ii) Confirm the inversion gives $n\ge n_{\mathrm{opt}}$ \emph{with equality} (the threshold-at-$0$
+test attains both errors $=\alpha$ at $n_{\mathrm{opt}}$), so the two-point bound is tight
+against the optimal test --- the gap is purely the BH surrogate. (iii) Confirm
+$R(\alpha)=2z_\alpha^2/\log\tfrac1{4\alpha}$ is U-shaped with $\lim_{\alpha\to0}R=4$ (use
+\texttt{norm.isf} for small $\alpha$; \texttt{ppf} underflows). Flag any claim that the limit is
+$3.3$--$3.6$.
+
+\noindent\textbf{T1b.} (i) Verify the band law \eqref{eq:band-law} and that $\tau=0$ certifies
+the two-world problem at $n_{\mathrm{opt}}$ (so the band penalty is $1$, not $4$). (ii) Verify
+the certificate's $\tau=\varepsilon_n$ forces exactly $4n_{\mathrm{opt}}$. (iii) Re-derive the
+three-world all-rules floor: check $\textsc{adapt}\subseteq\textsc{commit}$ gives
+$\Pr_0(\varphi=1)\le\alpha$; check $1-\TV(\Nrm(0,t),\Nrm(\Delta,t))=2\Phi(-\sqrt n\Delta/(2\sigma))$
+(half-separation $\Delta/2$); confirm the inversion is \emph{exactly} $4n_{\mathrm{opt}}$ for all
+$\alpha$. (iv) Confirm $\kappa(\alpha)=(1+z_{\alpha/2}/z_\alpha)^2\in[4,\approx5.2]$, $>4$
+strictly, $\to4$; and that the symmetric band is optimal among threshold rules (asymmetric
+search bottoms out at the symmetric formula). \textbf{Flag the open piece:} achievability is
+band-only (MLR); the all-randomized-rules matching upper bound is not established
+(Rmk.~\ref{rmk:t1b-caveat}).
+
+\noindent\textbf{T2.} (i) Confirm the counterexample family is a \emph{computable point}:
+continuous test integrals converge with the stated computable modulus
+($m_0L\cdot\text{Specker-tail}$). \textbf{Reject any version that drifts mass between off-zero
+atoms} --- that makes $\int x\,\mathrm dQ=(o-s)/2$ non-computable and the argument circular (the
+caught defect). (ii) Confirm the atom sits on $\operatorname{disc}(c_{gf})=\{0\}$ and $\Delta$
+is strictly signed on both sides ($\Phi$ holds; the only zero is the frontier, measure zero).
+(iii) Confirm the refutation is the \emph{operator} fact (computable point $\mapsto$
+non-computable real), not a claim that a single fixed computable function has a non-computable
+root (which is false by Turing/Specker). (iv) Confirm the POS direction: atomless on
+$\operatorname{disc}(c_{gf})$ $+$ transversal $\Rightarrow$ computable root/margin by bisection.
+(v) Confirm the verdict is a \emph{dichotomy}: the literal conjecture is false, the regular
+restriction is true, and every concrete family in the paper is regular. Check the cited
+theorems (Hoyrup--Rojas 2009; Mori--Tsujii--Yasugi 2009/2013; Specker 1949; Brattka--Gherardi
+2011; Pour-El--Richards 1989; Weihrauch 2000) say what is attributed.

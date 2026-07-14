@@ -1,0 +1,515 @@
+{
+  "meta": {
+    "build_id": "20260713T174825Z",
+    "generated_at": "2026-07-13T17:48:25.822278+00:00",
+    "commit": "128c599",
+    "paper": "docs/research/kbound/kbound_short_final_draft.pdf",
+    "paper_pages": 20
+  },
+  "research_status": {
+    "theory": "verified",
+    "controlled": "verified",
+    "natural_shifts": "no_harm",
+    "edge_study": "pending"
+  },
+  "evidence_strip": {
+    "proven_theorems": {
+      "value": "3 core",
+      "sub": "plus multiclass/regression bridges"
+    },
+    "theorem_validators": {
+      "value": "Lean partial",
+      "sub": "kernel-checked spine; external assumptions disclosed"
+    },
+    "controlled_beats_both": {
+      "value": "3 tracks",
+      "sub": "2 CIFAR adapter tracks + ImageNet-C SAR"
+    },
+    "natural_shift_no_harm": {
+      "value": "4 tracks",
+      "sub": "no clean natural CI beats-both claim"
+    },
+    "open_theory": {
+      "value": "foundations",
+      "sub": "full probability mechanization remains incomplete"
+    },
+    "reproducibility": {
+      "value": "manifest-backed",
+      "sub": "one promoted-number source"
+    }
+  },
+  "regime_map": [
+    {
+      "id": "mixed",
+      "title": "Mixed and detectable",
+      "action": "Route by certificate",
+      "status": "verified",
+      "examples": "CIFAR-10-C stress; ImageNet-C SAR",
+      "artifact": "docs/research/kbound/paper/generated/kbound_result_manifest.json"
+    },
+    {
+      "id": "one-sided",
+      "title": "Natural one-sided shifts",
+      "action": "Prevent damage; often tie",
+      "status": "no_harm",
+      "examples": "Office-Home, iWildCam, Camelyon17, RxRx1",
+      "artifact": "docs/research/kbound/paper/generated/kbound_result_manifest.json"
+    },
+    {
+      "id": "weak",
+      "title": "Weak or non-transferable evidence",
+      "action": "Abstain or report diagnostic failure",
+      "status": "diagnostic",
+      "examples": "CIFAR-10.1, ImageNet-R, incomplete PACS",
+      "artifact": "docs/research/kbound/paper/generated/kbound_result_manifest.json"
+    }
+  ],
+  "theory_ledger": [
+    {
+      "id": "T1",
+      "name": "Interior matched-evidence impossibility",
+      "status": "verified",
+      "artifact": "docs/research/kbound/paper/sections/theory_core_main.tex",
+      "implication": "For beta > 0 and |M| < beta, evidence-identical target laws can have opposite nonzero benefit.",
+      "evidence": "Paper proof; Lean covers supporting algebra, not the full target-law construction."
+    },
+    {
+      "id": "P1",
+      "name": "Closed-band abstention",
+      "status": "verified",
+      "artifact": "docs/research/kbound/kbound_short.tex",
+      "implication": "Under strict-action semantics, abstention is maximal on |M| <= beta.",
+      "evidence": "Boundary distinguishes zero-versus-strict ambiguity from the interior construction."
+    },
+    {
+      "id": "T2",
+      "name": "Strict-commitment frontier",
+      "status": "verified",
+      "artifact": "docs/research/kbound/formal/KBound/Frontier.lean",
+      "implication": "A uniform strict action is supportable exactly outside the declared drift band.",
+      "evidence": "Lean checks the sufficiency spine; richness/necessity assumptions remain paper-level."
+    },
+    {
+      "id": "T3",
+      "name": "Marginal false-adapt certificate",
+      "status": "conditional",
+      "artifact": "docs/research/kbound/formal/KBound/Certificate.lean",
+      "implication": "Interval coverage controls FA_u, not conditional FA_c.",
+      "evidence": "Coverage is the premise; exchangeability or shift correction is external support for coverage."
+    },
+    {
+      "id": "M1",
+      "name": "Multiclass bridge",
+      "status": "conditional",
+      "artifact": "docs/research/kbound/kbound_short.tex",
+      "implication": "Delta = P(D)(p_a-p_0); empirical KGA estimates Delta directly.",
+      "evidence": "The converse frontier requires declared-class richness."
+    }
+  ],
+  "headline_controlled": [
+    {
+      "name": "CIFAR-10-C stress / Tent",
+      "status": "verified",
+      "artifact": "experiments/kbound/results/stress_grid_multiseed_v1/LOCKED_ANALYSIS_RESULTS.json",
+      "framing": "Five seeds x 432 cross-fitted cells; archived CI beats both fixed policies.",
+      "freeze": 0.1240979162,
+      "adapt": 0.0079233799,
+      "kga": 0.0015736109,
+      "oracle": 0.0,
+      "regret_kga": 0.0015736109,
+      "regret_adapt": 0.0079233799,
+      "regret_freeze": 0.1240979162,
+      "false_adapt": 0.0,
+      "beats_both_artifact": true
+    },
+    {
+      "name": "CIFAR-10-C stress / EATA",
+      "status": "verified",
+      "artifact": "experiments/kbound/results/stress_grid_multiseed_v1/LOCKED_ANALYSIS_RESULTS.json",
+      "framing": "Five seeds x 432 cross-fitted cells; archived CI beats both fixed policies.",
+      "freeze": 0.1313789343,
+      "adapt": 0.0032682874,
+      "kga": 0.0012675925,
+      "oracle": 0.0,
+      "regret_kga": 0.0012675925,
+      "regret_adapt": 0.0032682874,
+      "regret_freeze": 0.1313789343,
+      "false_adapt": 0.0,
+      "beats_both_artifact": true
+    },
+    {
+      "name": "ImageNet-C / SAR",
+      "status": "conditional",
+      "artifact": "experiments/kbound/results/win_hunt_v5/imagenetc_aggr/percondition_bootstrap.json",
+      "framing": "Twenty-seven cells, seed 0; paired-bootstrap beats both with a single-seed caveat.",
+      "freeze": 0.0319259255,
+      "adapt": 0.0625185191,
+      "kga": 0.0108055561,
+      "oracle": 0.0,
+      "regret_kga": 0.0108055561,
+      "regret_adapt": 0.0625185191,
+      "regret_freeze": 0.0319259255,
+      "false_adapt": 0.0,
+      "beats_both_artifact": true
+    }
+  ],
+  "evidence_board": {
+    "controlled_wins": [
+      {
+        "name": "CIFAR-10-C stress / Tent",
+        "status": "verified",
+        "artifact": "experiments/kbound/results/stress_grid_multiseed_v1/LOCKED_ANALYSIS_RESULTS.json",
+        "framing": "Five seeds x 432 cross-fitted cells; archived CI beats both fixed policies.",
+        "freeze": 0.1240979162,
+        "adapt": 0.0079233799,
+        "kga": 0.0015736109,
+        "oracle": 0.0,
+        "regret_kga": 0.0015736109,
+        "regret_adapt": 0.0079233799,
+        "regret_freeze": 0.1240979162,
+        "false_adapt": 0.0,
+        "beats_both_artifact": true
+      },
+      {
+        "name": "CIFAR-10-C stress / EATA",
+        "status": "verified",
+        "artifact": "experiments/kbound/results/stress_grid_multiseed_v1/LOCKED_ANALYSIS_RESULTS.json",
+        "framing": "Five seeds x 432 cross-fitted cells; archived CI beats both fixed policies.",
+        "freeze": 0.1313789343,
+        "adapt": 0.0032682874,
+        "kga": 0.0012675925,
+        "oracle": 0.0,
+        "regret_kga": 0.0012675925,
+        "regret_adapt": 0.0032682874,
+        "regret_freeze": 0.1313789343,
+        "false_adapt": 0.0,
+        "beats_both_artifact": true
+      },
+      {
+        "name": "ImageNet-C / SAR",
+        "status": "conditional",
+        "artifact": "experiments/kbound/results/win_hunt_v5/imagenetc_aggr/percondition_bootstrap.json",
+        "framing": "Twenty-seven cells, seed 0; paired-bootstrap beats both with a single-seed caveat.",
+        "freeze": 0.0319259255,
+        "adapt": 0.0625185191,
+        "kga": 0.0108055561,
+        "oracle": 0.0,
+        "regret_kga": 0.0108055561,
+        "regret_adapt": 0.0625185191,
+        "regret_freeze": 0.0319259255,
+        "false_adapt": 0.0,
+        "beats_both_artifact": true
+      }
+    ],
+    "helpful_dominated": [],
+    "natural_shift_no_harm": [
+      {
+        "name": "Office-Home M v2",
+        "status": "no_harm",
+        "artifact": "research_lock/KBOUND_WIN_BOOTSTRAP_CIS_oof.json",
+        "framing": "No-harm; ties the safer fixed policy within the declared criterion.",
+        "freeze": 0.0158241758,
+        "adapt": 0.0468131868,
+        "kga": 0.0157142857,
+        "oracle": 0.0,
+        "regret_kga": 0.0157142857,
+        "regret_adapt": 0.0468131868,
+        "regret_freeze": 0.0158241758,
+        "false_adapt": 0.0,
+        "beats_both_artifact": false
+      },
+      {
+        "name": "iWildCam H v2",
+        "status": "no_harm",
+        "artifact": "research_lock/KBOUND_WIN_BOOTSTRAP_CIS_oof.json",
+        "framing": "No-harm; ties always-freeze and avoids harmful adaptation.",
+        "freeze": 0.0041023691,
+        "adapt": 0.1028299605,
+        "kga": 0.0041023691,
+        "oracle": 0.0,
+        "regret_kga": 0.0041023691,
+        "regret_adapt": 0.1028299605,
+        "regret_freeze": 0.0041023691,
+        "false_adapt": 0.0,
+        "beats_both_artifact": false
+      },
+      {
+        "name": "Camelyon17 OOD",
+        "status": "no_harm",
+        "artifact": "audits/integrity_2026-06-20/camelyon_reconciliation/",
+        "framing": "Reconciled genuine OOD result; no natural beats-both claim.",
+        "freeze": 0.1381,
+        "adapt": 0.0,
+        "kga": 0.0,
+        "oracle": 0.0,
+        "regret_kga": 0.0,
+        "regret_adapt": 0.0,
+        "regret_freeze": 0.1381,
+        "false_adapt": 0.0,
+        "beats_both_artifact": false
+      },
+      {
+        "name": "RxRx1 J",
+        "status": "no_harm",
+        "artifact": "docs/research/kbound/paper/generated/kbound_result_manifest.json",
+        "framing": "Locked no-harm result; always-freeze is already optimal.",
+        "freeze": 0.0,
+        "adapt": 0.2531,
+        "kga": 0.0,
+        "oracle": 0.0,
+        "regret_kga": 0.0,
+        "regret_adapt": 0.2531,
+        "regret_freeze": 0.0,
+        "false_adapt": 0.0,
+        "beats_both_artifact": false
+      }
+    ],
+    "boundary_negative": [
+      {
+        "name": "CIFAR-10.1",
+        "status": "diagnostic",
+        "artifact": "docs/research/kbound/paper/generated/kbound_result_manifest.json",
+        "framing": "Transfer bar fails; not promoted as a policy win.",
+        "regret_kga": 0.0021,
+        "false_adapt": 0.1667,
+        "note": "Consistent with weak evidence, low margin, estimator inadequacy, or calibration failure."
+      },
+      {
+        "name": "ImageNet-R Protocol D",
+        "status": "diagnostic",
+        "artifact": "docs/research/kbound/paper/generated/kbound_result_manifest.json",
+        "framing": "Three of four planned seeds complete; no stable CI-robust beats-both result.",
+        "note": "A diagnostic null, not proof of structural non-identifiability."
+      },
+      {
+        "name": "PACS",
+        "status": "pending",
+        "artifact": "docs/research/kbound/paper/generated/kbound_result_manifest.json",
+        "framing": "One of three planned seeds complete; breadth evidence remains incomplete."
+      },
+      {
+        "name": "Constructed three-source OOF stream",
+        "status": "conditional",
+        "artifact": "experiments/kbound/results/mixed_protocol_oof_v2/mixed_protocol_oof_v2_result.json",
+        "framing": "Researcher-constructed heterogeneous stream; routing evidence, not unseen-domain transfer.",
+        "freeze": 0.0342043,
+        "adapt": 0.0632323,
+        "kga": 0.0059117,
+        "oracle": 0.0,
+        "regret_kga": 0.0059117,
+        "regret_adapt": 0.0632323,
+        "regret_freeze": 0.0342043,
+        "false_adapt": 0.0,
+        "beats_both_artifact": true,
+        "note": "CI beats both, but the stream is researcher-constructed and does not establish transfer."
+      }
+    ]
+  },
+  "edge_validation": {
+    "study_status": "pending",
+    "study_label": "Pre-registered / awaiting fresh physical sessions",
+    "phases": [
+      {
+        "id": "protocol",
+        "label": "Protocol lock",
+        "status": "verified",
+        "detail": "Configuration and hash are frozen before capture.",
+        "artifact": "docs/research/kbound/edge/artifacts_real/protocol_lock.json"
+      },
+      {
+        "id": "capture",
+        "label": "Fresh physical sessions S01-S10",
+        "status": "pending",
+        "detail": "Raw clips must be physical, complete, hashed, and split by day/device.",
+        "artifact": "docs/research/kbound/edge/PHYSICAL_STUDY_RUNBOOK.md"
+      },
+      {
+        "id": "source",
+        "label": "Source-model quality gate",
+        "status": "pending",
+        "detail": "S02 balanced accuracy and macro-F1 must both be at least 0.80.",
+        "artifact": "experiments/kbound/results/edge_real_phone_v1/model_card.json"
+      },
+      {
+        "id": "heldout",
+        "label": "Held-out Phone A replay",
+        "status": "pending",
+        "detail": "S07-S08 are opened only after development and conformal calibration are sealed.",
+        "artifact": "experiments/kbound/results/edge_real_phone_v1/heldout_metrics.json"
+      },
+      {
+        "id": "replication",
+        "label": "Phone B replication and publication gate",
+        "status": "pending",
+        "detail": "S09-S10, strict anti-leakage audit, report, and table export.",
+        "artifact": "experiments/kbound/results/edge_real_phone_v1/publication_gate.json"
+      }
+    ],
+    "session_progress": [
+      {
+        "session": "S01",
+        "expected_clips": 120,
+        "captured_clips": 0,
+        "complete": false
+      },
+      {
+        "session": "S02",
+        "expected_clips": 40,
+        "captured_clips": 0,
+        "complete": false
+      },
+      {
+        "session": "S03",
+        "expected_clips": 64,
+        "captured_clips": 0,
+        "complete": false
+      },
+      {
+        "session": "S04",
+        "expected_clips": 48,
+        "captured_clips": 0,
+        "complete": false
+      },
+      {
+        "session": "S05",
+        "expected_clips": 64,
+        "captured_clips": 0,
+        "complete": false
+      },
+      {
+        "session": "S06",
+        "expected_clips": 48,
+        "captured_clips": 0,
+        "complete": false
+      },
+      {
+        "session": "S07",
+        "expected_clips": 64,
+        "captured_clips": 0,
+        "complete": false
+      },
+      {
+        "session": "S08",
+        "expected_clips": 48,
+        "captured_clips": 0,
+        "complete": false
+      },
+      {
+        "session": "S09",
+        "expected_clips": 64,
+        "captured_clips": 0,
+        "complete": false
+      },
+      {
+        "session": "S10",
+        "expected_clips": 48,
+        "captured_clips": 0,
+        "complete": false
+      }
+    ],
+    "development_metrics": null,
+    "unblock": {
+      "all_pass": false,
+      "gate_thresholds": {
+        "balanced_acc": 0.8,
+        "macro_f1": 0.8
+      },
+      "current": {
+        "sessions_complete": false,
+        "physical_only": false,
+        "source_gate": false,
+        "audit_pass": false
+      },
+      "gaps": [
+        {
+          "check": "Fresh physical S01-S10 captures",
+          "passed": false,
+          "detail": "no mock or pilot clips"
+        },
+        {
+          "check": "Source-model gate",
+          "passed": false,
+          "detail": "balanced accuracy and macro-F1 >= 0.80"
+        },
+        {
+          "check": "Strict anti-leakage audit",
+          "passed": false,
+          "detail": "all eight checks pass"
+        },
+        {
+          "check": "Phone A held-out replay",
+          "passed": false,
+          "detail": "S07-S08 metrics exist"
+        },
+        {
+          "check": "Phone B replication",
+          "passed": false,
+          "detail": "S09-S10 metrics exist"
+        },
+        {
+          "check": "Publication gate",
+          "passed": false,
+          "detail": "machine-readable final gate passes"
+        }
+      ],
+      "commands": {
+        "preflight": "python docs/research/kbound/edge/scripts/preflight_r2.py",
+        "full_pipeline": "bash docs/research/kbound/edge/scripts/run_edge_publication_pipeline.sh",
+        "retrain_source": "bash docs/research/kbound/edge/scripts/run_edge_source_gate.sh",
+        "replay_heldout": "python docs/research/kbound/edge/scripts/06_replay_heldout.py --config docs/research/kbound/edge/configs/edge_real_phone_v1.yaml",
+        "refresh_dashboard": "bash docs/research/kbound/scripts/build_dashboard.sh"
+      }
+    },
+    "protocol_hash": null,
+    "audit_pass": false
+  },
+  "safety": {
+    "metrics": [
+      {
+        "label": "FA_u",
+        "value": "P(adapt and Delta <= 0)",
+        "meaning": "The marginal false-adapt quantity controlled under valid interval coverage."
+      },
+      {
+        "label": "FA_c",
+        "value": "P(Delta <= 0 | adapt)",
+        "meaning": "Descriptive unless separately proved; not theorem-controlled here."
+      },
+      {
+        "label": "Abstain",
+        "value": "retain f0",
+        "meaning": "Do not commit the update; prediction continues from the frozen fallback."
+      }
+    ],
+    "prose": {
+      "false_adapt": "The empirical certificate is Delta_hat +/- epsilon; epsilon is not beta.",
+      "abstain": "Empirical abstention may reflect structural ambiguity, finite data, model inadequacy, transfer failure, or conservative width.",
+      "unknowable": "A benchmark null alone does not establish structural non-identifiability.",
+      "certificate_scope": "Every claim is limited to its saved protocol, calibration unit, adapter, and artifact lineage."
+    }
+  },
+  "reproduce": {
+    "primary": "bash docs/research/kbound/scripts/reproduce_submission.sh",
+    "gpu": "bash docs/research/kbound/scripts/kbtrain.sh smoke-all",
+    "validators": "cd docs/research/kbound/formal && bash build.sh",
+    "dashboard": "bash docs/research/kbound/scripts/build_dashboard.sh",
+    "runtime_estimate": "Cached audit is CPU-friendly; dataset refreshes require the documented data and accelerator.",
+    "inputs": [
+      "docs/research/kbound/paper/generated/kbound_result_manifest.json",
+      "research_lock/",
+      "experiments/kbound/results/"
+    ],
+    "outputs": [
+      "docs/research/kbound/dashboard/data/snapshot.json",
+      "docs/research/kbound/kbound_short_final_draft.pdf"
+    ]
+  },
+  "provenance": {
+    "snapshot_path": "docs/research/kbound/dashboard/data/snapshot.json",
+    "manifest": "docs/research/kbound/paper/generated/kbound_result_manifest.json",
+    "headline_lock": "research_lock/",
+    "edge_protocol_lock": "docs/research/kbound/edge/artifacts_real/protocol_lock.json",
+    "commit": "128c599",
+    "local_clips_note": "Raw physical clips remain local; manifests and hashes are release artifacts after privacy review."
+  }
+}

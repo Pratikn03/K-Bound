@@ -111,6 +111,12 @@ export interface EdgeValidation {
     detail: string;
     artifact?: string;
   }>;
+  session_progress?: Array<{
+    session: string;
+    expected_clips: number;
+    captured_clips: number;
+    complete: boolean;
+  }>;
   development_metrics?: {
     note: string;
     phone_a_balanced_acc?: number;

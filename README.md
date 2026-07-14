@@ -1,111 +1,199 @@
-# K-Bound / KGA — Knowability-Guided Adaptation
+# K-Bound: When Is Label-Free Adaptation Knowable?
 
-[![kbound-ci](https://github.com/Pratikn03/AutoML_Flagship_V8/actions/workflows/kbound-ci.yml/badge.svg)](https://github.com/Pratikn03/AutoML_Flagship_V8/actions/workflows/kbound-ci.yml)
-[![CI](https://github.com/Pratikn03/AutoML_Flagship_V8/actions/workflows/ci.yml/badge.svg)](https://github.com/Pratikn03/AutoML_Flagship_V8/actions/workflows/ci.yml)
-[![Ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json)](https://github.com/astral-sh/ruff)
-[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+K-Bound studies a deployment decision that ordinary test-time adaptation leaves
+implicit: should a proposed update be committed, rejected, or left undecided when
+target labels are unavailable?
 
-**Should a model adapt to new data it has no labels for — or would adapting make it worse?**
-K-Bound answers that *before* adapting. It formalizes label-free test-time adaptation (TTA)
-as an **adapt / freeze / abstain** decision governed by the sign of the adaptation benefit,
-and ships a finite-sample certificate, **KGA** (Knowability-Guided Adaptation), that controls
-the false-adapt rate at a chosen level α.
+The framework separates two layers:
 
-It is a **safety layer for TTA**, not a new adaptation method: KGA wraps existing adapters
-(Tent, EATA, SAR) and decides *whether* to trust them on this batch.
+- **K-Bound theory** characterizes when a strict adapt or freeze commitment is
+  uniformly supportable over a declared target class.
+- **KGA** is the practical finite-sample wrapper. It estimates adaptation benefit
+  from label-free evidence and commits only when a calibrated interval excludes
+  zero.
 
-## Why it exists
+KGA wraps candidate adapters such as Tent, EATA, and SAR. It is a safety and
+validity layer, not a new adaptation objective and not a universal accuracy
+booster.
 
-The same unlabeled objective that recovers accuracy under one shift can silently destroy it
-under another, and with no target labels the system can't tell which it's facing. K-Bound
-proves this is partly **fundamental**: when two target worlds produce identical label-free
-evidence but opposite adaptation benefit, no label-free rule can be right in both —
-abstention is information-theoretically necessary. It also gives the exact frontier: the
-benefit sign is recoverable **iff** an observable margin exceeds the calibration-drift budget.
+## Scientific Status
+
+| Evidence tier | Current result | Defensible reading |
+|---|---|---|
+| Core theory | Interior impossibility, closed-band abstention, strict-commitment frontier, marginal interval certificate | Conditional on the declared class and stated coverage assumptions |
+| Controlled mixed shifts | CIFAR-10-C Tent/EATA and ImageNet-C SAR beats-both tracks | Routing can improve on both fixed policies when helpful and harmful cells are detectable |
+| Natural shifts | Office-Home, iWildCam, Camelyon17, RxRx1 no-harm results | KGA generally matches the safer fixed policy; no clean single-dataset natural CI-robust beats-both claim |
+| Weak/incomplete evidence | CIFAR-10.1, ImageNet-R, PACS | Diagnostic only; a null does not prove structural non-identifiability |
+| Physical camera study | Protocol and implementation ready; fresh S01-S10 sessions pending | No real-camera headline result until the machine-readable publication gate passes |
+
+The promoted benchmark values and caveats live in
+[the canonical result manifest](docs/research/kbound/paper/generated/kbound_result_manifest.json).
+The dashboard and paper tables are built from that manifest rather than from
+legacy notes.
+
+## Theory and Certificate
+
+The adaptation benefit convention is Delta = R_T(f_0) - R_T(f_a). Positive
+benefit favors adaptation; negative benefit favors the frozen model.
+
+At population level, the theory uses the observable margin M, latent drift
+gamma, and declared drift budget beta. A strict action is uniformly supportable
+outside the band |M| <= beta under the paper's declared-class assumptions.
+
+Real-data KGA uses a separate empirical rule:
+
+- Delta_hat - epsilon > 0: adapt.
+- Delta_hat + epsilon < 0: freeze.
+- Otherwise: abstain from committing the update.
+
+KGA does not numerically estimate M, gamma, or beta on the reported real
+benchmarks, and epsilon is not an estimate of beta.
 
 ## Install
 
-```bash
-# Today (lightweight, numpy + scikit-learn only):
-pip install "git+https://github.com/Pratikn03/AutoML_Flagship_V8.git#subdirectory=docs/research/kbound/kbound_pkg"
-# After the PyPI release:  pip install kbound
-```
+~~~bash
+python3 -m venv .venv
+source .venv/bin/activate
+pip install -e .
+~~~
 
-## 30-second quickstart
+The lightweight certificate API is also packaged under
+[docs/research/kbound/kbound_pkg](docs/research/kbound/kbound_pkg).
 
-```python
+## Minimal Use
+
+~~~python
 import numpy as np
-from kbound.certificate import conformal_radius, decide
 
-# calibration residuals r_i = |Δ̂_i − Δ_i| from a held-out split
-residuals = np.abs(np.random.default_rng(0).standard_normal(200)) * 0.05
-eps = conformal_radius(residuals, alpha=0.10)        # finite-sample radius
+from kga.certificate import conformal_radius, decide
 
-decide(Bhat=0.12,  eps=eps)   # -> 'adapt'    (benefit certified positive)
-decide(Bhat=-0.12, eps=eps)   # -> 'freeze'   (benefit certified negative)
-decide(Bhat=0.01,  eps=eps)   # -> 'abstain'  (sign not identifiable)
-```
+residuals = np.abs(np.random.default_rng(0).normal(size=200)) * 0.05
+epsilon = conformal_radius(residuals, alpha=0.10)
 
-## Results — honest scope
+print(decide(Bhat=0.12, eps=epsilon))   # adapt
+print(decide(Bhat=-0.12, eps=epsilon))  # freeze
+print(decide(Bhat=0.01, eps=epsilon))   # abstain
+~~~
 
-KGA's value is **regime-specific**: it wins where harmful adaptation is frequent, detectable,
-and costly, and it *ties* (does no harm) where adapting is already the right call. It is **not**
-a universal accuracy booster. Every number below is from a pre-registered protocol
-(`research_lock/`) scored once on held-out test, with bootstrap confidence intervals.
+The exact split-conformal implementation uses the finite-sample order statistic.
+Archived stress-grid artifacts are labeled separately because they used
+leave-one-condition-out empirical residual calibration or an earlier empirical
+quantile implementation.
 
-| Setting | Result | Reading |
-|---|---|---|
-| **CIFAR-10-C / ImageNet-C** (collapse-prone) | **beats-both, CI-robust** (Tent/EATA; SAR-collapse cells) | the headline win — harmful adaptation is frequent *and* detectable |
-| **Office-Home** (Protocol M v2) | **no-harm** — beats always-adapt (CI excl. 0), ties always-freeze; false-adapt 0% | damage-prevention: blocks harm, keeps useful adaptation |
-| **iWildCam** (Protocol H v2) | **no-harm** — beats always-adapt, ties always-freeze; false-adapt 0% | damage-prevention on a natural shift |
-| **Camelyon17 / RxRx1** | **no-harm** — matches the better fixed policy | one-sided shifts; nothing to beat |
-| **PACS** (leave-one-domain-out) | **no-harm on 3/4 domains**; safe partial-adapt on the 4th | domain-generalization breadth check |
-| **CIFAR-10.1 / ImageNet-R** | honest nulls | evidence-poor / *unknowable* regime the theory predicts |
-| Mixed-deployment stream | *withdrawn* — pending a corrected out-of-fold re-run | not currently claimed |
+## Researcher Reproduction
 
-> Under a valid out-of-fold conformal radius, the only **beats-both** rows are the synthetic
-> corruption grids (CIFAR-10-C, ImageNet-C SAR); **every natural shift is no-harm**, not a win.
-> An earlier in-sample-radius Office-Home/iWildCam "beats-both" was a calibration bug and is corrected here.
+Fast checks that do not require raw datasets:
 
-> A previously reported Camelyon17 "beats-both" was traced to pooling in-distribution
-> validation cells into the held-out set and **withdrawn** — see the paper's natural-shift section.
+~~~bash
+python -m pytest tests docs/research/kbound/kbound_pkg/tests -q
+python docs/research/kbound/scripts/build_dashboard_snapshot.py
+bash docs/research/kbound/scripts/reproduce_submission.sh
+~~~
 
-## Reproduce
+Lean verification:
 
-```bash
-bash scripts/smoke_kbound.sh                              # hermetic, no data, no torch, <60s
-python -m pytest tests/test_certificate_drift_guard.py    # paper's certificate ≡ kga core
-python -m pytest tests/test_kga_package.py -q             # the importable certificate
-```
-Raw datasets are not committed; re-download via the scripts referenced in [`DATA.md`](DATA.md).
-Headline numbers reproduce from the cached result JSONs in `experiments/kbound/results/`.
+~~~bash
+cd docs/research/kbound/formal
+bash build.sh
+~~~
+
+Dataset refreshes and multiseed training are intentionally separate from the
+cached artifact audit. See [DATA.md](DATA.md),
+[REPRODUCE.md](docs/research/kbound/REPRODUCE.md), and
+[research_lock](research_lock).
+
+## Research Dashboard
+
+Build and serve the local dashboard:
+
+~~~bash
+bash docs/research/kbound/scripts/build_dashboard.sh
+python3 -m http.server 8765 --directory docs/research/kbound
+~~~
+
+Open http://127.0.0.1:8765/kbound_dashboard.html.
+
+The dashboard exposes theorem scope, promoted result lineage, negative evidence,
+camera readiness, session progress, and exact reproduction commands. Its browser
+camera is a connectivity preview only; it does not create study evidence.
+
+## Physical Camera Validation
+
+The physical package/label study is preregistered as edge_real_phone_v1. Source,
+calibration, held-out, and replication sessions are separated by session and
+device.
+
+~~~bash
+python docs/research/kbound/edge/scripts/preflight_r2.py
+bash docs/research/kbound/edge/scripts/run_edge_source_gate.sh
+bash docs/research/kbound/edge/scripts/run_edge_publication_pipeline.sh
+~~~
+
+The final command fails closed unless all of the following hold:
+
+1. S01-S10 contain exactly the expected physical clips.
+2. Every clip has physical-capture provenance and a unique hash.
+3. S02 balanced accuracy and macro-F1 are both at least 0.80.
+4. Development and conformal splits were sealed before held-out access.
+5. Phone A held-out and Phone B replication replays are complete.
+6. All eight anti-leakage checks pass.
+7. publication_gate.json reports passed: true.
+
+Raw phone video remains local until privacy review. Release artifacts contain
+manifests, hashes, policy logs, metrics, and table exports.
 
 ## Papers
 
-- Conference paper: [`docs/research/kbound/kbound.pdf`](docs/research/kbound/kbound.pdf)
-- Short version: [`docs/research/kbound/kbound_short.pdf`](docs/research/kbound/kbound_short.pdf)
-- Long-form thesis: [`docs/research/kbound/manuscript/`](docs/research/kbound/manuscript/)
-
-## Repository layout
-
-See **[`docs/REPO_LAYOUT.md`](docs/REPO_LAYOUT.md)** for the canonical tree (K-Bound only).
-
-| Path | What |
+| Artifact | Role |
 |---|---|
-| [`kga/`](kga/) | The KGA certificate core — pure-numpy, typed, the maintained source of truth |
-| [`docs/research/kbound/kbound_pkg/`](docs/research/kbound/kbound_pkg/) | The pip-installable `kbound` package (frozen copy, drift-guarded) |
-| [`docs/research/kbound/notebooks/`](docs/research/kbound/notebooks/) | Jupyter curriculum (theory → experiments → reproducibility) |
-| [`experiments/kbound/`](experiments/kbound/) | Experiment drivers + cached result JSONs (`results/`) + theorem validators |
-| [`research_lock/`](research_lock/) | Pre-registered protocols + decision log (the integrity backbone) |
-| [`tests/`](tests/) | Test suite incl. anti-leakage + manuscript-claim-consistency guards |
-| [`deploy/api/`](deploy/api/) | Hardened FastAPI service exposing `POST /decide` |
-| [`archive/legacy_elara/`](archive/legacy_elara/) | Archived ELARA/UAIS-V code (provenance only; not maintained) |
+| [kbound_short.tex](docs/research/kbound/kbound_short.tex) | Authoritative conference-style source |
+| [kbound_short_final_draft.pdf](docs/research/kbound/kbound_short_final_draft.pdf) | Current compiled short draft |
+| [kbound_short_final_draft.docx](docs/research/kbound/kbound_short_final_draft.docx) | Editable Word rendering synchronized from the final LaTeX source |
+| [kbound.tex](docs/research/kbound/kbound.tex) | Historical extended manuscript; not authoritative for claims |
+| [manuscript](docs/research/kbound/manuscript) | Long-form chapter organization |
+| [formal](docs/research/kbound/formal) | Lean 4 mechanization inventory |
+| [manuscript strategy](docs/research/kbound/KBOUND_MANUSCRIPT_STRATEGY.md) | What stays in the conference core versus supplement |
 
-## Cite
+The short paper is the claim-controlled submission draft. The current long
+manuscript predates several claim corrections and must not be submitted or used
+as a numerical source. It is a historical source for extended proofs and
+background only; material moves into the maintained supplement only after its
+assumptions and artifact lineage are re-audited.
 
-See [`CITATION.cff`](CITATION.cff) (GitHub renders a "Cite this repository" button). A Zenodo
-DOI is minted at release — see [`docs/research/kbound/RELEASE_CHECKLIST.md`](docs/research/kbound/RELEASE_CHECKLIST.md).
+## Repository Map
 
-## License
+| Path | Responsibility |
+|---|---|
+| [kga](kga) | Maintained certificate and routing core |
+| [kbound_pkg](docs/research/kbound/kbound_pkg) | Installable research package |
+| [generated paper data](docs/research/kbound/paper/generated) | Canonical result manifest and LaTeX macros |
+| [dashboard](docs/research/kbound/dashboard) | TypeScript research dashboard |
+| [edge](docs/research/kbound/edge) | Physical-camera protocol, runtime, tests, and reporting |
+| [formal](docs/research/kbound/formal) | Lean development and theorem map |
+| [experiments](experiments/kbound) | Experiment drivers and immutable result artifacts |
+| [research locks](research_lock) | Protocol locks and decision records |
+| [tests](tests) | Package, anti-leakage, and claim-consistency tests |
 
-MIT — see [`LICENSE`](LICENSE). Author: **Pratik Niroula**.
+## Formalization Scope
+
+Lean kernel-checks the indexed algebraic and finite-decision spine, including
+certificate soundness conditional on coverage and supporting frontier lemmas.
+The full target-law necessity construction, general exchangeable-process lift,
+optional-stopping foundations, product KL/TV layer, risk alignment, and
+calibration transfer remain external to the current mechanization. The paper
+states this boundary explicitly.
+
+## Current Submission Risks
+
+- ImageNet-C SAR is a single-seed operating point.
+- PACS and ImageNet-R planned seed panels are incomplete.
+- The natural datasets provide no-harm evidence, not a clean natural beats-both win.
+- Some controlled results depend on archived aggregates whose raw lineage must
+  remain documented.
+- The physical study still requires fresh held-out sessions.
+- Full foundational probability mechanization is incomplete.
+
+## License and Citation
+
+Released code is under the [MIT License](LICENSE). Citation metadata is in
+[CITATION.cff](CITATION.cff).
