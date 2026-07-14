@@ -27,9 +27,8 @@ This command runs the complete Python suite, regenerates the dashboard snapshot
 from the canonical result manifest, and compiles the TypeScript dashboard. It
 does not claim to retrain any model.
 
-Expected status for this release: 221 tests collected after the deterministic
-dashboard test was added, with two intentional skips when optional display
-capabilities are unavailable.
+The exact test count may grow as integrity checks are added. Two display-dependent
+tests are intentionally skipped when optional capabilities are unavailable.
 
 ## Paper Build
 
@@ -84,10 +83,12 @@ gate is necessary but not sufficient for a positive empirical conclusion.
 
 ## Full Dataset Reruns
 
-Raw benchmark reruns are intentionally not hidden inside the artifact audit.
-Each track must use its lock in `research_lock/`, preserve the specified seeds
-and split roles, and write a new immutable result directory. Do not replace the
-canonical manifest until the new run passes the declared statistical and
+Raw benchmark reruns are intentionally separate from the artifact audit. The
+release contains compact per-condition evidence for the promoted and diagnostic
+statements, but not every historical training orchestrator or raw dataset.
+Each new rerun must use its lock in `research_lock/`, preserve the specified
+seeds and split roles, and write a new immutable result directory. Do not replace
+the canonical manifest until the new run passes the declared statistical and
 lineage checks.
 
 The current release scope is summarized in [`DATA.md`](../../../DATA.md) and

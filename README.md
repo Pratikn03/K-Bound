@@ -222,7 +222,7 @@ predates several claim corrections. See [RELEASE_SCOPE.md](RELEASE_SCOPE.md).
 | [dashboard](docs/research/kbound/dashboard) | TypeScript research dashboard |
 | [edge](docs/research/kbound/edge) | Physical-camera protocol, runtime, tests, and reporting |
 | [formal](docs/research/kbound/formal) | Lean development and theorem map |
-| [experiments](experiments/kbound) | Experiment drivers and immutable result artifacts |
+| [experiments](experiments/kbound) | Compact immutable evidence for every paper track |
 | [research locks](research_lock) | Protocol locks and decision records |
 | [tests](tests) | Package, anti-leakage, and claim-consistency tests |
 | [.github/workflows](.github/workflows) | core, paper, dashboard, camera-integrity, and Lean CI |

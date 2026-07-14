@@ -41,7 +41,7 @@ prove structural non-identifiability.
 
 ### Natural no-harm results
 
-Office-Home M v2, iWildCam H v2, Camelyon17 genuine OOD reconciliation,
+Office-Home M v2 (reconciled v3), iWildCam H v2 (reconciled v3), Camelyon17 genuine OOD reconciliation,
 and RxRx1 J. These are not described as clean single-dataset natural beats-both
 wins.
 
@@ -67,7 +67,8 @@ bash scripts/build_pdfs.sh
 ~~~
 
 The generated result manifest is authoritative for repeated headline values.
-Historical notes and archived runs are provenance, not automatic evidence.
+Each local source path in that manifest is checked by the release-integrity
+tests. Historical notes and archived runs are provenance, not automatic evidence.
 
 ## Dashboard
 

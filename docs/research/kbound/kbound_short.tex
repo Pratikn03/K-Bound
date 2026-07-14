@@ -330,46 +330,40 @@ to the adapt/freeze/abstain loss; PAC prediction sets give set-valued analogues 
 shift~\cite{park2022pac}.
 
 \subsection{Evidence Map and Benefit Estimator}
-The evidence map uses only unlabeled batches and model outputs, and is instantiated as two
-label-free panels matched to the two calibration regimes below. On the controlled stress grids
-(CIFAR-10-C, ImageNet-C, PACS) the base panel is an $11$-dimensional vector computed from the
+The evidence map uses only unlabeled batches and model outputs. In the promoted per-condition
+artifacts retained by this release, it is an $11$-dimensional vector computed from the
 frozen softmax $p_0$ and the adapted softmax $p_a$ on the adaptation batch: the mean predictive
 entropy and mean confidence of $f_0$ and of $f_a$; the normalized marginal (predicted-class)
 entropy of each; the entropy and marginal-balance drops between them; the fraction of adapted
 predictions above confidence $0.9$ (a collapse indicator); the $\mathrm{KL}$ divergence between
 the adapted and frozen predicted-class marginals; and the $\ell_2$ norm of the adapter's
-parameter update. On the natural-shift protocols (Camelyon17, iWildCam, Office-Home, RxRx1) a
-$16$-dimensional panel adds distribution- and disagreement-oriented statistics computed from the
-frozen logits: entropy and confidence quantiles; the frozen/adapted prediction-disagreement rate;
-the entropy gap; a free-energy source$\to$target shift; a batch-vs-running BatchNorm-statistic
-$\mathrm{KL}$; an ATC-style threshold-accuracy estimate (its threshold fixed on \emph{source}
-labels only, never target labels); and a source$\to$target confidence drop. The source-calibrated
-correctness score $s$ of \S\ref{sec:theory} is operationalized by the adapted-confidence and
-ATC-style features. \textsc{KGA} does not explicitly estimate the theoretical margin $M$; it learns the benefit $\widehat\Delta=h_\theta(Z)$ directly from the full evidence vector $Z$.
+parameter update. An exploratory $16$-feature natural-shift panel existed in the development tree,
+but it is not used to support a promoted result here and is therefore excluded from the method
+claim. \textsc{KGA} does not explicitly estimate the theoretical margin $M$; it learns the benefit
+$\widehat\Delta=h_\theta(Z)$ directly from the retained evidence vector $Z$.
 
 The benefit model predicts $\widehat\Delta=h_\theta(Z)$ from labeled development conditions;
 $h_\theta$ is a gradient-boosted regression tree (scikit-learn
 \texttt{GradientBoostingRegressor}, squared error, $250$ trees, depth $2$, learning rate $0.05$,
 subsample $0.8$, seed $0$), refit \emph{per dataset and per candidate adapter} rather than shared,
 so the estimator itself implies no cross-dataset transfer.
-The complete schema for both panels---exact per-feature formulas and families---is given in
-Appendix~\ref{app:evidence-schema} (Tables~\ref{tab:schema-base} and~\ref{tab:schema-rich}), with
+The complete promoted schema---exact per-feature formulas and families---is given in
+Appendix~\ref{app:evidence-schema} (Table~\ref{tab:schema-base}), with
 per-adapter update hyperparameters in Table~\ref{tab:adapter-hparams}.
 
 \begin{table}[t]\centering\scriptsize
-\caption{Label-free evidence \emph{actually computed} by KGA. The $11$-dim base panel drives the
-stress grids; the natural-shift protocols use a $16$-dim panel that adds the rows marked
-\emph{(nat.)}. Exact formulas and per-track subsets are in the configuration files.}
+\caption{Label-free evidence in the promoted per-condition artifacts. Exact formulas are in
+Table~\ref{tab:schema-base}; tracks retained only as reconciled summaries do not support a stronger
+feature-level claim.}
 \label{tab:evidence-map}
 \begin{tabular}{@{}p{0.27\linewidth}p{0.63\linewidth}@{}}
 \toprule
 Family & Statistics \\
 \midrule
-Frozen output $Z_0$ & mean entropy, mean confidence, normalized marginal-class entropy; entropy/confidence quantiles \emph{(nat.)} \\
+Frozen output $Z_0$ & mean entropy, mean confidence, normalized marginal-class entropy \\
 Adapted output $Z_a$ & mean entropy, mean confidence, normalized marginal entropy, frac.\ confidence $>0.9$ \\
-Change $Z_{\rm change}$ & entropy drop, marginal-balance drop, entropy gap \\
-Disagreement & frozen/adapted prediction-disagreement rate \emph{(nat.)} \\
-Distribution drift & adapted-vs-frozen marginal $\mathrm{KL}$; free-energy shift, BN-statistic $\mathrm{KL}$, ATC/confidence drop \emph{(nat.)} \\
+Change $Z_{\rm change}$ & entropy drop, marginal-balance drop \\
+Distribution drift & adapted-vs-frozen predicted-class marginal $\mathrm{KL}$ \\
 Update behavior & $\ell_2$ norm of the adapter parameter update \\
 \bottomrule
 \end{tabular}
@@ -460,26 +454,28 @@ the fallback.
 KGA cannot avoid the cost of proposing an update because candidate adaptation includes forward and
 backward computation before commitment. A complete profile must separately report frozen inference,
 candidate adaptation, candidate inference, evidence extraction, benefit-estimator evaluation,
-model-copy memory, rollback, and end-to-end window latency. The controller's \emph{added} cost is measured in Table~\ref{tab:cost}
-(\texttt{scripts/cost\_profile.py}; locked artifact \texttt{cost\_profile.json}): evidence
-extraction $0.074$\,ms and benefit-model evaluation $0.127$\,ms per decision ($0.20$\,ms total),
-plus one model copy ($44.8$\,MB, ResNet-18/CIFAR) for rollback; the benefit model itself is
-$195$\,KB. Candidate adaptation and inference are unchanged by KGA---$f_a$ is evaluated
+model-copy memory, rollback, and end-to-end window latency. The controller's \emph{added} cost is
+measured in Table~\ref{tab:cost} (\texttt{scripts/recompute/cost\_profile.py}; artifact
+\path{experiments/kbound/results/controller_cost_v1/cost_profile.json}): evidence extraction
+$0.098$\,ms and benefit-model evaluation $0.245$\,ms per decision ($0.343$\,ms total) on the
+reported Apple-silicon environment. The referenced ResNet-18/CIFAR checkpoint is $44.77$\,MB on
+disk and the serialized benefit model is $194.9$\,KB. Candidate adaptation and inference are unchanged by KGA---$f_a$ is evaluated
 regardless---and dominate end-to-end latency.
 
 \begin{table}[t]\centering\footnotesize
-\caption{KGA controller \emph{added} cost (ResNet-18/CIFAR, measured via
-\texttt{scripts/cost\_profile.py}). The adaptation/inference step is unchanged by KGA.}
+\caption{KGA controller \emph{added} cost (ResNet-18/CIFAR, Apple silicon, Python 3.12.13;
+measured via \texttt{scripts/recompute/cost\_profile.py}). Timings are environment-specific and
+exclude adaptation/inference.}
 \label{tab:cost}
 \begin{tabular}{lc}
 \toprule
 Component & Cost \\
 \midrule
-Evidence extraction (per batch) & $0.074$\,ms \\
-Benefit-model evaluation (per decision) & $0.127$\,ms \\
-\textbf{Controller added latency} & $\mathbf{0.20}$\,\textbf{ms} \\
-Rollback model copy (memory) & $44.8$\,MB \\
-Benefit model size & $195$\,KB \\
+Evidence extraction (per batch) & $0.098$\,ms \\
+Benefit-model evaluation (per decision) & $0.245$\,ms \\
+\textbf{Controller added latency} & $\mathbf{0.343}$\,\textbf{ms} \\
+Rollback checkpoint (on-disk size) & $44.77$\,MB \\
+Serialized benefit model & $194.9$\,KB \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -611,7 +607,7 @@ distribution of the stress-grid design (Protocol~A; the $11$-point Pareto over h
 $N_{\mathrm{boot}}{=}5000$): Tent $+0.019\,[0.011,0.026]$ vs.\ always-adapt,
 $+0.080\,[0.052,0.107]$ vs.\ always-freeze; EATA $+0.015\,[0.009,0.021]$ and
 $+0.075\,[0.049,0.100]$. A conventional paired per-condition bootstrap over the $432$ realized
-conditions (\texttt{scripts/percondition\_bootstrap.py}) returns the same Tent/EATA verdict.}
+conditions (\texttt{scripts/recompute/percondition\_bootstrap.py}) returns the same Tent/EATA verdict.}
 The saved SAR aggregate is not promoted: a later seed-0 replacement causes the current raw tree to
 replay different SAR fixed-policy regrets, so SAR coverage and verdict require a clean five-seed
 rebuild. The Pareto panel in Fig.~\ref{fig:decisive} is retained as archived decision geometry; the
@@ -673,8 +669,9 @@ confidence/entropy gates false-adapt on ${\sim}74\%$ of harmful cells; the drift
 the budget, degenerates to always-freeze. The \textsc{KGA}-without-radius row isolates the radius:
 removing it lowers regret slightly ($0.0017\!\to\!0.0004$) but raises $\mathrm{FA}_{\mathrm u}$ from
 $0$ to $0.049$ (to $0.141$ on harmful cells): the radius is what turns a good benefit \emph{estimate}
-into a false-adapt \emph{guarantee}. Reproduced by \texttt{scripts/gate\_baseline\_comparison.py} on
-the locked per-cell dump.
+into a false-adapt \emph{certificate}. The archived values and a clean exact-rank recomputation are
+stored under \path{experiments/kbound/results/gate_baselines_v1/}; the recomputation script is
+\texttt{scripts/recompute/gate\_baseline\_comparison.py}.
 
 \begin{table}[t]\centering\small
 \caption{\textbf{Decision-baseline comparison, CIFAR-10-C stress grid} (Tent candidate, $n{=}432$
@@ -842,8 +839,8 @@ intervals are paired held-out-condition bootstrap intervals from
 
 \paragraph{Multi-seed stability (Camelyon17).} The one natural-shift track with per-condition logs at
 multiple seeds is Camelyon17 ($4$ seeds, $9$ composition-stress conditions/seed). Aggregating the
-deployed per-seed decisions (\texttt{scripts/multiseed\_natural.py}; locked
-\texttt{multiseed\_camelyon17\_*.json}) shows the no-harm outcome is \emph{candidate-dependent} and
+deployed per-seed decisions (\texttt{scripts/recompute/multiseed\_natural.py}; locked artifacts
+under \path{experiments/kbound/results/camelyon17_multiseed_v1/}) shows the no-harm outcome is \emph{candidate-dependent} and
 stable only for the milder adapter (Table~\ref{tab:multiseed}): with Tent, KGA is \textbf{stable
 no-harm} across all four seeds---it ties always-freeze, beats always-adapt, at
 $\mathrm{FA}_{\mathrm u}{=}0$ every seed; with EATA the margin is inconclusive; and with the
@@ -855,7 +852,7 @@ artifacts and remain future work.
 \begin{table}[t]\centering\footnotesize
 \caption{\textbf{Multi-seed no-harm (Camelyon17, seeds $0$--$3$).} Regret mean$\pm$std across seeds;
 $\mathrm{FA}_{\mathrm u}$ is the per-seed maximum. Reproduced by
-\texttt{scripts/multiseed\_natural.py} from the committed per-seed logs.}
+\texttt{scripts/recompute/multiseed\_natural.py} from the committed per-seed logs.}
 \label{tab:multiseed}
 \resizebox{\columnwidth}{!}{%
 \begin{tabular}{lccccl}
@@ -944,7 +941,7 @@ Statement & Status & Requirement \\
 Abstention needed in matched-evidence opposite-benefit worlds & theorem & stated model class \\
 $\mathrm{FA}_u \le \alpha$ (unconditional false-adapt) & theorem & measurable marginal coverage; exchangeability/shift correction only justifies coverage \\
 $\mathrm{FA}_c \le \alpha$ (conditional false-adapt) & \textbf{not claimed} & report $\mathrm{FA}_c$ descriptively only \\
-Nine-track panel & \textbf{accounting} & locked, reconciled, or provisional tiers shown explicitly \\
+Nine-track panel & \textbf{audit} & locked, reconciled, or provisional tiers shown explicitly \\
 Stress-grid beats-both (Tent/EATA) & empirical & locked Protocol~A v1 stress grid \\
 ImageNet-C SAR paired-bootstrap beats-both & empirical & source-backed 27-cell noise grid; both paired CIs exclude 0 \\
 Reconciled natural safety (Camelyon17, RxRx1) & empirical & raw OOD/test artifacts \\
@@ -1159,7 +1156,7 @@ results remain uncommon, but no priority claim is made.
 limited to the inventory described above. ``Empirical'' and ``diagnostic'' claims are restricted to
 the named saved artifacts and protocols.}
 \label{tab:claim-status}
-\begin{tabular}{@{}p{0.20\textwidth}p{0.075\textwidth}p{0.22\textwidth}p{0.22\textwidth}p{0.20\textwidth}@{}}
+\begin{tabular}{@{}p{0.19\textwidth}p{0.07\textwidth}p{0.21\textwidth}p{0.21\textwidth}p{0.18\textwidth}@{}}
 \toprule
 Claim & Type & Exact requirement & Evidence location & Caveat \\
 \midrule

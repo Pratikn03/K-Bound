@@ -1,5 +1,10 @@
 # K-Bound Short Paper Remaining Work
 
+The maintained software, compact claim evidence, dashboard, paper build, and
+Lean strict-core verification are release-complete. The items below are new
+experiments or external validation; they are not silently represented as
+finished implementation.
+
 ## Required before submission
 
 - Rebuild CIFAR-10-C SAR from a clean immutable five-seed tree or keep it withheld.

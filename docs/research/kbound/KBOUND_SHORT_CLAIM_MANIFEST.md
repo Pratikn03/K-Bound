@@ -8,10 +8,11 @@
 | Marginal `FA_u` certificate | theorem | marginal interval coverage | Theorem 3; Lean inventory | no `FA_c` guarantee |
 | CIFAR mixed-regime win | empirical | archived Tent/EATA aggregate and CIs | `LOCKED_ANALYSIS_RESULTS.json` via canonical manifest | SAR withheld after replay mismatch |
 | ImageNet-C SAR win | empirical | 27 saved cells and paired bootstrap | `percondition_bootstrap.json` via canonical manifest | seed 0 only |
-| Natural no-harm | empirical | reconciled OOF/locked held-out artifacts | OOF lock, Camelyon reconciliation, RxRx1 lock | not natural beats-both |
+| Natural no-harm | empirical | reconciled OOF/locked held-out artifacts | OOF lock, Camelyon reconciliation, RxRx1 and Camelyon multi-seed artifacts | not natural beats-both |
 | POEM/AETTA comparison | empirical | same logged stress cells | mixed head-to-head artifact | protocol-matched ports only |
 | Constructed mixed routing | empirical | fixed researcher-constructed stream | `mixed_protocol_oof_v2_result.json` | not unseen-shift transfer |
 | Sensitivity patterns | empirical | hashed seed-0 condition cells and declared software versions | `ablation_exactrank/ablation_exactrank.json` | cross-fitted empirical calibration, not exact split conformal |
+| Controller overhead | diagnostic | environment-stamped controller-only replay | `controller_cost_v1/cost_profile.json` | excludes adaptation and model inference |
 | Universal improvement | diagnostic | none | limitations/conclusion | explicitly not claimed |
 | Single-dataset natural beats-both | diagnostic | held-out CIs against both fixed policies | natural tables | explicitly not claimed |
 | Real-camera result | pending | fresh held-out physical sessions | preregistration templates | templates are not evidence |

@@ -17,6 +17,10 @@
 | RxRx1 J | 0.0000 / 0.2531 / 0.0000 | locked test, n=60 | tie with freeze; no-harm |
 | Three-source OOF | 0.0059 / 0.0632 / 0.0342 | constructed n=143 stream | CI beats-both; not transfer |
 
+The Camelyon17 four-seed adapter comparison is now self-contained under
+`experiments/kbound/results/camelyon17_multiseed_v1/`; its recomputation
+reproduces all three manuscript rows from 12 committed per-condition logs.
+
 ## Diagnostic or incomplete evidence
 
 - CIFAR-10.1: `FA_u=0.167`, `FA_c=0.444`; transfer bar fails.
@@ -47,5 +51,10 @@
 - Always-adapt/freeze are treated as fully decisive policies; adapt rate and decision coverage are not conflated.
 - `FA_u` and `FA_c` are separately named.
 - No blank camera table is used as evidence.
+- Every canonical local `source` path exists in the clean release.
+- Office-Home and iWildCam v2 point-win locks are superseded by explicit v3
+  reconciliation locks; the promoted interpretation is no-harm.
+- The controller-only timing table is backed by a platform-stamped JSON artifact;
+  full end-to-end adaptation latency remains pending.
 - The alpha, estimator, evidence-dropout, and adapter-transfer tables trace to
   `experiments/kbound/results/ablation_exactrank/ablation_exactrank.json`.

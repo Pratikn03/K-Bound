@@ -35,19 +35,16 @@ nine-track panel (Table~\ref{tab:uniform-panel}) and the primary numeric evidenc
 \end{algorithm}
 
 \section{Evidence feature schema and adapter hyperparameters}\label{app:evidence-schema}
-Two label-free evidence panels are used, matched to the two calibration regimes of
-\S\ref{sec:method}. Notation: $p_0,p_a$ are the frozen and adapted softmax rows on the adaptation
+The promoted per-condition artifacts use the following label-free evidence panel. Notation:
+$p_0,p_a$ are the frozen and adapted softmax rows on the adaptation
 batch; $\bar m_0=\mathrm{mean}_n\,p_{0,n}$ and $\bar m_a$ are the predicted-class marginals;
-$H(p)=-\sum_c p_c\log p_c$; $C$ is the number of classes. The stress-grid tracks (CIFAR-10-C,
-ImageNet-C, PACS) use the $11$-dimensional base panel of Table~\ref{tab:schema-base}
-(\texttt{kbound\_pkg/kbound/evidence.py}). The natural-shift tracks (Camelyon17, iWildCam,
-Office-Home, RxRx1) use the $16$-dimensional panel of Table~\ref{tab:schema-rich}: a $10$-statistic
-frozen-logit summary plus a $6$-feature rich panel (\texttt{scripts/run\_wilds\_camelyon17.py}). All
-features are target-label-free; the ATC feature calibrates its threshold on \emph{source} labels
-only.
+$H(p)=-\sum_c p_c\log p_c$; $C$ is the number of classes. The exact $11$-dimensional schema is
+implemented in \texttt{kbound\_pkg/kbound/evidence.py}. The retained Camelyon17 multi-seed logs
+also record this same ordered $11$-feature vector. Tracks available only through reconciled summary
+artifacts are not used to claim a richer feature schema.
 
 \begin{table}[t]\centering\scriptsize
-\caption{Base $11$-dim evidence panel (stress grids).}
+\caption{Promoted $11$-dim evidence panel.}
 \label{tab:schema-base}
 \begin{tabular}{@{}llp{0.30\linewidth}@{}}
 \toprule
@@ -64,35 +61,6 @@ Feature & Definition & Family \\
 \texttt{frac\_highconf}& $\mathrm{frac}_n(\max_c p_{a,n}{>}0.9)$ & collapse \\
 \texttt{marginal\_KL}  & $\sum_c \bar m_{a,c}\log(\bar m_{a,c}/\bar m_{0,c})$ & drift \\
 \texttt{update\_norm}  & $\lVert\Delta\theta_{\mathrm{aff}}\rVert_2$ & update \\
-\bottomrule
-\end{tabular}
-\end{table}
-
-\begin{table}[t]\centering\scriptsize
-\caption{Rich $16$-dim panel (natural shift): $10$ frozen-logit statistics $+$ $6$ rich features.
-$H$ is softmax entropy, $s=\max_c\mathrm{softmax}$ the confidence, $E(x)=-\log\sum_c e^{z_c}$ the
-free energy; subscripts $s,t$ denote source/target pools.}
-\label{tab:schema-rich}
-\begin{tabular}{@{}llp{0.26\linewidth}@{}}
-\toprule
-Feature & Definition & Family \\
-\midrule
-\multicolumn{3}{@{}l}{\emph{Frozen-logit summary (10)}}\\
-ent mean/std     & $\mathrm{mean}/\mathrm{std}\,H$ & frozen \\
-ent p25/p75      & $25/75$ pct.\ of $H$ & frozen \\
-conf mean/std    & $\mathrm{mean}/\mathrm{std}\,s$ & frozen \\
-frac hi-conf     & $\mathrm{frac}(s{>}0.9)$ & frozen \\
-frac hi-ent      & $\mathrm{frac}(H{>}\log 2)$ & frozen \\
-marg.\ max       & $\max_c \mathrm{mean}_n\,p$ & frozen marginal \\
-marg.\ std       & $\mathrm{std}_c \mathrm{mean}_n\,p$ & frozen marginal \\
-\midrule
-\multicolumn{3}{@{}l}{\emph{Rich features (6)}}\\
-\texttt{disagree} & $\mathrm{frac}(\arg\max f_0\!\neq\!\arg\max f_a)$ & disagreement \\
-\texttt{ent\_gap} & $\mathrm{mean}\,H(f_0)-\mathrm{mean}\,H(f_a)$ & change \\
-\texttt{en\_shift}& $\mathrm{mean}\,E_t-\mathrm{mean}\,E_s$ & drift \\
-\texttt{bn\_kl}   & $\mathrm{mean}_{\mathrm{ch}}\,\mathrm{KL}(\mathcal N_{\mathrm{run}}\!\parallel\!\mathcal N_{\mathrm{batch}})$ & drift \\
-\texttt{atc}      & $\mathrm{frac}_t(s\!\ge\! t)$, $t$ src-calib. & accuracy proxy \\
-\texttt{conf\_drop}& $\mathrm{mean}\,s_s-\mathrm{mean}\,s_t$ & drift \\
 \bottomrule
 \end{tabular}
 \end{table}

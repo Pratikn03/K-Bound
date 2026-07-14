@@ -84,12 +84,23 @@
 - Undefined references: 0.
 - Missing figures: 0.
 - Duplicate labels: 0 detected.
-- Remaining overfull messages are from pre-scaled table construction or boxes
-  under 6.4 points; raster review of the affected pages shows no clipping.
+- Release-completion pass added compact source artifacts for every canonical
+  track, including Camelyon17 four-seed logs, RxRx1, CIFAR-10.1, PACS, and
+  ImageNet-R diagnostics.
+- Added exact-rank decision-gate recomputation and an environment-stamped
+  controller-cost artifact. The paper now reports the measured 0.343 ms
+  controller-only latency rather than the unsupported historical 0.20 ms value.
+- Removed the unsupported claim that promoted natural-shift results used a
+  16-feature panel; retained logs verify the published 11-feature schema.
+- Added Office-Home and iWildCam v3 reconciliation locks that explicitly
+  supersede the older point-win labels.
+- Added release-integrity tests that fail on missing canonical sources,
+  Camelyon row drift, evidence-schema drift, runtime-provenance loss, or
+  natural-lock regression.
 
 ## Verification
 
-- Focused Python suite: 223 passed and 2 intentional skips across 225 collected package, edge, and dashboard tests.
+- Python suite: 229 tests collected; 227 passed and 2 intentional skips.
 - `analyze_F.py --self-test`: passed for global, Mondrian, and CQR paths.
 - Last recorded Lean/Mathlib build: 2,544 jobs; formal audit passed with 43 indexed
   theorem checks and a clean proof-hole scan. The clean release CI reruns this gate.

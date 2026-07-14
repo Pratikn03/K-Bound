@@ -1,0 +1,33 @@
+{
+  "schema_version": 1,
+  "scope": "controller-only microbenchmark; excludes adaptation and model inference",
+  "input": {
+    "path": "experiments/kbound/results/cifar10c_per_condition_seed0/per_condition_cifar10c_tent_seed0.json",
+    "sha256": "1507d404ad8b623b5cbdfdc71feb36fad83e427e0d0486df857143ba0dc01f01",
+    "records": 432
+  },
+  "config": {
+    "batch_size": 200,
+    "classes": 10,
+    "repeats": 5000,
+    "warmup": 500
+  },
+  "latency_ms": {
+    "evidence_assembly": 0.098157,
+    "benefit_model_prediction": 0.245145,
+    "controller_total": 0.343302
+  },
+  "benefit_model_bytes": 194898,
+  "rollback_checkpoint": {
+    "path_basename": "resnet18_cifar.pt",
+    "bytes": 44774219,
+    "sha256": "43333456a795bbe679966c14812f9964d8b3bf060d30ca2b3d5051cb8c9d7491"
+  },
+  "environment": {
+    "platform": "macOS-26.5.1-arm64-arm-64bit",
+    "python": "3.12.13",
+    "numpy": "2.4.6",
+    "scikit_learn": "1.9.0"
+  },
+  "interpretation": "Timing is environment-specific. The optional checkpoint records rollback-copy storage, not live peak memory."
+}
