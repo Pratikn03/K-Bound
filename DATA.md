@@ -65,3 +65,19 @@ Dataset locations are configured by experiment scripts or environment-specific
 paths and are intentionally excluded from Git. Never commit benchmark archives,
 WILDS images, CIFAR-10-C arrays, ImageNet data, raw phone video, checkpoints, or
 personal capture metadata.
+
+The locked multiseed launcher discovers the following default T9 layouts. An
+environment override may point to a different read-only location.
+
+| Dataset | Default root | Required marker | Override |
+|---|---|---|---|
+| CIFAR-10/CIFAR-10-C | `/Volumes/T9/uav/data/cifar` | `CIFAR-10-C/labels.npy`, `resnet18_cifar.pt` | `KBOUND_CIFAR_ROOT` |
+| ImageNet-C | `/Volumes/T9/uav/data/imagenet-c` | the three locked noise corruption directories | `KBOUND_IMAGENETC_ROOT` |
+| PACS | `/Volumes/T9/uav/data/domainbed` | all four `PACS/` domains | `KBOUND_PACS_ROOT` |
+| ImageNet-R | `/Volumes/T9/uav/data/imagenet-r` | ImageNet synset directories | `KBOUND_IMAGENETR_ROOT` |
+| ImageNet class map | `/Volumes/T9/uav/data/imagenet_class_index.json` | JSON class-index file | `KBOUND_IMAGENET_CLASS_INDEX` |
+
+The code repository itself need not live on T9. Run outputs are written under
+`experiments/kbound/runs/multiseed_completion_v1/`, which is intentionally
+ignored by Git until compact artifacts are audited and promoted. No launcher
+command writes into a raw dataset directory.

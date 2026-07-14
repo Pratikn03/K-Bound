@@ -84,12 +84,46 @@ gate is necessary but not sufficient for a positive empirical conclusion.
 ## Full Dataset Reruns
 
 Raw benchmark reruns are intentionally separate from the artifact audit. The
-release contains compact per-condition evidence for the promoted and diagnostic
-statements, but not every historical training orchestrator or raw dataset.
-Each new rerun must use its lock in `research_lock/`, preserve the specified
-seeds and split roles, and write a new immutable result directory. Do not replace
-the canonical manifest until the new run passes the declared statistical and
-lineage checks.
+maintained completion matrix is locked by
+`research_lock/MULTISEED_COMPLETION_PROTOCOL_v1.json` and is executed by one
+launcher. Historical repository paths are not runtime dependencies.
+
+After T9 is mounted, run:
+
+```bash
+bash docs/research/kbound/scripts/kbtrain.sh preflight --device mps
+bash docs/research/kbound/scripts/kbtrain.sh plan --device mps
+bash docs/research/kbound/scripts/kbtrain.sh run --device mps --yes
+bash docs/research/kbound/scripts/kbtrain.sh status
+bash docs/research/kbound/scripts/kbtrain.sh analyze --device mps
+```
+
+Use `--device cuda` on a CUDA host. CPU execution must be requested explicitly
+with `--device cpu`; the default path does not silently replace a missing GPU
+with a multi-day CPU run. Dataset overrides are documented in
+[`DATA.md`](../../../DATA.md).
+
+The default queue has four tracks:
+
+| Track | Analysis seeds | New model runs | Completion rule |
+|---|---:|---:|---|
+| CIFAR-10-C SAR | 0-4 | 0-4 | one SAR per-condition artifact per seed |
+| ImageNet-C SAR, locked 27 cells | 0-4 | 1-4 | imported seed 0 plus four new artifacts |
+| PACS | 0-2 | 0-2 | Tent, EATA, and SAR artifacts for every seed |
+| ImageNet-R Protocol D | 0-3 | 3 | all ten backbone artifacts for every seed |
+
+For each target seed, the common scorer uses the next seed for residual
+calibration and every remaining seed for fitting. It validates identical
+condition and evidence schemas, recomputes the exact finite-sample residual
+order statistic, and joins target outcomes only for offline metrics. The final
+JSON separates point beats-both, gain-CI beats-both, and a stricter CI-robust
+criterion that also requires the hierarchical 95% upper bound on FA_u to be at
+most alpha.
+
+The run directory contains immutable command locks, logs, per-seed compact
+records, uniform summaries, and optional ablations. It is ignored by Git. Do
+not replace the canonical paper manifest until the new records pass lineage,
+protocol-hash, and claim-scope review.
 
 The current release scope is summarized in [`DATA.md`](../../../DATA.md) and
 [`KBOUND_SHORT_RESULT_AUDIT.md`](KBOUND_SHORT_RESULT_AUDIT.md).

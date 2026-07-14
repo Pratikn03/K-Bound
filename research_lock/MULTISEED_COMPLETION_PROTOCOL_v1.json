@@ -1,0 +1,265 @@
+{
+  "schema": "kbound_multiseed_completion_protocol_v1",
+  "registered": "2026-07-14",
+  "alpha": 0.1,
+  "default_jobs": [
+    "cifar10c_sar",
+    "imagenetc_sar",
+    "pacs",
+    "imagenetr"
+  ],
+  "analysis": {
+    "outer_split": "for each target seed, the next seed calibrates and all remaining seeds fit",
+    "radius": "exact finite-sample residual order statistic",
+    "bootstrap": "hierarchical seed-then-condition paired bootstrap",
+    "target_labels": "offline scoring only"
+  },
+  "datasets": {
+    "cifar": {
+      "environment": "KBOUND_CIFAR_ROOT",
+      "candidates": [
+        "/Volumes/T9/uav/data/cifar",
+        "/Volumes/T9/uav/datasets/cifar",
+        "/Volumes/T9/uav/cifar"
+      ],
+      "markers": [
+        "CIFAR-10-C/labels.npy",
+        "resnet18_cifar.pt"
+      ]
+    },
+    "imagenetc": {
+      "environment": "KBOUND_IMAGENETC_ROOT",
+      "candidates": [
+        "/Volumes/T9/uav/data/imagenet-c",
+        "/Volumes/T9/uav/data/ImageNet-C",
+        "/Volumes/T9/uav/datasets/imagenet-c"
+      ],
+      "markers": [
+        "gaussian_noise/1",
+        "shot_noise/1",
+        "impulse_noise/1"
+      ]
+    },
+    "pacs": {
+      "environment": "KBOUND_PACS_ROOT",
+      "candidates": [
+        "/Volumes/T9/uav/data/domainbed",
+        "/Volumes/T9/uav/datasets/domainbed",
+        "/Volumes/T9/uav/domainbed"
+      ],
+      "markers": [
+        "PACS/art_painting",
+        "PACS/cartoon",
+        "PACS/photo",
+        "PACS/sketch"
+      ]
+    },
+    "imagenetr": {
+      "environment": "KBOUND_IMAGENETR_ROOT",
+      "candidates": [
+        "/Volumes/T9/uav/data/imagenet-r",
+        "/Volumes/T9/uav/data/ImageNet-R",
+        "/Volumes/T9/uav/datasets/imagenet-r"
+      ],
+      "markers": [
+        "glob:n*"
+      ]
+    }
+  },
+  "jobs": {
+    "cifar10c_sar": {
+      "dataset": "cifar",
+      "dataset_name": "cifar10c",
+      "methods": ["sar"],
+      "seeds": [0, 1, 2, 3, 4],
+      "run_seeds": [0, 1, 2, 3, 4],
+      "runner": "experiments/kbound/training/cifar_tent_mps_v2.py",
+      "output_layout": "per_seed",
+      "expected": ["per_condition_cifar10c_sar_seed{seed}.json"],
+      "arguments": [
+        "--benchmarks", "cifar10c",
+        "--quick",
+        "--data-root", "{data}",
+        "--cifar10-ckpt", "{data}/resnet18_cifar.pt",
+        "--methods", "sar",
+        "--device", "{device}",
+        "--seed", "{seed}",
+        "--out-results", "{seed_dir}",
+        "--out-figs", "{seed_dir}/figures"
+      ]
+    },
+    "imagenetc_sar": {
+      "dataset": "imagenetc",
+      "dataset_name": "imagenetc",
+      "methods": ["sar"],
+      "seeds": [0, 1, 2, 3, 4],
+      "run_seeds": [1, 2, 3, 4],
+      "bootstrap": {
+        "source": "experiments/kbound/results/imagenetc_seed0_v1",
+        "seeds": [0]
+      },
+      "runner": "experiments/kbound/training/cifar_tent_mps_v2.py",
+      "output_layout": "per_seed",
+      "expected": ["per_condition_imagenetc_sar_seed{seed}.json"],
+      "arguments": [
+        "--benchmarks", "imagenetc",
+        "--imagenetc-root", "{data}",
+        "--corruptions", "gaussian_noise", "shot_noise", "impulse_noise",
+        "--arch", "resnet50",
+        "--methods", "sar",
+        "--severities", "1", "3", "5",
+        "--batch-regimes", "small",
+        "--aggressiveness", "aggressive",
+        "--adapt-lr", "0.004",
+        "--imagenetc-composition", "iid", "imbalanced", "single_class",
+        "--max-images", "4000",
+        "--device", "{device}",
+        "--seed", "{seed}",
+        "--out-results", "{seed_dir}",
+        "--out-figs", "{seed_dir}/figures"
+      ]
+    },
+    "pacs": {
+      "dataset": "pacs",
+      "dataset_name": "pacs",
+      "methods": ["tent", "eata", "sar"],
+      "seeds": [0, 1, 2],
+      "run_seeds": [0, 1, 2],
+      "runner": "experiments/kbound/training/pacs_vlcs_runner.py",
+      "output_layout": "per_seed",
+      "expected": [
+        "per_condition_pacs_tent_seed{seed}.json",
+        "per_condition_pacs_eata_seed{seed}.json",
+        "per_condition_pacs_sar_seed{seed}.json"
+      ],
+      "arguments": [
+        "--dataset", "PACS",
+        "--root", "{data}",
+        "--device", "{device}",
+        "--methods", "tent", "eata", "sar",
+        "--seed", "{seed}",
+        "--out", "{seed_dir}/pacs_result.json"
+      ]
+    },
+    "imagenetr": {
+      "dataset": "imagenetr",
+      "dataset_name": "imagenet-r",
+      "methods": [
+        "resnet101",
+        "resnet152",
+        "resnext101_32x8d",
+        "efficientnet_b0",
+        "efficientnet_b3",
+        "convnext_tiny",
+        "convnext_base",
+        "vit_b_16",
+        "swin_t",
+        "swin_b"
+      ],
+      "seeds": [0, 1, 2, 3],
+      "run_seeds": [3],
+      "bootstrap": {
+        "source": "experiments/kbound/results/imagenetr_protocol_d_multiseed_v1",
+        "seeds": [0, 1, 2]
+      },
+      "runner": "experiments/kbound/training/run_imagenetr_kbound.py",
+      "output_layout": "flat",
+      "expected": [
+        "per_condition_imagenet-r_resnet101_seed{seed}.json",
+        "per_condition_imagenet-r_resnet152_seed{seed}.json",
+        "per_condition_imagenet-r_resnext101_32x8d_seed{seed}.json",
+        "per_condition_imagenet-r_efficientnet_b0_seed{seed}.json",
+        "per_condition_imagenet-r_efficientnet_b3_seed{seed}.json",
+        "per_condition_imagenet-r_convnext_tiny_seed{seed}.json",
+        "per_condition_imagenet-r_convnext_base_seed{seed}.json",
+        "per_condition_imagenet-r_vit_b_16_seed{seed}.json",
+        "per_condition_imagenet-r_swin_t_seed{seed}.json",
+        "per_condition_imagenet-r_swin_b_seed{seed}.json"
+      ],
+      "arguments": [
+        "--panel", "diverse_backbones",
+        "--imagenetr-dir", "{data}",
+        "--class-index", "{class_index}",
+        "--seeds", "{seed}",
+        "--compositions", "iid", "imbalanced", "single_class",
+        "--batch-regimes", "small", "tiny",
+        "--aggressiveness", "mild", "aggressive",
+        "--n-eval", "500",
+        "--n-batches", "4",
+        "--frozen-eval-batch", "24",
+        "--tau-star", "0.52",
+        "--kappa", "2.5",
+        "--sd-L", "0.6",
+        "--delta", "0.05",
+        "--device", "{device}",
+        "--resume",
+        "--serialize-per-condition",
+        "--results-root", "{job_parent}",
+        "--run-name", "{job_name}"
+      ]
+    },
+    "imagenetc_vit_architecture": {
+      "dataset": "imagenetc",
+      "dataset_name": "imagenetc",
+      "methods": ["sar"],
+      "seeds": [0, 1, 2],
+      "run_seeds": [0, 1, 2],
+      "runner": "experiments/kbound/training/cifar_tent_mps_v2.py",
+      "output_layout": "per_seed",
+      "expected": ["per_condition_imagenetc_sar_seed{seed}.json"],
+      "arguments": [
+        "--benchmarks", "imagenetc",
+        "--imagenetc-root", "{data}",
+        "--corruptions", "gaussian_noise", "shot_noise", "impulse_noise",
+        "--arch", "vit_b16",
+        "--methods", "sar",
+        "--severities", "1", "3", "5",
+        "--batch-regimes", "small",
+        "--aggressiveness", "aggressive",
+        "--adapt-lr", "0.004",
+        "--imagenetc-composition", "iid", "imbalanced", "single_class",
+        "--max-images", "4000",
+        "--device", "{device}",
+        "--seed", "{seed}",
+        "--out-results", "{seed_dir}",
+        "--out-figs", "{seed_dir}/figures"
+      ]
+    },
+    "imagenetc_batch_sensitivity": {
+      "dataset": "imagenetc",
+      "dataset_name": "imagenetc",
+      "methods": ["sar"],
+      "seeds": [0, 1, 2],
+      "run_seeds": [0, 1, 2],
+      "runner": "experiments/kbound/training/cifar_tent_mps_v2.py",
+      "output_layout": "per_seed",
+      "expected": ["per_condition_imagenetc_sar_seed{seed}.json"],
+      "arguments": [
+        "--benchmarks", "imagenetc",
+        "--imagenetc-root", "{data}",
+        "--corruptions", "gaussian_noise", "shot_noise", "impulse_noise",
+        "--arch", "resnet50",
+        "--methods", "sar",
+        "--severities", "1", "3", "5",
+        "--batch-regimes", "large_iid", "small", "tiny",
+        "--aggressiveness", "aggressive",
+        "--adapt-lr", "0.004",
+        "--imagenetc-composition", "iid", "imbalanced", "single_class",
+        "--max-images", "4000",
+        "--device", "{device}",
+        "--seed", "{seed}",
+        "--out-results", "{seed_dir}",
+        "--out-figs", "{seed_dir}/figures"
+      ]
+    }
+  },
+  "optional_jobs": {
+    "official_poem_aetta": {
+      "status": "blocked on pinned official upstream repositories and commit hashes",
+      "claim_rule": "do not label a simplified port as official"
+    },
+    "physical_camera": {
+      "status": "software complete; fresh S01-S10 capture remains human data collection"
+    }
+  }
+}

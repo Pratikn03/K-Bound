@@ -138,6 +138,33 @@ cached result can support an audit; a fresh benchmark claim requires the locked
 dataset, seed, adapter, split, and evaluation configuration recorded for that
 track.
 
+### Locked multiseed completion
+
+The clean repository now contains the maintained raw-data runners and one
+fail-closed completion launcher. Raw datasets remain on T9; code, logs, compact
+records, and analysis stay in this repository.
+
+~~~bash
+bash docs/research/kbound/scripts/kbtrain.sh preflight --device mps
+bash docs/research/kbound/scripts/kbtrain.sh plan --device mps
+bash docs/research/kbound/scripts/kbtrain.sh run --device mps --yes
+bash docs/research/kbound/scripts/kbtrain.sh analyze --device mps
+~~~
+
+The default locked queue contains clean CIFAR-10-C SAR seeds 0-4, ImageNet-C
+SAR seeds 1-4 joined with the immutable imported seed 0, PACS Tent/EATA/SAR
+seeds 0-2, and ImageNet-R Protocol D seed 3 joined with seeds 0-2. The common
+outer scorer rotates fit, residual-calibration, and target seeds; target labels
+enter only after decisions for offline scoring. It reports point beats-both,
+gain-CI beats-both, and the stricter CI-robust result whose hierarchical FA_u
+upper bound is also no larger than alpha.
+
+The launcher refuses missing datasets, a missing ImageNet class index, an
+unavailable requested accelerator, low output capacity, a second concurrent
+queue, or a long run without `--yes`. Completed seed artifacts are skipped only
+when every expected output exists. See
+[`experiments/kbound/training/README.md`](experiments/kbound/training/README.md).
+
 ## Research Dashboard
 
 Build and serve the local dashboard:
@@ -245,6 +272,10 @@ states this boundary explicitly.
   remain documented.
 - The physical study still requires fresh held-out sessions.
 - Full foundational probability mechanization is incomplete.
+
+The missing multiseed measurements above have locked runnable code; they remain
+scientific risks until the queue finishes and its outputs pass the uniform
+analysis. Implementation readiness is not reported as empirical completion.
 
 The 21-page PDF and synchronized 38-page Word rendering are complete as a
 claim-controlled reviewer draft. They are not yet a venue-specific camera-ready

@@ -14,6 +14,9 @@ large exploratory run trees.
   microbenchmark; it is not end-to-end TTA latency.
 - `gate_baselines_v1/gate_comparison.json` is the archived table artifact.
   `gate_comparison_exactrank.json` is the clean exact-rank recomputation.
+- `imagenetc_seed0_v1/` contains the immutable 27-cell seed-0 records used
+  only to bootstrap the clean ImageNet-C multi-seed completion. Its provenance
+  file records the operating point and every imported hash.
 
 The canonical index is
 `docs/research/kbound/paper/generated/kbound_result_manifest.json`.
