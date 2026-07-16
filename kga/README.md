@@ -2,7 +2,7 @@
 
 A small, pure-`numpy`/`scipy`, torch-free implementation of **KGA**, the decision
 algorithm from the paper *K-Bound: When Is Label-Free Adaptation Knowable?*
-([`docs/research/kbound/K-Bound_paper.pdf`](../docs/research/kbound/K-Bound_paper.pdf)).
+([`docs/research/kbound/kbound_short.pdf`](../docs/research/kbound/kbound_short.pdf)).
 
 KGA decides — **without any target labels** — whether to **ADAPT**, **FREEZE**, or
 **ABSTAIN** on a new test distribution. It does this from label-free *evidence* `Z`

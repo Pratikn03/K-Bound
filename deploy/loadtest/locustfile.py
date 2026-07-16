@@ -1,4 +1,4 @@
-"""Locust load test for deployed UAIS API (optional Gate P P15).
+"""Locust load test for deployed KGA API (optional Gate P P15).
 
 Usage (against running API):
   locust -f deploy/loadtest/locustfile.py --host http://127.0.0.1:8000
@@ -11,9 +11,9 @@ import os
 from locust import HttpUser, between, task
 
 
-class UaisUser(HttpUser):
+class KgaUser(HttpUser):
     wait_time = between(0.05, 0.2)
-    api_key = os.getenv("UAIS_LOADTEST_API_KEY", "replace-me")
+    api_key = os.getenv("KGA_LOADTEST_API_KEY", os.getenv("UAIS_LOADTEST_API_KEY", "replace-me"))
 
     @task(3)
     def health(self) -> None:

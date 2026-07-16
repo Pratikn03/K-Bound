@@ -50,5 +50,5 @@ python3 formal_audit.py
 
 echo ""
 echo "OK: all currently mechanized K-Bound theorems typechecked."
-echo "NOTE: this is a strict-core audit, not a full foundational Mathlib probability development."
+echo "For the Wave 6 foundations gate: python3 formal_audit.py --build --full-foundations"
 echo "See KBound/TheoremMap.lean for paper-label → Lean-name mapping."

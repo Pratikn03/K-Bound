@@ -13,6 +13,12 @@ import KBound.Multicandidate
 import KBound.ThreeWorld
 import KBound.Probability.ConformalExchangeability
 import KBound.Probability.EProcess
+import KBound.Probability.Exchangeable
 import KBound.Probability.LeCam
+import KBound.Probability.LeCamMeasure
 import KBound.Probability.Rates
+import KBound.Probability.Ville
+import KBound.Probability.MeasureCertificate
+import KBound.Probability.RankCounting
+import KBound.Probability.UniformConformal
 import KBound.TheoremMap

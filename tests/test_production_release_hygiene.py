@@ -12,7 +12,7 @@ def test_production_compose_defaults_to_api_only_service():
 
     assert "depends_on" not in services["api"]
     assert "profiles" not in services["api"]
-    assert "research" in services["streamlit"]["profiles"]
+    assert "legacy" in services["streamlit"]["profiles"]
     assert "research" in services["mlflow"]["profiles"]
 
 
@@ -42,5 +42,5 @@ def test_production_runbook_documents_required_operations():
         assert f"## {section}" in text
 
     assert "Gate E remains a scientific gate" in text
-    assert "UAIS_API_KEYS" in text
-    assert "UAIS_CORS_ORIGINS" in text
+    assert "KGA_API_KEYS" in text or "UAIS_API_KEYS" in text
+    assert "KGA_CORS_ORIGINS" in text or "UAIS_CORS_ORIGINS" in text

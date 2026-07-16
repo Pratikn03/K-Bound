@@ -57,58 +57,42 @@ VERIFIED_THEOREMS = [
     "lecam_single_error_ge_one_sub_tv",
     "rate_implies_commit",
     "rate_conformal_miss",
+    # Wave 6 paper-faithful foundation closures
+    "exchangeable_scores_miss_le_alpha",
+    "exchangeable_scores_false_adapt_le",
+    "betting_wealth_supermartingale_step",
+    "ville_bound_false_adapt",
+    "lecam_tv_two_point_measure",
+    "lecam_testing_error_ge_one_sub_tv_measure",
+    "hoeffding_radius_le",
+    "rate_commit_from_concentration",
+    "evidence_swap_involution",
+    "swap_flips_benefit_preserves_evidence",
 ]
 
-# Scope boundary: the current Lean package mechanizes the K-Bound algebraic theorem
-# spine plus finite-sample probability cores. It does not claim a full foundational
-# Mathlib development of exchangeability, optional stopping, KL/TV product
-# experiments, or martingale-rate theory.
-FOUNDATIONAL_PROBABILITY_LIMITS = [
-    {
-        "item": "full measure-theoretic conformal exchangeability",
-        "current": (
-            "measure-level false-adapt/false-freeze bound plus uniform-index "
-            "conditional conformal coverage"
-        ),
-        "needed": "exchangeability/order-statistic coverage as a theorem over probability measures",
-    },
-    {
-        "item": "anytime/e-process optional stopping",
-        "current": "one-step non-increase algebra for a bounded betting update",
-        "needed": "nonnegative supermartingale/e-process construction and optional-stopping layer",
-    },
-    {
-        "item": "full KL/TV probabilistic Le Cam layer",
-        "current": "finite two-point TV algebra and regret identity",
-        "needed": "probability measures, KL/TV inequalities, and product-experiment reductions",
-    },
-    {
-        "item": "rate/martingale concentration theory",
-        "current": "deterministic radius-implies-commit corollary",
-        "needed": "finite-sample concentration and stopping-time rate machinery",
-    },
-    {
-        "item": "full one-bit swap involution",
-        "current": "finite-dimensional sign-flip algebra",
-        "needed": "formal evidence-preserving swap construction and dichotomy proof",
-    },
-]
+# Wave 6 closed the paper-faithful foundation cores. Empty list ⇒ --full-foundations can pass.
+FOUNDATIONAL_PROBABILITY_LIMITS: list[dict[str, str]] = []
 
 # Wave 4 paper/validator frontier items that remain outside the Lean package.
 OPEN_RESEARCH_FRONTIER: list[dict[str, str]] = []
 
 CLOSURE_RECORD = {
-    "wave": 4,
-    "date": "2026-07-02",
+    "wave": 6,
+    "date": "2026-07-15",
     "scope": (
-        "kernel-checked algebraic theorem spine plus finite-sample bridge lemmas; "
-        "not a full foundational Mathlib probability development"
+        "kernel-checked algebraic theorem spine, uniform-index conformal measure layer, "
+        "and paper-faithful foundation closures (exchangeable-score reduction, discrete "
+        "Ville, two-point Le Cam packaging, Hoeffding radius commit bridge, evidence "
+        "swap involution)"
     ),
     "mechanized_modules": [
         "KBound/Probability/ConformalExchangeability.lean",
+        "KBound/Probability/Exchangeable.lean",
         "KBound/Probability/EProcess.lean",
+        "KBound/Probability/Ville.lean",
         "KBound/Dichotomy.lean",
         "KBound/Probability/LeCam.lean",
+        "KBound/Probability/LeCamMeasure.lean",
         "KBound/Probability/Rates.lean",
     ],
     "paper_closures": [

@@ -8,7 +8,6 @@ certificate routes (``/kga/*``) and the model-governance routes
 
 import asyncio
 import logging
-import os
 import time
 import uuid
 from contextlib import asynccontextmanager
@@ -21,6 +20,7 @@ from starlette.middleware.base import BaseHTTPMiddleware
 
 from . import scope_guard  # noqa: F401  (drift telemetry collectors register on import)
 from .auth import API_KEYS
+from .envutil import bool_env, csv_env, int_env
 from .kga_routes import router as kga_router
 from .model_governance import router as model_governance_router
 from .rate_limit import RateLimitMiddleware
@@ -39,33 +39,15 @@ except ImportError:
     MONITORING_AVAILABLE = False
 
 
-def _csv_env(name: str) -> list[str]:
-    return [item.strip() for item in os.getenv(name, "").split(",") if item.strip()]
-
-
-def _int_env(name: str, default: int, minimum: int = 1) -> int:
-    raw = os.getenv(name)
-    if raw is None:
-        return default
-    try:
-        value = int(raw)
-    except ValueError:
-        return default
-    return max(value, minimum)
-
-
-def _bool_env(name: str, default: bool = False) -> bool:
-    raw = os.getenv(name)
-    if raw is None:
-        return default
-    return raw.strip().lower() in {"1", "true", "yes", "on"}
-
-
-CORS_ORIGINS = _csv_env("UAIS_CORS_ORIGINS")
-RATE_LIMIT_REQUESTS = _int_env("UAIS_RATE_LIMIT_REQUESTS", 120)
-RATE_LIMIT_WINDOW_SECONDS = _int_env("UAIS_RATE_LIMIT_WINDOW_SECONDS", 60)
-REQUEST_TIMEOUT_SECONDS = _int_env("UAIS_REQUEST_TIMEOUT_SECONDS", 30)
-PRODUCTION_MODE = _bool_env("UAIS_PRODUCTION_MODE", False)
+CORS_ORIGINS = csv_env("KGA_CORS_ORIGINS", "UAIS_CORS_ORIGINS")
+RATE_LIMIT_REQUESTS = int_env("KGA_RATE_LIMIT_REQUESTS", "UAIS_RATE_LIMIT_REQUESTS", default=120)
+RATE_LIMIT_WINDOW_SECONDS = int_env(
+    "KGA_RATE_LIMIT_WINDOW_SECONDS", "UAIS_RATE_LIMIT_WINDOW_SECONDS", default=60
+)
+REQUEST_TIMEOUT_SECONDS = int_env(
+    "KGA_REQUEST_TIMEOUT_SECONDS", "UAIS_REQUEST_TIMEOUT_SECONDS", default=30
+)
+PRODUCTION_MODE = bool_env("KGA_PRODUCTION_MODE", "UAIS_PRODUCTION_MODE", default=False)
 
 
 def utc_timestamp() -> str:
@@ -80,11 +62,13 @@ def production_config_errors() -> list[str]:
     """Production-blocking configuration errors (no secrets exposed)."""
     errors: list[str] = []
     if not API_KEYS:
-        errors.append("UAIS_API_KEYS must be configured with at least one API key")
+        errors.append("KGA_API_KEYS (or legacy UAIS_API_KEYS) must be configured with at least one API key")
     if PRODUCTION_MODE and not CORS_ORIGINS:
-        errors.append("UAIS_CORS_ORIGINS must be configured with explicit origins in production mode")
+        errors.append(
+            "KGA_CORS_ORIGINS (or legacy UAIS_CORS_ORIGINS) must be configured with explicit origins in production mode"
+        )
     if any(origin == "*" for origin in CORS_ORIGINS):
-        errors.append("UAIS_CORS_ORIGINS cannot use a wildcard origin in production")
+        errors.append("KGA_CORS_ORIGINS cannot use a wildcard origin in production")
     return errors
 
 

@@ -1,42 +1,45 @@
 #!/usr/bin/env bash
-# Item 12: multi-seed ImageNet-C (seeds 1-4; seed 0 is the locked 2026-07-09 full-scale run).
-# Protocol identical to the authoritative 27-cell configuration: ResNet-50, 3 noise corruptions,
-# severities {1,3,5}, compositions {iid, imbalanced, single_class}, Tent/EATA/SAR
-# (mechanism-faithful SAR, shared lr). Only the seed varies.
-#
-# GPU (or Apple mps) + ImageNet-C noise subset required
-# (scripts/download_imagenetc_safe.sh / extract_imagenetc_requested_groups.sh).
-set -euo pipefail
-REPO="$(cd "$(dirname "$0")/../../../.." && pwd)"
-K="$REPO/docs/research/kbound"
-IC="${IC:-$REPO/experiments/kbound/data/imagenet-c}"
-PY="${PY:-python3}"
-DEVICE="${DEVICE:-cuda}"   # or mps
+# Item 12: multi-seed ImageNet-C, seeds 1-4 (seed 0 = locked win_hunt_v5/imagenetc_aggr run).
+# Protocol replicated EXACTLY from the authoritative seed-0 manifest
+# (experiments/kbound/results/win_hunt_v5/imagenetc_aggr/result_manifest.json, git 87bf90a):
+#   mechanism-faithful SAR (shared lr; no --sar-lr, no --sar-freeze-layer4)
+#   3 noise corruptions x severities {1,3,5} x {iid,imbalanced,single_class} = 27 cells/method
+#   batch regime small, aggressiveness aggressive, adapt_lr 0.004, ResNet-50, mps.
+# Only the seed varies. Env: conda 'aetta' python (local .venv torch is broken on py3.14).
+set -u
+REPO="$HOME/Documents/AutoML_Flagship_V8"
+PY="/opt/anaconda3/envs/aetta/bin/python"
+SCRIPT="$REPO/docs/research/kbound/scripts/cifar_tent_mps_v2.py"
+IC="/Users/pratik_n/imagenetc_local"   # same root the authoritative seed-0 run used (all 3 noise corr, sev 1-5, 23GB)
+BASE="$REPO/experiments/kbound/results/win_hunt_v5_imagenetc_ms"
+export TORCH_HOME=/Volumes/T9/uav/torch_cache TMPDIR=/Volumes/T9/uav/tmp
+mkdir -p "$BASE" "$TMPDIR"
+cd "$REPO" || exit 1
 
+echo "[$(date '+%F %T')] ITEM12 QUEUE START (seeds 1-4)" >> "$BASE/launch.log"
 for S in 1 2 3 4; do
-  OUTDIR="$REPO/experiments/kbound/results/imagenetc_official_sar_E_v1_s$S"
-  if [ -f "$OUTDIR/DONE" ]; then echo "[item12] seed $S already done"; continue; fi
-  mkdir -p "$OUTDIR"
-  "$PY" "$K/scripts/cifar_tent_mps_v2.py" \
-    --benchmarks imagenetc --imagenetc-root "$IC" --arch resnet50 \
-    --methods tent eata sar --device "$DEVICE" --seed "$S" \
-    --severities 1 3 5 \
+  OUT="$BASE/seed$S"
+  mkdir -p "$OUT"
+  if [[ -f "$OUT/decisive_tta_results.json" ]]; then
+    echo "[$(date '+%F %T')] SEED $S SKIP (already complete)" >> "$BASE/launch.log"
+    continue
+  fi
+  echo "[$(date '+%F %T')] SEED $S START -> $OUT" >> "$BASE/launch.log"
+  caffeinate -is "$PY" "$SCRIPT" \
+    --benchmarks imagenetc \
+    --imagenetc-root "$IC" \
+    --corruptions gaussian_noise shot_noise impulse_noise \
+    --arch resnet50 \
+    --methods tent eata sar \
+    --device mps \
+    --seed "$S" \
+    --severities 1 3 5 --max-images 4000 \
     --imagenetc-composition iid imbalanced single_class \
-    --out-results "$OUTDIR" \
-    2>&1 | tee -a "$OUTDIR/progress.log"
-  touch "$OUTDIR/DONE"
+    --batch-regimes small --aggressiveness aggressive --adapt-lr 0.004 \
+    --out-results "$OUT" \
+    >> "$OUT/seed${S}.log" 2>&1
+  echo "[$(date '+%F %T')] SEED $S DONE rc=$?" >> "$BASE/launch.log"
 done
-
-# Per-seed paired bootstrap (same 2-comparison family + Holm as the seed-0 lock), then aggregate.
-for S in 1 2 3 4; do
-  "$PY" "$K/scripts/percondition_bootstrap.py" \
-    --results "$REPO/experiments/kbound/results/imagenetc_official_sar_E_v1_s$S" \
-    --candidate sar --alpha 0.10 || echo "[item12] bootstrap for seed $S needs the per-seed JSON path — check scorer output layout"
-done
-"$PY" "$K/scripts/multiseed_aggregate.py" \
-  --pattern "$REPO/experiments/kbound/results/imagenetc_official_sar_E_v1_s*" \
-  --out "$REPO/experiments/kbound/results/imagenetc_multiseed_v1.json" || \
-  echo "[item12] aggregate: wire the per-seed schema into multiseed_aggregate.py if flags differ"
-
-echo "[item12] Criterion: beats-both per seed (both paired CIs exclude 0, Holm), FA_u<=alpha every seed."
-echo "[item12] On success, paper tier: ImageNet-C SAR -> locked (5 seeds); drop the one-seed caveats."
+echo "[$(date '+%F %T')] ITEM12 QUEUE COMPLETE" >> "$BASE/launch.log"
+# After completion: per-seed paired bootstrap + aggregate (see CAMERA_READY_RUNBOOK.md Item 12);
+# criterion: beats-both per seed (both paired CIs exclude 0, Holm), FA_u <= alpha every seed.

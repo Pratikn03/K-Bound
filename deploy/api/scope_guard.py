@@ -7,7 +7,8 @@ whose live score distribution drifts from the validated reference.
 
 Design (honest, no overclaim):
   - A reference envelope (per-domain validated score quantiles) is loaded from
-    UAIS_SCOPE_REFERENCE (JSON). If absent, the guard runs in ADVISORY mode and
+    KGA_SCOPE_REFERENCE (JSON; legacy UAIS_SCOPE_REFERENCE still accepted). If absent,
+    the guard runs in ADVISORY mode and
     uses only a reference-free novelty signal (cross-modal disagreement), clearly
     flagged as advisory.
   - evaluate(domain_scores) returns {in_envelope, drift, reasons} per request.
@@ -22,19 +23,20 @@ validated envelope itself is declared in deploy/SCOPE_CONTRACT.md.
 from __future__ import annotations
 
 import json
-import os
 from pathlib import Path
+
+from .envutil import env_first
 
 try:
     from prometheus_client import Gauge
 
     from .monitoring import _existing_collector
 
-    _DRIFT_GAUGE = _existing_collector("uais_scope_drift") or Gauge(
-        "uais_scope_drift", "Live out-of-envelope drift score (0=in-envelope)", ["endpoint"]
+    _DRIFT_GAUGE = _existing_collector("kga_scope_drift") or Gauge(
+        "kga_scope_drift", "Live out-of-envelope drift score (0=in-envelope)", ["endpoint"]
     )
-    _OOE_GAUGE = _existing_collector("uais_out_of_envelope_total") or Gauge(
-        "uais_out_of_envelope_total", "Count of out-of-envelope requests", ["endpoint"]
+    _OOE_GAUGE = _existing_collector("kga_out_of_envelope_total") or Gauge(
+        "kga_out_of_envelope_total", "Count of out-of-envelope requests", ["endpoint"]
     )
 except Exception:  # pragma: no cover - metrics optional
     _DRIFT_GAUGE = None
@@ -42,7 +44,7 @@ except Exception:  # pragma: no cover - metrics optional
 
 
 def _load_reference() -> dict | None:
-    path = os.getenv("UAIS_SCOPE_REFERENCE")
+    path = env_first("KGA_SCOPE_REFERENCE", "UAIS_SCOPE_REFERENCE")
     if not path:
         return None
     p = Path(path)
@@ -55,7 +57,9 @@ def _load_reference() -> dict | None:
 
 
 _REFERENCE = _load_reference()
-_DRIFT_THRESHOLD = float(os.getenv("UAIS_SCOPE_DRIFT_THRESHOLD", "0.5"))
+_DRIFT_THRESHOLD = float(
+    env_first("KGA_SCOPE_DRIFT_THRESHOLD", "UAIS_SCOPE_DRIFT_THRESHOLD", default="0.5") or "0.5"
+)
 
 
 def reference_loaded() -> bool:

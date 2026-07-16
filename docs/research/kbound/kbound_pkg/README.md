@@ -1,25 +1,23 @@
-# `kbound_pkg/` — frozen K-Bound reproduction snapshot
+# `kbound_pkg/` — FROZEN K-Bound reproduction snapshot
 
-**This package is a FROZEN SNAPSHOT.** It is the self-contained `kbound` package
-that ships with the K-Bound paper reproduction (notebooks, manifests, results).
-It is kept byte-stable so published numbers reproduce.
+**Do not edit this package for product work.**
+
+This directory is a **byte-stable** self-contained `kbound` package used by paper
+reproduction (notebooks, manifests, historical imports). It exists so published
+numbers keep reproducing.
 
 ## Canonical source of truth
 
-The maintained, productized implementation of the K-Bound certificate / evidence
-/ decision logic is the **top-level `kga/` package** (`kga/certificate.py`,
-`kga/evidence.py`, `kga/kga.py`, `kga/policy.py`).
+| Want | Edit |
+|------|------|
+| Certificate / evidence / decide / routing | **`kga/` at repo root** |
+| This frozen snapshot | Only when deliberately re-releasing the reproduction wheel |
 
-- `kbound/certificate.py::empirical_bernstein_lcb` here is **numerically
-  identical** to `kga.certificate.empirical_bernstein` (Maurer–Pontil 2009
-  empirical-Bernstein LCB). Verified over thousands of randomized inputs
-  (max abs diff ~1e-15).
-- The research origin, `src/elara/certification/switching_certificate.py`,
-  delegates its copy of that formula to `kga` (single source of truth).
+- `kbound/certificate.py::empirical_bernstein_lcb` here is numerically identical
+  to `kga.certificate.empirical_bernstein` (Maurer–Pontil empirical-Bernstein LCB).
+- Layout reference: [`docs/REPO_LAYOUT.md`](../../../REPO_LAYOUT.md).
 
 ## Rule to stop drift
 
-If the certificate math needs to change, **edit `kga/certificate.py`**, not this
-file. Re-vendor here only when the reproduction package is deliberately
-re-released. See `docs/research/kbound/ELARA_KGA_MERGE_PLAN.md` for the full merge
-plan and the equivalence evidence.
+If the certificate math needs to change, **edit `kga/certificate.py`**, then
+re-vendor into this tree only as an explicit release step.

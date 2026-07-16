@@ -44,7 +44,7 @@ gh release create v0.1.0 \
 
 ## 3. Mint a Zenodo DOI (one-time setup, then automatic)
 1. Sign in at https://zenodo.org with GitHub.
-2. Zenodo → **GitHub** settings → find `Pratikn03/AutoML_Flagship_V8` → flip the toggle **ON**.
+2. Zenodo → **GitHub** settings → find `Pratikn03/K-Bound` → flip the toggle **ON**.
 3. Re-create the release in step 2 *after* the toggle is on (Zenodo only captures releases made while enabled) — or cut a `v0.1.1` release to trigger it.
 4. Zenodo mints a DOI and a version-independent "concept" DOI. Copy the concept DOI.
 5. Add it back here:

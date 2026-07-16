@@ -24,10 +24,11 @@
 | `thm:reg-bracket-dichotomy` | Regression/general drift: bounded-drift iff + general impossibility. | **Closed** + `val_regression_bracketing_closure.py`. |
 
 > **Note:** Section B of `THEORY_100_PERCENT_CLOSURE_PLAN.md` is **fully closed** as of Wave 4 (2026-07-01).
-> The Lean `formal/` package kernel-checks the algebraic theorem spine and finite-sample bridge
-> lemmas. It does **not** claim a full foundational Mathlib probability development of
-> exchangeability, optional stopping, product KL/TV, martingale rates, or the full swap
-> involution construction.
+> Wave 6 (2026-07-15) closed the paper-faithful Lean foundation gaps: exchangeable-score
+> conformal reduction, discrete Ville / e-process step, two-point Le Cam packaging,
+> Hoeffding-radius commit bridge, and evidence-preserving swap involution.
+> `python3 formal_audit.py --build --full-foundations` exits 0 (53 theorem checks).
+> This is **not** a claim that all of Mathlib probability was rebuilt from axioms.
 
 ### GENUINELY OPEN (outside closure-plan scope)
 
@@ -107,3 +108,21 @@ Do not recreate them; update `PROJECT_STATUS_AND_OPEN_PROBLEMS.md` and `claim_le
 `gate_comparison.md`, `MIXED_BENCHMARK_PROTOCOL.md`, `theory_v2/UNCONDITIONAL_WEAKEST_CLASS_ATTEMPT.md`,
 `realshift_win/PROTOCOL_realshift_win.md`, `edge/` docs, all `paper/sections/*`, the live
 `kbound.tex` / `kbound_short.tex`.
+
+## 2026-07-15: Lean Wave 6 — paper-faithful foundations closed
+- New modules: `Exchangeable.lean`, `Ville.lean`, `LeCamMeasure.lean`; upgrades to
+  `Dichotomy.lean`, `Rates.lean`.
+- `FOUNDATIONAL_PROBABILITY_LIMITS` cleared; `--full-foundations` PASS (53 checks).
+- Scope: paper-faithful cores, not a Mathlib probability textbook.
+
+
+## 2026-07-15: repo cleanup (confusion risks closed)
+- Dual packages clarified: edit **`kga/`**; `kbound_pkg/` is frozen (README + `REPO_LAYOUT.md`).
+- Dual experiment trees: canonical = `experiments/kbound/`; nested
+  `docs/research/kbound/experiments/` documented as stubs; nested CIFAR data blob removed.
+- ELARA Family/phase2 tests moved to `archive/legacy_elara/tests/` (not in default pytest).
+- Paper `.bak` / Word / 2col drafts archived under `archive/paper_drafts_2026-07-15/`.
+- `formal/.lake` wiped locally (~3.6G); remains gitignored.
+- Root scratch JSON/coverage/logs removed; tracked root multiseed Camelyon copies dropped.
+- `AETTA/` converted from broken submodule gitlink to vendored plain files (`VENDOR.md`).
+- Docker/API env rebranded to `KGA_*` (legacy `UAIS_*` still accepted).

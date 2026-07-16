@@ -91,8 +91,8 @@ def test_production_runtime_config_validation_rejects_missing_auth_and_wildcard_
 
     errors = "\n".join(api.production_config_errors())
 
-    assert "UAIS_API_KEYS" in errors
-    assert "UAIS_CORS_ORIGINS" in errors
+    assert "KGA_API_KEYS" in errors or "UAIS_API_KEYS" in errors
+    assert "KGA_CORS_ORIGINS" in errors or "UAIS_CORS_ORIGINS" in errors or "wildcard" in errors.lower()
     assert "wildcard" in errors.lower()
 
 

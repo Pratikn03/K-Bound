@@ -8,7 +8,7 @@ result manifest, dashboard, and physical-camera validation package.
 
 | Goal | Entry point |
 |---|---|
-| Read the claim-controlled short paper | [kbound_short_final_draft.pdf](kbound_short_final_draft.pdf) |
+| Read the claim-controlled short paper | [kbound_short_final_draft.pdf](kbound_short_final_draft.pdf) / [kbound_short.docx](kbound_short.docx) |
 | Edit the short paper | [kbound_short.tex](kbound_short.tex) and [kbound_short_appendix.tex](kbound_short_appendix.tex) |
 | Inspect every promoted number | [paper/generated/kbound_result_manifest.json](paper/generated/kbound_result_manifest.json) |
 | Audit claim-to-artifact links | [KBOUND_SHORT_CLAIM_MANIFEST.md](KBOUND_SHORT_CLAIM_MANIFEST.md) |
@@ -60,11 +60,14 @@ bash scripts/reproduce_submission.sh
 bash scripts/build_dashboard.sh
 ~~~
 
-Paper-only build:
+Paper-only build (PDF **and** Word):
 
 ~~~bash
 bash scripts/build_pdfs.sh
 ~~~
+
+Outputs: `kbound_short.pdf`, `kbound_short.docx` (and matching `*_final_draft.*` copies).
+Optional long paper: `BUILD_LONG=1 bash scripts/build_pdfs.sh`.
 
 The generated result manifest is authoritative for repeated headline values.
 Historical notes and archived runs are provenance, not automatic evidence.

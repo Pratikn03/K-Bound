@@ -1,4 +1,4 @@
-"""Rate limiting for the UAIS API — Redis-backed when ``UAIS_REDIS_URL`` is set.
+"""Rate limiting for the KGA API — Redis-backed when ``KGA_REDIS_URL`` is set.
 
 Gate P P5: multi-replica deployments require a shared counter; without Redis the
 in-memory fixed-window limiter is used (single-instance only).
@@ -6,7 +6,6 @@ in-memory fixed-window limiter is used (single-instance only).
 
 from __future__ import annotations
 
-import os
 import time
 from collections import defaultdict, deque
 
@@ -15,11 +14,13 @@ from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.requests import Request
 from starlette.responses import JSONResponse
 
-REDIS_URL = os.getenv("UAIS_REDIS_URL", "").strip()
+from .envutil import env_first
+
+REDIS_URL = (env_first("KGA_REDIS_URL", "UAIS_REDIS_URL", default="") or "").strip()
 
 
 class RateLimitMiddleware(BaseHTTPMiddleware):
-    """Fixed-window limiter; uses Redis when ``UAIS_REDIS_URL`` is configured."""
+    """Fixed-window limiter; uses Redis when ``KGA_REDIS_URL`` is configured."""
 
     def __init__(self, app, limit: int, window_seconds: int):
         super().__init__(app)
@@ -32,7 +33,7 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
                 import redis
             except ImportError as err:  # pragma: no cover
                 raise RuntimeError(
-                    "UAIS_REDIS_URL is set but redis package is not installed"
+                    "KGA_REDIS_URL is set but redis package is not installed"
                 ) from err
             self._redis = redis.from_url(REDIS_URL, decode_responses=True)
 

@@ -1,4 +1,4 @@
-"""Baseline load test for the UAIS API (Gate P P15).
+"""Baseline load test for the KGA API (Gate P P15).
 
 Runs against an in-process TestClient — no live server required. For multi-replica
 load against a deployed stack, use ``locustfile.py`` with Locust.
@@ -20,9 +20,9 @@ sys.path.insert(0, str(ROOT))
 def run_baseline(*, n_requests: int = 200, concurrency: int = 1) -> dict:
     import os
 
-    os.environ.setdefault("UAIS_API_KEYS", "loadtest-key")
-    os.environ.setdefault("UAIS_CORS_ORIGINS", "https://ops.example")
-    os.environ["UAIS_PRODUCTION_MODE"] = "false"
+    os.environ.setdefault("KGA_API_KEYS", "loadtest-key")
+    os.environ.setdefault("KGA_CORS_ORIGINS", "https://ops.example")
+    os.environ["KGA_PRODUCTION_MODE"] = "false"
 
     from fastapi.testclient import TestClient
 

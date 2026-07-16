@@ -32,7 +32,7 @@ python3 -m git_filter_repo --force \
   --path docs/research/kbound/kbound_submission.pdf --invert-paths
 
 echo "[5/6] Re-add origin (filter-repo removes it) + repack ..."
-git remote add origin https://github.com/Pratikn03/AutoML_Flagship_V8.git 2>/dev/null || true
+git remote add origin https://github.com/Pratikn03/K-Bound.git 2>/dev/null || true
 git reflog expire --expire=now --all
 git gc --prune=now --aggressive
 

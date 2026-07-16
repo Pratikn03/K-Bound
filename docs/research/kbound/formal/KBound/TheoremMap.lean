@@ -13,14 +13,17 @@ import KBound.ThreeWorld
 import KBound.Multicandidate
 import KBound.Probability.ConformalExchangeability
 import KBound.Probability.EProcess
+import KBound.Probability.Exchangeable
 import KBound.Probability.LeCam
+import KBound.Probability.LeCamMeasure
 import KBound.Probability.Rates
+import KBound.Probability.Ville
 import KBound.Probability.MeasureCertificate
 import KBound.Probability.RankCounting
 import KBound.Probability.UniformConformal
 
 /-!
-# K-Bound paper theorem index (Wave 4 — strict-core closure; Wave 5 — measure layer)
+# K-Bound paper theorem index (Wave 4 spine + Wave 5 measure + Wave 6 foundations)
 -/
 
 namespace KBoundTheoremMap
@@ -70,5 +73,16 @@ namespace KBoundTheoremMap
 #check KBound.lecam_single_error_ge_one_sub_tv
 #check KBound.rate_implies_commit
 #check KBound.rate_conformal_miss
+-- Wave 6: paper-faithful foundation closures
+#check KBound.exchangeable_scores_miss_le_alpha
+#check KBound.exchangeable_scores_false_adapt_le
+#check KBound.betting_wealth_supermartingale_step
+#check KBound.ville_bound_false_adapt
+#check KBound.lecam_tv_two_point_measure
+#check KBound.lecam_testing_error_ge_one_sub_tv_measure
+#check KBound.hoeffding_radius_le
+#check KBound.rate_commit_from_concentration
+#check KBound.evidence_swap_involution
+#check KBound.swap_flips_benefit_preserves_evidence
 
 end KBoundTheoremMap

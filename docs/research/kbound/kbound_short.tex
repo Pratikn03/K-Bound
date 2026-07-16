@@ -281,7 +281,9 @@ $\rightarrow$ coverage condition $\rightarrow$ \textbf{Thm.~\ref{thm:certificate
 
 \subsection{Extensions and Deferred Results}
 Additional minimax, anytime-valid, multicandidate, and one-bit results are retained in the long
-manuscript (\texttt{kbound.tex}) and are not used by the short-paper claims. The saved iWildCam
+manuscript (\texttt{kbound.tex}) and are not used by the short-paper claims; the
+auditability of the drift budget itself is stated in Appendix~\ref{app:audit-short},
+with proofs in the long manuscript. The saved iWildCam
 streaming script computes its betting increments from frozen and adapted window accuracies, which
 require target labels. We therefore retain that run only as a label-informed offline stress
 diagnostic; it is not a label-free KGA deployment result and no streaming empirical claim is made
@@ -440,6 +442,8 @@ uncertainty, estimator inadequacy, or calibration conservatism. The impossibilit
 
 \subsection{Selecting and Auditing the Drift Budget}
 The drift budget $\beta$ is part of the declared deployment class, not a target-test-tuned hyperparameter. It may be justified from historical domain calibration gaps, a documented domain assumption, or an explicit stress envelope. Sensitivity analysis should report how decisions change over a pre-specified range of budgets. A smaller $\beta$ asserts stronger calibration transfer and increases commitment; a larger $\beta$ widens the abstention region. When no credible upper bound is available, the population frontier does not provide a robust sign certificate. Reporting $\beta=0$ is then only a zero-drift plug-in analysis, not an assumption-free or conservative guarantee.
+Appendix~\ref{app:audit-short} states exactly when a \emph{computed} $\widehat\beta$ can replace
+the declared budget, and the limits of any such audit.
 
 \subsection{Deployment Semantics and Failure-Safe Behavior}
 The shadow-state workflow is: (1) checkpoint the active model; (2) propose adaptation on a temporary
@@ -1090,8 +1094,12 @@ resulting near-\emph{tie} with always-adapt reflects the certificate abstaining 
 committing harmful updates: \textsc{KGA} approximately matches the better policy, at most paying a
 small abstention cost when it declines a helpful but uncertifiable update, so the value proposition
 is conditional, like insurance against detectable harm.
-\emph{Setting $\beta$.} The budget is \emph{declared}, not estimated---a deployment-time upper bound on
-admissible calibration drift, fixed from domain knowledge, historical dev-to-deployment gaps, or an explicit stress envelope.
+\emph{Setting $\beta$.} The budget is \emph{declared}, not estimated from unlabeled data---and
+provably so: label-free audits of $\beta$ are vacuous over the unrestricted class
+(Appendix~\ref{app:audit-short}). It can, however, be \emph{audited}: a labeled audit budget, a
+Lipschitz-transport assumption, or an unknown-direction index-drift assumption yields a computed
+upper bound with finite-sample validity, at the price of the named side information. Absent an audit, $\beta$ is fixed from domain knowledge,
+historical dev-to-deployment gaps, or an explicit stress envelope.
 The choice $\beta{=}0$ is the strongest zero-drift assumption and may be reported only as a plug-in baseline; it is not an assumption-free or conservative default. When no credible bound is justifiable, the population frontier cannot certify robustness to calibration drift, and the safe operational response is to abstain or freeze. Larger $\beta$ widens the abstain band monotonically, trading decision coverage for robustness.
 
 \textbf{Detectability and transfer.} ImageNet-R is a weak, split-specific evidence regime:

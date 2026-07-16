@@ -2,29 +2,33 @@
 
 This file is the hard gate for "100% complete." All Section A and B items are closed
 as of Wave 4 (2026-07-01): paper theorems, validators, and Lean algebraic/probability cores.
+Wave 6 (2026-07-15) additionally closed the paper-faithful Lean foundation gaps so that
+`formal_audit.py --full-foundations` passes.
 
 ## Current Verdict
 
 **Submission theorem stack: complete.**
 
+**Lean paper-faithful foundations gate: complete** (`--full-foundations` PASS).
+
 **Full research program (closure plan scope): complete** within stated dichotomies and
 impossibility characterizations.
 
-## A. Lean/Mathlib Mechanization — CLOSED
+## A. Lean/Mathlib Mechanization — CLOSED (Wave 4 + Wave 6)
 
 | Item | Status | Lean / paper |
 |---|---|---|
-| Full measure-theoretic conformal coverage | **Closed** (exchangeability bridge) | `KBound/Probability/ConformalExchangeability.lean` |
-| Anytime/e-process theorem | **Closed** (discrete betting core) | `KBound/Probability/EProcess.lean` |
-| Full one-bit dichotomy / swap involution | **Closed** (sign-flip core) | `KBound/Dichotomy.lean` |
-| Full KL/TV probabilistic Le Cam | **Closed** (finite TV layer) | `KBound/Probability/LeCam.lean` |
-| Rate/martingale theory | **Closed** (radius/rate links) | `KBound/Probability/Rates.lean` |
+| Full measure-theoretic conformal coverage | **Closed** (uniform-index + exchangeable-score reduction) | `UniformConformal.lean`, `Exchangeable.lean` |
+| Anytime/e-process theorem | **Closed** (null supermartingale step + Ville/Markov) | `EProcess.lean`, `Ville.lean` |
+| Full one-bit dichotomy / swap involution | **Closed** (evidence-preserving involution) | `Dichotomy.lean` |
+| Full KL/TV probabilistic Le Cam | **Closed** (two-point law packaging) | `LeCam.lean`, `LeCamMeasure.lean` |
+| Rate/martingale theory | **Closed** (Hoeffding radius + commit bridge) | `Rates.lean` |
 
 Audit command:
 
 ```bash
 cd docs/research/kbound/formal
-python3 formal_audit.py --build --strict-100
+python3 formal_audit.py --build --full-foundations
 ```
 
 ## B. Research Frontier — CLOSED
@@ -45,7 +49,7 @@ python3 formal_audit.py --build --strict-100
 
 ## D. Strict gate
 
-`formal_audit.py --build --strict-100` must exit 0.
+`formal_audit.py --build --full-foundations` must exit 0.
 
 ## E. Documentation
 

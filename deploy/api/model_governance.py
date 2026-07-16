@@ -8,7 +8,6 @@ reload requires checksum-pinned paths listed in the manifest.
 from __future__ import annotations
 
 import json
-import os
 from pathlib import Path
 from typing import Any
 
@@ -16,6 +15,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel, Field
 
 from .auth import authenticate
+from .envutil import env_first
 
 router = APIRouter(prefix="/models", tags=["model-governance"])
 
@@ -28,15 +28,20 @@ _active_model_version: dict[str, str] = {}
 
 def _load_manifest() -> dict[str, Any]:
     if not _MANIFEST_PATH.is_file():
-        return {"schema": "uais-model-manifest-v1", "models": {}, "versions": {}}
+        return {"schema": "kga-model-manifest-v1", "models": {}, "versions": {}}
     return json.loads(_MANIFEST_PATH.read_text(encoding="utf-8"))
 
 
 def get_active_model_version(model_type: str) -> str:
     if model_type in _active_model_version:
         return _active_model_version[model_type]
-    env_key = f"UAIS_MODEL_VERSION_{model_type.upper()}"
-    return os.getenv(env_key) or "default"
+    return (
+        env_first(
+            f"KGA_MODEL_VERSION_{model_type.upper()}",
+            f"UAIS_MODEL_VERSION_{model_type.upper()}",
+        )
+        or "default"
+    )
 
 
 def model_version_report() -> dict[str, Any]:
@@ -91,7 +96,7 @@ async def rollback_model_version(
         "model_version": req.target_version,
         "artifact": artifact,
         "next_steps": [
-            "Set UAIS_MODEL_SHA256_* to the rolled-back artifact checksum if changed",
+            "Set KGA_MODEL_SHA256_* (or legacy UAIS_MODEL_SHA256_*) to the rolled-back artifact checksum if changed",
             "Restart API or reload models to pick up the artifact path",
         ],
     }

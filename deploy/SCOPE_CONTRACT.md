@@ -26,9 +26,10 @@ outside this envelope is not supported by the evidence.
 
 - **Out-of-envelope drift guard** (`deploy/api/scope_guard.py`): every fusion
   inference is annotated with a drift score; out-of-envelope requests increment a
-  Prometheus counter (`uais_out_of_envelope_total`) and set `uais_scope_drift`.
+  Prometheus counter (`kga_out_of_envelope_total`) and set `kga_scope_drift`.
   Operators MUST alert on / hold out-of-envelope traffic rather than trust it.
-- **Reference envelope**: set `UAIS_SCOPE_REFERENCE` to per-domain validated score
+- **Reference envelope**: set `KGA_SCOPE_REFERENCE` (legacy `UAIS_SCOPE_REFERENCE`
+  still accepted) to per-domain validated score
   quantiles to enable full envelope checking; otherwise the guard runs in advisory
   (disagreement-only) mode and says so.
 - Mandatory auth on `/decide`, no-wildcard CORS in production, rate limiting,

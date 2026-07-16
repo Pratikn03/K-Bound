@@ -1,7 +1,6 @@
-"""Authentication and security middleware for UAIS-V API."""
+"""Authentication and security middleware for the KGA API."""
 
 import hmac
-import os
 from datetime import datetime, timezone, timedelta
 from typing import Optional
 
@@ -11,11 +10,13 @@ from jose import JWTError, jwt
 from passlib.context import CryptContext
 from pydantic import BaseModel, Field
 
-# Configuration
-SECRET_KEY = os.getenv("UAIS_SECRET_KEY")
+from .envutil import csv_env, env_first
+
+# Configuration (prefer KGA_*; accept legacy UAIS_* during rebrand)
+SECRET_KEY = env_first("KGA_SECRET_KEY", "UAIS_SECRET_KEY")
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 60
-API_KEYS = frozenset(key.strip() for key in os.getenv("UAIS_API_KEYS", "").split(",") if key.strip())
+API_KEYS = frozenset(csv_env("KGA_API_KEYS", "UAIS_API_KEYS"))
 
 # Password hashing
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")

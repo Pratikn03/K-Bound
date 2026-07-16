@@ -8,14 +8,15 @@ services:
     ports:
       - "127.0.0.1:8000:8000"
     environment:
-      UAIS_API_KEYS: ${UAIS_API_KEYS:?Set UAIS_API_KEYS before starting the API}
-      UAIS_CORS_ORIGINS: ${UAIS_CORS_ORIGINS:?Set UAIS_CORS_ORIGINS before starting the API}
-      UAIS_PRODUCTION_MODE: ${UAIS_PRODUCTION_MODE:-false}
-      UAIS_REQUIRED_MODELS: ${UAIS_REQUIRED_MODELS:-}
-      UAIS_TRUSTED_MODEL_ARTIFACTS: ${UAIS_TRUSTED_MODEL_ARTIFACTS:-false}
-      UAIS_REQUIRE_MODEL_CHECKSUMS: ${UAIS_REQUIRE_MODEL_CHECKSUMS:-false}
-      # Set for multi-replica rate limiting (Gate P P5): UAIS_REDIS_URL=redis://redis:6379/0
-      UAIS_REDIS_URL: ${UAIS_REDIS_URL:-}
+      # Prefer KGA_*. Legacy UAIS_* still works because deploy/api reads both.
+      KGA_API_KEYS: ${KGA_API_KEYS:?Set KGA_API_KEYS before starting the API}
+      KGA_CORS_ORIGINS: ${KGA_CORS_ORIGINS:?Set KGA_CORS_ORIGINS before starting the API}
+      KGA_PRODUCTION_MODE: ${KGA_PRODUCTION_MODE:-false}
+      KGA_REQUIRED_MODELS: ${KGA_REQUIRED_MODELS:-}
+      KGA_TRUSTED_MODEL_ARTIFACTS: ${KGA_TRUSTED_MODEL_ARTIFACTS:-false}
+      KGA_REQUIRE_MODEL_CHECKSUMS: ${KGA_REQUIRE_MODEL_CHECKSUMS:-false}
+      # Multi-replica rate limiting: KGA_REDIS_URL=redis://redis:6379/0
+      KGA_REDIS_URL: ${KGA_REDIS_URL:-}
     security_opt:
       - no-new-privileges:true
     read_only: true

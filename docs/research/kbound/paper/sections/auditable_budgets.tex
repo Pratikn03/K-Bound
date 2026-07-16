@@ -1,0 +1,201 @@
+% =====================================================================
+% Auditable drift budgets — appendix of THIS paper (single-paper structure).
+% Full proofs here (long manuscript); compact statements in the short build's
+% appendix (kbound_short_appendix.tex). Adversary-agent checked 2026-07-15
+% (delta-budget corrected). Validation artifacts:
+%   docs/research/kbound/audit_validation/{val_audited_drift.py,
+%   results_audited_drift.json, fig_p2_*.png}  (seeded, rerunnable).
+% \input from kbound.tex appendix. Uses host amsthm environments.
+% =====================================================================
+
+\section{Auditable drift budgets: what can replace a declared $\beta$}\label{app:auditable}
+
+The main text treats the drift budget $\beta$ as \emph{declared}. This appendix settles when
+$\beta$ can instead be \emph{computed}: a vacuity theorem (label-free audits certify nothing), three
+purchasable audits (labels; smoothness$\times$transport; rotation-uniform under unknown-direction
+index drift), the composition into the decision guarantee, a fully empirical rule, and a
+domain-level verifiability protocol with an exact feasibility floor. Notation as in
+Assumption~\ref{ass:deploy}: $u=\eta_a-s\in[-1,1]$ on $D$, $\gamma(P)=\E_{\mu_P}[u\mid D]$;
+representations $\psi(x)$ with $\|\psi\|\le B$; all statements conditional on $D$.
+
+\paragraph{Status and credit.} Proofs are complete below; the concentration ingredient of
+Theorem~\ref{thm:aud-F} is \emph{known} in sharper form (Bartl--Mendelson; Boedihardjo; Nietert
+et al.)~\cite{bartl2022structure,bartl2023uniformdkw,boedihardjo2024sharp,nietert2022sliced} and
+is used as a lemma; the hierarchical-conformal backbone of Theorem~\ref{thm:aud-G} follows
+Dunn--Wasserman--Ramdas and Lee--Barber--Willett~\cite{dunn2022hierarchical,lee2023hierarchical}.
+The contribution is the composition into the adapt/freeze/abstain audit and the floor analysis;
+synthetic validation (coverage, non-vacuity, decision safety) is in the repository artifact
+\texttt{audit\_validation/results\_audited\_drift.json}.
+
+\begin{theorem}[Aud-A: label-free budget audits are vacuous]\label{thm:aud-A}
+Fix the observables $(\mu_T,f_0,f_a,s)$, hence $M$, and let $\mathcal P(\mu_T)$ be all target
+laws with these observables. For every $\bar a\in[0,1]$ there is a law in $\mathcal P(\mu_T)$
+with $\gamma=\bar a-\tfrac12-M$ and the same joint law of $(Z,M)$; the achievable drift set is
+$[-(M+\tfrac12),\,\tfrac12-M]$ at matched evidence. Consequently any audit
+$\widehat\beta=g(Z)$ with $\Pr(|\gamma|\le\widehat\beta)\ge1-\delta$ uniformly over
+$\mathcal P(\mu_T)$ satisfies, with probability $\ge1-\delta$,
+$\widehat\beta\ge\tfrac12+|M|>|M|$: the audited frontier abstains with probability $\ge1-\delta$
+in every world.
+\end{theorem}
+\begin{proof}
+Extend the kernel construction in the proof of Theorem~\ref{lem:nonid}: for $\bar a\in[0,1]$ set
+$K^{\bar a}(x,f_a(x))=\bar a$, $K^{\bar a}(x,f_0(x))=1-\bar a$ on $D$ (valid Bernoulli since
+binary labels give $\{f_0(x),f_a(x)\}=\{0,1\}$ on $D$), keeping the off-$D$ kernel and all
+observables fixed. Then $\Law(Z,M)$ is identical across $\bar a$ while
+$\gamma=\bar a-\tfrac12-M$ sweeps the stated interval. Validity in the extreme world
+($\bar a\in\{0,1\}$ as $\sign M$ dictates, where $|\gamma|=\tfrac12+|M|$) forces the
+$(1-\delta)$-quantile of $g(Z)$ to be at least $\tfrac12+|M|$; since $g(Z)$ has the same
+distribution in every world of $\mathcal P(\mu_T)$, the bound transfers, and on that event
+neither strict branch of $|M|>\widehat\beta$ can fire.
+\end{proof}
+
+\begin{theorem}[Aud-B: label-budget audit]\label{thm:aud-B}
+Let $X_1,\dots,X_n\sim\mu_T(\cdot\mid D)$ with labels revealed, and
+$\widehat u_i=\mathbf 1\{f_a(X_i)=Y_i\}-s(X_i)\in[-1,1]$,
+$\widehat\gamma=\tfrac1n\sum\widehat u_i$, $t(n,\delta)=\sqrt{2\ln(2/\delta)/n}$. Then
+$\widehat\beta_{\mathrm{lab}}=|\widehat\gamma|+t(n,\delta)$ satisfies
+$\Pr(|\gamma|\le\widehat\beta_{\mathrm{lab}})\ge1-\delta$, and the audited frontier certifies a
+strict action whenever $|M|>|\gamma|+2t(n,\delta)$; in particular
+$n\ge 8\ln(2/\delta)/(|M|-|\gamma|)^2$ audit labels suffice when $|M|>|\gamma|$.
+\end{theorem}
+\begin{proof}
+$\E[\widehat u_i]=\gamma$; Hoeffding on range-2 variables gives
+$\Pr(|\widehat\gamma-\gamma|>t)\le2e^{-nt^2/2}=\delta$; the triangle inequality gives both
+claims. (This quantifies, in the form the frontier consumes, the audit rate discussed in
+App.~\ref{app:weakest}.)
+\end{proof}
+
+\begin{theorem}[Aud-C: transport-audited budget, finite-sample]\label{thm:aud-C}
+Assume \textup{(Lip)}: $u$ is $L$-Lipschitz on $D$ w.r.t.\ a bounded 1-d representation
+($|\psi|\le B$). With $n_{\mathrm{lab}}$ labeled calibration points, $m_{\mathrm{cal}},
+m_{\mathrm{dep}}$ unlabeled points, empirical measures $\widehat\mu$, and
+\[
+\widehat\beta_{W}=|\widehat\gamma_{\mathrm{cal}}|+t(n_{\mathrm{lab}},\delta/2)
++L\Bigl[\,\widehat W_1(\widehat\mu_T,\widehat\mu_{\mathrm{cal}})
++2B\bigl(\varepsilon_{\mathrm{DKW}}(m_{\mathrm{cal}},\delta/4)
++\varepsilon_{\mathrm{DKW}}(m_{\mathrm{dep}},\delta/4)\bigr)\Bigr],
+\quad \varepsilon_{\mathrm{DKW}}(m,\delta)=\sqrt{\tfrac{\ln(2/\delta)}{2m}},
+\]
+we have $\Pr(|\gamma(P_T)|\le\widehat\beta_{W})\ge1-\delta$.
+\end{theorem}
+\begin{proof}
+Population step: $u/L$ is 1-Lipschitz, so Kantorovich--Rubinstein gives
+$|\gamma(P_T)-\gamma(P_{\mathrm{cal}})|\le L\,W_1(\mu_T,\mu_{\mathrm{cal}})$. Finite-sample:
+on a 1-d bounded representation, $W_1(\widehat\mu,\mu)=\int|\widehat F-F|\le
+2B\sup_t|\widehat F-F|$, bounded by DKW at level $\delta/4$ per measure; Hoeffding at
+$\delta/2$ for $\widehat\gamma_{\mathrm{cal}}$; union bound and the $W_1$ triangle inequality
+assemble $\widehat\beta_W$. \textup{(Lip)} is declared, not verified---Theorem~\ref{thm:aud-A}
+guarantees some such purchase is unavoidable; multi-domain Lipschitz-ratio checks falsify but
+cannot verify it.
+\end{proof}
+
+\begin{theorem}[Aud-D/E: composition and the fully empirical rule]\label{thm:aud-DE}
+Let $\widehat\beta$ be any audit with $\Pr(|\gamma|\le\widehat\beta)\ge1-\delta$.
+\textup{(D)}~The audited population rule (adapt iff $M>\widehat\beta$; freeze iff
+$M<-\widehat\beta$; else abstain) has $\Pr(\text{false strict commitment})\le\delta$.
+\textup{(E)}~With $\widehat M=\tfrac1m\sum s(X_i)-\tfrac12$ from $m$ unlabeled deployment
+points and $t_M(m,\delta')=\sqrt{\ln(2/\delta')/(2m)}$, the \emph{empirical} audited rule
+(adapt iff $\widehat M-t_M>\widehat\beta$; freeze iff $\widehat M+t_M<-\widehat\beta$) has
+$\Pr(\text{false strict commitment})\le\delta+\delta'$, and every quantity in the rule is
+computable. Gated by the finite-sample certificate of Theorem~\ref{thm:certificate}, each
+false-commit event is bounded by $\alpha+\delta(+\delta')$.
+\end{theorem}
+\begin{proof}
+(D): on $\{|\gamma|\le\widehat\beta\}$, $M>\widehat\beta\ge|\gamma|$ implies $M+\gamma>0$, so
+$\sign\Delta=+1$ by Lemma~\ref{lem:reduction}; symmetric for freeze; a false commitment
+requires the audit event to fail. (E): Hoeffding for the $[0,1]$-valued $s(X_i)$ gives
+$\Pr(|\widehat M-M|>t_M)\le\delta'$; on the intersection of the two events the adapt branch
+gives $M\ge\widehat M-t_M>\widehat\beta\ge|\gamma|$; union bound. Validation: on the synthetic
+sweep the empirical rule makes $0/12$ false strict commits (population-$M$ rule $0/13$;
+$\beta{=}0$ plug-in $3/20$), with certification opening one grid step later than the
+population rule---the price of $t_M$
+(\texttt{audit\_validation/results\_audited\_drift.json}).
+\end{proof}
+
+\begin{theorem}[Aud-F: rotation-uniform audit under unknown-direction index drift]\label{thm:aud-F}
+Assume $\|\psi(x)\|\le B$ on $D$ and \textup{(Idx)}: $u(x)=g(\theta_*^{\!\top}\psi(x))$ with
+$g$ $L$-Lipschitz and $\theta_*\in S^{d-1}$ \emph{unknown}. Let
+$\mathrm{MS}_{\mathrm{net}}$ be the maximum of the empirical sliced distances
+$W_1(\theta\#\widehat\mu_{\mathrm{cal}},\theta\#\widehat\mu_T)$ over an $\epsilon$-net of
+$S^{d-1}$, and
+\[
+\widehat\beta_{F}=|\widehat\gamma_{\mathrm{cal}}|+t(n_{\mathrm{lab}},\delta/4)
++L\Bigl[\mathrm{MS}_{\mathrm{net}}+2B\epsilon
++2B\bigl(\varepsilon_{\mathrm{VC}}(n,\delta/4)+\varepsilon_{\mathrm{VC}}(m,\delta/4)\bigr)\Bigr],
+\qquad
+\varepsilon_{\mathrm{VC}}(n,\delta)=\sqrt{\tfrac{2\bigl((d{+}1)\ln(2n)+\ln(8/\delta)\bigr)}{n}}.
+\]
+Then $\Pr(|\gamma(P_T)|\le\widehat\beta_{F})\ge1-\delta$. The same statement holds for
+$k$-index drift $u=\sum_{j\le k}g_j(\theta_j^{\!\top}\psi)$ with $\sum_j\mathrm{Lip}(g_j)\le L$.
+\end{theorem}
+\begin{proof}
+(i)~\emph{Index transfer:} $g/L$ is 1-Lipschitz on the projected line, so 1-d
+Kantorovich--Rubinstein gives
+$|\gamma(P_T)-\gamma(P_{\mathrm{cal}})|\le L\,W_1(\theta_*\#\mu_{\mathrm{cal}},\theta_*\#\mu_T)
+\le L\,\sup_{\theta}W_1(\theta\#\mu_{\mathrm{cal}},\theta\#\mu_T)=L\cdot\mathrm{MS}$; the
+supremum covers the unknown $\theta_*$.
+(ii)~\emph{Uniform deviation:} for every $\theta$ simultaneously, deviations of the empirical
+sliced distances are controlled by
+$W_1(\widehat\nu,\nu)=\int_{[-B,B]}|\widehat F-F|\le 2B\sup_t|\widehat F-F|$ (the 1-d identity,
+valid with atoms), and $\sup_{\theta,t}|\widehat F_\theta(t)-F_\theta(t)|$ is the uniform
+deviation over the halfspace class $\{x:\psi(x)\cdot\theta\le t\}$, of VC dimension $\le d+1$;
+the VC inequality at level $\delta/4$ per measure gives the two
+$\varepsilon_{\mathrm{VC}}$ terms via $|\sup_\theta a-\sup_\theta b|\le\sup_\theta|a-b|$ and the
+per-$\theta$ $W_1$ triangle inequality.
+(iii)~\emph{Net:} $|W_1(\theta\#\cdot)-W_1(\theta'\#\cdot)|\le 2B\|\theta-\theta'\|$ (identity
+coupling and Cauchy--Schwarz, both measures), so
+$\mathrm{MS}\le\mathrm{MS}_{\mathrm{net}}+2B\epsilon$; the net-inflated value enters
+$\widehat\beta_F$.
+(iv)~\emph{Budget:} three random events (Hoeffding; VC for calibration; VC for deployment) at
+$\delta/4$ each, total failure $\le3\delta/4<\delta$. For $k$-index, bound each term by its own
+slice and use $\sum_j\mathrm{Lip}(g_j)\le L$.
+Sharper constants (and removal of the $\ln(2n)$ factor) follow by replacing the VC step with
+the max-sliced concentration of~\cite{bartl2022structure,boedihardjo2024sharp}; the
+$O((3/\epsilon)^d)$ net is computational only---the statistical bound is net-free.
+\end{proof}
+
+\begin{theorem}[Aud-G: domain-level verifiable alignment with an exact floor]\label{thm:aud-G}
+Assume \textup{(G1)} the $K$ calibration domains and the deployment domain are exchangeable
+tuples $(P_k,Z_k,\gamma_k)$; \textup{(G2)} each calibration domain carries a labeled sample of
+\emph{common} size $n_{\mathrm{lab}}$, giving $\widehat\gamma_k$ with common Hoeffding radius
+$e$ at level $\delta$; \textup{(G3)} the label-free drift predictor
+$\gamma_{\mathrm{pred}}(\cdot)$ is fixed and independent of all $K{+}1$ domains. Let
+$s_k=|\widehat\gamma_k-\gamma_{\mathrm{pred}}(Z_k)|$ and
+$j=\lceil(1-\alpha+\delta)(K+1)\rceil$, feasible iff $\alpha\ge\tfrac1{K+1}+\delta$. Then
+\[
+\Pr\Bigl(\,|\gamma_{K+1}|\le|\gamma_{\mathrm{pred}}(Z_{K+1})|+s_{(j)}+e\,\Bigr)\ \ge\ 1-\alpha ,
+\]
+with every right-hand quantity computable without deployment labels.
+\end{theorem}
+\begin{proof}
+The computable scores $s_1,\dots,s_{K+1}$ are exchangeable (common $n_{\mathrm{lab}}$ and
+estimator under (G1)--(G3); if per-domain labeled sizes differ, exchangeability of the scores
+fails and validity is lost). Split conformal at level $\alpha'=\alpha-\delta$ gives
+$\Pr(s_{K+1}\le s_{(j)})\ge1-\alpha'$. One deployment-side Hoeffding event bounds the ideal
+score $S_{K+1}=|\gamma_{K+1}-\gamma_{\mathrm{pred}}(Z_{K+1})|\le s_{K+1}+e$ (the counterfactual
+size-$n_{\mathrm{lab}}$ sample interpretation of $e$); the deterministic triangle
+$|\gamma_{K+1}|\le|\gamma_{\mathrm{pred}}(Z_{K+1})|+S_{K+1}$ and a union bound finish.
+\emph{Floor:} the conformal index requires $j\le K$, i.e.\ $\alpha\ge\tfrac1{K+1}+\delta$
+exactly; with $K=5$ domains nothing below $\alpha\approx0.17{+}\delta$ is certifiable, with
+$K=8$ nothing below $\approx0.11{+}\delta$. Per-deployment verification remains impossible
+(Theorem~\ref{thm:aud-A}); verifiability is \emph{priced in exchangeable domains}. (G3) is
+essential: a predictor fit on the calibration domains breaks exchangeability.
+\end{proof}
+
+\begin{conjecture}[Maximal auditable class]\label{conj:aud-maximal}
+Characterize the largest rotation-closed drift class admitting a label-free-at-deployment audit
+at rate $O(\sqrt{d/n})$. Bounded-$k$-index functions suffice (Theorem~\ref{thm:aud-F}); full
+Lipschitz drift is excluded at parametric rate by the $n^{-1/d}$ lower bounds for $W_1$
+estimation~\cite{fournier2015rate,niles2019estimation}. Whether \emph{audits} (one-sided upper
+confidence bounds) admit a strictly larger class than \emph{estimation}---where the
+spiked-transport line draws it---is open; a resolution plausibly requires a new lower-bound
+construction over direction mixtures.
+\end{conjecture}
+
+\begin{conjecture}[Certified supremum, polynomial time]\label{conj:aud-computational}
+Whether a $\mathrm{poly}(d)$ algorithm can output a \emph{certified upper bound} on
+$\sup_\theta W_1(\theta\#\widehat\mu_{\mathrm{cal}},\theta\#\widehat\mu_T)$ (not merely a local
+ascent value) plausibly inherits the statistical--computational gap conjectured for spiked
+transport; until settled, gradient-ascent surrogates for $\mathrm{MS}_{\mathrm{net}}$ are
+heuristics and only the net value is admissible in $\widehat\beta_F$.
+\end{conjecture}

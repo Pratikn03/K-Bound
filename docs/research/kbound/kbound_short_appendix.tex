@@ -204,3 +204,53 @@ The machine-readable manifest \texttt{paper/generated/kbound\_result\_manifest.j
 authoritative index for every promoted number, seed count, protocol, quantile convention, and known
 replay caveat. Table~\ref{tab:claim-status} gives the reader-facing summary; the external manifest
 retains exact repository paths and pending work.
+
+\section{Auditable drift budgets: statements}\label{app:audit-short}
+The drift budget $\beta$ of the population frontier is declared in the main text. The following
+results (proofs in the long manuscript, appendix ``Auditable drift budgets''; synthetic validation
+in the repository artifact \texttt{audit\_validation/results\_audited\_drift.json}) settle when a
+\emph{computed} budget can replace it. Write $u=\eta_a-s\in[-1,1]$ on $D$ and
+$\gamma(P)=\E_{\mu_P}[u\mid D]$.
+
+\begin{theorem}[Vacuity of label-free audits]\label{thm:short-audA}
+Fix the observables $(\mu_T,f_0,f_a,s)$, hence $M$. Over the class of all target laws with these
+observables, any label-free audit $\widehat\beta=g(Z)$ satisfying
+$\Pr(|\gamma|\le\widehat\beta)\ge1-\delta$ uniformly must satisfy
+$\widehat\beta\ge\tfrac12+|M|$ with probability $\ge1-\delta$; the audited frontier then abstains
+in every world. (Corollary of Theorem~\ref{lem:nonid}'s label-kernel construction.)
+\end{theorem}
+
+\begin{theorem}[Computed budgets under purchasable structure]\label{thm:short-audC}
+Each of the following side informations yields a computable $\widehat\beta$ with
+$\Pr(|\gamma(P_T)|\le\widehat\beta)\ge1-\delta$: \textup{(i)} $n$ deployment labels
+(Hoeffding; width $\sqrt{2\ln(2/\delta)/n}$); \textup{(ii)} an $L$-Lipschitz drift on a bounded
+1-d representation (Kantorovich--Rubinstein $+$ DKW, using only unlabeled batches and labeled
+\emph{calibration} data); \textup{(iii)} unknown-direction index drift
+$u=g(\theta_*^{\!\top}\psi)$ on $\|\psi\|\le B$ (rotation-uniform max-sliced audit at rate
+$O(\sqrt{(d+\ln(1/\delta))/n})$ via halfspace-VC uniformity; sharper constants from known
+max-sliced concentration). The structural assumptions are declared and falsifiable, not
+verifiable---some such purchase is unavoidable by Theorem~\ref{thm:short-audA}.
+\end{theorem}
+
+\begin{theorem}[Composition; fully empirical rule]\label{thm:short-audDE}
+For any audit with $\Pr(|\gamma|\le\widehat\beta)\ge1-\delta$: the audited rule (adapt iff
+$M>\widehat\beta$, freeze iff $M<-\widehat\beta$, else abstain) falsely strict-commits with
+probability $\le\delta$; replacing $M$ by the batch estimate $\widehat M\pm t_M(m,\delta')$
+gives a rule computable entirely from data with false-commit probability $\le\delta+\delta'$.
+On the synthetic sweep: $0/12$ false commits (empirical rule) and $0/13$ (population rule)
+versus $3/20$ for the $\beta{=}0$ plug-in.
+\end{theorem}
+
+\begin{theorem}[Domain-level verifiability with an exact floor]\label{thm:short-audG}
+With $K$ calibration domains exchangeable with deployment, common per-domain labeled size, and a
+drift predictor independent of all $K{+}1$ domains, a domain-level conformal bound certifies
+$|\gamma_{K+1}|\le|\gamma_{\mathrm{pred}}(Z_{K+1})|+s_{(j)}+e$ at level $1-\alpha$, feasible iff
+$\alpha\ge\tfrac1{K+1}+\delta$. Alignment is thus verifiable exactly at the rate one can afford
+exchangeable domains ($K{=}5$: nothing below $\alpha\approx0.17{+}\delta$); per-deployment
+verification remains impossible.
+\end{theorem}
+
+\noindent\emph{Open.} Whether one-sided audits admit a strictly larger tractable drift class than
+estimation (where spiked-transport lower bounds draw the line), and whether the direction
+supremum admits a certified polynomial-time upper bound, are stated as conjectures in the long
+manuscript.
