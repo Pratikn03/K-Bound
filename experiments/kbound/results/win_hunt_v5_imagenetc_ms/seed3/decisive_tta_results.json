@@ -1,0 +1,667 @@
+{
+  "alpha": 0.1,
+  "device": "mps",
+  "seed": 3,
+  "benchmarks": {
+    "imagenetc": {
+      "clean_acc": null,
+      "methods": {
+        "tent": {
+          "metrics": {
+            "n": 27,
+            "decision_counts": {
+              "ADAPT": 0,
+              "FREEZE": 0,
+              "ABSTAIN": 27
+            },
+            "coverage": 0.0,
+            "adapt_precision_B>0": null,
+            "false_adapt_rate_B<0": null,
+            "mean_acc": {
+              "always_adapt": 0.404037037105472,
+              "always_freeze": 0.40477778265873593,
+              "K_Bound": 0.40477778265873593,
+              "oracle": 0.42149074623982113
+            },
+            "regret_vs_oracle": {
+              "always_adapt": 0.017453709134349116,
+              "always_freeze": 0.016712963581085205,
+              "K_Bound": 0.016712963581085205
+            },
+            "worst_case_acc": {
+              "always_adapt": 0.12325000017881393,
+              "always_freeze": 0.0949999988079071,
+              "K_Bound": 0.0949999988079071
+            },
+            "beats_both_regret_only": false,
+            "beats_both": false,
+            "eps_conformal": 0.049606286412419986,
+            "alpha": 0.1,
+            "base_rate_harmful_B<0": 0.48148148148148145,
+            "mean_true_B": -0.0007407455532639115,
+            "decisions_by_regime": {
+              "helpful": {
+                "ADAPT": 0,
+                "FREEZE": 0,
+                "ABSTAIN": 11
+              },
+              "harmful": {
+                "ADAPT": 0,
+                "FREEZE": 0,
+                "ABSTAIN": 11
+              },
+              "marginal": {
+                "ADAPT": 0,
+                "FREEZE": 0,
+                "ABSTAIN": 5
+              }
+            },
+            "pareto": {
+              "curve": [
+                {
+                  "p_harmful": 0.0,
+                  "always_adapt": 0.0014688696347177027,
+                  "always_freeze": 0.028175394781678915,
+                  "K_Bound": 0.028175394781678915
+                },
+                {
+                  "p_harmful": 0.1,
+                  "always_adapt": 0.005379189485311508,
+                  "always_freeze": 0.025301338444836438,
+                  "K_Bound": 0.025301338444836438
+                },
+                {
+                  "p_harmful": 0.2,
+                  "always_adapt": 0.009352290576696396,
+                  "always_freeze": 0.022477613335102797,
+                  "K_Bound": 0.022477613335102797
+                },
+                {
+                  "p_harmful": 0.3,
+                  "always_adapt": 0.013280791725218297,
+                  "always_freeze": 0.019745981931313872,
+                  "K_Bound": 0.019745981931313872
+                },
+                {
+                  "p_harmful": 0.4,
+                  "always_adapt": 0.017142761564999817,
+                  "always_freeze": 0.017074788093194366,
+                  "K_Bound": 0.017074788093194366
+                },
+                {
+                  "p_harmful": 0.5,
+                  "always_adapt": 0.021188181459903713,
+                  "always_freeze": 0.014108975565433503,
+                  "K_Bound": 0.014108975565433503
+                },
+                {
+                  "p_harmful": 0.6,
+                  "always_adapt": 0.025092645043879747,
+                  "always_freeze": 0.011251544146426023,
+                  "K_Bound": 0.011251544146426023
+                },
+                {
+                  "p_harmful": 0.7,
+                  "always_adapt": 0.028972789920866493,
+                  "always_freeze": 0.00841771906875074,
+                  "K_Bound": 0.00841771906875074
+                },
+                {
+                  "p_harmful": 0.8,
+                  "always_adapt": 0.03284007860422134,
+                  "always_freeze": 0.005744681461714208,
+                  "K_Bound": 0.005744681461714208
+                },
+                {
+                  "p_harmful": 1.0,
+                  "always_adapt": 0.040768405914306645,
+                  "always_freeze": 0.0,
+                  "K_Bound": 0.0
+                }
+              ],
+              "p_where_KGA_beats_both": null
+            }
+          },
+          "n_conditions": 27,
+          "per_condition_file": "per_condition_imagenetc_tent_seed3.json",
+          "conditions": [
+            "gaussian_noise|s1|small|aggressive|iid",
+            "gaussian_noise|s1|small|aggressive|imbalanced",
+            "gaussian_noise|s1|small|aggressive|single_class",
+            "gaussian_noise|s3|small|aggressive|iid",
+            "gaussian_noise|s3|small|aggressive|imbalanced",
+            "gaussian_noise|s3|small|aggressive|single_class",
+            "gaussian_noise|s5|small|aggressive|iid",
+            "gaussian_noise|s5|small|aggressive|imbalanced",
+            "gaussian_noise|s5|small|aggressive|single_class",
+            "shot_noise|s1|small|aggressive|iid",
+            "shot_noise|s1|small|aggressive|imbalanced",
+            "shot_noise|s1|small|aggressive|single_class",
+            "shot_noise|s3|small|aggressive|iid",
+            "shot_noise|s3|small|aggressive|imbalanced",
+            "shot_noise|s3|small|aggressive|single_class",
+            "shot_noise|s5|small|aggressive|iid",
+            "shot_noise|s5|small|aggressive|imbalanced",
+            "shot_noise|s5|small|aggressive|single_class",
+            "impulse_noise|s1|small|aggressive|iid",
+            "impulse_noise|s1|small|aggressive|imbalanced",
+            "impulse_noise|s1|small|aggressive|single_class",
+            "impulse_noise|s3|small|aggressive|iid",
+            "impulse_noise|s3|small|aggressive|imbalanced",
+            "impulse_noise|s3|small|aggressive|single_class",
+            "impulse_noise|s5|small|aggressive|iid",
+            "impulse_noise|s5|small|aggressive|imbalanced",
+            "impulse_noise|s5|small|aggressive|single_class"
+          ],
+          "detail": {
+            "Bhat": [
+              0.0013626130477309044,
+              0.018465264424698473,
+              -0.049154016133864546,
+              -0.021862697752802397,
+              0.009622891532418234,
+              -0.04403716306717741,
+              0.044410209998114646,
+              -0.0026936238110389847,
+              -0.004668378642863075,
+              -0.03368077952101005,
+              0.0019434093015554977,
+              -0.029723034484720044,
+              0.017214805389813338,
+              -0.025994960973624675,
+              -0.031551711353654505,
+              0.010917013697038907,
+              0.008376356339035142,
+              0.03848363304076435,
+              -0.003545255964323028,
+              0.041607967202190795,
+              -0.04133479685044413,
+              0.010239129834633888,
+              -0.013980623590317683,
+              -0.019332807720759237,
+              0.035236835634076834,
+              0.04946907423038338,
+              -0.00022167870017092506
+            ],
+            "eps": 0.049606286412419986,
+            "dec": [
+              "ABSTAIN",
+              "ABSTAIN",
+              "ABSTAIN",
+              "ABSTAIN",
+              "ABSTAIN",
+              "ABSTAIN",
+              "ABSTAIN",
+              "ABSTAIN",
+              "ABSTAIN",
+              "ABSTAIN",
+              "ABSTAIN",
+              "ABSTAIN",
+              "ABSTAIN",
+              "ABSTAIN",
+              "ABSTAIN",
+              "ABSTAIN",
+              "ABSTAIN",
+              "ABSTAIN",
+              "ABSTAIN",
+              "ABSTAIN",
+              "ABSTAIN",
+              "ABSTAIN",
+              "ABSTAIN",
+              "ABSTAIN",
+              "ABSTAIN",
+              "ABSTAIN",
+              "ABSTAIN"
+            ],
+            "B": [
+              -0.00550001859664917,
+              -0.05774998664855957,
+              -0.030750036239624023,
+              0.025999993085861206,
+              -0.024250000715255737,
+              -0.04875001311302185,
+              0.059999994933605194,
+              0.027249999344348907,
+              0.019749999046325684,
+              0.0015000104904174805,
+              -0.04575002193450928,
+              -0.053250014781951904,
+              0.03349998593330383,
+              -0.04250001907348633,
+              -0.04250001907348633,
+              0.051750004291534424,
+              0.020750001072883606,
+              0.009499996900558472,
+              0.020500004291534424,
+              -0.02724999189376831,
+              -0.03575003147125244,
+              0.03750002384185791,
+              -0.01774999499320984,
+              -0.03949999809265137,
+              0.06000000238418579,
+              0.03125,
+              0.052000001072883606
+            ]
+          }
+        },
+        "eata": {
+          "metrics": {
+            "n": 27,
+            "decision_counts": {
+              "ADAPT": 27,
+              "FREEZE": 0,
+              "ABSTAIN": 0
+            },
+            "coverage": 1.0,
+            "adapt_precision_B>0": 1.0,
+            "false_adapt_rate_B<0": 0.0,
+            "mean_acc": {
+              "always_adapt": 0.4362777747489788,
+              "always_freeze": 0.40477778265873593,
+              "K_Bound": 0.4362777747489788,
+              "oracle": 0.4362777747489788
+            },
+            "regret_vs_oracle": {
+              "always_adapt": 0.0,
+              "always_freeze": 0.03149999209024288,
+              "K_Bound": 0.0
+            },
+            "worst_case_acc": {
+              "always_adapt": 0.15625,
+              "always_freeze": 0.0949999988079071,
+              "K_Bound": 0.15625
+            },
+            "beats_both_regret_only": false,
+            "beats_both": false,
+            "eps_conformal": 0.001061309571686245,
+            "alpha": 0.1,
+            "base_rate_harmful_B<0": 0.0,
+            "mean_true_B": 0.03149999209024288,
+            "decisions_by_regime": {
+              "helpful": {
+                "ADAPT": 17,
+                "FREEZE": 0,
+                "ABSTAIN": 0
+              },
+              "harmful": {
+                "ADAPT": 0,
+                "FREEZE": 0,
+                "ABSTAIN": 0
+              },
+              "marginal": {
+                "ADAPT": 10,
+                "FREEZE": 0,
+                "ABSTAIN": 0
+              }
+            },
+            "pareto": {
+              "note": "need both harmful and non-harmful conditions for the sweep",
+              "n_harmful": 0,
+              "n_nonharmful": 27
+            }
+          },
+          "n_conditions": 27,
+          "per_condition_file": "per_condition_imagenetc_eata_seed3.json",
+          "conditions": [
+            "gaussian_noise|s1|small|aggressive|iid",
+            "gaussian_noise|s1|small|aggressive|imbalanced",
+            "gaussian_noise|s1|small|aggressive|single_class",
+            "gaussian_noise|s3|small|aggressive|iid",
+            "gaussian_noise|s3|small|aggressive|imbalanced",
+            "gaussian_noise|s3|small|aggressive|single_class",
+            "gaussian_noise|s5|small|aggressive|iid",
+            "gaussian_noise|s5|small|aggressive|imbalanced",
+            "gaussian_noise|s5|small|aggressive|single_class",
+            "shot_noise|s1|small|aggressive|iid",
+            "shot_noise|s1|small|aggressive|imbalanced",
+            "shot_noise|s1|small|aggressive|single_class",
+            "shot_noise|s3|small|aggressive|iid",
+            "shot_noise|s3|small|aggressive|imbalanced",
+            "shot_noise|s3|small|aggressive|single_class",
+            "shot_noise|s5|small|aggressive|iid",
+            "shot_noise|s5|small|aggressive|imbalanced",
+            "shot_noise|s5|small|aggressive|single_class",
+            "impulse_noise|s1|small|aggressive|iid",
+            "impulse_noise|s1|small|aggressive|imbalanced",
+            "impulse_noise|s1|small|aggressive|single_class",
+            "impulse_noise|s3|small|aggressive|iid",
+            "impulse_noise|s3|small|aggressive|imbalanced",
+            "impulse_noise|s3|small|aggressive|single_class",
+            "impulse_noise|s5|small|aggressive|iid",
+            "impulse_noise|s5|small|aggressive|imbalanced",
+            "impulse_noise|s5|small|aggressive|single_class"
+          ],
+          "detail": {
+            "Bhat": [
+              0.022378799932757324,
+              0.008969823196237568,
+              0.008969823196237568,
+              0.028223502874422247,
+              0.028223502874422247,
+              0.028223502874422247,
+              0.05278051869676949,
+              0.05278051869676949,
+              0.05278051869676949,
+              0.010909770098806264,
+              0.017052281056651207,
+              0.017052281056651207,
+              0.016529989424119367,
+              0.016529989424119367,
+              0.016529989424119367,
+              0.04526779923708862,
+              0.04526779923708862,
+              0.04526779923708862,
+              0.012982046365461356,
+              0.024938338802185985,
+              0.024938338802185985,
+              0.03036595262662061,
+              0.030800067230309702,
+              0.030800067230309702,
+              0.06398066007361515,
+              0.06398066007361515,
+              0.06398066007361515
+            ],
+            "eps": 0.001061309571686245,
+            "dec": [
+              "ADAPT",
+              "ADAPT",
+              "ADAPT",
+              "ADAPT",
+              "ADAPT",
+              "ADAPT",
+              "ADAPT",
+              "ADAPT",
+              "ADAPT",
+              "ADAPT",
+              "ADAPT",
+              "ADAPT",
+              "ADAPT",
+              "ADAPT",
+              "ADAPT",
+              "ADAPT",
+              "ADAPT",
+              "ADAPT",
+              "ADAPT",
+              "ADAPT",
+              "ADAPT",
+              "ADAPT",
+              "ADAPT",
+              "ADAPT",
+              "ADAPT",
+              "ADAPT",
+              "ADAPT"
+            ],
+            "B": [
+              0.004999995231628418,
+              0.009000003337860107,
+              0.009000003337860107,
+              0.02824997901916504,
+              0.02824997901916504,
+              0.02824997901916504,
+              0.05274999886751175,
+              0.05274999886751175,
+              0.05274999886751175,
+              0.010999977588653564,
+              0.01699995994567871,
+              0.01699995994567871,
+              0.016499996185302734,
+              0.016499996185302734,
+              0.016499996185302734,
+              0.045249998569488525,
+              0.045249998569488525,
+              0.045249998569488525,
+              0.015500009059906006,
+              0.02499997615814209,
+              0.02499997615814209,
+              0.03525000810623169,
+              0.030750006437301636,
+              0.030750006437301636,
+              0.06399999558925629,
+              0.06399999558925629,
+              0.06399999558925629
+            ]
+          }
+        },
+        "sar": {
+          "metrics": {
+            "n": 27,
+            "decision_counts": {
+              "ADAPT": 14,
+              "FREEZE": 3,
+              "ABSTAIN": 10
+            },
+            "coverage": 0.6296296296296297,
+            "adapt_precision_B>0": 1.0,
+            "false_adapt_rate_B<0": 0.0,
+            "mean_acc": {
+              "always_adapt": 0.38973147698022703,
+              "always_freeze": 0.40477778265873593,
+              "K_Bound": 0.42819444669617546,
+              "oracle": 0.4338055528976299
+            },
+            "regret_vs_oracle": {
+              "always_adapt": 0.0440740759174029,
+              "always_freeze": 0.029027770238894003,
+              "K_Bound": 0.005611106201454445
+            },
+            "worst_case_acc": {
+              "always_adapt": 0.11874999850988388,
+              "always_freeze": 0.0949999988079071,
+              "K_Bound": 0.15625
+            },
+            "beats_both_regret_only": true,
+            "beats_both": true,
+            "eps_conformal": 0.026086337380081672,
+            "alpha": 0.1,
+            "base_rate_harmful_B<0": 0.14814814814814814,
+            "mean_true_B": -0.0150463056785089,
+            "decisions_by_regime": {
+              "helpful": {
+                "ADAPT": 14,
+                "FREEZE": 0,
+                "ABSTAIN": 2
+              },
+              "harmful": {
+                "ADAPT": 0,
+                "FREEZE": 3,
+                "ABSTAIN": 1
+              },
+              "marginal": {
+                "ADAPT": 0,
+                "FREEZE": 0,
+                "ABSTAIN": 7
+              }
+            },
+            "pareto": {
+              "curve": [
+                {
+                  "p_harmful": 0.0,
+                  "always_adapt": 0.0,
+                  "always_freeze": 0.03388521616868675,
+                  "K_Bound": 0.006636219203472138
+                },
+                {
+                  "p_harmful": 0.1,
+                  "always_adapt": 0.029571476216614247,
+                  "always_freeze": 0.030609254471585152,
+                  "K_Bound": 0.005968519735336304
+                },
+                {
+                  "p_harmful": 0.2,
+                  "always_adapt": 0.05942714626472442,
+                  "always_freeze": 0.02729978662636131,
+                  "K_Bound": 0.005299182833731174
+                },
+                {
+                  "p_harmful": 0.3,
+                  "always_adapt": 0.08917562876101584,
+                  "always_freeze": 0.02374310621358454,
+                  "K_Bound": 0.004658633397519588
+                },
+                {
+                  "p_harmful": 0.4,
+                  "always_adapt": 0.11911664874516427,
+                  "always_freeze": 0.020377994681708516,
+                  "K_Bound": 0.003967421574890613
+                },
+                {
+                  "p_harmful": 0.5,
+                  "always_adapt": 0.14743626241497695,
+                  "always_freeze": 0.017038008094951512,
+                  "K_Bound": 0.0033051221191883083
+                },
+                {
+                  "p_harmful": 0.6,
+                  "always_adapt": 0.17794045747965576,
+                  "always_freeze": 0.013588190225139261,
+                  "K_Bound": 0.002635360237956047
+                },
+                {
+                  "p_harmful": 0.7,
+                  "always_adapt": 0.20756894628498707,
+                  "always_freeze": 0.010206841066107152,
+                  "K_Bound": 0.0020018857359886174
+                },
+                {
+                  "p_harmful": 0.8,
+                  "always_adapt": 0.2372929162548855,
+                  "always_freeze": 0.00682550446242094,
+                  "K_Bound": 0.001332223816215992
+                },
+                {
+                  "p_harmful": 1.0,
+                  "always_adapt": 0.29688600617218763,
+                  "always_freeze": 0.0,
+                  "K_Bound": 0.0
+                }
+              ],
+              "p_where_KGA_beats_both": 0.1
+            }
+          },
+          "n_conditions": 27,
+          "per_condition_file": "per_condition_imagenetc_sar_seed3.json",
+          "conditions": [
+            "gaussian_noise|s1|small|aggressive|iid",
+            "gaussian_noise|s1|small|aggressive|imbalanced",
+            "gaussian_noise|s1|small|aggressive|single_class",
+            "gaussian_noise|s3|small|aggressive|iid",
+            "gaussian_noise|s3|small|aggressive|imbalanced",
+            "gaussian_noise|s3|small|aggressive|single_class",
+            "gaussian_noise|s5|small|aggressive|iid",
+            "gaussian_noise|s5|small|aggressive|imbalanced",
+            "gaussian_noise|s5|small|aggressive|single_class",
+            "shot_noise|s1|small|aggressive|iid",
+            "shot_noise|s1|small|aggressive|imbalanced",
+            "shot_noise|s1|small|aggressive|single_class",
+            "shot_noise|s3|small|aggressive|iid",
+            "shot_noise|s3|small|aggressive|imbalanced",
+            "shot_noise|s3|small|aggressive|single_class",
+            "shot_noise|s5|small|aggressive|iid",
+            "shot_noise|s5|small|aggressive|imbalanced",
+            "shot_noise|s5|small|aggressive|single_class",
+            "impulse_noise|s1|small|aggressive|iid",
+            "impulse_noise|s1|small|aggressive|imbalanced",
+            "impulse_noise|s1|small|aggressive|single_class",
+            "impulse_noise|s3|small|aggressive|iid",
+            "impulse_noise|s3|small|aggressive|imbalanced",
+            "impulse_noise|s3|small|aggressive|single_class",
+            "impulse_noise|s5|small|aggressive|iid",
+            "impulse_noise|s5|small|aggressive|imbalanced",
+            "impulse_noise|s5|small|aggressive|single_class"
+          ],
+          "detail": {
+            "Bhat": [
+              -0.3582108050196733,
+              0.009145276241040544,
+              0.009145276241040544,
+              0.02822065687519709,
+              0.02822065687519709,
+              0.02822065687519709,
+              0.052855131954826697,
+              0.052855131954826697,
+              0.052855131954826697,
+              0.010770684314731455,
+              0.017119810041032416,
+              0.017119810041032416,
+              0.016618172554751058,
+              0.016618172554751058,
+              0.016618172554751058,
+              0.04523957815553456,
+              0.04523957815553456,
+              0.04523957815553456,
+              -0.38979677637299676,
+              0.024552911243360703,
+              0.024552911243360703,
+              -0.15628456485646697,
+              0.030525354569110277,
+              0.030525354569110277,
+              0.06387832292823145,
+              0.06387832292823145,
+              0.06387832292823145
+            ],
+            "eps": 0.026086337380081672,
+            "dec": [
+              "FREEZE",
+              "ABSTAIN",
+              "ABSTAIN",
+              "ADAPT",
+              "ADAPT",
+              "ADAPT",
+              "ADAPT",
+              "ADAPT",
+              "ADAPT",
+              "ABSTAIN",
+              "ABSTAIN",
+              "ABSTAIN",
+              "ABSTAIN",
+              "ABSTAIN",
+              "ABSTAIN",
+              "ADAPT",
+              "ADAPT",
+              "ADAPT",
+              "FREEZE",
+              "ABSTAIN",
+              "ABSTAIN",
+              "FREEZE",
+              "ADAPT",
+              "ADAPT",
+              "ADAPT",
+              "ADAPT",
+              "ADAPT"
+            ],
+            "B": [
+              -0.44175001978874207,
+              0.009000003337860107,
+              0.009000003337860107,
+              0.02824997901916504,
+              0.02824997901916504,
+              0.02824997901916504,
+              0.05274999886751175,
+              0.05274999886751175,
+              0.05274999886751175,
+              -0.04575002193450928,
+              0.01699995994567871,
+              0.01699995994567871,
+              0.016499996185302734,
+              0.016499996185302734,
+              0.016499996185302734,
+              0.045249998569488525,
+              0.045249998569488525,
+              0.045249998569488525,
+              -0.3840000182390213,
+              0.02499997615814209,
+              0.02499997615814209,
+              -0.31849998980760574,
+              0.030750006437301636,
+              0.030750006437301636,
+              0.06399999558925629,
+              0.06399999558925629,
+              0.06399999558925629
+            ]
+          }
+        }
+      }
+    }
+  },
+  "generated": "2026-07-16 06:24"
+}

@@ -126,3 +126,9 @@ Do not recreate them; update `PROJECT_STATUS_AND_OPEN_PROBLEMS.md` and `claim_le
 - Root scratch JSON/coverage/logs removed; tracked root multiseed Camelyon copies dropped.
 - `AETTA/` converted from broken submodule gitlink to vendored plain files (`VENDOR.md`).
 - Docker/API env rebranded to `KGA_*` (legacy `UAIS_*` still accepted).
+
+## 2026-07-16: ImageNet-C multi-seed complete (runbook item 12)
+- Seeds 1-4 ran clean (mps, ~6.6-7.3h/seed); with locked seed 0: 5 seeds total.
+- SAR: point-level beats-both 5/5 seeds; pooled seed-averaged paired bootstrap (same design as CIFAR rows) BB with both CIs excluding 0 (gapA [-0.090,-0.003], gapF [-0.033,-0.009]), FA_u=0.007. Per-seed CIs exclude 0 on 2/5 at n=27 (disclosed, App imagenetc-ms).
+- Paper upgraded: tab:imagenetc-faithful now pooled 5-seed; tier locked (5 seeds); per-seed table added; one-seed caveats removed.
+- Artifacts: experiments/kbound/results/win_hunt_v5_imagenetc_ms/{seed1..4,pooled_5seed}/.

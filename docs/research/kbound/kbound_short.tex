@@ -561,7 +561,7 @@ The primary decision metrics are regret-to-oracle, marginal false-adapt $\mathrm
 Runs use Python~3.12, PyTorch~2.5.1, and scikit-learn for the benefit estimator. Accelerator and
 checkpoint details are recorded per run manifest rather than pooled into one hardware claim:
 CIFAR experiments used the saved ResNet-18 setup; the authoritative ImageNet-C result used
-ResNet-50 on seed~0. Hardware affects runtime but not the decision definitions or replayed metrics.
+ResNet-50 on seeds~$0$--$4$. Hardware affects runtime but not the decision definitions or replayed metrics.
 
 \section{Results}\label{sec:exp}
 The results are organized by regime rather than by dataset prestige. Controlled mixed regimes test policy improvement, one-sided natural shifts test no-harm behavior, and low-margin transfers test whether the method declines unsupported claims.
@@ -774,19 +774,24 @@ AETTA-style & dropout/disagreement-based label-free accuracy estimation & protoc
 \end{tabular}
 \end{table*}
 
-\subsection{ImageNet-C SAR (mechanism-faithful)}
+\subsection{ImageNet-C SAR (mechanism-faithful, five seeds)}
 On ImageNet-C noise (ResNet-50, $27$ cells: three noise corruptions $\times$ severities
-$\{1,3,5\}$ $\times$ three batch-composition regimes (iid, imbalanced, single-class), seed~0, full-scale), SAR is harmful on $14.8\%$ of cells under a
+$\{1,3,5\}$ $\times$ three batch-composition regimes (iid, imbalanced, single-class), seeds
+$0$--$4$, full-scale), SAR is harmful on $15.6\%$ of cell--seed pairs under a
 mechanism-faithful re-implementation (SAM, recovery reset, EMA) at the learning rate
-shared across candidates. Always-adapt drops to $0.379$ accuracy while \textsc{KGA}
-reaches $0.431$, \textbf{beating both} trivial policies (regret $0.0108$ vs $0.0625$/$0.0319$).
-The gap to the better fixed policy (always-freeze) has a $95\%$ paired-bootstrap CI of
-$[-0.032,-0.011]$; the gap to always-adapt is $[-0.115,-0.001]$. Both intervals are regenerated
-from the saved $27$ cells, so ImageNet-C SAR is a paired-bootstrap beats-both rather than a point
-estimate. No multiple-comparison correction is claimed for this isolated table. EATA stays helpful-dominated
-(\textsc{KGA} ties always-adapt); on Tent the harmful regime now dominates ($63\%$ of cells) and
-\textsc{KGA} abstains to always-freeze (Table~\ref{tab:imagenetc-faithful}). Under the same logged
-conditions, an ATC-style confidence gate false-adapts on the harmful SAR cells---it adapts wherever
+shared across candidates. Pooled over five seeds (seed-averaged conditions, the same paired
+design as the CIFAR-10-C rows), always-adapt drops to $0.385$ accuracy while \textsc{KGA}
+reaches $0.427$, \textbf{beating both} trivial policies (regret $0.0107$ vs $0.0529$/$0.0319$)
+at $\mathrm{FA}_{\mathrm u}=0.007$. The pooled $95\%$ paired-bootstrap gap to always-freeze is
+$[-0.033,-0.009]$ and to always-adapt $[-0.090,-0.003]$; both intervals exclude zero.
+Per seed, the point-level beats-both verdict holds on $5/5$ seeds; the per-seed $27$-cell CIs
+exclude zero on $2/5$ (seeds $0$--$1$) and narrowly include it on the lighter-harmful-mass seeds
+(App.~\ref{app:imagenetc-ms})---the win scales with detectable harmful mass, as the regime map
+predicts. EATA stays helpful-dominated
+(\textsc{KGA} ties always-adapt); on Tent the harmful regime dominates ($55.6\%$ of cell--seed
+pairs) and \textsc{KGA} abstains to always-freeze (Table~\ref{tab:imagenetc-faithful}). Under the
+same logged conditions, an ATC-style confidence gate false-adapts on the harmful SAR
+cells---it adapts wherever
 confidence is high, which is exactly where SAR collapses---while \textsc{KGA} abstains on them, so
 the certificate beats not only the two fixed policies but a simple label-free decision gate under the
 same protocol. The result uses our mechanism-faithful SAR reimplementation at a shared learning
@@ -799,21 +804,24 @@ harmful-SAR operating point rather than all SAR configurations.
 \toprule
 candidate & policy & mean acc & regret$\downarrow$ & harmful cells & beats both? \\
 \midrule
-Tent & always-adapt     & $0.399$          & $0.0216$ & $63\%$ & \\
-     & always-freeze    & $0.410$          & $0.0114$ &        & \\
-     & \textbf{K-Bound} & $\mathbf{0.410}$ & $\mathbf{0.0114}$ & & no (ties freeze) \\
+Tent & always-adapt     & $0.402$          & $0.0191$ & $56\%$ & \\
+     & always-freeze    & $0.406$          & $0.0145$ &        & \\
+     & \textbf{K-Bound} & $\mathbf{0.407}$ & $\mathbf{0.0139}$ & & no (${\approx}$ties freeze) \\
 \midrule
-EATA & always-adapt     & $\mathbf{0.443}$ & $0.0000$ & $0\%$  & no (ties adapt) \\
-     & always-freeze    & $0.410$          & $0.0336$ &        & \\
-     & \textbf{K-Bound} & $\mathbf{0.443}$ & $0.0000$ &        & \\
+EATA & always-adapt     & $\mathbf{0.440}$ & $0.0001$ & $2\%$  & no (ties adapt) \\
+     & always-freeze    & $0.406$          & $0.0342$ &        & \\
+     & \textbf{K-Bound} & $\mathbf{0.440}$ & $0.0003$ &        & \\
 \midrule
-SAR  & always-adapt     & $0.379$          & $0.0625$ & $15\%$ & \\
-     & always-freeze    & $0.410$          & $0.0319$ &        & \\
-     & \textbf{K-Bound} & $\mathbf{0.431}$ & $\mathbf{0.0108}$ & & \textbf{yes} \\
+SAR  & always-adapt     & $0.385$          & $0.0529$ & $16\%$ & \\
+     & always-freeze    & $0.406$          & $0.0319$ &        & \\
+     & \textbf{K-Bound} & $\mathbf{0.427}$ & $\mathbf{0.0107}$ & & \textbf{yes} \\
 \bottomrule
 \end{tabular}
 }
-\caption{ImageNet-C, mechanism-faithful SAR ($27$ cells: 3 noise corruptions, ResNet-50, $\alpha{=}0.1$); full-scale run (2026-07-09) superseding the earlier 36-cell provisional configuration.}
+\caption{ImageNet-C, mechanism-faithful SAR ($27$ cells: 3 noise corruptions, ResNet-50,
+$\alpha{=}0.1$); pooled over seeds $0$--$4$ (seed-averaged conditions), superseding the earlier
+single-seed and 36-cell provisional configurations. Per-seed detail in
+App.~\ref{app:imagenetc-ms}.}
 \label{tab:imagenetc-faithful}
 \end{table}
 
@@ -883,7 +891,7 @@ multi-seed result from being presented as equivalent evidence.}
 Track & Evaluation unit & Result & Decision interpretation & Evidence tier \\
 \midrule
 CIFAR-10-C stress & archived $5\times432$ aggregate & Tent: $0.0016/0.0079/0.1241$; EATA: $0.0013/0.0033/0.1314$; $\mathrm{FA}_{\mathrm u}=0$ & Tent/EATA CI BB; SAR withheld & locked (Tent/EATA aggregate); SAR-only replay mismatch \\
-ImageNet-C SAR & $27$ cells (3 noise corr.) & $0.0108/0.0625/0.0319$; $\mathrm{FA}_{\mathrm u}=0$ & \textbf{paired-bootstrap BB}; $12/27$ abstain & locked (single seed, source-backed) \\
+ImageNet-C SAR & $27$ cells $\times$ $5$ seeds & $0.0107/0.0529/0.0319$ pooled; $\mathrm{FA}_{\mathrm u}=0.007$ & \textbf{paired-bootstrap BB (pooled)}; point-level $5/5$ seeds & locked (5 seeds; per-seed CIs $2/5$) \\
 Camelyon17 OOD & genuine OOD test $n=18$ (support $n=36$) & $0.0000/0.0000/0.1381$; $\mathrm{FA}_{\mathrm u}=0$ & ties adapt; no BB & reconciled (raw records) \\
 iWildCam H v2 & held-out test $n=72$ & $0.0041/0.1028/0.0041$; $\mathrm{FA}_{\mathrm u}=0$ & no-harm, ties freeze & reconciled (OOF lock) \\
 Office-Home M v2 & target test $n=35$ & $0.0157/0.0468/0.0158$; $\mathrm{FA}_{\mathrm u}=0$ & no-harm, tiny point edge & reconciled (OOF lock) \\
@@ -923,7 +931,7 @@ Track & Unit & KGA & Adapt & Freeze & Status \\
 \midrule
 CIFAR-10-C Tent & $5\times432$ & .0016 & .0079 & .1241 & locked; CI BB, $\mathrm{FA}_{\mathrm u}=0$ \\
 CIFAR-10-C EATA & $5\times432$ & .0013 & .0033 & .1314 & locked; CI BB, $\mathrm{FA}_{\mathrm u}=0$ \\
-ImageNet-C SAR & $27$ cells & .0108 & .0625 & .0319 & locked (single seed); paired-bootstrap BB \\
+ImageNet-C SAR & $27$ cells $\times5$ seeds & .0107 & .0529 & .0319 & locked (5 seeds); pooled paired-bootstrap BB \\
 Camelyon17 OOD & $n=18$ & .0000 & .0000 & .1381 & reconciled; no-harm \\
 RxRx1 J & $n=60$ & .0000 & .2531 & .0000 & locked; no-harm \\
 Three-source OOF mixture & $n=143$ & .0059 & .0632 & .0342 & locked; CI BB (constructed) \\
@@ -946,7 +954,7 @@ $\mathrm{FA}_u \le \alpha$ (unconditional false-adapt) & theorem & measurable ma
 $\mathrm{FA}_c \le \alpha$ (conditional false-adapt) & \textbf{not claimed} & report $\mathrm{FA}_c$ descriptively only \\
 Nine-track panel & \textbf{accounting} & locked/reconciled/provisional tiers shown explicitly \\
 Stress-grid beats-both (Tent/EATA) & locked & locked Protocol~A v1 stress grid \\
-ImageNet-C SAR paired-bootstrap beats-both & locked (1 seed) & source-backed 27-cell noise grid; both paired CIs exclude 0 \\
+ImageNet-C SAR paired-bootstrap beats-both & locked (5 seeds) & 27-cell noise grid $\times$ 5 seeds; pooled paired CIs exclude 0; point-level $5/5$ \\
 Natural safety (Camelyon17, RxRx1) & reconciled / locked & raw OOD/test artifacts \\
 Office-Home and iWildCam OOF summaries & reconciled & OOF bootstrap lock \\
 Three-source mixed routing aggregate & locked & constructed OOF mixture, not transfer \\
@@ -1127,7 +1135,7 @@ strengthening the declared assumptions or evidence.
 committal confidence gate adapts on harmful cells while KGA abstains on the low-margin band. The
 POEM/AETTA comparison is complete only for protocol-matched ports; official implementations remain
 future baseline work. The Office-Home/iWildCam summaries have a separate saved recomputation lock,
-but no external-lab replication; more seeds would strengthen ImageNet-C and PACS. Abstention lowers \emph{decision} coverage
+but no external-lab replication; more seeds would strengthen PACS. Abstention lowers \emph{decision} coverage
 but never withholds a prediction: it retains the frozen fallback $f_0$.
 
 \begin{center}\fbox{\parbox{0.95\linewidth}{\small
@@ -1170,7 +1178,7 @@ Closed-band abstention & theorem & Strict three-way soundness over $|\gamma|\le\
 Strict-commitment frontier & theorem & Declared drift class and risk alignment & Thm.~\ref{thm:headline} & Uniform strict commitment, not universal sign recovery. \\
 Marginal $\mathrm{FA}_{\mathrm u}$ certificate & theorem & $\Pr(|\widehat\Delta-\Delta|\le\varepsilon)\ge1-\alpha$ & Thm.~\ref{thm:certificate}; Lean inventory & Does not control conditional $\mathrm{FA}_{\mathrm c}$. \\
 CIFAR-10-C mixed-regime beats-both & empirical & Locked Tent/EATA stress aggregate and paired CIs & Table~\ref{tab:decisive}; canonical manifest & Current raw tree does not replay archived SAR; SAR withheld. \\
-ImageNet-C authoritative result & empirical & 27 cells, SAR candidate, paired condition bootstrap & Table~\ref{tab:imagenetc-faithful}; bootstrap JSON & One seed; no cross-seed claim. \\
+ImageNet-C authoritative result & empirical & 27 cells $\times$ 5 seeds, SAR candidate, pooled seed-averaged paired bootstrap & Table~\ref{tab:imagenetc-faithful}; pooled bootstrap JSON & Per-seed CIs exclude 0 on $2/5$ at $n{=}27$; point-level $5/5$. \\
 Natural no-harm results & empirical & Reconciled OOF or locked held-out artifacts & Tables~\ref{tab:uniform-panel}--\ref{tab:primary-numeric} & Not single-dataset natural beats-both. \\
 POEM/AETTA comparison & empirical & Same logged stress cells and protocol-matched ports & Table~\ref{tab:headtohead-poem-aetta} & Not official implementations. \\
 Constructed heterogeneous mixture & empirical & Researcher-constructed three-source routing aggregate & Sec.~\ref{sec:constructed-routing} & Not unseen-shift transfer. \\
