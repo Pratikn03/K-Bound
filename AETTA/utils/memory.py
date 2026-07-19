@@ -6,7 +6,8 @@ import torch
 import conf
 
 device = torch.device("cuda:{:d}".format(conf.args.gpu_idx) if torch.cuda.is_available() else "cpu")
-torch.cuda.set_device(
+if __import__('torch').cuda.is_available():  # K-Bound: guard for non-CUDA (mps/cpu)
+    torch.cuda.set_device(
     conf.args.gpu_idx)  # this prevents unnecessary gpu memory allocation to cuda:0 when using estimator
 
 

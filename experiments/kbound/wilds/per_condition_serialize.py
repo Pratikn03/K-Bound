@@ -143,10 +143,37 @@ def _condition_key_imagenetr(r):
     return f"{base}|{mode}" if mode else base
 
 
+def _condition_key_officehome(r):
+    """Seed-independent Office-Home cell key (domain × split × composition × regime)."""
+    split = r.get("split") or "test"
+    return f"{r['domain']}|{split}|{r['comp']}|{r['regime']}"
+
+
+def _condition_key_iwildcam(r):
+    """Seed-independent iWildCam cell key (location/domain × grid axes × mode)."""
+    mode = r.get("mode", "")
+    loc = r.get("location", r.get("domain", "loc"))
+    base = f"{loc}|{r['comp']}|{r['regime']}|{r.get('aggr', '')}"
+    return f"{base}|{mode}" if mode else base
+
+
+def _condition_key_rxrx1(r):
+    """Seed-independent RxRx1 cell key (composition × regime × aggressiveness × mode)."""
+    mode = r.get("mode", "")
+    base = f"{r.get('domain', 'rxrx1')}|{r['comp']}|{r['regime']}|{r.get('aggr', '')}"
+    return f"{base}|{mode}" if mode else base
+
+
 CONDITION_KEYS = {
     "camelyon17": _condition_key_camelyon,
     "imagenet-r": _condition_key_imagenetr,
     "imagenet_r": _condition_key_imagenetr,
+    "officehome": _condition_key_officehome,
+    "office-home": _condition_key_officehome,
+    "iwildcam": _condition_key_iwildcam,
+    "wilds-iwildcam": _condition_key_iwildcam,
+    "rxrx1": _condition_key_rxrx1,
+    "wilds-rxrx1": _condition_key_rxrx1,
 }
 
 

@@ -65,7 +65,7 @@ def get_path():
 
 def main():
     ######################################################################
-    device = torch.device("cuda:{:d}".format(conf.args.gpu_idx) if torch.cuda.is_available() else "cpu")
+    device = torch.device("cuda:{:d}".format(conf.args.gpu_idx) if torch.cuda.is_available() else ("mps" if torch.backends.mps.is_available() else "cpu"))  # K-Bound: mps fallback (device placement only)
     # Assume that we are on a CUDA machine, then this should print a CUDA device:
     print(device)
 

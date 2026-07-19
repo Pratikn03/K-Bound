@@ -13,7 +13,8 @@
 The main text treats the drift budget $\beta$ as \emph{declared}. This appendix settles when
 $\beta$ can instead be \emph{computed}: a vacuity theorem (label-free audits certify nothing), three
 purchasable audits (labels; smoothness$\times$transport; rotation-uniform under unknown-direction
-index drift), the composition into the decision guarantee, a fully empirical rule, and a
+index drift), a witness-class sufficient condition for useful root-$n$ audits
+(Theorem~\ref{thm:aud-H}), the composition into the decision guarantee, a fully empirical rule, and a
 domain-level verifiability protocol with an exact feasibility floor. Notation as in
 Assumption~\ref{ass:deploy}: $u=\eta_a-s\in[-1,1]$ on $D$, $\gamma(P)=\E_{\mu_P}[u\mid D]$;
 representations $\psi(x)$ with $\|\psi\|\le B$; all statements conditional on $D$.
@@ -23,8 +24,9 @@ Theorem~\ref{thm:aud-F} is \emph{known} in sharper form (Bartl--Mendelson; Boedi
 et al.)~\cite{bartl2022structure,bartl2023uniformdkw,boedihardjo2024sharp,nietert2022sliced} and
 is used as a lemma; the hierarchical-conformal backbone of Theorem~\ref{thm:aud-G} follows
 Dunn--Wasserman--Ramdas and Lee--Barber--Willett~\cite{dunn2022hierarchical,lee2023hierarchical}.
-The contribution is the composition into the adapt/freeze/abstain audit and the floor analysis;
-synthetic validation (coverage, non-vacuity, decision safety) is in the repository artifact
+The contribution is the composition into the adapt/freeze/abstain audit, the witness-class
+sufficient condition (Theorem~\ref{thm:aud-H}), and the floor analysis; synthetic validation
+(coverage, non-vacuity, decision safety, Aud-F net panel) is in the repository artifact
 \texttt{audit\_validation/results\_audited\_drift.json}.
 
 \begin{theorem}[Aud-A: label-free budget audits are vacuous]\label{thm:aud-A}
@@ -112,6 +114,25 @@ population rule---the price of $t_M$
 (\texttt{audit\_validation/results\_audited\_drift.json}).
 \end{proof}
 
+\paragraph{Rotation-closed classes and useful audits.}
+The maximality questions below need two notions that are used throughout the rest of the
+appendix.
+\begin{definition}[Rotation-closed drift class]\label{def:rotation-closed}
+Fix a bounded feature map $\|\psi(x)\|\le B$ on $D$. A class $\mathcal U$ of drift functions
+$u:D\to[-1,1]$ is \emph{rotation-closed} if $u\in\mathcal U$ implies
+$u\circ R_\psi\in\mathcal U$ for every orthogonal transformation $R$ acting on the feature
+space (equivalently: if a single-index ridge $u(x)=g(\theta^\top\psi(x))$ is admitted for some
+$\theta\in S^{d-1}$, then the same ridge is admitted for every $\theta\in S^{d-1}$).
+\end{definition}
+\begin{definition}[Useful audit at rate $r_n$]\label{def:useful-audit}
+An audit $\widehat\beta$ is \emph{valid} at level $\delta$ over a class $\mathcal P$ if
+$\Pr(|\gamma(P)|\le\widehat\beta)\ge1-\delta$ for every $P\in\mathcal P$. It is
+\emph{useful at rate $r_n$} if it is valid and, whenever the true drift vanishes
+($\gamma\equiv0$ and $\mu_T=\mu_{\mathrm{cal}}$), one has $\widehat\beta=O_P(r_n)$.
+Usefulness rules out the vacuous label-free bound $\widehat\beta\ge\tfrac12+|M|$ of
+Theorem~\ref{thm:aud-A}.
+\end{definition}
+
 \begin{theorem}[Aud-F: rotation-uniform audit under unknown-direction index drift]\label{thm:aud-F}
 Assume $\|\psi(x)\|\le B$ on $D$ and \textup{(Idx)}: $u(x)=g(\theta_*^{\!\top}\psi(x))$ with
 $g$ $L$-Lipschitz and $\theta_*\in S^{d-1}$ \emph{unknown}. Let
@@ -153,6 +174,73 @@ Sharper constants (and removal of the $\ln(2n)$ factor) follow by replacing the 
 the max-sliced concentration of~\cite{bartl2022structure,boedihardjo2024sharp}; the
 $O((3/\epsilon)^d)$ net is computational only---the statistical bound is net-free.
 \end{proof}
+\begin{remark}[Aud-F audits adaptive max-sliced $W_1$]\label{rem:aud-F-msw}
+The population quantity controlled by Theorem~\ref{thm:aud-F} is the
+\emph{max-sliced} (projection-robust) distance
+$\Delta_1(\mu_{\mathrm{cal}},\mu_T)=\sup_{\theta\in S^{d-1}}W_1(\theta\#\mu_{\mathrm{cal}},\theta\#\mu_T)$,
+not a predeclared finite set of directions. The unknown ridge $\theta_*$ is therefore
+covered adaptively; the $\epsilon$-net enters only to produce a
+\emph{computable} upper certificate $\mathrm{MS}_{\mathrm{net}}+2B\epsilon$ on
+$\Delta_1(\widehat\mu_{\mathrm{cal}},\widehat\mu_T)$. Sharp $n^{-1/2}$ MSW$_1$ bounds under
+bounded support are available from~\cite{boedihardjo2024sharp,bartl2022structure}; Aud-F's
+contribution is the composition into a useful drift-budget audit for the adapt/freeze/abstain
+frontier. Numerical coverage of the net certificate on unknown-direction worlds is recorded in
+\texttt{audit\_validation/results\_audited\_drift.json} (panel \texttt{F\_index\_msw}).
+\end{remark}
+
+\begin{theorem}[Aud-H: useful audits for low-complexity witness classes]\label{thm:aud-H}
+Let $\mathcal F$ be a symmetric class of measurable functions $D\to[-L,L]$ that contains the
+unknown drift $u$ and has Rademacher complexity satisfying
+$\mathfrak R_n(\mathcal F)\le C\sqrt{(v+\ln(2/\delta))/n}$ for constants $C,v$
+(alternatively: VC-subgraph dimension at most $v$, which yields the same root-$n$ scale).
+Define the integral probability metric
+$\Delta_{\mathcal F}(P,Q)=\sup_{f\in\mathcal F}|Pf-Qf|$. With $n_{\mathrm{lab}}$ labeled
+calibration points, $n$ unlabeled calibration points, and $m$ unlabeled deployment points,
+set
+\begin{align*}
+\widehat\beta_{\mathcal F}
+&=|\widehat\gamma_{\mathrm{cal}}|+t(n_{\mathrm{lab}},\delta/3)
++\Delta_{\mathcal F}(\widehat\mu_{\mathrm{cal}},\widehat\mu_T)
++2\mathfrak R_n(\mathcal F)+2\mathfrak R_m(\mathcal F)
++L\sqrt{\tfrac{2\ln(6/\delta)}{2n}}
++L\sqrt{\tfrac{2\ln(6/\delta)}{2m}}.
+\end{align*}
+Then $\Pr(|\gamma(P_T)|\le\widehat\beta_{\mathcal F})\ge1-\delta$. In particular the audit is
+useful at rate $O(\sqrt{(v+\ln(1/\delta))/n})$ whenever $\mu_T=\mu_{\mathrm{cal}}$ and
+$\gamma=0$. Specializations:
+\textup{(i)}~projected $1$-Lipschitz / halfspace-CDF witnesses recover the adaptive MSW$_1$
+budget of Theorem~\ref{thm:aud-F} with $v\asymp d$;
+\textup{(ii)}~$s$-sparse ridge witnesses replace $d$ by $s\log(ed/s)$;
+\textup{(iii)}~the full $1$-Lipschitz class on a $d$-dimensional ball has metric entropy
+forcing the $n^{-1/d}$ empirical-$W_1$ rate~\cite{fournier2015rate,weed2019sharp} and is
+therefore \emph{not} useful at $O(\sqrt{d/n})$.
+\end{theorem}
+\begin{proof}
+(i)~\emph{Population transfer.} Since $u\in\mathcal F$ and $\mathcal F=-\mathcal F$,
+\[
+|\gamma(P_T)-\gamma(P_{\mathrm{cal}})|
+=\bigl|\E_{\mu_T}[u]-\E_{\mu_{\mathrm{cal}}}[u]\bigr|
+\le\Delta_{\mathcal F}(\mu_T,\mu_{\mathrm{cal}}).
+\]
+(ii)~\emph{Empirical IPM.} The triangle inequality gives
+$\Delta_{\mathcal F}(\mu_T,\mu_{\mathrm{cal}})
+\le\Delta_{\mathcal F}(\widehat\mu_T,\widehat\mu_{\mathrm{cal}})
++\Delta_{\mathcal F}(\widehat\mu_T,\mu_T)
++\Delta_{\mathcal F}(\widehat\mu_{\mathrm{cal}},\mu_{\mathrm{cal}})$.
+Standard symmetrization yields
+$\E\Delta_{\mathcal F}(\widehat\mu,\mu)\le 2\mathfrak R_n(\mathcal F)$; a bounded-difference /
+McDiarmid upgrade (range $2L/n$ per sample) adds the two
+$L\sqrt{\ln(6/\delta)/(2n)}$ concentration terms at total failure $\delta/3$.
+(iii)~\emph{Labeled calibration.} Hoeffding as in Theorem~\ref{thm:aud-B} at level $\delta/3$
+controls $|\widehat\gamma_{\mathrm{cal}}-\gamma(P_{\mathrm{cal}})|\le t(n_{\mathrm{lab}},\delta/3)$.
+(iv)~\emph{Union.} On the intersection of the three events,
+$|\gamma(P_T)|\le|\widehat\gamma_{\mathrm{cal}}|+t+\Delta_{\mathcal F}(\widehat\mu_{\mathrm{cal}},\widehat\mu_T)
++2\mathfrak R_n+2\mathfrak R_m+$concentration, which is $\widehat\beta_{\mathcal F}$.
+Specialization~(i) follows because $W_1(\theta\#P,\theta\#Q)=\sup\{|Pf-Qf|:f(x)=h(\theta^\top\psi(x)),\,\mathrm{Lip}(h)\le1\}$
+and the halfspace thresholds that realize the CDF form of $1$-d $W_1$ have VC dimension
+$\le d+1$, recovering Theorem~\ref{thm:aud-F}'s $\varepsilon_{\mathrm{VC}}$ scale.
+Specialization~(iii) is the classical empirical-$W_1$ rate on bounded domains.
+\end{proof}
 
 \begin{theorem}[Aud-G: domain-level verifiable alignment with an exact floor]\label{thm:aud-G}
 Assume \textup{(G1)} the $K$ calibration domains and the deployment domain are exchangeable
@@ -183,19 +271,44 @@ essential: a predictor fit on the calibration domains breaks exchangeability.
 \end{proof}
 
 \begin{conjecture}[Maximal auditable class]\label{conj:aud-maximal}
-Characterize the largest rotation-closed drift class admitting a label-free-at-deployment audit
-at rate $O(\sqrt{d/n})$. Bounded-$k$-index functions suffice (Theorem~\ref{thm:aud-F}); full
-Lipschitz drift is excluded at parametric rate by the $n^{-1/d}$ lower bounds for $W_1$
-estimation~\cite{fournier2015rate,niles2019estimation}. Whether \emph{audits} (one-sided upper
-confidence bounds) admit a strictly larger class than \emph{estimation}---where the
-spiked-transport line draws it---is open; a resolution plausibly requires a new lower-bound
-construction over direction mixtures.
+Characterize the largest rotation-closed class $\mathcal U$
+(Definition~\ref{def:rotation-closed}) that admits a \emph{useful}
+(Definition~\ref{def:useful-audit}) label-free-at-deployment audit at rate
+$O(\sqrt{d/n})$.
+\paragraph{Proved bracket.} Useful audits at that rate exist whenever the dual witness class
+has VC/Rademacher complexity $O(\sqrt{d/n})$ (Theorem~\ref{thm:aud-H}), including the
+rotation-closed unknown-direction / bounded-$k$-index ridge classes of
+Theorem~\ref{thm:aud-F}. Full Lipschitz / unrestricted $W_1$ witness classes are excluded from
+useful $O(\sqrt{d/n})$ audits by the $n^{-1/d}$ empirical-$W_1$ rates on bounded
+domains~\cite{fournier2015rate,weed2019sharp}.
+\paragraph{Why estimation lower bounds do not finish the question.}
+One-sided upper certificates (audits) and two-sided estimation are not equivalent: for
+Wasserstein geometry on the cube, identity \emph{testing} can require roughly the square root of
+the samples needed for estimation~\cite{deng2017wasserstein}. Thus $W_1$ estimation lower
+bounds alone cannot prove that no intermediate rotation-closed class admits a useful root-$n$
+audit.
+\paragraph{Open.} Whether there exists a rotation-closed class strictly larger than
+finite-index / adaptive MSW$_1$-ridge (e.g.\ slowly growing $k(n)$, constrained low-rank
+potentials) that still admits a useful root-$n$ audit; and whether one-sided audits can beat
+the spiked-transport estimation boundary~\cite{niles2019estimation}. A resolution plausibly
+requires a new lower-bound construction over direction mixtures that targets useful UCBs
+rather than two-sided estimators.
 \end{conjecture}
 
 \begin{conjecture}[Certified supremum, polynomial time]\label{conj:aud-computational}
-Whether a $\mathrm{poly}(d)$ algorithm can output a \emph{certified upper bound} on
-$\sup_\theta W_1(\theta\#\widehat\mu_{\mathrm{cal}},\theta\#\widehat\mu_T)$ (not merely a local
-ascent value) plausibly inherits the statistical--computational gap conjectured for spiked
-transport; until settled, gradient-ascent surrogates for $\mathrm{MS}_{\mathrm{net}}$ are
-heuristics and only the net value is admissible in $\widehat\beta_F$.
+Is there a $\mathrm{poly}(d,n)$-time algorithm that, from unlabeled samples, returns a number
+$U$ satisfying both
+\textup{(i)}~\emph{soundness:}
+$\sup_{\theta}W_1(\theta\#\widehat\mu_{\mathrm{cal}},\theta\#\widehat\mu_T)\le U$ with
+probability $\ge2/3$, and
+\textup{(ii)}~\emph{null-completeness:} $U=O(\sqrt{d/n})$ with probability $\ge2/3$ whenever
+$\mu_{\mathrm{cal}}=\mu_T$ (bounded support)?
+\paragraph{Status.} Open for \emph{linear} max-sliced $W_1$. The strongest nearby evidence is
+the statistical-query gap for spiked transport~\cite{niles2019estimation}; exact NP-hardness is
+known for a \emph{kernel} max-sliced $W_2$ variant~\cite{wang2024kernelmsw} and does
+\emph{not} transfer to the linear MSW$_1$ certificate required by Aud-F. Stationarity
+guarantees for 1-d max-slicing exist~\cite{nietert2022sliced} but are not global certificates.
+\paragraph{Operational rule.} Until settled, gradient-ascent surrogates for
+$\mathrm{MS}_{\mathrm{net}}$ are heuristics; only the net value (or an equally certified
+relaxation) may enter $\widehat\beta_F$ in Theorem~\ref{thm:aud-F}.
 \end{conjecture}

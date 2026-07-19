@@ -24,7 +24,8 @@ imagenet = conf.IMAGENET_C
 mnist = conf.MNISTOpt
 
 device = torch.device("cuda:{:d}".format(conf.args.gpu_idx) if torch.cuda.is_available() else "cpu")
-torch.cuda.set_device(conf.args.gpu_idx)  #
+if __import__('torch').cuda.is_available():  # K-Bound: guard for non-CUDA (mps/cpu)
+    torch.cuda.set_device(conf.args.gpu_idx)  #
 
 OUTDIST_CLASS_IDX = 10000
 

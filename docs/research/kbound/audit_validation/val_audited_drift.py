@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Validation for the auditable-drift-budget appendix (Theorems Aud-A..Aud-G).
+"""Validation for the auditable-drift-budget appendix (Theorems Aud-A..Aud-H).
 
 Single-paper artifact: numbers cited in paper/sections/auditable_budgets.tex and the
 short-paper appendix trace to this script's JSON output. Pure numpy + matplotlib,
@@ -18,6 +18,8 @@ Blocks:
   C. coverage of beta_hat over random Lipschitz worlds + 3L robustness +
      directed 30x adversary (assumption is load-bearing)
   D. theta sweep (Thms Aud-C/D/E): audited + fully-empirical rules vs beta=0 plug-in
+  F. Aud-F unknown-direction index worlds: net MSW1 certificate coverage vs
+     gradient-ascent heuristic; failure under non-index high-d Lip drift
 Run: STAGE=0 python3 val_audited_drift.py   (stages 1/2/3 for slow machines)
 """
 import json, os
@@ -225,6 +227,147 @@ for n in [25, 50, 100, 200, 400, 800, 1600, 3200]:
     budget["coverage"].append(float(np.mean(covers))); budget["fa_rate_audited"].append(fas / reps)
 res["B_label_budget"] = budget
 
+# ---------------- F. Aud-F: unknown-direction index drift (net MSW1) ----------------
+# Multi-d features psi ~ N(0,I_d) truncated to ||psi||_inf <= B_F.
+# Latent drift u = L_F * tanh(theta_* · psi); gamma = E[u].
+# Certificate uses a finite epsilon-net on S^{d-1} (admissible in Thm Aud-F);
+# gradient ascent on the sphere is recorded as a heuristic (not a certificate).
+D_F, B_F, L_F = 4, 1.5, 0.10
+N_LAB_F, N_CAL_F, N_DEP_F = 1000, 2000, 2000
+N_TRIALS_F = 40 if STAGE == 0 else 20
+EPS_NET = 0.35  # net inflation 2B*eps; denser net => smaller eps, more dirs
+
+
+def _sample_ball(n, d=D_F, b=B_F):
+    x = rng.normal(0.0, 0.7, size=(n, d)).astype(np.float64)
+    return np.clip(x, -b, b)
+
+
+def _w1_1d(a, b):
+    a = np.asarray(a, dtype=np.float64).ravel()
+    b = np.asarray(b, dtype=np.float64).ravel()
+    n = min(len(a), len(b), 800)
+    qa = np.quantile(a, np.linspace(0, 1, n))
+    qb = np.quantile(b, np.linspace(0, 1, n))
+    return float(np.mean(np.abs(qa - qb)))
+
+
+def _sphere_net(d, eps, rng_local):
+    # Fibonacci-ish + random fill: admissible over-approximation of an eps-net.
+    target = int(min(250, max(48, (2.5 / eps) ** (d - 1))))
+    dirs = []
+    for _ in range(target * 8):
+        if len(dirs) >= target:
+            break
+        v = rng_local.normal(0.0, 1.0, size=d).astype(np.float64)
+        nrm = float(np.linalg.norm(v))
+        if nrm < 1e-12:
+            continue
+        v = v / nrm
+        if not dirs or min(float(np.linalg.norm(v - u)) for u in dirs) >= 0.4 * eps:
+            dirs.append(v)
+    while len(dirs) < target:
+        v = rng_local.normal(0.0, 1.0, size=d).astype(np.float64)
+        v = v / (float(np.linalg.norm(v)) + 1e-12)
+        dirs.append(v)
+    return np.asarray(dirs[:target], dtype=np.float64)
+
+
+def _proj(x, th):
+    return np.dot(x, th)
+
+
+def _ms_net(x_cal, x_dep, net):
+    best = 0.0
+    for th in net:
+        best = max(best, _w1_1d(_proj(x_cal, th), _proj(x_dep, th)))
+    return float(best)
+
+
+def _ms_grad_ascent(x_cal, x_dep, steps=30, restarts=3):
+    """Heuristic local ascent of sliced W1 on the sphere (NOT a certificate)."""
+    best = 0.0
+    for _ in range(restarts):
+        th = rng.normal(0.0, 1.0, size=D_F).astype(np.float64)
+        th = th / (float(np.linalg.norm(th)) + 1e-12)
+        for _s in range(steps):
+            g = np.zeros(D_F, dtype=np.float64)
+            base = _w1_1d(_proj(x_cal, th), _proj(x_dep, th))
+            for j in range(D_F):
+                e = np.zeros(D_F, dtype=np.float64); e[j] = 1e-3
+                th2 = th + e; th2 = th2 / (float(np.linalg.norm(th2)) + 1e-12)
+                g[j] = (_w1_1d(_proj(x_cal, th2), _proj(x_dep, th2)) - base) / 1e-3
+            th = th + 0.35 * g
+            th = th / (float(np.linalg.norm(th)) + 1e-12)
+            best = max(best, _w1_1d(_proj(x_cal, th), _proj(x_dep, th)))
+    return float(best)
+
+
+def _eps_vc(n, d, delta):
+    return float(np.sqrt(2 * ((d + 1) * np.log(2 * n) + np.log(8 / delta)) / n))
+
+
+def _beta_F(gamma_cal_hat_f, t_f, ms, eps_vc):
+    return float(abs(gamma_cal_hat_f) + t_f
+                 + L_F * (ms + 2 * B_F * EPS_NET + 2 * B_F * eps_vc))
+
+
+net_F = _sphere_net(D_F, EPS_NET, rng)
+cov_f, cov_f_ascent, cov_f_fail = 0, 0, 0
+beta_f_vals, ms_net_vals, ms_asc_vals = [], [], []
+gamma_abs_vals, beta_null_vals = [], []
+eps_vc = _eps_vc(N_CAL_F, D_F, DELTA / 4) + _eps_vc(N_DEP_F, D_F, DELTA / 4)
+t_f = float(np.sqrt(2 * np.log(8 / DELTA) / N_LAB_F))
+for _tr in range(N_TRIALS_F):
+    theta_star = rng.normal(0.0, 1.0, size=D_F).astype(np.float64)
+    theta_star = theta_star / (float(np.linalg.norm(theta_star)) + 1e-12)
+    shift = rng.normal(0.0, 1.0, size=D_F).astype(np.float64)
+    shift = 0.7 * shift / (float(np.linalg.norm(shift)) + 1e-12)
+    x_cal = _sample_ball(N_CAL_F)
+    x_dep = np.clip(rng.normal(0.0, 0.7, size=(N_DEP_F, D_F)) + shift, -B_F, B_F).astype(np.float64)
+    x_lab = _sample_ball(N_LAB_F)
+    u_lab = L_F * np.tanh(_proj(x_lab, theta_star))
+    gamma_cal_hat_f = float(np.mean(u_lab))
+    gamma_dep_true = float(np.mean(L_F * np.tanh(_proj(x_dep, theta_star))))
+    gamma_abs_vals.append(abs(gamma_dep_true))
+    ms_n = _ms_net(x_cal, x_dep, net_F)
+    ms_a = _ms_grad_ascent(x_cal, x_dep)
+    ms_net_vals.append(ms_n); ms_asc_vals.append(ms_a)
+    beta_f = _beta_F(gamma_cal_hat_f, t_f, ms_n, eps_vc)
+    beta_f_vals.append(beta_f)
+    cov_f += int(abs(gamma_dep_true) <= beta_f)
+    beta_a = _beta_F(gamma_cal_hat_f, t_f, ms_a, eps_vc)
+    cov_f_ascent += int(abs(gamma_dep_true) <= beta_a)
+    # Non-index misspecification: drift depends on all coordinates jointly
+    u_fail_dep = float(np.mean(L_F * np.tanh(x_dep.sum(1) / np.sqrt(D_F))))
+    cov_f_fail += int(abs(u_fail_dep) <= beta_f)
+    # Null usefulness: identical cal/dep laws (shift=0), report beta size
+    x_null = _sample_ball(N_DEP_F)
+    ms_null = _ms_net(x_cal, x_null, net_F)
+    beta_null_vals.append(_beta_F(gamma_cal_hat_f, t_f, ms_null, eps_vc))
+
+res["F_index_msw"] = {
+    "d": D_F, "L": L_F, "B": B_F, "eps_net": EPS_NET, "n_net": int(len(net_F)),
+    "n_trials": N_TRIALS_F, "target": 1 - DELTA,
+    "coverage_net_certificate": cov_f / N_TRIALS_F,
+    "coverage_grad_ascent_heuristic": cov_f_ascent / N_TRIALS_F,
+    "coverage_nonindex_failure_world": cov_f_fail / N_TRIALS_F,
+    "mean_abs_gamma": float(np.mean(gamma_abs_vals)),
+    "mean_beta_F": float(np.mean(beta_f_vals)),
+    "mean_beta_null_identical_laws": float(np.mean(beta_null_vals)),
+    "trivial_vacuity_floor": 0.5,
+    "useful_vs_vacuity": bool(float(np.mean(beta_null_vals)) < 0.5),
+    "mean_MS_net": float(np.mean(ms_net_vals)),
+    "mean_MS_ascent": float(np.mean(ms_asc_vals)),
+    "eps_vc_sum": float(eps_vc),
+    "note": (
+        "Net certificate is the Aud-F-admissible upper bound; gradient ascent is a "
+        "heuristic (Conjecture aud-computational). Null beta << 1/2 demonstrates "
+        "usefulness (Def. useful-audit) vs Aud-A vacuity. Non-index world applies the "
+        "index certificate under misspecification."
+    ),
+}
+
 with open(OUT, "w") as f:
     json.dump(res, f, indent=1)
 
@@ -274,4 +417,13 @@ print(json.dumps({
     "sweep_false_commits": {"plugin": f"{fa_plg}/{com_plg}", "audited": f"{fa_aud}/{com_aud}",
                             "empirical": f"{fa_emp}/{com_emp}"},
     "budget_coverage_min": min(budget["coverage"]),
+    "F_index_msw": {
+        "coverage_net": res["F_index_msw"]["coverage_net_certificate"],
+        "coverage_ascent_heuristic": res["F_index_msw"]["coverage_grad_ascent_heuristic"],
+        "coverage_nonindex_fail": res["F_index_msw"]["coverage_nonindex_failure_world"],
+        "mean_beta_F": res["F_index_msw"]["mean_beta_F"],
+        "mean_beta_null": res["F_index_msw"]["mean_beta_null_identical_laws"],
+        "useful_vs_vacuity": res["F_index_msw"]["useful_vs_vacuity"],
+        "n_net": res["F_index_msw"]["n_net"],
+    },
 }, indent=1))

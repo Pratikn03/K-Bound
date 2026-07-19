@@ -62,6 +62,8 @@ def main():
     gap_better = (rf_pc-rk_pc) if better=="freeze" else (ra_pc-rk_pc)
     gap_worse  = (ra_pc-rk_pc) if better=="freeze" else (rf_pc-rk_pc)
     ci_b=boot(gap_better); ci_w=boot(gap_worse)
+    gap_vs_adapt = ra_pc - rk_pc; gap_vs_freeze = rf_pc - rk_pc
+    ci_a=boot(gap_vs_adapt); ci_f=boot(gap_vs_freeze)
     ties_better = ci_b[0]<=0<=ci_b[1]; beats_worse=ci_w[0]>0; beats_both=ci_b[0]>0 and beats_worse
     fa_ok=bool(np.all(fau<=a.alpha))
     verdict=("beats-both (multi-seed)" if beats_both and fa_ok else
@@ -73,7 +75,12 @@ def main():
              regret_freeze=[round(float(rf.mean()),4),round(float(rf.std()),4)],
              FA_u_per_seed=[round(float(x),4) for x in fau], FA_u_max=round(float(fau.max()),4),
              better_policy=better, gap_vs_better_ci95=ci_b, gap_vs_worse_ci95=ci_w,
-             verdict=verdict, files=[os.path.basename(f) for f in files])
+             gap_vs_adapt=dict(mean=round(float(gap_vs_adapt.mean()),4), ci95=ci_a),
+             gap_vs_freeze=dict(mean=round(float(gap_vs_freeze.mean()),4), ci95=ci_f),
+             verdict=verdict, files=[os.path.basename(f) for f in files],
+             latex_row=(f"{a.dataset} ({a.candidate}) & {len(S)} & "
+                        f"{rk.mean():.4f}$\\pm${rk.std():.4f} & "
+                        f"{ra.mean():.4f} & {rf.mean():.4f} & {fau.max():.3f} & {verdict} \\\\"))
     o=a.out or f"multiseed_{a.dataset}_{a.candidate}.json"; json.dump(out,open(o,"w"),indent=2)
     print(json.dumps(out,indent=2))
     print("\nLaTeX row:")

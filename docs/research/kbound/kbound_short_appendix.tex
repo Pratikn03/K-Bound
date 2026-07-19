@@ -256,10 +256,13 @@ $\Pr(|\gamma(P_T)|\le\widehat\beta)\ge1-\delta$: \textup{(i)} $n$ deployment lab
 (Hoeffding; width $\sqrt{2\ln(2/\delta)/n}$); \textup{(ii)} an $L$-Lipschitz drift on a bounded
 1-d representation (Kantorovich--Rubinstein $+$ DKW, using only unlabeled batches and labeled
 \emph{calibration} data); \textup{(iii)} unknown-direction index drift
-$u=g(\theta_*^{\!\top}\psi)$ on $\|\psi\|\le B$ (rotation-uniform max-sliced audit at rate
+$u=g(\theta_*^{\!\top}\psi)$ on $\|\psi\|\le B$ (rotation-uniform adaptive max-sliced audit at rate
 $O(\sqrt{(d+\ln(1/\delta))/n})$ via halfspace-VC uniformity; sharper constants from known
-max-sliced concentration). The structural assumptions are declared and falsifiable, not
-verifiable---some such purchase is unavoidable by Theorem~\ref{thm:short-audA}.
+max-sliced concentration). More generally, any symmetric witness class of Rademacher/VC
+complexity $O(\sqrt{v/n})$ yields a \emph{useful} root-$n$ integral-probability-metric audit
+whenever the unknown drift lies in that class (long-manuscript Theorem Aud-H); full Lipschitz
+$W_1$ witnesses are excluded from that rate. The structural assumptions are declared and
+falsifiable, not verifiable---some such purchase is unavoidable by Theorem~\ref{thm:short-audA}.
 \end{theorem}
 
 \begin{theorem}[Composition; fully empirical rule]\label{thm:short-audDE}
@@ -280,7 +283,13 @@ exchangeable domains ($K{=}5$: nothing below $\alpha\approx0.17{+}\delta$); per-
 verification remains impossible.
 \end{theorem}
 
-\noindent\emph{Open.} Whether one-sided audits admit a strictly larger tractable drift class than
-estimation (where spiked-transport lower bounds draw the line), and whether the direction
-supremum admits a certified polynomial-time upper bound, are stated as conjectures in the long
-manuscript.
+\noindent\emph{Open (long manuscript).}
+\textup{(1)}~\emph{Maximal auditable class:} useful $O(\sqrt{d/n})$ audits exist for
+rotation-closed classes whose dual witnesses have root-$n$ complexity (Aud-F/Aud-H), while full
+Lipschitz/$W_1$ is rate-excluded; whether anything strictly larger than adaptive MSW$_1$-ridge
+admits a useful root-$n$ audit---and whether one-sided audits can beat the spiked-transport
+estimation line---remains open (estimation lower bounds alone do not finish the question:
+Wasserstein testing can be easier than estimation).
+\textup{(2)}~\emph{Certified poly-time supremum:} whether a $\mathrm{poly}(d,n)$ algorithm can
+output a sound and null-complete upper bound on linear max-sliced $W_1$ is open; only net
+certificates (not gradient-ascent surrogates) are admissible in Aud-F until settled.
