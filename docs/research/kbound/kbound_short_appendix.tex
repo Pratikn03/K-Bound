@@ -144,6 +144,36 @@ matched-evidence form and zero-drift interpretation used by those proofs.
 
 \input{paper/sections/theory_appendix_ext}
 
+\paragraph{Asymmetric beats-both characterization (sharpening).}
+The main text notes informally that a router beats both fixed policies only when the optimal
+action varies \emph{and} is label-free detectable. The following proposition makes the
+condition exact and, crucially, \emph{asymmetric}, which explains why natural-shift tracks tie
+(rather than beat) always-adapt. Let $\delta^\star$ be the strict-commitment frontier
+(Theorem~\ref{thm:headline}) with abstention resolved to \textsc{freeze}, and let
+$R(\pi)=\E_Q[\,|\Delta|\,\mathbf 1\{\pi\neq\text{oracle}\}\,]$ be regret-to-oracle over a
+deployment mixture $Q$.
+\begin{proposition}[Asymmetric beats-both]\label{prop:beatsboth-asym}
+Since $\Delta>0$ on $\{M>\beta\}$ and $\Delta<0$ on $\{M<-\beta\}$ for every admissible drift
+(Theorem~\ref{thm:headline}),
+\[
+R(\textsc{af})-R(\delta^\star)=\E_Q[\,|\Delta|\,\mathbf 1\{M>\beta\}\,],\qquad
+R(\textsc{aa})-R(\delta^\star)=\E_Q[\,|\Delta|\,\mathbf 1\{M<-\beta\}\,]
++\E_Q[\,|\Delta|\,\mathbf 1\{|M|\le\beta,\Delta<0\}\,]
+-\E_Q[\,|\Delta|\,\mathbf 1\{|M|\le\beta,\Delta>0\}\,].
+\]
+Hence $\delta^\star$ weakly dominates always-freeze, strictly iff detectable-helpful mass
+$Q(M>\beta)>0$; but $\delta^\star$ beats always-adapt iff the certified harmful-mass win
+exceeds the helpful adaptation forgone in the abstention region. Beats-both thus requires
+\emph{both} detectable-helpful and net-detectable-harmful mass.
+\end{proposition}
+\noindent Because abstention defaults to \textsc{freeze}, the freeze side is free but the
+adapt side is conditional: a helpful-dominated shift with negligible detectable-harmful mass
+ties or slightly loses to always-adapt. This predicts the candidate-dependent Camelyon17
+outcome (Table~\ref{tab:multiseed}): the harmful-mass-bearing arm wins narrowly while the
+helpful-dominated arms tie. Full partition proof and a $25$-seed numerical check are in the
+repository note \texttt{theory\_v2/minimax\_frontier/}. This sharpens, and is consistent with,
+the frontier maximality already established in Theorem~\ref{thm:headline}.
+
 
 \section{Multiclass and regression derivations}\label{app:regression}
 For multiclass $0/1$ loss, errors cancel outside $D=\{f_0\neq f_a\}$, giving
