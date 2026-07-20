@@ -24,10 +24,40 @@ import KBound.Probability.UniformConformal
 
 /-!
 # K-Bound paper theorem index (Wave 4 spine + Wave 5 measure + Wave 6 foundations)
+
+## Clause-level coverage of the short-paper spine
+
+`lem:reduction`
+* FORMALIZED: binary benefit/sign algebra (`binary_sign_reduction`, `binary_margin_split`).
+* PEN-AND-PAPER: construction of the conditional correctness function from a target law.
+
+`lem:nonid` and `cor:matched-abstain`
+* FORMALIZED: opposite fixed benefits force abstention; action-probability arithmetic
+  (`matched_opposite_worlds_force_abstain`, `forced_abstention_probability`).
+* PEN-AND-PAPER: measurable target-label kernels, equality of induced evidence laws, and
+  membership of the constructed laws in the declared drift class.
+
+`prop:closed-band` and `thm:frontier`
+* FORMALIZED: frontier sufficiency and the three deterministic decision branches
+  (`frontier_identifiable_positive`, `frontier_identifiable_negative`,
+  `frontier_decision_adapt`, `frontier_decision_freeze`, `frontier_decision_abstain`).
+* PEN-AND-PAPER: zero-versus-strict boundary construction, target-class richness,
+  necessity, and pointwise maximality.
+
+`thm:certificate`
+* FORMALIZED: pointwise containment of strict directional errors in coverage failure,
+  measure-level error bounds conditional on coverage, and finite uniform-rank/exchangeable-score
+  reductions (certificate, measure, and probability declarations checked below).
+* NOT CLAIMED FORMALIZED: calibration transfer for the paper's heterogeneous deployment tracks or
+  a general theorem that leave-one-condition-out empirical calibration is exact conformal.
+
+Successful compilation checks only the declarations listed here; it is not an assertion that the
+pen-and-paper clauses above have been kernel-checked.
 -/
 
 namespace KBoundTheoremMap
 
+-- `thm:certificate`: interval-decision algebra and measure containment.
 #check KBound.cert_false_adapt_sound
 #check KBound.cert_false_freeze_sound
 -- Wave 5: measure-theoretic certificate + uniform-index conformal coverage
@@ -41,16 +71,19 @@ namespace KBoundTheoremMap
 #check KBound.uniformIndex_coverage_ge
 #check KBound.uniformIndex_false_adapt_le
 #check KBound.uniformIndex_false_freeze_le
+-- `lem:nonid` corollary only: fixed opposite worlds and probability arithmetic.
 #check KBound.gate_regret_identity
 #check KBound.forced_abstention_probability
 #check KBound.matched_opposite_worlds_force_abstain
 #check KBound.lecam_regret_floor_two_point
 #check KBound.lecam_testing_two_point
+-- `thm:frontier` sufficiency and rule branches only; necessity/maximality remain pen-and-paper.
 #check KBound.frontier_identifiable_positive
 #check KBound.frontier_identifiable_negative
 #check KBound.frontier_decision_adapt
 #check KBound.frontier_decision_freeze
 #check KBound.frontier_decision_abstain
+-- `lem:reduction`: algebraic sign reductions.
 #check KBound.binary_sign_reduction
 #check KBound.binary_margin_split
 #check KBound.multiclass_sign_reduction

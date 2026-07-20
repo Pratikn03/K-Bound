@@ -50,6 +50,30 @@ At evidence $z$: \emph{knowably helpful} if the population frontier certifies $\
 distinct signs, including zero versus a strict sign (\textsc{abstain}).
 \end{definition}
 
+For a supplied drift budget $\beta\ge0$, the \emph{declared deployment class} is
+\[
+\mathcal{C}_\beta \;:=\; \bigl\{P_T:\ |\gamma(P_T)|\le\beta\bigr\}.
+\]
+Identifiability statements below are \emph{over $\mathcal{C}_\beta$}, not over arbitrary shifts.
+
+\begin{definition}[Strict directional soundness and maximality]\label{def:strict-sound}
+Fix an augmented-evidence law $z$ and let $\mathcal C_\beta(z)$ be the laws in
+$\mathcal C_\beta$ that induce $z$. A strict action $a\in\{\textsc{adapt},\textsc{freeze}\}$
+is \emph{uniformly directionally sound at $z$} when
+\[
+\begin{aligned}
+a=\textsc{adapt}&\ \Rightarrow\ \Delta(P)>0
+&&\text{for every }P\in\mathcal C_\beta(z),\\
+a=\textsc{freeze}&\ \Rightarrow\ \Delta(P)<0
+&&\text{for every }P\in\mathcal C_\beta(z).
+\end{aligned}
+\]
+A sound three-way rule is \emph{pointwise maximal} if it commits whenever some strict action is
+uniformly directionally sound and abstains otherwise. Zero benefit blocks a strict directional
+claim even though adapt and freeze have equal task risk when $\Delta=0$; this is an epistemic
+validity convention, stronger than zero regret at the boundary.
+\end{definition}
+
 \begin{remark}[Four quantities]\label{rem:four-quantities}
 Do not confuse $M$ (observable margin, deploy-time), $\gamma$ (realized drift, latent),
 $\beta$ (declared bound $|\gamma|\le\beta$ on the deployment class), and $\varepsilon$
@@ -84,9 +108,3 @@ source/validation calibration split, never in the deployment batch or held-out t
 when the population evidence margin exceeds the declared drift budget; otherwise abstention is the
 maximal sound three-way action.}}
 \end{center}
-
-For a supplied drift budget $\beta\ge0$, the \emph{declared deployment class} is
-\[
-\mathcal{C}_\beta \;:=\; \bigl\{P_T:\ |\gamma(P_T)|\le\beta\bigr\}.
-\]
-Identifiability statements below are \emph{over $\mathcal{C}_\beta$}, not over arbitrary shifts.

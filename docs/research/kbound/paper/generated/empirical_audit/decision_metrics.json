@@ -1,0 +1,1737 @@
+{
+  "schema_version": 1,
+  "interval_method": "95% Wilson binomial interval",
+  "coverage_boundary": "empirical interval hits are descriptive; theorem coverage remains conditional on its premise",
+  "tracks": [
+    {
+      "track": "CIFAR-10-C TENT",
+      "n_decisions": 2160,
+      "seeds": [
+        0,
+        1,
+        2,
+        3,
+        4
+      ],
+      "source": "experiments/kbound/results/stress_grid_multiseed_v1/seed*/per_condition_cifar10c_tent_seed*.json",
+      "reproduction_command": ".venv/bin/python docs/research/kbound/scripts/percondition_bootstrap.py --root experiments/kbound/results/stress_grid_multiseed_v1",
+      "actions": {
+        "adapt": {
+          "count": 1109,
+          "rate": 0.513425925925926,
+          "ci95_wilson": [
+            0.49234254368019875,
+            0.5344616381897661
+          ]
+        },
+        "freeze": {
+          "count": 366,
+          "rate": 0.16944444444444445,
+          "ci95_wilson": [
+            0.15421397351438765,
+            0.18584858320440822
+          ]
+        },
+        "abstain": {
+          "count": 685,
+          "rate": 0.31712962962962965,
+          "ci95_wilson": [
+            0.29784405986063506,
+            0.3370644974277744
+          ]
+        }
+      },
+      "false_adapt_unconditional": {
+        "count": 0,
+        "n": 2160,
+        "rate": 0.0,
+        "ci95_wilson": [
+          0.0,
+          0.001775295877170106
+        ]
+      },
+      "interval_coverage_observed": {
+        "count": 1940,
+        "n": 2160,
+        "rate": 0.8981481481481481,
+        "ci95_wilson": [
+          0.8846780803898902,
+          0.9102045543745856
+        ],
+        "status": "empirical_only"
+      },
+      "theoretical_coverage": {
+        "status": "conditional_on_declared_premise",
+        "note": "Observed coverage does not prove exchangeability, drift correction, or risk alignment."
+      }
+    },
+    {
+      "track": "CIFAR-10-C EATA",
+      "n_decisions": 2160,
+      "seeds": [
+        0,
+        1,
+        2,
+        3,
+        4
+      ],
+      "source": "experiments/kbound/results/stress_grid_multiseed_v1/seed*/per_condition_cifar10c_eata_seed*.json",
+      "reproduction_command": ".venv/bin/python docs/research/kbound/scripts/percondition_bootstrap.py --root experiments/kbound/results/stress_grid_multiseed_v1",
+      "actions": {
+        "adapt": {
+          "count": 1243,
+          "rate": 0.575462962962963,
+          "ci95_wilson": [
+            0.5545027553111759,
+            0.5961552324406956
+          ]
+        },
+        "freeze": {
+          "count": 132,
+          "rate": 0.06111111111111111,
+          "ci95_wilson": [
+            0.05176764916285526,
+            0.07201288832932738
+          ]
+        },
+        "abstain": {
+          "count": 785,
+          "rate": 0.36342592592592593,
+          "ci95_wilson": [
+            0.3434009461820126,
+            0.38393582445110325
+          ]
+        }
+      },
+      "false_adapt_unconditional": {
+        "count": 0,
+        "n": 2160,
+        "rate": 0.0,
+        "ci95_wilson": [
+          0.0,
+          0.001775295877170106
+        ]
+      },
+      "interval_coverage_observed": {
+        "count": 1940,
+        "n": 2160,
+        "rate": 0.8981481481481481,
+        "ci95_wilson": [
+          0.8846780803898902,
+          0.9102045543745856
+        ],
+        "status": "empirical_only"
+      },
+      "theoretical_coverage": {
+        "status": "conditional_on_declared_premise",
+        "note": "Observed coverage does not prove exchangeability, drift correction, or risk alignment."
+      }
+    },
+    {
+      "track": "CIFAR-10-C SAR",
+      "n_decisions": 2160,
+      "seeds": [
+        0,
+        1,
+        2,
+        3,
+        4
+      ],
+      "source": "experiments/kbound/results/stress_grid_multiseed_v1/seed*/per_condition_cifar10c_sar_seed*.json",
+      "reproduction_command": ".venv/bin/python docs/research/kbound/scripts/percondition_bootstrap.py --root experiments/kbound/results/stress_grid_multiseed_v1",
+      "actions": {
+        "adapt": {
+          "count": 1313,
+          "rate": 0.6078703703703704,
+          "ci95_wilson": [
+            0.5871069636862523,
+            0.6282507734069138
+          ]
+        },
+        "freeze": {
+          "count": 167,
+          "rate": 0.07731481481481481,
+          "ci95_wilson": [
+            0.06678656321707664,
+            0.08934384894575327
+          ]
+        },
+        "abstain": {
+          "count": 680,
+          "rate": 0.3148148148148148,
+          "ci95_wilson": [
+            0.29557188844391596,
+            0.33471525817725817
+          ]
+        }
+      },
+      "false_adapt_unconditional": {
+        "count": 0,
+        "n": 2160,
+        "rate": 0.0,
+        "ci95_wilson": [
+          0.0,
+          0.001775295877170106
+        ]
+      },
+      "interval_coverage_observed": {
+        "count": 1940,
+        "n": 2160,
+        "rate": 0.8981481481481481,
+        "ci95_wilson": [
+          0.8846780803898902,
+          0.9102045543745856
+        ],
+        "status": "empirical_only"
+      },
+      "theoretical_coverage": {
+        "status": "conditional_on_declared_premise",
+        "note": "Observed coverage does not prove exchangeability, drift correction, or risk alignment."
+      }
+    },
+    {
+      "track": "ImageNet-C TENT",
+      "n_decisions": 27,
+      "seeds": [
+        0
+      ],
+      "source": "experiments/kbound/results/win_hunt_v5/imagenetc_aggr/per_condition_imagenetc_tent_seed0.json",
+      "reproduction_command": ".venv/bin/python docs/research/kbound/scripts/percondition_bootstrap.py --root experiments/kbound/results/win_hunt_v5/imagenetc_aggr --pattern 'per_condition_imagenetc_*.json'",
+      "actions": {
+        "adapt": {
+          "count": 0,
+          "rate": 0.0,
+          "ci95_wilson": [
+            0.0,
+            0.12455502974186705
+          ]
+        },
+        "freeze": {
+          "count": 0,
+          "rate": 0.0,
+          "ci95_wilson": [
+            0.0,
+            0.12455502974186705
+          ]
+        },
+        "abstain": {
+          "count": 27,
+          "rate": 1.0,
+          "ci95_wilson": [
+            0.8754449702581328,
+            0.9999999999999998
+          ]
+        }
+      },
+      "false_adapt_unconditional": {
+        "count": 0,
+        "n": 27,
+        "rate": 0.0,
+        "ci95_wilson": [
+          0.0,
+          0.12455502974186705
+        ]
+      },
+      "interval_coverage_observed": {
+        "count": 24,
+        "n": 27,
+        "rate": 0.8888888888888888,
+        "ci95_wilson": [
+          0.7194219918172017,
+          0.9614796517169016
+        ],
+        "status": "empirical_only"
+      },
+      "theoretical_coverage": {
+        "status": "conditional_on_declared_premise",
+        "note": "Observed coverage does not prove exchangeability, drift correction, or risk alignment."
+      }
+    },
+    {
+      "track": "ImageNet-C EATA",
+      "n_decisions": 27,
+      "seeds": [
+        0
+      ],
+      "source": "experiments/kbound/results/win_hunt_v5/imagenetc_aggr/per_condition_imagenetc_eata_seed0.json",
+      "reproduction_command": ".venv/bin/python docs/research/kbound/scripts/percondition_bootstrap.py --root experiments/kbound/results/win_hunt_v5/imagenetc_aggr --pattern 'per_condition_imagenetc_*.json'",
+      "actions": {
+        "adapt": {
+          "count": 27,
+          "rate": 1.0,
+          "ci95_wilson": [
+            0.8754449702581328,
+            0.9999999999999998
+          ]
+        },
+        "freeze": {
+          "count": 0,
+          "rate": 0.0,
+          "ci95_wilson": [
+            0.0,
+            0.12455502974186705
+          ]
+        },
+        "abstain": {
+          "count": 0,
+          "rate": 0.0,
+          "ci95_wilson": [
+            0.0,
+            0.12455502974186705
+          ]
+        }
+      },
+      "false_adapt_unconditional": {
+        "count": 0,
+        "n": 27,
+        "rate": 0.0,
+        "ci95_wilson": [
+          0.0,
+          0.12455502974186705
+        ]
+      },
+      "interval_coverage_observed": {
+        "count": 24,
+        "n": 27,
+        "rate": 0.8888888888888888,
+        "ci95_wilson": [
+          0.7194219918172017,
+          0.9614796517169016
+        ],
+        "status": "empirical_only"
+      },
+      "theoretical_coverage": {
+        "status": "conditional_on_declared_premise",
+        "note": "Observed coverage does not prove exchangeability, drift correction, or risk alignment."
+      }
+    },
+    {
+      "track": "ImageNet-C SAR",
+      "n_decisions": 27,
+      "seeds": [
+        0
+      ],
+      "source": "experiments/kbound/results/win_hunt_v5/imagenetc_aggr/per_condition_imagenetc_sar_seed0.json",
+      "reproduction_command": ".venv/bin/python docs/research/kbound/scripts/percondition_bootstrap.py --root experiments/kbound/results/win_hunt_v5/imagenetc_aggr --pattern 'per_condition_imagenetc_*.json'",
+      "actions": {
+        "adapt": {
+          "count": 12,
+          "rate": 0.4444444444444444,
+          "ci95_wilson": [
+            0.27585858177023004,
+            0.6268697548677552
+          ]
+        },
+        "freeze": {
+          "count": 3,
+          "rate": 0.1111111111111111,
+          "ci95_wilson": [
+            0.038520348283098374,
+            0.2805780081827982
+          ]
+        },
+        "abstain": {
+          "count": 12,
+          "rate": 0.4444444444444444,
+          "ci95_wilson": [
+            0.27585858177023004,
+            0.6268697548677552
+          ]
+        }
+      },
+      "false_adapt_unconditional": {
+        "count": 0,
+        "n": 27,
+        "rate": 0.0,
+        "ci95_wilson": [
+          0.0,
+          0.12455502974186705
+        ]
+      },
+      "interval_coverage_observed": {
+        "count": 24,
+        "n": 27,
+        "rate": 0.8888888888888888,
+        "ci95_wilson": [
+          0.7194219918172017,
+          0.9614796517169016
+        ],
+        "status": "empirical_only"
+      },
+      "theoretical_coverage": {
+        "status": "conditional_on_declared_premise",
+        "note": "Observed coverage does not prove exchangeability, drift correction, or risk alignment."
+      }
+    },
+    {
+      "track": "CIFAR-10.1 TENT",
+      "n_decisions": 30,
+      "seeds": [
+        0,
+        1,
+        2,
+        3,
+        4
+      ],
+      "source": "experiments/kbound/results/win_hunt_v5/cifar101_aggr/seed*/per_condition_cifar101_tent_seed*.json",
+      "reproduction_command": "bash docs/research/kbound/scripts/kbtrain.sh cifar101",
+      "actions": {
+        "adapt": {
+          "count": 0,
+          "rate": 0.0,
+          "ci95_wilson": [
+            0.0,
+            0.11351339317396876
+          ]
+        },
+        "freeze": {
+          "count": 24,
+          "rate": 0.8,
+          "ci95_wilson": [
+            0.6269430358685175,
+            0.9049489282271013
+          ]
+        },
+        "abstain": {
+          "count": 6,
+          "rate": 0.2,
+          "ci95_wilson": [
+            0.0950510717728987,
+            0.3730569641314825
+          ]
+        }
+      },
+      "false_adapt_unconditional": {
+        "count": 0,
+        "n": 30,
+        "rate": 0.0,
+        "ci95_wilson": [
+          0.0,
+          0.11351339317396876
+        ]
+      },
+      "interval_coverage_observed": {
+        "count": 25,
+        "n": 30,
+        "rate": 0.8333333333333334,
+        "ci95_wilson": [
+          0.6643564949358398,
+          0.9266345762815145
+        ],
+        "status": "empirical_only"
+      },
+      "theoretical_coverage": {
+        "status": "conditional_on_declared_premise",
+        "note": "Observed coverage does not prove exchangeability, drift correction, or risk alignment."
+      }
+    },
+    {
+      "track": "CIFAR-10.1 EATA",
+      "n_decisions": 30,
+      "seeds": [
+        0,
+        1,
+        2,
+        3,
+        4
+      ],
+      "source": "experiments/kbound/results/win_hunt_v5/cifar101_aggr/seed*/per_condition_cifar101_eata_seed*.json",
+      "reproduction_command": "bash docs/research/kbound/scripts/kbtrain.sh cifar101",
+      "actions": {
+        "adapt": {
+          "count": 0,
+          "rate": 0.0,
+          "ci95_wilson": [
+            0.0,
+            0.11351339317396876
+          ]
+        },
+        "freeze": {
+          "count": 16,
+          "rate": 0.5333333333333333,
+          "ci95_wilson": [
+            0.36142299619873297,
+            0.6976761109230025
+          ]
+        },
+        "abstain": {
+          "count": 14,
+          "rate": 0.4666666666666667,
+          "ci95_wilson": [
+            0.30232388907699753,
+            0.638577003801267
+          ]
+        }
+      },
+      "false_adapt_unconditional": {
+        "count": 0,
+        "n": 30,
+        "rate": 0.0,
+        "ci95_wilson": [
+          0.0,
+          0.11351339317396876
+        ]
+      },
+      "interval_coverage_observed": {
+        "count": 25,
+        "n": 30,
+        "rate": 0.8333333333333334,
+        "ci95_wilson": [
+          0.6643564949358398,
+          0.9266345762815145
+        ],
+        "status": "empirical_only"
+      },
+      "theoretical_coverage": {
+        "status": "conditional_on_declared_premise",
+        "note": "Observed coverage does not prove exchangeability, drift correction, or risk alignment."
+      }
+    },
+    {
+      "track": "CIFAR-10.1 SAR",
+      "n_decisions": 30,
+      "seeds": [
+        0,
+        1,
+        2,
+        3,
+        4
+      ],
+      "source": "experiments/kbound/results/win_hunt_v5/cifar101_aggr/seed*/per_condition_cifar101_sar_seed*.json",
+      "reproduction_command": "bash docs/research/kbound/scripts/kbtrain.sh cifar101",
+      "actions": {
+        "adapt": {
+          "count": 0,
+          "rate": 0.0,
+          "ci95_wilson": [
+            0.0,
+            0.11351339317396876
+          ]
+        },
+        "freeze": {
+          "count": 30,
+          "rate": 1.0,
+          "ci95_wilson": [
+            0.8864866068260312,
+            0.9999999999999999
+          ]
+        },
+        "abstain": {
+          "count": 0,
+          "rate": 0.0,
+          "ci95_wilson": [
+            0.0,
+            0.11351339317396876
+          ]
+        }
+      },
+      "false_adapt_unconditional": {
+        "count": 0,
+        "n": 30,
+        "rate": 0.0,
+        "ci95_wilson": [
+          0.0,
+          0.11351339317396876
+        ]
+      },
+      "interval_coverage_observed": {
+        "count": 25,
+        "n": 30,
+        "rate": 0.8333333333333334,
+        "ci95_wilson": [
+          0.6643564949358398,
+          0.9266345762815145
+        ],
+        "status": "empirical_only"
+      },
+      "theoretical_coverage": {
+        "status": "conditional_on_declared_premise",
+        "note": "Observed coverage does not prove exchangeability, drift correction, or risk alignment."
+      }
+    },
+    {
+      "track": "PACS art_painting",
+      "n_decisions": 18,
+      "seeds": [
+        0
+      ],
+      "source": "experiments/kbound/results/win_hunt_v5/pacs_aggr/pacs_result.json",
+      "reproduction_command": ".venv/bin/python docs/research/kbound/scripts/pacs_vlcs_runner.py --dataset PACS --root experiments/kbound/domainbed --seed <seed>",
+      "actions": {
+        "adapt": {
+          "count": 0,
+          "rate": 0.0,
+          "ci95_wilson": [
+            0.0,
+            0.17587922364665765
+          ],
+          "status": "reported_summary"
+        },
+        "freeze": {
+          "count": 18,
+          "rate": 1.0,
+          "ci95_wilson": [
+            0.8241207763533425,
+            1.0
+          ],
+          "status": "reported_summary"
+        },
+        "abstain": {
+          "count": 0,
+          "rate": 0.0,
+          "ci95_wilson": [
+            0.0,
+            0.17587922364665765
+          ],
+          "status": "reported_summary"
+        }
+      },
+      "false_adapt_unconditional": {
+        "count": 0,
+        "n": 18,
+        "rate": 0.0,
+        "ci95_wilson": [
+          0.0,
+          0.17587922364665765
+        ]
+      },
+      "interval_coverage_observed": {
+        "count": null,
+        "n": null,
+        "rate": null,
+        "ci95_wilson": null,
+        "status": "not_retained"
+      },
+      "theoretical_coverage": {
+        "status": "conditional_on_declared_premise",
+        "note": "No theorem premise is inferred from this empirical summary."
+      }
+    },
+    {
+      "track": "PACS cartoon",
+      "n_decisions": 18,
+      "seeds": [
+        0
+      ],
+      "source": "experiments/kbound/results/win_hunt_v5/pacs_aggr/pacs_result.json",
+      "reproduction_command": ".venv/bin/python docs/research/kbound/scripts/pacs_vlcs_runner.py --dataset PACS --root experiments/kbound/domainbed --seed <seed>",
+      "actions": {
+        "adapt": {
+          "count": 0,
+          "rate": 0.0,
+          "ci95_wilson": [
+            0.0,
+            0.17587922364665765
+          ],
+          "status": "reported_summary"
+        },
+        "freeze": {
+          "count": 14,
+          "rate": 0.7777777777777778,
+          "ci95_wilson": [
+            0.5478541568378739,
+            0.9099907189139831
+          ],
+          "status": "reported_summary"
+        },
+        "abstain": {
+          "count": 4,
+          "rate": 0.2222222222222222,
+          "ci95_wilson": [
+            0.09000928108601694,
+            0.45214584316212625
+          ],
+          "status": "reported_summary"
+        }
+      },
+      "false_adapt_unconditional": {
+        "count": 0,
+        "n": 18,
+        "rate": 0.0,
+        "ci95_wilson": [
+          0.0,
+          0.17587922364665765
+        ]
+      },
+      "interval_coverage_observed": {
+        "count": null,
+        "n": null,
+        "rate": null,
+        "ci95_wilson": null,
+        "status": "not_retained"
+      },
+      "theoretical_coverage": {
+        "status": "conditional_on_declared_premise",
+        "note": "No theorem premise is inferred from this empirical summary."
+      }
+    },
+    {
+      "track": "PACS photo",
+      "n_decisions": 18,
+      "seeds": [
+        0
+      ],
+      "source": "experiments/kbound/results/win_hunt_v5/pacs_aggr/pacs_result.json",
+      "reproduction_command": ".venv/bin/python docs/research/kbound/scripts/pacs_vlcs_runner.py --dataset PACS --root experiments/kbound/domainbed --seed <seed>",
+      "actions": {
+        "adapt": {
+          "count": 0,
+          "rate": 0.0,
+          "ci95_wilson": [
+            0.0,
+            0.17587922364665765
+          ],
+          "status": "reported_summary"
+        },
+        "freeze": {
+          "count": 17,
+          "rate": 0.9444444444444444,
+          "ci95_wilson": [
+            0.7424269921812741,
+            0.990124809021697
+          ],
+          "status": "reported_summary"
+        },
+        "abstain": {
+          "count": 1,
+          "rate": 0.05555555555555558,
+          "ci95_wilson": [
+            0.009875190978303097,
+            0.25757300781872594
+          ],
+          "status": "reported_summary"
+        }
+      },
+      "false_adapt_unconditional": {
+        "count": 0,
+        "n": 18,
+        "rate": 0.0,
+        "ci95_wilson": [
+          0.0,
+          0.17587922364665765
+        ]
+      },
+      "interval_coverage_observed": {
+        "count": null,
+        "n": null,
+        "rate": null,
+        "ci95_wilson": null,
+        "status": "not_retained"
+      },
+      "theoretical_coverage": {
+        "status": "conditional_on_declared_premise",
+        "note": "No theorem premise is inferred from this empirical summary."
+      }
+    },
+    {
+      "track": "PACS sketch",
+      "n_decisions": 18,
+      "seeds": [
+        0
+      ],
+      "source": "experiments/kbound/results/win_hunt_v5/pacs_aggr/pacs_result.json",
+      "reproduction_command": ".venv/bin/python docs/research/kbound/scripts/pacs_vlcs_runner.py --dataset PACS --root experiments/kbound/domainbed --seed <seed>",
+      "actions": {
+        "adapt": {
+          "count": 0,
+          "rate": 0.0,
+          "ci95_wilson": [
+            0.0,
+            0.17587922364665765
+          ],
+          "status": "reported_summary"
+        },
+        "freeze": {
+          "count": 18,
+          "rate": 1.0,
+          "ci95_wilson": [
+            0.8241207763533425,
+            1.0
+          ],
+          "status": "reported_summary"
+        },
+        "abstain": {
+          "count": 0,
+          "rate": 0.0,
+          "ci95_wilson": [
+            0.0,
+            0.17587922364665765
+          ],
+          "status": "reported_summary"
+        }
+      },
+      "false_adapt_unconditional": {
+        "count": 0,
+        "n": 18,
+        "rate": 0.0,
+        "ci95_wilson": [
+          0.0,
+          0.17587922364665765
+        ]
+      },
+      "interval_coverage_observed": {
+        "count": null,
+        "n": null,
+        "rate": null,
+        "ci95_wilson": null,
+        "status": "not_retained"
+      },
+      "theoretical_coverage": {
+        "status": "conditional_on_declared_premise",
+        "note": "No theorem premise is inferred from this empirical summary."
+      }
+    },
+    {
+      "track": "OfficeHome",
+      "n_decisions": 35,
+      "seeds": [
+        0,
+        1
+      ],
+      "source": "experiments/kbound/results/officehome_protocol_M_v2/protocol_result.json",
+      "reproduction_command": ".venv/bin/python docs/research/kbound/scripts/bootstrap_win_cis.py",
+      "actions": {
+        "adapt": {
+          "count": 22,
+          "rate": 0.6285714285714286,
+          "ci95_wilson": [
+            0.4633693684359532,
+            0.7683418049663429
+          ],
+          "status": "reported_summary"
+        },
+        "freeze": {
+          "count": 12,
+          "rate": 0.34285714285714286,
+          "ci95_wilson": [
+            0.20831694987048957,
+            0.5084805048600374
+          ],
+          "status": "reported_summary"
+        },
+        "abstain": {
+          "count": 1,
+          "rate": 0.02857142857142858,
+          "ci95_wilson": [
+            0.005061491855444203,
+            0.14533087233613673
+          ],
+          "status": "reported_summary"
+        }
+      },
+      "false_adapt_unconditional": {
+        "count": 0,
+        "n": 35,
+        "rate": 0.0,
+        "ci95_wilson": [
+          6.938893903907228e-18,
+          0.09890099232440402
+        ]
+      },
+      "interval_coverage_observed": {
+        "count": null,
+        "n": null,
+        "rate": null,
+        "ci95_wilson": null,
+        "status": "not_retained"
+      },
+      "theoretical_coverage": {
+        "status": "conditional_on_declared_premise",
+        "note": "No theorem premise is inferred from this empirical summary."
+      }
+    },
+    {
+      "track": "iWildCam",
+      "n_decisions": 72,
+      "seeds": [
+        0,
+        1
+      ],
+      "source": "experiments/kbound/results/iwildcam_protocol_H_v2/protocol_result.json",
+      "reproduction_command": ".venv/bin/python docs/research/kbound/scripts/bootstrap_win_cis.py",
+      "actions": {
+        "adapt": {
+          "count": 1,
+          "rate": 0.013888888888888888,
+          "ci95_wilson": [
+            0.002455951882905767,
+            0.07456602147476155
+          ],
+          "status": "reported_summary"
+        },
+        "freeze": {
+          "count": 60,
+          "rate": 0.8333333333333334,
+          "ci95_wilson": [
+            0.7308929306946451,
+            0.9020062875743832
+          ],
+          "status": "reported_summary"
+        },
+        "abstain": {
+          "count": 11,
+          "rate": 0.1527777777777778,
+          "ci95_wilson": [
+            0.08750708729475694,
+            0.25322289367500544
+          ],
+          "status": "reported_summary"
+        }
+      },
+      "false_adapt_unconditional": {
+        "count": 0,
+        "n": 72,
+        "rate": 0.0,
+        "ci95_wilson": [
+          0.0,
+          0.05065117259645781
+        ]
+      },
+      "interval_coverage_observed": {
+        "count": null,
+        "n": null,
+        "rate": null,
+        "ci95_wilson": null,
+        "status": "not_retained"
+      },
+      "theoretical_coverage": {
+        "status": "conditional_on_declared_premise",
+        "note": "No theorem premise is inferred from this empirical summary."
+      }
+    },
+    {
+      "track": "Camelyon17",
+      "n_decisions": 18,
+      "seeds": [
+        2,
+        3,
+        4
+      ],
+      "source": "audits/integrity_2026-06-20/camelyon_reconciliation/recon_results.json",
+      "reproduction_command": ".venv/bin/python audits/integrity_2026-06-20/camelyon_reconciliation/camelyon_G_reconciliation.py",
+      "actions": {
+        "adapt": {
+          "count": 18,
+          "rate": 1.0,
+          "ci95_wilson": [
+            0.8241207763533425,
+            1.0
+          ],
+          "status": "reported_summary"
+        },
+        "freeze": {
+          "count": 0,
+          "rate": 0.0,
+          "ci95_wilson": [
+            0.0,
+            0.17587922364665765
+          ],
+          "status": "reported_summary"
+        },
+        "abstain": {
+          "count": 0,
+          "rate": 0.0,
+          "ci95_wilson": [
+            0.0,
+            0.17587922364665765
+          ],
+          "status": "reported_summary"
+        }
+      },
+      "false_adapt_unconditional": {
+        "count": 0,
+        "n": 18,
+        "rate": 0.0,
+        "ci95_wilson": [
+          0.0,
+          0.17587922364665765
+        ]
+      },
+      "interval_coverage_observed": {
+        "count": null,
+        "n": null,
+        "rate": null,
+        "ci95_wilson": null,
+        "status": "not_retained"
+      },
+      "theoretical_coverage": {
+        "status": "conditional_on_declared_premise",
+        "note": "No theorem premise is inferred from this empirical summary."
+      }
+    },
+    {
+      "track": "RxRx1 eata_online",
+      "n_decisions": 12,
+      "seeds": [
+        0
+      ],
+      "source": "experiments/kbound/results/win_hunt_v5/rxrx1_aggr/result_4a2840ef.json",
+      "reproduction_command": "bash docs/research/kbound/scripts/kbtrain.sh rxrx1-9plus",
+      "actions": {
+        "adapt": {
+          "count": 0,
+          "rate": 0.0,
+          "ci95_wilson": [
+            2.7755575615628914e-17,
+            0.24249400665524085
+          ],
+          "status": "reported_summary"
+        },
+        "freeze": {
+          "count": 2,
+          "rate": 0.16666666666666666,
+          "ci95_wilson": [
+            0.04696514218385378,
+            0.4480308622529734
+          ],
+          "status": "reported_summary"
+        },
+        "abstain": {
+          "count": 10,
+          "rate": 0.8333333333333334,
+          "ci95_wilson": [
+            0.5519691377470266,
+            0.9530348578161463
+          ],
+          "status": "reported_summary"
+        }
+      },
+      "false_adapt_unconditional": {
+        "count": 0,
+        "n": 12,
+        "rate": 0.0,
+        "ci95_wilson": [
+          2.7755575615628914e-17,
+          0.24249400665524085
+        ]
+      },
+      "interval_coverage_observed": {
+        "count": null,
+        "n": null,
+        "rate": null,
+        "ci95_wilson": null,
+        "status": "not_retained"
+      },
+      "theoretical_coverage": {
+        "status": "conditional_on_declared_premise",
+        "note": "No theorem premise is inferred from this empirical summary."
+      }
+    },
+    {
+      "track": "RxRx1 sar_online",
+      "n_decisions": 12,
+      "seeds": [
+        0
+      ],
+      "source": "experiments/kbound/results/win_hunt_v5/rxrx1_aggr/result_4a2840ef.json",
+      "reproduction_command": "bash docs/research/kbound/scripts/kbtrain.sh rxrx1-9plus",
+      "actions": {
+        "adapt": {
+          "count": 0,
+          "rate": 0.0,
+          "ci95_wilson": [
+            2.7755575615628914e-17,
+            0.24249400665524085
+          ],
+          "status": "reported_summary"
+        },
+        "freeze": {
+          "count": 12,
+          "rate": 1.0,
+          "ci95_wilson": [
+            0.7575059933447592,
+            1.0
+          ],
+          "status": "reported_summary"
+        },
+        "abstain": {
+          "count": 0,
+          "rate": 0.0,
+          "ci95_wilson": [
+            2.7755575615628914e-17,
+            0.24249400665524085
+          ],
+          "status": "reported_summary"
+        }
+      },
+      "false_adapt_unconditional": {
+        "count": 0,
+        "n": 12,
+        "rate": 0.0,
+        "ci95_wilson": [
+          2.7755575615628914e-17,
+          0.24249400665524085
+        ]
+      },
+      "interval_coverage_observed": {
+        "count": null,
+        "n": null,
+        "rate": null,
+        "ci95_wilson": null,
+        "status": "not_retained"
+      },
+      "theoretical_coverage": {
+        "status": "conditional_on_declared_premise",
+        "note": "No theorem premise is inferred from this empirical summary."
+      }
+    },
+    {
+      "track": "RxRx1 tent_online",
+      "n_decisions": 12,
+      "seeds": [
+        0
+      ],
+      "source": "experiments/kbound/results/win_hunt_v5/rxrx1_aggr/result_4a2840ef.json",
+      "reproduction_command": "bash docs/research/kbound/scripts/kbtrain.sh rxrx1-9plus",
+      "actions": {
+        "adapt": {
+          "count": 0,
+          "rate": 0.0,
+          "ci95_wilson": [
+            2.7755575615628914e-17,
+            0.24249400665524085
+          ],
+          "status": "reported_summary"
+        },
+        "freeze": {
+          "count": 12,
+          "rate": 1.0,
+          "ci95_wilson": [
+            0.7575059933447592,
+            1.0
+          ],
+          "status": "reported_summary"
+        },
+        "abstain": {
+          "count": 0,
+          "rate": 0.0,
+          "ci95_wilson": [
+            2.7755575615628914e-17,
+            0.24249400665524085
+          ],
+          "status": "reported_summary"
+        }
+      },
+      "false_adapt_unconditional": {
+        "count": 0,
+        "n": 12,
+        "rate": 0.0,
+        "ci95_wilson": [
+          2.7755575615628914e-17,
+          0.24249400665524085
+        ]
+      },
+      "interval_coverage_observed": {
+        "count": null,
+        "n": null,
+        "rate": null,
+        "ci95_wilson": null,
+        "status": "not_retained"
+      },
+      "theoretical_coverage": {
+        "status": "conditional_on_declared_premise",
+        "note": "No theorem premise is inferred from this empirical summary."
+      }
+    },
+    {
+      "track": "ImageNet-R convnext_base",
+      "n_decisions": 36,
+      "seeds": [
+        0,
+        1,
+        2
+      ],
+      "source": "experiments/kbound/results/imagenetr_protocol_d_multiseed_v1/result_224624b1.json",
+      "reproduction_command": "bash docs/research/kbound/scripts/kbtrain.sh imagenetr-d",
+      "actions": {
+        "adapt": {
+          "count": 36,
+          "rate": 1.0,
+          "ci95_wilson": [
+            0.9035813714055363,
+            1.0
+          ],
+          "status": "reported_summary"
+        },
+        "freeze": {
+          "count": 0,
+          "rate": 0.0,
+          "ci95_wilson": [
+            0.0,
+            0.09641862859446367
+          ],
+          "status": "reported_summary"
+        },
+        "abstain": {
+          "count": 0,
+          "rate": 0.0,
+          "ci95_wilson": [
+            0.0,
+            0.09641862859446367
+          ],
+          "status": "reported_summary"
+        }
+      },
+      "false_adapt_unconditional": {
+        "count": 0,
+        "n": 36,
+        "rate": 0.0,
+        "ci95_wilson": [
+          0.0,
+          0.09641862859446367
+        ]
+      },
+      "interval_coverage_observed": {
+        "count": null,
+        "n": null,
+        "rate": null,
+        "ci95_wilson": null,
+        "status": "not_retained"
+      },
+      "theoretical_coverage": {
+        "status": "conditional_on_declared_premise",
+        "note": "No theorem premise is inferred from this empirical summary."
+      }
+    },
+    {
+      "track": "ImageNet-R convnext_tiny",
+      "n_decisions": 36,
+      "seeds": [
+        0,
+        1,
+        2
+      ],
+      "source": "experiments/kbound/results/imagenetr_protocol_d_multiseed_v1/result_224624b1.json",
+      "reproduction_command": "bash docs/research/kbound/scripts/kbtrain.sh imagenetr-d",
+      "actions": {
+        "adapt": {
+          "count": 5,
+          "rate": 0.1388888888888889,
+          "ci95_wilson": [
+            0.06081815009132838,
+            0.286595303893562
+          ],
+          "status": "reported_summary"
+        },
+        "freeze": {
+          "count": 0,
+          "rate": 0.0,
+          "ci95_wilson": [
+            0.0,
+            0.09641862859446367
+          ],
+          "status": "reported_summary"
+        },
+        "abstain": {
+          "count": 31,
+          "rate": 0.8611111111111112,
+          "ci95_wilson": [
+            0.713404696106438,
+            0.9391818499086717
+          ],
+          "status": "reported_summary"
+        }
+      },
+      "false_adapt_unconditional": {
+        "count": 0,
+        "n": 36,
+        "rate": 0.0,
+        "ci95_wilson": [
+          0.0,
+          0.09641862859446367
+        ]
+      },
+      "interval_coverage_observed": {
+        "count": null,
+        "n": null,
+        "rate": null,
+        "ci95_wilson": null,
+        "status": "not_retained"
+      },
+      "theoretical_coverage": {
+        "status": "conditional_on_declared_premise",
+        "note": "No theorem premise is inferred from this empirical summary."
+      }
+    },
+    {
+      "track": "ImageNet-R efficientnet_b0",
+      "n_decisions": 36,
+      "seeds": [
+        0,
+        1,
+        2
+      ],
+      "source": "experiments/kbound/results/imagenetr_protocol_d_multiseed_v1/result_224624b1.json",
+      "reproduction_command": "bash docs/research/kbound/scripts/kbtrain.sh imagenetr-d",
+      "actions": {
+        "adapt": {
+          "count": 0,
+          "rate": 0.0,
+          "ci95_wilson": [
+            0.0,
+            0.09641862859446367
+          ],
+          "status": "reported_summary"
+        },
+        "freeze": {
+          "count": 24,
+          "rate": 0.6666666666666666,
+          "ci95_wilson": [
+            0.5033399787115652,
+            0.7978538117569468
+          ],
+          "status": "reported_summary"
+        },
+        "abstain": {
+          "count": 12,
+          "rate": 0.33333333333333337,
+          "ci95_wilson": [
+            0.2021461882430531,
+            0.4966600212884348
+          ],
+          "status": "reported_summary"
+        }
+      },
+      "false_adapt_unconditional": {
+        "count": 0,
+        "n": 36,
+        "rate": 0.0,
+        "ci95_wilson": [
+          0.0,
+          0.09641862859446367
+        ]
+      },
+      "interval_coverage_observed": {
+        "count": null,
+        "n": null,
+        "rate": null,
+        "ci95_wilson": null,
+        "status": "not_retained"
+      },
+      "theoretical_coverage": {
+        "status": "conditional_on_declared_premise",
+        "note": "No theorem premise is inferred from this empirical summary."
+      }
+    },
+    {
+      "track": "ImageNet-R efficientnet_b3",
+      "n_decisions": 36,
+      "seeds": [
+        0,
+        1,
+        2
+      ],
+      "source": "experiments/kbound/results/imagenetr_protocol_d_multiseed_v1/result_224624b1.json",
+      "reproduction_command": "bash docs/research/kbound/scripts/kbtrain.sh imagenetr-d",
+      "actions": {
+        "adapt": {
+          "count": 36,
+          "rate": 1.0,
+          "ci95_wilson": [
+            0.9035813714055363,
+            1.0
+          ],
+          "status": "reported_summary"
+        },
+        "freeze": {
+          "count": 0,
+          "rate": 0.0,
+          "ci95_wilson": [
+            0.0,
+            0.09641862859446367
+          ],
+          "status": "reported_summary"
+        },
+        "abstain": {
+          "count": 0,
+          "rate": 0.0,
+          "ci95_wilson": [
+            0.0,
+            0.09641862859446367
+          ],
+          "status": "reported_summary"
+        }
+      },
+      "false_adapt_unconditional": {
+        "count": 0,
+        "n": 36,
+        "rate": 0.0,
+        "ci95_wilson": [
+          0.0,
+          0.09641862859446367
+        ]
+      },
+      "interval_coverage_observed": {
+        "count": null,
+        "n": null,
+        "rate": null,
+        "ci95_wilson": null,
+        "status": "not_retained"
+      },
+      "theoretical_coverage": {
+        "status": "conditional_on_declared_premise",
+        "note": "No theorem premise is inferred from this empirical summary."
+      }
+    },
+    {
+      "track": "ImageNet-R resnet101",
+      "n_decisions": 36,
+      "seeds": [
+        0,
+        1,
+        2
+      ],
+      "source": "experiments/kbound/results/imagenetr_protocol_d_multiseed_v1/result_224624b1.json",
+      "reproduction_command": "bash docs/research/kbound/scripts/kbtrain.sh imagenetr-d",
+      "actions": {
+        "adapt": {
+          "count": 19,
+          "rate": 0.5277777777777778,
+          "ci95_wilson": [
+            0.37005938022987594,
+            0.6801395848482095
+          ],
+          "status": "reported_summary"
+        },
+        "freeze": {
+          "count": 0,
+          "rate": 0.0,
+          "ci95_wilson": [
+            0.0,
+            0.09641862859446367
+          ],
+          "status": "reported_summary"
+        },
+        "abstain": {
+          "count": 17,
+          "rate": 0.4722222222222222,
+          "ci95_wilson": [
+            0.31986041515179053,
+            0.629940619770124
+          ],
+          "status": "reported_summary"
+        }
+      },
+      "false_adapt_unconditional": {
+        "count": 0,
+        "n": 36,
+        "rate": 0.0,
+        "ci95_wilson": [
+          0.0,
+          0.09641862859446367
+        ]
+      },
+      "interval_coverage_observed": {
+        "count": null,
+        "n": null,
+        "rate": null,
+        "ci95_wilson": null,
+        "status": "not_retained"
+      },
+      "theoretical_coverage": {
+        "status": "conditional_on_declared_premise",
+        "note": "No theorem premise is inferred from this empirical summary."
+      }
+    },
+    {
+      "track": "ImageNet-R resnet152",
+      "n_decisions": 36,
+      "seeds": [
+        0,
+        1,
+        2
+      ],
+      "source": "experiments/kbound/results/imagenetr_protocol_d_multiseed_v1/result_224624b1.json",
+      "reproduction_command": "bash docs/research/kbound/scripts/kbtrain.sh imagenetr-d",
+      "actions": {
+        "adapt": {
+          "count": 23,
+          "rate": 0.6388888888888888,
+          "ci95_wilson": [
+            0.4757507548555804,
+            0.7752440705348462
+          ],
+          "status": "reported_summary"
+        },
+        "freeze": {
+          "count": 0,
+          "rate": 0.0,
+          "ci95_wilson": [
+            0.0,
+            0.09641862859446367
+          ],
+          "status": "reported_summary"
+        },
+        "abstain": {
+          "count": 13,
+          "rate": 0.36111111111111116,
+          "ci95_wilson": [
+            0.22475592946515371,
+            0.5242492451444196
+          ],
+          "status": "reported_summary"
+        }
+      },
+      "false_adapt_unconditional": {
+        "count": 0,
+        "n": 36,
+        "rate": 0.0,
+        "ci95_wilson": [
+          0.0,
+          0.09641862859446367
+        ]
+      },
+      "interval_coverage_observed": {
+        "count": null,
+        "n": null,
+        "rate": null,
+        "ci95_wilson": null,
+        "status": "not_retained"
+      },
+      "theoretical_coverage": {
+        "status": "conditional_on_declared_premise",
+        "note": "No theorem premise is inferred from this empirical summary."
+      }
+    },
+    {
+      "track": "ImageNet-R resnext101_32x8d",
+      "n_decisions": 36,
+      "seeds": [
+        0,
+        1,
+        2
+      ],
+      "source": "experiments/kbound/results/imagenetr_protocol_d_multiseed_v1/result_224624b1.json",
+      "reproduction_command": "bash docs/research/kbound/scripts/kbtrain.sh imagenetr-d",
+      "actions": {
+        "adapt": {
+          "count": 36,
+          "rate": 1.0,
+          "ci95_wilson": [
+            0.9035813714055363,
+            1.0
+          ],
+          "status": "reported_summary"
+        },
+        "freeze": {
+          "count": 0,
+          "rate": 0.0,
+          "ci95_wilson": [
+            0.0,
+            0.09641862859446367
+          ],
+          "status": "reported_summary"
+        },
+        "abstain": {
+          "count": 0,
+          "rate": 0.0,
+          "ci95_wilson": [
+            0.0,
+            0.09641862859446367
+          ],
+          "status": "reported_summary"
+        }
+      },
+      "false_adapt_unconditional": {
+        "count": 0,
+        "n": 36,
+        "rate": 0.0,
+        "ci95_wilson": [
+          0.0,
+          0.09641862859446367
+        ]
+      },
+      "interval_coverage_observed": {
+        "count": null,
+        "n": null,
+        "rate": null,
+        "ci95_wilson": null,
+        "status": "not_retained"
+      },
+      "theoretical_coverage": {
+        "status": "conditional_on_declared_premise",
+        "note": "No theorem premise is inferred from this empirical summary."
+      }
+    },
+    {
+      "track": "ImageNet-R swin_b",
+      "n_decisions": 36,
+      "seeds": [
+        0,
+        1,
+        2
+      ],
+      "source": "experiments/kbound/results/imagenetr_protocol_d_multiseed_v1/result_224624b1.json",
+      "reproduction_command": "bash docs/research/kbound/scripts/kbtrain.sh imagenetr-d",
+      "actions": {
+        "adapt": {
+          "count": 11,
+          "rate": 0.3055555555555556,
+          "ci95_wilson": [
+            0.1800445159482992,
+            0.4685627285051034
+          ],
+          "status": "reported_summary"
+        },
+        "freeze": {
+          "count": 0,
+          "rate": 0.0,
+          "ci95_wilson": [
+            0.0,
+            0.09641862859446367
+          ],
+          "status": "reported_summary"
+        },
+        "abstain": {
+          "count": 25,
+          "rate": 0.6944444444444444,
+          "ci95_wilson": [
+            0.5314372714948966,
+            0.8199554840517008
+          ],
+          "status": "reported_summary"
+        }
+      },
+      "false_adapt_unconditional": {
+        "count": 0,
+        "n": 36,
+        "rate": 0.0,
+        "ci95_wilson": [
+          0.0,
+          0.09641862859446367
+        ]
+      },
+      "interval_coverage_observed": {
+        "count": null,
+        "n": null,
+        "rate": null,
+        "ci95_wilson": null,
+        "status": "not_retained"
+      },
+      "theoretical_coverage": {
+        "status": "conditional_on_declared_premise",
+        "note": "No theorem premise is inferred from this empirical summary."
+      }
+    },
+    {
+      "track": "ImageNet-R swin_t",
+      "n_decisions": 36,
+      "seeds": [
+        0,
+        1,
+        2
+      ],
+      "source": "experiments/kbound/results/imagenetr_protocol_d_multiseed_v1/result_224624b1.json",
+      "reproduction_command": "bash docs/research/kbound/scripts/kbtrain.sh imagenetr-d",
+      "actions": {
+        "adapt": {
+          "count": 0,
+          "rate": 0.0,
+          "ci95_wilson": [
+            0.0,
+            0.09641862859446367
+          ],
+          "status": "reported_summary"
+        },
+        "freeze": {
+          "count": 1,
+          "rate": 0.027777777777777776,
+          "ci95_wilson": [
+            0.004920407139810443,
+            0.14169718653273855
+          ],
+          "status": "reported_summary"
+        },
+        "abstain": {
+          "count": 35,
+          "rate": 0.9722222222222222,
+          "ci95_wilson": [
+            0.8583028134672614,
+            0.9950795928601897
+          ],
+          "status": "reported_summary"
+        }
+      },
+      "false_adapt_unconditional": {
+        "count": 0,
+        "n": 36,
+        "rate": 0.0,
+        "ci95_wilson": [
+          0.0,
+          0.09641862859446367
+        ]
+      },
+      "interval_coverage_observed": {
+        "count": null,
+        "n": null,
+        "rate": null,
+        "ci95_wilson": null,
+        "status": "not_retained"
+      },
+      "theoretical_coverage": {
+        "status": "conditional_on_declared_premise",
+        "note": "No theorem premise is inferred from this empirical summary."
+      }
+    },
+    {
+      "track": "ImageNet-R vit_b_16",
+      "n_decisions": 36,
+      "seeds": [
+        0,
+        1,
+        2
+      ],
+      "source": "experiments/kbound/results/imagenetr_protocol_d_multiseed_v1/result_224624b1.json",
+      "reproduction_command": "bash docs/research/kbound/scripts/kbtrain.sh imagenetr-d",
+      "actions": {
+        "adapt": {
+          "count": 7,
+          "rate": 0.19444444444444445,
+          "ci95_wilson": [
+            0.09753095418928728,
+            0.3502804299517739
+          ],
+          "status": "reported_summary"
+        },
+        "freeze": {
+          "count": 0,
+          "rate": 0.0,
+          "ci95_wilson": [
+            0.0,
+            0.09641862859446367
+          ],
+          "status": "reported_summary"
+        },
+        "abstain": {
+          "count": 29,
+          "rate": 0.8055555555555556,
+          "ci95_wilson": [
+            0.6497195700482261,
+            0.9024690458107127
+          ],
+          "status": "reported_summary"
+        }
+      },
+      "false_adapt_unconditional": {
+        "count": 1,
+        "n": 36,
+        "rate": 0.027777777777777776,
+        "ci95_wilson": [
+          0.004920407139810443,
+          0.14169718653273855
+        ]
+      },
+      "interval_coverage_observed": {
+        "count": null,
+        "n": null,
+        "rate": null,
+        "ci95_wilson": null,
+        "status": "not_retained"
+      },
+      "theoretical_coverage": {
+        "status": "conditional_on_declared_premise",
+        "note": "No theorem premise is inferred from this empirical summary."
+      }
+    }
+  ]
+}

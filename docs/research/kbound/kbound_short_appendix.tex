@@ -14,7 +14,7 @@ score the untouched held-out domains exactly once.
 \begin{algorithmic}[1]
 \Require Conditions $\mathcal{C}$; frozen $f_0$; adapters $\mathcal{A}_1,\ldots,\mathcal{A}_K$;
   track type (stress grid or natural shift); level $\alpha$
-\Ensure Regret-to-oracle, false-adapt rate, coverage, beats-both verdict
+\Ensure Regret-to-oracle, false-adapt rate, coverage, and action composition
 \ForAll{$c \in \mathcal{C}$, adapters $\mathcal{A}_k$} \Comment{shared evidence logging}
     \State $f_a^{(k,c)} \leftarrow \mathcal{A}_k(f_0, X_c)$;\;
       $Z_{k,c} \leftarrow \phi(X_c, f_0, f_a^{(k,c)})$;\;
@@ -144,15 +144,15 @@ matched-evidence form and zero-drift interpretation used by those proofs.
 
 \input{paper/sections/theory_appendix_ext}
 
-\paragraph{Asymmetric beats-both characterization (sharpening).}
-The main text notes informally that a router beats both fixed policies only when the optimal
+\paragraph{Asymmetric fixed-policy regret characterization (secondary).}
+For completeness, a router strictly improves both fixed-policy regrets only when the optimal
 action varies \emph{and} is label-free detectable. The following proposition makes the
 condition exact and, crucially, \emph{asymmetric}, which explains why natural-shift tracks tie
 (rather than beat) always-adapt. Let $\delta^\star$ be the strict-commitment frontier
 (Theorem~\ref{thm:headline}) with abstention resolved to \textsc{freeze}, and let
 $R(\pi)=\E_Q[\,|\Delta|\,\mathbf 1\{\pi\neq\text{oracle}\}\,]$ be regret-to-oracle over a
 deployment mixture $Q$.
-\begin{proposition}[Asymmetric beats-both]\label{prop:beatsboth-asym}
+\begin{proposition}[Asymmetric fixed-policy regret]\label{prop:beatsboth-asym}
 Since $\Delta>0$ on $\{M>\beta\}$ and $\Delta<0$ on $\{M<-\beta\}$ for every admissible drift
 (Theorem~\ref{thm:headline}),
 \[
@@ -163,7 +163,7 @@ R(\textsc{aa})-R(\delta^\star)=\E_Q[\,|\Delta|\,\mathbf 1\{M<-\beta\}\,]
 \]
 Hence $\delta^\star$ weakly dominates always-freeze, strictly iff detectable-helpful mass
 $Q(M>\beta)>0$; but $\delta^\star$ beats always-adapt iff the certified harmful-mass win
-exceeds the helpful adaptation forgone in the abstention region. Beats-both thus requires
+exceeds the helpful adaptation forgone in the abstention region. Strict improvement over both fixed policies thus requires
 \emph{both} detectable-helpful and net-detectable-harmful mass.
 \end{proposition}
 \noindent Because abstention defaults to \textsc{freeze}, the freeze side is free but the
@@ -226,19 +226,31 @@ inferred from the controller-only microbenchmark.
 
 \section{Formalization inventory}\label{app:formal}
 Lean checks the indexed algebraic, finite-decision, measure-containment, and conditional
-uniform-rank results listed in \texttt{formal/KBound/TheoremMap.lean}. It does not formalize the
-target-law witness construction, frontier necessity/maximality, risk alignment, calibration
-transfer, or the lift from a conditional uniform-index model to general exchangeable processes.
+uniform-rank results listed in \texttt{formal/KBound/TheoremMap.lean}. These declarations verify
+the named helper results and clauses; successful compilation does not by itself certify a whole
+paper theorem that also contains unformalized clauses. In particular, Lean does not formalize the
+explicit target-law witness construction, equality of the induced evidence laws, membership of
+those laws in $\mathcal C_\beta$, the zero-versus-strict boundary construction, frontier
+necessity/maximality, risk alignment, calibration transfer, or the lift from a conditional
+uniform-index model to arbitrary exchangeable deployment processes.
 
 \section{Claim-to-artifact map}\label{app:claim-artifact}
 The machine-readable manifest \texttt{paper/generated/kbound\_result\_manifest.json} is the
 authoritative index for every promoted number, seed count, protocol, quantile convention, and known
-replay caveat. Table~\ref{tab:claim-status} gives the reader-facing summary; the external manifest
-retains exact repository paths and pending work.
+replay caveat. The derived audit \texttt{paper/generated/empirical\_audit/decision\_metrics.json}
+adds adapt/freeze/abstain counts and rates, 95\% Wilson intervals for action rates and marginal
+false adaptation, empirical interval-hit coverage where the raw fields were retained, the exact
+source artifact, and a reproduction command. Observed interval-hit coverage is explicitly marked
+\emph{empirical only}; it neither verifies exchangeability nor establishes the theorem's coverage
+premise or risk alignment. Historical natural-shift summaries that did not retain interval-hit
+records are marked \texttt{not\_retained}, not assigned a synthetic coverage value. The compact
+claim matrix \texttt{paper/generated/empirical\_audit/claim\_matrix.md} records claim, dataset,
+seeds, artifact, paper consumer, and closure status. Table~\ref{tab:claim-status} gives the
+reader-facing summary.
 
 \section{ImageNet-C multi-seed detail}\label{app:imagenetc-ms}
 Table~\ref{tab:imagenetc-perseed} reports the SAR row of Table~\ref{tab:imagenetc-faithful} per
-seed. The point-level beats-both verdict holds on every seed; the per-seed $27$-cell paired
+seed. Point estimates improve both fixed-policy regrets on every seed; the per-seed $27$-cell paired
 bootstrap excludes zero on both gaps for seeds $0$--$1$ and narrowly includes zero on the
 remaining seeds, whose realized harmful mass is lighter---consistent with the regime map:
 the certified win scales with detectable harmful mass. The pooled seed-averaged bootstrap
