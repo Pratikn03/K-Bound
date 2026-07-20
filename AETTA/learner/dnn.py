@@ -258,7 +258,8 @@ class DNN():
         torch.save(cp.state_dict(), checkpoint_path)
 
     def load_checkpoint(self, checkpoint_path):
-        self.checkpoint = torch.load(checkpoint_path, map_location=f'cuda:{conf.args.gpu_idx}')
+        _mloc = (f'cuda:{conf.args.gpu_idx}' if torch.cuda.is_available() else ('mps' if torch.backends.mps.is_available() else 'cpu'))  # K-Bound: map_location device guard
+        self.checkpoint = torch.load(checkpoint_path, map_location=_mloc)
         self.net.load_state_dict(self.checkpoint, strict=True)
         self.net.to(device)
 
