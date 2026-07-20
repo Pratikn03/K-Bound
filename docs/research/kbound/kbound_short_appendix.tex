@@ -25,7 +25,7 @@ score the untouched held-out domains exactly once.
     \State Fit $\widehat\Delta_{-i}$ on the other $N{-}1$ cells;\;
       $\rho_i \leftarrow |\widehat\Delta_{-i}(Z_i)-\Delta_i|$ \Comment{leave-one-cell-out}
   \EndFor
-  \State $\varepsilon \leftarrow (1-\alpha)$ empirical quantile of $\{\rho_i\}_{i=1}^{N}$
+  \State $\varepsilon \leftarrow \rho_{(k)}$, $k=\lceil (N{+}1)(1-\alpha)\rceil$ \Comment{exact split-conformal rank quantile}
   \ForAll{cells $i \in \mathcal{C}$}
     \State Run Algorithm~\ref{alg:kga} with $(f_0,\mathcal{A}_k,X_i,\widehat\Delta_{-i},\varepsilon)$
       \Comment{each cell scored by the estimator that never saw it (cross-fitted)}
@@ -33,7 +33,7 @@ score the untouched held-out domains exactly once.
 \Else{ \textbf{natural shift} (Camelyon17, iWildCam, Office-Home, RxRx1): split
   $\mathcal{C}=\mathcal{C}_{\mathrm{cal}} \,\dot\cup\, \mathcal{C}_{\mathrm{test}}$ across domains}
   \State Form out-of-fold residuals on $\mathcal{C}_{\mathrm{cal}}$;\;
-    $\varepsilon \leftarrow (1-\alpha)$ empirical quantile
+    $\varepsilon \leftarrow \rho_{(k)}$, $k=\lceil (N{+}1)(1-\alpha)\rceil$ (exact split-conformal rank quantile)
   \State Fit deployment estimator $\widehat\Delta(Z)$ on all of $\mathcal{C}_{\mathrm{cal}}$;\;
     freeze $(\widehat\Delta,\varepsilon)$
   \ForAll{$c \in \mathcal{C}_{\mathrm{test}}$}
