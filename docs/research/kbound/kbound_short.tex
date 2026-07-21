@@ -117,12 +117,12 @@ states whether that point verdict is locked, reconciled, provisional, or diagnos
 \toprule
 Regime & Example & Expected & Result \\
 \midrule
-Helpful-dominated & Camelyon17 OOD & tie always-adapt & reconciled no-harm \\
-Harmful-dominated & RxRx1 (locked); iWildCam/Office-Home (reconciled, OOF lock) & tie always-freeze, beat always-adapt & no-harm \\
-Domain-gen.\ natural & PACS (4 LODO splits) & no-harm or abstain & three safety tracks; one null \\
-Mixed + detectable & CIFAR-10-C Tent/EATA, ImageNet-C SAR & adapt helpful, freeze harmful, abstain near zero & low false-adapt; CI-supported utility \\
-Weak evidence & ImageNet-R, CIFAR-10.1 & abstain / conservative & diagnostic; no promoted win \\
-Constructed mixture & three-source OOF stream & route per condition & supported routing result, not transfer \\
+Helpful-dominated & Camelyon17 OOD & tie always-adapt & locked no-harm \\
+Harmful-dominated & RxRx1; iWildCam/Office-Home (OOF lock) & tie always-freeze, beat always-adapt & locked no-harm \\
+Domain-gen.\ natural & PACS (4 LODO splits) & no-harm or abstain & diagnostic (1/3 seeds); photo null unreconciled \\
+Mixed + detectable & CIFAR-10-C Tent/EATA, ImageNet-C SAR & adapt helpful, freeze harmful, abstain near zero & locked; low false-adapt; CI-supported utility \\
+Weak evidence & ImageNet-R, CIFAR-10.1 & abstain / conservative & diagnostic; CIFAR-10.1 locked fail; ImageNet-R incomplete \\
+Constructed mixture & three-source OOF stream & route per condition & locked routing result, not transfer \\
 \bottomrule
 \end{tabular}
 }
@@ -894,15 +894,15 @@ multi-seed result from being presented as equivalent evidence.}
 \toprule
 Track & Evaluation unit & Result & Decision interpretation & Evidence tier \\
 \midrule
-CIFAR-10-C stress & $5\times432$ per candidate & Tent: $0.0016/0.0080/0.1239$; EATA: $0.0013/0.0033/0.1313$; SAR withheld; $\mathrm{FA}_{\mathrm u}=0$ & selective routing; paired-CI utility & Tent/EATA reconciled from five raw seeds; SAR withheld (seed-0 aggregate non-reproducing) \\
+CIFAR-10-C stress & $5\times432$ per candidate & Tent: $0.0016/0.0079/0.1241$; EATA: $0.0013/0.0033/0.1314$; SAR withheld; $\mathrm{FA}_{\mathrm u}=0$ & selective routing; paired-CI utility & locked (Tent/EATA; five raw seeds); SAR withheld (seed-0 aggregate non-reproducing) \\
 ImageNet-C SAR & $27$ cells $\times$ $5$ seeds & $0.0264/0.0529/0.0319$ pooled; $\mathrm{FA}_{\mathrm u}=0.000$ (exact split-conformal) & selective routing; pooled CI-supported utility; point-level $5/5$ seeds & locked (5 seeds; per-seed CIs $2/5$) \\
-Camelyon17 OOD & genuine OOD test $n=18$ (support $n=36$) & $0.0000/0.0000/0.1381$; $\mathrm{FA}_{\mathrm u}=0$ & selects adapt-equivalent behavior & reconciled (raw records) \\
-iWildCam H v2 & held-out test $n=72$ & $0.0041/0.1028/0.0041$; $\mathrm{FA}_{\mathrm u}=0$ & no-harm, ties freeze & reconciled (OOF lock; 5-seed real-ckpt confirmed) \\
-Office-Home M v2 & target test $n=35$ & $0.0157/0.0468/0.0158$; $\mathrm{FA}_{\mathrm u}=0$ & no-harm, tiny point edge & reconciled (OOF lock; 5-seed confirmed) \\
-RxRx1 J & OOD test $n=60$ & $0.0000/0.2587/0.0000$; $\mathrm{FA}_{\mathrm u}=0$ & selects freeze-equivalent behavior & locked (5 seeds, real ckpt) \\
-PACS & four LODO targets, $108$ cells each & three safety targets ($\mathrm{FA}_{\mathrm u}{=}0$); one null (photo, $\mathrm{FA}_{\mathrm u}{=}0.056$) & action-safety diagnostic & diagnostic (1 of 3 planned seeds) \\
+Camelyon17 OOD & genuine OOD test $n=18$ (support $n=36$) & $0.0000/0.0000/0.1381$; $\mathrm{FA}_{\mathrm u}=0$ & selects adapt-equivalent behavior & locked (OOD reconciliation seal) \\
+iWildCam H v2 & held-out test $n=72$ & $0.0041/0.1028/0.0041$; $\mathrm{FA}_{\mathrm u}=0$ & no-harm, ties freeze & locked (OOF bootstrap; single-run) \\
+Office-Home M v2 & target test $n=35$ & $0.0157/0.0468/0.0158$; $\mathrm{FA}_{\mathrm u}=0$ & no-harm, tiny point edge & locked (OOF no-harm only; LOO BB not promoted) \\
+RxRx1 J & OOD test $n=60$ & $0.0000/0.2531/0.0000$; $\mathrm{FA}_{\mathrm u}=0$ & selects freeze-equivalent behavior & locked (real ckpt; single-run) \\
+PACS & four LODO targets, $108$ cells each & primary replay $\mathrm{FA}_{\mathrm u}{=}0$ on all four targets; earlier photo-null ($0.056$) not reproduced & action-safety diagnostic & diagnostic (1 of 3 seeds; photo unreconciled) \\
 ImageNet-R D & $3$ seeds $\times10$ backbones & no CI-robust routing utility; one point-only arm fails the second CI & abstention / fixed-policy ties & diagnostic (3 of 4 planned seeds) \\
-CIFAR-10.1 K & cross-seed test $n=48$ & $0.0021/0.0190/0.0017$; $\mathrm{FA}_{\mathrm u}=0.167$, $\mathrm{FA}_{\mathrm c}=0.444$ & fails transfer bar; no claim & diagnostic (corrected metric label) \\
+CIFAR-10.1 K & cross-seed test $n=48$ & $0.0021/0.0190/0.0017$; $\mathrm{FA}_{\mathrm u}=0.167$, $\mathrm{FA}_{\mathrm c}=0.444$ & fails transfer bar; no claim & locked diagnostic fail \\
 \bottomrule
 \end{tabular}
 \end{table*}
@@ -936,8 +936,8 @@ Track & Unit & KGA & Adapt & Freeze & Status \\
 CIFAR-10-C Tent & $5\times432$ & .0016 & .0079 & .1241 & locked; selective routing, $\mathrm{FA}_{\mathrm u}=0$; CI utility \\
 CIFAR-10-C EATA & $5\times432$ & .0013 & .0033 & .1314 & locked; selective routing, $\mathrm{FA}_{\mathrm u}=0$; CI utility \\
 ImageNet-C SAR & $27$ cells $\times5$ seeds & .0264 & .0529 & .0319 & locked (5 seeds); pooled CI routing utility \\
-Camelyon17 OOD & $n=18$ & .0000 & .0000 & .1381 & reconciled; no-harm \\
-RxRx1 J & $n=60$ & .0000 & .2587 & .0000 & locked (5 seeds); no-harm \\
+Camelyon17 OOD & $n=18$ & .0000 & .0000 & .1381 & locked; no-harm \\
+RxRx1 J & $n=60$ & .0000 & .2531 & .0000 & locked; no-harm \\
 Three-source OOF mixture & $n=143$ & .0059 & .0632 & .0342 & locked; heterogeneous routing (constructed) \\
 \bottomrule
 \end{tabular}
@@ -956,11 +956,11 @@ Statement & Status & Requirement \\
 Abstention needed in matched-evidence opposite-benefit worlds & theorem & stated model class \\
 $\mathrm{FA}_u \le \alpha$ (unconditional false-adapt) & theorem & measurable marginal coverage; exchangeability/shift correction only justifies coverage \\
 $\mathrm{FA}_c \le \alpha$ (conditional false-adapt) & \textbf{not claimed} & report $\mathrm{FA}_c$ descriptively only \\
-Nine-track panel & \textbf{accounting} & locked/reconciled/provisional tiers shown explicitly \\
+Nine-track panel & \textbf{accounting} & sealed lock inventory (\texttt{NINE\_TRACK\_LOCK\_SEAL\_v1}); incomplete tracks stay diagnostic \\
 Stress-grid action validity and routing utility (Tent/EATA) & locked & locked Protocol~A v1 stress grid \\
 ImageNet-C SAR action validity and paired-bootstrap utility & locked (5 seeds) & 27-cell noise grid $\times$ 5 seeds; pooled paired CIs exclude 0; point-level $5/5$ \\
-Natural safety (Camelyon17, RxRx1) & reconciled / locked & raw OOD/test artifacts \\
-Office-Home and iWildCam OOF summaries & reconciled & OOF bootstrap lock \\
+Natural safety (Camelyon17, RxRx1) & locked & OOD reconciliation seal / held-out test artifacts \\
+Office-Home and iWildCam OOF summaries & locked & OOF bootstrap seal (no-harm only; OH LOO BB not promoted) \\
 Three-source mixed routing aggregate & locked & constructed OOF mixture, not transfer \\
 Universal improvement & \textbf{not claimed} & impossible in general \\
 $\varepsilon$ estimates drift budget $\beta$ & \textbf{false} & $\beta$ is declared; $\varepsilon$ is empirical \\
@@ -1091,12 +1091,12 @@ are robust while SAR collapses and \textsc{KGA} retains low regret under a mecha
 insurance regimes, not policy wins.
 
 \textbf{Real-shift scope.} The uniform panel deliberately distinguishes three outcomes. Camelyon17
-genuine OOD and RxRx1 are reconciled/locked no-harm results: KGA ties the better fixed policy at
-zero observed false-adapt. Office-Home and iWildCam are reconciled from their out-of-fold bootstrap lock
-(App.~\ref{app:claim-artifact}): no-harm safety results now backed by
-saved OOF confidence intervals rather than a pending replay. PACS, ImageNet-R, and CIFAR-10.1 are
-completed breadth tracks, not universal task-performance claims. The three-source mixture is a constructed
-routing aggregate; it is not a transfer result and does not change the per-dataset conclusion.
+genuine OOD and RxRx1 are locked no-harm results: KGA ties the better fixed policy at
+zero observed false-adapt. Office-Home and iWildCam are locked from their out-of-fold bootstrap seal
+(App.~\ref{app:claim-artifact}; Office-Home promotes OOF no-harm only; LOO beats-both is not claimed).
+PACS and ImageNet-R remain incomplete diagnostics; CIFAR-10.1 is a locked diagnostic fail.
+The three-source mixture is a constructed routing aggregate; it is not a transfer result and does not
+change the per-dataset conclusion.
 
 \textbf{Theory and calibration.} The conformal radius assumes exchangeable calibration pairs;
 sign bracketing without structure is impossible (Theorems~\ref{lem:nonid}
@@ -1187,6 +1187,7 @@ Marginal $\mathrm{FA}_{\mathrm u}$ certificate & theorem & $\Pr(|\widehat\Delta-
 CIFAR-10-C mixed-regime action validity & empirical & Five-seed raw decisions, action rates, false-adapt, and paired CIs & Table~\ref{tab:decisive}; empirical audit manifest & SAR rebuilt from current raw tree; higher radius instability disclosed. \\
 ImageNet-C authoritative result & empirical & 27 cells $\times$ 5 seeds, SAR candidate, pooled seed-averaged paired bootstrap & Table~\ref{tab:imagenetc-faithful}; pooled bootstrap JSON & Per-seed CIs exclude 0 on $2/5$ at $n{=}27$; point-level $5/5$. \\
 Natural no-harm results & empirical & Reconciled OOF or locked held-out artifacts & Tables~\ref{tab:uniform-panel}--\ref{tab:primary-numeric} & One-sided regimes mainly exercise the adapt or freeze branch. \\
+Controlled multimodal routing & empirical & Pre-registered $13\times10$ injected-corruption grid & App.~\ref{app:d33}; \texttt{KB-CLAIM-027} & Mechanism confirmation, not a natural multimodal benchmark. \\
 POEM/AETTA comparison & empirical & Same logged stress cells and protocol-matched ports & Table~\ref{tab:headtohead-poem-aetta} & Not official implementations. \\
 Constructed heterogeneous mixture & empirical & Researcher-constructed three-source routing aggregate & Sec.~\ref{sec:constructed-routing} & Not unseen-shift transfer. \\
 Universal improvement & diagnostic & No supporting requirement is declared & Sec.~\ref{sec:limits} & Explicitly not claimed. \\
@@ -1199,7 +1200,7 @@ Real-camera study & pending & Fresh preregistered held-out sessions and raw logs
 \section{Conclusion}
 K-Bound reframes test-time adaptation as a validity decision rather than an unconditional update. The central object is the target benefit $\Delta=R_T(f_0)-R_T(f_a)$. Over a declared drift-budget class, a strict adapt or freeze commitment is uniformly supportable if and only if the observable disagreement-region margin satisfies $|M|>\beta$; on $|M|\le\beta$, abstention is the maximal sound three-way action under the paper's strict-decision semantics.
 
-KGA operationalizes this principle with a label-free benefit estimate and a pre-calibrated uncertainty radius. The resulting controller commits the candidate only when the interval excludes zero, retains the frozen model when harm is certified, and otherwise abstains from changing state. Across the benchmark panel, the observed behavior follows the regime map: controlled mixed regimes exercise all three actions with low observed false adaptation and reduced regret, one-sided natural shifts primarily exercise the safe adapt or freeze branch, and weak or non-transferable evidence produces abstention or remains diagnostic rather than being promoted as a win.
+KGA operationalizes this principle with a label-free benefit estimate and a pre-calibrated uncertainty radius. The resulting controller commits the candidate only when the interval excludes zero, retains the frozen model when harm is certified, and otherwise abstains from changing state. Across the benchmark panel, the observed behavior follows the regime map: controlled mixed regimes---including the pre-registered two-view multimodal check of Appendix~\ref{app:d33}---exercise all three actions with low observed false adaptation and reduced regret, one-sided natural shifts primarily exercise the safe adapt or freeze branch, and weak or non-transferable evidence produces abstention or remains diagnostic rather than being promoted as a win.
 
 The broader implication is that an adaptation system should expose two components: an update mechanism and a validity layer that decides whether the update is supportable under the available evidence and assumptions. Strengthening K-Bound therefore requires not only better adapters, but also richer risk-aligned evidence, more defensible calibration across shifts, explicit drift-budget auditing, and reproducible deployment semantics.
 

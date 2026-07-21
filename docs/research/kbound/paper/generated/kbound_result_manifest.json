@@ -2,7 +2,11 @@
   "schema_version": 1,
   "generated_for": "kbound_short_final_draft",
   "alpha": 0.1,
-  "policy_order": ["kga", "always_adapt", "always_freeze"],
+  "policy_order": [
+    "kga",
+    "always_adapt",
+    "always_freeze"
+  ],
   "definitions": {
     "benefit": "Delta = R_T(f_0) - R_T(f_a)",
     "false_adapt_unconditional": "P(adapt and Delta <= 0)",
@@ -11,20 +15,242 @@
   "quantile_provenance": {
     "current_clean_split_code": "exact rank k=min(n,ceil((n+1)(1-alpha)))",
     "archived_benchmarks": "interpolated empirical residual quantile",
-    "stress_grid": "leave-one-condition-out cross-fitted empirical residual calibration; not exact split conformal"
+    "stress_grid": "leave-one-condition-out cross-fitted empirical residual calibration; not exact split conformal",
+    "imagenetc_sar": "exact split-conformal rank (5-seed pooled, 135 cells)"
   },
   "tracks": {
-    "cifar10c_tent": {"regret": [0.0015736109, 0.0079233799, 0.1240979162], "false_adapt": 0.0, "seeds": [0,1,2,3,4], "conditions_per_seed": 432, "verdict": "archived CI beats-both", "source": "experiments/kbound/results/stress_grid_multiseed_v1/LOCKED_ANALYSIS_RESULTS.json"},
-    "cifar10c_eata": {"regret": [0.0012675925, 0.0032682874, 0.1313789343], "false_adapt": 0.0, "seeds": [0,1,2,3,4], "conditions_per_seed": 432, "verdict": "archived CI beats-both", "source": "experiments/kbound/results/stress_grid_multiseed_v1/LOCKED_ANALYSIS_RESULTS.json"},
-    "imagenetc_sar": {"regret": [0.0108055561, 0.0625185191, 0.0319259255], "false_adapt": 0.0, "seeds": [0], "n_cells": 27, "abstain_count": 12, "gap_kga_minus_adapt_ci95": [-0.1153247679,-0.0011018512], "gap_kga_minus_freeze_ci95": [-0.0318703699,-0.0111104160], "verdict": "paired-bootstrap beats-both", "source": "experiments/kbound/results/win_hunt_v5/imagenetc_aggr/percondition_bootstrap.json", "caveat": "single seed; no multiple-comparison correction claimed"},
-    "officehome_M_v2": {"regret": [0.0157142857,0.0468131868,0.0158241758], "false_adapt": 0.0, "n_test": 35, "seeds": [0,1], "ci_vs_adapt": [0.0038434066,0.0618681319], "ci_vs_freeze": [0.0,0.0003296703], "verdict": "no-harm", "source": "research_lock/KBOUND_WIN_BOOTSTRAP_CIS_oof.json"},
-    "iwildcam_H_v2": {"regret": [0.0041023691,0.1028299605,0.0041023691], "false_adapt": 0.0, "n_test": 72, "calibration_seeds": [0], "test_seeds": [1], "ci_vs_adapt": [0.0795034211,0.1182122616], "ci_vs_freeze": [0.0,0.0], "verdict": "no-harm", "source": "research_lock/KBOUND_WIN_BOOTSTRAP_CIS_oof.json"},
-    "camelyon17_ood": {"regret": [0.0,0.0,0.1381], "false_adapt": 0.0, "n_test": 18, "dev_seeds": [0,1], "test_seeds": [2,3,4], "verdict": "reconciled no-harm", "source": "audits/integrity_2026-06-20/camelyon_reconciliation/"},
-    "rxrx1_J": {"regret": [0.0,0.2531,0.0], "false_adapt": 0.0, "n_test": 60, "dev_seeds": [0,1,2,3,4], "test_seeds": [5,6,7,8,9], "verdict": "locked no-harm"},
-    "cifar10_1_K": {"regret": [0.0021,0.0190,0.0017], "false_adapt_unconditional": 0.1667, "false_adapt_conditional": 0.4444, "n_test": 48, "verdict": "diagnostic; transfer bar fails"},
-    "three_source_oof": {"regret": [0.0059117,0.0632323,0.0342043], "false_adapt": 0.0, "n_conditions": 143, "verdict": "CI beats-both; constructed routing aggregate", "source": "experiments/kbound/results/mixed_protocol_oof_v2/mixed_protocol_oof_v2_result.json", "caveat": "saved scorer used 5000 bootstrap replicates while protocol text states 10000"},
-    "pacs": {"completed_seeds": 1, "planned_seeds": 3, "verdict": "diagnostic; incomplete"},
-    "imagenet_r_D": {"completed_seeds": [0,1,2], "planned_seed_count": 4, "verdict": "diagnostic; no CI-robust beats-both"}
+    "cifar10c_tent": {
+      "regret": [
+        0.0015736109,
+        0.0079233799,
+        0.1240979162
+      ],
+      "false_adapt": 0.0,
+      "seeds": [
+        0,
+        1,
+        2,
+        3,
+        4
+      ],
+      "conditions_per_seed": 432,
+      "verdict": "locked CI beats-both",
+      "source": "experiments/kbound/results/stress_grid_multiseed_v1/LOCKED_ANALYSIS_RESULTS.json",
+      "seal": "experiments/kbound/results/nine_track_lock_v1/LOCK_SEAL.json#cifar10c_tent_eata"
+    },
+    "cifar10c_eata": {
+      "regret": [
+        0.0012675925,
+        0.0032682874,
+        0.1313789343
+      ],
+      "false_adapt": 0.0,
+      "seeds": [
+        0,
+        1,
+        2,
+        3,
+        4
+      ],
+      "conditions_per_seed": 432,
+      "verdict": "locked CI beats-both",
+      "source": "experiments/kbound/results/stress_grid_multiseed_v1/LOCKED_ANALYSIS_RESULTS.json",
+      "seal": "experiments/kbound/results/nine_track_lock_v1/LOCK_SEAL.json#cifar10c_tent_eata"
+    },
+    "imagenetc_sar": {
+      "regret": [
+        0.026422222,
+        0.0529333334,
+        0.0318944445
+      ],
+      "false_adapt": 0.0,
+      "seeds": [
+        0,
+        1,
+        2,
+        3,
+        4
+      ],
+      "n_cells": 135,
+      "abstain_count": 109,
+      "gap_kga_minus_adapt_ci95": [
+        -0.0518416198,
+        -0.0038235196
+      ],
+      "gap_kga_minus_freeze_ci95": [
+        -0.0086428244,
+        -0.0026000001
+      ],
+      "verdict": "locked paired-bootstrap beats-both",
+      "quantile_rule": "exact split-conformal rank k=ceil((n+1)(1-alpha)), alpha=0.10",
+      "source": "win_hunt_v5_imagenetc_ms/pooled_5seed/per_condition_imagenetc_sar_seed{0..4}.json (canonical Method-B pooling, exact-rank)",
+      "regenerated": "2026-07-21",
+      "seal": "experiments/kbound/results/nine_track_lock_v1/LOCK_SEAL.json#imagenetc_sar"
+    },
+    "officehome_M_v2": {
+      "regret": [
+        0.0157142857,
+        0.0468131868,
+        0.0158241758
+      ],
+      "false_adapt": 0.0,
+      "n_test": 35,
+      "seeds": [
+        0,
+        1
+      ],
+      "ci_vs_adapt": [
+        0.0038434066,
+        0.0618681319
+      ],
+      "ci_vs_freeze": [
+        0.0,
+        0.0003296703
+      ],
+      "verdict": "locked no-harm (OOF; LOO BB not promoted)",
+      "source": "research_lock/KBOUND_WIN_BOOTSTRAP_CIS_oof.json",
+      "seal": "experiments/kbound/results/nine_track_lock_v1/LOCK_SEAL.json#officehome_M_v2"
+    },
+    "iwildcam_H_v2": {
+      "regret": [
+        0.0041023691,
+        0.1028299605,
+        0.0041023691
+      ],
+      "false_adapt": 0.0,
+      "n_test": 72,
+      "calibration_seeds": [
+        0
+      ],
+      "test_seeds": [
+        1
+      ],
+      "ci_vs_adapt": [
+        0.0795034211,
+        0.1182122616
+      ],
+      "ci_vs_freeze": [
+        0.0,
+        0.0
+      ],
+      "verdict": "locked no-harm (OOF)",
+      "source": "research_lock/KBOUND_WIN_BOOTSTRAP_CIS_oof.json",
+      "seal": "experiments/kbound/results/nine_track_lock_v1/LOCK_SEAL.json#iwildcam_H_v2"
+    },
+    "camelyon17_ood": {
+      "regret": [
+        0.0,
+        0.0,
+        0.1381
+      ],
+      "false_adapt": 0.0,
+      "n_test": 18,
+      "dev_seeds": [
+        0,
+        1
+      ],
+      "test_seeds": [
+        2,
+        3,
+        4
+      ],
+      "verdict": "locked no-harm (OOD reconciliation)",
+      "source": "audits/integrity_2026-06-20/camelyon_reconciliation/",
+      "seal": "experiments/kbound/results/nine_track_lock_v1/LOCK_SEAL.json#camelyon17_ood"
+    },
+    "rxrx1_J": {
+      "regret": [
+        0.0,
+        0.2531,
+        0.0
+      ],
+      "false_adapt": 0.0,
+      "n_test": 60,
+      "dev_seeds": [
+        0,
+        1,
+        2,
+        3,
+        4
+      ],
+      "test_seeds": [
+        5,
+        6,
+        7,
+        8,
+        9
+      ],
+      "verdict": "locked no-harm",
+      "seal": "experiments/kbound/results/nine_track_lock_v1/LOCK_SEAL.json#rxrx1_J"
+    },
+    "cifar10_1_K": {
+      "regret": [
+        0.0021,
+        0.019,
+        0.0017
+      ],
+      "false_adapt_unconditional": 0.1667,
+      "false_adapt_conditional": 0.4444,
+      "n_test": 48,
+      "verdict": "locked diagnostic fail (transfer bar)",
+      "seal": "experiments/kbound/results/nine_track_lock_v1/LOCK_SEAL.json#cifar10_1_K"
+    },
+    "three_source_oof": {
+      "regret": [
+        0.0059117,
+        0.0632323,
+        0.0342043
+      ],
+      "false_adapt": 0.0,
+      "n_conditions": 143,
+      "verdict": "locked CI beats-both; constructed routing aggregate",
+      "source": "experiments/kbound/results/mixed_protocol_oof_v2/mixed_protocol_oof_v2_result.json",
+      "caveat": "saved scorer used 5000 bootstrap replicates while protocol text states 10000",
+      "seal": "experiments/kbound/results/nine_track_lock_v1/LOCK_SEAL.json#three_source_oof"
+    },
+    "pacs": {
+      "completed_seeds": 1,
+      "planned_seeds": 3,
+      "verdict": "diagnostic; incomplete (not in NINE_TRACK_LOCK_SEAL_v1)"
+    },
+    "imagenet_r_D": {
+      "completed_seeds": [
+        0,
+        1,
+        2
+      ],
+      "planned_seed_count": 4,
+      "verdict": "diagnostic; incomplete seed 3 (not in NINE_TRACK_LOCK_SEAL_v1)"
+    },
+    "controlled_multimodal_D33": {
+      "dataset": "MNIST two-view controlled",
+      "n_conditions": 130,
+      "seed": 0,
+      "mean_accuracy": {
+        "kga": 0.8567846154,
+        "always_fuse": 0.5832307692,
+        "always_single_A": 0.8535538462,
+        "oracle": 0.8573076923
+      },
+      "decision_counts": {
+        "ADAPT": 9,
+        "FREEZE": 119,
+        "ABSTAIN": 2
+      },
+      "false_adapt": 0.0,
+      "superiority_probability": {
+        "vs_always_fuse": 1.0,
+        "vs_always_single_A": 1.0
+      },
+      "verdict": "supported controlled mechanism confirmation; not a natural-shift claim",
+      "claim_id": "KB-CLAIM-027",
+      "source": "experiments/kbound/results/controlled_multimodal_d33/results.json"
+    }
+  },
+  "nine_track_lock_seal": {
+    "path": "experiments/kbound/results/nine_track_lock_v1/LOCK_SEAL.json",
+    "research_lock": "research_lock/NINE_TRACK_LOCK_SEAL_v1.yaml",
+    "verify": "python docs/research/kbound/scripts/seal_nine_track_lock.py --verify"
   },
   "headtohead": {
     "verdict": "WIN",

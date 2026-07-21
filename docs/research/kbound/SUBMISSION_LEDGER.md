@@ -67,7 +67,7 @@ ImageNet-C SAR   | .0107/.0529/.0319 pooled; FA_u=.007              | [E] BB poo
 Camelyon17 OOD   | .0000/.0000/.1381; FA_u=0                        | [E] no-harm       | reconciled (raw)
 iWildCam H v2    | .0041/.1028/.0041; FA_u=0                        | [E] no-harm       | reconciled — ** fresh 5-seed pending (real-ckpt rerun queued) **
 Office-Home M v2 | .0157/.0468/.0158; FA_u=0                        | [E] no-harm       | reconciled (OOF). raw-grid BB NOT promoted
-RxRx1 J          | .0000/.2531/.0000; FA_u=0                        | [E] no-harm       | locked (fresh 5-seed valid)
+RxRx1 J          | .0000/.2531/.0000; FA_u=0                        | [E] no-harm       | locked (real ckpt; single seed-0 model, multi-condition)
 PACS             | 3 safe / 1 null                                  | [D]               | diagnostic (1 of 3 seeds)
 ImageNet-R D     | no CI-robust BB                                  | [D]               | diagnostic (3 of 4 seeds)
 CIFAR-10.1 K     | fails transfer bar (FA_u=.167,FA_c=.444)         | [D] negative      | diagnostic
@@ -94,3 +94,39 @@ G11 Prior audit docs conflicting/stale — this ledger supersedes them. [Phase 1
 safety/validity != accuracy | theorem-guarantee != empirical-coverage | mixed-regime BB != one-sided
 no-harm | natural benchmark != constructed mixture | official method != protocol-matched port |
 locked/reconciled != diagnostic/incomplete.
+
+
+## 6. Fix-queue resolutions (Phase 4-5 tail, 2026-07-21)
+G1 [RESOLVED] paper/generated/kbound_result_manifest.json /tracks/imagenetc_sar regenerated from the
+   5 per-seed files (win_hunt_v5_imagenetc_ms/pooled_5seed) under the EXACT split-conformal rank rule:
+   regret [0.0264,0.0529,0.0319], FA_u=0.0, seeds [0-4], n_cells 135, abstain 109, gap CIs
+   (adapt [-0.0518,-0.0038], freeze [-0.0086,-0.0026]) => paired-bootstrap beats-both. Now synced to manuscript.
+PACS [RESOLVED] Manuscript previously printed photo "null" FA_u=0.056; primary raw replay
+   (win_hunt_v5/pacs_aggr/pacs_result.json) gives FA_u=0 on ALL FOUR LODO targets (photo abstains/freezes,
+   ties freeze). Manuscript corrected: reports primary-replay FA_u=0 all four; earlier 0.056 flagged as
+   not reproduced; track stays diagnostic (1 of 3 seeds; photo unreconciled).
+OfficeHome [RESOLVED/annotated] 0.0157/0.0468/0.0158 is an OOF-lock DESIGN value (saved bootstrap lock,
+   App:claim-artifact), not a raw-grid per-cell number - already stated at lines ~851,1095-1097. Final panel tier: "locked (OOF no-harm only; LOO BB not promoted)". Not raw-traceable BY DESIGN.
+G9 [RESOLVED] claim_ledger.json KB-CLAIM-022 (Camelyon Protocol-G pooled beats-both) status=withdrawn,
+   test_split "pooled id_val (invalid)", forbidden_wording "beats both Camelyon17". That wording is ABSENT
+   from the compiled manuscript (grep rc=1); artifact archived under archive/audit_only. Manuscript only ever
+   states Camelyon "reconciled no-harm". No live lock/script asserts Camelyon beats-both. Quarantine intact.
+Phase 6 (leakage/timing) + Phase 7-8 (claim-by-claim integration): audited by two read-only subagents;
+   see PHASE6_LEAKAGE_AUDIT.md and PHASE7_INTEGRATION_AUDIT.md.
+
+## 7. Phase 6-8 audit verdict (2026-07-21)
+Phase 6 (leakage/timing, PHASE6_LEAKAGE_AUDIT.md): PASS/clean. All 7 live tracks fit epsilon on the
+   calibration split only (LOO/cross-fit), score a disjoint test partition; certificate decisions use
+   (b_hat, epsilon) only, true benefit B used solely for post-hoc FA_u scoring; ImageNet-C 5-seed pools
+   epsilon PER SEED (not one epsilon across pooled cells). KB-CLAIM-022 in-sample-radius quarantine confirmed.
+Phase 7-8 (integration, PHASE7_INTEGRATION_AUDIT.md): 20 MATCH / 3 MISMATCH / 1 UNVERIFIABLE. All six sec-5
+   distinctions hold; every withdrawn-claim forbidden phrase absent from compiled PDF. 3 defects fixed:
+   [P0] RxRx1 always-adapt regret 0.2587 -> 0.2531 (canonical; 0.2587 was the sar_online sub-candidate, not
+        the promoted protocol-J aggregate) at kbound_short.tex:902 and :940.
+   [P1] iWildCam tier "5-seed real-ckpt confirmed" -> "single-run" (:900); RxRx1 tier "5 seeds" -> "single-run"
+        (:902) and ":940" drop "(5 seeds)". Matches body text :865-866 (iWildCam/Office-Home/RxRx1 single-run).
+        Genuine 5-seed tracks remain CIFAR-10-C and ImageNet-C only (real seed0-4 grids, agent-validated).
+   [P2] Uniform-panel CIFAR-10-C Tent/EATA 4th-decimals 0.0080/0.1239, 0.1313 -> canonical 0.0079/0.1241,
+        0.1314 (:897), matching primary numeric table :936-937.
+Non-issues verified: undefined refs/citations = 0 (earlier "46" was a grep artifact); tab_multiseed_natural.tex
+   is not \input and does not exist (moot); RxRx1/Office-Home/iWildCam runs are single trained model.
