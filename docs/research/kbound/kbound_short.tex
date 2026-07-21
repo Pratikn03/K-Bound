@@ -898,8 +898,8 @@ CIFAR-10-C stress & $5\times432$ per candidate & Tent: $0.0016/0.0079/0.1241$; E
 ImageNet-C SAR & $27$ cells $\times$ $5$ seeds & $0.0264/0.0529/0.0319$ pooled; $\mathrm{FA}_{\mathrm u}=0.000$ (exact split-conformal) & selective routing; pooled CI-supported utility; point-level $5/5$ seeds & locked (5 seeds; per-seed CIs $2/5$) \\
 Camelyon17 OOD & genuine OOD test $n=18$ (support $n=36$) & $0.0000/0.0000/0.1381$; $\mathrm{FA}_{\mathrm u}=0$ & selects adapt-equivalent behavior & reconciled (raw records) \\
 iWildCam H v2 & held-out test $n=72$ & $0.0041/0.1028/0.0041$; $\mathrm{FA}_{\mathrm u}=0$ & no-harm, ties freeze & reconciled (OOF lock) \\
-Office-Home M v2 & target test $n=35$ & $0.0157/0.0468/0.0158$; $\mathrm{FA}_{\mathrm u}=0$ & no-harm, tiny point edge & reconciled (OOF lock) \\
-RxRx1 J & OOD test $n=60$ & $0.0000/0.2531/0.0000$; $\mathrm{FA}_{\mathrm u}=0$ & selects freeze-equivalent behavior & locked (raw run) \\
+Office-Home M v2 & target test $n=35$ & $0.0157/0.0468/0.0158$; $\mathrm{FA}_{\mathrm u}=0$ & no-harm, tiny point edge & reconciled (OOF lock; 5-seed confirmed) \\
+RxRx1 J & OOD test $n=60$ & $0.0000/0.2587/0.0000$; $\mathrm{FA}_{\mathrm u}=0$ & selects freeze-equivalent behavior & locked (5 seeds, real ckpt) \\
 PACS & four LODO targets, $108$ cells each & three safety targets ($\mathrm{FA}_{\mathrm u}{=}0$); one null (photo, $\mathrm{FA}_{\mathrm u}{=}0.056$) & action-safety diagnostic & diagnostic (1 of 3 planned seeds) \\
 ImageNet-R D & $3$ seeds $\times10$ backbones & no CI-robust routing utility; one point-only arm fails the second CI & abstention / fixed-policy ties & diagnostic (3 of 4 planned seeds) \\
 CIFAR-10.1 K & cross-seed test $n=48$ & $0.0021/0.0190/0.0017$; $\mathrm{FA}_{\mathrm u}=0.167$, $\mathrm{FA}_{\mathrm c}=0.444$ & fails transfer bar; no claim & diagnostic (corrected metric label) \\
@@ -937,7 +937,7 @@ CIFAR-10-C Tent & $5\times432$ & .0016 & .0079 & .1241 & locked; selective routi
 CIFAR-10-C EATA & $5\times432$ & .0013 & .0033 & .1314 & locked; selective routing, $\mathrm{FA}_{\mathrm u}=0$; CI utility \\
 ImageNet-C SAR & $27$ cells $\times5$ seeds & .0264 & .0529 & .0319 & locked (5 seeds); pooled CI routing utility \\
 Camelyon17 OOD & $n=18$ & .0000 & .0000 & .1381 & reconciled; no-harm \\
-RxRx1 J & $n=60$ & .0000 & .2531 & .0000 & locked; no-harm \\
+RxRx1 J & $n=60$ & .0000 & .2587 & .0000 & locked (5 seeds); no-harm \\
 Three-source OOF mixture & $n=143$ & .0059 & .0632 & .0342 & locked; heterogeneous routing (constructed) \\
 \bottomrule
 \end{tabular}
