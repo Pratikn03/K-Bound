@@ -894,10 +894,10 @@ multi-seed result from being presented as equivalent evidence.}
 \toprule
 Track & Evaluation unit & Result & Decision interpretation & Evidence tier \\
 \midrule
-CIFAR-10-C stress & $5\times432$ per candidate & Tent: $0.0016/0.0079/0.1241$; EATA: $0.0013/0.0033/0.1314$; SAR: $0.0015/0.0112/0.1286$; $\mathrm{FA}_{\mathrm u}=0$ & selective routing; paired-CI utility & reconciled from five raw seeds; SAR radius CV $0.390$ \\
+CIFAR-10-C stress & $5\times432$ per candidate & Tent: $0.0016/0.0080/0.1239$; EATA: $0.0013/0.0033/0.1313$; SAR withheld; $\mathrm{FA}_{\mathrm u}=0$ & selective routing; paired-CI utility & Tent/EATA reconciled from five raw seeds; SAR withheld (seed-0 aggregate non-reproducing) \\
 ImageNet-C SAR & $27$ cells $\times$ $5$ seeds & $0.0264/0.0529/0.0319$ pooled; $\mathrm{FA}_{\mathrm u}=0.000$ (exact split-conformal) & selective routing; pooled CI-supported utility; point-level $5/5$ seeds & locked (5 seeds; per-seed CIs $2/5$) \\
 Camelyon17 OOD & genuine OOD test $n=18$ (support $n=36$) & $0.0000/0.0000/0.1381$; $\mathrm{FA}_{\mathrm u}=0$ & selects adapt-equivalent behavior & reconciled (raw records) \\
-iWildCam H v2 & held-out test $n=72$ & $0.0041/0.1028/0.0041$; $\mathrm{FA}_{\mathrm u}=0$ & no-harm, ties freeze & reconciled (OOF lock) \\
+iWildCam H v2 & held-out test $n=72$ & $0.0041/0.1028/0.0041$; $\mathrm{FA}_{\mathrm u}=0$ & no-harm, ties freeze & reconciled (OOF lock; 5-seed real-ckpt confirmed) \\
 Office-Home M v2 & target test $n=35$ & $0.0157/0.0468/0.0158$; $\mathrm{FA}_{\mathrm u}=0$ & no-harm, tiny point edge & reconciled (OOF lock; 5-seed confirmed) \\
 RxRx1 J & OOD test $n=60$ & $0.0000/0.2587/0.0000$; $\mathrm{FA}_{\mathrm u}=0$ & selects freeze-equivalent behavior & locked (5 seeds, real ckpt) \\
 PACS & four LODO targets, $108$ cells each & three safety targets ($\mathrm{FA}_{\mathrm u}{=}0$); one null (photo, $\mathrm{FA}_{\mathrm u}{=}0.056$) & action-safety diagnostic & diagnostic (1 of 3 planned seeds) \\

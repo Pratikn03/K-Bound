@@ -72,7 +72,8 @@ def policy_metrics(dec, a0, aa, B=None):
         "n": int(len(a0)),
         "decision_counts": {d: int((dec == d).sum()) for d in ["ADAPT", "FREEZE", "ABSTAIN"]},
         "coverage": float(np.mean(dec != "ABSTAIN")),
-        "false_adapt_rate_B<0": float(np.mean(B[adapt] < 0)) if adapt.any() else None,
+        "false_adapt_rate_B<0": float(np.mean(B[adapt] < 0)) if adapt.any() else None,  # conditional FA_c (diagnostic)
+        "FA_u_marginal": float(np.mean(adapt & (B <= 0))),  # marginal FA_u (thm:certificate; Delta<=0 boundary)
         "adapt_precision_B>0":  float(np.mean(B[adapt] > 0)) if adapt.any() else None,
         "mean_balanced_acc": {
             "always_adapt":  float(aa.mean()),
