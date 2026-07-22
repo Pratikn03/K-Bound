@@ -69,12 +69,30 @@ class MaskedImageNetModel(nn.Module):
 
 
 def load_select_indices(class_index_path, imagenetr_dir, max_classes=0):
-    m = json.load(open(class_index_path))                 # {"0":["n01440764","tench"],...}
-    wnid2idx = {v[0]: int(k) for k, v in m.items()}
+    with open(class_index_path) as fh:
+        m = json.load(fh)
+    # Support both common canonical ImageNet-1K index schemas:
+    #   {"0": ["n01440764", "tench"], ...} and {"n01440764": 0, ...}.
+    # The latter is shipped by RobustBench and avoids requiring a duplicate file.
+    if m and all(str(k).startswith("n") for k in m):
+        wnid2idx = {str(k): int(v) for k, v in m.items()}
+    else:
+        try:
+            wnid2idx = {str(v[0]): int(k) for k, v in m.items()}
+        except (TypeError, ValueError, IndexError) as exc:
+            raise ValueError(
+                f"Unsupported ImageNet class-index schema in {class_index_path}"
+            ) from exc
     wnids = sorted([d for d in os.listdir(imagenetr_dir)
                     if d.startswith("n") and os.path.isdir(join(imagenetr_dir, d))])
     if max_classes and max_classes > 0:
         wnids = wnids[:max_classes]
+    missing = [w for w in wnids if w not in wnid2idx]
+    if missing:
+        raise ValueError(
+            f"ImageNet class index {class_index_path} is missing "
+            f"{len(missing)} dataset WNIDs (first: {missing[:5]})"
+        )
     sel = [wnid2idx[w] for w in wnids]
     return wnids, sel
 

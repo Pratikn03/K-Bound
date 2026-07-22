@@ -71,14 +71,12 @@ def summary_track(name, n, adapt, coverage, fa, source, seeds, command):
             "abstain": None if coverage is None else 1-coverage}
     actions = {}
     for a, rate in vals.items():
-        k = None if rate is None else round(rate*n)
-        actions[a] = {"count": k, "rate": rate, "ci95_wilson": None if k is None else wilson(k,n),
-                      "status": "reported_summary" if k is not None else "not_retained"}
-    fk = None if fa is None else round(fa*n)
+        actions[a] = {"count": None, "rate": rate, "ci95_wilson": None,
+                      "status": "summary_rate_only" if rate is not None else "not_retained"}
     return {"track": name, "n_decisions": n, "seeds": seeds, "source": source,
             "reproduction_command": command, "actions": actions,
-            "false_adapt_unconditional": {"count": fk, "n": n, "rate": fa,
-                "ci95_wilson": None if fk is None else wilson(fk,n)},
+            "false_adapt_unconditional": {"count": None, "n": None, "rate": fa,
+                "ci95_wilson": None, "status": "summary_rate_only" if fa is not None else "not_retained"},
             "interval_coverage_observed": {"count": None, "n": None, "rate": None,
                 "ci95_wilson": None, "status": "not_retained"},
             "theoretical_coverage": {"status": "conditional_on_declared_premise",
@@ -88,7 +86,9 @@ def summary_track(name, n, adapt, coverage, fa, source, seeds, command):
 def main():
     OUT.mkdir(parents=True, exist_ok=True)
     tracks = []
-    for method in ("tent", "eata", "sar"):
+    # CIFAR-10-C SAR is deliberately excluded: the archived aggregate does not
+    # reproduce from the current seed-0 replay (CIFAR10C_SAR_QUARANTINE.md).
+    for method in ("tent", "eata"):
         pat = f"experiments/kbound/results/stress_grid_multiseed_v1/seed*/per_condition_cifar10c_{method}_seed*.json"
         tracks.append(from_records(f"CIFAR-10-C {method.upper()}", records([pat]), pat, [0,1,2,3,4],
             f".venv/bin/python docs/research/kbound/scripts/percondition_bootstrap.py --root experiments/kbound/results/stress_grid_multiseed_v1"))
@@ -100,11 +100,21 @@ def main():
         pat = f"experiments/kbound/results/win_hunt_v5/cifar101_aggr/seed*/per_condition_cifar101_{method}_seed*.json"
         tracks.append(from_records(f"CIFAR-10.1 {method.upper()}", records([pat]), pat, [0,1,2,3,4], "bash docs/research/kbound/scripts/kbtrain.sh cifar101"))
 
-    pacs = load("experiments/kbound/results/win_hunt_v5/pacs_aggr/pacs_result.json")
-    for domain, d in pacs["per_domain"].items():
-        tracks.append(summary_track(f"PACS {domain}", d["n_test_cells"], d.get("adapt_rate"), d.get("coverage"), d.get("FA_u"),
-            "experiments/kbound/results/win_hunt_v5/pacs_aggr/pacs_result.json", [0],
-            ".venv/bin/python docs/research/kbound/scripts/pacs_vlcs_runner.py --dataset PACS --root experiments/kbound/domainbed --seed <seed>"))
+    pacs_aggregate_rel = "experiments/kbound/results/pacs_multiseed_v1/PACS_MULTISEED_RESULTS.json"
+    pacs_aggregate_path = ROOT / pacs_aggregate_rel
+    if pacs_aggregate_path.exists():
+        pacs = load(pacs_aggregate_rel)
+        for domain, d in pacs["per_domain"].items():
+            n = sum(d["n_test_cells_per_seed"])
+            tracks.append(summary_track(f"PACS {domain}", n, d["adapt_rate"]["mean"],
+                d["coverage"]["mean"], d["FA_u"]["mean"], pacs_aggregate_rel,
+                pacs["seeds"], "bash docs/research/kbound/runbooks/finish_empirical_training.sh run"))
+    else:
+        pacs = load("experiments/kbound/results/win_hunt_v5/pacs_aggr/pacs_result.json")
+        for domain, d in pacs["per_domain"].items():
+            tracks.append(summary_track(f"PACS {domain}", d["n_test_cells"], d.get("adapt_rate"), d.get("coverage"), d.get("FA_u"),
+                "experiments/kbound/results/win_hunt_v5/pacs_aggr/pacs_result.json", [0],
+                "bash docs/research/kbound/runbooks/finish_empirical_training.sh run"))
 
     # Action summaries come from the protocol artifacts; regret CIs remain sourced from the OOF lock.
     for name, path, seeds in (
@@ -114,6 +124,21 @@ def main():
         d = load(path)["test_locked"]
         tracks.append(summary_track(name, d["n_test"], d["adapt_rate"], d["coverage"], d["false_adapt"],
             path, seeds, ".venv/bin/python docs/research/kbound/scripts/bootstrap_win_cis.py"))
+    iw_stability_path = "experiments/kbound/results/multiseed/iwildcam/extracted_locked/multiseed_iwildcam_tent_online.json"
+    if (ROOT / iw_stability_path).exists():
+        iw_stability = load(iw_stability_path)
+        iw_track = next(t for t in tracks if t["track"] == "iWildCam")
+        iw_track["supplemental_multiseed_stability"] = {
+            "seeds": iw_stability["seeds"],
+            "conditions_per_seed": iw_stability["conditions_per_seed"],
+            "regret_kga_mean_sd": iw_stability["regret_kga"],
+            "regret_adapt_mean_sd": iw_stability["regret_adapt"],
+            "regret_freeze_mean_sd": iw_stability["regret_freeze"],
+            "false_adapt_max": iw_stability["FA_u_max"],
+            "verdict": iw_stability["verdict"],
+            "source": iw_stability_path,
+            "scope": "stability check; not a replacement for the held-out OOF lock",
+        }
     cam = load("audits/integrity_2026-06-20/camelyon_reconciliation/recon_results.json")["run_split_by_domain"]["OOD_test_only"]
     tracks.append(summary_track("Camelyon17", cam["n_test"], cam["adapt_rate"], cam["coverage"], cam["false_adapt"],
         "audits/integrity_2026-06-20/camelyon_reconciliation/recon_results.json", [2,3,4],
@@ -126,26 +151,40 @@ def main():
             "experiments/kbound/results/win_hunt_v5/rxrx1_aggr/result_4a2840ef.json", [0], "bash docs/research/kbound/scripts/kbtrain.sh rxrx1-9plus"))
 
     im = load("experiments/kbound/results/imagenetr_protocol_d_multiseed_v1/MULTISEED_ANALYSIS_RESULTS.json")
-    im_raw = load("experiments/kbound/results/imagenetr_protocol_d_multiseed_v1/result_224624b1.json")
     for cand, d in im["candidates"].items():
         n = d["false_adapt_den"]
-        counts = im_raw["routing_a_single_candidate"][cand]["kga"]["decision_counts"]
+        im_rows = records([f"experiments/kbound/results/imagenetr_protocol_d_multiseed_v1/per_condition_imagenet-r_{cand}_seed*.json"])
+        counts = Counter(str(r.get("kga_decision", "")).upper() for r in im_rows)
         tracks.append(summary_track(f"ImageNet-R {cand}", n, counts.get("ADAPT",0)/n,
             (counts.get("ADAPT",0)+counts.get("FREEZE",0))/n, d["false_adapt_num"]/n,
-            "experiments/kbound/results/imagenetr_protocol_d_multiseed_v1/result_224624b1.json", im["seeds"], "bash docs/research/kbound/scripts/kbtrain.sh imagenetr-d"))
+            "experiments/kbound/results/imagenetr_protocol_d_multiseed_v1/per_condition_imagenet-r_*_seed*.json", im["seeds"], "bash docs/research/kbound/runbooks/finish_empirical_training.sh run"))
+
+    d33_path = "experiments/kbound/results/controlled_multimodal_d33/results.json"
+    d33 = load(d33_path)
+    d33_dec = d33["decisions"]
+    tracks.append(summary_track("Controlled multimodal D33", d33["n_conditions"],
+        d33_dec["ADAPT"] / d33["n_conditions"],
+        (d33_dec["ADAPT"] + d33_dec["FREEZE"]) / d33["n_conditions"],
+        d33["false_adapt_rate"], d33_path, [0],
+        "python experiments/kbound/controlled_multimodal_d33.py"))
 
     payload = {"schema_version": 1, "interval_method": "95% Wilson binomial interval",
                "coverage_boundary": "empirical interval hits are descriptive; theorem coverage remains conditional on its premise",
                "tracks": tracks}
     (OUT / "decision_metrics.json").write_text(json.dumps(payload, indent=2) + "\n")
 
+    pacs_done = sorted({0} | {int(p.stem.removeprefix("pacs_seed")) for p in (ROOT / "experiments/kbound/results").glob("pacs_seed*.json")})
+    pacs_aggregate = pacs_aggregate_path
+    inr_seeds = im["seeds"]
     claims = [
         ["Three-way action behavior", "nine-track panel", "track-specific", "decision_metrics.json", "regime/action tables", "closed: rates and Wilson intervals reported"],
         ["False-adapt uncertainty", "nine-track panel", "track-specific", "decision_metrics.json", "decision metrics table", "closed where denominator exists"],
         ["Coverage uncertainty", "nine-track panel", "track-specific", "decision_metrics.json", "coverage audit", "closed where interval-hit records exist; historical natural logs marked not retained"],
-        ["CIFAR-SAR reconciliation", "CIFAR-10-C", "0--4", "stress_grid_multiseed_v1/seed*/per_condition_cifar10c_sar_seed*.json", "uniform panel", "closed: locked analysis rebuilt; radius CV 0.390 disclosed"],
-        ["PACS planned seeds", "PACS", "0 complete; 1--2 pending", "experiments/kbound/results/pacs_seed*.json", "PACS row", "blocked: PyTorch import failure in Python 3.14 runtime"],
-        ["ImageNet-R planned seeds", "ImageNet-R", "0--2 complete; 3 pending", "imagenetr_protocol_d_multiseed_v1", "ImageNet-R row", "pending seed 3"],
+        ["CIFAR-10-C SAR quarantine", "CIFAR-10-C", "none promoted", "CIFAR10C_SAR_QUARANTINE.md", "excluded from tables and claims", "withheld: replay mismatch; reinstatement gates not met"],
+        ["iWildCam stability", "iWildCam", "0--4", iw_stability_path, "uniform panel caveat", "closed: stable no-harm; supplemental to OOF lock" if (ROOT / iw_stability_path).exists() else "pending"],
+        ["PACS planned seeds", "PACS", ",".join(map(str, pacs_done)), "experiments/kbound/results/pacs_multiseed_v1/PACS_MULTISEED_RESULTS.json", "PACS row", "closed" if pacs_aggregate.exists() and {0,1,2}.issubset(pacs_done) else "pending seeds 1--2; seed-matched locked protocol"],
+        ["ImageNet-R planned seeds", "ImageNet-R", ",".join(map(str,inr_seeds)), "imagenetr_protocol_d_multiseed_v1", "ImageNet-R row", "closed" if set(inr_seeds)=={0,1,2,3} else "pending seed 3"],
+        ["Controlled multimodal routing", "MNIST two-view controlled", "fixed seed 0; 130 conditions", d33_path, "Appendix Protocol D33", "closed: KB-CLAIM-027 supported; controlled mechanism confirmation"],
     ]
     md = ["# Empirical claim matrix", "", "| Claim | Dataset | Seeds | Authoritative artifact | Paper consumer | Status |", "|---|---|---|---|---|---|"]
     md += ["| " + " | ".join(row) + " |" for row in claims]

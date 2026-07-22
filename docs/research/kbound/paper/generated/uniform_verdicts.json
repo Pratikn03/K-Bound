@@ -43,19 +43,19 @@
     },
     {
       "track": "CIFAR-10-C SAR",
-      "unit": "5x432 cells",
-      "regret_kga": 0.0015,
-      "regret_adapt": 0.0003,
-      "regret_freeze": 0.1405,
-      "FA_u": 0.0,
-      "better_policy": "adapt",
-      "point_beats_both": false,
-      "ci_robust_beats_both": false,
+      "unit": "excluded",
+      "regret_kga": null,
+      "regret_adapt": null,
+      "regret_freeze": null,
+      "FA_u": null,
+      "better_policy": null,
+      "point_beats_both": null,
+      "ci_robust_beats_both": null,
       "survives_wave_holm": null,
-      "verdict": "no-harm (ties adapt)",
-      "evidence_tier": "locked multi-seed",
-      "source": "stress_grid_multiseed_v1/LOCKED_ANALYSIS_RESULTS.json",
-      "note": "frozen; SAR ties the better fixed policy"
+      "verdict": "withheld",
+      "evidence_tier": "quarantined; not evidence",
+      "source": "CIFAR10C_SAR_QUARANTINE.md",
+      "note": "archived aggregate does not reproduce from the current seed-0 replay"
     },
     {
       "track": "ImageNet-C SAR",
@@ -133,9 +133,9 @@
       "ci_robust_beats_both": false,
       "survives_wave_holm": null,
       "verdict": "no-harm (ties freeze) -- MIGRATES from point-BB",
-      "evidence_tier": "provisional OOF summary",
+      "evidence_tier": "locked OOF no-harm (LOO BB not promoted)",
       "source": "KBOUND_WIN_BOOTSTRAP_CIS_oof.json",
-      "note": "point edge only; gap_vs_freeze 0.00011 [0.0,0.00033] includes 0 -> not CI-robust"
+      "note": "point edge only; gap_vs_freeze 0.00011 [0.0,0.00033] includes 0 -> not CI-robust; sealed NINE_TRACK_LOCK_SEAL_v1"
     },
     {
       "track": "iWildCam H v2",
@@ -149,25 +149,25 @@
       "ci_robust_beats_both": false,
       "survives_wave_holm": null,
       "verdict": "no-harm (ties freeze)",
-      "evidence_tier": "provisional OOF summary",
+      "evidence_tier": "locked OOF no-harm",
       "source": "KBOUND_WIN_BOOTSTRAP_CIS_oof.json",
-      "note": "gap_vs_freeze CI [0,0] includes 0"
+      "note": "gap_vs_freeze CI [0,0] includes 0; sealed NINE_TRACK_LOCK_SEAL_v1"
     },
     {
       "track": "Camelyon17 OOD",
-      "unit": "genuine OOD test n=54",
-      "regret_kga": 0.0029,
-      "regret_adapt": 0.0013,
-      "regret_freeze": 0.0749,
+      "unit": "genuine OOD test n=18 (paper); OOF pooled n=54 is not the promoted unit",
+      "regret_kga": 0.0,
+      "regret_adapt": 0.0,
+      "regret_freeze": 0.1381,
       "FA_u": 0.0,
       "better_policy": "adapt",
       "point_beats_both": false,
       "ci_robust_beats_both": false,
       "survives_wave_holm": null,
-      "verdict": "no-harm (ties adapt, beats freeze)",
-      "evidence_tier": "reconciled raw records",
-      "source": "KBOUND_WIN_BOOTSTRAP_CIS_oof.json",
-      "note": "gap_vs_adapt -0.0016 [-0.0051,+0.0013] includes 0"
+      "verdict": "no-harm (ties adapt on genuine OOD)",
+      "evidence_tier": "locked OOD reconciliation",
+      "source": "audits/integrity_2026-06-20/camelyon_reconciliation/recon_results.json",
+      "note": "promoted unit is OOD test n=18 (0/0/0.1381); sealed NINE_TRACK_LOCK_SEAL_v1"
     },
     {
       "track": "RxRx1 J",

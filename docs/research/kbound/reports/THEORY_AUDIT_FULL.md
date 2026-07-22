@@ -1,6 +1,6 @@
 # K-Bound Full Theory Audit
 
-Generated: 2026-07-02T13:19:40.795934+00:00
+Generated: 2026-07-22T05:57:42.631824+00:00
 Verdict: **PASS**
 
 ## Closed spine (paper claims)

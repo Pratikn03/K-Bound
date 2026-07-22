@@ -13,6 +13,9 @@ result manifest, dashboard, and physical-camera validation package.
 | Inspect every promoted number | [paper/generated/kbound_result_manifest.json](paper/generated/kbound_result_manifest.json) |
 | Audit claim-to-artifact links | [KBOUND_SHORT_CLAIM_MANIFEST.md](KBOUND_SHORT_CLAIM_MANIFEST.md) |
 | Reproduce the submission | [REVIEWER_REPRO_PACKET.md](REVIEWER_REPRO_PACKET.md) |
+| Run an independent replication | [INDEPENDENT_REPLICATION_PROTOCOL.md](INDEPENDENT_REPLICATION_PROTOCOL.md) |
+| Understand tracked vs external artifacts | [EXTERNAL_STORAGE_POLICY.md](EXTERNAL_STORAGE_POLICY.md) / [STORAGE_MANIFEST.json](STORAGE_MANIFEST.json) |
+| Inspect the withheld CIFAR SAR arm | [CIFAR10C_SAR_QUARANTINE.md](CIFAR10C_SAR_QUARANTINE.md) |
 | Inspect theory-to-code mapping | [THEORY_TO_CODE_MAP.md](THEORY_TO_CODE_MAP.md) |
 | Build the research dashboard | [dashboard/README.md](dashboard/README.md) |
 | Start the physical study | [edge/PHYSICAL_STUDY_RUNBOOK.md](edge/PHYSICAL_STUDY_RUNBOOK.md) |
@@ -36,8 +39,8 @@ prove structural non-identifiability.
 
 - CIFAR-10-C Tent: five seeds, 432 cells per seed, archived CI beats-both.
 - CIFAR-10-C EATA: five seeds, 432 cells per seed, archived CI beats-both.
-- ImageNet-C SAR: 27 cells, seed 0, paired-bootstrap beats-both with a
-  single-seed caveat.
+- ImageNet-C SAR: 27 cells per seed, five seeds, exact-rank pooled
+  paired-bootstrap beats-both; per-seed uncertainty remains disclosed.
 
 ### Natural no-harm results
 
@@ -45,11 +48,12 @@ Office-Home M v2, iWildCam H v2, Camelyon17 genuine OOD reconciliation,
 and RxRx1 J. These are not described as clean single-dataset natural beats-both
 wins.
 
-### Diagnostic or incomplete tracks
+### Diagnostic or withheld tracks
 
 - CIFAR-10.1 fails the declared transfer bar.
-- ImageNet-R has three of four planned seeds and no stable CI-robust win.
-- PACS has one of three planned seeds.
+- ImageNet-R is complete at four of four planned seeds and remains a weak-evidence/null diagnostic.
+- PACS is complete at three of three planned seeds and remains a null diagnostic.
+- CIFAR-10-C SAR is withheld after a replay mismatch and contributes no empirical claim.
 - The three-source OOF stream is researcher-constructed routing evidence, not
   unseen-domain transfer.
 

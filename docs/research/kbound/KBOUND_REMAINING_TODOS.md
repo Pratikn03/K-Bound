@@ -5,9 +5,10 @@ These are the items a faculty reviewer will still ask for. Each is either a visi
 labeled, not invented. Priority: **P1** blocks a serious submission, **P2** strengthens it, **P3**
 polish.
 
-> **Status:** **1 DRAFT TODO** remains (streaming figures) — and it is *not* T9-blocked: no saved
-> streaming artifact exists anywhere (T9, logs, or the long paper), so it needs a re-run of
-> `win_hunt_D_anytime_stream.py`. Everything else is done or documentation.
+> **Status:** the previously listed streaming artifact has been recovered and reconciled. The saved
+> full iWildCam run is a label-informed offline collapse diagnostic, not a label-free KGA deployment
+> result; the short paper now states that boundary explicitly. Remaining items are empirical closure
+> runs or documentation/polish, not a missing streaming file.
 
 ## Method / reproducibility
 - ~~Reconcile the **two evidence panels** into one documented feature schema~~ **DONE** —
@@ -31,8 +32,10 @@ polish.
 - ~~**Provenance**~~ **DONE** — restored `mixed_headtohead_v1/HEADTOHEAD_RESULTS_*.json`,
   `mixed_protocol_oof_v2/`, `KBOUND_WIN_BOOTSTRAP_CIS_oof.json`, and all of `research_lock/` from T9;
   the previously-dangling `\path{}` citations now resolve.
-- **P1** **Streaming demo** (35,370-image iWildCam) — the ONE remaining DRAFT TODO. No saved artifact
-  exists on T9/logs/long-paper; re-run `gapclose_wave5/win_hunt_D_anytime_stream.py` and commit the JSON.
+- ~~**Streaming demo artifact** (35,370-image iWildCam)~~ **RECOVERED / DIAGNOSTIC ONLY** —
+  `experiments/kbound/results/iwildcam_streaming_pilot/pilot_test_native_bs16.json` is present locally
+  and on T9 with matching SHA-256. It documents continual-TENT collapse, but its betting increments
+  use target labels, so it must not be presented as a label-free KGA deployment result.
 - **P2** **CIFAR-10.1 regret triple** — still only FA_u=0.444 traceable; low-stakes (a no-claim
   diagnostic row).
 

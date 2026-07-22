@@ -81,6 +81,52 @@ theorem frontier_decision_abstain {M beta : ℝ}
     frontierDecision M beta = abstain := by
   simp [frontierDecision, not_lt.mpr hleft, not_lt.mpr hright]
 
+/-- Every closed-band margin admits an allowed drift with exactly zero benefit.
+This is the algebraic zero-versus-strict witness used by frontier necessity. -/
+theorem frontier_band_zero_witness {M beta : ℝ} (hband : |M| ≤ beta) :
+    ∃ gamma : ℝ, |gamma| ≤ beta ∧ M + gamma = 0 := by
+  refine ⟨-M, ?_, by ring⟩
+  simpa only [abs_neg] using hband
+
+/-- In the open band, two allowed drift values yield opposite strict signs. -/
+theorem frontier_open_band_opposite_witnesses {M beta : ℝ} (hband : |M| < beta) :
+    ∃ gammaPos gammaNeg : ℝ,
+      |gammaPos| ≤ beta ∧ |gammaNeg| ≤ beta ∧
+      0 < M + gammaPos ∧ M + gammaNeg < 0 := by
+  have hbeta : 0 < beta := lt_of_le_of_lt (abs_nonneg M) hband
+  have hb := (abs_lt.mp hband)
+  refine ⟨beta, -beta, ?_, ?_, ?_, ?_⟩
+  · simpa [abs_of_pos hbeta]
+  · simpa [abs_of_pos hbeta]
+  · linarith
+  · linarith
+
+/-- At the positive boundary `M = β > 0`, an allowed drift realizes zero benefit
+while another allowed drift realizes a strict positive benefit. -/
+theorem frontier_positive_boundary_zero_strict {M beta : ℝ}
+    (hbeta : 0 < beta) (hM : M = beta) :
+    ∃ gammaZero gammaStrict : ℝ,
+      |gammaZero| ≤ beta ∧ |gammaStrict| ≤ beta ∧
+      M + gammaZero = 0 ∧ 0 < M + gammaStrict := by
+  refine ⟨-beta, 0, ?_, ?_, ?_, ?_⟩
+  · simp [abs_of_pos hbeta, le_rfl]
+  · simp [le_of_lt hbeta]
+  · linarith
+  · linarith
+
+/-- At the negative boundary `M = -β < 0`, allowed drifts realize zero and a
+strict negative benefit. -/
+theorem frontier_negative_boundary_zero_strict {M beta : ℝ}
+    (hbeta : 0 < beta) (hM : M = -beta) :
+    ∃ gammaZero gammaStrict : ℝ,
+      |gammaZero| ≤ beta ∧ |gammaStrict| ≤ beta ∧
+      M + gammaZero = 0 ∧ M + gammaStrict < 0 := by
+  refine ⟨beta, 0, ?_, ?_, ?_, ?_⟩
+  · simp [abs_of_pos hbeta, le_rfl]
+  · simp [le_of_lt hbeta]
+  · linarith
+  · linarith
+
 /-- β = 0 face used by ATC / DoC / GDE / COT / AETTA. -/
 theorem zero_budget_positive_face {M gamma : ℝ}
     (hM : 0 < M) (hdrift : |gamma| ≤ 0) :

@@ -5,8 +5,8 @@ Generated 2026-07-19 (audit plan Phase 1). Supersedes all prior audit docs.
 ## 0. Frozen target
 - Manuscript: docs/research/kbound/kbound_short.tex  (IEEE conference short paper)
 - Git commit (HEAD at freeze): ff9be6b2a90482394fdb518226d8e0efde2c9c7b  (branch main)
-- PDF sha256: 444db9a6f4e9cdc1fbbeb1fc33fbcb79ea0b39b258c5ed610c475857b405af4c
-- PDF pages: 22 ; tables: 27 (I–XXVII)
+- PDF sha256: 5b01e5e7da41edae5a574c09fb8d5fa6b0cb4cc8d5853ff814441484b755d00a
+- PDF pages: 23; long manuscript: 60 pages; every page rendered and counted
 - Build: latexmk clean, 0 undefined refs/citations
 - NOTE: working history lives on origin/flagship-history; origin/main is a separate curated release.
 
@@ -63,19 +63,20 @@ thm:imp=FIX (xref/notation). ZERO withdrawals. Full detail: PHASE2_THEOREM_AUDIT
 ## 3. Nine tracks (Table XV uniform panel) + promoted claim + evidence tier
 Track            | Promoted result (KGA/adapt/freeze; FA_u)         | Claim type | Tier (ledger)
 CIFAR-10-C stress| Tent .0016/.0079/.1241; EATA .0013/.0033/.1314   | [E] BB(Tent/EATA) | locked; SAR WITHHELD (seed0 non-repro)
-ImageNet-C SAR   | .0107/.0529/.0319 pooled; FA_u=.007              | [E] BB pooled     | locked(5s) — ** manifest still single-seed: STALE, Phase 5 **
+ImageNet-C SAR   | .0264/.0529/.0319 pooled; FA_u=0                 | [E] BB pooled     | locked (5 seeds; exact-rank manifest synced)
 Camelyon17 OOD   | .0000/.0000/.1381; FA_u=0                        | [E] no-harm       | reconciled (raw)
-iWildCam H v2    | .0041/.1028/.0041; FA_u=0                        | [E] no-harm       | reconciled — ** fresh 5-seed pending (real-ckpt rerun queued) **
+iWildCam H v2    | .0041/.1028/.0041; FA_u=0                        | [E] no-harm       | reconciled (single trained model; multi-condition)
 Office-Home M v2 | .0157/.0468/.0158; FA_u=0                        | [E] no-harm       | reconciled (OOF). raw-grid BB NOT promoted
 RxRx1 J          | .0000/.2531/.0000; FA_u=0                        | [E] no-harm       | locked (real ckpt; single seed-0 model, multi-condition)
-PACS             | 3 safe / 1 null                                  | [D]               | diagnostic (1 of 3 seeds)
-ImageNet-R D     | no CI-robust BB                                  | [D]               | diagnostic (3 of 4 seeds)
+PACS             | .0431/.0176/.0446; mean reported FA_u=.0093       | [D] null          | locked diagnostic (3 of 3 seeds; pooled FA count not retained)
+ImageNet-R D     | .0112/.0064/.0325 mean across backbones; FA=1/480 | [D] null          | locked diagnostic (4 of 4 seeds; 0/10 CI BB)
 CIFAR-10.1 K     | fails transfer bar (FA_u=.167,FA_c=.444)         | [D] negative      | diagnostic
 
 ## 4. Known gaps carried into Phases 2-8 (from user + this freeze)
-G1 ImageNet-C 5-seed manuscript numbers NOT synced with generated manifest (single-seed). [Phase 5]
-G2 CIFAR-10-C SAR withheld: seed0 no longer reproduces archived aggregate. [Phase 5]
-G3 PACS 1/3 seeds; G4 ImageNet-R 3/4 seeds. [Phase 8 GPU]
+G1 [RESOLVED] ImageNet-C five-seed manuscript numbers and generated manifest are synchronized.
+G2 [QUARANTINED] CIFAR-10-C SAR is withheld because seed 0 no longer reproduces the archived aggregate;
+   reinstatement gates are frozen in CIFAR10C_SAR_QUARANTINE.md.
+G3 [RESOLVED] PACS 3/3 seeds; G4 [RESOLVED] ImageNet-R 4/4 seeds. Both remain null diagnostics. [Phase 8 GPU]
 G5 Official POEM repro not wired; comparisons are protocol-matched ports (Table XI style). [Phase 8]
 G6 Physical-camera R2 pending — cannot support a claim (Table XXVI RESULT PENDING). [Phase 8 human]
 G7 Strict stress-grid v2 protocol appears unrun. [Phase 8]
@@ -101,10 +102,10 @@ G1 [RESOLVED] paper/generated/kbound_result_manifest.json /tracks/imagenetc_sar 
    5 per-seed files (win_hunt_v5_imagenetc_ms/pooled_5seed) under the EXACT split-conformal rank rule:
    regret [0.0264,0.0529,0.0319], FA_u=0.0, seeds [0-4], n_cells 135, abstain 109, gap CIs
    (adapt [-0.0518,-0.0038], freeze [-0.0086,-0.0026]) => paired-bootstrap beats-both. Now synced to manuscript.
-PACS [RESOLVED] Manuscript previously printed photo "null" FA_u=0.056; primary raw replay
-   (win_hunt_v5/pacs_aggr/pacs_result.json) gives FA_u=0 on ALL FOUR LODO targets (photo abstains/freezes,
-   ties freeze). Manuscript corrected: reports primary-replay FA_u=0 all four; earlier 0.056 flagged as
-   not reproduced; track stays diagnostic (1 of 3 seeds; photo unreconciled).
+PACS [RESOLVED] The registered three-seed aggregate is complete. Mean regret across four LODO targets
+   is .0431/.0176/.0446 (KGA/adapt/freeze), so the track remains a null diagnostic. The mean reported
+   FA_u is .0093; raw pooled action/FA counts were not retained, so no integer count or Wilson interval
+   is reconstructed. The superseded single-seed interpretation is not promoted.
 OfficeHome [RESOLVED/annotated] 0.0157/0.0468/0.0158 is an OOF-lock DESIGN value (saved bootstrap lock,
    App:claim-artifact), not a raw-grid per-cell number - already stated at lines ~851,1095-1097. Final panel tier: "locked (OOF no-harm only; LOO BB not promoted)". Not raw-traceable BY DESIGN.
 G9 [RESOLVED] claim_ledger.json KB-CLAIM-022 (Camelyon Protocol-G pooled beats-both) status=withdrawn,

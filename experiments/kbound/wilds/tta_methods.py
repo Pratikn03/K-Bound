@@ -22,9 +22,17 @@ import torch.nn as nn
 def pick_device(prefer: str = "auto"):
     if prefer == "cpu":
         return torch.device("cpu")
-    if prefer in ("mps", "auto") and torch.backends.mps.is_available():
+    if prefer == "mps":
+        if not torch.backends.mps.is_available():
+            raise RuntimeError("MPS was explicitly requested but is unavailable")
         return torch.device("mps")
-    if prefer in ("cuda", "auto") and torch.cuda.is_available():
+    if prefer == "cuda":
+        if not torch.cuda.is_available():
+            raise RuntimeError("CUDA was explicitly requested but is unavailable")
+        return torch.device("cuda")
+    if torch.backends.mps.is_available():
+        return torch.device("mps")
+    if torch.cuda.is_available():
         return torch.device("cuda")
     return torch.device("cpu")
 

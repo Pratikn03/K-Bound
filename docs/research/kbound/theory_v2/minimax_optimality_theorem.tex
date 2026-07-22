@@ -45,12 +45,12 @@ $\E[X_i]=-\Delta$ (world $P_-$, so \textsc{freeze} is Bayes), respectively, both
 per-sample variance proxy $\le\sigma^2$. A (possibly randomized) \emph{label-free decision rule}
 is a measurable map $g:(X_1,\dots,X_n)\mapsto\{\textsc{adapt},\textsc{freeze},\textsc{abstain}\}$.
 Its committal-error and miss probabilities are
-\[
-  \mathrm{FA}(g)=\Pr_{P_-}\!\big(g=\textsc{adapt}\big),\quad
-  \mathrm{FF}(g)=\Pr_{P_+}\!\big(g=\textsc{freeze}\big),\quad
-  \mathrm{miss}_+(g)=\Pr_{P_+}\!\big(g\neq\textsc{adapt}\big),\quad
-  \mathrm{miss}_-(g)=\Pr_{P_-}\!\big(g\neq\textsc{freeze}\big).
-\]
+\begin{align*}
+\mathrm{FA}(g)&=\Pr_{P_-}(g=\textsc{adapt}), &
+\mathrm{FF}(g)&=\Pr_{P_+}(g=\textsc{freeze}),\\
+\mathrm{miss}_+(g)&=\Pr_{P_+}(g\neq\textsc{adapt}), &
+\mathrm{miss}_-(g)&=\Pr_{P_-}(g\neq\textsc{freeze}).
+\end{align*}
 Here $\mathrm{FA},\mathrm{FF}$ are \emph{wrong-commit} (false-adapt / false-freeze) rates and
 $\mathrm{miss}_\pm$ are \emph{failure-to-certify} (the correct action is not committed --- it is
 either abstained or, worse, reversed). Call $g$ \emph{$\alpha$-certifying} if it meets the same

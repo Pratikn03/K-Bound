@@ -209,18 +209,29 @@
       "seal": "experiments/kbound/results/nine_track_lock_v1/LOCK_SEAL.json#three_source_oof"
     },
     "pacs": {
-      "completed_seeds": 1,
+      "completed_seeds": 3,
       "planned_seeds": 3,
-      "verdict": "diagnostic; incomplete (not in NINE_TRACK_LOCK_SEAL_v1)"
+      "mean_regret_kga_adapt_freeze": [0.0431, 0.0176, 0.0446],
+      "reported_false_adapt_mean": 0.0092592593,
+      "false_adapt_count_status": "not_retained",
+      "claim_id": "KB-CLAIM-041",
+      "source": "experiments/kbound/results/pacs_multiseed_v1/PACS_MULTISEED_RESULTS.json",
+      "verdict": "completed three-seed null action-safety diagnostic; no beats-both claim; sealed in NINE_TRACK_LOCK_SEAL_v1 (pacs_multiseed)"
     },
     "imagenet_r_D": {
       "completed_seeds": [
         0,
         1,
-        2
+        2,
+        3
       ],
       "planned_seed_count": 4,
-      "verdict": "diagnostic; incomplete seed 3 (not in NINE_TRACK_LOCK_SEAL_v1)"
+      "mean_regret_kga_adapt_freeze": [0.0112, 0.0064, 0.0325],
+      "observed_false_adapt": "1/480",
+      "beats_both_backbones": "0/10",
+      "claim_id": "KB-CLAIM-042",
+      "source": "experiments/kbound/results/imagenetr_protocol_d_multiseed_v1/MULTISEED_ANALYSIS_RESULTS.json",
+      "verdict": "completed four-seed ten-backbone weak-evidence diagnostic; 0/10 CI-supported beats-both; sealed in NINE_TRACK_LOCK_SEAL_v1 (imagenet_r_D)"
     },
     "controlled_multimodal_D33": {
       "dataset": "MNIST two-view controlled",

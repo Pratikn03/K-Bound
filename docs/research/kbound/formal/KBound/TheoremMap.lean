@@ -38,11 +38,15 @@ import KBound.Probability.UniformConformal
   membership of the constructed laws in the declared drift class.
 
 `prop:closed-band` and `thm:frontier`
-* FORMALIZED: frontier sufficiency and the three deterministic decision branches
+* FORMALIZED: frontier sufficiency, the three deterministic decision branches, the
+  closed-band zero witness, open-band opposite-sign witnesses, and both boundary
+  zero-versus-strict witnesses
   (`frontier_identifiable_positive`, `frontier_identifiable_negative`,
-  `frontier_decision_adapt`, `frontier_decision_freeze`, `frontier_decision_abstain`).
-* PEN-AND-PAPER: zero-versus-strict boundary construction, target-class richness,
-  necessity, and pointwise maximality.
+  `frontier_decision_adapt`, `frontier_decision_freeze`, `frontier_decision_abstain`,
+  `frontier_band_zero_witness`, `frontier_open_band_opposite_witnesses`).
+* PEN-AND-PAPER: realization of these algebraic drifts by measurable target laws,
+  target-class richness, and the lift from the witnesses to distributional
+  necessity/pointwise maximality.
 
 `thm:certificate`
 * FORMALIZED: pointwise containment of strict directional errors in coverage failure,
@@ -77,12 +81,16 @@ namespace KBoundTheoremMap
 #check KBound.matched_opposite_worlds_force_abstain
 #check KBound.lecam_regret_floor_two_point
 #check KBound.lecam_testing_two_point
--- `thm:frontier` sufficiency and rule branches only; necessity/maximality remain pen-and-paper.
+-- `thm:frontier`: sufficiency, rule branches, and algebraic necessity witnesses.
 #check KBound.frontier_identifiable_positive
 #check KBound.frontier_identifiable_negative
 #check KBound.frontier_decision_adapt
 #check KBound.frontier_decision_freeze
 #check KBound.frontier_decision_abstain
+#check KBound.frontier_band_zero_witness
+#check KBound.frontier_open_band_opposite_witnesses
+#check KBound.frontier_positive_boundary_zero_strict
+#check KBound.frontier_negative_boundary_zero_strict
 -- `lem:reduction`: algebraic sign reductions.
 #check KBound.binary_sign_reduction
 #check KBound.binary_margin_split

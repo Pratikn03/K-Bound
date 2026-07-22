@@ -154,13 +154,10 @@ $R(\pi)=\E_Q[\,|\Delta|\,\mathbf 1\{\pi\neq\text{oracle}\}\,]$ be regret-to-orac
 deployment mixture $Q$.
 \begin{proposition}[Asymmetric fixed-policy regret]\label{prop:beatsboth-asym}
 Since $\Delta>0$ on $\{M>\beta\}$ and $\Delta<0$ on $\{M<-\beta\}$ for every admissible drift
-(Theorem~\ref{thm:headline}),
-\[
-R(\textsc{af})-R(\delta^\star)=\E_Q[\,|\Delta|\,\mathbf 1\{M>\beta\}\,],\qquad
-R(\textsc{aa})-R(\delta^\star)=\E_Q[\,|\Delta|\,\mathbf 1\{M<-\beta\}\,]
-+\E_Q[\,|\Delta|\,\mathbf 1\{|M|\le\beta,\Delta<0\}\,]
--\E_Q[\,|\Delta|\,\mathbf 1\{|M|\le\beta,\Delta>0\}\,].
-\]
+(Theorem~\ref{thm:headline}).  The excess regret of always-freeze is exactly the
+detectable-helpful mass $\E_Q[|\Delta|\mathbf 1\{M>\beta\}]$.  For always-adapt
+it is the detectable-harmful mass plus harmful-minus-helpful regret inside
+$\{|M|\le\beta\}$.
 Hence $\delta^\star$ weakly dominates always-freeze, strictly iff detectable-helpful mass
 $Q(M>\beta)>0$; but $\delta^\star$ beats always-adapt iff the certified harmful-mass win
 exceeds the helpful adaptation forgone in the abstention region. Strict improvement over both fixed policies thus requires
@@ -216,6 +213,43 @@ not evidence.
 
 \input{edge/kbound_camera_main_tables}
 
+\section{Controlled multimodal mechanism check}\label{app:d33}
+Protocol D33 is a pre-registered controlled two-view MNIST experiment: each digit is split into
+left- and right-half modalities, and the right modality is corrupted by Gaussian noise over
+$13$ severities and $10$ batches, yielding $130$ conditions. This construction deliberately
+creates the named regime in which fusion changes from helpful to harmful and the change is visible
+in label-free reliability evidence. Table~\ref{tab:d33} reports the locked result.
+
+\begin{table}[t]\centering\footnotesize
+\caption{\textbf{Controlled multimodal Protocol D33 ($130$ conditions).} Accuracy is averaged over
+the fixed corruption grid. The superiority probabilities are paired-bootstrap quantities saved by
+the locked analysis. This is a controlled mechanism confirmation, not a natural-shift result.}
+\label{tab:d33}
+\begin{tabular}{lc}
+\toprule
+Policy or diagnostic & Result \\
+\midrule
+Always fuse (adapt) & $0.5832$ \\
+Always single-A (freeze) & $0.8536$ \\
+\textsc{KGA} routed & $\mathbf{0.8568}$ \\
+Oracle & $0.8573$ \\
+Actions (adapt / freeze / abstain) & $9 / 119 / 2$ \\
+Observed false-adapt & $0/130$ \\
+$P(\textsc{KGA}>\text{fuse})$ / $P(\textsc{KGA}>\text{single-A})$ & $1.000 / 1.000$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+The result confirms that the controller can exercise all three actions and improve on both fixed
+policies when the helpful-to-harmful transition is present and detectable. Its scientific scope is
+narrow: the corruption is injected, the gain over the safe single-modality policy is $0.0032$, and
+the experiment does not establish a natural multimodal win or universal accuracy improvement.
+The protocol was pre-registered in
+\path{research_lock/CONTROLLED_MULTIMODAL_PROTOCOL_D33_v1.yaml} (sealed 2026-06-15, before any
+result was computed); the authoritative artifact is
+\path{experiments/kbound/results/controlled_multimodal_d33/results.json}, and the claim ledger records
+this result as \texttt{KB-CLAIM-027} (supported).
+
 \section{Runtime details}\label{app:runtime}
 The adapter update requires forward and backward computation before the controller can decide.
 The saved controller microbenchmark reports evidence extraction, benefit-model evaluation, rollback
@@ -235,16 +269,16 @@ necessity/maximality, risk alignment, calibration transfer, or the lift from a c
 uniform-index model to arbitrary exchangeable deployment processes.
 
 \section{Claim-to-artifact map}\label{app:claim-artifact}
-The machine-readable manifest \texttt{paper/generated/kbound\_result\_manifest.json} is the
+The machine-readable manifest \path{paper/generated/kbound_result_manifest.json} is the
 authoritative index for every promoted number, seed count, protocol, quantile convention, and known
-replay caveat. The derived audit \texttt{paper/generated/empirical\_audit/decision\_metrics.json}
+replay caveat. The derived audit \path{paper/generated/empirical_audit/decision_metrics.json}
 adds adapt/freeze/abstain counts and rates, 95\% Wilson intervals for action rates and marginal
 false adaptation, empirical interval-hit coverage where the raw fields were retained, the exact
 source artifact, and a reproduction command. Observed interval-hit coverage is explicitly marked
 \emph{empirical only}; it neither verifies exchangeability nor establishes the theorem's coverage
 premise or risk alignment. Historical natural-shift summaries that did not retain interval-hit
 records are marked \texttt{not\_retained}, not assigned a synthetic coverage value. The compact
-claim matrix \texttt{paper/generated/empirical\_audit/claim\_matrix.md} records claim, dataset,
+claim matrix \path{paper/generated/empirical_audit/claim_matrix.md} records claim, dataset,
 seeds, artifact, paper consumer, and closure status. Table~\ref{tab:claim-status} gives the
 reader-facing summary.
 

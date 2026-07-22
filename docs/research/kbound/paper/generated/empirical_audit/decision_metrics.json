@@ -128,68 +128,6 @@
       }
     },
     {
-      "track": "CIFAR-10-C SAR",
-      "n_decisions": 2160,
-      "seeds": [
-        0,
-        1,
-        2,
-        3,
-        4
-      ],
-      "source": "experiments/kbound/results/stress_grid_multiseed_v1/seed*/per_condition_cifar10c_sar_seed*.json",
-      "reproduction_command": ".venv/bin/python docs/research/kbound/scripts/percondition_bootstrap.py --root experiments/kbound/results/stress_grid_multiseed_v1",
-      "actions": {
-        "adapt": {
-          "count": 1313,
-          "rate": 0.6078703703703704,
-          "ci95_wilson": [
-            0.5871069636862523,
-            0.6282507734069138
-          ]
-        },
-        "freeze": {
-          "count": 167,
-          "rate": 0.07731481481481481,
-          "ci95_wilson": [
-            0.06678656321707664,
-            0.08934384894575327
-          ]
-        },
-        "abstain": {
-          "count": 680,
-          "rate": 0.3148148148148148,
-          "ci95_wilson": [
-            0.29557188844391596,
-            0.33471525817725817
-          ]
-        }
-      },
-      "false_adapt_unconditional": {
-        "count": 0,
-        "n": 2160,
-        "rate": 0.0,
-        "ci95_wilson": [
-          0.0,
-          0.001775295877170106
-        ]
-      },
-      "interval_coverage_observed": {
-        "count": 1940,
-        "n": 2160,
-        "rate": 0.8981481481481481,
-        "ci95_wilson": [
-          0.8846780803898902,
-          0.9102045543745856
-        ],
-        "status": "empirical_only"
-      },
-      "theoretical_coverage": {
-        "status": "conditional_on_declared_premise",
-        "note": "Observed coverage does not prove exchangeability, drift correction, or risk alignment."
-      }
-    },
-    {
       "track": "ImageNet-C TENT",
       "n_decisions": 27,
       "seeds": [
@@ -551,49 +489,40 @@
     },
     {
       "track": "PACS art_painting",
-      "n_decisions": 18,
+      "n_decisions": 54,
       "seeds": [
-        0
+        0,
+        1,
+        2
       ],
-      "source": "experiments/kbound/results/win_hunt_v5/pacs_aggr/pacs_result.json",
-      "reproduction_command": ".venv/bin/python docs/research/kbound/scripts/pacs_vlcs_runner.py --dataset PACS --root experiments/kbound/domainbed --seed <seed>",
+      "source": "experiments/kbound/results/pacs_multiseed_v1/PACS_MULTISEED_RESULTS.json",
+      "reproduction_command": "bash docs/research/kbound/runbooks/finish_empirical_training.sh run",
       "actions": {
         "adapt": {
-          "count": 0,
-          "rate": 0.0,
-          "ci95_wilson": [
-            0.0,
-            0.17587922364665765
-          ],
-          "status": "reported_summary"
+          "count": null,
+          "rate": 0.2222222222222222,
+          "ci95_wilson": null,
+          "status": "summary_rate_only"
         },
         "freeze": {
-          "count": 18,
-          "rate": 1.0,
-          "ci95_wilson": [
-            0.8241207763533425,
-            1.0
-          ],
-          "status": "reported_summary"
+          "count": null,
+          "rate": 0.33333333333333337,
+          "ci95_wilson": null,
+          "status": "summary_rate_only"
         },
         "abstain": {
-          "count": 0,
-          "rate": 0.0,
-          "ci95_wilson": [
-            0.0,
-            0.17587922364665765
-          ],
-          "status": "reported_summary"
+          "count": null,
+          "rate": 0.4444444444444444,
+          "ci95_wilson": null,
+          "status": "summary_rate_only"
         }
       },
       "false_adapt_unconditional": {
-        "count": 0,
-        "n": 18,
-        "rate": 0.0,
-        "ci95_wilson": [
-          0.0,
-          0.17587922364665765
-        ]
+        "count": null,
+        "n": null,
+        "rate": 0.037037037037037035,
+        "ci95_wilson": null,
+        "status": "summary_rate_only"
       },
       "interval_coverage_observed": {
         "count": null,
@@ -609,49 +538,40 @@
     },
     {
       "track": "PACS cartoon",
-      "n_decisions": 18,
+      "n_decisions": 54,
       "seeds": [
-        0
+        0,
+        1,
+        2
       ],
-      "source": "experiments/kbound/results/win_hunt_v5/pacs_aggr/pacs_result.json",
-      "reproduction_command": ".venv/bin/python docs/research/kbound/scripts/pacs_vlcs_runner.py --dataset PACS --root experiments/kbound/domainbed --seed <seed>",
+      "source": "experiments/kbound/results/pacs_multiseed_v1/PACS_MULTISEED_RESULTS.json",
+      "reproduction_command": "bash docs/research/kbound/runbooks/finish_empirical_training.sh run",
       "actions": {
         "adapt": {
-          "count": 0,
+          "count": null,
           "rate": 0.0,
-          "ci95_wilson": [
-            0.0,
-            0.17587922364665765
-          ],
-          "status": "reported_summary"
+          "ci95_wilson": null,
+          "status": "summary_rate_only"
         },
         "freeze": {
-          "count": 14,
-          "rate": 0.7777777777777778,
-          "ci95_wilson": [
-            0.5478541568378739,
-            0.9099907189139831
-          ],
-          "status": "reported_summary"
+          "count": null,
+          "rate": 0.7962962962962963,
+          "ci95_wilson": null,
+          "status": "summary_rate_only"
         },
         "abstain": {
-          "count": 4,
-          "rate": 0.2222222222222222,
-          "ci95_wilson": [
-            0.09000928108601694,
-            0.45214584316212625
-          ],
-          "status": "reported_summary"
+          "count": null,
+          "rate": 0.20370370370370372,
+          "ci95_wilson": null,
+          "status": "summary_rate_only"
         }
       },
       "false_adapt_unconditional": {
-        "count": 0,
-        "n": 18,
+        "count": null,
+        "n": null,
         "rate": 0.0,
-        "ci95_wilson": [
-          0.0,
-          0.17587922364665765
-        ]
+        "ci95_wilson": null,
+        "status": "summary_rate_only"
       },
       "interval_coverage_observed": {
         "count": null,
@@ -667,49 +587,40 @@
     },
     {
       "track": "PACS photo",
-      "n_decisions": 18,
+      "n_decisions": 54,
       "seeds": [
-        0
+        0,
+        1,
+        2
       ],
-      "source": "experiments/kbound/results/win_hunt_v5/pacs_aggr/pacs_result.json",
-      "reproduction_command": ".venv/bin/python docs/research/kbound/scripts/pacs_vlcs_runner.py --dataset PACS --root experiments/kbound/domainbed --seed <seed>",
+      "source": "experiments/kbound/results/pacs_multiseed_v1/PACS_MULTISEED_RESULTS.json",
+      "reproduction_command": "bash docs/research/kbound/runbooks/finish_empirical_training.sh run",
       "actions": {
         "adapt": {
-          "count": 0,
+          "count": null,
           "rate": 0.0,
-          "ci95_wilson": [
-            0.0,
-            0.17587922364665765
-          ],
-          "status": "reported_summary"
+          "ci95_wilson": null,
+          "status": "summary_rate_only"
         },
         "freeze": {
-          "count": 17,
-          "rate": 0.9444444444444444,
-          "ci95_wilson": [
-            0.7424269921812741,
-            0.990124809021697
-          ],
-          "status": "reported_summary"
+          "count": null,
+          "rate": 0.9259259259259259,
+          "ci95_wilson": null,
+          "status": "summary_rate_only"
         },
         "abstain": {
-          "count": 1,
-          "rate": 0.05555555555555558,
-          "ci95_wilson": [
-            0.009875190978303097,
-            0.25757300781872594
-          ],
-          "status": "reported_summary"
+          "count": null,
+          "rate": 0.07407407407407407,
+          "ci95_wilson": null,
+          "status": "summary_rate_only"
         }
       },
       "false_adapt_unconditional": {
-        "count": 0,
-        "n": 18,
+        "count": null,
+        "n": null,
         "rate": 0.0,
-        "ci95_wilson": [
-          0.0,
-          0.17587922364665765
-        ]
+        "ci95_wilson": null,
+        "status": "summary_rate_only"
       },
       "interval_coverage_observed": {
         "count": null,
@@ -725,49 +636,40 @@
     },
     {
       "track": "PACS sketch",
-      "n_decisions": 18,
+      "n_decisions": 54,
       "seeds": [
-        0
+        0,
+        1,
+        2
       ],
-      "source": "experiments/kbound/results/win_hunt_v5/pacs_aggr/pacs_result.json",
-      "reproduction_command": ".venv/bin/python docs/research/kbound/scripts/pacs_vlcs_runner.py --dataset PACS --root experiments/kbound/domainbed --seed <seed>",
+      "source": "experiments/kbound/results/pacs_multiseed_v1/PACS_MULTISEED_RESULTS.json",
+      "reproduction_command": "bash docs/research/kbound/runbooks/finish_empirical_training.sh run",
       "actions": {
         "adapt": {
-          "count": 0,
+          "count": null,
           "rate": 0.0,
-          "ci95_wilson": [
-            0.0,
-            0.17587922364665765
-          ],
-          "status": "reported_summary"
+          "ci95_wilson": null,
+          "status": "summary_rate_only"
         },
         "freeze": {
-          "count": 18,
-          "rate": 1.0,
-          "ci95_wilson": [
-            0.8241207763533425,
-            1.0
-          ],
-          "status": "reported_summary"
+          "count": null,
+          "rate": 0.9814814814814815,
+          "ci95_wilson": null,
+          "status": "summary_rate_only"
         },
         "abstain": {
-          "count": 0,
-          "rate": 0.0,
-          "ci95_wilson": [
-            0.0,
-            0.17587922364665765
-          ],
-          "status": "reported_summary"
+          "count": null,
+          "rate": 0.01851851851851849,
+          "ci95_wilson": null,
+          "status": "summary_rate_only"
         }
       },
       "false_adapt_unconditional": {
-        "count": 0,
-        "n": 18,
+        "count": null,
+        "n": null,
         "rate": 0.0,
-        "ci95_wilson": [
-          0.0,
-          0.17587922364665765
-        ]
+        "ci95_wilson": null,
+        "status": "summary_rate_only"
       },
       "interval_coverage_observed": {
         "count": null,
@@ -792,41 +694,30 @@
       "reproduction_command": ".venv/bin/python docs/research/kbound/scripts/bootstrap_win_cis.py",
       "actions": {
         "adapt": {
-          "count": 22,
+          "count": null,
           "rate": 0.6285714285714286,
-          "ci95_wilson": [
-            0.4633693684359532,
-            0.7683418049663429
-          ],
-          "status": "reported_summary"
+          "ci95_wilson": null,
+          "status": "summary_rate_only"
         },
         "freeze": {
-          "count": 12,
+          "count": null,
           "rate": 0.34285714285714286,
-          "ci95_wilson": [
-            0.20831694987048957,
-            0.5084805048600374
-          ],
-          "status": "reported_summary"
+          "ci95_wilson": null,
+          "status": "summary_rate_only"
         },
         "abstain": {
-          "count": 1,
+          "count": null,
           "rate": 0.02857142857142858,
-          "ci95_wilson": [
-            0.005061491855444203,
-            0.14533087233613673
-          ],
-          "status": "reported_summary"
+          "ci95_wilson": null,
+          "status": "summary_rate_only"
         }
       },
       "false_adapt_unconditional": {
-        "count": 0,
-        "n": 35,
+        "count": null,
+        "n": null,
         "rate": 0.0,
-        "ci95_wilson": [
-          6.938893903907228e-18,
-          0.09890099232440402
-        ]
+        "ci95_wilson": null,
+        "status": "summary_rate_only"
       },
       "interval_coverage_observed": {
         "count": null,
@@ -851,41 +742,30 @@
       "reproduction_command": ".venv/bin/python docs/research/kbound/scripts/bootstrap_win_cis.py",
       "actions": {
         "adapt": {
-          "count": 1,
+          "count": null,
           "rate": 0.013888888888888888,
-          "ci95_wilson": [
-            0.002455951882905767,
-            0.07456602147476155
-          ],
-          "status": "reported_summary"
+          "ci95_wilson": null,
+          "status": "summary_rate_only"
         },
         "freeze": {
-          "count": 60,
+          "count": null,
           "rate": 0.8333333333333334,
-          "ci95_wilson": [
-            0.7308929306946451,
-            0.9020062875743832
-          ],
-          "status": "reported_summary"
+          "ci95_wilson": null,
+          "status": "summary_rate_only"
         },
         "abstain": {
-          "count": 11,
+          "count": null,
           "rate": 0.1527777777777778,
-          "ci95_wilson": [
-            0.08750708729475694,
-            0.25322289367500544
-          ],
-          "status": "reported_summary"
+          "ci95_wilson": null,
+          "status": "summary_rate_only"
         }
       },
       "false_adapt_unconditional": {
-        "count": 0,
-        "n": 72,
+        "count": null,
+        "n": null,
         "rate": 0.0,
-        "ci95_wilson": [
-          0.0,
-          0.05065117259645781
-        ]
+        "ci95_wilson": null,
+        "status": "summary_rate_only"
       },
       "interval_coverage_observed": {
         "count": null,
@@ -897,6 +777,32 @@
       "theoretical_coverage": {
         "status": "conditional_on_declared_premise",
         "note": "No theorem premise is inferred from this empirical summary."
+      },
+      "supplemental_multiseed_stability": {
+        "seeds": [
+          0,
+          1,
+          2,
+          3,
+          4
+        ],
+        "conditions_per_seed": 16,
+        "regret_kga_mean_sd": [
+          0.0113,
+          0.0026
+        ],
+        "regret_adapt_mean_sd": [
+          0.0653,
+          0.008
+        ],
+        "regret_freeze_mean_sd": [
+          0.0113,
+          0.0026
+        ],
+        "false_adapt_max": 0.0,
+        "verdict": "stable no-harm",
+        "source": "experiments/kbound/results/multiseed/iwildcam/extracted_locked/multiseed_iwildcam_tent_online.json",
+        "scope": "stability check; not a replacement for the held-out OOF lock"
       }
     },
     {
@@ -911,41 +817,30 @@
       "reproduction_command": ".venv/bin/python audits/integrity_2026-06-20/camelyon_reconciliation/camelyon_G_reconciliation.py",
       "actions": {
         "adapt": {
-          "count": 18,
+          "count": null,
           "rate": 1.0,
-          "ci95_wilson": [
-            0.8241207763533425,
-            1.0
-          ],
-          "status": "reported_summary"
+          "ci95_wilson": null,
+          "status": "summary_rate_only"
         },
         "freeze": {
-          "count": 0,
+          "count": null,
           "rate": 0.0,
-          "ci95_wilson": [
-            0.0,
-            0.17587922364665765
-          ],
-          "status": "reported_summary"
+          "ci95_wilson": null,
+          "status": "summary_rate_only"
         },
         "abstain": {
-          "count": 0,
+          "count": null,
           "rate": 0.0,
-          "ci95_wilson": [
-            0.0,
-            0.17587922364665765
-          ],
-          "status": "reported_summary"
+          "ci95_wilson": null,
+          "status": "summary_rate_only"
         }
       },
       "false_adapt_unconditional": {
-        "count": 0,
-        "n": 18,
+        "count": null,
+        "n": null,
         "rate": 0.0,
-        "ci95_wilson": [
-          0.0,
-          0.17587922364665765
-        ]
+        "ci95_wilson": null,
+        "status": "summary_rate_only"
       },
       "interval_coverage_observed": {
         "count": null,
@@ -969,41 +864,30 @@
       "reproduction_command": "bash docs/research/kbound/scripts/kbtrain.sh rxrx1-9plus",
       "actions": {
         "adapt": {
-          "count": 0,
+          "count": null,
           "rate": 0.0,
-          "ci95_wilson": [
-            2.7755575615628914e-17,
-            0.24249400665524085
-          ],
-          "status": "reported_summary"
+          "ci95_wilson": null,
+          "status": "summary_rate_only"
         },
         "freeze": {
-          "count": 2,
+          "count": null,
           "rate": 0.16666666666666666,
-          "ci95_wilson": [
-            0.04696514218385378,
-            0.4480308622529734
-          ],
-          "status": "reported_summary"
+          "ci95_wilson": null,
+          "status": "summary_rate_only"
         },
         "abstain": {
-          "count": 10,
+          "count": null,
           "rate": 0.8333333333333334,
-          "ci95_wilson": [
-            0.5519691377470266,
-            0.9530348578161463
-          ],
-          "status": "reported_summary"
+          "ci95_wilson": null,
+          "status": "summary_rate_only"
         }
       },
       "false_adapt_unconditional": {
-        "count": 0,
-        "n": 12,
+        "count": null,
+        "n": null,
         "rate": 0.0,
-        "ci95_wilson": [
-          2.7755575615628914e-17,
-          0.24249400665524085
-        ]
+        "ci95_wilson": null,
+        "status": "summary_rate_only"
       },
       "interval_coverage_observed": {
         "count": null,
@@ -1027,41 +911,30 @@
       "reproduction_command": "bash docs/research/kbound/scripts/kbtrain.sh rxrx1-9plus",
       "actions": {
         "adapt": {
-          "count": 0,
+          "count": null,
           "rate": 0.0,
-          "ci95_wilson": [
-            2.7755575615628914e-17,
-            0.24249400665524085
-          ],
-          "status": "reported_summary"
+          "ci95_wilson": null,
+          "status": "summary_rate_only"
         },
         "freeze": {
-          "count": 12,
+          "count": null,
           "rate": 1.0,
-          "ci95_wilson": [
-            0.7575059933447592,
-            1.0
-          ],
-          "status": "reported_summary"
+          "ci95_wilson": null,
+          "status": "summary_rate_only"
         },
         "abstain": {
-          "count": 0,
+          "count": null,
           "rate": 0.0,
-          "ci95_wilson": [
-            2.7755575615628914e-17,
-            0.24249400665524085
-          ],
-          "status": "reported_summary"
+          "ci95_wilson": null,
+          "status": "summary_rate_only"
         }
       },
       "false_adapt_unconditional": {
-        "count": 0,
-        "n": 12,
+        "count": null,
+        "n": null,
         "rate": 0.0,
-        "ci95_wilson": [
-          2.7755575615628914e-17,
-          0.24249400665524085
-        ]
+        "ci95_wilson": null,
+        "status": "summary_rate_only"
       },
       "interval_coverage_observed": {
         "count": null,
@@ -1085,41 +958,30 @@
       "reproduction_command": "bash docs/research/kbound/scripts/kbtrain.sh rxrx1-9plus",
       "actions": {
         "adapt": {
-          "count": 0,
+          "count": null,
           "rate": 0.0,
-          "ci95_wilson": [
-            2.7755575615628914e-17,
-            0.24249400665524085
-          ],
-          "status": "reported_summary"
+          "ci95_wilson": null,
+          "status": "summary_rate_only"
         },
         "freeze": {
-          "count": 12,
+          "count": null,
           "rate": 1.0,
-          "ci95_wilson": [
-            0.7575059933447592,
-            1.0
-          ],
-          "status": "reported_summary"
+          "ci95_wilson": null,
+          "status": "summary_rate_only"
         },
         "abstain": {
-          "count": 0,
+          "count": null,
           "rate": 0.0,
-          "ci95_wilson": [
-            2.7755575615628914e-17,
-            0.24249400665524085
-          ],
-          "status": "reported_summary"
+          "ci95_wilson": null,
+          "status": "summary_rate_only"
         }
       },
       "false_adapt_unconditional": {
-        "count": 0,
-        "n": 12,
+        "count": null,
+        "n": null,
         "rate": 0.0,
-        "ci95_wilson": [
-          2.7755575615628914e-17,
-          0.24249400665524085
-        ]
+        "ci95_wilson": null,
+        "status": "summary_rate_only"
       },
       "interval_coverage_observed": {
         "count": null,
@@ -1135,51 +997,41 @@
     },
     {
       "track": "ImageNet-R convnext_base",
-      "n_decisions": 36,
+      "n_decisions": 48,
       "seeds": [
         0,
         1,
-        2
+        2,
+        3
       ],
-      "source": "experiments/kbound/results/imagenetr_protocol_d_multiseed_v1/result_224624b1.json",
-      "reproduction_command": "bash docs/research/kbound/scripts/kbtrain.sh imagenetr-d",
+      "source": "experiments/kbound/results/imagenetr_protocol_d_multiseed_v1/per_condition_imagenet-r_*_seed*.json",
+      "reproduction_command": "bash docs/research/kbound/runbooks/finish_empirical_training.sh run",
       "actions": {
         "adapt": {
-          "count": 36,
+          "count": null,
           "rate": 1.0,
-          "ci95_wilson": [
-            0.9035813714055363,
-            1.0
-          ],
-          "status": "reported_summary"
+          "ci95_wilson": null,
+          "status": "summary_rate_only"
         },
         "freeze": {
-          "count": 0,
+          "count": null,
           "rate": 0.0,
-          "ci95_wilson": [
-            0.0,
-            0.09641862859446367
-          ],
-          "status": "reported_summary"
+          "ci95_wilson": null,
+          "status": "summary_rate_only"
         },
         "abstain": {
-          "count": 0,
+          "count": null,
           "rate": 0.0,
-          "ci95_wilson": [
-            0.0,
-            0.09641862859446367
-          ],
-          "status": "reported_summary"
+          "ci95_wilson": null,
+          "status": "summary_rate_only"
         }
       },
       "false_adapt_unconditional": {
-        "count": 0,
-        "n": 36,
+        "count": null,
+        "n": null,
         "rate": 0.0,
-        "ci95_wilson": [
-          0.0,
-          0.09641862859446367
-        ]
+        "ci95_wilson": null,
+        "status": "summary_rate_only"
       },
       "interval_coverage_observed": {
         "count": null,
@@ -1195,51 +1047,41 @@
     },
     {
       "track": "ImageNet-R convnext_tiny",
-      "n_decisions": 36,
+      "n_decisions": 48,
       "seeds": [
         0,
         1,
-        2
+        2,
+        3
       ],
-      "source": "experiments/kbound/results/imagenetr_protocol_d_multiseed_v1/result_224624b1.json",
-      "reproduction_command": "bash docs/research/kbound/scripts/kbtrain.sh imagenetr-d",
+      "source": "experiments/kbound/results/imagenetr_protocol_d_multiseed_v1/per_condition_imagenet-r_*_seed*.json",
+      "reproduction_command": "bash docs/research/kbound/runbooks/finish_empirical_training.sh run",
       "actions": {
         "adapt": {
-          "count": 5,
-          "rate": 0.1388888888888889,
-          "ci95_wilson": [
-            0.06081815009132838,
-            0.286595303893562
-          ],
-          "status": "reported_summary"
+          "count": null,
+          "rate": 0.0625,
+          "ci95_wilson": null,
+          "status": "summary_rate_only"
         },
         "freeze": {
-          "count": 0,
+          "count": null,
           "rate": 0.0,
-          "ci95_wilson": [
-            0.0,
-            0.09641862859446367
-          ],
-          "status": "reported_summary"
+          "ci95_wilson": null,
+          "status": "summary_rate_only"
         },
         "abstain": {
-          "count": 31,
-          "rate": 0.8611111111111112,
-          "ci95_wilson": [
-            0.713404696106438,
-            0.9391818499086717
-          ],
-          "status": "reported_summary"
+          "count": null,
+          "rate": 0.9375,
+          "ci95_wilson": null,
+          "status": "summary_rate_only"
         }
       },
       "false_adapt_unconditional": {
-        "count": 0,
-        "n": 36,
+        "count": null,
+        "n": null,
         "rate": 0.0,
-        "ci95_wilson": [
-          0.0,
-          0.09641862859446367
-        ]
+        "ci95_wilson": null,
+        "status": "summary_rate_only"
       },
       "interval_coverage_observed": {
         "count": null,
@@ -1255,51 +1097,41 @@
     },
     {
       "track": "ImageNet-R efficientnet_b0",
-      "n_decisions": 36,
+      "n_decisions": 48,
       "seeds": [
         0,
         1,
-        2
+        2,
+        3
       ],
-      "source": "experiments/kbound/results/imagenetr_protocol_d_multiseed_v1/result_224624b1.json",
-      "reproduction_command": "bash docs/research/kbound/scripts/kbtrain.sh imagenetr-d",
+      "source": "experiments/kbound/results/imagenetr_protocol_d_multiseed_v1/per_condition_imagenet-r_*_seed*.json",
+      "reproduction_command": "bash docs/research/kbound/runbooks/finish_empirical_training.sh run",
       "actions": {
         "adapt": {
-          "count": 0,
+          "count": null,
           "rate": 0.0,
-          "ci95_wilson": [
-            0.0,
-            0.09641862859446367
-          ],
-          "status": "reported_summary"
+          "ci95_wilson": null,
+          "status": "summary_rate_only"
         },
         "freeze": {
-          "count": 24,
-          "rate": 0.6666666666666666,
-          "ci95_wilson": [
-            0.5033399787115652,
-            0.7978538117569468
-          ],
-          "status": "reported_summary"
+          "count": null,
+          "rate": 0.7083333333333334,
+          "ci95_wilson": null,
+          "status": "summary_rate_only"
         },
         "abstain": {
-          "count": 12,
-          "rate": 0.33333333333333337,
-          "ci95_wilson": [
-            0.2021461882430531,
-            0.4966600212884348
-          ],
-          "status": "reported_summary"
+          "count": null,
+          "rate": 0.29166666666666663,
+          "ci95_wilson": null,
+          "status": "summary_rate_only"
         }
       },
       "false_adapt_unconditional": {
-        "count": 0,
-        "n": 36,
+        "count": null,
+        "n": null,
         "rate": 0.0,
-        "ci95_wilson": [
-          0.0,
-          0.09641862859446367
-        ]
+        "ci95_wilson": null,
+        "status": "summary_rate_only"
       },
       "interval_coverage_observed": {
         "count": null,
@@ -1315,51 +1147,41 @@
     },
     {
       "track": "ImageNet-R efficientnet_b3",
-      "n_decisions": 36,
+      "n_decisions": 48,
       "seeds": [
         0,
         1,
-        2
+        2,
+        3
       ],
-      "source": "experiments/kbound/results/imagenetr_protocol_d_multiseed_v1/result_224624b1.json",
-      "reproduction_command": "bash docs/research/kbound/scripts/kbtrain.sh imagenetr-d",
+      "source": "experiments/kbound/results/imagenetr_protocol_d_multiseed_v1/per_condition_imagenet-r_*_seed*.json",
+      "reproduction_command": "bash docs/research/kbound/runbooks/finish_empirical_training.sh run",
       "actions": {
         "adapt": {
-          "count": 36,
-          "rate": 1.0,
-          "ci95_wilson": [
-            0.9035813714055363,
-            1.0
-          ],
-          "status": "reported_summary"
+          "count": null,
+          "rate": 0.6458333333333334,
+          "ci95_wilson": null,
+          "status": "summary_rate_only"
         },
         "freeze": {
-          "count": 0,
+          "count": null,
           "rate": 0.0,
-          "ci95_wilson": [
-            0.0,
-            0.09641862859446367
-          ],
-          "status": "reported_summary"
+          "ci95_wilson": null,
+          "status": "summary_rate_only"
         },
         "abstain": {
-          "count": 0,
-          "rate": 0.0,
-          "ci95_wilson": [
-            0.0,
-            0.09641862859446367
-          ],
-          "status": "reported_summary"
+          "count": null,
+          "rate": 0.35416666666666663,
+          "ci95_wilson": null,
+          "status": "summary_rate_only"
         }
       },
       "false_adapt_unconditional": {
-        "count": 0,
-        "n": 36,
+        "count": null,
+        "n": null,
         "rate": 0.0,
-        "ci95_wilson": [
-          0.0,
-          0.09641862859446367
-        ]
+        "ci95_wilson": null,
+        "status": "summary_rate_only"
       },
       "interval_coverage_observed": {
         "count": null,
@@ -1375,51 +1197,41 @@
     },
     {
       "track": "ImageNet-R resnet101",
-      "n_decisions": 36,
+      "n_decisions": 48,
       "seeds": [
         0,
         1,
-        2
+        2,
+        3
       ],
-      "source": "experiments/kbound/results/imagenetr_protocol_d_multiseed_v1/result_224624b1.json",
-      "reproduction_command": "bash docs/research/kbound/scripts/kbtrain.sh imagenetr-d",
+      "source": "experiments/kbound/results/imagenetr_protocol_d_multiseed_v1/per_condition_imagenet-r_*_seed*.json",
+      "reproduction_command": "bash docs/research/kbound/runbooks/finish_empirical_training.sh run",
       "actions": {
         "adapt": {
-          "count": 19,
-          "rate": 0.5277777777777778,
-          "ci95_wilson": [
-            0.37005938022987594,
-            0.6801395848482095
-          ],
-          "status": "reported_summary"
+          "count": null,
+          "rate": 0.2916666666666667,
+          "ci95_wilson": null,
+          "status": "summary_rate_only"
         },
         "freeze": {
-          "count": 0,
+          "count": null,
           "rate": 0.0,
-          "ci95_wilson": [
-            0.0,
-            0.09641862859446367
-          ],
-          "status": "reported_summary"
+          "ci95_wilson": null,
+          "status": "summary_rate_only"
         },
         "abstain": {
-          "count": 17,
-          "rate": 0.4722222222222222,
-          "ci95_wilson": [
-            0.31986041515179053,
-            0.629940619770124
-          ],
-          "status": "reported_summary"
+          "count": null,
+          "rate": 0.7083333333333333,
+          "ci95_wilson": null,
+          "status": "summary_rate_only"
         }
       },
       "false_adapt_unconditional": {
-        "count": 0,
-        "n": 36,
+        "count": null,
+        "n": null,
         "rate": 0.0,
-        "ci95_wilson": [
-          0.0,
-          0.09641862859446367
-        ]
+        "ci95_wilson": null,
+        "status": "summary_rate_only"
       },
       "interval_coverage_observed": {
         "count": null,
@@ -1435,51 +1247,41 @@
     },
     {
       "track": "ImageNet-R resnet152",
-      "n_decisions": 36,
+      "n_decisions": 48,
       "seeds": [
         0,
         1,
-        2
+        2,
+        3
       ],
-      "source": "experiments/kbound/results/imagenetr_protocol_d_multiseed_v1/result_224624b1.json",
-      "reproduction_command": "bash docs/research/kbound/scripts/kbtrain.sh imagenetr-d",
+      "source": "experiments/kbound/results/imagenetr_protocol_d_multiseed_v1/per_condition_imagenet-r_*_seed*.json",
+      "reproduction_command": "bash docs/research/kbound/runbooks/finish_empirical_training.sh run",
       "actions": {
         "adapt": {
-          "count": 23,
-          "rate": 0.6388888888888888,
-          "ci95_wilson": [
-            0.4757507548555804,
-            0.7752440705348462
-          ],
-          "status": "reported_summary"
+          "count": null,
+          "rate": 0.8125,
+          "ci95_wilson": null,
+          "status": "summary_rate_only"
         },
         "freeze": {
-          "count": 0,
+          "count": null,
           "rate": 0.0,
-          "ci95_wilson": [
-            0.0,
-            0.09641862859446367
-          ],
-          "status": "reported_summary"
+          "ci95_wilson": null,
+          "status": "summary_rate_only"
         },
         "abstain": {
-          "count": 13,
-          "rate": 0.36111111111111116,
-          "ci95_wilson": [
-            0.22475592946515371,
-            0.5242492451444196
-          ],
-          "status": "reported_summary"
+          "count": null,
+          "rate": 0.1875,
+          "ci95_wilson": null,
+          "status": "summary_rate_only"
         }
       },
       "false_adapt_unconditional": {
-        "count": 0,
-        "n": 36,
+        "count": null,
+        "n": null,
         "rate": 0.0,
-        "ci95_wilson": [
-          0.0,
-          0.09641862859446367
-        ]
+        "ci95_wilson": null,
+        "status": "summary_rate_only"
       },
       "interval_coverage_observed": {
         "count": null,
@@ -1495,51 +1297,41 @@
     },
     {
       "track": "ImageNet-R resnext101_32x8d",
-      "n_decisions": 36,
+      "n_decisions": 48,
       "seeds": [
         0,
         1,
-        2
+        2,
+        3
       ],
-      "source": "experiments/kbound/results/imagenetr_protocol_d_multiseed_v1/result_224624b1.json",
-      "reproduction_command": "bash docs/research/kbound/scripts/kbtrain.sh imagenetr-d",
+      "source": "experiments/kbound/results/imagenetr_protocol_d_multiseed_v1/per_condition_imagenet-r_*_seed*.json",
+      "reproduction_command": "bash docs/research/kbound/runbooks/finish_empirical_training.sh run",
       "actions": {
         "adapt": {
-          "count": 36,
-          "rate": 1.0,
-          "ci95_wilson": [
-            0.9035813714055363,
-            1.0
-          ],
-          "status": "reported_summary"
+          "count": null,
+          "rate": 0.8958333333333334,
+          "ci95_wilson": null,
+          "status": "summary_rate_only"
         },
         "freeze": {
-          "count": 0,
+          "count": null,
           "rate": 0.0,
-          "ci95_wilson": [
-            0.0,
-            0.09641862859446367
-          ],
-          "status": "reported_summary"
+          "ci95_wilson": null,
+          "status": "summary_rate_only"
         },
         "abstain": {
-          "count": 0,
-          "rate": 0.0,
-          "ci95_wilson": [
-            0.0,
-            0.09641862859446367
-          ],
-          "status": "reported_summary"
+          "count": null,
+          "rate": 0.10416666666666663,
+          "ci95_wilson": null,
+          "status": "summary_rate_only"
         }
       },
       "false_adapt_unconditional": {
-        "count": 0,
-        "n": 36,
+        "count": null,
+        "n": null,
         "rate": 0.0,
-        "ci95_wilson": [
-          0.0,
-          0.09641862859446367
-        ]
+        "ci95_wilson": null,
+        "status": "summary_rate_only"
       },
       "interval_coverage_observed": {
         "count": null,
@@ -1555,51 +1347,41 @@
     },
     {
       "track": "ImageNet-R swin_b",
-      "n_decisions": 36,
+      "n_decisions": 48,
       "seeds": [
         0,
         1,
-        2
+        2,
+        3
       ],
-      "source": "experiments/kbound/results/imagenetr_protocol_d_multiseed_v1/result_224624b1.json",
-      "reproduction_command": "bash docs/research/kbound/scripts/kbtrain.sh imagenetr-d",
+      "source": "experiments/kbound/results/imagenetr_protocol_d_multiseed_v1/per_condition_imagenet-r_*_seed*.json",
+      "reproduction_command": "bash docs/research/kbound/runbooks/finish_empirical_training.sh run",
       "actions": {
         "adapt": {
-          "count": 11,
-          "rate": 0.3055555555555556,
-          "ci95_wilson": [
-            0.1800445159482992,
-            0.4685627285051034
-          ],
-          "status": "reported_summary"
+          "count": null,
+          "rate": 0.4791666666666667,
+          "ci95_wilson": null,
+          "status": "summary_rate_only"
         },
         "freeze": {
-          "count": 0,
+          "count": null,
           "rate": 0.0,
-          "ci95_wilson": [
-            0.0,
-            0.09641862859446367
-          ],
-          "status": "reported_summary"
+          "ci95_wilson": null,
+          "status": "summary_rate_only"
         },
         "abstain": {
-          "count": 25,
-          "rate": 0.6944444444444444,
-          "ci95_wilson": [
-            0.5314372714948966,
-            0.8199554840517008
-          ],
-          "status": "reported_summary"
+          "count": null,
+          "rate": 0.5208333333333333,
+          "ci95_wilson": null,
+          "status": "summary_rate_only"
         }
       },
       "false_adapt_unconditional": {
-        "count": 0,
-        "n": 36,
+        "count": null,
+        "n": null,
         "rate": 0.0,
-        "ci95_wilson": [
-          0.0,
-          0.09641862859446367
-        ]
+        "ci95_wilson": null,
+        "status": "summary_rate_only"
       },
       "interval_coverage_observed": {
         "count": null,
@@ -1615,51 +1397,41 @@
     },
     {
       "track": "ImageNet-R swin_t",
-      "n_decisions": 36,
+      "n_decisions": 48,
       "seeds": [
         0,
         1,
-        2
+        2,
+        3
       ],
-      "source": "experiments/kbound/results/imagenetr_protocol_d_multiseed_v1/result_224624b1.json",
-      "reproduction_command": "bash docs/research/kbound/scripts/kbtrain.sh imagenetr-d",
+      "source": "experiments/kbound/results/imagenetr_protocol_d_multiseed_v1/per_condition_imagenet-r_*_seed*.json",
+      "reproduction_command": "bash docs/research/kbound/runbooks/finish_empirical_training.sh run",
       "actions": {
         "adapt": {
-          "count": 0,
-          "rate": 0.0,
-          "ci95_wilson": [
-            0.0,
-            0.09641862859446367
-          ],
-          "status": "reported_summary"
+          "count": null,
+          "rate": 0.020833333333333332,
+          "ci95_wilson": null,
+          "status": "summary_rate_only"
         },
         "freeze": {
-          "count": 1,
-          "rate": 0.027777777777777776,
-          "ci95_wilson": [
-            0.004920407139810443,
-            0.14169718653273855
-          ],
-          "status": "reported_summary"
+          "count": null,
+          "rate": 0.125,
+          "ci95_wilson": null,
+          "status": "summary_rate_only"
         },
         "abstain": {
-          "count": 35,
-          "rate": 0.9722222222222222,
-          "ci95_wilson": [
-            0.8583028134672614,
-            0.9950795928601897
-          ],
-          "status": "reported_summary"
+          "count": null,
+          "rate": 0.8541666666666666,
+          "ci95_wilson": null,
+          "status": "summary_rate_only"
         }
       },
       "false_adapt_unconditional": {
-        "count": 0,
-        "n": 36,
+        "count": null,
+        "n": null,
         "rate": 0.0,
-        "ci95_wilson": [
-          0.0,
-          0.09641862859446367
-        ]
+        "ci95_wilson": null,
+        "status": "summary_rate_only"
       },
       "interval_coverage_observed": {
         "count": null,
@@ -1675,51 +1447,88 @@
     },
     {
       "track": "ImageNet-R vit_b_16",
-      "n_decisions": 36,
+      "n_decisions": 48,
       "seeds": [
         0,
         1,
-        2
+        2,
+        3
       ],
-      "source": "experiments/kbound/results/imagenetr_protocol_d_multiseed_v1/result_224624b1.json",
-      "reproduction_command": "bash docs/research/kbound/scripts/kbtrain.sh imagenetr-d",
+      "source": "experiments/kbound/results/imagenetr_protocol_d_multiseed_v1/per_condition_imagenet-r_*_seed*.json",
+      "reproduction_command": "bash docs/research/kbound/runbooks/finish_empirical_training.sh run",
       "actions": {
         "adapt": {
-          "count": 7,
-          "rate": 0.19444444444444445,
-          "ci95_wilson": [
-            0.09753095418928728,
-            0.3502804299517739
-          ],
-          "status": "reported_summary"
+          "count": null,
+          "rate": 0.3125,
+          "ci95_wilson": null,
+          "status": "summary_rate_only"
         },
         "freeze": {
-          "count": 0,
+          "count": null,
           "rate": 0.0,
-          "ci95_wilson": [
-            0.0,
-            0.09641862859446367
-          ],
-          "status": "reported_summary"
+          "ci95_wilson": null,
+          "status": "summary_rate_only"
         },
         "abstain": {
-          "count": 29,
-          "rate": 0.8055555555555556,
-          "ci95_wilson": [
-            0.6497195700482261,
-            0.9024690458107127
-          ],
-          "status": "reported_summary"
+          "count": null,
+          "rate": 0.6875,
+          "ci95_wilson": null,
+          "status": "summary_rate_only"
         }
       },
       "false_adapt_unconditional": {
-        "count": 1,
-        "n": 36,
-        "rate": 0.027777777777777776,
-        "ci95_wilson": [
-          0.004920407139810443,
-          0.14169718653273855
-        ]
+        "count": null,
+        "n": null,
+        "rate": 0.020833333333333332,
+        "ci95_wilson": null,
+        "status": "summary_rate_only"
+      },
+      "interval_coverage_observed": {
+        "count": null,
+        "n": null,
+        "rate": null,
+        "ci95_wilson": null,
+        "status": "not_retained"
+      },
+      "theoretical_coverage": {
+        "status": "conditional_on_declared_premise",
+        "note": "No theorem premise is inferred from this empirical summary."
+      }
+    },
+    {
+      "track": "Controlled multimodal D33",
+      "n_decisions": 130,
+      "seeds": [
+        0
+      ],
+      "source": "experiments/kbound/results/controlled_multimodal_d33/results.json",
+      "reproduction_command": "python experiments/kbound/controlled_multimodal_d33.py",
+      "actions": {
+        "adapt": {
+          "count": null,
+          "rate": 0.06923076923076923,
+          "ci95_wilson": null,
+          "status": "summary_rate_only"
+        },
+        "freeze": {
+          "count": null,
+          "rate": 0.9153846153846155,
+          "ci95_wilson": null,
+          "status": "summary_rate_only"
+        },
+        "abstain": {
+          "count": null,
+          "rate": 0.01538461538461533,
+          "ci95_wilson": null,
+          "status": "summary_rate_only"
+        }
+      },
+      "false_adapt_unconditional": {
+        "count": null,
+        "n": null,
+        "rate": 0.0,
+        "ci95_wilson": null,
+        "status": "summary_rate_only"
       },
       "interval_coverage_observed": {
         "count": null,

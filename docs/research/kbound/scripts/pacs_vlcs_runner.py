@@ -234,7 +234,13 @@ def main():
     print(f"classes={nC} domains={domains}", flush=True)
     cache = {d: load_domain(args.root, args.dataset, d)[0] for d in domains}
 
-    results = {"dataset": args.dataset, "alpha": args.alpha, "n_classes": nC,
+    results = {"schema": "kbound_pacs_seed_v1", "dataset": args.dataset,
+               "seed": args.seed, "alpha": args.alpha, "n_classes": nC,
+               "protocol": {"erm_steps": erm_steps, "methods": list(args.methods),
+                            "cell_grid": {"batch_regimes": list(_brs),
+                                          "compositions": list(_comps),
+                                          "aggressiveness": list(_ags),
+                                          "repetitions": list(reps)}},
                "win_hunt_v5_override": {"adapt_lr": args.adapt_lr,
                                         "batch_regimes": args.batch_regimes,
                                         "aggressiveness": args.aggressiveness},
@@ -272,12 +278,19 @@ def main():
               f"{pm['regret_vs_oracle']['always_freeze']:.4f} | FA_u {fa_u:.3f} cov {pm['coverage']:.2f}",
               flush=True)
         # per-cell dump for the gate-baseline comparison
-        json.dump(test, open(f"{args.dataset.lower()}_{d_test}_percell.json", "w"))
+        percell_dir = os.path.join(os.path.dirname(os.path.abspath(args.out)), "per_cell")
+        os.makedirs(percell_dir, exist_ok=True)
+        percell_path = os.path.join(
+            percell_dir, f"{args.dataset.lower()}_{d_test}_seed{args.seed}_percell.json")
+        with open(percell_path, "w") as f:
+            json.dump({"schema": "kbound_pacs_percell_v1", "dataset": args.dataset,
+                       "domain": d_test, "seed": args.seed, "records": test}, f, indent=2)
 
     _outdir = os.path.dirname(os.path.abspath(args.out))
     if _outdir:
         os.makedirs(_outdir, exist_ok=True)
-    json.dump(results, open(args.out, "w"), indent=2)
+    with open(args.out, "w") as f:
+        json.dump(results, f, indent=2)
     nwin = sum(v["verdict"].startswith("WIN") for v in results["per_domain"].values())
     print(f"\n==== {args.dataset}: {nwin}/{len(results['per_domain'])} domains are CI-robust beats-both."
           f"  wrote {args.out} ====")

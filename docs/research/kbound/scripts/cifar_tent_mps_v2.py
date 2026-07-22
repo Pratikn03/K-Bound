@@ -68,9 +68,17 @@ try:
     import torchvision as tv
     import torchvision.transforms as T
     _HAS_TORCH = True
-except Exception:  # pragma: no cover - exercised only off-GPU
+    _DatasetBase = torch.utils.data.Dataset
+except ImportError:  # torch/torchvision absent: the module still imports so the
+    # test suite can be COLLECTED and the analysis-only dry run works.  Any code
+    # path that actually needs torch raises a clear, named error via
+    # _require_torch() below -- we never silently proceed with torch=None.
     torch = None; nn = None; F = None; tv = None; T = None
     _HAS_TORCH = False
+    _DatasetBase = object  # sentinel base: Dataset subclasses are NOT defined
+    #                        through torch=None (avoids AttributeError at import).
+    #                        The clear, named failure lives in _require_torch()
+    #                        (defined once, below, in the torch-dependent section).
 
 from sklearn.ensemble import GradientBoostingRegressor
 
@@ -318,8 +326,19 @@ def make_figures(tag, per_method, fig_dir):
 #  TORCH-DEPENDENT PARTS  (only run on the M5 / GPU box)
 # =============================================================================
 def _require_torch():
+    """Raise a clear, named ImportError when a torch-only path is entered.
+
+    Uses ImportError (not sys.exit) so pytest can COLLECT this module and the
+    analysis-only tests without torch installed; the error still names the
+    packages and how to install them.
+    """
     if not _HAS_TORCH:
-        sys.exit("This step needs PyTorch + torchvision. Install them and re-run on your GPU/MPS box.")
+        raise ImportError(
+            "cifar_tent_mps_v2 requires PyTorch + torchvision for the adaptation "
+            "runs, but they are not importable. Install them with: "
+            "pip install torch torchvision (see https://pytorch.org for the build "
+            "matching your GPU/MPS box). The analysis core imports without torch."
+        )
 
 def pick_device():
     _require_torch()
@@ -423,7 +442,7 @@ try:
 except Exception:
     pass
 
-class _ICSampledDS(torch.utils.data.Dataset):
+class _ICSampledDS(_DatasetBase):
     """Precomputed (path, label) list; opens images lazily. Module-level so it is
     picklable for DataLoader workers under macOS 'spawn'."""
     def __init__(self, samples, transform):
@@ -444,6 +463,7 @@ def imagenet_c_loader(root, corruption, sev, transform, max_images, dev):
     """Fast loader: sample (path,label) directly instead of indexing the whole
     ~50k-image folder (ImageFolder stats every file -> minutes/cell on exFAT).
     Assumes complete class coverage (sorted wnid == ImageNet class order)."""
+    _require_torch()
     folder = os.path.join(root, corruption, str(sev))
     rng = np.random.default_rng(SEED)
     classes = sorted(d for d in os.listdir(folder)
@@ -507,7 +527,7 @@ def _ic_available(ic_root, corruption, sev=None):
         return True
     return _ic_corruption_tar(ic_root, corruption) is not None
 
-class _ICTarDS(torch.utils.data.Dataset):
+class _ICTarDS(_DatasetBase):
     """Streams (image, label) straight from an open ImageNet-C tar by stored TarInfo
     offset. num_workers MUST be 0 (single shared handle; exFAT can't back DataLoader shm)."""
     def __init__(self, tar_path, infos, labels, transform):
@@ -535,6 +555,7 @@ def _imagenet_c_tar_loader(ic_root, corruption, sev, transform, max_images):
     members under `<corruption>/<sev>/<wnid>/`, sample ~balanced across classes, and
     return a DataLoader that reads image bytes directly from the tar (NO extraction).
     Same (path-free) sampling discipline + SEED rng as the extracted-dir loader."""
+    _require_torch()
     import tarfile
     tar_path = _ic_corruption_tar(ic_root, corruption)
     if tar_path is None:

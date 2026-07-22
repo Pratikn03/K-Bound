@@ -8,6 +8,7 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 cd "$ROOT"
 export COPYFILE_DISABLE=1
+PY="${PYTHON:-python3}"
 
 need() {
   command -v "$1" >/dev/null 2>&1 || {
@@ -21,7 +22,7 @@ need pandoc
 
 echo "==> Generating table numbers from canonical manifest (if available)"
 if [[ -f scripts/make_tables.py ]]; then
-  python3 scripts/make_tables.py || echo "  (make_tables.py skipped/failed — continuing)"
+  "$PY" scripts/make_tables.py
 fi
 
 echo "==> Building kbound_short.pdf"
@@ -30,12 +31,15 @@ cp -f kbound_short.pdf kbound_short_final_draft.pdf
 
 echo "==> Building kbound_short.docx (pandoc from LaTeX)"
 # Pandoc may warn on complex math (\rm, align*); DOCX is still produced.
+PANDOC_LOG="$(mktemp -t kbound-pandoc.XXXXXX)"
+trap 'rm -f "$PANDOC_LOG"' EXIT
 pandoc kbound_short.tex \
   -o kbound_short.docx \
   --from latex \
   --resource-path=.:figures:paper:paper/generated:paper/sections \
   --standalone \
-  2> >(grep -v '^$' >&2 || true)
+  2>"$PANDOC_LOG"
+grep -v '^$' "$PANDOC_LOG" >&2 || true
 cp -f kbound_short.docx kbound_short_final_draft.docx
 
 if [[ "${BUILD_LONG:-0}" == "1" ]]; then

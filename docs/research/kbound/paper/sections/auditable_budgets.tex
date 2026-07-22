@@ -70,14 +70,15 @@ App.~\ref{app:weakest}.)
 \begin{theorem}[Aud-C: transport-audited budget, finite-sample]\label{thm:aud-C}
 Assume \textup{(Lip)}: $u$ is $L$-Lipschitz on $D$ w.r.t.\ a bounded 1-d representation
 ($|\psi|\le B$). With $n_{\mathrm{lab}}$ labeled calibration points, $m_{\mathrm{cal}},
-m_{\mathrm{dep}}$ unlabeled points, empirical measures $\widehat\mu$, and
-\[
-\widehat\beta_{W}=|\widehat\gamma_{\mathrm{cal}}|+t(n_{\mathrm{lab}},\delta/2)
-+L\Bigl[\,\widehat W_1(\widehat\mu_T,\widehat\mu_{\mathrm{cal}})
-+2B\bigl(\varepsilon_{\mathrm{DKW}}(m_{\mathrm{cal}},\delta/4)
-+\varepsilon_{\mathrm{DKW}}(m_{\mathrm{dep}},\delta/4)\bigr)\Bigr],
-\quad \varepsilon_{\mathrm{DKW}}(m,\delta)=\sqrt{\tfrac{\ln(2/\delta)}{2m}},
-\]
+m_{\mathrm{dep}}$ unlabeled points and empirical measures $\widehat\mu$, let
+$\varepsilon_{\mathrm{DKW}}(m,\delta)=\sqrt{\ln(2/\delta)/(2m)}$ and define
+\begin{align*}
+\widehat\beta_{W}
+&=|\widehat\gamma_{\mathrm{cal}}|+t(n_{\mathrm{lab}},\delta/2)\\
+&\quad+L\widehat W_1(\widehat\mu_T,\widehat\mu_{\mathrm{cal}})\\
+&\quad+2BL\varepsilon_{\mathrm{DKW}}(m_{\mathrm{cal}},\delta/4)\\
+&\quad+2BL\varepsilon_{\mathrm{DKW}}(m_{\mathrm{dep}},\delta/4).
+\end{align*}
 we have $\Pr(|\gamma(P_T)|\le\widehat\beta_{W})\ge1-\delta$.
 \end{theorem}
 \begin{proof}
@@ -139,13 +140,16 @@ $g$ $L$-Lipschitz and $\theta_*\in S^{d-1}$ \emph{unknown}. Let
 $\mathrm{MS}_{\mathrm{net}}$ be the maximum of the empirical sliced distances
 $W_1(\theta\#\widehat\mu_{\mathrm{cal}},\theta\#\widehat\mu_T)$ over an $\epsilon$-net of
 $S^{d-1}$, and
-\[
-\widehat\beta_{F}=|\widehat\gamma_{\mathrm{cal}}|+t(n_{\mathrm{lab}},\delta/4)
-+L\Bigl[\mathrm{MS}_{\mathrm{net}}+2B\epsilon
-+2B\bigl(\varepsilon_{\mathrm{VC}}(n,\delta/4)+\varepsilon_{\mathrm{VC}}(m,\delta/4)\bigr)\Bigr],
-\qquad
-\varepsilon_{\mathrm{VC}}(n,\delta)=\sqrt{\tfrac{2\bigl((d{+}1)\ln(2n)+\ln(8/\delta)\bigr)}{n}}.
-\]
+where
+$\varepsilon_{\mathrm{VC}}(n,\delta)=
+\sqrt{2((d{+}1)\ln(2n)+\ln(8/\delta))/n}$, define
+\begin{align*}
+\widehat\beta_{F}
+&=|\widehat\gamma_{\mathrm{cal}}|+t(n_{\mathrm{lab}},\delta/4)\\
+&\quad+L(\mathrm{MS}_{\mathrm{net}}+2B\epsilon)\\
+&\quad+2BL\varepsilon_{\mathrm{VC}}(n,\delta/4)
+ +2BL\varepsilon_{\mathrm{VC}}(m,\delta/4).
+\end{align*}
 Then $\Pr(|\gamma(P_T)|\le\widehat\beta_{F})\ge1-\delta$. The same statement holds for
 $k$-index drift $u=\sum_{j\le k}g_j(\theta_j^{\!\top}\psi)$ with $\sum_j\mathrm{Lip}(g_j)\le L$.
 \end{theorem}
@@ -200,10 +204,10 @@ set
 \begin{align*}
 \widehat\beta_{\mathcal F}
 &=|\widehat\gamma_{\mathrm{cal}}|+t(n_{\mathrm{lab}},\delta/3)
-+\Delta_{\mathcal F}(\widehat\mu_{\mathrm{cal}},\widehat\mu_T)
-+2\mathfrak R_n(\mathcal F)+2\mathfrak R_m(\mathcal F)
-+L\sqrt{\tfrac{2\ln(6/\delta)}{2n}}
-+L\sqrt{\tfrac{2\ln(6/\delta)}{2m}}.
+ +\Delta_{\mathcal F}(\widehat\mu_{\mathrm{cal}},\widehat\mu_T)\\
+&\quad+2\mathfrak R_n(\mathcal F)+2\mathfrak R_m(\mathcal F)\\
+&\quad+L\sqrt{\tfrac{\ln(6/\delta)}{n}}
+ +L\sqrt{\tfrac{\ln(6/\delta)}{m}}.
 \end{align*}
 Then $\Pr(|\gamma(P_T)|\le\widehat\beta_{\mathcal F})\ge1-\delta$. In particular the audit is
 useful at rate $O(\sqrt{(v+\ln(1/\delta))/n})$ whenever $\mu_T=\mu_{\mathrm{cal}}$ and

@@ -37,7 +37,8 @@ python3 formal_audit.py --build --full-foundations --json-out formal_audit_repor
 - `--full-foundations`: same, and requires the paper-faithful foundation gap list to be
   empty (Wave 6 closed those gaps).
 
-Wave 6 status: **`--full-foundations` PASS** (53 kernel-checked theorem checks).
+Current status: **`--full-foundations` PASS** (57 kernel-checked theorem checks, including the
+closed/open frontier-band and both zero-versus-strict boundary witnesses).
 This is the paper-faithful bar (exchangeable-score reduction, discrete Ville,
 two-point Le Cam packaging, Hoeffding-radius commit bridge, evidence swap
 involution) — not a from-scratch Mathlib probability textbook.
@@ -50,7 +51,7 @@ involution) — not a from-scratch Mathlib probability textbook.
 | `thm:gate` | `KBound/Gate.lean` | `gate_regret_identity` |
 | `thm:imp`, `cor:forced-abstain` | `KBound/Impossibility.lean` | `forced_abstention_probability`, `matched_opposite_worlds_force_abstain` |
 | `prop:lecam-finite` | `KBound/FiniteTesting.lean`, `LeCam.lean`, `LeCamMeasure.lean` | `lecam_testing_two_point`, `lecam_tv_two_point_measure` |
-| `thm:frontier` | `KBound/Frontier.lean` | `frontier_identifiable_positive`, `frontier_decision_abstain` |
+| `thm:frontier` | `KBound/Frontier.lean` | sufficiency, all decision branches, closed/open-band witnesses, and both zero-versus-strict boundary witnesses |
 | `lem:reduction`, `thm:disagree` | `KBound/Disagreement.lean` | `binary_sign_reduction` |
 | `cor:samplecomp` | `KBound/Corollaries.lean` | `one_sided_commit_when_radius_small` |
 | finite conformal rank algebra | `KBound/Conformal.lean` | `finite_uniform_rank_miss_le_alpha` |

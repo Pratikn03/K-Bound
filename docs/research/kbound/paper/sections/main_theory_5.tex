@@ -9,11 +9,10 @@ The body below expands the core spine into five load-bearing pillars.
 
 \begin{lemma}[Disagreement-region reduction]\label{lem:reduction}\label{thm:disagree}
 Under Assumption~\ref{ass:deploy}, with $\bar a:=\Pr_T(f_a{=}Y\mid D)$,
-\[
-\Delta = 2\,\mu_T(D)\bigl(\bar a-\tfrac12\bigr),
-\qquad
-\sign\Delta = \sign(\bar a-\tfrac12) = \sign(M+\gamma).
-\]
+\begin{align*}
+\Delta &= 2\,\mu_T(D)\bigl(\bar a-\tfrac12\bigr),\\
+\sign\Delta &= \sign(\bar a-\tfrac12) = \sign(M+\gamma).
+\end{align*}
 For $K$-class $0/1$ loss, $\Delta=\mu_T(D)(p_a-p_0)$ on $D$; for squared loss the sign reduces
 to one moment on $D$ (manuscript App.~C).
 \end{lemma}
@@ -25,10 +24,11 @@ Multiclass and regression extensions are algebraic identities on $D$.
 
 \begin{lemma}[Plug-in regret identity]\label{lem:gate}\label{thm:gate}
 For any estimator $\hat\Delta$ and gate $\hat g=\mathbf 1[\hat\Delta>0]$,
-\[
-R(\hat g)-R(g^\star)=\E\bigl[|\Delta(Z)|\,\mathbf 1\{\sign\hat\Delta\neq\sign\Delta\}\bigr],
-\qquad g^\star=\mathbf 1[\Delta>0].
-\]
+\begin{align*}
+R(\hat g)-R(g^\star)
+  &=\E\bigl[|\Delta(Z)|\,\mathbf 1\{\sign\hat\Delta\neq\sign\Delta\}\bigr],\\
+g^\star&=\mathbf 1[\Delta>0].
+\end{align*}
 On $\{|\Delta|<\varepsilon\}$, committal regret is at most $\varepsilon$.
 \end{lemma}
 \begin{proof}
@@ -41,11 +41,12 @@ Let $\{P_\theta\}_{\theta\in\{-1,+1\}}$ be two target worlds with
 $|\Delta(P_\theta)|\equiv\Lambda>0$, $\sign\Delta(P_\theta)=\theta$, and let $Q^{(n)}_\theta$
 be the law of any label-free evidence from $n$ unlabeled observations. Then for every
 label-free committal gate $\hat g$ and every finite $n$,
-\[
-\inf_{\hat g}\ \max_{\theta=\pm1}\bigl[R_{P_\theta}(\hat g)-R_{P_\theta}(g^\star)\bigr]
-\ \ge\ \tfrac{\Lambda}{2}\Bigl(1-\TV\bigl(Q^{(n)}_{-1},Q^{(n)}_{+1}\bigr)\Bigr)
-\ \ge\ \tfrac{\Lambda}{4}\,e^{-\mathrm{KL}(Q^{(n)}_{-1}\|Q^{(n)}_{+1})}.
-\]
+\begin{align*}
+&\inf_{\hat g}\ \max_{\theta=\pm1}
+  \bigl[R_{P_\theta}(\hat g)-R_{P_\theta}(g^\star)\bigr]\\
+&\quad\ge \tfrac{\Lambda}{2}\Bigl(1-\TV\bigl(Q^{(n)}_{-1},Q^{(n)}_{+1}\bigr)\Bigr)\\
+&\quad\ge \tfrac{\Lambda}{4}\,e^{-\mathrm{KL}(Q^{(n)}_{-1}\|Q^{(n)}_{+1})}.
+\end{align*}
 A Gaussian two-point family with $d_n=c/\sqrt n$ realizes a floor constant in $n$
 (\texttt{val\_thm2\_lecam\_finite\_n.py}).
 \end{proposition}

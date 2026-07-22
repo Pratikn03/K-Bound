@@ -119,9 +119,9 @@ Regime & Example & Expected & Result \\
 \midrule
 Helpful-dominated & Camelyon17 OOD & tie always-adapt & locked no-harm \\
 Harmful-dominated & RxRx1; iWildCam/Office-Home (OOF lock) & tie always-freeze, beat always-adapt & locked no-harm \\
-Domain-gen.\ natural & PACS (4 LODO splits) & no-harm or abstain & diagnostic (1/3 seeds); photo null unreconciled \\
+Domain-gen.\ natural & PACS (4 LODO splits) & no-harm or abstain & completed 3-seed null diagnostic \\
 Mixed + detectable & CIFAR-10-C Tent/EATA, ImageNet-C SAR & adapt helpful, freeze harmful, abstain near zero & locked; low false-adapt; CI-supported utility \\
-Weak evidence & ImageNet-R, CIFAR-10.1 & abstain / conservative & diagnostic; CIFAR-10.1 locked fail; ImageNet-R incomplete \\
+Weak evidence & ImageNet-R, CIFAR-10.1 & abstain / conservative & completed diagnostics; no promoted win \\
 Constructed mixture & three-source OOF stream & route per condition & locked routing result, not transfer \\
 \bottomrule
 \end{tabular}
@@ -287,7 +287,9 @@ auditability of the drift budget itself is stated in Appendix~\ref{app:audit-sho
 with proofs in the long manuscript. The saved iWildCam
 streaming script computes its betting increments from frozen and adapted window accuracies, which
 require target labels. We therefore retain that run only as a label-informed offline stress
-diagnostic; it is not a label-free KGA deployment result and no streaming empirical claim is made
+diagnostic (on the native $35{,}360$-image iWildCam test stream, continual TENT collapses to a
+cumulative macro-F1 of $0.02$ versus $0.26$ frozen, with predictions degenerating to a handful of
+classes); it is not a label-free KGA deployment result and no streaming empirical claim is made
 in this paper.
 
 \subsection{Claim Scope}
@@ -508,7 +510,7 @@ The evaluation separates controlled corruption/composition stress, large-scale c
 \toprule
 Track & Shift type & Candidate role & Evaluation purpose \\
 \midrule
-CIFAR-10-C stress & corruption/composition/update stress & Tent/EATA/SAR & mixed detectable decision benchmark \\
+CIFAR-10-C stress & corruption/composition/update stress & Tent/EATA (SAR withheld) & mixed detectable decision benchmark \\
 ImageNet-C noise & large-scale corruption & Tent/EATA/SAR & scale and candidate dependence \\
 Camelyon17 & hospital/institution shift & EATA & helpful-dominated natural safety \\
 iWildCam & geographic camera shift & Tent & harmful-dominated natural safety \\
@@ -536,7 +538,7 @@ Track & Calibration unit & Radius rule & Test unit \\
 \midrule
 CIFAR-10-C stress & grid cell (leave-one-cell-out) & LOO jackknife $q_{0.9}$ & $5{\times}432$ cells \\
 ImageNet-C & grid cell (leave-one-cell-out) & LOO jackknife $q_{0.9}$ & $27$ cells \\
-PACS (LODO) & source-domain cells & LOO jackknife $q_{0.9}$ & $108$ cells/target \\
+PACS (LODO) & source-domain cells & LOO jackknife $q_{0.9}$ & $18$ cells/target/seed; $3$ seeds \\
 Camelyon17 & dev $\{0,1\}$ & archived OOF empirical radius & test $\{2,3,4\}$ \\
 iWildCam H v2 & calibration $\{0\}$ & archived OOF empirical radius & held-out $\{1\}$ \\
 Office-Home M v2 & calibration $\{0,1\}$ & archived OOF empirical radius & target test $\{0,1\}$ \\
@@ -732,7 +734,7 @@ $\mathrm{FA}_{\mathrm u}{=}0\le\alpha$ (Table~\ref{tab:headtohead-poem-aetta}). 
 false-adapt at ${\sim}24$--$25\%$ on the same stream, consistent with the absence of an explicit marginal
 false-adapt certificate under this ported protocol. Secondary pooled sets (Tent+EATA, EATA alone) yield the same WIN verdict,
 and a separate pre-registered recomputation pipeline
-(paired bootstrap $10^4$) replicates all three configurations, with both regret-gap
+(paired bootstrap $10^4$) reproduces all three configurations internally, with both regret-gap
 CIs below zero in each and $\mathrm{FA}_{\textsc{kga}}{=}0$ versus $11$--$33\%$ for the competitors;
 both artifacts are indexed in the manifest (App.~\ref{app:claim-artifact}).
 
@@ -900,8 +902,8 @@ Camelyon17 OOD & genuine OOD test $n=18$ (support $n=36$) & $0.0000/0.0000/0.138
 iWildCam H v2 & held-out test $n=72$ & $0.0041/0.1028/0.0041$; $\mathrm{FA}_{\mathrm u}=0$ & no-harm, ties freeze & locked (OOF bootstrap; single-run) \\
 Office-Home M v2 & target test $n=35$ & $0.0157/0.0468/0.0158$; $\mathrm{FA}_{\mathrm u}=0$ & no-harm, tiny point edge & locked (OOF no-harm only; LOO BB not promoted) \\
 RxRx1 J & OOD test $n=60$ & $0.0000/0.2531/0.0000$; $\mathrm{FA}_{\mathrm u}=0$ & selects freeze-equivalent behavior & locked (real ckpt; single-run) \\
-PACS & four LODO targets, $108$ cells each & primary replay $\mathrm{FA}_{\mathrm u}{=}0$ on all four targets; earlier photo-null ($0.056$) not reproduced & action-safety diagnostic & diagnostic (1 of 3 seeds; photo unreconciled) \\
-ImageNet-R D & $3$ seeds $\times10$ backbones & no CI-robust routing utility; one point-only arm fails the second CI & abstention / fixed-policy ties & diagnostic (3 of 4 planned seeds) \\
+PACS & $3$ seeds $\times4$ LODO targets $\times18$ cells & mean regret $0.0431/0.0176/0.0446$; reported mean $\mathrm{FA}_{\mathrm u}=0.0093$ (pooled count not retained) & conservative/null action-safety diagnostic & locked diagnostic null; no beats-both claim \\
+ImageNet-R D & $4$ seeds $\times10$ backbones $\times12$ conditions & mean-across-backbone regret $0.0112/0.0064/0.0325$; observed $\mathrm{FA}_{\mathrm u}=1/480$ & candidate-dependent fixed-policy tracking; $0/10$ CI beats-both & locked diagnostic null \\
 CIFAR-10.1 K & cross-seed test $n=48$ & $0.0021/0.0190/0.0017$; $\mathrm{FA}_{\mathrm u}=0.167$, $\mathrm{FA}_{\mathrm c}=0.444$ & fails transfer bar; no claim & locked diagnostic fail \\
 \bottomrule
 \end{tabular}
@@ -910,7 +912,7 @@ CIFAR-10.1 K & cross-seed test $n=48$ & $0.0021/0.0190/0.0017$; $\mathrm{FA}_{\m
 \subsection{Weak-Evidence and Negative Regimes}
 ImageNet-R and CIFAR-10.1 remain diagnostics. Their outcomes are consistent with weak evidence,
 low margin, estimator inadequacy, or calibration-transfer failure; they do not by themselves prove
-structural non-identifiability. PACS is also incomplete relative to its three-seed registration.
+structural non-identifiability. PACS is complete at three seeds but remains a null diagnostic.
 
 \subsection{Physical-Study Pre-registration}
 We preregister a two-phone physical package-inspection study with distinct source, calibration,
@@ -1085,7 +1087,7 @@ K-Bound is most valuable when harmful updates are plausible, the cost of a bad c
 
 \medskip
 \textbf{Scope of empirical decision evidence.} On the stress grid \textsc{KGA} exercises selective adapt/freeze/abstain behavior for Tent/EATA
-and ties SAR (Table~\ref{tab:decisive}); on ImageNet-C the pattern flips by candidate---Tent/EATA
+(Table~\ref{tab:decisive}); CIFAR-10-C SAR is withheld. On ImageNet-C the pattern flips by candidate---Tent/EATA
 are robust while SAR collapses and \textsc{KGA} retains low regret under a mechanism-faithful re-run
 (Table~\ref{tab:imagenetc-faithful}). Per-corruption CIFAR-10-C and helpful natural shifts are
 insurance regimes, not policy wins.
@@ -1094,7 +1096,7 @@ insurance regimes, not policy wins.
 genuine OOD and RxRx1 are locked no-harm results: KGA ties the better fixed policy at
 zero observed false-adapt. Office-Home and iWildCam are locked from their out-of-fold bootstrap seal
 (App.~\ref{app:claim-artifact}; Office-Home promotes OOF no-harm only; LOO beats-both is not claimed).
-PACS and ImageNet-R remain incomplete diagnostics; CIFAR-10.1 is a locked diagnostic fail.
+PACS and ImageNet-R are completed, locked null diagnostics; CIFAR-10.1 is a locked diagnostic fail.
 The three-source mixture is a constructed routing aggregate; it is not a transfer result and does not
 change the per-dataset conclusion.
 
@@ -1115,7 +1117,7 @@ historical dev-to-deployment gaps, or an explicit stress envelope.
 The choice $\beta{=}0$ is the strongest zero-drift assumption and may be reported only as a plug-in baseline; it is not an assumption-free or conservative default. When no credible bound is justifiable, the population frontier cannot certify robustness to calibration drift, and the safe operational response is to abstain or freeze. Larger $\beta$ widens the abstain band monotonically, trading decision coverage for robustness.
 
 \textbf{Detectability and transfer.} ImageNet-R is a weak, split-specific evidence regime:
-one point-only arm does not survive both comparisons across three seeds. CIFAR-10.1 fails the
+no candidate survives both comparisons across four seeds. CIFAR-10.1 fails the
 cross-seed certificate bar ($\mathrm{FA}_{\mathrm u}=0.167$ and descriptive
 $\mathrm{FA}_{\mathrm c}=0.444$). These are useful boundary cases,
 not failed headline experiments: they show that a low-margin signal should not be promoted merely
@@ -1139,7 +1141,9 @@ strengthening the declared assumptions or evidence.
 committal confidence gate adapts on harmful cells while KGA abstains on the low-margin band. The
 POEM/AETTA comparison is complete only for protocol-matched ports; official implementations remain
 future baseline work. The Office-Home/iWildCam summaries have a separate saved recomputation lock,
-but no external-lab replication; more seeds would strengthen PACS. Abstention lowers \emph{decision} coverage
+but no external-lab replication. PACS and ImageNet-R are completed registered diagnostics and are
+retained as null/weak-evidence results rather than tuned into wins. The frozen external procedure is
+documented in \texttt{INDEPENDENT\_REPLICATION\_PROTOCOL.md}. Abstention lowers \emph{decision} coverage
 but never withholds a prediction: it retains the frozen fallback $f_0$.
 
 \begin{center}\fbox{\parbox{0.95\linewidth}{\small
@@ -1158,11 +1162,13 @@ repository.
 \subsection{Formal Verification Scope}
 The repository contains a kernel-checked Lean~4 formalization of indexed algebraic,
 finite-decision, measure-containment, and conditional uniform-rank results, with no
-\texttt{sorry}, \texttt{admit}, or project-defined axioms. It checks frontier sufficiency and the
-marginal false-adapt/false-freeze implication once coverage is assumed. The current development does
-not formalize the target-law witness construction, equality of its induced evidence laws, membership
-of those laws in $\mathcal C_\beta$, the zero-versus-strict boundary construction, frontier
-necessity or maximality, risk alignment, multiclass identifiability, calibration transfer, or a
+\texttt{sorry}, \texttt{admit}, or project-defined axioms. It checks frontier sufficiency, all three
+deterministic branches, algebraic witnesses for the closed and open bands, both zero-versus-strict
+boundary witnesses, and the marginal false-adapt/false-freeze implication once coverage is assumed.
+The current development does not formalize the target-law witness construction, equality of its
+induced evidence laws, membership of those laws in $\mathcal C_\beta$, realization of the algebraic
+witnesses by measurable target laws, distributional frontier necessity or pointwise maximality,
+risk alignment, multiclass identifiability, calibration transfer, or a
 general exchangeable-process lift. These clauses are proved only in the manuscript; compilation of
 the mapped helper declarations is not described as kernel verification of the complete paper theorem. The
 implementation theorem uses the same exact rank rule as the current clean-split scorer; historical
@@ -1184,7 +1190,7 @@ Interior matched-evidence impossibility & theorem & $\beta>0$, $|M|<\beta$, decl
 Closed-band abstention & theorem & Strict three-way soundness over $|\gamma|\le\beta$ & Prop.~\ref{prop:closed-band} & Boundary is zero-versus-strict ambiguity, not opposite signs. \\
 Strict-commitment frontier & theorem & Declared drift class and risk alignment & Thm.~\ref{thm:headline} & Uniform strict commitment, not universal sign recovery. \\
 Marginal $\mathrm{FA}_{\mathrm u}$ certificate & theorem & $\Pr(|\widehat\Delta-\Delta|\le\varepsilon)\ge1-\alpha$ & Thm.~\ref{thm:certificate}; Lean inventory & Does not control conditional $\mathrm{FA}_{\mathrm c}$. \\
-CIFAR-10-C mixed-regime action validity & empirical & Five-seed raw decisions, action rates, false-adapt, and paired CIs & Table~\ref{tab:decisive}; empirical audit manifest & SAR rebuilt from current raw tree; higher radius instability disclosed. \\
+CIFAR-10-C mixed-regime action validity & empirical & Five-seed Tent/EATA raw decisions, action rates, false-adapt, and paired CIs & Table~\ref{tab:decisive}; empirical audit manifest & SAR is withheld after a replay mismatch and contributes no evidence. \\
 ImageNet-C authoritative result & empirical & 27 cells $\times$ 5 seeds, SAR candidate, pooled seed-averaged paired bootstrap & Table~\ref{tab:imagenetc-faithful}; pooled bootstrap JSON & Per-seed CIs exclude 0 on $2/5$ at $n{=}27$; point-level $5/5$. \\
 Natural no-harm results & empirical & Reconciled OOF or locked held-out artifacts & Tables~\ref{tab:uniform-panel}--\ref{tab:primary-numeric} & One-sided regimes mainly exercise the adapt or freeze branch. \\
 Controlled multimodal routing & empirical & Pre-registered $13\times10$ injected-corruption grid & App.~\ref{app:d33}; \texttt{KB-CLAIM-027} & Mechanism confirmation, not a natural multimodal benchmark. \\
