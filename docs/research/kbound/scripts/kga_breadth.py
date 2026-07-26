@@ -46,6 +46,13 @@ LR          = 0.05
 SEED        = 0
 MIN_SAMPLES = 15   # skip tasks with fewer test samples
 MIN_TASKS   = 10   # need at least this many valid tasks for KGA to be meaningful
+CALIBRATION = "loo"   # leave-one-out-of-pool radius (fix-queue item 4)
+
+# The ONE K-Bound decision path (fix-queue items 4 + 15).
+_HERE = os.path.dirname(os.path.abspath(__file__))
+if _HERE not in sys.path:
+    sys.path.insert(0, _HERE)
+import kbound_decide as _kb  # noqa: E402
 
 
 # ---------------------------------------------------------------------------
@@ -78,24 +85,27 @@ def safe_auc(y, score):
 
 
 # ---------------------------------------------------------------------------
-# KGA decision rule — identical to cifar_tent_mps_v2.decide_kga
+# KGA decision rule — THE shipped path (kbound_decide -> kga.certificate/policy)
 # ---------------------------------------------------------------------------
-def decide_kga(Z, B, alpha=ALPHA):
-    Z = np.asarray(Z, float)
-    B = np.asarray(B, float)
-    N = len(B)
-    Bhat = np.zeros(N)
-    for i in range(N):
-        tr = np.arange(N) != i
-        m = GradientBoostingRegressor(
-            n_estimators=N_EST, max_depth=MAX_DEPTH,
-            learning_rate=LR, subsample=0.8, random_state=SEED)
-        m.fit(Z[tr], B[tr])
-        Bhat[i] = m.predict(Z[i:i+1])[0]
-    eps = float(np.quantile(np.abs(Bhat - B), 1 - alpha))
-    dec = np.where(Bhat - eps > 0, "ADAPT",
-                   np.where(Bhat + eps < 0, "FREEZE", "ABSTAIN"))
-    return Bhat, eps, dec
+def decide_kga(Z, B, alpha=ALPHA, calibration=CALIBRATION):
+    """Returns ``(Bhat, eps, dec)`` with **eps a per-cell ndarray**.
+
+    FIX-QUEUE ITEM 4.  The old body ended::
+
+        eps = float(np.quantile(np.abs(Bhat - B), 1 - alpha))
+
+    -- an interpolated quantile over all N residuals, then used to decide the
+    same N cells.  Radii are now leave-one-out-of-pool exact-rank quantiles.
+
+    FIX-QUEUE ITEM 15.  This was decide_kga fork #3 of seven; the body is gone
+    and the call goes through ``kbound_decide``, which calls the shipped
+    ``kga.certificate`` / ``kga.policy``.  The comment above used to read
+    "identical to cifar_tent_mps_v2.decide_kga", which was a promise the code
+    had no way to keep -- now it is the same function object's callee.
+    """
+    return _kb.decide_kga(Z, B, alpha=alpha, n_estimators=N_EST,
+                          max_depth=MAX_DEPTH, lr=LR, seed=SEED,
+                          calibration=calibration)
 
 
 # ---------------------------------------------------------------------------
@@ -106,10 +116,18 @@ def policy_metrics(dec, a0, aa, B):
     adapt = dec == "ADAPT"
     kga = np.where(adapt, aa, a0)
     oracle = np.maximum(a0, aa)
+    # fix-queue item 28: one definition, two named rates (marginal + conditional).
+    _fa = _kb.false_adapt(dec, B)
     out = {
         "n": int(len(a0)),
         "decision_counts": {d: int((dec == d).sum()) for d in ["ADAPT", "FREEZE", "ABSTAIN"]},
         "coverage": float(np.mean(dec != "ABSTAIN")),
+        "false_adapt_unconditional": _fa["fa_u"],   # Pr[ADAPT and B <= 0]
+        "false_adapt_conditional": _fa["fa_c"],     # Pr[B <= 0 | ADAPT]
+        "n_false_adapt": _fa["n_false_adapt"],
+        "false_adapt_definition":
+            "false adapt := ADAPT and B <= 0; fa_u marginal, fa_c conditional",
+        # DEPRECATED (conditional AND strict): kept for artifact diffability only.
         "false_adapt_rate_B<0": float(np.mean(B[adapt] < 0)) if adapt.any() else None,
         "adapt_precision_B>0": float(np.mean(B[adapt] > 0)) if adapt.any() else None,
         "mean_auc": {
@@ -238,7 +256,12 @@ def main():
     Bhat, eps, dec = decide_kga(Z_mat, B_arr, alpha=ALPHA)
 
     pm = policy_metrics(dec, a0_arr, aa_arr, B_arr)
-    pm["eps_conformal"] = float(eps)
+    # fix-queue item 4: eps is one radius PER TASK now, not a single scalar.
+    eps = np.asarray(eps, float)
+    pm["eps_conformal"] = float(np.mean(eps))
+    pm["eps_conformal_is"] = "mean of the per-task leave-one-out-of-pool radii"
+    pm["eps_conformal_min"] = float(np.min(eps))
+    pm["eps_conformal_max"] = float(np.max(eps))
     pm["alpha"] = ALPHA
     pm["base_rate_harmful_B<0"] = float(np.mean(B_arr < 0))
     pm["mean_true_B"] = float(B_arr.mean())
@@ -296,11 +319,18 @@ def main():
     print("\n=== RESULTS SUMMARY ===")
     print(f"N tasks: {len(tasks)}")
     print(f"Harmful base rate (B<0): {pm['base_rate_harmful_B<0']:.3f}")
-    print(f"Conformal eps: {eps:.4f}")
+    print(f"Conformal eps (per-task LOO radii): mean {pm['eps_conformal']:.4f} "
+          f"[{pm['eps_conformal_min']:.4f}, {pm['eps_conformal_max']:.4f}]")
     print(f"Decisions: {pm['decision_counts']}")
     print(f"Coverage: {pm['coverage']:.3f}")
-    if pm['false_adapt_rate_B<0'] is not None:
-        print(f"False-adapt rate (B<0 | ADAPT): {pm['false_adapt_rate_B<0']:.3f}")
+    # fix-queue item 28: report the MARGINAL rate (what thm:certificate bounds)
+    # first, the conditional rate second, and never one under the other's name.
+    print(f"FA_u = Pr[ADAPT and B <= 0]: {pm['false_adapt_unconditional']:.3f}"
+          f"   ({pm['n_false_adapt']}/{pm['n']})")
+    if pm['false_adapt_conditional'] is not None:
+        print(f"FA_c = Pr[B <= 0 | ADAPT]:   {pm['false_adapt_conditional']:.3f}")
+    else:
+        print("FA_c = Pr[B <= 0 | ADAPT]:   n/a (no ADAPT decisions -- guarantee untested)")
     print("Regret vs oracle:")
     for pol, val in pm["regret_vs_oracle"].items():
         print(f"  {pol}: {val:.4f}")
@@ -317,7 +347,11 @@ def build_markdown(result, per_task, skipped):
         "**Framework**: f0 = best-val-AUC single detector (frozen); "
         "f_a = mean-score ensemble of all 6 detectors (adapted); "
         "Z = label-free score statistics; B = AUC(f_a) − AUC(f0) on held-out test set.  ",
-        "KGA decision rule: LOO gradient-boosted Bhat ± split-conformal ε (α=0.10), identical to cifar_tent_mps_v2.py.",
+        "KGA decision rule: leave-one-task-out gradient-boosted Bhat ± the exact "
+        "split-conformal rank radius ε = r_(k), k = ceil((n+1)(1−α)), α = 0.10, "
+        "with the scored task removed from its own radius pool (leave-one-out-of-pool). "
+        "Computed by `kbound_decide.decide_kga`, i.e. the shipped `kga.certificate` / "
+        "`kga.policy` — the same function object cifar_tent_mps_v2.py calls, not a copy.",
         "",
         "## Aggregate Metrics",
         "",
@@ -332,7 +366,11 @@ def build_markdown(result, per_task, skipped):
         f"| ADAPT decisions | {pm['decision_counts']['ADAPT']} |",
         f"| FREEZE decisions | {pm['decision_counts']['FREEZE']} |",
         f"| ABSTAIN decisions | {pm['decision_counts']['ABSTAIN']} |",
-        f"| False-adapt rate (B<0 given ADAPT) | {pm['false_adapt_rate_B<0'] if pm['false_adapt_rate_B<0'] is not None else 'N/A'} |",
+        # fix-queue item 28: both rates, named. FA_u is what thm:certificate bounds.
+        f"| FA_u = Pr[ADAPT and B <= 0] (marginal) | {pm['false_adapt_unconditional']:.4f} "
+        f"({pm['n_false_adapt']}/{pm['n']}) |",
+        f"| FA_c = Pr[B <= 0 given ADAPT] (conditional) | "
+        f"{pm['false_adapt_conditional'] if pm['false_adapt_conditional'] is not None else 'N/A (no ADAPT)'} |",
         f"| Adapt precision (B>0 given ADAPT) | {pm['adapt_precision_B>0'] if pm['adapt_precision_B>0'] is not None else 'N/A'} |",
         f"| Mean AUC — always-adapt | {pm['mean_auc']['always_adapt']:.4f} |",
         f"| Mean AUC — always-freeze | {pm['mean_auc']['always_freeze']:.4f} |",

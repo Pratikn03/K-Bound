@@ -2,9 +2,23 @@
 # full_run.sh -- the REAL runs on the full datasets, one GPU job at a time.
 #   ImageNet-C noise (full, ResNet-50, cooldown 3s, checkpoint/resume) then CIFAR-10.1 (full).
 # RESUMABLE: if the Mac sleeps/overheats/shuts down, just RE-RUN this -- finished cells skip.
+# --- defect D8: portable roots. No machine-local absolute paths in tracked code
+# --- (docs/research/kbound/EXTERNAL_STORAGE_POLICY.md). KB_REPO_ROOT is discovered
+# --- from this script's own location; override with KBOUND_REPO_ROOT.
+_kb_find_root() {
+  d=$(cd "$(dirname "${BASH_SOURCE[0]:-$0}")" && pwd)
+  while [ "$d" != "/" ]; do
+    [ -f "$d/pyproject.toml" ] && { printf '%s\n' "$d"; return 0; }
+    d=$(dirname "$d")
+  done
+  echo "ERROR: repository root not found above $(dirname "${BASH_SOURCE[0]:-$0}")" >&2
+  return 1
+}
+KB_REPO_ROOT="${KBOUND_REPO_ROOT:-$(_kb_find_root)}" || exit 1
+
 set -uo pipefail
-K=/Volumes/T9/uav/AutoML_Flagship_V8/docs/research/kbound/scripts/kbtrain.sh
-R=/Volumes/T9/uav/AutoML_Flagship_V8/experiments/kbound/results
+K="$KB_REPO_ROOT"/docs/research/kbound/scripts/kbtrain.sh
+R="$KB_REPO_ROOT"/experiments/kbound/results
 echo "start: $(date)"
 echo "WATCH progress live in another terminal:"
 echo "   tail -f $R/imagenetc_noise/progress.log"

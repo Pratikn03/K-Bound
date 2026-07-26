@@ -1,296 +1,500 @@
 {
-  "_meta": {
-    "scored_utc": "2026-07-09T21:32:10Z",
-    "alpha": 0.1,
-    "nboot": 5000,
-    "ci_method": "canonical paired per-condition bootstrap (scripts/percondition_bootstrap.py)",
-    "rule": "BEATS-BOTH = regret_kga < adapt AND < freeze AND 95% CI on gap to BETTER policy excludes 0 AND clean held-out; NO-HARM = ties better + beats worse + FA_u<=alpha; FAIL = FA_u>alpha; else NULL",
-    "integrity": "scored once; every arm reported; Camelyon-G withdrawn not reinstated; frozen bars consumed for locked datasets (no re-roll); only ImageNet-C newly scored",
-    "wave_holm_family": "3 beats-both candidates (CIFAR-10-C tent/eata vs adapt; ImageNet-C sar vs freeze); all survive Holm at 0.05"
-  },
-  "wave": [
-    {
-      "track": "CIFAR-10-C Tent",
-      "unit": "5x432 cells",
-      "regret_kga": 0.0016,
-      "regret_adapt": 0.0079,
-      "regret_freeze": 0.1241,
-      "FA_u": 0.0,
-      "better_policy": "adapt",
-      "point_beats_both": true,
-      "ci_robust_beats_both": true,
-      "survives_wave_holm": true,
-      "verdict": "beats-both",
-      "evidence_tier": "locked multi-seed",
-      "source": "stress_grid_multiseed_v1/LOCKED_ANALYSIS_RESULTS.json",
-      "note": "frozen"
+    "_meta": {
+        "scored_utc": "2026-07-26T00:00:00Z",
+        "alpha": 0.1,
+        "nboot": 5000,
+        "ci_method": "paired percentile bootstrap; the resampling unit is stated per row. ImageNet-C previously resampled 135 correlated cell-seed rows i.i.d. while the manuscript described a seed-averaged condition-level design; the condition-level design is the one reported. CIFAR-10-C rows additionally report cluster-robust intervals at 216 twin-pairs, 12 corruption x severity clusters and 6 corruption families, because the 432 grid cells are not 432 independent draws (r0/r1 replicate correlation 0.948-0.999).",
+        "rule": "BEATS-BOTH = regret_kga < adapt AND < freeze AND the 95% CI on the gap to the BETTER policy excludes 0 AND clean held-out. CLUSTER-ROBUST BEATS-BOTH additionally requires the interval to exclude 0 when whole corruption families are the resampling unit. NO-HARM = ties better + beats worse + FA_u <= alpha; FAIL = FA_u > alpha; else NULL.",
+        "integrity": "scored once; every arm reported; Camelyon-G withdrawn not reinstated; frozen bars consumed for locked datasets (no re-roll); only ImageNet-C newly scored",
+        "wave_holm_family": "SUPERSEDED. The previous value -- '3 beats-both candidates (CIFAR-10-C tent/eata vs adapt; ImageNet-C sar vs freeze); all survive Holm at 0.05' -- named exactly the three comparisons that came out positive, after the results were known. That is not a multiplicity family and it is withdrawn. The confirmatory family is now declared PROSPECTIVELY as the set of pre-registered beats-both bars: one per (track, candidate) pair named in a research_lock/ protocol file BEFORE any number for that pair was computed, each evaluated once on its declared test cells. Rows from development screens, superseded protocol versions or post hoc re-scorings are not members and are not eligible for promotion. Holm is applied over that inventory, published in full (including failures) as Appendix 'Pre-registered arm inventory' / tab:arm-inventory. Denominator for context: 1387 recorded beats_both determinations project-wide (326 true, 23.5% base rate) over 70 scored result units and 69 protocol files.",
+        "multiplicity_family_status": "declared prospectively; see tab:arm-inventory",
+        "stale_rows_requiring_pipeline_regeneration": [
+            "PACS (4 LODO): row is a single-seed panel verdict ('3 no-harm + 1 null'). The promoted multi-seed result is 0.0431/0.0176/0.0446 over 3 seeds x 4 targets -- a NULL in which KGA loses to always-adapt by 2.45x. Regenerate from pacs_multiseed_v1/PACS_MULTISEED_RESULTS.json.",
+            "ImageNet-R D: row is a 3-seed debug scoring (0.0031/0.0105/0.0037). The promoted panel row is 0.0151 under the declared exact-rank rule (0.0112 interpolated) vs always-adapt 0.0064, i.e. KGA is WORSE than always-adapt, on 7 of 10 backbones. Regenerate from imagenetr_protocol_d_multiseed_v1/MULTISEED_ANALYSIS_RESULTS.json.",
+            "Camelyon17 G / Camelyon17 OOD: the promoted n=18 triple 0/0/0.1381 appears in no artifact on disk; the source directory audits/integrity_2026-06-20/camelyon_reconciliation/ does not exist."
+        ],
+        "corrections_applied": "fix-queue items 2, 3, 4, 5, 17, 24, 25 (paper slice), plus verifier defects D1 (item 17 EATA cluster reversal), D3 (promote the leave-one-out ImageNet-C number) and D5 (unclamped radius rule). Numbers taken from /home/claude/kb_fixes/NUMBERS_PACK.json or recomputed directly from the named per-condition artifacts; every recompute script is re-runnable.",
+        "radius_rule": "ONE rule, declared once: exact split-conformal rank eps = rho_(k), k = ceil((n_cal+1)(1-alpha)), UNCLAMPED (+inf => ABSTAIN when k > n_cal), alpha = 0.10, calibrated LEAVE-ONE-OUT-OF-POOL (cell i's radius excludes cell i's residual). This matches kga.certificate.split_conformal_rank_radius / conformal_radii_loo as shipped. The old k = min(n_cal, .) clamp is not used for any number here."
     },
-    {
-      "track": "CIFAR-10-C EATA",
-      "unit": "5x432 cells",
-      "regret_kga": 0.0013,
-      "regret_adapt": 0.0033,
-      "regret_freeze": 0.1314,
-      "FA_u": 0.0,
-      "better_policy": "adapt",
-      "point_beats_both": true,
-      "ci_robust_beats_both": true,
-      "survives_wave_holm": true,
-      "verdict": "beats-both",
-      "evidence_tier": "locked multi-seed",
-      "source": "stress_grid_multiseed_v1/LOCKED_ANALYSIS_RESULTS.json",
-      "note": "frozen"
-    },
-    {
-      "track": "CIFAR-10-C SAR",
-      "unit": "excluded",
-      "regret_kga": null,
-      "regret_adapt": null,
-      "regret_freeze": null,
-      "FA_u": null,
-      "better_policy": null,
-      "point_beats_both": null,
-      "ci_robust_beats_both": null,
-      "survives_wave_holm": null,
-      "verdict": "withheld",
-      "evidence_tier": "quarantined; not evidence",
-      "source": "CIFAR10C_SAR_QUARANTINE.md",
-      "note": "archived aggregate does not reproduce from the current seed-0 replay"
-    },
-    {
-      "track": "ImageNet-C SAR",
-      "unit": "27 cells (3 noise corr., seed0)",
-      "regret_kga": 0.0108,
-      "regret_adapt": 0.0625,
-      "regret_freeze": 0.0319,
-      "FA_u": 0.0,
-      "better_policy": "freeze",
-      "point_beats_both": true,
-      "ci_robust_beats_both": true,
-      "survives_wave_holm": true,
-      "verdict": "beats-both-CI-robust",
-      "evidence_tier": "locked single-seed full-scale",
-      "source": "win_hunt_v5/imagenetc_aggr/decisive_tta_results.json",
-      "note": "NEW/changed: gap_vs_freeze -0.0211 [-0.0319,-0.0111] excl 0; gap_vs_adapt -0.0517 [-0.1153,-0.0011]; Holm p=0.0003; harmful 14.8%; 12/27 abstain; supersedes prior 36-cell provisional"
-    },
-    {
-      "track": "ImageNet-C Tent",
-      "unit": "27 cells (3 noise corr.)",
-      "regret_kga": 0.0114,
-      "regret_adapt": 0.0216,
-      "regret_freeze": 0.0114,
-      "FA_u": 0.0,
-      "better_policy": "freeze",
-      "point_beats_both": false,
-      "ci_robust_beats_both": false,
-      "survives_wave_holm": null,
-      "verdict": "no-harm (ties freeze)",
-      "evidence_tier": "locked single-seed full-scale",
-      "source": "win_hunt_v5/imagenetc_aggr",
-      "note": "harmful 63%; KGA abstains all -> ties freeze"
-    },
-    {
-      "track": "ImageNet-C EATA",
-      "unit": "27 cells (3 noise corr.)",
-      "regret_kga": 0.0,
-      "regret_adapt": 0.0,
-      "regret_freeze": 0.0336,
-      "FA_u": 0.0,
-      "better_policy": "adapt",
-      "point_beats_both": false,
-      "ci_robust_beats_both": false,
-      "survives_wave_holm": null,
-      "verdict": "no-harm (helpful-dominated, ties adapt)",
-      "evidence_tier": "locked single-seed full-scale",
-      "source": "win_hunt_v5/imagenetc_aggr",
-      "note": "harmful 0%"
-    },
-    {
-      "track": "Mixed head-to-head (CIFAR-10-C Tent primary)",
-      "unit": "pooled stream",
-      "regret_kga": 0.0016,
-      "regret_adapt": 0.0079,
-      "regret_freeze": 0.1241,
-      "FA_u": 0.0,
-      "better_policy": "adapt",
-      "point_beats_both": true,
-      "ci_robust_beats_both": true,
-      "survives_wave_holm": true,
-      "verdict": "beats-both (WIN)",
-      "evidence_tier": "locked",
-      "source": "mixed_headtohead_v1/HEADTOHEAD_RESULTS_cifar10c_tent_primary.json",
-      "note": "frozen; also beats POEM 0.0088 / AETTA 0.0073; constructed routing mixture, not cross-dataset transfer"
-    },
-    {
-      "track": "Office-Home M v2",
-      "unit": "target test n=35",
-      "regret_kga": 0.0157,
-      "regret_adapt": 0.0468,
-      "regret_freeze": 0.0158,
-      "FA_u": 0.0,
-      "better_policy": "freeze",
-      "point_beats_both": true,
-      "ci_robust_beats_both": false,
-      "survives_wave_holm": null,
-      "verdict": "no-harm (ties freeze) -- MIGRATES from point-BB",
-      "evidence_tier": "locked OOF no-harm (LOO BB not promoted)",
-      "source": "KBOUND_WIN_BOOTSTRAP_CIS_oof.json",
-      "note": "point edge only; gap_vs_freeze 0.00011 [0.0,0.00033] includes 0 -> not CI-robust; sealed NINE_TRACK_LOCK_SEAL_v1"
-    },
-    {
-      "track": "iWildCam H v2",
-      "unit": "held-out test n=72",
-      "regret_kga": 0.0041,
-      "regret_adapt": 0.1028,
-      "regret_freeze": 0.0041,
-      "FA_u": 0.0,
-      "better_policy": "freeze",
-      "point_beats_both": false,
-      "ci_robust_beats_both": false,
-      "survives_wave_holm": null,
-      "verdict": "no-harm (ties freeze)",
-      "evidence_tier": "locked OOF no-harm",
-      "source": "KBOUND_WIN_BOOTSTRAP_CIS_oof.json",
-      "note": "gap_vs_freeze CI [0,0] includes 0; sealed NINE_TRACK_LOCK_SEAL_v1"
-    },
-    {
-      "track": "Camelyon17 OOD",
-      "unit": "genuine OOD test n=18 (paper); OOF pooled n=54 is not the promoted unit",
-      "regret_kga": 0.0,
-      "regret_adapt": 0.0,
-      "regret_freeze": 0.1381,
-      "FA_u": 0.0,
-      "better_policy": "adapt",
-      "point_beats_both": false,
-      "ci_robust_beats_both": false,
-      "survives_wave_holm": null,
-      "verdict": "no-harm (ties adapt on genuine OOD)",
-      "evidence_tier": "locked OOD reconciliation",
-      "source": "audits/integrity_2026-06-20/camelyon_reconciliation/recon_results.json",
-      "note": "promoted unit is OOD test n=18 (0/0/0.1381); sealed NINE_TRACK_LOCK_SEAL_v1"
-    },
-    {
-      "track": "RxRx1 J",
-      "unit": "OOD test n=60",
-      "regret_kga": 0.0,
-      "regret_adapt": 0.2531,
-      "regret_freeze": 0.0,
-      "FA_u": 0.0,
-      "better_policy": "freeze",
-      "point_beats_both": false,
-      "ci_robust_beats_both": false,
-      "survives_wave_holm": null,
-      "verdict": "no-harm (ties freeze)",
-      "evidence_tier": "locked raw run",
-      "source": "win_hunt_v5/rxrx1_aggr",
-      "note": "KGA abstains/freezes on all cells"
-    },
-    {
-      "track": "PACS (4 LODO)",
-      "unit": "18 cells/target x4",
-      "regret_kga": null,
-      "regret_adapt": null,
-      "regret_freeze": null,
-      "FA_u": 0.0,
-      "better_policy": "per-domain",
-      "point_beats_both": false,
-      "ci_robust_beats_both": false,
-      "survives_wave_holm": null,
-      "verdict": "3 no-harm + 1 null (photo)",
-      "evidence_tier": "locked single-seed panel",
-      "source": "win_hunt_v5/pacs_aggr/pacs_result.json",
-      "note": "art_painting no-harm; cartoon no-harm; sketch no-harm; photo NULL (KGA regret > better policy)"
-    },
-    {
-      "track": "ImageNet-R D",
-      "unit": "3 seeds x 10 backbones",
-      "regret_kga": 0.0031,
-      "regret_adapt": 0.0105,
-      "regret_freeze": 0.0037,
-      "FA_u": null,
-      "better_policy": "freeze",
-      "point_beats_both": false,
-      "ci_robust_beats_both": false,
-      "survives_wave_holm": null,
-      "verdict": "diagnostic (no CI-robust BB)",
-      "evidence_tier": "locked multi-seed diagnostic",
-      "source": "imagenetr_kbound_debug_mps",
-      "note": "point-only arm fails the second CI"
-    },
-    {
-      "track": "CIFAR-10.1 K",
-      "unit": "cross-seed test n=48",
-      "regret_kga": 0.0021,
-      "regret_adapt": 0.019,
-      "regret_freeze": 0.0017,
-      "FA_u": 0.444,
-      "better_policy": "freeze",
-      "point_beats_both": null,
-      "ci_robust_beats_both": false,
-      "survives_wave_holm": null,
-      "verdict": "FAIL (FA_u=0.444 > alpha) / diagnostic",
-      "evidence_tier": "locked diagnostic",
-      "source": "win_hunt_v5/cifar101_aggr",
-      "note": "fails transfer bar; no claim"
-    },
-    {
-      "track": "Camelyon17 G",
-      "unit": "dev-vs-OOD, n=54 'held-out'",
-      "regret_kga": null,
-      "regret_adapt": null,
-      "regret_freeze": null,
-      "FA_u": null,
-      "better_policy": "n/a",
-      "point_beats_both": null,
-      "ci_robust_beats_both": null,
-      "survives_wave_holm": null,
-      "verdict": "WITHDRAWN (contaminated held-out; NOT reinstated)",
-      "evidence_tier": "withdrawn",
-      "source": "-",
-      "note": "prior beats-both pooled in-distribution id_val into the held-out set; withdrawn per pre-registration"
+    "wave": [
+        {
+            "track": "CIFAR-10-C Tent",
+            "unit": "5x432 cells",
+            "regret_kga": 0.0016,
+            "regret_adapt": 0.0079,
+            "regret_freeze": 0.1241,
+            "FA_u": 0.0,
+            "better_policy": "adapt",
+            "point_beats_both": true,
+            "ci_robust_beats_both": true,
+            "survives_wave_holm": true,
+            "verdict": "beats-both, CLUSTER-ROBUST (adapt-side CI excludes zero at 432 cells, 216 twin-pairs, 12 corruption x severity clusters and 6 corruption families)",
+            "evidence_tier": "locked multi-seed",
+            "source": "experiments/kbound/results/mixed_headtohead_v1/per_condition_cifar10c_tent_primary_kga_seed{0..4}.json",
+            "note": "frozen",
+            "regret_kga_interpolated_as_published": 0.00157361,
+            "regret_exact_rank": [
+                0.00158518,
+                0.00792338,
+                0.12409792
+            ],
+            "decisions_changed_by_leave_one_out_of_pool_radius": 0,
+            "cluster_robust_beats_both": true,
+            "gap_vs_adapt_ci95": {
+                "cells_iid_432": [
+                    -0.00787,
+                    -0.00489
+                ],
+                "twin_pairs_216": [
+                    -0.00846,
+                    -0.00434
+                ],
+                "corruption_x_severity_12": [
+                    -0.01157,
+                    -0.00158
+                ],
+                "corruption_family_6": [
+                    -0.00952,
+                    -0.00259
+                ]
+            },
+            "gap_vs_freeze_ci95": {
+                "cells_iid_432": [
+                    -0.13738,
+                    -0.1081
+                ],
+                "twin_pairs_216": [
+                    -0.14351,
+                    -0.10235
+                ],
+                "corruption_x_severity_12": [
+                    -0.21426,
+                    -0.0423
+                ],
+                "corruption_family_6": [
+                    -0.1779,
+                    -0.06364
+                ]
+            },
+            "adverse_corruption_families": {
+                "gaussian_noise": 0.00189
+            },
+            "decision_counts": {
+                "ADAPT": 1113,
+                "FREEZE": 358,
+                "ABSTAIN": 689
+            },
+            "cp95_upper_fa_c": 0.002688,
+            "leave_one_corruption_out_ablation": {
+                "folds": 6,
+                "residual_MAE": 0.0309,
+                "R2": 0.8954,
+                "eps": 0.09882,
+                "adapt_rate": 0.4134,
+                "fa_u": 0.0,
+                "regret_kga": 0.00603,
+                "vs_leave_one_cell_out": {
+                    "residual_MAE": 0.00959,
+                    "R2": 0.9929,
+                    "eps": 0.02132,
+                    "adapt_rate": 0.5153,
+                    "regret_kga": 0.00159
+                },
+                "verdict": "beats-both survives: 0.00603 < 0.00792 (always-adapt) and < 0.12410 (always-freeze), FA_u still 0"
+            }
+        },
+        {
+            "track": "CIFAR-10-C EATA",
+            "unit": "5x432 cells",
+            "regret_kga": 0.0013,
+            "regret_adapt": 0.0033,
+            "regret_freeze": 0.1314,
+            "FA_u": 0.0,
+            "better_policy": "adapt",
+            "point_beats_both": true,
+            "ci_robust_beats_both": false,
+            "survives_wave_holm": true,
+            "verdict": "point beats-both; CI-supported vs always-freeze at every unit; NOT CI-supported vs always-adapt once corruption is the cluster: [-0.00483,+0.00043] at 12 corruption x severity clusters and [-0.00436,+0.00035] at 6 corruption families, both containing zero. *** THIS REVERSES review_6 item 17, which asserted all cluster CIs still exclude zero. ***",
+            "evidence_tier": "locked multi-seed",
+            "source": "experiments/kbound/results/mixed_headtohead_v1/per_condition_cifar10c_eata_secondary_kga_seed{0..4}.json",
+            "note": "frozen",
+            "regret_kga_interpolated_as_published": 0.00126759,
+            "regret_exact_rank": [
+                0.00127986,
+                0.00326829,
+                0.13137893
+            ],
+            "decisions_changed_by_leave_one_out_of_pool_radius": 0,
+            "cluster_robust_beats_both": false,
+            "gap_vs_adapt_ci95": {
+                "cells_iid_432": [
+                    -0.0028,
+                    -0.00123
+                ],
+                "twin_pairs_216": [
+                    -0.00311,
+                    -0.00096
+                ],
+                "corruption_x_severity_12": [
+                    -0.00483,
+                    0.00043
+                ],
+                "corruption_family_6": [
+                    -0.00436,
+                    0.00035
+                ]
+            },
+            "gap_vs_freeze_ci95": {
+                "cells_iid_432": [
+                    -0.14535,
+                    -0.11518
+                ],
+                "twin_pairs_216": [
+                    -0.15184,
+                    -0.1092
+                ],
+                "corruption_x_severity_12": [
+                    -0.2251,
+                    -0.04666
+                ],
+                "corruption_family_6": [
+                    -0.18757,
+                    -0.06998
+                ]
+            },
+            "adverse_corruption_families": {
+                "gaussian_noise": 0.00022,
+                "jpeg_compression": 0.00292
+            },
+            "decision_counts": {
+                "ADAPT": 1244,
+                "FREEZE": 130,
+                "ABSTAIN": 786
+            },
+            "cp95_upper_fa_c": 0.002405,
+            "leave_one_corruption_out_ablation": "not run for EATA; the ablation in this file is a Tent result"
+        },
+        {
+            "track": "CIFAR-10-C SAR",
+            "unit": "excluded",
+            "regret_kga": null,
+            "regret_adapt": null,
+            "regret_freeze": null,
+            "FA_u": null,
+            "better_policy": null,
+            "point_beats_both": null,
+            "ci_robust_beats_both": null,
+            "survives_wave_holm": null,
+            "verdict": "withheld",
+            "evidence_tier": "quarantined; not evidence",
+            "source": "CIFAR10C_SAR_QUARANTINE.md",
+            "note": "archived aggregate does not reproduce from the current seed-0 replay"
+        },
+        {
+            "track": "ImageNet-C SAR",
+            "unit": "27 conditions (3 noise corr. x 3 sev x 3 batch regimes), seed-averaged over seeds 0-4",
+            "regret_kga": 0.028893,
+            "regret_adapt": 0.052933,
+            "regret_freeze": 0.031894,
+            "FA_u": 0.007407,
+            "better_policy": "freeze",
+            "point_beats_both": true,
+            "ci_robust_beats_both": false,
+            "survives_wave_holm": false,
+            "verdict": "POINT-ESTIMATE no-harm vs always-freeze (0.028893 < 0.031894). NOT a CI-supported beats-both against either fixed policy: under the promoted leave-one-out-of-pool radius the freeze-side interval includes zero at every legitimate unit (seed-averaged 27 conditions [-0.0085,+0.0038]; even the generous i.i.d.-135 design [-0.0079,+0.0036]) and the adapt-side interval includes zero at the condition level [-0.0755,+0.0181]. Only a 3-cluster corruption-family bootstrap excludes zero and it is not a primary interval.",
+            "evidence_tier": "locked 5 seeds; 2/5 seeds beat both, 3/5 bit-identical ties with always-freeze",
+            "source": "experiments/kbound/results/win_hunt_v5_imagenetc_ms/pooled_5seed/per_condition_imagenetc_sar_seed{0..4}.json",
+            "note": "CORRECTED (fix-queue items 2, 3, 4 and verifier defect D3). The promoted row is now the leave-one-out-of-pool exact-rank scoring. Recompute: kb_fixes/recompute/01_imagenetc_perseed.py, 03_imagenetc_bootstrap.py.",
+            "decision_counts": {
+                "ADAPT": 13,
+                "FREEZE": 15,
+                "ABSTAIN": 107
+            },
+            "gap_vs_adapt_ci95_seedavg27": [
+                -0.075534,
+                0.01813
+            ],
+            "gap_vs_freeze_ci95_seedavg27": [
+                -0.008487,
+                0.003791
+            ],
+            "quantile_rule": "exact rank rho_(k), k=ceil((n+1)(1-alpha)), unclamped, LEAVE-ONE-OUT-OF-POOL",
+            "cluster_robust_beats_both": false,
+            "cp95_upper_fa_c": 0.31634,
+            "gap_vs_freeze_ci95_iid135": [
+                -0.007939,
+                0.003581
+            ],
+            "sensitivity_in_pool_radius_SUPERSEDED": {
+                "regret": [
+                    0.026422,
+                    0.052933,
+                    0.031894
+                ],
+                "fa_u": 0.0,
+                "decision_counts": {
+                    "ADAPT": 12,
+                    "FREEZE": 14,
+                    "ABSTAIN": 109
+                },
+                "cp95_upper_fa_c": 0.220922,
+                "gap_vs_freeze_ci95_seedavg27": [
+                    -0.009232,
+                    -0.0023
+                ],
+                "gap_vs_adapt_ci95_iid135": [
+                    -0.051842,
+                    -0.003824
+                ],
+                "note": "DEMOTED. This is the radius fitted on a pool that contains the scored cell's own residual, so eps is a function of the test label the FA_u guarantee attaches to (fix-queue item 4). Its freeze-side CI does exclude zero; that is exactly what the leakage bought. 2 of 135 decisions differ."
+            },
+            "per_seed_beating_both": [
+                2,
+                4
+            ],
+            "per_seed_tying_freeze_bit_identically": [
+                0,
+                1,
+                3
+            ]
+        },
+        {
+            "track": "ImageNet-C Tent",
+            "unit": "27 cells x 5 seeds (135)",
+            "regret_kga": 0.014465,
+            "regret_adapt": 0.019061,
+            "regret_freeze": 0.014465,
+            "FA_u": 0.0,
+            "better_policy": "freeze",
+            "point_beats_both": false,
+            "ci_robust_beats_both": false,
+            "survives_wave_holm": null,
+            "verdict": "no-harm (ties freeze exactly; 0 of 135 ADAPT decisions -- guarantee untested)",
+            "evidence_tier": "locked 5 seeds",
+            "source": "experiments/kbound/results/win_hunt_v5_imagenetc_ms/pooled_5seed/per_condition_imagenetc_tent_seed{0..4}.json",
+            "note": "harmful base rate 55.6% -- the most mixed track in the paper, and KGA still never adapts. Recomputed under the declared unclamped exact-rank leave-one-out rule.",
+            "decision_counts": {
+                "ADAPT": 0,
+                "FREEZE": 0,
+                "ABSTAIN": 135
+            }
+        },
+        {
+            "track": "ImageNet-C EATA",
+            "unit": "27 cells x 5 seeds (135)",
+            "regret_kga": 0.00067,
+            "regret_adapt": 9.6e-05,
+            "regret_freeze": 0.034189,
+            "FA_u": 0.007407,
+            "better_policy": "adapt",
+            "point_beats_both": false,
+            "ci_robust_beats_both": false,
+            "survives_wave_holm": null,
+            "verdict": "no-harm (helpful-dominated); KGA TRAILS always-adapt 0.00067 vs 0.00010 -- essentially a tie, not a win",
+            "evidence_tier": "locked 5 seeds",
+            "source": "experiments/kbound/results/win_hunt_v5_imagenetc_ms/pooled_5seed/per_condition_imagenetc_eata_seed{0..4}.json",
+            "note": "harmful base rate 1.5%. Recomputed under the declared unclamped exact-rank leave-one-out rule (3 decisions differ from in-pool).",
+            "decision_counts": {
+                "ADAPT": 120,
+                "FREEZE": 1,
+                "ABSTAIN": 14
+            },
+            "cp95_upper_fa_c": 0.038921
+        },
+        {
+            "track": "Mixed head-to-head (CIFAR-10-C Tent primary)",
+            "unit": "pooled stream",
+            "regret_kga": 0.0016,
+            "regret_adapt": 0.0079,
+            "regret_freeze": 0.1241,
+            "FA_u": 0.0,
+            "better_policy": "adapt",
+            "point_beats_both": true,
+            "ci_robust_beats_both": true,
+            "survives_wave_holm": true,
+            "verdict": "beats-both (WIN)",
+            "evidence_tier": "locked",
+            "source": "mixed_headtohead_v1/HEADTOHEAD_RESULTS_cifar10c_tent_primary.json",
+            "note": "frozen; also beats POEM 0.0088 / AETTA 0.0073; constructed routing mixture, not cross-dataset transfer"
+        },
+        {
+            "track": "Office-Home M v2",
+            "unit": "target test n=35",
+            "regret_kga": 0.0157,
+            "regret_adapt": 0.0468,
+            "regret_freeze": 0.0158,
+            "FA_u": 0.0,
+            "better_policy": "freeze",
+            "point_beats_both": true,
+            "ci_robust_beats_both": false,
+            "survives_wave_holm": null,
+            "verdict": "no-harm (ties freeze) -- MIGRATES from point-BB",
+            "evidence_tier": "locked OOF no-harm (LOO BB not promoted)",
+            "source": "KBOUND_WIN_BOOTSTRAP_CIS_oof.json",
+            "note": "point edge only; gap_vs_freeze 0.00011 [0.0,0.00033] includes 0 -> not CI-robust; sealed NINE_TRACK_LOCK_SEAL_v1"
+        },
+        {
+            "track": "iWildCam H v2",
+            "unit": "held-out test n=72",
+            "regret_kga": 0.0041,
+            "regret_adapt": 0.1028,
+            "regret_freeze": 0.0041,
+            "FA_u": 0.0,
+            "better_policy": "freeze",
+            "point_beats_both": false,
+            "ci_robust_beats_both": false,
+            "survives_wave_holm": null,
+            "verdict": "no-harm (ties freeze)",
+            "evidence_tier": "locked OOF no-harm",
+            "source": "KBOUND_WIN_BOOTSTRAP_CIS_oof.json",
+            "note": "gap_vs_freeze CI [0,0] includes 0; sealed NINE_TRACK_LOCK_SEAL_v1"
+        },
+        {
+            "track": "Camelyon17 OOD",
+            "unit": "genuine OOD test n=18 (paper); OOF pooled n=54 is not the promoted unit",
+            "regret_kga": 0.0,
+            "regret_adapt": 0.0,
+            "regret_freeze": 0.1381,
+            "FA_u": 0.0,
+            "better_policy": "adapt",
+            "point_beats_both": false,
+            "ci_robust_beats_both": false,
+            "survives_wave_holm": null,
+            "verdict": "no-harm (ties adapt on genuine OOD)",
+            "evidence_tier": "locked OOD reconciliation",
+            "source": "audits/integrity_2026-06-20/camelyon_reconciliation/recon_results.json",
+            "note": "promoted unit is OOD test n=18 (0/0/0.1381); sealed NINE_TRACK_LOCK_SEAL_v1"
+        },
+        {
+            "track": "RxRx1 J",
+            "unit": "OOD test n=60",
+            "regret_kga": 0.0,
+            "regret_adapt": 0.2531,
+            "regret_freeze": 0.0,
+            "FA_u": 0.0,
+            "better_policy": "freeze",
+            "point_beats_both": false,
+            "ci_robust_beats_both": false,
+            "survives_wave_holm": null,
+            "verdict": "no-harm (ties freeze)",
+            "evidence_tier": "locked raw run",
+            "source": "win_hunt_v5/rxrx1_aggr",
+            "note": "KGA abstains/freezes on all cells"
+        },
+        {
+            "track": "PACS (4 LODO)",
+            "unit": "18 cells/target x4",
+            "regret_kga": null,
+            "regret_adapt": null,
+            "regret_freeze": null,
+            "FA_u": 0.0,
+            "better_policy": "per-domain",
+            "point_beats_both": false,
+            "ci_robust_beats_both": false,
+            "survives_wave_holm": null,
+            "verdict": "3 no-harm + 1 null (photo)",
+            "evidence_tier": "locked single-seed panel",
+            "source": "win_hunt_v5/pacs_aggr/pacs_result.json",
+            "note": "art_painting no-harm; cartoon no-harm; sketch no-harm; photo NULL (KGA regret > better policy)"
+        },
+        {
+            "track": "ImageNet-R D",
+            "unit": "3 seeds x 10 backbones",
+            "regret_kga": 0.0031,
+            "regret_adapt": 0.0105,
+            "regret_freeze": 0.0037,
+            "FA_u": null,
+            "better_policy": "freeze",
+            "point_beats_both": false,
+            "ci_robust_beats_both": false,
+            "survives_wave_holm": null,
+            "verdict": "diagnostic (no CI-robust BB)",
+            "evidence_tier": "locked multi-seed diagnostic",
+            "source": "imagenetr_kbound_debug_mps",
+            "note": "point-only arm fails the second CI"
+        },
+        {
+            "track": "CIFAR-10.1 K",
+            "unit": "cross-seed test n=48",
+            "regret_kga": 0.0021,
+            "regret_adapt": 0.019,
+            "regret_freeze": 0.0017,
+            "FA_u": 0.444,
+            "better_policy": "freeze",
+            "point_beats_both": null,
+            "ci_robust_beats_both": false,
+            "survives_wave_holm": null,
+            "verdict": "FAIL (FA_u=0.444 > alpha) / diagnostic",
+            "evidence_tier": "locked diagnostic",
+            "source": "win_hunt_v5/cifar101_aggr",
+            "note": "fails transfer bar; no claim"
+        },
+        {
+            "track": "Camelyon17 G",
+            "unit": "dev-vs-OOD, n=54 'held-out'",
+            "regret_kga": null,
+            "regret_adapt": null,
+            "regret_freeze": null,
+            "FA_u": null,
+            "better_policy": "n/a",
+            "point_beats_both": null,
+            "ci_robust_beats_both": null,
+            "survives_wave_holm": null,
+            "verdict": "WITHDRAWN (contaminated held-out; NOT reinstated)",
+            "evidence_tier": "withdrawn",
+            "source": "-",
+            "note": "prior beats-both pooled in-distribution id_val into the held-out set; withdrawn per pre-registration"
+        }
+    ],
+    "wave_holm": [
+        {
+            "name": "CIFAR-10-C:tent (vs adapt)",
+            "p_raw": 9.999e-05,
+            "p_holm": 0.0003,
+            "survives_holm": true,
+            "family_status": "computed over the RETROSPECTIVE 3-winner family, which is withdrawn (see _meta.wave_holm_family). Must be recomputed over the prospective pre-registered arm inventory (tab:arm-inventory) before it is quoted."
+        },
+        {
+            "name": "CIFAR-10-C:eata (vs adapt)",
+            "p_raw": 9.999e-05,
+            "p_holm": 0.0003,
+            "survives_holm": true,
+            "family_status": "computed over the RETROSPECTIVE 3-winner family, which is withdrawn (see _meta.wave_holm_family). Must be recomputed over the prospective pre-registered arm inventory (tab:arm-inventory) before it is quoted.",
+            "note": "The 432-cell p-value below is not cluster-robust: at 12 or 6 corruption clusters the EATA adapt-side interval contains zero. Do not quote this row as a cluster-robust result."
+        },
+        {
+            "name": "ImageNet-C:sar (vs freeze)",
+            "p_raw": 0.0002,
+            "p_holm": 0.0003,
+            "survives_holm": false,
+            "family_status": "computed over the RETROSPECTIVE 3-winner family, which is withdrawn (see _meta.wave_holm_family). Must be recomputed over the prospective pre-registered arm inventory (tab:arm-inventory) before it is quoted.",
+            "note": "WITHDRAWN. Under the promoted leave-one-out-of-pool radius the freeze-side gap no longer excludes zero at any legitimate unit ([-0.0085,+0.0038] seed-averaged; [-0.0079,+0.0036] i.i.d.-135), so there is no interval-supported comparison here to enter any family."
+        }
+    ],
+    "migration": {
+        "point_beats_both": [
+            "CIFAR-10-C Tent",
+            "CIFAR-10-C EATA",
+            "ImageNet-C SAR",
+            "Mixed head-to-head",
+            "Office-Home M v2",
+            "(historical) Camelyon17 G"
+        ],
+        "ci_robust_beats_both": [
+            "CIFAR-10-C Tent",
+            "CIFAR-10-C EATA (at the 432-cell / 216-twin-pair unit only)",
+            "Mixed head-to-head"
+        ],
+        "cluster_robust_beats_both": [
+            "CIFAR-10-C Tent"
+        ],
+        "migrated_to_no_harm": [
+            "Office-Home M v2",
+            "ImageNet-C SAR (demoted from CI beats-both to point-estimate no-harm by the leave-one-out radius)"
+        ],
+        "withdrawn": [
+            "Camelyon17 G"
+        ],
+        "note": "point-beats-both is necessary, not sufficient; CI-beats-both at the as-run unit is not sufficient either. Exactly ONE arm in this paper is a cluster-robust beats-both: CIFAR-10-C Tent."
     }
-  ],
-  "wave_holm": [
-    {
-      "name": "CIFAR-10-C:tent (vs adapt)",
-      "p_raw": 9.999e-05,
-      "p_holm": 0.0003,
-      "survives_holm": true
-    },
-    {
-      "name": "CIFAR-10-C:eata (vs adapt)",
-      "p_raw": 9.999e-05,
-      "p_holm": 0.0003,
-      "survives_holm": true
-    },
-    {
-      "name": "ImageNet-C:sar (vs freeze)",
-      "p_raw": 0.0002,
-      "p_holm": 0.0003,
-      "survives_holm": true
-    }
-  ],
-  "migration": {
-    "point_beats_both": [
-      "CIFAR-10-C Tent",
-      "CIFAR-10-C EATA",
-      "ImageNet-C SAR",
-      "Mixed head-to-head",
-      "Office-Home M v2",
-      "(historical) Camelyon17 G"
-    ],
-    "ci_robust_beats_both": [
-      "CIFAR-10-C Tent",
-      "CIFAR-10-C EATA",
-      "ImageNet-C SAR",
-      "Mixed head-to-head"
-    ],
-    "migrated_to_no_harm": [
-      "Office-Home M v2"
-    ],
-    "withdrawn": [
-      "Camelyon17 G"
-    ],
-    "note": "point-beats-both is necessary, not sufficient; ImageNet-C SAR is the one newly CI-confirmed arm this pass"
-  }
 }

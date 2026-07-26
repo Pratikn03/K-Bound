@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import importlib
-import os
 import sys
 from pathlib import Path
 
@@ -11,8 +10,13 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "src"))
 
 
-def test_scope_guard_advisory_mode_flags_disagreement():
-    os.environ.pop("UAIS_SCOPE_REFERENCE", None)
+def test_scope_guard_advisory_mode_flags_disagreement(monkeypatch):
+    # Fix-queue item 30 (reproducibility hygiene): these two tests used to mutate
+    # os.environ in place. A failure between set and pop leaked
+    # UAIS_SCOPE_REFERENCE into every subsequent test in the session, so the
+    # suite's result depended on collection order. monkeypatch restores the
+    # environment even when the assertion fails.
+    monkeypatch.delenv("UAIS_SCOPE_REFERENCE", raising=False)
     from deploy.api import scope_guard
     importlib.reload(scope_guard)
     # strongly conflicting modalities -> high drift AND out of envelope (audit H1:
@@ -27,17 +31,26 @@ def test_scope_guard_advisory_mode_flags_disagreement():
     assert out2["in_envelope"] is True
 
 
-def test_scope_guard_reference_envelope_detects_out_of_range(tmp_path):
+def test_scope_guard_reference_envelope_detects_out_of_range(tmp_path, monkeypatch):
+    # Fix-queue item 30 (reproducibility hygiene), same defect as above: the
+    # os.environ[...] = ... / os.environ.pop(...) pair only unsets the variable
+    # when the assertions in between all pass. On a failure UAIS_SCOPE_REFERENCE
+    # stayed set for the rest of the session and every later scope_guard reload
+    # silently ran in reference_envelope mode, so one failure changed the
+    # outcome of unrelated tests. monkeypatch unsets it in teardown either way.
     ref = tmp_path / "ref.json"
     ref.write_text('{"rgb": {"q01": 0.0, "q99": 0.6}, "depth": {"q01": 0.0, "q99": 0.6}}')
-    os.environ["UAIS_SCOPE_REFERENCE"] = str(ref)
+    monkeypatch.setenv("UAIS_SCOPE_REFERENCE", str(ref))
     from deploy.api import scope_guard
     importlib.reload(scope_guard)
     assert scope_guard.reference_loaded() is True
     out = scope_guard.evaluate({"rgb": 0.99, "depth": 0.1}, endpoint="fusion")  # rgb out of band
     assert out["mode"] == "reference_envelope"
     assert out["drift"] > 0
-    os.environ.pop("UAIS_SCOPE_REFERENCE", None)
+    # The module is process-global state: reload it once more after teardown has
+    # removed the variable so the next test does not inherit this reference.
+    monkeypatch.undo()
+    importlib.reload(scope_guard)
 
 
 def test_gate_p_audit_runs_and_is_scoped_ready():

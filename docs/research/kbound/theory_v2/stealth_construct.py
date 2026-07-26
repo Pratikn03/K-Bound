@@ -1,3 +1,24 @@
+# --- defect D8: portable roots (docs/research/kbound/EXTERNAL_STORAGE_POLICY.md bans
+# --- machine-local absolute paths in tracked code). This file previously hard-coded a
+# --- Cowork *session sandbox* mount, which is worse than a
+# --- home directory: it is valid only inside one ephemeral container.
+import os as _kb_os
+from pathlib import Path as _KbPath
+
+
+def _kb_repo_root() -> str:
+    override = _kb_os.environ.get("KBOUND_REPO_ROOT", "").strip()
+    if override:
+        return str(_KbPath(override).expanduser().resolve())
+    here = _KbPath(__file__).resolve()
+    for candidate in here.parents:
+        if (candidate / "pyproject.toml").exists():
+            return str(candidate)
+    raise RuntimeError(f"repository root not found above {here}; set KBOUND_REPO_ROOT")
+
+
+KB_REPO_ROOT = _kb_repo_root()
+
 import numpy as np
 import itertools
 from scipy.optimize import nnls, linprog
@@ -67,6 +88,6 @@ trip_real = np.sum(p*S[:,0]*S[:,1]*S[:,2])
 trip_ind = b_true[0]*b_true[1]*b_true[2]
 print("E[s0 s1 s2] realized:", round(trip_real,4), " vs product of means:", round(trip_ind,4),
       " -> CEI", "VIOLATED" if abs(trip_real-trip_ind)>1e-3 else "ok")
-np.save("/sessions/peaceful-blissful-ptolemy/mnt/uav/AutoML_Flagship_V8/docs/research/kbound/theory_v2/stealth_p.npy", p)
-np.save("/sessions/peaceful-blissful-ptolemy/mnt/uav/AutoML_Flagship_V8/docs/research/kbound/theory_v2/stealth_meta.npy",
+np.save(KB_REPO_ROOT + "/docs/research/kbound/theory_v2/stealth_p.npy", p)
+np.save(KB_REPO_ROOT + "/docs/research/kbound/theory_v2/stealth_meta.npy",
         {"b_fit":b_fit,"b_true":b_true,"patterns":patterns}, allow_pickle=True)

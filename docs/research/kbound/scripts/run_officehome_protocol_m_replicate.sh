@@ -12,9 +12,27 @@
 #   experiments/kbound/results/officehome_protocol_m_repl_targetval/
 #   experiments/kbound/results/officehome_protocol_m_repl_targettest/
 #   experiments/kbound/results/officehome_protocol_m_repl_holdout/
+# --- external (git-excluded) data volume: ONE documented variable, no default.
+# --- defect D8: portable roots. No machine-local absolute paths in tracked code
+# --- (docs/research/kbound/EXTERNAL_STORAGE_POLICY.md). KB_REPO_ROOT is discovered
+# --- from this script's own location; override with KBOUND_REPO_ROOT.
+_kb_find_root() {
+  d=$(cd "$(dirname "${BASH_SOURCE[0]:-$0}")" && pwd)
+  while [ "$d" != "/" ]; do
+    [ -f "$d/pyproject.toml" ] && { printf '%s\n' "$d"; return 0; }
+    d=$(dirname "$d")
+  done
+  echo "ERROR: repository root not found above $(dirname "${BASH_SOURCE[0]:-$0}")" >&2
+  return 1
+}
+KB_REPO_ROOT="${KBOUND_REPO_ROOT:-$(_kb_find_root)}" || exit 1
+
+: "${KBOUND_EXTERNAL_ROOT:?set KBOUND_EXTERNAL_ROOT to the volume holding the git-excluded datasets/checkpoints/caches (layout: docs/research/kbound/kbound_repro/paths.py, acquisition: DATA.md)}"
+KB_EXTERNAL_ROOT="$KBOUND_EXTERNAL_ROOT"
+
 set -euo pipefail
 
-REPO=/Volumes/T9/uav/AutoML_Flagship_V8
+REPO="$KB_REPO_ROOT"
 PY="${KB_VENV:-$HOME/.venv_wilds}/bin/python"
 RUNNER="$REPO/experiments/kbound/officehome/run_officehome_kbound.py"
 SCORER="$REPO/docs/research/kbound/scripts/score_kbound_holdout.py"
@@ -25,8 +43,8 @@ cd "$REPO"
 mkdir -p "$RES"
 export PYTORCH_ENABLE_MPS_FALLBACK=1
 export PYTHONUNBUFFERED=1
-export TMPDIR=/Volumes/T9/uav/tmp
-export TORCH_HOME=/Volumes/T9/uav/torch_cache
+export TMPDIR="$KB_EXTERNAL_ROOT/tmp"
+export TORCH_HOME="$KB_EXTERNAL_ROOT/torch_cache"
 mkdir -p "$TMPDIR" "$TORCH_HOME"
 
 echo "=== OfficeHome Protocol M replication start $(date) ===" | tee "$LOG"

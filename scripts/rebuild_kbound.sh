@@ -18,7 +18,7 @@
 #   PYTHON=.venv/bin/python bash scripts/rebuild_kbound.sh
 # =============================================================================
 set -euo pipefail
-cd "$(dirname "$0")/.."                    # -> repo root (AutoML_Flagship_V8/)
+cd "$(dirname "$0")/.."                    # -> repo root
 PY="${PYTHON:-python3}"
 echo "K-Bound rebuild — interpreter: $PY  root: $(pwd)"
 

@@ -24,6 +24,6 @@ Docs: [`../docs/research/kbound/README.md`](../docs/research/kbound/README.md)
 Map: [`../docs/research/kbound/THEORY_TO_CODE_MAP.md`](../docs/research/kbound/THEORY_TO_CODE_MAP.md)
 
 ```bash
-cd /Volumes/T9/uav/AutoML_Flagship_V8
+cd "$KBOUND_REPO_ROOT"        # set KBOUND_REPO_ROOT to your checkout
 bash docs/research/kbound/scripts/kbound_tour.sh
 ```

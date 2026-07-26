@@ -1,6 +1,26 @@
+# --- defect D8: portable roots (docs/research/kbound/EXTERNAL_STORAGE_POLICY.md bans
+# --- machine-local absolute paths in tracked code). KB_REPO_ROOT is discovered from this
+# --- file's own location; override with $KBOUND_REPO_ROOT.
+import os as _kb_os
+from pathlib import Path as _KbPath
+
+
+def _kb_repo_root() -> str:
+    override = _kb_os.environ.get("KBOUND_REPO_ROOT", "").strip()
+    if override:
+        return str(_KbPath(override).expanduser().resolve())
+    here = _KbPath(__file__).resolve()
+    for candidate in here.parents:
+        if (candidate / "pyproject.toml").exists():
+            return str(candidate)
+    raise RuntimeError(f"repository root not found above {here}; set KBOUND_REPO_ROOT")
+
+
+KB_REPO_ROOT = _kb_repo_root()
+
 import sys, glob, os, json
 import numpy as np
-sys.path.insert(0, "/Volumes/T9/uav/AutoML_Flagship_V8/docs/research/kbound/theory_v2/realdata")
+sys.path.insert(0, KB_REPO_ROOT + "/docs/research/kbound/theory_v2/realdata")
 from realdata_audit import audit_task, ARCHIVE
 
 # 62 torch-free usable tasks: 42 ADBench tabular + 20 special domains (exclude cv_* image OOD)
@@ -57,5 +77,5 @@ out = {"P1": {"per_task_val_opt": results["val_opt"],
                         "tau null = best-fit CEI/per-class-symmetric H-model bootstrap (300 draws), "
                         "H_reject if observed tau > null q95. Identification is up to global flip; "
                         "sign scored is relative sign(b_a-b_0) fixed by majority-above-chance anchor.")}}
-json.dump(out, open("/Volumes/T9/uav/AutoML_Flagship_V8/docs/research/kbound/theory_v2/realdata/_p1_partial.json", "w"), indent=2)
+json.dump(out, open(KB_REPO_ROOT + "/docs/research/kbound/theory_v2/realdata/_p1_partial.json", "w"), indent=2)
 print("\nwrote _p1_partial.json")

@@ -409,6 +409,10 @@ def _finalize_window(buf, cam, dev_cams, test_cams):
 # ===================================================== certificate: DEV-fit / TEST-score
 from sklearn.ensemble import GradientBoostingRegressor
 
+# defect D10: the certificate radius is the shipped exact-rank rule, not np.quantile.
+sys.path.insert(0, str(Path(__file__).resolve().parents[3]))
+from kga.certificate import split_conformal_rank_radius as _rank_radius  # noqa: E402
+
 CANDIDATES = ["episodic_tent", "lame"]   # the K adaptive candidates (freeze is the default)
 
 
@@ -416,7 +420,21 @@ def calibrate_certificate(dev_windows, alpha, seed):
     """Fit, on DEV windows ONLY, a per-candidate benefit certificate:
       - GBR  B_hat(Z)  trained on DEV (Z -> measured per-window benefit B),
       - split-conformal radius eps at the Bonferroni level delta_K = alpha/K, where the
-        radius is the (1 - delta_K) quantile of DEV leave-one-out |B_hat - B| residuals.
+        radius is the EXACT RANK quantile eps = r_(k), k = ceil((n+1)(1 - delta_K)), of the
+        DEV leave-one-out |B_hat - B| residuals.
+
+    DEFECT D10.  This line used to be ``float(np.quantile(|B_hat - B|, 1 - delta_K))`` --
+    numpy's linearly interpolated quantile, which is not an observed order statistic and
+    does not satisfy the finite-sample rank argument.  iWildCam is a promoted panel track,
+    so it was the only promoted track still scored under a rule the paper does not declare.
+    It now calls the shipped ``kga.certificate.split_conformal_rank_radius``, the same
+    function every other track uses.  The DEV/TEST split is genuine, so fix-queue item 4
+    (leakage) never applied here; only the rule was wrong.
+
+    Feasibility.  At K = 2 candidates and alpha = 0.10 the Bonferroni level is
+    delta_K = 0.05, which needs n >= min_calibration_size(0.05) = 19 DEV windows.  With
+    fewer the radius is +inf and every window ABSTAINs -- reported, not clamped.
+
     The one-sided lower bound is L(Z) = B_hat(Z) - eps.  DEV labels enter ONLY through B.
     Mirrors analysis.decide_kga's estimator/conformal machinery, split across DEV/TEST."""
     K = len(CANDIDATES)
@@ -435,7 +453,7 @@ def calibrate_certificate(dev_windows, alpha, seed):
                                           subsample=0.8, random_state=seed)
             m.fit(Z[tr], B[tr])
             Bhat_loo[i] = m.predict(Z[i:i + 1])[0]
-        eps = float(np.quantile(np.abs(Bhat_loo - B), 1.0 - delta_K))
+        eps = float(_rank_radius(np.abs(Bhat_loo - B), delta_K))
         # final estimator fit on ALL DEV windows (used to score TEST)
         full = GradientBoostingRegressor(n_estimators=250, max_depth=2, learning_rate=0.05,
                                          subsample=0.8, random_state=seed)

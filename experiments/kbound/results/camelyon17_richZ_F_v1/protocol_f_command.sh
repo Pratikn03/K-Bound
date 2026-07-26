@@ -1,12 +1,32 @@
 #!/usr/bin/env bash
+# --- external (git-excluded) data volume: ONE documented variable, no default.
+# --- defect D8: portable roots. No machine-local absolute paths in tracked code
+# --- (docs/research/kbound/EXTERNAL_STORAGE_POLICY.md). KB_REPO_ROOT is discovered
+# --- from this script's own location; override with KBOUND_REPO_ROOT.
+_kb_find_root() {
+  d=$(cd "$(dirname "${BASH_SOURCE[0]:-$0}")" && pwd)
+  while [ "$d" != "/" ]; do
+    [ -f "$d/pyproject.toml" ] && { printf '%s\n' "$d"; return 0; }
+    d=$(dirname "$d")
+  done
+  echo "ERROR: repository root not found above $(dirname "${BASH_SOURCE[0]:-$0}")" >&2
+  return 1
+}
+KB_REPO_ROOT="${KBOUND_REPO_ROOT:-$(_kb_find_root)}" || exit 1
+
+: "${KBOUND_EXTERNAL_ROOT:?set KBOUND_EXTERNAL_ROOT to the volume holding the git-excluded datasets/checkpoints/caches (layout: docs/research/kbound/kbound_repro/paths.py, acquisition: DATA.md)}"
+KB_EXTERNAL_ROOT="$KBOUND_EXTERNAL_ROOT"
+
 set -euo pipefail
-cd /Volumes/T9/uav/AutoML_Flagship_V8
-source /Users/pratik_n/.venv_wilds/bin/activate
-export TMPDIR=/Volumes/T9/uav/tmp
-export TORCH_HOME=/Volumes/T9/uav/torch_cache
+cd "$KB_REPO_ROOT"
+# defect D8: was `source /Users/…/.venv_wilds/bin/activate`.
+# $KBOUND_PYTHON names the interpreter (default python3); activate your own env first.
+KB_PYTHON="${KBOUND_PYTHON:-python3}"
+export TMPDIR="$KB_EXTERNAL_ROOT/tmp"
+export TORCH_HOME="$KB_EXTERNAL_ROOT/torch_cache"
 mkdir -p "$TMPDIR" "$TORCH_HOME"
 caffeinate -is python experiments/kbound/wilds/run_camelyon17_kbound.py \
-  --data-root /Users/pratik_n/datasets/wilds \
+  --data-root "$KB_EXTERNAL_ROOT/datasets/wilds" \
   --f0-template 'experiments/kbound/results/camelyon17_fullscale_B_v1/f0_seed{seed}.pt' \
   --seeds 0 1 2 3 4 \
   --domains test val id_val \

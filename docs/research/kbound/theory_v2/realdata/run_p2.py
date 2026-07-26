@@ -18,11 +18,31 @@ Per-condition paired bootstrap (resample the 65 cells with replacement, recomput
 mean d) gives a BCa-free percentile CI; paired t over cells gives p; Holm corrects
 across the family of comparisons. We report which headline comparisons survive Holm.
 """
+# --- defect D8: portable roots (docs/research/kbound/EXTERNAL_STORAGE_POLICY.md bans
+# --- machine-local absolute paths in tracked code). KB_REPO_ROOT is discovered from this
+# --- file's own location; override with $KBOUND_REPO_ROOT.
+import os as _kb_os
+from pathlib import Path as _KbPath
+
+
+def _kb_repo_root() -> str:
+    override = _kb_os.environ.get("KBOUND_REPO_ROOT", "").strip()
+    if override:
+        return str(_KbPath(override).expanduser().resolve())
+    here = _KbPath(__file__).resolve()
+    for candidate in here.parents:
+        if (candidate / "pyproject.toml").exists():
+            return str(candidate)
+    raise RuntimeError(f"repository root not found above {here}; set KBOUND_REPO_ROOT")
+
+
+KB_REPO_ROOT = _kb_repo_root()
+
 import csv, json, os
 import numpy as np
 from scipy import stats
 
-CSV = "/Volumes/T9/uav/AutoML_Flagship_V8/experiments/kbound/results/cifar10c_65cells.csv"
+CSV = KB_REPO_ROOT + "/experiments/kbound/results/cifar10c_65cells.csv"
 RNG = np.random.default_rng(42)
 NBOOT = 10000
 ALPHA = 0.05
@@ -116,5 +136,5 @@ out = {
     }
 }
 print(json.dumps(out, indent=2))
-json.dump(out, open("/Volumes/T9/uav/AutoML_Flagship_V8/docs/research/kbound/theory_v2/realdata/_p2_partial.json", "w"), indent=2)
+json.dump(out, open(KB_REPO_ROOT + "/docs/research/kbound/theory_v2/realdata/_p2_partial.json", "w"), indent=2)
 print("\nwrote _p2_partial.json")

@@ -1,10 +1,30 @@
+# --- defect D8: portable roots (docs/research/kbound/EXTERNAL_STORAGE_POLICY.md bans
+# --- machine-local absolute paths in tracked code). KB_REPO_ROOT is discovered from this
+# --- file's own location; override with $KBOUND_REPO_ROOT.
+import os as _kb_os
+from pathlib import Path as _KbPath
+
+
+def _kb_repo_root() -> str:
+    override = _kb_os.environ.get("KBOUND_REPO_ROOT", "").strip()
+    if override:
+        return str(_KbPath(override).expanduser().resolve())
+    here = _KbPath(__file__).resolve()
+    for candidate in here.parents:
+        if (candidate / "pyproject.toml").exists():
+            return str(candidate)
+    raise RuntimeError(f"repository root not found above {here}; set KBOUND_REPO_ROOT")
+
+
+KB_REPO_ROOT = _kb_repo_root()
+
 import json, os, hashlib
-HERE = "/Volumes/T9/uav/AutoML_Flagship_V8/docs/research/kbound/theory_v2/realdata"
+HERE = KB_REPO_ROOT + "/docs/research/kbound/theory_v2/realdata"
 p1 = json.load(open(os.path.join(HERE, "_p1_partial.json")))["P1"]
 p2 = json.load(open(os.path.join(HERE, "_p2_partial.json")))["P2"]
 
 # original flagged CIs for side-by-side honesty
-flagged = json.load(open("/Volumes/T9/uav/AutoML_Flagship_V8/experiments/kbound/results/decisive_tta_cis.json"))
+flagged = json.load(open(KB_REPO_ROOT + "/experiments/kbound/results/decisive_tta_cis.json"))
 
 out = {
     "_meta": {
@@ -16,8 +36,8 @@ out = {
                       "Labels in P1 used ONLY to compute ground-truth b_true/sign_true for scoring, "
                       "never to fit the label-free estimators. Failures reported as-is."),
         "data_sources": {
-            "P1": "/Volumes/T9/uav/AutoML_Flagship_V8/experiments/elara_u/score_archive/*.npz (123-task anomaly bank, 6 detectors)",
-            "P2": "/Volumes/T9/uav/AutoML_Flagship_V8/experiments/kbound/results/cifar10c_65cells.csv (real per-condition CIFAR-10-C grid)",
+            "P1": KB_REPO_ROOT + "/experiments/elara_u/score_archive/*.npz (123-task anomaly bank, 6 detectors)",
+            "P2": KB_REPO_ROOT + "/experiments/kbound/results/cifar10c_65cells.csv (real per-condition CIFAR-10-C grid)",
         },
     },
     "P1_anomaly_bank": p1,

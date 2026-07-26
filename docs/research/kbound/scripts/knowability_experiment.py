@@ -1,3 +1,18 @@
+# SUPERSEDED RULE -- EXPLORATORY v1 CODE (defect D10).
+# This script computes its certificate radius as ``np.quantile(|Bhat - B|, 1 - alpha)``,
+# numpy's *linearly interpolated* quantile.  That is NOT the rule the paper declares.
+# The declared rule is the exact split-conformal rank quantile
+# ``eps = r_(k)``, ``k = ceil((n + 1)(1 - alpha))``, leave-one-out-of-pool, with ``+inf``
+# => ABSTAIN when ``k > n`` -- implemented once in ``kga/certificate.py`` and reached from
+# ``docs/research/kbound/scripts/kbound_decide.py``.
+#
+# This file is retained unconverted on purpose: it is v1/exploratory code, no promoted
+# number in the paper comes from it, and its archived JSON outputs were produced under the
+# interpolated rule, so converting it in place would silently make those outputs
+# irreproducible.  Do not cite any number it prints, and do not copy its radius line.
+# It is on the named allowlist in ``tests/test_one_radius_rule.py``; adding a new
+# interpolated radius anywhere else fails that test.
+
 """
 Knowability Boundary — REAL experiment on the ELARA-U 123-task score archive.
 

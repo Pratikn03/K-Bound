@@ -40,10 +40,21 @@ polish.
   diagnostic row).
 
 ## Leakage hygiene (residual)
-- **P1** De-register the pooled Camelyon `id_val` config from `scripts/bootstrap_win_cis.py`
-  (still hard-codes n=54) and from `WIN_HUNT_v5_PROTOCOL_SHELL.yaml:97` (re-lists `id_val`).
+- **P1 — HALF DONE, STILL OPEN (verified 2026-07-26).** De-register the pooled Camelyon `id_val`
+  config from two places:
+  - `scripts/bootstrap_win_cis.py` — **DONE**; no `id_val` remains in that file.
+  - `research_lock/WIN_HUNT_v5_PROTOCOL_SHELL.yaml:97` — **STILL OPEN**; the line still reads
+    `split_ref: CAMELYON17_PROTOCOL_G_RECONCILED_v2 (default domains test/val/id_val; ...)`.
+  `SUBMISSION_LEDGER.md` marked this `[RESOLVED]` under G9 on the strength of the first half only;
+  G9 is re-opened.
+- **P1 — NEW, 2026-07-26.** The conformal radius was calibrated **in sample** on five shipped
+  scripts and seven `decide_kga` forks: cell *i*'s own residual was in cell *i*'s radius pool. The
+  code is fixed (leave-one-out-of-pool default). `PHASE6_LEAKAGE_AUDIT.md`'s 2026-07-21
+  "PASS (clean)" verdict is retracted at the top of that file. Blast radius:
+  `SUBMISSION_LEDGER.md §9`.
 - **P2** Make the seed-split scorer **domain-aware** so an OOD claim cannot silently pool
-  in-distribution cells again.
+  in-distribution cells again. (This is the mechanism that produced KB-CLAIM-022; it is still
+  unimplemented, which is why P1's YAML half matters.)
 
 ## Theory (from Phase 1 audit)
 - **P2** Namespace the duplicate `\label` keys shared by `theory_core_main.tex` (short) and

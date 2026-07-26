@@ -19,14 +19,60 @@ DESIGN:  per-dataset ADAPTER (locate numbers) -> ONE verdict() (decide) -> table
 FOLD-IN TODO: extend the adapters' recs[] with per-cell (acc_freeze,acc_adapt,acc_oracle,acc_kga)
     from each dataset's per_condition_*.json / records[] so the CI-robust branch fires for all.
 """
+# --- defect D8: portable roots (docs/research/kbound/EXTERNAL_STORAGE_POLICY.md bans
+# --- machine-local absolute paths in tracked code). KB_REPO_ROOT is discovered from this
+# --- file's own location; override with $KBOUND_REPO_ROOT.
+import os as _kb_os
+from pathlib import Path as _KbPath
+
+
+def _kb_repo_root() -> str:
+    override = _kb_os.environ.get("KBOUND_REPO_ROOT", "").strip()
+    if override:
+        return str(_KbPath(override).expanduser().resolve())
+    here = _KbPath(__file__).resolve()
+    for candidate in here.parents:
+        if (candidate / "pyproject.toml").exists():
+            return str(candidate)
+    raise RuntimeError(f"repository root not found above {here}; set KBOUND_REPO_ROOT")
+
+
+KB_REPO_ROOT = _kb_repo_root()
+
+# --- external (git-excluded) data volume: ONE documented variable, no default.
+def _kb_external_root() -> str:
+    value = _kb_os.environ.get("KBOUND_EXTERNAL_ROOT", "").strip()
+    if not value:
+        raise RuntimeError(
+            "KBOUND_EXTERNAL_ROOT is not set. This script needs data that is deliberately "
+            "not in the git release (raw datasets, checkpoints, caches). Point "
+            "KBOUND_EXTERNAL_ROOT at the volume holding them; the expected layout is "
+            "documented in docs/research/kbound/kbound_repro/paths.py (EXTERNAL_LAYOUT) "
+            "and acquisition is in DATA.md. There is no default on purpose: this used to "
+            "be one author's external SSD, and defaulting to $HOME would write gigabytes "
+            "somewhere you did not choose."
+        )
+    return str(_KbPath(value).expanduser().resolve())
+
+
+KB_EXTERNAL_ROOT = _kb_external_root()
+
 import json, os, argparse, math
 
 ALPHA = 0.10     # false-adapt budget
 TOL   = 0.003    # regret tie tolerance (point)
 Z     = 1.96     # 95% CI
 
-REPO = "/Volumes/T9/uav/AutoML_Flagship_V8"
-R    = os.path.join(REPO, "experiments/kbound/results")
+# fix-queue item 30 (F3-17): `REPO` was hard-coded to KB_EXTERNAL_ROOT + "/
+# the author's external volume", against EXTERNAL_STORAGE_POLICY.md:18's ban on
+# machine-local absolute paths -- this script could not run from a checkout.
+# It now resolves relative to __file__, with KBOUND_REPO_ROOT /
+# KBOUND_RESULTS_ROOT as environment overrides.
+REPO = os.environ.get(
+    "KBOUND_REPO_ROOT",
+    os.path.normpath(os.path.join(os.path.dirname(os.path.abspath(__file__)), *[os.pardir] * 4)))
+R    = os.environ.get("KBOUND_RESULTS_ROOT",
+                      os.path.join(REPO, "experiments", "kbound", "results"))
 
 # name, path, family, clean_heldout(bool)  -- clean_heldout=False marks a contaminated split
 DATASETS = [

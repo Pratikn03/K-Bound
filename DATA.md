@@ -1,247 +1,281 @@
-# DATA — pipeline, provenance, integrity, and the hermetic smoke path
+# DATA.md — dataset provenance, versions, licences, and acquisition
 
-This document describes the K-Bound data pipeline: how raw datasets flow into the
-score archives that the K-Bound / KGA experiments consume, where each dataset
-comes from, how to verify input integrity, and how to run a **zero-dependency,
-CPU-only smoke** that reproduces the algorithm with **no external data at all**.
+**Written 2026-07-26** to close fix-queue item 20 (F4-13). Three entries in
+`docs/research/kbound/STORAGE_MANIFEST.json` pointed at this file and it did not exist; one of the
+acquisition commands it gave (`bash scripts/download_data.py --dataset imagenet-r`) is not a real
+invocation of that script, and another referenced an `AETTA/` directory that is not in the release.
 
-K-Bound studies *when label-free test-time adaptation is knowable*. Its decision
-algorithm is **KGA** (Knowability-Guided Adaptation), implemented in the
-importable [`kga/`](kga/) package: from label-free evidence `Z` and a
-finite-sample certificate `Δ̂ ± ε` it returns **ADAPT / FREEZE / ABSTAIN** with a
-false-adapt probability bounded by `α` (Theorem 3).
-
----
-
-## 1. Pipeline DAG
-
-```
-                         ┌─────────────────────────────────────────────┐
-                         │  RAW datasets  (data/raw/…)                   │
-                         │  ADBench tabular, credit-card fraud, UNSW-NB15│
-                         │  cyber, Enron (NLP), CIFAR-10/-C, Imagenette, │
-                         │  HAR, NAB, SMD, TSB-AD, MVTec/RealIAD (images)│
-                         └───────────────┬─────────────────────────────┘
-                                         │  loaders: src/uais/data/*.py
-                                         │  (load_fraud_data, load_cyber_data,
-                                         │   load_behavior_data, load_datasets,
-                                         │   download_nlp_vision, …)
-                                         ▼
-                         ┌─────────────────────────────────────────────┐
-                         │  INTERIM  (cleaned / split frames)            │
-                         │  train/val/test via                          │
-                         │  src/uais/data/split_data.py                 │
-                         └───────────────┬─────────────────────────────┘
-                                         │  fit base detectors per task
-                                         │  (ECOD/COPOD/IForest/LOF/KNN/OCSVM
-                                         │   for tabular; deep features for images)
-                                         ▼
-                         ┌─────────────────────────────────────────────┐
-                         │  PROCESSED  (per-detector anomaly scores)     │
-                         └───────────────┬─────────────────────────────┘
-                                         │  serialize one .npz per task
-                                         ▼
-            ┌────────────────────────────────────────────────────────────────┐
-            │  SCORE ARCHIVE  experiments/elara_u/score_archive/*.npz          │
-            │  123 tasks, each: Sval/yval/Stest/ytest/det_names/val_auc/domain │
-            │  (POINTER artifact — see manifests/score_cache_manifest.csv;     │
-            │   local-only, not committed)                                     │
-            └───────────────┬────────────────────────────────────────────────┘
-                            │  consumed (label-free Z + benefit B) by:
-                            ▼
-            ┌────────────────────────────────────────────────────────────────┐
-            │  K-BOUND EXPERIMENTS  src/scripts/kbound/                        │
-            │   • knowability_experiment.py   (trichotomy on 123 real tasks)   │
-            │   • mixed_regime_experiment.py  (clean/detectable/covert regimes)│
-            │   • kbound_full_experiments.py, kbound_harmful_regime.py, …      │
-            │  → results in experiments/kbound/results/ ; figures under        │
-            │    docs/research/kbound/figures/                                 │
-            └────────────────────────────────────────────────────────────────┘
-
-            ┌────────────────────────────────────────────────────────────────┐
-            │  HERMETIC SMOKE  (no raw data, no archive, no torch)            │
-            │   make_synth_archive.py  →  experiments/kbound/_smoke/…          │
-            │      writes a tiny SYNTHETIC archive with the SAME schema        │
-            │   smoke_trichotomy.py    →  runs the REAL kga package over it    │
-            │      asserts helpful→ADAPT, harmful→FREEZE, unknowable→ABSTAIN   │
-            │   scripts/smoke_kbound.sh  (one-command wrapper, <60s, CPU)      │
-            └────────────────────────────────────────────────────────────────┘
-```
-
-The hermetic smoke is a *drop-in substitute* for the score-archive stage: it
-emits the identical `.npz` schema so the same `kga` evidence → certificate →
-decision pipeline runs unchanged, but every byte is synthetic and seeded.
+**Ground rule for this document.** Every version string, split definition, corruption list and grid
+shape below was read out of a committed artifact or a committed script in this repository, and the
+file it was read from is named. Where a fact is *not* recoverable from the release, the row says
+**UNPINNED** and states what the author must supply. Nothing here is inferred from what a dataset
+"usually" is. Checksums are recorded as **NOT RECORDED** rather than guessed; they must be filled
+at release time by the procedure in `docs/research/kbound/PLACEHOLDER_INVENTORY.md`, Guard 2.
 
 ---
 
-## 2. Score-archive schema (the K-Bound contract)
+## 0. Summary: which table depends on which dataset
 
-Each task is one `.npz` file under `experiments/elara_u/score_archive/`, uniform
-across all 123 tasks (verified against the loaders in
-`src/scripts/kbound/knowability_experiment.py` and `mixed_regime_experiment.py`):
+| dataset | promoted artifact it supports | evidence tier today |
+|---|---|---|
+| CIFAR-10 + CIFAR-10-C | `tab:primary-numeric`, uniform panel rows CIFAR-10-C Tent / EATA, `tab:gates`, all ablations | locked; the paper's strongest track |
+| ImageNet-C | uniform panel row ImageNet-C SAR, `tab:imagenetc-perseed` | locked; point-estimate claim only after the item-4 radius fix |
+| CIFAR-10.1 v6 | uniform panel row CIFAR-10.1 K (declared negative result) | diagnostic fail; no claim |
+| WILDS Camelyon17 | uniform panel row Camelyon17 OOD; `tab:multiseed` Camelyon rows | **sealed but not recomputable from release** (see §4b) |
+| WILDS iWildCam | uniform panel row iWildCam H v2 | locked row, but its source record file is absent (§4) |
+| WILDS RxRx1 | uniform panel row RxRx1 J | locked |
+| Office-Home | uniform panel row Office-Home M v2 | locked row, but both source record files are absent and the runner source is an unreadable placeholder (§4) |
+| PACS | uniform panel row PACS (null diagnostic) | locked diagnostic; cannot be re-scored (no `b_hat`/ε in released per-cell dumps) |
+| ImageNet-R | uniform panel row ImageNet-R D (null diagnostic) | locked diagnostic |
 
-| key         | shape            | dtype   | meaning                                            |
-|-------------|------------------|---------|----------------------------------------------------|
-| `Sval`      | `(n_val, n_det)` | float64 | validation-set anomaly scores (one column/detector)|
-| `yval`      | `(n_val,)`       | int64   | validation labels (0 = normal, 1 = anomaly)        |
-| `Stest`     | `(n_test, n_det)`| float64 | test-set anomaly scores (unlabelled at decision)   |
-| `ytest`     | `(n_test,)`      | int64   | test labels — used **only** for oracle evaluation  |
-| `det_names` | `(n_det,)`       | str     | detector names, e.g. ECOD/COPOD/IForest/LOF/KNN/OCSVM |
-| `val_auc`   | `(n_det,)`       | float64 | per-detector validation AUC (selects `f0`)         |
-| `domain`    | scalar           | str     | dataset/domain tag (e.g. `adbench`, `fraud`)       |
-
-The decision setup: `f0` (FREEZE candidate) is the best-validation-AUC detector,
-`f0 = argmax(val_auc)`; `fa` (ADAPT candidate) is a rank-normalised ensemble/stack
-over the detectors. The **true benefit** `B = AUC_test(fa) − AUC_test(f0)`
-(oracle; labels used for evaluation only). The gate must decide using only the
-label-free evidence `Z` computed from `Sval`, `yval`, and `Stest` — never
-`ytest`.
-
-The synthetic generator (`src/scripts/kbound/make_synth_archive.py`) emits
-**exactly** these keys/dtypes, so it is schema-compatible by construction (this is
-asserted in `tests/test_smoke_trichotomy.py::test_synth_archive_schema_matches_real`).
+`ImageNet-1k` (the source-domain training set for the ImageNet-C / ImageNet-R backbones) is
+**never downloaded by this project**: all ImageNet backbones are torchvision pretrained weights.
+See §9.
 
 ---
 
-## 3. Dataset provenance
+## 1. CIFAR-10 (source domain)
 
-Sources are loaded by the modules in `src/uais/data/`. All loaders have a
-synthetic fallback for smoke tests but use the real files when present under
-`data/raw/`.
+| field | value | read from |
+|---|---|---|
+| version | canonical CIFAR-10 python batches, obtained via `torchvision.datasets.CIFAR10(download=True)` | `docs/research/kbound/scripts/cifar_tent_mps_v2.py` |
+| split used | the 10 000-image test split only; the source model `f0` is a pretrained CIFAR-10 classifier | `cifar_tent_mps_v2.py` |
+| licence | MIT-style research use (Krizhevsky 2009); no redistribution in this repository | upstream |
+| DOI / URL | `https://www.cs.toronto.edu/~kriz/cifar.html` | upstream |
+| archive checksum | **NOT RECORDED** — torchvision verifies its own md5 on download | |
 
-| dataset / group        | raw location (`data/raw/…`)        | loader                                   | provenance |
-|------------------------|------------------------------------|------------------------------------------|------------|
-| ADBench tabular (47)   | `adbench/*.npz`                    | refit via sklearn detectors              | ADBench benchmark (Han et al., 2022) |
-| Credit-card fraud      | `fraud/`                          | `load_fraud_data.py`                     | Kaggle Credit Card Fraud (PCA features V1–V28, `Class`) |
-| PaySim / BAF fraud     | `fraud/`                          | `load_paysim.py`, `load_fraud_data.py`   | PaySim / Bank-Account-Fraud panels |
-| UNSW-NB15 (cyber)      | `cyber/`                          | `load_cyber_data.py`                     | UNSW-NB15 network-traffic (49 features) |
-| Behaviour / HAR        | `behavior/`                       | `load_behavior_data.py`                  | Human Activity Recognition (561 features) |
-| Enron emails (NLP)     | `nlp/enron_emails.csv`            | `load_datasets.load_enron_emails`        | Enron corpus; fetched by `download_nlp_vision.py` |
-| CIFAR-10 (vision)      | `vision/cifar-10-python/`         | `load_datasets.load_cifar10`             | CIFAR-10 (Krizhevsky); `download_nlp_vision.py` from cs.toronto.edu |
-| CIFAR-10-C             | `experiments/kbound/cifar/CIFAR-10-C/` | GPU TTA scripts                     | CIFAR-10-C corruptions (Hendrycks & Dietterich) — **torch-required** |
-| Imagenette-320         | `vision/imagenette/`              | GPU TTA scripts                          | Imagenette subset of ImageNet — **torch-required** |
-| NAB / SMD / TSB-AD     | `nab/`, `smd/`, `tsb_ad/`         | tabular time-series loaders              | NAB, Server-Machine-Dataset, TSB-AD benchmarks |
-| MVTec-AD / -3D / RealIAD / 3D-ADAM / MulSen | `mvtec*/`, `realiad*/`, … | image/3D detectors            | industrial AD benchmarks — **torch-required** |
+## 2. CIFAR-10-C
 
-A fuller inventory with per-task counts lives in
-`docs/research/kbound/DATASET_INVENTORY.md`. The pointer registry for the
-local-only score caches is
-`docs/research/kbound/manifests/score_cache_manifest.csv`.
+| field | value | read from |
+|---|---|---|
+| **canonical URL** | `https://zenodo.org/records/2535967/files/CIFAR-10-C.tar` | `docs/research/kbound/scripts/run_decisive_cifar.sh:19` |
+| Zenodo record | **2535967** (Hendrycks & Dietterich, ICLR 2019) | same |
+| licence | CC BY 4.0 (Zenodo record) | upstream |
+| local layout expected | `$KBOUND_DATA_ROOT/CIFAR-10-C/<corruption>.npy` + `labels.npy` | `run_decisive_cifar.sh` |
+| archive checksum | **NOT RECORDED** — Zenodo publishes an md5 per file; record it at release | |
 
-> **Torch-free vs torch-required.** The tabular/score-cached tasks (ADBench,
-> fraud, cyber, NLP, time-series) drive the CPU-only K-Bound experiments. The
-> image/industrial benchmarks need a forward pass through a CNN/ViT/PatchCore and
-> are excluded from the CPU path. The hermetic smoke below needs **none** of
-> these.
+**The operating point actually used is a subset, and it must be stated wherever the track is
+reported.** The promoted 432-cell-per-seed grid is the driver's `--quick` mode:
+
+- **6 of the 15 standard corruptions**, exactly:
+  `gaussian_noise, defocus_blur, fog, contrast, pixelate, jpeg_compression`
+  (`cifar_tent_mps_v2.py`, `CIFAR_C_QUICK`).
+- **severities {1, 5}** only — not 1-5.
+- crossed with batch regime `{large_iid, small, tiny}` × label regime
+  `{iid, imbalanced, single_class}` × aggressiveness `{mild, aggressive}` × replicate `{r0, r1}`.
+- 6 × 2 × 3 × 3 × 2 × 2 = **432 cells per candidate per seed**, which is the published n.
+
+Verified by decomposing the `condition` strings in
+`experiments/kbound/results/mixed_headtohead_v1/per_condition_cifar10c_tent_primary_kga_seed0.json`
+(864 rows = 432 Tent + 432 EATA). Any sentence describing this track as "the official CIFAR-10-C
+corruptions" is false as written.
+
+## 3. ImageNet-C
+
+| field | value | read from |
+|---|---|---|
+| **canonical URL** | `https://zenodo.org/records/2235448/files/<group>.tar?download=1`, groups `blur noise weather digital` (+ `extra`) | `docs/research/kbound/scripts/download_all_datasets.sh:74` |
+| Zenodo record | **2235448** (Hendrycks & Dietterich, ICLR 2019) | same |
+| licence | CC BY 4.0 (Zenodo record) | upstream |
+| local layout | `<root>/<corruption>/<severity 1-5>/<class>/*.JPEG` | `download_all_datasets.sh:78` |
+| checksum tooling | `docs/research/kbound/scripts/verify_imagenetc_tars.sh` md5-verifies each tar against a `_zenodo_md5sums.txt` reference file that the user must place next to the tars | that script |
+| archive checksum | **NOT RECORDED in the repository** — the verifier exists, the reference sums are not committed | |
+| acquisition path in run manifests | `/Users/pratik_n/imagenetc_local` — a private path; replicators must use `--imagenetc-root` | run manifests |
+
+**Operating point of the promoted 27-cell-per-seed grid**, read by decomposing the `condition`
+strings in `experiments/kbound/results/win_hunt_v5_imagenetc_ms/pooled_5seed/per_condition_imagenetc_sar_seed1.json`:
+
+- **3 corruptions only**: `gaussian_noise, shot_noise, impulse_noise` (all three are the *noise*
+  family — the corruption-family clustering in `NUMBERS_PACK.md §0.1` therefore has only 3
+  clusters and must not be used as a primary interval).
+- severities **{1, 3, 5}**.
+- batch regime `small` only, aggressiveness `aggressive` only.
+- label regime `{iid, imbalanced, single_class}`.
+- 3 × 3 × 1 × 1 × 3 = **27 cells per seed**, 5 seeds = 135 rows.
+
+Note that `IMAGENET_C_QUICK` in `cifar_tent_mps_v2.py` names a *different* 6-corruption subset
+(`gaussian_noise, defocus_blur, snow, contrast, elastic_transform, jpeg_compression`). The
+promoted run did not use it. Do not cite `IMAGENET_C_QUICK` as the grid.
+
+## 4. WILDS (Camelyon17, iWildCam, RxRx1)
+
+| field | value | read from |
+|---|---|---|
+| **library version** | `wilds 2.0.0` | `experiments/kbound/wilds/READINESS.md:5`, `experiments/kbound/results/iwildcam_streaming_pilot/PREREG.md:125`, `experiments/kbound/wilds/run_rxrx1_kbound.py:56` |
+| torch version alongside it | 2.5.1 (`~/.venv_wilds`, MPS) | `READINESS.md:5` |
+| **dataset versions** | `camelyon17_v1.0`, `iwildcam_v2.0`, `rxrx1_v1.0` | `research_lock/KBOUND_6_DATASET_PANEL_v1.yaml:43,112`; `experiments/kbound/wilds/READINESS.md:18`; `run_camelyon17_kbound.py:441` |
+| acquisition | `from wilds import get_dataset; get_dataset(dataset="camelyon17", download=True, root_dir=...)` | `download_all_datasets.sh:57-62` |
+| licence | Camelyon17 CC0 1.0; iWildCam CC BY 4.0; RxRx1 CC BY-NC-SA 4.0 (per the WILDS dataset cards) | upstream |
+| DOI | WILDS: Koh et al., ICML 2021 | upstream |
+
+**Pin this.** `download_all_datasets.sh:52` currently installs WILDS unpinned
+(`$PIP install -q wilds`). A replicator on a later WILDS release may get different official splits.
+Change that line to `$PIP install -q wilds==2.0.0` before release; that is the version every
+committed manifest was produced under.
+
+### 4a. Camelyon17 — data completeness disclosure
+
+`experiments/kbound/wilds/READINESS.md:18-20` records that the runs used an **internal copy that
+was 90.9% complete**: 414 389 of 455 954 patches. Center 2 (the `test` = hardest OOD hospital) is
+recorded as 100% present; the ~41.5k missing patches are in other centers and the loader's
+disk-filter drops them, logged. `T9_AUDIT.md:17` confirms "active run uses internal `~/kbound_cam`,
+NOT this [complete T9 copy]".
+
+Consequence: **a third party downloading the complete `camelyon17_v1.0` will not reproduce the
+non-test-center conditions cell-for-cell.** This has to be stated in the paper's data section. It
+is separate from, and additional to, the fact below.
+
+### 4b. Camelyon17 — the promoted row is sealed but not recomputable
+
+The promoted panel row is `0.0000 / 0.0000 / 0.1381 (n = 18, FA_u = 0)`. Its status, stated
+precisely:
+
+- **The regret triple IS recorded on disk**, in exactly one place:
+  `research_lock/CAMELYON17_PROTOCOL_G_RECONCILED_v2.yaml:29` —
+  `OOD_test_only: {n_test: 18, regret_kga: 0.0, regret_adapt: 0.0, regret_freeze: 0.1381,
+  beats_both: false}`. That file is sealed in `LOCK_SEAL.json` and its hash verifies byte-for-byte.
+  A grep restricted to `*.json` (as the review panel ran) misses it; it is a `.yaml`.
+- **The promoted `FA_u = 0` is not recorded anywhere.** That YAML's only false-adapt figure for
+  Camelyon is `idval_only: {false_adapt: 0.80}`. The `OOD_test_only` entry has no false-adapt field.
+- **Nothing recomputes it.** The YAML is a hand-transcribed summary of a rerun, not a per-cell
+  artifact. The three files it names as its own evidence —
+  `audits/integrity_2026-06-20/camelyon_reconciliation/{camelyon_G_reconciliation.py,
+  recon_results.json, VERDICT_phase1.md}` — are all absent; two of them are the only 2 of 72 files
+  sealed in `LOCK_SEAL.json` that are missing from disk, and the third (the script) was never
+  sealed at all.
+- **The nearest live artifacts disagree on different slices**, as they should, since they score
+  different subsets: `camelyon17_protocol_G_v1` gives `false_adapt` 0.0256 at n = 54 (the
+  contaminated pooled split) and `camelyon17_richZ_F_v1` gives 0.0329 at n = 324.
+
+So the correct label is **"sealed but not recomputable from release"**, and it is applied
+throughout this repository in place of "locked". A reader can verify that the number was written
+down before the paper cited it; a reader cannot verify that it is correct. Restoration procedure:
+`docs/research/kbound/SUBMISSION_LEDGER.md §8`.
+
+### 4c. Other absent record files
+
+`docs/research/kbound/scripts/bootstrap_win_cis.py` loads four record files to produce the
+promoted Office-Home / iWildCam / Camelyon17 bootstrap intervals. All four are absent:
+
+```
+experiments/kbound/results/officehome_full_targetval/result_target_val_361a1e8c.json
+experiments/kbound/results/officehome_full_targettest/result_target_test_6605675d.json
+experiments/kbound/results/iwildcam_full_test/result_e40faf29.json
+experiments/kbound/results/camelyon17_richZ_F_v1/result_884129ba.json
+```
+
+These are small per-condition JSONs — exactly the class `EXTERNAL_STORAGE_POLICY.md` declares
+"tracked in Git". They must be committed, or registered in `STORAGE_MANIFEST.json` with checksums
+and an acquisition procedure. Until then the Office-Home and iWildCam promoted values are
+locked-by-lock-file only.
+
+## 5. Office-Home
+
+| field | value | read from |
+|---|---|---|
+| version / revision | **UNPINNED** | — |
+| domains | Art, Clipart, Product, Real-World (4 domains, 65 classes) | upstream convention; not asserted anywhere in the release |
+| **split definition** | **UNPINNED.** The protocol names roles (`target_val`, `target_test`, cal seeds {0,1}, test seeds {0,1}) but the code that materializes them is unreadable | `research_lock/OFFICEHOME_PROTOCOL_M_v2.yaml:33-41` |
+| acquisition | **NO PATH IN THE RELEASE** | — |
+| licence | research use only, by request from the dataset authors (Venkateswara et al., CVPR 2017) | upstream |
+
+**This is the least reproducible dataset in the panel.** The runner
+`experiments/kbound/officehome/run_officehome_kbound.py` (17 202 bytes) and the analysis
+`oh_analyze.py` (18 989 bytes) are **iCloud placeholders — zero readable bytes** (see
+`docs/research/kbound/PLACEHOLDER_INVENTORY.md`, group B), together with nine more files in that
+directory. Both source record files are also absent (§4c). Nothing about the Office-Home split can
+be recovered from the release.
+
+**Author action required, in this order:** (1) materialize the placeholders (`brctl download`),
+(2) read the split out of `oh_data.py` and write it here, (3) commit the two record files, (4)
+state the acquisition URL and licence terms.
+
+## 6. PACS
+
+| field | value | read from |
+|---|---|---|
+| **acquisition** | HuggingFace dataset `flwrlabs/pacs`, exported to the DomainBed ImageFolder layout by `docs/research/kbound/scripts/export_pacs_hf.py` | that script's docstring |
+| why not DomainBed directly | the DomainBed Google Drive link is quota-blocked | `export_pacs_hf.py:4` |
+| local layout | `<root>/PACS/{art_painting,cartoon,photo,sketch}/<class>/*.jpg` | `scripts/pacs_vlcs_runner.py:21` |
+| protocol | leave-one-domain-out; 4 targets × 3 seeds × 18 cells | `PACS_MULTISEED_RESULTS.json` |
+| revision pin | **UNPINNED** — `load_dataset("flwrlabs/pacs")` takes no revision; pin the HF commit sha | `export_pacs_hf.py:28` |
+| licence | PACS is research-use (Li et al., ICCV 2017); the HF mirror inherits it | upstream |
+
+**Re-scoring limitation.** The released per-cell dumps (`results/per_cell/pacs_*_percell.json`)
+carry `Z, a0, aa, B` but **no `b_hat`, no `eps_conformal` and no decision**, and seed 0 has no
+per-cell dump at all. PACS therefore cannot be re-scored under a corrected radius from the release;
+only the rates in `PACS_MULTISEED_RESULTS.json` are available.
+
+## 7. ImageNet-R
+
+| field | value | read from |
+|---|---|---|
+| **acquisition** | **NO PATH IN THE RELEASE.** The runner takes `--imagenetr-dir` (default `<data>/imagenet-r`) and assumes the data is already there | `experiments/kbound/wilds/run_imagenetr_kbound.py:478` |
+| canonical upstream | Hendrycks et al., "The Many Faces of Robustness", ICCV 2021 — repository `github.com/hendrycks/imagenet-r`. **VERIFY the tarball URL against that repository before release; it is not recorded anywhere in this tree.** | upstream |
+| revision | **UNPINNED** | — |
+| licence | MIT (per the upstream repository) — **verify before release** | upstream |
+| panel shape | 10 backbones × 4 seeds × 12 conditions | `imagenetr_protocol_d_multiseed_v1/MULTISEED_ANALYSIS_RESULTS.json` |
+
+`STORAGE_MANIFEST.json` previously gave `bash scripts/download_data.py --dataset imagenet-r` as the
+acquisition command. **That is not a real invocation.** `scripts/download_data.py` is the parent
+monorepo's Enron/CIFAR-10 downloader and accepts only `--enron`, `--cifar10`, `--all`,
+`--no-kaggle`. The line has been corrected in the manifest to point here.
+
+## 8. CIFAR-10.1
+
+| field | value | read from |
+|---|---|---|
+| **version** | **v6** (the ~2 000-image release) | `cifar_tent_mps_v2.py:471,1186` |
+| **data URL** | `https://github.com/modestyachts/CIFAR-10.1/raw/master/datasets/cifar10.1_v6_data.npy` | `cifar_tent_mps_v2.py:467` |
+| **labels URL** | `https://github.com/modestyachts/CIFAR-10.1/raw/master/datasets/cifar10.1_v6_labels.npy` | `cifar_tent_mps_v2.py:468` |
+| acquisition | automatic — the runner downloads to `<root>/CIFAR-10.1/` if absent | `cifar_tent_mps_v2.py:475-483` |
+| split used | the v6 set is split ~half eval / ~half adapt-stream by the runner | `cifar_tent_mps_v2.py:1181` |
+| source model | the **CIFAR-10** classifier is reused unchanged | `cifar_tent_mps_v2.py:465` |
+| licence | MIT (Recht et al. 2019 repository) | upstream |
+| archive checksum | **NOT RECORDED** | |
+
+This is the one dataset in the panel whose acquisition is fully automatic and fully pinned.
+
+## 9. Pretrained backbones
+
+No ImageNet-1k training data is used or required. All ImageNet-side backbones are torchvision
+pretrained weights, cached by `download_all_datasets.sh:84-89`:
+
+- `resnet50` — `ResNet50_Weights.IMAGENET1K_V2`
+- `vit_b_16` — `ViT_B_16_Weights.IMAGENET1K_V1`
+- the ImageNet-R panel additionally uses `convnext_base`, `convnext_tiny`, `efficientnet_b0`,
+  `efficientnet_b3`, `resnet101`, `resnet152`, `resnext101_32x8d`, `swin_b`, `swin_t`
+  (10 backbones total, named in `MULTISEED_ANALYSIS_RESULTS.json`).
+
+WILDS-side source models `f0` are trained in-repo: 4 DenseNet-121 seeds,
+`results/wilds/f0_seed{0..3}.pt`, 28 MB each (`experiments/kbound/wilds/READINESS.md:21`).
 
 ---
 
-## 3b. Run TTA benchmark suite (vision / WILDS) — corrected `beats_both` verdicts
+## 10. What a third party can actually obtain today
 
-The provenance table in §3 covers the tabular / score-cached tasks but **omitted the
-vision and WILDS benchmarks that were actually run** for the paper. They are listed
-here, each with its **re-derived** decision verdict. Per the pre-registered protocol a
-benchmark counts as a *win* only if the K-Bound router strictly beats **both** trivial
-policies on regret **and** stays within the false-adapt budget:
+| dataset | obtainable from this release alone? |
+|---|---|
+| CIFAR-10, CIFAR-10-C | **yes** — Zenodo 2535967, command in `run_decisive_cifar.sh` |
+| CIFAR-10.1 v6 | **yes** — automatic, URLs pinned in the runner |
+| ImageNet-C | **yes** — Zenodo 2235448, command in `download_all_datasets.sh`; md5 reference file not committed |
+| WILDS Camelyon17 / iWildCam / RxRx1 | **yes for the data** (pin `wilds==2.0.0` first); **no for the exact Camelyon patch set** (90.9% copy, §4a) |
+| PACS | **yes** — HF `flwrlabs/pacs` via `export_pacs_hf.py`; revision unpinned |
+| ImageNet-R | **no** — no URL anywhere in the release |
+| Office-Home | **no** — no URL, no split definition, unreadable runner |
 
-> `beats_both := (router_regret < always-freeze_regret) AND (router_regret < best-fixed-adapt_regret) AND (false_adapt_rate ≤ α)  [α = 0.1]`, stable across seeds.
+Two of nine are unobtainable, one is partially reproducible. That is the honest state, and it is an
+improvement on the pre-2026-07-26 documentation only in that it is now written down.
 
-These verdicts were recomputed in the 2026-06-20 integrity pass directly from the
-underlying numbers in each artifact (the historical stored `beats_both` flag was
-regret-only and did **not** enforce `false_adapt ≤ α`). Audit trail and the
-machine-extracted table: `audits/integrity_2026-06-20/` (`benchmark_verdicts.json`).
+## 11. Release checklist for this file
 
-| Benchmark | What ran | router vs freeze | router vs best-adapt | false-adapt | corrected verdict | canonical artifact |
-|-----------|----------|------------------|----------------------|-------------|-------------------|--------------------|
-| **CIFAR-10-C** | ResNet-18, 432-cell harmful/helpful mix (tent & eata) | 0.0016 < 0.1232 ✓ | 0.0016 < 0.0086 ✓ | 0.000 ✓ | **WIN (True)** — verified | `decisive_tta_results.json::benchmarks.cifar10c` |
-| **ImageNet-C** | ResNet-50 noise corruptions, 36 cells (sar) | 0.0086 < 0.0277 ✓ | 0.0086 < 0.0606 ✓ | 0.000 ✓ | **WIN (True)** — verified | `imagenetc_noise/decisive_tta_results.json` |
-| **Camelyon17** | Protocol G, eata_online, 5-seed dev→test held-out | 3.6e-5 < 0.0749 ✓ | 3.6e-5 < 0.0013 ✓ | 0.026 ✓ | **WIN (True)** — verified | `camelyon17_protocol_G_v1/analyze_F_results.json` |
-| **CIFAR-10.1** | 5-seed quick protocol (tent/eata/sar) | — | — | — | **False** — best adapter beats both in only **1/5** seeds (not stable) | `cifar101_multiseed_v1/pooled_summary.json` |
-| **ImageNet-R** | multiseed panel, 10 architectures | — | — | — | **False** — **0/10** candidates beat both at a realistic harmful fraction (only ≥0.83) | `imagenetr_protocol_d_multiseed_v1/MULTISEED_ANALYSIS_RESULTS.json` |
-| **RxRx1** | Protocol J, sar_online, 10-seed held-out | 0.0 = 0.0 (tie) | — | 0.000 | **False** — KGA correctly freezes (no win, no harm) | `rxrx1_protocol_J_v1/analyze_F_results.json` |
-| **iWildCam** | full-val route-b multicandidate; 5th-null headline | 0.0307 ≈ 0.0310 (tie) | 0.0307 < 0.0546 | **0.500 ✗** | **False** — false-adapt 0.5 ≫ α (stored flag was True; **patched**) | `iwildcam_full_val/result_f08e751c.json` |
-| **Office-Home** | val, route-a deployed (eata_online_mild) | 0.0281 = 0.0281 (tie) | — | 0.000 | **False (val)** — KGA freezes | `officehome_full_FINAL/VERDICT_val.json` |
-| **fMoW** | Protocol L, sar_online, 5-seed held-out | 0.0129 = 0.0129 (tie) | 0.0129 > 0.0092 | **0.375 ✗** | **False** — false-adapt 0.375 ≫ α | `fmow_protocol_L_v1/analyze_F_results.json` |
-| **PovertyMap** | Protocol L dev screen | — | — | — | **N/A** — stopped at dev screen (no held-out verdict) | honest null (headline manifest) |
-| **ACDC** | segmentation TTA pipeline coded | — | — | — | **N/A** — code-only, **not run** | `experiments/kbound/acdc/` (code present) |
+Before the release is cut, each of these must be closed:
 
-**Notes.** (1) iWildCam and Office-Home each also have a *dev-locked six-arm panel*
-sub-protocol (`IWILDCAM_PROTOCOL_H_v2`, `OFFICEHOME_PROTOCOL_M_v2`) whose **held-out
-test** row is a properly **gated** win (`verdict_win=True`, false-adapt 0.0). Those
-protocol wins are honest and survive the gate; the **dataset-level / val** verdicts in
-the table above remain **null** (no win on the main evaluation), which is the
-conservative figure recorded here. (2) The three confirmed wins (CIFAR-10-C, ImageNet-C,
-Camelyon17) were re-verified, not assumed: each satisfies `false_adapt ≤ α` and both
-regret bars. (3) See `INTEGRITY_FIXES.md` (2026-06-20 entry) for the full audit.
-
-## 4. Verifying input integrity (the manifest)
-
-`data/MANIFEST.json` records the SHA-256, byte size, and mtime of every file
-under the key data roots (default: `experiments/elara_u/score_archive`). It is
-produced and checked by the stdlib-only module `src/uais/data/manifest.py`.
-
-Build (or rebuild) the manifest with current hashes:
-
-```bash
-python -m uais.data.manifest build
-# optionally choose roots / output:
-python -m uais.data.manifest build --roots experiments/elara_u/score_archive --output data/MANIFEST.json
-```
-
-Verify on-disk files against the manifest:
-
-```bash
-python -m uais.data.manifest verify
-# exit 0 = all match; exit 1 = drift (missing / changed); prints a JSON report
-```
-
-Notes:
-
-- The score archive is a **local-only pointer artifact**; if it is absent on a
-  given machine, `build` writes a valid manifest with `entries: []` (version
-  stamped) and `verify` reports `empty: true, ok: true`. Re-run `build`
-  centrally once the real archive is present to populate the hashes.
-- `verify` catches three failure modes: a **missing** recorded file, a **size
-  mismatch**, and a **content (sha256) change** even at identical size. These are
-  exercised in `tests/test_data_manifest.py`.
-
----
-
-## 5. Hermetic smoke path (zero external data, CPU-only, <60 s)
-
-This is the fastest way to confirm the K-Bound algorithm actually runs and makes
-the right decisions, on any machine, with nothing downloaded:
-
-```bash
-bash scripts/smoke_kbound.sh          # honours $PYTHON, defaults to python3
-```
-
-What it does:
-
-1. `src/scripts/kbound/make_synth_archive.py` writes a tiny **deterministic
-   synthetic** score archive (fixed seed) to
-   `experiments/kbound/_smoke/score_archive/`, using the exact schema in §2, with
-   three tasks spanning the trichotomy:
-   - `synth_helpful` — the validation-selected detector `f0` has degraded on test
-     while the ensemble `fa` is far more correct → benefit clearly **positive**;
-   - `synth_harmful` — `f0` stays excellent while `fa` is corrupted → benefit
-     clearly **negative**;
-   - `synth_unknowable` — `f0` and `fa` are statistically tied → benefit ≈ **0**.
-2. `src/scripts/kbound/smoke_trichotomy.py` runs the **real** `kga` package over
-   the archive — `compute_evidence` (label-free `Z`), `KGA.certify` (the
-   empirical-Bernstein certificate `Δ̂ ± ε`), and `KGA.decide` (the trichotomy) —
-   and **asserts** `synth_helpful → ADAPT`, `synth_harmful → FREEZE`,
-   `synth_unknowable → ABSTAIN`. The separations are large relative to the
-   certificate radius, so the result is robust, not luck.
-3. It writes `experiments/kbound/_smoke/smoke_result.json` and prints
-   `SMOKE PASS` with a one-line metrics summary; it exits non-zero on any
-   mismatch.
-
-Run the same logic under pytest:
-
-```bash
-pytest tests/test_smoke_trichotomy.py tests/test_data_manifest.py -q
-```
-
-Both suites are pure `numpy` + `kga` (no torch, no network, no real datasets) and
-complete in a few seconds.
+1. Pin `wilds==2.0.0` in `docs/research/kbound/scripts/download_all_datasets.sh:52`.
+2. Add the ImageNet-R acquisition URL and licence (§7) after verifying it upstream.
+3. Materialize the Office-Home placeholders and write the real split definition (§5).
+4. Commit `_zenodo_md5sums.txt` for ImageNet-C so `verify_imagenetc_tars.sh` runs unaided (§3).
+5. Fill every **NOT RECORDED** checksum, and register each dataset archive in
+   `docs/research/kbound/STORAGE_MANIFEST.json` with `sha256` + `size_bytes`.
+6. Commit or register the four absent record files (§4c) and restore the Camelyon reconciliation
+   directory (§4b).

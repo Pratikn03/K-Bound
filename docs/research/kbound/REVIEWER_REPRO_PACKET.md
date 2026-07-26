@@ -1,5 +1,12 @@
 # K-Bound / KGA — External Audit & Reproduction Packet
 
+> **STATUS 2026-07-26 — PARTIALLY SUPERSEDED BY `SUBMISSION_LEDGER.md`.**
+> Where this packet and the ledger disagree, the ledger wins. Known corrections applied in place
+> below: the Office-Home CI claim in §A5 (F4-17), and the Camelyon17 evidence tier (F4-12).
+> Before using Part B, read `SUBMISSION_LEDGER.md §8` (absent artifacts), `§9` (the radius fix and
+> what it moved) and `§10` (environment heterogeneity) — several of the reproduction steps below
+> will not run as written until those are closed.
+
 **Purpose.** This packet exists so two independent people can sign off on the paper before it is
 frozen for submission:
 
@@ -89,8 +96,16 @@ radius. A reviewer should pressure-test the following, in order of how load-bear
   reappear in abstract, tables, or mixed-stream.
 - The mixed stream is described as a **cross-protocol aggregate** (`n=143`, OOD cells only), not a
   single heterogeneous deployment.
-- iWildCam is a **point-estimate** win (no CI claim); Office-Home and the CIFAR stress grid carry the
-  CI-backed beats-both.
+- iWildCam is a **point-estimate** result (no CI claim). **CORRECTED 2026-07-26 (F4-17):** an earlier
+  version of this line said "Office-Home and the CIFAR stress grid carry the CI-backed beats-both."
+  That was wrong about Office-Home and it was the version handed to external reviewers. Office-Home
+  is promoted as **OOF no-harm only**; its LOO beats-both is explicitly **not** promoted, and its own
+  artifact `research_lock/KBOUND_WIN_BOOTSTRAP_CIS_oof.json` records `"beats_both_robust": false`
+  and `kga_vs_freeze.ci_excludes_zero: false`. The CI-backed beats-both tracks are the **CIFAR-10-C
+  stress grid (Tent and EATA)** and the constructed three-source mixture. ImageNet-C SAR's
+  freeze-gap CI does not survive the 2026-07-26 radius fix — see `SUBMISSION_LEDGER.md §9`.
+- Camelyon17's promoted row is **sealed but not recomputable from this release**; do not treat it as
+  a reproduced number (`SUBMISSION_LEDGER.md §8`).
 
 ### A6. The unconditional weakest-class theorem (`thm:uncond-weakest`, "Theorem 8") + Appendix `app:weakest`
 - **Claim.** With General Position removed, one declared bit certifies `sign(Δ)` on a falsifiable
@@ -187,7 +202,7 @@ mixing-ratio CI. Expected:
 Pre-registered: `docs/research/kbound/MIXED_BENCHMARK_PROTOCOL.md`.
 
 ```bash
-cd /path/to/AutoML_Flagship_V8
+cd "$KBOUND_REPO_ROOT"        # set KBOUND_REPO_ROOT to your checkout
 PY=.venv/bin/python bash experiments/kbound/poem_aetta/run_all_headtohead.sh
 ```
 

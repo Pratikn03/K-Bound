@@ -1,8 +1,22 @@
 #!/bin/bash
 # 1% AETTA-detector PREVIEW: source(id_val)+target(val), small grid, online candidates.
+# --- defect D8: portable roots. No machine-local absolute paths in tracked code
+# --- (docs/research/kbound/EXTERNAL_STORAGE_POLICY.md). KB_REPO_ROOT is discovered
+# --- from this script's own location; override with KBOUND_REPO_ROOT.
+_kb_find_root() {
+  d=$(cd "$(dirname "${BASH_SOURCE[0]:-$0}")" && pwd)
+  while [ "$d" != "/" ]; do
+    [ -f "$d/pyproject.toml" ] && { printf '%s\n' "$d"; return 0; }
+    d=$(dirname "$d")
+  done
+  echo "ERROR: repository root not found above $(dirname "${BASH_SOURCE[0]:-$0}")" >&2
+  return 1
+}
+KB_REPO_ROOT="${KBOUND_REPO_ROOT:-$(_kb_find_root)}" || exit 1
+
 set -e
-cd /Volumes/T9/uav/AutoML_Flagship_V8
-PY=~/.venv_wilds/bin/python
+cd "$KB_REPO_ROOT"
+PY="${KBOUND_PYTHON:-${KBOUND_VENV:-$HOME/.venv_wilds}/bin/python}"   # override with KBOUND_PYTHON
 CK=experiments/kbound/results/iwildcam_f0_erm/f0_resnet50_erm_seed0.pt
 run () {
   PYTORCH_ENABLE_MPS_FALLBACK=1 $PY -u experiments/kbound/wilds/run_iwildcam_aetta.py \

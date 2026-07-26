@@ -68,6 +68,12 @@ import os
 from dataclasses import dataclass, asdict, field
 
 import numpy as np
+
+# --- defect D10: the certificate radius is the shipped exact-rank rule ---
+import sys as _sys
+from pathlib import Path as _Path
+_sys.path.insert(0, str(_Path(__file__).resolve().parents[3]))
+from kga.certificate import split_conformal_rank_radius as _rank_radius  # noqa: E402
 from scipy.stats import norm, ks_2samp
 
 
@@ -353,7 +359,8 @@ def kbound_conformal_committal_error(
         nn = idx[np.argsort(d)[:k]]
         Bhat_s[r] = float(np.mean(B_s[nn]))
     Bhat = np.empty(N); Bhat[order] = Bhat_s     # unsort
-    eps = float(np.quantile(np.abs(Bhat - B), 1 - alpha))
+    # D10: exact split-conformal rank radius, not numpy's interpolated quantile.
+    eps = float(_rank_radius(np.abs(Bhat - B), alpha))
     dec = np.where(Bhat - eps > 0, "ADAPT", np.where(Bhat + eps < 0, "FREEZE", "ABSTAIN"))
 
     abstain_frac = float(np.mean(dec == "ABSTAIN"))

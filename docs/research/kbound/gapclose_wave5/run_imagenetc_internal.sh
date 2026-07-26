@@ -6,15 +6,33 @@
 #   - copies data T9 -> internal (~/imagenetc_local) with ditto (fast for many small files)
 #   - auto scope: FULL 15 if >=60 GB free on /, else the 3-noise protocol-E set
 #   - launches under caffeinate so the machine/drive never sleep-stalls again
+# --- external (git-excluded) data volume: ONE documented variable, no default.
+# --- defect D8: portable roots. No machine-local absolute paths in tracked code
+# --- (docs/research/kbound/EXTERNAL_STORAGE_POLICY.md). KB_REPO_ROOT is discovered
+# --- from this script's own location; override with KBOUND_REPO_ROOT.
+_kb_find_root() {
+  d=$(cd "$(dirname "${BASH_SOURCE[0]:-$0}")" && pwd)
+  while [ "$d" != "/" ]; do
+    [ -f "$d/pyproject.toml" ] && { printf '%s\n' "$d"; return 0; }
+    d=$(dirname "$d")
+  done
+  echo "ERROR: repository root not found above $(dirname "${BASH_SOURCE[0]:-$0}")" >&2
+  return 1
+}
+KB_REPO_ROOT="${KBOUND_REPO_ROOT:-$(_kb_find_root)}" || exit 1
+
+: "${KBOUND_EXTERNAL_ROOT:?set KBOUND_EXTERNAL_ROOT to the volume holding the git-excluded datasets/checkpoints/caches (layout: docs/research/kbound/kbound_repro/paths.py, acquisition: DATA.md)}"
+KB_EXTERNAL_ROOT="$KBOUND_EXTERNAL_ROOT"
+
 set -u
-SRC=/Volumes/T9/uav/AutoML_Flagship_V8/experiments/kbound/data/imagenet-c
+SRC="$KB_REPO_ROOT"/experiments/kbound/data/imagenet-c
 DST=$HOME/imagenetc_local
-REPO=/Volumes/T9/uav/AutoML_Flagship_V8
+REPO="$KB_REPO_ROOT"
 OUT=$REPO/experiments/kbound/results/win_hunt_v5/imagenetc_aggr
 
 cd "$REPO" || exit 1
-source ~/.venv_wilds/bin/activate
-export TORCH_HOME=/Volumes/T9/uav/torch_cache   # reuse the already-cached resnet50 weights
+source "${KBOUND_VENV:-$HOME/.venv_wilds}/bin/activate"   # override with KBOUND_VENV
+export TORCH_HOME="$KB_EXTERNAL_ROOT/torch_cache"   # reuse the already-cached resnet50 weights
 
 echo "== kill any lingering imagenet-c run =="
 pkill -9 -f cifar_tent_mps_v2 2>/dev/null || true

@@ -16,7 +16,7 @@
 # Set DEVICE=cuda on your GPU box (use mps on a Mac). Resumable via _partial.json.
 # ============================================================================
 set -euo pipefail
-cd "$(dirname "$0")/../../../.."                      # -> repo root (AutoML_Flagship_V8)
+cd "$(dirname "$0")/../../../.."                      # -> repo root
 PY="${PY:-$HOME/.venv_wilds/bin/python}"
 DEVICE="${DEVICE:-cuda}"
 F0="experiments/kbound/results/iwildcam_f0_erm/f0_resnet50_erm_seed0.pt"

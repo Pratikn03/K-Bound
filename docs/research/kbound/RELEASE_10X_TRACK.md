@@ -66,7 +66,7 @@ See `claim_ledger.json` for machine-readable status. Summary:
 
 ```bash
 # Environment
-cd /Volumes/T9/uav/AutoML_Flagship_V8
+cd "$KBOUND_REPO_ROOT"        # set KBOUND_REPO_ROOT to your checkout
 source .venv/bin/activate   # or ~/.venv_wilds per local setup
 
 # Full submission repro (lightweight + cached verify)

@@ -1,0 +1,60 @@
+{
+  "alpha": 0.1,
+  "status": "ILLUSTRATION -- NOT A TEST OF THE FRONTIER",
+  "note": "Z is four noisy copies of M, so the residual is exactly -gamma and eps -> 0.9*beta by algebra. The frontier location and the reported coverage are consequences of the data-generating process, not measurements. See frontier_sweep.py for the real experiment.",
+  "circularity_asserted": true,
+  "max_abs_corr_Z_M": 0.996897,
+  "recovery": {
+    "n": 400,
+    "beta": 0.1,
+    "eps_mean": 0.0975,
+    "eps_min": 0.0971,
+    "eps_max": 0.0976,
+    "eps_over_beta": 0.975,
+    "eps_predicted_by_algebra": 0.09,
+    "empirical_coverage": 0.9,
+    "target_coverage": 0.9,
+    "in_pool_quantile_identity_coverage_at_n": 0.9,
+    "coverage_caveat": "with the archived IN-POOL interpolated radius this coverage is a function of n alone (0.90 at n=400) and carries no information; the leave-one-out radius used here at least lets it vary.",
+    "mae": 0.0536
+  },
+  "frontier": {
+    "beta": 0.1,
+    "eps": 0.0975,
+    "commit_rate_below_beta": 0.065,
+    "commit_rate_above_beta": 0.967,
+    "sign_correct_among_committed": 0.9932,
+    "why_this_is_not_evidence": "the transition sits at |M| ~ eps and eps ~ 0.9*beta because the residual IS gamma ~ U(-beta,beta) by construction; the plot restates the DGP."
+  },
+  "fa_by_beta": {
+    "0.05": {
+      "mean_FA_u": 0.0006,
+      "max_FA_u": 0.0045,
+      "mean_FF_u": 0.0011,
+      "mean_eps": 0.0571,
+      "mean_coverage": 0.9
+    },
+    "0.1": {
+      "mean_FA_u": 0.0006,
+      "max_FA_u": 0.0045,
+      "mean_FF_u": 0.0011,
+      "mean_eps": 0.1039,
+      "mean_coverage": 0.9
+    },
+    "0.15": {
+      "mean_FA_u": 0.0011,
+      "max_FA_u": 0.0045,
+      "mean_FF_u": 0.0006,
+      "mean_eps": 0.1535,
+      "mean_coverage": 0.9
+    },
+    "0.2": {
+      "mean_FA_u": 0.0028,
+      "max_FA_u": 0.0136,
+      "mean_FF_u": 0.0023,
+      "mean_eps": 0.2036,
+      "mean_coverage": 0.9
+    }
+  },
+  "fa_by_beta_caveat": "eps ~ 0.9*beta in every row because gamma ~ U(-beta,beta) was drawn that way. The 'eps self-calibrates to beta' panel is a plot of our own generator."
+}

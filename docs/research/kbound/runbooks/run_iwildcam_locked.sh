@@ -2,11 +2,28 @@
 # iWildCam 5-seed with the REAL locked ERM ResNet-50 checkpoint (from T9, copied internal).
 # Fixes the chain's junk finder run (throwaway ResNet-18, 0.6% acc). Waits for the item-11
 # AETTA TTA to free the GPU, then runs run_iwildcam_aetta.py (--ckpt required, backbone rn50).
+# --- interpreter: $KBOUND_PYTHON, default python3 (was a hard-coded venv path).
+# --- defect D8: portable roots. No machine-local absolute paths in tracked code
+# --- (docs/research/kbound/EXTERNAL_STORAGE_POLICY.md). KB_REPO_ROOT is discovered
+# --- from this script's own location; override with KBOUND_REPO_ROOT.
+_kb_find_root() {
+  d=$(cd "$(dirname "${BASH_SOURCE[0]:-$0}")" && pwd)
+  while [ "$d" != "/" ]; do
+    [ -f "$d/pyproject.toml" ] && { printf '%s\n' "$d"; return 0; }
+    d=$(dirname "$d")
+  done
+  echo "ERROR: repository root not found above $(dirname "${BASH_SOURCE[0]:-$0}")" >&2
+  return 1
+}
+KB_REPO_ROOT="${KBOUND_REPO_ROOT:-$(_kb_find_root)}" || exit 1
+
+KB_PYTHON="${KBOUND_PYTHON:-python3}"
+
 set -u
-R="$HOME/Documents/AutoML_Flagship_V8"
+R="$KB_REPO_ROOT"
 CKPT="$R/experiments/kbound/results/iwildcam_f0_erm/f0_resnet50_erm_seed0.pt"
 OUT="$R/experiments/kbound/results/multiseed/iwildcam"
-LOG="$OUT/iwildcam_locked.log"; PY=/opt/anaconda3/envs/aetta/bin/python
+LOG="$OUT/iwildcam_locked.log"; PY="$KB_PYTHON"
 say(){ echo "[$(date '+%F %T')] $*" | tee -a "$LOG"; }
 say "WAIT: item-11 AETTA TTA to free the GPU"
 while pgrep -f "eval_results_0_dist1|tta_item11|run_item11_finish|main.py.*cifar10outdist" >/dev/null 2>&1; do sleep 180; done
@@ -17,7 +34,7 @@ caffeinate -is "$PY" "$R/experiments/kbound/wilds/run_iwildcam_aetta.py" \
   --max-locations 4 --device auto \
   --results-root "$OUT" --run-name iwildcam_locked_v1 >> "$LOG" 2>&1
 say "iwildcam run rc=$?"
-/opt/anaconda3/bin/python3 "$R/docs/research/kbound/scripts/extract_multiseed_natural.py" --track iwildcam \
+"$KB_PYTHON" "$R/docs/research/kbound/scripts/extract_multiseed_natural.py" --track iwildcam \
   --result "$OUT/iwildcam_locked_v1/**/result_*.json" --candidates tent_online \
   --out-dir "$OUT/extracted_locked" >> "$LOG" 2>&1
 say "iwildcam extract rc=$? — DONE (real-model 5-seed)"

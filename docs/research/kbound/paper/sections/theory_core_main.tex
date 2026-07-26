@@ -57,9 +57,14 @@ $Z=\phi(X_{1:m},f_0,f_a)$ uses no labels, so
 $\Law(\widetilde Z\mid P_T^{+})=\Law(\widetilde Z\mid P_T^{-})$ for $\widetilde Z=(Z,M)$.
 \emph{Opposite signs:} Lemma~\ref{lem:reduction} gives
 $\Delta_\theta=2\mu_T(D)\,\theta\delta\neq0$ with $\sign\Delta_\theta=\theta$.
-This completes the construction. An explicit Gaussian witness appears in
-Appendix~\ref{app:theory-full} (Theorem~\ref{thm:imp}).
+This completes the construction.
 \end{proof}
+\noindent The two evidence laws here coincide \emph{exactly}, not merely approximately: the
+construction changes only the label kernel on $D$, and $Z$ is a function of unlabeled inputs and
+model outputs. We therefore do not present this as a Le Cam two-point argument. A Le Cam argument
+trades off a positive total-variation distance against the achievable error; here the distance is
+zero, which is the degenerate and strongest case, and the corresponding statement is exact
+non-identifiability rather than a rate.
 
 \begin{corollary}[Matched-evidence abstention lower bound]\label{cor:matched-abstain}
 Fix $\alpha\in(0,\tfrac12)$. On the shared evidence law constructed in
@@ -75,17 +80,27 @@ $\alpha$ in the positive world. The three action probabilities sum to one.
 \end{proof}
 
 \begin{proposition}[Boundary case and closed-band abstention]\label{prop:closed-band}
-Fix $\alpha\in(0,\tfrac12)$. If $|M|=\beta>0$, the declared class contains an
-augmented-evidence-identical zero-benefit world ($\gamma=-M$) and a strict-benefit world of sign
-$M$ ($\gamma=0$). In the zero-benefit world both strict actions are errors under the directional
-events used in Corollary~\ref{cor:matched-abstain}, so any rule controlling both marginal errors at level $\alpha$ abstains with
-probability at least $1-2\alpha$. If $M=\beta=0$, every admissible world has $\Delta=0$ and the same
-conclusion holds directly. Thus, under Definition~\ref{def:strict-sound}, abstention is the
-pointwise maximal sound three-way action throughout the closed band $|M|\le\beta$, although
-opposite nonzero signs are asserted only in the interior. This directional convention is stricter
+Fix $\alpha\in(0,\tfrac12)$. Under Definition~\ref{def:strict-sound}, abstention is the pointwise
+maximal sound three-way action throughout the closed band $|M|\le\beta$, and any label-free rule
+controlling both marginal errors at level $\alpha$ abstains there with probability at least
+$1-2\alpha$. Opposite nonzero signs are asserted only in the interior $|M|<\beta$.
+\end{proposition}
+\begin{proof}
+For $|M|<\beta$ this is Theorem~\ref{lem:nonid} together with
+Corollary~\ref{cor:matched-abstain}. For $|M|=\beta>0$, the declared class contains an
+augmented-evidence-identical zero-benefit world (take $\gamma=-M$, admissible since
+$|\gamma|=\beta$) and a strict-benefit world of sign $M$ (take $\gamma=0$). In the zero-benefit world
+$\Delta=0$, so \emph{both} directional error events $\{\textsc{adapt},\Delta\le0\}$ and
+$\{\textsc{freeze},\Delta\ge0\}$ occur whenever the rule commits; since the rule's action
+probabilities are identical across the two evidence-identical worlds, dual control at level $\alpha$
+gives $\Pr[\textsc{adapt}]\le\alpha$ and $\Pr[\textsc{freeze}]\le\alpha$, hence
+$\Pr[\textsc{abstain}]\ge1-2\alpha$, and neither strict action is uniformly directionally sound.
+For $M=\beta=0$ the class $\mathcal C_0$ forces $\gamma=0$, so $\Delta\equiv0$ and the same
+conclusion holds directly.
+\end{proof}
+\noindent This directional convention is stricter
 than task regret: at $\Delta=0$, adapt and freeze are risk-equivalent but neither certifies a strict
 sign.
-\end{proposition}
 
 \begin{theorem}[Exact strict-commitment frontier]\label{thm:headline}\label{thm:frontier}
 Under Assumption~\ref{ass:deploy}, fix the observables $(\mu_T,P_S,f_0,f_a,s)$ so $M$ is

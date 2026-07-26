@@ -6,6 +6,8 @@ paired bootstrap over test records. Verifies means match the locked numbers firs
 import sys, numpy as np
 sys.path.insert(0, "docs/research/kbound/scripts")
 import analyze_F as A
+# fix-queue item 15 / defect D10: the certificate radius is the shipped one.
+import kbound_decide as _kb  # noqa: E402
 ALPHA = 0.10
 recs, _panel = A.load_records("experiments/kbound/results/camelyon17_richZ_F_v1/result_884129ba.json")
 Z, B, a0, aa, sd, comp = A.arrays(recs)
@@ -14,12 +16,13 @@ Zc, Bc = Z[cal], B[cal]; Zt, Bt, a0t, aat = Z[tst], B[tst], a0[tst], aa[tst]
 compc, compt = comp[cal], comp[tst]
 m = A.fit_point(Zc, Bc); Bhat_c = m.predict(Zc); Bhat_t = m.predict(Zt)
 Bhat_c, Bhat_t = A.ppi_debias(Bhat_c, Bc, Zc, Zt, Bhat_t)
-eps_glob = float(np.quantile(np.abs(Bhat_c - Bc), 1 - ALPHA))
+# D10: exact split-conformal rank radius via the shipped library, not np.quantile.
+eps_glob = float(_kb.conformal_radius(np.abs(Bhat_c - Bc), ALPHA))
 dec = np.array(["ABSTAIN"] * len(Bhat_t), dtype=object)
 groups = set(compc.tolist())
 for g in groups:
     mc = compc == g
-    epsg = float(np.quantile(np.abs(Bhat_c[mc] - Bc[mc]), 1 - ALPHA)) if mc.sum() >= 5 else eps_glob
+    epsg = float(_kb.conformal_radius(np.abs(Bhat_c[mc] - Bc[mc]), ALPHA)) if mc.sum() >= 5 else eps_glob
     mt = compt == g
     dec[mt] = A.decide_global(Bhat_t[mt], epsg)
 unseen = ~np.isin(compt, list(groups)); dec[unseen] = A.decide_global(Bhat_t[unseen], eps_glob)

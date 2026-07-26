@@ -1,0 +1,501 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>K-Bound — Panel Review Fix Queue</title>
+<style>
+:root{--bg:#0f1115;--panel:#171a21;--line:#262b36;--tx:#e6e9ef;--dim:#9aa3b2;--acc:#7aa2f7;
+--blocker:#f7768e;--major:#ff9e64;--minor:#7dcfff;--nit:#9ece6a}
+@media(prefers-color-scheme:light){:root{--bg:#f7f8fa;--panel:#fff;--line:#e3e6ec;--tx:#1a1d23;--dim:#5b6472;--acc:#2f5fd0}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--tx);font:15px/1.6 -apple-system,BlinkMacSystemFont,"Segoe UI",Inter,sans-serif}
+.wrap{max-width:1080px;margin:0 auto;padding:32px 20px 80px}
+h1{font-size:26px;margin:0 0 4px} .sub{color:var(--dim);margin:0 0 24px;font-size:14px}
+.stats{display:flex;gap:10px;flex-wrap:wrap;margin:18px 0 26px}
+.stat{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:12px 16px;min-width:110px}
+.stat .k{font-size:24px;font-weight:650} .stat .l{font-size:12px;color:var(--dim);text-transform:uppercase;letter-spacing:.06em}
+section{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:18px 20px;margin:0 0 18px}
+section>h2{margin:0 0 10px;font-size:17px}
+table{width:100%;border-collapse:collapse;font-size:13.5px;margin:6px 0}
+th,td{text-align:left;padding:8px 10px;border-bottom:1px solid var(--line);vertical-align:top}
+th{color:var(--dim);font-weight:600;font-size:12px;text-transform:uppercase;letter-spacing:.05em}
+code{background:rgba(122,162,247,.12);color:var(--acc);padding:1px 5px;border-radius:4px;font-size:12.5px;
+font-family:ui-monospace,SFMono-Regular,Menlo,monospace;word-break:break-word}
+.filters{display:flex;gap:8px;flex-wrap:wrap;margin:0 0 14px;align-items:center}
+.filters button{background:var(--panel);border:1px solid var(--line);color:var(--tx);border-radius:999px;
+padding:6px 14px;font-size:13px;cursor:pointer}
+.filters button.on{border-color:var(--acc);color:var(--acc)}
+.progress{height:6px;background:var(--line);border-radius:99px;overflow:hidden;margin:0 0 18px}
+.progress>i{display:block;height:100%;width:0;background:var(--acc);transition:width .25s}
+.grp{font-size:15px;margin:26px 0 10px;color:var(--dim);text-transform:uppercase;letter-spacing:.08em}
+.card{background:var(--panel);border:1px solid var(--line);border-left:3px solid var(--line);border-radius:10px;margin:0 0 8px;overflow:hidden}
+.card.sev-blocker{border-left-color:var(--blocker)} .card.sev-major{border-left-color:var(--major)}
+.card.sev-minor{border-left-color:var(--minor)} .card.sev-nit{border-left-color:var(--nit)}
+.row{display:flex;gap:10px;align-items:baseline;padding:12px 14px;cursor:pointer;flex-wrap:wrap}
+.num{color:var(--dim);font-variant-numeric:tabular-nums;min-width:20px;font-size:13px}
+.badge{font-size:10.5px;font-weight:700;letter-spacing:.06em;padding:2px 7px;border-radius:5px;white-space:nowrap}
+.b-blocker{background:rgba(247,118,142,.16);color:var(--blocker)} .b-major{background:rgba(255,158,100,.16);color:var(--major)}
+.b-minor{background:rgba(125,207,255,.14);color:var(--minor)} .b-nit{background:rgba(158,206,106,.14);color:var(--nit)}
+.title{flex:1;min-width:240px;font-weight:520}
+.effort{font-size:12px;color:var(--dim);white-space:nowrap}
+.refs{font-size:11px;color:var(--dim);font-family:ui-monospace,monospace}
+.chev{color:var(--dim);font-size:12px}
+.detail{display:none;padding:2px 16px 16px 46px;border-top:1px solid var(--line);font-size:14px;color:var(--tx)}
+.detail p{margin:10px 0}
+.card.open .detail{display:block} .card.open .chev{transform:rotate(180deg);display:inline-block}
+.card.done .title{text-decoration:line-through;opacity:.5}
+input[type=checkbox]{width:16px;height:16px;accent-color:var(--acc);cursor:pointer}
+.hide{display:none}
+footer{color:var(--dim);font-size:12px;margin-top:30px;text-align:center}
+</style></head><body><div class="wrap">
+<h1>K-Bound — Panel Review Fix Queue</h1>
+<p class="sub">Five specialist reviewers · 82 findings · every finding adversarially re-verified against the source · chief-reviewer synthesis. Generated from <code>review_6_overall.md</code>.</p>
+
+<div class="stats">
+  <div class="stat"><div class="k">1</div><div class="l">Blocker</div></div>
+  <div class="stat"><div class="k">16</div><div class="l">Major</div></div>
+  <div class="stat"><div class="k">13</div><div class="l">Minor</div></div>
+  <div class="stat"><div class="k">2</div><div class="l">Nit</div></div>
+  <div class="stat"><div class="k">4.2</div><div class="l">Panel mean /10</div></div>
+</div>
+
+<section><h2>Verdict</h2><p><strong>Major revision — not submittable in its current state, at any venue.</strong></p>
+<p>The reason is narrow and fixable, and it is not the theory. It is that <strong>the abstract makes a universally quantified empirical claim that is falsified by a table inside the same PDF</strong> (F5-1), and that <strong>two different conformal calibration rules are used within a single claim, with the more favourable one chosen for each half</strong> (F1-2 / F4-10 / F5-2). Those two are disqualifying on their own: the first is the kind of thing a program committee finds in ten minutes and never forgives in a paper whose entire selling point is calibrated honesty; the second looks like rule-shopping even though I believe it is staleness.</p>
+<p><strong>At a top venue (NeurIPS / ICML / ICLR): reject.</strong> Beyond the two items above, the theory section will be discounted to a definition plus a triangle inequality (F5-3, and the authors&#x27; own <code>VENUE_BENCHMARK_2026-06.md:80</code> says as much), the population theory has zero contact with the nine benchmark tracks (F5-4: β is never supplied to KGA on real data, <code>kbound_short.tex:596-598</code>), and the one experiment that tests the frontier is circular by construction (F1-4). A 23-page IEEEtran <code>[conference]</code> submission with 26 tables (F5-11) is a desk-reject risk before any of that is read.</p>
+<p><strong>At a mid-tier venue or TMLR: major revision, then a plausible accept.</strong> The CIFAR-10-C stress-grid safety result is real, well-powered and survives every robustness check the panel threw at it — including one I ran myself (see below). The engineering hygiene is genuinely above field average. TMLR&#x27;s criteria (claims supported by evidence, not novelty magnitude) actually fit this work, and reformatting single-column dissolves F5-11.</p>
+<p><strong>The single biggest risk to the work</strong> is not any individual defect. It is that the paper&#x27;s *product* is trustworthiness — a certificate that tells you when to trust an unlabeled decision — and the panel found that the project&#x27;s own audit documents certify things the source code contradicts: <code>PHASE6_LEAKAGE_AUDIT.md</code> declares &quot;PASS (clean). No live promoted track computes ε in-sample on the cells it scores&quot; while four scripts do exactly that (F3-13 / F4-2 / F4-3); <code>SUBMISSION_LEDGER.md</code> marks G8 <code>[RESOLVED = PASS]</code> while the appendix table it ordered regenerated was not regenerated (F1-2) and the ledger itself reverts the panel to the values G8 said to drop (F3-4). A reviewer who discovers that the self-audit is unreliable stops believing the parts that are correct, and most of this project *is* correct. Fixing the audit-vs-source discrepancies is worth more than any new experiment.</p>
+<p><strong>Bottom line for the author:</strong> you are approximately three weeks of disciplined cleanup away from a defensible submission, and roughly none of that work is new experiments. The evidence you have mostly supports a *narrower* paper than the one you wrote.</p>
+<p>---</p></section>
+<section><h2>Panel scorecard</h2><table><thead><tr><th>Reviewer</th><th>Perspective</th><th>Score /10</th><th>Confidence</th><th>Biggest concern</th></tr></thead><tbody><tr><td>R1</td><td>Mathematician / theoretical statistician</td><td>5</td><td>4/5</td><td>The finite-sample layer: <code>thm:certificate</code> is <code>if coverage then safety</code>, and on the promoted rule FA_u ≤ α is an arithmetic identity, not a measurement (F1-1)</td></tr><tr><td>R2</td><td>AI/ML systems engineer (TTA)</td><td>4</td><td>5/5</td><td>The shipped <code>kga</code> package produced no reported number; seven copy-pasted <code>decide_kga()</code> forks did, using the rule <code>certificate.py</code> exists to replace (F2-1)</td></tr><tr><td>R3</td><td>Empirical scientist / methodologist</td><td>4</td><td>4/5</td><td>Wrong unit of analysis: the ImageNet-C beats-both CI bootstraps 135 correlated cell-seed rows as independent; the paper says it seed-averaged (F3-1)</td></tr><tr><td>R4</td><td>Research integrity / reproducibility</td><td>4</td><td>5/5</td><td>Neither documented one-command reproduction runs; 142 committed artifacts are NUL placeholders; 2 of 9 promoted tracks have no verifiable source (F4-7/8/9/12)</td></tr><tr><td>R5</td><td>Area chair / venue</td><td>4</td><td>4/5</td><td>The abstract&#x27;s universal no-harm claim is contradicted by the paper&#x27;s own Table XV (F5-1)</td></tr></tbody></table><p>Panel mean <strong>4.2/10</strong>. No reviewer recommended acceptance; two recommended reject, three major revision. Notably, all five independently praised the project&#x27;s self-audit discipline before criticising it — the scores reflect claim-evidence mismatch, not sloppiness.</p>
+<p>---</p></section>
+<section><h2>Where the panel agrees</h2></section>
+
+<h2 style="margin:30px 0 12px;font-size:19px">Fix queue</h2>
+<div class="progress"><i id="bar"></i></div>
+<div class="filters">
+  <button class="on" data-f="ALL">All</button>
+  <button data-f="BLOCKER">Blocker</button>
+  <button data-f="MAJOR">Major</button>
+  <button data-f="MINOR">Minor</button>
+  <button data-f="NIT">Nit</button>
+  <span id="cnt" style="color:var(--dim);font-size:13px;margin-left:auto"></span>
+</div>
+<h3 class="grp">Must fix before submission</h3>
+<div class="card sev-blocker" data-sev="BLOCKER" data-group="Must fix before submission">
+  <label class="row">
+    <input type="checkbox" class="chk" data-id="1">
+    <span class="num">1</span>
+    <span class="badge b-blocker">BLOCKER</span>
+    <span class="title">Abstract/conclusion claim uniform no-harm on shifts where the paper&#x27;s own panel
+shows KGA losing.</span>
+    <span class="effort">30 minutes</span>
+    <span class="refs">F5-1, F3-2</span>
+    <span class="chev">▾</span>
+  </label>
+  <div class="detail"><p>File: <code>docs/research/kbound/kbound_short.tex:41</code>, <code>:85</code>, <code>:1221</code>. Fix: delete &quot;domain, and rendition&quot; from the enumeration, or restate as: &quot;on the four one-sided natural tracks with locked held-out artifacts (Camelyon17, iWildCam, Office-Home, RxRx1) KGA ties the better fixed policy at zero observed false adaptation; on PACS, ImageNet-R and CIFAR-10.1 it is a conservative null or fails the transfer bar.&quot; The scoped version already exists at <code>:580</code> — promote it. Effort: <strong>30 minutes.</strong> This is the single highest value-per-minute edit in the project.</p></div>
+</div>
+<div class="card sev-major" data-sev="MAJOR" data-group="Must fix before submission">
+  <label class="row">
+    <input type="checkbox" class="chk" data-id="2">
+    <span class="num">2</span>
+    <span class="badge b-major">MAJOR</span>
+    <span class="title">One quantile rule, everywhere; the &quot;5/5 seeds&quot; sentence is false under the
+promoted rule.</span>
+    <span class="effort">2-3 hours</span>
+    <span class="refs">F1-2, F4-10, F5-2</span>
+    <span class="chev">▾</span>
+  </label>
+  <div class="detail"><p>Files: <code>kbound_short_appendix.tex:287</code>, <code>:303-310</code>; <code>kbound_short.tex:801</code>, <code>:910</code>, <code>:1206</code>; <code>paper/generated/decision_metrics.json</code>; <code>paper/generated/uniform_verdicts.json</code> (stale, still carries the superseded 27-cell row). Fix: regenerate <code>tab:imagenetc-perseed</code> under exact rank; replace the claim with &quot;point estimates improve both fixed-policy regrets on 2/5 seeds; on seeds 0, 1 and 3 KGA abstains throughout and is bit-identical to always-freeze; the pooled win is driven by seeds 2 and 4.&quot; Declare the rule once, in the config table. Effort: <strong>2-3 hours.</strong></p></div>
+</div>
+<div class="card sev-major" data-sev="MAJOR" data-group="Must fix before submission">
+  <label class="row">
+    <input type="checkbox" class="chk" data-id="3">
+    <span class="num">3</span>
+    <span class="badge b-major">MAJOR</span>
+    <span class="title">Re-run the ImageNet-C bootstrap at the unit of analysis the text claims, and demote the
+adapt-side claim.</span>
+    <span class="effort">2 hours</span>
+    <span class="refs">F3-1</span>
+    <span class="chev">▾</span>
+  </label>
+  <div class="detail"><p>File: <code>docs/research/kbound/scripts/g8_exactrank_ci.py:18</code> (<code>idx=rng.integers(0,n,(5000,n))</code> over 135 rows). Fix: seed-average to 27 conditions, as <code>_locked_analysis_script.py:54</code> already does for CIFAR. Report adapt-gap [-0.081, +0.018] and freeze-gap [-0.009, -0.002]. Restate as &quot;beats the better fixed policy (always-freeze) with a CI excluding zero; the gap to always-adapt is not CI-supported at the condition level.&quot; Update Table XV, <code>tab:primary-numeric</code>, <code>uniform_verdicts.json</code>. Effort: <strong>2 hours.</strong></p></div>
+</div>
+<div class="card sev-major" data-sev="MAJOR" data-group="Must fix before submission">
+  <label class="row">
+    <input type="checkbox" class="chk" data-id="4">
+    <span class="num">4</span>
+    <span class="badge b-major">MAJOR</span>
+    <span class="title">Remove the scored cell from its own radius pool, everywhere;
+correct the leakage audit.</span>
+    <span class="effort">1 day</span>
+    <span class="refs">F4-2, F4-3, F2-2, F1-1, F3-13</span>
+    <span class="chev">▾</span>
+  </label>
+  <div class="detail"><p>Files: <code>scripts/cifar_tent_mps_v2.py:162</code>, <code>g8_canonical_pooling.py:11</code>, <code>g8_exactrank_regen.py:26</code>, <code>run_wilds_camelyon17.py:56</code>, <code>ablation_exactrank.py:88-89</code>, plus the 7 <code>decide_kga</code> forks. Fix: leave-one-out-of-pool radius (or a genuine held-out calibration split). I verified this changes <strong>0 of 3456</strong> CIFAR decisions, so the flagship number is safe; ImageNet-C becomes 0.0289 with FA_u = 1/135 (say so — beats-both against freeze still holds); Camelyon17 Table VIII must be re-scored (its ε of 0.15-0.37 at n = 9 is what produces &quot;over-freezes&quot;). Then rewrite <code>PHASE6_LEAKAGE_AUDIT.md:5,11,16</code> — its VERDICT line is false as stated. Add a regression test asserting the scored index is excluded. Effort: <strong>1 day</strong>, most of it re-scoring and doc correction.</p></div>
+</div>
+<div class="card sev-major" data-sev="MAJOR" data-group="Must fix before submission">
+  <label class="row">
+    <input type="checkbox" class="chk" data-id="5">
+    <span class="num">5</span>
+    <span class="badge b-major">MAJOR</span>
+    <span class="title">Stop reporting FA_u ≤ α as if it were measured where it is forced or untested.</span>
+    <span class="effort">half a day</span>
+    <span class="refs">F1-1, F3-8</span>
+    <span class="chev">▾</span>
+  </label>
+  <div class="detail"><p>Files: <code>kbound_short.tex:511</code> (RQ2), Table XV <code>:908-918</code>, <code>paper/generated/empirical_audit/decision_metrics.json</code>. Fix: (a) state that with in-sample rank calibration FA_u ≤ (N−k)/N is an identity, so the informative statistic is FA_u = 0 versus the ceiling, not &quot;FA_u ≤ α&quot;; (b) add ADAPT/FREEZE/ABSTAIN counts and a Clopper-Pearson upper bound on FA_c to every panel row; (c) mark tracks with &lt; 10 ADAPT decisions &quot;guarantee untested&quot; — that is RxRx1 (0 adapts), iWildCam (1), Office-Home (22), ImageNet-C SAR (12); (d) delete the Wilson intervals on deterministic in-sample counts (F1-11). Effort: <strong>half a day.</strong> This is the honesty fix that makes the CIFAR-10-C result look *better*, because it is the one track with real power (0/1114 adapts wrong, CP upper bound 0.0027).</p></div>
+</div>
+<div class="card sev-major" data-sev="MAJOR" data-group="Must fix before submission">
+  <label class="row">
+    <input type="checkbox" class="chk" data-id="6">
+    <span class="num">6</span>
+    <span class="badge b-major">MAJOR</span>
+    <span class="title">Remove or restate the quarantined CIFAR-10-C SAR paragraph.</span>
+    <span class="effort">30 minutes</span>
+    <span class="refs">F3-3, F4-1</span>
+    <span class="chev">▾</span>
+  </label>
+  <div class="detail"><p>File: <code>kbound_short.tex:637-642</code>. Fix: the sentence claims the aggregate was &quot;rebuilt from all five saved per-condition seed files&quot; — only four exist for the 432-cell grid (a fifth complete set exists at <code>win_hunt_v5/cifar10c_aggr/</code>, but that is a 270-cell grid). Drop the &quot;intervals exclude zero&quot; clause. Replace with: &quot;SAR&#x27;s five-seed aggregate is dominated by seed 0, whose harmful base rate (0.53) is 5× the other seeds&#x27;; on seeds 1-4 KGA&#x27;s regret (0.00160) exceeds always-adapt&#x27;s (0.00031). No comparative verdict is drawn.&quot; This is what your own <code>LOCKED_ANALYSIS_FINDINGS.md</code> and <code>LOCK_SEAL.json</code>&#x27;s <code>&quot;not_locked&quot;</code> field already say. Effort: <strong>30 minutes.</strong></p></div>
+</div>
+<div class="card sev-major" data-sev="MAJOR" data-group="Must fix before submission">
+  <label class="row">
+    <input type="checkbox" class="chk" data-id="7">
+    <span class="num">7</span>
+    <span class="badge b-major">MAJOR</span>
+    <span class="title">Disclose the actual operating points.</span>
+    <span class="effort">1 hour</span>
+    <span class="refs">F2-5, F2-6</span>
+    <span class="chev">▾</span>
+  </label>
+  <div class="detail"><p>Files: <code>kbound_short.tex:622-625</code>, <code>kbound.tex:807</code>, <code>kbound_short_appendix.tex:127</code> (<code>tab:adapter-hparams</code>). Fix: (a) state that the CIFAR-10-C grid is 6 of 15 corruptions (name them) at severities {1,5} — the driver&#x27;s <code>--quick</code> mode, <code>&quot;quick&quot;: true</code> in every run manifest; <code>kbound.tex:807</code>&#x27;s &quot;the official CIFAR-10-C corruptions&quot; is false as written. (b) State the ImageNet-C SAR operating point inline: lr 4e-3 (16× the 2.5e-4 your own docstring at <code>cifar_tent_mps_v2.py:759</code> calls official), batch 16, 50 steps, layer4 adapted contrary to Niu et al. <code>tab:adapter-hparams</code> currently says &quot;mild &amp; aggressive (per cell)&quot;, which is wrong — the manifests show aggressive-only, small-batch-only. Effort: <strong>1 hour</strong> to disclose. Add <strong>1 day</strong> if you also run the official-settings control, which you should — &quot;beats both because SAR collapses&quot; is much weaker if SAR only collapses at 16× its own lr.</p></div>
+</div>
+<div class="card sev-major" data-sev="MAJOR" data-group="Must fix before submission">
+  <label class="row">
+    <input type="checkbox" class="chk" data-id="8">
+    <span class="num">8</span>
+    <span class="badge b-major">MAJOR</span>
+    <span class="title">Make the two documented reproductions actually run.</span>
+    <span class="effort">1 day</span>
+    <span class="refs">F4-7, F2-3, F4-9</span>
+    <span class="chev">▾</span>
+  </label>
+  <div class="detail"><p>Files: <code>experiments/kbound/results/stress_grid_multiseed_v1/seed0/</code> (missing per-condition dumps); <code>scripts/ablation_exactrank.py:36</code>; <code>scripts/gate_baseline_comparison.py:213</code>; <code>tests/test_calibration_split_integrity.py:10-11</code> (computes <code>REPO/&quot;docs&quot;/&quot;experiments&quot;/...</code>, a path that cannot exist); <code>reproduce_submission.sh:3</code> (<code>set -euo pipefail</code> means steps 2-9 never run). Fix: commit <code>per_condition_cifar10c_{tent,eata,sar}_seed0.json</code> for the 432-cell grid, or repoint the harness at the head-to-head seed-0 dump — but note <code>ablation_exactrank.py</code>&#x27;s <code>load()</code> also reads <code>r[&#x27;a_oracle&#x27;]</code>, absent from every committed 432-cell dump, so repointing alone will not work. Fix the test path, and <code>skipif</code> on missing edge artifacts so the guard degrades honestly. Add CI that runs <code>_locked_analysis_script.py</code> against the archived tree. Effort: <strong>1 day.</strong></p></div>
+</div>
+<div class="card sev-major" data-sev="MAJOR" data-group="Must fix before submission">
+  <label class="row">
+    <input type="checkbox" class="chk" data-id="9">
+    <span class="num">9</span>
+    <span class="badge b-major">MAJOR</span>
+    <span class="title">Materialize the 142 NUL-filled placeholder artifacts.</span>
+    <span class="effort">hours</span>
+    <span class="refs">F4-8</span>
+    <span class="chev">▾</span>
+  </label>
+  <div class="detail"><p>Files: every ablation JSON, <code>cost_profile.json</code>, <code>experiments/kbound/officehome/run_officehome_kbound.py</code> (17,202 bytes, zero readable), <code>oh_analyze.py</code>, edge CSVs. Fix: iCloud &quot;Download Now&quot;, then add a release guard rejecting any tracked text artifact that is NUL-filled — note the naive whitespace test does *not* catch these (I checked: a strict whitespace scan returns 0 files, a NUL scan returns 142). Extend <code>STORAGE_MANIFEST.json</code> checksums (currently 3 files) to every artifact a table depends on. Effort: <strong>hours</strong> if the source Mac is available; <strong>days</strong> if any are genuinely lost.</p></div>
+</div>
+<div class="card sev-major" data-sev="MAJOR" data-group="Must fix before submission">
+  <label class="row">
+    <input type="checkbox" class="chk" data-id="10">
+    <span class="num">10</span>
+    <span class="badge b-major">MAJOR</span>
+    <span class="title">Two promoted tracks have no verifiable source.</span>
+    <span class="effort">hours</span>
+    <span class="refs">F3-6, F4-12</span>
+    <span class="chev">▾</span>
+  </label>
+  <div class="detail"><p>Files: <code>scripts/bootstrap_win_cis.py:37,43,47</code> (all four record files absent); <code>audits/integrity_2026-06-20/camelyon_reconciliation/</code> (does not exist — these are the only 2 of 69 sealed files missing, and they are also the sole basis for the KB-CLAIM-022 withdrawal argument in <code>PHASE6_LEAKAGE_AUDIT.md:43-45</code>). Fix: restore the directory (its SHA-256s are already sealed, so restoration is independently verifiable) or re-run <code>camelyon_G_reconciliation.py</code> and re-seal. Until then mark Camelyon17 OOD &quot;not reproducible from release&quot; rather than &quot;locked&quot;. The promoted row 0.0000/0.0000/0.1381 appears in <strong>no</strong> artifact on disk, while live Camelyon artifacts show FA_u of 0.026 and 0.033. Effort: <strong>hours</strong> to restore, <strong>1 day</strong> to re-run.</p></div>
+</div>
+<div class="card sev-major" data-sev="MAJOR" data-group="Must fix before submission">
+  <label class="row">
+    <input type="checkbox" class="chk" data-id="11">
+    <span class="num">11</span>
+    <span class="badge b-major">MAJOR</span>
+    <span class="title">Fix the provenance layer that the appendix calls &quot;the authoritative index&quot;.</span>
+    <span class="effort">half a day</span>
+    <span class="refs">F3-4, F4-5, F4-11</span>
+    <span class="chev">▾</span>
+  </label>
+  <div class="detail"><p>Files: <code>paper/generated/kbound_result_manifest.json</code>; <code>nine_track_lock_v1/LOCK_SEAL.json</code>. Fix: the CIFAR rows&#x27; <code>source</code> points at <code>LOCKED_ANALYSIS_RESULTS.json</code>, which contains different numbers; the promoted values live in <code>mixed_headtohead_v1/HEADTOHEAD_RESULTS_*.json</code>. Repoint, add a <code>source</code> field to <code>cifar10_1_K</code> and <code>rxrx1_J</code> (currently absent), seal the files that actually contain each number, and add a CI check asserting each sealed file contains the manifest&#x27;s value. Reconcile <code>SUBMISSION_LEDGER.md:88-89</code> (G8 says drop interpolated) with <code>:130-131</code> (P2 reverts to interpolated) — the ledger currently contradicts itself while marking G8 <code>[RESOLVED = PASS]</code>. Effort: <strong>half a day.</strong></p></div>
+</div>
+<div class="card sev-major" data-sev="MAJOR" data-group="Must fix before submission">
+  <label class="row">
+    <input type="checkbox" class="chk" data-id="12">
+    <span class="num">12</span>
+    <span class="badge b-major">MAJOR</span>
+    <span class="title">Decide the venue and cut to its limit.</span>
+    <span class="effort">1-2 days</span>
+    <span class="refs">F5-11</span>
+    <span class="chev">▾</span>
+  </label>
+  <div class="detail"><p>File: <code>kbound_short.tex:1</code> (<code>\documentclass[conference]{IEEEtran}</code>, 23 pages, 26 tables, 7 figures, 12 theorem environments, appendix bound in via <code>\appendices</code>). Fix: at least eight tables are meta-tables about the paper rather than results (<code>tab:regime-summary</code>, <code>tab:data-access</code>, <code>tab:assumptions-role</code>, <code>tab:notation-main</code>, <code>tab:evidence-map</code>, <code>tab:failure-modes</code>, <code>tab:claim-status</code>, <code>tab:baseline-faithfulness</code>); merge or supplement five of them. Cut <code>fig:regime-map</code> (its own caption admits it is a schematic duplicating <code>tab:regime-summary</code>). If TMLR, reformat single-column and most of this dissolves. Also scrub identity before any double-blind submission — <code>CITATION.cff</code> names the author while <code>kbound_short.tex:1167</code> says &quot;anonymized repository&quot; (F4-18). Effort: <strong>1-2 days.</strong></p></div>
+</div><h3 class="grp">Should fix</h3>
+<div class="card sev-major" data-sev="MAJOR" data-group="Should fix">
+  <label class="row">
+    <input type="checkbox" class="chk" data-id="13">
+    <span class="num">13</span>
+    <span class="badge b-major">MAJOR FRAMING</span>
+    <span class="title">Stop selling the frontier as the theoretical contribution.</span>
+    <span class="effort">half a day</span>
+    <span class="refs">F5-3, F1-9</span>
+    <span class="chev">▾</span>
+  </label>
+  <div class="detail"><p>Files: <code>kbound_short.tex:112</code> (contributions), <code>paper/sections/theory_setup.tex:21-27</code>. Fix: γ is *defined* as <code>ā − 1/2 − M</code>, so <code>sign Δ = sign(M+γ)</code> is an identity and the sufficiency half of <code>thm:headline</code> is interval arithmetic. Present <code>lem:reduction</code> honestly as a decomposition (a useful one), put the weight on <code>lem:nonid</code>&#x27;s construction and on the necessity half, and consider promoting <code>thm:short-audA</code> — the vacuity of label-free budget audits — which is the result with actual content. Effort: <strong>half a day</strong> of rewriting, no new math.</p></div>
+</div>
+<div class="card sev-major" data-sev="MAJOR" data-group="Should fix">
+  <label class="row">
+    <input type="checkbox" class="chk" data-id="14">
+    <span class="num">14</span>
+    <span class="badge b-major">MAJOR</span>
+    <span class="title">Relabel the frontier validation, or give it teeth.</span>
+    <span class="effort">1 hour</span>
+    <span class="refs">F5-4, F1-4</span>
+    <span class="chev">▾</span>
+  </label>
+  <div class="detail"><p>File: <code>scripts/frontier_validation.py:53-58</code>; <code>kbound_short.tex:593-612</code>. Fix: <code>Z</code> is four noisy copies of <code>M</code>, so the residual is exactly γ and ε → 0.9β by algebra — the script&#x27;s own docstring (<code>:19-22</code>) says so, and the reported &quot;90.0% empirical coverage&quot; is <code>np.quantile</code>&#x27;s definition (verified: exactly 0.90 at n = 400 and n = 220 for arbitrary data). Either call it an illustration, or re-run with <code>Z</code> that is not a noisy copy of <code>M</code>, γ whose 0.9-quantile is not β, and a held-out set. Better: compute <code>M</code> from the ATC-style source-calibrated score you already have at <code>:364</code> on the CIFAR grid, declare β from historical dev-to-deployment gaps, sweep β ∈ {0, 0.02, 0.05, 0.10, 0.20} and run the population rule against Δ̂ ± ε. A negative result there is far more informative than the current silence (F5-5). Effort: <strong>1 hour</strong> to relabel; <strong>2-3 days</strong> for the real experiment. The real experiment is the single biggest upgrade available to this paper.</p></div>
+</div>
+<div class="card sev-major" data-sev="MAJOR" data-group="Should fix">
+  <label class="row">
+    <input type="checkbox" class="chk" data-id="15">
+    <span class="num">15</span>
+    <span class="badge b-major">MAJOR</span>
+    <span class="title">Route every driver through the shipped library, or stop shipping it as the artifact.</span>
+    <span class="effort">1 day</span>
+    <span class="refs">F2-1</span>
+    <span class="chev">▾</span>
+  </label>
+  <div class="detail"><p>Files: <code>kga/certificate.py</code>, <code>kga/policy.py</code> vs. 7 <code>decide_kga</code> forks (<code>cifar_tent_mps_v2.py:151</code>, <code>wilds/analysis.py:55</code>, <code>kga_breadth.py:83</code>, <code>frontier_validation.py:41</code>, <code>run_decision_baselines.py:83</code>, <code>run_wilds_camelyon17.py:45</code>, <code>theory_v2/realdata/eps_recal/_probe2.py:14</code>, plus two inlined in <code>wilds/per_condition_serialize.py:60,84</code>). Fix: delete the forks; re-score every promoted track from stored <code>b_hat</code>/<code>B</code> through one path. Also resolve the internal contradiction between <code>kbound_short.tex:549-550</code> (&quot;LOO jackknife q_0.9&quot;) and <code>:800-801</code> (&quot;exact split-conformal radius&quot;) — the config table is the stale one. Effort: <strong>1 day.</strong></p></div>
+</div>
+<div class="card sev-minor" data-sev="MINOR" data-group="Should fix">
+  <label class="row">
+    <input type="checkbox" class="chk" data-id="16">
+    <span class="num">16</span>
+    <span class="badge b-minor">MINOR BUT HIGH-PRIORITY</span>
+    <span class="title">Add a BN-statistics-only baseline arm.</span>
+    <span class="effort">half a day</span>
+    <span class="refs">F2-4</span>
+    <span class="chev">▾</span>
+  </label>
+  <div class="detail"><p>File: <code>scripts/cifar_tent_mps_v2.py</code> (<code>TTA_METHODS</code> at <code>:818</code>). Fix: add a <code>bn</code> method (source weights, target BN statistics, zero gradient steps) and report Δ against it as well; or evaluate f0 in <code>train()</code> mode so both arms use target statistics and Δ isolates the gradient update. Also state the eval chunk size (512 CIFAR / 256 WILDS) in the config table — it silently changes <code>a_adapted</code> because the adapted arm recomputes BN stats per chunk. Effort: <strong>half a day</strong> to implement, hours to re-run.</p></div>
+</div>
+<div class="card sev-minor" data-sev="MINOR" data-group="Should fix">
+  <label class="row">
+    <input type="checkbox" class="chk" data-id="17">
+    <span class="num">17</span>
+    <span class="badge b-minor">MINOR</span>
+    <span class="title">Report cluster-robust intervals and a leave-one-corruption-out row.</span>
+    <span class="effort">2 hours</span>
+    <span class="refs">F3-5, F3-12</span>
+    <span class="chev">▾</span>
+  </label>
+  <div class="detail"><p>File: <code>_locked_analysis_script.py:60</code>; ablation table. Fix: r0/r1 replicate pairs correlate 0.948-0.999, so effective n ≤ 216, not 432; clustering by corruption family widens CIs 2.4-3.9× (all still exclude zero) and reveals one family (gaussian_noise, +0.0019) where KGA is worse than always-adapt. Separately, leave-one-corruption-out calibration triples estimator MAE (0.0102 → 0.0322) and quadruples ε (0.021 → 0.092) while FA_u stays 0 — that ablation costs six model fits and about one second, and it answers the strongest objection to your calibration design. Add both. Effort: <strong>2 hours.</strong> Strengthens the paper.</p></div>
+</div>
+<div class="card sev-minor" data-sev="MINOR" data-group="Should fix">
+  <label class="row">
+    <input type="checkbox" class="chk" data-id="18">
+    <span class="num">18</span>
+    <span class="badge b-minor">MINOR</span>
+    <span class="title">Baseline parity and the radius&#x27;s own value.</span>
+    <span class="effort">3 hours</span>
+    <span class="refs">F3-10, F3-11</span>
+    <span class="chev">▾</span>
+  </label>
+  <div class="detail"><p>Files: <code>scripts/gate_baseline_comparison.py:26-28,49,52</code>; <code>tab:gates</code>. Fix: two of the four gates are unfitted sign rules while KGA gets 432 LOO GBR fits; the docstring claims all gates are leave-one-task-out calibrated &quot;exactly like KGA&quot;, which is false for gates 1-2 *and* for KGA (leave-one-cell-out). Either port the LOO-tuned rows from <code>kbound.tex:1948-1958</code> or say in the caption that the gates are untuned. Separately, report explicitly that the radius-free variant meets the declared budget (FA_u = 0.049 &lt; α = 0.10) at 4.25× lower regret, and identify the regime where the radius pays for itself — the harmful-cell column (0.141 → 0.000) is your answer; make it the argument. Effort: <strong>3 hours.</strong></p></div>
+</div>
+<div class="card sev-major" data-sev="MAJOR" data-group="Should fix">
+  <label class="row">
+    <input type="checkbox" class="chk" data-id="19">
+    <span class="num">19</span>
+    <span class="badge b-major">MAJOR/MINOR</span>
+    <span class="title">Disclose or eliminate the seed-0 environment heterogeneity.</span>
+    <span class="effort">hours</span>
+    <span class="refs">F4-6, F4-14</span>
+    <span class="chev">▾</span>
+  </label>
+  <div class="detail"><p>Files: <code>stress_grid_multiseed_v1/seed*/result_manifest.json</code>; <code>requirements.lock.txt</code>. Fix: seed 0 ran on a different commit, Python 3.12.13 and torch 2.5.1; seeds 1-3 on Python 3.14.3 and torch 2.12.0; seed 4 on a third commit. ImageNet-C seed 0&#x27;s argv also omits <code>--severities 1 3 5</code> and <code>--max-images 4000</code>. A five-seed variance claim requires seeds to differ only in seed. Re-run seed 0 under the seeds-1-4 stack, or footnote it. Also record the scikit-learn version in <code>result_manifest.json</code> — <code>b_hat</code> comes from <code>GradientBoostingRegressor(subsample=0.8)</code> and no manifest pins it, so ε and every decision are version-dependent. Add <code>result_manifest.json</code> to <code>pooled_5seed/</code>. Effort: <strong>hours</strong> to disclose, <strong>1 day</strong> to re-run.</p></div>
+</div>
+<div class="card sev-major" data-sev="MAJOR" data-group="Should fix">
+  <label class="row">
+    <input type="checkbox" class="chk" data-id="20">
+    <span class="num">20</span>
+    <span class="badge b-major">MAJOR</span>
+    <span class="title">Write <code>DATA.md</code>.</span>
+    <span class="effort">half a day</span>
+    <span class="refs">F4-13</span>
+    <span class="chev">▾</span>
+  </label>
+  <div class="detail"><p>File: <code>STORAGE_MANIFEST.json</code>. Fix: three entries say &quot;see DATA.md&quot; and no such file exists anywhere; the ImageNet-R command (<code>bash scripts/download_data.py --dataset imagenet-r</code>) is not a real invocation (that script accepts only <code>--enron</code>, <code>--cifar10</code>, <code>--all</code>); the CIFAR-10-C command references an <code>AETTA/</code> directory not in the release. Only 2 of 9 datasets have a working path. Per dataset: canonical URL/DOI, version, split definition, licence, archive checksum. Pin <code>wilds==&lt;version&gt;</code>. Effort: <strong>half a day.</strong></p></div>
+</div>
+<div class="card sev-minor" data-sev="MINOR" data-group="Should fix">
+  <label class="row">
+    <input type="checkbox" class="chk" data-id="21">
+    <span class="num">21</span>
+    <span class="badge b-minor">MINOR</span>
+    <span class="title">Proof hygiene in the compiled build.</span>
+    <span class="effort">half a day</span>
+    <span class="refs">F1-6, F1-8, F5-12</span>
+    <span class="chev">▾</span>
+  </label>
+  <div class="detail"><p>Files: <code>paper/sections/theory_core_main.tex:60-61</code>; <code>theory_appendix_ext.tex:36,46</code>; <code>kbound_short_appendix.tex:155-157,321,329,344,353</code>. Fix: 8 of 13 compiled theorem-level results have no proof. Concretely: delete the dangling &quot;An explicit Gaussian witness appears in Appendix (Theorem thm:imp)&quot; (the witness is inside an <code>\iffalse</code> block and does not compile; the Bernoulli kernel already in <code>lem:nonid</code> suffices); give <code>thm:imp(ii)</code> a two-line Neyman-Pearson proof and define <code>\TV</code>, which is a bare macro; repair <code>prop:beatsboth-asym</code>, which is currently a subordinate clause with no main verb inside a numbered proposition of a frozen submission, and add its two-line partition proof; supply six-line proofs for Aud-A/C/DE/G or mark them &quot;stated here; proved in [long version]&quot; with a retrievable citation. Also fix <code>theory_appendix_ext.tex:37</code> — it claims <code>lem:nonid</code> is parts (i)-(ii) of <code>thm:imp</code>, but <code>lem:nonid</code> establishes only (i), and <code>SUBMISSION_LEDGER.md:45</code> records that exact xref as already fixed. Add <code>prop:multiclass</code> to the ledger&#x27;s compiled inventory. Effort: <strong>half a day.</strong></p></div>
+</div>
+<div class="card sev-minor" data-sev="MINOR" data-group="Should fix">
+  <label class="row">
+    <input type="checkbox" class="chk" data-id="22">
+    <span class="num">22</span>
+    <span class="badge b-minor">MINOR</span>
+    <span class="title">Framing repairs.</span>
+    <span class="effort">3 hours</span>
+    <span class="refs">F5-6, F5-7, F5-8, F5-9, F5-13</span>
+    <span class="chev">▾</span>
+  </label>
+  <div class="detail"><p>File: <code>kbound_short.tex:41,114,132,155-156</code>. Fix: (a) define &quot;detectable&quot; ex ante and measurably, then classify all nine tracks *before* reporting outcomes — ImageNet-C Tent at 56% harmful is the most mixed track in the paper and is not labelled mixed+detectable because KGA does not win there; (b) delete &quot;FMoW, Poverty&quot; from the contributions bullet (they appear nowhere else in the paper); (c) compile two sentences of <code>related_work_positioning.tex:97-108</code> into Section II — your own honest-scope paragraph is written and never <code>\input</code>; (d) add Ben-David et al. 2010, Lipton BBSE, Garg label-shift and a reject-option/learn-to-defer citation, and state the three differences (paired sign not risk level; ambiguity localized to D; class parameterized by declared budget); (e) in the abstract replace <code>|M| &gt; β</code> with words and qualify &quot;the only sound action&quot; as &quot;the only action that certifies a strict benefit direction&quot;. Effort: <strong>3 hours.</strong></p></div>
+</div>
+<div class="card sev-minor" data-sev="MINOR" data-group="Should fix">
+  <label class="row">
+    <input type="checkbox" class="chk" data-id="23">
+    <span class="num">23</span>
+    <span class="badge b-minor">MINOR</span>
+    <span class="title">Panel rows that hide their own variance.</span>
+    <span class="effort">3 hours</span>
+    <span class="refs">F5-10, F3-15, F3-16</span>
+    <span class="chev">▾</span>
+  </label>
+  <div class="detail"><p>Files: <code>kbound_short.tex:911,915,916</code>; <code>PACS_MULTISEED_RESULTS.json</code>. Fix: Camelyon17&#x27;s panel row reports FA_u = 0 with no candidate qualifier while <code>tab:multiseed</code>&#x27;s SAR row reports 0.11 &gt; α — qualify the row and note that 1/9 is inside binomial noise. PACS art_painting seed 1 has FA_u = 0.1111 &gt; α and seed 2 abstains on all 18 cells; report k/n with a Wilson interval (the per-cell files exist for 2 of 3 seeds). ImageNet-R&#x27;s mean-across-backbone hides convnext_tiny at 0.0207 vs always-adapt 0.0015 (14×) and convnext_base at a degenerate 0% harmful base rate — report min/median/max and the harmful base rate per backbone. Effort: <strong>3 hours.</strong></p></div>
+</div>
+<div class="card sev-minor" data-sev="MINOR" data-group="Should fix">
+  <label class="row">
+    <input type="checkbox" class="chk" data-id="24">
+    <span class="num">24</span>
+    <span class="badge b-minor">MINOR</span>
+    <span class="title">Declare the comparison family prospectively.</span>
+    <span class="effort">3 hours</span>
+    <span class="refs">F3-9</span>
+    <span class="chev">▾</span>
+  </label>
+  <div class="detail"><p>File: <code>paper/generated/uniform_verdicts.json</code> (<code>_meta.wave_holm_family</code>). Fix: the family is &quot;the 3 beats-both candidates ... all survive Holm&quot; — exactly the three that won, declared after the results were known, against 1,387 recorded <code>beats_both</code> determinations project-wide (23.5% true). Most of those are exploratory dev-screen rows and should not be treated as a multiplicity family, but the paper publishes no arm inventory at all. Publish protocol → arms → verdicts as an appendix table and define the family over the pre-registered beats-both bars. Effort: <strong>3 hours.</strong></p></div>
+</div><h3 class="grp">Nice to have</h3>
+<div class="card sev-minor" data-sev="MINOR" data-group="Nice to have">
+  <label class="row">
+    <input type="checkbox" class="chk" data-id="25">
+    <span class="num">25</span>
+    <span class="badge b-minor">MINOR</span>
+    <span class="title"><code>kga/certificate.py:261</code> silently under-covers at small n.</span>
+    <span class="effort">—</span>
+    <span class="refs">F1-5, F2-7</span>
+    <span class="chev">▾</span>
+  </label>
+  <div class="detail"><p><code>k = min(n, ceil((n+1)*(1-alpha)))</code> returns <code>max(residuals)</code> when the clamp fires (n ≤ 8 at α = 0.1), giving attainable coverage n/(n+1) &lt; 1−α while the docstring still promises 1−α. Three sibling scripts (<code>ablation_exactrank.py:57</code>, <code>official_baselines_headtohead.py:48</code>, <code>reproduce_headlines.py:32</code>) already return <code>inf</code> correctly, so this is a bug, not a convention. Return <code>inf</code> → ABSTAIN; apply the same guard inside <code>route_panel</code>, where <code>bonf = alpha/k</code> makes it reachable (I confirmed <code>route_panel(K=5, n_cal=10)</code> returns <code>committed=True</code> at an unattainable level). Add tests at n ∈ {3,5,8}. <strong>1 hour.</strong></p></div>
+</div>
+<div class="card sev-minor" data-sev="MINOR" data-group="Nice to have">
+  <label class="row">
+    <input type="checkbox" class="chk" data-id="26">
+    <span class="num">26</span>
+    <span class="badge b-minor">MINOR</span>
+    <span class="title">Certificate estimator defaults.</span>
+    <span class="effort">—</span>
+    <span class="refs">F1-12, F2-12, + R1&#x27;s missed item</span>
+    <span class="chev">▾</span>
+  </label>
+  <div class="detail"><p><code>empirical_bernstein</code> (<code>:181</code>) and <code>hoeffding</code> (<code>:236-239</code>) both default to a data-estimated range, voiding Maurer-Pontil. Make <code>benefit_range</code> required. Separately — and this is the sharpest unflagged item in the whole panel — both return <strong>one-sided</strong> radii (<code>ln(2/alpha)</code>, <code>ln(1/alpha)</code>) while <code>kga/policy.py:79-81</code> applies ε in both directions, so <code>thm:certificate</code>&#x27;s two-sided premise holds only at 1−2α. The FA_u/FF_u conclusions survive via the one-sided argument, so the right fix is to restate <code>thm:certificate</code> with two separate one-sided coverage conditions rather than <code>Pr[|Δ̂−Δ| ≤ ε] ≥ 1−α</code>. <strong>2 hours</strong>, and it makes the theorem stronger.</p></div>
+</div>
+<div class="card sev-minor" data-sev="MINOR" data-group="Nice to have">
+  <label class="row">
+    <input type="checkbox" class="chk" data-id="27">
+    <span class="num">27</span>
+    <span class="badge b-minor">MINOR</span>
+    <span class="title">Algorithm 1&#x27;s two <code>\Comment</code> labels say &quot;exact split-conformal rank quantile&quot; for
+branches that are leave-one-out and CV respectively.</span>
+    <span class="effort">—</span>
+    <span class="refs">F1-3</span>
+    <span class="chev">▾</span>
+  </label>
+  <div class="detail"><p>The body text (<code>kbound_short.tex:338-341</code>, <code>:402</code>, <code>:692-693</code>) is already honest about this and even names jackknife+ as unimplemented; only the algorithm labels are wrong. Promote the manifest&#x27;s own string (&quot;leave-one-condition-out cross-fitted empirical residual calibration; not exact split conformal&quot;) into the algorithm. <strong>15 minutes.</strong></p></div>
+</div>
+<div class="card sev-minor" data-sev="MINOR" data-group="Nice to have">
+  <label class="row">
+    <input type="checkbox" class="chk" data-id="28">
+    <span class="num">28</span>
+    <span class="badge b-minor">MINOR</span>
+    <span class="title">One definition of false-adapt.</span>
+    <span class="effort">—</span>
+    <span class="refs">F2-9</span>
+    <span class="chev">▾</span>
+  </label>
+  <div class="detail"><p><code>wilds/analysis.py:87</code> and <code>cifar_tent_mps_v2.py:182</code> compute <code>mean(B[adapt] &lt; 0)</code> (conditional, strict) under the field name <code>false_adapt_rate_B&lt;0</code>, and it gates <code>beats_both</code>; <code>_locked_analysis_script.py:43</code> uses the marginal <code>mean(is_adapt &amp; (B &lt;= 0))</code> that the theorem controls. 500 archived cells have B exactly 0.0, 102 of them ADAPT (97 in baseline arms). Define <code>false_adapt_unconditional</code> once in <code>kga/policy.py</code>, emit <code>fa_u</code> and <code>fa_c</code> as separate fields. <code>SUBMISSION_LEDGER.md:89</code> already carries &quot;Still fix FA_u marginal code label&quot; inside a block marked <code>[RESOLVED = PASS]</code>. <strong>2 hours.</strong></p></div>
+</div>
+<div class="card sev-minor" data-sev="MINOR" data-group="Nice to have">
+  <label class="row">
+    <input type="checkbox" class="chk" data-id="29">
+    <span class="num">29</span>
+    <span class="badge b-minor">MINOR</span>
+    <span class="title">Shipped library defects with no paper impact.</span>
+    <span class="effort">—</span>
+    <span class="refs">F2-10, F2-11, F2-15</span>
+    <span class="chev">▾</span>
+  </label>
+  <div class="detail"><p><code>kga/cli.py:62-64</code> hard-codes <code>delta_hat = 0.0</code>, so <code>python -m kga decide</code> is a constant-ABSTAIN generator (I ran it: maximal detected drift, still ABSTAIN) — this is the first thing a reader will execute. <code>kga/evidence.py:218</code> computes the reciprocal of the importance weight its docstring specifies, giving opposite conclusions on variance-shrink shifts (ess_frac 0.883 vs 0.0008 in my run). <code>kga/routing.py:202-205</code> early-returns, so candidates after the first rejecter never ingest that step. <strong>3 hours total.</strong></p></div>
+</div>
+<div class="card sev-nit" data-sev="NIT" data-group="Nice to have">
+  <label class="row">
+    <input type="checkbox" class="chk" data-id="30">
+    <span class="num">30</span>
+    <span class="badge b-nit">MINOR/NIT</span>
+    <span class="title">Reproducibility hygiene.</span>
+    <span class="effort">—</span>
+    <span class="refs">F2-8, F3-17, F2-16</span>
+    <span class="chev">▾</span>
+  </label>
+  <div class="detail"><p><code>src/scripts/kbound/cifar10c_suite.py:70</code> seeds per-cell RNG with salted <code>hash()</code> (three interpreters gave three different values) — replace with a stable digest. Six scripts hard-code <code>~/Documents/AutoML_Flagship_V8</code> or <code>/Volumes/T9/...</code>, including both scripts that produce the ImageNet-C headline (<code>g8_canonical_pooling.py:2</code>, <code>g8_exactrank_ci.py:2</code>), against <code>EXTERNAL_STORAGE_POLICY.md:18</code>&#x27;s own ban on machine-local paths. <code>test_sar_faithful.py:58</code> asserts <code>(w.clone() - w).norm() &lt; 1e-9</code>, which is 0 by construction and touches no project code — replace with an assertion on the real parameter tensors. <strong>2 hours.</strong></p></div>
+</div>
+<div class="card sev-minor" data-sev="MINOR" data-group="Nice to have">
+  <label class="row">
+    <input type="checkbox" class="chk" data-id="31">
+    <span class="num">31</span>
+    <span class="badge b-minor">MINOR</span>
+    <span class="title">Ledger and seal hygiene.</span>
+    <span class="effort">—</span>
+    <span class="refs">F4-4, F4-15, F4-17, F4-19</span>
+    <span class="chev">▾</span>
+  </label>
+  <div class="detail"><p>Re-freeze (the pinned PDF sha256 cannot match a <code>.tex</code> edited a day later per <code>EDIT_NOTES_2026-07-23.md</code>); regenerate <code>STORAGE_MANIFEST.json</code> (its recorded hash for <code>claim_ledger.json</code> — the file it designates the wording authority — no longer matches disk); stamp superseded audit docs &quot;SUPERSEDED BY SUBMISSION_LEDGER §N&quot; or delete them (three of them tell three different stories about RxRx1 0.2531 vs 0.2587, and <code>REVIEWER_REPRO_PACKET.md:92-93</code> tells external reviewers that Office-Home carries a CI-backed beats-both that the ledger deliberately demoted); make the forbidden-phrase gate context-aware, since it currently fires 25 times on the paper&#x27;s own disclaimers. <strong>half a day.</strong></p></div>
+</div>
+<div class="card sev-nit" data-sev="NIT" data-group="Nice to have">
+  <label class="row">
+    <input type="checkbox" class="chk" data-id="32">
+    <span class="num">32</span>
+    <span class="badge b-nit">NIT</span>
+    <span class="title">Out-of-build and cosmetic.</span>
+    <span class="effort">—</span>
+    <span class="refs">F1-7, F1-14, F5-14, F5-15</span>
+    <span class="chev">▾</span>
+  </label>
+  <div class="detail"><p><code>theory_v2/tight_constants_closure.tex:93-97</code> invokes MLR/Karlin-Rubin where Neyman-Pearson with a p+q ≤ α budget split is needed (the constant κ(α) is correct, the argument is not; also its stated range [4, 5.2] holds only for α ≤ 0.10 — κ(0.20) = 6.36). Not in the frozen build, so fix it before the long version. Rename <code>Impossibility.lean</code>&#x27;s <code>forced_abstention_probability</code> (proved <code>by linarith</code>) and <code>exchangeable_scores_miss_le_alpha</code> (which takes its hard step as a hypothesis; no permutation-invariance definition exists anywhere in the 27 <code>.lean</code> files) to match content — or formalize exchangeability properly, which is the highest-value addition available and a tractable mathlib exercise. Drop <code>\resizebox</code> from 12 tables. <strong>1 day.</strong></p>
+<p>---</p></div>
+</div>
+
+<section style="margin-top:26px"><h2>What is genuinely strong</h2><p>Do not change these. Several are better than field standard and two are better than anything else the panel has reviewed recently.</p>
+<p>- <strong>The CIFAR-10-C stress-grid safety result is real and it is your paper.</strong> 2,160 cell-seed pairs, 1,114   ADAPT decisions, 0 false adapts, Clopper-Pearson 95% upper bound on FA_c of 0.0027. R3 reproduced   0.00157361 / 0.00792338 / 0.12409792 to 8 decimals from raw. It survives cluster-robust bootstrapping at   the corruption level, leave-one-twin-pair-out refitting, leave-one-corruption-out calibration (FA_u stays   0), and — my own check — leave-one-out-of-pool radius recomputation across 3,456 cells with <strong>zero</strong>   decision changes. This is the one place where the guarantee is actually exercised and it holds. - <strong>No TTA state leakage.</strong> <code>_clone_for_tta</code> (<code>cifar_tent_mps_v2.py:702</code>) deep-copies the frozen model with   a fresh optimizer per cell; the adaptation stream and evaluation pool are disjoint on CIFAR   (<code>:838-840</code>); the eval pool is class-balanced. This is the single most common source of fake TTA gains   and R2 confirmed it is absent. - <strong>β is never fitted.</strong> R3 grepped <code>kga/</code>, <code>src/scripts/kbound/</code> and all 69 <code>research_lock/*.yaml</code>: the   obvious fatal flaw — a &quot;declared&quot; budget silently tuned on test — does not exist, and α is fixed at 0.10   everywhere. - <strong>The evidence seal works.</strong> Two reviewers independently recomputed all 69 SHA-256 entries in   <code>LOCK_SEAL.json</code>: 67 verify byte-for-byte, 0 mismatches, 2 missing. The machinery is sound; the problem is   only that two seals hash files that do not contain the promoted number (item 11). - <strong>Negative results are retained and the promotion direction is honest.</strong> CIFAR-10.1 is reported at   FA_u = 0.167 and labelled a diagnostic fail; PACS and ImageNet-R are kept as nulls; the exact-rank   regeneration moved ImageNet-C SAR from 0.0108 to 0.0264 and you promoted the worse number; Office-Home&#x27;s   promoted scoring is the *less* flattering of the two available. <code>tab:abl-transfer</code> publishes the   configuration where your own guarantee breaks (SAR→Tent, FA_u = 0.255). This is rare and you should say so   more loudly, not less. - <strong>Definitional hygiene.</strong> <code>rem:four-quantities</code> (<code>theory_setup.tex:77-96</code>) separates M, γ, β and ε with an   explicit table and states that ε is not an estimate of β; R1 searched for a place where they are conflated   in the compiled build and found none. <code>def:risk-align</code> is stated as a definition with &quot;Fitting a benefit   regressor does not certify risk alignment&quot; immediately after. Boundary cases (|M| = β &gt; 0, M = β = 0,   β = 0) each get their own clause. - <strong><code>lem:nonid</code> is correct.</strong> The Bernoulli-kernel construction stays inside <code>C_β</code>, the quantifiers are   correctly ordered, the evidence laws genuinely coincide because Z is label-free, and the β = 0 carve-out   is both correct and necessary. R1 re-derived the whole impossibility chain independently. The theorem is   sound; only its novelty framing overreaches. - <strong>Zero <code>sorry</code>, <code>axiom</code> or <code>admit</code> in all 27 Lean files</strong>, with an accurate volunteered inventory of what   Lean does *not* cover (<code>kbound_short_appendix.tex:261-269</code>). Better disclosure than most formalization   appendices, even though the file names overclaim. - <strong><code>theory_v2/minimax_optimality_theorem.tex</code> contains a real Le Cam two-point argument</strong> with the   three-way-to-two-way reduction done cleanly, the correct <code>ε_n &lt; Δ/2</code> achievability step (the one most   people get wrong), and an explicit statement that it proves order-optimality, not tight constants. - <strong>The pre-registration is genuine</strong>, with a report-all-arms rule, a schema guard that exits rather than   fabricate, and <code>prohibited_after_unblinding: any re-tuning</code>. The withdrawals are substantive:   <code>claim_ledger.json</code> records KB-CLAIM-022&#x27;s <code>calibration_method: &quot;in_sample_radius&quot;</code> in plain text.</p>
+<p>---</p></section>
+<section><h2>Recommended next 5 concrete actions</h2><p>1. <strong>Fix the abstract (30 min).</strong> Delete &quot;domain, and rendition&quot; from <code>kbound_short.tex:41</code>, mirror the edit    at <code>:85</code> and <code>:1221</code>, and promote the already-correct scoped sentence at <code>:580</code>. Nothing else in this    list matters if a reviewer stops reading at the abstract. Then grep every universal quantifier in the    paper (&quot;every&quot;, &quot;all&quot;, &quot;uniformly&quot;, &quot;5/5&quot;) against Table XV before you touch anything else.</p>
+<p>2. <strong>Declare one quantile rule and regenerate everything downstream (half a day).</strong> Pick exact rank.    Regenerate <code>tab:imagenetc-perseed</code>, <code>decision_metrics.json</code>, <code>uniform_verdicts.json</code> and the CIFAR    manifest rows under it. Change <code>kbound_short.tex:801</code> and <code>kbound_short_appendix.tex:287</code> to &quot;2/5 seeds,    with three exact ties to always-freeze&quot;. Fix the config table at <code>:549-550</code>. This closes items 2 and 11    and removes the appearance of rule-shopping, which is the accusation that would do the most damage.</p>
+<p>3. <strong>Re-run every radius leave-one-out-of-pool and rewrite <code>PHASE6_LEAKAGE_AUDIT.md</code> (1 day).</strong> You already    know the answer for CIFAR — I measured it: nothing changes. ImageNet-C becomes 0.0289 / FA_u = 1/135 and    still beats freeze. Camelyon17 Table VIII needs a genuine re-score. Publishing &quot;we found this ourselves,    here is the corrected number, the conclusion is unchanged&quot; is a much stronger position than having a    reviewer find it, and after this fix your leakage audit becomes true.</p>
+<p>4. <strong>Make <code>reproduce_submission.sh</code> and <code>_locked_analysis_script.py</code> run on a clean checkout (1 day).</strong>    Commit the seed-0 per-condition dumps (or repoint and add the missing <code>a_oracle</code> field), fix    <code>test_calibration_split_integrity.py:10-11</code>&#x27;s impossible path, materialize the 142 NUL artifacts, and    write <code>DATA.md</code>. A reviewer who can run one command and see your numbers appear will forgive a great    deal; one who runs your own command and gets a <code>FileNotFoundError</code> in step 1 will forgive nothing.</p>
+<p>5. <strong>Run the two experiments that convert your weakest claims into strong ones (2-3 days).</strong> (a) The    real-data β sweep: compute M from the ATC-style score at <code>kbound_short.tex:364</code> on the CIFAR grid, declare    β from historical dev-to-deployment gaps, sweep β ∈ {0, 0.02, 0.05, 0.10, 0.20}, and run the population    frontier rule against Δ̂ ± ε. This is the only thing that connects your theory to your experiments, and a    negative result still publishes. (b) The BN-statistics-only arm plus a SAR control at official settings    (lr 2.5e-4, layer4 frozen). Both are questions every reviewer will ask; answering them pre-emptively is    worth more than any additional benchmark track.</p>
+<p><strong>What to defend, not fix:</strong> the CIFAR-10-C safety result, <code>lem:nonid</code>, the evidence-tier policy, the quarantine practice, and the retained negatives. When you narrow the paper, narrow it *toward* those.</p></section>
+<footer>Checkbox state is in-memory only — it resets on reload.</footer>
+</div>
+<script>
+const cards=[...document.querySelectorAll('.card')],bar=document.getElementById('bar'),cnt=document.getElementById('cnt');
+function upd(){const d=cards.filter(c=>c.classList.contains('done')).length;
+bar.style.width=(100*d/cards.length)+'%';cnt.textContent=d+' / '+cards.length+' done';}
+cards.forEach(c=>{
+  const chk=c.querySelector('.chk');
+  c.querySelector('.row').addEventListener('click',e=>{if(e.target===chk)return;c.classList.toggle('open');});
+  chk.addEventListener('change',()=>{c.classList.toggle('done',chk.checked);upd();});
+});
+document.querySelectorAll('.filters button').forEach(b=>b.addEventListener('click',()=>{
+  document.querySelectorAll('.filters button').forEach(x=>x.classList.remove('on'));b.classList.add('on');
+  const f=b.dataset.f;cards.forEach(c=>c.classList.toggle('hide',f!=='ALL'&&c.dataset.sev!==f));
+  document.querySelectorAll('.grp').forEach(g=>{let n=g.nextElementSibling,any=false;
+    while(n&&n.classList.contains('card')){if(!n.classList.contains('hide'))any=true;n=n.nextElementSibling;}
+    g.classList.toggle('hide',!any);});
+}));
+upd();
+</script></body></html>

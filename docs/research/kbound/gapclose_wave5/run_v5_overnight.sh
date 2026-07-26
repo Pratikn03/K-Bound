@@ -1,17 +1,35 @@
 #!/bin/bash
 # WIN_HUNT_v5 FULL queue: ALL nine datasets, natural-first, sequential.
 # Failures logged and skipped; completed CIFAR seeds auto-skipped; never fatal.
-cd /Volumes/T9/uav/AutoML_Flagship_V8 || exit 1
-source ~/.venv_wilds/bin/activate
-export TMPDIR=/Volumes/T9/uav/tmp
-export TORCH_HOME=/Volumes/T9/uav/torch_cache
+# --- external (git-excluded) data volume: ONE documented variable, no default.
+# --- defect D8: portable roots. No machine-local absolute paths in tracked code
+# --- (docs/research/kbound/EXTERNAL_STORAGE_POLICY.md). KB_REPO_ROOT is discovered
+# --- from this script's own location; override with KBOUND_REPO_ROOT.
+_kb_find_root() {
+  d=$(cd "$(dirname "${BASH_SOURCE[0]:-$0}")" && pwd)
+  while [ "$d" != "/" ]; do
+    [ -f "$d/pyproject.toml" ] && { printf '%s\n' "$d"; return 0; }
+    d=$(dirname "$d")
+  done
+  echo "ERROR: repository root not found above $(dirname "${BASH_SOURCE[0]:-$0}")" >&2
+  return 1
+}
+KB_REPO_ROOT="${KBOUND_REPO_ROOT:-$(_kb_find_root)}" || exit 1
+
+: "${KBOUND_EXTERNAL_ROOT:?set KBOUND_EXTERNAL_ROOT to the volume holding the git-excluded datasets/checkpoints/caches (layout: docs/research/kbound/kbound_repro/paths.py, acquisition: DATA.md)}"
+KB_EXTERNAL_ROOT="$KBOUND_EXTERNAL_ROOT"
+
+cd "$KB_REPO_ROOT" || exit 1
+source "${KBOUND_VENV:-$HOME/.venv_wilds}/bin/activate"   # override with KBOUND_VENV
+export TMPDIR="$KB_EXTERNAL_ROOT/tmp"
+export TORCH_HOME="$KB_EXTERNAL_ROOT/torch_cache"
 mkdir -p "$TMPDIR" "$TORCH_HOME"
-WILDS_ROOT=/Volumes/T9/uav/AutoML_Flagship_V8/experiments/kbound/data/wilds
-PACS_ROOT=/Volumes/T9/uav/AutoML_Flagship_V8/experiments/kbound/domainbed
-OFFICEHOME_ROOT=/Volumes/T9/uav/AutoML_Flagship_V8/experiments/kbound/data/office_home
-OFFICEHOME_SPLITS=/Volumes/T9/uav/AutoML_Flagship_V8/experiments/kbound/results/win_hunt_v5/officehome_splits.json
-RXRX1_CKPT=/Volumes/T9/uav/AutoML_Flagship_V8/experiments/kbound/results/rxrx1_internal_backup/rxrx1_seed:0_epoch:best_model.pth
-IMAGENETC_ROOT=/Volumes/T9/uav/AutoML_Flagship_V8/experiments/kbound/data/imagenet-c
+WILDS_ROOT="$KB_REPO_ROOT"/experiments/kbound/data/wilds
+PACS_ROOT="$KB_REPO_ROOT"/experiments/kbound/domainbed
+OFFICEHOME_ROOT="$KB_REPO_ROOT"/experiments/kbound/data/office_home
+OFFICEHOME_SPLITS="$KB_REPO_ROOT"/experiments/kbound/results/win_hunt_v5/officehome_splits.json
+RXRX1_CKPT="$KB_REPO_ROOT"/experiments/kbound/results/rxrx1_internal_backup/rxrx1_seed:0_epoch:best_model.pth
+IMAGENETC_ROOT="$KB_REPO_ROOT"/experiments/kbound/data/imagenet-c
 step () { echo ""; echo "==================== [$(date '+%H:%M:%S')] $1 ===================="; }
 
 step "1/9 CAMELYON17 (natural)"
@@ -59,4 +77,4 @@ step "9/9 IMAGENET-C"
 python docs/research/kbound/scripts/cifar_tent_mps_v2.py --benchmarks imagenetc --imagenetc-root "$IMAGENETC_ROOT" --methods tent eata sar --device mps --seed 0 --batch-regimes small --aggressiveness aggressive --adapt-lr 0.004 --imagenetc-composition iid imbalanced single_class --out-results experiments/kbound/results/win_hunt_v5/imagenetc_aggr || echo "[FAIL] imagenetc"
 
 step "QUEUE COMPLETE — summary of problems (if any):"
-grep -E "\[(FAIL|NOT_RUN)\]" /Volumes/T9/uav/v5_overnight.log 2>/dev/null || echo "none"
+grep -E "\[(FAIL|NOT_RUN)\]" "$KB_EXTERNAL_ROOT"/v5_overnight.log 2>/dev/null || echo "none"

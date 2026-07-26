@@ -1,6 +1,6 @@
 # RUNSHEET — Wave 6 (WIN_HUNT_v4), ordered. Run phases in order; STOP if a phase fails.
 # Protocol: research_lock/WIN_HUNT_v4_PROTOCOL.yaml (bars frozen 2026-07-04).
-# All commands from repo root: cd /Volumes/T9/uav/AutoML_Flagship_V8
+# All commands from repo root: cd "$KBOUND_REPO_ROOT"        # set KBOUND_REPO_ROOT to your checkout
 
 ## PHASE 0 — CPU validators (Mac, ~10 min total). ALL must print PASS / exit 0 before anything else.
 .venv/bin/python docs/research/kbound/gapclose_wave5/radius_jackknife_plus.py
@@ -16,7 +16,8 @@
 ## PHASE 2 — GPU runs (arms D, E). Disk: arm D ~35-85 MB; arm E same size as existing seeds.
 # Arm D: per-sample stress run, Tent, seeds 0-4 (official POEM/AETTA head-to-head)
 source ~/.venv_wilds/bin/activate
-export TMPDIR=/Volumes/T9/uav/tmp TORCH_HOME=/Volumes/T9/uav/torch_cache
+export TMPDIR="${KBOUND_EXTERNAL_ROOT:?set KBOUND_EXTERNAL_ROOT}"/tmp \
+       TORCH_HOME="$KBOUND_EXTERNAL_ROOT"/torch_cache
 mkdir -p "$TMPDIR" "$TORCH_HOME"
 for S in 0 1 2 3 4; do
   caffeinate -is python docs/research/kbound/scripts/cifar_tent_mps_v2.py \

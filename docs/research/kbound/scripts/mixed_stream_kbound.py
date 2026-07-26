@@ -25,6 +25,9 @@ import numpy as np
 ROOT = Path(__file__).resolve().parents[4]
 sys.path.insert(0, str(ROOT / "docs/research/kbound/scripts"))
 import analyze_F as af  # fit_point, decide_global, ALPHA, load_records
+# The ONE radius rule (fix-queue items 2, 4, 15): exact split-conformal rank,
+# routed through kga.certificate / kga.policy.
+import kbound_decide as _kb
 
 
 def filt(recs, seeds):
@@ -33,7 +36,20 @@ def filt(recs, seeds):
 
 
 def per_condition(cal, test):
-    """Return per-condition regret triples + benefit, faithful to analyze_F.metrics."""
+    """Return per-condition regret triples + benefit, faithful to analyze_F.metrics.
+
+    FIX-QUEUE ITEM 4 does not bite here: the radius pool is the DEV-seed
+    calibration set and the scored conditions are TEST-seed conditions, which is
+    the genuine held-out calibration split the fix-queue offers as the
+    alternative to leave-one-out-of-pool.
+
+    FIX-QUEUE ITEMS 2 + 15 did bite: the radius was
+    ``float(np.quantile(np.abs(_loo - Bc), 1 - af.ALPHA))``, numpy's interpolated
+    quantile, so this driver used a different rule from the one the paper
+    declares.  It is now the exact split-conformal rank quantile
+    ``r_(k)``, ``k = ceil((n+1)(1-alpha))``, via ``kbound_decide`` ->
+    ``kga.certificate`` / ``kga.policy``.
+    """
     Zc = np.array([r["Z"] for r in cal], float); Bc = np.array([r["B"] for r in cal], float)
     Zt = np.array([r["Z"] for r in test], float)
     Bt = np.array([r["B"] for r in test], float)
@@ -45,8 +61,8 @@ def per_condition(cal, test):
     for _i in range(len(Bc)):
         _tr = np.arange(len(Bc)) != _i
         _loo[_i] = af.fit_point(Zc[_tr], Bc[_tr]).predict(Zc[_i:_i + 1])[0]
-    eps = float(np.quantile(np.abs(_loo - Bc), 1 - af.ALPHA))
-    dec = af.decide_global(m.predict(Zt), eps)
+    eps = float(_kb.conformal_radius(np.abs(_loo - Bc), af.ALPHA))
+    dec = _kb.decide(m.predict(Zt), eps, alpha=af.ALPHA)
     adapt = dec == "ADAPT"
     kga = np.where(adapt, aa, a0)
     oracle = np.maximum(a0, aa)

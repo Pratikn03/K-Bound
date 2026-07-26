@@ -7,6 +7,14 @@
 %  finite α is an IMPOSSIBILITY theorem (certification at 4 n_opt cannot hold).
 %
 %  Validator: theory_v2/val_tight_constants.py  (section T1c)
+%
+%  REVISION NOTE (proof correction): Step 1 previously invoked MLR / Karlin-Rubin to
+%  claim the symmetric two-sided set is the P_0-constrained maximizer of P_{+Delta}
+%  mass. That is wrong -- the likelihood ratio is monotone increasing, so Neyman-Pearson
+%  gives the ONE-SIDED upper tail. The constant kappa(alpha) is unaffected; the argument
+%  is now the correct budget-split Neyman-Pearson one (p + q <= alpha, minimized at
+%  p = q = alpha/2). The file also used z_alpha and z_{1-alpha/2} under two conflicting
+%  conventions; it now uses z_{1-x} := Phi^{-1}(1-x) throughout.
 % ============================================================================
 \providecommand{\TV}{\mathrm{TV}}
 \section{Exact minimax sample complexity for honest frontier abstention}\label{sec:t1c-closure}
@@ -15,14 +23,19 @@ Wave~3 (Theorem~\ref{thm:minimax-opt}, Prop.~\ref{prop:t1b-3world}--\ref{prop:t1
 established: (i)~$4n_{\mathrm{opt}}$ is a valid \emph{all-rules} lower bound once a third
 frontier world $\mu=0$ must abstain at level $\alpha$; (ii)~the symmetric band certifies at
 $n=\kappa(\alpha)\,n_{\mathrm{opt}}$ with
-$\kappa(\alpha)=\bigl(1+z_{1-\alpha/2}/z_{1-\alpha}\bigr)^2\in[4,\approx5.2]\downarrow4$;
+$\kappa(\alpha)=\bigl(1+z_{1-\alpha/2}/z_{1-\alpha}\bigr)^2$, which lies in $[4,\approx5.2]$
+\emph{for $\alpha\le0.10$} and decreases to $4$ as $\alpha\downarrow0$ --- the range is not
+universal: $\kappa(0.20)=6.36$, and $\kappa$ is increasing in $\alpha$ on $(0,\tfrac12)$;
 (iii)~the residual $\kappa/4\in[1,1.30]$ was left open for arbitrary randomized rules.
 This section closes (iii).
 
 \subsection{The three-world certifying problem}
 
 Fix $\sigma>0$, $\Delta>0$, $\alpha\in(0,\tfrac14)$, and write $v=\sigma^2/n$,
-$z_\alpha:=\Phi^{-1}(1-\alpha)$, $n_{\mathrm{opt}}=(\sigma/\Delta)^2 z_\alpha^2$.  Observe
+$z_{1-x}:=\Phi^{-1}(1-x)$ for $x\in(0,1)$ --- so $z_{1-\alpha}=\Phi^{-1}(1-\alpha)$ and
+$z_{1-\alpha/2}=\Phi^{-1}(1-\alpha/2)$, both positive, and the earlier shorthand $z_\alpha$ for
+$\Phi^{-1}(1-\alpha)$ is retired because it collided with this subscript convention ---
+and $n_{\mathrm{opt}}=(\sigma/\Delta)^2 z_{1-\alpha}^2$.  Observe
 $\bar X\sim\mathcal N(\mu,v)$ under world $\mu\in\{-\Delta,0,+\Delta\}$ (sufficient statistic
 for the $n$-sample Gaussian location model).  A (possibly randomized) \emph{certifying rule} maps
 $\bar X$ to $\{\textsc{adapt},\textsc{freeze},\textsc{abstain}\}$ and is
@@ -46,7 +59,7 @@ For every $\sigma>0$, $\Delta>0$, and $\alpha\in(0,\tfrac14)$,
   \boxed{\;
   n^\star_{3}(\Delta,\sigma,\alpha)
   \;=\;\kappa(\alpha)\,n_{\mathrm{opt}}(\Delta,\sigma,\alpha)
-  \;=\;\Bigl(\tfrac{\sigma\,(z_\alpha+z_{1-\alpha/2})}{\Delta}\Bigr)^2\; }.
+  \;=\;\Bigl(\tfrac{\sigma\,(z_{1-\alpha}+z_{1-\alpha/2})}{\Delta}\Bigr)^2\; }.
 \]
 The symmetric band ``\textsc{adapt} iff $\bar X>\tau$; \textsc{freeze} iff $\bar X<-\tau$;
 else \textsc{abstain}'' with $\tau=z_{1-\alpha/2}\,\sigma/\sqrt n$ attains this with equality
@@ -71,7 +84,7 @@ Write $t=\sqrt v=\sigma/\sqrt n$.
 $\tau=z_{1-\alpha/2}\,t$.  Then
 $\mathrm{commit}_0=2\Phi(-\tau/t)=2\Phi(-z_{1-\alpha/2})=\alpha$ exactly.  In world $+\Delta$,
 $\mathrm{miss}_+=\Phi\bigl((\tau-\Delta)/t\bigr)$; feasibility requires
-$(\Delta-\tau)/t\ge z_\alpha$, i.e.\ $\Delta/t\ge z_\alpha+z_{1-\alpha/2}$.  The smallest $n$
+$(\Delta-\tau)/t\ge z_{1-\alpha}$, i.e.\ $\Delta/t\ge z_{1-\alpha}+z_{1-\alpha/2}$.  The smallest $n$
 satisfying this is $n=\kappa(\alpha)\,n_{\mathrm{opt}}$, at which $\mathrm{miss}_+=\alpha$ and,
 by symmetry, $\mathrm{miss}_-=\alpha$.  Hence $n^\star_{3}\le\kappa(\alpha)\,n_{\mathrm{opt}}$.
 
@@ -90,39 +103,51 @@ where $A_+$ is the \textsc{adapt} region.  Since wrong \textsc{freeze} in world 
 subset of $\bar X\notin A_+$, the miss bound is the operative constraint on the high side; by
 symmetry the low side is identical.
 
-\emph{Step 1 (necessary abstention width).}  Among all Borel sets $C$ with
-$\Pr_0(\bar X\in C)\le\alpha$, the one \emph{maximizing} $\Pr_{+\Delta}(\bar X\in C)$ under a
-fixed $\Pr_0(C)$ is an interval $(-\infty,-\tau]\cup[\tau,\infty)$ by the monotone likelihood
-ratio (MLR) property of the Gaussian location family (Karlin--Rubin): mass under $P_0$ is
-pushed toward the tails where $P_{+\Delta}$ has higher density.  Thus any rule that certifies in
-world $+\Delta$ with $\mathrm{miss}_+\le\alpha$ while committing at $0$ with rate $\alpha$ must
-obey, for some $\tau\ge0$,
+\emph{Step 1 (necessary abstention width; Neyman--Pearson with a split budget).}
+\textbf{Correction.}  An earlier version of this step invoked the monotone-likelihood-ratio /
+Karlin--Rubin property to claim that the two-sided set
+$(-\infty,-\tau]\cup[\tau,\infty)$ maximizes $\Pr_{+\Delta}(\bar X\in C)$ at fixed $\Pr_0(C)$.
+That is \emph{false}: $dP_{+\Delta}/dP_0$ is increasing in $x$, so by Neyman--Pearson the
+maximizer is the \emph{one-sided} upper tail $[\tau',\infty)$, and the symmetric set is strictly
+sub-optimal for that objective.  The conclusion below is nevertheless correct; here is an argument
+that actually delivers it.
+
+Let $A_+$ and $A_-$ be the \textsc{adapt} and \textsc{freeze} regions and write
+$p:=\Pr_0(A_+)$, $q:=\Pr_0(A_-)$, so that the abstention constraint reads
+$\mathrm{commit}_0=p+q\le\alpha$.  These are two \emph{separate} one-sided testing problems that
+share a single type-I budget.  Apply Neyman--Pearson to each side individually: among all sets of
+$P_0$-measure $p$, the one maximizing $P_{+\Delta}$-mass is the upper tail
+$[\,t\,\Phi^{-1}(1-p),\infty)$, so
+$\mathrm{miss}_+\le\alpha$ forces
+$\Delta/t\ \ge\ z_{1-\alpha}+\Phi^{-1}(1-p)$, and symmetrically
+$\Delta/t\ \ge\ z_{1-\alpha}+\Phi^{-1}(1-q)$.
+Any rule must satisfy both, i.e.\
 \[
-  2\Phi(-\tau/t)\le\alpha\quad\Longrightarrow\quad \tau\ge z_{1-\alpha/2}\,t,
+  \Delta/t\ \ge\ z_{1-\alpha}+\max\{\Phi^{-1}(1-p),\,\Phi^{-1}(1-q)\}.
 \]
-and simultaneously $\Phi\bigl((\tau-\Delta)/t\bigr)\le\alpha$, i.e.\
-$(\Delta-\tau)/t\ge z_\alpha$.  Combining,
+Since $\Phi^{-1}(1-\cdot)$ is decreasing, the right-hand side is minimized over the budget set
+$\{p+q\le\alpha,\ p,q\ge0\}$ at $p=q=\alpha/2$, giving
 \[
-  \Delta/t\;\ge\;z_\alpha+z_{1-\alpha/2}
+  \Delta/t\;\ge\;z_{1-\alpha}+z_{1-\alpha/2}
   \quad\Longleftrightarrow\quad
-  n\;\ge\;\Bigl(\tfrac{\sigma\,(z_\alpha+z_{1-\alpha/2})}{\Delta}\Bigr)^2
-  \;=\;\kappa(\alpha)\,n_{\mathrm{opt}}.
+  n\;\ge\;\Bigl(\tfrac{\sigma\,(z_{1-\alpha}+z_{1-\alpha/2})}{\Delta}\Bigr)^2
+  \;=\;\kappa(\alpha)\,n_{\mathrm{opt}},
 \]
+where throughout $z_{1-x}:=\Phi^{-1}(1-x)$ (see the notation note below).
 Hence $n^\star_{3}\ge\kappa(\alpha)\,n_{\mathrm{opt}}$.
 
-\emph{Step 2 (randomization).}  Step~1 used only that $\mathrm{commit}_0\le\alpha$ and
-$\mathrm{miss}_+\le\alpha$; the MLR argument applies to the \emph{averaged} commit indicator
-$\Pr(g=\textsc{adapt or freeze}\mid\bar X=x)$, which is a measurable function in $[0,1]$.
-The extremal commit profile at fixed $\Pr_0(C)=\alpha$ is a symmetric interval complement; any
-randomized mixture of commit regions has the same or larger $\mathrm{miss}_+$ at fixed
-$\mathrm{commit}_0$ by convexity of the Gaussian tail probabilities.  Thus no randomized rule
-beats the symmetric band.
+\emph{Step 2 (randomization).}  The budget-split argument of Step~1 is already stated for
+arbitrary measurable commit profiles: replace the indicator of $A_\pm$ by a randomized test
+function $\psi_\pm:\R\to[0,1]$, set $p:=\E_0\psi_+$, $q:=\E_0\psi_-$, and apply the randomized
+Neyman--Pearson lemma on each side.  The extremal randomized test at a given $P_0$-level is again
+a (possibly boundary-randomized) one-sided tail, so the same two inequalities hold verbatim and
+the same minimization over $p+q\le\alpha$ applies.  No randomized rule beats the symmetric band.
 
 \emph{Step 3 (impossibility at $4n_{\mathrm{opt}}$).}  At $n=4n_{\mathrm{opt}}$ one has
-$\Delta/t=2z_\alpha$.  Step~1 requires $z_\alpha+z_{1-\alpha/2}\le2z_\alpha$, i.e.\
-$z_{1-\alpha/2}\le z_\alpha$.  But $z_{1-\alpha/2}>z_\alpha$ for every $\alpha\in(0,\tfrac12)$,
+$\Delta/t=2z_{1-\alpha}$.  Step~1 requires $z_{1-\alpha}+z_{1-\alpha/2}\le2z_{1-\alpha}$, i.e.\
+$z_{1-\alpha/2}\le z_{1-\alpha}$.  But $z_{1-\alpha/2}>z_{1-\alpha}$ for every $\alpha\in(0,\tfrac12)$,
 so the inequality fails: no $\alpha$-certifying rule exists at $n=4n_{\mathrm{opt}}$.  Since
-$\kappa(\alpha)=(1+z_{1-\alpha/2}/z_\alpha)^2>4$ for every finite $\alpha$, the ratio
+$\kappa(\alpha)=(1+z_{1-\alpha/2}/z_{1-\alpha})^2>4$ for every finite $\alpha$, the ratio
 $\kappa(\alpha)/4>1$ cannot be closed to $1$ --- it is a theorem of impossibility, not an open
 constant gap.
 \end{proof}

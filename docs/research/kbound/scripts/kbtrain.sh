@@ -1,11 +1,29 @@
 #!/usr/bin/env bash
 # Foolproof K-Bound training launcher. Run from ANY folder, e.g.:
-#   bash /Volumes/T9/uav/AutoML_Flagship_V8/docs/research/kbound/scripts/kbtrain.sh noise
+#   bash "$KB_REPO_ROOT"/docs/research/kbound/scripts/kbtrain.sh noise
 #
 # It always: cd's to the repo, activates ~/.venv_wilds (the one WITH torch+wilds),
 # sets TMPDIR/TORCH_HOME to T9, wraps in caffeinate, and verifies the venv first.
+# --- external (git-excluded) data volume: ONE documented variable, no default.
+# --- defect D8: portable roots. No machine-local absolute paths in tracked code
+# --- (docs/research/kbound/EXTERNAL_STORAGE_POLICY.md). KB_REPO_ROOT is discovered
+# --- from this script's own location; override with KBOUND_REPO_ROOT.
+_kb_find_root() {
+  d=$(cd "$(dirname "${BASH_SOURCE[0]:-$0}")" && pwd)
+  while [ "$d" != "/" ]; do
+    [ -f "$d/pyproject.toml" ] && { printf '%s\n' "$d"; return 0; }
+    d=$(dirname "$d")
+  done
+  echo "ERROR: repository root not found above $(dirname "${BASH_SOURCE[0]:-$0}")" >&2
+  return 1
+}
+KB_REPO_ROOT="${KBOUND_REPO_ROOT:-$(_kb_find_root)}" || exit 1
+
+: "${KBOUND_EXTERNAL_ROOT:?set KBOUND_EXTERNAL_ROOT to the volume holding the git-excluded datasets/checkpoints/caches (layout: docs/research/kbound/kbound_repro/paths.py, acquisition: DATA.md)}"
+KB_EXTERNAL_ROOT="$KBOUND_EXTERNAL_ROOT"
+
 set -uo pipefail
-REPO=/Volumes/T9/uav/AutoML_Flagship_V8
+REPO="$KB_REPO_ROOT"
 VENV="$HOME/.venv_wilds"
 IC=experiments/kbound/data/imagenet-c
 IC_FAST="$HOME/kbound_inc"            # fast internal-SSD copy of ImageNet-C noise (prep_internal_noise.sh)
@@ -27,7 +45,7 @@ KGA_ELARA=src/scripts/kbound/run_kga_elara_integration.py
 cd "$REPO" || { echo "ERROR: repo not found at $REPO"; exit 1; }
 [ -d "$VENV" ] || { echo "ERROR: $VENV missing. Create it once with run_wilds.sh"; exit 1; }
 source "$VENV/bin/activate"
-export TMPDIR=/Volumes/T9/uav/tmp TORCH_HOME=/Volumes/T9/uav/torch_cache
+export TMPDIR="$KB_EXTERNAL_ROOT/tmp" TORCH_HOME="$KB_EXTERNAL_ROOT/torch_cache"
 mkdir -p "$TMPDIR" "$TORCH_HOME"
 python -c "import torch, wilds" 2>/dev/null || { echo "ERROR: wrong venv (torch/wilds missing). Expected $VENV"; exit 1; }
 echo ">> repo=$REPO  venv=$VENV  job=${1:-<none>}"

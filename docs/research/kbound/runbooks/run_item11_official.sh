@@ -9,8 +9,22 @@
 #            no guessed flags — no fabricated protocol).
 #   Phase C: if decisions exist -> official_baselines_headtohead.py (Holm, CIs, FA_u).
 # Monitor:  tail -f experiments/kbound/results/official_repro_v1/item11.log
+# --- defect D8: portable roots. No machine-local absolute paths in tracked code
+# --- (docs/research/kbound/EXTERNAL_STORAGE_POLICY.md). KB_REPO_ROOT is discovered
+# --- from this script's own location; override with KBOUND_REPO_ROOT.
+_kb_find_root() {
+  d=$(cd "$(dirname "${BASH_SOURCE[0]:-$0}")" && pwd)
+  while [ "$d" != "/" ]; do
+    [ -f "$d/pyproject.toml" ] && { printf '%s\n' "$d"; return 0; }
+    d=$(dirname "$d")
+  done
+  echo "ERROR: repository root not found above $(dirname "${BASH_SOURCE[0]:-$0}")" >&2
+  return 1
+}
+KB_REPO_ROOT="${KBOUND_REPO_ROOT:-$(_kb_find_root)}" || exit 1
+
 set -u
-R="$HOME/Documents/AutoML_Flagship_V8"
+R="$KB_REPO_ROOT"
 A="$R/AETTA"
 K="$R/docs/research/kbound"
 OUT="$R/experiments/kbound/results/official_repro_v1"

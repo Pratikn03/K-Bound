@@ -12,6 +12,58 @@ pip install -r requirements.lock.txt          # numpy, scikit-learn, matplotlib 
 ```
 A `Dockerfile` at the repo root pins the full environment for GPU re-runs.
 
+### 0a. Disclosure: the committed multi-seed runs were NOT produced under one environment
+
+Read this before treating any across-seed spread in this project as seed variance. It is not:
+some of it is toolchain variance. Scanned from the 43 committed `result_manifest.json` files
+(fix-queue item 19; F4-6, F4-14; `NUMBERS_PACK.md §7.3`).
+
+**CIFAR-10-C stress grid — three distinct stacks across five seeds:**
+
+| seed | git hash | Python | torch | numpy | finished |
+|---|---|---|---|---|---|
+| **0** | `4896181799ad` | **3.12.13** | **2.5.1** | **2.4.6** | 2026-07-02 |
+| 1 | `6a237ed489c3` | 3.14.3 | 2.12.0 | 2.4.4 | 2026-06-11 |
+| 2 | `6a237ed489c3` | 3.14.3 | 2.12.0 | 2.4.4 | 2026-06-12 |
+| 3 | `6a237ed489c3` | 3.14.3 | 2.12.0 | 2.4.4 | 2026-06-12 |
+| **4** | **`571c89f25989`** | 3.14.3 | 2.12.0 | 2.4.4 | 2026-06-12 |
+
+**ImageNet-C — two stacks across seeds 1-4, and seed 0 comes from a third:**
+
+| seed | git hash | Python | torch | numpy | finished |
+|---|---|---|---|---|---|
+| **0** (via `win_hunt_v5/imagenetc_aggr/`) | `87bf90aaadce` | **3.12.13** | **2.5.1** | **2.4.6** | 2026-07-09 |
+| 1, 2 | `27a7e977f033` | 3.9.23 | 2.8.0 | 2.0.2 | 2026-07-15/16 |
+| 3, 4 | `1adea4515b8c` | 3.9.23 | 2.8.0 | 2.0.2 | 2026-07-16 |
+
+Four further facts, all verified:
+
+1. **ImageNet-C seed 0's `argv` omits `--severities 1 3 5` and `--max-images 4000`**, both present
+   for seeds 1-4. Seed 0 is not the same experiment as seeds 1-4.
+2. `pooled_5seed/per_condition_imagenetc_sar_seed0.json` is **md5-identical**
+   (`8b655a29360a23ca6fa9f5658f91d95a`) to
+   `win_hunt_v5/imagenetc_aggr/per_condition_imagenetc_sar_seed0.json`, so the pooled tree's seed 0
+   is a copy of the older run, not a re-run under the seeds-1-4 stack.
+3. **`pooled_5seed/` has no `result_manifest.json` at all** — the aggregate that carries the
+   ImageNet-C headline records no environment.
+4. **0 of 43 run manifests record a scikit-learn version.** `b_hat` comes from
+   `GradientBoostingRegressor(subsample=0.8)`, so ε and therefore *every decision* is
+   scikit-learn-version-dependent. An independent recompute reproduced the shipped `b_hat` at
+   correlation 0.999996-1.000000 but **not bit-for-bit**, which is exactly the signature of an
+   unpinned estimator.
+
+**What this permits and forbids.**
+*Permitted:* reporting the five seeds as five runs, and reporting their spread as an upper bound on
+seed variance. *Forbidden:* calling it a five-seed variance estimate, or attributing any seed-0
+outlier to the seed. The CIFAR-10-C SAR quarantine (`CIFAR10C_SAR_QUARANTINE.md`) is the concrete
+instance: seed 0's harmful base rate is 0.53 against ~0.10 on seeds 1-4, and seed 0 is also the one
+seed on a different Python, torch and commit. Those two facts cannot be separated from the release.
+
+**To close this properly:** re-run seed 0 under the seeds-1-4 stack with the seeds-1-4 `argv`; add
+`scikit_learn` to the recorded environment in `result_manifest.json`; add a
+`result_manifest.json` to `pooled_5seed/`. Until then every multi-seed claim in the paper must
+carry a footnote pointing here.
+
 ## 1. One-command verification (CPU, seconds)
 ```
 python3 docs/research/kbound/scripts/reproduce_headlines.py
@@ -25,6 +77,17 @@ Exits 0 iff all checks PASS. It:
   locked artifacts (`results_source.json`, `research_lock/KBOUND_MIXED_STREAM_v2.json`,
   `recon_results.json`, `.../imagenetc_aggr/decisive_tta_results.json`).
 
+> **Known failures of this script as of 2026-07-26 — do not report a green run as a clean bill.**
+> - `recon_results.json` **does not exist** in this release. The Camelyon17 check either skips or
+>   must be repointed at `research_lock/CAMELYON17_PROTOCOL_G_RECONCILED_v2.yaml:29`, which carries
+>   the regret triple but **not** the promoted `FA_u = 0`. See `SUBMISSION_LEDGER.md §8`.
+> - `.../imagenetc_aggr/decisive_tta_results.json`'s sibling `checkpoint.json` is a NUL-filled
+>   iCloud placeholder (`PLACEHOLDER_INVENTORY.md`, group D).
+> - The ImageNet-C SAR number this script confirms is the **in-pool** value 0.0264. Under the
+>   2026-07-26 leave-one-out-of-pool radius fix it is 0.0289 with FA_u 1/135
+>   (`SUBMISSION_LEDGER.md §9`). A check that passes against the old constant is checking the wrong
+>   constant.
+
 ## 2. Locked artifacts (CI-confirmed headlines)
 | Result | Artifact |
 |--------|----------|
@@ -34,7 +97,13 @@ Exits 0 iff all checks PASS. It:
 | Three-source mixture (constructed) | `research_lock/KBOUND_MIXED_STREAM_v2.json` |
 | Anytime streaming | label-informed offline diagnostic only; not promoted as label-free evidence |
 | Exact-rank ablations | `experiments/kbound/results/ablation_exactrank.json` (input SHAs inside) |
-| Controller cost profile | `experiments/kbound/results/cost_profile.json` |
+| Controller cost profile | `experiments/kbound/results/cost_profile.json` — **NUL-filled placeholder, unreadable** |
+| Camelyon17 OOD | **sealed but not recomputable**; `research_lock/CAMELYON17_PROTOCOL_G_RECONCILED_v2.yaml:29` only |
+
+> `cost_profile.json` and `ablation_{alpha,dropout,estimator,transfer}.json` are iCloud
+> placeholders with zero readable bytes. The published cost and ablation tables therefore cannot be
+> re-derived from this release. Full census and recovery command:
+> `PLACEHOLDER_INVENTORY.md`.
 
 ## 3. Re-run from logged data (no raw images, seconds each)
 ```

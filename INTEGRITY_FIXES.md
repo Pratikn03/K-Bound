@@ -1,5 +1,19 @@
 # Integrity Fixes Log — 2026-06-14
 
+> **SUPERSEDED BY `docs/research/kbound/SUBMISSION_LEDGER.md` §7 and §11.**
+> Retained as a dated historical record of the fixes applied on 2026-06-14. It is **not** a current
+> statement of project status.
+> - The artifacts it produced under
+>   `experiments/kbound/theory_validation/frontier_decisive/**` are now NUL-filled iCloud
+>   placeholders, so the runs recorded here cannot be re-verified from this release
+>   (`docs/research/kbound/PLACEHOLDER_INVENTORY.md`, group F).
+> - Its item 5 ("Camelyon17 natural-shift win") describes a debug-scale recalibration that was
+>   later **withdrawn**: the Protocol-G pooled beats-both is KB-CLAIM-022, `status="withdrawn"`,
+>   root cause `in_sample_radius` + a pooled `id_val` split. Current Camelyon17 status:
+>   `SUBMISSION_LEDGER.md §8a`.
+>
+> Stamped 2026-07-26.
+
 > Redaction note (2026-07-03): the name of the legacy companion project is redacted as
 > "legacy-project" throughout, for the standalone public release. No finding altered.
 

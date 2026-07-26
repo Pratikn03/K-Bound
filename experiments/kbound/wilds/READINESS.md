@@ -51,7 +51,7 @@ Camelyon17 K-Bound DEBUG grid LAUNCHED on MPS.
 
 **SAR resume command** (run after the Camelyon run finishes / GPU freed; resumes from checkpoint):
 ```bash
-cd /Volumes/T9/uav/AutoML_Flagship_V8
+cd "$KBOUND_REPO_ROOT"        # set KBOUND_REPO_ROOT to your checkout
 PYTORCH_ENABLE_MPS_FALLBACK=1 caffeinate -is ~/.venv_wilds/bin/python \
   docs/research/kbound/scripts/cifar_tent_mps_v2.py --benchmarks imagenetc \
   --imagenetc-root experiments/kbound/data/imagenet-c \

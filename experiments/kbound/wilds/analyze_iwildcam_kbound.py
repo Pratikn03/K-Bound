@@ -20,12 +20,19 @@ VERDICT
   beats_both  = KGA regret-to-oracle < BOTH always-adapt and always-freeze on TARGET.
 """
 from __future__ import annotations
-import argparse, json
+import argparse, json, os, sys
 from pathlib import Path
 import numpy as np
 from sklearn.ensemble import GradientBoostingRegressor
 from sklearn.model_selection import KFold
 from sklearn.metrics import f1_score, balanced_accuracy_score
+
+# ---- the ONE K-Bound radius / false-adapt definition (fix-queue items 4, 28) --
+_REPO_ROOT = os.path.abspath(os.path.join(os.path.dirname(os.path.abspath(__file__)), *[os.pardir] * 3))
+_KB_SCRIPTS = os.path.join(_REPO_ROOT, "docs", "research", "kbound", "scripts")
+if _KB_SCRIPTS not in sys.path:
+    sys.path.insert(0, _KB_SCRIPTS)
+import kbound_decide as _kb  # noqa: E402
 
 ALPHA = 0.10
 THR = 0.02
@@ -91,7 +98,33 @@ def _auc(score, label):
 
 
 def fit_certificate(Z, B, alpha=ALPHA, seed=0):
-    """Fit Z->B on SOURCE; cross-conformal eps from source CV residuals."""
+    """Fit Z->B on SOURCE; cross-conformal eps from source CV residuals.
+
+    FIX-QUEUE ITEM 4 does not bite here -- the radius pool is the SOURCE (id_val)
+    split and the cells it scores are TARGET (val/test) cells, so the scored cell
+    is never in its own pool.  What DID need fixing is the *rule*: the radius was
+    ``float(np.quantile(res, 1 - alpha))``, numpy's interpolated quantile, which
+    is not an observed order statistic and does not satisfy the finite-sample
+    rank argument.  It is now the exact split-conformal rank quantile
+    ``eps = res_(k)``, ``k = ceil((n+1)(1-alpha))``, via
+    ``kbound_decide.conformal_radius`` -> ``kga.certificate`` (fix-queue item 15),
+    so this track uses the same rule as every other track.
+
+    INFEASIBLE AT THIS n -- read before quoting any number from this script.
+    At the source sizes used here (n < 9 at alpha = 0.10) ``k > n``, so no finite
+    radius attains 1-alpha.  There is no longer a clamp to fall back on (defect
+    D9 removed ``clamp="min_n"`` from ``kbound_decide`` so that it implements the
+    same single rule as the shipped ``kga`` library): ``conformal_radius``
+    returns ``+inf`` with a ``UserWarning`` and **every cell ABSTAINs**.
+
+    The archived iWildCam row (N = 72, 1 ADAPT, 60 FREEZE, 11 ABSTAIN;
+    ``NUMBERS_PACK.md`` sec. 5.2) was produced under the superseded clamped
+    radius ``r_(n)``, whose attained coverage is n/(n+1) < 1-alpha.  It is
+    therefore *not* reproducible under the rule the paper declares, and this
+    function will no longer reproduce it.  Either enlarge the source calibration
+    split past ``kga.certificate.min_calibration_size(alpha)`` or report the
+    track as uncertifiable at alpha = 0.10 -- do not re-enable the clamp.
+    """
     Z = np.asarray(Z, float); B = np.asarray(B, float); n = len(B)
     res = np.zeros(n)
     if n >= 4:
@@ -100,7 +133,7 @@ def fit_certificate(Z, B, alpha=ALPHA, seed=0):
             m = GradientBoostingRegressor(n_estimators=250, max_depth=2, learning_rate=0.05,
                                           subsample=0.8, random_state=seed).fit(Z[tr], B[tr])
             res[te] = np.abs(m.predict(Z[te]) - B[te])
-        eps = float(np.quantile(res, 1 - alpha))
+        eps = float(_kb.conformal_radius(res, alpha))
     else:
         eps = float(np.std(B) + 1e-6)
     full = GradientBoostingRegressor(n_estimators=250, max_depth=2, learning_rate=0.05,
@@ -109,27 +142,49 @@ def fit_certificate(Z, B, alpha=ALPHA, seed=0):
 
 
 def policy(dec, a0, aa, B, alpha=ALPHA):
+    """FIX-QUEUE ITEM 28 -- ONE definition of false-adapt, and the right one gates.
+
+    The old ``beats_both`` gate was ``float(np.mean(B[adapt] < 0)) <= alpha``:
+    the rate *conditional* on ADAPT, with a *strict* inequality.  Neither half is
+    what ``thm:certificate`` bounds.  The theorem controls the MARGINAL rate
+    ``Pr[ADAPT and B <= 0]``; the conditional rate is a different, larger
+    quantity, and the strict ``< 0`` exempts ties (500 archived cells have B
+    exactly 0.0 and 102 of them ADAPT -- an ADAPT on B == 0 obtained no strict
+    benefit, so it is a false adapt).  ``fa_u`` and ``fa_c`` are now separate
+    named fields from ``kbound_decide.false_adapt``, the gate uses ``fa_u``, and
+    the legacy conditional-strict field is retained for artifact diffability only.
+    """
     a0 = np.asarray(a0, float); aa = np.asarray(aa, float); B = np.asarray(B, float)
     dec = np.asarray(dec)
     adapt = dec == "ADAPT"
     realized = np.where(adapt, aa, a0)
     oracle = np.maximum(a0, aa)
     rk = float((oracle - realized).mean()); ra = float((oracle - aa).mean()); rf = float((oracle - a0).mean())
+    _fa = _kb.false_adapt(dec, B)
     return {
         "n": int(len(a0)),
         "decision_counts": {d: int((dec == d).sum()) for d in ["ADAPT", "FREEZE", "ABSTAIN"]},
         "mean_F1": {"always_adapt": float(aa.mean()), "always_freeze": float(a0.mean()),
                     "K_Bound": float(realized.mean()), "oracle": float(oracle.mean())},
         "regret_vs_oracle": {"always_adapt": ra, "always_freeze": rf, "K_Bound": rk},
-        "false_adapt_count": int(np.sum(adapt & (B < 0))),
+        # ---- fix-queue item 28: the two rates, named, never interchanged ----
+        "false_adapt_unconditional": _fa["fa_u"],   # Pr[ADAPT and B <= 0] (thm:certificate)
+        "false_adapt_conditional": _fa["fa_c"],     # Pr[B <= 0 | ADAPT]
+        "false_adapt_count": _fa["n_false_adapt"],
+        "false_adapt_definition":
+            "false adapt := ADAPT and B <= 0; fa_u marginal (bounded by thm:certificate), "
+            "fa_c conditional",
         "adapt_count": int(adapt.sum()),
+        # DEPRECATED (conditional AND strict). Gates nothing.
         "false_adapt_rate_among_adapt": (float(np.mean(B[adapt] < 0)) if adapt.any() else None),
         "worst_case_F1": {"always_adapt": float(aa.min()), "always_freeze": float(a0.min()),
                           "K_Bound": float(realized.min())},
         "alpha_false_adapt_budget": float(alpha),
         "beats_both_regret_only": bool(rk < ra - 1e-9 and rk < rf - 1e-9),
         "beats_both": bool(rk < ra - 1e-9 and rk < rf - 1e-9
-                           and adapt.any() and float(np.mean(B[adapt] < 0)) <= alpha),
+                           and adapt.any() and float(_fa["fa_u"]) <= alpha),
+        "beats_both_gate": "regret vs both fixed policies AND fa_u <= alpha "
+                           "(fa_u = Pr[ADAPT and B <= 0])",
     }
 
 

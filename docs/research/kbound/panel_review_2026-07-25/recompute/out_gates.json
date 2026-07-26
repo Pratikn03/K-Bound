@@ -1,0 +1,1172 @@
+{
+ "seed0": {
+  "artifact": "experiments/kbound/results/mixed_headtohead_v1/per_condition_cifar10c_tent_primary_kga_seed0.json",
+  "n": 432,
+  "n_harmful": 146,
+  "eps_interp": 0.021442435176256835,
+  "eps_exact": 0.02165530668277449,
+  "rules": {
+   "confidence gate": {
+    "calibration": "unfitted sign rule (no calibration at all)",
+    "all": {
+     "n": 432,
+     "regret": 0.008232639343650252,
+     "FA_u": 0.2523148148148148,
+     "FA_num": 109,
+     "FA_c": 0.296195652173913,
+     "coverage": 1.0,
+     "adapt_rate": 0.8518518518518519,
+     "n_adapt": 368,
+     "cp95_upper_FA_c": 0.3378390191631548
+    },
+    "harmful_subset": {
+     "n": 146,
+     "regret": 0.02305822013175651,
+     "FA_u": 0.7465753424657534,
+     "FA_num": 109,
+     "FA_c": 1.0,
+     "coverage": 1.0,
+     "adapt_rate": 0.7465753424657534,
+     "n_adapt": 109,
+     "cp95_upper_FA_c": 1.0
+    }
+   },
+   "entropy gate": {
+    "calibration": "unfitted sign rule (no calibration at all)",
+    "all": {
+     "n": 432,
+     "regret": 0.00837152823805809,
+     "FA_u": 0.25,
+     "FA_num": 108,
+     "FA_c": 0.2983425414364641,
+     "coverage": 1.0,
+     "adapt_rate": 0.8379629629629629,
+     "n_adapt": 362,
+     "cp95_upper_FA_c": 0.3404184153008211
+    },
+    "harmful_subset": {
+     "n": 146,
+     "regret": 0.023054795314187873,
+     "FA_u": 0.7397260273972602,
+     "FA_num": 108,
+     "FA_c": 1.0,
+     "coverage": 1.0,
+     "adapt_rate": 0.7397260273972602,
+     "n_adapt": 108,
+     "cp95_upper_FA_c": 1.0
+    }
+   },
+   "drift/KL gate": {
+    "calibration": "leave-one-CORRUPTION-out threshold (6 folds)",
+    "all": {
+     "n": 432,
+     "regret": 0.1239907401441424,
+     "FA_u": 0.0,
+     "FA_num": 0,
+     "FA_c": null,
+     "coverage": 1.0,
+     "adapt_rate": 0.0,
+     "n_adapt": 0,
+     "cp95_upper_FA_c": null
+    },
+    "harmful_subset": {
+     "n": 146,
+     "regret": 0.0,
+     "FA_u": 0.0,
+     "FA_num": 0,
+     "FA_c": null,
+     "coverage": 1.0,
+     "adapt_rate": 0.0,
+     "n_adapt": 0,
+     "cp95_upper_FA_c": null
+    }
+   },
+   "ATC-style gate": {
+    "calibration": "leave-one-CORRUPTION-out isotonic (6 folds)",
+    "all": {
+     "n": 432,
+     "regret": 0.0035358794309474804,
+     "FA_u": 0.1087962962962963,
+     "FA_num": 47,
+     "FA_c": 0.16095890410958905,
+     "coverage": 1.0,
+     "adapt_rate": 0.6759259259259259,
+     "n_adapt": 292,
+     "cp95_upper_FA_c": 0.20059480369058846
+    },
+    "harmful_subset": {
+     "n": 146,
+     "regret": 0.007811642672917615,
+     "FA_u": 0.3219178082191781,
+     "FA_num": 47,
+     "FA_c": 1.0,
+     "coverage": 1.0,
+     "adapt_rate": 0.3219178082191781,
+     "n_adapt": 47,
+     "cp95_upper_FA_c": 1.0
+    }
+   },
+   "KGA (no radius)": {
+    "calibration": "leave-one-CELL-out GBR (431 fits), no radius",
+    "all": {
+     "n": 432,
+     "regret": 0.00037499986313007495,
+     "FA_u": 0.046296296296296294,
+     "FA_num": 20,
+     "FA_c": 0.0684931506849315,
+     "coverage": 1.0,
+     "adapt_rate": 0.6759259259259259,
+     "n_adapt": 292,
+     "cp95_upper_FA_c": 0.09797405773898492
+    },
+    "harmful_subset": {
+     "n": 146,
+     "regret": 0.0008732868384008539,
+     "FA_u": 0.136986301369863,
+     "FA_num": 20,
+     "FA_c": 1.0,
+     "coverage": 1.0,
+     "adapt_rate": 0.136986301369863,
+     "n_adapt": 20,
+     "cp95_upper_FA_c": 1.0
+    }
+   },
+   "KGA (certificate, interp eps)": {
+    "calibration": "leave-one-CELL-out GBR (431 fits) + in-pool interpolated eps=0.02144",
+    "all": {
+     "n": 432,
+     "regret": 0.0013055555798389294,
+     "FA_u": 0.0,
+     "FA_num": 0,
+     "FA_c": 0.0,
+     "coverage": 0.6898148148148148,
+     "adapt_rate": 0.5231481481481481,
+     "n_adapt": 226,
+     "cp95_upper_FA_c": 0.013167985923235872
+    },
+    "harmful_subset": {
+     "n": 146,
+     "regret": 0.0,
+     "FA_u": 0.0,
+     "FA_num": 0,
+     "FA_c": null,
+     "coverage": 0.4931506849315068,
+     "adapt_rate": 0.0,
+     "n_adapt": 0,
+     "cp95_upper_FA_c": null
+    }
+   },
+   "KGA (certificate, exact-rank eps)": {
+    "calibration": "leave-one-CELL-out GBR (431 fits) + in-pool exact-rank eps=0.02166",
+    "all": {
+     "n": 432,
+     "regret": 0.0013055555798389294,
+     "FA_u": 0.0,
+     "FA_num": 0,
+     "FA_c": 0.0,
+     "coverage": 0.6898148148148148,
+     "adapt_rate": 0.5231481481481481,
+     "n_adapt": 226,
+     "cp95_upper_FA_c": 0.013167985923235872
+    },
+    "harmful_subset": {
+     "n": 146,
+     "regret": 0.0,
+     "FA_u": 0.0,
+     "FA_num": 0,
+     "FA_c": null,
+     "coverage": 0.4931506849315068,
+     "adapt_rate": 0.0,
+     "n_adapt": 0,
+     "cp95_upper_FA_c": null
+    }
+   },
+   "KGA (certificate, leave-one-CORRUPTION-out)": {
+    "calibration": "leave-one-CORRUPTION-out GBR (6 folds, SAME budget as gates 3-4) + eps=0.09219",
+    "all": {
+     "n": 432,
+     "regret": 0.005495370124225263,
+     "FA_u": 0.0,
+     "FA_num": 0,
+     "FA_c": 0.0,
+     "coverage": 0.4166666666666667,
+     "adapt_rate": 0.4166666666666667,
+     "n_adapt": 180,
+     "cp95_upper_FA_c": 0.016505228195662733
+    },
+    "harmful_subset": {
+     "n": 146,
+     "regret": 0.0,
+     "FA_u": 0.0,
+     "FA_num": 0,
+     "FA_c": null,
+     "coverage": 0.0,
+     "adapt_rate": 0.0,
+     "n_adapt": 0,
+     "cp95_upper_FA_c": null
+    }
+   },
+   "KGA (no radius, leave-one-CORRUPTION-out)": {
+    "calibration": "leave-one-CORRUPTION-out GBR (6 folds), no radius",
+    "all": {
+     "n": 432,
+     "regret": 0.00047453699840439693,
+     "FA_u": 0.046296296296296294,
+     "FA_num": 20,
+     "FA_c": 0.06779661016949153,
+     "coverage": 1.0,
+     "adapt_rate": 0.6828703703703703,
+     "n_adapt": 295,
+     "cp95_upper_FA_c": 0.09699344308020533
+    },
+    "harmful_subset": {
+     "n": 146,
+     "regret": 0.0010273962804715926,
+     "FA_u": 0.136986301369863,
+     "FA_num": 20,
+     "FA_c": 1.0,
+     "coverage": 1.0,
+     "adapt_rate": 0.136986301369863,
+     "n_adapt": 20,
+     "cp95_upper_FA_c": 1.0
+    }
+   }
+  }
+ },
+ "seed1": {
+  "artifact": "experiments/kbound/results/mixed_headtohead_v1/per_condition_cifar10c_tent_primary_kga_seed1.json",
+  "n": 432,
+  "n_harmful": 145,
+  "eps_interp": 0.019934344818493304,
+  "eps_exact": 0.02004137286254093,
+  "rules": {
+   "confidence gate": {
+    "calibration": "unfitted sign rule (no calibration at all)",
+    "all": {
+     "n": 432,
+     "regret": 0.008146990366556027,
+     "FA_u": 0.24768518518518517,
+     "FA_num": 107,
+     "FA_c": 0.29395604395604397,
+     "coverage": 1.0,
+     "adapt_rate": 0.8425925925925926,
+     "n_adapt": 364,
+     "cp95_upper_FA_c": 0.33576853722566335
+    },
+    "harmful_subset": {
+     "n": 145,
+     "regret": 0.022644826872595426,
+     "FA_u": 0.7379310344827587,
+     "FA_num": 107,
+     "FA_c": 1.0,
+     "coverage": 1.0,
+     "adapt_rate": 0.7379310344827587,
+     "n_adapt": 107,
+     "cp95_upper_FA_c": 1.0
+    }
+   },
+   "entropy gate": {
+    "calibration": "unfitted sign rule (no calibration at all)",
+    "all": {
+     "n": 432,
+     "regret": 0.008254629318360929,
+     "FA_u": 0.24537037037037038,
+     "FA_num": 106,
+     "FA_c": 0.29444444444444445,
+     "coverage": 1.0,
+     "adapt_rate": 0.8333333333333334,
+     "n_adapt": 360,
+     "cp95_upper_FA_c": 0.33651834703522693
+    },
+    "harmful_subset": {
+     "n": 145,
+     "regret": 0.022624137483794115,
+     "FA_u": 0.7310344827586207,
+     "FA_num": 106,
+     "FA_c": 1.0,
+     "coverage": 1.0,
+     "adapt_rate": 0.7310344827586207,
+     "n_adapt": 106,
+     "cp95_upper_FA_c": 1.0
+    }
+   },
+   "drift/KL gate": {
+    "calibration": "leave-one-CORRUPTION-out threshold (6 folds)",
+    "all": {
+     "n": 432,
+     "regret": 0.12373379445462315,
+     "FA_u": 0.0,
+     "FA_num": 0,
+     "FA_c": null,
+     "coverage": 1.0,
+     "adapt_rate": 0.0,
+     "n_adapt": 0,
+     "cp95_upper_FA_c": null
+    },
+    "harmful_subset": {
+     "n": 145,
+     "regret": 0.0,
+     "FA_u": 0.0,
+     "FA_num": 0,
+     "FA_c": null,
+     "coverage": 1.0,
+     "adapt_rate": 0.0,
+     "n_adapt": 0,
+     "cp95_upper_FA_c": null
+    }
+   },
+   "ATC-style gate": {
+    "calibration": "leave-one-CORRUPTION-out isotonic (6 folds)",
+    "all": {
+     "n": 432,
+     "regret": 0.004570601025113353,
+     "FA_u": 0.12268518518518519,
+     "FA_num": 53,
+     "FA_c": 0.18088737201365188,
+     "coverage": 1.0,
+     "adapt_rate": 0.6782407407407407,
+     "n_adapt": 293,
+     "cp95_upper_FA_c": 0.22195015203897556
+    },
+    "harmful_subset": {
+     "n": 145,
+     "regret": 0.008975861401393496,
+     "FA_u": 0.36551724137931035,
+     "FA_num": 53,
+     "FA_c": 1.0,
+     "coverage": 1.0,
+     "adapt_rate": 0.36551724137931035,
+     "n_adapt": 53,
+     "cp95_upper_FA_c": 1.0
+    }
+   },
+   "KGA (no radius)": {
+    "calibration": "leave-one-CELL-out GBR (431 fits), no radius",
+    "all": {
+     "n": 432,
+     "regret": 0.00025810149532777294,
+     "FA_u": 0.034722222222222224,
+     "FA_num": 15,
+     "FA_c": 0.05154639175257732,
+     "coverage": 1.0,
+     "adapt_rate": 0.6736111111111112,
+     "n_adapt": 291,
+     "cp95_upper_FA_c": 0.07826431664208774
+    },
+    "harmful_subset": {
+     "n": 145,
+     "regret": 0.0005137924490303829,
+     "FA_u": 0.10344827586206896,
+     "FA_num": 15,
+     "FA_c": 1.0,
+     "coverage": 1.0,
+     "adapt_rate": 0.10344827586206896,
+     "n_adapt": 15,
+     "cp95_upper_FA_c": 1.0
+    }
+   },
+   "KGA (certificate, interp eps)": {
+    "calibration": "leave-one-CELL-out GBR (431 fits) + in-pool interpolated eps=0.01993",
+    "all": {
+     "n": 432,
+     "regret": 0.0016307859785026973,
+     "FA_u": 0.0,
+     "FA_num": 0,
+     "FA_c": 0.0,
+     "coverage": 0.6944444444444444,
+     "adapt_rate": 0.5185185185185185,
+     "n_adapt": 224,
+     "cp95_upper_FA_c": 0.013284772806081101
+    },
+    "harmful_subset": {
+     "n": 145,
+     "regret": 0.0,
+     "FA_u": 0.0,
+     "FA_num": 0,
+     "FA_c": null,
+     "coverage": 0.5241379310344828,
+     "adapt_rate": 0.0,
+     "n_adapt": 0,
+     "cp95_upper_FA_c": null
+    }
+   },
+   "KGA (certificate, exact-rank eps)": {
+    "calibration": "leave-one-CELL-out GBR (431 fits) + in-pool exact-rank eps=0.02004",
+    "all": {
+     "n": 432,
+     "regret": 0.0016307859785026973,
+     "FA_u": 0.0,
+     "FA_num": 0,
+     "FA_c": 0.0,
+     "coverage": 0.6944444444444444,
+     "adapt_rate": 0.5185185185185185,
+     "n_adapt": 224,
+     "cp95_upper_FA_c": 0.013284772806081101
+    },
+    "harmful_subset": {
+     "n": 145,
+     "regret": 0.0,
+     "FA_u": 0.0,
+     "FA_num": 0,
+     "FA_c": null,
+     "coverage": 0.5241379310344828,
+     "adapt_rate": 0.0,
+     "n_adapt": 0,
+     "cp95_upper_FA_c": null
+    }
+   },
+   "KGA (certificate, leave-one-CORRUPTION-out)": {
+    "calibration": "leave-one-CORRUPTION-out GBR (6 folds, SAME budget as gates 3-4) + eps=0.09806",
+    "all": {
+     "n": 432,
+     "regret": 0.006260415608132327,
+     "FA_u": 0.0,
+     "FA_num": 0,
+     "FA_c": 0.0,
+     "coverage": 0.41203703703703703,
+     "adapt_rate": 0.41203703703703703,
+     "n_adapt": 178,
+     "cp95_upper_FA_c": 0.016689124048896803
+    },
+    "harmful_subset": {
+     "n": 145,
+     "regret": 0.0,
+     "FA_u": 0.0,
+     "FA_num": 0,
+     "FA_c": null,
+     "coverage": 0.0,
+     "adapt_rate": 0.0,
+     "n_adapt": 0,
+     "cp95_upper_FA_c": null
+    }
+   },
+   "KGA (no radius, leave-one-CORRUPTION-out)": {
+    "calibration": "leave-one-CORRUPTION-out GBR (6 folds), no radius",
+    "all": {
+     "n": 432,
+     "regret": 0.0005578699487226981,
+     "FA_u": 0.05324074074074074,
+     "FA_num": 23,
+     "FA_c": 0.0777027027027027,
+     "coverage": 1.0,
+     "adapt_rate": 0.6851851851851852,
+     "n_adapt": 296,
+     "cp95_upper_FA_c": 0.10828954865697678
+    },
+    "harmful_subset": {
+     "n": 145,
+     "regret": 0.0010931027346643908,
+     "FA_u": 0.15862068965517243,
+     "FA_num": 23,
+     "FA_c": 1.0,
+     "coverage": 1.0,
+     "adapt_rate": 0.15862068965517243,
+     "n_adapt": 23,
+     "cp95_upper_FA_c": 1.0
+    }
+   }
+  }
+ },
+ "seed2": {
+  "artifact": "experiments/kbound/results/mixed_headtohead_v1/per_condition_cifar10c_tent_primary_kga_seed2.json",
+  "n": 432,
+  "n_harmful": 139,
+  "eps_interp": 0.02153021379284946,
+  "eps_exact": 0.02187706201668216,
+  "rules": {
+   "confidence gate": {
+    "calibration": "unfitted sign rule (no calibration at all)",
+    "all": {
+     "n": 432,
+     "regret": 0.007534721935236895,
+     "FA_u": 0.24537037037037038,
+     "FA_num": 106,
+     "FA_c": 0.2896174863387978,
+     "coverage": 1.0,
+     "adapt_rate": 0.8472222222222222,
+     "n_adapt": 366,
+     "cp95_upper_FA_c": 0.3311655244410894
+    },
+    "harmful_subset": {
+     "n": 139,
+     "regret": 0.02172661813900625,
+     "FA_u": 0.762589928057554,
+     "FA_num": 106,
+     "FA_c": 1.0,
+     "coverage": 1.0,
+     "adapt_rate": 0.762589928057554,
+     "n_adapt": 106,
+     "cp95_upper_FA_c": 1.0
+    }
+   },
+   "entropy gate": {
+    "calibration": "unfitted sign rule (no calibration at all)",
+    "all": {
+     "n": 432,
+     "regret": 0.0077997684754707195,
+     "FA_u": 0.24537037037037038,
+     "FA_num": 106,
+     "FA_c": 0.292817679558011,
+     "coverage": 1.0,
+     "adapt_rate": 0.8379629629629629,
+     "n_adapt": 362,
+     "cp95_upper_FA_c": 0.3347150164142527
+    },
+    "harmful_subset": {
+     "n": 139,
+     "regret": 0.02187769747466492,
+     "FA_u": 0.762589928057554,
+     "FA_num": 106,
+     "FA_c": 1.0,
+     "coverage": 1.0,
+     "adapt_rate": 0.762589928057554,
+     "n_adapt": 106,
+     "cp95_upper_FA_c": 1.0
+    }
+   },
+   "drift/KL gate": {
+    "calibration": "leave-one-CORRUPTION-out threshold (6 folds)",
+    "all": {
+     "n": 432,
+     "regret": 0.12393171322980413,
+     "FA_u": 0.0,
+     "FA_num": 0,
+     "FA_c": null,
+     "coverage": 1.0,
+     "adapt_rate": 0.0,
+     "n_adapt": 0,
+     "cp95_upper_FA_c": null
+    },
+    "harmful_subset": {
+     "n": 139,
+     "regret": 0.0,
+     "FA_u": 0.0,
+     "FA_num": 0,
+     "FA_c": null,
+     "coverage": 1.0,
+     "adapt_rate": 0.0,
+     "n_adapt": 0,
+     "cp95_upper_FA_c": null
+    }
+   },
+   "ATC-style gate": {
+    "calibration": "leave-one-CORRUPTION-out isotonic (6 folds)",
+    "all": {
+     "n": 432,
+     "regret": 0.004362268028435884,
+     "FA_u": 0.1111111111111111,
+     "FA_num": 48,
+     "FA_c": 0.16842105263157894,
+     "coverage": 1.0,
+     "adapt_rate": 0.6597222222222222,
+     "n_adapt": 285,
+     "cp95_upper_FA_c": 0.20918398315029949
+    },
+    "harmful_subset": {
+     "n": 139,
+     "regret": 0.00866906377051374,
+     "FA_u": 0.34532374100719426,
+     "FA_num": 48,
+     "FA_c": 1.0,
+     "coverage": 1.0,
+     "adapt_rate": 0.34532374100719426,
+     "n_adapt": 48,
+     "cp95_upper_FA_c": 1.0
+    }
+   },
+   "KGA (no radius)": {
+    "calibration": "leave-one-CELL-out GBR (431 fits), no radius",
+    "all": {
+     "n": 432,
+     "regret": 0.0004386577617239069,
+     "FA_u": 0.05092592592592592,
+     "FA_num": 22,
+     "FA_c": 0.0728476821192053,
+     "coverage": 1.0,
+     "adapt_rate": 0.6990740740740741,
+     "n_adapt": 302,
+     "cp95_upper_FA_c": 0.10238990609172575
+    },
+    "harmful_subset": {
+     "n": 139,
+     "regret": 0.0009820161105917513,
+     "FA_u": 0.15827338129496402,
+     "FA_num": 22,
+     "FA_c": 1.0,
+     "coverage": 1.0,
+     "adapt_rate": 0.15827338129496402,
+     "n_adapt": 22,
+     "cp95_upper_FA_c": 1.0
+    }
+   },
+   "KGA (certificate, interp eps)": {
+    "calibration": "leave-one-CELL-out GBR (431 fits) + in-pool interpolated eps=0.02153",
+    "all": {
+     "n": 432,
+     "regret": 0.0016967589380564513,
+     "FA_u": 0.0,
+     "FA_num": 0,
+     "FA_c": 0.0,
+     "coverage": 0.6759259259259259,
+     "adapt_rate": 0.5092592592592593,
+     "n_adapt": 220,
+     "cp95_upper_FA_c": 0.013524673398400562
+    },
+    "harmful_subset": {
+     "n": 139,
+     "regret": 0.0,
+     "FA_u": 0.0,
+     "FA_num": 0,
+     "FA_c": null,
+     "coverage": 0.5107913669064749,
+     "adapt_rate": 0.0,
+     "n_adapt": 0,
+     "cp95_upper_FA_c": null
+    }
+   },
+   "KGA (certificate, exact-rank eps)": {
+    "calibration": "leave-one-CELL-out GBR (431 fits) + in-pool exact-rank eps=0.02188",
+    "all": {
+     "n": 432,
+     "regret": 0.0016967589380564513,
+     "FA_u": 0.0,
+     "FA_num": 0,
+     "FA_c": 0.0,
+     "coverage": 0.6759259259259259,
+     "adapt_rate": 0.5092592592592593,
+     "n_adapt": 220,
+     "cp95_upper_FA_c": 0.013524673398400562
+    },
+    "harmful_subset": {
+     "n": 139,
+     "regret": 0.0,
+     "FA_u": 0.0,
+     "FA_num": 0,
+     "FA_c": null,
+     "coverage": 0.5107913669064749,
+     "adapt_rate": 0.0,
+     "n_adapt": 0,
+     "cp95_upper_FA_c": null
+    }
+   },
+   "KGA (certificate, leave-one-CORRUPTION-out)": {
+    "calibration": "leave-one-CORRUPTION-out GBR (6 folds, SAME budget as gates 3-4) + eps=0.09922",
+    "all": {
+     "n": 432,
+     "regret": 0.006148148328065872,
+     "FA_u": 0.0,
+     "FA_num": 0,
+     "FA_c": 0.0,
+     "coverage": 0.41435185185185186,
+     "adapt_rate": 0.41435185185185186,
+     "n_adapt": 179,
+     "cp95_upper_FA_c": 0.016596666745133146
+    },
+    "harmful_subset": {
+     "n": 139,
+     "regret": 0.0,
+     "FA_u": 0.0,
+     "FA_num": 0,
+     "FA_c": null,
+     "coverage": 0.0,
+     "adapt_rate": 0.0,
+     "n_adapt": 0,
+     "cp95_upper_FA_c": null
+    }
+   },
+   "KGA (no radius, leave-one-CORRUPTION-out)": {
+    "calibration": "leave-one-CORRUPTION-out GBR (6 folds), no radius",
+    "all": {
+     "n": 432,
+     "regret": 0.0005162040944452639,
+     "FA_u": 0.05555555555555555,
+     "FA_num": 24,
+     "FA_c": 0.07947019867549669,
+     "coverage": 1.0,
+     "adapt_rate": 0.6990740740740741,
+     "n_adapt": 302,
+     "cp95_upper_FA_c": 0.1099435498421415
+    },
+    "harmful_subset": {
+     "n": 139,
+     "regret": 0.0012266207084381323,
+     "FA_u": 0.17266187050359713,
+     "FA_num": 24,
+     "FA_c": 1.0,
+     "coverage": 1.0,
+     "adapt_rate": 0.17266187050359713,
+     "n_adapt": 24,
+     "cp95_upper_FA_c": 1.0
+    }
+   }
+  }
+ },
+ "seed3": {
+  "artifact": "experiments/kbound/results/mixed_headtohead_v1/per_condition_cifar10c_tent_primary_kga_seed3.json",
+  "n": 432,
+  "n_harmful": 144,
+  "eps_interp": 0.020983037437328832,
+  "eps_exact": 0.02114908525840236,
+  "rules": {
+   "confidence gate": {
+    "calibration": "unfitted sign rule (no calibration at all)",
+    "all": {
+     "n": 432,
+     "regret": 0.00786921312963521,
+     "FA_u": 0.25462962962962965,
+     "FA_num": 110,
+     "FA_c": 0.2981029810298103,
+     "coverage": 1.0,
+     "adapt_rate": 0.8541666666666666,
+     "n_adapt": 369,
+     "cp95_upper_FA_c": 0.3397470907198809
+    },
+    "harmful_subset": {
+     "n": 144,
+     "regret": 0.022135416252745524,
+     "FA_u": 0.7638888888888888,
+     "FA_num": 110,
+     "FA_c": 1.0,
+     "coverage": 1.0,
+     "adapt_rate": 0.7638888888888888,
+     "n_adapt": 110,
+     "cp95_upper_FA_c": 1.0
+    }
+   },
+   "entropy gate": {
+    "calibration": "unfitted sign rule (no calibration at all)",
+    "all": {
+     "n": 432,
+     "regret": 0.00792129655127172,
+     "FA_u": 0.2523148148148148,
+     "FA_num": 109,
+     "FA_c": 0.29945054945054944,
+     "coverage": 1.0,
+     "adapt_rate": 0.8425925925925926,
+     "n_adapt": 364,
+     "cp95_upper_FA_c": 0.34143883065481245
+    },
+    "harmful_subset": {
+     "n": 144,
+     "regret": 0.02210763841867447,
+     "FA_u": 0.7569444444444444,
+     "FA_num": 109,
+     "FA_c": 1.0,
+     "coverage": 1.0,
+     "adapt_rate": 0.7569444444444444,
+     "n_adapt": 109,
+     "cp95_upper_FA_c": 1.0
+    }
+   },
+   "drift/KL gate": {
+    "calibration": "leave-one-CORRUPTION-out threshold (6 folds)",
+    "all": {
+     "n": 432,
+     "regret": 0.12392013930474166,
+     "FA_u": 0.0,
+     "FA_num": 0,
+     "FA_c": null,
+     "coverage": 1.0,
+     "adapt_rate": 0.0,
+     "n_adapt": 0,
+     "cp95_upper_FA_c": null
+    },
+    "harmful_subset": {
+     "n": 144,
+     "regret": 0.0,
+     "FA_u": 0.0,
+     "FA_num": 0,
+     "FA_c": null,
+     "coverage": 1.0,
+     "adapt_rate": 0.0,
+     "n_adapt": 0,
+     "cp95_upper_FA_c": null
+    }
+   },
+   "ATC-style gate": {
+    "calibration": "leave-one-CORRUPTION-out isotonic (6 folds)",
+    "all": {
+     "n": 432,
+     "regret": 0.0037395829955736795,
+     "FA_u": 0.125,
+     "FA_num": 54,
+     "FA_c": 0.18181818181818182,
+     "coverage": 1.0,
+     "adapt_rate": 0.6875,
+     "n_adapt": 297,
+     "cp95_upper_FA_c": 0.2226416566734702
+    },
+    "harmful_subset": {
+     "n": 144,
+     "regret": 0.008420137067635855,
+     "FA_u": 0.375,
+     "FA_num": 54,
+     "FA_c": 1.0,
+     "coverage": 1.0,
+     "adapt_rate": 0.375,
+     "n_adapt": 54,
+     "cp95_upper_FA_c": 1.0
+    }
+   },
+   "KGA (no radius)": {
+    "calibration": "leave-one-CELL-out GBR (431 fits), no radius",
+    "all": {
+     "n": 432,
+     "regret": 0.0003819450460098408,
+     "FA_u": 0.032407407407407406,
+     "FA_num": 14,
+     "FA_c": 0.04827586206896552,
+     "coverage": 1.0,
+     "adapt_rate": 0.6712962962962963,
+     "n_adapt": 290,
+     "cp95_upper_FA_c": 0.07444225642200158
+    },
+    "harmful_subset": {
+     "n": 144,
+     "regret": 0.0005868064860502878,
+     "FA_u": 0.09722222222222222,
+     "FA_num": 14,
+     "FA_c": 1.0,
+     "coverage": 1.0,
+     "adapt_rate": 0.09722222222222222,
+     "n_adapt": 14,
+     "cp95_upper_FA_c": 1.0
+    }
+   },
+   "KGA (certificate, interp eps)": {
+    "calibration": "leave-one-CELL-out GBR (431 fits) + in-pool interpolated eps=0.02098",
+    "all": {
+     "n": 432,
+     "regret": 0.0014398147662480671,
+     "FA_u": 0.0,
+     "FA_num": 0,
+     "FA_c": 0.0,
+     "coverage": 0.6828703703703703,
+     "adapt_rate": 0.5162037037037037,
+     "n_adapt": 223,
+     "cp95_upper_FA_c": 0.01334394653317319
+    },
+    "harmful_subset": {
+     "n": 144,
+     "regret": 0.0,
+     "FA_u": 0.0,
+     "FA_num": 0,
+     "FA_c": null,
+     "coverage": 0.5,
+     "adapt_rate": 0.0,
+     "n_adapt": 0,
+     "cp95_upper_FA_c": null
+    }
+   },
+   "KGA (certificate, exact-rank eps)": {
+    "calibration": "leave-one-CELL-out GBR (431 fits) + in-pool exact-rank eps=0.02115",
+    "all": {
+     "n": 432,
+     "regret": 0.0014398147662480671,
+     "FA_u": 0.0,
+     "FA_num": 0,
+     "FA_c": 0.0,
+     "coverage": 0.6828703703703703,
+     "adapt_rate": 0.5162037037037037,
+     "n_adapt": 223,
+     "cp95_upper_FA_c": 0.01334394653317319
+    },
+    "harmful_subset": {
+     "n": 144,
+     "regret": 0.0,
+     "FA_u": 0.0,
+     "FA_num": 0,
+     "FA_c": null,
+     "coverage": 0.5,
+     "adapt_rate": 0.0,
+     "n_adapt": 0,
+     "cp95_upper_FA_c": null
+    }
+   },
+   "KGA (certificate, leave-one-CORRUPTION-out)": {
+    "calibration": "leave-one-CORRUPTION-out GBR (6 folds, SAME budget as gates 3-4) + eps=0.09983",
+    "all": {
+     "n": 432,
+     "regret": 0.005530093003202368,
+     "FA_u": 0.0,
+     "FA_num": 0,
+     "FA_c": 0.0,
+     "coverage": 0.4166666666666667,
+     "adapt_rate": 0.4166666666666667,
+     "n_adapt": 180,
+     "cp95_upper_FA_c": 0.016505228195662733
+    },
+    "harmful_subset": {
+     "n": 144,
+     "regret": 0.0,
+     "FA_u": 0.0,
+     "FA_num": 0,
+     "FA_c": null,
+     "coverage": 0.0,
+     "adapt_rate": 0.0,
+     "n_adapt": 0,
+     "cp95_upper_FA_c": null
+    }
+   },
+   "KGA (no radius, leave-one-CORRUPTION-out)": {
+    "calibration": "leave-one-CORRUPTION-out GBR (6 folds), no radius",
+    "all": {
+     "n": 432,
+     "regret": 0.00045833433115923845,
+     "FA_u": 0.04398148148148148,
+     "FA_num": 19,
+     "FA_c": 0.06418918918918919,
+     "coverage": 1.0,
+     "adapt_rate": 0.6851851851851852,
+     "n_adapt": 296,
+     "cp95_upper_FA_c": 0.09276670757040895
+    },
+    "harmful_subset": {
+     "n": 144,
+     "regret": 0.0009236132933033837,
+     "FA_u": 0.13194444444444445,
+     "FA_num": 19,
+     "FA_c": 1.0,
+     "coverage": 1.0,
+     "adapt_rate": 0.13194444444444445,
+     "n_adapt": 19,
+     "cp95_upper_FA_c": 1.0
+    }
+   }
+  }
+ },
+ "seed4": {
+  "artifact": "experiments/kbound/results/mixed_headtohead_v1/per_condition_cifar10c_tent_primary_kga_seed4.json",
+  "n": 432,
+  "n_harmful": 137,
+  "eps_interp": 0.02141370153028981,
+  "eps_exact": 0.021859898796224853,
+  "rules": {
+   "confidence gate": {
+    "calibration": "unfitted sign rule (no calibration at all)",
+    "all": {
+     "n": 432,
+     "regret": 0.007826389537917243,
+     "FA_u": 0.24305555555555555,
+     "FA_num": 105,
+     "FA_c": 0.28688524590163933,
+     "coverage": 1.0,
+     "adapt_rate": 0.8472222222222222,
+     "n_adapt": 366,
+     "cp95_upper_FA_c": 0.32834084061922586
+    },
+    "harmful_subset": {
+     "n": 137,
+     "regret": 0.022689783225094316,
+     "FA_u": 0.7664233576642335,
+     "FA_num": 105,
+     "FA_c": 1.0,
+     "coverage": 1.0,
+     "adapt_rate": 0.7664233576642335,
+     "n_adapt": 105,
+     "cp95_upper_FA_c": 1.0
+    }
+   },
+   "entropy gate": {
+    "calibration": "unfitted sign rule (no calibration at all)",
+    "all": {
+     "n": 432,
+     "regret": 0.007983797126346164,
+     "FA_u": 0.24074074074074073,
+     "FA_num": 104,
+     "FA_c": 0.2857142857142857,
+     "coverage": 1.0,
+     "adapt_rate": 0.8425925925925926,
+     "n_adapt": 364,
+     "cp95_upper_FA_c": 0.32725028977012377
+    },
+    "harmful_subset": {
+     "n": 137,
+     "regret": 0.023087593760803667,
+     "FA_u": 0.7591240875912408,
+     "FA_num": 104,
+     "FA_c": 1.0,
+     "coverage": 1.0,
+     "adapt_rate": 0.7591240875912408,
+     "n_adapt": 104,
+     "cp95_upper_FA_c": 1.0
+    }
+   },
+   "drift/KL gate": {
+    "calibration": "leave-one-CORRUPTION-out threshold (6 folds)",
+    "all": {
+     "n": 432,
+     "regret": 0.12491319404432068,
+     "FA_u": 0.0,
+     "FA_num": 0,
+     "FA_c": null,
+     "coverage": 1.0,
+     "adapt_rate": 0.0,
+     "n_adapt": 0,
+     "cp95_upper_FA_c": null
+    },
+    "harmful_subset": {
+     "n": 137,
+     "regret": 0.0,
+     "FA_u": 0.0,
+     "FA_num": 0,
+     "FA_c": null,
+     "coverage": 1.0,
+     "adapt_rate": 0.0,
+     "n_adapt": 0,
+     "cp95_upper_FA_c": null
+    }
+   },
+   "ATC-style gate": {
+    "calibration": "leave-one-CORRUPTION-out isotonic (6 folds)",
+    "all": {
+     "n": 432,
+     "regret": 0.004074073914024565,
+     "FA_u": 0.11342592592592593,
+     "FA_num": 49,
+     "FA_c": 0.1678082191780822,
+     "coverage": 1.0,
+     "adapt_rate": 0.6759259259259259,
+     "n_adapt": 292,
+     "cp95_upper_FA_c": 0.20798100142827247
+    },
+    "harmful_subset": {
+     "n": 137,
+     "regret": 0.00883941667793441,
+     "FA_u": 0.35766423357664234,
+     "FA_num": 49,
+     "FA_c": 1.0,
+     "coverage": 1.0,
+     "adapt_rate": 0.35766423357664234,
+     "n_adapt": 49,
+     "cp95_upper_FA_c": 1.0
+    }
+   },
+   "KGA (no radius)": {
+    "calibration": "leave-one-CELL-out GBR (431 fits), no radius",
+    "all": {
+     "n": 432,
+     "regret": 0.00034027808794268857,
+     "FA_u": 0.027777777777777776,
+     "FA_num": 12,
+     "FA_c": 0.04067796610169491,
+     "coverage": 1.0,
+     "adapt_rate": 0.6828703703703703,
+     "n_adapt": 295,
+     "cp95_upper_FA_c": 0.06507484380772233
+    },
+    "harmful_subset": {
+     "n": 137,
+     "regret": 0.0006459864386676872,
+     "FA_u": 0.08759124087591241,
+     "FA_num": 12,
+     "FA_c": 1.0,
+     "coverage": 1.0,
+     "adapt_rate": 0.08759124087591241,
+     "n_adapt": 12,
+     "cp95_upper_FA_c": 1.0
+    }
+   },
+   "KGA (certificate, interp eps)": {
+    "calibration": "leave-one-CELL-out GBR (431 fits) + in-pool interpolated eps=0.02141",
+    "all": {
+     "n": 432,
+     "regret": 0.0018530094789134131,
+     "FA_u": 0.0,
+     "FA_num": 0,
+     "FA_c": 0.0,
+     "coverage": 0.6666666666666666,
+     "adapt_rate": 0.5092592592592593,
+     "n_adapt": 220,
+     "cp95_upper_FA_c": 0.013524673398400562
+    },
+    "harmful_subset": {
+     "n": 137,
+     "regret": 0.0,
+     "FA_u": 0.0,
+     "FA_num": 0,
+     "FA_c": null,
+     "coverage": 0.49635036496350365,
+     "adapt_rate": 0.0,
+     "n_adapt": 0,
+     "cp95_upper_FA_c": null
+    }
+   },
+   "KGA (certificate, exact-rank eps)": {
+    "calibration": "leave-one-CELL-out GBR (431 fits) + in-pool exact-rank eps=0.02186",
+    "all": {
+     "n": 432,
+     "regret": 0.0018530094789134131,
+     "FA_u": 0.0,
+     "FA_num": 0,
+     "FA_c": 0.0,
+     "coverage": 0.6643518518518519,
+     "adapt_rate": 0.5092592592592593,
+     "n_adapt": 220,
+     "cp95_upper_FA_c": 0.013524673398400562
+    },
+    "harmful_subset": {
+     "n": 137,
+     "regret": 0.0,
+     "FA_u": 0.0,
+     "FA_num": 0,
+     "FA_c": null,
+     "coverage": 0.48905109489051096,
+     "adapt_rate": 0.0,
+     "n_adapt": 0,
+     "cp95_upper_FA_c": null
+    }
+   },
+   "KGA (certificate, leave-one-CORRUPTION-out)": {
+    "calibration": "leave-one-CORRUPTION-out GBR (6 folds, SAME budget as gates 3-4) + eps=0.09655",
+    "all": {
+     "n": 432,
+     "regret": 0.005901619929958273,
+     "FA_u": 0.0,
+     "FA_num": 0,
+     "FA_c": 0.0,
+     "coverage": 0.4166666666666667,
+     "adapt_rate": 0.4166666666666667,
+     "n_adapt": 180,
+     "cp95_upper_FA_c": 0.016505228195662733
+    },
+    "harmful_subset": {
+     "n": 137,
+     "regret": 0.0,
+     "FA_u": 0.0,
+     "FA_num": 0,
+     "FA_c": null,
+     "coverage": 0.0,
+     "adapt_rate": 0.0,
+     "n_adapt": 0,
+     "cp95_upper_FA_c": null
+    }
+   },
+   "KGA (no radius, leave-one-CORRUPTION-out)": {
+    "calibration": "leave-one-CORRUPTION-out GBR (6 folds), no radius",
+    "all": {
+     "n": 432,
+     "regret": 0.0004108799276528535,
+     "FA_u": 0.03009259259259259,
+     "FA_num": 13,
+     "FA_c": 0.04421768707482993,
+     "coverage": 1.0,
+     "adapt_rate": 0.6805555555555556,
+     "n_adapt": 294,
+     "cp95_upper_FA_c": 0.06938301282495306
+    },
+    "harmful_subset": {
+     "n": 137,
+     "regret": 0.0007773733487094406,
+     "FA_u": 0.0948905109489051,
+     "FA_num": 13,
+     "FA_c": 1.0,
+     "coverage": 1.0,
+     "adapt_rate": 0.0948905109489051,
+     "n_adapt": 13,
+     "cp95_upper_FA_c": 1.0
+    }
+   }
+  }
+ }
+}

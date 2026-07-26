@@ -5,7 +5,7 @@ Zenodo / PyPI identity, so you execute them. Each is copy-paste.
 
 ## 0. Land all the hardening work on `main`
 ```bash
-cd /Volumes/T9/uav/AutoML_Flagship_V8
+cd "$KBOUND_REPO_ROOT"        # set KBOUND_REPO_ROOT to your checkout
 git checkout main
 git merge --no-ff phase-cd-arch-git -m "Merge Phases B+C+D (deps, security, drift-guard, CI)"
 # (phase-cd-arch-git already contains the Phase B commit)

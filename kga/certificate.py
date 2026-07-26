@@ -4,13 +4,33 @@ A *certificate* answers the question "by how much does adapting beat freezing,
 and how sure are we?".  Concretely it carries
 
     Delta_hat   estimated benefit  Delta = R(f0) - R(fa)  (>0 means adapt helps),
-    epsilon     a one-sided/symmetric confidence radius at level ``alpha``,
+    epsilon     a confidence radius at level ``alpha``,
 
-so that, with probability at least ``1 - alpha``, the true benefit obeys
-``Delta >= Delta_hat - epsilon`` (and, for the two-sided estimators, also
-``Delta <= Delta_hat + epsilon``).  Feeding the certificate to
-:func:`kga.policy.decide` yields the ADAPT/FREEZE/ABSTAIN trichotomy with the
-false-adapt ``<= alpha`` guarantee of Theorem 3.
+Feeding the certificate to :func:`kga.policy.decide` yields the
+ADAPT/FREEZE/ABSTAIN trichotomy with the false-adapt ``<= alpha`` guarantee of
+Theorem 3.
+
+Sidedness of the radius (read this before quoting an interval)
+--------------------------------------------------------------
+:func:`empirical_bernstein` and :func:`hoeffding` return **one-sided** radii:
+each satisfies, separately,
+
+    Pr[ Delta >= Delta_hat - epsilon ] >= 1 - alpha        (lower side)
+    Pr[ Delta <= Delta_hat + epsilon ] >= 1 - alpha        (upper side)
+
+but *not* both simultaneously at ``1 - alpha``.  By a union bound the two-sided
+event ``|Delta - Delta_hat| <= epsilon`` holds only at ``1 - 2 alpha``.  This is
+exactly what the trichotomy needs and no more: the ADAPT branch only ever uses
+the lower side and the FREEZE branch only ever uses the upper side, so
+``FA_u <= alpha`` and ``FF_u <= alpha`` each follow from a *single* one-sided
+statement.  Any figure, table or sentence that presents ``[lower, upper]`` as a
+simultaneous interval must label it ``1 - 2 alpha``.  (Panel finding F2-12 /
+F1-12; the companion fix restates ``thm:certificate`` as two one-sided coverage
+conditions rather than one two-sided one.)
+
+:func:`conformal_split` is the exception: its radius is a two-sided
+order statistic of ``|Delta_hat - Delta|``, so ``Pr[|Delta - Delta_hat| <=
+epsilon] >= 1 - alpha`` holds simultaneously for that estimator.
 
 This module provides four estimators, each mirroring a piece of the paper's
 canonical code:
@@ -45,12 +65,24 @@ hidden.  K-Bound imports nothing from ``src/elara``.
 from __future__ import annotations
 
 import math
+import warnings
 from dataclasses import dataclass
 
 import numpy as np
 
 #: Allowed estimator identifiers (the ``method`` field of a :class:`Certificate`).
 METHODS = ("ebern", "hoeffding", "conformal", "evalue")
+
+
+class InsufficientCalibrationError(ValueError):
+    """Raised when no finite conformal radius can attain the requested level.
+
+    The exact split-conformal rank rule needs ``k = ceil((n + 1) * (1 - alpha))``
+    calibration residuals and only has ``n``.  When ``k > n`` -- equivalently
+    ``n < 1/alpha - 1`` -- *every* finite radius under-covers, and the only
+    honest output is ``+inf`` (forced ABSTAIN).  See
+    :func:`min_calibration_size`.
+    """
 
 
 @dataclass(frozen=True)
@@ -65,7 +97,9 @@ class Certificate:
     epsilon : float
         Confidence radius at level ``alpha``.  The certified lower bound is
         ``delta_hat - epsilon`` and the certified upper bound is
-        ``delta_hat + epsilon``.
+        ``delta_hat + epsilon``.  For ``method in {'ebern', 'hoeffding'}`` each
+        bound holds *separately* at ``1 - alpha``; the two together hold only at
+        ``1 - 2 alpha`` (see the module docstring).
     method : str
         Estimator identifier, one of :data:`METHODS`.
     alpha : float
@@ -83,13 +117,30 @@ class Certificate:
 
     @property
     def lower(self) -> float:
-        """Certified lower bound ``delta_hat - epsilon`` on the true benefit."""
+        """One-sided certified lower bound ``delta_hat - epsilon`` at ``1 - alpha``.
+
+        This is the only quantity the ADAPT branch consults.  Do not pair it
+        with :attr:`upper` and call the result a ``1 - alpha`` interval for the
+        ``ebern``/``hoeffding`` methods -- that pairing is ``1 - 2 alpha``.
+        """
         return self.delta_hat - self.epsilon
 
     @property
     def upper(self) -> float:
-        """Certified upper bound ``delta_hat + epsilon`` on the true benefit."""
+        """One-sided certified upper bound ``delta_hat + epsilon`` at ``1 - alpha``.
+
+        This is the only quantity the FREEZE branch consults.  See :attr:`lower`
+        for the sidedness caveat.
+        """
         return self.delta_hat + self.epsilon
+
+    @property
+    def interval_level(self) -> float:
+        """Simultaneous coverage of ``[lower, upper]``: ``1 - 2 alpha``, or
+        ``1 - alpha`` for the two-sided ``conformal`` radius."""
+        if self.method == "conformal":
+            return 1.0 - self.alpha
+        return 1.0 - 2.0 * self.alpha
 
 
 # ---------------------------------------------------------------------------
@@ -98,6 +149,28 @@ class Certificate:
 def _check_alpha(alpha: float) -> None:
     if not (0.0 < alpha < 1.0):
         raise ValueError(f"alpha must be in (0, 1), got {alpha}")
+
+
+def _check_benefit_range(benefit_range: float, caller: str) -> float:
+    """Validate the *a priori* benefit range ``R = b - a``.
+
+    ``benefit_range`` is required (no data-estimated fallback): Maurer-Pontil and
+    Hoeffding both need ``R`` to be fixed before the sample is seen, and the
+    observed ``max - min`` is a downward-biased estimate of it, which makes the
+    radius anti-conservative.  Panel findings F1-12 / F2-12 and the verifier's
+    note that the identical defect sat in :func:`hoeffding`.
+    """
+    if benefit_range is None:
+        raise ValueError(
+            f"{caller}: benefit_range is required and must be an a-priori bound on "
+            "the benefit support (b - a). It used to default to the observed "
+            "max - min, which is data-dependent and voids the finite-sample "
+            "guarantee. For |p - y| paired 0/1 losses pass benefit_range=2.0."
+        )
+    rng = float(benefit_range)
+    if not math.isfinite(rng) or rng <= 0.0:
+        raise ValueError(f"{caller}: benefit_range must be finite and > 0, got {benefit_range!r}")
+    return rng
 
 
 def _as_1d(x: np.ndarray, name: str) -> np.ndarray:
@@ -120,7 +193,7 @@ def empirical_bernstein(
     paired_benefits: np.ndarray,
     *,
     alpha: float = 0.1,
-    benefit_range: float | None = None,
+    benefit_range: float,
 ) -> Certificate:
     """Maurer-Pontil (2009) empirical-Bernstein certificate (batch Theorem 3).
 
@@ -137,21 +210,37 @@ def empirical_bernstein(
     most paired benefits agree in sign), and is deterministic, streamable, and
     finite-sample valid.
 
+    The radius is **one-sided at ``alpha``** (note the ``ln(2/alpha)``: the 2 pays
+    for the union of the variance and range deviations *within* one side, not for
+    two sides).  ``[lower, upper]`` is therefore a ``1 - 2 alpha`` interval; see
+    the module docstring.
+
     Parameters
     ----------
     paired_benefits : array-like of shape (n,)
         Per-sample benefits ``X_i`` in a bounded interval.
     alpha : float, default=0.1
         Miscoverage level.  ``P(E[X] >= delta_hat - epsilon) >= 1 - alpha``.
-    benefit_range : float, optional
-        The range ``R = b - a``.  If ``None`` it is estimated as
-        ``max - min`` of the observed benefits.  For ``|p - y|`` paired losses
-        the exact range is ``2.0`` and should be passed explicitly.
+    benefit_range : float, **required**, keyword-only
+        The *a priori* range ``R = b - a`` of the benefit support.  Maurer-Pontil
+        requires ``R`` to be known before seeing the data; substituting the
+        observed ``max - min`` (which this function used to do by default) makes
+        the range term data-dependent and under-estimates ``R``, so the stated
+        ``1 - alpha`` guarantee no longer holds.  There is no safe default, so
+        there is no default: for ``|p - y|`` paired 0/1 losses pass ``2.0``.
+        Panel findings F1-12 / F2-12.
 
     Returns
     -------
     Certificate
         With ``method='ebern'``.
+
+    Raises
+    ------
+    TypeError
+        If ``benefit_range`` is omitted.
+    ValueError
+        If ``benefit_range`` is not a strictly positive finite float.
 
     References
     ----------
@@ -168,6 +257,7 @@ def empirical_bernstein(
     True
     """
     _check_alpha(alpha)
+    rng = _check_benefit_range(benefit_range, "empirical_bernstein")
     arr = _as_1d(paired_benefits, "paired_benefits")
     n = arr.size
     mean = float(arr.mean())
@@ -175,11 +265,6 @@ def empirical_bernstein(
         # No variance estimate; degenerate radius (infinite -> always ABSTAIN).
         return Certificate(delta_hat=mean, epsilon=float("inf"), method="ebern", alpha=alpha, n=n)
     var = float(arr.var(ddof=1))
-    if benefit_range is not None:
-        rng = float(benefit_range)
-    else:
-        rng = float(arr.max() - arr.min())
-    rng = max(rng, 1e-12)
 
     ln_term = math.log(2.0 / alpha)
     var_term = math.sqrt(2.0 * var * ln_term / n)
@@ -195,7 +280,7 @@ def hoeffding(
     paired_benefits: np.ndarray,
     *,
     alpha: float = 0.1,
-    benefit_range: float | None = None,
+    benefit_range: float,
 ) -> Certificate:
     """Hoeffding certificate -- distribution-free LCB on the mean benefit.
 
@@ -208,13 +293,18 @@ def hoeffding(
     empirical-Bernstein one in the small-variance regime, so it is provided
     mainly as a conservative baseline / sanity comparator.
 
+    The ``ln(1/alpha)`` makes this an explicitly **one-sided** radius at
+    ``alpha``; pairing ``lower`` and ``upper`` gives a ``1 - 2 alpha`` interval.
+
     Parameters
     ----------
     paired_benefits : array-like of shape (n,)
     alpha : float, default=0.1
-    benefit_range : float, optional
-        Range ``R = b - a``.  Estimated from the data if ``None``; pass ``2.0``
-        for ``|p - y|`` paired losses.
+    benefit_range : float, **required**, keyword-only
+        The *a priori* range ``R = b - a``.  As in
+        :func:`empirical_bernstein`, the data-estimated fallback that used to be
+        the default voids the guarantee, so it has been removed.  Pass ``2.0``
+        for ``|p - y|`` paired 0/1 losses.
 
     Returns
     -------
@@ -230,14 +320,10 @@ def hoeffding(
     True
     """
     _check_alpha(alpha)
+    rng = _check_benefit_range(benefit_range, "hoeffding")
     arr = _as_1d(paired_benefits, "paired_benefits")
     n = arr.size
     mean = float(arr.mean())
-    if benefit_range is not None:
-        rng = float(benefit_range)
-    else:
-        rng = float(arr.max() - arr.min())
-    rng = max(rng, 1e-12)
     epsilon = rng * math.sqrt(math.log(1.0 / alpha) / (2.0 * n))
     return Certificate(delta_hat=mean, epsilon=epsilon, method="hoeffding", alpha=alpha, n=n)
 
@@ -245,13 +331,72 @@ def hoeffding(
 # ---------------------------------------------------------------------------
 # (3) Split-conformal  (cross-task estimator used in the main experiments)
 # ---------------------------------------------------------------------------
-def split_conformal_rank_radius(calib_residuals: np.ndarray, alpha: float = 0.1) -> float:
-    """Return the exact finite-sample split-conformal residual radius.
+def min_calibration_size(alpha: float) -> int:
+    """Smallest ``n`` for which a *finite* conformal radius attains ``1 - alpha``.
 
-    For sorted residuals ``r_(1) <= ... <= r_(n)``, this uses
-    ``k = min(n, ceil((n + 1) * (1 - alpha)))`` and returns ``r_(k)``.
-    Unlike ``numpy.quantile``'s default interpolation, this is an observed
-    order statistic and matches the finite-sample rank argument.
+    The exact-rank radius is ``r_(k)`` with ``k = ceil((n + 1) * (1 - alpha))``.
+    A finite radius exists iff ``k <= n``, i.e. iff ``n + 1 >= 1/alpha``.  So the
+    feasibility threshold is ``n >= ceil(1/alpha) - 1``; at ``alpha = 0.10`` that
+    is ``n >= 9``, and at ``alpha = 0.02`` (the Bonferroni level of a 5-candidate
+    panel at ``alpha = 0.10``) it is ``n >= 49``.
+
+    Examples
+    --------
+    >>> min_calibration_size(0.1)
+    9
+    >>> min_calibration_size(0.02)
+    49
+    """
+    _check_alpha(alpha)
+    return int(math.ceil(1.0 / alpha)) - 1
+
+
+def conformal_attained_level(n: int, alpha: float) -> float:
+    """Coverage attainable at pool size ``n`` -- the *diagnostic*, not the rule.
+
+    Returns ``min(n, k) / (n + 1)`` with ``k = ceil((n + 1)(1 - alpha))``.  For
+    ``n >= min_calibration_size(alpha)`` this is ``k / (n + 1) >= 1 - alpha``, the
+    level the shipped rule actually attains.  For smaller ``n`` it is
+    ``n / (n + 1) < 1 - alpha``: the *best any finite radius could do*, which is
+    why :func:`split_conformal_rank_radius` refuses to return one and yields
+    ``+inf`` instead (panel finding F1-5 / F2-7).
+
+    The ``min(n, .)`` here is a **ceiling on attainable coverage**, not a radius
+    clamp: nothing in this module selects an order statistic with it.  See
+    :func:`legacy_clamped_radius` for the superseded rule that did.
+    """
+    _check_alpha(alpha)
+    n = int(n)
+    if n < 1:
+        raise ValueError(f"n must be >= 1, got {n}")
+    k = min(n, int(math.ceil((n + 1) * (1.0 - alpha))))
+    return k / (n + 1)
+
+
+def legacy_clamped_radius(calib_residuals: np.ndarray, alpha: float = 0.1) -> float:
+    """SUPERSEDED, under-covering rule ``r_(min(n, k))``. Never call for a new number.
+
+    This reproduces the pre-fix radius that shipped before fix-queue item 25:
+    ``k = min(n, ceil((n + 1)(1 - alpha)))``, i.e. the maximum residual whenever
+    ``k > n``.  Its attained coverage is ``n / (n + 1) < 1 - alpha``, so the
+    ``1 - alpha`` promise in the old docstring was false.
+
+    It is kept as a *separate, explicitly named* function -- not as a mode of
+    :func:`split_conformal_rank_radius` -- for exactly two purposes:
+
+    1. replaying an archived pre-fix artifact byte-for-byte, and
+    2. keeping the Monte-Carlo under-coverage regression test honest
+       (``tests/test_kga_canonical_rule.py::TestSmallNInfeasible``).
+
+    It is unreachable from :func:`kga.policy.decide_kga`, from
+    :func:`conformal_split` and from every driver: the canonical path has no
+    argument that can select it.
+
+    Examples
+    --------
+    >>> import numpy as np
+    >>> legacy_clamped_radius(np.arange(1.0, 9.0), 0.1)   # n = 8, k = 9 -> r_(8)
+    8.0
     """
     _check_alpha(alpha)
     arr = _as_1d(calib_residuals, "calib_residuals")
@@ -262,24 +407,138 @@ def split_conformal_rank_radius(calib_residuals: np.ndarray, alpha: float = 0.1)
     return float(np.sort(arr)[k - 1])
 
 
+def split_conformal_rank_radius(
+    calib_residuals: np.ndarray,
+    alpha: float = 0.1,
+    *,
+    on_infeasible: str = "inf",
+) -> float:
+    """Return the exact finite-sample split-conformal residual radius.
+
+    For sorted residuals ``r_(1) <= ... <= r_(n)`` this uses the **exact rank**
+
+        k = ceil((n + 1) * (1 - alpha)),      epsilon = r_(k)
+
+    and returns ``r_(k)``.  ``numpy.quantile``'s default linear interpolation is
+    never used: it is not an observed order statistic and does not satisfy the
+    finite-sample rank argument, and mixing the two rules inside one claim is
+    panel finding F1-2 / F4-10 / F5-2.
+
+    Small ``n`` (panel finding F1-5 / F2-7)
+    ---------------------------------------
+    When ``k > n`` -- equivalently ``n < min_calibration_size(alpha)``, i.e.
+    ``n <= 8`` at ``alpha = 0.10`` -- **no finite radius attains ``1 - alpha``**.
+    The maximum residual, which this function used to return via a
+    ``k = min(n, ...)`` clamp, attains only ``n / (n + 1) < 1 - alpha`` while the
+    docstring promised ``1 - alpha``.  **There is no clamp mode any more**: the
+    function returns ``+inf`` (or raises), which :func:`kga.policy.decide` turns
+    into ABSTAIN -- the honest answer, and the one three sibling scripts in this
+    repo (``ablation_exactrank.py``, ``official_baselines_headtohead.py``,
+    ``reproduce_headlines.py``) and the project's own validator
+    (``theory_v2/val_multicandidate.py:93-98``) already give.  The superseded
+    clamped value is available only from the separately named
+    :func:`legacy_clamped_radius`, which no decision path calls.
+
+    Parameters
+    ----------
+    calib_residuals : array-like of shape (n,)
+        Non-negative residuals ``|Delta_hat_i - Delta_i|``.
+    alpha : float, default=0.1
+        Miscoverage level.
+    on_infeasible : {'inf', 'raise'}, default='inf'
+        What to do when ``k > n``.  Both branches refuse to certify; they differ
+        only in whether the refusal is a value or an exception.
+
+        * ``'inf'``   -- return ``+inf`` (forced ABSTAIN) and emit a
+          :class:`UserWarning`.  This is the default and the correct behaviour.
+        * ``'raise'`` -- raise :class:`InsufficientCalibrationError`.
+
+    Examples
+    --------
+    >>> import numpy as np
+    >>> split_conformal_rank_radius(np.arange(1.0, 10.0), 0.1)   # n = 9, k = 9
+    9.0
+    """
+    _check_alpha(alpha)
+    if on_infeasible not in ("inf", "raise"):
+        raise ValueError(
+            f"on_infeasible must be 'inf' or 'raise', got {on_infeasible!r}. "
+            "The 'clamp' mode was removed (fix-queue item 25): the clamped radius "
+            "under-covers, and it is now only reachable through the explicitly named "
+            "kga.certificate.legacy_clamped_radius()."
+        )
+    arr = _as_1d(calib_residuals, "calib_residuals")
+    if np.any(arr < 0.0):
+        raise ValueError("calib_residuals must be non-negative (they are |Delta_hat - Delta|)")
+    n = arr.size
+    k = int(math.ceil((n + 1) * (1.0 - alpha)))
+    if k > n:
+        n_min = min_calibration_size(alpha)
+        msg = (
+            f"split-conformal at alpha={alpha} needs n >= {n_min} calibration "
+            f"residuals but got n={n}: the exact rank k={k} exceeds n, so no "
+            f"finite radius attains 1-alpha (the best attainable coverage is "
+            f"n/(n+1) = {n / (n + 1):.4f}). Returning +inf => ABSTAIN."
+        )
+        if on_infeasible == "raise":
+            raise InsufficientCalibrationError(msg)
+        warnings.warn(msg, UserWarning, stacklevel=2)
+        return float("inf")
+    return float(np.sort(arr)[k - 1])
+
+
+def conformal_radii_loo(
+    calib_residuals: np.ndarray,
+    alpha: float = 0.1,
+    *,
+    on_infeasible: str = "inf",
+) -> np.ndarray:
+    """Leave-one-out-of-pool radii: cell ``i``'s radius excludes cell ``i``.
+
+    Returns an array ``eps`` of the same length as ``calib_residuals``, where
+    ``eps[i] = split_conformal_rank_radius(delete(residuals, i), alpha)``.
+
+    This is fix-queue item 4.  Every shipped runner used to compute one radius
+    over *all* ``N`` residuals -- including the residual of the very cell being
+    scored -- which makes ``epsilon`` a function of the test labels that the
+    ``FA_u <= alpha`` guarantee attaches to.  Excluding the scored index restores
+    exchangeability between the query residual and the calibration pool, which is
+    the only assumption the rank argument needs.
+
+    Note the knock-on effect at small ``n``: a pool of ``n`` residuals yields
+    LOO pools of ``n - 1``, so feasibility now requires
+    ``n >= min_calibration_size(alpha) + 1`` (``n >= 10`` at ``alpha = 0.10``).
+    """
+    arr = _as_1d(calib_residuals, "calib_residuals")
+    n = arr.size
+    out = np.empty(n, dtype=float)
+    for i in range(n):
+        out[i] = split_conformal_rank_radius(np.delete(arr, i), alpha, on_infeasible=on_infeasible)
+    return out
+
+
 def conformal_split(
     delta_hat: float,
     calib_residuals: np.ndarray,
     *,
     alpha: float = 0.1,
+    on_infeasible: str = "inf",
 ) -> Certificate:
     """Split-conformal certificate around a benefit point estimate.
 
     Given calibration residuals ``r_i = |Delta_hat_i - Delta_i|`` from held-out
-    tasks/instances, the radius
+    tasks/instances -- the query instance's own residual **must not** be in the
+    pool -- the radius
 
-        k = min(n, ceil((n + 1) * (1 - alpha)))
-        epsilon = r_(k)
+        k = ceil((n + 1) * (1 - alpha))
+        epsilon = r_(k)                    (+inf when k > n)
 
     guarantees that a fresh ``Delta_hat`` deviates from the true ``Delta`` by at
     most ``epsilon`` with probability at least ``1 - alpha`` over the exchangeable
     calibration split (split-conformal coverage). The returned radius is an
     observed residual order statistic; it does not use interpolated quantiles.
+    Because it bounds ``|Delta_hat - Delta|``, this is the one *genuinely
+    two-sided* estimator in the module.
 
     Parameters
     ----------
@@ -288,21 +547,25 @@ def conformal_split(
         leave-one-out / cross-fitted benefit regressor).
     calib_residuals : array-like of shape (n,)
         Absolute prediction errors ``|Delta_hat_i - Delta_i|`` on the
-        calibration set.  Must be non-negative.
+        calibration set.  Must be non-negative and must exclude the query.
     alpha : float, default=0.1
         Miscoverage level.
+    on_infeasible : {'inf', 'raise'}, default='inf'
+        Behaviour when ``n < min_calibration_size(alpha)``; see
+        :func:`split_conformal_rank_radius`.  There is no clamp mode.
 
     Returns
     -------
     Certificate
         With ``method='conformal'`` and ``n`` = number of calibration residuals.
+        ``epsilon`` is ``+inf`` (hence ABSTAIN) when ``n`` is too small.
 
     Examples
     --------
     >>> import numpy as np
     >>> r = np.abs(np.random.default_rng(0).standard_normal(200))
     >>> cert = conformal_split(0.2, r, alpha=0.1)
-    >>> k = min(len(r), int(np.ceil((len(r) + 1) * 0.9)))
+    >>> k = int(np.ceil((len(r) + 1) * 0.9))
     >>> cert.epsilon == float(np.sort(r)[k - 1])
     True
     """
@@ -310,7 +573,7 @@ def conformal_split(
     if not math.isfinite(float(delta_hat)):
         raise ValueError(f"delta_hat must be finite, got {delta_hat}")
     arr = _as_1d(calib_residuals, "calib_residuals")
-    epsilon = split_conformal_rank_radius(arr, alpha)
+    epsilon = split_conformal_rank_radius(arr, alpha, on_infeasible=on_infeasible)
     return Certificate(delta_hat=float(delta_hat), epsilon=epsilon, method="conformal", alpha=alpha, n=arr.size)
 
 

@@ -1,7 +1,23 @@
 {
-  "generated_at": "2026-07-02T13:26:22Z",
-  "git_commit": "27342121d90e290cd4e63358c8a755f2a409a736",
-  "python": "Python 3.14.3",
-  "steps_completed": ["unit_tests", "theory_artifacts_present", "gate_selftest", "make_tables", "claim_ledger", "mixed_headtohead_check", "cached_artifacts"],
-  "note": "Full GPU protocol re-runs are not executed by this script; see RELEASE_10X_TRACK.md"
+  "generated_at": "2026-07-26T03:19:43Z",
+  "git_commit": "unknown",
+  "python": "Python 3.11.15",
+  "pythonhashseed": "0",
+  "overall": "PASS",
+  "required_failures": 0,
+  "steps": [
+    {"step": "1 core unit tests (leakage + claim semantics + conformal + policy + routing)", "status": "PASS", "note": ""},
+    {"step": "1b env-dependent tests (edge capture artifacts + torch)", "status": "SKIP", "note": "needs torch and experiments/kbound/results/edge_real_phone_v1/{calibration_summary,split_audit}.json, which are not in the release"},
+    {"step": "2 theory validator artifacts present", "status": "PASS", "note": ""},
+    {"step": "2b full theory audit (artifacts + claim ledger cross-check)", "status": "PASS", "note": ""},
+    {"step": "2c wave-4 theory_v2 validators + routing selftest", "status": "PASS", "note": ""},
+    {"step": "3 gate baseline CPU selftest", "status": "PASS", "note": ""},
+    {"step": "4a refresh results_source (locked)", "status": "PASS", "note": ""},
+    {"step": "4b regenerate paper table macros", "status": "PASS", "note": ""},
+    {"step": "5 unified result verdict audit", "status": "PASS", "note": ""},
+    {"step": "6 validate claim ledger", "status": "PASS", "note": ""},
+    {"step": "7 mixed head-to-head (POEM/AETTA) result present", "status": "PASS", "note": ""},
+    {"step": "8 cached headline artifacts", "status": "PASS", "note": ""}
+  ],
+  "note": "Every step runs; REQUIRED failures set overall=FAIL and a non-zero exit. Full GPU protocol re-runs are not executed by this script; see RELEASE_10X_TRACK.md"
 }

@@ -2,8 +2,22 @@
 # PROTOCOL A multi-seed stress grid launcher (seeds 0..4, sequential = one MPS job at a time).
 # Confirmatory 432-condition grid reproduced byte-identically via: --benchmarks cifar10c --quick
 # --methods tent eata sar. Grid constants in cifar_tent_mps_v2.py are UNCHANGED.
+# --- defect D8: portable roots. No machine-local absolute paths in tracked code
+# --- (docs/research/kbound/EXTERNAL_STORAGE_POLICY.md). KB_REPO_ROOT is discovered
+# --- from this script's own location; override with KBOUND_REPO_ROOT.
+_kb_find_root() {
+  d=$(cd "$(dirname "${BASH_SOURCE[0]:-$0}")" && pwd)
+  while [ "$d" != "/" ]; do
+    [ -f "$d/pyproject.toml" ] && { printf '%s\n' "$d"; return 0; }
+    d=$(dirname "$d")
+  done
+  echo "ERROR: repository root not found above $(dirname "${BASH_SOURCE[0]:-$0}")" >&2
+  return 1
+}
+KB_REPO_ROOT="${KBOUND_REPO_ROOT:-$(_kb_find_root)}" || exit 1
+
 set -u
-REPO=/Volumes/T9/uav/AutoML_Flagship_V8
+REPO="$KB_REPO_ROOT"
 PY="$REPO/.venv/bin/python"
 SCRIPT="$REPO/docs/research/kbound/scripts/cifar_tent_mps_v2.py"
 BASE="$REPO/experiments/kbound/results/stress_grid_multiseed_v1"

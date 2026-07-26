@@ -21,7 +21,7 @@ from __future__ import annotations
 import argparse, hashlib, os, sys, tarfile, urllib.request, urllib.error
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-# scripts/ -> kbound/ -> research/ -> docs/ -> AutoML_Flagship_V8/
+# scripts/ -> kbound/ -> research/ -> docs/ -> <repo root>/
 REPO_ROOT = os.path.abspath(os.path.join(HERE, "..", "..", "..", ".."))
 DEFAULT_DATA_ROOT = os.path.join(REPO_ROOT, "experiments", "kbound", "cifar")
 

@@ -5,7 +5,7 @@
 # Office-Home 30).  Every command below sets ONLY those operating-point flags on top of each
 # runner's existing protocol defaults; with the flags removed each runner is byte-identical to
 # its prior protocol (A/E/G/H/M/J/K/D, PACS prereg).
-# All commands from repo root:  cd /Volumes/T9/uav/AutoML_Flagship_V8
+# All commands from repo root:  cd "$KBOUND_REPO_ROOT"        # set KBOUND_REPO_ROOT to your checkout
 #
 # Verification status (2026-07-05, this build session, CPU/sandbox):
 #   * all 7 runners py_compile clean; CIFAR + PACS --help expose --adapt-lr/--batch-regimes/
@@ -14,13 +14,14 @@
 #     three *_online candidates.  The GPU/MPS execution itself is the user's step (needs torch).
 
 set -euo pipefail
-REPO=/Volumes/T9/uav/AutoML_Flagship_V8
+REPO="${KBOUND_REPO_ROOT:?set KBOUND_REPO_ROOT to your checkout}"
 cd "$REPO"
 
 # ============================================================================
 # PHASE 0 — environment
 # ============================================================================
-export TMPDIR=/Volumes/T9/uav/tmp TORCH_HOME=/Volumes/T9/uav/torch_cache
+export TMPDIR="${KBOUND_EXTERNAL_ROOT:?set KBOUND_EXTERNAL_ROOT}"/tmp \
+       TORCH_HOME="$KBOUND_EXTERNAL_ROOT"/torch_cache
 mkdir -p "$TMPDIR" "$TORCH_HOME"
 # Two interpreters (both have torch + MPS):
 #   PY_CORE  = repo venv, used for the CIFAR-family runner + PACS (protocol-E precedent).

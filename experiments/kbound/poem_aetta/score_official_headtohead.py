@@ -330,7 +330,7 @@ def main(argv=None):
     if a.out:
         out_path = a.out
     else:
-        repo_root = os.path.dirname(os.path.dirname(os.path.dirname(_HERE)))  # .../AutoML_Flagship_V8
+        repo_root = os.path.dirname(os.path.dirname(os.path.dirname(_HERE)))  # the repository root
         out_path = os.path.join(repo_root, "research_lock", "WIN_HUNT_v4_ARM_D_result.json")
     os.makedirs(os.path.dirname(os.path.abspath(out_path)), exist_ok=True)
     with open(out_path, "w") as f:

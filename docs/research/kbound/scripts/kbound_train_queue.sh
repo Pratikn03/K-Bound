@@ -1,14 +1,32 @@
 #!/usr/bin/env bash
 # Phase-A sequential, memory-safe training queue (Mac/MPS). ONE MPS job at a time.
+# --- external (git-excluded) data volume: ONE documented variable, no default.
+# --- defect D8: portable roots. No machine-local absolute paths in tracked code
+# --- (docs/research/kbound/EXTERNAL_STORAGE_POLICY.md). KB_REPO_ROOT is discovered
+# --- from this script's own location; override with KBOUND_REPO_ROOT.
+_kb_find_root() {
+  d=$(cd "$(dirname "${BASH_SOURCE[0]:-$0}")" && pwd)
+  while [ "$d" != "/" ]; do
+    [ -f "$d/pyproject.toml" ] && { printf '%s\n' "$d"; return 0; }
+    d=$(dirname "$d")
+  done
+  echo "ERROR: repository root not found above $(dirname "${BASH_SOURCE[0]:-$0}")" >&2
+  return 1
+}
+KB_REPO_ROOT="${KBOUND_REPO_ROOT:-$(_kb_find_root)}" || exit 1
+
+: "${KBOUND_EXTERNAL_ROOT:?set KBOUND_EXTERNAL_ROOT to the volume holding the git-excluded datasets/checkpoints/caches (layout: docs/research/kbound/kbound_repro/paths.py, acquisition: DATA.md)}"
+KB_EXTERNAL_ROOT="$KBOUND_EXTERNAL_ROOT"
+
 set -u
 export PATH="/Library/TeX/texbin:/opt/homebrew/bin:$PATH"
-REPO=/Volumes/T9/uav/AutoML_Flagship_V8
+REPO="$KB_REPO_ROOT"
 PY="$HOME/.venv_wilds/bin/python"
 S2="docs/research/kbound/scripts/cifar_tent_mps_v2.py"
 IC="experiments/kbound/data/imagenet-c"
 RES="experiments/kbound/results"
 QLOG="$REPO/$RES/_train_queue.log"
-export MPLCONFIGDIR=/Volumes/T9/uav/tmp/mpl PYTHONUNBUFFERED=1 PYTHONPATH=.
+export MPLCONFIGDIR="$KB_EXTERNAL_ROOT/tmp"/mpl PYTHONUNBUFFERED=1 PYTHONPATH=.
 cd "$REPO" || exit 1
 log(){ echo "[$(date '+%F %T')] $*" | tee -a "$QLOG"; }
 wait_for(){ while pgrep -f "$1" >/dev/null 2>&1; do sleep 60; done; }

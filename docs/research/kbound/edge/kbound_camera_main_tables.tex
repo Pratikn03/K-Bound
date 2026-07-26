@@ -42,15 +42,21 @@ captures pass the source-model gate ($\ge 0.80$ balanced accuracy and macro-F1 o
 Until then every metric cell reads \emph{RESULT PENDING --- NO MEASURED DATA AVAILABLE};
 development replays on mock clips are audit-only and must not be cited.}
 \label{tab:camera-r2}
-\footnotesize
-\setlength{\tabcolsep}{3.6pt}
+%% fix-queue item 32: \resizebox{\textwidth}{!} wrapper dropped. Scaling glyphs below the
+%% declared point size is an accessibility problem, and in the single-column TMLR build the
+%% wrapper scaled this table UP, so its type no longer matched the surrounding text. Sized
+%% instead by \scriptsize + tighter column separation + abbreviated column heads. No package
+%% beyond booktabs is required (in particular, no array/ragged2e column specifiers, which the
+%% drivers do not load).
+\scriptsize
+\setlength{\tabcolsep}{2.8pt}
 \renewcommand{\arraystretch}{1.08}
-\resizebox{\textwidth}{!}{%
+{%
 \begin{tabular}{@{}lcccccccc@{}}
 \toprule
-Policy & Balanced acc. $\uparrow$ & Macro-F1 $\uparrow$ & Regret $\downarrow$ &
-$\mathrm{FA}_u$ $\downarrow$ & $\mathrm{FA}_c$ $\downarrow$ & Adapt rate & Abstain rate &
-Mean latency (ms) $\downarrow$ \\
+Policy & Bal.\ acc.$\uparrow$ & Macro-F1$\uparrow$ & Regret$\downarrow$ &
+$\mathrm{FA}_u\downarrow$ & $\mathrm{FA}_c\downarrow$ & Adapt & Abstain &
+Lat.\ (ms)$\downarrow$ \\
 \midrule
 Always-freeze   & \CameraRTwoBalAccAlwaysFreeze & \CameraRTwoMacroFAlwaysFreeze & \CameraRTwoRegretAlwaysFreeze & \CameraRTwoFAuAlwaysFreeze & \CameraRTwoFAcAlwaysFreeze & \CameraRTwoAdaptRateAlwaysFreeze & \CameraRTwoAbstainRateAlwaysFreeze & \CameraRTwoLatencyAlwaysFreeze \\
 Always-adapt    & \CameraRTwoBalAccAlwaysAdapt & \CameraRTwoMacroFAlwaysAdapt & \CameraRTwoRegretAlwaysAdapt & \CameraRTwoFAuAlwaysAdapt & \CameraRTwoFAcAlwaysAdapt & \CameraRTwoAdaptRateAlwaysAdapt & \CameraRTwoAbstainRateAlwaysAdapt & \CameraRTwoLatencyAlwaysAdapt \\

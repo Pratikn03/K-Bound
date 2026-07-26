@@ -1,3 +1,24 @@
+# --- defect D8: portable roots (docs/research/kbound/EXTERNAL_STORAGE_POLICY.md bans
+# --- machine-local absolute paths in tracked code). This file previously hard-coded a
+# --- Cowork *session sandbox* mount, which is worse than a
+# --- home directory: it is valid only inside one ephemeral container.
+import os as _kb_os
+from pathlib import Path as _KbPath
+
+
+def _kb_repo_root() -> str:
+    override = _kb_os.environ.get("KBOUND_REPO_ROOT", "").strip()
+    if override:
+        return str(_KbPath(override).expanduser().resolve())
+    here = _KbPath(__file__).resolve()
+    for candidate in here.parents:
+        if (candidate / "pyproject.toml").exists():
+            return str(candidate)
+    raise RuntimeError(f"repository root not found above {here}; set KBOUND_REPO_ROOT")
+
+
+KB_REPO_ROOT = _kb_repo_root()
+
 import numpy as np, itertools, json
 from scipy.optimize import linprog
 
@@ -72,6 +93,6 @@ out={"b_fit":b_fit.tolist(),"b_true":b_true.round(6).tolist(),"p":p.round(8).tol
      "min_pattern_prob":float(p.min()),"tau":float(max(prods)-min(prods)),
      "max_b_true_minus_b_fit":float(np.max(np.abs(b_true-b_fit))),
      "patterns":patterns.tolist()}
-with open("/sessions/peaceful-blissful-ptolemy/mnt/uav/AutoML_Flagship_V8/docs/research/kbound/theory_v2/stealth_law.json","w") as f:
+with open(KB_REPO_ROOT + "/docs/research/kbound/theory_v2/stealth_law.json","w") as f:
     json.dump(out,f,indent=2)
 print("saved stealth_law.json")

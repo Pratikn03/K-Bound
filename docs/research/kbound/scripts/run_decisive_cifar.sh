@@ -4,7 +4,7 @@
 #            docs/research/kbound/figures/fig_decisive_*.png
 set -euo pipefail
 
-# --- 0. go to repo root (AutoML_Flagship_V8) ---
+# --- 0. go to repo root ---
 cd "$(cd "$(dirname "${BASH_SOURCE[0]}")/../../../.." && pwd)"
 echo "repo root: $(pwd)"
 

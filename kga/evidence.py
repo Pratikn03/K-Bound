@@ -201,6 +201,18 @@ def _importance_ess(calib: np.ndarray, test: np.ndarray) -> tuple[float, float]:
     separate.  This is the same support-overlap diagnostic used for the
     covariate-shift certificate in ``kbound_full_experiments.py``.
 
+    Direction (panel finding F2-11)
+    -------------------------------
+    The implementation used to compute ``log w = log p_test - log p_calib``, the
+    **reciprocal** of the weight documented above.  ESS is not invariant under
+    ``w -> 1/w``: on a variance-*shrinking* shift (calib ~ N(0, 3),
+    test ~ N(0, 1)) the reciprocal reports ``ess_frac ~ 0.88`` ("good overlap")
+    where the documented weight reports ``~ 0.03`` ("severe overlap failure").
+    The documented direction is the correct one for this diagnostic -- the
+    question ``ess_frac`` answers is "how well does the calibration set cover the
+    test set", i.e. how badly does re-weighting test points back onto the
+    calibration law degrade the sample -- so the code now matches the docstring.
+
     Returns
     -------
     (ess, ess_frac) : tuple of float
@@ -214,8 +226,8 @@ def _importance_ess(calib: np.ndarray, test: np.ndarray) -> tuple[float, float]:
     # Degenerate spreads: treat as no usable shift information -> uniform weights.
     if s_c <= 1e-12 or s_t <= 1e-12:
         return float(n_t), 1.0
-    # log w = log N(t; mu_c, s_c) - log N(t; mu_t, s_t)
-    log_w = (-0.5 * ((t - mu_t) / s_t) ** 2 - math.log(s_t)) - (-0.5 * ((t - mu_c) / s_c) ** 2 - math.log(s_c))
+    # log w = log N(t; mu_c, s_c) - log N(t; mu_t, s_t)   (matches the docstring)
+    log_w = (-0.5 * ((t - mu_c) / s_c) ** 2 - math.log(s_c)) - (-0.5 * ((t - mu_t) / s_t) ** 2 - math.log(s_t))
     log_w = np.clip(log_w, -50.0, 50.0)
     w = np.exp(log_w - log_w.max())  # stabilise; self-normalisation cancels the offset
     sw = float(w.sum())

@@ -2,11 +2,32 @@
 """Probe 3: reproduce detectability.certificate_harm_AUC_negBhat (0.912) and
 certificate_eps (0.0598). Hypothesis: single GBR fit over ALL 432 cells (LOO),
 features = Z (and maybe candidate id). Try a few variants."""
+# --- defect D8: portable roots (docs/research/kbound/EXTERNAL_STORAGE_POLICY.md bans
+# --- machine-local absolute paths in tracked code). This file previously hard-coded a
+# --- Cowork *session sandbox* mount, which is worse than a
+# --- home directory: it is valid only inside one ephemeral container.
+import os as _kb_os
+from pathlib import Path as _KbPath
+
+
+def _kb_repo_root() -> str:
+    override = _kb_os.environ.get("KBOUND_REPO_ROOT", "").strip()
+    if override:
+        return str(_KbPath(override).expanduser().resolve())
+    here = _KbPath(__file__).resolve()
+    for candidate in here.parents:
+        if (candidate / "pyproject.toml").exists():
+            return str(candidate)
+    raise RuntimeError(f"repository root not found above {here}; set KBOUND_REPO_ROOT")
+
+
+KB_REPO_ROOT = _kb_repo_root()
+
 import json, numpy as np
 from sklearn.ensemble import GradientBoostingRegressor
 from sklearn.model_selection import KFold
 
-P = "/sessions/peaceful-blissful-ptolemy/mnt/uav/AutoML_Flagship_V8/experiments/kbound/results/wilds_kbound_debug_mps/result_73add410.json"
+P = KB_REPO_ROOT + "/experiments/kbound/results/wilds_kbound_debug_mps/result_73add410.json"
 d = json.load(open(P))
 recs = d["records"]
 det = d["detectability"]

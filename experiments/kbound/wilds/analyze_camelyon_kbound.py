@@ -9,11 +9,18 @@ SOURCE = id_val (in-distribution hospitals).  TARGET = test (OOD held-out).
 This is the leakage-free multicandidate fix; headline policy wins remain Protocol G/H.
 """
 from __future__ import annotations
-import argparse, json
+import argparse, json, os, sys
 from pathlib import Path
 import numpy as np
 from sklearn.ensemble import GradientBoostingRegressor
 from sklearn.model_selection import KFold
+
+# ---- the ONE K-Bound radius / false-adapt definition (fix-queue items 4, 28) --
+_REPO_ROOT = os.path.abspath(os.path.join(os.path.dirname(os.path.abspath(__file__)), *[os.pardir] * 3))
+_KB_SCRIPTS = os.path.join(_REPO_ROOT, "docs", "research", "kbound", "scripts")
+if _KB_SCRIPTS not in sys.path:
+    sys.path.insert(0, _KB_SCRIPTS)
+import kbound_decide as _kb  # noqa: E402
 
 ALPHA = 0.10
 THR = 0.02
@@ -47,6 +54,15 @@ def _auc(score, label):
 
 
 def fit_certificate(Z, B, alpha=ALPHA, seed=0):
+    """SOURCE-fit certificate; the radius pool is SOURCE, the scored cells TARGET.
+
+    FIX-QUEUE ITEM 4 does not bite (the scored cell is never in its own pool),
+    but the RULE did: ``float(np.quantile(res, 1 - alpha))`` is numpy's
+    interpolated quantile, not an observed order statistic.  Now the exact
+    split-conformal rank quantile ``eps = res_(k)``, ``k = ceil((n+1)(1-alpha))``,
+    via ``kbound_decide.conformal_radius`` -> ``kga.certificate``
+    (fix-queue item 15), so this track uses the same rule as every other track.
+    """
     Z = np.asarray(Z, float); B = np.asarray(B, float); n = len(B)
     res = np.zeros(n)
     if n >= 4:
@@ -54,7 +70,7 @@ def fit_certificate(Z, B, alpha=ALPHA, seed=0):
         for tr, te in kf.split(Z):
             m = GradientBoostingRegressor(**GBR_KW, random_state=seed).fit(Z[tr], B[tr])
             res[te] = np.abs(m.predict(Z[te]) - B[te])
-        eps = float(np.quantile(res, 1 - alpha))
+        eps = float(_kb.conformal_radius(res, alpha))
     else:
         eps = float(np.std(B) + 1e-6)
     full = GradientBoostingRegressor(**GBR_KW, random_state=seed).fit(Z, B)
@@ -62,20 +78,41 @@ def fit_certificate(Z, B, alpha=ALPHA, seed=0):
 
 
 def policy(dec, a0, aa, B, alpha=ALPHA):
+    """FIX-QUEUE ITEM 28 -- ONE definition of false-adapt, and the right one gates.
+
+    The old gate was ``fa = mean(B[adapt] < 0); beats_both = ... and fa <= alpha``
+    -- conditional on ADAPT and strict.  ``thm:certificate`` bounds the MARGINAL
+    ``Pr[ADAPT and B <= 0]``, and the strict inequality exempts ``B == 0`` ties
+    (500 archived cells have B exactly 0.0; 102 of them ADAPT).  Worse, the old
+    ``fa is None`` branch let a run with ZERO adapt decisions pass the budget gate
+    vacuously.  ``fa_u`` and ``fa_c`` are now separate named fields and the gate
+    requires at least one ADAPT.
+    """
     a0 = np.asarray(a0, float); aa = np.asarray(aa, float); B = np.asarray(B, float)
     dec = np.asarray(dec)
     adapt = dec == "ADAPT"
     realized = np.where(adapt, aa, a0)
     oracle = np.maximum(a0, aa)
     rk = float((oracle - realized).mean()); ra = float((oracle - aa).mean()); rf = float((oracle - a0).mean())
-    fa = float(np.mean(B[adapt] < 0)) if adapt.any() else None
+    _fa = _kb.false_adapt(dec, B)
     return {
         "n": int(len(a0)),
         "decision_counts": {d: int((dec == d).sum()) for d in ["ADAPT", "FREEZE", "ABSTAIN"]},
         "regret_vs_oracle": {"always_adapt": ra, "always_freeze": rf, "K_Bound": rk},
-        "false_adapt_count": int(np.sum(adapt & (B < 0))),
-        "false_adapt_rate_among_adapt": fa,
-        "beats_both": bool(rk < ra - 1e-9 and rk < rf - 1e-9 and (fa is None or fa <= alpha)),
+        # ---- fix-queue item 28: the two rates, named, never interchanged ----
+        "false_adapt_unconditional": _fa["fa_u"],   # Pr[ADAPT and B <= 0] (thm:certificate)
+        "false_adapt_conditional": _fa["fa_c"],     # Pr[B <= 0 | ADAPT]
+        "false_adapt_count": _fa["n_false_adapt"],
+        "adapt_count": _fa["n_adapt"],
+        "false_adapt_definition":
+            "false adapt := ADAPT and B <= 0; fa_u marginal (bounded by thm:certificate), "
+            "fa_c conditional",
+        # DEPRECATED (conditional AND strict). Gates nothing.
+        "false_adapt_rate_among_adapt": (float(np.mean(B[adapt] < 0)) if adapt.any() else None),
+        "beats_both": bool(rk < ra - 1e-9 and rk < rf - 1e-9
+                           and adapt.any() and float(_fa["fa_u"]) <= alpha),
+        "beats_both_gate": "regret vs both fixed policies AND fa_u <= alpha "
+                           "(fa_u = Pr[ADAPT and B <= 0]); requires >= 1 ADAPT",
     }
 
 

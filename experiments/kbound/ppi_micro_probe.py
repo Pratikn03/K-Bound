@@ -6,11 +6,63 @@ Faithful to research_lock/TARGET_LABEL_LIGHT_PPI_PROTOCOL_D25_v1.yaml (sealed
 debiasing from k labels. Reports whatever it computes; no per-category selection.
 """
 from __future__ import annotations
+# --- defect D8: portable roots (docs/research/kbound/EXTERNAL_STORAGE_POLICY.md bans
+# --- machine-local absolute paths in tracked code). KB_REPO_ROOT is discovered from this
+# --- file's own location; override with $KBOUND_REPO_ROOT.
+import os as _kb_os
+from pathlib import Path as _KbPath
+
+
+def _kb_repo_root() -> str:
+    override = _kb_os.environ.get("KBOUND_REPO_ROOT", "").strip()
+    if override:
+        return str(_KbPath(override).expanduser().resolve())
+    here = _KbPath(__file__).resolve()
+    for candidate in here.parents:
+        if (candidate / "pyproject.toml").exists():
+            return str(candidate)
+    raise RuntimeError(f"repository root not found above {here}; set KBOUND_REPO_ROOT")
+
+
+KB_REPO_ROOT = _kb_repo_root()
+
+# --- external (git-excluded) data volume: ONE documented variable, no default.
+def _kb_external_root() -> str:
+    value = _kb_os.environ.get("KBOUND_EXTERNAL_ROOT", "").strip()
+    if not value:
+        raise RuntimeError(
+            "KBOUND_EXTERNAL_ROOT is not set. This script needs data that is deliberately "
+            "not in the git release (raw datasets, checkpoints, caches). Point "
+            "KBOUND_EXTERNAL_ROOT at the volume holding them; the expected layout is "
+            "documented in docs/research/kbound/kbound_repro/paths.py (EXTERNAL_LAYOUT) "
+            "and acquisition is in DATA.md. There is no default on purpose: this used to "
+            "be one author's external SSD, and defaulting to $HOME would write gigabytes "
+            "somewhere you did not choose."
+        )
+    return str(_KbPath(value).expanduser().resolve())
+
+
+KB_EXTERNAL_ROOT = _kb_external_root()
+
 import glob, json, os
 import numpy as np
 from sklearn.ensemble import GradientBoostingRegressor
 
-REPO = "/Volumes/T9/uav/AutoML_Flagship_V8"
+# --- defect D10: the certificate radius is the shipped exact-rank rule ---
+import sys as _sys
+from pathlib import Path as _Path
+_sys.path.insert(0, str(_Path(__file__).resolve().parents[2]))
+from kga.certificate import split_conformal_rank_radius as _rank_radius  # noqa: E402
+
+# FIX-QUEUE ITEM 30 (F3-17): `REPO` was hard-coded to the author's external
+# volume (KB_REPO_ROOT), which `EXTERNAL_STORAGE_POLICY.md:18`
+# explicitly bans ("Release guards reject ... absolute machine-local paths").
+# The probe could not be run by anyone else without editing it.  It now resolves
+# from this file's own location, with KBOUND_REPO_ROOT as the override.
+REPO = os.environ.get(
+    "KBOUND_REPO_ROOT",
+    os.path.abspath(os.path.join(os.path.dirname(os.path.abspath(__file__)), os.pardir, os.pardir)),
+)
 ALPHA = 0.10
 PROBE_SIZES = [0, 8, 16, 32, 64]
 SEED = 20260615
@@ -87,7 +139,8 @@ abs_bias = np.abs(theta_lf - theta_true)
 
 def loo_eps(i):  # leave-one-category-out (1-alpha) quantile of |theta_lf - theta_true|
     others = np.delete(abs_bias, i)
-    return float(np.quantile(others, 1 - ALPHA))
+    # D10: exact split-conformal rank radius, not numpy's interpolated quantile.
+    return float(_rank_radius(others, ALPHA))
 
 def decide(point, eps):
     if point - eps > 0: return "ADAPT"

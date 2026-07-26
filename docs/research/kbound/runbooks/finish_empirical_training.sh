@@ -5,13 +5,16 @@
 #   bash docs/research/kbound/runbooks/finish_empirical_training.sh smoke
 #   caffeinate -is bash docs/research/kbound/runbooks/finish_empirical_training.sh run
 #   bash docs/research/kbound/runbooks/finish_empirical_training.sh finalize
+# --- interpreter: $KBOUND_PYTHON, default python3 (was a hard-coded venv path).
+KB_PYTHON="${KBOUND_PYTHON:-python3}"
+
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "$0")/../../../.." && pwd)"
 K="$ROOT/docs/research/kbound"
 RES="$ROOT/experiments/kbound/results"
 AETTA="$ROOT/AETTA"
-PY="${PY:-/opt/anaconda3/envs/aetta/bin/python}"
+PY="${PY:-"$KB_PYTHON"}"
 CONDA="${CONDA:-/opt/anaconda3/bin/conda}"
 MODE="${1:-preflight}"
 export MPLCONFIGDIR="${MPLCONFIGDIR:-/tmp/kbound-matplotlib}"

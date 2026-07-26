@@ -1,4 +1,20 @@
-# Phase 4-5 Evidence Matrix (2026-07-21). Two audit subagents (grid=complete, natural=partial).
+# Phase 4-5 Evidence Matrix (2026-07-21)
+
+> **SUPERSEDED BY `SUBMISSION_LEDGER.md` §3 and §7.** Stamped 2026-07-26. Three specific ways this
+> file is now wrong, all recorded so the drift is visible rather than silent:
+> 1. Its CIFAR-10-C rows carry the **stress-grid** aggregate (`.0016/.0080/.1239`). The promoted
+>    panel is the **mixed head-to-head** aggregate (`.0016/.0079/.1241`). Both are real; only one
+>    is the panel source. Reconciliation: `SUBMISSION_LEDGER.md §5`.
+> 2. It records "RxRx1 fresh 0.0/0.2587/0.0 real ckpt confirmed". The promoted value is **0.2531**,
+>    from `rxrx1_protocol_J_v1/analyze_F_results.json` (`candidate: sar_online`, test seeds 5-9).
+>    0.2587 is the seeds 0-4 extraction — a different seed set. Settled: `SUBMISSION_LEDGER.md §11a`.
+> 3. Several items marked `[TODO-local]` here are marked `[RESOLVED]` in the ledger, so the two
+>    "single sources of truth" disagreed about their own status. The ledger wins.
+>
+> Its replay rule line below describes the **in-pool** radius. The declared rule is now
+> leave-one-out-of-pool (`SUBMISSION_LEDGER.md §1a`).
+
+Two audit subagents (grid=complete, natural=partial).
 Replay rule: exact split-conformal eps=sorted(rho)[k-1], k=ceil((n+1)(1-a)), a=0.10; FA_u=mean(ADAPT & B<=0).
 
 ## GRID + DIAGNOSTIC (Agent A, complete)

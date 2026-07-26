@@ -1,6 +1,27 @@
 """Validation v2 (adversary-hardened): multi-seed, asymmetric abstain regions, full precision.
 Tests: (F),(A) identities; forced-abstention >=1/2; and whether (A)'s sign robustly separates
 ImageNet-C-like (harmful mass) from Camelyon-like (helpful-dominated) or is a knife-edge."""
+# --- defect D8: portable roots (docs/research/kbound/EXTERNAL_STORAGE_POLICY.md bans
+# --- machine-local absolute paths in tracked code). This file previously hard-coded a
+# --- Cowork *session sandbox* mount, which is worse than a
+# --- home directory: it is valid only inside one ephemeral container.
+import os as _kb_os
+from pathlib import Path as _KbPath
+
+
+def _kb_repo_root() -> str:
+    override = _kb_os.environ.get("KBOUND_REPO_ROOT", "").strip()
+    if override:
+        return str(_KbPath(override).expanduser().resolve())
+    here = _KbPath(__file__).resolve()
+    for candidate in here.parents:
+        if (candidate / "pyproject.toml").exists():
+            return str(candidate)
+    raise RuntimeError(f"repository root not found above {here}; set KBOUND_REPO_ROOT")
+
+
+KB_REPO_ROOT = _kb_repo_root()
+
 import numpy as np, json, os
 beta=0.10
 def scen(rng, p_help,p_harm, abst_skew):
@@ -32,5 +53,5 @@ out={"beta":beta,
  "camelyon_like(helpful-dom, no harmful, abst NET-HELPFUL)": multi(0.80,0.00,+0.6),
  "camelyon_like(helpful-dom, tiny harmful, abst ~neutral)": multi(0.78,0.02,0.0),
  "forced_abstention": "structural: |M|<beta admits gamma=+/-beta with opposite sign(Delta) at matched (Z,M) => any commit wrong w.p.>=1/2"}
-json.dump(out,open("/sessions/inspiring-vigilant-keller/mnt/AutoML_Flagship_V8/docs/research/kbound/theory_v2/minimax_frontier/results_v2.json","w"),indent=2)
+json.dump(out,open(KB_REPO_ROOT + "/docs/research/kbound/theory_v2/minimax_frontier/results_v2.json","w"),indent=2)
 print(json.dumps(out,indent=2))

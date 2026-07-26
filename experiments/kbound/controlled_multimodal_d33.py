@@ -7,6 +7,12 @@ from __future__ import annotations
 import os, json, numpy as np
 from sklearn.linear_model import LogisticRegression
 from sklearn.ensemble import GradientBoostingRegressor
+
+# --- defect D10: the certificate radius is the shipped exact-rank rule ---
+import sys as _sys
+from pathlib import Path as _Path
+_sys.path.insert(0, str(_Path(__file__).resolve().parents[2]))
+from kga.certificate import split_conformal_rank_radius as _rank_radius  # noqa: E402
 from torchvision import datasets
 
 SEED = 20260615; ALPHA = 0.10
@@ -53,7 +59,8 @@ for i in range(n):
     gb=GradientBoostingRegressor(n_estimators=200,max_depth=2,learning_rate=0.05,subsample=0.8,random_state=0)
     gb.fit(Z[tr_idx], ben[tr_idx])
     bhat=float(gb.predict(Z[i:i+1])[0])
-    resid=np.abs(ben[tr_idx]-gb.predict(Z[tr_idx])); eps=float(np.quantile(resid,1-ALPHA))
+    # D10: exact split-conformal rank radius, not numpy's interpolated quantile.
+    resid=np.abs(ben[tr_idx]-gb.predict(Z[tr_idx])); eps=float(_rank_radius(resid,ALPHA))
     if bhat-eps>0: d_,a="ADAPT",accF[i]; n_adapt+=1; fa+=int(ben[i]<0)
     elif bhat+eps<0: d_,a="FREEZE",accA[i]
     else: d_,a="ABSTAIN",accA[i]

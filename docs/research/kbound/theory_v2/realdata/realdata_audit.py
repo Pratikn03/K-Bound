@@ -18,13 +18,33 @@ correlation violating H is EXPECTED -- it is the diagnostic (tau, gamma) working
 
 Author: K-Bound theory_v2 real-data agent. CPU-only. Seeds fixed.
 """
+# --- defect D8: portable roots (docs/research/kbound/EXTERNAL_STORAGE_POLICY.md bans
+# --- machine-local absolute paths in tracked code). KB_REPO_ROOT is discovered from this
+# --- file's own location; override with $KBOUND_REPO_ROOT.
+import os as _kb_os
+from pathlib import Path as _KbPath
+
+
+def _kb_repo_root() -> str:
+    override = _kb_os.environ.get("KBOUND_REPO_ROOT", "").strip()
+    if override:
+        return str(_KbPath(override).expanduser().resolve())
+    here = _KbPath(__file__).resolve()
+    for candidate in here.parents:
+        if (candidate / "pyproject.toml").exists():
+            return str(candidate)
+    raise RuntimeError(f"repository root not found above {here}; set KBOUND_REPO_ROOT")
+
+
+KB_REPO_ROOT = _kb_repo_root()
+
 import json, os, glob, csv
 import numpy as np
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-ARCHIVE = "/Volumes/T9/uav/AutoML_Flagship_V8/experiments/elara_u/score_archive"
-TTA_CSV = "/Volumes/T9/uav/AutoML_Flagship_V8/experiments/kbound/results/cifar10c_65cells.csv"
-TTA_CIS = "/Volumes/T9/uav/AutoML_Flagship_V8/experiments/kbound/results/decisive_tta_cis.json"
+ARCHIVE = KB_REPO_ROOT + "/experiments/elara_u/score_archive"
+TTA_CSV = KB_REPO_ROOT + "/experiments/kbound/results/cifar10c_65cells.csv"
+TTA_CIS = KB_REPO_ROOT + "/experiments/kbound/results/decisive_tta_cis.json"
 OUT_JSON = os.path.join(HERE, "realdata_audit_results.json")
 RNG = np.random.default_rng(20260610)
 

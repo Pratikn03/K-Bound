@@ -36,6 +36,8 @@ from PIL import Image
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from cifar_tent_mps_v2 import (tent_adapt, eata_adapt, sar_adapt, evidence_vector,
                                policy_metrics, label_regime, acc_on, ALPHA, SEED)
+# The ONE radius rule and the ONE false-adapt definition (fix-queue items 4, 15, 28).
+import kbound_decide as _kb  # noqa: E402
 
 DOMAINS = {"PACS": ["art_painting", "cartoon", "photo", "sketch"],
            "VLCS": ["Caltech101", "LabelMe", "SUN09", "VOC2007"]}
@@ -162,7 +164,28 @@ def gen_cells(f0, samples, nC, dev, rng, methods, cell_cfgs, adapt_lr=None):
 
 
 def decide_transfer(cal, test, alpha):
-    """GBR fit on CALIBRATION cells, conformal eps from cal LOO residuals, applied to TEST cells."""
+    """GBR fit on CALIBRATION cells, conformal eps from cal LOO residuals, applied to TEST cells.
+
+    FIX-QUEUE ITEM 4 does not bite here: this is the *genuine held-out calibration
+    split* the fix-queue offers as the alternative to leave-one-out-of-pool.  The
+    calibration cells come from a held-out SOURCE domain and the scored cells from
+    the held-out TEST domain, so eps is never a function of a label it protects.
+
+    What DID need fixing is the RULE (fix-queue items 2 + 4): eps was
+    ``float(np.quantile(np.abs(loo - Bc), 1 - alpha))``, numpy's linear
+    interpolation between order statistics.  That is not an observed residual and
+    does not satisfy the finite-sample rank argument, and having two rules inside
+    one paper is panel finding F1-2 / F4-10 / F5-2.  eps is now the exact
+    split-conformal rank quantile ``r_(k)``, ``k = ceil((n+1)(1-alpha))``, from
+    ``kbound_decide.conformal_radius`` -> ``kga.certificate`` (fix-queue item 15),
+    and the trichotomy comes from ``kga.policy`` rather than a local ``np.where``.
+
+    NOTE for the paper: this changes the PACS/VLCS numbers by the interpolated ->
+    exact-rank delta (NUMBERS_PACK.md sec. 0.4 prices the same change on five other
+    published rows). The committed PACS artifacts carry no ``b_hat``, so they
+    cannot be re-scored offline (NUMBERS_PACK.md sec. 8.2) -- this track must be
+    re-run to be reported under the declared rule.
+    """
     from sklearn.ensemble import GradientBoostingRegressor
     Zc = np.array([r["Z"] for r in cal]); Bc = np.array([r["B"] for r in cal])
     Zt = np.array([r["Z"] for r in test])
@@ -173,9 +196,9 @@ def decide_transfer(cal, test, alpha):
         tr = np.arange(len(Bc)) != i
         loo[i] = GradientBoostingRegressor(n_estimators=250, max_depth=2, learning_rate=0.05,
                                            subsample=0.8, random_state=SEED).fit(Zc[tr], Bc[tr]).predict(Zc[i:i+1])[0]
-    eps = float(np.quantile(np.abs(loo - Bc), 1 - alpha))
+    eps = float(_kb.conformal_radius(np.abs(loo - Bc), alpha))
     Bhat = gbr.predict(Zt)
-    dec = np.where(Bhat - eps > 0, "ADAPT", np.where(Bhat + eps < 0, "FREEZE", "ABSTAIN"))
+    dec = _kb.decide(Bhat, eps, alpha=alpha)
     return dec, eps
 
 
@@ -260,7 +283,13 @@ def main():
         B = aa - a0
         pm = policy_metrics(dec, a0, aa, B)
         adapt = dec == "ADAPT"
-        fa_u = float(np.mean(adapt & (B < 0))); fa_c = float(np.mean(B[adapt] < 0)) if adapt.any() else 0.0
+        # fix-queue item 28: ONE definition -- a false adapt is ADAPT on B <= 0.
+        # The old line used the STRICT `B < 0` on both rates, which exempts ties
+        # (500 archived cells have B exactly 0.0 and 102 of them ADAPT), and
+        # silently reported fa_c = 0.0 rather than "undefined" when nothing adapted.
+        _fa = _kb.false_adapt(dec, B)
+        fa_u = float(_fa["fa_u"])
+        fa_c = _fa["fa_c"]   # None when there are no ADAPT decisions
         cis = boot_ci(dec, a0, aa)
         win = (cis["vs_adapt_ci"][0] > 0 and cis["vs_freeze_ci"][0] > 0 and fa_u <= args.alpha)
         verdict = "WIN (beats-both, CI-robust)" if win else (

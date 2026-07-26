@@ -25,15 +25,22 @@ score the untouched held-out domains exactly once.
     \State Fit $\widehat\Delta_{-i}$ on the other $N{-}1$ cells;\;
       $\rho_i \leftarrow |\widehat\Delta_{-i}(Z_i)-\Delta_i|$ \Comment{leave-one-cell-out}
   \EndFor
-  \State $\varepsilon \leftarrow \rho_{(k)}$, $k=\lceil (N{+}1)(1-\alpha)\rceil$ \Comment{exact split-conformal rank quantile}
   \ForAll{cells $i \in \mathcal{C}$}
-    \State Run Algorithm~\ref{alg:kga} with $(f_0,\mathcal{A}_k,X_i,\widehat\Delta_{-i},\varepsilon)$
+    \State $\varepsilon_i \leftarrow \rho_{(k)}$ over $\{\rho_j\}_{j\ne i}$, $k=\lceil N(1-\alpha)\rceil$;\;
+      $\varepsilon_i \leftarrow +\infty$ if $k>N{-}1$
+      \Comment{\textbf{leave-one-out-of-pool} (\S\ref{par:loo-pool}); unclamped rank rule, so an
+      infeasible $k$ returns $+\infty$ and forces \textsc{abstain}. Pool is a jackknife, not a clean
+      split: \textbf{NOT exact split conformal}, coverage here is empirical}
+  \EndFor
+  \ForAll{cells $i \in \mathcal{C}$}
+    \State Run Algorithm~\ref{alg:kga} with $(f_0,\mathcal{A}_k,X_i,\widehat\Delta_{-i},\varepsilon_i)$
       \Comment{each cell scored by the estimator that never saw it (cross-fitted)}
   \EndFor
 \Else{ \textbf{natural shift} (Camelyon17, iWildCam, Office-Home, RxRx1): split
   $\mathcal{C}=\mathcal{C}_{\mathrm{cal}} \,\dot\cup\, \mathcal{C}_{\mathrm{test}}$ across domains}
   \State Form out-of-fold residuals on $\mathcal{C}_{\mathrm{cal}}$;\;
-    $\varepsilon \leftarrow \rho_{(k)}$, $k=\lceil (N{+}1)(1-\alpha)\rceil$ (exact split-conformal rank quantile)
+    $\varepsilon \leftarrow \rho_{(k)}$, $k=\lceil (N{+}1)(1-\alpha)\rceil$ ($+\infty$ if $k>N$)
+    \Comment{\textbf{cross-validated residuals applied to a full-data estimator; NOT exact split conformal.} The CV-vs-CV$+$ mismatch means no finite-sample guarantee attaches; jackknife$+$ at level $1-2\alpha$ would, and is not implemented}
   \State Fit deployment estimator $\widehat\Delta(Z)$ on all of $\mathcal{C}_{\mathrm{cal}}$;\;
     freeze $(\widehat\Delta,\varepsilon)$
   \ForAll{$c \in \mathcal{C}_{\mathrm{test}}$}
@@ -110,28 +117,35 @@ marg.\ std       & $\mathrm{std}_c \mathrm{mean}_n\,p$ & frozen marginal \\
 \end{table}
 
 \begin{table}[t]\centering\footnotesize
-\caption{Per-track adapter hyperparameters (from the run configs). Adapted parameters are
-BN/LayerNorm-affine only; TTA optimizer is Adam. ``Aggressiveness'' cells use
-mild $=(10$ steps, lr $10^{-3})$ or aggressive $=(50$ steps, lr $2.5\!\times\!10^{-3})$. EATA uses
-an entropy filter $e_{\mathrm{thr}}{=}0.4\ln K$ ($\approx0.92$ for CIFAR-10, $2.76$ for
-ImageNet); SAR adds SAM $+$ entropy reset.
+\caption{Per-track adapter operating points, read back from the archived run manifests
+(\texttt{argv} plus the driver's resolved constants) rather than from the intended configuration.
+Adapted parameters are BN/LayerNorm-affine only \emph{except} on ImageNet-C, where
+\texttt{layer4} is also adaptable; TTA optimizer is Adam except SAR, which uses
+SGD(momentum $0.9$) under SAM. EATA uses an entropy filter $e_{\mathrm{thr}}{=}0.4\ln K$
+($\approx0.92$ for CIFAR-10, $2.76$ for ImageNet); SAR adds SAM $+$ entropy reset.
 Backbones for CIFAR-10-C, ImageNet-C, PACS, and Camelyon17 are verified from the run code; the
 remaining WILDS/DomainBed tracks use the standard baseline.}
 \label{tab:adapter-hparams}
-\resizebox{\columnwidth}{!}{%
-\begin{tabular}{@{}llll@{}}
+\begin{tabular}{@{}p{0.17\linewidth}p{0.17\linewidth}p{0.20\linewidth}p{0.34\linewidth}@{}}
 \toprule
-Track & Backbone & Adapter(s) & Steps / lr \\
+Track & Backbone & Adapter(s) & Batch / steps / lr (as run) \\
 \midrule
-CIFAR-10-C stress & ResNet-18 & Tent/EATA/SAR & mild \& aggressive (per cell) \\
-ImageNet-C & ResNet-50 & Tent/EATA/SAR (SAM+reset) & mild \& aggressive (per cell) \\
-PACS (LODO) & ResNet-18 & mild/aggressive & $10$/$10^{-3}$ \,\&\, $50$/$2.5{\times}10^{-3}$ \\
+CIFAR-10-C stress & ResNet-18 & Tent/EATA/SAR & both levels crossed per cell: mild $=(10$ steps, $10^{-3})$ and aggressive $=(50$ steps, $2.5{\times}10^{-3})$; batch regimes large-iid / small / tiny \\
+ImageNet-C & ResNet-50 & Tent/EATA/SAR (SAM$+$reset) & \textbf{aggressive only, small batch only}: batch $16$, $50$ steps, lr $\mathbf{4{\times}10^{-3}}$, \texttt{layer4} adaptable. This is $16\times$ SAR's published $2.5{\times}10^{-4}$ and the block Niu et al.\ freeze is not frozen (\S\ref{sec:imagenetc}) \\
+PACS (LODO) & ResNet-18 & Tent/EATA/SAR & mild and aggressive crossed: $10$/$10^{-3}$ and $50$/$2.5{\times}10^{-3}$ \\
 Camelyon17 & DenseNet-121 & EATA online & $10$ / $10^{-3}$ \\
 iWildCam & ResNet-50 & Tent episodic & $10$ / $10^{-3}$ \\
 Office-Home & ResNet (DomainBed) & SAR online aggr. & $50$ / $2.5{\times}10^{-3}$ \\
-RxRx1 & ResNet-50 & episodic & $5$ / (batch $64$) \\
+RxRx1 & ResNet-50 & episodic & $5$ steps, batch $64$ \\
 \bottomrule
-\end{tabular}}
+\end{tabular}
+
+\vspace{2pt}
+{\footnotesize An earlier version of this table recorded ``mild \& aggressive (per cell)'' for
+ImageNet-C. That was wrong: the archived \texttt{argv} for every promoted ImageNet-C seed contains
+\texttt{--batch-regimes small --aggressiveness aggressive --adapt-lr 0.004}, i.e.\ a single
+operating point, and \texttt{SAR\_FREEZE\_LAYER4} is left at its default \texttt{False}. The
+corrected row is above.}
 \end{table}
 
 \section{Complete core proofs}\label{app:theory-full}
@@ -153,21 +167,39 @@ condition exact and, crucially, \emph{asymmetric}, which explains why natural-sh
 $R(\pi)=\E_Q[\,|\Delta|\,\mathbf 1\{\pi\neq\text{oracle}\}\,]$ be regret-to-oracle over a
 deployment mixture $Q$.
 \begin{proposition}[Asymmetric fixed-policy regret]\label{prop:beatsboth-asym}
-Since $\Delta>0$ on $\{M>\beta\}$ and $\Delta<0$ on $\{M<-\beta\}$ for every admissible drift
-(Theorem~\ref{thm:headline}).  The excess regret of always-freeze is exactly the
-detectable-helpful mass $\E_Q[|\Delta|\mathbf 1\{M>\beta\}]$.  For always-adapt
-it is the detectable-harmful mass plus harmful-minus-helpful regret inside
-$\{|M|\le\beta\}$.
-Hence $\delta^\star$ weakly dominates always-freeze, strictly iff detectable-helpful mass
-$Q(M>\beta)>0$; but $\delta^\star$ beats always-adapt iff the certified harmful-mass win
-exceeds the helpful adaptation forgone in the abstention region. Strict improvement over both fixed policies thus requires
-\emph{both} detectable-helpful and net-detectable-harmful mass.
+Assume $\Delta>0$ on $\{M>\beta\}$ and $\Delta<0$ on $\{M<-\beta\}$ for every admissible drift, which
+holds by Theorem~\ref{thm:headline}(ii). Then:
+\begin{enumerate}
+\item[\textnormal{(a)}] $R(\textsc{always-freeze})-R(\delta^\star)
+  =\E_Q[|\Delta|\mathbf 1\{M>\beta\}]\ \ge 0$;
+\item[\textnormal{(b)}] $R(\textsc{always-adapt})-R(\delta^\star)
+  =\E_Q[|\Delta|\mathbf 1\{M<-\beta\}]
+  +\E_Q[|\Delta|\mathbf 1\{|M|\le\beta,\ \Delta<0\}]
+  -\E_Q[|\Delta|\mathbf 1\{|M|\le\beta,\ \Delta>0\}]$.
+\end{enumerate}
+Consequently $\delta^\star$ weakly dominates always-freeze, and strictly so if and only if
+$\E_Q[|\Delta|\mathbf 1\{M>\beta\}]>0$; whereas $\delta^\star$ beats always-adapt if and only if the
+first two terms of (b) exceed the third, i.e.\ the certified plus incidentally-avoided harmful mass
+exceeds the helpful adaptation forgone inside the abstention band. Strict improvement over
+\emph{both} fixed policies therefore requires detectable-helpful mass and net-detectable-harmful
+mass simultaneously.
 \end{proposition}
+\begin{proof}
+Partition the deployment mixture into $\{M>\beta\}$, $\{M<-\beta\}$, and $\{|M|\le\beta\}$. On
+$\{M>\beta\}$ the frontier adapts and $\Delta>0$, so $\delta^\star$ is the oracle and pays $0$ while
+always-freeze pays $|\Delta|$; on $\{M<-\beta\}$ the frontier freezes and $\Delta<0$, so
+$\delta^\star$ pays $0$ while always-adapt pays $|\Delta|$. On $\{|M|\le\beta\}$ the frontier
+abstains and, by the stated convention, serves $f_0$: it therefore agrees with always-freeze there
+and pays $|\Delta|\mathbf 1\{\Delta>0\}$, while always-adapt pays $|\Delta|\mathbf 1\{\Delta<0\}$.
+Taking expectations under $Q$ and differencing term by term gives (a) and (b). Non-negativity in (a)
+is immediate; the ``if and only if'' clauses follow because each displayed expectation is an integral
+of a non-negative integrand.
+\end{proof}
 \noindent Because abstention defaults to \textsc{freeze}, the freeze side is free but the
 adapt side is conditional: a helpful-dominated shift with negligible detectable-harmful mass
 ties or slightly loses to always-adapt. This predicts the candidate-dependent Camelyon17
 outcome (Table~\ref{tab:multiseed}): the harmful-mass-bearing arm wins narrowly while the
-helpful-dominated arms tie. Full partition proof and a $25$-seed numerical check are in the
+helpful-dominated arms tie. A $25$-seed numerical check of the partition identity is in the
 repository note \texttt{theory\_v2/minimax\_frontier/}. This sharpens, and is consistent with,
 the frontier maximality already established in Theorem~\ref{thm:headline}.
 
@@ -271,12 +303,42 @@ uniform-index model to arbitrary exchangeable deployment processes.
 \section{Claim-to-artifact map}\label{app:claim-artifact}
 The machine-readable manifest \path{paper/generated/kbound_result_manifest.json} is the
 authoritative index for every promoted number, seed count, protocol, quantile convention, and known
-replay caveat. The derived audit \path{paper/generated/empirical_audit/decision_metrics.json}
-adds adapt/freeze/abstain counts and rates, 95\% Wilson intervals for action rates and marginal
-false adaptation, empirical interval-hit coverage where the raw fields were retained, the exact
-source artifact, and a reproduction command. Observed interval-hit coverage is explicitly marked
-\emph{empirical only}; it neither verifies exchangeability nor establishes the theorem's coverage
-premise or risk alignment. Historical natural-shift summaries that did not retain interval-hit
+replay caveat. It was regenerated for this revision, and three of its \texttt{source} fields were
+wrong or absent before that: \texttt{cifar10c\_tent} and \texttt{cifar10c\_eata} named
+\path{stress_grid_multiseed_v1/LOCKED_ANALYSIS_RESULTS.json}, which holds
+$0.0016259/0.0079757/0.1239368$ --- \emph{not} the values this paper prints; the promoted values
+come from \path{mixed_headtohead_v1/} and are now recomputed cell by cell from its five
+per-condition dumps. \texttt{cifar10\_1\_K} and \texttt{rxrx1\_J} carried no \texttt{source} field
+at all and now name existing artifacts. \texttt{camelyon17\_ood} named a directory that does not
+exist; it now carries \texttt{reproducibility\_status: NOT\_REPRODUCIBLE\_FROM\_RELEASE} instead of
+a false pointer. Every row that was recomputed says so, and every row that could not be says why.
+
+The derived audit \path{paper/generated/empirical_audit/decision_metrics.json}
+adds adapt/freeze/abstain counts and rates, the exact source artifact, and a reproduction command.
+Three changes were made to it in this revision. First, its CIFAR-10-C rows recorded $1{,}109$ and
+$1{,}243$ \textsc{adapt} decisions where this paper prints $1{,}113$ and $1{,}244$. Both numbers
+were real, and of different things: $1{,}109$ is the \path{stress_grid_multiseed_v1} five-seed
+aggregate under the \emph{archived interpolated} quantile, assembled as seed~$0$'s stored summary
+($221$ adapts --- that tree ships no seed-$0$ per-condition dump) plus seeds $1$--$4$ recomputed
+($888$); $1{,}113$ is the \path{mixed_headtohead_v1} five-seed aggregate under the declared
+exact-rank rule, recomputed from all five dumps. The paper promotes the latter, so the audit now
+does too, and its reproduction command reproduces it. (The old glob was also self-inconsistent: it
+matched four files, $1{,}728$ cells, while the row claimed $n=2160$.) Second, it now carries
+one-sided Clopper--Pearson
+$95\%$ upper bounds on the \emph{conditional} false-adapt rate, which is the statistic that
+constrains the guarantee once the marginal rate is $0$ (\S\ref{sec:fa-identity},
+Table~\ref{tab:decision-accounting}). Second, the $95\%$ Wilson intervals previously attached to
+\texttt{interval\_coverage\_observed} have been \textbf{deleted}: under in-sample rank calibration
+that count is $N-(N-k)$, a deterministic function of $N$ and $\alpha$ rather than a binomial draw
+(it is $1940/2160=0.8981$ at $N{=}432\times5$ and $24/27$ at $N{=}27$ for \emph{any} data), so a
+binomial interval on it has no frequentist interpretation. Wilson intervals are retained only where
+the count is a genuine draw, e.g.\ the PACS false-adapt count. Third, the ImageNet-C rows were
+single-seed scorings under the superseded interpolated rule and are now the five-seed,
+$135$-cell aggregates under the declared leave-one-out-of-pool exact-rank rule; note that under
+that pool the coverage count is \emph{not} a deterministic function of $n$, which is why the
+ImageNet-C SAR row's $\mathrm{FA}_{\mathrm u}$ is a measured $1/135$ rather than a forced $0$. Observed interval-hit coverage
+remains marked \emph{empirical only}; it neither verifies exchangeability nor establishes the
+theorem's coverage premise or risk alignment. Historical natural-shift summaries that did not retain interval-hit
 records are marked \texttt{not\_retained}, not assigned a synthetic coverage value. The compact
 claim matrix \path{paper/generated/empirical_audit/claim_matrix.md} records claim, dataset,
 seeds, artifact, paper consumer, and closure status. Table~\ref{tab:claim-status} gives the
@@ -284,47 +346,144 @@ reader-facing summary.
 
 \section{ImageNet-C multi-seed detail}\label{app:imagenetc-ms}
 Table~\ref{tab:imagenetc-perseed} reports the SAR row of Table~\ref{tab:imagenetc-faithful} per
-seed. Point estimates improve both fixed-policy regrets on every seed; the per-seed $27$-cell paired
-bootstrap excludes zero on both gaps for seeds $0$--$1$ and narrowly includes zero on the
-remaining seeds, whose realized harmful mass is lighter---consistent with the regime map:
-the certified win scales with detectable harmful mass. The pooled seed-averaged bootstrap
-(the same design as the CIFAR-10-C rows) excludes zero on both gaps.
-$\mathrm{FA}_{\mathrm u}\le\alpha$ at every seed.
+seed, under the declared unclamped exact-rank radius calibrated leave-one-out-of-pool
+(\S\ref{par:quantile-rule}, \S\ref{par:loo-pool}).
+
+\paragraph{Correction 1: the rule.} Earlier versions of this table were computed with the
+interpolated empirical quantile \texttt{np.quantile}$(\rho,0.9)$ while the main-text aggregate used
+the exact rank statistic, and the two rules are $2.4\times$ apart on this track (pooled regret
+$0.0122$ versus $0.0289$; $61$ versus $13$ \textsc{adapt} decisions out of $135$). The sentence
+``point estimates improve both fixed-policy regrets on every seed'' was true only under the
+interpolated rule and is \textbf{false} under the promoted one: on seeds $0$, $1$, and $3$
+\textsc{KGA} never adapts, so its regret is bit-identical to always-freeze and it beats neither. The
+corrected statement is that point estimates improve both fixed-policy regrets on $2$ of $5$ seeds
+(seeds $2$ and $4$), and the pooled point estimate rests on $13$ \textsc{adapt} decisions of which
+$10$ come from seed~$2$.
+
+\paragraph{Correction 2: the pool.} The values previously printed here ($0.0264$ pooled,
+$\mathrm{FA}_{\mathrm u}=0$, $12/14/109$) were computed with each cell's own residual inside the
+pool that produced its radius. Removing the scored index changes $2$ of $135$ decisions and gives
+the promoted row: $0.0289$, $\mathrm{FA}_{\mathrm u}=1/135$, $13/15/107$. The superseded in-pool
+values are kept in the last row of Table~\ref{tab:imagenetc-perseed} for comparison, not for
+citation.
+
+\paragraph{What the per-seed zeros mean, and the one that is not zero.} At $n=27$ the in-sample
+exact-rank ceiling is $(n-k)/n=1/27=0.037$, so under an in-pool radius
+``$\mathrm{FA}_{\mathrm u}\le\alpha$'' would be arithmetically forced
+(\S\ref{sec:fa-identity}). Under the promoted leave-one-out pool it is not forced, and it is not
+$0$: seed~$2$ takes $10$ \textsc{adapt} decisions and $1$ of them is on a cell with $\Delta\le0$,
+giving $\mathrm{FA}_{\mathrm u}=1/27=0.037$ on that seed and $1/135=0.0074$ pooled --- inside
+$\alpha=0.10$, but measured rather than forced. Conditional on the adapts actually taken, the
+one-sided Clopper--Pearson $95\%$ upper bounds on $\mathrm{FA}_{\mathrm c}$ are $0.394$ for seed~$2$
+($1/10$) and $0.632$ for seed~$4$ ($0/3$); seeds $0$, $1$, $3$ make no adapt decision and
+admit no bound at all. The pooled bound is $0.316$ on $1/13$.
 
 \begin{table}[t]\centering\footnotesize
-\caption{Per-seed SAR detail (ImageNet-C, $27$ cells/seed, $\alpha{=}0.1$). Gap columns are
-$95\%$ paired-bootstrap upper bounds (negative = CI excludes zero).}
+\caption{\textbf{ImageNet-C SAR per seed under the declared unclamped exact-rank rule, calibrated
+leave-one-out-of-pool} ($n{=}27$ conditions per seed, $\alpha{=}0.10$). Regret is against the
+per-cell oracle $\max(a_0,a_a)$. ``$\equiv$'' marks a seed on which \textsc{KGA} never adapts, so its
+regret is bit-identical to always-freeze. \textsc{ad}/\textsc{fr}/\textsc{ab} are the action counts.
+The final row is the superseded in-pool scoring, printed so the reader can price the leakage; it is
+not the promoted row.}
 \label{tab:imagenetc-perseed}
-\resizebox{\columnwidth}{!}{%
-\begin{tabular}{lccccc}
+\begin{tabular}{lcccccccc}
 \toprule
-seed & harmful & regret KGA & gap$_{\mathrm{adapt}}$ hi & gap$_{\mathrm{freeze}}$ hi & $\mathrm{FA}_{\mathrm u}$ \\
+seed & \textsc{KGA} & adapt & freeze & $\mathrm{FA}_{\mathrm u}$
+& \textsc{ad} & \textsc{fr} & \textsc{ab} & beats both \\
 \midrule
-0 & $0.148$ & $0.0108$ & $-0.0011$ & $-0.0111$ & $0.000$ \\
-1 & $0.222$ & $0.0091$ & $-0.0047$ & $-0.0105$ & $0.000$ \\
-2 & $0.111$ & $0.0128$ & $+0.0007$ & $+0.0148$ & $0.037$ \\
-3 & $0.148$ & $0.0056$ & $+0.0041$ & $-0.0143$ & $0.000$ \\
-4 & $0.148$ & $0.0154$ & $+0.0063$ & $-0.0115$ & $0.000$ \\
+0 & $0.0319$ & $0.0625$ & $0.0319$\;$\equiv$ & $0.000$ & 0 & 3 & 24 & --- \\
+1 & $0.0312$ & $0.0595$ & $0.0312$\;$\equiv$ & $0.000$ & 0 & 4 & 23 & --- \\
+2 & $0.0226$ & $0.0425$ & $0.0284$ & $0.037$ & 10 & 2 & 15 & yes \\
+3 & $0.0290$ & $0.0441$ & $0.0290$\;$\equiv$ & $0.000$ & 0 & 3 & 24 & --- \\
+4 & $0.0297$ & $0.0561$ & $0.0389$ & $0.000$ & 3 & 3 & 21 & yes \\
 \midrule
-pooled & $0.156$ & $0.0107$ & $-0.0030$ & $-0.0093$ & $0.007$ \\
+\textbf{pooled (promoted)} & $\mathbf{0.0289}$ & $0.0529$ & $0.0319$ & $\mathbf{0.0074}$ & 13 & 15 & 107 & point est.\ only; Tab.~\ref{tab:imagenetc-ci-unit} \\
+\midrule
+\emph{pooled, in-pool (superseded)} & \emph{0.0264} & $0.0529$ & $0.0319$ & \emph{0.000} & 12 & 14 & 109 & --- \\
 \bottomrule
-\end{tabular}}
+\end{tabular}
+\end{table}
+
+\section{Pre-registered arm inventory and the multiplicity family}\label{app:arm-inventory}
+\S\ref{par:multiplicity} defines the confirmatory family prospectively as the pre-registered
+beats-both bars. This appendix publishes the inventory so a reader can see the denominator.
+
+\paragraph{Campaign census.} Across the committed result and protocol artifacts there are
+$1{,}387$ recorded \texttt{beats\_both} determinations ($326$ true, $1{,}049$ false; a $23.5\%$ base
+rate), spread over $70$ distinct scored result units and $69$ pre-registered protocol files in
+\path{research_lock/}, produced by campaigns named \texttt{win\_hunt\_v2}--\texttt{v5},
+\texttt{win\_finder\_v*}, \texttt{win\_loop\_v1}, and \texttt{hard\_dataset\_win\_loop\_v1}. The
+overwhelming majority are development screens on dev splits. They are recorded here because a
+reader is entitled to know that the search happened, not because they belong in an inferential
+family.
+
+\paragraph{Confirmatory family.} Table~\ref{tab:arm-inventory} lists every (track, candidate) pair
+that reached a declared held-out scoring under a sealed protocol, with its verdict --- including the
+pairs that failed. Holm at $0.05$ is applied over this inventory, not over the subset that won.
+
+\begin{table}[t]\centering\footnotesize
+\caption{Confirmatory arm inventory: pairs scored once on declared test cells under a sealed
+protocol. ``BB'' = beats both fixed policies at the declared resampling unit.}
+\label{tab:arm-inventory}
+\begin{tabular}{@{}p{0.22\linewidth}p{0.13\linewidth}p{0.55\linewidth}@{}}
+\toprule
+Track & Candidate & Verdict on declared test cells \\
+\midrule
+CIFAR-10-C stress & Tent & BB, CI excludes zero vs.\ both \emph{at every resampling unit down to $6$ corruption clusters} \\
+CIFAR-10-C stress & EATA & BB point estimate; CI excludes zero vs.\ freeze at every unit, vs.\ adapt \emph{only} at the cell / twin-pair unit ($[-0.0044,+0.0004]$ at $6$ corruption clusters) \\
+CIFAR-10-C stress & SAR & \textbf{quarantined}; loses to always-adapt on seeds $1$--$4$ \\
+ImageNet-C & SAR & \textbf{no CI-supported BB}; point-estimate no-harm vs.\ always-freeze ($0.0289$ vs.\ $0.0319$); both condition-level intervals include zero under the promoted leave-one-out pool \\
+ImageNet-C & Tent & no BB; ties always-freeze exactly, $0/135$ adapts \\
+ImageNet-C & EATA & no BB; \emph{trails} always-adapt $0.0007$ vs.\ $0.0001$ \\
+Camelyon17 & EATA & no-harm; promoted triple not reproducible from release \\
+Camelyon17 (multi-seed) & Tent/EATA/SAR & no BB; SAR over-freezes \\
+iWildCam H v2 & Tent & no-harm, ties freeze; $1$ adapt \\
+Office-Home M v2 & SAR & no-harm; LOO beats-both deliberately \emph{not} promoted \\
+RxRx1 J & online & no-harm, ties freeze; $0$ adapts \\
+PACS (LODO) & fixed & \textbf{null}; loses to always-adapt $2.45\times$ \\
+ImageNet-R D & $10$ backbones & \textbf{null}; $0/10$ CI beats-both; worse than adapt on $7/10$ \\
+CIFAR-10.1 K & Tent/EATA/SAR & \textbf{fails} the transfer bar, $\mathrm{FA}_{\mathrm u}=0.167$ \\
+Three-source mixture & constructed & routing aggregate, not a transfer arm \\
+Multimodal D33 & constructed & BB on an injected-corruption grid; $9$ adapts \\
+\bottomrule
+\end{tabular}
 \end{table}
 
 \section{Auditable drift budgets: statements}\label{app:audit-short}
 The drift budget $\beta$ of the population frontier is declared in the main text. The following
-results (proofs in the long manuscript, appendix ``Auditable drift budgets''; synthetic validation
-in the repository artifact \texttt{audit\_validation/results\_audited\_drift.json}) settle when a
-\emph{computed} budget can replace it. Write $u=\eta_a-s\in[-1,1]$ on $D$ and
-$\gamma(P)=\E_{\mu_P}[u\mid D]$.
+results settle when a \emph{computed} budget can replace it. Write $u=\eta_a-s\in[-1,1]$ on $D$ and
+$\gamma(P)=\E_{\mu_P}[u\mid D]$. \textbf{Proof status.} Theorem~\ref{thm:short-audA} is proved in
+full below; it is the one we rely on. Theorems~\ref{thm:short-audC}, \ref{thm:short-audDE}, and
+\ref{thm:short-audG} are \emph{stated here without proof} and are proved in the long version of this
+manuscript (appendix ``Auditable drift budgets''); we mark them as such rather than let a reader
+assume a refereed proof is available, and no claim in the main text depends on them. Their synthetic
+validation is the repository artifact
+\texttt{audit\_validation/results\_audited\_drift.json}.
 
 \begin{theorem}[Vacuity of label-free audits]\label{thm:short-audA}
 Fix the observables $(\mu_T,f_0,f_a,s)$, hence $M$. Over the class of all target laws with these
 observables, any label-free audit $\widehat\beta=g(Z)$ satisfying
 $\Pr(|\gamma|\le\widehat\beta)\ge1-\delta$ uniformly must satisfy
-$\widehat\beta\ge\tfrac12+|M|$ with probability $\ge1-\delta$; the audited frontier then abstains
-in every world. (Corollary of Theorem~\ref{lem:nonid}'s label-kernel construction.)
+$\widehat\beta\ge\tfrac12+|M|$ with probability $\ge1-\delta$; since
+$\tfrac12+|M|>|M|$, the audited frontier abstains in every world.
 \end{theorem}
+\begin{proof}
+Because $Z=\phi(X_{1:m},f_0,f_a)$ uses no labels and the observables are held fixed, $\Law(Z)$ --- and
+hence the law of $\widehat\beta=g(Z)$ --- is the \emph{same} for every target law in the class; only
+the label kernel on $D$ varies. Now $\gamma=\E_{\mu_T}[\eta_a-s\mid D]=\bar a-\tfrac12-M$, and
+$\bar a=\Pr_T(f_a{=}Y\mid D)$ ranges over the whole of $[0,1]$ as the label kernel ranges over the
+class (take $\eta_a\equiv1$ or $\eta_a\equiv0$ on $D$, both admissible Bernoulli kernels, exactly as
+in the construction of Theorem~\ref{lem:nonid}). Hence
+$\sup|\gamma|=\max\{|1-\tfrac12-M|,\,|0-\tfrac12-M|\}=\tfrac12+|M|$, attained. Fix any realized value
+$b$ of $\widehat\beta$ with $b<\tfrac12+|M|$; choose the extremal kernel, for which
+$|\gamma|=\tfrac12+|M|>b$ deterministically, so the coverage event fails on that whole world.
+Uniform validity therefore forces $\Pr(\widehat\beta\ge\tfrac12+|M|)\ge1-\delta$.
+\end{proof}
+\noindent This is the result we regard as carrying the most operational content in the paper, and it
+is why $\beta$ is a \emph{declared} input to K-Bound rather than a fitted one: no label-free
+procedure can supply a budget that is both valid over the unrestricted class and small enough for the
+frontier to ever commit. Every useful audit must therefore purchase structure, which is what
+Theorem~\ref{thm:short-audC} prices.
 
 \begin{theorem}[Computed budgets under purchasable structure]\label{thm:short-audC}
 Each of the following side informations yields a computable $\widehat\beta$ with

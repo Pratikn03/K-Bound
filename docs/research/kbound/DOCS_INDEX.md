@@ -1,6 +1,7 @@
 # K-Bound documentation index
 
-**Last reconciled:** 2026-07-01 (Wave 4 strict-100 + doc cleanup)
+**Last reconciled:** 2026-07-26 (post-external-review revision).
+Previous reconciliation: 2026-07-01 (Wave 4 strict-100 + doc cleanup).
 
 Use this file instead of dated status notes. Stale process MDs from June 2026 were removed;
 history remains in git.
@@ -11,12 +12,23 @@ history remains in git.
 
 | Doc | Role |
 |-----|------|
-| [`README.md`](README.md) | Repo tour, quick reproduce, training commands |
-| [`PIPELINE_VS_PDF_AUDIT.md`](PIPELINE_VS_PDF_AUDIT.md) | **What `run_final_showcase.sh` updates vs PDF tables** |
-| [`PROJECT_STATUS_AND_OPEN_PROBLEMS.md`](PROJECT_STATUS_AND_OPEN_PROBLEMS.md) | **Single source of truth** — theory ledger, empirical ledger, freeze gate |
+| [`SUBMISSION_LEDGER.md`](SUBMISSION_LEDGER.md) | **CANONICAL. Overrides every other document.** Venue, freeze status, nine-track evidence tiers, absent artifacts, open items. |
+| [`README.md`](README.md) | Repo tour, current-state banner, evidence tiers, quick reproduce |
+| [`../../../DATA.md`](../../../DATA.md) | **NEW 2026-07-26.** Per-dataset version, split, DOI/URL, licence, acquisition, and which table depends on it |
+| [`PLACEHOLDER_INVENTORY.md`](PLACEHOLDER_INVENTORY.md) | **NEW 2026-07-26.** The 143 unreadable iCloud placeholders, what depends on them, recovery command, release-guard spec |
+| [`COMPARISON_FAMILY.md`](COMPARISON_FAMILY.md) | **NEW 2026-07-26.** Prospective comparison family, full pre-registered arm inventory, multiplicity correction |
+| [`PHASE6_LEAKAGE_AUDIT.md`](PHASE6_LEAKAGE_AUDIT.md) | **Corrected 2026-07-26** — its 2026-07-21 "PASS (clean)" verdict is retracted at the top of the file |
+| [`PIPELINE_VS_PDF_AUDIT.md`](PIPELINE_VS_PDF_AUDIT.md) | What `run_final_showcase.sh` updates vs PDF tables |
+| [`PROJECT_STATUS_AND_OPEN_PROBLEMS.md`](PROJECT_STATUS_AND_OPEN_PROBLEMS.md) | Theory ledger, empirical ledger, freeze gate (superseded by `SUBMISSION_LEDGER.md` where they disagree) |
 | [`THEORY_100_PERCENT_CLOSURE_PLAN.md`](THEORY_100_PERCENT_CLOSURE_PLAN.md) | Wave 4 closure gate (`formal_audit.py --strict-100`) |
 | [`THEORY_TO_CODE_MAP.md`](THEORY_TO_CODE_MAP.md) | Theorem → proof → validator → code → JSON |
 | [`claim_ledger.json`](claim_ledger.json) | Every claim ID → artifact → allowed wording |
+
+### Superseded — stamped in place, retained as history
+
+`GAP_AUDIT.md`, `INTEGRITY_FIXES.md` (both repo root), `EVIDENCE_MATRIX.md`,
+`PHASE7_INTEGRATION_AUDIT.md`, and `REVIEWER_REPRO_PACKET.md` (partially). Each carries a header
+stating what it still gets wrong. Registry: `SUBMISSION_LEDGER.md §11`.
 
 ---
 

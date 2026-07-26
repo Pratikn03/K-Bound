@@ -31,6 +31,21 @@ $g:\mathcal{Z}\to\{\textsc{adapt},\textsc{freeze},\textsc{abstain}\}$ that does 
 labels on the deployment batch.
 \end{assumption}
 
+\begin{remark}[$\gamma$ is a residual, so $M+\gamma=\bar a-\tfrac12$ is an identity]\label{rem:gamma-residual}
+The drift $\gamma$ is \emph{defined} as $\bar a-\tfrac12-M$: it is whatever is left of the
+disagreement-region accuracy after the observable part $M$ is removed. Consequently
+$M+\gamma=\bar a-\tfrac12$ by construction, and the reduction of Lemma~\ref{lem:reduction} is a
+bookkeeping identity rather than a derived fact about the shift. We state this explicitly because it
+determines what the frontier of Theorem~\ref{thm:headline} does and does not assert. Sufficiency
+($|M|>\beta\Rightarrow\sign\Delta=\sign M$) is then interval arithmetic: the interval
+$[M-\beta,M+\beta]$ has a determined sign exactly when $|M|>\beta$. The mathematical content sits in
+the \emph{necessity} clause, which requires exhibiting two admissible target laws that induce the same
+evidence law and have opposite nonzero benefits (Theorem~\ref{lem:nonid}), and in the
+audit-vacuity theorem (Aud-A), which shows the budget $\beta$ that makes the decomposition operational
+cannot itself be audited from label-free data. What the decomposition buys is organizational, and that
+is not nothing: it names, isolates, and prices the one unobservable quantity a deployment must bound.
+\end{remark}
+
 \begin{definition}[Risk alignment]\label{def:risk-align}
 Evidence $Z$ is \emph{risk-aligned on a class $\mathcal{P}$} if no two laws
 $P_T^1,P_T^2\in\mathcal{P}$ with $\sign\Delta_1\neq\sign\Delta_2$ satisfy
@@ -79,9 +94,10 @@ Do not confuse $M$ (observable margin, deploy-time), $\gamma$ (realized drift, l
 $\beta$ (declared bound $|\gamma|\le\beta$ on the deployment class), and $\varepsilon$
 (finite-sample radius from held-out residuals). The radius $\varepsilon$ operationalizes
 coverage; it is \emph{not} an estimate of $\beta$.
+%% \resizebox dropped (fix-queue item 32): scaling a \footnotesize table down again put the
+%% glyphs below the accessibility floor. Single-column TMLR has the width for it at declared size.
 \begin{center}\footnotesize
-\resizebox{\columnwidth}{!}{%
-\begin{tabular}{@{}lp{0.28\linewidth}lp{0.24\linewidth}@{}}
+\begin{tabular}{@{}lp{0.26\linewidth}lp{0.24\linewidth}@{}}
 \toprule
 Symbol & Meaning & At deploy? & Role \\
 \midrule
@@ -91,7 +107,6 @@ $\beta$ & declared bound on $|\gamma|$ & externally supplied & population fronti
 $\varepsilon$ & residual quantile radius & estimated pre-deploy & finite-sample certificate \\
 \bottomrule
 \end{tabular}
-}
 \end{center}
 \end{remark}
 

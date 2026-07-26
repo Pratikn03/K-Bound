@@ -1,5 +1,12 @@
 # MAIN_PAPER_REVISION_AUDIT — kbound_short.tex → submission-ready main manuscript
 
+> **SUPERSEDED 2026-07-26 on one point.** This dated record asserts *uniform* natural-shift
+> no-harm. That claim was withdrawn: no-harm holds on the four one-sided locked tracks
+> (Camelyon17, iWildCam, Office-Home, RxRx1) only. PACS loses to always-adapt by 2.45x,
+> ImageNet-R loses on 7 of 10 backbones, CIFAR-10.1 fails the transfer bar (FA_u = 0.167).
+> The record is left unedited below; the live claim is in `kbound_short_body.tex`.
+
+
 Date: 2026-07-03. Auditor: Claude session (lead technical editor role), with Pratik.
 Scope: revision of the SHORT paper only. The long manuscript (`kbound.tex`) remains the full
 technical record and is not edited by this revision except where noted (none).

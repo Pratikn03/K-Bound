@@ -56,14 +56,17 @@ $|\hat c_{ij}-c_{ij}|\le\varepsilon_c:=\sqrt{2\log(8/\delta)/n}$ and
 $|\hat q_a-q_a|\le\sqrt{\log(8/\delta)/(2n)}$. For a triple with
 $|c_{kl}|=|b_kb_l|\ge b_{\min}^2$ and $\varepsilon_c\le b_{\min}^2/2$, writing
 $R=c_{1k}c_{1l}/c_{kl}=b_1^2$,
+%% fix-queue item 32: \resizebox{\columnwidth}{!}{$\displaystyle ...$} dropped. Shrinking a
+%% display to fit the measure changes the math point size mid-proof; the chain is broken
+%% across two lines instead, which is the same statement at the document's own size.
 \[
-\resizebox{\columnwidth}{!}{$\displaystyle
+\begin{aligned}
 |\hat R-R|
-=\frac{|c_{kl}(\hat c_{1k}\hat c_{1l}-c_{1k}c_{1l})
-        -c_{1k}c_{1l}(\hat c_{kl}-c_{kl})|}{|\hat c_{kl}c_{kl}|}
-\le \frac{(2\varepsilon_c+\varepsilon_c^2)+\varepsilon_c}{b_{\min}^4/2}
-\le \frac{8\varepsilon_c}{b_{\min}^4},
-$}
+&=\frac{|c_{kl}(\hat c_{1k}\hat c_{1l}-c_{1k}c_{1l})
+        -c_{1k}c_{1l}(\hat c_{kl}-c_{kl})|}{|\hat c_{kl}c_{kl}|}\\[2pt]
+&\le \frac{(2\varepsilon_c+\varepsilon_c^2)+\varepsilon_c}{b_{\min}^4/2}
+\;\le\; \frac{8\varepsilon_c}{b_{\min}^4},
+\end{aligned}
 \]
 and the median over triples inherits the bound. Since
 $\hat b_1+b_1\ge b_{\min}$ on this event (anchored, clamped root),

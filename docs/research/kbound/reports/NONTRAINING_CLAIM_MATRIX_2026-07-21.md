@@ -1,5 +1,12 @@
 # K-Bound Reviewer Claim Matrix (non-training closure)
 
+> **SUPERSEDED 2026-07-26 on one point.** This dated record asserts *uniform* natural-shift
+> no-harm. That claim was withdrawn: no-harm holds on the four one-sided locked tracks
+> (Camelyon17, iWildCam, Office-Home, RxRx1) only. PACS loses to always-adapt by 2.45x,
+> ImageNet-R loses on 7 of 10 backbones, CIFAR-10.1 fails the transfer bar (FA_u = 0.167).
+> The record is left unedited below; the live claim is in `kbound_short_body.tex`.
+
+
 Generated: 2026-07-21T16:54:35.164744+00:00
 Source: `docs/research/kbound/claim_ledger.json` (schema `kbound-claim-ledger-v1`)
 

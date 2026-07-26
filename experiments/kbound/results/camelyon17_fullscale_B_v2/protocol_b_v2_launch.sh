@@ -5,11 +5,15 @@
 # Requires ~/.venv_wilds (torch + wilds) — same env as Protocol F GPU runs.
 #
 # From uav/:
-#   bash AutoML_Flagship_V8/experiments/kbound/results/camelyon17_fullscale_B_v2/protocol_b_v2_launch.sh
-# From AutoML_Flagship_V8/:
+#   bash <repo>/experiments/kbound/results/camelyon17_fullscale_B_v2/protocol_b_v2_launch.sh
+# From the repository root:
 #   bash experiments/kbound/results/camelyon17_fullscale_B_v2/protocol_b_v2_launch.sh
 #
 # EXPECTED OUTCOME: scientific negative (bias-limited sparse Z) even at n=1024.
+# --- external (git-excluded) data volume: ONE documented variable, no default.
+: "${KBOUND_EXTERNAL_ROOT:?set KBOUND_EXTERNAL_ROOT to the volume holding the git-excluded datasets/checkpoints/caches (layout: docs/research/kbound/kbound_repro/paths.py, acquisition: DATA.md)}"
+KB_EXTERNAL_ROOT="$KBOUND_EXTERNAL_ROOT"
+
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
@@ -30,11 +34,11 @@ else
   exit 1
 fi
 
-export TMPDIR="${TMPDIR:-/Volumes/T9/uav/tmp}"
-export TORCH_HOME="${TORCH_HOME:-/Volumes/T9/uav/torch_cache}"
+export TMPDIR="${TMPDIR:-"$KB_EXTERNAL_ROOT/tmp"}"
+export TORCH_HOME="${TORCH_HOME:-"$KB_EXTERNAL_ROOT/torch_cache"}"
 mkdir -p "$TMPDIR" "$TORCH_HOME"
 
-DATA_ROOT="${WILDS_DATA_ROOT:-/Users/pratik_n/datasets/wilds}"
+DATA_ROOT="${WILDS_DATA_ROOT:-"$KB_EXTERNAL_ROOT/datasets/wilds"}"
 F0_TEMPLATE="experiments/kbound/results/camelyon17_fullscale_B_v1/f0_seed{seed}.pt"
 RUN_NAME="camelyon17_fullscale_B_v2"
 OUT="$ROOT/experiments/kbound/results/$RUN_NAME"

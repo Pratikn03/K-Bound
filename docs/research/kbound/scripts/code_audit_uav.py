@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Automated code audit for /Volumes/T9/uav (canonical: AutoML_Flagship_V8).
+"""Automated code audit for the external volume $KBOUND_EXTERNAL_ROOT.
 
 Scans Python for integrity patterns, duplicates vs kbound_only, and hygiene issues.
 Does NOT replace human review of proofs — complements theory_audit_full.py.
@@ -9,6 +9,44 @@ Usage:
   python3 docs/research/kbound/scripts/code_audit_uav.py --write-report
 """
 from __future__ import annotations
+# --- defect D8: portable roots (docs/research/kbound/EXTERNAL_STORAGE_POLICY.md bans
+# --- machine-local absolute paths in tracked code). KB_REPO_ROOT is discovered from this
+# --- file's own location; override with $KBOUND_REPO_ROOT.
+import os as _kb_os
+from pathlib import Path as _KbPath
+
+
+def _kb_repo_root() -> str:
+    override = _kb_os.environ.get("KBOUND_REPO_ROOT", "").strip()
+    if override:
+        return str(_KbPath(override).expanduser().resolve())
+    here = _KbPath(__file__).resolve()
+    for candidate in here.parents:
+        if (candidate / "pyproject.toml").exists():
+            return str(candidate)
+    raise RuntimeError(f"repository root not found above {here}; set KBOUND_REPO_ROOT")
+
+
+KB_REPO_ROOT = _kb_repo_root()
+
+# --- external (git-excluded) data volume: ONE documented variable, no default.
+def _kb_external_root() -> str:
+    value = _kb_os.environ.get("KBOUND_EXTERNAL_ROOT", "").strip()
+    if not value:
+        raise RuntimeError(
+            "KBOUND_EXTERNAL_ROOT is not set. This script needs data that is deliberately "
+            "not in the git release (raw datasets, checkpoints, caches). Point "
+            "KBOUND_EXTERNAL_ROOT at the volume holding them; the expected layout is "
+            "documented in docs/research/kbound/kbound_repro/paths.py (EXTERNAL_LAYOUT) "
+            "and acquisition is in DATA.md. There is no default on purpose: this used to "
+            "be one author's external SSD, and defaulting to $HOME would write gigabytes "
+            "somewhere you did not choose."
+        )
+    return str(_KbPath(value).expanduser().resolve())
+
+
+KB_EXTERNAL_ROOT = _kb_external_root()
+
 
 import argparse
 import hashlib
@@ -20,8 +58,11 @@ from collections import defaultdict
 from datetime import datetime, timezone
 from pathlib import Path
 
-UAV = Path("/Volumes/T9/uav")
-AUTO = UAV / "AutoML_Flagship_V8"
+# The volume being audited ($KBOUND_EXTERNAL_ROOT) and the repository inside it.
+# Historically these were /Volumes/T9/uav and .../AutoML_Flagship_V8; the repo has
+# since been renamed and may live anywhere, so it is discovered, not assumed.
+UAV = Path(KB_EXTERNAL_ROOT)
+AUTO = Path(KB_REPO_ROOT)
 KBOUND = AUTO / "docs" / "research" / "kbound"
 KONLY = UAV / "kbound_only"
 
@@ -128,7 +169,7 @@ def compare_mirrors() -> list[dict]:
 
 def count_loc() -> dict:
     stats = {}
-    for label, root in [("AutoML_Flagship_V8", AUTO), ("kbound_only", KONLY), ("uav_root_src", UAV / "src")]:
+    for label, root in [("repository", AUTO), ("kbound_only", KONLY), ("volume_root_src", UAV / "src")]:
         files = _iter_py(root)
         lines = sum(len(p.read_text(errors="replace").splitlines()) for p in files)
         stats[label] = {"py_files": len(files), "lines": lines}
@@ -140,9 +181,9 @@ def stale_root() -> list[str]:
     for d in ["src", "tests", "docs", "research_lock"]:
         p = UAV / d
         if p.exists() and not any(p.rglob("*.py")) and not any(p.rglob("*.md")):
-            notes.append(f"/Volumes/T9/uav/{d}/ is empty placeholder — use AutoML_Flagship_V8/")
+            notes.append(f"{UAV}/{d}/ is empty placeholder — use the repository at {AUTO}/")
     if (UAV / "kbound.log").exists():
-        notes.append("Root kbound.log/aux are stale LaTeX artifacts (Jun 15); canonical papers in AutoML_Flagship_V8/docs/research/kbound/")
+        notes.append("Root kbound.log/aux are stale LaTeX artifacts (Jun 15); canonical papers in <repo>/docs/research/kbound/")
     return notes
 
 
@@ -227,7 +268,7 @@ def build_report() -> dict:
     monorepo = monorepo_score(wrappers, all(r["status"] == "OK" for r in scorers), pytest_rc)
     return {
         "generated_at": datetime.now(timezone.utc).isoformat(),
-        "scope": "Automated pass over /Volumes/T9/uav (canonical AutoML_Flagship_V8)",
+        "scope": "Automated pass over $KBOUND_EXTERNAL_ROOT and the repository inside it",
         "note": "Full line-by-line human review of ~161k LOC is not feasible in one pass; this audit targets integrity + mirrors + hygiene.",
         "loc": count_loc(),
         "stale_root": stale_root(),

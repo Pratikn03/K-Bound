@@ -21,9 +21,14 @@ Example
 >>> kga = KGA(alpha=0.1, method="ebern")
 >>> # Strongly positive paired benefits -> ADAPT is certifiable.
 >>> benefits = rng.normal(0.3, 0.1, size=400)
->>> cert = kga.certify(scores=benefits)
+>>> cert = kga.certify(scores=benefits, benefit_range=2.0)
 >>> kga.decide(cert).value in {"ADAPT", "FREEZE", "ABSTAIN"}
 True
+
+``benefit_range`` is required for the ``ebern``/``hoeffding`` conventions: it is
+the *a priori* support width ``b - a``, and estimating it from the sample voids
+the Maurer-Pontil / Hoeffding guarantee (panel findings F1-12, F2-12).  For
+paired 0/1 losses it is ``2.0``.
 """
 
 from __future__ import annotations
@@ -155,9 +160,13 @@ class KGA:
         method : str, optional
             Override the batch estimator for convention 1.
         benefit_range : float, optional
-            Range ``R = b - a`` of the paired benefits for ``ebern``/``hoeffding``
-            (convention 1).  Defaults to data-estimated; pass ``2.0`` for
-            ``|p - y|`` losses.
+            *A priori* range ``R = b - a`` of the paired benefits.  **Required**
+            for ``ebern``/``hoeffding`` (convention 1) -- there is no safe
+            data-estimated default, because substituting the observed
+            ``max - min`` makes the deviation term data-dependent and voids the
+            finite-sample guarantee (panel findings F1-12 / F2-12).  Pass ``2.0``
+            for ``|p - y|`` paired 0/1 losses.  Ignored by ``evalue`` and by the
+            conformal conventions.
 
         Returns
         -------
@@ -166,7 +175,8 @@ class KGA:
         Raises
         ------
         ValueError
-            If the supplied arguments do not match exactly one convention.
+            If the supplied arguments do not match exactly one convention, or if
+            ``benefit_range`` is missing for ``ebern``/``hoeffding``.
         """
         # Convention 1 (paired benefits) takes precedence when `scores` is given.
         if scores is not None:
@@ -229,6 +239,8 @@ class KGA:
             RNG seed for subsampling when ``k < len(benefits)``.
         method, benefit_range
             Forwarded to the batch estimator (default ``self.method``).
+            ``benefit_range`` is required for ``ebern``/``hoeffding``; see
+            :meth:`certify`.
 
         Returns
         -------

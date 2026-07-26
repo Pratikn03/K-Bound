@@ -14,7 +14,7 @@ import sys
 from pathlib import Path
 from typing import Any
 
-ROOT = Path(__file__).resolve().parents[4]  # AutoML_Flagship_V8
+ROOT = Path(__file__).resolve().parents[4]  # <repo root>
 KBOUND = ROOT / "docs" / "research" / "kbound"
 
 

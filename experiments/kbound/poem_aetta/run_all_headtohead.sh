@@ -13,9 +13,23 @@
 # RUN_ON_MAC doc and is NOT run here.
 #
 # Overrides via env: REPO, RECORDS_DIR, OUT_DIR, SEEDS, PY.
+# --- defect D8: portable roots. No machine-local absolute paths in tracked code
+# --- (docs/research/kbound/EXTERNAL_STORAGE_POLICY.md). KB_REPO_ROOT is discovered
+# --- from this script's own location; override with KBOUND_REPO_ROOT.
+_kb_find_root() {
+  d=$(cd "$(dirname "${BASH_SOURCE[0]:-$0}")" && pwd)
+  while [ "$d" != "/" ]; do
+    [ -f "$d/pyproject.toml" ] && { printf '%s\n' "$d"; return 0; }
+    d=$(dirname "$d")
+  done
+  echo "ERROR: repository root not found above $(dirname "${BASH_SOURCE[0]:-$0}")" >&2
+  return 1
+}
+KB_REPO_ROOT="${KBOUND_REPO_ROOT:-$(_kb_find_root)}" || exit 1
+
 set -euo pipefail
 
-REPO="${REPO:-/Volumes/T9/uav/AutoML_Flagship_V8}"
+REPO="${REPO:-$KB_REPO_ROOT}"
 RECORDS_DIR="${RECORDS_DIR:-$REPO/experiments/kbound/results/stress_grid_multiseed_v1}"
 OUT_DIR="${OUT_DIR:-$REPO/experiments/kbound/results/mixed_headtohead_v1}"
 SEEDS="${SEEDS:-0 1 2 3 4}"

@@ -3,7 +3,7 @@
 #  K-Bound — turnkey DECISIVE deep-TTA run (CIFAR-10-C + Tent/EATA/SAR/KGA)
 #  ONE command. Run on your Mac (Apple-silicon / MPS) or any CUDA box.
 #
-#  From the repo root (AutoML_Flagship_V8), just run:
+#  From the repo root, just run:
 #      bash docs/research/kbound/scripts/run_decisive_tta.sh
 #
 #  It will: make a venv, install torch+deps, verify MPS, auto-download
@@ -23,7 +23,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "$SCRIPT_DIR/../../../.." && pwd)"
 DATA_ROOT="$REPO_ROOT/experiments/kbound/cifar"
 # Keep the venv on the internal APFS disk: `ensurepip` fails when a venv is created
-# on an exFAT external drive (e.g. /Volumes/T9). Data + results stay in the repo.
+# on an exFAT external drive (see $KBOUND_EXTERNAL_ROOT). Data + results stay in the repo.
 VENV="${KB_VENV:-$HOME/.venv_kbound_tta}"
 # Pick a torch-friendly interpreter (torch/torchvision wheels lag new Python releases).
 pick_python() {

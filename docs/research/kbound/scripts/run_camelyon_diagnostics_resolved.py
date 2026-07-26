@@ -16,7 +16,7 @@ from __future__ import annotations
 import json, os, subprocess, sys
 from pathlib import Path
 
-ROOT = Path(__file__).resolve().parents[4]  # AutoML_Flagship_V8
+ROOT = Path(__file__).resolve().parents[4]  # <repo root>
 OUT = ROOT / "experiments/kbound/results/camelyon17_diagnostics_resolved_v1"
 PY = sys.executable
 F_JSON = ROOT / "experiments/kbound/results/camelyon17_richZ_F_v1/result_884129ba.json"

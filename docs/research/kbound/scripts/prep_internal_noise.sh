@@ -3,9 +3,23 @@
 # Copy the ImageNet-C *noise* data the standard grid needs (gaussian/shot/impulse,
 # severities 1/3/5) from the slow exFAT T9 drive to the fast internal SSD (~/kbound_inc),
 # so the TTA run loads ~10x faster. Resumable (rsync): if interrupted, just re-run.
+# --- defect D8: portable roots. No machine-local absolute paths in tracked code
+# --- (docs/research/kbound/EXTERNAL_STORAGE_POLICY.md). KB_REPO_ROOT is discovered
+# --- from this script's own location; override with KBOUND_REPO_ROOT.
+_kb_find_root() {
+  d=$(cd "$(dirname "${BASH_SOURCE[0]:-$0}")" && pwd)
+  while [ "$d" != "/" ]; do
+    [ -f "$d/pyproject.toml" ] && { printf '%s\n' "$d"; return 0; }
+    d=$(dirname "$d")
+  done
+  echo "ERROR: repository root not found above $(dirname "${BASH_SOURCE[0]:-$0}")" >&2
+  return 1
+}
+KB_REPO_ROOT="${KBOUND_REPO_ROOT:-$(_kb_find_root)}" || exit 1
+
 set -uo pipefail
 
-SRC=/Volumes/T9/uav/AutoML_Flagship_V8/experiments/kbound/data/imagenet-c
+SRC="$KB_REPO_ROOT"/experiments/kbound/data/imagenet-c
 DST="$HOME/kbound_inc"
 
 echo "============================================================"
@@ -42,7 +56,7 @@ done
 echo "============================================================"
 if [ "$ok" = 1 ]; then
   echo " READY. Start training with:"
-  echo "   bash /Volumes/T9/uav/AutoML_Flagship_V8/docs/research/kbound/scripts/kbtrain.sh noise-fast"
+  echo "   bash $KB_REPO_ROOT/docs/research/kbound/scripts/kbtrain.sh noise-fast"
 else
   echo " WARNING: some severities look incomplete (<900 class dirs)."
   echo " Re-run this script (rsync resumes) before training."

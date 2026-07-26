@@ -1,7 +1,7 @@
 # Run sheet — official baselines, multi-seed, verify (copy-paste)
 
 Everything below runs on your Mac/GPU. K-Bound harness commands assume repo root
-`/Volumes/T9/uav/AutoML_Flagship_V8` (or your internal checkout).
+`$KBOUND_REPO_ROOT` (your checkout; the runs were made from an external volume).
 
 ## 1. Official AETTA  (conda; CIFAR-10-C)
 ```bash
@@ -26,7 +26,7 @@ python main.py --method no_adapt --model resnet50_gn_timm --exp_type severity_sh
 
 ## 3. Convert their output -> decisions, then score (K-Bound harness)
 ```bash
-cd /Volumes/T9/uav/AutoML_Flagship_V8
+cd "$KBOUND_REPO_ROOT"        # set KBOUND_REPO_ROOT to your checkout
 python3 docs/research/kbound/scripts/baseline_decisions_adapter.py --method aetta --input aetta_out.csv --out aetta_decisions.json
 python3 docs/research/kbound/scripts/baseline_decisions_adapter.py --method poem  --input poem_out.json  --out poem_decisions.json
 python3 docs/research/kbound/scripts/official_baselines_headtohead.py --candidate tent \
@@ -36,7 +36,7 @@ python3 docs/research/kbound/scripts/official_baselines_headtohead.py --candidat
 
 ## 4. Multi-seed no-harm (GPU + WILDS data)
 ```bash
-cd /Volumes/T9/uav/AutoML_Flagship_V8
+cd "$KBOUND_REPO_ROOT"        # set KBOUND_REPO_ROOT to your checkout
 WILDS_ROOT=~/datasets/wilds bash docs/research/kbound/scripts/run_multiseed.sh camelyon
 # -> experiments/kbound/results/multiseed/multiseed_Camelyon17.json
 ```

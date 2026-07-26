@@ -82,6 +82,15 @@ except ImportError:  # torch/torchvision absent: the module still imports so the
 
 from sklearn.ensemble import GradientBoostingRegressor
 
+# The ONE K-Bound decision path (fix-queue items 4 + 15): exact-rank conformal
+# radius, leave-one-out-of-pool calibration, routed through kga.certificate /
+# kga.policy.  Import by absolute path so the module resolves whether this file
+# is run as a script, imported by pytest, or shelled out to from src/scripts.
+_SCRIPTS_DIR = os.path.dirname(os.path.abspath(__file__))
+if _SCRIPTS_DIR not in sys.path:
+    sys.path.insert(0, _SCRIPTS_DIR)
+import kbound_decide as _kb  # noqa: E402
+
 # ----------------------------------------------------------------------------- #
 #  Pre-registered condition grid (declare BEFORE looking at any result)
 # ----------------------------------------------------------------------------- #
@@ -94,6 +103,15 @@ EVAL_POOL       = 2000       # balanced held-out eval images per corruption/seve
 HELP_THR        = 0.02       # |B| band for labeling regime (REPORTING ONLY)
 ALPHA           = 0.10       # conformal miscoverage -> false-adapt/false-freeze target
 SEED            = 0
+# Radius calibration (fix-queue item 4).  "loo" = leave-one-out-of-pool: the cell
+# being scored is removed from its own residual pool, so eps is not a function of
+# the label the FA_u guarantee is about.  "in_pool" reproduces the archived (leaky)
+# rule and exists only for provenance checks.  Set from the CLI via --calibration.
+CALIBRATION     = "loo"
+# Eval-pool chunk size.  Stated here (and stamped into every run manifest) because
+# it silently changes a_adapted: the adapted arm is evaluated in train() mode, so
+# BN statistics are recomputed per chunk (fix-queue item 16).
+EVAL_CHUNK      = 512
 # Official-SAR (Protocol E) knobs. Defaults reproduce the matched-LR SAR exactly
 # (sar_lr=None -> shared lr; freeze_layer4=False -> all affine params adapted), so
 # every prior run stays byte-identical unless these are explicitly set from the CLI.
@@ -148,20 +166,30 @@ IMAGENET_C_ALL = ["gaussian_noise","shot_noise","impulse_noise",
 # =============================================================================
 #  ANALYSIS CORE  (pure numpy/sklearn — no torch; unit-testable off-GPU)
 # =============================================================================
-def decide_kga(Z, B, alpha=ALPHA, n_estimators=250, max_depth=2, lr=0.05, seed=SEED):
-    """Leave-one-out gradient-boosted benefit estimator + split-conformal radius.
-    Returns (Bhat, eps, decisions). Identical machinery to knowability/mixed_regime."""
-    Z = np.asarray(Z, float); B = np.asarray(B, float); N = len(B)
-    Bhat = np.zeros(N)
-    for i in range(N):
-        tr = np.arange(N) != i
-        m = GradientBoostingRegressor(n_estimators=n_estimators, max_depth=max_depth,
-                                      learning_rate=lr, subsample=0.8, random_state=seed)
-        m.fit(Z[tr], B[tr])
-        Bhat[i] = m.predict(Z[i:i+1])[0]
-    eps = float(np.quantile(np.abs(Bhat - B), 1 - alpha))
-    dec = np.where(Bhat - eps > 0, "ADAPT", np.where(Bhat + eps < 0, "FREEZE", "ABSTAIN"))
-    return Bhat, eps, dec
+def decide_kga(Z, B, alpha=ALPHA, n_estimators=250, max_depth=2, lr=0.05, seed=SEED,
+               calibration=CALIBRATION):
+    """Leave-one-cell-out gradient-boosted benefit estimator + conformal radius.
+
+    Returns ``(Bhat, eps, decisions)`` where **eps is a per-cell ndarray**, not a
+    scalar: cell i's radius is calibrated on the other N-1 residuals only.
+
+    This is fix-queue item 4.  The previous body was
+
+        eps = float(np.quantile(np.abs(Bhat - B), 1 - alpha))
+
+    -- one interpolated quantile over ALL N residuals including cell i's own,
+    then used to decide cell i.  That makes eps a function of the test labels
+    that the FA_u <= alpha guarantee attaches to.  Measured effect on this track
+    (NUMBERS_PACK.md sec. 4.1): 0 of 9,504 committed CIFAR-10-C decisions change
+    and FA_u stays 0 -- the flagship safety result is unaffected by the fix.
+
+    The implementation now lives in ``kbound_decide.decide_kga``, which calls
+    ``kga.certificate`` / ``kga.policy`` (fix-queue item 15).  Pass
+    ``calibration="in_pool"`` only to reproduce a pre-fix archived number.
+    """
+    return _kb.decide_kga(Z, B, alpha=alpha, n_estimators=n_estimators,
+                          max_depth=max_depth, lr=lr, seed=seed,
+                          calibration=calibration)
 
 
 def policy_metrics(dec, a0, aa, B=None):
@@ -174,12 +202,25 @@ def policy_metrics(dec, a0, aa, B=None):
         B = aa - a0
     B = np.asarray(B, float)
     naive = (aa - a0) > 0  # an estimator-free "adapt if it would help" upper-reference uses truth; we instead use Bhat outside
+    # ---- ONE definition of false-adapt (fix-queue item 28) --------------------
+    # A false adapt is an ADAPT decision on a cell with B <= 0.  The weak
+    # inequality matters: 500 archived cells have B exactly 0.0, 102 of them
+    # ADAPT, and the old strict `B < 0` silently exempted every one of them.
+    #   fa_u = Pr[ADAPT and B <= 0]  -- the quantity thm:certificate bounds
+    #   fa_c = Pr[B <= 0 | ADAPT]    -- the conditional rate
+    _fa = _kb.false_adapt(dec, B)
     out = {
         "n": int(len(a0)),
         "decision_counts": {d: int((dec == d).sum()) for d in ["ADAPT", "FREEZE", "ABSTAIN"]},
         "coverage": float(np.mean(dec != "ABSTAIN")),
         "adapt_precision_B>0": float(np.mean(B[adapt] > 0)) if adapt.any() else None,
+        "false_adapt_unconditional": _fa["fa_u"],
+        "false_adapt_conditional": _fa["fa_c"],
+        "n_false_adapt": _fa["n_false_adapt"],
+        # DEPRECATED: conditional AND strict (B<0).  Retained only so pre-fix
+        # artifacts stay diffable; never gate anything on it.
         "false_adapt_rate_B<0": float(np.mean(B[adapt] < 0)) if adapt.any() else None,
+        "false_adapt_definition": "false adapt := ADAPT and B <= 0; fa_u marginal, fa_c conditional",
         "mean_acc": {
             "always_adapt": float(aa.mean()),
             "always_freeze": float(a0.mean()),
@@ -202,9 +243,14 @@ def policy_metrics(dec, a0, aa, B=None):
         # false-adapt budget FA<=ALPHA, not regret alone (regret-only over-counted
         # "wins" on mixes where the router false-adapts above budget). The ungated
         # regret comparison is preserved above as beats_both_regret_only.
+        # 2026-07 (fix-queue item 28): the gate now uses the single false-adapt
+        # definition (B <= 0) instead of the strict B < 0 it used before.  This is
+        # strictly more conservative -- a cell with B == 0.0 that ADAPTs now counts
+        # against the budget -- so no arm can gain a "win" from this change.
         "beats_both": bool((oracle - kga).mean() < (oracle - aa).mean() - 1e-9 and
                            (oracle - kga).mean() < (oracle - a0).mean() - 1e-9 and
-                           adapt.any() and float(np.mean(B[adapt] < 0)) <= ALPHA),
+                           adapt.any() and float(_fa["fa_c"]) <= ALPHA),
+        "beats_both_gate": "regret vs both fixed policies AND fa_c <= alpha (fa_c = Pr[B<=0|ADAPT])",
     }
     return out
 
@@ -252,8 +298,20 @@ def summarize(rows, alpha=ALPHA):
     B = aa - a0
     regime = np.array([r["regime"] for r in rows])
     Bhat, eps, dec = decide_kga(Z, B, alpha=alpha)
+    eps = np.asarray(eps, float)
     pm = policy_metrics(dec, a0, aa, B)
-    pm["eps_conformal"] = eps
+    # eps is now ONE RADIUS PER CELL (leave-one-out-of-pool, fix-queue item 4).
+    # The scalar field is kept for schema compatibility but is explicitly a mean;
+    # the per-cell values are what actually decided each cell and they are
+    # serialised in full into the per-condition dump.
+    pm["eps_conformal"] = float(np.mean(eps))
+    pm["eps_conformal_is"] = "mean of the per-cell leave-one-out-of-pool radii"
+    pm["eps_conformal_min"] = float(np.min(eps))
+    pm["eps_conformal_max"] = float(np.max(eps))
+    pm["eps_calibration"] = CALIBRATION
+    pm["eps_rule"] = "exact split-conformal rank k=ceil((n+1)(1-alpha)); no interpolation"
+    pm["kga_backend"] = _kb.backend()
+    pm["eval_chunk"] = EVAL_CHUNK
     pm["alpha"] = alpha
     pm["base_rate_harmful_B<0"] = float(np.mean(B < 0))
     pm["mean_true_B"] = float(B.mean())
@@ -262,7 +320,7 @@ def summarize(rows, alpha=ALPHA):
         for g in ["helpful", "harmful", "marginal"]
     }
     pm["pareto"] = mixing_pareto(dec, a0, aa, regime)
-    return pm, dict(Bhat=Bhat.tolist(), eps=eps, dec=dec.tolist(), B=B.tolist())
+    return pm, dict(Bhat=Bhat.tolist(), eps=eps.tolist(), dec=list(dec), B=B.tolist())
 
 
 def label_regime(B, thr=HELP_THR):
@@ -815,7 +873,38 @@ def shot_adapt(base, stream, steps, lr):
             opt.zero_grad(); loss.backward(); opt.step()
     return m, _upd_norm(ps, init)
 
-TTA_METHODS = {"tent": tent_adapt, "eata": eata_adapt, "sar": sar_adapt, "shot": shot_adapt}
+def bn_adapt(base, stream, steps, lr):
+    """BN-STATISTICS-ONLY baseline (fix-queue item 16).
+
+    Source weights, target BN statistics, **zero gradient steps**.  This is the
+    arm that isolates the confound R2-F2-4 identified: every reported Delta in
+    this repo compares f0 evaluated at :1054 with ``train_mode=False`` (source BN
+    statistics) against f_a evaluated at :1061 with ``train_mode=True`` on a clone
+    whose running statistics were nulled at :694.  Delta therefore bundles
+    BN-statistic replacement with the gradient update, and no BN-only arm existed
+    anywhere in the tree.  This is the first thing a TTA reviewer asks for.
+
+    Implementation: clone exactly as the gradient arms do (so the parameter set
+    and the running-statistics nulling are identical), run the stream forward
+    under ``no_grad`` so the batch statistics are the target's, and take no
+    optimiser step.  ``steps`` and ``lr`` are accepted and ignored so the arm
+    slots into the same driver loop; ``update_norm`` is 0 by construction, which
+    is the correct evidence value for "no parameters moved".
+
+    The arm is wired but NOT run by default -- add ``bn`` to --methods to run it.
+    """
+    m, ps, init = _clone_for_tta(base)
+    _require_torch()
+    with torch.no_grad():
+        for _ in range(max(1, int(steps > 0))):   # one pass is enough to set BN stats
+            for xb in stream:
+                m(xb.contiguous())
+    return m, _upd_norm(ps, init)   # == 0.0: no gradient step was taken
+
+
+TTA_METHODS = {"tent": tent_adapt, "eata": eata_adapt, "sar": sar_adapt, "shot": shot_adapt,
+               # BN-statistics-only control: source weights, target BN stats, 0 steps.
+               "bn": bn_adapt}
 
 # ---- stream / eval construction ----
 def _norm_cifar(x):
@@ -855,11 +944,20 @@ def build_stream_and_eval(Xc, yc, sev_X, sev_y, comp, bs, num_classes, rng, dev,
     return stream, eval_x, eval_y
 
 def acc_on(model, x, y, train_mode=True):
+    """Accuracy on (x, y), evaluated in EVAL_CHUNK-sized chunks.
+
+    NOTE (fix-queue item 16): with train_mode=True the model uses *batch*
+    statistics, so the chunk size is an operating point, not an implementation
+    detail -- a_adapted changes with EVAL_CHUNK.  The frozen arm is evaluated at
+    :1054 with train_mode=False and the adapted arm at :1061 with train_mode=True,
+    so B = a_adapted - a0 bundles BN-statistic replacement with the gradient
+    update.  The `bn` arm in TTA_METHODS isolates the first half.
+    """
     model.train() if train_mode else model.eval()
     with torch.no_grad():
         pred = []
-        for i in range(0, len(x), 512):
-            pred.append(model(x[i:i + 512]).argmax(1).cpu())
+        for i in range(0, len(x), EVAL_CHUNK):
+            pred.append(model(x[i:i + EVAL_CHUNK]).argmax(1).cpu())
     return (torch.cat(pred) == y).float().mean().item()
 
 
@@ -1243,7 +1341,12 @@ def main():
     ap.add_argument("--benchmarks", nargs="+", default=["cifar10c"],
                     choices=["cifar10c", "cifar100c", "cifar101", "imagenetc"])
     ap.add_argument("--methods", nargs="+", default=["tent", "eata", "sar"],
-                    choices=["tent", "eata", "sar"])
+                    choices=["tent", "eata", "sar", "shot", "bn"],
+                    help="TTA arms to run. 'bn' is the BN-statistics-only control "
+                         "(source weights, target BN statistics, zero gradient steps) "
+                         "that separates BN-statistic replacement from the gradient "
+                         "update in Delta; it is OFF by default so every prior run "
+                         "stays byte-identical (fix-queue item 16).")
     ap.add_argument("--data-root", default="experiments/kbound/cifar",
                     help="dir holding CIFAR-10-C/ and CIFAR-100-C/ and model ckpts")
     ap.add_argument("--cifar10-ckpt", default=None)
@@ -1263,6 +1366,11 @@ def main():
                     help="seconds to sleep between cells (thermal relief for hot laptops; e.g. 3)")
     ap.add_argument("--out-figs", default="docs/research/kbound/figures")
     ap.add_argument("--alpha", type=float, default=ALPHA)
+    ap.add_argument("--calibration", default="loo", choices=["loo", "in_pool"],
+                    help="conformal radius calibration. 'loo' (default) removes the "
+                         "scored cell from its own residual pool -- fix-queue item 4. "
+                         "'in_pool' reproduces the archived leaky rule and must only "
+                         "be used for provenance checks.")
     ap.add_argument("--quick", action="store_true", help="subset of corruptions/severities (fast smoke run)")
     ap.add_argument("--arch", default="resnet50", choices=["resnet50", "vit_b16"],
                     help="ImageNet-C backbone: resnet50 (BN-affine Tent) or vit_b16 (LayerNorm-affine Tent)")
@@ -1319,6 +1427,13 @@ def main():
     set_global_seed(args.seed); print("seed:", SEED)
     global SAR_LR, SAR_FREEZE_LAYER4
     SAR_LR = args.sar_lr; SAR_FREEZE_LAYER4 = args.sar_freeze_layer4
+    global CALIBRATION
+    CALIBRATION = args.calibration
+    print(f"[kga] radius rule=exact-rank k=ceil((n+1)(1-alpha))  calibration={CALIBRATION}  "
+          f"backend={_kb.backend()}  eval_chunk={EVAL_CHUNK}")
+    if CALIBRATION == "in_pool":
+        print("[kga] WARNING: --calibration in_pool scores each cell with a radius computed "
+              "from that cell's own residual. Provenance replays only; never for a new result.")
     global LOG_SAMPLES, LOG_SAMPLES_DIR, AETTA_MC_IMAGES
     LOG_SAMPLES = args.log_samples
     LOG_SAMPLES_DIR = args.out_results
@@ -1375,7 +1490,9 @@ def main():
             _per_cond = []
             for i, r in enumerate(rws):
                 b_hat_i = float(detail["Bhat"][i])
-                eps_i = float(detail["eps"])
+                # per-cell radius (fix-queue item 4): cell i's calibration pool
+                # excludes cell i's own residual, so eps is no longer a scalar.
+                eps_i = float(detail["eps"][i])
                 lb_i = b_hat_i - eps_i
                 ub_i = b_hat_i + eps_i
                 if lb_i > 0:
@@ -1417,7 +1534,15 @@ def main():
                            "per_condition_fields_absent_reason":
                                "v2 KGA = gradient-boosted B_hat(Z) + split-conformal eps; "
                                "it does not compute pairwise agreements c_ij or n_D.",
+                           "eps_calibration": CALIBRATION,
+                           "eps_rule": "exact split-conformal rank k=ceil((n+1)(1-alpha)); "
+                                       "no np.quantile interpolation",
+                           "kga_backend": _kb.backend(),
+                           "eval_chunk": EVAL_CHUNK,
                            "per_condition_field_notes": {
+                               "eps_conformal":
+                                   "PER-CELL radius: cell i's calibration pool excludes cell i's "
+                                   "own residual (leave-one-out-of-pool, fix-queue item 4).",
                                "tau_hat_tau_star":
                                    "single-candidate route (frozen vs adapted), so tau is degenerate and set to 0.0.",
                                "zone":
@@ -1431,7 +1556,8 @@ def main():
                                "per_condition_file": os.path.basename(_pc_path),
                                "conditions": [r["condition"] for r in rws],
                                "detail": {"Bhat": detail["Bhat"].tolist() if hasattr(detail["Bhat"], "tolist") else detail["Bhat"],
-                                          "eps": float(detail["eps"]),
+                                          # per-cell LOO radii, not a scalar (item 4)
+                                          "eps": [float(e) for e in detail["eps"]],
                                           "dec": list(detail["dec"]),
                                           "B": detail["B"].tolist() if hasattr(detail["B"], "tolist") else detail["B"]}}
             print(f"\n=== {bench} / {mth} ===")
@@ -1454,6 +1580,13 @@ def main():
     print("Saved decisive_tta_table.md")
 
     # ---- per-seed manifest (protocol serialization_contract: result_manifest.json) ----
+    def _sklearn_version():
+        try:
+            import sklearn
+            return sklearn.__version__
+        except Exception:
+            return None
+
     def _git_hash():
         try:
             import subprocess
@@ -1478,10 +1611,24 @@ def main():
         "n_conditions_per_method": {b: {m: combined["benchmarks"][b]["methods"][m]["n_conditions"]
                                         for m in combined["benchmarks"][b]["methods"]}
                                     for b in combined["benchmarks"]},
+        # Decision-path provenance (fix-queue items 4, 15, 16): the rule, the pool,
+        # which implementation ran, and the eval chunk size -- the last because with
+        # train_mode=True BN statistics are recomputed per chunk, so a_adapted is a
+        # function of EVAL_CHUNK.
+        "kga": {"eps_rule": "exact split-conformal rank k=ceil((n+1)(1-alpha)); "
+                            "no np.quantile interpolation",
+                "eps_calibration": CALIBRATION,
+                "backend": _kb.backend(),
+                "eval_chunk": EVAL_CHUNK},
         "git_hash": _git_hash(),
         "python": sys.version.split()[0],
         "torch": (torch.__version__ if _HAS_TORCH else None),
         "numpy": np.__version__,
+        # fix-queue item 30 / F4-14: b_hat comes from
+        # GradientBoostingRegressor(subsample=0.8), so eps and EVERY decision are
+        # scikit-learn-version-dependent. 0 of 43 archived run manifests record it.
+        "scikit_learn": _sklearn_version(),
+        "pythonhashseed": os.environ.get("PYTHONHASHSEED"),
         "argv": sys.argv,
         "wall_time_sec": round(time.time() - _t_start, 1),
         "finished": time.strftime("%Y-%m-%d %H:%M:%S"),

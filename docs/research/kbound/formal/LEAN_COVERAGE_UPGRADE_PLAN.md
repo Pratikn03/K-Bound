@@ -70,7 +70,7 @@ first fix: replace the file's Mathlib imports with the single umbrella `import M
 ## Build loop
 
 ```
-cd /Volumes/T9/uav/AutoML_Flagship_V8/docs/research/kbound/formal
+cd "$KBOUND_REPO_ROOT"/docs/research/kbound/formal   # KBOUND_REPO_ROOT = your checkout
 lake exe cache get   # mathlib cache (needed once; also fixes ProofWidgets JS)
 lake build 2>&1 | tail -40
 ```

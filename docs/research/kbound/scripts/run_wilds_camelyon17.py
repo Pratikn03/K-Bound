@@ -20,7 +20,7 @@ KGA pipeline:
 
 SETUP (run once, on your Mac with M-series or CUDA)
 ---------------------------------------------------
-  cd /path/to/AutoML_Flagship_V8
+  cd /path/to/the/repository
   bash docs/research/kbound/scripts/run_wilds.sh
 
 DIRECT RUN (after setup)
@@ -41,22 +41,48 @@ from sklearn.ensemble import GradientBoostingRegressor
 
 ALPHA = 0.10
 SEED  = 0
+CALIBRATION = "loo"
 
-def decide_kga(Z, B, alpha=ALPHA, n_estimators=250, max_depth=2, lr=0.05, seed=SEED):
-    """LOO gradient-boosted benefit estimator + split-conformal radius.
-    Identical to cifar_tent_mps_v2.decide_kga."""
-    Z = np.asarray(Z, float); B = np.asarray(B, float); N = len(B)
-    Bhat = np.zeros(N)
-    for i in range(N):
-        tr = np.arange(N) != i
-        m = GradientBoostingRegressor(n_estimators=n_estimators, max_depth=max_depth,
-                                      learning_rate=lr, subsample=0.8, random_state=seed)
-        m.fit(Z[tr], B[tr])
-        Bhat[i] = m.predict(Z[i:i+1])[0]
-    eps = float(np.quantile(np.abs(Bhat - B), 1 - alpha))
-    dec = np.where(Bhat - eps > 0, "ADAPT",
-                   np.where(Bhat + eps < 0, "FREEZE", "ABSTAIN"))
-    return Bhat, eps, dec
+# The ONE K-Bound decision path (fix-queue items 4 + 15).
+_SCRIPTS_DIR = os.path.dirname(os.path.abspath(__file__))
+if _SCRIPTS_DIR not in sys.path:
+    sys.path.insert(0, _SCRIPTS_DIR)
+import kbound_decide as _kb  # noqa: E402
+
+
+def decide_kga(Z, B, alpha=ALPHA, n_estimators=250, max_depth=2, lr=0.05, seed=SEED,
+               calibration=CALIBRATION):
+    """LOO gradient-boosted benefit estimator + exact-rank conformal radius.
+
+    Returns ``(Bhat, eps, decisions)`` with **eps a per-cell ndarray**.
+
+    Fix-queue item 4.  The old body was::
+
+        eps = float(np.quantile(np.abs(Bhat - B), 1 - alpha))
+
+    -- one interpolated quantile over all N residuals, reused to score the very
+    cells that produced them.  This track is where that mattered most: Table VIII
+    has n = 9 cells per seed and realized eps of 0.153-0.372 (Tent), which is
+    what produces the "over-freezes" verdict.  Re-scored with the leave-one-out
+    pool, the SAR row gets WORSE, not better (NUMBERS_PACK.md sec. 4.3:
+    FA_u 1/36 -> 2/36, FA_c 0.143 -> 0.250).  Report that.
+
+    Structural caveat at this n, corrected 2026-07-26 (defect D9).  The sentence
+    that stood here said ``k = min(9, ceil(10*0.9)) = 9``, so eps is the MAXIMUM
+    residual and FA_u is forced to exactly 0.  That described the *clamped* rule,
+    which no longer exists.  Under the declared rule and the default LOO pool,
+    Table VIII's n = 9 cells give pools of 8, the exact rank ``k = 9`` exceeds
+    ``n``, and **no finite radius attains 1 - alpha**: eps is ``+inf`` and every
+    cell ABSTAINs.  The archived exact-rank column of Table VIII was produced
+    under the clamp and is not reproducible here.  Report the panel as
+    uncertifiable at alpha = 0.10, or enlarge it past
+    ``kga.certificate.min_calibration_size(alpha) + 1 = 10`` cells.  Only the
+    in-pool replay (``calibration='in_pool'``, n = 9, k = 9) still returns a
+    finite radius, and there FA_u is an arithmetic 0 rather than a measurement.
+    """
+    return _kb.decide_kga(Z, B, alpha=alpha, n_estimators=n_estimators,
+                          max_depth=max_depth, lr=lr, seed=seed,
+                          calibration=calibration)
 
 
 def policy_metrics(dec, a0, aa, B=None):
@@ -72,8 +98,14 @@ def policy_metrics(dec, a0, aa, B=None):
         "n": int(len(a0)),
         "decision_counts": {d: int((dec == d).sum()) for d in ["ADAPT", "FREEZE", "ABSTAIN"]},
         "coverage": float(np.mean(dec != "ABSTAIN")),
-        "false_adapt_rate_B<0": float(np.mean(B[adapt] < 0)) if adapt.any() else None,  # conditional FA_c (diagnostic)
-        "FA_u_marginal": float(np.mean(adapt & (B <= 0))),  # marginal FA_u (thm:certificate; Delta<=0 boundary)
+        # ONE definition of false-adapt (fix-queue item 28): ADAPT and B <= 0.
+        "false_adapt_unconditional": _kb.false_adapt(dec, B)["fa_u"],
+        "false_adapt_conditional":   _kb.false_adapt(dec, B)["fa_c"],
+        "n_false_adapt":             _kb.false_adapt(dec, B)["n_false_adapt"],
+        "false_adapt_definition": "false adapt := ADAPT and B <= 0; fa_u marginal, fa_c conditional",
+        # DEPRECATED aliases retained so pre-fix artifacts stay diffable.
+        "false_adapt_rate_B<0": float(np.mean(B[adapt] < 0)) if adapt.any() else None,  # conditional, strict
+        "FA_u_marginal": _kb.false_adapt(dec, B)["fa_u"],
         "adapt_precision_B>0":  float(np.mean(B[adapt] > 0)) if adapt.any() else None,
         "mean_balanced_acc": {
             "always_adapt":  float(aa.mean()),
@@ -91,6 +123,15 @@ def policy_metrics(dec, a0, aa, B=None):
             (oracle - kga).mean() < (oracle - a0).mean() - 1e-9
         ),
     }
+
+
+def _sklearn_version_str():
+    """scikit-learn version, stamped into every run manifest (fix-queue item 30)."""
+    try:
+        import sklearn
+        return sklearn.__version__
+    except Exception:
+        return None
 
 
 def balanced_accuracy(y_true, y_pred):
@@ -417,6 +458,19 @@ def run_experiment(args):
     # ── Evaluate ─────────────────────────────────────────────────────────────
     @torch.no_grad()
     def evaluate(model, loader):
+        """FIX-QUEUE ITEM 16 disclosure: BOTH arms are evaluated in ``eval()`` mode.
+
+        Unlike ``cifar_tent_mps_v2.acc_on``, which evaluates the adapted arm in
+        ``train()`` mode and therefore recomputes BN statistics per EVAL_CHUNK,
+        this runner evaluates f0 and f_a identically with the models' *running*
+        BN statistics.  So on this track the eval batch size (``_EVAL_BS = 64``)
+        does NOT change the reported accuracies, and B = bal_acc(f_a) - bal_acc(f0)
+        is not confounded by an eval-mode mismatch between the arms.  The adapted
+        arm's running statistics have still been moved by the adaptation pass, so
+        B bundles BN-statistic drift with the gradient update -- the isolating
+        control is the ``bn`` arm in ``cifar_tent_mps_v2.TTA_METHODS``, which has
+        no counterpart here.
+        """
         model.eval()
         all_preds, all_labels = [], []
         all_logits = []
@@ -626,14 +680,24 @@ def run_experiment(args):
             aa_arr = np.array([r["aa"] for r in recs])
             B_arr  = aa_arr - a0_arr
             Bhat, eps, dec = decide_kga(Z_mat, B_arr)
+            eps = np.asarray(eps, float)
             # Protocol F: serialize per-record B_hat / decision / eps so each
             # cell x seed record is self-describing (FIX: B-run wrote only aggregates).
-            for _r, _bh, _d in zip(recs, Bhat.tolist(), list(dec)):
+            # eps is PER CELL now (fix-queue item 4), so zip it in rather than
+            # stamping one scalar onto every record.
+            for _r, _bh, _d, _e in zip(recs, Bhat.tolist(), list(dec), eps.tolist()):
                 _r["B_hat"] = float(_bh)
                 _r["decision"] = str(_d)
-                _r["eps"] = float(eps)
+                _r["eps"] = float(_e)
             pm = policy_metrics(dec, a0_arr, aa_arr, B_arr)
-            pm["eps_conformal"] = eps
+            pm["eps_conformal"] = float(np.mean(eps))
+            pm["eps_conformal_is"] = "mean of the per-cell leave-one-out-of-pool radii"
+            pm["eps_conformal_min"] = float(np.min(eps))
+            pm["eps_conformal_max"] = float(np.max(eps))
+            pm["eps_calibration"] = CALIBRATION
+            pm["eps_rule"] = "exact split-conformal rank k=ceil((n+1)(1-alpha)); no interpolation"
+            pm["kga_backend"] = _kb.backend()
+            pm["fa_u_structural_ceiling_in_pool"] = _kb.fa_ceiling(len(B_arr), ALPHA)
             pm["base_rate_harmful_B<0"] = float(np.mean(B_arr < 0))
             pm["mean_true_B"] = float(B_arr.mean())
             print(f"[{method_name}] regret: KBound={pm['regret_vs_oracle']['K_Bound']:.5f} "
@@ -684,11 +748,24 @@ def run_experiment(args):
         "output_dir": args.output_dir,
         "wall_time_sec": round(_wall, 2),
         "wall_time_human": f"{int(_wall // 3600)}h{int((_wall % 3600) // 60)}m{int(_wall % 60)}s",
+        # Decision-path provenance (fix-queue items 4, 15, 16).
+        "kga": {"eps_rule": "exact split-conformal rank k=ceil((n+1)(1-alpha)); "
+                            "no np.quantile interpolation",
+                "eps_calibration": CALIBRATION,
+                "backend": _kb.backend(),
+                "eval_batch_size": _EVAL_BS,
+                "eval_mode": "eval() for BOTH arms -- running BN stats, so eval batch "
+                             "size does not change the reported accuracies"},
         "env": {
             "python": sys.version.split()[0],
             "numpy": np.__version__,
             "platform": sys.platform,
             "torch": (torch.__version__ if "torch" in dir() else None),
+            # fix-queue item 30 / F4-14: b_hat comes from
+            # GradientBoostingRegressor(subsample=0.8), so eps and every decision are
+            # scikit-learn-version-dependent; 0 of 43 archived manifests record it.
+            "scikit_learn": _sklearn_version_str(),
+            "pythonhashseed": os.environ.get("PYTHONHASHSEED"),
         },
         "result_json": os.path.basename(out_path),
         "timestamp": time.strftime("%Y-%m-%dT%H:%M:%S%z"),

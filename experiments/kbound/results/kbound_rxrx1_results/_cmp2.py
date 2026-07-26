@@ -1,7 +1,45 @@
+# --- defect D8: portable roots (docs/research/kbound/EXTERNAL_STORAGE_POLICY.md bans
+# --- machine-local absolute paths in tracked code). KB_REPO_ROOT is discovered from this
+# --- file's own location; override with $KBOUND_REPO_ROOT.
+import os as _kb_os
+from pathlib import Path as _KbPath
+
+
+def _kb_repo_root() -> str:
+    override = _kb_os.environ.get("KBOUND_REPO_ROOT", "").strip()
+    if override:
+        return str(_KbPath(override).expanduser().resolve())
+    here = _KbPath(__file__).resolve()
+    for candidate in here.parents:
+        if (candidate / "pyproject.toml").exists():
+            return str(candidate)
+    raise RuntimeError(f"repository root not found above {here}; set KBOUND_REPO_ROOT")
+
+
+KB_REPO_ROOT = _kb_repo_root()
+
+# --- external (git-excluded) data volume: ONE documented variable, no default.
+def _kb_external_root() -> str:
+    value = _kb_os.environ.get("KBOUND_EXTERNAL_ROOT", "").strip()
+    if not value:
+        raise RuntimeError(
+            "KBOUND_EXTERNAL_ROOT is not set. This script needs data that is deliberately "
+            "not in the git release (raw datasets, checkpoints, caches). Point "
+            "KBOUND_EXTERNAL_ROOT at the volume holding them; the expected layout is "
+            "documented in docs/research/kbound/kbound_repro/paths.py (EXTERNAL_LAYOUT) "
+            "and acquisition is in DATA.md. There is no default on purpose: this used to "
+            "be one author's external SSD, and defaulting to $HOME would write gigabytes "
+            "somewhere you did not choose."
+        )
+    return str(_KbPath(value).expanduser().resolve())
+
+
+KB_EXTERNAL_ROOT = _kb_external_root()
+
 import json, sys
 import numpy as np
-WILDS = "/Volumes/T9/uav/AutoML_Flagship_V8/experiments/kbound/wilds"
-THEORY = "/Volumes/T9/uav/AutoML_Flagship_V8/experiments/kbound/theory_validation"
+WILDS = KB_REPO_ROOT + "/experiments/kbound/wilds"
+THEORY = KB_REPO_ROOT + "/experiments/kbound/theory_validation"
 sys.path[:0] = [WILDS, THEORY]
 import analysis as an
 import tta_methods as tm
@@ -34,8 +72,8 @@ def agg(d, name):
                 best_harm_auc=det.get("best_single_feature_harm_AUC"),
                 top_feats=sorted(((k, v["harm_AUC"]) for k, v in det.get("per_feature", {}).items() if v.get("harm_AUC") is not None), key=lambda kv: -kv[1])[:3])
 
-RX = json.load(open("/Users/pratik_n/kbound_rxrx1_results/rxrx1_kbound_light_mps_internal/result_f6b268c7.json"))
-IR = json.load(open("/Users/pratik_n/kbound_inr_results/imagenetr_kbound_light_mps_internal/result_f4a1293b.json"))
+RX = json.load(open(KB_EXTERNAL_ROOT + "/kbound_rxrx1_results/rxrx1_kbound_light_mps_internal/result_f6b268c7.json"))
+IR = json.load(open(KB_EXTERNAL_ROOT + "/kbound_inr_results/imagenetr_kbound_light_mps_internal/result_f4a1293b.json"))
 out = {"rxrx1": agg(RX, "RxRx1"), "imagenetr": agg(IR, "ImageNet-R")}
-json.dump(out, open("/Users/pratik_n/kbound_rxrx1_results/_cmp_numbers.json", "w"), indent=2)
+json.dump(out, open(KB_EXTERNAL_ROOT + "/kbound_rxrx1_results/_cmp_numbers.json", "w"), indent=2)
 print(json.dumps(out, indent=2))

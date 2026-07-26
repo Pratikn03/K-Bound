@@ -13,6 +13,27 @@ INTEGRITY:
     variant predicts a direct upper-bound radius instead of one global eps.
   - CIFAR sanity uses an analogous DEV/TEST seed split to confirm no regression.
 """
+# --- defect D8: portable roots (docs/research/kbound/EXTERNAL_STORAGE_POLICY.md bans
+# --- machine-local absolute paths in tracked code). This file previously hard-coded a
+# --- Cowork *session sandbox* mount, which is worse than a
+# --- home directory: it is valid only inside one ephemeral container.
+import os as _kb_os
+from pathlib import Path as _KbPath
+
+
+def _kb_repo_root() -> str:
+    override = _kb_os.environ.get("KBOUND_REPO_ROOT", "").strip()
+    if override:
+        return str(_KbPath(override).expanduser().resolve())
+    here = _KbPath(__file__).resolve()
+    for candidate in here.parents:
+        if (candidate / "pyproject.toml").exists():
+            return str(candidate)
+    raise RuntimeError(f"repository root not found above {here}; set KBOUND_REPO_ROOT")
+
+
+KB_REPO_ROOT = _kb_repo_root()
+
 import json, itertools, numpy as np, os
 from sklearn.ensemble import GradientBoostingRegressor, RandomForestRegressor
 from sklearn.linear_model import Ridge, QuantileRegressor
@@ -22,7 +43,7 @@ from sklearn.neural_network import MLPRegressor
 from sklearn.pipeline import Pipeline
 
 ALPHA = 0.10
-ROOT = "/sessions/peaceful-blissful-ptolemy/mnt/uav/AutoML_Flagship_V8"
+ROOT = KB_REPO_ROOT
 CAM = f"{ROOT}/experiments/kbound/results/wilds_kbound_debug_mps/result_73add410.json"
 CIFAR_DIR = f"{ROOT}/experiments/kbound/results/stress_grid_multiseed_v1"
 OUTDIR = f"{ROOT}/experiments/kbound/results/camelyon17_fullscale_B_v1/estimator_dryrun"

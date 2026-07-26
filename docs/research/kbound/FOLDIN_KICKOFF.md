@@ -3,7 +3,7 @@
 **Goal.** Score every K-Bound v5 dataset **once** against the frozen pre-registered bars using **one uniform CI-robust verdict rule**, fold the verdicts into the paper, regenerate both PDFs. No new training. No re-rolling — score once and take what it gives.
 
 ## Inputs (result JSONs, already on disk — no raw data needed)
-Repo: `/Volumes/T9/uav/AutoML_Flagship_V8`, results under `experiments/kbound/results/`
+Repo: `$KBOUND_REPO_ROOT`, results under `experiments/kbound/results/`
 - CIFAR-10-C — `win_hunt_v5/cifar10c_aggr/seed{0..4}/decisive_tta_results.json`
 - CIFAR-10.1 — `win_hunt_v5/cifar101_aggr/seed{0..4}/decisive_tta_results.json`
 - RxRx1 — `win_hunt_v5/rxrx1_aggr/result_4a2840ef.json`

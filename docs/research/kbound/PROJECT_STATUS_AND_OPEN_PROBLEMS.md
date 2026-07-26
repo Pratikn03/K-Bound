@@ -82,8 +82,15 @@
 **85+ readiness command:** `bash docs/research/kbound/scripts/run_85plus_readiness.sh`
 
 **Honest headline at freeze:** an impossibility/frontier theorem + a certificate that provably
-controls false-adapt (gate table) + beats-both on synthetic stress grids + uniform no-harm on
-five real benchmarks. *No* real-shift or camera beats-both is claimed.
+controls false-adapt (gate table) + beats-both on synthetic stress grids + no-harm on the **four**
+one-sided natural tracks with locked held-out artifacts (Camelyon17, iWildCam, Office-Home, RxRx1).
+*No* real-shift or camera beats-both is claimed.
+
+> **CORRECTION 2026-07-26.** This line previously read *"uniform no-harm on five real benchmarks"*.
+> That was the submission BLOCKER: no-harm does **not** hold uniformly. PACS loses to always-adapt
+> by 2.45× (0.0431 vs 0.0176), ImageNet-R loses on 7 of 10 backbones, and CIFAR-10.1 fails the
+> declared transfer bar at FA_u = 0.167. The claim is now scoped to the four one-sided tracks named
+> above. See `kbound_short_body.tex` and `paper/generated/kbound_result_manifest.json`.
 
 ---
 

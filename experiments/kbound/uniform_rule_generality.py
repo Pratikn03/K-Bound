@@ -4,6 +4,8 @@
 import sys, numpy as np
 sys.path.insert(0,"docs/research/kbound/scripts")
 import analyze_F as A
+# fix-queue item 15 / defect D10: the certificate radius is the shipped one.
+import kbound_decide as _kb  # noqa: E402
 ALPHA=0.10
 DS = {
  "Camelyon17": dict(cal="experiments/kbound/results/camelyon17_richZ_F_v1/result_884129ba.json",
@@ -24,7 +26,8 @@ def evalk(cal,test,cs,ts,cand):
     Zc=np.array([r["Z"] for r in cr],float); Bc=np.array([r["B"] for r in cr],float)
     Zt=np.array([r["Z"] for r in tr],float); Bt=np.array([r["B"] for r in tr],float)
     a0=np.array([r["a0"] for r in tr],float); aa=np.array([r["aa"] for r in tr],float)
-    m=A.fit_point(Zc,Bc); eps=float(np.quantile(np.abs(m.predict(Zc)-Bc),1-ALPHA))
+    # D10: exact split-conformal rank radius via the shipped library, not np.quantile.
+    m=A.fit_point(Zc,Bc); eps=float(_kb.conformal_radius(np.abs(m.predict(Zc)-Bc),ALPHA))
     dec=A.decide_global(m.predict(Zt),eps); adapt=dec=="ADAPT"
     kga=np.where(adapt,aa,a0); orc=np.maximum(a0,aa)
     rk=(orc-kga).mean(); ra=(orc-aa).mean(); rf=(orc-a0).mean()

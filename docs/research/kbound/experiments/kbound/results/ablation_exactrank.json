@@ -1,6 +1,8 @@
 {
   "config": {
     "radius": "exact_rank eps=r_(ceil((n+1)(1-alpha)))",
+    "calibration": "loo",
+    "calibration_note": "loo = leave-one-out-of-pool: cell i's radius excludes cell i's own residual (fix-queue item 4). in_pool reproduces the archived rule in which eps was a function of the labels it scored.",
     "crossfit_folds": 8,
     "gbr": {
       "n_estimators": 250,
@@ -9,135 +11,146 @@
       "subsample": 0.8,
       "random_state": 0
     },
+    "input_seed": 1,
+    "n_cells": {
+      "tent": 432,
+      "eata": 432,
+      "sar": 432
+    },
+    "a_oracle_source": {
+      "tent": "derived: max(a0, a_adapted) -- 'a_oracle' absent from this dump",
+      "eata": "derived: max(a0, a_adapted) -- 'a_oracle' absent from this dump",
+      "sar": "derived: max(a0, a_adapted) -- 'a_oracle' absent from this dump"
+    },
     "input_sha12": {
-      "tent": "1507d404ad8b",
-      "eata": "7a867d10a08a",
-      "sar": "d1487773bf5e"
+      "tent": "586dae4b971d",
+      "eata": "da91d613804c",
+      "sar": "6699490cbc7f"
     }
   },
   "alpha": {
     "tent": {
       "alpha=0.01": {
-        "regret": 0.0036,
+        "regret": 0.0035,
         "FA_u": 0.0,
         "FA_c": 0.0,
-        "adapt_rate": 0.449,
-        "coverage": 0.477,
+        "adapt_rate": 0.458,
+        "coverage": 0.502,
         "n": 432
       },
       "alpha=0.05": {
-        "regret": 0.0021,
+        "regret": 0.0023,
         "FA_u": 0.0,
         "FA_c": 0.0,
-        "adapt_rate": 0.493,
-        "coverage": 0.63,
-        "n": 432
-      },
-      "alpha=0.1": {
-        "regret": 0.0017,
-        "FA_u": 0.0,
-        "FA_c": 0.0,
-        "adapt_rate": 0.507,
-        "coverage": 0.685,
-        "n": 432
-      },
-      "alpha=0.2": {
-        "regret": 0.0011,
-        "FA_u": 0.0,
-        "FA_c": 0.0,
-        "adapt_rate": 0.53,
-        "coverage": 0.736,
-        "n": 432
-      },
-      "no_radius": {
-        "regret": 0.0004,
-        "FA_u": 0.0509,
-        "FA_c": 0.0751,
-        "adapt_rate": 0.678,
-        "coverage": 1.0,
-        "n": 432
-      }
-    },
-    "eata": {
-      "alpha=0.01": {
-        "regret": 0.0041,
-        "FA_u": 0.0,
-        "FA_c": 0.0,
-        "adapt_rate": 0.477,
-        "coverage": 0.488,
-        "n": 432
-      },
-      "alpha=0.05": {
-        "regret": 0.0015,
-        "FA_u": 0.0,
-        "FA_c": 0.0,
-        "adapt_rate": 0.558,
-        "coverage": 0.604,
-        "n": 432
-      },
-      "alpha=0.1": {
-        "regret": 0.0014,
-        "FA_u": 0.0,
-        "FA_c": 0.0,
-        "adapt_rate": 0.565,
-        "coverage": 0.639,
-        "n": 432
-      },
-      "alpha=0.2": {
-        "regret": 0.0006,
-        "FA_u": 0.0,
-        "FA_c": 0.0,
-        "adapt_rate": 0.613,
-        "coverage": 0.722,
-        "n": 432
-      },
-      "no_radius": {
-        "regret": 0.0002,
-        "FA_u": 0.0324,
-        "FA_c": 0.0444,
-        "adapt_rate": 0.729,
-        "coverage": 1.0,
-        "n": 432
-      }
-    },
-    "sar": {
-      "alpha=0.01": {
-        "regret": 0.0045,
-        "FA_u": 0.0,
-        "FA_c": 0.0,
-        "adapt_rate": 0.299,
-        "coverage": 0.669,
-        "n": 432
-      },
-      "alpha=0.05": {
-        "regret": 0.0025,
-        "FA_u": 0.0,
-        "FA_c": 0.0,
-        "adapt_rate": 0.336,
-        "coverage": 0.72,
+        "adapt_rate": 0.491,
+        "coverage": 0.637,
         "n": 432
       },
       "alpha=0.1": {
         "regret": 0.0016,
         "FA_u": 0.0,
         "FA_c": 0.0,
-        "adapt_rate": 0.35,
-        "coverage": 0.738,
+        "adapt_rate": 0.516,
+        "coverage": 0.69,
         "n": 432
       },
       "alpha=0.2": {
-        "regret": 0.0009,
-        "FA_u": 0.0,
-        "FA_c": 0.0,
-        "adapt_rate": 0.373,
-        "coverage": 0.764,
+        "regret": 0.0011,
+        "FA_u": 0.0023,
+        "FA_c": 0.0042,
+        "adapt_rate": 0.549,
+        "coverage": 0.741,
         "n": 432
       },
       "no_radius": {
         "regret": 0.0002,
-        "FA_u": 0.0069,
-        "FA_c": 0.0157,
-        "adapt_rate": 0.442,
+        "FA_u": 0.0324,
+        "FA_c": 0.0483,
+        "adapt_rate": 0.671,
+        "coverage": 1.0,
+        "n": 432
+      }
+    },
+    "eata": {
+      "alpha=0.01": {
+        "regret": 0.0042,
+        "FA_u": 0.0,
+        "FA_c": 0.0,
+        "adapt_rate": 0.481,
+        "coverage": 0.5,
+        "n": 432
+      },
+      "alpha=0.05": {
+        "regret": 0.0021,
+        "FA_u": 0.0,
+        "FA_c": 0.0,
+        "adapt_rate": 0.546,
+        "coverage": 0.586,
+        "n": 432
+      },
+      "alpha=0.1": {
+        "regret": 0.0015,
+        "FA_u": 0.0,
+        "FA_c": 0.0,
+        "adapt_rate": 0.576,
+        "coverage": 0.641,
+        "n": 432
+      },
+      "alpha=0.2": {
+        "regret": 0.0008,
+        "FA_u": 0.0,
+        "FA_c": 0.0,
+        "adapt_rate": 0.62,
+        "coverage": 0.72,
+        "n": 432
+      },
+      "no_radius": {
+        "regret": 0.0002,
+        "FA_u": 0.0231,
+        "FA_c": 0.0311,
+        "adapt_rate": 0.745,
+        "coverage": 1.0,
+        "n": 432
+      }
+    },
+    "sar": {
+      "alpha=0.01": {
+        "regret": 0.003,
+        "FA_u": 0.0,
+        "FA_c": 0.0,
+        "adapt_rate": 0.586,
+        "coverage": 0.586,
+        "n": 432
+      },
+      "alpha=0.05": {
+        "regret": 0.0025,
+        "FA_u": 0.0,
+        "FA_c": 0.0,
+        "adapt_rate": 0.618,
+        "coverage": 0.618,
+        "n": 432
+      },
+      "alpha=0.1": {
+        "regret": 0.0015,
+        "FA_u": 0.0,
+        "FA_c": 0.0,
+        "adapt_rate": 0.678,
+        "coverage": 0.678,
+        "n": 432
+      },
+      "alpha=0.2": {
+        "regret": 0.0009,
+        "FA_u": 0.0023,
+        "FA_c": 0.0031,
+        "adapt_rate": 0.738,
+        "coverage": 0.738,
+        "n": 432
+      },
+      "no_radius": {
+        "regret": 0.0004,
+        "FA_u": 0.081,
+        "FA_c": 0.0868,
+        "adapt_rate": 0.933,
         "coverage": 1.0,
         "n": 432
       }
@@ -145,85 +158,85 @@
   },
   "estimator": {
     "GBR": {
-      "regret": 0.0017,
+      "regret": 0.0016,
       "FA_u": 0.0,
       "FA_c": 0.0,
-      "adapt_rate": 0.507,
-      "coverage": 0.685,
+      "adapt_rate": 0.516,
+      "coverage": 0.69,
       "n": 432
     },
     "Ridge_linear": {
-      "regret": 0.0043,
+      "regret": 0.0044,
       "FA_u": 0.0,
       "FA_c": 0.0,
-      "adapt_rate": 0.454,
-      "coverage": 0.47,
+      "adapt_rate": 0.461,
+      "coverage": 0.479,
       "n": 432
     },
     "RandomForest": {
-      "regret": 0.0017,
-      "FA_u": 0.0023,
-      "FA_c": 0.0045,
-      "adapt_rate": 0.512,
-      "coverage": 0.653,
+      "regret": 0.0018,
+      "FA_u": 0.0046,
+      "FA_c": 0.0089,
+      "adapt_rate": 0.521,
+      "coverage": 0.688,
       "n": 432
     },
     "MLP": {
-      "regret": 0.0143,
+      "regret": 0.016,
       "FA_u": 0.0,
       "FA_c": 0.0,
-      "adapt_rate": 0.361,
-      "coverage": 0.361,
+      "adapt_rate": 0.354,
+      "coverage": 0.354,
       "n": 432
     }
   },
   "dropout": {
     "full_11": {
-      "regret": 0.0017,
+      "regret": 0.0016,
       "FA_u": 0.0,
       "FA_c": 0.0,
-      "adapt_rate": 0.507,
-      "coverage": 0.685,
+      "adapt_rate": 0.516,
+      "coverage": 0.69,
       "n": 432
     },
     "drop_frozen": {
-      "regret": 0.0019,
+      "regret": 0.0016,
       "FA_u": 0.0,
       "FA_c": 0.0,
-      "adapt_rate": 0.5,
-      "coverage": 0.671,
+      "adapt_rate": 0.516,
+      "coverage": 0.683,
       "n": 432
     },
     "drop_adapted": {
-      "regret": 0.0017,
+      "regret": 0.0016,
       "FA_u": 0.0,
       "FA_c": 0.0,
-      "adapt_rate": 0.505,
-      "coverage": 0.681,
+      "adapt_rate": 0.519,
+      "coverage": 0.69,
       "n": 432
     },
     "drop_change": {
-      "regret": 0.0015,
+      "regret": 0.0014,
       "FA_u": 0.0,
       "FA_c": 0.0,
-      "adapt_rate": 0.514,
-      "coverage": 0.676,
+      "adapt_rate": 0.53,
+      "coverage": 0.688,
       "n": 432
     },
     "drop_drift": {
-      "regret": 0.0019,
+      "regret": 0.0016,
       "FA_u": 0.0,
       "FA_c": 0.0,
-      "adapt_rate": 0.5,
-      "coverage": 0.667,
+      "adapt_rate": 0.519,
+      "coverage": 0.69,
       "n": 432
     },
     "drop_update": {
-      "regret": 0.0018,
+      "regret": 0.0016,
       "FA_u": 0.0,
       "FA_c": 0.0,
-      "adapt_rate": 0.502,
-      "coverage": 0.662,
+      "adapt_rate": 0.519,
+      "coverage": 0.681,
       "n": 432
     }
   },
@@ -232,48 +245,48 @@
       "regret": 0.002,
       "FA_u": 0.0,
       "FA_c": 0.0,
-      "adapt_rate": 0.542,
-      "coverage": 0.634,
+      "adapt_rate": 0.546,
+      "coverage": 0.648,
       "n": 432
     },
     "tent->sar": {
-      "regret": 0.0173,
-      "FA_u": 0.125,
-      "FA_c": 0.2488,
-      "adapt_rate": 0.502,
-      "coverage": 0.72,
+      "regret": 0.0031,
+      "FA_u": 0.0,
+      "FA_c": 0.0,
+      "adapt_rate": 0.583,
+      "coverage": 0.583,
       "n": 432
     },
     "eata->tent": {
       "regret": 0.001,
-      "FA_u": 0.0069,
-      "FA_c": 0.0127,
-      "adapt_rate": 0.546,
-      "coverage": 0.685,
+      "FA_u": 0.0046,
+      "FA_c": 0.0083,
+      "adapt_rate": 0.556,
+      "coverage": 0.683,
       "n": 432
     },
     "eata->sar": {
-      "regret": 0.0236,
-      "FA_u": 0.1921,
-      "FA_c": 0.336,
-      "adapt_rate": 0.572,
-      "coverage": 0.625,
+      "regret": 0.0027,
+      "FA_u": 0.0,
+      "FA_c": 0.0,
+      "adapt_rate": 0.606,
+      "coverage": 0.606,
       "n": 432
     },
     "sar->tent": {
-      "regret": 0.0085,
-      "FA_u": 0.2546,
-      "FA_c": 0.3022,
-      "adapt_rate": 0.843,
-      "coverage": 0.843,
+      "regret": 0.0033,
+      "FA_u": 0.0949,
+      "FA_c": 0.1376,
+      "adapt_rate": 0.69,
+      "coverage": 0.69,
       "n": 432
     },
     "sar->eata": {
-      "regret": 0.0027,
-      "FA_u": 0.1157,
-      "FA_c": 0.1543,
-      "adapt_rate": 0.75,
-      "coverage": 0.75,
+      "regret": 0.0009,
+      "FA_u": 0.0093,
+      "FA_c": 0.0143,
+      "adapt_rate": 0.648,
+      "coverage": 0.648,
       "n": 432
     }
   }

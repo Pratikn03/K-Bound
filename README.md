@@ -8,28 +8,44 @@ The framework separates two layers:
 
 - **K-Bound theory** characterizes when a strict adapt or freeze commitment is
   uniformly supportable over a declared target class.
-- **KGA** is the practical finite-sample wrapper. It estimates adaptation benefit
-  from label-free evidence and commits only when a calibrated interval excludes
-  zero.
+- **KGA** — **Knowability-Guided Adaptation** — is the practical finite-sample
+  wrapper. It estimates adaptation benefit from label-free evidence and commits
+  only when a calibrated interval excludes zero.
 
 KGA wraps candidate adapters such as Tent, EATA, and SAR. It is a safety and
 validity layer, not a new adaptation objective and not a universal accuracy
 booster.
 
-## Scientific Status
+## Scientific Status (revised 2026-07-26)
+
+Target venue: **TMLR**. Manuscript status: **NOT FROZEN**. Canonical, always-current version of
+this table with numbers and open items:
+[`docs/research/kbound/SUBMISSION_LEDGER.md`](docs/research/kbound/SUBMISSION_LEDGER.md).
 
 | Evidence tier | Current result | Defensible reading |
 |---|---|---|
-| Core theory | Interior impossibility, closed-band abstention, strict-commitment frontier, marginal interval certificate | Conditional on the declared class and stated coverage assumptions |
-| Controlled mixed shifts | CIFAR-10-C Tent/EATA and ImageNet-C SAR beats-both tracks | Routing can improve on both fixed policies when helpful and harmful cells are detectable |
-| Natural shifts | Office-Home, iWildCam, Camelyon17, RxRx1 no-harm results | KGA generally matches the safer fixed policy; no clean single-dataset natural CI-robust beats-both claim |
-| Weak/incomplete evidence | CIFAR-10.1, ImageNet-R, PACS | Diagnostic only; a null does not prove structural non-identifiability |
-| Physical camera study | Protocol and implementation ready; fresh S01-S10 sessions pending | No real-camera headline result until the machine-readable publication gate passes |
+| Core theory | Interior impossibility, closed-band abstention, strict-commitment frontier, marginal interval certificate | Conditional on the declared class and stated coverage assumptions. 8 of 13 compiled theorem-level results currently carry no proof in the compiled build. |
+| Controlled mixed shifts — CI-supported | **CIFAR-10-C Tent and EATA** beats-both | Routing can improve on both fixed policies when helpful and harmful cells are detectable. This is the one track with real statistical power, and it survives every robustness check including the 2026-07-26 radius fix (0 of 9 504 decisions change). |
+| Controlled mixed shifts — point estimate only | **ImageNet-C SAR** | Beats always-freeze on the point estimate (0.0289 vs 0.0319); the freeze-gap CI at the seed-averaged unit includes zero. **Demoted from beats-both 2026-07-26.** |
+| Natural shifts | Office-Home, iWildCam, RxRx1 one-sided no-harm | KGA matches the safer fixed policy; no clean single-dataset natural CI-robust beats-both claim. RxRx1 (0 adapts) and iWildCam (1 adapt) leave the guarantee untested, and three of these four tracks have absent source records. |
+| Natural shifts — provenance failure | **Camelyon17 OOD** | **Sealed but not recomputable from release.** The promoted triple lives in one sealed YAML and in no computable artifact; the promoted FA_u = 0 is recorded nowhere. Do not cite it as a reproduced number. |
+| Weak / incomplete evidence | CIFAR-10.1 (declared negative), ImageNet-R, PACS | Diagnostic only; a null does not prove structural non-identifiability. ImageNet-R is worse than its mean row suggests — KGA loses to always-adapt on 7 of 10 backbones. |
+| Physical camera study | Protocol and implementation ready; fresh S01-S10 sessions pending | No real-camera headline result until the machine-readable publication gate passes. The session checklists on disk are unreadable placeholders. |
 
-The promoted benchmark values and caveats live in
+The promoted benchmark values live in
 [the canonical result manifest](docs/research/kbound/paper/generated/kbound_result_manifest.json).
-The dashboard and paper tables are built from that manifest rather than from
-legacy notes.
+The dashboard and paper tables are built from that manifest rather than from legacy notes.
+
+**Three release caveats a reader should know before running anything:**
+
+1. **143 committed text artifacts are NUL-filled iCloud placeholders**, including the entire
+   Office-Home runner and every ablation JSON. Census, one-command recovery, release-guard spec:
+   [`docs/research/kbound/PLACEHOLDER_INVENTORY.md`](docs/research/kbound/PLACEHOLDER_INVENTORY.md).
+2. **Datasets**: [`DATA.md`](DATA.md) gives per-dataset version, split, licence and acquisition.
+   Two of nine (ImageNet-R, Office-Home) are not obtainable from this release as shipped.
+3. **The multi-seed runs span three Python/torch stacks**, and no manifest records a scikit-learn
+   version. Their spread is not seed variance —
+   [`docs/research/kbound/REPRODUCE.md §0a`](docs/research/kbound/REPRODUCE.md).
 
 ## Theory and Certificate
 
@@ -75,10 +91,22 @@ print(decide(Bhat=-0.12, eps=epsilon))  # freeze
 print(decide(Bhat=0.01, eps=epsilon))   # abstain
 ~~~
 
-The exact split-conformal implementation uses the finite-sample order statistic.
-Archived stress-grid artifacts are labeled separately because they used
-leave-one-condition-out empirical residual calibration or an earlier empirical
-quantile implementation.
+**The declared calibration rule, as of 2026-07-26, is one rule everywhere**: exact split-conformal
+rank quantile with a **leave-one-out-of-pool** radius — cell *i*'s radius is calibrated on the
+other n−1 residuals only. It replaces two earlier variants that both shipped: an interpolated
+`np.quantile` rule, and an in-pool variant that included cell *i*'s own residual in cell *i*'s
+radius. The in-pool variant made epsilon a function of the test labels that the FA_u guarantee
+attaches to; correcting it changes **0 of 9 504** committed CIFAR-10-C decisions and moves
+ImageNet-C SAR's FA_u from 0/135 to 1/135. Full accounting:
+[`SUBMISSION_LEDGER.md §1a`](docs/research/kbound/SUBMISSION_LEDGER.md) and `§9`.
+
+One structural caveat to state wherever FA_u is reported: under in-pool rank calibration
+`FA_u ≤ (N−k)/N` is an arithmetic identity — exactly 0 at n ≤ 9 — so "FA_u ≤ α" is not a
+measurement on the small-n tracks. Report FA_u against that ceiling, with the ADAPT count and a
+Clopper-Pearson bound on FA_c.
+
+Archived stress-grid artifacts are labeled separately because they used leave-one-condition-out
+empirical residual calibration or an earlier empirical quantile implementation.
 
 ## Researcher Reproduction
 

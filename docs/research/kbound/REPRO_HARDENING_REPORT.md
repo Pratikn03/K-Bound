@@ -27,9 +27,31 @@ The canonical numerical manifest that depends on those aggregates is therefore
    `KBOUND_DATA_ROOT` / `KBOUND_RESULTS_ROOT` / `KBOUND_IMAGENETR_ROOT` /
    `KBOUND_PACS_ROOT` env resolution with actionable errors. The new current
    command (`runbooks/release_candidate.sh`) is fully portable and verified by a
-   relocation test. **70 legacy/executable scripts still hard-code
-   `/Volumes/T9` or `/Users/pratik_n`** and are listed as a remediation backlog;
-   several are the *active-training* runners and were deliberately not edited.
+   relocation test.
+
+   **CORRECTION, 2026-07-26 (defect D8).** The sentence that stood here said 70
+   legacy scripts were "listed as a remediation backlog", and that "several are
+   the *active-training* runners and were deliberately not edited". Neither half
+   survived audit: the real count at the time of the fix run was **94 tracked
+   `.py`/`.sh` files**, no such list existed in the repository, and the
+   "deliberately not edited" runners included result producers
+   (`experiments/kbound/wilds/run_camelyon17_kbound.py`,
+   `experiments/kbound/poem_aetta/score_official_headtohead.py`, the launch
+   shells under `experiments/kbound/results/*/`) that nobody could run without
+   editing them first. The backlog is now closed: **94 → 9**, and the nine are
+   named with reasons in `tests/test_reproducibility_hygiene.py`
+   (`MACHINE_LOCAL_ALLOWLIST`) — every one of them either *detects* the pattern
+   or *documents* it, and none depends on such a path to run. The sweep also
+   caught a class this report never mentioned: eleven files hard-coded a Cowork
+   **session-sandbox** mount, valid only inside one ephemeral container.
+
+   Paths that must genuinely leave the repository now route through **one**
+   documented variable, `KBOUND_EXTERNAL_ROOT`, whose layout is declared in
+   `kbound_repro/paths.py::EXTERNAL_LAYOUT` and which **raises** when unset
+   rather than defaulting to a home directory. The guard that previously
+   asserted this for `kga/` and `tests/` only — which is why it stayed green
+   through the whole violation — now scans the entire tree, `.sh` as well as
+   `.py`, and does not exempt comments.
 2. **Device/runtime** — `kbound_repro/runtime.py`: single selector, order
    requested→CUDA→MPS→CPU, **fails clearly** instead of silently switching, records
    the resolved device for manifests, lazy torch import. No `set_device` calls.
@@ -64,6 +86,10 @@ The canonical numerical manifest that depends on those aggregates is therefore
 - KB-CLAIM-022 (Camelyon17 pooled) stays **withdrawn**; Camelyon = reconciled OOD
   no-harm only. KB-CLAIM-004 (FA_c≤α), 012 (jackknife+), 023 (13×/24× mixed), 050
   (universal improvement) stay withdrawn.
+  **Amended 2026-07-26:** the Camelyon17 OOD no-harm row is now tiered **"sealed but not
+  recomputable from release"** — the promoted regret triple exists only in one sealed YAML, nothing
+  recomputes it, the promoted `FA_u = 0` is recorded nowhere, and the reconciliation directory
+  KB-CLAIM-022's withdrawal argument rests on is absent. `SUBMISSION_LEDGER.md §8a`.
 - Protocol D33 stays controlled mechanism confirmation (KB-CLAIM-027), not a
   natural benchmark.
 - Empirical coverage kept separate from theoretical; risk alignment stays an

@@ -54,14 +54,55 @@ VERDICT (pre-stated, STEP 3)
                  detectable (AUC 0.91) but not certifiable at level alpha at
                  this sample size."
 """
+# --- defect D8: portable roots (docs/research/kbound/EXTERNAL_STORAGE_POLICY.md bans
+# --- machine-local absolute paths in tracked code). This file previously hard-coded a
+# --- Cowork *session sandbox* mount, which is worse than a
+# --- home directory: it is valid only inside one ephemeral container.
+import os as _kb_os
+from pathlib import Path as _KbPath
+
+
+def _kb_repo_root() -> str:
+    override = _kb_os.environ.get("KBOUND_REPO_ROOT", "").strip()
+    if override:
+        return str(_KbPath(override).expanduser().resolve())
+    here = _KbPath(__file__).resolve()
+    for candidate in here.parents:
+        if (candidate / "pyproject.toml").exists():
+            return str(candidate)
+    raise RuntimeError(f"repository root not found above {here}; set KBOUND_REPO_ROOT")
+
+
+KB_REPO_ROOT = _kb_repo_root()
+
+# --- defect D8: portable roots (docs/research/kbound/EXTERNAL_STORAGE_POLICY.md bans
+# --- machine-local absolute paths in tracked code). KB_REPO_ROOT is discovered from this
+# --- file's own location; override with $KBOUND_REPO_ROOT.
+import os as _kb_os
+from pathlib import Path as _KbPath
+
+
+def _kb_repo_root() -> str:
+    override = _kb_os.environ.get("KBOUND_REPO_ROOT", "").strip()
+    if override:
+        return str(_KbPath(override).expanduser().resolve())
+    here = _KbPath(__file__).resolve()
+    for candidate in here.parents:
+        if (candidate / "pyproject.toml").exists():
+            return str(candidate)
+    raise RuntimeError(f"repository root not found above {here}; set KBOUND_REPO_ROOT")
+
+
+KB_REPO_ROOT = _kb_repo_root()
+
 import json, itertools, math, os
 import numpy as np
 from sklearn.ensemble import GradientBoostingRegressor
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-DEFAULT_RESULT = "/Volumes/T9/uav/AutoML_Flagship_V8/experiments/kbound/results/wilds_kbound_debug_mps/result_73add410.json"
+DEFAULT_RESULT = KB_REPO_ROOT + "/experiments/kbound/results/wilds_kbound_debug_mps/result_73add410.json"
 if not os.path.exists(DEFAULT_RESULT):
-    DEFAULT_RESULT = "/sessions/peaceful-blissful-ptolemy/mnt/uav/AutoML_Flagship_V8/experiments/kbound/results/wilds_kbound_debug_mps/result_73add410.json"
+    DEFAULT_RESULT = KB_REPO_ROOT + "/experiments/kbound/results/wilds_kbound_debug_mps/result_73add410.json"
 
 ALPHA = 0.10                 # FIXED. never tuned.
 GBR_KW = dict(n_estimators=250, max_depth=2, learning_rate=0.05,

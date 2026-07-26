@@ -17,9 +17,9 @@ Generated: 2026-07-01T18:12Z
 
 ## Next commands
 ```bash
-KB_SMOKE_SEEDS="0 1" bash /Volumes/T9/uav/AutoML_Flagship_V8/docs/research/kbound/scripts/run_smoke_showcase.sh
-bash /Volumes/T9/uav/AutoML_Flagship_V8/docs/research/kbound/edge/scripts/run_edge_source_gate.sh
-bash /Volumes/T9/uav/AutoML_Flagship_V8/docs/research/kbound/edge/scripts/run_edge_publication_pipeline.sh
-bash /Volumes/T9/uav/AutoML_Flagship_V8/docs/research/kbound/scripts/prepare_rxrx1_data.sh
-KB_SEEDS="0 1 2 3 4" bash /Volumes/T9/uav/AutoML_Flagship_V8/docs/research/kbound/scripts/run_final_showcase.sh --device mps --seeds "0 1 2 3 4"
+KB_SMOKE_SEEDS="0 1" bash "$KBOUND_REPO_ROOT"/docs/research/kbound/scripts/run_smoke_showcase.sh
+bash "$KBOUND_REPO_ROOT"/docs/research/kbound/edge/scripts/run_edge_source_gate.sh
+bash "$KBOUND_REPO_ROOT"/docs/research/kbound/edge/scripts/run_edge_publication_pipeline.sh
+bash "$KBOUND_REPO_ROOT"/docs/research/kbound/scripts/prepare_rxrx1_data.sh
+KB_SEEDS="0 1 2 3 4" bash "$KBOUND_REPO_ROOT"/docs/research/kbound/scripts/run_final_showcase.sh --device mps --seeds "0 1 2 3 4"
 ```

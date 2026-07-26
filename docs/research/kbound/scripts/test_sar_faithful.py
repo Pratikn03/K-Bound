@@ -1,9 +1,8 @@
 #!/usr/bin/env python3
 """A/B validation of the faithful-SAR fix: OLD (broken) SAR vs FIXED SAR.
 
-Run on the Mac (torch env):
-    source ~/.venv_wilds/bin/activate
-    cd /Volumes/T9/uav/AutoML_Flagship_V8
+Run from a checkout, in an env with torch (fix-queue item 30: no machine-local paths):
+    cd <repo root>
     python docs/research/kbound/scripts/test_sar_faithful.py
 
 Part A = deterministic mechanical asserts on the FIXED code (the real gate).
@@ -52,12 +51,34 @@ sig = inspect.signature(H.sar_adapt); d = {k: v.default for k, v in sig.paramete
 assert abs(d["reset_constant_em"] - 0.2) < 1e-12 and d["margin_e0"] is None, "faithful defaults"
 print("[A1] OK  defaults: reset_constant_em=0.2 (absolute), margin_e0 -> 0.4*ln(K)")
 
-w = torch.tensor([1., -2., .5, .3]); rho = .05
+# ---- [A2] SAM restore is exact -- ON THE REAL PARAMETER TENSORS -------------
+# FIX-QUEUE ITEM 30 (F2-16).  The previous A2 was:
+#
+#     res_new = (w.clone() - w).norm().item()
+#     assert res_new < 1e-9 < res_old, "SAM restore must be exact"
+#
+# `‖w − w‖` is 0 by construction on a local scratch tensor.  It touched neither
+# `sar_adapt` nor any other project code, so it validated nothing while reading
+# as the headline gate of this file.  Replaced with an assertion on the actual
+# parameters `sar_adapt` mutates: the SAM ascent perturbation must leave no
+# residue, so with lr = 0 the weights must come back bit-identical after N steps
+# (the ascent is the only thing that moves them when the optimiser step is a
+# no-op).  The analytic drift of the OLD bug -- restoring with the *second*
+# gradient instead of the saved weights -- is kept as the contrast value.
+rho = .05
 g1 = torch.tensor([2., 1., -3., .4]); g2 = torch.tensor([1.5, 1.2, -2., .9])
-res_old = ((w + rho * g1 / g1.norm()) - rho * g2 / g2.norm() - w).norm().item()
-res_new = (w.clone() - w).norm().item()
-assert res_new < 1e-9 < res_old, "SAM restore must be exact"
-print(f"[A2] OK  SAM restore exact: fixed residual {res_new:.1e}  vs  old-bug drift {res_old:.4f}/step")
+res_old = (rho * g1 / g1.norm() - rho * g2 / g2.norm()).norm().item()   # old-bug drift/step
+
+_base_a2 = tiny_model().eval()
+_init_a2 = [p.detach().clone() for p in _base_a2.parameters()]
+_m_a2, _un_a2 = H.sar_adapt(_base_a2, stream(), steps=5, lr=0.0, num_classes=10)
+res_new = max((p.detach() - q).abs().max().item()
+              for p, q in zip(_m_a2.parameters(), _init_a2))
+assert res_new < 1e-9 < res_old, (
+    "SAM restore must leave no residue on the real parameters: sar_adapt with lr=0 "
+    f"moved a weight by {res_new:.3e}")
+print(f"[A2] OK  SAM restore exact on sar_adapt's own parameters: max drift after 5 "
+      f"lr=0 steps {res_new:.1e}  vs  old-bug analytic drift {res_old:.4f}/step")
 
 base = tiny_model().eval(); init = [p.detach().clone() for p in base.parameters()]
 m, un = H.sar_adapt(base, stream(), steps=3, lr=1e-2, num_classes=10, reset_constant_em=1e9)

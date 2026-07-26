@@ -1,11 +1,32 @@
 #!/usr/bin/env python3
 """Forest plot: 95% paired-bootstrap CIs for the 6 KGA-vs-trivial comparisons (mean regret diff)."""
+# --- defect D8: portable roots (docs/research/kbound/EXTERNAL_STORAGE_POLICY.md bans
+# --- machine-local absolute paths in tracked code). This file previously hard-coded a
+# --- Cowork *session sandbox* mount, which is worse than a
+# --- home directory: it is valid only inside one ephemeral container.
+import os as _kb_os
+from pathlib import Path as _KbPath
+
+
+def _kb_repo_root() -> str:
+    override = _kb_os.environ.get("KBOUND_REPO_ROOT", "").strip()
+    if override:
+        return str(_KbPath(override).expanduser().resolve())
+    here = _KbPath(__file__).resolve()
+    for candidate in here.parents:
+        if (candidate / "pyproject.toml").exists():
+            return str(candidate)
+    raise RuntimeError(f"repository root not found above {here}; set KBOUND_REPO_ROOT")
+
+
+KB_REPO_ROOT = _kb_repo_root()
+
 import json, os
 import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 
-RES = "/sessions/peaceful-blissful-ptolemy/mnt/uav/AutoML_Flagship_V8/experiments/kbound/results/stress_grid_multiseed_v1"
+RES = KB_REPO_ROOT + "/experiments/kbound/results/stress_grid_multiseed_v1"
 r = json.load(open(os.path.join(RES, "LOCKED_ANALYSIS_RESULTS.json")))
 rows = r["comparisons"]
 # order: tent(adapt,freeze), eata(adapt,freeze), sar(adapt,freeze) -> top to bottom

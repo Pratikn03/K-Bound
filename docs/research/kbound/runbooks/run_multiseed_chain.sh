@@ -6,12 +6,29 @@
 #   3) RxRx1 test (seeds 0-4)               [heaviest; data read from T9]
 #   PACS: SKIPPED (no PACS data on internal or T9; arm later via HF download).
 # Monitor: tail -f experiments/kbound/results/multiseed/chain.log
+# --- interpreter: $KBOUND_PYTHON, default python3 (was a hard-coded venv path).
+# --- defect D8: portable roots. No machine-local absolute paths in tracked code
+# --- (docs/research/kbound/EXTERNAL_STORAGE_POLICY.md). KB_REPO_ROOT is discovered
+# --- from this script's own location; override with KBOUND_REPO_ROOT.
+_kb_find_root() {
+  d=$(cd "$(dirname "${BASH_SOURCE[0]:-$0}")" && pwd)
+  while [ "$d" != "/" ]; do
+    [ -f "$d/pyproject.toml" ] && { printf '%s\n' "$d"; return 0; }
+    d=$(dirname "$d")
+  done
+  echo "ERROR: repository root not found above $(dirname "${BASH_SOURCE[0]:-$0}")" >&2
+  return 1
+}
+KB_REPO_ROOT="${KBOUND_REPO_ROOT:-$(_kb_find_root)}" || exit 1
+
+KB_PYTHON="${KBOUND_PYTHON:-python3}"
+
 set -u
-R="$HOME/Documents/AutoML_Flagship_V8"
+R="$KB_REPO_ROOT"
 K="$R/docs/research/kbound"
-T9="/Volumes/T9/uav/AutoML_Flagship_V8/experiments/kbound"
+T9="$KB_REPO_ROOT/experiments/kbound"
 OUT="$R/experiments/kbound/results/multiseed"
-PYBIN="/opt/anaconda3/envs/aetta/bin/python"
+PYBIN=""$KB_PYTHON""
 LOG="$OUT/chain.log"
 mkdir -p "$OUT"
 say() { echo "[$(date '+%F %T')] $*" >> "$LOG"; }

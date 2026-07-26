@@ -260,7 +260,14 @@ def aggregate_single_candidate(records):
         if len(rs) >= 2 and len(np.unique(B)) > 1:
             Bhat, eps, dec = an.decide_kga(Z, B)
             pm = an.policy_metrics(dec, a0, aa, B)
-            pm["eps_conformal"] = float(eps)
+            # fix-queue item 4: eps is one radius per cell (the scored cell is
+            # excluded from its own calibration pool), so the scalar that used to
+            # be written here no longer exists. Record the summary, labelled.
+            eps = np.asarray(eps, float)
+            pm["eps_conformal"] = float(np.mean(eps))
+            pm["eps_conformal_is"] = "mean of the per-cell leave-one-out-of-pool radii"
+            pm["eps_conformal_min"] = float(np.min(eps))
+            pm["eps_conformal_max"] = float(np.max(eps))
             entry["kga"] = pm
         else:
             entry["kga"] = {"note": "need >=2 cells with B variation for the cross-cell certificate"}
@@ -383,7 +390,7 @@ def aggregate_smoothdrift(conditions):
     }
 
 
-REPO = os.path.dirname(os.path.dirname(os.path.dirname(HERE)))   # .../AutoML_Flagship_V8
+REPO = os.path.dirname(os.path.dirname(os.path.dirname(HERE)))   # the repository root
 
 
 def build_manifest(args, records, conditions, meta):

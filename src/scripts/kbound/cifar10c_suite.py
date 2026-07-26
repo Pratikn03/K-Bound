@@ -11,8 +11,30 @@ Model: cached ResNet-18 (clean CIFAR-10 ~0.874). Online/continual TTA (collapse-
 KGA = continual Tent gated by a clean labelled validation probe. Subsample N_PER/cell.
 NOT here (future work): ImageNet-C/ViT (Exp3), WILDS (Exp5), TTT/SHOT baselines.
 """
-import os, json, copy, math
+import os, json, copy, math, hashlib
 import numpy as np
+
+
+def stable_seed(*parts, mod=2**31 - 1):
+    """Process-stable seed from arbitrary parts (fix-queue item 30 / F2-8).
+
+    ``cifar10c_suite.py:70`` used to read
+
+        r = np.random.default_rng(sev*131 + hash(corr)%9973)
+
+    and Python salts ``hash()`` on ``str`` per interpreter process unless
+    ``PYTHONHASHSEED`` is set -- which nothing in this repo sets.  Three
+    interpreters therefore drew three different 800-image subsamples for the
+    SAME cell, despite the ``torch.manual_seed(0); np.random.seed(0)`` above.
+    That makes ``cifar10c_suite_results.json`` unregenerable and it is why
+    ``CIFAR10C_SAR_QUARANTINE.md``'s reinstatement gate #2 ("reproduce seed 0
+    from clean raw outputs") could not be met.
+
+    blake2b is a fixed function of the bytes, so this is stable across
+    processes, machines and Python versions.
+    """
+    key = "|".join(str(p) for p in parts).encode("utf-8")
+    return int(hashlib.blake2b(key, digest_size=8).hexdigest(), 16) % mod
 import torch, torch.nn as nn, torch.nn.functional as F
 import torchvision as tv
 from imagecorruptions import corrupt
@@ -67,7 +89,8 @@ def accv(m,x,y,tr):
 N_PER=800; BATCH=200; LR=1e-3; TOL=0.01
 ETH=0.4*math.log(10)
 def load_cell(corr,sev):
-    r=np.random.default_rng(sev*131+hash(corr)%9973); idx=r.choice(POOL,N_PER,replace=False)
+    # fix-queue item 30: stable digest, NOT Python's per-process-salted hash().
+    r=np.random.default_rng(stable_seed("cifar10c_suite", corr, sev)); idx=r.choice(POOL,N_PER,replace=False)
     imgs=np.stack([corrupt(Xclean[i],corruption_name=corr,severity=sev) for i in idx]).astype(np.float32)/255.
     x=torch.tensor(imgs).permute(0,3,1,2).contiguous(); y=torch.tensor(yall[idx]); return x,y
 

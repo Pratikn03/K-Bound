@@ -1,5 +1,19 @@
 # K-Bound — Gap Audit (Research Integrity + Experiment Coverage)
 
+> **SUPERSEDED BY `docs/research/kbound/SUBMISSION_LEDGER.md` §3, §4 and §11.**
+> Retained as a dated historical record of the 2026-06-14 audit. It is **not** a current statement
+> of project status and must not be cited as one. Two specific reasons it cannot be re-verified
+> today:
+> - Its Part-B findings rest on `experiments/kbound/theory_validation/frontier_decisive/**`, all
+>   17 files of which are now NUL-filled iCloud placeholders
+>   (`docs/research/kbound/PLACEHOLDER_INVENTORY.md`, group F).
+> - Its headline conclusion "**No fabrication was found**" was and remains true, but its clean bill
+>   on calibration was scoped to the theory-validation suite. The separate defect found on
+>   2026-07-26 — an in-sample conformal radius on five shipped experiment scripts — is outside
+>   everything this document inspected. See `SUBMISSION_LEDGER.md §9`.
+>
+> Stamped 2026-07-26.
+
 **Date:** 2026-06-14
 **Scope requested:** (1) Research integrity — does every paper claim/theorem trace to a real validator script + result artifact, with no placeholders/fabrication? (2) Experiment coverage — are promised experiments actually run, with the claimed baselines/seeds/datasets?
 **Method:** Deep *static* cross-check (no heavy execution). Paper of record = `tmp/pdfs/kbound_review/text/primary.txt` (1806 lines). Cross-referenced against `README.md`, `CODEBASE_MAP.md`, `docs/research/kbound/*`, `research_lock/`, `audits/`, `experiments/kbound/**`, `tests/**`. Roughly 25 result JSONs and all 7 main theorem validators were inspected; the four highest-stakes findings were independently re-verified against the files.

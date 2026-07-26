@@ -22,10 +22,20 @@ these correlations for evaluation; the router only ever sees Z or agreements.
 from __future__ import annotations
 import os, sys
 import numpy as np
-from sklearn.ensemble import GradientBoostingRegressor
+from sklearn.ensemble import GradientBoostingRegressor  # noqa: F401 (used by callers/tests)
 
 ALPHA = 0.10
 SEED = 0
+CALIBRATION = "loo"   # fix-queue item 4: leave-one-out-of-pool radius by default
+
+# ---- the ONE K-Bound decision path (fix-queue items 4 + 15) -----------------
+# `docs/research/kbound/scripts/kbound_decide.py` wraps `kga.certificate` /
+# `kga.policy`; importing it here removes decide_kga fork #2 of seven.
+_REPO_ROOT = os.path.abspath(os.path.join(os.path.dirname(os.path.abspath(__file__)), *[os.pardir] * 3))
+_KB_SCRIPTS = os.path.join(_REPO_ROOT, "docs", "research", "kbound", "scripts")
+if _KB_SCRIPTS not in sys.path:
+    sys.path.insert(0, _KB_SCRIPTS)
+import kbound_decide as _kb  # noqa: E402
 
 # import the multi-candidate residual estimators WITHOUT modifying that file
 _THEORY = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "theory_validation")
@@ -52,25 +62,51 @@ except Exception as e:  # pragma: no cover
 
 
 # ============================ (a) single-candidate KGA =======================
-def decide_kga(Z, B, alpha=ALPHA, n_estimators=250, max_depth=2, lr=0.05, seed=SEED):
-    """LOO gradient-boosted benefit estimator + split-conformal radius.
-    Returns (Bhat, eps, decisions in {ADAPT,FREEZE,ABSTAIN})."""
-    Z = np.asarray(Z, float); B = np.asarray(B, float); N = len(B)
-    Bhat = np.zeros(N)
-    for i in range(N):
-        tr = np.arange(N) != i
-        m = GradientBoostingRegressor(n_estimators=n_estimators, max_depth=max_depth,
-                                      learning_rate=lr, subsample=0.8, random_state=seed)
-        m.fit(Z[tr], B[tr])
-        Bhat[i] = m.predict(Z[i:i + 1])[0]
-    eps = float(np.quantile(np.abs(Bhat - B), 1 - alpha))
-    dec = np.where(Bhat - eps > 0, "ADAPT", np.where(Bhat + eps < 0, "FREEZE", "ABSTAIN"))
-    return Bhat, eps, dec
+def decide_kga(Z, B, alpha=ALPHA, n_estimators=250, max_depth=2, lr=0.05, seed=SEED,
+               calibration=CALIBRATION):
+    """LOO gradient-boosted benefit estimator + exact-rank conformal radius.
+
+    Returns ``(Bhat, eps, decisions)`` where **eps is a per-cell ndarray**, not a
+    scalar.
+
+    FIX-QUEUE ITEM 4.  The old body ended with::
+
+        eps = float(np.quantile(np.abs(Bhat - B), 1 - alpha))
+        dec = np.where(Bhat - eps > 0, "ADAPT", ...)
+
+    -- one interpolated ``np.quantile`` over ALL N residuals (including cell i's
+    own) then used to decide cell i, so eps was a function of the very test
+    labels the FA_u <= alpha guarantee attaches to.  Radii are now
+    leave-one-out-of-pool and the rule is the exact split-conformal rank
+    quantile ``k = ceil((n+1)(1-alpha))`` -- no interpolation anywhere.
+
+    FIX-QUEUE ITEM 15.  The body is gone; this is a thin signature-preserving
+    shim over ``kbound_decide.decide_kga``, which calls ``kga.certificate`` /
+    ``kga.policy``.  This file was fork #2 of seven.
+    """
+    return _kb.decide_kga(Z, B, alpha=alpha, n_estimators=n_estimators,
+                          max_depth=max_depth, lr=lr, seed=seed,
+                          calibration=calibration)
 
 
 def policy_metrics(dec, a0, aa, B=None, alpha=ALPHA):
     """Realized accuracy + regret vs oracle for each policy. ABSTAIN/FREEZE -> frozen.
-    beats_both REQUIRES the pre-registered false-adapt budget FA<=alpha, not regret alone."""
+    beats_both REQUIRES the pre-registered false-adapt budget, not regret alone.
+
+    FIX-QUEUE ITEM 28 -- ONE definition of false-adapt.  This function used to
+    emit only ``false_adapt_rate_B<0 = mean(B[adapt] < 0)``: *conditional* on
+    ADAPT and *strict*.  Two things were wrong with using it to gate
+    ``beats_both``.  (i) ``thm:certificate`` bounds the MARGINAL rate
+    ``Pr[ADAPT and B <= 0]``, which is what ``_locked_analysis_script.py:43``
+    computes -- the conditional rate is a different, larger quantity and gating
+    on it is neither the guarantee nor conservative in general.  (ii) The strict
+    inequality exempts ties: 500 archived cells have ``B`` exactly 0.0 and 102 of
+    them ADAPT, and an ADAPT on ``B == 0`` is a false adapt (no strict benefit
+    was obtained, yet the certificate committed).
+    ``fa_u`` and ``fa_c`` are now separate named fields, both computed by
+    ``kbound_decide.false_adapt``; the legacy field is retained, marked
+    deprecated, and gates nothing.
+    """
     a0 = np.asarray(a0, float); aa = np.asarray(aa, float)
     adapt = dec == "ADAPT"
     kga = np.where(adapt, aa, a0)
@@ -78,12 +114,22 @@ def policy_metrics(dec, a0, aa, B=None, alpha=ALPHA):
     if B is None:
         B = aa - a0
     B = np.asarray(B, float)
+    _fa = _kb.false_adapt(dec, B)
     return {
         "n": int(len(a0)),
         "decision_counts": {d: int((dec == d).sum()) for d in ["ADAPT", "FREEZE", "ABSTAIN"]},
         "coverage": float(np.mean(dec != "ABSTAIN")),
         "abstention_rate": float(np.mean(dec == "ABSTAIN")),
         "adapt_precision_B>0": float(np.mean(B[adapt] > 0)) if adapt.any() else None,
+        # ---- fix-queue item 28: the two rates, named, never interchanged ----
+        "false_adapt_unconditional": _fa["fa_u"],   # Pr[ADAPT and B <= 0]  (thm:certificate)
+        "false_adapt_conditional": _fa["fa_c"],     # Pr[B <= 0 | ADAPT]
+        "n_false_adapt": _fa["n_false_adapt"],
+        "false_adapt_definition":
+            "false adapt := ADAPT and B <= 0; fa_u marginal (bounded by thm:certificate), "
+            "fa_c conditional",
+        # DEPRECATED (conditional AND strict). Kept only so pre-fix artifacts stay
+        # diffable. Gates nothing.
         "false_adapt_rate_B<0": float(np.mean(B[adapt] < 0)) if adapt.any() else None,
         "mean_acc": {
             "always_adapt": float(aa.mean()), "always_freeze": float(a0.mean()),
@@ -99,9 +145,16 @@ def policy_metrics(dec, a0, aa, B=None, alpha=ALPHA):
         "alpha_false_adapt_budget": float(alpha),
         "beats_both_regret_only": bool((oracle - kga).mean() < (oracle - aa).mean() - 1e-9 and
                                        (oracle - kga).mean() < (oracle - a0).mean() - 1e-9),
+        # fix-queue item 28: the budget gate is now the MARGINAL rate the theorem
+        # bounds, with the weak inequality. The old gate was
+        #   float(np.mean(B[adapt] < 0)) <= alpha
+        # i.e. conditional + strict, which is neither the guaranteed quantity nor
+        # tie-safe.
         "beats_both": bool((oracle - kga).mean() < (oracle - aa).mean() - 1e-9 and
                            (oracle - kga).mean() < (oracle - a0).mean() - 1e-9 and
-                           adapt.any() and float(np.mean(B[adapt] < 0)) <= alpha),
+                           adapt.any() and float(_fa["fa_u"]) <= alpha),
+        "beats_both_gate": "regret vs both fixed policies AND fa_u <= alpha "
+                           "(fa_u = Pr[ADAPT and B <= 0])",
     }
 
 
@@ -161,7 +214,13 @@ def detectability_analysis(records, evidence_names, alpha=ALPHA):
     if n >= 4 and harmful.sum() not in (0, n):
         Bhat, eps, dec = decide_kga(Z, B, alpha=alpha)
         out["certificate_harm_AUC_negBhat"] = _auc(-Bhat, harmful)
-        out["certificate_eps"] = float(eps)
+        # eps is now one radius PER CELL (fix-queue item 4), so a single scalar
+        # here would silently be a summary. Say which summary it is.
+        eps = np.asarray(eps, float)
+        out["certificate_eps"] = float(np.mean(eps))
+        out["certificate_eps_is"] = "mean of the per-cell leave-one-out-of-pool radii"
+        out["certificate_eps_min"] = float(np.min(eps))
+        out["certificate_eps_max"] = float(np.max(eps))
     # headline: is harm detectable at all?
     aucs = [v["harm_AUC"] for v in out["per_feature"].values() if v["harm_AUC"] is not None]
     out["best_single_feature_harm_AUC"] = float(max(aucs)) if aucs else None

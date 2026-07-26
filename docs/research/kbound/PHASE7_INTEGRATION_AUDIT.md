@@ -1,5 +1,17 @@
 # PHASE 7 — CLAIM-BY-CLAIM MANUSCRIPT-INTEGRATION AUDIT (K-Bound short paper)
 
+> **SUPERSEDED BY `SUBMISSION_LEDGER.md` §7, §9 and §11a.** Stamped 2026-07-26.
+> Its 20 MATCH / 3 MISMATCH / 1 UNVERIFIABLE tally was computed against the pre-2026-07-26 panel
+> and against the **in-pool** conformal radius. Three tracks have since been demoted
+> (`SUBMISSION_LEDGER.md §3`), so a "MATCH" here does not certify the current manuscript.
+>
+> One factual correction to this document's own text: its [P0] item states that *"0.2587 was the
+> sar_online sub-candidate, not the promoted protocol-J aggregate"*. That is backwards —
+> `rxrx1_protocol_J_v1/analyze_F_results.json` carries `"candidate": "sar_online"` and
+> `regret_adapt = 0.2530598958`, so `sar_online` **is** the promoted candidate. The digit change
+> 0.2587 -> 0.2531 was correct; the reason given for it was not. Settled account:
+> `SUBMISSION_LEDGER.md §11a`.
+
 Read-only audit. Generated 2026-07-21. Manuscript audited: `docs/research/kbound/kbound_short.tex`
 (1211 lines; `\input{kbound_short_appendix.tex}` at line 1207) + `kbound_short_appendix.tex` (337 lines).
 Canonical priority: `SUBMISSION_LEDGER.md` (sec 3 nine-track / sec 4 gaps / sec 5 distinctions) >

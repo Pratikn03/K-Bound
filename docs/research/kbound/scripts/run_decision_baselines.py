@@ -44,11 +44,19 @@ from __future__ import annotations
 import argparse
 import json
 import os
+import sys
 
 import numpy as np
 
 ALPHA = 0.10
 SEED = 0
+CALIBRATION = "loo"   # leave-one-out-of-pool radius (fix-queue item 4)
+
+# The ONE K-Bound decision path (fix-queue items 4 + 15).
+_HERE = os.path.dirname(os.path.abspath(__file__))
+if _HERE not in sys.path:
+    sys.path.insert(0, _HERE)
+import kbound_decide as _kb  # noqa: E402
 EVIDENCE_NAMES = ["pre_entropy", "pre_conf", "pre_pbal", "post_entropy", "post_conf",
                   "post_pbal", "pbal_drop", "entropy_drop", "frac_highconf",
                   "marginal_KL", "update_norm"]
@@ -58,17 +66,38 @@ EVIDENCE_NAMES = ["pre_entropy", "pre_conf", "pre_pbal", "post_entropy", "post_c
 # Metrics: identical semantics to cifar_tent_mps_v2.policy_metrics
 # --------------------------------------------------------------------------
 def policy_metrics(dec, a0, aa, B):
+    """FIX-QUEUE ITEM 28 -- one definition of false-adapt, for KGA *and* the baselines.
+
+    This is the baseline-comparison harness, so an asymmetric definition here is
+    worse than anywhere else: the table compared every rule on
+    ``false_adapt_rate_B<0 = mean(B[adapt] < 0)``, which is conditional on ADAPT
+    and strict, while ``thm:certificate`` bounds the marginal
+    ``Pr[ADAPT and B <= 0]``.  A rule that adapts rarely looks bad on the
+    conditional rate and good on the marginal one, so which column you print
+    changes the ranking.  Both are now emitted, named, for every rule; the
+    ``harmful`` mask also uses ``B <= 0`` so a cell with ``B == 0`` (500 of them
+    are archived, 102 adapted) counts as harmful rather than being exempted.
+    """
     a0 = np.asarray(a0, float); aa = np.asarray(aa, float); B = np.asarray(B, float)
     dec = np.asarray(dec)
     adapt = dec == "ADAPT"
     real = np.where(adapt, aa, a0)
     oracle = np.maximum(a0, aa)
-    harmful = B < 0
+    harmful = B <= 0
+    _fa = _kb.false_adapt(dec, B)
     return {
         "n": int(len(a0)),
         "decision_counts": {d: int((dec == d).sum()) for d in ["ADAPT", "FREEZE", "ABSTAIN"]},
         "coverage": float(np.mean(dec != "ABSTAIN")),
         "adapt_precision_B>0": float(np.mean(B[adapt] > 0)) if adapt.any() else None,
+        # ---- fix-queue item 28: the two rates, named, never interchanged ----
+        "false_adapt_unconditional": _fa["fa_u"],   # Pr[ADAPT and B <= 0] (thm:certificate)
+        "false_adapt_conditional": _fa["fa_c"],     # Pr[B <= 0 | ADAPT]
+        "n_false_adapt": _fa["n_false_adapt"],
+        "false_adapt_definition":
+            "false adapt := ADAPT and B <= 0; fa_u marginal (bounded by thm:certificate), "
+            "fa_c conditional",
+        # DEPRECATED (conditional AND strict). Kept so pre-fix artifacts stay diffable.
         "false_adapt_rate_B<0": float(np.mean(B[adapt] < 0)) if adapt.any() else None,
         "harmful_cells_adapted_frac": float(np.mean(adapt[harmful])) if harmful.any() else None,
         "mean_acc": float(real.mean()),
@@ -78,21 +107,28 @@ def policy_metrics(dec, a0, aa, B):
 
 
 # --------------------------------------------------------------------------
-# KGA reproduction (identical machinery to cifar_tent_mps_v2.decide_kga)
+# KGA -- THE shipped decision path (kbound_decide -> kga.certificate/policy)
 # --------------------------------------------------------------------------
-def decide_kga(Z, B, alpha=ALPHA, n_estimators=250, max_depth=2, lr=0.05, seed=SEED):
-    from sklearn.ensemble import GradientBoostingRegressor
-    Z = np.asarray(Z, float); B = np.asarray(B, float); N = len(B)
-    Bhat = np.zeros(N)
-    for i in range(N):
-        tr = np.arange(N) != i
-        m = GradientBoostingRegressor(n_estimators=n_estimators, max_depth=max_depth,
-                                      learning_rate=lr, subsample=0.8, random_state=seed)
-        m.fit(Z[tr], B[tr])
-        Bhat[i] = m.predict(Z[i:i + 1])[0]
-    eps = float(np.quantile(np.abs(Bhat - B), 1 - alpha))
-    dec = np.where(Bhat - eps > 0, "ADAPT", np.where(Bhat + eps < 0, "FREEZE", "ABSTAIN"))
-    return Bhat, eps, dec
+def decide_kga(Z, B, alpha=ALPHA, n_estimators=250, max_depth=2, lr=0.05, seed=SEED,
+               calibration=CALIBRATION):
+    """Returns ``(Bhat, eps, dec)`` with **eps a per-cell ndarray**.
+
+    FIX-QUEUE ITEM 4.  The old body ended::
+
+        eps = float(np.quantile(np.abs(Bhat - B), 1 - alpha))
+
+    -- an interpolated in-pool quantile.  This one mattered for THIS script in
+    particular: it is the baseline-comparison harness, so a leaky KGA arm was
+    being compared against non-leaky baselines.  Radii are now
+    leave-one-out-of-pool exact-rank quantiles.
+
+    FIX-QUEUE ITEM 15.  decide_kga fork #5 of seven; body deleted, call routed
+    through ``kbound_decide``.  The header used to promise "identical machinery
+    to cifar_tent_mps_v2.decide_kga" -- now it is literally the same callee.
+    """
+    return _kb.decide_kga(Z, B, alpha=alpha, n_estimators=n_estimators,
+                          max_depth=max_depth, lr=lr, seed=seed,
+                          calibration=calibration)
 
 
 # --------------------------------------------------------------------------
@@ -179,7 +215,13 @@ def run_method(rows, alpha=ALPHA):
 
     # KGA: full certificate, and its committal (eps=0) ablation
     Bhat, eps, dec_kga = decide_kga(Z, B, alpha=alpha)
-    pm = policy_metrics(dec_kga, a0, aa, B); pm["eps_conformal"] = eps
+    pm = policy_metrics(dec_kga, a0, aa, B)
+    # fix-queue item 4: one radius per cell now, so record the labelled summary.
+    eps = np.asarray(eps, float)
+    pm["eps_conformal"] = float(np.mean(eps))
+    pm["eps_conformal_is"] = "mean of the per-cell leave-one-out-of-pool radii"
+    pm["eps_conformal_min"] = float(np.min(eps))
+    pm["eps_conformal_max"] = float(np.max(eps))
     out["KGA"] = pm
     out["gbm_committal"] = policy_metrics(
         np.where(Bhat > 0, "ADAPT", "FREEZE"), a0, aa, B)
@@ -225,17 +267,25 @@ def main():
     for m, r in res["methods"].items():
         lines += [f"## {m}  (oracle acc {r['_oracle_acc']:.3f}, harmful base rate "
                   f"{r['_harmful_base_rate']:.0%})", "",
-                  "| policy | mean acc | regret | false-adapt | harmful adapted | worst case | coverage |",
-                  "|---|--:|--:|--:|--:|--:|--:|"]
+                  "| policy | mean acc | regret | FA_u | FA_c | harmful adapted | worst case | coverage |",
+                  "|---|--:|--:|--:|--:|--:|--:|--:|"]
         for p in pol_order:
             pm = r[p]
-            fa = pm["false_adapt_rate_B<0"]
+            # fix-queue item 28: print BOTH rates. FA_u is the quantity
+            # thm:certificate bounds; FA_c is the conditional rate.
+            fau = pm["false_adapt_unconditional"]
+            fac = pm["false_adapt_conditional"]
             ha = pm["harmful_cells_adapted_frac"]
             lines.append(
                 f"| {p} | {pm['mean_acc']:.3f} | {pm['regret_vs_oracle']:.4f} | "
-                f"{'—' if fa is None else f'{fa:.2f}'} | "
+                f"{'—' if fau is None else f'{fau:.3f}'} | "
+                f"{'—' if fac is None else f'{fac:.3f}'} | "
                 f"{'—' if ha is None else f'{ha:.2f}'} | "
                 f"{pm['worst_case_acc']:.3f} | {pm['coverage']:.2f} |")
+        lines.append("")
+        lines.append("FA_u = Pr[ADAPT and B <= 0] (the rate thm:certificate bounds); "
+                     "FA_c = Pr[B <= 0 | ADAPT]. Both use the weak inequality, so a "
+                     "cell with B exactly 0 counts (fix-queue item 28).")
         lines.append("")
     with open(os.path.join(args.out_dir, "decision_baselines_table.md"), "w") as f:
         f.write("\n".join(lines))

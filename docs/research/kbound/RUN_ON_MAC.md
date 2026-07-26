@@ -22,7 +22,7 @@ Proves the serialization + SAR plumbing + paired-CI logic is correct *before* sp
 time. Torch-free, sklearn-free, synthetic scores (every field stamped `_synthetic_smoke`):
 
 ```bash
-cd /Volumes/T9/uav/AutoML_Flagship_V8
+cd "$KBOUND_REPO_ROOT"        # set KBOUND_REPO_ROOT to your checkout
 PYTHONPATH="$PWD:$PWD/src:$PWD/experiments/kbound/wilds" \
   python3 experiments/kbound/theory_validation/verify_runner_pipeline.py --smoke
 ```
@@ -36,7 +36,7 @@ Expect `ALL_ASSERTIONS_PASSED = True` and, for both datasets, `cells=9/9 seeds=[
 ## 1. One command (recommended)
 
 ```bash
-cd /Volumes/T9/uav/AutoML_Flagship_V8
+cd "$KBOUND_REPO_ROOT"        # set KBOUND_REPO_ROOT to your checkout
 bash scripts/run_remaining_gpu_experiments.sh
 ```
 
@@ -79,7 +79,7 @@ WILDS_DATA_ROOT="$HOME/datasets/wilds" \
 If you prefer to run each step yourself (the script runs exactly these):
 
 ```bash
-cd /Volumes/T9/uav/AutoML_Flagship_V8
+cd "$KBOUND_REPO_ROOT"        # set KBOUND_REPO_ROOT to your checkout
 export PYTHONPATH="$PWD:$PWD/src:$PWD/experiments/kbound/wilds"
 PY="$PWD/.venv/bin/python"          # torch
 WPY="$HOME/.venv_wilds/bin/python"  # torch + wilds (Camelyon17)
@@ -166,7 +166,7 @@ all seeds are present, the **SAR** column exists (Camelyon17), and the multi-see
 finite:
 
 ```bash
-cd /Volumes/T9/uav/AutoML_Flagship_V8
+cd "$KBOUND_REPO_ROOT"        # set KBOUND_REPO_ROOT to your checkout
 python3 - <<'PY'
 import json, os, glob, re
 def check(run_dir, dataset, want_seeds, require_sar):

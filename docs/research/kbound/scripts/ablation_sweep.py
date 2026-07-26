@@ -24,6 +24,15 @@ from sklearn.linear_model import Ridge
 from sklearn.neural_network import MLPRegressor
 from sklearn.model_selection import KFold
 
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+# The ONE radius rule (fix-queue items 2, 4, 15) and the ranked input resolver
+# that fix-queue item 8 added to ablation_exactrank.py -- reused rather than
+# re-forked, because this file had exactly the same two defects.
+from kbound_decide import conformal_radius as _conformal_radius  # noqa: E402
+from ablation_exactrank import _resolve as _resolve_percell      # noqa: E402
+from kbound_decide import read_json as _read_json                # noqa: E402
+from kbound_decide import results_root as _results_root          # noqa: E402
+
 # Ablation uses 8-fold cross-fitting as a fast, faithful proxy for the deployed
 # leave-one-cell-out radius (each fold trains on 7/8 of the cells). The 'alpha'
 # block prints an anchor row to confirm it reproduces the locked LOCO gate table.
@@ -46,14 +55,34 @@ def ridge(): return Ridge(alpha=1.0, random_state=0)
 def rf():    return RandomForestRegressor(n_estimators=200, max_depth=4, random_state=0, n_jobs=-1)
 def mlp():   return MLPRegressor(hidden_layer_sizes=(32,16), max_iter=500, random_state=0)
 
-def load(cand):
-    f = os.path.join(RESULTS_DIR, f"per_condition_cifar10c_{cand}_seed0.json")
-    recs = json.load(open(f))["records"]
+def load(cand, seed=1, root=None):
+    """FIX-QUEUE ITEM 8 -- this loader could not run as released, for two reasons.
+
+    (1) It read ``<scripts>/../experiments/kbound/results/
+        per_condition_cifar10c_{cand}_seed0.json``.  No such file exists there or
+        anywhere else in the tree; ``stress_grid_multiseed_v1/seed0/`` has no
+        per-condition dump at all.  It now uses the same ranked resolver
+        ``ablation_exactrank._resolve`` (default seed 1) and fails with the list
+        of paths it tried instead of a bare FileNotFoundError.
+    (2) It read ``r["a_oracle"]``, which is absent from EVERY committed 432-cell
+        dump, so repointing alone still crashed.  ``a_oracle`` is DEFINED as
+        ``max(a0, a_adapted)``; it is derived when absent and the substitution is
+        announced on stdout rather than done silently.
+    """
+    root = root or _results_root()
+    f, ncells = _resolve_percell(cand, seed, root, allow_270=False)
+    recs = _read_json(f)["records"]          # names the file if it is a placeholder
     Z  = np.array([r["Z"] for r in recs], float)
     B  = np.array([r["B"] for r in recs], float)
     a0 = np.array([r["a0"] for r in recs], float)
     aa = np.array([r["a_adapted"] for r in recs], float)
-    ao = np.array([r["a_oracle"] for r in recs], float)
+    if all("a_oracle" in r for r in recs):
+        ao = np.array([r["a_oracle"] for r in recs], float)
+    else:
+        ao = np.maximum(a0, aa)
+        print(f"[ablation_sweep] {cand}: 'a_oracle' absent from {os.path.basename(f)}; "
+              f"derived as max(a0, a_adapted).")
+    print(f"[ablation_sweep] {cand}: {len(recs)} cells (grid nominal {ncells}) <- {f}")
     return Z, B, a0, aa, ao
 
 def loco_bhat(Z, B, factory, cols=None):
@@ -82,7 +111,24 @@ def metrics(d, B, a0, aa, ao):
                 coverage=round(float((d!="abstain").mean()),3),
                 n=int(len(B)), harmful_frac=round(float((B<=0).mean()),3))
 
-def eps_q(resid, alpha): return float(np.quantile(resid, 1-alpha))
+def eps_q(resid, alpha):
+    """FIX-QUEUE ITEMS 2 + 4 + 15 -- one radius rule, computed by the shipped library.
+
+    Was ``float(np.quantile(resid, 1 - alpha))``: numpy's linear interpolation
+    between order statistics, which is not an observed residual and does not
+    satisfy the finite-sample rank argument.  Now the exact split-conformal rank
+    quantile ``r_(k)``, ``k = ceil((n+1)(1-alpha))``, from
+    ``kbound_decide.conformal_radius`` -> ``kga.certificate``.
+
+    NOTE on the pool: within a block this radius is in-pool (all n residuals,
+    including the scored cell's own), which is fix-queue item 4.  ``run_transfer``
+    is exempt -- its radius comes from the SOURCE adapter's residuals and is
+    applied to a different adapter's cells, so it is a genuine held-out radius.
+    For the leave-one-out-of-pool version of the alpha / estimator / dropout
+    blocks use ``ablation_exactrank.py --calibration loo``, which is the script
+    this one was cloned from.
+    """
+    return float(_conformal_radius(np.abs(np.asarray(resid, float)), alpha))
 
 def run_alpha(cands=("tent","eata","sar")):
     out = {}

@@ -3,13 +3,31 @@
 #   (A) the 5 tars:  noise.tar blur.tar weather.tar digital.tar extra.tar   (streamed, no extract)
 #   (B) flat corruption dirs:  gaussian_noise/<sev>/<wnid>/*.JPEG , motion_blur/<sev>/... etc.
 # A category-nested layout ( <root>/noise/gaussian_noise/... ) will NOT be found — flatten it.
+# --- external (git-excluded) data volume: ONE documented variable, no default.
+# --- defect D8: portable roots. No machine-local absolute paths in tracked code
+# --- (docs/research/kbound/EXTERNAL_STORAGE_POLICY.md). KB_REPO_ROOT is discovered
+# --- from this script's own location; override with KBOUND_REPO_ROOT.
+_kb_find_root() {
+  d=$(cd "$(dirname "${BASH_SOURCE[0]:-$0}")" && pwd)
+  while [ "$d" != "/" ]; do
+    [ -f "$d/pyproject.toml" ] && { printf '%s\n' "$d"; return 0; }
+    d=$(dirname "$d")
+  done
+  echo "ERROR: repository root not found above $(dirname "${BASH_SOURCE[0]:-$0}")" >&2
+  return 1
+}
+KB_REPO_ROOT="${KBOUND_REPO_ROOT:-$(_kb_find_root)}" || exit 1
+
+: "${KBOUND_EXTERNAL_ROOT:?set KBOUND_EXTERNAL_ROOT to the volume holding the git-excluded datasets/checkpoints/caches (layout: docs/research/kbound/kbound_repro/paths.py, acquisition: DATA.md)}"
+KB_EXTERNAL_ROOT="$KBOUND_EXTERNAL_ROOT"
+
 set -e
-cd /Volumes/T9/uav/AutoML_Flagship_V8
-source ~/.venv_wilds/bin/activate
-export TORCH_HOME=/Volumes/T9/uav/torch_cache   # pretrained resnet50 f0 cache
+cd "$KB_REPO_ROOT"
+source "${KBOUND_VENV:-$HOME/.venv_wilds}/bin/activate"   # override with KBOUND_VENV
+export TORCH_HOME="$KB_EXTERNAL_ROOT/torch_cache"   # pretrained resnet50 f0 cache
 
 # >>> EDIT THIS ONE LINE <<<
-IC_ROOT=/Volumes/T9/uav/AutoML_Flagship_V8/experiments/kbound/data/imagenet-c
+IC_ROOT="$KB_REPO_ROOT"/experiments/kbound/data/imagenet-c
 
 echo "IC_ROOT=$IC_ROOT"
 echo "contents:"; ls -1 "$IC_ROOT" 2>/dev/null | grep -viE '^\._' | head

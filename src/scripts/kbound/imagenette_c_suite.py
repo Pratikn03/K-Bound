@@ -7,7 +7,7 @@ This tests whether the helpful/harmful behaviour persists at realistic resolutio
 across a CNN and a transformer. Honestly labeled: Imagenette, not full 1000-class ImageNet-C.
 Online TTA; KGA = clean-probe-gated continual Tent. All numbers from this run.
 """
-import os, json, math, tarfile, urllib.request, glob
+import os, json, math, tarfile, urllib.request, glob, hashlib
 import numpy as np
 from PIL import Image
 import torch, torch.nn as nn
@@ -78,8 +78,18 @@ def restore(ps,snap):
 CORRUPTIONS=["gaussian_noise","contrast","brightness","defocus_blur"]
 SEV=[1,3,5]; N_PER=150; BATCH=75; LR=1e-3; TOL=0.01
 
+def stable_seed(*parts, mod=2**31 - 1):
+    """Process-stable seed (fix-queue item 30 / F2-8). See cifar10c_suite.stable_seed:
+    Python salts hash() on str/tuple per process unless PYTHONHASHSEED is set, and
+    nothing in this repo sets it, so `hash((corr,sev))` drew a different subsample
+    every run."""
+    key = "|".join(str(p) for p in parts).encode("utf-8")
+    return int(hashlib.blake2b(key, digest_size=8).hexdigest(), 16) % mod
+
+
 def load_cell(corr,sev):
-    sub=POOL[:N_PER]; r=np.random.default_rng(hash((corr,sev))%9991)
+    # fix-queue item 30: was np.random.default_rng(hash((corr,sev))%9991)
+    sub=POOL[:N_PER]; r=np.random.default_rng(stable_seed("imagenette_c_suite", corr, sev))
     imgs=np.stack([corrupt(to_uint8(p),corruption_name=corr,severity=sev) for p,_ in sub]).astype(np.float32)/255.
     x=torch.tensor(imgs).permute(0,3,1,2).contiguous(); y=torch.tensor([i for _,i in sub]); return x,y
 

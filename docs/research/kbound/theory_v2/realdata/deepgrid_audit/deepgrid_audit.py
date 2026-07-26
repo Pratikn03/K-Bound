@@ -28,10 +28,30 @@ serialized, the grid is reported "not serialized" and skipped (no improvisation)
 
 CPU only. Seeds fixed. Author: K-Bound theory_v2 deep-grid audit agent (Task E).
 """
+# --- defect D8: portable roots (docs/research/kbound/EXTERNAL_STORAGE_POLICY.md bans
+# --- machine-local absolute paths in tracked code). KB_REPO_ROOT is discovered from this
+# --- file's own location; override with $KBOUND_REPO_ROOT.
+import os as _kb_os
+from pathlib import Path as _KbPath
+
+
+def _kb_repo_root() -> str:
+    override = _kb_os.environ.get("KBOUND_REPO_ROOT", "").strip()
+    if override:
+        return str(_KbPath(override).expanduser().resolve())
+    here = _KbPath(__file__).resolve()
+    for candidate in here.parents:
+        if (candidate / "pyproject.toml").exists():
+            return str(candidate)
+    raise RuntimeError(f"repository root not found above {here}; set KBOUND_REPO_ROOT")
+
+
+KB_REPO_ROOT = _kb_repo_root()
+
 import json, os, glob
 import numpy as np
 
-RES = "/Volumes/T9/uav/AutoML_Flagship_V8/experiments/kbound/results"
+RES = KB_REPO_ROOT + "/experiments/kbound/results"
 HERE = os.path.dirname(os.path.abspath(__file__))
 OUT_JSON = os.path.join(HERE, "deepgrid_audit_results.json")
 ALPHA = 0.05      # audit level

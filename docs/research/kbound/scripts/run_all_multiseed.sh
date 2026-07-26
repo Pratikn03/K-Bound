@@ -9,8 +9,22 @@
 #   Camelyon17   natural_win_v2_camelyon    4 seeds x  36 conditions
 # iWildCam / Office-Home / RxRx1 / PACS have only single-run per-condition logs; ImageNet-R's per-seed
 # logs are debug-scale (n=3). Those need the seed-0..4 GPU re-run (scripts/run_multiseed.sh).
+# --- defect D8: portable roots. No machine-local absolute paths in tracked code
+# --- (docs/research/kbound/EXTERNAL_STORAGE_POLICY.md). KB_REPO_ROOT is discovered
+# --- from this script's own location; override with KBOUND_REPO_ROOT.
+_kb_find_root() {
+  d=$(cd "$(dirname "${BASH_SOURCE[0]:-$0}")" && pwd)
+  while [ "$d" != "/" ]; do
+    [ -f "$d/pyproject.toml" ] && { printf '%s\n' "$d"; return 0; }
+    d=$(dirname "$d")
+  done
+  echo "ERROR: repository root not found above $(dirname "${BASH_SOURCE[0]:-$0}")" >&2
+  return 1
+}
+KB_REPO_ROOT="${KBOUND_REPO_ROOT:-$(_kb_find_root)}" || exit 1
+
 set -euo pipefail
-ROOT="${ROOT:-/Users/pratik_n/Documents/AutoML_Flagship_V8}"
+ROOT="${ROOT:-$KB_REPO_ROOT}"
 PY="${PY:-$HOME/.venv_wilds/bin/python}"; [ -x "$PY" ] || PY=python3
 SC="$ROOT/docs/research/kbound/scripts/multiseed_natural.py"
 R="$ROOT/experiments/kbound/results"; OUT="$R/multiseed"; mkdir -p "$OUT"

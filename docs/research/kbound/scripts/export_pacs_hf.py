@@ -6,7 +6,7 @@ Avoids the quota-blocked DomainBed Google Drive link.
 
 Usage:
   pip install datasets
-  python scripts/export_pacs_hf.py /Volumes/T9/uav/AutoML_Flagship_V8/experiments/kbound/domainbed
+  python scripts/export_pacs_hf.py <repo root>/experiments/kbound/domainbed
 Then:
   python scripts/pacs_vlcs_runner.py --dataset PACS --root <out> --device cpu --smoke
 """

@@ -38,7 +38,7 @@ import argparse
 import numpy as np
 
 HERE = os.path.dirname(os.path.abspath(__file__))            # .../experiments/kbound/theory_validation
-REPO = os.path.dirname(os.path.dirname(os.path.dirname(HERE)))  # .../AutoML_Flagship_V8
+REPO = os.path.dirname(os.path.dirname(os.path.dirname(HERE)))  # the repository root
 WILDS = os.path.join(REPO, "experiments", "kbound", "wilds")
 for _p in (WILDS, REPO, os.path.join(REPO, "src")):
     if _p not in sys.path:

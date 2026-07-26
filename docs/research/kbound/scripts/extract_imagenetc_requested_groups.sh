@@ -8,9 +8,23 @@
 #   digital.tar -> contrast, elastic_transform, pixelate, jpeg_compression
 #
 # The script deletes a group tar only after successful extraction.
+# --- defect D8: portable roots. No machine-local absolute paths in tracked code
+# --- (docs/research/kbound/EXTERNAL_STORAGE_POLICY.md). KB_REPO_ROOT is discovered
+# --- from this script's own location; override with KBOUND_REPO_ROOT.
+_kb_find_root() {
+  d=$(cd "$(dirname "${BASH_SOURCE[0]:-$0}")" && pwd)
+  while [ "$d" != "/" ]; do
+    [ -f "$d/pyproject.toml" ] && { printf '%s\n' "$d"; return 0; }
+    d=$(dirname "$d")
+  done
+  echo "ERROR: repository root not found above $(dirname "${BASH_SOURCE[0]:-$0}")" >&2
+  return 1
+}
+KB_REPO_ROOT="${KBOUND_REPO_ROOT:-$(_kb_find_root)}" || exit 1
+
 set -uo pipefail
 
-DATA_ROOT="${DATA_ROOT:-/Volumes/T9/uav/AutoML_Flagship_V8/experiments/kbound/data/imagenet-c}"
+DATA_ROOT="${DATA_ROOT:-$KB_REPO_ROOT/experiments/kbound/data/imagenet-c}"
 IMAGENETC_GROUPS="${IMAGENETC_GROUPS:-blur weather digital}"
 BASE="${BASE:-https://zenodo.org/records/2235448/files}"
 MIN_FREE_GB="${MIN_FREE_GB:-80}"

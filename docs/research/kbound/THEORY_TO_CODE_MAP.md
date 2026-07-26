@@ -31,6 +31,88 @@ flowchart LR
 
 ---
 
+## 1a. The radius rule — stated once, verbatim, for quotation
+
+**Added 2026-07-26 closing defect D9.**  This is the single normative statement of the
+K-Bound certificate radius.  The paper, the library and the drivers must all quote *this*
+paragraph; if any of them says something else, that one is wrong.
+
+> **The rule.**  Let `r_1, …, r_n` be the absolute calibration residuals
+> `r_i = |Δ̂_i − Δ_i|`, and let `r_(1) ≤ … ≤ r_(n)` be their order statistics.  For a
+> miscoverage level `α ∈ (0, 1)`, the radius is the **exact split-conformal rank
+> quantile**
+>
+> ```
+> k   = ceil((n + 1) * (1 - α))
+> ε   = r_(k)                                     if k ≤ n
+> ε   = +∞    (⇒ the decision is ABSTAIN)         if k > n
+> ```
+>
+> The pool is **leave-one-out-of-pool**: the radius used to score cell `i` is computed
+> from the other `n − 1` residuals only, so `ε_i` is never a function of the label that
+> the `FA_u ≤ α` guarantee attaches to.  Under leave-one-out, a track of `N` cells is
+> calibrated from pools of size `N − 1`.
+>
+> The decision is the strict trichotomy: ADAPT iff `Δ̂_i − ε_i > 0`; FREEZE iff
+> `Δ̂_i + ε_i < 0`; ABSTAIN otherwise.  A lower bound of exactly zero ABSTAINs.
+
+**Three things the rule is not.**
+
+1. **Not `np.quantile(r, 1 − α)`.**  NumPy's default quantile linearly interpolates
+   between order statistics.  The interpolated value is not an observed residual, so the
+   finite-sample rank argument does not apply to it.
+2. **Not clamped.**  `k = min(n, ceil((n + 1)(1 − α)))` — the "return the maximum residual
+   when `k > n`" convention that shipped before fix-queue item 25 — attains only
+   `n / (n + 1) < 1 − α`.  It is removed from `kga/certificate.py`, from
+   `kga/policy.py::decide_kga` and, as of D9, from
+   `docs/research/kbound/scripts/kbound_decide.py`, which had gone on defaulting to it.
+   The superseded value survives only under the explicit name
+   `kga.certificate.legacy_clamped_radius`, which no decision path calls.
+3. **Not silently feasible at every `n`.**  A finite radius exists iff
+   `n ≥ ceil(1/α) − 1` (`kga.certificate.min_calibration_size`): **`n ≥ 9` at `α = 0.10`**,
+   `n ≥ 19` at `α = 0.05`, `n ≥ 49` at `α = 0.02` (the Bonferroni level of a five-candidate
+   panel at `α = 0.10`).  Below that the library warns and returns `+∞`, or raises
+   `InsufficientCalibrationError` on request.  Because the pool is leave-one-out, a track
+   needs `N ≥ 10` **cells** at `α = 0.10`.
+
+**Where it is implemented.**  Once, in the library; everything else delegates.
+
+| Layer | Symbol | File |
+|---|---|---|
+| radius | `split_conformal_rank_radius` | `kga/certificate.py` |
+| leave-one-out pool | `conformal_radii_loo` | `kga/certificate.py` |
+| feasibility threshold | `min_calibration_size` | `kga/certificate.py` |
+| superseded value (not a decision path) | `legacy_clamped_radius` | `kga/certificate.py` |
+| trichotomy | `decide`, `decide_batch` | `kga/policy.py` |
+| end-to-end rule | `decide_kga` | `kga/policy.py` |
+| driver-side single entry point | `conformal_radius`, `decide_kga` | `docs/research/kbound/scripts/kbound_decide.py` |
+
+**Where it is enforced.**  `tests/test_one_radius_rule.py` fails if a clamp or an
+interpolated quantile is reintroduced into any radius function, if `decide_kga` grows an
+infeasibility knob, or if the library and the driver shim disagree at any pool size —
+including the infeasible sizes, which is exactly where they had drifted apart.
+`tests/test_kga_canonical_rule.py` pins the behavioural side.
+
+**What removing the clamp costs, stated rather than hidden.**  The clamp only ever fired
+for pools of `n ≤ 8` at `α = 0.10`.  Every promoted panel track has a larger pool
+(`NUMBERS_PACK.md` §5.2: CIFAR-10-C 432/seed, ImageNet-C 27/seed, D33 130, iWildCam 72,
+RxRx1 60, CIFAR-10.1 48, Office-Home 35, Camelyon17 pooled 18), so **no promoted headline
+number changes**.  Two rows do change and must be relabelled rather than re-emitted:
+
+* **Camelyon17 Table VIII**, which is `n = 9` cells per seed.  Under leave-one-out the
+  pools are size 8, so the exact rank `k = 9` exceeds `n` and the panel is **not
+  certifiable at `α = 0.10`** — every cell ABSTAINs.  The archived per-seed row was
+  produced under the clamp.
+* **iWildCam's source-CV certificate** in
+  `experiments/kbound/wilds/analyze_iwildcam_kbound.py`, whose source split has `n < 9`.
+  Same conclusion: `+∞` ⇒ ABSTAIN.  The archived row (N = 72, 1 ADAPT, 60 FREEZE,
+  11 ABSTAIN) is not reproducible under the declared rule.
+
+Either enlarge those calibration splits past `min_calibration_size(α)`, or report both
+tracks as uncertifiable at `α = 0.10`.  Do not re-enable the clamp.
+
+---
+
 ## 2. Theory spine (closed for the paper)
 
 ### 2.1 Identifiability frontier

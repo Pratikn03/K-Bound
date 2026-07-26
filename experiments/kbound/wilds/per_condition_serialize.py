@@ -28,8 +28,18 @@ without torch.
 """
 from __future__ import annotations
 import os
+import sys
 import json
 import numpy as np
+
+# ---- the ONE K-Bound decision path (fix-queue items 4 + 15) -----------------
+_REPO_ROOT = os.path.abspath(os.path.join(os.path.dirname(os.path.abspath(__file__)), *[os.pardir] * 3))
+_KB_SCRIPTS = os.path.join(_REPO_ROOT, "docs", "research", "kbound", "scripts")
+if _KB_SCRIPTS not in sys.path:
+    sys.path.insert(0, _KB_SCRIPTS)
+import kbound_decide as _kb  # noqa: E402
+
+CALIBRATION = "loo"   # leave-one-out-of-pool radius (fix-queue item 4)
 
 # Canonical evidence names (mirror tta_methods.EVIDENCE_NAMES; duplicated here so this
 # module stays importable without torch).  Asserted equal to tta_methods.EVIDENCE_NAMES
@@ -47,19 +57,19 @@ ALPHA = 0.10
 # (a) single-candidate KGA benefit certificate                                #
 # --------------------------------------------------------------------------- #
 def _decide_kga_sklearn(Z, B, alpha):
-    """Production path: identical machinery to analysis.decide_kga."""
-    from sklearn.ensemble import GradientBoostingRegressor  # local import: optional dep
-    Z = np.asarray(Z, float); B = np.asarray(B, float); N = len(B)
-    Bhat = np.zeros(N)
-    for i in range(N):
-        tr = np.arange(N) != i
-        m = GradientBoostingRegressor(n_estimators=250, max_depth=2,
-                                      learning_rate=0.05, subsample=0.8, random_state=0)
-        m.fit(Z[tr], B[tr])
-        Bhat[i] = m.predict(Z[i:i + 1])[0]
-    eps = float(np.quantile(np.abs(Bhat - B), 1 - alpha))
-    dec = np.where(Bhat - eps > 0, "ADAPT", np.where(Bhat + eps < 0, "FREEZE", "ABSTAIN"))
-    return Bhat, eps, np.asarray(dec)
+    """Production path: THE shipped decision path (``kbound_decide`` -> ``kga``).
+
+    FIX-QUEUE ITEMS 4 + 15.  The old body was inlined decide_kga fork #8::
+
+        ... 250-tree GBR LOO loop ...
+        eps = float(np.quantile(np.abs(Bhat - B), 1 - alpha))
+        dec = np.where(Bhat - eps > 0, "ADAPT", ...)
+
+    -- an interpolated in-pool quantile, and a ninth private copy of the decision
+    rule.  Both are gone.  ``eps`` is now an ndarray of per-cell
+    leave-one-out-of-pool exact-rank radii.
+    """
+    return _kb.decide_kga(Z, B, alpha=alpha, calibration=CALIBRATION)
 
 
 def _decide_kga_numpy(Z, B, alpha, k=8):
@@ -69,6 +79,11 @@ def _decide_kga_numpy(Z, B, alpha, k=8):
     This is NOT the production gradient-boosted estimator; it exists so the
     serialization / aggregation / decision-rule plumbing can be exercised in a
     torch+sklearn-free sandbox.  Callers stamp `kga_backend="numpy_knn_fallback"`.
+
+    FIX-QUEUE ITEMS 4 + 15: only the *estimator* is local now.  The radius and
+    the decision rule come from ``kbound_decide`` (exact-rank,
+    leave-one-out-of-pool), so the fallback cannot drift away from the
+    production rule the way the two inlined ``np.quantile`` copies had.
     """
     Z = np.asarray(Z, float); B = np.asarray(B, float); N = len(B)
     # standardize Z columns for a scale-free distance
@@ -81,8 +96,7 @@ def _decide_kga_numpy(Z, B, alpha, k=8):
         d[i] = np.inf
         nn = np.argsort(d)[:kk]
         Bhat[i] = float(np.mean(B[nn]))
-    eps = float(np.quantile(np.abs(Bhat - B), 1 - alpha))
-    dec = np.where(Bhat - eps > 0, "ADAPT", np.where(Bhat + eps < 0, "FREEZE", "ABSTAIN"))
+    eps, dec = _kb.decide_from_records(Bhat, B, alpha=alpha, calibration=CALIBRATION)
     return Bhat, eps, np.asarray(dec)
 
 
@@ -198,9 +212,13 @@ def build_per_condition_records(records, method, seed, dataset, alpha=ALPHA,
     Z = np.array([r["Z"] for r in rs], float) if rs else np.zeros((0, len(z_names)))
     B = np.array([r["B"] for r in rs], float) if rs else np.zeros((0,))
     Bhat, eps, dec, backend = decide_benefit(Z, B, alpha=alpha, prefer=prefer)
+    # fix-queue item 4: eps is now ONE RADIUS PER CELL (the scored cell is excluded
+    # from its own calibration pool), so `eps_conformal` is serialised per record
+    # rather than the single file-level scalar the old code broadcast.
+    eps_vec = np.broadcast_to(np.asarray(eps, float), (len(rs),)) if len(rs) else np.zeros(0)
     per_cond = []
     for i, r in enumerate(rs):
-        b_hat_i = float(Bhat[i]); eps_i = float(eps)
+        b_hat_i = float(Bhat[i]); eps_i = float(eps_vec[i])
         lb_i = b_hat_i - eps_i; ub_i = b_hat_i + eps_i
         if lb_i > 0:
             zone_i = "CERTIFIED_ADAPT"

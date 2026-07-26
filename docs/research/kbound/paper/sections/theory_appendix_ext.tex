@@ -33,15 +33,35 @@ A Gaussian family with $d_n=c/\sqrt n$ realizes a constant floor in $n$
 \end{proposition}
 \fi
 
+\paragraph{Total variation.} For probability measures $P,Q$ on a common measurable space,
+$\TV(P,Q):=\sup_A|P(A)-Q(A)|\in[0,1]$; equivalently $\TV=\tfrac12\|P-Q\|_1$ when both are dominated
+by a common measure.
+
 \begin{theorem}[Matched evidence impossibility (full form)]\label{thm:imp}
-Theorem~\ref{lem:nonid} is parts~(i)--(ii) of the following. Fix $\alpha\in(0,\tfrac12)$.
+Theorem~\ref{lem:nonid} establishes part~(i) of the following (only part (i); (ii) and (iii) are
+proved here). Fix $\alpha\in(0,\tfrac12)$.
 \begin{enumerate}
 \item[\textnormal{(i)}] Witness worlds with $\Law(Z\mid P_T^1)=\Law(Z\mid P_T^2)$ and
 $\sign\Delta_1=-\sign\Delta_2\neq0$.
-\item[\textnormal{(ii)}] Le Cam identity: $\inf_g \mathrm{err}(g)=1-\TV$ between the evidence laws, where $\mathrm{err}(g)$ is the total test error (distinct from the observable margin $M$).
+\item[\textnormal{(ii)}] For any test $g$ deciding between the two worlds from $Z$, writing
+$\mathrm{err}(g):=\Pr_{1}[g{=}2]+\Pr_{2}[g{=}1]$ for the \emph{sum} of the two error
+probabilities (not their average, and unrelated to the observable margin $M$),
+$\inf_g\mathrm{err}(g)=1-\TV\bigl(\Law(Z\mid P_T^1),\Law(Z\mid P_T^2)\bigr)$. On the witness pair of
+(i) the two laws coincide, so $\TV=0$ and $\inf_g\mathrm{err}(g)=1$.
 \item[\textnormal{(iii)}] Forced abstention at rate $\ge 1-2\alpha$ under dual error control.
 \end{enumerate}
 \end{theorem}
+\begin{proof}
+(i) is Theorem~\ref{lem:nonid}. For (ii), let $\mu$ dominate both laws with densities $p_1,p_2$.
+For any (possibly randomized) test with rejection function $\psi\in[0,1]$,
+$\mathrm{err}=\int\psi p_1+\int(1-\psi)p_2 = 1-\int\psi(p_2-p_1)$, which is minimized pointwise by
+the Neyman--Pearson choice $\psi=\mathbf 1\{p_2>p_1\}$, giving
+$\mathrm{err}=1-\int(p_2-p_1)^+=1-\TV$. Randomization on the tie set does not change the value.
+For (iii), a label-free rule sees only $\Law(Z)$, which is the same in both worlds, so its action
+probabilities $(q_a,q_f,q_{\mathrm{ab}})$ are identical in both. Dual error control forces
+$q_a\le\alpha$ in the world with $\Delta<0$ and $q_f\le\alpha$ in the world with $\Delta>0$; since
+the probabilities are world-independent and sum to one, $q_{\mathrm{ab}}=1-q_a-q_f\ge1-2\alpha$.
+\end{proof}
 
 \begin{corollary}[Closed-band abstention under dual error control]\label{cor:forced-abstain}
 In the $|M|\le\beta$ wedge of Theorem~\ref{thm:headline}, Theorem~\ref{thm:imp}(iii) implies
@@ -50,6 +70,12 @@ least $1-2\alpha$ on matched evidence. Opposite nonzero signs are required only 
 at $|M|=\beta>0$ zero-versus-strict ambiguity suffices, and at $M=\beta=0$ the benefit is
 identically zero so neither strict action is sound.
 \end{corollary}
+\begin{proof}
+Immediate from Theorem~\ref{thm:imp}(iii) applied to the witness pair supplied by
+Theorem~\ref{lem:nonid} when $|M|<\beta$, and to the zero-benefit boundary law of
+Proposition~\ref{prop:closed-band} when $|M|=\beta>0$ (there the ``error'' event in the zero world is
+$\{\Delta\le0\}\cap\{\Delta\ge0\}$, which both strict actions incur).
+\end{proof}
 
 \iffalse
 \begin{proposition}[Certificate sample complexity]\label{prop:cert-sample}

@@ -1,0 +1,155 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% kbound_tmlr.tex -- single-column TMLR build of the K-Bound paper.
+%%
+%% WHY THIS FILE EXISTS
+%%   The IEEEtran two-column build (kbound_short.tex) ran to 23 pages with 26
+%%   tables, which is a desk-reject risk at a conference and, more importantly,
+%%   is too dense for a reviewer to hold in mind. TMLR is single-column with no
+%%   hard page limit and judges claim-evidence support rather than novelty
+%%   magnitude, which is the right bar for this work. Reformatting single-column
+%%   dissolves the length problem WITHOUT cutting any result table.
+%%
+%% >>> BEFORE SUBMITTING: DROP tmlr.sty NEXT TO THIS FILE <<<
+%%   The official TMLR style file (tmlr.sty, from
+%%   https://github.com/JmlrOrg/tmlr-style-file) is NOT vendored here, because
+%%   redistributing it inside this repository is not ours to do. Download it,
+%%   place it in this directory, and swap in these TWO lines:
+%%
+%%     (1) replace   \documentclass[11pt]{article}
+%%         with      \documentclass{article}\usepackage{tmlr}
+%%                   % ... or \usepackage[accepted]{tmlr} for the camera-ready,
+%%                   %     or \usepackage[preprint]{tmlr} for an arXiv preprint.
+%%
+%%     (2) delete the "TMLR SHIM" block below (between the two marker comments)
+%%         -- tmlr.sty defines \title/\author/\abstract handling, the running
+%%         head, and the anonymisation switch itself, and the shim will clash.
+%%
+%%   Everything else in this file, and every file it \input s, is style-agnostic.
+%%
+%% ANONYMITY
+%%   TMLR is single-blind by default: author names are shown. This file therefore
+%%   compiles NON-anonymous. Set \anontrue below (or \usepackage{tmlr} without
+%%   [accepted]) for a double-blind venue; \ifanon also suppresses the repository
+%%   link in the Reproducibility section, which is a real de-anonymisation hazard
+%%   (the released tree contains CITATION.cff with the author's name and email).
+%%
+%% SHARED SOURCE
+%%   This driver and kbound_short.tex \input the SAME body, abstract, appendix,
+%%   theory sections and bibliography. Edit those, never a driver, for content.
+%%     kbound_abstract.tex        abstract text
+%%     kbound_short_body.tex      Introduction .. Conclusion
+%%     kbound_short_appendix.tex  appendices (which \input paper/sections/*)
+%%     paper/references_kbound_expanded.tex
+%%
+%% WHAT WAS CUT FOR THIS BUILD (and what deliberately was not)
+%%   Cut:  fig:regime-map (fig_phase_diagram.png) -- its own caption conceded it
+%%         was a conceptual schematic duplicating tab:regime-summary.
+%%   Cut:  every \resizebox{\columnwidth}{!} wrapper -- with a single column the
+%%         tables fit at their declared point size, and scaling glyphs below
+%%         \scriptsize was an accessibility problem in the two-column build.
+%%   Merged: tab:data-access and tab:assumptions-role -- two adjacent meta-tables about
+%%         the same subject (protocol discipline), neither of which was \ref'd anywhere
+%%         in the text. They are now one float in kbound_short_body.tex carrying both
+%%         labels. tab:notation-main is kept: it IS referenced, and it is the reference
+%%         card a referee actually uses.
+%%   NOT cut: any result table. tab:decisive, tab:gates, tab:headtohead-poem-aetta,
+%%         tab:imagenetc-faithful, tab:imagenetc-ci-unit, tab:multiseed,
+%%         tab:uniform-panel, tab:decision-accounting, tab:imagenetr-backbone,
+%%         tab:primary-numeric, the ablation tables and the appendix tables all
+%%         stay. Length is a formatting problem; deleting evidence is not a fix.
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\documentclass[11pt]{article}
+
+\usepackage[T1]{fontenc}
+\usepackage{lmodern}
+\usepackage{microtype}
+\usepackage{amsmath,amssymb,amsthm}
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{algorithm}
+\usepackage{algpseudocode}
+\usepackage{xcolor}
+\usepackage{url}
+\usepackage[colorlinks=true,linkcolor=black,citecolor=blue,urlcolor=blue]{hyperref}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%% BEGIN TMLR SHIM %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% Delete this whole block once tmlr.sty is present (see header, step 2).
+%% Geometry approximating tmlr.sty's text block (6.5in x 9in on US letter) so that
+%% the page count you see here is close to the page count you will get with the real
+%% style file. Do NOT load parskip: tmlr.sty uses indented paragraphs with no inter-
+%% paragraph glue, and parskip inflates this document by roughly a fifth.
+\usepackage[letterpaper,margin=1in]{geometry}
+%% \path is IEEEtran/url sugar used throughout the shared body.
+\providecommand{\path}[1]{\texttt{#1}}
+%% article already defines table* / figure* (they degrade to plain floats in
+%% one-column mode via \@dblfloat), and \columnwidth == \linewidth here, so the
+%% shared body's floats need no aliasing.
+%% IEEEtran-only front-matter commands used by the shared body / the other driver:
+\providecommand{\IEEEauthorblockN}[1]{{\large #1}}
+\providecommand{\IEEEauthorblockA}[1]{{\normalsize #1}}
+\newenvironment{IEEEkeywords}{\par\noindent\textbf{Keywords:}\ }{\par}
+%% IEEEtran's \appendices -> article's \appendix, with lettered sections.
+\providecommand{\appendices}{\appendix}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%% END TMLR SHIM %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\theoremstyle{plain}
+\newtheorem{theorem}{Theorem}
+\newtheorem{lemma}{Lemma}
+\newtheorem{proposition}{Proposition}
+\newtheorem{corollary}{Corollary}
+\newtheorem{conjecture}{Conjecture}
+\theoremstyle{definition}
+\newtheorem{definition}{Definition}
+\newtheorem{assumption}{Assumption}
+\theoremstyle{remark}
+\newtheorem{remark}{Remark}
+
+\newcommand{\R}{\mathbb{R}}
+\newcommand{\E}{\mathbb{E}}
+\renewcommand{\Pr}{\mathbb{P}}
+\newcommand{\TV}{\mathrm{TV}}
+\newcommand{\sign}{\operatorname{sign}}
+\newcommand{\Law}{\mathrm{Law}}
+
+%% Anonymity switch. TMLR is single-blind by default -> \anonfalse.
+%% Set \anontrue for a double-blind venue; this also suppresses the repository
+%% pointer in the Reproducibility section.
+\newif\ifanon
+\anonfalse
+
+\title{K-Bound: Knowing When Not to Adapt\\[2pt]
+\large A Label-Free Adapt/Freeze/Abstain Certificate for Safe Test-Time Adaptation}
+
+\ifanon
+  \author{Anonymous authors\\Paper under double-blind review}
+\else
+  \author{Pratik Niroula\\
+  \normalsize Minnesota State University, Mankato\\
+  \normalsize \texttt{pratik.niroula@mnsu.edu}}
+\fi
+\date{}
+
+\emergencystretch=3em
+\input{paper/generated/kbound_numbers}  % auto-generated result numbers (scripts/make_tables.py)
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+\input{kbound_abstract}
+\end{abstract}
+
+\begin{IEEEkeywords}
+test-time adaptation, safe adaptation, abstention, selective prediction, distribution shift,
+identifiability, label-free risk estimation
+\end{IEEEkeywords}
+
+\input{kbound_short_body}
+
+\appendices
+\input{kbound_short_appendix}
+
+\input{paper/references_kbound_expanded}
+
+\end{document}
