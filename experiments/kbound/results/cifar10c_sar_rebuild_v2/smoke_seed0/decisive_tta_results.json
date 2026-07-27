@@ -1,0 +1,115 @@
+{
+  "alpha": 0.1,
+  "device": "mps",
+  "seed": 0,
+  "benchmarks": {
+    "cifar10c": {
+      "clean_acc": 0.8669999837875366,
+      "methods": {
+        "sar": {
+          "metrics": {
+            "n": 8,
+            "decision_counts": {
+              "ADAPT": 8,
+              "FREEZE": 0,
+              "ABSTAIN": 0
+            },
+            "coverage": 1.0,
+            "adapt_precision_B>0": 1.0,
+            "false_adapt_rate_B<0": 0.0,
+            "mean_acc": {
+              "always_adapt": 0.8342500030994415,
+              "always_freeze": 0.7765625044703484,
+              "K_Bound": 0.8342500030994415,
+              "oracle": 0.8342500030994415
+            },
+            "regret_vs_oracle": {
+              "always_adapt": 0.0,
+              "always_freeze": 0.05768749862909317,
+              "K_Bound": 0.0
+            },
+            "worst_case_acc": {
+              "always_adapt": 0.8255000114440918,
+              "always_freeze": 0.7674999833106995,
+              "K_Bound": 0.8255000114440918
+            },
+            "beats_both_regret_only": false,
+            "beats_both": false,
+            "eps_conformal": 0.00962868019739345,
+            "alpha": 0.1,
+            "base_rate_harmful_B<0": 0.0,
+            "mean_true_B": 0.05768749862909317,
+            "decisions_by_regime": {
+              "helpful": {
+                "ADAPT": 8,
+                "FREEZE": 0,
+                "ABSTAIN": 0
+              },
+              "harmful": {
+                "ADAPT": 0,
+                "FREEZE": 0,
+                "ABSTAIN": 0
+              },
+              "marginal": {
+                "ADAPT": 0,
+                "FREEZE": 0,
+                "ABSTAIN": 0
+              }
+            },
+            "pareto": {
+              "note": "need both harmful and non-harmful conditions for the sweep",
+              "n_harmful": 0,
+              "n_nonharmful": 8
+            }
+          },
+          "n_conditions": 8,
+          "per_condition_file": "per_condition_cifar10c_sar_seed0.json",
+          "conditions": [
+            "gaussian_noise|s1|large_iid|iid|mild|r0",
+            "gaussian_noise|s1|large_iid|iid|mild|r1",
+            "gaussian_noise|s1|large_iid|iid|aggressive|r0",
+            "gaussian_noise|s1|large_iid|iid|aggressive|r1",
+            "gaussian_noise|s1|large_iid|imbalanced|mild|r0",
+            "gaussian_noise|s1|large_iid|imbalanced|mild|r1",
+            "gaussian_noise|s1|large_iid|imbalanced|aggressive|r0",
+            "gaussian_noise|s1|large_iid|imbalanced|aggressive|r1"
+          ],
+          "detail": {
+            "Bhat": [
+              0.05136467968834945,
+              0.05325996899123022,
+              0.06026596507154438,
+              0.05983295920980342,
+              0.0576444547869011,
+              0.060911506008869236,
+              0.06426952481722957,
+              0.05993237226340407
+            ],
+            "eps": 0.00962868019739345,
+            "dec": [
+              "ADAPT",
+              "ADAPT",
+              "ADAPT",
+              "ADAPT",
+              "ADAPT",
+              "ADAPT",
+              "ADAPT",
+              "ADAPT"
+            ],
+            "B": [
+              0.06150001287460327,
+              0.05349999666213989,
+              0.052500009536743164,
+              0.059500038623809814,
+              0.04899996519088745,
+              0.05149996280670166,
+              0.06849998235702515,
+              0.06550002098083496
+            ]
+          }
+        }
+      }
+    }
+  },
+  "generated": "2026-07-22 20:30"
+}

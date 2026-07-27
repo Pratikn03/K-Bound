@@ -1,0 +1,91 @@
+{
+  "seed": 4,
+  "alpha": 0.1,
+  "device": "mps",
+  "benchmarks": [
+    "cifar10c"
+  ],
+  "methods": [
+    "sar"
+  ],
+  "quick": true,
+  "max_cells": 0,
+  "sar_arm": {
+    "sar_lr": null,
+    "freeze_layer4": false,
+    "default_matched_lr_behavior": true
+  },
+  "win_hunt_v5_override": {
+    "adapt_lr": null,
+    "batch_regimes": null,
+    "aggressiveness": null,
+    "default_grid_behavior": true
+  },
+  "grid": {
+    "severities": [
+      1,
+      3,
+      5
+    ],
+    "quick_severities": [
+      1,
+      5
+    ],
+    "batch_regimes": {
+      "large_iid": 200,
+      "small": 16,
+      "tiny": 8
+    },
+    "compositions": [
+      "iid",
+      "imbalanced",
+      "single_class"
+    ],
+    "aggressiveness": {
+      "mild": {
+        "steps": 10,
+        "lr": 0.001
+      },
+      "aggressive": {
+        "steps": 50,
+        "lr": 0.0025
+      }
+    },
+    "n_repeats": 2,
+    "eval_pool": 2000,
+    "help_thr": 0.02
+  },
+  "n_conditions_per_method": {
+    "cifar10c": {
+      "sar": 432
+    }
+  },
+  "git_hash": "675ebfcb7a56854123b13250e01843f69007589b",
+  "python": "3.11.11",
+  "torch": "2.9.0",
+  "numpy": "2.3.5",
+  "argv": [
+    "/Users/pratik_n/Documents/AutoML_Flagship_V8/docs/research/kbound/scripts/cifar_tent_mps_v2.py",
+    "--benchmarks",
+    "cifar10c",
+    "--quick",
+    "--methods",
+    "sar",
+    "--device",
+    "mps",
+    "--seed",
+    "4",
+    "--max-cells",
+    "0",
+    "--data-root",
+    "/Users/pratik_n/Documents/AutoML_Flagship_V8/experiments/kbound/cifar",
+    "--cifar10-ckpt",
+    "/Users/pratik_n/Documents/AutoML_Flagship_V8/experiments/kbound/cifar/resnet18_cifar.pt",
+    "--out-results",
+    "/Users/pratik_n/Documents/AutoML_Flagship_V8/experiments/kbound/results/cifar10c_sar_rebuild_v2/seed4",
+    "--out-figs",
+    "/Users/pratik_n/Documents/AutoML_Flagship_V8/experiments/kbound/results/cifar10c_sar_rebuild_v2/seed4"
+  ],
+  "wall_time_sec": 85662.2,
+  "finished": "2026-07-24 20:54:49"
+}
