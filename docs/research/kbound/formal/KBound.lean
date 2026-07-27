@@ -11,6 +11,7 @@ import KBound.Impossibility
 import KBound.LeCam
 import KBound.Multicandidate
 import KBound.ThreeWorld
+import KBound.TargetLaw
 import KBound.Probability.ConformalExchangeability
 import KBound.Probability.EProcess
 import KBound.Probability.Exchangeable

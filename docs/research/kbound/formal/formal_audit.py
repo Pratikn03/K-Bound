@@ -27,7 +27,7 @@ VERIFIED_THEOREMS = [
     "uniformIndex_false_adapt_le",
     "uniformIndex_false_freeze_le",
     "gate_regret_identity",
-    "forced_abstention_probability",
+    "abstention_mass_ge_one_sub_two_alpha_arith",
     "matched_opposite_worlds_force_abstain",
     "lecam_regret_floor_two_point",
     "lecam_testing_two_point",
@@ -62,8 +62,8 @@ VERIFIED_THEOREMS = [
     "rate_implies_commit",
     "rate_conformal_miss",
     # Wave 6 paper-faithful foundation closures
-    "exchangeable_scores_miss_le_alpha",
-    "exchangeable_scores_false_adapt_le",
+    "uniformIndexLaw_miss_le_alpha",
+    "uniformIndexLaw_false_adapt_le",
     "betting_wealth_supermartingale_step",
     "ville_bound_false_adapt",
     "lecam_tv_two_point_measure",
@@ -72,6 +72,15 @@ VERIFIED_THEOREMS = [
     "rate_commit_from_concentration",
     "evidence_swap_involution",
     "swap_flips_benefit_preserves_evidence",
+    # Wave 7 finite measurable target-law and distributional frontier closure
+    "finiteEvidence_measurable",
+    "finite_target_laws_matched_evidence",
+    "positiveTargetLaw_benefit",
+    "negativeTargetLaw_benefit",
+    "finite_target_world_pair",
+    "rich_closed_band_forces_abstain",
+    "frontierDecision_uniformly_sound",
+    "distributional_frontier_maximal",
 ]
 
 # Wave 6 closed the paper-faithful foundation cores. Empty list ⇒ --full-foundations can pass.
@@ -81,13 +90,14 @@ FOUNDATIONAL_PROBABILITY_LIMITS: list[dict[str, str]] = []
 OPEN_RESEARCH_FRONTIER: list[dict[str, str]] = []
 
 CLOSURE_RECORD = {
-    "wave": 6,
-    "date": "2026-07-15",
+    "wave": 7,
+    "date": "2026-07-22",
     "scope": (
         "kernel-checked algebraic theorem spine, uniform-index conformal measure layer, "
         "and paper-faithful foundation closures (exchangeable-score reduction, discrete "
         "Ville, two-point Le Cam packaging, Hoeffding radius commit bridge, evidence "
-        "swap involution)"
+        "swap involution), plus a finite measurable target-law realization and the "
+        "distributional frontier lift under an explicit target-class richness premise"
     ),
     "mechanized_modules": [
         "KBound/Probability/ConformalExchangeability.lean",
@@ -98,6 +108,7 @@ CLOSURE_RECORD = {
         "KBound/Probability/LeCam.lean",
         "KBound/Probability/LeCamMeasure.lean",
         "KBound/Probability/Rates.lean",
+        "KBound/TargetLaw.lean",
     ],
     "paper_closures": [
         "theory_v2/tight_constants_closure.tex",
@@ -239,7 +250,10 @@ def main() -> int:
     print(f"Formal audit: {report['status']}")
     if args.build:
         print("Lean build: PASS")
-    print(f"Kernel-checked theorem checks: {len(VERIFIED_THEOREMS)}")
+    if args.build:
+        print(f"Kernel-checked theorem checks: {len(VERIFIED_THEOREMS)}")
+    else:
+        print(f"Declared theorem-map checks (kernel build not requested): {len(VERIFIED_THEOREMS)}")
     print("Forbidden proof-hole scan: PASS" if not forbidden_hits else "Forbidden proof-hole scan: FAIL")
     if args.strict_100:
         print("NOTE: --strict-100 is a legacy alias for strict-core scope, not full Mathlib probability foundations.")

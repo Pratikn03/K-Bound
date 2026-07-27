@@ -45,8 +45,15 @@ theorem certificate_forced_abstention_under_matched_coverage
     · intro hadapt; exact adapt_sound_on_coverage hcov₂ hadapt
     · intro hfreeze; exact freeze_sound_on_coverage hcov₂ hfreeze
 
-/-- Paper `thm:imp` (iii): matched-evidence abstention rate. -/
-theorem forced_abstention_probability {qa qf alpha : ℝ}
+/-- **Arithmetic core of paper `thm:imp` (iii)** (matched-evidence abstention rate).
+Scope, stated honestly: this is a statement about three *real numbers*, not about a
+measure or about the certificate.  Given `qa ≤ α` and `qf ≤ α` it concludes
+`1 - qa - qf ≥ 1 - 2α` by `linarith`.  Nothing here establishes that `qa` and `qf`
+*are* the false-adapt and false-freeze probabilities of the certificate, nor that
+abstention is forced; those are the paper's content and are NOT formalised.
+Renamed 2026-07-26: the previous name `forced_abstention_probability` claimed
+probabilistic content this statement does not have. -/
+theorem abstention_mass_ge_one_sub_two_alpha_arith {qa qf alpha : ℝ}
     (hfa : qa ≤ alpha)
     (hff : qf ≤ alpha)
     (_hprob : qa + qf ≤ 1) :

@@ -1,6 +1,10 @@
 import KBound.Basics
 import Mathlib.Data.Real.Basic
 import Mathlib.Tactic.Linarith
+-- `frontier_band_zero_witness` discharges `M + -M = 0` with `ring`.  Older Mathlib
+-- re-exported `ring` transitively through Linarith; current Mathlib does not, so the
+-- tactic must be imported explicitly.  No proof term is changed by this import.
+import Mathlib.Tactic.Ring
 
 /-!
 # Exact benefit-sign frontier (`thm:frontier`)

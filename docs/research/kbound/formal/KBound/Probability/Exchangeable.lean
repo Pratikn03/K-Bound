@@ -18,11 +18,15 @@ open MeasureTheory
 
 variable {n : ℕ}
 
-/-- **Exchangeable-score miss bound.**  If the held-out index law equals the
-uniform law (the conditional-on-the-bag consequence of exchangeability), the
-rank-`k` conformal miss probability is at most `α` whenever the quantile
-threshold holds. -/
-theorem exchangeable_scores_miss_le_alpha
+/-- **Uniform-index-law miss bound.**  Scope, stated honestly: uniformity of the
+held-out index law is a HYPOTHESIS here (`hexch : μ = uniformIndexMeasure n`), not
+a conclusion.  The step from exchangeability of the scores to uniformity of the
+held-out index is the mathematically substantive one and is NOT formalised in this
+development.  Given uniformity, the rank-`k` miss probability is at most `α`
+whenever the quantile threshold holds.
+Renamed 2026-07-26 (was `exchangeable_scores_miss_le_alpha`): the old name implied
+the exchangeability reduction had been proved. -/
+theorem uniformIndexLaw_miss_le_alpha
     (R : Fin (n + 1) → ℝ) (k : ℕ) {alpha : ENNReal}
     {μ : Measure (Fin (n + 1))} [IsProbabilityMeasure μ]
     (hexch : μ = uniformIndexMeasure n)
@@ -34,7 +38,7 @@ theorem exchangeable_scores_miss_le_alpha
 /-- **Exchangeable-score false-adapt bound.**  Under the exchangeable → uniform
 index reduction, the certificate's unconditional false-adapt probability is
 `≤ α` end-to-end (composes with `uniformIndex_false_adapt_le`). -/
-theorem exchangeable_scores_false_adapt_le
+theorem uniformIndexLaw_false_adapt_le
     (dhat delta : Fin (n + 1) → ℝ) (eps : ℝ) (R : Fin (n + 1) → ℝ) (k : ℕ)
     {alpha : ENNReal}
     {μ : Measure (Fin (n + 1))} [IsProbabilityMeasure μ]
@@ -46,7 +50,7 @@ theorem exchangeable_scores_false_adapt_le
   exact uniformIndex_false_adapt_le dhat delta eps R k hsub hk
 
 /-- Mirror: exchangeable-score false-freeze bound. -/
-theorem exchangeable_scores_false_freeze_le
+theorem uniformIndexLaw_false_freeze_le
     (dhat delta : Fin (n + 1) → ℝ) (eps : ℝ) (R : Fin (n + 1) → ℝ) (k : ℕ)
     {alpha : ENNReal}
     {μ : Measure (Fin (n + 1))} [IsProbabilityMeasure μ]

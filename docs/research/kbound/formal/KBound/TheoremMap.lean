@@ -10,6 +10,7 @@ import KBound.Gate
 import KBound.Impossibility
 import KBound.LeCam
 import KBound.ThreeWorld
+import KBound.TargetLaw
 import KBound.Multicandidate
 import KBound.Probability.ConformalExchangeability
 import KBound.Probability.EProcess
@@ -33,7 +34,7 @@ import KBound.Probability.UniformConformal
 
 `lem:nonid` and `cor:matched-abstain`
 * FORMALIZED: opposite fixed benefits force abstention; action-probability arithmetic
-  (`matched_opposite_worlds_force_abstain`, `forced_abstention_probability`).
+  (`matched_opposite_worlds_force_abstain`, `abstention_mass_ge_one_sub_two_alpha_arith`).
 * PEN-AND-PAPER: measurable target-label kernels, equality of induced evidence laws, and
   membership of the constructed laws in the declared drift class.
 
@@ -44,9 +45,12 @@ import KBound.Probability.UniformConformal
   (`frontier_identifiable_positive`, `frontier_identifiable_negative`,
   `frontier_decision_adapt`, `frontier_decision_freeze`, `frontier_decision_abstain`,
   `frontier_band_zero_witness`, `frontier_open_band_opposite_witnesses`).
-* PEN-AND-PAPER: realization of these algebraic drifts by measurable target laws,
-  target-class richness, and the lift from the witnesses to distributional
-  necessity/pointwise maximality.
+* FORMALIZED: a canonical finite discrete measurable target-law construction,
+  matched induced evidence laws, and the distributional necessity/pointwise-maximality
+  lift under the explicit `RichAt` target-class premise (`KBound/TargetLaw.lean`).
+* PEN-AND-PAPER: realization on an arbitrary non-finite input space and proof that a
+  user-declared target subclass satisfies `RichAt`; these cannot follow without
+  additional assumptions on that subclass.
 
 `thm:certificate`
 * FORMALIZED: pointwise containment of strict directional errors in coverage failure,
@@ -77,7 +81,7 @@ namespace KBoundTheoremMap
 #check KBound.uniformIndex_false_freeze_le
 -- `lem:nonid` corollary only: fixed opposite worlds and probability arithmetic.
 #check KBound.gate_regret_identity
-#check KBound.forced_abstention_probability
+#check KBound.abstention_mass_ge_one_sub_two_alpha_arith
 #check KBound.matched_opposite_worlds_force_abstain
 #check KBound.lecam_regret_floor_two_point
 #check KBound.lecam_testing_two_point
@@ -91,6 +95,14 @@ namespace KBoundTheoremMap
 #check KBound.frontier_open_band_opposite_witnesses
 #check KBound.frontier_positive_boundary_zero_strict
 #check KBound.frontier_negative_boundary_zero_strict
+#check KBound.finiteEvidence_measurable
+#check KBound.finite_target_laws_matched_evidence
+#check KBound.positiveTargetLaw_benefit
+#check KBound.negativeTargetLaw_benefit
+#check KBound.finite_target_world_pair
+#check KBound.rich_closed_band_forces_abstain
+#check KBound.frontierDecision_uniformly_sound
+#check KBound.distributional_frontier_maximal
 -- `lem:reduction`: algebraic sign reductions.
 #check KBound.binary_sign_reduction
 #check KBound.binary_margin_split
@@ -115,8 +127,8 @@ namespace KBoundTheoremMap
 #check KBound.rate_implies_commit
 #check KBound.rate_conformal_miss
 -- Wave 6: paper-faithful foundation closures
-#check KBound.exchangeable_scores_miss_le_alpha
-#check KBound.exchangeable_scores_false_adapt_le
+#check KBound.uniformIndexLaw_miss_le_alpha
+#check KBound.uniformIndexLaw_false_adapt_le
 #check KBound.betting_wealth_supermartingale_step
 #check KBound.ville_bound_false_adapt
 #check KBound.lecam_tv_two_point_measure

@@ -37,7 +37,8 @@ python3 formal_audit.py --build --full-foundations --json-out formal_audit_repor
 - `--full-foundations`: same, and requires the paper-faithful foundation gap list to be
   empty (Wave 6 closed those gaps).
 
-Current status: **`--full-foundations` PASS** (57 kernel-checked theorem checks, including the
+Current release status: **57 checks PASS; Wave 7 pending local kernel build**. The audit now
+requires 65 named theorem checks, including the
 closed/open frontier-band and both zero-versus-strict boundary witnesses).
 This is the paper-faithful bar (exchangeable-score reduction, discrete Ville,
 two-point Le Cam packaging, Hoeffding-radius commit bridge, evidence swap
@@ -49,14 +50,15 @@ involution) — not a from-scratch Mathlib probability textbook.
 |-------------|-----------|--------------|
 | `thm:cert` | `KBound/Certificate.lean` | `cert_false_adapt_sound`, `cert_false_freeze_sound` |
 | `thm:gate` | `KBound/Gate.lean` | `gate_regret_identity` |
-| `thm:imp`, `cor:forced-abstain` | `KBound/Impossibility.lean` | `forced_abstention_probability`, `matched_opposite_worlds_force_abstain` |
+| `thm:imp`, `cor:forced-abstain` | `KBound/Impossibility.lean` | `abstention_mass_ge_one_sub_two_alpha_arith`, `matched_opposite_worlds_force_abstain` |
 | `prop:lecam-finite` | `KBound/FiniteTesting.lean`, `LeCam.lean`, `LeCamMeasure.lean` | `lecam_testing_two_point`, `lecam_tv_two_point_measure` |
 | `thm:frontier` | `KBound/Frontier.lean` | sufficiency, all decision branches, closed/open-band witnesses, and both zero-versus-strict boundary witnesses |
+| `thm:frontier` necessity/maximality lift | `KBound/TargetLaw.lean` | candidate Wave 7 closure: finite discrete measurable target laws, matched evidence, concrete opposite-benefit worlds, and the distributional lift under explicit `RichAt`; release only after the 65-check kernel audit passes |
 | `lem:reduction`, `thm:disagree` | `KBound/Disagreement.lean` | `binary_sign_reduction` |
 | `cor:samplecomp` | `KBound/Corollaries.lean` | `one_sided_commit_when_radius_small` |
 | finite conformal rank algebra | `KBound/Conformal.lean` | `finite_uniform_rank_miss_le_alpha` |
 | uniform-index conformal | `KBound/Probability/UniformConformal.lean` | `uniformIndex_false_adapt_le` |
-| exchangeable-score reduction | `KBound/Probability/Exchangeable.lean` | `exchangeable_scores_miss_le_alpha`, `exchangeable_scores_false_adapt_le` |
+| exchangeable-score reduction | `KBound/Probability/Exchangeable.lean` | `uniformIndexLaw_miss_le_alpha`, `uniformIndexLaw_false_adapt_le` |
 | anytime / Ville | `KBound/Probability/EProcess.lean`, `Ville.lean` | `betting_wealth_supermartingale_step`, `ville_bound_false_adapt` |
 | one-bit swap involution | `KBound/Dichotomy.lean` | `evidence_swap_involution`, `swap_flips_benefit_preserves_evidence` |
 | rate / Hoeffding bridge | `KBound/Probability/Rates.lean` | `hoeffding_radius_le`, `rate_commit_from_concentration` |
