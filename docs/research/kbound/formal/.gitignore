@@ -1,2 +1,6 @@
-.lake/
+# `.lake/` (with the slash) matches a directory only. The build tree is now a
+# SYMLINK to a non-iCloud location, because iCloud evicts .olean contents and
+# Lean then blocks forever faulting them in. Match both forms.
+.lake
+.lake__icloud_evicted_*
 formal_audit_report.json

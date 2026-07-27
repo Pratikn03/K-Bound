@@ -30,7 +30,11 @@ from utils import memory_rotta
 import utils.reset_utils as reset_utils
 
 
-device = torch.device("cuda:{:d}".format(conf.args.gpu_idx) if torch.cuda.is_available() else "cpu")
+device = torch.device(
+    "cuda:{:d}".format(conf.args.gpu_idx)
+    if torch.cuda.is_available()
+    else ("mps" if torch.backends.mps.is_available() else "cpu")
+)
 if __import__('torch').cuda.is_available():  # K-Bound: guard for non-CUDA (mps/cpu)
     torch.cuda.set_device(
     conf.args.gpu_idx)  # this prevents unnecessary gpu memory allocation to cuda:0 when using estimator
@@ -130,6 +134,12 @@ class DNN():
 
         self.sa_src_net = deepcopy(self.net)
         self.sa_ref_net_1 = None
+        # GDE agreement is also evaluated for the frozen Src baseline.  That
+        # path does not call init_reset(), so these queues must exist for every
+        # DNN instance rather than only for reset-enabled TTA subclasses.
+        self.prev_net_state_queue = deque()
+        self.prev_feat_queue = deque()
+        self.prev_optim_state_queue = deque()
 
     def init_json(self, log_path):
         self.write_path = log_path

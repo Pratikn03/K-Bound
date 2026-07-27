@@ -159,6 +159,52 @@ def _decide_command(args: argparse.Namespace) -> int:
     return 0
 
 
+def _assumption_gate_command(args: argparse.Namespace) -> int:
+    """Run the A1-A6 gate and print the assumption report.
+
+    The gate fails closed: every check you do not supply inputs for is recorded as
+    failed, not skipped.  A bare invocation therefore returns ``diagnostic_only``,
+    which is the correct answer to "what may I certify given nothing".
+    """
+    from kga.assumptions import GateThresholds, ProtocolRecord, run_gate
+
+    record = ProtocolRecord(
+        protocol=args.protocol,
+        dataset=args.dataset,
+        inference_unit=args.inference_unit,
+        candidate_fixed_at=args.candidate_fixed_at,
+        calibration_design_fixed_at=args.calibration_fixed_at,
+        target_evaluated_at=args.target_evaluated_at,
+        target_labels_used_for_routing=args.target_labels_used_for_routing,
+        test_set_influenced_hparams=args.test_set_influenced_hparams,
+        calibration_test_separated=args.calibration_test_separated,
+        protocol_lock_id=args.protocol_lock_id,
+        failed_runs_retained=args.failed_runs_retained,
+    )
+    kwargs: dict = {}
+    if args.calib_residuals:
+        kwargs["residuals"] = _load_array(args.calib_residuals, "--calib-residuals")
+    if args.groups:
+        kwargs["calibration_groups"] = _load_array(args.groups, "--groups")
+    if args.calib:
+        kwargs["z_cal"] = _load_array(args.calib, "--calib")
+    if args.test:
+        kwargs["z_dep"] = _load_array(args.test, "--test")
+
+    report = run_gate(
+        record=record,
+        alpha=args.alpha,
+        thresholds=GateThresholds(min_effective_units=args.min_units),
+        **kwargs,
+    )
+    print(report.to_json())
+    if args.out:
+        from kga.assumptions import write_report
+
+        write_report(report, args.out)
+    return 0
+
+
 def build_parser() -> argparse.ArgumentParser:
     """Construct the argument parser for the ``kga`` command-line tool."""
     parser = argparse.ArgumentParser(
@@ -202,6 +248,35 @@ def build_parser() -> argparse.ArgumentParser:
     p_decide.add_argument("--test", default=None, help="Optional test scores (.npy), reported as evidence only.")
     p_decide.add_argument("--alpha", type=float, default=0.1, help="Miscoverage level in (0, 1). Default 0.1.")
     p_decide.set_defaults(func=_decide_command)
+
+    p_gate = sub.add_parser(
+        "assumption-gate",
+        help="Run the A1-A6 assumption gate and emit a machine-readable report.",
+    )
+    p_gate.add_argument("--dataset", required=True)
+    p_gate.add_argument("--protocol", required=True)
+    p_gate.add_argument(
+        "--inference-unit",
+        required=True,
+        help="Level at which calibration draws are exchangeable: domain, episode, cell, backbone, seed.",
+    )
+    p_gate.add_argument("--calib-residuals", default=None, help="Held-out residuals (.npy).")
+    p_gate.add_argument("--groups", default=None, help="Unit label per calibration row (.npy). Required for A5.")
+    p_gate.add_argument("--calib", default=None, help="Calibration evidence Z (.npy).")
+    p_gate.add_argument("--test", default=None, help="Deployment evidence Z (.npy).")
+    p_gate.add_argument("--alpha", type=float, default=0.1)
+    p_gate.add_argument("--min-units", type=int, default=20, help="Declared minimum effective units (A5).")
+    p_gate.add_argument("--protocol-lock-id", default=None, help="Timestamped lock id; absence fails A6.")
+    p_gate.add_argument("--candidate-fixed-at", default=None, help="ISO-8601.")
+    p_gate.add_argument("--calibration-fixed-at", default=None, help="ISO-8601.")
+    p_gate.add_argument("--target-evaluated-at", default=None, help="ISO-8601.")
+    p_gate.add_argument("--calibration-test-separated", action="store_true", default=None)
+    p_gate.add_argument("--target-labels-used-for-routing", action="store_true", default=None)
+    p_gate.add_argument("--test-set-influenced-hparams", action="store_true", default=None)
+    p_gate.add_argument("--failed-runs-retained", action="store_true", default=None)
+    p_gate.add_argument("--out", default=None, help="Write the report JSON here as well as stdout.")
+    p_gate.set_defaults(func=_assumption_gate_command)
+
     return parser
 
 

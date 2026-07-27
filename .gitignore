@@ -180,3 +180,24 @@ docs/research/kbound/edge/artifacts_real/**
 !docs/research/kbound/edge/artifacts_real/protocol_lock.json
 !docs/research/kbound/edge/artifacts_real/protocol_lock.sha256
 docs/research/kbound/edge/my_train.log
+
+# ===== AETTA vendored code: keep the source, exclude data/caches/checkpoints =====
+# (58 tracked source files under AETTA/ -- *.py/*.md/*.txt/*.yml/*.sh -- are NOT
+#  matched by these rules and remain tracked. Only heavy regenerable payloads are
+#  excluded, per the storage policy in docs/research/kbound/STORAGE_MANIFEST.json.)
+AETTA/cached_data/
+AETTA/dataset/
+AETTA/**/*.npy
+AETTA/**/*.npz
+AETTA/**/*.pkl
+AETTA/**/*.pt
+AETTA/**/*.pth
+AETTA/**/*.ckpt
+
+# Temporary PDF renders / page-image dumps produced by the release runbook's
+# visual-render check (the compiled release PDFs live under paper/ and are kept).
+docs/research/kbound/**/_pdf_render_*/
+docs/research/kbound/**/*.render.png
+
+# kbound_repro toolkit: keep source/schemas/tests, drop its local caches
+docs/research/kbound/kbound_repro/**/__pycache__/

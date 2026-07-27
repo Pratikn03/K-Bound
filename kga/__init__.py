@@ -47,6 +47,22 @@ The package is pure ``numpy``/``scipy`` (no torch) and deterministic.
 from __future__ import annotations
 
 from kga._version import __version__
+from kga.assumptions import (
+    AssumptionReport,
+    CoverageType,
+    FallbackAction,
+    GateDecision,
+    GateThresholds,
+    ProtocolRecord,
+    Status,
+    conformal_radius,
+    evidence_support_overlap,
+    observed_coverage,
+    radius_stability,
+    risk_alignment_audit,
+    run_gate,
+    write_report,
+)
 from kga.certificate import (
     Certificate,
     InsufficientCalibrationError,
@@ -88,5 +104,19 @@ __all__ = [
     "bonferroni_multicandidate_route",
     "multiclass_benefit",
     "route_panel",
+    "AssumptionReport",
+    "CoverageType",
+    "FallbackAction",
+    "GateDecision",
+    "GateThresholds",
+    "ProtocolRecord",
+    "Status",
+    "conformal_radius",
+    "evidence_support_overlap",
+    "observed_coverage",
+    "radius_stability",
+    "risk_alignment_audit",
+    "run_gate",
+    "write_report",
     "__version__",
 ]

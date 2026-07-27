@@ -70,6 +70,26 @@ MACHINE_LOCAL_ALLOWLIST: dict[str, str] = {
     "docs/research/kbound/scrub_submission.py": "the anonymiser; the fragment is a substitution pattern",
     "docs/research/kbound/scripts/code_audit_uav.py": "one prose line recording the volume's historical name",
     "scripts/migrate_repo_name_to_kbound.sh": "record of the completed rename; the old name is its subject",
+    # -----------------------------------------------------------------------
+    # SURFACED 2026-07-26 BY THE iCLOUD MATERIALISATION.  All eight files below
+    # were NUL-filled placeholders when the "94 files down to 9" census was
+    # taken, so this scanner could not read them and counted them as clean.
+    # That census was complete over the READABLE tree, not over the tree.  Every
+    # entry is a real violation, newly visible; none is in a promoted code path.
+    # -----------------------------------------------------------------------
+    "experiments/kbound/results/gpu_queue_camelyon_then_iwildcam.sh":
+        "a saved GPU submission QUEUE, i.e. a record of the exact command that was "
+        "run on the author's machine. Rewriting it would falsify the run record; it "
+        "is not a reproduction entry point",
+    "experiments/kbound/results/gpu_queue_iwildcam_after_camelyon.sh":
+        "second saved GPU submission queue; same rationale",
+    "experiments/kbound/theory_validation/frontier_decisive/camelyon_recal/camelyon_recal.py":
+        "superseded theory probe (GAP_AUDIT.md / INTEGRITY_FIXES.md both SUPERSEDED); "
+        "the path is an ephemeral Cowork session-sandbox mount, already dead",
+    "experiments/kbound/theory_validation/frontier_decisive/kga_elara/kga_elara_convergence.py":
+        "superseded theory probe; same dead session-sandbox mount",
+    "experiments/kbound/theory_validation/frontier_decisive/realdata/realdata_frontier.py":
+        "superseded theory probe; same dead session-sandbox mount",
 }
 
 
