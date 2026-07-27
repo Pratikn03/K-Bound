@@ -1,0 +1,45 @@
+protocol: CIFAR10C_SAR_REBUILD_v2
+status: frozen_before_rerun
+purpose: replace the quarantined CIFAR-10-C SAR artifact with a clean, independently named five-seed tree
+candidate: sar
+seeds: [0, 1, 2, 3, 4]
+expected_conditions_per_seed: 432
+alpha: 0.10
+device: mps
+# `runner` points at the IMMUTABLE ARCHIVED COPY of the source that actually produced
+# this tree, recovered from `executed_runner_commit` -- the value every seed's
+# result_manifest.json records as git_hash.  `runner_sha256` is UNCHANGED from the
+# original freeze: the recovered source hashes to exactly this value, which proves the
+# freeze was correct all along.  The live worktree path has drifted since execution
+# (leave-one-out conformal calibration, kbound_decide routing, EVAL_CHUNK) and is NOT
+# authoritative for this frozen tree.
+runner: research_lock/executed_sources/cifar_tent_mps_v2__675ebfcb.py
+runner_sha256: f1687904d36114340ae7da055197f6bd44c08e2f617d17703a52824765e62dbc
+runner_source_path_at_commit: docs/research/kbound/scripts/cifar_tent_mps_v2.py
+executed_runner_commit: 675ebfcb7a56854123b13250e01843f69007589b
+runner_live_path_status: drifted_after_execution__not_authoritative
+checkpoint: experiments/kbound/cifar/resnet18_cifar.pt
+checkpoint_sha256: 43333456a795bbe679966c14812f9964d8b3bf060d30ca2b3d5051cb8c9d7491
+labels: experiments/kbound/cifar/CIFAR-10-C/labels.npy
+labels_sha256: e6d972b1238665d8ef54aae5affe8e292dda1eb88a6840bf0f5988cdb649da7b
+output_root: experiments/kbound/results/cifar10c_sar_rebuild_v2
+command_contract:
+  - --benchmarks cifar10c
+  - --quick
+  - --methods sar
+  - --device mps
+  - --max-cells 0
+  - --sar-lr default
+  - --sar-freeze-layer4 false
+forbidden:
+  - writing into stress_grid_multiseed_v1
+  - copying or editing archived SAR records
+  - changing the grid, checkpoint, learning rate, alpha, or decision rule after viewing a seed
+  - reconstructing counts from rounded rates
+reinstatement_gates:
+  - all five seed files contain exactly 432 unique ordered conditions
+  - identical condition keys across seeds
+  - every record contains raw B, a0, a_adapted, b_hat, eps_conformal, and kga_decision
+  - result manifests record the frozen runner and checkpoint
+  - per-condition bootstrap and integer action/error counts are regenerated from the new tree
+  - claim ledger, seal, tables, figures, and manuscripts update only after validation passes
