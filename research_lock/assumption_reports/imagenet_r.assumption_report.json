@@ -1,0 +1,388 @@
+{
+  "dataset": "ImageNet-R",
+  "protocol": "IMAGENETR_DIVERSE_PANEL_PROTOCOL_D_v1",
+  "inference_unit": "backbone x seed",
+  "calibration_test_separated": true,
+  "candidate_fixed_before_test": true,
+  "target_labels_used_for_routing": false,
+  "coverage_type": "diagnostic_only",
+  "theoretical_coverage_claimed": false,
+  "observed_coverage": null,
+  "n_rows": null,
+  "n_units": 40,
+  "coverage_interval_95": null,
+  "coverage_interval_method": null,
+  "support_overlap_status": "fail",
+  "radius_stability_status": "fail",
+  "conclusion_stability_status": "fail",
+  "leakage_status": "pass",
+  "deployment_gate": "diagnostic_only",
+  "fallback_action": "none",
+  "alpha": 0.1,
+  "thresholds": {
+    "min_effective_units": 20,
+    "support_frac_outside_warn": 0.05,
+    "support_frac_outside_fail": 0.2,
+    "domain_auroc_warn": 0.75,
+    "domain_auroc_fail": 0.9,
+    "radius_cv_warn": 0.2,
+    "radius_cv_fail": 0.5,
+    "decision_disagreement_warn": 0.05,
+    "decision_disagreement_fail": 0.2,
+    "conclusion_change_fail": 0.0
+  },
+  "diagnostics": {
+    "n_backbones": 10,
+    "n_seeds": 4,
+    "per_backbone": {
+      "convnext_base": {
+        "regret": [
+          0.0,
+          0.0,
+          0.06932291666666666
+        ],
+        "harmful_base_rate_per_seed": [
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        "harmful_base_rate_mean": 0.0,
+        "false_adapt_num": 0,
+        "false_adapt_den": 48,
+        "fa_u": 0.0,
+        "cp95_upper_fa_u": 0.0605034093488943,
+        "eps_per_seed": [
+          0.040364,
+          0.031584,
+          0.034201,
+          0.036383
+        ],
+        "eps_cv": 0.10423214845927012,
+        "between_seed_std": {
+          "kga": 0.0,
+          "adapt": 0.0,
+          "freeze": 0.00560148118225752
+        },
+        "kga_worse_than_adapt": false,
+        "ratio_kga_over_adapt": null,
+        "degenerate_zero_harmful": true
+      },
+      "convnext_tiny": {
+        "regret": [
+          0.020729166666666663,
+          0.0014583333333333323,
+          0.02208333333333333
+        ],
+        "harmful_base_rate_per_seed": [
+          0.16667,
+          0.16667,
+          0.08333,
+          0.16667
+        ],
+        "harmful_base_rate_mean": 0.14583500000000002,
+        "false_adapt_num": 0,
+        "false_adapt_den": 48,
+        "fa_u": 0.0,
+        "cp95_upper_fa_u": 0.0605034093488943,
+        "eps_per_seed": [
+          0.0362,
+          0.04197,
+          0.029417,
+          0.04426
+        ],
+        "eps_cv": 0.17463050256179363,
+        "between_seed_std": {
+          "kga": 0.00256004285988428,
+          "adapt": 0.0006133167268283228,
+          "freeze": 0.0040860251898210175
+        },
+        "kga_worse_than_adapt": true,
+        "ratio_kga_over_adapt": 14.214285714285722,
+        "degenerate_zero_harmful": false
+      },
+      "efficientnet_b0": {
+        "regret": [
+          0.0,
+          0.050624999999999996,
+          0.0
+        ],
+        "harmful_base_rate_per_seed": [
+          1.0,
+          1.0,
+          1.0,
+          1.0
+        ],
+        "harmful_base_rate_mean": 1.0,
+        "false_adapt_num": 0,
+        "false_adapt_den": 48,
+        "fa_u": 0.0,
+        "cp95_upper_fa_u": 0.0605034093488943,
+        "eps_per_seed": [
+          0.046168,
+          0.048935,
+          0.033528,
+          0.039277
+        ],
+        "eps_cv": 0.16541881879340006,
+        "between_seed_std": {
+          "kga": 0.0,
+          "adapt": 0.0023385358667337144,
+          "freeze": 0.0
+        },
+        "kga_worse_than_adapt": false,
+        "ratio_kga_over_adapt": 0.0,
+        "degenerate_zero_harmful": false
+      },
+      "efficientnet_b3": {
+        "regret": [
+          0.018593749999999992,
+          0.0,
+          0.05010416666666665
+        ],
+        "harmful_base_rate_per_seed": [
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        "harmful_base_rate_mean": 0.0,
+        "false_adapt_num": 0,
+        "false_adapt_den": 48,
+        "fa_u": 0.0,
+        "cp95_upper_fa_u": 0.0605034093488943,
+        "eps_per_seed": [
+          0.027151,
+          0.044455,
+          0.02703,
+          0.058296
+        ],
+        "eps_cv": 0.3853071785218123,
+        "between_seed_std": {
+          "kga": 0.02201073956617541,
+          "adapt": 0.0,
+          "freeze": 0.005296476379352322
+        },
+        "kga_worse_than_adapt": true,
+        "ratio_kga_over_adapt": null,
+        "degenerate_zero_harmful": true
+      },
+      "resnet101": {
+        "regret": [
+          0.015156249999999996,
+          0.0005208333333333338,
+          0.023749999999999997
+        ],
+        "harmful_base_rate_per_seed": [
+          0.08333,
+          0.0,
+          0.08333,
+          0.16667
+        ],
+        "harmful_base_rate_mean": 0.0833325,
+        "false_adapt_num": 0,
+        "false_adapt_den": 48,
+        "fa_u": 0.0,
+        "cp95_upper_fa_u": 0.0605034093488943,
+        "eps_per_seed": [
+          0.028236,
+          0.026124,
+          0.030837,
+          0.0262
+        ],
+        "eps_cv": 0.07967657008130442,
+        "between_seed_std": {
+          "kga": 0.0026427694420955525,
+          "adapt": 0.0007701761462784324,
+          "freeze": 0.0034148030147622853
+        },
+        "kga_worse_than_adapt": true,
+        "ratio_kga_over_adapt": 29.09999999999997,
+        "degenerate_zero_harmful": false
+      },
+      "resnet152": {
+        "regret": [
+          0.008749999999999999,
+          0.0,
+          0.04208333333333333
+        ],
+        "harmful_base_rate_per_seed": [
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        "harmful_base_rate_mean": 0.0,
+        "false_adapt_num": 0,
+        "false_adapt_den": 48,
+        "fa_u": 0.0,
+        "cp95_upper_fa_u": 0.0605034093488943,
+        "eps_per_seed": [
+          0.030578,
+          0.038699,
+          0.030389,
+          0.032143
+        ],
+        "eps_cv": 0.11869357640619238,
+        "between_seed_std": {
+          "kga": 0.0075939333730336385,
+          "adapt": 0.0,
+          "freeze": 0.0030286059010217405
+        },
+        "kga_worse_than_adapt": true,
+        "ratio_kga_over_adapt": null,
+        "degenerate_zero_harmful": true
+      },
+      "resnext101_32x8d": {
+        "regret": [
+          0.005885416666666665,
+          0.0,
+          0.05197916666666665
+        ],
+        "harmful_base_rate_per_seed": [
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        "harmful_base_rate_mean": 0.0,
+        "false_adapt_num": 0,
+        "false_adapt_den": 48,
+        "fa_u": 0.0,
+        "cp95_upper_fa_u": 0.0605034093488943,
+        "eps_per_seed": [
+          0.038378,
+          0.042089,
+          0.023358,
+          0.038799
+        ],
+        "eps_cv": 0.2345931883566065,
+        "between_seed_std": {
+          "kga": 0.004739678723093806,
+          "adapt": 0.0,
+          "freeze": 0.0038055302107834017
+        },
+        "kga_worse_than_adapt": true,
+        "ratio_kga_over_adapt": null,
+        "degenerate_zero_harmful": true
+      },
+      "swin_b": {
+        "regret": [
+          0.022604166666666658,
+          5.208333333333338e-05,
+          0.037499999999999985
+        ],
+        "harmful_base_rate_per_seed": [
+          0.0,
+          0.0,
+          0.0,
+          0.08333
+        ],
+        "harmful_base_rate_mean": 0.0208325,
+        "false_adapt_num": 0,
+        "false_adapt_den": 48,
+        "fa_u": 0.0,
+        "cp95_upper_fa_u": 0.0605034093488943,
+        "eps_per_seed": [
+          0.049143,
+          0.028735,
+          0.039511,
+          0.064633
+        ],
+        "eps_cv": 0.33478698922097294,
+        "between_seed_std": {
+          "kga": 0.015251081473492658,
+          "adapt": 0.00010416666666666675,
+          "freeze": 0.0058432455466562805
+        },
+        "kga_worse_than_adapt": true,
+        "ratio_kga_over_adapt": 433.9999999999995,
+        "degenerate_zero_harmful": false
+      },
+      "swin_t": {
+        "regret": [
+          0.004322916666666666,
+          0.010572916666666668,
+          0.004739583333333332
+        ],
+        "harmful_base_rate_per_seed": [
+          0.83333,
+          0.5,
+          0.58333,
+          0.5
+        ],
+        "harmful_base_rate_mean": 0.6041650000000001,
+        "false_adapt_num": 0,
+        "false_adapt_den": 48,
+        "fa_u": 0.0,
+        "cp95_upper_fa_u": 0.0605034093488943,
+        "eps_per_seed": [
+          0.019393,
+          0.033432,
+          0.022241,
+          0.057629
+        ],
+        "eps_cv": 0.5242986847608941,
+        "between_seed_std": {
+          "kga": 0.0024377374053427903,
+          "adapt": 0.004440237809572321,
+          "freeze": 0.002401864389655729
+        },
+        "kga_worse_than_adapt": false,
+        "ratio_kga_over_adapt": 0.4088669950738915,
+        "degenerate_zero_harmful": false
+      },
+      "vit_b_16": {
+        "regret": [
+          0.01598958333333333,
+          0.0003645833333333337,
+          0.023697916666666662
+        ],
+        "harmful_base_rate_per_seed": [
+          0.08333,
+          0.0,
+          0.0,
+          0.16667
+        ],
+        "harmful_base_rate_mean": 0.0625,
+        "false_adapt_num": 1,
+        "false_adapt_den": 48,
+        "fa_u": 0.020833333333333332,
+        "cp95_upper_fa_u": 0.09505862462413558,
+        "eps_per_seed": [
+          0.027368,
+          0.021633,
+          0.033308,
+          0.058948
+        ],
+        "eps_cv": 0.46614006507607836,
+        "between_seed_std": {
+          "kga": 0.006408578506363342,
+          "adapt": 0.0004294901693351733,
+          "freeze": 0.0026754142548744034
+        },
+        "kga_worse_than_adapt": true,
+        "ratio_kga_over_adapt": 43.85714285714281,
+        "degenerate_zero_harmful": false
+      }
+    },
+    "panel_note": "0/10 CI beats-both, observed false-adapt 1/480"
+  },
+  "limitations": [
+    "KGA is worse than always-adapt on 7 of 10 backbones; a low observed false-adapt rate here reflects rare harmful cases, not useful selection",
+    "observed false-adapt 1/480 with harmful cells nearly absent on several backbones: the guarantee is barely exercised and should be reported as guarantee-untested, not as a safety success",
+    "observed interval-hit coverage is not computable from the released records: they carry decisions and realised benefits, not per-unit interval endpoints. false-adapt rates below are NOT interval-hit coverage and must not be read as it",
+    "no theoretical coverage claim: A1-A3 are not checkable from label-free deployment evidence, so any coverage figure here is an observed hit rate"
+  ],
+  "provenance": {
+    "item23.imagenet_r": {
+      "description": "ImageNet-R per-backbone spread behind the panel mean",
+      "method": "per-backbone rows read from MULTISEED_ANALYSIS_RESULTS.json and independently re-scored cell-by-cell in 06_decision_accounting.py",
+      "artifact_paths": [
+        "experiments/kbound/results/imagenetr_protocol_d_multiseed_v1/MULTISEED_ANALYSIS_RESULTS.json",
+        "experiments/kbound/results/imagenetr_protocol_d_multiseed_v1/per_condition_imagenet-r_*_seed{0..3}.json"
+      ]
+    }
+  },
+  "schema_version": "kbound-assumption-report/1"
+}

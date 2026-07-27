@@ -1,0 +1,67 @@
+{
+  "dataset": "CIFAR-10-C (SAR)",
+  "protocol": "CIFAR10C_SAR_REBUILD_PROTOCOL_v2",
+  "inference_unit": "seed (5 seeds over the corruption x severity grid)",
+  "calibration_test_separated": true,
+  "candidate_fixed_before_test": true,
+  "target_labels_used_for_routing": false,
+  "coverage_type": "diagnostic_only",
+  "theoretical_coverage_claimed": false,
+  "observed_coverage": null,
+  "n_rows": null,
+  "n_units": 5,
+  "coverage_interval_95": null,
+  "coverage_interval_method": null,
+  "support_overlap_status": "fail",
+  "radius_stability_status": "fail",
+  "conclusion_stability_status": "fail",
+  "leakage_status": "pass",
+  "deployment_gate": "reject",
+  "fallback_action": "none",
+  "alpha": 0.1,
+  "thresholds": {
+    "min_effective_units": 20,
+    "support_frac_outside_warn": 0.05,
+    "support_frac_outside_fail": 0.2,
+    "domain_auroc_warn": 0.75,
+    "domain_auroc_fail": 0.9,
+    "radius_cv_warn": 0.2,
+    "radius_cv_fail": 0.5,
+    "decision_disagreement_warn": 0.05,
+    "decision_disagreement_fail": 0.2,
+    "conclusion_change_fail": 0.0
+  },
+  "diagnostics": {
+    "harmful_base_rate_per_seed": [
+      0.5278,
+      0.1019,
+      0.088,
+      0.0741,
+      0.0995
+    ],
+    "seed0_over_seeds1to4_ratio": 5.807977991746905,
+    "seeds1to4_regret_kga_adapt_freeze": [
+      0.0015989582019823568,
+      0.000309895862031866,
+      0.14049652727596737
+    ]
+  },
+  "limitations": [
+    "TRACK IS QUARANTINED; see CIFAR10C_SAR_QUARANTINE.md. No certificate is emitted and no claim in the paper rests on it",
+    "seed 0's harmful base rate (0.5278) is 5.81x the mean of seeds 1-4 (0.0909); the seeds are not exchangeable, so A1 and A5 both fail at the seed unit",
+    "1 of 5 seeds beats both fixed policies and it is seed 0 -- the non-exchangeable one",
+    "observed interval-hit coverage is not computable from the released records: they carry decisions and realised benefits, not per-unit interval endpoints. false-adapt rates below are NOT interval-hit coverage and must not be read as it",
+    "no theoretical coverage claim: A1-A3 are not checkable from label-free deployment evidence, so any coverage figure here is an observed hit rate"
+  ],
+  "provenance": {
+    "item6.cifar10c_sar.quarantine": {
+      "description": "CIFAR-10-C SAR quarantined arm: per-seed harmful base rate and the seeds-1-4-only regret triple",
+      "method": "per-seed rows read from pstar_law.per_seed_cand; the seeds-1-4 triple is the unweighted mean of those four seeds, and it reproduces EXACTLY from the four committed per-condition files (0.00159896/0.00030990/0.14049653)",
+      "artifact_paths": [
+        "experiments/kbound/results/stress_grid_multiseed_v1/LOCKED_ANALYSIS_RESULTS.json",
+        "experiments/kbound/results/stress_grid_multiseed_v1/seed{1..4}/per_condition_cifar10c_sar_seed{s}.json"
+      ]
+    }
+  },
+  "schema_version": "kbound-assumption-report/1"
+}

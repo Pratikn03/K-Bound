@@ -1,0 +1,93 @@
+{
+  "dataset": "ImageNet-C (SAR)",
+  "protocol": "win_hunt_v5_imagenetc_ms / pooled_5seed",
+  "inference_unit": "corruption_condition (27 conditions x 5 seeds = 135 rows)",
+  "calibration_test_separated": true,
+  "candidate_fixed_before_test": true,
+  "target_labels_used_for_routing": false,
+  "coverage_type": "diagnostic_only",
+  "theoretical_coverage_claimed": false,
+  "observed_coverage": null,
+  "n_rows": 135,
+  "n_units": 27,
+  "coverage_interval_95": null,
+  "coverage_interval_method": "paired percentile bootstrap, 20000 replicates, rng seed 20260720 (from NUMBERS_PACK)",
+  "support_overlap_status": "fail",
+  "radius_stability_status": "fail",
+  "conclusion_stability_status": "fail",
+  "leakage_status": "pass",
+  "deployment_gate": "diagnostic_only",
+  "fallback_action": "none",
+  "alpha": 0.1,
+  "thresholds": {
+    "min_effective_units": 20,
+    "support_frac_outside_warn": 0.05,
+    "support_frac_outside_fail": 0.2,
+    "domain_auroc_warn": 0.75,
+    "domain_auroc_fail": 0.9,
+    "radius_cv_warn": 0.2,
+    "radius_cv_fail": 0.5,
+    "decision_disagreement_warn": 0.05,
+    "decision_disagreement_fail": 0.2,
+    "conclusion_change_fail": 0.0
+  },
+  "diagnostics": {
+    "beats_both_by_resampling_unit": {
+      "iid_135_rows_as_coded": {
+        "n_units": 135,
+        "beats_both": true,
+        "adapt_gap_ci95": [
+          -0.05187782358102224,
+          -0.003366530436884486
+        ]
+      },
+      "cluster_by_condition": {
+        "n_units": 27,
+        "beats_both": false,
+        "adapt_gap_ci95": [
+          -0.08075097290178139,
+          0.017546343494344637
+        ]
+      },
+      "cluster_by_corruption_family": {
+        "n_units": 3,
+        "beats_both": true,
+        "adapt_gap_ci95": [
+          -0.03207777506775326,
+          -0.019672223594453597
+        ]
+      }
+    }
+  },
+  "limitations": [
+    "CONCLUSION FLIPS ON THE RESAMPLING UNIT: beats-both holds treating the 135 cell-seed rows as independent and FAILS when they are clustered by condition (27 units). Both clusterings are admissible, so the promoted conclusion is a conclusion about the clustering",
+    "cluster-by-corruption-family has only 3 clusters, far below the declared minimum of 20 effective units; a 3-cluster percentile bootstrap is not a primary interval (A5 unmet)",
+    "observed interval-hit coverage is not computable from the released records: they carry decisions and realised benefits, not per-unit interval endpoints. false-adapt rates below are NOT interval-hit coverage and must not be read as it",
+    "no theoretical coverage claim: A1-A3 are not checkable from label-free deployment evidence, so any coverage figure here is an observed hit rate",
+    "support overlap and radius stability were not evaluated for this track; an unevaluated check is a failed check"
+  ],
+  "provenance": {
+    "item3.imagenetc_sar.ci.iid135_as_coded.exact_rank": {
+      "description": "ImageNet-C SAR gap CIs, resampling unit = iid_135_cellseed_rows_AS_CODED",
+      "method": "paired percentile bootstrap, 20000 replicates, rng seed 20260720",
+      "artifact_paths": [
+        "experiments/kbound/results/win_hunt_v5_imagenetc_ms/pooled_5seed/per_condition_imagenetc_sar_seed{0..4}.json"
+      ]
+    },
+    "item3.imagenetc_sar.ci.cluster_by_condition.exact_rank": {
+      "description": "ImageNet-C SAR gap CIs, resampling unit = cluster_by_condition_135_rows",
+      "method": "paired percentile bootstrap, 20000 replicates, rng seed 20260720",
+      "artifact_paths": [
+        "experiments/kbound/results/win_hunt_v5_imagenetc_ms/pooled_5seed/per_condition_imagenetc_sar_seed{0..4}.json"
+      ]
+    },
+    "item3.imagenetc_sar.ci.cluster_by_corruption_family.exact_rank": {
+      "description": "ImageNet-C SAR gap CIs, resampling unit = cluster_by_corruption_family_27_seedavg",
+      "method": "paired percentile bootstrap, 20000 replicates, rng seed 20260720",
+      "artifact_paths": [
+        "experiments/kbound/results/win_hunt_v5_imagenetc_ms/pooled_5seed/per_condition_imagenetc_sar_seed{0..4}.json"
+      ]
+    }
+  },
+  "schema_version": "kbound-assumption-report/1"
+}

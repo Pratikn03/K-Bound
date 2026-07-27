@@ -1,0 +1,579 @@
+{
+  "dataset": "PACS (4 LODO splits)",
+  "protocol": "PACS_VLCS_PREREG_PROTOCOL_v1",
+  "inference_unit": "domain x seed cell",
+  "calibration_test_separated": true,
+  "candidate_fixed_before_test": true,
+  "target_labels_used_for_routing": false,
+  "coverage_type": "diagnostic_only",
+  "theoretical_coverage_claimed": false,
+  "observed_coverage": null,
+  "n_rows": 216,
+  "n_units": 12,
+  "coverage_interval_95": null,
+  "coverage_interval_method": "Clopper-Pearson / Wilson on the pooled false-adapt count (from NUMBERS_PACK) -- a false-adapt interval, NOT an interval-hit coverage interval",
+  "support_overlap_status": "fail",
+  "radius_stability_status": "fail",
+  "conclusion_stability_status": "fail",
+  "leakage_status": "pass",
+  "deployment_gate": "diagnostic_only",
+  "fallback_action": "none",
+  "alpha": 0.1,
+  "thresholds": {
+    "min_effective_units": 20,
+    "support_frac_outside_warn": 0.05,
+    "support_frac_outside_fail": 0.2,
+    "domain_auroc_warn": 0.75,
+    "domain_auroc_fail": 0.9,
+    "radius_cv_warn": 0.2,
+    "radius_cv_fail": 0.5,
+    "decision_disagreement_warn": 0.05,
+    "decision_disagreement_fail": 0.2,
+    "conclusion_change_fail": 0.0
+  },
+  "diagnostics": {
+    "pooled_false_adapt": {
+      "count": 2,
+      "n": 216,
+      "rate": 0.009259259259259259,
+      "wilson95": [
+        0.00254,
+        0.03313
+      ],
+      "clopper_pearson95": [
+        0.00112,
+        0.03305
+      ]
+    },
+    "per_domain": {
+      "art_painting": {
+        "FA_u": {
+          "n": 3,
+          "min": 0.0,
+          "median": 0.0,
+          "max": 0.1111111111111111,
+          "mean": 0.037037037037037035,
+          "sd": 0.06415002990995841,
+          "values": [
+            0.0,
+            0.1111111111111111,
+            0.0
+          ]
+        },
+        "FA_c": {
+          "n": 3,
+          "min": 0.0,
+          "median": 0.0,
+          "max": 0.16666666666666666,
+          "mean": 0.05555555555555555,
+          "sd": 0.09622504486493762,
+          "values": [
+            0.0,
+            0.16666666666666666,
+            0.0
+          ]
+        },
+        "coverage": {
+          "n": 3,
+          "min": 0.0,
+          "median": 0.6666666666666666,
+          "max": 1.0,
+          "mean": 0.5555555555555555,
+          "sd": 0.5091750772173156,
+          "values": [
+            1.0,
+            0.6666666666666666,
+            0.0
+          ]
+        },
+        "adapt_rate": {
+          "n": 3,
+          "min": 0.0,
+          "median": 0.0,
+          "max": 0.6666666666666666,
+          "mean": 0.2222222222222222,
+          "sd": 0.38490017945975047,
+          "values": [
+            0.0,
+            0.6666666666666666,
+            0.0
+          ]
+        },
+        "base_rate_harmful": {
+          "n": 3,
+          "min": 0.16666666666666666,
+          "median": 0.16666666666666666,
+          "max": 0.4444444444444444,
+          "mean": 0.25925925925925924,
+          "sd": 0.16037507477489604,
+          "values": [
+            0.4444444444444444,
+            0.16666666666666666,
+            0.16666666666666666
+          ]
+        },
+        "regret_K_Bound": {
+          "n": 3,
+          "min": 0.016754849089516535,
+          "median": 0.03086419900258382,
+          "max": 0.0449735422929128,
+          "mean": 0.03086419679500439,
+          "sd": 0.014109346601698264,
+          "values": [
+            0.03086419900258382,
+            0.016754849089516535,
+            0.0449735422929128
+          ]
+        },
+        "regret_always_adapt": {
+          "n": 3,
+          "min": 0.013227512439092001,
+          "median": 0.0185185174147288,
+          "max": 0.04056437975830502,
+          "mean": 0.02410346987070861,
+          "sd": 0.014498960278541712,
+          "values": [
+            0.04056437975830502,
+            0.013227512439092001,
+            0.0185185174147288
+          ]
+        },
+        "regret_always_freeze": {
+          "n": 3,
+          "min": 0.03086419900258382,
+          "median": 0.0343915323416392,
+          "max": 0.0449735422929128,
+          "mean": 0.03674309121237861,
+          "sd": 0.007342735448251065,
+          "values": [
+            0.03086419900258382,
+            0.0343915323416392,
+            0.0449735422929128
+          ]
+        },
+        "n_test_cells_per_seed": [
+          18,
+          18,
+          18
+        ],
+        "verdict_per_seed": [
+          "SAFETY (no-harm)",
+          "NULL",
+          "NULL"
+        ],
+        "implied_fa_counts": [
+          0,
+          2,
+          0
+        ],
+        "implied_adapt_counts": [
+          0,
+          12,
+          0
+        ]
+      },
+      "cartoon": {
+        "FA_u": {
+          "n": 3,
+          "min": 0.0,
+          "median": 0.0,
+          "max": 0.0,
+          "mean": 0.0,
+          "sd": 0.0,
+          "values": [
+            0.0,
+            0.0,
+            0.0
+          ]
+        },
+        "FA_c": {
+          "n": 3,
+          "min": 0.0,
+          "median": 0.0,
+          "max": 0.0,
+          "mean": 0.0,
+          "sd": 0.0,
+          "values": [
+            0.0,
+            0.0,
+            0.0
+          ]
+        },
+        "coverage": {
+          "n": 3,
+          "min": 0.6111111111111112,
+          "median": 0.7777777777777778,
+          "max": 1.0,
+          "mean": 0.7962962962962963,
+          "sd": 0.19510469912690254,
+          "values": [
+            0.7777777777777778,
+            0.6111111111111112,
+            1.0
+          ]
+        },
+        "adapt_rate": {
+          "n": 3,
+          "min": 0.0,
+          "median": 0.0,
+          "max": 0.0,
+          "mean": 0.0,
+          "sd": 0.0,
+          "values": [
+            0.0,
+            0.0,
+            0.0
+          ]
+        },
+        "base_rate_harmful": {
+          "n": 3,
+          "min": 0.3333333333333333,
+          "median": 0.3333333333333333,
+          "max": 0.6111111111111112,
+          "mean": 0.4259259259259259,
+          "sd": 0.1603750747748961,
+          "values": [
+            0.6111111111111112,
+            0.3333333333333333,
+            0.3333333333333333
+          ]
+        },
+        "regret_K_Bound": {
+          "n": 3,
+          "min": 0.0052910049756368,
+          "median": 0.014991180764304267,
+          "max": 0.0238095223903656,
+          "mean": 0.014697236043435556,
+          "sd": 0.009262757388277986,
+          "values": [
+            0.0052910049756368,
+            0.014991180764304267,
+            0.0238095223903656
+          ]
+        },
+        "regret_always_adapt": {
+          "n": 3,
+          "min": 0.011463844113879733,
+          "median": 0.020282185739941068,
+          "max": 0.043209873967700534,
+          "mean": 0.02498530127384045,
+          "sd": 0.01638725342038209,
+          "values": [
+            0.043209873967700534,
+            0.020282185739941068,
+            0.011463844113879733
+          ]
+        },
+        "regret_always_freeze": {
+          "n": 3,
+          "min": 0.0052910049756368,
+          "median": 0.014991180764304267,
+          "max": 0.0238095223903656,
+          "mean": 0.014697236043435556,
+          "sd": 0.009262757388277986,
+          "values": [
+            0.0052910049756368,
+            0.014991180764304267,
+            0.0238095223903656
+          ]
+        },
+        "n_test_cells_per_seed": [
+          18,
+          18,
+          18
+        ],
+        "verdict_per_seed": [
+          "SAFETY (no-harm)",
+          "SAFETY (no-harm)",
+          "NULL"
+        ],
+        "implied_fa_counts": [
+          0,
+          0,
+          0
+        ],
+        "implied_adapt_counts": [
+          0,
+          0,
+          0
+        ]
+      },
+      "photo": {
+        "FA_u": {
+          "n": 3,
+          "min": 0.0,
+          "median": 0.0,
+          "max": 0.0,
+          "mean": 0.0,
+          "sd": 0.0,
+          "values": [
+            0.0,
+            0.0,
+            0.0
+          ]
+        },
+        "FA_c": {
+          "n": 3,
+          "min": 0.0,
+          "median": 0.0,
+          "max": 0.0,
+          "mean": 0.0,
+          "sd": 0.0,
+          "values": [
+            0.0,
+            0.0,
+            0.0
+          ]
+        },
+        "coverage": {
+          "n": 3,
+          "min": 0.8333333333333334,
+          "median": 0.9444444444444444,
+          "max": 1.0,
+          "mean": 0.9259259259259259,
+          "sd": 0.08486251286955257,
+          "values": [
+            0.9444444444444444,
+            1.0,
+            0.8333333333333334
+          ]
+        },
+        "adapt_rate": {
+          "n": 3,
+          "min": 0.0,
+          "median": 0.0,
+          "max": 0.0,
+          "mean": 0.0,
+          "sd": 0.0,
+          "values": [
+            0.0,
+            0.0,
+            0.0
+          ]
+        },
+        "base_rate_harmful": {
+          "n": 3,
+          "min": 0.16666666666666666,
+          "median": 0.2222222222222222,
+          "max": 0.3333333333333333,
+          "mean": 0.24074074074074073,
+          "sd": 0.08486251286955258,
+          "values": [
+            0.16666666666666666,
+            0.3333333333333333,
+            0.2222222222222222
+          ]
+        },
+        "regret_K_Bound": {
+          "n": 3,
+          "min": 0.04144620564248827,
+          "median": 0.0502645472685496,
+          "max": 0.056437386406792536,
+          "mean": 0.049382713105943464,
+          "sd": 0.007534394388055751,
+          "values": [
+            0.0502645472685496,
+            0.04144620564248827,
+            0.056437386406792536
+          ]
+        },
+        "regret_always_adapt": {
+          "n": 3,
+          "min": 0.0052910049756368,
+          "median": 0.012345678276485868,
+          "max": 0.014109346601698134,
+          "mean": 0.0105820099512736,
+          "sd": 0.004666227783713446,
+          "values": [
+            0.0052910049756368,
+            0.012345678276485868,
+            0.014109346601698134
+          ]
+        },
+        "regret_always_freeze": {
+          "n": 3,
+          "min": 0.04144620564248827,
+          "median": 0.0502645472685496,
+          "max": 0.056437386406792536,
+          "mean": 0.049382713105943464,
+          "sd": 0.007534394388055751,
+          "values": [
+            0.0502645472685496,
+            0.04144620564248827,
+            0.056437386406792536
+          ]
+        },
+        "n_test_cells_per_seed": [
+          18,
+          18,
+          18
+        ],
+        "verdict_per_seed": [
+          "NULL",
+          "NULL",
+          "NULL"
+        ],
+        "implied_fa_counts": [
+          0,
+          0,
+          0
+        ],
+        "implied_adapt_counts": [
+          0,
+          0,
+          0
+        ]
+      },
+      "sketch": {
+        "FA_u": {
+          "n": 3,
+          "min": 0.0,
+          "median": 0.0,
+          "max": 0.0,
+          "mean": 0.0,
+          "sd": 0.0,
+          "values": [
+            0.0,
+            0.0,
+            0.0
+          ]
+        },
+        "FA_c": {
+          "n": 3,
+          "min": 0.0,
+          "median": 0.0,
+          "max": 0.0,
+          "mean": 0.0,
+          "sd": 0.0,
+          "values": [
+            0.0,
+            0.0,
+            0.0
+          ]
+        },
+        "coverage": {
+          "n": 3,
+          "min": 0.9444444444444444,
+          "median": 1.0,
+          "max": 1.0,
+          "mean": 0.9814814814814815,
+          "sd": 0.03207501495497923,
+          "values": [
+            1.0,
+            0.9444444444444444,
+            1.0
+          ]
+        },
+        "adapt_rate": {
+          "n": 3,
+          "min": 0.0,
+          "median": 0.0,
+          "max": 0.0,
+          "mean": 0.0,
+          "sd": 0.0,
+          "values": [
+            0.0,
+            0.0,
+            0.0
+          ]
+        },
+        "base_rate_harmful": {
+          "n": 3,
+          "min": 0.0,
+          "median": 0.1111111111111111,
+          "max": 0.4444444444444444,
+          "mean": 0.1851851851851852,
+          "sd": 0.23129622216290363,
+          "values": [
+            0.4444444444444444,
+            0.0,
+            0.1111111111111111
+          ]
+        },
+        "regret_K_Bound": {
+          "n": 3,
+          "min": 0.019400351577334933,
+          "median": 0.05996472305721707,
+          "max": 0.1534391442934672,
+          "mean": 0.07760140630933973,
+          "sd": 0.06873782754278276,
+          "values": [
+            0.019400351577334933,
+            0.1534391442934672,
+            0.05996472305721707
+          ]
+        },
+        "regret_always_adapt": {
+          "n": 3,
+          "min": 0.0,
+          "median": 0.004409170813030667,
+          "max": 0.028218693203396268,
+          "mean": 0.010875954672142312,
+          "sd": 0.01518018878793017,
+          "values": [
+            0.028218693203396268,
+            0.0,
+            0.004409170813030667
+          ]
+        },
+        "regret_always_freeze": {
+          "n": 3,
+          "min": 0.019400351577334933,
+          "median": 0.05996472305721707,
+          "max": 0.1534391442934672,
+          "mean": 0.07760140630933973,
+          "sd": 0.06873782754278276,
+          "values": [
+            0.019400351577334933,
+            0.1534391442934672,
+            0.05996472305721707
+          ]
+        },
+        "n_test_cells_per_seed": [
+          18,
+          18,
+          18
+        ],
+        "verdict_per_seed": [
+          "SAFETY (no-harm)",
+          "NULL",
+          "NULL"
+        ],
+        "implied_fa_counts": [
+          0,
+          0,
+          0
+        ],
+        "implied_adapt_counts": [
+          0,
+          0,
+          0
+        ]
+      }
+    },
+    "panel_row_regret_kga_adapt_freeze": [
+      0.0431,
+      0.0176,
+      0.0446
+    ]
+  },
+  "limitations": [
+    "only 12 effective units (domain x seed) against a declared minimum of 20; A5 unmet",
+    "art_painting seed 1 has false-adapt 0.1111 (2 of 18 cells), ABOVE alpha; the pooled rate hides a cell where the marginal bound is not met in-sample",
+    "art_painting seed 2 abstains on all 18 cells (decision coverage 0.0), so the guarantee is untested there rather than satisfied",
+    "acceptable pooled false-adapt coexists with routing utility worse than always-adapt on this track: coverage is not utility",
+    "observed interval-hit coverage is not computable from the released records: they carry decisions and realised benefits, not per-unit interval endpoints. false-adapt rates below are NOT interval-hit coverage and must not be read as it",
+    "no theoretical coverage claim: A1-A3 are not checkable from label-free deployment evidence, so any coverage figure here is an observed hit rate"
+  ],
+  "provenance": {
+    "item23.pacs": {
+      "description": "PACS per-domain per-seed spread behind the panel mean",
+      "method": "per-seed rates read from PACS_MULTISEED_RESULTS.json; integer counts back-derived as rate x 18 (exact, since every rate is a multiple of 1/18); Wilson and Clopper-Pearson on the pooled 2/216",
+      "artifact_paths": [
+        "experiments/kbound/results/pacs_multiseed_v1/PACS_MULTISEED_RESULTS.json",
+        "experiments/kbound/results/per_cell/pacs_*_seed{1,2}_percell.json"
+      ]
+    }
+  },
+  "schema_version": "kbound-assumption-report/1"
+}
