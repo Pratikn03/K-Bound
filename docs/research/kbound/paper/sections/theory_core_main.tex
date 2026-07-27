@@ -33,31 +33,17 @@ is determined and no such pair exists: matched-evidence ambiguity is a strictly-
 phenomenon.)
 \end{theorem}
 \begin{proof}
-Choose $0<\delta<\min\{\beta-|M|,\tfrac12\}$ and construct the two label laws explicitly. For
-$\theta\in\{+1,-1\}$ define $P_T^\theta$ on $\mathcal X\times\{0,1\}$ by
-$P_T^\theta(dx,y)=\mu_T(dx)\,K^\theta(x,y)$ with label kernel
-\[
-K^\theta(x,y)=
-\begin{cases}
-\tfrac12+\theta\delta, & x\in D,\ y=f_a(x),\\[2pt]
-\tfrac12-\theta\delta, & x\in D,\ y=f_0(x),\\[2pt]
-K^{\circ}(x,y), & x\notin D,
-\end{cases}
-\]
-where $K^{\circ}$ is any fixed conditional label law used by \emph{both} worlds (e.g.\ the source
-conditional). On $D$ the binary labels satisfy $\{f_0(x),f_a(x)\}=\{0,1\}$, so $K^\theta(x,\cdot)$
-is a valid Bernoulli law ($\delta<\tfrac12$ keeps both masses in $(0,1)$); off $D$ the two
-predictors agree, so those labels contribute identically to both risks and cancel in $\Delta$.
-\emph{Class membership:} $\eta_a^\theta(x)=\tfrac12+\theta\delta$ on $D$, hence
-$\bar a_\theta=\tfrac12+\theta\delta$ and
-$\gamma_\theta=\bar a_\theta-(M+\tfrac12)=\theta\delta-M$, with
-$|\gamma_\theta|\le\delta+|M|<\beta$; both worlds lie in $\mathcal{C}_\beta$.
-\emph{Matched evidence:} the input marginal $\mu_T$ and $(f_0,f_a,s)$ are unchanged, and
-$Z=\phi(X_{1:m},f_0,f_a)$ uses no labels, so
-$\Law(\widetilde Z\mid P_T^{+})=\Law(\widetilde Z\mid P_T^{-})$ for $\widetilde Z=(Z,M)$.
-\emph{Opposite signs:} Lemma~\ref{lem:reduction} gives
-$\Delta_\theta=2\mu_T(D)\,\theta\delta\neq0$ with $\sign\Delta_\theta=\theta$.
-This completes the construction.
+This is Lemma~\ref{lem:fibre} read at one radius. Choose
+$0<\delta<\min\{\beta-|M|,\tfrac12\}$ and apply the lemma with the two constant kernels
+$\eta\equiv\tfrac12+\theta\delta$, $\theta\in\{+1,-1\}$, holding the off-$D$ kernel $K^\circ$
+common to both worlds. The lemma supplies the two laws $P_T^\theta$, and:
+\emph{class membership,} $\bar a_\theta=\tfrac12+\theta\delta$ so
+$\gamma_\theta=\theta\delta-M$ with $|\gamma_\theta|\le\delta+|M|<\beta$, hence both worlds lie
+in $\mathcal C_\beta$; \emph{matched evidence,} $\Law(W\mid P_T^\eta)$ does not depend on $\eta$
+by the lemma and $\widetilde Z=(Z,M)$ is a function of $W$, so
+$\Law(\widetilde Z\mid P_T^{+})=\Law(\widetilde Z\mid P_T^{-})$; \emph{opposite signs,}
+Lemma~\ref{lem:reduction} gives $\Delta_\theta=2\mu_T(D)\,\theta\delta\neq0$ with
+$\sign\Delta_\theta=\theta$.
 \end{proof}
 \noindent The two evidence laws here coincide \emph{exactly}, not merely approximately: the
 construction changes only the label kernel on $D$, and $Z$ is a function of unlabeled inputs and
@@ -154,51 +140,3 @@ $M=\beta=0$ & benefit is identically zero & \textsc{abstain} \\
 \bottomrule
 \end{tabular}
 \end{center}
-
-\begin{theorem}[Finite-sample adapt/freeze/abstain certificate]\label{thm:certificate}\label{thm:cert}
-Suppose $\Delta$, $\widehat\Delta$, and the nonnegative random radius $\varepsilon$ are measurable
-on a common probability space containing all calibration, benefit-model fitting, and
-deployment-unit randomness, and that the benefit interval satisfies marginal coverage
-\[
-\Pr\!\bigl[\,|\widehat\Delta-\Delta|\le\varepsilon\,\bigr]\ \ge\ 1-\alpha .
-\]
-Define
-\[
-g(Z)=\begin{cases}
-\textsc{adapt} & \widehat\Delta-\varepsilon>0,\\
-\textsc{freeze} & \widehat\Delta+\varepsilon<0,\\
-\textsc{abstain} & \text{otherwise}.
-\end{cases}
-\]
-Then, marginally over that common probability space,
-\begin{align*}
-\Pr\bigl[g(Z)=\textsc{adapt},\Delta\le0\bigr]&\le\alpha,\\
-\Pr\bigl[g(Z)=\textsc{freeze},\Delta\ge0\bigr]&\le\alpha.
-\end{align*}
-\end{theorem}
-\begin{proof}
-On the event $\{|\widehat\Delta-\Delta|\le\varepsilon\}$, the condition
-$\widehat\Delta-\varepsilon>0$ implies $\Delta>0$, so a false adapt requires the complement of
-this event, which has probability at most $\alpha$. The freeze case is symmetric.
-\end{proof}
-Exchangeability, or an explicit shift correction, is one route to this coverage assumption. Risk
-alignment is not required for the conditional-on-coverage implication.
-
-\begin{remark}[Marginal vs.\ conditional error]\label{rem:fa-marginal}
-Theorem~\ref{thm:certificate} bounds the \emph{marginal, unconditional} false-adapt and
-false-freeze probabilities ($\mathrm{FA}_{\mathrm u}$). It does \emph{not} bound the conditional
-rate $\mathrm{FA}_{\mathrm c}=\Pr[\Delta\le0\mid\textsc{adapt}]$, which we report empirically.
-Risk alignment (Definition~\ref{def:risk-align}) is required for the \emph{frontier}
-identifiability claim; coverage alone certifies the \emph{interval} rule above.
-\end{remark}
-
-\begin{remark}[Fallback when assumptions are unsupported]\label{cor:abstain-valid}
-If interval coverage---or the calibration assumptions supporting it (exchangeability, or an explicit
-shift correction)---cannot be justified on the deployment batch, Theorem~\ref{thm:certificate}
-supplies no level-$\alpha$ protection for either strict action. A deployment must then use a
-separately declared operational fallback, such as abstention or serving the frozen model; this is a
-policy recommendation, not a conclusion that either fallback is optimal. If instead \emph{risk alignment}
-(Definition~\ref{def:risk-align}) cannot be justified, the population-frontier interpretation and the
-transferability of the benefit estimator are unsupported, even though the interval implication of
-Theorem~\ref{thm:certificate} remains valid \emph{conditional on coverage} (cf.\ Theorem~\ref{lem:nonid}).
-\end{remark}

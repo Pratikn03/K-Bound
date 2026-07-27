@@ -1,0 +1,46 @@
+%% figure_fallback.tex -- graceful degradation for figure assets that are not in the tree.
+%%
+%% WHY THIS EXISTS
+%%   Six PNG assets referenced by the manuscripts are absent from this repository
+%%   snapshot (they predate the 2026-07 restructure and were never committed):
+%%     fig_decision_flow, fig_frontier_schematic, fig_certificate,
+%%     fig_decisive_decisions_cifar10c, fig_decisive_pareto_cifar10c, fig_natural_forest
+%%   (the long manuscript kbound.tex references a further ten in the same state).
+%%   Without this file pdflatex raises "File not found" and typesets a black
+%%   rectangle containing the raw path -- a broken image box in the shipped PDF.
+%%
+%% WHAT IT DOES
+%%   \kbgraphics[<opts>]{<path>} == \includegraphics[<opts>]{<path>} when <path>
+%%   exists, and otherwise typesets a clearly-labelled placeholder frame naming the
+%%   absent asset. Nothing is invented: the placeholder asserts no data and is
+%%   visually impossible to mistake for a result. Restore the PNGs and every call
+%%   silently reverts to the real figure with no source edit and no rebuild flag.
+%%
+%%   A PLACEHOLDER IS NOT A FIGURE. It is not a null result, not an empty plot,
+%%   and not evidence of anything. Every quantity the absent figures would display
+%%   is reported numerically in the text and tables.
+%%
+%%   \detokenize is used to print the path: the asset names contain underscores,
+%%   which are catcode-8 subscript characters by the time the macro sees them.
+
+\newcommand{\kbplaceholder}[1]{%
+  \begingroup
+  \setlength{\fboxsep}{6pt}%
+  \setlength{\fboxrule}{0.8pt}%
+  \fbox{\begin{minipage}[c][0.18\textheight][c]{0.84\linewidth}%
+    \centering\normalfont\footnotesize
+    \textbf{FIGURE ASSET NOT PRESENT IN THIS BUILD}\par\vspace{4pt}
+    \texttt{\detokenize{#1}}\par\vspace{6pt}
+    This placeholder is not a figure and reports no result. The asset is absent from
+    the repository snapshot used for this build. The caption below states what the
+    figure would show, and every quantity it would display is given numerically in
+    the text and tables. Restoring the file to \texttt{figures/} reinstates the
+    figure automatically, with no change to the source.\par
+  \end{minipage}}%
+  \endgroup
+}
+
+%% \kbgraphics[<includegraphics opts>]{<path>}
+\newcommand{\kbgraphics}[2][width=\linewidth]{%
+  \IfFileExists{#2}{\includegraphics[#1]{#2}}{\kbplaceholder{#2}}%
+}

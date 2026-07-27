@@ -1,0 +1,232 @@
+% =====================================================================
+% necessity_observed.tex -- Act 2, part 3: is the impossibility configuration
+% OBSERVED, or only constructed?
+%
+% Shared by kbound_short_body.tex (short + TMLR builds) and kbound.tex.
+% Placed immediately after theory_core_main.tex / main_theory_5.tex, i.e. right
+% after lem:nonid, because its whole job is to say what lem:nonid's constructed
+% pair looks like in logged data.
+%
+% LABEL DISCIPLINE: only labels present in BOTH build aux files are \ref'd here
+% (lem:nonid, lem:fibre, thm:headline, cor:beta-is-beta, thm:beta-minimax,
+% epi:thm-ident, epi:thm-conformal, sec:beta-sweep, sec:decision-value,
+% thm:certificate, ass:deploy). Do NOT add \ref{sec:episode}, \ref{tab:schema-base}
+% or \ref{sec:impossible} here: those exist in the short build only.
+%
+% SOURCE OF EVERY NUMBER BELOW:
+%   experiments/kbound/necessity_v1/necessity_nn.py       -> necessity_nn_results.json
+%   experiments/kbound/necessity_v1/necessity_ceiling.py  -> necessity_ceiling_results.json
+%   Seed 20260727, deterministic. Memos: NECESSITY_NN_FINDINGS.md,
+%   NECESSITY_CEILING_FINDINGS.md in the same directory.
+% =====================================================================
+
+Theorem~\ref{lem:nonid} is proved by constructing two target laws. A referee is entitled to ask
+whether that configuration is a worst case that practice never visits. We measured it. On the
+$6{,}480$ logged CIFAR-10-C and $405$ logged ImageNet-C deployment cells --- the same artifacts that
+carry \S\ref{sec:beta-sweep} and \S\ref{sec:decision-value} --- we ran two analyses that share no
+estimator: a per-pair test for deployments that are indistinguishable in label-free evidence but
+have opposite-signed benefit, and a population-level estimate of the conditional law of
+$\sign\Delta$ given evidence at its own noise floor. Throughout, $B$ (realized benefit),
+$a_{\mathrm{oracle}}$, the oracle action and the regime label are \emph{labels}: they are the
+quantity whose conditional behaviour is being estimated and are never inputs to any distance,
+neighbourhood, cross-fitting group or matching rule.
+
+\paragraph{The verdict, stated before the numbers.} The impossibility configuration is
+\emph{observed}, but it is \emph{rare}, and the rarity is the more surprising half. Matched-evidence
+pairs disagree in benefit sign far \emph{less} often than chance --- $39\times$ less on CIFAR-10-C
+and $1.5\times$ less on ImageNet-C, with permutation $p_{\text{below}}$ at the floor of $0.0005$ in
+every specification we ran. Label-free evidence is therefore highly informative about the sign of
+the benefit and still not sufficient to determine it, which is exactly the gap
+Theorem~\ref{lem:nonid} describes and exactly the reason a declared $\beta$ cannot be replaced by an
+audit. We report this as a \emph{bound on the ambiguity}, not as a demonstration that ambiguity is
+common.
+
+\paragraph{Existence, at single-deployment and at population resolution.} A \emph{law} is a
+deployment condition modulo the replicate index; its cells are i.i.d.\ draws, so within-law scatter
+\emph{is} the sampling noise of the evidence. Distances are Mahalanobis in the pooled within-law
+covariance, so $d{=}1$ means ``one noise standard deviation apart'', and two deployments are called
+matched at level $q$ iff $d_{ij}$ is below the $q$-quantile of the within-law distances of
+\emph{their own two laws} --- a nonparametric statement that the two are no further apart than two
+repeats of either one of them. A cell's benefit sign is called resolvable only if
+$|B|\ge0.01$, its sign agrees with its law's mean, and the law's mean is significantly nonzero
+across replicates; the conformal interval on $\widehat\Delta$ is deliberately \emph{not} used for
+this, since it is an interval on the prediction, not on the realized benefit.
+
+The strongest witness is a pair of ImageNet-C \textsc{tent} deployments,
+\texttt{gaussian\_noise|s1|small|aggressive|imbalanced} against
+\texttt{impulse\_noise|s3|small|aggressive|iid}, five replicates each. Their evidence is
+indistinguishable in the strong sense: Hotelling $d^2=2.34$ on $9$ d.f.\ ($p=0.985$), no coordinate
+discrepancy exceeding $1.01$ standard errors, and a $95\%$ upper confidence bound on the
+noncentrality of $3\times10^{-61}$ --- a positive equivalence result rather than a failure to reject. The
+assumption-free version is sharper still: enumerating all $\binom{10}{5}=252$ re-splits of the two
+laws' pooled replicates, $99.2\%$ give a \emph{larger} $d^2$ than the observed one (median re-split
+$d^2=6.89$), so the two laws' evidence is more similar than a random re-split of their own
+replicates. Their benefits are $-5.33$ [$-8.11$, $-2.55$] and $+3.50$ [$+2.34$, $+4.66$] accuracy
+points, with perfect rank separation across replicates (exact Mann--Whitney $U=0$, $p=0.0079$, the
+minimum attainable at $5$ versus $5$). The mechanism is visible in one line: the two deployments
+differ by $24$ points of base accuracy ($0.682$ versus $0.441$) and their entropy- and
+confidence-based evidence still cannot be told apart, because $a_0$ is a label quantity and the
+audit cannot see it. This is Lemma~\ref{lem:fibre}'s free label kernel, instantiated.
+
+On CIFAR-10-C the cleanest witness is a same-method, same-corruption, same-severity pair
+(\textsc{tent}, \texttt{jpeg\_compression|s5}) differing only in the stream's class balance:
+$d=1.66$ against a $q{=}0.25$ pair-specific floor of $2.64$, with $97.8\%$ of same-law replicate
+pairs farther apart, base accuracies $0.7290$ and $0.7295$, and law-mean benefits $+1.58$
+[$+0.82$, $+2.34$] and $-1.64$ [$-2.82$, $-0.45$] accuracy points. \textsc{KGA} abstained on both
+cells (\textsc{blind} zone) --- the correct behaviour, and precisely the decision yield the
+certificate pays for it. On ImageNet-C, $365$ of the opposite-sign matched pairs differ
+\emph{only} in corruption type and/or severity with every deployment knob held fixed, so they are
+pure distribution-shift witnesses rather than artifacts of varying the protocol.
+
+\paragraph{Rarity, and the clean negative.} Table~\ref{tab:necessity-rate} gives the rates against
+a permutation null that holds the matched-pair set and the entire evidence geometry fixed and
+permutes only the cell-to-benefit assignment, so it destroys any evidence-to-sign relation while
+preserving both marginals. The observed rate is \emph{below} the null everywhere, by a factor of
+$39$ on CIFAR-10-C and $1.5$ on ImageNet-C, and a random-pair control with no matching at all
+returns $0.2723$ and $0.2232$, consistent with the nulls. We ran the excess-over-chance test the
+lemma's existence claim does not require, it came out the other way, and the number belongs here as
+the honest calibration of how rare the failure is: matching on label-free evidence \emph{suppresses}
+benefit-sign disagreement strongly, which is a statement that $Z$ is informative, not that it is
+sufficient.
+
+\begin{table}[t]\centering\footnotesize
+\caption{\textbf{Matched-evidence benefit-sign disagreement, observed against a geometry-fixed
+permutation null.} A pair is matched at level $q$ iff its evidence distance is below the
+$q$-quantile of the within-law replicate distances of its own two laws; $q{=}0.95$ is the formal
+non-rejection level and $q{=}0.25$ is strictly stronger. ``Law'' rows average replicates and apply a
+Hotelling test at $\chi^2_9(0.95)=16.92$. Rates are over pairs whose \emph{both} benefit signs are
+individually resolvable. Null is $2{,}000$ permutations of the cell-to-benefit assignment within
+benchmark $\times$ method with the matched set held fixed; $p_{\text{below}}=0.0005$ (the
+permutation floor) in every row. A random-pair control with no matching gives $0.2723$
+(CIFAR-10-C) and $0.2232$ (ImageNet-C). \emph{Every row is below its null.}}
+\label{tab:necessity-rate}
+\begin{tabular}{@{}llrrrl@{}}
+\toprule
+Benchmark & Level & Pairs & Opp.\ sign & Observed & Null [95\% CI] \\
+\midrule
+CIFAR-10-C & cell, $q{=}0.25$ & $30{,}555$ & $13$ & $0.00043$ & $0.187$ [$0.176$, $0.199$] \\
+CIFAR-10-C & cell, $q{=}0.95$ & $252{,}277$ & $1{,}194$ & $0.00473$ & $0.185$ [$0.178$, $0.193$] \\
+CIFAR-10-C & law             & $1{,}172$   & $\mathbf{0}$ & $0.000$ & $0.164$ [$0.138$, $0.190$] \\
+\midrule
+ImageNet-C & cell, $q{=}0.25$ & $867$   & $62$      & $0.0715$ & $0.250$ [$0.208$, $0.288$] \\
+ImageNet-C & cell, $q{=}0.95$ & $9{,}901$ & $1{,}588$ & $0.1604$ & $0.240$ [$0.225$, $0.256$] \\
+ImageNet-C & law              & $169$   & $\mathbf{3}$ & $0.0178$ & $0.218$ [$0.156$, $0.274$] \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\paragraph{The ambiguity is real, certified, and narrow --- and its width is $\beta$.} The second
+analysis asks not whether a pair exists but how wide the blind spot is. It first bounds what any
+frontier rule could extract: the best cross-fitted label-free predictor of $\sign\Delta$ from the
+evidence reaches AUC $0.983$ and accuracy $0.931$ against a $0.740$ majority baseline on CIFAR-10-C
+(and $0.970$ / $0.910$ held out across corruption families; permuted-label null AUC $0.504$). It
+then fixes a radius at the median within-cell replicate distance --- pure evidence noise, since
+replicates are independent draws of the same condition --- and estimates
+$\Pr(\sign\Delta={+}1\mid Z\in N)$ in each matched neighbourhood with a cluster bootstrap over
+distinct deployment conditions, widened to a Clopper--Pearson interval at the cluster count so that
+neither ambiguity nor determinacy can be certified by a degenerate interval. On CIFAR-10-C,
+$29.4\%$ of the $4{,}949$ evaluable cells sit in neighbourhoods whose
+interval lies entirely inside $[0.05,0.95]$, and $20.2\%$ entirely inside $[0.25,0.75]$: both signs
+occur at $\ge25\%$ among deployments the evidence cannot tell apart, and this survives $135$ matched
+observations drawn from $28$ distinct conditions, so it is ambiguity in the conditional law and not
+in the estimate. Under the same pipeline with the labels permuted and the geometry held fixed the
+figure is $85.4\pm0.9\%$. The fraction moves only between $0.29$ and $0.34$ across the $25$th,
+$50$th and $75$th percentile radii and under a strict variant that forbids matching a deployment to
+the same corruption and severity run by a different adapter. Expressed over \emph{all} $6{,}480$
+cells the figure is $22.5\%$, but that restatement counts every non-evaluable cell as unambiguous;
+the evaluable subset is itself mildly selected (mean $|\Delta|$ $0.116$ evaluable against $0.197$
+non-evaluable), so $22.5\%$ is a conservative convention rather than a measurement and the claim we
+make is the $29.4\%$ over evaluable cells.
+
+The width of that ambiguous band is the number the spine predicts. Table~\ref{tab:necessity-band}
+places three quantities side by side that were computed without reference to one another. The local
+dispersion of the benefit over evidence-matched deployments, the global residual budget the same
+artifact needs, and the episode-conformal $\widehat\beta$ that Theorem~\ref{epi:thm-conformal}
+returns from labelled history all land between $1$ and $2$ accuracy points, agreeing to within a
+factor of $1.75$. Half of the residual benefit dispersion that a declared budget must cover
+($0.519$ of $\operatorname{Var}\gamma$) survives conditioning on the label-free evidence at its own
+noise floor. That is Corollary~\ref{cor:beta-is-beta} as a measurement rather than an identity: the
+radius of the ambiguity is the budget, and the budget is the radius of the band on which the rule
+must abstain. It also brackets decision yield --- a label-free rule must abstain where the fibre is
+certified ambiguous and may commit where it is certified determined, giving
+$\text{yield}\le0.706$ with $\ge0.543$ certifiably committable. The deployed certificate's measured
+yield with the same benefit model, $0.594$--$0.657$ across the eight split protocols, sits inside
+that bracket near its top --- but this is indicative and not a matched comparison: the bracket is
+derived from evidence neighbourhoods and the yield is measured under a different splitting
+protocol, and it is a range of per-protocol means, not of individual splits ($0.246$--$0.987$).
+
+\begin{table}[t]\centering\footnotesize
+\caption{\textbf{Three unrelated routes to the same drift budget on CIFAR-10-C.} The first two are
+local and global dispersions of the benefit residual $\gamma=B-M(Z)$ over evidence-matched
+deployments with no episode structure; the third is a conformal order statistic over \emph{episodes}
+with outcomes revealed retrospectively (Theorem~\ref{epi:thm-conformal}), which shares neither
+estimator nor sample construction with the first two. They agree to a factor of $1.75$.
+\emph{The agreement is conditional on the benefit model.} All four rows use the gradient-boosted
+$M$; the same episode-conformal estimator run with the alternative confidence-based $M$ on the same
+$135$ splits returns $0.0536$, a factor of $4.9$ rather than $1.75$. The residual $\gamma=B-M(Z)$ is
+defined relative to $M$, so a weaker $M$ leaves a larger residual and needs a larger budget; the
+three routes agree for the $M$ this paper deploys, and we do not claim more.}
+\label{tab:necessity-band}
+\begin{tabular}{@{}lr@{}}
+\toprule
+Quantity & Value \\
+\midrule
+Local fibre radius on $B$, median over matched neighbourhoods & $0.0130$ \\
+Local fibre radius on $\gamma$, median & $0.0108$ \\
+Global $q_{0.9}|\gamma|$ over all cells & $0.0155$ \\
+Episode-conformal $\widehat\beta$ (gradient-boosted $M$), mean over $135$ splits & $0.0190$ \\
+\midrule
+Within-fibre share of $\operatorname{Var}\gamma$ & $0.519$ \\
+Ratio $\widehat\beta\,/$ local fibre radius & $1.75$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\paragraph{Where the two analyses agree, where they do not, and which we credit.} They agree on the
+conclusion --- evidence is highly informative about the benefit sign and is not sufficient to
+determine it --- on the rarity, and, independently, on a structural defect in the logged evidence
+vector recorded below. They disagree on \emph{which benchmark} carries the evidence, and the two
+disagreements do not have the same status. The pair analysis finds its population-level witnesses
+only on ImageNet-C and none on CIFAR-10-C; the neighbourhood analysis certifies ambiguity only on
+CIFAR-10-C and none on ImageNet-C. We credit the CIFAR-10-C zero and discount the ImageNet-C one.
+The ImageNet-C zero is a coverage limitation: with $81$ deployment conditions, only $52.6\%$ of
+cells have enough distinct matched neighbours to be evaluated at all, and the evaluable subset is
+selected in exactly the adverse direction ($97.7\%$ of evaluable cells have $\Delta>0$ against
+$51.0\%$ of the non-evaluable ones), so the method measures the sign-pure half of that artifact and
+correctly reports it as sign-pure. Its $\beta$ comparison inherits the same defect (ratio $16.8$
+against $1.75$) and we do not quote it. The CIFAR-10-C zero is a measurement: all $229$ of its
+witness law pairs become separable once ten replicates are averaged.
+
+\paragraph{What that structural finding says about the spine.} On CIFAR-10-C the
+non-identifiability is entirely a finite-sample property of \emph{single} deployments and it
+dissolves under a population of them; on ImageNet-C --- the harder artifact --- three pairs survive
+averaging. That is the spine's own architecture appearing in the data: what escapes the
+single-deployment impossibility is a population of deployments, which is what
+Theorem~\ref{epi:thm-ident} formalises and prices. It also sharpens the caveat on that escape.
+Averaging replicates of a \emph{fixed} condition is not the same operation as averaging over a
+population of \emph{distinct} deployments, and on the harder benchmark it does not suffice; the
+escape route remains the one Theorem~\ref{epi:thm-ident}(b) describes, whose binding resource is
+historical \emph{labels}, not more unlabeled repetitions.
+
+\paragraph{Threats we could not remove, and one disclosure.} ``Indistinguishable'' means ``not
+distinguishable at ten (CIFAR-10-C) or five (ImageNet-C) replicates''. Only the headline pair
+carries a tight equivalence bound; the other two surviving ImageNet-C pairs ($d^2=12.8$ and $15.3$,
+exact re-split $13.5\%$ and $14.3\%$) are consistent with a real but undetected evidence gap and we
+do not quote them as population-level witnesses. Screening covered $209{,}628$ CIFAR-10-C and
+$3{,}240$ ImageNet-C law pairs, so three survivors is unremarkable under multiplicity alone --- which
+is why the headline pair rests on an exact $252$-fold enumeration and an exact Mann--Whitney rather
+than on a screening $p$-value. The witnesses are also adapter-specific and disjoint across
+benchmarks (CIFAR-10-C: \textsc{eata} $884$, \textsc{tent} $310$, \textsc{sar} $0$; ImageNet-C:
+\textsc{tent} $1{,}586$, \textsc{sar} $2$, \textsc{eata} $0$), so whatever generates a witness is
+not a property of the evidence vector alone. Most importantly, this measurement speaks only to
+\emph{the evidence vector this system logs}. A richer label-free statistic could shrink the band;
+bounding what \emph{any} label-free statistic can do is the job of Theorem~\ref{thm:beta-minimax}
+and Corollary~\ref{cor:beta-is-beta}, and no experiment can do it. Finally, the disclosure both
+analyses returned independently: the logged evidence vector is \emph{nine}-dimensional, not eleven.
+Two of its coordinates are \emph{exact} linear functions of the others ---
+$\texttt{entropy\_drop}=\texttt{pre\_entropy}-\texttt{post\_entropy}$ and
+$\texttt{pbal\_drop}=\texttt{pre\_pbal}-\texttt{post\_pbal}$, maximum residual exactly $0.0$ --- so
+every covariance of the logged $Z$ is exactly singular and two of the audit's eleven coordinates
+carry no information beyond the other nine. That does not affect any result in this paper, whose
+estimators are invariant to it, but it is a defect in the evidence map as documented and we record
+it here.

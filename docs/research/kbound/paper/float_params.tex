@@ -1,0 +1,22 @@
+% ---------------------------------------------------------------------
+% float_params.tex -- float-placement parameters, shared by all three drivers.
+%
+% Added 2026-07-27 in the length pass. LaTeX's defaults (topfraction 0.7,
+% textfraction 0.2, totalnumber 3) refuse to put a large table on a page that
+% also carries text, so in a table-dense paper every big float is deferred to a
+% float-only page at the end. That cost this paper NINE consecutive
+% table-only pages in the single-column build. Relaxing the fractions lets the
+% same tables sit on text pages instead. This changes LAYOUT ONLY: no float is
+% removed, resized, or reordered, and the float order LaTeX guarantees is
+% unaffected.
+% ---------------------------------------------------------------------
+\setcounter{topnumber}{4}
+\setcounter{bottomnumber}{3}
+\setcounter{totalnumber}{6}
+\setcounter{dbltopnumber}{4}
+\renewcommand{\topfraction}{0.92}
+\renewcommand{\bottomfraction}{0.75}
+\renewcommand{\textfraction}{0.06}
+\renewcommand{\floatpagefraction}{0.80}
+\renewcommand{\dbltopfraction}{0.92}
+\renewcommand{\dblfloatpagefraction}{0.80}

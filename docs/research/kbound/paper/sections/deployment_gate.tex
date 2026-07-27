@@ -1,0 +1,176 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% deployment_gate.tex -- the operational counterpart to assumption_contract.tex.
+%%
+%% PLACEMENT: after \subsection{Deployment Semantics and Failure-Safe Behavior}
+%% (short body) / the corresponding Method material in kbound.tex. It FORMALISES the
+%% failure-safe defaults already described there; it does not replace them.
+%%
+%% PORTABILITY: no algorithm float. kbound.tex loads algorithm2e, the short drivers load
+%% algorithm+algpseudocode, and those cannot both be served by one source file, so the
+%% gate is an enumerate. Uses only amsmath, booktabs, enumerate, and `remark'.
+%%
+%% DEFINES: sec:gate, sec:diagnostics, tab:diagnostics, sec:assumption-report,
+%%          tab:report-schema, rem:report-reading
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\subsection{The assumption gate}\label{sec:gate}
+
+The failure-safe defaults above abstain when the batch is too small, the evidence lies
+outside calibration support, a configuration hash differs, or no valid radius exists.
+Those are the right reflexes, and the gate below is what they look like once they are
+stated as a precondition on \emph{certification} rather than as guards inside the
+decision path. Because (A1)--(A6) cannot be verified label-free
+(Remark~\ref{rem:contract-not}), a deployment is permitted to issue strict
+\textsc{adapt}/\textsc{freeze} decisions only after passing it. Thresholds are fixed
+before deployment and versioned with the protocol: a gate tuned after seeing the outcome
+violates (A6) and voids the certificate.
+
+\smallskip
+\noindent\textbf{Inputs.} Frozen candidate $f_a$; frozen benefit estimator
+$\widehat\Delta$; calibration evidence and residuals; unlabelled deployment evidence $Z$;
+the declared inference unit; thresholds fixed before deployment.
+
+\begin{enumerate}\itemsep2pt
+  \item \textbf{Verify protocol separation.} If target labels affected candidate,
+    feature, threshold or stopping choice: \emph{certification disabled} --- (A4).
+  \item \textbf{Verify inference-unit adequacy.} If the effective number of independent
+    calibration units is below the declared minimum: \emph{diagnostic only} --- (A5).
+  \item \textbf{Test evidence-support overlap.} If deployment evidence lies outside the
+    calibrated support: \textsc{abstain} or \textsc{freeze} --- (A1)/(A2) suspect.
+  \item \textbf{Test calibration stability.} Recompute $\varepsilon$ across folds, seeds,
+    domains or time blocks. If the radius or the action proportions are unstable:
+    \textsc{abstain} or \textsc{freeze}.
+  \item \textbf{Check sensitivity.} Vary the declared calibration construction and the
+    clustering unit. If the promoted conclusion changes: \emph{diagnostic only}.
+  \item \textbf{Apply the certified rule.} \textsc{adapt} if $L>0$; \textsc{freeze} if
+    $U<0$; otherwise \textsc{abstain}.
+  \item \textbf{Monitor sequentially.} If support, evidence distribution or action rates
+    drift beyond predeclared thresholds, suspend strict decisions and revert to
+    \textsc{freeze}/\textsc{abstain}.
+\end{enumerate}
+
+\smallskip
+\noindent Steps 1--2 are protocol checks and are fatal; steps 3--5 are statistical
+diagnostics and degrade the permitted behaviour along Table~\ref{tab:fallback-ladder}
+rather than aborting; step 7 runs for the lifetime of the deployment. The gate fails
+closed: an \emph{unevaluated} check counts as a failed check, so a pipeline that does not
+yet supply deployment evidence or unit labels returns a restricted decision rather than a
+clean one.
+
+\subsection{Diagnostics, and what each one cannot do}\label{sec:diagnostics}
+
+\begin{table}[htbp]
+\centering
+\small
+\caption{The diagnostic suite consumed by the gate. None establishes theoretical
+coverage (Definition~\ref{def:cov-theoretical}); each can only remove a way of being
+wrong. The right-hand column is as much a part of the method as the left.}
+\label{tab:diagnostics}
+\begin{tabular}{@{}p{0.24\columnwidth}p{0.34\columnwidth}p{0.34\columnwidth}@{}}
+\toprule
+Diagnostic & Detects & Cannot show \\
+\midrule
+Evidence-support overlap
+  & deployment evidence outside the calibrated envelope; high
+    calibration-vs-deployment separability
+  & that low separability implies transfer \\[2pt]
+Radius stability
+  & $\varepsilon$ or the action mix depending on an arbitrary choice of fold, seed,
+    domain or block
+  & that a stable radius is a correct radius \\[2pt]
+Risk-alignment audit
+  & benefit-sign errors, rank decorrelation, coverage varying by evidence region
+  & anything about a condition with no labels; it is retrospective by construction \\[2pt]
+Leakage audit
+  & target labels or test-set influence entering candidate, threshold or
+    hyperparameter choice
+  & analyst decisions outside the recorded protocol \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\paragraph{Evidence-support overlap.} We report the distance to the nearest calibration
+unit, the fraction of deployment evidence outside the calibration envelope, a
+cross-fitted domain-classifier AUROC, and the maximum standardised feature deviation.
+High separability is evidence \emph{against} direct transfer; low separability is not
+evidence for it, since two conditions can be indistinguishable in $Z$ and still have
+different $\Delta$ --- which is exactly the configuration \S\ref{sec:theory}
+constructs, not a corner case. This is the same one-sidedness already noted for the
+separability screen in \S\ref{sec:limits}.
+
+\paragraph{Radius stability.} We recompute $\varepsilon$ leaving out one unit at a time
+and report the mean radius, its range and coefficient of variation, and the
+decision-disagreement rate against the pooled radius. The number that matters is the
+fraction of promoted conclusions that change under an alternative \emph{equally valid}
+split: a conclusion that survives only one admissible clustering is a conclusion about
+the clustering. The check is not an outlier detector --- a contaminated fraction well
+below $\alpha$ does not move the quantile and should not.
+
+\paragraph{Risk-alignment audit.} Where evaluation labels exist we report
+benefit-estimation error, rank correlation between predicted and realised benefit,
+coverage stratified by evidence region, false-adapt by domain or cluster, and whether
+benefit \emph{sign} prediction transfers across domains. This is a retrospective audit of
+(A2) on the tracks we evaluated. It is not available at deployment time, which is the
+entire difficulty.
+
+\paragraph{Leakage audit.} For each promoted claim we record when the candidate was
+fixed, when the calibration design was fixed, whether target labels were accessed,
+whether the test set influenced hyperparameters, the protocol-lock identifier, and
+whether failed runs were retained. Chronology is the evidence for (A6); an assertion of
+pre-registration without a timestamped lock is not, and the audit fails closed on a
+missing record rather than assuming the benign case.
+
+\subsection{The assumption report}\label{sec:assumption-report}
+
+Each track emits a fixed-schema record (Table~\ref{tab:report-schema}) alongside its
+results, so the assumption state travels with the number instead of living in prose.
+Every value is computed from raw units by \path{kga.assumptions}; none is transcribed by
+hand. The records are released with the artifacts.
+
+%% \bk : zero-width break opportunity so snake_case names wrap in a narrow column.
+\providecommand{\bk}{\discretionary{}{}{}}
+\begin{table}[htbp]
+\centering
+\small
+\caption{Assumption-report schema, version \texttt{kbound-assumption-report/1}. A
+statistic that cannot be computed from the supplied inputs is \texttt{null} and adds a
+string to \texttt{limitations}; it is never defaulted to a plausible number. The released
+records are the authority for every value --- nothing here is an example value.}
+\label{tab:report-schema}
+\begin{tabular}{@{}p{0.42\columnwidth}p{0.48\columnwidth}@{}}
+\toprule
+Field & Type / admissible values \\
+\midrule
+\texttt{dataset}, \texttt{protocol} & \texttt{str} \\
+\texttt{inference\bk \_unit} & \texttt{str} (Def.~\ref{def:inference-unit}) \\
+\texttt{calibration\bk \_test\bk \_separated} & \texttt{bool} \\
+\texttt{candidate\bk \_fixed\bk \_before\bk \_test} & \texttt{bool} \\
+\texttt{target\bk \_labels\bk \_used\bk \_for\bk \_routing} & \texttt{bool} \\
+\texttt{coverage\bk \_type} & \texttt{theoretical} $\mid$ \texttt{observed\bk \_empirical} $\mid$ \texttt{diagnostic\bk \_only} \\
+\texttt{theoretical\bk \_coverage\bk \_claimed} & \texttt{bool} \\
+\texttt{observed\bk \_coverage} & \texttt{float} $\mid$ \texttt{null} \\
+\texttt{n\bk \_rows}, \texttt{n\bk \_units} & \texttt{int} \\
+\texttt{coverage\bk \_interval\bk \_95} & \texttt{[float, float]} $\mid$ \texttt{null} \\
+\texttt{coverage\bk \_interval\bk \_method} & \texttt{str} \\
+\texttt{support\bk \_overlap\bk \_status} & \texttt{pass} $\mid$ \texttt{warning} $\mid$ \texttt{fail} \\
+\texttt{radius\bk \_stability\bk \_status} & as above \\
+\texttt{conclusion\bk \_stability\bk \_status} & as above \\
+\texttt{leakage\bk \_status} & \texttt{pass} $\mid$ \texttt{fail} \\
+\texttt{deployment\bk \_gate} & \texttt{certify} $\mid$ \texttt{restricted} $\mid$ \texttt{diagnostic\bk \_only} $\mid$ \texttt{reject} \\
+\texttt{fallback\bk \_action} & \texttt{adapt\bk \_freeze\bk \_abstain} $\mid$ \texttt{freeze\bk \_or\bk \_abstain} $\mid$ \texttt{none} \\
+\texttt{alpha}, \texttt{thresholds} & \texttt{float}, \texttt{object} \\
+\texttt{diagnostics} & \texttt{object} (per-check detail) \\
+\texttt{limitations} & \texttt{[str]} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{remark}[Reading a report]\label{rem:report-reading}
+\texttt{theoretical\_coverage\_claimed} is \texttt{false} on every track in this paper.
+That is not a formatting artefact: there is no track on which we are willing to assert
+\eqref{eq:cov-theoretical} for an unseen deployment condition, because (A1)--(A3) are not
+checkable from the evidence we hold. \texttt{observed\_coverage} is the statistic of
+Definition~\ref{def:cov-observed}, reported with \texttt{n\_units} and an interval
+computed at the declared unit, so that a coverage figure computed on correlated cells
+cannot be read as though it came from that many independent draws.
+\end{remark}

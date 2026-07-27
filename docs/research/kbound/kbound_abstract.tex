@@ -1,3 +1,19 @@
-% Shared abstract for kbound_short.tex (IEEEtran) and kbound_tmlr.tex (article/TMLR).
-% Contains the abstract TEXT only -- each driver supplies its own abstract environment.
-Test-time adaptation (TTA) can silently degrade a deployed model on unlabeled target data, and with no target labels the system cannot tell a helpful shift from a harmful one. We recast TTA as a safety decision made \emph{before} the update---whether to \emph{adapt}, \emph{freeze}, or \emph{abstain}---and give a label-free certificate for it. Defining adaptation benefit as $\Delta=R_T(f_0)-R_T(f_a)$, we record that over a declared calibration-drift class a strict adapt-or-freeze commitment is uniformly sound if and only if the label-free evidence margin exceeds the declared drift budget; inside the closed band, matched evidence or zero-benefit ambiguity leaves abstention as the only action that certifies a \emph{strict} benefit direction. The substantive half of that statement is a construction: two target laws with \emph{identical} label-free evidence laws and opposite nonzero benefits, from which we also obtain that any label-free audit of the drift budget itself is vacuous over the unrestricted class. Knowability-Guided Adaptation (\textsc{KGA}) is the separate finite-sample rule: it wraps any adapter (Tent, EATA, SAR), estimates $\Delta$ from label-free evidence, and commits only when a calibrated interval $\widehat\Delta\pm\varepsilon$ excludes zero, controlling the marginal false-adapt rate at a chosen level under interval coverage. The finite-sample rule does not numerically test the population frontier, and $\varepsilon$ is not an estimate of the budget. Our primary evidence is a safety guarantee, not an accuracy gain. On the four one-sided natural tracks with locked held-out artifacts---hospital (Camelyon17), wildlife-camera (iWildCam), laboratory-batch (RxRx1), and domain (Office-Home) shifts---KGA ties the better fixed policy at zero observed false adaptation; on PACS, ImageNet-R, and CIFAR-10.1 it is a conservative null or fails the declared transfer bar, and we report those outcomes rather than withdraw the tracks. The guarantee is exercised with real statistical power on exactly one track: the CIFAR-10-C stress grid, where $1{,}113$ \textsc{adapt} decisions produce zero false adaptations (Clopper--Pearson $95\%$ upper bound $0.0027$ on the conditional rate). K-Bound is a safety, validity, and abstention layer for TTA; it does not compete on accuracy and does not claim universal improvement.
+% =====================================================================
+% kbound_abstract.tex -- SHORT/TMLR abstract = shared core + short closing.
+%
+% The shared text lives in kbound_abstract_core.tex and the weak-zeros caveat
+% in kbound_abstract_disclosures.tex; kbound.tex \input s both and supplies its
+% own (longer) closing paragraph. Do not paste either file's text here -- that
+% duplication is what caused defect D2. Contains the abstract TEXT only; each
+% driver supplies its own abstract environment.
+% =====================================================================
+\input{kbound_abstract_core}
+On four one-sided natural tracks (Camelyon17,
+iWildCam, RxRx1, Office-Home) the certificate ties the better fixed policy at zero observed false
+adaptation, but \input{kbound_abstract_disclosures}. On PACS, ImageNet-R and CIFAR-10.1 the
+certificate is a
+conservative null or fails the declared transfer bar, and we report those outcomes rather than
+withdraw the tracks; on ImageNet-R it is $1.76\times$ worse than always-adapt. K-Bound is
+a safety, validity and abstention layer for test-time adaptation; the drift budget its own theory
+requires is not obtainable at a deployment, and the certificate is what remains when that is taken
+seriously.

@@ -52,15 +52,13 @@ $\inf_g\mathrm{err}(g)=1-\TV\bigl(\Law(Z\mid P_T^1),\Law(Z\mid P_T^2)\bigr)$. On
 \end{enumerate}
 \end{theorem}
 \begin{proof}
-(i) is Theorem~\ref{lem:nonid}. For (ii), let $\mu$ dominate both laws with densities $p_1,p_2$.
-For any (possibly randomized) test with rejection function $\psi\in[0,1]$,
+Part~(i) is Theorem~\ref{lem:nonid}, itself Lemma~\ref{lem:fibre} at one radius; part~(iii) is
+Corollary~\ref{cor:matched-abstain}, proved in the main text on exactly this witness pair. Only
+part~(ii) is new. Let $\mu$ dominate both laws with densities $p_1,p_2$. For any (possibly
+randomized) test with rejection function $\psi\in[0,1]$,
 $\mathrm{err}=\int\psi p_1+\int(1-\psi)p_2 = 1-\int\psi(p_2-p_1)$, which is minimized pointwise by
 the Neyman--Pearson choice $\psi=\mathbf 1\{p_2>p_1\}$, giving
 $\mathrm{err}=1-\int(p_2-p_1)^+=1-\TV$. Randomization on the tie set does not change the value.
-For (iii), a label-free rule sees only $\Law(Z)$, which is the same in both worlds, so its action
-probabilities $(q_a,q_f,q_{\mathrm{ab}})$ are identical in both. Dual error control forces
-$q_a\le\alpha$ in the world with $\Delta<0$ and $q_f\le\alpha$ in the world with $\Delta>0$; since
-the probabilities are world-independent and sum to one, $q_{\mathrm{ab}}=1-q_a-q_f\ge1-2\alpha$.
 \end{proof}
 
 \begin{corollary}[Closed-band abstention under dual error control]\label{cor:forced-abstain}
@@ -71,10 +69,10 @@ at $|M|=\beta>0$ zero-versus-strict ambiguity suffices, and at $M=\beta=0$ the b
 identically zero so neither strict action is sound.
 \end{corollary}
 \begin{proof}
-Immediate from Theorem~\ref{thm:imp}(iii) applied to the witness pair supplied by
-Theorem~\ref{lem:nonid} when $|M|<\beta$, and to the zero-benefit boundary law of
-Proposition~\ref{prop:closed-band} when $|M|=\beta>0$ (there the ``error'' event in the zero world is
-$\{\Delta\le0\}\cap\{\Delta\ge0\}$, which both strict actions incur).
+This is Proposition~\ref{prop:closed-band}, restated at the level of the witness pair: apply
+Theorem~\ref{thm:imp}(iii) to the pair supplied by Theorem~\ref{lem:nonid} when $|M|<\beta$, and to
+the zero-benefit boundary law when $|M|=\beta>0$ (there the ``error'' event in the zero world is
+$\{\Delta\le0\}\cap\{\Delta\ge0\}$, which both strict actions incur). No construction is added.
 \end{proof}
 
 \iffalse

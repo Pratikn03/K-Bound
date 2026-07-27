@@ -3,7 +3,7 @@
 % abstract, keywords) and back matter (appendix, bibliography) live in the driver files.
 \section{Introduction}\label{sec:intro}
 \begin{figure}[t]\centering
-\includegraphics[width=0.86\columnwidth]{figures/fig_decision_flow.png}
+\kbgraphics[width=0.86\columnwidth]{figures/fig_decision_flow.png}
 \caption{\textbf{K-Bound previews the decision.} From an unlabeled batch under shift, the certificate
 estimates the adaptation benefit $\widehat\Delta$ with a finite-sample radius $\varepsilon$ and returns
 \textsc{adapt} (certified helpful), \textsc{freeze} (certified harmful), or \textsc{abstain} (no
@@ -26,28 +26,46 @@ Some cases are information-theoretically unknowable. It is established that labe
 quantities cannot decide adaptation without an assumption on the shift: identifying OOD
 accuracy is as hard as identifying the optimal predictor~\cite{garg2022atc}, and the optimal
 predict-versus-abstain rule under a shift budget has a known form~\cite{kalai2021abstain}. We
-localize this landscape to the paired benefit sign. The load-bearing step is a construction: for any
-margin strictly inside the declared band there are two admissible target laws whose label-free
-evidence laws are \emph{identical} and whose benefits have opposite nonzero signs
-(Theorem~\ref{lem:nonid}), which forces abstention at rate $\ge1-2\alpha$ on that evidence fibre
-(Corollary~\ref{cor:matched-abstain}); on the boundary, zero-versus-strict ambiguity still rules out a
-uniformly sound strict action (Proposition~\ref{prop:closed-band}). Packaging this with the
-observable/latent split $\Delta\leftrightarrow M+\gamma$---a definitional decomposition, not a derived
-one (Remark~\ref{rem:gamma-residual})---gives the strict-commitment criterion
-$|M|>\beta$ (Theorem~\ref{thm:headline}), whose sufficiency half is interval arithmetic and whose
-necessity half is the construction. The same construction shows that $\beta$ itself admits no
-non-vacuous label-free audit (Appendix~\ref{app:audit-short}), which is why K-Bound treats the budget
-as declared. \textsc{KGA}
-(Algorithm~\ref{alg:kga}) wraps a benefit estimator and a conformal radius around any
-adapter (Tent, EATA, SAR). It realizes the three-way decision as a finite-sample certificate---a direct benefit estimate with a calibrated radius, not a numerical $|M|{>}\beta$ test---and controls
-marginal false-adapt and false-freeze events under interval coverage (Theorem~\ref{thm:certificate}).
+localize this landscape to the paired benefit sign, and the localization is a single statement in
+five links. \emph{One.} On the disagreement region the label kernel is a free parameter that no
+label-free observable constrains (Lemma~\ref{lem:fibre}); read at one radius that is the
+matched-evidence impossibility (Theorem~\ref{lem:nonid}), which forces abstention at rate
+$\ge1-2\alpha$ on that evidence fibre (Corollary~\ref{cor:matched-abstain}) and yields the
+strict-commitment criterion $|M|>\beta$ (Theorem~\ref{thm:headline}). A label-free adapt/freeze
+decision therefore exists only relative to a \emph{declared} drift budget $\beta$, and the question
+that decides the method is where that budget comes from. That configuration is not only
+constructed: \S\ref{sec:necessity-observed} exhibits it in logged deployments, and measures that it
+is $39\times$ \emph{rarer} than chance --- the evidence is informative and merely insufficient.
+\emph{Two.} The same lemma, read at its
+extreme radii, answers it: for every declared class the exact minimax label-free budget is the fibre
+radius $\Gamma_z$, attained by a constant audit that reads none of its data
+(Theorem~\ref{thm:beta-minimax}), and for the deployment class $\Gamma_z(\mathcal C_\beta)=\beta$
+exactly (Corollary~\ref{cor:beta-is-beta}) --- the best possible label-free audit returns its own
+input, and the number it returns is the radius of the band on which the frontier must abstain.
+\emph{Three.} A fully labeled calibration sample from any other domain moves that value by exactly
+zero absent a separately declared coupling (Theorem~\ref{thm:anchor}). That is a prediction about
+our own method section, and \S\ref{sec:beta-sweep} measures it on $6{,}885$ real evaluation cells:
+declaring $\beta$ from source-like development data fails, the frontier's operational reading is
+withdrawn, and the theorem says why. \emph{Four.} What escapes is a population of deployments rather
+than a deployment: under retrospective outcome logging and episode exchangeability, $\beta$ is
+identified as an episode quantile and estimable from $K$ logged deployments bracketed to a factor of
+$e$ (Theorems~\ref{epi:thm-ident}, \ref{epi:thm-conformal}, \ref{epi:thm-floor}) --- and the
+assumption that buys it is the one a novel deployment violates, which we also measure
+(\S\ref{sec:episode-empirics}). \emph{Five.} What remains deployable is a finite-sample certificate
+that trades decision yield for a false-adapt guarantee (Theorem~\ref{thm:certificate}). \textsc{KGA}
+(Algorithm~\ref{alg:kga}) realizes it: a benefit estimator and a conformal radius wrapped around any
+adapter (Tent, EATA, SAR), committing only when a calibrated interval excludes zero --- a direct
+benefit estimate with a calibrated radius, not a numerical $|M|{>}\beta$ test.
 
 The evidence follows the regime map in Table~\ref{tab:regime-summary}, and the primary finding is a
-safety one. On the four one-sided natural tracks with locked held-out artifacts---hospital
+safety one. On four one-sided natural tracks---hospital
 (Camelyon17), wildlife-camera (iWildCam), laboratory-batch (RxRx1), and domain (Office-Home)
 shifts---KGA is \emph{no-harm}: it ties the better fixed policy and averts the failure of the wrong
 one, with zero observed false adaptation, and it abstains rather than overclaim where the evidence is
-weak. On the remaining three natural tracks the outcome is different and we report it as such: PACS is
+weak. Three of those four zeros are weak, and we say so where we report them: Camelyon17's OOD test
+subset contains no harmful cell, and RxRx1 and iWildCam make $0$ and $1$ \textsc{adapt} decisions.
+Only Office-Home ($22$ adapts) carries a non-trivial adapt count among the four, and its
+Clopper--Pearson bound $0.127$ still exceeds $\alpha$. On the remaining three natural tracks the outcome is different and we report it as such: PACS is
 a conservative null in which \textsc{KGA}'s mean regret ($0.0431$) is $2.45\times$ always-adapt's
 ($0.0176$); ImageNet-R is a weak-evidence null in which \textsc{KGA} ($0.0151$) is worse than
 always-adapt ($0.0064$) on $7$ of $10$ backbones; and CIFAR-10.1 fails the declared transfer bar at
@@ -58,6 +76,20 @@ the opposite failure is exactly correct behavior. A three-way router can beat bo
 where helpful and harmful conditions coexist and the evidence separates them, in the operational sense
 defined in \S\ref{sec:detectability}; we report those beats-both results as secondary mechanism
 confirmation, on stress and constructed regimes only, never as single-dataset natural-shift dominance.
+Because an \textsc{abstain} here realizes the frozen model, always-abstain is numerically
+always-freeze, so no-harm is \emph{not} free; \S\ref{sec:decision-value} quantifies what the
+certificate buys instead---on CIFAR-10-C, commitment on $66.8\%$ of $6{,}480$ cells at zero false
+adaptations, regret $5.0\times$ below the better fixed policy and $3.1\times$ below a
+hindsight-tuned label-free drift heuristic at the same false-adapt budget, with commitments landing
+on cells whose true effect is $24.5\times$ larger than those it declines---and where it buys
+nothing, which on ImageNet-R is a $1.76\times$ loss to always-adapt.
+The strongest single stress result the paper owns sits behind that number and belongs in the
+introduction: refitting the whole CIFAR-10-C pipeline leave-one-\emph{corruption}-out, so the
+estimator never sees the corruption it is scored on, inflates the conformal radius
+$4.3\times$--$6.9\times$ and worsens regret $3.4\times$--$7.6\times$, and the false-adapt count is
+$0$ in all ten runs (two adapters $\times$ five seeds). The safety property survives that partition;
+the routing-utility property does not, and we report both: under leave-one-corruption-out the
+certificate beats always-adapt on all five Tent runs and loses to it on all five EATA runs.
 K-Bound therefore provides a safety, validity, and abstention layer for TTA rather than an accuracy
 boost, and does not claim universal improvement.
 
@@ -65,7 +97,8 @@ boost, and does not claim universal improvement.
 The question that matters at deployment is not how hard to adapt but whether to adapt at all. K-Bound
 answers it with a certificate: adapt only when label-free evidence certifies benefit, freeze when it
 certifies harm, and \textsc{abstain} otherwise (the maximal sound three-way rule when
-$|M|\le\beta$; KGA implements the distinct finite-sample interval decision). On the one-sided natural-shift
+$|M|\le\beta$, and the budget $\beta$ is not obtainable at the deployment,
+\S\ref{sec:impossible}; KGA implements the distinct finite-sample interval decision). On the one-sided natural-shift
 datasets this returns \emph{no-harm}---safety or abstention---which is exactly the point; on the
 domain-generalization and rendition tracks it returns a conservative null that costs regret relative
 to always-adapt, and we report that too. Beating both fixed policies additionally requires a mixed
@@ -74,12 +107,75 @@ with any constructed pooled mixture labeled as such, never as single-dataset nat
 
 \paragraph{Contributions.}
 \begin{enumerate}
-\item \textbf{TTA as a safety decision.} We recast test-time adaptation as a pre-commitment \emph{whether-to-adapt} problem---adapt, freeze, or abstain---and make the target risk difference, fallback semantics, and target-label-free information boundary explicit. The object of study is the validity of the decision, not the accuracy of the adapter.
-\item \textbf{A matched-evidence impossibility construction, and the vacuity of label-free budget audits.} We exhibit two target laws inside the declared class whose label-free evidence laws are \emph{equal}---not merely close---and whose benefits have opposite nonzero signs (Theorem~\ref{lem:nonid}), and we show that abstention is forced at rate $\ge 1-2\alpha$ on that fibre (Corollary~\ref{cor:matched-abstain}). The same label-kernel construction yields the result with the most operational content in the paper: any label-free audit $\widehat\beta$ that is valid uniformly over the unrestricted class must return $\widehat\beta\ge\tfrac12+|M|$, so the audited frontier abstains in every world (Theorem~\ref{thm:short-audA}). This is why the drift budget in K-Bound is \emph{declared} rather than estimated, and it is a statement no amount of better label-free evidence can repeal.
-\item \textbf{A bookkeeping decomposition and the frontier it induces.} Splitting the disagreement-region accuracy into an observable margin $M$ and a latent calibration drift $\gamma$ gives $\sign\Delta=\sign(M+\gamma)$ (Lemma~\ref{lem:reduction}). We state plainly what this is: $\gamma$ is \emph{defined} as the residual $\bar a-\tfrac12-M$, so the decomposition is an identity and the sufficiency half of Theorem~\ref{thm:headline} ($|M|>\beta\Rightarrow\sign\Delta=\sign M$) is interval arithmetic on $[M-\beta,M+\beta]$. Its value is organizational---it names the quantity a deployment must bound---and the mathematical content of Theorem~\ref{thm:headline} lies entirely in the necessity clause, which rests on the construction above.
-\item \textbf{Coverage-based false-adapt certificate.} Under measurable interval coverage, the finite-sample rule controls the marginal false-adapt and false-freeze rates at level $\alpha$ (Theorem~\ref{thm:certificate})---the deployable safety guarantee. We do not claim this interval construction as novel machinery; it is split-conformal-style calibration applied to a paired benefit, and its contribution is the decision object it is attached to.
-\item \textbf{KGA deployable wrapper.} KGA wraps Tent/EATA/SAR without changing their adaptation objectives and uses shadow state, commit, rollback, and logging (Algorithm~\ref{alg:kga}). It is adapter-interface agnostic but adapter-specific in calibration: the benefit model and radius are refit per dataset and per candidate adapter.
-\item \textbf{Scoped no-harm evidence, with the negatives kept.} A pre-registered nine-track panel shows KGA is no-harm on the four one-sided natural tracks with locked held-out artifacts, abstains under weak evidence, and beats both fixed policies only on stress and constructed regimes that meet the ex ante detectability criterion of \S\ref{sec:detectability}. Honest nulls and failures (PACS, ImageNet-R, CIFAR-10.1) are retained and reported with the direction of loss, and the one track where the guarantee is actually exercised at power (CIFAR-10-C, $1{,}113$ adapts, $0$ false) is separated from the tracks where an observed $\mathrm{FA}_{\mathrm u}=0$ is uninformative (Table~\ref{tab:decision-accounting}). Fixed-policy regret comparisons are a secondary routing-utility check.
+\item \textbf{One lemma, three radii.} We isolate the construction the paper previously carried out
+three times: on the disagreement region the label kernel is a free parameter that no label-free
+observable constrains (Lemma~\ref{lem:fibre}). Read at radius $\delta$ it is the matched-evidence
+impossibility (Theorem~\ref{lem:nonid}); at radius $\beta$ it is the abstention band of the
+strict-commitment frontier (Theorem~\ref{thm:headline}); at the extreme points it is the vacuity of
+label-free budget audits (Corollary~\ref{cor:audA}). Naming it once is what makes the rest of the
+paper a single statement rather than three.
+\item \textbf{The exact minimax label-free drift budget, and the identity that closes the loop.}
+For every declared class $\mathcal C$ the least label-free-certifiable budget is the fibre radius
+$\Gamma_z(\mathcal C)$, and it is attained by a constant audit that reads none of its data
+(Theorem~\ref{thm:beta-minimax}(a),(b)). For the paper's own deployment class,
+$\Gamma_z(\mathcal C_\beta)=\beta$ exactly (Corollary~\ref{cor:beta-is-beta}): \emph{the best
+possible label-free audit of the drift budget returns the budget you declared, and that number is
+the radius of the band on which the frontier must abstain.} Two riders make it operational rather
+than philosophical: no label-free audit ever converts an abstention into a commitment
+(Theorem~\ref{thm:beta-minimax}(c)), and over the unrestricted class the audited rule's decision
+yield is at most the false-commitment budget $\delta$, at every batch size, every calibration sample
+size and every evidence map (Theorem~\ref{thm:beta-minimax}(d)).
+\item \textbf{Labels at the wrong domain buy nothing, and the three currencies that a budget costs.}
+A fully labeled calibration sample of any size leaves the minimax budget at $\tfrac12+|M|$ unless a
+coupling to the deployment domain is separately declared (Theorem~\ref{thm:anchor}), which is
+strictly stronger than audit vacuity and is the statement that bears on our own measurements. The
+bound $|\gamma_T|\le|\gamma_{\mathrm{cal}}|+\Delta_{\mathcal F}(\mu_{\mathrm{cal}},\mu_T)+\rho$
+separates the three (Proposition~\ref{prop:threeterm}); exactly one term is label-free computable,
+and declaring $\rho$ instead of $\beta$ is a renaming, because the budget-declaration problem is a
+fixed point of the same construction (Remark~\ref{rem:reading}).
+\item \textbf{The theorem explains our own negative experiment.} We ran the declaration procedure
+this paper prescribes on $6{,}885$ real evaluation cells and it fails (\S\ref{sec:beta-sweep}):
+$1.4\times$--$50\times$ too small on CIFAR-10-C, $24$--$73\%$ of cells outside the declared class,
+commit errors of $0.4$--$16.6\%$ against a promised $0\%$, and zero commitments on all $405$
+ImageNet-C cells in five of ten configurations. Theorem~\ref{thm:anchor} predicts exactly this: the
+procedure supplies term~1 of Proposition~\ref{prop:threeterm} and sets terms~2 and~3 to zero by an
+undeclared exchangeability assumption. We check the prediction quantitatively---under the label
+shuffle of our own ablation the budget must collapse to $q_{0.90}(|\Delta-\E\Delta|)=0.2376$, and it
+measures $0.2468$--$0.2606$ across six channels---and we report the one place the prediction fails
+(\S\ref{sec:beta-sweep}, the ImageNet-C sign reversal). It is also not a quantile-estimation
+failure: across $470$ splits the conformal order statistic differs from the plug-in by a median
+$0.34\%$ at a median coverage difference of exactly $0$.
+\item \textbf{Where a budget can come from, what it costs, and why that does not help a shifted
+deployment.} $\beta$ is a property of a population of deployments. Under retrospective outcome
+logging (E1) and episode exchangeability (E2) it is identified as an episode quantile
+(Theorem~\ref{epi:thm-ident}(a)) and estimable by a conformal order statistic
+(Theorem~\ref{epi:thm-conformal}); it is \emph{not} identified from unlabeled episode observables at
+any $K$, so the binding resource is historical \emph{labels}, not historical data
+(Theorem~\ref{epi:thm-ident}(b)). We locate the escape from Corollary~\ref{cor:audA} to one logical
+move---average over the episode law instead of supremum over the fibre---and prove neither
+ingredient suffices alone (Proposition~\ref{epi:prop-escape}); we bracket the episode requirement to
+a factor of $e$, $1/(e\alpha)-1\le K^\star\le1/\alpha-1$
+(Theorem~\ref{epi:thm-floor}, Corollary~\ref{epi:cor-bracket}), verified at exactly $K=9$ on real
+data; and we price the labels, with the calibrated score acting as a control variate that makes
+estimating $\gamma$ strictly cheaper than estimating $\bar a-\tfrac12$
+(Proposition~\ref{epi:prop-labels}). Then we measure E2 and it fails on the axis a shifted
+deployment lives on: coverage $0.905$ under an exchangeable control and $0.626$/$0.454$ when the
+corruption family or severity changes, with weighted conformal restoring coverage to $1.000$ at
+decision yield $0.000$ (\S\ref{sec:episode-empirics}).
+\item \textbf{What remains: a finite-sample certificate whose yield/safety frontier we measure.}
+Under interval coverage the rule controls the marginal false-adapt and false-freeze events at level
+$\alpha$ (Theorem~\ref{thm:certificate}); we do not claim the interval construction as novel
+machinery, and $\varepsilon$ is not an estimate of $\beta$. What is new is the measured exchange
+rate. On CIFAR-10-C the certificate commits on $66.8\%$ of $6{,}480$ cells at
+$\mathrm{FA}_{\mathrm u}=0/6480$ over $1{,}113$ and $1{,}244$ \textsc{adapt} decisions
+(Clopper--Pearson $95\%$ upper bounds $0.0027$/$0.0024$ on the conditional rate), cuts
+regret $5.00\times$ below the better fixed policy and $3.1\times$ below a hindsight-tuned label-free
+heuristic at the same budget, and commits on cells whose true effect is $24.5\times$ larger than
+those it declines (permutation $p<0.0002$). Under leave-one-corruption-out recalibration the radius
+inflates $4.3\times$--$6.9\times$, the commitment rate falls from $0.51$--$0.60$ to $0.40$--$0.42$,
+regret worsens $3.4\times$--$7.6\times$, and the false-adapt count is $0$ in all ten runs. Where it
+buys nothing we say so: ImageNet-R, $1.76\times$ worse than always-adapt, with per-backbone value
+per committed decision exactly $0$ on $9$ of $10$ backbones.
 \end{enumerate}
 
 \begin{table}[t]\centering\footnotesize
@@ -94,13 +190,15 @@ assignment follows Definition~\ref{def:detectable}, applied before outcomes are 
 \toprule
 Regime & Example & Expected & Result \\
 \midrule
-Helpful-dominated & Camelyon17 OOD & tie always-adapt & no-harm, but not reproducible from release \\
+Helpful-dominated & Camelyon17 OOD & tie always-adapt & no-harm, and vacuous: recomputable, but $18/18$ cells are helpful and KGA adapts $18/18$ \\
 Harmful-dominated & RxRx1; iWildCam/Office-Home (OOF lock) & tie always-freeze, beat always-adapt & locked no-harm; $0$/$1$/$22$ adapts \\
 Domain-gen.\ natural & PACS (4 LODO splits) & no-harm or abstain & \textbf{null; loses to always-adapt} $2.45\times$ \\
 Mixed + detectable & CIFAR-10-C Tent/EATA & adapt helpful, freeze harmful, abstain near zero & locked; $0$ false adapts in $2357$; CI utility vs.\ both \\
 Mixed, \emph{not} detectable & ImageNet-C Tent ($56\%$ harmful) & abstain / tie freeze & ties freeze; $0$ adapts \\
 Weak evidence & ImageNet-R, CIFAR-10.1 & abstain / conservative & \textbf{diagnostics; ImageNet-R loses to always-adapt on $7/10$ backbones, CIFAR-10.1 fails the bar} \\
 Constructed mixture & three-source OOF stream & route per condition & locked routing result, not transfer \\
+\midrule
+Budget declarable? & any & no label-free audit beats $\Gamma_z$ (Thm.~\ref{thm:beta-minimax}) & measured: $\widehat\beta$ $1.4$--$50\times$ too small (\S\ref{sec:beta-sweep}) \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -108,20 +206,21 @@ Constructed mixture & three-source OOF stream & route per condition & locked rou
 \noindent\emph{Table note.} The uniform panel below is the sole empirical index; diagnostic variants
 and historical runs are not additional evidence for the headline claims.
 
+\input{paper/sections/scope_box}
+
 \section{Related Work}\label{sec:related}
-The closest literature improves test-time updates, monitors adaptation failures, estimates target performance without labels, or characterizes abstention under shift. K-Bound differs in the decision object: it certifies the sign of the frozen-versus-adapted risk difference before the candidate state is committed.
+The closest literature improves test-time updates, monitors adaptation failures, estimates target
+performance without labels, or characterizes abstention under shift. K-Bound differs in the decision
+object: it certifies the sign of the frozen-versus-adapted risk difference before the candidate state
+is committed, and it prices the one input that any such certificate needs.
 
-\subsection{Test-Time Adaptation}
-Tent~\cite{wang2021tent}, SHOT~\cite{liang2020shot}, TTT~\cite{sun2020ttt}, EATA~\cite{niu2022eata}, SAR~\cite{niu2023sar}, CoTTA~\cite{wang2022cotta}, and MEMO~\cite{zhang2022memo} improve adaptation through entropy minimization, filtering, regularization, sharpness-aware updates, or temporal stabilization (survey:~\cite{liang2025ttasurvey}). These methods primarily answer \emph{how} to adapt. Even when the update rule is more stable, the deployment system generally still commits to adaptation rather than certifying that the candidate has positive target benefit.
+\paragraph{Test-time adaptation.} Tent~\cite{wang2021tent}, SHOT~\cite{liang2020shot}, TTT~\cite{sun2020ttt}, EATA~\cite{niu2022eata}, SAR~\cite{niu2023sar}, CoTTA~\cite{wang2022cotta}, and MEMO~\cite{zhang2022memo} improve adaptation through entropy minimization, filtering, regularization, sharpness-aware updates, or temporal stabilization (survey:~\cite{liang2025ttasurvey}). These methods primarily answer \emph{how} to adapt. Even when the update rule is more stable, the deployment system generally still commits to adaptation rather than certifying that the candidate has positive target benefit.
 
-\subsection{Guarded and Monitored Adaptation}
-POEM~\cite{bar2024poem}, sequential risk monitors~\cite{schirmer2025monitoring,podkopaev2022tracking}, PeTTA~\cite{hoang2024petta}, and sample-level filters such as DeYO~\cite{lee2024deyo} guard an adaptation stream during or after updating; reset-timing rules for long-horizon streams~\cite{lim2026reset} decide when to \emph{restart} adaptation once it has already run. These approaches are complementary to K-Bound. They typically monitor a proxy or intervene in one failure direction, whereas K-Bound poses a pre-commitment three-way decision over the benefit sign and explicitly represents an unknowable region.
+\paragraph{Guarded and monitored adaptation.} POEM~\cite{bar2024poem}, sequential risk monitors~\cite{schirmer2025monitoring,podkopaev2022tracking}, PeTTA~\cite{hoang2024petta}, and sample-level filters such as DeYO~\cite{lee2024deyo} guard an adaptation stream during or after updating; reset-timing rules for long-horizon streams~\cite{lim2026reset} decide when to \emph{restart} adaptation once it has already run. These approaches are complementary to K-Bound. They typically monitor a proxy or intervene in one failure direction, whereas K-Bound poses a pre-commitment three-way decision over the benefit sign and explicitly represents an unknowable region.
 
-\subsection{Label-Free Performance Estimation}
-ATC~\cite{garg2022atc}, agreement-on-the-line~\cite{baek2022aol,miller2021aol}, AETTA~\cite{lee2024aetta}, and related confidence-style estimators~\cite{deng2023confidence,xie2024mano} estimate target accuracy or error without target labels. Estimating $R_T(f)$ is not identical to certifying $\sign(R_T(f_0)-R_T(f_a))$: a deployment controller needs the sign of a paired risk difference and must account for uncertainty around zero. K-Bound uses this difference as the estimand and abstains when the available evidence does not identify its sign.
+\paragraph{Label-free performance estimation.} ATC~\cite{garg2022atc}, agreement-on-the-line~\cite{baek2022aol,miller2021aol}, AETTA~\cite{lee2024aetta}, and related confidence-style estimators~\cite{deng2023confidence,xie2024mano} estimate target accuracy or error without target labels. Estimating $R_T(f)$ is not identical to certifying $\sign(R_T(f_0)-R_T(f_a))$: a deployment controller needs the sign of a paired risk difference and must account for uncertainty around zero. K-Bound uses this difference as the estimand and abstains when the available evidence does not identify its sign.
 
-\subsection{Impossibility, Abstention, and Risk Control}
-General label-free target-risk identification requires assumptions on the shift~\cite{garg2022atc,steinhardt2016,bendavid2010theory,rosenfeld2023dis2}. Kalai and Kanade~\cite{kalai2021abstain} characterize a related abstain-versus-predict decision under a shift budget, while selective prediction~\cite{geifman2017selective}, Chow's reject option~\cite{chow1970reject}, and learning-to-defer / reject-option classification~\cite{cortes2016boosting,madras2018learntodefer} abstain on individual labels. Its empirical uncertainty layer connects to split conformal prediction, conformal under shift, RCPS, and Learn-then-Test~\cite{tibshirani2019conformal,gibbs2021adaptive,barber2023beyond,bates2021rcps,angelopoulos2025ltt}.
+\paragraph{Impossibility, abstention, and risk control.} General label-free target-risk identification requires assumptions on the shift~\cite{garg2022atc,steinhardt2016,bendavid2010theory,rosenfeld2023dis2}. Kalai and Kanade~\cite{kalai2021abstain} characterize a related abstain-versus-predict decision under a shift budget, while selective prediction~\cite{geifman2017selective}, Chow's reject option~\cite{chow1970reject}, and learning-to-defer / reject-option classification~\cite{cortes2016boosting,madras2018learntodefer} abstain on individual labels. Our empirical uncertainty layer connects to split conformal prediction, conformal under shift, RCPS, and Learn-then-Test~\cite{tibshirani2019conformal,gibbs2021adaptive,barber2023beyond,bates2021rcps,angelopoulos2025ltt}; the episode-level budget of \S\ref{sec:episode} is a domain-level conformal construction in the sense of that line, and we claim no new machinery for it (Remark~\ref{epi:rem-audG}).
 
 \paragraph{Relation to classical DA and label-shift non-identifiability.}
 Theorem~\ref{lem:nonid} constructs two target laws with identical unlabeled observables and opposite
@@ -134,21 +233,29 @@ preserves the disagreement-region ordering, so estimator-quality arguments do no
 (ii) The ambiguity is localized to the disagreement region $D$, which shrinks the construction from
 the full risk range to a band of width $2\beta$ on a single conditional expectation. (iii) The class
 is parameterized by a \emph{declared} budget, which turns an all-or-nothing impossibility into a
-frontier with an operational knob --- and, by Aud-A (App.~\ref{app:audit-short}), a knob that cannot
-be set from unlabeled data. Readers from the label-shift literature should read
-Theorem~\ref{lem:nonid} as a localization of a known phenomenon, and Aud-A as the part that is not
-already implied by it.
+frontier with an operational knob --- and \S\ref{sec:impossible} then computes the exact minimax
+value of that knob under every label-free procedure, which is where the content of this paper's
+theory sits. Readers from the label-shift literature should read Theorem~\ref{lem:nonid} as a
+localization of a known phenomenon, and Theorem~\ref{thm:beta-minimax} with
+Theorem~\ref{thm:anchor} as the part that is not already implied by it.
 
-\subsection{Surviving Gap, and What Is Not Ours}
-Existing work provides stronger adapters, reactive monitors, label-free accuracy estimates, and general abstention theory. The remaining gap is a pre-commitment rule for the sign of adaptation benefit that (i) distinguishes helpful, harmful, and unsupported decisions, (ii) states the assumptions under which the decision is valid, and (iii) controls marginal false adaptation under a calibrated uncertainty model. K-Bound addresses this gap with the population frontier and its finite-sample realization, \textsc{KGA}.
+\paragraph{Surviving gap, and what is not ours.} Existing work provides stronger adapters, reactive
+monitors, label-free accuracy estimates, and general abstention theory. The remaining gap is not
+that nobody certifies the benefit sign; it is that \emph{nobody has priced the budget that any such
+certificate needs}. Every label-free adapt/freeze rule with a validity claim is implicitly a
+statement about a declared class, and the literature does not say what a procedure can learn about
+that declaration, what labeled data at the wrong domain buys, or what structure makes the
+declaration estimable at all. \S\ref{sec:impossible} and \S\ref{sec:episode} answer those three
+questions, and \S\ref{sec:beta-sweep} and \S\ref{sec:episode-empirics} measure the answers.
 
 We state the other half explicitly, because it is easy to overstate. The interval machinery is
 \emph{not} our contribution: confidence-sequence and anytime-valid risk monitoring for adaptation
 streams already exists~\cite{schirmer2025monitoring,podkopaev2022tracking,bar2024poem}, and the
 unsupervised-accuracy-estimation literature already states the no-assumption impossibility
 informally~\cite{garg2022atc}. Our certificate shares machinery with that line; what we add is the
-pre-commitment decision object, the explicit abstention region, and the accounting of when the
-resulting guarantee is actually tested --- not the interval construction.
+pre-commitment decision object, the explicit abstention region, the exact minimax value of the
+budget it requires, and the accounting of when the resulting guarantee is actually tested --- not
+the interval construction.
 
 \section{Problem Formulation and Validity}\label{sec:setup}
 
@@ -171,7 +278,7 @@ g(Z)\in\{\textsc{adapt},\textsc{freeze},\textsc{abstain}\}.
 K-Bound is target-label-free rather than supervision-free. Source labels and a held-out development set may be used to fit the benefit estimator and calibrate its uncertainty radius. No target-test label may influence the adapter configuration, evidence map, benefit estimator, radius, action threshold, or model selection. Target-test labels are opened only after all decisions are frozen, for reporting accuracy, regret, and false-adapt events.
 
 \subsection{Assumptions and Validity Scope}
-The theory and the finite-sample certificate rely on distinct assumptions. \emph{Risk alignment} determines whether the evidence can identify or bound the benefit sign over the declared target class. \emph{Coverage} determines whether the empirical interval contains the true benefit at the stated rate. \emph{Exchangeability} (or an explicit shift correction) connects calibration residuals to deployment residuals. The adapter, evidence schema, estimator, and calibration protocol must be fixed before held-out scoring. If these conditions cannot be justified, the theorem does not license either strict action; deployment must use a separately declared operational fallback, such as abstention or serving the frozen model. This is a safety policy, not a theorem that freezing is optimal. Risk alignment is an assumption on the deployment class, not a property certified by fitting a benefit regressor: support and residual diagnostics may reject implausible evidence maps, but they do not verify it universally.
+The theory and the finite-sample certificate rely on distinct assumptions. \emph{Risk alignment} determines whether the evidence can identify or bound the benefit sign over the declared target class. \emph{Coverage} determines whether the empirical interval contains the true benefit at the stated rate. \emph{Exchangeability} (or an explicit shift correction) connects calibration residuals to deployment residuals. The adapter, evidence schema, estimator, and calibration protocol must be fixed before held-out scoring. If these conditions cannot be justified, the theorem does not license either strict action; deployment must use a separately declared operational fallback, such as abstention or serving the frozen model. This is a safety policy, not a theorem that freezing is optimal. Risk alignment is an assumption on the deployment class, not a property certified by fitting a benefit regressor: support and residual diagnostics may reject implausible evidence maps, but they do not verify it universally. These conditions are named (A1)--(A6) and stated as a single contract in \S\ref{ass:contract}; \S\ref{sec:gate} makes them an operational gate, and \S\ref{sec:assumption-report} records the resulting assumption state per track.
 
 %% Fix-queue item 12: tab:data-access and tab:assumptions-role were two adjacent unreferenced
 %% meta-tables about the same thing (protocol discipline). Merged into one float below; both
@@ -230,88 +337,57 @@ $\alpha$ & marginal error level & chosen pre-deployment \\
 \end{tabular}
 \end{table}
 
-\subsection{Multiclass and Regression Scope}
-The binary $0$--$1$ loss case gives the cleanest frontier because, on $D=\{x:f_0(x)\neq f_a(x)\}$, exactly one predictor is correct. For multiclass $0$--$1$ loss,
-\[
-\Delta=P_T(D)(p_a-p_0),\qquad p_j=P_T(f_j(X)=Y\mid D),
-\]
-so the decision becomes an ordinal comparison of the two disagreement-region accuracies. For squared-loss regression, the risk difference reduces to a disagreement-local moment. The main theorem uses a split-observable decomposition $\sign(\Delta)=\sign(M+\gamma)$; the multiclass bridge is stated below and the regression derivation appears in Appendix~\ref{app:regression}.
-
-\begin{proposition}[Multiclass benefit decomposition]\label{prop:multiclass}
-For multiclass $0/1$ loss, $\Delta=\mu_T(D)(p_a-p_0)$ with $p_j=\Pr_T(f_j(X){=}Y\mid D)$. If the
-disagreement-region accuracy gap admits a split-observable decomposition
-$p_a-p_0=M_{\mathrm{mc}}+\gamma_{\mathrm{mc}}$ with $|\gamma_{\mathrm{mc}}|\le\beta_{\mathrm{mc}}$, then
-$|M_{\mathrm{mc}}|>\beta_{\mathrm{mc}}$ implies $\sign\Delta=\sign M_{\mathrm{mc}}$. The converse
-strict-commitment result additionally requires a richness assumption: the declared class must contain
-augmented-evidence-identical laws whose admissible $\gamma_{\mathrm{mc}}$ values straddle
-$-M_{\mathrm{mc}}$, together with the zero-benefit boundary law. At
-$M_{\mathrm{mc}}=\beta_{\mathrm{mc}}=0$, the sign is identified as zero.
-\end{proposition}
-\begin{proof}
-Off $D$ the two predictors agree, so their $0/1$ losses cancel pointwise and only $D$ contributes:
-$\Delta=\mu_T(D)\bigl(\Pr_T(f_a{=}Y\mid D)-\Pr_T(f_0{=}Y\mid D)\bigr)=\mu_T(D)(p_a-p_0)$. Since
-$\mu_T(D)>0$, $\sign\Delta=\sign(p_a-p_0)=\sign(M_{\mathrm{mc}}+\gamma_{\mathrm{mc}})$; if
-$M_{\mathrm{mc}}>\beta_{\mathrm{mc}}\ge|\gamma_{\mathrm{mc}}|$ the sum is positive, and symmetrically
-for the negative case. The converse repeats the label-kernel construction of
-Theorem~\ref{lem:nonid} with the multiclass conditional, which requires the declared class to
-contain the resulting evidence-identical laws --- hence the richness hypothesis. Full derivation in
-Appendix~\ref{app:regression}.
-\end{proof}
-\noindent In the multiclass experiments \textsc{KGA} estimates $\Delta$ directly through the benefit
-proxy $\widehat\Delta=h_\theta(Z)$ (not $M_{\mathrm{mc}}$ itself); the binary frontier is the
-identifiability backbone, and the multiclass results are evaluated through this benefit-estimation route.
-
-\begin{figure}[t]\centering
-\includegraphics[width=0.95\linewidth]{figures/fig_frontier_schematic.png}
-\caption{\textbf{Population strict-commitment frontier.} The population rule supports adapt or
-freeze outside the drift band and abstains inside it. At the boundary, zero-benefit ambiguity rules
-out a uniformly sound strict action; opposite nonzero signs are claimed only in the interior. KGA
-uses the separate finite-sample interval rule in Fig.~\ref{fig:certificate}.}
-\label{fig:frontier}
-\end{figure}
 
 \subsection{Formal Setup}
 \input{paper/sections/theory_setup}
 
-\section{Theory}\label{sec:theory}
-\subsection{Roadmap}
-The theoretical spine has three layers, and they carry unequal weight. First, the risk difference
-reduces to the region where the frozen and candidate predictions disagree, and the disagreement-region
-accuracy splits into an observable margin $M$ and a residual $\gamma$; this layer is definitional
-bookkeeping (Remark~\ref{rem:gamma-residual}) and we do not present it as a result. Second---and this
-is the layer with mathematical content---matched label-free evidence can support incompatible nonzero
-benefit signs inside the declared band, which establishes an abstention requirement that no estimator
-can engineer away, and the same construction makes label-free auditing of the band itself vacuous.
-Third, combining the two gives the population frontier, while a calibrated interval around
-$\widehat\Delta$ yields the separate finite-sample decision rule.
+\section{The drift budget cannot be supplied label-free}\label{sec:impossible}\label{sec:theory}
+The population frontier below commits exactly when $|M|>\beta$, and $\beta$ is a \emph{declared}
+input. This section settles what a procedure can do about that. The answer is sharper than
+``label-free audits are vacuous'': for \emph{every} declared class, the best label-free budget is a
+constant that ignores the data, that constant is exactly the radius of the class's own abstention
+band, and any attempt to buy it with labels at a domain other than the deployment domain buys
+nothing unless a transfer constraint is separately declared. The escape is a matched pair --- labels
+at an anchor, plus a declared coupling --- and it carries an $n^{-1/2}$ floor that no structural
+assumption removes.
+
+Throughout, Assumption~\ref{ass:deploy} is in force: $Y\in\{0,1\}$, $0/1$ loss, $\mu_T(D)>0$,
+$s:\mathcal X\to[0,1]$ a fixed \emph{source}-calibrated score, $u:=\eta_a-s\in[-1,1]$ on $D$,
+$\gamma=\E_{\mu_T}[u\mid D]=\bar a-\tfrac12-M$, and
+$M=\E_{\mu_T}[s\mid D]-\tfrac12\in[-\tfrac12,\tfrac12]$. The residual $\gamma$ is \emph{defined},
+not derived (Remark~\ref{rem:gamma-residual}); everything below is a statement about what a
+procedure can learn about it.
+
+\subsection{The engine: one lemma, used three times}
+\input{paper/sections/theory_fibre_engine}
+
+\subsection{What the engine already proved: the frontier}
+The three results this paper published previously are readings of Lemma~\ref{lem:fibre} at three
+radii, and we now present them that way. The first is bookkeeping and we do not present it as a
+result; the second is the construction; the third combines them. The proof of
+Theorem~\ref{lem:nonid} is now three lines because the work is done in \S\ref{sec:impossible}
+above.
 
 \input{paper/sections/theory_core_main}
 
-\subsection{How the Results Fit Together, and Which Steps Are Substantive}
-\begin{center}\small
-\textbf{Thm.~\ref{lem:nonid}} (opposite-world label-kernel construction; $\TV=0$)
-$\rightarrow$ \textbf{Cor.~\ref{cor:matched-abstain}} (abstention forced at rate $\ge1-2\alpha$)
-$\rightarrow$ \textbf{Aud-A} (label-free budget audits are vacuous) \\[3pt]
-{\itshape the row above is the content; the row below is bookkeeping and an assumption} \\[3pt]
-disagreement-region reduction and the residual definition $\gamma:=\bar a-\tfrac12-M$
-$\rightarrow$ identity $\sign\Delta=\sign(M+\gamma)$
-$\rightarrow$ \textbf{Thm.~\ref{thm:headline}} (interval arithmetic $+$ the construction above) \\[3pt]
-assumed coverage $\Pr[|\widehat\Delta-\Delta|\le\varepsilon]\ge1-\alpha$
-$\rightarrow$ \textbf{Thm.~\ref{thm:certificate}} (three-line implication)
-\end{center}
-\noindent We separate the two rows deliberately. Theorem~\ref{thm:certificate} is an implication
-from an assumed premise, and the premise---not the theorem---is where the difficulty lives;
-\S\ref{sec:fa-identity} shows that on our stress grids the premise is supplied by a calibration
-that makes the conclusion arithmetically unavoidable. Theorem~\ref{thm:headline}'s sufficiency
-clause is likewise an inequality on an interval we defined. What cannot be obtained by definition
-is the construction in Theorem~\ref{lem:nonid} and its audit corollary, and that is where we ask
-the reader to look.
+% CUT 2026-07-27 (length pass): fig:frontier (fig_frontier_schematic.png) was a
+% schematic of Theorem~\ref{thm:headline} whose four regions and actions are the
+% four rows of the region/action tabular that theory_core_main.tex prints
+% immediately above it. Zero \ref s in either build, and the asset is absent from
+% this snapshot, so it was typesetting a placeholder box. The figure duplicated a
+% table by its own caption; the table is kept.
 
-\subsection{Extensions and Deferred Results}
+\input{paper/sections/theory_beta_minimax}
+
+\subsection{Is the impossibility configuration observed?}\label{sec:necessity-observed}
+\input{paper/sections/necessity_observed}
+
+\subsection{Extensions and deferred results}
 Additional minimax, anytime-valid, multicandidate, and one-bit results are retained in the long
-manuscript (\texttt{kbound.tex}) and are not used by the short-paper claims; the
-auditability of the drift budget itself is stated in Appendix~\ref{app:audit-short},
-with proofs in the long manuscript. The saved iWildCam
+manuscript (\texttt{kbound.tex}) and are not used by the short-paper claims; the \emph{positive}
+side of the budget question --- which structural purchases yield a computed budget, and at what
+rate --- is stated in Appendix~\ref{app:audit-short} and analysed as an instance of
+Proposition~\ref{prop:threeterm}. The saved iWildCam
 streaming script computes its betting increments from frozen and adapted window accuracies, which
 require target labels. We therefore retain that run only as a label-informed offline stress
 diagnostic (on the native $35{,}360$-image iWildCam test stream, continual TENT collapses to a
@@ -319,10 +395,319 @@ cumulative macro-F1 of $0.02$ versus $0.26$ frozen, with predictions degeneratin
 classes); it is not a label-free KGA deployment result and no streaming empirical claim is made
 in this paper.
 
-\subsection{Claim Scope}
-The population theorem is conditional on the declared class $\mathcal C_\beta$, and the finite-sample guarantee is conditional on valid interval coverage. The theorem controls the marginal probabilities $\Pr(\textsc{adapt},\Delta\le0)$ and $\Pr(\textsc{freeze},\Delta\ge0)$; it does not automatically control the conditional error among committed actions. The framework does not claim that $\beta$ is identifiable from unlabeled deployment data, that the empirical radius $\varepsilon$ estimates $\beta$, or that calibration coverage transfers to arbitrary unseen domains without an assumption or correction.
+\subsection{Claim scope}
+The population theorem is conditional on the declared class $\mathcal C_\beta$, and the
+finite-sample guarantee is conditional on valid interval coverage. The theorem controls the marginal
+probabilities $\Pr(\textsc{adapt},\Delta\le0)$ and $\Pr(\textsc{freeze},\Delta\ge0)$; it does not
+automatically control the conditional error among committed actions.
+Theorem~\ref{thm:beta-minimax} proves that $\beta$ is not identifiable from unlabeled deployment
+data, and Theorem~\ref{epi:thm-ident}(b) proves that it is not identifiable from unlabeled
+\emph{historical} data either; the framework does not claim that the empirical radius $\varepsilon$
+estimates $\beta$, or that calibration coverage transfers to arbitrary unseen domains without an
+assumption or correction.
 
-\section{KGA Method}\label{sec:method}
+\section{The measured consequence: a $\beta$ sweep (negative
+result)}\label{sec:beta-sweep}
+Theorem~\ref{thm:anchor} predicts that a budget bought with labels at a domain other than the
+deployment domain is worth nothing absent a declared coupling. \textbf{This section is that
+prediction, measured.} We derived $\beta$ the way \S\ref{sec:method} of this paper recommends ---
+as a high quantile of the realized drift on source-like development cells --- and ran the population
+rule against realized benefit signs on $6{,}885$ real evaluation cells. The result is negative: the
+frontier does not operationalize, because $\beta$ cannot be declared from development data in a way
+that is simultaneously sound and useful. We report it in full, and narrow the corresponding claim
+rather than hedge it (\S\ref{sec:limits}).
+
+\paragraph{What is empirically testable, given that the decomposition is an identity.}
+$\gamma$ is \emph{defined} as the residual $\bar a-\tfrac12-M$ (Remark~\ref{rem:gamma-residual}), so
+the sufficiency half of Theorem~\ref{thm:headline} is interval arithmetic and no experiment can
+refute it. The empirical content is exactly two claims:
+\textbf{(C1)} the label-free margin $M$ carries usable sign information about $\Delta$; and
+\textbf{(C2)} a budget $\beta$ declared from data the deployer actually has bounds $|\gamma|$ on the
+deployment cells. If (C2) fails, clause (ii) is true but vacuous---the world the deployer is in is
+not the class they declared. We measure both. Proposition~\ref{prop:threeterm} says exactly what
+(C2) asserts: the declaration procedure supplies the first term $|\gamma_{\mathrm{cal}}|$ and sets
+the transfer term $\Delta_{\mathcal F}(\mu_{\mathrm{cal}},\mu_T)$ and the invariance defect $\rho$
+to zero, so (C2) is the claim that those two terms are zero and the measurement below is a test of
+that claim.
+
+\paragraph{Design.} $6{,}885$ real evaluation cells, no retraining: the CIFAR-10-C stress grid
+($432$ conditions $\times$ $3$ adapters $\times$ $5$ seeds $=6{,}480$; $6$ corruption families, $2$
+severities; $\Pr(\Delta>0)=0.740$, mean $|\Delta|=0.1355$) and the ImageNet-C multi-seed grid
+($27\times3\times5=405$; $3$ families, $3$ severities; $\Pr(\Delta>0)=0.756$, mean
+$|\Delta|=0.0509$). Recomputing the oracle action from $\sign\Delta$ reproduced the recorded
+\texttt{oracle\_action} on $6{,}885/6{,}885$ cells.
+$M$ is built from the $11$-dimensional label-free evidence vector $Z$ only, in three variants of
+increasing strength---$M_{\mathrm{DoC}}$ (difference of confidences, ridge), $M_{\mathrm{ATC4}}$
+(confidence gap, entropy drop, high-confidence fraction, marginal KL; ridge), $M_{\mathrm{GBM}}$
+(all $11$ coordinates, gradient boosting)---plus $M:=\widehat\Delta$, the shipped estimator, used
+only as a \emph{rule-form} control that holds the evidence channel and the calibration protocol
+fixed. Four splits: leave-one-corruption-family-out (\textsc{loco}, primary), leave-one-seed-out
+(\textsc{loso}), a source-like holdout fit on the mildest severity and mildest update strength
+(\textsc{srclike}, the deployment-realistic calibration), and \textsc{shipped}. $\beta$ is declared
+as $\widehat\beta=q_{0.90}(|\Delta-M|)$ on the source-like dev cells with $M$ computed out of fold;
+no target cell enters the declaration.
+
+\paragraph{Label firewall.} $B$, $a_{\text{oracle}}$, \texttt{oracle\_action} and \texttt{regime}
+are loaded into a separate structure that no feature builder and no estimator design matrix
+touches; labels enter only as the regression target on disjoint calibration folds (the labeled dev
+data a deployer is assumed to have---the same assumption $\widehat\Delta$ already makes) and inside
+the evaluation functions. An adversarial checker verifies this on all six
+(dataset~$\times$~estimator) configurations: permuting the labels of the \emph{scored} fold leaves
+$M$ bit-identical; permuting the labels of the \emph{training} folds changes it; and under full
+label permutation the out-of-fold AUC collapses to chance ($0.495$--$0.501$ on CIFAR-10-C,
+$0.474$--$0.496$ on ImageNet-C, over $10$ permutations each).
+
+\paragraph{Scale convention (stated, not glossed).} These artifacts do not record $\mu_T(D)$, so
+$M$, $\gamma$ and $\beta$ here are on the \emph{benefit} scale, $\Delta=M+\gamma$ with
+$\gamma:=\Delta-M$. Since $2\mu_T(D)>0$ the sign identity and the frontier's form are preserved
+exactly; what is not preserved is that a single benefit-scale $\beta$ corresponds to a
+\emph{cell-varying} disagreement-scale budget $\beta/(2\mu_T(D_i))$.
+
+\paragraph{(C1) The evidence channel is real, and weaker than its AUC suggests.} Out-of-fold
+(\textsc{loco}) AUC against $\sign\Delta$ is $0.754/0.875/0.974$ (DoC/ATC4/GBM) on CIFAR-10-C and
+$0.351/0.739/0.938$ on ImageNet-C; the shipped $\widehat\Delta$ reaches $0.982$ and $0.893$. Two
+qualifications belong next to those numbers. The base rate is $0.740$, so $M_{\mathrm{ATC4}}$'s raw
+sign agreement of $0.808$ is only $+6.8$ points over the constant ``always adapt.'' And
+difference-of-confidences---the single most standard label-free accuracy-shift statistic---is
+\emph{anti-predictive} on ImageNet-C: AUC $0.351$ (\textsc{loco}), $0.264$ (\textsc{loso}), $0.373$
+(\textsc{srclike}), consistently below $0.5$. The frontier's evidence channel is not
+benchmark-agnostic.
+
+\paragraph{(C2) The declared budget does not bound the realized drift.} Table~\ref{tab:beta-sweep}
+is the result of the exercise. Against $\widehat\beta$ we report $\beta^{\min}_{\mathrm{sound}}$,
+the smallest budget for which the population rule makes \emph{zero} committed sign errors---an
+oracle diagnostic, i.e.\ the number the deployer would have had to declare. The two benchmarks fail
+in opposite directions and neither leaves a usable operating point.
+On CIFAR-10-C the declared budget is $1.4\times$ to $50\times$ too small; between $24\%$ and $73\%$
+of deployment cells fall outside the declared class $\mathcal C_\beta$, and committed actions are
+correspondingly wrong at rates of $0.4\%$ to $16.6\%$ where the theorem promises $0\%$.
+On ImageNet-C a large enough budget \emph{is} derivable and it is useless: in $5$ of $10$
+configurations the declared $\widehat\beta$ produces zero commitments on all $405$ cells.
+Of the $20$ configurations, \textbf{$3$ deliver the promised zero commit-error rate at nonzero
+yield} (all ImageNet-C, all using the full-$Z$ GBM or the shipped estimator; \emph{none} using an
+ATC-style margin, \emph{none} on CIFAR-10-C), \textbf{$5$ deliver it vacuously} at zero yield, and
+\textbf{$12$ commit at error rates between $0.4\%$ and $100\%$}. The most adverse single row is
+\textsc{imagenetc}\,$|$\,\textsc{srclike}\,$|$\,$M_{\mathrm{GBM}}$---exactly the honest source-only
+calibration our own text recommends---which declares $\widehat\beta=0.0302$, commits on $62$ cells,
+and gets $53.2\%$ of them wrong while formally ``certified.'' Finding a $\beta$ that is both sound
+and high-yield on CIFAR-10-C requires already knowing the answer: $\beta^{\min}_{\mathrm{sound}}$ is
+computed from labels. The parameter is not declarable.
+
+\begin{table*}[t]\centering\scriptsize
+\caption{\textbf{The $\beta$-sweep frontier test: what the deployer gets at the budget the
+declaration procedure returns.} $\widehat\beta=q_{0.90}(|\Delta-M|)$ on source-like dev cells with
+out-of-fold $M$; no target cell is used. $\beta^{\min}_{\mathrm{sound}}$ (oracle diagnostic) is the
+smallest budget giving zero committed sign errors. ``$\Pr(|\gamma|\le\widehat\beta)$'' is the
+fraction of deployment cells that satisfy the \emph{declared} class. Theorem~\ref{thm:headline}
+promises a commit-error rate of exactly $0$ whenever that class holds. Rows with $0$ commitments are
+sound vacuously. \emph{Read the last column against its null, not against $1$:} $\widehat\beta$ is a
+$0.90$ quantile, so $\Pr(|\gamma|\le\widehat\beta)$ is exactly $0.900$ on the dev cells by
+\texttt{np.quantile}'s definition, and an adversarial re-run with the labels shuffled returns
+$0.890$--$0.902$ on the target cells. The informative CIFAR-10-C entries are the ones far
+\emph{below} $0.90$; the ImageNet-C entries ($0.896$--$0.985$) sit at or above the null and carry
+almost no information, which is why the ImageNet-C conclusion is drawn from the yield column
+instead. Source:
+\texttt{experiments/kbound/frontier\_sweep\_v1/beta\_sweep\_results.json} (seed $20260726$);
+null values from \texttt{adversarial\_ablations\_results.json}.}
+\label{tab:beta-sweep}
+\setlength{\tabcolsep}{4pt}
+\begin{tabular}{@{}llcccccrcc@{}}
+\toprule
+split & $M$ & AUC & $\widehat\beta$ & $\beta^{\min}_{\mathrm{sound}}$ & ratio &
+yield & \#commit & \textbf{commit-error} & $\Pr(|\gamma|\le\widehat\beta)$ \\
+\midrule
+\multicolumn{10}{@{}l}{\emph{CIFAR-10-C stress grid, $n=6{,}480$}}\\
+\textsc{loco} & DoC & $0.754$ & $0.0460$ & $0.2375$ & $5.2\times$ & $0.691$ & $4478$ & $\mathbf{0.166}$ & $0.452$ \\
+\textsc{loco} & ATC4 & $0.875$ & $0.0360$ & $0.5575$ & $\mathbf{15.5\times}$ & $0.472$ & $3057$ & $\mathbf{0.031}$ & $0.756$ \\
+\textsc{loco} & GBM & $0.974$ & $0.0213$ & $0.0433$ & $2.0\times$ & $0.634$ & $4108$ & $0.007$ & $0.607$ \\
+\textsc{loso} & DoC & $0.772$ & $0.0421$ & $0.2363$ & $5.6\times$ & $0.716$ & $4637$ & $\mathbf{0.165}$ & $0.478$ \\
+\textsc{loso} & ATC4 & $0.860$ & $0.0326$ & $0.6319$ & $\mathbf{19.4\times}$ & $0.487$ & $3154$ & $\mathbf{0.039}$ & $0.727$ \\
+\textsc{loso} & GBM & $0.954$ & $0.0092$ & $0.4600$ & $\mathbf{50.1\times}$ & $0.742$ & $4807$ & $0.022$ & $0.661$ \\
+\textsc{srclike} & DoC & $0.822$ & $0.0482$ & $0.1518$ & $3.1\times$ & $0.694$ & $3371$ & $\mathbf{0.108}$ & $0.376$ \\
+\textsc{srclike} & ATC4 & $0.901$ & $0.0345$ & $1.4099$ & $\mathbf{40.9\times}$ & $0.745$ & $3620$ & $\mathbf{0.075}$ & $0.274$ \\
+\textsc{srclike} & GBM & $0.969$ & $0.0408$ & $0.0563$ & $1.4\times$ & $0.707$ & $3438$ & $0.032$ & $0.386$ \\
+\textsc{shipped} & $\widehat\Delta$ & $0.982$ & $0.0097$ & $0.0257$ & $2.7\times$ & $0.749$ & $4852$ & $0.004$ & $0.707$ \\
+\midrule
+\multicolumn{10}{@{}l}{\emph{ImageNet-C multi-seed grid, $n=405$}}\\
+\textsc{loco} & DoC & $0.351$ & $0.2395$ & $0.0166$ & $0.1\times$ & $\mathbf{0.000}$ & $0$ & --- & $0.956$ \\
+\textsc{loco} & ATC4 & $0.739$ & $0.2036$ & $0.1167$ & $0.6\times$ & $\mathbf{0.000}$ & $0$ & --- & $0.956$ \\
+\textsc{loco} & GBM & $0.938$ & $0.0360$ & $0.0343$ & $1.0\times$ & $0.314$ & $127$ & $0.000$ & $0.896$ \\
+\textsc{loso} & DoC & $0.264$ & $0.2373$ & $0.0154$ & $0.1\times$ & $\mathbf{0.000}$ & $0$ & --- & $0.956$ \\
+\textsc{loso} & ATC4 & $0.733$ & $0.2305$ & $0.1918$ & $0.8\times$ & $\mathbf{0.000}$ & $0$ & --- & $0.956$ \\
+\textsc{loso} & GBM & $0.946$ & $0.0420$ & $0.0403$ & $1.0\times$ & $0.331$ & $134$ & $0.000$ & $0.923$ \\
+\textsc{srclike} & DoC & $0.373$ & $0.1994$ & $0.0752$ & $0.4\times$ & $\mathbf{0.000}$ & $0$ & --- & $0.985$ \\
+\textsc{srclike} & ATC4 & $0.826$ & $0.2156$ & $0.2394$ & $1.1\times$ & $0.007$ & $2$ & $\mathbf{1.000}$ & $0.956$ \\
+\textsc{srclike} & GBM & $0.882$ & $0.0302$ & $0.0847$ & $2.8\times$ & $0.230$ & $62$ & $\mathbf{0.532}$ & $0.511$ \\
+\textsc{shipped} & $\widehat\Delta$ & $0.893$ & $0.0487$ & $0.0468$ & $1.0\times$ & $0.252$ & $102$ & $0.000$ & $0.921$ \\
+\bottomrule
+\end{tabular}
+\end{table*}
+
+\begin{figure*}[t]\centering
+\kbgraphics[width=0.98\textwidth]{figures/fig_beta_frontier_test.png}
+\caption{\textbf{The population frontier does not operationalize.}
+\emph{(a)} The budget a deployer can declare from dev data, $\widehat\beta$, against the budget
+soundness actually required, $\beta^{\min}_{\mathrm{sound}}$; points above the diagonal are
+configurations whose committed actions are unsound. All ten CIFAR-10-C configurations sit above it,
+by $1.4\times$ to $50\times$.
+\emph{(b)} At $\widehat\beta$: decision yield against realized commit-error rate. The theorem
+promises the green line. The five configurations on it at yield $0$ achieve soundness by never
+committing on any of the $405$ ImageNet-C cells.
+\emph{(c)} CIFAR-10-C regret--yield curves for the population rule swept over $\beta$, against the
+shipped conformal rule. With a genuinely held-out evidence margin (blue, green) the population rule
+is dominated at every $\beta>0$---the green curve reaches the conformal rule only at its
+$\beta\!\to\!0$ endpoint, the degenerate never-abstain plug-in; the one curve that beats the
+conformal rule at a nonzero budget (orange) is the control in which $M$ is
+set to the shipped $\widehat\Delta$, i.e.\ the evidence channel is held fixed and only the rule form
+changes. Regenerated by
+\texttt{figures/source/make\_frontier\_sweep\_figs.py} from
+\texttt{beta\_sweep\_results.json}.}
+\label{fig:beta-frontier}
+\end{figure*}
+
+\paragraph{The confusion matrix for the soundness prediction.} Table~\ref{tab:beta-confusion} splits
+every cell at $\widehat\beta$ into committed/abstained $\times$ $\sign M$ correct/wrong. The
+theorem's prediction is that the top-right entry is empty and the bottom row is a coin flip. On the
+primary CIFAR-10-C configuration the top-right entry contains $94$ cells, and the bottom row is not
+a coin flip: $M$ still ranks the sign at AUC $0.728$ inside the band it declares unidentifiable, and
+$36.5\%$ of in-band cells have $|\Delta|>0.02$. Sign balance inside the band does approach
+$50$/$50$ on CIFAR-10-C ($0.506$--$0.570$ across configurations), which is a point \emph{for} the
+theorem's picture; the ranking result is the point against it. Because abstention resolves to
+\textsc{freeze}, the forfeited benefit is expensive: at $\widehat\beta=0.0360$ the population rule's
+regret is $0.0076$ with a condition-clustered $95\%$ interval $[0.0065,0.0087]$---an interval that
+\emph{contains} the regret of simply always adapting ($0.0075$) and excludes the shipped conformal
+rule's $0.0015$ $[0.0013,0.0017]$.
+
+\begin{table}[t]\centering\scriptsize
+\caption{\textbf{Confusion matrix for the soundness prediction}, at the declared $\widehat\beta$.
+Theorem~\ref{thm:headline} predicts ``committed, $\sign M$ wrong'' $=0$ and no usable signal in the
+abstained row. Neither holds. ``in-band AUC'' is the AUC of $M$ against $\sign\Delta$ \emph{inside}
+the abstention band.}
+\label{tab:beta-confusion}
+\setlength{\tabcolsep}{3.5pt}
+\begin{tabular}{@{}lcccccc@{}}
+\toprule
+& & \multicolumn{2}{c}{committed ($|M|>\widehat\beta$)} & \multicolumn{2}{c}{abstained} & \\
+\cmidrule(lr){3-4}\cmidrule(lr){5-6}
+config & $\widehat\beta$ & correct & \textbf{wrong} & $M$ right & $M$ wrong & in-band AUC \\
+\midrule
+c10c \textsc{loco} ATC4 & $0.0360$ & $2963$ & $\mathbf{94}$ & $2270$ & $1153$ & $0.728$ \\
+c10c \textsc{loco} GBM & $0.0213$ & $4079$ & $\mathbf{29}$ & $1866$ & $506$ & $0.877$ \\
+c10c \textsc{shipped} & $0.0097$ & $4834$ & $\mathbf{18}$ & $1157$ & $471$ & $0.805$ \\
+\midrule
+i-C \textsc{srclike} GBM & $0.0302$ & $29$ & $\mathbf{33}$ & $188$ & $20$ & $0.927$ \\
+i-C \textsc{shipped} & $0.0487$ & $102$ & $0$ & $249$ & $54$ & $0.820$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\paragraph{Sensitivity: $\beta$ is a free knob, not a specification.} Sweeping
+$\beta\in[0,0.30]$ on CIFAR-10-C moves decision yield from $1.000$ to $0.120$ and spans regret by
+$26\times$ ($M_{\mathrm{ATC4}}$, \textsc{loco}) and $192\times$ ($M:=\widehat\Delta$). Worse, at a
+\emph{single fixed} $\widehat\beta$ the operating point is unstable across adapters and seeds: over
+the $15$ (method, seed) cells, CIFAR-10-C \textsc{loco}/ATC4 at $\widehat\beta=0.0360$ gives yield
+$0.424$--$0.637$ and commit accuracy $0.851$--$1.000$, and ImageNet-C \textsc{shipped} at
+$\widehat\beta=0.0487$ gives yield $0.000$--$0.519$. A deployment parameter that cannot be estimated
+to within an order of magnitude, moves regret by two orders across its plausible range, and leaves
+yield varying by $21$ to $52$ points at a fixed value, is not a specification.
+
+\paragraph{Head-to-head against the empirical certificate.} With a genuinely held-out $M$
+(\textsc{loco}, \textsc{loso}, \textsc{srclike}), \textbf{no $\beta>0$ matches the shipped conformal
+rule on both yield and regret in $15$ of the $18$ configurations swept.} The three exceptions are
+all the full-$Z$ GBM channel on the $405$-cell, $3$-family ImageNet-C grid at $\beta=0.02$---not a
+primary result, and in none of them is $0.02$ the value the declaration procedure returns. Two
+further configurations ``match'' only at $\beta=0$, the degenerate never-abstain plug-in the paper
+itself declines to call a guarantee. Compared \emph{at matched decision yield}, the population
+rule's regret ratio against the empirical rule is $1.1\times$ to $8.1\times$, with conditional
+false-adapt rates of $0.7\%$ to $51\%$ against the empirical rule's $0.0\%$--$1.0\%$.
+
+\paragraph{The one positive result, stated precisely.} When the evidence channel and the calibration
+protocol are held fixed---$M:=\widehat\Delta$, the same leave-one-cell-out estimator the empirical
+rule uses---$\beta$-thresholding \emph{does} beat the conformal interval on CIFAR-10-C at the
+honestly-derived $\widehat\beta=0.0097$: yield $0.749$ vs.\ $0.668$ at regret $0.00081$ vs.\
+$0.00150$, with non-overlapping condition-clustered intervals ($k{=}432$: $[0.0007,0.0009]$ vs.\
+$[0.0013,0.0017]$). We report the two facts that scope it. First, under corruption-family
+clustering ($k{=}6$) the intervals overlap, $[0.0004,0.0012]$ vs.\ $[0.0006,0.0026]$, and a
+six-cluster interval is not a primary unit. Second, the mechanism is a yield/soundness trade, not a
+vindication: the population rule buys its extra $8$ points of yield by discarding the conformal
+safety margin, committing on $4{,}852$ cells against $4{,}330$ and making $18$ sign errors
+($10$ false \textsc{adapt}, $8$ false \textsc{freeze}) against the empirical rule's $1$
+($0$ false \textsc{adapt}). Soundness is precisely what the theorem sells and precisely what is
+given up. The defensible claim is therefore narrow: \emph{with the evidence channel held fixed,
+thresholding the plug-in margin at a small budget raises decision yield from $0.668$ to $0.749$ at
+lower oracle regret than the conformal interval, at the cost of a $0.3\%$ conditional false-adapt
+rate}---supported at $k{=}432$ condition clusters and not supported at $k{=}6$ family clusters.
+
+\paragraph{What this does and does not touch.} Nothing here bears on either proof. Sufficiency is
+arithmetic; necessity rests on the matched-evidence construction of Theorem~\ref{lem:nonid}, which
+is untouched and remains the mathematically substantive content. What the experiment establishes is
+that the theorem's \emph{operational} reading does not survive contact with data, and we withdraw
+that reading: the frontier is a statement about a declared class whose antecedent we have now
+measured and found violated on $24$--$73\%$ of CIFAR-10-C cells, and the operational certificate is
+the conformal interval, not $|M|>\beta$. Consequences are recorded in \S\ref{sec:limits} and
+\S\ref{sec:guarantees}. Limitations of this test itself: two benchmarks with $6$ and
+$3$ corruption families (family-level intervals are reported but are too few to be primary); the
+benefit scale rather than the disagreement scale; $\beta^{\min}_{\mathrm{sound}}$ is an oracle
+quantity; the \textsc{shipped} split is leaky by family \emph{by design} (it is a rule-form control,
+not a deployment estimate); regret resolves \textsc{abstain} to \textsc{freeze}, which penalizes
+abstention heavily---the soundness conclusions do not depend on that choice, the regret comparisons
+do; and $M$ is fit against realized benefit on disjoint calibration folds, so a reader who rejects
+that assumption should read the AUCs above as upper bounds.
+Four further caveats, all found by an adversarial re-run of this experiment and recorded in
+\path{experiments/kbound/frontier_sweep_v1/adversarial_ablations_results.json}.
+\emph{(i)} For the two cross-fit splits the source-like dev cells used to declare $\widehat\beta$
+are also inside the scored target set ($1{,}620/6{,}480$ and $135/405$); excluding them moves
+CIFAR-10-C \textsc{loco} coverage from $0.452/0.756/0.607$ down to $0.303/0.708/0.509$ (DoC/ATC4/GBM)
+and leaves commit-error unchanged to within $0.5$ points, so the published table understates the
+failure. The \textsc{srclike} rows are already disjoint.
+\emph{(ii)} The ImageNet-C zero-yield rows have the same signature the null produces: with labels
+shuffled, $M$ collapses toward a constant, $\widehat\beta\to q_{0.90}(|\Delta|)$, and yield goes to
+$0$ in $8$ of $12$ configurations. Those rows are therefore evidence that a \emph{weak} $M$ makes
+$\widehat\beta$ useless, not an independent second failure mode of the frontier.
+\emph{(iii)} The chance level for \textsc{loco} AUC is not $0.5$ on CIFAR-10-C: replacing $Z$ with
+noise gives $0.426$, because a per-fold constant predictor is anti-correlated with the held-out
+fold's mean. On ImageNet-C the same control gives $0.486$--$0.540$, so the DoC anti-predictivity
+reported above is real and not a fold artifact.
+\emph{(iv)} The GBM rows move with the estimator's random seed: over five seeds CIFAR-10-C
+\textsc{loco}/GBM gives $\widehat\beta\in[0.0172,0.0217]$ and coverage $\in[0.579,0.629]$, and the
+ImageNet-C \textsc{loco}/GBM commit-error is $0$ on four of five seeds and $0.008$ on the fifth, so
+the ``$3$ configurations at zero commit-error'' count is $2$--$3$, not exactly $3$.
+
+
+\paragraph{It is not a quantile-estimation failure.} The obvious rebuttal is that
+$\widehat\beta=q_{0.90}(|\gamma|)$ is a plug-in quantile and that a conformal order statistic would
+have fixed it. It would not. Replacing the plug-in by the conformal budget of
+Theorem~\ref{epi:thm-conformal} across all $470$ splits of \S\ref{sec:episode-empirics} moves the
+budget by a \emph{median relative gap of $0.34\%$} and the coverage by a median of \emph{exactly
+$0.000$} (\texttt{beta\_estimability/compare\_to\_sweep\_results.json}; the maximum relative gap is
+$52\%$, on the smallest splits). At $K$ in the thousands the conformal correction moves one order
+statistic and nothing else. What the sweep measured was the failure of exchangeability between
+development and deployment cells, not the failure of a quantile estimator, and no conformal
+machinery repairs it.
+
+\input{paper/sections/beta_sweep_correspondence}
+
+\section{Where a budget can come from, what it costs, and why it does not help
+here}\label{sec:episode}
+\input{paper/sections/theory_episode_main}
+
+\section{What remains: the finite-sample certificate and KGA}\label{sec:method}
+Sections~\ref{sec:impossible}--\ref{sec:episode} withdraw the population frontier's operational
+reading and price its replacement. What survives is the object of this section: a finite-sample
+certificate that trades decision yield for a false-adapt guarantee. Its radius $\varepsilon$ is a
+conformal quantity calibrated on held-out residuals and it is \emph{not} an estimate of $\beta$;
+nothing in \S\ref{sec:impossible} applies to it, because it certifies an interval around
+$\widehat\Delta$ rather than a bound on the latent drift.
+
+\input{paper/sections/assumption_contract}
+
+\input{paper/sections/theory_certificate}
+
+\noindent Theorem~\ref{thm:certificate} is an implication from an assumed premise, and the premise
+--- not the theorem --- is where the difficulty lives; \S\ref{sec:fa-identity} shows that on our
+stress grids the premise is supplied by a calibration that makes the conclusion arithmetically
+unavoidable, and reports what an observed $\mathrm{FA}_{\mathrm u}=0$ does and does not establish.
+
 \subsection{System Overview}
 \textsc{KGA} is the paper's practical finite-sample method---a decision wrapper around a fixed
 adapter, not a new adaptation objective and not a numerical implementation of the population
@@ -392,28 +777,21 @@ $h_\theta$ is a gradient-boosted regression tree (scikit-learn
 \texttt{GradientBoostingRegressor}, squared error, $250$ trees, depth $2$, learning rate $0.05$,
 subsample $0.8$, seed $0$), refit \emph{per dataset and per candidate adapter} rather than shared,
 so the estimator itself implies no cross-dataset transfer.
-The complete schema for both panels---exact per-feature formulas and families---is given in
+The coordinate-by-coordinate schema a re-implementer needs---exact per-feature formulas and
+families, for both the $11$-dimensional base panel that drives the stress grids and the
+$16$-dimensional panel the natural-shift protocols use---is
 Appendix~\ref{app:evidence-schema} (Tables~\ref{tab:schema-base} and~\ref{tab:schema-rich}), with
-per-adapter update hyperparameters in Table~\ref{tab:adapter-hparams}.
+per-adapter update hyperparameters in Table~\ref{tab:adapter-hparams}. The calibration and
+held-out evaluation protocol behind every radius in this paper is Appendix~\ref{app:calib-eval}.
 
-\begin{table}[t]\centering\scriptsize
-\caption{Label-free evidence \emph{actually computed} by KGA. The $11$-dim base panel drives the
-stress grids; the natural-shift protocols use a $16$-dim panel that adds the rows marked
-\emph{(nat.)}. Exact formulas and per-track subsets are in the configuration files.}
-\label{tab:evidence-map}
-\begin{tabular}{@{}p{0.27\linewidth}p{0.63\linewidth}@{}}
-\toprule
-Family & Statistics \\
-\midrule
-Frozen output $Z_0$ & mean entropy, mean confidence, normalized marginal-class entropy; entropy/confidence quantiles \emph{(nat.)} \\
-Adapted output $Z_a$ & mean entropy, mean confidence, normalized marginal entropy, frac.\ confidence $>0.9$ \\
-Change $Z_{\rm change}$ & entropy drop, marginal-balance drop, entropy gap \\
-Disagreement & frozen/adapted prediction-disagreement rate \emph{(nat.)} \\
-Distribution drift & adapted-vs-frozen marginal $\mathrm{KL}$; free-energy shift, BN-statistic $\mathrm{KL}$, ATC/confidence drop \emph{(nat.)} \\
-Update behavior & $\ell_2$ norm of the adapter parameter update \\
-\bottomrule
-\end{tabular}
-\end{table}
+% CUT 2026-07-27 (length pass): tab:evidence-map, "Label-free evidence actually
+% computed by KGA". A six-row family-level paraphrase of the evidence panel whose
+% every entry is given exactly, per coordinate and with its formula, by
+% Table~\ref{tab:schema-base} (base 11-dim) and Table~\ref{tab:schema-rich}
+% (rich 16-dim) in Appendix~\ref{app:evidence-schema} -- which the sentence above
+% already pointed at, three lines after pointing at this table. The appendix
+% tables are strictly more informative; nothing was in this one that is not in
+% them. Its single incoming \ref is rewritten above.
 
 \subsection{Out-of-Fold Uncertainty Calibration}
 For calibration condition $i$, an estimator that did not train on $i$ produces $\widehat\Delta_{-i}(Z_i)$ and residual
@@ -441,7 +819,7 @@ The radius is a pre-specified upper residual quantile. On clean development/test
 \end{algorithm}
 
 \begin{figure}[t]\centering
-\includegraphics[width=0.95\columnwidth]{figures/fig_certificate.png}
+\kbgraphics[width=0.95\columnwidth]{figures/fig_certificate.png}
 \caption{\textbf{The certificate rule in one picture.} \textsc{KGA} estimates the label-free benefit
 $\widehat\Delta(Z)$ and forms an interval $\widehat\Delta\pm\varepsilon$: if the interval is entirely
 positive it adapts, if entirely negative it freezes, and otherwise it abstains. The vertical axis here
@@ -456,28 +834,30 @@ marginal coverage; exchangeability or shift correction is used to justify covera
 alignment is relevant to the population interpretation and estimator transfer. No target labels are
 used at deployment.
 
-\subsection{Population Frontier versus Empirical Certificate}
-\textsc{KGA}'s commit boundary is not a swept hyperparameter, but the population frontier and the
-empirical radius must be kept distinct. The \emph{population} frontier of
-Theorem~\ref{thm:headline} says a strict action is uniformly sound over $\mathcal C_\beta$ iff the
-population margin $|M|$ exceeds the declared budget $\beta$. The realized drift satisfies
-$|\gamma|\le\beta$ but is unobserved. KGA instead learns $\widehat\Delta$ from $Z$ and uses a
-finite-sample residual-coverage radius $\varepsilon$, fixed before target-test scoring. The radius
-neither estimates nor substitutes for $\beta$; conditional on valid coverage it controls marginal
-decision errors without requiring risk alignment. Confidence-thresholding (ATC) and
-agreement-trend selection (AGL) fit a scalar against a labeled or held-out signal and
-predict \emph{accuracy}. \textsc{KGA} instead certifies a strict benefit direction with a calibrated
-interval and, unlike a committal thresholded estimator,
-\textsc{abstains} where that interval crosses zero. This behavior is consistent with the structural region
-studied by Theorem~\ref{lem:nonid}, though finite-sample abstentions may also reflect sampling
-uncertainty, estimator inadequacy, or calibration conservatism. The impossibility construction, not a tuned cutoff, is what separates
-\textsc{KGA} from ``estimate accuracy, then threshold.''
+\subsection{$\varepsilon$ is not an estimate of $\beta$}
+\textsc{KGA}'s commit boundary is not a swept hyperparameter, and it is not a numerical
+implementation of the population frontier. \S\ref{sec:impossible} and \S\ref{sec:beta-sweep} make
+the distinction load-bearing, so we state it once, exactly. The population frontier
+(Theorem~\ref{thm:headline}) certifies a strict action over the declared class $\mathcal C_\beta$
+when the population margin $|M|$ exceeds the \emph{declared} budget $\beta$; the realized drift
+$\gamma$ is unobserved and, by Theorem~\ref{thm:beta-minimax}, unknowable label-free. \textsc{KGA}
+instead learns $\widehat\Delta$ from $Z$ and uses a finite-sample residual-coverage radius
+$\varepsilon$, fixed on the calibration split before any target-test cell is scored.
+\textbf{$\varepsilon$ neither estimates nor substitutes for $\beta$}: it is a quantile of held-out
+$|\widehat\Delta-\Delta|$ residuals, and conditional on valid coverage it controls marginal decision
+errors (Theorem~\ref{thm:certificate}) without requiring risk alignment and without any statement
+about $\gamma$. Nothing in \S\ref{sec:impossible} constrains it, because it is not an audit of the
+drift budget.
 
-
-\subsection{Selecting and Auditing the Drift Budget}
-The drift budget $\beta$ is part of the declared deployment class, not a target-test-tuned hyperparameter. It may be justified from historical domain calibration gaps, a documented domain assumption, or an explicit stress envelope. Sensitivity analysis should report how decisions change over a pre-specified range of budgets. A smaller $\beta$ asserts stronger calibration transfer and increases commitment; a larger $\beta$ widens the abstention region. When no credible upper bound is available, the population frontier does not provide a robust sign certificate. Reporting $\beta=0$ is then only a zero-drift plug-in analysis, not an assumption-free or conservative guarantee.
-Appendix~\ref{app:audit-short} states exactly when a \emph{computed} $\widehat\beta$ can replace
-the declared budget, and the limits of any such audit.
+What separates \textsc{KGA} from ``estimate accuracy, then threshold'' is therefore not the value of
+its cutoff. Confidence-thresholding (ATC) and agreement-trend selection (AGL) fit a scalar against a
+labeled or held-out signal and predict \emph{accuracy}; \textsc{KGA} certifies a strict benefit
+\emph{direction} and abstains where the interval crosses zero. Finite-sample abstentions may reflect
+the structural region of Theorem~\ref{lem:nonid} or merely sampling uncertainty, estimator
+inadequacy, or calibration conservatism, and \S\ref{sec:decision-value} separates those causes
+empirically. Finally, the two rules are not interchangeable and the population rule is \emph{not} the
+better one: with a genuinely held-out margin, no positive $\beta$ matches the conformal rule on both
+decision yield and regret in $15$ of $18$ configurations (\S\ref{sec:beta-sweep}).
 
 \subsection{Deployment Semantics and Failure-Safe Behavior}
 The shadow-state workflow is: (1) checkpoint the active model; (2) propose adaptation on a temporary
@@ -498,40 +878,21 @@ adapter-configuration hash differs from the calibrated one, or when the radius o
 missing or numerically invalid. In continual operation the last certified state replaces $f_0$ as
 the fallback.
 
-\subsection{Computational Cost}
-KGA cannot avoid the cost of proposing an update because candidate adaptation includes forward and
-backward computation before commitment. The controller's \emph{added} cost is measured by a
-controller-only microbenchmark (Table~\ref{tab:cost}): evidence
-extraction $0.074$\,ms and benefit-model evaluation $0.127$\,ms per decision ($0.20$\,ms total),
-plus one model copy ($44.8$\,MB, ResNet-18/CIFAR) for rollback; the benefit model itself is
-$195$\,KB. Candidate adaptation and inference are unchanged by KGA---$f_a$ is evaluated
-regardless---and are expected to dominate end-to-end latency, but this microbenchmark does not
-measure them: a complete end-to-end component profile (frozen inference, candidate adaptation and
-inference, rollback time, total window latency) remains pending (App.~\ref{app:runtime}).
 
-\begin{table}[t]\centering\footnotesize
-\caption{KGA controller \emph{added} cost (ResNet-18/CIFAR; controller-only microbenchmark).
-Candidate adaptation/inference are unchanged by KGA and are \emph{not} measured here; the
-end-to-end component profile is pending (App.~\ref{app:runtime}).}
-\label{tab:cost}
-\begin{tabular}{lc}
-\toprule
-Component & Cost \\
-\midrule
-Evidence extraction (per batch) & $0.074$\,ms \\
-Benefit-model evaluation (per decision) & $0.127$\,ms \\
-\textbf{Controller added latency} & $\mathbf{0.20}$\,\textbf{ms} \\
-Rollback model copy (memory) & $44.8$\,MB \\
-Benefit model size & $195$\,KB \\
-\bottomrule
-\end{tabular}
-\end{table}
+\input{paper/sections/deployment_gate}
 
 \section{Experimental Setup}\label{sec:exp-setup}
 \subsection{Research Questions}
-The experiments address seven questions: \textbf{RQ1} whether the decision code implements the population frontier as specified (a wiring check on synthetic ground truth, \emph{not} a test of the frontier --- see \S\ref{sec:synthetic}); \textbf{RQ2} whether the interval controls marginal false adaptation \emph{where that is testable} --- wherever a rank radius is computed in-sample it makes $\mathrm{FA}_{\mathrm u}\le\alpha$ an arithmetic identity rather than a measurement (\S\ref{sec:fa-identity}), so RQ2 is really the question of how many \textsc{adapt} decisions a track makes under a leave-one-out radius and whether any of them is wrong; \textbf{RQ3} whether KGA assigns \textsc{adapt}, \textsc{freeze}, and \textsc{abstain} consistently with helpful, harmful, and low-margin conditions; \textbf{RQ4} whether it prevents damage on held-out natural shifts; \textbf{RQ5} whether it improves decision validity over simple and neighboring label-free gates; \textbf{RQ6} which evidence and calibration choices matter; and \textbf{RQ7} what computational overhead the controller adds.
+The experiments address eight questions: \textbf{RQ1} whether the population frontier
+$|M|>\beta$ operationalizes on real data---i.e.\ whether a $\beta$ declared from development cells
+bounds the realized drift at deployment, and whether the resulting rule is competitive with the
+finite-sample certificate (\S\ref{sec:beta-sweep}; the answer is no, and
+Theorem~\ref{thm:anchor} says why); \textbf{RQ1b} what the certificate buys at its
+declared operating point, in decision yield, regret, and false-adapt rate, and whether its
+commitments are better than randomly placed (\S\ref{sec:decision-value}); \textbf{RQ2} whether the interval controls marginal false adaptation \emph{where that is testable} --- wherever a rank radius is computed in-sample it makes $\mathrm{FA}_{\mathrm u}\le\alpha$ an arithmetic identity rather than a measurement (\S\ref{sec:fa-identity}), so RQ2 is really the question of how many \textsc{adapt} decisions a track makes under a leave-one-out radius and whether any of them is wrong; \textbf{RQ3} whether KGA assigns \textsc{adapt}, \textsc{freeze}, and \textsc{abstain} consistently with helpful, harmful, and low-margin conditions; \textbf{RQ4} whether it prevents damage on held-out natural shifts; \textbf{RQ5} whether it improves decision validity over simple and neighboring label-free gates; \textbf{RQ6} which evidence and calibration choices matter; and \textbf{RQ7} what computational overhead the controller adds.
 
 \subsection{Datasets and Shift Taxonomy}
+Table~\ref{tab:dataset-taxonomy} is the track-by-track inventory.
 The evaluation separates controlled corruption/composition stress, large-scale corruption, natural institutional or geographic shifts, domain generalization, and low-margin diagnostic transfers. This taxonomy matters because mixed conditions test action discrimination, one-sided shifts test safe commitment, and low-margin transfers test abstention. The nine tracks draw on CIFAR-10-C~\cite{hendrycks2019cifar10c}, ImageNet~\cite{deng2009imagenet}, the WILDS Camelyon17, iWildCam, and RxRx1 shifts~\cite{koh2021wilds,bandi2019camelyon,taylor2019rxrx1}, Office-Home~\cite{venkateswara2017officehome}, PACS via DomainBed~\cite{gulrajani2021domainbed}, and CIFAR-10.1~\cite{recht2019cifar10}; models build on RobustBench checkpoints~\cite{croce2021robustbench} with PyTorch~\cite{paszke2019pytorch} and scikit-learn~\cite{pedregosa2011sklearn}.
 
 \begin{table*}[t]\centering\scriptsize
@@ -556,6 +917,8 @@ CIFAR-10.1 & natural resampling & TTA candidates & low-margin transfer diagnosti
 
 \subsection{Models, Adapters, and Leakage Control}
 For every track, the source checkpoint, candidate adapter, update mode, learning rate, number of steps, batch construction, adapted parameter subset, and random seeds must be declared before held-out scoring. Adapter selection, evidence selection, benefit-model fitting, and residual calibration use development data only. All choices are frozen before the target test cells are scored once; target labels are opened afterward solely for offline audit. The calibration and scoring configuration is uniform across tracks except where noted in Table~\ref{tab:config-table}.
+
+\paragraph{A seed-level heterogeneity we found and did not re-pool.} Seed $0$ of the \texttt{stress\_grid\_multiseed\_v1} artifact is not exchangeable with seeds $1$--$4$: its mean $\Delta$ is $0.0895$ against $0.128$, its helpful fraction $0.614$ against $0.767$--$0.776$, and its mean adapter update norm $12.39$ against $3.42$--$3.44$, i.e.\ $3.6\times$ the others. The episode-conformal estimator of \S\ref{sec:episode} detects it independently: the leave-one-seed-out coverage for seed $0$ is $0.730$/$0.731$ against $0.885$--$0.942$ for seeds $1$--$4$. This is a pre-existing property of the artifacts, not of any analysis in this paper, and it may affect any number pooled over the five seeds. We disclose it and \emph{do not} silently re-pool or drop the seed; every five-seed figure in this paper includes seed $0$. Source: \path{beta_estimability/episode_beta_results.json}.
 
 \paragraph{The quantile rule, declared once.}\label{par:quantile-rule}
 Every radius reported in this paper is the \textbf{exact-rank} order statistic
@@ -721,62 +1084,16 @@ ResNet-50 on seeds~$0$--$4$. Hardware affects runtime but not the decision defin
 
 \section{Results}\label{sec:exp}
 The results are organized by regime rather than by dataset prestige, and they are read as a safety evaluation. The primary result is that on the four one-sided natural tracks with locked held-out artifacts KGA is no-harm---the deployment guarantee an operator wants---while on the three remaining natural tracks it is a conservative null or a declared failure, which we report in the same table rather than in a footnote. Controlled mixed regimes then test action discrimination and selective coverage and supply the secondary beats-both mechanism confirmation, and low-margin transfers test whether the method declines unsupported claims. Accuracy and regret are reported as descriptive task metrics throughout, not as the controller's objective.
+This section is the evidence for the last link of the spine: what the surviving certificate buys.
+\S\ref{sec:cifar-stress} carries its strongest stress result (leave-one-corruption-out
+recalibration at zero false adaptations in all ten runs), \S\ref{sec:fa-identity} is the paper's own
+refutation of its most quotable number, and \S\ref{sec:decision-value} measures the yield/safety
+frontier exactly, including the track on which the certificate buys less than nothing. The evidence
+for the earlier links is in \S\ref{sec:beta-sweep} and \S\ref{sec:episode-empirics}.
 
 %% fig:regime-map (fig_phase_diagram.png) removed: its own caption conceded it was a conceptual
 %% schematic with illustrative rather than measured axis coordinates, duplicating
 %% Table~\ref{tab:regime-summary}. No \ref pointed at it.
-
-\subsection{Synthetic illustration of the frontier (not a test of it)}\label{sec:synthetic}
-Before the real-data tracks we \emph{illustrate} the population rule on synthetic ground truth, where
-the observable margin $M$, the unobserved drift $\gamma\sim\mathrm{U}(-\beta,\beta)$, and hence the
-true benefit sign $\sign\Delta=\sign(M+\gamma)$ are all controlled. We label this an illustration
-rather than a validation, and we say plainly why, because the distinction was blurred in earlier
-versions of this work.
-
-\paragraph{Why this cannot falsify the frontier.} In the generator, the evidence $Z$ is four copies
-of $M$ perturbed by Gaussian noise of scale $0.02$, and the benefit is $B=M+\gamma$. Any competent
-regressor therefore recovers $\widehat\Delta\approx M$, which makes the residual
-$|\widehat\Delta-\Delta|$ equal to $|\gamma|$ up to observation noise, so the conformal radius
-converges to $q_{0.9}(|\mathrm U(-\beta,\beta)|)=0.9\beta$ \emph{by algebra}. The commit rule
-$|\widehat\Delta|>\varepsilon$ is then $|M|>0.9\beta$: the frontier is not discovered, it is
-substituted in. For the same reason the reported ``$90.0\%$ empirical coverage'' is not evidence of
-anything --- \texttt{np.quantile} at level $0.9$ returns a value with exactly $90\%$ of the sample
-below it for \emph{any} input, and we verified it is exactly $0.900$ at both $n{=}400$ and $n{=}220$.
-The generator's own docstring states the mechanism. This experiment demonstrates that the
-implementation computes what the theory says; it cannot come out negative and so it tests nothing.
-
-\paragraph{What it shows.} With that caveat, the run is internally consistent
-(Fig.~\ref{fig:frontier-measured}; $\alpha{=}0.10$): $\widehat\Delta$ tracks $\Delta$; the commit rate
-moves from $6.5\%$ for $|M|<\beta$ to $96.7\%$ for $|M|>\beta$ and the committed sign is correct
-$99.3\%$ of the time; and $\mathrm{FA}_{\mathrm u}\le0.014$ for every
-$\beta\in\{0.05,\ldots,0.20\}$. Read it as a wiring check on the decision code, at the level of a
-unit test.
-
-\paragraph{The experiment that would test it, and why we have not run it.} A genuine test of the
-population frontier requires $M$ computed from data rather than drawn, evidence that is not a noisy
-copy of $M$, a $\gamma$ whose $0.9$-quantile is not $\beta$, and a held-out scoring set. The natural
-design on our own tracks is a $\beta$ sweep on the CIFAR-10-C grid: take $M$ from the ATC-style
-source-calibrated correctness score already in the rich evidence panel (\S\ref{sec:method}), declare
-$\beta$ from historical dev-to-deployment calibration gaps rather than from the test residuals,
-sweep $\beta\in\{0,0.02,0.05,0.10,0.20\}$, and run the population rule $M\gtrless\pm\beta$ against
-the realized benefit signs on held-out cells. That experiment is not in this paper. Its absence is
-the single largest gap in our evidence: as things stand, \textbf{the population theory has no contact
-with any of the nine benchmark tracks}, and $\beta$ is never numerically supplied to \textsc{KGA} on
-real data (the empirical decision uses $\widehat\Delta\pm\varepsilon$ throughout). We flag it as the
-first item of future work, and note that a \emph{negative} result there would be more informative
-than the present silence.
-
-\begin{figure}[t]\centering
-\includegraphics[width=0.86\columnwidth]{figures/fig_frontier_transition.png}
-\caption{\textbf{Benefit-sign frontier, synthetic illustration} (archived cross-fitted rule). The
-commit rate transitions sharply from abstention to adapt/freeze near $|M|{=}\beta$ and the calibrated
-radius $\varepsilon$ (dotted) tracks $\beta$ --- both by construction, since the generator's residual
-is exactly $\gamma$ and $q_{0.9}(|\gamma|)=0.9\beta$ (\S\ref{sec:synthetic}). This figure is a wiring
-check, not a test. Companion panels---estimator recovery
-and $\mathrm{FA}_{\mathrm u}\le\alpha$ across $\beta$---in
-\texttt{fig\_frontier\_recovery.png}, \texttt{fig\_frontier\_fa\_coverage.png}.}
-\label{fig:frontier-measured}
-\end{figure}
 
 \subsection{CIFAR-10-C stress grid (5 seeds)}\label{sec:cifar-stress}
 \paragraph{What the grid is.} The \emph{stress} grid crosses corruption, severity,
@@ -804,6 +1121,49 @@ among helpful cells it adapts almost all; on marginal cells it abstains. This is
 the paper where the false-adapt guarantee is exercised at power: $1{,}113$ (Tent) and $1{,}244$
 (EATA) \textsc{adapt} decisions, none of them wrong, Clopper--Pearson $95\%$ upper bounds on
 $\mathrm{FA}_{\mathrm c}$ of $0.0027$ and $0.0024$ (\S\ref{sec:fa-identity}).
+
+\paragraph{Leave-one-corruption-out recalibration: the strongest stress test in the paper.} The
+radius on this grid is calibrated leave-one-\emph{cell}-out, so the calibration pool for a cell
+contains the other five severities and repeats of the \emph{same} corruption. That is the most
+favourable partition available, and it is the obvious place to attack the result. We therefore refit
+the whole pipeline leave-one-\emph{corruption}-out --- six folds, the estimator never sees the
+corruption it is scored on --- for \emph{both} candidates and \emph{all five} seeds, ten runs in
+total (Table~\ref{tab:loco-ten}). Every intermediate quantity degrades: the conformal radius inflates
+from $0.0152$--$0.0219$ to $0.0926$--$0.1122$ ($4.3\times$--$6.9\times$), the commitment rate falls
+from $0.509$--$0.600$ to $0.398$--$0.417$, and regret worsens by $3.4\times$--$7.6\times$. The
+safety property does not: \textbf{$\mathrm{FA}_{\mathrm u}=0.0000$ in all ten runs}, zero false
+adaptations in every fold. Source:
+\path{experiments/kbound/frontier_sweep_v1/out_cifar_loco_tent_eata.json}. Three things are lost and
+we state all three. \emph{(a) The routing-utility claim does not survive on EATA.} Against
+always-adapt, \textsc{KGA} under LOCO wins on all five Tent runs ($0.66\times$--$0.82\times$ its
+regret) and \emph{loses on all five EATA runs} ($2.01\times$--$2.94\times$). It beats always-freeze
+on all ten. So what survives leave-one-corruption-out is the false-adapt guarantee and the
+freeze-side utility, not beats-both. \emph{(b) The freeze branch empties.} The inflated radius
+swallows the harmful cells: $0$ freezes in every LOCO run against $22$--$76$ as shipped, so the
+three-way routing degenerates to adapt-or-abstain. \emph{(c)} Six corruption families is a small
+number of folds; this is a robustness check on the safety property, not an independent benchmark.
+
+\begin{table}[t]\centering\footnotesize
+\caption{\textbf{Leave-one-corruption-out recalibration, all ten runs} (two candidates $\times$ five
+seeds, $432$ cells each). ``Shipped'' is the leave-one-cell-out calibration used everywhere else in
+the paper. Regret is against the oracle. \textbf{The safety property survives and the beats-both
+property does not:} against always-adapt ($0.00296$--$0.00833$ across runs) \textsc{KGA} wins on all
+five Tent runs and loses on all five EATA runs; against always-freeze ($0.12373$--$0.13210$) it wins
+on all ten. Source: \texttt{out\_cifar\_loco\_tent\_eata.json}, exact-rank radius.}
+\label{tab:loco-ten}
+\begin{tabular}{@{}lcccc@{}}
+\toprule
+& shipped & LOCO & ratio & $\mathrm{FA}_{\mathrm u}$ (LOCO) \\
+\midrule
+radius $\varepsilon$ & $0.0152$--$0.0219$ & $0.0926$--$0.1122$ & $4.3\times$--$6.9\times$ & --- \\
+commitment rate & $0.509$--$0.600$ & $0.398$--$0.417$ & $0.70\times$--$0.80\times$ & --- \\
+\textsc{KGA} regret & $0.00101$--$0.00185$ & $0.00550$--$0.00997$ & $3.4\times$--$7.6\times$ & --- \\
+freeze decisions & $22$--$76$ & $0$ & --- & --- \\
+regret vs.\ always-adapt & wins $10/10$ & wins $5/10$ (Tent only) & --- & --- \\
+false adaptations & $0$ & $0$ & --- & $\mathbf{0.0000}$ in $10/10$ \\
+\bottomrule
+\end{tabular}
+\end{table}
 
 \paragraph{The beats-both claim, separated by candidate.} Both candidates beat both fixed policies
 on the point estimate. They do \emph{not} survive the same interval scrutiny, and we report them
@@ -838,17 +1198,7 @@ $+0.075\,[0.049,0.100]$. Those intervals treat the mixing ratio as the only sour
 are not cluster-robust; where they disagree with Table~\ref{tab:cifar-cluster}, the cluster-robust
 row is the one we claim on.}
 
-\paragraph{Leave-one-corruption-out calibration.} The radius on this grid is calibrated
-leave-one-\emph{cell}-out, so the calibration pool for a cell contains the other five severities and
-repeats of the \emph{same} corruption. That is the most favourable partition available. Refitting
-the whole pipeline leave-one-\emph{corruption}-out --- six folds, the estimator never sees the
-corruption it is scored on --- degrades every intermediate quantity and the decision still holds
-(bottom row of Table~\ref{tab:cifar-cluster}): residual MAE $0.00959\to0.03090$ ($3.2\times$),
-$R^2$ $0.993\to0.895$, $\varepsilon$ $0.0213\to0.0988$ ($4.6\times$), adapt rate $51.5\%\to41.3\%$,
-and \textsc{KGA} regret $0.00159\to0.00603$ ($3.8\times$) --- still below always-adapt's $0.00792$
-and always-freeze's $0.12410$, at $\mathrm{FA}_{\mathrm u}=0$ under every partition. This is the
-strongest single robustness result in the paper and it is a Tent result: we have not run the
-corresponding refit for EATA.
+\paragraph{Leave-one-corruption-out, intermediate quantities (Tent, seed pool).} For the single-run detail behind the paragraph above, the bottom row of Table~\ref{tab:cifar-cluster} records residual MAE $0.00959\to0.03090$ ($3.2\times$), $R^2$ $0.993\to0.895$, $\varepsilon$ $0.0213\to0.0988$ ($4.6\times$), adapt rate $51.5\%\to41.3\%$ and \textsc{KGA} regret $0.00159\to0.00603$ ($3.8\times$), at $\mathrm{FA}_{\mathrm u}=0$ under every partition. Table~\ref{tab:loco-ten} generalises that row to both candidates and all five seeds.
 
 \paragraph{The withheld SAR arm.} SAR on this grid is quarantined and we draw no comparative verdict
 from it. The five-seed aggregate ($0.0015/0.0112/0.1286$) is dominated by seed $0$, whose harmful base
@@ -938,21 +1288,13 @@ $-0.00542$, fog $-0.00556$, \textbf{gaussian\_noise $+0.00022$},
 \textbf{jpeg\_compression $+0.00292$}, pixelate $-0.00153$. Tent has one adverse family, EATA two.}
 \end{table*}
 
-\begin{figure*}[t]\centering
-\begin{minipage}{0.48\textwidth}\centering
-\includegraphics[width=\linewidth]{figures/fig_decisive_decisions_cifar10c.png}\\[-2pt]
-{\footnotesize (a) decisions by true regime}
-\end{minipage}\hfill
-\begin{minipage}{0.48\textwidth}\centering
-\includegraphics[width=\linewidth]{figures/fig_decisive_pareto_cifar10c.png}\\[-2pt]
-{\footnotesize (b) regret as harmful fraction changes}
-\end{minipage}
-\caption{\textbf{CIFAR-10-C stress grid is a decision result, not only an accuracy result.}
-\textsc{KGA} adapts on helpful cells, freezes harmful cells, abstains on marginal cells, and therefore
-lies on the regret front: it ties always-adapt at $p{=}0$ and improves both fixed-policy regrets once harmful
-mass is nontrivial.}
-\label{fig:decisive}
-\end{figure*}
+% CUT 2026-07-27 (length pass): fig:decisive (fig_decisive_decisions_cifar10c.png,
+% fig_decisive_pareto_cifar10c.png). A full-width two-panel float placed
+% immediately after Table~\ref{tab:decisive}, whose own caption restated that
+% table's two contents -- the action composition by true regime, and the regret
+% comparison against the two fixed policies. Zero \ref s in either build; both
+% assets absent from this snapshot. The table is kept; no number was in the
+% figure that is not in the table.
 
 \subsection{Decision-baseline comparison: empirical safety of the calibrated certificate}
 
@@ -1204,14 +1546,13 @@ interpret $\mathrm{FA}_{\mathrm c}$ as a certificate.
 Tier labels follow the four-level policy of \S\ref{sec:evidence-policy}; only locked and
 reconciled rows support the empirical headline.
 
-\begin{figure}[t]\centering
-\includegraphics[width=0.96\linewidth]{figures/fig_natural_forest.png}
-\caption{\textbf{Natural-shift action safety.} Positive values favor KGA. Office-Home
-and iWildCam beat always-adapt but tie always-freeze under the corrected out-of-fold replay; the
-intervals are paired held-out-condition bootstrap intervals from the saved OOF bootstrap lock
-(App.~\ref{app:claim-artifact}).}
-\label{fig:natural-forest}
-\end{figure}
+% CUT 2026-07-27 (length pass): fig:natural-forest (fig_natural_forest.png). A
+% forest plot of the natural-track regret gaps against the two fixed policies --
+% the same rows, gaps and paired bootstrap intervals that
+% Table~\ref{tab:uniform-panel} and Table~\ref{tab:decision-accounting} print
+% numerically. Zero \ref s in either build; asset absent from this snapshot. The
+% "Office-Home and iWildCam beat always-adapt but tie always-freeze" reading it
+% carried is stated in the text of this subsection and in tab:uniform-panel.
 
 \paragraph{Multi-seed stability (Camelyon17).} The one natural-shift track with per-condition logs at
 multiple seeds is Camelyon17 ($4$ seeds, $9$ composition-stress conditions/seed). Aggregating the
@@ -1273,8 +1614,8 @@ Track & Evaluation unit & \textsc{ad} & Result & Decision interpretation & Evide
 \midrule
 CIFAR-10-C stress & $5\times432$ per candidate & 1113 / 1244 & Tent: $0.0016/0.0079/0.1241$; EATA: $0.0013/0.0033/0.1314$; SAR withheld; $\mathrm{FA}_{\mathrm u}=0$, CP$_{95}$ upper on $\mathrm{FA}_{\mathrm c}$ $0.0027$ / $0.0024$ & selective routing; \textbf{the one powered track}. Cluster-robust beats-both for \emph{Tent only}: EATA's adapt-side CI includes zero once corruption is the cluster (Table~\ref{tab:cifar-cluster}) & locked (Tent/EATA; five raw seeds); SAR withheld (seed-0 aggregate non-reproducing) \\
 ImageNet-C SAR & $27$ cells $\times$ $5$ seeds & 13 & $0.0289/0.0529/0.0319$ pooled; $\mathrm{FA}_{\mathrm u}=1/135=0.0074$, CP$_{95}$ $0.316$ & \textbf{point-estimate} no-harm vs.\ always-freeze; \emph{no} CI-supported beats-both at any legitimate unit & locked (5 seeds; $2/5$ seeds beat both, $3/5$ tie freeze exactly) \\
-Camelyon17 OOD (EATA candidate) & genuine OOD test $n=18$ (support $n=36$) & n/r$^{\dagger}$ & $0.0000/0.0000/0.1381$; $\mathrm{FA}_{\mathrm u}=0$ & selects adapt-equivalent behavior & \textbf{not reproducible from the release}: the triple appears in no artifact on disk (App.~\ref{app:claim-artifact}) \\
-iWildCam H v2 & held-out test $n=72$ & 1$^{\dagger}$ & $0.0041/0.1028/0.0041$; $\mathrm{FA}_{\mathrm u}=0$, CP$_{95}$ $0.950$ & no-harm, ties freeze; guarantee untested & locked (OOF bootstrap; single-run) \\
+Camelyon17 OOD (EATA candidate) & genuine OOD test $n=18$ (support $n=36$) & 18 & $0.0000/0.0000/0.1381$; $\mathrm{FA}_{\mathrm u}=0$ & adapts on every cell, so it \emph{is} always-adapt here; all $18$ cells are helpful, so $\mathrm{FA}_{\mathrm u}{=}0$ is vacuous, not evidence & \textbf{recomputed 2026-07-26} from \path{camelyon17_richZ_F_v1/_partial.json} (App.~\ref{app:claim-artifact}) \\
+iWildCam H v2 & held-out test $n=72$ & 1$^{\dagger}$ & $0.0037/0.1028/0.0041$; $\mathrm{FA}_{\mathrm u}=0$, CP$_{95}$ $0.950$ & no-harm, ties freeze; guarantee untested & \textbf{not reproducible from the release}: the held-out record file is absent (App.~\ref{app:claim-artifact}) \\
 Office-Home M v2 & target test $n=35$ & 22 & $0.0157/0.0468/0.0158$; $\mathrm{FA}_{\mathrm u}=0$, CP$_{95}$ $0.127$ & no-harm, tiny point edge; CP bound is $1.3\times\alpha$ & locked (OOF no-harm only; LOO BB not promoted) \\
 RxRx1 J & OOD test $n=60$ & 0$^{\dagger}$ & $0.0000/0.2531/0.0000$; $\mathrm{FA}_{\mathrm u}=0$ & freezes on every cell; guarantee untested & locked (real ckpt; single-run) \\
 PACS & $3$ seeds $\times4$ LODO targets $\times18$ cells & 12 & mean regret $0.0431/0.0176/0.0446$; pooled $\mathrm{FA}_{\mathrm u}=2/216$, CP$_{95}$ on $\mathrm{FA}_{\mathrm c}$ $0.438$ & \textbf{worse than always-adapt} ($2.45\times$); all $12$ adapts come from one domain--seed cell, $2$ of them false & locked diagnostic null; no beats-both claim \\
@@ -1321,7 +1662,16 @@ actually constrains anything. On CIFAR-10-C the bound is $0.0027$ from $1{,}113$
 SAR it is $0.316$ --- and there the observed conditional rate is not even $0$, it is $1/13$; on
 Office-Home the bound is $0.127$; on iWildCam $0.950$. Three tracks (RxRx1 with $0$ adapts,
 iWildCam with $1$, the D33 mechanism check with $9$) make fewer than $10$ \textsc{adapt} decisions and
-we mark them \emph{guarantee untested}. The conclusion we draw is deliberately narrow: \textbf{the
+we mark them \emph{guarantee untested}.
+
+A low adapt count is not the only way a zero can be empty, and Camelyon17 is the other way. Its
+recomputed row makes $18$ \textsc{adapt} decisions --- above the bar --- for a CP$_{95}$ of $0.153$,
+but every one of those $18$ cells has $\Delta>0$. There is no harmful cell in the subset, so no
+\textsc{adapt} on it could have been false, whatever the rule had decided. The count is adequate and
+the test is still empty. We report the row because it is now recomputable from the release, not
+because it is evidence.
+
+The conclusion we draw is deliberately narrow: \textbf{the
 certificate's safety guarantee is tested with real power on exactly one track, and there it holds}.
 
 \begin{table}[t]\centering\small
@@ -1341,7 +1691,7 @@ ImageNet-C SAR & 135 & 13 & 15 & 107 & 1 & $0.0074$ & $0.3163$ \\
 Office-Home M v2 & 35 & 22 & 12 & 1 & 0 & $0.0000$ & $0.1273$ \\
 PACS (pooled) & 216 & 12 & 164 & 40 & 2 & $0.0093$ & $0.4381$ \\
 iWildCam H v2$^{\dagger}$ & 72 & 1 & 60 & 11 & 0 & $0.0000$ & $0.9500$ \\
-Camelyon17 OOD & 18 & --- & --- & --- & 0 & $0.0000$ & undef. \\
+Camelyon17 OOD & 18 & 18 & 0 & 0 & 0 & $0.0000$ & $0.1533$ \\
 RxRx1 J$^{\dagger}$ & 60 & 0 & 60 & 0 & 0 & $0.0000$ & undef. \\
 CIFAR-10.1 K & 48 & 18 & 24 & 6 & 8 & $0.1667$ & $0.6594$ \\
 multimodal D33$^{\dagger}$ & 130 & 9 & 119 & 2 & 0 & $0.0000$ & $0.2831$ \\
@@ -1349,137 +1699,260 @@ multimodal D33$^{\dagger}$ & 130 & 9 & 119 & 2 & 0 & $0.0000$ & $0.2831$ \\
 \end{tabular}
 
 \vspace{2pt}
-{\footnotesize Camelyon17's row is dashed because the promoted $n{=}18$ triple is not reproducible
-from the release (App.~\ref{app:claim-artifact}); Office-Home, iWildCam, RxRx1 and CIFAR-10.1 counts
-are $n_{\mathrm{test}}\times$ the promoted adapt rate, the CIFAR-10-C, ImageNet-C and PACS counts are
-recomputed cell by cell.}
+{\footnotesize Camelyon17's counts were dashed until 2026-07-26 because the promoted $n{=}18$
+triple had no reproducible source; they are now recomputed cell by cell
+(App.~\ref{app:claim-artifact}) and they are $18/18$ \textsc{adapt}. Its CP$_{95}$ of $0.1533$ is
+the least informative kind of zero in this table: not one of those $18$ cells is harmful, so no
+\textsc{adapt} could have been false. Office-Home, iWildCam, RxRx1 and CIFAR-10.1 counts
+are $n_{\mathrm{test}}\times$ the promoted adapt rate, the CIFAR-10-C, ImageNet-C, PACS and
+Camelyon17 counts are recomputed cell by cell.}
 \end{table}
 
-\subsection{Variance behind the panel means}\label{sec:panel-variance}
-Three of the panel's aggregate rows average over a spread wide enough that the mean misdescribes the
-track. We report the spread rather than the mean alone.
+\subsection{What the certificate buys: decision yield, safety, and where abstention is
+correct}\label{sec:decision-value}
+A certificate that abstains almost everywhere invites the objection that its no-harm result is
+vacuous, because no-harm is trivially achievable by abstaining---and on the promoted natural tracks
+the certificate does commit rarely (Office-Home \texttt{tent\_online\_aggressive}: $0$/$0$/$35$;
+RxRx1: $0$ \textsc{adapt}; iWildCam: $1$). This subsection answers the objection with numbers, and
+concedes the two places where the answer goes against us.
 
-\paragraph{PACS.} The panel mean $0.0431$ is an average over $12$ domain--seed cells whose \textsc{KGA}
-regret ranges from $0.00529$ to $0.15344$ (median $0.03616$, s.d.\ $0.03895$). The adapt rate is
-\emph{zero} on $11$ of those $12$ cells: PACS's entire adaptation evidence is $12$ \textsc{adapt}
-decisions taken on the single cell art\_painting/seed~$1$, and $2$ of the $12$ are false. That cell's
-own $\mathrm{FA}_{\mathrm u}$ is $0.1111>\alpha$, and art\_painting/seed~$2$ abstains on all $18$
-cells (decision coverage $0.0$). Pooled over all $216$ cells, $\mathrm{FA}_{\mathrm u}=2/216=0.0093$
-(Wilson $95\%$ $[0.0025,0.0331]$), but $\mathrm{FA}_{\mathrm c}=2/12=0.167$ with a Clopper--Pearson
-$95\%$ upper bound of $0.438$. PACS is a null in which \textsc{KGA} loses to always-adapt by
-$2.45\times$; it is reported, not withdrawn.
+Two things have to hold for the objection to fail. \textbf{(i) Abstention must not be free.} In this
+system an \textsc{abstain} realizes the \emph{frozen} model, so always-abstain is numerically
+identical to always-freeze and inherits its regret exactly; whether that is cheap or ruinous is a
+per-track empirical fact. \textbf{(ii) The commitments must be worth something.} A certificate that
+fires rarely \emph{and at random} is decoration; one that fires rarely but only on high-stakes cells
+is an instrument. These are distinguishable, and we distinguish them.
 
-\paragraph{ImageNet-R.} The mean-across-backbone row hides a reversal on most backbones
-(Table~\ref{tab:imagenetr-backbone}). \textsc{KGA} is worse than always-adapt on $7$ of $10$
-backbones, by up to $434\times$ (swin\_b) and $43.9\times$ (vit\_b\_16), and $4$ backbones have a
-degenerate $0\%$ harmful base rate --- always-adapt is exactly oracle there, so any abstention costs
-regret and the comparison is uninformative. On the two backbones with a substantial harmful base rate
-(efficientnet\_b0 at $100\%$, swin\_t at $60.4\%$) \textsc{KGA} is better than always-adapt, which is
-the regime map's prediction; the panel mean averages these opposite regimes together and should not
-be read as a single verdict.
+\paragraph{Integrity of the replay.} The $\kappa$-family rule
+``\textsc{adapt} iff $\widehat\Delta-\kappa\varepsilon>0$, \textsc{freeze} iff
+$\widehat\Delta+\kappa\varepsilon<0$'' reproduces the shipped \texttt{kga\_decision} on
+$7{,}365/7{,}365$ cells ($100.0\%$) at $\kappa=1$ across CIFAR-10-C ($6{,}480$), ImageNet-C ($405$)
+and ImageNet-R ($480$). $\kappa=1$ \emph{is} the shipped $\alpha{=}0.10$ certificate, so the sweep
+below is a sweep of the real system. Label hygiene is enforced at run time rather than by comment:
+every label array is registered on load and every array a policy consumes is checked against the
+registry by identity, buffer and value; the guard is demonstrated firing on $B$, on a copy of $B$,
+on a view of $B$, and on $a_{\text{oracle}}$.
 
-\begin{table}[t]\centering\footnotesize
-\caption{\textbf{ImageNet-R per backbone} ($4$ seeds $\times12$ conditions each). Regrets
-KGA / always-adapt / always-freeze; ``harm'' is the harmful base rate. Decomposition is from the
-archived per-backbone scoring; the panel row above is the exact-rank aggregate. Under either quantile
-rule \textsc{KGA}'s mean exceeds always-adapt's $0.0064$.}
-\label{tab:imagenetr-backbone}
-\begin{tabular}{lcccc}
-\toprule
-backbone & KGA & adapt & freeze & harm \\
-\midrule
-convnext\_base & $0.0000$ & $0.0000$ & $0.0693$ & $0.0\%$ \\
-convnext\_tiny & $0.0207$ & $0.0015$ & $0.0221$ & $14.6\%$ \\
-efficientnet\_b0 & $0.0000$ & $0.0506$ & $0.0000$ & $100.0\%$ \\
-efficientnet\_b3 & $0.0186$ & $0.0000$ & $0.0501$ & $0.0\%$ \\
-resnet101 & $0.0152$ & $0.0005$ & $0.0238$ & $8.3\%$ \\
-resnet152 & $0.0088$ & $0.0000$ & $0.0421$ & $0.0\%$ \\
-resnext101\_32x8d & $0.0059$ & $0.0000$ & $0.0520$ & $0.0\%$ \\
-swin\_b & $0.0226$ & $0.0000$ & $0.0375$ & $2.1\%$ \\
-swin\_t & $0.0043$ & $0.0106$ & $0.0047$ & $60.4\%$ \\
-vit\_b\_16 & $0.0160$ & $0.0004$ & $0.0237$ & $6.2\%$ \\
-\bottomrule
-\end{tabular}
-\end{table}
+\paragraph{The yield/regret/false-adapt frontier.} Table~\ref{tab:kappa-frontier} and
+Fig.~\ref{fig:decision-frontier} sweep $\kappa$ from $0$ (commit on the sign of $\widehat\Delta$
+everywhere) to $\infty$ (abstain everywhere). On CIFAR-10-C the certificate cuts regret $5.0\times$
+below the better fixed policy and $85\times$ below the worse, at $\mathrm{FA}_{\mathrm u}=0/6480$
+(Wilson $95\%$ upper bound $0.0006$) --- and always-abstain ties always-freeze as the \emph{worst}
+row in the table, so that reduction is not achievable by abstaining. On ImageNet-C the ratio is $2.90\times$.
+\textbf{On ImageNet-R it goes the other way: the certificate is $1.76\times$ \emph{worse} than
+always-adapt} ($0.0112$ vs.\ $0.0064$), paying $0.48$ accuracy points per cell to buy
+$\mathrm{FA}_{\mathrm u}$ $0.0021$ against $0.2021$ on a track where adaptation essentially never
+hurts. That is the clearest counterexample in the paper to a blanket ``uniformly no-harm'' reading,
+and it comes from an artifact we ourselves promote.
 
-\paragraph{CIFAR-10-C stress grid.} Here the spread is small and it is worth saying so: per-seed
-\textsc{KGA} regret is $0.001567$/$0.001631$/$0.001639$/$0.001440$/$0.001853$ for Tent
-($\varepsilon$ coefficient of variation $0.030$) and $5/5$ seeds beat both fixed policies. EATA is
-likewise $5/5$ with $\varepsilon$ c.v.\ $0.068$. The withheld SAR arm's $\varepsilon$ c.v.\ is
-$0.390$, an order of magnitude larger, which is the quantitative form of the instability that put it
-in quarantine (\S\ref{sec:cifar-stress}).
-
-\subsection{Weak-Evidence and Negative Regimes}
-ImageNet-R and CIFAR-10.1 remain diagnostics. Their outcomes are consistent with weak evidence,
-low margin, estimator inadequacy, or calibration-transfer failure; they do not by themselves prove
-structural non-identifiability. PACS is complete at three seeds but remains a null diagnostic in
-which \textsc{KGA} loses to always-adapt.
-
-\subsection{Physical-Study Pre-registration}
-We preregister a two-phone physical package-inspection study with distinct source, calibration,
-held-out, and replication sessions. The protocol, leakage checks, and outcome-free result templates
-are provided in Appendix~\ref{app:edge-physical}. No physical result is claimed until fresh sessions
-pass the repository's fail-closed publication gate; mock or reconstructed clips are never admissible
-evidence.
-
-\subsection{Constructed Heterogeneous Routing}\label{sec:constructed-routing}
-The three-source OOF mixture combines separately calibrated Office-Home, iWildCam, and Camelyon17
-conditions. It demonstrates routing value under a researcher-constructed heterogeneous stream, not
-single-dataset natural-shift dominance or transfer to unseen shift types.
+\paragraph{Is the shipped operating point efficient? Mostly not, but only just.} CIFAR-10-C pooled
+is dominated by $\kappa=0.9$ (regret $0.00134$ at yield $0.684$), ImageNet-C pooled likewise
+($0.00763$ at $0.551$), and ImageNet-C EATA is dominated by nine more permissive values of $\kappa$;
+ImageNet-R is on the frontier of its own family. The sharpest instance is ImageNet-C SAR, where
+$\kappa=0.5$ gets $46\%$ more decisions at $39\%$ less regret (yield $0.874$ vs.\ $0.600$, regret
+$0.0066$ vs.\ $0.0108$) for a price of one extra false adaptation ($1/135\to2/135$, both far under
+$\alpha$). The gap is $10$--$40\%$ of regret, not an order of magnitude. \textbf{$\alpha=0.10$ is
+defensible as a pre-registered safety choice; it is not regret-optimal, and we do not claim it is.}
+Against a \emph{perfect} ordering of cells by the regret a correct commitment removes, the
+certificate sits $7.50\times$ / $2.79\times$ / $2.64\times$ above the achievable floor at its own
+yield: there is real headroom in \emph{which} cells it commits on, not only in how many.
 
 \begin{table}[t]\centering\scriptsize
-\caption{\textbf{Primary numeric evidence used for empirical claims.} All rows use the declared
-exact-rank radius. The three-source row is a constructed routing mixture, not a natural-transfer
-result. ``CI utility'' means a paired bootstrap at the declared resampling unit whose interval
-excludes zero against the named policy. ImageNet-C SAR has \emph{no} such policy: its entry is a
-point estimate on both sides.}
-\label{tab:primary-numeric}
-\setlength{\tabcolsep}{3pt}
-\begin{tabular}{@{}p{0.22\linewidth}p{0.14\linewidth}ccc p{0.21\linewidth}@{}}
+\caption{\textbf{Decision-yield / safety frontier} (pooled per track, radius scaled by $\kappa$;
+$\kappa{=}1$ is the shipped certificate and reproduces its decisions on $7{,}365/7{,}365$ cells).
+Regret is to the per-cell oracle; \textsc{abstain} and \textsc{freeze} both realize $f_0$, so
+always-abstain is numerically always-freeze. ``best label-free heuristic'' is the minimum over four
+single-signal thresholded scores (\texttt{marginal\_KL} as a batch-statistics drift proxy,
+\texttt{entropy\_drop}, confidence gain, \texttt{pbal\_drop}) whose thresholds are chosen \emph{with}
+the test labels subject to $\mathrm{FA}_{\mathrm u}\le\alpha$; the comparison is therefore biased in
+the heuristic's favour. Source: \texttt{decision\_value\_results.json}.}
+\label{tab:kappa-frontier}
+\setlength{\tabcolsep}{3.2pt}
+\begin{tabular}{@{}lcccccc@{}}
 \toprule
-Track & Unit & KGA & Adapt & Freeze & Status \\
+& \multicolumn{2}{c}{CIFAR-10-C ($6480$)} & \multicolumn{2}{c}{ImageNet-C ($405$)} &
+\multicolumn{2}{c}{ImageNet-R ($480$)} \\
+\cmidrule(lr){2-3}\cmidrule(lr){4-5}\cmidrule(lr){6-7}
+policy & yield & regret & yield & regret & yield & regret \\
 \midrule
-CIFAR-10-C Tent & $5\times432$ & .0016 & .0079 & .1241 & locked; selective routing, $\mathrm{FA}_{\mathrm u}=0$ over $1113$ adapts; CI utility vs.\ both, \emph{cluster-robust} (Table~\ref{tab:cifar-cluster}) \\
-CIFAR-10-C EATA & $5\times432$ & .0013 & .0033 & .1314 & locked; selective routing, $\mathrm{FA}_{\mathrm u}=0$ over $1244$ adapts; CI utility vs.\ freeze at every unit; vs.\ adapt \emph{only} at the cell/twin-pair unit --- clustering by corruption gives $[-0.0044,+0.0004]$ \\
-ImageNet-C SAR & $27$ cond.\ (seed-avg.\ of $5$) & .0289 & .0529 & .0319 & locked (5 seeds); \textbf{no CI utility}: both condition-level gaps include zero under the promoted leave-one-out pool \\
-Camelyon17 OOD & $n=18$ & .0000 & .0000 & .1381 & \textbf{not reproducible from release}; no artifact on disk contains this triple \\
-RxRx1 J & $n=60$ & .0000 & .2531 & .0000 & locked; no-harm, but $0$ adapts --- guarantee untested \\
-Three-source OOF mixture & $n=143$ & .0059 & .0632 & .0342 & locked; heterogeneous routing (constructed) \\
+$\kappa=0$ & $1.000$ & $0.00029$ & $1.000$ & $0.00595$ & $1.000$ & $0.00126$ \\
+$\kappa=0.5$ & $0.763$ & $0.00074$ & $0.751$ & $0.00575$ & $0.812$ & $0.00465$ \\
+$\kappa=0.9$ & $0.684$ & $\mathbf{0.00134}$ & $0.551$ & $\mathbf{0.00763}$ & $0.588$ & $0.00939$ \\
+\textbf{$\kappa=1$ (shipped)} & $\mathbf{0.668}$ & $\mathbf{0.00150}$ & $\mathbf{0.521}$ &
+$\mathbf{0.00829}$ & $\mathbf{0.535}$ & $\mathbf{0.01120}$ \\
+$\kappa=2$ & $0.546$ & $0.00312$ & $0.400$ & $0.01260$ & $0.098$ & $0.02686$ \\
+\midrule
+always-adapt & $1.000$ & $0.00748$ & $1.000$ & $0.02403$ & $1.000$ & $\mathbf{0.00636}$ \\
+always-freeze & $1.000$ & $0.12797$ & $1.000$ & $0.02685$ & $1.000$ & $0.03253$ \\
+always-abstain & $0.000$ & $0.12797$ & $0.000$ & $0.02685$ & $0.000$ & $0.03253$ \\
+coin flip & $1.000$ & $0.06773$ & $1.000$ & $0.02544$ & $1.000$ & $0.01944$ \\
+best label-free heuristic & $1.000$ & $0.00472$ & $1.000$ & $0.02558$ & $1.000$ & $0.01864$ \\
+oracle bound at shipped yield & $0.668$ & $0.00020$ & $0.521$ & $0.00298$ & $0.535$ & $0.00424$ \\
+\midrule
+$\mathrm{FA}_{\mathrm u}$ at $\kappa{=}1$ & \multicolumn{2}{c}{$0.0000$ (W$_{95}$ $0.0006$)} &
+\multicolumn{2}{c}{$0.0049$ (W$_{95}$ $0.0178$)} & \multicolumn{2}{c}{$0.0021$ (W$_{95}$ $0.0117$)} \\
+regret ratio, best fixed / KGA & \multicolumn{2}{c}{$\mathbf{5.00\times}$} &
+\multicolumn{2}{c}{$\mathbf{2.90\times}$} & \multicolumn{2}{c}{$\mathbf{0.57\times}$ (KGA loses)} \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-\subsection{Consolidated Claim and Guarantee Accounting}\label{sec:guarantees}
-\begin{center}
-\scriptsize
-\renewcommand{\arraystretch}{1.12}
-\setlength{\tabcolsep}{4pt}
-\begin{tabular}{@{}p{0.40\linewidth}p{0.14\linewidth}p{0.38\linewidth}@{}}
+\begin{figure*}[t]\centering
+\kbgraphics[width=0.98\textwidth]{figures/fig_decision_value_frontier.png}
+\caption{\textbf{What the certificate buys.} Regret against decision yield as the conformal radius
+is scaled by $\kappa$; the star is the shipped $\alpha{=}0.10$ operating point, which reproduces the
+released decisions exactly. Always-abstain is the leftmost point and coincides with always-freeze:
+abstention is not free. The certificate sits well below both fixed policies on CIFAR-10-C and
+ImageNet-C and \emph{above} always-adapt on ImageNet-R, which is reported as a negative result.
+The dotted curve is the best regret achievable at each yield by a perfect ordering of cells; the
+grey triangle is the batch-statistics drift heuristic (\texttt{marginal\_KL}) with its threshold
+chosen using the test labels subject to $\mathrm{FA}_{\mathrm u}\le\alpha$, which is the best of the
+four heuristics on CIFAR-10-C but not on the other two tracks (Table~\ref{tab:kappa-frontier}).}
+\label{fig:decision-frontier}
+\end{figure*}
+
+\paragraph{Against cheap label-free heuristics.} Four single-signal, no-training references drawn
+from the same evidence panel (\texttt{marginal\_KL} as a batch-statistics drift proxy,
+\texttt{entropy\_drop}, confidence gain, \texttt{pbal\_drop}) are scored two ways: with a
+hindsight-optimal threshold, and with a threshold fitted on labelled seeds $\{0,1,2\}$ and scored on
+$\{3,4\}$. On CIFAR-10-C the certificate beats a hindsight-tuned drift heuristic held to the same
+false-adapt budget by $3.1\times$ on regret ($0.00150$ vs.\ $0.00472$) while making zero false
+adaptations against that heuristic's $324/6480$. On ImageNet-C it wins only against heuristics held
+to its own budget: the fair-split confidence-gain heuristic reaches \emph{lower} regret
+($0.00689$ vs.\ $0.00905$ on held-out seeds) by adapting $93\%$ of the time at
+$\mathrm{FA}_{\mathrm u}=0.185$. On ImageNet-R all four heuristics degenerate to always-adapt and
+beat the certificate on the same held-out seeds ($0.00677$ vs.\ $0.01617$) while adapting on every
+cell at $\mathrm{FA}_{\mathrm u}=0.217$, against the certificate's $0.000$ on those seeds and
+$0.0021$ pooled.
+\textbf{The certificate's advantage over cheap heuristics is entirely an advantage in false-adapt
+rate, and it converts into a regret advantage only where adaptation is genuinely two-sided.}
+
+\paragraph{Value per committed decision.} Among the cells where the certificate commits, we measure
+the regret removed relative to the \emph{better} fixed policy, against a permutation null that holds
+the number of \textsc{adapt} and \textsc{freeze} commitments fixed and reassigns them to a uniformly
+random subset of cells ($5{,}000$ draws). On CIFAR-10-C a committed decision is worth $+0.0094$
+accuracy against a null of $-0.0185$ ($p<0.0002$), and commitments land on cells whose true effect
+is $\mathbf{24.5\times}$ larger than the cells it declines ($p<0.0002$): it fires on high-stakes
+cells, not at random. \textbf{The single ImageNet-C Tent commitment---the critique's own example---is
+worth $+0.081$ accuracy, $2.4\times$ the average cell effect, against a null of $-0.004$
+($p=0.016$).} One decision out of $135$, on the right cell.
+\textbf{The counter-case is ImageNet-R}, and we state it plainly: per backbone, the value per
+committed decision is exactly $0.0000$ on $9$ of $10$ backbones, the $|\Delta|$ concentration ratio
+is $0.71$--$1.57$ with permutation $p$ between $0.054$ and $1.000$ (not one backbone reaches
+$p<0.05$), and the pooled share of value attributable to committed cells is $-0.77$. The mechanism
+is that on those backbones adaptation always helps, so every commitment is an \textsc{adapt} that
+merely reproduces always-adapt, and all of the certificate's effect lives on the cells it abstains
+on, where it freezes and loses.
+
+\paragraph{Why the abstaining tracks abstain.} A cell abstains iff $|\widehat\Delta|\le\varepsilon$,
+which can mean the estimator is too noisy or that the effect is genuinely smaller than the radius.
+The discriminator is the \emph{yield ceiling} $\Pr(|\Delta|>\varepsilon)$: the maximum yield any
+estimator could reach at that radius. Table~\ref{tab:abstention-decomp} and
+Fig.~\ref{fig:yield-ceiling} report it. On four of five per-cell slices the certificate commits on
+$93$--$102\%$ of what is committable; \textbf{the abstention is the radius being wider than the
+effect, not conservatism.} The one genuine estimator failure is ImageNet-C Tent, at $4\%$ of its
+ceiling. We state the limit of this statistic rather than lean on it: because $\widehat\Delta$ and
+$\Delta$ have nearly the same marginal spread, a share near $1$ is close to the null---replacing
+$\widehat\Delta$ by $\Delta$ plus a \emph{reshuffled} residual, which destroys the per-cell pairing
+entirely, still gives a share of $1.05$ (CIFAR-10-C) and $1.02$ (ImageNet-C)---above the observed
+values (\path{adversarial_share_of_ceiling_probe.json}). The share therefore discriminates only at the
+extreme, which is exactly where it is used (ImageNet-C Tent, $0.04$); the evidence that abstention
+is a radius problem rather than timidity is the $\varepsilon/\overline{|\Delta|}$ column, and the
+evidence that commitments land on the right cells is the permutation test above, not this ratio.
+On the natural tracks the critique names, the answer is sharper. On \textbf{RxRx1},
+$\Pr(\Delta>\varepsilon)=0.000$ for all three candidates: not one cell of $36$ has a true adaptation
+benefit exceeding the radius, so ``$0$ \textsc{adapt}'' is correct rather than timid---and meanwhile
+the certificate commits $12/12$ \textsc{freeze} on both promoted candidates against an always-adapt
+regret of $0.169$--$0.272$. On \textbf{iWildCam}, $\Pr(\Delta>\varepsilon)\le0.007$ across all six
+candidates, and the certificate commits \textsc{freeze} on $22$--$33\%$ of cells against an
+always-adapt regret of $0.098$--$0.108$. On \textbf{Office-Home
+\texttt{tent\_online\_aggressive}}---the $0$/$0$/$35$ case---$\varepsilon=0.0454$ is $2.3\times$ the
+mean absolute effect and, decisively, always-adapt regret ($0.0100$) and always-freeze regret
+($0.0096$) differ by $0.0004$: total abstention costs four hundredths of an accuracy point because
+there was no decision worth making. The same certificate commits on $8.6$--$37.1\%$ of cells on the
+other Office-Home candidates, so $0$/$0$/$35$ is a property of that adapter, not of the method. The
+rows where the certificate is unambiguously earning are the ones where it commits \textsc{freeze}
+against an always-adapt regret of $0.496$ (Office-Home \texttt{labelshift}, $35/35$ \textsc{freeze})
+and $0.272$ (RxRx1 SAR): unguarded adaptation would have destroyed the model there.
+
+\begin{table}[t]\centering\scriptsize
+\caption{\textbf{Abstention decomposition.} The ceiling $\Pr(|\Delta|>\varepsilon)$ is the maximum
+yield \emph{any} estimator could reach at that radius; ``share'' is achieved yield over ceiling.
+Natural-track rows use the published $\varepsilon$ and decision counts against per-cell $\Delta$
+from the same artifact; $\Pr(\Delta>\varepsilon)$ is the fraction of cells on which an
+\textsc{adapt} is even available.}
+\label{tab:abstention-decomp}
+\setlength{\tabcolsep}{3.2pt}
+\begin{tabular}{@{}lccccc@{}}
 \toprule
-Statement & Status & Requirement / observed \\
+track / candidate & $\varepsilon$ & $\varepsilon/\overline{|\Delta|}$ & yield & ceiling & share \\
 \midrule
-Abstention needed in matched-evidence opposite-benefit worlds & theorem & stated model class \\
-Label-free audit of $\beta$ is vacuous over the unrestricted class & theorem & Aud-A, App.~\ref{app:audit-short} \\
-$\mathrm{FA}_u \le \alpha$ (unconditional false-adapt) & theorem & measurable marginal coverage; exchangeability/shift correction only justifies coverage \\
-$\mathrm{FA}_u \le \alpha$ \emph{as measured on the grids} & \textbf{forced, not measured} & under in-sample rank calibration the ceiling is $(n{-}k)/n<\alpha$ for every $n$ used here (\S\ref{sec:fa-identity}) \\
-$\mathrm{FA}_c \le \alpha$ (conditional false-adapt) & \textbf{not claimed} & CP$_{95}$ upper bound is $0.0027$ on CIFAR-10-C but $0.13$--$0.95$ elsewhere \\
-An observed $\mathrm{FA}_{\mathrm u}$ exceedance exists in this paper & \textbf{yes, disclosed} & Camelyon17 SAR seed~$0$, $1/9=0.111$ under the archived interpolated rule; CP$_{95}$ interval $[0.003,0.429]$, i.e.\ inside binomial noise; PACS art\_painting seed~$1$, $2/18=0.111$ \\
-Nine-track panel & \textbf{accounting} & sealed lock inventory (\texttt{NINE\_TRACK\_LOCK\_SEAL\_v1}); incomplete tracks stay diagnostic \\
-Stress-grid action validity and routing utility (Tent/EATA) & locked & locked Protocol~A v1 stress grid; $6$ of $15$ corruptions, severities $\{1,5\}$ \\
-CIFAR-10-C \emph{Tent} beats both, cluster-robustly & locked & adapt-gap CI excludes zero at all four units down to $6$ corruption clusters $[-0.0095,-0.0026]$; survives leave-one-corruption-out refit (Table~\ref{tab:cifar-cluster}) \\
-CIFAR-10-C \emph{EATA} beats both, cluster-robustly & \textbf{not claimed} & adapt-gap CI includes zero at $12$ clusters $[-0.0048,+0.0004]$ and $6$ clusters $[-0.0044,+0.0004]$; two adverse corruption families. Point beats-both and the freeze-side CI stand \\
-ImageNet-C SAR beats always-freeze & \textbf{point estimate only} & $0.0289$ vs.\ $0.0319$; under the promoted leave-one-out pool the condition-level CI $[-0.0085,+0.0038]$ and even the i.i.d.-135 CI $[-0.0079,+0.0036]$ include zero; $2/5$ seeds beat both \\
-ImageNet-C SAR beats always-adapt & \textbf{point estimate only} & condition-level CI $[-0.076,+0.018]$ includes zero \\
-Natural safety (RxRx1) & locked & held-out test artifacts; $0$ adapts, so the bound is untested \\
-Natural safety (Camelyon17 $n{=}18$) & \textbf{unverifiable} & the promoted triple is in no released artifact \\
-Office-Home and iWildCam OOF summaries & locked & OOF bootstrap seal (no-harm only; OH LOO BB not promoted) \\
-Three-source mixed routing aggregate & locked & constructed OOF mixture, not transfer \\
-Universal improvement & \textbf{not claimed} & impossible in general \\
-No-harm on \emph{every} natural shift & \textbf{withdrawn} & holds on the four one-sided locked tracks; PACS and ImageNet-R lose to always-adapt \\
-$\varepsilon$ estimates drift budget $\beta$ & \textbf{false} & $\beta$ is declared; $\varepsilon$ is empirical \\
+CIFAR-10-C pooled & $0.0179$ & $0.13$ & $0.668$ & $0.675$ & $\mathbf{0.99}$ \\
+ImageNet-C EATA & $0.0053$ & $0.15$ & $0.956$ & $0.933$ & $1.02$ \\
+ImageNet-C SAR & $0.0294$ & $0.35$ & $0.600$ & $0.644$ & $0.93$ \\
+\textbf{ImageNet-C Tent} & $0.0534$ & $\mathbf{1.59}$ & $\mathbf{0.007}$ & $0.178$ & $\mathbf{0.04}$ \\
+ImageNet-R pooled & $0.0365$ & $0.94$ & $0.535$ & $0.527$ & $1.02$ \\
+\midrule
+& & & \multicolumn{2}{c}{$\Pr(\Delta{>}\varepsilon)$} & reg.\ adapt \\
+\midrule
+RxRx1 Tent ($0$/$12$/$0$) & $0.0496$ & $0.29$ & \multicolumn{2}{c}{$\mathbf{0.000}$} & $0.1689$ \\
+RxRx1 SAR ($0$/$12$/$0$) & $0.0432$ & $0.16$ & \multicolumn{2}{c}{$\mathbf{0.000}$} & $0.2718$ \\
+iWildCam Tent ($0$/$39$/$105$) & $0.1369$ & $1.20$ & \multicolumn{2}{c}{$0.007$} & $0.1075$ \\
+iWildCam EATA ($0$/$47$/$97$) & $0.1257$ & $1.21$ & \multicolumn{2}{c}{$\mathbf{0.000}$} & $0.0975$ \\
+O-Home tent-aggr.\ ($0$/$0$/$35$) & $0.0454$ & $2.32$ & \multicolumn{2}{c}{$0.086$} & $0.0100$ \\
+O-Home \texttt{labelshift} ($0$/$35$/$0$) & $0.0549$ & $0.11$ & \multicolumn{2}{c}{$0.000$} & $\mathbf{0.4958}$ \\
 \bottomrule
 \end{tabular}
-\end{center}
+\end{table}
+
+\begin{figure*}[t]\centering
+\kbgraphics[width=0.84\textwidth]{figures/fig_yield_ceiling.png}
+\caption{\textbf{Abstention is the radius, not timidity.} \emph{(a)} Achieved decision yield against
+the ceiling $\Pr(|\Delta|>\varepsilon)$; points on the diagonal commit on everything committable at
+their own radius. \emph{(b)} On the natural tracks the critique names, the fraction of cells on
+which an \textsc{adapt} is even available at the published radius, against the regret of the two
+fixed policies. On RxRx1 and iWildCam that fraction is $\le0.007$, and the certificate's value is
+carried entirely by its \textsc{freeze} commitments.}
+\label{fig:yield-ceiling}
+\end{figure*}
+
+\paragraph{Power analysis: what would have to improve.} Modelling
+$\widehat\Delta=\Delta+c\,r$ with $\Delta$ and the residual $r$ resampled from their empirical
+distributions and the radius recomputed as the exact-rank order statistic the real certificate uses,
+$c$ is an evidence-quality multiplier ($c{=}1$ is today's estimator). Residuals are \emph{not}
+Gaussian---a Gaussian radius would be $3.6\times$ the true one on ImageNet-C SAR---so the empirical
+form matters. \textbf{Yield above $50\%$ at $\alpha{=}0.10$ requires the margin to separate
+$\sign\Delta$ at AUC $\approx0.94$--$0.99$}; CIFAR-10-C ($0.982$) and ImageNet-C EATA ($0.957$) are
+past that phase transition, ImageNet-C Tent ($0.741$) is nowhere near it. Two diagnostics locate the
+binding constraint. First, the radius floor: $\Delta$ is a paired accuracy difference on $n_D$
+samples, so $\varepsilon$ cannot fall below $\Phi^{-1}(0.95)\,\mathrm{sd}(\Delta)$. On CIFAR-10-C
+the observed $\varepsilon=0.0179$ sits at $0.84$ of the upper end of a $[0.0110,0.0213]$ bracket at
+$n_D{=}2000$---\textbf{already at the finite-sample floor}, so no better estimator can shrink it and
+yield is anyway at $99\%$ of its ceiling. On ImageNet-C Tent the radius is $3.3\times$ the floor, and
+that excess is estimator error no amount of extra data removes. Second, shrinkage: the plug-in
+regresses on $\Delta$ with slope $0.995$ on CIFAR-10-C but $0.322$ on ImageNet-C Tent, where
+shrinkage accounts for $55\%$ of the residual variance and hurts twice (it pushes
+$|\widehat\Delta|$ toward zero \emph{and} inflates the radius). Removing the shrinkage
+alone---making the estimator merely unbiased, noise unchanged---takes ImageNet-C Tent from $0.7\%$
+yield to $45\%$ at $\mathrm{FA}_{\mathrm u}=0.005$. \textbf{The binding constraint is estimator
+calibration, not sample size}, and that is the concrete target for future work. These are
+retrospective design calculations, not estimators, and are labelled as such.
+
+\paragraph{The scoped claim.} The certificate's value is not ``no harm''---abstention alone would
+deliver that, since an \textsc{abstain} realizes the frozen model. Its value is decision yield at a
+controlled false-adapt rate, and that value is concentrated where adaptation is genuinely two-sided.
+On the CIFAR-10-C stress grid it commits on $66.8\%$ of $6{,}480$ cells with zero false adaptations,
+cutting regret $5.0\times$ below the better fixed policy and $3.1\times$ below a hindsight-tuned
+label-free drift heuristic at the same false-adapt budget, with commitments landing on cells whose
+true effect is $24.5\times$ larger than those it declines. On natural shifts it buys far less: on
+iWildCam and RxRx1 no cell has a true benefit exceeding the conformal radius, so the zero
+\textsc{adapt} decisions are correct rather than timid and the value is entirely in the
+\textsc{freeze} commitments; on ImageNet-R, where adaptation almost never hurts, the certificate is
+$1.76\times$ worse than always-adapt and its committed decisions are statistically indistinguishable
+from a random subset. \textbf{K-Bound buys decision yield under two-sided risk, not uniform
+improvement; on one-sided natural shifts its guarantee is close to free but also close to empty.}
+Threats to these conclusions are recorded in \S\ref{sec:limits}.
+
 
 \section{Ablations and Sensitivity}\label{sec:ablations}
 \subsection{Value of the Uncertainty Radius}
@@ -1490,8 +1963,13 @@ All ablations reuse the logged CIFAR-10-C stress evidence (per-condition $Z$ and
 $432$ conditions/candidate, seed~0) and the deployed rule with an \emph{exact-rank} empirical residual radius
 $\varepsilon=r_{(k)}$, $k=\lceil(n{+}1)(1-\alpha)\rceil$ (locked exact-rank ablation artifact with
 input hashes, App.~\ref{app:claim-artifact}). At the deployed operating
-point (Tent, $\alpha{=}0.10$) the harness reproduces the locked gate row of Table~\ref{tab:gates}
-(regret $0.0017$, $\mathrm{FA}_{\mathrm u}{=}0$, adapt $0.51$, coverage $0.69$).
+point (Tent, $\alpha{=}0.10$) the harness returns regret $0.0019$,
+$\mathrm{FA}_{\mathrm u}{=}0$, adapt $0.50$, coverage $0.67$ --- the same
+$\mathrm{FA}_{\mathrm u}$ as the locked gate row of Table~\ref{tab:gates} and the same
+decision profile to within one point of coverage, but not the identical number: the
+ablation harness cross-fits the benefit model in $8$ folds while Table~\ref{tab:gates}
+refits it leave-one-cell-out ($431$ fits per cell), and the cheaper fit costs
+$0.0003$ of regret. The two are consistent, not interchangeable.
 
 \textbf{(i) Safety level $\alpha$.} Sweeping $\alpha$ (Table~\ref{tab:abl-alpha}) trades decision
 coverage for regret while holding $\mathrm{FA}_{\mathrm u}{=}0$ at every certified level; only the
@@ -1500,15 +1978,17 @@ radius-free variant breaks the guarantee ($\mathrm{FA}_{\mathrm u}=0.051$).
 false-adapt guarantee intact: gradient boosting, random forest, and ridge all keep
 $\mathrm{FA}_{\mathrm u}{\le}0.002$; a small MLP over-abstains on this small calibration set.
 \textbf{(iii) Evidence family.} Dropping any single evidence family (frozen, adapted, change, drift,
-or update) keeps regret in $[0.0015,0.0019]$ at $\mathrm{FA}_{\mathrm u}{=}0$: no single family is
-load-bearing.
+or update) keeps regret in $[0.0012,0.0019]$ at $\mathrm{FA}_{\mathrm u}{\le}0.002$: no single family
+is load-bearing for regret. The one family that is not free to drop is \emph{change}: without it the
+radius admits a false adapt ($\mathrm{FA}_{\mathrm u}{=}0.002$, $1$ cell of $432$), the only
+non-zero entry in this sweep.
 \textbf{(iv) Cross-adapter transfer.} Fitting the benefit model on one adapter and applying it to
 another (Table~\ref{tab:abl-transfer}) \emph{breaks} the false-adapt bound in most directions
 (SAR$\to$Tent $\mathrm{FA}_{\mathrm u}=0.25$), which is exactly why the deployed method refits per
 adapter.
-\textbf{(v) Drift budget $\beta$.} The population-frontier $\beta$ sweep is the synthetic
-ground-truth validation of \S\ref{sec:synthetic}, kept distinct from the empirical radius
-$\varepsilon$.
+\textbf{(v) Drift budget $\beta$.} The population-frontier $\beta$ sweep is
+\S\ref{sec:beta-sweep}, and it is kept distinct from the empirical radius $\varepsilon$:
+$\varepsilon$ is a conformal quantity and is not an estimate of $\beta$.
 
 \begin{table}[t]\centering\footnotesize
 \caption{Ablation (i): safety-level $\alpha$ sweep (exact-rank radius), CIFAR-10-C Tent ($n{=}432$).
@@ -1520,8 +2000,8 @@ $\alpha$ & regret$\downarrow$ & $\mathrm{FA}_{\mathrm u}$ & adapt & coverage \\
 \midrule
 $0.01$ & $0.0036$ & $0.000$ & $0.45$ & $0.48$ \\
 $0.05$ & $0.0021$ & $0.000$ & $0.49$ & $0.63$ \\
-$0.10$ & $0.0017$ & $0.000$ & $0.51$ & $0.69$ \\
-$0.20$ & $0.0011$ & $0.000$ & $0.53$ & $0.74$ \\
+$0.10$ & $0.0019$ & $0.000$ & $0.50$ & $0.67$ \\
+$0.20$ & $0.0010$ & $0.000$ & $0.53$ & $0.74$ \\
 no radius & $0.0004$ & $0.051$ & $0.68$ & $1.00$ \\
 \bottomrule
 \end{tabular}
@@ -1535,7 +2015,7 @@ The radius keeps $\mathrm{FA}_{\mathrm u}{\approx}0$ regardless of estimator.}
 \toprule
 estimator & regret$\downarrow$ & $\mathrm{FA}_{\mathrm u}$ & adapt & coverage \\
 \midrule
-gradient boosting & $0.0017$ & $0.000$ & $0.51$ & $0.69$ \\
+gradient boosting & $0.0019$ & $0.000$ & $0.50$ & $0.67$ \\
 random forest & $0.0017$ & $0.002$ & $0.51$ & $0.65$ \\
 ridge (linear) & $0.0043$ & $0.000$ & $0.45$ & $0.47$ \\
 small MLP & $0.0143$ & $0.000$ & $0.36$ & $0.36$ \\
@@ -1552,7 +2032,7 @@ directions---per-adapter calibration is required.}
 \toprule
 fit $\to$ apply & regret$\downarrow$ & $\mathrm{FA}_{\mathrm u}$ & adapt & coverage \\
 \midrule
-Tent $\to$ EATA & $0.0020$ & $0.000$ & $0.54$ & $0.63$ \\
+Tent $\to$ EATA & $0.0022$ & $0.000$ & $0.54$ & $0.63$ \\
 EATA $\to$ Tent & $0.0010$ & $0.007$ & $0.55$ & $0.69$ \\
 Tent $\to$ SAR & $0.0173$ & $0.125$ & $0.50$ & $0.72$ \\
 EATA $\to$ SAR & $0.0236$ & $0.192$ & $0.57$ & $0.62$ \\
@@ -1563,37 +2043,9 @@ SAR $\to$ EATA & $0.0027$ & $0.116$ & $0.75$ & $0.75$ \\
 \end{table}
 
 
-\section{Discussion and Failure Modes}\label{sec:discussion}
-\subsection{Why Natural Shifts Mainly Produce No-Harm}
-A single natural benchmark is often one-sided: adaptation helps almost everywhere or harms almost everywhere. In the first case, always-adapt is already near-oracle; in the second, always-freeze is near-oracle. A three-way router gains a strict margin over both fixed policies only when helpful and harmful conditions coexist and the evidence distinguishes them. Natural no-harm results and mixed-regime wins are therefore different operating points of the same decision geometry.
 
-\subsection{Four Sources of Abstention}
-Not every abstention has the same interpretation. \emph{Structural non-identifiability} means opposite-benefit worlds share the same admissible evidence law. \emph{Finite-sample uncertainty} means the sign is identifiable in principle but the interval still crosses zero. \emph{Estimator inadequacy} means the chosen model fails to extract an available signal. \emph{Calibration failure} means a development relationship does not transfer to deployment. We distinguish these causes throughout the evaluation rather than treating every null result as evidence of structural unknowability.
-
-\subsection{Operational Failure Modes}
-Table~\ref{tab:failure-modes} maps each deployment failure to a diagnostic and a safe response.
-\begin{table}[t]\centering\scriptsize
-\caption{Deployment failures, diagnostics, and safe responses.}
-\label{tab:failure-modes}
-\begin{tabular}{@{}p{0.28\linewidth}p{0.30\linewidth}p{0.32\linewidth}@{}}
-\toprule
-Failure & Diagnostic & Safe response \\
-\midrule
-Calibration transfer fails & support/residual audit & recalibrate, widen radius, or abstain \\
-True drift exceeds $\beta$ & external domain monitoring & revise class/budget; freeze meanwhile \\
-Evidence out of support & distance or density check in $Z$-space & abstain \\
-Adapter/checkpoint changed & configuration hash mismatch & require recalibration \\
-Batch too small & minimum-size rule & wait for more data or freeze \\
-Continual state accumulates error & checkpoint/stream monitor & rollback to last certified state \\
-Missing/invalid evidence & schema and numerical validation & freeze \\
-\bottomrule
-\end{tabular}
-\end{table}
-
-\subsection{When to Deploy K-Bound}
-K-Bound is most valuable when harmful updates are plausible, the cost of a bad commit is high, a frozen fallback is available, and historical or structural information supports calibration. It is less useful when adaptation is uniformly benign, when no credible drift class or calibration set exists, or when the candidate update cannot be evaluated and rolled back safely.
-
-\section{Limitations}\label{sec:limits}
+\section{Limitations and Failure Modes}\label{sec:limits}\label{sec:discussion}
+\input{paper/sections/scope_box}
 
 \medskip
 \textbf{Scope of empirical decision evidence.} On the stress grid \textsc{KGA} exercises selective adapt/freeze/abstain behavior for Tent/EATA
@@ -1605,11 +2057,14 @@ insurance regimes, not policy wins.
 \textbf{Real-shift scope.} The uniform panel deliberately distinguishes three outcomes, and the
 no-harm claim covers only the first. Camelyon17
 genuine OOD and RxRx1 are no-harm results: KGA ties the better fixed policy at
-zero observed false-adapt --- with the caveats that Camelyon17's promoted $n{=}18$ triple is not
-reproducible from the release and that RxRx1 makes zero \textsc{adapt} decisions, so neither
-exercises the guarantee. Office-Home and iWildCam are locked from their out-of-fold bootstrap seal
+zero observed false-adapt --- with the caveats that Camelyon17's promoted $n{=}18$ triple, although
+recomputable from the release as of 2026-07-26, is scored on a subset with \emph{no harmful cell}
+(all $18$ have $\Delta>0$) and on which \textsc{KGA} adapts $18/18$, so it is behaviourally
+always-adapt there; and that RxRx1 makes zero \textsc{adapt} decisions. Neither exercises the
+guarantee. Office-Home and iWildCam are locked from their out-of-fold bootstrap seal
 (App.~\ref{app:claim-artifact}; Office-Home promotes OOF no-harm only; LOO beats-both is not claimed);
-iWildCam makes one \textsc{adapt} decision. PACS and ImageNet-R are completed, locked null
+iWildCam makes one \textsc{adapt} decision, and the record file behind its promoted triple is absent
+from the release, so that row is a sealed summary rather than a reproduced result. PACS and ImageNet-R are completed, locked null
 diagnostics in which \textsc{KGA} \emph{loses} to always-adapt --- by $2.45\times$ on PACS and on $7$
 of $10$ ImageNet-R backbones --- and CIFAR-10.1 is a locked diagnostic fail. We state the losses in
 the limitations section as well as the results section because the abstract of an earlier version of
@@ -1626,13 +2081,70 @@ resulting near-\emph{tie} with always-adapt reflects the certificate abstaining 
 committing harmful updates: \textsc{KGA} approximately matches the better policy, at most paying a
 small abstention cost when it declines a helpful but uncertifiable update, so the value proposition
 is conditional, like insurance against detectable harm.
-\emph{Setting $\beta$.} The budget is \emph{declared}, not estimated from unlabeled data---and
-provably so: label-free audits of $\beta$ are vacuous over the unrestricted class
-(Appendix~\ref{app:audit-short}). It can, however, be \emph{audited}: a labeled audit budget, a
-Lipschitz-transport assumption, or an unknown-direction index-drift assumption yields a computed
-upper bound with finite-sample validity, at the price of the named side information. Absent an audit, $\beta$ is fixed from domain knowledge,
-historical dev-to-deployment gaps, or an explicit stress envelope.
+\emph{Setting $\beta$.} The budget is \emph{declared}, not estimated from unlabeled data --- and
+provably so: no label-free procedure supplies a budget below the fibre radius, which for the
+deployment class is $\beta$ itself (Theorem~\ref{thm:beta-minimax},
+Corollary~\ref{cor:beta-is-beta}). Every audit in Appendix~\ref{app:audit-short} purchases the first
+term of Proposition~\ref{prop:threeterm} with labels at an anchor and sets the third to zero by
+declaration; none of them computes a budget from unlabeled deployment data, and
+Theorem~\ref{thm:anchor} says that labels at an anchor with no declared coupling to the deployment
+domain move the minimax budget by exactly zero. The only route to a budget available to a deployer
+without deployment labels is the episode route of \S\ref{sec:episode}, which needs
+$K\ge1/\alpha-1$ logged deployments with retrospectively revealed outcomes and pays for them with
+an exchangeability assumption that \S\ref{sec:episode-empirics} measures failing. Absent all of
+that, $\beta$ is fixed from domain knowledge, historical dev-to-deployment gaps, or an explicit
+stress envelope, and is a declaration.
 The choice $\beta{=}0$ is the strongest zero-drift assumption and may be reported only as a plug-in baseline; it is not an assumption-free or conservative default. When no credible bound is justifiable, the population frontier cannot certify robustness to calibration drift, and the safe operational response is to abstain or freeze. Larger $\beta$ widens the abstain band monotonically, trading decision coverage for robustness.
+
+\textbf{$\beta$ is not estimable from development data, and the frontier's operational reading is
+withdrawn.} This is the paper's own negative result; \S\ref{sec:beta-sweep} reports it in full and
+Theorem~\ref{thm:anchor} says why it had to happen. We repeat here only the consequences.
+(i) We do not claim $|M|>\beta$ as a deployable rule and never ran it as one. (ii) We keep
+Theorem~\ref{lem:nonid} and the budget-impossibility results, whose proofs are untouched by any of
+this. (iii) The sensitivity is itself adverse: over $\beta\in[0,0.30]$ regret spans $26\times$ to
+$192\times$, and at a single fixed $\widehat\beta$ decision yield varies by $21$ to $52$ points
+across adapters and seeds, so $\beta$ behaves as a free knob rather than a specification.
+(iv) A further limitation, new in this revision: episode exchangeability (E2) is \emph{not
+verifiable, only falsifiable} (Corollary~\ref{epi:cor-not-free}), and its label-free observable
+component is only a one-sided screen --- the separability AUC correlates with realised coverage at
+$r=-0.35$ over $n=470$ splits, so a low reading is informative and a high reading is only a warning.
+Limitations of the $\beta$-sweep test itself: two benchmarks with only $6$ and
+$3$ corruption families, so family-clustered intervals are reported but are not primary; the
+benefit rather than disagreement scale, since $\mu_T(D)$ is not recorded in these artifacts;
+$\beta^{\min}_{\mathrm{sound}}$ is an oracle diagnostic no deployer could compute; and regret
+resolves \textsc{abstain} to \textsc{freeze}, which penalizes abstention heavily---the soundness
+conclusions do not depend on that convention, the regret comparisons do.
+
+\textbf{The escape is marginal, not conditional.} The episode budget of \S\ref{sec:episode}
+controls a long-run rate across deployments; it provides no protection \emph{at} a deployment
+(Proposition~\ref{epi:prop-escape}(a), Remark~\ref{epi:rem-marginal}). Conditional on the current
+episode being one of the adversarial ones, the audited frontier commits and is wrong, and the
+$\alpha$ it was run at says nothing about that. This is Remark~\ref{rem:fa-marginal} one level up,
+and a deployer who is told ``$\beta$ was estimated'' should be told this as well.
+
+\textbf{The probe dominates at one deployment.} Proposition~\ref{epi:prop-probe}(b) is the
+uncomfortable ranking. At a \emph{single} deployment, buying $k=\Theta(\varepsilon^{-2})$ labeled
+probes strictly dominates estimating a budget: the probe certifies $\sign(M+\gamma)$ directly, the
+budget route certifies only $|M|>|\gamma|$. The budget route is worth taking because it amortises
+over future deployments, and amortisation is exactly what E2 licenses. If E2 fails --- and
+\S\ref{sec:episode-empirics} measures it failing on the axis a novel deployment lives on --- the
+budget route loses both its guarantee and its economic rationale.
+
+\textbf{Scope of the decision-value analysis.} The frontier of \S\ref{sec:decision-value} is a
+replay, not a re-run: no model is refit, and it inherits every limitation of the artifacts it
+replays. Four specific threats. $n_D$ ($2000$/$4000$) is inferred from accuracy denominators rather
+than read from the files, so the radius-floor conclusions are stated as brackets. The heuristic
+references are given either a hindsight-optimal threshold or a labelled-seed-split threshold, both
+generous relative to a deployable heuristic---where the certificate wins it wins against a
+handicapped-in-its-favour opponent, and where it loses (ImageNet-R) it loses to a heuristic that is
+also achievable. The power model resamples $\Delta$ and the residual independently, dropping their
+empirical coupling; the de-shrunk variant, not the naive curve, is the corrected reading. And the
+natural tracks publish no per-cell $\widehat\Delta$, so their rows use the published $\varepsilon$
+and decision counts against per-cell $\Delta$: $\Pr(\Delta>\varepsilon)$ and the regret columns are
+exact, but the $|\widehat\Delta|$-versus-$\varepsilon$ split is available only on the three per-cell
+tracks. Finally, $\alpha{=}0.10$ is a pre-registered safety choice and is \emph{not} regret-optimal:
+$\kappa{=}0.9$ dominates it on two of three pooled tracks, and on ImageNet-C SAR $\kappa{=}0.5$
+obtains $46\%$ more decisions at $39\%$ less regret for one extra false adaptation.
 
 \textbf{Detectability and transfer.} ImageNet-R is a weak, split-specific evidence regime:
 no candidate survives both comparisons across four seeds. CIFAR-10.1 fails the
@@ -1661,23 +2173,80 @@ POEM/AETTA comparison is complete only for protocol-matched ports; official impl
 future baseline work. The Office-Home/iWildCam summaries have a separate saved recomputation lock,
 but no external-lab replication. PACS and ImageNet-R are completed registered diagnostics and are
 retained as null/weak-evidence results rather than tuned into wins. The frozen external procedure is
-documented in \texttt{INDEPENDENT\_REPLICATION\_PROTOCOL.md}. Abstention lowers \emph{decision} coverage
+documented in \texttt{INDEPENDENT\_REPLICATION\_PROTOCOL.md}. A physical-camera study is
+pre-registered in Appendix~\ref{app:edge-physical} and \emph{no physical result is claimed}: a
+template is not evidence, and we report it as a protocol only. Abstention lowers \emph{decision} coverage
 but never withholds a prediction: it retains the frozen fallback $f_0$.
 
 \begin{center}\fbox{\parbox{0.95\linewidth}{\small
 \textbf{What we do not claim.} Universal accuracy gains; adapter selection by test regret;
-multicandidate routes with violated false-adapt bounds; or wins on helpful-dominated shifts
-where always-adapt is already oracle-optimal.}}
+multicandidate routes with violated false-adapt bounds; wins on helpful-dominated shifts
+where always-adapt is already oracle-optimal; that the drift budget $\beta$ can be declared from
+development data (\S\ref{sec:beta-sweep} measures the attempt and it fails); that $\beta$ can be
+supplied by \emph{any} label-free procedure (Theorem~\ref{thm:beta-minimax} makes this a theorem,
+not a concession); that episode exchangeability holds at a novel deployment
+(\S\ref{sec:episode-empirics} measures it false, coverage $0.626$ and $0.454$); that weighted
+conformal repairs that (\S\ref{sec:episode-empirics} measures it valid and vacuous, coverage
+$1.000$ at yield $0.000$); that $|M|>\beta$ is the rule \textsc{KGA} runs or should run; or that
+$\alpha{=}0.10$ is regret-optimal.}}
 \end{center}
+
+\subsection{Why Natural Shifts Mainly Produce No-Harm}
+A single natural benchmark is often one-sided: adaptation helps almost everywhere or harms almost everywhere. In the first case, always-adapt is already near-oracle; in the second, always-freeze is near-oracle. A three-way router gains a strict margin over both fixed policies only when helpful and harmful conditions coexist and the evidence distinguishes them. Natural no-harm results and mixed-regime wins are therefore different operating points of the same decision geometry.
+
+\subsection{Four Sources of Abstention}
+Not every abstention has the same interpretation. \emph{Structural non-identifiability} means opposite-benefit worlds share the same admissible evidence law. \emph{Finite-sample uncertainty} means the sign is identifiable in principle but the interval still crosses zero. \emph{Estimator inadequacy} means the chosen model fails to extract an available signal. \emph{Calibration failure} means a development relationship does not transfer to deployment. We distinguish these causes throughout the evaluation rather than treating every null result as evidence of structural unknowability.
+\S\ref{sec:decision-value} now separates them quantitatively, using the yield ceiling
+$\Pr(|\Delta|>\varepsilon)$ as the discriminator. Four of five per-cell slices commit on
+$93$--$102\%$ of what is committable at their own radius, so their abstention is
+\emph{finite-sample}: the radius is wider than the effect, and on CIFAR-10-C it is already at the
+$n_D$ floor. ImageNet-C Tent is the one clear case of \emph{estimator inadequacy}---$4\%$ of its
+ceiling, with $55\%$ of the residual variance attributable to shrinkage, and removing that
+shrinkage alone would take yield from $0.7\%$ to $45\%$. And \S\ref{sec:beta-sweep} supplies the
+missing measurement of \emph{calibration failure}: the drift a source-like calibration fails to
+anticipate is $1.4\times$ to $50\times$ the budget it declares. What we still cannot do is
+demonstrate \emph{structural} non-identifiability on any real track; empirical abstention never
+establishes it.
+
+\subsection{Operational Failure Modes}
+Table~\ref{tab:failure-modes} maps each deployment failure to a diagnostic and a safe response.
+\begin{table}[t]\centering\scriptsize
+\caption{Deployment failures, diagnostics, and safe responses.}
+\label{tab:failure-modes}
+\begin{tabular}{@{}p{0.28\linewidth}p{0.30\linewidth}p{0.32\linewidth}@{}}
+\toprule
+Failure & Diagnostic & Safe response \\
+\midrule
+Calibration transfer fails & support/residual audit & recalibrate, widen radius, or abstain \\
+True drift exceeds $\beta$ & external domain monitoring & revise class/budget; freeze meanwhile \\
+Evidence out of support & distance or density check in $Z$-space & abstain \\
+Adapter/checkpoint changed & configuration hash mismatch & require recalibration \\
+Batch too small & minimum-size rule & wait for more data or freeze \\
+Continual state accumulates error & checkpoint/stream monitor & rollback to last certified state \\
+Missing/invalid evidence & schema and numerical validation & freeze \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{When to Deploy K-Bound}
+K-Bound is most valuable when harmful updates are plausible, the cost of a bad commit is high, a frozen fallback is available, and historical or structural information supports calibration. It is less useful when adaptation is uniformly benign, when no credible drift class or calibration set exists, or when the candidate update cannot be evaluated and rolled back safely.
+
 
 \section{Reproducibility}\label{sec:repro-main}
 \subsection{Artifacts and Result Lineage}
-All locked/reconciled rows in Tables~\ref{tab:uniform-panel}--\ref{tab:primary-numeric} link to
+All locked/reconciled rows in Table~\ref{tab:uniform-panel} link to
 saved raw cells or seed aggregates in the released repository, with two documented exceptions: the
-Camelyon17 $n{=}18$ triple, whose reconciliation directory is absent from the release, and the
-Office-Home and iWildCam promoted regrets, whose named record files are absent while two other
-scorings of the same track survive and disagree (App.~\ref{app:claim-artifact}). Those three rows
-are marked \emph{not reproducible from the release} rather than \emph{locked}. Provisional rows are
+Office-Home and iWildCam promoted regrets, whose named record files are absent while other scorings
+of the same track survive and disagree (App.~\ref{app:claim-artifact}). Those two rows are marked
+\emph{not reproducible from the release} rather than \emph{locked}. The Camelyon17 $n{=}18$ triple
+was the third such row until 2026-07-26; its sealed reconciliation directory is still absent, but the
+row was recomputed from \path{camelyon17_richZ_F_v1/_partial.json}, which carries the full
+$5\ \text{seeds}\times6\ \text{candidates}\times3\ \text{domains}\times6$ grid the reconciliation
+partitioned. Calibrating on dev seeds $\{0,1\}$ and scoring test seeds $\{2,3,4\}$ reproduces all
+four routes recorded in the sealed protocol --- pooled $n{=}54$ to seven significant figures
+($3.616898{\times}10^{-5}/1.320168{\times}10^{-3}/0.0749240$, $\mathrm{FA}_{\mathrm c}$ exactly
+$1/39$), $n{=}36$ freeze regret $0.11228$, and the promoted OOD-only $n{=}18$ freeze regret
+$0.138129$. That row is now \emph{recomputable}, and it is also weaker than it looks: see below. Provisional rows are
 retained only to document completed evidence and the required replay; they are not reused as headline
 claims. The core certificate module is packaged as an installable module in the same repository.
 \ifanon
@@ -1685,56 +2254,55 @@ claims. The core certificate module is packaged as an installable module in the 
 author block are withheld; the release itself is not anonymized and must be redacted before an
 anonymous submission, not merely described as anonymous.
 \fi
-\subsection{Formal Verification Scope}
-The repository contains a kernel-checked Lean~4 formalization of indexed algebraic,
-finite-decision, measure-containment, and conditional uniform-rank results, with no
-\texttt{sorry}, \texttt{admit}, or project-defined axioms. It checks frontier sufficiency, all three
-deterministic branches, algebraic witnesses for the closed and open bands, both zero-versus-strict
-boundary witnesses, and the marginal false-adapt/false-freeze implication once coverage is assumed.
-The current development does not formalize the target-law witness construction, equality of its
-induced evidence laws, membership of those laws in $\mathcal C_\beta$, realization of the algebraic
-witnesses by measurable target laws, distributional frontier necessity or pointwise maximality,
-risk alignment, multiclass identifiability, calibration transfer, or a
-general exchangeable-process lift. These clauses are proved only in the manuscript; compilation of
-the mapped helper declarations is not described as kernel verification of the complete paper theorem. The
-implementation theorem uses the same exact rank rule as the current clean-split scorer; historical
-benchmark artifacts produced with an interpolated empirical quantile are not presented as
-kernel-certified split-conformal experiments. Machine-checked learning-theory results are an
-emerging area---Lean formalizations of generalization-error bounds exist~\cite{sonoda2025lean}---and
-to our knowledge machine-checked conformal-coverage results remain uncommon; no priority claim is
-made.
-
-\subsection{Claim-to-Support Map}
-\begin{table*}[t]\centering\scriptsize
-\caption{\textbf{Claim-to-support map.} ``Theorem'' means proved in the manuscript; Lean coverage is
-limited to the inventory described above. ``Empirical'' and ``diagnostic'' claims are restricted to
-the named saved artifacts and protocols.}
-\label{tab:claim-status}
-\begin{tabular}{@{}p{0.20\textwidth}p{0.075\textwidth}p{0.22\textwidth}p{0.22\textwidth}p{0.20\textwidth}@{}}
-\toprule
-Claim & Type & Exact requirement & Evidence location & Caveat \\
-\midrule
-Interior matched-evidence impossibility & theorem & $\beta>0$, $|M|<\beta$, declared class contains the constructed worlds & Thm.~\ref{lem:nonid}; App.~\ref{app:theory-full} & Opposite nonzero benefits are an interior result only. \\
-Closed-band abstention & theorem & Strict three-way soundness over $|\gamma|\le\beta$ & Prop.~\ref{prop:closed-band} & Boundary is zero-versus-strict ambiguity, not opposite signs. \\
-Strict-commitment frontier & theorem & Declared drift class and risk alignment & Thm.~\ref{thm:headline} & Uniform strict commitment, not universal sign recovery. \\
-Marginal $\mathrm{FA}_{\mathrm u}$ certificate & theorem & $\Pr(|\widehat\Delta-\Delta|\le\varepsilon)\ge1-\alpha$ & Thm.~\ref{thm:certificate}; Lean inventory & Does not control conditional $\mathrm{FA}_{\mathrm c}$. \\
-CIFAR-10-C mixed-regime action validity & empirical & Five-seed Tent/EATA raw decisions, action rates, false-adapt, and paired CIs & Table~\ref{tab:decisive}; empirical audit manifest & SAR is withheld after a replay mismatch and contributes no evidence. \\
-ImageNet-C authoritative result & empirical & 27 cells $\times$ 5 seeds, SAR candidate, pooled seed-averaged paired bootstrap & Table~\ref{tab:imagenetc-faithful}; Table~\ref{tab:imagenetc-ci-unit} & Under the promoted leave-one-out pool neither condition-level gap excludes 0; $2/5$ seeds beat both, $3/5$ tie freeze exactly. \\
-Natural no-harm results & empirical & Reconciled OOF or locked held-out artifacts & Tables~\ref{tab:uniform-panel}--\ref{tab:primary-numeric} & One-sided regimes mainly exercise the adapt or freeze branch. \\
-Controlled multimodal routing & empirical & Pre-registered $13\times10$ injected-corruption grid & App.~\ref{app:d33}; \texttt{KB-CLAIM-027} & Mechanism confirmation, not a natural multimodal benchmark. \\
-POEM/AETTA comparison & empirical & Same logged stress cells and protocol-matched ports & Table~\ref{tab:headtohead-poem-aetta} & Not official implementations. \\
-Constructed heterogeneous mixture & empirical & Researcher-constructed three-source routing aggregate & Sec.~\ref{sec:constructed-routing} & Not unseen-shift transfer. \\
-Universal improvement & diagnostic & No supporting requirement is declared & Sec.~\ref{sec:limits} & Explicitly not claimed. \\
-Universal accuracy improvement & diagnostic & Would require a different objective and task-specific held-out evidence & Natural-shift tables & Explicitly not claimed. \\
-Real-camera study & pending & Fresh preregistered held-out sessions and raw logs & pre-registration templates & Templates are not evidence. \\
-\bottomrule
-\end{tabular}
-\end{table*}
+\noindent\textbf{Formal verification and claim-to-support map.} The Lean formalization
+inventory, its explicit non-coverage list, and the claim-to-support map are in
+Appendix~\ref{app:formal} and Appendix~\ref{sec:guarantees}. Neither is evidence for an
+empirical claim; both are provenance.
 
 \section{Conclusion}
-K-Bound reframes test-time adaptation as a validity and safety decision---whether to adapt at all---rather than an unconditional update, and contributes the missing decision layer: a label-free adapt/freeze/abstain certificate with a controlled false-adapt rate. The central object is the target benefit $\Delta=R_T(f_0)-R_T(f_a)$. Over a declared drift-budget class, a strict adapt or freeze commitment is uniformly supportable if and only if the observable disagreement-region margin exceeds the declared budget; on $|M|\le\beta$, abstention is the maximal sound three-way action under the paper's strict-decision semantics. We are explicit about which half of that ``iff'' carries content: sufficiency is interval arithmetic on a decomposition we defined, while necessity rests on a construction of two admissible target laws with identical label-free evidence and opposite nonzero benefits---the same construction that makes label-free auditing of the budget itself vacuous.
+% CONDENSED 2026-07-27 (length pass). The previous conclusion restated the
+% abstract's four paragraphs at nearly full length -- the same numbers, in the
+% same order, a third time after the abstract and the introduction. Every figure
+% dropped here is still in the abstract, in the section it belongs to, and in the
+% guarantee-accounting table of \S\ref{sec:guarantees}. The one genuinely new
+% paragraph (the two-component reading and the calibration-not-sample-size
+% finding) is kept verbatim.
+A label-free adapt/freeze/abstain decision is possible only relative to a declared bound on
+calibration drift, and that bound cannot come from the deployment. This is a theorem with an exact
+value, not a limitation: for every declared class the least label-free-certifiable budget is the
+fibre radius $\Gamma_z$, attained by a constant audit that reads none of its data, and for the
+paper's own deployment class $\Gamma_z(\mathcal C_\beta)=\beta$ --- the best possible label-free
+audit of the budget returns its own input, and the number it returns is simultaneously the radius of
+the band on which a strict commitment is unsound. One lemma carries this, the matched-evidence
+impossibility, and the abstention band, as readings of the same one-parameter family at three radii;
+labels at another domain move the minimax budget by exactly zero, which is why declaring $\beta$
+from development data fails on $6{,}885$ real cells (\S\ref{sec:beta-sweep}) rather than merely
+being hard to estimate. The impossibility's configuration is not only constructed: in logged
+deployments there are pairs whose label-free evidence cannot be told apart while their benefit has
+resolvably opposite sign, and roughly $30\%$ of evaluable CIFAR-10-C cells sit in fibres whose
+sign genuinely goes both ways --- though such pairs are $39\times$ \emph{rarer} than chance, so the
+evidence is informative and merely insufficient (\S\ref{sec:necessity-observed}).
 
-KGA operationalizes this principle with a label-free benefit estimate and a pre-calibrated uncertainty radius. The resulting controller commits the candidate only when the interval excludes zero, retains the frozen model when harm is certified, and otherwise abstains from changing state. Across the benchmark panel the primary outcome is a safety one, and it is scoped: on the four one-sided natural tracks with locked held-out artifacts (Camelyon17, iWildCam, Office-Home, RxRx1) KGA ties the better fixed policy at zero observed false adaptation; on PACS, ImageNet-R, and CIFAR-10.1 it is a conservative null or fails the declared transfer bar, and those three are reported as such rather than removed from the panel. Controlled mixed regimes---including the pre-registered two-view multimodal check of Appendix~\ref{app:d33}---additionally exercise all three actions and confirm, as a secondary mechanism check, that the certificate can beat both fixed policies where helpful and harmful conditions coexist and are separable by the evidence. The safety guarantee itself is exercised with genuine statistical power on one track only: the CIFAR-10-C stress grid, at $1{,}113$ \textsc{adapt} decisions and zero false adaptations. Weak or non-transferable evidence produces abstention or remains diagnostic rather than being promoted as a win.
+A budget can be obtained from a \emph{population} of deployments, at a price we state exactly:
+between $1/(e\alpha)-1$ and $1/\alpha-1$ logged episodes with retrospectively revealed outcomes,
+three to nine at $\alpha=0.10$, first feasible at exactly $K=9$ on real data. The escape is one
+logical move --- average over the episode law instead of supremum over the fibre --- paid for with
+historical labels, and neither ingredient works alone. The guarantee it buys is marginal across
+deployments, not conditional on the one in front of you, and the exchangeability that buys it is
+what a shifted deployment violates: coverage collapses from a nominal $0.900$ to $0.626$ and
+$0.454$ when the corruption family or severity changes, and weighted conformal restores it to
+$1.000$ only by driving decision yield to $0.000$ --- the same vacuity reappearing inside the method
+that was supposed to escape it.
 
-The broader implication is that an adaptation system should expose two components: an update mechanism and a validity layer that decides whether the update is supportable under the available evidence and assumptions. Strengthening K-Bound therefore requires not only better adapters, but also richer risk-aligned evidence, more defensible calibration across shifts, explicit drift-budget auditing, and reproducible deployment semantics.
+What remains is the deployable object: a finite-sample certificate that trades decision yield for a
+false-adapt guarantee, with the frontier measured. The guarantee is exercised with genuine
+statistical power on one track, the CIFAR-10-C stress grid, where the certificate commits on
+$66.8\%$ of $6{,}480$ cells at $\mathrm{FA}_{\mathrm u}=0/6480$, cuts regret $5.00\times$ below the
+better fixed policy, places its commitments on cells whose true effect is $24.5\times$ larger than
+the ones it declines, and still returns zero false adaptations in all ten leave-one-corruption-out
+runs. Elsewhere it ties the better fixed policy on the four one-sided natural tracks --- three of
+those zeros weakly, as \S\ref{sec:limits} records --- and where it buys nothing we say so: PACS,
+ImageNet-R ($1.76\times$ worse than always-adapt) and CIFAR-10.1 stay in the panel as a
+conservative null, a loss, and a failed transfer bar.
 
+The broader implication is that an adaptation system should expose two components: an update mechanism and a validity layer that decides whether the update is supportable under the available evidence and assumptions. Strengthening K-Bound therefore requires not only better adapters, but also richer risk-aligned evidence, more defensible calibration across shifts, and either logged deployment populations or deployment labels --- not a better label-free audit, which \S\ref{sec:impossible} rules out. The measurements above make one requirement concrete: the binding constraint on decision yield is estimator \emph{calibration}, not sample size---the phase transition sits at a margin AUC of roughly $0.95$, and de-biasing an already-noisy plug-in is worth more than any feasible increase in evaluation batch size.

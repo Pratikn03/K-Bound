@@ -1,0 +1,49 @@
+% Finite-sample certificate: split out of theory_core_main.tex during the 2026-07 restructure.
+% Consumed by the "what remains" method section (sec:method), not by the impossibility section.
+\begin{theorem}[Finite-sample adapt/freeze/abstain certificate]\label{thm:certificate}\label{thm:cert}
+Suppose $\Delta$, $\widehat\Delta$, and the nonnegative random radius $\varepsilon$ are measurable
+on a common probability space containing all calibration, benefit-model fitting, and
+deployment-unit randomness, and that the benefit interval satisfies marginal coverage
+\[
+\Pr\!\bigl[\,|\widehat\Delta-\Delta|\le\varepsilon\,\bigr]\ \ge\ 1-\alpha .
+\]
+Define
+\[
+g(Z)=\begin{cases}
+\textsc{adapt} & \widehat\Delta-\varepsilon>0,\\
+\textsc{freeze} & \widehat\Delta+\varepsilon<0,\\
+\textsc{abstain} & \text{otherwise}.
+\end{cases}
+\]
+Then, marginally over that common probability space,
+\begin{align*}
+\Pr\bigl[g(Z)=\textsc{adapt},\Delta\le0\bigr]&\le\alpha,\\
+\Pr\bigl[g(Z)=\textsc{freeze},\Delta\ge0\bigr]&\le\alpha.
+\end{align*}
+\end{theorem}
+\begin{proof}
+On the event $\{|\widehat\Delta-\Delta|\le\varepsilon\}$, the condition
+$\widehat\Delta-\varepsilon>0$ implies $\Delta>0$, so a false adapt requires the complement of
+this event, which has probability at most $\alpha$. The freeze case is symmetric.
+\end{proof}
+Exchangeability, or an explicit shift correction, is one route to this coverage assumption. Risk
+alignment is not required for the conditional-on-coverage implication.
+
+\begin{remark}[Marginal vs.\ conditional error]\label{rem:fa-marginal}
+Theorem~\ref{thm:certificate} bounds the \emph{marginal, unconditional} false-adapt and
+false-freeze probabilities ($\mathrm{FA}_{\mathrm u}$). It does \emph{not} bound the conditional
+rate $\mathrm{FA}_{\mathrm c}=\Pr[\Delta\le0\mid\textsc{adapt}]$, which we report empirically.
+Risk alignment (Definition~\ref{def:risk-align}) is required for the \emph{frontier}
+identifiability claim; coverage alone certifies the \emph{interval} rule above.
+\end{remark}
+
+\begin{remark}[Fallback when assumptions are unsupported]\label{cor:abstain-valid}
+If interval coverage---or the calibration assumptions supporting it (exchangeability, or an explicit
+shift correction)---cannot be justified on the deployment batch, Theorem~\ref{thm:certificate}
+supplies no level-$\alpha$ protection for either strict action. A deployment must then use a
+separately declared operational fallback, such as abstention or serving the frozen model; this is a
+policy recommendation, not a conclusion that either fallback is optimal. If instead \emph{risk alignment}
+(Definition~\ref{def:risk-align}) cannot be justified, the population-frontier interpretation and the
+transferability of the benefit estimator are unsupported, even though the interval implication of
+Theorem~\ref{thm:certificate} remains valid \emph{conditional on coverage} (cf.\ Theorem~\ref{lem:nonid}).
+\end{remark}

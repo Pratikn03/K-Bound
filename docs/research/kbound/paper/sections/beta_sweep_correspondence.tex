@@ -1,0 +1,66 @@
+% =====================================================================
+% beta_sweep_correspondence.tex -- the theory/experiment correspondence for
+% Sec.~\ref{sec:beta-sweep}.
+%
+% Source: kb_fixes/theory_beta_impossible.tex, Remark rem:empirical, promoted
+% to sit next to the experiment it interprets rather than in the theory
+% section. Two numbers corrected against the artifacts during promotion:
+% the ImageNet-C genuine-measurement row is 0.470 in the adversarial re-run
+% (0.511 in tab:beta-sweep, which uses the primary beta_hat = 0.0302), and the
+% count is five of six recorded configurations in
+% adversarial_ablations_results.json.
+% =====================================================================
+
+\begin{remark}[What the theorems predict about this experiment, and what they do
+not]\label{rem:empirical}
+The $\beta$-sweep is \emph{not} a label-free audit: its budget
+$\widehat\beta=q_{0.90}(|\gamma|)$ is computed on labeled source-like development cells.
+Corollary~\ref{cor:audA} therefore does not apply to it, and we do not claim it as a confirmation of
+Corollary~\ref{cor:audA}. What applies is Theorem~\ref{thm:anchor} with
+Proposition~\ref{prop:threeterm}: the procedure supplies the first term and \emph{sets the other two
+to zero by an undeclared exchangeability assumption between development and deployment cells}. The
+theory then predicts under-coverage of unbounded size, and that is what is measured.
+\begin{itemize}
+\item \emph{Coverage.} $\widehat\beta$ is a $0.90$ quantile on development cells, so
+$\Pr(|\gamma|\le\widehat\beta)$ has a by-construction null of $0.900$ on the deployment cells
+whenever the two pools are exchangeable ($0.900$ for CIFAR-10-C and $0.8963$ for ImageNet-C,
+recorded as \texttt{coverage\_on\_dev\_cells\_BY\_CONSTRUCTION}). CIFAR-10-C measures
+$0.274$--$0.756$, far below that null: the exchangeability declaration is falsified, so
+$\rho+\Delta_{\mathcal F}>0$ was set to $0$, and the committed error rate is correspondingly
+$0.4\%$--$16.6\%$ where Theorem~\ref{thm:headline} promises $0\%$. ImageNet-C measures
+$0.904$--$0.985$ in five of the six configurations recorded in
+\texttt{adversarial\_ablations\_results.json}, at or above the null, which \emph{carries no
+information}; and its three \texttt{loco} rows additionally have
+\texttt{dev\_and\_target\_disjoint}$=$\texttt{false}. The single ImageNet-C configuration whose
+coverage is a genuine measurement is \texttt{srclike}$|$\texttt{M\_gbm}, at $0.470$ in that re-run
+and $0.511$ in Table~\ref{tab:beta-sweep} (which uses the primary $\widehat\beta=0.0302$); it is
+also the configuration with commit-error $0.532$ on $62$ committed cells (sign match $0.468$, $95\%$
+CI $[0.340,0.599]$).
+\item \emph{Sup versus quantile.} Theorem~\ref{thm:beta-minimax} bounds any valid budget by a
+\emph{supremum} over the fibre, not a development quantile. Measured on CIFAR-10-C: the maximal
+realised $|\gamma|$ on deployment cells exceeds the maximal $|\gamma|$ on development cells by
+factors of $2.4$--$28.4$ across the ten configurations (\texttt{gamma\_absmax\_target} versus
+\texttt{beta\_hat\_max} in \texttt{beta\_sweep\_results.json}).
+\item \emph{Anchor destruction, quantitatively.} Theorem~\ref{thm:anchor} says an uninformative
+anchor leaves only a class-scale constant. Under the global label permutation of
+\texttt{adversarial\_ablations.py}, any estimator fit on the permuted benefit column converges to
+the constant $\E[\Delta]$, so the declaration procedure must return approximately
+$q_{0.90}(|\Delta-\E\Delta|)$ --- a number computable from the raw artifacts with no model fitting.
+On CIFAR-10-C that prediction is $0.2376$; the six measured shuffled budgets are
+$0.2468$--$0.2606$, ratios $1.04$--$1.10$, against real budgets of $0.0178$--$0.0482$ (inflation
+$5.2\times$--$14.1\times$), with zero commitments in $5/5$ replicates for the \texttt{M\_doc} and
+\texttt{M\_atc4} channels. On ImageNet-C the prediction is $0.0689$ against measured
+$0.0742$--$0.1171$ (ratios $1.08$--$1.70$; $n=405$). Script and output:
+\texttt{frontier\_sweep\_v1/beta\_impossible/\{check\_anchor\_collapse.py,anchor\_collapse\_check.json\}}.
+\item \emph{A prediction that fails, stated as such.} On ImageNet-C the anchored budget for the
+\texttt{M\_doc} and \texttt{M\_atc4} channels is \emph{larger} than the anchor-free constant
+($0.199$--$0.239$ real versus $0.074$--$0.090$ shuffled), which is the reverse of the pattern the
+mechanism above describes. Nothing in \S\ref{sec:impossible} forbids it:
+Theorem~\ref{thm:beta-minimax} lower-bounds \emph{valid} audits and says nothing about how far an
+invalid heuristic may overshoot. The mechanism is visible in the same artifact ---
+difference-of-confidences is anti-predictive on ImageNet-C (AUC $0.351$), so its residuals exceed
+the marginal spread of the benefit. The operational reading is that on that benchmark the anchored
+declaration is beaten by the trivial constant, and those are exactly the rows with decision yield
+$0.000$. We report this as a failed prediction rather than omit it.
+\end{itemize}
+\end{remark}

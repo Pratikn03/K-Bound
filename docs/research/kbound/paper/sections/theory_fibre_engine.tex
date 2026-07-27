@@ -1,0 +1,82 @@
+% =====================================================================
+% theory_fibre_engine.tex  --  Act 2, part 1: the one lemma.
+%
+% Promoted to the main body in the 2026-07 restructure. Source:
+% kb_fixes/theory_beta_impossible.tex, section "The engine", verbatim except
+% for the short-build label bridging documented in kb_fixes/RESTRUCTURE_PLAN.md
+% Sec. 3 (thm:aud-A is carried by Corollary~\ref{cor:audA} in this build).
+%
+% Consumed by kbound_short_body.tex immediately BEFORE
+% paper/sections/theory_core_main.tex, because lem:nonid's proof now cites
+% lem:fibre.
+% =====================================================================
+
+\providecommand{\E}{\mathbb{E}}
+\providecommand{\sign}{\operatorname{sign}}
+\providecommand{\TV}{\mathrm{TV}}
+\providecommand{\KL}{\mathrm{KL}}
+\providecommand{\Var}{\operatorname{Var}}
+
+\begin{definition}[Audit data]\label{def:audit-data}
+The \emph{audit data} $W$ is the totality of what a deployment-time procedure may read:
+the unlabeled deployment batch $X_{1:m}\sim\mu_T$, the fixed maps $(f_0,f_a,s)$ and every
+label-free statistic $Z=\phi(X_{1:m},f_0,f_a)$ derived from them, together with any sample
+$S$ --- labeled or not --- drawn from a source or calibration law that is specified
+independently of the target label kernel. An \emph{audit} is a measurable
+$\widehat\beta=g(W,U)\ge0$ where $U$ is a randomisation seed independent of everything else.
+$W$ contains \emph{no target labels}. This is exactly the ``target-label-free'' convention
+boxed in Assumption~\ref{ass:deploy}.
+\end{definition}
+
+\begin{lemma}[Kernel freedom on the disagreement region]\label{lem:fibre}
+Fix the observables $(\mu_T,P_S,f_0,f_a,s)$, hence $D$ and $M$, and fix any off-$D$
+conditional label law $K^\circ$. For every measurable $\eta:D\to[0,1]$ there is a target law
+$P_T^{\eta}$ on $\mathcal X\times\{0,1\}$ with input marginal $\mu_T$, off-$D$ kernel
+$K^\circ$, and
+\[
+\Pr_{P_T^{\eta}}\bigl(f_a(X)=Y\mid X=x\bigr)=\eta(x)\quad\text{for }x\in D .
+\]
+Moreover $\Law(W\mid P_T^{\eta})$ does not depend on $\eta$, and
+\[
+\bar a(P_T^\eta)=\E_{\mu_T}[\eta\mid D],\qquad
+\gamma(P_T^\eta)=\E_{\mu_T}[\eta\mid D]-\tfrac12-M ,
+\]
+so that as $\eta$ ranges over all of $[0,1]^D$, $\gamma$ ranges over exactly
+$\bigl[-\tfrac12-M,\ \tfrac12-M\bigr]$, an interval of length $1$ containing $0$ in its
+interior whenever $|M|<\tfrac12$.
+\end{lemma}
+
+\begin{proof}
+\emph{Existence.} On $D$ we have $f_0(x)\neq f_a(x)$ and $Y$ is binary, so
+$\{f_0(x),f_a(x)\}=\{0,1\}$; setting $K^\eta(x,f_a(x))=\eta(x)$ and
+$K^\eta(x,f_0(x))=1-\eta(x)$ therefore defines a valid Bernoulli conditional law on
+$\{0,1\}$ for each $x\in D$, measurable in $x$ because $\eta,f_0,f_a$ are. Off $D$ take
+$K^\circ$. Then $P_T^\eta(dx,dy):=\mu_T(dx)K(x,dy)$ is a probability law with the stated
+marginal and pointwise correctness.
+
+\emph{Invariance of the audit data.} By Definition~\ref{def:audit-data}, $W$ is a function of
+$X_{1:m}$, of the fixed maps $(f_0,f_a,s)$, of $S$, and of $U$. The construction changes
+neither $\mu_T$ (so $\Law(X_{1:m})$ is fixed), nor the maps, nor the law generating $S$, nor
+$U$. Hence $\Law(W\mid P_T^\eta)=\Law(W)$ for every $\eta$.
+
+\emph{Range.} $\bar a=\E_{\mu_T}[\eta\mid D]$ by definition of $\bar a$, and
+$\gamma=\bar a-\tfrac12-M$ by Remark~\ref{rem:gamma-residual}. Taking $\eta\equiv c$ for
+$c\in[0,1]$ gives $\bar a=c$, so $\bar a$ attains every value in $[0,1]$ and $\gamma$ every
+value in $[-\tfrac12-M,\tfrac12-M]$; no larger range is possible since $\bar a\in[0,1]$
+always. Since $\mu_T(D)>0$ the conditional expectation is well defined.
+\end{proof}
+
+\begin{remark}[The three uses are one construction]\label{rem:one-construction}
+Lemma~\ref{lem:fibre} restricted to the two-point subfamily $\eta\equiv\tfrac12\pm\delta$ with
+$\delta<\min\{\beta-|M|,\tfrac12\}$ \emph{is} the proof of the matched-evidence impossibility
+(Theorem~\ref{lem:nonid}). The same lemma at the two \emph{extreme} points $\eta\equiv1$ and
+$\eta\equiv0$ \emph{is} the proof of audit vacuity (Corollary~\ref{cor:audA}). Everything in
+this section is the same one-parameter family $\{\eta\equiv c\}_{c\in[0,1]}$ read at a
+different radius. In particular the construction that forces abstention and the construction
+that forbids auditing the budget which decides abstention are literally the same object;
+Corollary~\ref{cor:beta-is-beta} makes this an equality of numbers, not an analogy.
+No total-variation trade-off is available to sharpen or weaken it: within a fibre the
+observable laws coincide \emph{exactly}, which is the degenerate --- and strongest --- case
+of a two-point argument, so Le Cam's method has nothing to add here. It reappears, genuinely,
+only in Theorem~\ref{thm:lecam}, where labels make the two laws distinguishable.
+\end{remark}

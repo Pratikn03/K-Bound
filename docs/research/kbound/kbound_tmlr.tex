@@ -1,6 +1,16 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% kbound_tmlr.tex -- single-column TMLR build of the K-Bound paper.
 %%
+%% ============================================================================
+%% STATUS: AUTHORITATIVE SUBMISSION DRIVER.
+%% This is the single driver the TMLR submission is built from.  The other two
+%% drivers in this directory are NOT submission candidates:
+%%   kbound_short.tex  SUPERSEDED  -- IEEEtran two-column build this file replaced
+%%   kbound.tex        COMPANION   -- long-form IEEEtran manuscript, archival only
+%% All three \input the SAME abstract, body, appendix and theory sources, so the
+%% science cannot diverge between them.  Edit content in those shared files.
+%% ============================================================================
+%%
 %% WHY THIS FILE EXISTS
 %%   The IEEEtran two-column build (kbound_short.tex) ran to 23 pages with 26
 %%   tables, which is a desk-reject risk at a conference and, more importantly,
@@ -80,6 +90,10 @@
 %% style file. Do NOT load parskip: tmlr.sty uses indented paragraphs with no inter-
 %% paragraph glue, and parskip inflates this document by roughly a fifth.
 \usepackage[letterpaper,margin=1in]{geometry}
+% Spacing only, no content change.  Mirrors the setting the companion driver
+% (kbound.tex) already carries.  Absorbs the residual overfull hboxes caused by
+% long unbreakable \texttt{} paths in the appendices.
+\setlength{\emergencystretch}{3em}
 %% \path is IEEEtran/url sugar used throughout the shared body.
 \providecommand{\path}[1]{\texttt{#1}}
 %% article already defines table* / figure* (they degrade to plain floats in
@@ -132,6 +146,9 @@
 
 \emergencystretch=3em
 \input{paper/generated/kbound_numbers}  % auto-generated result numbers (scripts/make_tables.py)
+
+\input{paper/float_params}  % float placement parameters (layout only)
+\input{paper/figure_fallback}  % graceful degradation for absent figure assets
 
 \begin{document}
 \maketitle

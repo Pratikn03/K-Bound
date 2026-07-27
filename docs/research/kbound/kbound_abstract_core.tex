@@ -1,0 +1,75 @@
+% =====================================================================
+% kbound_abstract_core.tex -- the SHARED abstract text for ALL THREE drivers
+% (kbound_short.tex, kbound_tmlr.tex, kbound.tex).
+%
+% WHY THIS FILE EXISTS
+%   kbound.tex used to carry its own copy of the abstract. The copies drifted
+%   and four disclosures silently fell out of the long manuscript's abstract
+%   (defect D2, kb_fixes/RESTRUCTURE_COMPLETE.md Sec. 5). Three of the four --
+%   the frontier retraction, the episode-marginal caveat, and the LOCO EATA
+%   negative -- live in THIS file and are now impossible to drop from one
+%   build without dropping them from all three. The fourth (the weak-zeros
+%   caveat) lives in kbound_abstract_disclosures.tex, which every closing
+%   paragraph must \input.
+%
+% DO NOT paste this text into a driver. Edit here.
+% =====================================================================
+Test-time adaptation can silently degrade a deployed model on unlabeled target data, and with no
+target labels the system cannot tell a helpful shift from a harmful one. Deciding \emph{whether} to
+adapt is possible only relative to a declared bound on calibration drift---a drift budget
+$\beta$---so the question that decides the method is where that budget comes from. This paper
+answers it, and the answer is that it cannot come from the deployment.
+
+We prove that for every declared class of target laws the exact minimax label-free budget is the
+fibre radius $\Gamma_z$, attained by a constant audit that reads none of its data; for the
+deployment class $\mathcal C_\beta$ the fibre radius equals $\beta$ exactly, so the best possible
+label-free audit returns its own input, and the number it returns is simultaneously the radius of
+the band on which a strict adapt-or-freeze commitment is unsound. Two consequences follow. Any
+$\delta$-valid label-free audited rule commits with probability at most $\delta$ over the
+unrestricted class---decision yield is bounded by the error budget, at every batch size and for
+every evidence map. And a \emph{fully labeled} calibration sample from any other domain leaves the
+minimax budget unchanged, absent a separately declared coupling. One lemma---that the label kernel
+on the disagreement region is unconstrained by every label-free observable---carries the
+matched-evidence impossibility, the abstention band, and the budget impossibility as readings of the
+same one-parameter family at three radii.
+
+We then measure the prediction. Declaring $\beta$ as a high quantile of realized drift on
+source-like development cells, exactly as this paper's own method section prescribes, fails on
+$6{,}885$ real evaluation cells: on CIFAR-10-C the declared budget is $1.4\times$ to $50\times$
+smaller than soundness requires, $24$--$73\%$ of deployment cells fall outside the declared class,
+and committed actions are wrong at $0.4$--$16.6\%$ where the frontier promises $0\%$; on ImageNet-C
+a large enough budget is derivable and returns zero commitments on all $405$ cells in five of ten
+configurations. This is not a quantile-estimation failure: across $470$ splits the conformal order
+statistic that replaces the plug-in quantile differs from it by a median $0.34\%$, with a median
+coverage difference of exactly zero. We withdraw the operational reading of the frontier; the proofs
+are untouched.
+
+What escapes the impossibility is a population of deployments rather than a deployment. Under
+retrospective outcome logging and exchangeability with $K$ logged episodes, $\beta$ is identified as
+an episode quantile and estimable by a conformal order statistic, with the episode requirement
+bracketed to a factor of $e$: $1/(e\alpha)-1\le K^\star\le1/\alpha-1$, between $3$ and $9$ logged
+deployments at $\alpha=0.10$, and first feasible on real data at exactly $K=9$. The escape is
+average-over-episodes instead of supremum-over-the-fibre, paid for with historical labels, and
+neither ingredient suffices alone; the guarantee it buys is marginal across deployments, not
+conditional on the one in hand. The assumption that buys it is the one a shifted deployment
+violates: on CIFAR-10-C the episode budget attains its nominal $0.900$ coverage under an
+exchangeable control ($0.905$) and along nuisance axes, and collapses to $0.626$ when the corruption
+family changes and $0.454$ when severity changes, with half the severity splits admitting no budget
+at any declared level; weighted conformal restores coverage to $1.000$ by driving decision yield to
+$0.000$.
+
+What survives is a finite-sample certificate that trades decision yield for a false-adapt
+guarantee, and we measure that frontier exactly. Knowability-Guided Adaptation wraps any adapter
+(Tent, EATA, SAR), estimates the benefit $\Delta=R_T(f_0)-R_T(f_a)$ from label-free evidence, and
+commits only when a calibrated interval $\widehat\Delta\pm\varepsilon$ excludes zero; $\varepsilon$
+is a conformal radius and is \emph{not} an estimate of $\beta$. On the CIFAR-10-C stress grid it
+commits on $66.8\%$ of $6{,}480$ cells at zero false adaptations over $1{,}113$ and $1{,}244$
+\textsc{adapt} decisions (Clopper--Pearson $95\%$ upper bounds $0.0027$ and $0.0024$ on the
+conditional rate), cuts regret $5.00\times$ below the better fixed policy and $3.1\times$ below a
+hindsight-tuned label-free drift heuristic held to the same budget, and places its commitments on
+cells whose true effect is $24.5\times$ larger than the cells it declines. Under
+leave-one-corruption-out calibration the radius inflates $4.3\times$--$6.9\times$, the commitment
+rate falls from $0.51$--$0.60$ to $0.40$--$0.42$ and regret worsens $3.4\times$--$7.6\times$, and
+the false-adapt count stays at zero in all ten runs; under that partition the certificate still
+beats always-adapt on all five Tent runs and loses to it on all five EATA runs, so what survives
+leave-one-corruption-out is the safety property and not the routing-utility one.

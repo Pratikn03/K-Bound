@@ -125,19 +125,70 @@ theory_appendix_ext.tex:  [** 5 of these are \iffalse'd OUT of the short build *
   thm:imp            [G] Matched-evidence impossibility (full form)  -- COMPILED
   cor:forced-abstain [G] Closed-band abstention under dual error control -- COMPILED
   lem:gate, prop:lecam-finite, prop:cert-sample, thm:conj1-dichotomy, thm:ev-rate -- NOT COMPILED
+theory_fibre_engine.tex:  [** NEW 2026-07-27, MAIN BODY Sec. 4.1 **]
+  def:audit-data     [G-def]  Audit data W (everything a deployment-time procedure may read)
+  lem:fibre          [G] Kernel freedom on D. THE engine: lem:nonid, thm:headline and cor:audA are
+                         readings of it at three radii. Proof in main body.
+  rem:one-construction [G-remark] The three uses are one construction.
+theory_beta_minimax.tex:  [** NEW 2026-07-27, MAIN BODY Sec. 4.3-4.6 **]
+  def:fibre-radius   [G-def]  Fibre C(z) and fibre radius Gamma_z; delta-validity on a fibre
+  thm:beta-minimax   [G] (a) floor (b) attainment by a constant audit (c) decision inertness
+                         (d) yield <= delta. Proof in main body.
+  cor:audA           [G] = thm:aud-A = thm:short-audA (triple-labelled). Aud-A recovered and
+                         sharpened: Gamma_z(C_all) = 1/2+|M|. MOVED appendix -> main body.
+  cor:beta-is-beta   [G] Gamma_z(C_beta) = beta exactly. Proof in main body.
+  thm:anchor         [G] Anchor destruction: labeled data at a non-deployment anchor moves the
+                         minimax budget by exactly zero. Proof in main body. STRICTLY STRONGER
+                         than cor:audA and the statement that bears on the beta-sweep.
+  prop:threeterm     [G] |gamma_T| <= |gamma_cal| + Delta_F + rho. Proof in main body.
+  rem:reading        [G-remark] Declaring rho instead of beta is a renaming (fixed point).
+  thm:lecam          [G] Root-n floor with deployment labels. STATEMENT in main body,
+                         PROOF in app:episode-proofs.
+  thm:dichotomy      [G] (N)/(P)/(D) trichotomy. Proof in main body.
+  rem:notsharp       [G-remark] Where the dichotomy is not sharp (transfer axis open).
+  rem:honest-scope   [G-remark] What is and is not standard about Sec. 4. MANDATORY, main body.
+theory_episode_main.tex:  [** NEW 2026-07-27, MAIN BODY Sec. 6 **]
+  epi:def-episode, epi:ass-E1, epi:ass-E2, epi:def-beta-star  [G-def/assump]
+  epi:thm-ident      [G] (a) beta* identified as an episode quantile; (b) NOT identified from
+                         unlabeled episode observables at any K. Proof in app:episode-proofs.
+  epi:thm-conformal  [G] Episode-conformal budget, feasible iff alpha >= 1/(K+1)+delta.
+                         Proof in app:episode-proofs. NO NOVELTY CLAIMED over thm:short-audG
+                         (epi:rem-audG, mandatory, in main text).
+  epi:def-fibreblind, epi:prop-escape  [G] Two ingredients, neither sufficient alone.
+                         PROOF IN MAIN BODY -- this is the consistency seam with Sec. 4.
+  epi:rem-marginal   [G-remark] The guarantee is episode-marginal, not conditional.
+  epi:thm-floor      [G] 1/(e*alpha)-1 episode floor. Proof in app:episode-proofs.
+  epi:cor-bracket    [G] 1/(e*alpha)-1 <= K* <= 1/alpha-1. At alpha=0.10: 3 to 9.
+  epi:prop-labels    [G] Bernstein label price + control-variate identity.
+                         Proof in app:episode-proofs; identity checked numerically (C3).
+  epi:prop-probe     [G] Probe lower bound Theta(eps^-2) + break-even N*.
+                         Proof in app:episode-proofs. AT ONE DEPLOYMENT THE PROBE DOMINATES.
+  epi:thm-shift      [G] (a) rho-bounded degradation; (b) weighted conformal (cited, not reproved).
+  epi:cor-not-free   [G] The relaxation moves E2 from unfalsifiable to falsifiable, NOT to verified.
+  epi:conj-open      [CONJECTURE -- labelled as such in the text, not as a theorem]
 kbound_short_appendix.tex:
-  thm:short-audA     [G] Vacuity of label-free audits (Aud-A)
-  thm:short-audC     [G] Computed budgets under purchasable structure (Aud-C/F)
-  thm:short-audDE    [G] Composition; fully empirical rule (Aud-D/E)
-  thm:short-audG     [G] Domain-level verifiability with exact floor (Aud-G)
-  prop:beatsboth-asym[G] Asymmetric beats-both (sharpens thm:headline; added 2026-07-19)
-  prop:multiclass    [G] Multiclass bridge  ** ADDED to this inventory 2026-07-26 (was omitted) **
-TRUE COMPILED short-paper stack: lem:reduction, lem:nonid, cor:matched-abstain, prop:closed-band,
-thm:headline, thm:certificate, thm:imp, cor:forced-abstain, thm:short-audA/C/DE/G,
-prop:beatsboth-asym, prop:multiclass (+ defs/assumption).
-**Open (2026-07-26):** 8 of 13 compiled theorem-level results carry no proof in the compiled build.
-Either supply them or mark them "stated here; proved in [long version]" with a retrievable
-citation. Detail: `PHASE2_THEOREM_AUDIT.md`.
+  thm:short-audC     [G] = thm:aud-C. Computed budgets under purchasable structure (Aud-C/F)
+  thm:short-audDE    [G] = thm:aud-DE. Composition; fully empirical rule (Aud-D/E)
+  thm:short-audG     [G] = thm:aud-G. Domain-level verifiability with exact floor (Aud-G)
+  prop:multiclass    [G] Multiclass bridge  ** MOVED 2026-07-27: Sec. 3.5 -> app:regression **
+  prop:beatsboth-asym  ** CUT 2026-07-27. ** Zero \ref in either build; it sharpened an
+                         operational reading of the frontier that Sec. 5 withdraws. The cut is
+                         recorded as a comment at its former site in kbound_short_appendix.tex.
+theory_appendix_ext.tex:  [** 5 of these are \iffalse'd OUT of the short build **]
+  thm:imp            [G] Matched-evidence impossibility (full form)  -- COMPILED
+  cor:forced-abstain [G] Closed-band abstention under dual error control -- COMPILED
+  lem:gate, prop:lecam-finite, prop:cert-sample, thm:conj1-dichotomy, thm:ev-rate -- NOT COMPILED
+TRUE COMPILED short-paper stack (2026-07-27): lem:reduction, lem:fibre, lem:nonid,
+cor:matched-abstain, prop:closed-band, thm:headline, thm:beta-minimax, cor:audA, cor:beta-is-beta,
+thm:anchor, prop:threeterm, thm:lecam, thm:dichotomy, thm:certificate, epi:thm-ident,
+epi:thm-conformal, epi:prop-escape, epi:thm-floor, epi:cor-bracket, epi:prop-labels,
+epi:prop-probe, epi:thm-shift, epi:cor-not-free, thm:imp, cor:forced-abstain,
+thm:short-audC/DE/G, prop:multiclass (+ defs/assumptions), and epi:conj-open as a CONJECTURE.
+**Proof coverage (2026-07-27):** every promoted result carries either its proof in the main body or
+an explicit pointer to app:theory-full / app:episode-proofs. The three that remain proofless in the
+compiled build are thm:short-audC, thm:short-audDE and thm:short-audG, and app:audit-short says so
+in its own text ("stated here without proof, proved in the long version"). No main-text claim
+depends on them. Detail: `PHASE2_THEOREM_AUDIT.md`.
 
 ## 3. Nine tracks — promoted claim and evidence tier (REVISED 2026-07-26)
 
@@ -148,8 +199,8 @@ demoted, and the demotions are the point of this revision.
 |---|---|---|---|
 | CIFAR-10-C stress | Tent .0016/.0079/.1241; EATA .0013/.0033/.1314 | [E] beats-both (Tent/EATA) | **locked.** The one track with real power. Radius fix changes 0 of 9 504 decisions. SAR arm remains WITHHELD (seed-0 non-repro). |
 | ImageNet-C SAR | .0264/.0529/.0319 pooled; FA_u=0 (in-pool) | [E] **point-estimate no-harm vs always-freeze** | **DEMOTED from "beats-both".** Under the declared LOO radius: .0289/.0529/.0319, FA_u 1/135; the freeze-gap CI at the seed-averaged unit is [-0.0085,+0.0038] and includes zero. §9. |
-| Camelyon17 OOD | .0000/.0000/.1381; FA_u=0 | [E] no-harm | **DEMOTED to "sealed but not recomputable from release".** §8a. |
-| iWildCam H v2 | .0041/.1028/.0041; FA_u=0 | [E] no-harm | locked row; **source record file absent** (§8). Single trained model, multi-condition. 1 ADAPT decision — guarantee untested. Declared beats-both bar NOT met. |
+| Camelyon17 OOD | .0000/.0000/.1381; FA_u=0 | [E] no-harm | **RE-PROMOTED to "recomputable from release" 2026-07-26** — recomputed from `camelyon17_richZ_F_v1/_partial.json`, all four sealed routes reproduce (§8a). But 18/18 cells are helpful and KGA adapts 18/18, so it ties always-adapt by construction and FA_u=0 is vacuous. |
+| iWildCam H v2 | **.0037**/.1028/.0041; FA_u=0 | [E] no-harm | **DEMOTED to "sealed, not recomputable from release" 2026-07-26** (§8b). The regret_kga slot previously carried .0041, which is the always-freeze value; the row mixed the OOF-bootstrap triple with Protocol H v2's decision counts. **Source record file still absent** and never a placeholder. 1 ADAPT decision — guarantee untested. Declared beats-both bar NOT met. |
 | Office-Home M v2 | .0157/.0468/.0158; FA_u=0 | [E] no-harm (OOF lock) | locked row; **both source record files absent AND the runner source is unreadable** (§8, `PLACEHOLDER_INVENTORY.md` group B). LOO beats-both explicitly NOT promoted. |
 | RxRx1 J | .0000/.2531/.0000; FA_u=0 | [E] no-harm | locked (real ckpt; single seed-0 model, multi-condition). **0 ADAPT decisions — guarantee untested.** |
 | PACS | .0431/.0176/.0446; FA_u=.0093 | [D] null | locked diagnostic (3/3 seeds). **Cannot be re-scored** — released per-cell dumps carry no `b_hat`/eps/decision. Its entire adapt evidence is 12 ADAPT decisions from one domain-seed cell, 2 of them false (FA_c 0.1667, CP95 upper 0.4381). |
@@ -167,7 +218,7 @@ Recomputed under the exact-rank rule:
 | ImageNet-C SAR (5x27) | 135 | 12 | 14 | 109 | 0 | 0.0000 | 0.2209 | weak |
 | Office-Home M v2 | 35 | 22 | 12 | 1 | 0 | 0.0000 | 0.1273 | weak |
 | iWildCam H v2 | 72 | **1** | 60 | 11 | 0 | 0.0000 | 0.9500 | **guarantee untested** |
-| Camelyon17 OOD | 18 | — | — | — | 0 | 0.0000 | undefined | **counts not recorded** (§8a) |
+| Camelyon17 OOD | 18 | **18** | 0 | 0 | 0 | 0.0000 | undefined | **counts recomputed 2026-07-26**; 0 harmful cells, so FA_u=0 is vacuous (§8a) |
 | RxRx1 J | 60 | **0** | 60 | 0 | 0 | 0.0000 | undefined | **guarantee untested** |
 | CIFAR-10.1 K | 48 | 18 | 24 | 6 | 8 | 0.1667 | 0.6594 | diagnostic fail |
 | controlled multimodal D33 | 130 | **9** | 119 | 2 | 0 | 0.0000 | 0.2831 | **guarantee untested** |
@@ -268,6 +319,20 @@ port | locked != sealed-but-not-recomputable != diagnostic/incomplete | **point-
 
 The last distinction is new and it is the one the 2026-07-26 revision turns on.
 
+**Added 2026-07-27, and all four sites must agree:** `epsilon != beta`. The conformal radius is a
+quantile of held-out `|Delta_hat - Delta|` residuals; the drift budget is a declared bound on a
+latent quantity that `thm:beta-minimax` proves no label-free procedure can supply below the fibre
+radius. The four sites are the abstract, Sec. 4.8 (Claim scope), Sec. 7.4 ("epsilon is not an
+estimate of beta", rewritten to carry the distinction as its subsection title), and the long
+manuscript's "the threshold is derived, not tuned" paragraph. **The long-manuscript site is NOT
+owned by this rewrite and still asserts that `thm:frontier` identifies epsilon as the exact
+benefit-sign budget; that is the conflation this line forbids and it must be fixed there.**
+
+Also added 2026-07-27: **marginal-over-episodes != conditional-at-this-deployment.** The episode
+budget of Sec. 6 controls a long-run rate across deployments and gives a deployer no protection at
+the deployment in front of them (`epi:prop-escape`(a), `epi:rem-marginal`). Stated in Sec. 6.4,
+Sec. 11 (Limitations) and the abstract.
+
 ## 7. Fix-queue resolutions (Phase 4-5 tail, 2026-07-21) — retained for the record
 
 - **G1 [RESOLVED]** `kbound_result_manifest.json` `/tracks/imagenetc_sar` regenerated from the 5
@@ -318,20 +383,171 @@ beats_both: false}`). That file is sealed and its hash verifies. (The external r
 number as appearing in no artifact; that grep was restricted to `*.json`. The correction is
 recorded here so the record is accurate in both directions.)
 
-What remains true, and is the reason for the demotion:
+#### RESOLVED 2026-07-26 — the row is recomputable after all
 
-1. That YAML entry is a **hand-transcribed summary of a rerun**, not a per-cell artifact. Nothing
-   in the release recomputes it.
-2. The promoted **`FA_u = 0` is recorded nowhere.** The YAML's only Camelyon false-adapt figure is
-   `idval_only: {false_adapt: 0.80}`; the `OOD_test_only` entry has no false-adapt field.
-3. All three artifacts the YAML names as its own evidence are absent (rows 1-3 above).
-4. Live Camelyon artifacts give nonzero false-adapt on their own, different slices:
-   `camelyon17_protocol_G_v1` 0.0256 at n=54, `camelyon17_richZ_F_v1` 0.0329 at n=324.
+Points 1-4 below were the reason for the demotion. **Points 1, 2 and 4 are now withdrawn.** The
+sealed reconciliation directory is still absent and is not coming back, but it is not needed: row 1
+of the absent-artifact table above already states the restoration procedure as *"re-run
+`analyze_F.run_split(dev{0,1}, test{2,3,4})` with domain filtering"*, and the grid that procedure
+consumes **is in the release** — `experiments/kbound/results/camelyon17_richZ_F_v1/_partial.json`,
+540 records = 5 seeds x 6 candidates x 3 domains x 6 cells, complete (`progress: 90/90`). The four
+route sizes the sealed YAML records (54 / 36 / 18 / 18) are exactly the
+`{test,val,id_val} x {seeds 2,3,4}` partition of that grid. The reason this was missed is that the
+earlier search looked for the *named directory* rather than for a grid of the right shape.
+
+Recomputation, 2026-07-26 (candidate `eata_online`, rich panel `Z_dim` 17, GBR, global conformal,
+calibrate on dev seeds {0,1} across all three domains, n = 36):
+
+| route | n | sealed | recomputed |
+|---|---:|---|---|
+| `POOLED_test_val_idval` | 54 | `3.616898e-05 / 1.320168e-03 / 0.0749240451`, FA_c `0.02564102564102564` | `3.616898148e-05 / 1.320167824e-03 / 0.0749240451`, FA_c `0.02564102564102564` |
+| `OOD_test_plus_val` | 36 | freeze `0.1123` | freeze `0.1122775608` |
+| **`OOD_test_only` (the promoted row)** | **18** | **`0.0 / 0.0 / 0.1381`** | **`0.0 / 0.0 / 0.1381293403`** |
+| `idval_only` | 18 | `false_adapt: 0.80` | FA_c `0.3333` (1 of 3 adapts), FA_u `0.0556` |
+
+All four routes reproduce; the pooled row matches to seven significant figures and its FA_c matches
+exactly. The result is stable across estimator `random_state` 0-5 (18/18 ADAPT every time).
+
+1. ~~That YAML entry is a hand-transcribed summary of a rerun, not a per-cell artifact. Nothing in
+   the release recomputes it.~~ **WITHDRAWN** — the release recomputes it, above.
+2. ~~The promoted `FA_u = 0` is recorded nowhere.~~ **WITHDRAWN** — it is now computed, and it is
+   `0`. But see the new point 6: it is `0` for a reason that is not to the method's credit.
+3. All three artifacts the YAML names as its own evidence are still absent (rows 1-3 above). The
+   recomputation above routes around them; it does not restore them.
+4. ~~Live Camelyon artifacts give nonzero false-adapt on their own, different slices:
+   `camelyon17_protocol_G_v1` 0.0256 at n=54, `camelyon17_richZ_F_v1` 0.0329 at n=324.~~
+   **WITHDRAWN as a discrepancy** — it was never one. `0.0256` is FA_c = 1/39 on the **pooled**
+   route, which includes the **in-distribution `id_val` domain**; 16 of those 18 `id_val` cells are
+   harmful (mean `B` = -0.0037) and the single false adapt lies entirely there, which is why the
+   `idval_only` route alone has FA_c = 1/3. The promoted OOD-test-only subset excludes `id_val`.
+   The `0.0329` figure is from `camelyon17_fullscale_B_v2` (n = 324, **base** evidence panel) — a
+   different grid, not a rescoring of this one. Same run, different subsets; no contradiction.
 5. Separately, the runs used a **90.9%-complete** Camelyon copy (414 389 / 455 954 patches;
-   center 2 = `test` 100% present) — `DATA.md §4a`.
+   center 2 = `test` 100% present) — `DATA.md §4a`. Unchanged.
+6. **NEW, and it is the real limitation of this row.** All 18 cells of the OOD test subset are
+   **helpful** (`B` in `[0.0244, 0.2793]`, mean `0.1381`); there is not one harmful cell. KGA
+   adapts on 18 of 18. So on this row KGA *is* always-adapt, `regret_kga = regret_adapt = 0` is a
+   tie with always-adapt by construction, and `FA_u = 0` is arithmetically forced — there was
+   nothing available to false-adapt on. The row is now verifiable and it is still not evidence that
+   the certificate works.
 
-**Tier: "sealed but not recomputable from release."** A reader can verify the number was written
-down under change control before the paper cited it. A reader cannot verify it is correct.
+**Tier: "recomputable from release; verified; vacuous on the safety axis."** A reader can now verify
+the number is correct. It remains the case that the number does not exercise the guarantee.
+
+### 8b. iWildCam — the precise status (NEW 2026-07-26)
+
+iWildCam is named in the abstract as one of four headline no-harm tracks, so its provenance is the
+single largest open exposure in the release. Settled as follows.
+
+**The promoted triple was wrong in one slot, and the row mixed two runs.** The paper carried
+`0.0041023691 / 0.1028299605 / 0.0041023691`. The first and third entries are *the same number*: the
+`regret_kga` slot was carrying the **always-freeze** value. Tracing it:
+
+| quantity | artifact | value |
+|---|---|---|
+| promoted regret triple | `research_lock/KBOUND_WIN_BOOTSTRAP_CIS_oof.json` (`wins[iWildCam]`) | `regret_kga == regret_freeze == 0.004102369062102953` to 18 digits |
+| decision counts (ADAPT 1 / FREEZE 60 / ABSTAIN 11) | `iwildcam_protocol_H_v2/protocol_result.json` (`test_locked`) | `adapt_rate 0.013889`, `coverage 0.847222` |
+| that same block's own regret | `iwildcam_protocol_H_v2/protocol_result.json` | `regret_kga = 0.0036745149` |
+
+The OOF-bootstrap file additionally carries `reproduces_locked: false` and
+`beats_both_robust: false` on this row — it records, in its own fields, that it does not reproduce
+the value it was cited for. And `regret_kga == regret_freeze` exactly implies **zero effective ADAPT
+decisions**, which contradicts the `ADAPT = 1` printed beside it.
+
+Protocol H v2 is internally consistent and is the declared protocol, so the row now reports it:
+`0.0036745149 / 0.1028299605 / 0.0041023691`. Check: `regret_freeze - regret_kga = 0.0004278541`,
+which is exactly the `margin` field recorded in the same block — one ADAPT on a helpful cell with
+`Delta = +0.0308`.
+
+**Calibration-pool size: 72.** Previously unrecorded anywhere, which is a defect in its own right.
+The held-out route is `mode: seed_split`, `cal_seeds [0]`, `test_seeds [1]` over a 144-cell grid, so
+the pool is 72 cells. Under the declared unclamped exact-rank rule at `alpha = 0.10`,
+`k = ceil(73 * 0.9) = 66 <= 72`, so the radius is finite and the rule is not in its degenerate range
+(contrast §1a). The identically sized dev-screen pool yields `eps = 0.033417`.
+
+**Still not recomputable, and the missing input is named.** The blocking file is
+`experiments/kbound/results/iwildcam_full_test/result_e40faf29.json`. It is **absent, and was never
+an iCloud placeholder** — it is not among the 143 files in `PLACEHOLDER_INVENTORY.md`, so the
+2026-07-26 materialisation could not and did not recover it. The dev-screen record
+`iwildcam_full_idval/result_489da28f.json` is absent on the same terms.
+
+What *was* established, so the blockage is narrow and specific rather than general:
+
+1. **The scoring machinery reproduces exactly.** Replaying `cal = seed 0 -> eval = seed 1` on
+   `multiseed/iwildcam/extracted/per_condition_iwildcam_tent_episodic_seed{0,1}.json` reproduces the
+   protocol's dev-screen row to ten significant figures: `regret_kga 0.0056517032` (protocol
+   `0.005651703154`), `regret_adapt 0.0988480525`, `regret_freeze 0.0208499683`, ADAPT 9/72 =
+   `adapt_rate 0.125`. Nothing is wrong with the pipeline; only the held-out record is missing.
+2. **The closest surviving evidence points the same way.**
+   `iwildcam_full_test/PARTIAL_test_57cond.json` retains 65 of the 144 held-out test cells (seed 0
+   only, so the declared seed split cannot be run). Scored under the canonical rule (exact-rank,
+   leave-one-out-of-pool) on `tent_episodic`: **ADAPT 0 / FREEZE 14 / ABSTAIN 51**, with
+   `regret_kga = regret_freeze = 0.0076241` **exactly** and `regret_adapt = 0.0971068`. The
+   direction of the promoted claim — no-harm, ties freeze — is supported. The magnitude is not
+   recoverable, and `FA_u = 0` here is vacuous because there are no ADAPT decisions at all.
+3. **A second shipped scoring path reaches the opposite verdict.**
+   `win_loop_v1/iwildcam_full_idval_to_test/tent_episodic__gbr__global/holdout_score.json` scores the
+   same candidate, estimator and conformal mode against the same absent test record over all 144
+   cells and reports **5 ADAPT with `false_adapt: 1.0`** — every adapt false — `regret_kga
+   0.0113964`, `beats_both: false`, `verdict_win: false`. It is labelled `paper_ready: false` and
+   "diagnostic replication route". Two shipped paths, opposite verdicts, neither recomputable.
+
+**Tier: "sealed, not recomputable from release."** The abstract and the panel table now say so, and
+the abstract no longer describes this track as having a locked held-out artifact.
+
+### 8c. What the iCloud materialization surfaced — two closed items were not closed (NEW 2026-07-26)
+
+The 2026-07-26 materialization recovered 140 of the 143 placeholder files
+(`PLACEHOLDER_INVENTORY.md`). Making 140 previously-unreadable files readable **re-opened two items
+this ledger had recorded as closed.** The mechanism is the same in both cases and is worth stating
+plainly, because it is a general lesson about this release:
+
+> A tree-wide scanner cannot flag a defect inside a file it cannot read. Both censuses below were
+> run while 143 tracked text files were NUL-filled. They were therefore complete over the
+> **readable** tree, and were reported as complete over the tree. They were not.
+
+**(i) "94 files carrying machine-local paths are down to 9."** Materialization made **8 more**
+visible, none of which the scanner had ever been able to see:
+
+| file | group |
+|---|---|
+| `experiments/kbound/officehome/_count.py` | B |
+| `experiments/kbound/officehome/make_report_figs.py` | B |
+| `experiments/kbound/officehome/supervise_oh.sh` | B |
+| `experiments/kbound/results/gpu_queue_camelyon_then_iwildcam.sh` | E |
+| `experiments/kbound/results/gpu_queue_iwildcam_after_camelyon.sh` | E |
+| `.../frontier_decisive/camelyon_recal/camelyon_recal.py` | E |
+| `.../frontier_decisive/kga_elara/kga_elara_convergence.py` | F |
+| `.../frontier_decisive/realdata/realdata_frontier.py` | F |
+
+Each is now allowlisted in `tests/test_reproducibility_hygiene.py` with an individual reason. None
+is in a promoted code path: three are Office-Home tooling (a track already demoted), two are saved
+GPU submission queues whose value *is* being a verbatim record of what was run, and three are
+superseded theory probes pointing at a dead Cowork session-sandbox mount. The corrected count is
+**9 -> 17 allowlisted, 0 unexplained.**
+
+**(ii) "One radius rule, stated once and implemented once."** Materialization made **4 more**
+interpolated-radius sites visible. Three are benign (the review recomputation harness, which
+implements both rules on purpose to compare them; a superseded theory probe; a `route_b` baseline
+tau threshold). **One is not:**
+
+`experiments/kbound/officehome/oh_analyze.py:99` computes
+`eps = float(np.quantile(res, 1 - alpha))` over K-fold cross-fit residuals and then scores the same
+cells — i.e. it is **both** the archived *interpolated* rule **and** the *in-pool* variant, in the
+analysis script of a promoted panel track. `PHASE6_LEAKAGE_AUDIT.md`'s census of in-pool sites could
+not see it either.
+
+This does not move a promoted number, for a reason that is itself uncomfortable: the Office-Home
+promoted row is *already* demoted to "not reproducible from the release" because both of its record
+files (`officehome_full_targetval/result_target_val_361a1e8c.json`,
+`officehome_full_targettest/result_target_test_6605675d.json`) are absent. So there is no number to
+re-derive. What the newly readable source adds is **evidence about how that demoted row was
+produced**: under the archived interpolated in-pool rule, not the declared one. Treat it as
+corroborating the demotion rather than as a new defect in a live claim.
+
+**Open item.** If Office-Home is ever restored to the locked tier, `oh_analyze.py` must be converted
+to `kga.certificate.split_conformal_rank_radius` first, and the row recomputed — not re-promoted on
+its existing numbers.
 
 ## 9. The radius fix and what it moved (NEW 2026-07-26)
 
@@ -386,6 +602,45 @@ either way, but the *cause* cannot be attributed from the release.
 **To close:** re-run seed 0 under the seeds-1-4 stack and `argv`; add `scikit_learn` to the
 recorded environment in `result_manifest.json`; add a `result_manifest.json` to `pooled_5seed/`.
 Until then every multi-seed sentence carries a footnote to `REPRODUCE.md §0a`.
+
+### 10a. Seed-0 benefit heterogeneity in `stress_grid_multiseed_v1` (NEW 2026-07-27)
+
+Found while validating the episode-conformal budget. **Seed 0 is not exchangeable with seeds 1-4 in
+the outcome column, not only in the environment column.**
+
+| seed | n | mean Delta | sd | frac Delta>0 | mean update_norm |
+|---|---:|---:|---:|---:|---:|
+| **0** | 1296 | **0.0895** | 0.1723 | **0.614** | **12.39** |
+| 1 | 1296 | 0.1276 | 0.1610 | 0.769 | 3.43 |
+| 2 | 1296 | 0.1283 | 0.1618 | 0.767 | 3.44 |
+| 3 | 1296 | 0.1282 | 0.1620 | 0.775 | 3.43 |
+| 4 | 1296 | 0.1288 | 0.1623 | 0.776 | 3.42 |
+
+Seed 0's adapter update norm is 3.6x the others. The episode-conformal estimator detects it
+independently: `LOSO/0` coverage is 0.730/0.731 (both estimators) against 0.885-0.942 for seeds 1-4.
+This is a property of the artifacts, not of the analysis, and it may affect any number pooled over
+the five seeds. **Disclosed in the paper (Sec. 8, "A seed-level heterogeneity we found and did not
+re-pool"); NOT silently re-pooled, and seed 0 is not dropped from any five-seed figure.** This is
+confounded with the environment heterogeneity above -- seed 0 is also the seed on a different
+interpreter, torch and commit -- and the cause cannot be attributed from the release.
+Source: `frontier_sweep_v1/beta_estimability/episode_beta_results.json`.
+
+### 10b. Corrected LOCO ranges (NEW 2026-07-27)
+
+Two ranges circulated in earlier drafts that the artifact does not support as stated. Recomputed
+across all ten runs (Tent/EATA x 5 seeds) from `out_cifar_loco_tent_eata.json`, exact-rank radius:
+
+- radius inflation is **4.3x-6.9x** (0.0152-0.0219 -> 0.0926-0.1122), not "~0.021 -> ~0.10", which
+  is true only of the Tent runs;
+- regret degradation is **3.4x-7.6x**, not "4-6x";
+- commitment rate 0.509-0.600 -> 0.398-0.417; FA_u = 0.0000 in all ten runs.
+
+**And a negative that had not been stated at all:** under LOCO the certificate beats always-adapt on
+all five Tent runs (0.66x-0.82x its regret) and **loses on all five EATA runs (2.01x-2.94x)**. It
+beats always-freeze on all ten. The freeze branch also empties (0 freezes in every LOCO run against
+22-76 as shipped). **What survives leave-one-corruption-out is the false-adapt guarantee, not the
+beats-both routing-utility claim**, and the paper now says so in the introduction, the abstract and
+Sec. 9.1.
 
 ## 11. Superseded-document registry (NEW 2026-07-26)
 

@@ -1,0 +1,171 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% assumption_contract.tex  -- the A1-A6 contract and the three coverage statements.
+%%
+%% PLACEMENT: immediately BEFORE the certificate theorem.
+%%   kbound_short_body.tex : above \input{paper/sections/theory_certificate} (sec:method)
+%%   kbound.tex            : above \input{paper/sections/main_theory_5}, or in the
+%%                           Method section above the \paragraph{Assumptions.} block
+%%
+%% PORTABILITY: uses only amsmath, booktabs and the `definition' / `remark' theorem
+%% environments, all present in kbound_tmlr.tex, kbound_short.tex and kbound.tex.
+%% It deliberately declares NO algorithm float: kbound.tex loads algorithm2e while the
+%% short drivers load algorithm+algpseudocode, and the two cannot both be satisfied by
+%% one source file.
+%%
+%% DEFINES: sec:three-coverages, def:cov-theoretical, def:cov-observed,
+%%          def:cov-diagnostic, def:inference-unit, ass:contract,
+%%          rem:contract-not, rem:interval-carries, tab:fallback-ladder
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\subsection{Three coverage statements, kept separate}\label{sec:three-coverages}
+
+Much of the difficulty in reading an adaptation certificate comes from one word doing
+three jobs. We fix the terminology here and hold to it for the rest of the paper. In
+what follows $[L,U]=[\widehat\Delta-\varepsilon,\ \widehat\Delta+\varepsilon]$ is the
+benefit interval of the certificate rule, so that the coverage premise
+$\Pr[\,|\widehat\Delta-\Delta|\le\varepsilon\,]\ge1-\alpha$ of
+Theorem~\ref{thm:certificate} and the interval statement below are the same hypothesis
+written two ways.
+
+\begin{definition}[Theoretical coverage]\label{def:cov-theoretical}
+The interval has \emph{theoretical coverage} at level $1-\alpha$ if
+\begin{equation}\label{eq:cov-theoretical}
+  \Pr\bigl\{\Delta \in [L,U]\bigr\} \;\ge\; 1-\alpha ,
+\end{equation}
+the probability taken over the common space of calibration, benefit-model fitting and
+deployment-unit randomness. This is a property of a distribution, not of a run. We
+assert it only where (A1)--(A6) below are argued to hold, and never on the basis of an
+observed hit rate.
+\end{definition}
+
+\begin{definition}[Observed empirical coverage]\label{def:cov-observed}
+For a completed, labelled track with $n$ independent inference units
+(Definition~\ref{def:inference-unit}), the \emph{observed empirical coverage} is
+\begin{equation}\label{eq:cov-observed}
+  \widehat{\mathrm{Cov}}
+  \;=\;
+  \frac{1}{n}\sum_{i=1}^{n}\mathbf{1}\bigl\{\Delta_i \in [L_i,U_i]\bigr\},
+\end{equation}
+reported with $n$, the resampling unit, and an interval computed at that unit. It
+estimates a hit rate on the conditions evaluated, and is not evidence for
+\eqref{eq:cov-theoretical} on any other condition.
+\end{definition}
+
+\begin{remark}[When \emph{not} to attach an interval]\label{rem:no-interval}
+Definition~\ref{def:cov-observed} applies to a hit rate that is genuinely random. It does
+\emph{not} apply to a realized calibration-set coverage figure produced by in-sample rank
+calibration, which is a deterministic function of $n$ and carries no sampling variability
+at all --- attaching a binomial or bootstrap interval to such a figure gives it a
+frequentist meaning it does not have. \S\ref{sec:limits} identifies the figures in this
+paper that are arithmetic in this sense, and they are reported without intervals. The
+discipline this section imposes is that every coverage number states which of the three
+kinds it is; for the arithmetic ones, the honest annotation is ``deterministic in $n$'',
+not a wider interval.
+\end{remark}
+
+\begin{definition}[Deployment diagnostic]\label{def:cov-diagnostic}
+A \emph{deployment diagnostic} is a label-free statistic whose large values are evidence
+\emph{against} (A1)--(A6). Diagnostics are one-sided by construction: they can falsify
+and cannot verify. Passing every diagnostic of \S\ref{sec:gate} does not establish
+\eqref{eq:cov-theoretical}.
+\end{definition}
+
+\begin{definition}[Inference unit]\label{def:inference-unit}
+The \emph{inference unit} is the level at which calibration draws are treated as
+exchangeable and at which uncertainty is resampled: a domain, an episode, a
+corruption$\times$severity cell, a backbone, or a seed, declared per track. It is the
+individual example only when examples are independently drawn, which on the tracks of
+\S\ref{sec:exp} they are not.
+\end{definition}
+
+\subsection{The assumption contract}\label{ass:contract}
+
+The paper already records which condition buys what, and what to do when one
+fails. What that table does not do is give the conditions names that the
+rest of the paper, the released artifacts and a deployment can all refer to. We do that
+now, because a condition nobody can cite is a condition nobody checks.
+
+\begin{description}
+  \item[\textnormal{(A1)} Calibration exchangeability.] Calibration units and the
+    deployment unit are exchangeable at the declared inference unit, or an explicit
+    shift correction supplies the same conclusion. (This is the episode-exchangeability condition E2, read at the unit level.)
+  \item[\textnormal{(A2)} Risk alignment.] The evidence $Z$ is risk-aligned
+    (Definition~\ref{def:risk-align}): it retains enough information about $\Delta$ for
+    calibration residuals to transfer to the deployment condition.
+  \item[\textnormal{(A3)} Coverage premise.] The interval satisfies
+    \eqref{eq:cov-theoretical} on the target class.
+  \item[\textnormal{(A4)} Protocol independence.] Target-test labels influence none of:
+    feature selection, candidate selection, threshold selection, calibration, or
+    stopping. (The retrospective outcome-logging condition E1, and the data-access
+    discipline of the protocol tables.)
+  \item[\textnormal{(A5)} Correct sampling unit.] Calibration and uncertainty
+    calculations operate on independent domains, episodes, corruptions, backbones or
+    seeds, not on correlated examples pooled as though independent.
+  \item[\textnormal{(A6)} Fixed decision rule.] Estimator, interval construction,
+    $\alpha$ and decision rule are fixed before the promoted target conditions are
+    evaluated.
+\end{description}
+
+\noindent (A1)--(A4) and (A6) rename conditions the paper already carried:
+the conditions previously listed as risk-aligned $Z$, coverage of
+$\widehat\Delta\pm\varepsilon$, exchangeable or corrected residuals, and frozen
+protocol become (A2), (A3), (A1) and (A4)/(A6) respectively, and the long manuscript's assumptions (i)--(iii) map to (A1), the
+bounded-benefit regularity condition, and (A2). Bounded loss and benefit remains a
+regularity condition needed for the concentration arguments; it is not part of the
+deployment gate because it is a property of the loss we choose, not of the deployment we
+meet. \textbf{(A5) is new in this revision}, and it is the one the empirical sections
+most often failed to make explicit: a coverage figure computed over correlated cells was
+reported without the denominator that makes it readable.
+
+\begin{remark}[What the contract is not]\label{rem:contract-not}
+Theorem~\ref{thm:certificate} is conditional on (A1)--(A6), and K-Bound does not infer,
+test into, or prove any of them from unlabelled deployment data. (A1)--(A3) are not
+identifiable label-free; this is the obstruction of \S\ref{sec:theory} applied to
+calibration transfer rather than to the drift budget. What a deployment can do is detect
+\emph{some} violations and refuse to certify when it does, which is \S\ref{sec:gate}.
+\end{remark}
+
+\begin{remark}[Where the guarantee lives]\label{rem:interval-carries}
+The proof of Theorem~\ref{thm:certificate} uses no property of $\widehat\Delta$ beyond
+its appearance in $L$ and $U$: a false adapt requires $\Delta\le0<L$, which is the
+complement of the coverage event, and a false freeze requires $\Delta\ge0>U$. So the
+guarantee is carried entirely by (A3); the fitted benefit estimator contributes decision
+\emph{yield}, not safety. A better estimator narrows the interval and buys more committed
+decisions at the same $\alpha$; a worthless one widens it until the system abstains. That
+is the intended failure direction, and it is why (A3) --- not estimator quality --- is
+the assumption a deployment has to defend.
+\end{remark}
+
+\subsection{Permitted behaviour by assumption state}\label{sec:fallback-ladder}
+
+Where the earlier tables say what to do when a single condition fails,
+Table~\ref{tab:fallback-ladder} says what a deployment is permitted to \emph{emit},
+which is the operational form of the same idea and the object \S\ref{sec:gate}
+implements.
+
+\begin{table}[htbp]
+\centering
+\small
+\caption{Fallback ladder. Permitted behaviour is a function of the assumption state, not
+of the estimated benefit. ``Certification disabled'' means no certificate is emitted; the
+system may still serve the frozen model, but no K-Bound claim attaches to that choice.}
+\label{tab:fallback-ladder}
+\begin{tabular}{@{}p{0.46\columnwidth}p{0.44\columnwidth}@{}}
+\toprule
+Assumption state & Permitted behaviour \\
+\midrule
+All required gates pass
+  & Full \textsc{adapt}/\textsc{freeze}/\textsc{abstain} certificate \\
+Support warning, no hard violation
+  & \textsc{abstain} or \textsc{freeze} only \\
+Insufficient independent calibration units
+  & Diagnostic output only; no decision \\
+Leakage, failed transfer, or unknown provenance
+  & Certification disabled \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Read with Remark~\ref{rem:interval-carries}, this is the honest description of what
+K-Bound offers: \emph{conditional insurance against detectable adaptation harm}, not an
+unconditional safety guarantee.

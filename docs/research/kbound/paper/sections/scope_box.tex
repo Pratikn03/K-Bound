@@ -1,0 +1,29 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% scope_box.tex -- the boxed scope statement. Input TWICE, deliberately:
+%%   (1) Introduction, after the contributions/regime table, so a referee meets the
+%%       scope before the results;
+%%   (2) \S Limitations, as the opening block.
+%% It contains no \label, so a second \input is safe.
+%%
+%% PORTABILITY: \fbox+minipage rather than tcolorbox, so the same source compiles in the
+%% IEEEtran two-column builds (kbound.tex, kbound_short.tex) and the single-column TMLR
+%% build (kbound_tmlr.tex). Requires nothing beyond base LaTeX.
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\begin{center}
+\fbox{%
+\begin{minipage}{0.94\columnwidth}
+\small
+\textbf{Scope of the guarantee.} K-Bound does not guarantee that a newly encountered
+deployment is exchangeable with the calibration data, that label-free evidence is
+risk-aligned, or that a fitted benefit estimator transfers. Its guarantee is conditional:
+\emph{if} the declared benefit interval attains marginal target coverage, \emph{then}
+strict adaptation on $\widehat\Delta-\varepsilon>0$ controls the unconditional
+false-adapt event at level $\alpha$, and strict freezing on
+$\widehat\Delta+\varepsilon<0$ the false-freeze event. Deployment diagnostics can
+identify support shift, instability, leakage and insufficient effective sample size, but
+passing them does not prove coverage. When required checks fail or cannot be evaluated,
+the prescribed output is \textsc{abstain} or \textsc{freeze} --- not a certified
+adaptation decision.
+\end{minipage}}
+\end{center}
