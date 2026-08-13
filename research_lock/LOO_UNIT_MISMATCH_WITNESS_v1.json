@@ -1,0 +1,35 @@
+{
+  "artifact": "loo_unit_mismatch_witness_v1",
+  "claim": "Leave-one-CELL-out conformal calibration undercovers on a NEW condition when cells within a condition are correlated. The level alpha is exact at the unit it was calibrated on; the failure is the transfer to a new unit. This is an (A5) failure, not a defect of conformal prediction.",
+  "model": "Delta_kj = mu_k + eps_kj; mu_k ~ N(0,tau^2), eps_kj ~ N(0,sigma^2)",
+  "estimator": "predicts a cell by the mean of same-condition calibration cells; falls back to the global mean on an unseen condition (what a GBM on condition-identifying evidence features learns)",
+  "alpha": 0.1,
+  "nominal_coverage": 0.9,
+  "grid": {"K_conditions": 20, "m_cells_per_condition": 18, "tau": 1.0, "sigma": 0.1, "n_replicates": 4000},
+  "headline": {
+    "new_condition_coverage_cell_out_radius": 0.13775,
+    "new_condition_coverage_condition_out_radius": 0.89175,
+    "same_condition_new_cell_coverage_cell_out_radius": 0.9005,
+    "mean_radius_ratio_cond_over_cell": 10.112460525132292
+  },
+  "sensitivity_tau_over_sigma": [
+    {"tau_over_sigma": 0.0,  "cell_out": 0.9195, "cond_out": 0.9155},
+    {"tau_over_sigma": 1.0,  "cell_out": 0.7700, "cond_out": 0.9100},
+    {"tau_over_sigma": 3.0,  "cell_out": 0.4030, "cond_out": 0.8975},
+    {"tau_over_sigma": 10.0, "cell_out": 0.1320, "cond_out": 0.9000},
+    {"tau_over_sigma": 30.0, "cell_out": 0.0450, "cond_out": 0.9070}
+  ],
+  "sensitivity_cells_per_condition": [
+    {"m": 2,  "cell_out": 0.1880, "cond_out": 0.8985},
+    {"m": 5,  "cell_out": 0.1405, "cond_out": 0.9065},
+    {"m": 18, "cell_out": 0.1370, "cond_out": 0.8975},
+    {"m": 65, "cell_out": 0.1410, "cond_out": 0.8970}
+  ],
+  "controls": {
+    "tau_zero_is_the_control": "at tau=0 cells are genuinely exchangeable and BOTH radii attain nominal coverage, so the witness isolates the dependence structure and nothing else",
+    "in_pool_control": "the cell-out radius attains nominal coverage (0.9005) for a new cell of a SEEN condition, so it is not simply too small"
+  },
+  "reproduce": "python3 scripts/loo_unit_mismatch_witness.py",
+  "rng": "numpy default_rng, seeds 0/1/2/7 as coded; deterministic",
+  "status": "numerically verified; Lean formalization pending (mathlib build in progress)"
+}

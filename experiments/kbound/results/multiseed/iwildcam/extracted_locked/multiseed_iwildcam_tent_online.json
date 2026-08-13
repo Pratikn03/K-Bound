@@ -1,0 +1,71 @@
+{
+  "dataset": "iwildcam",
+  "candidate": "tent_online",
+  "analysis": "loo_within_seed_single_candidate",
+  "analysis_note": "Per-seed LOO GBR+conformal on that seed's conditions only (Camelyon multiseed_natural contract). This is a multi-seed stability check on a monolithic result_*.json grid; it is NOT a replay of Protocol M/H/J OOF seed-holdout locks.",
+  "seeds": [
+    0,
+    1,
+    2,
+    3,
+    4
+  ],
+  "n_seeds": 5,
+  "conditions_per_seed": 16,
+  "alpha": 0.1,
+  "kga_backend": [
+    "sklearn_gradient_boost"
+  ],
+  "regret_kga": [
+    0.0113,
+    0.0026
+  ],
+  "regret_adapt": [
+    0.0653,
+    0.008
+  ],
+  "regret_freeze": [
+    0.0113,
+    0.0026
+  ],
+  "FA_u_per_seed": [
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0
+  ],
+  "FA_u_max": 0.0,
+  "better_policy": "freeze",
+  "gap_vs_better_ci95": [
+    0.0,
+    0.0
+  ],
+  "gap_vs_worse_ci95": [
+    0.0343,
+    0.0737
+  ],
+  "gap_vs_adapt": {
+    "mean": 0.054,
+    "ci95": [
+      0.0343,
+      0.0737
+    ]
+  },
+  "gap_vs_freeze": {
+    "mean": 0.0,
+    "ci95": [
+      0.0,
+      0.0
+    ]
+  },
+  "verdict": "stable no-harm",
+  "files": [
+    "per_condition_iwildcam_tent_online_seed0.json",
+    "per_condition_iwildcam_tent_online_seed1.json",
+    "per_condition_iwildcam_tent_online_seed2.json",
+    "per_condition_iwildcam_tent_online_seed3.json",
+    "per_condition_iwildcam_tent_online_seed4.json"
+  ],
+  "latex_row": "iwildcam (tent_online) & 5 & 0.0113$\\pm$0.0026 & 0.0653 & 0.0113 & 0.000 & stable no-harm \\\\"
+}

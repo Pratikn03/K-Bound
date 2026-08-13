@@ -1,0 +1,32 @@
+/opt/anaconda3/envs/aetta/lib/python3.9/site-packages/torch/_weights_only_unpickler.py:549: UserWarning: Detected pickle protocol 4 in the checkpoint, which was not the default pickle protocol used by `torch.load` (2). The weights_only Unpickler might not support all instructions implemented by this protocol, please file an issue for adding support if you encounter this.
+  warnings.warn(
+Command:	main.py --gpu_idx 3 --dataset cifar10outdist --method Src --tgt contrast-5 --model resnet18 --epoch 0 --load_checkpoint_path log/cifar10/Src/tgt_test/reproduce_src_0/cp/cp_last.pth.tar --update_every_x 64 --seed 0 --log_prefix eval_results_0 --acc_est_method aetta softmax_score gde src_validation adv_perturb
+Namespace(dataset='cifar10outdist', model='resnet18', method='Src', src=None, tgt='contrast-5', gpu_idx=3, lr=None, weight_decay=None, seed=0, epoch=0, load_checkpoint_path='log/cifar10/Src/tgt_test/reproduce_src_0/cp/cp_last.pth.tar', train_max_rows=inf, valid_max_rows=inf, test_max_rows=inf, nsample=20000000, log_prefix='eval_results_0', remove_cp=False, data_gen=False, num_source=100, parallel=False, tgt_train_dist=1, online=False, update_every_x=64, memory_size=1, memory_type='FIFO', ema_factor=0.999, restoration_factor=0.01, aug_threshold=0.92, outdist='original', outdist_size=None, outdist_class=None, bn_momentum=0.1, use_learned_stats=False, temperature=1.0, loss_scaler=0, validation=False, adapt_then_eval=False, no_adapt=False, skip_thres=1, dummy=False, sam=False, fisher_size=2000, fisher_alpha=2000.0, e_margin=2.763102111592855, d_margin=0.05, high_threshold=0.99, reset_function=None, reset_every_x=1, num_eval_source=1000, turn_off_reset=False, acc_est_method=['aetta', 'softmax_score', 'gde', 'src_validation', 'adv_perturb'], dropout_rate=-1, log_name='log/', cont_seq=0, debug=False)
+mps
+Path:log/cifar10outdist/Src_outdist/tgt_contrast-5_original_None_None/eval_results_0/
+##############Source Data Loading...##############
+Domains:['original']
+#Multi?:0 data_loader len:50000 Train: 50000	# Valid: 0	# Test: 0
+# Time: 27.195149 secs
+num_domains:1
+##############Target Data Loading...##############
+Domains:['contrast-5']
+#Multi?:0 data_loader len:10000 Train: 10000	# Valid: 0	# Test: 0
+# Time: 0.109529 secs
+num_domains:1
+Cache hit:./cached_data/cifar10outdist_original_None_None_0_dist1/contrast_5___dataset_CIFAR_10_C_target_train_set.pkl
+Data Loading Completion time: 0m 36s
+Traceback (most recent call last):
+  File "/Users/pratik_n/Documents/AutoML_Flagship_V8/AETTA/main.py", line 435, in <module>
+    main()
+  File "/Users/pratik_n/Documents/AutoML_Flagship_V8/AETTA/main.py", line 230, in main
+    learner.dump_eval_online_result(is_train_offline=True)  # eval with final model
+  File "/Users/pratik_n/Documents/AutoML_Flagship_V8/AETTA/learner/dnn.py", line 490, in dump_eval_online_result
+    self.evaluation_online(num_sample + batchsize,
+  File "/Users/pratik_n/Documents/AutoML_Flagship_V8/AETTA/learner/dnn.py", line 399, in evaluation_online
+    self.evaluation_online_body(epoch, current_samples, feats, cls, dls)
+  File "/Users/pratik_n/Documents/AutoML_Flagship_V8/AETTA/learner/dnn.py", line 438, in evaluation_online_body
+    self.agreement(feats, y_pred)
+  File "/Users/pratik_n/Documents/AutoML_Flagship_V8/AETTA/learner/dnn.py", line 866, in agreement
+    self.prev_net_state_queue.appendleft(deepcopy(self.net.state_dict()))
+AttributeError: 'DNN' object has no attribute 'prev_net_state_queue'

@@ -1,0 +1,25 @@
+/opt/anaconda3/envs/aetta/lib/python3.9/site-packages/torch/_weights_only_unpickler.py:549: UserWarning: Detected pickle protocol 4 in the checkpoint, which was not the default pickle protocol used by `torch.load` (2). The weights_only Unpickler might not support all instructions implemented by this protocol, please file an issue for adding support if you encounter this.
+  warnings.warn(
+Command:	main.py --gpu_idx 1 --dataset cifar10 --method Src --tgt test --model resnet18 --epoch 200 --update_every_x 64 --memory_size 64 --seed 1 --log_prefix reproduce_src_1 --dummy
+Namespace(dataset='cifar10', model='resnet18', method='Src', src=None, tgt='test', gpu_idx=1, lr=None, weight_decay=None, seed=1, epoch=200, load_checkpoint_path='', train_max_rows=inf, valid_max_rows=inf, test_max_rows=inf, nsample=20000000, log_prefix='reproduce_src_1', remove_cp=False, data_gen=False, num_source=100, parallel=False, tgt_train_dist=1, online=False, update_every_x=64, memory_size=64, memory_type='FIFO', ema_factor=0.999, restoration_factor=0.01, aug_threshold=0.92, outdist='original', outdist_size=None, outdist_class=None, bn_momentum=0.1, use_learned_stats=False, temperature=1.0, loss_scaler=0, validation=False, adapt_then_eval=False, no_adapt=False, skip_thres=1, dummy=True, sam=False, fisher_size=2000, fisher_alpha=2000.0, e_margin=2.763102111592855, d_margin=0.05, high_threshold=0.99, reset_function=None, reset_every_x=1, num_eval_source=1000, turn_off_reset=False, acc_est_method='', dropout_rate=-1, log_name='log/', cont_seq=0, debug=False)
+mps
+Path:log/cifar10/Src_outdist/tgt_test_original_None_None/reproduce_src_1/
+##############Source Data Loading...##############
+Domains:['original']
+Cache hit:./cached_data/cifar10/__original_____dataset_CIFAR_10_C_src.pkl
+#Multi?:0 data_loader len:50000 Train: 50000	# Valid: 0	# Test: 0
+# Time: 5.439479 secs
+num_domains:1
+##############Target Data Loading...##############
+Domains:['test']
+Cache hit:./cached_data/cifar10/__test_____dataset_CIFAR_10_C_val.pkl
+#Multi?:0 data_loader len:10000 Train: 10000	# Valid: 0	# Test: 0
+# Time: 0.426165 secs
+num_domains:1
+Cache hit:./cached_data/cifar10_original_None_None_1_dist1/test___dataset_CIFAR_10_C_target_train_set.pkl
+Data Loading Completion time: 0m 6s
+  0%|          | 0/781 [00:00<?, ?it/s]/Users/pratik_n/Documents/AutoML_Flagship_V8/AETTA/learner/dnn.py:335: UserWarning: Converting a tensor with requires_grad=True to a scalar may lead to unexpected behavior.
+Consider using tensor.detach() first. (Triggered internally at /Users/runner/work/pytorch/pytorch/pytorch/torch/csrc/autograd/generated/python_variable_methods.cpp:836.)
+  class_loss_sum += float(class_loss * feats.size(0))
+  0%|          | 1/781 [00:01<18:59,  1.46s/it]  0%|          | 2/781 [00:02<19:05,  1.47s/it]  0%|          | 3/781 [00:04<18:32,  1.43s/it]  1%|          | 4/781 [00:05<18:36,  1.44s/it]  1%|          | 5/781 [00:07<18:26,  1.43s/it]  1%|          | 6/781 [00:08<18:18,  1.42s/it]  1%|          | 7/781 [00:10<18:35,  1.44s/it]  1%|          | 8/781 [00:11<18:22,  1.43s/it]  1%|          | 9/781 [00:12<18:06,  1.41s/it]  1%|▏         | 10/781 [00:14<18:10,  1.41s/it]  1%|▏         | 11/781 [00:15<18:02,  1.41s/it]  2%|▏         | 12/781 [00:17<18:04,  1.41s/it]  2%|▏         | 13/781 [00:18<18:13,  1.42s/it]  2%|▏         | 14/781 [00:19<18:09,  1.42s/it]  2%|▏         | 15/781 [00:21<18:09,  1.42s/it]  2%|▏         | 16/781 [00:22<18:08,  1.42s/it]  2%|▏         | 17/781 [00:24<18:09,  1.43s/it]  2%|▏         | 18/781 [00:25<19:05,  1.50s/it]  2%|▏         | 19/781 [00:27<19:23,  1.53s/it]  3%|▎         | 20/781 [00:28<19:01,  1.50s/it]  3%|▎         | 21/781 [00:30<18:49,  1.49s/it]  3%|▎         | 22/781 [00:31<18:45,  1.48s/it]  3%|▎         | 23/781 [00:33<18:48,  1.49s/it]  3%|▎         | 24/781 [00:34<18:51,  1.49s/it]  3%|▎         | 25/781 [00:36<18:45,  1.49s/it]  3%|▎         | 26/781 [00:37<18:51,  1.50s/it]  3%|▎         | 27/781 [00:39<18:55,  1.51s/it]  4%|▎         | 28/781 [00:40<18:48,  1.50s/it]  4%|▎         | 29/781 [00:42<18:51,  1.50s/it]  4%|▍         | 30/781 [00:43<18:45,  1.50s/it]  4%|▍         | 31/781 [00:45<18:36,  1.49s/it]  4%|▍         | 32/781 [00:46<18:36,  1.49s/it]  4%|▍         | 33/781 [00:48<18:25,  1.48s/it]  4%|▍         | 34/781 [00:49<18:11,  1.46s/it]  4%|▍         | 35/781 [00:51<18:07,  1.46s/it]/opt/anaconda3/envs/aetta/lib/python3.9/multiprocessing/resource_tracker.py:216: UserWarning: resource_tracker: There appear to be 1 leaked semaphore objects to clean up at shutdown
+  warnings.warn('resource_tracker: There appear to be %d '

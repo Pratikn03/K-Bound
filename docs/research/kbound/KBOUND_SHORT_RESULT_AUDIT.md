@@ -1,70 +1,59 @@
-# K-Bound Short Paper Empirical Consistency Audit
+# K-Bound Short Paper Result Audit
 
-> **Revised 2026-07-26.** Three rows below carried stale values (ImageNet-C SAR was the superseded
-> single-seed triple; ImageNet-R and PACS seed counts were out of date) and three evidence scopes
-> were overstated. Canonical: `SUBMISSION_LEDGER.md §3`.
+Date: 2026-08-11
 
 ## Canonical source
 
-`paper/generated/kbound_result_manifest.json` is the authoritative promoted-number index. It records
-policy order, metric definitions, seed counts, source artifacts, quantile provenance, verdicts, and
-caveats. Where it and `SUBMISSION_LEDGER.md` disagree, the ledger wins.
+Authoritative artifact:
+`experiments/kbound/results/reconciled_panels_v1/canonical_panel_results.json`
 
-## Promoted evidence
+Provenance:
 
-Regret triples are KGA / always-adapt / always-freeze.
+- 72 compact source files recorded in `source_manifest.json` with SHA-256 hashes.
+- Generator hash and runtime versions recorded in the canonical JSON.
+- Runtime: Python 3.14.3, NumPy 2.4.4, scikit-learn 1.8.0.
+- The release stores sufficient records to replay ImageNet-C, ImageNet-R, Office-Home, and iWildCam.
+- PACS aggregate arithmetic is cross-validated, but its gate cannot be replayed from the archived
+  files because `b_hat` and calibration residual records are absent.
 
-| Track | Regret | Evidence scope | Final claim (2026-07-26) |
-|---|---:|---|---|
-| CIFAR-10-C Tent | 0.0016 / 0.0079 / 0.1241 | mixed head-to-head 5-seed aggregate, 432 cells/seed | **CI beats-both**; `FA_u = 0`. Unaffected by the radius fix. |
-| CIFAR-10-C EATA | 0.0013 / 0.0033 / 0.1314 | same | **CI beats-both**; `FA_u = 0`. Adapt-gap CI does **not** exclude zero when clustered by corruption family. |
-| ImageNet-C SAR | 0.0289 / 0.0529 / 0.0319 | 27 cells/seed x 5 seeds = 135, LOO radius | **point-estimate no-harm vs always-freeze only.** `FA_u = 1/135`. Seed-averaged freeze-gap CI [-0.0085, +0.0038] includes zero. Was 0.0264/0.0529/0.0319 under the in-pool radius. |
-| Camelyon17 OOD | 0.0000 / 0.0000 / 0.1381 | n = 18 | **sealed but not recomputable from release.** The triple exists only at `research_lock/CAMELYON17_PROTOCOL_G_RECONCILED_v2.yaml:29`; the `FA_u = 0` is recorded nowhere. |
-| iWildCam H v2 | 0.0041 / 0.1028 / 0.0041 | OOF lock, n = 72 | exact tie with freeze; no-harm. **1 ADAPT decision — guarantee untested.** Source record file absent. |
-| Office-Home M v2 | 0.0157 / 0.0468 / 0.0158 | OOF lock, n = 35 | no-harm; point edge only. **Both source record files absent; runner source unreadable.** |
-| RxRx1 J | 0.0000 / 0.2531 / 0.0000 | locked test, n = 60 | tie with freeze; no-harm. **0 ADAPT decisions — guarantee untested.** |
-| Three-source OOF | 0.0059 / 0.0632 / 0.0342 | constructed n = 143 stream | CI beats-both; **constructed routing mixture, not transfer.** |
+## Authoritative panel
 
-## Diagnostic, negative or withheld evidence
+| Track | n | KGA | Adapt | Freeze | AD/FZ/AB | FA_u | Defensible verdict |
+|---|---:|---:|---:|---:|---:|---:|---|
+| Office-Home primary | 35 | 0.0158 | 0.0468 | 0.0158 | 0/11/24 | 0 | Ties freeze; descriptive no-harm |
+| iWildCam | 72 | 0.0041 | 0.1028 | 0.0041 | 0/21/51 | 0 | Ties freeze; descriptive no-harm |
+| ImageNet-C SAR | 135 | 0.0289 | 0.0529 | 0.0319 | 13/15/107 | 0.0074 | Pooled point beats-both only |
+| ImageNet-R | 480 | 0.0150 | 0.0064 | 0.0325 | 165/29/286 | 0 | Negative; worse than adapt on 8/10 backbones |
+| PACS | 12 domain-seed units | 0.0431 | 0.0176 | 0.0446 | aggregate only | 0.0093 | Diagnostic null; replay incomplete |
 
-- **CIFAR-10.1**: `FA_u = 0.167`, `FA_c = 0.444`; transfer bar fails. Pre-declared as a likely
-  negative; came out worse than declared.
-- **ImageNet-R**: **4 of 4** planned seeds, 10 backbones. No CI-robust beats-both on any backbone.
-  The panel mean 0.0112 hides that **KGA is worse than always-adapt on 7 of 10 backbones**, and
-  4 of 10 backbones have a 0% harmful base rate (so there is nothing for a certificate to prevent).
-  Report min / median / max and the per-backbone harmful base rate.
-- **PACS**: **3 of 3** planned seeds, 4 LODO targets. Null diagnostic. Its entire adapt evidence is
-  12 ADAPT decisions from one domain-seed cell (art_painting seed 1, `FA_u = 0.1111 > alpha`);
-  art_painting seed 2 abstained on all 18 cells. Pooled `FA_u = 2/216`, CP95 upper 0.03305.
-  Cannot be re-scored — the released per-cell dumps carry no `b_hat`, no epsilon and no decision.
-- **CIFAR-10-C SAR**: withheld because the current raw seed 0 does not replay the archived
-  aggregate — and seed 0 is also the only seed on a different Python, torch and commit, so the
-  cause is confounded (`CIFAR10C_SAR_QUARANTINE.md`).
+Regrets are ordered KGA / always-adapt / always-freeze. AD/FZ/AB is adapt/freeze/abstain.
 
-## Calibration provenance
+## Configuration controls
 
-- **Declared rule (2026-07-26): exact split-conformal rank quantile, leave-one-out-of-pool.** One
-  rule, stated once, at `SUBMISSION_LEDGER.md §1a`.
-- Superseded variant 1: interpolated empirical quantile `np.quantile(|Bhat - B|, 1-alpha)`.
-- Superseded variant 2: **in-pool** rank quantile — cell *i*'s own residual was in cell *i*'s
-  radius. This was live on five shipped scripts and seven `decide_kga` forks until 2026-07-26; it
-  made epsilon a function of the test labels the `FA_u` guarantee attaches to.
-- Stress grids: leave-one-condition-out cross-fitted empirical residual calibration; approximate
-  nominal empirical coverage, not exact split-conformal validity.
-- **Structural caveat:** under in-pool rank calibration `FA_u <= (N-k)/N` is an arithmetic identity
-  — exactly 0 at n <= 9. Camelyon17 Table VIII (n = 9/seed), RxRx1 and ImageNet-R (n = 12) are in
-  that degenerate range, so their `FA_u = 0` is forced, not measured.
+- ImageNet-C authority is the 27-cell x 5-seed panel, not older 36-cell configurations.
+- ImageNet-C and ImageNet-R use exact-rank, leave-one-condition-out replay at the declared operating
+  point.
+- Office-Home and iWildCam use separate calibration/test transfer scoring. Their A7 full-fit versus
+  leave-one-out stability premise was not predeclared, so theorem-level transfer coverage is not
+  promoted.
+- Always-adapt and always-freeze have decision coverage 1 by definition; the manuscript keeps
+  decision coverage separate from adapt rate.
+- Point beats-both, seed-robust beats-both, and CI-robust beats-both are not conflated.
 
-## Baseline fidelity
+## Corrected stale summaries
 
-- KGA is the paper's method.
-- POEM-style and AETTA-style rows are protocol-matched ports, not official implementations.
-- Higher observed false-adapt in these ports is described as consistent with the lack of an explicit marginal certificate, not caused solely by it.
+- Removed the old Office-Home one-adapt headline from the primary panel.
+- Removed the old iWildCam freeze-count summary and replaced it with 21 freezes under the locked
+  runtime replay.
+- Replaced the old ImageNet-R ratio/backbone summary with 2.35x worse than adapt and 8/10 backbones.
+- Demoted the historical constructed mixture until it is replayed from reconciled components.
+- Marked superseded permutation and power-probe diagnostics as draft TODOs instead of reusing them.
 
-## Consistency checks
+## Remaining empirical gaps
 
-- ImageNet-C 27-cell values are not mixed with the superseded 36-cell configuration.
-- Natural-shift point wins are not promoted as CI-robust beats-both.
-- Always-adapt/freeze are treated as fully decisive policies; adapt rate and decision coverage are not conflated.
-- `FA_u` and `FA_c` are separately named.
-- No blank camera table is used as evidence.
+- No clean held-out natural single-dataset CI-robust beats-both result is established.
+- ImageNet-C SAR does not have seed-robust or CI-robust beats-both support.
+- Natural transfer tracks need independent seeds and a declared stability/coverage design.
+- PACS needs per-cell benefit predictions and calibration residuals for a full gate replay.
+- Physical-camera tables remain preregistration templates, not result evidence.
+

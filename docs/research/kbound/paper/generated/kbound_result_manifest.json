@@ -175,11 +175,11 @@
     },
     "imagenetc_sar": {
       "regret": [
-        0.0288925924,
-        0.0529333334,
-        0.0318944445
+        0.028892592368302522,
+        0.05293333342781773,
+        0.031894444481090266
       ],
-      "false_adapt": 0.0074074074,
+      "false_adapt": 0.007407407407407408,
       "false_adapt_count": 1,
       "decision_counts": {
         "ADAPT": 13,
@@ -195,7 +195,7 @@
         3,
         4
       ],
-      "quantile_rule": "exact split-conformal rank k=ceil((n+1)(1-alpha)), unclamped, alpha=0.10, calibrated LEAVE-ONE-OUT-OF-POOL",
+      "quantile_rule": "per-candidate/per-seed exact-rank leave-one-condition-out residual calibration",
       "gap_kga_minus_adapt_ci95_seedavg27": [
         -0.0755336,
         0.0181299
@@ -208,7 +208,7 @@
         -0.0079389,
         0.0035815
       ],
-      "verdict": "POINT-ESTIMATE no-harm versus always-freeze (0.0289 < 0.0319). NOT a CI-supported beats-both: under the promoted leave-one-out radius the freeze-side interval includes zero at every legitimate resampling unit (seed-averaged 27 conditions [-0.0085,+0.0038]; even the generous i.i.d.-135 design [-0.0079,+0.0036]), and the adapt-side interval includes zero at the condition level. Only a 3-cluster corruption-family bootstrap excludes zero and that is not a primary interval.",
+      "verdict": "Pooled point estimate is below both fixed policies, with one false adaptation in 135 cells; the seed bootstrap touches zero on the freeze side, so CI-robust beats-both is not claimed.",
       "in_pool_superseded": {
         "regret": [
           0.026422222,
@@ -242,17 +242,30 @@
         1,
         3
       ],
-      "source": "experiments/kbound/results/win_hunt_v5_imagenetc_ms/pooled_5seed/per_condition_imagenetc_sar_seed{0..4}.json",
+      "source": "experiments/kbound/results/reconciled_panels_v1/canonical_panel_results.json",
       "reproduction": "python3 kb_fixes/recompute/01_imagenetc_perseed.py ; kb_fixes/recompute/03_imagenetc_bootstrap.py",
-      "status": "recomputed",
+      "status": "source-record exact-LOO replay",
       "regenerated": "2026-07-26",
-      "seal": "experiments/kbound/results/nine_track_lock_v1/LOCK_SEAL.json#imagenetc_sar"
+      "seal": "experiments/kbound/results/nine_track_lock_v1/LOCK_SEAL.json#imagenetc_sar",
+      "point_beats_both": true,
+      "ci_robust_beats_both": false,
+      "gap_baseline_minus_kga_ci95_seed": {
+        "always_adapt": [
+          0.018668522547792506,
+          0.028805554740958743
+        ],
+        "always_freeze": [
+          0.0,
+          0.006690741192411495
+        ]
+      },
+      "source_manifest": "experiments/kbound/results/reconciled_panels_v1/source_manifest.json"
     },
     "officehome_M_v2": {
       "regret": [
-        0.0157142857,
-        0.0468131868,
-        0.0158241758
+        0.01582417582417583,
+        0.04681318681318681,
+        0.01582417582417583
       ],
       "false_adapt": 0.0,
       "n_test": 35,
@@ -261,29 +274,55 @@
         1
       ],
       "ci_vs_adapt": [
-        0.0038434066,
-        0.0618681319
+        0.025113122171945692,
+        0.036538461538461534
       ],
       "ci_vs_freeze": [
         0.0,
-        0.0003296703
+        0.0
       ],
-      "verdict": "locked no-harm (OOF; LOO BB not promoted)",
-      "source": "research_lock/KBOUND_WIN_BOOTSTRAP_CIS_oof.json",
+      "verdict": "Descriptive no-harm tie with freeze under the locked release runtime; the predeclared uniform A7 full-fit-versus-LOO stability premise is absent.",
+      "source": "experiments/kbound/results/reconciled_panels_v1/canonical_panel_results.json",
       "seal": "experiments/kbound/results/nine_track_lock_v1/LOCK_SEAL.json#officehome_M_v2",
       "decision_counts": {
-        "ADAPT": 22,
-        "FREEZE": 12,
-        "ABSTAIN": 1
+        "ADAPT": 0,
+        "FREEZE": 11,
+        "ABSTAIN": 24
       },
-      "cp95_upper_fa_c": 0.1273,
-      "source_caveat": "The promoted regret 0.0157142857 comes from research_lock/KBOUND_WIN_BOOTSTRAP_CIS_oof.json. The raw record files it names (officehome_full_targetval/, officehome_full_targettest/) are absent. officehome_protocol_M_v2/protocol_result.json gives 0.002198 instead, 7.2x smaller."
+      "cp95_upper_fa_c": null,
+      "source_caveat": "The compact source records and original SHA-256 hashes are released. Decision counts are 0 ADAPT, 11 FREEZE, and 24 ABSTAIN under the recorded runtime.",
+      "false_adapt_count": 0,
+      "point_beats_both": false,
+      "ci_robust_beats_both": false,
+      "source_manifest": "experiments/kbound/results/reconciled_panels_v1/source_manifest.json",
+      "quantile_rule": "held-out target test with leave-one-calibration-record-out residuals and exact-rank radius",
+      "a7_status": "not_established",
+      "independent_seed_replication": {
+        "regret": [
+          0.02150997150997151,
+          0.045797720797720785,
+          0.02172364672364672
+        ],
+        "n_test": 54,
+        "seeds": [
+          2,
+          3,
+          4
+        ],
+        "decision_counts": {
+          "ADAPT": 1,
+          "FREEZE": 14,
+          "ABSTAIN": 39
+        },
+        "ci_robust_beats_both": false,
+        "a7_status": "not_established"
+      }
     },
     "iwildcam_H_v2": {
       "regret": [
-        0.0041023691,
-        0.1028299605,
-        0.0041023691
+        0.004102369062102953,
+        0.10282996048460004,
+        0.004102369062102953
       ],
       "false_adapt": 0.0,
       "n_test": 72,
@@ -301,17 +340,23 @@
         0.0,
         0.0
       ],
-      "verdict": "locked no-harm (OOF)",
-      "source": "research_lock/KBOUND_WIN_BOOTSTRAP_CIS_oof.json",
+      "verdict": "Descriptive no-harm tie with freeze; zero ADAPT decisions and only one test seed.",
+      "source": "experiments/kbound/results/reconciled_panels_v1/canonical_panel_results.json",
       "seal": "experiments/kbound/results/nine_track_lock_v1/LOCK_SEAL.json#iwildcam_H_v2",
       "decision_counts": {
-        "ADAPT": 1,
-        "FREEZE": 60,
-        "ABSTAIN": 11
+        "ADAPT": 0,
+        "FREEZE": 21,
+        "ABSTAIN": 51
       },
-      "cp95_upper_fa_c": 0.95,
-      "guarantee_status": "untested: 1 ADAPT decision, CP95 upper bound 0.95",
-      "source_caveat": "Promoted regret_kga equals regret_freeze to 18 digits. The raw record file iwildcam_full_test/result_e40faf29.json is absent; iwildcam_protocol_H_v2/protocol_result.json gives 0.0036745149."
+      "cp95_upper_fa_c": null,
+      "guarantee_status": "untested: zero ADAPT decisions",
+      "source_caveat": "The compact source records and original SHA-256 hash are released. Decision counts are 0 ADAPT, 21 FREEZE, and 51 ABSTAIN under the recorded runtime.",
+      "false_adapt_count": 0,
+      "point_beats_both": false,
+      "ci_robust_beats_both": false,
+      "source_manifest": "experiments/kbound/results/reconciled_panels_v1/source_manifest.json",
+      "quantile_rule": "seed-0 calibration to seed-1 held-out test with exact-rank radius",
+      "a7_status": "not_established"
     },
     "camelyon17_ood": {
       "regret": [
@@ -408,15 +453,15 @@
       "completed_seeds": 3,
       "planned_seeds": 3,
       "mean_regret_kga_adapt_freeze": [
-        0.0431,
-        0.0176,
-        0.0446
+        0.043136388063430786,
+        0.01763668394199124,
+        0.04460611166777434
       ],
-      "reported_false_adapt_mean": 0.0092592593,
+      "reported_false_adapt_mean": 0.009259259259259259,
       "false_adapt_count_status": "back-derived exactly from the stored per-cell rates (every rate is a multiple of 1/18); the artifact itself records 'not_retained'",
       "claim_id": "KB-CLAIM-041",
-      "source": "experiments/kbound/results/pacs_multiseed_v1/PACS_MULTISEED_RESULTS.json",
-      "verdict": "completed three-seed null action-safety diagnostic; KGA loses to always-adapt by 2.45x; all 12 ADAPT decisions come from the single domain-seed cell art_painting/seed 1 and 2 of them are false; no beats-both claim; sealed in NINE_TRACK_LOCK_SEAL_v1 (pacs_multiseed)",
+      "source": "experiments/kbound/results/reconciled_panels_v1/canonical_panel_results.json",
+      "verdict": "Completed three-seed null diagnostic. Seed summaries agree exactly, but archived per-cell files omit b_hat and calibration residuals, so gate decisions cannot be replayed.",
       "decision_counts": {
         "ADAPT": 12,
         "FREEZE": 164,
@@ -424,7 +469,10 @@
       },
       "false_adapt_count": 2,
       "false_adapt_unconditional": 0.0092592593,
-      "cp95_upper_fa_c": 0.4381
+      "cp95_upper_fa_c": 0.4381,
+      "source_manifest": "experiments/kbound/results/reconciled_panels_v1/source_manifest.json",
+      "decision_replay_available": false,
+      "decision_replay_blocker": "archived per-cell files omit b_hat and the calibration-domain residual records; the saved seed summaries can be cross-validated but the gate cannot be rerun"
     },
     "imagenet_r_D": {
       "completed_seeds": [
@@ -435,20 +483,161 @@
       ],
       "planned_seed_count": 4,
       "mean_regret_kga_adapt_freeze": [
-        0.0151,
-        0.0064,
-        0.0325
+        0.014968749999999998,
+        0.0063593750000000004,
+        0.03252604166666666
       ],
-      "observed_false_adapt": "1/480",
+      "observed_false_adapt": "0/480",
       "beats_both_backbones": "0/10",
       "claim_id": "KB-CLAIM-042",
-      "source": "experiments/kbound/results/imagenetr_protocol_d_multiseed_v1/MULTISEED_ANALYSIS_RESULTS.json",
-      "verdict": "completed four-seed ten-backbone weak-evidence diagnostic; 0/10 CI-supported beats-both; KGA is WORSE than always-adapt on 7 of 10 backbones and 4 backbones have a 0% harmful base rate, so their comparison is vacuous; sealed in NINE_TRACK_LOCK_SEAL_v1 (imagenet_r_D)",
+      "source": "experiments/kbound/results/reconciled_panels_v1/canonical_panel_results.json",
+      "verdict": "Negative four-seed, ten-backbone diagnostic: KGA is worse than always-adapt on 8/10 backbones; no architecture has CI-robust beats-both.",
       "mean_regret_interpolated_superseded": [
         0.0112,
         0.0064,
         0.0325
-      ]
+      ],
+      "false_adapt_count": 0,
+      "decision_counts": {
+        "ADAPT": 165,
+        "FREEZE": 29,
+        "ABSTAIN": 286
+      },
+      "worse_than_always_adapt_backbones": "8/10",
+      "source_manifest": "experiments/kbound/results/reconciled_panels_v1/source_manifest.json",
+      "quantile_rule": "per-backbone/per-seed exact-rank leave-one-condition-out residual calibration",
+      "per_backbone": {
+        "convnext_base": {
+          "regret": [
+            0.003229166666666667,
+            0.0,
+            0.06932291666666666
+          ],
+          "decision_counts": {
+            "ADAPT": 46,
+            "FREEZE": 0,
+            "ABSTAIN": 2
+          },
+          "false_adapt_count": 0
+        },
+        "convnext_tiny": {
+          "regret": [
+            0.02161458333333333,
+            0.0014583333333333323,
+            0.02208333333333333
+          ],
+          "decision_counts": {
+            "ADAPT": 1,
+            "FREEZE": 0,
+            "ABSTAIN": 47
+          },
+          "false_adapt_count": 0
+        },
+        "efficientnet_b0": {
+          "regret": [
+            0.0,
+            0.050624999999999996,
+            0.0
+          ],
+          "decision_counts": {
+            "ADAPT": 0,
+            "FREEZE": 29,
+            "ABSTAIN": 19
+          },
+          "false_adapt_count": 0
+        },
+        "efficientnet_b3": {
+          "regret": [
+            0.021093749999999994,
+            0.0,
+            0.05010416666666665
+          ],
+          "decision_counts": {
+            "ADAPT": 27,
+            "FREEZE": 0,
+            "ABSTAIN": 21
+          },
+          "false_adapt_count": 0
+        },
+        "resnet101": {
+          "regret": [
+            0.01875,
+            0.0005208333333333338,
+            0.023749999999999993
+          ],
+          "decision_counts": {
+            "ADAPT": 9,
+            "FREEZE": 0,
+            "ABSTAIN": 39
+          },
+          "false_adapt_count": 0
+        },
+        "resnet152": {
+          "regret": [
+            0.016145833333333328,
+            0.0,
+            0.04208333333333333
+          ],
+          "decision_counts": {
+            "ADAPT": 30,
+            "FREEZE": 0,
+            "ABSTAIN": 18
+          },
+          "false_adapt_count": 0
+        },
+        "resnext101_32x8d": {
+          "regret": [
+            0.010833333333333334,
+            0.0,
+            0.05197916666666665
+          ],
+          "decision_counts": {
+            "ADAPT": 39,
+            "FREEZE": 0,
+            "ABSTAIN": 9
+          },
+          "false_adapt_count": 0
+        },
+        "swin_b": {
+          "regret": [
+            0.03255208333333332,
+            5.208333333333338e-05,
+            0.03749999999999999
+          ],
+          "decision_counts": {
+            "ADAPT": 8,
+            "FREEZE": 0,
+            "ABSTAIN": 40
+          },
+          "false_adapt_count": 0
+        },
+        "swin_t": {
+          "regret": [
+            0.004739583333333332,
+            0.010572916666666668,
+            0.004739583333333332
+          ],
+          "decision_counts": {
+            "ADAPT": 0,
+            "FREEZE": 0,
+            "ABSTAIN": 48
+          },
+          "false_adapt_count": 0
+        },
+        "vit_b_16": {
+          "regret": [
+            0.020729166666666663,
+            0.0003645833333333337,
+            0.023697916666666662
+          ],
+          "decision_counts": {
+            "ADAPT": 5,
+            "FREEZE": 0,
+            "ABSTAIN": 43
+          },
+          "false_adapt_count": 0
+        }
+      }
     },
     "controlled_multimodal_D33": {
       "dataset": "MNIST two-view controlled",
@@ -474,6 +663,82 @@
       "claim_id": "KB-CLAIM-027",
       "source": "experiments/kbound/results/controlled_multimodal_d33/results.json",
       "guarantee_status": "untested: 9 ADAPT decisions (< 10), CP95 upper bound on FA_c 0.2831"
+    },
+    "imagenetc_tent": {
+      "regret": [
+        0.014464814464251201,
+        0.01906111130007991,
+        0.014464814464251201
+      ],
+      "false_adapt": 0.0,
+      "false_adapt_count": 0,
+      "decision_counts": {
+        "ADAPT": 0,
+        "FREEZE": 0,
+        "ABSTAIN": 135
+      },
+      "n_cells": 135,
+      "seeds": [
+        0,
+        1,
+        2,
+        3,
+        4
+      ],
+      "quantile_rule": "per-candidate/per-seed exact-rank leave-one-condition-out residual calibration",
+      "point_beats_both": false,
+      "ci_robust_beats_both": false,
+      "gap_baseline_minus_kga_ci95_seed": {
+        "always_adapt": [
+          0.0013240752948655023,
+          0.008172222364831856
+        ],
+        "always_freeze": [
+          0.0,
+          0.0
+        ]
+      },
+      "source": "experiments/kbound/results/reconciled_panels_v1/canonical_panel_results.json",
+      "source_manifest": "experiments/kbound/results/reconciled_panels_v1/source_manifest.json",
+      "status": "source-record exact-LOO replay"
+    },
+    "imagenetc_eata": {
+      "regret": [
+        0.000670370790693495,
+        9.629638106734664e-05,
+        0.03418888907741617
+      ],
+      "false_adapt": 0.007407407407407408,
+      "false_adapt_count": 1,
+      "decision_counts": {
+        "ADAPT": 120,
+        "FREEZE": 1,
+        "ABSTAIN": 14
+      },
+      "n_cells": 135,
+      "seeds": [
+        0,
+        1,
+        2,
+        3,
+        4
+      ],
+      "quantile_rule": "per-candidate/per-seed exact-rank leave-one-condition-out residual calibration",
+      "point_beats_both": false,
+      "ci_robust_beats_both": false,
+      "gap_baseline_minus_kga_ci95_seed": {
+        "always_adapt": [
+          -0.0014462961090935603,
+          -1.2962906448929404e-05
+        ],
+        "always_freeze": [
+          0.030514818816273305,
+          0.0372796270582411
+        ]
+      },
+      "source": "experiments/kbound/results/reconciled_panels_v1/canonical_panel_results.json",
+      "source_manifest": "experiments/kbound/results/reconciled_panels_v1/source_manifest.json",
+      "status": "source-record exact-LOO replay"
     }
   },
   "nine_track_lock_seal": {
@@ -617,5 +882,17 @@
       }
     ],
     "fa_u_identity": "Under IN-SAMPLE rank calibration the miscoverage count is identically n-k, so FA_u <= (n-k)/n holds for any data: 0.0972 at n=432, 0.0370 at n=27, and exactly 0 at n in {9,12,18} where k=n. Under the promoted leave-one-out-of-pool calibration this identity does not hold, which is why the ImageNet-C SAR count is 1 and not 0."
+  },
+  "reconciliation_source": {
+    "canonical_panel": "experiments/kbound/results/reconciled_panels_v1/canonical_panel_results.json",
+    "source_manifest": "experiments/kbound/results/reconciled_panels_v1/source_manifest.json",
+    "generator": "scripts/reconcile_result_panels.py",
+    "generator_sha256": "faae704b256806a217149db28b9061fa850873d3ae5a196422d256089092ce8d",
+    "runtime": {
+      "numpy": "2.4.4",
+      "platform": "macOS-26.5.1-arm64-arm-64bit-Mach-O",
+      "python": "3.14.3",
+      "scikit_learn": "1.8.0"
+    }
   }
 }

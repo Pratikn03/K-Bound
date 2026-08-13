@@ -1,0 +1,34 @@
+{
+  "artifact": "cifar10c_tent_corruption_unit_ci_v1",
+  "question": "Table tab:loco-ten establishes that beats-both does not survive leave-one-corruption-out calibration, but does so by win-counts across five seeds. What is the INTERVAL for the LOCO-calibrated decisions at the corruption unit?",
+  "answer": "Gap to always-adapt is -0.001891 with CI95 [-0.008990, +0.007725], which includes zero. The gap to always-freeze is -0.118066 with CI95 [-0.174258, -0.059881], which excludes it. This confirms the paper's existing conclusion with the statistic the conclusion needs.",
+  "method": "Refit GradientBoostingRegressor(n_estimators=250, max_depth=2, learning_rate=0.05, subsample=0.8, random_state=0) out-of-fold by corruption family; eps_exact rank k=min(n,ceil((n+1)(1-alpha))), alpha=0.10; ADAPT iff bhat-eps>0, FREEZE iff bhat+eps<0. Paired percentile bootstrap, 20000 replicates resampling corruption families, rng seed 20260720, seeds averaged per corruption before resampling. Mirrors recompute/05_cifar_loco.py and kb_common.py. sklearn 1.8.0.",
+  "validation": "The as-shipped arm reproduces NUMBERS_PACK item17 cluster_robust corruption_family_6 adapt CI [-0.00952,-0.00259] as [-0.009516,-0.002629]; the LOCO eps 0.09882 and adapt rate 0.4134 match item17 exactly.",
+  "n_units": 6, "n_decisions": 2160, "alpha": 0.10,
+  "arms": {
+    "as_shipped_cell_out": {
+      "eps_mean": 0.020882, "adapt_rate_mean": 0.516204, "false_adapts_total": 0,
+      "gap_vs_adapt": {"point": -0.006350, "ci95": [-0.009516, -0.002629], "excludes_zero": true},
+      "gap_vs_freeze": {"point": -0.122524, "ci95": [-0.178069, -0.063639], "excludes_zero": true},
+      "per_corruption_gap_vs_adapt": {
+        "contrast": -0.008251, "defocus_blur": -0.010537, "fog": -0.010290,
+        "gaussian_noise": 0.001890, "jpeg_compression": -0.003471, "pixelate": -0.007439}
+    },
+    "leave_one_corruption_out": {
+      "eps_mean": 0.098815, "adapt_rate_mean": 0.413426, "false_adapts_total": 0,
+      "gap_vs_adapt": {"point": -0.001891, "ci95": [-0.008990, 0.007725], "excludes_zero": false},
+      "gap_vs_freeze": {"point": -0.118066, "ci95": [-0.174258, -0.059881], "excludes_zero": true},
+      "per_corruption_gap_vs_adapt": {
+        "contrast": -0.008251, "defocus_blur": -0.010537, "fog": -0.008588,
+        "gaussian_noise": 0.020029, "jpeg_compression": 0.003439, "pixelate": -0.007439}
+    }
+  },
+  "conclusions": [
+    "Safety is untouched: 0 false adapts in 2160 decisions under a 4.7x wider radius.",
+    "KGA beats always-freeze under both calibrations with the interval excluding zero.",
+    "KGA does not beat always-adapt once calibration and inference share the corruption unit.",
+    "Reversals spread under LOCO: gaussian_noise +0.020029 and jpeg_compression +0.003439, against gaussian_noise +0.001890 alone as shipped.",
+    "This supersedes nothing in the paper; it supplies the interval behind the win-count statement already made for tab:loco-ten."
+  ],
+  "status": "computed from committed artifacts; no new training runs"
+}

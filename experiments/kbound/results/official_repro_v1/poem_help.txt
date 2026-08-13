@@ -1,0 +1,66 @@
+usage: main.py [-h] [--data DATA] [--data_corruption DATA_CORRUPTION]
+               [--v2_path V2_PATH] [--output OUTPUT] [--seed SEED] [--gpu GPU]
+               [--debug DEBUG] [--workers WORKERS]
+               [--test_batch_size TEST_BATCH_SIZE] [--if_shuffle IF_SHUFFLE]
+               [--level LEVEL] [--corruption CORRUPTION]
+               [--fisher_size FISHER_SIZE] [--fisher_alpha FISHER_ALPHA]
+               [--e_margin E_MARGIN] [--d_margin D_MARGIN] [--method METHOD]
+               [--model MODEL] [--exp_type EXP_TYPE] [--cont_size CONT_SIZE]
+               [--severity_list SEVERITY_LIST [SEVERITY_LIST ...]]
+               [--temp TEMP] [--exp_comment EXP_COMMENT]
+               [--sar_margin_e0 SAR_MARGIN_E0]
+               [--imbalance_ratio IMBALANCE_RATIO] [--gamma GAMMA]
+               [--eps_clip EPS_CLIP] [--lr_factor LR_FACTOR] [--vanilla_loss]
+
+SAR exps
+
+options:
+  -h, --help            show this help message and exit
+  --data DATA           path to dataset
+  --data_corruption DATA_CORRUPTION
+                        path to corruption dataset
+  --v2_path V2_PATH     path to corruption dataset
+  --output OUTPUT       the output directory of this experiment
+  --seed SEED           seed for initializing training.
+  --gpu GPU             GPU id to use.
+  --debug DEBUG         debug or not.
+  --workers WORKERS     number of data loading workers (default: 4)
+  --test_batch_size TEST_BATCH_SIZE
+                        mini-batch size for testing, before default value is 4
+  --if_shuffle IF_SHUFFLE
+                        if shuffle the test set.
+  --level LEVEL         corruption level of test(val) set.
+  --corruption CORRUPTION
+                        corruption type of test(val) set.
+  --fisher_size FISHER_SIZE
+                        number of samples to compute fisher information
+                        matrix.
+  --fisher_alpha FISHER_ALPHA
+                        the trade-off between entropy and regularization loss,
+                        in Eqn. (8)
+  --e_margin E_MARGIN   entropy margin E_0 in Eqn. (3) for filtering reliable
+                        samples
+  --d_margin D_MARGIN   \epsilon in Eqn. (5) for filtering redundant samples
+  --method METHOD       no_adapt, tent, eata, sar, cotta, poem
+  --model MODEL         resnet50_gn_timm or resnet50_bn_torch or vitbase_timm
+  --exp_type EXP_TYPE   normal, continual, bs1, in_dist, natural_shift,
+                        severity_shift, eps_cdf, martingale
+  --cont_size CONT_SIZE
+                        each corruption size for continual type
+  --severity_list SEVERITY_LIST [SEVERITY_LIST ...]
+  --temp TEMP           temperature for the model to be calibrated
+  --exp_comment EXP_COMMENT
+  --sar_margin_e0 SAR_MARGIN_E0
+                        the threshold for reliable minimization in SAR, Eqn.
+                        (2)
+  --imbalance_ratio IMBALANCE_RATIO
+                        imbalance ratio for label shift exps, selected from
+                        [1, 1000, 2000, 3000, 4000, 5000, 500000], 1 denotes
+                        totally uniform and 500000 denotes (almost the same to
+                        Pure Class Order). See Section 4.3 for details;
+  --gamma GAMMA         protector's gamma
+  --eps_clip EPS_CLIP   clipping value for epsilon during protection
+  --lr_factor LR_FACTOR
+                        multiplies the learning rate for poem
+  --vanilla_loss        Use vanilla match loss (not l match ++).
+

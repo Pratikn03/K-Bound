@@ -1,21 +1,32 @@
 # K-Bound Short Paper Claim-to-Artifact Manifest
 
-> Revised 2026-07-26. Three empirical rows re-scoped; artifact pointers corrected. Canonical:
-> `SUBMISSION_LEDGER.md §3`, `§5`, `§8`, `§9`.
+Date: 2026-08-11
 
-| Claim | Type | Exact requirement | Artifact | Caveat |
+| Claim | Type | Exact requirement | Evidence location | Caveat |
 |---|---|---|---|---|
-| Interior matched-evidence impossibility | theorem | `beta>0`, `|M|<beta`, rich declared class | `paper/sections/theory_core_main.tex` | opposite nonzero signs are interior only |
-| Closed-band abstention | theorem | strict dual-error semantics | Proposition 2 in main source | boundary is zero-versus-strict ambiguity |
-| Strict-commitment frontier | theorem | declared drift class and risk alignment | Theorem 2 in main source | not universal sign recovery |
-| Marginal `FA_u` certificate | theorem | marginal interval coverage | Theorem 3; Lean inventory | no `FA_c` guarantee |
-| CIFAR mixed-regime win | empirical | Tent/EATA head-to-head 5-seed aggregate and CIs | `mixed_headtohead_v1/HEADTOHEAD_RESULTS_cifar10c_{tent_primary,eata_secondary}.json` (**not** `LOCKED_ANALYSIS_RESULTS.json`, which is the stress-grid aggregate — see `SUBMISSION_LEDGER.md §5`) | SAR withheld after replay mismatch; EATA's adapt-gap CI does not survive corruption-family clustering |
-| ImageNet-C SAR | empirical | 27 cells x 5 seeds = 135, paired bootstrap seed-averaged to 27 conditions | `win_hunt_v5_imagenetc_ms/pooled_5seed/` | **point-estimate no-harm only** under the declared LOO radius; freeze-gap CI includes zero. Not a beats-both. |
-| Natural no-harm | empirical | reconciled OOF/locked held-out artifacts | OOF lock, RxRx1 lock; **Camelyon reconciliation directory is ABSENT** | not natural beats-both; Office-Home and iWildCam source records absent; RxRx1 (0 adapts) and iWildCam (1 adapt) leave the guarantee untested |
-| POEM/AETTA comparison | empirical | same logged stress cells | mixed head-to-head artifact | protocol-matched ports only |
-| Constructed mixed routing | empirical | fixed researcher-constructed stream | `mixed_protocol_oof_v2_result.json` | not unseen-shift transfer |
-| Universal improvement | diagnostic | none | limitations/conclusion | explicitly not claimed |
-| Single-dataset natural beats-both | diagnostic | held-out CIs against both fixed policies | natural tables | explicitly not claimed |
-| Real-camera result | pending | fresh held-out physical sessions | preregistration templates | templates are not evidence |
+| Interior matched-evidence obstruction | theorem | Declared target class contains evidence-identical worlds with opposite strict benefits | `kbound_short_body.tex`; Lean algebra map in `formal/KBound/TheoremMap.lean` | Deployment-law construction has external assumptions |
+| Closed-band abstention | theorem | Sound three-way decision over the declared drift class | `kbound_short_body.tex`; theory appendix | Boundary zero-benefit case uses strict-decision semantics |
+| Strict-commitment frontier | theorem | Declared valid bound `|gamma| <= beta` | Theory sections and claim accounting | Real-data KGA does not numerically apply this rule |
+| Marginal false-adapt certificate | theorem | `P(|Delta_hat-Delta| <= epsilon) >= 1-alpha` | Certificate theorem and Lean implication | Controls `FA_u`, not `FA_c`; coverage justification remains protocol-specific |
+| CIFAR-10-C mixed-regime win | empirical | Locked exact-rank stress protocol and declared clustering unit | Generated result manifest and main tables | Tent is cluster-robust; EATA adapt-side CI includes zero |
+| ImageNet-C authoritative panel | empirical | 27 cells x 5 seeds, exact-LOO replay | `reconciled_panels_v1/canonical_panel_results.json` | SAR pooled point win is not CI- or seed-robust |
+| Office-Home no-harm | diagnostic | Source-record transfer replay | Canonical panel, 35 test records | Ties freeze, zero adapts, A7 open |
+| iWildCam no-harm | diagnostic | Source-record transfer replay | Canonical panel, 72 test records | Ties freeze, zero adapts, one test seed, A7 open |
+| PACS negative result | diagnostic | Three-seed aggregate matches archived summaries | Canonical panel PACS section | Gate replay unavailable from archived fields |
+| ImageNet-R negative result | diagnostic | 4 seeds x 10 backbones x 12 conditions, exact-LOO replay | Canonical panel and per-backbone table | Worse than adapt on 8/10 backbones |
+| POEM/AETTA comparison | empirical port | Protocol-matched ports and disclosed implementation status | Main head-to-head table and baseline-faithfulness table | Not an official implementation claim |
+| Constructed heterogeneous mixture | pending | Replay from reconciled component records | Manuscript TODO and remaining-work file | Historical result withdrawn |
+| Universal improvement | not claimed | Would require dominance across deployment laws | Claim-accounting table | Impossible in general |
+| Single-dataset natural beats-both | not claimed | Held-out, source-replayable, CI-robust win at declared unit | Result audit | No current natural track meets this bar |
+| Real-camera validation | pending | Locked calibration/test sessions and fresh physical logs | Edge preregistration and blank templates | Templates are not evidence |
 
-Machine-readable exact values and source paths are in `paper/generated/kbound_result_manifest.json`.
+## Canonical generated chain
+
+1. `scripts/reconcile_result_panels.py`
+2. `experiments/kbound/results/reconciled_panels_v1/canonical_panel_results.json`
+3. `scripts/sync_reconciled_panels.py`
+4. `docs/research/kbound/paper/generated/kbound_result_manifest.json`
+5. `docs/research/kbound/RESULT_MANIFEST.json`
+6. `docs/research/kbound/paper/generated/kbound_numbers.tex`
+7. `kbound_short_final_draft.pdf`
+

@@ -1,0 +1,149 @@
+% Theory-to-algorithm bridge for the K-Bound population frontier and KGA.
+% Intended placement: in sec:method, after theory_certificate.tex and before the
+% detailed KGA architecture/evidence-map description.
+
+\subsection{From the Population Frontier to KGA}
+\label{sec:theory-algorithm-bridge}
+
+The population frontier and the empirical certificate concern the same target
+functional, but they certify it in different ways. Under
+Assumption~\ref{ass:deploy} and binary $0/1$ loss,
+Lemma~\ref{lem:reduction} gives the exact bridge
+\begin{equation}
+  \Delta
+  = 2\mu_T(D)(M+\gamma),
+  \qquad
+  \widehat\Delta=h_\theta(Z),
+  \qquad
+  \widehat\Delta-\Delta
+  =h_\theta(Z)-2\mu_T(D)(M+\gamma).
+  \label{eq:population-empirical-bridge}
+\end{equation}
+Thus $M+\gamma$ determines the population benefit direction, while
+$\widehat\Delta$ estimates the resulting benefit $\Delta$ directly.  The
+calibrated radius $\varepsilon$ covers the total benefit-estimation residual in
+the last expression; it neither estimates $\beta$ nor decomposes that residual
+into observable margin and latent drift.  In particular, the reported KGA rule
+does not compute $M$, $\gamma$, or $\beta$ at deployment.
+
+\begin{proposition}[Population-to-KGA implication chain]
+\label{prop:theory-algorithm-bridge}
+Fix the outer population class
+$\mathcal C_\beta=\{P_T:|\gamma(P_T)|\le\beta\}$ and an operational
+calibration/deployment class $\mathcal P_{\mathrm{KGA}}\subseteq\mathcal C_\beta$.
+Let the realized target law belong to $\mathcal P_{\mathrm{KGA}}$.  Suppose the
+following chain is declared before the deployment unit is evaluated.
+\begin{enumerate}
+  \item \textbf{Population specification.} Assumption~\ref{ass:deploy} holds,
+    $M$ is determined on each augmented-evidence fibre, and the class has the
+    richness required by Theorem~\ref{thm:headline}.
+  \item \textbf{Operational risk alignment.} The evidence $Z$ is risk-aligned
+    on $\mathcal P_{\mathrm{KGA}}$ in the sense of
+    Definition~\ref{def:risk-align}.  This is an additional restriction used
+    for estimator transfer, not a consequence of fitting $h_\theta$ and not a
+    claim that the full class $\mathcal C_\beta$ is risk-aligned.
+  \item \textbf{Estimable benefit.} A measurable predictor
+    $\widehat\Delta=h_\theta(Z)$ is fixed using permitted development data and
+    without labels from the deployment unit.
+  \item \textbf{Calibration validity.} A nonnegative radius $\varepsilon$ is
+    fixed so that, over the declared calibration and deployment randomness,
+    \begin{equation}
+      \Pr\!\left(|\widehat\Delta-\Delta|\le\varepsilon\right)
+      \ge 1-\alpha.
+      \label{eq:bridge-coverage}
+    \end{equation}
+\end{enumerate}
+Then two distinct conclusions follow.
+\begin{enumerate}
+  \item[(a)] If $|M|>\beta$, the population frontier supports the unique
+    strict action with direction $\sign M$; if $|M|\le\beta$, no strict action
+    is uniformly directionally sound over the full declared class and the
+    pointwise maximal population rule abstains.
+  \item[(b)] The empirical rule
+    \[
+      \widehat\Delta-\varepsilon>0\Rightarrow\textsc{adapt},
+      \qquad
+      \widehat\Delta+\varepsilon<0\Rightarrow\textsc{freeze},
+    \]
+    and \textsc{abstain} otherwise, controls the marginal false-adapt and
+    false-freeze events at level $\alpha$ as in
+    Theorem~\ref{thm:certificate}.
+  \item[(c)] On the coverage event in~\eqref{eq:bridge-coverage}, whenever
+    $|M|>\beta$ and KGA commits, its action agrees with the population-frontier
+    direction.  KGA may nevertheless abstain because its finite-sample interval
+    is too wide.  Conversely, a KGA commitment at $|M|\le\beta$ is a marginal
+    statement about the narrower operational sampling law under
+    \eqref{eq:bridge-coverage}; it does not establish uniform directional
+    soundness over $\mathcal C_\beta$.
+\end{enumerate}
+\end{proposition}
+
+\begin{proof}
+Part~(a) is Theorem~\ref{thm:headline}.  Part~(b) is
+Theorem~\ref{thm:certificate}.  On the coverage event, an empirical
+\textsc{adapt} decision implies $\Delta>0$ and an empirical \textsc{freeze}
+decision implies $\Delta<0$.  When $|M|>\beta$,
+Lemma~\ref{lem:reduction} and $|\gamma|\le\beta$ give
+$\sign\Delta=\sign M$, proving the agreement statement in~(c).  The remaining
+claims distinguish the pointwise interval event for the realized law from the
+uniform quantification over all laws in $\mathcal C_\beta$.
+\end{proof}
+
+The logical chain is therefore
+\[
+  \boxed{\mathcal C_\beta\ \text{declared}}
+  \longrightarrow
+  \boxed{\mathcal P_{\mathrm{KGA}}\subseteq\mathcal C_\beta\
+         \ \text{risk-aligned for }Z}
+  \longrightarrow
+  \boxed{\widehat\Delta=h_\theta(Z)}
+  \longrightarrow
+  \boxed{\Pr(|\widehat\Delta-\Delta|\le\varepsilon)\ge1-\alpha}
+  \longrightarrow
+  \boxed{\textsc{adapt}/\textsc{freeze}/\textsc{abstain}}.
+\]
+The arrows are not all learned by KGA.  Declaring a credible outer class and
+drift budget, specifying the narrower operational class, defending risk
+alignment there, and justifying calibration transfer at the correct inference
+unit remain external validity obligations.  KGA implements the
+evidence-to-benefit predictor, residual-radius construction, and interval
+decision rule.  Once coverage is assumed, risk alignment is not an additional
+logical premise of Theorem~\ref{thm:certificate}; it instead supports the
+transfer interpretation and the possibility of obtaining a useful, finite
+interval.  The two classes are essential: the matched worlds used by
+Theorem~\ref{lem:nonid} make the rich $\mathcal C_\beta$ non-risk-aligned inside
+the population band.  If an operational class retains those worlds, a valid
+interval must absorb their ambiguity through width and abstention rather than
+silently assuming it away.
+
+\begin{table}[t]
+\centering
+\footnotesize
+\caption{Correspondence between the population theory and empirical KGA.  A
+shared target functional does not make the quantities equal.}
+\label{tab:theory-algorithm-bridge}
+\begin{tabular}{@{}p{0.15\columnwidth}p{0.40\columnwidth}p{0.35\columnwidth}@{}}
+\toprule
+Quantity & Role in the bridge & Status in KGA \\
+\midrule
+$M$ & Observable population margin on the disagreement region & Not explicitly estimated by the reported rule \\
+$\gamma$ & Latent residual satisfying $M+\gamma=\bar a-\tfrac12$ & Not observed or estimated \\
+$\beta$ & Externally declared uniform bound on $|\gamma|$ over $\mathcal C_\beta$ & Not a numerical KGA input \\
+$\Delta$ & Target risk reduction; equals $2\mu_T(D)(M+\gamma)$ in the binary setup & Estimand, unavailable without audit labels \\
+$\widehat\Delta$ & Finite-sample estimate of $\Delta$ from evidence $Z$ & Produced by $h_\theta(Z)$ \\
+$\varepsilon$ & Radius supporting coverage of $\Delta$ by $\widehat\Delta\pm\varepsilon$ & Calibrated from permitted residuals \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\paragraph{Plain-language interpretation.}
+K-Bound says what a whole declared family of target worlds permits: if every
+allowed drift preserves one strict direction, that direction is population
+sound; otherwise the maximal uniform rule abstains.  KGA addresses the realized
+deployment unit under a separately declared operational transfer model: it
+predicts the actual risk difference and commits only when a calibrated interval
+excludes zero.  The common object is $\Delta$; the
+population theorem brackets it through $(M,\gamma,\beta)$, whereas KGA brackets
+it through $(\widehat\Delta,\varepsilon)$.  The algorithm therefore realizes
+the framework's adapt/freeze/abstain semantics, but it does not turn the
+external population assumptions into data-derived facts.

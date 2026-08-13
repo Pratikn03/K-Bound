@@ -1,0 +1,533 @@
+% =====================================================================
+% theory_beta_estimable.tex
+% Making the drift budget beta estimable under episode structure.
+%
+% Drop-in appendix section for kbound_tmlr.tex / kbound.tex.  Uses the host
+% amsthm environments and the notation of Assumption~\ref{ass:deploy}
+% (theory_setup.tex).  Cross-references used:
+%   ass:deploy, lem:reduction, thm:headline, thm:aud-A, thm:aud-B,
+%   thm:aud-DE, thm:aud-G, rem:fa-marginal
+% New labels are namespaced "epi:".
+%
+% STATUS OF EVERY CLAIM IS MARKED IN A COMMENT ABOVE IT.
+% Numerical validation:
+%   experiments/kbound/frontier_sweep_v1/beta_estimability/
+%     episode_beta.py, episode_beta_results.json
+% =====================================================================
+
+\providecommand{\Var}{\operatorname{Var}}
+\providecommand{\E}{\mathbb{E}}
+\providecommand{\Law}{\mathcal{L}}
+\providecommand{\sign}{\operatorname{sign}}
+\providecommand{\TV}{\mathrm{TV}}
+\providecommand{\KL}{\mathrm{KL}}
+\providecommand{\R}{\mathbb{R}}
+
+\section{Where a drift budget can come from: episode structure}
+\label{app:episode-beta}
+
+Theorem~\ref{thm:aud-A} says a label-free audit of the drift budget is vacuous. The main text
+therefore treats $\beta$ as \emph{declared}. This section asks the complementary question --- under
+what structure is $\beta$ \emph{estimable}, and at what price --- and answers it in one direction:
+$\beta$ is a property of a \emph{population of deployments}, not of a deployment. Under
+exchangeability across deployments plus retrospectively revealed outcomes it is identified and
+estimable at the conformal rate; without both ingredients it is not identified at all. We then
+measure, on the K-Bound artifacts, how far real deployment populations are from that structure. The
+answer is: far enough that the estimator is valid along nuisance axes (fitting seed, adaptation
+method) and fails along the axis a deployment actually cares about (a corruption family or severity
+never seen before).
+
+\subsection{The episode model}
+
+\begin{definition}[Deployment episode]\label{epi:def-episode}
+An \emph{episode} $e$ is one deployment: a target law $P_e$, a frozen model $f_0^e$, a candidate
+$f_a^e$, a source-calibrated score $s^e$, and the induced disagreement region $D_e$ with
+$\mu_{P_e}(D_e)>0$. Write the \emph{observable part}
+$W_e=(Z_e,M_e)$ --- the label-free evidence and margin of Assumption~\ref{ass:deploy} --- and the
+\emph{latent part} $\gamma_e=\bar a_e-\tfrac12-M_e$. Put $V_e=(W_e,\gamma_e)$.
+\end{definition}
+
+\begin{assumption}[E1: retrospective outcome logging]\label{epi:ass-E1}
+For each past episode $e\le K$, a sample of $n$ units drawn i.i.d.\ from $\mu_{P_e}(\cdot\mid D_e)$
+has its labels revealed \emph{after} that deployment concluded, yielding
+\[
+\widehat\gamma_e=\frac1n\sum_{i=1}^{n}\bigl(\mathbf 1\{f_a^e(X_i)=Y_i\}-s^e(X_i)\bigr)\in[-1,1].
+\]
+No labels are available for the current episode $K+1$.
+\end{assumption}
+
+\begin{assumption}[E2: episode exchangeability]\label{epi:ass-E2}
+$(V_1,\dots,V_{K+1})$ is exchangeable. Write $Q$ for the common marginal law of $V$.
+\end{assumption}
+
+E1 is an accounting assumption: it says outcomes are eventually observed and logged, which is true
+of any deployment with a downstream ground truth (delivered claims, resolved tickets, confirmed
+diagnoses) and false of deployments whose outcomes are never revealed. E2 is a much stronger
+statement about the deployment pipeline; \S\ref{epi:sec-honesty} argues it is the binding constraint
+and \S\ref{epi:sec-numerics} measures its failure.
+
+\begin{definition}[Episode budget]\label{epi:def-beta-star}
+For $\alpha\in(0,1)$, $\beta^\star(\alpha):=\inf\{b\ge0:\ Q(|\gamma|\le b)\ge1-\alpha\}$, the
+$(1-\alpha)$-quantile of $|\gamma|$ under the episode law.
+\end{definition}
+
+\subsection{Identification, and what it costs}
+
+% STATUS: PROVED. (a) is bookkeeping + Aud-D composition; (b) is Aud-A's kernel
+% construction applied episodewise.
+\begin{theorem}[Episode identification and its price]\label{epi:thm-ident}
+Under Assumption~\ref{epi:ass-E2}:
+\begin{enumerate}
+\item[\textnormal{(a)}] \textbf{(Positive.)} $\beta^\star(\alpha)$ is a functional of the episode law
+of $(W,\gamma)$, and it is the smallest budget $b$ for which the declared class holds with episode
+probability at least $1-\alpha$, i.e.\ $Q(P\in\mathcal C_b)\ge1-\alpha$. Consequently the frontier
+rule of Theorem~\ref{thm:headline} run at $b=\beta^\star(\alpha)$ has episode-marginal
+false-strict-commitment probability at most $\alpha$.
+\item[\textnormal{(b)}] \textbf{(Negative: the price is historical labels, not historical data.)}
+$\beta^\star(\alpha)$ is \emph{not} a functional of the episode law of $W$ alone. For every
+$b\in[0,\tfrac12]$ there is an episode law $Q_b$ with the same $W$-marginal and
+$\beta^\star_{Q_b}(\alpha)=b$. No quantity of unlabeled historical deployments identifies $\beta$.
+\end{enumerate}
+\end{theorem}
+
+\begin{proof}
+(a) $\beta^\star(\alpha)$ is by construction the $(1-\alpha)$-quantile of $|\gamma|$ under $Q$, hence
+a functional of the $(W,\gamma)$-law; and $\{|\gamma|\le b\}=\{P\in\mathcal C_b\}$ by the definition
+of $\mathcal C_b$, so the quantile characterisation is immediate. For the decision consequence, fix
+the history and condition on $\{|\gamma_{K+1}|\le b\}$. On that event
+Theorem~\ref{thm:headline}(ii) applies, so a strict commitment made at margin $|M_{K+1}|>b$ has the
+correct sign; a false strict commitment therefore requires $\{|\gamma_{K+1}|>b\}$, an event of
+probability at most $\alpha$. (This is Theorem~\ref{thm:aud-DE}(D) with the audit event supplied by
+$Q$ instead of by a concentration bound.)
+
+(b) Fix the $W$-marginal $Q_W$. By the kernel construction in the proof of
+Theorem~\ref{thm:aud-A}, for any episode with observables $(\mu,f_0,f_a,s)$ --- hence any value of
+$W$ --- and any $\bar a\in[0,1]$ there is a label kernel on $D$ realising $\bar a$ while leaving
+$(Z,M)$ unchanged. The achievable drift set at matched evidence is
+$I_M=[-(M+\tfrac12),\,\tfrac12-M]$, an interval of length $1$ containing $0$ whose endpoints have
+absolute values $\tfrac12+M$ and $\tfrac12-M$, the larger being $\tfrac12+|M|\ge\tfrac12$. Hence for
+every $b\in[0,\tfrac12]$ at least one of $+b,-b$ lies in $I_M$; concretely, set
+$\theta(W)=+1$ if $b\le\tfrac12-M$ and $\theta(W)=-1$ otherwise, which is admissible because
+$b>\tfrac12-M$ forces $M+\tfrac12>1-b\ge b$ for $b\le\tfrac12$. Define $Q_b$ by drawing
+$W\sim Q_W$ and realising $\gamma=\theta(W)\,b$ by the corresponding kernel. Then $Q_b$ has
+$W$-marginal $Q_W$, and $|\gamma|=b$ $Q_b$-almost surely, so
+$Q_b(|\gamma|\le b')=0<1-\alpha$ for every $b'<b$ while $Q_b(|\gamma|\le b)=1$; hence
+$\beta^\star_{Q_b}(\alpha)=b$ for every $\alpha\in(0,1)$. Since $b$ was arbitrary in
+$[0,\tfrac12]$, the $W$-marginal carries no information about $\beta^\star$.
+\end{proof}
+
+\subsection{The estimator}
+
+% STATUS: PROVED. This is Theorem~\ref{thm:aud-G} specialised to
+% gamma_pred == 0, restated here because that specialisation is the one that
+% needs no label-free drift predictor and is the one we validate numerically.
+% The conformal backbone is Vovk et al. / Papadopoulos et al.; the hierarchical
+% domain-level version is Dunn-Wasserman-Ramdas and Lee-Barber-Willett.
+\begin{theorem}[Episode-conformal budget]\label{epi:thm-conformal}
+Assume E1 and E2, with a common labeled size $n$ and the same estimator in every episode. Let
+$S_e=|\widehat\gamma_e|$ for $e\le K$, let $\delta\in(0,\alpha)$,
+$t(n,\delta)=\sqrt{2\ln(2/\delta)/n}$, and
+\[
+j=\bigl\lceil(1-\alpha+\delta)(K+1)\bigr\rceil,
+\qquad
+\widehat\beta_{\mathrm{epi}}=S_{(j)}+t(n,\delta),
+\]
+feasible exactly when $\alpha\ge\tfrac1{K+1}+\delta$. Then
+$\Pr\bigl(|\gamma_{K+1}|\le\widehat\beta_{\mathrm{epi}}\bigr)\ge1-\alpha$, with the probability
+taken over the joint draw of all $K+1$ episodes and their label samples. Composed with
+Theorem~\ref{thm:aud-DE}(D)--(E), the audited frontier makes a false strict commitment with
+probability at most $\alpha$ (population $M$) or $\alpha+\delta'$ (empirical $\widehat M$ from $m$
+unlabeled deployment points).
+\end{theorem}
+
+\begin{proof}
+Define the counterfactual score $S_{K+1}=|\widehat\gamma_{K+1}|$ that a size-$n$ label sample from
+the current episode would produce. Under E1--E2 the vector $(S_1,\dots,S_{K+1})$ is exchangeable:
+$V_{1:K+1}$ is exchangeable, the label samples are conditionally i.i.d.\ of common size $n$ given the
+episodes, and $S_e$ is the same measurable functional of $(V_e,\text{labels}_e)$ for every $e$. Split
+conformal on an exchangeable sequence gives
+$\Pr\bigl(S_{K+1}\le S_{(j)}\bigr)\ge j/(K+1)\ge1-\alpha+\delta$. Independently, Hoeffding on the
+$n$ i.i.d.\ variables $u_i\in[-1,1]$ gives
+$\Pr\bigl(|\widehat\gamma_{K+1}-\gamma_{K+1}|>t(n,\delta)\bigr)\le\delta$. On the intersection,
+$|\gamma_{K+1}|\le S_{K+1}+t\le S_{(j)}+t$. A union bound gives failure probability at most
+$(\alpha-\delta)+\delta=\alpha$. Feasibility is $j\le K$, i.e.\ $\alpha\ge\tfrac1{K+1}+\delta$.
+\end{proof}
+
+\begin{remark}[Relation to Theorem~\ref{thm:aud-G}]\label{epi:rem-audG}
+Theorem~\ref{epi:thm-conformal} is Theorem~\ref{thm:aud-G} with the label-free drift predictor set
+to $\gamma_{\mathrm{pred}}\equiv0$ and ``domain'' read as ``episode''. We restate it because the
+specialisation is the object the rest of this section analyses and validates: it needs no auxiliary
+predictor, so its coverage failures isolate the exchangeability assumption rather than confounding it
+with predictor misspecification. Aud-G's assumption (G3) --- that any predictor be fixed
+independently of the $K{+}1$ episodes --- is vacuous here.
+\end{remark}
+
+\subsection{Exactly where Theorem~\ref{thm:aud-A} is escaped}
+
+This is the load-bearing check. If Theorem~\ref{epi:thm-conformal} did not violate a hypothesis of
+Theorem~\ref{thm:aud-A}, one of the two would be false.
+
+\begin{definition}[Fibre-blind budget]\label{epi:def-fibreblind}
+Fix observables $(\mu_T,f_0,f_a,s)$ and let $\mathcal P(\mu_T)$ be the matched-evidence fibre of
+Theorem~\ref{thm:aud-A}. A random budget $B$ is \emph{fibre-blind} if $\Law(B)$ is the same for every
+$P\in\mathcal P(\mu_T)$. Both a deployment-evidence audit $B=g(Z)$ and any budget computed from a
+history drawn independently of the current episode are fibre-blind.
+\end{definition}
+
+% STATUS: PROVED. (a) is Aud-A's argument verbatim, restated to cover
+% history-measurable budgets; (b) and (c) are immediate.
+\begin{proposition}[Two ingredients, neither sufficient alone]\label{epi:prop-escape}
+\begin{enumerate}
+\item[\textnormal{(a)}] \textbf{Labels alone do not escape Aud-A.} If $B$ is fibre-blind and
+$\Pr(|\gamma(P)|\le B)\ge1-\delta$ for \emph{every} $P\in\mathcal P(\mu_T)$, then
+$B\ge\tfrac12+|M|$ with probability at least $1-\delta$, and the audited frontier abstains with
+probability at least $1-\delta$. In particular $\widehat\beta_{\mathrm{epi}}$, which is fibre-blind,
+does \emph{not} satisfy fibre-uniform validity.
+\item[\textnormal{(b)}] \textbf{The escape is the average.} Theorem~\ref{epi:thm-conformal}'s
+guarantee is $Q$-marginal: the deployment law is itself drawn from $Q$, and the extreme worlds
+$\bar a\in\{0,1\}$ that force Aud-A's bound carry $Q$-probability at most $\alpha$. The
+hypothesis Aud-A uses and E2 removes is precisely the \emph{supremum over the fibre}, replaced by an
+\emph{average over $Q$}.
+\item[\textnormal{(c)}] \textbf{The average alone does not escape either.} By
+Theorem~\ref{epi:thm-ident}(b), without historical labels the $Q$-average budget is as
+uninformative as the fibre supremum: the $W$-marginal is consistent with $\beta^\star(\alpha)=b$ for
+every $b\in[0,\tfrac12]$.
+\end{enumerate}
+\end{proposition}
+
+\begin{proof}
+(a) Take the extreme world $P^\dagger\in\mathcal P(\mu_T)$ with $\bar a\in\{0,1\}$ chosen so that
+$|\gamma|=\tfrac12+|M|$, which exists by the kernel construction of Theorem~\ref{thm:aud-A}. Validity
+at $P^\dagger$ forces $\Pr(B\ge\tfrac12+|M|)\ge1-\delta$; fibre-blindness transfers this statement to
+every other world in the fibre. Since $|M|<\tfrac12+|M|$, neither branch of $|M|>B$ can fire on that
+event. (b) and (c) are restatements of Theorem~\ref{epi:thm-conformal} and
+Theorem~\ref{epi:thm-ident}(b).
+\end{proof}
+
+\begin{remark}[What the deployer actually gets]\label{epi:rem-marginal}
+Proposition~\ref{epi:prop-escape}(a) is not a technicality. It says the episode budget provides no
+protection \emph{at} a deployment: conditional on the episode being one of the adversarial ones, the
+frontier commits and is wrong. What is controlled is the long-run rate across deployments. This is
+the same marginal-versus-conditional distinction that governs the certificate's own false-adapt guarantee (Theorem~\ref{thm:cert}), and it should be
+stated to any deployer who is told $\beta$ was ``estimated''.
+\end{remark}
+
+\subsection{How many episodes: a factor-$e$ bracket}
+
+% STATUS: PROVED.  Standard distribution-free two-point argument, stated for
+% this object.
+\begin{theorem}[Episode floor]\label{epi:thm-floor}
+Fix $\alpha\in(0,\tfrac12)$ and $b\in(0,\tfrac12]$. Consider budgets
+$\widehat\beta=h(\gamma_1,\dots,\gamma_K)$ computed from $K$ historical drifts observed
+\emph{without label noise} (the most favourable case), and require validity
+$\Pr_{Q}\bigl(|\gamma_{K+1}|\le\widehat\beta\bigr)\ge1-\alpha$ for every i.i.d.\ episode law $Q$.
+Then either
+\[
+\begin{aligned}
+&h(0,\dots,0)\ \ge\ b\qquad\text{or}\\
+&\alpha\ \ge\ \frac1{K+1}\Bigl(1-\frac1{K+1}\Bigr)^{K}\ \ge\ \frac1{e(K+1)} .
+\end{aligned}
+\]
+Equivalently: a budget that returns anything strictly below $b$ on a drift-free history requires
+$K\ge\tfrac1{e\alpha}-1$ episodes.
+\end{theorem}
+
+\begin{proof}
+For $p\in(0,1)$ let $Q_p$ be the i.i.d.\ episode law with $|\gamma_e|=b$ with probability $p$ and
+$\gamma_e=0$ otherwise (realisable at fixed observables by the kernel construction of
+Theorem~\ref{thm:aud-A}, as in Theorem~\ref{epi:thm-ident}(b)). Suppose $h(0,\dots,0)<b$. The event
+$A=\{\gamma_1=\dots=\gamma_K=0\}\cap\{|\gamma_{K+1}|=b\}$ has $Q_p$-probability $p(1-p)^K$ and on $A$
+the budget misses. Hence $\alpha\ge\sup_{p}p(1-p)^K$. Setting $p=1/(K+1)$ gives
+$\alpha\ge\frac1{K+1}(1-\frac1{K+1})^K$. Finally
+$K\ln(1-\tfrac1{K+1})=-K\ln(1+\tfrac1K)\ge-1$ since $\ln(1+x)\le x$, so
+$(1-\tfrac1{K+1})^K\ge e^{-1}$.
+\end{proof}
+
+\begin{corollary}[Bracket]\label{epi:cor-bracket}
+Let $K^\star(\alpha)$ be the least number of episodes admitting a non-vacuous level-$\alpha$
+episode budget. Then, ignoring the label-noise allowance $\delta$,
+\[
+\frac1{e\alpha}-1\ \le\ K^\star(\alpha)\ \le\ \frac1\alpha-1 .
+\]
+The upper bound is Theorem~\ref{epi:thm-conformal}'s feasibility condition; the lower bound is
+Theorem~\ref{epi:thm-floor}. At $\alpha=0.10$: between $3$ and $9$ historical deployments.
+\end{corollary}
+
+\subsection{How many labels: the per-episode price, and a control variate}
+
+% STATUS: PROVED.  Bernstein is standard; the calibration identity is a short
+% computation and is the only new part.
+\begin{proposition}[Label price per episode]\label{epi:prop-labels}
+Write $C=\mathbf 1\{f_a(X)=Y\}$ and $u=C-s(X)\in[-1,1]$ on $D$, $\sigma^2=\Var(u)$. Bernstein's
+inequality gives, with probability $1-\delta$,
+\[
+|\widehat\gamma-\gamma|\ \le\ \sqrt{\tfrac{2\sigma^2\ln(2/\delta)}{n}}+\tfrac{4\ln(2/\delta)}{3n}.
+\]
+Hence to keep the label-noise inflation in Theorem~\ref{epi:thm-conformal} below $\kappa\beta$ it
+suffices to take
+$n\ \ge\ \tfrac{8\sigma^2\ln(2/\delta)}{(\kappa\beta)^2}+\tfrac{8\ln(2/\delta)}{3\kappa\beta}$
+(bound each of the two terms by $\kappa\beta/2$).
+Moreover, if $s$ is pointwise calibrated on $D$, i.e.\ $\E[C\mid X]=s(X)$ $\mu_T$-a.s.\ on $D$, then
+\[
+\sigma^2=\E[s(1-s)]=\Var(C)-\Var(s)\ <\ \Var(C),
+\]
+so estimating the drift $\gamma$ is strictly cheaper in labels than estimating $\bar a-\tfrac12$
+directly, by exactly the variance of the calibrated score. The score acts as a control variate.
+\end{proposition}
+
+\begin{proof}
+The Bernstein statement is standard for $u\in[-1,1]$ (range $2$); the sufficient $n$ follows by
+bounding each term by $\kappa\beta/2$. For the identity, calibration gives $\E[u]=0$ and
+$\E[u^2]=\E\bigl[\E[(C-s)^2\mid X]\bigr]=\E[\Var(C\mid X)]=\E[s(1-s)]$, so $\sigma^2=\E[s(1-s)]$.
+Also $\Var(C)=\E[C]-\E[C]^2=\E[s]-\E[s]^2=\E[s(1-s)]+\bigl(\E[s^2]-\E[s]^2\bigr)
+=\E[s(1-s)]+\Var(s)$.
+\end{proof}
+
+\subsection{Why not just buy labels at deployment? The amortisation argument}
+
+% STATUS: PROVED.  (a) is a Le Cam two-point bound; (b) is arithmetic.
+\begin{proposition}[Probe lower bound and break-even]\label{epi:prop-probe}
+\begin{enumerate}
+\item[\textnormal{(a)}] Fix $\alpha,\eta\ge0$ with $2\alpha+\eta<1$ and $\varepsilon\in(0,\tfrac14]$.
+Any rule that observes $k$ i.i.d.\ labeled probes from $\mu_T(\cdot\mid D)$, commits strictly with
+probability at least $1-\eta$, and has false-adapt and false-freeze probability at most $\alpha$
+whenever $|\bar a-\tfrac12|=\varepsilon$, must use
+\[
+k\ \ge\ \frac{3(1-2\alpha-\eta)^2}{16\,\varepsilon^{2}} .
+\]
+Theorem~\ref{thm:aud-B} achieves $O(\varepsilon^{-2}\log(1/\delta))$, so the probe price is
+$\Theta(\varepsilon^{-2})$ up to the confidence log.
+\item[\textnormal{(b)}] Over $N$ future deployments the probe route costs $Nk$ labels; the episode
+route costs $Kn$ labels once and none thereafter. The routes break even at $N^\star=Kn/k$. Taking
+$\alpha=0.10$, $K=9$ (Corollary~\ref{epi:cor-bracket}), $n=8\sigma^2\ln(2/\delta)/\beta^2$
+(Proposition~\ref{epi:prop-labels} with $\kappa=1$, dropping the lower-order term) and
+$k=3(1-2\alpha-\eta)^2/(16\varepsilon^2)$ from part~(a),
+\[
+\begin{aligned}
+N^\star\ =\ \frac{Kn}{k}\ =\ \frac{384\,K\,\sigma^{2}\ln(2/\delta)}{3(1-2\alpha-\eta)^{2}}
+\cdot\Bigl(\frac{\varepsilon}{\beta}\Bigr)^{2},
+\end{aligned}
+\]
+which is $\Theta\bigl(K\sigma^2\log(1/\delta)\,(\varepsilon/\beta)^2\bigr)$: the budget route pays
+for itself after a number of deployments proportional to the squared ratio of the typical margin to
+the budget. It never pays for itself if $\beta\ll\varepsilon$, i.e.\ if the budget is so tight that
+the frontier commits on almost everything anyway.
+\end{enumerate}
+\end{proposition}
+
+\begin{proof}
+(a) Consider the two worlds $\bar a=\tfrac12\pm\varepsilon$ realised at matched observables by the
+kernel construction of Theorem~\ref{thm:aud-A}; by Lemma~\ref{lem:reduction} they have
+$\Delta>0$ and $\Delta<0$ respectively. Each probe is Bernoulli($\bar a$) for the event
+$\{f_a(X)=Y\}$. In the $+$ world, $\Pr_+[\textsc{freeze}]\le\alpha$ and
+$\Pr_+[\textsc{abstain}]\le\eta$, so $\Pr_+[\textsc{adapt}]\ge1-\alpha-\eta$; in the $-$ world
+$\Pr_-[\textsc{adapt}]\le\alpha$. Hence
+$\mathrm{TV}\bigl(\mathrm{Ber}(\tfrac12+\varepsilon)^{\otimes k},
+\mathrm{Ber}(\tfrac12-\varepsilon)^{\otimes k}\bigr)\ge1-2\alpha-\eta$. Pinsker and tensorisation
+give $\mathrm{TV}\le\sqrt{k\,\mathrm{KL}/2}$ with
+$\mathrm{KL}=2\varepsilon\ln\frac{1/2+\varepsilon}{1/2-\varepsilon}
+=2\varepsilon\cdot2\operatorname{artanh}(2\varepsilon)\le
+2\varepsilon\cdot\frac{4\varepsilon}{1-4\varepsilon^2}\le\frac{32\varepsilon^2}{3}$
+for $\varepsilon\le\tfrac14$. Thus $1-2\alpha-\eta\le4\varepsilon\sqrt{k/3}$, which rearranges to the
+claim. (b) is arithmetic on the two label counts, using
+$n\asymp\sigma^2\log(1/\delta)/\beta^2$ and $k\asymp\log(1/\alpha)/\varepsilon^2$.
+\end{proof}
+
+\begin{remark}
+Proposition~\ref{epi:prop-probe} is the honest ranking. At a \emph{single} deployment, buying
+$k$ probe labels dominates estimating a budget: the probe certifies $\sign(M+\gamma)$ directly,
+whereas the budget route certifies the weaker $|M|>|\gamma|$. The budget is worth estimating only
+because it is \emph{reused}, and reuse is exactly what E2 licenses. If E2 fails, the budget route
+loses both its guarantee and its economic rationale.
+\end{remark}
+
+\subsection{Relaxing exchangeability}
+
+% STATUS: PROVED (both parts).  (a) is a one-line change of measure; (b) is
+% Tibshirani et al. (2019) weighted conformal, cited not reproved.
+\begin{theorem}[Graceful degradation]\label{epi:thm-shift}
+Let the history be drawn from $Q$ and the current episode from $Q'$.
+\begin{enumerate}
+\item[\textnormal{(a)}] \textbf{Bounded episode-law ratio.} If $dQ'/dQ\le\rho$ then the budget of
+Theorem~\ref{epi:thm-conformal} run at level $\alpha$ satisfies
+$\Pr_{Q'}(|\gamma_{K+1}|\le\widehat\beta_{\mathrm{epi}})\ge1-\rho\alpha$. To retain level $\alpha$
+under $Q'$, run the history at level $\alpha/\rho$, which requires $K\ge\rho/\alpha-1$ episodes: a
+$\rho$-fold mismatch costs a $\rho$-fold increase in the number of historical deployments.
+\item[\textnormal{(b)}] \textbf{Episode covariate shift.} If $Q'(dw,d\gamma)=Q(d\gamma\mid w)\,Q'(dw)$
+--- the episode observables shift but the conditional drift law does not --- then weighted split
+conformal with weights $w(W)=dQ'_W/dQ_W$ is exactly valid at level $\alpha$, and $w$ is estimable
+from \emph{unlabeled} episode observables alone by a two-sample density-ratio fit.
+\end{enumerate}
+\end{theorem}
+
+\begin{proof}
+(a) Write $\mathcal H$ for the history. By Theorem~\ref{epi:thm-conformal},
+$\E_{\mathcal H}\bigl[Q(|\gamma|>\widehat\beta(\mathcal H))\bigr]\le\alpha$. Since
+$Q'(A)\le\rho\,Q(A)$ for every measurable $A$,
+$\Pr_{Q'}(\text{miss})=\E_{\mathcal H}\bigl[Q'(|\gamma|>\widehat\beta)\bigr]
+\le\rho\,\E_{\mathcal H}\bigl[Q(|\gamma|>\widehat\beta)\bigr]\le\rho\alpha$. The feasibility
+condition at level $\alpha/\rho$ is $\alpha/\rho\ge1/(K+1)$.
+(b) Under the stated factorisation the scores $S_1,\dots,S_{K+1}$ are weighted exchangeable in the
+sense of Tibshirani, Barber, Cand\`es and Ramdas (2019) with weight function
+$w$; their Theorem~2 gives exact $(1-\alpha)$ coverage for the weighted quantile
+$\inf\{s:\sum_k p_k\mathbf 1\{S_k\le s\}\ge1-\alpha\}$,
+$p_k=w(W_k)/\bigl(\sum_i w(W_i)+w(W_{K+1})\bigr)$. Estimability of $w$ from unlabeled data is the
+standard two-sample density-ratio reduction: $w\propto\frac{\pi(W)}{1-\pi(W)}$ for
+$\pi(W)=\Pr(\text{episode is current}\mid W)$, and $W$ contains no labels.
+\end{proof}
+
+% STATUS: PROVED (immediate corollary of Aud-A).
+\begin{corollary}[The relaxation is not free]\label{epi:cor-not-free}
+The conditional-stability hypothesis of Theorem~\ref{epi:thm-shift}(b) is not auditable from
+label-free deployment data: Theorem~\ref{thm:aud-A} applies verbatim at each fixed $w$, so no
+label-free statistic distinguishes $Q(\cdot\mid w)$ from any other conditional drift law with the
+same observables. It is, however, \emph{falsifiable} given retrospective labels on two episode
+populations, which a declared $\beta$ at a single deployment is not. That is the whole gain:
+the assumption moves from unfalsifiable to falsifiable, not from unverified to verified.
+\end{corollary}
+
+\subsection{Is E2 plausible? An honest answer}
+\label{epi:sec-honesty}
+
+E2 asserts that the deployment a system is about to face is exchangeable with the deployments it has
+already logged. Three observations, in decreasing order of comfort.
+
+\emph{Where it is plausible.} When the episode population is generated by a stable operational
+process --- a fixed fleet of sites, a recurring seasonal cycle, a queue of customers drawn from a
+stable market --- and the model, the candidate update rule, and the scoring function are held fixed,
+E2 is the same assumption already made whenever a deployment team computes a historical error rate
+and uses it as a forecast. It is checkable in the weak sense that its consequences (coverage of past
+budgets on later episodes) can be back-tested.
+
+\emph{Where it fails, and it is the interesting case.} E2 fails exactly when the current deployment
+differs from the history in kind rather than in draw: a new corruption mechanism, a new site, a new
+severity regime, a new sensor. This is the case that motivates test-time adaptation in the first
+place. A deployer who could guarantee E2 could often also have retrained.
+
+\emph{What the theory can and cannot say about that failure.} Theorem~\ref{epi:thm-shift}(a) prices
+the failure if $\rho$ is known, and $\rho$ is not knowable label-free
+(Corollary~\ref{epi:cor-not-free}). Theorem~\ref{epi:thm-shift}(b) removes the need for $\rho$ at the
+cost of a conditional-stability assumption that is itself unverifiable at deployment. So the honest
+summary is: \textbf{episode structure converts an unfalsifiable per-deployment declaration into a
+falsifiable population-level one, and buys a marginal (not conditional) guarantee. It does not make
+$\beta$ knowable at the deployment that needs it.} The empirical section quantifies the gap.
+
+\subsection{Numerical validation on the K-Bound artifacts}
+\label{epi:sec-numerics}
+
+Protocol. Episodes are the $6480$ CIFAR-10-C and $405$ ImageNet-C cells (condition $\times$ method
+$\times$ seed) of \S\ref{sec:exp}; $\gamma:=\Delta-M$ in benefit units as in the
+$\beta$-sweep. Each split partitions the cells into three disjoint pools: a fit pool $F$ on which the
+benefit model $M(\cdot)$ is fit, a history $H$ whose labels are revealed, and a deployment set $D$
+whose labels are used only for evaluation. $M$ is fit once on $F$ and applied identically to $H$ and
+$D$, so the scores on $H$ and $D$ are exchangeable exactly when the episode populations are. Five
+random $F/H$ splits per protocol; $\alpha=0.10$, so \textbf{the null coverage is $0.90$}: any
+protocol whose deployment set is exchangeable with its history must return $\approx0.90$, and the
+finding is the deviation. Artifacts:
+\texttt{frontier\_sweep\_v1/beta\_estimability/\{episode\_beta.py,episode\_beta\_results.json\}}.
+
+\begin{table*}[t]\centering\footnotesize
+\caption{\textbf{Episode-conformal budget coverage on CIFAR-10-C, by the episode axis that changes
+at deployment.} Nominal coverage is $0.900$ ($\alpha=0.10$) and \emph{the finding is the deviation}:
+a row at $0.90$ is the null, not a result. Coverage is pooled over deployment cells
+($24{,}300$ for the control, $32{,}400$ per leave-one-axis-out protocol); CIs are binomial.
+Artifact: \texttt{beta\_estimability/episode\_beta\_results.json}, key \texttt{summary}.}
+\label{tab:episode-coverage}
+\begin{tabular}{@{}llcccc@{}}
+\toprule
+Episode axis perturbed & changes at deployment & coverage & 95\% CI &
+$\rho_{\mathrm{impl}}$ & yield \\
+\midrule
+\multicolumn{6}{@{}l}{\textsc{cifar-10-c}, $M_{\mathrm{gbm}}$ (11 evidence coordinates, GBM)}\\
+\texttt{RAND} (control) & nothing & 0.905 & [0.901, 0.908] & 0.95 & 0.647\\
+\texttt{LOSO} & fitting seed & 0.875 & [0.872, 0.879] & 1.25 & 0.647\\
+\texttt{LOPROT} & class-balance protocol & 0.877 & [0.874, 0.881] & 1.23 & 0.657\\
+\texttt{LOBATCH} & batch size & 0.862 & [0.858, 0.866] & 1.38 & 0.655\\
+\texttt{LOMO} & adaptation method & 0.804 & [0.800, 0.808] & 1.96 & 0.630\\
+\texttt{LOSTR} & adaptation strength & 0.721 & [0.717, 0.726] & 2.79 & 0.594\\
+\texttt{LOCO} & corruption family & 0.626 & [0.621, 0.631] & 3.74 & 0.645\\
+\texttt{LOSEV} & corruption severity & 0.454 & [0.449, 0.460] & 5.46 & 0.615\\
+\midrule
+\multicolumn{6}{@{}l}{\textsc{cifar-10-c}, $M_{\mathrm{atc4}}$ (4 ATC coordinates, ridge)}\\
+\texttt{RAND} (control) & nothing & 0.912 & [0.908, 0.915] & 0.88 & 0.446\\
+\texttt{LOCO} & corruption family & 0.866 & [0.863, 0.870] & 1.34 & 0.438\\
+\texttt{LOSEV} & corruption severity & 0.595 & [0.589, 0.600] & 4.05 & 0.424\\
+\bottomrule
+\end{tabular}
+\end{table*}
+\noindent
+$\rho_{\mathrm{impl}}$ is the episode-law ratio that Theorem~\ref{epi:thm-shift}(a) would need in
+order to explain the realised miss rate, i.e.\ $(1-\text{coverage})/\alpha$; it equals $1$ under E2.
+Full tables, ImageNet-C, and the false-adapt columns are in
+\texttt{beta\_estimability/tables.md}.
+
+Four things follow.
+\emph{(i) The estimator is correct.} On the exchangeable control the realised coverage is
+$0.905$ and $0.912$ against a null of $0.900$, and a $K$-sweep reproduces the feasibility floor
+exactly: at $\alpha=0.10$ the conformal budget is infeasible for $K\in\{3,5\}$ and first attains
+$0.907\pm0.088$ at $K=9=\lceil1/\alpha\rceil-1$, matching Corollary~\ref{epi:cor-bracket}.
+\emph{(ii) Nuisance axes are safe, deployment axes are not.} Coverage is within $0.04$ of nominal
+when the seed, class-balance protocol or batch size changes, and falls to $0.626$ and $0.454$ when
+the corruption family or severity changes. The implied $\rho$ rises from $1$ to $5.5$.
+\emph{(iii) A better benefit model transfers worse.} The eleven-coordinate GBM has higher decision
+yield than the four-coordinate ATC ridge ($0.647$ vs $0.446$) and strictly worse budget transfer on
+every deployment axis ($0.626$ vs $0.866$ on \texttt{LOCO}, $0.454$ vs $0.595$ on \texttt{LOSEV}).
+Fitting the benefit surface harder shrinks the history residuals without shrinking the residuals on
+a novel episode, so the quantile it produces is too small.
+\emph{(iv) Weighted conformal restores validity by destroying yield.} With label-free evidence
+weights (Theorem~\ref{epi:thm-shift}(b)) the \texttt{LOSEV} coverage goes from $0.454$ to $1.000$
+and the decision yield goes from $0.615$ to $0.000$: the weights concentrate on the few history
+episodes that resemble the deployment, the weighted quantile runs off the end of the score list, and
+the frontier abstains everywhere. This is the same trade Theorem~\ref{thm:aud-A} forces on any
+label-free audit, now appearing inside a method that was supposed to escape it.
+
+\subsection{Two consequences for the rest of the paper}
+
+\paragraph{The $\beta$-sweep's failure was never a quantile-estimation failure.}
+The $\beta$-sweep declares $\widehat\beta$ as the plug-in $q_{0.90}$ of $|\gamma|$ on dev cells;
+Theorem~\ref{epi:thm-conformal} replaces that by the conformal order statistic. Across all $470$
+splits the two budgets differ by a median relative gap of $0.34\%$, and the median coverage
+difference is exactly $0$. At $K$ in the thousands the conformal correction moves one order
+statistic and nothing else. The $\beta$-sweep's negative result therefore survives intact: what it
+measured was the failure of E2, not the failure of a quantile estimator, and no conformal
+machinery repairs it. Conversely, when E2 does hold the frontier operationalises: on an exchangeable
+three-way split of CIFAR-10-C the episode budget delivers decision yield $0.641$ at regret $0.0019$
+and $\mathrm{FA}_{\mathrm u}=0.0002$, against the shipped conformal-interval rule's $0.662$,
+$0.0015$ and $0.0000$ on the same cells. On ImageNet-C it does not: yield $0.344$ versus $0.508$.
+
+\paragraph{E2 is not verifiable, but its observable component is falsifiable.}
+Corollary~\ref{epi:cor-not-free} says no label-free statistic certifies the conditional part of E2.
+The \emph{marginal} part is a different matter: $\Delta_{\mathrm{sep}}=\mathrm{AUC}$ of a
+cross-fitted classifier separating history from deployment episodes on the evidence $Z$ alone is
+computable without any labels, and equals $\tfrac12$ under E2. Measured across the $470$ splits it
+correlates with realised coverage at Pearson $r=-0.35$ ($p=1.2\times10^{-14}$), Spearman
+$\rho=-0.35$, and it reads $0.497\pm0.033$ on the exchangeable control, as it must. Used as a
+one-sided screen at $\Delta_{\mathrm{sep}}<0.70$: mean coverage $0.905$ with $7.7\%$ of splits below
+$0.85$; above the threshold, mean coverage $0.782$ with $43.3\%$ below $0.85$. So a low separability
+reading is informative and a high one is only a warning --- which is exactly the asymmetry
+Corollary~\ref{epi:cor-not-free} predicts, since the residual $65\%$ of the coverage variation lives
+in the conditional component that Theorem~\ref{thm:aud-A} makes invisible. We recommend reporting
+$\Delta_{\mathrm{sep}}$ alongside any episode budget; we do not recommend treating it as a
+certificate.
+
+\subsection{What is left open}
+
+\begin{conjecture}[Estimable budgets without exchangeability]\label{epi:conj-open}
+Is there a structural assumption, weaker than E2 and \emph{falsifiable from retrospective labels on
+the history alone}, under which $\beta^\star$ for a novel episode is identified? The two natural
+candidates both fail to be that: bounded episode-law ratio (Theorem~\ref{epi:thm-shift}(a)) needs an
+unknowable $\rho$; conditional stability (Theorem~\ref{epi:thm-shift}(b)) is falsifiable only with
+labels from the novel population, which is what is missing. A positive answer would need a drift
+functional that extrapolates off the support of the history, and
+Theorem~\ref{epi:thm-ident}(b) shows no such functional can be built from unlabeled observables
+alone.
+\end{conjecture}
+
+\noindent This is stated as a conjecture, not a theorem: we neither exhibit such an assumption nor
+prove that none exists.
+
+We did not pursue an anytime-valid within-episode budget from the e-process machinery. The reason is
+structural rather than technical: within one episode $\gamma$ is a fixed unknown number and every
+observable in the adaptation stream is label-free, so Theorem~\ref{thm:aud-A} applies to any
+stopping-time-measurable statistic of that stream. Sequential machinery buys anytime validity, not
+identification.

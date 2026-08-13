@@ -1,159 +1,186 @@
 {
- "schema_version": "kbound-result-manifest-v1",
- "created_at": "2026-07-22T05:14:47.864999+00:00",
- "code_commit": "4775850612bc7fa9fc0e05096ec54a38d0a0fc57",
- "runtime": {
-  "builder": "docs/research/kbound/scripts/build_result_manifest.py"
- },
- "results": [
-  {
-   "claim_id": "KB-CLAIM-010",
-   "dataset": "CIFAR-10-C stress grid",
-   "protocol": "STRESS_GRID_MULTISEED_PROTOCOL_A_v1",
-   "status": "supported",
-   "source_artifact": "experiments/kbound/results/stress_grid_multiseed_v1/LOCKED_ANALYSIS_RESULTS.json",
-   "config_hash": null,
-   "quantile_rule": "loo_gbr + conformal_on_loo_residuals",
-   "metrics": {
-    "artifact_sha256": "fbada73a499891dca52749501311999868828e95a0fe04a5e8916466ef6f59ce",
-    "artifact_bytes": 11754
-   },
-   "caveat_2026_07_26": "source_artifact LOCKED_ANALYSIS_RESULTS.json holds 0.0016259/0.0079757/0.1239368, which is the STRESS-GRID aggregate. The promoted panel row comes from mixed_headtohead_v1 (KB-CLAIM-026/027). Both are real 5-seed aggregates; only the head-to-head one is the panel source. SUBMISSION_LEDGER.md section 5.",
-   "source_artifact_status": "present; sha256 verifies"
+  "schema_version": "kbound-result-manifest-v1",
+  "created_at": "2026-08-11T22:25:31.535475+00:00",
+  "code_commit": "1cf45d439b4151d8f698926c4a0a80aef77721cb",
+  "runtime": {
+    "builder": "docs/research/kbound/scripts/build_result_manifest.py",
+    "worktree_dirty": true
   },
-  {
-   "claim_id": "KB-CLAIM-011",
-   "dataset": "ImageNet-C",
-   "protocol": "imagenetc_protocol_E_v1",
-   "status": "supported",
-   "source_artifact": "experiments/kbound/results/win_hunt_v5_imagenetc_ms/pooled_5seed/percondition_bootstrap_pooled.json",
-   "config_hash": null,
-   "quantile_rule": "loo_gbr + conformal",
-   "metrics": {
-    "artifact_sha256": "deaf44442d4eac627a631ebc51bc41da34e14aa3afa87e97b71131cf9c446393",
-    "artifact_bytes": 2153
-   },
-   "caveat_2026_07_26": "DEMOTED 2026-07-26: point-estimate no-harm vs always-freeze, not a CI-supported beats-both. Under the declared leave-one-out-of-pool radius: 0.0289/0.0529/0.0319, FA_u 1/135, seed-averaged freeze-gap CI [-0.0085, +0.0038]. SUBMISSION_LEDGER.md section 9.",
-   "source_artifact_status": "present; sha256 verifies"
-  },
-  {
-   "claim_id": "KB-CLAIM-020",
-   "dataset": "Office-Home",
-   "protocol": "OFFICEHOME_PROTOCOL_M_v2",
-   "status": "no-harm",
-   "source_artifact": "research_lock/KBOUND_WIN_BOOTSTRAP_CIS_oof.json",
-   "config_hash": null,
-   "quantile_rule": "oof_conformal",
-   "metrics": {
-    "artifact_sha256": "ebb185dc2efe4ff7e926e8d3ed4170398baabc02aaea5329cbc19fdd4480ed3e",
-    "artifact_bytes": 2665
-   },
-   "caveat_2026_07_26": "The two raw record files behind this value (officehome_full_target{val,test}/result_*.json) are ABSENT, and the entire experiments/kbound/officehome/ runner directory is NUL-filled placeholders. The value is an OOF-lock design value, not raw-traceable. SUBMISSION_LEDGER.md section 8.",
-   "source_artifact_status": "present; sha256 verifies"
-  },
-  {
-   "claim_id": "KB-CLAIM-021",
-   "dataset": "iWildCam",
-   "protocol": "IWILDCAM_PROTOCOL_H_v2",
-   "status": "no-harm",
-   "source_artifact": "research_lock/KBOUND_WIN_BOOTSTRAP_CIS_oof.json",
-   "config_hash": null,
-   "quantile_rule": "oof_conformal",
-   "metrics": {
-    "artifact_sha256": "ebb185dc2efe4ff7e926e8d3ed4170398baabc02aaea5329cbc19fdd4480ed3e",
-    "artifact_bytes": 2665
-   },
-   "caveat_2026_07_26": "The raw record file behind this value (iwildcam_full_test/result_e40faf29.json) is ABSENT. 1 ADAPT decision -- guarantee untested. SUBMISSION_LEDGER.md section 8.",
-   "source_artifact_status": "present; sha256 verifies"
-  },
-  {
-   "claim_id": "KB-CLAIM-024",
-   "dataset": "Office-Home+iWildCam+Camelyon OOD",
-   "protocol": "mixed_protocol_oof_v2",
-   "status": "supported",
-   "source_artifact": "research_lock/KBOUND_MIXED_STREAM_v2.json",
-   "config_hash": null,
-   "quantile_rule": "per_dataset_dev_lock_loo_conformal",
-   "metrics": {
-    "artifact_sha256": "2aebfea3544c83c0432b239a9ec29a15c054f28d12672d6b33fbd205ae3f824f",
-    "artifact_bytes": 998
-   },
-   "caveat_2026_07_26": "Constructed routing mixture, not unseen-domain transfer. Built from three tracks whose raw record files are absent, so it inherits their provenance gaps.",
-   "source_artifact_status": "present; sha256 verifies"
-  },
-  {
-   "claim_id": "KB-CLAIM-026",
-   "dataset": "CIFAR-10-C stress grid (Tent)",
-   "protocol": "MIXED_HEADTOHEAD_PROTOCOL_v1",
-   "status": "supported",
-   "source_artifact": "experiments/kbound/results/mixed_headtohead_v1/HEADTOHEAD_RESULTS_cifar10c_tent_primary.json",
-   "config_hash": null,
-   "quantile_rule": "loo_gbr + conformal (KGA); faithful POEM/AETTA ports",
-   "metrics": {
-    "artifact_sha256": "7d6d0b4986c803874c49b0896ad18d16a72c573c63dd67b482123c3d905347d7",
-    "artifact_bytes": 9175
-   },
-   "source_artifact_status": "present; sha256 verifies"
-  },
-  {
-   "claim_id": "KB-CLAIM-027",
-   "dataset": "MNIST two-view controlled",
-   "protocol": "CONTROLLED_MULTIMODAL_PROTOCOL_D33_v1",
-   "status": "supported",
-   "source_artifact": "research_lock/CONTROLLED_MULTIMODAL_PROTOCOL_D33_v1.yaml",
-   "config_hash": null,
-   "quantile_rule": "loo_conformal",
-   "metrics": {
-    "artifact_sha256": "0208c6ae6b050a43e9ce25ece182aeeac2476ce235a87bc22adf084ea0c2b383",
-    "artifact_bytes": 2854
-   },
-   "source_artifact_status": "present; sha256 verifies"
-  },
-  {
-   "claim_id": "KB-CLAIM-041",
-   "dataset": "PACS",
-   "protocol": "PACS_MULTI_SEED_v1",
-   "status": "supported",
-   "source_artifact": "experiments/kbound/results/pacs_multiseed_v1/PACS_MULTISEED_RESULTS.json",
-   "config_hash": null,
-   "quantile_rule": "loo_jackknife_quantile",
-   "metrics": {
-    "n_seeds": 3,
-    "n_decisions": 216,
-    "regret_kga_mean_across_domains": 0.043136388063430786,
-    "regret_adapt_mean_across_domains": 0.017636683941991242,
-    "regret_freeze_mean_across_domains": 0.04460611166777434,
-    "false_adapt_reported_rate": 0.009259259259259259,
-    "false_adapt_count_status": "not_retained",
-    "beats_both_promoted": false,
-    "artifact_sha256": "669c36974afd0d64e28d6e7ba61e9fd33f5c3c4659028b0ea9079cf5ab0c26df",
-    "artifact_bytes": 7743
-   },
-   "source_artifact_status": "present; sha256 verifies"
-  },
-  {
-   "claim_id": "KB-CLAIM-042",
-   "dataset": "ImageNet-R",
-   "protocol": "IMAGENETR_PROTOCOL_D_v1",
-   "status": "supported",
-   "source_artifact": "experiments/kbound/results/imagenetr_protocol_d_multiseed_v1/MULTISEED_ANALYSIS_RESULTS.json",
-   "config_hash": null,
-   "quantile_rule": "per-seed conformal radius; paired bootstrap with Holm correction",
-   "metrics": {
-    "n_seeds": 4,
-    "n_backbones": 10,
-    "conditions_per_backbone_seed": 12,
-    "regret_kga_mean_across_backbones": 0.011203124999999998,
-    "regret_adapt_mean_across_backbones": 0.0063593750000000004,
-    "regret_freeze_mean_across_backbones": 0.03252604166666666,
-    "false_adapt_num": 1,
-    "false_adapt_den": 480,
-    "beats_both_candidates": 0,
-    "artifact_sha256": "7203e2f9e5111a95999644f64f6a479ee3a09247aab0833b66fe469576d0d359",
-    "artifact_bytes": 32372
-   },
-   "source_artifact_status": "present; sha256 verifies"
+  "results": [
+    {
+      "claim_id": "KB-CLAIM-010",
+      "dataset": "CIFAR-10-C stress grid",
+      "protocol": "STRESS_GRID_MULTISEED_PROTOCOL_A_v1",
+      "status": "supported",
+      "source_artifact": "experiments/kbound/results/stress_grid_multiseed_v1/LOCKED_ANALYSIS_RESULTS.json",
+      "config_hash": null,
+      "quantile_rule": "loo_gbr + conformal_on_loo_residuals",
+      "metrics": {
+        "artifact_sha256": "fbada73a499891dca52749501311999868828e95a0fe04a5e8916466ef6f59ce",
+        "artifact_bytes": 11754
+      }
+    },
+    {
+      "claim_id": "KB-CLAIM-011",
+      "dataset": "ImageNet-C",
+      "protocol": "imagenetc_protocol_E_v1",
+      "status": "no-harm",
+      "source_artifact": "experiments/kbound/results/reconciled_panels_v1/canonical_panel_results.json",
+      "config_hash": null,
+      "quantile_rule": "exact_rank_leave_one_condition_out_residual_calibration",
+      "metrics": {
+        "n_seeds": 5,
+        "n_decisions": 135,
+        "regret_kga": 0.028892592368302522,
+        "regret_adapt": 0.05293333342781773,
+        "regret_freeze": 0.031894444481090266,
+        "false_adapt_num": 1,
+        "false_adapt_den": 135,
+        "ci_robust_beats_both": false,
+        "artifact_sha256": "fb2e4b989a55c1cb9525f18dc9d26c93bc8a2e04879f43e0e9fdb864b2c48a30",
+        "artifact_bytes": 313853
+      }
+    },
+    {
+      "claim_id": "KB-CLAIM-020",
+      "dataset": "Office-Home",
+      "protocol": "OFFICEHOME_PROTOCOL_M_v2",
+      "status": "descriptive",
+      "source_artifact": "experiments/kbound/results/reconciled_panels_v1/canonical_panel_results.json",
+      "config_hash": null,
+      "quantile_rule": "calibration-record LOO residuals + exact-rank transfer radius",
+      "metrics": {
+        "n_decisions": 35,
+        "regret_kga": 0.01582417582417583,
+        "regret_adapt": 0.04681318681318681,
+        "regret_freeze": 0.01582417582417583,
+        "false_adapt_num": 0,
+        "false_adapt_den": 35,
+        "decision_counts": {
+          "ADAPT": 0,
+          "FREEZE": 11,
+          "ABSTAIN": 24
+        },
+        "ci_robust_beats_both": false,
+        "a7_status": "not_established",
+        "artifact_sha256": "fb2e4b989a55c1cb9525f18dc9d26c93bc8a2e04879f43e0e9fdb864b2c48a30",
+        "artifact_bytes": 313853
+      }
+    },
+    {
+      "claim_id": "KB-CLAIM-021",
+      "dataset": "iWildCam",
+      "protocol": "IWILDCAM_PROTOCOL_H_v2",
+      "status": "descriptive",
+      "source_artifact": "experiments/kbound/results/reconciled_panels_v1/canonical_panel_results.json",
+      "config_hash": null,
+      "quantile_rule": "seed-0 calibration to seed-1 test with exact-rank radius",
+      "metrics": {
+        "n_decisions": 72,
+        "regret_kga": 0.004102369062102953,
+        "regret_adapt": 0.10282996048460004,
+        "regret_freeze": 0.004102369062102953,
+        "false_adapt_num": 0,
+        "false_adapt_den": 72,
+        "decision_counts": {
+          "ADAPT": 0,
+          "FREEZE": 21,
+          "ABSTAIN": 51
+        },
+        "ci_robust_beats_both": false,
+        "a7_status": "not_established",
+        "artifact_sha256": "fb2e4b989a55c1cb9525f18dc9d26c93bc8a2e04879f43e0e9fdb864b2c48a30",
+        "artifact_bytes": 313853
+      }
+    },
+    {
+      "claim_id": "KB-CLAIM-024",
+      "dataset": "Office-Home+iWildCam+Camelyon OOD",
+      "protocol": "mixed_protocol_oof_v2",
+      "status": "diagnostic",
+      "source_artifact": "research_lock/KBOUND_MIXED_STREAM_v2.json",
+      "config_hash": null,
+      "quantile_rule": "per_dataset_dev_lock_loo_conformal",
+      "metrics": {
+        "artifact_sha256": "2aebfea3544c83c0432b239a9ec29a15c054f28d12672d6b33fbd205ae3f824f",
+        "artifact_bytes": 998
+      }
+    },
+    {
+      "claim_id": "KB-CLAIM-026",
+      "dataset": "CIFAR-10-C stress grid (Tent)",
+      "protocol": "MIXED_HEADTOHEAD_PROTOCOL_v1",
+      "status": "supported",
+      "source_artifact": "experiments/kbound/results/mixed_headtohead_v1/HEADTOHEAD_RESULTS_cifar10c_tent_primary.json",
+      "config_hash": null,
+      "quantile_rule": "loo_gbr + conformal (KGA); faithful POEM/AETTA ports",
+      "metrics": {
+        "artifact_sha256": "7d6d0b4986c803874c49b0896ad18d16a72c573c63dd67b482123c3d905347d7",
+        "artifact_bytes": 9175
+      }
+    },
+    {
+      "claim_id": "KB-CLAIM-027",
+      "dataset": "MNIST two-view controlled",
+      "protocol": "CONTROLLED_MULTIMODAL_PROTOCOL_D33_v1",
+      "status": "supported",
+      "source_artifact": "research_lock/CONTROLLED_MULTIMODAL_PROTOCOL_D33_v1.yaml",
+      "config_hash": null,
+      "quantile_rule": "loo_conformal",
+      "metrics": {
+        "artifact_sha256": "0208c6ae6b050a43e9ce25ece182aeeac2476ce235a87bc22adf084ea0c2b383",
+        "artifact_bytes": 2854
+      }
+    },
+    {
+      "claim_id": "KB-CLAIM-041",
+      "dataset": "PACS",
+      "protocol": "PACS_MULTI_SEED_v1",
+      "status": "diagnostic",
+      "source_artifact": "experiments/kbound/results/reconciled_panels_v1/canonical_panel_results.json",
+      "config_hash": null,
+      "quantile_rule": "loo_jackknife_quantile",
+      "metrics": {
+        "n_seeds": 3,
+        "n_domain_seed_units": 12,
+        "regret_kga_mean_across_domains": 0.043136388063430786,
+        "regret_adapt_mean_across_domains": 0.01763668394199124,
+        "regret_freeze_mean_across_domains": 0.04460611166777434,
+        "false_adapt_reported_rate": 0.009259259259259259,
+        "decision_replay_available": false,
+        "beats_both_promoted": false,
+        "artifact_sha256": "fb2e4b989a55c1cb9525f18dc9d26c93bc8a2e04879f43e0e9fdb864b2c48a30",
+        "artifact_bytes": 313853
+      }
+    },
+    {
+      "claim_id": "KB-CLAIM-042",
+      "dataset": "ImageNet-R",
+      "protocol": "IMAGENETR_PROTOCOL_D_v1",
+      "status": "diagnostic",
+      "source_artifact": "experiments/kbound/results/reconciled_panels_v1/canonical_panel_results.json",
+      "config_hash": null,
+      "quantile_rule": "per-backbone/per-seed exact-rank LOO residual calibration",
+      "metrics": {
+        "n_seeds": 4,
+        "n_backbones": 10,
+        "conditions_per_backbone_seed": 12,
+        "regret_kga_mean_across_backbones": 0.014968749999999998,
+        "regret_adapt_mean_across_backbones": 0.0063593750000000004,
+        "regret_freeze_mean_across_backbones": 0.03252604166666666,
+        "false_adapt_num": 0,
+        "false_adapt_den": 480,
+        "beats_both_candidates": 0,
+        "worse_than_always_adapt_candidates": 8,
+        "artifact_sha256": "fb2e4b989a55c1cb9525f18dc9d26c93bc8a2e04879f43e0e9fdb864b2c48a30",
+        "artifact_bytes": 313853
+      }
+    }
+  ],
+  "reconciliation_source": {
+    "canonical_panel": "experiments/kbound/results/reconciled_panels_v1/canonical_panel_results.json",
+    "canonical_panel_sha256": "fb2e4b989a55c1cb9525f18dc9d26c93bc8a2e04879f43e0e9fdb864b2c48a30",
+    "source_manifest": "experiments/kbound/results/reconciled_panels_v1/source_manifest.json",
+    "source_manifest_sha256": "e7c3431c717c30b157ce578842873517709cdc595cbc2e39bc7e7a172ea741f9"
   }
- ],
- "_correction_2026_07_26": "Evidence tiers revised after an external five-specialist review. See docs/research/kbound/SUBMISSION_LEDGER.md sections 3, 5, 8, 9. code_commit above is unverifiable: there is no .git directory in this release."
 }

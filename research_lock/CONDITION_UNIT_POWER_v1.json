@@ -1,0 +1,31 @@
+{
+  "artifact": "condition_unit_power_v1",
+  "question": "At the corruption-family resampling unit -- the defensible one under (A5) -- which beats-both claims are recoverable, and what would a new track need?",
+  "method": "Paired gap vs always-adapt per corruption family, from NUMBERS_PACK item17 per_corruption blocks. Standardised effect d = |mean gap| / sd(gap across families). n required for 95% two-sided, 80% power = (1.96+0.842)^2 / d^2. ImageNet-C SAR sd is back-derived from its published cluster_by_condition CI (n_units=27).",
+  "results": [
+    {"track": "CIFAR-10-C Tent", "effect": -0.006350, "sd_across_conditions": 0.004776,
+     "d": 1.329, "n_needed": 5, "n_available": 6, "verdict": "CLEARS"},
+    {"track": "CIFAR-10-C EATA", "effect": -0.002001, "sd_across_conditions": 0.003293,
+     "d": 0.608, "n_needed": 22, "n_available": 6, "verdict": "SHORT"},
+    {"track": "ImageNet-C SAR", "effect": -0.026511, "sd_across_conditions": 0.130300,
+     "d": 0.203, "n_needed": 190, "n_available": 27, "verdict": "SHORT"}
+  ],
+  "benchmark_ceiling": {
+    "cifar10c_corruption_families": 15,
+    "imagenetc_corruption_families": 15,
+    "imagenetc_sar_grid_families_currently_covered": 3,
+    "min_detectable_d_at_n15": 0.723
+  },
+  "conclusions": [
+    "Tent beats-both survives the corruption unit and should be promoted as primary.",
+    "EATA needs 22 independent families against a 15-family ceiling. Not recoverable by more compute or more seeds; it should move permanently to no-harm.",
+    "ImageNet-C SAR needs 190. Expanding its grid from 3 to all 15 corruption families would NOT rescue it. It should move permanently to no-harm.",
+    "The obstruction is not effect size. SAR's effect is 4.2x Tent's while its across-condition sd is 27.3x Tent's; sd/|effect| is 0.75 (Tent), 1.65 (EATA), 4.91 (SAR)."
+  ],
+  "design_constraint_for_a_new_track": {
+    "statement": "Visible harm is concentrated harm, and concentration destroys power at the condition unit. A track where always-adapt loses badly on a few conditions cannot show beats-both at the correct resampling unit.",
+    "requirement": "harm that is large AND uniform across conditions: sd across conditions <= 1.38x the mean gap, on a benchmark with at least 15 independent conditions",
+    "implication": "Harmful-dominated regimes are the wrong target: there KGA correctly freezes and merely ties always-freeze, so beats-both is unreachable and the guarantee goes untested (cf. ImageNet-C Tent at 56 percent harmful, 0 adapts)."
+  },
+  "status": "derived from committed artifacts; no new runs"
+}

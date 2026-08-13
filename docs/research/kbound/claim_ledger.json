@@ -1,745 +1,755 @@
 {
- "schema_version": "kbound-claim-ledger-v1",
- "generated_at": "2026-07-01",
- "claims": [
-  {
-   "claim_id": "KB-CLAIM-001",
-   "claim_text": "Label-free adaptation benefit sign is identifiable iff observable disagreement margin exceeds calibration-drift budget.",
-   "claim_type": "theorem",
-   "claim_tier": "A",
-   "protocol": "theory_validation",
-   "dataset": "synthetic validators",
-   "candidate_adapter": "n/a",
-   "calibration_method": "n/a",
-   "test_split": "n/a",
-   "supporting_artifacts": [
-    "experiments/kbound/theory_validation/results_thm2_regret.json",
-    "experiments/kbound/theory_validation/results_thm5_multiclass.json",
-    "experiments/kbound/theory_validation/results_frontier.json",
-    "experiments/kbound/theory_validation/results_benefit_frontier.json"
-   ],
-   "assumptions": [
-    "declared target class",
-    "risk alignment on identifiable region"
-   ],
-   "status": "supported",
-   "allowed_wording": "iff identifiability on declared drift class",
-   "forbidden_wording": [
-    "assumption-free",
-    "universal"
-   ]
-  },
-  {
-   "claim_id": "KB-CLAIM-002",
-   "claim_text": "Matched-evidence opposite-benefit worlds force abstention (impossibility).",
-   "claim_type": "theorem",
-   "claim_tier": "A",
-   "protocol": "theory_validation",
-   "dataset": "witness",
-   "candidate_adapter": "n/a",
-   "calibration_method": "n/a",
-   "test_split": "n/a",
-   "supporting_artifacts": [
-    "docs/research/kbound/results/witness/witness_clean.json",
-    "experiments/kbound/theory_validation/results_thm1_lecam.json",
-    "experiments/kbound/theory_validation/results_knowability_dichotomy.json"
-   ],
-   "assumptions": [
-    "non-identifiability construction"
-   ],
-   "status": "supported",
-   "allowed_wording": "information-theoretically necessary abstention",
-   "forbidden_wording": "engineering gap only"
-  },
-  {
-   "claim_id": "KB-CLAIM-003",
-   "claim_text": "KGA certificate controls unconditional false-adapt rate FA_u at level alpha under split conformal + stated assumptions.",
-   "claim_type": "theorem",
-   "claim_tier": "A",
-   "protocol": "certificate",
-   "dataset": "n/a",
-   "candidate_adapter": "mechanism-agnostic",
-   "calibration_method": "split_conformal_quantile",
-   "test_split": "calibration conformal split",
-   "supporting_artifacts": [
-    "docs/research/kbound/kbound_pkg/kbound/certificate.py",
-    "experiments/kbound/theory_validation/results_thm3_evalue_alpha005.json"
-   ],
-   "assumptions": [
-    "exchangeable calibration pairs",
-    "risk alignment",
-    "valid coverage of residuals"
-   ],
-   "status": "supported",
-   "allowed_wording": "FA_u <= alpha under stated assumptions",
-   "forbidden_wording": [
-    "FA_c <= alpha",
-    "guaranteed safe in the wild",
-    "assumption-free"
-   ]
-  },
-  {
-   "claim_id": "KB-CLAIM-004",
-   "claim_text": "Conditional false-adapt FA_c is bounded by alpha.",
-   "claim_type": "theorem",
-   "claim_tier": "A",
-   "protocol": "n/a",
-   "dataset": "n/a",
-   "candidate_adapter": "n/a",
-   "calibration_method": "n/a",
-   "test_split": "n/a",
-   "supporting_artifacts": [],
-   "assumptions": [],
-   "status": "withdrawn",
-   "allowed_wording": "report FA_c descriptively only",
-   "forbidden_wording": "FA_c <= alpha guaranteed"
-  },
-  {
-   "claim_id": "KB-CLAIM-010",
-   "claim_text": "CIFAR-10-C stress grid: KGA beats both always-adapt and always-freeze for Tent and EATA.",
-   "claim_type": "empirical",
-   "claim_tier": "B",
-   "protocol": "STRESS_GRID_MULTISEED_PROTOCOL_A_v1",
-   "dataset": "CIFAR-10-C stress grid",
-   "candidate_adapter": "tent,eata",
-   "calibration_method": "loo_gbr + conformal_on_loo_residuals",
-   "test_split": "per-condition held-out eval within seed",
-   "supporting_artifacts": [
-    "experiments/kbound/results/stress_grid_multiseed_v1/LOCKED_ANALYSIS_RESULTS.json",
-    "docs/research/kbound/results_source.json"
-   ],
-   "assumptions": [
-    "locked grid",
-    "Holm-corrected CIs"
-   ],
-   "status": "supported",
-   "allowed_wording": "beats both under Protocol A v1 stress grid",
-   "forbidden_wording": [
-    "universal TTA improvement",
-    "natural-shift win"
-   ]
-  },
-  {
-   "claim_id": "KB-CLAIM-011",
-   "claim_text": "ImageNet-C SAR harmful operating point: KGA beats both with zero observed FA_u.",
-   "claim_type": "empirical",
-   "claim_tier": "B",
-   "protocol": "imagenetc_protocol_E_v1",
-   "dataset": "ImageNet-C",
-   "candidate_adapter": "sar_fixed",
-   "calibration_method": "loo_gbr + conformal",
-   "test_split": "locked harmful cells",
-   "supporting_artifacts": [
-    "experiments/kbound/results/win_hunt_v5_imagenetc_ms/pooled_5seed/percondition_bootstrap_pooled.json",
-    "docs/research/kbound/results_source.json"
-   ],
-   "assumptions": [
-    "mechanism-faithful SAR re-run"
-   ],
-   "status": "supported",
-   "allowed_wording": "beats both on harmful SAR operating point",
-   "forbidden_wording": "all ImageNet-C candidates"
-  },
-  {
-   "claim_id": "KB-CLAIM-012",
-   "claim_text": "Finite-sample distribution-free jackknife+ guarantee for stress-grid calibration.",
-   "claim_type": "empirical",
-   "claim_tier": "B",
-   "protocol": "STRESS_GRID_MULTISEED_PROTOCOL_A_v1",
-   "dataset": "CIFAR-10-C",
-   "candidate_adapter": "tent,eata,sar",
-   "calibration_method": "loo_gbr",
-   "test_split": "per condition",
-   "supporting_artifacts": [
-    "docs/research/kbound/scripts/cifar_tent_mps_v2.py"
-   ],
-   "assumptions": [],
-   "status": "withdrawn",
-   "allowed_wording": "split/LOO conformal empirical certificate; assumptions in guarantee box",
-   "forbidden_wording": [
-    "jackknife+",
-    "distribution-free without assumptions"
-   ]
-  },
-  {
-   "claim_id": "KB-CLAIM-020",
-   "claim_text": "Office-Home Protocol M v2: KGA is no-harm OOF (beats always-adapt, ties always-freeze).",
-   "claim_type": "empirical",
-   "claim_tier": "B",
-   "protocol": "OFFICEHOME_PROTOCOL_M_v2",
-   "dataset": "Office-Home",
-   "candidate_adapter": "dev-locked",
-   "calibration_method": "oof_conformal",
-   "test_split": "held-out target domains",
-   "supporting_artifacts": [
-    "research_lock/KBOUND_WIN_BOOTSTRAP_CIS_oof.json",
-    "experiments/kbound/results/officehome_protocol_M_v2/protocol_result.json"
-   ],
-   "assumptions": [
-    "dev lock",
-    "OOF radius"
-   ],
-   "status": "no-harm",
-   "allowed_wording": "no-harm under the stated held-out protocol: ties always-freeze, beats always-adapt, FA_u = 0 over 22 ADAPT decisions",
-   "forbidden_wording": [
-    "beats both",
-    "natural-shift win",
-    "uniformly no-harm",
-    "uniform no-harm"
-   ]
-  },
-  {
-   "claim_id": "KB-CLAIM-021",
-   "claim_text": "iWildCam Protocol H v2: KGA is no-harm OOF.",
-   "claim_type": "empirical",
-   "claim_tier": "B",
-   "protocol": "IWILDCAM_PROTOCOL_H_v2",
-   "dataset": "iWildCam",
-   "candidate_adapter": "dev-locked",
-   "calibration_method": "oof_conformal",
-   "test_split": "held-out",
-   "supporting_artifacts": [
-    "research_lock/KBOUND_WIN_BOOTSTRAP_CIS_oof.json",
-    "experiments/kbound/results/iwildcam_protocol_H_v2/protocol_result.json"
-   ],
-   "assumptions": [
-    "dev lock",
-    "OOF radius"
-   ],
-   "status": "no-harm",
-   "allowed_wording": "no-harm; damage-prevention",
-   "forbidden_wording": "beats both"
-  },
-  {
-   "claim_id": "KB-CLAIM-022",
-   "claim_text": "Camelyon17 Protocol G pooled beats-both headline.",
-   "claim_type": "empirical",
-   "claim_tier": "B",
-   "protocol": "CAMELYON17_PROTOCOL_G_v1",
-   "dataset": "Camelyon17",
-   "candidate_adapter": "sar",
-   "calibration_method": "in_sample_radius",
-   "test_split": "pooled id_val (invalid)",
-   "supporting_artifacts": [
-    "research_lock/CAMELYON17_PROTOCOL_G_RECONCILED_v2.yaml  (LIVE: the reconciliation verdict and the domain-pooling root cause; sealed, hash verifies)",
-    "archive/audit_only/camelyon17_protocol_G_pooled_beats_both  (NOT MATERIALIZED ON DISK -- the withdrawn artifact was never committed to this path)"
-   ],
-   "assumptions": [],
-   "status": "withdrawn",
-   "allowed_wording": "withdrawn pooling artifact; genuine OOD no-harm",
-   "forbidden_wording": "beats both Camelyon17",
-   "artifact_pointer_correction_2026_07_26": "The sole supporting_artifact was a path that does not exist, so the withdrawal had no live evidence pointer. Repointed to the sealed reconciliation YAML. The deeper evidence (audits/integrity_2026-06-20/camelyon_reconciliation/recon_results.json) is also absent; see SUBMISSION_LEDGER.md section 8."
-  },
-  {
-   "claim_id": "KB-CLAIM-023",
-   "claim_text": "Cross-protocol mixed aggregate beats both always-adapt and always-freeze.",
-   "claim_type": "empirical",
-   "claim_tier": "B",
-   "protocol": "KBOUND_MIXED_STREAM_v1",
-   "dataset": "Office-Home+iWildCam+Camelyon",
-   "candidate_adapter": "per-dataset dev lock",
-   "calibration_method": "in_sample_radius (invalid)",
-   "test_split": "aggregated conditions",
-   "supporting_artifacts": [],
-   "assumptions": [],
-   "status": "withdrawn",
-   "allowed_wording": "withdrawn in-sample-radius artifact; superseded by mixed_protocol_oof_v2",
-   "forbidden_wording": [
-    "13x",
-    "24x",
-    "beats both mixed"
-   ],
-   "evidence_tier_2026_07_26": "sealed_not_recomputable_from_release",
-   "evidence_tier_note": "The promoted regret triple 0.0000/0.0000/0.1381 (n=18) is recorded ONLY at research_lock/CAMELYON17_PROTOCOL_G_RECONCILED_v2.yaml:29, a hand-transcribed summary; nothing in the release recomputes it, and the promoted FA_u = 0 is recorded nowhere. SUBMISSION_LEDGER.md section 8a."
-  },
-  {
-   "claim_id": "KB-CLAIM-024",
-   "claim_text": "Cross-protocol mixed aggregate (mixed_protocol_oof_v2) beats both fixed policies under per-dataset OOF conformal calibration.",
-   "claim_type": "empirical",
-   "claim_tier": "B",
-   "protocol": "mixed_protocol_oof_v2",
-   "dataset": "Office-Home+iWildCam+Camelyon OOD",
-   "candidate_adapter": "per-dataset dev lock",
-   "calibration_method": "per_dataset_dev_lock_loo_conformal",
-   "test_split": "n=143 pooled test conditions",
-   "supporting_artifacts": [
-    "research_lock/KBOUND_MIXED_STREAM_v2.json",
-    "experiments/kbound/results/mixed_protocol_oof_v2/mixed_protocol_oof_v2_result.json"
-   ],
-   "assumptions": [
-    "constructed aggregate",
-    "not universal cross-dataset gate"
-   ],
-   "status": "supported",
-   "allowed_wording": "beats both on constructed cross-protocol aggregate only",
-   "forbidden_wording": [
-    "universal mixed deployment",
-    "natural-shift win",
-    "13x",
-    "24x"
-   ]
-  },
-  {
-   "claim_id": "KB-CLAIM-025",
-   "claim_text": "Universal label-free benefit bracketing (conj:gen) does not exist; minimal supplement is one bit.",
-   "claim_type": "theorem",
-   "claim_tier": "A",
-   "protocol": "theory_validation",
-   "dataset": "synthetic validators",
-   "candidate_adapter": "n/a",
-   "calibration_method": "n/a",
-   "test_split": "n/a",
-   "supporting_artifacts": [
-    "docs/research/kbound/paper/sections/main_theory_5.tex",
-    "docs/research/kbound/theory_v2/conj1_closure_results.json",
-    "experiments/kbound/theory_validation/results_conj1_genpos.json"
-   ],
-   "assumptions": [
-    "thm:conj1-dichotomy"
-   ],
-   "status": "supported",
-   "allowed_wording": "resolved negatively; impossibility not open problem",
-   "forbidden_wording": [
-    "conj:gen open",
-    "universal label-free bracketing exists"
-   ]
-  },
-  {
-   "claim_id": "KB-CLAIM-026",
-   "claim_text": "On pre-registered mixed harmful+helpful CIFAR-10-C stress grid, KGA beats POEM and AETTA on regret-to-oracle with Holm-corrected paired-bootstrap CIs, at FA_u=0.",
-   "claim_type": "empirical",
-   "claim_tier": "B",
-   "protocol": "MIXED_HEADTOHEAD_PROTOCOL_v1",
-   "dataset": "CIFAR-10-C stress grid (Tent)",
-   "candidate_adapter": "tent",
-   "calibration_method": "loo_gbr + conformal (KGA); faithful POEM/AETTA ports",
-   "test_split": "432 conditions/seed x 5 seeds",
-   "supporting_artifacts": [
-    "experiments/kbound/results/mixed_headtohead_v1/HEADTOHEAD_RESULTS_cifar10c_tent_primary.json",
-    "docs/research/kbound/MIXED_BENCHMARK_PROTOCOL.md"
-   ],
-   "assumptions": [
-    "pre-registered WIN criterion",
-    "shared per-condition signals"
-   ],
-   "status": "supported",
-   "allowed_wording": "beats POEM and AETTA on mixed regret (pre-registered WIN)",
-   "forbidden_wording": [
-    "beats POEM on natural shifts",
-    "official-repo arm without labeling"
-   ]
-  },
-  {
-   "claim_id": "KB-CLAIM-030",
-   "claim_text": "Physical camera package inspection primary result (R2).",
-   "claim_type": "empirical",
-   "claim_tier": "C",
-   "protocol": "edge_real_phone_v1",
-   "dataset": "physical packages P01-P10",
-   "candidate_adapter": "episodic_tent",
-   "calibration_method": "session_split_conformal",
-   "test_split": "S07/S08 held-out; S09/S10 replication",
-   "supporting_artifacts": [
-    "docs/experiments/kbound/results/edge_real_phone_v1/"
-   ],
-   "assumptions": [
-    "real captures",
-    "source gate >= 0.80",
-    "held-out objects distinct"
-   ],
-   "status": "pending",
-   "allowed_wording": "pre-registered protocol only; feasibility/no-harm if helpful-dominated",
-   "forbidden_wording": [
-    "real-world win",
-    "deployment success",
-    "25% balanced acc as headline"
-   ]
-  },
-  {
-   "claim_id": "KB-CLAIM-027",
-   "claim_text": "Controlled multimodal D33: KGA beats both always-fuse and always-single-A with zero false-adapt on injected corruption.",
-   "claim_type": "empirical",
-   "claim_tier": "B",
-   "protocol": "CONTROLLED_MULTIMODAL_PROTOCOL_D33_v1",
-   "dataset": "MNIST two-view controlled",
-   "candidate_adapter": "fusion routing",
-   "calibration_method": "loo_conformal",
-   "test_split": "n=130 conditions",
-   "supporting_artifacts": [
-    "research_lock/CONTROLLED_MULTIMODAL_PROTOCOL_D33_v1.yaml",
-    "experiments/kbound/results/controlled_multimodal_d33/results.json"
-   ],
-   "assumptions": [
-    "controlled construction",
-    "not natural benchmark"
-   ],
-   "status": "supported",
-   "allowed_wording": "mechanism confirmation on controlled multimodal harm",
-   "forbidden_wording": [
-    "natural multimodal SOTA",
-    "universal fusion win"
-   ]
-  },
-  {
-   "claim_id": "KB-CLAIM-040",
-   "claim_text": "Assumption audit stress suite did not falsify deployment safeguards on cached arm.",
-   "claim_type": "protocol",
-   "claim_tier": "C",
-   "protocol": "assumption_audit_v1",
-   "dataset": "stress + deployment slices",
-   "candidate_adapter": "n/a",
-   "calibration_method": "n/a",
-   "test_split": "pre-registered stress suite",
-   "supporting_artifacts": [
-    "docs/research/kbound/results/assumption_audit_v1.json",
-    "docs/research/kbound/kbound_pkg/assumption_audit/"
-   ],
-   "assumptions": [
-    "falsification-oriented only"
-   ],
-   "status": "supported",
-   "allowed_wording": "audit triggered warnings under designed shifts; does not verify exchangeability",
-   "forbidden_wording": [
-    "verified exchangeability",
-    "proved risk alignment"
-   ]
-  },
-  {
-   "claim_id": "KB-CLAIM-028",
-   "claim_text": "Under General Position, C_mono is a weakest one-bit class (conditional).",
-   "claim_type": "theorem",
-   "claim_tier": "A",
-   "protocol": "theory_validation",
-   "dataset": "synthetic",
-   "candidate_adapter": "n/a",
-   "calibration_method": "n/a",
-   "test_split": "n/a",
-   "supporting_artifacts": [
-    "experiments/kbound/theory_validation/results_conj1_genpos.json"
-   ],
-   "assumptions": [
-    "General Position"
-   ],
-   "status": "supported",
-   "allowed_wording": "weakest one-bit class under GP",
-   "forbidden_wording": [
-    "unique weakest class unconditionally"
-   ]
-  },
-  {
-   "claim_id": "KB-CLAIM-029",
-   "claim_text": "Unconditional weakest one-bit classes are explicit dominance polytopes W* (machine-verified).",
-   "claim_type": "theorem",
-   "claim_tier": "A",
-   "protocol": "theory_validation",
-   "dataset": "synthetic enumeration",
-   "candidate_adapter": "n/a",
-   "calibration_method": "n/a",
-   "test_split": "n/a",
-   "supporting_artifacts": [
-    "docs/research/kbound/theory_v2/unconditional_weakest_results.json",
-    "docs/research/kbound/theory_v2/val_unconditional_weakest.py"
-   ],
-   "assumptions": [
-    "finite polytope enumeration"
-   ],
-   "status": "supported",
-   "allowed_wording": "explicit finite family W*; GP as collapsing face",
-   "forbidden_wording": [
-    "unique weakest class"
-   ]
-  },
-  {
-   "claim_id": "KB-CLAIM-031",
-   "claim_text": "Anytime-valid streaming certificate controls false-adapt time-uniformly under optional stopping.",
-   "claim_type": "theorem",
-   "claim_tier": "A",
-   "protocol": "theory_v2",
-   "dataset": "synthetic stream",
-   "candidate_adapter": "n/a",
-   "calibration_method": "e-process",
-   "test_split": "n/a",
-   "supporting_artifacts": [
-    "docs/research/kbound/theory_v2/val_sequential_anytime_results.json",
-    "docs/research/kbound/kbound_pkg/kbound/eprocess.py"
-   ],
-   "assumptions": [
-    "bounded benefits",
-    "valid e-process"
-   ],
-   "status": "supported",
-   "allowed_wording": "time-uniform FA_u extension; multiclass anytime FWER closed (Wave 4)",
-   "forbidden_wording": [
-    "multiclass anytime open"
-   ]
-  },
-  {
-   "claim_id": "KB-CLAIM-032",
-   "claim_text": "Multicandidate Bonferroni routing controls family-wise false-adapt at level alpha.",
-   "claim_type": "theorem",
-   "claim_tier": "A",
-   "protocol": "theory_v2",
-   "dataset": "synthetic K candidates",
-   "candidate_adapter": "n/a",
-   "calibration_method": "Bonferroni per-candidate",
-   "test_split": "n/a",
-   "supporting_artifacts": [
-    "docs/research/kbound/theory_v2/val_multicandidate_results.json",
-    "docs/research/kbound/kbound_pkg/kbound/router.py"
-   ],
-   "assumptions": [
-    "independent per-candidate calibration or Bonferroni"
-   ],
-   "status": "supported",
-   "allowed_wording": "family-wise FA <= alpha under Bonferroni selection-proof",
-   "forbidden_wording": [
-    "naive argmax L_k has FA <= alpha",
-    "multiclass routing open"
-   ]
-  },
-  {
-   "claim_id": "KB-CLAIM-033",
-   "claim_text": "Exact 3-world minimax certifying sample complexity n*_3 = kappa(alpha) n_opt (thm:t1c-exact).",
-   "claim_type": "theorem",
-   "claim_tier": "A",
-   "protocol": "theory_v2",
-   "dataset": "analytic Gaussian validators",
-   "candidate_adapter": "n/a",
-   "calibration_method": "n/a",
-   "test_split": "n/a",
-   "supporting_artifacts": [
-    "docs/research/kbound/theory_v2/tight_constants_closure.tex",
-    "docs/research/kbound/theory_v2/tight_constants_results.json",
-    "docs/research/kbound/formal/KBound/Probability/Rates.lean"
-   ],
-   "assumptions": [
-    "Gaussian 3-world location model",
-    "honest frontier abstention"
-   ],
-   "status": "supported",
-   "allowed_wording": "kappa(alpha) is exact; 4 n_opt is pairwise floor only",
-   "forbidden_wording": [
-    "tight constants open",
-    "kappa/4 still open"
-   ]
-  },
-  {
-   "claim_id": "KB-CLAIM-034",
-   "claim_text": "Multiclass multicandidate routing with Bonferroni family-wise false-adapt and false-harm control on D.",
-   "claim_type": "theorem",
-   "claim_tier": "A",
-   "protocol": "theory_v2",
-   "dataset": "synthetic multiclass",
-   "candidate_adapter": "n/a",
-   "calibration_method": "Bonferroni per-candidate LCB",
-   "test_split": "n/a",
-   "supporting_artifacts": [
-    "docs/research/kbound/theory_v2/multiclass_multicandidate_theorem.tex",
-    "docs/research/kbound/theory_v2/val_multiclass_multicandidate_results.json",
-    "kga/routing.py",
-    "docs/research/kbound/scripts/multicandidate_decide_kga.py"
-   ],
-   "assumptions": [
-    "per-candidate LCB eq:mc-percand",
-    "0/1 multiclass on D"
-   ],
-   "status": "supported",
-   "allowed_wording": "FWER <= alpha for multiclass routing on D",
-   "forbidden_wording": [
-    "multiclass certs not attempted"
-   ]
-  },
-  {
-   "claim_id": "KB-CLAIM-035",
-   "claim_text": "No universal scalar multiclass capacity without R1/R2 (impossibility; thm:mc-cap-impossibility).",
-   "claim_type": "theorem",
-   "claim_tier": "A",
-   "protocol": "theory_v2",
-   "dataset": "synthetic K>=3",
-   "candidate_adapter": "n/a",
-   "calibration_method": "n/a",
-   "test_split": "n/a",
-   "supporting_artifacts": [
-    "docs/research/kbound/theory_v2/multiclass_capacity_impossibility.tex",
-    "docs/research/kbound/theory_v2/val_multiclass_capacity.py"
-   ],
-   "assumptions": [
-    "vector-concept regime",
-    "multi-conflict-pair"
-   ],
-   "status": "supported",
-   "allowed_wording": "closed negatively; per-component orientation minimal supplement",
-   "forbidden_wording": [
-    "general multiclass capacity exists",
-    "conj:gen-capacity open"
-   ]
-  },
-  {
-   "claim_id": "KB-CLAIM-036",
-   "claim_text": "Frontier margin computability dichotomy (conj:dich-compute closed).",
-   "claim_type": "theorem",
-   "claim_tier": "A",
-   "protocol": "theory_v2",
-   "dataset": "structural validators",
-   "candidate_adapter": "n/a",
-   "calibration_method": "n/a",
-   "test_split": "n/a",
-   "supporting_artifacts": [
-    "docs/research/kbound/theory_v2/margin_computability_closure.tex",
-    "docs/research/kbound/theory_v2/margin_computability_results.json"
-   ],
-   "assumptions": [
-    "integral-functional families",
-    "atomless vs atom dichotomy"
-   ],
-   "status": "supported",
-   "allowed_wording": "dichotomy not unconditional computability",
-   "forbidden_wording": [
-    "conj:dich-compute open",
-    "margin always computable"
-   ]
-  },
-  {
-   "claim_id": "KB-CLAIM-037",
-   "claim_text": "Regression bracketing dichotomy: bounded-drift iff (thm:reg-iff) plus general impossibility.",
-   "claim_type": "theorem",
-   "claim_tier": "A",
-   "protocol": "theory_v2",
-   "dataset": "regression synthetic",
-   "candidate_adapter": "n/a",
-   "calibration_method": "n/a",
-   "test_split": "n/a",
-   "supporting_artifacts": [
-    "docs/research/kbound/theory_v2/regression_bracketing_closure.tex",
-    "docs/research/kbound/theory_v2/val_regression_bracketing_closure_results.json",
-    "docs/research/kbound/scripts/regression_conjecture_validation.py"
-   ],
-   "assumptions": [
-    "squared loss",
-    "known drift budget B"
-   ],
-   "status": "supported",
-   "allowed_wording": "complete iff under bounded drift; no universal bracket",
-   "forbidden_wording": [
-    "regression bracketing open",
-    "universal drift bracket"
-   ]
-  },
-  {
-   "claim_id": "KB-CLAIM-038",
-   "claim_text": "K-Bound theory closure plan: strict-core formal audit passes (Lean + validators).",
-   "claim_type": "protocol",
-   "claim_tier": "A",
-   "protocol": "formal_audit",
-   "dataset": "n/a",
-   "candidate_adapter": "n/a",
-   "calibration_method": "n/a",
-   "test_split": "n/a",
-   "supporting_artifacts": [
-    "docs/research/kbound/THEORY_100_PERCENT_CLOSURE_PLAN.md",
-    "docs/research/kbound/formal/formal_audit.py",
-    "docs/research/kbound/formal/KBound/TheoremMap.lean"
-   ],
-   "assumptions": [
-    "algebraic/finite-sample Lean scope as documented"
-   ],
-   "status": "supported",
-   "allowed_wording": "closure plan complete within stated scopes",
-   "forbidden_wording": [
-    "100% full Mathlib measure theory",
-    "all open problems closed"
-   ]
-  },
-  {
-   "claim_id": "KB-CLAIM-041",
-   "claim_text": "Completed three-seed PACS evaluation is a null action-safety diagnostic.",
-   "claim_type": "empirical",
-   "claim_tier": "B",
-   "protocol": "PACS_MULTI_SEED_v1",
-   "dataset": "PACS",
-   "candidate_adapter": "tent,eata,sar",
-   "calibration_method": "loo_jackknife_quantile",
-   "test_split": "four leave-one-domain-out targets; 18 cells per target per seed",
-   "supporting_artifacts": [
-    "experiments/kbound/results/pacs_multiseed_v1/PACS_MULTISEED_RESULTS.json",
-    "experiments/kbound/results/nine_track_lock_v1/LOCK_SEAL.json"
-   ],
-   "assumptions": [
-    "seed-matched protocol",
-    "descriptive aggregation across targets"
-   ],
-   "status": "supported",
-   "allowed_wording": "completed three-seed null diagnostic; reported mean FA_u 0.0093; raw pooled count not retained",
-   "forbidden_wording": [
-    "PACS beats both",
-    "PACS natural-shift win",
-    "PACS uniformly no-harm"
-   ]
-  },
-  {
-   "claim_id": "KB-CLAIM-042",
-   "claim_text": "Completed four-seed ImageNet-R panel has no CI-supported beats-both candidate.",
-   "claim_type": "empirical",
-   "claim_tier": "B",
-   "protocol": "IMAGENETR_PROTOCOL_D_v1",
-   "dataset": "ImageNet-R",
-   "candidate_adapter": "ten independent ImageNet-1K backbones",
-   "calibration_method": "per-seed conformal radius; paired bootstrap with Holm correction",
-   "test_split": "12 conditions per backbone per seed",
-   "supporting_artifacts": [
-    "experiments/kbound/results/imagenetr_protocol_d_multiseed_v1/MULTISEED_ANALYSIS_RESULTS.json",
-    "experiments/kbound/results/nine_track_lock_v1/LOCK_SEAL.json"
-   ],
-   "assumptions": [
-    "four registered seeds",
-    "candidate panels compared separately"
-   ],
-   "status": "supported",
-   "allowed_wording": "completed weak-evidence diagnostic; 0/10 CI-supported beats-both; observed FA_u 1/480 descriptively pooled",
-   "forbidden_wording": [
-    "ImageNet-R beats both",
-    "ImageNet-R win",
-    "480 independent trials"
-   ]
-  },
-  {
-   "claim_id": "KB-CLAIM-050",
-   "claim_text": "Universal accuracy improvement from KGA.",
-   "claim_type": "limitation",
-   "claim_tier": "A",
-   "protocol": "n/a",
-   "dataset": "all",
-   "candidate_adapter": "all",
-   "calibration_method": "n/a",
-   "test_split": "n/a",
-   "supporting_artifacts": [
-    "kbound_short.tex sec:limits"
-   ],
-   "assumptions": [
-    "frontier theorem"
-   ],
-   "status": "withdrawn",
-   "allowed_wording": "conditional insurance against detectable harm",
-   "forbidden_wording": [
-    "universal improvement",
-    "always beats adapt"
-   ]
-  }
- ],
- "_artifact_audit_2026_07_26": {
-  "checked": "every supporting_artifacts path, resolved against the repository root",
-  "missing_count": 2,
-  "missing": [
-   {
-    "claim_id": "KB-CLAIM-022",
-    "path": "archive/audit_only/camelyon17_protocol_G_pooled_beats_both"
-   },
-   {
-    "claim_id": "KB-CLAIM-030",
-    "path": "docs/experiments/kbound/results/edge_real_phone_v1/"
-   }
+  "schema_version": "kbound-claim-ledger-v1",
+  "generated_at": "2026-07-01",
+  "claims": [
+    {
+      "claim_id": "KB-CLAIM-001",
+      "claim_text": "A strict adapt or freeze commitment is uniformly supportable over the declared drift class iff |M| > beta; on |M| <= beta, abstention is the maximal sound three-way action.",
+      "claim_type": "theorem",
+      "claim_tier": "A",
+      "protocol": "theory_validation",
+      "dataset": "synthetic validators",
+      "candidate_adapter": "n/a",
+      "calibration_method": "n/a",
+      "test_split": "n/a",
+      "supporting_artifacts": [
+        "experiments/kbound/theory_validation/results_thm2_regret.json",
+        "experiments/kbound/theory_validation/results_thm5_multiclass.json",
+        "experiments/kbound/theory_validation/results_frontier.json",
+        "experiments/kbound/theory_validation/results_benefit_frontier.json"
+      ],
+      "assumptions": [
+        "declared target class",
+        "risk alignment on identifiable region"
+      ],
+      "status": "supported",
+      "allowed_wording": "strict-commitment frontier over the declared drift class",
+      "forbidden_wording": [
+        "assumption-free",
+        "universal",
+        "benefit sign identifiable iff"
+      ]
+    },
+    {
+      "claim_id": "KB-CLAIM-002",
+      "claim_text": "Matched-evidence opposite-benefit worlds force abstention (impossibility).",
+      "claim_type": "theorem",
+      "claim_tier": "A",
+      "protocol": "theory_validation",
+      "dataset": "witness",
+      "candidate_adapter": "n/a",
+      "calibration_method": "n/a",
+      "test_split": "n/a",
+      "supporting_artifacts": [
+        "docs/research/kbound/results/witness/witness_clean.json",
+        "experiments/kbound/theory_validation/results_thm1_lecam.json",
+        "experiments/kbound/theory_validation/results_knowability_dichotomy.json"
+      ],
+      "assumptions": [
+        "non-identifiability construction"
+      ],
+      "status": "supported",
+      "allowed_wording": "information-theoretically necessary abstention",
+      "forbidden_wording": "engineering gap only"
+    },
+    {
+      "claim_id": "KB-CLAIM-003",
+      "claim_text": "If P(|Delta_hat-Delta| <= epsilon) >= 1-alpha, the KGA interval rule controls the unconditional false-adapt event FA_u at level alpha.",
+      "claim_type": "theorem",
+      "claim_tier": "A",
+      "protocol": "certificate",
+      "dataset": "n/a",
+      "candidate_adapter": "mechanism-agnostic",
+      "calibration_method": "split_conformal_quantile",
+      "test_split": "calibration conformal split",
+      "supporting_artifacts": [
+        "docs/research/kbound/kbound_pkg/kbound/certificate.py",
+        "experiments/kbound/theory_validation/results_thm3_evalue_alpha005.json"
+      ],
+      "assumptions": [
+        "valid marginal interval coverage",
+        "exchangeability or another justified calibration argument is one route to coverage"
+      ],
+      "status": "supported",
+      "allowed_wording": "FA_u <= alpha under interval coverage",
+      "forbidden_wording": [
+        "FA_c <= alpha",
+        "guaranteed safe in the wild",
+        "assumption-free"
+      ]
+    },
+    {
+      "claim_id": "KB-CLAIM-004",
+      "claim_text": "Conditional false-adapt FA_c is bounded by alpha.",
+      "claim_type": "theorem",
+      "claim_tier": "A",
+      "protocol": "n/a",
+      "dataset": "n/a",
+      "candidate_adapter": "n/a",
+      "calibration_method": "n/a",
+      "test_split": "n/a",
+      "supporting_artifacts": [],
+      "assumptions": [],
+      "status": "withdrawn",
+      "allowed_wording": "report FA_c descriptively only",
+      "forbidden_wording": "FA_c <= alpha guaranteed"
+    },
+    {
+      "claim_id": "KB-CLAIM-010",
+      "claim_text": "CIFAR-10-C stress grid: KGA beats both always-adapt and always-freeze for Tent and EATA.",
+      "claim_type": "empirical",
+      "claim_tier": "B",
+      "protocol": "STRESS_GRID_MULTISEED_PROTOCOL_A_v1",
+      "dataset": "CIFAR-10-C stress grid",
+      "candidate_adapter": "tent,eata",
+      "calibration_method": "loo_gbr + conformal_on_loo_residuals",
+      "test_split": "per-condition held-out eval within seed",
+      "supporting_artifacts": [
+        "experiments/kbound/results/stress_grid_multiseed_v1/LOCKED_ANALYSIS_RESULTS.json",
+        "docs/research/kbound/results_source.json"
+      ],
+      "assumptions": [
+        "locked grid",
+        "Holm-corrected CIs"
+      ],
+      "status": "supported",
+      "allowed_wording": "beats both under Protocol A v1 stress grid",
+      "forbidden_wording": [
+        "universal TTA improvement",
+        "natural-shift win"
+      ]
+    },
+    {
+      "claim_id": "KB-CLAIM-011",
+      "claim_text": "ImageNet-C SAR exact-LOO panel has a pooled point estimate below both fixed policies, but the seed-level freeze comparison touches zero and FA_u is 1/135.",
+      "claim_type": "empirical",
+      "claim_tier": "B",
+      "protocol": "imagenetc_protocol_E_v1",
+      "dataset": "ImageNet-C",
+      "candidate_adapter": "sar_fixed",
+      "calibration_method": "exact_rank_leave_one_condition_out_residual_calibration",
+      "test_split": "27 cross-fitted conditions per seed x 5 seeds",
+      "supporting_artifacts": [
+        "experiments/kbound/results/reconciled_panels_v1/canonical_panel_results.json",
+        "experiments/kbound/results/reconciled_panels_v1/source_manifest.json"
+      ],
+      "assumptions": [
+        "controlled grid",
+        "seed is the primary inference unit"
+      ],
+      "status": "no-harm",
+      "allowed_wording": "pooled point-estimate no-harm; no CI-robust beats-both claim",
+      "forbidden_wording": [
+        "zero false adaptation",
+        "CI-supported beats-both",
+        "natural-shift win"
+      ]
+    },
+    {
+      "claim_id": "KB-CLAIM-012",
+      "claim_text": "Finite-sample distribution-free jackknife+ guarantee for stress-grid calibration.",
+      "claim_type": "empirical",
+      "claim_tier": "B",
+      "protocol": "STRESS_GRID_MULTISEED_PROTOCOL_A_v1",
+      "dataset": "CIFAR-10-C",
+      "candidate_adapter": "tent,eata,sar",
+      "calibration_method": "loo_gbr",
+      "test_split": "per condition",
+      "supporting_artifacts": [
+        "docs/research/kbound/scripts/cifar_tent_mps_v2.py"
+      ],
+      "assumptions": [],
+      "status": "withdrawn",
+      "allowed_wording": "split/LOO conformal empirical certificate; assumptions in guarantee box",
+      "forbidden_wording": [
+        "jackknife+",
+        "distribution-free without assumptions"
+      ]
+    },
+    {
+      "claim_id": "KB-CLAIM-020",
+      "claim_text": "Office-Home M-v2 exact-rank source replay ties always-freeze under the locked release runtime; the predeclared A7 stability premise is absent.",
+      "claim_type": "empirical",
+      "claim_tier": "B",
+      "protocol": "OFFICEHOME_PROTOCOL_M_v2",
+      "dataset": "Office-Home",
+      "candidate_adapter": "dev-locked",
+      "calibration_method": "calibration-record LOO residuals + exact-rank transfer radius",
+      "test_split": "held-out target domains",
+      "supporting_artifacts": [
+        "experiments/kbound/results/reconciled_panels_v1/canonical_panel_results.json",
+        "experiments/kbound/results/reconciled_panels_v1/source_manifest.json"
+      ],
+      "assumptions": [
+        "dev-locked candidate",
+        "A7 full-fit-versus-LOO stability not established"
+      ],
+      "status": "descriptive",
+      "allowed_wording": "descriptive no-harm tie with zero ADAPT decisions under the locked runtime",
+      "forbidden_wording": [
+        "CI-robust beats both",
+        "natural-shift win",
+        "uniform no-harm"
+      ]
+    },
+    {
+      "claim_id": "KB-CLAIM-021",
+      "claim_text": "iWildCam H-v2 exact-rank source replay ties always-freeze with zero ADAPT decisions.",
+      "claim_type": "empirical",
+      "claim_tier": "B",
+      "protocol": "IWILDCAM_PROTOCOL_H_v2",
+      "dataset": "iWildCam",
+      "candidate_adapter": "dev-locked",
+      "calibration_method": "seed-0 calibration to seed-1 test with exact-rank radius",
+      "test_split": "held-out",
+      "supporting_artifacts": [
+        "experiments/kbound/results/reconciled_panels_v1/canonical_panel_results.json",
+        "experiments/kbound/results/reconciled_panels_v1/source_manifest.json"
+      ],
+      "assumptions": [
+        "one held-out test seed",
+        "A7 full-fit-versus-LOO stability not established"
+      ],
+      "status": "descriptive",
+      "allowed_wording": "descriptive no-harm tie; false-adapt guarantee untested",
+      "forbidden_wording": [
+        "beats both",
+        "powered safety result",
+        "multi-seed natural win"
+      ]
+    },
+    {
+      "claim_id": "KB-CLAIM-022",
+      "claim_text": "Camelyon17 Protocol G pooled beats-both headline.",
+      "claim_type": "empirical",
+      "claim_tier": "B",
+      "protocol": "CAMELYON17_PROTOCOL_G_v1",
+      "dataset": "Camelyon17",
+      "candidate_adapter": "sar",
+      "calibration_method": "in_sample_radius",
+      "test_split": "pooled id_val (invalid)",
+      "supporting_artifacts": [
+        "research_lock/CAMELYON17_PROTOCOL_G_RECONCILED_v2.yaml  (LIVE: the reconciliation verdict and the domain-pooling root cause; sealed, hash verifies)",
+        "archive/audit_only/camelyon17_protocol_G_pooled_beats_both  (NOT MATERIALIZED ON DISK -- the withdrawn artifact was never committed to this path)"
+      ],
+      "assumptions": [],
+      "status": "withdrawn",
+      "allowed_wording": "withdrawn pooling artifact; genuine OOD no-harm",
+      "forbidden_wording": "beats both Camelyon17",
+      "artifact_pointer_correction_2026_07_26": "The sole supporting_artifact was a path that does not exist, so the withdrawal had no live evidence pointer. Repointed to the sealed reconciliation YAML. The deeper evidence (audits/integrity_2026-06-20/camelyon_reconciliation/recon_results.json) is also absent; see SUBMISSION_LEDGER.md section 8."
+    },
+    {
+      "claim_id": "KB-CLAIM-023",
+      "claim_text": "Cross-protocol mixed aggregate beats both always-adapt and always-freeze.",
+      "claim_type": "empirical",
+      "claim_tier": "B",
+      "protocol": "KBOUND_MIXED_STREAM_v1",
+      "dataset": "Office-Home+iWildCam+Camelyon",
+      "candidate_adapter": "per-dataset dev lock",
+      "calibration_method": "in_sample_radius (invalid)",
+      "test_split": "aggregated conditions",
+      "supporting_artifacts": [],
+      "assumptions": [],
+      "status": "withdrawn",
+      "allowed_wording": "withdrawn in-sample-radius artifact; superseded by mixed_protocol_oof_v2",
+      "forbidden_wording": [
+        "13x",
+        "24x",
+        "beats both mixed"
+      ],
+      "evidence_tier_2026_07_26": "sealed_not_recomputable_from_release",
+      "evidence_tier_note": "The promoted regret triple 0.0000/0.0000/0.1381 (n=18) is recorded ONLY at research_lock/CAMELYON17_PROTOCOL_G_RECONCILED_v2.yaml:29, a hand-transcribed summary; nothing in the release recomputes it, and the promoted FA_u = 0 is recorded nowhere. SUBMISSION_LEDGER.md section 8a."
+    },
+    {
+      "claim_id": "KB-CLAIM-024",
+      "claim_text": "Cross-protocol mixed aggregate (mixed_protocol_oof_v2) beats both fixed policies under per-dataset OOF conformal calibration.",
+      "claim_type": "empirical",
+      "claim_tier": "B",
+      "protocol": "mixed_protocol_oof_v2",
+      "dataset": "Office-Home+iWildCam+Camelyon OOD",
+      "candidate_adapter": "per-dataset dev lock",
+      "calibration_method": "per_dataset_dev_lock_loo_conformal",
+      "test_split": "n=143 pooled test conditions",
+      "supporting_artifacts": [
+        "research_lock/KBOUND_MIXED_STREAM_v2.json",
+        "experiments/kbound/results/mixed_protocol_oof_v2/mixed_protocol_oof_v2_result.json"
+      ],
+      "assumptions": [
+        "constructed aggregate",
+        "not universal cross-dataset gate"
+      ],
+      "status": "diagnostic",
+      "allowed_wording": "historical researcher-constructed routing aggregate; rerun required under reconciled per-track decisions",
+      "forbidden_wording": [
+        "promoted beats-both claim",
+        "natural-shift win",
+        "transfer result"
+      ]
+    },
+    {
+      "claim_id": "KB-CLAIM-025",
+      "claim_text": "Universal label-free benefit bracketing (conj:gen) does not exist; minimal supplement is one bit.",
+      "claim_type": "theorem",
+      "claim_tier": "A",
+      "protocol": "theory_validation",
+      "dataset": "synthetic validators",
+      "candidate_adapter": "n/a",
+      "calibration_method": "n/a",
+      "test_split": "n/a",
+      "supporting_artifacts": [
+        "docs/research/kbound/paper/sections/main_theory_5.tex",
+        "docs/research/kbound/theory_v2/conj1_closure_results.json",
+        "experiments/kbound/theory_validation/results_conj1_genpos.json"
+      ],
+      "assumptions": [
+        "thm:conj1-dichotomy"
+      ],
+      "status": "supported",
+      "allowed_wording": "resolved negatively; impossibility not open problem",
+      "forbidden_wording": [
+        "conj:gen open",
+        "universal label-free bracketing exists"
+      ]
+    },
+    {
+      "claim_id": "KB-CLAIM-026",
+      "claim_text": "On pre-registered mixed harmful+helpful CIFAR-10-C stress grid, KGA beats POEM and AETTA on regret-to-oracle with Holm-corrected paired-bootstrap CIs, at FA_u=0.",
+      "claim_type": "empirical",
+      "claim_tier": "B",
+      "protocol": "MIXED_HEADTOHEAD_PROTOCOL_v1",
+      "dataset": "CIFAR-10-C stress grid (Tent)",
+      "candidate_adapter": "tent",
+      "calibration_method": "loo_gbr + conformal (KGA); faithful POEM/AETTA ports",
+      "test_split": "432 conditions/seed x 5 seeds",
+      "supporting_artifacts": [
+        "experiments/kbound/results/mixed_headtohead_v1/HEADTOHEAD_RESULTS_cifar10c_tent_primary.json",
+        "docs/research/kbound/MIXED_BENCHMARK_PROTOCOL.md"
+      ],
+      "assumptions": [
+        "pre-registered WIN criterion",
+        "shared per-condition signals"
+      ],
+      "status": "supported",
+      "allowed_wording": "beats POEM and AETTA on mixed regret (pre-registered WIN)",
+      "forbidden_wording": [
+        "beats POEM on natural shifts",
+        "official-repo arm without labeling"
+      ]
+    },
+    {
+      "claim_id": "KB-CLAIM-030",
+      "claim_text": "Physical camera package inspection primary result (R2).",
+      "claim_type": "empirical",
+      "claim_tier": "C",
+      "protocol": "edge_real_phone_v1",
+      "dataset": "physical packages P01-P10",
+      "candidate_adapter": "episodic_tent",
+      "calibration_method": "session_split_conformal",
+      "test_split": "S07/S08 held-out; S09/S10 replication",
+      "supporting_artifacts": [
+        "docs/experiments/kbound/results/edge_real_phone_v1/"
+      ],
+      "assumptions": [
+        "real captures",
+        "source gate >= 0.80",
+        "held-out objects distinct"
+      ],
+      "status": "pending",
+      "allowed_wording": "pre-registered protocol only; feasibility/no-harm if helpful-dominated",
+      "forbidden_wording": [
+        "real-world win",
+        "deployment success",
+        "25% balanced acc as headline"
+      ]
+    },
+    {
+      "claim_id": "KB-CLAIM-027",
+      "claim_text": "Controlled multimodal D33: KGA beats both always-fuse and always-single-A with zero false-adapt on injected corruption.",
+      "claim_type": "empirical",
+      "claim_tier": "B",
+      "protocol": "CONTROLLED_MULTIMODAL_PROTOCOL_D33_v1",
+      "dataset": "MNIST two-view controlled",
+      "candidate_adapter": "fusion routing",
+      "calibration_method": "loo_conformal",
+      "test_split": "n=130 conditions",
+      "supporting_artifacts": [
+        "research_lock/CONTROLLED_MULTIMODAL_PROTOCOL_D33_v1.yaml",
+        "experiments/kbound/results/controlled_multimodal_d33/results.json"
+      ],
+      "assumptions": [
+        "controlled construction",
+        "not natural benchmark"
+      ],
+      "status": "supported",
+      "allowed_wording": "mechanism confirmation on controlled multimodal harm",
+      "forbidden_wording": [
+        "natural multimodal SOTA",
+        "universal fusion win"
+      ]
+    },
+    {
+      "claim_id": "KB-CLAIM-040",
+      "claim_text": "Assumption audit stress suite did not falsify deployment safeguards on cached arm.",
+      "claim_type": "protocol",
+      "claim_tier": "C",
+      "protocol": "assumption_audit_v1",
+      "dataset": "stress + deployment slices",
+      "candidate_adapter": "n/a",
+      "calibration_method": "n/a",
+      "test_split": "pre-registered stress suite",
+      "supporting_artifacts": [
+        "docs/research/kbound/results/assumption_audit_v1.json",
+        "docs/research/kbound/kbound_pkg/assumption_audit/"
+      ],
+      "assumptions": [
+        "falsification-oriented only"
+      ],
+      "status": "supported",
+      "allowed_wording": "audit triggered warnings under designed shifts; does not verify exchangeability",
+      "forbidden_wording": [
+        "verified exchangeability",
+        "proved risk alignment"
+      ]
+    },
+    {
+      "claim_id": "KB-CLAIM-028",
+      "claim_text": "Under General Position, C_mono is a weakest one-bit class (conditional).",
+      "claim_type": "theorem",
+      "claim_tier": "A",
+      "protocol": "theory_validation",
+      "dataset": "synthetic",
+      "candidate_adapter": "n/a",
+      "calibration_method": "n/a",
+      "test_split": "n/a",
+      "supporting_artifacts": [
+        "experiments/kbound/theory_validation/results_conj1_genpos.json"
+      ],
+      "assumptions": [
+        "General Position"
+      ],
+      "status": "supported",
+      "allowed_wording": "weakest one-bit class under GP",
+      "forbidden_wording": [
+        "unique weakest class unconditionally"
+      ]
+    },
+    {
+      "claim_id": "KB-CLAIM-029",
+      "claim_text": "Unconditional weakest one-bit classes are explicit dominance polytopes W* (machine-verified).",
+      "claim_type": "theorem",
+      "claim_tier": "A",
+      "protocol": "theory_validation",
+      "dataset": "synthetic enumeration",
+      "candidate_adapter": "n/a",
+      "calibration_method": "n/a",
+      "test_split": "n/a",
+      "supporting_artifacts": [
+        "docs/research/kbound/theory_v2/unconditional_weakest_results.json",
+        "docs/research/kbound/theory_v2/val_unconditional_weakest.py"
+      ],
+      "assumptions": [
+        "finite polytope enumeration"
+      ],
+      "status": "supported",
+      "allowed_wording": "explicit finite family W*; GP as collapsing face",
+      "forbidden_wording": [
+        "unique weakest class"
+      ]
+    },
+    {
+      "claim_id": "KB-CLAIM-031",
+      "claim_text": "Anytime-valid streaming certificate controls false-adapt time-uniformly under optional stopping.",
+      "claim_type": "theorem",
+      "claim_tier": "A",
+      "protocol": "theory_v2",
+      "dataset": "synthetic stream",
+      "candidate_adapter": "n/a",
+      "calibration_method": "e-process",
+      "test_split": "n/a",
+      "supporting_artifacts": [
+        "docs/research/kbound/theory_v2/val_sequential_anytime_results.json",
+        "docs/research/kbound/kbound_pkg/kbound/eprocess.py"
+      ],
+      "assumptions": [
+        "bounded benefits",
+        "valid e-process"
+      ],
+      "status": "supported",
+      "allowed_wording": "time-uniform FA_u extension; multiclass anytime FWER closed (Wave 4)",
+      "forbidden_wording": [
+        "multiclass anytime open"
+      ]
+    },
+    {
+      "claim_id": "KB-CLAIM-032",
+      "claim_text": "Multicandidate Bonferroni routing controls family-wise false-adapt at level alpha.",
+      "claim_type": "theorem",
+      "claim_tier": "A",
+      "protocol": "theory_v2",
+      "dataset": "synthetic K candidates",
+      "candidate_adapter": "n/a",
+      "calibration_method": "Bonferroni per-candidate",
+      "test_split": "n/a",
+      "supporting_artifacts": [
+        "docs/research/kbound/theory_v2/val_multicandidate_results.json",
+        "docs/research/kbound/kbound_pkg/kbound/router.py"
+      ],
+      "assumptions": [
+        "independent per-candidate calibration or Bonferroni"
+      ],
+      "status": "supported",
+      "allowed_wording": "family-wise FA <= alpha under Bonferroni selection-proof",
+      "forbidden_wording": [
+        "naive argmax L_k has FA <= alpha",
+        "multiclass routing open"
+      ]
+    },
+    {
+      "claim_id": "KB-CLAIM-033",
+      "claim_text": "Exact 3-world minimax certifying sample complexity n*_3 = kappa(alpha) n_opt (thm:t1c-exact).",
+      "claim_type": "theorem",
+      "claim_tier": "A",
+      "protocol": "theory_v2",
+      "dataset": "analytic Gaussian validators",
+      "candidate_adapter": "n/a",
+      "calibration_method": "n/a",
+      "test_split": "n/a",
+      "supporting_artifacts": [
+        "docs/research/kbound/theory_v2/tight_constants_closure.tex",
+        "docs/research/kbound/theory_v2/tight_constants_results.json",
+        "docs/research/kbound/formal/KBound/Probability/Rates.lean"
+      ],
+      "assumptions": [
+        "Gaussian 3-world location model",
+        "honest frontier abstention"
+      ],
+      "status": "supported",
+      "allowed_wording": "kappa(alpha) is exact; 4 n_opt is pairwise floor only",
+      "forbidden_wording": [
+        "tight constants open",
+        "kappa/4 still open"
+      ]
+    },
+    {
+      "claim_id": "KB-CLAIM-034",
+      "claim_text": "Multiclass multicandidate routing with Bonferroni family-wise false-adapt and false-harm control on D.",
+      "claim_type": "theorem",
+      "claim_tier": "A",
+      "protocol": "theory_v2",
+      "dataset": "synthetic multiclass",
+      "candidate_adapter": "n/a",
+      "calibration_method": "Bonferroni per-candidate LCB",
+      "test_split": "n/a",
+      "supporting_artifacts": [
+        "docs/research/kbound/theory_v2/multiclass_multicandidate_theorem.tex",
+        "docs/research/kbound/theory_v2/val_multiclass_multicandidate_results.json",
+        "kga/routing.py",
+        "docs/research/kbound/scripts/multicandidate_decide_kga.py"
+      ],
+      "assumptions": [
+        "per-candidate LCB eq:mc-percand",
+        "0/1 multiclass on D"
+      ],
+      "status": "supported",
+      "allowed_wording": "FWER <= alpha for multiclass routing on D",
+      "forbidden_wording": [
+        "multiclass certs not attempted"
+      ]
+    },
+    {
+      "claim_id": "KB-CLAIM-035",
+      "claim_text": "No universal scalar multiclass capacity without R1/R2 (impossibility; thm:mc-cap-impossibility).",
+      "claim_type": "theorem",
+      "claim_tier": "A",
+      "protocol": "theory_v2",
+      "dataset": "synthetic K>=3",
+      "candidate_adapter": "n/a",
+      "calibration_method": "n/a",
+      "test_split": "n/a",
+      "supporting_artifacts": [
+        "docs/research/kbound/theory_v2/multiclass_capacity_impossibility.tex",
+        "docs/research/kbound/theory_v2/val_multiclass_capacity.py"
+      ],
+      "assumptions": [
+        "vector-concept regime",
+        "multi-conflict-pair"
+      ],
+      "status": "supported",
+      "allowed_wording": "closed negatively; per-component orientation minimal supplement",
+      "forbidden_wording": [
+        "general multiclass capacity exists",
+        "conj:gen-capacity open"
+      ]
+    },
+    {
+      "claim_id": "KB-CLAIM-036",
+      "claim_text": "Frontier margin computability dichotomy (conj:dich-compute closed).",
+      "claim_type": "theorem",
+      "claim_tier": "A",
+      "protocol": "theory_v2",
+      "dataset": "structural validators",
+      "candidate_adapter": "n/a",
+      "calibration_method": "n/a",
+      "test_split": "n/a",
+      "supporting_artifacts": [
+        "docs/research/kbound/theory_v2/margin_computability_closure.tex",
+        "docs/research/kbound/theory_v2/margin_computability_results.json"
+      ],
+      "assumptions": [
+        "integral-functional families",
+        "atomless vs atom dichotomy"
+      ],
+      "status": "supported",
+      "allowed_wording": "dichotomy not unconditional computability",
+      "forbidden_wording": [
+        "conj:dich-compute open",
+        "margin always computable"
+      ]
+    },
+    {
+      "claim_id": "KB-CLAIM-037",
+      "claim_text": "Regression bracketing dichotomy: bounded-drift iff (thm:reg-iff) plus general impossibility.",
+      "claim_type": "theorem",
+      "claim_tier": "A",
+      "protocol": "theory_v2",
+      "dataset": "regression synthetic",
+      "candidate_adapter": "n/a",
+      "calibration_method": "n/a",
+      "test_split": "n/a",
+      "supporting_artifacts": [
+        "docs/research/kbound/theory_v2/regression_bracketing_closure.tex",
+        "docs/research/kbound/theory_v2/val_regression_bracketing_closure_results.json",
+        "docs/research/kbound/scripts/regression_conjecture_validation.py"
+      ],
+      "assumptions": [
+        "squared loss",
+        "known drift budget B"
+      ],
+      "status": "supported",
+      "allowed_wording": "complete iff under bounded drift; no universal bracket",
+      "forbidden_wording": [
+        "regression bracketing open",
+        "universal drift bracket"
+      ]
+    },
+    {
+      "claim_id": "KB-CLAIM-038",
+      "claim_text": "K-Bound theory closure plan: strict-core formal audit passes (Lean + validators).",
+      "claim_type": "protocol",
+      "claim_tier": "A",
+      "protocol": "formal_audit",
+      "dataset": "n/a",
+      "candidate_adapter": "n/a",
+      "calibration_method": "n/a",
+      "test_split": "n/a",
+      "supporting_artifacts": [
+        "docs/research/kbound/THEORY_100_PERCENT_CLOSURE_PLAN.md",
+        "docs/research/kbound/formal/formal_audit.py",
+        "docs/research/kbound/formal/KBound/TheoremMap.lean"
+      ],
+      "assumptions": [
+        "algebraic/finite-sample Lean scope as documented"
+      ],
+      "status": "supported",
+      "allowed_wording": "closure plan complete within stated scopes",
+      "forbidden_wording": [
+        "100% full Mathlib measure theory",
+        "all open problems closed"
+      ]
+    },
+    {
+      "claim_id": "KB-CLAIM-041",
+      "claim_text": "Completed three-seed PACS evaluation is a null action-safety diagnostic.",
+      "claim_type": "empirical",
+      "claim_tier": "B",
+      "protocol": "PACS_MULTI_SEED_v1",
+      "dataset": "PACS",
+      "candidate_adapter": "tent,eata,sar",
+      "calibration_method": "loo_jackknife_quantile",
+      "test_split": "four leave-one-domain-out targets; 18 cells per target per seed",
+      "supporting_artifacts": [
+        "experiments/kbound/results/reconciled_panels_v1/canonical_panel_results.json",
+        "experiments/kbound/results/reconciled_panels_v1/source_manifest.json"
+      ],
+      "assumptions": [
+        "seed-matched protocol",
+        "descriptive aggregation across targets"
+      ],
+      "status": "diagnostic",
+      "allowed_wording": "three-seed null diagnostic; seed summaries cross-validated",
+      "forbidden_wording": [
+        "decision replay complete",
+        "beats both"
+      ]
+    },
+    {
+      "claim_id": "KB-CLAIM-042",
+      "claim_text": "ImageNet-R Protocol D exact-LOO replay is a negative architecture-panel diagnostic: KGA is worse than always-adapt on 8/10 backbones.",
+      "claim_type": "empirical",
+      "claim_tier": "B",
+      "protocol": "IMAGENETR_PROTOCOL_D_v1",
+      "dataset": "ImageNet-R",
+      "candidate_adapter": "ten independent ImageNet-1K backbones",
+      "calibration_method": "per-backbone/per-seed exact-rank LOO residual calibration",
+      "test_split": "12 conditions per backbone per seed",
+      "supporting_artifacts": [
+        "experiments/kbound/results/reconciled_panels_v1/canonical_panel_results.json",
+        "experiments/kbound/results/reconciled_panels_v1/source_manifest.json"
+      ],
+      "assumptions": [
+        "four registered seeds",
+        "candidate panels compared separately"
+      ],
+      "status": "diagnostic",
+      "allowed_wording": "negative four-seed architecture-panel diagnostic",
+      "forbidden_wording": [
+        "beats both",
+        "single deployable policy",
+        "7/10 backbones"
+      ]
+    },
+    {
+      "claim_id": "KB-CLAIM-050",
+      "claim_text": "Universal accuracy improvement from KGA.",
+      "claim_type": "limitation",
+      "claim_tier": "A",
+      "protocol": "n/a",
+      "dataset": "all",
+      "candidate_adapter": "all",
+      "calibration_method": "n/a",
+      "test_split": "n/a",
+      "supporting_artifacts": [
+        "kbound_short.tex sec:limits"
+      ],
+      "assumptions": [
+        "frontier theorem"
+      ],
+      "status": "withdrawn",
+      "allowed_wording": "conditional insurance against detectable harm",
+      "forbidden_wording": [
+        "universal improvement",
+        "always beats adapt"
+      ]
+    }
   ],
-  "note": "Restoration procedures: SUBMISSION_LEDGER.md section 8."
- },
- "_correction_2026_07_26": "Annotated after an external five-specialist review. This file remains the wording/status authority; its recorded checksum in STORAGE_MANIFEST.json had drifted (F4-15) and has been refreshed. Evidence tiers: SUBMISSION_LEDGER.md section 3."
+  "_artifact_audit_2026_07_26": {
+    "checked": "every supporting_artifacts path, resolved against the repository root",
+    "missing_count": 2,
+    "missing": [
+      {
+        "claim_id": "KB-CLAIM-022",
+        "path": "archive/audit_only/camelyon17_protocol_G_pooled_beats_both"
+      },
+      {
+        "claim_id": "KB-CLAIM-030",
+        "path": "docs/experiments/kbound/results/edge_real_phone_v1/"
+      }
+    ],
+    "note": "Restoration procedures: SUBMISSION_LEDGER.md section 8."
+  },
+  "_correction_2026_07_26": "Annotated after an external five-specialist review. This file remains the wording/status authority; its recorded checksum in STORAGE_MANIFEST.json had drifted (F4-15) and has been refreshed. Evidence tiers: SUBMISSION_LEDGER.md section 3.",
+  "reconciliation_source": {
+    "canonical_panel": "experiments/kbound/results/reconciled_panels_v1/canonical_panel_results.json",
+    "source_manifest": "experiments/kbound/results/reconciled_panels_v1/source_manifest.json"
+  }
 }

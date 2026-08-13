@@ -1,26 +1,37 @@
 # K-Bound Short Paper Remaining Work
 
-## Required before submission
+Date: 2026-08-11
 
-- Rebuild CIFAR-10-C SAR from a clean immutable five-seed tree or keep it withheld.
-- Run and lock the final exact-rank alpha/evidence/estimator/calibration-size/batch/adapter/architecture ablations.
-- Produce a full end-to-end component runtime profile with raw logs. The current
-  controller-only microbenchmark does not measure candidate adaptation or total latency.
-- Replace the label-informed iWildCam streaming diagnostic with a genuinely
-  label-free sequential evaluation before making any streaming deployment claim.
+## Required before an empirical camera-ready claim
 
-## Strengthening work
+- [ ] Run the preregistered physical-camera protocol and populate the locked tables from fresh logs.
+- [ ] Add independent natural-shift seeds under one declared train/calibration/test split.
+- [ ] Predeclare and test the transfer-stability premise, or explicitly keep transfer results
+  descriptive without theorem-level coverage language.
+- [ ] Export PACS per-cell `Delta`, `Delta_hat`, calibration residuals, and exact-rank decisions so the
+  gate is replayable.
 
-- Add multiple ImageNet-C seeds.
-- Complete PACS seeds 2 and 3 and ImageNet-R seed 3.
-- Reproduce official POEM and AETTA implementations if they remain central baselines.
-- Obtain external independent replication of the natural-shift summaries.
-- Run the preregistered physical-camera sessions with fresh held-out days/objects and release raw logs.
+## Explicit manuscript TODOs
 
-## Submission risks that remain
+- [ ] Regenerate the ImageNet-R per-commitment permutation diagnostic at the corrected exact-LOO
+  operating point.
+- [ ] Rerun the ImageNet-C Tent counterfactual power probe using the corrected radius.
+- [ ] Rebuild the three-source heterogeneous mixture from reconciled Office-Home, iWildCam, and
+  Camelyon17 component records.
 
-- No clean single-dataset natural-shift CI-robust beats-both result.
-- Controlled-grid wins depend on archived aggregates whose raw replay lineage must be documented carefully.
-- ImageNet-C beats-both is currently a single-seed operating point.
-- Full foundational probability mechanization remains incomplete.
-- The physical study, full runtime profile, and genuinely label-free sequential evaluation remain explicit pending work rather than placeholder results.
+## Submission packaging
+
+- [ ] Replace the local TMLR shim with the official venue style file before submission.
+- [ ] Decide anonymous versus named submission and lock repository disclosure accordingly.
+- [ ] Commit only the reconciled release artifacts after reviewing the existing dirty worktree.
+- [ ] Run the full repository suite in an environment that includes the intentionally excluded ELARA
+  legacy files, or remove those tests from the K-Bound-only release configuration.
+
+## Claims that must remain out
+
+- [ ] Do not claim universal improvement or universal natural-shift no-harm.
+- [ ] Do not claim a clean natural CI-robust beats-both win from Office-Home, iWildCam, PACS,
+  ImageNet-R, Camelyon17, or RxRx1 without new evidence.
+- [ ] Do not restore the old constructed-mixture win before source-record replay.
+- [ ] Do not describe real-camera templates as completed physical validation.
+

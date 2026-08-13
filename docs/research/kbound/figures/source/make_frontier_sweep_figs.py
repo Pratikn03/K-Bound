@@ -3,11 +3,10 @@
 make_frontier_sweep_figs.py -- figures for the beta-sweep frontier test and the
 decision-value / abstention analysis.
 
-Every number plotted here is read from one of two result JSONs produced by the
-frontier_sweep_v1 slice; nothing is hard-coded, nothing is drawn from a
-generator.  Re-running the two upstream scripts and then this one reproduces the
-figures byte-for-byte (matplotlib is seeded only through the data; there is no
-randomness in this file).
+Every number plotted here is read from one of two result JSONs.  The ImageNet-C
+and ImageNet-R decision-value branches are synchronized by
+``scripts/sync_reconciled_panels.py`` from the source-replayed exact-LOO panel;
+the remaining branches come from the original frontier_sweep_v1 slice.
 
 Inputs
     experiments/kbound/frontier_sweep_v1/beta_sweep_results.json
@@ -190,7 +189,7 @@ def fig_decision_value_frontier(dv):
         k1 = f["kga_operating_point_kappa1"]
         ax.scatter([k1["yield"]], [k1["regret"]], s=95, marker="*", color=col,
                    edgecolor="k", linewidth=0.55, zorder=6,
-                   label=r"shipped KGA ($\kappa{=}1$, $\alpha{=}0.10$)")
+                   label=r"canonical KGA ($\kappa{=}1$, $\alpha{=}0.10$)")
         ymin = g.min() * 0.35
         ob = f["oracle_yield_bound"]["ordering_maxB"]
         oy = np.array([p["yield"] for p in ob])

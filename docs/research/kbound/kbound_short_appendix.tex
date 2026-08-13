@@ -341,7 +341,7 @@ Benefit model size & $195$\,KB \\
 % that list is the disclosure and none of it was shortened.
 The repository contains a kernel-checked Lean~4 formalization of indexed algebraic,
 finite-decision, measure-containment, and conditional uniform-rank results, listed in
-\texttt{formal/KBound/TheoremMap.lean}, with no \texttt{sorry}, \texttt{admit}, or project-defined
+\path{formal/KBound/TheoremMap.lean}, with no \texttt{sorry}, \texttt{admit}, or project-defined
 axioms. It checks frontier sufficiency, all three deterministic branches, algebraic witnesses for
 the closed and open bands, both zero-versus-strict boundary witnesses, and the marginal
 false-adapt/false-freeze implication once coverage is assumed.
@@ -542,7 +542,7 @@ pairs that failed. Holm at $0.05$ is applied over this inventory, not over the s
 \caption{Confirmatory arm inventory: pairs scored once on declared test cells under a sealed
 protocol. ``BB'' = beats both fixed policies at the declared resampling unit.}
 \label{tab:arm-inventory}
-\begin{tabular}{@{}p{0.22\linewidth}p{0.13\linewidth}p{0.55\linewidth}@{}}
+\begin{tabular}{@{}p{0.22\linewidth}p{0.16\linewidth}p{0.52\linewidth}@{}}
 \toprule
 Track & Candidate & Verdict on declared test cells \\
 \midrule
@@ -554,13 +554,13 @@ ImageNet-C & Tent & no BB; ties always-freeze exactly, $0/135$ adapts \\
 ImageNet-C & EATA & no BB; \emph{trails} always-adapt $0.0007$ vs.\ $0.0001$ \\
 Camelyon17 & EATA & no-harm, and vacuous: recomputable from release (2026-07-26), but all $18$ cells are helpful and KGA adapts $18/18$ \\
 Camelyon17 (multi-seed) & Tent/EATA/SAR & no BB; SAR over-freezes \\
-iWildCam H v2 & Tent & no-harm, ties freeze; $1$ adapt \\
-Office-Home M v2 & SAR & no-harm; LOO beats-both deliberately \emph{not} promoted \\
+iWildCam H v2 & Tent & descriptive no-harm, ties freeze; $0$ adapts; one test seed and A7 open \\
+Office-Home M v2 & SAR & descriptive no-harm, ties freeze; $0$ adapts; A7 open \\
 RxRx1 J & online & no-harm, ties freeze; $0$ adapts \\
 PACS (LODO) & fixed & \textbf{null}; loses to always-adapt $2.45\times$ \\
-ImageNet-R D & $10$ backbones & \textbf{null}; $0/10$ CI beats-both; worse than adapt on $7/10$ \\
+ImageNet-R D & $10$ backbones & \textbf{null}; $0/10$ CI beats-both; worse than adapt on $8/10$ \\
 CIFAR-10.1 K & Tent/EATA/SAR & \textbf{fails} the transfer bar, $\mathrm{FA}_{\mathrm u}=0.167$ \\
-Three-source mixture & constructed & routing aggregate, not a transfer arm \\
+Three-source mixture & constructed & historical routing aggregate; demoted pending replay of changed component decisions \\
 Multimodal D33 & constructed & BB on an injected-corruption grid; $9$ adapts \\
 \bottomrule
 \end{tabular}
@@ -589,8 +589,8 @@ $95\%$ upper bound of $0.438$. PACS is a null in which \textsc{KGA} loses to alw
 $2.45\times$; it is reported, not withdrawn.
 
 \paragraph{ImageNet-R.} The mean-across-backbone row hides a reversal on most backbones
-(Table~\ref{tab:imagenetr-backbone}). \textsc{KGA} is worse than always-adapt on $7$ of $10$
-backbones, by up to $434\times$ (swin\_b) and $43.9\times$ (vit\_b\_16), and $4$ backbones have a
+(Table~\ref{tab:imagenetr-backbone}). Under the source-replayed exact-LOO radius, \textsc{KGA} is
+worse than always-adapt on $8$ of $10$ backbones, and $4$ backbones have a
 degenerate $0\%$ harmful base rate --- always-adapt is exactly oracle there, so any abstention costs
 regret and the comparison is uninformative. On the two backbones with a substantial harmful base rate
 (efficientnet\_b0 at $100\%$, swin\_t at $60.4\%$) \textsc{KGA} is better than always-adapt, which is
@@ -600,23 +600,23 @@ be read as a single verdict.
 \begin{table}[t]\centering\footnotesize
 \caption{\textbf{ImageNet-R per backbone} ($4$ seeds $\times12$ conditions each). Regrets
 KGA / always-adapt / always-freeze; ``harm'' is the harmful base rate. Decomposition is from the
-archived per-backbone scoring; the panel row above is the exact-rank aggregate. Under either quantile
-rule \textsc{KGA}'s mean exceeds always-adapt's $0.0064$.}
+source-replayed per-condition records; the panel row above is the same exact-LOO aggregate.
+\textsc{KGA}'s mean regret is $0.0150$, above always-adapt's $0.0064$.}
 \label{tab:imagenetr-backbone}
 \begin{tabular}{lcccc}
 \toprule
 backbone & KGA & adapt & freeze & harm \\
 \midrule
-convnext\_base & $0.0000$ & $0.0000$ & $0.0693$ & $0.0\%$ \\
-convnext\_tiny & $0.0207$ & $0.0015$ & $0.0221$ & $14.6\%$ \\
+convnext\_base & $0.0032$ & $0.0000$ & $0.0693$ & $0.0\%$ \\
+convnext\_tiny & $0.0216$ & $0.0015$ & $0.0221$ & $14.6\%$ \\
 efficientnet\_b0 & $0.0000$ & $0.0506$ & $0.0000$ & $100.0\%$ \\
-efficientnet\_b3 & $0.0186$ & $0.0000$ & $0.0501$ & $0.0\%$ \\
-resnet101 & $0.0152$ & $0.0005$ & $0.0238$ & $8.3\%$ \\
-resnet152 & $0.0088$ & $0.0000$ & $0.0421$ & $0.0\%$ \\
-resnext101\_32x8d & $0.0059$ & $0.0000$ & $0.0520$ & $0.0\%$ \\
-swin\_b & $0.0226$ & $0.0000$ & $0.0375$ & $2.1\%$ \\
-swin\_t & $0.0043$ & $0.0106$ & $0.0047$ & $60.4\%$ \\
-vit\_b\_16 & $0.0160$ & $0.0004$ & $0.0237$ & $6.2\%$ \\
+efficientnet\_b3 & $0.0211$ & $0.0000$ & $0.0501$ & $0.0\%$ \\
+resnet101 & $0.0188$ & $0.0005$ & $0.0238$ & $8.3\%$ \\
+resnet152 & $0.0161$ & $0.0000$ & $0.0421$ & $0.0\%$ \\
+resnext101\_32x8d & $0.0108$ & $0.0000$ & $0.0520$ & $0.0\%$ \\
+swin\_b & $0.0326$ & $0.0001$ & $0.0375$ & $2.1\%$ \\
+swin\_t & $0.0047$ & $0.0106$ & $0.0047$ & $60.4\%$ \\
+vit\_b\_16 & $0.0207$ & $0.0004$ & $0.0237$ & $6.2\%$ \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -629,11 +629,11 @@ $0.390$, an order of magnitude larger, which is the quantitative form of the ins
 in quarantine (\S\ref{sec:cifar-stress}).
 
 \subsection{Constructed Heterogeneous Routing}\label{sec:constructed-routing}
-The three-source OOF mixture combines separately calibrated Office-Home, iWildCam, and Camelyon17
-conditions. It demonstrates routing value under a researcher-constructed heterogeneous stream, not
-single-dataset natural-shift dominance or transfer to unseen shift types. On its $n=143$
-conditions the regrets are $0.0059$ (\textsc{KGA}) against $0.0632$ (always-adapt) and $0.0342$
-(always-freeze), under the declared exact-rank radius.
+The historical three-source OOF mixture combined separately calibrated Office-Home, iWildCam, and
+Camelyon17 conditions. It was always a researcher-constructed stream rather than a transfer result.
+The Office-Home and iWildCam decision streams changed under source replay, so the old $n=143$
+aggregate is demoted and its numeric win is not used as evidence. \textbf{DRAFT TODO: rerun the
+constructed mixture from the reconciled component records before restoring a routing claim.}
 
 % CUT 2026-07-27 (length pass): tab:primary-numeric, "Primary numeric evidence used
 % for empirical claims". Six rows, of which five (CIFAR-10-C Tent, CIFAR-10-C EATA,
@@ -674,18 +674,42 @@ Nine-track panel & \textbf{accounting} & sealed lock inventory (\texttt{NINE\_TR
 Stress-grid action validity and routing utility (Tent/EATA) & locked & locked Protocol~A v1 stress grid; $6$ of $15$ corruptions, severities $\{1,5\}$ \\
 CIFAR-10-C \emph{Tent} beats both, cluster-robustly & locked & adapt-gap CI excludes zero at all four units down to $6$ corruption clusters $[-0.0095,-0.0026]$; survives leave-one-corruption-out refit (Table~\ref{tab:cifar-cluster}) \\
 CIFAR-10-C \emph{EATA} beats both, cluster-robustly & \textbf{not claimed} & adapt-gap CI includes zero at $12$ clusters $[-0.0048,+0.0004]$ and $6$ clusters $[-0.0044,+0.0004]$; two adverse corruption families. Point beats-both and the freeze-side CI stand \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\begin{center}
+\scriptsize
+\renewcommand{\arraystretch}{1.12}
+\setlength{\tabcolsep}{4pt}
+\begin{tabular}{@{}p{0.40\linewidth}p{0.14\linewidth}p{0.38\linewidth}@{}}
+\toprule
+Statement (continued) & Status & Requirement / observed \\
+\midrule
 ImageNet-C SAR beats always-freeze & \textbf{point estimate only} & $0.0289$ vs.\ $0.0319$; under the promoted leave-one-out pool the condition-level CI $[-0.0085,+0.0038]$ and even the i.i.d.-135 CI $[-0.0079,+0.0036]$ include zero; $2/5$ seeds beat both \\
 ImageNet-C SAR beats always-adapt & \textbf{point estimate only} & condition-level CI $[-0.076,+0.018]$ includes zero \\
 Natural safety (RxRx1) & locked & held-out test artifacts; $0$ adapts, so the bound is untested \\
 Natural safety (Camelyon17 $n{=}18$) & \textbf{recomputable and vacuous} & recomputed 2026-07-26 from \path{camelyon17_richZ_F_v1/_partial.json}; all $18$ cells are helpful and KGA adapts $18/18$, so the zero false-adapt rate is untested \\
-Office-Home and iWildCam OOF summaries & locked & OOF bootstrap seal (no-harm only; OH LOO BB not promoted) \\
-Three-source mixed routing aggregate & locked & constructed OOF mixture, not transfer \\
+Office-Home and iWildCam transfer summaries & \textbf{source-replayed, descriptive} & exact-rank transfer scores tie always-freeze with zero \textsc{adapt} decisions; A7 stability was not predeclared, so no beats-both or coverage theorem is promoted \\
+Three-source mixed routing aggregate & \textbf{withdrawn pending replay} & the historical constructed mixture used superseded component decisions; rerun from the reconciled records before making a routing claim \\
 Universal improvement & \textbf{not claimed} & impossible in general \\
-No-harm on \emph{every} natural shift & \textbf{withdrawn} & holds on the four one-sided locked tracks; PACS and ImageNet-R lose to always-adapt \\
+No-harm on \emph{every} natural shift & \textbf{withdrawn} & point-estimate no-harm holds on four one-sided tracks with stated caveats; PACS and ImageNet-R lose to always-adapt \\
 $\varepsilon$ estimates drift budget $\beta$ & \textbf{false} & $\beta$ is declared; $\varepsilon$ is empirical \\
 $|M|>\beta$ is a deployable rule at a declarable $\beta$ & \textbf{withdrawn (measured)} & $\widehat\beta$ from source-like dev cells is $1.4$--$50\times$ too small on CIFAR-10-C ($24$--$73\%$ of cells outside $\mathcal C_\beta$, commit error $0.4$--$16.6\%$ against a promised $0\%$) and returns $0$ commitments on all $405$ ImageNet-C cells in $5$ of $10$ configurations (\S\ref{sec:beta-sweep}) \\
 Population frontier matches the empirical rule at some $\beta>0$ & \textbf{false under held-out $M$} & fails on both yield and regret in $15$ of $18$ configurations; the $3$ exceptions are the full-$Z$ GBM channel on the $405$-cell ImageNet-C grid at a $\beta$ the declaration procedure does not return \\
 $\beta$-thresholding raises yield over the interval at fixed evidence & \textbf{yes, scoped} & CIFAR-10-C, $M{:=}\widehat\Delta$, $\widehat\beta{=}0.0097$: yield $0.749$ vs.\ $0.668$, regret $0.00081$ vs.\ $0.00150$; separated at $k{=}432$ condition clusters, \emph{not} at $k{=}6$ family clusters; costs $18$ sign errors vs.\ $1$ \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\begin{center}
+\scriptsize
+\renewcommand{\arraystretch}{1.12}
+\setlength{\tabcolsep}{4pt}
+\begin{tabular}{@{}p{0.40\linewidth}p{0.14\linewidth}p{0.38\linewidth}@{}}
+\toprule
+Statement (continued) & Status & Requirement / observed \\
+\midrule
 Theorem~\ref{thm:headline} / Theorem~\ref{lem:nonid} proofs affected by the above & \textbf{no} & sufficiency is arithmetic; necessity is the matched-evidence construction. Only the operational reading is withdrawn \\
 Abstention is a free way to satisfy no-harm & \textbf{false} & \textsc{abstain} realizes $f_0$, so always-abstain $=$ always-freeze: regret $0.128$ / $0.027$ / $0.033$ on CIFAR-10-C / ImageNet-C / ImageNet-R, the worst row on two of three \\
 Commitments land on high-stakes cells & \textbf{yes, on the stress grids} & CIFAR-10-C: $+0.0094$ per committed decision vs.\ permutation null $-0.0185$, $p<0.0002$; committed $|\Delta|$ is $24.5\times$ abstained, $p<0.0002$ \\
@@ -776,4 +800,3 @@ Wasserstein testing can be easier than estimation).
 \textup{(2)}~\emph{Certified poly-time supremum:} whether a $\mathrm{poly}(d,n)$ algorithm can
 output a sound and null-complete upper bound on linear max-sliced $W_1$ is open; only net
 certificates (not gradient-ascent surrogates) are admissible in Aud-F until settled.
-

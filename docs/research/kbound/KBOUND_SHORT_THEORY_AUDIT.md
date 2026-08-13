@@ -1,44 +1,45 @@
-# K-Bound Short Paper Mathematical Audit
+# K-Bound Short Paper Theory Audit
 
-## Core convention
+Date: 2026-08-11
 
-The manuscript now uses `Delta = R_T(f_0)-R_T(f_a)` consistently: positive is helpful, negative is harmful, and zero makes the fixed actions risk-equivalent.
+## Verdict
 
-## Core results
+The current manuscript keeps the mathematical and empirical layers distinct. No empirical panel in
+this reconciliation is used to alter or prove a population theorem.
 
-| Result | Final statement | Status |
-|---|---|---|
-| Disagreement reduction | `Delta=2 mu_T(D)(a_bar-1/2)` and `sign Delta=sign(M+gamma)` | proved in main text |
-| Interior impossibility | for `beta>0` and `|M|<beta`, matched augmented evidence can support opposite nonzero benefits | proved in main text |
-| Boundary result | at `|M|=beta>0`, zero-versus-strict ambiguity blocks a uniformly sound strict action | proved separately |
-| Closed-band action | abstention is maximal under strict three-way soundness on `|M|<=beta` | proved in main text |
-| Strict-commitment frontier | a strict adapt/freeze action is uniformly supportable iff `|M|>beta` | proved in main text |
-| Finite-sample certificate | marginal interval coverage implies marginal false-adapt and false-freeze at most `alpha` | proved in main text |
-| Multiclass bridge | `Delta=P_T(D)(p_a-p_0)` | proved; converse needs target-class richness |
-| Regression bridge | squared-loss benefit decomposes as `M_reg+gamma_reg` | derived; converse needs richness |
+## Checked conventions
 
-## Assumption separation
-
-- Risk alignment is structural and supports population identifiability/transfer interpretation.
-- Coverage alone is the premise of the elementary finite-sample error implication.
-- Exchangeability or an explicit shift correction is one route to coverage.
-- Fitting a benefit regressor does not certify risk alignment.
-- `beta=0` is the strongest zero-drift assumption, not a conservative unknown-drift setting.
-
-## Population versus empirical layer
-
-- Population: `M`, `gamma`, `beta`.
-- Empirical KGA: `Delta_hat`, `epsilon`.
-- Real-data KGA does not numerically estimate or apply `M`, `gamma`, or `beta`.
-- `epsilon` does not estimate `beta`.
-- Empirical abstention does not prove structural non-identifiability.
+- Benefit is `Delta = R_T(f_0) - R_T(f_a)`: positive helps, negative harms, and zero is a tie.
+- A strict adapt/freeze commitment is uniformly supportable over the declared drift class only
+  outside the closed band `|M| <= beta`; the conservative action inside the band is abstention.
+- `beta = 0` is a zero-drift assumption, not a conservative default for unknown drift.
+- `M`, `gamma`, and `beta` are population quantities.
+- `Delta_hat` and `epsilon` are finite-sample KGA quantities.
+- `epsilon` does not estimate `beta`, and real-data KGA does not numerically apply `|M| > beta`.
+- The elementary false-adapt implication requires interval coverage. Exchangeability or a valid
+  correction may justify coverage; risk alignment is not an extra premise after coverage is assumed.
+- `FA_u = P(adapt and Delta <= 0)` is the theorem-controlled marginal event under coverage.
+- `FA_c = P(Delta <= 0 | adapt)` is descriptive unless separately proved.
 
 ## Lean scope
 
-The repository's Lean inventory checks indexed algebraic, finite-decision, measure-containment, and conditional uniform-rank results. It includes frontier sufficiency and marginal error containment conditional on coverage. It does not establish the full target-law witness construction, frontier necessity/maximality, risk alignment, multiclass identifiability, calibration transfer, or the general exchangeable-process lift. The final paper states this narrower scope.
+The manuscript describes the Lean development as kernel-checked for the named algebraic,
+finite-decision, measure-containment, and conditional uniform-rank results. It does not claim that a
+successful build mechanizes the entire deployment theorem. External assumptions and unmechanized
+links include target-law construction, evidence-law equality, deployment-class membership, risk
+alignment, calibration transfer, and the lift to arbitrary exchangeable deployment processes.
 
-## Residual mathematical risk
+## Empirical non-implications
 
-- A specialist should independently review the target-law richness used by the necessity construction.
-- The full measure-theoretic exchangeability lift remains outside the current Lean development.
-- No theorem controls conditional false-adapt `FA_c`; it is descriptive only.
+- Empirical abstention is not automatically structural non-identifiability.
+- A fitted benefit regressor does not certify risk alignment.
+- Source-replayed natural no-harm results do not prove a universal no-harm theorem.
+- ImageNet-C SAR point beats-both does not establish CI-robust or seed-robust superiority.
+- ImageNet-R and PACS are retained as negative diagnostics rather than forced into the theory claim.
+
+## Residual theory risk
+
+The main submission risk is interpretive, not an algebraic contradiction: reviewers may still read
+the long population-budget development as stronger than the deployment evidence. The paper now
+states the operational frontier reading as withdrawn where the declared budget procedure fails.
+

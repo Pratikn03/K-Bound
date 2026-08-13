@@ -104,6 +104,9 @@ now, because a condition nobody can cite is a condition nobody checks.
   \item[\textnormal{(A6)} Fixed decision rule.] Estimator, interval construction,
     $\alpha$ and decision rule are fixed before the promoted target conditions are
     evaluated.
+  \item[\textnormal{(A7)} Estimator stability.] Where the radius is calibrated
+    leave-one-out rather than on a clean split, the deployed full-data fit and each
+    leave-one-out fit differ by at most $\beta_{\mathrm{stab}}$ in prediction.
 \end{description}
 
 \noindent (A1)--(A4) and (A6) rename conditions the paper already carried:
@@ -116,6 +119,23 @@ deployment gate because it is a property of the loss we choose, not of the deplo
 meet. \textbf{(A5) is new in this revision}, and it is the one the empirical sections
 most often failed to make explicit: a coverage figure computed over correlated cells was
 reported without the denominator that makes it readable.
+
+\begin{remark}[Why (A7) exists, and what it costs]\label{rem:a7}
+The grids of \S\ref{sec:exp} calibrate $\varepsilon$ leave-one-out rather than on a
+clean split, and no theorem makes that exact conformal: the plain jackknife has no
+distribution-free finite-sample guarantee, and its finite-sample counterpart buys
+$1-2\alpha$ rather than $1-\alpha$. What does hold is a deterministic transfer. If the
+deployed fit differs from each leave-one-out fit by at most $\beta_{\mathrm{stab}}$,
+then leave-one-out coverage at radius $\varepsilon$ gives full-fit coverage at radius
+$\beta_{\mathrm{stab}}+\varepsilon$ (\path{formal/KBound/Stability.lean},
+\texttt{stability\_transfers\_loo\_coverage}, machine-checked). So
+$\beta_{\mathrm{stab}}$ is the price of leave-one-out calibration, and it is an
+assumption about the estimator rather than something the calibration data can
+establish. The contrapositive is the useful direction: a miss beyond
+$\beta_{\mathrm{stab}}+\varepsilon$ \emph{proves} the fit was less stable than
+$\beta_{\mathrm{stab}}$, so (A7) is falsifiable after the fact even though it is not
+verifiable before.
+\end{remark}
 
 \begin{remark}[What the contract is not]\label{rem:contract-not}
 Theorem~\ref{thm:certificate} is conditional on (A1)--(A6), and K-Bound does not infer,

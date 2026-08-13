@@ -1,0 +1,164 @@
+{
+  "_provenance": {
+    "archive_relative_path": "experiments/kbound/results/pacs_seed1.json",
+    "original_bytes": 3698,
+    "original_sha256": "66752b8c322428bde75c5b385cdc55a6bda2944cfecab6c442a79af67378656a"
+  },
+  "alpha": 0.1,
+  "dataset": "PACS",
+  "n_classes": 7,
+  "per_domain": {
+    "art_painting": {
+      "FA_c": 0.16666666666666666,
+      "FA_u": 0.1111111111111111,
+      "adapt_rate": 0.6666666666666666,
+      "base_rate_harmful": 0.16666666666666666,
+      "calibration_domain": "sketch",
+      "cis": {
+        "vs_adapt_ci": [
+          -0.0211640199025472,
+          0.0158730149269104
+        ],
+        "vs_adapt_mean": -0.0035273366504245335,
+        "vs_freeze_ci": [
+          -0.0017636683252122668,
+          0.03791886899206373
+        ],
+        "vs_freeze_mean": 0.017636683252122667
+      },
+      "coverage": 0.6666666666666666,
+      "eps": 0.017132883374906566,
+      "n_test_cells": 18,
+      "regret": {
+        "K_Bound": 0.016754849089516535,
+        "always_adapt": 0.013227512439092001,
+        "always_freeze": 0.0343915323416392
+      },
+      "verdict": "NULL",
+      "wall_sec": 1467.1
+    },
+    "cartoon": {
+      "FA_c": 0.0,
+      "FA_u": 0.0,
+      "adapt_rate": 0.0,
+      "base_rate_harmful": 0.3333333333333333,
+      "calibration_domain": "sketch",
+      "cis": {
+        "vs_adapt_ci": [
+          -0.0158730149269104,
+          0.028218693203396268
+        ],
+        "vs_adapt_mean": 0.0052910049756368,
+        "vs_freeze_ci": [
+          0.0,
+          0.0
+        ],
+        "vs_freeze_mean": 0.0
+      },
+      "coverage": 0.6111111111111112,
+      "eps": 0.022805733757415604,
+      "n_test_cells": 18,
+      "regret": {
+        "K_Bound": 0.014991180764304267,
+        "always_adapt": 0.020282185739941068,
+        "always_freeze": 0.014991180764304267
+      },
+      "verdict": "SAFETY (no-harm)",
+      "wall_sec": 1295.2
+    },
+    "photo": {
+      "FA_c": 0.0,
+      "FA_u": 0.0,
+      "adapt_rate": 0.0,
+      "base_rate_harmful": 0.3333333333333333,
+      "calibration_domain": "sketch",
+      "cis": {
+        "vs_adapt_ci": [
+          -0.059082888894610934,
+          -0.0017636683252122668
+        ],
+        "vs_adapt_mean": -0.0291005273660024,
+        "vs_freeze_ci": [
+          0.0,
+          0.0
+        ],
+        "vs_freeze_mean": 0.0
+      },
+      "coverage": 1.0,
+      "eps": 0.022102671198098868,
+      "n_test_cells": 18,
+      "regret": {
+        "K_Bound": 0.04144620564248827,
+        "always_adapt": 0.012345678276485868,
+        "always_freeze": 0.04144620564248827
+      },
+      "verdict": "NULL",
+      "wall_sec": 1060.4
+    },
+    "sketch": {
+      "FA_c": 0.0,
+      "FA_u": 0.0,
+      "adapt_rate": 0.0,
+      "base_rate_harmful": 0.0,
+      "calibration_domain": "photo",
+      "cis": {
+        "vs_adapt_ci": [
+          -0.17372133003340828,
+          -0.13139329022831386
+        ],
+        "vs_adapt_mean": -0.1534391442934672,
+        "vs_freeze_ci": [
+          0.0,
+          0.0
+        ],
+        "vs_freeze_mean": 0.0
+      },
+      "coverage": 0.9444444444444444,
+      "eps": 0.04122452220485112,
+      "n_test_cells": 18,
+      "regret": {
+        "K_Bound": 0.1534391442934672,
+        "always_adapt": 0.0,
+        "always_freeze": 0.1534391442934672
+      },
+      "verdict": "NULL",
+      "wall_sec": 1073.1
+    }
+  },
+  "protocol": {
+    "cell_grid": {
+      "aggressiveness": [
+        "aggressive"
+      ],
+      "batch_regimes": [
+        "tiny"
+      ],
+      "compositions": [
+        "iid",
+        "imbalanced",
+        "single_class"
+      ],
+      "repetitions": [
+        0,
+        1
+      ]
+    },
+    "erm_steps": 600,
+    "methods": [
+      "tent",
+      "eata",
+      "sar"
+    ]
+  },
+  "schema": "kbound_pacs_seed_v1",
+  "seed": 1,
+  "win_hunt_v5_override": {
+    "adapt_lr": 0.004,
+    "aggressiveness": [
+      "aggressive"
+    ],
+    "batch_regimes": [
+      "tiny"
+    ]
+  }
+}

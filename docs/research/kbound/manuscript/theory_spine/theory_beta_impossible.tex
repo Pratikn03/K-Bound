@@ -1,0 +1,476 @@
+% =====================================================================
+% theory_beta_impossible.tex
+%
+% The beta-declaration impossibility: what a label-free procedure can and
+% cannot supply as a drift budget, and the exact ingredient that escapes.
+%
+% Written to be \input from the K-Bound appendix (long build) or, in the
+% compressed statement-only form marked below, from kbound_short_appendix.tex.
+% Uses the host amsthm environments and the notation of theory_setup.tex
+% (Assumption ass:deploy): D, mu_T, s, eta_a, abar, M, gamma, beta, Z.
+%
+% Relation to what is already in the paper:
+%   * Lemma~\ref{lem:fibre} is the construction already used twice --- in the
+%     proof of Theorem~\ref{lem:nonid} and in the proof of Theorem~\ref{thm:aud-A}.
+%     It is isolated here because everything below is a corollary of it.
+%   * Theorem~\ref{thm:beta-minimax} generalises Theorem~\ref{thm:aud-A} from
+%     the unrestricted class to an arbitrary declared class, and upgrades it
+%     from an impossibility to an exact minimax value.
+%   * Theorem~\ref{thm:anchor} is new and is strictly stronger than
+%     Theorem~\ref{thm:aud-A}.
+%   * Theorem~\ref{thm:lecam} is the matching lower bound for the positive
+%     side (Theorem~\ref{thm:aud-B}); together they close the rate.
+%
+% Numerical check: kb_fixes/beta_impossible/check_anchor_collapse.py and its
+% output anchor_collapse_check.json (see Remark~\ref{rem:empirical}).
+% =====================================================================
+
+\providecommand{\E}{\mathbb{E}}
+\providecommand{\Law}{\mathcal{L}}
+\providecommand{\sign}{\operatorname{sign}}
+\providecommand{\TV}{\mathrm{TV}}
+\providecommand{\KL}{\mathrm{KL}}
+
+\providecommand{\Var}{\operatorname{Var}}
+\providecommand{\E}{\mathbb{E}}
+\providecommand{\Law}{\mathcal{L}}
+\providecommand{\sign}{\operatorname{sign}}
+\providecommand{\TV}{\mathrm{TV}}
+\providecommand{\KL}{\mathrm{KL}}
+\providecommand{\R}{\mathbb{R}}
+
+\section{The drift budget cannot come from the deployment: the exact minimax label-free budget}
+\label{app:beta-impossible}
+
+The population frontier of Theorem~\ref{thm:headline} commits exactly when $|M|>\beta$, and
+$\beta$ is a \emph{declared} input. This section settles what a procedure can do about that.
+The answer is sharper than ``label-free audits are vacuous''
+(Theorem~\ref{thm:aud-A}): for \emph{every} declared class, the best label-free budget is a
+constant that ignores the data, that constant is exactly the radius of the class's own
+abstention band, and any attempt to buy it with labels at a domain other than the deployment
+domain buys nothing unless a transfer constraint is separately declared. The escape is a
+matched pair --- labels at an anchor, plus a declared coupling --- and it carries a
+$n^{-1/2}$ floor that no structural assumption removes.
+
+Throughout, Assumption~\ref{ass:deploy} is in force: $Y\in\{0,1\}$, $0/1$ loss, $\mu_T(D)>0$,
+$s:\mathcal X\to[0,1]$ a fixed \emph{source}-calibrated score, $u:=\eta_a-s\in[-1,1]$ on $D$,
+$\gamma=\E_{\mu_T}[u\mid D]=\bar a-\tfrac12-M$, and $M=\E_{\mu_T}[s\mid D]-\tfrac12\in[-\tfrac12,\tfrac12]$.
+
+\subsection{The engine: one lemma, used three times}
+
+\begin{definition}[Audit data]\label{def:audit-data}
+The \emph{audit data} $W$ is the totality of what a deployment-time procedure may read:
+the unlabeled deployment batch $X_{1:m}\sim\mu_T$, the fixed maps $(f_0,f_a,s)$ and every
+label-free statistic $Z=\phi(X_{1:m},f_0,f_a)$ derived from them, together with any sample
+$S$ --- labeled or not --- drawn from a source or calibration law that is specified
+independently of the target label kernel. An \emph{audit} is a measurable
+$\widehat\beta=g(W,U)\ge0$ where $U$ is a randomisation seed independent of everything else.
+$W$ contains \emph{no target labels}. This is exactly the ``target-label-free'' convention
+boxed in Assumption~\ref{ass:deploy}.
+\end{definition}
+
+\begin{lemma}[Kernel freedom on the disagreement region]\label{lem:fibre}
+Fix the observables $(\mu_T,P_S,f_0,f_a,s)$, hence $D$ and $M$, and fix any off-$D$
+conditional label law $K^\circ$. For every measurable $\eta:D\to[0,1]$ there is a target law
+$P_T^{\eta}$ on $\mathcal X\times\{0,1\}$ with input marginal $\mu_T$, off-$D$ kernel
+$K^\circ$, and
+\[
+\Pr_{P_T^{\eta}}\bigl(f_a(X)=Y\mid X=x\bigr)=\eta(x)\quad\text{for }x\in D .
+\]
+Moreover $\Law(W\mid P_T^{\eta})$ does not depend on $\eta$, and
+\[
+\begin{aligned}
+\bar a(P_T^\eta)&=\E_{\mu_T}[\eta\mid D],\\
+\gamma(P_T^\eta)&=\E_{\mu_T}[\eta\mid D]-\tfrac12-M ,
+\end{aligned}
+\]
+so that as $\eta$ ranges over all of $[0,1]^D$, $\gamma$ ranges over exactly
+$\bigl[-\tfrac12-M,\ \tfrac12-M\bigr]$, an interval of length $1$ containing $0$ in its
+interior whenever $|M|<\tfrac12$.
+\end{lemma}
+
+\begin{proof}
+\emph{Existence.} On $D$ we have $f_0(x)\neq f_a(x)$ and $Y$ is binary, so
+$\{f_0(x),f_a(x)\}=\{0,1\}$; setting $K^\eta(x,f_a(x))=\eta(x)$ and
+$K^\eta(x,f_0(x))=1-\eta(x)$ therefore defines a valid Bernoulli conditional law on
+$\{0,1\}$ for each $x\in D$, measurable in $x$ because $\eta,f_0,f_a$ are. Off $D$ take
+$K^\circ$. Then $P_T^\eta(dx,dy):=\mu_T(dx)K(x,dy)$ is a probability law with the stated
+marginal and pointwise correctness.
+
+\emph{Invariance of the audit data.} By Definition~\ref{def:audit-data}, $W$ is a function of
+$X_{1:m}$, of the fixed maps $(f_0,f_a,s)$, of $S$, and of $U$. The construction changes
+neither $\mu_T$ (so $\Law(X_{1:m})$ is fixed), nor the maps, nor the law generating $S$, nor
+$U$. Hence $\Law(W\mid P_T^\eta)=\Law(W)$ for every $\eta$.
+
+\emph{Range.} $\bar a=\E_{\mu_T}[\eta\mid D]$ by definition of $\bar a$, and
+$\gamma=\bar a-\tfrac12-M$ by Remark~\ref{rem:gamma-residual}. Taking $\eta\equiv c$ for
+$c\in[0,1]$ gives $\bar a=c$, so $\bar a$ attains every value in $[0,1]$ and $\gamma$ every
+value in $[-\tfrac12-M,\tfrac12-M]$; no larger range is possible since $\bar a\in[0,1]$
+always. Since $\mu_T(D)>0$ the conditional expectation is well defined.
+\end{proof}
+
+\begin{remark}[The three uses are one construction]\label{rem:one-construction}
+Lemma~\ref{lem:fibre} restricted to the two-point subfamily $\eta\equiv\tfrac12\pm\delta$ with
+$\delta<\min\{\beta-|M|,\tfrac12\}$ \emph{is} the proof of the matched-evidence impossibility
+(Theorem~\ref{lem:nonid}). The same lemma at the two \emph{extreme} points $\eta\equiv1$ and
+$\eta\equiv0$ \emph{is} the proof of audit vacuity (Theorem~\ref{thm:aud-A}). Everything in
+this section is the same one-parameter family $\{\eta\equiv c\}_{c\in[0,1]}$ read at a
+different radius. In particular the construction that forces abstention and the construction
+that forbids auditing the budget which decides abstention are literally the same object;
+Corollary~\ref{cor:beta-is-beta} makes this an equality of numbers, not an analogy.
+No total-variation trade-off is available to sharpen or weaken it: within a fibre the
+observable laws coincide \emph{exactly}, which is the degenerate --- and strongest --- case
+of a two-point argument, so Le Cam's method has nothing to add here. It reappears, genuinely,
+only in Theorem~\ref{thm:lecam}, where labels make the two laws distinguishable.
+\end{remark}
+
+\subsection{The exact minimax label-free budget}
+
+\begin{definition}[Fibre and fibre radius]\label{def:fibre-radius}
+Let $\mathcal C$ be a declared class of target laws and let $z$ denote a value of
+$\Law(W)$. The \emph{fibre} of $\mathcal C$ at $z$ is
+$\mathcal C(z):=\{P\in\mathcal C:\Law(W\mid P)=z\}$, assumed nonempty, and the \emph{fibre
+radius} is
+\[
+\Gamma_z(\mathcal C)\;:=\;\sup_{P\in\mathcal C(z)}|\gamma(P)|\ \in\ \bigl[0,\tfrac12+|M|\bigr].
+\]
+An audit $\widehat\beta$ is \emph{$\delta$-valid on $\mathcal C(z)$} if
+$\Pr_P(|\gamma(P)|\le\widehat\beta)\ge1-\delta$ for \emph{every} $P\in\mathcal C(z)$.
+\end{definition}
+
+\begin{theorem}[Label-free budget audits are declarations]\label{thm:beta-minimax}
+Fix $z$ with $\mathcal C(z)\neq\emptyset$ and $\delta\in[0,1)$.
+\begin{enumerate}
+\item[\textnormal{(a)}]\textbf{Floor.} Every $\delta$-valid audit satisfies
+$\Pr\bigl(\widehat\beta\ge\Gamma_z(\mathcal C)\bigr)\ge1-\delta$, and this probability is the
+same under every $P\in\mathcal C(z)$.
+\item[\textnormal{(b)}]\textbf{Attainment.} The constant audit
+$\widehat\beta\equiv\Gamma_z(\mathcal C)$ is $0$-valid. Hence
+$\inf\{\,\mathrm{ess\,sup}\,\widehat\beta:\widehat\beta\ \text{$0$-valid}\,\}=\Gamma_z(\mathcal C)$,
+and the infimum is attained by an audit that reads none of its data.
+\item[\textnormal{(c)}]\textbf{Decision inertness.} On the event of (a), the audited rule
+(\textsc{adapt} iff $M>\widehat\beta$, \textsc{freeze} iff $M<-\widehat\beta$, else
+\textsc{abstain}) commits only where the \emph{a priori} rule with declared budget
+$\Gamma_z(\mathcal C)$ commits. No label-free audit ever converts an abstention into a
+commitment relative to that declaration.
+\item[\textnormal{(d)}]\textbf{Yield is bounded by the error budget.} If
+$|M|\le\Gamma_z(\mathcal C)$ then $\Pr[\,\text{the audited rule commits}\,]\le\delta$.
+\end{enumerate}
+\end{theorem}
+
+\begin{proof}
+By Lemma~\ref{lem:fibre} and Definition~\ref{def:fibre-radius}, $\Law(W\mid P)=z$ for every
+$P\in\mathcal C(z)$; since $\widehat\beta=g(W,U)$ with $U$ independent, $\Law(\widehat\beta)$
+is one and the same law $\nu$ under every $P\in\mathcal C(z)$. Write $\Pr_\nu$ for it.
+
+(a) Fix $P\in\mathcal C(z)$. Its drift $\gamma(P)$ is a deterministic number, so
+$\delta$-validity reads $\Pr_\nu(\widehat\beta\ge|\gamma(P)|)\ge1-\delta$. Taking the
+supremum over the fibre: for every $c<\Gamma_z(\mathcal C)$ there is $P\in\mathcal C(z)$ with
+$|\gamma(P)|>c$, whence $\Pr_\nu(\widehat\beta\ge c)\ge\Pr_\nu(\widehat\beta\ge|\gamma(P)|)\ge1-\delta$.
+Now $\{\widehat\beta\ge\Gamma_z\}=\bigcap_{n\ge1}\{\widehat\beta\ge\Gamma_z-1/n\}$ is a
+decreasing intersection of events each of probability $\ge1-\delta$, so
+$\Pr_\nu(\widehat\beta\ge\Gamma_z)\ge1-\delta$ by continuity from above. (No attainment of the
+supremum is needed.)
+
+(b) Immediate from the definition of $\Gamma_z$: $|\gamma(P)|\le\Gamma_z$ for every
+$P\in\mathcal C(z)$, deterministically. Combined with (a), no $0$-valid audit has essential
+supremum below $\Gamma_z$, and the constant achieves it.
+
+(c) On $\{\widehat\beta\ge\Gamma_z\}$, $|M|>\widehat\beta$ implies $|M|>\Gamma_z$.
+
+(d) A commitment requires $|M|>\widehat\beta$; if $|M|\le\Gamma_z$ this forces
+$\widehat\beta<\Gamma_z$, an event of probability at most $\delta$ by (a).
+\end{proof}
+
+\begin{corollary}[Aud-A, recovered and sharpened]\label{cor:audA}
+Let $\mathcal C^{\mathrm{all}}$ be the class of all target laws matching the observables.
+Then $\Gamma_z(\mathcal C^{\mathrm{all}})=\tfrac12+|M|$, so every $\delta$-valid label-free
+audit has $\widehat\beta\ge\tfrac12+|M|>|M|$ with probability $\ge1-\delta$; the audited
+frontier's decision yield is at most $\delta$, for every deployment batch size $m$, every
+calibration sample size, and every choice of evidence map $\phi$.
+\end{corollary}
+\begin{proof}
+Lemma~\ref{lem:fibre} gives the achievable drift set
+$[-\tfrac12-M,\tfrac12-M]$, whose largest absolute value is
+$\max\{|\tfrac12-M|,|\tfrac12+M|\}=\tfrac12+|M|$ because $|M|\le\tfrac12$. Apply
+Theorem~\ref{thm:beta-minimax}(a) and (d), using $\tfrac12+|M|>|M|$.
+\end{proof}
+
+\begin{corollary}[The least auditable budget is the declared budget]\label{cor:beta-is-beta}
+For the declared deployment class $\mathcal C_\beta=\{P:|\gamma(P)|\le\beta\}$ with
+$0\le\beta\le\tfrac12$, the fibre radius is $\Gamma_z(\mathcal C_\beta)=\beta$ exactly.
+Consequently:
+\begin{enumerate}
+\item[\textnormal{(i)}] the smallest budget any label-free audit can certify over
+$\mathcal C_\beta$ is $\beta$ itself, so the best possible audit returns its own input; and
+\item[\textnormal{(ii)}] the fibre radius is simultaneously the abstention radius: strict
+commitment is uniformly directionally sound at $z$ if and only if
+$|M|>\Gamma_z(\mathcal C_\beta)$, which is Theorem~\ref{thm:headline}\,(iv).
+\end{enumerate}
+\end{corollary}
+\begin{proof}
+By Lemma~\ref{lem:fibre} the achievable drifts inside $\mathcal C_\beta$ are
+$G=[-\beta,\beta]\cap[-\tfrac12-M,\tfrac12-M]
+=[-\min(\beta,\tfrac12+M),\ \min(\beta,\tfrac12-M)]$. Since $|M|\le\tfrac12$ and
+$\beta\le\tfrac12$ we have $\beta\le\tfrac12+|M|$, so
+$\Gamma_z=\max\{\min(\beta,\tfrac12-M),\min(\beta,\tfrac12+M)\}=\min(\beta,\tfrac12+|M|)=\beta$.
+Part~(i) is Theorem~\ref{thm:beta-minimax}(a)--(b). For (ii), $\sign(M+\gamma)$ is constant
+and nonzero over $\gamma\in G$ iff $0\notin[M+\inf G,\,M+\sup G]$; for $M>0$ this is
+$\min(\beta,\tfrac12+M)<M$, i.e.\ $\beta<M$ (as $M\le\tfrac12<\tfrac12+M$), and symmetrically
+for $M<0$; for $M=0$ it fails for every $\beta\ge0$. So the condition is $|M|>\beta$, which by
+the first part is $|M|>\Gamma_z(\mathcal C_\beta)$; the equivalence with uniform directional
+soundness is Theorem~\ref{thm:headline}\,(iv).
+\end{proof}
+
+\noindent Corollary~\ref{cor:beta-is-beta} is the precise sense in which the two halves of
+the paper are one statement. \emph{The number that bounds the region on which the frontier
+must abstain, and the number that is the best a label-free audit of the budget can ever
+return, are the same number.} Auditing $\beta$ from unlabeled deployment data is not merely
+hard; it is the identity map on the declaration.
+
+\begin{remark}[The only seam, named in advance]\label{rem:seam}
+Theorem~\ref{thm:beta-minimax} says no budget valid \emph{uniformly over the fibre} beats
+$\Gamma_z$, and \S\ref{app:episode-beta} nonetheless exhibits a budget computed from a history that
+is independent of the current episode's label kernel. These are consistent, and the consistency is
+not incidental: Proposition~\ref{epi:prop-escape} localises it to a single logical move.
+Theorem~\ref{thm:beta-minimax} quantifies with a \emph{supremum over the fibre};
+Theorem~\ref{epi:thm-conformal} quantifies with an \emph{average over the episode law}, and the
+fibre's extreme worlds---the ones that force $\Gamma_z$---carry episode probability at most
+$\alpha$. The episode budget is therefore not fibre-uniformly valid, and
+Proposition~\ref{epi:prop-escape}(a) states that explicitly rather than leaving it implicit. Neither
+ingredient works alone: averaging without retrospective labels identifies nothing
+(Theorem~\ref{epi:thm-ident}(b)), and labels without an exchangeable population return us to this
+section. Every guarantee downstream of that move is marginal over deployments, not conditional on
+one (Remark~\ref{epi:rem-marginal}).
+\end{remark}
+
+\subsection{Labels at the wrong domain buy nothing}
+
+Theorem~\ref{thm:aud-A} is often read as ``labels fix it''. They do not, unless they are
+labels of the deployment domain or a coupling to it is declared.
+
+\begin{theorem}[Anchor destruction]\label{thm:anchor}
+Suppose the audit additionally observes a \emph{fully labeled} sample
+$S_{\mathrm{cal}}=(X_i,Y_i)_{i\le n_{\mathrm{lab}}}$ from a calibration law
+$P_{\mathrm{cal}}$, and that the declared class $\mathcal C$ imposes no constraint relating
+the deployment drift function $u_T$ to $u_{\mathrm{cal}}$ (formally: $\mathcal C$ is a product,
+$\mathcal C=\mathcal C_{\mathrm{cal}}\times\mathcal C_T$ with $\mathcal C_T$ containing, for
+each of its members, the whole family $\{P_T^\eta\}_{\eta\in[0,1]^D}$ of
+Lemma~\ref{lem:fibre}). Then $\Gamma_z(\mathcal C)=\tfrac12+|M|$ and
+Theorem~\ref{thm:beta-minimax} applies verbatim: the labeled calibration sample changes the
+minimax budget by exactly zero, for every $n_{\mathrm{lab}}$.
+\end{theorem}
+\begin{proof}
+$S_{\mathrm{cal}}$ is part of $W$ (Definition~\ref{def:audit-data}) and its law is specified
+by $P_{\mathrm{cal}}$, which the fibre construction of Lemma~\ref{lem:fibre} leaves
+untouched: the construction alters only the target label kernel on $D$. Hence
+$\Law(W)$ is constant on the fibre, and the fibre still contains
+$\{P_T^\eta\}_{\eta\in[0,1]^D}$, so $\Gamma_z=\tfrac12+|M|$ as in
+Corollary~\ref{cor:audA}.
+\end{proof}
+
+\begin{proposition}[Three-term decomposition: what each ingredient buys]\label{prop:threeterm}
+Let $\mathcal F$ be a symmetric class of functions $D\to\mathbb R$ with
+$u_{\mathrm{cal}}\in\mathcal F$, let
+$\Delta_{\mathcal F}(P,Q)=\sup_{f\in\mathcal F}|Pf-Qf|$, and put
+$\rho:=\E_{\mu_T}\bigl[\,|u_T-u_{\mathrm{cal}}|\ \bigm|\ D\,\bigr]$. Then, exactly,
+\[
+\begin{aligned}
+|\gamma_T|\ \le\ &\underbrace{|\gamma_{\mathrm{cal}}|}_{\text{needs labels at the anchor}}
+\;+\;\underbrace{\Delta_{\mathcal F}(\mu_{\mathrm{cal}},\mu_T)}_{\text{label-free computable}}\\
+&\;+\;\underbrace{\rho}_{\text{declared invariance defect}} .
+\end{aligned}
+\]
+Every audit in Appendix~\ref{app:auditable} --- Aud-B, Aud-C, Aud-F, Aud-G, Aud-H --- is an
+instance of this decomposition with $\rho$ set to $0$ by declaration and the middle term
+estimated in a class-specific way; none of them omits the first term.
+\end{proposition}
+\begin{proof}
+$\gamma_T=\E_{\mu_T}[u_T\mid D]
+=\E_{\mu_T}[u_{\mathrm{cal}}\mid D]+\E_{\mu_T}[u_T-u_{\mathrm{cal}}\mid D]$.
+The second summand is bounded in absolute value by $\rho$ by Jensen. For the first,
+$\E_{\mu_T}[u_{\mathrm{cal}}\mid D]
+=\gamma_{\mathrm{cal}}+\bigl(\E_{\mu_T}-\E_{\mu_{\mathrm{cal}}}\bigr)[u_{\mathrm{cal}}\mid D]$
+and, since $u_{\mathrm{cal}}\in\mathcal F=-\mathcal F$, the bracket is at most
+$\Delta_{\mathcal F}(\mu_{\mathrm{cal}},\mu_T)$ in absolute value. Triangle inequality.
+\end{proof}
+
+\begin{remark}[Reading of Proposition~\ref{prop:threeterm}]\label{rem:reading}
+The three terms are bought by three different currencies and no currency substitutes for
+another. Only the middle term is label-free computable, and
+Theorem~\ref{thm:beta-minimax} applied to the first and third says why: both are fibre
+quantities. The third term $\rho$ is a drift budget of exactly the same type as $\beta$ ---
+apply Lemma~\ref{lem:fibre} with $u$ replaced by $u_T-u_{\mathrm{cal}}$, which is equally
+unconstrained by $W$, to get $\Gamma_z=\tfrac12+|M|$ for $\rho$ as well. Declaring $\rho$
+instead of $\beta$ is therefore a renaming, not a reduction: \emph{the budget-declaration
+problem is a fixed point of the audit construction.} This is not a defect of the paper's
+audits; it is the reason they must declare (Lip), (Idx), the witness class, or (G1)--(G3),
+and the reason those declarations are falsifiable but never verifiable.
+\end{remark}
+
+\subsection{The escape, and its floor}
+
+\begin{theorem}[Root-$n$ floor with deployment labels]\label{thm:lecam}
+Consider the most favourable labeled setting: the audit observes $n\ge2$ i.i.d.\ correctness
+indicators $\mathbf 1\{f_a(X_i)=Y_i\}$ with $X_i\sim\mu_T(\cdot\mid D)$, i.e.\ labels at the
+deployment domain itself, so that $\rho=0$ and $\Delta_{\mathcal F}=0$ in
+Proposition~\ref{prop:threeterm}. Let $\mathcal U$ be the declared class of drift functions
+on $D$ and let $\tau(\mathcal U):=\sup\{|c|:\text{the constant function }c\in\mathcal U\}$.
+Suppose $\widehat\beta$ is $\delta$-valid on $\mathcal C_{\mathcal U}$ with $\delta\le\tfrac16$
+and is \emph{$\kappa$-useful}, meaning $\Pr_{P_0}(\widehat\beta\le\kappa)\ge\tfrac23$ at a law
+$P_0$ with $\mu_T=\mu_{\mathrm{cal}}$ and $\gamma=0$. Then
+\[
+\kappa\ \ge\ \min\Bigl\{\tau(\mathcal U),\ \tfrac{1}{4},\ \tfrac{1}{2\sqrt{2n}}\Bigr\}.
+\]
+In particular, whenever nonzero constant drifts are admissible at scale
+$\tau(\mathcal U)\ge(2\sqrt{2n})^{-1}$, no valid audit is useful at any rate faster than
+$n^{-1/2}$; matched from above by Theorem~\ref{thm:aud-B}, whose width is
+$\sqrt{2\ln(2/\delta)/n}$.
+\end{theorem}
+\begin{proof}
+Take $s\equiv\tfrac12$ on $D$, so $M=0$, and for $t\in[0,\tfrac14]$ let $P_t$ be the law of
+Lemma~\ref{lem:fibre} with $\eta\equiv\tfrac12+t$; then $u_t\equiv t$ is the constant $t$,
+$P_t\in\mathcal C_{\mathcal U}$ whenever $t\le\tau(\mathcal U)$, and $\gamma(P_t)=t$, while
+$P_0$ is the null law with $\gamma=0$. The audit's data are $n$ i.i.d.\
+$\mathrm{Bernoulli}(\tfrac12+t)$ variables together with label-free quantities whose law does
+not depend on $t$ (Lemma~\ref{lem:fibre}); write $Q_t$ for the induced law of the audit's
+input and $A:=\{\widehat\beta\ge t\}$.
+
+Suppose, for contradiction, that $\kappa<t$ for some $t\le\min\{\tau(\mathcal U),\tfrac14\}$
+with $\TV(Q_0,Q_t)<\tfrac12$. Validity at $P_t$ gives $Q_t(A)\ge1-\delta\ge\tfrac56$;
+usefulness at $P_0$ gives $Q_0(A)\le Q_0(\widehat\beta>\kappa)\le\tfrac13$. Hence
+$\TV(Q_0,Q_t)\ge Q_t(A)-Q_0(A)\ge\tfrac56-\tfrac13=\tfrac12$, a contradiction. Therefore
+$\kappa\ge t$ for every such $t$.
+
+It remains to bound $\TV$. The $t$-dependent part of $Q_t$ is a product of $n$ Bernoulli laws,
+so by the tensorisation of $\KL$, then $\KL\le\chi^2$, then Pinsker,
+\[
+\begin{aligned}
+\TV(Q_0,Q_t)&\le\sqrt{\tfrac12\KL(Q_t\Vert Q_0)}\\
+&=\sqrt{\tfrac{n}{2}\,\KL\bigl(\mathrm{Ber}(\tfrac12{+}t)\,\Vert\,\mathrm{Ber}(\tfrac12)\bigr)}\\
+&\le\sqrt{\tfrac{n}{2}\cdot\tfrac{t^2}{\tfrac12(1-\tfrac12)}}=t\sqrt{2n},
+\end{aligned}
+\]
+using $\chi^2(\mathrm{Ber}(p)\Vert\mathrm{Ber}(q))=(p-q)^2/(q(1-q))$ with $q=\tfrac12$. Thus
+$\TV<\tfrac12$ whenever $t<(2\sqrt{2n})^{-1}$. Taking the supremum of admissible $t$ over
+$t<\min\{\tau(\mathcal U),\tfrac14,(2\sqrt{2n})^{-1}\}$ gives the claim.
+(The conditions of Pinsker's and the $\KL\le\chi^2$ inequalities hold: both laws are
+mutually absolutely continuous for $t<\tfrac12$.)
+\end{proof}
+
+\begin{theorem}[Dichotomy]\label{thm:dichotomy}
+Fix a declared drift class $\mathcal U$ and the observables at $z$. Exactly one of the
+following regimes obtains for a $\delta$-valid audit.
+\begin{enumerate}
+\item[\textnormal{(N)}]\emph{No deployment labels, no declared coupling.} By
+Theorems~\ref{thm:beta-minimax} and \ref{thm:anchor} the minimax budget is
+$\Gamma_z(\mathcal C)$, a constant that does not depend on the deployment batch size $m$, on
+the calibration sample size $n_{\mathrm{lab}}$, or on the evidence map. \textbf{There is no
+rate.} If moreover $|M|\le\Gamma_z(\mathcal C)$ --- automatic for the unrestricted class,
+where $\Gamma_z=\tfrac12+|M|$ --- the decision yield is at most $\delta$.
+\item[\textnormal{(P)}]\emph{Labels at an anchor, plus a declared coupling
+$(\mathcal F,\rho)$.} Proposition~\ref{prop:threeterm} with
+Theorems~\ref{thm:aud-B}/\ref{thm:aud-H} gives a valid
+$\widehat\beta=|\widehat\gamma_{\mathrm{cal}}|
++O\bigl(\sqrt{\ln(1/\delta)/n_{\mathrm{lab}}}\bigr)
++\widehat\Delta_{\mathcal F}+O\bigl(\sqrt{(v+\ln(1/\delta))/n}\bigr)+\rho$,
+and by Theorem~\ref{thm:lecam} the $n_{\mathrm{lab}}^{-1/2}$ term is unimprovable whenever
+$\tau(\mathcal U)\ge(2\sqrt{2n_{\mathrm{lab}}})^{-1}$. The irreducible offset is $\rho$,
+which is declared, not estimated.
+\item[\textnormal{(D)}]\emph{Degenerate declaration.} If $\tau(\mathcal U)<(2\sqrt{2n_{\mathrm{lab}}})^{-1}$
+the class already pins the drift scale more tightly than $n_{\mathrm{lab}}$ labels can
+resolve; the ``audit'' is then a restatement of the class declaration and the labels are
+inert.
+\end{enumerate}
+\end{theorem}
+\begin{proof}
+(N) is Theorem~\ref{thm:beta-minimax}(a),(d) together with Theorem~\ref{thm:anchor}; the
+sample-size independence is the statement that $\Gamma_z$ is defined from $\mathcal C(z)$
+alone. (P) is Proposition~\ref{prop:threeterm} composed with the cited upper bounds, and
+Theorem~\ref{thm:lecam} for the lower bound. (D) is the second branch of the minimum in
+Theorem~\ref{thm:lecam}. The three cases are exhaustive and mutually exclusive by the
+trichotomy on (i) presence of deployment-domain labels and (ii) the comparison
+$\tau(\mathcal U)$ versus $(2\sqrt{2n_{\mathrm{lab}}})^{-1}$.
+\end{proof}
+
+\begin{remark}[Where this is \emph{not} sharp]\label{rem:notsharp}
+Theorem~\ref{thm:dichotomy} closes the rate in $n_{\mathrm{lab}}$ and closes the
+labels/no-labels axis exactly. It does \emph{not} close the transfer axis: the
+$O(\sqrt{v/n})$ complexity term of Aud-H has no matching lower bound here, and whether a
+rotation-closed class strictly larger than adaptive $\mathrm{MSW}_1$-ridge admits a useful
+root-$n$ audit remains Conjecture~\ref{conj:aud-maximal}. Nor does anything above forbid an
+audit valid \emph{at the realised $P_T$ only}; all statements require uniform validity over
+the declared class, which is the standard --- and the only checkable --- requirement.
+\end{remark}
+
+\subsection{Correspondence with the measured record}
+
+\begin{remark}[What the theorems predict about the $\beta$-sweep, and what they do not]\label{rem:empirical}
+The $\beta$-sweep (repository artifact
+\texttt{experiments/kbound/frontier\_sweep\_v1/beta\_sweep\_results.json}) is \emph{not} a
+label-free audit: its budget $\widehat\beta=q_{0.90}(|\gamma|)$ is computed on labeled
+source-like development cells. Corollary~\ref{cor:audA} therefore does not apply to it, and
+we do not claim it as a confirmation. What applies is Theorem~\ref{thm:anchor} with
+Proposition~\ref{prop:threeterm}: the procedure supplies the first term and \emph{sets the
+other two to zero by an undeclared exchangeability assumption between development and
+deployment cells}. The theory then predicts under-coverage of unbounded size, and that is
+what is measured.
+\begin{itemize}
+\item \emph{Coverage.} $\widehat\beta$ is a $0.90$ quantile on development cells, so
+$\Pr(|\gamma|\le\widehat\beta)$ has a by-construction null of $0.90$ on the deployment cells
+whenever the two pools are exchangeable (recorded as
+\texttt{coverage\_on\_dev\_cells\_BY\_CONSTRUCTION} $=0.900$ for CIFAR-10-C and $0.8963$ for
+ImageNet-C). CIFAR-10-C measures $0.274$--$0.756$, far below that null: the exchangeability
+declaration is falsified, so $\rho+\Delta_{\mathcal F}>0$ was set to $0$, and the committed
+error rate is correspondingly $0.4\%$--$16.6\%$ where Theorem~\ref{thm:headline} promises
+$0\%$. ImageNet-C measures $0.904$--$0.985$ in five of its six recorded configurations, at or
+above the null, which \emph{carries no information}; and its three \texttt{loco} rows
+additionally have \texttt{dev\_and\_target\_disjoint}$=$\texttt{false}. The single ImageNet-C row whose
+coverage is a genuine measurement is \texttt{srclike}$|$\texttt{M\_gbm} at $0.470$, and it is
+also the row with commit-error $0.532$ on $62$ committed cells (sign match
+$0.468$, $95\%$ CI $[0.340,0.599]$).
+\item \emph{Sup versus quantile.} Theorem~\ref{thm:beta-minimax} bounds any valid budget by a
+\emph{supremum} over the fibre, not a development quantile. Measured on CIFAR-10-C: the
+maximal realised $|\gamma|$ on deployment cells exceeds the maximal $|\gamma|$ on development
+cells by factors of $2.4$--$28.4$ across the ten configurations
+(\texttt{gamma\_absmax\_target} versus \texttt{beta\_hat\_max} in
+\texttt{beta\_sweep\_results.json}).
+\item \emph{Anchor destruction, quantitatively.} Theorem~\ref{thm:anchor} says an
+uninformative anchor leaves only a class-scale constant. Under the global label permutation
+of \texttt{adversarial\_ablations.py}, any estimator fit on the permuted benefit column
+converges to the constant $\E[\Delta]$, so the declaration procedure must return
+approximately $q_{0.90}(|\Delta-\E\Delta|)$ --- a number computable from the raw artifacts
+with no model fitting. On CIFAR-10-C that prediction is $0.2376$; the six measured shuffled
+budgets are $0.2468$--$0.2606$, ratios $1.04$--$1.10$, against real budgets of
+$0.0178$--$0.0482$ (inflation $5.2\times$--$14.1\times$), with zero commitments in $5/5$
+replicates for the \texttt{M\_doc} and \texttt{M\_atc4} channels. On ImageNet-C the
+prediction is $0.0689$ against measured $0.0742$--$0.1171$ (ratios $1.08$--$1.70$; $n=405$).
+Script and output: \texttt{kb\_fixes/beta\_impossible/check\_anchor\_collapse.py},
+\texttt{anchor\_collapse\_check.json}.
+\item \emph{A prediction that fails, stated as such.} On ImageNet-C the anchored budget for
+the \texttt{M\_doc} and \texttt{M\_atc4} channels is \emph{larger} than the anchor-free
+constant ($0.199$--$0.239$ real versus $0.074$--$0.090$ shuffled). Nothing above forbids
+this: Theorem~\ref{thm:beta-minimax} lower-bounds \emph{valid} audits and says nothing about
+how far an invalid heuristic may overshoot. The mechanism is visible in the same artifact ---
+difference-of-confidences is anti-predictive on ImageNet-C (AUC $0.351$), so its residuals
+exceed the marginal spread of the benefit. The operational reading is that on that benchmark
+the anchored declaration is beaten by the trivial constant, and those are exactly the rows
+with decision yield $0.000$.
+\end{itemize}
+\end{remark}
+
+\begin{remark}[Honest scope]\label{rem:honest-scope}
+Lemma~\ref{lem:fibre} is elementary and the fibre argument of
+Theorem~\ref{thm:beta-minimax} is the standard observation that an unidentified parameter
+cannot be estimated, specialised to a fibre on which the observable laws coincide exactly.
+What is not standard, and what the section is for, is (i) the identification of the exact
+minimax value $\Gamma_z(\mathcal C)$ for every declared class rather than an impossibility
+for one class, (ii) Corollary~\ref{cor:beta-is-beta}, which shows the abstention radius and
+the least auditable budget are the same number, (iii) the yield $\le\delta$ exchange rate of
+Theorem~\ref{thm:beta-minimax}(d), and (iv) Theorem~\ref{thm:anchor}, which is strictly
+stronger than Theorem~\ref{thm:aud-A} and is the statement that actually bears on the
+measured record. A reader who finds (i)--(iv) obvious should nonetheless note that the
+paper's own appendix presents five ``audits'' of which four read as though the budget is
+computed from data; Proposition~\ref{prop:threeterm} says precisely which term each of them
+computes and which two they declare.
+\end{remark}

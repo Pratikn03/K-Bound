@@ -1,0 +1,20 @@
+25:from dataset.selectedRotateImageFolder import prepare_test_data
+120:    parser.add_argument('--data', default='/datasets/ImageNet', help='path to dataset')
+121:    parser.add_argument('--data_corruption', default='/datasets/ImageNet/ImageNet-C', help='path to corruption dataset')
+122:    parser.add_argument('--v2_path', default='/datasets/ImageNet2/imagenetv2-matched-frequency-format-val/', help='path to corruption dataset')
+239:        datasets = []
+244:            val_dataset, _, holdout_dataset, holdout_loader = prepare_test_data(args, model=dummy_model_for_transorms.model)
+245:            indices = torch.randperm(len(val_dataset), generator=torch.Generator().manual_seed(args.seed + i)).tolist()[:args.cont_size]
+246:            val_dataset = Subset(val_dataset, indices)
+247:            datasets.append(val_dataset)
+249:        mixed_dataset = ConcatDataset(datasets)
+250:        logger.info(f"length of continual dataset is {len(mixed_dataset)}")
+251:        logger.info(f"not shuffling dataset")
+252:        val_loader = torch.utils.data.DataLoader(mixed_dataset, batch_size=args.test_batch_size, shuffle=False, num_workers=args.workers, pin_memory=True)
+257:        datasets = []
+263:            val_dataset, _, holdout_dataset, holdout_loader = prepare_test_data(args, model=dummy_model_for_transorms.model)
+264:            indices = torch.randperm(len(val_dataset), generator=torch.Generator().manual_seed(args.seed + i)).tolist()[:args.cont_size]
+265:            val_dataset = Subset(val_dataset, indices)
+266:            datasets.append(val_dataset)
+268:        mixed_dataset = ConcatDataset(datasets)
+269:        logger.info(f"length of continual dataset is {len(mixed_dataset)}")

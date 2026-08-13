@@ -59,17 +59,16 @@ at any declared level; weighted conformal restores coverage to $1.000$ by drivin
 $0.000$.
 
 What survives is a finite-sample certificate that trades decision yield for a false-adapt
-guarantee, and we measure that frontier exactly. Knowability-Guided Adaptation wraps any adapter
-(Tent, EATA, SAR), estimates the benefit $\Delta=R_T(f_0)-R_T(f_a)$ from label-free evidence, and
-commits only when a calibrated interval $\widehat\Delta\pm\varepsilon$ excludes zero; $\varepsilon$
-is a conformal radius and is \emph{not} an estimate of $\beta$. On the CIFAR-10-C stress grid it
-commits on $66.8\%$ of $6{,}480$ cells at zero false adaptations over $1{,}113$ and $1{,}244$
-\textsc{adapt} decisions (Clopper--Pearson $95\%$ upper bounds $0.0027$ and $0.0024$ on the
-conditional rate), cuts regret $5.00\times$ below the better fixed policy and $3.1\times$ below a
-hindsight-tuned label-free drift heuristic held to the same budget, and places its commitments on
-cells whose true effect is $24.5\times$ larger than the cells it declines. Under
-leave-one-corruption-out calibration the radius inflates $4.3\times$--$6.9\times$, the commitment
-rate falls from $0.51$--$0.60$ to $0.40$--$0.42$ and regret worsens $3.4\times$--$7.6\times$, and
-the false-adapt count stays at zero in all ten runs; under that partition the certificate still
-beats always-adapt on all five Tent runs and loses to it on all five EATA runs, so what survives
-leave-one-corruption-out is the safety property and not the routing-utility one.
+guarantee. Knowability-Guided Adaptation wraps a fixed candidate adapter, estimates the benefit
+$\Delta=R_T(f_0)-R_T(f_a)$ from label-free evidence, and commits only when a calibrated interval
+$\widehat\Delta\pm\varepsilon$ excludes zero. The population and empirical layers share the target
+functional $\Delta$, but KGA does not compute $M$, $\gamma$, or $\beta$, and $\varepsilon$ is not an
+estimate of $\beta$. Across the eligible Tent and EATA CIFAR-10-C stress arms, KGA makes $2{,}845$
+strict decisions among $4{,}320$ cell--seed evaluations ($65.9\%$ decision coverage), including
+$1{,}113$ and $1{,}244$ \textsc{adapt} decisions with no observed false adaptations. Tent's shipped
+operating point beats both fixed policies with intervals that exclude zero down to the six
+corruption-family clusters; EATA's point estimate beats both, but its adapt-side interval includes
+zero once corruption is the resampling unit. Under leave-one-corruption-out refitting the radius
+inflates $4.3\times$--$6.9\times$ and the false-adapt count remains zero in all ten runs, while the
+utility comparison survives only descriptively for Tent and fails for EATA. The completed SAR
+rebuild is reported separately as a negative arm rather than pooled into this headline.

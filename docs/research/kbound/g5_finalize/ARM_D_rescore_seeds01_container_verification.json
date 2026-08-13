@@ -1,0 +1,92 @@
+{
+  "arm": "arm_D_official_persample_headtohead",
+  "protocol": "research_lock/WIN_HUNT_v4_PROTOCOL.yaml (registered 2026-07-04)",
+  "dataset": "cifar10c",
+  "adapter": "tent",
+  "seeds": [
+    0,
+    1
+  ],
+  "n_conditions_per_seed": 432,
+  "harmful_base_rate_range": [
+    0.3449074074074074,
+    0.34953703703703703
+  ],
+  "nboot": 10000,
+  "boot_seed": 20260704,
+  "holm_alpha": 0.05,
+  "alpha_falseadapt": 0.1,
+  "poem_config": {
+    "alpha_detect": 0.05,
+    "variant": "matching",
+    "source_cdf": "logged_clean_source",
+    "alarm_threshold": 20.0
+  },
+  "aetta_config": {
+    "floor": 20.0,
+    "margin": 0.0,
+    "N_dropout_passes": 10,
+    "alpha_entropy_ratio": 3.0,
+    "dropout_rate": "dataset-specific (CIFAR-10 0.4)"
+  },
+  "policy_mean_regret": {
+    "kga": 0.001535300510349097,
+    "poem": 0.018942708873914346,
+    "aetta": 0.0023310186548365485
+  },
+  "policy_false_adapt_rate": {
+    "kga": 0.0,
+    "poem": 0.09490740740740741,
+    "aetta": 0.14351851851851852
+  },
+  "comparisons": [
+    {
+      "competitor": "poem",
+      "label": "kga_vs_poem",
+      "kga_mean_regret": 0.001535300510349097,
+      "competitor_mean_regret": 0.018942708873914346,
+      "mean_diff_kga_minus_competitor": -0.01740740836356525,
+      "ci95_lo": -0.023892477804070545,
+      "ci95_hi": -0.011542694512064812,
+      "p_raw": 9.999000099990002e-05,
+      "p_holm": 0.00019998000199980003,
+      "ci_below_zero": true,
+      "ci_above_zero": false,
+      "kga_beats": true,
+      "kga_loses": false
+    },
+    {
+      "competitor": "aetta",
+      "label": "kga_vs_aetta",
+      "kga_mean_regret": 0.001535300510349097,
+      "competitor_mean_regret": 0.0023310186548365485,
+      "mean_diff_kga_minus_competitor": -0.0007957181444874516,
+      "ci95_lo": -0.0015272144590400985,
+      "ci95_hi": -7.925385402308612e-05,
+      "p_raw": 0.031196880311968805,
+      "p_holm": 0.031196880311968805,
+      "ci_below_zero": true,
+      "ci_above_zero": false,
+      "kga_beats": true,
+      "kga_loses": false
+    }
+  ],
+  "beats_poem": true,
+  "beats_aetta": true,
+  "loses_to_poem": false,
+  "loses_to_aetta": false,
+  "kga_false_adapt_rate": 0.0,
+  "kga_false_adapt_le_alpha": true,
+  "VERDICT": "WIN",
+  "replacement_eligible": true,
+  "verdict_criterion": "WIN iff KGA beats POEM AND AETTA (each 95% paired-bootstrap CI of regret_KGA-regret_X entirely < 0 AND survives Holm at family-wise alpha=0.05); LOSE if KGA loses to either; else TIE. arm_D bar does not gate the VERDICT on FA; replacement_eligible adds the frozen headline policy's FA<=alpha requirement.",
+  "verdict_legend": {
+    "WIN": "official per-sample POEM and dropout-AETTA are both beaten by KGA on regret",
+    "TIE": "KGA matches at least one of the official baselines on regret (no loss)",
+    "LOSE": "KGA is beaten by official POEM and/or dropout-AETTA on regret"
+  },
+  "git_hash": "unknown",
+  "python": "3.11.15",
+  "scored": "2026-07-24 02:08:11",
+  "run_dir": "/home/claude/g5/stress_persample_v1"
+}

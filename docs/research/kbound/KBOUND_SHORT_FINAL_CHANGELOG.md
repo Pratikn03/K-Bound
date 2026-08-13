@@ -1,85 +1,77 @@
-# K-Bound Short Paper Final-Draft Changelog
+# K-Bound Short Final Draft Changelog
 
-## Authoritative source
+Date: 2026-08-11
 
-- Main entrypoint: `kbound_short.tex`.
-- Baseline: the source corresponding to `kbound_short_draft(2)(1).pdf`, preserved at `/private/tmp/kbound_short_authoritative_baseline` during this audit.
-- The older `kbound_short(17).pdf` was not used to restore claims.
+## Submission driver
 
-## Theory statements corrected
+- Authoritative driver: `kbound_tmlr.tex`.
+- Shared scientific sources: `kbound_abstract.tex`, `kbound_short_body.tex`, and
+  `kbound_short_appendix.tex`.
+- Compatibility driver: `kbound_short.tex` (legacy IEEE two-column build).
+- Delivered PDF: `kbound_short_final_draft.pdf`.
 
-- Standardized benefit as `Delta = R_T(f_0) - R_T(f_a)`.
-- Corrected pointwise candidate correctness to `eta_a(x)=P_T(f_a(X)=Y | X=x)`.
-- Expanded the disagreement algebra explicitly through `M + gamma = E[eta_a | D] - 1/2`.
-- Split interior opposite-sign impossibility from boundary zero-versus-strict ambiguity.
-- Replaced broad sign-identification headlines with the exact strict-commitment frontier.
-- Corrected the `beta=0` interpretation and separated `beta` from `epsilon` and `M` from `Delta_hat`.
-- Restated Theorem 3 as coverage-implies-marginal-error control; exchangeability supports coverage and risk alignment is not a direct premise once coverage is assumed.
-- Added the multiclass bridge and retained the target-class richness caveat for converse claims.
+## Result reconciliation
 
-## Empirical corrections
+- Added `scripts/reconcile_result_panels.py` and imported 72 compact, source-hashed records into
+  `experiments/kbound/results/reconciled_panels_v1/`.
+- Added `scripts/sync_reconciled_panels.py` so the canonical panel updates the generated result
+  manifest, claim ledger, and decision-value artifact from one source.
+- Replayed ImageNet-C and ImageNet-R with the declared exact-rank leave-one-condition-out rule.
+- Replayed Office-Home and iWildCam transfer scoring under the locked repository runtime:
+  Python 3.14.3, NumPy 2.4.4, and scikit-learn 1.8.0.
+- Cross-validated the PACS three-seed aggregate. PACS per-cell gate replay remains unavailable
+  because the archived files omit `b_hat` and calibration residual records.
 
-- Added `paper/generated/kbound_result_manifest.json` as the canonical promoted-number manifest.
-- Corrected iWildCam to an exact tie with always-freeze under the OOF lock.
-- Corrected CIFAR-10.1 from conditional false-adapt `0.444` mislabeled as unconditional to `FA_u=0.167`, `FA_c=0.444`.
-- Restricted CIFAR-10-C promotion to archived Tent/EATA results; SAR is withheld after the raw seed-0 replay mismatch.
-- Standardized ImageNet-C to the authoritative 27-cell, seed-0 SAR result and removed the unsupported Holm claim for that isolated table.
-- Marked PACS as 1/3 planned seeds and ImageNet-R as 3/4 planned seeds.
-- Kept Office-Home, iWildCam, Camelyon17, and RxRx1 as no-harm/safety results rather than natural beats-both claims.
-- Kept the three-source OOF result as a researcher-constructed routing aggregate, not transfer.
+## Corrected empirical statements
 
-## Calibration and code
+- Office-Home primary: KGA/adapt/freeze regret `0.0158/0.0468/0.0158`, with 0 ADAPT, 11 FREEZE,
+  and 24 ABSTAIN decisions. The result ties always-freeze and is descriptive no-harm only.
+- iWildCam: `0.0041/0.1028/0.0041`, with 0 ADAPT, 21 FREEZE, and 51 ABSTAIN decisions. The result
+  ties always-freeze and is descriptive no-harm only.
+- ImageNet-C SAR: `0.0289/0.0529/0.0319`, 13 ADAPT, 15 FREEZE, 107 ABSTAIN, and one false adapt
+  over 135 cells. This is a pooled point beats-both result, not a seed-robust or CI-robust win.
+- ImageNet-R: `0.0150/0.0064/0.0325`, 165 ADAPT, 29 FREEZE, 286 ABSTAIN, and zero false adapts
+  over 480 cells. KGA is worse than always-adapt on 8 of 10 backbones.
+- PACS remains a diagnostic null: `0.0431/0.0176/0.0446` on the pooled domain-seed mean.
+- The historical three-source mixed-routing win was demoted pending replay because its component
+  Office-Home and iWildCam decisions changed.
 
-- The maintained implementation uses the exact clean-split rank `k=min(n,ceil((n+1)(1-alpha)))`.
-- Stress-grid artifacts remain labeled leave-one-condition-out cross-fitted empirical residual calibration, not exact split conformal or jackknife+.
-- Archived benchmark JSONs are explicitly disclosed as using the earlier interpolated empirical quantile.
+## Tables and figures
 
-## Figures regenerated
+- Regenerated `paper/generated/kbound_numbers.tex` and the compatible result source.
+- Regenerated the decision-value frontier and yield-ceiling figures from the canonical manifest.
+- Updated the uniform nine-track panel, decision accounting, ImageNet-C, ImageNet-R, Office-Home,
+  iWildCam, PACS, kappa-sweep, and claim-accounting text.
+- Split the unbreakable 35-row guarantee table into three continued blocks. This removed the
+  previous 700-point vertical overflow.
+- Replaced unbreakable artifact identifiers with breakable paths and adjusted table widths.
 
-- `figures/fig_frontier_schematic.png`: population-only strict-commitment frontier using `M` and `beta`.
-- `figures/fig_phase_diagram.png`: conceptual regime geometry with no measured-looking coordinates.
-- `figures/fig_natural_forest.png`: corrected OOF Office-Home/iWildCam no-harm intervals.
+## Theory and claim scope
 
-## Tables regenerated or reconciled
-
-- Generated headline macros in `paper/generated/kbound_numbers.tex` from the canonical manifest.
-- Rebuilt the nine-track empirical panel, primary numeric table, assumptions table, and five-column claim-to-support map.
-- Removed SAR macros from the promoted CIFAR table path.
-
-## Appendix and claim cleanup
-
-- Retained core proofs, boundary case, multiclass/regression derivations, evidence/configuration details, protocol reconciliation, runtime status, formalization inventory, and claim-to-artifact map.
-- Deferred one-bit, minimax, extensive rate, and weakest-class material from the short build.
-- Removed disabled legacy blocks containing withdrawn universal-gate, seven-source, and superseded ablation claims from the public source.
-- Removed the stale verdict-migration figure and unsupported numerical runtime/sensitivity tables.
-- Weakened formalization and prior-work language; no priority claim remains.
-- Pruned 34 bibliography entries not cited by the compiled short paper; the full 75-entry list is preserved as `paper/references_kbound_expanded_full.tex`.
-
-## Pending evidence stated in prose
-
-- The historical streaming script is disclosed as label-informed and excluded from label-free evidence.
-- A full component-level runtime profile and immutable final sensitivity artifacts remain pending.
-- Fresh held-out real-camera evidence remains pending; blank templates are not treated as results.
-
-## Research tooling
-
-- Rebuilt the TypeScript dashboard from the canonical result manifest and removed legacy ELARA as a data source.
-- Added a fail-closed physical-study publication gate covering provenance, exact session inventory, source-model quality, calibration sealing, held-out chronology, replication, and leakage checks.
-- Regenerated the Word draft from the same flattened LaTeX source and verified its rendered layout.
-
-## Build outcome
-
-- Final PDF: 20 pages, letter size.
-- Synchronized Word rendering: 37 single-column pages.
-- Fatal errors: 0.
-- Undefined citations: 0.
-- Undefined references: 0.
-- Missing figures: 0.
-- Duplicate labels: 0 detected.
-- Remaining overfull messages are from pre-scaled table construction or sub-6-point boxes; rendered pages show no clipping.
+- Retained the population/empirical distinction: the population frontier uses `M`, `gamma`, and
+  `beta`; real-data KGA uses `Delta_hat +/- epsilon` and does not numerically receive `beta`.
+- Preserved the strict-commitment wording and the distinction between marginal `FA_u` and
+  descriptive conditional `FA_c`.
+- Weakened natural-shift claims to descriptive no-harm where the gate ties always-freeze.
+- Kept ImageNet-C SAR as point-estimate evidence only and ImageNet-R/PACS as negative results.
 
 ## Verification
 
-- Focused Python suite: 218 passed and 2 intentional skips across 220 collected package, edge, and dashboard tests.
-- `analyze_F.py --self-test`: passed for global, Mondrian, and CQR paths.
-- Lean/Mathlib: 2,544 jobs built; formal audit passed; 43 indexed theorem checks; forbidden proof-hole scan passed.
+- `tests/test_reconciled_panels.py`: 3 passed.
+- Combined K-Bound package, canonical-rule, certificate-drift, routing, and reconciled-panel set:
+  109 passed.
+- Three unrelated ELARA checks still fail because two legacy ELARA files are absent; the existing
+  K-Bound closure report already classifies those checks as outside K-Bound scope.
+- Authoritative and legacy LaTeX drivers compile successfully.
+- Final authoritative pass: no undefined references, undefined citations, duplicate labels,
+  missing figures, fatal errors, or overfull boxes.
+- Visual inspection covered all 91 rendered pages, including the title, main result tables,
+  regenerated figures, appendix claim table, and references.
+
+## Remaining draft items
+
+- Rerun the corrected ImageNet-R per-commitment permutation diagnostic.
+- Rerun the corrected ImageNet-C Tent counterfactual power probe.
+- Rebuild the constructed heterogeneous mixture from reconciled component records.
+- Complete the preregistered real-camera study before claiming physical validation.
+- Establish or replace the undeclared A7 stability premise for transfer coverage claims.

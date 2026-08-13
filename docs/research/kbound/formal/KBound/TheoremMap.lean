@@ -1,4 +1,8 @@
 import KBound.Basics
+import KBound.UnitMismatch
+import KBound.Stability
+import KBound.JackknifePlus
+import KBound.NonFinite
 import KBound.Certificate
 import KBound.Conformal
 import KBound.Corollaries
@@ -126,6 +130,19 @@ namespace KBoundTheoremMap
 #check KBound.lecam_single_error_ge_one_sub_tv
 #check KBound.rate_implies_commit
 #check KBound.rate_conformal_miss
+-- Wave 8: (A5) unit mismatch -- deterministic core of the LOO undercoverage witness
+#check KBound.unit_mismatch_forces_miss
+#check KBound.covering_requires_across_unit_radius
+#check KBound.miss_mono
+-- Wave 8: (A7) estimator stability transfers leave-one-out coverage
+#check KBound.stability_transfers_loo_coverage
+#check KBound.unstable_fit_voids_transfer
+-- Wave 9: jackknife+ counting core (the factor two) and finiteness-free impossibility
+#check KBoundJK.two_mul_pairs_le
+#check KBoundJK.card_le_two_mul
+#check KBoundNF.matched_opposite_forces_abstain
+#check KBoundNF.continuum_matched_witness
+#check KBoundNF.continuum_impossibility
 -- Wave 6: paper-faithful foundation closures
 #check KBound.uniformIndexLaw_miss_le_alpha
 #check KBound.uniformIndexLaw_false_adapt_le

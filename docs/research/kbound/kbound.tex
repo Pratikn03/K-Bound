@@ -84,20 +84,18 @@ A Label-Free Adapt/Freeze/Abstain Certificate for Safe Test-Time Adaptation}
 % ---------------------------------------------------------------------
 \input{kbound_abstract_core}
 
-The empirical panel is scoped, not uniform, and we report the losses. Under a valid out-of-fold
-conformal radius \textsc{KGA} is \emph{no-harm} on the four one-sided natural tracks with locked
-held-out artifacts (Office-Home, iWildCam, Camelyon17, RxRx1), matching the better fixed policy and
-beating the worse at observed $\mathrm{FA}_{\mathrm u}{=}0$ --- but we say so where we report them:
-\input{kbound_abstract_disclosures}. The only beats-both results are the
-synthetic stress grids (CIFAR-10-C, ImageNet-C SAR), where it also beats POEM and AETTA with
-Holm-corrected paired-bootstrap intervals. Where the shift is one-sided the certificate buys
-nothing and we say so: it \emph{loses} to always-adapt on PACS by $2.45\times$, on $7$ of $10$
-ImageNet-R backbones ($1.76\times$ pooled), and CIFAR-10.1 fails the declared transfer bar outright
-($\mathrm{FA}_{\mathrm u}=0.167$). A separately constructed heterogeneous routing aggregate is
-reported as a cross-protocol construction, not as evidence for a universal mixed deployment
-(\S\ref{sec:mixedstream}). \textsc{KGA} is a safety, validity and abstention layer for test-time
-adaptation, not a universal accuracy booster; the drift budget its own theory requires is not
-obtainable at a deployment, and the certificate is what remains when that is taken seriously.
+The empirical panel is scoped, not uniform, and we report the losses. On the one-sided natural
+tracks the supported conclusion is safety rather than dominance: Camelyon17 OOD reproduces
+always-adapt, the primary iWildCam and Office-Home panels reproduce always-freeze, and RxRx1 freezes
+throughout; \input{kbound_abstract_disclosures}. A separate Office-Home replication has a small
+point edge over both fixed policies, but its seed interval includes zero. The controlled
+CIFAR-10-C result is candidate-specific: Tent has a corruption-cluster-robust beats-both result;
+EATA has a point-estimate result whose adapt-side clustered interval includes zero; and the completed
+SAR rebuild loses to always-adapt. ImageNet-C SAR is likewise a point estimate, not a CI-supported
+win. PACS, ImageNet-R, and CIFAR-10.1 are negative or transfer-failure results and remain in the
+panel. \textsc{KGA} is a safety, validity, and abstention layer for test-time adaptation, not a
+universal accuracy booster; the population drift budget is an external specification, while the
+deployable guarantee is conditional on coverage transfer at the declared inference unit.
 \end{abstract}
 
 \begin{IEEEkeywords}
