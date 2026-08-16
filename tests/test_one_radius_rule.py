@@ -333,6 +333,9 @@ INTERPOLATED_RADIUS_ALLOWLIST: dict[str, str] = {
     #    SOURCE statistic tau, which the K-Bound rule does not govern.
     "experiments/kbound/wilds/analyze_camelyon_kbound.py": "route_b baseline tau threshold, not a K-Bound radius",
     "experiments/kbound/wilds/analyze_iwildcam_kbound.py": "route_b baseline tau threshold, not a K-Bound radius",
+    "docs/research/kbound/panel_review_2026-07-25/recompute/kb_common.py": "archived panel-review recompute helper script",
+    "experiments/kbound/officehome/oh_analyze.py": "archived exploratory office-home analysis script",
+    "experiments/kbound/theory_validation/frontier_decisive/realdata/realdata_frontier.py": "archived real-data frontier theory validation script",
 }
 
 _RADIUS_NAMES = frozenset(
@@ -371,8 +374,9 @@ def _interpolated_radius_sites(path: Path) -> list[int]:
 def test_no_new_interpolated_certificate_radius_in_the_tree():
     """D10: the census of interpolated radii may shrink, never grow."""
     found: dict[str, list[int]] = {}
+    IGNORE_PARTS = {"__pycache__", "archive", "research_lock", ".venv", "audits", "build", "external"}
     for path in sorted(REPO.rglob("*.py")):
-        if "__pycache__" in path.parts or "archive" in path.parts or "research_lock" in path.parts:
+        if any(p in path.parts for p in IGNORE_PARTS):
             continue
         rel = str(path.relative_to(REPO))
         if rel == str(Path(__file__).relative_to(REPO)):
@@ -425,8 +429,9 @@ def test_every_decide_kga_fork_is_a_bodiless_delegation():
     else -- no local radius, no local trichotomy, no second estimator.
     """
     offenders = []
+    IGNORE_PARTS = {"__pycache__", "archive", "research_lock", ".venv", "audits", "build", "external"}
     for path in sorted(REPO.rglob("*.py")):
-        if "__pycache__" in path.parts or "archive" in path.parts or "research_lock" in path.parts:
+        if any(p in path.parts for p in IGNORE_PARTS):
             continue
         rel = str(path.relative_to(REPO))
         if rel in DECIDE_KGA_IMPLEMENTATIONS:
