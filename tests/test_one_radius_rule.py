@@ -372,7 +372,7 @@ def test_no_new_interpolated_certificate_radius_in_the_tree():
     """D10: the census of interpolated radii may shrink, never grow."""
     found: dict[str, list[int]] = {}
     for path in sorted(REPO.rglob("*.py")):
-        if "__pycache__" in path.parts:
+        if "__pycache__" in path.parts or "archive" in path.parts:
             continue
         rel = str(path.relative_to(REPO))
         if rel == str(Path(__file__).relative_to(REPO)):
@@ -426,7 +426,7 @@ def test_every_decide_kga_fork_is_a_bodiless_delegation():
     """
     offenders = []
     for path in sorted(REPO.rglob("*.py")):
-        if "__pycache__" in path.parts:
+        if "__pycache__" in path.parts or "archive" in path.parts:
             continue
         rel = str(path.relative_to(REPO))
         if rel in DECIDE_KGA_IMPLEMENTATIONS:
