@@ -452,3 +452,20 @@ def test_every_decide_kga_fork_is_a_bodiless_delegation():
         + ", ".join(sorted(DECIDE_KGA_IMPLEMENTATIONS))
         + " may implement the rule."
     )
+
+
+def test_worst_group_conformal_radius():
+    """Verify worst_group_conformal_radius selects the maximum domain group radius."""
+    from kga.certificate import split_conformal_rank_radius, worst_group_conformal_radius
+
+    rng = np.random.default_rng(0)
+    g1 = np.abs(rng.normal(loc=0.0, scale=0.03, size=20))
+    g2 = np.abs(rng.normal(loc=0.0, scale=0.08, size=20))
+
+    r1 = split_conformal_rank_radius(g1, alpha=0.10)
+    r2 = split_conformal_rank_radius(g2, alpha=0.10)
+    r_robust = worst_group_conformal_radius([g1, g2], alpha=0.10)
+
+    assert r_robust == max(r1, r2)
+    assert r_robust >= r1
+

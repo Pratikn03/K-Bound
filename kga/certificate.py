@@ -711,3 +711,16 @@ def evalue_anytime(
     # + epsilon.
     epsilon = abs(mean) + 1e-12
     return Certificate(delta_hat=mean, epsilon=epsilon, method="evalue", alpha=alpha, n=n)
+
+
+def worst_group_conformal_radius(group_residuals: list[np.ndarray], alpha: float) -> float:
+    """Computes robust worst-group domain conformal radius across domain clusters.
+
+    eps_robust = max_{g} split_conformal_rank_radius(R_g, alpha)
+
+    Protects against domain non-exchangeability (unit mismatch) when novel deployment
+    environments exhibit higher drift variance than baseline calibration cells.
+    """
+    radii = [split_conformal_rank_radius(np.asarray(res, dtype=float), alpha) for res in group_residuals]
+    return float(max(radii))
+

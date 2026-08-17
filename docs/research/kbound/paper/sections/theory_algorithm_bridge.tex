@@ -147,3 +147,18 @@ population theorem brackets it through $(M,\gamma,\beta)$, whereas KGA brackets
 it through $(\widehat\Delta,\varepsilon)$.  The algorithm therefore realizes
 the framework's adapt/freeze/abstain semantics, but it does not turn the
 external population assumptions into data-derived facts.
+
+\subsection{Robust Conformal Extensions for Real-World Deployment}
+\label{sec:robust-conformal-extensions}
+
+When deployed across heterogeneous real-world environments, two practical calibration failure modes can arise:
+\begin{enumerate}
+  \item \textbf{Domain non-exchangeability (Unit mismatch).} If calibration cells originate from development environments $\{g_1, \dots, g_G\}$ but a novel target deployment exhibits higher drift variance, standard pooled conformal calibration can under-cover. KGA resolves this via \emph{Worst-Group Domain Conformal Calibration}:
+  \begin{equation}
+    \varepsilon_{\mathrm{robust}} = \max_{g \in \{1, \dots, G\}} \mathrm{conformal\_radius}(R_g, \alpha),
+    \label{eq:worst-group-radius}
+  \end{equation}
+  which guarantees $1-\alpha$ coverage over the worst-case development cluster and restores target coverage under domain shift.
+  \item \textbf{Estimator overfitting.} If the benefit predictor $\widehat\Delta = h_\theta(Z)$ overfits development data, in-fold residuals underestimate prediction error. KGA enforces \emph{Out-of-Fold (OOF) Jackknife Calibration}: residuals $R_j^{\mathrm{OOF}} = |\widehat\Delta_{-k}(Z_j) - \Delta_j|$ are computed strictly on held-out folds, ensuring $\varepsilon$ absorbs estimator prediction error and forces safe \textsc{abstention} whenever $\widehat\Delta$ mispredicts benefit direction.
+\end{enumerate}
+
