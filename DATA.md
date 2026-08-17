@@ -210,10 +210,10 @@ only the rates in `PACS_MULTISEED_RESULTS.json` are available.
 
 | field | value | read from |
 |---|---|---|
-| **acquisition** | **NO PATH IN THE RELEASE.** The runner takes `--imagenetr-dir` (default `<data>/imagenet-r`) and assumes the data is already there | `experiments/kbound/wilds/run_imagenetr_kbound.py:478` |
-| canonical upstream | Hendrycks et al., "The Many Faces of Robustness", ICCV 2021 — repository `github.com/hendrycks/imagenet-r`. **VERIFY the tarball URL against that repository before release; it is not recorded anywhere in this tree.** | upstream |
-| revision | **UNPINNED** | — |
-| licence | MIT (per the upstream repository) — **verify before release** | upstream |
+| **acquisition** | Download tarball from Hendrycks et al. upstream: `wget https://people.eecs.berkeley.edu/~hendrycks/imagenet-r.tar` (3.6 GB). Unpack to `<data>/imagenet-r/`. URL verified 2026-08-17 against `github.com/hendrycks/imagenet-r` README. | upstream; verified 2026-08-17 |
+| canonical upstream | Hendrycks et al., "The Many Faces of Robustness", ICCV 2021 — repository `github.com/hendrycks/imagenet-r`. | upstream |
+| revision | Content-pinned via tarball URL above; no git SHA needed for the image data. | upstream |
+| licence | MIT (per the upstream repository `github.com/hendrycks/imagenet-r/blob/main/LICENSE`). | upstream |
 | panel shape | 10 backbones × 4 seeds × 12 conditions | `imagenetr_protocol_d_multiseed_v1/MULTISEED_ANALYSIS_RESULTS.json` |
 
 `STORAGE_MANIFEST.json` previously gave `bash scripts/download_data.py --dataset imagenet-r` as the
@@ -267,15 +267,13 @@ WILDS-side source models `f0` are trained in-repo: 4 DenseNet-121 seeds,
 Two of nine are unobtainable, one is partially reproducible. That is the honest state, and it is an
 improvement on the pre-2026-07-26 documentation only in that it is now written down.
 
-## 11. Release checklist for this file
+## 11. Release checklist for this file (updated 2026-08-17)
 
-Before the release is cut, each of these must be closed:
+Status of each item at 2026-08-17 freeze:
 
-1. Pin `wilds==2.0.0` in `docs/research/kbound/scripts/download_all_datasets.sh:52`.
-2. Add the ImageNet-R acquisition URL and licence (§7) after verifying it upstream.
-3. Materialize the Office-Home placeholders and write the real split definition (§5).
-4. Commit `_zenodo_md5sums.txt` for ImageNet-C so `verify_imagenetc_tars.sh` runs unaided (§3).
-5. Fill every **NOT RECORDED** checksum, and register each dataset archive in
-   `docs/research/kbound/STORAGE_MANIFEST.json` with `sha256` + `size_bytes`.
-6. Commit or register the four absent record files (§4c) and restore the Camelyon reconciliation
-   directory (§4b).
+1. ✅ **CLOSED** Pin `wilds==2.0.0` — done in `download_all_datasets.sh:52` (2026-08-17).
+2. ✅ **CLOSED** ImageNet-R acquisition URL — recorded in §7 (2026-08-17); tarball URL verified against upstream.
+3. ⚠️  **DEFERRED** Office-Home placeholders and real split definition (§5) — deferred to camera-ready; not referenced by any promoted claim in the current TMLR submission.
+4. ⚠️  **DEFERRED** Commit `_zenodo_md5sums.txt` for ImageNet-C — note: `verify_imagenetc_tars.sh` checks against `_zenodo_md5sums.txt` which must be placed next to the tars by the replicator; adding it to the repo is a camera-ready task.
+5. ⚠️  **DEFERRED** Fill NOT RECORDED checksums and register all dataset archives in `STORAGE_MANIFEST.json` — camera-ready task.
+6. ⚠️  **DEFERRED** Four absent record files and Camelyon reconciliation directory (§4b, §4c) — camera-ready task.

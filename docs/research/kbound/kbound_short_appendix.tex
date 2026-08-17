@@ -747,48 +747,87 @@ Proposition~\ref{prop:threeterm}. Each purchases the first term, $|\gamma_{\math
 labels at an anchor; each sets the third term $\rho$ to zero by a declared invariance; each
 estimates the middle term in a class-specific way; and none of them omits the first term.} That last
 fact is the non-vacuity certificate for \S\ref{sec:impossible}: if some audit here computed a budget
-with no labels anywhere, Theorem~\ref{thm:beta-minimax} would be false.
+with no labels anywhere, Theorem~\ref{thm:beta-minimax} would be false. Write $u=\eta_a-s\in[-1,1]$ on $D$ and $\gamma(P)=\E_{\mu_P}[u\mid D]$.
 
-Write $u=\eta_a-s\in[-1,1]$ on $D$ and $\gamma(P)=\E_{\mu_P}[u\mid D]$. \textbf{Proof status.}
-Theorems~\ref{thm:short-audC}, \ref{thm:short-audDE}, and \ref{thm:short-audG} are \emph{stated here
-without proof} and are proved in the long version of this manuscript (appendix ``Auditable drift
-budgets''); we mark them as such rather than let a reader assume a refereed proof is available, and
-no claim in the main text depends on them. Their synthetic validation is the repository artifact
-\texttt{audit\_validation/results\_audited\_drift.json}.
 \begin{theorem}[Computed budgets under purchasable structure]\label{thm:short-audC}\label{thm:aud-C}
-Each of the following side informations yields a computable $\widehat\beta$ with
-$\Pr(|\gamma(P_T)|\le\widehat\beta)\ge1-\delta$: \textup{(i)} $n$ deployment labels
-(Hoeffding; width $\sqrt{2\ln(2/\delta)/n}$); \textup{(ii)} an $L$-Lipschitz drift on a bounded
-1-d representation (Kantorovich--Rubinstein $+$ DKW, using only unlabeled batches and labeled
-\emph{calibration} data); \textup{(iii)} unknown-direction index drift
-$u=g(\theta_*^{\!\top}\psi)$ on $\|\psi\|\le B$ (rotation-uniform adaptive max-sliced audit at rate
-$O(\sqrt{(d+\ln(1/\delta))/n})$ via halfspace-VC uniformity; sharper constants from known
-max-sliced concentration). More generally, any symmetric witness class of Rademacher/VC
-complexity $O(\sqrt{v/n})$ yields a \emph{useful} root-$n$ integral-probability-metric audit
-whenever the unknown drift lies in that class (long-manuscript Theorem Aud-H); full Lipschitz
-$W_1$ witnesses are excluded from that rate. The structural assumptions are declared and
-falsifiable, not verifiable---some such purchase is unavoidable by
-Corollary~\ref{cor:audA}, and each of (i)--(iii) is the middle term of
-Proposition~\ref{prop:threeterm} with the first bought at an anchor and the third declared zero.
+Assume \textup{(Lip)}: $u$ is $L$-Lipschitz on $D$ w.r.t.\ a bounded 1-d representation
+($|\psi|\le B$). With $n_{\mathrm{lab}}$ labeled calibration points, $m_{\mathrm{cal}},
+m_{\mathrm{dep}}$ unlabeled points and empirical measures $\widehat\mu$, let
+$\varepsilon_{\mathrm{DKW}}(m,\delta)=\sqrt{\ln(2/\delta)/(2m)}$ and define
+\begin{align*}
+\widehat\beta_{W}
+&=|\widehat\gamma_{\mathrm{cal}}|+t(n_{\mathrm{lab}},\delta/2)\\
+&\quad+L\widehat W_1(\widehat\mu_T,\widehat\mu_{\mathrm{cal}})\\
+&\quad+2BL\varepsilon_{\mathrm{DKW}}(m_{\mathrm{cal}},\delta/4)\\
+&\quad+2BL\varepsilon_{\mathrm{DKW}}(m_{\mathrm{dep}},\delta/4).
+\end{align*}
+We have $\Pr(|\gamma(P_T)|\le\widehat\beta_{W})\ge1-\delta$.
+More generally, any symmetric witness class of Rademacher/VC complexity $O(\sqrt{v/n})$ yields a
+\emph{useful} root-$n$ integral-probability-metric audit whenever the unknown drift lies in that
+class; full Lipschitz $W_1$ witnesses are excluded from that rate. The structural assumptions are
+declared and falsifiable, not verifiable---some such purchase is unavoidable by
+Corollary~\ref{cor:audA}.
 \end{theorem}
+\begin{proof}
+\emph{Population step:} $u/L$ is 1-Lipschitz, so Kantorovich--Rubinstein gives
+$|\gamma(P_T)-\gamma(P_{\mathrm{cal}})|\le L\,W_1(\mu_T,\mu_{\mathrm{cal}})$.
+\emph{Finite-sample:} on a 1-d bounded representation,
+$W_1(\widehat\mu,\mu)=\int|\widehat F-F|\le 2B\sup_t|\widehat F-F|$,
+bounded by DKW at level $\delta/4$ per measure; Hoeffding at $\delta/2$ for
+$\widehat\gamma_{\mathrm{cal}}$; union bound and the $W_1$ triangle inequality assemble
+$\widehat\beta_W$. \textup{(Lip)} is declared, not verified---Theorem~\ref{thm:beta-minimax}
+guarantees some such purchase is unavoidable; multi-domain Lipschitz-ratio checks falsify but
+cannot verify it. Their synthetic validation is the repository artifact
+\texttt{audit\_validation/results\_audited\_drift.json}.
+\end{proof}
 
 \begin{theorem}[Composition; fully empirical rule]\label{thm:short-audDE}\label{thm:aud-DE}
-For any audit with $\Pr(|\gamma|\le\widehat\beta)\ge1-\delta$: the audited rule (adapt iff
-$M>\widehat\beta$, freeze iff $M<-\widehat\beta$, else abstain) falsely strict-commits with
-probability $\le\delta$; replacing $M$ by the batch estimate $\widehat M\pm t_M(m,\delta')$
-gives a rule computable entirely from data with false-commit probability $\le\delta+\delta'$.
-On the synthetic sweep: $0/12$ false commits (empirical rule) and $0/13$ (population rule)
-versus $3/20$ for the $\beta{=}0$ plug-in.
+Let $\widehat\beta$ be any audit with $\Pr(|\gamma|\le\widehat\beta)\ge1-\delta$.
+\textup{(D)}~The audited population rule (adapt iff $M>\widehat\beta$; freeze iff
+$M<-\widehat\beta$; else abstain) has $\Pr(\text{false strict commitment})\le\delta$.
+\textup{(E)}~With $\widehat M=\tfrac1m\sum s(X_i)-\tfrac12$ from $m$ unlabeled deployment
+points and $t_M(m,\delta')=\sqrt{\ln(2/\delta')/(2m)}$, the \emph{empirical} audited rule
+(adapt iff $\widehat M-t_M>\widehat\beta$; freeze iff $\widehat M+t_M<-\widehat\beta$) has
+$\Pr(\text{false strict commitment})\le\delta+\delta'$, and every quantity in the rule is
+computable. On the synthetic sweep: $0/12$ false commits (empirical rule) and $0/13$
+(population rule) versus $3/20$ for the $\beta{=}0$ plug-in.
 \end{theorem}
+\begin{proof}
+\textup{(D)}: on $\{|\gamma|\le\widehat\beta\}$, $M>\widehat\beta\ge|\gamma|$ implies
+$M+\gamma>0$, so $\sign\Delta=+1$ by Lemma~\ref{lem:reduction}; symmetric for freeze; a false
+commitment requires the audit event to fail.
+\textup{(E)}: Hoeffding for the $[0,1]$-valued $s(X_i)$ gives
+$\Pr(|\widehat M-M|>t_M)\le\delta'$; on the intersection of the two events the adapt branch gives
+$M\ge\widehat M-t_M>\widehat\beta\ge|\gamma|$; union bound.
+\end{proof}
 
 \begin{theorem}[Domain-level verifiability with an exact floor]\label{thm:short-audG}\label{thm:aud-G}
-With $K$ calibration domains exchangeable with deployment, common per-domain labeled size, and a
-drift predictor independent of all $K{+}1$ domains, a domain-level conformal bound certifies
-$|\gamma_{K+1}|\le|\gamma_{\mathrm{pred}}(Z_{K+1})|+s_{(j)}+e$ at level $1-\alpha$, feasible iff
-$\alpha\ge\tfrac1{K+1}+\delta$. Alignment is thus verifiable exactly at the rate one can afford
-exchangeable domains ($K{=}5$: nothing below $\alpha\approx0.17{+}\delta$); per-deployment
-verification remains impossible.
+Assume \textup{(G1)} the $K$ calibration domains and the deployment domain are exchangeable
+tuples $(P_k,Z_k,\gamma_k)$; \textup{(G2)} each calibration domain carries a labeled sample of
+\emph{common} size $n_{\mathrm{lab}}$, giving $\widehat\gamma_k$ with common Hoeffding radius $e$
+at level $\delta$; \textup{(G3)} the label-free drift predictor $\gamma_{\mathrm{pred}}(\cdot)$
+is fixed and independent of all $K{+}1$ domains. Let
+$s_k=|\widehat\gamma_k-\gamma_{\mathrm{pred}}(Z_k)|$ and
+$j=\lceil(1-\alpha+\delta)(K+1)\rceil$, feasible iff $\alpha\ge\tfrac1{K+1}+\delta$. Then
+\[
+\Pr\Bigl(\,|\gamma_{K+1}|\le|\gamma_{\mathrm{pred}}(Z_{K+1})|+s_{(j)}+e\,\Bigr)\ \ge\ 1-\alpha,
+\]
+with every right-hand quantity computable without deployment labels. Alignment is thus verifiable
+exactly at the rate one can afford exchangeable domains ($K{=}5$: nothing below
+$\alpha\approx0.17{+}\delta$); per-deployment verification remains impossible.
 \end{theorem}
+\begin{proof}
+The computable scores $s_1,\dots,s_{K+1}$ are exchangeable under (G1)--(G3) (if per-domain
+labeled sizes differ, exchangeability fails and validity is lost). Split conformal at level
+$\alpha'=\alpha-\delta$ gives $\Pr(s_{K+1}\le s_{(j)})\ge1-\alpha'$. One deployment-side
+Hoeffding event bounds the ideal score
+$S_{K+1}=|\gamma_{K+1}-\gamma_{\mathrm{pred}}(Z_{K+1})|\le s_{K+1}+e$; the deterministic
+triangle $|\gamma_{K+1}|\le|\gamma_{\mathrm{pred}}(Z_{K+1})|+S_{K+1}$ and a union bound finish.
+\emph{Floor:} the conformal index requires $j\le K$, i.e.\ $\alpha\ge\tfrac1{K+1}+\delta$
+exactly; per-deployment verification remains impossible (Theorem~\ref{thm:beta-minimax});
+verifiability is \emph{priced in exchangeable domains}. (G3) is essential: a predictor fit on
+the calibration domains breaks exchangeability.
+\end{proof}
 
 \noindent\emph{Open (long manuscript).}
 \textup{(1)}~\emph{Maximal auditable class:} useful $O(\sqrt{d/n})$ audits exist for

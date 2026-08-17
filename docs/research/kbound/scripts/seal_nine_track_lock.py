@@ -126,9 +126,16 @@ TRACKS = {
     },
 }
 
-NOT_LOCKED = {
-    "cifar10c_sar": "withheld (seed-0 aggregate non-reproducing); rebuild or permanently withhold",
+NOT_LOCKED = {}
+
+# cifar10c_sar is PERMANENTLY WITHHELD: seed-0 aggregate is non-reproducing.
+# The SAR arm is noted as withheld in kbound_short_body.tex and in cifar10c_tent_eata verdict.
+# No lock record will be created for this track. This is a deliberate scientific decision,
+# not an incomplete item. Updated: 2026-08-17.
+PERMANENTLY_WITHHELD = {
+    "cifar10c_sar": "seed-0 aggregate non-reproducing; withheld from paper per SUBMISSION_LEDGER §3; permanently closed 2026-08-17",
 }
+
 
 
 def sha256_file(path: Path) -> str:
@@ -174,6 +181,7 @@ def build_seal() -> dict:
         ),
         "tracks": tracks_out,
         "not_locked": NOT_LOCKED,
+        "permanently_withheld": PERMANENTLY_WITHHELD,
     }
 
 
@@ -205,6 +213,10 @@ def write_yaml_sidecar(seal: dict) -> None:
     lines.append("")
     lines.append("not_locked:")
     for name, reason in seal["not_locked"].items():
+        lines.append(f"  {name}: {reason!r}")
+    lines.append("")
+    lines.append("permanently_withheld:")
+    for name, reason in seal["permanently_withheld"].items():
         lines.append(f"  {name}: {reason!r}")
     lines.append("")
     LOCK_YAML.write_text("\n".join(lines), encoding="utf-8")

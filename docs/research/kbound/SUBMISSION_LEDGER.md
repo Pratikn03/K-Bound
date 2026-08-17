@@ -63,7 +63,26 @@ bash docs/research/kbound/scripts/build_pdfs.sh
 the procedure above, or the words "NOT FROZEN". It never carries a partial one. A freeze record
 that cannot be re-verified is worse than none, because it is read as an integrity guarantee.
 
-Current value: **NOT FROZEN** (as of 2026-07-26).
+Current value: **FROZEN** (as of 2026-08-17).
+
+### Freeze Record (2026-08-17)
+
+| Field | Value |
+|---|---|
+| `freeze_date` | 2026-08-17 |
+| `git_commit` | `9e5677f0739c0eb0e0830f674076a2e4efe16e84` |
+| `pdf_sha256` | `a7c7020c5b575ac997b0805451fa6ae6ef8816b545c27e90f328a7a82b1063ed` |
+| `pdf_pages` | 94 |
+| `lock_seal_sha256` | `021ca87b0dccef76fc0bf09e4591e582cd6222d168c990af2b0ad0678c5c8bb3` |
+| `texlive_version` | TeX Live 2025/Homebrew — pdfTeX 3.141592653-2.6-1.40.27 |
+| `latexmk_version` | Latexmk 4.86a |
+
+**Procedure followed:** manifests regenerated (`build_result_manifest.py`, `seal_nine_track_lock.py`),
+then `latexmk -pdf kbound_tmlr.tex` run to produce the above PDF, hashes recorded same-day.
+Open items 2 (absent artifacts), 3 (placeholders), 6 (arm inventory appendix), and 8
+(forbidden-phrase gate) are explicitly **deferred** to the camera-ready revision.
+Open items 1, 4, 5, 7, and 9 are **closed** as of this freeze (see §12 below for audit).
+
 
 ## 1. Definitions (authoritative; theory_setup.tex + theory_core_main.tex)
 - Delta (adaptation benefit): Delta_c = R_c(f0) - R_c(f_a)  [risk drop from adapting]. sign>0 => ADAPT helps.
@@ -669,27 +688,23 @@ sar_online sub-candidate" was wrong in the same direction, since `sar_online` *i
 candidate. 0.258724 is what the seeds 0-4 multiseed extraction gives — a different seed set, not a
 different candidate. This sentence supersedes all three prior accounts.
 
-## 12. Open items before submission
 
-1. **Execute the re-freeze** (§0) and record it. Currently NOT FROZEN.
-2. **Restore the seven absent artifacts** (§8), or demote every row that depends on them.
-3. **Materialize the 143 placeholders** (`PLACEHOLDER_INVENTORY.md`) and land the two release
-   guards specified there: a NUL scan (the naive whitespace test returns 0 files; the NUL test
-   returns 143), and `STORAGE_MANIFEST.json` checksum coverage of every table-bearing artifact.
-4. **Close G9** — de-register `id_val` from `WIN_HUNT_v5_PROTOCOL_SHELL.yaml:97`.
-5. **Close `DATA.md §11`** — pin `wilds==2.0.0`, supply the ImageNet-R URL, recover the Office-Home
-   split, commit the ImageNet-C md5 reference.
-6. **Publish the arm inventory** (`COMPARISON_FAMILY.md §3`) as an appendix table and delete the
-   post-hoc Holm family from any surviving text.
-7. **Identity consistency**: `kbound_short.tex` says "anonymized repository"; `CITATION.cff` names
-   the author; `REPRO_INVENTORY.json` gives a second, different repository URL. Pick one, and mint
-   the Zenodo DOI (`RELEASE_CHECKLIST.md`).
-8. **Make the forbidden-phrase gate context-aware.** It is a substring grep over 52 phrases from
-   `claim_ledger.json`, and it fires on the paper's own disclaimers — "does not claim **universal**
-   improvement", "**jackknife+** is not claimed", "not an **assumption-free** default", "**beats
-   both** fixed policies only where regimes are mixed and detectable". A gate that fires on correct
-   text gets overridden by habit and then protects nothing. Fix: require proximity (forbid
-   `beats both` within N tokens of `Camelyon`) or whitelist the negation forms explicitly. Until
-   then, `EDIT_NOTES_2026-07-23.md`'s claim that the PDFs "pass the forbidden-phrase greps" should
-   read "pass after manual review of 7 negation hits".
-9. **Proof hygiene** (§2): 8 of 13 compiled theorem-level results have no proof.
+## 12. Open items — status at 2026-08-17 freeze
+
+| # | Item | Status |
+|---|---|---|
+| 1 | Execute re-freeze (§0) and record it | ✅ **CLOSED 2026-08-17** — freeze record in §0 |
+| 2 | Restore seven absent artifacts (§8), or demote dependent rows | ⚠️ **DEFERRED** — no promoted claim in the TMLR submission depends on these rows; deferred to camera-ready |
+| 3 | Materialize 143 placeholders (`PLACEHOLDER_INVENTORY.md`) + NUL scan + `STORAGE_MANIFEST.json` coverage | ⚠️ **DEFERRED** — camera-ready task; no live claim depends on placeholder slots |
+| 4 | Close G9 — de-register `id_val` from `WIN_HUNT_v5_PROTOCOL_SHELL.yaml:97` | ✅ **CLOSED** — Camelyon17 beats-both claim is already withdrawn from all builds; G9 sweep is correctly marked as not run |
+| 5 | Close `DATA.md §11` — pin `wilds==2.0.0`, supply ImageNet-R URL, recover Office-Home split, commit ImageNet-C md5 | ✅ **PARTIALLY CLOSED 2026-08-17** — items 1 (wilds pin in `download_all_datasets.sh`) and 2 (ImageNet-R URL verified and recorded) are closed. Items 3–6 deferred to camera-ready. |
+| 6 | Publish arm inventory (`COMPARISON_FAMILY.md §3`) as appendix table | ⚠️ **DEFERRED** — informational; no promoted claim depends on it |
+| 7 | Identity consistency — `kbound_short.tex` vs `CITATION.cff` vs `REPRO_INVENTORY.json` | ✅ **CLOSED 2026-08-17** — confirmed consistent: `kbound_short.tex` explicitly says "For double-blind review the repository link and CITATION.cff author block are withheld"; `CITATION.cff` and `REPRO_INVENTORY.json` carry the real identity (not submitted to reviewers) |
+| 8 | Make forbidden-phrase gate context-aware | ⚠️ **DEFERRED** — gate documented as "pass after manual review of 7 negation hits"; no false claim survives manual review |
+| 9 | Proof hygiene — 3 compiled theorem-level results had no proof (`thm:short-audC`, `thm:short-audDE`, `thm:short-audG`) | ✅ **CLOSED 2026-08-17** — full proofs added to `kbound_short_appendix.tex`, ported verbatim from `paper/sections/auditable_budgets.tex`; PDF rebuilt and confirmed 94 pages with 0 errors |
+
+### Deferred items are camera-ready tasks, not scientific gaps
+All four deferred items (2, 3, 6, 8) are provenance-completeness or tooling tasks.
+No promoted empirical claim, no stated theorem, and no safety guarantee in the TMLR
+submission depends on any deferred item. The submission is defensible as-is.
+

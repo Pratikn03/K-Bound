@@ -49,7 +49,7 @@ source "$VENV/bin/activate"
 # uv-created venvs ship no `pip`; install into the active venv via `uv pip`.
 PIP="uv pip"; command -v uv >/dev/null 2>&1 || PIP="python -m pip"
 python -c "import torch" 2>/dev/null || $PIP install -q torch==2.5.1 torchvision==0.20.1
-python -c "import wilds" 2>/dev/null || $PIP install -q wilds
+python -c "import wilds; assert wilds.__version__=='2.0.0'" 2>/dev/null || $PIP install -q "wilds==2.0.0"
 
 # ── 1. Camelyon17 (WILDS) ────────────────────────────────────────────────────
 if [ "${SKIP_CAMELYON:-0}" != 1 ]; then
