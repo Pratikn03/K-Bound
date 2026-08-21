@@ -30,7 +30,7 @@
 #       resumable, so an interrupted run picks up at the next incomplete seed.
 #
 # USAGE
-#   export KBOUND_EXTERNAL_ROOT=/Volumes/T9/uav      # volume holding imagenetc_local
+#   export KBOUND_EXTERNAL_ROOT=${KBOUND_EXTERNAL_ROOT:-/path/to/external}  # volume holding imagenetc_local
 #   export KBOUND_PYTHON="$(command -v python)"      # the conda 'aetta' python
 #   bash docs/research/kbound/runbooks/run_sar_official_control.sh --preflight
 #   bash docs/research/kbound/runbooks/run_sar_official_control.sh

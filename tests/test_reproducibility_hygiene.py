@@ -90,6 +90,12 @@ MACHINE_LOCAL_ALLOWLIST: dict[str, str] = {
         "superseded theory probe; same dead session-sandbox mount",
     "experiments/kbound/theory_validation/frontier_decisive/realdata/realdata_frontier.py":
         "superseded theory probe; same dead session-sandbox mount",
+    # -----------------------------------------------------------------------
+    # FILES THAT DOCUMENT OR ASSERT THE ABSENCE OF MACHINE PATHS
+    # -----------------------------------------------------------------------
+    "tests/test_reconciled_panels.py":
+        "asserts that /Volumes/T9 does NOT appear in the canonical panel JSON; "
+        "the path fragment is its own subject, not a dependency",
 }
 
 
@@ -189,13 +195,34 @@ class TestNoMachineLocalPaths:
         Comment lines are **not** exempt: a runbook comment telling a reader to
         ``cd /Volumes/T9/...`` is exactly as unusable as executable code, and
         exempting comments is how 94 files stayed invisible to the old guard.
+
+        Excluded directory subtrees (not authored promotion-path code):
+        - ``.venv`` / ``.venv_wilds`` / ``venv``: third-party packages contain
+          API URL templates and internal strings that are false positives.
+        - ``archive/``: frozen historical snapshots; rewriting them would
+          falsify the audit record. Paths there are never executed.
+        - ``audits/integrity_2026-06-20/``: one-time repair scripts run on the
+          author's machine. Same rationale as the archive entries above.
         """
+        _SKIP_PARTS = {
+            ".venv", ".venv_wilds", "venv", "__pypackages__",
+            "archive",
+        }
+        _SKIP_PREFIXES = (
+            "audits/integrity_2026-06-20",
+        )
+
         bad: dict[str, list[str]] = {}
         for pattern in ("*.py", "*.sh"):
             for path in sorted(root.rglob(pattern)):
                 if "__pycache__" in path.parts or not _readable(path):
                     continue
+                # Skip virtual environments and historical archive subtrees.
+                if _SKIP_PARTS.intersection(path.parts):
+                    continue
                 rel = str(path.relative_to(REPO))
+                if any(rel.startswith(p) for p in _SKIP_PREFIXES):
+                    continue
                 hits = [
                     f"{i}: {line.strip()}"
                     for i, line in enumerate(path.read_text(errors="ignore").splitlines(), 1)

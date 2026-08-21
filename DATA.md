@@ -160,23 +160,22 @@ precisely:
 number was written before the paper cited it; a reader cannot verify that it is correct.
 **Restoration procedure:** `docs/research/kbound/SUBMISSION_LEDGER.md §8`.
 
-### 4c. Absent Record Files
+### 4c. Source Record Files
 
 `docs/research/kbound/scripts/bootstrap_win_cis.py` loads four record files to produce the
-promoted Office-Home, iWildCam, and Camelyon17 bootstrap intervals. All four are absent from the
-release tree:
+promoted Office-Home, iWildCam, and Camelyon17 bootstrap intervals. All four are present on disk
+and tracked in Git (verified 2026-08-21):
 
 ```
-experiments/kbound/results/officehome_full_targetval/result_target_val_361a1e8c.json
-experiments/kbound/results/officehome_full_targettest/result_target_test_6605675d.json
-experiments/kbound/results/iwildcam_full_test/result_e40faf29.json
-experiments/kbound/results/camelyon17_richZ_F_v1/result_884129ba.json
+experiments/kbound/results/officehome_full_targetval/result_target_val_361a1e8c.json   (2.3 MB)
+experiments/kbound/results/officehome_full_targettest/result_target_test_6605675d.json (2.2 MB)
+experiments/kbound/results/iwildcam_full_test/result_e40faf29.json                     (2.2 MB)
+experiments/kbound/results/camelyon17_richZ_F_v1/result_884129ba.json                  (999 KB)
 ```
 
-These are small per-condition JSON files — exactly the class that `EXTERNAL_STORAGE_POLICY.md`
-declares "tracked in Git." They must be committed, or registered in `STORAGE_MANIFEST.json` with
-checksums and an acquisition procedure. Until then, the Office-Home and iWildCam promoted values
-are locked by lock-file only, not independently verifiable from source artifacts.
+These files were previously listed as absent because the local working copy resided on an external
+drive (`/Volumes/T9`) where they were inaccessible during the 2026-07-26 audit. They were already
+committed to Git at that time. The warning is retracted.
 
 ---
 
