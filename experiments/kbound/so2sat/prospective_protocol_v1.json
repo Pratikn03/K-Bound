@@ -1,0 +1,133 @@
+{
+  "amendment_rule": "Any material change requires a new versioned protocol and disclosure. Model, adapter, preprocessing, optimizer, checkpoint-selection, and gate settings must be fixed in a separate execution seal before gate calibration or any target pixel access.",
+  "dataset": {
+    "class_count": 17,
+    "geo_files": {
+      "testing": "testing_geo.h5",
+      "training": "training_geo.h5",
+      "validation": "validation_geo.h5"
+    },
+    "geo_keys": [
+      "city",
+      "epsg",
+      "tfw"
+    ],
+    "name": "So2Sat LCZ42",
+    "official_repository": "https://github.com/zhu-xlab/So2Sat-LCZ42",
+    "patch_shape": [
+      32,
+      32
+    ],
+    "release": "v4.2",
+    "split_counts": {
+      "testing": 24188,
+      "training": 352366,
+      "validation": 24119
+    },
+    "split_scenario": "culture-10"
+  },
+  "execution": {
+    "candidate_selection_data": "gate_fit_cities_only",
+    "lock_before": "gate_calibration_and_any_target_pixel_access",
+    "model_seeds": [
+      0,
+      1,
+      2,
+      3,
+      4
+    ],
+    "modality": "sen2_10_band",
+    "report_regardless_of_direction": true,
+    "required_later_seal_fields": [
+      "source_preprocessing_and_normalization",
+      "model_architecture_and_initialization",
+      "source_training_and_checkpoint_selection",
+      "candidate_adapter_implementations_and_exact_commits",
+      "gate_features_estimator_and_calibration",
+      "batching_and_stream_order",
+      "dataset_checkpoint_code_and_environment_hashes"
+    ]
+  },
+  "inference": {
+    "cluster_unit": "target_city",
+    "comparison_family": [
+      "kga_vs_always_adapt",
+      "kga_vs_always_freeze"
+    ],
+    "confidence_interval_sign": "positive_favors_kga",
+    "multiplicity": "holm",
+    "report_all_10_target_cities": true,
+    "strong_success_requires": [
+      "confidence_intervals_above_zero_against_both_fixed_policies",
+      "both_city_sign_flip_tests_survive_holm_at_0.05",
+      "meaningful_adapt_and_freeze_exposure",
+      "all_five_checkpoint_by_ten_city_cells_complete"
+    ]
+  },
+  "protocol_id": "KBOUND_SO2SAT_LCZ42_PROSPECTIVE_CONFIRMATION_v1",
+  "roles": {
+    "target": {
+      "action_unit": "city",
+      "cities": "the_10_official_culture_10_cities",
+      "evaluation_labels_available_to_live_runner": false,
+      "evaluation_split": "testing",
+      "probe_labels_scored": false,
+      "probe_split": "validation"
+    },
+    "training_city_partition": {
+      "algorithm": "metadata_count_then_sha256",
+      "core_city_rule": "five_largest_eligible_to_source_fit_core_count_descending_then_city_id",
+      "count_source": "complete_training_geo_population",
+      "eligibility_rule": "rows_at_least_256_and_at_least_2_distinct_6400m_block_eastings",
+      "expected_ineligible_city_count": 9,
+      "gate_candidate_rule": "remaining_28_eligible_cities",
+      "gate_hash_rule": "ascending_sha256_then_city_id_first_9_gate_fit_remaining_19_gate_cal",
+      "gate_hash_salt": "KBOUND_SO2SAT_GATE_CITY_ROLES_v1",
+      "labels_used": false,
+      "minimum_gate_city_distinct_block_eastings": 2,
+      "minimum_gate_city_rows": 256,
+      "role_counts": {
+        "gate_cal": 19,
+        "gate_fit": 9,
+        "source_fit_core": 5,
+        "source_fit_ineligible": 9
+      },
+      "ineligible_city_rule": "any_city_failing_either_eligibility_condition_to_source_fit_ineligible",
+      "source_fit_total_cities": 14,
+      "unit": "normalized_city"
+    },
+    "within_development_city_partition": {
+      "block_definition": "floor(patch_center_x/6400),floor(patch_center_y/6400), using TFW world-file order A,D,B,E,C,F",
+      "easting_threshold": "upper_median_of_sorted_distinct_block_eastings_per_city",
+      "evaluation_rule": "block_easting_at_or_east_of_threshold",
+      "labels_used": false,
+      "probe_rule": "block_easting_strictly_west_of_threshold",
+      "unit": "epsg_x_6400m_spatial_block",
+      "whole_block_atomicity": "required"
+    },
+    "source_monitor_partition": {
+      "hash": "sha256_exact_rational_comparison",
+      "labels_used": false,
+      "monitor_fraction": 0.1,
+      "salt": "KBOUND_SO2SAT_SOURCE_MONITOR_BLOCK_ROLES_v1",
+      "unit": "epsg_x_6400m_spatial_block"
+    }
+  },
+  "schema": "kbound_so2sat_prospective_protocol_v1",
+  "status": "STRUCTURAL_PROTOCOL_SEALED_EXECUTION_CONFIG_PENDING",
+  "target_label_firewall": {
+    "geo_reader_allowed_datasets": [
+      "city",
+      "epsg",
+      "tfw"
+    ],
+    "live_objects_expose_labels": false,
+    "opaque_container_hashing_deserializes_hdf5_datasets": false,
+    "pixel_reader_allowed_datasets": [
+      "sen1",
+      "sen2"
+    ],
+    "scoring_implementation_in_this_package": false,
+    "target_outcome_dataset_access": "forbidden_until_predictions_and_actions_are_sealed"
+  }
+}

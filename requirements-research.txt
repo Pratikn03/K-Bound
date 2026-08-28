@@ -1,0 +1,25 @@
+# Complete K-Bound research/collection profile (CPU Torch + WILDS).
+#
+# Install this file for repository-wide pytest collection.  It extends the
+# paper/core profile with the repository-pinned API stack and the exact heavy
+# dependency versions exercised by the supported Python 3.12 environment on
+# 2026-08-27. CI installs the pinned Torch pair from the PyTorch CPU index
+# first, then installs this file.
+-r requirements-paper.txt
+
+# API/security tests
+fastapi==0.136.3
+httpx==0.28.1
+python-jose[cryptography]==3.5.0
+passlib==1.7.4
+psutil==7.2.2
+
+# Headless edge-dashboard tests
+opencv-python-headless==4.13.0.92
+
+# Natural-shift runners and the NLP smoke-test import surface
+torch==2.5.1
+torchvision==0.20.1
+wilds==2.0.0
+transformers==4.46.3
+h5py==3.16.0
