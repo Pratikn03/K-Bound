@@ -1,0 +1,413 @@
+{
+  "audit_stages": {
+    "initial_diagnosis": {
+      "critical_findings": 5,
+      "empirical_readiness_score_out_of_10": 5.8,
+      "finding_count": 15,
+      "high_findings": 8,
+      "score_kind": "senior-reviewer judgment, not a scientific estimand"
+    },
+    "post_remediation": {
+      "historical_results_revalidated_by_code_fixes": false,
+      "invalid_derived_artifacts_quarantined": 14,
+      "natural_shift_routing_evidence_score_out_of_10": 4.0,
+      "overall_empirical_readiness_score_out_of_10": null,
+      "overall_score_status": "WITHHELD_PENDING_SEALED_PROSPECTIVE_EVIDENCE",
+      "raw_sources_deleted": false,
+      "remediation_rows": 15,
+      "status_counts": {
+        "CONTROL_IMPLEMENTED_DEVELOPMENT_DIAGNOSTIC_ONLY": 1,
+        "CONTROL_IMPLEMENTED_HISTORICAL_ARTIFACT_WITHHELD": 1,
+        "CONTROL_IMPLEMENTED_HISTORICAL_JSON_WITHHELD": 1,
+        "CONTROL_IMPLEMENTED_HISTORICAL_RESULT_WITHHELD": 1,
+        "CONTROL_IMPLEMENTED_HISTORICAL_ROUTE_WITHHELD": 2,
+        "CONTROL_IMPLEMENTED_LEGACY_POPULATION_WITHHELD": 1,
+        "CONTROL_IMPLEMENTED_RERUN_REQUIRED": 2,
+        "MANUSCRIPT_CORRECTED": 1,
+        "PARTIALLY_REMEDIATED_LEGACY_SCHEMA_DISCLOSED": 1,
+        "PENDING_FINAL_RELEASE_SEAL": 1,
+        "QUARANTINED_AND_CONTROL_IMPLEMENTED": 2,
+        "UNRESOLVED_REQUIRES_NEW_UNOPENED_TARGET": 1
+      }
+    }
+  },
+  "bottom_line": {
+    "can_guarantee_9_5_empirical_score": false,
+    "code_hardening_retroactively_repairs_historical_results": false,
+    "controlled_cifar10c_tent_remains_strong": true,
+    "defensible_natural_beats_both_win": false,
+    "recommended_claim": "Strong controlled routing evidence; hardened natural-shift code is ready for sealed reruns, while existing natural evidence remains a transparent boundary/null result rather than a natural win."
+  },
+  "canonical": {
+    "aggregate_score_checks": {
+      "problem_count": 0,
+      "problems": [],
+      "score_nodes_checked": 117
+    },
+    "bundle": {
+      "benefit_identity_failures": 0,
+      "compact_hash_failures": 0,
+      "compact_size_failures": 0,
+      "core_nonfinite_values": 0,
+      "dataset_record_counts": {
+        "camelyon17_b_v2": 324,
+        "camelyon17_ood": 540,
+        "cifar101": 120,
+        "cifar10c": 6480,
+        "imagenetc": 405,
+        "imagenetr": 480,
+        "iwildcam": 864,
+        "officehome": 1102,
+        "pacs": 144,
+        "rxrx1": 2160
+      },
+      "docs_missing_metadata_dataset": 85,
+      "duplicate_dimension_keys_within_file": 0,
+      "exact_duplicate_records_within_file": 0,
+      "manifest_file_count": 106,
+      "missing_metric_rate": 0.8442031856723987,
+      "missing_metric_records": 10653,
+      "original_hash_failures": 0,
+      "original_size_failures": 0,
+      "out_of_range_score_values": 0,
+      "record_file_count": 101,
+      "records_missing_metadata_dataset": 8349,
+      "records_missing_metadata_dataset_rate": 0.6616213646089231,
+      "records_total": 12619,
+      "row_count_failures": 0,
+      "strict_json_failures": 0,
+      "summary_artifact_count": 5
+    },
+    "canonical_declared_source_manifest_sha256": "391983f4fa09d65c256ab8c620fea772866b652c219dad0c36574ce38c740482",
+    "canonical_sha256": "ee64e858184cc9f67f4e596183b69880d59d64d267e22d3ba29c422afa609df9",
+    "source_manifest_hash_matches_canonical": true,
+    "source_manifest_sha256": "391983f4fa09d65c256ab8c620fea772866b652c219dad0c36574ce38c740482"
+  },
+  "critical_findings": 5,
+  "finding_count": 15,
+  "focused_officehome": {
+    "b_hat_outside_unit_interval_cells": 5,
+    "b_hat_outside_unit_interval_values": 9,
+    "b_hat_values_total": 60,
+    "candidate_records": 45,
+    "distinct_checkpoint_hashes": 5,
+    "eata_sar_exact_prediction_cells": 10,
+    "literal_infinity_values": 57,
+    "locked_tau_star": 0.52,
+    "mean_accuracy": {
+      "eata_online_aggressive": 0.5891282051282052,
+      "freeze_or_kga": 0.571076923076923,
+      "oracle": 0.594051282051282,
+      "sar_online_aggressive": 0.5913846153846154,
+      "tent_online_aggressive": 0.571076923076923
+    },
+    "minimum_total_cells_for_alpha_0_10_exact_rank_loo": 10,
+    "negative_anchor_cells": 13,
+    "regret": {
+      "kga": 0.022974358974358962,
+      "sar": 0.002666666666666662
+    },
+    "result_files": 5,
+    "route_action_counts": {
+      "ABSTAIN": 15
+    },
+    "route_conditions": 15,
+    "single_candidate_calibration_cells_per_checkpoint": 3,
+    "single_candidate_route_feasible": false,
+    "strict_json_files_failed": 5,
+    "tau_max": 1.1764862292039069,
+    "tau_min": 0.7764383175874823
+  },
+  "generated_at": "2026-08-27T00:00:00-05:00",
+  "high_findings": 8,
+  "intended_grain": {
+    "candidate_record": "dataset x checkpoint/model_seed x stream_seed x domain/location/backbone x split x composition x regime x aggressiveness x candidate",
+    "inference_unit_warning": "inference units, condition evaluations, repeated twin settings, and stream seeds are not interchangeable",
+    "route_record": "same condition key without candidate"
+  },
+  "iwild_metric": {
+    "corrected_transfer_replay": {
+      "action_counts": {
+        "abstain": 68,
+        "adapt": 0,
+        "freeze": 4
+      },
+      "epsilon": 0.12185321593723766,
+      "expected_numpy": "2.4.4",
+      "expected_sklearn": "1.8.0",
+      "n_calibration": 72,
+      "n_test": 72,
+      "point_beats_both": false,
+      "regret": {
+        "always_adapt": 0.0745020738022451,
+        "always_freeze": 0.005511145919765506,
+        "kga": 0.005511145919765506
+      },
+      "runtime_matches_reconciliation": false,
+      "runtime_numpy": "2.4.6",
+      "runtime_sklearn": "1.9.0",
+      "status": "diagnostic_only_runtime_differs_from_pinned_reconciliation"
+    },
+    "full_test_864_record_diagnostic": {
+      "benefit_sign_flips": 60,
+      "mean_corrected_minus_stored_benefit": 0.029378928063897216,
+      "records": 864
+    },
+    "metric_contract": "official WILDS macro-F1 averages labels present in y_true only",
+    "primary_48_record_diagnostic": {
+      "benefit_sign_flips": 2,
+      "mean_corrected_minus_stored_benefit": 0.011198453152783241,
+      "records": 48
+    }
+  },
+  "multiseed_lineage": {
+    "current_release_artifacts_present": false,
+    "iwildcam": {
+      "aggregate_seed_count": 2,
+      "aggregate_seeds": [
+        0,
+        1
+      ],
+      "aggregate_verdict": "stable no-harm",
+      "current_serialization_written": [],
+      "current_source": "experiments/kbound/results/multiseed/iwildcam/iwildcam_kbound_finder_v1/result_0e82b624.json",
+      "current_source_candidates": [
+        "eata_online",
+        "sar_online",
+        "tent_online"
+      ],
+      "requested_candidate": "tent_episodic",
+      "stale_aggregate_emitted": true,
+      "status": "historical_invalid_evidence_quarantined"
+    },
+    "officehome": {
+      "duplicate_rows": 90,
+      "oracle_action_matches": 180,
+      "per_condition_files": 5,
+      "reported_inference_unit": null,
+      "reported_regret_kga": [
+        0.0,
+        0.0
+      ],
+      "reported_verdict": "beats-both (multi-seed)",
+      "rows": 180,
+      "source_checkpoint_identity": "same seed-0 checkpoint path; no model_seed or checkpoint SHA-256 recorded",
+      "status": "historical_invalid_evidence_quarantined",
+      "unique_seed_condition_keys": 90
+    },
+    "raw_sources_deleted": false,
+    "status": "quarantined_invalid_derived_artifacts"
+  },
+  "natural_target_provenance": {
+    "prospective_natural_track_available": false,
+    "track_count": 8,
+    "verdict": "no_verified_unopened_target_found",
+    "verified_unopened_tracks": []
+  },
+  "pacs_denominator": {
+    "abstentions": 40,
+    "adaptations": 12,
+    "decision_evaluations": 216,
+    "false_adaptations": 2,
+    "freezes": 164,
+    "inference_units": 12,
+    "paired_settings": 108,
+    "reported_adapt_rate": 0.05555555555555555,
+    "reported_coverage": 0.8148148148148149,
+    "reported_fa_u": 0.009259259259259259
+  },
+  "release_checksums": {
+    "entries": 23,
+    "rows": [
+      {
+        "actual_sha256": "0fddb8b737633d844c4881eafc24d7602dcf014016d5319606c2e111f0ea347d",
+        "expected_sha256": "0fddb8b737633d844c4881eafc24d7602dcf014016d5319606c2e111f0ea347d",
+        "path": "docs/research/kbound/claim_ledger.json",
+        "status": "match"
+      },
+      {
+        "actual_sha256": "eee81e085c48f4cd8fe8c43c7f3deac57f9a756eec648f3a1988002f0f1fceaa",
+        "expected_sha256": "eee81e085c48f4cd8fe8c43c7f3deac57f9a756eec648f3a1988002f0f1fceaa",
+        "path": "docs/research/kbound/RESULT_MANIFEST.json",
+        "status": "match"
+      },
+      {
+        "actual_sha256": "2831528d6983886742bf228d5032efe56d8ae73cc7aeb0b79bdbdd96f166f723",
+        "expected_sha256": "2831528d6983886742bf228d5032efe56d8ae73cc7aeb0b79bdbdd96f166f723",
+        "path": "docs/research/kbound/kbound_short_final_draft.pdf",
+        "status": "match"
+      },
+      {
+        "actual_sha256": "2831528d6983886742bf228d5032efe56d8ae73cc7aeb0b79bdbdd96f166f723",
+        "expected_sha256": "2831528d6983886742bf228d5032efe56d8ae73cc7aeb0b79bdbdd96f166f723",
+        "path": "docs/research/kbound/kbound_submission.pdf",
+        "status": "match"
+      },
+      {
+        "actual_sha256": "b03c22e01e4296793adafd801c05f618928a6a0411140172a98f3eccb8d62565",
+        "expected_sha256": "b03c22e01e4296793adafd801c05f618928a6a0411140172a98f3eccb8d62565",
+        "path": "docs/research/kbound/kbound_tmlr.pdf",
+        "status": "match"
+      },
+      {
+        "actual_sha256": "ee64e858184cc9f67f4e596183b69880d59d64d267e22d3ba29c422afa609df9",
+        "expected_sha256": "ee64e858184cc9f67f4e596183b69880d59d64d267e22d3ba29c422afa609df9",
+        "path": "experiments/kbound/results/reconciled_panels_v1/canonical_panel_results.json",
+        "status": "match"
+      },
+      {
+        "actual_sha256": "391983f4fa09d65c256ab8c620fea772866b652c219dad0c36574ce38c740482",
+        "expected_sha256": "391983f4fa09d65c256ab8c620fea772866b652c219dad0c36574ce38c740482",
+        "path": "experiments/kbound/results/reconciled_panels_v1/source_manifest.json",
+        "status": "match"
+      },
+      {
+        "actual_sha256": "ed89020c071ff3d9c758f65fc16f52a3b42bb0b03dfcbcd611d5e1fa2806364f",
+        "expected_sha256": "ed89020c071ff3d9c758f65fc16f52a3b42bb0b03dfcbcd611d5e1fa2806364f",
+        "path": "experiments/kbound/results/reconciled_panels_v1/current_policy_cluster_inference.json",
+        "status": "match"
+      },
+      {
+        "actual_sha256": "550e70865e5f36b856f0c8c4a74cb1f9838ee48bdbf41e03f7c843dc0a697a14",
+        "expected_sha256": "550e70865e5f36b856f0c8c4a74cb1f9838ee48bdbf41e03f7c843dc0a697a14",
+        "path": "research_lock/KBOUND_PROSPECTIVE_CLOSURE_v1.yaml",
+        "status": "match"
+      },
+      {
+        "actual_sha256": "0e6088666ea7713641ecfa9054f01cb24ac871069909eb51fc00e4246cdbb552",
+        "expected_sha256": "0e6088666ea7713641ecfa9054f01cb24ac871069909eb51fc00e4246cdbb552",
+        "path": "research_lock/KBOUND_EXACT_CONFIRMATION_UNSEALED_v1.json",
+        "status": "match"
+      },
+      {
+        "actual_sha256": "52d68663a0f5457bbe5047226a3379a0e23751b4cdf4da97e64e787dde2209e0",
+        "expected_sha256": "52d68663a0f5457bbe5047226a3379a0e23751b4cdf4da97e64e787dde2209e0",
+        "path": "experiments/kbound/results/frontier_kga_bridge_v1/bridge_results.json",
+        "status": "match"
+      },
+      {
+        "actual_sha256": "7d66b340e32af00ef421d4c86745daa06a55d57b5ebc4bf4140afb5221d58d0c",
+        "expected_sha256": "7d66b340e32af00ef421d4c86745daa06a55d57b5ebc4bf4140afb5221d58d0c",
+        "path": "experiments/kbound/results/natural_target_provenance_v1/NATURAL_TARGET_PROVENANCE_AUDIT.json",
+        "status": "match"
+      },
+      {
+        "actual_sha256": "000eac387c87bec368192c285d03f9dc981ccd40b7caa44388c2231d5503fcf4",
+        "expected_sha256": "055cc3e6e41a040dcd60b5fb3a4cb11b040c140d6d5eb727f020251aa14a2847",
+        "path": "experiments/kbound/results/official_repro_v1/OFFICIAL_BASELINE_AUDIT.json",
+        "status": "mismatch"
+      },
+      {
+        "actual_sha256": "715c54f96ba195bbba2adef725ea3b1f87f5f38c48f73ad430546136b490e154",
+        "expected_sha256": "715c54f96ba195bbba2adef725ea3b1f87f5f38c48f73ad430546136b490e154",
+        "path": "experiments/kbound/results/smoke_pacs_replay_v2/PACS_REPLAY_AUDIT.json",
+        "status": "match"
+      },
+      {
+        "actual_sha256": "6f4686bd909da0da631f0191f253472de7c19eaafc81e88e06ec3dc119e29e37",
+        "expected_sha256": "6f4686bd909da0da631f0191f253472de7c19eaafc81e88e06ec3dc119e29e37",
+        "path": "experiments/kbound/results/edge_real_phone_v1/publication_gate.json",
+        "status": "match"
+      },
+      {
+        "actual_sha256": "7ef009df47dfef857b9fa07e1e381a1947e5388ce11b4ee1d52c39ce0043df1c",
+        "expected_sha256": "7ef009df47dfef857b9fa07e1e381a1947e5388ce11b4ee1d52c39ce0043df1c",
+        "path": "docs/research/kbound/audits/phase1_provenance_2026_08_27/provenance_seal.json",
+        "status": "match"
+      },
+      {
+        "actual_sha256": "db66ab04702be445de5b3144327ada074225c7585f91cda7c5b1949253cb5e16",
+        "expected_sha256": "db66ab04702be445de5b3144327ada074225c7585f91cda7c5b1949253cb5e16",
+        "path": "docs/research/kbound/STORAGE_MANIFEST.json",
+        "status": "match"
+      },
+      {
+        "actual_sha256": "0ef5fbdc5d6e1f00ce84e676437e20ca354a60926fc8f3992283f2aeca4dfcfa",
+        "expected_sha256": "0ef5fbdc5d6e1f00ce84e676437e20ca354a60926fc8f3992283f2aeca4dfcfa",
+        "path": "docs/research/kbound/kbound_short_final_draft.docx",
+        "status": "match"
+      },
+      {
+        "actual_sha256": "722d2ebbe2d883c7eb173d72af9e4aa4c0a99b1ec320d913bf668f07d28eff48",
+        "expected_sha256": "722d2ebbe2d883c7eb173d72af9e4aa4c0a99b1ec320d913bf668f07d28eff48",
+        "path": "docs/research/kbound/paper/generated/cct20_release_manifest.json",
+        "status": "match"
+      },
+      {
+        "actual_sha256": "f8d48b87a2228bf17176ab058f854340cd2b545abd3ee0b61fc7a1e9cb62a228",
+        "expected_sha256": "f8d48b87a2228bf17176ab058f854340cd2b545abd3ee0b61fc7a1e9cb62a228",
+        "path": "docs/research/kbound/paper/generated/cct20_release_manifest.json.receipt.json",
+        "status": "match"
+      },
+      {
+        "actual_sha256": "7e63bfad43c2374d02ec9995ccdd4bf94335fc6e4a529d506b7546c722f1b77c",
+        "expected_sha256": "7e63bfad43c2374d02ec9995ccdd4bf94335fc6e4a529d506b7546c722f1b77c",
+        "path": "docs/research/kbound/paper/generated/cct20_numbers.tex",
+        "status": "match"
+      },
+      {
+        "actual_sha256": "e3ce875900bead95095db20506dcf2cbc6a03cb51ef750549e89d36a2c845b7f",
+        "expected_sha256": "e3ce875900bead95095db20506dcf2cbc6a03cb51ef750549e89d36a2c845b7f",
+        "path": "docs/research/kbound/paper/generated/cct20_primary_table.tex",
+        "status": "match"
+      },
+      {
+        "actual_sha256": "918b00402e85662813dc469b0f4ecb7260e7934ad0b0015172b0707abbf27e78",
+        "expected_sha256": "918b00402e85662813dc469b0f4ecb7260e7934ad0b0015172b0707abbf27e78",
+        "path": "docs/research/kbound/paper/generated/cct20_location_effects.tex",
+        "status": "match"
+      }
+    ],
+    "status_counts": {
+      "match": 22,
+      "mismatch": 1
+    }
+  },
+  "release_decision": {
+    "controlled_cifar10c_tent_claim": "SUPPORTED_WITH_DECLARED_CLUSTERED_ROBUSTNESS",
+    "historical_invalid_natural_derivatives": "QUARANTINED_OR_NONPROMOTABLE",
+    "iwildcam_numerical_and_action_claim": "WITHHELD_PENDING_PINNED_OFFICIAL_METRIC_RERUN",
+    "natural_beats_both_claim": "NOT_SUPPORTED",
+    "outer_checksum_seal": "PENDING_FINAL_RELEASE_SEAL"
+  },
+  "repository_path_binding": {
+    "root": ".",
+    "root_role": "git_repository_root",
+    "schema": "git-repository-relative-posix-v1"
+  },
+  "resume_contamination": {
+    "declared_target_test_conditions": 42,
+    "declared_target_test_file": "experiments/kbound/results/officehome_kbound_run/result_target_test_d2f4bf2c.json",
+    "declared_target_test_role_counts": {
+      "source_validation": 6,
+      "target_test": 18,
+      "target_validation": 18
+    },
+    "declared_target_validation_conditions": 24,
+    "declared_target_validation_file": "experiments/kbound/results/officehome_kbound_run/result_target_val_ce1e4380.json",
+    "declared_target_validation_role_counts": {
+      "source_validation": 6,
+      "target_validation": 18
+    },
+    "non_test_conditions_in_target_test_artifact": 24,
+    "non_test_fraction": 0.5714285714285714
+  },
+  "route_b_archive": {
+    "adapt_cells": 138,
+    "adapt_negative_anchor_cells": 138,
+    "adapt_negative_realized_benefit_cells": 105,
+    "adapt_nonpositive_realized_benefit_cells": 107,
+    "b_hat_b_tilde_sign_disagreement_cells": 2534,
+    "b_hat_outside_unit_interval_cells": 1685,
+    "files_with_route_cells": 45,
+    "gate_pass_cells": 144,
+    "gate_pass_negative_anchor_cells": 138,
+    "route_cells": 2892
+  },
+  "runtime": {
+    "numpy": "2.4.6",
+    "python": "3.12.13",
+    "python_executable_basename": "python"
+  },
+  "schema": "kbound_empirical_data_quality_audit_v2"
+}

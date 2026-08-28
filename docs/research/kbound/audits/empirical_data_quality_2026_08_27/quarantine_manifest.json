@@ -1,0 +1,111 @@
+{
+  "schema": "kbound_quarantined_derived_artifacts_v1",
+  "created": "2026-08-27",
+  "policy": "Remove invalid derived artifacts from the release tree, retain their raw source runs and this hash inventory, and regenerate only after the hardened lineage checks pass.",
+  "raw_sources_deleted": false,
+  "historical_evidence": {
+    "officehome": {
+      "per_condition_files": 5,
+      "rows": 180,
+      "unique_seed_condition_keys": 90,
+      "duplicate_rows": 90,
+      "oracle_action_matches": 180,
+      "reported_regret_kga": [
+        0.0,
+        0.0
+      ],
+      "reported_verdict": "beats-both (multi-seed)",
+      "reported_inference_unit": null,
+      "source_checkpoint_identity": "same seed-0 checkpoint path; no model_seed or checkpoint SHA-256 recorded"
+    },
+    "iwildcam": {
+      "current_source": "experiments/kbound/results/multiseed/iwildcam/iwildcam_kbound_finder_v1/result_0e82b624.json",
+      "current_source_candidates": [
+        "eata_online",
+        "sar_online",
+        "tent_online"
+      ],
+      "requested_candidate": "tent_episodic",
+      "current_serialization_written": [],
+      "stale_aggregate_emitted": true,
+      "aggregate_seed_count": 2,
+      "aggregate_seeds": [
+        0,
+        1
+      ],
+      "aggregate_verdict": "stable no-harm"
+    }
+  },
+  "artifacts": [
+    {
+      "path": "experiments/kbound/results/multiseed/officehome/extracted/extract_manifest_officehome.json",
+      "sha256": "acecf508188271a87acc6eeb0f324d08286cbcd96419f83bb7df5e0d8173a50b",
+      "reason": "Manifest combines two scientifically duplicate target-test runs."
+    },
+    {
+      "path": "experiments/kbound/results/multiseed/officehome/extracted/multiseed_officehome_sar_online_aggressive.json",
+      "sha256": "7a740b03d0a2678975fde6d54c24913449a9423a35782b145944c90d7dfe1b46",
+      "reason": "Zero-regret beats-both aggregate is produced by duplicate-row leave-one-out leakage and mislabels stream seeds as independent model seeds."
+    },
+    {
+      "path": "experiments/kbound/results/multiseed/officehome/extracted/per_condition_officehome_sar_online_aggressive_seed0.json",
+      "sha256": "3195f27d429a1ddfc148b990ed151bcbd99132afcfd381aa12cdd90e9a72f068",
+      "reason": "Contains 36 rows but only 18 unique conditions."
+    },
+    {
+      "path": "experiments/kbound/results/multiseed/officehome/extracted/per_condition_officehome_sar_online_aggressive_seed1.json",
+      "sha256": "c21d5574950d4bf79a7e8caca5063c260e855588b98e0993afa5c000be086a37",
+      "reason": "Contains 36 rows but only 18 unique conditions."
+    },
+    {
+      "path": "experiments/kbound/results/multiseed/officehome/extracted/per_condition_officehome_sar_online_aggressive_seed2.json",
+      "sha256": "eae5b578ec6323bdcdacb422cf6b3f5d39376152b49ede6611092bc332c4254b",
+      "reason": "Contains 36 rows but only 18 unique conditions."
+    },
+    {
+      "path": "experiments/kbound/results/multiseed/officehome/extracted/per_condition_officehome_sar_online_aggressive_seed3.json",
+      "sha256": "c5002cb086936dba5c52d02fcdf00917e644d7a705c8775e0e7d9fe79f3e8a8d",
+      "reason": "Contains 36 rows but only 18 unique conditions."
+    },
+    {
+      "path": "experiments/kbound/results/multiseed/officehome/extracted/per_condition_officehome_sar_online_aggressive_seed4.json",
+      "sha256": "c0814255fdcf8d32b2851b8efbbab19d10421a15a6f5fc0af29ba27b3eb2f004",
+      "reason": "Contains 36 rows but only 18 unique conditions."
+    },
+    {
+      "path": "experiments/kbound/results/multiseed/iwildcam/extracted/extract_manifest_iwildcam.json",
+      "sha256": "cecfc934696371a5c26a3cc8aaa597c02c2e8ccab790c72bef1433c190296e2e",
+      "reason": "Current source wrote no requested tent_episodic rows but the manifest still names an aggregate."
+    },
+    {
+      "path": "experiments/kbound/results/multiseed/iwildcam/extracted/multiseed_iwildcam_tent_episodic.json",
+      "sha256": "d321aea5bbd3eb421eaf5545167593440cce86013ad0a8da544f8fc641e10be3",
+      "reason": "Aggregate is built from stale seed files not produced by the manifest's current source."
+    },
+    {
+      "path": "experiments/kbound/results/multiseed/iwildcam/extracted/per_condition_iwildcam_tent_episodic_seed0.json",
+      "sha256": "51ba635b116c3867556c3263b82c5629bd8e023b59c147ef0ab5bfea3f7fd193",
+      "reason": "Stale extraction file with no current-source lineage."
+    },
+    {
+      "path": "experiments/kbound/results/multiseed/iwildcam/extracted/per_condition_iwildcam_tent_episodic_seed1.json",
+      "sha256": "5c2646efe0e0580a64838830a24545c8f25703e573bd6f10cba1661479832795",
+      "reason": "Stale extraction file with no current-source lineage."
+    },
+    {
+      "path": "docs/research/kbound/figures/fig_natural_forest_multiseed.png",
+      "sha256": "a67b276d241db287abb0437742f7ef85b2bbe20ed21eda710ce0d41ff0277649",
+      "reason": "Generated visualization includes the invalid Office-Home and stale iWildCam aggregates."
+    },
+    {
+      "path": "docs/research/kbound/figures/tab_multiseed_natural.tex",
+      "sha256": "2c96b5771bf58eddae84ec85f065c0fcc6427f0ca837e9f840954bba74d15d74",
+      "reason": "Generated table publishes invalid lineage and also has a malformed six-column tabular declaration for seven fields."
+    },
+    {
+      "path": "docs/research/kbound/figures/multiseed_natural_forest_payload.json",
+      "sha256": "f68854250335a556c8dffc37ea8365d360b71cb790cc3ad7857b47448ac10ca6",
+      "reason": "Generated payload carries the same invalid lineage as the table and figure."
+    }
+  ]
+}
