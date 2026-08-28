@@ -9,11 +9,14 @@ mlruns/
 src/mlruns/
 .ipynb_checkpoints/
 .pytest_cache/
+.mypy_cache/
 .hypothesis/
 .ruff_cache/
 .cache/
 .idea/
 .torch_cache/
+# Driver-generated CUDA/NVIDIA kernel caches are machine-local build products.
+**/.nv/ComputeCache/
 tmp/
 # Heavy raw prediction-array payloads (index CSVs are committed explicitly)
 elara_master_c/predictions/confirmation/M2-CONFIRMATORY__*/
@@ -90,6 +93,45 @@ experiments/kbound/*
 !experiments/kbound/poem_aetta/**
 !experiments/kbound/wilds/
 !experiments/kbound/wilds/**
+# The recursive source exception above must never re-include raw datasets,
+# checkpoints, archives, or interpreter caches.
+experiments/kbound/wilds/**/data/
+experiments/kbound/wilds/**/*.h5
+experiments/kbound/wilds/**/*.hdf5
+experiments/kbound/wilds/**/*.h5.gz
+experiments/kbound/wilds/**/*.pt
+experiments/kbound/wilds/**/*.pth
+experiments/kbound/wilds/**/*.ckpt
+experiments/kbound/wilds/**/*.tar
+experiments/kbound/wilds/**/*.tar.gz
+experiments/kbound/wilds/**/*.zip
+experiments/kbound/wilds/**/__pycache__/
+experiments/kbound/wilds/**/*.py[cod]
+!experiments/kbound/officehome/
+experiments/kbound/officehome/*
+!experiments/kbound/officehome/materialize_officehome.py
+!experiments/kbound/officehome/oh_candidates.py
+!experiments/kbound/officehome/oh_data.py
+!experiments/kbound/officehome/run_officehome_kbound.py
+!experiments/kbound/officehome/train_f0_officehome.py
+!experiments/kbound/officehome/supervise_oh.sh
+!experiments/kbound/cct20/
+!experiments/kbound/cct20/**
+experiments/kbound/cct20/**/__pycache__/
+experiments/kbound/cct20/**/*.py[cod]
+!experiments/kbound/so2sat/
+!experiments/kbound/so2sat/**
+experiments/kbound/so2sat/**/__pycache__/
+experiments/kbound/so2sat/**/*.py[cod]
+experiments/kbound/so2sat/**/*.h5
+experiments/kbound/so2sat/**/*.hdf5
+experiments/kbound/so2sat/**/*.h5.gz
+experiments/kbound/so2sat/**/*.pt
+experiments/kbound/so2sat/**/*.pth
+experiments/kbound/so2sat/**/*.ckpt
+experiments/kbound/so2sat/**/*.tar
+experiments/kbound/so2sat/**/*.tar.gz
+experiments/kbound/so2sat/**/*.zip
 !experiments/kbound/*.py
 !experiments/kbound/results/
 experiments/kbound/results/*
@@ -125,10 +167,15 @@ docs/research/kbound/**/*.lot
 docs/research/kbound/**/*backup*
 docs/research/kbound/**/*partial.json
 experiments/kbound/results/**/_partial.json
+experiments/kbound/results/**/_partial*.json
 experiments/kbound/results/**/*.bak.*
 experiments/kbound/results/**/*.out
 experiments/kbound/results/**/checkpoint.json
 experiments/kbound/results/**/*.pid
+docs/research/kbound/output/
+# The recursive results-directory exceptions above must not re-include
+# machine-local NVIDIA kernel caches.
+experiments/kbound/results/**/.nv/ComputeCache/
 
 # Re-include model documentation (cards + integrity manifest); keep binaries out
 !models/
