@@ -166,10 +166,10 @@ python -m experiments.kbound.so2sat.development select \
   --training-data /absolute/path/to/training.h5 \
   --checkpoint-dir /absolute/path/to/source_checkpoints \
   --output-dir /absolute/path/to/development_results \
-  --device auto
+  --device mps
 
 SELECTED_CANDIDATE_ID="$(python -c \
-  'import json; print(json.load(open("/absolute/path/to/development_results/so2sat_candidate_selection.json"))["selected_candidate_id"])')"
+  'import json, sys; candidate = json.load(open("/absolute/path/to/development_results/so2sat_candidate_selection.json"))["selected_candidate_id"]; sys.exit("STOP: no feasible candidate; target preparation and gate calibration remain forbidden") if candidate is None else print(candidate)')"
 
 python -m experiments.kbound.so2sat.precalibration_seal \
   --population-manifest /absolute/path/to/so2sat_population_manifest_v1.json \
@@ -202,6 +202,22 @@ python -m experiments.kbound.so2sat.development calibrate \
   --output-dir /absolute/path/to/development_results \
   --device auto
 ```
+
+The selection command always writes the honest create-only selection artifact.
+When neither candidate is feasible, it then exits with status `20` and prints a
+`STOP` message. Treat that status as a successful negative scientific result,
+but as a hard workflow stop: do not create the pre-calibration seal, open
+gate-calibration rows, decompress target containers, or invoke any target
+stage. The explicit extraction guard above also refuses JSON `null`; never
+substitute the string `None` into a later artifact path.
+
+Gate-fit output publication is restart-safe. A rerun may reuse only complete,
+receipt-verified Tent or SAR pairs whose source, code, runtime, and device
+bindings still match. An incomplete artifact/receipt pair or any unknown file
+in the dedicated output directory is rejected before source rehashing or
+development-data access. Preserve such a directory for audit and choose a new
+empty output directory; never delete or overwrite a partial scientific
+artifact merely to make the command continue.
 
 The candidates are Tent (Adam, learning rate `1e-3`) and SAR (SAM/SGD,
 learning rate `2.5e-4`, momentum `0.9`, reliable-entropy margin

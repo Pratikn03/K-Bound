@@ -12,8 +12,11 @@ from __future__ import annotations
 
 import argparse
 import copy
+import importlib.metadata
 import math
 import os
+import platform
+import sys
 from collections.abc import Iterable, Mapping, Sequence
 from dataclasses import dataclass
 from pathlib import Path
@@ -86,6 +89,8 @@ CANDIDATE_BUNDLE_SCHEMA = "kbound_so2sat_development_candidate_bundle_v1"
 SELECTION_SCHEMA = "kbound_so2sat_adapter_candidate_selection_v1"
 CELL_SCHEMA = "kbound_so2sat_development_adapter_cell_v1"
 GATE_AUTHORIZATION_SCHEMA = "kbound_so2sat_gate_authorization_v1"
+DEVELOPMENT_ENVIRONMENT_SCHEMA = "kbound_so2sat_development_environment_v1"
+NO_FEASIBLE_CANDIDATE_EXIT_CODE = 20
 _GATE_ROW_KEYS = {
     "role",
     "city_id",
@@ -139,6 +144,7 @@ _CANDIDATE_BUNDLE_KEYS = {
     "source_container_identity_sha256",
     "normalizer_sha256",
     "runner_code",
+    "development_environment_identity",
     "cells",
     "gate_rows_sha256",
     "candidate_feasibility",
@@ -162,6 +168,102 @@ MIN_ACTION_CITIES_PER_POLICY = 2
 
 class NoFeasibleCandidateError(IntegrityError):
     """Raised before gate-calibration data access when no candidate qualifies."""
+
+
+def development_environment_identity(device: torch.device) -> dict[str, Any]:
+    """Return the self-hashed runtime identity for one development phase."""
+
+    if device.type not in {"cpu", "mps"}:
+        raise IntegrityError("development environment supports only CPU or MPS")
+    versions: dict[str, str] = {}
+    for package in ("h5py", "numpy", "torch", "torchvision"):
+        try:
+            versions[package] = importlib.metadata.version(package)
+        except importlib.metadata.PackageNotFoundError:
+            versions[package] = "NOT_INSTALLED"
+    if any(value == "NOT_INSTALLED" for value in versions.values()):
+        raise IntegrityError("development environment lacks a required package")
+    document = {
+        "schema": DEVELOPMENT_ENVIRONMENT_SCHEMA,
+        "python_implementation": platform.python_implementation(),
+        "python_version": platform.python_version(),
+        "python_executable_basename": Path(sys.executable).name,
+        "platform_system": platform.system(),
+        "platform_release": platform.release(),
+        "platform_machine": platform.machine(),
+        "package_versions": versions,
+        "device_type": device.type,
+        "torch_deterministic_algorithms_enabled": bool(
+            torch.are_deterministic_algorithms_enabled()
+        ),
+        "torch_num_threads": int(torch.get_num_threads()),
+        "torch_num_interop_threads": int(torch.get_num_interop_threads()),
+        "mps_built": bool(torch.backends.mps.is_built()),
+        "mps_available": bool(torch.backends.mps.is_available()),
+    }
+    document["environment_identity_sha256"] = stable_sha256(document)
+    validate_development_environment_identity(document)
+    return document
+
+
+def validate_development_environment_identity(document: Mapping[str, Any]) -> None:
+    """Validate a recorded CPU/MPS development runtime without relabeling it."""
+
+    expected_fields = {
+        "schema",
+        "python_implementation",
+        "python_version",
+        "python_executable_basename",
+        "platform_system",
+        "platform_release",
+        "platform_machine",
+        "package_versions",
+        "device_type",
+        "torch_deterministic_algorithms_enabled",
+        "torch_num_threads",
+        "torch_num_interop_threads",
+        "mps_built",
+        "mps_available",
+        "environment_identity_sha256",
+    }
+    if not isinstance(document, Mapping) or set(document) != expected_fields:
+        raise IntegrityError("development environment identity schema drift")
+    versions = document.get("package_versions")
+    if (
+        document.get("schema") != DEVELOPMENT_ENVIRONMENT_SCHEMA
+        or not isinstance(versions, Mapping)
+        or set(versions) != {"h5py", "numpy", "torch", "torchvision"}
+        or any(not isinstance(value, str) or not value or value == "NOT_INSTALLED" for value in versions.values())
+        or document.get("device_type") not in {"cpu", "mps"}
+        or not isinstance(document.get("torch_deterministic_algorithms_enabled"), bool)
+        or not isinstance(document.get("mps_built"), bool)
+        or not isinstance(document.get("mps_available"), bool)
+    ):
+        raise IntegrityError("development environment identity contract drift")
+    if document.get("device_type") == "mps" and document.get("mps_available") is not True:
+        raise IntegrityError("development environment records unavailable MPS execution")
+    for field in ("torch_num_threads", "torch_num_interop_threads"):
+        value = document.get(field)
+        if isinstance(value, bool) or not isinstance(value, int) or value < 1:
+            raise IntegrityError(f"development environment {field} is invalid")
+    for field in (
+        "python_implementation",
+        "python_version",
+        "python_executable_basename",
+        "platform_system",
+        "platform_release",
+        "platform_machine",
+    ):
+        if not isinstance(document.get(field), str) or not document[field]:
+            raise IntegrityError(f"development environment {field} is invalid")
+    claimed = require_sha256(
+        document.get("environment_identity_sha256"),
+        field="development_environment_identity.environment_identity_sha256",
+    )
+    unsigned = dict(document)
+    unsigned.pop("environment_identity_sha256", None)
+    if claimed != stable_sha256(unsigned):
+        raise IntegrityError("development environment identity SHA-256 mismatch")
 
 
 @dataclass(frozen=True)
@@ -353,19 +455,25 @@ class DevelopmentData:
         training_data: str | os.PathLike[str],
         inventory: DevelopmentInventory,
         normalizer: BandNormalizer,
+        *,
+        authorized_role: str,
     ) -> None:
+        if authorized_role not in DEVELOPMENT_ROLES:
+            raise IntegrityError("development data authority has an unknown role")
+        self.authorized_role = authorized_role
         self.inventory = inventory
         self.container = H5SourceContainer(training_data, expected_rows=inventory.population_n)
         self.normalizer = normalizer
         if normalizer.source_container_identity_sha256 != self.container.identity_sha256:
             raise IntegrityError("development container differs from source normalizer container")
         self._authorized: dict[str, set[int]] = {}
-        for role in DEVELOPMENT_ROLES:
-            for partition in inventory.partitions[role].values():
-                self._authorized[f"{role}_probe:{partition.city_id}"] = {row.row_index for row in partition.probe_rows}
-                self._authorized[f"{role}_evaluation:{partition.city_id}"] = {
-                    row.row_index for row in partition.evaluation_rows
-                }
+        for partition in inventory.partitions[authorized_role].values():
+            self._authorized[f"{authorized_role}_probe:{partition.city_id}"] = {
+                row.row_index for row in partition.probe_rows
+            }
+            self._authorized[f"{authorized_role}_evaluation:{partition.city_id}"] = {
+                row.row_index for row in partition.evaluation_rows
+            }
 
     def _validate_rows(
         self,
@@ -374,6 +482,10 @@ class DevelopmentData:
         *,
         half: str,
     ) -> tuple[int, ...]:
+        if partition.role != self.authorized_role:
+            raise IntegrityError(
+                "development read attempted outside its phase-specific authority"
+            )
         if half not in {"probe", "evaluation"}:
             raise IntegrityError("unknown development partition half")
         expected_rows = partition.probe_rows if half == "probe" else partition.evaluation_rows
@@ -616,7 +728,11 @@ def run_development_cell(
 ) -> dict[str, Any]:
     """Reset, adapt on west/probe, and score both policies on east/evaluation."""
 
-    if role not in DEVELOPMENT_ROLES or partition.role != role:
+    if (
+        role not in DEVELOPMENT_ROLES
+        or partition.role != role
+        or data.authorized_role != role
+    ):
         raise IntegrityError("development cell role/partition mismatch")
     validate_study_binding(study_binding)
     spec = candidate_spec(candidate_id)
@@ -999,9 +1115,11 @@ def build_candidate_bundle(
     source_container_identity_sha256: str,
     normalizer_sha256: str,
     code_identity: Mapping[str, Any],
+    development_environment: Mapping[str, Any],
 ) -> dict[str, Any]:
     if role not in DEVELOPMENT_ROLES:
         raise IntegrityError("unknown candidate bundle role")
+    validate_development_environment_identity(development_environment)
     spec = candidate_spec(candidate_id)
     expected_cities = study_binding["gate_fit_cities"] if role == GATE_FIT_ROLE else study_binding["gate_cal_cities"]
     expected = {(city, checkpoint) for city in expected_cities for checkpoint in CHECKPOINT_IDS}
@@ -1032,6 +1150,9 @@ def build_candidate_bundle(
         ),
         "normalizer_sha256": require_sha256(normalizer_sha256, field="normalizer_sha256"),
         "runner_code": copy.deepcopy(dict(code_identity)),
+        "development_environment_identity": copy.deepcopy(
+            dict(development_environment)
+        ),
         "cells": ordered,
         "gate_rows_sha256": stable_sha256([cell["gate_row"] for cell in ordered]),
         "candidate_feasibility": (
@@ -1097,6 +1218,10 @@ def validate_candidate_bundle(
         dict(runner_code["files_sha256"])
     ):
         raise IntegrityError("candidate bundle runner-code aggregate hash mismatch")
+    environment = bundle.get("development_environment_identity")
+    if not isinstance(environment, Mapping):
+        raise IntegrityError("candidate bundle lacks a development environment identity")
+    validate_development_environment_identity(environment)
 
     cells = bundle.get("cells")
     expected_cities = study_binding["gate_fit_cities"] if role == GATE_FIT_ROLE else study_binding["gate_cal_cities"]
@@ -1296,6 +1421,17 @@ def select_candidate(
         by_id[candidate_id] = bundle
     if set(by_id) != set(CANDIDATE_IDS):
         raise IntegrityError("candidate selection candidate set drift")
+    gate_fit_environment = by_id[CANDIDATE_IDS[0]].get(
+        "development_environment_identity"
+    )
+    if not isinstance(gate_fit_environment, Mapping):
+        raise IntegrityError("candidate selection lacks its gate-fit environment")
+    validate_development_environment_identity(gate_fit_environment)
+    if any(
+        bundle.get("development_environment_identity") != gate_fit_environment
+        for bundle in by_id.values()
+    ):
+        raise IntegrityError("candidate bundles were produced in different environments")
     expected_acceptance_fields = {
         "source_postrun_acceptance_artifact_basename",
         "source_postrun_acceptance_artifact_sha256",
@@ -1343,10 +1479,16 @@ def select_candidate(
             candidate_id: {
                 "bundle_sha256": by_id[candidate_id]["bundle_sha256"],
                 "candidate_config_sha256": by_id[candidate_id]["candidate_config_sha256"],
+                "development_environment_identity_sha256": gate_fit_environment[
+                    "environment_identity_sha256"
+                ],
                 "feasibility": copy.deepcopy(by_id[candidate_id]["candidate_feasibility"]),
             }
             for candidate_id in CANDIDATE_IDS
         },
+        "gate_fit_environment_identity": copy.deepcopy(
+            dict(gate_fit_environment)
+        ),
         "ranking_rule": [
             "descending_loco_routed_gain_over_best_fixed",
             "descending_oracle_routing_gap",
@@ -1381,6 +1523,7 @@ def validate_selection(
         "selection_data_role",
         "candidate_ids",
         "candidate_summaries",
+        "gate_fit_environment_identity",
         "ranking_rule",
         "selected_candidate_id",
         "selected_bundle_sha256",
@@ -1422,6 +1565,10 @@ def validate_selection(
         require_sha256(source_acceptance.get(field), field=field)
     if document.get("candidate_ids") != list(CANDIDATE_IDS):
         raise IntegrityError("candidate-selection candidate set drift")
+    gate_fit_environment = document.get("gate_fit_environment_identity")
+    if not isinstance(gate_fit_environment, Mapping):
+        raise IntegrityError("candidate selection lacks its gate-fit environment")
+    validate_development_environment_identity(gate_fit_environment)
     if document.get("ranking_rule") != [
         "descending_loco_routed_gain_over_best_fixed",
         "descending_oracle_routing_gap",
@@ -1438,6 +1585,7 @@ def validate_selection(
         if not isinstance(summary, Mapping) or set(summary) != {
             "bundle_sha256",
             "candidate_config_sha256",
+            "development_environment_identity_sha256",
             "feasibility",
         }:
             raise IntegrityError("candidate-selection summary schema drift")
@@ -1446,6 +1594,10 @@ def validate_selection(
             summary.get("candidate_config_sha256"),
             field="summary.candidate_config_sha256",
         )
+        if summary.get("development_environment_identity_sha256") != (
+            gate_fit_environment["environment_identity_sha256"]
+        ):
+            raise IntegrityError("candidate-selection environment binding drift")
         if (
             summary["candidate_config_sha256"]
             != candidate_spec(candidate_id, verify_official_sources=False)["candidate_config_sha256"]
@@ -1817,6 +1969,124 @@ def _load_manifest_and_inventory(
     return study_binding, manifest, inventory
 
 
+def _candidate_output_paths(destination: Path) -> dict[str, Path]:
+    paths = {
+        candidate_id: destination / f"so2sat_{candidate_id}.gate_fit.json"
+        for candidate_id in CANDIDATE_IDS
+    }
+    paths["selection"] = destination / "so2sat_candidate_selection.json"
+    return paths
+
+
+def _inspect_candidate_output_state(destination: Path) -> dict[str, bool]:
+    """Inspect only the exact create-only gate-fit namespace before expensive work."""
+
+    paths = _candidate_output_paths(destination)
+    state = dict.fromkeys(paths, False)
+    if not destination.exists():
+        return state
+    if destination.is_symlink() or not destination.is_dir():
+        raise IntegrityError("candidate output destination must be a real directory")
+    allowed = {
+        child.name
+        for path in paths.values()
+        for child in (path, path.with_name(path.name + ".receipt.json"))
+    }
+    allowed_sidecars = {"._" + name for name in allowed}
+    entries = {entry.name: entry for entry in destination.iterdir()}
+    observed = set(entries)
+    unknown = sorted(observed - allowed - allowed_sidecars)
+    if unknown:
+        raise IntegrityError(
+            "candidate output directory contains unknown state: " + ", ".join(unknown)
+        )
+    for sidecar_name in observed & allowed_sidecars:
+        sidecar = entries[sidecar_name]
+        if sidecar.is_symlink() or not sidecar.is_file():
+            raise IntegrityError(
+                f"candidate output has an invalid AppleDouble sidecar: {sidecar_name}"
+            )
+    for name, path in paths.items():
+        receipt_path = path.with_name(path.name + ".receipt.json")
+        members = (path, receipt_path)
+        flags = tuple(member.exists() or member.is_symlink() for member in members)
+        if any(
+            present and (member.is_symlink() or not member.is_file())
+            for present, member in zip(flags, members, strict=True)
+        ):
+            raise IntegrityError(
+                f"candidate output pair contains a non-regular member: {path.name}"
+            )
+        if any(flags) and not all(flags):
+            raise IntegrityError(
+                f"candidate output has an incomplete artifact/receipt pair: {path.name}"
+            )
+        state[name] = all(flags)
+    if state["selection"] and not all(
+        state[candidate_id] for candidate_id in CANDIDATE_IDS
+    ):
+        raise IntegrityError("candidate selection exists without both candidate bundles")
+    return state
+
+
+def _load_reusable_candidate_bundle(
+    path: Path,
+    *,
+    candidate_id: str,
+    study_binding: Mapping[str, Any],
+    checkpoint_collection: Mapping[str, Any],
+    source_container_identity_sha256: str,
+    normalizer_sha256: str,
+    code_identity: Mapping[str, Any],
+    development_environment: Mapping[str, Any],
+) -> dict[str, Any]:
+    """Load one complete candidate pair only when every live binding still matches."""
+
+    verify_artifact_receipt(path)
+    loaded = strict_json_load(path)
+    if not isinstance(loaded, Mapping):
+        raise IntegrityError("reusable candidate bundle must be a JSON mapping")
+    validate_candidate_bundle(loaded, study_binding=study_binding)
+    if (
+        loaded.get("role") != GATE_FIT_ROLE
+        or loaded.get("candidate_spec", {}).get("candidate_id") != candidate_id
+        or loaded.get("checkpoint_collection_canonical_sha256")
+        != stable_sha256(dict(checkpoint_collection))
+        or loaded.get("source_container_identity_sha256")
+        != source_container_identity_sha256
+        or loaded.get("normalizer_sha256") != normalizer_sha256
+        or loaded.get("runner_code") != dict(code_identity)
+        or loaded.get("development_environment_identity")
+        != dict(development_environment)
+    ):
+        raise IntegrityError("reusable candidate bundle differs from the current sealed run")
+    return copy.deepcopy(dict(loaded))
+
+
+def _load_reusable_selection(
+    path: Path,
+    *,
+    bundles: Sequence[Mapping[str, Any]],
+    study_binding: Mapping[str, Any],
+    source_postrun_acceptance: Mapping[str, str],
+) -> dict[str, Any]:
+    """Return an idempotent selection only when it exactly replays from both bundles."""
+
+    verify_artifact_receipt(path)
+    loaded = strict_json_load(path)
+    if not isinstance(loaded, Mapping):
+        raise IntegrityError("reusable candidate selection must be a JSON mapping")
+    validate_selection(loaded, study_binding=study_binding)
+    expected = select_candidate(
+        bundles,
+        study_binding=study_binding,
+        source_postrun_acceptance=source_postrun_acceptance,
+    )
+    if loaded != expected:
+        raise IntegrityError("reusable candidate selection does not replay")
+    return copy.deepcopy(dict(loaded))
+
+
 def run_candidate_selection(
     *,
     population_manifest: str | os.PathLike[str],
@@ -1830,6 +2100,11 @@ def run_candidate_selection(
 ) -> dict[str, Any]:
     """Evaluate both candidates on gate_fit only and seal the decision."""
 
+    requested_destination = Path(output_dir).expanduser()
+    if requested_destination.is_symlink():
+        raise IntegrityError("candidate output destination must not be a symlink")
+    destination = requested_destination.resolve()
+    output_state = _inspect_candidate_output_state(destination)
     manifest_path = Path(population_manifest).expanduser().resolve()
     source_acceptance, source_acceptance_receipt = (
         verify_source_postrun_acceptance_bindings(
@@ -1843,60 +2118,126 @@ def run_candidate_selection(
     source_acceptance_binding = source_postrun_acceptance_binding(
         source_acceptance, source_acceptance_receipt
     )
-    # The strict source-chain replay above completes before the first object
-    # capable of opening gate-fit geographic or image datasets is constructed.
-    study_binding, _, inventory = _load_manifest_and_inventory(manifest_path, Path(training_geo).expanduser().resolve())
+    study_binding = load_study_binding(manifest_path)
     checkpoint_collection, checkpoints = load_verified_checkpoints(checkpoint_dir)
     normalizer = load_sealed_band_normalizer(
         Path(checkpoint_dir).expanduser().resolve() / "so2sat_sen2_source_normalizer.json"
     )
     if normalizer.normalizer_sha256 != checkpoint_collection.get("normalizer_sha256"):
         raise IntegrityError("checkpoint collection and normalizer identity differ")
-    data = DevelopmentData(training_data, inventory, normalizer)
     code_start = _runner_code_identity()
-    bundles: list[dict[str, Any]] = []
-    destination = Path(output_dir).expanduser().resolve()
-    destination.mkdir(parents=True, exist_ok=True)
+    environment_start = development_environment_identity(device)
+    postrun_source = source_acceptance.get("postrun_source_container")
+    if not isinstance(postrun_source, Mapping):
+        raise IntegrityError("source acceptance lacks its post-run source container")
+    source_container_identity = require_sha256(
+        postrun_source.get("source_container_identity_sha256"),
+        field="postrun_source_container.source_container_identity_sha256",
+    )
+    output_paths = _candidate_output_paths(destination)
+    bundles_by_id: dict[str, dict[str, Any]] = {}
     for candidate_id in CANDIDATE_IDS:
-        cells = []
-        for city in study_binding["gate_fit_cities"]:
-            partition = inventory.partitions[GATE_FIT_ROLE][city]
-            for checkpoint in checkpoints:
-                cells.append(
-                    run_development_cell(
-                        candidate_id=candidate_id,
-                        role=GATE_FIT_ROLE,
-                        partition=partition,
-                        checkpoint=checkpoint,
-                        data=data,
-                        study_binding=study_binding,
-                        device=device,
-                        code_identity=code_start,
-                    )
-                )
-                if device.type == "mps":
-                    torch.mps.synchronize()
-                    torch.mps.empty_cache()
-        bundle = build_candidate_bundle(
-            candidate_id=candidate_id,
-            role=GATE_FIT_ROLE,
-            cells=cells,
-            study_binding=study_binding,
-            checkpoint_collection=checkpoint_collection,
-            source_container_identity_sha256=data.container.identity_sha256,
-            normalizer_sha256=normalizer.normalizer_sha256,
-            code_identity=code_start,
+        if output_state[candidate_id]:
+            bundles_by_id[candidate_id] = _load_reusable_candidate_bundle(
+                output_paths[candidate_id],
+                candidate_id=candidate_id,
+                study_binding=study_binding,
+                checkpoint_collection=checkpoint_collection,
+                source_container_identity_sha256=source_container_identity,
+                normalizer_sha256=normalizer.normalizer_sha256,
+                code_identity=code_start,
+                development_environment=environment_start,
+            )
+
+    missing_candidates = [
+        candidate_id
+        for candidate_id in CANDIDATE_IDS
+        if candidate_id not in bundles_by_id
+    ]
+    if missing_candidates:
+        # The source chain and phase authority are fixed before constructing
+        # the first object capable of opening gate-fit image/label datasets.
+        inventory_binding, _, inventory = _load_manifest_and_inventory(
+            manifest_path,
+            Path(training_geo).expanduser().resolve(),
         )
-        write_immutable_json_with_receipt(destination / f"so2sat_{candidate_id}.gate_fit.json", bundle)
-        bundles.append(bundle)
-    if _runner_code_identity() != code_start:
-        raise IntegrityError("So2Sat development code changed during candidate selection")
+        if inventory_binding != study_binding:
+            raise IntegrityError("development inventory study binding changed")
+        data = DevelopmentData(
+            training_data,
+            inventory,
+            normalizer,
+            authorized_role=GATE_FIT_ROLE,
+        )
+        if data.container.identity_sha256 != source_container_identity:
+            raise IntegrityError("gate-fit container differs from source acceptance")
+        destination.mkdir(parents=True, exist_ok=True)
+        for candidate_id in missing_candidates:
+            cells = []
+            for city in study_binding["gate_fit_cities"]:
+                partition = inventory.partitions[GATE_FIT_ROLE][city]
+                for checkpoint in checkpoints:
+                    cells.append(
+                        run_development_cell(
+                            candidate_id=candidate_id,
+                            role=GATE_FIT_ROLE,
+                            partition=partition,
+                            checkpoint=checkpoint,
+                            data=data,
+                            study_binding=study_binding,
+                            device=device,
+                            code_identity=code_start,
+                        )
+                    )
+                    if device.type == "mps":
+                        torch.mps.synchronize()
+                        torch.mps.empty_cache()
+            bundle = build_candidate_bundle(
+                candidate_id=candidate_id,
+                role=GATE_FIT_ROLE,
+                cells=cells,
+                study_binding=study_binding,
+                checkpoint_collection=checkpoint_collection,
+                source_container_identity_sha256=data.container.identity_sha256,
+                normalizer_sha256=normalizer.normalizer_sha256,
+                code_identity=code_start,
+                development_environment=environment_start,
+            )
+            write_immutable_json_with_receipt(
+                output_paths[candidate_id],
+                bundle,
+            )
+            bundles_by_id[candidate_id] = bundle
+
+    bundles = [bundles_by_id[candidate_id] for candidate_id in CANDIDATE_IDS]
+    if (
+        _runner_code_identity() != code_start
+        or development_environment_identity(device) != environment_start
+    ):
+        raise IntegrityError(
+            "So2Sat development code/environment changed during candidate selection"
+        )
+    published_state = _inspect_candidate_output_state(destination)
+    if not all(published_state[candidate_id] for candidate_id in CANDIDATE_IDS):
+        raise IntegrityError("candidate publication did not produce both complete bundles")
+    if output_state["selection"]:
+        if not published_state["selection"]:
+            raise IntegrityError("candidate selection disappeared during verified reuse")
+        return _load_reusable_selection(
+            output_paths["selection"],
+            bundles=bundles,
+            study_binding=study_binding,
+            source_postrun_acceptance=source_acceptance_binding,
+        )
+    if published_state["selection"]:
+        raise IntegrityError("candidate selection appeared during candidate publication")
     selection = select_candidate(
         bundles,
         study_binding=study_binding,
         source_postrun_acceptance=source_acceptance_binding,
     )
-    write_immutable_json_with_receipt(destination / "so2sat_candidate_selection.json", selection)
+    destination.mkdir(parents=True, exist_ok=True)
+    write_immutable_json_with_receipt(output_paths["selection"], selection)
     return selection
 
 
@@ -1924,6 +2265,11 @@ def run_gate_calibration(
     if not isinstance(selection, Mapping):
         raise IntegrityError("candidate selection artifact must be a JSON mapping")
     validate_selection(selection, study_binding=study_binding)
+    selected = selection.get("selected_candidate_id")
+    if selected is None:
+        raise NoFeasibleCandidateError(
+            "selection sealed no feasible candidate; refusing to enter gate calibration"
+        )
     source_acceptance, source_acceptance_receipt = (
         verify_source_postrun_acceptance_bindings(
             source_postrun_acceptance_path,
@@ -1938,11 +2284,6 @@ def run_gate_calibration(
     )
     if selection["source_postrun_acceptance"] != source_acceptance_binding:
         raise IntegrityError("candidate selection binds another source acceptance")
-    selected = selection.get("selected_candidate_id")
-    if selected is None:
-        raise NoFeasibleCandidateError(
-            "selection sealed no feasible candidate; refusing to open gate_cal development rows"
-        )
 
     destination = Path(output_dir).expanduser().resolve()
     fit_path = destination / f"so2sat_{selected}.gate_fit.json"
@@ -2015,6 +2356,10 @@ def run_gate_calibration(
         != source_acceptance["source_checkpoint_selection_disclosure"]
         or precalibration_seal["source_initialization_clarification"]
         != source_acceptance["source_initialization_clarification"]
+        or precalibration_seal[
+            "gate_fit_development_environment_identity"
+        ]
+        != fit_bundle["development_environment_identity"]
         or precalibration_seal["package_code_identity"]
         != precalibration_code_identity()
         or precalibration_seal["development_calibration_environment_identity"]
@@ -2027,9 +2372,14 @@ def run_gate_calibration(
     _, _, inventory = _load_manifest_and_inventory(manifest_path, Path(training_geo).expanduser().resolve())
     if normalizer.normalizer_sha256 != checkpoint_collection.get("normalizer_sha256"):
         raise IntegrityError("checkpoint collection and normalizer identity differ")
-    data = DevelopmentData(training_data, inventory, normalizer)
-
     code_start = _runner_code_identity()
+    environment_start = development_environment_identity(device)
+    data = DevelopmentData(
+        training_data,
+        inventory,
+        normalizer,
+        authorized_role=GATE_CAL_ROLE,
+    )
     cells = []
     for city in study_binding["gate_cal_cities"]:
         partition = inventory.partitions[GATE_CAL_ROLE][city]
@@ -2058,9 +2408,15 @@ def run_gate_calibration(
         source_container_identity_sha256=data.container.identity_sha256,
         normalizer_sha256=normalizer.normalizer_sha256,
         code_identity=code_start,
+        development_environment=environment_start,
     )
-    if _runner_code_identity() != code_start:
-        raise IntegrityError("So2Sat development code changed during gate calibration")
+    if (
+        _runner_code_identity() != code_start
+        or development_environment_identity(device) != environment_start
+    ):
+        raise IntegrityError(
+            "So2Sat development code/environment changed during gate calibration"
+        )
     write_immutable_json_with_receipt(destination / f"so2sat_{selected}.gate_cal.json", calibration_bundle)
     gate = calibrate_selected_candidate(
         selection,
@@ -2130,6 +2486,13 @@ def main() -> None:
             f"So2Sat candidate selection: {result['status']} selected={result['selected_candidate_id']}",
             flush=True,
         )
+        if result["selected_candidate_id"] is None:
+            print(
+                "STOP: no feasible candidate; do not create the pre-calibration seal, "
+                "open gate-calibration rows, decompress target containers, or run target stages.",
+                flush=True,
+            )
+            raise SystemExit(NO_FEASIBLE_CANDIDATE_EXIT_CODE)
     else:
         gate = run_gate_calibration(
             selection_path=args.selection,

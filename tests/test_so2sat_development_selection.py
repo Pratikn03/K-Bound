@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import copy
 import inspect
+import sys
 from pathlib import Path
 from typing import Any
 
@@ -23,11 +24,21 @@ from experiments.kbound.so2sat.adapters import (
     frozen_logits_and_bn_divergence,
 )
 from experiments.kbound.so2sat.development import (
+    GATE_CAL_ROLE,
+    GATE_FIT_ROLE,
+    NO_FEASIBLE_CANDIDATE_EXIT_CODE,
+    CityPartition,
+    DevelopmentData,
+    DevelopmentRow,
     NoFeasibleCandidateError,
+    _inspect_candidate_output_state,
+    _load_reusable_candidate_bundle,
+    _partition_hash,
     build_candidate_bundle,
     build_gate_authorization,
     calibrate_selected_candidate,
     candidate_feasibility,
+    development_environment_identity,
     run_candidate_selection,
     run_gate_calibration,
     select_candidate,
@@ -42,7 +53,11 @@ from experiments.kbound.so2sat.gate import (
     trace_identity_sha256,
     validate_study_binding,
 )
-from experiments.kbound.so2sat.integrity import IntegrityError, stable_sha256
+from experiments.kbound.so2sat.integrity import (
+    IntegrityError,
+    stable_sha256,
+    write_immutable_json_with_receipt,
+)
 from experiments.kbound.so2sat.protocol import PROTOCOL_ID
 
 SOURCE_ACCEPTANCE_BINDING = {
@@ -215,7 +230,147 @@ def _bundle(
             "files_sha256": {"synthetic.py": "7" * 64},
             "code_sha256": stable_sha256({"synthetic.py": "7" * 64}),
         },
+        development_environment=development_environment_identity(
+            torch.device("cpu")
+        ),
     )
+
+
+def _partition(role: str, city_id: str) -> CityPartition:
+    probe_role = f"{role}_probe"
+    evaluation_role = f"{role}_evaluation"
+    probe = (
+        DevelopmentRow(
+            row_index=0,
+            sample_id="training:00000000",
+            city_id=city_id,
+            spatial_block_id="epsg:block-west",
+            sample_role=probe_role,
+        ),
+    )
+    evaluation = (
+        DevelopmentRow(
+            row_index=1,
+            sample_id="training:00000001",
+            city_id=city_id,
+            spatial_block_id="epsg:block-east",
+            sample_role=evaluation_role,
+        ),
+    )
+    return CityPartition(
+        role=role,
+        city_id=city_id,
+        probe_rows=probe,
+        evaluation_rows=evaluation,
+        partition_sha256=_partition_hash(role, city_id, probe, evaluation),
+    )
+
+
+def test_phase_specific_data_authority_rejects_gate_cal_before_hdf5_read() -> None:
+    class _TrapContainer:
+        def read_pixels(self, _rows: Any) -> np.ndarray:
+            raise AssertionError("HDF5 pixel read occurred before the role check")
+
+    data = object.__new__(DevelopmentData)
+    data.authorized_role = GATE_FIT_ROLE
+    data._authorized = {}
+    data.container = _TrapContainer()
+    partition = _partition(GATE_CAL_ROLE, "cal00")
+    with pytest.raises(IntegrityError, match="phase-specific authority"):
+        list(data.pixel_batches(partition, half="probe"))
+
+
+def test_gate_fit_bundles_bind_one_self_hashed_runtime() -> None:
+    binding = _binding()
+    effects = [-0.04, -0.03, -0.02, -0.01, 0.01, 0.02, 0.03, 0.04, 0.05]
+    tent = _bundle(TENT_CANDIDATE_ID, effects, binding)
+    sar = _bundle(SAR_CANDIDATE_ID, [value * 0.7 for value in effects], binding)
+    assert (
+        tent["development_environment_identity"]
+        == sar["development_environment_identity"]
+    )
+
+    changed = copy.deepcopy(sar)
+    environment = changed["development_environment_identity"]
+    environment["torch_num_threads"] += 1
+    environment["environment_identity_sha256"] = stable_sha256(
+        {
+            key: value
+            for key, value in environment.items()
+            if key != "environment_identity_sha256"
+        }
+    )
+    changed["bundle_sha256"] = stable_sha256(
+        {key: value for key, value in changed.items() if key != "bundle_sha256"}
+    )
+    validate_candidate_bundle(changed, study_binding=binding)
+    with pytest.raises(IntegrityError, match="different environments"):
+        select_candidate(
+            [tent, changed],
+            study_binding=binding,
+            source_postrun_acceptance=SOURCE_ACCEPTANCE_BINDING,
+        )
+
+
+def test_candidate_output_state_rejects_incomplete_and_unknown_files(
+    tmp_path: Path,
+) -> None:
+    destination = tmp_path / "development"
+    assert not any(_inspect_candidate_output_state(destination).values())
+    destination.mkdir()
+    incomplete = destination / f"so2sat_{TENT_CANDIDATE_ID}.gate_fit.json"
+    incomplete.write_text("{}\n", encoding="utf-8")
+    with pytest.raises(IntegrityError, match="incomplete artifact/receipt pair"):
+        _inspect_candidate_output_state(destination)
+
+    other = tmp_path / "other-development"
+    other.mkdir()
+    (other / "unexpected.json").write_text("{}\n", encoding="utf-8")
+    with pytest.raises(IntegrityError, match="unknown state"):
+        _inspect_candidate_output_state(other)
+
+    non_regular = tmp_path / "non-regular-development"
+    non_regular.mkdir()
+    (non_regular / f"so2sat_{TENT_CANDIDATE_ID}.gate_fit.json").mkdir()
+    with pytest.raises(IntegrityError, match="non-regular member"):
+        _inspect_candidate_output_state(non_regular)
+
+
+def test_complete_candidate_pair_is_reusable_only_with_exact_live_bindings(
+    tmp_path: Path,
+) -> None:
+    binding = _binding()
+    effects = [-0.04, -0.03, -0.02, -0.01, 0.01, 0.02, 0.03, 0.04, 0.05]
+    bundle = _bundle(TENT_CANDIDATE_ID, effects, binding)
+    destination = tmp_path / "development"
+    destination.mkdir()
+    path = destination / f"so2sat_{TENT_CANDIDATE_ID}.gate_fit.json"
+    write_immutable_json_with_receipt(path, bundle)
+    state = _inspect_candidate_output_state(destination)
+    assert state[TENT_CANDIDATE_ID] is True
+    assert state[SAR_CANDIDATE_ID] is False
+    reused = _load_reusable_candidate_bundle(
+        path,
+        candidate_id=TENT_CANDIDATE_ID,
+        study_binding=binding,
+        checkpoint_collection={"schema": "synthetic-five-checkpoint-collection"},
+        source_container_identity_sha256="9" * 64,
+        normalizer_sha256="8" * 64,
+        code_identity=bundle["runner_code"],
+        development_environment=bundle["development_environment_identity"],
+    )
+    assert reused == bundle
+    with pytest.raises(IntegrityError, match="differs from the current sealed run"):
+        _load_reusable_candidate_bundle(
+            path,
+            candidate_id=TENT_CANDIDATE_ID,
+            study_binding=binding,
+            checkpoint_collection={"schema": "synthetic-five-checkpoint-collection"},
+            source_container_identity_sha256="0" * 64,
+            normalizer_sha256="8" * 64,
+            code_identity=bundle["runner_code"],
+            development_environment=bundle["development_environment_identity"],
+        )
 
 
 def test_frozen_tent_and_sar_specs_are_hash_pinned_and_probe_only() -> None:
@@ -413,3 +568,124 @@ def test_source_acceptance_replays_before_gate_fit_data_construction(
             device=torch.device("cpu"),
         )
     assert calls == {"acceptance": 1, "inventory": 0}
+
+
+def test_incomplete_output_stops_before_source_rehash(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    output = tmp_path / "development"
+    output.mkdir()
+    (output / f"so2sat_{TENT_CANDIDATE_ID}.gate_fit.json").write_text(
+        "{}\n", encoding="utf-8"
+    )
+    calls = {"acceptance": 0}
+
+    def forbidden_acceptance(*_args: Any, **_kwargs: Any) -> Any:
+        calls["acceptance"] += 1
+        raise AssertionError("source chain was rehashed before output-state validation")
+
+    monkeypatch.setattr(
+        development_module,
+        "verify_source_postrun_acceptance_bindings",
+        forbidden_acceptance,
+    )
+    with pytest.raises(IntegrityError, match="incomplete artifact/receipt pair"):
+        run_candidate_selection(
+            population_manifest=tmp_path / "population.json",
+            source_postrun_acceptance_path=tmp_path / "acceptance.json",
+            source_preflight_path=tmp_path / "preflight.json",
+            training_geo=tmp_path / "training_geo.h5",
+            training_data=tmp_path / "training.h5",
+            checkpoint_dir=tmp_path / "checkpoints",
+            output_dir=output,
+            device=torch.device("cpu"),
+        )
+    assert calls == {"acceptance": 0}
+
+
+def test_no_candidate_stops_gate_calibration_before_source_rehash(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    binding = _binding()
+    all_helpful = [0.010 + index * 0.001 for index in range(9)]
+    selection = select_candidate(
+        [
+            _bundle(TENT_CANDIDATE_ID, all_helpful, binding),
+            _bundle(SAR_CANDIDATE_ID, all_helpful, binding),
+        ],
+        study_binding=binding,
+        source_postrun_acceptance=SOURCE_ACCEPTANCE_BINDING,
+    )
+    selection_path = tmp_path / "so2sat_candidate_selection.json"
+    write_immutable_json_with_receipt(selection_path, selection)
+    calls = {"acceptance": 0}
+
+    monkeypatch.setattr(development_module, "load_study_binding", lambda _path: binding)
+
+    def forbidden_acceptance(*_args: Any, **_kwargs: Any) -> Any:
+        calls["acceptance"] += 1
+        raise AssertionError("source chain was rehashed after a sealed no-candidate stop")
+
+    monkeypatch.setattr(
+        development_module,
+        "verify_source_postrun_acceptance_bindings",
+        forbidden_acceptance,
+    )
+    with pytest.raises(NoFeasibleCandidateError, match="enter gate calibration"):
+        run_gate_calibration(
+            selection_path=selection_path,
+            source_postrun_acceptance_path=tmp_path / "acceptance.json",
+            source_preflight_path=tmp_path / "preflight.json",
+            precalibration_seal_path=tmp_path / "preseal.json",
+            target_boundary_amendment_path=tmp_path / "amendment.json",
+            population_manifest=tmp_path / "population.json",
+            training_geo=tmp_path / "training_geo.h5",
+            training_data=tmp_path / "training.h5",
+            checkpoint_dir=tmp_path / "checkpoints",
+            output_dir=tmp_path / "development",
+            device=torch.device("cpu"),
+        )
+    assert calls == {"acceptance": 0}
+
+
+def test_cli_exits_twenty_after_sealing_no_candidate_stop(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    monkeypatch.setattr(
+        development_module,
+        "run_candidate_selection",
+        lambda **_kwargs: {
+            "status": "NO_FEASIBLE_CANDIDATE_STOP_BEFORE_GATE_CAL",
+            "selected_candidate_id": None,
+        },
+    )
+    monkeypatch.setattr(
+        sys,
+        "argv",
+        [
+            "development.py",
+            "select",
+            "--population-manifest",
+            str(tmp_path / "population.json"),
+            "--training-geo",
+            str(tmp_path / "training_geo.h5"),
+            "--training-data",
+            str(tmp_path / "training.h5"),
+            "--source-postrun-acceptance",
+            str(tmp_path / "acceptance.json"),
+            "--source-preflight",
+            str(tmp_path / "preflight.json"),
+            "--checkpoint-dir",
+            str(tmp_path / "checkpoints"),
+            "--output-dir",
+            str(tmp_path / "development"),
+            "--device",
+            "cpu",
+        ],
+    )
+    with pytest.raises(SystemExit) as stopped:
+        development_module.main()
+    assert stopped.value.code == NO_FEASIBLE_CANDIDATE_EXIT_CODE
+    assert "STOP: no feasible candidate" in capsys.readouterr().out

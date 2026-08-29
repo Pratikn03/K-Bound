@@ -25,6 +25,7 @@ from experiments.kbound.so2sat.adapters import (
 from experiments.kbound.so2sat.development import (
     build_candidate_bundle,
     build_gate_authorization,
+    development_environment_identity,
     select_candidate,
 )
 from experiments.kbound.so2sat.features import extract_label_free_features
@@ -595,6 +596,9 @@ def _candidate_bundle(
         source_container_identity_sha256=source_container_sha256,
         normalizer_sha256=normalizer_sha256,
         code_identity=code_identity,
+        development_environment=development_environment_identity(
+            torch.device("cpu")
+        ),
     )
 
 
@@ -1277,6 +1281,10 @@ def test_precalibration_seal_predates_and_is_extended_by_target_seal(
     fixture = _fixture(tmp_path)
     precalibration = strict_json_load(fixture["precalibration_seal"])
     execution = strict_json_load(fixture["seal"])
+    selected_fit = strict_json_load(fixture["fit_bundle"])
+    assert precalibration["gate_fit_development_environment_identity"] == (
+        selected_fit["development_environment_identity"]
+    )
     assert precalibration["seal_creation_audit"] == {
         "created_after_gate_fit_selection": True,
         "created_before_gate_calibration": True,

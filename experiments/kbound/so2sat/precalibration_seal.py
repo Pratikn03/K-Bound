@@ -26,6 +26,7 @@ from .development import (
     GATE_FIT_ROLE,
     _runner_code_identity,
     validate_candidate_bundle,
+    validate_development_environment_identity,
 )
 from .features import FEATURE_NAMES, feature_vector
 from .gate import (
@@ -343,6 +344,12 @@ def build_precalibration_seal(
         or fit_bundle.get("candidate_spec", {}).get("candidate_id") != selected
     ):
         raise IntegrityError("precalibration selection and gate-fit bundle differ")
+    gate_fit_environment = fit_bundle.get("development_environment_identity")
+    if not isinstance(gate_fit_environment, Mapping):
+        raise IntegrityError("precalibration gate-fit bundle lacks its environment")
+    validate_development_environment_identity(gate_fit_environment)
+    if selection.get("gate_fit_environment_identity") != gate_fit_environment:
+        raise IntegrityError("precalibration selection/gate-fit environment mismatch")
     normalizer_hash = require_sha256(normalizer_sha256, field="normalizer_sha256")
     source_acceptance_binding = source_postrun_acceptance_binding(
         source_postrun_acceptance, source_postrun_acceptance_receipt
@@ -443,6 +450,9 @@ def build_precalibration_seal(
         "gate_algorithm_contract": gate_algorithm_contract(),
         "frozen_gate_fit_model": frozen_gate_fit_model(fit_bundle),
         "development_runner_code": dict(fit_bundle["runner_code"]),
+        "gate_fit_development_environment_identity": dict(
+            gate_fit_environment
+        ),
         "package_code_identity": dict(package_code_identity),
         "development_calibration_environment_identity": dict(
             development_environment_identity
@@ -529,6 +539,7 @@ def validate_precalibration_seal(
         "gate_algorithm_contract",
         "frozen_gate_fit_model",
         "development_runner_code",
+        "gate_fit_development_environment_identity",
         "package_code_identity",
         "development_calibration_environment_identity",
         "target_live_environment_identity",
@@ -668,6 +679,17 @@ def validate_precalibration_seal(
         raise IntegrityError("precalibration frozen ridge fit changed")
     if document.get("development_runner_code") != fit_bundle["runner_code"]:
         raise IntegrityError("precalibration development code differs from gate-fit")
+    gate_fit_environment = document.get(
+        "gate_fit_development_environment_identity"
+    )
+    if not isinstance(gate_fit_environment, Mapping):
+        raise IntegrityError("precalibration gate-fit environment is invalid")
+    validate_development_environment_identity(gate_fit_environment)
+    if (
+        gate_fit_environment != fit_bundle.get("development_environment_identity")
+        or gate_fit_environment != selection.get("gate_fit_environment_identity")
+    ):
+        raise IntegrityError("precalibration gate-fit environment binding drift")
     package = document.get("package_code_identity")
     if (
         not isinstance(package, Mapping)
