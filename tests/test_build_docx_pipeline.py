@@ -180,6 +180,26 @@ def test_split_bibliography_accepts_data_derived_55th_cct_reference() -> None:
     assert resolved.count(r"\item ") == 55
 
 
+def test_split_bibliography_accepts_shared_author_year_wrapper() -> None:
+    tex = "\n".join(
+        (
+            r"See \cite{first,second}.",
+            r"\begin{thebibliography}{99}",
+            r"\KBbibitem{first}{First Author}{2025} First reference.",
+            r"\KBbibitem{second}{Second et al.}{2026} Second reference.",
+            r"\end{thebibliography}",
+        )
+    )
+
+    rendered, bibliography = MODULE.split_bibliography(tex)
+
+    assert bibliography == [
+        ("first", "First reference."),
+        ("second", "Second reference."),
+    ]
+    assert MODULE.resolve_citations(rendered, bibliography).startswith("See [1, 2].")
+
+
 def test_citation_resolution_handles_notes_and_fails_closed() -> None:
     entries = [("first", "First reference."), ("second", "Second reference.")]
     tex = r"See \citep[compare][p.~2]{second,first}."

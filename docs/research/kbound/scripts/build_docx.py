@@ -439,6 +439,17 @@ def split_bibliography(tex: str) -> tuple[str, list[tuple[str, str]]]:
         raise RuntimeError(f"expected one active compact bibliography, found {len(matches)}")
     match = matches[0]
     raw = match.group(1)
+    # The shared bibliography uses a three-argument wrapper so the TMLR driver
+    # can emit author-year labels while the compact PDF remains numeric.  Word
+    # output is numeric, so collapse each wrapper invocation to an ordinary
+    # \bibitem before extracting entries.  The metadata arguments are flat by
+    # construction; reject nested braces by leaving an unrecognized invocation
+    # for the fail-closed empty-bibliography check below.
+    raw = re.sub(
+        r"\\KBbibitem\{([^{}]+)\}\{[^{}]*\}\{[^{}]*\}",
+        r"\\bibitem{\1}",
+        raw,
+    )
     item_pattern = re.compile(r"\\bibitem(?:\[[^\]]*\])?\{([^}]+)\}")
     markers = list(item_pattern.finditer(raw))
     entries: list[tuple[str, str]] = []
@@ -450,7 +461,10 @@ def split_bibliography(tex: str) -> tuple[str, list[tuple[str, str]]]:
             raise RuntimeError(f"active compact bibliography entry is empty: {marker.group(1)}")
         entries.append((marker.group(1), content))
     if not entries:
-        raise RuntimeError("active compact bibliography has no references")
+        raise RuntimeError(
+            "active compact bibliography has no references; expected \\bibitem or "
+            "flat \\KBbibitem entries"
+        )
     keys = [key for key, _ in entries]
     duplicate_keys = sorted({key for key in keys if keys.count(key) > 1})
     if duplicate_keys:
