@@ -1,5 +1,14 @@
 """
-run_iwildcam_kga_router.py - FINAL ceiling-break experiment for the K-Bound project.
+DEPRECATED, NON-PROMOTABLE EXPERIMENTAL RUNNER.
+
+This historical runner reports ``sklearn.metrics.f1_score(average="macro")``.
+That is not the accepted WILDS label-present macro-F1 contract, so its output
+cannot support a paper, release, or canonical-panel claim. Execution fails
+closed unless the caller passes ``--allow-nonpromotable-experimental``. Even
+with that opt-in, every newly written result is marked non-promotable at the
+top level. The historical calculations below are retained for auditability.
+
+run_iwildcam_kga_router.py - historical ceiling-break experiment for K-Bound.
 
 QUESTION (pre-registered in results/iwildcam_kga_router/PREREG.md):
   The collapse pilot (run_iwildcam_streaming_pilot.py) PROVED that on iWildCam OOD
@@ -39,7 +48,8 @@ LEAKAGE / HONESTY:
     once; on TEST the route decision is a function of label-free Z + the DEV-fit
     estimator ONLY.  This is asserted at the decision site (route_decision()).
   * Native order is mandatory and is the default.  Windows never cross a camera.
-  * Metric = official macro-F1.  95% CIs by CLUSTER bootstrap over TEST cameras.
+  * Metric = legacy sklearn macro-F1, not official WILDS label-present macro-F1.
+    95% CIs are by CLUSTER bootstrap over TEST cameras.
   * No fabricated benefit: if the certificate cannot certify benefit > 0, freeze.
 
 Outputs -> results/iwildcam_kga_router/ (JSON + PNG).  Existing results untouched.
@@ -75,6 +85,35 @@ import analysis as an                     # decide_kga certificate (LOO GBR + co
 NUM_CLASSES = R.NUM_CLASSES               # 182
 DEFAULT_CKPT = REPO / "experiments/kbound/results/iwildcam_f0_erm/f0_resnet50_erm_seed0.pt"
 ORDER_FIELDS = P.ORDER_FIELDS             # native-order sort keys
+
+
+def nonpromotable_result_status():
+    """Return the mandatory top-level status for every newly emitted result."""
+    return {
+        "evidence_status": "NON_PROMOTABLE_EXPERIMENTAL",
+        "release_ingestion_allowed": False,
+        "release_verdict": "NOT_ELIGIBLE_NON_PROMOTABLE",
+        "metric_contract": {
+            "name": "sklearn_f1_score_average_macro",
+            "official_wilds_label_present": False,
+            "status": "NON_OFFICIAL",
+        },
+        "release_warning": (
+            "The embedded legacy verdict is diagnostic only and must not be used "
+            "as a canonical, publication, or release claim."
+        ),
+    }
+
+
+def require_nonpromotable_opt_in(args):
+    """Fail before device, data, checkpoint, or output access without explicit opt-in."""
+    if not bool(getattr(args, "allow_nonpromotable_experimental", False)):
+        raise RuntimeError(
+            "This iWildCam router is deprecated and non-promotable because it uses "
+            "legacy sklearn macro-F1 rather than the official WILDS label-present "
+            "metric. Re-run only for historical diagnostics with "
+            "--allow-nonpromotable-experimental; its outputs remain non-promotable."
+        )
 
 
 # =========================================================================== LAME
@@ -635,7 +674,7 @@ def make_plot(result, png_path):
     fig, axes = plt.subplots(2, 2, figsize=(13, 9))
     fig.suptitle(
         f"iWildCam KGA router (TEST OOD, native order, bs={result['config']['batch_size']}) "
-        f"-> {result['verdict']['verdict']}", fontsize=12)
+        f"-> legacy diagnostic {result['legacy_internal_verdict']['verdict']}", fontsize=12)
 
     # (1) policy macro-F1 with camera-bootstrap CIs
     ax = axes[0, 0]
@@ -694,6 +733,7 @@ def make_plot(result, png_path):
 
 # ===================================================== orchestrator
 def run(args):
+    require_nonpromotable_opt_in(args)
     t_run0 = time.time()
     device = tm.pick_device(args.device)
     out_dir = Path(args.results_root) / args.run_name
@@ -732,20 +772,21 @@ def run(args):
                                        if k != "model"} for c in CANDIDATES}}
 
     result = {
-        "schema": "iwildcam_kga_router_v1",
+        "schema": "iwildcam_kga_router_nonpromotable_v2",
+        **nonpromotable_result_status(),
         "created": time.strftime("%Y-%m-%dT%H:%M:%S"),
         "host": {"node": platform.node(), "platform": platform.platform(),
                  "torch": torch.__version__, "device": str(device)},
         "config": vars(args),
         "source_model": {"ckpt": str(ckpt), "backbone": backbone, **ck_meta},
         "stream_meta": meta,
-        "metric": "macro_f1",
+        "metric": "sklearn_macro_f1_legacy_nonofficial",
         "policies": ["frozen", "online_tent", "episodic_tent", "lame", "kga_router"],
         "candidates": CANDIDATES,
         "certificate": cert_summary,
         "test_scores": test_scores,
         "bootstrap": boot,
-        "verdict": vd,
+        "legacy_internal_verdict": vd,
         "leading_indicator": li,
         "router_decision_counts": route_counts,
         "router_decisions": decisions,
@@ -774,7 +815,7 @@ def run(args):
           f"CI[{boot['delta_kga_minus_frozen']['lo']:+.4f},"
           f"{boot['delta_kga_minus_frozen']['hi']:+.4f}] "
           f"excl0={boot['delta_kga_minus_frozen']['excludes_zero']}", flush=True)
-    print(f"[VERDICT] {vd['verdict']}", flush=True)
+    print(f"[LEGACY INTERNAL VERDICT; NON-PROMOTABLE] {vd['verdict']}", flush=True)
     print(f"[router mix on TEST] {route_counts}", flush=True)
     print(f"[leading-indicator DEV] " + ", ".join(
         f"{c}: ever_beats={li['dev'][c]['ever_beats_frozen']} "
@@ -804,7 +845,17 @@ def _json_default(o):
 
 
 def parse_args(argv=None):
-    p = argparse.ArgumentParser(description="iWildCam KGA multicandidate router (ceiling-break)")
+    p = argparse.ArgumentParser(
+        description="DEPRECATED non-promotable iWildCam KGA multicandidate router"
+    )
+    p.add_argument(
+        "--allow-nonpromotable-experimental",
+        action="store_true",
+        help=(
+            "explicitly allow this historical non-official-metric diagnostic; "
+            "outputs remain ineligible for release or publication claims"
+        ),
+    )
     p.add_argument("--data-root", default=str(REPO / "experiments/kbound/data/wilds"))
     p.add_argument("--results-root", default=str(REPO / "experiments/kbound/results"))
     p.add_argument("--run-name", default="iwildcam_kga_router")

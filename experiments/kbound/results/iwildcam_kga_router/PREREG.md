@@ -1,5 +1,12 @@
 # PRE-REGISTRATION — iWildCam KGA multicandidate router (empirical ceiling-break)
 
+> **Historical and non-promotable.** This document is preserved to record the
+> original plan, but its use of sklearn macro-F1 as an “official” iWildCam metric
+> was incorrect. It does not use the accepted WILDS label-present macro-F1
+> contract. The runner now requires an explicit non-promotable experimental
+> opt-in, and no result from this protocol may enter a canonical panel, release,
+> or paper claim.
+
 **Status:** pre-registered BEFORE the TEST split is scored. Calibration (DEV) and
 scoring (TEST) are disjoint by camera. This file is written by hand and committed
 before the confirmatory TEST run; the runner reads the same split rule from code.
