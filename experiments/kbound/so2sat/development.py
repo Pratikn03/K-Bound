@@ -63,6 +63,10 @@ from .model import (
     build_so2sat_resnet18,
     tensor_state_sha256,
 )
+from .source_acceptance import (
+    source_postrun_acceptance_binding,
+    verify_source_postrun_acceptance_bindings,
+)
 from .source_data import (
     BandNormalizer,
     H5SourceContainer,
@@ -586,6 +590,8 @@ def _runner_code_identity() -> dict[str, Any]:
         "model.py",
         "source_data.py",
         "train_source.py",
+        "source_acceptance.py",
+        "source_preflight.py",
         "adapters.py",
         "features.py",
         "gate.py",
@@ -1273,6 +1279,7 @@ def select_candidate(
     bundles: Sequence[Mapping[str, Any]],
     *,
     study_binding: Mapping[str, Any],
+    source_postrun_acceptance: Mapping[str, str],
 ) -> dict[str, Any]:
     """Choose at most one candidate using complete gate-fit bundles only."""
 
@@ -1289,6 +1296,26 @@ def select_candidate(
         by_id[candidate_id] = bundle
     if set(by_id) != set(CANDIDATE_IDS):
         raise IntegrityError("candidate selection candidate set drift")
+    expected_acceptance_fields = {
+        "source_postrun_acceptance_artifact_basename",
+        "source_postrun_acceptance_artifact_sha256",
+        "source_postrun_acceptance_canonical_document_sha256",
+    }
+    if not isinstance(source_postrun_acceptance, Mapping) or set(
+        source_postrun_acceptance
+    ) != expected_acceptance_fields:
+        raise IntegrityError("candidate selection lacks the source post-run acceptance")
+    for field in expected_acceptance_fields - {
+        "source_postrun_acceptance_artifact_basename"
+    }:
+        require_sha256(source_postrun_acceptance.get(field), field=field)
+    if (
+        source_postrun_acceptance.get(
+            "source_postrun_acceptance_artifact_basename"
+        )
+        != "so2sat_source_postrun_acceptance.json"
+    ):
+        raise IntegrityError("candidate selection source acceptance basename drift")
     feasible = [
         candidate_id for candidate_id in CANDIDATE_IDS if bool(by_id[candidate_id]["candidate_feasibility"]["feasible"])
     ]
@@ -1328,6 +1355,10 @@ def select_candidate(
         ],
         "selected_candidate_id": selected,
         "selected_bundle_sha256": by_id[selected]["bundle_sha256"] if selected else None,
+        "source_postrun_acceptance": copy.deepcopy(
+            dict(source_postrun_acceptance)
+        ),
+        "source_postrun_acceptance_verified_before_gate_fit_access": True,
         "gate_cal_rows_read_before_selection": 0,
         "target_pixels_read": 0,
         "target_labels_read": 0,
@@ -1353,6 +1384,8 @@ def validate_selection(
         "ranking_rule",
         "selected_candidate_id",
         "selected_bundle_sha256",
+        "source_postrun_acceptance",
+        "source_postrun_acceptance_verified_before_gate_fit_access",
         "gate_cal_rows_read_before_selection",
         "target_pixels_read",
         "target_labels_read",
@@ -1366,8 +1399,27 @@ def validate_selection(
     if (
         document.get("selection_data_role") != "gate_fit_only"
         or document.get("gate_cal_rows_read_before_selection") != 0
+        or document.get("source_postrun_acceptance_verified_before_gate_fit_access")
+        is not True
     ):
         raise IntegrityError("candidate selection crossed the gate-cal boundary")
+    source_acceptance = document.get("source_postrun_acceptance")
+    if not isinstance(source_acceptance, Mapping) or set(source_acceptance) != {
+        "source_postrun_acceptance_artifact_basename",
+        "source_postrun_acceptance_artifact_sha256",
+        "source_postrun_acceptance_canonical_document_sha256",
+    }:
+        raise IntegrityError("candidate selection source acceptance schema drift")
+    if (
+        source_acceptance.get("source_postrun_acceptance_artifact_basename")
+        != "so2sat_source_postrun_acceptance.json"
+    ):
+        raise IntegrityError("candidate selection source acceptance basename drift")
+    for field in (
+        "source_postrun_acceptance_artifact_sha256",
+        "source_postrun_acceptance_canonical_document_sha256",
+    ):
+        require_sha256(source_acceptance.get(field), field=field)
     if document.get("candidate_ids") != list(CANDIDATE_IDS):
         raise IntegrityError("candidate-selection candidate set drift")
     if document.get("ranking_rule") != [
@@ -1539,6 +1591,12 @@ def build_gate_authorization(
         "protocol_file_sha256": study_binding["protocol_file_sha256"],
         "protocol_document_sha256": study_binding["protocol_document_sha256"],
         "selection_sha256": selection["selection_sha256"],
+        "source_postrun_acceptance_artifact_sha256": selection[
+            "source_postrun_acceptance"
+        ]["source_postrun_acceptance_artifact_sha256"],
+        "source_postrun_acceptance_canonical_document_sha256": selection[
+            "source_postrun_acceptance"
+        ]["source_postrun_acceptance_canonical_document_sha256"],
         "selected_candidate_id": selected,
         "selected_candidate_config_sha256": specification["candidate_config_sha256"],
         "selected_gate_fit_bundle_sha256": fit_bundle["bundle_sha256"],
@@ -1588,6 +1646,8 @@ def validate_gate_authorization(
         "protocol_file_sha256",
         "protocol_document_sha256",
         "selection_sha256",
+        "source_postrun_acceptance_artifact_sha256",
+        "source_postrun_acceptance_canonical_document_sha256",
         "selected_candidate_id",
         "selected_candidate_config_sha256",
         "selected_gate_fit_bundle_sha256",
@@ -1641,6 +1701,12 @@ def validate_gate_authorization(
         "protocol_file_sha256": study_binding["protocol_file_sha256"],
         "protocol_document_sha256": study_binding["protocol_document_sha256"],
         "selection_sha256": selection["selection_sha256"],
+        "source_postrun_acceptance_artifact_sha256": selection[
+            "source_postrun_acceptance"
+        ]["source_postrun_acceptance_artifact_sha256"],
+        "source_postrun_acceptance_canonical_document_sha256": selection[
+            "source_postrun_acceptance"
+        ]["source_postrun_acceptance_canonical_document_sha256"],
         "selected_candidate_id": selected,
         "selected_candidate_config_sha256": selection["candidate_summaries"][selected]["candidate_config_sha256"],
         "selected_gate_fit_bundle_sha256": selection["selected_bundle_sha256"],
@@ -1754,6 +1820,8 @@ def _load_manifest_and_inventory(
 def run_candidate_selection(
     *,
     population_manifest: str | os.PathLike[str],
+    source_postrun_acceptance_path: str | os.PathLike[str],
+    source_preflight_path: str | os.PathLike[str],
     training_geo: str | os.PathLike[str],
     training_data: str | os.PathLike[str],
     checkpoint_dir: str | os.PathLike[str],
@@ -1763,6 +1831,20 @@ def run_candidate_selection(
     """Evaluate both candidates on gate_fit only and seal the decision."""
 
     manifest_path = Path(population_manifest).expanduser().resolve()
+    source_acceptance, source_acceptance_receipt = (
+        verify_source_postrun_acceptance_bindings(
+            source_postrun_acceptance_path,
+            population_manifest_path=manifest_path,
+            source_preflight_path=source_preflight_path,
+            training_data_path=training_data,
+            checkpoint_dir=checkpoint_dir,
+        )
+    )
+    source_acceptance_binding = source_postrun_acceptance_binding(
+        source_acceptance, source_acceptance_receipt
+    )
+    # The strict source-chain replay above completes before the first object
+    # capable of opening gate-fit geographic or image datasets is constructed.
     study_binding, _, inventory = _load_manifest_and_inventory(manifest_path, Path(training_geo).expanduser().resolve())
     checkpoint_collection, checkpoints = load_verified_checkpoints(checkpoint_dir)
     normalizer = load_sealed_band_normalizer(
@@ -1809,7 +1891,11 @@ def run_candidate_selection(
         bundles.append(bundle)
     if _runner_code_identity() != code_start:
         raise IntegrityError("So2Sat development code changed during candidate selection")
-    selection = select_candidate(bundles, study_binding=study_binding)
+    selection = select_candidate(
+        bundles,
+        study_binding=study_binding,
+        source_postrun_acceptance=source_acceptance_binding,
+    )
     write_immutable_json_with_receipt(destination / "so2sat_candidate_selection.json", selection)
     return selection
 
@@ -1817,6 +1903,10 @@ def run_candidate_selection(
 def run_gate_calibration(
     *,
     selection_path: str | os.PathLike[str],
+    source_postrun_acceptance_path: str | os.PathLike[str],
+    source_preflight_path: str | os.PathLike[str],
+    precalibration_seal_path: str | os.PathLike[str],
+    target_boundary_amendment_path: str | os.PathLike[str],
     population_manifest: str | os.PathLike[str],
     training_geo: str | os.PathLike[str],
     training_data: str | os.PathLike[str],
@@ -1834,6 +1924,20 @@ def run_gate_calibration(
     if not isinstance(selection, Mapping):
         raise IntegrityError("candidate selection artifact must be a JSON mapping")
     validate_selection(selection, study_binding=study_binding)
+    source_acceptance, source_acceptance_receipt = (
+        verify_source_postrun_acceptance_bindings(
+            source_postrun_acceptance_path,
+            population_manifest_path=manifest_path,
+            source_preflight_path=source_preflight_path,
+            training_data_path=training_data,
+            checkpoint_dir=checkpoint_dir,
+        )
+    )
+    source_acceptance_binding = source_postrun_acceptance_binding(
+        source_acceptance, source_acceptance_receipt
+    )
+    if selection["source_postrun_acceptance"] != source_acceptance_binding:
+        raise IntegrityError("candidate selection binds another source acceptance")
     selected = selection.get("selected_candidate_id")
     if selected is None:
         raise NoFeasibleCandidateError(
@@ -1850,13 +1954,77 @@ def run_gate_calibration(
     if fit_bundle["bundle_sha256"] != selection["selected_bundle_sha256"]:
         raise IntegrityError("selected gate-fit bundle does not match the selection artifact")
 
+    # A distinct execution/configuration seal must predate the first gate-cal
+    # data object.  It binds the exact selection, gate-fit ridge parameters,
+    # source artifacts, target opaque hashes, code, runtime, and reveal registry.
+    from .precalibration_seal import (
+        development_calibration_environment_identity,
+        load_precalibration_seal_with_receipt,
+        precalibration_code_identity,
+    )
+    from .target_amendment import load_target_boundary_amendment
+    from .target_contract import PRODUCTION_MODE, artifact_binding
+
+    amendment, amendment_receipt = load_target_boundary_amendment(
+        target_boundary_amendment_path
+    )
+    checkpoint_collection, checkpoints = load_verified_checkpoints(checkpoint_dir)
+    collection_path = (
+        Path(checkpoint_dir).expanduser().resolve()
+        / "so2sat_source_checkpoint_collection.json"
+    )
+    collection_receipt = verify_artifact_receipt(collection_path)
+    normalizer_path = (
+        Path(checkpoint_dir).expanduser().resolve()
+        / "so2sat_sen2_source_normalizer.json"
+    )
+    normalizer = load_sealed_band_normalizer(normalizer_path)
+    normalizer_receipt = verify_artifact_receipt(normalizer_path)
+    precalibration_seal, _ = load_precalibration_seal_with_receipt(
+        precalibration_seal_path,
+        study_binding=study_binding,
+        selection=selection,
+        fit_bundle=fit_bundle,
+        target_boundary_amendment=amendment,
+        checkpoint_collection=checkpoint_collection,
+    )
+    if precalibration_seal["execution_mode"] != PRODUCTION_MODE:
+        raise IntegrityError("gate calibration requires a PRODUCTION precalibration seal")
+    if (
+        precalibration_seal["population_manifest_artifact"]
+        != artifact_binding(verify_artifact_receipt(manifest_path))
+        or precalibration_seal["selection_artifact"]
+        != artifact_binding(verify_artifact_receipt(selection_file))
+        or precalibration_seal["selected_gate_fit_bundle_artifact"]
+        != artifact_binding(verify_artifact_receipt(fit_path))
+        or precalibration_seal["target_boundary_amendment_artifact"]
+        != artifact_binding(amendment_receipt)
+        or precalibration_seal["checkpoint_collection_artifact"]
+        != artifact_binding(collection_receipt)
+        or precalibration_seal["normalizer_artifact"]
+        != artifact_binding(normalizer_receipt)
+        or precalibration_seal["normalizer_sha256"]
+        != normalizer.normalizer_sha256
+        or precalibration_seal["source_postrun_acceptance"]
+        != source_acceptance_binding
+        or precalibration_seal["source_postrun_training_container"]
+        != source_acceptance["postrun_source_container"]
+        or precalibration_seal["source_hdf5_runtime_disclosure"]
+        != source_acceptance["source_hdf5_runtime_disclosure"]
+        or precalibration_seal["source_checkpoint_selection_disclosure"]
+        != source_acceptance["source_checkpoint_selection_disclosure"]
+        or precalibration_seal["source_initialization_clarification"]
+        != source_acceptance["source_initialization_clarification"]
+        or precalibration_seal["package_code_identity"]
+        != precalibration_code_identity()
+        or precalibration_seal["development_calibration_environment_identity"]
+        != development_calibration_environment_identity(device)
+    ):
+        raise IntegrityError("gate calibration inputs/code/runtime differ from the prior seal")
+
     # The selection and its exact selected gate-fit bundle are verified before
     # construction of the first object capable of opening training.h5.
     _, _, inventory = _load_manifest_and_inventory(manifest_path, Path(training_geo).expanduser().resolve())
-    checkpoint_collection, checkpoints = load_verified_checkpoints(checkpoint_dir)
-    normalizer = load_sealed_band_normalizer(
-        Path(checkpoint_dir).expanduser().resolve() / "so2sat_sen2_source_normalizer.json"
-    )
     if normalizer.normalizer_sha256 != checkpoint_collection.get("normalizer_sha256"):
         raise IntegrityError("checkpoint collection and normalizer identity differ")
     data = DevelopmentData(training_data, inventory, normalizer)
@@ -1900,6 +2068,8 @@ def run_gate_calibration(
         calibration_bundle,
         study_binding=study_binding,
     )
+    if gate["ridge"] != precalibration_seal["frozen_gate_fit_model"]:
+        raise IntegrityError("calibrated gate changed the ridge model frozen before calibration")
     write_gate_with_receipt(destination / "so2sat_ridge_gate.json", gate)
     authorization = build_gate_authorization(
         selection,
@@ -1931,15 +2101,25 @@ def main() -> None:
         subparser.add_argument("--population-manifest", type=Path, required=True)
         subparser.add_argument("--training-geo", type=Path, required=True)
         subparser.add_argument("--training-data", type=Path, required=True)
+        subparser.add_argument(
+            "--source-postrun-acceptance", type=Path, required=True
+        )
+        subparser.add_argument("--source-preflight", type=Path, required=True)
         subparser.add_argument("--checkpoint-dir", type=Path, required=True)
         subparser.add_argument("--output-dir", type=Path, required=True)
         subparser.add_argument("--device", choices=("auto", "mps", "cpu"), default="auto")
         if phase == "calibrate":
             subparser.add_argument("--selection", type=Path, required=True)
+            subparser.add_argument("--precalibration-seal", type=Path, required=True)
+            subparser.add_argument(
+                "--target-boundary-amendment", type=Path, required=True
+            )
     args = parser.parse_args()
     if args.phase == "select":
         result = run_candidate_selection(
             population_manifest=args.population_manifest,
+            source_postrun_acceptance_path=args.source_postrun_acceptance,
+            source_preflight_path=args.source_preflight,
             training_geo=args.training_geo,
             training_data=args.training_data,
             checkpoint_dir=args.checkpoint_dir,
@@ -1953,6 +2133,10 @@ def main() -> None:
     else:
         gate = run_gate_calibration(
             selection_path=args.selection,
+            source_postrun_acceptance_path=args.source_postrun_acceptance,
+            source_preflight_path=args.source_preflight,
+            precalibration_seal_path=args.precalibration_seal,
+            target_boundary_amendment_path=args.target_boundary_amendment,
             population_manifest=args.population_manifest,
             training_geo=args.training_geo,
             training_data=args.training_data,

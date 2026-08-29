@@ -1,0 +1,38 @@
+{
+  "amendment_id": "KBOUND_SO2SAT_TARGET_BOUNDARY_AMENDMENT_v1.1",
+  "base_protocol_binding": {
+    "artifact_basename": "prospective_protocol_v1.json",
+    "artifact_sha256": "3eef92d7b33938bc24aa211fa4bcf32aedd849ff85eb42b6705a86494ef93f16",
+    "canonical_document_sha256": "e0ec39d27b6c47845cd8512921391d0e07e8cba732cb8cd4d54594c7ce53eadf",
+    "protocol_id": "KBOUND_SO2SAT_LCZ42_PROSPECTIVE_CONFIRMATION_v1"
+  },
+  "boundary_contract": {
+    "live_runner_imports_offline_scorer": false,
+    "live_runner_target_outcome_interface": false,
+    "offline_scorer_imports_live_inference_backend": false,
+    "offline_scorer_imports_live_runner": false,
+    "offline_scorer_process_starts_only_after_complete_target_bundle_receipt": true,
+    "final_target_seal_extends_prior_precalibration_seal": true,
+    "precalibration_execution_seal_required_before_gate_calibration": true,
+    "precalibration_seal_binds_gate_algorithm_before_calibration_outcomes": true,
+    "shared_receipt_and_artifact_validation_contracts_allowed": true,
+    "testing_label_dataset_maximum_reveals_per_execution_seal": 1,
+    "validation_probe_labels_opened": false,
+    "validation_probe_labels_scored": false
+  },
+  "schema": "kbound_so2sat_target_boundary_amendment_v1_1",
+  "status": "SEALED_TARGET_BOUNDARY_AMENDMENT_BEFORE_ANY_TARGET_CONTAINER_DESERIALIZATION",
+  "supersession": {
+    "all_other_base_protocol_fields_preserved": true,
+    "new_value": true,
+    "old_value": false,
+    "reason": "The target runner and offline scorer are now implemented as distinct sealed entry points. The live entry point remains structurally unable to request an outcome dataset; the offline entry point is authorized only after the complete prediction/action bundle and all receipts exist.",
+    "superseded_json_pointer": "/target_label_firewall/scoring_implementation_in_this_package"
+  },
+  "target_access_at_amendment_creation": {
+    "hdf5_datasets_deserialized": 0,
+    "target_container_paths_accepted_by_creation_step": false,
+    "target_labels_opened": 0,
+    "target_pixels_opened": 0
+  }
+}

@@ -397,6 +397,31 @@ def test_source_postrun_acceptance_replays_full_chain_and_raw_hash_once(
             "initial_tensor_sha256_by_model_seed"
         ]
     ) == {"0", "1", "2", "3", "4"}
+    environment_versions = document["acceptance_environment_identity"]["package_versions"]
+    assert set(environment_versions) == {"h5py", "numpy", "torch", "torchvision"}
+    assert environment_versions["h5py"] != "NOT_INSTALLED"
+    hdf5_disclosure = document["source_hdf5_runtime_disclosure"]
+    assert hdf5_disclosure["source_preflight_explicit_h5py_version_recorded"] is False
+    assert (
+        hdf5_disclosure[
+            "all_source_training_receipts_explicitly_record_h5py_version"
+        ]
+        is False
+    )
+    assert hdf5_disclosure[
+        "postrun_acceptance_h5py_version_is_retroactive_source_runtime_proof"
+    ] is False
+    assert hdf5_disclosure["postrun_acceptance_h5py_version"] == environment_versions["h5py"]
+    assert set(hdf5_disclosure["source_training_runtime_sha256_by_model_seed"]) == {
+        "0",
+        "1",
+        "2",
+        "3",
+        "4",
+    }
+    assert set(hdf5_disclosure["source_training_explicit_h5py_version_by_model_seed"].values()) == {
+        None
+    }
     binding = source_acceptance.source_postrun_acceptance_binding(document, receipt)
     assert binding[source_acceptance.TARGET_SEAL_BINDING_FIELD] == receipt["artifact_sha256"]
 
@@ -438,3 +463,27 @@ def test_source_postrun_acceptance_replays_full_chain_and_raw_hash_once(
     # The verifier rejects the altered receipt/checkpoint pair before another
     # expensive source-container hash pass.
     assert len(training_hash_calls) == 2
+
+
+def test_source_acceptance_rejects_removed_h5py_environment_identity(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    paths = _build_synthetic_source_chain(tmp_path)
+    monkeypatch.setattr(source_acceptance, "validate_population_manifest", lambda _: None)
+    source_acceptance.create_source_postrun_acceptance(
+        population_manifest=paths["manifest"],
+        training_data=paths["training_data"],
+        source_preflight=paths["preflight"],
+        checkpoint_dir=paths["checkpoint_dir"],
+        output=paths["output"],
+    )
+    tampered = strict_json_load(paths["output"])
+    environment = tampered["acceptance_environment_identity"]
+    environment["package_versions"].pop("h5py")
+    unsigned_environment = dict(environment)
+    unsigned_environment.pop("environment_identity_sha256")
+    environment["environment_identity_sha256"] = stable_sha256(unsigned_environment)
+    _rewrite_receipted_json(paths["output"], tampered)
+    with pytest.raises(IntegrityError, match="environment identity drift"):
+        source_acceptance.load_verified_source_postrun_acceptance(paths["output"])

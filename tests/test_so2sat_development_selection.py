@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import copy
 import inspect
+from pathlib import Path
 from typing import Any
 
 import numpy as np
@@ -11,6 +12,7 @@ import pytest
 import torch
 from torch import nn
 
+from experiments.kbound.so2sat import development as development_module
 from experiments.kbound.so2sat.adapters import (
     CANDIDATE_IDS,
     SAR_CANDIDATE_ID,
@@ -42,6 +44,14 @@ from experiments.kbound.so2sat.gate import (
 )
 from experiments.kbound.so2sat.integrity import IntegrityError, stable_sha256
 from experiments.kbound.so2sat.protocol import PROTOCOL_ID
+
+SOURCE_ACCEPTANCE_BINDING = {
+    "source_postrun_acceptance_artifact_basename": (
+        "so2sat_source_postrun_acceptance.json"
+    ),
+    "source_postrun_acceptance_artifact_sha256": "a" * 64,
+    "source_postrun_acceptance_canonical_document_sha256": "b" * 64,
+}
 
 
 class _TinyBatchNormClassifier(nn.Module):
@@ -265,7 +275,11 @@ def test_mixed_effect_feasibility_and_deterministic_selection_use_gate_fit_only(
     tent = _bundle(TENT_CANDIDATE_ID, strong, binding)
     sar = _bundle(SAR_CANDIDATE_ID, weaker, binding)
     assert candidate_feasibility(tent["cells"], study_binding=binding)["feasible"] is True
-    selection = select_candidate([sar, tent], study_binding=binding)
+    selection = select_candidate(
+        [sar, tent],
+        study_binding=binding,
+        source_postrun_acceptance=SOURCE_ACCEPTANCE_BINDING,
+    )
     assert selection["status"] == "EXACTLY_ONE_CANDIDATE_SELECTED_BEFORE_GATE_CAL"
     assert selection["selected_candidate_id"] == TENT_CANDIDATE_ID
     assert selection["gate_cal_rows_read_before_selection"] == 0
@@ -285,7 +299,11 @@ def test_all_one_direction_effects_seal_honest_stop_before_gate_calibration() ->
         _bundle(TENT_CANDIDATE_ID, all_helpful, binding),
         _bundle(SAR_CANDIDATE_ID, all_helpful, binding),
     ]
-    selection = select_candidate(bundles, study_binding=binding)
+    selection = select_candidate(
+        bundles,
+        study_binding=binding,
+        source_postrun_acceptance=SOURCE_ACCEPTANCE_BINDING,
+    )
     assert selection["status"] == "NO_FEASIBLE_CANDIDATE_STOP_BEFORE_GATE_CAL"
     assert selection["selected_candidate_id"] is None
     with pytest.raises(NoFeasibleCandidateError, match="gate-calibration access is forbidden"):
@@ -297,7 +315,11 @@ def test_gate_authorization_binds_selection_candidate_bundles_and_gate() -> None
     fit_effects = [-0.040, -0.030, -0.020, -0.010, 0.010, 0.020, 0.030, 0.040, 0.050]
     tent = _bundle(TENT_CANDIDATE_ID, fit_effects, binding)
     sar = _bundle(SAR_CANDIDATE_ID, [value * 0.65 for value in fit_effects], binding)
-    selection = select_candidate([tent, sar], study_binding=binding)
+    selection = select_candidate(
+        [tent, sar],
+        study_binding=binding,
+        source_postrun_acceptance=SOURCE_ACCEPTANCE_BINDING,
+    )
     selected_fit = tent if selection["selected_candidate_id"] == TENT_CANDIDATE_ID else sar
     calibration_effects = np.linspace(-0.045, 0.045, 19).tolist()
     calibration = _bundle(
@@ -352,3 +374,42 @@ def test_real_cli_surfaces_only_training_data_and_two_separate_phases() -> None:
     assert all("validation" not in name and "testing" not in name for name in calibration_parameters)
     assert "selection_path" not in select_parameters
     assert "selection_path" in calibration_parameters
+
+
+def test_source_acceptance_replays_before_gate_fit_data_construction(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    calls = {"acceptance": 0, "inventory": 0}
+
+    def reject_acceptance(
+        *_args: Any, **_kwargs: Any
+    ) -> tuple[dict[str, Any], dict[str, Any]]:
+        calls["acceptance"] += 1
+        raise IntegrityError("acceptance-first-stop")
+
+    def forbidden_inventory(*_args: Any, **_kwargs: Any) -> Any:
+        calls["inventory"] += 1
+        raise AssertionError("gate-fit inventory constructed before source acceptance")
+
+    monkeypatch.setattr(
+        development_module,
+        "verify_source_postrun_acceptance_bindings",
+        reject_acceptance,
+    )
+    monkeypatch.setattr(
+        development_module,
+        "_load_manifest_and_inventory",
+        forbidden_inventory,
+    )
+    with pytest.raises(IntegrityError, match="acceptance-first-stop"):
+        run_candidate_selection(
+            population_manifest=tmp_path / "population.json",
+            source_postrun_acceptance_path=tmp_path / "acceptance.json",
+            source_preflight_path=tmp_path / "preflight.json",
+            training_geo=tmp_path / "training_geo.h5",
+            training_data=tmp_path / "training.h5",
+            checkpoint_dir=tmp_path / "checkpoints",
+            output_dir=tmp_path / "development",
+            device=torch.device("cpu"),
+        )
+    assert calls == {"acceptance": 1, "inventory": 0}

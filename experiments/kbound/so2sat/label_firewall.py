@@ -33,7 +33,6 @@ from .metadata_manifest import (
 )
 from .protocol import OFFICIAL_SPLIT_COUNTS
 
-
 TARGET_SPLITS = ("validation", "testing")
 PIXEL_DATASET_BY_MODALITY = {
     "sen1_8_band": ("sen1", (32, 32, 8)),
@@ -83,6 +82,7 @@ class VerifiedTrainingGeoIndex:
             allocation_contract=allocation_contract,
         )
         self._manifest = dict(manifest)
+        self._uses_canonical_h5_factory = h5_factory is None
         self._training_path = Path(training_geo_path).expanduser().resolve()
         self._factory = h5_factory
         self._expected_counts = dict(expected_split_counts)
@@ -123,6 +123,12 @@ class VerifiedTrainingGeoIndex:
             self._manifest.get("population_identity_sha256"),
             field="population_identity_sha256",
         )
+
+    @property
+    def uses_canonical_h5_factory(self) -> bool:
+        """True only when no injectable HDF5 factory was supplied."""
+
+        return self._uses_canonical_h5_factory
 
     def record(self, row_index: int) -> GeoRecord:
         if isinstance(row_index, bool) or not isinstance(row_index, int):
@@ -213,6 +219,27 @@ class VerifiedGeoIndex(VerifiedTrainingGeoIndex):
             raise IntegrityError(f"target metadata returned undeclared city {record.city_id!r}")
         return record
 
+    def iter_records(self, split: str = "training") -> Iterator[GeoRecord]:
+        """Iterate one verified split with a single safe geo-container open."""
+
+        if split == "training":
+            yield from super().iter_records()
+            return
+        if split not in TARGET_SPLITS:
+            raise IntegrityError(f"unknown So2Sat split: {split!r}")
+        for record in iter_geo_records(
+            split,
+            self._paths[split],
+            city_roles=self._city_roles,
+            development_easting_thresholds=self._easting_thresholds,
+            h5_factory=self._factory,
+        ):
+            if record.city_id not in self._target_cities:
+                raise IntegrityError(
+                    f"target metadata returned undeclared city {record.city_id!r}"
+                )
+            yield record
+
 
 class LabelFreeTargetLoader:
     """Load target pixels only after opaque container identities are verified."""
@@ -239,6 +266,7 @@ class LabelFreeTargetLoader:
         }
         self._identities = {split: dict(expected_data_identities[split]) for split in TARGET_SPLITS}
         self._modality = modality
+        self._uses_canonical_h5_factory = h5_factory is None
         self._factory = _default_h5_factory if h5_factory is None else h5_factory
         self._expected_counts = {split: expected_split_counts[split] for split in TARGET_SPLITS}
         self._verified = False
@@ -256,6 +284,12 @@ class LabelFreeTargetLoader:
     @property
     def access_log(self) -> tuple[dict[str, Any], ...]:
         return tuple(dict(row) for row in self._access_log)
+
+    @property
+    def uses_canonical_h5_factory(self) -> bool:
+        """True only for the fixed production h5py path."""
+
+        return self._uses_canonical_h5_factory
 
     def verify_containers(self) -> dict[str, Any]:
         """Hash raw container bytes without opening or deserializing HDF5 datasets."""
@@ -288,17 +322,50 @@ class LabelFreeTargetLoader:
         }
 
     def read(self, split: str, row_index: int) -> PixelSample:
+        return self.read_many(split, [row_index])[0]
+
+    def _validate_split(self, split: str) -> tuple[str, tuple[int, ...]]:
         if not self._verified:
             raise IntegrityError("target containers must be hash-verified before pixel access")
         if split not in TARGET_SPLITS:
             raise LabelFirewallError(
                 f"live target loader permits only {list(TARGET_SPLITS)}, found {split!r}"
             )
-        metadata = self._geo_index.record(split, row_index)
+        return PIXEL_DATASET_BY_MODALITY[self._modality]
+
+    def read_verified_many(
+        self,
+        split: str,
+        records: Sequence[GeoRecord],
+    ) -> list[PixelSample]:
+        """Read a verified metadata batch with one fixed-key HDF5 open.
+
+        The live runner obtains ``records`` from ``VerifiedGeoIndex.iter_records``;
+        this method revalidates every safe field before using the row indices.
+        It never accepts a dataset name from the caller.
+        """
+
+        dataset_name, trailing_shape = self._validate_split(split)
+        if not records:
+            raise IntegrityError("read_verified_many requires at least one metadata record")
+        row_indices = [record.row_index for record in records]
+        if (
+            any(isinstance(index, bool) or not isinstance(index, int) for index in row_indices)
+            or row_indices != sorted(set(row_indices))
+            or any(not 0 <= index < self._expected_counts[split] for index in row_indices)
+        ):
+            raise IntegrityError("verified target metadata batch has invalid row indices")
         required_role = "target_probe" if split == "validation" else "target_evaluation"
-        if metadata.city_role != "target" or metadata.sample_role != required_role:
-            raise LabelFirewallError("safe metadata does not match the target probe/evaluation contract")
-        dataset_name, trailing_shape = PIXEL_DATASET_BY_MODALITY[self._modality]
+        if any(
+            record.official_split != split
+            or record.city_role != "target"
+            or record.sample_role != required_role
+            for record in records
+        ):
+            raise LabelFirewallError(
+                "safe metadata does not match the target probe/evaluation contract"
+            )
+        pixels_by_row: list[Any] = []
         with self._factory(self._paths[split]) as handle:
             # Deliberately do not enumerate this handle: the official container
             # co-locates outcomes.  Exactly one fixed sensor dataset is indexed.
@@ -309,20 +376,26 @@ class LabelFreeTargetLoader:
                 raise IntegrityError(
                     f"{split}/{dataset_name} shape drift: expected {expected_shape}, found {shape}"
                 )
-            pixels = dataset[row_index]
-        self._access_log.append(
-            {
-                "split": split,
-                "row_index": row_index,
-                "dataset": dataset_name,
-                "target_outcome_dataset_accessed": False,
-            }
-        )
-        return PixelSample(pixels=pixels, metadata=metadata)
+            for row_index in row_indices:
+                pixels_by_row.append(dataset[row_index])
+        samples: list[PixelSample] = []
+        for metadata, pixels in zip(records, pixels_by_row, strict=True):
+            self._access_log.append(
+                {
+                    "split": split,
+                    "row_index": metadata.row_index,
+                    "dataset": dataset_name,
+                    "target_outcome_dataset_accessed": False,
+                }
+            )
+            samples.append(PixelSample(pixels=pixels, metadata=metadata))
+        return samples
 
     def read_many(self, split: str, row_indices: Sequence[int]) -> list[PixelSample]:
+        self._validate_split(split)
         if not row_indices:
             raise IntegrityError("read_many requires at least one row index")
         if len(set(row_indices)) != len(row_indices):
             raise IntegrityError("read_many refuses duplicate row indices")
-        return [self.read(split, row_index) for row_index in row_indices]
+        records = [self._geo_index.record(split, row_index) for row_index in row_indices]
+        return self.read_verified_many(split, records)

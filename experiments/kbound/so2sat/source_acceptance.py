@@ -112,11 +112,15 @@ def _acceptance_code_identity() -> dict[str, Any]:
 
 def _acceptance_environment_identity() -> dict[str, Any]:
     versions: dict[str, str] = {}
-    for package in ("numpy", "torch", "torchvision"):
+    for package in ("h5py", "numpy", "torch", "torchvision"):
         try:
             versions[package] = importlib.metadata.version(package)
         except importlib.metadata.PackageNotFoundError:
             versions[package] = "NOT_INSTALLED"
+    if versions["h5py"] == "NOT_INSTALLED":
+        raise IntegrityError(
+            "source post-run acceptance requires h5py so its exact version can be sealed"
+        )
     document = {
         "schema": "kbound_so2sat_source_postrun_acceptance_environment_v1",
         "python_implementation": platform.python_implementation(),
@@ -350,8 +354,21 @@ def _verify_checkpoint_collection(
             raise IntegrityError("unknown source training receipt during post-run acceptance")
         data = receipt.get("data")
         metrics = receipt.get("best_source_monitor")
-        if not isinstance(data, Mapping) or not isinstance(metrics, Mapping):
+        scientific = receipt.get("scientific_identity")
+        runtime = scientific.get("runtime") if isinstance(scientific, Mapping) else None
+        runtime_sha = scientific.get("runtime_sha256") if isinstance(scientific, Mapping) else None
+        if (
+            not isinstance(data, Mapping)
+            or not isinstance(metrics, Mapping)
+            or not isinstance(runtime, Mapping)
+            or runtime_sha != stable_sha256(dict(runtime))
+        ):
             raise IntegrityError("source training receipt lacks data/best metrics")
+        explicit_h5py_version = runtime.get("h5py")
+        if explicit_h5py_version is not None and (
+            not isinstance(explicit_h5py_version, str) or not explicit_h5py_version
+        ):
+            raise IntegrityError("source training runtime has an invalid explicit h5py version")
         if data.get("source_container_identity") != dict(expected_source_identity):
             raise IntegrityError("source checkpoint was trained from another source container")
         if data.get("normalizer") != normalizer.document():
@@ -391,6 +408,8 @@ def _verify_checkpoint_collection(
                     EXPECTED_ABSENT_SOURCE_MONITOR_CLASS_IDS
                 ),
                 "scientific_identity_sha256": receipt["scientific_identity_sha256"],
+                "training_runtime_sha256": runtime_sha,
+                "training_runtime_h5py_version": explicit_h5py_version,
                 "config_sha256": receipt["config_sha256"],
                 "data_identity_sha256": receipt["data_identity_sha256"],
                 "code_sha256": receipt["code_sha256"],
@@ -449,6 +468,62 @@ def _source_initialization_clarification(
         "exact_initial_tensor_hashes_authoritative": True,
         "initial_tensor_sha256_by_model_seed": hashes,
         "numerical_artifacts_changed_by_clarification": False,
+    }
+
+
+def _source_hdf5_runtime_disclosure(
+    verified_checkpoints: list[Mapping[str, Any]],
+    acceptance_environment_identity: Mapping[str, Any],
+) -> dict[str, Any]:
+    """Disclose the source-runtime gap without retroactively relabeling it."""
+
+    runtime_sha_by_seed: dict[str, str] = {}
+    h5py_version_by_seed: dict[str, str | None] = {}
+    for expected_seed, row in zip(
+        CANONICAL_MODEL_SEEDS, verified_checkpoints, strict=True
+    ):
+        if row.get("model_seed") != expected_seed:
+            raise IntegrityError("source runtime disclosure checkpoint order drift")
+        runtime_sha_by_seed[str(expected_seed)] = require_sha256(
+            row.get("training_runtime_sha256"),
+            field=f"verified_checkpoints[{expected_seed}].training_runtime_sha256",
+        )
+        h5py_version = row.get("training_runtime_h5py_version")
+        if h5py_version is not None and (
+            not isinstance(h5py_version, str) or not h5py_version
+        ):
+            raise IntegrityError("source runtime disclosure has an invalid h5py version")
+        h5py_version_by_seed[str(expected_seed)] = h5py_version
+    package_versions = acceptance_environment_identity.get("package_versions")
+    acceptance_h5py = (
+        package_versions.get("h5py") if isinstance(package_versions, Mapping) else None
+    )
+    if (
+        not isinstance(acceptance_h5py, str)
+        or not acceptance_h5py
+        or acceptance_h5py == "NOT_INSTALLED"
+    ):
+        raise IntegrityError("source acceptance environment lacks an installed h5py version")
+    return {
+        "source_preflight_schema": SOURCE_PREFLIGHT_SCHEMA,
+        "source_preflight_explicit_h5py_version_recorded": False,
+        "source_training_scientific_identity_schema": (
+            "kbound_so2sat_source_seed_identity_v1"
+        ),
+        "source_training_runtime_sha256_by_model_seed": runtime_sha_by_seed,
+        "source_training_explicit_h5py_version_by_model_seed": h5py_version_by_seed,
+        "all_source_training_receipts_explicitly_record_h5py_version": all(
+            version is not None for version in h5py_version_by_seed.values()
+        ),
+        "postrun_acceptance_h5py_version": acceptance_h5py,
+        "postrun_acceptance_h5py_version_is_retroactive_source_runtime_proof": False,
+        "required_reporting": (
+            "The sealed source-preflight artifact and source-training v1 receipts do not "
+            "necessarily expose h5py as a named runtime field. Their artifact, code, and "
+            "per-seed runtime hashes remain authoritative. The post-run acceptance seals "
+            "its own h5py version; that later observation is not retroactive proof of the "
+            "h5py version used by preflight or training."
+        ),
     }
 
 
@@ -595,6 +670,10 @@ def create_source_postrun_acceptance(
             "source_rows_sha256": collection["source_rows_sha256"],
         },
         "verified_checkpoints": verified_checkpoints,
+        "source_hdf5_runtime_disclosure": _source_hdf5_runtime_disclosure(
+            verified_checkpoints,
+            acceptance_environment_identity,
+        ),
         "source_checkpoint_selection_disclosure": _source_checkpoint_selection_disclosure(),
         "source_initialization_clarification": _source_initialization_clarification(initial_hashes),
     }
@@ -637,6 +716,7 @@ def load_verified_source_postrun_acceptance(
         "source_normalizer",
         "checkpoint_collection",
         "verified_checkpoints",
+        "source_hdf5_runtime_disclosure",
         "source_checkpoint_selection_disclosure",
         "source_initialization_clarification",
     }
@@ -711,8 +791,9 @@ def load_verified_source_postrun_acceptance(
         environment.get("schema")
         != "kbound_so2sat_source_postrun_acceptance_environment_v1"
         or not isinstance(package_versions, Mapping)
-        or set(package_versions) != {"numpy", "torch", "torchvision"}
+        or set(package_versions) != {"h5py", "numpy", "torch", "torchvision"}
         or any(not isinstance(value, str) or not value for value in package_versions.values())
+        or package_versions.get("h5py") == "NOT_INSTALLED"
     ):
         raise IntegrityError("source acceptance environment identity drift")
     environment_unsigned = dict(environment)
@@ -920,6 +1001,8 @@ def load_verified_source_postrun_acceptance(
         "source_monitor_supported_class_count",
         "source_monitor_absent_class_ids",
         "scientific_identity_sha256",
+        "training_runtime_sha256",
+        "training_runtime_h5py_version",
         "config_sha256",
         "data_identity_sha256",
         "code_sha256",
@@ -938,11 +1021,17 @@ def load_verified_source_postrun_acceptance(
             "checkpoint_tensor_sha256",
             "initial_tensor_sha256",
             "scientific_identity_sha256",
+            "training_runtime_sha256",
             "config_sha256",
             "data_identity_sha256",
             "code_sha256",
         ):
             require_sha256(row.get(field), field=f"verified_checkpoints[{expected_seed}].{field}")
+        explicit_h5py_version = row.get("training_runtime_h5py_version")
+        if explicit_h5py_version is not None and (
+            not isinstance(explicit_h5py_version, str) or not explicit_h5py_version
+        ):
+            raise IntegrityError("source training runtime h5py-version disclosure drift")
         training_receipt_artifact = _validate_portable_artifact_identity(
             row.get("training_receipt_artifact"),
             field=f"verified_checkpoints[{expected_seed}].training_receipt_artifact",
@@ -980,6 +1069,11 @@ def load_verified_source_postrun_acceptance(
         or clarification != _source_initialization_clarification(initial_by_seed)
     ):
         raise IntegrityError("source post-run checkpoint/initialization clarification drift")
+    if document.get("source_hdf5_runtime_disclosure") != _source_hdf5_runtime_disclosure(
+        checkpoints,
+        environment,
+    ):
+        raise IntegrityError("source HDF5 runtime disclosure drift")
     return document, receipt
 
 
@@ -1041,6 +1135,10 @@ def verify_source_postrun_acceptance_bindings(
     verifier_code_start = _acceptance_code_identity()
     if document["acceptance_code_identity"] != verifier_code_start:
         raise IntegrityError("current source acceptance code differs from its creator identity")
+    if document["acceptance_environment_identity"] != _acceptance_environment_identity():
+        raise IntegrityError(
+            "current source acceptance environment differs from its creator identity"
+        )
     manifest_path, manifest, manifest_receipt = _load_population_manifest(
         population_manifest_path
     )
