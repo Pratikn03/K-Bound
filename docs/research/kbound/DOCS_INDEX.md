@@ -17,6 +17,7 @@ history remains in git.
 | [`KBOUND_EMPIRICAL_AND_RELEASE_CLOSURE_PLAN.md`](KBOUND_EMPIRICAL_AND_RELEASE_CLOSURE_PLAN.md) | **ACTIVE.** Executable plan for natural evidence, uniform protocols, official baselines, camera validation, and release CI. |
 | [`KBOUND_SHORT_RESULT_AUDIT.md`](KBOUND_SHORT_RESULT_AUDIT.md) | Current source-hashed empirical verdicts and protocol scope. |
 | [`KBOUND_SHORT_CLAIM_MANIFEST.md`](KBOUND_SHORT_CLAIM_MANIFEST.md) | Current claim-to-artifact authority. |
+| [`KBOUND_RELEASE_SHA256SUMS.txt`](KBOUND_RELEASE_SHA256SUMS.txt) | Current 24-entry release byte seal; regenerate only with `runbooks/release_candidate.sh checksums`. |
 | [`SUBMISSION_LEDGER.md`](SUBMISSION_LEDGER.md) | Historical July/August freeze ledger; superseded for current verdicts and paths. |
 | [`KBOUND_RELEASE_CLEANUP_REPORT_2026-08-27.md`](KBOUND_RELEASE_CLEANUP_REPORT_2026-08-27.md) | Historical pre-Phase-1 cleanup/checksum snapshot; operational cleanup ledger only. |
 | [`COMPARISON_FAMILY.md`](COMPARISON_FAMILY.md) | Superseded 2026-07-26 search census and proposed Holm family; retained as history, not current multiplicity evidence. |

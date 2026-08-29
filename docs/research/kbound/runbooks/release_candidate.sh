@@ -179,6 +179,8 @@ emit_checksums() {
   local files=(
     "$KB/claim_ledger.json"
     "$KB/RESULT_MANIFEST.json"
+    "$KB/results_source.json"
+    "$KB/paper/generated/kbound_numbers.tex"
     "$KB/kbound_short_final_draft.pdf"
     "$KB/kbound_tmlr.pdf"
     "experiments/kbound/results/reconciled_panels_v1/canonical_panel_results.json"
