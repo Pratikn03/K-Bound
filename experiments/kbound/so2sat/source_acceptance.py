@@ -11,7 +11,10 @@ once.  It never opens an HDF5 dataset.
 from __future__ import annotations
 
 import argparse
+import importlib.metadata
 import os
+import platform
+import sys
 from collections.abc import Mapping
 from pathlib import Path
 from typing import Any
@@ -52,6 +55,19 @@ SOURCE_NORMALIZER_BASENAME = "so2sat_sen2_source_normalizer.json"
 SOURCE_COLLECTION_BASENAME = "so2sat_source_checkpoint_collection.json"
 EXPECTED_SUPPORTED_CLASS_COUNT = 15
 EXPECTED_ABSENT_SOURCE_MONITOR_CLASS_IDS = (0, 6)
+ACCEPTANCE_CODE_BASENAMES = (
+    "integrity.py",
+    "protocol.py",
+    "metadata_manifest.py",
+    "label_firewall.py",
+    "model.py",
+    "source_data.py",
+    "source_preflight.py",
+    "train_source.py",
+    "source_acceptance.py",
+    "prospective_protocol_v1.json",
+    "prospective_protocol_v1.json.receipt.json",
+)
 
 
 def _require_exact_mapping(
@@ -83,6 +99,36 @@ def _require_portable_basename(value: Any, *, field: str) -> str:
     ):
         raise IntegrityError(f"{field} must be one portable basename")
     return value
+
+
+def _acceptance_code_identity() -> dict[str, Any]:
+    directory = Path(__file__).resolve().parent
+    files = {name: file_sha256(directory / name) for name in ACCEPTANCE_CODE_BASENAMES}
+    return {
+        "files_sha256": files,
+        "code_identity_sha256": stable_sha256(files),
+    }
+
+
+def _acceptance_environment_identity() -> dict[str, Any]:
+    versions: dict[str, str] = {}
+    for package in ("numpy", "torch", "torchvision"):
+        try:
+            versions[package] = importlib.metadata.version(package)
+        except importlib.metadata.PackageNotFoundError:
+            versions[package] = "NOT_INSTALLED"
+    document = {
+        "schema": "kbound_so2sat_source_postrun_acceptance_environment_v1",
+        "python_implementation": platform.python_implementation(),
+        "python_version": platform.python_version(),
+        "python_executable_basename": Path(sys.executable).name,
+        "platform_system": platform.system(),
+        "platform_release": platform.release(),
+        "platform_machine": platform.machine(),
+        "package_versions": versions,
+    }
+    document["environment_identity_sha256"] = stable_sha256(document)
+    return document
 
 
 def _portable_artifact_identity(path: Path, receipt: Mapping[str, Any]) -> dict[str, Any]:
@@ -426,6 +472,8 @@ def create_source_postrun_acceptance(
         raise IntegrityError(
             f"refusing to overwrite source post-run acceptance pair for {output_path}"
         )
+    acceptance_code_identity = _acceptance_code_identity()
+    acceptance_environment_identity = _acceptance_environment_identity()
     manifest_path, manifest, manifest_receipt = _load_population_manifest(population_manifest)
     source_path = require_source_training_path(training_data)
     preflight_path, preflight, preflight_receipt = _load_source_preflight(source_preflight)
@@ -478,6 +526,11 @@ def create_source_postrun_acceptance(
         or observed_source_sha != expected_source_identity["file_sha256"]
     ):
         raise IntegrityError("post-run source bytes changed or differ from the source preflight")
+    if (
+        _acceptance_code_identity() != acceptance_code_identity
+        or _acceptance_environment_identity() != acceptance_environment_identity
+    ):
+        raise IntegrityError("source acceptance code/environment changed during verification")
 
     initial_hashes = {
         str(row["model_seed"]): row["initial_tensor_sha256"]
@@ -499,6 +552,8 @@ def create_source_postrun_acceptance(
             "required_field": TARGET_SEAL_BINDING_FIELD,
             "value_source": TARGET_SEAL_BINDING_VALUE_SOURCE,
         },
+        "acceptance_code_identity": acceptance_code_identity,
+        "acceptance_environment_identity": acceptance_environment_identity,
         "population_manifest": {
             **_portable_artifact_identity(manifest_path, manifest_receipt),
             "schema": manifest["schema"],
@@ -574,6 +629,8 @@ def load_verified_source_postrun_acceptance(
         "target_data_inputs",
         "acceptance_scope",
         "target_seal_binding",
+        "acceptance_code_identity",
+        "acceptance_environment_identity",
         "population_manifest",
         "source_preflight",
         "postrun_source_container",
@@ -620,6 +677,48 @@ def load_verified_source_postrun_acceptance(
         or scope.get("five_checkpoint_receipt_pairs_verified") is not True
     ):
         raise IntegrityError("source post-run acceptance scope drift")
+
+    code_identity = _require_exact_mapping(
+        document.get("acceptance_code_identity"),
+        {"files_sha256", "code_identity_sha256"},
+        field="acceptance_code_identity",
+    )
+    code_files = code_identity.get("files_sha256")
+    if not isinstance(code_files, Mapping) or set(code_files) != set(ACCEPTANCE_CODE_BASENAMES):
+        raise IntegrityError("source acceptance code-file coverage drift")
+    for name, digest in code_files.items():
+        require_sha256(digest, field=f"acceptance_code_identity.files_sha256.{name}")
+    if code_identity.get("code_identity_sha256") != stable_sha256(dict(code_files)):
+        raise IntegrityError("source acceptance aggregate code identity does not replay")
+
+    environment = _require_exact_mapping(
+        document.get("acceptance_environment_identity"),
+        {
+            "schema",
+            "python_implementation",
+            "python_version",
+            "python_executable_basename",
+            "platform_system",
+            "platform_release",
+            "platform_machine",
+            "package_versions",
+            "environment_identity_sha256",
+        },
+        field="acceptance_environment_identity",
+    )
+    package_versions = environment.get("package_versions")
+    if (
+        environment.get("schema")
+        != "kbound_so2sat_source_postrun_acceptance_environment_v1"
+        or not isinstance(package_versions, Mapping)
+        or set(package_versions) != {"numpy", "torch", "torchvision"}
+        or any(not isinstance(value, str) or not value for value in package_versions.values())
+    ):
+        raise IntegrityError("source acceptance environment identity drift")
+    environment_unsigned = dict(environment)
+    environment_sha = environment_unsigned.pop("environment_identity_sha256", None)
+    if environment_sha != stable_sha256(environment_unsigned):
+        raise IntegrityError("source acceptance environment identity does not replay")
 
     population = _require_exact_mapping(
         document.get("population_manifest"),
@@ -939,6 +1038,9 @@ def verify_source_postrun_acceptance_bindings(
     """Re-verify the complete source chain before any gate-fit data are opened."""
 
     document, receipt = load_verified_source_postrun_acceptance(acceptance_path)
+    verifier_code_start = _acceptance_code_identity()
+    if document["acceptance_code_identity"] != verifier_code_start:
+        raise IntegrityError("current source acceptance code differs from its creator identity")
     manifest_path, manifest, manifest_receipt = _load_population_manifest(
         population_manifest_path
     )
@@ -1038,6 +1140,8 @@ def verify_source_postrun_acceptance_bindings(
         or document["postrun_source_container"] != expected_postrun_source
     ):
         raise IntegrityError("current training.h5 bytes differ from the accepted source chain")
+    if _acceptance_code_identity() != verifier_code_start:
+        raise IntegrityError("source acceptance verifier code changed during chain replay")
     source_postrun_acceptance_binding(document, receipt)
     return document, receipt
 
