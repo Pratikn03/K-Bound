@@ -7,9 +7,7 @@ RESULT_MANIFEST.json; paper table values live in paper/generated/kbound_result_m
 from __future__ import annotations
 
 import json
-from datetime import datetime, timezone
 from pathlib import Path
-
 
 ROOT = Path(__file__).resolve().parents[4]
 TABLE = ROOT / "docs/research/kbound/paper/generated/kbound_result_manifest.json"
@@ -27,7 +25,8 @@ def main() -> None:
             "are generated from paper/generated/kbound_result_manifest.json."
         ),
         "schema_version": 1,
-        "generated_at": datetime.now(timezone.utc).isoformat(),
+        # Keep this compatibility view byte-stable for a fixed canonical table.
+        "generated_at": table.get("regenerated_utc"),
         "canonical_claim_manifest": CLAIMS.relative_to(ROOT).as_posix(),
         "canonical_table_manifest": TABLE.relative_to(ROOT).as_posix(),
         "alpha": table.get("alpha"),

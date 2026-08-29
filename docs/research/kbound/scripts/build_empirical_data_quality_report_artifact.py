@@ -8,7 +8,6 @@ import json
 from pathlib import Path
 from typing import Any
 
-
 ROOT = Path(__file__).resolve().parents[4]
 AUDIT_DIR = ROOT / "docs/research/kbound/audits/empirical_data_quality_2026_08_27"
 OUTPUT = AUDIT_DIR / "artifact.json"
@@ -461,7 +460,7 @@ ORDER BY panel, policy""",
             {
                 "id": "executive_summary",
                 "type": "markdown",
-                "body": "## Technical Summary\n\nThe initial audit found five critical defects capable of invalidating natural routing evidence. The current tree now fails closed on Route-B orientation and task compatibility, duplicate/stale extraction, resume identity, official-metric parity, infeasible calibration, incomplete cells, and non-finite JSON. Fourteen invalid derived artifacts were quarantined while raw sources were retained. These controls improve future-run validity; they do not repair old results or create a natural-shift win. Natural routing evidence remains 4.0/10, iWildCam numerical/action claims remain withheld, and no verified unopened natural target exists. CIFAR-10-C Tent remains the strongest defensible empirical result.",
+                "body": "## Technical Summary\n\nThe initial audit found five critical defects capable of invalidating natural routing evidence. The current tree now fails closed on Route-B orientation and task compatibility, duplicate/stale extraction, resume identity, official-metric parity, infeasible calibration, incomplete cells, and non-finite JSON. Fourteen invalid derived artifacts were quarantined while raw sources were retained. These controls improve future-run validity; they do not repair old results or create a natural-shift win. Natural routing evidence remains 4.0/10, iWildCam numerical/action claims remain withheld, and no verified unopened natural target exists. CIFAR-10-C Tent is the strongest controlled point-estimate result, but both preregistered six-comparison Holm p-values are 0.09375; no cluster-robust or confirmatory win is promoted.",
                 "sourceId": "audit",
             },
             {
@@ -487,7 +486,7 @@ ORDER BY panel, policy""",
             {
                 "id": "comparison_heading",
                 "type": "markdown",
-                "body": "## Only the controlled Tent panel shows material displayed beats-both value\n\nThe controlled CIFAR-10-C Tent panel is the only displayed accuracy row where KGA is materially below both fixed policies. Office-Home primary ties freeze; the replication has only a small point edge; ImageNet-R and PACS trail always-adapt. Panel protocols are not pooled. iWildCam is excluded because its archived metric contract is invalid for release, not merely because it uses a different metric.",
+                "body": "## Only the controlled Tent panel shows material displayed point-estimate value\n\nThe controlled CIFAR-10-C Tent panel is the only displayed accuracy row where KGA is materially below both fixed policies. Its ordinary six-family intervals are positive, but the preregistered six-comparison Holm p-values are 0.09375 and independent-checkpoint inference is unavailable. Office-Home primary ties freeze; the replication has only a small point edge; ImageNet-R and PACS trail always-adapt. Panel protocols are not pooled. iWildCam is excluded because its archived metric contract is invalid for release, not merely because it uses a different metric.",
                 "sourceId": "canonical",
             },
             {"id": "regret_chart_block", "type": "chart", "chartId": "accuracy_regret_chart", "layout": "full"},
@@ -528,13 +527,13 @@ ORDER BY panel, policy""",
             {
                 "id": "limitations_heading",
                 "type": "markdown",
-                "body": "## Limitations: controls are stronger than the current evidence\n\nThe corrected iWildCam replay now executes under the pinned NumPy/scikit-learn analysis runtime, but its exact decimals remain diagnostic because it is a retrospective recomputation rather than a sealed official-metric run over a frozen population. Historical Route-B counts include archived copies and establish implementation scope, not a population effect. Current natural targets are opened and cannot support a new confirmatory claim. The scorecard is reviewer judgment, not a formal metric; the post-remediation overall score is intentionally withheld.",
+                "body": "## Limitations: controls are stronger than the current evidence\n\nThe corrected iWildCam replay now executes under the pinned NumPy/scikit-learn analysis runtime, but its exact decimals remain diagnostic because it is a retrospective recomputation rather than a sealed official-metric run over a frozen population. Historical Route-B counts include archived copies and establish implementation scope, not a population effect. Current natural targets are opened and cannot support a new confirmatory claim. On the controlled panel, ordinary family-bootstrap intervals are unadjusted and the preregistered six-comparison Holm gate fails. The scorecard is reviewer judgment, not a formal metric; the post-remediation overall score is intentionally withheld.",
                 "sourceId": "audit",
             },
             {
                 "id": "recovery_heading",
                 "type": "markdown",
-                "body": "## Remaining release and evidence work\n\n1. Keep the 14 invalid derivatives quarantined and preserve the raw-source/hash record.\n2. Run the focused regression suite and smoke the hardened runners only in fresh directories; do not promote historical Route-B or contaminated-resume outputs.\n3. Complete the final PDF/manuscript freeze, regenerate the outer SHA-256 seal, and rerun this audit until every seal entry matches.\n4. Freeze candidates and thresholds using source/development data only; require unique prediction rank, feasible exact-rank calibration, complete ledgers, and population/checkpoint hashes before a target run.\n5. Preserve CIFAR-10-C Tent as the controlled headline and present existing natural results as transparent diagnostic/null/boundary evidence.\n6. For a natural beats-both claim, evaluate one genuinely new cohort or hidden-label target after sealing code, checkpoints, sample IDs, population hashes, and the inference plan.",
+                "body": "## Remaining release and evidence work\n\n1. Keep the 14 invalid derivatives quarantined and preserve the raw-source/hash record.\n2. Run the focused regression suite and smoke the hardened runners only in fresh directories; do not promote historical Route-B or contaminated-resume outputs.\n3. Complete the final PDF/manuscript freeze, regenerate the outer SHA-256 seal, and rerun this audit until every seal entry matches.\n4. Freeze candidates and thresholds using source/development data only; require unique prediction rank, feasible exact-rank calibration, complete ledgers, and population/checkpoint hashes before a target run.\n5. Preserve CIFAR-10-C Tent as a bounded controlled point-estimate result and report that its preregistered six-comparison Holm gate fails.\n6. Present existing natural results as transparent diagnostic/null/boundary evidence. For a natural beats-both claim, evaluate one genuinely new cohort or hidden-label target after sealing code, checkpoints, sample IDs, population hashes, and the inference plan.",
                 "sourceId": "audit",
             },
             {

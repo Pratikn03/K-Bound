@@ -9,8 +9,9 @@ separately so a numeric refresh cannot silently change the claim scope.
 
 from __future__ import annotations
 
-import json
+import argparse
 import hashlib
+import json
 import math
 from pathlib import Path
 from typing import Any
@@ -595,7 +596,6 @@ def _sync_table(
     )
 
     iwild_panel = panels["iwildcam"]["primary"]
-    iwild = iwild_panel["exact_rank_transfer_score"]
     iwild_row = tracks["iwildcam_H_v2"]
     historical_audit_seal = iwild_row.get("historical_audit_seal") or iwild_row.get("seal")
     _drop_stale_ci_aliases(iwild_row)
@@ -1983,6 +1983,13 @@ def _sync_frontier(panel: dict[str, Any], frontier_data: dict[str, Any]) -> None
 
 
 def main() -> None:
+    parser = argparse.ArgumentParser()
+    parser.add_argument(
+        "--json-only",
+        action="store_true",
+        help="refresh structured release data without writing generated TeX",
+    )
+    args = parser.parse_args()
     panel = _load(PANEL_PATH)
     current_cluster = _load(CURRENT_CLUSTER_PATH)
     table = _load(TABLE_PATH)
@@ -1998,7 +2005,8 @@ def main() -> None:
     _sync_decision_metrics(panel, decision_metrics, current_cluster)
     _sync_ledger(ledger, current_cluster)
     _sync_frontier(panel, frontier)
-    _write_current_cluster_table(current_cluster)
+    if not args.json_only:
+        _write_current_cluster_table(current_cluster)
     _write(TABLE_PATH, table)
     _write(LEDGER_PATH, ledger)
     _write(FRONTIER_PATH, frontier)
@@ -2009,7 +2017,8 @@ def main() -> None:
     print(f"updated {FRONTIER_PATH.relative_to(ROOT)}")
     print(f"updated {UNIFORM_VERDICTS_PATH.relative_to(ROOT)}")
     print(f"updated {DECISION_METRICS_PATH.relative_to(ROOT)}")
-    print(f"updated {CURRENT_CLUSTER_TABLE_PATH.relative_to(ROOT)}")
+    if not args.json_only:
+        print(f"updated {CURRENT_CLUSTER_TABLE_PATH.relative_to(ROOT)}")
 
 
 if __name__ == "__main__":

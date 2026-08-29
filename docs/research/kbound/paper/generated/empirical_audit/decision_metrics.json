@@ -1,1864 +1,2906 @@
 {
- "schema_version": 3,
- "interval_method": "95% Wilson binomial intervals on genuine binomial counts only. The Wilson intervals on interval_coverage_observed have been DELETED: that count is a deterministic function of N and alpha under in-sample rank calibration (fix-queue item 5d / F1-11). Conditional false-adapt now carries a one-sided 95% Clopper-Pearson UPPER bound, computed as scipy.stats.beta.ppf(0.95, k+1, n-k).",
- "coverage_boundary": "empirical interval hits are descriptive; theorem coverage remains conditional on its premise",
- "tracks": [
-  {
-   "track": "CIFAR-10-C TENT",
-   "n_decisions": 2160,
-   "seeds": [
-    0,
-    1,
-    2,
-    3,
-    4
-   ],
-   "source": "experiments/kbound/results/mixed_headtohead_v1/per_condition_cifar10c_tent_primary_kga_seed{0..4}.json",
-   "reproduction_command": "python3 kb_fixes/recompute/02_cifar_loo_radius.py",
-   "actions": {
-    "adapt": {
-     "count": 1113,
-     "rate": 0.5152777777777777,
-     "ci95_wilson": [
-      0.49419334454169794,
-      0.5363079658620551
-     ]
+  "schema_version": 3,
+  "interval_method": "Two-sided 95% Wilson intervals are used for action and unconditional false-adapt counts. Conditional false-adapt reports a one-sided 95% exact Clopper-Pearson upper bound from false-adapt events over ADAPT decisions; it is undefined when ADAPT=0.",
+  "coverage_boundary": "empirical interval hits are descriptive; theorem coverage remains conditional on its premise",
+  "tracks": [
+    {
+      "track": "CIFAR-10-C TENT",
+      "n_decisions": 2160,
+      "seeds": [
+        0,
+        1,
+        2,
+        3,
+        4
+      ],
+      "source": "experiments/kbound/results/reconciled_panels_v1/canonical_panel_results.json",
+      "reproduction_command": "python scripts/reconcile_result_panels.py && python scripts/sync_reconciled_panels.py",
+      "actions": {
+        "adapt": {
+          "count": 1107,
+          "rate": 0.5125,
+          "ci95_wilson": [
+            0.4914172515496247,
+            0.5335383660534461
+          ]
+        },
+        "freeze": {
+          "count": 359,
+          "rate": 0.16620370370370371,
+          "ci95_wilson": [
+            0.1511000582210358,
+            0.18249252356363058
+          ]
+        },
+        "abstain": {
+          "count": 694,
+          "rate": 0.3212962962962963,
+          "ci95_wilson": [
+            0.3019353745514747,
+            0.3412917219379583
+          ]
+        }
+      },
+      "false_adapt_unconditional": {
+        "count": 0,
+        "n": 2160,
+        "rate": 0.0,
+        "ci95_wilson": [
+          0.0,
+          0.001775295877170106
+        ]
+      },
+      "interval_coverage_observed": {
+        "status": "not_promoted_from_canonical_score_summary"
+      },
+      "theoretical_coverage": {
+        "status": "conditional_on_declared_premise",
+        "note": "No theorem premise is inferred from an empirical score summary."
+      },
+      "false_adapt_conditional": {
+        "definition": "Pr[Delta<=0 | ADAPT]",
+        "false_adapts": 0,
+        "n_adapt_decisions": 1107,
+        "rate": 0.0,
+        "cp95_upper": 0.0027025134998491795,
+        "guarantee_status": "exercised"
+      },
+      "radius_rule": "exact-rank, unclamped, leave-one-out-of-pool (identical to in-pool here: 0 of 2160 decisions differ)",
+      "regret_kga_adapt_freeze": [
+        0.0016453700209105456,
+        0.007975694592352266,
+        0.12393680485310378
+      ],
+      "source_manifest": "experiments/kbound/results/reconciled_panels_v1/source_manifest.json",
+      "numeric_release_eligible": true,
+      "current_policy_authority": true,
+      "comparison_inference": {
+        "convention": "baseline_regret_minus_kga_regret; positive values favor KGA",
+        "comparisons": {
+          "always_adapt": {
+            "point": 0.00633032457144172,
+            "ci95": [
+              0.005985880146423975,
+              0.00668541736624859
+            ]
+          },
+          "always_freeze": {
+            "point": 0.12229143483219324,
+            "ci95": [
+              0.12187499874443919,
+              0.12273009245594343
+            ]
+          }
+        },
+        "method": "paired percentile bootstrap of run-seed means",
+        "unit": "run-seed mean conditional on the archived checkpoint/protocol",
+        "replicates": 20000,
+        "random_seed": 20260809,
+        "current_policy_authority": true,
+        "supports_ci_robust_beats_both": false
+      },
+      "status": "current_policy_exact_rank_replay",
+      "note": "Current per-candidate exact-rank replay. Run-seed inference is descriptive; the separate six-family sensitivity is retrospective and fails the preregistered six-comparison Holm gate.",
+      "current_policy_family_sensitivity": {
+        "status": "retrospective_current_policy_family_sensitivity",
+        "current_policy_authority": true,
+        "retrospective": true,
+        "confirmatory": false,
+        "convention": "baseline_regret_minus_kga_regret; positive values favor KGA",
+        "artifact_path": "experiments/kbound/results/reconciled_panels_v1/current_policy_cluster_inference.json",
+        "artifact_sha256": "47e0afdb2720839764faa7b62d899d91f1d07f404aaf552a601ce2d3967b08d1",
+        "artifact_bytes": 18613,
+        "artifact_schema": "kbound-current-policy-cluster-inference-v2",
+        "generated_utc": "2026-08-29T00:00:28.680180+00:00",
+        "git_head": "b261866fc976d5be4f9be1abc5a2cfec3ff3bbcc",
+        "analysis_script": "docs/research/kbound/scripts/analyze_current_policy_cluster_inference.py",
+        "analysis_script_sha256": "af58c22d21192c83134237711b5f46a9f8dd5ddccfd1719fc1c549fbe79e89a6",
+        "runtime": {
+          "python": "3.12.13",
+          "numpy": "2.4.6",
+          "platform": "macOS-26.6.2-arm64-arm-64bit"
+        },
+        "live_code_bindings": {
+          "policy": {
+            "path": "kga/policy.py",
+            "sha256": "d63ea5a123d2cd63a3f13fd2f59928dc3fb39f4ee472cc9ad91e5affdd33282b"
+          },
+          "certificate": {
+            "path": "kga/certificate.py",
+            "sha256": "9fdc11831cc9d2a29d5445d0ecc1098e2b624be92df665f80d58380775a4e4ea"
+          },
+          "preregistered_protocol": {
+            "path": "research_lock/STRESS_GRID_MULTISEED_PROTOCOL_A_v1.yaml",
+            "sha256": "ee6caac547c32c0fb23bc21c2a319cbf166961f50ddc2d8c4bd2cca0626167ca"
+          }
+        },
+        "grain": {
+          "record": "candidate x run_seed x stress-grid condition",
+          "inference_unit": "corruption_family",
+          "nested_repetitions": "run seeds and condition cells are averaged within family",
+          "n_records": 2160,
+          "n_run_seeds": 5,
+          "n_conditions_per_seed": 432,
+          "n_inference_units": 6,
+          "families": [
+            "contrast",
+            "defocus_blur",
+            "fog",
+            "gaussian_noise",
+            "jpeg_compression",
+            "pixelate"
+          ]
+        },
+        "comparisons": {
+          "always_adapt": {
+            "point": 0.006330324571441721,
+            "ci95_unadjusted_family_bootstrap": [
+              0.002543518554281305,
+              0.009536807073487174
+            ],
+            "family_effects": {
+              "contrast": 0.008229167262713114,
+              "defocus_blur": 0.010590276949935489,
+              "fog": 0.010380557345019446,
+              "gaussian_noise": -0.0020555557476149666,
+              "jpeg_compression": 0.003368055820465088,
+              "pixelate": 0.007469445798132155
+            },
+            "p_value_one_sided_exact_sign_flip": 0.03125,
+            "p_value_holm_within_candidate_posthoc": 0.03125,
+            "p_value_holm_preregistered_six_comparison_family": 0.09375,
+            "preregistered_six_comparison_reject_at_0.05": false
+          },
+          "always_freeze": {
+            "point": 0.12229143483219324,
+            "ci95_unadjusted_family_bootstrap": [
+              0.06330717476429762,
+              0.17772361136696957
+            ],
+            "family_effects": {
+              "contrast": 0.22884583324193955,
+              "defocus_blur": 0.12017222195863723,
+              "fog": 0.06325694289472368,
+              "gaussian_noise": 0.17364722390969595,
+              "jpeg_compression": 0.006643055048253801,
+              "pixelate": 0.1411833319399092
+            },
+            "p_value_one_sided_exact_sign_flip": 0.015625,
+            "p_value_holm_within_candidate_posthoc": 0.03125,
+            "p_value_holm_preregistered_six_comparison_family": 0.09375,
+            "preregistered_six_comparison_reject_at_0.05": false
+          }
+        },
+        "pointwise_family_intervals_positive_vs_both": true,
+        "within_candidate_posthoc_holm_rejects_both": true,
+        "preregistered_six_comparison_holm_rejects_both": false,
+        "claim_boundary": {
+          "supports": "retrospective current-policy family sensitivity on the controlled CIFAR-10-C stress grid; positive pointwise intervals may be described conditionally",
+          "does_not_support": [
+            "a preregistered cluster-robust win when six-comparison Holm fails",
+            "simultaneous confidence intervals",
+            "independent-checkpoint population inference",
+            "prospective confirmation",
+            "natural-shift generalization",
+            "official-code POEM or AETTA superiority"
+          ],
+          "few_cluster_warning": "Only six corruption families are available; intervals and sign-flip tests have low resolution and must be reported with the family-level effects.",
+          "multiplicity_warning": "The preregistered family contains all six candidate-by-baseline comparisons; within-candidate Holm values are retrospective diagnostics only."
+        },
+        "claim_note": "Retrospective sensitivity on six observed corruption families. Ordinary family-bootstrap intervals are unadjusted; the within-candidate two-contrast Holm values are post hoc, and the preregistered six-comparison Holm family fails for every candidate. This is not independent-checkpoint, prospective, natural-shift, or official-code POEM/AETTA evidence."
+      }
     },
-    "freeze": {
-     "count": 358,
-     "rate": 0.16574074074074074,
-     "ci95_wilson": [
-      0.15065538640215884,
-      0.18201291324906047
-     ]
+    {
+      "track": "CIFAR-10-C EATA",
+      "n_decisions": 2160,
+      "seeds": [
+        0,
+        1,
+        2,
+        3,
+        4
+      ],
+      "source": "experiments/kbound/results/reconciled_panels_v1/canonical_panel_results.json",
+      "reproduction_command": "python scripts/reconcile_result_panels.py && python scripts/sync_reconciled_panels.py",
+      "actions": {
+        "adapt": {
+          "count": 1241,
+          "rate": 0.5745370370370371,
+          "ci95_wilson": [
+            0.5535725648561158,
+            0.5952368586288617
+          ]
+        },
+        "freeze": {
+          "count": 132,
+          "rate": 0.06111111111111111,
+          "ci95_wilson": [
+            0.05176764916285526,
+            0.07201288832932738
+          ]
+        },
+        "abstain": {
+          "count": 787,
+          "rate": 0.36435185185185187,
+          "ci95_wilson": [
+            0.34431421160370906,
+            0.38487112329630097
+          ]
+        }
+      },
+      "false_adapt_unconditional": {
+        "count": 0,
+        "n": 2160,
+        "rate": 0.0,
+        "ci95_wilson": [
+          0.0,
+          0.001775295877170106
+        ]
+      },
+      "interval_coverage_observed": {
+        "status": "not_promoted_from_canonical_score_summary"
+      },
+      "theoretical_coverage": {
+        "status": "conditional_on_declared_premise",
+        "note": "No theorem premise is inferred from an empirical score summary."
+      },
+      "false_adapt_conditional": {
+        "definition": "Pr[Delta<=0 | ADAPT]",
+        "false_adapts": 0,
+        "n_adapt_decisions": 1241,
+        "rate": 0.0,
+        "cp95_upper": 0.0024110551029652427,
+        "guarantee_status": "exercised"
+      },
+      "radius_rule": "exact-rank, unclamped, leave-one-out-of-pool (identical to in-pool here: 0 of 2160 decisions differ)",
+      "regret_kga_adapt_freeze": [
+        0.0013249999947018093,
+        0.003276389064612212,
+        0.13133703588887496
+      ],
+      "source_manifest": "experiments/kbound/results/reconciled_panels_v1/source_manifest.json",
+      "numeric_release_eligible": true,
+      "current_policy_authority": true,
+      "comparison_inference": {
+        "convention": "baseline_regret_minus_kga_regret; positive values favor KGA",
+        "comparisons": {
+          "always_adapt": {
+            "point": 0.0019513890699104028,
+            "ci95": [
+              0.0017152772457511337,
+              0.0021134263111485378
+            ]
+          },
+          "always_freeze": {
+            "point": 0.13001203589417315,
+            "ci95": [
+              0.12959421146661046,
+              0.13060231359882485
+            ]
+          }
+        },
+        "method": "paired percentile bootstrap of run-seed means",
+        "unit": "run-seed mean conditional on the archived checkpoint/protocol",
+        "replicates": 20000,
+        "random_seed": 20260809,
+        "current_policy_authority": true,
+        "supports_ci_robust_beats_both": false
+      },
+      "status": "current_policy_exact_rank_replay",
+      "note": "Current per-candidate exact-rank replay. Run-seed inference is descriptive; the separate six-family sensitivity is retrospective and fails the preregistered six-comparison Holm gate.",
+      "current_policy_family_sensitivity": {
+        "status": "retrospective_current_policy_family_sensitivity",
+        "current_policy_authority": true,
+        "retrospective": true,
+        "confirmatory": false,
+        "convention": "baseline_regret_minus_kga_regret; positive values favor KGA",
+        "artifact_path": "experiments/kbound/results/reconciled_panels_v1/current_policy_cluster_inference.json",
+        "artifact_sha256": "47e0afdb2720839764faa7b62d899d91f1d07f404aaf552a601ce2d3967b08d1",
+        "artifact_bytes": 18613,
+        "artifact_schema": "kbound-current-policy-cluster-inference-v2",
+        "generated_utc": "2026-08-29T00:00:28.680180+00:00",
+        "git_head": "b261866fc976d5be4f9be1abc5a2cfec3ff3bbcc",
+        "analysis_script": "docs/research/kbound/scripts/analyze_current_policy_cluster_inference.py",
+        "analysis_script_sha256": "af58c22d21192c83134237711b5f46a9f8dd5ddccfd1719fc1c549fbe79e89a6",
+        "runtime": {
+          "python": "3.12.13",
+          "numpy": "2.4.6",
+          "platform": "macOS-26.6.2-arm64-arm-64bit"
+        },
+        "live_code_bindings": {
+          "policy": {
+            "path": "kga/policy.py",
+            "sha256": "d63ea5a123d2cd63a3f13fd2f59928dc3fb39f4ee472cc9ad91e5affdd33282b"
+          },
+          "certificate": {
+            "path": "kga/certificate.py",
+            "sha256": "9fdc11831cc9d2a29d5445d0ecc1098e2b624be92df665f80d58380775a4e4ea"
+          },
+          "preregistered_protocol": {
+            "path": "research_lock/STRESS_GRID_MULTISEED_PROTOCOL_A_v1.yaml",
+            "sha256": "ee6caac547c32c0fb23bc21c2a319cbf166961f50ddc2d8c4bd2cca0626167ca"
+          }
+        },
+        "grain": {
+          "record": "candidate x run_seed x stress-grid condition",
+          "inference_unit": "corruption_family",
+          "nested_repetitions": "run seeds and condition cells are averaged within family",
+          "n_records": 2160,
+          "n_run_seeds": 5,
+          "n_conditions_per_seed": 432,
+          "n_inference_units": 6,
+          "families": [
+            "contrast",
+            "defocus_blur",
+            "fog",
+            "gaussian_noise",
+            "jpeg_compression",
+            "pixelate"
+          ]
+        },
+        "comparisons": {
+          "always_adapt": {
+            "point": 0.0019513890699104023,
+            "ci95_unadjusted_family_bootstrap": [
+              -0.0005194442415678941,
+              0.004381944708250187
+            ],
+            "family_effects": {
+              "contrast": 0.002649999823835161,
+              "defocus_blur": 0.00548888858821657,
+              "fog": 0.005572223001056247,
+              "gaussian_noise": -0.00022083371877670288,
+              "jpeg_compression": -0.0033013885219891864,
+              "pixelate": 0.0015194452471203274
+            },
+            "p_value_one_sided_exact_sign_flip": 0.125,
+            "p_value_holm_within_candidate_posthoc": 0.125,
+            "p_value_holm_preregistered_six_comparison_family": 0.25,
+            "preregistered_six_comparison_reject_at_0.05": false
+          },
+          "always_freeze": {
+            "point": 0.13001203589417318,
+            "ci95_unadjusted_family_bootstrap": [
+              0.06977175780468516,
+              0.18754398066688469
+            ],
+            "family_effects": {
+              "contrast": 0.23968055546283723,
+              "defocus_blur": 0.12648055454095206,
+              "fog": 0.06860277652740479,
+              "gaussian_noise": 0.186472221215566,
+              "jpeg_compression": 0.012358331514729395,
+              "pixelate": 0.14647777610354953
+            },
+            "p_value_one_sided_exact_sign_flip": 0.015625,
+            "p_value_holm_within_candidate_posthoc": 0.03125,
+            "p_value_holm_preregistered_six_comparison_family": 0.09375,
+            "preregistered_six_comparison_reject_at_0.05": false
+          }
+        },
+        "pointwise_family_intervals_positive_vs_both": false,
+        "within_candidate_posthoc_holm_rejects_both": false,
+        "preregistered_six_comparison_holm_rejects_both": false,
+        "claim_boundary": {
+          "supports": "retrospective current-policy family sensitivity on the controlled CIFAR-10-C stress grid; positive pointwise intervals may be described conditionally",
+          "does_not_support": [
+            "a preregistered cluster-robust win when six-comparison Holm fails",
+            "simultaneous confidence intervals",
+            "independent-checkpoint population inference",
+            "prospective confirmation",
+            "natural-shift generalization",
+            "official-code POEM or AETTA superiority"
+          ],
+          "few_cluster_warning": "Only six corruption families are available; intervals and sign-flip tests have low resolution and must be reported with the family-level effects.",
+          "multiplicity_warning": "The preregistered family contains all six candidate-by-baseline comparisons; within-candidate Holm values are retrospective diagnostics only."
+        },
+        "claim_note": "Retrospective sensitivity on six observed corruption families. Ordinary family-bootstrap intervals are unadjusted; the within-candidate two-contrast Holm values are post hoc, and the preregistered six-comparison Holm family fails for every candidate. This is not independent-checkpoint, prospective, natural-shift, or official-code POEM/AETTA evidence."
+      }
     },
-    "abstain": {
-     "count": 689,
-     "rate": 0.3189814814814815,
-     "ci95_wilson": [
-      0.29966219952645784,
-      0.33894348629573984
-     ]
+    {
+      "track": "ImageNet-C TENT",
+      "n_decisions": 135,
+      "seeds": [
+        0,
+        1,
+        2,
+        3,
+        4
+      ],
+      "source": "experiments/kbound/results/reconciled_panels_v1/canonical_panel_results.json",
+      "reproduction_command": "python scripts/reconcile_result_panels.py && python scripts/sync_reconciled_panels.py",
+      "actions": {
+        "adapt": {
+          "count": 0,
+          "rate": 0.0,
+          "ci95_wilson": [
+            0.0,
+            0.02766795201752491
+          ]
+        },
+        "freeze": {
+          "count": 0,
+          "rate": 0.0,
+          "ci95_wilson": [
+            0.0,
+            0.02766795201752491
+          ]
+        },
+        "abstain": {
+          "count": 135,
+          "rate": 1.0,
+          "ci95_wilson": [
+            0.9723320479824751,
+            1.0
+          ]
+        }
+      },
+      "false_adapt_unconditional": {
+        "count": 0,
+        "n": 135,
+        "rate": 0.0,
+        "ci95_wilson": [
+          0.0,
+          0.02766795201752491
+        ]
+      },
+      "interval_coverage_observed": {
+        "status": "not_promoted_from_canonical_score_summary"
+      },
+      "theoretical_coverage": {
+        "status": "conditional_on_declared_premise",
+        "note": "No theorem premise is inferred from an empirical score summary."
+      },
+      "false_adapt_conditional": {
+        "definition": "Pr[Delta<=0 | ADAPT]",
+        "false_adapts": 0,
+        "n_adapt_decisions": 0,
+        "rate": null,
+        "cp95_upper": null,
+        "guarantee_status": "not_exercised_zero_adapt"
+      },
+      "radius_rule": "exact-rank, unclamped, leave-one-out-of-pool",
+      "regret_kga_adapt_freeze": [
+        0.014464814464251201,
+        0.01906111130007991,
+        0.014464814464251201
+      ],
+      "note": "Current per-candidate exact-rank replay.",
+      "source_manifest": "experiments/kbound/results/reconciled_panels_v1/source_manifest.json",
+      "numeric_release_eligible": true,
+      "current_policy_authority": true,
+      "comparison_inference": {
+        "convention": "baseline_regret_minus_kga_regret; positive values favor KGA",
+        "comparisons": {
+          "always_adapt": {
+            "point": 0.00459629683582871,
+            "ci95": [
+              0.0013240752948655023,
+              0.008172222364831856
+            ]
+          },
+          "always_freeze": {
+            "point": 0.0,
+            "ci95": [
+              0.0,
+              0.0
+            ]
+          }
+        },
+        "method": "paired percentile bootstrap of run-seed means",
+        "unit": "run-seed mean conditional on the archived checkpoint/protocol",
+        "replicates": 20000,
+        "random_seed": 20260809,
+        "current_policy_authority": true,
+        "supports_ci_robust_beats_both": false
+      },
+      "status": "current_policy_exact_rank_replay"
+    },
+    {
+      "track": "ImageNet-C EATA",
+      "n_decisions": 135,
+      "seeds": [
+        0,
+        1,
+        2,
+        3,
+        4
+      ],
+      "source": "experiments/kbound/results/reconciled_panels_v1/canonical_panel_results.json",
+      "reproduction_command": "python scripts/reconcile_result_panels.py && python scripts/sync_reconciled_panels.py",
+      "actions": {
+        "adapt": {
+          "count": 120,
+          "rate": 0.8888888888888888,
+          "ci95_wilson": [
+            0.8247586355576375,
+            0.9314996239842874
+          ]
+        },
+        "freeze": {
+          "count": 1,
+          "rate": 0.007407407407407408,
+          "ci95_wilson": [
+            0.001308788246274506,
+            0.040764083000620406
+          ]
+        },
+        "abstain": {
+          "count": 14,
+          "rate": 0.1037037037037037,
+          "ci95_wilson": [
+            0.0627845011302634,
+            0.1665523200984415
+          ]
+        }
+      },
+      "false_adapt_unconditional": {
+        "count": 1,
+        "n": 135,
+        "rate": 0.007407407407407408,
+        "ci95_wilson": [
+          0.001308788246274506,
+          0.040764083000620406
+        ]
+      },
+      "interval_coverage_observed": {
+        "status": "not_promoted_from_canonical_score_summary"
+      },
+      "theoretical_coverage": {
+        "status": "conditional_on_declared_premise",
+        "note": "No theorem premise is inferred from an empirical score summary."
+      },
+      "false_adapt_conditional": {
+        "definition": "Pr[Delta<=0 | ADAPT]",
+        "false_adapts": 1,
+        "n_adapt_decisions": 120,
+        "rate": 0.008333333333333333,
+        "cp95_upper": 0.038920846860168445,
+        "guarantee_status": "exercised"
+      },
+      "radius_rule": "exact-rank, unclamped, leave-one-out-of-pool",
+      "regret_kga_adapt_freeze": [
+        0.000670370790693495,
+        9.629638106734664e-05,
+        0.03418888907741617
+      ],
+      "note": "Current per-candidate exact-rank replay.",
+      "source_manifest": "experiments/kbound/results/reconciled_panels_v1/source_manifest.json",
+      "numeric_release_eligible": true,
+      "current_policy_authority": true,
+      "comparison_inference": {
+        "convention": "baseline_regret_minus_kga_regret; positive values favor KGA",
+        "comparisons": {
+          "always_adapt": {
+            "point": -0.0005740744096261484,
+            "ci95": [
+              -0.0014462961090935603,
+              -1.2962906448929404e-05
+            ]
+          },
+          "always_freeze": {
+            "point": 0.03351851828672268,
+            "ci95": [
+              0.030514818816273305,
+              0.0372796270582411
+            ]
+          }
+        },
+        "method": "paired percentile bootstrap of run-seed means",
+        "unit": "run-seed mean conditional on the archived checkpoint/protocol",
+        "replicates": 20000,
+        "random_seed": 20260809,
+        "current_policy_authority": true,
+        "supports_ci_robust_beats_both": false
+      },
+      "status": "current_policy_exact_rank_replay"
+    },
+    {
+      "track": "ImageNet-C SAR",
+      "n_decisions": 135,
+      "seeds": [
+        0,
+        1,
+        2,
+        3,
+        4
+      ],
+      "source": "experiments/kbound/results/reconciled_panels_v1/canonical_panel_results.json",
+      "reproduction_command": "python scripts/reconcile_result_panels.py && python scripts/sync_reconciled_panels.py",
+      "actions": {
+        "adapt": {
+          "count": 13,
+          "rate": 0.0962962962962963,
+          "ci95_wilson": [
+            0.05714181943506583,
+            0.1577900825642691
+          ]
+        },
+        "freeze": {
+          "count": 15,
+          "rate": 0.1111111111111111,
+          "ci95_wilson": [
+            0.06850037601571249,
+            0.17524136444236246
+          ]
+        },
+        "abstain": {
+          "count": 107,
+          "rate": 0.7925925925925926,
+          "ci95_wilson": [
+            0.7165717620317186,
+            0.8524225475283965
+          ]
+        }
+      },
+      "false_adapt_unconditional": {
+        "count": 1,
+        "n": 135,
+        "rate": 0.007407407407407408,
+        "ci95_wilson": [
+          0.001308788246274506,
+          0.040764083000620406
+        ]
+      },
+      "interval_coverage_observed": {
+        "status": "not_promoted_from_canonical_score_summary"
+      },
+      "theoretical_coverage": {
+        "status": "conditional_on_declared_premise",
+        "note": "No theorem premise is inferred from an empirical score summary."
+      },
+      "false_adapt_conditional": {
+        "definition": "Pr[Delta<=0 | ADAPT]",
+        "false_adapts": 1,
+        "n_adapt_decisions": 13,
+        "rate": 0.07692307692307693,
+        "cp95_upper": 0.31633976476272985,
+        "guarantee_status": "exercised"
+      },
+      "radius_rule": "exact-rank, unclamped, leave-one-out-of-pool",
+      "regret_kga_adapt_freeze": [
+        0.028892592368302522,
+        0.05293333342781773,
+        0.031894444481090266
+      ],
+      "source_manifest": "experiments/kbound/results/reconciled_panels_v1/source_manifest.json",
+      "numeric_release_eligible": true,
+      "current_policy_authority": true,
+      "comparison_inference": {
+        "convention": "baseline_regret_minus_kga_regret; positive values favor KGA",
+        "comparisons": {
+          "always_adapt": {
+            "point": 0.02404074105951521,
+            "ci95": [
+              0.018668522547792506,
+              0.028805554740958743
+            ]
+          },
+          "always_freeze": {
+            "point": 0.0030018521127877437,
+            "ci95": [
+              0.0,
+              0.006690741192411495
+            ]
+          }
+        },
+        "method": "paired percentile bootstrap of run-seed means",
+        "unit": "run-seed mean conditional on the archived checkpoint/protocol",
+        "replicates": 20000,
+        "random_seed": 20260809,
+        "current_policy_authority": true,
+        "supports_ci_robust_beats_both": false
+      },
+      "status": "current_policy_exact_rank_replay",
+      "note": "Current per-candidate exact-rank replay."
+    },
+    {
+      "track": "CIFAR-10.1 TENT",
+      "n_decisions": 48,
+      "seeds": [
+        3,
+        4
+      ],
+      "source": "experiments/kbound/results/reconciled_panels_v1/canonical_panel_results.json",
+      "reproduction_command": "python scripts/reconcile_result_panels.py && python scripts/sync_reconciled_panels.py",
+      "actions": {
+        "adapt": {
+          "count": 0,
+          "rate": 0.0,
+          "ci95_wilson": [
+            6.938893903907228e-18,
+            0.07410012966611748
+          ]
+        },
+        "freeze": {
+          "count": 22,
+          "rate": 0.4583333333333333,
+          "ci95_wilson": [
+            0.32575242292867446,
+            0.5970892545435019
+          ]
+        },
+        "abstain": {
+          "count": 26,
+          "rate": 0.5416666666666666,
+          "ci95_wilson": [
+            0.40291074545649797,
+            0.6742475770713254
+          ]
+        }
+      },
+      "false_adapt_unconditional": {
+        "count": 0,
+        "n": 48,
+        "rate": 0.0,
+        "ci95_wilson": [
+          6.938893903907228e-18,
+          0.07410012966611748
+        ]
+      },
+      "interval_coverage_observed": {
+        "status": "not_promoted_from_canonical_score_summary"
+      },
+      "theoretical_coverage": {
+        "status": "conditional_on_declared_premise",
+        "note": "No theorem premise is inferred from an empirical score summary."
+      },
+      "false_adapt_conditional": {
+        "definition": "Pr[Delta<=0 | ADAPT]",
+        "false_adapts": 0,
+        "n_adapt_decisions": 0,
+        "rate": null,
+        "cp95_upper": null,
+        "guarantee_status": "not_exercised_zero_adapt"
+      },
+      "source_manifest": "experiments/kbound/results/reconciled_panels_v1/source_manifest.json",
+      "regret_kga_adapt_freeze": [
+        0.0017083374162515004,
+        0.019020830591519673,
+        0.0017083374162515004
+      ],
+      "numeric_release_eligible": true,
+      "current_policy_authority": true,
+      "comparison_inference": {
+        "convention": "baseline_regret_minus_kga_regret; positive values favor KGA",
+        "comparisons": {
+          "always_adapt": {
+            "point": 0.017312493175268173,
+            "ci95": [
+              0.016374990344047546,
+              0.0182499960064888
+            ]
+          },
+          "always_freeze": {
+            "point": 0.0,
+            "ci95": [
+              0.0,
+              0.0
+            ]
+          }
+        },
+        "method": "paired percentile bootstrap of run-seed means",
+        "unit": "run-seed mean conditional on the archived checkpoint/protocol",
+        "replicates": 20000,
+        "random_seed": 20260809,
+        "current_policy_authority": true,
+        "supports_ci_robust_beats_both": false
+      },
+      "status": "current_policy_exact_rank_replay",
+      "note": "Current locked negative cross-seed diagnostic."
+    },
+    {
+      "track": "CIFAR-10.1 EATA",
+      "n_decisions": null,
+      "seeds": null,
+      "source": null,
+      "reproduction_command": null,
+      "actions": {
+        "adapt": {
+          "count": null,
+          "rate": null,
+          "ci95_wilson": null,
+          "status": "historical_policy_only"
+        },
+        "freeze": {
+          "count": null,
+          "rate": null,
+          "ci95_wilson": null,
+          "status": "historical_policy_only"
+        },
+        "abstain": {
+          "count": null,
+          "rate": null,
+          "ci95_wilson": null,
+          "status": "historical_policy_only"
+        }
+      },
+      "false_adapt_unconditional": {
+        "count": null,
+        "n": null,
+        "rate": null,
+        "ci95_wilson": null,
+        "status": "historical_policy_only"
+      },
+      "interval_coverage_observed": {
+        "count": 25,
+        "n": 30,
+        "rate": 0.8333333333333334,
+        "status": "empirical_only",
+        "ci_note": "Wilson interval DELETED (fix-queue item 5d / F1-11). Under in-sample rank calibration this count is identically N-(N-k), a deterministic function of N and alpha, not a binomial draw; a binomial interval on it has no frequentist interpretation."
+      },
+      "theoretical_coverage": {
+        "status": "conditional_on_declared_premise",
+        "note": "Observed coverage does not prove exchangeability, drift correction, or risk alignment."
+      },
+      "false_adapt_conditional": {
+        "false_adapts": null,
+        "n_adapt_decisions": null,
+        "rate": null,
+        "cp95_upper": null,
+        "guarantee_status": "historical_policy_only"
+      },
+      "source_manifest": null,
+      "historical_source": "experiments/kbound/results/win_hunt_v5/cifar101_aggr/seed*/per_condition_cifar101_eata_seed*.json",
+      "regret_kga_adapt_freeze": null,
+      "comparison_inference": null,
+      "numeric_release_eligible": false,
+      "current_policy_authority": false,
+      "status": "historical_policy_only",
+      "note": "No current-policy EATA row exists in the canonical panel."
+    },
+    {
+      "track": "CIFAR-10.1 SAR",
+      "n_decisions": null,
+      "seeds": null,
+      "source": null,
+      "reproduction_command": null,
+      "actions": {
+        "adapt": {
+          "count": null,
+          "rate": null,
+          "ci95_wilson": null,
+          "status": "historical_policy_only"
+        },
+        "freeze": {
+          "count": null,
+          "rate": null,
+          "ci95_wilson": null,
+          "status": "historical_policy_only"
+        },
+        "abstain": {
+          "count": null,
+          "rate": null,
+          "ci95_wilson": null,
+          "status": "historical_policy_only"
+        }
+      },
+      "false_adapt_unconditional": {
+        "count": null,
+        "n": null,
+        "rate": null,
+        "ci95_wilson": null,
+        "status": "historical_policy_only"
+      },
+      "interval_coverage_observed": {
+        "count": 25,
+        "n": 30,
+        "rate": 0.8333333333333334,
+        "status": "empirical_only",
+        "ci_note": "Wilson interval DELETED (fix-queue item 5d / F1-11). Under in-sample rank calibration this count is identically N-(N-k), a deterministic function of N and alpha, not a binomial draw; a binomial interval on it has no frequentist interpretation."
+      },
+      "theoretical_coverage": {
+        "status": "conditional_on_declared_premise",
+        "note": "Observed coverage does not prove exchangeability, drift correction, or risk alignment."
+      },
+      "false_adapt_conditional": {
+        "false_adapts": null,
+        "n_adapt_decisions": null,
+        "rate": null,
+        "cp95_upper": null,
+        "guarantee_status": "historical_policy_only"
+      },
+      "source_manifest": null,
+      "historical_source": "experiments/kbound/results/win_hunt_v5/cifar101_aggr/seed*/per_condition_cifar101_sar_seed*.json",
+      "regret_kga_adapt_freeze": null,
+      "comparison_inference": null,
+      "numeric_release_eligible": false,
+      "current_policy_authority": false,
+      "status": "historical_policy_only",
+      "note": "No current-policy SAR row exists in the canonical panel."
+    },
+    {
+      "track": "PACS art_painting",
+      "n_decisions": null,
+      "seeds": null,
+      "source": null,
+      "reproduction_command": null,
+      "actions": {
+        "adapt": {
+          "count": null,
+          "rate": null,
+          "ci95_wilson": null,
+          "status": "historical_policy_only"
+        },
+        "freeze": {
+          "count": null,
+          "rate": null,
+          "ci95_wilson": null,
+          "status": "historical_policy_only"
+        },
+        "abstain": {
+          "count": null,
+          "rate": null,
+          "ci95_wilson": null,
+          "status": "historical_policy_only"
+        }
+      },
+      "false_adapt_unconditional": {
+        "count": null,
+        "n": null,
+        "rate": null,
+        "ci95_wilson": null,
+        "status": "historical_policy_only"
+      },
+      "interval_coverage_observed": {
+        "count": null,
+        "n": null,
+        "rate": null,
+        "status": "not_retained",
+        "ci_note": "Wilson interval DELETED (fix-queue item 5d / F1-11). Under in-sample rank calibration this count is identically N-(N-k), a deterministic function of N and alpha, not a binomial draw; a binomial interval on it has no frequentist interpretation."
+      },
+      "theoretical_coverage": {
+        "status": "conditional_on_declared_premise",
+        "note": "No theorem premise is inferred from this empirical summary."
+      },
+      "false_adapt_conditional": {
+        "false_adapts": null,
+        "n_adapt_decisions": null,
+        "rate": null,
+        "cp95_upper": null,
+        "guarantee_status": "historical_policy_only"
+      },
+      "source_manifest": null,
+      "historical_source": "experiments/kbound/results/pacs_multiseed_v1/PACS_MULTISEED_RESULTS.json",
+      "regret_kga_adapt_freeze": null,
+      "comparison_inference": null,
+      "numeric_release_eligible": false,
+      "current_policy_authority": false,
+      "status": "historical_policy_only",
+      "note": "The canonical PACS evidence supports only the pooled three-seed summary; archived per-domain gate decisions are not replayable."
+    },
+    {
+      "track": "PACS cartoon",
+      "n_decisions": null,
+      "seeds": null,
+      "source": null,
+      "reproduction_command": null,
+      "actions": {
+        "adapt": {
+          "count": null,
+          "rate": null,
+          "ci95_wilson": null,
+          "status": "historical_policy_only"
+        },
+        "freeze": {
+          "count": null,
+          "rate": null,
+          "ci95_wilson": null,
+          "status": "historical_policy_only"
+        },
+        "abstain": {
+          "count": null,
+          "rate": null,
+          "ci95_wilson": null,
+          "status": "historical_policy_only"
+        }
+      },
+      "false_adapt_unconditional": {
+        "count": null,
+        "n": null,
+        "rate": null,
+        "ci95_wilson": null,
+        "status": "historical_policy_only"
+      },
+      "interval_coverage_observed": {
+        "count": null,
+        "n": null,
+        "rate": null,
+        "status": "not_retained",
+        "ci_note": "Wilson interval DELETED (fix-queue item 5d / F1-11). Under in-sample rank calibration this count is identically N-(N-k), a deterministic function of N and alpha, not a binomial draw; a binomial interval on it has no frequentist interpretation."
+      },
+      "theoretical_coverage": {
+        "status": "conditional_on_declared_premise",
+        "note": "No theorem premise is inferred from this empirical summary."
+      },
+      "false_adapt_conditional": {
+        "false_adapts": null,
+        "n_adapt_decisions": null,
+        "rate": null,
+        "cp95_upper": null,
+        "guarantee_status": "historical_policy_only"
+      },
+      "source_manifest": null,
+      "historical_source": "experiments/kbound/results/pacs_multiseed_v1/PACS_MULTISEED_RESULTS.json",
+      "regret_kga_adapt_freeze": null,
+      "comparison_inference": null,
+      "numeric_release_eligible": false,
+      "current_policy_authority": false,
+      "status": "historical_policy_only",
+      "note": "The canonical PACS evidence supports only the pooled three-seed summary; archived per-domain gate decisions are not replayable."
+    },
+    {
+      "track": "PACS photo",
+      "n_decisions": null,
+      "seeds": null,
+      "source": null,
+      "reproduction_command": null,
+      "actions": {
+        "adapt": {
+          "count": null,
+          "rate": null,
+          "ci95_wilson": null,
+          "status": "historical_policy_only"
+        },
+        "freeze": {
+          "count": null,
+          "rate": null,
+          "ci95_wilson": null,
+          "status": "historical_policy_only"
+        },
+        "abstain": {
+          "count": null,
+          "rate": null,
+          "ci95_wilson": null,
+          "status": "historical_policy_only"
+        }
+      },
+      "false_adapt_unconditional": {
+        "count": null,
+        "n": null,
+        "rate": null,
+        "ci95_wilson": null,
+        "status": "historical_policy_only"
+      },
+      "interval_coverage_observed": {
+        "count": null,
+        "n": null,
+        "rate": null,
+        "status": "not_retained",
+        "ci_note": "Wilson interval DELETED (fix-queue item 5d / F1-11). Under in-sample rank calibration this count is identically N-(N-k), a deterministic function of N and alpha, not a binomial draw; a binomial interval on it has no frequentist interpretation."
+      },
+      "theoretical_coverage": {
+        "status": "conditional_on_declared_premise",
+        "note": "No theorem premise is inferred from this empirical summary."
+      },
+      "false_adapt_conditional": {
+        "false_adapts": null,
+        "n_adapt_decisions": null,
+        "rate": null,
+        "cp95_upper": null,
+        "guarantee_status": "historical_policy_only"
+      },
+      "source_manifest": null,
+      "historical_source": "experiments/kbound/results/pacs_multiseed_v1/PACS_MULTISEED_RESULTS.json",
+      "regret_kga_adapt_freeze": null,
+      "comparison_inference": null,
+      "numeric_release_eligible": false,
+      "current_policy_authority": false,
+      "status": "historical_policy_only",
+      "note": "The canonical PACS evidence supports only the pooled three-seed summary; archived per-domain gate decisions are not replayable."
+    },
+    {
+      "track": "PACS sketch",
+      "n_decisions": null,
+      "seeds": null,
+      "source": null,
+      "reproduction_command": null,
+      "actions": {
+        "adapt": {
+          "count": null,
+          "rate": null,
+          "ci95_wilson": null,
+          "status": "historical_policy_only"
+        },
+        "freeze": {
+          "count": null,
+          "rate": null,
+          "ci95_wilson": null,
+          "status": "historical_policy_only"
+        },
+        "abstain": {
+          "count": null,
+          "rate": null,
+          "ci95_wilson": null,
+          "status": "historical_policy_only"
+        }
+      },
+      "false_adapt_unconditional": {
+        "count": null,
+        "n": null,
+        "rate": null,
+        "ci95_wilson": null,
+        "status": "historical_policy_only"
+      },
+      "interval_coverage_observed": {
+        "count": null,
+        "n": null,
+        "rate": null,
+        "status": "not_retained",
+        "ci_note": "Wilson interval DELETED (fix-queue item 5d / F1-11). Under in-sample rank calibration this count is identically N-(N-k), a deterministic function of N and alpha, not a binomial draw; a binomial interval on it has no frequentist interpretation."
+      },
+      "theoretical_coverage": {
+        "status": "conditional_on_declared_premise",
+        "note": "No theorem premise is inferred from this empirical summary."
+      },
+      "false_adapt_conditional": {
+        "false_adapts": null,
+        "n_adapt_decisions": null,
+        "rate": null,
+        "cp95_upper": null,
+        "guarantee_status": "historical_policy_only"
+      },
+      "source_manifest": null,
+      "historical_source": "experiments/kbound/results/pacs_multiseed_v1/PACS_MULTISEED_RESULTS.json",
+      "regret_kga_adapt_freeze": null,
+      "comparison_inference": null,
+      "numeric_release_eligible": false,
+      "current_policy_authority": false,
+      "status": "historical_policy_only",
+      "note": "The canonical PACS evidence supports only the pooled three-seed summary; archived per-domain gate decisions are not replayable."
+    },
+    {
+      "track": "OfficeHome",
+      "n_decisions": 35,
+      "seeds": [
+        0,
+        1
+      ],
+      "source": "experiments/kbound/results/reconciled_panels_v1/canonical_panel_results.json",
+      "reproduction_command": "python scripts/reconcile_result_panels.py && python scripts/sync_reconciled_panels.py",
+      "actions": {
+        "adapt": {
+          "count": 0,
+          "rate": 0.0,
+          "ci95_wilson": [
+            6.938893903907228e-18,
+            0.09890099232440402
+          ]
+        },
+        "freeze": {
+          "count": 11,
+          "rate": 0.3142857142857143,
+          "ci95_wilson": [
+            0.18550844674265818,
+            0.4797976361206918
+          ]
+        },
+        "abstain": {
+          "count": 24,
+          "rate": 0.6857142857142857,
+          "ci95_wilson": [
+            0.5202023638793081,
+            0.8144915532573418
+          ]
+        }
+      },
+      "false_adapt_unconditional": {
+        "count": 0,
+        "n": 35,
+        "rate": 0.0,
+        "ci95_wilson": [
+          6.938893903907228e-18,
+          0.09890099232440402
+        ]
+      },
+      "interval_coverage_observed": {
+        "status": "not_promoted_from_canonical_score_summary"
+      },
+      "theoretical_coverage": {
+        "status": "conditional_on_declared_premise",
+        "note": "No theorem premise is inferred from an empirical score summary."
+      },
+      "false_adapt_conditional": {
+        "definition": "Pr[Delta<=0 | ADAPT]",
+        "false_adapts": 0,
+        "n_adapt_decisions": 0,
+        "rate": null,
+        "cp95_upper": null,
+        "guarantee_status": "not_exercised_zero_adapt"
+      },
+      "source_manifest": "experiments/kbound/results/reconciled_panels_v1/source_manifest.json",
+      "regret_kga_adapt_freeze": [
+        0.01582417582417583,
+        0.04681318681318681,
+        0.01582417582417583
+      ],
+      "numeric_release_eligible": true,
+      "current_policy_authority": true,
+      "comparison_inference": {
+        "convention": "baseline_regret_minus_kga_regret; positive values favor KGA",
+        "comparisons": {
+          "always_adapt": {
+            "point": 0.030989010989010978,
+            "ci95": [
+              0.025113122171945692,
+              0.036538461538461534
+            ]
+          },
+          "always_freeze": {
+            "point": 0.0,
+            "ci95": [
+              0.0,
+              0.0
+            ]
+          }
+        },
+        "method": "paired percentile bootstrap of run-seed means",
+        "unit": "run-seed mean conditional on the archived checkpoint/protocol",
+        "replicates": 20000,
+        "random_seed": 20260809,
+        "current_policy_authority": true,
+        "supports_ci_robust_beats_both": false
+      },
+      "status": "current_policy_exact_rank_replay",
+      "note": "Current primary held-out target replay; A7 stability is not established."
+    },
+    {
+      "track": "iWildCam",
+      "n_decisions": null,
+      "seeds": null,
+      "source": "experiments/kbound/results/reconciled_panels_v1/canonical_panel_results.json",
+      "reproduction_command": null,
+      "actions": {
+        "adapt": {
+          "count": null,
+          "rate": null,
+          "ci95_wilson": null,
+          "status": "withheld"
+        },
+        "freeze": {
+          "count": null,
+          "rate": null,
+          "ci95_wilson": null,
+          "status": "withheld"
+        },
+        "abstain": {
+          "count": null,
+          "rate": null,
+          "ci95_wilson": null,
+          "status": "withheld"
+        }
+      },
+      "false_adapt_unconditional": {
+        "count": null,
+        "n": null,
+        "rate": null,
+        "ci95_wilson": null,
+        "status": "withheld"
+      },
+      "interval_coverage_observed": {
+        "count": null,
+        "n": null,
+        "rate": null,
+        "status": "withheld"
+      },
+      "theoretical_coverage": {
+        "status": "not_evaluable_for_release",
+        "note": "The archived metric contract is invalid for release-level numerical use."
+      },
+      "false_adapt_conditional": {
+        "false_adapts": null,
+        "n_adapt_decisions": null,
+        "rate": null,
+        "cp95_upper": null,
+        "guarantee_status": "withheld"
+      },
+      "source_manifest": "experiments/kbound/results/reconciled_panels_v1/source_manifest.json",
+      "numeric_release_eligible": false,
+      "release_disposition": "WITHHELD_INVALID_METRIC_CONTRACT_DIAGNOSTIC_ONLY",
+      "withheld_reason": "The archived scorer does not implement the official WILDS label-present macro-F1 contract, and no population-sealed official-metric rerun is available."
+    },
+    {
+      "track": "Camelyon17",
+      "n_decisions": 18,
+      "seeds": [
+        2,
+        3,
+        4
+      ],
+      "source": "experiments/kbound/results/reconciled_panels_v1/canonical_panel_results.json",
+      "reproduction_command": "python scripts/reconcile_result_panels.py && python scripts/sync_reconciled_panels.py",
+      "actions": {
+        "adapt": {
+          "count": 18,
+          "rate": 1.0,
+          "ci95_wilson": [
+            0.8241207763533425,
+            1.0
+          ]
+        },
+        "freeze": {
+          "count": 0,
+          "rate": 0.0,
+          "ci95_wilson": [
+            0.0,
+            0.17587922364665765
+          ]
+        },
+        "abstain": {
+          "count": 0,
+          "rate": 0.0,
+          "ci95_wilson": [
+            0.0,
+            0.17587922364665765
+          ]
+        }
+      },
+      "false_adapt_unconditional": {
+        "count": 0,
+        "n": 18,
+        "rate": 0.0,
+        "ci95_wilson": [
+          0.0,
+          0.17587922364665765
+        ]
+      },
+      "interval_coverage_observed": {
+        "status": "not_promoted_from_canonical_score_summary"
+      },
+      "theoretical_coverage": {
+        "status": "conditional_on_declared_premise",
+        "note": "No theorem premise is inferred from an empirical score summary."
+      },
+      "false_adapt_conditional": {
+        "definition": "Pr[Delta<=0 | ADAPT]",
+        "false_adapts": 0,
+        "n_adapt_decisions": 18,
+        "rate": 0.0,
+        "cp95_upper": 0.1533175539572782,
+        "guarantee_status": "exercised"
+      },
+      "source_manifest": "experiments/kbound/results/reconciled_panels_v1/source_manifest.json",
+      "regret_kga_adapt_freeze": [
+        0.0,
+        0.0,
+        0.1381293402777778
+      ],
+      "numeric_release_eligible": true,
+      "current_policy_authority": true,
+      "comparison_inference": {
+        "convention": "baseline_regret_minus_kga_regret; positive values favor KGA",
+        "comparisons": {
+          "always_adapt": {
+            "point": 0.0,
+            "ci95": [
+              0.0,
+              0.0
+            ]
+          },
+          "always_freeze": {
+            "point": 0.1381293402777778,
+            "ci95": [
+              0.07291666666666667,
+              0.2353515625
+            ]
+          }
+        },
+        "method": "paired percentile bootstrap of run-seed means",
+        "unit": "run-seed mean conditional on the archived checkpoint/protocol",
+        "replicates": 20000,
+        "random_seed": 20260809,
+        "current_policy_authority": true,
+        "supports_ci_robust_beats_both": false
+      },
+      "status": "current_policy_exact_rank_replay",
+      "note": "Opened all-helpful OOD diagnostic; not prospective and not beats-both."
+    },
+    {
+      "track": "RxRx1 eata_online",
+      "n_decisions": null,
+      "seeds": null,
+      "source": null,
+      "reproduction_command": null,
+      "actions": {
+        "adapt": {
+          "count": null,
+          "rate": null,
+          "ci95_wilson": null,
+          "status": "historical_policy_only"
+        },
+        "freeze": {
+          "count": null,
+          "rate": null,
+          "ci95_wilson": null,
+          "status": "historical_policy_only"
+        },
+        "abstain": {
+          "count": null,
+          "rate": null,
+          "ci95_wilson": null,
+          "status": "historical_policy_only"
+        }
+      },
+      "false_adapt_unconditional": {
+        "count": null,
+        "n": null,
+        "rate": null,
+        "ci95_wilson": null,
+        "status": "historical_policy_only"
+      },
+      "interval_coverage_observed": {
+        "count": null,
+        "n": null,
+        "rate": null,
+        "status": "not_retained",
+        "ci_note": "Wilson interval DELETED (fix-queue item 5d / F1-11). Under in-sample rank calibration this count is identically N-(N-k), a deterministic function of N and alpha, not a binomial draw; a binomial interval on it has no frequentist interpretation."
+      },
+      "theoretical_coverage": {
+        "status": "conditional_on_declared_premise",
+        "note": "No theorem premise is inferred from this empirical summary."
+      },
+      "false_adapt_conditional": {
+        "false_adapts": null,
+        "n_adapt_decisions": null,
+        "rate": null,
+        "cp95_upper": null,
+        "guarantee_status": "historical_policy_only"
+      },
+      "source_manifest": null,
+      "historical_source": "experiments/kbound/results/win_hunt_v5/rxrx1_aggr/result_4a2840ef.json",
+      "regret_kga_adapt_freeze": null,
+      "comparison_inference": null,
+      "numeric_release_eligible": false,
+      "current_policy_authority": false,
+      "status": "historical_policy_only",
+      "note": "No current-policy EATA row exists in the canonical panel."
+    },
+    {
+      "track": "RxRx1 sar_online",
+      "n_decisions": 60,
+      "seeds": [
+        5,
+        6,
+        7,
+        8,
+        9
+      ],
+      "source": "experiments/kbound/results/reconciled_panels_v1/canonical_panel_results.json",
+      "reproduction_command": "python scripts/reconcile_result_panels.py && python scripts/sync_reconciled_panels.py",
+      "actions": {
+        "adapt": {
+          "count": 0,
+          "rate": 0.0,
+          "ci95_wilson": [
+            0.0,
+            0.06017185214208986
+          ]
+        },
+        "freeze": {
+          "count": 60,
+          "rate": 1.0,
+          "ci95_wilson": [
+            0.93982814785791,
+            0.9999999999999998
+          ]
+        },
+        "abstain": {
+          "count": 0,
+          "rate": 0.0,
+          "ci95_wilson": [
+            0.0,
+            0.06017185214208986
+          ]
+        }
+      },
+      "false_adapt_unconditional": {
+        "count": 0,
+        "n": 60,
+        "rate": 0.0,
+        "ci95_wilson": [
+          0.0,
+          0.06017185214208986
+        ]
+      },
+      "interval_coverage_observed": {
+        "status": "not_promoted_from_canonical_score_summary"
+      },
+      "theoretical_coverage": {
+        "status": "conditional_on_declared_premise",
+        "note": "No theorem premise is inferred from an empirical score summary."
+      },
+      "false_adapt_conditional": {
+        "definition": "Pr[Delta<=0 | ADAPT]",
+        "false_adapts": 0,
+        "n_adapt_decisions": 0,
+        "rate": null,
+        "cp95_upper": null,
+        "guarantee_status": "not_exercised_zero_adapt"
+      },
+      "source_manifest": "experiments/kbound/results/reconciled_panels_v1/source_manifest.json",
+      "regret_kga_adapt_freeze": [
+        0.0,
+        0.2530598958333333,
+        0.0
+      ],
+      "numeric_release_eligible": true,
+      "current_policy_authority": true,
+      "comparison_inference": {
+        "convention": "baseline_regret_minus_kga_regret; positive values favor KGA",
+        "comparisons": {
+          "always_adapt": {
+            "point": 0.2530598958333333,
+            "ci95": [
+              0.2509765625,
+              0.2552734375
+            ]
+          },
+          "always_freeze": {
+            "point": 0.0,
+            "ci95": [
+              0.0,
+              0.0
+            ]
+          }
+        },
+        "method": "paired percentile bootstrap of run-seed means",
+        "unit": "run-seed mean conditional on the archived checkpoint/protocol",
+        "replicates": 20000,
+        "random_seed": 20260809,
+        "current_policy_authority": true,
+        "supports_ci_robust_beats_both": false
+      },
+      "status": "current_policy_exact_rank_replay",
+      "note": "Primary model-seed-0 score; three independent model seeds all tie always-freeze."
+    },
+    {
+      "track": "RxRx1 tent_online",
+      "n_decisions": null,
+      "seeds": null,
+      "source": null,
+      "reproduction_command": null,
+      "actions": {
+        "adapt": {
+          "count": null,
+          "rate": null,
+          "ci95_wilson": null,
+          "status": "historical_policy_only"
+        },
+        "freeze": {
+          "count": null,
+          "rate": null,
+          "ci95_wilson": null,
+          "status": "historical_policy_only"
+        },
+        "abstain": {
+          "count": null,
+          "rate": null,
+          "ci95_wilson": null,
+          "status": "historical_policy_only"
+        }
+      },
+      "false_adapt_unconditional": {
+        "count": null,
+        "n": null,
+        "rate": null,
+        "ci95_wilson": null,
+        "status": "historical_policy_only"
+      },
+      "interval_coverage_observed": {
+        "count": null,
+        "n": null,
+        "rate": null,
+        "status": "not_retained",
+        "ci_note": "Wilson interval DELETED (fix-queue item 5d / F1-11). Under in-sample rank calibration this count is identically N-(N-k), a deterministic function of N and alpha, not a binomial draw; a binomial interval on it has no frequentist interpretation."
+      },
+      "theoretical_coverage": {
+        "status": "conditional_on_declared_premise",
+        "note": "No theorem premise is inferred from this empirical summary."
+      },
+      "false_adapt_conditional": {
+        "false_adapts": null,
+        "n_adapt_decisions": null,
+        "rate": null,
+        "cp95_upper": null,
+        "guarantee_status": "historical_policy_only"
+      },
+      "source_manifest": null,
+      "historical_source": "experiments/kbound/results/win_hunt_v5/rxrx1_aggr/result_4a2840ef.json",
+      "regret_kga_adapt_freeze": null,
+      "comparison_inference": null,
+      "numeric_release_eligible": false,
+      "current_policy_authority": false,
+      "status": "historical_policy_only",
+      "note": "No current-policy Tent row exists in the canonical panel."
+    },
+    {
+      "track": "ImageNet-R convnext_base",
+      "n_decisions": 48,
+      "seeds": [
+        0,
+        1,
+        2,
+        3
+      ],
+      "source": "experiments/kbound/results/reconciled_panels_v1/canonical_panel_results.json",
+      "reproduction_command": "python scripts/reconcile_result_panels.py && python scripts/sync_reconciled_panels.py",
+      "actions": {
+        "adapt": {
+          "count": 46,
+          "rate": 0.9583333333333334,
+          "ci95_wilson": [
+            0.8602434412954456,
+            0.9884981065106133
+          ]
+        },
+        "freeze": {
+          "count": 0,
+          "rate": 0.0,
+          "ci95_wilson": [
+            6.938893903907228e-18,
+            0.07410012966611748
+          ]
+        },
+        "abstain": {
+          "count": 2,
+          "rate": 0.041666666666666664,
+          "ci95_wilson": [
+            0.011501893489386586,
+            0.13975655870455445
+          ]
+        }
+      },
+      "false_adapt_unconditional": {
+        "count": 0,
+        "n": 48,
+        "rate": 0.0,
+        "ci95_wilson": [
+          6.938893903907228e-18,
+          0.07410012966611748
+        ]
+      },
+      "interval_coverage_observed": {
+        "status": "not_promoted_from_canonical_score_summary"
+      },
+      "theoretical_coverage": {
+        "status": "conditional_on_declared_premise",
+        "note": "No theorem premise is inferred from an empirical score summary."
+      },
+      "false_adapt_conditional": {
+        "definition": "Pr[Delta<=0 | ADAPT]",
+        "false_adapts": 0,
+        "n_adapt_decisions": 46,
+        "rate": 0.0,
+        "cp95_upper": 0.06304930167405454,
+        "guarantee_status": "exercised"
+      },
+      "source_manifest": "experiments/kbound/results/reconciled_panels_v1/source_manifest.json",
+      "regret_kga_adapt_freeze": [
+        0.003229166666666667,
+        0.0,
+        0.06932291666666666
+      ],
+      "numeric_release_eligible": true,
+      "current_policy_authority": true,
+      "comparison_inference": {
+        "convention": "baseline_regret_minus_kga_regret; positive values favor KGA",
+        "comparisons": {
+          "always_adapt": {
+            "point": -0.003229166666666667,
+            "ci95": [
+              -0.009687500000000002,
+              0.0
+            ]
+          },
+          "always_freeze": {
+            "point": 0.06609374999999999,
+            "ci95": [
+              0.06098958333333332,
+              0.07260416666666666
+            ]
+          }
+        },
+        "method": "paired percentile bootstrap of run-seed means",
+        "unit": "run-seed mean conditional on the archived checkpoint/protocol",
+        "replicates": 20000,
+        "random_seed": 20260809,
+        "current_policy_authority": true,
+        "supports_ci_robust_beats_both": false
+      },
+      "status": "current_policy_exact_rank_replay",
+      "note": "Current per-backbone exact-rank replay."
+    },
+    {
+      "track": "ImageNet-R convnext_tiny",
+      "n_decisions": 48,
+      "seeds": [
+        0,
+        1,
+        2,
+        3
+      ],
+      "source": "experiments/kbound/results/reconciled_panels_v1/canonical_panel_results.json",
+      "reproduction_command": "python scripts/reconcile_result_panels.py && python scripts/sync_reconciled_panels.py",
+      "actions": {
+        "adapt": {
+          "count": 1,
+          "rate": 0.020833333333333332,
+          "ci95_wilson": [
+            0.003687110977510649,
+            0.10899217995251861
+          ]
+        },
+        "freeze": {
+          "count": 0,
+          "rate": 0.0,
+          "ci95_wilson": [
+            6.938893903907228e-18,
+            0.07410012966611748
+          ]
+        },
+        "abstain": {
+          "count": 47,
+          "rate": 0.9791666666666666,
+          "ci95_wilson": [
+            0.8910078200474814,
+            0.9963128890224893
+          ]
+        }
+      },
+      "false_adapt_unconditional": {
+        "count": 0,
+        "n": 48,
+        "rate": 0.0,
+        "ci95_wilson": [
+          6.938893903907228e-18,
+          0.07410012966611748
+        ]
+      },
+      "interval_coverage_observed": {
+        "status": "not_promoted_from_canonical_score_summary"
+      },
+      "theoretical_coverage": {
+        "status": "conditional_on_declared_premise",
+        "note": "No theorem premise is inferred from an empirical score summary."
+      },
+      "false_adapt_conditional": {
+        "definition": "Pr[Delta<=0 | ADAPT]",
+        "false_adapts": 0,
+        "n_adapt_decisions": 1,
+        "rate": 0.0,
+        "cp95_upper": 0.95,
+        "guarantee_status": "exercised"
+      },
+      "source_manifest": "experiments/kbound/results/reconciled_panels_v1/source_manifest.json",
+      "regret_kga_adapt_freeze": [
+        0.02161458333333333,
+        0.0014583333333333323,
+        0.02208333333333333
+      ],
+      "numeric_release_eligible": true,
+      "current_policy_authority": true,
+      "comparison_inference": {
+        "convention": "baseline_regret_minus_kga_regret; positive values favor KGA",
+        "comparisons": {
+          "always_adapt": {
+            "point": -0.020156249999999997,
+            "ci95": [
+              -0.023020833333333327,
+              -0.01765624999999999
+            ]
+          },
+          "always_freeze": {
+            "point": 0.0004687500000000004,
+            "ci95": [
+              0.0,
+              0.0014062500000000012
+            ]
+          }
+        },
+        "method": "paired percentile bootstrap of run-seed means",
+        "unit": "run-seed mean conditional on the archived checkpoint/protocol",
+        "replicates": 20000,
+        "random_seed": 20260809,
+        "current_policy_authority": true,
+        "supports_ci_robust_beats_both": false
+      },
+      "status": "current_policy_exact_rank_replay",
+      "note": "Current per-backbone exact-rank replay."
+    },
+    {
+      "track": "ImageNet-R efficientnet_b0",
+      "n_decisions": 48,
+      "seeds": [
+        0,
+        1,
+        2,
+        3
+      ],
+      "source": "experiments/kbound/results/reconciled_panels_v1/canonical_panel_results.json",
+      "reproduction_command": "python scripts/reconcile_result_panels.py && python scripts/sync_reconciled_panels.py",
+      "actions": {
+        "adapt": {
+          "count": 0,
+          "rate": 0.0,
+          "ci95_wilson": [
+            6.938893903907228e-18,
+            0.07410012966611748
+          ]
+        },
+        "freeze": {
+          "count": 29,
+          "rate": 0.6041666666666666,
+          "ci95_wilson": [
+            0.4631040849254725,
+            0.7297917213940862
+          ]
+        },
+        "abstain": {
+          "count": 19,
+          "rate": 0.3958333333333333,
+          "ci95_wilson": [
+            0.2702082786059137,
+            0.5368959150745274
+          ]
+        }
+      },
+      "false_adapt_unconditional": {
+        "count": 0,
+        "n": 48,
+        "rate": 0.0,
+        "ci95_wilson": [
+          6.938893903907228e-18,
+          0.07410012966611748
+        ]
+      },
+      "interval_coverage_observed": {
+        "status": "not_promoted_from_canonical_score_summary"
+      },
+      "theoretical_coverage": {
+        "status": "conditional_on_declared_premise",
+        "note": "No theorem premise is inferred from an empirical score summary."
+      },
+      "false_adapt_conditional": {
+        "definition": "Pr[Delta<=0 | ADAPT]",
+        "false_adapts": 0,
+        "n_adapt_decisions": 0,
+        "rate": null,
+        "cp95_upper": null,
+        "guarantee_status": "not_exercised_zero_adapt"
+      },
+      "source_manifest": "experiments/kbound/results/reconciled_panels_v1/source_manifest.json",
+      "regret_kga_adapt_freeze": [
+        0.0,
+        0.050624999999999996,
+        0.0
+      ],
+      "numeric_release_eligible": true,
+      "current_policy_authority": true,
+      "comparison_inference": {
+        "convention": "baseline_regret_minus_kga_regret; positive values favor KGA",
+        "comparisons": {
+          "always_adapt": {
+            "point": 0.050624999999999996,
+            "ci95": [
+              0.04864583333333333,
+              0.052604166666666674
+            ]
+          },
+          "always_freeze": {
+            "point": 0.0,
+            "ci95": [
+              0.0,
+              0.0
+            ]
+          }
+        },
+        "method": "paired percentile bootstrap of run-seed means",
+        "unit": "run-seed mean conditional on the archived checkpoint/protocol",
+        "replicates": 20000,
+        "random_seed": 20260809,
+        "current_policy_authority": true,
+        "supports_ci_robust_beats_both": false
+      },
+      "status": "current_policy_exact_rank_replay",
+      "note": "Current per-backbone exact-rank replay."
+    },
+    {
+      "track": "ImageNet-R efficientnet_b3",
+      "n_decisions": 48,
+      "seeds": [
+        0,
+        1,
+        2,
+        3
+      ],
+      "source": "experiments/kbound/results/reconciled_panels_v1/canonical_panel_results.json",
+      "reproduction_command": "python scripts/reconcile_result_panels.py && python scripts/sync_reconciled_panels.py",
+      "actions": {
+        "adapt": {
+          "count": 27,
+          "rate": 0.5625,
+          "ci95_wilson": [
+            0.42275017419827776,
+            0.6929873095934576
+          ]
+        },
+        "freeze": {
+          "count": 0,
+          "rate": 0.0,
+          "ci95_wilson": [
+            6.938893903907228e-18,
+            0.07410012966611748
+          ]
+        },
+        "abstain": {
+          "count": 21,
+          "rate": 0.4375,
+          "ci95_wilson": [
+            0.30701269040654244,
+            0.5772498258017222
+          ]
+        }
+      },
+      "false_adapt_unconditional": {
+        "count": 0,
+        "n": 48,
+        "rate": 0.0,
+        "ci95_wilson": [
+          6.938893903907228e-18,
+          0.07410012966611748
+        ]
+      },
+      "interval_coverage_observed": {
+        "status": "not_promoted_from_canonical_score_summary"
+      },
+      "theoretical_coverage": {
+        "status": "conditional_on_declared_premise",
+        "note": "No theorem premise is inferred from an empirical score summary."
+      },
+      "false_adapt_conditional": {
+        "definition": "Pr[Delta<=0 | ADAPT]",
+        "false_adapts": 0,
+        "n_adapt_decisions": 27,
+        "rate": 0.0,
+        "cp95_upper": 0.10501923017634429,
+        "guarantee_status": "exercised"
+      },
+      "source_manifest": "experiments/kbound/results/reconciled_panels_v1/source_manifest.json",
+      "regret_kga_adapt_freeze": [
+        0.021093749999999994,
+        0.0,
+        0.05010416666666665
+      ],
+      "numeric_release_eligible": true,
+      "current_policy_authority": true,
+      "comparison_inference": {
+        "convention": "baseline_regret_minus_kga_regret; positive values favor KGA",
+        "comparisons": {
+          "always_adapt": {
+            "point": -0.021093749999999994,
+            "ci95": [
+              -0.04218749999999999,
+              0.0
+            ]
+          },
+          "always_freeze": {
+            "point": 0.029010416666666657,
+            "ci95": [
+              0.004895833333333335,
+              0.053124999999999985
+            ]
+          }
+        },
+        "method": "paired percentile bootstrap of run-seed means",
+        "unit": "run-seed mean conditional on the archived checkpoint/protocol",
+        "replicates": 20000,
+        "random_seed": 20260809,
+        "current_policy_authority": true,
+        "supports_ci_robust_beats_both": false
+      },
+      "status": "current_policy_exact_rank_replay",
+      "note": "Current per-backbone exact-rank replay."
+    },
+    {
+      "track": "ImageNet-R resnet101",
+      "n_decisions": 48,
+      "seeds": [
+        0,
+        1,
+        2,
+        3
+      ],
+      "source": "experiments/kbound/results/reconciled_panels_v1/canonical_panel_results.json",
+      "reproduction_command": "python scripts/reconcile_result_panels.py && python scripts/sync_reconciled_panels.py",
+      "actions": {
+        "adapt": {
+          "count": 9,
+          "rate": 0.1875,
+          "ci95_wilson": [
+            0.10191390954847647,
+            0.31939867149284695
+          ]
+        },
+        "freeze": {
+          "count": 0,
+          "rate": 0.0,
+          "ci95_wilson": [
+            6.938893903907228e-18,
+            0.07410012966611748
+          ]
+        },
+        "abstain": {
+          "count": 39,
+          "rate": 0.8125,
+          "ci95_wilson": [
+            0.680601328507153,
+            0.8980860904515235
+          ]
+        }
+      },
+      "false_adapt_unconditional": {
+        "count": 0,
+        "n": 48,
+        "rate": 0.0,
+        "ci95_wilson": [
+          6.938893903907228e-18,
+          0.07410012966611748
+        ]
+      },
+      "interval_coverage_observed": {
+        "status": "not_promoted_from_canonical_score_summary"
+      },
+      "theoretical_coverage": {
+        "status": "conditional_on_declared_premise",
+        "note": "No theorem premise is inferred from an empirical score summary."
+      },
+      "false_adapt_conditional": {
+        "definition": "Pr[Delta<=0 | ADAPT]",
+        "false_adapts": 0,
+        "n_adapt_decisions": 9,
+        "rate": 0.0,
+        "cp95_upper": 0.2831288355631135,
+        "guarantee_status": "exercised"
+      },
+      "source_manifest": "experiments/kbound/results/reconciled_panels_v1/source_manifest.json",
+      "regret_kga_adapt_freeze": [
+        0.01875,
+        0.0005208333333333338,
+        0.023749999999999993
+      ],
+      "numeric_release_eligible": true,
+      "current_policy_authority": true,
+      "comparison_inference": {
+        "convention": "baseline_regret_minus_kga_regret; positive values favor KGA",
+        "comparisons": {
+          "always_adapt": {
+            "point": -0.018229166666666664,
+            "ci95": [
+              -0.019374999999999986,
+              -0.017395833333333333
+            ]
+          },
+          "always_freeze": {
+            "point": 0.004999999999999994,
+            "ci95": [
+              0.0015104166666666669,
+              0.00869791666666666
+            ]
+          }
+        },
+        "method": "paired percentile bootstrap of run-seed means",
+        "unit": "run-seed mean conditional on the archived checkpoint/protocol",
+        "replicates": 20000,
+        "random_seed": 20260809,
+        "current_policy_authority": true,
+        "supports_ci_robust_beats_both": false
+      },
+      "status": "current_policy_exact_rank_replay",
+      "note": "Current per-backbone exact-rank replay."
+    },
+    {
+      "track": "ImageNet-R resnet152",
+      "n_decisions": 48,
+      "seeds": [
+        0,
+        1,
+        2,
+        3
+      ],
+      "source": "experiments/kbound/results/reconciled_panels_v1/canonical_panel_results.json",
+      "reproduction_command": "python scripts/reconcile_result_panels.py && python scripts/sync_reconciled_panels.py",
+      "actions": {
+        "adapt": {
+          "count": 30,
+          "rate": 0.625,
+          "ci95_wilson": [
+            0.4836276351921527,
+            0.747847332391318
+          ]
+        },
+        "freeze": {
+          "count": 0,
+          "rate": 0.0,
+          "ci95_wilson": [
+            6.938893903907228e-18,
+            0.07410012966611748
+          ]
+        },
+        "abstain": {
+          "count": 18,
+          "rate": 0.375,
+          "ci95_wilson": [
+            0.25215266760868205,
+            0.5163723648078473
+          ]
+        }
+      },
+      "false_adapt_unconditional": {
+        "count": 0,
+        "n": 48,
+        "rate": 0.0,
+        "ci95_wilson": [
+          6.938893903907228e-18,
+          0.07410012966611748
+        ]
+      },
+      "interval_coverage_observed": {
+        "status": "not_promoted_from_canonical_score_summary"
+      },
+      "theoretical_coverage": {
+        "status": "conditional_on_declared_premise",
+        "note": "No theorem premise is inferred from an empirical score summary."
+      },
+      "false_adapt_conditional": {
+        "definition": "Pr[Delta<=0 | ADAPT]",
+        "false_adapts": 0,
+        "n_adapt_decisions": 30,
+        "rate": 0.0,
+        "cp95_upper": 0.09503385285530419,
+        "guarantee_status": "exercised"
+      },
+      "source_manifest": "experiments/kbound/results/reconciled_panels_v1/source_manifest.json",
+      "regret_kga_adapt_freeze": [
+        0.016145833333333328,
+        0.0,
+        0.04208333333333333
+      ],
+      "numeric_release_eligible": true,
+      "current_policy_authority": true,
+      "comparison_inference": {
+        "convention": "baseline_regret_minus_kga_regret; positive values favor KGA",
+        "comparisons": {
+          "always_adapt": {
+            "point": -0.016145833333333328,
+            "ci95": [
+              -0.018906249999999996,
+              -0.013385416666666662
+            ]
+          },
+          "always_freeze": {
+            "point": 0.0259375,
+            "ci95": [
+              0.023437499999999993,
+              0.03057291666666665
+            ]
+          }
+        },
+        "method": "paired percentile bootstrap of run-seed means",
+        "unit": "run-seed mean conditional on the archived checkpoint/protocol",
+        "replicates": 20000,
+        "random_seed": 20260809,
+        "current_policy_authority": true,
+        "supports_ci_robust_beats_both": false
+      },
+      "status": "current_policy_exact_rank_replay",
+      "note": "Current per-backbone exact-rank replay."
+    },
+    {
+      "track": "ImageNet-R resnext101_32x8d",
+      "n_decisions": 48,
+      "seeds": [
+        0,
+        1,
+        2,
+        3
+      ],
+      "source": "experiments/kbound/results/reconciled_panels_v1/canonical_panel_results.json",
+      "reproduction_command": "python scripts/reconcile_result_panels.py && python scripts/sync_reconciled_panels.py",
+      "actions": {
+        "adapt": {
+          "count": 39,
+          "rate": 0.8125,
+          "ci95_wilson": [
+            0.680601328507153,
+            0.8980860904515235
+          ]
+        },
+        "freeze": {
+          "count": 0,
+          "rate": 0.0,
+          "ci95_wilson": [
+            6.938893903907228e-18,
+            0.07410012966611748
+          ]
+        },
+        "abstain": {
+          "count": 9,
+          "rate": 0.1875,
+          "ci95_wilson": [
+            0.10191390954847647,
+            0.31939867149284695
+          ]
+        }
+      },
+      "false_adapt_unconditional": {
+        "count": 0,
+        "n": 48,
+        "rate": 0.0,
+        "ci95_wilson": [
+          6.938893903907228e-18,
+          0.07410012966611748
+        ]
+      },
+      "interval_coverage_observed": {
+        "status": "not_promoted_from_canonical_score_summary"
+      },
+      "theoretical_coverage": {
+        "status": "conditional_on_declared_premise",
+        "note": "No theorem premise is inferred from an empirical score summary."
+      },
+      "false_adapt_conditional": {
+        "definition": "Pr[Delta<=0 | ADAPT]",
+        "false_adapts": 0,
+        "n_adapt_decisions": 39,
+        "rate": 0.0,
+        "cp95_upper": 0.07393758892668656,
+        "guarantee_status": "exercised"
+      },
+      "source_manifest": "experiments/kbound/results/reconciled_panels_v1/source_manifest.json",
+      "regret_kga_adapt_freeze": [
+        0.010833333333333334,
+        0.0,
+        0.05197916666666665
+      ],
+      "numeric_release_eligible": true,
+      "current_policy_authority": true,
+      "comparison_inference": {
+        "convention": "baseline_regret_minus_kga_regret; positive values favor KGA",
+        "comparisons": {
+          "always_adapt": {
+            "point": -0.010833333333333334,
+            "ci95": [
+              -0.019479166666666665,
+              -0.0021874999999999998
+            ]
+          },
+          "always_freeze": {
+            "point": 0.04114583333333332,
+            "ci95": [
+              0.034166666666666665,
+              0.04932291666666665
+            ]
+          }
+        },
+        "method": "paired percentile bootstrap of run-seed means",
+        "unit": "run-seed mean conditional on the archived checkpoint/protocol",
+        "replicates": 20000,
+        "random_seed": 20260809,
+        "current_policy_authority": true,
+        "supports_ci_robust_beats_both": false
+      },
+      "status": "current_policy_exact_rank_replay",
+      "note": "Current per-backbone exact-rank replay."
+    },
+    {
+      "track": "ImageNet-R swin_b",
+      "n_decisions": 48,
+      "seeds": [
+        0,
+        1,
+        2,
+        3
+      ],
+      "source": "experiments/kbound/results/reconciled_panels_v1/canonical_panel_results.json",
+      "reproduction_command": "python scripts/reconcile_result_panels.py && python scripts/sync_reconciled_panels.py",
+      "actions": {
+        "adapt": {
+          "count": 8,
+          "rate": 0.16666666666666666,
+          "ci95_wilson": [
+            0.08695513576485567,
+            0.295778284012556
+          ]
+        },
+        "freeze": {
+          "count": 0,
+          "rate": 0.0,
+          "ci95_wilson": [
+            6.938893903907228e-18,
+            0.07410012966611748
+          ]
+        },
+        "abstain": {
+          "count": 40,
+          "rate": 0.8333333333333334,
+          "ci95_wilson": [
+            0.7042217159874441,
+            0.9130448642351444
+          ]
+        }
+      },
+      "false_adapt_unconditional": {
+        "count": 0,
+        "n": 48,
+        "rate": 0.0,
+        "ci95_wilson": [
+          6.938893903907228e-18,
+          0.07410012966611748
+        ]
+      },
+      "interval_coverage_observed": {
+        "status": "not_promoted_from_canonical_score_summary"
+      },
+      "theoretical_coverage": {
+        "status": "conditional_on_declared_premise",
+        "note": "No theorem premise is inferred from an empirical score summary."
+      },
+      "false_adapt_conditional": {
+        "definition": "Pr[Delta<=0 | ADAPT]",
+        "false_adapts": 0,
+        "n_adapt_decisions": 8,
+        "rate": 0.0,
+        "cp95_upper": 0.31234397806636793,
+        "guarantee_status": "exercised"
+      },
+      "source_manifest": "experiments/kbound/results/reconciled_panels_v1/source_manifest.json",
+      "regret_kga_adapt_freeze": [
+        0.03255208333333332,
+        5.208333333333338e-05,
+        0.03749999999999999
+      ],
+      "numeric_release_eligible": true,
+      "current_policy_authority": true,
+      "comparison_inference": {
+        "convention": "baseline_regret_minus_kga_regret; positive values favor KGA",
+        "comparisons": {
+          "always_adapt": {
+            "point": -0.03249999999999999,
+            "ci95": [
+              -0.037239583333333326,
+              -0.02682291666666667
+            ]
+          },
+          "always_freeze": {
+            "point": 0.00494791666666667,
+            "ci95": [
+              0.0,
+              0.00989583333333333
+            ]
+          }
+        },
+        "method": "paired percentile bootstrap of run-seed means",
+        "unit": "run-seed mean conditional on the archived checkpoint/protocol",
+        "replicates": 20000,
+        "random_seed": 20260809,
+        "current_policy_authority": true,
+        "supports_ci_robust_beats_both": false
+      },
+      "status": "current_policy_exact_rank_replay",
+      "note": "Current per-backbone exact-rank replay."
+    },
+    {
+      "track": "ImageNet-R swin_t",
+      "n_decisions": 48,
+      "seeds": [
+        0,
+        1,
+        2,
+        3
+      ],
+      "source": "experiments/kbound/results/reconciled_panels_v1/canonical_panel_results.json",
+      "reproduction_command": "python scripts/reconcile_result_panels.py && python scripts/sync_reconciled_panels.py",
+      "actions": {
+        "adapt": {
+          "count": 0,
+          "rate": 0.0,
+          "ci95_wilson": [
+            6.938893903907228e-18,
+            0.07410012966611748
+          ]
+        },
+        "freeze": {
+          "count": 0,
+          "rate": 0.0,
+          "ci95_wilson": [
+            6.938893903907228e-18,
+            0.07410012966611748
+          ]
+        },
+        "abstain": {
+          "count": 48,
+          "rate": 1.0,
+          "ci95_wilson": [
+            0.9258998703338824,
+            0.9999999999999999
+          ]
+        }
+      },
+      "false_adapt_unconditional": {
+        "count": 0,
+        "n": 48,
+        "rate": 0.0,
+        "ci95_wilson": [
+          6.938893903907228e-18,
+          0.07410012966611748
+        ]
+      },
+      "interval_coverage_observed": {
+        "status": "not_promoted_from_canonical_score_summary"
+      },
+      "theoretical_coverage": {
+        "status": "conditional_on_declared_premise",
+        "note": "No theorem premise is inferred from an empirical score summary."
+      },
+      "false_adapt_conditional": {
+        "definition": "Pr[Delta<=0 | ADAPT]",
+        "false_adapts": 0,
+        "n_adapt_decisions": 0,
+        "rate": null,
+        "cp95_upper": null,
+        "guarantee_status": "not_exercised_zero_adapt"
+      },
+      "source_manifest": "experiments/kbound/results/reconciled_panels_v1/source_manifest.json",
+      "regret_kga_adapt_freeze": [
+        0.004739583333333332,
+        0.010572916666666668,
+        0.004739583333333332
+      ],
+      "numeric_release_eligible": true,
+      "current_policy_authority": true,
+      "comparison_inference": {
+        "convention": "baseline_regret_minus_kga_regret; positive values favor KGA",
+        "comparisons": {
+          "always_adapt": {
+            "point": 0.005833333333333336,
+            "ci95": [
+              0.003437500000000003,
+              0.009583333333333343
+            ]
+          },
+          "always_freeze": {
+            "point": 0.0,
+            "ci95": [
+              0.0,
+              0.0
+            ]
+          }
+        },
+        "method": "paired percentile bootstrap of run-seed means",
+        "unit": "run-seed mean conditional on the archived checkpoint/protocol",
+        "replicates": 20000,
+        "random_seed": 20260809,
+        "current_policy_authority": true,
+        "supports_ci_robust_beats_both": false
+      },
+      "status": "current_policy_exact_rank_replay",
+      "note": "Current per-backbone exact-rank replay."
+    },
+    {
+      "track": "ImageNet-R vit_b_16",
+      "n_decisions": 48,
+      "seeds": [
+        0,
+        1,
+        2,
+        3
+      ],
+      "source": "experiments/kbound/results/reconciled_panels_v1/canonical_panel_results.json",
+      "reproduction_command": "python scripts/reconcile_result_panels.py && python scripts/sync_reconciled_panels.py",
+      "actions": {
+        "adapt": {
+          "count": 5,
+          "rate": 0.10416666666666667,
+          "ci95_wilson": [
+            0.045321719041813105,
+            0.2216742169438633
+          ]
+        },
+        "freeze": {
+          "count": 0,
+          "rate": 0.0,
+          "ci95_wilson": [
+            6.938893903907228e-18,
+            0.07410012966611748
+          ]
+        },
+        "abstain": {
+          "count": 43,
+          "rate": 0.8958333333333334,
+          "ci95_wilson": [
+            0.7783257830561368,
+            0.9546782809581869
+          ]
+        }
+      },
+      "false_adapt_unconditional": {
+        "count": 0,
+        "n": 48,
+        "rate": 0.0,
+        "ci95_wilson": [
+          6.938893903907228e-18,
+          0.07410012966611748
+        ]
+      },
+      "interval_coverage_observed": {
+        "status": "not_promoted_from_canonical_score_summary"
+      },
+      "theoretical_coverage": {
+        "status": "conditional_on_declared_premise",
+        "note": "No theorem premise is inferred from an empirical score summary."
+      },
+      "false_adapt_conditional": {
+        "definition": "Pr[Delta<=0 | ADAPT]",
+        "false_adapts": 0,
+        "n_adapt_decisions": 5,
+        "rate": 0.0,
+        "cp95_upper": 0.4507197283469412,
+        "guarantee_status": "exercised"
+      },
+      "source_manifest": "experiments/kbound/results/reconciled_panels_v1/source_manifest.json",
+      "regret_kga_adapt_freeze": [
+        0.020729166666666663,
+        0.0003645833333333337,
+        0.023697916666666662
+      ],
+      "numeric_release_eligible": true,
+      "current_policy_authority": true,
+      "comparison_inference": {
+        "convention": "baseline_regret_minus_kga_regret; positive values favor KGA",
+        "comparisons": {
+          "always_adapt": {
+            "point": -0.02036458333333333,
+            "ci95": [
+              -0.024687499999999994,
+              -0.016562499999999994
+            ]
+          },
+          "always_freeze": {
+            "point": 0.002968749999999999,
+            "ci95": [
+              0.00041666666666666415,
+              0.005833333333333337
+            ]
+          }
+        },
+        "method": "paired percentile bootstrap of run-seed means",
+        "unit": "run-seed mean conditional on the archived checkpoint/protocol",
+        "replicates": 20000,
+        "random_seed": 20260809,
+        "current_policy_authority": true,
+        "supports_ci_robust_beats_both": false
+      },
+      "status": "current_policy_exact_rank_replay",
+      "note": "Current per-backbone exact-rank replay."
+    },
+    {
+      "track": "Controlled multimodal D33",
+      "n_decisions": 130,
+      "seeds": [
+        0
+      ],
+      "source": "experiments/kbound/results/controlled_multimodal_d33/results.json",
+      "reproduction_command": "python experiments/kbound/controlled_multimodal_d33.py",
+      "actions": {
+        "adapt": {
+          "count": null,
+          "rate": 0.06923076923076923,
+          "ci95_wilson": null,
+          "status": "summary_rate_only"
+        },
+        "freeze": {
+          "count": null,
+          "rate": 0.9153846153846155,
+          "ci95_wilson": null,
+          "status": "summary_rate_only"
+        },
+        "abstain": {
+          "count": null,
+          "rate": 0.01538461538461533,
+          "ci95_wilson": null,
+          "status": "summary_rate_only"
+        }
+      },
+      "false_adapt_unconditional": {
+        "count": null,
+        "n": null,
+        "rate": 0.0,
+        "ci95_wilson": null,
+        "status": "summary_rate_only"
+      },
+      "interval_coverage_observed": {
+        "count": null,
+        "n": null,
+        "rate": null,
+        "status": "not_retained",
+        "ci_note": "Wilson interval DELETED (fix-queue item 5d / F1-11). Under in-sample rank calibration this count is identically N-(N-k), a deterministic function of N and alpha, not a binomial draw; a binomial interval on it has no frequentist interpretation."
+      },
+      "theoretical_coverage": {
+        "status": "conditional_on_declared_premise",
+        "note": "No theorem premise is inferred from this empirical summary."
+      },
+      "false_adapt_conditional": {
+        "definition": "Pr[Delta<=0 | ADAPT] -- the statistic that constrains the guarantee once FA_u = 0",
+        "false_adapts": 0,
+        "n_adapt_decisions": 9,
+        "rate": 0.0,
+        "cp95_upper": 0.283129,
+        "count_provenance": "back-derived as rate x N; exact because every stored rate is a multiple of 1/N",
+        "guarantee_status": "untested (<10 ADAPT decisions); an observed FA_u of 0 here is uninformative"
+      }
+    },
+    {
+      "track": "CIFAR-10-C SAR",
+      "actions": {
+        "adapt": {
+          "count": 1446,
+          "rate": 0.6694444444444444,
+          "ci95_wilson": [
+            0.6493208356316317,
+            0.688966425209994
+          ]
+        },
+        "freeze": {
+          "count": 0,
+          "rate": 0.0,
+          "ci95_wilson": [
+            0.0,
+            0.001775295877170106
+          ]
+        },
+        "abstain": {
+          "count": 714,
+          "rate": 0.33055555555555555,
+          "ci95_wilson": [
+            0.31103357479000604,
+            0.3506791643683682
+          ]
+        }
+      },
+      "n_decisions": 2160,
+      "seeds": [
+        0,
+        1,
+        2,
+        3,
+        4
+      ],
+      "source": "experiments/kbound/results/reconciled_panels_v1/canonical_panel_results.json",
+      "source_manifest": "experiments/kbound/results/reconciled_panels_v1/source_manifest.json",
+      "reproduction_command": "python scripts/reconcile_result_panels.py && python scripts/sync_reconciled_panels.py",
+      "regret_kga_adapt_freeze": [
+        0.0015581017842999211,
+        0.0003354167496716535,
+        0.1404706014527215
+      ],
+      "numeric_release_eligible": true,
+      "current_policy_authority": true,
+      "comparison_inference": {
+        "convention": "baseline_regret_minus_kga_regret; positive values favor KGA",
+        "comparisons": {
+          "always_adapt": {
+            "point": -0.0012226850346282675,
+            "ci95": [
+              -0.0014638890822728475,
+              -0.0009923607662872033
+            ]
+          },
+          "always_freeze": {
+            "point": 0.1389124996684216,
+            "ci95": [
+              0.13858518482496338,
+              0.13920462948304635
+            ]
+          }
+        },
+        "method": "paired percentile bootstrap of run-seed means",
+        "unit": "run-seed mean conditional on the archived checkpoint/protocol",
+        "replicates": 20000,
+        "random_seed": 20260809,
+        "current_policy_authority": true,
+        "supports_ci_robust_beats_both": false
+      },
+      "status": "current_policy_exact_rank_replay",
+      "note": "Current per-candidate exact-rank replay. Run-seed inference is descriptive; the separate six-family sensitivity is retrospective and fails the preregistered six-comparison Holm gate.",
+      "false_adapt_unconditional": {
+        "count": 0,
+        "n": 2160,
+        "rate": 0.0,
+        "ci95_wilson": [
+          0.0,
+          0.001775295877170106
+        ]
+      },
+      "false_adapt_conditional": {
+        "definition": "Pr[Delta<=0 | ADAPT]",
+        "false_adapts": 0,
+        "n_adapt_decisions": 1446,
+        "rate": 0.0,
+        "cp95_upper": 0.0020695928285967558,
+        "guarantee_status": "exercised"
+      },
+      "interval_coverage_observed": {
+        "status": "not_promoted_from_canonical_score_summary"
+      },
+      "theoretical_coverage": {
+        "status": "conditional_on_declared_premise",
+        "note": "No theorem premise is inferred from an empirical score summary."
+      },
+      "current_policy_family_sensitivity": {
+        "status": "retrospective_current_policy_family_sensitivity",
+        "current_policy_authority": true,
+        "retrospective": true,
+        "confirmatory": false,
+        "convention": "baseline_regret_minus_kga_regret; positive values favor KGA",
+        "artifact_path": "experiments/kbound/results/reconciled_panels_v1/current_policy_cluster_inference.json",
+        "artifact_sha256": "47e0afdb2720839764faa7b62d899d91f1d07f404aaf552a601ce2d3967b08d1",
+        "artifact_bytes": 18613,
+        "artifact_schema": "kbound-current-policy-cluster-inference-v2",
+        "generated_utc": "2026-08-29T00:00:28.680180+00:00",
+        "git_head": "b261866fc976d5be4f9be1abc5a2cfec3ff3bbcc",
+        "analysis_script": "docs/research/kbound/scripts/analyze_current_policy_cluster_inference.py",
+        "analysis_script_sha256": "af58c22d21192c83134237711b5f46a9f8dd5ddccfd1719fc1c549fbe79e89a6",
+        "runtime": {
+          "python": "3.12.13",
+          "numpy": "2.4.6",
+          "platform": "macOS-26.6.2-arm64-arm-64bit"
+        },
+        "live_code_bindings": {
+          "policy": {
+            "path": "kga/policy.py",
+            "sha256": "d63ea5a123d2cd63a3f13fd2f59928dc3fb39f4ee472cc9ad91e5affdd33282b"
+          },
+          "certificate": {
+            "path": "kga/certificate.py",
+            "sha256": "9fdc11831cc9d2a29d5445d0ecc1098e2b624be92df665f80d58380775a4e4ea"
+          },
+          "preregistered_protocol": {
+            "path": "research_lock/STRESS_GRID_MULTISEED_PROTOCOL_A_v1.yaml",
+            "sha256": "ee6caac547c32c0fb23bc21c2a319cbf166961f50ddc2d8c4bd2cca0626167ca"
+          }
+        },
+        "grain": {
+          "record": "candidate x run_seed x stress-grid condition",
+          "inference_unit": "corruption_family",
+          "nested_repetitions": "run seeds and condition cells are averaged within family",
+          "n_records": 2160,
+          "n_run_seeds": 5,
+          "n_conditions_per_seed": 432,
+          "n_inference_units": 6,
+          "families": [
+            "contrast",
+            "defocus_blur",
+            "fog",
+            "gaussian_noise",
+            "jpeg_compression",
+            "pixelate"
+          ]
+        },
+        "comparisons": {
+          "always_adapt": {
+            "point": -0.0012226850346282677,
+            "ci95_unadjusted_family_bootstrap": [
+              -0.0026736108517205273,
+              -6.736067158204539e-05
+            ],
+            "family_effects": {
+              "contrast": -0.0025402787658903333,
+              "defocus_blur": 6.388939089245267e-05,
+              "fog": 6.945265663994683e-06,
+              "gaussian_noise": 0.0,
+              "jpeg_compression": -0.000545833342605167,
+              "pixelate": -0.004320832755830553
+            },
+            "p_value_one_sided_exact_sign_flip": 0.90625,
+            "p_value_holm_within_candidate_posthoc": 0.90625,
+            "p_value_holm_preregistered_six_comparison_family": 0.90625,
+            "preregistered_six_comparison_reject_at_0.05": false
+          },
+          "always_freeze": {
+            "point": 0.13891249966842156,
+            "ci95_unadjusted_family_bootstrap": [
+              0.08031388794382413,
+              0.19686064847089627
+            ],
+            "family_effects": {
+              "contrast": 0.24956250041723252,
+              "defocus_blur": 0.13258749975098505,
+              "fog": 0.07422638850079642,
+              "gaussian_noise": 0.1980319455265999,
+              "jpeg_compression": 0.025679164628187815,
+              "pixelate": 0.15338749918672773
+            },
+            "p_value_one_sided_exact_sign_flip": 0.015625,
+            "p_value_holm_within_candidate_posthoc": 0.03125,
+            "p_value_holm_preregistered_six_comparison_family": 0.09375,
+            "preregistered_six_comparison_reject_at_0.05": false
+          }
+        },
+        "pointwise_family_intervals_positive_vs_both": false,
+        "within_candidate_posthoc_holm_rejects_both": false,
+        "preregistered_six_comparison_holm_rejects_both": false,
+        "claim_boundary": {
+          "supports": "retrospective current-policy family sensitivity on the controlled CIFAR-10-C stress grid; positive pointwise intervals may be described conditionally",
+          "does_not_support": [
+            "a preregistered cluster-robust win when six-comparison Holm fails",
+            "simultaneous confidence intervals",
+            "independent-checkpoint population inference",
+            "prospective confirmation",
+            "natural-shift generalization",
+            "official-code POEM or AETTA superiority"
+          ],
+          "few_cluster_warning": "Only six corruption families are available; intervals and sign-flip tests have low resolution and must be reported with the family-level effects.",
+          "multiplicity_warning": "The preregistered family contains all six candidate-by-baseline comparisons; within-candidate Holm values are retrospective diagnostics only."
+        },
+        "claim_note": "Retrospective sensitivity on six observed corruption families. Ordinary family-bootstrap intervals are unadjusted; the within-candidate two-contrast Holm values are post hoc, and the preregistered six-comparison Holm family fails for every candidate. This is not independent-checkpoint, prospective, natural-shift, or official-code POEM/AETTA evidence."
+      }
     }
-   },
-   "false_adapt_unconditional": {
-    "count": 0,
-    "n": 2160,
-    "rate": 0.0,
-    "ci95_wilson": [
-     0.0,
-     0.001775295877170106
-    ]
-   },
-   "interval_coverage_observed": {
-    "count": 1940,
-    "n": 2160,
-    "rate": 0.8981481481481481,
-    "status": "empirical_only",
-    "ci_note": "Wilson interval DELETED (fix-queue item 5d / F1-11). Under in-sample rank calibration this count is identically N-(N-k), a deterministic function of N and alpha, not a binomial draw; a binomial interval on it has no frequentist interpretation."
-   },
-   "theoretical_coverage": {
-    "status": "conditional_on_declared_premise",
-    "note": "Observed coverage does not prove exchangeability, drift correction, or risk alignment."
-   },
-   "false_adapt_conditional": {
-    "definition": "Pr[Delta<=0 | ADAPT] -- the statistic that constrains the guarantee once FA_u = 0",
-    "false_adapts": 0,
-    "n_adapt_decisions": 1113,
-    "rate": 0.0,
-    "cp95_upper": 0.002688,
-    "guarantee_status": "exercised"
-   },
-   "radius_rule": "exact-rank, unclamped, leave-one-out-of-pool (identical to in-pool here: 0 of 2160 decisions differ)",
-   "reproduction_script": "kb_fixes/recompute/02_cifar_loo_radius.py",
-   "regret_kga_adapt_freeze": [
-    0.0015851849,
-    0.0079233799,
-    0.1240979162
-   ],
-   "superseded_aggregate": {
-    "count_adapt": 1109,
-    "count_freeze": 366,
-    "count_abstain": 685,
-    "source": "experiments/kbound/results/stress_grid_multiseed_v1/ (seed 0 from its stored summary + seeds 1-4 per-condition dumps)",
-    "radius_rule": "archived interpolated np.quantile(rho, 0.9)",
-    "why_superseded": "different artifact tree AND different quantile rule from the promoted panel row; see aggregate_provenance_rule"
-   }
+  ],
+  "fa_u_identity_note": "No in-sample rank identity is promoted. Current false-adapt counts and rates are copied from the source-hashed canonical per-track replay; unreplayable PACS counts are omitted.",
+  "guarantee_untested_rule": "Conditional false-adapt evidence is exercised only when at least one ADAPT decision occurs; zero-ADAPT rows are marked not_exercised_zero_adapt.",
+  "aggregate_provenance_rule": "Every numeric row marked current_policy_authority=true comes from the source-hashed canonical panel. Rows absent from that panel are scrubbed and retained only as historical placeholders.",
+  "reconciliation_source": {
+    "canonical_panel": "experiments/kbound/results/reconciled_panels_v1/canonical_panel_results.json",
+    "canonical_panel_sha256": "ee64e858184cc9f67f4e596183b69880d59d64d267e22d3ba29c422afa609df9",
+    "source_manifest": "experiments/kbound/results/reconciled_panels_v1/source_manifest.json",
+    "source_manifest_sha256": "391983f4fa09d65c256ab8c620fea772866b652c219dad0c36574ce38c740482"
   },
-  {
-   "track": "CIFAR-10-C EATA",
-   "n_decisions": 2160,
-   "seeds": [
-    0,
-    1,
-    2,
-    3,
-    4
-   ],
-   "source": "experiments/kbound/results/mixed_headtohead_v1/per_condition_cifar10c_eata_secondary_kga_seed{0..4}.json",
-   "reproduction_command": "python3 kb_fixes/recompute/02_cifar_loo_radius.py",
-   "actions": {
-    "adapt": {
-     "count": 1244,
-     "rate": 0.575925925925926,
-     "ci95_wilson": [
-      0.5549678785284787,
-      0.5966143913568399
-     ]
+  "comparison_ci_convention": "baseline_regret_minus_kga_regret; positive values favor KGA",
+  "current_policy_family_sensitivity": {
+    "artifact_path": "experiments/kbound/results/reconciled_panels_v1/current_policy_cluster_inference.json",
+    "artifact_sha256": "47e0afdb2720839764faa7b62d899d91f1d07f404aaf552a601ce2d3967b08d1",
+    "artifact_bytes": 18613,
+    "status": "retrospective_current_policy_family_sensitivity",
+    "preregistered_six_comparison_holm": {
+      "raw_p_values": {
+        "tent::always_adapt": 0.03125,
+        "tent::always_freeze": 0.015625,
+        "eata::always_adapt": 0.125,
+        "eata::always_freeze": 0.015625,
+        "sar::always_adapt": 0.90625,
+        "sar::always_freeze": 0.015625
+      },
+      "adjusted_p_values": {
+        "tent::always_freeze": 0.09375,
+        "eata::always_freeze": 0.09375,
+        "sar::always_freeze": 0.09375,
+        "tent::always_adapt": 0.09375,
+        "eata::always_adapt": 0.25,
+        "sar::always_adapt": 0.90625
+      },
+      "family_size": 6,
+      "alpha": 0.05
     },
-    "freeze": {
-     "count": 130,
-     "rate": 0.06018518518518518,
-     "ci95_wilson": [
-      0.05091483817395365,
-      0.07101713505133486
-     ]
-    },
-    "abstain": {
-     "count": 786,
-     "rate": 0.3638888888888889,
-     "ci95_wilson": [
-      0.34385756877657436,
-      0.3844034839899885
-     ]
-    }
-   },
-   "false_adapt_unconditional": {
-    "count": 0,
-    "n": 2160,
-    "rate": 0.0,
-    "ci95_wilson": [
-     0.0,
-     0.001775295877170106
-    ]
-   },
-   "interval_coverage_observed": {
-    "count": 1940,
-    "n": 2160,
-    "rate": 0.8981481481481481,
-    "status": "empirical_only",
-    "ci_note": "Wilson interval DELETED (fix-queue item 5d / F1-11). Under in-sample rank calibration this count is identically N-(N-k), a deterministic function of N and alpha, not a binomial draw; a binomial interval on it has no frequentist interpretation."
-   },
-   "theoretical_coverage": {
-    "status": "conditional_on_declared_premise",
-    "note": "Observed coverage does not prove exchangeability, drift correction, or risk alignment."
-   },
-   "false_adapt_conditional": {
-    "definition": "Pr[Delta<=0 | ADAPT] -- the statistic that constrains the guarantee once FA_u = 0",
-    "false_adapts": 0,
-    "n_adapt_decisions": 1244,
-    "rate": 0.0,
-    "cp95_upper": 0.002405,
-    "guarantee_status": "exercised"
-   },
-   "radius_rule": "exact-rank, unclamped, leave-one-out-of-pool (identical to in-pool here: 0 of 2160 decisions differ)",
-   "reproduction_script": "kb_fixes/recompute/02_cifar_loo_radius.py",
-   "regret_kga_adapt_freeze": [
-    0.001279861,
-    0.0032682874,
-    0.1313789343
-   ],
-   "superseded_aggregate": {
-    "count_adapt": 1243,
-    "count_freeze": 132,
-    "count_abstain": 785,
-    "source": "experiments/kbound/results/stress_grid_multiseed_v1/ (seed 0 from its stored summary + seeds 1-4 per-condition dumps)",
-    "radius_rule": "archived interpolated np.quantile(rho, 0.9)",
-    "why_superseded": "different artifact tree AND different quantile rule from the promoted panel row; see aggregate_provenance_rule"
-   }
-  },
-  {
-   "track": "ImageNet-C TENT",
-   "n_decisions": 135,
-   "seeds": [
-    0,
-    1,
-    2,
-    3,
-    4
-   ],
-   "source": "experiments/kbound/results/win_hunt_v5_imagenetc_ms/pooled_5seed/per_condition_imagenetc_tent_seed{0..4}.json",
-   "reproduction_command": "python3 kb_fixes/recompute/01_imagenetc_perseed.py",
-   "actions": {
-    "adapt": {
-     "count": 0,
-     "rate": 0.0,
-     "ci95_wilson": [
-      0.0,
-      0.02766795201752491
-     ]
-    },
-    "freeze": {
-     "count": 0,
-     "rate": 0.0,
-     "ci95_wilson": [
-      0.0,
-      0.02766795201752491
-     ]
-    },
-    "abstain": {
-     "count": 135,
-     "rate": 1.0,
-     "ci95_wilson": [
-      0.9723320479824751,
-      1.0
-     ]
-    }
-   },
-   "false_adapt_unconditional": {
-    "count": 0,
-    "n": 135,
-    "rate": 0.0,
-    "ci95_wilson": [
-     0.0,
-     0.02766795201752491
-    ]
-   },
-   "interval_coverage_observed": {
-    "status": "not_an_identity_under_leave_one_out",
-    "ci_note": "leave-one-out-of-pool radius: the miscoverage count is a measurement, not n-k."
-   },
-   "theoretical_coverage": {
-    "status": "conditional_on_declared_premise",
-    "note": "Observed coverage does not prove exchangeability, drift correction, or risk alignment."
-   },
-   "false_adapt_conditional": {
-    "definition": "Pr[Delta<=0 | ADAPT]",
-    "false_adapts": 0,
-    "n_adapt_decisions": 0,
-    "rate": null,
-    "cp95_upper": null,
-    "guarantee_status": "untested (0 ADAPT)"
-   },
-   "radius_rule": "exact-rank, unclamped, leave-one-out-of-pool",
-   "reproduction_script": "kb_fixes/recompute/01_imagenetc_perseed.py",
-   "regret_kga_adapt_freeze": [
-    0.0144648,
-    0.0190611,
-    0.0144648
-   ],
-   "note": "KGA never adapts under the declared rule: regret is bit-identical to always-freeze. Guarantee untested (0 ADAPT).",
-   "superseded_aggregate": {
-    "n_decisions": 27,
-    "seeds": [
-     0
-    ],
-    "source": "experiments/kbound/results/win_hunt_v5/imagenetc_aggr/",
-    "radius_rule": "archived interpolated np.quantile(rho, 0.9), seed 0 only",
-    "why_superseded": "single-seed and wrong rule"
-   }
-  },
-  {
-   "track": "ImageNet-C EATA",
-   "n_decisions": 135,
-   "seeds": [
-    0,
-    1,
-    2,
-    3,
-    4
-   ],
-   "source": "experiments/kbound/results/win_hunt_v5_imagenetc_ms/pooled_5seed/per_condition_imagenetc_eata_seed{0..4}.json",
-   "reproduction_command": "python3 kb_fixes/recompute/01_imagenetc_perseed.py",
-   "actions": {
-    "adapt": {
-     "count": 120,
-     "rate": 0.8888888888888888,
-     "ci95_wilson": [
-      0.8247586355576375,
-      0.9314996239842874
-     ]
-    },
-    "freeze": {
-     "count": 1,
-     "rate": 0.007407407407407408,
-     "ci95_wilson": [
-      0.0013087882462745083,
-      0.040764083000620406
-     ]
-    },
-    "abstain": {
-     "count": 14,
-     "rate": 0.1037037037037037,
-     "ci95_wilson": [
-      0.0627845011302634,
-      0.1665523200984415
-     ]
-    }
-   },
-   "false_adapt_unconditional": {
-    "count": 1,
-    "n": 135,
-    "rate": 0.007407407407407408,
-    "ci95_wilson": [
-     0.0013087882462745083,
-     0.040764083000620406
-    ]
-   },
-   "interval_coverage_observed": {
-    "status": "not_an_identity_under_leave_one_out",
-    "ci_note": "leave-one-out-of-pool radius: the miscoverage count is a measurement, not n-k."
-   },
-   "theoretical_coverage": {
-    "status": "conditional_on_declared_premise",
-    "note": "Observed coverage does not prove exchangeability, drift correction, or risk alignment."
-   },
-   "false_adapt_conditional": {
-    "definition": "Pr[Delta<=0 | ADAPT]",
-    "false_adapts": 1,
-    "n_adapt_decisions": 120,
-    "rate": 0.008333333333333333,
-    "cp95_upper": 0.038921,
-    "guarantee_status": "exercised"
-   },
-   "radius_rule": "exact-rank, unclamped, leave-one-out-of-pool",
-   "reproduction_script": "kb_fixes/recompute/01_imagenetc_perseed.py",
-   "regret_kga_adapt_freeze": [
-    0.0006704,
-    9.63e-05,
-    0.0341889
-   ],
-   "note": "helpful-dominated (harmful base rate 1.5%); KGA trails always-adapt 0.00067 vs 0.00010, i.e. essentially a tie and not a win.",
-   "superseded_aggregate": {
-    "n_decisions": 27,
-    "seeds": [
-     0
-    ],
-    "source": "experiments/kbound/results/win_hunt_v5/imagenetc_aggr/",
-    "radius_rule": "archived interpolated np.quantile(rho, 0.9), seed 0 only",
-    "why_superseded": "single-seed and wrong rule"
-   }
-  },
-  {
-   "track": "ImageNet-C SAR",
-   "n_decisions": 135,
-   "seeds": [
-    0,
-    1,
-    2,
-    3,
-    4
-   ],
-   "source": "experiments/kbound/results/win_hunt_v5_imagenetc_ms/pooled_5seed/per_condition_imagenetc_sar_seed{0..4}.json",
-   "reproduction_command": "python3 kb_fixes/recompute/01_imagenetc_perseed.py",
-   "actions": {
-    "adapt": {
-     "count": 13,
-     "rate": 0.0962962962962963,
-     "ci95_wilson": [
-      0.05714181943506583,
-      0.1577900825642691
-     ]
-    },
-    "freeze": {
-     "count": 15,
-     "rate": 0.1111111111111111,
-     "ci95_wilson": [
-      0.06850037601571247,
-      0.17524136444236246
-     ]
-    },
-    "abstain": {
-     "count": 107,
-     "rate": 0.7925925925925926,
-     "ci95_wilson": [
-      0.7165717620317186,
-      0.8524225475283966
-     ]
-    }
-   },
-   "false_adapt_unconditional": {
-    "count": 1,
-    "n": 135,
-    "rate": 0.007407407407407408,
-    "ci95_wilson": [
-     0.0013087882462745083,
-     0.040764083000620406
-    ]
-   },
-   "interval_coverage_observed": {
-    "status": "not_an_identity_under_leave_one_out",
-    "ci_note": "Under the promoted leave-one-out-of-pool radius the miscoverage count is NOT forced to n-k, so this row is a genuine measurement rather than arithmetic. That is precisely why FA_u here is 1/135 and not 0."
-   },
-   "theoretical_coverage": {
-    "status": "conditional_on_declared_premise",
-    "note": "Observed coverage does not prove exchangeability, drift correction, or risk alignment."
-   },
-   "false_adapt_conditional": {
-    "definition": "Pr[Delta<=0 | ADAPT] -- the statistic that constrains the guarantee once FA_u = 0",
-    "false_adapts": 1,
-    "n_adapt_decisions": 13,
-    "rate": 0.07692307692307693,
-    "cp95_upper": 0.31634,
-    "guarantee_status": "weak (13 adapts, CP95 upper 0.316)"
-   },
-   "radius_rule": "exact-rank, unclamped, leave-one-out-of-pool",
-   "reproduction_script": "kb_fixes/recompute/01_imagenetc_perseed.py",
-   "regret_kga_adapt_freeze": [
-    0.0288925924,
-    0.0529333334,
-    0.0318944445
-   ],
-   "superseded_aggregate": {
-    "count_adapt": 12,
-    "count_freeze": 3,
-    "count_abstain": 12,
-    "n_decisions": 27,
-    "seeds": [
-     0
-    ],
-    "source": "experiments/kbound/results/win_hunt_v5/imagenetc_aggr/per_condition_imagenetc_sar_seed0.json",
-    "radius_rule": "archived interpolated np.quantile(rho, 0.9), seed 0 only",
-    "why_superseded": "single-seed and wrong rule; the promoted row is the 5-seed 135-cell exact-rank leave-one-out aggregate"
-   }
-  },
-  {
-   "track": "CIFAR-10.1 TENT",
-   "n_decisions": 30,
-   "seeds": [
-    0,
-    1,
-    2,
-    3,
-    4
-   ],
-   "source": "experiments/kbound/results/win_hunt_v5/cifar101_aggr/seed*/per_condition_cifar101_tent_seed*.json",
-   "reproduction_command": "bash docs/research/kbound/scripts/kbtrain.sh cifar101",
-   "actions": {
-    "adapt": {
-     "count": 0,
-     "rate": 0.0,
-     "ci95_wilson": [
-      0.0,
-      0.11351339317396876
-     ]
-    },
-    "freeze": {
-     "count": 24,
-     "rate": 0.8,
-     "ci95_wilson": [
-      0.6269430358685175,
-      0.9049489282271013
-     ]
-    },
-    "abstain": {
-     "count": 6,
-     "rate": 0.2,
-     "ci95_wilson": [
-      0.0950510717728987,
-      0.3730569641314825
-     ]
-    }
-   },
-   "false_adapt_unconditional": {
-    "count": 0,
-    "n": 30,
-    "rate": 0.0,
-    "ci95_wilson": [
-     0.0,
-     0.11351339317396876
-    ]
-   },
-   "interval_coverage_observed": {
-    "count": 25,
-    "n": 30,
-    "rate": 0.8333333333333334,
-    "status": "empirical_only",
-    "ci_note": "Wilson interval DELETED (fix-queue item 5d / F1-11). Under in-sample rank calibration this count is identically N-(N-k), a deterministic function of N and alpha, not a binomial draw; a binomial interval on it has no frequentist interpretation."
-   },
-   "theoretical_coverage": {
-    "status": "conditional_on_declared_premise",
-    "note": "Observed coverage does not prove exchangeability, drift correction, or risk alignment."
-   },
-   "false_adapt_conditional": {
-    "definition": "Pr[Delta<=0 | ADAPT] -- the statistic that constrains the guarantee once FA_u = 0",
-    "false_adapts": 0,
-    "n_adapt_decisions": 0,
-    "rate": null,
-    "cp95_upper": null,
-    "guarantee_status": "untested (<10 ADAPT decisions); an observed FA_u of 0 here is uninformative"
-   }
-  },
-  {
-   "track": "CIFAR-10.1 EATA",
-   "n_decisions": 30,
-   "seeds": [
-    0,
-    1,
-    2,
-    3,
-    4
-   ],
-   "source": "experiments/kbound/results/win_hunt_v5/cifar101_aggr/seed*/per_condition_cifar101_eata_seed*.json",
-   "reproduction_command": "bash docs/research/kbound/scripts/kbtrain.sh cifar101",
-   "actions": {
-    "adapt": {
-     "count": 0,
-     "rate": 0.0,
-     "ci95_wilson": [
-      0.0,
-      0.11351339317396876
-     ]
-    },
-    "freeze": {
-     "count": 16,
-     "rate": 0.5333333333333333,
-     "ci95_wilson": [
-      0.36142299619873297,
-      0.6976761109230025
-     ]
-    },
-    "abstain": {
-     "count": 14,
-     "rate": 0.4666666666666667,
-     "ci95_wilson": [
-      0.30232388907699753,
-      0.638577003801267
-     ]
-    }
-   },
-   "false_adapt_unconditional": {
-    "count": 0,
-    "n": 30,
-    "rate": 0.0,
-    "ci95_wilson": [
-     0.0,
-     0.11351339317396876
-    ]
-   },
-   "interval_coverage_observed": {
-    "count": 25,
-    "n": 30,
-    "rate": 0.8333333333333334,
-    "status": "empirical_only",
-    "ci_note": "Wilson interval DELETED (fix-queue item 5d / F1-11). Under in-sample rank calibration this count is identically N-(N-k), a deterministic function of N and alpha, not a binomial draw; a binomial interval on it has no frequentist interpretation."
-   },
-   "theoretical_coverage": {
-    "status": "conditional_on_declared_premise",
-    "note": "Observed coverage does not prove exchangeability, drift correction, or risk alignment."
-   },
-   "false_adapt_conditional": {
-    "definition": "Pr[Delta<=0 | ADAPT] -- the statistic that constrains the guarantee once FA_u = 0",
-    "false_adapts": 0,
-    "n_adapt_decisions": 0,
-    "rate": null,
-    "cp95_upper": null,
-    "guarantee_status": "untested (<10 ADAPT decisions); an observed FA_u of 0 here is uninformative"
-   }
-  },
-  {
-   "track": "CIFAR-10.1 SAR",
-   "n_decisions": 30,
-   "seeds": [
-    0,
-    1,
-    2,
-    3,
-    4
-   ],
-   "source": "experiments/kbound/results/win_hunt_v5/cifar101_aggr/seed*/per_condition_cifar101_sar_seed*.json",
-   "reproduction_command": "bash docs/research/kbound/scripts/kbtrain.sh cifar101",
-   "actions": {
-    "adapt": {
-     "count": 0,
-     "rate": 0.0,
-     "ci95_wilson": [
-      0.0,
-      0.11351339317396876
-     ]
-    },
-    "freeze": {
-     "count": 30,
-     "rate": 1.0,
-     "ci95_wilson": [
-      0.8864866068260312,
-      0.9999999999999999
-     ]
-    },
-    "abstain": {
-     "count": 0,
-     "rate": 0.0,
-     "ci95_wilson": [
-      0.0,
-      0.11351339317396876
-     ]
-    }
-   },
-   "false_adapt_unconditional": {
-    "count": 0,
-    "n": 30,
-    "rate": 0.0,
-    "ci95_wilson": [
-     0.0,
-     0.11351339317396876
-    ]
-   },
-   "interval_coverage_observed": {
-    "count": 25,
-    "n": 30,
-    "rate": 0.8333333333333334,
-    "status": "empirical_only",
-    "ci_note": "Wilson interval DELETED (fix-queue item 5d / F1-11). Under in-sample rank calibration this count is identically N-(N-k), a deterministic function of N and alpha, not a binomial draw; a binomial interval on it has no frequentist interpretation."
-   },
-   "theoretical_coverage": {
-    "status": "conditional_on_declared_premise",
-    "note": "Observed coverage does not prove exchangeability, drift correction, or risk alignment."
-   },
-   "false_adapt_conditional": {
-    "definition": "Pr[Delta<=0 | ADAPT] -- the statistic that constrains the guarantee once FA_u = 0",
-    "false_adapts": 0,
-    "n_adapt_decisions": 0,
-    "rate": null,
-    "cp95_upper": null,
-    "guarantee_status": "untested (<10 ADAPT decisions); an observed FA_u of 0 here is uninformative"
-   }
-  },
-  {
-   "track": "PACS art_painting",
-   "n_decisions": 54,
-   "seeds": [
-    0,
-    1,
-    2
-   ],
-   "source": "experiments/kbound/results/pacs_multiseed_v1/PACS_MULTISEED_RESULTS.json",
-   "reproduction_command": "bash docs/research/kbound/runbooks/finish_empirical_training.sh run",
-   "actions": {
-    "adapt": {
-     "count": null,
-     "rate": 0.2222222222222222,
-     "ci95_wilson": null,
-     "status": "summary_rate_only"
-    },
-    "freeze": {
-     "count": null,
-     "rate": 0.33333333333333337,
-     "ci95_wilson": null,
-     "status": "summary_rate_only"
-    },
-    "abstain": {
-     "count": null,
-     "rate": 0.4444444444444444,
-     "ci95_wilson": null,
-     "status": "summary_rate_only"
-    }
-   },
-   "false_adapt_unconditional": {
-    "count": null,
-    "n": null,
-    "rate": 0.037037037037037035,
-    "ci95_wilson": null,
-    "status": "summary_rate_only"
-   },
-   "interval_coverage_observed": {
-    "count": null,
-    "n": null,
-    "rate": null,
-    "status": "not_retained",
-    "ci_note": "Wilson interval DELETED (fix-queue item 5d / F1-11). Under in-sample rank calibration this count is identically N-(N-k), a deterministic function of N and alpha, not a binomial draw; a binomial interval on it has no frequentist interpretation."
-   },
-   "theoretical_coverage": {
-    "status": "conditional_on_declared_premise",
-    "note": "No theorem premise is inferred from this empirical summary."
-   },
-   "false_adapt_conditional": {
-    "definition": "Pr[Delta<=0 | ADAPT] -- the statistic that constrains the guarantee once FA_u = 0",
-    "false_adapts": 2,
-    "n_adapt_decisions": 12,
-    "rate": 0.16666666666666666,
-    "cp95_upper": 0.438105,
-    "count_provenance": "back-derived as rate x N; exact because every stored rate is a multiple of 1/N",
-    "guarantee_status": "exercised"
-   }
-  },
-  {
-   "track": "PACS cartoon",
-   "n_decisions": 54,
-   "seeds": [
-    0,
-    1,
-    2
-   ],
-   "source": "experiments/kbound/results/pacs_multiseed_v1/PACS_MULTISEED_RESULTS.json",
-   "reproduction_command": "bash docs/research/kbound/runbooks/finish_empirical_training.sh run",
-   "actions": {
-    "adapt": {
-     "count": null,
-     "rate": 0.0,
-     "ci95_wilson": null,
-     "status": "summary_rate_only"
-    },
-    "freeze": {
-     "count": null,
-     "rate": 0.7962962962962963,
-     "ci95_wilson": null,
-     "status": "summary_rate_only"
-    },
-    "abstain": {
-     "count": null,
-     "rate": 0.20370370370370372,
-     "ci95_wilson": null,
-     "status": "summary_rate_only"
-    }
-   },
-   "false_adapt_unconditional": {
-    "count": null,
-    "n": null,
-    "rate": 0.0,
-    "ci95_wilson": null,
-    "status": "summary_rate_only"
-   },
-   "interval_coverage_observed": {
-    "count": null,
-    "n": null,
-    "rate": null,
-    "status": "not_retained",
-    "ci_note": "Wilson interval DELETED (fix-queue item 5d / F1-11). Under in-sample rank calibration this count is identically N-(N-k), a deterministic function of N and alpha, not a binomial draw; a binomial interval on it has no frequentist interpretation."
-   },
-   "theoretical_coverage": {
-    "status": "conditional_on_declared_premise",
-    "note": "No theorem premise is inferred from this empirical summary."
-   },
-   "false_adapt_conditional": {
-    "definition": "Pr[Delta<=0 | ADAPT] -- the statistic that constrains the guarantee once FA_u = 0",
-    "false_adapts": 0,
-    "n_adapt_decisions": 0,
-    "rate": null,
-    "cp95_upper": null,
-    "count_provenance": "back-derived as rate x N; exact because every stored rate is a multiple of 1/N",
-    "guarantee_status": "untested (<10 ADAPT decisions); an observed FA_u of 0 here is uninformative"
-   }
-  },
-  {
-   "track": "PACS photo",
-   "n_decisions": 54,
-   "seeds": [
-    0,
-    1,
-    2
-   ],
-   "source": "experiments/kbound/results/pacs_multiseed_v1/PACS_MULTISEED_RESULTS.json",
-   "reproduction_command": "bash docs/research/kbound/runbooks/finish_empirical_training.sh run",
-   "actions": {
-    "adapt": {
-     "count": null,
-     "rate": 0.0,
-     "ci95_wilson": null,
-     "status": "summary_rate_only"
-    },
-    "freeze": {
-     "count": null,
-     "rate": 0.9259259259259259,
-     "ci95_wilson": null,
-     "status": "summary_rate_only"
-    },
-    "abstain": {
-     "count": null,
-     "rate": 0.07407407407407407,
-     "ci95_wilson": null,
-     "status": "summary_rate_only"
-    }
-   },
-   "false_adapt_unconditional": {
-    "count": null,
-    "n": null,
-    "rate": 0.0,
-    "ci95_wilson": null,
-    "status": "summary_rate_only"
-   },
-   "interval_coverage_observed": {
-    "count": null,
-    "n": null,
-    "rate": null,
-    "status": "not_retained",
-    "ci_note": "Wilson interval DELETED (fix-queue item 5d / F1-11). Under in-sample rank calibration this count is identically N-(N-k), a deterministic function of N and alpha, not a binomial draw; a binomial interval on it has no frequentist interpretation."
-   },
-   "theoretical_coverage": {
-    "status": "conditional_on_declared_premise",
-    "note": "No theorem premise is inferred from this empirical summary."
-   },
-   "false_adapt_conditional": {
-    "definition": "Pr[Delta<=0 | ADAPT] -- the statistic that constrains the guarantee once FA_u = 0",
-    "false_adapts": 0,
-    "n_adapt_decisions": 0,
-    "rate": null,
-    "cp95_upper": null,
-    "count_provenance": "back-derived as rate x N; exact because every stored rate is a multiple of 1/N",
-    "guarantee_status": "untested (<10 ADAPT decisions); an observed FA_u of 0 here is uninformative"
-   }
-  },
-  {
-   "track": "PACS sketch",
-   "n_decisions": 54,
-   "seeds": [
-    0,
-    1,
-    2
-   ],
-   "source": "experiments/kbound/results/pacs_multiseed_v1/PACS_MULTISEED_RESULTS.json",
-   "reproduction_command": "bash docs/research/kbound/runbooks/finish_empirical_training.sh run",
-   "actions": {
-    "adapt": {
-     "count": null,
-     "rate": 0.0,
-     "ci95_wilson": null,
-     "status": "summary_rate_only"
-    },
-    "freeze": {
-     "count": null,
-     "rate": 0.9814814814814815,
-     "ci95_wilson": null,
-     "status": "summary_rate_only"
-    },
-    "abstain": {
-     "count": null,
-     "rate": 0.01851851851851849,
-     "ci95_wilson": null,
-     "status": "summary_rate_only"
-    }
-   },
-   "false_adapt_unconditional": {
-    "count": null,
-    "n": null,
-    "rate": 0.0,
-    "ci95_wilson": null,
-    "status": "summary_rate_only"
-   },
-   "interval_coverage_observed": {
-    "count": null,
-    "n": null,
-    "rate": null,
-    "status": "not_retained",
-    "ci_note": "Wilson interval DELETED (fix-queue item 5d / F1-11). Under in-sample rank calibration this count is identically N-(N-k), a deterministic function of N and alpha, not a binomial draw; a binomial interval on it has no frequentist interpretation."
-   },
-   "theoretical_coverage": {
-    "status": "conditional_on_declared_premise",
-    "note": "No theorem premise is inferred from this empirical summary."
-   },
-   "false_adapt_conditional": {
-    "definition": "Pr[Delta<=0 | ADAPT] -- the statistic that constrains the guarantee once FA_u = 0",
-    "false_adapts": 0,
-    "n_adapt_decisions": 0,
-    "rate": null,
-    "cp95_upper": null,
-    "count_provenance": "back-derived as rate x N; exact because every stored rate is a multiple of 1/N",
-    "guarantee_status": "untested (<10 ADAPT decisions); an observed FA_u of 0 here is uninformative"
-   }
-  },
-  {
-   "track": "OfficeHome",
-   "n_decisions": 35,
-   "seeds": [
-    0,
-    1
-   ],
-   "source": "experiments/kbound/results/officehome_protocol_M_v2/protocol_result.json",
-   "reproduction_command": ".venv/bin/python docs/research/kbound/scripts/bootstrap_win_cis.py",
-   "actions": {
-    "adapt": {
-     "count": null,
-     "rate": 0.6285714285714286,
-     "ci95_wilson": null,
-     "status": "summary_rate_only"
-    },
-    "freeze": {
-     "count": null,
-     "rate": 0.34285714285714286,
-     "ci95_wilson": null,
-     "status": "summary_rate_only"
-    },
-    "abstain": {
-     "count": null,
-     "rate": 0.02857142857142858,
-     "ci95_wilson": null,
-     "status": "summary_rate_only"
-    }
-   },
-   "false_adapt_unconditional": {
-    "count": null,
-    "n": null,
-    "rate": 0.0,
-    "ci95_wilson": null,
-    "status": "summary_rate_only"
-   },
-   "interval_coverage_observed": {
-    "count": null,
-    "n": null,
-    "rate": null,
-    "status": "not_retained",
-    "ci_note": "Wilson interval DELETED (fix-queue item 5d / F1-11). Under in-sample rank calibration this count is identically N-(N-k), a deterministic function of N and alpha, not a binomial draw; a binomial interval on it has no frequentist interpretation."
-   },
-   "theoretical_coverage": {
-    "status": "conditional_on_declared_premise",
-    "note": "No theorem premise is inferred from this empirical summary."
-   },
-   "false_adapt_conditional": {
-    "definition": "Pr[Delta<=0 | ADAPT] -- the statistic that constrains the guarantee once FA_u = 0",
-    "false_adapts": 0,
-    "n_adapt_decisions": 22,
-    "rate": 0.0,
-    "cp95_upper": 0.127305,
-    "count_provenance": "back-derived as rate x N; exact because every stored rate is a multiple of 1/N",
-    "guarantee_status": "exercised"
-   }
-  },
-  {
-   "track": "iWildCam",
-   "n_decisions": 72,
-   "seeds": [
-    0,
-    1
-   ],
-   "source": "experiments/kbound/results/iwildcam_protocol_H_v2/protocol_result.json",
-   "reproduction_command": ".venv/bin/python docs/research/kbound/scripts/bootstrap_win_cis.py",
-   "actions": {
-    "adapt": {
-     "count": null,
-     "rate": 0.013888888888888888,
-     "ci95_wilson": null,
-     "status": "summary_rate_only"
-    },
-    "freeze": {
-     "count": null,
-     "rate": 0.8333333333333334,
-     "ci95_wilson": null,
-     "status": "summary_rate_only"
-    },
-    "abstain": {
-     "count": null,
-     "rate": 0.1527777777777778,
-     "ci95_wilson": null,
-     "status": "summary_rate_only"
-    }
-   },
-   "false_adapt_unconditional": {
-    "count": null,
-    "n": null,
-    "rate": 0.0,
-    "ci95_wilson": null,
-    "status": "summary_rate_only"
-   },
-   "interval_coverage_observed": {
-    "count": null,
-    "n": null,
-    "rate": null,
-    "status": "not_retained",
-    "ci_note": "Wilson interval DELETED (fix-queue item 5d / F1-11). Under in-sample rank calibration this count is identically N-(N-k), a deterministic function of N and alpha, not a binomial draw; a binomial interval on it has no frequentist interpretation."
-   },
-   "theoretical_coverage": {
-    "status": "conditional_on_declared_premise",
-    "note": "No theorem premise is inferred from this empirical summary."
-   },
-   "supplemental_multiseed_stability": {
-    "seeds": [
-     0,
-     1,
-     2,
-     3,
-     4
-    ],
-    "conditions_per_seed": 16,
-    "regret_kga_mean_sd": [
-     0.0113,
-     0.0026
-    ],
-    "regret_adapt_mean_sd": [
-     0.0653,
-     0.008
-    ],
-    "regret_freeze_mean_sd": [
-     0.0113,
-     0.0026
-    ],
-    "false_adapt_max": 0.0,
-    "verdict": "stable no-harm",
-    "source": "experiments/kbound/results/multiseed/iwildcam/extracted_locked/multiseed_iwildcam_tent_online.json",
-    "scope": "stability check; not a replacement for the held-out OOF lock"
-   },
-   "false_adapt_conditional": {
-    "definition": "Pr[Delta<=0 | ADAPT] -- the statistic that constrains the guarantee once FA_u = 0",
-    "false_adapts": 0,
-    "n_adapt_decisions": 1,
-    "rate": 0.0,
-    "cp95_upper": 0.95,
-    "count_provenance": "back-derived as rate x N; exact because every stored rate is a multiple of 1/N",
-    "guarantee_status": "untested (<10 ADAPT decisions); an observed FA_u of 0 here is uninformative"
-   }
-  },
-  {
-   "track": "Camelyon17",
-   "n_decisions": 18,
-   "seeds": [
-    2,
-    3,
-    4
-   ],
-   "source": "audits/integrity_2026-06-20/camelyon_reconciliation/recon_results.json",
-   "reproduction_command": ".venv/bin/python audits/integrity_2026-06-20/camelyon_reconciliation/camelyon_G_reconciliation.py",
-   "actions": {
-    "adapt": {
-     "count": null,
-     "rate": 1.0,
-     "ci95_wilson": null,
-     "status": "summary_rate_only"
-    },
-    "freeze": {
-     "count": null,
-     "rate": 0.0,
-     "ci95_wilson": null,
-     "status": "summary_rate_only"
-    },
-    "abstain": {
-     "count": null,
-     "rate": 0.0,
-     "ci95_wilson": null,
-     "status": "summary_rate_only"
-    }
-   },
-   "false_adapt_unconditional": {
-    "count": null,
-    "n": null,
-    "rate": 0.0,
-    "ci95_wilson": null,
-    "status": "summary_rate_only"
-   },
-   "interval_coverage_observed": {
-    "count": null,
-    "n": null,
-    "rate": null,
-    "status": "not_retained",
-    "ci_note": "Wilson interval DELETED (fix-queue item 5d / F1-11). Under in-sample rank calibration this count is identically N-(N-k), a deterministic function of N and alpha, not a binomial draw; a binomial interval on it has no frequentist interpretation."
-   },
-   "theoretical_coverage": {
-    "status": "conditional_on_declared_premise",
-    "note": "No theorem premise is inferred from this empirical summary."
-   },
-   "false_adapt_conditional": {
-    "definition": "Pr[Delta<=0 | ADAPT] -- the statistic that constrains the guarantee once FA_u = 0",
-    "false_adapts": 0,
-    "n_adapt_decisions": 18,
-    "rate": 0.0,
-    "cp95_upper": 0.153318,
-    "count_provenance": "back-derived as rate x N; exact because every stored rate is a multiple of 1/N",
-    "guarantee_status": "exercised"
-   }
-  },
-  {
-   "track": "RxRx1 eata_online",
-   "n_decisions": 12,
-   "seeds": [
-    0
-   ],
-   "source": "experiments/kbound/results/win_hunt_v5/rxrx1_aggr/result_4a2840ef.json",
-   "reproduction_command": "bash docs/research/kbound/scripts/kbtrain.sh rxrx1-9plus",
-   "actions": {
-    "adapt": {
-     "count": null,
-     "rate": 0.0,
-     "ci95_wilson": null,
-     "status": "summary_rate_only"
-    },
-    "freeze": {
-     "count": null,
-     "rate": 0.16666666666666666,
-     "ci95_wilson": null,
-     "status": "summary_rate_only"
-    },
-    "abstain": {
-     "count": null,
-     "rate": 0.8333333333333334,
-     "ci95_wilson": null,
-     "status": "summary_rate_only"
-    }
-   },
-   "false_adapt_unconditional": {
-    "count": null,
-    "n": null,
-    "rate": 0.0,
-    "ci95_wilson": null,
-    "status": "summary_rate_only"
-   },
-   "interval_coverage_observed": {
-    "count": null,
-    "n": null,
-    "rate": null,
-    "status": "not_retained",
-    "ci_note": "Wilson interval DELETED (fix-queue item 5d / F1-11). Under in-sample rank calibration this count is identically N-(N-k), a deterministic function of N and alpha, not a binomial draw; a binomial interval on it has no frequentist interpretation."
-   },
-   "theoretical_coverage": {
-    "status": "conditional_on_declared_premise",
-    "note": "No theorem premise is inferred from this empirical summary."
-   },
-   "false_adapt_conditional": {
-    "definition": "Pr[Delta<=0 | ADAPT] -- the statistic that constrains the guarantee once FA_u = 0",
-    "false_adapts": 0,
-    "n_adapt_decisions": 0,
-    "rate": null,
-    "cp95_upper": null,
-    "count_provenance": "back-derived as rate x N; exact because every stored rate is a multiple of 1/N",
-    "guarantee_status": "untested (<10 ADAPT decisions); an observed FA_u of 0 here is uninformative"
-   }
-  },
-  {
-   "track": "RxRx1 sar_online",
-   "n_decisions": 12,
-   "seeds": [
-    0
-   ],
-   "source": "experiments/kbound/results/win_hunt_v5/rxrx1_aggr/result_4a2840ef.json",
-   "reproduction_command": "bash docs/research/kbound/scripts/kbtrain.sh rxrx1-9plus",
-   "actions": {
-    "adapt": {
-     "count": null,
-     "rate": 0.0,
-     "ci95_wilson": null,
-     "status": "summary_rate_only"
-    },
-    "freeze": {
-     "count": null,
-     "rate": 1.0,
-     "ci95_wilson": null,
-     "status": "summary_rate_only"
-    },
-    "abstain": {
-     "count": null,
-     "rate": 0.0,
-     "ci95_wilson": null,
-     "status": "summary_rate_only"
-    }
-   },
-   "false_adapt_unconditional": {
-    "count": null,
-    "n": null,
-    "rate": 0.0,
-    "ci95_wilson": null,
-    "status": "summary_rate_only"
-   },
-   "interval_coverage_observed": {
-    "count": null,
-    "n": null,
-    "rate": null,
-    "status": "not_retained",
-    "ci_note": "Wilson interval DELETED (fix-queue item 5d / F1-11). Under in-sample rank calibration this count is identically N-(N-k), a deterministic function of N and alpha, not a binomial draw; a binomial interval on it has no frequentist interpretation."
-   },
-   "theoretical_coverage": {
-    "status": "conditional_on_declared_premise",
-    "note": "No theorem premise is inferred from this empirical summary."
-   },
-   "false_adapt_conditional": {
-    "definition": "Pr[Delta<=0 | ADAPT] -- the statistic that constrains the guarantee once FA_u = 0",
-    "false_adapts": 0,
-    "n_adapt_decisions": 0,
-    "rate": null,
-    "cp95_upper": null,
-    "count_provenance": "back-derived as rate x N; exact because every stored rate is a multiple of 1/N",
-    "guarantee_status": "untested (<10 ADAPT decisions); an observed FA_u of 0 here is uninformative"
-   }
-  },
-  {
-   "track": "RxRx1 tent_online",
-   "n_decisions": 12,
-   "seeds": [
-    0
-   ],
-   "source": "experiments/kbound/results/win_hunt_v5/rxrx1_aggr/result_4a2840ef.json",
-   "reproduction_command": "bash docs/research/kbound/scripts/kbtrain.sh rxrx1-9plus",
-   "actions": {
-    "adapt": {
-     "count": null,
-     "rate": 0.0,
-     "ci95_wilson": null,
-     "status": "summary_rate_only"
-    },
-    "freeze": {
-     "count": null,
-     "rate": 1.0,
-     "ci95_wilson": null,
-     "status": "summary_rate_only"
-    },
-    "abstain": {
-     "count": null,
-     "rate": 0.0,
-     "ci95_wilson": null,
-     "status": "summary_rate_only"
-    }
-   },
-   "false_adapt_unconditional": {
-    "count": null,
-    "n": null,
-    "rate": 0.0,
-    "ci95_wilson": null,
-    "status": "summary_rate_only"
-   },
-   "interval_coverage_observed": {
-    "count": null,
-    "n": null,
-    "rate": null,
-    "status": "not_retained",
-    "ci_note": "Wilson interval DELETED (fix-queue item 5d / F1-11). Under in-sample rank calibration this count is identically N-(N-k), a deterministic function of N and alpha, not a binomial draw; a binomial interval on it has no frequentist interpretation."
-   },
-   "theoretical_coverage": {
-    "status": "conditional_on_declared_premise",
-    "note": "No theorem premise is inferred from this empirical summary."
-   },
-   "false_adapt_conditional": {
-    "definition": "Pr[Delta<=0 | ADAPT] -- the statistic that constrains the guarantee once FA_u = 0",
-    "false_adapts": 0,
-    "n_adapt_decisions": 0,
-    "rate": null,
-    "cp95_upper": null,
-    "count_provenance": "back-derived as rate x N; exact because every stored rate is a multiple of 1/N",
-    "guarantee_status": "untested (<10 ADAPT decisions); an observed FA_u of 0 here is uninformative"
-   }
-  },
-  {
-   "track": "ImageNet-R convnext_base",
-   "n_decisions": 48,
-   "seeds": [
-    0,
-    1,
-    2,
-    3
-   ],
-   "source": "experiments/kbound/results/imagenetr_protocol_d_multiseed_v1/per_condition_imagenet-r_*_seed*.json",
-   "reproduction_command": "bash docs/research/kbound/runbooks/finish_empirical_training.sh run",
-   "actions": {
-    "adapt": {
-     "count": null,
-     "rate": 1.0,
-     "ci95_wilson": null,
-     "status": "summary_rate_only"
-    },
-    "freeze": {
-     "count": null,
-     "rate": 0.0,
-     "ci95_wilson": null,
-     "status": "summary_rate_only"
-    },
-    "abstain": {
-     "count": null,
-     "rate": 0.0,
-     "ci95_wilson": null,
-     "status": "summary_rate_only"
-    }
-   },
-   "false_adapt_unconditional": {
-    "count": null,
-    "n": null,
-    "rate": 0.0,
-    "ci95_wilson": null,
-    "status": "summary_rate_only"
-   },
-   "interval_coverage_observed": {
-    "count": null,
-    "n": null,
-    "rate": null,
-    "status": "not_retained",
-    "ci_note": "Wilson interval DELETED (fix-queue item 5d / F1-11). Under in-sample rank calibration this count is identically N-(N-k), a deterministic function of N and alpha, not a binomial draw; a binomial interval on it has no frequentist interpretation."
-   },
-   "theoretical_coverage": {
-    "status": "conditional_on_declared_premise",
-    "note": "No theorem premise is inferred from this empirical summary."
-   },
-   "false_adapt_conditional": {
-    "definition": "Pr[Delta<=0 | ADAPT] -- the statistic that constrains the guarantee once FA_u = 0",
-    "false_adapts": 0,
-    "n_adapt_decisions": 48,
-    "rate": 0.0,
-    "cp95_upper": 0.060503,
-    "count_provenance": "back-derived as rate x N; exact because every stored rate is a multiple of 1/N",
-    "guarantee_status": "exercised"
-   }
-  },
-  {
-   "track": "ImageNet-R convnext_tiny",
-   "n_decisions": 48,
-   "seeds": [
-    0,
-    1,
-    2,
-    3
-   ],
-   "source": "experiments/kbound/results/imagenetr_protocol_d_multiseed_v1/per_condition_imagenet-r_*_seed*.json",
-   "reproduction_command": "bash docs/research/kbound/runbooks/finish_empirical_training.sh run",
-   "actions": {
-    "adapt": {
-     "count": null,
-     "rate": 0.0625,
-     "ci95_wilson": null,
-     "status": "summary_rate_only"
-    },
-    "freeze": {
-     "count": null,
-     "rate": 0.0,
-     "ci95_wilson": null,
-     "status": "summary_rate_only"
-    },
-    "abstain": {
-     "count": null,
-     "rate": 0.9375,
-     "ci95_wilson": null,
-     "status": "summary_rate_only"
-    }
-   },
-   "false_adapt_unconditional": {
-    "count": null,
-    "n": null,
-    "rate": 0.0,
-    "ci95_wilson": null,
-    "status": "summary_rate_only"
-   },
-   "interval_coverage_observed": {
-    "count": null,
-    "n": null,
-    "rate": null,
-    "status": "not_retained",
-    "ci_note": "Wilson interval DELETED (fix-queue item 5d / F1-11). Under in-sample rank calibration this count is identically N-(N-k), a deterministic function of N and alpha, not a binomial draw; a binomial interval on it has no frequentist interpretation."
-   },
-   "theoretical_coverage": {
-    "status": "conditional_on_declared_premise",
-    "note": "No theorem premise is inferred from this empirical summary."
-   },
-   "false_adapt_conditional": {
-    "definition": "Pr[Delta<=0 | ADAPT] -- the statistic that constrains the guarantee once FA_u = 0",
-    "false_adapts": 0,
-    "n_adapt_decisions": 3,
-    "rate": 0.0,
-    "cp95_upper": 0.631597,
-    "count_provenance": "back-derived as rate x N; exact because every stored rate is a multiple of 1/N",
-    "guarantee_status": "untested (<10 ADAPT decisions); an observed FA_u of 0 here is uninformative"
-   }
-  },
-  {
-   "track": "ImageNet-R efficientnet_b0",
-   "n_decisions": 48,
-   "seeds": [
-    0,
-    1,
-    2,
-    3
-   ],
-   "source": "experiments/kbound/results/imagenetr_protocol_d_multiseed_v1/per_condition_imagenet-r_*_seed*.json",
-   "reproduction_command": "bash docs/research/kbound/runbooks/finish_empirical_training.sh run",
-   "actions": {
-    "adapt": {
-     "count": null,
-     "rate": 0.0,
-     "ci95_wilson": null,
-     "status": "summary_rate_only"
-    },
-    "freeze": {
-     "count": null,
-     "rate": 0.7083333333333334,
-     "ci95_wilson": null,
-     "status": "summary_rate_only"
-    },
-    "abstain": {
-     "count": null,
-     "rate": 0.29166666666666663,
-     "ci95_wilson": null,
-     "status": "summary_rate_only"
-    }
-   },
-   "false_adapt_unconditional": {
-    "count": null,
-    "n": null,
-    "rate": 0.0,
-    "ci95_wilson": null,
-    "status": "summary_rate_only"
-   },
-   "interval_coverage_observed": {
-    "count": null,
-    "n": null,
-    "rate": null,
-    "status": "not_retained",
-    "ci_note": "Wilson interval DELETED (fix-queue item 5d / F1-11). Under in-sample rank calibration this count is identically N-(N-k), a deterministic function of N and alpha, not a binomial draw; a binomial interval on it has no frequentist interpretation."
-   },
-   "theoretical_coverage": {
-    "status": "conditional_on_declared_premise",
-    "note": "No theorem premise is inferred from this empirical summary."
-   },
-   "false_adapt_conditional": {
-    "definition": "Pr[Delta<=0 | ADAPT] -- the statistic that constrains the guarantee once FA_u = 0",
-    "false_adapts": 0,
-    "n_adapt_decisions": 0,
-    "rate": null,
-    "cp95_upper": null,
-    "count_provenance": "back-derived as rate x N; exact because every stored rate is a multiple of 1/N",
-    "guarantee_status": "untested (<10 ADAPT decisions); an observed FA_u of 0 here is uninformative"
-   }
-  },
-  {
-   "track": "ImageNet-R efficientnet_b3",
-   "n_decisions": 48,
-   "seeds": [
-    0,
-    1,
-    2,
-    3
-   ],
-   "source": "experiments/kbound/results/imagenetr_protocol_d_multiseed_v1/per_condition_imagenet-r_*_seed*.json",
-   "reproduction_command": "bash docs/research/kbound/runbooks/finish_empirical_training.sh run",
-   "actions": {
-    "adapt": {
-     "count": null,
-     "rate": 0.6458333333333334,
-     "ci95_wilson": null,
-     "status": "summary_rate_only"
-    },
-    "freeze": {
-     "count": null,
-     "rate": 0.0,
-     "ci95_wilson": null,
-     "status": "summary_rate_only"
-    },
-    "abstain": {
-     "count": null,
-     "rate": 0.35416666666666663,
-     "ci95_wilson": null,
-     "status": "summary_rate_only"
-    }
-   },
-   "false_adapt_unconditional": {
-    "count": null,
-    "n": null,
-    "rate": 0.0,
-    "ci95_wilson": null,
-    "status": "summary_rate_only"
-   },
-   "interval_coverage_observed": {
-    "count": null,
-    "n": null,
-    "rate": null,
-    "status": "not_retained",
-    "ci_note": "Wilson interval DELETED (fix-queue item 5d / F1-11). Under in-sample rank calibration this count is identically N-(N-k), a deterministic function of N and alpha, not a binomial draw; a binomial interval on it has no frequentist interpretation."
-   },
-   "theoretical_coverage": {
-    "status": "conditional_on_declared_premise",
-    "note": "No theorem premise is inferred from this empirical summary."
-   },
-   "false_adapt_conditional": {
-    "definition": "Pr[Delta<=0 | ADAPT] -- the statistic that constrains the guarantee once FA_u = 0",
-    "false_adapts": 0,
-    "n_adapt_decisions": 31,
-    "rate": 0.0,
-    "cp95_upper": 0.092114,
-    "count_provenance": "back-derived as rate x N; exact because every stored rate is a multiple of 1/N",
-    "guarantee_status": "exercised"
-   }
-  },
-  {
-   "track": "ImageNet-R resnet101",
-   "n_decisions": 48,
-   "seeds": [
-    0,
-    1,
-    2,
-    3
-   ],
-   "source": "experiments/kbound/results/imagenetr_protocol_d_multiseed_v1/per_condition_imagenet-r_*_seed*.json",
-   "reproduction_command": "bash docs/research/kbound/runbooks/finish_empirical_training.sh run",
-   "actions": {
-    "adapt": {
-     "count": null,
-     "rate": 0.2916666666666667,
-     "ci95_wilson": null,
-     "status": "summary_rate_only"
-    },
-    "freeze": {
-     "count": null,
-     "rate": 0.0,
-     "ci95_wilson": null,
-     "status": "summary_rate_only"
-    },
-    "abstain": {
-     "count": null,
-     "rate": 0.7083333333333333,
-     "ci95_wilson": null,
-     "status": "summary_rate_only"
-    }
-   },
-   "false_adapt_unconditional": {
-    "count": null,
-    "n": null,
-    "rate": 0.0,
-    "ci95_wilson": null,
-    "status": "summary_rate_only"
-   },
-   "interval_coverage_observed": {
-    "count": null,
-    "n": null,
-    "rate": null,
-    "status": "not_retained",
-    "ci_note": "Wilson interval DELETED (fix-queue item 5d / F1-11). Under in-sample rank calibration this count is identically N-(N-k), a deterministic function of N and alpha, not a binomial draw; a binomial interval on it has no frequentist interpretation."
-   },
-   "theoretical_coverage": {
-    "status": "conditional_on_declared_premise",
-    "note": "No theorem premise is inferred from this empirical summary."
-   },
-   "false_adapt_conditional": {
-    "definition": "Pr[Delta<=0 | ADAPT] -- the statistic that constrains the guarantee once FA_u = 0",
-    "false_adapts": 0,
-    "n_adapt_decisions": 14,
-    "rate": 0.0,
-    "cp95_upper": 0.192636,
-    "count_provenance": "back-derived as rate x N; exact because every stored rate is a multiple of 1/N",
-    "guarantee_status": "exercised"
-   }
-  },
-  {
-   "track": "ImageNet-R resnet152",
-   "n_decisions": 48,
-   "seeds": [
-    0,
-    1,
-    2,
-    3
-   ],
-   "source": "experiments/kbound/results/imagenetr_protocol_d_multiseed_v1/per_condition_imagenet-r_*_seed*.json",
-   "reproduction_command": "bash docs/research/kbound/runbooks/finish_empirical_training.sh run",
-   "actions": {
-    "adapt": {
-     "count": null,
-     "rate": 0.8125,
-     "ci95_wilson": null,
-     "status": "summary_rate_only"
-    },
-    "freeze": {
-     "count": null,
-     "rate": 0.0,
-     "ci95_wilson": null,
-     "status": "summary_rate_only"
-    },
-    "abstain": {
-     "count": null,
-     "rate": 0.1875,
-     "ci95_wilson": null,
-     "status": "summary_rate_only"
-    }
-   },
-   "false_adapt_unconditional": {
-    "count": null,
-    "n": null,
-    "rate": 0.0,
-    "ci95_wilson": null,
-    "status": "summary_rate_only"
-   },
-   "interval_coverage_observed": {
-    "count": null,
-    "n": null,
-    "rate": null,
-    "status": "not_retained",
-    "ci_note": "Wilson interval DELETED (fix-queue item 5d / F1-11). Under in-sample rank calibration this count is identically N-(N-k), a deterministic function of N and alpha, not a binomial draw; a binomial interval on it has no frequentist interpretation."
-   },
-   "theoretical_coverage": {
-    "status": "conditional_on_declared_premise",
-    "note": "No theorem premise is inferred from this empirical summary."
-   },
-   "false_adapt_conditional": {
-    "definition": "Pr[Delta<=0 | ADAPT] -- the statistic that constrains the guarantee once FA_u = 0",
-    "false_adapts": 0,
-    "n_adapt_decisions": 39,
-    "rate": 0.0,
-    "cp95_upper": 0.073938,
-    "count_provenance": "back-derived as rate x N; exact because every stored rate is a multiple of 1/N",
-    "guarantee_status": "exercised"
-   }
-  },
-  {
-   "track": "ImageNet-R resnext101_32x8d",
-   "n_decisions": 48,
-   "seeds": [
-    0,
-    1,
-    2,
-    3
-   ],
-   "source": "experiments/kbound/results/imagenetr_protocol_d_multiseed_v1/per_condition_imagenet-r_*_seed*.json",
-   "reproduction_command": "bash docs/research/kbound/runbooks/finish_empirical_training.sh run",
-   "actions": {
-    "adapt": {
-     "count": null,
-     "rate": 0.8958333333333334,
-     "ci95_wilson": null,
-     "status": "summary_rate_only"
-    },
-    "freeze": {
-     "count": null,
-     "rate": 0.0,
-     "ci95_wilson": null,
-     "status": "summary_rate_only"
-    },
-    "abstain": {
-     "count": null,
-     "rate": 0.10416666666666663,
-     "ci95_wilson": null,
-     "status": "summary_rate_only"
-    }
-   },
-   "false_adapt_unconditional": {
-    "count": null,
-    "n": null,
-    "rate": 0.0,
-    "ci95_wilson": null,
-    "status": "summary_rate_only"
-   },
-   "interval_coverage_observed": {
-    "count": null,
-    "n": null,
-    "rate": null,
-    "status": "not_retained",
-    "ci_note": "Wilson interval DELETED (fix-queue item 5d / F1-11). Under in-sample rank calibration this count is identically N-(N-k), a deterministic function of N and alpha, not a binomial draw; a binomial interval on it has no frequentist interpretation."
-   },
-   "theoretical_coverage": {
-    "status": "conditional_on_declared_premise",
-    "note": "No theorem premise is inferred from this empirical summary."
-   },
-   "false_adapt_conditional": {
-    "definition": "Pr[Delta<=0 | ADAPT] -- the statistic that constrains the guarantee once FA_u = 0",
-    "false_adapts": 0,
-    "n_adapt_decisions": 43,
-    "rate": 0.0,
-    "cp95_upper": 0.067297,
-    "count_provenance": "back-derived as rate x N; exact because every stored rate is a multiple of 1/N",
-    "guarantee_status": "exercised"
-   }
-  },
-  {
-   "track": "ImageNet-R swin_b",
-   "n_decisions": 48,
-   "seeds": [
-    0,
-    1,
-    2,
-    3
-   ],
-   "source": "experiments/kbound/results/imagenetr_protocol_d_multiseed_v1/per_condition_imagenet-r_*_seed*.json",
-   "reproduction_command": "bash docs/research/kbound/runbooks/finish_empirical_training.sh run",
-   "actions": {
-    "adapt": {
-     "count": null,
-     "rate": 0.4791666666666667,
-     "ci95_wilson": null,
-     "status": "summary_rate_only"
-    },
-    "freeze": {
-     "count": null,
-     "rate": 0.0,
-     "ci95_wilson": null,
-     "status": "summary_rate_only"
-    },
-    "abstain": {
-     "count": null,
-     "rate": 0.5208333333333333,
-     "ci95_wilson": null,
-     "status": "summary_rate_only"
-    }
-   },
-   "false_adapt_unconditional": {
-    "count": null,
-    "n": null,
-    "rate": 0.0,
-    "ci95_wilson": null,
-    "status": "summary_rate_only"
-   },
-   "interval_coverage_observed": {
-    "count": null,
-    "n": null,
-    "rate": null,
-    "status": "not_retained",
-    "ci_note": "Wilson interval DELETED (fix-queue item 5d / F1-11). Under in-sample rank calibration this count is identically N-(N-k), a deterministic function of N and alpha, not a binomial draw; a binomial interval on it has no frequentist interpretation."
-   },
-   "theoretical_coverage": {
-    "status": "conditional_on_declared_premise",
-    "note": "No theorem premise is inferred from this empirical summary."
-   },
-   "false_adapt_conditional": {
-    "definition": "Pr[Delta<=0 | ADAPT] -- the statistic that constrains the guarantee once FA_u = 0",
-    "false_adapts": 0,
-    "n_adapt_decisions": 23,
-    "rate": 0.0,
-    "cp95_upper": 0.122123,
-    "count_provenance": "back-derived as rate x N; exact because every stored rate is a multiple of 1/N",
-    "guarantee_status": "exercised"
-   }
-  },
-  {
-   "track": "ImageNet-R swin_t",
-   "n_decisions": 48,
-   "seeds": [
-    0,
-    1,
-    2,
-    3
-   ],
-   "source": "experiments/kbound/results/imagenetr_protocol_d_multiseed_v1/per_condition_imagenet-r_*_seed*.json",
-   "reproduction_command": "bash docs/research/kbound/runbooks/finish_empirical_training.sh run",
-   "actions": {
-    "adapt": {
-     "count": null,
-     "rate": 0.020833333333333332,
-     "ci95_wilson": null,
-     "status": "summary_rate_only"
-    },
-    "freeze": {
-     "count": null,
-     "rate": 0.125,
-     "ci95_wilson": null,
-     "status": "summary_rate_only"
-    },
-    "abstain": {
-     "count": null,
-     "rate": 0.8541666666666666,
-     "ci95_wilson": null,
-     "status": "summary_rate_only"
-    }
-   },
-   "false_adapt_unconditional": {
-    "count": null,
-    "n": null,
-    "rate": 0.0,
-    "ci95_wilson": null,
-    "status": "summary_rate_only"
-   },
-   "interval_coverage_observed": {
-    "count": null,
-    "n": null,
-    "rate": null,
-    "status": "not_retained",
-    "ci_note": "Wilson interval DELETED (fix-queue item 5d / F1-11). Under in-sample rank calibration this count is identically N-(N-k), a deterministic function of N and alpha, not a binomial draw; a binomial interval on it has no frequentist interpretation."
-   },
-   "theoretical_coverage": {
-    "status": "conditional_on_declared_premise",
-    "note": "No theorem premise is inferred from this empirical summary."
-   },
-   "false_adapt_conditional": {
-    "definition": "Pr[Delta<=0 | ADAPT] -- the statistic that constrains the guarantee once FA_u = 0",
-    "false_adapts": 0,
-    "n_adapt_decisions": 1,
-    "rate": 0.0,
-    "cp95_upper": 0.95,
-    "count_provenance": "back-derived as rate x N; exact because every stored rate is a multiple of 1/N",
-    "guarantee_status": "untested (<10 ADAPT decisions); an observed FA_u of 0 here is uninformative"
-   }
-  },
-  {
-   "track": "ImageNet-R vit_b_16",
-   "n_decisions": 48,
-   "seeds": [
-    0,
-    1,
-    2,
-    3
-   ],
-   "source": "experiments/kbound/results/imagenetr_protocol_d_multiseed_v1/per_condition_imagenet-r_*_seed*.json",
-   "reproduction_command": "bash docs/research/kbound/runbooks/finish_empirical_training.sh run",
-   "actions": {
-    "adapt": {
-     "count": null,
-     "rate": 0.3125,
-     "ci95_wilson": null,
-     "status": "summary_rate_only"
-    },
-    "freeze": {
-     "count": null,
-     "rate": 0.0,
-     "ci95_wilson": null,
-     "status": "summary_rate_only"
-    },
-    "abstain": {
-     "count": null,
-     "rate": 0.6875,
-     "ci95_wilson": null,
-     "status": "summary_rate_only"
-    }
-   },
-   "false_adapt_unconditional": {
-    "count": null,
-    "n": null,
-    "rate": 0.020833333333333332,
-    "ci95_wilson": null,
-    "status": "summary_rate_only"
-   },
-   "interval_coverage_observed": {
-    "count": null,
-    "n": null,
-    "rate": null,
-    "status": "not_retained",
-    "ci_note": "Wilson interval DELETED (fix-queue item 5d / F1-11). Under in-sample rank calibration this count is identically N-(N-k), a deterministic function of N and alpha, not a binomial draw; a binomial interval on it has no frequentist interpretation."
-   },
-   "theoretical_coverage": {
-    "status": "conditional_on_declared_premise",
-    "note": "No theorem premise is inferred from this empirical summary."
-   },
-   "false_adapt_conditional": {
-    "definition": "Pr[Delta<=0 | ADAPT] -- the statistic that constrains the guarantee once FA_u = 0",
-    "false_adapts": 1,
-    "n_adapt_decisions": 15,
-    "rate": 0.06666666666666667,
-    "cp95_upper": 0.279396,
-    "count_provenance": "back-derived as rate x N; exact because every stored rate is a multiple of 1/N",
-    "guarantee_status": "exercised"
-   }
-  },
-  {
-   "track": "Controlled multimodal D33",
-   "n_decisions": 130,
-   "seeds": [
-    0
-   ],
-   "source": "experiments/kbound/results/controlled_multimodal_d33/results.json",
-   "reproduction_command": "python experiments/kbound/controlled_multimodal_d33.py",
-   "actions": {
-    "adapt": {
-     "count": null,
-     "rate": 0.06923076923076923,
-     "ci95_wilson": null,
-     "status": "summary_rate_only"
-    },
-    "freeze": {
-     "count": null,
-     "rate": 0.9153846153846155,
-     "ci95_wilson": null,
-     "status": "summary_rate_only"
-    },
-    "abstain": {
-     "count": null,
-     "rate": 0.01538461538461533,
-     "ci95_wilson": null,
-     "status": "summary_rate_only"
-    }
-   },
-   "false_adapt_unconditional": {
-    "count": null,
-    "n": null,
-    "rate": 0.0,
-    "ci95_wilson": null,
-    "status": "summary_rate_only"
-   },
-   "interval_coverage_observed": {
-    "count": null,
-    "n": null,
-    "rate": null,
-    "status": "not_retained",
-    "ci_note": "Wilson interval DELETED (fix-queue item 5d / F1-11). Under in-sample rank calibration this count is identically N-(N-k), a deterministic function of N and alpha, not a binomial draw; a binomial interval on it has no frequentist interpretation."
-   },
-   "theoretical_coverage": {
-    "status": "conditional_on_declared_premise",
-    "note": "No theorem premise is inferred from this empirical summary."
-   },
-   "false_adapt_conditional": {
-    "definition": "Pr[Delta<=0 | ADAPT] -- the statistic that constrains the guarantee once FA_u = 0",
-    "false_adapts": 0,
-    "n_adapt_decisions": 9,
-    "rate": 0.0,
-    "cp95_upper": 0.283129,
-    "count_provenance": "back-derived as rate x N; exact because every stored rate is a multiple of 1/N",
-    "guarantee_status": "untested (<10 ADAPT decisions); an observed FA_u of 0 here is uninformative"
-   }
+    "interpretation": "Tent has positive ordinary intervals against both baselines. No candidate rejects both comparisons after the preregistered six-way Holm correction."
   }
- ],
- "fa_u_identity_note": "Under IN-SAMPLE rank calibration eps is the k-th order statistic of the same residual vector it tests, so the miscoverage count is identically n-k and FA_u <= (n-k)/n holds for any data (0.0972 at n=432, 0.0370 at n=27, exactly 0 at n in {9,12,18} where k=n). Under the promoted leave-one-out-of-pool calibration the identity is broken and FA_u becomes a measurement; CIFAR-10-C still measures 0 over 9504 cells, ImageNet-C SAR measures 1/135.",
- "guarantee_untested_rule": "tracks with fewer than 10 ADAPT decisions are marked 'guarantee untested'",
- "aggregate_provenance_rule": "ONE aggregate per row, and the row states which artifact tree it came from. Resolved 2026-07-26 (fix-queue defect F). The CIFAR-10-C rows previously recorded 1109 (Tent) and 1243 (EATA) ADAPT decisions while the paper printed 1113 and 1244. Both were real numbers of different things. 1109 = the stress_grid_multiseed_v1 five-seed aggregate under the ARCHIVED INTERPOLATED quantile, assembled as seed 0's stored summary (221 adapts, read from seed0/decisive_tta_results.json because seed 0 ships no per-condition dump) plus seeds 1-4 recomputed from their per-condition dumps (888 adapts) = 1109; likewise EATA 242 + 1001 = 1243. 1113 = the mixed_headtohead_v1 five-seed aggregate under the DECLARED exact-rank rule, recomputed cell by cell from all five per-condition dumps; likewise EATA 1244. The paper promotes mixed_headtohead_v1 under the declared rule, so these rows now do too, and the reproduction command reproduces them. The old glob was also self-inconsistent: it matched only 4 files (1728 cells) while the row claimed n_decisions 2160."
 }

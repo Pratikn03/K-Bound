@@ -36,7 +36,7 @@ export function evidenceStrip(strip: Snapshot["evidence_strip"]): string {
   const items: [string, string][] = [
     ["proven_theorems", "Proven theorems"],
     ["theorem_validators", "Theorem validators"],
-    ["controlled_beats_both", "Controlled beats-both"],
+    ["controlled_beats_both", "Controlled evidence"],
     ["natural_shift_no_harm", "Natural-shift no-harm"],
     ["open_theory", "Open questions"],
     ["reproducibility", "Reproducibility"],
@@ -70,7 +70,7 @@ export function regimeMap(regimes: Snapshot["regime_map"]): string {
   return `
     <div class="page-section">
       <div class="section-label">Research status map</div>
-      <h2 class="section-title">Three adaptation regimes</h2>
+      <h2 class="section-title">Evidence regimes</h2>
       <div class="regime-map">${cards}</div>
     </div>`;
 }
@@ -450,8 +450,8 @@ export function experimentsPage(board: Snapshot["evidence_board"], headline?: Po
       <div class="section-label">Experiments</div>
       <h2 class="section-title">Controlled and natural-shift benchmarks</h2>
       <div class="evidence-group">
-        <h3 class="evidence-group-title">Controlled beats-both tracks</h3>
-        <p class="evidence-group-desc">Regret-to-oracle from the canonical paper manifest. Lower is better.</p>
+        <h3 class="evidence-group-title">Controlled point-estimate comparisons</h3>
+        <p class="evidence-group-desc">Regret-to-oracle from the canonical paper manifest. Lower is better; status text carries the inferential boundary.</p>
         <div class="panel"><div class="panel-body panel-scroll-x"><table class="data-table">
           <thead><tr><th>Experiment</th><th class="num">Regret freeze</th><th class="num">Regret adapt</th><th class="num">Regret KGA</th><th class="num">Oracle</th><th>Status</th><th class="num">KGA</th></tr></thead>
           <tbody>${policyTableRows(headline)}</tbody>

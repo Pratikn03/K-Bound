@@ -1,6 +1,6 @@
 {
   "schema_version": "kbound-claim-ledger-v1",
-  "generated_at": "2026-07-01",
+  "generated_at": "2026-08-27",
   "claims": [
     {
       "claim_id": "KB-CLAIM-001",
@@ -96,7 +96,7 @@
     },
     {
       "claim_id": "KB-CLAIM-010",
-      "claim_text": "CIFAR-10-C stress grid: KGA beats both always-adapt and always-freeze for Tent and EATA.",
+      "claim_text": "CIFAR-10-C stress grid: Tent and EATA beat both fixed policies in pooled point estimates under the current exact-rank replay, while SAR loses to always-adapt. A retrospective current-policy sensitivity over six corruption families gives Tent positive ordinary family-bootstrap intervals against both baselines, but the preregistered six-comparison Holm p-values are 0.09375 for both Tent contrasts; EATA and SAR also fail the two-baseline gate.",
       "claim_type": "empirical",
       "claim_tier": "B",
       "protocol": "STRESS_GRID_MULTISEED_PROTOCOL_A_v1",
@@ -105,19 +105,89 @@
       "calibration_method": "loo_gbr + conformal_on_loo_residuals",
       "test_split": "per-condition held-out eval within seed",
       "supporting_artifacts": [
-        "experiments/kbound/results/stress_grid_multiseed_v1/LOCKED_ANALYSIS_RESULTS.json",
-        "docs/research/kbound/results_source.json"
+        "experiments/kbound/results/reconciled_panels_v1/canonical_panel_results.json",
+        "experiments/kbound/results/reconciled_panels_v1/source_manifest.json",
+        "experiments/kbound/results/reconciled_panels_v1/current_policy_cluster_inference.json"
       ],
       "assumptions": [
-        "locked grid",
-        "Holm-corrected CIs"
+        "controlled cross-fitted grid",
+        "run seeds share the archived checkpoint/protocol",
+        "six observed corruption families are the retrospective sensitivity units"
       ],
       "status": "supported",
-      "allowed_wording": "beats both under Protocol A v1 stress grid",
+      "allowed_wording": "controlled current-policy point-estimate routing gains; retrospective six-family Tent sensitivity with positive unadjusted intervals; preregistered six-comparison Holm fails",
       "forbidden_wording": [
+        "five independent model seeds",
+        "current-policy cluster-robust win",
+        "preregistered cluster pass",
+        "confirmatory cluster win",
+        "simultaneous confidence intervals",
         "universal TTA improvement",
-        "natural-shift win"
-      ]
+        "natural-shift win",
+        "official POEM or AETTA superiority"
+      ],
+      "current_policy_family_sensitivity": {
+        "artifact_path": "experiments/kbound/results/reconciled_panels_v1/current_policy_cluster_inference.json",
+        "artifact_sha256": "47e0afdb2720839764faa7b62d899d91f1d07f404aaf552a601ce2d3967b08d1",
+        "artifact_bytes": 18613,
+        "status": "retrospective_current_policy_family_sensitivity",
+        "runtime": {
+          "python": "3.12.13",
+          "numpy": "2.4.6",
+          "platform": "macOS-26.6.2-arm64-arm-64bit"
+        },
+        "live_code_bindings": {
+          "policy": {
+            "path": "kga/policy.py",
+            "sha256": "d63ea5a123d2cd63a3f13fd2f59928dc3fb39f4ee472cc9ad91e5affdd33282b"
+          },
+          "certificate": {
+            "path": "kga/certificate.py",
+            "sha256": "9fdc11831cc9d2a29d5445d0ecc1098e2b624be92df665f80d58380775a4e4ea"
+          },
+          "preregistered_protocol": {
+            "path": "research_lock/STRESS_GRID_MULTISEED_PROTOCOL_A_v1.yaml",
+            "sha256": "ee6caac547c32c0fb23bc21c2a319cbf166961f50ddc2d8c4bd2cca0626167ca"
+          }
+        },
+        "preregistered_six_comparison_holm": {
+          "raw_p_values": {
+            "tent::always_adapt": 0.03125,
+            "tent::always_freeze": 0.015625,
+            "eata::always_adapt": 0.125,
+            "eata::always_freeze": 0.015625,
+            "sar::always_adapt": 0.90625,
+            "sar::always_freeze": 0.015625
+          },
+          "adjusted_p_values": {
+            "tent::always_freeze": 0.09375,
+            "eata::always_freeze": 0.09375,
+            "sar::always_freeze": 0.09375,
+            "tent::always_adapt": 0.09375,
+            "eata::always_adapt": 0.25,
+            "sar::always_adapt": 0.90625
+          },
+          "family_size": 6,
+          "alpha": 0.05
+        },
+        "candidates": {
+          "tent": {
+            "pointwise_family_intervals_positive_vs_both": true,
+            "within_candidate_posthoc_holm_rejects_both": true,
+            "preregistered_six_comparison_holm_rejects_both": false
+          },
+          "eata": {
+            "pointwise_family_intervals_positive_vs_both": false,
+            "within_candidate_posthoc_holm_rejects_both": false,
+            "preregistered_six_comparison_holm_rejects_both": false
+          },
+          "sar": {
+            "pointwise_family_intervals_positive_vs_both": false,
+            "within_candidate_posthoc_holm_rejects_both": false,
+            "preregistered_six_comparison_holm_rejects_both": false
+          }
+        }
+      }
     },
     {
       "claim_id": "KB-CLAIM-011",
@@ -168,7 +238,7 @@
     },
     {
       "claim_id": "KB-CLAIM-020",
-      "claim_text": "Office-Home M-v2 exact-rank source replay ties always-freeze under the locked release runtime; the predeclared A7 stability premise is absent.",
+      "claim_text": "Office-Home M-v2 exact-rank source replay ties always-freeze with zero ADAPT decisions under the locked release runtime; a separate test-stream replication has a small point edge, but the A7 stability premise and independent model-seed replication are absent.",
       "claim_type": "empirical",
       "claim_tier": "B",
       "protocol": "OFFICEHOME_PROTOCOL_M_v2",
@@ -185,7 +255,7 @@
         "A7 full-fit-versus-LOO stability not established"
       ],
       "status": "descriptive",
-      "allowed_wording": "descriptive no-harm tie with zero ADAPT decisions under the locked runtime",
+      "allowed_wording": "primary descriptive no-harm tie; separate replication has a small point edge; no robust natural win",
       "forbidden_wording": [
         "CI-robust beats both",
         "natural-shift win",
@@ -194,29 +264,33 @@
     },
     {
       "claim_id": "KB-CLAIM-021",
-      "claim_text": "iWildCam H-v2 exact-rank source replay ties always-freeze with zero ADAPT decisions.",
+      "claim_text": "The archived iWildCam numerical and action row is withheld because its scorer does not match the official WILDS label-present macro-F1 contract.",
       "claim_type": "empirical",
       "claim_tier": "B",
       "protocol": "IWILDCAM_PROTOCOL_H_v2",
       "dataset": "iWildCam",
       "candidate_adapter": "dev-locked",
-      "calibration_method": "seed-0 calibration to seed-1 test with exact-rank radius",
+      "calibration_method": null,
       "test_split": "held-out",
       "supporting_artifacts": [
         "experiments/kbound/results/reconciled_panels_v1/canonical_panel_results.json",
         "experiments/kbound/results/reconciled_panels_v1/source_manifest.json"
       ],
       "assumptions": [
-        "one held-out test seed",
-        "A7 full-fit-versus-LOO stability not established"
+        "an official-metric rerun is required",
+        "the evaluation population must be sealed before scoring"
       ],
-      "status": "descriptive",
-      "allowed_wording": "descriptive no-harm tie; false-adapt guarantee untested",
+      "status": "withheld",
+      "allowed_wording": "numerical and action claims withheld pending a population-sealed official-metric rerun",
       "forbidden_wording": [
         "beats both",
         "powered safety result",
-        "multi-seed natural win"
-      ]
+        "multi-seed natural win",
+        "descriptive no-harm tie"
+      ],
+      "numeric_release_eligible": false,
+      "release_disposition": "WITHHELD_INVALID_METRIC_CONTRACT_DIAGNOSTIC_ONLY",
+      "withheld_reason": "The archived scorer does not implement the official WILDS label-present macro-F1 contract, and no population-sealed official-metric rerun is available."
     },
     {
       "claim_id": "KB-CLAIM-022",
@@ -229,14 +303,15 @@
       "calibration_method": "in_sample_radius",
       "test_split": "pooled id_val (invalid)",
       "supporting_artifacts": [
-        "research_lock/CAMELYON17_PROTOCOL_G_RECONCILED_v2.yaml  (LIVE: the reconciliation verdict and the domain-pooling root cause; sealed, hash verifies)",
-        "archive/audit_only/camelyon17_protocol_G_pooled_beats_both  (NOT MATERIALIZED ON DISK -- the withdrawn artifact was never committed to this path)"
+        "research_lock/CAMELYON17_PROTOCOL_G_RECONCILED_v2.yaml",
+        "audits/integrity_2026-06-20/camelyon_reconciliation/recon_results.json",
+        "audits/integrity_2026-06-20/camelyon_reconciliation/VERDICT_phase1.md"
       ],
       "assumptions": [],
       "status": "withdrawn",
-      "allowed_wording": "withdrawn pooling artifact; genuine OOD no-harm",
+      "allowed_wording": "historical pooled Protocol G headline withdrawn; separate n=18 OOD row is an opened, all-helpful diagnostic",
       "forbidden_wording": "beats both Camelyon17",
-      "artifact_pointer_correction_2026_07_26": "The sole supporting_artifact was a path that does not exist, so the withdrawal had no live evidence pointer. Repointed to the sealed reconciliation YAML. The deeper evidence (audits/integrity_2026-06-20/camelyon_reconciliation/recon_results.json) is also absent; see SUBMISSION_LEDGER.md section 8."
+      "artifact_pointer_correction_2026_08_27": "The sealed reconciliation result and verdict are present and hash-verified. They support withdrawal of the pooled Protocol G headline; they do not turn the separate opened OOD row into a prospective or beats-both result."
     },
     {
       "claim_id": "KB-CLAIM-023",
@@ -313,7 +388,7 @@
     },
     {
       "claim_id": "KB-CLAIM-026",
-      "claim_text": "On pre-registered mixed harmful+helpful CIFAR-10-C stress grid, KGA beats POEM and AETTA on regret-to-oracle with Holm-corrected paired-bootstrap CIs, at FA_u=0.",
+      "claim_text": "The archived CIFAR-10-C Tent head-to-head compared protocol-matched POEM- and AETTA-style ports against an earlier KGA policy that was not recomputed. Its Holm-adjusted p-values and unadjusted paired intervals are historical only.",
       "claim_type": "empirical",
       "claim_tier": "B",
       "protocol": "MIXED_HEADTOHEAD_PROTOCOL_v1",
@@ -323,18 +398,28 @@
       "test_split": "432 conditions/seed x 5 seeds",
       "supporting_artifacts": [
         "experiments/kbound/results/mixed_headtohead_v1/HEADTOHEAD_RESULTS_cifar10c_tent_primary.json",
-        "docs/research/kbound/MIXED_BENCHMARK_PROTOCOL.md"
+        "experiments/kbound/results/reconciled_panels_v1/canonical_panel_results.json",
+        "experiments/kbound/results/reconciled_panels_v1/source_manifest.json"
       ],
       "assumptions": [
-        "pre-registered WIN criterion",
-        "shared per-condition signals"
+        "archived scorer recorded recompute_kga=false",
+        "current exact-rank KGA policy differs from the archived KGA policy"
       ],
-      "status": "supported",
-      "allowed_wording": "beats POEM and AETTA on mixed regret (pre-registered WIN)",
+      "status": "diagnostic",
+      "allowed_wording": "historical earlier-policy comparison; current-policy POEM/AETTA-style recomputation pending",
       "forbidden_wording": [
-        "beats POEM on natural shifts",
-        "official-repo arm without labeling"
-      ]
+        "current-policy WIN",
+        "release-eligible WIN",
+        "official POEM reproduction",
+        "official AETTA reproduction",
+        "beats POEM on natural shifts"
+      ],
+      "numeric_release_eligible": false,
+      "policy_synchronized": false,
+      "current_policy_authority": false,
+      "release_eligible_win": false,
+      "ci_convention": "baseline_regret_minus_kga_regret; positive values favor KGA",
+      "holm_scope": "archived p-values only; paired confidence intervals are unadjusted"
     },
     {
       "claim_id": "KB-CLAIM-030",
@@ -347,7 +432,7 @@
       "calibration_method": "session_split_conformal",
       "test_split": "S07/S08 held-out; S09/S10 replication",
       "supporting_artifacts": [
-        "docs/experiments/kbound/results/edge_real_phone_v1/"
+        "experiments/kbound/results/edge_real_phone_v1/"
       ],
       "assumptions": [
         "real captures",
@@ -669,14 +754,15 @@
       "test_split": "four leave-one-domain-out targets; 18 cells per target per seed",
       "supporting_artifacts": [
         "experiments/kbound/results/reconciled_panels_v1/canonical_panel_results.json",
-        "experiments/kbound/results/reconciled_panels_v1/source_manifest.json"
+        "experiments/kbound/results/reconciled_panels_v1/source_manifest.json",
+        "experiments/kbound/results/smoke_pacs_replay_v2/PACS_REPLAY_AUDIT.json"
       ],
       "assumptions": [
         "seed-matched protocol",
         "descriptive aggregation across targets"
       ],
       "status": "diagnostic",
-      "allowed_wording": "three-seed null diagnostic; seed summaries cross-validated",
+      "allowed_wording": "three-seed null diagnostic; aggregate seed summaries cross-validated; separate one-domain smoke validates the v2 replay schema",
       "forbidden_wording": [
         "decision replay complete",
         "beats both"
@@ -719,7 +805,8 @@
       "calibration_method": "n/a",
       "test_split": "n/a",
       "supporting_artifacts": [
-        "kbound_short.tex sec:limits"
+        "docs/research/kbound/kbound_submission_body.tex",
+        "docs/research/kbound/claim_ledger.json"
       ],
       "assumptions": [
         "frontier theorem"
@@ -729,27 +816,163 @@
       "forbidden_wording": [
         "universal improvement",
         "always beats adapt"
+      ],
+      "source_locator": "kbound_submission_body.tex, Limitations and Discussion"
+    },
+    {
+      "claim_id": "KB-CLAIM-043",
+      "claim_text": "The controlled frontier/KGA bridge checks two distinct APIs against the shared benefit target Delta.",
+      "claim_type": "protocol",
+      "status": "diagnostic",
+      "supporting_artifacts": [
+        "experiments/kbound/results/frontier_kga_bridge_v1/bridge_results.json"
+      ],
+      "allowed_wording": "controlled algebraic correspondence check with agreement and disagreement",
+      "forbidden_wording": [
+        "real-data beta estimate",
+        "identical abstention sets"
+      ]
+    },
+    {
+      "claim_id": "KB-CLAIM-044",
+      "claim_text": "No verified unopened natural target was available at the 2026-08-24 prospective-closure audit.",
+      "claim_type": "protocol",
+      "status": "pending",
+      "supporting_artifacts": [
+        "experiments/kbound/results/natural_target_provenance_v1/NATURAL_TARGET_PROVENANCE_AUDIT.json"
+      ],
+      "allowed_wording": "prospective natural claim awaits a genuinely unopened target",
+      "forbidden_wording": [
+        "current natural panel is prospective",
+        "unopened target win"
+      ]
+    },
+    {
+      "claim_id": "KB-CLAIM-045",
+      "claim_text": "The exact split-conformal confirmation has a deterministic draft manifest but has not been sealed or executed.",
+      "claim_type": "protocol",
+      "status": "pending",
+      "supporting_artifacts": [
+        "research_lock/KBOUND_EXACT_CONFIRMATION_UNSEALED_v1.json"
+      ],
+      "allowed_wording": "draft disjoint fit/calibration/test confirmation design",
+      "forbidden_wording": [
+        "confirmatory result",
+        "sealed preregistration"
+      ]
+    },
+    {
+      "claim_id": "KB-CLAIM-046",
+      "claim_text": "Official AETTA and POEM native reproduction requirements are not yet satisfied.",
+      "claim_type": "protocol",
+      "status": "pending",
+      "supporting_artifacts": [
+        "experiments/kbound/results/official_repro_v1/OFFICIAL_BASELINE_AUDIT.json"
+      ],
+      "allowed_wording": "protocol-matched ports; official native reproduction pending",
+      "forbidden_wording": [
+        "official implementation result",
+        "official reproduction complete"
+      ]
+    },
+    {
+      "claim_id": "KB-CLAIM-047",
+      "claim_text": "Camelyon17 OOD exact-rank replay is an opened all-helpful diagnostic: KGA adapts on all 18 conditions and ties always-adapt, so it is neither prospective nor beats-both.",
+      "claim_type": "empirical",
+      "claim_tier": "B",
+      "protocol": "CAMELYON17_OOD_ARCHIVED_REPLAY",
+      "dataset": "Camelyon17 OOD",
+      "candidate_adapter": "eata_online",
+      "calibration_method": "calibration-record LOO residuals + exact-rank transfer radius",
+      "test_split": "opened OOD test conditions, seeds 2-4",
+      "status": "diagnostic",
+      "supporting_artifacts": [
+        "experiments/kbound/results/reconciled_panels_v1/canonical_panel_results.json",
+        "experiments/kbound/results/reconciled_panels_v1/source_manifest.json"
+      ],
+      "assumptions": [
+        "opened target",
+        "all scored conditions favor adaptation"
+      ],
+      "allowed_wording": "opened all-helpful OOD diagnostic that ties always-adapt",
+      "forbidden_wording": [
+        "prospective natural result",
+        "beats both",
+        "non-vacuous safety win"
+      ]
+    },
+    {
+      "claim_id": "KB-CLAIM-048",
+      "claim_text": "RxRx1 SAR-online exact-rank replay is a harmful-dominated no-harm diagnostic: KGA freezes on all 60 primary conditions and ties always-freeze; three independently trained model seeds reproduce that tie.",
+      "claim_type": "empirical",
+      "claim_tier": "B",
+      "protocol": "RXRX1_PROTOCOL_J",
+      "dataset": "RxRx1",
+      "candidate_adapter": "sar_online",
+      "calibration_method": "calibration-record LOO residuals + exact-rank transfer radius",
+      "test_split": "test stream seeds 5-9",
+      "status": "diagnostic",
+      "supporting_artifacts": [
+        "experiments/kbound/results/reconciled_panels_v1/canonical_panel_results.json",
+        "experiments/kbound/results/reconciled_panels_v1/source_manifest.json"
+      ],
+      "assumptions": [
+        "harmful-dominated panel",
+        "A7 stability not established"
+      ],
+      "allowed_wording": "three-model-seed no-harm tie with always-freeze",
+      "forbidden_wording": [
+        "beats both",
+        "mixed-regime routing win",
+        "uniform no-harm"
+      ]
+    },
+    {
+      "claim_id": "KB-CLAIM-049",
+      "claim_text": "CIFAR-10.1 Tent exact-rank replay is a locked negative cross-seed diagnostic: KGA makes no ADAPT decisions and ties always-freeze on 48 test conditions.",
+      "claim_type": "empirical",
+      "claim_tier": "B",
+      "protocol": "CIFAR10_1_PROTOCOL_K",
+      "dataset": "CIFAR-10.1",
+      "candidate_adapter": "tent",
+      "calibration_method": "calibration-record LOO residuals + exact-rank transfer radius",
+      "test_split": "test stream seeds 3-4",
+      "status": "diagnostic",
+      "supporting_artifacts": [
+        "experiments/kbound/results/reconciled_panels_v1/canonical_panel_results.json",
+        "experiments/kbound/results/reconciled_panels_v1/source_manifest.json"
+      ],
+      "assumptions": [
+        "locked cross-seed diagnostic",
+        "A7 stability not established"
+      ],
+      "allowed_wording": "negative exact-rank diagnostic that ties always-freeze",
+      "forbidden_wording": [
+        "FA_u failure",
+        "beats both",
+        "natural-shift win"
       ]
     }
   ],
-  "_artifact_audit_2026_07_26": {
-    "checked": "every supporting_artifacts path, resolved against the repository root",
-    "missing_count": 2,
-    "missing": [
-      {
-        "claim_id": "KB-CLAIM-022",
-        "path": "archive/audit_only/camelyon17_protocol_G_pooled_beats_both"
-      },
-      {
-        "claim_id": "KB-CLAIM-030",
-        "path": "docs/experiments/kbound/results/edge_real_phone_v1/"
-      }
-    ],
-    "note": "Restoration procedures: SUBMISSION_LEDGER.md section 8."
-  },
   "_correction_2026_07_26": "Annotated after an external five-specialist review. This file remains the wording/status authority; its recorded checksum in STORAGE_MANIFEST.json had drifted (F4-15) and has been refreshed. Evidence tiers: SUBMISSION_LEDGER.md section 3.",
   "reconciliation_source": {
     "canonical_panel": "experiments/kbound/results/reconciled_panels_v1/canonical_panel_results.json",
-    "source_manifest": "experiments/kbound/results/reconciled_panels_v1/source_manifest.json"
+    "canonical_panel_sha256": "ee64e858184cc9f67f4e596183b69880d59d64d267e22d3ba29c422afa609df9",
+    "source_manifest": "experiments/kbound/results/reconciled_panels_v1/source_manifest.json",
+    "source_manifest_sha256": "391983f4fa09d65c256ab8c620fea772866b652c219dad0c36574ce38c740482",
+    "comparison_ci_convention": "baseline_regret_minus_kga_regret; positive values favor KGA",
+    "current_policy_family_sensitivity": {
+      "artifact": "experiments/kbound/results/reconciled_panels_v1/current_policy_cluster_inference.json",
+      "artifact_sha256": "47e0afdb2720839764faa7b62d899d91f1d07f404aaf552a601ce2d3967b08d1",
+      "artifact_bytes": 18613,
+      "status": "retrospective_current_policy_family_sensitivity",
+      "preregistered_six_comparison_gate": "failed_for_all_candidates"
+    }
+  },
+  "_artifact_audit_2026_08_27": {
+    "checked": "every supporting_artifacts path, resolved against the repository root",
+    "missing_count": 0,
+    "missing": [],
+    "note": "Regenerated after repairing KB-CLAIM-022 and replacing the malformed KB-CLAIM-050 section pseudo-path with repository-relative files."
   }
 }

@@ -24,11 +24,11 @@ import re
 import sys
 import tempfile
 from collections import Counter, defaultdict
+from collections.abc import Iterable
 from pathlib import Path
-from typing import Any, Iterable
+from typing import Any
 
 import numpy as np
-
 
 ROOT = Path(__file__).resolve().parents[4]
 RESULTS = ROOT / "experiments/kbound/results"
@@ -748,7 +748,7 @@ def natural_policy_rows(canonical: dict[str, Any]) -> list[dict[str, Any]]:
             "accuracy",
             canonical["panels"]["cifar10c"]["panel"]["candidates"]["tent"]["regret"],
             "controlled",
-            "controlled_mixed_regime_claim_supported",
+            "controlled_point_estimate_with_retrospective_sensitivity",
             True,
         ),
         (
@@ -1139,7 +1139,17 @@ def findings_with_remediation(
 def reviewer_scorecard() -> list[dict[str, Any]]:
     return [
         {"stage": "current_evidence", "dimension": "Canonical bundle integrity", "score_out_of_10": 9.5, "score_status": "SCORED", "basis": "106/106 source and compact hashes pass; 12,619 rows and 117 aggregates reconcile. This is internal integrity, not blanket claim validity."},
-        {"stage": "current_evidence", "dimension": "Controlled CIFAR-10-C evidence", "score_out_of_10": 8.8, "score_status": "SCORED", "basis": "Tent beats both fixed policies with clustered robustness, but EATA/SAR do not show the same strength."},
+        {
+            "stage": "current_evidence",
+            "dimension": "Controlled CIFAR-10-C evidence",
+            "score_out_of_10": None,
+            "score_status": "NOT_RESCORED_AFTER_INFERENCE_CORRECTION",
+            "basis": (
+                "Tent has a beats-both point estimate and positive ordinary six-family intervals, "
+                "but its two preregistered six-comparison Holm p-values are 0.09375. EATA and SAR "
+                "also fail that gate, and independent-checkpoint inference is unavailable."
+            ),
+        },
         {"stage": "current_evidence", "dimension": "Natural-shift routing evidence", "score_out_of_10": 4.0, "score_status": "UNCHANGED_AFTER_CODE_REMEDIATION", "basis": "No defensible natural beats-both win exists. Hardening code does not convert opened, invalid, duplicated, or one-sided archives into new evidence."},
         {"stage": "initial_audit", "dimension": "Estimator/task validity (pre-remediation)", "score_out_of_10": 4.0, "score_status": "HISTORICAL_BASELINE", "basis": "The initial audit found arbitrary Route-B orientation and multiclass misuse; current controls address these defects only for fresh runs."},
         {"stage": "initial_audit", "dimension": "Provenance and reproducibility (pre-remediation)", "score_out_of_10": 5.5, "score_status": "HISTORICAL_BASELINE", "basis": "The initial audit found resume contamination, stale release hashes, sample drift, and overloaded seed semantics."},
@@ -1255,7 +1265,10 @@ def main() -> int:
             },
         },
         "release_decision": {
-            "controlled_cifar10c_tent_claim": "SUPPORTED_WITH_DECLARED_CLUSTERED_ROBUSTNESS",
+            "controlled_cifar10c_tent_claim": (
+                "SUPPORTED_POINT_ESTIMATE_WITH_RETROSPECTIVE_UNADJUSTED_INTERVAL_SENSITIVITY; "
+                "PREREGISTERED_SIX_COMPARISON_HOLM_FAILED"
+            ),
             "iwildcam_numerical_and_action_claim": "WITHHELD_PENDING_PINNED_OFFICIAL_METRIC_RERUN",
             "historical_invalid_natural_derivatives": "QUARANTINED_OR_NONPROMOTABLE",
             "natural_beats_both_claim": "NOT_SUPPORTED",
@@ -1266,6 +1279,7 @@ def main() -> int:
         "bottom_line": {
             "defensible_natural_beats_both_win": False,
             "controlled_cifar10c_tent_remains_strong": True,
+            "controlled_cifar10c_preregistered_cluster_win": False,
             "can_guarantee_9_5_empirical_score": False,
             "code_hardening_retroactively_repairs_historical_results": False,
             "recommended_claim": "Strong controlled routing evidence; hardened natural-shift code is ready for sealed reruns, while existing natural evidence remains a transparent boundary/null result rather than a natural win.",

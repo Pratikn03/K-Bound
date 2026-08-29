@@ -1,7 +1,7 @@
 {
   "schema_version": "kbound-result-manifest-v1",
-  "created_at": "2026-08-11T22:25:31.535475+00:00",
-  "code_commit": "1cf45d439b4151d8f698926c4a0a80aef77721cb",
+  "created_at": "2026-08-27T00:00:00Z",
+  "code_commit": "735c65d7d201de2cd3620f4ff90a25cf095e20c3",
   "runtime": {
     "builder": "docs/research/kbound/scripts/build_result_manifest.py",
     "worktree_dirty": true
@@ -12,12 +12,339 @@
       "dataset": "CIFAR-10-C stress grid",
       "protocol": "STRESS_GRID_MULTISEED_PROTOCOL_A_v1",
       "status": "supported",
-      "source_artifact": "experiments/kbound/results/stress_grid_multiseed_v1/LOCKED_ANALYSIS_RESULTS.json",
+      "source_artifact": "experiments/kbound/results/reconciled_panels_v1/canonical_panel_results.json",
       "config_hash": null,
+      "config_hash_status": "No single execution-time configuration hash can truthfully represent this aggregate or historical claim. Recoverable serialized configuration hashes, protocol-file hashes, and unresolved gaps are recorded in the Phase-1 provenance seal.",
       "quantile_rule": "loo_gbr + conformal_on_loo_residuals",
       "metrics": {
-        "artifact_sha256": "fbada73a499891dca52749501311999868828e95a0fe04a5e8916466ef6f59ce",
-        "artifact_bytes": 11754
+        "candidates": {
+          "tent": {
+            "n_decisions": 2160,
+            "regret_kga": 0.0016453700209105456,
+            "regret_adapt": 0.007975694592352266,
+            "regret_freeze": 0.12393680485310378,
+            "false_adapt_num": 0,
+            "false_adapt_den": 2160,
+            "decision_counts": {
+              "ADAPT": 1107,
+              "FREEZE": 359,
+              "ABSTAIN": 694
+            },
+            "point_beats_both": true,
+            "ci_robust_beats_both": false,
+            "comparison_inference": {
+              "convention": "baseline_regret_minus_kga_regret; positive values favor KGA",
+              "comparisons": {
+                "always_adapt": {
+                  "point": 0.00633032457144172,
+                  "ci95": [
+                    0.005985880146423975,
+                    0.00668541736624859
+                  ]
+                },
+                "always_freeze": {
+                  "point": 0.12229143483219324,
+                  "ci95": [
+                    0.12187499874443919,
+                    0.12273009245594343
+                  ]
+                }
+              },
+              "unit": "run-seed mean conditional on the archived checkpoint/protocol",
+              "current_policy_authority": true
+            }
+          },
+          "eata": {
+            "n_decisions": 2160,
+            "regret_kga": 0.0013249999947018093,
+            "regret_adapt": 0.003276389064612212,
+            "regret_freeze": 0.13133703588887496,
+            "false_adapt_num": 0,
+            "false_adapt_den": 2160,
+            "decision_counts": {
+              "ADAPT": 1241,
+              "FREEZE": 132,
+              "ABSTAIN": 787
+            },
+            "point_beats_both": true,
+            "ci_robust_beats_both": false,
+            "comparison_inference": {
+              "convention": "baseline_regret_minus_kga_regret; positive values favor KGA",
+              "comparisons": {
+                "always_adapt": {
+                  "point": 0.0019513890699104028,
+                  "ci95": [
+                    0.0017152772457511337,
+                    0.0021134263111485378
+                  ]
+                },
+                "always_freeze": {
+                  "point": 0.13001203589417315,
+                  "ci95": [
+                    0.12959421146661046,
+                    0.13060231359882485
+                  ]
+                }
+              },
+              "unit": "run-seed mean conditional on the archived checkpoint/protocol",
+              "current_policy_authority": true
+            }
+          },
+          "sar": {
+            "n_decisions": 2160,
+            "regret_kga": 0.0015581017842999211,
+            "regret_adapt": 0.0003354167496716535,
+            "regret_freeze": 0.1404706014527215,
+            "false_adapt_num": 0,
+            "false_adapt_den": 2160,
+            "decision_counts": {
+              "ADAPT": 1446,
+              "FREEZE": 0,
+              "ABSTAIN": 714
+            },
+            "point_beats_both": false,
+            "ci_robust_beats_both": false,
+            "comparison_inference": {
+              "convention": "baseline_regret_minus_kga_regret; positive values favor KGA",
+              "comparisons": {
+                "always_adapt": {
+                  "point": -0.0012226850346282675,
+                  "ci95": [
+                    -0.0014638890822728475,
+                    -0.0009923607662872033
+                  ]
+                },
+                "always_freeze": {
+                  "point": 0.1389124996684216,
+                  "ci95": [
+                    0.13858518482496338,
+                    0.13920462948304635
+                  ]
+                }
+              },
+              "unit": "run-seed mean conditional on the archived checkpoint/protocol",
+              "current_policy_authority": true
+            }
+          }
+        },
+        "current_policy_family_sensitivity": {
+          "status": "retrospective_current_policy_family_sensitivity",
+          "confirmatory": false,
+          "artifact_path": "experiments/kbound/results/reconciled_panels_v1/current_policy_cluster_inference.json",
+          "artifact_sha256": "47e0afdb2720839764faa7b62d899d91f1d07f404aaf552a601ce2d3967b08d1",
+          "artifact_bytes": 18613,
+          "schema": "kbound-current-policy-cluster-inference-v2",
+          "generated_utc": "2026-08-29T00:00:28.680180+00:00",
+          "git_head": "b261866fc976d5be4f9be1abc5a2cfec3ff3bbcc",
+          "analysis_script": "docs/research/kbound/scripts/analyze_current_policy_cluster_inference.py",
+          "analysis_script_sha256": "af58c22d21192c83134237711b5f46a9f8dd5ddccfd1719fc1c549fbe79e89a6",
+          "runtime": {
+            "python": "3.12.13",
+            "numpy": "2.4.6",
+            "platform": "macOS-26.6.2-arm64-arm-64bit"
+          },
+          "live_code_bindings": {
+            "policy": {
+              "path": "kga/policy.py",
+              "sha256": "d63ea5a123d2cd63a3f13fd2f59928dc3fb39f4ee472cc9ad91e5affdd33282b"
+            },
+            "certificate": {
+              "path": "kga/certificate.py",
+              "sha256": "9fdc11831cc9d2a29d5445d0ecc1098e2b624be92df665f80d58380775a4e4ea"
+            },
+            "preregistered_protocol": {
+              "path": "research_lock/STRESS_GRID_MULTISEED_PROTOCOL_A_v1.yaml",
+              "sha256": "ee6caac547c32c0fb23bc21c2a319cbf166961f50ddc2d8c4bd2cca0626167ca"
+            }
+          },
+          "convention": "baseline_regret_minus_kga_regret; positive values favor KGA",
+          "inference": {
+            "bootstrap": "paired percentile bootstrap of corruption-family mean gaps; whole families resampled with replacement",
+            "hypothesis_test": "exact one-sided sign-flip test over six paired corruption-family effects",
+            "multiplicity": "Primary audit: Holm adjustment over the preregistered six candidate-by-baseline comparisons. A two-comparison within-candidate Holm result is also shown and is explicitly post hoc.",
+            "holm_applies_to": "p-values only; confidence intervals are unadjusted",
+            "ci_level": 0.95,
+            "bootstrap_replicates": 20000,
+            "random_seed_base": 20260827
+          },
+          "claim_boundary": {
+            "supports": "retrospective current-policy family sensitivity on the controlled CIFAR-10-C stress grid; positive pointwise intervals may be described conditionally",
+            "does_not_support": [
+              "a preregistered cluster-robust win when six-comparison Holm fails",
+              "simultaneous confidence intervals",
+              "independent-checkpoint population inference",
+              "prospective confirmation",
+              "natural-shift generalization",
+              "official-code POEM or AETTA superiority"
+            ],
+            "few_cluster_warning": "Only six corruption families are available; intervals and sign-flip tests have low resolution and must be reported with the family-level effects.",
+            "multiplicity_warning": "The preregistered family contains all six candidate-by-baseline comparisons; within-candidate Holm values are retrospective diagnostics only."
+          },
+          "preregistered_six_comparison_holm": {
+            "raw_p_values": {
+              "tent::always_adapt": 0.03125,
+              "tent::always_freeze": 0.015625,
+              "eata::always_adapt": 0.125,
+              "eata::always_freeze": 0.015625,
+              "sar::always_adapt": 0.90625,
+              "sar::always_freeze": 0.015625
+            },
+            "adjusted_p_values": {
+              "tent::always_freeze": 0.09375,
+              "eata::always_freeze": 0.09375,
+              "sar::always_freeze": 0.09375,
+              "tent::always_adapt": 0.09375,
+              "eata::always_adapt": 0.25,
+              "sar::always_adapt": 0.90625
+            },
+            "family_size": 6,
+            "alpha": 0.05
+          },
+          "candidates": {
+            "tent": {
+              "inference_unit": "corruption_family",
+              "n_inference_units": 6,
+              "nested_repetitions": "run seeds and condition cells are averaged within family",
+              "pointwise_family_intervals_positive_vs_both": true,
+              "within_candidate_posthoc_holm_rejects_both": true,
+              "preregistered_six_comparison_holm_rejects_both": false,
+              "comparisons": {
+                "always_adapt": {
+                  "point": 0.006330324571441721,
+                  "ci95_unadjusted_family_bootstrap": [
+                    0.002543518554281305,
+                    0.009536807073487174
+                  ],
+                  "family_effects": {
+                    "contrast": 0.008229167262713114,
+                    "defocus_blur": 0.010590276949935489,
+                    "fog": 0.010380557345019446,
+                    "gaussian_noise": -0.0020555557476149666,
+                    "jpeg_compression": 0.003368055820465088,
+                    "pixelate": 0.007469445798132155
+                  },
+                  "p_value_one_sided_exact_sign_flip": 0.03125,
+                  "p_value_holm_within_candidate_posthoc": 0.03125,
+                  "p_value_holm_preregistered_six_comparison_family": 0.09375
+                },
+                "always_freeze": {
+                  "point": 0.12229143483219324,
+                  "ci95_unadjusted_family_bootstrap": [
+                    0.06330717476429762,
+                    0.17772361136696957
+                  ],
+                  "family_effects": {
+                    "contrast": 0.22884583324193955,
+                    "defocus_blur": 0.12017222195863723,
+                    "fog": 0.06325694289472368,
+                    "gaussian_noise": 0.17364722390969595,
+                    "jpeg_compression": 0.006643055048253801,
+                    "pixelate": 0.1411833319399092
+                  },
+                  "p_value_one_sided_exact_sign_flip": 0.015625,
+                  "p_value_holm_within_candidate_posthoc": 0.03125,
+                  "p_value_holm_preregistered_six_comparison_family": 0.09375
+                }
+              }
+            },
+            "eata": {
+              "inference_unit": "corruption_family",
+              "n_inference_units": 6,
+              "nested_repetitions": "run seeds and condition cells are averaged within family",
+              "pointwise_family_intervals_positive_vs_both": false,
+              "within_candidate_posthoc_holm_rejects_both": false,
+              "preregistered_six_comparison_holm_rejects_both": false,
+              "comparisons": {
+                "always_adapt": {
+                  "point": 0.0019513890699104023,
+                  "ci95_unadjusted_family_bootstrap": [
+                    -0.0005194442415678941,
+                    0.004381944708250187
+                  ],
+                  "family_effects": {
+                    "contrast": 0.002649999823835161,
+                    "defocus_blur": 0.00548888858821657,
+                    "fog": 0.005572223001056247,
+                    "gaussian_noise": -0.00022083371877670288,
+                    "jpeg_compression": -0.0033013885219891864,
+                    "pixelate": 0.0015194452471203274
+                  },
+                  "p_value_one_sided_exact_sign_flip": 0.125,
+                  "p_value_holm_within_candidate_posthoc": 0.125,
+                  "p_value_holm_preregistered_six_comparison_family": 0.25
+                },
+                "always_freeze": {
+                  "point": 0.13001203589417318,
+                  "ci95_unadjusted_family_bootstrap": [
+                    0.06977175780468516,
+                    0.18754398066688469
+                  ],
+                  "family_effects": {
+                    "contrast": 0.23968055546283723,
+                    "defocus_blur": 0.12648055454095206,
+                    "fog": 0.06860277652740479,
+                    "gaussian_noise": 0.186472221215566,
+                    "jpeg_compression": 0.012358331514729395,
+                    "pixelate": 0.14647777610354953
+                  },
+                  "p_value_one_sided_exact_sign_flip": 0.015625,
+                  "p_value_holm_within_candidate_posthoc": 0.03125,
+                  "p_value_holm_preregistered_six_comparison_family": 0.09375
+                }
+              }
+            },
+            "sar": {
+              "inference_unit": "corruption_family",
+              "n_inference_units": 6,
+              "nested_repetitions": "run seeds and condition cells are averaged within family",
+              "pointwise_family_intervals_positive_vs_both": false,
+              "within_candidate_posthoc_holm_rejects_both": false,
+              "preregistered_six_comparison_holm_rejects_both": false,
+              "comparisons": {
+                "always_adapt": {
+                  "point": -0.0012226850346282677,
+                  "ci95_unadjusted_family_bootstrap": [
+                    -0.0026736108517205273,
+                    -6.736067158204539e-05
+                  ],
+                  "family_effects": {
+                    "contrast": -0.0025402787658903333,
+                    "defocus_blur": 6.388939089245267e-05,
+                    "fog": 6.945265663994683e-06,
+                    "gaussian_noise": 0.0,
+                    "jpeg_compression": -0.000545833342605167,
+                    "pixelate": -0.004320832755830553
+                  },
+                  "p_value_one_sided_exact_sign_flip": 0.90625,
+                  "p_value_holm_within_candidate_posthoc": 0.90625,
+                  "p_value_holm_preregistered_six_comparison_family": 0.90625
+                },
+                "always_freeze": {
+                  "point": 0.13891249966842156,
+                  "ci95_unadjusted_family_bootstrap": [
+                    0.08031388794382413,
+                    0.19686064847089627
+                  ],
+                  "family_effects": {
+                    "contrast": 0.24956250041723252,
+                    "defocus_blur": 0.13258749975098505,
+                    "fog": 0.07422638850079642,
+                    "gaussian_noise": 0.1980319455265999,
+                    "jpeg_compression": 0.025679164628187815,
+                    "pixelate": 0.15338749918672773
+                  },
+                  "p_value_one_sided_exact_sign_flip": 0.015625,
+                  "p_value_holm_within_candidate_posthoc": 0.03125,
+                  "p_value_holm_preregistered_six_comparison_family": 0.09375
+                }
+              }
+            }
+          },
+          "release_interpretation": "Tent has positive ordinary family-bootstrap intervals against both fixed policies. Its within-candidate two-contrast Holm result is post hoc; the preregistered six-way Holm p-values are 0.09375 against both baselines, so no cluster-robust or confirmatory win is promoted. EATA and SAR also fail the preregistered gate."
+        },
+        "independent_checkpoint_inference": "not_available",
+        "artifact_sha256": "ee64e858184cc9f67f4e596183b69880d59d64d267e22d3ba29c422afa609df9",
+        "artifact_bytes": 587516
       }
     },
     {
@@ -27,18 +354,46 @@
       "status": "no-harm",
       "source_artifact": "experiments/kbound/results/reconciled_panels_v1/canonical_panel_results.json",
       "config_hash": null,
+      "config_hash_status": "No single execution-time configuration hash can truthfully represent this aggregate or historical claim. Recoverable serialized configuration hashes, protocol-file hashes, and unresolved gaps are recorded in the Phase-1 provenance seal.",
       "quantile_rule": "exact_rank_leave_one_condition_out_residual_calibration",
       "metrics": {
-        "n_seeds": 5,
         "n_decisions": 135,
         "regret_kga": 0.028892592368302522,
         "regret_adapt": 0.05293333342781773,
         "regret_freeze": 0.031894444481090266,
         "false_adapt_num": 1,
         "false_adapt_den": 135,
+        "decision_counts": {
+          "ADAPT": 13,
+          "FREEZE": 15,
+          "ABSTAIN": 107
+        },
+        "point_beats_both": true,
         "ci_robust_beats_both": false,
-        "artifact_sha256": "fb2e4b989a55c1cb9525f18dc9d26c93bc8a2e04879f43e0e9fdb864b2c48a30",
-        "artifact_bytes": 313853
+        "comparison_inference": {
+          "convention": "baseline_regret_minus_kga_regret; positive values favor KGA",
+          "comparisons": {
+            "always_adapt": {
+              "point": 0.02404074105951521,
+              "ci95": [
+                0.018668522547792506,
+                0.028805554740958743
+              ]
+            },
+            "always_freeze": {
+              "point": 0.0030018521127877437,
+              "ci95": [
+                0.0,
+                0.006690741192411495
+              ]
+            }
+          },
+          "unit": "run-seed mean conditional on the archived checkpoint/protocol",
+          "current_policy_authority": true
+        },
+        "n_seeds": 5,
+        "artifact_sha256": "ee64e858184cc9f67f4e596183b69880d59d64d267e22d3ba29c422afa609df9",
+        "artifact_bytes": 587516
       }
     },
     {
@@ -48,6 +403,7 @@
       "status": "descriptive",
       "source_artifact": "experiments/kbound/results/reconciled_panels_v1/canonical_panel_results.json",
       "config_hash": null,
+      "config_hash_status": "No single execution-time configuration hash can truthfully represent this aggregate or historical claim. Recoverable serialized configuration hashes, protocol-file hashes, and unresolved gaps are recorded in the Phase-1 provenance seal.",
       "quantile_rule": "calibration-record LOO residuals + exact-rank transfer radius",
       "metrics": {
         "n_decisions": 35,
@@ -61,36 +417,32 @@
           "FREEZE": 11,
           "ABSTAIN": 24
         },
+        "point_beats_both": false,
         "ci_robust_beats_both": false,
-        "a7_status": "not_established",
-        "artifact_sha256": "fb2e4b989a55c1cb9525f18dc9d26c93bc8a2e04879f43e0e9fdb864b2c48a30",
-        "artifact_bytes": 313853
-      }
-    },
-    {
-      "claim_id": "KB-CLAIM-021",
-      "dataset": "iWildCam",
-      "protocol": "IWILDCAM_PROTOCOL_H_v2",
-      "status": "descriptive",
-      "source_artifact": "experiments/kbound/results/reconciled_panels_v1/canonical_panel_results.json",
-      "config_hash": null,
-      "quantile_rule": "seed-0 calibration to seed-1 test with exact-rank radius",
-      "metrics": {
-        "n_decisions": 72,
-        "regret_kga": 0.004102369062102953,
-        "regret_adapt": 0.10282996048460004,
-        "regret_freeze": 0.004102369062102953,
-        "false_adapt_num": 0,
-        "false_adapt_den": 72,
-        "decision_counts": {
-          "ADAPT": 0,
-          "FREEZE": 21,
-          "ABSTAIN": 51
+        "comparison_inference": {
+          "convention": "baseline_regret_minus_kga_regret; positive values favor KGA",
+          "comparisons": {
+            "always_adapt": {
+              "point": 0.030989010989010978,
+              "ci95": [
+                0.025113122171945692,
+                0.036538461538461534
+              ]
+            },
+            "always_freeze": {
+              "point": 0.0,
+              "ci95": [
+                0.0,
+                0.0
+              ]
+            }
+          },
+          "unit": "run-seed mean conditional on the archived checkpoint/protocol",
+          "current_policy_authority": true
         },
-        "ci_robust_beats_both": false,
         "a7_status": "not_established",
-        "artifact_sha256": "fb2e4b989a55c1cb9525f18dc9d26c93bc8a2e04879f43e0e9fdb864b2c48a30",
-        "artifact_bytes": 313853
+        "artifact_sha256": "ee64e858184cc9f67f4e596183b69880d59d64d267e22d3ba29c422afa609df9",
+        "artifact_bytes": 587516
       }
     },
     {
@@ -100,6 +452,7 @@
       "status": "diagnostic",
       "source_artifact": "research_lock/KBOUND_MIXED_STREAM_v2.json",
       "config_hash": null,
+      "config_hash_status": "No single execution-time configuration hash can truthfully represent this aggregate or historical claim. Recoverable serialized configuration hashes, protocol-file hashes, and unresolved gaps are recorded in the Phase-1 provenance seal.",
       "quantile_rule": "per_dataset_dev_lock_loo_conformal",
       "metrics": {
         "artifact_sha256": "2aebfea3544c83c0432b239a9ec29a15c054f28d12672d6b33fbd205ae3f824f",
@@ -110,11 +463,104 @@
       "claim_id": "KB-CLAIM-026",
       "dataset": "CIFAR-10-C stress grid (Tent)",
       "protocol": "MIXED_HEADTOHEAD_PROTOCOL_v1",
-      "status": "supported",
+      "status": "diagnostic",
       "source_artifact": "experiments/kbound/results/mixed_headtohead_v1/HEADTOHEAD_RESULTS_cifar10c_tent_primary.json",
       "config_hash": null,
+      "config_hash_status": "No single execution-time configuration hash can truthfully represent this aggregate or historical claim. Recoverable serialized configuration hashes, protocol-file hashes, and unresolved gaps are recorded in the Phase-1 provenance seal.",
       "quantile_rule": "loo_gbr + conformal (KGA); faithful POEM/AETTA ports",
       "metrics": {
+        "numeric_release_eligible": false,
+        "release_eligible_win": false,
+        "policy_synchronized": false,
+        "current_policy_authority": false,
+        "archived_policy_recomputed_kga": false,
+        "comparison_ci_convention": "baseline_regret_minus_kga_regret; positive values favor KGA",
+        "archived_comparisons": [
+          {
+            "competitor": "poem",
+            "mean_gap_baseline_minus_kga": 0.007231019023391936,
+            "ci95_baseline_minus_kga": [
+              0.005708061794026032,
+              0.008780376902195039
+            ],
+            "p_raw": 9.999000099990002e-05,
+            "p_holm": 0.00039996000399960006,
+            "holm_applies_to": "p_value_only",
+            "ci_adjustment": "unadjusted paired percentile interval"
+          },
+          {
+            "competitor": "aetta",
+            "mean_gap_baseline_minus_kga": 0.0057562503273840306,
+            "ci95_baseline_minus_kga": [
+              0.0043985880235279055,
+              0.007142604557038458
+            ],
+            "p_raw": 9.999000099990002e-05,
+            "p_holm": 0.00039996000399960006,
+            "holm_applies_to": "p_value_only",
+            "ci_adjustment": "unadjusted paired percentile interval"
+          },
+          {
+            "competitor": "always_adapt",
+            "mean_gap_baseline_minus_kga": 0.006349768986304603,
+            "ci95_baseline_minus_kga": [
+              0.00489674762926168,
+              0.007840816527605057
+            ],
+            "p_raw": 9.999000099990002e-05,
+            "p_holm": 0.00039996000399960006,
+            "holm_applies_to": "p_value_only",
+            "ci_adjustment": "unadjusted paired percentile interval"
+          },
+          {
+            "competitor": "always_freeze",
+            "mean_gap_baseline_minus_kga": 0.12252430535025066,
+            "ci95_baseline_minus_kga": [
+              0.10839270806302213,
+              0.1372839521651191
+            ],
+            "p_raw": 9.999000099990002e-05,
+            "p_holm": 0.00039996000399960006,
+            "holm_applies_to": "p_value_only",
+            "ci_adjustment": "unadjusted paired percentile interval"
+          }
+        ],
+        "current_exact_rank_reference": {
+          "n_decisions": 2160,
+          "regret_kga": 0.0016453700209105456,
+          "regret_adapt": 0.007975694592352266,
+          "regret_freeze": 0.12393680485310378,
+          "false_adapt_num": 0,
+          "false_adapt_den": 2160,
+          "decision_counts": {
+            "ADAPT": 1107,
+            "FREEZE": 359,
+            "ABSTAIN": 694
+          },
+          "point_beats_both": true,
+          "ci_robust_beats_both": false,
+          "comparison_inference": {
+            "convention": "baseline_regret_minus_kga_regret; positive values favor KGA",
+            "comparisons": {
+              "always_adapt": {
+                "point": 0.00633032457144172,
+                "ci95": [
+                  0.005985880146423975,
+                  0.00668541736624859
+                ]
+              },
+              "always_freeze": {
+                "point": 0.12229143483219324,
+                "ci95": [
+                  0.12187499874443919,
+                  0.12273009245594343
+                ]
+              }
+            },
+            "unit": "run-seed mean conditional on the archived checkpoint/protocol",
+            "current_policy_authority": true
+          }
+        },
         "artifact_sha256": "7d6d0b4986c803874c49b0896ad18d16a72c573c63dd67b482123c3d905347d7",
         "artifact_bytes": 9175
       }
@@ -126,6 +572,7 @@
       "status": "supported",
       "source_artifact": "research_lock/CONTROLLED_MULTIMODAL_PROTOCOL_D33_v1.yaml",
       "config_hash": null,
+      "config_hash_status": "No single execution-time configuration hash can truthfully represent this aggregate or historical claim. Recoverable serialized configuration hashes, protocol-file hashes, and unresolved gaps are recorded in the Phase-1 provenance seal.",
       "quantile_rule": "loo_conformal",
       "metrics": {
         "artifact_sha256": "0208c6ae6b050a43e9ce25ece182aeeac2476ce235a87bc22adf084ea0c2b383",
@@ -139,6 +586,7 @@
       "status": "diagnostic",
       "source_artifact": "experiments/kbound/results/reconciled_panels_v1/canonical_panel_results.json",
       "config_hash": null,
+      "config_hash_status": "No single execution-time configuration hash can truthfully represent this aggregate or historical claim. Recoverable serialized configuration hashes, protocol-file hashes, and unresolved gaps are recorded in the Phase-1 provenance seal.",
       "quantile_rule": "loo_jackknife_quantile",
       "metrics": {
         "n_seeds": 3,
@@ -149,8 +597,8 @@
         "false_adapt_reported_rate": 0.009259259259259259,
         "decision_replay_available": false,
         "beats_both_promoted": false,
-        "artifact_sha256": "fb2e4b989a55c1cb9525f18dc9d26c93bc8a2e04879f43e0e9fdb864b2c48a30",
-        "artifact_bytes": 313853
+        "artifact_sha256": "ee64e858184cc9f67f4e596183b69880d59d64d267e22d3ba29c422afa609df9",
+        "artifact_bytes": 587516
       }
     },
     {
@@ -160,6 +608,7 @@
       "status": "diagnostic",
       "source_artifact": "experiments/kbound/results/reconciled_panels_v1/canonical_panel_results.json",
       "config_hash": null,
+      "config_hash_status": "No single execution-time configuration hash can truthfully represent this aggregate or historical claim. Recoverable serialized configuration hashes, protocol-file hashes, and unresolved gaps are recorded in the Phase-1 provenance seal.",
       "quantile_rule": "per-backbone/per-seed exact-rank LOO residual calibration",
       "metrics": {
         "n_seeds": 4,
@@ -172,15 +621,192 @@
         "false_adapt_den": 480,
         "beats_both_candidates": 0,
         "worse_than_always_adapt_candidates": 8,
-        "artifact_sha256": "fb2e4b989a55c1cb9525f18dc9d26c93bc8a2e04879f43e0e9fdb864b2c48a30",
-        "artifact_bytes": 313853
+        "artifact_sha256": "ee64e858184cc9f67f4e596183b69880d59d64d267e22d3ba29c422afa609df9",
+        "artifact_bytes": 587516
+      }
+    },
+    {
+      "claim_id": "KB-CLAIM-047",
+      "dataset": "Camelyon17 OOD",
+      "protocol": "CAMELYON17_OOD_ARCHIVED_REPLAY",
+      "status": "diagnostic",
+      "source_artifact": "experiments/kbound/results/reconciled_panels_v1/canonical_panel_results.json",
+      "config_hash": null,
+      "config_hash_status": "No single execution-time configuration hash can truthfully represent this aggregate or historical claim. Recoverable serialized configuration hashes, protocol-file hashes, and unresolved gaps are recorded in the Phase-1 provenance seal.",
+      "quantile_rule": "calibration-record LOO residuals + exact-rank transfer radius",
+      "metrics": {
+        "n_decisions": 18,
+        "regret_kga": 0.0,
+        "regret_adapt": 0.0,
+        "regret_freeze": 0.1381293402777778,
+        "false_adapt_num": 0,
+        "false_adapt_den": 18,
+        "decision_counts": {
+          "ADAPT": 18,
+          "FREEZE": 0,
+          "ABSTAIN": 0
+        },
+        "point_beats_both": false,
+        "ci_robust_beats_both": false,
+        "comparison_inference": {
+          "convention": "baseline_regret_minus_kga_regret; positive values favor KGA",
+          "comparisons": {
+            "always_adapt": {
+              "point": 0.0,
+              "ci95": [
+                0.0,
+                0.0
+              ]
+            },
+            "always_freeze": {
+              "point": 0.1381293402777778,
+              "ci95": [
+                0.07291666666666667,
+                0.2353515625
+              ]
+            }
+          },
+          "unit": "run-seed mean conditional on the archived checkpoint/protocol",
+          "current_policy_authority": true
+        },
+        "headline_promotion_eligible": false,
+        "opened_target": true,
+        "artifact_sha256": "ee64e858184cc9f67f4e596183b69880d59d64d267e22d3ba29c422afa609df9",
+        "artifact_bytes": 587516
+      }
+    },
+    {
+      "claim_id": "KB-CLAIM-048",
+      "dataset": "RxRx1",
+      "protocol": "RXRX1_PROTOCOL_J",
+      "status": "diagnostic",
+      "source_artifact": "experiments/kbound/results/reconciled_panels_v1/canonical_panel_results.json",
+      "config_hash": null,
+      "config_hash_status": "No single execution-time configuration hash can truthfully represent this aggregate or historical claim. Recoverable serialized configuration hashes, protocol-file hashes, and unresolved gaps are recorded in the Phase-1 provenance seal.",
+      "quantile_rule": "calibration-record LOO residuals + exact-rank transfer radius",
+      "metrics": {
+        "n_decisions": 60,
+        "regret_kga": 0.0,
+        "regret_adapt": 0.2530598958333333,
+        "regret_freeze": 0.0,
+        "false_adapt_num": 0,
+        "false_adapt_den": 60,
+        "decision_counts": {
+          "ADAPT": 0,
+          "FREEZE": 60,
+          "ABSTAIN": 0
+        },
+        "point_beats_both": false,
+        "ci_robust_beats_both": false,
+        "comparison_inference": {
+          "convention": "baseline_regret_minus_kga_regret; positive values favor KGA",
+          "comparisons": {
+            "always_adapt": {
+              "point": 0.2530598958333333,
+              "ci95": [
+                0.2509765625,
+                0.2552734375
+              ]
+            },
+            "always_freeze": {
+              "point": 0.0,
+              "ci95": [
+                0.0,
+                0.0
+              ]
+            }
+          },
+          "unit": "run-seed mean conditional on the archived checkpoint/protocol",
+          "current_policy_authority": true
+        },
+        "headline_promotion_eligible": false,
+        "model_seed_robustness": {
+          "all_tie_always_freeze": true,
+          "any_point_beats_both": false,
+          "fa_u_max": 0.0,
+          "n_model_seeds": 3,
+          "regret_mean_std": {
+            "always_adapt": {
+              "mean": 0.25838758680555557,
+              "std_population": 0.004372358651720795
+            },
+            "always_freeze": {
+              "mean": 0.0,
+              "std_population": 0.0
+            },
+            "kga": {
+              "mean": 0.0,
+              "std_population": 0.0
+            }
+          }
+        },
+        "artifact_sha256": "ee64e858184cc9f67f4e596183b69880d59d64d267e22d3ba29c422afa609df9",
+        "artifact_bytes": 587516
+      }
+    },
+    {
+      "claim_id": "KB-CLAIM-049",
+      "dataset": "CIFAR-10.1",
+      "protocol": "CIFAR10_1_PROTOCOL_K",
+      "status": "diagnostic",
+      "source_artifact": "experiments/kbound/results/reconciled_panels_v1/canonical_panel_results.json",
+      "config_hash": null,
+      "config_hash_status": "No single execution-time configuration hash can truthfully represent this aggregate or historical claim. Recoverable serialized configuration hashes, protocol-file hashes, and unresolved gaps are recorded in the Phase-1 provenance seal.",
+      "quantile_rule": "calibration-record LOO residuals + exact-rank transfer radius",
+      "metrics": {
+        "n_decisions": 48,
+        "regret_kga": 0.0017083374162515004,
+        "regret_adapt": 0.019020830591519673,
+        "regret_freeze": 0.0017083374162515004,
+        "false_adapt_num": 0,
+        "false_adapt_den": 48,
+        "decision_counts": {
+          "ADAPT": 0,
+          "FREEZE": 22,
+          "ABSTAIN": 26
+        },
+        "point_beats_both": false,
+        "ci_robust_beats_both": false,
+        "comparison_inference": {
+          "convention": "baseline_regret_minus_kga_regret; positive values favor KGA",
+          "comparisons": {
+            "always_adapt": {
+              "point": 0.017312493175268173,
+              "ci95": [
+                0.016374990344047546,
+                0.0182499960064888
+              ]
+            },
+            "always_freeze": {
+              "point": 0.0,
+              "ci95": [
+                0.0,
+                0.0
+              ]
+            }
+          },
+          "unit": "run-seed mean conditional on the archived checkpoint/protocol",
+          "current_policy_authority": true
+        },
+        "headline_promotion_eligible": false,
+        "artifact_sha256": "ee64e858184cc9f67f4e596183b69880d59d64d267e22d3ba29c422afa609df9",
+        "artifact_bytes": 587516
       }
     }
   ],
   "reconciliation_source": {
     "canonical_panel": "experiments/kbound/results/reconciled_panels_v1/canonical_panel_results.json",
-    "canonical_panel_sha256": "fb2e4b989a55c1cb9525f18dc9d26c93bc8a2e04879f43e0e9fdb864b2c48a30",
+    "canonical_panel_sha256": "ee64e858184cc9f67f4e596183b69880d59d64d267e22d3ba29c422afa609df9",
     "source_manifest": "experiments/kbound/results/reconciled_panels_v1/source_manifest.json",
-    "source_manifest_sha256": "e7c3431c717c30b157ce578842873517709cdc595cbc2e39bc7e7a172ea741f9"
+    "source_manifest_sha256": "391983f4fa09d65c256ab8c620fea772866b652c219dad0c36574ce38c740482",
+    "comparison_ci_convention": "baseline_regret_minus_kga_regret; positive values favor KGA",
+    "current_policy_family_sensitivity": {
+      "artifact": "experiments/kbound/results/reconciled_panels_v1/current_policy_cluster_inference.json",
+      "artifact_sha256": "47e0afdb2720839764faa7b62d899d91f1d07f404aaf552a601ce2d3967b08d1",
+      "artifact_bytes": 18613,
+      "status": "retrospective_not_preregistered_significant"
+    },
+    "phase1_provenance_seal": "docs/research/kbound/audits/phase1_provenance_2026_08_27/provenance_seal.json",
+    "identity_scope": "Retrospective hashes bind current or archived bytes only; they are not silently treated as missing historical execution identities."
   }
 }

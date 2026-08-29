@@ -9,9 +9,8 @@ Archived or legacy ELARA outputs are intentionally ignored.
 from __future__ import annotations
 
 import csv
+import hashlib
 import json
-import subprocess
-from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
@@ -38,16 +37,8 @@ def rel(path: Path) -> str:
         return str(path)
 
 
-def git_short_hash() -> str | None:
-    try:
-        return subprocess.check_output(
-            ["git", "rev-parse", "--short", "HEAD"],
-            cwd=REPO,
-            text=True,
-            stderr=subprocess.DEVNULL,
-        ).strip()
-    except (FileNotFoundError, subprocess.CalledProcessError):
-        return None
+def sha256(path: Path) -> str:
+    return hashlib.sha256(path.read_bytes()).hexdigest()
 
 
 def regret_row(
@@ -72,7 +63,12 @@ def regret_row(
         "regret_adapt": adapt,
         "regret_freeze": freeze,
         "false_adapt": track.get("false_adapt", track.get("false_adapt_unconditional")),
-        "beats_both_artifact": "beats-both" in track.get("verdict", ""),
+        "point_beats_both": track.get("point_beats_both"),
+        "ci_robust_beats_both": track.get("ci_robust_beats_both"),
+        # Retained for the existing dashboard schema.  It is intentionally tied
+        # to the explicit inferential flag, never to a substring in prose (for
+        # example, "not a beats-both result").
+        "beats_both_artifact": track.get("ci_robust_beats_both") is True,
     }
 
 
@@ -233,22 +229,31 @@ def build_snapshot() -> dict[str, Any]:
             manifest,
             "cifar10c_tent",
             "CIFAR-10-C stress / Tent",
-            "verified",
-            "Five seeds x 432 cross-fitted cells; archived CI beats both fixed policies.",
+            "conditional",
+            (
+                "Point estimate is below both fixed policies and ordinary six-family intervals "
+                "are positive, but both preregistered six-comparison Holm p-values are 0.09375."
+            ),
         ),
         regret_row(
             manifest,
             "cifar10c_eata",
             "CIFAR-10-C stress / EATA",
-            "verified",
-            "Five seeds x 432 cross-fitted cells; archived CI beats both fixed policies.",
+            "diagnostic",
+            (
+                "Point estimate is below both fixed policies, but the ordinary family interval "
+                "against always-adapt crosses zero and the preregistered Holm gate fails."
+            ),
         ),
         regret_row(
             manifest,
             "imagenetc_sar",
             "ImageNet-C / SAR",
-            "conditional",
-            "Twenty-seven cells, seed 0; paired-bootstrap beats both with a single-seed caveat.",
+            "no_harm",
+            (
+                "Pooled point estimate is below both fixed policies, with one false adaptation "
+                "in 135 cells; the freeze-side seed interval touches zero."
+            ),
         ),
     ]
     constructed = regret_row(
@@ -261,13 +266,27 @@ def build_snapshot() -> dict[str, Any]:
 
     natural = [
         regret_row(manifest, "officehome_M_v2", "Office-Home M v2", "no_harm", "No-harm; ties the safer fixed policy within the declared criterion."),
-        regret_row(manifest, "iwildcam_H_v2", "iWildCam H v2", "no_harm", "No-harm; ties always-freeze and avoids harmful adaptation."),
-        regret_row(manifest, "camelyon17_ood", "Camelyon17 OOD", "no_harm", "Reconciled genuine OOD result; no natural beats-both claim."),
         regret_row(manifest, "rxrx1_J", "RxRx1 J", "no_harm", "Locked no-harm result; always-freeze is already optimal."),
     ]
 
     c101 = manifest["tracks"]["cifar10_1_K"]
+    camelyon = regret_row(
+        manifest,
+        "camelyon17_ood",
+        "Camelyon17 OOD",
+        "diagnostic",
+        "Opened all-helpful OOD diagnostic; KGA ties always-adapt on all 18 conditions.",
+    )
+    camelyon["note"] = "Not prospective, not beats-both, and not a non-vacuous safety result."
     boundary = [
+        {
+            "name": "iWildCam H v2",
+            "status": "withheld",
+            "artifact": "docs/research/kbound/claim_ledger.json#KB-CLAIM-021",
+            "framing": "Numerical and action evidence is not release-eligible.",
+            "note": "The archived scorer violates the official WILDS metric contract; a population-sealed official-metric rerun is required.",
+        },
+        camelyon,
         {
             "name": "CIFAR-10.1",
             "status": "diagnostic",
@@ -341,25 +360,46 @@ def build_snapshot() -> dict[str, Any]:
         },
     ]
 
+    release_date = manifest.get("regenerated_utc")
+    if not isinstance(release_date, str) or len(release_date) != 10:
+        raise ValueError("canonical result manifest must provide YYYY-MM-DD regenerated_utc")
+    reconciliation = manifest.get("reconciliation_source") or {}
+    canonical_sha = reconciliation.get("canonical_panel_sha256")
+    current_policy = reconciliation.get("current_policy_family_sensitivity") or {}
+    if not isinstance(canonical_sha, str) or len(canonical_sha) != 64:
+        raise ValueError("canonical result manifest is missing canonical_panel_sha256")
+    if canonical_sha != sha256(REPO / reconciliation["canonical_panel"]):
+        raise ValueError("canonical result manifest has a stale canonical-panel binding")
+    if current_policy.get("artifact_sha256") != sha256(REPO / current_policy["artifact"]):
+        raise ValueError("canonical result manifest has a stale current-policy artifact binding")
+
     return {
         "meta": {
-            "build_id": datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ"),
-            "generated_at": datetime.now(timezone.utc).isoformat(),
-            "commit": git_short_hash(),
+            "build_id": release_date.replace("-", "") + "T000000Z",
+            "generated_at": release_date + "T00:00:00Z",
+            "commit": None,
+            "canonical_panel_sha256": canonical_sha,
+            "current_policy_sha256": current_policy["artifact_sha256"],
             "paper": "docs/research/kbound/kbound_short_final_draft.pdf",
-            "paper_pages": 20,
+            "paper_pages": 22,
         },
         "research_status": {
             "theory": "verified",
-            "controlled": "verified",
-            "natural_shifts": "no_harm",
+            "controlled": "conditional",
+            "natural_shifts": "diagnostic",
             "edge_study": "pending",
         },
         "evidence_strip": {
             "proven_theorems": {"value": "3 core", "sub": "plus multiclass/regression bridges"},
             "theorem_validators": {"value": "Lean partial", "sub": "kernel-checked spine; external assumptions disclosed"},
-            "controlled_beats_both": {"value": "3 tracks", "sub": "2 CIFAR adapter tracks + ImageNet-C SAR"},
-            "natural_shift_no_harm": {"value": "4 tracks", "sub": "no clean natural CI beats-both claim"},
+            "controlled_beats_both": {
+                "value": "3 point-estimate tracks",
+                "sub": "No current track has a promoted CI-robust or preregistered cluster win",
+            },
+            "natural_shift_no_harm": {
+                "value": "2 ties",
+                "sub": "Office-Home and RxRx1; Camelyon is diagnostic and iWildCam is withheld",
+            },
             "open_theory": {"value": "foundations", "sub": "full probability mechanization remains incomplete"},
             "reproducibility": {"value": "manifest-backed", "sub": "one promoted-number source"},
         },
@@ -377,8 +417,16 @@ def build_snapshot() -> dict[str, Any]:
                 "title": "Natural one-sided shifts",
                 "action": "Prevent damage; often tie",
                 "status": "no_harm",
-                "examples": "Office-Home, iWildCam, Camelyon17, RxRx1",
+                "examples": "Office-Home, RxRx1",
                 "artifact": rel(MANIFEST),
+            },
+            {
+                "id": "withheld",
+                "title": "Withheld evidence",
+                "action": "Rerun under the official metric contract",
+                "status": "withheld",
+                "examples": "iWildCam",
+                "artifact": "docs/research/kbound/claim_ledger.json#KB-CLAIM-021",
             },
             {
                 "id": "weak",
@@ -437,7 +485,9 @@ def build_snapshot() -> dict[str, Any]:
             "manifest": rel(MANIFEST),
             "headline_lock": "research_lock/",
             "edge_protocol_lock": rel(EDGE / "artifacts_real" / "protocol_lock.json"),
-            "commit": git_short_hash(),
+            "commit": None,
+            "canonical_panel_sha256": canonical_sha,
+            "current_policy_sha256": current_policy["artifact_sha256"],
             "local_clips_note": "Raw physical clips remain local; manifests and hashes are release artifacts after privacy review.",
         },
     }

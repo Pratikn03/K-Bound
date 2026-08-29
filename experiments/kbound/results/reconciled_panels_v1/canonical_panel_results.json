@@ -3,7 +3,7 @@
   "alpha": 0.1,
   "decision_rule": "ADAPT iff delta_hat-epsilon>0; FREEZE iff delta_hat+epsilon<0; otherwise ABSTAIN",
   "generator": "scripts/reconcile_result_panels.py",
-  "generator_sha256": "eafec262371355ca173503b81b56029bc1f14b1a51701541b2be38746e635a66",
+  "generator_sha256": "b043cf959d5f76ac0cbe05afa29081d4da501aa090de0b128535a04be1f4756f",
   "panels": {
     "camelyon17": {
       "b_v2_diagnostic": {
@@ -183,7 +183,8 @@
             },
             "seed_inference": {
               "ci_robust_beats_both": false,
-              "paired_seed_bootstrap": {
+              "descriptive_seed_bootstrap": {
+                "both_lower_bounds_positive": false,
                 "gaps": {
                   "always_adapt": {
                     "ci95": [
@@ -202,7 +203,7 @@
                 },
                 "random_seed": 20260809,
                 "replicates": 20000,
-                "unit": "seed mean"
+                "unit": "run-seed mean conditional on the archived checkpoint/protocol"
               },
               "per_seed": [
                 {
@@ -244,9 +245,11 @@
                   },
                   "seed": 2
                 }
-              ]
+              ],
+              "reason": "independent checkpoint identities are not recorded for these run seeds; the percentile interval is descriptive and cannot promote a CI-robust claim"
             }
           },
+          "calibration_scope": "cross-fitted empirical residual calibration; direct self-inclusion removed, exchangeability and independence not established",
           "candidate_count": 3,
           "candidates": {
             "eata": {
@@ -491,7 +494,8 @@
               },
               "seed_inference": {
                 "ci_robust_beats_both": false,
-                "paired_seed_bootstrap": {
+                "descriptive_seed_bootstrap": {
+                  "both_lower_bounds_positive": false,
                   "gaps": {
                     "always_adapt": {
                       "ci95": [
@@ -510,7 +514,7 @@
                   },
                   "random_seed": 20260809,
                   "replicates": 20000,
-                  "unit": "seed mean"
+                  "unit": "run-seed mean conditional on the archived checkpoint/protocol"
                 },
                 "per_seed": [
                   {
@@ -552,7 +556,8 @@
                     },
                     "seed": 2
                   }
-                ]
+                ],
+                "reason": "independent checkpoint identities are not recorded for these run seeds; the percentile interval is descriptive and cannot promote a CI-robust claim"
               }
             },
             "sar": {
@@ -796,8 +801,9 @@
                 "kga": 0.0006329571759259259
               },
               "seed_inference": {
-                "ci_robust_beats_both": true,
-                "paired_seed_bootstrap": {
+                "ci_robust_beats_both": false,
+                "descriptive_seed_bootstrap": {
+                  "both_lower_bounds_positive": true,
                   "gaps": {
                     "always_adapt": {
                       "ci95": [
@@ -816,7 +822,7 @@
                   },
                   "random_seed": 20260809,
                   "replicates": 20000,
-                  "unit": "seed mean"
+                  "unit": "run-seed mean conditional on the archived checkpoint/protocol"
                 },
                 "per_seed": [
                   {
@@ -858,7 +864,8 @@
                     },
                     "seed": 2
                   }
-                ]
+                ],
+                "reason": "independent checkpoint identities are not recorded for these run seeds; the percentile interval is descriptive and cannot promote a CI-robust claim"
               }
             },
             "tent": {
@@ -1103,7 +1110,8 @@
               },
               "seed_inference": {
                 "ci_robust_beats_both": false,
-                "paired_seed_bootstrap": {
+                "descriptive_seed_bootstrap": {
+                  "both_lower_bounds_positive": false,
                   "gaps": {
                     "always_adapt": {
                       "ci95": [
@@ -1122,7 +1130,7 @@
                   },
                   "random_seed": 20260809,
                   "replicates": 20000,
-                  "unit": "seed mean"
+                  "unit": "run-seed mean conditional on the archived checkpoint/protocol"
                 },
                 "per_seed": [
                   {
@@ -1164,11 +1172,31 @@
                     },
                     "seed": 2
                   }
-                ]
+                ],
+                "reason": "independent checkpoint identities are not recorded for these run seeds; the percentile interval is descriptive and cannot promote a CI-robust claim"
               }
             }
           },
+          "evidence_contract": {
+            "dimension": 11,
+            "feature_names": [
+              "pre_entropy",
+              "pre_conf",
+              "pre_pbal",
+              "post_entropy",
+              "post_conf",
+              "post_pbal",
+              "pbal_drop",
+              "entropy_drop",
+              "frac_highconf",
+              "marginal_KL",
+              "update_norm"
+            ],
+            "names_recovered": true,
+            "schema_sha256": "76b3951e77c42bbb1359123abd8d937b087c9c42ba0f14e11e61f9aca132f7f7"
+          },
           "rule": "per-candidate, per-seed exact-rank leave-one-condition-out KGA",
+          "seed_scope": "run/stream seeds conditional on archived checkpoint identities unless a track separately supplies independently trained checkpoint hashes",
           "seeds": [
             0,
             1,
@@ -1243,10 +1271,10 @@
         ]
       },
       "ood": {
-        "claim_scope": "held-out no-harm result that ties always-adapt on an all-helpful test panel; not a beats-both result and FA_u=0 is vacuous here",
+        "claim_scope": "archived opened OOD diagnostic that ties always-adapt on an all-helpful panel; not prospective, not a beats-both result, and FA_u=0 is vacuous here",
         "headline_promotion": {
           "eligible": false,
-          "reason": "one fixed policy is oracle-equivalent on every held-out condition"
+          "reason": "the OOD evaluation was already opened and one fixed policy is oracle-equivalent on every condition"
         },
         "protocol": "OOD test-domain-only replay; dev seeds 0-1 calibrate and test seeds 2-4 are scored once with EATA-online",
         "replay": {
@@ -1254,10 +1282,10 @@
             "a7_reason": "the deployment estimator is refit on all calibration records; no uniform, predeclared full-fit-versus-LOO stability bound was archived",
             "a7_status": "not_established",
             "alpha": 0.1,
-            "epsilon": 0.05321631039404867,
-            "method": "leave-one-calibration-record-out residuals; exact split-conformal rank",
-            "observed_full_fit_vs_loo_max_gap": 0.05313669598123344,
-            "observed_full_fit_vs_loo_mean_gap": 0.023189613500621598,
+            "epsilon": 0.05620401052945184,
+            "method": "leave-one-calibration-record-out empirical residuals with an exact-rank order statistic; not exact split conformal or jackknife+",
+            "observed_full_fit_vs_loo_max_gap": 0.05612439611663661,
+            "observed_full_fit_vs_loo_mean_gap": 0.02353153984401594,
             "observed_stability_inflation_is_diagnostic_only": true
           },
           "calibration_seeds": [
@@ -1274,6 +1302,30 @@
               "random_state": 0,
               "subsample": 0.8
             }
+          },
+          "evidence_contract": {
+            "dimension": 17,
+            "feature_names": [
+              "pre_entropy",
+              "pre_conf",
+              "pre_pbal",
+              "post_entropy",
+              "post_conf",
+              "post_pbal",
+              "pbal_drop",
+              "entropy_drop",
+              "frac_highconf",
+              "marginal_KL",
+              "update_norm",
+              "disagreement_rate",
+              "entropy_gap",
+              "energy_shift",
+              "bn_kl",
+              "atc_acc_est",
+              "conf_drop"
+            ],
+            "names_recovered": true,
+            "schema_sha256": "bf6eb06e5048705c02293c85038c732e0aacc6e6737f6cb481b3bc5df83ca746"
           },
           "exact_rank_transfer_score": {
             "abstain_count": 0,
@@ -1293,7 +1345,8 @@
             },
             "seed_inference": {
               "ci_robust_beats_both": false,
-              "paired_seed_bootstrap": {
+              "descriptive_seed_bootstrap": {
+                "both_lower_bounds_positive": false,
                 "gaps": {
                   "always_adapt": {
                     "ci95": [
@@ -1312,7 +1365,7 @@
                 },
                 "random_seed": 20260809,
                 "replicates": 20000,
-                "unit": "seed mean"
+                "unit": "run-seed mean conditional on the archived checkpoint/protocol"
               },
               "per_seed": [
                 {
@@ -1354,7 +1407,8 @@
                   },
                   "seed": 4
                 }
-              ]
+              ],
+              "reason": "independent checkpoint identities are not recorded for these run seeds; the percentile interval is descriptive and cannot promote a CI-robust claim"
             }
           },
           "n_calibration": 12,
@@ -1377,7 +1431,8 @@
             },
             "seed_inference": {
               "ci_robust_beats_both": false,
-              "paired_seed_bootstrap": {
+              "descriptive_seed_bootstrap": {
+                "both_lower_bounds_positive": false,
                 "gaps": {
                   "always_adapt": {
                     "ci95": [
@@ -1396,7 +1451,7 @@
                 },
                 "random_seed": 20260809,
                 "replicates": 20000,
-                "unit": "seed mean"
+                "unit": "run-seed mean conditional on the archived checkpoint/protocol"
               },
               "per_seed": [
                 {
@@ -1438,7 +1493,8 @@
                   },
                   "seed": 4
                 }
-              ]
+              ],
+              "reason": "independent checkpoint identities are not recorded for these run seeds; the percentile interval is descriptive and cannot promote a CI-robust claim"
             }
           },
           "record_filters": {
@@ -1455,11 +1511,11 @@
               "decision": "ADAPT",
               "delta_hat": 0.2056658668238197,
               "domain": "test",
-              "epsilon": 0.05321631039404867,
+              "epsilon": 0.05620401052945184,
               "method": "eata",
               "mode": "online",
               "observed_stability_inflated_decision": "ADAPT",
-              "observed_stability_inflated_epsilon": 0.10635300637528211,
+              "observed_stability_inflated_epsilon": 0.11232840664608845,
               "regime": "small",
               "seed": 2
             },
@@ -1473,11 +1529,11 @@
               "decision": "ADAPT",
               "delta_hat": 0.20631313206811502,
               "domain": "test",
-              "epsilon": 0.05321631039404867,
+              "epsilon": 0.05620401052945184,
               "method": "eata",
               "mode": "online",
               "observed_stability_inflated_decision": "ADAPT",
-              "observed_stability_inflated_epsilon": 0.10635300637528211,
+              "observed_stability_inflated_epsilon": 0.11232840664608845,
               "regime": "small",
               "seed": 2
             },
@@ -1491,11 +1547,11 @@
               "decision": "ADAPT",
               "delta_hat": 0.22861191282398596,
               "domain": "test",
-              "epsilon": 0.05321631039404867,
+              "epsilon": 0.05620401052945184,
               "method": "eata",
               "mode": "online",
               "observed_stability_inflated_decision": "ADAPT",
-              "observed_stability_inflated_epsilon": 0.10635300637528211,
+              "observed_stability_inflated_epsilon": 0.11232840664608845,
               "regime": "small",
               "seed": 2
             },
@@ -1509,11 +1565,11 @@
               "decision": "ADAPT",
               "delta_hat": 0.22811935890555649,
               "domain": "test",
-              "epsilon": 0.05321631039404867,
+              "epsilon": 0.05620401052945184,
               "method": "eata",
               "mode": "online",
               "observed_stability_inflated_decision": "ADAPT",
-              "observed_stability_inflated_epsilon": 0.10635300637528211,
+              "observed_stability_inflated_epsilon": 0.11232840664608845,
               "regime": "small",
               "seed": 2
             },
@@ -1527,11 +1583,11 @@
               "decision": "ADAPT",
               "delta_hat": 0.19599718949368922,
               "domain": "test",
-              "epsilon": 0.05321631039404867,
+              "epsilon": 0.05620401052945184,
               "method": "eata",
               "mode": "online",
               "observed_stability_inflated_decision": "ADAPT",
-              "observed_stability_inflated_epsilon": 0.10635300637528211,
+              "observed_stability_inflated_epsilon": 0.11232840664608845,
               "regime": "small",
               "seed": 2
             },
@@ -1545,11 +1601,11 @@
               "decision": "ADAPT",
               "delta_hat": 0.19542040734600233,
               "domain": "test",
-              "epsilon": 0.05321631039404867,
+              "epsilon": 0.05620401052945184,
               "method": "eata",
               "mode": "online",
               "observed_stability_inflated_decision": "ADAPT",
-              "observed_stability_inflated_epsilon": 0.10635300637528211,
+              "observed_stability_inflated_epsilon": 0.11232840664608845,
               "regime": "small",
               "seed": 2
             },
@@ -1563,11 +1619,11 @@
               "decision": "ADAPT",
               "delta_hat": 0.18682109146109135,
               "domain": "test",
-              "epsilon": 0.05321631039404867,
+              "epsilon": 0.05620401052945184,
               "method": "eata",
               "mode": "online",
               "observed_stability_inflated_decision": "ADAPT",
-              "observed_stability_inflated_epsilon": 0.10635300637528211,
+              "observed_stability_inflated_epsilon": 0.11232840664608845,
               "regime": "small",
               "seed": 3
             },
@@ -1581,11 +1637,11 @@
               "decision": "ADAPT",
               "delta_hat": 0.1759500356347453,
               "domain": "test",
-              "epsilon": 0.05321631039404867,
+              "epsilon": 0.05620401052945184,
               "method": "eata",
               "mode": "online",
               "observed_stability_inflated_decision": "ADAPT",
-              "observed_stability_inflated_epsilon": 0.10635300637528211,
+              "observed_stability_inflated_epsilon": 0.11232840664608845,
               "regime": "small",
               "seed": 3
             },
@@ -1599,11 +1655,11 @@
               "decision": "ADAPT",
               "delta_hat": 0.19436761092454277,
               "domain": "test",
-              "epsilon": 0.05321631039404867,
+              "epsilon": 0.05620401052945184,
               "method": "eata",
               "mode": "online",
               "observed_stability_inflated_decision": "ADAPT",
-              "observed_stability_inflated_epsilon": 0.10635300637528211,
+              "observed_stability_inflated_epsilon": 0.11232840664608845,
               "regime": "small",
               "seed": 3
             },
@@ -1617,11 +1673,11 @@
               "decision": "ADAPT",
               "delta_hat": 0.18680429239085883,
               "domain": "test",
-              "epsilon": 0.05321631039404867,
+              "epsilon": 0.05620401052945184,
               "method": "eata",
               "mode": "online",
               "observed_stability_inflated_decision": "ADAPT",
-              "observed_stability_inflated_epsilon": 0.10635300637528211,
+              "observed_stability_inflated_epsilon": 0.11232840664608845,
               "regime": "small",
               "seed": 3
             },
@@ -1635,11 +1691,11 @@
               "decision": "ADAPT",
               "delta_hat": 0.16972641904809577,
               "domain": "test",
-              "epsilon": 0.05321631039404867,
+              "epsilon": 0.05620401052945184,
               "method": "eata",
               "mode": "online",
               "observed_stability_inflated_decision": "ADAPT",
-              "observed_stability_inflated_epsilon": 0.10635300637528211,
+              "observed_stability_inflated_epsilon": 0.11232840664608845,
               "regime": "small",
               "seed": 3
             },
@@ -1653,11 +1709,11 @@
               "decision": "ADAPT",
               "delta_hat": 0.19798118616688778,
               "domain": "test",
-              "epsilon": 0.05321631039404867,
+              "epsilon": 0.05620401052945184,
               "method": "eata",
               "mode": "online",
               "observed_stability_inflated_decision": "ADAPT",
-              "observed_stability_inflated_epsilon": 0.10635300637528211,
+              "observed_stability_inflated_epsilon": 0.11232840664608845,
               "regime": "small",
               "seed": 3
             },
@@ -1671,11 +1727,11 @@
               "decision": "ADAPT",
               "delta_hat": 0.20277191963752,
               "domain": "test",
-              "epsilon": 0.05321631039404867,
+              "epsilon": 0.05620401052945184,
               "method": "eata",
               "mode": "online",
               "observed_stability_inflated_decision": "ADAPT",
-              "observed_stability_inflated_epsilon": 0.10635300637528211,
+              "observed_stability_inflated_epsilon": 0.11232840664608845,
               "regime": "small",
               "seed": 4
             },
@@ -1689,11 +1745,11 @@
               "decision": "ADAPT",
               "delta_hat": 0.18985082792014532,
               "domain": "test",
-              "epsilon": 0.05321631039404867,
+              "epsilon": 0.05620401052945184,
               "method": "eata",
               "mode": "online",
               "observed_stability_inflated_decision": "ADAPT",
-              "observed_stability_inflated_epsilon": 0.10635300637528211,
+              "observed_stability_inflated_epsilon": 0.11232840664608845,
               "regime": "small",
               "seed": 4
             },
@@ -1707,11 +1763,11 @@
               "decision": "ADAPT",
               "delta_hat": 0.16450040986248365,
               "domain": "test",
-              "epsilon": 0.05321631039404867,
+              "epsilon": 0.05620401052945184,
               "method": "eata",
               "mode": "online",
               "observed_stability_inflated_decision": "ADAPT",
-              "observed_stability_inflated_epsilon": 0.10635300637528211,
+              "observed_stability_inflated_epsilon": 0.11232840664608845,
               "regime": "small",
               "seed": 4
             },
@@ -1725,11 +1781,11 @@
               "decision": "ADAPT",
               "delta_hat": 0.18549115931141236,
               "domain": "test",
-              "epsilon": 0.05321631039404867,
+              "epsilon": 0.05620401052945184,
               "method": "eata",
               "mode": "online",
               "observed_stability_inflated_decision": "ADAPT",
-              "observed_stability_inflated_epsilon": 0.10635300637528211,
+              "observed_stability_inflated_epsilon": 0.11232840664608845,
               "regime": "small",
               "seed": 4
             },
@@ -1743,11 +1799,11 @@
               "decision": "ADAPT",
               "delta_hat": 0.18664883734232307,
               "domain": "test",
-              "epsilon": 0.05321631039404867,
+              "epsilon": 0.05620401052945184,
               "method": "eata",
               "mode": "online",
               "observed_stability_inflated_decision": "ADAPT",
-              "observed_stability_inflated_epsilon": 0.10635300637528211,
+              "observed_stability_inflated_epsilon": 0.11232840664608845,
               "regime": "small",
               "seed": 4
             },
@@ -1761,11 +1817,11 @@
               "decision": "ADAPT",
               "delta_hat": 0.19261953743961438,
               "domain": "test",
-              "epsilon": 0.05321631039404867,
+              "epsilon": 0.05620401052945184,
               "method": "eata",
               "mode": "online",
               "observed_stability_inflated_decision": "ADAPT",
-              "observed_stability_inflated_epsilon": 0.10635300637528211,
+              "observed_stability_inflated_epsilon": 0.11232840664608845,
               "regime": "small",
               "seed": 4
             }
@@ -1799,10 +1855,10 @@
           "a7_reason": "the deployment estimator is refit on all calibration records; no uniform, predeclared full-fit-versus-LOO stability bound was archived",
           "a7_status": "not_established",
           "alpha": 0.1,
-          "epsilon": 0.0193694479594346,
-          "method": "leave-one-calibration-record-out residuals; exact split-conformal rank",
-          "observed_full_fit_vs_loo_max_gap": 0.02970232633578941,
-          "observed_full_fit_vs_loo_mean_gap": 0.007480324858363335,
+          "epsilon": 0.019479225733432,
+          "method": "leave-one-calibration-record-out empirical residuals with an exact-rank order statistic; not exact split conformal or jackknife+",
+          "observed_full_fit_vs_loo_max_gap": 0.029755702318687627,
+          "observed_full_fit_vs_loo_mean_gap": 0.007364990560463563,
           "observed_stability_inflation_is_diagnostic_only": true
         },
         "calibration_seeds": [
@@ -1820,6 +1876,24 @@
             "random_state": 0,
             "subsample": 0.8
           }
+        },
+        "evidence_contract": {
+          "dimension": 11,
+          "feature_names": [
+            "pre_entropy",
+            "pre_conf",
+            "pre_pbal",
+            "post_entropy",
+            "post_conf",
+            "post_pbal",
+            "pbal_drop",
+            "entropy_drop",
+            "frac_highconf",
+            "marginal_KL",
+            "update_norm"
+          ],
+          "names_recovered": true,
+          "schema_sha256": "76b3951e77c42bbb1359123abd8d937b087c9c42ba0f14e11e61f9aca132f7f7"
         },
         "exact_rank_transfer_score": {
           "abstain_count": 26,
@@ -1839,7 +1913,8 @@
           },
           "seed_inference": {
             "ci_robust_beats_both": false,
-            "paired_seed_bootstrap": {
+            "descriptive_seed_bootstrap": {
+              "both_lower_bounds_positive": false,
               "gaps": {
                 "always_adapt": {
                   "ci95": [
@@ -1858,7 +1933,7 @@
               },
               "random_seed": 20260809,
               "replicates": 20000,
-              "unit": "seed mean"
+              "unit": "run-seed mean conditional on the archived checkpoint/protocol"
             },
             "per_seed": [
               {
@@ -1887,7 +1962,8 @@
                 },
                 "seed": 4
               }
-            ]
+            ],
+            "reason": "independent checkpoint identities are not recorded for these run seeds; the percentile interval is descriptive and cannot promote a CI-robust claim"
           }
         },
         "n_calibration": 72,
@@ -1910,7 +1986,8 @@
           },
           "seed_inference": {
             "ci_robust_beats_both": false,
-            "paired_seed_bootstrap": {
+            "descriptive_seed_bootstrap": {
+              "both_lower_bounds_positive": false,
               "gaps": {
                 "always_adapt": {
                   "ci95": [
@@ -1929,7 +2006,7 @@
               },
               "random_seed": 20260809,
               "replicates": 20000,
-              "unit": "seed mean"
+              "unit": "run-seed mean conditional on the archived checkpoint/protocol"
             },
             "per_seed": [
               {
@@ -1958,7 +2035,8 @@
                 },
                 "seed": 4
               }
-            ]
+            ],
+            "reason": "independent checkpoint identities are not recorded for these run seeds; the percentile interval is descriptive and cannot promote a CI-robust claim"
           }
         },
         "record_filters": {},
@@ -1984,13 +2062,13 @@
             "benchmark": "cifar101",
             "condition": "cifar101|small|iid|mild|r0",
             "decision": "ABSTAIN",
-            "delta_hat": 0.004668815541226225,
+            "delta_hat": 0.00483184694075102,
             "eps_conformal": 0.022965995452819618,
-            "epsilon": 0.0193694479594346,
+            "epsilon": 0.019479225733432,
             "kga_decision": "ABSTAIN",
             "method": "tent",
             "observed_stability_inflated_decision": "ABSTAIN",
-            "observed_stability_inflated_epsilon": 0.04907177429522401,
+            "observed_stability_inflated_epsilon": 0.049234928052119625,
             "oracle_action": "ADAPT",
             "regime": "marginal",
             "seed": 3
@@ -2016,13 +2094,13 @@
             "benchmark": "cifar101",
             "condition": "cifar101|small|iid|mild|r1",
             "decision": "ABSTAIN",
-            "delta_hat": 0.0037826143442728105,
+            "delta_hat": 0.005111767787868195,
             "eps_conformal": 0.022965995452819618,
-            "epsilon": 0.0193694479594346,
+            "epsilon": 0.019479225733432,
             "kga_decision": "ABSTAIN",
             "method": "tent",
             "observed_stability_inflated_decision": "ABSTAIN",
-            "observed_stability_inflated_epsilon": 0.04907177429522401,
+            "observed_stability_inflated_epsilon": 0.049234928052119625,
             "oracle_action": "FREEZE",
             "regime": "marginal",
             "seed": 3
@@ -2048,13 +2126,13 @@
             "benchmark": "cifar101",
             "condition": "cifar101|small|iid|aggressive|r0",
             "decision": "FREEZE",
-            "delta_hat": -0.02534498843213306,
+            "delta_hat": -0.023953822380951607,
             "eps_conformal": 0.022965995452819618,
-            "epsilon": 0.0193694479594346,
+            "epsilon": 0.019479225733432,
             "kga_decision": "ABSTAIN",
             "method": "tent",
             "observed_stability_inflated_decision": "ABSTAIN",
-            "observed_stability_inflated_epsilon": 0.04907177429522401,
+            "observed_stability_inflated_epsilon": 0.049234928052119625,
             "oracle_action": "FREEZE",
             "regime": "marginal",
             "seed": 3
@@ -2080,13 +2158,13 @@
             "benchmark": "cifar101",
             "condition": "cifar101|small|iid|aggressive|r1",
             "decision": "FREEZE",
-            "delta_hat": -0.027745453689444963,
+            "delta_hat": -0.028585435257570457,
             "eps_conformal": 0.022965995452819618,
-            "epsilon": 0.0193694479594346,
+            "epsilon": 0.019479225733432,
             "kga_decision": "FREEZE",
             "method": "tent",
             "observed_stability_inflated_decision": "ABSTAIN",
-            "observed_stability_inflated_epsilon": 0.04907177429522401,
+            "observed_stability_inflated_epsilon": 0.049234928052119625,
             "oracle_action": "FREEZE",
             "regime": "harmful",
             "seed": 3
@@ -2112,13 +2190,13 @@
             "benchmark": "cifar101",
             "condition": "cifar101|small|imbalanced|mild|r0",
             "decision": "ABSTAIN",
-            "delta_hat": 0.0051975566446467655,
+            "delta_hat": 0.005142871731223532,
             "eps_conformal": 0.022965995452819618,
-            "epsilon": 0.0193694479594346,
+            "epsilon": 0.019479225733432,
             "kga_decision": "ABSTAIN",
             "method": "tent",
             "observed_stability_inflated_decision": "ABSTAIN",
-            "observed_stability_inflated_epsilon": 0.04907177429522401,
+            "observed_stability_inflated_epsilon": 0.049234928052119625,
             "oracle_action": "FREEZE",
             "regime": "marginal",
             "seed": 3
@@ -2144,13 +2222,13 @@
             "benchmark": "cifar101",
             "condition": "cifar101|small|imbalanced|mild|r1",
             "decision": "ABSTAIN",
-            "delta_hat": 0.004329157688714144,
+            "delta_hat": 0.0045806192929870575,
             "eps_conformal": 0.022965995452819618,
-            "epsilon": 0.0193694479594346,
+            "epsilon": 0.019479225733432,
             "kga_decision": "ABSTAIN",
             "method": "tent",
             "observed_stability_inflated_decision": "ABSTAIN",
-            "observed_stability_inflated_epsilon": 0.04907177429522401,
+            "observed_stability_inflated_epsilon": 0.049234928052119625,
             "oracle_action": "ADAPT",
             "regime": "marginal",
             "seed": 3
@@ -2176,13 +2254,13 @@
             "benchmark": "cifar101",
             "condition": "cifar101|small|imbalanced|aggressive|r0",
             "decision": "FREEZE",
-            "delta_hat": -0.04151001234407141,
+            "delta_hat": -0.04147364481969671,
             "eps_conformal": 0.022965995452819618,
-            "epsilon": 0.0193694479594346,
+            "epsilon": 0.019479225733432,
             "kga_decision": "FREEZE",
             "method": "tent",
             "observed_stability_inflated_decision": "ABSTAIN",
-            "observed_stability_inflated_epsilon": 0.04907177429522401,
+            "observed_stability_inflated_epsilon": 0.049234928052119625,
             "oracle_action": "FREEZE",
             "regime": "harmful",
             "seed": 3
@@ -2208,13 +2286,13 @@
             "benchmark": "cifar101",
             "condition": "cifar101|small|imbalanced|aggressive|r1",
             "decision": "FREEZE",
-            "delta_hat": -0.0211803596129948,
+            "delta_hat": -0.021786683504465443,
             "eps_conformal": 0.022965995452819618,
-            "epsilon": 0.0193694479594346,
+            "epsilon": 0.019479225733432,
             "kga_decision": "FREEZE",
             "method": "tent",
             "observed_stability_inflated_decision": "ABSTAIN",
-            "observed_stability_inflated_epsilon": 0.04907177429522401,
+            "observed_stability_inflated_epsilon": 0.049234928052119625,
             "oracle_action": "FREEZE",
             "regime": "harmful",
             "seed": 3
@@ -2240,13 +2318,13 @@
             "benchmark": "cifar101",
             "condition": "cifar101|small|single_class|mild|r0",
             "decision": "ABSTAIN",
-            "delta_hat": 0.008096948097151311,
+            "delta_hat": 0.0076523307418740905,
             "eps_conformal": 0.022965995452819618,
-            "epsilon": 0.0193694479594346,
+            "epsilon": 0.019479225733432,
             "kga_decision": "ABSTAIN",
             "method": "tent",
             "observed_stability_inflated_decision": "ABSTAIN",
-            "observed_stability_inflated_epsilon": 0.04907177429522401,
+            "observed_stability_inflated_epsilon": 0.049234928052119625,
             "oracle_action": "ADAPT",
             "regime": "marginal",
             "seed": 3
@@ -2272,13 +2350,13 @@
             "benchmark": "cifar101",
             "condition": "cifar101|small|single_class|mild|r1",
             "decision": "ABSTAIN",
-            "delta_hat": 0.010302996922757952,
+            "delta_hat": 0.009629417518559266,
             "eps_conformal": 0.022965995452819618,
-            "epsilon": 0.0193694479594346,
+            "epsilon": 0.019479225733432,
             "kga_decision": "ABSTAIN",
             "method": "tent",
             "observed_stability_inflated_decision": "ABSTAIN",
-            "observed_stability_inflated_epsilon": 0.04907177429522401,
+            "observed_stability_inflated_epsilon": 0.049234928052119625,
             "oracle_action": "FREEZE",
             "regime": "marginal",
             "seed": 3
@@ -2304,13 +2382,13 @@
             "benchmark": "cifar101",
             "condition": "cifar101|small|single_class|aggressive|r0",
             "decision": "ABSTAIN",
-            "delta_hat": -0.009869587434420369,
+            "delta_hat": -0.01096884217174964,
             "eps_conformal": 0.022965995452819618,
-            "epsilon": 0.0193694479594346,
+            "epsilon": 0.019479225733432,
             "kga_decision": "ABSTAIN",
             "method": "tent",
             "observed_stability_inflated_decision": "ABSTAIN",
-            "observed_stability_inflated_epsilon": 0.04907177429522401,
+            "observed_stability_inflated_epsilon": 0.049234928052119625,
             "oracle_action": "FREEZE",
             "regime": "marginal",
             "seed": 3
@@ -2336,13 +2414,13 @@
             "benchmark": "cifar101",
             "condition": "cifar101|small|single_class|aggressive|r1",
             "decision": "FREEZE",
-            "delta_hat": -0.03380822315684642,
+            "delta_hat": -0.034117090292863354,
             "eps_conformal": 0.022965995452819618,
-            "epsilon": 0.0193694479594346,
+            "epsilon": 0.019479225733432,
             "kga_decision": "FREEZE",
             "method": "tent",
             "observed_stability_inflated_decision": "ABSTAIN",
-            "observed_stability_inflated_epsilon": 0.04907177429522401,
+            "observed_stability_inflated_epsilon": 0.049234928052119625,
             "oracle_action": "FREEZE",
             "regime": "harmful",
             "seed": 3
@@ -2368,13 +2446,13 @@
             "benchmark": "cifar101",
             "condition": "cifar101|tiny|iid|mild|r0",
             "decision": "ABSTAIN",
-            "delta_hat": 0.0011097138695963294,
+            "delta_hat": 0.0018314394194714945,
             "eps_conformal": 0.022965995452819618,
-            "epsilon": 0.0193694479594346,
+            "epsilon": 0.019479225733432,
             "kga_decision": "ABSTAIN",
             "method": "tent",
             "observed_stability_inflated_decision": "ABSTAIN",
-            "observed_stability_inflated_epsilon": 0.04907177429522401,
+            "observed_stability_inflated_epsilon": 0.049234928052119625,
             "oracle_action": "ADAPT",
             "regime": "marginal",
             "seed": 3
@@ -2400,13 +2478,13 @@
             "benchmark": "cifar101",
             "condition": "cifar101|tiny|iid|mild|r1",
             "decision": "ABSTAIN",
-            "delta_hat": 0.001708639150840363,
+            "delta_hat": 0.0005961659909039634,
             "eps_conformal": 0.022965995452819618,
-            "epsilon": 0.0193694479594346,
+            "epsilon": 0.019479225733432,
             "kga_decision": "ABSTAIN",
             "method": "tent",
             "observed_stability_inflated_decision": "ABSTAIN",
-            "observed_stability_inflated_epsilon": 0.04907177429522401,
+            "observed_stability_inflated_epsilon": 0.049234928052119625,
             "oracle_action": "ADAPT",
             "regime": "marginal",
             "seed": 3
@@ -2432,13 +2510,13 @@
             "benchmark": "cifar101",
             "condition": "cifar101|tiny|iid|aggressive|r0",
             "decision": "ABSTAIN",
-            "delta_hat": -0.00945721998036743,
+            "delta_hat": -0.011048683406407734,
             "eps_conformal": 0.022965995452819618,
-            "epsilon": 0.0193694479594346,
+            "epsilon": 0.019479225733432,
             "kga_decision": "FREEZE",
             "method": "tent",
             "observed_stability_inflated_decision": "ABSTAIN",
-            "observed_stability_inflated_epsilon": 0.04907177429522401,
+            "observed_stability_inflated_epsilon": 0.049234928052119625,
             "oracle_action": "FREEZE",
             "regime": "harmful",
             "seed": 3
@@ -2464,13 +2542,13 @@
             "benchmark": "cifar101",
             "condition": "cifar101|tiny|iid|aggressive|r1",
             "decision": "FREEZE",
-            "delta_hat": -0.03232096275335697,
+            "delta_hat": -0.033289236854152346,
             "eps_conformal": 0.022965995452819618,
-            "epsilon": 0.0193694479594346,
+            "epsilon": 0.019479225733432,
             "kga_decision": "ABSTAIN",
             "method": "tent",
             "observed_stability_inflated_decision": "ABSTAIN",
-            "observed_stability_inflated_epsilon": 0.04907177429522401,
+            "observed_stability_inflated_epsilon": 0.049234928052119625,
             "oracle_action": "FREEZE",
             "regime": "harmful",
             "seed": 3
@@ -2496,13 +2574,13 @@
             "benchmark": "cifar101",
             "condition": "cifar101|tiny|imbalanced|mild|r0",
             "decision": "ABSTAIN",
-            "delta_hat": -2.9700611499713262e-05,
+            "delta_hat": -0.0017757499002060738,
             "eps_conformal": 0.022965995452819618,
-            "epsilon": 0.0193694479594346,
+            "epsilon": 0.019479225733432,
             "kga_decision": "ABSTAIN",
             "method": "tent",
             "observed_stability_inflated_decision": "ABSTAIN",
-            "observed_stability_inflated_epsilon": 0.04907177429522401,
+            "observed_stability_inflated_epsilon": 0.049234928052119625,
             "oracle_action": "ADAPT",
             "regime": "marginal",
             "seed": 3
@@ -2528,13 +2606,13 @@
             "benchmark": "cifar101",
             "condition": "cifar101|tiny|imbalanced|mild|r1",
             "decision": "ABSTAIN",
-            "delta_hat": 0.0055930518628157,
+            "delta_hat": 0.006386409596836195,
             "eps_conformal": 0.022965995452819618,
-            "epsilon": 0.0193694479594346,
+            "epsilon": 0.019479225733432,
             "kga_decision": "ABSTAIN",
             "method": "tent",
             "observed_stability_inflated_decision": "ABSTAIN",
-            "observed_stability_inflated_epsilon": 0.04907177429522401,
+            "observed_stability_inflated_epsilon": 0.049234928052119625,
             "oracle_action": "FREEZE",
             "regime": "marginal",
             "seed": 3
@@ -2560,13 +2638,13 @@
             "benchmark": "cifar101",
             "condition": "cifar101|tiny|imbalanced|aggressive|r0",
             "decision": "FREEZE",
-            "delta_hat": -0.043718978154058355,
+            "delta_hat": -0.04327320198704424,
             "eps_conformal": 0.022965995452819618,
-            "epsilon": 0.0193694479594346,
+            "epsilon": 0.019479225733432,
             "kga_decision": "FREEZE",
             "method": "tent",
             "observed_stability_inflated_decision": "ABSTAIN",
-            "observed_stability_inflated_epsilon": 0.04907177429522401,
+            "observed_stability_inflated_epsilon": 0.049234928052119625,
             "oracle_action": "FREEZE",
             "regime": "harmful",
             "seed": 3
@@ -2592,13 +2670,13 @@
             "benchmark": "cifar101",
             "condition": "cifar101|tiny|imbalanced|aggressive|r1",
             "decision": "FREEZE",
-            "delta_hat": -0.03379300905620162,
+            "delta_hat": -0.03281423285655703,
             "eps_conformal": 0.022965995452819618,
-            "epsilon": 0.0193694479594346,
+            "epsilon": 0.019479225733432,
             "kga_decision": "FREEZE",
             "method": "tent",
             "observed_stability_inflated_decision": "ABSTAIN",
-            "observed_stability_inflated_epsilon": 0.04907177429522401,
+            "observed_stability_inflated_epsilon": 0.049234928052119625,
             "oracle_action": "FREEZE",
             "regime": "harmful",
             "seed": 3
@@ -2624,13 +2702,13 @@
             "benchmark": "cifar101",
             "condition": "cifar101|tiny|single_class|mild|r0",
             "decision": "ABSTAIN",
-            "delta_hat": 0.0049880714771711005,
+            "delta_hat": 0.005295626578872838,
             "eps_conformal": 0.022965995452819618,
-            "epsilon": 0.0193694479594346,
+            "epsilon": 0.019479225733432,
             "kga_decision": "ABSTAIN",
             "method": "tent",
             "observed_stability_inflated_decision": "ABSTAIN",
-            "observed_stability_inflated_epsilon": 0.04907177429522401,
+            "observed_stability_inflated_epsilon": 0.049234928052119625,
             "oracle_action": "FREEZE",
             "regime": "marginal",
             "seed": 3
@@ -2656,13 +2734,13 @@
             "benchmark": "cifar101",
             "condition": "cifar101|tiny|single_class|mild|r1",
             "decision": "ABSTAIN",
-            "delta_hat": -0.0020372347948075173,
+            "delta_hat": -0.0031271497218025384,
             "eps_conformal": 0.022965995452819618,
-            "epsilon": 0.0193694479594346,
+            "epsilon": 0.019479225733432,
             "kga_decision": "ABSTAIN",
             "method": "tent",
             "observed_stability_inflated_decision": "ABSTAIN",
-            "observed_stability_inflated_epsilon": 0.04907177429522401,
+            "observed_stability_inflated_epsilon": 0.049234928052119625,
             "oracle_action": "FREEZE",
             "regime": "marginal",
             "seed": 3
@@ -2688,13 +2766,13 @@
             "benchmark": "cifar101",
             "condition": "cifar101|tiny|single_class|aggressive|r0",
             "decision": "FREEZE",
-            "delta_hat": -0.03682869882030367,
+            "delta_hat": -0.03668235257712374,
             "eps_conformal": 0.022965995452819618,
-            "epsilon": 0.0193694479594346,
+            "epsilon": 0.019479225733432,
             "kga_decision": "FREEZE",
             "method": "tent",
             "observed_stability_inflated_decision": "ABSTAIN",
-            "observed_stability_inflated_epsilon": 0.04907177429522401,
+            "observed_stability_inflated_epsilon": 0.049234928052119625,
             "oracle_action": "FREEZE",
             "regime": "harmful",
             "seed": 3
@@ -2720,13 +2798,13 @@
             "benchmark": "cifar101",
             "condition": "cifar101|tiny|single_class|aggressive|r1",
             "decision": "FREEZE",
-            "delta_hat": -0.03841154155857404,
+            "delta_hat": -0.037993077852693395,
             "eps_conformal": 0.022965995452819618,
-            "epsilon": 0.0193694479594346,
+            "epsilon": 0.019479225733432,
             "kga_decision": "FREEZE",
             "method": "tent",
             "observed_stability_inflated_decision": "ABSTAIN",
-            "observed_stability_inflated_epsilon": 0.04907177429522401,
+            "observed_stability_inflated_epsilon": 0.049234928052119625,
             "oracle_action": "FREEZE",
             "regime": "harmful",
             "seed": 3
@@ -2752,13 +2830,13 @@
             "benchmark": "cifar101",
             "condition": "cifar101|small|iid|mild|r0",
             "decision": "ABSTAIN",
-            "delta_hat": 0.005172351706888951,
+            "delta_hat": 0.0055502793211931285,
             "eps_conformal": 0.017300151661454412,
-            "epsilon": 0.0193694479594346,
+            "epsilon": 0.019479225733432,
             "kga_decision": "ABSTAIN",
             "method": "tent",
             "observed_stability_inflated_decision": "ABSTAIN",
-            "observed_stability_inflated_epsilon": 0.04907177429522401,
+            "observed_stability_inflated_epsilon": 0.049234928052119625,
             "oracle_action": "FREEZE",
             "regime": "marginal",
             "seed": 4
@@ -2784,13 +2862,13 @@
             "benchmark": "cifar101",
             "condition": "cifar101|small|iid|mild|r1",
             "decision": "ABSTAIN",
-            "delta_hat": 0.01044085467300546,
+            "delta_hat": 0.009781832890199998,
             "eps_conformal": 0.017300151661454412,
-            "epsilon": 0.0193694479594346,
+            "epsilon": 0.019479225733432,
             "kga_decision": "ABSTAIN",
             "method": "tent",
             "observed_stability_inflated_decision": "ABSTAIN",
-            "observed_stability_inflated_epsilon": 0.04907177429522401,
+            "observed_stability_inflated_epsilon": 0.049234928052119625,
             "oracle_action": "ADAPT",
             "regime": "marginal",
             "seed": 4
@@ -2816,13 +2894,13 @@
             "benchmark": "cifar101",
             "condition": "cifar101|small|iid|aggressive|r0",
             "decision": "FREEZE",
-            "delta_hat": -0.03286352927344615,
+            "delta_hat": -0.03139522628786913,
             "eps_conformal": 0.017300151661454412,
-            "epsilon": 0.0193694479594346,
+            "epsilon": 0.019479225733432,
             "kga_decision": "FREEZE",
             "method": "tent",
             "observed_stability_inflated_decision": "ABSTAIN",
-            "observed_stability_inflated_epsilon": 0.04907177429522401,
+            "observed_stability_inflated_epsilon": 0.049234928052119625,
             "oracle_action": "FREEZE",
             "regime": "harmful",
             "seed": 4
@@ -2848,13 +2926,13 @@
             "benchmark": "cifar101",
             "condition": "cifar101|small|iid|aggressive|r1",
             "decision": "FREEZE",
-            "delta_hat": -0.027939800734665794,
+            "delta_hat": -0.029122290103512603,
             "eps_conformal": 0.017300151661454412,
-            "epsilon": 0.0193694479594346,
+            "epsilon": 0.019479225733432,
             "kga_decision": "FREEZE",
             "method": "tent",
             "observed_stability_inflated_decision": "ABSTAIN",
-            "observed_stability_inflated_epsilon": 0.04907177429522401,
+            "observed_stability_inflated_epsilon": 0.049234928052119625,
             "oracle_action": "FREEZE",
             "regime": "harmful",
             "seed": 4
@@ -2880,13 +2958,13 @@
             "benchmark": "cifar101",
             "condition": "cifar101|small|imbalanced|mild|r0",
             "decision": "ABSTAIN",
-            "delta_hat": 0.004381382234693065,
+            "delta_hat": 0.004556472066018974,
             "eps_conformal": 0.017300151661454412,
-            "epsilon": 0.0193694479594346,
+            "epsilon": 0.019479225733432,
             "kga_decision": "ABSTAIN",
             "method": "tent",
             "observed_stability_inflated_decision": "ABSTAIN",
-            "observed_stability_inflated_epsilon": 0.04907177429522401,
+            "observed_stability_inflated_epsilon": 0.049234928052119625,
             "oracle_action": "FREEZE",
             "regime": "marginal",
             "seed": 4
@@ -2912,13 +2990,13 @@
             "benchmark": "cifar101",
             "condition": "cifar101|small|imbalanced|mild|r1",
             "decision": "ABSTAIN",
-            "delta_hat": 0.007418536090890043,
+            "delta_hat": 0.006488737092811309,
             "eps_conformal": 0.017300151661454412,
-            "epsilon": 0.0193694479594346,
+            "epsilon": 0.019479225733432,
             "kga_decision": "ABSTAIN",
             "method": "tent",
             "observed_stability_inflated_decision": "ABSTAIN",
-            "observed_stability_inflated_epsilon": 0.04907177429522401,
+            "observed_stability_inflated_epsilon": 0.049234928052119625,
             "oracle_action": "ADAPT",
             "regime": "marginal",
             "seed": 4
@@ -2944,13 +3022,13 @@
             "benchmark": "cifar101",
             "condition": "cifar101|small|imbalanced|aggressive|r0",
             "decision": "FREEZE",
-            "delta_hat": -0.049391326759471665,
+            "delta_hat": -0.049927113869804335,
             "eps_conformal": 0.017300151661454412,
-            "epsilon": 0.0193694479594346,
+            "epsilon": 0.019479225733432,
             "kga_decision": "FREEZE",
             "method": "tent",
             "observed_stability_inflated_decision": "FREEZE",
-            "observed_stability_inflated_epsilon": 0.04907177429522401,
+            "observed_stability_inflated_epsilon": 0.049234928052119625,
             "oracle_action": "FREEZE",
             "regime": "harmful",
             "seed": 4
@@ -2976,13 +3054,13 @@
             "benchmark": "cifar101",
             "condition": "cifar101|small|imbalanced|aggressive|r1",
             "decision": "FREEZE",
-            "delta_hat": -0.020887750980173536,
+            "delta_hat": -0.02008595719298004,
             "eps_conformal": 0.017300151661454412,
-            "epsilon": 0.0193694479594346,
+            "epsilon": 0.019479225733432,
             "kga_decision": "FREEZE",
             "method": "tent",
             "observed_stability_inflated_decision": "ABSTAIN",
-            "observed_stability_inflated_epsilon": 0.04907177429522401,
+            "observed_stability_inflated_epsilon": 0.049234928052119625,
             "oracle_action": "FREEZE",
             "regime": "harmful",
             "seed": 4
@@ -3008,13 +3086,13 @@
             "benchmark": "cifar101",
             "condition": "cifar101|small|single_class|mild|r0",
             "decision": "ABSTAIN",
-            "delta_hat": 0.007597760829836606,
+            "delta_hat": 0.008354545340604213,
             "eps_conformal": 0.017300151661454412,
-            "epsilon": 0.0193694479594346,
+            "epsilon": 0.019479225733432,
             "kga_decision": "ABSTAIN",
             "method": "tent",
             "observed_stability_inflated_decision": "ABSTAIN",
-            "observed_stability_inflated_epsilon": 0.04907177429522401,
+            "observed_stability_inflated_epsilon": 0.049234928052119625,
             "oracle_action": "ADAPT",
             "regime": "marginal",
             "seed": 4
@@ -3040,13 +3118,13 @@
             "benchmark": "cifar101",
             "condition": "cifar101|small|single_class|mild|r1",
             "decision": "ABSTAIN",
-            "delta_hat": 0.0032604149113904914,
+            "delta_hat": 0.003021493527561715,
             "eps_conformal": 0.017300151661454412,
-            "epsilon": 0.0193694479594346,
+            "epsilon": 0.019479225733432,
             "kga_decision": "ABSTAIN",
             "method": "tent",
             "observed_stability_inflated_decision": "ABSTAIN",
-            "observed_stability_inflated_epsilon": 0.04907177429522401,
+            "observed_stability_inflated_epsilon": 0.049234928052119625,
             "oracle_action": "FREEZE",
             "regime": "marginal",
             "seed": 4
@@ -3072,13 +3150,13 @@
             "benchmark": "cifar101",
             "condition": "cifar101|small|single_class|aggressive|r0",
             "decision": "FREEZE",
-            "delta_hat": -0.020800997615400066,
+            "delta_hat": -0.02074679050554724,
             "eps_conformal": 0.017300151661454412,
-            "epsilon": 0.0193694479594346,
+            "epsilon": 0.019479225733432,
             "kga_decision": "FREEZE",
             "method": "tent",
             "observed_stability_inflated_decision": "ABSTAIN",
-            "observed_stability_inflated_epsilon": 0.04907177429522401,
+            "observed_stability_inflated_epsilon": 0.049234928052119625,
             "oracle_action": "FREEZE",
             "regime": "harmful",
             "seed": 4
@@ -3104,13 +3182,13 @@
             "benchmark": "cifar101",
             "condition": "cifar101|small|single_class|aggressive|r1",
             "decision": "FREEZE",
-            "delta_hat": -0.030329143888658067,
+            "delta_hat": -0.030330163218224293,
             "eps_conformal": 0.017300151661454412,
-            "epsilon": 0.0193694479594346,
+            "epsilon": 0.019479225733432,
             "kga_decision": "FREEZE",
             "method": "tent",
             "observed_stability_inflated_decision": "ABSTAIN",
-            "observed_stability_inflated_epsilon": 0.04907177429522401,
+            "observed_stability_inflated_epsilon": 0.049234928052119625,
             "oracle_action": "FREEZE",
             "regime": "harmful",
             "seed": 4
@@ -3136,13 +3214,13 @@
             "benchmark": "cifar101",
             "condition": "cifar101|tiny|iid|mild|r0",
             "decision": "ABSTAIN",
-            "delta_hat": 0.007904261790487645,
+            "delta_hat": 0.007840054449893495,
             "eps_conformal": 0.017300151661454412,
-            "epsilon": 0.0193694479594346,
+            "epsilon": 0.019479225733432,
             "kga_decision": "ABSTAIN",
             "method": "tent",
             "observed_stability_inflated_decision": "ABSTAIN",
-            "observed_stability_inflated_epsilon": 0.04907177429522401,
+            "observed_stability_inflated_epsilon": 0.049234928052119625,
             "oracle_action": "ADAPT",
             "regime": "marginal",
             "seed": 4
@@ -3168,13 +3246,13 @@
             "benchmark": "cifar101",
             "condition": "cifar101|tiny|iid|mild|r1",
             "decision": "ABSTAIN",
-            "delta_hat": 0.0011114838411020905,
+            "delta_hat": 0.0013525127812738821,
             "eps_conformal": 0.017300151661454412,
-            "epsilon": 0.0193694479594346,
+            "epsilon": 0.019479225733432,
             "kga_decision": "ABSTAIN",
             "method": "tent",
             "observed_stability_inflated_decision": "ABSTAIN",
-            "observed_stability_inflated_epsilon": 0.04907177429522401,
+            "observed_stability_inflated_epsilon": 0.049234928052119625,
             "oracle_action": "ADAPT",
             "regime": "marginal",
             "seed": 4
@@ -3200,13 +3278,13 @@
             "benchmark": "cifar101",
             "condition": "cifar101|tiny|iid|aggressive|r0",
             "decision": "FREEZE",
-            "delta_hat": -0.03078137464101256,
+            "delta_hat": -0.030830758615392646,
             "eps_conformal": 0.017300151661454412,
-            "epsilon": 0.0193694479594346,
+            "epsilon": 0.019479225733432,
             "kga_decision": "FREEZE",
             "method": "tent",
             "observed_stability_inflated_decision": "ABSTAIN",
-            "observed_stability_inflated_epsilon": 0.04907177429522401,
+            "observed_stability_inflated_epsilon": 0.049234928052119625,
             "oracle_action": "FREEZE",
             "regime": "harmful",
             "seed": 4
@@ -3232,13 +3310,13 @@
             "benchmark": "cifar101",
             "condition": "cifar101|tiny|iid|aggressive|r1",
             "decision": "FREEZE",
-            "delta_hat": -0.02258287823163552,
+            "delta_hat": -0.022226109174398583,
             "eps_conformal": 0.017300151661454412,
-            "epsilon": 0.0193694479594346,
+            "epsilon": 0.019479225733432,
             "kga_decision": "FREEZE",
             "method": "tent",
             "observed_stability_inflated_decision": "ABSTAIN",
-            "observed_stability_inflated_epsilon": 0.04907177429522401,
+            "observed_stability_inflated_epsilon": 0.049234928052119625,
             "oracle_action": "FREEZE",
             "regime": "harmful",
             "seed": 4
@@ -3264,13 +3342,13 @@
             "benchmark": "cifar101",
             "condition": "cifar101|tiny|imbalanced|mild|r0",
             "decision": "ABSTAIN",
-            "delta_hat": 0.0001523491183226729,
+            "delta_hat": -0.0006827583552058102,
             "eps_conformal": 0.017300151661454412,
-            "epsilon": 0.0193694479594346,
+            "epsilon": 0.019479225733432,
             "kga_decision": "ABSTAIN",
             "method": "tent",
             "observed_stability_inflated_decision": "ABSTAIN",
-            "observed_stability_inflated_epsilon": 0.04907177429522401,
+            "observed_stability_inflated_epsilon": 0.049234928052119625,
             "oracle_action": "ADAPT",
             "regime": "marginal",
             "seed": 4
@@ -3296,13 +3374,13 @@
             "benchmark": "cifar101",
             "condition": "cifar101|tiny|imbalanced|mild|r1",
             "decision": "ABSTAIN",
-            "delta_hat": 0.00799867154626093,
+            "delta_hat": 0.008416478677118727,
             "eps_conformal": 0.017300151661454412,
-            "epsilon": 0.0193694479594346,
+            "epsilon": 0.019479225733432,
             "kga_decision": "ABSTAIN",
             "method": "tent",
             "observed_stability_inflated_decision": "ABSTAIN",
-            "observed_stability_inflated_epsilon": 0.04907177429522401,
+            "observed_stability_inflated_epsilon": 0.049234928052119625,
             "oracle_action": "FREEZE",
             "regime": "marginal",
             "seed": 4
@@ -3328,13 +3406,13 @@
             "benchmark": "cifar101",
             "condition": "cifar101|tiny|imbalanced|aggressive|r0",
             "decision": "FREEZE",
-            "delta_hat": -0.02926662684092576,
+            "delta_hat": -0.0297177143695427,
             "eps_conformal": 0.017300151661454412,
-            "epsilon": 0.0193694479594346,
+            "epsilon": 0.019479225733432,
             "kga_decision": "FREEZE",
             "method": "tent",
             "observed_stability_inflated_decision": "ABSTAIN",
-            "observed_stability_inflated_epsilon": 0.04907177429522401,
+            "observed_stability_inflated_epsilon": 0.049234928052119625,
             "oracle_action": "FREEZE",
             "regime": "marginal",
             "seed": 4
@@ -3360,13 +3438,13 @@
             "benchmark": "cifar101",
             "condition": "cifar101|tiny|imbalanced|aggressive|r1",
             "decision": "FREEZE",
-            "delta_hat": -0.04511611878773195,
+            "delta_hat": -0.04480432480441525,
             "eps_conformal": 0.017300151661454412,
-            "epsilon": 0.0193694479594346,
+            "epsilon": 0.019479225733432,
             "kga_decision": "FREEZE",
             "method": "tent",
             "observed_stability_inflated_decision": "ABSTAIN",
-            "observed_stability_inflated_epsilon": 0.04907177429522401,
+            "observed_stability_inflated_epsilon": 0.049234928052119625,
             "oracle_action": "FREEZE",
             "regime": "harmful",
             "seed": 4
@@ -3392,13 +3470,13 @@
             "benchmark": "cifar101",
             "condition": "cifar101|tiny|single_class|mild|r0",
             "decision": "ABSTAIN",
-            "delta_hat": 0.005323684068141453,
+            "delta_hat": 0.00641851889600269,
             "eps_conformal": 0.017300151661454412,
-            "epsilon": 0.0193694479594346,
+            "epsilon": 0.019479225733432,
             "kga_decision": "ABSTAIN",
             "method": "tent",
             "observed_stability_inflated_decision": "ABSTAIN",
-            "observed_stability_inflated_epsilon": 0.04907177429522401,
+            "observed_stability_inflated_epsilon": 0.049234928052119625,
             "oracle_action": "ADAPT",
             "regime": "marginal",
             "seed": 4
@@ -3424,13 +3502,13 @@
             "benchmark": "cifar101",
             "condition": "cifar101|tiny|single_class|mild|r1",
             "decision": "ABSTAIN",
-            "delta_hat": 0.004407103937604053,
+            "delta_hat": 0.0050337221658772885,
             "eps_conformal": 0.017300151661454412,
-            "epsilon": 0.0193694479594346,
+            "epsilon": 0.019479225733432,
             "kga_decision": "ABSTAIN",
             "method": "tent",
             "observed_stability_inflated_decision": "ABSTAIN",
-            "observed_stability_inflated_epsilon": 0.04907177429522401,
+            "observed_stability_inflated_epsilon": 0.049234928052119625,
             "oracle_action": "FREEZE",
             "regime": "marginal",
             "seed": 4
@@ -3456,13 +3534,13 @@
             "benchmark": "cifar101",
             "condition": "cifar101|tiny|single_class|aggressive|r0",
             "decision": "FREEZE",
-            "delta_hat": -0.041601992734676664,
+            "delta_hat": -0.04140743243309772,
             "eps_conformal": 0.017300151661454412,
-            "epsilon": 0.0193694479594346,
+            "epsilon": 0.019479225733432,
             "kga_decision": "FREEZE",
             "method": "tent",
             "observed_stability_inflated_decision": "ABSTAIN",
-            "observed_stability_inflated_epsilon": 0.04907177429522401,
+            "observed_stability_inflated_epsilon": 0.049234928052119625,
             "oracle_action": "FREEZE",
             "regime": "harmful",
             "seed": 4
@@ -3488,13 +3566,13 @@
             "benchmark": "cifar101",
             "condition": "cifar101|tiny|single_class|aggressive|r1",
             "decision": "FREEZE",
-            "delta_hat": -0.03803025165449306,
+            "delta_hat": -0.03595353132212231,
             "eps_conformal": 0.017300151661454412,
-            "epsilon": 0.0193694479594346,
+            "epsilon": 0.019479225733432,
             "kga_decision": "FREEZE",
             "method": "tent",
             "observed_stability_inflated_decision": "ABSTAIN",
-            "observed_stability_inflated_epsilon": 0.04907177429522401,
+            "observed_stability_inflated_epsilon": 0.049234928052119625,
             "oracle_action": "FREEZE",
             "regime": "harmful",
             "seed": 4
@@ -3726,8 +3804,9 @@
             "kga": 0.0015094905999707587
           },
           "seed_inference": {
-            "ci_robust_beats_both": true,
-            "paired_seed_bootstrap": {
+            "ci_robust_beats_both": false,
+            "descriptive_seed_bootstrap": {
+              "both_lower_bounds_positive": true,
               "gaps": {
                 "always_adapt": {
                   "ci95": [
@@ -3746,7 +3825,7 @@
               },
               "random_seed": 20260809,
               "replicates": 20000,
-              "unit": "seed mean"
+              "unit": "run-seed mean conditional on the archived checkpoint/protocol"
             },
             "per_seed": [
               {
@@ -3814,9 +3893,11 @@
                 },
                 "seed": 4
               }
-            ]
+            ],
+            "reason": "independent checkpoint identities are not recorded for these run seeds; the percentile interval is descriptive and cannot promote a CI-robust claim"
           }
         },
+        "calibration_scope": "cross-fitted empirical residual calibration; direct self-inclusion removed, exchangeability and independence not established",
         "candidate_count": 3,
         "candidates": {
           "eata": {
@@ -4108,8 +4189,9 @@
               "kga": 0.0013249999947018093
             },
             "seed_inference": {
-              "ci_robust_beats_both": true,
-              "paired_seed_bootstrap": {
+              "ci_robust_beats_both": false,
+              "descriptive_seed_bootstrap": {
+                "both_lower_bounds_positive": true,
                 "gaps": {
                   "always_adapt": {
                     "ci95": [
@@ -4128,7 +4210,7 @@
                 },
                 "random_seed": 20260809,
                 "replicates": 20000,
-                "unit": "seed mean"
+                "unit": "run-seed mean conditional on the archived checkpoint/protocol"
               },
               "per_seed": [
                 {
@@ -4196,7 +4278,8 @@
                   },
                   "seed": 4
                 }
-              ]
+              ],
+              "reason": "independent checkpoint identities are not recorded for these run seeds; the percentile interval is descriptive and cannot promote a CI-robust claim"
             }
           },
           "sar": {
@@ -4489,7 +4572,8 @@
             },
             "seed_inference": {
               "ci_robust_beats_both": false,
-              "paired_seed_bootstrap": {
+              "descriptive_seed_bootstrap": {
+                "both_lower_bounds_positive": false,
                 "gaps": {
                   "always_adapt": {
                     "ci95": [
@@ -4508,7 +4592,7 @@
                 },
                 "random_seed": 20260809,
                 "replicates": 20000,
-                "unit": "seed mean"
+                "unit": "run-seed mean conditional on the archived checkpoint/protocol"
               },
               "per_seed": [
                 {
@@ -4576,7 +4660,8 @@
                   },
                   "seed": 4
                 }
-              ]
+              ],
+              "reason": "independent checkpoint identities are not recorded for these run seeds; the percentile interval is descriptive and cannot promote a CI-robust claim"
             }
           },
           "tent": {
@@ -4868,8 +4953,9 @@
               "kga": 0.0016453700209105456
             },
             "seed_inference": {
-              "ci_robust_beats_both": true,
-              "paired_seed_bootstrap": {
+              "ci_robust_beats_both": false,
+              "descriptive_seed_bootstrap": {
+                "both_lower_bounds_positive": true,
                 "gaps": {
                   "always_adapt": {
                     "ci95": [
@@ -4888,7 +4974,7 @@
                 },
                 "random_seed": 20260809,
                 "replicates": 20000,
-                "unit": "seed mean"
+                "unit": "run-seed mean conditional on the archived checkpoint/protocol"
               },
               "per_seed": [
                 {
@@ -4956,11 +5042,31 @@
                   },
                   "seed": 4
                 }
-              ]
+              ],
+              "reason": "independent checkpoint identities are not recorded for these run seeds; the percentile interval is descriptive and cannot promote a CI-robust claim"
             }
           }
         },
+        "evidence_contract": {
+          "dimension": 11,
+          "feature_names": [
+            "pre_entropy",
+            "pre_conf",
+            "pre_pbal",
+            "post_entropy",
+            "post_conf",
+            "post_pbal",
+            "pbal_drop",
+            "entropy_drop",
+            "frac_highconf",
+            "marginal_KL",
+            "update_norm"
+          ],
+          "names_recovered": true,
+          "schema_sha256": "76b3951e77c42bbb1359123abd8d937b087c9c42ba0f14e11e61f9aca132f7f7"
+        },
         "rule": "per-candidate, per-seed exact-rank leave-one-condition-out KGA",
+        "seed_scope": "run/stream seeds conditional on archived checkpoint identities unless a track separately supplies independently trained checkpoint hashes",
         "seeds": [
           0,
           1,
@@ -5251,7 +5357,8 @@
           },
           "seed_inference": {
             "ci_robust_beats_both": false,
-            "paired_seed_bootstrap": {
+            "descriptive_seed_bootstrap": {
+              "both_lower_bounds_positive": false,
               "gaps": {
                 "always_adapt": {
                   "ci95": [
@@ -5270,7 +5377,7 @@
               },
               "random_seed": 20260809,
               "replicates": 20000,
-              "unit": "seed mean"
+              "unit": "run-seed mean conditional on the archived checkpoint/protocol"
             },
             "per_seed": [
               {
@@ -5325,9 +5432,11 @@
                 },
                 "seed": 3
               }
-            ]
+            ],
+            "reason": "independent checkpoint identities are not recorded for these run seeds; the percentile interval is descriptive and cannot promote a CI-robust claim"
           }
         },
+        "calibration_scope": "cross-fitted empirical residual calibration; direct self-inclusion removed, exchangeability and independence not established",
         "candidate_count": 10,
         "candidates": {
           "convnext_base": {
@@ -5596,7 +5705,8 @@
             },
             "seed_inference": {
               "ci_robust_beats_both": false,
-              "paired_seed_bootstrap": {
+              "descriptive_seed_bootstrap": {
+                "both_lower_bounds_positive": false,
                 "gaps": {
                   "always_adapt": {
                     "ci95": [
@@ -5615,7 +5725,7 @@
                 },
                 "random_seed": 20260809,
                 "replicates": 20000,
-                "unit": "seed mean"
+                "unit": "run-seed mean conditional on the archived checkpoint/protocol"
               },
               "per_seed": [
                 {
@@ -5670,7 +5780,8 @@
                   },
                   "seed": 3
                 }
-              ]
+              ],
+              "reason": "independent checkpoint identities are not recorded for these run seeds; the percentile interval is descriptive and cannot promote a CI-robust claim"
             }
           },
           "convnext_tiny": {
@@ -5939,7 +6050,8 @@
             },
             "seed_inference": {
               "ci_robust_beats_both": false,
-              "paired_seed_bootstrap": {
+              "descriptive_seed_bootstrap": {
+                "both_lower_bounds_positive": false,
                 "gaps": {
                   "always_adapt": {
                     "ci95": [
@@ -5958,7 +6070,7 @@
                 },
                 "random_seed": 20260809,
                 "replicates": 20000,
-                "unit": "seed mean"
+                "unit": "run-seed mean conditional on the archived checkpoint/protocol"
               },
               "per_seed": [
                 {
@@ -6013,7 +6125,8 @@
                   },
                   "seed": 3
                 }
-              ]
+              ],
+              "reason": "independent checkpoint identities are not recorded for these run seeds; the percentile interval is descriptive and cannot promote a CI-robust claim"
             }
           },
           "efficientnet_b0": {
@@ -6282,7 +6395,8 @@
             },
             "seed_inference": {
               "ci_robust_beats_both": false,
-              "paired_seed_bootstrap": {
+              "descriptive_seed_bootstrap": {
+                "both_lower_bounds_positive": false,
                 "gaps": {
                   "always_adapt": {
                     "ci95": [
@@ -6301,7 +6415,7 @@
                 },
                 "random_seed": 20260809,
                 "replicates": 20000,
-                "unit": "seed mean"
+                "unit": "run-seed mean conditional on the archived checkpoint/protocol"
               },
               "per_seed": [
                 {
@@ -6356,7 +6470,8 @@
                   },
                   "seed": 3
                 }
-              ]
+              ],
+              "reason": "independent checkpoint identities are not recorded for these run seeds; the percentile interval is descriptive and cannot promote a CI-robust claim"
             }
           },
           "efficientnet_b3": {
@@ -6625,7 +6740,8 @@
             },
             "seed_inference": {
               "ci_robust_beats_both": false,
-              "paired_seed_bootstrap": {
+              "descriptive_seed_bootstrap": {
+                "both_lower_bounds_positive": false,
                 "gaps": {
                   "always_adapt": {
                     "ci95": [
@@ -6644,7 +6760,7 @@
                 },
                 "random_seed": 20260809,
                 "replicates": 20000,
-                "unit": "seed mean"
+                "unit": "run-seed mean conditional on the archived checkpoint/protocol"
               },
               "per_seed": [
                 {
@@ -6699,7 +6815,8 @@
                   },
                   "seed": 3
                 }
-              ]
+              ],
+              "reason": "independent checkpoint identities are not recorded for these run seeds; the percentile interval is descriptive and cannot promote a CI-robust claim"
             }
           },
           "resnet101": {
@@ -6968,7 +7085,8 @@
             },
             "seed_inference": {
               "ci_robust_beats_both": false,
-              "paired_seed_bootstrap": {
+              "descriptive_seed_bootstrap": {
+                "both_lower_bounds_positive": false,
                 "gaps": {
                   "always_adapt": {
                     "ci95": [
@@ -6987,7 +7105,7 @@
                 },
                 "random_seed": 20260809,
                 "replicates": 20000,
-                "unit": "seed mean"
+                "unit": "run-seed mean conditional on the archived checkpoint/protocol"
               },
               "per_seed": [
                 {
@@ -7042,7 +7160,8 @@
                   },
                   "seed": 3
                 }
-              ]
+              ],
+              "reason": "independent checkpoint identities are not recorded for these run seeds; the percentile interval is descriptive and cannot promote a CI-robust claim"
             }
           },
           "resnet152": {
@@ -7311,7 +7430,8 @@
             },
             "seed_inference": {
               "ci_robust_beats_both": false,
-              "paired_seed_bootstrap": {
+              "descriptive_seed_bootstrap": {
+                "both_lower_bounds_positive": false,
                 "gaps": {
                   "always_adapt": {
                     "ci95": [
@@ -7330,7 +7450,7 @@
                 },
                 "random_seed": 20260809,
                 "replicates": 20000,
-                "unit": "seed mean"
+                "unit": "run-seed mean conditional on the archived checkpoint/protocol"
               },
               "per_seed": [
                 {
@@ -7385,7 +7505,8 @@
                   },
                   "seed": 3
                 }
-              ]
+              ],
+              "reason": "independent checkpoint identities are not recorded for these run seeds; the percentile interval is descriptive and cannot promote a CI-robust claim"
             }
           },
           "resnext101_32x8d": {
@@ -7654,7 +7775,8 @@
             },
             "seed_inference": {
               "ci_robust_beats_both": false,
-              "paired_seed_bootstrap": {
+              "descriptive_seed_bootstrap": {
+                "both_lower_bounds_positive": false,
                 "gaps": {
                   "always_adapt": {
                     "ci95": [
@@ -7673,7 +7795,7 @@
                 },
                 "random_seed": 20260809,
                 "replicates": 20000,
-                "unit": "seed mean"
+                "unit": "run-seed mean conditional on the archived checkpoint/protocol"
               },
               "per_seed": [
                 {
@@ -7728,7 +7850,8 @@
                   },
                   "seed": 3
                 }
-              ]
+              ],
+              "reason": "independent checkpoint identities are not recorded for these run seeds; the percentile interval is descriptive and cannot promote a CI-robust claim"
             }
           },
           "swin_b": {
@@ -7997,7 +8120,8 @@
             },
             "seed_inference": {
               "ci_robust_beats_both": false,
-              "paired_seed_bootstrap": {
+              "descriptive_seed_bootstrap": {
+                "both_lower_bounds_positive": false,
                 "gaps": {
                   "always_adapt": {
                     "ci95": [
@@ -8016,7 +8140,7 @@
                 },
                 "random_seed": 20260809,
                 "replicates": 20000,
-                "unit": "seed mean"
+                "unit": "run-seed mean conditional on the archived checkpoint/protocol"
               },
               "per_seed": [
                 {
@@ -8071,7 +8195,8 @@
                   },
                   "seed": 3
                 }
-              ]
+              ],
+              "reason": "independent checkpoint identities are not recorded for these run seeds; the percentile interval is descriptive and cannot promote a CI-robust claim"
             }
           },
           "swin_t": {
@@ -8340,7 +8465,8 @@
             },
             "seed_inference": {
               "ci_robust_beats_both": false,
-              "paired_seed_bootstrap": {
+              "descriptive_seed_bootstrap": {
+                "both_lower_bounds_positive": false,
                 "gaps": {
                   "always_adapt": {
                     "ci95": [
@@ -8359,7 +8485,7 @@
                 },
                 "random_seed": 20260809,
                 "replicates": 20000,
-                "unit": "seed mean"
+                "unit": "run-seed mean conditional on the archived checkpoint/protocol"
               },
               "per_seed": [
                 {
@@ -8414,7 +8540,8 @@
                   },
                   "seed": 3
                 }
-              ]
+              ],
+              "reason": "independent checkpoint identities are not recorded for these run seeds; the percentile interval is descriptive and cannot promote a CI-robust claim"
             }
           },
           "vit_b_16": {
@@ -8683,7 +8810,8 @@
             },
             "seed_inference": {
               "ci_robust_beats_both": false,
-              "paired_seed_bootstrap": {
+              "descriptive_seed_bootstrap": {
+                "both_lower_bounds_positive": false,
                 "gaps": {
                   "always_adapt": {
                     "ci95": [
@@ -8702,7 +8830,7 @@
                 },
                 "random_seed": 20260809,
                 "replicates": 20000,
-                "unit": "seed mean"
+                "unit": "run-seed mean conditional on the archived checkpoint/protocol"
               },
               "per_seed": [
                 {
@@ -8757,11 +8885,31 @@
                   },
                   "seed": 3
                 }
-              ]
+              ],
+              "reason": "independent checkpoint identities are not recorded for these run seeds; the percentile interval is descriptive and cannot promote a CI-robust claim"
             }
           }
         },
+        "evidence_contract": {
+          "dimension": 11,
+          "feature_names": [
+            "pre_entropy",
+            "pre_conf",
+            "pre_pbal",
+            "post_entropy",
+            "post_conf",
+            "post_pbal",
+            "pbal_drop",
+            "entropy_drop",
+            "frac_highconf",
+            "marginal_KL",
+            "update_norm"
+          ],
+          "names_recovered": true,
+          "schema_sha256": "76b3951e77c42bbb1359123abd8d937b087c9c42ba0f14e11e61f9aca132f7f7"
+        },
         "rule": "per-candidate, per-seed exact-rank leave-one-condition-out KGA",
+        "seed_scope": "run/stream seeds conditional on archived checkpoint identities unless a track separately supplies independently trained checkpoint hashes",
         "seeds": [
           0,
           1,
@@ -8942,8 +9090,9 @@
             "kga": 0.014675925874415739
           },
           "seed_inference": {
-            "ci_robust_beats_both": true,
-            "paired_seed_bootstrap": {
+            "ci_robust_beats_both": false,
+            "descriptive_seed_bootstrap": {
+              "both_lower_bounds_positive": true,
               "gaps": {
                 "always_adapt": {
                   "ci95": [
@@ -8962,7 +9111,7 @@
               },
               "random_seed": 20260809,
               "replicates": 20000,
-              "unit": "seed mean"
+              "unit": "run-seed mean conditional on the archived checkpoint/protocol"
             },
             "per_seed": [
               {
@@ -9030,9 +9179,11 @@
                 },
                 "seed": 4
               }
-            ]
+            ],
+            "reason": "independent checkpoint identities are not recorded for these run seeds; the percentile interval is descriptive and cannot promote a CI-robust claim"
           }
         },
+        "calibration_scope": "cross-fitted empirical residual calibration; direct self-inclusion removed, exchangeability and independence not established",
         "candidate_count": 3,
         "candidates": {
           "eata": {
@@ -9325,7 +9476,8 @@
             },
             "seed_inference": {
               "ci_robust_beats_both": false,
-              "paired_seed_bootstrap": {
+              "descriptive_seed_bootstrap": {
+                "both_lower_bounds_positive": false,
                 "gaps": {
                   "always_adapt": {
                     "ci95": [
@@ -9344,7 +9496,7 @@
                 },
                 "random_seed": 20260809,
                 "replicates": 20000,
-                "unit": "seed mean"
+                "unit": "run-seed mean conditional on the archived checkpoint/protocol"
               },
               "per_seed": [
                 {
@@ -9412,7 +9564,8 @@
                   },
                   "seed": 4
                 }
-              ]
+              ],
+              "reason": "independent checkpoint identities are not recorded for these run seeds; the percentile interval is descriptive and cannot promote a CI-robust claim"
             }
           },
           "sar": {
@@ -9705,7 +9858,8 @@
             },
             "seed_inference": {
               "ci_robust_beats_both": false,
-              "paired_seed_bootstrap": {
+              "descriptive_seed_bootstrap": {
+                "both_lower_bounds_positive": false,
                 "gaps": {
                   "always_adapt": {
                     "ci95": [
@@ -9724,7 +9878,7 @@
                 },
                 "random_seed": 20260809,
                 "replicates": 20000,
-                "unit": "seed mean"
+                "unit": "run-seed mean conditional on the archived checkpoint/protocol"
               },
               "per_seed": [
                 {
@@ -9792,7 +9946,8 @@
                   },
                   "seed": 4
                 }
-              ]
+              ],
+              "reason": "independent checkpoint identities are not recorded for these run seeds; the percentile interval is descriptive and cannot promote a CI-robust claim"
             }
           },
           "tent": {
@@ -10085,7 +10240,8 @@
             },
             "seed_inference": {
               "ci_robust_beats_both": false,
-              "paired_seed_bootstrap": {
+              "descriptive_seed_bootstrap": {
+                "both_lower_bounds_positive": false,
                 "gaps": {
                   "always_adapt": {
                     "ci95": [
@@ -10104,7 +10260,7 @@
                 },
                 "random_seed": 20260809,
                 "replicates": 20000,
-                "unit": "seed mean"
+                "unit": "run-seed mean conditional on the archived checkpoint/protocol"
               },
               "per_seed": [
                 {
@@ -10172,11 +10328,31 @@
                   },
                   "seed": 4
                 }
-              ]
+              ],
+              "reason": "independent checkpoint identities are not recorded for these run seeds; the percentile interval is descriptive and cannot promote a CI-robust claim"
             }
           }
         },
+        "evidence_contract": {
+          "dimension": 11,
+          "feature_names": [
+            "pre_entropy",
+            "pre_conf",
+            "pre_pbal",
+            "post_entropy",
+            "post_conf",
+            "post_pbal",
+            "pbal_drop",
+            "entropy_drop",
+            "frac_highconf",
+            "marginal_KL",
+            "update_norm"
+          ],
+          "names_recovered": true,
+          "schema_sha256": "76b3951e77c42bbb1359123abd8d937b087c9c42ba0f14e11e61f9aca132f7f7"
+        },
         "rule": "per-candidate, per-seed exact-rank leave-one-condition-out KGA",
+        "seed_scope": "run/stream seeds conditional on archived checkpoint identities unless a track separately supplies independently trained checkpoint hashes",
         "seeds": [
           0,
           1,
@@ -10188,14 +10364,33 @@
       "protocol": "authoritative 27-cell x 5-seed panel"
     },
     "iwildcam": {
-      "claim_scope": "descriptive transfer result; A7 stability premise was not predeclared",
+      "claim_scope": "withheld from release-level numerical claims because the archived scorer used sklearn macro-F1 rather than the official WILDS label-present macro-F1 contract",
+      "historical_reconciliation": {
+        "corrected_claim": {
+          "epsilon": 0.14670687199500268,
+          "point_beats_both": false,
+          "regret_always_adapt": 0.10282996048460004,
+          "regret_always_freeze": 0.004102369062102953,
+          "regret_kga": 0.004102369062102953
+        },
+        "historical_artifact": "experiments/kbound/results/reconciled_panels_v1/source/iwildcam/superseded_protocol_result.json",
+        "historical_claim": {
+          "beats_both": true,
+          "epsilon": 0.02937365719012003,
+          "regret_always_adapt": 0.10282996048460004,
+          "regret_always_freeze": 0.004102369062102953,
+          "regret_kga": 0.0036745149311371416
+        },
+        "reason": "the historical radius is consistent with optimistic in-sample residual calibration; replay with leave-one-calibration-record-out residuals makes the radius wider, removes the only ADAPT action, and ties always-freeze",
+        "status": "superseded_not_promotable"
+      },
       "primary": {
         "calibration": {
           "a7_reason": "the deployment estimator is refit on all calibration records; no uniform, predeclared full-fit-versus-LOO stability bound was archived",
           "a7_status": "not_established",
           "alpha": 0.1,
           "epsilon": 0.14670687199500268,
-          "method": "leave-one-calibration-record-out residuals; exact split-conformal rank",
+          "method": "leave-one-calibration-record-out empirical residuals with an exact-rank order statistic; not exact split conformal or jackknife+",
           "observed_full_fit_vs_loo_max_gap": 0.2582804796439331,
           "observed_full_fit_vs_loo_mean_gap": 0.05526727245545718,
           "observed_stability_inflation_is_diagnostic_only": true
@@ -10213,6 +10408,24 @@
             "random_state": 0,
             "subsample": 0.8
           }
+        },
+        "evidence_contract": {
+          "dimension": 11,
+          "feature_names": [
+            "pre_entropy",
+            "pre_conf",
+            "pre_pbal",
+            "post_entropy",
+            "post_conf",
+            "post_pbal",
+            "pbal_drop",
+            "entropy_drop",
+            "frac_highconf",
+            "marginal_KL",
+            "update_norm"
+          ],
+          "names_recovered": true,
+          "schema_sha256": "76b3951e77c42bbb1359123abd8d937b087c9c42ba0f14e11e61f9aca132f7f7"
         },
         "exact_rank_transfer_score": {
           "abstain_count": 51,
@@ -10290,6 +10503,7 @@
             "reason": "fewer than two independent seed units"
           }
         },
+        "record_filters": {},
         "records": [
           {
             "B": -0.016320716320716314,
@@ -11952,17 +12166,821 @@
           1
         ]
       },
-      "protocol": "H-v2 locked Tent episodic, seed-0 calibration to seed-1 evaluation"
+      "protocol": "H-v2 locked Tent episodic, seed-0 calibration to seed-1 evaluation",
+      "release_promotion": {
+        "eligible": false,
+        "reason": "the archived scorer includes prediction-only classes; a pinned rerun with the official WILDS metric and a sealed population manifest is required",
+        "status": "withheld_metric_contract_rerun_required"
+      }
     },
     "officehome": {
       "claim_scope": "descriptive transfer result; A7 stability premise was not predeclared",
-      "independent_seed_replication": {
+      "primary": {
+        "calibration": {
+          "a7_reason": "the deployment estimator is refit on all calibration records; no uniform, predeclared full-fit-versus-LOO stability bound was archived",
+          "a7_status": "not_established",
+          "alpha": 0.1,
+          "epsilon": 0.04375060169663211,
+          "method": "leave-one-calibration-record-out empirical residuals with an exact-rank order statistic; not exact split conformal or jackknife+",
+          "observed_full_fit_vs_loo_max_gap": 0.049073361947927385,
+          "observed_full_fit_vs_loo_mean_gap": 0.014258478575267526,
+          "observed_stability_inflation_is_diagnostic_only": true
+        },
+        "calibration_seeds": [
+          0,
+          1
+        ],
+        "candidate": "sar_online_aggressive",
+        "estimator": {
+          "class": "sklearn.ensemble.GradientBoostingRegressor",
+          "hyperparameters": {
+            "learning_rate": 0.05,
+            "max_depth": 2,
+            "n_estimators": 250,
+            "random_state": 0,
+            "subsample": 0.8
+          }
+        },
+        "evidence_contract": {
+          "dimension": 18,
+          "feature_names": [
+            "pre_entropy",
+            "pre_conf",
+            "pre_pbal",
+            "post_entropy",
+            "post_conf",
+            "post_pbal",
+            "pbal_drop",
+            "entropy_drop",
+            "frac_highconf",
+            "marginal_KL",
+            "update_norm",
+            "disagreement",
+            "energy_shift",
+            "bn_kl",
+            "atc_acc_est",
+            "conf_drop",
+            "prior_kl_source",
+            "cand_disagree_mean"
+          ],
+          "names_recovered": true,
+          "schema_sha256": "a363c05a2475f3170976b8f7efc30763859e29b9cfe1714f9c4f91a4f1e892bc"
+        },
+        "exact_rank_transfer_score": {
+          "abstain_count": 24,
+          "adapt_count": 0,
+          "adapt_rate": 0.0,
+          "decision_coverage": 0.3142857142857143,
+          "fa_c": null,
+          "fa_u": 0.0,
+          "false_adapt_count": 0,
+          "freeze_count": 11,
+          "n": 35,
+          "point_beats_both": false,
+          "regret": {
+            "always_adapt": 0.04681318681318681,
+            "always_freeze": 0.01582417582417583,
+            "kga": 0.01582417582417583
+          },
+          "seed_inference": {
+            "ci_robust_beats_both": false,
+            "descriptive_seed_bootstrap": {
+              "both_lower_bounds_positive": false,
+              "gaps": {
+                "always_adapt": {
+                  "ci95": [
+                    0.025113122171945692,
+                    0.036538461538461534
+                  ],
+                  "mean_gap_baseline_minus_kga": 0.030825791855203614
+                },
+                "always_freeze": {
+                  "ci95": [
+                    0.0,
+                    0.0
+                  ],
+                  "mean_gap_baseline_minus_kga": 0.0
+                }
+              },
+              "random_seed": 20260809,
+              "replicates": 20000,
+              "unit": "run-seed mean conditional on the archived checkpoint/protocol"
+            },
+            "per_seed": [
+              {
+                "adapt_rate": 0.0,
+                "decision_coverage": 0.3333333333333333,
+                "fa_u": 0.0,
+                "n": 18,
+                "point_beats_both": false,
+                "regret": {
+                  "always_adapt": 0.05170940170940171,
+                  "always_freeze": 0.015170940170940176,
+                  "kga": 0.015170940170940176
+                },
+                "seed": 0
+              },
+              {
+                "adapt_rate": 0.0,
+                "decision_coverage": 0.29411764705882354,
+                "fa_u": 0.0,
+                "n": 17,
+                "point_beats_both": false,
+                "regret": {
+                  "always_adapt": 0.0416289592760181,
+                  "always_freeze": 0.016515837104072405,
+                  "kga": 0.016515837104072405
+                },
+                "seed": 1
+              }
+            ],
+            "reason": "independent checkpoint identities are not recorded for these run seeds; the percentile interval is descriptive and cannot promote a CI-robust claim"
+          }
+        },
+        "n_calibration": 36,
+        "n_test": 35,
+        "observed_stability_inflated_sensitivity": {
+          "abstain_count": 26,
+          "adapt_count": 0,
+          "adapt_rate": 0.0,
+          "decision_coverage": 0.2571428571428571,
+          "fa_c": null,
+          "fa_u": 0.0,
+          "false_adapt_count": 0,
+          "freeze_count": 9,
+          "n": 35,
+          "point_beats_both": false,
+          "regret": {
+            "always_adapt": 0.04681318681318681,
+            "always_freeze": 0.01582417582417583,
+            "kga": 0.01582417582417583
+          },
+          "seed_inference": {
+            "ci_robust_beats_both": false,
+            "descriptive_seed_bootstrap": {
+              "both_lower_bounds_positive": false,
+              "gaps": {
+                "always_adapt": {
+                  "ci95": [
+                    0.025113122171945692,
+                    0.036538461538461534
+                  ],
+                  "mean_gap_baseline_minus_kga": 0.030825791855203614
+                },
+                "always_freeze": {
+                  "ci95": [
+                    0.0,
+                    0.0
+                  ],
+                  "mean_gap_baseline_minus_kga": 0.0
+                }
+              },
+              "random_seed": 20260809,
+              "replicates": 20000,
+              "unit": "run-seed mean conditional on the archived checkpoint/protocol"
+            },
+            "per_seed": [
+              {
+                "adapt_rate": 0.0,
+                "decision_coverage": 0.2222222222222222,
+                "fa_u": 0.0,
+                "n": 18,
+                "point_beats_both": false,
+                "regret": {
+                  "always_adapt": 0.05170940170940171,
+                  "always_freeze": 0.015170940170940176,
+                  "kga": 0.015170940170940176
+                },
+                "seed": 0
+              },
+              {
+                "adapt_rate": 0.0,
+                "decision_coverage": 0.29411764705882354,
+                "fa_u": 0.0,
+                "n": 17,
+                "point_beats_both": false,
+                "regret": {
+                  "always_adapt": 0.0416289592760181,
+                  "always_freeze": 0.016515837104072405,
+                  "kga": 0.016515837104072405
+                },
+                "seed": 1
+              }
+            ],
+            "reason": "independent checkpoint identities are not recorded for these run seeds; the percentile interval is descriptive and cannot promote a CI-robust claim"
+          }
+        },
+        "record_filters": {},
+        "records": [
+          {
+            "B": 0.011538461538461497,
+            "a0": 0.6576923076923077,
+            "a_adapted": 0.6692307692307692,
+            "candidate": "sar_online_aggressive",
+            "comp": "iid",
+            "decision": "ABSTAIN",
+            "delta_hat": 0.017280328007251766,
+            "domain": "Art",
+            "epsilon": 0.04375060169663211,
+            "metric": "accuracy",
+            "observed_stability_inflated_decision": "ABSTAIN",
+            "observed_stability_inflated_epsilon": 0.0928239636445595,
+            "regime": "tiny",
+            "seed": 0,
+            "split": "test"
+          },
+          {
+            "B": -0.18846153846153846,
+            "a0": 0.5923076923076923,
+            "a_adapted": 0.40384615384615385,
+            "candidate": "sar_online_aggressive",
+            "comp": "iid",
+            "decision": "FREEZE",
+            "delta_hat": -0.1482538213312016,
+            "domain": "Art",
+            "epsilon": 0.04375060169663211,
+            "metric": "accuracy",
+            "observed_stability_inflated_decision": "FREEZE",
+            "observed_stability_inflated_epsilon": 0.0928239636445595,
+            "regime": "small",
+            "seed": 0,
+            "split": "test"
+          },
+          {
+            "B": 0.019230769230769273,
+            "a0": 0.6384615384615384,
+            "a_adapted": 0.6576923076923077,
+            "candidate": "sar_online_aggressive",
+            "comp": "imbalanced",
+            "decision": "ABSTAIN",
+            "delta_hat": 0.016022604400965045,
+            "domain": "Art",
+            "epsilon": 0.04375060169663211,
+            "metric": "accuracy",
+            "observed_stability_inflated_decision": "ABSTAIN",
+            "observed_stability_inflated_epsilon": 0.0928239636445595,
+            "regime": "tiny",
+            "seed": 0,
+            "split": "test"
+          },
+          {
+            "B": 0.03076923076923077,
+            "a0": 0.6192307692307693,
+            "a_adapted": 0.65,
+            "candidate": "sar_online_aggressive",
+            "comp": "imbalanced",
+            "decision": "ABSTAIN",
+            "delta_hat": 0.013339671998327042,
+            "domain": "Art",
+            "epsilon": 0.04375060169663211,
+            "metric": "accuracy",
+            "observed_stability_inflated_decision": "ABSTAIN",
+            "observed_stability_inflated_epsilon": 0.0928239636445595,
+            "regime": "small",
+            "seed": 0,
+            "split": "test"
+          },
+          {
+            "B": 0.0346153846153846,
+            "a0": 0.6346153846153846,
+            "a_adapted": 0.6692307692307692,
+            "candidate": "sar_online_aggressive",
+            "comp": "single_class",
+            "decision": "ABSTAIN",
+            "delta_hat": 0.030483415697724635,
+            "domain": "Art",
+            "epsilon": 0.04375060169663211,
+            "metric": "accuracy",
+            "observed_stability_inflated_decision": "ABSTAIN",
+            "observed_stability_inflated_epsilon": 0.0928239636445595,
+            "regime": "tiny",
+            "seed": 0,
+            "split": "test"
+          },
+          {
+            "B": 0.02692307692307694,
+            "a0": 0.6230769230769231,
+            "a_adapted": 0.65,
+            "candidate": "sar_online_aggressive",
+            "comp": "single_class",
+            "decision": "ABSTAIN",
+            "delta_hat": 0.025134942826252192,
+            "domain": "Art",
+            "epsilon": 0.04375060169663211,
+            "metric": "accuracy",
+            "observed_stability_inflated_decision": "ABSTAIN",
+            "observed_stability_inflated_epsilon": 0.0928239636445595,
+            "regime": "small",
+            "seed": 0,
+            "split": "test"
+          },
+          {
+            "B": -0.08076923076923076,
+            "a0": 0.3730769230769231,
+            "a_adapted": 0.2923076923076923,
+            "candidate": "sar_online_aggressive",
+            "comp": "iid",
+            "decision": "FREEZE",
+            "delta_hat": -0.08378794501885611,
+            "domain": "Clipart",
+            "epsilon": 0.04375060169663211,
+            "metric": "accuracy",
+            "observed_stability_inflated_decision": "ABSTAIN",
+            "observed_stability_inflated_epsilon": 0.0928239636445595,
+            "regime": "tiny",
+            "seed": 0,
+            "split": "test"
+          },
+          {
+            "B": -0.08461538461538459,
+            "a0": 0.38076923076923075,
+            "a_adapted": 0.29615384615384616,
+            "candidate": "sar_online_aggressive",
+            "comp": "iid",
+            "decision": "FREEZE",
+            "delta_hat": -0.10804366539125018,
+            "domain": "Clipart",
+            "epsilon": 0.04375060169663211,
+            "metric": "accuracy",
+            "observed_stability_inflated_decision": "FREEZE",
+            "observed_stability_inflated_epsilon": 0.0928239636445595,
+            "regime": "small",
+            "seed": 0,
+            "split": "test"
+          },
+          {
+            "B": 0.015384615384615385,
+            "a0": 0.38846153846153847,
+            "a_adapted": 0.40384615384615385,
+            "candidate": "sar_online_aggressive",
+            "comp": "imbalanced",
+            "decision": "ABSTAIN",
+            "delta_hat": 0.01224134902417159,
+            "domain": "Clipart",
+            "epsilon": 0.04375060169663211,
+            "metric": "accuracy",
+            "observed_stability_inflated_decision": "ABSTAIN",
+            "observed_stability_inflated_epsilon": 0.0928239636445595,
+            "regime": "tiny",
+            "seed": 0,
+            "split": "test"
+          },
+          {
+            "B": 0.015384615384615385,
+            "a0": 0.4,
+            "a_adapted": 0.4153846153846154,
+            "candidate": "sar_online_aggressive",
+            "comp": "imbalanced",
+            "decision": "ABSTAIN",
+            "delta_hat": 0.02616164365393777,
+            "domain": "Clipart",
+            "epsilon": 0.04375060169663211,
+            "metric": "accuracy",
+            "observed_stability_inflated_decision": "ABSTAIN",
+            "observed_stability_inflated_epsilon": 0.0928239636445595,
+            "regime": "small",
+            "seed": 0,
+            "split": "test"
+          },
+          {
+            "B": 0.046153846153846156,
+            "a0": 0.4153846153846154,
+            "a_adapted": 0.46153846153846156,
+            "candidate": "sar_online_aggressive",
+            "comp": "single_class",
+            "decision": "ABSTAIN",
+            "delta_hat": 0.020115682538890213,
+            "domain": "Clipart",
+            "epsilon": 0.04375060169663211,
+            "metric": "accuracy",
+            "observed_stability_inflated_decision": "ABSTAIN",
+            "observed_stability_inflated_epsilon": 0.0928239636445595,
+            "regime": "tiny",
+            "seed": 0,
+            "split": "test"
+          },
+          {
+            "B": 0.038461538461538436,
+            "a0": 0.36923076923076925,
+            "a_adapted": 0.4076923076923077,
+            "candidate": "sar_online_aggressive",
+            "comp": "single_class",
+            "decision": "ABSTAIN",
+            "delta_hat": 0.021705928317881103,
+            "domain": "Clipart",
+            "epsilon": 0.04375060169663211,
+            "metric": "accuracy",
+            "observed_stability_inflated_decision": "ABSTAIN",
+            "observed_stability_inflated_epsilon": 0.0928239636445595,
+            "regime": "small",
+            "seed": 0,
+            "split": "test"
+          },
+          {
+            "B": -0.05769230769230771,
+            "a0": 0.7423076923076923,
+            "a_adapted": 0.6846153846153846,
+            "candidate": "sar_online_aggressive",
+            "comp": "iid",
+            "decision": "FREEZE",
+            "delta_hat": -0.061250435298115594,
+            "domain": "Product",
+            "epsilon": 0.04375060169663211,
+            "metric": "accuracy",
+            "observed_stability_inflated_decision": "ABSTAIN",
+            "observed_stability_inflated_epsilon": 0.0928239636445595,
+            "regime": "tiny",
+            "seed": 0,
+            "split": "test"
+          },
+          {
+            "B": -0.26538461538461544,
+            "a0": 0.7076923076923077,
+            "a_adapted": 0.4423076923076923,
+            "candidate": "sar_online_aggressive",
+            "comp": "iid",
+            "decision": "FREEZE",
+            "delta_hat": -0.2681825230632783,
+            "domain": "Product",
+            "epsilon": 0.04375060169663211,
+            "metric": "accuracy",
+            "observed_stability_inflated_decision": "FREEZE",
+            "observed_stability_inflated_epsilon": 0.0928239636445595,
+            "regime": "small",
+            "seed": 0,
+            "split": "test"
+          },
+          {
+            "B": 0.007692307692307665,
+            "a0": 0.75,
+            "a_adapted": 0.7576923076923077,
+            "candidate": "sar_online_aggressive",
+            "comp": "imbalanced",
+            "decision": "ABSTAIN",
+            "delta_hat": 0.002076357855759061,
+            "domain": "Product",
+            "epsilon": 0.04375060169663211,
+            "metric": "accuracy",
+            "observed_stability_inflated_decision": "ABSTAIN",
+            "observed_stability_inflated_epsilon": 0.0928239636445595,
+            "regime": "tiny",
+            "seed": 0,
+            "split": "test"
+          },
+          {
+            "B": -0.25384615384615383,
+            "a0": 0.7269230769230769,
+            "a_adapted": 0.47307692307692306,
+            "candidate": "sar_online_aggressive",
+            "comp": "imbalanced",
+            "decision": "FREEZE",
+            "delta_hat": -0.23984058164564134,
+            "domain": "Product",
+            "epsilon": 0.04375060169663211,
+            "metric": "accuracy",
+            "observed_stability_inflated_decision": "FREEZE",
+            "observed_stability_inflated_epsilon": 0.0928239636445595,
+            "regime": "small",
+            "seed": 0,
+            "split": "test"
+          },
+          {
+            "B": 0.011538461538461608,
+            "a0": 0.7230769230769231,
+            "a_adapted": 0.7346153846153847,
+            "candidate": "sar_online_aggressive",
+            "comp": "single_class",
+            "decision": "ABSTAIN",
+            "delta_hat": -0.0009081574391157051,
+            "domain": "Product",
+            "epsilon": 0.04375060169663211,
+            "metric": "accuracy",
+            "observed_stability_inflated_decision": "ABSTAIN",
+            "observed_stability_inflated_epsilon": 0.0928239636445595,
+            "regime": "tiny",
+            "seed": 0,
+            "split": "test"
+          },
+          {
+            "B": 0.015384615384615441,
+            "a0": 0.7307692307692307,
+            "a_adapted": 0.7461538461538462,
+            "candidate": "sar_online_aggressive",
+            "comp": "single_class",
+            "decision": "ABSTAIN",
+            "delta_hat": 0.0007785584392722115,
+            "domain": "Product",
+            "epsilon": 0.04375060169663211,
+            "metric": "accuracy",
+            "observed_stability_inflated_decision": "ABSTAIN",
+            "observed_stability_inflated_epsilon": 0.0928239636445595,
+            "regime": "small",
+            "seed": 0,
+            "split": "test"
+          },
+          {
+            "B": -0.09615384615384609,
+            "a0": 0.5769230769230769,
+            "a_adapted": 0.4807692307692308,
+            "candidate": "sar_online_aggressive",
+            "comp": "iid",
+            "decision": "FREEZE",
+            "delta_hat": -0.12226509155718841,
+            "domain": "Art",
+            "epsilon": 0.04375060169663211,
+            "metric": "accuracy",
+            "observed_stability_inflated_decision": "FREEZE",
+            "observed_stability_inflated_epsilon": 0.0928239636445595,
+            "regime": "tiny",
+            "seed": 1,
+            "split": "test"
+          },
+          {
+            "B": -0.19615384615384612,
+            "a0": 0.6076923076923076,
+            "a_adapted": 0.4115384615384615,
+            "candidate": "sar_online_aggressive",
+            "comp": "iid",
+            "decision": "FREEZE",
+            "delta_hat": -0.18614983632660498,
+            "domain": "Art",
+            "epsilon": 0.04375060169663211,
+            "metric": "accuracy",
+            "observed_stability_inflated_decision": "FREEZE",
+            "observed_stability_inflated_epsilon": 0.0928239636445595,
+            "regime": "small",
+            "seed": 1,
+            "split": "test"
+          },
+          {
+            "B": 0.019230769230769162,
+            "a0": 0.6423076923076924,
+            "a_adapted": 0.6615384615384615,
+            "candidate": "sar_online_aggressive",
+            "comp": "imbalanced",
+            "decision": "ABSTAIN",
+            "delta_hat": 0.015962588307400737,
+            "domain": "Art",
+            "epsilon": 0.04375060169663211,
+            "metric": "accuracy",
+            "observed_stability_inflated_decision": "ABSTAIN",
+            "observed_stability_inflated_epsilon": 0.0928239636445595,
+            "regime": "tiny",
+            "seed": 1,
+            "split": "test"
+          },
+          {
+            "B": 0.03076923076923077,
+            "a0": 0.6038461538461538,
+            "a_adapted": 0.6346153846153846,
+            "candidate": "sar_online_aggressive",
+            "comp": "imbalanced",
+            "decision": "ABSTAIN",
+            "delta_hat": 0.029070460605960472,
+            "domain": "Art",
+            "epsilon": 0.04375060169663211,
+            "metric": "accuracy",
+            "observed_stability_inflated_decision": "ABSTAIN",
+            "observed_stability_inflated_epsilon": 0.0928239636445595,
+            "regime": "small",
+            "seed": 1,
+            "split": "test"
+          },
+          {
+            "B": 0.034615384615384714,
+            "a0": 0.5769230769230769,
+            "a_adapted": 0.6115384615384616,
+            "candidate": "sar_online_aggressive",
+            "comp": "single_class",
+            "decision": "ABSTAIN",
+            "delta_hat": 0.027326811046291227,
+            "domain": "Art",
+            "epsilon": 0.04375060169663211,
+            "metric": "accuracy",
+            "observed_stability_inflated_decision": "ABSTAIN",
+            "observed_stability_inflated_epsilon": 0.0928239636445595,
+            "regime": "tiny",
+            "seed": 1,
+            "split": "test"
+          },
+          {
+            "B": 0.04230769230769238,
+            "a0": 0.6076923076923076,
+            "a_adapted": 0.65,
+            "candidate": "sar_online_aggressive",
+            "comp": "single_class",
+            "decision": "ABSTAIN",
+            "delta_hat": 0.025796839932782107,
+            "domain": "Art",
+            "epsilon": 0.04375060169663211,
+            "metric": "accuracy",
+            "observed_stability_inflated_decision": "ABSTAIN",
+            "observed_stability_inflated_epsilon": 0.0928239636445595,
+            "regime": "small",
+            "seed": 1,
+            "split": "test"
+          },
+          {
+            "B": -0.03076923076923077,
+            "a0": 0.3230769230769231,
+            "a_adapted": 0.2923076923076923,
+            "candidate": "sar_online_aggressive",
+            "comp": "iid",
+            "decision": "FREEZE",
+            "delta_hat": -0.10233155292353605,
+            "domain": "Clipart",
+            "epsilon": 0.04375060169663211,
+            "metric": "accuracy",
+            "observed_stability_inflated_decision": "FREEZE",
+            "observed_stability_inflated_epsilon": 0.0928239636445595,
+            "regime": "small",
+            "seed": 1,
+            "split": "test"
+          },
+          {
+            "B": 0.0038461538461538325,
+            "a0": 0.38846153846153847,
+            "a_adapted": 0.3923076923076923,
+            "candidate": "sar_online_aggressive",
+            "comp": "imbalanced",
+            "decision": "ABSTAIN",
+            "delta_hat": 0.03018420465126876,
+            "domain": "Clipart",
+            "epsilon": 0.04375060169663211,
+            "metric": "accuracy",
+            "observed_stability_inflated_decision": "ABSTAIN",
+            "observed_stability_inflated_epsilon": 0.0928239636445595,
+            "regime": "tiny",
+            "seed": 1,
+            "split": "test"
+          },
+          {
+            "B": 0.0038461538461538325,
+            "a0": 0.40384615384615385,
+            "a_adapted": 0.4076923076923077,
+            "candidate": "sar_online_aggressive",
+            "comp": "imbalanced",
+            "decision": "ABSTAIN",
+            "delta_hat": 0.04186623158695914,
+            "domain": "Clipart",
+            "epsilon": 0.04375060169663211,
+            "metric": "accuracy",
+            "observed_stability_inflated_decision": "ABSTAIN",
+            "observed_stability_inflated_epsilon": 0.0928239636445595,
+            "regime": "small",
+            "seed": 1,
+            "split": "test"
+          },
+          {
+            "B": 0.026923076923076883,
+            "a0": 0.35384615384615387,
+            "a_adapted": 0.38076923076923075,
+            "candidate": "sar_online_aggressive",
+            "comp": "single_class",
+            "decision": "ABSTAIN",
+            "delta_hat": 0.023781334186596934,
+            "domain": "Clipart",
+            "epsilon": 0.04375060169663211,
+            "metric": "accuracy",
+            "observed_stability_inflated_decision": "ABSTAIN",
+            "observed_stability_inflated_epsilon": 0.0928239636445595,
+            "regime": "tiny",
+            "seed": 1,
+            "split": "test"
+          },
+          {
+            "B": 0.07692307692307693,
+            "a0": 0.34615384615384615,
+            "a_adapted": 0.4230769230769231,
+            "candidate": "sar_online_aggressive",
+            "comp": "single_class",
+            "decision": "ABSTAIN",
+            "delta_hat": -0.006051378399552718,
+            "domain": "Clipart",
+            "epsilon": 0.04375060169663211,
+            "metric": "accuracy",
+            "observed_stability_inflated_decision": "ABSTAIN",
+            "observed_stability_inflated_epsilon": 0.0928239636445595,
+            "regime": "small",
+            "seed": 1,
+            "split": "test"
+          },
+          {
+            "B": -0.06538461538461537,
+            "a0": 0.75,
+            "a_adapted": 0.6846153846153846,
+            "candidate": "sar_online_aggressive",
+            "comp": "iid",
+            "decision": "ABSTAIN",
+            "delta_hat": -0.03432645200413635,
+            "domain": "Product",
+            "epsilon": 0.04375060169663211,
+            "metric": "accuracy",
+            "observed_stability_inflated_decision": "ABSTAIN",
+            "observed_stability_inflated_epsilon": 0.0928239636445595,
+            "regime": "tiny",
+            "seed": 1,
+            "split": "test"
+          },
+          {
+            "B": -0.1461538461538462,
+            "a0": 0.7115384615384616,
+            "a_adapted": 0.5653846153846154,
+            "candidate": "sar_online_aggressive",
+            "comp": "iid",
+            "decision": "FREEZE",
+            "delta_hat": -0.1643575995782138,
+            "domain": "Product",
+            "epsilon": 0.04375060169663211,
+            "metric": "accuracy",
+            "observed_stability_inflated_decision": "FREEZE",
+            "observed_stability_inflated_epsilon": 0.0928239636445595,
+            "regime": "small",
+            "seed": 1,
+            "split": "test"
+          },
+          {
+            "B": 0.007692307692307665,
+            "a0": 0.7230769230769231,
+            "a_adapted": 0.7307692307692307,
+            "candidate": "sar_online_aggressive",
+            "comp": "imbalanced",
+            "decision": "ABSTAIN",
+            "delta_hat": 0.009826127746519482,
+            "domain": "Product",
+            "epsilon": 0.04375060169663211,
+            "metric": "accuracy",
+            "observed_stability_inflated_decision": "ABSTAIN",
+            "observed_stability_inflated_epsilon": 0.0928239636445595,
+            "regime": "tiny",
+            "seed": 1,
+            "split": "test"
+          },
+          {
+            "B": -0.17307692307692302,
+            "a0": 0.7538461538461538,
+            "a_adapted": 0.5807692307692308,
+            "candidate": "sar_online_aggressive",
+            "comp": "imbalanced",
+            "decision": "FREEZE",
+            "delta_hat": -0.19565861508544802,
+            "domain": "Product",
+            "epsilon": 0.04375060169663211,
+            "metric": "accuracy",
+            "observed_stability_inflated_decision": "FREEZE",
+            "observed_stability_inflated_epsilon": 0.0928239636445595,
+            "regime": "small",
+            "seed": 1,
+            "split": "test"
+          },
+          {
+            "B": 0.019230769230769273,
+            "a0": 0.7615384615384615,
+            "a_adapted": 0.7807692307692308,
+            "candidate": "sar_online_aggressive",
+            "comp": "single_class",
+            "decision": "ABSTAIN",
+            "delta_hat": 0.007141029492812557,
+            "domain": "Product",
+            "epsilon": 0.04375060169663211,
+            "metric": "accuracy",
+            "observed_stability_inflated_decision": "ABSTAIN",
+            "observed_stability_inflated_epsilon": 0.0928239636445595,
+            "regime": "tiny",
+            "seed": 1,
+            "split": "test"
+          },
+          {
+            "B": 0.015384615384615441,
+            "a0": 0.6923076923076923,
+            "a_adapted": 0.7076923076923077,
+            "candidate": "sar_online_aggressive",
+            "comp": "single_class",
+            "decision": "ABSTAIN",
+            "delta_hat": 0.010916938321558106,
+            "domain": "Product",
+            "epsilon": 0.04375060169663211,
+            "metric": "accuracy",
+            "observed_stability_inflated_decision": "ABSTAIN",
+            "observed_stability_inflated_epsilon": 0.0928239636445595,
+            "regime": "small",
+            "seed": 1,
+            "split": "test"
+          }
+        ],
+        "test_seeds": [
+          0,
+          1
+        ]
+      },
+      "protocol": "M-v2 locked SAR, target-val calibration to target-test evaluation",
+      "test_stream_seed_replication": {
         "calibration": {
           "a7_reason": "the deployment estimator is refit on all calibration records; no uniform, predeclared full-fit-versus-LOO stability bound was archived",
           "a7_status": "not_established",
           "alpha": 0.1,
           "epsilon": 0.054603686368784404,
-          "method": "leave-one-calibration-record-out residuals; exact split-conformal rank",
+          "method": "leave-one-calibration-record-out empirical residuals with an exact-rank order statistic; not exact split conformal or jackknife+",
           "observed_full_fit_vs_loo_max_gap": 0.09343768701654728,
           "observed_full_fit_vs_loo_mean_gap": 0.02009148619453457,
           "observed_stability_inflation_is_diagnostic_only": true
@@ -11983,6 +13001,31 @@
             "subsample": 0.8
           }
         },
+        "evidence_contract": {
+          "dimension": 18,
+          "feature_names": [
+            "pre_entropy",
+            "pre_conf",
+            "pre_pbal",
+            "post_entropy",
+            "post_conf",
+            "post_pbal",
+            "pbal_drop",
+            "entropy_drop",
+            "frac_highconf",
+            "marginal_KL",
+            "update_norm",
+            "disagreement",
+            "energy_shift",
+            "bn_kl",
+            "atc_acc_est",
+            "conf_drop",
+            "prior_kl_source",
+            "cand_disagree_mean"
+          ],
+          "names_recovered": true,
+          "schema_sha256": "a363c05a2475f3170976b8f7efc30763859e29b9cfe1714f9c4f91a4f1e892bc"
+        },
         "exact_rank_transfer_score": {
           "abstain_count": 39,
           "adapt_count": 1,
@@ -12001,7 +13044,8 @@
           },
           "seed_inference": {
             "ci_robust_beats_both": false,
-            "paired_seed_bootstrap": {
+            "descriptive_seed_bootstrap": {
+              "both_lower_bounds_positive": false,
               "gaps": {
                 "always_adapt": {
                   "ci95": [
@@ -12020,7 +13064,7 @@
               },
               "random_seed": 20260809,
               "replicates": 20000,
-              "unit": "seed mean"
+              "unit": "run-seed mean conditional on the archived checkpoint/protocol"
             },
             "per_seed": [
               {
@@ -12062,7 +13106,8 @@
                 },
                 "seed": 4
               }
-            ]
+            ],
+            "reason": "independent checkpoint identities are not recorded for these run seeds; the percentile interval is descriptive and cannot promote a CI-robust claim"
           }
         },
         "n_calibration": 54,
@@ -12085,7 +13130,8 @@
           },
           "seed_inference": {
             "ci_robust_beats_both": false,
-            "paired_seed_bootstrap": {
+            "descriptive_seed_bootstrap": {
+              "both_lower_bounds_positive": false,
               "gaps": {
                 "always_adapt": {
                   "ci95": [
@@ -12104,7 +13150,7 @@
               },
               "random_seed": 20260809,
               "replicates": 20000,
-              "unit": "seed mean"
+              "unit": "run-seed mean conditional on the archived checkpoint/protocol"
             },
             "per_seed": [
               {
@@ -12146,9 +13192,11 @@
                 },
                 "seed": 4
               }
-            ]
+            ],
+            "reason": "independent checkpoint identities are not recorded for these run seeds; the percentile interval is descriptive and cannot promote a CI-robust claim"
           }
         },
+        "record_filters": {},
         "records": [
           {
             "B": 0.038461538461538436,
@@ -13074,776 +14122,7 @@
           3,
           4
         ]
-      },
-      "primary": {
-        "calibration": {
-          "a7_reason": "the deployment estimator is refit on all calibration records; no uniform, predeclared full-fit-versus-LOO stability bound was archived",
-          "a7_status": "not_established",
-          "alpha": 0.1,
-          "epsilon": 0.04375060169663211,
-          "method": "leave-one-calibration-record-out residuals; exact split-conformal rank",
-          "observed_full_fit_vs_loo_max_gap": 0.049073361947927385,
-          "observed_full_fit_vs_loo_mean_gap": 0.014258478575267526,
-          "observed_stability_inflation_is_diagnostic_only": true
-        },
-        "calibration_seeds": [
-          0,
-          1
-        ],
-        "candidate": "sar_online_aggressive",
-        "estimator": {
-          "class": "sklearn.ensemble.GradientBoostingRegressor",
-          "hyperparameters": {
-            "learning_rate": 0.05,
-            "max_depth": 2,
-            "n_estimators": 250,
-            "random_state": 0,
-            "subsample": 0.8
-          }
-        },
-        "exact_rank_transfer_score": {
-          "abstain_count": 24,
-          "adapt_count": 0,
-          "adapt_rate": 0.0,
-          "decision_coverage": 0.3142857142857143,
-          "fa_c": null,
-          "fa_u": 0.0,
-          "false_adapt_count": 0,
-          "freeze_count": 11,
-          "n": 35,
-          "point_beats_both": false,
-          "regret": {
-            "always_adapt": 0.04681318681318681,
-            "always_freeze": 0.01582417582417583,
-            "kga": 0.01582417582417583
-          },
-          "seed_inference": {
-            "ci_robust_beats_both": false,
-            "paired_seed_bootstrap": {
-              "gaps": {
-                "always_adapt": {
-                  "ci95": [
-                    0.025113122171945692,
-                    0.036538461538461534
-                  ],
-                  "mean_gap_baseline_minus_kga": 0.030825791855203614
-                },
-                "always_freeze": {
-                  "ci95": [
-                    0.0,
-                    0.0
-                  ],
-                  "mean_gap_baseline_minus_kga": 0.0
-                }
-              },
-              "random_seed": 20260809,
-              "replicates": 20000,
-              "unit": "seed mean"
-            },
-            "per_seed": [
-              {
-                "adapt_rate": 0.0,
-                "decision_coverage": 0.3333333333333333,
-                "fa_u": 0.0,
-                "n": 18,
-                "point_beats_both": false,
-                "regret": {
-                  "always_adapt": 0.05170940170940171,
-                  "always_freeze": 0.015170940170940176,
-                  "kga": 0.015170940170940176
-                },
-                "seed": 0
-              },
-              {
-                "adapt_rate": 0.0,
-                "decision_coverage": 0.29411764705882354,
-                "fa_u": 0.0,
-                "n": 17,
-                "point_beats_both": false,
-                "regret": {
-                  "always_adapt": 0.0416289592760181,
-                  "always_freeze": 0.016515837104072405,
-                  "kga": 0.016515837104072405
-                },
-                "seed": 1
-              }
-            ]
-          }
-        },
-        "n_calibration": 36,
-        "n_test": 35,
-        "observed_stability_inflated_sensitivity": {
-          "abstain_count": 26,
-          "adapt_count": 0,
-          "adapt_rate": 0.0,
-          "decision_coverage": 0.2571428571428571,
-          "fa_c": null,
-          "fa_u": 0.0,
-          "false_adapt_count": 0,
-          "freeze_count": 9,
-          "n": 35,
-          "point_beats_both": false,
-          "regret": {
-            "always_adapt": 0.04681318681318681,
-            "always_freeze": 0.01582417582417583,
-            "kga": 0.01582417582417583
-          },
-          "seed_inference": {
-            "ci_robust_beats_both": false,
-            "paired_seed_bootstrap": {
-              "gaps": {
-                "always_adapt": {
-                  "ci95": [
-                    0.025113122171945692,
-                    0.036538461538461534
-                  ],
-                  "mean_gap_baseline_minus_kga": 0.030825791855203614
-                },
-                "always_freeze": {
-                  "ci95": [
-                    0.0,
-                    0.0
-                  ],
-                  "mean_gap_baseline_minus_kga": 0.0
-                }
-              },
-              "random_seed": 20260809,
-              "replicates": 20000,
-              "unit": "seed mean"
-            },
-            "per_seed": [
-              {
-                "adapt_rate": 0.0,
-                "decision_coverage": 0.2222222222222222,
-                "fa_u": 0.0,
-                "n": 18,
-                "point_beats_both": false,
-                "regret": {
-                  "always_adapt": 0.05170940170940171,
-                  "always_freeze": 0.015170940170940176,
-                  "kga": 0.015170940170940176
-                },
-                "seed": 0
-              },
-              {
-                "adapt_rate": 0.0,
-                "decision_coverage": 0.29411764705882354,
-                "fa_u": 0.0,
-                "n": 17,
-                "point_beats_both": false,
-                "regret": {
-                  "always_adapt": 0.0416289592760181,
-                  "always_freeze": 0.016515837104072405,
-                  "kga": 0.016515837104072405
-                },
-                "seed": 1
-              }
-            ]
-          }
-        },
-        "records": [
-          {
-            "B": 0.011538461538461497,
-            "a0": 0.6576923076923077,
-            "a_adapted": 0.6692307692307692,
-            "candidate": "sar_online_aggressive",
-            "comp": "iid",
-            "decision": "ABSTAIN",
-            "delta_hat": 0.017280328007251766,
-            "domain": "Art",
-            "epsilon": 0.04375060169663211,
-            "metric": "accuracy",
-            "observed_stability_inflated_decision": "ABSTAIN",
-            "observed_stability_inflated_epsilon": 0.0928239636445595,
-            "regime": "tiny",
-            "seed": 0,
-            "split": "test"
-          },
-          {
-            "B": -0.18846153846153846,
-            "a0": 0.5923076923076923,
-            "a_adapted": 0.40384615384615385,
-            "candidate": "sar_online_aggressive",
-            "comp": "iid",
-            "decision": "FREEZE",
-            "delta_hat": -0.1482538213312016,
-            "domain": "Art",
-            "epsilon": 0.04375060169663211,
-            "metric": "accuracy",
-            "observed_stability_inflated_decision": "FREEZE",
-            "observed_stability_inflated_epsilon": 0.0928239636445595,
-            "regime": "small",
-            "seed": 0,
-            "split": "test"
-          },
-          {
-            "B": 0.019230769230769273,
-            "a0": 0.6384615384615384,
-            "a_adapted": 0.6576923076923077,
-            "candidate": "sar_online_aggressive",
-            "comp": "imbalanced",
-            "decision": "ABSTAIN",
-            "delta_hat": 0.016022604400965045,
-            "domain": "Art",
-            "epsilon": 0.04375060169663211,
-            "metric": "accuracy",
-            "observed_stability_inflated_decision": "ABSTAIN",
-            "observed_stability_inflated_epsilon": 0.0928239636445595,
-            "regime": "tiny",
-            "seed": 0,
-            "split": "test"
-          },
-          {
-            "B": 0.03076923076923077,
-            "a0": 0.6192307692307693,
-            "a_adapted": 0.65,
-            "candidate": "sar_online_aggressive",
-            "comp": "imbalanced",
-            "decision": "ABSTAIN",
-            "delta_hat": 0.013339671998327042,
-            "domain": "Art",
-            "epsilon": 0.04375060169663211,
-            "metric": "accuracy",
-            "observed_stability_inflated_decision": "ABSTAIN",
-            "observed_stability_inflated_epsilon": 0.0928239636445595,
-            "regime": "small",
-            "seed": 0,
-            "split": "test"
-          },
-          {
-            "B": 0.0346153846153846,
-            "a0": 0.6346153846153846,
-            "a_adapted": 0.6692307692307692,
-            "candidate": "sar_online_aggressive",
-            "comp": "single_class",
-            "decision": "ABSTAIN",
-            "delta_hat": 0.030483415697724635,
-            "domain": "Art",
-            "epsilon": 0.04375060169663211,
-            "metric": "accuracy",
-            "observed_stability_inflated_decision": "ABSTAIN",
-            "observed_stability_inflated_epsilon": 0.0928239636445595,
-            "regime": "tiny",
-            "seed": 0,
-            "split": "test"
-          },
-          {
-            "B": 0.02692307692307694,
-            "a0": 0.6230769230769231,
-            "a_adapted": 0.65,
-            "candidate": "sar_online_aggressive",
-            "comp": "single_class",
-            "decision": "ABSTAIN",
-            "delta_hat": 0.025134942826252192,
-            "domain": "Art",
-            "epsilon": 0.04375060169663211,
-            "metric": "accuracy",
-            "observed_stability_inflated_decision": "ABSTAIN",
-            "observed_stability_inflated_epsilon": 0.0928239636445595,
-            "regime": "small",
-            "seed": 0,
-            "split": "test"
-          },
-          {
-            "B": -0.08076923076923076,
-            "a0": 0.3730769230769231,
-            "a_adapted": 0.2923076923076923,
-            "candidate": "sar_online_aggressive",
-            "comp": "iid",
-            "decision": "FREEZE",
-            "delta_hat": -0.08378794501885611,
-            "domain": "Clipart",
-            "epsilon": 0.04375060169663211,
-            "metric": "accuracy",
-            "observed_stability_inflated_decision": "ABSTAIN",
-            "observed_stability_inflated_epsilon": 0.0928239636445595,
-            "regime": "tiny",
-            "seed": 0,
-            "split": "test"
-          },
-          {
-            "B": -0.08461538461538459,
-            "a0": 0.38076923076923075,
-            "a_adapted": 0.29615384615384616,
-            "candidate": "sar_online_aggressive",
-            "comp": "iid",
-            "decision": "FREEZE",
-            "delta_hat": -0.10804366539125018,
-            "domain": "Clipart",
-            "epsilon": 0.04375060169663211,
-            "metric": "accuracy",
-            "observed_stability_inflated_decision": "FREEZE",
-            "observed_stability_inflated_epsilon": 0.0928239636445595,
-            "regime": "small",
-            "seed": 0,
-            "split": "test"
-          },
-          {
-            "B": 0.015384615384615385,
-            "a0": 0.38846153846153847,
-            "a_adapted": 0.40384615384615385,
-            "candidate": "sar_online_aggressive",
-            "comp": "imbalanced",
-            "decision": "ABSTAIN",
-            "delta_hat": 0.01224134902417159,
-            "domain": "Clipart",
-            "epsilon": 0.04375060169663211,
-            "metric": "accuracy",
-            "observed_stability_inflated_decision": "ABSTAIN",
-            "observed_stability_inflated_epsilon": 0.0928239636445595,
-            "regime": "tiny",
-            "seed": 0,
-            "split": "test"
-          },
-          {
-            "B": 0.015384615384615385,
-            "a0": 0.4,
-            "a_adapted": 0.4153846153846154,
-            "candidate": "sar_online_aggressive",
-            "comp": "imbalanced",
-            "decision": "ABSTAIN",
-            "delta_hat": 0.02616164365393777,
-            "domain": "Clipart",
-            "epsilon": 0.04375060169663211,
-            "metric": "accuracy",
-            "observed_stability_inflated_decision": "ABSTAIN",
-            "observed_stability_inflated_epsilon": 0.0928239636445595,
-            "regime": "small",
-            "seed": 0,
-            "split": "test"
-          },
-          {
-            "B": 0.046153846153846156,
-            "a0": 0.4153846153846154,
-            "a_adapted": 0.46153846153846156,
-            "candidate": "sar_online_aggressive",
-            "comp": "single_class",
-            "decision": "ABSTAIN",
-            "delta_hat": 0.020115682538890213,
-            "domain": "Clipart",
-            "epsilon": 0.04375060169663211,
-            "metric": "accuracy",
-            "observed_stability_inflated_decision": "ABSTAIN",
-            "observed_stability_inflated_epsilon": 0.0928239636445595,
-            "regime": "tiny",
-            "seed": 0,
-            "split": "test"
-          },
-          {
-            "B": 0.038461538461538436,
-            "a0": 0.36923076923076925,
-            "a_adapted": 0.4076923076923077,
-            "candidate": "sar_online_aggressive",
-            "comp": "single_class",
-            "decision": "ABSTAIN",
-            "delta_hat": 0.021705928317881103,
-            "domain": "Clipart",
-            "epsilon": 0.04375060169663211,
-            "metric": "accuracy",
-            "observed_stability_inflated_decision": "ABSTAIN",
-            "observed_stability_inflated_epsilon": 0.0928239636445595,
-            "regime": "small",
-            "seed": 0,
-            "split": "test"
-          },
-          {
-            "B": -0.05769230769230771,
-            "a0": 0.7423076923076923,
-            "a_adapted": 0.6846153846153846,
-            "candidate": "sar_online_aggressive",
-            "comp": "iid",
-            "decision": "FREEZE",
-            "delta_hat": -0.061250435298115594,
-            "domain": "Product",
-            "epsilon": 0.04375060169663211,
-            "metric": "accuracy",
-            "observed_stability_inflated_decision": "ABSTAIN",
-            "observed_stability_inflated_epsilon": 0.0928239636445595,
-            "regime": "tiny",
-            "seed": 0,
-            "split": "test"
-          },
-          {
-            "B": -0.26538461538461544,
-            "a0": 0.7076923076923077,
-            "a_adapted": 0.4423076923076923,
-            "candidate": "sar_online_aggressive",
-            "comp": "iid",
-            "decision": "FREEZE",
-            "delta_hat": -0.2681825230632783,
-            "domain": "Product",
-            "epsilon": 0.04375060169663211,
-            "metric": "accuracy",
-            "observed_stability_inflated_decision": "FREEZE",
-            "observed_stability_inflated_epsilon": 0.0928239636445595,
-            "regime": "small",
-            "seed": 0,
-            "split": "test"
-          },
-          {
-            "B": 0.007692307692307665,
-            "a0": 0.75,
-            "a_adapted": 0.7576923076923077,
-            "candidate": "sar_online_aggressive",
-            "comp": "imbalanced",
-            "decision": "ABSTAIN",
-            "delta_hat": 0.002076357855759061,
-            "domain": "Product",
-            "epsilon": 0.04375060169663211,
-            "metric": "accuracy",
-            "observed_stability_inflated_decision": "ABSTAIN",
-            "observed_stability_inflated_epsilon": 0.0928239636445595,
-            "regime": "tiny",
-            "seed": 0,
-            "split": "test"
-          },
-          {
-            "B": -0.25384615384615383,
-            "a0": 0.7269230769230769,
-            "a_adapted": 0.47307692307692306,
-            "candidate": "sar_online_aggressive",
-            "comp": "imbalanced",
-            "decision": "FREEZE",
-            "delta_hat": -0.23984058164564134,
-            "domain": "Product",
-            "epsilon": 0.04375060169663211,
-            "metric": "accuracy",
-            "observed_stability_inflated_decision": "FREEZE",
-            "observed_stability_inflated_epsilon": 0.0928239636445595,
-            "regime": "small",
-            "seed": 0,
-            "split": "test"
-          },
-          {
-            "B": 0.011538461538461608,
-            "a0": 0.7230769230769231,
-            "a_adapted": 0.7346153846153847,
-            "candidate": "sar_online_aggressive",
-            "comp": "single_class",
-            "decision": "ABSTAIN",
-            "delta_hat": -0.0009081574391157051,
-            "domain": "Product",
-            "epsilon": 0.04375060169663211,
-            "metric": "accuracy",
-            "observed_stability_inflated_decision": "ABSTAIN",
-            "observed_stability_inflated_epsilon": 0.0928239636445595,
-            "regime": "tiny",
-            "seed": 0,
-            "split": "test"
-          },
-          {
-            "B": 0.015384615384615441,
-            "a0": 0.7307692307692307,
-            "a_adapted": 0.7461538461538462,
-            "candidate": "sar_online_aggressive",
-            "comp": "single_class",
-            "decision": "ABSTAIN",
-            "delta_hat": 0.0007785584392722115,
-            "domain": "Product",
-            "epsilon": 0.04375060169663211,
-            "metric": "accuracy",
-            "observed_stability_inflated_decision": "ABSTAIN",
-            "observed_stability_inflated_epsilon": 0.0928239636445595,
-            "regime": "small",
-            "seed": 0,
-            "split": "test"
-          },
-          {
-            "B": -0.09615384615384609,
-            "a0": 0.5769230769230769,
-            "a_adapted": 0.4807692307692308,
-            "candidate": "sar_online_aggressive",
-            "comp": "iid",
-            "decision": "FREEZE",
-            "delta_hat": -0.12226509155718841,
-            "domain": "Art",
-            "epsilon": 0.04375060169663211,
-            "metric": "accuracy",
-            "observed_stability_inflated_decision": "FREEZE",
-            "observed_stability_inflated_epsilon": 0.0928239636445595,
-            "regime": "tiny",
-            "seed": 1,
-            "split": "test"
-          },
-          {
-            "B": -0.19615384615384612,
-            "a0": 0.6076923076923076,
-            "a_adapted": 0.4115384615384615,
-            "candidate": "sar_online_aggressive",
-            "comp": "iid",
-            "decision": "FREEZE",
-            "delta_hat": -0.18614983632660498,
-            "domain": "Art",
-            "epsilon": 0.04375060169663211,
-            "metric": "accuracy",
-            "observed_stability_inflated_decision": "FREEZE",
-            "observed_stability_inflated_epsilon": 0.0928239636445595,
-            "regime": "small",
-            "seed": 1,
-            "split": "test"
-          },
-          {
-            "B": 0.019230769230769162,
-            "a0": 0.6423076923076924,
-            "a_adapted": 0.6615384615384615,
-            "candidate": "sar_online_aggressive",
-            "comp": "imbalanced",
-            "decision": "ABSTAIN",
-            "delta_hat": 0.015962588307400737,
-            "domain": "Art",
-            "epsilon": 0.04375060169663211,
-            "metric": "accuracy",
-            "observed_stability_inflated_decision": "ABSTAIN",
-            "observed_stability_inflated_epsilon": 0.0928239636445595,
-            "regime": "tiny",
-            "seed": 1,
-            "split": "test"
-          },
-          {
-            "B": 0.03076923076923077,
-            "a0": 0.6038461538461538,
-            "a_adapted": 0.6346153846153846,
-            "candidate": "sar_online_aggressive",
-            "comp": "imbalanced",
-            "decision": "ABSTAIN",
-            "delta_hat": 0.029070460605960472,
-            "domain": "Art",
-            "epsilon": 0.04375060169663211,
-            "metric": "accuracy",
-            "observed_stability_inflated_decision": "ABSTAIN",
-            "observed_stability_inflated_epsilon": 0.0928239636445595,
-            "regime": "small",
-            "seed": 1,
-            "split": "test"
-          },
-          {
-            "B": 0.034615384615384714,
-            "a0": 0.5769230769230769,
-            "a_adapted": 0.6115384615384616,
-            "candidate": "sar_online_aggressive",
-            "comp": "single_class",
-            "decision": "ABSTAIN",
-            "delta_hat": 0.027326811046291227,
-            "domain": "Art",
-            "epsilon": 0.04375060169663211,
-            "metric": "accuracy",
-            "observed_stability_inflated_decision": "ABSTAIN",
-            "observed_stability_inflated_epsilon": 0.0928239636445595,
-            "regime": "tiny",
-            "seed": 1,
-            "split": "test"
-          },
-          {
-            "B": 0.04230769230769238,
-            "a0": 0.6076923076923076,
-            "a_adapted": 0.65,
-            "candidate": "sar_online_aggressive",
-            "comp": "single_class",
-            "decision": "ABSTAIN",
-            "delta_hat": 0.025796839932782107,
-            "domain": "Art",
-            "epsilon": 0.04375060169663211,
-            "metric": "accuracy",
-            "observed_stability_inflated_decision": "ABSTAIN",
-            "observed_stability_inflated_epsilon": 0.0928239636445595,
-            "regime": "small",
-            "seed": 1,
-            "split": "test"
-          },
-          {
-            "B": -0.03076923076923077,
-            "a0": 0.3230769230769231,
-            "a_adapted": 0.2923076923076923,
-            "candidate": "sar_online_aggressive",
-            "comp": "iid",
-            "decision": "FREEZE",
-            "delta_hat": -0.10233155292353605,
-            "domain": "Clipart",
-            "epsilon": 0.04375060169663211,
-            "metric": "accuracy",
-            "observed_stability_inflated_decision": "FREEZE",
-            "observed_stability_inflated_epsilon": 0.0928239636445595,
-            "regime": "small",
-            "seed": 1,
-            "split": "test"
-          },
-          {
-            "B": 0.0038461538461538325,
-            "a0": 0.38846153846153847,
-            "a_adapted": 0.3923076923076923,
-            "candidate": "sar_online_aggressive",
-            "comp": "imbalanced",
-            "decision": "ABSTAIN",
-            "delta_hat": 0.03018420465126876,
-            "domain": "Clipart",
-            "epsilon": 0.04375060169663211,
-            "metric": "accuracy",
-            "observed_stability_inflated_decision": "ABSTAIN",
-            "observed_stability_inflated_epsilon": 0.0928239636445595,
-            "regime": "tiny",
-            "seed": 1,
-            "split": "test"
-          },
-          {
-            "B": 0.0038461538461538325,
-            "a0": 0.40384615384615385,
-            "a_adapted": 0.4076923076923077,
-            "candidate": "sar_online_aggressive",
-            "comp": "imbalanced",
-            "decision": "ABSTAIN",
-            "delta_hat": 0.04186623158695914,
-            "domain": "Clipart",
-            "epsilon": 0.04375060169663211,
-            "metric": "accuracy",
-            "observed_stability_inflated_decision": "ABSTAIN",
-            "observed_stability_inflated_epsilon": 0.0928239636445595,
-            "regime": "small",
-            "seed": 1,
-            "split": "test"
-          },
-          {
-            "B": 0.026923076923076883,
-            "a0": 0.35384615384615387,
-            "a_adapted": 0.38076923076923075,
-            "candidate": "sar_online_aggressive",
-            "comp": "single_class",
-            "decision": "ABSTAIN",
-            "delta_hat": 0.023781334186596934,
-            "domain": "Clipart",
-            "epsilon": 0.04375060169663211,
-            "metric": "accuracy",
-            "observed_stability_inflated_decision": "ABSTAIN",
-            "observed_stability_inflated_epsilon": 0.0928239636445595,
-            "regime": "tiny",
-            "seed": 1,
-            "split": "test"
-          },
-          {
-            "B": 0.07692307692307693,
-            "a0": 0.34615384615384615,
-            "a_adapted": 0.4230769230769231,
-            "candidate": "sar_online_aggressive",
-            "comp": "single_class",
-            "decision": "ABSTAIN",
-            "delta_hat": -0.006051378399552718,
-            "domain": "Clipart",
-            "epsilon": 0.04375060169663211,
-            "metric": "accuracy",
-            "observed_stability_inflated_decision": "ABSTAIN",
-            "observed_stability_inflated_epsilon": 0.0928239636445595,
-            "regime": "small",
-            "seed": 1,
-            "split": "test"
-          },
-          {
-            "B": -0.06538461538461537,
-            "a0": 0.75,
-            "a_adapted": 0.6846153846153846,
-            "candidate": "sar_online_aggressive",
-            "comp": "iid",
-            "decision": "ABSTAIN",
-            "delta_hat": -0.03432645200413635,
-            "domain": "Product",
-            "epsilon": 0.04375060169663211,
-            "metric": "accuracy",
-            "observed_stability_inflated_decision": "ABSTAIN",
-            "observed_stability_inflated_epsilon": 0.0928239636445595,
-            "regime": "tiny",
-            "seed": 1,
-            "split": "test"
-          },
-          {
-            "B": -0.1461538461538462,
-            "a0": 0.7115384615384616,
-            "a_adapted": 0.5653846153846154,
-            "candidate": "sar_online_aggressive",
-            "comp": "iid",
-            "decision": "FREEZE",
-            "delta_hat": -0.1643575995782138,
-            "domain": "Product",
-            "epsilon": 0.04375060169663211,
-            "metric": "accuracy",
-            "observed_stability_inflated_decision": "FREEZE",
-            "observed_stability_inflated_epsilon": 0.0928239636445595,
-            "regime": "small",
-            "seed": 1,
-            "split": "test"
-          },
-          {
-            "B": 0.007692307692307665,
-            "a0": 0.7230769230769231,
-            "a_adapted": 0.7307692307692307,
-            "candidate": "sar_online_aggressive",
-            "comp": "imbalanced",
-            "decision": "ABSTAIN",
-            "delta_hat": 0.009826127746519482,
-            "domain": "Product",
-            "epsilon": 0.04375060169663211,
-            "metric": "accuracy",
-            "observed_stability_inflated_decision": "ABSTAIN",
-            "observed_stability_inflated_epsilon": 0.0928239636445595,
-            "regime": "tiny",
-            "seed": 1,
-            "split": "test"
-          },
-          {
-            "B": -0.17307692307692302,
-            "a0": 0.7538461538461538,
-            "a_adapted": 0.5807692307692308,
-            "candidate": "sar_online_aggressive",
-            "comp": "imbalanced",
-            "decision": "FREEZE",
-            "delta_hat": -0.19565861508544802,
-            "domain": "Product",
-            "epsilon": 0.04375060169663211,
-            "metric": "accuracy",
-            "observed_stability_inflated_decision": "FREEZE",
-            "observed_stability_inflated_epsilon": 0.0928239636445595,
-            "regime": "small",
-            "seed": 1,
-            "split": "test"
-          },
-          {
-            "B": 0.019230769230769273,
-            "a0": 0.7615384615384615,
-            "a_adapted": 0.7807692307692308,
-            "candidate": "sar_online_aggressive",
-            "comp": "single_class",
-            "decision": "ABSTAIN",
-            "delta_hat": 0.007141029492812557,
-            "domain": "Product",
-            "epsilon": 0.04375060169663211,
-            "metric": "accuracy",
-            "observed_stability_inflated_decision": "ABSTAIN",
-            "observed_stability_inflated_epsilon": 0.0928239636445595,
-            "regime": "tiny",
-            "seed": 1,
-            "split": "test"
-          },
-          {
-            "B": 0.015384615384615441,
-            "a0": 0.6923076923076923,
-            "a_adapted": 0.7076923076923077,
-            "candidate": "sar_online_aggressive",
-            "comp": "single_class",
-            "decision": "ABSTAIN",
-            "delta_hat": 0.010916938321558106,
-            "domain": "Product",
-            "epsilon": 0.04375060169663211,
-            "metric": "accuracy",
-            "observed_stability_inflated_decision": "ABSTAIN",
-            "observed_stability_inflated_epsilon": 0.0928239636445595,
-            "regime": "small",
-            "seed": 1,
-            "split": "test"
-          }
-        ],
-        "test_seeds": [
-          0,
-          1
-        ]
-      },
-      "protocol": "M-v2 locked SAR, target-val calibration to target-test evaluation"
+      }
     },
     "pacs": {
       "aggregate_matches_seed_files": true,
@@ -13946,9 +14225,9 @@
               "a7_status": "not_established",
               "alpha": 0.1,
               "epsilon": 0.05181536080378646,
-              "method": "leave-one-calibration-record-out residuals; exact split-conformal rank",
-              "observed_full_fit_vs_loo_max_gap": 0.05833119172902257,
-              "observed_full_fit_vs_loo_mean_gap": 0.01996107896778286,
+              "method": "leave-one-calibration-record-out empirical residuals with an exact-rank order statistic; not exact split conformal or jackknife+",
+              "observed_full_fit_vs_loo_max_gap": 0.0576420060833118,
+              "observed_full_fit_vs_loo_mean_gap": 0.020287237302779006,
               "observed_stability_inflation_is_diagnostic_only": true
             },
             "exact_rank_transfer_score": {
@@ -13969,7 +14248,8 @@
               },
               "seed_inference": {
                 "ci_robust_beats_both": false,
-                "paired_seed_bootstrap": {
+                "descriptive_seed_bootstrap": {
+                  "both_lower_bounds_positive": false,
                   "gaps": {
                     "always_adapt": {
                       "ci95": [
@@ -13988,7 +14268,7 @@
                   },
                   "random_seed": 20260809,
                   "replicates": 20000,
-                  "unit": "seed mean"
+                  "unit": "run-seed mean conditional on the archived checkpoint/protocol"
                 },
                 "per_seed": [
                   {
@@ -14056,7 +14336,8 @@
                     },
                     "seed": 9
                   }
-                ]
+                ],
+                "reason": "independent checkpoint identities are not recorded for these run seeds; the percentile interval is descriptive and cannot promote a CI-robust claim"
               }
             },
             "model_seed": 0
@@ -14067,9 +14348,9 @@
               "a7_status": "not_established",
               "alpha": 0.1,
               "epsilon": 0.04074240203525317,
-              "method": "leave-one-calibration-record-out residuals; exact split-conformal rank",
-              "observed_full_fit_vs_loo_max_gap": 0.05415534363277208,
-              "observed_full_fit_vs_loo_mean_gap": 0.017362079471983594,
+              "method": "leave-one-calibration-record-out empirical residuals with an exact-rank order statistic; not exact split conformal or jackknife+",
+              "observed_full_fit_vs_loo_max_gap": 0.05429554551328064,
+              "observed_full_fit_vs_loo_mean_gap": 0.01756567461460624,
               "observed_stability_inflation_is_diagnostic_only": true
             },
             "exact_rank_transfer_score": {
@@ -14090,7 +14371,8 @@
               },
               "seed_inference": {
                 "ci_robust_beats_both": false,
-                "paired_seed_bootstrap": {
+                "descriptive_seed_bootstrap": {
+                  "both_lower_bounds_positive": false,
                   "gaps": {
                     "always_adapt": {
                       "ci95": [
@@ -14109,7 +14391,7 @@
                   },
                   "random_seed": 20260809,
                   "replicates": 20000,
-                  "unit": "seed mean"
+                  "unit": "run-seed mean conditional on the archived checkpoint/protocol"
                 },
                 "per_seed": [
                   {
@@ -14177,7 +14459,8 @@
                     },
                     "seed": 9
                   }
-                ]
+                ],
+                "reason": "independent checkpoint identities are not recorded for these run seeds; the percentile interval is descriptive and cannot promote a CI-robust claim"
               }
             },
             "model_seed": 1
@@ -14187,10 +14470,10 @@
               "a7_reason": "the deployment estimator is refit on all calibration records; no uniform, predeclared full-fit-versus-LOO stability bound was archived",
               "a7_status": "not_established",
               "alpha": 0.1,
-              "epsilon": 0.04730348609962784,
-              "method": "leave-one-calibration-record-out residuals; exact split-conformal rank",
-              "observed_full_fit_vs_loo_max_gap": 0.06064928950760562,
-              "observed_full_fit_vs_loo_mean_gap": 0.016756879693049634,
+              "epsilon": 0.04682551206488411,
+              "method": "leave-one-calibration-record-out empirical residuals with an exact-rank order statistic; not exact split conformal or jackknife+",
+              "observed_full_fit_vs_loo_max_gap": 0.06061687476064667,
+              "observed_full_fit_vs_loo_mean_gap": 0.016717229598079354,
               "observed_stability_inflation_is_diagnostic_only": true
             },
             "exact_rank_transfer_score": {
@@ -14211,7 +14494,8 @@
               },
               "seed_inference": {
                 "ci_robust_beats_both": false,
-                "paired_seed_bootstrap": {
+                "descriptive_seed_bootstrap": {
+                  "both_lower_bounds_positive": false,
                   "gaps": {
                     "always_adapt": {
                       "ci95": [
@@ -14230,7 +14514,7 @@
                   },
                   "random_seed": 20260809,
                   "replicates": 20000,
-                  "unit": "seed mean"
+                  "unit": "run-seed mean conditional on the archived checkpoint/protocol"
                 },
                 "per_seed": [
                   {
@@ -14298,7 +14582,8 @@
                     },
                     "seed": 9
                   }
-                ]
+                ],
+                "reason": "independent checkpoint identities are not recorded for these run seeds; the percentile interval is descriptive and cannot promote a CI-robust claim"
               }
             },
             "model_seed": 2
@@ -14335,9 +14620,9 @@
           "a7_status": "not_established",
           "alpha": 0.1,
           "epsilon": 0.05181536080378646,
-          "method": "leave-one-calibration-record-out residuals; exact split-conformal rank",
-          "observed_full_fit_vs_loo_max_gap": 0.05833119172902257,
-          "observed_full_fit_vs_loo_mean_gap": 0.01996107896778286,
+          "method": "leave-one-calibration-record-out empirical residuals with an exact-rank order statistic; not exact split conformal or jackknife+",
+          "observed_full_fit_vs_loo_max_gap": 0.0576420060833118,
+          "observed_full_fit_vs_loo_mean_gap": 0.020287237302779006,
           "observed_stability_inflation_is_diagnostic_only": true
         },
         "calibration_seeds": [
@@ -14358,6 +14643,12 @@
             "subsample": 0.8
           }
         },
+        "evidence_contract": {
+          "dimension": 11,
+          "feature_names": null,
+          "names_recovered": false,
+          "schema_sha256": "8444fd58264350b2379bff08f5ccc0259f381265db7a03f9e0b48415e562805e"
+        },
         "exact_rank_transfer_score": {
           "abstain_count": 0,
           "adapt_count": 0,
@@ -14376,7 +14667,8 @@
           },
           "seed_inference": {
             "ci_robust_beats_both": false,
-            "paired_seed_bootstrap": {
+            "descriptive_seed_bootstrap": {
+              "both_lower_bounds_positive": false,
               "gaps": {
                 "always_adapt": {
                   "ci95": [
@@ -14395,7 +14687,7 @@
               },
               "random_seed": 20260809,
               "replicates": 20000,
-              "unit": "seed mean"
+              "unit": "run-seed mean conditional on the archived checkpoint/protocol"
             },
             "per_seed": [
               {
@@ -14463,7 +14755,8 @@
                 },
                 "seed": 9
               }
-            ]
+            ],
+            "reason": "independent checkpoint identities are not recorded for these run seeds; the percentile interval is descriptive and cannot promote a CI-robust claim"
           }
         },
         "n_calibration": 60,
@@ -14486,7 +14779,8 @@
           },
           "seed_inference": {
             "ci_robust_beats_both": false,
-            "paired_seed_bootstrap": {
+            "descriptive_seed_bootstrap": {
+              "both_lower_bounds_positive": false,
               "gaps": {
                 "always_adapt": {
                   "ci95": [
@@ -14505,7 +14799,7 @@
               },
               "random_seed": 20260809,
               "replicates": 20000,
-              "unit": "seed mean"
+              "unit": "run-seed mean conditional on the archived checkpoint/protocol"
             },
             "per_seed": [
               {
@@ -14573,7 +14867,8 @@
                 },
                 "seed": 9
               }
-            ]
+            ],
+            "reason": "independent checkpoint identities are not recorded for these run seeds; the percentile interval is descriptive and cannot promote a CI-robust claim"
           }
         },
         "record_filters": {},
@@ -14586,13 +14881,13 @@
             "candidate": "sar_online",
             "comp": "iid",
             "decision": "FREEZE",
-            "delta_hat": -0.2012850253923532,
+            "delta_hat": -0.20243366265704985,
             "domain": "rxrx1",
             "epsilon": 0.05181536080378646,
             "method": "sar",
             "mode": "online",
             "observed_stability_inflated_decision": "FREEZE",
-            "observed_stability_inflated_epsilon": 0.11014655253280903,
+            "observed_stability_inflated_epsilon": 0.10945736688709826,
             "regime": "small",
             "seed": 5
           },
@@ -14604,13 +14899,13 @@
             "candidate": "sar_online",
             "comp": "iid",
             "decision": "FREEZE",
-            "delta_hat": -0.2909688645057698,
+            "delta_hat": -0.2921575899986056,
             "domain": "rxrx1",
             "epsilon": 0.05181536080378646,
             "method": "sar",
             "mode": "online",
             "observed_stability_inflated_decision": "FREEZE",
-            "observed_stability_inflated_epsilon": 0.11014655253280903,
+            "observed_stability_inflated_epsilon": 0.10945736688709826,
             "regime": "small",
             "seed": 5
           },
@@ -14622,13 +14917,13 @@
             "candidate": "sar_online",
             "comp": "iid",
             "decision": "FREEZE",
-            "delta_hat": -0.23336838887137143,
+            "delta_hat": -0.2327805174833358,
             "domain": "rxrx1",
             "epsilon": 0.05181536080378646,
             "method": "sar",
             "mode": "online",
             "observed_stability_inflated_decision": "FREEZE",
-            "observed_stability_inflated_epsilon": 0.11014655253280903,
+            "observed_stability_inflated_epsilon": 0.10945736688709826,
             "regime": "tiny",
             "seed": 5
           },
@@ -14640,13 +14935,13 @@
             "candidate": "sar_online",
             "comp": "iid",
             "decision": "FREEZE",
-            "delta_hat": -0.29014051298061644,
+            "delta_hat": -0.29123222003312427,
             "domain": "rxrx1",
             "epsilon": 0.05181536080378646,
             "method": "sar",
             "mode": "online",
             "observed_stability_inflated_decision": "FREEZE",
-            "observed_stability_inflated_epsilon": 0.11014655253280903,
+            "observed_stability_inflated_epsilon": 0.10945736688709826,
             "regime": "tiny",
             "seed": 5
           },
@@ -14658,13 +14953,13 @@
             "candidate": "sar_online",
             "comp": "imbalanced",
             "decision": "FREEZE",
-            "delta_hat": -0.2228323325727311,
+            "delta_hat": -0.22340167714188597,
             "domain": "rxrx1",
             "epsilon": 0.05181536080378646,
             "method": "sar",
             "mode": "online",
             "observed_stability_inflated_decision": "FREEZE",
-            "observed_stability_inflated_epsilon": 0.11014655253280903,
+            "observed_stability_inflated_epsilon": 0.10945736688709826,
             "regime": "small",
             "seed": 5
           },
@@ -14676,13 +14971,13 @@
             "candidate": "sar_online",
             "comp": "imbalanced",
             "decision": "FREEZE",
-            "delta_hat": -0.27895872929456705,
+            "delta_hat": -0.2795002757484911,
             "domain": "rxrx1",
             "epsilon": 0.05181536080378646,
             "method": "sar",
             "mode": "online",
             "observed_stability_inflated_decision": "FREEZE",
-            "observed_stability_inflated_epsilon": 0.11014655253280903,
+            "observed_stability_inflated_epsilon": 0.10945736688709826,
             "regime": "small",
             "seed": 5
           },
@@ -14694,13 +14989,13 @@
             "candidate": "sar_online",
             "comp": "imbalanced",
             "decision": "FREEZE",
-            "delta_hat": -0.22891883956909387,
+            "delta_hat": -0.22844730846607375,
             "domain": "rxrx1",
             "epsilon": 0.05181536080378646,
             "method": "sar",
             "mode": "online",
             "observed_stability_inflated_decision": "FREEZE",
-            "observed_stability_inflated_epsilon": 0.11014655253280903,
+            "observed_stability_inflated_epsilon": 0.10945736688709826,
             "regime": "tiny",
             "seed": 5
           },
@@ -14712,13 +15007,13 @@
             "candidate": "sar_online",
             "comp": "imbalanced",
             "decision": "FREEZE",
-            "delta_hat": -0.2584403292878852,
+            "delta_hat": -0.25901669984224046,
             "domain": "rxrx1",
             "epsilon": 0.05181536080378646,
             "method": "sar",
             "mode": "online",
             "observed_stability_inflated_decision": "FREEZE",
-            "observed_stability_inflated_epsilon": 0.11014655253280903,
+            "observed_stability_inflated_epsilon": 0.10945736688709826,
             "regime": "tiny",
             "seed": 5
           },
@@ -14730,13 +15025,13 @@
             "candidate": "sar_online",
             "comp": "single_class",
             "decision": "FREEZE",
-            "delta_hat": -0.23771888705537053,
+            "delta_hat": -0.2377470394093617,
             "domain": "rxrx1",
             "epsilon": 0.05181536080378646,
             "method": "sar",
             "mode": "online",
             "observed_stability_inflated_decision": "FREEZE",
-            "observed_stability_inflated_epsilon": 0.11014655253280903,
+            "observed_stability_inflated_epsilon": 0.10945736688709826,
             "regime": "small",
             "seed": 5
           },
@@ -14748,13 +15043,13 @@
             "candidate": "sar_online",
             "comp": "single_class",
             "decision": "FREEZE",
-            "delta_hat": -0.28161909031504345,
+            "delta_hat": -0.2817500301213083,
             "domain": "rxrx1",
             "epsilon": 0.05181536080378646,
             "method": "sar",
             "mode": "online",
             "observed_stability_inflated_decision": "FREEZE",
-            "observed_stability_inflated_epsilon": 0.11014655253280903,
+            "observed_stability_inflated_epsilon": 0.10945736688709826,
             "regime": "small",
             "seed": 5
           },
@@ -14766,13 +15061,13 @@
             "candidate": "sar_online",
             "comp": "single_class",
             "decision": "FREEZE",
-            "delta_hat": -0.21014980466726105,
+            "delta_hat": -0.21052365237648077,
             "domain": "rxrx1",
             "epsilon": 0.05181536080378646,
             "method": "sar",
             "mode": "online",
             "observed_stability_inflated_decision": "FREEZE",
-            "observed_stability_inflated_epsilon": 0.11014655253280903,
+            "observed_stability_inflated_epsilon": 0.10945736688709826,
             "regime": "tiny",
             "seed": 5
           },
@@ -14784,13 +15079,13 @@
             "candidate": "sar_online",
             "comp": "single_class",
             "decision": "FREEZE",
-            "delta_hat": -0.2780541626436767,
+            "delta_hat": -0.2781850322823124,
             "domain": "rxrx1",
             "epsilon": 0.05181536080378646,
             "method": "sar",
             "mode": "online",
             "observed_stability_inflated_decision": "FREEZE",
-            "observed_stability_inflated_epsilon": 0.11014655253280903,
+            "observed_stability_inflated_epsilon": 0.10945736688709826,
             "regime": "tiny",
             "seed": 5
           },
@@ -14802,13 +15097,13 @@
             "candidate": "sar_online",
             "comp": "iid",
             "decision": "FREEZE",
-            "delta_hat": -0.2105095867040954,
+            "delta_hat": -0.20962661533063817,
             "domain": "rxrx1",
             "epsilon": 0.05181536080378646,
             "method": "sar",
             "mode": "online",
             "observed_stability_inflated_decision": "FREEZE",
-            "observed_stability_inflated_epsilon": 0.11014655253280903,
+            "observed_stability_inflated_epsilon": 0.10945736688709826,
             "regime": "small",
             "seed": 6
           },
@@ -14820,13 +15115,13 @@
             "candidate": "sar_online",
             "comp": "iid",
             "decision": "FREEZE",
-            "delta_hat": -0.2863018401718228,
+            "delta_hat": -0.28612480420102826,
             "domain": "rxrx1",
             "epsilon": 0.05181536080378646,
             "method": "sar",
             "mode": "online",
             "observed_stability_inflated_decision": "FREEZE",
-            "observed_stability_inflated_epsilon": 0.11014655253280903,
+            "observed_stability_inflated_epsilon": 0.10945736688709826,
             "regime": "small",
             "seed": 6
           },
@@ -14838,13 +15133,13 @@
             "candidate": "sar_online",
             "comp": "iid",
             "decision": "FREEZE",
-            "delta_hat": -0.2245761772545221,
+            "delta_hat": -0.22344101526337734,
             "domain": "rxrx1",
             "epsilon": 0.05181536080378646,
             "method": "sar",
             "mode": "online",
             "observed_stability_inflated_decision": "FREEZE",
-            "observed_stability_inflated_epsilon": 0.11014655253280903,
+            "observed_stability_inflated_epsilon": 0.10945736688709826,
             "regime": "tiny",
             "seed": 6
           },
@@ -14856,13 +15151,13 @@
             "candidate": "sar_online",
             "comp": "iid",
             "decision": "FREEZE",
-            "delta_hat": -0.29005010436591916,
+            "delta_hat": -0.2910253209233357,
             "domain": "rxrx1",
             "epsilon": 0.05181536080378646,
             "method": "sar",
             "mode": "online",
             "observed_stability_inflated_decision": "FREEZE",
-            "observed_stability_inflated_epsilon": 0.11014655253280903,
+            "observed_stability_inflated_epsilon": 0.10945736688709826,
             "regime": "tiny",
             "seed": 6
           },
@@ -14874,13 +15169,13 @@
             "candidate": "sar_online",
             "comp": "imbalanced",
             "decision": "FREEZE",
-            "delta_hat": -0.21454810229719984,
+            "delta_hat": -0.21524760368731127,
             "domain": "rxrx1",
             "epsilon": 0.05181536080378646,
             "method": "sar",
             "mode": "online",
             "observed_stability_inflated_decision": "FREEZE",
-            "observed_stability_inflated_epsilon": 0.11014655253280903,
+            "observed_stability_inflated_epsilon": 0.10945736688709826,
             "regime": "small",
             "seed": 6
           },
@@ -14892,13 +15187,13 @@
             "candidate": "sar_online",
             "comp": "imbalanced",
             "decision": "FREEZE",
-            "delta_hat": -0.2770691689069188,
+            "delta_hat": -0.2766527938114698,
             "domain": "rxrx1",
             "epsilon": 0.05181536080378646,
             "method": "sar",
             "mode": "online",
             "observed_stability_inflated_decision": "FREEZE",
-            "observed_stability_inflated_epsilon": 0.11014655253280903,
+            "observed_stability_inflated_epsilon": 0.10945736688709826,
             "regime": "small",
             "seed": 6
           },
@@ -14910,13 +15205,13 @@
             "candidate": "sar_online",
             "comp": "imbalanced",
             "decision": "FREEZE",
-            "delta_hat": -0.239863946151017,
+            "delta_hat": -0.23819768760515853,
             "domain": "rxrx1",
             "epsilon": 0.05181536080378646,
             "method": "sar",
             "mode": "online",
             "observed_stability_inflated_decision": "FREEZE",
-            "observed_stability_inflated_epsilon": 0.11014655253280903,
+            "observed_stability_inflated_epsilon": 0.10945736688709826,
             "regime": "tiny",
             "seed": 6
           },
@@ -14928,13 +15223,13 @@
             "candidate": "sar_online",
             "comp": "imbalanced",
             "decision": "FREEZE",
-            "delta_hat": -0.2889917055531201,
+            "delta_hat": -0.29046323195346196,
             "domain": "rxrx1",
             "epsilon": 0.05181536080378646,
             "method": "sar",
             "mode": "online",
             "observed_stability_inflated_decision": "FREEZE",
-            "observed_stability_inflated_epsilon": 0.11014655253280903,
+            "observed_stability_inflated_epsilon": 0.10945736688709826,
             "regime": "tiny",
             "seed": 6
           },
@@ -14946,13 +15241,13 @@
             "candidate": "sar_online",
             "comp": "single_class",
             "decision": "FREEZE",
-            "delta_hat": -0.21173798235217953,
+            "delta_hat": -0.21022559398604268,
             "domain": "rxrx1",
             "epsilon": 0.05181536080378646,
             "method": "sar",
             "mode": "online",
             "observed_stability_inflated_decision": "FREEZE",
-            "observed_stability_inflated_epsilon": 0.11014655253280903,
+            "observed_stability_inflated_epsilon": 0.10945736688709826,
             "regime": "small",
             "seed": 6
           },
@@ -14964,13 +15259,13 @@
             "candidate": "sar_online",
             "comp": "single_class",
             "decision": "FREEZE",
-            "delta_hat": -0.2817312285742981,
+            "delta_hat": -0.28336152841207546,
             "domain": "rxrx1",
             "epsilon": 0.05181536080378646,
             "method": "sar",
             "mode": "online",
             "observed_stability_inflated_decision": "FREEZE",
-            "observed_stability_inflated_epsilon": 0.11014655253280903,
+            "observed_stability_inflated_epsilon": 0.10945736688709826,
             "regime": "small",
             "seed": 6
           },
@@ -14982,13 +15277,13 @@
             "candidate": "sar_online",
             "comp": "single_class",
             "decision": "FREEZE",
-            "delta_hat": -0.23618038057818025,
+            "delta_hat": -0.23347970502710283,
             "domain": "rxrx1",
             "epsilon": 0.05181536080378646,
             "method": "sar",
             "mode": "online",
             "observed_stability_inflated_decision": "FREEZE",
-            "observed_stability_inflated_epsilon": 0.11014655253280903,
+            "observed_stability_inflated_epsilon": 0.10945736688709826,
             "regime": "tiny",
             "seed": 6
           },
@@ -15000,13 +15295,13 @@
             "candidate": "sar_online",
             "comp": "single_class",
             "decision": "FREEZE",
-            "delta_hat": -0.2646125952762105,
+            "delta_hat": -0.26517225345686574,
             "domain": "rxrx1",
             "epsilon": 0.05181536080378646,
             "method": "sar",
             "mode": "online",
             "observed_stability_inflated_decision": "FREEZE",
-            "observed_stability_inflated_epsilon": 0.11014655253280903,
+            "observed_stability_inflated_epsilon": 0.10945736688709826,
             "regime": "tiny",
             "seed": 6
           },
@@ -15018,13 +15313,13 @@
             "candidate": "sar_online",
             "comp": "iid",
             "decision": "FREEZE",
-            "delta_hat": -0.2291163707429135,
+            "delta_hat": -0.2280134851909132,
             "domain": "rxrx1",
             "epsilon": 0.05181536080378646,
             "method": "sar",
             "mode": "online",
             "observed_stability_inflated_decision": "FREEZE",
-            "observed_stability_inflated_epsilon": 0.11014655253280903,
+            "observed_stability_inflated_epsilon": 0.10945736688709826,
             "regime": "small",
             "seed": 7
           },
@@ -15036,13 +15331,13 @@
             "candidate": "sar_online",
             "comp": "iid",
             "decision": "FREEZE",
-            "delta_hat": -0.27584136401854137,
+            "delta_hat": -0.27787496199931666,
             "domain": "rxrx1",
             "epsilon": 0.05181536080378646,
             "method": "sar",
             "mode": "online",
             "observed_stability_inflated_decision": "FREEZE",
-            "observed_stability_inflated_epsilon": 0.11014655253280903,
+            "observed_stability_inflated_epsilon": 0.10945736688709826,
             "regime": "small",
             "seed": 7
           },
@@ -15054,13 +15349,13 @@
             "candidate": "sar_online",
             "comp": "iid",
             "decision": "FREEZE",
-            "delta_hat": -0.23326146591504032,
+            "delta_hat": -0.23341834207610718,
             "domain": "rxrx1",
             "epsilon": 0.05181536080378646,
             "method": "sar",
             "mode": "online",
             "observed_stability_inflated_decision": "FREEZE",
-            "observed_stability_inflated_epsilon": 0.11014655253280903,
+            "observed_stability_inflated_epsilon": 0.10945736688709826,
             "regime": "tiny",
             "seed": 7
           },
@@ -15072,13 +15367,13 @@
             "candidate": "sar_online",
             "comp": "iid",
             "decision": "FREEZE",
-            "delta_hat": -0.2856012634270698,
+            "delta_hat": -0.28501759350900274,
             "domain": "rxrx1",
             "epsilon": 0.05181536080378646,
             "method": "sar",
             "mode": "online",
             "observed_stability_inflated_decision": "FREEZE",
-            "observed_stability_inflated_epsilon": 0.11014655253280903,
+            "observed_stability_inflated_epsilon": 0.10945736688709826,
             "regime": "tiny",
             "seed": 7
           },
@@ -15090,13 +15385,13 @@
             "candidate": "sar_online",
             "comp": "imbalanced",
             "decision": "FREEZE",
-            "delta_hat": -0.2065298039161521,
+            "delta_hat": -0.2085474948825867,
             "domain": "rxrx1",
             "epsilon": 0.05181536080378646,
             "method": "sar",
             "mode": "online",
             "observed_stability_inflated_decision": "FREEZE",
-            "observed_stability_inflated_epsilon": 0.11014655253280903,
+            "observed_stability_inflated_epsilon": 0.10945736688709826,
             "regime": "small",
             "seed": 7
           },
@@ -15108,13 +15403,13 @@
             "candidate": "sar_online",
             "comp": "imbalanced",
             "decision": "FREEZE",
-            "delta_hat": -0.29460182120924905,
+            "delta_hat": -0.29379782405267035,
             "domain": "rxrx1",
             "epsilon": 0.05181536080378646,
             "method": "sar",
             "mode": "online",
             "observed_stability_inflated_decision": "FREEZE",
-            "observed_stability_inflated_epsilon": 0.11014655253280903,
+            "observed_stability_inflated_epsilon": 0.10945736688709826,
             "regime": "small",
             "seed": 7
           },
@@ -15126,13 +15421,13 @@
             "candidate": "sar_online",
             "comp": "imbalanced",
             "decision": "FREEZE",
-            "delta_hat": -0.20942441229092618,
+            "delta_hat": -0.20975223071963878,
             "domain": "rxrx1",
             "epsilon": 0.05181536080378646,
             "method": "sar",
             "mode": "online",
             "observed_stability_inflated_decision": "FREEZE",
-            "observed_stability_inflated_epsilon": 0.11014655253280903,
+            "observed_stability_inflated_epsilon": 0.10945736688709826,
             "regime": "tiny",
             "seed": 7
           },
@@ -15144,13 +15439,13 @@
             "candidate": "sar_online",
             "comp": "imbalanced",
             "decision": "FREEZE",
-            "delta_hat": -0.26957191421310883,
+            "delta_hat": -0.26888435770245556,
             "domain": "rxrx1",
             "epsilon": 0.05181536080378646,
             "method": "sar",
             "mode": "online",
             "observed_stability_inflated_decision": "FREEZE",
-            "observed_stability_inflated_epsilon": 0.11014655253280903,
+            "observed_stability_inflated_epsilon": 0.10945736688709826,
             "regime": "tiny",
             "seed": 7
           },
@@ -15162,13 +15457,13 @@
             "candidate": "sar_online",
             "comp": "single_class",
             "decision": "FREEZE",
-            "delta_hat": -0.20104123774922203,
+            "delta_hat": -0.20156818878249091,
             "domain": "rxrx1",
             "epsilon": 0.05181536080378646,
             "method": "sar",
             "mode": "online",
             "observed_stability_inflated_decision": "FREEZE",
-            "observed_stability_inflated_epsilon": 0.11014655253280903,
+            "observed_stability_inflated_epsilon": 0.10945736688709826,
             "regime": "small",
             "seed": 7
           },
@@ -15180,13 +15475,13 @@
             "candidate": "sar_online",
             "comp": "single_class",
             "decision": "FREEZE",
-            "delta_hat": -0.2777536784873921,
+            "delta_hat": -0.2795895296825395,
             "domain": "rxrx1",
             "epsilon": 0.05181536080378646,
             "method": "sar",
             "mode": "online",
             "observed_stability_inflated_decision": "FREEZE",
-            "observed_stability_inflated_epsilon": 0.11014655253280903,
+            "observed_stability_inflated_epsilon": 0.10945736688709826,
             "regime": "small",
             "seed": 7
           },
@@ -15198,13 +15493,13 @@
             "candidate": "sar_online",
             "comp": "single_class",
             "decision": "FREEZE",
-            "delta_hat": -0.22453902998136369,
+            "delta_hat": -0.2259458206803008,
             "domain": "rxrx1",
             "epsilon": 0.05181536080378646,
             "method": "sar",
             "mode": "online",
             "observed_stability_inflated_decision": "FREEZE",
-            "observed_stability_inflated_epsilon": 0.11014655253280903,
+            "observed_stability_inflated_epsilon": 0.10945736688709826,
             "regime": "tiny",
             "seed": 7
           },
@@ -15216,13 +15511,13 @@
             "candidate": "sar_online",
             "comp": "single_class",
             "decision": "FREEZE",
-            "delta_hat": -0.28491357287306956,
+            "delta_hat": -0.28368983358347005,
             "domain": "rxrx1",
             "epsilon": 0.05181536080378646,
             "method": "sar",
             "mode": "online",
             "observed_stability_inflated_decision": "FREEZE",
-            "observed_stability_inflated_epsilon": 0.11014655253280903,
+            "observed_stability_inflated_epsilon": 0.10945736688709826,
             "regime": "tiny",
             "seed": 7
           },
@@ -15234,13 +15529,13 @@
             "candidate": "sar_online",
             "comp": "iid",
             "decision": "FREEZE",
-            "delta_hat": -0.21786283502328804,
+            "delta_hat": -0.21761779119720373,
             "domain": "rxrx1",
             "epsilon": 0.05181536080378646,
             "method": "sar",
             "mode": "online",
             "observed_stability_inflated_decision": "FREEZE",
-            "observed_stability_inflated_epsilon": 0.11014655253280903,
+            "observed_stability_inflated_epsilon": 0.10945736688709826,
             "regime": "small",
             "seed": 8
           },
@@ -15252,13 +15547,13 @@
             "candidate": "sar_online",
             "comp": "iid",
             "decision": "FREEZE",
-            "delta_hat": -0.27309944914708667,
+            "delta_hat": -0.2769063040895236,
             "domain": "rxrx1",
             "epsilon": 0.05181536080378646,
             "method": "sar",
             "mode": "online",
             "observed_stability_inflated_decision": "FREEZE",
-            "observed_stability_inflated_epsilon": 0.11014655253280903,
+            "observed_stability_inflated_epsilon": 0.10945736688709826,
             "regime": "small",
             "seed": 8
           },
@@ -15270,13 +15565,13 @@
             "candidate": "sar_online",
             "comp": "iid",
             "decision": "FREEZE",
-            "delta_hat": -0.2274469221994281,
+            "delta_hat": -0.22779850125344234,
             "domain": "rxrx1",
             "epsilon": 0.05181536080378646,
             "method": "sar",
             "mode": "online",
             "observed_stability_inflated_decision": "FREEZE",
-            "observed_stability_inflated_epsilon": 0.11014655253280903,
+            "observed_stability_inflated_epsilon": 0.10945736688709826,
             "regime": "tiny",
             "seed": 8
           },
@@ -15288,13 +15583,13 @@
             "candidate": "sar_online",
             "comp": "iid",
             "decision": "FREEZE",
-            "delta_hat": -0.29706980983201103,
+            "delta_hat": -0.29504950531539414,
             "domain": "rxrx1",
             "epsilon": 0.05181536080378646,
             "method": "sar",
             "mode": "online",
             "observed_stability_inflated_decision": "FREEZE",
-            "observed_stability_inflated_epsilon": 0.11014655253280903,
+            "observed_stability_inflated_epsilon": 0.10945736688709826,
             "regime": "tiny",
             "seed": 8
           },
@@ -15306,13 +15601,13 @@
             "candidate": "sar_online",
             "comp": "imbalanced",
             "decision": "FREEZE",
-            "delta_hat": -0.22223540187442925,
+            "delta_hat": -0.22126292677653117,
             "domain": "rxrx1",
             "epsilon": 0.05181536080378646,
             "method": "sar",
             "mode": "online",
             "observed_stability_inflated_decision": "FREEZE",
-            "observed_stability_inflated_epsilon": 0.11014655253280903,
+            "observed_stability_inflated_epsilon": 0.10945736688709826,
             "regime": "small",
             "seed": 8
           },
@@ -15324,13 +15619,13 @@
             "candidate": "sar_online",
             "comp": "imbalanced",
             "decision": "FREEZE",
-            "delta_hat": -0.30322073642171443,
+            "delta_hat": -0.3016920979988527,
             "domain": "rxrx1",
             "epsilon": 0.05181536080378646,
             "method": "sar",
             "mode": "online",
             "observed_stability_inflated_decision": "FREEZE",
-            "observed_stability_inflated_epsilon": 0.11014655253280903,
+            "observed_stability_inflated_epsilon": 0.10945736688709826,
             "regime": "small",
             "seed": 8
           },
@@ -15342,13 +15637,13 @@
             "candidate": "sar_online",
             "comp": "imbalanced",
             "decision": "FREEZE",
-            "delta_hat": -0.22126403659937793,
+            "delta_hat": -0.21868897509341767,
             "domain": "rxrx1",
             "epsilon": 0.05181536080378646,
             "method": "sar",
             "mode": "online",
             "observed_stability_inflated_decision": "FREEZE",
-            "observed_stability_inflated_epsilon": 0.11014655253280903,
+            "observed_stability_inflated_epsilon": 0.10945736688709826,
             "regime": "tiny",
             "seed": 8
           },
@@ -15360,13 +15655,13 @@
             "candidate": "sar_online",
             "comp": "imbalanced",
             "decision": "FREEZE",
-            "delta_hat": -0.2727054088891697,
+            "delta_hat": -0.2728590430277552,
             "domain": "rxrx1",
             "epsilon": 0.05181536080378646,
             "method": "sar",
             "mode": "online",
             "observed_stability_inflated_decision": "FREEZE",
-            "observed_stability_inflated_epsilon": 0.11014655253280903,
+            "observed_stability_inflated_epsilon": 0.10945736688709826,
             "regime": "tiny",
             "seed": 8
           },
@@ -15378,13 +15673,13 @@
             "candidate": "sar_online",
             "comp": "single_class",
             "decision": "FREEZE",
-            "delta_hat": -0.23592420935052852,
+            "delta_hat": -0.23606072732963398,
             "domain": "rxrx1",
             "epsilon": 0.05181536080378646,
             "method": "sar",
             "mode": "online",
             "observed_stability_inflated_decision": "FREEZE",
-            "observed_stability_inflated_epsilon": 0.11014655253280903,
+            "observed_stability_inflated_epsilon": 0.10945736688709826,
             "regime": "small",
             "seed": 8
           },
@@ -15396,13 +15691,13 @@
             "candidate": "sar_online",
             "comp": "single_class",
             "decision": "FREEZE",
-            "delta_hat": -0.28203630367828103,
+            "delta_hat": -0.27927267068205575,
             "domain": "rxrx1",
             "epsilon": 0.05181536080378646,
             "method": "sar",
             "mode": "online",
             "observed_stability_inflated_decision": "FREEZE",
-            "observed_stability_inflated_epsilon": 0.11014655253280903,
+            "observed_stability_inflated_epsilon": 0.10945736688709826,
             "regime": "small",
             "seed": 8
           },
@@ -15414,13 +15709,13 @@
             "candidate": "sar_online",
             "comp": "single_class",
             "decision": "FREEZE",
-            "delta_hat": -0.2192245857818017,
+            "delta_hat": -0.21906412173681394,
             "domain": "rxrx1",
             "epsilon": 0.05181536080378646,
             "method": "sar",
             "mode": "online",
             "observed_stability_inflated_decision": "FREEZE",
-            "observed_stability_inflated_epsilon": 0.11014655253280903,
+            "observed_stability_inflated_epsilon": 0.10945736688709826,
             "regime": "tiny",
             "seed": 8
           },
@@ -15432,13 +15727,13 @@
             "candidate": "sar_online",
             "comp": "single_class",
             "decision": "FREEZE",
-            "delta_hat": -0.26569013173591194,
+            "delta_hat": -0.26543484523762334,
             "domain": "rxrx1",
             "epsilon": 0.05181536080378646,
             "method": "sar",
             "mode": "online",
             "observed_stability_inflated_decision": "FREEZE",
-            "observed_stability_inflated_epsilon": 0.11014655253280903,
+            "observed_stability_inflated_epsilon": 0.10945736688709826,
             "regime": "tiny",
             "seed": 8
           },
@@ -15450,13 +15745,13 @@
             "candidate": "sar_online",
             "comp": "iid",
             "decision": "FREEZE",
-            "delta_hat": -0.22906755794577566,
+            "delta_hat": -0.2283026307764506,
             "domain": "rxrx1",
             "epsilon": 0.05181536080378646,
             "method": "sar",
             "mode": "online",
             "observed_stability_inflated_decision": "FREEZE",
-            "observed_stability_inflated_epsilon": 0.11014655253280903,
+            "observed_stability_inflated_epsilon": 0.10945736688709826,
             "regime": "small",
             "seed": 9
           },
@@ -15468,13 +15763,13 @@
             "candidate": "sar_online",
             "comp": "iid",
             "decision": "FREEZE",
-            "delta_hat": -0.2890347664409606,
+            "delta_hat": -0.28939226718547834,
             "domain": "rxrx1",
             "epsilon": 0.05181536080378646,
             "method": "sar",
             "mode": "online",
             "observed_stability_inflated_decision": "FREEZE",
-            "observed_stability_inflated_epsilon": 0.11014655253280903,
+            "observed_stability_inflated_epsilon": 0.10945736688709826,
             "regime": "small",
             "seed": 9
           },
@@ -15486,13 +15781,13 @@
             "candidate": "sar_online",
             "comp": "iid",
             "decision": "FREEZE",
-            "delta_hat": -0.2371677474701571,
+            "delta_hat": -0.23739882424302203,
             "domain": "rxrx1",
             "epsilon": 0.05181536080378646,
             "method": "sar",
             "mode": "online",
             "observed_stability_inflated_decision": "FREEZE",
-            "observed_stability_inflated_epsilon": 0.11014655253280903,
+            "observed_stability_inflated_epsilon": 0.10945736688709826,
             "regime": "tiny",
             "seed": 9
           },
@@ -15504,13 +15799,13 @@
             "candidate": "sar_online",
             "comp": "iid",
             "decision": "FREEZE",
-            "delta_hat": -0.2977024823197144,
+            "delta_hat": -0.2976061788362201,
             "domain": "rxrx1",
             "epsilon": 0.05181536080378646,
             "method": "sar",
             "mode": "online",
             "observed_stability_inflated_decision": "FREEZE",
-            "observed_stability_inflated_epsilon": 0.11014655253280903,
+            "observed_stability_inflated_epsilon": 0.10945736688709826,
             "regime": "tiny",
             "seed": 9
           },
@@ -15522,13 +15817,13 @@
             "candidate": "sar_online",
             "comp": "imbalanced",
             "decision": "FREEZE",
-            "delta_hat": -0.21171055213175458,
+            "delta_hat": -0.2113630426434747,
             "domain": "rxrx1",
             "epsilon": 0.05181536080378646,
             "method": "sar",
             "mode": "online",
             "observed_stability_inflated_decision": "FREEZE",
-            "observed_stability_inflated_epsilon": 0.11014655253280903,
+            "observed_stability_inflated_epsilon": 0.10945736688709826,
             "regime": "small",
             "seed": 9
           },
@@ -15540,13 +15835,13 @@
             "candidate": "sar_online",
             "comp": "imbalanced",
             "decision": "FREEZE",
-            "delta_hat": -0.2878663895339042,
+            "delta_hat": -0.28843170208674024,
             "domain": "rxrx1",
             "epsilon": 0.05181536080378646,
             "method": "sar",
             "mode": "online",
             "observed_stability_inflated_decision": "FREEZE",
-            "observed_stability_inflated_epsilon": 0.11014655253280903,
+            "observed_stability_inflated_epsilon": 0.10945736688709826,
             "regime": "small",
             "seed": 9
           },
@@ -15558,13 +15853,13 @@
             "candidate": "sar_online",
             "comp": "imbalanced",
             "decision": "FREEZE",
-            "delta_hat": -0.22833319319077564,
+            "delta_hat": -0.22719597528946922,
             "domain": "rxrx1",
             "epsilon": 0.05181536080378646,
             "method": "sar",
             "mode": "online",
             "observed_stability_inflated_decision": "FREEZE",
-            "observed_stability_inflated_epsilon": 0.11014655253280903,
+            "observed_stability_inflated_epsilon": 0.10945736688709826,
             "regime": "tiny",
             "seed": 9
           },
@@ -15576,13 +15871,13 @@
             "candidate": "sar_online",
             "comp": "imbalanced",
             "decision": "FREEZE",
-            "delta_hat": -0.25870318045575474,
+            "delta_hat": -0.25885257544102586,
             "domain": "rxrx1",
             "epsilon": 0.05181536080378646,
             "method": "sar",
             "mode": "online",
             "observed_stability_inflated_decision": "FREEZE",
-            "observed_stability_inflated_epsilon": 0.11014655253280903,
+            "observed_stability_inflated_epsilon": 0.10945736688709826,
             "regime": "tiny",
             "seed": 9
           },
@@ -15594,13 +15889,13 @@
             "candidate": "sar_online",
             "comp": "single_class",
             "decision": "FREEZE",
-            "delta_hat": -0.20359837330804076,
+            "delta_hat": -0.20510567596960505,
             "domain": "rxrx1",
             "epsilon": 0.05181536080378646,
             "method": "sar",
             "mode": "online",
             "observed_stability_inflated_decision": "FREEZE",
-            "observed_stability_inflated_epsilon": 0.11014655253280903,
+            "observed_stability_inflated_epsilon": 0.10945736688709826,
             "regime": "small",
             "seed": 9
           },
@@ -15612,13 +15907,13 @@
             "candidate": "sar_online",
             "comp": "single_class",
             "decision": "FREEZE",
-            "delta_hat": -0.2882285421709101,
+            "delta_hat": -0.28954516245115264,
             "domain": "rxrx1",
             "epsilon": 0.05181536080378646,
             "method": "sar",
             "mode": "online",
             "observed_stability_inflated_decision": "FREEZE",
-            "observed_stability_inflated_epsilon": 0.11014655253280903,
+            "observed_stability_inflated_epsilon": 0.10945736688709826,
             "regime": "small",
             "seed": 9
           },
@@ -15630,13 +15925,13 @@
             "candidate": "sar_online",
             "comp": "single_class",
             "decision": "FREEZE",
-            "delta_hat": -0.20933550601292733,
+            "delta_hat": -0.20791663644363903,
             "domain": "rxrx1",
             "epsilon": 0.05181536080378646,
             "method": "sar",
             "mode": "online",
             "observed_stability_inflated_decision": "FREEZE",
-            "observed_stability_inflated_epsilon": 0.11014655253280903,
+            "observed_stability_inflated_epsilon": 0.10945736688709826,
             "regime": "tiny",
             "seed": 9
           },
@@ -15648,13 +15943,13 @@
             "candidate": "sar_online",
             "comp": "single_class",
             "decision": "FREEZE",
-            "delta_hat": -0.2957528577131734,
+            "delta_hat": -0.29560060718061076,
             "domain": "rxrx1",
             "epsilon": 0.05181536080378646,
             "method": "sar",
             "mode": "online",
             "observed_stability_inflated_decision": "FREEZE",
-            "observed_stability_inflated_epsilon": 0.11014655253280903,
+            "observed_stability_inflated_epsilon": 0.10945736688709826,
             "regime": "tiny",
             "seed": 9
           }
@@ -15694,12 +15989,12 @@
     }
   },
   "runtime": {
-    "numpy": "2.4.6",
-    "platform": "macOS-26.5.1-arm64-arm-64bit",
+    "numpy": "2.4.4",
+    "platform": "macOS-26.6.2-arm64-arm-64bit",
     "python": "3.12.13",
-    "scikit_learn": "1.9.0"
+    "scikit_learn": "1.8.0"
   },
   "schema": "kbound-canonical-panel-results-v2",
-  "source_file_count": 105,
-  "source_manifest_sha256": "717346de09aac8eed4c543da8ed5c3514ab43891618a0fa0b4ff97d72597307c"
+  "source_file_count": 106,
+  "source_manifest_sha256": "391983f4fa09d65c256ab8c620fea772866b652c219dad0c36574ce38c740482"
 }

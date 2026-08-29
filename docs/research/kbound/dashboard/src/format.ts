@@ -6,6 +6,7 @@ export const STATUS_LABELS: Record<string, string> = {
   open: "Open",
   pending: "Pending",
   diagnostic: "Development",
+  withheld: "Withheld",
   failed: "Blocked",
   no_harm: "No-harm",
 };

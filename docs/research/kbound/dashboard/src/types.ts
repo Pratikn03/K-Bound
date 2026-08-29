@@ -4,6 +4,7 @@ export type StatusKind =
   | "no_harm"
   | "pending"
   | "diagnostic"
+  | "withheld"
   | "open"
   | "failed";
 
@@ -11,7 +12,9 @@ export interface Snapshot {
   meta?: {
     build_id?: string;
     generated_at?: string;
-    commit?: string;
+    commit?: string | null;
+    canonical_panel_sha256?: string;
+    current_policy_sha256?: string;
     paper?: string;
     paper_pages?: number;
   };
@@ -71,6 +74,8 @@ export interface PolicyRow {
   regret_freeze?: number | null;
   false_adapt?: number | null;
   beats_both_artifact?: boolean;
+  point_beats_both?: boolean | null;
+  ci_robust_beats_both?: boolean | null;
 }
 
 export interface NaturalRow {

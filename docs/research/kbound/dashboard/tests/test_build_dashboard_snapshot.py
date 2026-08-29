@@ -16,6 +16,13 @@ def test_build_dashboard_snapshot_runs():
     subprocess.run([sys.executable, str(SCRIPT)], check=True, cwd=REPO)
 
 
+def test_build_dashboard_snapshot_is_byte_stable():
+    subprocess.run([sys.executable, str(SCRIPT)], check=True, cwd=REPO)
+    first = SNAPSHOT.read_bytes()
+    subprocess.run([sys.executable, str(SCRIPT)], check=True, cwd=REPO)
+    assert SNAPSHOT.read_bytes() == first
+
+
 def test_snapshot_has_required_sections():
     if not SNAPSHOT.is_file():
         test_build_dashboard_snapshot_runs()
@@ -39,6 +46,12 @@ def test_snapshot_has_required_sections():
 
     controlled = data["evidence_board"]["controlled_wins"]
     assert any("CIFAR-10-C" in r["name"] for r in controlled)
+    assert all(row["status"] != "verified" for row in controlled)
+    assert all(row["ci_robust_beats_both"] is False for row in controlled)
+    assert all(row["beats_both_artifact"] is False for row in controlled)
+    tent = next(row for row in controlled if row["name"].endswith("Tent"))
+    assert "preregistered six-comparison Holm" in tent["framing"]
+    assert "cluster-robust" not in json.dumps(data).lower()
 
     assert edge.get("session_progress")
     assert not edge["unblock"]["all_pass"]
@@ -48,6 +61,27 @@ def test_snapshot_has_required_sections():
     inr = next((b for b in boundary if b["name"].startswith("ImageNet-R")), None)
     assert inr is not None
     assert inr["status"] == "diagnostic"
+
+    natural = data["evidence_board"].get("natural_shift_no_harm") or []
+    assert not any(row["name"].startswith("iWildCam") for row in natural)
+    assert not any(row["name"].startswith("Camelyon17") for row in natural)
+    iwild = next((b for b in boundary if b["name"].startswith("iWildCam")), None)
+    assert iwild is not None
+    assert iwild["status"] == "withheld"
+    for field in ("freeze", "adapt", "kga", "regret_kga", "regret_adapt", "regret_freeze", "false_adapt"):
+        assert iwild.get(field) is None
+
+    camelyon = next((b for b in boundary if b["name"].startswith("Camelyon17")), None)
+    assert camelyon is not None
+    assert camelyon["status"] == "diagnostic"
+    assert camelyon["point_beats_both"] is False
+    assert camelyon["beats_both_artifact"] is False
+
+    manifest = json.loads(
+        (REPO / "docs/research/kbound/paper/generated/kbound_result_manifest.json").read_text()
+    )
+    binding = manifest["reconciliation_source"]["current_policy_family_sensitivity"]
+    assert data["meta"]["current_policy_sha256"] == binding["artifact_sha256"]
 
     assert data["edge_validation"].get("unblock") is not None
     assert data["provenance"]["manifest"].endswith("kbound_result_manifest.json")
