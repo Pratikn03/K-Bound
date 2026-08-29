@@ -1,0 +1,471 @@
+{
+  "schema": "kbound-current-policy-cluster-inference-v2",
+  "generated_utc": "2026-08-29T00:00:28.680180+00:00",
+  "git_head": "b261866fc976d5be4f9be1abc5a2cfec3ff3bbcc",
+  "analysis_script": "docs/research/kbound/scripts/analyze_current_policy_cluster_inference.py",
+  "analysis_script_sha256": "af58c22d21192c83134237711b5f46a9f8dd5ddccfd1719fc1c549fbe79e89a6",
+  "runtime": {
+    "python": "3.12.13",
+    "numpy": "2.4.6",
+    "platform": "macOS-26.6.2-arm64-arm-64bit"
+  },
+  "live_code_bindings": {
+    "policy": {
+      "path": "kga/policy.py",
+      "sha256": "d63ea5a123d2cd63a3f13fd2f59928dc3fb39f4ee472cc9ad91e5affdd33282b"
+    },
+    "certificate": {
+      "path": "kga/certificate.py",
+      "sha256": "9fdc11831cc9d2a29d5445d0ecc1098e2b624be92df665f80d58380775a4e4ea"
+    },
+    "preregistered_protocol": {
+      "path": "research_lock/STRESS_GRID_MULTISEED_PROTOCOL_A_v1.yaml",
+      "sha256": "ee6caac547c32c0fb23bc21c2a319cbf166961f50ddc2d8c4bd2cca0626167ca"
+    }
+  },
+  "source_scope": "canonical current-policy exact-rank CIFAR-10-C compact panel",
+  "contrast_convention": "baseline_regret_minus_kga_regret; positive values favor KGA",
+  "inference": {
+    "bootstrap": "paired percentile bootstrap of corruption-family mean gaps; whole families resampled with replacement",
+    "hypothesis_test": "exact one-sided sign-flip test over six paired corruption-family effects",
+    "multiplicity": "Primary audit: Holm adjustment over the preregistered six candidate-by-baseline comparisons. A two-comparison within-candidate Holm result is also shown and is explicitly post hoc.",
+    "holm_applies_to": "p-values only; confidence intervals are unadjusted",
+    "ci_level": 0.95,
+    "bootstrap_replicates": 20000,
+    "random_seed_base": 20260827
+  },
+  "claim_boundary": {
+    "supports": "retrospective current-policy family sensitivity on the controlled CIFAR-10-C stress grid; positive pointwise intervals may be described conditionally",
+    "does_not_support": [
+      "a preregistered cluster-robust win when six-comparison Holm fails",
+      "simultaneous confidence intervals",
+      "independent-checkpoint population inference",
+      "prospective confirmation",
+      "natural-shift generalization",
+      "official-code POEM or AETTA superiority"
+    ],
+    "few_cluster_warning": "Only six corruption families are available; intervals and sign-flip tests have low resolution and must be reported with the family-level effects.",
+    "multiplicity_warning": "The preregistered family contains all six candidate-by-baseline comparisons; within-candidate Holm values are retrospective diagnostics only."
+  },
+  "preregistered_six_comparison_holm": {
+    "raw_p_values": {
+      "tent::always_adapt": 0.03125,
+      "tent::always_freeze": 0.015625,
+      "eata::always_adapt": 0.125,
+      "eata::always_freeze": 0.015625,
+      "sar::always_adapt": 0.90625,
+      "sar::always_freeze": 0.015625
+    },
+    "adjusted_p_values": {
+      "tent::always_freeze": 0.09375,
+      "eata::always_freeze": 0.09375,
+      "sar::always_freeze": 0.09375,
+      "tent::always_adapt": 0.09375,
+      "eata::always_adapt": 0.25,
+      "sar::always_adapt": 0.90625
+    },
+    "family_size": 6,
+    "alpha": 0.05
+  },
+  "candidates": {
+    "tent": {
+      "candidate": "tent",
+      "grain": {
+        "record": "candidate x run_seed x stress-grid condition",
+        "inference_unit": "corruption_family",
+        "nested_repetitions": "run seeds and condition cells are averaged within family",
+        "n_records": 2160,
+        "n_run_seeds": 5,
+        "n_conditions_per_seed": 432,
+        "n_inference_units": 6,
+        "families": [
+          "contrast",
+          "defocus_blur",
+          "fog",
+          "gaussian_noise",
+          "jpeg_compression",
+          "pixelate"
+        ]
+      },
+      "decision_counts": {
+        "ADAPT": 1107,
+        "FREEZE": 359,
+        "ABSTAIN": 694
+      },
+      "recorded_historical_decision_counts": {
+        "ADAPT": 1109,
+        "FREEZE": 366,
+        "ABSTAIN": 685
+      },
+      "current_vs_recorded_decision_disagreements": 9,
+      "adapt_exposure": 0.5125,
+      "freeze_exposure": 0.16620370370370371,
+      "strict_decision_coverage": 0.6787037037037037,
+      "comparisons": {
+        "always_adapt": {
+          "point": 0.006330324571441721,
+          "ci": [
+            0.002543518554281305,
+            0.009536807073487174
+          ],
+          "ci_level": 0.95,
+          "replicates": 20000,
+          "random_seed": 20260827,
+          "family_effects": {
+            "contrast": 0.008229167262713114,
+            "defocus_blur": 0.010590276949935489,
+            "fog": 0.010380557345019446,
+            "gaussian_noise": -0.0020555557476149666,
+            "jpeg_compression": 0.003368055820465088,
+            "pixelate": 0.007469445798132155
+          },
+          "p_value_one_sided_exact_sign_flip": 0.03125,
+          "p_value_holm_within_candidate_posthoc": 0.03125,
+          "holm_within_candidate_posthoc_reject_at_0.05": true,
+          "p_value_holm_preregistered_six_comparison_family": 0.09375,
+          "holm_preregistered_six_comparison_reject_at_0.05": false
+        },
+        "always_freeze": {
+          "point": 0.12229143483219324,
+          "ci": [
+            0.06330717476429762,
+            0.17772361136696957
+          ],
+          "ci_level": 0.95,
+          "replicates": 20000,
+          "random_seed": 20260828,
+          "family_effects": {
+            "contrast": 0.22884583324193955,
+            "defocus_blur": 0.12017222195863723,
+            "fog": 0.06325694289472368,
+            "gaussian_noise": 0.17364722390969595,
+            "jpeg_compression": 0.006643055048253801,
+            "pixelate": 0.1411833319399092
+          },
+          "p_value_one_sided_exact_sign_flip": 0.015625,
+          "p_value_holm_within_candidate_posthoc": 0.03125,
+          "holm_within_candidate_posthoc_reject_at_0.05": true,
+          "p_value_holm_preregistered_six_comparison_family": 0.09375,
+          "holm_preregistered_six_comparison_reject_at_0.05": false
+        }
+      },
+      "gate": {
+        "both_pointwise_95pct_cluster_bootstrap_intervals_positive": true,
+        "both_one_sided_sign_flip_tests_survive_within_candidate_posthoc_holm_0.05": true,
+        "posthoc_within_candidate_cluster_sensitivity_pass": true,
+        "both_sign_flip_tests_survive_preregistered_six_comparison_holm_0.05": false,
+        "preregistered_six_comparison_cluster_sensitivity_pass": false
+      },
+      "current_policy_replay": {
+        "entry_point": "kga.policy.decide_kga",
+        "alpha": 0.1,
+        "calibration": "loo",
+        "radius": "exact split-conformal rank radius, leave-one-cell-out",
+        "stored_kga_decision_used_for_scoring": false
+      },
+      "sources": [
+        {
+          "path": "experiments/kbound/results/reconciled_panels_v1/source/cifar10c/per_condition_cifar10c_tent_seed0.json",
+          "sha256": "5513d6596cfd49416758c3336a34b05809d4de6b7a048b35857bd4e99f80a805",
+          "bytes": 444443,
+          "run_seed": 0,
+          "records": 432
+        },
+        {
+          "path": "experiments/kbound/results/reconciled_panels_v1/source/cifar10c/per_condition_cifar10c_tent_seed1.json",
+          "sha256": "348bf368b12f31d6fd9bacccc71d4dea1158d311209e37951918bc89cd0ff4fc",
+          "bytes": 444789,
+          "run_seed": 1,
+          "records": 432
+        },
+        {
+          "path": "experiments/kbound/results/reconciled_panels_v1/source/cifar10c/per_condition_cifar10c_tent_seed2.json",
+          "sha256": "45db8611a0f26570bc2920dca0f3f4eb830c88c7e4f50fb13168e06627f3c86c",
+          "bytes": 444918,
+          "run_seed": 2,
+          "records": 432
+        },
+        {
+          "path": "experiments/kbound/results/reconciled_panels_v1/source/cifar10c/per_condition_cifar10c_tent_seed3.json",
+          "sha256": "f582e68a0f3618850f9ad05aa57fb9e754e8903d84c2a15651f212a39da3ab02",
+          "bytes": 444972,
+          "run_seed": 3,
+          "records": 432
+        },
+        {
+          "path": "experiments/kbound/results/reconciled_panels_v1/source/cifar10c/per_condition_cifar10c_tent_seed4.json",
+          "sha256": "eef4f466521f4bfc4e465d25072853543a4d621666016a7876e1758b3b2169fb",
+          "bytes": 444870,
+          "run_seed": 4,
+          "records": 432
+        }
+      ]
+    },
+    "eata": {
+      "candidate": "eata",
+      "grain": {
+        "record": "candidate x run_seed x stress-grid condition",
+        "inference_unit": "corruption_family",
+        "nested_repetitions": "run seeds and condition cells are averaged within family",
+        "n_records": 2160,
+        "n_run_seeds": 5,
+        "n_conditions_per_seed": 432,
+        "n_inference_units": 6,
+        "families": [
+          "contrast",
+          "defocus_blur",
+          "fog",
+          "gaussian_noise",
+          "jpeg_compression",
+          "pixelate"
+        ]
+      },
+      "decision_counts": {
+        "ADAPT": 1241,
+        "FREEZE": 132,
+        "ABSTAIN": 787
+      },
+      "recorded_historical_decision_counts": {
+        "ADAPT": 1243,
+        "FREEZE": 132,
+        "ABSTAIN": 785
+      },
+      "current_vs_recorded_decision_disagreements": 2,
+      "adapt_exposure": 0.5745370370370371,
+      "freeze_exposure": 0.06111111111111111,
+      "strict_decision_coverage": 0.6356481481481482,
+      "comparisons": {
+        "always_adapt": {
+          "point": 0.0019513890699104023,
+          "ci": [
+            -0.0005194442415678941,
+            0.004381944708250187
+          ],
+          "ci_level": 0.95,
+          "replicates": 20000,
+          "random_seed": 20260837,
+          "family_effects": {
+            "contrast": 0.002649999823835161,
+            "defocus_blur": 0.00548888858821657,
+            "fog": 0.005572223001056247,
+            "gaussian_noise": -0.00022083371877670288,
+            "jpeg_compression": -0.0033013885219891864,
+            "pixelate": 0.0015194452471203274
+          },
+          "p_value_one_sided_exact_sign_flip": 0.125,
+          "p_value_holm_within_candidate_posthoc": 0.125,
+          "holm_within_candidate_posthoc_reject_at_0.05": false,
+          "p_value_holm_preregistered_six_comparison_family": 0.25,
+          "holm_preregistered_six_comparison_reject_at_0.05": false
+        },
+        "always_freeze": {
+          "point": 0.13001203589417318,
+          "ci": [
+            0.06977175780468516,
+            0.18754398066688469
+          ],
+          "ci_level": 0.95,
+          "replicates": 20000,
+          "random_seed": 20260838,
+          "family_effects": {
+            "contrast": 0.23968055546283723,
+            "defocus_blur": 0.12648055454095206,
+            "fog": 0.06860277652740479,
+            "gaussian_noise": 0.186472221215566,
+            "jpeg_compression": 0.012358331514729395,
+            "pixelate": 0.14647777610354953
+          },
+          "p_value_one_sided_exact_sign_flip": 0.015625,
+          "p_value_holm_within_candidate_posthoc": 0.03125,
+          "holm_within_candidate_posthoc_reject_at_0.05": true,
+          "p_value_holm_preregistered_six_comparison_family": 0.09375,
+          "holm_preregistered_six_comparison_reject_at_0.05": false
+        }
+      },
+      "gate": {
+        "both_pointwise_95pct_cluster_bootstrap_intervals_positive": false,
+        "both_one_sided_sign_flip_tests_survive_within_candidate_posthoc_holm_0.05": false,
+        "posthoc_within_candidate_cluster_sensitivity_pass": false,
+        "both_sign_flip_tests_survive_preregistered_six_comparison_holm_0.05": false,
+        "preregistered_six_comparison_cluster_sensitivity_pass": false
+      },
+      "current_policy_replay": {
+        "entry_point": "kga.policy.decide_kga",
+        "alpha": 0.1,
+        "calibration": "loo",
+        "radius": "exact split-conformal rank radius, leave-one-cell-out",
+        "stored_kga_decision_used_for_scoring": false
+      },
+      "sources": [
+        {
+          "path": "experiments/kbound/results/reconciled_panels_v1/source/cifar10c/per_condition_cifar10c_eata_seed0.json",
+          "sha256": "8f287ddceadc95c6d1a46a97a1e7a197cacb32705be7e4620878bced92ce63f2",
+          "bytes": 445015,
+          "run_seed": 0,
+          "records": 432
+        },
+        {
+          "path": "experiments/kbound/results/reconciled_panels_v1/source/cifar10c/per_condition_cifar10c_eata_seed1.json",
+          "sha256": "5c6955624122576e9411e1d82600c90cc8af50fe7d804c8ba6b3bbe53ac3ee68",
+          "bytes": 444906,
+          "run_seed": 1,
+          "records": 432
+        },
+        {
+          "path": "experiments/kbound/results/reconciled_panels_v1/source/cifar10c/per_condition_cifar10c_eata_seed2.json",
+          "sha256": "33754558492810fdd17cc04ddd5ae2261f20ac871ba61a108d15f9d0a4f7205a",
+          "bytes": 444923,
+          "run_seed": 2,
+          "records": 432
+        },
+        {
+          "path": "experiments/kbound/results/reconciled_panels_v1/source/cifar10c/per_condition_cifar10c_eata_seed3.json",
+          "sha256": "b8ee33b8f65ad549fa43e1ecadc4ef82cae2f9d29f7cb1cba9ad0a5bd9b6f4cf",
+          "bytes": 444532,
+          "run_seed": 3,
+          "records": 432
+        },
+        {
+          "path": "experiments/kbound/results/reconciled_panels_v1/source/cifar10c/per_condition_cifar10c_eata_seed4.json",
+          "sha256": "8b23b1c4bb6ef6fc54d674dba31cb0a5d5fd6e60e913f1c797eb0bed15fa2cc5",
+          "bytes": 444817,
+          "run_seed": 4,
+          "records": 432
+        }
+      ]
+    },
+    "sar": {
+      "candidate": "sar",
+      "grain": {
+        "record": "candidate x run_seed x stress-grid condition",
+        "inference_unit": "corruption_family",
+        "nested_repetitions": "run seeds and condition cells are averaged within family",
+        "n_records": 2160,
+        "n_run_seeds": 5,
+        "n_conditions_per_seed": 432,
+        "n_inference_units": 6,
+        "families": [
+          "contrast",
+          "defocus_blur",
+          "fog",
+          "gaussian_noise",
+          "jpeg_compression",
+          "pixelate"
+        ]
+      },
+      "decision_counts": {
+        "ADAPT": 1446,
+        "FREEZE": 0,
+        "ABSTAIN": 714
+      },
+      "recorded_historical_decision_counts": {
+        "ADAPT": 1448,
+        "FREEZE": 0,
+        "ABSTAIN": 712
+      },
+      "current_vs_recorded_decision_disagreements": 2,
+      "adapt_exposure": 0.6694444444444444,
+      "freeze_exposure": 0.0,
+      "strict_decision_coverage": 0.6694444444444444,
+      "comparisons": {
+        "always_adapt": {
+          "point": -0.0012226850346282677,
+          "ci": [
+            -0.0026736108517205273,
+            -6.736067158204539e-05
+          ],
+          "ci_level": 0.95,
+          "replicates": 20000,
+          "random_seed": 20260847,
+          "family_effects": {
+            "contrast": -0.0025402787658903333,
+            "defocus_blur": 6.388939089245267e-05,
+            "fog": 6.945265663994683e-06,
+            "gaussian_noise": 0.0,
+            "jpeg_compression": -0.000545833342605167,
+            "pixelate": -0.004320832755830553
+          },
+          "p_value_one_sided_exact_sign_flip": 0.90625,
+          "p_value_holm_within_candidate_posthoc": 0.90625,
+          "holm_within_candidate_posthoc_reject_at_0.05": false,
+          "p_value_holm_preregistered_six_comparison_family": 0.90625,
+          "holm_preregistered_six_comparison_reject_at_0.05": false
+        },
+        "always_freeze": {
+          "point": 0.13891249966842156,
+          "ci": [
+            0.08031388794382413,
+            0.19686064847089627
+          ],
+          "ci_level": 0.95,
+          "replicates": 20000,
+          "random_seed": 20260848,
+          "family_effects": {
+            "contrast": 0.24956250041723252,
+            "defocus_blur": 0.13258749975098505,
+            "fog": 0.07422638850079642,
+            "gaussian_noise": 0.1980319455265999,
+            "jpeg_compression": 0.025679164628187815,
+            "pixelate": 0.15338749918672773
+          },
+          "p_value_one_sided_exact_sign_flip": 0.015625,
+          "p_value_holm_within_candidate_posthoc": 0.03125,
+          "holm_within_candidate_posthoc_reject_at_0.05": true,
+          "p_value_holm_preregistered_six_comparison_family": 0.09375,
+          "holm_preregistered_six_comparison_reject_at_0.05": false
+        }
+      },
+      "gate": {
+        "both_pointwise_95pct_cluster_bootstrap_intervals_positive": false,
+        "both_one_sided_sign_flip_tests_survive_within_candidate_posthoc_holm_0.05": false,
+        "posthoc_within_candidate_cluster_sensitivity_pass": false,
+        "both_sign_flip_tests_survive_preregistered_six_comparison_holm_0.05": false,
+        "preregistered_six_comparison_cluster_sensitivity_pass": false
+      },
+      "current_policy_replay": {
+        "entry_point": "kga.policy.decide_kga",
+        "alpha": 0.1,
+        "calibration": "loo",
+        "radius": "exact split-conformal rank radius, leave-one-cell-out",
+        "stored_kga_decision_used_for_scoring": false
+      },
+      "sources": [
+        {
+          "path": "experiments/kbound/results/reconciled_panels_v1/source/cifar10c/per_condition_cifar10c_sar_seed0.json",
+          "sha256": "378d44ce51853a2af89262a4437a2ac2d5fc936077d7436923d37b23096dbae8",
+          "bytes": 444912,
+          "run_seed": 0,
+          "records": 432
+        },
+        {
+          "path": "experiments/kbound/results/reconciled_panels_v1/source/cifar10c/per_condition_cifar10c_sar_seed1.json",
+          "sha256": "b7a2560a01b7de4877ff0e6f627986481231732adc22e6fc7f025d3687fe048e",
+          "bytes": 444752,
+          "run_seed": 1,
+          "records": 432
+        },
+        {
+          "path": "experiments/kbound/results/reconciled_panels_v1/source/cifar10c/per_condition_cifar10c_sar_seed2.json",
+          "sha256": "e08795e0d2ecdfd6b7b49aedef86e369753456746fea102698a47381571d839e",
+          "bytes": 444398,
+          "run_seed": 2,
+          "records": 432
+        },
+        {
+          "path": "experiments/kbound/results/reconciled_panels_v1/source/cifar10c/per_condition_cifar10c_sar_seed3.json",
+          "sha256": "9e4bb6b10364a8cb2e5786198947d35c94b50d4412367a51b6bb542210a49a28",
+          "bytes": 445041,
+          "run_seed": 3,
+          "records": 432
+        },
+        {
+          "path": "experiments/kbound/results/reconciled_panels_v1/source/cifar10c/per_condition_cifar10c_sar_seed4.json",
+          "sha256": "c6b2f39aec004315e5652916b72dd11efa74336a42c8d905a6a4aa341b5a7875",
+          "bytes": 445024,
+          "run_seed": 4,
+          "records": 432
+        }
+      ]
+    }
+  }
+}
