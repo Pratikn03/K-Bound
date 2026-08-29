@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import ast
 import copy
 import inspect
 import sys
@@ -13,6 +14,7 @@ import pytest
 import torch
 from torch import nn
 
+from experiments.kbound.so2sat import adapters as adapters_module
 from experiments.kbound.so2sat import development as development_module
 from experiments.kbound.so2sat.adapters import (
     CANDIDATE_IDS,
@@ -421,6 +423,79 @@ def test_adapter_updates_only_probe_then_becomes_fixed(candidate_id: str) -> Non
     assert logits.shape == (4, 17)
     assert all(torch.equal(before[name], tensor) for name, tensor in adapted.state_dict().items())
     assert torch.equal(source.bn.running_mean, torch.zeros_like(source.bn.running_mean))
+
+
+@pytest.mark.skipif(
+    not torch.backends.mps.is_available(),
+    reason="MPS regression coverage requires Apple Silicon",
+)
+def test_batchnorm_divergence_is_finite_and_cpu_consistent_on_mps() -> None:
+    torch.manual_seed(17)
+    cpu_model = _TinyBatchNormClassifier().eval()
+    mps_model = copy.deepcopy(cpu_model).to(torch.device("mps")).eval()
+    probe = [
+        torch.randn(6, 10, 32, 32) + 0.4,
+        torch.randn(5, 10, 32, 32) - 0.2,
+    ]
+
+    cpu_logits, cpu_divergence = frozen_logits_and_bn_divergence(
+        cpu_model,
+        (batch.clone() for batch in probe),
+        device=torch.device("cpu"),
+    )
+    mps_logits, mps_divergence = frozen_logits_and_bn_divergence(
+        mps_model,
+        (batch.clone() for batch in probe),
+        device=torch.device("mps"),
+    )
+
+    assert cpu_logits.shape == mps_logits.shape == (11, 17)
+    assert torch.isfinite(mps_logits).all()
+    assert mps_divergence >= 0.0
+    assert mps_divergence == pytest.approx(cpu_divergence, rel=1e-7, abs=1e-9)
+    parameter = nn.Parameter(torch.tensor([3.0, 4.0], device=torch.device("mps")))
+    assert adapters_module._parameter_norm([parameter]) == pytest.approx(5.0)
+
+
+def test_batchnorm_divergence_preserves_primary_hook_error() -> None:
+    model = _TinyBatchNormClassifier().eval()
+    with pytest.raises(IntegrityError, match="hook received invalid activations"):
+        frozen_logits_and_bn_divergence(
+            model,
+            [torch.randn(6, 10, 32)],
+            device=torch.device("cpu"),
+        )
+
+
+def test_so2sat_runtime_uses_mps_safe_cpu_float64_conversions() -> None:
+    unsafe: list[str] = []
+    source_root = Path(__file__).parents[1] / "experiments/kbound/so2sat"
+    for source_path in sorted(source_root.glob("*.py")):
+        tree = ast.parse(source_path.read_text(encoding="utf-8"))
+        for node in ast.walk(tree):
+            if not (isinstance(node, ast.Call) and isinstance(node.func, ast.Attribute)):
+                continue
+            if node.func.attr == "to":
+                keywords = {
+                    keyword.arg: keyword.value
+                    for keyword in node.keywords
+                    if keyword.arg
+                }
+                device = keywords.get("device")
+                dtype = keywords.get("dtype")
+                sends_to_cpu = (
+                    isinstance(device, ast.Constant) and device.value == "cpu"
+                )
+                widens_to_float64 = (
+                    dtype is not None and ast.unparse(dtype) == "torch.float64"
+                )
+                if sends_to_cpu and widens_to_float64:
+                    unsafe.append(f"combined-to:{source_path.name}:{node.lineno}")
+            if node.func.attr == "cpu" and isinstance(node.func.value, ast.Call):
+                inner = node.func.value.func
+                if isinstance(inner, ast.Attribute) and inner.attr == "double":
+                    unsafe.append(f"double-before-cpu:{source_path.name}:{node.lineno}")
+    assert unsafe == [], f"MPS-unsafe float64 conversions: {unsafe}"
 
 
 def test_mixed_effect_feasibility_and_deterministic_selection_use_gate_fit_only() -> None:

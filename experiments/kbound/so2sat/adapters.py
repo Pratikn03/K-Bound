@@ -398,10 +398,16 @@ def _restore_source_batchnorm_buffers(
     model.requires_grad_(False)
 
 
+def _to_cpu_float64(value: torch.Tensor) -> torch.Tensor:
+    """Transfer before widening so the operation is valid for MPS tensors."""
+
+    return value.detach().to(device="cpu").to(dtype=torch.float64)
+
+
 def _parameter_norm(parameters: Sequence[nn.Parameter]) -> float:
     squared = torch.zeros((), dtype=torch.float64)
     for parameter in parameters:
-        squared += parameter.detach().double().cpu().square().sum()
+        squared += _to_cpu_float64(parameter).square().sum()
     value = float(torch.sqrt(squared))
     if not math.isfinite(value):
         raise IntegrityError("adapter parameter norm is non-finite")
@@ -420,8 +426,8 @@ class BatchNormDivergenceCollector:
                 continue
             if module.running_mean is None or module.running_var is None:
                 raise IntegrityError(f"source BatchNorm layer {name!r} lacks statistics")
-            source_mean = module.running_mean.detach().clone()
-            source_var = module.running_var.detach().clone()
+            source_mean = _to_cpu_float64(module.running_mean).clone()
+            source_var = _to_cpu_float64(module.running_var).clone()
             eps = float(module.eps)
 
             def hook(
@@ -436,12 +442,16 @@ class BatchNormDivergenceCollector:
                 if value.ndim != 4 or value.shape[0] < 1:
                     raise IntegrityError("BatchNorm divergence hook received invalid activations")
                 dimensions = (0, 2, 3)
-                observed_mean = value.double().mean(dim=dimensions)
-                observed_var = value.double().var(dim=dimensions, unbiased=False)
-                mean_ref = source_mean.double().to(value.device)
-                var_ref = source_var.double().to(value.device)
-                mean_term = (observed_mean - mean_ref).square() / (var_ref + eps)
-                variance_term = torch.log((observed_var + eps) / (var_ref + eps)).square()
+                # The sealed statistic is defined by float64 moments. MPS cannot
+                # represent float64, so transfer the full float32 activation first
+                # and preserve the same CPU-float64 calculation on every backend.
+                statistics = _to_cpu_float64(value)
+                observed_mean = statistics.mean(dim=dimensions)
+                observed_var = statistics.var(dim=dimensions, unbiased=False)
+                mean_term = (observed_mean - source_mean).square() / (source_var + eps)
+                variance_term = torch.log(
+                    (observed_var + eps) / (source_var + eps)
+                ).square()
                 divergence = 0.5 * (mean_term + variance_term)
                 if not torch.isfinite(divergence).all():
                     raise IntegrityError("BatchNorm source-statistic divergence is non-finite")
@@ -453,10 +463,13 @@ class BatchNormDivergenceCollector:
         if not self._handles:
             raise IntegrityError("no BatchNorm layers available for divergence collection")
 
-    def close(self) -> float:
+    def remove_hooks(self) -> None:
         for handle in self._handles:
             handle.remove()
         self._handles.clear()
+
+    def close(self) -> float:
+        self.remove_hooks()
         if self._weight < 1:
             raise IntegrityError("BatchNorm divergence collector observed no probe batch")
         result = self._weighted_sum / self._weight
@@ -484,7 +497,10 @@ def frozen_logits_and_bn_divergence(
                     raise IntegrityError("source model emitted invalid frozen probe logits")
                 outputs.append(logits.detach().cpu().double())
     finally:
-        divergence = collector.close()
+        # Cleanup must not replace a primary model or hook exception with the
+        # secondary "no probe batch" integrity error.
+        collector.remove_hooks()
+    divergence = collector.close()
     if not outputs:
         raise IntegrityError("frozen probe pass received no batch")
     return torch.cat(outputs, dim=0), divergence
