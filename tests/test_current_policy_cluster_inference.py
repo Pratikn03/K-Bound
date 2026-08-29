@@ -19,20 +19,27 @@ def _sha256(path: Path) -> str:
     return hashlib.sha256(path.read_bytes()).hexdigest()
 
 
-def test_canonical_generation_paths_refresh_cluster_before_sync() -> None:
-    paths = (
-        ROOT / "docs/research/kbound/runbooks/release_candidate.sh",
-        ROOT / "docs/research/kbound/scripts/build_pdfs.sh",
+def test_release_generation_refreshes_cluster_before_sync() -> None:
+    path = ROOT / "docs/research/kbound/runbooks/release_candidate.sh"
+    text = path.read_text()
+    reconcile_at = text.index("scripts/reconcile_result_panels.py")
+    cluster_at = text.index(
+        "scripts/analyze_current_policy_cluster_inference.py",
+        reconcile_at,
     )
-    for path in paths:
-        text = path.read_text()
-        reconcile_at = text.index("scripts/reconcile_result_panels.py")
-        cluster_at = text.index(
-            "scripts/analyze_current_policy_cluster_inference.py",
-            reconcile_at,
-        )
-        sync_at = text.index("scripts/sync_reconciled_panels.py", cluster_at)
-        assert reconcile_at < cluster_at < sync_at, path
+    sync_at = text.index("scripts/sync_reconciled_panels.py", cluster_at)
+    assert reconcile_at < cluster_at < sync_at
+
+
+def test_paper_build_validates_but_does_not_regenerate_release_authority() -> None:
+    path = ROOT / "docs/research/kbound/scripts/build_pdfs.sh"
+    text = path.read_text()
+
+    assert "validate_canonical_release_data.py" in text
+    assert "validate_manuscript_claims.py" in text
+    assert "scripts/reconcile_result_panels.py" not in text
+    assert "scripts/analyze_current_policy_cluster_inference.py" not in text
+    assert "scripts/sync_reconciled_panels.py" not in text
 
 
 def test_saved_artifact_source_hashes_match_disk() -> None:
