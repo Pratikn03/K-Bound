@@ -96,6 +96,50 @@ def test_real_claim_ledger_validates():
     S.validate(ledger, "claim_ledger")
 
 
+def test_claim_ledger_accepts_explicitly_withheld_evidence():
+    ledger = {
+        "schema_version": "kbound-claim-ledger-v1",
+        "claims": [{
+            "claim_id": "KB-CLAIM-999",
+            "claim_text": "Numerical evidence is withheld pending a valid rerun.",
+            "claim_type": "empirical",
+            "status": "withheld",
+        }],
+    }
+    S.validate(ledger, "claim_ledger")
+
+
+def test_claim_ledger_rejects_duplicate_claim_ids():
+    claim = {
+        "claim_id": "KB-CLAIM-999",
+        "claim_text": "A claim whose status must not be shadowed.",
+        "claim_type": "empirical",
+        "status": "withheld",
+    }
+    ledger = {
+        "schema_version": "kbound-claim-ledger-v1",
+        "claims": [claim, {**claim, "status": "supported"}],
+    }
+    with pytest.raises(S.SchemaError, match="duplicate claim IDs.*KB-CLAIM-999"):
+        S.validate(ledger, "claim_ledger")
+
+
+@pytest.mark.parametrize("status", ["pending", "withdrawn", "withheld"])
+def test_result_manifest_rejects_non_numerical_claim_states(status):
+    manifest = {
+        "schema_version": "kbound-result-manifest-v1",
+        "results": [{
+            "claim_id": "KB-CLAIM-999",
+            "dataset": "example",
+            "protocol": "example-v1",
+            "status": status,
+            "source_artifact": "example.json",
+        }],
+    }
+    with pytest.raises(S.SchemaError, match="status"):
+        S.validate(manifest, "result_manifest")
+
+
 def test_migration_preserves_original_and_marks_not_retained(tmp_path):
     # A historical rate-only artifact (no raw decisions / integer counts).
     src = tmp_path / "hist.json"

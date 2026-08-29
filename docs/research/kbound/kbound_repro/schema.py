@@ -30,8 +30,9 @@ from __future__ import annotations
 
 import json
 import re
+from collections.abc import Iterable
 from pathlib import Path
-from typing import Any, Iterable
+from typing import Any
 
 from . import deps
 
@@ -41,6 +42,7 @@ __all__ = [
     "SCHEMA_VERSIONS",
     "validate",
     "check_counts_not_from_rates",
+    "check_unique_claim_ids",
     "check_seed_uniqueness",
     "check_identical_condition_order",
     "migrate_historical_per_condition",
@@ -76,6 +78,26 @@ _PROVENANCE_REQUIRED = [
     "source_artifact",
     "resolved_device",
     "created_at",
+]
+
+# The wording ledger records every claim state, including evidence that is
+# deliberately withheld.  The numerical manifest is narrower: it may contain
+# supported results and clearly labelled descriptive/diagnostic results, but
+# never pending, withdrawn, or withheld claims.
+_CLAIM_LEDGER_STATUSES = [
+    "supported",
+    "no-harm",
+    "descriptive",
+    "diagnostic",
+    "withdrawn",
+    "withheld",
+    "pending",
+]
+_RESULT_MANIFEST_STATUSES = [
+    "supported",
+    "no-harm",
+    "descriptive",
+    "diagnostic",
 ]
 
 # ---------------------------------------------------------------------------
@@ -174,7 +196,7 @@ SCHEMAS: dict[str, dict[str, Any]] = {
                         "claim_id": {"type": "string", "pattern": "^KB-CLAIM-[0-9]+$"},
                         "claim_text": {"type": "string"},
                         "claim_type": {"enum": ["theorem", "empirical", "protocol", "limitation"]},
-                        "status": {"enum": ["supported", "no-harm", "withdrawn", "pending"]},
+                        "status": {"enum": _CLAIM_LEDGER_STATUSES},
                         "allowed_wording": {"type": ["string", "array"]},
                         "forbidden_wording": {"type": ["string", "array"]},
                     },
@@ -203,7 +225,7 @@ SCHEMAS: dict[str, dict[str, Any]] = {
                         "claim_id": {"type": "string", "pattern": "^KB-CLAIM-[0-9]+$"},
                         "dataset": {"type": "string"},
                         "protocol": {"type": "string"},
-                        "status": {"enum": ["supported", "no-harm", "withdrawn", "pending"]},
+                        "status": {"enum": _RESULT_MANIFEST_STATUSES},
                         "source_artifact": {"type": "string"},
                         "config_hash": {"type": ["string", "null"]},
                         "quantile_rule": {"type": ["string", "null"]},
@@ -328,10 +350,32 @@ def validate(record: dict, schema_name: str) -> None:
         try:
             jsonschema.validate(record, SCHEMAS[schema_name])
         except jsonschema.ValidationError as exc:  # type: ignore[attr-defined]
-            raise SchemaError(f"{schema_name} validation failed: {exc.message}") from exc
+            location = ".".join(str(part) for part in exc.absolute_path) or "<root>"
+            raise SchemaError(
+                f"{schema_name} validation failed at {location}: {exc.message}"
+            ) from exc
     # cross-field rule shared by per-condition / per-seed / empirical metrics
     if "counts" in record:
         check_counts_not_from_rates(record)
+    if schema_name == "claim_ledger":
+        check_unique_claim_ids(record.get("claims", []), artifact="claim ledger")
+    elif schema_name == "result_manifest":
+        check_unique_claim_ids(record.get("results", []), artifact="result manifest")
+
+
+def check_unique_claim_ids(rows: Iterable[dict], *, artifact: str) -> None:
+    """Reject repeated claim IDs before any last-value-wins indexing can occur."""
+    seen: set[str] = set()
+    duplicates: set[str] = set()
+    for row in rows:
+        claim_id = row.get("claim_id")
+        if not isinstance(claim_id, str):
+            continue  # the structural schema reports missing or mistyped IDs
+        if claim_id in seen:
+            duplicates.add(claim_id)
+        seen.add(claim_id)
+    if duplicates:
+        raise SchemaError(f"{artifact} contains duplicate claim IDs: {sorted(duplicates)}")
 
 
 def check_counts_not_from_rates(record: dict) -> None:

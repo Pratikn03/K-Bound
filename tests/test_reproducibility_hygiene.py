@@ -50,6 +50,47 @@ TESTS = REPO / "tests"
 KGA = REPO / "kga"
 CIFAR10C_SUITE = REPO / "src" / "scripts" / "kbound" / "cifar10c_suite.py"
 
+
+def _iter_authored_files(root: Path, suffixes: tuple[str, ...]):
+    """Yield authored files without descending into dependency/cache trees."""
+    skipped_directories = {
+        ".git",
+        ".venv",
+        ".venv_wilds",
+        "venv",
+        "__pypackages__",
+        "__pycache__",
+        "node_modules",
+        ".mypy_cache",
+        ".pytest_cache",
+        ".ruff_cache",
+        ".ipynb_checkpoints",
+        "archive",
+        "build",
+        "external",
+    }
+    for directory, names, files in os.walk(root):
+        base = Path(directory)
+        retained = []
+        for name in names:
+            child = base / name
+            try:
+                relative = child.relative_to(REPO).as_posix()
+            except ValueError:
+                relative = ""
+            if (
+                name in skipped_directories
+                or name.startswith(".lake__icloud")
+                or relative == "audits/integrity_2026-06-20"
+            ):
+                continue
+            retained.append(name)
+        names[:] = sorted(retained)
+        for name in sorted(files):
+            path = base / name
+            if path.suffix in suffixes:
+                yield path
+
 #: Machine-local roots that must never appear in tracked source.
 BANNED_PATH_FRAGMENTS = ("AutoML_Flagship_V8", "/Volumes/T9", "/Users/pratik", "/sessions/")
 
@@ -132,8 +173,7 @@ class TestStableSeedIsProcessStable:
             [sys.executable, "-c", source],
             env=env,
             text=True,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
+            capture_output=True,
             check=False,
         )
         assert proc.returncode == 0, proc.stderr
@@ -213,23 +253,22 @@ class TestNoMachineLocalPaths:
         )
 
         bad: dict[str, list[str]] = {}
-        for pattern in ("*.py", "*.sh"):
-            for path in sorted(root.rglob(pattern)):
-                if "__pycache__" in path.parts or not _readable(path):
-                    continue
-                # Skip virtual environments and historical archive subtrees.
-                if _SKIP_PARTS.intersection(path.parts):
-                    continue
-                rel = str(path.relative_to(REPO))
-                if any(rel.startswith(p) for p in _SKIP_PREFIXES):
-                    continue
-                hits = [
-                    f"{i}: {line.strip()}"
-                    for i, line in enumerate(path.read_text(errors="ignore").splitlines(), 1)
-                    if any(frag in line for frag in BANNED_PATH_FRAGMENTS)
-                ]
-                if hits:
-                    bad[rel] = hits
+        for path in _iter_authored_files(root, (".py", ".sh")):
+            if not _readable(path):
+                continue
+            # Skip historical archive subtrees.
+            if _SKIP_PARTS.intersection(path.parts):
+                continue
+            rel = str(path.relative_to(REPO))
+            if any(rel.startswith(p) for p in _SKIP_PREFIXES):
+                continue
+            hits = [
+                f"{i}: {line.strip()}"
+                for i, line in enumerate(path.read_text(errors="ignore").splitlines(), 1)
+                if any(frag in line for frag in BANNED_PATH_FRAGMENTS)
+            ]
+            if hits:
+                bad[rel] = hits
         return bad
 
     def test_no_machine_local_paths_anywhere_in_the_tree(self):
@@ -265,8 +304,8 @@ class TestNoRawEnvironMutation:
 
     def test_no_direct_environ_assignment_in_tests(self):
         offenders = []
-        for path in sorted(TESTS.rglob("test_*.py")):
-            if "__pycache__" in path.parts or not _readable(path):
+        for path in _iter_authored_files(TESTS, (".py",)):
+            if not path.name.startswith("test_") or not _readable(path):
                 continue
             tree = ast.parse(path.read_text())
             for node in ast.walk(tree):

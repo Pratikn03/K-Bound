@@ -38,8 +38,16 @@ resolve_root() {
 REPO="$(resolve_root)"
 cd "$REPO"
 KB="docs/research/kbound"
-export PYTHONPATH="${REPO}/${KB}:${PYTHONPATH:-}"
-PY="${PYTHON:-python3}"
+export PYTHONPATH="${REPO}:${REPO}/src:${REPO}/${KB}:${REPO}/${KB}/kbound_pkg:${REPO}/${KB}/edge/src${PYTHONPATH:+:$PYTHONPATH}"
+if [[ -n "${KBOUND_PYTHON:-}" ]]; then
+  PY="$KBOUND_PYTHON"
+elif [[ -n "${PYTHON:-}" ]]; then
+  PY="$PYTHON"
+elif command -v python3.12 >/dev/null 2>&1; then
+  PY="python3.12"
+else
+  PY="python3"
+fi
 MODE="${1:-all}"
 WARN=()
 log()  { printf '[%s] %s\n' "$(date +%H:%M:%S)" "$*"; }
@@ -55,6 +63,11 @@ step_preflight() {
   log "MODE preflight -- repo root: $REPO"
   "$PY" - <<'PYEOF'
 import sys
+if sys.version_info[:2] != (3, 12):
+    raise SystemExit(
+        f"release requires Python 3.12; got {sys.version_info.major}.{sys.version_info.minor} "
+        f"from {sys.executable}"
+    )
 sys.path.insert(0, "docs/research/kbound")
 from kbound_repro import runtime
 info = runtime.describe_runtime()
@@ -78,76 +91,155 @@ PYEOF
 }
 
 step_validate_results() {
-  log "MODE validate-results -- schema + seed + hash validation"
-  if [[ -f "$KB/scripts/02_verify_results.py" ]]; then
-    log "verify results (02)"
-    "$PY" "$KB/scripts/02_verify_results.py"
-  else
-    warn "missing $KB/scripts/02_verify_results.py (verify results (02)) -- skipped"
-  fi
-  "$PY" -m kbound_repro.release_checks || {
-    warn "authority/consistency checks reported problems (see above)"; return 1;
-  }
+  log "MODE validate-results -- canonical panel, schema, hashes, and claim authority"
+  "$PY" -m pytest -q tests/test_reconciled_panels.py tests/test_manuscript_claim_consistency.py
+  "$PY" -m pytest -q \
+    tests/test_kga_experiment_contract.py \
+    tests/test_kga_frontier_api.py \
+    tests/test_pacs_replay_artifact.py \
+    tests/test_independent_checkpoint_audit.py \
+    tests/test_official_baseline_provenance.py \
+    tests/test_natural_target_provenance.py \
+    tests/test_exact_confirmation_pipeline.py
+  "$PY" -m kbound_repro.release_checks --require-manifest
+  "$PY" "$KB/scripts/validate_closure_protocol.py"
 }
 
 step_generate() {
-  log "MODE generate -- rebuild aggregates -> manifest -> matrix/tables/figures"
-  local item desc
-  for item in 01_build_manifests.py 03_make_tables.py 04_make_figures.py; do
-    case "$item" in
-      01_*) desc="build manifests (01)" ;;
-      03_*) desc="make tables (03)" ;;
-      04_*) desc="make figures (04)" ;;
-    esac
-    if [[ -f "$KB/scripts/$item" ]]; then
-      log "$desc"
-      "$PY" "$KB/scripts/$item"
-    else
-      warn "missing $KB/scripts/$item ($desc) -- skipped"
-    fi
-  done
+  log "MODE generate -- rebuild the current source-hashed panel, manifest, tables, and figures"
+  "$PY" scripts/reconcile_result_panels.py
+  "$PY" "$KB/scripts/analyze_current_policy_cluster_inference.py"
+  "$PY" scripts/sync_reconciled_panels.py
+  "$PY" "$KB/scripts/build_result_manifest.py"
+  "$PY" "$KB/scripts/build_results_source_compat.py"
+  "$PY" "$KB/scripts/make_tables.py"
+  "$PY" "$KB/scripts/plot_canonical_decision_frontier.py"
+  "$PY" "$KB/scripts/plot_conceptual_regime_geometry.py"
+  "$PY" "$KB/scripts/run_frontier_kga_bridge.py"
+  "$PY" "$KB/scripts/audit_natural_target_provenance.py"
+  "$PY" "$KB/scripts/audit_official_baselines.py" --repo "$REPO"
+  "$PY" src/scripts/validate_manuscript_claims.py
 }
 
 step_test() {
-  log "MODE test -- software tests + forbidden-claim checks + formal audit"
-  # inexpensive first: canonical toolkit tests (torch-independent)
+  log "MODE test -- collection, software tests, claim checks, and formal audit"
+  "$PY" -m pytest --collect-only -q
   "$PY" -m pytest "$KB/kbound_repro/tests" -q
-  # forbidden-claim / authority gate
-  "$PY" -m kbound_repro.release_checks
-  # staged-file / portability guard (no-op if nothing staged)
-  "$PY" -m kbound_repro.check_repo --staged || warn "check_repo flagged staged files"
-  # formal audit (strict) if present
-  if [[ -f "$KB/formal/formal_audit.py" ]]; then
-    log "formal audit (strict 100% inventory)"
-    "$PY" "$KB/formal/formal_audit.py" --strict-100
-  else
-    warn "formal audit script absent -- skipped"
-  fi
+  "$PY" -m pytest -q \
+    "$KB/kbound_pkg/tests" \
+    "$KB/tests" \
+    "$KB/edge/tests" \
+    tests/test_kga_experiment_contract.py \
+    tests/test_kga_frontier_api.py \
+    tests/test_pacs_replay_artifact.py \
+    tests/test_independent_checkpoint_audit.py \
+    tests/test_official_baseline_provenance.py \
+    tests/test_natural_target_provenance.py \
+    tests/test_exact_confirmation_pipeline.py \
+    tests/test_cct20_release_builder.py \
+    tests/test_cct20_manuscript_claim_validation.py \
+    tests/test_build_docx_pipeline.py \
+    tests/test_kga_canonical_rule.py \
+    tests/test_reconciled_panels.py \
+    tests/test_manuscript_claim_consistency.py \
+    "$KB/edge/tests/test_protocol_inventory_reporting.py"
+  "$PY" -m kbound_repro.release_checks --require-manifest
+  "$PY" src/scripts/validate_manuscript_claims.py
+  "$PY" -m kbound_repro.check_repo --staged
+  log "Lean/Mathlib build and formal audit"
+  bash "$KB/formal/build.sh"
 }
 
 step_pdf() {
-  log "MODE pdf -- build short & long PDFs, render every page"
+  log "MODE pdf -- build the maintained compact and long PDFs and render every page"
   if [[ -f "$KB/scripts/build_pdfs.sh" ]]; then
-    PYTHON="$PY" BUILD_LONG=1 bash "$KB/scripts/build_pdfs.sh" || { warn "PDF build failed"; return 1; }
+    BUILD_LONG_TMLR=1 PYTHON="$PY" bash "$KB/scripts/build_pdfs.sh" || {
+      warn "compact/long PDF build failed"
+      return 1
+    }
   else
     warn "build_pdfs.sh absent -- cannot build PDFs"; return 1
   fi
   # page-render / page-count check if a helper exists
   if [[ -f "$KB/scripts/render_pdf_pages.py" ]]; then
-    "$PY" "$KB/scripts/render_pdf_pages.py" || warn "PDF page render check reported issues"
+    "$PY" "$KB/scripts/render_pdf_pages.py" || {
+      warn "PDF page render check failed"
+      return 1
+    }
   else
-    warn "render_pdf_pages.py absent -- page-image render check skipped"
+    warn "render_pdf_pages.py absent -- cannot verify release pages"
+    return 1
   fi
 }
 
 emit_checksums() {
   log "output checksums (authoritative artifacts)"
-  local files=("$KB/claim_ledger.json" "$KB/STORAGE_MANIFEST.json")
-  [[ -f "$KB/RESULT_MANIFEST.json" ]] && files+=("$KB/RESULT_MANIFEST.json")
+  local output="$KB/KBOUND_RELEASE_SHA256SUMS.txt"
+  : >"$output"
+  local files=(
+    "$KB/claim_ledger.json"
+    "$KB/RESULT_MANIFEST.json"
+    "$KB/kbound_short_final_draft.pdf"
+    "$KB/kbound_submission.pdf"
+    "$KB/kbound_tmlr.pdf"
+    "experiments/kbound/results/reconciled_panels_v1/canonical_panel_results.json"
+    "experiments/kbound/results/reconciled_panels_v1/source_manifest.json"
+    "experiments/kbound/results/reconciled_panels_v1/current_policy_cluster_inference.json"
+    "research_lock/KBOUND_PROSPECTIVE_CLOSURE_v1.yaml"
+    "research_lock/KBOUND_EXACT_CONFIRMATION_UNSEALED_v1.json"
+    "experiments/kbound/results/frontier_kga_bridge_v1/bridge_results.json"
+    "experiments/kbound/results/natural_target_provenance_v1/NATURAL_TARGET_PROVENANCE_AUDIT.json"
+    "experiments/kbound/results/official_repro_v1/OFFICIAL_BASELINE_AUDIT.json"
+    "experiments/kbound/results/smoke_pacs_replay_v2/PACS_REPLAY_AUDIT.json"
+    "experiments/kbound/results/edge_real_phone_v1/publication_gate.json"
+    "$KB/audits/phase1_provenance_2026_08_27/provenance_seal.json"
+  )
+  [[ -f "$KB/STORAGE_MANIFEST.json" ]] && files+=("$KB/STORAGE_MANIFEST.json")
+  [[ -f "$KB/kbound_short_final_draft.docx" ]] && files+=("$KB/kbound_short_final_draft.docx")
+  local cct_manifest="$KB/paper/generated/cct20_release_manifest.json"
+  if [[ -f "$cct_manifest" ]]; then
+    local cct_files=(
+      "$cct_manifest"
+      "$KB/paper/generated/cct20_release_manifest.json.receipt.json"
+      "$KB/paper/generated/cct20_numbers.tex"
+      "$KB/paper/generated/cct20_primary_table.tex"
+      "$KB/paper/generated/cct20_location_effects.tex"
+    )
+    local cct_file
+    for cct_file in "${cct_files[@]}"; do
+      if [[ ! -f "$cct_file" ]]; then
+        warn "completed CCT-20 release is incomplete: missing $cct_file"
+        return 1
+      fi
+    done
+    files+=("${cct_files[@]}")
+  fi
+  local required_pdf
+  for required_pdf in \
+    "$KB/kbound_short_final_draft.pdf" \
+    "$KB/kbound_submission.pdf" \
+    "$KB/kbound_tmlr.pdf"; do
+    if [[ ! -f "$required_pdf" ]]; then
+      warn "missing maintained release PDF: $required_pdf"
+      return 1
+    fi
+  done
   for f in "${files[@]}"; do
     [[ -f "$f" ]] || continue
-    if have sha256sum; then sha256sum "$f"; elif have shasum; then shasum -a 256 "$f"; fi
+    local digest rel
+    if have sha256sum; then
+      digest="$(sha256sum "$f" | awk '{print $1}')"
+    elif have shasum; then
+      digest="$(shasum -a 256 "$f" | awk '{print $1}')"
+    else
+      warn "no SHA-256 utility available"
+      return 1
+    fi
+    rel="$f"
+    [[ "$rel" == "$REPO/"* ]] && rel="${rel#"$REPO/"}"
+    printf '%s  %s\n' "$digest" "$rel" | tee -a "$output"
   done
+  log "wrote ${output#"$REPO/"}"
 }
 
 # --- 3. dispatch ------------------------------------------------------------
@@ -157,6 +249,9 @@ case "$MODE" in
   generate)         step_preflight; step_generate ;;
   test)             step_preflight; step_test ;;
   pdf)              step_preflight; step_pdf ;;
+  # Hashing is intentionally environment-independent: this mode reads bytes
+  # only. Scientific validation/build modes retain the strict Python preflight.
+  checksums)         emit_checksums ;;
   all)
     step_preflight
     step_validate_results
@@ -165,7 +260,7 @@ case "$MODE" in
     step_pdf
     emit_checksums
     ;;
-  *) echo "unknown MODE '$MODE' (preflight|validate-results|generate|test|pdf|all)" >&2; exit 2 ;;
+  *) echo "unknown MODE '$MODE' (preflight|validate-results|generate|test|pdf|checksums|all)" >&2; exit 2 ;;
 esac
 
 # --- 4. summary -------------------------------------------------------------
