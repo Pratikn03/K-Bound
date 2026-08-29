@@ -79,8 +79,8 @@ python3.12 -m venv "$root_release_tmp/.venv"
 
 paper_pkg_tmp="$(mktemp -d)"
 ( cd docs/research/kbound/kbound_pkg && COPYFILE_DISABLE=1 tar cf - \
-    --exclude='._*' --exclude='__pycache__' --exclude='dist' --exclude='build' \
-    --exclude='*.egg-info' . ) | ( cd "$paper_pkg_tmp" && tar xf - )
+    --exclude='._*' --exclude='__pycache__' \
+    pyproject.toml README.md LICENSE kbound tests ) | ( cd "$paper_pkg_tmp" && tar xf - )
 ( cd "$paper_pkg_tmp" && COPYFILE_DISABLE=1 python3.12 -m build )
 python3.12 -m twine check "$paper_pkg_tmp"/dist/*
 python3.12 -m venv "$paper_pkg_tmp/.venv"
