@@ -330,14 +330,67 @@ def balanced_acc(preds, y_np):
     return float(np.mean(recalls)) if recalls else float((preds == y_np).mean())
 
 
+def tta_protocol_contract(mode: str) -> dict:
+    """Return the exact, label-free data-use contract for a TTA candidate.
+
+    Both supported paths are transductive at prediction time because adapted
+    BatchNorm modules are evaluated in training mode and therefore use the
+    current evaluation batch's statistics.  Episodic TTA additionally takes
+    gradient updates on that same evaluation batch.  The separately sampled
+    stream is still required to be disjoint from the evaluation pool, but that
+    fact must never be described as candidate adaptation/evaluation
+    disjointness for the episodic path.
+    """
+
+    if mode == "online":
+        semantics = "online_disjoint_stream_update_then_transductive_bn_evaluation"
+        gradient_update_reads_eval_x = False
+    elif mode == "episodic":
+        semantics = "episodic_transductive_eval_batch_update_and_evaluation"
+        gradient_update_reads_eval_x = True
+    else:
+        raise ValueError(f"unknown mode {mode}")
+    return {
+        "schema": "kbound_tta_candidate_protocol_v1",
+        "mode": mode,
+        "semantics": semantics,
+        "requires_auxiliary_stream_eval_disjoint": True,
+        "gradient_update_reads_eval_x": gradient_update_reads_eval_x,
+        "prediction_uses_eval_batch_statistics": True,
+        "candidate_evaluation_is_transductive": True,
+        "candidate_adaptation_eval_disjoint": False,
+        "target_labels_used_for_adaptation_or_prediction": False,
+    }
+
+
+def stream_prior_protocol_contract(kind: str) -> dict:
+    """Contract for OfficeHome's inference-only stream-prior candidates."""
+
+    if kind not in {"labelshift", "conservative"}:
+        raise ValueError(f"unknown stream-prior candidate {kind}")
+    return {
+        "schema": "kbound_tta_candidate_protocol_v1",
+        "mode": "inference_only_stream_prior",
+        "semantics": f"{kind}_fit_on_disjoint_auxiliary_stream_then_inductive_evaluation",
+        "requires_auxiliary_stream_eval_disjoint": True,
+        "gradient_update_reads_eval_x": False,
+        "prediction_uses_eval_batch_statistics": False,
+        "candidate_evaluation_is_transductive": False,
+        "candidate_adaptation_eval_disjoint": True,
+        "target_labels_used_for_adaptation_or_prediction": False,
+    }
+
+
 def run_candidate(method, mode, f0, adapt_stream, eval_x, eval_y_np, num_classes,
                   steps, lr, eval_bs=64, prob_mode="class", episodic_steps=None,
                   return_details=False):
     """Run one candidate = (method, mode) and return (aa_balanced, Z, upd_norm, preds).
 
-    mode='online'   : adapt one model across the whole adaptation stream (state carried),
-                      then evaluate the resulting model on the balanced held-out eval pool.
-                      Z is measured on the adaptation stream's first batch.
+    mode='online'   : adapt one model across the disjoint auxiliary stream (state carried),
+                      then predict the held-out eval pool in BN training mode.  The gradient
+                      update is stream/eval disjoint, but prediction remains transductive because
+                      it uses each evaluation batch's statistics.  Z is measured on the auxiliary
+                      stream's first batch.
     mode='episodic' : reset to f0 for every eval batch and adapt transductively on that
                       batch before predicting it (standard episodic TTA).  Z is measured
                       from a single-batch episodic probe on the adaptation stream.
@@ -369,7 +422,10 @@ def run_candidate(method, mode, f0, adapt_stream, eval_x, eval_y_np, num_classes
         raise ValueError(f"unknown mode {mode}")
     aa = balanced_acc(preds, eval_y_np)
     if return_details:
-        return aa, Z, Z[-1], preds, pa_pos, {"logits_eval": logits_eval}
+        return aa, Z, Z[-1], preds, pa_pos, {
+            "logits_eval": logits_eval,
+            "tta_protocol": tta_protocol_contract(mode),
+        }
     return aa, Z, Z[-1], preds, pa_pos
 
 

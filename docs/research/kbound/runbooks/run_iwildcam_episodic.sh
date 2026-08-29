@@ -1,32 +1,24 @@
 #!/usr/bin/env bash
-# --- interpreter: $KBOUND_PYTHON, default python3 (was a hard-coded venv path).
-# --- defect D8: portable roots. No machine-local absolute paths in tracked code
-# --- (docs/research/kbound/EXTERNAL_STORAGE_POLICY.md). KB_REPO_ROOT is discovered
-# --- from this script's own location; override with KBOUND_REPO_ROOT.
-_kb_find_root() {
-  d=$(cd "$(dirname "${BASH_SOURCE[0]:-$0}")" && pwd)
-  while [ "$d" != "/" ]; do
-    [ -f "$d/pyproject.toml" ] && { printf '%s\n' "$d"; return 0; }
-    d=$(dirname "$d")
-  done
-  echo "ERROR: repository root not found above $(dirname "${BASH_SOURCE[0]:-$0}")" >&2
-  return 1
-}
-KB_REPO_ROOT="${KBOUND_REPO_ROOT:-$(_kb_find_root)}" || exit 1
+# RETIRED: the historical workflow reused one checkpoint across stream seeds and
+# fitted LOO benefit certificates with target-test labels. That is not a valid
+# model-seed replication or a disjoint validation->test evaluation.
+set -euo pipefail
 
-KB_PYTHON="${KBOUND_PYTHON:-python3}"
+script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+replacement="$script_dir/../scripts/run_multiseed.sh"
 
-set -u; R="$KB_REPO_ROOT"
-CKPT="$R/experiments/kbound/results/iwildcam_f0_erm/f0_resnet50_erm_seed0.pt"
-OUT="$R/experiments/kbound/results/multiseed/iwildcam"; PY="$KB_PYTHON"
-LOG="$OUT/iwildcam_episodic.log"; say(){ echo "[$(date '+%F %T')] $*" | tee -a "$LOG"; }
-say "iWildCam tent_episodic 5-seed (real ResNet-50 ERM ckpt) — matches paper's Protocol-H candidate"
-cd "$R/experiments/kbound/wilds"
-caffeinate -is "$PY" run_iwildcam_aetta.py --ckpt "$CKPT" --backbone resnet50 --split test \
-  --seeds 0 1 2 3 4 --max-locations 4 --candidates tent_episodic --device auto \
-  --results-root "$OUT" --run-name iwildcam_episodic_v1 >> "$LOG" 2>&1
-say "run rc=$?"
-"$KB_PYTHON" "$R/docs/research/kbound/scripts/extract_multiseed_natural.py" --track iwildcam \
-  --result "$OUT/iwildcam_episodic_v1/**/result_*.json" --candidates tent_episodic \
-  --out-dir "$OUT/extracted_episodic" >> "$LOG" 2>&1
-say "extract rc=$? — DONE"
+cat >&2 <<EOF
+RETIRED WORKFLOW: run_iwildcam_episodic.sh
+
+This script intentionally performs no training, evaluation, extraction, or file writes.
+The former workflow used target-test labels inside LOO calibration and treated stream
+seeds from one checkpoint as independent models. Its aggregates are scientifically invalid.
+
+Use the independent-checkpoint workflow instead:
+  bash "$replacement" iwildcam
+
+That workflow produces a lineage-verified development diagnostic only. A held-out
+beats-both claim remains unavailable until a disjoint validation-locked test scorer
+is implemented and the test target is unopened at lock time.
+EOF
+exit 64

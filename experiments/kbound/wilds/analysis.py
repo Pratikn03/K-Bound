@@ -2,17 +2,17 @@
 analysis.py - torch-free K-Bound analysis core for the WILDS Camelyon17 pipeline.
 
 Routing variants implemented:
-  (a) SINGLE-candidate certificate   -> decide_kga (LOO gradient-boosted B_hat(Z)
-      + split-conformal radius eps; ADAPT/FREEZE/ABSTAIN).  Identical machinery to
-      the rest of the paper (cifar_tent_mps_v2.decide_kga / run_wilds_camelyon17).
-  (b) MULTI-candidate route [Theorem 1A, tau-residual] -> multicandidate_route,
-      which REUSES rankone_fit_offdiag / minor_estimator / overdet_residual from
-      experiments/kbound/theory_validation/val_multicandidate_residual.py (imported,
-      never modified) to recover per-candidate advantages from the label-free
-      pairwise-agreement matrix on the disagreement region and tau-gate the commit.
-  (c) SMOOTH-DRIFT route [Theorem 1B] -> smooth_drift_route: TODO STUB.  The backing
-      validation file experiments/kbound/theory_validation/val_smooth_drift.py does
-      NOT exist yet, so per the protocol (c) is left as a clearly-marked stub.
+  (a) SINGLE-candidate diagnostic -> decide_kga (label-disjoint cross-fitted
+      gradient-boosted B_hat(Z) + split-conformal radius eps;
+      ADAPT/FREEZE/ABSTAIN). It is not a held-out confirmation unless an
+      independently locked validation-to-test scorer is used.
+  (b) MULTI-candidate route [Theorem 1A, tau-residual] -> multicandidate_route.
+      The release path contains a small NumPy-only implementation of the three
+      estimators it needs.  Keeping route math here avoids importing the plotting
+      stack from the numerical-validation script at runtime.
+  Route C is intentionally absent.  The retired prototype mixed a binary Brier
+  bracket with accuracy/F1 runner objectives and selected the compared adapter
+  using target labels.  Current runners emit an explicit UNSUPPORTED state.
 
 DETECTABILITY: detectability_analysis correlates each label-free Z feature (and the
 LOO B_hat) with the TRUE benefit sign -> tells us whether harm, if it occurs, is
@@ -26,7 +26,7 @@ from sklearn.ensemble import GradientBoostingRegressor  # noqa: F401 (used by ca
 
 ALPHA = 0.10
 SEED = 0
-CALIBRATION = "loo"   # fix-queue item 4: leave-one-out-of-pool radius by default
+CALIBRATION = "crossfit_split"
 
 # ---- the ONE K-Bound decision path (fix-queue items 4 + 15) -----------------
 # `docs/research/kbound/scripts/kbound_decide.py` wraps `kga.certificate` /
@@ -37,34 +37,10 @@ if _KB_SCRIPTS not in sys.path:
     sys.path.insert(0, _KB_SCRIPTS)
 import kbound_decide as _kb  # noqa: E402
 
-# import the multi-candidate residual estimators WITHOUT modifying that file
-_THEORY = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "theory_validation")
-if _THEORY not in sys.path:
-    sys.path.insert(0, _THEORY)
-try:
-    import val_multicandidate_residual as vmc
-    _VMC_OK = True
-    _VMC_ERR = None
-except Exception as e:  # pragma: no cover
-    _VMC_OK = False
-    _VMC_ERR = repr(e)
-    vmc = None
-
-# import the smooth-drift (Theorem 1B) primitives WITHOUT modifying that file
-try:
-    import val_smooth_drift as vsd
-    _VSD_OK = True
-    _VSD_ERR = None
-except Exception as e:  # pragma: no cover
-    _VSD_OK = False
-    _VSD_ERR = repr(e)
-    vsd = None
-
-
 # ============================ (a) single-candidate KGA =======================
 def decide_kga(Z, B, alpha=ALPHA, n_estimators=250, max_depth=2, lr=0.05, seed=SEED,
-               calibration=CALIBRATION):
-    """LOO gradient-boosted benefit estimator + exact-rank conformal radius.
+               calibration=CALIBRATION, sample_ids=None):
+    """Label-disjoint cross-fitted estimator + exact-rank conformal radius.
 
     Returns ``(Bhat, eps, decisions)`` where **eps is a per-cell ndarray**, not a
     scalar.
@@ -76,17 +52,25 @@ def decide_kga(Z, B, alpha=ALPHA, n_estimators=250, max_depth=2, lr=0.05, seed=S
 
     -- one interpolated ``np.quantile`` over ALL N residuals (including cell i's
     own) then used to decide cell i, so eps was a function of the very test
-    labels the FA_u <= alpha guarantee attaches to.  Radii are now
-    leave-one-out-of-pool and the rule is the exact split-conformal rank
-    quantile ``k = ceil((n+1)(1-alpha))`` -- no interpolation anywhere.
+    labels the FA_u <= alpha guarantee attaches to.  The current path instead
+    cross-fits on identity-stable folds: a scored cell's label is used in
+    neither its estimator fit nor its disjoint exact-rank calibration subset.
+    The radius uses ``k = ceil((n+1)(1-alpha))`` with no interpolation.
 
     FIX-QUEUE ITEM 15.  The body is gone; this is a thin signature-preserving
-    shim over ``kbound_decide.decide_kga``, which calls ``kga.certificate`` /
-    ``kga.policy``.  This file was fork #2 of seven.
+    shim over ``kbound_decide.decide_kga_crossfit``.  This file was fork #2 of
+    seven.
     """
-    return _kb.decide_kga(Z, B, alpha=alpha, n_estimators=n_estimators,
-                          max_depth=max_depth, lr=lr, seed=seed,
-                          calibration=calibration)
+    return _kb.decide_kga_crossfit(
+        Z,
+        B,
+        alpha=alpha,
+        n_estimators=n_estimators,
+        max_depth=max_depth,
+        lr=lr,
+        seed=seed,
+        sample_ids=sample_ids,
+    )
 
 
 def policy_metrics(dec, a0, aa, B=None, alpha=ALPHA):
@@ -107,13 +91,27 @@ def policy_metrics(dec, a0, aa, B=None, alpha=ALPHA):
     ``kbound_decide.false_adapt``; the legacy field is retained, marked
     deprecated, and gates nothing.
     """
+    dec = np.asarray(dec)
     a0 = np.asarray(a0, float); aa = np.asarray(aa, float)
+    if dec.ndim != 1 or a0.ndim != 1 or aa.ndim != 1 or not (len(dec) == len(a0) == len(aa)):
+        raise ValueError("dec, a0, and aa must be one-dimensional arrays of equal length")
+    allowed = {"ADAPT", "FREEZE", "ABSTAIN"}
+    unknown = sorted({str(x) for x in dec.tolist()} - allowed)
+    if unknown:
+        raise ValueError(
+            "unscorable routing decision(s): " + ", ".join(unknown)
+            + "; ERROR/UNSUPPORTED states must be resolved, not scored as FREEZE"
+        )
+    if not (np.isfinite(a0).all() and np.isfinite(aa).all()):
+        raise ValueError("a0 and aa must contain only finite values")
     adapt = dec == "ADAPT"
     kga = np.where(adapt, aa, a0)
     oracle = np.maximum(a0, aa)
     if B is None:
         B = aa - a0
     B = np.asarray(B, float)
+    if B.shape != a0.shape or not np.isfinite(B).all():
+        raise ValueError("B must match a0 and contain only finite values")
     _fa = _kb.false_adapt(dec, B)
     return {
         "n": int(len(a0)),
@@ -193,7 +191,8 @@ def detectability_analysis(records, evidence_names, alpha=ALPHA):
     Pearson corr with B, point-biserial corr with the harmful event (B<0), and the
     single-feature AUC for detecting harm (the feature is sign-flipped so AUC>=.5 means
     'higher value => more harmful').  We also report the AUC of the LOO B_hat(Z) harm
-    predictor (-B_hat as harm score) -> the operational detectability of the certificate.
+    predictor (-B_hat as harm score) -> the operational detectability of the certificate
+    only when the requested exact-rank cross-fit design is feasible.
     """
     Z = np.array([r["Z"] for r in records], float)
     B = np.array([r["B"] for r in records], float)
@@ -210,15 +209,42 @@ def detectability_analysis(records, evidence_names, alpha=ALPHA):
         best = max([a for a in (a_pos, a_neg) if a is not None], default=None)
         name = evidence_names[k] if k < len(evidence_names) else f"z{k}"
         out["per_feature"][name] = {"pearson_corr_B": pear, "harm_AUC": best}
-    # operational: LOO B_hat as harm detector
-    if n >= 4 and harmful.sum() not in (0, n):
+    # Operational cross-fitted B_hat as a harm detector.  At alpha=.10 the
+    # disjoint fit/calibrate/score construction needs 12 cells.  The old n>=4
+    # guard called the exact-rank routine for n=4..11 and then serialized an
+    # infinite radius.  An infeasible finite-sample certificate is now explicit
+    # JSON null/status, never an Infinity token.
+    minimum_cells = int(_kb.minimum_crossfit_size(alpha))
+    out["certificate_minimum_cells"] = minimum_cells
+    if harmful.sum() in (0, n):
+        out["certificate_calibration_status"] = "NOT_APPLICABLE_NO_REGIME_VARIATION"
+        out["certificate_eps"] = None
+        out["certificate_eps_min"] = None
+        out["certificate_eps_max"] = None
+    elif n < minimum_cells:
+        out["certificate_calibration_status"] = "INFEASIBLE_UNDERSIZED_EXACT_RANK"
+        out["certificate_calibration_feasible"] = False
+        out["certificate_infeasible_reason"] = (
+            f"need at least {minimum_cells} cells for disjoint estimator-fit, "
+            f"calibration, and scoring at alpha={float(alpha):g}; observed {n}"
+        )
+        out["certificate_harm_AUC_negBhat"] = None
+        out["certificate_eps"] = None
+        out["certificate_eps_is"] = "unavailable: exact-rank calibration infeasible"
+        out["certificate_eps_min"] = None
+        out["certificate_eps_max"] = None
+    else:
         Bhat, eps, dec = decide_kga(Z, B, alpha=alpha)
         out["certificate_harm_AUC_negBhat"] = _auc(-Bhat, harmful)
         # eps is now one radius PER CELL (fix-queue item 4), so a single scalar
         # here would silently be a summary. Say which summary it is.
         eps = np.asarray(eps, float)
+        if not np.isfinite(eps).all():
+            raise ValueError("feasible detectability calibration returned a non-finite radius")
+        out["certificate_calibration_status"] = "FINITE"
+        out["certificate_calibration_feasible"] = True
         out["certificate_eps"] = float(np.mean(eps))
-        out["certificate_eps_is"] = "mean of the per-cell leave-one-out-of-pool radii"
+        out["certificate_eps_is"] = "mean of label-disjoint cross-fitted split-conformal radii"
         out["certificate_eps_min"] = float(np.min(eps))
         out["certificate_eps_max"] = float(np.max(eps))
     # headline: is harm detectable at all?
@@ -234,9 +260,99 @@ def detectability_analysis(records, evidence_names, alpha=ALPHA):
 
 
 # ================= (b) multi-candidate route [Theorem 1A, tau] ===============
+_BINARY_TASK_TYPES = frozenset({"binary", "binary_classification"})
+_ACCURACY_OBJECTIVES = frozenset({"accuracy", "top1_accuracy", "top_1_accuracy"})
+
+
+class _OrientationError(ValueError):
+    """The agreement system cannot be oriented from the trusted anchor."""
+
+
+def _route_state(decision, status, reason, *, scorable, **extra):
+    """Build one explicit route state; non-OK states are never silently scorable."""
+    out = {
+        "decision": decision,
+        "status": status,
+        "scorable": bool(scorable),
+        "choice": None,
+        "reason": reason,
+    }
+    out.update(extra)
+    return out
+
+
+def _normalise_token(value):
+    return str(value).strip().lower().replace("-", "_").replace(" ", "_")
+
+
+def _prediction_labels(preds_all):
+    """Return the observed label set, rejecting missing or non-finite labels."""
+    if preds_all.dtype.kind in "biuf":
+        if not np.isfinite(preds_all).all():
+            raise ValueError("predictions contain NaN or infinity")
+    elif preds_all.dtype.kind == "c":
+        raise ValueError("complex-valued class labels are unsupported")
+    else:
+        for value in preds_all.ravel().tolist():
+            if value is None:
+                raise ValueError("predictions contain missing labels")
+            try:
+                missing = bool(np.isnan(value))
+            except (TypeError, ValueError):
+                missing = False
+            if missing:
+                raise ValueError("predictions contain NaN labels")
+    try:
+        return np.unique(preds_all)
+    except (TypeError, ValueError) as exc:
+        raise ValueError("prediction labels must have one consistent comparable type") from exc
+
+
+def _candidate_geometry(preds_all, labels, rank_rtol, rank_atol):
+    """Audit exact duplicates and numerical row rank in a coding-invariant way.
+
+    The route is binary-only, so mapping either observed label to 0/1 loses no
+    information.  Centering and row-normalising then makes the SVD invariant to
+    swapping the two label names and prevents nominally duplicated/complementary
+    predictors from satisfying the M>=4 identifiability premise.
+    """
+    M = preds_all.shape[0]
+    duplicates = []
+    for i in range(M):
+        for j in range(i + 1, M):
+            if np.array_equal(preds_all[i], preds_all[j]):
+                duplicates.append([int(i), int(j)])
+
+    if len(labels) == 2:
+        encoded = (preds_all == labels[1]).astype(float)
+    else:
+        # A declared binary task may contain a one-class batch.  Such a batch has
+        # no candidate geometry and must fail the rank check rather than commit.
+        encoded = np.zeros(preds_all.shape, dtype=float)
+    centered = encoded - encoded.mean(axis=1, keepdims=True)
+    norms = np.linalg.norm(centered, axis=1)
+    normalised = np.divide(
+        centered,
+        norms[:, None],
+        out=np.zeros_like(centered),
+        where=norms[:, None] > rank_atol,
+    )
+    singular_values = np.linalg.svd(normalised, compute_uv=False)
+    if len(singular_values) == 0 or singular_values[0] <= rank_atol:
+        effective_rank = 0
+    else:
+        threshold = max(float(rank_atol), float(rank_rtol) * float(singular_values[0]))
+        effective_rank = int(np.sum(singular_values > threshold))
+    return duplicates, effective_rank, [float(x) for x in singular_values]
+
+
 def agreement_matrix(preds_all, D):
     """Centered pairwise prediction-agreement matrix C on region D (label-free).
-    preds_all: (M, N) int predictions; row 0 = anchor (frozen f0).  C_ij = 2*Pr(f_i=f_j|D)-1."""
+
+    ``preds_all`` has shape (M, N), row 0 is the frozen anchor, and
+    C_ij = 2 Pr(f_i=f_j | D) - 1.  Input validation belongs to
+    :func:`multicandidate_route`; this helper intentionally performs only math.
+    """
     P = preds_all[:, D]
     M = P.shape[0]
     eq = (P[:, None, :] == P[None, :, :]).mean(axis=2)
@@ -245,93 +361,336 @@ def agreement_matrix(preds_all, D):
     return C
 
 
-def multicandidate_route(preds_all, tau_star=0.08, kappa=2.5, min_D=8):
-    """Theorem 1A tau-residual route over M = 1(anchor f0) + K adapted candidates.
+def _rankone_fit_offdiag(C, iters=90, tol=1e-12):
+    """NumPy-only off-diagonal rank-one fit used solely to compute tau.
 
-    Label-free: uses ONLY prediction agreements on the disagreement region
-    D = {x : the M predictions are not unanimous}.  Recovers advantages b_hat via
-    rank-one fit (vmc.rankone_fit_offdiag) and median-of-minors (vmc.minor_estimator),
-    with f0 as the above-chance anchor (index 0).  COMMIT to the adapted candidate of
-    largest advantage iff tau<=tau* AND its advantage beats the anchor by the observed
-    margin; else FREEZE.  tau>tau* (Def-5 violation certified) => ABSTAIN.
-    Returns a dict; 'choice' is the adapted-candidate index (>=1) or None."""
-    if not _VMC_OK:
-        return {"decision": "ERROR", "reason": f"val_multicandidate_residual import failed: {_VMC_ERR}"}
-    M, N = preds_all.shape
-    if M < 4:
-        return {"decision": "ABSTAIN", "reason": f"need M>=4 candidates incl anchor for tau route; got M={M}",
-                "choice": None, "n_D": 0}
-    unanimous = (preds_all == preds_all[0:1, :]).all(axis=0)
-    D = np.where(~unanimous)[0]
-    if len(D) < min_D:
-        return {"decision": "FREEZE", "reason": f"|D|={len(D)} < min_D={min_D}; candidates ~agree, no signal",
-                "choice": None, "n_D": int(len(D))}
-    C = agreement_matrix(preds_all, D)
-    b_hat, tau = vmc.rankone_fit_offdiag(C)
-    try:
-        b_tilde = vmc.minor_estimator(C)
-    except Exception:
-        b_tilde = b_hat
+    The fitted vector has an arbitrary global sign and can be outside [-1, 1].
+    It is therefore deliberately *not returned by the route* and is never used
+    for orientation, ranking, a margin, or a decision.
+    """
+    M = C.shape[0]
+    W = np.array(C, dtype=float, copy=True)
+    d = np.sqrt(np.clip((C ** 2).sum(axis=1) / max(M - 1, 1), 1e-12, None))
+    previous = None
+    b_fit = np.zeros(M, dtype=float)
+    for _ in range(int(iters)):
+        np.fill_diagonal(W, d ** 2)
+        values, vectors = np.linalg.eigh(W)
+        lam = max(float(values[-1]), 0.0)
+        b_fit = np.sqrt(lam) * vectors[:, -1]
+        if not np.isfinite(b_fit).all():
+            raise FloatingPointError("non-finite spectral rank-one fit")
+        d = np.abs(b_fit)
+        if previous is not None and min(
+            np.linalg.norm(b_fit - previous), np.linalg.norm(b_fit + previous)
+        ) < tol:
+            break
+        previous = b_fit.copy()
     off = ~np.eye(M, dtype=bool)
-    h_hat = float(np.abs(C - np.outer(b_hat, b_hat))[off].max())
-    margin = kappa * h_hat + 2.0 / np.sqrt(len(D))
+    residual = C[off] - np.outer(b_fit, b_fit)[off]
+    tau = float(np.sqrt(np.dot(residual, residual)))
+    if not np.isfinite(tau):
+        raise FloatingPointError("non-finite tau residual")
+    return b_fit, tau
+
+
+def _minor_estimator(C, orientation_tol=1e-10):
+    """Anchor-oriented, bounded median-of-minors advantage estimator.
+
+    Candidate 0 is declared above chance by the caller.  Magnitudes are clipped
+    to [0, 1] before the signs are oriented by C[0,j].  An unobservable sign for
+    any non-zero estimate is an explicit failure, never a spectral fallback.
+    """
+    M = C.shape[0]
+    b2 = np.zeros(M, dtype=float)
+    for i in range(M):
+        others = [k for k in range(M) if k != i]
+        ratios = []
+        for left in range(len(others)):
+            for right in range(left + 1, len(others)):
+                k, ell = others[left], others[right]
+                denominator = float(C[k, ell])
+                if abs(denominator) <= orientation_tol:
+                    continue
+                ratio = float(C[i, k] * C[i, ell] / denominator)
+                if np.isfinite(ratio):
+                    ratios.append(ratio)
+        if not ratios:
+            raise _OrientationError(f"candidate {i} has no finite orientable minor")
+        b2[i] = float(np.median(ratios))
+    magnitude = np.sqrt(np.clip(b2, 0.0, 1.0))
+    b = magnitude.copy()  # trusted anchor fixes b[0] >= 0
+    for j in range(1, M):
+        if magnitude[j] <= orientation_tol:
+            b[j] = 0.0
+            continue
+        anchor_agreement = float(C[0, j])
+        if abs(anchor_agreement) <= orientation_tol:
+            raise _OrientationError(f"candidate {j} sign is not orientable from the anchor")
+        b[j] *= np.sign(anchor_agreement)
+    if not np.isfinite(b).all() or np.any(np.abs(b) > 1.0 + 1e-12):
+        raise _OrientationError("bounded advantage estimator failed its finite/range check")
+    if b[0] <= orientation_tol:
+        raise _OrientationError("anchor advantage is not strictly positive/orientable")
+    return np.clip(b, -1.0, 1.0)
+
+
+def _overdet_residual(C):
+    """Mean spread of the three rank-one pairings over all 4-subsets."""
+    from itertools import combinations
+
+    M = C.shape[0]
+    if M < 4:
+        return 0.0
+    spreads = []
+    for i, j, k, ell in combinations(range(M), 4):
+        products = [C[i, j] * C[k, ell], C[i, k] * C[j, ell], C[i, ell] * C[j, k]]
+        spreads.append(float(max(products) - min(products)))
+    value = float(np.mean(spreads))
+    if not np.isfinite(value):
+        raise FloatingPointError("non-finite overdetermination residual")
+    return value
+
+
+def multicandidate_route(
+    preds_all,
+    tau_star=0.08,
+    kappa=2.5,
+    min_D=8,
+    *,
+    task_type=None,
+    n_classes=None,
+    objective=None,
+    anchor_above_chance=None,
+    effective_rank_rtol=1e-6,
+    effective_rank_atol=1e-12,
+):
+    """Fail-closed Theorem-1A route for binary accuracy only.
+
+    The pairwise-agreement identity used by this route is valid only for binary
+    correctness and an accuracy objective.  ``objective`` and the trusted
+    ``anchor_above_chance`` premise must therefore be explicit.  Binary task
+    metadata may be supplied as ``task_type='binary_classification'`` or
+    ``n_classes=2``; when both are omitted, exactly two observed prediction
+    labels are accepted as a documented inference.  Any multiclass label set or
+    non-accuracy objective returns an unscorable ``ABSTAIN/UNSUPPORTED`` state.
+
+    Every decision quantity -- anchor, ranking, h_hat, margin, and selected
+    candidate -- uses the same anchor-oriented, [-1, 1]-bounded minor estimator.
+    The arbitrary-sign spectral vector is used only inside the scalar tau
+    residual calculation and is never exposed or used for a decision.
+    """
+    try:
+        predictions = np.asarray(preds_all)
+    except Exception as exc:
+        return _route_state("ERROR", "ERROR", f"could not read prediction matrix: {exc}", scorable=False)
+    if predictions.ndim != 2:
+        return _route_state(
+            "ERROR", "ERROR", f"preds_all must have shape (M, N); got ndim={predictions.ndim}",
+            scorable=False,
+        )
+    M, N = predictions.shape
+    base = {"M": int(M), "N": int(N), "n_D": 0}
+    if M == 0 or N == 0:
+        return _route_state("ERROR", "ERROR", "prediction matrix must be non-empty", scorable=False, **base)
+
+    scalar_parameters = {
+        "tau_star": tau_star,
+        "kappa": kappa,
+        "effective_rank_rtol": effective_rank_rtol,
+        "effective_rank_atol": effective_rank_atol,
+    }
+    try:
+        parsed = {name: float(value) for name, value in scalar_parameters.items()}
+    except (TypeError, ValueError):
+        return _route_state("ERROR", "ERROR", "route thresholds must be numeric", scorable=False, **base)
+    if not all(np.isfinite(value) and value >= 0.0 for value in parsed.values()):
+        return _route_state(
+            "ERROR", "ERROR", "route thresholds must be finite and non-negative", scorable=False, **base
+        )
+    tau_star = parsed["tau_star"]
+    kappa = parsed["kappa"]
+    rank_rtol = parsed["effective_rank_rtol"]
+    rank_atol = parsed["effective_rank_atol"]
+    if isinstance(min_D, (bool, np.bool_)) or not isinstance(min_D, (int, np.integer)) or int(min_D) < 1:
+        return _route_state("ERROR", "ERROR", "min_D must be a positive integer", scorable=False, **base)
+    min_D = int(min_D)
+
+    try:
+        labels = _prediction_labels(predictions)
+    except ValueError as exc:
+        return _route_state("ERROR", "ERROR", str(exc), scorable=False, **base)
+
+    objective_token = None if objective is None else _normalise_token(objective)
+    if objective_token not in _ACCURACY_OBJECTIVES:
+        shown = "missing" if objective is None else repr(objective)
+        return _route_state(
+            "ABSTAIN", "UNSUPPORTED",
+            f"UNSUPPORTED objective {shown}; Route B is valid only for binary accuracy",
+            scorable=False, observed_n_classes=int(len(labels)), **base,
+        )
+
+    if task_type is not None and _normalise_token(task_type) not in _BINARY_TASK_TYPES:
+        return _route_state(
+            "ABSTAIN", "UNSUPPORTED",
+            f"UNSUPPORTED task_type {task_type!r}; Route B requires binary classification",
+            scorable=False, observed_n_classes=int(len(labels)), **base,
+        )
+    if n_classes is not None:
+        if isinstance(n_classes, (bool, np.bool_)):
+            declared_n_classes = None
+        else:
+            try:
+                declared_n_classes = float(n_classes)
+            except (TypeError, ValueError):
+                declared_n_classes = None
+        if declared_n_classes != 2.0:
+            return _route_state(
+                "ABSTAIN", "UNSUPPORTED",
+                f"UNSUPPORTED n_classes={n_classes!r}; Route B requires exactly two classes",
+                scorable=False, observed_n_classes=int(len(labels)), **base,
+            )
+    if len(labels) > 2:
+        return _route_state(
+            "ABSTAIN", "UNSUPPORTED",
+            f"UNSUPPORTED observed label set has {len(labels)} classes; binary identity does not hold",
+            scorable=False, observed_n_classes=int(len(labels)), **base,
+        )
+    declared_binary = task_type is not None or n_classes is not None
+    if not declared_binary and len(labels) != 2:
+        return _route_state(
+            "ABSTAIN", "UNSUPPORTED",
+            "UNSUPPORTED task is not verifiably binary; pass task_type or n_classes metadata",
+            scorable=False, observed_n_classes=int(len(labels)), **base,
+        )
+    if not isinstance(anchor_above_chance, (bool, np.bool_)) or not bool(anchor_above_chance):
+        return _route_state(
+            "ABSTAIN", "UNSUPPORTED",
+            "UNSUPPORTED missing/false anchor_above_chance premise; global sign is unidentified",
+            scorable=False, observed_n_classes=int(len(labels)), **base,
+        )
+
+    try:
+        duplicates, effective_rank, singular_values = _candidate_geometry(
+            predictions, labels, rank_rtol, rank_atol
+        )
+    except (FloatingPointError, np.linalg.LinAlgError, ValueError) as exc:
+        return _route_state(
+            "ERROR", "ERROR", f"candidate geometry check failed: {exc}", scorable=False, **base
+        )
+    geometry = {
+        "duplicate_candidate_pairs": duplicates,
+        "effective_candidate_rank": int(effective_rank),
+        "candidate_singular_values": singular_values,
+    }
+    if duplicates or effective_rank < M:
+        detail = f"exact duplicate pairs={duplicates}" if duplicates else f"effective rank={effective_rank} < M={M}"
+        return _route_state(
+            "ABSTAIN", "DEGENERATE_CANDIDATES",
+            f"candidate panel is not identifiable: {detail}",
+            scorable=False, observed_n_classes=int(len(labels)), **base, **geometry,
+        )
+    if M < 4:
+        return _route_state(
+            "ABSTAIN", "INSUFFICIENT_CANDIDATES",
+            f"need four distinct full-rank predictors including the anchor; got M={M}",
+            scorable=False, observed_n_classes=int(len(labels)), **base, **geometry,
+        )
+
+    unanimous = (predictions == predictions[0:1, :]).all(axis=0)
+    D = np.where(~unanimous)[0]
+    route_context = {
+        **base,
+        **geometry,
+        "n_D": int(len(D)),
+        "observed_n_classes": int(len(labels)),
+        "task_type": "binary_classification",
+        "objective": "accuracy",
+        "anchor_above_chance": True,
+    }
+    if len(D) < min_D:
+        return _route_state(
+            "FREEZE", "OK",
+            f"|D|={len(D)} < min_D={min_D}; candidates nearly agree, so freeze",
+            scorable=True, **route_context,
+        )
+
+    try:
+        C = agreement_matrix(predictions, D)
+        if not np.isfinite(C).all():
+            raise FloatingPointError("agreement matrix is non-finite")
+        spectral_fit, tau = _rankone_fit_offdiag(C)
+        if not np.isfinite(np.asarray(spectral_fit, dtype=float)).all():
+            raise FloatingPointError("spectral tau fit is non-finite")
+        b_decision = np.asarray(_minor_estimator(C), dtype=float)
+        if b_decision.shape != (M,):
+            raise ValueError(f"decision estimator returned shape {b_decision.shape}; expected {(M,)}")
+        off = ~np.eye(M, dtype=bool)
+        h_hat = float(np.max(np.abs(C - np.outer(b_decision, b_decision))[off]))
+        margin = float(kappa * h_hat + 2.0 / np.sqrt(len(D)))
+        overdet = _overdet_residual(C)
+        numeric = np.asarray([tau, h_hat, margin, overdet, *b_decision], dtype=float)
+        if not np.isfinite(numeric).all() or np.any(np.abs(b_decision) > 1.0 + 1e-12):
+            raise FloatingPointError("route produced a non-finite or unbounded statistic")
+    except _OrientationError as exc:
+        return _route_state(
+            "ABSTAIN", "ORIENTATION_FAILED", f"anchor orientation failed: {exc}",
+            scorable=False, **route_context,
+        )
+    except (FloatingPointError, np.linalg.LinAlgError, ValueError) as exc:
+        return _route_state(
+            "ERROR", "ERROR", f"route numerical failure: {exc}", scorable=False, **route_context
+        )
+
     gate = bool(tau <= tau_star)
-    od = float(vmc.overdet_residual(C)) if M >= 4 else 0.0
-    res = {"tau": float(tau), "tau_star": float(tau_star), "gate_pass": gate,
-           "overdet_residual": od, "h_hat": h_hat, "margin": float(margin),
-           "b_hat": [float(x) for x in b_hat], "b_tilde": [float(x) for x in b_tilde],
-           "anchor_b0": float(b_hat[0]), "n_D": int(len(D)), "M": int(M)}
+    bounded = [float(x) for x in b_decision]
+    result = {
+        **route_context,
+        "status": "OK",
+        "scorable": True,
+        "tau": float(tau),
+        "tau_star": float(tau_star),
+        "gate_pass": gate,
+        "overdet_residual": float(overdet),
+        "h_hat": float(h_hat),
+        "margin": float(margin),
+        "advantage_estimator": "anchor_oriented_bounded_median_of_minors",
+        "b_decision": bounded,
+        "b_tilde": bounded,
+        # Backward-compatible field: no spectral vector is emitted.  The alias
+        # is bounded and is exactly the vector used for every decision quantity.
+        "b_hat": bounded,
+        "b_hat_semantics": "bounded decision estimator (alias of b_tilde), not spectral fit",
+        "anchor_b0": float(b_decision[0]),
+    }
     if not gate:
-        res.update({"decision": "ABSTAIN", "choice": None,
-                    "reason": f"tau={tau:.4f} > tau*={tau_star} certifies Def-5 violated"})
-        return res
-    adv = b_hat[1:] - b_hat[0]                       # advantage of each adapted cand over anchor
-    committed = [i + 1 for i in range(M - 1) if adv[i] > margin and b_hat[i + 1] > 0]
+        result.update({
+            "decision": "ABSTAIN",
+            "choice": None,
+            "reason": f"tau={tau:.4f} > tau*={tau_star:.4f} certifies the rank-one premise is violated",
+        })
+        return result
+
+    advantage_over_anchor = b_decision[1:] - b_decision[0]
+    committed = [
+        i + 1 for i in range(M - 1)
+        if advantage_over_anchor[i] > margin and b_decision[i + 1] > 0.0
+    ]
     if not committed:
-        res.update({"decision": "FREEZE", "choice": None,
-                    "reason": "no candidate beats anchor f0 by the observed margin"})
-        return res
-    choice = int(max(committed, key=lambda i: b_hat[i]))
-    res.update({"decision": "ADAPT", "choice": choice, "committed": committed,
-                "reason": f"candidate {choice} commits (b_hat={b_hat[choice]:.3f} > anchor {b_hat[0]:.3f}+margin)"})
-    return res
-
-
-# ================= (c) smooth-drift route [Theorem 1B] =======================
-def smooth_drift_route(f0_pos, fa_pos, stream_f0_pos, L=0.6):
-    """Theorem 1B smooth-drift bracket on REAL Camelyon17, reusing val_smooth_drift.py
-    (imported as vsd, never modified): the observable boundary
-        center c = U - 2 T_S ,  reach rho = 2 (L d) W ,
-        COMMIT sign(c) iff |c| > rho + eps_n  else ABSTAIN,  bracket [c-rho-eps, c+rho+eps].
-
-    Binary classification is mapped to vsd's squared-loss (Brier) setting via the
-    positive-class probabilities: f0:=P0(y=1), fa:=Pa(y=1) on the eval set (label-free);
-    U=E[(f0-fa)(f0+fa)], W=E|f0-fa|.  The covariate discrepancy d is the OBSERVABLE
-    stream-vs-eval shift (vsd.w2_gaussian on frozen P(y=1) moments).
-
-    HONEST SURROGATE / DIAGNOSTIC: g_S (source concept) is approximated by the frozen
-    source model f0, which makes the center conservative (c = -E[(f0-fa)^2] <= 0).  A
-    non-degenerate center needs an f0-independent source-concept estimate (the paper's
-    deep-classification instantiation of 1B).  So (c) is reported as a diagnostic bracket,
-    not yet a certified commit.  Reuses vsd.w2_gaussian + the exact 1B boundary rule."""
-    if not _VSD_OK:
-        return {"decision": "ERROR", "implemented": False,
-                "reason": f"val_smooth_drift import failed: {_VSD_ERR}"}
-    f0p = np.asarray(f0_pos, float); fap = np.asarray(fa_pos, float); n = len(f0p)
-    dp = f0p - fap; sp = f0p + fap
-    U = float(np.mean(dp * sp)); W = float(np.mean(np.abs(dp)))
-    T_S = float(np.mean(dp * f0p))                       # g_S := f0 (conservative surrogate)
-    c = U - 2.0 * T_S
-    s = np.asarray(stream_f0_pos, float)
-    d_obs = float(vsd.w2_gaussian(float(s.mean()), float(s.std() + 1e-9),
-                                  float(f0p.mean()), float(f0p.std() + 1e-9)))
-    reach = 2.0 * L * d_obs * W
-    eps_n = 2.0 / np.sqrt(max(n, 1))
-    lo, hi = c - reach - eps_n, c + reach + eps_n
-    dec = ("ADAPT" if c > 0 else "FREEZE") if abs(c) > reach + eps_n else "ABSTAIN"
-    return {"decision": dec, "implemented": True, "theorem": "1B",
-            "view": "brier_squared_loss", "gS_estimate": "f0_surrogate(conservative)",
-            "center_c": c, "U": U, "T_S": T_S, "W": W, "d_obs": d_obs, "L": float(L),
-            "reach": reach, "eps_n": float(eps_n), "bracket": [lo, hi],
-            "note": "DIAGNOSTIC: g_S~f0 makes center conservative; full 1B classification "
-                    "instantiation needs an f0-independent source-concept estimate."}
+        result.update({
+            "decision": "FREEZE",
+            "choice": None,
+            "reason": "no bounded, anchor-oriented candidate estimate beats the anchor by the margin",
+        })
+        return result
+    choice = int(max(committed, key=lambda i: b_decision[i]))
+    result.update({
+        "decision": "ADAPT",
+        "choice": choice,
+        "committed": committed,
+        "reason": (
+            f"candidate {choice} commits (b={b_decision[choice]:.3f} > "
+            f"anchor {b_decision[0]:.3f} + margin {margin:.3f})"
+        ),
+    })
+    return result

@@ -6,6 +6,8 @@ import argparse
 import json
 from pathlib import Path
 
+from validate_pacs_replay import PACSReplayError, validate_seed_summary
+
 PACS_DOMAINS = {"art_painting", "cartoon", "photo", "sketch"}
 INR_METHODS = {
     "resnet101", "resnet152", "resnext101_32x8d", "efficientnet_b0",
@@ -14,7 +16,7 @@ INR_METHODS = {
 }
 
 
-def validate_pacs(path: Path, seed: int) -> None:
+def validate_pacs(path: Path, seed: int, *, require_replay: bool = True) -> None:
     data = json.loads(path.read_text())
     if data.get("dataset") != "PACS" or data.get("seed") != seed:
         raise ValueError(f"{path}: expected PACS seed {seed}")
@@ -28,7 +30,16 @@ def validate_pacs(path: Path, seed: int) -> None:
     for domain, row in data["per_domain"].items():
         if row.get("n_test_cells") != 18:
             raise ValueError(f"{path}: {domain} has {row.get('n_test_cells')} cells, expected 18")
-    print(f"VALID PACS seed {seed}: 4 domains x 18 cells")
+    if require_replay:
+        try:
+            replayed = validate_seed_summary(path)
+        except PACSReplayError as exc:
+            raise ValueError(f"{path}: per-cell replay failed: {exc}") from exc
+        if set(replayed) != PACS_DOMAINS:
+            raise ValueError(f"{path}: replay domain set mismatch")
+        print(f"VALID PACS seed {seed}: 4 domains x 18 replayable cells")
+    else:
+        print(f"VALID LEGACY PACS seed {seed}: 4 domains x 18 aggregate-only cells")
 
 
 def validate_imagenetr(run_dir: Path, seed: int) -> None:
@@ -58,12 +69,17 @@ def main() -> None:
     p = sub.add_parser("pacs")
     p.add_argument("--file", type=Path, required=True)
     p.add_argument("--seed", type=int, required=True)
+    p.add_argument(
+        "--legacy-aggregate-only",
+        action="store_true",
+        help="audit an old summary without claiming per-cell replayability",
+    )
     i = sub.add_parser("imagenetr")
     i.add_argument("--run-dir", type=Path, required=True)
     i.add_argument("--seed", type=int, required=True)
     args = ap.parse_args()
     if args.kind == "pacs":
-        validate_pacs(args.file, args.seed)
+        validate_pacs(args.file, args.seed, require_replay=not args.legacy_aggregate_only)
     else:
         validate_imagenetr(args.run_dir, args.seed)
 

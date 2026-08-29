@@ -26,7 +26,7 @@ Smoke (tiny, validates end-to-end in a couple min on CPU):
 Full run:
   python scripts/pacs_vlcs_runner.py --dataset PACS --root <root> --device mps --out pacs_result.json
 """
-import argparse, json, os, sys, time
+import argparse, hashlib, json, os, sys, tempfile, time
 import numpy as np
 import torch, torch.nn as nn, torch.nn.functional as F
 import torchvision as tv
@@ -35,7 +35,8 @@ from PIL import Image
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from cifar_tent_mps_v2 import (tent_adapt, eata_adapt, sar_adapt, evidence_vector,
-                               policy_metrics, label_regime, acc_on, ALPHA, SEED)
+                               policy_metrics, label_regime, acc_on, ALPHA, SEED,
+                               EVIDENCE_NAMES)
 # The ONE radius rule and the ONE false-adapt definition (fix-queue items 4, 15, 28).
 import kbound_decide as _kb  # noqa: E402
 
@@ -159,6 +160,7 @@ def gen_cells(f0, samples, nC, dev, rng, methods, cell_cfgs, adapt_lr=None):
             aa = acc_on(adapted, ex, ey, train_mode=True)
             Z = evidence_vector(f0, adapted, ex, nC, un)
             rows.append(dict(condition=f"{comp}|{brn}|{agn}|r{rep}|{mth}",
+                             candidate=mth,
                              Z=Z, a0=a0, aa=aa, B=aa - a0, regime=label_regime(aa - a0)))
     return rows
 
@@ -199,7 +201,57 @@ def decide_transfer(cal, test, alpha):
     eps = float(_kb.conformal_radius(np.abs(loo - Bc), alpha))
     Bhat = gbr.predict(Zt)
     dec = _kb.decide(Bhat, eps, alpha=alpha)
-    return dec, eps
+    residual_payload = np.asarray(np.sort(np.abs(loo - Bc)), dtype="<f8").tobytes()
+    return dec, {
+        "epsilon": eps,
+        "b_hat": Bhat,
+        "residual_pool_sha256": hashlib.sha256(residual_payload).hexdigest(),
+        "n_calibration_residuals": len(Bc),
+    }
+
+
+def _model_sha256(model):
+    digest = hashlib.sha256()
+    for name, tensor in sorted(model.state_dict().items()):
+        array = tensor.detach().cpu().contiguous().numpy()
+        digest.update(name.encode("utf-8"))
+        digest.update(str(array.dtype).encode("ascii"))
+        digest.update(str(array.shape).encode("ascii"))
+        digest.update(array.tobytes())
+    return digest.hexdigest()
+
+
+def _canonical_sha256(document):
+    payload = json.dumps(document, sort_keys=True, separators=(",", ":"), allow_nan=False)
+    return hashlib.sha256(payload.encode("utf-8")).hexdigest()
+
+
+def _atomic_json(path, document):
+    """Write a complete artifact atomically; partial seed files are never publishable."""
+    path = os.path.abspath(path)
+    os.makedirs(os.path.dirname(path), exist_ok=True)
+    fd, tmp = tempfile.mkstemp(prefix=f".{os.path.basename(path)}.", dir=os.path.dirname(path))
+    try:
+        with os.fdopen(fd, "w") as handle:
+            json.dump(document, handle, indent=2, sort_keys=True, allow_nan=False)
+            handle.write("\n")
+            handle.flush()
+            os.fsync(handle.fileno())
+        os.replace(tmp, path)
+    except Exception:
+        try:
+            os.unlink(tmp)
+        except FileNotFoundError:
+            pass
+        raise
+
+
+def _sha256(path):
+    digest = hashlib.sha256()
+    with open(path, "rb") as handle:
+        for block in iter(lambda: handle.read(1024 * 1024), b""):
+            digest.update(block)
+    return digest.hexdigest()
 
 
 def boot_ci(dec, a0, aa, n_boot=3000, seed=SEED):
@@ -243,10 +295,13 @@ def main():
 
     domains = DOMAINS[args.dataset]
     # cell grid (held back in smoke)
-    reps = [0] if args.smoke else [0, 1]
+    # Exact split conformal at alpha=.10 requires at least nine calibration
+    # residuals. Smoke uses 2 compositions x 1 mild setting x 5 repeats = 10
+    # cells per candidate, while avoiding the expensive 50-step setting.
+    reps = list(range(5)) if args.smoke else [0, 1]
     # WIN_HUNT_v5: optional batch/aggr subsetting (None -> full sweep, byte-identical). Smoke unchanged.
     _brs = (["small"] if args.smoke else (args.batch_regimes or list(BATCH_REGIMES)))
-    _ags = (list(AGGR) if args.smoke else (args.aggressiveness or list(AGGR)))
+    _ags = (["mild"] if args.smoke else (args.aggressiveness or list(AGGR)))
     _comps = (["iid", "single_class"] if args.smoke else COMPS)
     cell_cfgs = [(b, c, a, r) for b in _brs for c in _comps for a in _ags for r in reps]
     erm_steps = 30 if args.smoke else args.erm_steps
@@ -273,12 +328,29 @@ def main():
         src = [d for d in domains if d != d_test]
         print(f"\n=== held-out test domain: {d_test}  (sources {src}) ===", flush=True)
         f0 = erm_train([cache[s] for s in src], nC, dev, erm_steps, seed=args.seed)
+        checkpoint_sha256 = _model_sha256(f0)
+        domain_config = {
+            "dataset": args.dataset,
+            "seed": args.seed,
+            "source_domains": src,
+            "target_domain": d_test,
+            "calibration_domain": src[-1],
+            "methods": list(args.methods),
+            "alpha": args.alpha,
+            "erm_steps": erm_steps,
+            "cell_grid": results["protocol"]["cell_grid"],
+            "adapt_lr": args.adapt_lr,
+            "evidence_schema": "kbound_evidence_v1_11d",
+        }
+        config_sha256 = _canonical_sha256(domain_config)
         rng = np.random.default_rng(args.seed)
         # calibration cells: a held-out SOURCE domain (last source) -- no test labels used
         cal_dom = src[-1]
         cal = gen_cells(f0, cache[cal_dom], nC, dev, rng, args.methods, cell_cfgs, adapt_lr=args.adapt_lr)
         test = gen_cells(f0, cache[d_test], nC, dev, rng, args.methods, cell_cfgs, adapt_lr=args.adapt_lr)
-        dec, eps = decide_transfer(cal, test, args.alpha)
+        dec, decision_fit = decide_transfer(cal, test, args.alpha)
+        eps = float(decision_fit["epsilon"])
+        bhat = decision_fit["b_hat"]
         a0 = np.array([r["a0"] for r in test]); aa = np.array([r["aa"] for r in test])
         B = aa - a0
         pm = policy_metrics(dec, a0, aa, B)
@@ -296,30 +368,94 @@ def main():
             "SAFETY (no-harm)" if fa_u <= args.alpha and pm["regret_vs_oracle"]["K_Bound"] <=
             min(pm["regret_vs_oracle"]["always_adapt"], pm["regret_vs_oracle"]["always_freeze"]) + 1e-6
             else "NULL")
+        radius_is_finite = bool(np.isfinite(eps))
+        serialized_radius = float(eps) if radius_is_finite else None
+        percell_records = []
+        for row, prediction, action in zip(test, bhat, dec, strict=True):
+            benefit = float(row["B"])
+            percell_records.append(
+                {
+                    "dataset": args.dataset,
+                    "domain": d_test,
+                    "calibration_domain": cal_dom,
+                    "seed": args.seed,
+                    "split": "test",
+                    "condition": row["condition"],
+                    "candidate": row["candidate"],
+                    "metric": "accuracy",
+                    "Z": [float(value) for value in row["Z"]],
+                    "Z_names": list(EVIDENCE_NAMES),
+                    "evidence_schema_version": "kbound_evidence_v1_11d",
+                    "a0": float(row["a0"]),
+                    "aa": float(row["aa"]),
+                    "loss_frozen": float(1.0 - row["a0"]),
+                    "loss_adapted": float(1.0 - row["aa"]),
+                    "B": benefit,
+                    "b_hat": float(prediction),
+                    "eps_conformal": serialized_radius,
+                    "radius_status": (
+                        "FINITE" if radius_is_finite else "INFINITE_INSUFFICIENT_CALIBRATION"
+                    ),
+                    "kga_decision": str(action),
+                    "oracle_action": "ADAPT" if benefit > 0 else "FREEZE",
+                    "source_checkpoint_sha256": checkpoint_sha256,
+                    "run_config_sha256": config_sha256,
+                    "residual_pool_sha256": decision_fit["residual_pool_sha256"],
+                }
+            )
+            percell_records[-1]["record_id"] = _canonical_sha256(
+                {
+                    "run_config_sha256": config_sha256,
+                    "condition": row["condition"],
+                    "candidate": row["candidate"],
+                }
+            )
+
+        percell_dir = os.path.join(os.path.dirname(os.path.abspath(args.out)), "per_cell")
+        percell_path = os.path.join(
+            percell_dir, f"{args.dataset.lower()}_{d_test}_seed{args.seed}_percell.json")
+        percell_document = {
+            "schema": "kbound_pacs_percell_v2",
+            "dataset": args.dataset,
+            "domain": d_test,
+            "calibration_domain": cal_dom,
+            "source_domains": src,
+            "seed": args.seed,
+            "alpha": args.alpha,
+            "source_checkpoint_sha256": checkpoint_sha256,
+            "run_config": domain_config,
+            "run_config_sha256": config_sha256,
+            "decision_rule": "ADAPT iff b_hat-eps>0; FREEZE iff b_hat+eps<0; else ABSTAIN",
+            "calibration": {
+                "design": "held-out source-domain calibration to held-out target domain",
+                "radius": "LOO residuals with exact split-conformal order statistic",
+                "n_calibration_cells": len(cal),
+                "residual_pool_sha256": decision_fit["residual_pool_sha256"],
+            },
+            "records": percell_records,
+        }
+        _atomic_json(percell_path, percell_document)
+
         results["per_domain"][d_test] = {
-            "calibration_domain": cal_dom, "n_test_cells": len(test), "eps": eps,
+            "calibration_domain": cal_dom, "n_test_cells": len(test),
+            "eps": serialized_radius,
+            "radius_status": (
+                "FINITE" if radius_is_finite else "INFINITE_INSUFFICIENT_CALIBRATION"
+            ),
             "regret": pm["regret_vs_oracle"], "FA_u": fa_u, "FA_c": fa_c,
             "coverage": pm["coverage"], "adapt_rate": float(adapt.mean()),
             "base_rate_harmful": float(np.mean(B < 0)), "cis": cis, "verdict": verdict,
+            "per_cell_artifact": os.path.relpath(percell_path, os.path.dirname(os.path.abspath(args.out))),
+            "per_cell_sha256": _sha256(percell_path),
+            "source_checkpoint_sha256": checkpoint_sha256,
+            "run_config_sha256": config_sha256,
+            "residual_pool_sha256": decision_fit["residual_pool_sha256"],
             "wall_sec": round(time.time() - t0, 1)}
         print(f"  {d_test}: {verdict} | regret KGA {pm['regret_vs_oracle']['K_Bound']:.4f} "
               f"vs adapt {pm['regret_vs_oracle']['always_adapt']:.4f} / freeze "
               f"{pm['regret_vs_oracle']['always_freeze']:.4f} | FA_u {fa_u:.3f} cov {pm['coverage']:.2f}",
               flush=True)
-        # per-cell dump for the gate-baseline comparison
-        percell_dir = os.path.join(os.path.dirname(os.path.abspath(args.out)), "per_cell")
-        os.makedirs(percell_dir, exist_ok=True)
-        percell_path = os.path.join(
-            percell_dir, f"{args.dataset.lower()}_{d_test}_seed{args.seed}_percell.json")
-        with open(percell_path, "w") as f:
-            json.dump({"schema": "kbound_pacs_percell_v1", "dataset": args.dataset,
-                       "domain": d_test, "seed": args.seed, "records": test}, f, indent=2)
-
-    _outdir = os.path.dirname(os.path.abspath(args.out))
-    if _outdir:
-        os.makedirs(_outdir, exist_ok=True)
-    with open(args.out, "w") as f:
-        json.dump(results, f, indent=2)
+    _atomic_json(args.out, results)
     nwin = sum(v["verdict"].startswith("WIN") for v in results["per_domain"].values())
     print(f"\n==== {args.dataset}: {nwin}/{len(results['per_domain'])} domains are CI-robust beats-both."
           f"  wrote {args.out} ====")

@@ -36,6 +36,18 @@ SUPLOG="$OUT/supervisor.log"
 LOCK="$OUT/supervisor.lock"
 MAX=200
 mkdir -p "$OUT"
+RUN_ARGS=(--run-name "$RUN_NAME" --results-root "$RESULTS_ROOT")
+
+completion_receipt_valid() {
+  [ -f "$DONE" ] || return 1
+  "$PYBIN" "$SCRIPT" --verify-completion "$DONE" "${RUN_ARGS[@]}" >> "$SUPLOG" 2>&1
+}
+
+discard_stale_receipt() {
+  [ -f "$DONE" ] || return 0
+  rm -f "$DONE"
+  echo "[supervisor] removed invalid/stale completion receipt $(date)" >> "$SUPLOG"
+}
 # --- single-instance guard ---
 if [ -f "$LOCK" ] && kill -0 "$(cat "$LOCK" 2>/dev/null)" 2>/dev/null; then
   echo "[supervisor] another supervisor PID $(cat "$LOCK") already alive; exiting $(date)" >> "$SUPLOG"
@@ -47,15 +59,27 @@ echo $$ > "$LOCK"
 trap 'rm -f "$LOCK"' EXIT
 echo "[supervisor] START $(date) pid=$$ host=$(hostname)" >> "$SUPLOG"
 i=0
+completed=0
 while [ $i -lt $MAX ]; do
   i=$((i+1))
-  if [ -f "$DONE" ]; then echo "[supervisor] .done present before attempt $i; stop $(date)" >> "$SUPLOG"; break; fi
+  if completion_receipt_valid; then
+    completed=1
+    echo "[supervisor] valid bound completion receipt before attempt $i; stop $(date)" >> "$SUPLOG"
+    break
+  fi
+  discard_stale_receipt
   echo "[supervisor] attempt $i: launching runner $(date)" >> "$SUPLOG"
-  "$PYBIN" "$SCRIPT" --resume --run-name "$RUN_NAME" --results-root "$RESULTS_ROOT" >> "$RUNLOG" 2>&1
+  "$PYBIN" "$SCRIPT" --resume "${RUN_ARGS[@]}" >> "$RUNLOG" 2>&1
   code=$?
   echo "[supervisor] attempt $i: runner exited code=$code $(date)" >> "$SUPLOG"
-  if [ -f "$DONE" ]; then echo "[supervisor] .done present after attempt $i; stop $(date)" >> "$SUPLOG"; break; fi
-  echo "[supervisor] runner died before .done; resuming in 5s" >> "$SUPLOG"
+  if completion_receipt_valid; then
+    completed=1
+    echo "[supervisor] valid bound completion receipt after attempt $i; stop $(date)" >> "$SUPLOG"
+    break
+  fi
+  discard_stale_receipt
+  echo "[supervisor] runner exited without a valid completion receipt; resuming in 5s" >> "$SUPLOG"
   sleep 5
 done
-echo "[supervisor] EXIT $(date) attempts=$i" >> "$SUPLOG"
+echo "[supervisor] EXIT $(date) attempts=$i completed=$completed" >> "$SUPLOG"
+[ "$completed" -eq 1 ] || exit 1

@@ -13,7 +13,7 @@ K-Bound target.  Every epoch's id_val / val macro-F1 + accuracy is logged.  Best
 checkpoint is selected by id_val macro-F1 (source-side selection).
 """
 from __future__ import annotations
-import argparse, json, os, sys, time
+import argparse, hashlib, json, os, sys, time
 from pathlib import Path
 import numpy as np
 import torch
@@ -56,6 +56,14 @@ def build_model(device):
     return m.to(device)
 
 
+def sha256(path):
+    digest = hashlib.sha256()
+    with open(path, "rb") as handle:
+        for block in iter(lambda: handle.read(1024 * 1024), b""):
+            digest.update(block)
+    return digest.hexdigest()
+
+
 @torch.no_grad()
 def evaluate(model, sub, device, n, seed, bs=64, workers=4):
     rng = np.random.default_rng(seed)
@@ -84,7 +92,8 @@ def main():
     p.add_argument("--bs", type=int, default=24)
     p.add_argument("--lr", type=float, default=1e-4)
     p.add_argument("--wd", type=float, default=0.05)
-    p.add_argument("--workers", type=int, default=6)
+    p.add_argument("--workers", type=int, default=0)
+    p.add_argument("--device", default="mps", choices=["mps", "cuda", "cpu"])
     p.add_argument("--eval-n", type=int, default=3000)
     p.add_argument("--max-steps", type=int, default=0, help="0 = full epochs")
     args = p.parse_args()
@@ -94,7 +103,11 @@ def main():
     ckpt_best = out / f"f0_resnet50_erm_seed{args.seed}.pt"
     ckpt_last = out / f"f0_resnet50_erm_seed{args.seed}_last.pt"
 
-    device = torch.device("mps")
+    if args.device == "mps" and not torch.backends.mps.is_available():
+        raise SystemExit("MPS requested but unavailable")
+    if args.device == "cuda" and not torch.cuda.is_available():
+        raise SystemExit("CUDA requested but unavailable")
+    device = torch.device(args.device)
     torch.manual_seed(args.seed); np.random.seed(args.seed)
     print(f"[cfg] {vars(args)}", flush=True)
 
@@ -113,8 +126,15 @@ def main():
     loss_fn = nn.CrossEntropyLoss(label_smoothing=0.1)
 
     g = torch.Generator().manual_seed(args.seed)
-    loader = DataLoader(train_sub, batch_size=args.bs, shuffle=True, num_workers=args.workers,
-                        drop_last=True, persistent_workers=True, generator=g)
+    loader = DataLoader(
+        train_sub,
+        batch_size=args.bs,
+        shuffle=True,
+        num_workers=args.workers,
+        drop_last=True,
+        persistent_workers=args.workers > 0,
+        generator=g,
+    )
 
     log = {"config": vars(args), "epochs": [], "started": time.strftime("%Y-%m-%dT%H:%M:%S")}
     best_f1 = -1.0
@@ -160,8 +180,14 @@ def main():
             json.dump(log, f, indent=2)
         if done:
             break
-    log["finished"] = time.strftime("%Y-%m-%dT%H:%M:%S")
+    log["execution_complete"] = True
+    log["finished_at_utc"] = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
     log["total_min"] = round((time.time() - t0) / 60, 1)
+    log["model_seed"] = args.seed
+    log["best_checkpoint"] = str(ckpt_best)
+    log["best_checkpoint_sha256"] = sha256(ckpt_best)
+    log["selection_split"] = "id_val"
+    log["target_splits_used_for_selection"] = []
     with open(log_path, "w") as f:
         json.dump(log, f, indent=2)
     print(f"[DONE] best id_val_macro_f1={best_f1:.4f} -> {ckpt_best}", flush=True)

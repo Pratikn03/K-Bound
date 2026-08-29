@@ -6,8 +6,9 @@ Same protocol as the Camelyon17 debug run, generalized to multi-class:
                 ImageNet-R classes  (ImageNet-R is a robustness test set for ImageNet
                 classifiers -> NO training; just restrict the 1000 logits to the 200).
   candidates  : {tent,eata,sar} x {online,episodic}   (reused from tta_methods)
-  routing     : (a) single-cand KGA, (b) multi-cand tau-route, (c) smooth-drift
-                surrogate (max-prob Brier view)        (reused from analysis)
+  routing     : (a) single-cand KGA; Route B is unsupported for the multiclass
+                objective; Route C is unsupported because its binary Brier-score
+                bracket does not identify balanced-accuracy benefit.
   conditions  : composition x batch_regime x aggressiveness x seed  (no hospital/center
                 axis here; the rendition shift is the single target domain).
 
@@ -32,6 +33,7 @@ import analysis as an              # noqa: E402
 import run_camelyon17_kbound as rc  # noqa: E402  (reuse aggregations: AGGR, CANDIDATES, aggregate_*, kbound_summary, route_realized)
 import per_condition_serialize as pcs  # noqa: E402  (torch-free per-condition serializer)
 import panel_capture as pc          # noqa: E402  (Wave-5: c_ij/n_D capture)
+import run_integrity as ri          # noqa: E402  (strict resume/completeness/publication contract)
 assert list(pcs.EVIDENCE_NAMES) == list(tm.EVIDENCE_NAMES), "EVIDENCE_NAMES drift"
 
 NUM_CLASSES = 200
@@ -54,7 +56,13 @@ TRANSFORM = T.Compose([T.Resize(256), T.CenterCrop(224), T.ToTensor(),
 
 
 def load_img(path):
-    return TRANSFORM(Image.open(path).convert("RGB"))
+    try:
+        with Image.open(path) as image:
+            return TRANSFORM(image.convert("RGB"))
+    except Exception as exc:
+        raise RuntimeError(
+            f"unreadable requested ImageNet-R image {path!r}; sample substitution is forbidden"
+        ) from exc
 
 
 class MaskedImageNetModel(nn.Module):
@@ -149,17 +157,15 @@ def build_index(imagenetr_dir, wnids):
     items = []
     for w in wnids:
         d = join(imagenetr_dir, w)
-        for f in os.listdir(d):
+        for f in sorted(os.listdir(d)):
             if f.lower().endswith((".jpg", ".jpeg", ".png")) and not f.startswith("._"):
                 items.append((join(d, f), w2l[w]))
     return items
 
 
-def build_condition(index, labels, comp, bs, n_eval, rng, device, n_batches=4, tries=15):
-    """Class-balanced held-out eval + composition-controlled adaptation stream.
-    single_class/imbalanced + tiny batches are the natural collapse-prone cells.
-    Stream is label-free at use; eval keeps labels (resample within class on read error)."""
-    N = len(index); pos_all = np.arange(N)
+def _condition_positions(labels, comp, bs, n_eval, rng, n_batches=4):
+    labels = np.asarray(labels, dtype=int)
+    N = len(labels); pos_all = np.arange(N)
     classes = np.unique(labels)
     per = max(1, n_eval // len(classes))
     ev = []
@@ -170,50 +176,687 @@ def build_condition(index, labels, comp, bs, n_eval, rng, device, n_batches=4, t
     ev = np.concatenate(ev); rng.shuffle(ev)
     remain = np.setdiff1d(pos_all, ev)
     if len(remain) == 0:
-        remain = pos_all
+        raise RuntimeError("evaluation pool leaves no disjoint ImageNet-R adaptation samples")
     n_stream = max(bs, bs * n_batches)
     if comp == "iid":
-        s = rng.choice(remain, n_stream, replace=len(remain) < n_stream)
+        if len(remain) < n_stream:
+            raise RuntimeError(f"iid stream needs {n_stream} unique samples; only {len(remain)} remain")
+        s = rng.choice(remain, n_stream, replace=False)
     elif comp == "imbalanced":
         maj = int(rng.choice(classes))
         mp = np.intersect1d(pos_all[labels == maj], remain); op = np.setdiff1d(remain, mp)
         if len(mp) and len(op):
             nM = int(n_stream * 0.85)
-            s = np.concatenate([rng.choice(mp, nM, replace=len(mp) < nM),
-                                rng.choice(op, n_stream - nM, replace=len(op) < (n_stream - nM))])
+            if len(mp) < nM or len(op) < n_stream - nM:
+                raise RuntimeError(
+                    f"imbalanced stream needs {nM}/{n_stream - nM} unique majority/other "
+                    f"samples; only {len(mp)}/{len(op)} remain"
+                )
+            s = np.concatenate([rng.choice(mp, nM, replace=False),
+                                rng.choice(op, n_stream - nM, replace=False)])
         else:
-            s = rng.choice(remain, n_stream, replace=len(remain) < n_stream)
+            raise RuntimeError("imbalanced stream requires both majority and non-majority samples")
     else:  # single_class label shift
         maj = int(rng.choice(classes))
         mp = np.intersect1d(pos_all[labels == maj], remain)
-        pool = mp if len(mp) else remain
-        s = rng.choice(pool, n_stream, replace=len(pool) < n_stream)
+        if len(mp) < n_stream:
+            raise RuntimeError(
+                f"single-class stream needs {n_stream} unique class-{maj} samples; only {len(mp)} remain"
+            )
+        s = rng.choice(mp, n_stream, replace=False)
     rng.shuffle(s)
+    if len(np.unique(s)) != len(s) or len(np.unique(ev)) != len(ev):
+        raise RuntimeError("ImageNet-R condition contains duplicate requested identities")
+    if np.intersect1d(s, ev).size:
+        raise RuntimeError("ImageNet-R adaptation and evaluation identities overlap")
+    return np.asarray(s, dtype=int), np.asarray(ev, dtype=int)
 
-    def _load(positions, same_class=None):
-        xs = []
-        for p in positions:
-            ok = False
-            cand = pos_all[labels == same_class] if same_class is not None else pos_all
-            order = [int(p)] + [int(q) for q in rng.permutation(cand)]
-            for q in order[:tries]:
-                try:
-                    xs.append(load_img(index[int(q)][0])); ok = True; break
-                except Exception:
-                    continue
-            if not ok:
-                raise RuntimeError("no readable image")
+
+def build_condition(index, labels, comp, bs, n_eval, rng, device, n_batches=4, tries=None,
+                    return_ids=False):
+    """Class-balanced held-out eval + composition-controlled adaptation stream.
+    single_class/imbalanced + tiny batches are the natural collapse-prone cells.
+    Stream is label-free at use; selected identities are loaded exactly or the
+    whole cell fails.  Substitution, duplicate identities, and stream/eval
+    overlap are forbidden."""
+    s, ev = _condition_positions(labels, comp, bs, n_eval, rng, n_batches=n_batches)
+
+    def _load_exact(positions):
+        import concurrent.futures
+        paths = [index[int(position)][0] for position in positions]
+        with concurrent.futures.ThreadPoolExecutor(max_workers=16) as executor:
+            xs = list(executor.map(load_img, paths))
         return torch.stack(xs).to(device)
 
-    stream_x = _load(s)
+    stream_x = _load_exact(s)
     stream = [stream_x[i:i + bs] for i in range(0, len(stream_x), bs)]
-    ex, ey = [], []
-    for p in ev:
-        c = int(labels[p])
-        x1 = _load([p], same_class=c)
-        ex.append(x1); ey.append(c)
-    eval_x = torch.cat(ex, 0).to(device); eval_y = np.array(ey, dtype=int)
+    eval_x = _load_exact(ev)
+    eval_y = labels[ev].astype(int)
+    if return_ids:
+        return stream, eval_x, eval_y, {
+            "stream_requested_positions": np.asarray(s, dtype=int),
+            "stream_resolved_positions": np.asarray(s, dtype=int),
+            "eval_requested_positions": np.asarray(ev, dtype=int),
+            "eval_resolved_positions": np.asarray(ev, dtype=int),
+        }
     return stream, eval_x, eval_y
+
+
+def _cell_spec(seed, comp, regime, aggr):
+    return {
+        "dataset": "imagenet-r",
+        "model_seed": 0,
+        "model_replication": "fixed_torchvision_pretrained_weights",
+        "stream_seed": int(seed),
+        "composition": comp,
+        "batch_regime": regime,
+        "aggressiveness": aggr,
+    }
+
+
+def _cell_id(seed, comp, regime, aggr):
+    return ri.make_cell_id(**_cell_spec(seed, comp, regime, aggr))
+
+
+def _expected_cell_ids(args):
+    return [
+        _cell_id(seed, comp, regime, aggr)
+        for seed in args.seeds
+        for comp in args.compositions
+        for regime in args.batch_regimes
+        for aggr in args.aggressiveness
+    ]
+
+
+def _population_identity(index, imagenetr_dir):
+    root = os.path.abspath(imagenetr_dir)
+    rows = []
+    for path, label in index:
+        absolute = os.path.abspath(path)
+        relative = os.path.relpath(absolute, root)
+        size = os.path.getsize(absolute)
+        content_sha256 = ri.file_sha256(absolute)
+        rows.append({
+            "path": relative,
+            "label": int(label),
+            "bytes": size,
+            "content_sha256": content_sha256,
+        })
+    return {
+        "sha256": ri.stable_sha256(rows),
+        "n_images": len(rows),
+        "identity_fields": ["path", "label", "bytes", "content_sha256"],
+        "order": "class-WNID then filename lexical order",
+    }
+
+
+def _model_state_sha256(model):
+    digest = hashlib.sha256()
+    for name, tensor in sorted(model.state_dict().items()):
+        value = tensor.detach().cpu().contiguous()
+        digest.update(name.encode("utf-8"))
+        digest.update(str(value.dtype).encode("ascii"))
+        digest.update(json.dumps(list(value.shape), separators=(",", ":")).encode("ascii"))
+        digest.update(value.numpy().tobytes(order="C"))
+    return digest.hexdigest()
+
+
+def _model_identity(backbone, description, model):
+    tensor_sha256 = _model_state_sha256(model)
+    return {
+        "backbone": str(backbone),
+        "description": str(description),
+        "tensor_sha256": tensor_sha256,
+        # Retain the historical name as an explicit alias for old audit tooling.
+        "state_sha256": tensor_sha256,
+    }
+
+
+def _collect_candidate_identities(backbones, select_indices, device):
+    names = list(backbones)
+    if len(names) != len(set(names)):
+        raise ValueError("candidate backbone inventory contains duplicates")
+    identities = {}
+    for name in names:
+        candidate = None
+        try:
+            candidate, description = make_masked_backbone(name, select_indices, device)
+            identities[name] = _model_identity(name, description, candidate)
+        finally:
+            if candidate is not None:
+                candidate.to(torch.device("cpu"))
+                del candidate
+            tm.mps_free()
+    hashes = [identities[name]["tensor_sha256"] for name in names]
+    if len(hashes) != len(set(hashes)):
+        raise RuntimeError("candidate backbones do not have unique tensor-state identities")
+    return identities
+
+
+def _validate_diverse_resume_model_identities(records, conditions, candidate_identities):
+    """Bind every resumed diverse-panel row to the tensor identities in config."""
+    expected = dict(candidate_identities)
+    if not expected:
+        raise ri.RunIntegrityError("diverse-backbone resume lacks candidate tensor identities")
+    for index, record in enumerate(records):
+        candidate = record.get("candidate")
+        if candidate not in expected:
+            raise ri.RunIntegrityError(
+                f"resumed diverse record {index} has an unknown candidate backbone"
+            )
+        if (
+            record.get("candidate_model_identity") != expected[candidate]
+            or record.get("candidate_tensor_sha256") != expected[candidate]["tensor_sha256"]
+        ):
+            raise ri.RunIntegrityError(
+                f"resumed candidate {candidate!r} is not bound to its configured tensor identity"
+            )
+    for index, condition in enumerate(conditions):
+        if condition.get("candidate_model_identities") != expected:
+            raise ri.RunIntegrityError(
+                f"resumed diverse condition {index} has a mismatched candidate identity inventory"
+            )
+
+
+def _scientific_config(
+    args,
+    *,
+    resolved_device,
+    population_identity,
+    f0_identity,
+    candidate_identities=None,
+):
+    fields = (
+        "imagenetr_dir", "panel", "f0_backbone", "candidate_backbones",
+        "seeds", "compositions", "batch_regimes", "aggressiveness",
+        "n_eval", "n_batches", "tau_star", "kappa", "sd_L", "delta",
+        "steps_override", "max_classes", "episodic_steps", "episodic_batch",
+        "frozen_eval_batch", "smoke", "adapt_lr", "online_only",
+    )
+    config = {key: getattr(args, key) for key in fields}
+    config["imagenetr_dir"] = os.path.abspath(os.path.expanduser(config["imagenetr_dir"]))
+    config["class_index"] = os.path.abspath(os.path.expanduser(args.class_index))
+    config["class_index_sha256"] = ri.file_sha256(config["class_index"])
+    config["resolved_device"] = str(resolved_device)
+    config["metric"] = "balanced_accuracy"
+    config["route_b_task_status"] = "unsupported_multiclass"
+    config["route_c_contract"] = rc.route_c_contract("balanced_accuracy", NUM_CLASSES)
+    config["population_manifest"] = population_identity
+    config["f0_artifact"] = f0_identity
+    candidate_identities = candidate_identities or {}
+    if config["panel"] == "diverse_backbones":
+        expected_candidates = list(config["candidate_backbones"])
+        if (
+            len(expected_candidates) != len(set(expected_candidates))
+            or set(candidate_identities) != set(expected_candidates)
+        ):
+            raise ValueError(
+                "diverse-backbone scientific config requires one exact tensor identity per candidate"
+            )
+        hashes = []
+        for name in expected_candidates:
+            identity = candidate_identities[name]
+            tensor_sha256 = identity.get("tensor_sha256") if isinstance(identity, dict) else None
+            if (
+                not isinstance(tensor_sha256, str)
+                or len(tensor_sha256) != 64
+                or any(character not in "0123456789abcdef" for character in tensor_sha256.lower())
+            ):
+                raise ValueError(f"candidate {name!r} lacks a valid tensor-state SHA-256")
+            if identity.get("backbone") != name:
+                raise ValueError(f"candidate {name!r} identity is bound to another backbone")
+            hashes.append(tensor_sha256.lower())
+        if len(hashes) != len(set(hashes)):
+            raise ValueError("candidate tensor-state identities must be unique")
+        config["candidate_model_artifacts"] = {
+            name: candidate_identities[name] for name in expected_candidates
+        }
+        config["candidate_tta_protocols"] = {}
+    else:
+        if candidate_identities:
+            raise ValueError("shared-TTA config cannot carry unrelated candidate-backbone identities")
+        config["candidate_model_artifacts"] = {}
+        shared_candidates = [
+            (method, mode)
+            for method, mode in rc.CANDIDATES
+            if (not config["online_only"]) or mode == "online"
+        ]
+        config["candidate_tta_protocols"] = {
+            f"{method}_{mode}": tm.tta_protocol_contract(mode)
+            for method, mode in shared_candidates
+        }
+    config["implementation_sha256"] = {
+        "runner": ri.file_sha256(__file__),
+        "tta_methods": ri.file_sha256(tm.__file__),
+        "analysis": ri.file_sha256(an.__file__),
+        "routing_aggregates": ri.file_sha256(rc.__file__),
+        "per_condition_serialize": ri.file_sha256(pcs.__file__),
+        "panel_capture": ri.file_sha256(pc.__file__),
+    }
+    config["seed_semantics"] = {
+        "model_seed": 0,
+        "model_replications": 1,
+        "args_seeds_role": "stream_seed",
+        "independent_model_ci_eligible": False,
+    }
+    return config
+
+
+def _condition_sample_provenance(index, sample_ids, condition_seed):
+    stream_requested = np.asarray(sample_ids["stream_requested_positions"], dtype=int)
+    stream_resolved = np.asarray(sample_ids["stream_resolved_positions"], dtype=int)
+    eval_requested = np.asarray(sample_ids["eval_requested_positions"], dtype=int)
+    eval_resolved = np.asarray(sample_ids["eval_resolved_positions"], dtype=int)
+    equal = (
+        np.array_equal(stream_requested, stream_resolved)
+        and np.array_equal(eval_requested, eval_resolved)
+    )
+    overlap = np.intersect1d(stream_resolved, eval_resolved)
+    if not equal or overlap.size:
+        raise RuntimeError("ImageNet-R requested/resolved identity or disjointness invariant failed")
+    return {
+        "condition_seed": int(condition_seed),
+        "stream_n": int(len(stream_resolved)),
+        "eval_n": int(len(eval_resolved)),
+        "ordered_stream_requested_positions_sha256": ri.stable_sha256(stream_requested.tolist()),
+        "ordered_stream_resolved_positions_sha256": ri.stable_sha256(stream_resolved.tolist()),
+        "ordered_eval_requested_positions_sha256": ri.stable_sha256(eval_requested.tolist()),
+        "ordered_eval_resolved_positions_sha256": ri.stable_sha256(eval_resolved.tolist()),
+        "ordered_stream_sample_ids_sha256": ri.stable_sha256([
+            os.path.abspath(index[int(position)][0]) for position in stream_resolved
+        ]),
+        "ordered_eval_sample_ids_sha256": ri.stable_sha256([
+            os.path.abspath(index[int(position)][0]) for position in eval_resolved
+        ]),
+        "requested_resolved_identity_equal": bool(equal),
+        "stream_eval_disjoint": bool(overlap.size == 0),
+        "stream_unique": bool(len(np.unique(stream_resolved)) == len(stream_resolved)),
+        "eval_unique": bool(len(np.unique(eval_resolved)) == len(eval_resolved)),
+        "stream_eval_overlap_count": int(overlap.size),
+    }
+
+
+def _close_score(actual, expected, *, atol=1e-12):
+    try:
+        return bool(np.isfinite(float(actual)) and abs(float(actual) - float(expected)) <= atol)
+    except (TypeError, ValueError):
+        return False
+
+
+def _validate_imagenetr_completed_cell(
+    condition,
+    cell_records,
+    *,
+    args,
+    index,
+    labels,
+    f0_identity,
+    candidate_identities,
+):
+    """Validate a completed ImageNet-R cell from current scientific context."""
+
+    if not isinstance(condition, dict):
+        raise ri.RunIntegrityError("ImageNet-R resumed condition must be an object")
+    try:
+        seed = int(condition["stream_seed"])
+        comp = str(condition["comp"])
+        regime = str(condition["regime"])
+        aggr = str(condition["aggr"])
+    except (KeyError, TypeError, ValueError) as exc:
+        raise ri.RunIntegrityError("ImageNet-R resumed condition has incomplete axes") from exc
+    if (
+        seed not in [int(value) for value in args.seeds]
+        or comp not in args.compositions
+        or regime not in args.batch_regimes
+        or aggr not in args.aggressiveness
+    ):
+        raise ri.RunIntegrityError("ImageNet-R resumed condition is outside the configured grid")
+
+    scientific_identity = _cell_spec(seed, comp, regime, aggr)
+    cell_id = _cell_id(seed, comp, regime, aggr)
+    ri.validate_scientific_cell_identity(
+        condition.get("cell_id"),
+        condition.get("scientific_cell_identity"),
+        context="ImageNet-R resumed condition",
+    )
+    if (
+        condition.get("cell_id") != cell_id
+        or condition.get("scientific_cell_identity") != scientific_identity
+    ):
+        raise ri.RunIntegrityError("ImageNet-R resumed scientific cell identity mismatch")
+    sample_seed = ri.deterministic_seed(cell_id)
+    expected_identity = {
+        "model_seed": 0,
+        "stream_seed": seed,
+        "sampling_seed": sample_seed,
+        "seed": seed,
+        "domain": "imagenet_r",
+        "comp": comp,
+        "regime": regime,
+        "aggr": aggr,
+        "f0_model_identity": f0_identity,
+    }
+    for field, expected in expected_identity.items():
+        if condition.get(field) != expected:
+            raise ri.RunIntegrityError(
+                f"ImageNet-R resumed condition has mismatched {field}"
+            )
+
+    stream_positions, eval_positions = _condition_positions(
+        labels,
+        comp,
+        BATCH_REGIMES[regime],
+        args.n_eval,
+        np.random.default_rng(sample_seed),
+        n_batches=args.n_batches,
+    )
+    sample_ids = {
+        "stream_requested_positions": stream_positions,
+        "stream_resolved_positions": stream_positions,
+        "eval_requested_positions": eval_positions,
+        "eval_resolved_positions": eval_positions,
+    }
+    expected_provenance = _condition_sample_provenance(index, sample_ids, sample_seed)
+    provenance = condition.get("sample_provenance")
+    if provenance != expected_provenance:
+        raise ri.RunIntegrityError(
+            "ImageNet-R resumed sample provenance differs from deterministic selection"
+        )
+    try:
+        eval_y = np.asarray(condition.get("eval_y"), dtype=int)
+        frozen = np.asarray(condition.get("preds_frozen"), dtype=int)
+    except (TypeError, ValueError) as exc:
+        raise ri.RunIntegrityError(
+            "ImageNet-R resumed evaluation labels/predictions are invalid"
+        ) from exc
+    expected_eval_y = np.asarray(labels, dtype=int)[eval_positions]
+    if (
+        eval_y.ndim != 1
+        or eval_y.size == 0
+        or not np.array_equal(eval_y, expected_eval_y)
+        or frozen.shape != eval_y.shape
+    ):
+        raise ri.RunIntegrityError(
+            "ImageNet-R resumed evaluation labels/predictions are inconsistent"
+        )
+    a0 = tm.balanced_acc(frozen, eval_y)
+    if not _close_score(condition.get("a0"), a0):
+        raise ri.RunIntegrityError("ImageNet-R resumed frozen score is inconsistent")
+
+    if args.panel == "diverse_backbones":
+        candidate_specs = [("backbone", "frozen", name) for name in args.candidate_backbones]
+        if condition.get("candidate_model_identities") != candidate_identities:
+            raise ri.RunIntegrityError(
+                "ImageNet-R resumed diverse candidate identity inventory mismatch"
+            )
+    else:
+        candidate_specs = [
+            (method, mode, f"{method}_{mode}")
+            for method, mode in rc.CANDIDATES
+            if (not getattr(args, "online_only", False)) or mode == "online"
+        ]
+        if candidate_identities:
+            raise ri.RunIntegrityError(
+                "ImageNet-R shared-TTA resume has unrelated backbone identities"
+            )
+    rows = {record.get("candidate"): record for record in cell_records}
+    names = ["freeze_f0", *[candidate for _, _, candidate in candidate_specs]]
+    if len(rows) != len(candidate_specs) or condition.get("cand_names") != names:
+        raise ri.RunIntegrityError(
+            "ImageNet-R resumed candidate transaction differs from configured candidates"
+        )
+
+    aa_all = [a0]
+    for method, mode, candidate in candidate_specs:
+        record = rows.get(candidate)
+        if not isinstance(record, dict):
+            raise ri.RunIntegrityError(
+                f"ImageNet-R resumed cell is missing candidate {candidate}"
+            )
+        if (
+            record.get("cell_id") != cell_id
+            or record.get("scientific_cell_identity") != scientific_identity
+            or record.get("method") != method
+            or record.get("mode") != mode
+            or record.get("candidate") != candidate
+            or record.get("metric") != "balanced_accuracy"
+            or record.get("sample_provenance") != provenance
+        ):
+            raise ri.RunIntegrityError(
+                f"ImageNet-R resumed candidate {candidate} has inconsistent identity/provenance"
+            )
+        for field, expected in expected_identity.items():
+            if record.get(field) != expected:
+                raise ri.RunIntegrityError(
+                    f"ImageNet-R resumed candidate {candidate} has mismatched {field}"
+                )
+
+        expected_protocol = None
+        if args.panel == "diverse_backbones":
+            expected_model_identity = candidate_identities.get(candidate)
+            if (
+                not isinstance(expected_model_identity, dict)
+                or record.get("candidate_model_identity") != expected_model_identity
+                or record.get("candidate_tensor_sha256") != expected_model_identity.get("tensor_sha256")
+                or record.get("candidate_artifact") != expected_model_identity.get("description")
+                or not _close_score(record.get("upd_norm"), 0.0)
+            ):
+                raise ri.RunIntegrityError(
+                    f"ImageNet-R resumed backbone {candidate} has mismatched tensor identity"
+                )
+        else:
+            expected_protocol = tm.tta_protocol_contract(mode)
+        ri.validate_evidence_record(
+            record,
+            tm.EVIDENCE_NAMES,
+            expected_tta_protocol=expected_protocol,
+            context=f"ImageNet-R {cell_id}/{candidate}",
+        )
+
+        try:
+            preds = np.asarray(record.get("preds"), dtype=int)
+        except (TypeError, ValueError) as exc:
+            raise ri.RunIntegrityError(
+                f"ImageNet-R resumed candidate {candidate} predictions are invalid"
+            ) from exc
+        if preds.shape != eval_y.shape:
+            raise ri.RunIntegrityError(
+                f"ImageNet-R resumed candidate {candidate} prediction length mismatch"
+            )
+        aa = tm.balanced_acc(preds, eval_y)
+        if (
+            not _close_score(record.get("a0"), a0)
+            or not _close_score(record.get("aa"), aa)
+            or not _close_score(record.get("B"), aa - a0)
+            or record.get("regime_label") != an.label_regime(aa - a0)
+        ):
+            raise ri.RunIntegrityError(
+                f"ImageNet-R resumed candidate {candidate} score semantics are inconsistent"
+            )
+        aa_all.append(aa)
+
+    stored_scores = condition.get("aa_all")
+    if not isinstance(stored_scores, list) or len(stored_scores) != len(aa_all) or any(
+        not _close_score(actual, expected)
+        for actual, expected in zip(stored_scores, aa_all)
+    ):
+        raise ri.RunIntegrityError("ImageNet-R resumed condition scores are inconsistent")
+    if (
+        not _close_score(condition.get("best_adapt"), max(aa_all[1:]))
+        or not _close_score(condition.get("oracle"), max(aa_all))
+        or condition.get("true_best") != names[int(np.argmax(aa_all))]
+        or condition.get("regime_label") != an.label_regime(max(aa_all[1:]) - a0)
+    ):
+        raise ri.RunIntegrityError("ImageNet-R resumed condition summary is inconsistent")
+
+
+def _validate_resume_semantics(
+    records,
+    conditions,
+    *,
+    args,
+    index,
+    labels,
+    f0_identity,
+    candidate_identities,
+):
+    records_by_cell = {}
+    for record in records:
+        records_by_cell.setdefault(record.get("cell_id"), []).append(record)
+    for condition in conditions:
+        _validate_imagenetr_completed_cell(
+            condition,
+            records_by_cell.get(condition.get("cell_id"), []),
+            args=args,
+            index=index,
+            labels=labels,
+            f0_identity=f0_identity,
+            candidate_identities=candidate_identities,
+        )
+
+
+def _flush_partial(partial_path, *, run_config_sha256, expected_cell_ids,
+                   records, conditions, failures, progress, semantic_validator):
+    if not partial_path:
+        return
+    payload = ri.partial_document(
+        run_config_sha256=run_config_sha256,
+        expected_cell_ids=expected_cell_ids,
+        records=records,
+        conditions=conditions,
+        failures=failures,
+        progress=progress,
+        require_scientific_cell_identity=True,
+        semantic_validator=semantic_validator,
+    )
+    ri.atomic_json_dump(payload, partial_path)
+
+
+def _execute_diverse_cell(
+    *, args, f0, index, labels, num_classes, select_indices, device,
+    seed, comp, regime, aggr, bs, cell_id, sample_seed, f0_identity,
+    candidate_identities,
+):
+    rng = np.random.default_rng(sample_seed)
+    torch.manual_seed(sample_seed)
+    stream, eval_x, eval_y, sample_ids = build_condition(
+        index, labels, comp, bs, args.n_eval, rng, device, n_batches=args.n_batches,
+        return_ids=True,
+    )
+    sample_provenance = _condition_sample_provenance(index, sample_ids, sample_seed)
+    a0, p0, _ = tm.eval_frozen(
+        f0, eval_x, eval_y, prob_mode="max", bs=args.frozen_eval_batch,
+    )
+    cell_records = []
+    preds_all = [p0]
+    aa_all = [a0]
+    cand_names = ["freeze_f0"]
+    probe = stream[0]
+    for name in args.candidate_backbones:
+        candidate = None
+        try:
+            # load candidate lazily so heavyweight backbones never accumulate in
+            # unified memory during the diverse-panel sweep.
+            candidate, description = make_masked_backbone(name, select_indices, device)
+            candidate.eval()
+            actual_identity = _model_identity(name, description, candidate)
+            expected_identity = candidate_identities.get(name)
+            if actual_identity != expected_identity:
+                raise RuntimeError(
+                    f"candidate backbone tensor identity changed after run configuration lock: {name}"
+                )
+            aa, preds, _ = tm.eval_frozen(
+                candidate, eval_x, eval_y, prob_mode="max", bs=args.frozen_eval_batch,
+            )
+            evidence = tm.evidence_vector(f0, candidate, probe, num_classes, upd_norm=0.0)
+            benefit = float(aa - a0)
+            cell_records.append({
+                "cell_id": cell_id,
+                "scientific_cell_identity": _cell_spec(seed, comp, regime, aggr),
+                "model_seed": 0,
+                "stream_seed": int(seed),
+                "sampling_seed": int(sample_seed),
+                "seed": int(seed),
+                "domain": "imagenet_r",
+                "comp": comp,
+                "regime": regime,
+                "aggr": aggr,
+                "method": "backbone",
+                "mode": "frozen",
+                "candidate": name,
+                "candidate_artifact": description,
+                "candidate_model_identity": actual_identity,
+                "candidate_tensor_sha256": actual_identity["tensor_sha256"],
+                "f0_model_identity": f0_identity,
+                "metric": "balanced_accuracy",
+                "a0": float(a0),
+                "aa": float(aa),
+                "B": benefit,
+                "upd_norm": 0.0,
+                "Z": [float(value) for value in evidence],
+                "regime_label": an.label_regime(benefit),
+                "sample_provenance": sample_provenance,
+                "preds": [int(value) for value in preds],
+            })
+            preds_all.append(preds)
+            aa_all.append(float(aa))
+            cand_names.append(name)
+        finally:
+            if candidate is not None:
+                candidate.to(torch.device("cpu"))
+                del candidate
+            tm.mps_free()
+
+    predictions = np.stack(preds_all, 0)
+    pc.attach_to_last(cell_records, len(cand_names) - 1, pc.panel_fields(predictions))
+    route = an.multicandidate_route(
+        predictions,
+        tau_star=args.tau_star,
+        kappa=args.kappa,
+        task_type="multiclass_classification",
+        n_classes=num_classes,
+        objective="balanced_accuracy",
+        anchor_above_chance=False,
+    )
+    realized = rc.route_realized(route, aa_all)
+    oracle = float(max(aa_all))
+    best_adapt = float(max(aa_all[1:]))
+    route_c = rc.unsupported_route_c("balanced_accuracy", num_classes)
+    return cell_records, {
+        "cell_id": cell_id,
+        "scientific_cell_identity": _cell_spec(seed, comp, regime, aggr),
+        "model_seed": 0,
+        "stream_seed": int(seed),
+        "sampling_seed": int(sample_seed),
+        "f0_model_identity": f0_identity,
+        "seed": int(seed),
+        "domain": "imagenet_r",
+        "comp": comp,
+        "regime": regime,
+        "aggr": aggr,
+        "cand_names": cand_names,
+        "aa_all": [float(value) for value in aa_all],
+        "a0": float(a0),
+        "oracle": oracle,
+        "best_adapt": best_adapt,
+        "true_best": cand_names[int(np.argmax(aa_all))],
+        "route": route,
+        "route_objective": {
+            "metric": "balanced_accuracy",
+            "n_classes": int(num_classes),
+            "route_b_eligible": False,
+        },
+        "route_c": route_c,
+        "realized": realized,
+        "route_scorable": realized is not None,
+        "regime_label": an.label_regime(best_adapt - a0),
+        "sample_provenance": sample_provenance,
+        "eval_y": [int(value) for value in eval_y],
+        "preds_frozen": [int(value) for value in p0],
+        "candidate_model_identities": {
+            name: candidate_identities[name] for name in args.candidate_backbones
+        },
+    }
 
 
 def run_diverse_backbones(args, partial_path=None):
@@ -232,115 +875,255 @@ def run_diverse_backbones(args, partial_path=None):
     f0, f0_desc = make_masked_backbone(args.f0_backbone, sel, device)
     print(f"[imagenet-r:D] f0={args.f0_backbone} candidates={','.join(args.candidate_backbones)}")
 
-    records, conditions = [], []
-    # ---- OOM-resilience: resume from a prior partial (skip the heavy 10-backbone
-    # inference for cells already completed, while still advancing the per-seed RNG in
-    # lock-step so the not-yet-done cells are byte-identical to a fresh run). ----------
-    done = set()
-    if partial_path and getattr(args, "resume", True) and os.path.exists(partial_path):
-        try:
-            prev = json.load(open(partial_path))
-            records = prev.get("records", []); conditions = prev.get("conditions", [])
-            done = {(int(c["seed"]), c["comp"], c["regime"], c["aggr"]) for c in conditions}
-            if done:
-                print(f"[resume] {len(done)} cells loaded from {partial_path}", flush=True)
-        except Exception as e:
-            print(f"[resume] could not read partial ({e!r}); starting fresh")
-            records, conditions, done = [], [], set()
-    n_total = (len(args.seeds) * len(args.compositions) * len(args.batch_regimes) * len(args.aggressiveness))
+    population_identity = _population_identity(index, args.imagenetr_dir)
+    f0_identity = _model_identity(args.f0_backbone, f0_desc, f0)
+    candidate_identities = _collect_candidate_identities(
+        args.candidate_backbones, sel, device
+    )
+    scientific_config = _scientific_config(
+        args,
+        resolved_device=device,
+        population_identity=population_identity,
+        f0_identity=f0_identity,
+        candidate_identities=candidate_identities,
+    )
+    run_config_sha256 = ri.stable_sha256(scientific_config)
+    expected_cell_ids = _expected_cell_ids(args)
+
+    def validate_partial_semantics(candidate_records, completed_conditions):
+        _validate_diverse_resume_model_identities(
+            candidate_records, completed_conditions, candidate_identities
+        )
+        _validate_resume_semantics(
+            candidate_records,
+            completed_conditions,
+            args=args,
+            index=index,
+            labels=labels,
+            f0_identity=f0_identity,
+            candidate_identities=candidate_identities,
+        )
+
+    records, conditions, failures = [], [], []
+    if partial_path and getattr(args, "resume", True):
+        records, conditions, failures = ri.load_partial_state(
+            partial_path,
+            run_config_sha256=run_config_sha256,
+            expected_cell_ids=expected_cell_ids,
+            require_scientific_cell_identity=True,
+            semantic_validator=validate_partial_semantics,
+        )
+        if conditions or failures:
+            print(
+                f"[resume] completed={len(conditions)} prior_failures={len(failures)} "
+                f"from {partial_path}",
+                flush=True,
+            )
+    done = {condition["cell_id"] for condition in conditions}
+    n_total = len(expected_cell_ids)
     ci = 0
     for seed in args.seeds:
-        torch.manual_seed(seed); np.random.seed(seed); rng = np.random.default_rng(seed)
         for comp in args.compositions:
             for regime in args.batch_regimes:
                 bs = BATCH_REGIMES[regime]
                 for aggr in args.aggressiveness:
-                    ci += 1; tag = f"s{seed}/{comp}/{regime}/{aggr}"
-                    try:
-                        stream, eval_x, eval_y = build_condition(
-                            index, labels, comp, bs, args.n_eval, rng, device, n_batches=args.n_batches)
-                    except Exception as e:
-                        print(f"  [{ci}/{n_total}] {tag} SKIP build: {e}"); continue
-                    if (int(seed), comp, regime, aggr) in done:
-                        # RNG already advanced via build_condition above -> not-yet-done
-                        # cells stay byte-identical. Release tensors; skip heavy inference.
-                        del stream, eval_x, eval_y; tm.mps_free()
+                    ci += 1
+                    tag = f"s{seed}/{comp}/{regime}/{aggr}"
+                    cell_id = _cell_id(seed, comp, regime, aggr)
+                    if cell_id in done:
                         print(f"  [{ci}/{n_total}] {tag} SKIP (resume)", flush=True)
                         continue
+                    sample_seed = ri.deterministic_seed(cell_id)
                     try:
-                        a0, p0, p0_pos = tm.eval_frozen(
-                            f0, eval_x, eval_y, prob_mode="max", bs=args.frozen_eval_batch)
-                        stream_f0_pos = tm._predict_prob(
-                            f0, torch.cat(stream, 0), train_mode=False,
-                            bs=args.frozen_eval_batch, mode="max")
-                        preds_all = [p0]; aa_all = [a0]; cand_names = ["freeze_f0"]
-                        best_pa = p0_pos; best_aa_c = float(a0)
-                        probe = stream[0]
-                        for name in args.candidate_backbones:
-                            cand = None
-                            try:
-                                # load candidate lazily: heavyweight backbones must not
-                                # accumulate in unified memory on Apple-silicon MPS.
-                                cand, _desc = make_masked_backbone(name, sel, device)
-                                cand.eval()
-                                aa, preds, pa_pos = tm.eval_frozen(
-                                    cand, eval_x, eval_y, prob_mode="max", bs=args.frozen_eval_batch)
-                                Z = tm.evidence_vector(f0, cand, probe, num, upd_norm=0.0)
-                                B = float(aa - a0)
-                                records.append(dict(seed=int(seed), domain="imagenet_r", comp=comp, regime=regime,
-                                                    aggr=aggr, method="backbone", mode="frozen", candidate=name,
-                                                    a0=float(a0), aa=float(aa), B=B, upd_norm=0.0,
-                                                    Z=[float(z) for z in Z], regime_label=an.label_regime(B)))
-                                preds_all.append(preds); aa_all.append(float(aa)); cand_names.append(name)
-                                if float(aa) > best_aa_c:
-                                    best_aa_c = float(aa); best_pa = pa_pos
-                            finally:
-                                if cand is not None:
-                                    cand.to(torch.device("cpu"))
-                                    del cand
-                                tm.mps_free()
-                        preds_mat = np.stack(preds_all, 0)
-                        # Wave-5 (Gap B): panel agreements + n_D on the DIVERSE-BACKBONE
-                        # panel (the decisive independently-trained candidate set).
-                        try:
-                            pc.attach_to_last(records, len(cand_names) - 1,
-                                              pc.panel_fields(preds_mat))
-                        except Exception as _e:
-                            print(f"  panel_capture skipped: {_e!r}")
-                        route = an.multicandidate_route(preds_mat, tau_star=args.tau_star, kappa=args.kappa)
-                        realized = rc.route_realized(route, aa_all)
-                        oracle = float(max(aa_all)); best_adapt = float(max(aa_all[1:]))
-                        try:
-                            route_c = an.smooth_drift_route(p0_pos, best_pa, stream_f0_pos, L=args.sd_L)
-                            if route_c.get("implemented") and "bracket" in route_c:
-                                trueB = best_adapt - a0
-                                route_c["true_B_best"] = float(trueB)
-                                route_c["bracket_covers_trueB"] = bool(route_c["bracket"][0] <= trueB <= route_c["bracket"][1])
-                        except Exception as e:
-                            route_c = {"decision": "ERROR", "implemented": False, "reason": repr(e)}
-                        conditions.append(dict(seed=int(seed), domain="imagenet_r", comp=comp, regime=regime,
-                                               aggr=aggr, cand_names=cand_names, aa_all=[float(a) for a in aa_all],
-                                               a0=float(a0), oracle=oracle, best_adapt=best_adapt,
-                                               true_best=cand_names[int(np.argmax(aa_all))], route=route,
-                                               route_c=route_c, realized=realized,
-                                               regime_label=an.label_regime(best_adapt - a0)))
-                        print(f"  [{ci}/{n_total}] {tag} a0={a0:.3f} best_aa={best_adapt:.3f} "
-                              f"oracle={oracle:.3f} route={route.get('decision')} "
-                              f"tau={route.get('tau', float('nan')):.3f} sd_c={route_c.get('decision')}")
-                    except Exception as e:
-                        print(f"  [{ci}/{n_total}] {tag} ERROR: {repr(e)[:120]}")
-                    if partial_path:
-                        try:
-                            json.dump({"progress": f"{ci}/{n_total}", "records": records, "conditions": conditions},
-                                      open(partial_path, "w"))
-                        except Exception:
-                            pass
+                        cell_records, condition = _execute_diverse_cell(
+                            args=args,
+                            f0=f0,
+                            index=index,
+                            labels=labels,
+                            num_classes=num,
+                            select_indices=sel,
+                            device=device,
+                            seed=seed,
+                            comp=comp,
+                            regime=regime,
+                            aggr=aggr,
+                            bs=bs,
+                            cell_id=cell_id,
+                            sample_seed=sample_seed,
+                            f0_identity=f0_identity,
+                            candidate_identities=candidate_identities,
+                        )
+                        _validate_imagenetr_completed_cell(
+                            condition,
+                            cell_records,
+                            args=args,
+                            index=index,
+                            labels=labels,
+                            f0_identity=f0_identity,
+                            candidate_identities=candidate_identities,
+                        )
+                    except Exception as exc:
+                        ri.upsert_failure(failures, {
+                            "cell_id": cell_id,
+                            **_cell_spec(seed, comp, regime, aggr),
+                            "sampling_seed": int(sample_seed),
+                            "stage": "cell_execution",
+                            "error_type": type(exc).__name__,
+                            "error": repr(exc),
+                        })
+                        print(f"  [{ci}/{n_total}] {tag} ERROR: {repr(exc)[:160]}", flush=True)
+                        _flush_partial(
+                            partial_path,
+                            run_config_sha256=run_config_sha256,
+                            expected_cell_ids=expected_cell_ids,
+                            records=records,
+                            conditions=conditions,
+                            failures=failures,
+                            progress=f"{ci}/{n_total}",
+                            semantic_validator=validate_partial_semantics,
+                        )
+                        continue
+                    records.extend(cell_records)
+                    conditions.append(condition)
+                    done.add(cell_id)
+                    ri.clear_failure(failures, cell_id)
+                    route = condition["route"]
+                    print(
+                        f"  [{ci}/{n_total}] {tag} a0={condition['a0']:.3f} "
+                        f"best_aa={condition['best_adapt']:.3f} oracle={condition['oracle']:.3f} "
+                        f"route={route.get('decision')} status={route.get('status')} "
+                        f"sd_c={condition['route_c'].get('decision')}",
+                        flush=True,
+                    )
+                    _flush_partial(
+                        partial_path,
+                        run_config_sha256=run_config_sha256,
+                        expected_cell_ids=expected_cell_ids,
+                        records=records,
+                        conditions=conditions,
+                        failures=failures,
+                        progress=f"{ci}/{n_total}",
+                        semantic_validator=validate_partial_semantics,
+                    )
     f0.to(torch.device("cpu")); tm.mps_free()
     return records, conditions, {
         "n_images": len(index), "n_classes": len(wnids), "wall_sec": time.time() - t0,
         "panel": "diverse_backbones", "f0": f0_desc,
         "candidate_backbones": list(args.candidate_backbones),
         "candidate_names": list(args.candidate_backbones),
+        "scientific_config": scientific_config,
+        "run_config_sha256": run_config_sha256,
+        "expected_cell_ids": expected_cell_ids,
+        "failures": failures,
+        "ledger": ri.build_ledger(expected_cell_ids, conditions, failures),
+        "population_identity": population_identity,
+        "f0_identity": f0_identity,
+        "candidate_identities": candidate_identities,
+    }
+
+
+def _execute_shared_cell(
+    *, args, f0, index, labels, num_classes, device, candidates,
+    seed, comp, regime, aggr, bs, cell_id, sample_seed, f0_identity,
+):
+    rng = np.random.default_rng(sample_seed)
+    torch.manual_seed(sample_seed)
+    stream, eval_x, eval_y, sample_ids = build_condition(
+        index, labels, comp, bs, args.n_eval, rng, device, n_batches=args.n_batches,
+        return_ids=True,
+    )
+    sample_provenance = _condition_sample_provenance(index, sample_ids, sample_seed)
+    a0, p0, _ = tm.eval_frozen(f0, eval_x, eval_y, prob_mode="max")
+    cell_records = []
+    preds_all = [p0]
+    aa_all = [a0]
+    cand_names = ["freeze_f0"]
+    steps = args.steps_override or rc.AGGR[aggr]["steps"]
+    lr = args.adapt_lr if getattr(args, "adapt_lr", None) is not None else rc.AGGR[aggr]["lr"]
+    for method, mode in candidates:
+        aa, evidence, update_norm, preds, _ = tm.run_candidate(
+            method, mode, f0, stream, eval_x, eval_y, num_classes,
+            steps, lr, eval_bs=args.episodic_batch, prob_mode="max",
+            episodic_steps=args.episodic_steps,
+        )
+        benefit = float(aa - a0)
+        cell_records.append({
+            "cell_id": cell_id,
+            "scientific_cell_identity": _cell_spec(seed, comp, regime, aggr),
+            "model_seed": 0,
+            "stream_seed": int(seed),
+            "sampling_seed": int(sample_seed),
+            "seed": int(seed),
+            "domain": "imagenet_r",
+            "comp": comp,
+            "regime": regime,
+            "aggr": aggr,
+            "method": method,
+            "mode": mode,
+            "candidate": f"{method}_{mode}",
+            "f0_model_identity": f0_identity,
+            "tta_protocol": tm.tta_protocol_contract(mode),
+            "metric": "balanced_accuracy",
+            "a0": float(a0),
+            "aa": float(aa),
+            "B": benefit,
+            "upd_norm": float(update_norm),
+            "Z": [float(value) for value in evidence],
+            "regime_label": an.label_regime(benefit),
+            "sample_provenance": sample_provenance,
+            "preds": [int(value) for value in preds],
+        })
+        preds_all.append(preds)
+        aa_all.append(float(aa))
+        cand_names.append(f"{method}_{mode}")
+        tm.mps_free()
+
+    predictions = np.stack(preds_all, 0)
+    pc.attach_to_last(cell_records, len(candidates), pc.panel_fields(predictions))
+    route = an.multicandidate_route(
+        predictions,
+        tau_star=args.tau_star,
+        kappa=args.kappa,
+        task_type="multiclass_classification",
+        n_classes=num_classes,
+        objective="balanced_accuracy",
+        anchor_above_chance=False,
+    )
+    realized = rc.route_realized(route, aa_all)
+    oracle = float(max(aa_all))
+    best_adapt = float(max(aa_all[1:]))
+    route_c = rc.unsupported_route_c("balanced_accuracy", num_classes)
+    return cell_records, {
+        "cell_id": cell_id,
+        "scientific_cell_identity": _cell_spec(seed, comp, regime, aggr),
+        "model_seed": 0,
+        "stream_seed": int(seed),
+        "sampling_seed": int(sample_seed),
+        "f0_model_identity": f0_identity,
+        "seed": int(seed),
+        "domain": "imagenet_r",
+        "comp": comp,
+        "regime": regime,
+        "aggr": aggr,
+        "cand_names": cand_names,
+        "aa_all": [float(value) for value in aa_all],
+        "a0": float(a0),
+        "oracle": oracle,
+        "best_adapt": best_adapt,
+        "true_best": cand_names[int(np.argmax(aa_all))],
+        "route": route,
+        "route_objective": {
+            "metric": "balanced_accuracy",
+            "n_classes": int(num_classes),
+            "route_b_eligible": False,
+        },
+        "route_c": route_c,
+        "realized": realized,
+        "route_scorable": realized is not None,
+        "regime_label": an.label_regime(best_adapt - a0),
+        "sample_provenance": sample_provenance,
+        "eval_y": [int(value) for value in eval_y],
+        "preds_frozen": [int(value) for value in p0],
     }
 
 
@@ -355,121 +1138,236 @@ def run(args, partial_path=None):
     num = len(wnids)
     print(f"[imagenet-r] classes={num} images={len(index)} device={device}")
     f0 = make_f0(sel, device)                              # fixed pretrained f0, reused across seeds
-    records, conditions = [], []
-    n_total = (len(args.seeds) * len(args.compositions) * len(args.batch_regimes) * len(args.aggressiveness))
+    population_identity = _population_identity(index, args.imagenetr_dir)
+    f0_identity = {
+        "description": "torchvision resnet50 IMAGENET1K_V2",
+        "state_sha256": _model_state_sha256(f0),
+    }
+    scientific_config = _scientific_config(
+        args,
+        resolved_device=device,
+        population_identity=population_identity,
+        f0_identity=f0_identity,
+        candidate_identities={},
+    )
+    run_config_sha256 = ri.stable_sha256(scientific_config)
+    expected_cell_ids = _expected_cell_ids(args)
+
+    def validate_partial_semantics(candidate_records, completed_conditions):
+        _validate_resume_semantics(
+            candidate_records,
+            completed_conditions,
+            args=args,
+            index=index,
+            labels=labels,
+            f0_identity=f0_identity,
+            candidate_identities={},
+        )
+
+    records, conditions, failures = [], [], []
+    if partial_path and getattr(args, "resume", True):
+        records, conditions, failures = ri.load_partial_state(
+            partial_path,
+            run_config_sha256=run_config_sha256,
+            expected_cell_ids=expected_cell_ids,
+            require_scientific_cell_identity=True,
+            semantic_validator=validate_partial_semantics,
+        )
+        if conditions or failures:
+            print(
+                f"[resume] completed={len(conditions)} prior_failures={len(failures)} "
+                f"from {partial_path}",
+                flush=True,
+            )
+    done = {condition["cell_id"] for condition in conditions}
+    n_total = len(expected_cell_ids)
     ci = 0
     # WIN_HUNT_v5: online-only candidate pool (the "continual" no-episodic-reset op-point) when
     # --online-only is set; default keeps all six online+episodic candidates (byte-identical).
     _cands = [(m, md) for (m, md) in rc.CANDIDATES
               if (not getattr(args, "online_only", False)) or md == "online"]
     for seed in args.seeds:
-        torch.manual_seed(seed); np.random.seed(seed); rng = np.random.default_rng(seed)
         for comp in args.compositions:
             for regime in args.batch_regimes:
                 bs = BATCH_REGIMES[regime]
                 for aggr in args.aggressiveness:
-                    steps = args.steps_override or rc.AGGR[aggr]["steps"]; lr = args.adapt_lr if getattr(args, "adapt_lr", None) is not None else rc.AGGR[aggr]["lr"]
-                    ci += 1; tag = f"s{seed}/{comp}/{regime}/{aggr}"
+                    ci += 1
+                    tag = f"s{seed}/{comp}/{regime}/{aggr}"
+                    cell_id = _cell_id(seed, comp, regime, aggr)
+                    if cell_id in done:
+                        print(f"  [{ci}/{n_total}] {tag} SKIP (resume)", flush=True)
+                        continue
+                    sample_seed = ri.deterministic_seed(cell_id)
                     try:
-                        stream, eval_x, eval_y = build_condition(
-                            index, labels, comp, bs, args.n_eval, rng, device, n_batches=args.n_batches)
-                    except Exception as e:
-                        print(f"  [{ci}/{n_total}] {tag} SKIP build: {e}"); continue
-                    try:
-                        a0, p0, p0_pos = tm.eval_frozen(f0, eval_x, eval_y, prob_mode="max")
-                        stream_f0_pos = tm._predict_prob(f0, torch.cat(stream, 0), train_mode=False, bs=128, mode="max")
-                        preds_all = [p0]; aa_all = [a0]; cand_names = ["freeze_f0"]
-                        best_pa = p0_pos; best_aa_c = float(a0)
-                        for (method, mode) in _cands:
-                            aa, Z, upd, preds, pa_pos = tm.run_candidate(
-                                method, mode, f0, stream, eval_x, eval_y, num,
-                                steps, lr, eval_bs=args.episodic_batch, prob_mode="max",
-                                episodic_steps=args.episodic_steps)
-                            B = float(aa - a0)
-                            records.append(dict(seed=int(seed), domain="imagenet_r", comp=comp, regime=regime,
-                                                aggr=aggr, method=method, mode=mode, candidate=f"{method}_{mode}",
-                                                a0=float(a0), aa=float(aa), B=B, upd_norm=float(upd),
-                                                Z=[float(z) for z in Z], regime_label=an.label_regime(B)))
-                            preds_all.append(preds); aa_all.append(float(aa)); cand_names.append(f"{method}_{mode}")
-                            if float(aa) > best_aa_c:
-                                best_aa_c = float(aa); best_pa = pa_pos
-                            tm.mps_free()
-                        preds_mat = np.stack(preds_all, 0)
-                        # Wave-5 (Gap B): panel agreements + n_D for the tau' gate
-                        try:
-                            pc.attach_to_last(records, len(cand_names) - 1,
-                                              pc.panel_fields(preds_mat))
-                        except Exception as _e:
-                            print(f"  panel_capture skipped: {_e!r}")
-                        route = an.multicandidate_route(preds_mat, tau_star=args.tau_star, kappa=args.kappa)
-                        realized = rc.route_realized(route, aa_all)
-                        oracle = float(max(aa_all)); best_adapt = float(max(aa_all[1:]))
-                        try:
-                            route_c = an.smooth_drift_route(p0_pos, best_pa, stream_f0_pos, L=args.sd_L)
-                            if route_c.get("implemented") and "bracket" in route_c:
-                                trueB = best_adapt - a0
-                                route_c["true_B_best"] = float(trueB)
-                                route_c["bracket_covers_trueB"] = bool(route_c["bracket"][0] <= trueB <= route_c["bracket"][1])
-                        except Exception as e:
-                            route_c = {"decision": "ERROR", "implemented": False, "reason": repr(e)}
-                        conditions.append(dict(seed=int(seed), domain="imagenet_r", comp=comp, regime=regime,
-                                               aggr=aggr, cand_names=cand_names, aa_all=[float(a) for a in aa_all],
-                                               a0=float(a0), oracle=oracle, best_adapt=best_adapt,
-                                               true_best=cand_names[int(np.argmax(aa_all))], route=route,
-                                               route_c=route_c, realized=realized,
-                                               regime_label=an.label_regime(best_adapt - a0)))
-                        print(f"  [{ci}/{n_total}] {tag} a0={a0:.3f} best_aa={best_adapt:.3f} "
-                              f"oracle={oracle:.3f} route={route.get('decision')} "
-                              f"tau={route.get('tau', float('nan')):.3f} sd_c={route_c.get('decision')}")
-                    except Exception as e:
-                        print(f"  [{ci}/{n_total}] {tag} ERROR: {repr(e)[:120]}")
-                    if partial_path:
-                        try:
-                            json.dump({"progress": f"{ci}/{n_total}", "records": records, "conditions": conditions},
-                                      open(partial_path, "w"))
-                        except Exception:
-                            pass
-    return records, conditions, {"n_images": len(index), "n_classes": len(wnids), "wall_sec": time.time() - t0}
+                        cell_records, condition = _execute_shared_cell(
+                            args=args,
+                            f0=f0,
+                            index=index,
+                            labels=labels,
+                            num_classes=num,
+                            device=device,
+                            candidates=_cands,
+                            seed=seed,
+                            comp=comp,
+                            regime=regime,
+                            aggr=aggr,
+                            bs=bs,
+                            cell_id=cell_id,
+                            sample_seed=sample_seed,
+                            f0_identity=f0_identity,
+                        )
+                        _validate_imagenetr_completed_cell(
+                            condition,
+                            cell_records,
+                            args=args,
+                            index=index,
+                            labels=labels,
+                            f0_identity=f0_identity,
+                            candidate_identities={},
+                        )
+                    except Exception as exc:
+                        ri.upsert_failure(failures, {
+                            "cell_id": cell_id,
+                            **_cell_spec(seed, comp, regime, aggr),
+                            "sampling_seed": int(sample_seed),
+                            "stage": "cell_execution",
+                            "error_type": type(exc).__name__,
+                            "error": repr(exc),
+                        })
+                        print(f"  [{ci}/{n_total}] {tag} ERROR: {repr(exc)[:160]}", flush=True)
+                        _flush_partial(
+                            partial_path,
+                            run_config_sha256=run_config_sha256,
+                            expected_cell_ids=expected_cell_ids,
+                            records=records,
+                            conditions=conditions,
+                            failures=failures,
+                            progress=f"{ci}/{n_total}",
+                            semantic_validator=validate_partial_semantics,
+                        )
+                        continue
+                    records.extend(cell_records)
+                    conditions.append(condition)
+                    done.add(cell_id)
+                    ri.clear_failure(failures, cell_id)
+                    route = condition["route"]
+                    print(
+                        f"  [{ci}/{n_total}] {tag} a0={condition['a0']:.3f} "
+                        f"best_aa={condition['best_adapt']:.3f} oracle={condition['oracle']:.3f} "
+                        f"route={route.get('decision')} status={route.get('status')} "
+                        f"sd_c={condition['route_c'].get('decision')}",
+                        flush=True,
+                    )
+                    _flush_partial(
+                        partial_path,
+                        run_config_sha256=run_config_sha256,
+                        expected_cell_ids=expected_cell_ids,
+                        records=records,
+                        conditions=conditions,
+                        failures=failures,
+                        progress=f"{ci}/{n_total}",
+                        semantic_validator=validate_partial_semantics,
+                    )
+    return records, conditions, {
+        "n_images": len(index),
+        "n_classes": len(wnids),
+        "wall_sec": time.time() - t0,
+        "panel": "shared_tta",
+        "f0": "torchvision resnet50 IMAGENET1K_V2",
+        "candidate_names": [f"{method}_{mode}" for method, mode in _cands],
+        "scientific_config": scientific_config,
+        "run_config_sha256": run_config_sha256,
+        "expected_cell_ids": expected_cell_ids,
+        "failures": failures,
+        "ledger": ri.build_ledger(expected_cell_ids, conditions, failures),
+        "population_identity": population_identity,
+        "f0_identity": f0_identity,
+    }
 
 
 def build_manifest(args, records, conditions, meta):
-    cfg = {k: getattr(args, k) for k in (
-        "imagenetr_dir", "panel", "f0_backbone", "candidate_backbones",
-        "seeds", "compositions", "batch_regimes", "aggressiveness",
-        "n_eval", "n_batches", "tau_star", "kappa", "sd_L", "delta", "device",
-        "steps_override", "max_classes", "episodic_steps", "episodic_batch",
-        "frozen_eval_batch", "smoke",
-        "adapt_lr", "online_only")}   # WIN_HUNT_v5 operating-point overrides enter the config hash
-    sha = hashlib.sha256(json.dumps(cfg, sort_keys=True, default=str).encode()).hexdigest()[:8]
+    cfg = meta["scientific_config"]
+    config_sha256 = meta["run_config_sha256"]
+    complete = bool(meta["ledger"]["execution_complete"])
     candidate_names = meta.get("candidate_names", [f"{m}_{md}" for (m, md) in rc.CANDIDATES])
-    return {
-        "schema": "kbound_imagenetr_v0.5", "dataset": "imagenet-r",
+    not_computed = {
+        "status": "NOT_COMPUTED_INCOMPLETE_RUN",
+        "scorable": False,
+        "note": "aggregate withheld because the expected/completed/failed ledger is incomplete",
+    }
+    routing_a = (
+        rc.relabel_balanced_accuracy_fields(rc.aggregate_single_candidate(records))
+        if complete else not_computed
+    )
+    routing_b = rc.aggregate_multicandidate(conditions) if complete else not_computed
+    routing_c = rc.aggregate_smoothdrift(conditions) if complete else not_computed
+    detectability = (
+        an.detectability_analysis(records, tm.EVIDENCE_NAMES)
+        if complete and len(records) >= 4
+        else ({"note": "need>=4"} if complete else not_computed)
+    )
+    summary = rc.kbound_summary(records, conditions, delta=args.delta) if complete else not_computed
+    baselines = {
+        "always_freeze_mean_balanced_accuracy": (
+            float(np.mean([r["a0"] for r in records])) if records else None
+        ),
+        "per_candidate_always_adapt_mean_balanced_accuracy": {
+            candidate: float(np.mean([r["aa"] for r in records if r["candidate"] == candidate]))
+            for candidate in sorted(set(r["candidate"] for r in records))
+        },
+        "per_condition_oracle_mean_balanced_accuracy": (
+            float(np.mean([condition["oracle"] for condition in conditions])) if conditions else None
+        ),
+    } if complete else not_computed
+    manifest = {
+        "schema": "kbound_imagenetr_v0.7", "dataset": "imagenet-r",
+        "metric": "balanced_accuracy",
+        "metric_contract": {
+            "name": "balanced_accuracy",
+            "definition": "mean per-class recall over labels present in each evaluation pool",
+            "ordinary_accuracy_alias_allowed": False,
+        },
         "created": time.strftime("%Y-%m-%dT%H:%M:%S"),
         "host": {"platform": platform.platform(), "torch": torch.__version__,
                  "mps": bool(torch.backends.mps.is_available())},
-        "config": cfg, "config_sha8": sha,
+        "config": cfg,
+        "config_sha256": config_sha256,
+        "config_sha8": config_sha256[:8],
+        "run_ledger": meta["ledger"],
+        "execution_complete": complete,
+        "publication_eligible": False,
+        "publication_eligibility_note": (
+            "diagnostic run on an opened target; no disjoint validation-locked confirmation"
+        ),
+        "seed_semantics": cfg["seed_semantics"],
+        "model_artifact": meta["f0_identity"],
+        "candidate_model_artifacts": meta.get("candidate_identities", {}),
+        "claim_eligibility": {
+            "raw_completed_records": complete,
+            "route_a_single_candidate": False,
+            "route_b_multicandidate": False,
+            "route_c_smooth_drift": False,
+        },
+        "failures": meta["failures"],
         "f0": meta.get("f0", "torchvision resnet50 IMAGENET1K_V2; 1000 logits masked to 200 ImageNet-R classes (frozen)"),
         "num_classes": meta["n_classes"], "candidates": candidate_names,
         "panel": getattr(args, "panel", "shared_tta"),
-        "multiclass_caveat": ("multi-candidate tau-route (b) uses prediction agreement on a 200-class "
-                              "label space; the binary-Y advantage recovery (Thm 1A) is heuristic here, "
-                              "so per-condition tau is stored for re-pick. (a) KGA and (c) smooth-drift "
-                              "(max-prob Brier) generalize directly."),
-        "data": {"n_images": meta["n_images"], "n_classes": meta["n_classes"], "wall_sec": round(meta["wall_sec"], 1)},
-        "baselines": {
-            "always_freeze_mean_acc": float(np.mean([r["a0"] for r in records])) if records else None,
-            "per_candidate_always_adapt_mean_acc": {
-                c: float(np.mean([r["aa"] for r in records if r["candidate"] == c]))
-                for c in sorted(set(r["candidate"] for r in records))},
-            "per_condition_oracle_mean_acc": float(np.mean([c["oracle"] for c in conditions])) if conditions else None},
-        "routing_a_single_candidate": rc.aggregate_single_candidate(records),
-        "routing_b_multicandidate": rc.aggregate_multicandidate(conditions),
-        "routing_c_smooth_drift": rc.aggregate_smoothdrift(conditions),
-        "detectability": an.detectability_analysis(records, tm.EVIDENCE_NAMES) if len(records) >= 4 else {"note": "need>=4"},
-        "kbound_summary": rc.kbound_summary(records, conditions, delta=args.delta),
+        "multiclass_caveat": ("Route B is unsupported and unscored on the 200-class label space because "
+                              "its correctness-agreement identity is binary-only. Stored agreements are "
+                              "diagnostic data, not a routing result."),
+        "data": {"n_images": meta["n_images"], "n_classes": meta["n_classes"],
+                 "population_manifest": meta["population_identity"],
+                 "wall_sec": round(meta["wall_sec"], 1)},
+        "baselines": baselines,
+        "routing_a_single_candidate": routing_a,
+        "routing_b_multicandidate": routing_b,
+        "routing_c_smooth_drift": routing_c,
+        "detectability": detectability,
+        "kbound_summary": summary,
         "tau_distribution": sorted([float(c["route"]["tau"]) for c in conditions if c["route"].get("tau") is not None]),
         "records": records, "conditions": conditions,
     }
+    return rc.relabel_balanced_accuracy_fields(manifest)
 
 
 def parse_args(argv=None):
@@ -563,27 +1461,42 @@ def main(argv=None):
     partial = join(out_dir, "_partial.json")
     records, conditions, meta = run(a, partial_path=partial)
     man = build_manifest(a, records, conditions, meta)
-    out = a.out or join(out_dir, f"result_{man['config_sha8']}.json")
-    json.dump(man, open(out, "w"), indent=2)
+    complete = man["execution_complete"]
+    prefix = "diagnostic" if complete else "incomplete"
+    out = a.out or join(out_dir, f"{prefix}_{man['config_sha8']}.json")
+    ri.atomic_json_dump(man, out)
+    if not complete:
+        print(f"\nmanifest -> {out}")
+        raise RuntimeError(f"run incomplete: {man['run_ledger']}; wrote non-promotable artifact {out}")
     # ---- per-condition serialization (stress_grid_multiseed schema) ----------
-    if getattr(a, "serialize_per_condition", True) and records:
+    if complete and getattr(a, "serialize_per_condition", True) and records:
         # diverse_backbones panel: each frozen backbone is the "method" axis
         # (records carry method="backbone", candidate=<backbone>); shared_tta panel
         # uses method in {tent,eata,sar}.
         m_field = "candidate" if a.panel == "diverse_backbones" else "method"
         methods = sorted({r[m_field] for r in records})
         seeds = [int(s) for s in a.seeds]
+        seed_metadata = {
+            int(seed): {
+                "seed_role": "stream_seed",
+                "stream_seed": int(seed),
+                "model_seed": 0,
+                "checkpoint_sha256": meta["f0_identity"]["state_sha256"],
+                "independent_model_ci_eligible": False,
+            }
+            for seed in seeds
+        }
         ser = pcs.serialize_run(records, dataset="imagenet-r", out_dir=out_dir,
-                                seeds=seeds, methods=methods, method_field=m_field)
+                                seeds=seeds, methods=methods, method_field=m_field,
+                                seed_metadata=seed_metadata)
         print(f"[serialize] wrote {len(ser['written'])} per-condition files "
               f"(panel={a.panel}, methods={methods}, seeds={seeds}, "
               f"kga_backend={ser['kga_backend']}) -> {out_dir}")
-        if a.panel == "diverse_backbones" and conditions:
-            pan = pcs.serialize_panel_run(
-                records, conditions, dataset="imagenet-r", out_dir=out_dir,
-                seeds=seeds, candidate_order=list(a.candidate_backbones))
-            print(f"[serialize] wrote {len(pan['written'])} per-panel files "
-                  f"({pan['n_conditions']} conditions) -> {out_dir}")
+        if a.panel == "diverse_backbones":
+            print(
+                "[serialize] multicandidate panel artifact withheld: Route B is binary-only; "
+                "agreement fields remain available in the completed raw manifest"
+            )
     ks = man["kbound_summary"]; mb = man["routing_b_multicandidate"]; rcd = man["routing_c_smooth_drift"]
     td = man["tau_distribution"]
     print("\n" + "=" * 70)
@@ -594,6 +1507,10 @@ def main(argv=None):
     print(f"tau range             : [{td[0]:.3f}..{td[-1]:.3f}] (tau*={a.tau_star})" if td else "tau range: n/a")
     print(f"smooth-drift (c)      : impl={rcd.get('implemented')} decisions={rcd.get('decision_counts')} bracket_cov={rcd.get('bracket_coverage_trueB')}")
     print(f"\nmanifest -> {out}")
+    try:
+        os.unlink(partial)
+    except FileNotFoundError:
+        pass
     return out
 
 

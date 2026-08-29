@@ -6,21 +6,33 @@ import sys
 from pathlib import Path
 
 import numpy as np
-
+import pytest
 
 ROOT = Path(__file__).resolve().parents[1]
 WILDS_DIR = ROOT / "experiments" / "kbound" / "wilds"
 SCRIPTS_DIR = ROOT / "docs" / "research" / "kbound" / "scripts"
 
 
+def _require_torch() -> None:
+    if sys.version_info >= (3, 14):
+        pytest.skip("research torch runners are supported by the Python 3.12 CI environment")
+    try:
+        import torch  # noqa: F401
+    except (ImportError, RuntimeError) as exc:
+        for name in list(sys.modules):
+            if name == "torch" or name.startswith("torch."):
+                del sys.modules[name]
+        pytest.skip(f"torch runtime unavailable in this Python environment: {exc}")
+
+
 def test_full_camelyon_runner_exposes_protocol_f_evidence_panel_flag():
+    _require_torch()
     runner = WILDS_DIR / "run_camelyon17_kbound.py"
     proc = subprocess.run(
         [sys.executable, str(runner), "--help"],
         check=True,
         text=True,
-        stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE,
+        capture_output=True,
     )
 
     assert "--evidence-panel" in proc.stdout
@@ -28,6 +40,7 @@ def test_full_camelyon_runner_exposes_protocol_f_evidence_panel_flag():
 
 
 def test_rich_evidence_vector_is_finite_and_named():
+    _require_torch()
     sys.path.insert(0, str(WILDS_DIR))
     import tta_methods as tm
 

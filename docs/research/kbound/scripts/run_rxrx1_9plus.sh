@@ -94,9 +94,14 @@ read -r -a AGGRESSIVENESS <<< "$AGGRESSIVENESS_STR"
 
 quote_cmd() {
   local item
-  printf '%q' "$1"
+  item="$1"
+  [[ "$item" == "$REPO"* ]] && item="<repo>${item#"$REPO"}"
+  [[ "$item" == "$HOME"* ]] && item='${HOME}'"${item#"$HOME"}"
+  printf '%q' "$item"
   shift || true
   for item in "$@"; do
+    [[ "$item" == "$REPO"* ]] && item="<repo>${item#"$REPO"}"
+    [[ "$item" == "$HOME"* ]] && item='${HOME}'"${item#"$HOME"}"
     printf ' %q' "$item"
   done
   printf '\n'
@@ -106,8 +111,13 @@ condition_count=$((${#MODEL_SEEDS[@]} * ${#CONDITION_SEEDS[@]} * ${#COMPOSITIONS
 record_count=$((condition_count * 6))
 
 echo "RxRx1 Protocol-C / 9+ launcher"
-echo "  repo             = $REPO"
-echo "  runner           = $RUNNER"
+if [[ "$DRY_RUN" -eq 1 ]]; then
+  echo "  repo             = <repo>"
+  echo "  runner           = <repo>/experiments/kbound/wilds/run_rxrx1_kbound.py"
+else
+  echo "  repo             = $REPO"
+  echo "  runner           = $RUNNER"
+fi
 echo "  model seeds      = ${MODEL_SEEDS[*]}"
 echo "  condition seeds  = ${CONDITION_SEEDS[*]}"
 echo "  n_eval/n_batches = $N_EVAL / $N_BATCHES"

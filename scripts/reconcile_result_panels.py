@@ -40,6 +40,8 @@ from kga.certificate import split_conformal_rank_radius  # noqa: E402
 from kga.policy import decide_batch, decide_kga  # noqa: E402
 
 ALPHA = 0.10
+EXPECTED_NUMPY_VERSION = "2.4.4"
+EXPECTED_SKLEARN_VERSION = "1.8.0"
 BOOTSTRAP_REPLICATES = 20_000
 BOOTSTRAP_SEED = 20260809
 KAPPA_GRID = (0.0, 0.25, 0.5, 0.75, 0.9, 1.0, 1.25, 1.5, 2.0, 3.0, 5.0)
@@ -135,6 +137,10 @@ def _source_specs(archive: Path) -> list[tuple[Path, Path]]:
             SOURCE_ROOT / "iwildcam/test_seed01.json",
         ),
         (
+            results / "iwildcam_protocol_H_v2/protocol_result.json",
+            SOURCE_ROOT / "iwildcam/superseded_protocol_result.json",
+        ),
+        (
             results / "pacs_multiseed_v1/PACS_MULTISEED_RESULTS.json",
             SOURCE_ROOT / "pacs/PACS_MULTISEED_RESULTS.json",
         ),
@@ -168,9 +174,7 @@ def _source_specs(archive: Path) -> list[tuple[Path, Path]]:
     specs.extend(
         (path, SOURCE_ROOT / "cifar10c" / path.name)
         for path in sorted(
-            (results / "cifar10c_sar_rebuild_v2").glob(
-                "seed[0-4]/per_condition_cifar10c_sar_seed*.json"
-            )
+            (results / "cifar10c_sar_rebuild_v2").glob("seed[0-4]/per_condition_cifar10c_sar_seed*.json")
         )
     )
     specs.append(
@@ -181,11 +185,7 @@ def _source_specs(archive: Path) -> list[tuple[Path, Path]]:
     )
     specs.extend(
         (path, SOURCE_ROOT / "camelyon17_b_v2" / path.name)
-        for path in sorted(
-            (results / "camelyon17_fullscale_B_v2").glob(
-                "per_condition_camelyon17_*_seed*.json"
-            )
-        )
+        for path in sorted((results / "camelyon17_fullscale_B_v2").glob("per_condition_camelyon17_*_seed*.json"))
     )
     for model_seed, filename in (
         (0, "result_3f579e72.json"),
@@ -200,11 +200,7 @@ def _source_specs(archive: Path) -> list[tuple[Path, Path]]:
         )
     specs.extend(
         (path, SOURCE_ROOT / "cifar101" / path.name)
-        for path in sorted(
-            (results / "cifar101_multiseed_v1").glob(
-                "seed*/per_condition_cifar101_tent_seed*.json"
-            )
-        )
+        for path in sorted((results / "cifar101_multiseed_v1").glob("seed*/per_condition_cifar101_tent_seed*.json"))
     )
     return specs
 
@@ -294,6 +290,35 @@ def _path_list(paths: Path | Sequence[Path]) -> list[Path]:
 
 def _records_many(paths: Path | Sequence[Path]) -> list[dict[str, Any]]:
     return [record for path in _path_list(paths) for record in _records(path)]
+
+
+def _evidence_contract(paths: Path | Sequence[Path], records: Sequence[dict[str, Any]]) -> dict[str, Any]:
+    """Recover the exact feature width/names represented by compact sources."""
+
+    dimensions = sorted({len(row["Z"]) for row in records if "Z" in row})
+    if len(dimensions) != 1:
+        raise ValueError(f"mixed or missing evidence dimensions: {dimensions}")
+    names_seen: set[tuple[str, ...]] = set()
+    for row in records:
+        if row.get("Z_names"):
+            names_seen.add(tuple(str(name) for name in row["Z_names"]))
+    for path in _path_list(paths):
+        metadata = _load(path).get("metadata", {})
+        if metadata.get("evidence_names"):
+            names_seen.add(tuple(str(name) for name in metadata["evidence_names"]))
+    if len(names_seen) > 1:
+        raise ValueError(f"mixed evidence-name schemas: {sorted(names_seen)!r}")
+    names = next(iter(names_seen), None)
+    dimension = dimensions[0]
+    if names is not None and len(names) != dimension:
+        raise ValueError(f"evidence name count {len(names)} does not match width {dimension}")
+    payload = {
+        "dimension": dimension,
+        "feature_names": list(names) if names is not None else None,
+        "names_recovered": names is not None,
+    }
+    payload["schema_sha256"] = hashlib.sha256(_json_bytes(payload)).hexdigest()
+    return payload
 
 
 def _source_provenance(paths: Path | Sequence[Path]) -> list[dict[str, Any]]:
@@ -396,16 +421,21 @@ def _seed_bootstrap(records: Sequence[dict[str, Any]], decisions: Any) -> dict[s
             "mean_gap_baseline_minus_kga": float(values.mean()),
             "ci95": [float(x) for x in np.quantile(draws, [0.025, 0.975])],
         }
-    robust = all(row["ci95"][0] > 0.0 for row in intervals.values())
+    descriptive_positive = all(row["ci95"][0] > 0.0 for row in intervals.values())
     return {
         "per_seed": seed_rows,
-        "paired_seed_bootstrap": {
-            "unit": "seed mean",
+        "descriptive_seed_bootstrap": {
+            "unit": "run-seed mean conditional on the archived checkpoint/protocol",
             "replicates": BOOTSTRAP_REPLICATES,
             "random_seed": BOOTSTRAP_SEED,
             "gaps": intervals,
+            "both_lower_bounds_positive": descriptive_positive,
         },
-        "ci_robust_beats_both": robust,
+        "ci_robust_beats_both": False,
+        "reason": (
+            "independent checkpoint identities are not recorded for these run seeds; "
+            "the percentile interval is descriptive and cannot promote a CI-robust claim"
+        ),
     }
 
 
@@ -415,9 +445,7 @@ def _annotate_score(records: Sequence[dict[str, Any]], decisions: Any) -> dict[s
     return out
 
 
-def _kappa_sweep(
-    records: Sequence[dict[str, Any]], prediction: Any, epsilon: Any
-) -> list[dict[str, Any]]:
+def _kappa_sweep(records: Sequence[dict[str, Any]], prediction: Any, epsilon: Any) -> list[dict[str, Any]]:
     """Replay the interval gate while scaling only its already-fitted radius."""
     prediction_array = np.asarray(prediction, dtype=float)
     epsilon_array = np.asarray(epsilon, dtype=float)
@@ -478,9 +506,7 @@ def _radius_diagnostics(
         "mean_abs_Delta": float(np.mean(np.abs(benefit))),
         "sd_Delta": float(np.std(benefit)),
         "eps_over_mean_abs_Delta": (
-            float(np.mean(epsilon_array) / np.mean(np.abs(benefit)))
-            if np.mean(np.abs(benefit)) > 0
-            else None
+            float(np.mean(epsilon_array) / np.mean(np.abs(benefit))) if np.mean(np.abs(benefit)) > 0 else None
         ),
         "yield_ceiling_P_absDelta_gt_eps": ceiling,
         "estimator_share_of_ceiling": decision_yield / ceiling if ceiling > 0 else None,
@@ -562,6 +588,9 @@ def _transfer_panel(
         "test_seeds": sorted(test_seeds),
         "n_calibration": len(cal),
         "n_test": len(test),
+        "evidence_contract": _evidence_contract(
+            list(dict.fromkeys(_path_list(cal_path) + _path_list(test_path))), cal + test
+        ),
         "estimator": {
             "class": "sklearn.ensemble.GradientBoostingRegressor",
             "hyperparameters": {
@@ -573,7 +602,10 @@ def _transfer_panel(
             },
         },
         "calibration": {
-            "method": "leave-one-calibration-record-out residuals; exact split-conformal rank",
+            "method": (
+                "leave-one-calibration-record-out empirical residuals with an exact-rank "
+                "order statistic; not exact split conformal or jackknife+"
+            ),
             "alpha": ALPHA,
             "epsilon": float(epsilon),
             "a7_status": "not_established",
@@ -614,17 +646,55 @@ def reconcile_transfer_panels() -> dict[str, Any]:
         cal_seeds={0},
         test_seeds={1},
     )
+    historical_iwild = _load(SOURCE_ROOT / "iwildcam/superseded_protocol_result.json")
+    historical_score = historical_iwild["test_locked"]
     return {
         "officehome": {
             "protocol": "M-v2 locked SAR, target-val calibration to target-test evaluation",
             "primary": office_primary,
-            "independent_seed_replication": office_replication,
+            "test_stream_seed_replication": office_replication,
             "claim_scope": "descriptive transfer result; A7 stability premise was not predeclared",
         },
         "iwildcam": {
             "protocol": "H-v2 locked Tent episodic, seed-0 calibration to seed-1 evaluation",
             "primary": iwild,
-            "claim_scope": "descriptive transfer result; A7 stability premise was not predeclared",
+            "claim_scope": (
+                "withheld from release-level numerical claims because the archived scorer used "
+                "sklearn macro-F1 rather than the official WILDS label-present macro-F1 contract"
+            ),
+            "release_promotion": {
+                "eligible": False,
+                "status": "withheld_metric_contract_rerun_required",
+                "reason": (
+                    "the archived scorer includes prediction-only classes; a pinned rerun with "
+                    "the official WILDS metric and a sealed population manifest is required"
+                ),
+            },
+            "historical_reconciliation": {
+                "status": "superseded_not_promotable",
+                "historical_artifact": (
+                    "experiments/kbound/results/reconciled_panels_v1/source/iwildcam/superseded_protocol_result.json"
+                ),
+                "historical_claim": {
+                    "epsilon": historical_score["eps_global"],
+                    "regret_kga": historical_score["regret_kga"],
+                    "regret_always_adapt": historical_score["regret_adapt"],
+                    "regret_always_freeze": historical_score["regret_freeze"],
+                    "beats_both": historical_score["beats_both"],
+                },
+                "corrected_claim": {
+                    "epsilon": iwild["calibration"]["epsilon"],
+                    "regret_kga": iwild["exact_rank_transfer_score"]["regret"]["kga"],
+                    "regret_always_adapt": iwild["exact_rank_transfer_score"]["regret"]["always_adapt"],
+                    "regret_always_freeze": iwild["exact_rank_transfer_score"]["regret"]["always_freeze"],
+                    "point_beats_both": iwild["exact_rank_transfer_score"]["point_beats_both"],
+                },
+                "reason": (
+                    "the historical radius is consistent with optimistic in-sample residual "
+                    "calibration; replay with leave-one-calibration-record-out residuals makes "
+                    "the radius wider, removes the only ADAPT action, and ties always-freeze"
+                ),
+            },
         },
     }
 
@@ -637,9 +707,7 @@ def _grid_panel(directory: Path, *, expected_seeds: set[int]) -> dict[str, Any]:
     files = _grid_files(directory)
     if not files:
         raise FileNotFoundError(f"no per-condition files under {directory}")
-    by_candidate: dict[
-        str, list[tuple[list[dict[str, Any]], np.ndarray, np.ndarray, np.ndarray]]
-    ] = defaultdict(list)
+    by_candidate: dict[str, list[tuple[list[dict[str, Any]], np.ndarray, np.ndarray, np.ndarray]]] = defaultdict(list)
     seen_seeds: dict[str, set[int]] = defaultdict(set)
     for path in files:
         records = _records(path)
@@ -686,9 +754,7 @@ def _grid_panel(directory: Path, *, expected_seeds: set[int]) -> dict[str, Any]:
             )
         score = _annotate_score(candidate_records, candidate_decisions)
         score["per_file"] = per_file
-        score["kappa_sweep"] = _kappa_sweep(
-            candidate_records, candidate_predictions, candidate_epsilons
-        )
+        score["kappa_sweep"] = _kappa_sweep(candidate_records, candidate_predictions, candidate_epsilons)
         score["radius_diagnostics"] = _radius_diagnostics(
             candidate_records,
             candidate_predictions,
@@ -702,13 +768,20 @@ def _grid_panel(directory: Path, *, expected_seeds: set[int]) -> dict[str, Any]:
         all_decisions.extend(candidate_decisions)
     aggregate = _annotate_score(all_records, all_decisions)
     aggregate["kappa_sweep"] = _kappa_sweep(all_records, all_predictions, all_epsilons)
-    aggregate["radius_diagnostics"] = _radius_diagnostics(
-        all_records, all_predictions, all_epsilons, all_decisions
-    )
+    aggregate["radius_diagnostics"] = _radius_diagnostics(all_records, all_predictions, all_epsilons, all_decisions)
     return {
         "rule": "per-candidate, per-seed exact-rank leave-one-condition-out KGA",
+        "calibration_scope": (
+            "cross-fitted empirical residual calibration; direct self-inclusion removed, "
+            "exchangeability and independence not established"
+        ),
         "alpha": ALPHA,
         "seeds": sorted(expected_seeds),
+        "seed_scope": (
+            "run/stream seeds conditional on archived checkpoint identities unless a track "
+            "separately supplies independently trained checkpoint hashes"
+        ),
+        "evidence_contract": _evidence_contract(files, [row for path in files for row in _records(path)]),
         "candidate_count": len(candidates),
         "candidates": candidates,
         "architecture_panel_aggregate": aggregate,
@@ -758,9 +831,7 @@ def _model_seed_robustness(
     aggregate: dict[str, Any] = {
         "n_model_seeds": len(per_model_seed),
         "regret_mean_std": {},
-        "fa_u_max": float(
-            max(row["exact_rank_transfer_score"]["fa_u"] for row in per_model_seed)
-        ),
+        "fa_u_max": float(max(row["exact_rank_transfer_score"]["fa_u"] for row in per_model_seed)),
         "all_tie_always_freeze": all(
             math.isclose(
                 row["exact_rank_transfer_score"]["regret"]["kga"],
@@ -769,17 +840,11 @@ def _model_seed_robustness(
             )
             for row in per_model_seed
         ),
-        "any_point_beats_both": any(
-            row["exact_rank_transfer_score"]["point_beats_both"]
-            for row in per_model_seed
-        ),
+        "any_point_beats_both": any(row["exact_rank_transfer_score"]["point_beats_both"] for row in per_model_seed),
     }
     for policy in ("kga", "always_adapt", "always_freeze"):
         values = np.asarray(
-            [
-                row["exact_rank_transfer_score"]["regret"][policy]
-                for row in per_model_seed
-            ],
+            [row["exact_rank_transfer_score"]["regret"][policy] for row in per_model_seed],
             dtype=float,
         )
         aggregate["regret_mean_std"][policy] = {
@@ -813,9 +878,7 @@ def reconcile_missing_locked_panels() -> dict[str, Any]:
     )
 
     camelyon_b_files = _grid_files(SOURCE_ROOT / "camelyon17_b_v2")
-    camelyon_b = _grid_panel(
-        SOURCE_ROOT / "camelyon17_b_v2", expected_seeds={0, 1, 2}
-    )
+    camelyon_b = _grid_panel(SOURCE_ROOT / "camelyon17_b_v2", expected_seeds={0, 1, 2})
 
     rxrx1_sources = [SOURCE_ROOT / f"rxrx1/modelseed{seed}.json" for seed in range(3)]
     rxrx1_primary = _transfer_panel(
@@ -866,12 +929,15 @@ def reconcile_missing_locked_panels() -> dict[str, Any]:
                 ),
                 "replay": camelyon_ood,
                 "claim_scope": (
-                    "held-out no-harm result that ties always-adapt on an all-helpful test panel; "
-                    "not a beats-both result and FA_u=0 is vacuous here"
+                    "archived opened OOD diagnostic that ties always-adapt on an all-helpful panel; "
+                    "not prospective, not a beats-both result, and FA_u=0 is vacuous here"
                 ),
                 "headline_promotion": {
                     "eligible": False,
-                    "reason": "one fixed policy is oracle-equivalent on every held-out condition",
+                    "reason": (
+                        "the OOD evaluation was already opened and one fixed policy is "
+                        "oracle-equivalent on every condition"
+                    ),
                 },
                 "source_provenance": _source_provenance(camelyon_ood_source),
             },
@@ -891,8 +957,7 @@ def reconcile_missing_locked_panels() -> dict[str, Any]:
         },
         "rxrx1": {
             "protocol": (
-                "Protocol J, SAR-online; dev stream seeds 0-4 calibrate and test stream "
-                "seeds 5-9 are scored once"
+                "Protocol J, SAR-online; dev stream seeds 0-4 calibrate and test stream seeds 5-9 are scored once"
             ),
             "primary_model_seed0": rxrx1_primary,
             "model_seed_robustness": _model_seed_robustness(
@@ -912,10 +977,7 @@ def reconcile_missing_locked_panels() -> dict[str, Any]:
             "source_provenance": _source_provenance(rxrx1_sources),
         },
         "cifar101": {
-            "protocol": (
-                "Protocol K, Tent; dev stream seeds 0-2 calibrate and test stream seeds "
-                "3-4 are scored once"
-            ),
+            "protocol": ("Protocol K, Tent; dev stream seeds 0-2 calibrate and test stream seeds 3-4 are scored once"),
             "replay": cifar101,
             "claim_scope": (
                 "locked negative cross-seed diagnostic; the corrected exact-rank replay "
@@ -1029,11 +1091,20 @@ def _fmt(value: float | None) -> str:
 def _panel_rows(result: dict[str, Any]) -> list[dict[str, Any]]:
     rows = []
     office = result["panels"]["officehome"]
-    for name, key in (("Office-Home M-v2", "primary"), ("Office-Home replication", "independent_seed_replication")):
+    for name, key in (("Office-Home M-v2", "primary"), ("Office-Home replication", "test_stream_seed_replication")):
         score = office[key]["exact_rank_transfer_score"]
         rows.append({"name": name, "score": score, "replay": "yes", "scope": "descriptive/A7 open"})
-    iwild = result["panels"]["iwildcam"]["primary"]["exact_rank_transfer_score"]
-    rows.append({"name": "iWildCam H-v2", "score": iwild, "replay": "yes", "scope": "descriptive/A7 open"})
+    iwild_panel = result["panels"]["iwildcam"]
+    iwild = iwild_panel["primary"]["exact_rank_transfer_score"]
+    rows.append(
+        {
+            "name": "iWildCam H-v2",
+            "score": iwild,
+            "replay": "archived only",
+            "scope": "withheld: official-metric rerun required",
+            "withheld": not iwild_panel.get("release_promotion", {}).get("eligible", False),
+        }
+    )
     imagenetc = result["panels"]["imagenetc"]["panel"]["candidates"]
     for candidate in ("sar", "tent", "eata"):
         rows.append(
@@ -1058,20 +1129,16 @@ def _panel_rows(result: dict[str, Any]) -> list[dict[str, Any]]:
                 "scope": "controlled exact-rank grid",
             }
         )
-    camelyon_ood = result["panels"]["camelyon17"]["ood"]["replay"][
-        "exact_rank_transfer_score"
-    ]
+    camelyon_ood = result["panels"]["camelyon17"]["ood"]["replay"]["exact_rank_transfer_score"]
     rows.append(
         {
             "name": "Camelyon17 OOD",
             "score": camelyon_ood,
             "replay": "yes",
-            "scope": "held-out no-harm",
+            "scope": "archived opened OOD diagnostic",
         }
     )
-    camelyon_b = result["panels"]["camelyon17"]["b_v2_diagnostic"]["panel"][
-        "candidates"
-    ]
+    camelyon_b = result["panels"]["camelyon17"]["b_v2_diagnostic"]["panel"]["candidates"]
     for candidate in ("tent", "eata", "sar"):
         rows.append(
             {
@@ -1081,9 +1148,7 @@ def _panel_rows(result: dict[str, Any]) -> list[dict[str, Any]]:
                 "scope": "within-seed diagnostic",
             }
         )
-    rxrx1 = result["panels"]["rxrx1"]["primary_model_seed0"][
-        "exact_rank_transfer_score"
-    ]
+    rxrx1 = result["panels"]["rxrx1"]["primary_model_seed0"]["exact_rank_transfer_score"]
     rows.append(
         {
             "name": "RxRx1 J",
@@ -1117,6 +1182,12 @@ def render_markdown(result: dict[str, Any]) -> str:
     for row in _panel_rows(result):
         score = row["score"]
         regret = score["regret"]
+        if row.get("withheld"):
+            lines.append(
+                f"| {row['name']} | withheld | withheld | withheld | withheld | withheld | withheld | withheld "
+                f"| {row['replay']} | {row['scope']} |"
+            )
+            continue
         lines.append(
             f"| {row['name']} | {score.get('n', score.get('n_domain_seed_units', '--'))} "
             f"| {_fmt(regret['kga'])} | {_fmt(regret['always_adapt'])} "
@@ -1129,12 +1200,13 @@ def render_markdown(result: dict[str, Any]) -> str:
             "",
             "## Interpretation",
             "",
-            "- Office-Home and iWildCam are now numerically reconciled from their saved per-condition records. Their transfer-calibrated scores remain descriptive because no predeclared uniform A7 full-fit-versus-LOO stability bound was archived.",
+            "- Office-Home is numerically reconciled from its saved per-condition records, but remains descriptive because no predeclared uniform A7 full-fit-versus-LOO stability bound was archived.",
+            "- iWildCam is withheld from the release-level numerical panel because its archived records used sklearn macro-F1 rather than the official WILDS metric. Historical and cross-fitted values under that invalid contract remain hash-locked for audit only; a pinned official-metric rerun is required.",
             "- ImageNet-C is recomputed with exact-rank, leave-one-condition-out radii. It is a corrected controlled-grid panel, not a natural-shift claim.",
             "- PACS seed summaries agree with the three-seed aggregate, but the absent `b_hat` and calibration residuals prevent decision replay.",
             "- ImageNet-R is replayed per backbone and seed. Its aggregate is an architecture-panel diagnostic, not one deployable policy and not a beats-both result.",
             "- CIFAR-10-C uses the completed SAR rebuild alongside the original Tent/EATA stress-grid records. Candidate scores are separate policies; their aggregate is diagnostic only.",
-            "- Camelyon17 OOD and RxRx1 J are held-out no-harm results that tie the better fixed policy. Camelyon17 B-v2 is retained separately as a within-seed diagnostic.",
+            "- Camelyon17 OOD is an archived, already-opened, all-helpful diagnostic; RxRx1 J is a no-harm result that ties always-freeze. Camelyon17 B-v2 is retained separately as a within-seed diagnostic.",
             "- CIFAR-10.1 K is the locked cross-seed replay. It is retained as a negative diagnostic and is not promoted from historical within-seed summaries.",
             "",
         ]
@@ -1155,6 +1227,11 @@ def render_latex(result: dict[str, Any]) -> str:
         regret = score["regret"]
         name = row["name"].replace("-", "--")
         n = score.get("n", score.get("n_domain_seed_units", "--"))
+        if row.get("withheld"):
+            lines.append(
+                f"{name} & \\multicolumn{{6}}{{c}}{{withheld: official-metric rerun required}} \\\\"
+            )
+            continue
         lines.append(
             f"{name} & {n} & {_fmt(regret['kga'])} & {_fmt(regret['always_adapt'])} & "
             f"{_fmt(regret['always_freeze'])} & {_fmt(score.get('fa_u'))} & "
@@ -1226,6 +1303,16 @@ def main() -> int:
         help="reuse the existing Office-Home/iWildCam transfer replay and refresh grid panels only",
     )
     args = parser.parse_args()
+    runtime_mismatch = []
+    if np.__version__ != EXPECTED_NUMPY_VERSION:
+        runtime_mismatch.append(f"numpy={np.__version__} (expected {EXPECTED_NUMPY_VERSION})")
+    if sklearn.__version__ != EXPECTED_SKLEARN_VERSION:
+        runtime_mismatch.append(f"scikit-learn={sklearn.__version__} (expected {EXPECTED_SKLEARN_VERSION})")
+    if runtime_mismatch:
+        parser.error(
+            "canonical reconciliation requires the analysis runtime pinned in "
+            "requirements.lock.txt; " + ", ".join(runtime_mismatch)
+        )
     if args.import_from:
         if args.clean_import and SOURCE_ROOT.exists():
             # ExFAT/APFS metadata races can make a directory entry disappear
@@ -1235,6 +1322,13 @@ def main() -> int:
         print(f"Imported {manifest['file_count']} source artifacts into {SOURCE_ROOT}")
     if not (RESULT_ROOT / "source_manifest.json").is_file():
         parser.error("source manifest missing; run once with --import-from ARCHIVE_ROOT")
+    manifest_path = RESULT_ROOT / "source_manifest.json"
+    manifest = _load(manifest_path)
+    generator_hash = _sha256(Path(__file__))
+    if manifest.get("generator_sha256") != generator_hash:
+        manifest["generator"] = "scripts/reconcile_result_panels.py"
+        manifest["generator_sha256"] = generator_hash
+        _write_json(manifest_path, manifest)
     if args.reuse_transfer and not (RESULT_ROOT / "canonical_panel_results.json").is_file():
         parser.error("--reuse-transfer requires an existing canonical_panel_results.json")
     result = reconcile(reuse_transfer=args.reuse_transfer)
