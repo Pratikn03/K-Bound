@@ -71,6 +71,23 @@ def test_source_seal_rejects_non_head_commit(
         seal.build_payload(tmp_path, old)
 
 
+def test_tree_enumeration_does_not_request_unrelated_blob_sizes(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    calls: list[tuple[str, ...]] = []
+    oid = "a" * 40
+
+    def fake_git_bytes(*args: str, repo: Path) -> bytes:
+        assert repo == tmp_path
+        calls.append(args)
+        return f"100644 blob {oid}\tmaintained.txt\0".encode("ascii")
+
+    monkeypatch.setattr(seal, "_git_bytes", fake_git_bytes)
+
+    assert seal._tree_blobs(tmp_path, "source-commit") == {"maintained.txt": oid}
+    assert calls == [("ls-tree", "-r", "-z", "source-commit")]
+
+
 def test_release_generated_authorities_are_outer_checksum_outputs() -> None:
     generated = {
         "docs/research/kbound/claim_ledger.json",

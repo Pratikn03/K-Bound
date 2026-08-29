@@ -206,18 +206,23 @@ def _dirty_paths(repo: Path) -> set[str]:
     return paths
 
 
-def _tree_blobs(repo: Path, commit: str) -> dict[str, tuple[str, int]]:
-    raw = _git_bytes("ls-tree", "-r", "-l", "-z", commit, repo=repo)
-    blobs: dict[str, tuple[str, int]] = {}
+def _tree_blobs(repo: Path, commit: str) -> dict[str, str]:
+    # Do not request ``ls-tree -l`` sizes here. Git may need to read every blob
+    # to obtain them, which can hydrate unrelated macOS/iCloud dataless objects.
+    # Tree entries already contain every path and blob object ID needed to select
+    # the maintained inventory; byte counts are derived only for selected blobs
+    # after their contents are read below.
+    raw = _git_bytes("ls-tree", "-r", "-z", commit, repo=repo)
+    blobs: dict[str, str] = {}
     for record in raw.split(b"\0"):
         if not record:
             continue
         metadata, encoded_path = record.split(b"\t", 1)
-        _mode, kind, oid, size = metadata.decode("ascii").split()
+        _mode, kind, oid = metadata.decode("ascii").split()
         if kind != "blob":
             continue
         path = encoded_path.decode("utf-8")
-        blobs[path] = (oid, int(size))
+        blobs[path] = oid
     return blobs
 
 
@@ -247,10 +252,9 @@ def _artifact_rows(repo: Path, commit: str) -> list[dict[str, object]]:
             raise FileNotFoundError(
                 f"required release-seal input is not tracked at {commit}: {relative}"
             )
-        blob_oid, blob_bytes = blobs[relative]
+        blob_oid = blobs[relative]
         data = _git_bytes("cat-file", "blob", blob_oid, repo=repo)
-        if len(data) != blob_bytes:
-            raise ValueError(f"git blob byte count is inconsistent: {relative}")
+        blob_bytes = len(data)
         rows.append(
             {
                 "path": relative,
