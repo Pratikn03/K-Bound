@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 """Build the canonical promoted-result manifest from the claim ledger.
 
-The ledger controls wording/status.  This manifest records one existing authoritative
-artifact for every promoted empirical claim and adds machine-readable headline metrics
-for the completed PACS and ImageNet-R diagnostics.
+The ledger controls wording/status. This manifest records one existing authoritative
+artifact for every release-eligible empirical claim and adds bounded, machine-readable
+metrics for canonical panels plus the separately sealed CCT-20 and So2Sat authorities.
 """
 from __future__ import annotations
 
@@ -25,7 +25,18 @@ HEADTOHEAD = (
     ROOT
     / "experiments/kbound/results/mixed_headtohead_v1/HEADTOHEAD_RESULTS_cifar10c_tent_primary.json"
 )
+CCT20_RELEASE = ROOT / "docs/research/kbound/paper/generated/cct20_release_manifest.json"
+SO2SAT_SELECTION = (
+    ROOT
+    / "experiments/kbound/results/so2sat_lcz42_prospective_v1/"
+    "development_mps_bn_fix_v1/so2sat_candidate_selection.json"
+)
 CI_CONVENTION = "baseline_regret_minus_kga_regret; positive values favor KGA"
+CURRENT_CLUSTER_SCHEMA = "kbound-current-policy-cluster-inference-v3"
+FAMILY_FIELD = "retrospective_holm_over_six_prospectively_named_contrasts"
+COMPARISON_P_FIELD = "p_value_retrospective_holm_six_prospectively_named_contrasts"
+GATE_REJECTS_BOTH_FIELD = "both_sign_flip_tests_survive_retrospective_six_contrast_holm_0_05"
+GATE_PASS_FIELD = "retrospective_six_contrast_cluster_sensitivity_pass"
 PHASE1_PROVENANCE = (
     "docs/research/kbound/audits/phase1_provenance_2026_08_27/provenance_seal.json"
 )
@@ -37,6 +48,37 @@ def digest(path: Path) -> str:
         for chunk in iter(lambda: fh.read(1 << 20), b""):
             h.update(chunk)
     return h.hexdigest()
+
+
+def validated_separate_authorities(ledger: dict) -> dict:
+    """Validate and return the non-panel CCT-20 and So2Sat authorities."""
+
+    reconciliation = ledger.get("reconciliation_source", {})
+    authorities = reconciliation.get("separate_receipt_linked_authorities", {})
+    expected = {
+        "cct20": (
+            "KB-CLAIM-051",
+            CCT20_RELEASE,
+            "SAFE_UTILITY_ONLY",
+        ),
+        "so2sat_development": (
+            "KB-CLAIM-052",
+            SO2SAT_SELECTION,
+            "NO_FEASIBLE_CANDIDATE_STOP_BEFORE_GATE_CAL",
+        ),
+    }
+    if set(authorities) != set(expected):
+        raise ValueError("release ledger must name exactly the CCT-20 and So2Sat authorities")
+    for name, (claim_id, path, verdict) in expected.items():
+        row = authorities[name]
+        if (
+            row.get("claim_id") != claim_id
+            or row.get("artifact") != path.relative_to(ROOT).as_posix()
+            or row.get("artifact_sha256") != digest(path)
+            or row.get("verdict") != verdict
+        ):
+            raise ValueError(f"release ledger has a stale or malformed {name} authority")
+    return authorities
 
 
 def score_metrics(score: dict) -> dict:
@@ -72,18 +114,42 @@ def score_metrics(score: dict) -> dict:
     }
 
 
+def config_hash_status(claim_id: str) -> str:
+    if claim_id == "KB-CLAIM-051":
+        return (
+            "Protocol, runtime, checkpoint, data, and artifact identities are recorded "
+            "in the receipt-linked CCT-20 release manifest and "
+            "KBOUND_CCT20_EXECUTION_RUNTIME_ADDENDUM_v2.yaml."
+        )
+    if claim_id == "KB-CLAIM-052":
+        return (
+            "Candidate configuration, environment, source-checkpoint, protocol, "
+            "runtime-amendment, bundle, and receipt hashes are stored in the selection "
+            "and gate-fit artifacts."
+        )
+    return (
+        "No single execution-time configuration hash can truthfully represent this "
+        "aggregate or historical claim. Recoverable serialized configuration hashes, "
+        "protocol-file hashes, and unresolved gaps are recorded in the Phase-1 "
+        "provenance seal."
+    )
+
+
 def current_cluster_metrics() -> dict:
     raw = json.loads(CURRENT_CLUSTER.read_text())
-    if raw.get("schema") != "kbound-current-policy-cluster-inference-v2":
-        raise ValueError("current-policy family sensitivity must use the v2 schema")
+    if raw.get("schema") != CURRENT_CLUSTER_SCHEMA:
+        raise ValueError("current-policy family sensitivity must use the v3 schema")
     if raw.get("contrast_convention") != CI_CONVENTION:
         raise ValueError("current-policy family sensitivity uses the wrong contrast convention")
     analysis_path = ROOT / raw["analysis_script"]
     if not analysis_path.is_file() or digest(analysis_path) != raw["analysis_script_sha256"]:
         raise ValueError("current-policy family sensitivity analysis-script binding is stale")
-    family = raw.get("preregistered_six_comparison_holm", {})
+    family = raw.get(FAMILY_FIELD, {})
     if family.get("family_size") != 6 or family.get("alpha") != 0.05:
-        raise ValueError("current-policy family sensitivity lacks the preregistered six-way Holm family")
+        raise ValueError(
+            "current-policy family sensitivity lacks retrospective Holm over the six "
+            "prospectively named contrasts"
+        )
 
     for name, binding in raw.get("live_code_bindings", {}).items():
         path = ROOT / binding["path"]
@@ -93,8 +159,8 @@ def current_cluster_metrics() -> dict:
     candidates = {}
     for candidate in ("tent", "eata", "sar"):
         row = raw["candidates"][candidate]
-        if row["gate"]["preregistered_six_comparison_cluster_sensitivity_pass"] is not False:
-            raise ValueError(f"unexpected preregistered family-sensitivity pass for {candidate}")
+        if row["gate"][GATE_PASS_FIELD] is not False:
+            raise ValueError(f"unexpected retrospective family-sensitivity pass for {candidate}")
         candidates[candidate] = {
             "inference_unit": row["grain"]["inference_unit"],
             "n_inference_units": row["grain"]["n_inference_units"],
@@ -105,8 +171,8 @@ def current_cluster_metrics() -> dict:
             "within_candidate_posthoc_holm_rejects_both": row["gate"][
                 "both_one_sided_sign_flip_tests_survive_within_candidate_posthoc_holm_0.05"
             ],
-            "preregistered_six_comparison_holm_rejects_both": row["gate"][
-                "both_sign_flip_tests_survive_preregistered_six_comparison_holm_0.05"
+            "retrospective_six_contrast_holm_rejects_both": row["gate"][
+                GATE_REJECTS_BOTH_FIELD
             ],
             "comparisons": {
                 baseline: {
@@ -119,9 +185,7 @@ def current_cluster_metrics() -> dict:
                     "p_value_holm_within_candidate_posthoc": comparison[
                         "p_value_holm_within_candidate_posthoc"
                     ],
-                    "p_value_holm_preregistered_six_comparison_family": comparison[
-                        "p_value_holm_preregistered_six_comparison_family"
-                    ],
+                    COMPARISON_P_FIELD: comparison[COMPARISON_P_FIELD],
                 }
                 for baseline, comparison in row["comparisons"].items()
             },
@@ -143,13 +207,14 @@ def current_cluster_metrics() -> dict:
         "convention": CI_CONVENTION,
         "inference": raw["inference"],
         "claim_boundary": raw["claim_boundary"],
-        "preregistered_six_comparison_holm": family,
+        FAMILY_FIELD: family,
         "candidates": candidates,
         "release_interpretation": (
             "Tent has positive ordinary family-bootstrap intervals against both fixed policies. "
-            "Its within-candidate two-contrast Holm result is post hoc; the preregistered six-way "
-            "Holm p-values are 0.09375 against both baselines, so no cluster-robust or "
-            "confirmatory win is promoted. EATA and SAR also fail the preregistered gate."
+            "Its within-candidate two-contrast Holm result is post hoc; the retrospectively "
+            "Holm-adjusted p-values over the six prospectively named contrasts are 0.09375 "
+            "against both baselines. The exact-rank replay, sign-flip tests, and Holm analysis "
+            "are retrospective and non-confirmatory; EATA and SAR also fail the gate."
         ),
     }
 
@@ -258,11 +323,141 @@ def special_metrics(claim_id: str) -> dict:
             **score_metrics(panels["cifar101"]["replay"]["exact_rank_transfer_score"]),
             "headline_promotion_eligible": False,
         }
+    if claim_id == "KB-CLAIM-051":
+        raw = json.loads(CCT20_RELEASE.read_text())
+        verdict = raw.get("verdict", {})
+        if (
+            raw.get("schema") != "kbound_cct20_release_manifest_v1"
+            or raw.get("status") != "RELEASE_COMPLETE"
+            or verdict.get("code") != "SAFE_UTILITY_ONLY"
+            or verdict.get("safe_utility_passes") is not True
+            or verdict.get("protocol_strong_success") is not False
+        ):
+            raise ValueError("CCT-20 release authority is not the sealed safe-utility-only result")
+        counts = raw.get("action_exposure", {}).get("counts", {})
+        if counts != {"ABSTAIN": 1, "ADAPT": 0, "FREEZE": 44}:
+            raise ValueError("CCT-20 release action counts drifted")
+        return {
+            "n_decisions": raw["design"]["cell_count"],
+            "checkpoint_count": raw["design"]["checkpoint_count"],
+            "location_cluster_count": raw["design"]["location_cluster_count"],
+            "decision_counts": counts,
+            "adaptation_effect_counts": {
+                "helpful": raw["adaptation_effect_mix"]["helpful_cells_strictly_positive"],
+                "harmful": raw["adaptation_effect_mix"]["harmful_cells_strictly_negative"],
+                "zero": raw["adaptation_effect_mix"]["neutral_cells_exactly_zero"],
+            },
+            "point_beats_both": False,
+            "ci_robust_beats_both": False,
+            "verdict": verdict["code"],
+            "safe_utility_passes": True,
+            "comparison_inference": {
+                "convention": CI_CONVENTION,
+                "unit": (
+                    "camera location, averaging the five independent checkpoints "
+                    "within each location"
+                ),
+                "multiplicity": "separate locked two-comparison Holm family",
+                "comparisons": {
+                    baseline.removeprefix("versus_"): {
+                        "point": row["point_estimate"],
+                        "simultaneous_bonferroni_97_5_ci": row[
+                            "simultaneous_bonferroni_97_5_ci"
+                        ],
+                        "holm_p": row["holm_adjusted_p"],
+                    }
+                    for baseline, row in raw["primary_comparisons"].items()
+                },
+                "current_policy_authority": True,
+            },
+            "headline_promotion_eligible": False,
+            "prospective_disclosure": raw["prospective_disclosure"],
+        }
+    if claim_id == "KB-CLAIM-052":
+        raw = json.loads(SO2SAT_SELECTION.read_text())
+        candidate_names = {
+            "tent_adam_bn_affine_probe_transfer_v1": "tent",
+            "sar_sam_bn_affine_probe_transfer_v1": "sar",
+        }
+        candidate_ids = raw.get("candidate_ids", [])
+        candidate_summaries = raw.get("candidate_summaries", {})
+        gate_fit_cities = raw.get("study_binding", {}).get("gate_fit_cities", [])
+        if (
+            raw.get("schema") != "kbound_so2sat_adapter_candidate_selection_v1"
+            or raw.get("status") != "NO_FEASIBLE_CANDIDATE_STOP_BEFORE_GATE_CAL"
+            or raw.get("selected_candidate_id") is not None
+            or set(candidate_ids) != set(candidate_names)
+            or set(candidate_summaries) != set(candidate_names)
+            or not gate_fit_cities
+            or len(set(gate_fit_cities)) != len(gate_fit_cities)
+            or raw.get("gate_cal_rows_read_before_selection") != 0
+            or raw.get("target_pixels_read") != 0
+            or raw.get("target_labels_read") != 0
+            or raw.get("target_inputs") != []
+        ):
+            raise ValueError("So2Sat selection authority does not preserve the no-candidate stop")
+        candidates = {}
+        study_shapes = set()
+        for candidate_id, summary in sorted(candidate_summaries.items()):
+            feasibility = summary["feasibility"]
+            if feasibility.get("feasible") is not False:
+                raise ValueError(f"So2Sat candidate unexpectedly became feasible: {candidate_id}")
+            short_name = candidate_names.get(candidate_id)
+            if short_name is None:
+                raise ValueError(f"unknown So2Sat candidate ID: {candidate_id}")
+            city_count = feasibility.get("city_count")
+            checkpoint_count = feasibility.get("checkpoint_count")
+            cell_count = feasibility.get("cell_count")
+            if (
+                city_count != len(gate_fit_cities)
+                or set(feasibility.get("city_mean_benefit", {})) != set(gate_fit_cities)
+                or not isinstance(checkpoint_count, int)
+                or checkpoint_count <= 0
+                or cell_count != city_count * checkpoint_count
+            ):
+                raise ValueError(f"So2Sat study shape drifted for candidate: {candidate_id}")
+            study_shapes.add((city_count, checkpoint_count, cell_count))
+            candidates[short_name] = {
+                "feasible": False,
+                "helpful_cities": len(feasibility["helpful_cities"]),
+                "harmful_cities": len(feasibility["harmful_cities"]),
+                "always_adapt_accuracy": feasibility["always_adapt_accuracy"],
+                "always_freeze_accuracy": feasibility["always_freeze_accuracy"],
+                "loco_routed_accuracy": feasibility["loco_routed_accuracy"],
+                "oracle_routing_gap": feasibility["oracle_routing_gap"],
+                "loco_sign_accuracy": feasibility["loco_sign_accuracy"],
+                "loco_gain_over_best_fixed": feasibility[
+                    "loco_routed_gain_over_best_fixed"
+                ],
+            }
+        if len(study_shapes) != 1:
+            raise ValueError("So2Sat candidates do not share one development study shape")
+        development_city_count, checkpoint_count, development_cell_count = study_shapes.pop()
+        return {
+            "verdict": raw["status"],
+            "selected_candidate_id": None,
+            "development_city_count": development_city_count,
+            "checkpoint_count": checkpoint_count,
+            "candidate_count": len(candidate_ids),
+            "development_cell_count_per_candidate": development_cell_count,
+            "target_score": None,
+            "target_access": {
+                "target_inputs": [],
+                "target_pixels_read": 0,
+                "target_labels_read": 0,
+                "gate_cal_rows_read_before_selection": 0,
+            },
+            "candidate_summaries": candidates,
+            "point_beats_both": False,
+            "ci_robust_beats_both": False,
+            "headline_promotion_eligible": False,
+        }
     return {}
 
 
 def main() -> None:
     ledger = json.loads(LEDGER.read_text())
+    separate_authorities = validated_separate_authorities(ledger)
     results = []
     missing = []
     for claim in ledger["claims"]:
@@ -283,12 +478,7 @@ def main() -> None:
             "claim_id": claim["claim_id"], "dataset": claim.get("dataset", "n/a"),
             "protocol": claim.get("protocol", "n/a"), "status": claim["status"],
             "source_artifact": rel, "config_hash": None,
-            "config_hash_status": (
-                "No single execution-time configuration hash can truthfully represent this "
-                "aggregate or historical claim. Recoverable serialized configuration hashes, "
-                "protocol-file hashes, and unresolved gaps are recorded in the Phase-1 "
-                "provenance seal."
-            ),
+            "config_hash_status": config_hash_status(claim["claim_id"]),
             "quantile_rule": claim.get("calibration_method"), "metrics": metrics,
         })
     if missing:
@@ -319,6 +509,10 @@ def main() -> None:
                 "artifact_bytes": CURRENT_CLUSTER.stat().st_size,
                 "status": "retrospective_not_preregistered_significant",
             },
+            "separate_receipt_linked_authorities": separate_authorities,
+            "multiplicity_status": ledger["reconciliation_source"][
+                "multiplicity_status"
+            ],
             "phase1_provenance_seal": PHASE1_PROVENANCE,
             "identity_scope": (
                 "Retrospective hashes bind current or archived bytes only; they are not "

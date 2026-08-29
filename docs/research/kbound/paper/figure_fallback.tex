@@ -1,20 +1,19 @@
-%% figure_fallback.tex -- graceful degradation for figure assets that are not in the tree.
+%% figure_fallback.tex -- graceful degradation if a figure asset is unavailable.
 %%
 %% WHY THIS EXISTS
-%%   Six PNG assets referenced by the manuscripts are absent from this repository
-%%   snapshot (they predate the 2026-07 restructure and were never committed):
+%%   The maintained repository currently carries the six historical PNG assets:
 %%     fig_decision_flow, fig_frontier_schematic, fig_certificate,
 %%     fig_decisive_decisions_cifar10c, fig_decisive_pareto_cifar10c, fig_natural_forest
-%%   (the long manuscript kbound.tex references a further ten in the same state).
-%%   Without this file pdflatex raises "File not found" and typesets a black
-%%   rectangle containing the raw path -- a broken image box in the shipped PDF.
+%%   This fallback keeps reduced or anonymous source bundles buildable if an
+%%   optional asset is deliberately omitted. Without it, pdflatex raises
+%%   "File not found" and leaves a broken image box.
 %%
 %% WHAT IT DOES
 %%   \kbgraphics[<opts>]{<path>} == \includegraphics[<opts>]{<path>} when <path>
 %%   exists, and otherwise typesets a clearly-labelled placeholder frame naming the
 %%   absent asset. Nothing is invented: the placeholder asserts no data and is
-%%   visually impossible to mistake for a result. Restore the PNGs and every call
-%%   silently reverts to the real figure with no source edit and no rebuild flag.
+%%   visually impossible to mistake for a result. When the PNG is present, every
+%%   call uses the real figure with no source edit or build flag.
 %%
 %%   A PLACEHOLDER IS NOT A FIGURE. It is not a null result, not an empty plot,
 %%   and not evidence of anything. Every quantity the absent figures would display

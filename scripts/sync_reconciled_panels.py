@@ -38,11 +38,37 @@ HISTORICAL_HEADTOHEAD_PATH = (
     ROOT
     / "experiments/kbound/results/mixed_headtohead_v1/HEADTOHEAD_RESULTS_cifar10c_tent_primary.json"
 )
+CCT20_RELEASE_PATH = ROOT / "docs/research/kbound/paper/generated/cct20_release_manifest.json"
+CCT20_RELEASE_RECEIPT_PATH = CCT20_RELEASE_PATH.with_suffix(".json.receipt.json")
+CCT20_RUNTIME_ADDENDUM_PATH = (
+    ROOT / "research_lock/KBOUND_CCT20_EXECUTION_RUNTIME_ADDENDUM_v2.yaml"
+)
+SO2SAT_DEVELOPMENT_DIR = (
+    ROOT
+    / "experiments/kbound/results/so2sat_lcz42_prospective_v1/development_mps_bn_fix_v1"
+)
+SO2SAT_SELECTION_PATH = SO2SAT_DEVELOPMENT_DIR / "so2sat_candidate_selection.json"
+SO2SAT_SELECTION_RECEIPT_PATH = SO2SAT_SELECTION_PATH.with_suffix(".json.receipt.json")
+SO2SAT_TENT_GATE_FIT_PATH = (
+    SO2SAT_DEVELOPMENT_DIR / "so2sat_tent_adam_bn_affine_probe_transfer_v1.gate_fit.json"
+)
+SO2SAT_SAR_GATE_FIT_PATH = (
+    SO2SAT_DEVELOPMENT_DIR / "so2sat_sar_sam_bn_affine_probe_transfer_v1.gate_fit.json"
+)
+SO2SAT_RUNTIME_AMENDMENT_PATH = (
+    ROOT / "research_lock/KBOUND_SO2SAT_DEVELOPMENT_RUNTIME_AMENDMENT_v1.json"
+)
 
 CI_CONVENTION = "baseline_regret_minus_kga_regret; positive values favor KGA"
 CURRENT_POLICY_STATUS = "current_policy_exact_rank_replay"
 HISTORICAL_POLICY_STATUS = "historical_policy_only"
 CURRENT_CLUSTER_STATUS = "retrospective_current_policy_family_sensitivity"
+CURRENT_CLUSTER_SCHEMA = "kbound-current-policy-cluster-inference-v3"
+FAMILY_FIELD = "retrospective_holm_over_six_prospectively_named_contrasts"
+COMPARISON_P_FIELD = "p_value_retrospective_holm_six_prospectively_named_contrasts"
+COMPARISON_REJECT_FIELD = "retrospective_holm_six_contrasts_reject_at_0_05"
+GATE_REJECTS_BOTH_FIELD = "both_sign_flip_tests_survive_retrospective_six_contrast_holm_0_05"
+GATE_PASS_FIELD = "retrospective_six_contrast_cluster_sensitivity_pass"
 
 
 def _load(path: Path) -> dict[str, Any]:
@@ -55,6 +81,218 @@ def _write(path: Path, value: dict[str, Any]) -> None:
 
 def _sha256(path: Path) -> str:
     return hashlib.sha256(path.read_bytes()).hexdigest()
+
+
+def _relative(path: Path) -> str:
+    return path.relative_to(ROOT).as_posix()
+
+
+def _validated_separate_natural_authorities() -> tuple[dict[str, Any], dict[str, Any]]:
+    """Load the later CCT-20/So2Sat authorities and verify their receipt bindings.
+
+    These studies are not rows in the reconciled panel.  The panel synchronizer must
+    therefore preserve them explicitly, and must stop instead of silently dropping or
+    accepting a changed authority.
+    """
+
+    required = (
+        CCT20_RELEASE_PATH,
+        CCT20_RELEASE_RECEIPT_PATH,
+        CCT20_RUNTIME_ADDENDUM_PATH,
+        SO2SAT_SELECTION_PATH,
+        SO2SAT_SELECTION_RECEIPT_PATH,
+        SO2SAT_TENT_GATE_FIT_PATH,
+        SO2SAT_TENT_GATE_FIT_PATH.with_suffix(".json.receipt.json"),
+        SO2SAT_SAR_GATE_FIT_PATH,
+        SO2SAT_SAR_GATE_FIT_PATH.with_suffix(".json.receipt.json"),
+        SO2SAT_RUNTIME_AMENDMENT_PATH,
+    )
+    missing = [_relative(path) for path in required if not path.is_file()]
+    if missing:
+        raise FileNotFoundError(
+            "separate natural-study release authority is incomplete: " + ", ".join(missing)
+        )
+
+    cct = _load(CCT20_RELEASE_PATH)
+    cct_receipt = _load(CCT20_RELEASE_RECEIPT_PATH)
+    cct_hash = _sha256(CCT20_RELEASE_PATH)
+    cct_verdict = cct.get("verdict", {})
+    if (
+        cct.get("schema") != "kbound_cct20_release_manifest_v1"
+        or cct.get("status") != "RELEASE_COMPLETE"
+        or cct_verdict.get("code") != "SAFE_UTILITY_ONLY"
+        or cct_verdict.get("safe_utility_passes") is not True
+        or cct_verdict.get("protocol_strong_success") is not False
+        or cct_receipt.get("schema") != "kbound_cct20_artifact_receipt_v1"
+        or cct_receipt.get("artifact_sha256") != cct_hash
+        or cct_receipt.get("artifact_bytes") != CCT20_RELEASE_PATH.stat().st_size
+    ):
+        raise ValueError("CCT-20 release manifest or receipt is stale or malformed")
+
+    so2sat = _load(SO2SAT_SELECTION_PATH)
+    so2sat_receipt = _load(SO2SAT_SELECTION_RECEIPT_PATH)
+    so2sat_hash = _sha256(SO2SAT_SELECTION_PATH)
+    expected_candidates = {
+        "tent_adam_bn_affine_probe_transfer_v1",
+        "sar_sam_bn_affine_probe_transfer_v1",
+    }
+    if (
+        so2sat.get("schema") != "kbound_so2sat_adapter_candidate_selection_v1"
+        or so2sat.get("status") != "NO_FEASIBLE_CANDIDATE_STOP_BEFORE_GATE_CAL"
+        or so2sat.get("selected_candidate_id") is not None
+        or set(so2sat.get("candidate_ids", [])) != expected_candidates
+        or set(so2sat.get("candidate_summaries", {})) != expected_candidates
+        or so2sat.get("study_binding", {}).get("protocol_id")
+        != "KBOUND_SO2SAT_LCZ42_PROSPECTIVE_CONFIRMATION_v1"
+        or so2sat.get("gate_cal_rows_read_before_selection") != 0
+        or so2sat.get("target_inputs") != []
+        or so2sat.get("target_pixels_read") != 0
+        or so2sat.get("target_labels_read") != 0
+        or so2sat_receipt.get("schema") != "kbound_so2sat_artifact_receipt_v2"
+        or so2sat_receipt.get("artifact_sha256") != so2sat_hash
+        or so2sat_receipt.get("artifact_bytes") != SO2SAT_SELECTION_PATH.stat().st_size
+    ):
+        raise ValueError("So2Sat selection manifest or receipt is stale or malformed")
+    if any(
+        row.get("feasibility", {}).get("feasible") is not False
+        for row in so2sat["candidate_summaries"].values()
+    ):
+        raise ValueError("So2Sat release authority no longer records a negative gate-fit")
+
+    return cct, so2sat
+
+
+def _separate_natural_release_claims(
+    cct: dict[str, Any], so2sat: dict[str, Any]
+) -> list[dict[str, Any]]:
+    counts = cct["action_exposure"]["counts"]
+    if counts != {"ABSTAIN": 1, "ADAPT": 0, "FREEZE": 44}:
+        raise ValueError("CCT-20 action counts drifted from the released safe-utility result")
+
+    summaries: dict[str, Any] = {}
+    candidate_names = {
+        "tent_adam_bn_affine_probe_transfer_v1": "tent",
+        "sar_sam_bn_affine_probe_transfer_v1": "sar",
+    }
+    for candidate_id, short_name in candidate_names.items():
+        feasibility = so2sat["candidate_summaries"][candidate_id]["feasibility"]
+        summaries[short_name] = {
+            "helpful_cities": len(feasibility["helpful_cities"]),
+            "harmful_cities": len(feasibility["harmful_cities"]),
+            "loco_sign_accuracy": feasibility["loco_sign_accuracy"],
+            "loco_gain_over_best_fixed": feasibility[
+                "loco_routed_gain_over_best_fixed"
+            ],
+            "oracle_routing_gap": feasibility["oracle_routing_gap"],
+            "feasible": False,
+        }
+
+    return [
+        {
+            "claim_id": "KB-CLAIM-051",
+            "claim_text": (
+                "The prospectively governed CCT-20 target study passed only its locked "
+                "safe-utility criterion: across 45 checkpoint-location cells KGA issued 44 "
+                "FREEZE, zero ADAPT, and one ABSTAIN decision, tied always-freeze, and "
+                "improved over harmful always-adapt."
+            ),
+            "claim_type": "empirical",
+            "claim_tier": "B",
+            "protocol": "KBOUND_CCT20_PROSPECTIVE_CONFIRMATION_v1",
+            "dataset": "CCT-20",
+            "candidate_adapter": "Tent",
+            "calibration_method": (
+                "locked development ridge gate with location-level target inference"
+            ),
+            "test_split": "prospective CCT-20 trans-test target",
+            "status": "no-harm",
+            "supporting_artifacts": [
+                _relative(CCT20_RELEASE_PATH),
+                _relative(CCT20_RELEASE_RECEIPT_PATH),
+                _relative(CCT20_RUNTIME_ADDENDUM_PATH),
+            ],
+            "assumptions": [
+                "set-membership top-1 accuracy rather than official single-label leaderboard accuracy",
+                "location is the inference cluster",
+                "five independent checkpoint tensors",
+                (
+                    "outcomes were unopened before execution, but aggregate target metadata "
+                    "had been inspected during dataset ranking"
+                ),
+                "zero ADAPT exposure prevents a bidirectional routing-success claim",
+            ],
+            "allowed_wording": (
+                "prospective CCT-20 SAFE_UTILITY_ONLY result; ties always-freeze and protects "
+                "against harmful always-adapt with zero ADAPT exposure"
+            ),
+            "forbidden_wording": [
+                "beats both fixed policies",
+                "strong routing success",
+                "bidirectional natural-shift win",
+                "official CCT-20 leaderboard reproduction",
+                "literally label-unopened target selection",
+            ],
+            "verdict": "SAFE_UTILITY_ONLY",
+            "action_counts": counts,
+            "contrast_convention": CI_CONVENTION,
+        },
+        {
+            "claim_id": "KB-CLAIM-052",
+            "claim_text": (
+                "The locked So2Sat-LCZ42 development gate-fit found no feasible Tent or SAR "
+                "candidate and stopped before gate calibration; target inputs were empty, "
+                "target pixels read were zero, target labels read were zero, and no target "
+                "natural-shift score exists."
+            ),
+            "claim_type": "empirical",
+            "claim_tier": "B",
+            "protocol": "KBOUND_SO2SAT_LCZ42_PROSPECTIVE_CONFIRMATION_v1",
+            "dataset": "So2Sat-LCZ42",
+            "candidate_adapter": "Tent and SAR",
+            "calibration_method": (
+                "locked leave-one-city-out ridge gate fit on nine development cities"
+            ),
+            "test_split": "development gate-fit only; Culture-10 target unopened",
+            "status": "diagnostic",
+            "supporting_artifacts": [
+                _relative(SO2SAT_SELECTION_PATH),
+                _relative(SO2SAT_SELECTION_RECEIPT_PATH),
+                _relative(SO2SAT_TENT_GATE_FIT_PATH),
+                _relative(SO2SAT_TENT_GATE_FIT_PATH.with_suffix(".json.receipt.json")),
+                _relative(SO2SAT_SAR_GATE_FIT_PATH),
+                _relative(SO2SAT_SAR_GATE_FIT_PATH.with_suffix(".json.receipt.json")),
+                _relative(SO2SAT_RUNTIME_AMENDMENT_PATH),
+            ],
+            "assumptions": [
+                "five independent source checkpoints",
+                "nine gate-fit cities with locked west/east spatial partitions",
+                "development outcomes are now open and cannot be reused as fresh confirmation",
+                (
+                    "v1 target action-unit contract must be resolved before any future target "
+                    "execution"
+                ),
+            ],
+            "allowed_wording": (
+                "negative development-stage gate-fit; no feasible candidate; stopped before "
+                "gate calibration with no target access and no target score"
+            ),
+            "forbidden_wording": [
+                "So2Sat target result",
+                "natural-shift routing win",
+                "target confirmation",
+                "Culture-10 score",
+                "retune on the same development panel and call it confirmatory",
+            ],
+            "verdict": "NO_FEASIBLE_CANDIDATE_STOP_BEFORE_GATE_CAL",
+            "target_access": {
+                "target_inputs": [],
+                "target_pixels_read": 0,
+                "target_labels_read": 0,
+                "gate_cal_rows_read_before_selection": 0,
+            },
+            "development_summary": summaries,
+        },
+    ]
 
 
 def _regret(score: dict[str, Any]) -> list[float]:
@@ -167,14 +405,17 @@ def _normalized_historical_cluster() -> dict[str, Any]:
 def _normalized_current_cluster(raw: dict[str, Any], candidate: str) -> dict[str, Any]:
     """Expose the corrected family sensitivity without promoting a confirmatory win."""
 
-    if raw.get("schema") != "kbound-current-policy-cluster-inference-v2":
-        raise ValueError("current-policy cluster artifact must use the v2 schema")
+    if raw.get("schema") != CURRENT_CLUSTER_SCHEMA:
+        raise ValueError("current-policy cluster artifact must use the v3 schema")
     if raw.get("contrast_convention") != CI_CONVENTION:
         raise ValueError("current-policy cluster artifact uses the wrong contrast convention")
 
-    family = raw.get("preregistered_six_comparison_holm", {})
+    family = raw.get(FAMILY_FIELD, {})
     if family.get("family_size") != 6 or family.get("alpha") != 0.05:
-        raise ValueError("current-policy cluster artifact must expose the preregistered six-way Holm family")
+        raise ValueError(
+            "current-policy cluster artifact must expose retrospective Holm over the six "
+            "prospectively named contrasts"
+        )
 
     bindings = raw.get("live_code_bindings", {})
     required_bindings = ("policy", "certificate", "preregistered_protocol")
@@ -194,8 +435,10 @@ def _normalized_current_cluster(raw: dict[str, Any], candidate: str) -> dict[str
     grain = row.get("grain", {})
     if grain.get("inference_unit") != "corruption_family" or grain.get("n_inference_units") != 6:
         raise ValueError(f"current-policy cluster candidate {candidate!r} has the wrong inference unit")
-    if row.get("gate", {}).get("preregistered_six_comparison_cluster_sensitivity_pass") is not False:
-        raise ValueError(f"current-policy cluster candidate {candidate!r} must fail the preregistered gate")
+    if row.get("gate", {}).get(GATE_PASS_FIELD) is not False:
+        raise ValueError(
+            f"current-policy cluster candidate {candidate!r} must fail the retrospective gate"
+        )
 
     comparisons: dict[str, Any] = {}
     for baseline in ("always_adapt", "always_freeze"):
@@ -210,12 +453,8 @@ def _normalized_current_cluster(raw: dict[str, Any], candidate: str) -> dict[str
             "p_value_holm_within_candidate_posthoc": comparison[
                 "p_value_holm_within_candidate_posthoc"
             ],
-            "p_value_holm_preregistered_six_comparison_family": comparison[
-                "p_value_holm_preregistered_six_comparison_family"
-            ],
-            "preregistered_six_comparison_reject_at_0.05": comparison[
-                "holm_preregistered_six_comparison_reject_at_0.05"
-            ],
+            COMPARISON_P_FIELD: comparison[COMPARISON_P_FIELD],
+            COMPARISON_REJECT_FIELD: comparison[COMPARISON_REJECT_FIELD],
         }
 
     return {
@@ -242,15 +481,17 @@ def _normalized_current_cluster(raw: dict[str, Any], candidate: str) -> dict[str
         "within_candidate_posthoc_holm_rejects_both": row["gate"][
             "both_one_sided_sign_flip_tests_survive_within_candidate_posthoc_holm_0.05"
         ],
-        "preregistered_six_comparison_holm_rejects_both": row["gate"][
-            "both_sign_flip_tests_survive_preregistered_six_comparison_holm_0.05"
+        "retrospective_six_contrast_holm_rejects_both": row["gate"][
+            GATE_REJECTS_BOTH_FIELD
         ],
         "claim_boundary": raw["claim_boundary"],
         "claim_note": (
             "Retrospective sensitivity on six observed corruption families. Ordinary family-"
             "bootstrap intervals are unadjusted; the within-candidate two-contrast Holm values "
-            "are post hoc, and the preregistered six-comparison Holm family fails for every "
-            "candidate. This is not independent-checkpoint, prospective, natural-shift, or "
+            "are post hoc. Retrospective Holm adjustment over the six prospectively named "
+            "contrasts fails the two-baseline gate for every candidate. The exact-rank replay, "
+            "sign-flip tests, and Holm analysis are retrospective and non-confirmatory. This "
+            "is not independent-checkpoint, prospective, natural-shift, or "
             "official-code POEM/AETTA evidence."
         ),
     }
@@ -278,8 +519,8 @@ def _write_current_cluster_table(raw: dict[str, Any]) -> None:
         freeze = row["comparisons"]["always_freeze"]
         lines.append(
             f"{labels[candidate]} & {interval(adapt)} & {interval(freeze)} & "
-            f"{adapt['p_value_holm_preregistered_six_comparison_family']:.5f}/"
-            f"{freeze['p_value_holm_preregistered_six_comparison_family']:.5f} \\\\"
+            f"{adapt[COMPARISON_P_FIELD]:.5f}/"
+            f"{freeze[COMPARISON_P_FIELD]:.5f} \\\\"
         )
     lines.extend([r"\bottomrule", r"\end{tabular}"])
     CURRENT_CLUSTER_TABLE_PATH.write_text("\n".join(lines) + "\n")
@@ -528,13 +769,15 @@ def _sync_table(
     tracks["cifar10c_tent"]["verdict"] = (
         "Current exact-rank point estimate beats both fixed policies. In a retrospective "
         "current-policy sensitivity over six corruption families, both ordinary family-bootstrap "
-        "intervals are positive; however, both preregistered six-comparison Holm p-values are "
-        "0.09375, so no cluster-robust, confirmatory, or independent-checkpoint win is claimed."
+        "intervals are positive; however, p-values from retrospective Holm adjustment over the "
+        "six prospectively named contrasts are 0.09375, so no cluster-robust, confirmatory, or "
+        "independent-checkpoint win is claimed."
     )
     tracks["cifar10c_eata"]["verdict"] = (
         "Current exact-rank point estimate beats both fixed policies, but the ordinary adapt-side "
-        "family-bootstrap interval crosses zero and the preregistered six-comparison Holm family "
-        "fails; no cluster-robust or independent-checkpoint claim is made."
+        "family-bootstrap interval crosses zero and the retrospective Holm analysis over the "
+        "six prospectively named contrasts fails; no cluster-robust or independent-checkpoint "
+        "claim is made."
     )
     tracks["cifar10c_sar"]["verdict"] = (
         "Completed negative arm: zero observed false adaptation but higher regret than always-adapt."
@@ -886,22 +1129,22 @@ def _sync_table(
         "runtime": current_cluster["runtime"],
         "live_code_bindings": current_cluster["live_code_bindings"],
         "inference": current_cluster["inference"],
-        "preregistered_six_comparison_holm": current_cluster[
-            "preregistered_six_comparison_holm"
-        ],
+        FAMILY_FIELD: current_cluster[FAMILY_FIELD],
         "claim_boundary": current_cluster["claim_boundary"],
         "candidates": normalized_cluster,
         "release_interpretation": (
             "Tent has positive ordinary family-bootstrap intervals against both fixed policies, "
-            "but its two preregistered six-comparison Holm p-values are 0.09375. EATA and SAR "
-            "also fail the preregistered gate. No cluster-robust or confirmatory win is promoted."
+            "but its two p-values from retrospective Holm adjustment over the six prospectively "
+            "named contrasts are 0.09375. EATA and SAR also fail the retrospective gate. No "
+            "cluster-robust or confirmatory win is promoted."
         ),
     }
     table["regenerated_utc"] = "2026-08-27"
     table["regeneration_provenance"] = (
         "All current-policy rows are regenerated from the source-hashed canonical panel. "
         "The separately code-bound current-policy family sensitivity is retrospective and fails "
-        "the preregistered six-comparison Holm gate. Earlier-policy cluster and head-to-head "
+        "retrospective Holm adjustment over the six prospectively named contrasts. "
+        "Earlier-policy cluster and head-to-head "
         "artifacts are retained only in explicitly historical, non-release-eligible blocks."
     )
     table["nine_track_lock_seal"]["status"] = HISTORICAL_POLICY_STATUS
@@ -1011,11 +1254,11 @@ def _sync_uniform_verdicts(
             unit=f"{len(cifar['seeds'])} run seeds x {score['n'] // len(cifar['seeds'])} cells",
             verdict=(
                 "current-policy point beats both; retrospective six-family sensitivity only; "
-                "preregistered six-comparison Holm fails"
+                "retrospective six-named-contrast Holm gate fails"
                 if candidate == "tent"
                 else (
                     "current-policy point beats both; adapt-side family interval crosses zero; "
-                    "preregistered six-comparison Holm fails"
+                    "retrospective six-named-contrast Holm gate fails"
                     if candidate == "eata"
                     else "negative arm: current-policy KGA has higher regret than always-adapt"
                 )
@@ -1029,7 +1272,7 @@ def _sync_uniform_verdicts(
         )
         uniform_row = _row_by_track(rows, track)
         uniform_row["current_policy_family_sensitivity"] = cluster_sensitivity
-        uniform_row["survives_preregistered_six_comparison_holm"] = False
+        uniform_row["survives_retrospective_six_contrast_holm"] = False
 
     imagenetc = panels["imagenetc"]["panel"]
     for candidate, track in (
@@ -1202,15 +1445,17 @@ def _sync_uniform_verdicts(
         "Mixed head-to-head: recompute POEM/AETTA-style comparisons against the current exact-rank KGA policy."
     ]
     meta["multiplicity_family_status"] = (
-        "The current CIFAR-10-C sensitivity applies Holm to the preregistered six "
-        "candidate-by-baseline sign-flip p-values; every candidate fails its two-baseline gate. "
+        "The current CIFAR-10-C sensitivity applies retrospective Holm adjustment over the six "
+        "prospectively named candidate-by-baseline contrasts; every candidate fails its "
+        "two-baseline gate. "
         "No current-policy POEM/AETTA head-to-head family has been evaluated."
     )
     meta.pop("wave_holm_family", None)
     meta["corrections_applied"] = (
         "Current CIFAR-10-C family-bootstrap confidence intervals are unadjusted. Holm is applied "
-        "to the preregistered six sign-flip p-values; within-candidate two-contrast Holm values "
-        "are post hoc only. Archived POEM/AETTA-style p-values use a separate historical Holm "
+        "retrospectively to the six sign-flip p-values for the prospectively named contrasts; "
+        "within-candidate two-contrast Holm values are post hoc only. Archived POEM/AETTA-style "
+        "p-values use a separate historical Holm "
         "correction; their archived paired percentile confidence intervals are unadjusted."
     )
     meta["reconciliation_source"] = {
@@ -1230,9 +1475,7 @@ def _sync_uniform_verdicts(
         "artifact_bytes": CURRENT_CLUSTER_PATH.stat().st_size,
         "runtime": current_cluster["runtime"],
         "live_code_bindings": current_cluster["live_code_bindings"],
-        "preregistered_six_comparison_holm": current_cluster[
-            "preregistered_six_comparison_holm"
-        ],
+        FAMILY_FIELD: current_cluster[FAMILY_FIELD],
         "claim_boundary": current_cluster["claim_boundary"],
     }
     # The prior Holm family and migration summary mixed earlier policies with
@@ -1249,11 +1492,11 @@ def _sync_uniform_verdicts(
         ],
         "retrospective_current_policy_family_sensitivity": {
             "positive_unadjusted_intervals_vs_both": ["CIFAR-10-C Tent"],
-            "preregistered_six_comparison_holm_rejects_both": [],
+            "retrospective_six_contrast_holm_rejects_both": [],
             "note": (
                 "Tent's within-candidate two-contrast Holm p-values are 0.03125, but that "
-                "comparison family is post hoc. The preregistered six-comparison Holm p-values "
-                "are 0.09375 for both Tent baselines."
+                "comparison family is post hoc. The p-values from retrospective Holm adjustment "
+                "over the six prospectively named contrasts are 0.09375 for both Tent baselines."
             ),
         },
         "current_policy_negative_or_tie_diagnostics": [
@@ -1273,7 +1516,8 @@ def _sync_uniform_verdicts(
         "withdrawn": ["Camelyon17 G"],
         "note": (
             "A current-policy six-family sensitivity is now available. Tent's ordinary intervals "
-            "are positive, but no candidate passes the preregistered six-comparison Holm gate; "
+            "are positive, but no candidate passes the retrospective Holm gate over the six "
+            "prospectively named contrasts; "
             "therefore no cluster-robust or confirmatory win is promoted. A policy-synchronized "
             "POEM/AETTA Phase 2 recomputation is still required."
         ),
@@ -1400,7 +1644,7 @@ def _sync_decision_metrics(
             note=(
                 "Current per-candidate exact-rank replay. Run-seed inference is descriptive; "
                 "the separate six-family sensitivity is retrospective and fails the "
-                "preregistered six-comparison Holm gate."
+                "retrospective Holm gate over the six prospectively named contrasts."
             ),
         )
         _row_by_track(rows, track)["current_policy_family_sensitivity"] = (
@@ -1534,12 +1778,11 @@ def _sync_decision_metrics(
         "artifact_sha256": _sha256(CURRENT_CLUSTER_PATH),
         "artifact_bytes": CURRENT_CLUSTER_PATH.stat().st_size,
         "status": CURRENT_CLUSTER_STATUS,
-        "preregistered_six_comparison_holm": current_cluster[
-            "preregistered_six_comparison_holm"
-        ],
+        FAMILY_FIELD: current_cluster[FAMILY_FIELD],
         "interpretation": (
             "Tent has positive ordinary intervals against both baselines. No candidate rejects "
-            "both comparisons after the preregistered six-way Holm correction."
+            "both comparisons after retrospective Holm adjustment over the six prospectively "
+            "named contrasts."
         ),
     }
     metrics["reconciliation_source"] = {
@@ -1553,6 +1796,7 @@ def _sync_decision_metrics(
 def _sync_ledger(ledger: dict[str, Any], current_cluster: dict[str, Any]) -> None:
     source = PANEL_PATH.relative_to(ROOT).as_posix()
     source_manifest = SOURCE_MANIFEST.relative_to(ROOT).as_posix()
+    cct20_authority, so2sat_authority = _validated_separate_natural_authorities()
 
     theorem = _claim(ledger, "KB-CLAIM-001")
     theorem["claim_text"] = (
@@ -1581,8 +1825,9 @@ def _sync_ledger(ledger: dict[str, Any], current_cluster: dict[str, Any]) -> Non
                 "estimates under the current exact-rank replay, while SAR loses to always-adapt. "
                 "A retrospective current-policy sensitivity over six corruption families gives "
                 "Tent positive ordinary family-bootstrap intervals against both baselines, but "
-                "the preregistered six-comparison Holm p-values are 0.09375 for both Tent "
-                "contrasts; EATA and SAR also fail the two-baseline gate."
+                "the p-values from retrospective Holm adjustment over the six prospectively "
+                "named contrasts are 0.09375 for both Tent contrasts; EATA and SAR also fail the "
+                "two-baseline gate."
             ),
             "supporting_artifacts": [
                 source,
@@ -1596,8 +1841,8 @@ def _sync_ledger(ledger: dict[str, Any], current_cluster: dict[str, Any]) -> Non
             ],
             "allowed_wording": (
                 "controlled current-policy point-estimate routing gains; retrospective six-family "
-                "Tent sensitivity with positive unadjusted intervals; preregistered six-comparison "
-                "Holm fails"
+                "Tent sensitivity with positive unadjusted intervals; retrospective Holm over "
+                "the six prospectively named contrasts fails"
             ),
             "forbidden_wording": [
                 "five independent model seeds",
@@ -1616,9 +1861,7 @@ def _sync_ledger(ledger: dict[str, Any], current_cluster: dict[str, Any]) -> Non
                 "status": CURRENT_CLUSTER_STATUS,
                 "runtime": current_cluster["runtime"],
                 "live_code_bindings": current_cluster["live_code_bindings"],
-                "preregistered_six_comparison_holm": current_cluster[
-                    "preregistered_six_comparison_holm"
-                ],
+                FAMILY_FIELD: current_cluster[FAMILY_FIELD],
                 "candidates": {
                     candidate: {
                         "pointwise_family_intervals_positive_vs_both": current_cluster[
@@ -1631,7 +1874,7 @@ def _sync_ledger(ledger: dict[str, Any], current_cluster: dict[str, Any]) -> Non
                         ][candidate]["gate"][
                             "both_one_sided_sign_flip_tests_survive_within_candidate_posthoc_holm_0.05"
                         ],
-                        "preregistered_six_comparison_holm_rejects_both": False,
+                        "retrospective_six_contrast_holm_rejects_both": False,
                     }
                     for candidate in ("tent", "eata", "sar")
                 },
@@ -1643,9 +1886,14 @@ def _sync_ledger(ledger: dict[str, Any], current_cluster: dict[str, Any]) -> Non
     head_to_head.update(
         {
             "claim_text": (
-                "The archived CIFAR-10-C Tent head-to-head compared protocol-matched POEM- and "
-                "AETTA-style ports against an earlier KGA policy that was not recomputed. Its "
+                "The archived CIFAR-10-C Tent head-to-head compared protocol-matched, "
+                "non-official historical POEM/AETTA ports against an earlier KGA policy that "
+                "was not recomputed. Its "
                 "Holm-adjusted p-values and unadjusted paired intervals are historical only."
+            ),
+            "calibration_method": (
+                "loo_gbr + conformal (KGA); protocol-matched, non-official historical "
+                "POEM/AETTA ports"
             ),
             "status": "diagnostic",
             "supporting_artifacts": [
@@ -1658,7 +1906,8 @@ def _sync_ledger(ledger: dict[str, Any], current_cluster: dict[str, Any]) -> Non
                 "current exact-rank KGA policy differs from the archived KGA policy",
             ],
             "allowed_wording": (
-                "historical earlier-policy comparison; current-policy POEM/AETTA-style recomputation pending"
+                "protocol-matched, non-official historical POEM/AETTA ports; current-policy "
+                "official native recomputation pending"
             ),
             "forbidden_wording": [
                 "current-policy WIN",
@@ -1811,13 +2060,14 @@ def _sync_ledger(ledger: dict[str, Any], current_cluster: dict[str, Any]) -> Non
     universal["source_locator"] = "kbound_submission_body.tex, Limitations and Discussion"
 
     ledger.pop("_artifact_audit_2026_07_26", None)
-    ledger["_artifact_audit_2026_08_27"] = {
+    ledger.pop("_artifact_audit_2026_08_27", None)
+    ledger["_artifact_audit_2026_08_29"] = {
         "checked": "every supporting_artifacts path, resolved against the repository root",
         "missing_count": 0,
         "missing": [],
         "note": (
-            "Regenerated after repairing KB-CLAIM-022 and replacing the malformed KB-CLAIM-050 "
-            "section pseudo-path with repository-relative files."
+            "All supporting paths verified after adding receipt-linked CCT-20 and So2Sat "
+            "claims and preserving KB-CLAIM-044/045 as superseded historical records."
         ),
     }
 
@@ -1832,10 +2082,47 @@ def _sync_ledger(ledger: dict[str, Any], current_cluster: dict[str, Any]) -> Non
             "artifact_sha256": _sha256(CURRENT_CLUSTER_PATH),
             "artifact_bytes": CURRENT_CLUSTER_PATH.stat().st_size,
             "status": CURRENT_CLUSTER_STATUS,
-            "preregistered_six_comparison_gate": "failed_for_all_candidates",
+            "retrospective_six_contrast_holm_gate": "failed_for_all_candidates",
+        },
+        "separate_receipt_linked_authorities": {
+            "cct20": {
+                "claim_id": "KB-CLAIM-051",
+                "artifact": _relative(CCT20_RELEASE_PATH),
+                "artifact_sha256": _sha256(CCT20_RELEASE_PATH),
+                "receipt": _relative(CCT20_RELEASE_RECEIPT_PATH),
+                "verdict": "SAFE_UTILITY_ONLY",
+            },
+            "so2sat_development": {
+                "claim_id": "KB-CLAIM-052",
+                "artifact": _relative(SO2SAT_SELECTION_PATH),
+                "artifact_sha256": _sha256(SO2SAT_SELECTION_PATH),
+                "verdict": "NO_FEASIBLE_CANDIDATE_STOP_BEFORE_GATE_CAL",
+                "target_access": "none",
+            },
+        },
+        "multiplicity_status": {
+            "cifar_current_policy_scope": (
+                "The six candidate-by-fixed-policy contrast family was prospectively "
+                "specified; the current exact-rank replay and six-corruption-family "
+                "bootstrap sensitivity are retrospective."
+            ),
+            "confidence_intervals": "ordinary unadjusted family-bootstrap intervals",
+            "holm_scope": "six sign-flip p-values only",
+            "tent_adjusted_p_values": {
+                "versus_always_adapt": 0.09375,
+                "versus_always_freeze": 0.09375,
+            },
+            "release_verdict": (
+                "no candidate passes both baselines at family-wise alpha 0.05; no "
+                "cluster-robust or confirmatory win"
+            ),
+            "separate_families": (
+                "CCT-20 two-comparison inference and archived POEM/AETTA p-values are not "
+                "pooled with the CIFAR family"
+            ),
         },
     }
-    ledger["generated_at"] = "2026-08-27"
+    ledger["generated_at"] = "2026-08-29"
 
     closure_claims = [
         {
@@ -1849,23 +2136,41 @@ def _sync_ledger(ledger: dict[str, Any], current_cluster: dict[str, Any]) -> Non
         },
         {
             "claim_id": "KB-CLAIM-044",
-            "claim_text": "No verified unopened natural target was available at the 2026-08-24 prospective-closure audit.",
+            "claim_text": (
+                "No verified unopened natural target was available at the 2026-08-24 "
+                "prospective-closure audit; this is a point-in-time historical finding that "
+                "predates the later CCT-20 and So2Sat studies."
+            ),
             "claim_type": "protocol",
-            "status": "pending",
+            "status": "diagnostic",
             "supporting_artifacts": [
                 "experiments/kbound/results/natural_target_provenance_v1/NATURAL_TARGET_PROVENANCE_AUDIT.json"
             ],
-            "allowed_wording": "prospective natural claim awaits a genuinely unopened target",
-            "forbidden_wording": ["current natural panel is prospective", "unopened target win"],
+            "allowed_wording": (
+                "historical 2026-08-24 target-search audit, superseded for current project status"
+            ),
+            "forbidden_wording": [
+                "current natural panel is prospective",
+                "unopened target win",
+                "no prospective target study was ever executed",
+            ],
         },
         {
             "claim_id": "KB-CLAIM-045",
-            "claim_text": "The exact split-conformal confirmation has a deterministic draft manifest but has not been sealed or executed.",
+            "claim_text": (
+                "The generic exact split-conformal confirmation draft was never sealed or "
+                "executed and is retained as a superseded planning artifact; later CCT-20 and "
+                "So2Sat studies use their own versioned protocols."
+            ),
             "claim_type": "protocol",
-            "status": "pending",
+            "status": "diagnostic",
             "supporting_artifacts": ["research_lock/KBOUND_EXACT_CONFIRMATION_UNSEALED_v1.json"],
-            "allowed_wording": "draft disjoint fit/calibration/test confirmation design",
-            "forbidden_wording": ["confirmatory result", "sealed preregistration"],
+            "allowed_wording": "superseded, unexecuted draft confirmation design",
+            "forbidden_wording": [
+                "confirmatory result",
+                "sealed preregistration",
+                "current execution protocol",
+            ],
         },
         {
             "claim_id": "KB-CLAIM-046",
@@ -1935,6 +2240,9 @@ def _sync_ledger(ledger: dict[str, Any], current_cluster: dict[str, Any]) -> Non
             "forbidden_wording": ["FA_u failure", "beats both", "natural-shift win"],
         },
     ]
+    closure_claims.extend(
+        _separate_natural_release_claims(cct20_authority, so2sat_authority)
+    )
     by_id = {row["claim_id"]: row for row in ledger["claims"]}
     for row in closure_claims:
         if row["claim_id"] in by_id:

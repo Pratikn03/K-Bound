@@ -24,7 +24,7 @@ remains:
 | Dimension | Score | Current interpretation |
 |---|---:|---|
 | Canonical bundle integrity | 9.5/10 | Hashes, row counts, score identities, and aggregate values reconcile. |
-| Controlled CIFAR-10-C evidence | 8.8/10 | Tent is the strongest point result and has positive ordinary intervals in a retrospective six-family sensitivity, but the preregistered six-comparison Holm gate fails; EATA is point-estimate only and SAR is negative at an aggressive non-official operating point. |
+| Controlled CIFAR-10-C evidence | 8.8/10 | Tent is the strongest point result and has positive ordinary intervals in a retrospective six-family sensitivity, but retrospective Holm over the six prospectively named contrasts is non-confirmatory; EATA is point-estimate only and SAR is negative at an aggressive non-official operating point. |
 | Natural-shift routing evidence | 4.0/10 | No verified natural beats-both win exists; code hardening cannot retroactively repair opened, invalid, duplicated, or one-sided archives. |
 | Overall empirical readiness | Withheld | A new score requires sealed reruns and genuinely unopened or hidden-label natural evidence. |
 
@@ -41,7 +41,8 @@ null/boundary results, and hardened code ready for new sealed evaluations.
 - Disclosed that the reported ImageNet-C SAR result uses a 16x higher learning rate than SAR's
   published setting and is not a claim about official SAR.
 - Separated Tent's positive retrospective family-interval sensitivity from EATA's point-estimate-only
-  result and recorded that the preregistered six-comparison Holm gate fails.
+  result and recorded that retrospective Holm over the six prospectively named contrasts is
+  non-confirmatory.
 - Added the protocol-matched POEM/AETTA comparison with explicit port limitations.
 - Added the ImageNet-R backbone breakdown and retained its negative aggregate interpretation.
 - Added the 1,387-development-determination multiplicity census and the frozen-subset distinction.

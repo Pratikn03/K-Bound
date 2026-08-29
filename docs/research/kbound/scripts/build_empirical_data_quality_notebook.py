@@ -29,7 +29,7 @@ def build_notebook() -> nbf.NotebookNode:
 
 **Forensic companion notebook · 27 August 2026**
 
-This notebook reruns the read-only audit and keeps two stages separate: the initial forensic findings and the post-remediation control state. Historical defects remain visible even when code is fixed, because a fix cannot retroactively validate an affected result. Diagnostic corrections are never promoted as confirmatory evidence.
+This notebook reads the frozen forensic outputs and refreshes only bounded release metadata. It keeps two stages separate: the initial findings and the post-remediation control state. Historical defects remain visible even when code is fixed, because a fix cannot retroactively validate an affected result. Diagnostic corrections are never promoted as confirmatory evidence.
 """
         ),
         markdown(
@@ -58,7 +58,16 @@ if not (ROOT / "docs/research/kbound").exists():
 
 AUDIT_SCRIPT = ROOT / "docs/research/kbound/scripts/audit_empirical_data_quality_2026_08_27.py"
 AUDIT_DIR = ROOT / "docs/research/kbound/audits/empirical_data_quality_2026_08_27"
-subprocess.run([sys.executable, str(AUDIT_SCRIPT), "--out-dir", str(AUDIT_DIR)], check=True)
+subprocess.run(
+    [
+        sys.executable,
+        str(AUDIT_SCRIPT),
+        "--out-dir",
+        str(AUDIT_DIR),
+        "--wording-only",
+    ],
+    check=True,
+)
 
 summary = json.loads((AUDIT_DIR / "audit_summary.json").read_text())
 findings = pd.read_csv(AUDIT_DIR / "findings.csv")
@@ -95,7 +104,7 @@ display(grain)
 assert summary["canonical"]["source_manifest_hash_matches_canonical"]
 assert summary["canonical"]["aggregate_score_checks"]["problem_count"] == 0
 assert summary["bottom_line"]["defensible_natural_beats_both_win"] is False
-assert summary["bottom_line"]["controlled_cifar10c_preregistered_cluster_win"] is False
+assert summary["bottom_line"]["controlled_cifar10c_retrospective_six_contrast_holm_win"] is False
 assert summary["bottom_line"]["code_hardening_retroactively_repairs_historical_results"] is False
 assert len(remediation) == len(findings) == 15
 assert set(remediation["rank"]) == set(findings["rank"]) == set(range(1, 16))
@@ -269,7 +278,7 @@ print(
 2. **The repaired paths now fail closed.** Scientific-config resume hashes, official metric parity, strict error/completeness ledgers, candidate rank and feasibility checks, atomic lineage, strict JSON, and explicit inference-unit fields protect fresh runs.
 3. **Historical evidence remains historical.** Old Route-B, contaminated resume, iWildCam metric, and infeasible-calibration results stay non-promotable until rerun under the new contract.
 4. **No natural win is claimed.** All current natural targets are opened, so they support only transparent diagnostic, null, or boundary statements. The natural-shift evidence score remains **4.0/10**.
-5. **Preserve the bounded controlled result.** CIFAR-10-C Tent has a beats-both point estimate and positive ordinary six-family intervals, but both preregistered six-comparison Holm p-values are 0.09375. It is not a cluster-robust or confirmatory win.
+5. **Preserve the bounded controlled result.** CIFAR-10-C Tent has a beats-both point estimate and positive ordinary six-family intervals, but p-values from retrospective Holm adjustment over the six prospectively named contrasts are both 0.09375. It is not a cluster-robust or confirmatory win.
 6. **A new overall score is withheld.** The initial **5.8/10** readiness judgment is retained as a historical baseline, not relabeled as current. A 9–9.5 rigor score would require complete hardened reruns, a final checksum seal, and a genuinely new or hidden-label natural evaluation.
 """
         ),

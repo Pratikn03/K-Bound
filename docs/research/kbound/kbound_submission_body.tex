@@ -69,12 +69,16 @@ A router can beat both fixed policies only when some updates help, others harm, 
 separates the two groups. Controlled CIFAR-10-C provides exact-rank point gains for Tent and EATA,
 while SAR is negative. In a retrospective current-policy sensitivity over six observed corruption
 families, Tent has positive ordinary family-bootstrap intervals against both fixed policies. The
-within-Tent two-contrast Holm values are post hoc, however, and the preregistered six-comparison
-Holm adjustment gives $p=0.09375$ for both Tent contrasts. We therefore make no cluster-robust or
-confirmatory win claim. Office-Home, Camelyon17, and RxRx1 mainly provide descriptive no-harm or
-one-sided evidence. iWildCam remains withheld pending an official-metric, population-sealed rerun.
-PACS, ImageNet-R, CIFAR-10.1, and several ImageNet-C candidate rows are null or negative. These rows
-remain visible because K-Bound is a validity and rollback layer, not a universal accuracy booster.
+within-Tent two-contrast Holm values are post hoc. Holm over the six prospectively named contrasts
+gives adjusted retrospective sign-flip values of $0.09375$ for both Tent comparisons. Because the
+replay, corruption-family unit, and test were not preregistered, this is not confirmatory evidence.
+We therefore make no cluster-robust or confirmatory win claim. Office-Home, Camelyon17, and RxRx1
+mainly provide descriptive no-harm or one-sided evidence. iWildCam remains withheld pending an
+official-metric, population-sealed rerun.
+The locked So2Sat-LCZ42 study stopped at its development-feasibility gate with no eligible candidate;
+gate calibration and target evaluation did not run. PACS, ImageNet-R, CIFAR-10.1, and several
+ImageNet-C candidate rows are null or negative. These rows remain visible because K-Bound is a
+validity and rollback layer, not a universal accuracy booster.
 
 Sections~\ref{sec:compact-setup}--\ref{sec:compact-kga} define the decision and its two theoretical
 layers. Sections~\ref{sec:compact-experiments}--\ref{sec:compact-results} describe the evidence and
@@ -103,6 +107,13 @@ Recent selective TTA work makes the overlap sharper. Informed Adaptation learns 
 features that predict whether an update will help~\cite{mutlu2026informed}. This work rules out a
 novelty claim based only on learning when to adapt. KGA is operationally a learned router, not the
 first selective TTA gate.
+
+Test-Time Selective Adaptation (TTSA) routes among modality-specific adapters when a shift affects
+one modality in multi-modal data~\cite{chen2025ttsa}. It chooses where to adapt. GALA uses gradient
+alignment to select layers and filter unreliable samples while building a candidate
+update~\cite{sahoo2025gala}. K-Bound uses estimated benefit to ask a different question: whether to
+commit, freeze, or abstain for the proposed candidate. We do not claim a direct empirical comparison
+with either method.
 
 \subsection{Label-Free Performance and Benefit Estimation}
 
@@ -635,17 +646,18 @@ status, and shift geometry determine what the row can support.}
 \label{tab:compact-taxonomy}
 \begin{tabular}{@{}p{0.17\textwidth}p{0.20\textwidth}p{0.23\textwidth}p{0.31\textwidth}@{}}
 \toprule
-Track & Shift geometry & Candidates in canonical panel & Defensible use \\
+Track & Shift geometry & Candidate/protocol & Defensible use \\
 \midrule
-CIFAR-10-C & controlled mixed corruption/composition & Tent, EATA, SAR & routing and candidate dependence; empirical LOO calibration \\
-ImageNet-C & large-scale corruption grid & Tent, EATA, SAR & candidate-dependent scale diagnostic \\
-Office-Home & semantic domain shift & locked candidate & primary no-harm, 54-cell stream-seed replication, and an invalidated exploratory five-checkpoint route \\
-iWildCam & geographic/camera shift & locked candidate & numerical row withheld; official WILDS-metric rerun required \\
-Camelyon17 & hospital shift & OOD row; Tent/EATA/SAR diagnostic & archived opened one-sided OOD diagnostic plus within-seed diagnostics \\
-RxRx1 & laboratory/batch shift & locked candidate & displayed model-seed-0 no-harm row plus a three-checkpoint all-freeze replication \\
-PACS & domain generalization & aggregate candidate & negative aggregate diagnostic; incomplete decision replay \\
-ImageNet-R & rendition and architecture panel & ten-backbone panel & negative architecture diagnostic, not one deployed policy \\
-CIFAR-10.1 & natural resampling & locked replay & negative low-margin cross-seed diagnostic \\
+CIFAR-10-C~\cite{hendrycks2019cifar10c} & controlled mixed corruption/composition & Tent, EATA, SAR & routing and candidate dependence; empirical LOO calibration \\
+ImageNet-C~\cite{hendrycks2019cifar10c} & large-scale corruption grid & Tent, EATA, SAR & candidate-dependent scale diagnostic \\
+Office-Home~\cite{venkateswara2017officehome} & semantic domain shift & locked candidate & primary no-harm, 54-cell stream-seed replication, and an invalidated exploratory five-checkpoint route \\
+iWildCam~\cite{koh2021wilds} & geographic/camera shift & locked candidate & numerical row withheld; official WILDS-metric rerun required \\
+Camelyon17~\cite{bandi2019camelyon} & hospital shift & OOD row; Tent/EATA/SAR diagnostic & archived opened one-sided OOD diagnostic plus within-seed diagnostics \\
+RxRx1~\cite{taylor2019rxrx1} & laboratory/batch shift & locked candidate & displayed model-seed-0 no-harm row plus a three-checkpoint all-freeze replication \\
+So2Sat-LCZ42~\cite{zhu2020so2sat} & geographic urban shift & locked Tent/SAR development gate & negative development-feasibility result; no candidate, calibration, or target result \\
+PACS~\cite{li2017pacs} & domain generalization & aggregate candidate & negative aggregate diagnostic; incomplete decision replay \\
+ImageNet-R~\cite{hendrycks2021manyfaces} & rendition and architecture panel & ten-backbone panel & negative architecture diagnostic, not one deployed policy \\
+CIFAR-10.1~\cite{recht2019cifar10} & natural resampling & locked replay & negative low-margin cross-seed diagnostic \\
 \bottomrule
 \end{tabular}
 \end{table*}
@@ -695,8 +707,10 @@ The results answer three questions. First, can KGA beat both fixed policies when
 updates coexist? Second, does that result hold across adapters and resampling units? Third, does the
 same behavior transfer to natural shifts? The answers are: yes at the exact-rank point-estimate
 level for controlled Tent and EATA; positive ordinary six-family intervals for Tent, but no
-candidate clears the preregistered six-comparison Holm gate; and mostly no-harm, negative, or
-withheld evidence on natural shifts.
+candidate has confirmatory family-level evidence because the retrospective Holm values over the six
+prospectively named contrasts are $0.09375$ for both Tent comparisons; and mostly no-harm, negative,
+or withheld evidence on natural shifts. The locked So2Sat-LCZ42 attempt is a development-gate
+negative, not a target natural-shift result.
 
 \begin{table*}[!t]
 \centering
@@ -737,24 +751,28 @@ corruption families. With baseline regret minus KGA regret, Tent has gaps $0.006
 $[0.00254,0.00954]$ against always-adapt and $0.12229$ $[0.06331,0.17772]$ against always-freeze;
 these are ordinary, unadjusted 95\% family-bootstrap intervals. The exact one-sided sign-flip
 $p$-values are $0.03125$ and $0.015625$. Adjusting only these two Tent contrasts gives $0.03125$ for
-each, but that within-candidate family is post hoc. The preregistered family contains all six
-candidate-by-baseline contrasts; its Holm-adjusted Tent values are $0.09375$ for both comparisons
-and fail at $0.05$. EATA's adapt-side family interval $[-0.00052,0.00438]$ also crosses zero, and SAR
-loses to always-adapt. We therefore retain Tent and EATA as exact-rank point results and describe the
-Tent family analysis only as retrospective sensitivity, not a cluster-robust, confirmatory, or
-independent-checkpoint win. This mixed setting is where routing can help: adaptation is useful in
-some cells, harmful in others, and the label-free evidence supports different actions.
+each, but that within-candidate family is post hoc. All six candidate-by-baseline contrasts were
+named prospectively. The exact-rank replay, corruption-family unit, sign-flip tests, and Holm
+adjustment were chosen retrospectively. Holm over the six named contrasts gives adjusted
+retrospective sign-flip values of $0.09375$ for both Tent comparisons. Because the replay, corruption-family
+unit, and test were not preregistered, this is not confirmatory evidence. EATA's adapt-side family
+interval $[-0.00052,0.00438]$ also crosses zero, and SAR loses to always-adapt. We therefore retain
+Tent and EATA as exact-rank point results and describe the Tent family analysis only as retrospective
+sensitivity, not a cluster-robust, confirmatory, or independent-checkpoint win. This mixed setting is
+where routing can help: adaptation is useful in some cells, harmful in others, and the label-free
+evidence supports different actions.
 
 \begin{table*}[!t]
 \centering
 \scriptsize
 \caption{Retrospective current-policy sensitivity over six observed CIFAR-10-C corruption families.
 Each cell reports baseline regret minus KGA regret and an ordinary, unadjusted family-bootstrap 95\%
-interval; positive values favor KGA. Holm $p$-values use the preregistered six
-candidate-by-baseline sign-flip family. The within-Tent two-contrast Holm value is $0.03125$ but is
-post hoc. This table is conditional on one archived checkpoint and does not provide simultaneous
-intervals, independent-checkpoint inference, prospective confirmation, natural-shift evidence, or
-official POEM/AETTA superiority.}
+interval; positive values favor KGA. Holm values are retrospective sign-flip adjustments over six
+prospectively named candidate-by-baseline contrasts. The replay, corruption-family unit, sign-flip
+test, and Holm adjustment were not preregistered. The within-Tent two-contrast Holm value is
+$0.03125$ but is post hoc. This table is conditional on one archived checkpoint and does not provide
+simultaneous intervals, independent-checkpoint inference, prospective confirmation, natural-shift
+evidence, or official POEM/AETTA superiority.}
 \label{tab:compact-current-family}
 \resizebox{\textwidth}{!}{\input{paper/generated/current_policy_family_sensitivity}}
 \end{table*}
@@ -765,14 +783,13 @@ fixed policy. The three candidate rows cannot be pooled into a claim that KGA al
 They show that routing utility depends on the adapter-induced benefit distribution and on how well
 the evidence predicts it.
 
-\subsubsection{Protocol-Matched POEM and AETTA Comparison}
-The archived head-to-head on the same locked CIFAR-10-C stress stream reports KGA regret to oracle
-of $0.0016$, below the POEM-style result ($0.0088$) and the AETTA-style result ($0.0073$). Using the
-paper's baseline-minus-KGA convention, its ordinary paired-bootstrap 95\% intervals are
-$[0.0057,0.0088]$ for POEM and $[0.0044,0.0071]$ for AETTA; only the paired $p$-values were
-Holm-adjusted. The artifact used an earlier KGA action vector, so synchronization with the current
-exact-rank policy is pending. These are historical protocol-matched ports, not a current-policy
-comparison or a claim about untouched official implementations.
+\subsubsection{Historical Protocol-Matched POEM and AETTA Ports}
+The repository retains a head-to-head artifact on the locked CIFAR-10-C stress stream, but its KGA
+actions came from an earlier policy and are not synchronized with the current exact-rank actions.
+Its numerical ordering is therefore audit history, not release-eligible comparative evidence, and
+we do not report a superiority estimate from it. The neighboring methods are protocol-matched ports,
+not untouched official implementations. A defensible comparison requires all methods to be replayed
+on identical current-policy records with the multiplicity family fixed in advance.
 
 These controlled results use empirical calibration. Leaving one cell out prevents that cell from
 directly fitting its own prediction or radius. It does not establish exact split-conformal coverage
@@ -951,10 +968,40 @@ Calibration used 45 rows collapsed to nine cis-test camera locations, while the 
 from trans-test locations. Coverage therefore needs an unverified cross-split exchangeability
 assumption. Target Mahalanobis diagnostics ranged from 7.12 to 485.67 (median 28.73), showing strong
 extrapolation; this diagnostic never changed an action and is not a formal coverage guarantee. One
-natural dataset also cannot establish a general natural-shift win. The next study should retain the
-same outcome-blind release path, add diverse development units, require useful exposure to both
-ADAPT and FREEZE, and repeat the test on a second locked natural-shift dataset.
+natural dataset also cannot establish a general natural-shift win. A follow-on locked study on
+So2Sat-LCZ42 retained an outcome-blind boundary but stopped at development feasibility, as described
+next. A new versioned study still needs diverse development units, useful exposure to both ADAPT and
+FREEZE, and untouched confirmation environments.
 \CCTSecondaryMetricDisclosure
+
+\subsubsection{So2Sat-LCZ42 Development-Gate Stop}
+\label{sec:so2sat-development-stop}
+
+The locked So2Sat-LCZ42 v1 study evaluated \SoTwoCandidateCount{} candidates, Tent and SAR, on
+\SoTwoDevelopmentCityCount{} development cities and \SoTwoCheckpointCount{} independent source
+checkpoints, giving \SoTwoCellCountPerCandidate{} city--checkpoint cells per candidate. This was a
+candidate-feasibility stage, not target evaluation. Tent had \SoTwoTentHelpfulCityCount{} helpful and
+\SoTwoTentHarmfulCityCount{} harmful cities and a cell-oracle opportunity of
+\SoTwoTentOracleGainPP{} percentage points. Its leave-one-city-out sign accuracy was
+\SoTwoTentLocoSignPct{}\%, and routed accuracy was \SoTwoTentLossBestFixedPP{} percentage points
+below always adapt, its better fixed policy. SAR had \SoTwoSarHelpfulCityCount{} qualifying helpful
+cities, \SoTwoSarHarmfulCityCount{} harmful cities, and an oracle opportunity of
+\SoTwoSarOracleGainPP{} percentage points. It selected ADAPT in only \SoTwoSarAdaptCellCount{} of
+\SoTwoCellCountPerCandidate{} cells, and routed accuracy was \SoTwoSarLossBestFixedPP{} percentage
+points below always freeze. Tent passed \SoTwoTentPassedCheckCount{} of
+\SoTwoFeasibilityCheckCount{} feasibility checks and SAR passed \SoTwoSarPassedCheckCount{} of
+\SoTwoFeasibilityCheckCount{}, so neither candidate was eligible.
+
+The locked status records no feasible candidate and a stop before gate calibration. No held-out
+gate-calibration rows or target inputs were accessed; the recorded counts were
+\SoTwoGateCalRowsRead{} gate-calibration rows, \SoTwoTargetInputCount{} target inputs,
+\SoTwoTargetPixelsRead{} target pixels, and \SoTwoTargetLabelsRead{} target labels. Thus the study
+supplies a negative development-transfer result and evidence that routing opportunity can exist; it
+supplies no target natural-shift score. All \SoTwoOpenedOutcomeCount{} development outcomes are now
+open, so retuning on them cannot produce fresh confirmatory evidence. In addition, v1 declares one
+target action per city while the target runner creates city--checkpoint actions. This mismatch did
+not affect the stop, because no target action was created, but target execution remains blocked until
+a new versioned protocol and implementation use the same action unit.
 
 \subsection{Negative and Diagnostic Tracks}
 
@@ -985,17 +1032,18 @@ estimator inadequacy, or calibration transfer can produce the same pattern.
 \begin{table}[t]
 \centering
 \footnotesize
-\caption{Claim discipline for the reconciled panel.}
+\caption{Claim discipline for the reconciled panel and locked auxiliary evidence.}
 \label{tab:compact-claims}
 \begin{tabular}{@{}p{0.34\columnwidth}p{0.57\columnwidth}@{}}
 \toprule
 Observation & Supported interpretation \\
 \midrule
-CIFAR-10-C Tent result & exact-rank point gain; retrospective current-policy six-family intervals positive; preregistered six-comparison Holm fails \\
-CIFAR-10-C EATA result & point-estimate gain; current adapt-side family interval includes zero; preregistered six-comparison Holm fails \\
+CIFAR-10-C Tent result & exact-rank point gain; retrospective six-family intervals positive; retrospective Holm over prospectively named contrasts is nonconfirmatory \\
+CIFAR-10-C EATA result & point-estimate gain; adapt-side family interval includes zero; retrospective Holm over prospectively named contrasts is nonconfirmatory \\
 CIFAR-10-C SAR loss & candidate dependence is material \\
 Office/Rx no-harm & descriptive fail-closed behavior; little or no adaptation exposure \\
 CCT-20 locked result & safe-utility check passes; KGA ties freeze, rejects always adapt, and has zero ADAPT exposure \\
+So2Sat-LCZ42 locked development gate & no feasible Tent or SAR candidate; stopped before calibration and target access \\
 iWildCam & numerical claim withheld pending official-metric, population-sealed rerun \\
 Camelyon17 OOD tie to adapt & archived opened one-sided diagnostic; no selective-routing test \\
 PACS/ImageNet-R losses & completed negative diagnostics, retained in scope \\
@@ -1008,8 +1056,10 @@ The panel supports neither universal improvement nor a clean, CI-robust beats-bo
 dataset. Its strongest positive routing evidence is controlled and candidate-specific. Its natural
 evidence is mainly no-harm, often obtained by declining adaptation. CCT-20 adds a locked
 safe-utility result: KGA rejects harmful adaptation but does not select the single helpful cell.
-Together, these findings support fail-closed and rollback mechanics in the observed protocols, but
-they do not establish an adapt-side safety property or broad accuracy improvement.
+So2Sat-LCZ42 adds a stricter negative: development cities contained Tent help/harm heterogeneity,
+but the locked label-free gate did not recover it out of city and correctly stopped before target
+access. Together, these findings support fail-closed and rollback mechanics in the observed
+protocols, but they do not establish an adapt-side safety property or broad accuracy improvement.
 
 \section{Sensitivity, Failure Analysis, and Limitations}
 \label{sec:compact-sensitivity}
@@ -1076,14 +1126,19 @@ CIFAR-10-C is large and mixed, but related cells share corruption families, seve
 checkpoints. Leave-one-cell-out evaluation is weaker than holding out an entire corruption family or
 an independent physical deployment. We therefore describe Tent and EATA as controlled exact-rank
 point gains. The retrospective current-policy family analysis gives Tent positive ordinary
-intervals, but the preregistered six-comparison Holm gate fails and the six families share one
-archived checkpoint. The older earlier-policy cluster artifact remains separate historical evidence.
-Neither result proves independent-checkpoint stability or natural-domain transfer.
+intervals, but Holm over the six prospectively named contrasts gives adjusted retrospective
+sign-flip values of $0.09375$ for both Tent comparisons. The replay, corruption-family unit, and
+test were not preregistered, and the six families share one archived checkpoint. The older
+earlier-policy cluster artifact remains separate historical evidence. Neither result proves
+independent-checkpoint stability or natural-domain transfer.
 
 \paragraph{Natural evidence is mostly no-harm.}
 Several natural rows tie the better fixed policy because the candidate is one-sided and KGA makes
 few or no adapt decisions. Such behavior can be appropriate, but it does not demonstrate an
-accuracy breakthrough. A genuinely unopened or hidden-label natural beats-both result remains open.
+accuracy breakthrough. So2Sat-LCZ42 revealed a development-stage oracle opportunity, but its locked
+gate failed feasibility and never reached the unopened target. A successful hidden-label natural
+beats-both confirmation therefore remains open; the now-open So2Sat development outcomes cannot be
+retuned and reused as fresh confirmation.
 
 \subsection{Search, Multiplicity, and Selective Reporting}
 
@@ -1119,19 +1174,34 @@ The point estimates in Table~\ref{tab:compact-canonical} have one numerical sour
 \path{experiments/kbound/results/reconciled_panels_v1/canonical_panel_results.json}. Its compact
 source manifest has SHA-256 \hashtext{\SourceManifestSHA}. Named auxiliary artifacts support only
 their stated roles. The code-bound current-policy family sensitivity is retrospective and fails the
-preregistered six-comparison Holm gate; the earlier Tent cluster artifact and archived POEM/AETTA
-comparison remain historical. None overwrites the canonical point-estimate panel. The generated
-result manifest indexes every promoted claim and its scope.
+confirmatory bar: Holm over six prospectively named contrasts gives adjusted retrospective sign-flip
+values of $0.09375$ for both Tent comparisons, but the replay, corruption-family unit, and test were
+not preregistered. The earlier Tent cluster artifact and archived POEM/AETTA comparison remain
+historical. The So2Sat-LCZ42 selection artifact is a separate locked
+development-gate record with no promoted target row. None of these overwrites the canonical
+point-estimate panel. The generated result manifest indexes every promoted claim and its scope.
 
 \subsection{Reproduction Pipeline}
 
-From the repository root, the maintained sequence is:
+The full gate requires Python~3.12 with the repository-wide research profile
+\path{requirements-research.txt}; the smaller paper-only profile does not include the Torch imports
+used during repository-wide test collection. From the repository root, the release command is:
 \begin{quote}
-\small\noindent\texttt{BUILD\_LONG\_TMLR=1 bash }\path{docs/research/kbound/scripts/build_pdfs.sh}
+\small\noindent\texttt{KBOUND\_PYTHON=.venv/bin/python bash }%
+\path{docs/research/kbound/runbooks/release_candidate.sh}\texttt{ all}
 \end{quote}
-The script reconciles source-hashed records, synchronizes structured manifests, regenerates tables,
-macros, and figures, and builds both layouts. It consumes frozen model outputs; it does not rerun
-training.
+It runs the read-only preflight, validates and regenerates result authorities, executes software and
+formal checks, builds the two PDFs and compact DOCX, renders every PDF page, and emits release
+checksums. It consumes frozen model outputs and never launches training.
+
+For presentation-only rebuilding from already validated authorities, the command is:
+\begin{quote}
+\small\noindent\texttt{BUILD\_LONG\_TMLR=1 BUILD\_DOCX=1 bash }%
+\path{docs/research/kbound/scripts/build_pdfs.sh}
+\end{quote}
+This shorter command validates the frozen authorities, regenerates presentation tables and figures,
+and builds the maintained PDFs and DOCX. It does not replace the full release gate or create new
+empirical evidence.
 
 \subsection{Calibration Identity and Implementation Contract}
 
@@ -1178,23 +1248,30 @@ $\widehat\Delta$, and $\beta$ is not $\varepsilon$.
 
 The evidence supports a specific conclusion. In controlled mixed conditions, KGA gives exact-rank
 point gains over both fixed policies for Tent and EATA, while SAR loses to always-adapt. Tent's
-retrospective current-policy six-family intervals are positive, but its preregistered six-comparison
-Holm values are $0.09375$ against both baselines. No cluster-robust or confirmatory gain is therefore
-promoted. On natural and semantic shifts, KGA mainly matches the better one-sided policy or records a
-negative diagnostic. In the locked CCT-20 study, it matched always freeze and beat always adapt,
+retrospective current-policy six-family intervals are positive. Holm over the six prospectively
+named contrasts gives adjusted retrospective sign-flip values of $0.09375$ for both Tent
+comparisons. Because the replay, corruption-family unit, and test were not preregistered, this is not
+confirmatory evidence. No cluster-robust or confirmatory gain is therefore promoted. On natural and
+semantic shifts, KGA mainly matches the better one-sided policy or records a negative diagnostic. In
+the locked CCT-20 study, it matched always freeze and beat always adapt,
 but made no ADAPT decisions and therefore failed the stronger protocol test. These results support
-a fail-closed rollback design for avoiding unsupported updates in the observed protocols. They do
-not establish general safety, selective natural-shift routing, or a universal accuracy claim.
+a fail-closed rollback design for avoiding unsupported updates in the observed protocols. The
+So2Sat-LCZ42 study then stopped at development feasibility: Tent exposed help/harm opportunity but
+the gate did not generalize across cities, SAR had no qualifying helpful city, and neither candidate
+reached calibration or target evaluation. They do not establish general safety, selective
+natural-shift routing, or a universal accuracy claim.
 
 \subsection{Next Confirmatory Experiment}
 
-The next empirical step is clear. A new prospectively locked study should lock the adapter, evidence schema,
-calibration unit, scoring unit, and inference unit before target labels are opened. It should use a
-separate calibration partition and then evaluate unopened natural target environments containing
-both helpful and harmful updates. A meaningful test requires nontrivial adapt and freeze exposure,
-predeclared paired regret gaps against both fixed policies, and labels joined only after every
-decision is fixed. Such a study would answer the practical question at the center of this paper:
-can label-free evidence identify when an update is worth the risk?
+The next empirical step must be a new versioned confirmation, not a retuning of So2Sat v1. It should
+lock the adapter, evidence schema, calibration unit, scoring unit, and inference unit before target
+labels are opened; its protocol and runner must also agree on whether an action is defined per city
+or per city--checkpoint cell. It should use fresh development evidence, a separate calibration
+partition, and unopened natural target environments containing both helpful and harmful updates.
+A meaningful test requires nontrivial adapt and freeze exposure, predeclared paired regret gaps
+against both fixed policies, and labels joined only after every decision is fixed. Such a study
+would answer the practical question at the center of this paper: can label-free evidence identify
+when an update is worth the risk?
 
 \appendix
 \section{Compact Assumption and Claim Ledger}
@@ -1214,9 +1291,10 @@ Interior matched-evidence impossibility & theorem & $\beta>0$, $|M|<\beta$, full
 Closed-band abstention & theorem & strict directional semantics and rich class & Prop.~\ref{prop:closed-band} & zero benefit blocks a strict claim \\
 Exact strict-commitment frontier & theorem & fixed augmented evidence, declared $\mathcal C_\beta$ & Thm.~\ref{thm:headline} & $\beta$ externally supplied \\
 Marginal false-adapt control & theorem & Eq.~\eqref{eq:compact-coverage} & Thm.~\ref{thm:certificate} & does not bound $\mathrm{FA}_{\mathrm c}$ \\
-CIFAR-10-C Tent routing gain & empirical & frozen Tent controlled-grid protocol & Tables~\ref{tab:compact-canonical} and~\ref{tab:compact-current-family} & exact-rank point gain; positive ordinary six-family intervals; preregistered Holm fails \\
-CIFAR-10-C EATA point gain & empirical & frozen EATA controlled-grid protocol & Tables~\ref{tab:compact-canonical} and~\ref{tab:compact-current-family} & adapt-side family interval includes zero; preregistered Holm fails \\
+CIFAR-10-C Tent routing gain & empirical & frozen Tent controlled-grid protocol & Tables~\ref{tab:compact-canonical} and~\ref{tab:compact-current-family} & exact-rank point gain; positive ordinary six-family intervals; retrospective Holm is nonconfirmatory \\
+CIFAR-10-C EATA point gain & empirical & frozen EATA controlled-grid protocol & Tables~\ref{tab:compact-canonical} and~\ref{tab:compact-current-family} & adapt-side family interval includes zero; retrospective Holm is nonconfirmatory \\
 Natural no-harm rows & empirical & archived split and candidate remain fixed & Table~\ref{tab:compact-canonical} & often zero adapt exposure \\
+So2Sat-LCZ42 development stop & diagnostic & locked v1 feasibility rules and unopened target boundary & Sec.~\ref{sec:so2sat-development-stop} & no feasible candidate; no calibration or target score \\
 ImageNet-C candidate dependence & diagnostic & candidate rows interpreted separately & Table~\ref{tab:compact-canonical} & no dataset-wide win \\
 PACS/ImageNet-R/CIFAR-10.1 nulls & diagnostic & canonical replay scope retained & Table~\ref{tab:compact-canonical} & null does not prove unknowability \\
 Universal improvement & not claimed & would require broad held-out dominance & none & contradicted by negative rows \\
@@ -1391,6 +1469,7 @@ iWildCam & withheld & archived opened test-split records; non-promoted official-
 Camelyon17 & replayable diagnostic & archived opened OOD row plus separate B--v2 diagnostics & OOD row is one-sided and non-prospective; B--v2 is not untouched-domain evidence \\
 RxRx1 & replayable & displayed model-seed-0 row plus three model-checkpoint records and source hashes & all three checkpoints freeze throughout; no helpful test conditions \\
 CCT-20 & sealed complete & 5 independent checkpoints, 9 target locations, actions, predictions, score, and inference hashes & only two fit locations; no ADAPT exposure; trans-target extrapolation \\
+So2Sat-LCZ42 & sealed development stop & \SoTwoCandidateCount{} candidate bundles, \SoTwoDevelopmentCityCount{} development cities, \SoTwoCheckpointCount{} checkpoints, selection record, and \SoTwoTargetInputCount{} target inputs & no feasible candidate; all \SoTwoOpenedOutcomeCount{} gate-fit outcomes now open; no calibration or target result \\
 PACS & partial & three-seed aggregate and source cross-checks & missing per-cell $\widehat\Delta$ and residuals prevent full gate replay \\
 ImageNet-R & replayable & 4 seeds, 10 candidate backbones, 12 conditions each & architecture aggregate is diagnostic, not one deployable router \\
 CIFAR-10.1 & replayable & locked cross-seed condition records & negative low-margin result; no natural beats-both claim \\
@@ -1542,9 +1621,17 @@ The sealed CCT-20 study narrows, but does not close, the empirical gap that matt
 \CCTHarmfulCount{} harmful candidate updates, but KGA makes \CCTFreezeCount{} FREEZE,
 \CCTAbstainCount{} ABSTAIN, and \CCTAdaptCount{} ADAPT decisions. It therefore matches
 always-freeze and improves on always-adapt: evidence of conservative harm avoidance under natural
-shift, not evidence of bidirectional routing or improvement over both fixed policies. The following
-protocol describes the stronger second study still needed. It is a design for future evidence and is
-not counted as a completed experiment in this paper.
+shift, not evidence of bidirectional routing or improvement over both fixed policies. A second
+locked attempt on So2Sat-LCZ42 stopped at its development-feasibility gate with no eligible Tent or
+SAR candidate. No held-out gate-calibration rows or target inputs were accessed. The following
+protocol therefore describes a new versioned confirmation, not a continuation or reinterpretation
+of v1.
+
+All So2Sat v1 gate-fit outcomes are open and cannot be used to tune a fresh confirmatory arm. Its
+target protocol also defines one action per city, whereas the current runner creates one action per
+city--checkpoint cell. That mismatch did not affect the development stop, but the target runner
+must remain disabled until a versioned lock resolves the action unit. The design below is future
+evidence and is not counted as a completed target experiment in this paper.
 
 \subsection{Lock Before Target Labels}
 

@@ -38,6 +38,38 @@ SOURCE_MANIFEST_PATH = CANONICAL_DIR / "source_manifest.json"
 OUT_DEFAULT = ROOT / "docs/research/kbound/audits/empirical_data_quality_2026_08_27"
 QUARANTINE_MANIFEST_PATH = OUT_DEFAULT / "quarantine_manifest.json"
 GENERATED_AT = "2026-08-27T00:00:00-05:00"
+CONTROLLED_HOLM_STATUS = (
+    "RETROSPECTIVE_HOLM_OVER_SIX_PROSPECTIVELY_NAMED_CONTRASTS_FAILED"
+)
+CONTROLLED_HOLM_BASIS = (
+    "Tent has a beats-both point estimate and positive ordinary six-family intervals, "
+    "but p-values from retrospective Holm adjustment over the six prospectively named "
+    "contrasts are both 0.09375. The analysis is retrospective and non-confirmatory; "
+    "EATA and SAR also fail that gate, and independent-checkpoint inference is unavailable."
+)
+OUTER_SEAL_STATUS = "CONTROL_IMPLEMENTED_VERIFIED_BY_FINAL_RELEASE_GATE"
+
+
+def outer_seal_remediation() -> dict[str, str]:
+    """Describe the non-self-referential outer checksum control."""
+
+    return {
+        "remediation_status": OUTER_SEAL_STATUS,
+        "remediation_action": (
+            "The release runner writes and independently verifies the outer checksum seal "
+            "after all audit, manuscript, PDF, DOCX, and source-seal outputs are final."
+        ),
+        "verification_evidence": (
+            "docs/research/kbound/KBOUND_RELEASE_SHA256SUMS.txt; "
+            "docs/research/kbound/scripts/verify_release_checksums.py; "
+            "docs/research/kbound/runbooks/release_candidate.sh"
+        ),
+        "release_disposition": "PASS_ONLY_IF_FINAL_RELEASE_CHECKSUM_GATE_PASSES",
+        "remaining_requirement": (
+            "The final release_candidate.sh checksum stage must pass; this audit artifact "
+            "does not self-certify the checksum file that binds it."
+        ),
+    }
 
 
 def sha256(path: Path) -> str:
@@ -979,9 +1011,6 @@ def remediation_rows(
 ) -> list[dict[str, Any]]:
     """Map every initial finding to its current control and release disposition."""
 
-    release_mismatches = int(release.get("status_counts", {}).get("mismatch", 0))
-    release_missing = int(release.get("status_counts", {}).get("missing", 0))
-    seal_clean = release_mismatches == 0 and release_missing == 0
     quarantine_active = lineage.get("status") == "quarantined_invalid_derived_artifacts"
 
     rows = [
@@ -1083,15 +1112,7 @@ def remediation_rows(
         },
         {
             "rank": 12,
-            "remediation_status": "RELEASE_SEAL_VERIFIED" if seal_clean else "PENDING_FINAL_RELEASE_SEAL",
-            "remediation_action": (
-                "All outer checksum entries currently match."
-                if seal_clean
-                else f"The seal remains intentionally pending while release artifacts change ({release_mismatches} mismatch, {release_missing} missing)."
-            ),
-            "verification_evidence": "docs/research/kbound/KBOUND_RELEASE_SHA256SUMS.txt; audit_summary.json release_checksums",
-            "release_disposition": "PASS" if seal_clean else "RELEASE_BLOCKED_UNTIL_FINAL_RESEAL",
-            "remaining_requirement": "None" if seal_clean else "Regenerate the checksum file after PDFs, manifests, and audit outputs are final, then rerun this audit.",
+            **outer_seal_remediation(),
         },
         {
             "rank": 13,
@@ -1144,11 +1165,7 @@ def reviewer_scorecard() -> list[dict[str, Any]]:
             "dimension": "Controlled CIFAR-10-C evidence",
             "score_out_of_10": None,
             "score_status": "NOT_RESCORED_AFTER_INFERENCE_CORRECTION",
-            "basis": (
-                "Tent has a beats-both point estimate and positive ordinary six-family intervals, "
-                "but its two preregistered six-comparison Holm p-values are 0.09375. EATA and SAR "
-                "also fail that gate, and independent-checkpoint inference is unavailable."
-            ),
+            "basis": CONTROLLED_HOLM_BASIS,
         },
         {"stage": "current_evidence", "dimension": "Natural-shift routing evidence", "score_out_of_10": 4.0, "score_status": "UNCHANGED_AFTER_CODE_REMEDIATION", "basis": "No defensible natural beats-both win exists. Hardening code does not convert opened, invalid, duplicated, or one-sided archives into new evidence."},
         {"stage": "initial_audit", "dimension": "Estimator/task validity (pre-remediation)", "score_out_of_10": 4.0, "score_status": "HISTORICAL_BASELINE", "basis": "The initial audit found arbitrary Route-B orientation and multiclass misuse; current controls address these defects only for fresh runs."},
@@ -1178,12 +1195,118 @@ def pacs_denominator_audit(canonical: dict[str, Any]) -> dict[str, Any]:
     }
 
 
+def refresh_release_wording_only(out_dir: Path) -> None:
+    """Correct bounded release wording without restoring quarantined diagnostics.
+
+    No number is recomputed or changed. The invalid focused Office-Home derivatives used by
+    the historical audit were deliberately quarantined, so a wording correction must not
+    restore or silently re-run them.
+    """
+
+    summary_path = out_dir / "audit_summary.json"
+    scorecard_path = out_dir / "reviewer_scorecard.csv"
+    if not summary_path.is_file() or not scorecard_path.is_file():
+        raise FileNotFoundError("wording-only refresh requires the existing audit JSON and CSV")
+    summary = load_json_strict(summary_path)
+    release_decision = summary.get("release_decision")
+    if not isinstance(release_decision, dict):
+        raise ValueError("audit summary lacks release_decision")
+    prior = release_decision.get("controlled_cifar10c_tent_claim")
+    allowed_prior = {
+        (
+            "SUPPORTED_POINT_ESTIMATE_WITH_RETROSPECTIVE_UNADJUSTED_INTERVAL_SENSITIVITY; "
+            "PREREGISTERED_SIX_COMPARISON_HOLM_FAILED"
+        ),
+        (
+            "SUPPORTED_POINT_ESTIMATE_WITH_RETROSPECTIVE_UNADJUSTED_INTERVAL_SENSITIVITY; "
+            + CONTROLLED_HOLM_STATUS
+        ),
+    }
+    if prior not in allowed_prior:
+        raise ValueError("unexpected controlled-claim status in audit summary")
+    release_decision["controlled_cifar10c_tent_claim"] = (
+        "SUPPORTED_POINT_ESTIMATE_WITH_RETROSPECTIVE_UNADJUSTED_INTERVAL_SENSITIVITY; "
+        + CONTROLLED_HOLM_STATUS
+    )
+    current_rel = (
+        "experiments/kbound/results/reconciled_panels_v1/"
+        "current_policy_cluster_inference.json"
+    )
+    checksum_rows = (summary.get("release_checksums") or {}).get("rows")
+    if not isinstance(checksum_rows, list):
+        raise ValueError("audit summary lacks release checksum rows")
+    current_rows = [row for row in checksum_rows if row.get("path") == current_rel]
+    if len(current_rows) != 1:
+        raise ValueError("audit summary must contain one current-policy checksum row")
+    current_hash = sha256(ROOT / current_rel)
+    current_rows[0]["actual_sha256"] = current_hash
+    current_rows[0]["status"] = (
+        "match" if current_rows[0].get("expected_sha256") == current_hash else "mismatch"
+    )
+    status_counts = Counter(row.get("status") for row in checksum_rows)
+    summary["release_checksums"]["status_counts"] = dict(status_counts)
+    summary["release_checksums"]["verification_scope"] = (
+        "Historical/pre-release observation only. The authoritative outer checksum is "
+        "written and verified after this audit artifact is finalized."
+    )
+    release_decision["outer_checksum_seal"] = OUTER_SEAL_STATUS
+    bottom_line = summary.get("bottom_line") or {}
+    prior_key = "controlled_cifar10c_preregistered_cluster_win"
+    if prior_key in bottom_line:
+        prior_value = bottom_line.pop(prior_key)
+        if prior_value is not False:
+            raise ValueError("unexpected prior controlled-cluster status")
+    bottom_line["controlled_cifar10c_retrospective_six_contrast_holm_win"] = False
+    summary["bottom_line"] = bottom_line
+
+    with scorecard_path.open(newline="", encoding="utf-8") as handle:
+        reader = csv.DictReader(handle)
+        fieldnames = reader.fieldnames
+        rows = list(reader)
+    if not fieldnames:
+        raise ValueError("reviewer scorecard has no CSV header")
+    matches = [row for row in rows if row.get("dimension") == "Controlled CIFAR-10-C evidence"]
+    if len(matches) != 1:
+        raise ValueError("reviewer scorecard must contain one controlled CIFAR-10-C row")
+    matches[0]["basis"] = CONTROLLED_HOLM_BASIS
+    write_csv(scorecard_path, rows, fieldnames)
+
+    outer = outer_seal_remediation()
+    for name in ("remediation_status.csv", "findings.csv"):
+        path = out_dir / name
+        with path.open(newline="", encoding="utf-8") as handle:
+            reader = csv.DictReader(handle)
+            output_fields = reader.fieldnames
+            output_rows = list(reader)
+        if not output_fields:
+            raise ValueError(f"{name} has no CSV header")
+        rank_rows = [row for row in output_rows if row.get("rank") == "12"]
+        if len(rank_rows) != 1:
+            raise ValueError(f"{name} must contain one rank-12 release-seal row")
+        rank_rows[0].update(outer)
+        write_csv(path, output_rows, output_fields)
+
+    write_json(summary_path, summary)
+
+
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--out-dir", type=Path, default=OUT_DEFAULT)
+    parser.add_argument(
+        "--wording-only",
+        action="store_true",
+        help=(
+            "update bounded release wording and metadata in existing audit outputs; do "
+            "not recompute quarantined historical diagnostics"
+        ),
+    )
     args = parser.parse_args()
     out_dir = args.out_dir.resolve()
     out_dir.mkdir(parents=True, exist_ok=True)
+    if args.wording_only:
+        refresh_release_wording_only(out_dir)
+        print(json.dumps({"out_dir": out_dir.relative_to(ROOT).as_posix(), "wording_only": True}))
+        return 0
 
     canonical = load_json_strict(CANONICAL_PATH)
     source_manifest = load_json_strict(SOURCE_MANIFEST_PATH)
@@ -1267,7 +1390,7 @@ def main() -> int:
         "release_decision": {
             "controlled_cifar10c_tent_claim": (
                 "SUPPORTED_POINT_ESTIMATE_WITH_RETROSPECTIVE_UNADJUSTED_INTERVAL_SENSITIVITY; "
-                "PREREGISTERED_SIX_COMPARISON_HOLM_FAILED"
+                + CONTROLLED_HOLM_STATUS
             ),
             "iwildcam_numerical_and_action_claim": "WITHHELD_PENDING_PINNED_OFFICIAL_METRIC_RERUN",
             "historical_invalid_natural_derivatives": "QUARANTINED_OR_NONPROMOTABLE",
@@ -1279,7 +1402,7 @@ def main() -> int:
         "bottom_line": {
             "defensible_natural_beats_both_win": False,
             "controlled_cifar10c_tent_remains_strong": True,
-            "controlled_cifar10c_preregistered_cluster_win": False,
+            "controlled_cifar10c_retrospective_six_contrast_holm_win": False,
             "can_guarantee_9_5_empirical_score": False,
             "code_hardening_retroactively_repairs_historical_results": False,
             "recommended_claim": "Strong controlled routing evidence; hardened natural-shift code is ready for sealed reruns, while existing natural evidence remains a transparent boundary/null result rather than a natural win.",

@@ -1,15 +1,24 @@
 # K-Bound Empirical and Release Closure Plan
 
-**Status:** ACTIVE PLAN -- no new empirical claim is created by this document
+**Status:** EXECUTED IN PART / SUPERSEDED AS THE ACTIVE STATUS SOURCE -- no empirical claim is
+created by this document. Use `KBOUND_SHORT_RESULT_AUDIT.md` and
+`KBOUND_SHORT_CLAIM_MANIFEST.md` for current status.
 
 **Created:** 2026-08-21
 
-**Last execution audit:** 2026-08-24
+**Last execution audit:** 2026-08-29
 
 **Current evidence authority:**
 `experiments/kbound/results/reconciled_panels_v1/canonical_panel_results.json`
 
 **Current manuscript authority:** `kbound_submission.tex` and `kbound_tmlr.tex`
+
+**Execution update:** CCT-20 completed as `SAFE_UTILITY_ONLY`, not strong routing success. A later
+So2Sat development gate-fit found no feasible candidate and stopped before gate calibration with no
+target access or target score. Thus the project now has an honestly retained prospective natural
+target result, but still has no natural CI-robust beats-both routing win. Items below remain the
+original acceptance design and optional evidence-upgrade plan; they are not a claim that those
+outcomes succeeded.
 
 ## 1. Objective
 
@@ -449,7 +458,8 @@ After all completed runs:
 4. Run `scripts/reconcile_result_panels.py` into a new versioned panel, never over an old release.
 5. Regenerate numerical macros, tables, and figures from that panel.
 6. Update the claim ledger first; manuscript prose consumes the ledger's verdict.
-7. Rebuild both maintained PDFs and render every page.
+7. Rebuild both maintained PDFs and the required compact DOCX; render every PDF page and run the
+   document checks.
 8. Freeze commit, environment, protocol hashes, model hashes, result hashes, PDF hashes, and page
    counts together.
 

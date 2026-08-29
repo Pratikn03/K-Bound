@@ -769,8 +769,39 @@ def test_completed_cct20_claim_rejects_stale_upstream_hash(tmp_path: Path) -> No
         snippet,
         release_manifest_path=manifest_path,
         repository_root=tmp_path,
+        deep_local_provenance=True,
     )
     assert any("SHA-256 mismatch" in problem for problem in problems), problems
+
+
+def test_portable_release_validation_does_not_open_machine_local_upstreams(
+    tmp_path: Path,
+) -> None:
+    manifest_path, _ = _write_release_manifest(tmp_path)
+    (tmp_path / "artifacts").rename(tmp_path / "disconnected-machine-local-artifacts")
+
+    document, portable_problems = VALIDATOR.validate_cct20_release_manifest(
+        manifest_path,
+        repository_root=tmp_path,
+    )
+    assert document is not None
+    assert portable_problems == []
+
+    _, deep_problems = VALIDATOR.validate_cct20_release_manifest(
+        manifest_path,
+        repository_root=tmp_path,
+        deep_local_provenance=True,
+    )
+    assert any("artifact is missing" in problem for problem in deep_problems)
+
+
+def test_release_runbook_keeps_deep_local_cct_provenance_explicit() -> None:
+    runbook = (
+        ROOT / "docs/research/kbound/runbooks/release_candidate.sh"
+    ).read_text(encoding="utf-8")
+    assert "deep-local-provenance" in runbook
+    assert "KBOUND_DEEP_LOCAL_CCT20_PROVENANCE=1" in runbook
+    assert "--deep-local-cct20-provenance" in runbook
 
 
 def test_release_manifest_requires_builder_ledgers_and_aggregate_hashes(tmp_path: Path) -> None:
@@ -802,6 +833,7 @@ def test_release_manifest_rejects_stale_received_receipt(tmp_path: Path) -> None
     _, problems = VALIDATOR.validate_cct20_release_manifest(
         manifest_path,
         repository_root=tmp_path,
+        deep_local_provenance=True,
     )
     assert any("receipt" in problem and "SHA-256 mismatch" in problem for problem in problems)
 
@@ -823,6 +855,7 @@ def test_release_manifest_cross_binds_spent_scoring_marker(tmp_path: Path) -> No
     _, problems = VALIDATOR.validate_cct20_release_manifest(
         manifest_path,
         repository_root=tmp_path,
+        deep_local_provenance=True,
     )
     assert any("scoring marker differs from the release chain" in problem for problem in problems)
 

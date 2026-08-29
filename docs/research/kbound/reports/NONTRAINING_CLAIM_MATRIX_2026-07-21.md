@@ -1,10 +1,9 @@
 # K-Bound Reviewer Claim Matrix (non-training closure)
 
-> **SUPERSEDED 2026-07-26 on one point.** This dated record asserts *uniform* natural-shift
-> no-harm. That claim was withdrawn: no-harm holds on the four one-sided locked tracks
-> (Camelyon17, iWildCam, Office-Home, RxRx1) only. PACS loses to always-adapt by 2.45x,
-> ImageNet-R loses on 7 of 10 backbones, CIFAR-10.1 fails the transfer bar (FA_u = 0.167).
-> The record is left unedited below; the live claim is in `kbound_short_body.tex`.
+> **SUPERSEDED CLAIM MATRIX (2026-08-29).** This file is a projection of the July ledger and is
+> retained only as history. It predates the exact-rank reconciliation, iWildCam withholding,
+> CCT-20 safe-utility result, So2Sat negative development stop, and current maintained manuscript.
+> Use `../claim_ledger.json` and `../KBOUND_SHORT_CLAIM_MANIFEST.md` instead.
 
 
 Generated: 2026-07-21T16:54:35.164744+00:00
@@ -29,7 +28,7 @@ Scope note: PACS and ImageNet-R Protocol-D multi-seed remain **pending** the act
 | KB-CLAIM-023 | withdrawn | B | Office-Home+iWildCam+Camelyon | KBOUND_MIXED_STREAM_v1 | in_sample_radius (invalid) | withdrawn in-sample-radius artifact; superseded by mixed_protocol_oof_v2 | 13x ; 24x ; beats both mixed | — |
 | KB-CLAIM-024 | supported | B | Office-Home+iWildCam+Camelyon OOD | mixed_protocol_oof_v2 | per_dataset_dev_lock_loo_conformal | beats both on constructed cross-protocol aggregate only | universal mixed deployment ; natural-shift win ; 13x ; 24x | research_lock/KBOUND_MIXED_STREAM_v2.json |
 | KB-CLAIM-025 | supported | A | synthetic validators | theory_validation | n/a | resolved negatively; impossibility not open problem | conj:gen open ; universal label-free bracketing exists | docs/research/kbound/paper/sections/main_theory_5.tex |
-| KB-CLAIM-026 | supported | B | CIFAR-10-C stress grid (Tent) | MIXED_HEADTOHEAD_PROTOCOL_v1 | loo_gbr + conformal (KGA); faithful POEM/AETTA ports | beats POEM and AETTA on mixed regret (pre-registered WIN) | beats POEM on natural shifts ; official-repo arm without labeling | experiments/kbound/results/mixed_headtohead_v1/HEADTOHEAD_RESULTS_cifar10c_tent_primary.json |
+| KB-CLAIM-026 | supported | B | CIFAR-10-C stress grid (Tent) | MIXED_HEADTOHEAD_PROTOCOL_v1 | loo_gbr + conformal (KGA); protocol-matched, non-official historical POEM/AETTA ports | historical WIN under the locked comparison protocol | beats POEM on natural shifts ; official-repo arm without labeling | experiments/kbound/results/mixed_headtohead_v1/HEADTOHEAD_RESULTS_cifar10c_tent_primary.json |
 | KB-CLAIM-030 | pending | C | physical packages P01-P10 | edge_real_phone_v1 | session_split_conformal | pre-registered protocol only; feasibility/no-harm if helpful-dominated | real-world win ; deployment success ; 25% balanced acc as headline | docs/experiments/kbound/results/edge_real_phone_v1/ |
 | KB-CLAIM-027 | supported | B | MNIST two-view controlled | CONTROLLED_MULTIMODAL_PROTOCOL_D33_v1 | loo_conformal | mechanism confirmation on controlled multimodal harm | natural multimodal SOTA ; universal fusion win | research_lock/CONTROLLED_MULTIMODAL_PROTOCOL_D33_v1.yaml |
 | KB-CLAIM-040 | supported | C | stress + deployment slices | assumption_audit_v1 | n/a | audit triggered warnings under designed shifts; does not verify exchangeability | verified exchangeability ; proved risk alignment | docs/research/kbound/results/assumption_audit_v1.json |

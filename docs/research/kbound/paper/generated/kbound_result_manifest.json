@@ -41,7 +41,7 @@
         4
       ],
       "conditions_per_seed": 432,
-      "verdict": "Current exact-rank point estimate beats both fixed policies. In a retrospective current-policy sensitivity over six corruption families, both ordinary family-bootstrap intervals are positive; however, both preregistered six-comparison Holm p-values are 0.09375, so no cluster-robust, confirmatory, or independent-checkpoint win is claimed.",
+      "verdict": "Current exact-rank point estimate beats both fixed policies. In a retrospective current-policy sensitivity over six corruption families, both ordinary family-bootstrap intervals are positive; however, p-values from retrospective Holm adjustment over the six prospectively named contrasts are 0.09375, so no cluster-robust, confirmatory, or independent-checkpoint win is claimed.",
       "source": "experiments/kbound/results/reconciled_panels_v1/canonical_panel_results.json",
       "status": "current_policy_exact_rank_replay",
       "quantile_rule": "per-candidate/per-run-seed exact-rank leave-one-condition-out empirical residual calibration",
@@ -233,16 +233,16 @@
         "confirmatory": false,
         "convention": "baseline_regret_minus_kga_regret; positive values favor KGA",
         "artifact_path": "experiments/kbound/results/reconciled_panels_v1/current_policy_cluster_inference.json",
-        "artifact_sha256": "47e0afdb2720839764faa7b62d899d91f1d07f404aaf552a601ce2d3967b08d1",
-        "artifact_bytes": 18613,
-        "artifact_schema": "kbound-current-policy-cluster-inference-v2",
-        "generated_utc": "2026-08-29T00:00:28.680180+00:00",
-        "git_head": "b261866fc976d5be4f9be1abc5a2cfec3ff3bbcc",
+        "artifact_sha256": "286ab67432a91a98095ff234474fae7bee68b10fbcad22b5d8e0f1a79552288e",
+        "artifact_bytes": 18810,
+        "artifact_schema": "kbound-current-policy-cluster-inference-v3",
+        "generated_utc": "2026-08-29T18:59:40.615442+00:00",
+        "git_head": "9130a46553880bedec6b38ab8e5de0fa72e7f221",
         "analysis_script": "docs/research/kbound/scripts/analyze_current_policy_cluster_inference.py",
-        "analysis_script_sha256": "af58c22d21192c83134237711b5f46a9f8dd5ddccfd1719fc1c549fbe79e89a6",
+        "analysis_script_sha256": "42e7d28135820ae5ec7f456089c7f468216c1becbcf7e017f0e605e7bc7db63c",
         "runtime": {
           "python": "3.12.13",
-          "numpy": "2.4.6",
+          "numpy": "2.4.4",
           "platform": "macOS-26.6.2-arm64-arm-64bit"
         },
         "live_code_bindings": {
@@ -293,8 +293,8 @@
             },
             "p_value_one_sided_exact_sign_flip": 0.03125,
             "p_value_holm_within_candidate_posthoc": 0.03125,
-            "p_value_holm_preregistered_six_comparison_family": 0.09375,
-            "preregistered_six_comparison_reject_at_0.05": false
+            "p_value_retrospective_holm_six_prospectively_named_contrasts": 0.09375,
+            "retrospective_holm_six_contrasts_reject_at_0_05": false
           },
           "always_freeze": {
             "point": 0.12229143483219324,
@@ -312,17 +312,17 @@
             },
             "p_value_one_sided_exact_sign_flip": 0.015625,
             "p_value_holm_within_candidate_posthoc": 0.03125,
-            "p_value_holm_preregistered_six_comparison_family": 0.09375,
-            "preregistered_six_comparison_reject_at_0.05": false
+            "p_value_retrospective_holm_six_prospectively_named_contrasts": 0.09375,
+            "retrospective_holm_six_contrasts_reject_at_0_05": false
           }
         },
         "pointwise_family_intervals_positive_vs_both": true,
         "within_candidate_posthoc_holm_rejects_both": true,
-        "preregistered_six_comparison_holm_rejects_both": false,
+        "retrospective_six_contrast_holm_rejects_both": false,
         "claim_boundary": {
           "supports": "retrospective current-policy family sensitivity on the controlled CIFAR-10-C stress grid; positive pointwise intervals may be described conditionally",
           "does_not_support": [
-            "a preregistered cluster-robust win when six-comparison Holm fails",
+            "a confirmatory cluster-robust win",
             "simultaneous confidence intervals",
             "independent-checkpoint population inference",
             "prospective confirmation",
@@ -330,9 +330,9 @@
             "official-code POEM or AETTA superiority"
           ],
           "few_cluster_warning": "Only six corruption families are available; intervals and sign-flip tests have low resolution and must be reported with the family-level effects.",
-          "multiplicity_warning": "The preregistered family contains all six candidate-by-baseline comparisons; within-candidate Holm values are retrospective diagnostics only."
+          "multiplicity_warning": "The six contrasts were prospectively named, but the exact-rank replay, sign-flip tests, and Holm adjustment are retrospective and non-confirmatory; within-candidate Holm values are additional post-hoc diagnostics."
         },
-        "claim_note": "Retrospective sensitivity on six observed corruption families. Ordinary family-bootstrap intervals are unadjusted; the within-candidate two-contrast Holm values are post hoc, and the preregistered six-comparison Holm family fails for every candidate. This is not independent-checkpoint, prospective, natural-shift, or official-code POEM/AETTA evidence."
+        "claim_note": "Retrospective sensitivity on six observed corruption families. Ordinary family-bootstrap intervals are unadjusted; the within-candidate two-contrast Holm values are post hoc. Retrospective Holm adjustment over the six prospectively named contrasts fails the two-baseline gate for every candidate. The exact-rank replay, sign-flip tests, and Holm analysis are retrospective and non-confirmatory. This is not independent-checkpoint, prospective, natural-shift, or official-code POEM/AETTA evidence."
       }
     },
     "cifar10c_eata": {
@@ -358,7 +358,7 @@
         4
       ],
       "conditions_per_seed": 432,
-      "verdict": "Current exact-rank point estimate beats both fixed policies, but the ordinary adapt-side family-bootstrap interval crosses zero and the preregistered six-comparison Holm family fails; no cluster-robust or independent-checkpoint claim is made.",
+      "verdict": "Current exact-rank point estimate beats both fixed policies, but the ordinary adapt-side family-bootstrap interval crosses zero and the retrospective Holm analysis over the six prospectively named contrasts fails; no cluster-robust or independent-checkpoint claim is made.",
       "source": "experiments/kbound/results/reconciled_panels_v1/canonical_panel_results.json",
       "status": "current_policy_exact_rank_replay",
       "quantile_rule": "per-candidate/per-run-seed exact-rank leave-one-condition-out empirical residual calibration",
@@ -493,16 +493,16 @@
         "confirmatory": false,
         "convention": "baseline_regret_minus_kga_regret; positive values favor KGA",
         "artifact_path": "experiments/kbound/results/reconciled_panels_v1/current_policy_cluster_inference.json",
-        "artifact_sha256": "47e0afdb2720839764faa7b62d899d91f1d07f404aaf552a601ce2d3967b08d1",
-        "artifact_bytes": 18613,
-        "artifact_schema": "kbound-current-policy-cluster-inference-v2",
-        "generated_utc": "2026-08-29T00:00:28.680180+00:00",
-        "git_head": "b261866fc976d5be4f9be1abc5a2cfec3ff3bbcc",
+        "artifact_sha256": "286ab67432a91a98095ff234474fae7bee68b10fbcad22b5d8e0f1a79552288e",
+        "artifact_bytes": 18810,
+        "artifact_schema": "kbound-current-policy-cluster-inference-v3",
+        "generated_utc": "2026-08-29T18:59:40.615442+00:00",
+        "git_head": "9130a46553880bedec6b38ab8e5de0fa72e7f221",
         "analysis_script": "docs/research/kbound/scripts/analyze_current_policy_cluster_inference.py",
-        "analysis_script_sha256": "af58c22d21192c83134237711b5f46a9f8dd5ddccfd1719fc1c549fbe79e89a6",
+        "analysis_script_sha256": "42e7d28135820ae5ec7f456089c7f468216c1becbcf7e017f0e605e7bc7db63c",
         "runtime": {
           "python": "3.12.13",
-          "numpy": "2.4.6",
+          "numpy": "2.4.4",
           "platform": "macOS-26.6.2-arm64-arm-64bit"
         },
         "live_code_bindings": {
@@ -553,8 +553,8 @@
             },
             "p_value_one_sided_exact_sign_flip": 0.125,
             "p_value_holm_within_candidate_posthoc": 0.125,
-            "p_value_holm_preregistered_six_comparison_family": 0.25,
-            "preregistered_six_comparison_reject_at_0.05": false
+            "p_value_retrospective_holm_six_prospectively_named_contrasts": 0.25,
+            "retrospective_holm_six_contrasts_reject_at_0_05": false
           },
           "always_freeze": {
             "point": 0.13001203589417318,
@@ -572,17 +572,17 @@
             },
             "p_value_one_sided_exact_sign_flip": 0.015625,
             "p_value_holm_within_candidate_posthoc": 0.03125,
-            "p_value_holm_preregistered_six_comparison_family": 0.09375,
-            "preregistered_six_comparison_reject_at_0.05": false
+            "p_value_retrospective_holm_six_prospectively_named_contrasts": 0.09375,
+            "retrospective_holm_six_contrasts_reject_at_0_05": false
           }
         },
         "pointwise_family_intervals_positive_vs_both": false,
         "within_candidate_posthoc_holm_rejects_both": false,
-        "preregistered_six_comparison_holm_rejects_both": false,
+        "retrospective_six_contrast_holm_rejects_both": false,
         "claim_boundary": {
           "supports": "retrospective current-policy family sensitivity on the controlled CIFAR-10-C stress grid; positive pointwise intervals may be described conditionally",
           "does_not_support": [
-            "a preregistered cluster-robust win when six-comparison Holm fails",
+            "a confirmatory cluster-robust win",
             "simultaneous confidence intervals",
             "independent-checkpoint population inference",
             "prospective confirmation",
@@ -590,9 +590,9 @@
             "official-code POEM or AETTA superiority"
           ],
           "few_cluster_warning": "Only six corruption families are available; intervals and sign-flip tests have low resolution and must be reported with the family-level effects.",
-          "multiplicity_warning": "The preregistered family contains all six candidate-by-baseline comparisons; within-candidate Holm values are retrospective diagnostics only."
+          "multiplicity_warning": "The six contrasts were prospectively named, but the exact-rank replay, sign-flip tests, and Holm adjustment are retrospective and non-confirmatory; within-candidate Holm values are additional post-hoc diagnostics."
         },
-        "claim_note": "Retrospective sensitivity on six observed corruption families. Ordinary family-bootstrap intervals are unadjusted; the within-candidate two-contrast Holm values are post hoc, and the preregistered six-comparison Holm family fails for every candidate. This is not independent-checkpoint, prospective, natural-shift, or official-code POEM/AETTA evidence."
+        "claim_note": "Retrospective sensitivity on six observed corruption families. Ordinary family-bootstrap intervals are unadjusted; the within-candidate two-contrast Holm values are post hoc. Retrospective Holm adjustment over the six prospectively named contrasts fails the two-baseline gate for every candidate. The exact-rank replay, sign-flip tests, and Holm analysis are retrospective and non-confirmatory. This is not independent-checkpoint, prospective, natural-shift, or official-code POEM/AETTA evidence."
       }
     },
     "imagenetc_sar": {
@@ -1752,16 +1752,16 @@
         "confirmatory": false,
         "convention": "baseline_regret_minus_kga_regret; positive values favor KGA",
         "artifact_path": "experiments/kbound/results/reconciled_panels_v1/current_policy_cluster_inference.json",
-        "artifact_sha256": "47e0afdb2720839764faa7b62d899d91f1d07f404aaf552a601ce2d3967b08d1",
-        "artifact_bytes": 18613,
-        "artifact_schema": "kbound-current-policy-cluster-inference-v2",
-        "generated_utc": "2026-08-29T00:00:28.680180+00:00",
-        "git_head": "b261866fc976d5be4f9be1abc5a2cfec3ff3bbcc",
+        "artifact_sha256": "286ab67432a91a98095ff234474fae7bee68b10fbcad22b5d8e0f1a79552288e",
+        "artifact_bytes": 18810,
+        "artifact_schema": "kbound-current-policy-cluster-inference-v3",
+        "generated_utc": "2026-08-29T18:59:40.615442+00:00",
+        "git_head": "9130a46553880bedec6b38ab8e5de0fa72e7f221",
         "analysis_script": "docs/research/kbound/scripts/analyze_current_policy_cluster_inference.py",
-        "analysis_script_sha256": "af58c22d21192c83134237711b5f46a9f8dd5ddccfd1719fc1c549fbe79e89a6",
+        "analysis_script_sha256": "42e7d28135820ae5ec7f456089c7f468216c1becbcf7e017f0e605e7bc7db63c",
         "runtime": {
           "python": "3.12.13",
-          "numpy": "2.4.6",
+          "numpy": "2.4.4",
           "platform": "macOS-26.6.2-arm64-arm-64bit"
         },
         "live_code_bindings": {
@@ -1812,8 +1812,8 @@
             },
             "p_value_one_sided_exact_sign_flip": 0.90625,
             "p_value_holm_within_candidate_posthoc": 0.90625,
-            "p_value_holm_preregistered_six_comparison_family": 0.90625,
-            "preregistered_six_comparison_reject_at_0.05": false
+            "p_value_retrospective_holm_six_prospectively_named_contrasts": 0.90625,
+            "retrospective_holm_six_contrasts_reject_at_0_05": false
           },
           "always_freeze": {
             "point": 0.13891249966842156,
@@ -1831,17 +1831,17 @@
             },
             "p_value_one_sided_exact_sign_flip": 0.015625,
             "p_value_holm_within_candidate_posthoc": 0.03125,
-            "p_value_holm_preregistered_six_comparison_family": 0.09375,
-            "preregistered_six_comparison_reject_at_0.05": false
+            "p_value_retrospective_holm_six_prospectively_named_contrasts": 0.09375,
+            "retrospective_holm_six_contrasts_reject_at_0_05": false
           }
         },
         "pointwise_family_intervals_positive_vs_both": false,
         "within_candidate_posthoc_holm_rejects_both": false,
-        "preregistered_six_comparison_holm_rejects_both": false,
+        "retrospective_six_contrast_holm_rejects_both": false,
         "claim_boundary": {
           "supports": "retrospective current-policy family sensitivity on the controlled CIFAR-10-C stress grid; positive pointwise intervals may be described conditionally",
           "does_not_support": [
-            "a preregistered cluster-robust win when six-comparison Holm fails",
+            "a confirmatory cluster-robust win",
             "simultaneous confidence intervals",
             "independent-checkpoint population inference",
             "prospective confirmation",
@@ -1849,9 +1849,9 @@
             "official-code POEM or AETTA superiority"
           ],
           "few_cluster_warning": "Only six corruption families are available; intervals and sign-flip tests have low resolution and must be reported with the family-level effects.",
-          "multiplicity_warning": "The preregistered family contains all six candidate-by-baseline comparisons; within-candidate Holm values are retrospective diagnostics only."
+          "multiplicity_warning": "The six contrasts were prospectively named, but the exact-rank replay, sign-flip tests, and Holm adjustment are retrospective and non-confirmatory; within-candidate Holm values are additional post-hoc diagnostics."
         },
-        "claim_note": "Retrospective sensitivity on six observed corruption families. Ordinary family-bootstrap intervals are unadjusted; the within-candidate two-contrast Holm values are post hoc, and the preregistered six-comparison Holm family fails for every candidate. This is not independent-checkpoint, prospective, natural-shift, or official-code POEM/AETTA evidence."
+        "claim_note": "Retrospective sensitivity on six observed corruption families. Ordinary family-bootstrap intervals are unadjusted; the within-candidate two-contrast Holm values are post hoc. Retrospective Holm adjustment over the six prospectively named contrasts fails the two-baseline gate for every candidate. The exact-rank replay, sign-flip tests, and Holm analysis are retrospective and non-confirmatory. This is not independent-checkpoint, prospective, natural-shift, or official-code POEM/AETTA evidence."
       }
     }
   },
@@ -1953,7 +1953,7 @@
     "current_policy_headtohead": "POEM/AETTA-style comparisons require Phase 2 recomputation against the current exact-rank KGA policy."
   },
   "regenerated_utc": "2026-08-27",
-  "regeneration_provenance": "All current-policy rows are regenerated from the source-hashed canonical panel. The separately code-bound current-policy family sensitivity is retrospective and fails the preregistered six-comparison Holm gate. Earlier-policy cluster and head-to-head artifacts are retained only in explicitly historical, non-release-eligible blocks.",
+  "regeneration_provenance": "All current-policy rows are regenerated from the source-hashed canonical panel. The separately code-bound current-policy family sensitivity is retrospective and fails retrospective Holm adjustment over the six prospectively named contrasts. Earlier-policy cluster and head-to-head artifacts are retained only in explicitly historical, non-release-eligible blocks.",
   "decision_accounting_summary": {
     "note": "Current rows below are refreshed from the source-hashed canonical panel. The controlled multimodal D33 row is a separately sealed auxiliary result; iWildCam remains withheld. This block is not an independent inference authority.",
     "rows": [
@@ -2089,11 +2089,11 @@
     "ci_convention": "baseline_regret_minus_kga_regret; positive values favor KGA",
     "current_policy_family_sensitivity": {
       "artifact": "experiments/kbound/results/reconciled_panels_v1/current_policy_cluster_inference.json",
-      "artifact_sha256": "47e0afdb2720839764faa7b62d899d91f1d07f404aaf552a601ce2d3967b08d1",
-      "artifact_bytes": 18613,
+      "artifact_sha256": "286ab67432a91a98095ff234474fae7bee68b10fbcad22b5d8e0f1a79552288e",
+      "artifact_bytes": 18810,
       "runtime": {
         "python": "3.12.13",
-        "numpy": "2.4.6",
+        "numpy": "2.4.4",
         "platform": "macOS-26.6.2-arm64-arm-64bit"
       },
       "live_code_bindings": {
@@ -2116,13 +2116,13 @@
   "current_policy_family_sensitivity": {
     "status": "retrospective_current_policy_family_sensitivity",
     "artifact_path": "experiments/kbound/results/reconciled_panels_v1/current_policy_cluster_inference.json",
-    "artifact_sha256": "47e0afdb2720839764faa7b62d899d91f1d07f404aaf552a601ce2d3967b08d1",
-    "artifact_bytes": 18613,
-    "artifact_schema": "kbound-current-policy-cluster-inference-v2",
+    "artifact_sha256": "286ab67432a91a98095ff234474fae7bee68b10fbcad22b5d8e0f1a79552288e",
+    "artifact_bytes": 18810,
+    "artifact_schema": "kbound-current-policy-cluster-inference-v3",
     "convention": "baseline_regret_minus_kga_regret; positive values favor KGA",
     "runtime": {
       "python": "3.12.13",
-      "numpy": "2.4.6",
+      "numpy": "2.4.4",
       "platform": "macOS-26.6.2-arm64-arm-64bit"
     },
     "live_code_bindings": {
@@ -2142,13 +2142,13 @@
     "inference": {
       "bootstrap": "paired percentile bootstrap of corruption-family mean gaps; whole families resampled with replacement",
       "hypothesis_test": "exact one-sided sign-flip test over six paired corruption-family effects",
-      "multiplicity": "Primary audit: Holm adjustment over the preregistered six candidate-by-baseline comparisons. A two-comparison within-candidate Holm result is also shown and is explicitly post hoc.",
+      "multiplicity": "Retrospective Holm adjustment over the six prospectively named contrasts. The exact-rank replay, sign-flip tests, and Holm analysis are retrospective and non-confirmatory. A two-comparison within-candidate Holm result is also shown and is explicitly post hoc.",
       "holm_applies_to": "p-values only; confidence intervals are unadjusted",
       "ci_level": 0.95,
       "bootstrap_replicates": 20000,
       "random_seed_base": 20260827
     },
-    "preregistered_six_comparison_holm": {
+    "retrospective_holm_over_six_prospectively_named_contrasts": {
       "raw_p_values": {
         "tent::always_adapt": 0.03125,
         "tent::always_freeze": 0.015625,
@@ -2171,7 +2171,7 @@
     "claim_boundary": {
       "supports": "retrospective current-policy family sensitivity on the controlled CIFAR-10-C stress grid; positive pointwise intervals may be described conditionally",
       "does_not_support": [
-        "a preregistered cluster-robust win when six-comparison Holm fails",
+        "a confirmatory cluster-robust win",
         "simultaneous confidence intervals",
         "independent-checkpoint population inference",
         "prospective confirmation",
@@ -2179,7 +2179,7 @@
         "official-code POEM or AETTA superiority"
       ],
       "few_cluster_warning": "Only six corruption families are available; intervals and sign-flip tests have low resolution and must be reported with the family-level effects.",
-      "multiplicity_warning": "The preregistered family contains all six candidate-by-baseline comparisons; within-candidate Holm values are retrospective diagnostics only."
+      "multiplicity_warning": "The six contrasts were prospectively named, but the exact-rank replay, sign-flip tests, and Holm adjustment are retrospective and non-confirmatory; within-candidate Holm values are additional post-hoc diagnostics."
     },
     "candidates": {
       "tent": {
@@ -2189,16 +2189,16 @@
         "confirmatory": false,
         "convention": "baseline_regret_minus_kga_regret; positive values favor KGA",
         "artifact_path": "experiments/kbound/results/reconciled_panels_v1/current_policy_cluster_inference.json",
-        "artifact_sha256": "47e0afdb2720839764faa7b62d899d91f1d07f404aaf552a601ce2d3967b08d1",
-        "artifact_bytes": 18613,
-        "artifact_schema": "kbound-current-policy-cluster-inference-v2",
-        "generated_utc": "2026-08-29T00:00:28.680180+00:00",
-        "git_head": "b261866fc976d5be4f9be1abc5a2cfec3ff3bbcc",
+        "artifact_sha256": "286ab67432a91a98095ff234474fae7bee68b10fbcad22b5d8e0f1a79552288e",
+        "artifact_bytes": 18810,
+        "artifact_schema": "kbound-current-policy-cluster-inference-v3",
+        "generated_utc": "2026-08-29T18:59:40.615442+00:00",
+        "git_head": "9130a46553880bedec6b38ab8e5de0fa72e7f221",
         "analysis_script": "docs/research/kbound/scripts/analyze_current_policy_cluster_inference.py",
-        "analysis_script_sha256": "af58c22d21192c83134237711b5f46a9f8dd5ddccfd1719fc1c549fbe79e89a6",
+        "analysis_script_sha256": "42e7d28135820ae5ec7f456089c7f468216c1becbcf7e017f0e605e7bc7db63c",
         "runtime": {
           "python": "3.12.13",
-          "numpy": "2.4.6",
+          "numpy": "2.4.4",
           "platform": "macOS-26.6.2-arm64-arm-64bit"
         },
         "live_code_bindings": {
@@ -2249,8 +2249,8 @@
             },
             "p_value_one_sided_exact_sign_flip": 0.03125,
             "p_value_holm_within_candidate_posthoc": 0.03125,
-            "p_value_holm_preregistered_six_comparison_family": 0.09375,
-            "preregistered_six_comparison_reject_at_0.05": false
+            "p_value_retrospective_holm_six_prospectively_named_contrasts": 0.09375,
+            "retrospective_holm_six_contrasts_reject_at_0_05": false
           },
           "always_freeze": {
             "point": 0.12229143483219324,
@@ -2268,17 +2268,17 @@
             },
             "p_value_one_sided_exact_sign_flip": 0.015625,
             "p_value_holm_within_candidate_posthoc": 0.03125,
-            "p_value_holm_preregistered_six_comparison_family": 0.09375,
-            "preregistered_six_comparison_reject_at_0.05": false
+            "p_value_retrospective_holm_six_prospectively_named_contrasts": 0.09375,
+            "retrospective_holm_six_contrasts_reject_at_0_05": false
           }
         },
         "pointwise_family_intervals_positive_vs_both": true,
         "within_candidate_posthoc_holm_rejects_both": true,
-        "preregistered_six_comparison_holm_rejects_both": false,
+        "retrospective_six_contrast_holm_rejects_both": false,
         "claim_boundary": {
           "supports": "retrospective current-policy family sensitivity on the controlled CIFAR-10-C stress grid; positive pointwise intervals may be described conditionally",
           "does_not_support": [
-            "a preregistered cluster-robust win when six-comparison Holm fails",
+            "a confirmatory cluster-robust win",
             "simultaneous confidence intervals",
             "independent-checkpoint population inference",
             "prospective confirmation",
@@ -2286,9 +2286,9 @@
             "official-code POEM or AETTA superiority"
           ],
           "few_cluster_warning": "Only six corruption families are available; intervals and sign-flip tests have low resolution and must be reported with the family-level effects.",
-          "multiplicity_warning": "The preregistered family contains all six candidate-by-baseline comparisons; within-candidate Holm values are retrospective diagnostics only."
+          "multiplicity_warning": "The six contrasts were prospectively named, but the exact-rank replay, sign-flip tests, and Holm adjustment are retrospective and non-confirmatory; within-candidate Holm values are additional post-hoc diagnostics."
         },
-        "claim_note": "Retrospective sensitivity on six observed corruption families. Ordinary family-bootstrap intervals are unadjusted; the within-candidate two-contrast Holm values are post hoc, and the preregistered six-comparison Holm family fails for every candidate. This is not independent-checkpoint, prospective, natural-shift, or official-code POEM/AETTA evidence."
+        "claim_note": "Retrospective sensitivity on six observed corruption families. Ordinary family-bootstrap intervals are unadjusted; the within-candidate two-contrast Holm values are post hoc. Retrospective Holm adjustment over the six prospectively named contrasts fails the two-baseline gate for every candidate. The exact-rank replay, sign-flip tests, and Holm analysis are retrospective and non-confirmatory. This is not independent-checkpoint, prospective, natural-shift, or official-code POEM/AETTA evidence."
       },
       "eata": {
         "status": "retrospective_current_policy_family_sensitivity",
@@ -2297,16 +2297,16 @@
         "confirmatory": false,
         "convention": "baseline_regret_minus_kga_regret; positive values favor KGA",
         "artifact_path": "experiments/kbound/results/reconciled_panels_v1/current_policy_cluster_inference.json",
-        "artifact_sha256": "47e0afdb2720839764faa7b62d899d91f1d07f404aaf552a601ce2d3967b08d1",
-        "artifact_bytes": 18613,
-        "artifact_schema": "kbound-current-policy-cluster-inference-v2",
-        "generated_utc": "2026-08-29T00:00:28.680180+00:00",
-        "git_head": "b261866fc976d5be4f9be1abc5a2cfec3ff3bbcc",
+        "artifact_sha256": "286ab67432a91a98095ff234474fae7bee68b10fbcad22b5d8e0f1a79552288e",
+        "artifact_bytes": 18810,
+        "artifact_schema": "kbound-current-policy-cluster-inference-v3",
+        "generated_utc": "2026-08-29T18:59:40.615442+00:00",
+        "git_head": "9130a46553880bedec6b38ab8e5de0fa72e7f221",
         "analysis_script": "docs/research/kbound/scripts/analyze_current_policy_cluster_inference.py",
-        "analysis_script_sha256": "af58c22d21192c83134237711b5f46a9f8dd5ddccfd1719fc1c549fbe79e89a6",
+        "analysis_script_sha256": "42e7d28135820ae5ec7f456089c7f468216c1becbcf7e017f0e605e7bc7db63c",
         "runtime": {
           "python": "3.12.13",
-          "numpy": "2.4.6",
+          "numpy": "2.4.4",
           "platform": "macOS-26.6.2-arm64-arm-64bit"
         },
         "live_code_bindings": {
@@ -2357,8 +2357,8 @@
             },
             "p_value_one_sided_exact_sign_flip": 0.125,
             "p_value_holm_within_candidate_posthoc": 0.125,
-            "p_value_holm_preregistered_six_comparison_family": 0.25,
-            "preregistered_six_comparison_reject_at_0.05": false
+            "p_value_retrospective_holm_six_prospectively_named_contrasts": 0.25,
+            "retrospective_holm_six_contrasts_reject_at_0_05": false
           },
           "always_freeze": {
             "point": 0.13001203589417318,
@@ -2376,17 +2376,17 @@
             },
             "p_value_one_sided_exact_sign_flip": 0.015625,
             "p_value_holm_within_candidate_posthoc": 0.03125,
-            "p_value_holm_preregistered_six_comparison_family": 0.09375,
-            "preregistered_six_comparison_reject_at_0.05": false
+            "p_value_retrospective_holm_six_prospectively_named_contrasts": 0.09375,
+            "retrospective_holm_six_contrasts_reject_at_0_05": false
           }
         },
         "pointwise_family_intervals_positive_vs_both": false,
         "within_candidate_posthoc_holm_rejects_both": false,
-        "preregistered_six_comparison_holm_rejects_both": false,
+        "retrospective_six_contrast_holm_rejects_both": false,
         "claim_boundary": {
           "supports": "retrospective current-policy family sensitivity on the controlled CIFAR-10-C stress grid; positive pointwise intervals may be described conditionally",
           "does_not_support": [
-            "a preregistered cluster-robust win when six-comparison Holm fails",
+            "a confirmatory cluster-robust win",
             "simultaneous confidence intervals",
             "independent-checkpoint population inference",
             "prospective confirmation",
@@ -2394,9 +2394,9 @@
             "official-code POEM or AETTA superiority"
           ],
           "few_cluster_warning": "Only six corruption families are available; intervals and sign-flip tests have low resolution and must be reported with the family-level effects.",
-          "multiplicity_warning": "The preregistered family contains all six candidate-by-baseline comparisons; within-candidate Holm values are retrospective diagnostics only."
+          "multiplicity_warning": "The six contrasts were prospectively named, but the exact-rank replay, sign-flip tests, and Holm adjustment are retrospective and non-confirmatory; within-candidate Holm values are additional post-hoc diagnostics."
         },
-        "claim_note": "Retrospective sensitivity on six observed corruption families. Ordinary family-bootstrap intervals are unadjusted; the within-candidate two-contrast Holm values are post hoc, and the preregistered six-comparison Holm family fails for every candidate. This is not independent-checkpoint, prospective, natural-shift, or official-code POEM/AETTA evidence."
+        "claim_note": "Retrospective sensitivity on six observed corruption families. Ordinary family-bootstrap intervals are unadjusted; the within-candidate two-contrast Holm values are post hoc. Retrospective Holm adjustment over the six prospectively named contrasts fails the two-baseline gate for every candidate. The exact-rank replay, sign-flip tests, and Holm analysis are retrospective and non-confirmatory. This is not independent-checkpoint, prospective, natural-shift, or official-code POEM/AETTA evidence."
       },
       "sar": {
         "status": "retrospective_current_policy_family_sensitivity",
@@ -2405,16 +2405,16 @@
         "confirmatory": false,
         "convention": "baseline_regret_minus_kga_regret; positive values favor KGA",
         "artifact_path": "experiments/kbound/results/reconciled_panels_v1/current_policy_cluster_inference.json",
-        "artifact_sha256": "47e0afdb2720839764faa7b62d899d91f1d07f404aaf552a601ce2d3967b08d1",
-        "artifact_bytes": 18613,
-        "artifact_schema": "kbound-current-policy-cluster-inference-v2",
-        "generated_utc": "2026-08-29T00:00:28.680180+00:00",
-        "git_head": "b261866fc976d5be4f9be1abc5a2cfec3ff3bbcc",
+        "artifact_sha256": "286ab67432a91a98095ff234474fae7bee68b10fbcad22b5d8e0f1a79552288e",
+        "artifact_bytes": 18810,
+        "artifact_schema": "kbound-current-policy-cluster-inference-v3",
+        "generated_utc": "2026-08-29T18:59:40.615442+00:00",
+        "git_head": "9130a46553880bedec6b38ab8e5de0fa72e7f221",
         "analysis_script": "docs/research/kbound/scripts/analyze_current_policy_cluster_inference.py",
-        "analysis_script_sha256": "af58c22d21192c83134237711b5f46a9f8dd5ddccfd1719fc1c549fbe79e89a6",
+        "analysis_script_sha256": "42e7d28135820ae5ec7f456089c7f468216c1becbcf7e017f0e605e7bc7db63c",
         "runtime": {
           "python": "3.12.13",
-          "numpy": "2.4.6",
+          "numpy": "2.4.4",
           "platform": "macOS-26.6.2-arm64-arm-64bit"
         },
         "live_code_bindings": {
@@ -2465,8 +2465,8 @@
             },
             "p_value_one_sided_exact_sign_flip": 0.90625,
             "p_value_holm_within_candidate_posthoc": 0.90625,
-            "p_value_holm_preregistered_six_comparison_family": 0.90625,
-            "preregistered_six_comparison_reject_at_0.05": false
+            "p_value_retrospective_holm_six_prospectively_named_contrasts": 0.90625,
+            "retrospective_holm_six_contrasts_reject_at_0_05": false
           },
           "always_freeze": {
             "point": 0.13891249966842156,
@@ -2484,17 +2484,17 @@
             },
             "p_value_one_sided_exact_sign_flip": 0.015625,
             "p_value_holm_within_candidate_posthoc": 0.03125,
-            "p_value_holm_preregistered_six_comparison_family": 0.09375,
-            "preregistered_six_comparison_reject_at_0.05": false
+            "p_value_retrospective_holm_six_prospectively_named_contrasts": 0.09375,
+            "retrospective_holm_six_contrasts_reject_at_0_05": false
           }
         },
         "pointwise_family_intervals_positive_vs_both": false,
         "within_candidate_posthoc_holm_rejects_both": false,
-        "preregistered_six_comparison_holm_rejects_both": false,
+        "retrospective_six_contrast_holm_rejects_both": false,
         "claim_boundary": {
           "supports": "retrospective current-policy family sensitivity on the controlled CIFAR-10-C stress grid; positive pointwise intervals may be described conditionally",
           "does_not_support": [
-            "a preregistered cluster-robust win when six-comparison Holm fails",
+            "a confirmatory cluster-robust win",
             "simultaneous confidence intervals",
             "independent-checkpoint population inference",
             "prospective confirmation",
@@ -2502,11 +2502,11 @@
             "official-code POEM or AETTA superiority"
           ],
           "few_cluster_warning": "Only six corruption families are available; intervals and sign-flip tests have low resolution and must be reported with the family-level effects.",
-          "multiplicity_warning": "The preregistered family contains all six candidate-by-baseline comparisons; within-candidate Holm values are retrospective diagnostics only."
+          "multiplicity_warning": "The six contrasts were prospectively named, but the exact-rank replay, sign-flip tests, and Holm adjustment are retrospective and non-confirmatory; within-candidate Holm values are additional post-hoc diagnostics."
         },
-        "claim_note": "Retrospective sensitivity on six observed corruption families. Ordinary family-bootstrap intervals are unadjusted; the within-candidate two-contrast Holm values are post hoc, and the preregistered six-comparison Holm family fails for every candidate. This is not independent-checkpoint, prospective, natural-shift, or official-code POEM/AETTA evidence."
+        "claim_note": "Retrospective sensitivity on six observed corruption families. Ordinary family-bootstrap intervals are unadjusted; the within-candidate two-contrast Holm values are post hoc. Retrospective Holm adjustment over the six prospectively named contrasts fails the two-baseline gate for every candidate. The exact-rank replay, sign-flip tests, and Holm analysis are retrospective and non-confirmatory. This is not independent-checkpoint, prospective, natural-shift, or official-code POEM/AETTA evidence."
       }
     },
-    "release_interpretation": "Tent has positive ordinary family-bootstrap intervals against both fixed policies, but its two preregistered six-comparison Holm p-values are 0.09375. EATA and SAR also fail the preregistered gate. No cluster-robust or confirmatory win is promoted."
+    "release_interpretation": "Tent has positive ordinary family-bootstrap intervals against both fixed policies, but its two p-values from retrospective Holm adjustment over the six prospectively named contrasts are 0.09375. EATA and SAR also fail the retrospective gate. No cluster-robust or confirmatory win is promoted."
   }
 }

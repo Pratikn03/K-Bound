@@ -1275,6 +1275,84 @@ def test_exact_live_types_with_injected_hdf5_factories_cannot_emit_production(
     assert not (tmp_path / "must-not-exist").exists()
 
 
+def test_production_runner_and_seal_stop_on_action_unit_mismatch_before_io(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    runner_calls: list[str] = []
+
+    def stop_runner() -> None:
+        runner_calls.append("runner")
+        raise IntegrityError("synthetic action-unit mismatch")
+
+    monkeypatch.setattr(
+        target_runner, "require_production_target_action_unit_alignment", stop_runner
+    )
+    geo = object.__new__(VerifiedGeoIndex)
+    geo._uses_canonical_h5_factory = True  # type: ignore[attr-defined]
+    loader = object.__new__(LabelFreeTargetLoader)
+    loader._uses_canonical_h5_factory = True  # type: ignore[attr-defined]
+    loader._geo_index = geo  # type: ignore[attr-defined]
+    executor = object.__new__(TorchTargetCellExecutor)
+    with pytest.raises(IntegrityError, match="synthetic action-unit mismatch"):
+        target_runner._run_label_blind_target_core(
+            execution_seal_path=tmp_path / "missing-seal.json",
+            population_manifest_path=tmp_path / "missing-manifest.json",
+            source_postrun_acceptance_path=tmp_path / "missing-source-acceptance.json",
+            selected_candidate_path=tmp_path / "missing-selection.json",
+            selected_gate_fit_bundle_path=tmp_path / "missing-fit.json",
+            selected_gate_cal_bundle_path=tmp_path / "missing-cal.json",
+            precalibration_seal_path=tmp_path / "missing-precal.json",
+            gate_path=tmp_path / "missing-gate.json",
+            gate_authorization_path=tmp_path / "missing-authorization.json",
+            target_boundary_amendment_path=tmp_path / "missing-amendment.json",
+            checkpoint_collection_path=tmp_path / "missing-collection.json",
+            checkpoint_dir=tmp_path / "missing-checkpoints",
+            geo_index=geo,
+            target_loader=loader,
+            cell_executor=executor,
+            output_dir=tmp_path / "must-not-exist",
+            population_manifest_validator=target_runner.validate_population_manifest,
+            expected_execution_mode=target_runner.PRODUCTION_MODE,
+        )
+    assert runner_calls == ["runner"]
+    assert not (tmp_path / "must-not-exist").exists()
+
+    seal_calls: list[str] = []
+
+    def stop_seal() -> None:
+        seal_calls.append("seal")
+        raise IntegrityError("synthetic action-unit mismatch")
+
+    monkeypatch.setattr(
+        target_seal, "require_production_target_action_unit_alignment", stop_seal
+    )
+    with pytest.raises(IntegrityError, match="synthetic action-unit mismatch"):
+        target_seal._create_execution_seal_core(
+            population_manifest_path=tmp_path / "missing-manifest.json",
+            source_postrun_acceptance_path=tmp_path / "missing-source-acceptance.json",
+            selected_candidate_path=tmp_path / "missing-selection.json",
+            selected_gate_fit_bundle_path=tmp_path / "missing-fit.json",
+            selected_gate_cal_bundle_path=tmp_path / "missing-cal.json",
+            precalibration_seal_path=tmp_path / "missing-precal.json",
+            gate_path=tmp_path / "missing-gate.json",
+            gate_authorization_path=tmp_path / "missing-authorization.json",
+            target_boundary_amendment_path=tmp_path / "missing-amendment.json",
+            checkpoint_collection_path=tmp_path / "missing-collection.json",
+            checkpoint_dir=tmp_path / "missing-checkpoints",
+            reveal_registry_dir=tmp_path / "missing-registry",
+            target_data_paths={},
+            output_path=tmp_path / "must-not-seal.json",
+            live_code_identity_sha256="0" * 64,
+            live_environment_identity_sha256="1" * 64,
+            live_normalizer_sha256="2" * 64,
+            execution_mode=target_seal.PRODUCTION_MODE,
+            population_manifest_validator=target_seal.validate_population_manifest,
+            production_authority=target_seal._PRODUCTION_SEAL_AUTHORITY,
+        )
+    assert seal_calls == ["seal"]
+    assert not (tmp_path / "must-not-seal.json").exists()
+
+
 def test_precalibration_seal_predates_and_is_extended_by_target_seal(
     tmp_path: Path,
 ) -> None:

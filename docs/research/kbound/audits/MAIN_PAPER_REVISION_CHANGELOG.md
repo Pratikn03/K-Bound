@@ -1,5 +1,8 @@
 # MAIN_PAPER_REVISION_CHANGELOG — kbound_short.tex (2026-07-03)
 
+> **SUPERSEDED PROCESS RECORD (2026-08-29).** This changelog describes an older manuscript
+> generation. It is not a current claim or release ledger; see `../KBOUND_SHORT_FINAL_CHANGELOG.md`.
+
 No numerical value was changed anywhere. No evidence strength was upgraded. All withdrawn-claim
 disclosures survive. Files touched: `kbound_short.tex`, `kbound_short_appendix.tex` (4 lines).
 

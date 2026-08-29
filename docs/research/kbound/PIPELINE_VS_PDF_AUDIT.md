@@ -1,5 +1,10 @@
 # Pipeline vs PDF — integration audit (2026-07-01)
 
+> **SUPERSEDED PIPELINE MAP (2026-08-29).** This document maps the retired showcase path and
+> historical PDFs. It is retained for provenance only. The maintained generation chain is
+> `runbooks/release_candidate.sh`, `kbound_submission.tex`, the shared
+> `kbound_submission_body.tex`, and `kbound_tmlr.tex`.
+
 Maps every **headline paper claim** to what `run_final_showcase.sh` actually regenerates.
 
 **Command:** `bash docs/research/kbound/scripts/run_final_showcase.sh`

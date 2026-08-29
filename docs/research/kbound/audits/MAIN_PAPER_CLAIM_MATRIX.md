@@ -1,5 +1,9 @@
 # MAIN_PAPER_CLAIM_MATRIX — kbound_short.tex (2026-07-03)
 
+> **SUPERSEDED PROCESS RECORD (2026-08-29).** This matrix targets the retired `kbound_short.tex`
+> manuscript and contains empirical wording corrected by the later source-hashed reconciliation.
+> Use `../KBOUND_SHORT_CLAIM_MANIFEST.md` and `../claim_ledger.json` for current claims.
+
 | Claim | Paper location | Evidence artifact | Assumptions | Allowed wording | Forbidden wording |
 |---|---|---|---|---|---|
 | Matched evidence ⇒ abstention necessary | Thm 1 (`lem:nonid`), §theory | Appendix app:theory-full proofs; Lean swap-involution files; val_* validators | declared class C_β; label-free evidence | "no label-free rule can be correct in both", "abstention necessary" | "abstention always optimal", any claim outside the declared class |

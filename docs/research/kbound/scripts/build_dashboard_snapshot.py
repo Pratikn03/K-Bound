@@ -232,7 +232,8 @@ def build_snapshot() -> dict[str, Any]:
             "conditional",
             (
                 "Point estimate is below both fixed policies and ordinary six-family intervals "
-                "are positive, but both preregistered six-comparison Holm p-values are 0.09375."
+                "are positive, but p-values from retrospective Holm adjustment over the six "
+                "prospectively named contrasts are both 0.09375."
             ),
         ),
         regret_row(
@@ -242,7 +243,8 @@ def build_snapshot() -> dict[str, Any]:
             "diagnostic",
             (
                 "Point estimate is below both fixed policies, but the ordinary family interval "
-                "against always-adapt crosses zero and the preregistered Holm gate fails."
+                "against always-adapt crosses zero and the retrospective Holm gate over the "
+                "six prospectively named contrasts fails."
             ),
         ),
         regret_row(

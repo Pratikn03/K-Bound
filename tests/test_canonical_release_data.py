@@ -7,6 +7,8 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 VALIDATOR = ROOT / "docs/research/kbound/scripts/validate_canonical_release_data.py"
 STORAGE_REFRESH = ROOT / "docs/research/kbound/scripts/refresh_storage_manifest.py"
+RESULT_BUILDER = ROOT / "docs/research/kbound/scripts/build_result_manifest.py"
+PANEL_SYNC = ROOT / "scripts/sync_reconciled_panels.py"
 
 
 def load_module(path: Path, name: str):
@@ -20,6 +22,63 @@ def load_module(path: Path, name: str):
 def test_canonical_release_data_is_consistent() -> None:
     validator = load_module(VALIDATOR, "canonical_release_validator")
     assert validator.validate() == []
+
+
+def test_separate_natural_authorities_survive_result_manifest_regeneration() -> None:
+    builder = load_module(RESULT_BUILDER, "result_manifest_builder")
+    ledger = builder.json.loads(builder.LEDGER.read_text())
+    authorities = builder.validated_separate_authorities(ledger)
+    assert authorities["cct20"]["claim_id"] == "KB-CLAIM-051"
+    assert authorities["so2sat_development"]["claim_id"] == "KB-CLAIM-052"
+
+    cct20 = builder.special_metrics("KB-CLAIM-051")
+    assert cct20["decision_counts"] == {"ADAPT": 0, "FREEZE": 44, "ABSTAIN": 1}
+    assert cct20["point_beats_both"] is False
+    assert cct20["ci_robust_beats_both"] is False
+
+    so2sat = builder.special_metrics("KB-CLAIM-052")
+    assert so2sat["verdict"] == "NO_FEASIBLE_CANDIDATE_STOP_BEFORE_GATE_CAL"
+    assert so2sat["selected_candidate_id"] is None
+    assert so2sat["target_score"] is None
+    assert so2sat["target_access"] == {
+        "target_inputs": [],
+        "target_pixels_read": 0,
+        "target_labels_read": 0,
+        "gate_cal_rows_read_before_selection": 0,
+    }
+
+
+def test_panel_sync_preserves_later_studies_and_is_idempotent() -> None:
+    sync = load_module(PANEL_SYNC, "reconciled_panel_sync")
+    builder = load_module(RESULT_BUILDER, "result_manifest_builder_after_sync")
+    ledger = sync._load(sync.LEDGER_PATH)
+    current_cluster = sync._load(sync.CURRENT_CLUSTER_PATH)
+
+    sync._sync_ledger(ledger, current_cluster)
+    first_sync = copy.deepcopy(ledger)
+    sync._sync_ledger(ledger, current_cluster)
+    assert ledger == first_sync
+    assert ledger["generated_at"] == "2026-08-29"
+    assert len(ledger["claims"]) == 39
+
+    by_id = {row["claim_id"]: row for row in ledger["claims"]}
+    assert by_id["KB-CLAIM-044"]["status"] == "diagnostic"
+    assert by_id["KB-CLAIM-045"]["status"] == "diagnostic"
+    assert by_id["KB-CLAIM-051"]["verdict"] == "SAFE_UTILITY_ONLY"
+    assert by_id["KB-CLAIM-052"]["target_access"]["target_labels_read"] == 0
+    builder.validated_separate_authorities(ledger)
+
+    promoted = [
+        row
+        for row in ledger["claims"]
+        if row.get("claim_type") == "empirical"
+        and row.get("status") in {"supported", "no-harm", "descriptive", "diagnostic"}
+        and any((ROOT / rel).is_file() for rel in row.get("supporting_artifacts", []))
+    ]
+    assert len(promoted) == 13
+    assert {"KB-CLAIM-051", "KB-CLAIM-052"} <= {
+        row["claim_id"] for row in promoted
+    }
 
 
 def test_storage_refresh_is_bounded_to_declared_authorities() -> None:

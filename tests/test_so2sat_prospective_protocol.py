@@ -38,8 +38,10 @@ from experiments.kbound.so2sat.metadata_manifest import (
     validate_population_manifest,
 )
 from experiments.kbound.so2sat.protocol import (
+    IMPLEMENTED_TARGET_ACTION_UNIT,
     load_protocol,
     protocol_identity,
+    require_production_target_action_unit_alignment,
     verify_checked_in_protocol_receipt,
 )
 
@@ -51,6 +53,14 @@ class _FakeDataset:
 
     def __getitem__(self, index: int) -> Any:
         return self.values[index]
+
+
+def test_production_target_is_disabled_on_action_unit_mismatch() -> None:
+    protocol = load_protocol()
+    assert protocol["roles"]["target"]["action_unit"] == "city"
+    assert IMPLEMENTED_TARGET_ACTION_UNIT == "city_checkpoint"
+    with pytest.raises(IntegrityError, match="new versioned protocol"):
+        require_production_target_action_unit_alignment()
 
 
 class _FakeGeoHandle:

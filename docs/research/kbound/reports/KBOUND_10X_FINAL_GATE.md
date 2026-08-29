@@ -1,10 +1,10 @@
 # K-Bound 10× Final Decision Gate
 
-> **SUPERSEDED 2026-07-26 on one point.** This dated record asserts *uniform* natural-shift
-> no-harm. That claim was withdrawn: no-harm holds on the four one-sided locked tracks
-> (Camelyon17, iWildCam, Office-Home, RxRx1) only. PACS loses to always-adapt by 2.45x,
-> ImageNet-R loses on 7 of 10 backbones, CIFAR-10.1 fails the transfer bar (FA_u = 0.167).
-> The record is left unedited below; the live claim is in `kbound_short_body.tex`.
+> **FULLY SUPERSEDED AS A RELEASE GATE (2026-08-29).** This June snapshot predates the canonical
+> exact-rank reconciliation, iWildCam withholding, CCT-20 safe-utility result, and So2Sat negative
+> development stop. Its PASS and natural-shift wording are historical only. The record below is
+> preserved unchanged; use `KBOUND_SHORT_RESULT_AUDIT.md`, `KBOUND_SHORT_CLAIM_MANIFEST.md`, and
+> `runbooks/release_candidate.sh` for current status.
 
 
 **Date:** 2026-06-25 (positioning refresh 2026-06-29)

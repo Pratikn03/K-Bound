@@ -61,6 +61,9 @@ if [[ ! -f kbound_short_original_build.log && -f kbound_tmlr.log ]]; then
   cp -f kbound_tmlr.log kbound_short_original_build.log
 fi
 
+echo "==> Regenerating receipt-bound So2Sat manuscript numbers"
+"$PY" scripts/build_so2sat_numbers.py
+
 echo "==> Validating frozen release authorities"
 # A manuscript build is a presentation operation.  It must not rewrite sealed
 # scientific evidence with a new timestamp, Git head, or local package version.

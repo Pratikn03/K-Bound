@@ -1,6 +1,6 @@
 # K-Bound Claim-To-Artifact Manifest
 
-Date: 2026-08-27
+Date: 2026-08-29
 
 | Claim | Type | Exact requirement | Evidence location | Caveat |
 |---|---|---|---|---|
@@ -9,8 +9,8 @@ Date: 2026-08-27
 | Exact strict-commitment frontier | theorem | Valid declared bound `|gamma|<=beta`, fixed augmented evidence, and class richness for necessity | Theorem in shared source; `distributional_frontier_maximal` | No robust commitment if no credible beta is supplied |
 | Marginal FA_u certificate | theorem | `P(|Delta_hat-Delta|<=epsilon)>=1-alpha` at the declared inference unit | `paper/sections/theory_certificate.tex`; Lean measure containment | Does not control FA_c |
 | Population-to-KGA bridge | theorem/method | Shared target `Delta`; separately justified operational class and coverage | `paper/sections/theory_algorithm_bridge.tex`; `frontier_kga_bridge_v1/bridge_results.json` | Controlled algebraic check only; KGA does not estimate M, gamma, or beta |
-| CIFAR-10-C Tent routing | empirical | Five run seeds conditional on one archived checkpoint, controlled grid, candidate-specific calibration | canonical JSON, current-policy family-sensitivity artifact, and compact Tables 4-5 | Current exact-rank point win; retrospective ordinary intervals are positive over six families, but preregistered six-comparison Holm fails at 0.05 ($p=0.09375$ for both contrasts); no cluster-robust or confirmatory win |
-| CIFAR-10-C EATA routing | empirical | Same controlled protocol | same current artifacts and compact Tables 4-5 | Current exact-rank point win; adapt-side family interval crosses zero and preregistered six-comparison Holm fails |
+| CIFAR-10-C Tent routing | empirical | Five run seeds conditional on one archived checkpoint, controlled grid, candidate-specific calibration | canonical JSON, current-policy family-sensitivity artifact, and compact Tables 4-5 | Current exact-rank point win; retrospective ordinary intervals are positive over six families, but retrospective Holm over the six prospectively named contrasts gives $p=0.09375$ for both contrasts; no cluster-robust or confirmatory win |
+| CIFAR-10-C EATA routing | empirical | Same controlled protocol | same current artifacts and compact Tables 4-5 | Current exact-rank point win; adapt-side family interval crosses zero and retrospective six-contrast Holm does not support a confirmatory win |
 | CIFAR-10-C SAR negative | empirical | Completed five-seed exact-rank rebuild | canonical JSON | Zero false adapt but loses to always-adapt |
 | ImageNet-C authoritative panel | empirical | 27 conditions per seed, five seeds, exact LOO replay | canonical JSON and ImageNet-C tables | Candidate dependent; SAR point-only |
 | Office-Home primary/replication | empirical/diagnostic | Archived split and source-hashed records replayed under the release-locked numerical runtime | canonical JSON | Primary ties freeze with zero adapts; replication has a tiny point edge whose test-stream CI includes zero |
@@ -20,6 +20,8 @@ Date: 2026-08-27
 | Camelyon17 OOD one-sided diagnostic | diagnostic | Archived opened OOD evaluation row | canonical JSON | Already opened, all cells helpful, and always-adapt is oracle-equivalent; not prospective or untouched evidence |
 | Camelyon17 B-v2 SAR | diagnostic | Three within-seed grids | canonical JSON | Not an untouched hospital-domain win |
 | RxRx1 freeze behavior | empirical | Three source checkpoints in supporting artifacts; canonical displayed panel | canonical JSON and repetition table | Endpoint no-harm, zero adapt exposure |
+| CCT-20 prospective safe utility | empirical/no-harm | Outcome-unopened target execution (aggregate target metadata had been inspected), five independent checkpoints, nine target locations, location-level inference, receipt-linked one-pass score | `paper/generated/cct20_release_manifest.json` and receipt | `SAFE_UTILITY_ONLY`: 44 FREEZE, zero ADAPT, one ABSTAIN; ties freeze and protects against harmful adapt, but fails strong routing-success exposure; not described as literally label-unopened |
+| So2Sat locked development gate-fit | diagnostic/negative | Nine gate-fit cities, five independent checkpoints, two locked adapters, selection before gate calibration | `so2sat_lcz42_prospective_v1/development_mps_bn_fix_v1/` candidate selection, bundles, receipts, and runtime amendment | No feasible candidate; stopped before gate calibration; target inputs empty and target pixel/label reads zero; no target natural-shift score |
 | PACS negative | diagnostic | Aggregate domain-seed arithmetic | canonical JSON | Promoted-panel replay incomplete; one-domain smoke validates serialization only |
 | ImageNet-R negative | diagnostic | Four seeds, ten backbones, 12 conditions each | canonical JSON and per-backbone table | Architecture panel, not one deployed policy |
 | CIFAR-10.1 negative | diagnostic | Locked 48-cell replay | canonical JSON | Ties freeze; no adapts |
@@ -28,7 +30,7 @@ Date: 2026-08-27
 | Universal improvement | not claimed | Would require broad held-out dominance | limitations and claim ledger | Contradicted by negative rows |
 | Single-dataset natural CI-robust beats-both | not claimed | Untouched natural environments and robust inference | remaining-work protocol | No current track meets the bar |
 | Real-camera validation | pending | Fresh locked physical sessions and publication gate | `edge/` protocol and runbook | Templates and demos are not evidence |
-| Unopened natural target | pending | A target with no prior result inspection and prospective seal | `natural_target_provenance_v1/NATURAL_TARGET_PROVENANCE_AUDIT.json` | No verified unopened target currently exists |
+| Unopened natural target audit dated 2026-08-24 | diagnostic/superseded | Point-in-time search for an eligible untouched target | `natural_target_provenance_v1/NATURAL_TARGET_PROVENANCE_AUDIT.json` | Historical audit only: CCT-20 was subsequently executed prospectively; So2Sat remains target-unopened because its development gate stopped. Neither provides a natural beats-both routing win |
 | Exact split-conformal confirmation | pending | Sealed disjoint fit/calibration/test unit manifest and one-pass execution | `research_lock/KBOUND_EXACT_CONFIRMATION_UNSEALED_v1.json` | Draft manifest only; no result claimed |
 | Official baseline provenance | diagnostic | Pinned clean upstream source and complete successful native logs | `official_repro_v1/OFFICIAL_BASELINE_AUDIT.json` | AETTA and POEM remain protocol-matched ports |
 
@@ -38,6 +40,14 @@ update on the separate auxiliary stream but predict with evaluation-batch BatchN
 Recorded stream/evaluation disjointness therefore applies to the auxiliary stream identities, not
 to a claim of inductive candidate evaluation. Target labels remain unavailable until offline
 scoring.
+
+Multiplicity disclosure: for CIFAR-10-C, the six candidate-by-fixed-policy contrasts were stated
+prospectively, but the current exact-rank policy replay, six-family bootstrap sensitivity, sign-flip
+p-values, and Holm adjustment are retrospective and non-confirmatory. Ordinary intervals are
+unadjusted, and no candidate passes both baselines after Holm over the six contrasts. The within-Tent
+two-contrast Holm value is post hoc. CCT-20
+uses its own locked two-comparison family, while archived POEM/AETTA p-values belong to a separate
+historical comparison; these families are not pooled.
 
 ## Canonical Generation Chain
 

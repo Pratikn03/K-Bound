@@ -25,8 +25,10 @@ SOURCE_TREE_EXCLUDED_PARTS = {
     "dataset",
     "log",
     "raw_logs",
+    "public",
 }
 SOURCE_TREE_EXCLUDED_SUFFIXES = {".ckpt", ".npy", ".npz", ".pkl", ".pt", ".pth"}
+_UF_DATALESS = 0x40000000
 
 
 def sha256_file(path: Path) -> str:
@@ -102,22 +104,35 @@ def repository_relative(path: Path, repo: Path) -> str:
 
 def native_logs(root: Path, *, repo: Path) -> dict[str, Any]:
     files = sorted(path for path in root.rglob("*") if path.is_file()) if root.is_dir() else []
-    hashes = {repository_relative(path, repo): sha256_file(path) for path in files}
+    hashes: dict[str, str] = {}
+    unavailable: list[str] = []
     failed = []
     for path in files:
+        relative = repository_relative(path, repo)
+        try:
+            if getattr(path.stat(), "st_flags", 0) & _UF_DATALESS:
+                unavailable.append(relative)
+                continue
+            hashes[relative] = sha256_file(path)
+        except OSError:
+            unavailable.append(relative)
+            continue
         if path.suffix.lower() not in {".txt", ".log", ".json", ".csv"}:
             continue
         try:
             text = path.read_text(encoding="utf-8", errors="replace")
         except OSError:
+            unavailable.append(relative)
+            hashes.pop(relative, None)
             continue
         if "Traceback (most recent call last)" in text or "RuntimeError:" in text:
-            failed.append(repository_relative(path, repo))
+            failed.append(relative)
     return {
         "count": len(files),
         "sha256": hashes,
+        "unavailable": sorted(set(unavailable)),
         "failure_markers": failed,
-        "successful": bool(files) and not failed,
+        "successful": bool(files) and not failed and not unavailable,
     }
 
 

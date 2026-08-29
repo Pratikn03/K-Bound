@@ -107,7 +107,7 @@ def test_replayed_actions_match_canonical_panel_exactly() -> None:
         assert replayed["decision_counts"] == expected[candidate]
 
 
-def test_preregistered_six_comparison_holm_does_not_promote_tent() -> None:
+def test_retrospective_holm_over_six_prospectively_named_contrasts_does_not_promote_tent() -> None:
     args = MODULE.argparse.Namespace(
         source_dir=MODULE.DEFAULT_SOURCE_DIR,
         output=MODULE.DEFAULT_OUTPUT,
@@ -119,11 +119,11 @@ def test_preregistered_six_comparison_holm_does_not_promote_tent() -> None:
     artifact = MODULE.build_artifact(args)
     tent = artifact["candidates"]["tent"]
 
-    assert artifact["preregistered_six_comparison_holm"]["family_size"] == 6
+    assert artifact[MODULE.FAMILY_FIELD]["family_size"] == 6
     assert not tent["gate"][
-        "preregistered_six_comparison_cluster_sensitivity_pass"
+        MODULE.GATE_PASS_FIELD
     ]
     for baseline in MODULE.BASELINES:
         assert tent["comparisons"][baseline][
-            "p_value_holm_preregistered_six_comparison_family"
+            MODULE.COMPARISON_P_FIELD
         ] == 0.09375

@@ -12,8 +12,10 @@ The reported contrast is always
     regret(fixed baseline) - regret(KGA),
 
 so positive values favor KGA.  Percentile intervals resample whole corruption
-families.  P-values are exact one-sided sign-flip tests over the family-level
-paired gaps and are Holm-adjusted across the two fixed-policy comparisons.
+families. P-values are exact one-sided sign-flip tests over the family-level
+paired gaps. The six candidate-by-fixed-policy contrasts were prospectively
+named, but this exact-rank replay, sign-flip analysis, and six-way Holm
+adjustment are retrospective and non-confirmatory.
 """
 
 from __future__ import annotations
@@ -50,6 +52,12 @@ DEFAULT_OUTPUT = (
 BASELINES = ("always_adapt", "always_freeze")
 CI_CONVENTION = "baseline_regret_minus_kga_regret; positive values favor KGA"
 PROTOCOL_LOCK = ROOT / "research_lock/STRESS_GRID_MULTISEED_PROTOCOL_A_v1.yaml"
+SCHEMA = "kbound-current-policy-cluster-inference-v3"
+FAMILY_FIELD = "retrospective_holm_over_six_prospectively_named_contrasts"
+COMPARISON_P_FIELD = "p_value_retrospective_holm_six_prospectively_named_contrasts"
+COMPARISON_REJECT_FIELD = "retrospective_holm_six_contrasts_reject_at_0_05"
+GATE_REJECTS_BOTH_FIELD = "both_sign_flip_tests_survive_retrospective_six_contrast_holm_0_05"
+GATE_PASS_FIELD = "retrospective_six_contrast_cluster_sensitivity_pass"
 
 
 def sha256(path: Path) -> str:
@@ -324,17 +332,11 @@ def build_artifact(args: argparse.Namespace) -> dict[str, Any]:
         for baseline in BASELINES:
             key = f"{row['candidate']}::{baseline}"
             adjusted = protocol_family_adjusted[key]
-            row["comparisons"][baseline][
-                "p_value_holm_preregistered_six_comparison_family"
-            ] = adjusted
-            row["comparisons"][baseline][
-                "holm_preregistered_six_comparison_reject_at_0.05"
-            ] = adjusted <= 0.05
+            row["comparisons"][baseline][COMPARISON_P_FIELD] = adjusted
+            row["comparisons"][baseline][COMPARISON_REJECT_FIELD] = adjusted <= 0.05
             protocol_rejects.append(adjusted <= 0.05)
-        row["gate"][
-            "both_sign_flip_tests_survive_preregistered_six_comparison_holm_0.05"
-        ] = all(protocol_rejects)
-        row["gate"]["preregistered_six_comparison_cluster_sensitivity_pass"] = bool(
+        row["gate"][GATE_REJECTS_BOTH_FIELD] = all(protocol_rejects)
+        row["gate"][GATE_PASS_FIELD] = bool(
             row["gate"]["both_pointwise_95pct_cluster_bootstrap_intervals_positive"]
             and all(protocol_rejects)
         )
@@ -342,7 +344,7 @@ def build_artifact(args: argparse.Namespace) -> dict[str, Any]:
     policy_path = ROOT / "kga/policy.py"
     certificate_path = ROOT / "kga/certificate.py"
     return {
-        "schema": "kbound-current-policy-cluster-inference-v2",
+        "schema": SCHEMA,
         "generated_utc": datetime.now(timezone.utc).isoformat(),
         "git_head": git_head(),
         "analysis_script": Path(__file__).relative_to(ROOT).as_posix(),
@@ -377,8 +379,9 @@ def build_artifact(args: argparse.Namespace) -> dict[str, Any]:
                 "exact one-sided sign-flip test over six paired corruption-family effects"
             ),
             "multiplicity": (
-                "Primary audit: Holm adjustment over the preregistered six candidate-by-"
-                "baseline comparisons. A two-comparison within-candidate Holm result is also "
+                "Retrospective Holm adjustment over the six prospectively named contrasts. "
+                "The exact-rank replay, sign-flip tests, and Holm analysis are retrospective "
+                "and non-confirmatory. A two-comparison within-candidate Holm result is also "
                 "shown and is explicitly post hoc."
             ),
             "holm_applies_to": "p-values only; confidence intervals are unadjusted",
@@ -392,7 +395,7 @@ def build_artifact(args: argparse.Namespace) -> dict[str, Any]:
                 "stress grid; positive pointwise intervals may be described conditionally"
             ),
             "does_not_support": [
-                "a preregistered cluster-robust win when six-comparison Holm fails",
+                "a confirmatory cluster-robust win",
                 "simultaneous confidence intervals",
                 "independent-checkpoint population inference",
                 "prospective confirmation",
@@ -404,11 +407,12 @@ def build_artifact(args: argparse.Namespace) -> dict[str, Any]:
                 "low resolution and must be reported with the family-level effects."
             ),
             "multiplicity_warning": (
-                "The preregistered family contains all six candidate-by-baseline comparisons; "
-                "within-candidate Holm values are retrospective diagnostics only."
+                "The six contrasts were prospectively named, but the exact-rank replay, "
+                "sign-flip tests, and Holm adjustment are retrospective and non-confirmatory; "
+                "within-candidate Holm values are additional post-hoc diagnostics."
             ),
         },
-        "preregistered_six_comparison_holm": {
+        FAMILY_FIELD: {
             "raw_p_values": protocol_family_raw_p,
             "adjusted_p_values": protocol_family_adjusted,
             "family_size": len(protocol_family_raw_p),

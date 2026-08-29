@@ -5,8 +5,8 @@
 > interpretation is not part of the Phase-1 release. Retain it only as search-history context. The
 > current authority is `claim_ledger.json` plus `paper/generated/uniform_verdicts.json`, whose
 > `wave_holm` family is empty. A separate retrospective current-policy six-family sensitivity now
-> exists, but every candidate fails the preregistered six-comparison Holm gate; current-policy
-> POEM/AETTA inference remains pending.
+> exists, but retrospective Holm adjustment over the six prospectively named contrasts is
+> non-confirmatory for every candidate; current-policy POEM/AETTA inference remains pending.
 
 **Written 2026-07-26** to close fix-queue item 24 (F3-9). This document declares the confirmatory
 comparison family, publishes the search that produced it, and states what correction applies.

@@ -1,8 +1,15 @@
 # Reproducibility Release Report
 
+> **SUPERSEDED SNAPSHOT — DO NOT USE AS A CURRENT RELEASE PASS (2026-08-29).** This report records
+> commit `46eae5f...` on 2026-07-27. It predates the Phase-1 reconciliation, CCT-20 target result,
+> So2Sat development stop, current manuscript artifacts, and final code cleanup. The step log below
+> is retained unchanged as execution history. Publication requires a new clean-checkout report and
+> regenerated release checksums after all maintained files are frozen.
+
 Generated: 2026-07-27T07:18:46Z
 Commit: 46eae5f570f66e513ec8d9bf0bdf40b3428cef88
-Overall: **PASS** (0 required step(s) failed)
+Historical overall at the recorded commit: **PASS** (0 required step(s) failed); current status:
+**SUPERSEDED / NOT EVALUATED BY THIS REPORT**.
 
 Every step below was attempted. PASS = ran and exited 0. FAIL = a required step
 did not (this sets Overall to FAIL). SKIP = an optional step could not run,

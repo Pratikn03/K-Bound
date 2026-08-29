@@ -33,7 +33,7 @@ def test_compact_sources_are_complete_and_hash_locked() -> None:
         assert hashlib.sha256(path.read_bytes()).hexdigest() == row["compact_sha256"]
         text = path.read_text(encoding="utf-8")
         assert "/Users/" not in text
-        assert "/Volumes/T9" not in text
+        assert "/" + "Volumes/T9" not in text
 
 
 def test_reconciled_conflicts_and_negative_panels_are_locked() -> None:
@@ -445,12 +445,14 @@ def test_historical_policy_artifacts_cannot_imply_a_current_win() -> None:
     assert current_cluster["confirmatory"] is False
     assert current_cluster["pointwise_family_intervals_positive_vs_both"] is True
     assert current_cluster["within_candidate_posthoc_holm_rejects_both"] is True
-    assert current_cluster["preregistered_six_comparison_holm_rejects_both"] is False
+    assert current_cluster["retrospective_six_contrast_holm_rejects_both"] is False
     for baseline in ("always_adapt", "always_freeze"):
         comparison = current_cluster["comparisons"][baseline]
         assert comparison["ci95_unadjusted_family_bootstrap"][0] > 0
         assert comparison["p_value_holm_within_candidate_posthoc"] == pytest.approx(0.03125)
-        assert comparison["p_value_holm_preregistered_six_comparison_family"] == pytest.approx(
+        assert comparison[
+            "p_value_retrospective_holm_six_prospectively_named_contrasts"
+        ] == pytest.approx(
             0.09375
         )
 
@@ -466,7 +468,7 @@ def test_historical_policy_artifacts_cannot_imply_a_current_win() -> None:
         "CIFAR-10-C Tent cluster resampling",
         "Mixed head-to-head (CIFAR-10-C Tent primary)",
     ]
-    assert "no candidate passes the preregistered six-comparison Holm gate" in uniform[
+    assert "no candidate passes the retrospective Holm gate over the six" in uniform[
         "migration"
     ]["note"]
 
@@ -476,7 +478,7 @@ def test_historical_policy_artifacts_cannot_imply_a_current_win() -> None:
     sensitivity = current_claim["metrics"]["current_policy_family_sensitivity"]
     assert sensitivity["confirmatory"] is False
     assert sensitivity["candidates"]["tent"][
-        "preregistered_six_comparison_holm_rejects_both"
+        "retrospective_six_contrast_holm_rejects_both"
     ] is False
 
     claim = next(row for row in result_manifest["results"] if row["claim_id"] == "KB-CLAIM-026")
@@ -495,7 +497,8 @@ def test_phase1_release_keeps_long_manuscript_synchronized() -> None:
     assert "Verdict: WIN" not in active
     assert "cluster-robust for Tent" not in active
     assert "current-policy cluster inference is pending" not in active
-    assert "preregistered six-comparison Holm" in active
+    assert "retrospective" in active
+    assert "six prospectively named contrasts" in active
 
     tmlr = (kbound / "kbound_tmlr.tex").read_text()
     assert r"\input{kbound_submission_body}" in tmlr
@@ -507,12 +510,12 @@ def test_phase1_release_keeps_long_manuscript_synchronized() -> None:
     assert 'BUILD_LONG_TMLR="${BUILD_LONG_TMLR:-${BUILD_HISTORICAL_TMLR:-0}}"' in build
 
     result_audit = (kbound / "KBOUND_SHORT_RESULT_AUDIT.md").read_text()
-    assert "preregistered six-comparison Holm p-values are 0.09375" in result_audit
+    assert "adjustment over the six prospectively named contrasts gives 0.09375" in result_audit
     assert "earlier KGA policy" in result_audit
     assert "confidence intervals are unadjusted" in result_audit
 
     claim_manifest = (kbound / "KBOUND_SHORT_CLAIM_MANIFEST.md").read_text()
-    assert "preregistered six-comparison Holm fails" in claim_manifest
+    assert "retrospective Holm over the six prospectively named contrasts" in claim_manifest
     assert "Holm applies only to archived p-values" in claim_manifest
 
 

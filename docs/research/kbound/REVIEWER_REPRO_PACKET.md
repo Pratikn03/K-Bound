@@ -1,11 +1,11 @@
 # K-Bound / KGA — External Audit & Reproduction Packet
 
-> **STATUS 2026-07-26 — PARTIALLY SUPERSEDED BY `SUBMISSION_LEDGER.md`.**
-> Where this packet and the ledger disagree, the ledger wins. Known corrections applied in place
-> below: the Office-Home CI claim in §A5 (F4-17), and the Camelyon17 evidence tier (F4-12).
-> Before using Part B, read `SUBMISSION_LEDGER.md §8` (absent artifacts), `§9` (the radius fix and
-> what it moved) and `§10` (environment heterogeneity) — several of the reproduction steps below
-> will not run as written until those are closed.
+> **STATUS 2026-08-29 — HISTORICAL REVIEW PACKET, PARTIALLY SUPERSEDED.**
+> Use `KBOUND_SHORT_RESULT_AUDIT.md`, `KBOUND_SHORT_CLAIM_MANIFEST.md`, `claim_ledger.json`, and
+> `runbooks/release_candidate.sh` for the current review. The dated checks below are retained for
+> provenance and reviewer context. They predate CCT-20 (`SAFE_UTILITY_ONLY`), the So2Sat negative
+> development stop, the current exact-rank multiplicity reconciliation, and the maintained shared
+> manuscript body. Where this packet disagrees with those authorities, this packet loses.
 
 **Purpose.** This packet exists so two independent people can sign off on the paper before it is
 frozen for submission:
@@ -17,7 +17,9 @@ frozen for submission:
 Both are the *user's* action items — this document just makes them fast. Nothing here should be
 taken as a claim that the audit has already happened. The sign-off form is at the end (Part D).
 
-Paper under review: `docs/research/kbound/kbound_short.tex` → `kbound_short.pdf`.
+Paper under review: `docs/research/kbound/kbound_submission.tex` with
+`kbound_submission_body.tex` → `kbound_short_final_draft.pdf`; the synchronized long companion is
+`kbound_tmlr.pdf`.
 
 ---
 

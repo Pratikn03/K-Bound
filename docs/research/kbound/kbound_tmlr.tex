@@ -1,5 +1,5 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%% kbound_tmlr.tex -- maintained single-column long-form K-Bound companion.
+%% kbound_tmlr.tex -- anonymous TMLR submission driver.
 %%
 %% This driver uses the same corrected abstract, 11-section body, generated
 %% numbers, theorem sources, appendices, and bibliography as the compact paper.
@@ -14,29 +14,11 @@
 %%   magnitude, which is the right bar for this work. Reformatting single-column
 %%   dissolves the length problem WITHOUT cutting any result table.
 %%
-%% >>> BEFORE SUBMITTING: DROP tmlr.sty NEXT TO THIS FILE <<<
-%%   The official TMLR style file (tmlr.sty, from
-%%   https://github.com/JmlrOrg/tmlr-style-file) is NOT vendored here, because
-%%   redistributing it inside this repository is not ours to do. Download it,
-%%   place it in this directory, and swap in these TWO lines:
-%%
-%%     (1) replace   \documentclass[11pt]{article}
-%%         with      \documentclass{article}\usepackage{tmlr}
-%%                   % ... or \usepackage[accepted]{tmlr} for the camera-ready,
-%%                   %     or \usepackage[preprint]{tmlr} for an arXiv preprint.
-%%
-%%     (2) delete the "TMLR SHIM" block below (between the two marker comments)
-%%         -- tmlr.sty defines \title/\author/\abstract handling, the running
-%%         head, and the anonymisation switch itself, and the shim will clash.
-%%
-%%   Everything else in this file, and every file it \input s, is style-agnostic.
-%%
 %% ANONYMITY
-%%   TMLR is single-blind by default: author names are shown. This file therefore
-%%   compiles NON-anonymous. Set \anontrue below (or \usepackage{tmlr} without
-%%   [accepted]) for a double-blind venue; \ifanon also suppresses the repository
-%%   link in the Reproducibility section, which is a real de-anonymisation hazard
-%%   (the released tree contains CITATION.cff with the author's name and email).
+%%   The official style is loaded without accepted/preprint options, so the PDF
+%%   is double-blind.  \anontrue also suppresses author-identifying repository
+%%   material in the shared body.  A camera-ready or preprint must be built from
+%%   a separate, explicitly versioned driver rather than changing this one.
 %%
 %% SHARED SOURCE
 %%   kbound_abstract.tex          shared abstract
@@ -44,10 +26,10 @@
 %%   paper/references_kbound_expanded.tex
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-\documentclass[11pt]{article}
+\documentclass[10pt]{article}
 
-\usepackage[T1]{fontenc}
-\usepackage{lmodern}
+\usepackage{paper/vendor/tmlr/tmlr}
+
 \usepackage{microtype}
 \usepackage{amsmath,amssymb,amsthm}
 \usepackage{graphicx}
@@ -60,30 +42,14 @@
 \usepackage{xspace}
 \usepackage{seqsplit}
 \usepackage[colorlinks=true,linkcolor=black,citecolor=blue,urlcolor=blue]{hyperref}
+\hypersetup{
+  pdftitle={K-Bound: When Is Label-Free Adaptation Knowable?},
+  pdfauthor={}
+}
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%% BEGIN TMLR SHIM %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%% Delete this whole block once tmlr.sty is present (see header, step 2).
-%% Geometry approximating tmlr.sty's text block (6.5in x 9in on US letter) so that
-%% the page count you see here is close to the page count you will get with the real
-%% style file. Do NOT load parskip: tmlr.sty uses indented paragraphs with no inter-
-%% paragraph glue, and parskip inflates this document by roughly a fifth.
-\usepackage[letterpaper,margin=1in]{geometry}
-% Spacing only, no content change.  Mirrors the setting the companion driver
-% (kbound.tex) already carries.  Absorbs the residual overfull hboxes caused by
-% long unbreakable \texttt{} paths in the appendices.
-\setlength{\emergencystretch}{3em}
-%% \path is IEEEtran/url sugar used throughout the shared body.
 \providecommand{\path}[1]{\texttt{#1}}
-%% article already defines table* / figure* (they degrade to plain floats in
-%% one-column mode via \@dblfloat), and \columnwidth == \linewidth here, so the
-%% shared body's floats need no aliasing.
-%% IEEEtran-only front-matter commands used by the shared body / the other driver:
-\providecommand{\IEEEauthorblockN}[1]{{\large #1}}
-\providecommand{\IEEEauthorblockA}[1]{{\normalsize #1}}
 \newenvironment{IEEEkeywords}{\par\noindent\textbf{Keywords:}\ }{\par}
-%% IEEEtran's \appendices -> article's \appendix, with lettered sections.
 \providecommand{\appendices}{\appendix}
-%%%%%%%%%%%%%%%%%%%%%%%%%%%% END TMLR SHIM %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 \theoremstyle{plain}
 \newtheorem{theorem}{Theorem}
@@ -108,28 +74,23 @@
 \newcommand{\freeze}{\textnormal{\textsc{freeze}}\xspace}
 \newcommand{\abstain}{\textnormal{\textsc{abstain}}\xspace}
 \DeclareRobustCommand{\hashtext}[1]{{\ttfamily\expandafter\seqsplit\expandafter{#1}}}
+% Select natbib-compatible author-year labels from the shared bibliography.
+\newcommand{\KBoundAuthorYearCitations}{}
 
-%% Anonymity switch. TMLR is single-blind by default -> \anonfalse.
-%% Set \anontrue for a double-blind venue; this also suppresses the repository
-%% pointer in the Reproducibility section.
+%% The maintained TMLR artifact is the anonymous review submission.
 \newif\ifanon
-\anonfalse
+\anontrue
 
 \title{K-Bound: When Is Label-Free Adaptation Knowable?\\[2pt]
 \large Helpful, Harmful, and Unknowable Regimes Under Distribution Shift}
 
-\ifanon
-  \author{Anonymous authors\\Paper under double-blind review}
-\else
-  \author{Pratik Niroula\\
-  \normalsize Minnesota State University, Mankato\\
-  \normalsize \texttt{pratik.niroula@mnsu.edu}}
-\fi
+\author{Anonymous authors\\Paper under double-blind review}
 \date{}
 
 \emergencystretch=3em
 \input{paper/generated/kbound_numbers}  % auto-generated result numbers (scripts/make_tables.py)
 \input{paper/generated/cct20_numbers.tex}
+\input{paper/generated/so2sat_numbers.tex}
 
 \input{paper/float_params}  % float placement parameters (layout only)
 \input{paper/figure_fallback}  % graceful degradation for absent figure assets

@@ -23,7 +23,7 @@ SHA-256, but those hashes are not represented as the code that produced an old e
 | Recoverable legacy configurations | 10/10 full SHA-256 values recovered | Each archived `config_sha8` matches the prefix of the recomputed full digest. |
 | Archived expected checkpoint hashes | 6/6 match | CIFAR-10-C SAR plus five Office-Home opportunity-audit checkpoints. |
 | Current release/rerun code | 21 files hashed | Working-copy snapshot only; the tree is not clean. |
-| Current-policy CIFAR family sensitivity | Artifact, runtime, analysis script, live policy/certificate, and preregistered protocol are SHA-256 bound | Retrospective six-family analysis only. Tent's ordinary intervals are positive, but the preregistered six-comparison Holm gate fails. |
+| Current-policy CIFAR family sensitivity | Artifact, runtime, analysis script, live policy/certificate, and protocol naming the six contrasts are SHA-256 bound | Retrospective six-family analysis only. Tent's ordinary intervals are positive, but retrospective Holm over the six prospectively named contrasts is non-confirmatory. |
 | ImageNet-R materialization | 30,000 images, 2,167,990,742 bytes | Post-hoc tree SHA-256 `3f1bbfb98fe6fcaea3f2cf4ac22071330d5bee3ce3ba7ff2e86e84860ed62409`. |
 | Office-Home materialization | 15,588 images, 2,186,812,856 bytes | Post-hoc tree SHA-256 `b995bd0f1ece7b589344c05d03fa61c200fb46fd24df15850d62d668998f8b66`. |
 | ImageNet-R torchvision weights | 11/11 current cache files hashed | Post-hoc cache snapshot; the old run did not record full weight digests. |

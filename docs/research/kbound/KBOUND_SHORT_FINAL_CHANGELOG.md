@@ -1,14 +1,33 @@
 # K-Bound Final Manuscript Changelog
 
-Date: 2026-08-28
+Date: 2026-08-29
+
+## 2026-08-29 Evidence Reconciliation Addendum
+
+- Added the later, separately receipt-linked CCT-20 target authority. Its locked verdict is
+  `SAFE_UTILITY_ONLY`: 44 FREEZE, zero ADAPT, and one ABSTAIN decision; it ties always-freeze and
+  protects against harmful always-adapt without establishing bidirectional routing.
+- Added the So2Sat-LCZ42 development-gate authority. Neither Tent nor SAR was feasible, so execution
+  stopped before gate calibration with no target inputs and zero target pixel/label reads. No
+  So2Sat target score exists.
+- Reclassified the 2026-08-24 unopened-target search and generic exact-confirmation draft as
+  superseded point-in-time planning records rather than current project status.
+- Demoted the legacy eight-seed simulated paired-t-test row in the historical CSV manifests; it is
+  not used by either maintained paper and carries no current significance claim.
+- Stamped the July reproducibility PASS and v0.1.0 release notes as historical. The final
+  clean-checkout release gate and checksum freeze remain to be run after all manuscript/code edits.
+- Centralized multiplicity wording: CIFAR's six contrasts were prospectively named, while the
+  current exact-rank replay, six-family sensitivity, sign-flip tests, and Holm adjustment are
+  retrospective and non-confirmatory. Ordinary intervals are unadjusted, and no candidate rejects
+  both fixed-policy comparisons after the six-contrast adjustment.
 
 ## Maintained Papers
 
 - Compact submission source: `kbound_submission.tex` and `kbound_submission_body.tex`.
 - Compact outputs: `kbound_short_final_draft.pdf` (28 pages) and
   `kbound_short_final_draft.docx` (28 rendered pages).
-- Long companion source: `kbound_tmlr.tex` with the shared body and appendices.
-- Long companion PDF: `kbound_tmlr.pdf` (37 pages).
+- TMLR source: anonymous official-style `kbound_tmlr.tex` with the shared body and appendices.
+- TMLR PDF: `kbound_tmlr.pdf` (page count must be refreshed after the final rebuild).
 - Older compatibility PDFs remain historical snapshots and are not refreshed or delivered.
 - The legacy full-source IEEE render is diagnostic only and is no longer built by default.
 
@@ -46,7 +65,8 @@ Date: 2026-08-28
   including the superseded iWildCam H--v2 result used for explicit historical reconciliation.
 - Kept candidate rows separate for CIFAR-10-C and ImageNet-C.
 - CIFAR-10-C: Tent has positive ordinary intervals in a retrospective six-family sensitivity, but
-  the preregistered six-comparison Holm gate fails; EATA is point-estimate beats-both with an
+  retrospective Holm adjustment over the six prospectively named contrasts is non-confirmatory;
+  EATA is point-estimate beats-both with an
   adapt-side family interval containing zero; SAR is a completed negative arm.
 - ImageNet-C: the authoritative configuration is 27 conditions per seed times five seeds. SAR has
   a pooled point edge without a promoted CI-robust claim; Tent ties freeze; EATA trails adapt.
@@ -65,8 +85,8 @@ Date: 2026-08-28
 - Regenerated `paper/generated/kbound_numbers.tex` and
   `canonical_panel_table.tex` from the same canonical JSON.
 - Added the code-bound `current_policy_cluster_inference.json` artifact and generated
-  `current_policy_family_sensitivity.tex` table, with post-hoc and preregistered Holm families kept
-  distinct.
+  `current_policy_family_sensitivity.tex` table, separating the post-hoc two-contrast adjustment
+  from retrospective Holm over the six prospectively named contrasts.
 - Regenerated `fig_decision_value_frontier.png` directly from canonical kappa sweeps.
 - Regenerated `fig_phase_diagram.png` as a conceptual, no-tick regime diagram rather than using
   pseudo-measured coordinates.
@@ -87,17 +107,12 @@ Date: 2026-08-28
 
 ## Verification
 
-- Compact and full LaTeX builds: zero fatal errors, undefined citations, undefined references,
-  duplicate labels, missing figures, or overfull boxes.
-- Repository collection gate: 513 tests collect under Python 3.12. The maintained K-Bound,
-  reconciliation, closure, edge, and reproducibility suites pass with declared environment-dependent
-  skips and no failures.
-- Manuscript claim gate: PASS.
-- Canonical reconciliation tests: PASS.
-- Lean/Mathlib: 2,554 jobs completed; formal audit and proof-hole scan PASS; 65 declarations mapped.
-- Visual inspection: all 28 compact PDF pages, all 37 long-companion pages, and all 28 rendered
-  DOCX pages pass full-page inspection with no clipping, overlap, broken tables, blank figures, or
-  unreadable glyphs.
+- The hand-maintained July/August test and page counts are retired because they described older
+  binaries. Final verification belongs to the clean-source release run, the rendered deliverables,
+  the source seal, and `KBOUND_RELEASE_SHA256SUMS.txt`.
+- Before the final clean-source run, both maintained LaTeX drivers compile without fatal errors,
+  undefined citations or references, duplicate labels, missing figures, or overfull boxes; full
+  repository collection succeeds under the Python 3.12 research profile.
 
 ## Claims Retained And Weakened
 
@@ -105,12 +120,15 @@ Date: 2026-08-28
   shadow-state KGA wrapper, controlled mixed-regime Tent result, and negative diagnostics.
 - Weakened: EATA to point-only at the corruption-family unit; ImageNet-C SAR to point-only;
   natural rows to descriptive no-harm or negative evidence; POEM/AETTA to protocol-matched ports.
-- Pending: fresh held-out natural routing confirmation, physical-camera validation, official
-  neighboring-method implementations, and a complete PACS per-cell gate replay.
+- Pending evidence upgrades, not prerequisites for the current theory-led claim set: a successful
+  fresh held-out natural routing confirmation, physical-camera validation, official neighboring-
+  method implementations, and a complete PACS per-cell gate replay.
 
 ## Closure Engineering
 
-- Added fail-closed audits for unopened natural targets and official AETTA/POEM provenance.
+- Added fail-closed audits for unopened natural targets and official AETTA/POEM provenance. The
+  unopened-target audit is now a superseded 2026-08-24 snapshot because CCT-20 was later executed
+  prospectively and So2Sat later stopped at development.
 - Added a deterministic, disjoint exact split-conformal confirmation manifest and leakage-checked
   decision/evaluation pipeline; the manifest remains deliberately unsealed and unexecuted.
 - Added a controlled population-frontier/KGA API bridge without treating it as a benchmark or a

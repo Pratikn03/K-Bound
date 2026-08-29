@@ -1,5 +1,5 @@
 [build-system]
-requires = ["setuptools>=62", "wheel"]
+requires = ["setuptools>=77", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
@@ -8,27 +8,39 @@ version = "0.1.0"
 description = "K-Bound / KGA: Knowability-Guided Adaptation — a finite-sample certificate for safe test-time adaptation."
 readme = "README.md"
 requires-python = ">=3.11"
+license = "MIT"
+license-files = ["LICENSE"]
 authors = [{ name = "Pratik Niroula" }]
 keywords = ["test-time adaptation", "distribution shift", "certificate", "kga", "kbound"]
 classifiers = [
     "Programming Language :: Python :: 3",
-    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
     "Intended Audience :: Science/Research",
     "Topic :: Scientific/Engineering :: Artificial Intelligence",
 ]
+dependencies = [
+    "numpy>=1.24.0",
+    "scipy>=1.11.0",
+    "PyYAML>=6.0",
+]
 
-[tool.setuptools]
-package-dir = {"" = "src", "kga" = "kga"}
+[project.urls]
+Homepage = "https://github.com/Pratikn03/K-Bound"
+Repository = "https://github.com/Pratikn03/K-Bound"
+Issues = "https://github.com/Pratikn03/K-Bound/issues"
+
+[project.scripts]
+kga = "kga.cli:main"
 
 [tool.setuptools.packages.find]
-where = ["src", "."]
-include = ["kga*"]
+where = ["."]
+include = ["kga", "kga.*"]
+exclude = ["tests*", "docs*", "experiments*", "src*"]
+namespaces = false
 
 [tool.setuptools.package-data]
 kga = ["py.typed"]
-
-[tool.setuptools.dynamic]
-dependencies = {file = ["requirements.txt"]}
 
 [tool.pytest.ini_options]
 minversion = "7.0"

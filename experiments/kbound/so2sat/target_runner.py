@@ -53,7 +53,7 @@ from .precalibration_seal import (
     load_precalibration_seal_with_receipt,
     validate_precalibration_seal,
 )
-from .protocol import PROTOCOL_ID
+from .protocol import PROTOCOL_ID, require_production_target_action_unit_alignment
 from .target_amendment import (
     load_target_boundary_amendment,
     validate_target_boundary_amendment,
@@ -762,6 +762,7 @@ def _run_label_blind_target_core(
                 "production target core rejects injected validators, geo indexes, "
                 "loaders, or executors"
             )
+        require_production_target_action_unit_alignment()
     elif expected_execution_mode != TEST_ONLY_MODE:
         raise IntegrityError("target runner execution mode is invalid")
 

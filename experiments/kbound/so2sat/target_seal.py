@@ -30,6 +30,7 @@ from .precalibration_seal import (
     precalibration_code_identity,
     validate_reveal_registry_directory,
 )
+from .protocol import require_production_target_action_unit_alignment
 from .target_amendment import load_target_boundary_amendment
 from .target_contract import (
     PRODUCTION_MODE,
@@ -88,6 +89,8 @@ def _create_execution_seal_core(
         raise IntegrityError("production seal core rejects injected construction authority")
     if execution_mode not in {PRODUCTION_MODE, TEST_ONLY_MODE}:
         raise IntegrityError("target seal execution mode is invalid")
+    if execution_mode == PRODUCTION_MODE:
+        require_production_target_action_unit_alignment()
     manifest, _ = _verified_json(population_manifest_path)
     population_manifest_validator(manifest)
     source_acceptance, _, source_acceptance_binding = (

@@ -1,8 +1,8 @@
 # `kga` — Knowability-Guided Adaptation
 
-A small, pure-`numpy`/`scipy`, torch-free implementation of **KGA**, the decision
-algorithm from the paper *K-Bound: When Is Label-Free Adaptation Knowable?*
-([`docs/research/kbound/kbound_short.pdf`](../docs/research/kbound/kbound_short.pdf)).
+A small, lightweight `numpy`/`scipy`/`PyYAML`, torch-free implementation of **KGA**,
+the decision algorithm from the paper *K-Bound: When Is Label-Free Adaptation Knowable?*
+([`docs/research/kbound/kbound_short_final_draft.pdf`](../docs/research/kbound/kbound_short_final_draft.pdf)).
 
 KGA can decide without **deployment** target labels after a benefit estimator has
 been fitted on labelled development conditions and calibrated on a disjoint
@@ -74,7 +74,7 @@ estimate `Δ̂` and a radius `ε` at level `α`. KGA applies:
 | `Δ̂ + ε < 0` | **FREEZE** — adapting is certified harmful |
 | otherwise | **ABSTAIN** — the empirical certificate supports no strict update |
 
-**Conditional false-adapt theorem (Theorem 3, `thm:cert`).** If the radius construction
+**Unconditional false-adapt event (Theorem 3, `thm:cert`).** If the radius construction
 attains the stated marginal coverage, then
 `Δ ≥ Δ̂ − ε` holds with probability ≥ `1 − α`. ADAPT fires only when `Δ̂ − ε > 0`,
 which on that event forces `Δ > 0`. Hence `P(ADAPT and Δ ≤ 0) ≤ α` — the chance of a

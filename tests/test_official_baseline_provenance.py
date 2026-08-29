@@ -49,6 +49,18 @@ def test_tree_hash_excludes_local_data_and_run_logs(tmp_path: Path) -> None:
     assert module.tree_hash(source) == expected
 
 
+def test_tree_hash_excludes_static_public_assets(tmp_path: Path) -> None:
+    module = load_audit_module()
+    source = tmp_path / "source"
+    source.mkdir()
+    (source / "a.py").write_text("x = 1\n", encoding="utf-8")
+    expected = module.tree_hash(source)
+    public = source / "public/fonts"
+    public.mkdir(parents=True)
+    (public / "font.woff2").write_bytes(b"static UI asset")
+    assert module.tree_hash(source) == expected
+
+
 def test_native_log_traceback_fails_closed(tmp_path: Path) -> None:
     module = load_audit_module()
     logs = tmp_path / "logs"
@@ -70,6 +82,25 @@ def test_native_logs_reject_paths_outside_root_binding(tmp_path: Path) -> None:
     (outside / "run.log").write_text("complete\n", encoding="utf-8")
     with pytest.raises(ValueError, match="outside the repository-root binding"):
         module.native_logs(outside, repo=repository)
+
+
+def test_native_logs_fail_closed_when_a_log_cannot_be_hashed(
+    tmp_path: Path, monkeypatch
+) -> None:
+    module = load_audit_module()
+    logs = tmp_path / "logs"
+    logs.mkdir()
+    (logs / "run.log").write_text("complete\n", encoding="utf-8")
+
+    def unavailable(_path: Path) -> str:
+        raise OSError(89, "operation canceled")
+
+    monkeypatch.setattr(module, "sha256_file", unavailable)
+    result = module.native_logs(logs, repo=tmp_path)
+
+    assert result["sha256"] == {}
+    assert result["unavailable"] == ["logs/run.log"]
+    assert result["successful"] is False
 
 
 def test_saved_audit_uses_only_repo_relative_provenance_paths() -> None:

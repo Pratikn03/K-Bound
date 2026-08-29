@@ -50,7 +50,10 @@ def test_snapshot_has_required_sections():
     assert all(row["ci_robust_beats_both"] is False for row in controlled)
     assert all(row["beats_both_artifact"] is False for row in controlled)
     tent = next(row for row in controlled if row["name"].endswith("Tent"))
-    assert "preregistered six-comparison Holm" in tent["framing"]
+    assert (
+        "retrospective Holm adjustment over the six prospectively named contrasts"
+        in tent["framing"]
+    )
     assert "cluster-robust" not in json.dumps(data).lower()
 
     assert edge.get("session_progress")

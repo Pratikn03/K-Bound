@@ -48,7 +48,12 @@ def test_every_initial_finding_has_one_release_disposition() -> None:
     assert all(row["release_disposition"] for row in combined)
     assert all(row["remaining_requirement"] for row in combined)
     assert combined[11]["finding"].startswith("Six of fourteen outer release checksum")
-    assert combined[11]["remediation_status"] == "RELEASE_SEAL_VERIFIED"
+    assert combined[11]["remediation_status"] == (
+        "CONTROL_IMPLEMENTED_VERIFIED_BY_FINAL_RELEASE_GATE"
+    )
+    assert combined[11]["release_disposition"] == (
+        "PASS_ONLY_IF_FINAL_RELEASE_CHECKSUM_GATE_PASSES"
+    )
     assert combined[12]["release_disposition"] == "NO_CONFIRMATORY_NATURAL_WIN_CLAIM_ALLOWED"
 
 
@@ -77,6 +82,13 @@ def test_generated_audit_separates_initial_and_post_remediation_state() -> None:
     assert iwild["numeric_release_eligible"] == "False"
     assert iwild["claim_scope"] == "withheld_invalid_archived_metric_contract_historical_values"
     assert summary["bottom_line"]["defensible_natural_beats_both_win"] is False
+    assert (
+        summary["bottom_line"][
+            "controlled_cifar10c_retrospective_six_contrast_holm_win"
+        ]
+        is False
+    )
+    assert "controlled_cifar10c_preregistered_cluster_win" not in summary["bottom_line"]
 
 
 def test_report_artifact_and_notebook_are_complete() -> None:

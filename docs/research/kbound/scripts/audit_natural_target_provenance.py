@@ -30,7 +30,10 @@ TRACKS: dict[str, dict[str, Any]] = {
     },
     "rxrx1": {
         "environments": ["id_test", "val", "test", "experiment groups"],
-        "patterns": ["**/*rxrx1*/**/*.json", "rxrx1_internal_backup/*.csv"],
+        # Result JSON is sufficient to establish that this track was opened.
+        # Do not traverse or hash raw prediction CSVs in the internal backup:
+        # they are not release evidence and can live on slow/offline storage.
+        "patterns": ["**/*rxrx1*/**/*.json"],
     },
     "pacs": {
         "environments": ["art_painting", "cartoon", "photo", "sketch"],
@@ -50,9 +53,32 @@ TRACKS: dict[str, dict[str, Any]] = {
     },
 }
 
+# Darwin marks cloud-evicted files with UF_DATALESS. Reading one may block on an
+# unrelated download or fail with ECANCELED, so an inventory must not hydrate it.
+_UF_DATALESS = 0x40000000
+
 
 def sha256_file(path: Path) -> str:
     return hashlib.sha256(path.read_bytes()).hexdigest()
+
+
+def evidence_record(path: Path, display_root: Path) -> dict[str, Any]:
+    record: dict[str, Any] = {"path": str(path.relative_to(display_root))}
+    try:
+        if getattr(path.stat(), "st_flags", 0) & _UF_DATALESS:
+            record.update(sha256=None, hash_status="dataless_skipped")
+        else:
+            record.update(sha256=sha256_file(path), hash_status="verified")
+    except OSError as exc:
+        # Existence alone is enough to conservatively mark a target as opened.
+        # Keep the missing digest explicit instead of making release generation
+        # depend on stale, evicted, or otherwise unavailable historical files.
+        record.update(
+            sha256=None,
+            hash_status="unavailable",
+            os_error_errno=exc.errno,
+        )
+    return record
 
 
 def matching_artifacts(results: Path, patterns: list[str]) -> list[Path]:
@@ -78,11 +104,7 @@ def audit(results: Path) -> dict[str, Any]:
             "reason": reason,
             "artifact_count": len(artifacts),
             "evidence": [
-                {
-                    "path": str(path.relative_to(results.parent.parent.parent)),
-                    "sha256": sha256_file(path),
-                }
-                for path in artifacts[:25]
+                evidence_record(path, results.parent.parent.parent) for path in artifacts[:25]
             ],
             "evidence_truncated": len(artifacts) > 25,
         }

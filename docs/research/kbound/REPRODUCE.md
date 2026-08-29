@@ -1,16 +1,29 @@
 # Reproducing K-Bound
 
-This document reproduces the K-Bound short-paper results from committed artifacts. Every headline
-number is either (a) rebuilt from raw per-condition logs by the verifier, or (b) traced to a locked
-JSON. Nothing here needs the external T9 drive.
+> **CURRENT ENTRY POINT (2026-08-29):** run
+> `bash docs/research/kbound/runbooks/release_candidate.sh all` under Python 3.12. Sections 0a--5
+> below are retained as a forensic account of historical heterogeneous runs and legacy helper
+> scripts; several named headline artifacts and commands are intentionally superseded. Current
+> claims come from `KBOUND_SHORT_RESULT_AUDIT.md`, `claim_ledger.json`, the canonical reconciled
+> panel, and the separate receipt-linked CCT-20/So2Sat authorities. A green legacy helper is not a
+> current release PASS.
+
+The current release gate reconstructs or validates every maintained headline surface from committed
+artifacts. Historical GPU provenance remains heterogeneous as documented below. The So2Sat target
+was never accessed, and the CCT-20 target result uses its own receipt-linked release manifest.
 
 ## 0. Environment
 ```
-python3 -m venv .venv && source .venv/bin/activate
-pip install -r requirements.lock.txt          # numpy, scikit-learn, matplotlib (pinned)
-# GPU re-runs additionally need torch + the WILDS/torchvision data (see §3).
+python3.12 -m venv .venv
+uv pip install --python .venv/bin/python -r requirements-research.txt
+KBOUND_PYTHON=.venv/bin/python \
+  bash docs/research/kbound/runbooks/release_candidate.sh all
 ```
-A `Dockerfile` at the repo root pins the full environment for GPU re-runs.
+The full release profile includes Torch, torchvision, WILDS, and the Word-export dependencies because
+repository-wide test collection imports those surfaces even though the release gate never trains a
+model. Linux CI uses the hashed `requirements-research-ci.lock.txt`; the smaller
+`requirements-paper.lock.txt` is sufficient only for a presentation rebuild from already validated
+authorities. A `Dockerfile` at the repo root pins the full environment for GPU re-runs.
 
 ### 0a. Disclosure: the committed multi-seed runs were NOT produced under one environment
 
@@ -59,10 +72,13 @@ outlier to the seed. The CIFAR-10-C SAR quarantine (`CIFAR10C_SAR_QUARANTINE.md`
 instance: seed 0's harmful base rate is 0.53 against ~0.10 on seeds 1-4, and seed 0 is also the one
 seed on a different Python, torch and commit. Those two facts cannot be separated from the release.
 
-**To close this properly:** re-run seed 0 under the seeds-1-4 stack with the seeds-1-4 `argv`; add
-`scikit_learn` to the recorded environment in `result_manifest.json`; add a
-`result_manifest.json` to `pooled_5seed/`. Until then every multi-seed claim in the paper must
-carry a footnote pointing here.
+**Historical closeout requirement:** the original draft required a seed-0 rerun under the
+seeds-1-4 stack and `argv`, a recorded `scikit_learn` version, a pooled-run manifest, and a paper
+footnote for every multi-seed claim. The maintained paper instead takes the bounded route: these
+heterogeneous runs are retrospective/descriptive only and support neither a seed-variance estimate
+nor a current significance claim. A future paper claim that attributes dispersion specifically to
+random seed would still require the homogeneous rerun and complete environment manifests above;
+the historical blanket footnote prescription is not a condition imposed on the current manuscript.
 
 ## 1. One-command verification (CPU, seconds)
 ```

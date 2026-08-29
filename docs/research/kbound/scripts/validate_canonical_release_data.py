@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import hashlib
+import importlib.util
 import json
 from collections.abc import Iterable
 from pathlib import Path
@@ -16,6 +17,18 @@ CURRENT_POLICY_REL = (
 )
 CANONICAL_REL = "experiments/kbound/results/reconciled_panels_v1/canonical_panel_results.json"
 SOURCE_MANIFEST_REL = "experiments/kbound/results/reconciled_panels_v1/source_manifest.json"
+CCT20_REL = "docs/research/kbound/paper/generated/cct20_release_manifest.json"
+CCT20_RECEIPT_REL = CCT20_REL + ".receipt.json"
+SO2SAT_REL = (
+    "experiments/kbound/results/so2sat_lcz42_prospective_v1/"
+    "development_mps_bn_fix_v1/so2sat_candidate_selection.json"
+)
+SO2SAT_RECEIPT_REL = SO2SAT_REL + ".receipt.json"
+SO2SAT_NUMBERS_REL = "docs/research/kbound/paper/generated/so2sat_numbers.tex"
+SO2SAT_NUMBERS_BUILDER_REL = "docs/research/kbound/scripts/build_so2sat_numbers.py"
+CURRENT_CLUSTER_SCHEMA = "kbound-current-policy-cluster-inference-v3"
+FAMILY_FIELD = "retrospective_holm_over_six_prospectively_named_contrasts"
+GATE_PASS_FIELD = "retrospective_six_contrast_cluster_sensitivity_pass"
 
 SURFACES = {
     "claim_ledger": "docs/research/kbound/claim_ledger.json",
@@ -128,17 +141,46 @@ def validate() -> list[str]:
     canonical_hash = sha256(canonical_path)
     source_manifest_hash = sha256(source_manifest_path)
 
+    numbers_path = ROOT / SO2SAT_NUMBERS_REL
+    builder_path = ROOT / SO2SAT_NUMBERS_BUILDER_REL
+    if not numbers_path.is_file() or not builder_path.is_file():
+        problems.append("missing generated So2Sat manuscript numbers or builder")
+    else:
+        try:
+            spec = importlib.util.spec_from_file_location("kbound_so2sat_numbers", builder_path)
+            if spec is None or spec.loader is None:
+                raise RuntimeError("cannot load So2Sat numbers builder")
+            builder = importlib.util.module_from_spec(spec)
+            spec.loader.exec_module(builder)
+            expected_numbers = builder.render_numbers_tex(builder.load_validated_numbers())
+            if numbers_path.read_text(encoding="ascii") != expected_numbers:
+                problems.append("generated So2Sat manuscript numbers are stale")
+        except (OSError, UnicodeError, ValueError, RuntimeError) as exc:
+            problems.append(f"cannot validate generated So2Sat manuscript numbers: {exc}")
+    for driver_rel in (
+        "docs/research/kbound/kbound_submission.tex",
+        "docs/research/kbound/kbound_tmlr.tex",
+    ):
+        driver = ROOT / driver_rel
+        if not driver.is_file() or r"\input{paper/generated/so2sat_numbers.tex}" not in driver.read_text(
+            encoding="utf-8"
+        ):
+            problems.append(f"maintained driver does not input So2Sat numbers: {driver_rel}")
+
     current = strict_json(current_path)
-    if current.get("schema") != "kbound-current-policy-cluster-inference-v2":
+    if current.get("schema") != CURRENT_CLUSTER_SCHEMA:
         problems.append("current-policy authority has the wrong schema")
-    family = current.get("preregistered_six_comparison_holm") or {}
+    family = current.get(FAMILY_FIELD) or {}
     if family.get("family_size") != 6 or family.get("alpha") != 0.05:
-        problems.append("current-policy authority has the wrong preregistered Holm family")
+        problems.append(
+            "current-policy authority has the wrong retrospective Holm family over the six "
+            "prospectively named contrasts"
+        )
     for candidate in ("tent", "eata", "sar"):
         row = (current.get("candidates") or {}).get(candidate) or {}
         gate = row.get("gate") or {}
-        if gate.get("preregistered_six_comparison_cluster_sensitivity_pass") is not False:
-            problems.append(f"{candidate} must not pass the preregistered six-comparison gate")
+        if gate.get(GATE_PASS_FIELD) is not False:
+            problems.append(f"{candidate} must not pass the retrospective six-contrast gate")
 
     for label in (
         "claim_ledger",
@@ -211,6 +253,69 @@ def validate() -> list[str]:
     if (ledger_claims.get("KB-CLAIM-021") or {}).get("status") != "withheld":
         problems.append("KB-CLAIM-021 iWildCam must remain withheld")
 
+    cct20_path = ROOT / CCT20_REL
+    cct20_receipt_path = ROOT / CCT20_RECEIPT_REL
+    so2sat_path = ROOT / SO2SAT_REL
+    so2sat_receipt_path = ROOT / SO2SAT_RECEIPT_REL
+    for path in (cct20_path, cct20_receipt_path, so2sat_path, so2sat_receipt_path):
+        if not path.is_file():
+            problems.append(f"missing separate release authority: {path.relative_to(ROOT)}")
+    if any(not path.is_file() for path in (cct20_path, cct20_receipt_path, so2sat_path, so2sat_receipt_path)):
+        return problems
+
+    cct20_hash = sha256(cct20_path)
+    so2sat_hash = sha256(so2sat_path)
+    cct20 = strict_json(cct20_path)
+    cct20_receipt = strict_json(cct20_receipt_path)
+    so2sat = strict_json(so2sat_path)
+    so2sat_receipt = strict_json(so2sat_receipt_path)
+    if (
+        cct20_receipt.get("artifact_sha256") != cct20_hash
+        or cct20_receipt.get("artifact_bytes") != cct20_path.stat().st_size
+    ):
+        problems.append("CCT-20 release receipt does not bind the release manifest")
+    if (
+        so2sat_receipt.get("artifact_sha256") != so2sat_hash
+        or so2sat_receipt.get("artifact_bytes") != so2sat_path.stat().st_size
+    ):
+        problems.append("So2Sat selection receipt does not bind the selection artifact")
+
+    cct_claim = ledger_claims.get("KB-CLAIM-051") or {}
+    if (
+        cct_claim.get("status") != "no-harm"
+        or cct_claim.get("verdict") != "SAFE_UTILITY_ONLY"
+        or cct_claim.get("action_counts") != {"ADAPT": 0, "FREEZE": 44, "ABSTAIN": 1}
+    ):
+        problems.append("KB-CLAIM-051 must remain the bounded CCT-20 safe-utility-only result")
+    so2sat_claim = ledger_claims.get("KB-CLAIM-052") or {}
+    if (
+        so2sat_claim.get("status") != "diagnostic"
+        or so2sat_claim.get("verdict") != "NO_FEASIBLE_CANDIDATE_STOP_BEFORE_GATE_CAL"
+        or (so2sat_claim.get("target_access") or {}).get("target_pixels_read") != 0
+        or (so2sat_claim.get("target_access") or {}).get("target_labels_read") != 0
+    ):
+        problems.append("KB-CLAIM-052 must remain a no-target-access So2Sat development diagnostic")
+
+    if (
+        cct20.get("schema") != "kbound_cct20_release_manifest_v1"
+        or cct20.get("status") != "RELEASE_COMPLETE"
+        or (cct20.get("verdict") or {}).get("code") != "SAFE_UTILITY_ONLY"
+        or (cct20.get("verdict") or {}).get("protocol_strong_success") is not False
+        or (cct20.get("action_exposure") or {}).get("counts")
+        != {"ABSTAIN": 1, "ADAPT": 0, "FREEZE": 44}
+    ):
+        problems.append("CCT-20 authority drifted from the safe-utility-only verdict")
+    if (
+        so2sat.get("schema") != "kbound_so2sat_adapter_candidate_selection_v1"
+        or so2sat.get("status") != "NO_FEASIBLE_CANDIDATE_STOP_BEFORE_GATE_CAL"
+        or so2sat.get("selected_candidate_id") is not None
+        or so2sat.get("gate_cal_rows_read_before_selection") != 0
+        or so2sat.get("target_inputs") != []
+        or so2sat.get("target_pixels_read") != 0
+        or so2sat.get("target_labels_read") != 0
+    ):
+        problems.append("So2Sat authority drifted from the no-candidate/no-target-access stop")
+
     table = documents["table_manifest"]
     tracks = table.get("tracks") or {}
     for key in ("cifar10c_tent", "cifar10c_eata", "cifar10c_sar", "imagenetc_sar"):
@@ -229,6 +334,45 @@ def validate() -> list[str]:
     }
     if "KB-CLAIM-021" in result_claim_ids:
         problems.append("withheld iWildCam must not appear in RESULT_MANIFEST results")
+    if not {"KB-CLAIM-051", "KB-CLAIM-052"} <= result_claim_ids:
+        problems.append("RESULT_MANIFEST must include CCT-20 and So2Sat release entries")
+    result_rows = {
+        row.get("claim_id"): row
+        for row in documents["result_manifest"].get("results", [])
+        if isinstance(row, dict)
+    }
+    cct_result = result_rows.get("KB-CLAIM-051") or {}
+    cct_metrics = cct_result.get("metrics") or {}
+    if (
+        cct_result.get("source_artifact") != CCT20_REL
+        or cct_metrics.get("artifact_sha256") != cct20_hash
+        or cct_metrics.get("decision_counts") != {"ADAPT": 0, "FREEZE": 44, "ABSTAIN": 1}
+        or cct_metrics.get("point_beats_both") is not False
+        or cct_metrics.get("ci_robust_beats_both") is not False
+    ):
+        problems.append("RESULT_MANIFEST CCT-20 row is stale or overclaims")
+    so2sat_result = result_rows.get("KB-CLAIM-052") or {}
+    so2sat_metrics = so2sat_result.get("metrics") or {}
+    if (
+        so2sat_result.get("source_artifact") != SO2SAT_REL
+        or so2sat_metrics.get("artifact_sha256") != so2sat_hash
+        or so2sat_metrics.get("selected_candidate_id") is not None
+        or so2sat_metrics.get("target_score") is not None
+        or (so2sat_metrics.get("target_access") or {}).get("target_pixels_read") != 0
+        or (so2sat_metrics.get("target_access") or {}).get("target_labels_read") != 0
+    ):
+        problems.append("RESULT_MANIFEST So2Sat row is stale or implies target access")
+
+    for label in ("claim_ledger", "result_manifest"):
+        authorities = (documents[label].get("reconciliation_source") or {}).get(
+            "separate_receipt_linked_authorities"
+        ) or {}
+        if (
+            (authorities.get("cct20") or {}).get("artifact_sha256") != cct20_hash
+            or (authorities.get("so2sat_development") or {}).get("artifact_sha256")
+            != so2sat_hash
+        ):
+            problems.append(f"{label} has stale separate CCT-20/So2Sat authorities")
     compat_iwild = (documents["results_source"].get("tracks") or {}).get("iwildcam_H_v2") or {}
     if compat_iwild.get("regret") is not None:
         problems.append("results_source iWildCam regret must remain null")
@@ -250,12 +394,15 @@ def validate() -> list[str]:
     release_claim = (audit.get("release_decision") or {}).get(
         "controlled_cifar10c_tent_claim", ""
     )
-    if "PREREGISTERED_SIX_COMPARISON_HOLM_FAILED" not in release_claim:
-        problems.append("empirical audit does not preserve the failed preregistered Holm gate")
+    if "RETROSPECTIVE_HOLM_OVER_SIX_PROSPECTIVELY_NAMED_CONTRASTS_FAILED" not in release_claim:
+        problems.append(
+            "empirical audit does not preserve the failed retrospective Holm gate over the "
+            "six prospectively named contrasts"
+        )
     if (audit.get("bottom_line") or {}).get(
-        "controlled_cifar10c_preregistered_cluster_win"
+        "controlled_cifar10c_retrospective_six_contrast_holm_win"
     ) is not False:
-        problems.append("empirical audit must record no preregistered cluster win")
+        problems.append("empirical audit must record no retrospective six-contrast Holm win")
     current_checksum_rows = [
         row
         for row in (audit.get("release_checksums") or {}).get("rows", [])

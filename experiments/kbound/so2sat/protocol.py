@@ -28,6 +28,7 @@ SOURCE_CITY_ROLE_COUNTS = {
 MINIMUM_GATE_CITY_ROWS = 256
 SOURCE_FIT_TOTAL_CITIES = 14
 GATE_CITY_SALT = "KBOUND_SO2SAT_GATE_CITY_ROLES_v1"
+IMPLEMENTED_TARGET_ACTION_UNIT = "city_checkpoint"
 
 
 def default_protocol_path() -> Path:
@@ -194,3 +195,24 @@ def verify_checked_in_protocol_receipt(path: str | Path | None = None) -> dict[s
     if dict(receipt) != expected_receipt:
         raise IntegrityError("checked-in So2Sat protocol receipt mismatch")
     return dict(receipt)
+
+
+def require_production_target_action_unit_alignment() -> None:
+    """Refuse production target access while v1 and the live runner disagree.
+
+    The immutable v1 protocol commits to one action per target city.  The
+    current live implementation computes and seals a separate action for every
+    city-by-checkpoint cell.  Either design can be studied, but changing
+    between them changes the estimand and therefore requires a new versioned
+    protocol.  Keep production sealing and execution unreachable until that
+    protocol exists; test-only synthetic boundary checks remain available.
+    """
+
+    declared = load_protocol()["roles"]["target"]["action_unit"]
+    if declared != IMPLEMENTED_TARGET_ACTION_UNIT:
+        raise IntegrityError(
+            "So2Sat production target stages are disabled: prospective protocol "
+            f"v1 declares action_unit={declared!r}, while the live runner emits "
+            f"{IMPLEMENTED_TARGET_ACTION_UNIT!r} actions; create and seal a new "
+            "versioned protocol before any target-pixel access"
+        )

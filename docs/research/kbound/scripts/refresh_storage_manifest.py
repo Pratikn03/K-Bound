@@ -73,6 +73,22 @@ def refresh(manifest: dict[str, Any]) -> None:
             raise ValueError(f"refreshable authority is not marked tracked: {location}")
         row["size_bytes"] = path.stat().st_size
         row["sha256"] = sha256(path)
+    rows[
+        "experiments/kbound/results/reconciled_panels_v1/current_policy_cluster_inference.json"
+    ]["scope"] = (
+        "Retrospective six-corruption-family current-policy sensitivity; ordinary intervals "
+        "are unadjusted. Retrospective Holm adjustment over the six prospectively named "
+        "contrasts is non-confirmatory and no candidate passes both baselines."
+    )
+    rows[
+        "experiments/kbound/results/reconciled_panels_v1/canonical_panel_results.json"
+    ]["drift_note"] = (
+        "The deterministic 2026-08-28 reconciler reproduced the Phase-1 canonical authority "
+        "hash recorded by the provenance audit. Current-policy six-family sensitivity remains "
+        "a separately hashed artifact synchronized into the paper manifests; panel measurements "
+        "are unchanged, and the retrospective Holm gates over the six prospectively named "
+        "contrasts remain false."
+    )
     manifest["generated_by"] = (
         "mechanically refreshed by docs/research/kbound/scripts/"
         "refresh_storage_manifest.py from the four declared tracked release authorities; "
