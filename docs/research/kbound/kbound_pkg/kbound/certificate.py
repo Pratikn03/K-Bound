@@ -10,9 +10,11 @@ numerically identical to ``kga.certificate.empirical_bernstein``
 
 Theorem thm:cert (K-Bound paper):
     Given calibration residuals r_i = |Bhat_i - B_i|, the split-conformal
-    radius eps = r_(k), k=min(n,ceil((n+1)(1-alpha))), guarantees that a new prediction Bhat
-    deviates from the true B by at most eps with probability >= 1 - alpha over
-    the random calibration split.
+    radius eps = r_(k), k=ceil((n+1)(1-alpha)), guarantees that a new prediction
+    Bhat deviates from the true B by at most eps with probability >= 1 - alpha
+    over the random calibration split.  If k > n, no finite order statistic can
+    attain that level, so the maintained rule returns +inf (forced ABSTAIN) or
+    raises instead of silently clamping the rank.
 
 Decision rule (Proposition):
     ADAPT   if  Bhat - eps > 0   (certified beneficial)
@@ -23,10 +25,32 @@ Decision rule (Proposition):
 from __future__ import annotations
 
 import math
+import warnings
+
 import numpy as np
 
 
-def conformal_radius(residuals: np.ndarray, alpha: float = 0.1) -> float:
+class InsufficientCalibrationError(ValueError):
+    """Raised when no finite conformal radius can attain ``1 - alpha``."""
+
+
+def min_calibration_size(alpha: float) -> int:
+    """Return the smallest pool size permitting a finite exact-rank radius.
+
+    The feasibility condition is ``ceil((n + 1) * (1 - alpha)) <= n``, or
+    equivalently ``n >= ceil(1 / alpha) - 1``.
+    """
+    if not (0.0 < alpha < 1.0):
+        raise ValueError(f"alpha must be in (0, 1), got {alpha}")
+    return int(math.ceil(1.0 / alpha)) - 1
+
+
+def conformal_radius(
+    residuals: np.ndarray,
+    alpha: float = 0.1,
+    *,
+    on_infeasible: str = "inf",
+) -> float:
     """Split-conformal radius from calibration residuals.
 
     Implements Thm thm:cert using the exact finite-sample residual rank.
@@ -39,11 +63,16 @@ def conformal_radius(residuals: np.ndarray, alpha: float = 0.1) -> float:
         Absolute prediction errors |Bhat_i - B_i| on the calibration set.
     alpha : float, default=0.1
         Miscoverage level in (0, 1).  Typical value 0.10.
+    on_infeasible : {'inf', 'raise'}, default='inf'
+        Behaviour when the exact rank exceeds the available calibration pool.
+        ``'inf'`` warns and returns ``+inf`` so every finite prediction abstains;
+        ``'raise'`` raises :class:`InsufficientCalibrationError`.
 
     Returns
     -------
     eps : float
-        The exact split-conformal order statistic of the residuals.
+        The exact split-conformal order statistic, or ``+inf`` when the
+        requested coverage is infeasible and ``on_infeasible='inf'``.
 
     Examples
     --------
@@ -57,12 +86,27 @@ def conformal_radius(residuals: np.ndarray, alpha: float = 0.1) -> float:
         raise ValueError("residuals must be a non-empty 1-D array")
     if not (0.0 < alpha < 1.0):
         raise ValueError(f"alpha must be in (0, 1), got {alpha}")
+    if on_infeasible not in ("inf", "raise"):
+        raise ValueError(
+            f"on_infeasible must be 'inf' or 'raise', got {on_infeasible!r}"
+        )
     if not np.all(np.isfinite(r)):
         raise ValueError("residuals must contain only finite values")
     if np.any(r < 0.0):
         raise ValueError("residuals must be non-negative")
     n = len(r)
-    k = min(n, int(math.ceil((n + 1) * (1.0 - alpha))))
+    k = int(math.ceil((n + 1) * (1.0 - alpha)))
+    if k > n:
+        n_min = min_calibration_size(alpha)
+        msg = (
+            f"split-conformal at alpha={alpha} needs n >= {n_min} calibration "
+            f"residuals but got n={n}: exact rank k={k} exceeds n, so no finite "
+            f"radius attains 1-alpha. Returning +inf => ABSTAIN."
+        )
+        if on_infeasible == "raise":
+            raise InsufficientCalibrationError(msg)
+        warnings.warn(msg, UserWarning, stacklevel=2)
+        return float("inf")
     return float(np.sort(r)[k - 1])
 
 

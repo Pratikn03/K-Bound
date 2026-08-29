@@ -18,16 +18,26 @@ upload, or submission.
 
 ## 2. Run the local release gate
 
-Use Python 3.12 with `requirements-research.txt` installed from a clean checkout. The release driver
-never launches training or modifies raw datasets. Its default manuscript gate is portable: it
-validates the receipt-bound CCT-20 manifest, internal ledgers, adjacent receipt, and repository
-generated artifacts without opening the manifest's author-machine absolute upstream paths.
+Use Python 3.12 with `requirements-research.txt` installed from a clean checkout. First commit every
+maintained source/code edit and record that clean commit as the source freeze. Do not mix newly
+regenerated publication artifacts into that source-freeze commit. The release driver never launches
+training or modifies raw datasets. Its default manuscript gate is portable: it validates the
+receipt-bound CCT-20 manifest, internal ledgers, adjacent receipt, and repository-generated
+artifacts without opening the manifest's author-machine absolute upstream paths.
 
 ```bash
+test -z "$(git status --porcelain --untracked-files=all)"
+source_commit="$(git rev-parse HEAD)"
 KBOUND_PYTHON=.venv/bin/python \
+KBOUND_SOURCE_COMMIT="$source_commit" \
   bash docs/research/kbound/runbooks/release_candidate.sh all
 git status --short
 ```
+
+Review the exact generated-artifact allowlist, rerun the independent checksum and source-seal
+verifiers, and then create a separate artifact-only commit. The seal's `source_commit` must remain
+the clean source-freeze commit, normally the artifact commit's parent; do not reseal against the
+artifact commit itself.
 
 Optional author-machine provenance verification is a separate read-only mode. It is not required
 for a clean clone or anonymous submission and should be run only while every sealed local upstream
@@ -45,6 +55,8 @@ Required outcomes:
 - [ ] the required compact Word export is rebuilt and passes its document checks;
 - [ ] `KBOUND_RELEASE_SHA256SUMS.txt` is regenerated after every maintained artifact is final;
 - [ ] a separate byte-for-byte checksum verification passes;
+- [ ] the source seal binds maintained checkout bytes to the recorded clean source-freeze commit;
+- [ ] generated outputs are reviewed and committed separately from the source freeze;
 - [ ] the working tree is clean after the final freeze commit.
 
 The dated July `RELEASE_MANIFEST.json` and `reports/reproducibility_release_report.md` are historical

@@ -8,7 +8,13 @@ import math
 import numpy as np
 import pytest
 
-from kbound.certificate import conformal_radius, empirical_bernstein_lcb, decide
+from kbound.certificate import (
+    InsufficientCalibrationError,
+    conformal_radius,
+    decide,
+    empirical_bernstein_lcb,
+    min_calibration_size,
+)
 
 
 # ---------------------------------------------------------------------------
@@ -49,7 +55,7 @@ class TestConformalRadius:
         r = rng.standard_normal(200) ** 2   # chi-squared-like residuals
         alpha = 0.15
         eps = conformal_radius(r, alpha)
-        k = min(len(r), int(np.ceil((len(r) + 1) * (1 - alpha))))
+        k = int(np.ceil((len(r) + 1) * (1 - alpha)))
         assert abs(eps - float(np.sort(r)[k - 1])) < 1e-12
 
     def test_output_positive(self):
@@ -75,10 +81,25 @@ class TestConformalRadius:
         with pytest.raises(ValueError):
             conformal_radius(np.array([]), alpha=0.1)
 
-    def test_single_value(self):
-        """Single residual: eps = that value (since quantile(r, 0.9) of [x] is x)."""
-        eps = conformal_radius(np.array([0.5]), 0.1)
-        assert eps == pytest.approx(0.5)
+    def test_small_pool_fails_closed(self):
+        """An infeasible exact rank returns +inf and therefore forces ABSTAIN."""
+        with pytest.warns(UserWarning, match="no finite radius"):
+            eps = conformal_radius(np.array([0.5]), 0.1)
+        assert math.isinf(eps) and eps > 0
+        assert decide(0.5, eps) == "abstain"
+
+    def test_small_pool_can_raise(self):
+        with pytest.raises(InsufficientCalibrationError, match="no finite radius"):
+            conformal_radius(np.arange(8.0), 0.1, on_infeasible="raise")
+
+    def test_feasible_boundary_uses_maximum(self):
+        r = np.arange(1.0, 10.0)
+        assert min_calibration_size(0.1) == 9
+        assert conformal_radius(r, 0.1) == pytest.approx(9.0)
+
+    def test_invalid_infeasible_mode(self):
+        with pytest.raises(ValueError, match="on_infeasible"):
+            conformal_radius(np.ones(10), 0.1, on_infeasible="clamp")
 
 
 # ---------------------------------------------------------------------------

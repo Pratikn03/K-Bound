@@ -3,13 +3,21 @@
 Exposes the public API:
 
     conformal_radius  -- Thm thm:cert batch conformal radius
+    min_calibration_size -- finite-radius feasibility threshold
+    InsufficientCalibrationError -- explicit fail-closed exception
     EProcess          -- anytime-valid betting e-process (Ville's inequality)
     BenefitRouter     -- leave-one-out GBR + conformal decisions
     KGA               -- full adapt/freeze/abstain gate (label-free)
     KBoundOptimizer   -- torch gradient-gating optimizer (torch optional)
 """
 
-from kbound.certificate import conformal_radius, empirical_bernstein_lcb, decide
+from kbound.certificate import (
+    InsufficientCalibrationError,
+    conformal_radius,
+    decide,
+    empirical_bernstein_lcb,
+    min_calibration_size,
+)
 from kbound.evidence import evidence_vector
 from kbound.router import BenefitRouter
 from kbound.routing import (
@@ -26,6 +34,8 @@ from kbound.optimizer import KBoundOptimizer
 
 __all__ = [
     "conformal_radius",
+    "min_calibration_size",
+    "InsufficientCalibrationError",
     "empirical_bernstein_lcb",
     "decide",
     "evidence_vector",

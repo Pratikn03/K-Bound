@@ -15,7 +15,8 @@ Date: 2026-08-29
 - Demoted the legacy eight-seed simulated paired-t-test row in the historical CSV manifests; it is
   not used by either maintained paper and carries no current significance claim.
 - Stamped the July reproducibility PASS and v0.1.0 release notes as historical. The final
-  clean-checkout release gate and checksum freeze remain to be run after all manuscript/code edits.
+  clean-checkout release gate and checksum freeze are regenerated from the source-freeze commit;
+  the dated release seal records the bound commit and maintained artifacts.
 - Centralized multiplicity wording: CIFAR's six contrasts were prospectively named, while the
   current exact-rank replay, six-family sensitivity, sign-flip tests, and Holm adjustment are
   retrospective and non-confirmatory. Ordinary intervals are unadjusted, and no candidate rejects
@@ -24,10 +25,10 @@ Date: 2026-08-29
 ## Maintained Papers
 
 - Compact submission source: `kbound_submission.tex` and `kbound_submission_body.tex`.
-- Compact outputs: `kbound_short_final_draft.pdf` (28 pages) and
-  `kbound_short_final_draft.docx` (28 rendered pages).
+- Compact outputs: `kbound_short_final_draft.pdf` (30 pages) and
+  `kbound_short_final_draft.docx` (29 rendered pages).
 - TMLR source: anonymous official-style `kbound_tmlr.tex` with the shared body and appendices.
-- TMLR PDF: `kbound_tmlr.pdf` (page count must be refreshed after the final rebuild).
+- TMLR PDF: `kbound_tmlr.pdf` (34 pages).
 - Older compatibility PDFs remain historical snapshots and are not refreshed or delivered.
 - The legacy full-source IEEE render is diagnostic only and is no longer built by default.
 
