@@ -1,16 +1,20 @@
 import hashlib
 import json
 from pathlib import Path
+
 import yaml
+
 
 class ProtocolError(ValueError):
     """Exception raised for protocol validation errors."""
+
     pass
+
 
 def load_real_protocol(path: str | Path) -> dict:
     """Load and validate the real protocol configuration from a YAML file."""
     try:
-        with open(path, "r") as f:
+        with open(path) as f:
             cfg = yaml.safe_load(f)
         validate_protocol(cfg)
         return cfg
@@ -18,6 +22,7 @@ def load_real_protocol(path: str | Path) -> dict:
         if not isinstance(e, ProtocolError):
             raise ProtocolError(f"Failed to load/parse protocol: {e}") from e
         raise e
+
 
 def validate_protocol(config: dict) -> None:
     """Validate that the config dictionary satisfies all protocol constraints."""
@@ -27,16 +32,16 @@ def validate_protocol(config: dict) -> None:
     # 1. Check protocol name
     if config.get("protocol") != "edge_real_phone_v1":
         raise ProtocolError("Invalid protocol name, expected 'edge_real_phone_v1'")
-    
+
     # 2. Check classes
     expected_classes = ["ok", "missing_label", "misaligned_label", "damaged_label"]
     if config.get("classes") != expected_classes:
         raise ProtocolError(f"Invalid classes, expected {expected_classes}")
-        
+
     # 3. Check window_size
     if config.get("window_size") != 32:
         raise ProtocolError("Invalid window_size, expected 32")
-        
+
     # 4. Check alpha
     if config.get("alpha") != 0.10:
         raise ProtocolError("Invalid alpha, expected 0.10")
@@ -46,46 +51,50 @@ def validate_protocol(config: dict) -> None:
     source_train_calib = obj_cfg.get("source_train_calib", [])
     source_val_calib = obj_cfg.get("source_val_calib", [])
     held_out_replication = obj_cfg.get("held_out_replication", [])
-    
+
     if source_train_calib != ["P01", "P02", "P03", "P04", "P05", "P06"]:
         raise ProtocolError("Invalid source_train_calib objects")
     if source_val_calib != ["P07", "P08"]:
         raise ProtocolError("Invalid source_val_calib objects")
     if held_out_replication != ["P09", "P10"]:
         raise ProtocolError("Invalid held_out_replication objects")
-        
+
     # 6. Check phone splits
     phones = config.get("phones", {})
     if "phone_a" not in phones or "phone_b" not in phones:
         raise ProtocolError("Missing phone_a or phone_b configuration")
-        
+
     # 7. Check sessions
     sessions = config.get("sessions", {})
     expected_session_ids = [f"S{i:02d}" for i in range(1, 11)]
     for s_id in expected_session_ids:
         if s_id not in sessions:
             raise ProtocolError(f"Missing session {s_id}")
-            
+
     # Check duplicate session split types
     splits = [sess.get("split") for sess in sessions.values() if sess.get("split")]
     if len(splits) != len(set(splits)):
         raise ProtocolError(f"duplicate session split types found: {splits}")
-        
+
     # Validate each session configuration
     for s_id, sess in sessions.items():
         split = sess.get("split")
         phone_id = sess.get("phone_id")
         objects = sess.get("objects")
         windows = sess.get("windows")
-        
+
         if phone_id == "phone_b" and s_id not in ["S09", "S10"]:
             raise ProtocolError(f"phone_b cannot be used in session {s_id} (outside replication)")
-            
+
         expected_n = len(expected_windows(config, s_id))
         if windows != expected_n:
             raise ProtocolError(f"{s_id} windows={windows} != expected {expected_n} from protocol generator")
         if s_id == "S01":
-            if split != "source_train" or phone_id != "phone_a" or objects != ["P01", "P02", "P03", "P04", "P05", "P06"]:
+            if (
+                split != "source_train"
+                or phone_id != "phone_a"
+                or objects != ["P01", "P02", "P03", "P04", "P05", "P06"]
+            ):
                 raise ProtocolError(f"S01 configuration mismatch: {sess}")
         elif s_id == "S02":
             if split != "source_val" or phone_id != "phone_a" or objects != ["P07", "P08"]:
@@ -108,17 +117,21 @@ def validate_protocol(config: dict) -> None:
         if s_id not in ["S09", "S10"] and sess.get("phone_id") == "phone_b":
             raise ProtocolError(f"phone_b cannot be used in session {s_id} (outside replication)")
 
+
 def canonical_protocol_hash(config: dict) -> str:
     """Compute a stable SHA-256 hash of the protocol configuration."""
+
     def sort_struct(item):
         if isinstance(item, dict):
             return {k: sort_struct(item[k]) for k in sorted(item.keys())}
         elif isinstance(item, list):
             return [sort_struct(x) for x in item]
         return item
+
     sorted_cfg = sort_struct(config)
     data = json.dumps(sorted_cfg, sort_keys=True)
     return hashlib.sha256(data.encode("utf-8")).hexdigest()
+
 
 def expected_windows(config: dict, session_id: str) -> list[dict]:
     """Return the list of all expected windows (physical and derived) for a session."""
@@ -126,38 +139,42 @@ def expected_windows(config: dict, session_id: str) -> list[dict]:
     sess = sessions.get(session_id)
     if not sess:
         raise ProtocolError(f"Session {session_id} not found in protocol")
-    
+
     objects = sess["objects"]
     classes = config["classes"]
-    
+
     is_a_session = session_id in ["S01", "S03", "S05", "S07", "S09"]
-    
+
     wins = []
-    
+
     if session_id == "S01":
-        # source_train: 6 objects, 4 classes, 10 repetitions, stable shift
+        # source_train: 6 objects, 4 classes, 5 repetitions, stable shift
         for obj in objects:
             for cls in classes:
                 for rep in range(1, 6):
-                    wins.append({
-                        "object_id": obj,
-                        "class_id": cls,
-                        "shift_id": "stable",
-                        "repetition": rep,
-                        "is_derived": False
-                    })
+                    wins.append(
+                        {
+                            "object_id": obj,
+                            "class_id": cls,
+                            "shift_id": "stable",
+                            "repetition": rep,
+                            "is_derived": False,
+                        }
+                    )
     elif session_id == "S02":
-        # source_val: 2 objects, 4 classes, 10 repetitions, stable shift
+        # source_val: 2 objects, 4 classes, 5 repetitions, stable shift
         for obj in objects:
             for cls in classes:
                 for rep in range(1, 6):
-                    wins.append({
-                        "object_id": obj,
-                        "class_id": cls,
-                        "shift_id": "stable",
-                        "repetition": rep,
-                        "is_derived": False
-                    })
+                    wins.append(
+                        {
+                            "object_id": obj,
+                            "class_id": cls,
+                            "shift_id": "stable",
+                            "repetition": rep,
+                            "is_derived": False,
+                        }
+                    )
     elif is_a_session:
         # S03, S05, S07, S09
         # odd sessions use A_sessions shifts: [mild_light, side_shadow, new_background, glare]
@@ -167,58 +184,65 @@ def expected_windows(config: dict, session_id: str) -> list[dict]:
             for cls in classes:
                 for shift in shifts:
                     for rep in range(1, reps + 1):
-                        wins.append({
-                            "object_id": obj,
-                            "class_id": cls,
-                            "shift_id": shift,
-                            "repetition": rep,
-                            "is_derived": False
-                        })
+                        wins.append(
+                            {
+                                "object_id": obj,
+                                "class_id": cls,
+                                "shift_id": shift,
+                                "repetition": rep,
+                                "is_derived": False,
+                            }
+                        )
     else:
         # S04, S06, S08, S10
-        # 96 physical windows with [motion_blur, viewpoint_45, distance_scale]
+        # Physical windows with [motion_blur, viewpoint_45, distance_scale]
         # plus 32 derived batch_composition windows.
         shifts = ["motion_blur", "viewpoint_45", "distance_scale"]
         reps = 1 if session_id in ["S04", "S06"] else 2
-        
-        # 96 physical windows
+
+        # 48 physical windows for S04/S06; 48 for S08/S10 because those
+        # sessions use two objects and two repetitions instead of four objects.
         for obj in objects:
             for cls in classes:
                 for shift in shifts:
                     for rep in range(1, reps + 1):
-                        wins.append({
-                            "object_id": obj,
-                            "class_id": cls,
-                            "shift_id": shift,
-                            "repetition": rep,
-                            "is_derived": False
-                        })
-                        
+                        wins.append(
+                            {
+                                "object_id": obj,
+                                "class_id": cls,
+                                "shift_id": shift,
+                                "repetition": rep,
+                                "is_derived": False,
+                            }
+                        )
+
         # 32 derived batch_composition windows
         # We assign recipe and index to make them identifiable.
         recipes = [
             ("balanced", [8, 8, 8, 8]),
             ("ok_heavy", [20, 4, 4, 4]),
             ("missing_heavy", [4, 20, 4, 4]),
-            ("fault_mixed", [4, 8, 10, 10])
+            ("fault_mixed", [4, 8, 10, 10]),
         ]
-        
+
         idx = 1
         for recipe_name, counts in recipes:
             for _ in range(8):  # 8 windows per recipe
-                wins.append({
-                    "object_id": "mixed",
-                    "class_id": "mixed",
-                    "shift_id": "batch_composition",
-                    "repetition": idx,
-                    "is_derived": True,
-                    "recipe": recipe_name,
-                    "counts": counts
-                })
+                wins.append(
+                    {
+                        "object_id": "mixed",
+                        "class_id": "mixed",
+                        "shift_id": "batch_composition",
+                        "repetition": idx,
+                        "is_derived": True,
+                        "recipe": recipe_name,
+                        "counts": counts,
+                    }
+                )
                 idx += 1
-                
+
     # Assign deterministic window_ids: SXX_W001, SXX_W002, etc.
     for i, w in enumerate(wins):
-        w["window_id"] = f"{session_id}_W{i+1:03d}"
-        
+        w["window_id"] = f"{session_id}_W{i + 1:03d}"
+
     return wins

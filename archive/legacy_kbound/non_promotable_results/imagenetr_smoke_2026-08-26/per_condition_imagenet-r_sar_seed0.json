@@ -1,0 +1,506 @@
+{
+  "seed": 0,
+  "benchmark": "imagenet-r",
+  "method": "sar",
+  "alpha": 0.1,
+  "n_conditions": 4,
+  "kga_backend": "sklearn_gradient_boost",
+  "per_condition_fields_absent": [],
+  "per_condition_fields_absent_reason": "n_D/c_ij are attached by the runner via panel_capture.py (Wave-5); absent means the runner predates the patch or the panel capture was skipped.",
+  "per_condition_field_notes": {
+    "tau_hat_tau_star": "single-candidate route (frozen vs adapted), so tau is degenerate and set to 0.0.",
+    "zone": "computed from benefit_ci: lb>0 => CERTIFIED_ADAPT, ub<0 => CERTIFIED_FREEZE, else BLIND.",
+    "gamma_hat": "single-candidate proxy (b_hat/2) with gamma_ci = benefit_ci/2.",
+    "kga_backend": "sklearn_gradient_boost = production certificate; numpy_knn_fallback = torch/sklearn-free verification estimator (decision rule + conformal radius identical, estimator differs)."
+  },
+  "records": [
+    {
+      "seed": 0,
+      "benchmark": "imagenet-r",
+      "method": "sar",
+      "condition": "imagenet_r|iid|tiny|mild|online",
+      "B": 0.025000000000000022,
+      "a0": 0.575,
+      "a_adapted": 0.6,
+      "a_kbound": 0.575,
+      "a_oracle": 0.6,
+      "regime": "helpful",
+      "oracle_action": "ADAPT",
+      "Z": [
+        2.2215123176574707,
+        0.34258437156677246,
+        0.9328213242102024,
+        2.4069597721099854,
+        0.30201229453086853,
+        0.9603242827356908,
+        -0.027502958525488452,
+        -0.18544745445251465,
+        0.0,
+        0.1098540723323822,
+        0.07503767201204056
+      ],
+      "Z_names": [
+        "pre_entropy",
+        "pre_conf",
+        "pre_pbal",
+        "post_entropy",
+        "post_conf",
+        "post_pbal",
+        "pbal_drop",
+        "entropy_drop",
+        "frac_highconf",
+        "marginal_KL",
+        "update_norm"
+      ],
+      "n_D": 17,
+      "c_ij": [
+        [
+          1.0,
+          0.25,
+          0.30000000000000004,
+          0.3500000000000001,
+          0.25,
+          0.25,
+          0.19999999999999996
+        ],
+        [
+          0.25,
+          1.0,
+          0.8500000000000001,
+          0.8,
+          0.8500000000000001,
+          0.8,
+          0.75
+        ],
+        [
+          0.30000000000000004,
+          0.8500000000000001,
+          1.0,
+          0.8500000000000001,
+          0.8999999999999999,
+          0.8500000000000001,
+          0.8
+        ],
+        [
+          0.3500000000000001,
+          0.8,
+          0.8500000000000001,
+          1.0,
+          0.8999999999999999,
+          0.8500000000000001,
+          0.8
+        ],
+        [
+          0.25,
+          0.8500000000000001,
+          0.8999999999999999,
+          0.8999999999999999,
+          1.0,
+          0.95,
+          0.8999999999999999
+        ],
+        [
+          0.25,
+          0.8,
+          0.8500000000000001,
+          0.8500000000000001,
+          0.95,
+          1.0,
+          0.95
+        ],
+        [
+          0.19999999999999996,
+          0.75,
+          0.8,
+          0.8,
+          0.8999999999999999,
+          0.95,
+          1.0
+        ]
+      ],
+      "Z_ev2": null,
+      "Z_ev2_names": null,
+      "tau_hat": 0.0,
+      "tau_star": 0.0,
+      "b_hat": -1.1647824873528171e-05,
+      "eps_conformal": Infinity,
+      "benefit_ci": [
+        -Infinity,
+        Infinity
+      ],
+      "zone": "BLIND",
+      "gamma_hat": -5.823912436764086e-06,
+      "gamma_ci": [
+        -Infinity,
+        Infinity
+      ],
+      "kga_decision": "ABSTAIN"
+    },
+    {
+      "seed": 0,
+      "benchmark": "imagenet-r",
+      "method": "sar",
+      "condition": "imagenet_r|iid|tiny|mild|episodic",
+      "B": 0.0,
+      "a0": 0.575,
+      "a_adapted": 0.575,
+      "a_kbound": 0.575,
+      "a_oracle": 0.575,
+      "regime": "marginal",
+      "oracle_action": "FREEZE",
+      "Z": [
+        2.2215123176574707,
+        0.34258437156677246,
+        0.9328213242102024,
+        2.412471294403076,
+        0.3006611466407776,
+        0.9607611307118071,
+        -0.02793980650160477,
+        -0.19095897674560547,
+        0.0,
+        0.1096099466085434,
+        0.060984552855196626
+      ],
+      "Z_names": [
+        "pre_entropy",
+        "pre_conf",
+        "pre_pbal",
+        "post_entropy",
+        "post_conf",
+        "post_pbal",
+        "pbal_drop",
+        "entropy_drop",
+        "frac_highconf",
+        "marginal_KL",
+        "update_norm"
+      ],
+      "n_D": 17,
+      "c_ij": [
+        [
+          1.0,
+          0.25,
+          0.30000000000000004,
+          0.3500000000000001,
+          0.25,
+          0.25,
+          0.19999999999999996
+        ],
+        [
+          0.25,
+          1.0,
+          0.8500000000000001,
+          0.8,
+          0.8500000000000001,
+          0.8,
+          0.75
+        ],
+        [
+          0.30000000000000004,
+          0.8500000000000001,
+          1.0,
+          0.8500000000000001,
+          0.8999999999999999,
+          0.8500000000000001,
+          0.8
+        ],
+        [
+          0.3500000000000001,
+          0.8,
+          0.8500000000000001,
+          1.0,
+          0.8999999999999999,
+          0.8500000000000001,
+          0.8
+        ],
+        [
+          0.25,
+          0.8500000000000001,
+          0.8999999999999999,
+          0.8999999999999999,
+          1.0,
+          0.95,
+          0.8999999999999999
+        ],
+        [
+          0.25,
+          0.8,
+          0.8500000000000001,
+          0.8500000000000001,
+          0.95,
+          1.0,
+          0.95
+        ],
+        [
+          0.19999999999999996,
+          0.75,
+          0.8,
+          0.8,
+          0.8999999999999999,
+          0.95,
+          1.0
+        ]
+      ],
+      "Z_ev2": null,
+      "Z_ev2_names": null,
+      "tau_hat": 0.0,
+      "tau_star": 0.0,
+      "b_hat": 0.02498252826268973,
+      "eps_conformal": Infinity,
+      "benefit_ci": [
+        -Infinity,
+        Infinity
+      ],
+      "zone": "BLIND",
+      "gamma_hat": 0.012491264131344866,
+      "gamma_ci": [
+        -Infinity,
+        Infinity
+      ],
+      "kga_decision": "ABSTAIN"
+    },
+    {
+      "seed": 0,
+      "benchmark": "imagenet-r",
+      "method": "sar",
+      "condition": "imagenet_r|single_class|tiny|mild|online",
+      "B": -0.050000000000000044,
+      "a0": 0.525,
+      "a_adapted": 0.475,
+      "a_kbound": 0.525,
+      "a_oracle": 0.525,
+      "regime": "harmful",
+      "oracle_action": "FREEZE",
+      "Z": [
+        1.937090277671814,
+        0.45910152792930603,
+        0.7964750939499159,
+        2.807800769805908,
+        0.17444971203804016,
+        0.9857583216060288,
+        -0.18928322765611294,
+        -0.8707104921340942,
+        0.0,
+        0.24726641178131104,
+        0.0
+      ],
+      "Z_names": [
+        "pre_entropy",
+        "pre_conf",
+        "pre_pbal",
+        "post_entropy",
+        "post_conf",
+        "post_pbal",
+        "pbal_drop",
+        "entropy_drop",
+        "frac_highconf",
+        "marginal_KL",
+        "update_norm"
+      ],
+      "n_D": 13,
+      "c_ij": [
+        [
+          1.0,
+          0.3500000000000001,
+          0.3500000000000001,
+          0.3500000000000001,
+          0.3500000000000001,
+          0.3500000000000001,
+          0.3500000000000001
+        ],
+        [
+          0.3500000000000001,
+          1.0,
+          0.95,
+          0.95,
+          0.95,
+          0.95,
+          0.95
+        ],
+        [
+          0.3500000000000001,
+          0.95,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0
+        ],
+        [
+          0.3500000000000001,
+          0.95,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0
+        ],
+        [
+          0.3500000000000001,
+          0.95,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0
+        ],
+        [
+          0.3500000000000001,
+          0.95,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0
+        ],
+        [
+          0.3500000000000001,
+          0.95,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0
+        ]
+      ],
+      "Z_ev2": null,
+      "Z_ev2_names": null,
+      "tau_hat": 0.0,
+      "tau_star": 0.0,
+      "b_hat": -0.05009612088154809,
+      "eps_conformal": Infinity,
+      "benefit_ci": [
+        -Infinity,
+        Infinity
+      ],
+      "zone": "BLIND",
+      "gamma_hat": -0.025048060440774046,
+      "gamma_ci": [
+        -Infinity,
+        Infinity
+      ],
+      "kga_decision": "ABSTAIN"
+    },
+    {
+      "seed": 0,
+      "benchmark": "imagenet-r",
+      "method": "sar",
+      "condition": "imagenet_r|single_class|tiny|mild|episodic",
+      "B": -0.050000000000000044,
+      "a0": 0.525,
+      "a_adapted": 0.475,
+      "a_kbound": 0.525,
+      "a_oracle": 0.525,
+      "regime": "harmful",
+      "oracle_action": "FREEZE",
+      "Z": [
+        1.937090277671814,
+        0.45910152792930603,
+        0.7964750939499159,
+        2.807800769805908,
+        0.17444971203804016,
+        0.9857583216060288,
+        -0.18928322765611294,
+        -0.8707104921340942,
+        0.0,
+        0.24726641178131104,
+        0.0
+      ],
+      "Z_names": [
+        "pre_entropy",
+        "pre_conf",
+        "pre_pbal",
+        "post_entropy",
+        "post_conf",
+        "post_pbal",
+        "pbal_drop",
+        "entropy_drop",
+        "frac_highconf",
+        "marginal_KL",
+        "update_norm"
+      ],
+      "n_D": 13,
+      "c_ij": [
+        [
+          1.0,
+          0.3500000000000001,
+          0.3500000000000001,
+          0.3500000000000001,
+          0.3500000000000001,
+          0.3500000000000001,
+          0.3500000000000001
+        ],
+        [
+          0.3500000000000001,
+          1.0,
+          0.95,
+          0.95,
+          0.95,
+          0.95,
+          0.95
+        ],
+        [
+          0.3500000000000001,
+          0.95,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0
+        ],
+        [
+          0.3500000000000001,
+          0.95,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0
+        ],
+        [
+          0.3500000000000001,
+          0.95,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0
+        ],
+        [
+          0.3500000000000001,
+          0.95,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0
+        ],
+        [
+          0.3500000000000001,
+          0.95,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0
+        ]
+      ],
+      "Z_ev2": null,
+      "Z_ev2_names": null,
+      "tau_hat": 0.0,
+      "tau_star": 0.0,
+      "b_hat": -0.05009612088154809,
+      "eps_conformal": Infinity,
+      "benefit_ci": [
+        -Infinity,
+        Infinity
+      ],
+      "zone": "BLIND",
+      "gamma_hat": -0.025048060440774046,
+      "gamma_ci": [
+        -Infinity,
+        Infinity
+      ],
+      "kga_decision": "ABSTAIN"
+    }
+  ]
+}

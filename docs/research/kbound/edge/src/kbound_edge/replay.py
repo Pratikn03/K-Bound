@@ -13,17 +13,18 @@ labels it owns -- those labels are never passed into :func:`run_window`.
 
 from __future__ import annotations
 
+from collections.abc import Sequence
 from dataclasses import dataclass
 from time import perf_counter
-from typing import Any, Dict, List, Optional, Sequence
+from typing import Any
 
 import numpy as np
 
-from kbound_edge.model import predict_proba
-from kbound_edge.evidence import edge_evidence_vector, EDGE_EVIDENCE_NAMES
-from kbound_edge.policy import kga_decide, Decision, PolicyContext, apply_policy, POLICIES
-from kbound_edge.logging import assert_no_labels
 from kbound_edge.dataset import frames_to_tensor
+from kbound_edge.evidence import EDGE_EVIDENCE_NAMES, edge_evidence_vector
+from kbound_edge.logging import assert_no_labels
+from kbound_edge.model import predict_proba
+from kbound_edge.policy import POLICIES, Decision, PolicyContext, apply_policy, kga_decide
 
 
 @dataclass
@@ -32,30 +33,30 @@ class WindowOutcome:
 
     window_id: int
     decision: Decision
-    evidence: Dict[str, float]
-    p0: np.ndarray            # frozen softmax (N,C) -- OFFICIAL model output
-    pa: np.ndarray            # adapted-candidate softmax (N,C) -- shadow only
+    evidence: dict[str, float]
+    p0: np.ndarray  # frozen softmax (N,C) -- OFFICIAL model output
+    pa: np.ndarray  # adapted-candidate softmax (N,C) -- shadow only
     upd_norm: float
     latency_ms: float
 
     @property
-    def frozen_pred(self) -> List[int]:
+    def frozen_pred(self) -> list[int]:
         return self.p0.argmax(1).tolist()
 
     @property
-    def candidate_pred(self) -> List[int]:
+    def candidate_pred(self) -> list[int]:
         return self.pa.argmax(1).tolist()
 
 
 def _to_tensor(window: Any, image_size: int):
     """Coerce a window payload to a model tensor, guarding against label leaks."""
-    import torch
-
     if isinstance(window, dict):
         assert_no_labels(window, where="online window payload")
         if "frames" not in window:
             raise KeyError("window dict must contain a 'frames' entry")
         return _to_tensor(window["frames"], image_size)
+    import torch
+
     if isinstance(window, torch.Tensor):
         return window
     # assume a sequence of BGR frames
@@ -79,9 +80,9 @@ def run_window(
     x = _to_tensor(window, image_size)
 
     t0 = perf_counter()
-    p0 = predict_proba(f0, x)            # frozen model = official output
-    res = adapter.adapt(x)               # isolated candidate (f0 untouched)
-    pa = predict_proba(res.model, x)     # candidate output (shadow)
+    p0 = predict_proba(f0, x)  # frozen model = official output
+    res = adapter.adapt(x)  # isolated candidate (f0 untouched)
+    pa = predict_proba(res.model, x)  # candidate output (shadow)
     z = edge_evidence_vector(p0, pa, res.upd_norm)
     bhat = estimator.predict_one(z)
     decision = kga_decide(bhat, eps)
@@ -99,8 +100,9 @@ def run_window(
     )
 
 
-def policy_decisions_for(outcome: WindowOutcome, eps: float,
-                         conf_tau: float = 0.5, entropy_tau: float = 0.05) -> Dict[str, str]:
+def policy_decisions_for(
+    outcome: WindowOutcome, eps: float, conf_tau: float = 0.5, entropy_tau: float = 0.05
+) -> dict[str, str]:
     """Decisions of EVERY comparison policy for one window (for the ablation table)."""
     ctx = PolicyContext(
         bhat=outcome.decision.bhat,
@@ -123,7 +125,7 @@ def replay_windows(
     collect_policies: bool = True,
     conf_tau: float = 0.5,
     entropy_tau: float = 0.05,
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """Replay a sequence of windows; log each; return outcomes + policy decisions.
 
     Returns a dict with:
@@ -132,10 +134,10 @@ def replay_windows(
         latencies_ms      list[float]
         policy_decisions  dict[policy_name -> list[str]]   (if collect_policies)
     """
-    outcomes: List[WindowOutcome] = []
-    decisions: List[str] = []
-    latencies: List[float] = []
-    policy_decisions: Dict[str, List[str]] = {name: [] for name in POLICIES}
+    outcomes: list[WindowOutcome] = []
+    decisions: list[str] = []
+    latencies: list[float] = []
+    policy_decisions: dict[str, list[str]] = {name: [] for name in POLICIES}
 
     for wid, window in enumerate(windows):
         outcome = run_window(wid, window, f0, adapter, estimator, eps, image_size)
@@ -150,8 +152,7 @@ def replay_windows(
                 evidence=outcome.evidence,
                 latency_ms=outcome.latency_ms,
                 frozen_pred=outcome.frozen_pred,
-                extra={"shadow_candidate_pred": outcome.candidate_pred,
-                       "upd_norm": outcome.upd_norm},
+                extra={"shadow_candidate_pred": outcome.candidate_pred, "upd_norm": outcome.upd_norm},
             )
         if collect_policies:
             for name, d in policy_decisions_for(outcome, eps, conf_tau, entropy_tau).items():

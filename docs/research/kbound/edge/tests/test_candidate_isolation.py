@@ -7,10 +7,10 @@ content hash is bit-identical and only the candidate has changed.
 
 import pytest
 
-torch = pytest.importorskip("torch")
+torch = pytest.importorskip("torch", exc_type=ImportError)
 
-from kbound_edge.model import build_model, state_dict_hash, bn_affine_param_names
-from kbound_edge.tent_adapter import EpisodicTentAdapter
+from kbound_edge.model import bn_affine_param_names, build_model, state_dict_hash  # noqa: E402
+from kbound_edge.tent_adapter import EpisodicTentAdapter  # noqa: E402
 
 
 def _batch(n=4, size=48):

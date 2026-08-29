@@ -4,16 +4,17 @@
 import argparse
 import os
 import sys
-import numpy as np
 
 import _common as C
+import numpy as np
 
 _HERE = os.path.dirname(os.path.abspath(__file__))
 _SRC = os.path.normpath(os.path.join(_HERE, "..", "src"))
 if _SRC not in sys.path:
     sys.path.insert(0, _SRC)
 
-from kbound_edge.logging import read_jsonl
+from kbound_edge.logging import read_jsonl  # noqa: E402
+from kbound_edge.reporting import protocol_inventory_macros  # noqa: E402
 
 
 def main():
@@ -28,14 +29,19 @@ def main():
     def _write_pending_tex(reason: str):
         tex_path = os.path.join(results_dir, "camera_tables_values.tex")
         elig_path = os.path.join(results_dir, "claim_eligibility.json")
-        C.save_json(elig_path, {
-            "publication_ready": False,
-            "reason": reason,
-            "headline_claim": "pending",
-        })
+        C.save_json(
+            elig_path,
+            {
+                "publication_ready": False,
+                "reason": reason,
+                "headline_claim": "pending",
+            },
+        )
         pending = "\\providecommand{\\CamPending}{RESULT PENDING --- NO MEASURED DATA AVAILABLE}\n"
         macros = [
-            "CameraRTwoBalAccKgaFull", "CameraRTwoRegretKgaFull", "CameraRTwoFAuKgaFull",
+            "CameraRTwoBalAccKgaFull",
+            "CameraRTwoRegretKgaFull",
+            "CameraRTwoFAuKgaFull",
             "CameraRTwoAbstainRateKgaFull",
         ]
         with open(tex_path, "w", encoding="utf-8") as fh:
@@ -57,33 +63,40 @@ def main():
         val_f1 = (mc.get("metrics") or {}).get("val_macro_f1", 0.0)
         abstain = (held.get("kga_full_metrics") or {}).get("abstain_rate", 1.0)
         held_bs = (held.get("bootstrap_results") or {}).get("kga_full", {})
-        held_bal = ((held_bs.get("balanced_acc") or {}).get("val"))
+        held_bal = (held_bs.get("balanced_acc") or {}).get("val")
         if bypass or val_bal < 0.80 or val_f1 < 0.80:
             _write_pending_tex("source model gate not met or bypass-gate used")
             return
         if held_bal is not None and held_bal <= 0.30 and abstain >= 0.95:
             _write_pending_tex("helpful-dominated development replay; not publication evidence")
             return
-    
+
     # 1. Load results JSONs
     heldout_metrics = C.load_json(os.path.join(results_dir, "heldout_metrics.json"))
-    replication_metrics = C.load_json(os.path.join(results_dir, "replication_metrics.json"))
+    C.load_json(os.path.join(results_dir, "replication_metrics.json"))
     ablation_results = C.load_json(os.path.join(results_dir, "ablation_results.json"))
     runtime_profile = C.load_json(os.path.join(results_dir, "runtime_profile.json"))
     anti_leakage_audit = C.load_json(os.path.join(results_dir, "anti_leakage_audit.json"))
-    recording_inventory = C.load_json(os.path.join(results_dir, "recording_inventory.json"))
-    calibration_summary = C.load_json(os.path.join(results_dir, "calibration_summary.json"))
+    C.load_json(os.path.join(results_dir, "recording_inventory.json"))
+    C.load_json(os.path.join(results_dir, "calibration_summary.json"))
 
     # Load held-out online log
     log_path = C.resolve(cfg["paths"]["heldout_log"])
     records = read_jsonl(log_path)
-    
+
     # Load true labels from held-out NPZs to map to shifts
     from kbound_edge.real_dataset import load_window
+
     windows_dir = C.resolve(cfg["paths"]["windows_dir"])
     split_dir = os.path.join(windows_dir, "heldout")
-    files = sorted([f for f in os.listdir(split_dir) if not f.startswith(".") and f.endswith(".npz") and (f.startswith("S07_") or f.startswith("S08_"))])
-    
+    files = sorted(
+        [
+            f
+            for f in os.listdir(split_dir)
+            if not f.startswith(".") and f.endswith(".npz") and (f.startswith("S07_") or f.startswith("S08_"))
+        ]
+    )
+
     true_labels = []
     for fname in files:
         _, off_load = load_window(os.path.join(split_dir, fname))
@@ -91,6 +104,7 @@ def main():
 
     # Load metadata mapping window_id to metadata dict
     from kbound_edge.real_manifest import expected_windows
+
     win_meta_map = {}
     for s_id in ["S07", "S08"]:
         for w in expected_windows(cfg, s_id):
@@ -134,7 +148,7 @@ def main():
     def fmt_percent_ci(bs_res, metric_key):
         val = bs_res[metric_key]["val"] * 100.0
         ci = bs_res[metric_key]["ci"]
-        return f"{val:.1f}\\% [{ci[0]*100.0:.1f}, {ci[1]*100.0:.1f}]"
+        return f"{val:.1f}\\% [{ci[0] * 100.0:.1f}, {ci[1] * 100.0:.1f}]"
 
     def fmt_decimal_ci(bs_res, metric_key, precision=4):
         val = bs_res[metric_key]["val"]
@@ -161,7 +175,7 @@ def main():
         macros[f"CameraRTwoFAc{p_macro}"] = fmt_decimal_ci(p_bs, "false_adapt_cond")
         macros[f"CameraRTwoAdaptRate{p_macro}"] = fmt_decimal_ci(p_bs, "adapt_rate", precision=3)
         macros[f"CameraRTwoAbstainRate{p_macro}"] = fmt_decimal_ci(p_bs, "abstain_rate", precision=3)
-        
+
         # Mean latency
         lat_mean = p_bs["mean_latency"]["val"]
         lat_ci = p_bs["mean_latency"]["ci"]
@@ -176,7 +190,7 @@ def main():
         "NewBackground": ["new_background", "viewpoint_45", "distance_scale"],
         "BatchComposition": ["batch_composition"],
     }
-    
+
     interpretations = {
         "MildLight": "Stable; KGA adapt/freeze safety preserved.",
         "SideShadow": "Abstained under shadow to avoid false adaptation.",
@@ -191,82 +205,46 @@ def main():
         for idx, meta in enumerate(record_metadata):
             if meta["shift_id"] in shift_ids:
                 group_indices.append(idx)
-        
+
         # Aggregate statistics
         n_wins = len(group_indices)
         macros[f"CameraRThreeWindows{group_name}"] = str(n_wins)
-        
+
         if n_wins > 0:
             B_sub = B_held[group_indices]
             # Always adapt regret
             aa_regret = np.maximum(B_sub, 0.0) - B_sub
             macros[f"CameraRThreeAlwaysAdaptRegret{group_name}"] = f"{aa_regret.mean():.4f}"
-            
+
             # KGA regret
             kga_decs = [records[i]["decision"] for i in group_indices]
             kga_realised = np.array([B_sub[i] if dec == "adapt" else 0.0 for i, dec in enumerate(kga_decs)])
             kga_regret = np.maximum(B_sub, 0.0) - kga_realised
             macros[f"CameraRThreeKgaRegret{group_name}"] = f"{kga_regret.mean():.4f}"
-            
+
             # Decision pattern (A/F/U)
             from collections import Counter
+
             counts = Counter(kga_decs)
-            macros[f"CameraRThreeDecisionPattern{group_name}"] = f"{counts['adapt']}/{counts['freeze']}/{counts['abstain']}"
+            macros[f"CameraRThreeDecisionPattern{group_name}"] = (
+                f"{counts['adapt']}/{counts['freeze']}/{counts['abstain']}"
+            )
         else:
             macros[f"CameraRThreeAlwaysAdaptRegret{group_name}"] = "\\CamPending"
             macros[f"CameraRThreeKgaRegret{group_name}"] = "\\CamPending"
             macros[f"CameraRThreeDecisionPattern{group_name}"] = "0/0/0"
-            
+
         macros[f"CameraRThreeInterpretation{group_name}"] = interpretations[group_name]
 
     # --- TABLE S1 ---
-    # Dataset inventory details
-    macros["CameraSOneSessionSourceTrain"] = "Day 1 / S01"
-    macros["CameraSOneObjectsSourceTrain"] = "P01--P06"
-    macros["CameraSOneWindowsSourceTrain"] = "240"
-    macros["CameraSOneFramesSourceTrain"] = "7,680"
-    macros["CameraSOneLabelsSourceTrain"] = "60/60/60/60"
-
-    macros["CameraSOneSessionSourceVal"] = "Day 1 / S02"
-    macros["CameraSOneObjectsSourceVal"] = "P07, P08"
-    macros["CameraSOneWindowsSourceVal"] = "80"
-    macros["CameraSOneFramesSourceVal"] = "2,560"
-    macros["CameraSOneLabelsSourceVal"] = "20/20/20/20"
-
-    # S03 + S04 (physical + derived)
-    macros["CameraSOneSessionCalibrationFit"] = "Day 2 / S03, S04"
-    macros["CameraSOneObjectsCalibrationFit"] = "P01--P08"
-    macros["CameraSOneWindowsCalibrationFit"] = "256"
-    macros["CameraSOneFramesCalibrationFit"] = "8,192"
-    macros["CameraSOneLabelsCalibrationFit"] = "92/96/82/82"
-
-    # S05 + S06
-    macros["CameraSOneSessionCalibrationConformal"] = "Day 3 / S05, S06"
-    macros["CameraSOneObjectsCalibrationConformal"] = "P01--P08"
-    macros["CameraSOneWindowsCalibrationConformal"] = "256"
-    macros["CameraSOneFramesCalibrationConformal"] = "8,192"
-    macros["CameraSOneLabelsCalibrationConformal"] = "92/96/82/82"
-
-    # S07 + S08
-    macros["CameraSOneSessionHeldoutTest"] = "Day 4 / S07, S08"
-    macros["CameraSOneObjectsHeldoutTest"] = "P09, P10"
-    macros["CameraSOneWindowsHeldoutTest"] = "256"
-    macros["CameraSOneFramesHeldoutTest"] = "8,192"
-    macros["CameraSOneLabelsHeldoutTest"] = "92/96/82/82"
-
-    # S09 + S10 (Replication Phone B)
-    macros["CameraSOneSessionReplication"] = "Day 5 / S09, S10"
-    macros["CameraSOneObjectsReplication"] = "P09, P10"
-    macros["CameraSOneWindowsReplication"] = "256"
-    macros["CameraSOneFramesReplication"] = "8,192"
-    macros["CameraSOneLabelsReplication"] = "92/96/82/82"
+    macros.update(protocol_inventory_macros(cfg))
 
     # --- TABLE S2 ---
     # Anti-leakage audit results
     audit_checks = anti_leakage_audit["checks"]
     for idx, c in enumerate(audit_checks):
         status = "PASS" if c["passed"] else "FAIL"
-        macros[f"CameraSTwoCheck{['One','Two','Three','Four','Five','Six','Seven','Eight'][idx]}"] = status
+        macros[f"CameraSTwoCheck{['One', 'Two', 'Three', 'Four', 'Five', 'Six', 'Seven', 'Eight'][idx]}"] = status
 
     # --- TABLE S3 ---
     # Per-condition held-out audit trail
@@ -277,8 +255,8 @@ def main():
         "HThree": ("Lens blur", "motion_blur"),
         "HFour": ("Background shift", "new_background"),
     }
-    
-    for h_macro, (shift_name, shift_id) in shift_h_map.items():
+
+    for h_macro, (_, shift_id) in shift_h_map.items():
         indices = [idx for idx, meta in enumerate(record_metadata) if meta["shift_id"] == shift_id]
         if indices:
             B_sub = B_held[indices]
@@ -287,17 +265,22 @@ def main():
             kga_decs = [records[i]["decision"] for i in indices]
             kga_realised = np.array([B_sub[i] if dec == "adapt" else 0.0 for i, dec in enumerate(kga_decs)])
             regret = np.maximum(B_sub, 0.0) - kga_realised
-            
+
             from collections import Counter
+
             counts = Counter(kga_decs)
             dominant_dec = counts.most_common(1)[0][0]
-            
+
             macros[f"CameraSThree{h_macro}Delta"] = f"{B_sub.mean():+.4f}"
             macros[f"CameraSThree{h_macro}Oracle"] = "Adapt" if B_sub.mean() > 0 else "Freeze"
             macros[f"CameraSThree{h_macro}Freeze"] = f"{froz_acc.mean():.4f}"
             macros[f"CameraSThree{h_macro}Adapt"] = f"{cand_acc.mean():.4f}"
             macros[f"CameraSThree{h_macro}Kga"] = dominant_dec.capitalize()
-            macros[f"CameraSThree{h_macro}Correct"] = "Yes" if (B_sub.mean() > 0 and dominant_dec == "adapt") or (B_sub.mean() <= 0 and dominant_dec != "adapt") else "No"
+            macros[f"CameraSThree{h_macro}Correct"] = (
+                "Yes"
+                if (B_sub.mean() > 0 and dominant_dec == "adapt") or (B_sub.mean() <= 0 and dominant_dec != "adapt")
+                else "No"
+            )
             macros[f"CameraSThree{h_macro}Regret"] = f"{regret.mean():.4f}"
         else:
             macros[f"CameraSThree{h_macro}Delta"] = "\\CamPending"
@@ -319,12 +302,12 @@ def main():
         "FullWindow": "end_to_end",
         "VideoCapture": "capture_preprocess",
     }
-    
+
     for macro_suffix, stage_key in stage_map.items():
         stats = runtime_profile[stage_key]
         macros[f"CameraSFourMean{macro_suffix}"] = f"{stats['mean_ms']:.1f}"
         macros[f"CameraSFourPNinetyFive{macro_suffix}"] = f"{stats['p95_ms']:.1f}"
-        
+
         # Memory MB
         mem_mb = runtime_profile["metadata"]["rss_mem_before_mb"]
         macros[f"CameraSFourMemory{macro_suffix}"] = f"{mem_mb:.1f}"
@@ -339,7 +322,7 @@ def main():
         "ConfidenceOnly": "confidence_only",
         "EntropyOnly": "entropy_only",
     }
-    
+
     for macro_suffix, variant_key in ablation_variant_map.items():
         stats = ablation_results[variant_key]
         macros[f"CameraSFiveRegret{macro_suffix}"] = f"{stats['regret']:.4f}"
@@ -355,7 +338,7 @@ def main():
         fh.write(f"% Generated: {anti_leakage_audit.get('sealed_at', '2026-06-25')}\n\n")
         for name, val in sorted(macros.items()):
             fh.write(f"\\def\\{name}{{{val}}}\n")
-            
+
     print(f"[11] Exported {len(macros)} macros to: {tex_path}")
 
 

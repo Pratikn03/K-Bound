@@ -1,0 +1,2921 @@
+{
+  "schema": "kbound_imagenetr_v0.5",
+  "dataset": "imagenet-r",
+  "created": "2026-08-26T16:14:33",
+  "host": {
+    "platform": "macOS-26.6.2-arm64-arm-64bit",
+    "torch": "2.13.0",
+    "mps": true
+  },
+  "config": {
+    "imagenetr_dir": "/Users/pratik_n/Documents/AutoML_Flagship_V8/experiments/kbound/data/imagenet-r",
+    "panel": "shared_tta",
+    "f0_backbone": "resnet50",
+    "candidate_backbones": [
+      "resnet101",
+      "resnet152",
+      "resnext101_32x8d",
+      "efficientnet_b0",
+      "efficientnet_b3",
+      "convnext_tiny",
+      "convnext_base",
+      "vit_b_16",
+      "swin_t",
+      "swin_b"
+    ],
+    "seeds": [
+      0,
+      1
+    ],
+    "compositions": [
+      "iid",
+      "single_class"
+    ],
+    "batch_regimes": [
+      "tiny"
+    ],
+    "aggressiveness": [
+      "mild"
+    ],
+    "n_eval": 40,
+    "n_batches": 2,
+    "tau_star": 0.52,
+    "kappa": 2.5,
+    "sd_L": 0.6,
+    "delta": 0.05,
+    "device": "cpu",
+    "steps_override": 4,
+    "max_classes": 20,
+    "episodic_steps": 5,
+    "episodic_batch": 64,
+    "frozen_eval_batch": 32,
+    "smoke": true,
+    "adapt_lr": null,
+    "online_only": false
+  },
+  "config_sha8": "4827f335",
+  "f0": "torchvision resnet50 IMAGENET1K_V2; 1000 logits masked to 200 ImageNet-R classes (frozen)",
+  "num_classes": 20,
+  "candidates": [
+    "tent_online",
+    "tent_episodic",
+    "eata_online",
+    "eata_episodic",
+    "sar_online",
+    "sar_episodic"
+  ],
+  "panel": "shared_tta",
+  "multiclass_caveat": "multi-candidate tau-route (b) uses prediction agreement on a 200-class label space; the binary-Y advantage recovery (Thm 1A) is heuristic here, so per-condition tau is stored for re-pick. (a) KGA and (c) smooth-drift (max-prob Brier) generalize directly.",
+  "data": {
+    "n_images": 3231,
+    "n_classes": 20,
+    "wall_sec": 894.0
+  },
+  "baselines": {
+    "always_freeze_mean_acc": 0.55625,
+    "per_candidate_always_adapt_mean_acc": {
+      "eata_episodic": 0.59375,
+      "eata_online": 0.5874999999999999,
+      "sar_episodic": 0.575,
+      "sar_online": 0.58125,
+      "tent_episodic": 0.6000000000000001,
+      "tent_online": 0.6000000000000001
+    },
+    "per_condition_oracle_mean_acc": 0.6125
+  },
+  "routing_a_single_candidate": {
+    "eata_episodic": {
+      "n_cells": 4,
+      "mean_B": 0.037500000000000006,
+      "base_rate_harmful_B<0": 0.25,
+      "mean_acc": {
+        "always_adapt": 0.59375,
+        "always_freeze": 0.55625
+      },
+      "kga": {
+        "n": 4,
+        "decision_counts": {
+          "ADAPT": 0,
+          "FREEZE": 0,
+          "ABSTAIN": 4
+        },
+        "coverage": 0.0,
+        "abstention_rate": 1.0,
+        "adapt_precision_B>0": null,
+        "false_adapt_unconditional": 0.0,
+        "false_adapt_conditional": null,
+        "n_false_adapt": 0,
+        "false_adapt_definition": "false adapt := ADAPT and B <= 0; fa_u marginal (bounded by thm:certificate), fa_c conditional",
+        "false_adapt_rate_B<0": null,
+        "mean_acc": {
+          "always_adapt": 0.59375,
+          "always_freeze": 0.55625,
+          "K_Bound": 0.55625,
+          "oracle": 0.60625
+        },
+        "regret_vs_oracle": {
+          "always_adapt": 0.012500000000000011,
+          "always_freeze": 0.05000000000000002,
+          "K_Bound": 0.05000000000000002
+        },
+        "worst_case_acc": {
+          "always_adapt": 0.475,
+          "always_freeze": 0.475,
+          "K_Bound": 0.475
+        },
+        "alpha_false_adapt_budget": 0.1,
+        "beats_both_regret_only": false,
+        "beats_both": false,
+        "beats_both_gate": "regret vs both fixed policies AND fa_u <= alpha (fa_u = Pr[ADAPT and B <= 0])",
+        "eps_conformal": Infinity,
+        "eps_conformal_is": "mean of the per-cell leave-one-out-of-pool radii",
+        "eps_conformal_min": Infinity,
+        "eps_conformal_max": Infinity
+      }
+    },
+    "eata_online": {
+      "n_cells": 4,
+      "mean_B": 0.03125,
+      "base_rate_harmful_B<0": 0.25,
+      "mean_acc": {
+        "always_adapt": 0.5874999999999999,
+        "always_freeze": 0.55625
+      },
+      "kga": {
+        "n": 4,
+        "decision_counts": {
+          "ADAPT": 0,
+          "FREEZE": 0,
+          "ABSTAIN": 4
+        },
+        "coverage": 0.0,
+        "abstention_rate": 1.0,
+        "adapt_precision_B>0": null,
+        "false_adapt_unconditional": 0.0,
+        "false_adapt_conditional": null,
+        "n_false_adapt": 0,
+        "false_adapt_definition": "false adapt := ADAPT and B <= 0; fa_u marginal (bounded by thm:certificate), fa_c conditional",
+        "false_adapt_rate_B<0": null,
+        "mean_acc": {
+          "always_adapt": 0.5874999999999999,
+          "always_freeze": 0.55625,
+          "K_Bound": 0.55625,
+          "oracle": 0.6000000000000001
+        },
+        "regret_vs_oracle": {
+          "always_adapt": 0.012500000000000011,
+          "always_freeze": 0.04375000000000001,
+          "K_Bound": 0.04375000000000001
+        },
+        "worst_case_acc": {
+          "always_adapt": 0.475,
+          "always_freeze": 0.475,
+          "K_Bound": 0.475
+        },
+        "alpha_false_adapt_budget": 0.1,
+        "beats_both_regret_only": false,
+        "beats_both": false,
+        "beats_both_gate": "regret vs both fixed policies AND fa_u <= alpha (fa_u = Pr[ADAPT and B <= 0])",
+        "eps_conformal": Infinity,
+        "eps_conformal_is": "mean of the per-cell leave-one-out-of-pool radii",
+        "eps_conformal_min": Infinity,
+        "eps_conformal_max": Infinity
+      }
+    },
+    "sar_episodic": {
+      "n_cells": 4,
+      "mean_B": 0.01874999999999999,
+      "base_rate_harmful_B<0": 0.25,
+      "mean_acc": {
+        "always_adapt": 0.575,
+        "always_freeze": 0.55625
+      },
+      "kga": {
+        "n": 4,
+        "decision_counts": {
+          "ADAPT": 0,
+          "FREEZE": 0,
+          "ABSTAIN": 4
+        },
+        "coverage": 0.0,
+        "abstention_rate": 1.0,
+        "adapt_precision_B>0": null,
+        "false_adapt_unconditional": 0.0,
+        "false_adapt_conditional": null,
+        "n_false_adapt": 0,
+        "false_adapt_definition": "false adapt := ADAPT and B <= 0; fa_u marginal (bounded by thm:certificate), fa_c conditional",
+        "false_adapt_rate_B<0": null,
+        "mean_acc": {
+          "always_adapt": 0.575,
+          "always_freeze": 0.55625,
+          "K_Bound": 0.55625,
+          "oracle": 0.5875
+        },
+        "regret_vs_oracle": {
+          "always_adapt": 0.012500000000000011,
+          "always_freeze": 0.03125,
+          "K_Bound": 0.03125
+        },
+        "worst_case_acc": {
+          "always_adapt": 0.475,
+          "always_freeze": 0.475,
+          "K_Bound": 0.475
+        },
+        "alpha_false_adapt_budget": 0.1,
+        "beats_both_regret_only": false,
+        "beats_both": false,
+        "beats_both_gate": "regret vs both fixed policies AND fa_u <= alpha (fa_u = Pr[ADAPT and B <= 0])",
+        "eps_conformal": Infinity,
+        "eps_conformal_is": "mean of the per-cell leave-one-out-of-pool radii",
+        "eps_conformal_min": Infinity,
+        "eps_conformal_max": Infinity
+      }
+    },
+    "sar_online": {
+      "n_cells": 4,
+      "mean_B": 0.024999999999999994,
+      "base_rate_harmful_B<0": 0.25,
+      "mean_acc": {
+        "always_adapt": 0.58125,
+        "always_freeze": 0.55625
+      },
+      "kga": {
+        "n": 4,
+        "decision_counts": {
+          "ADAPT": 0,
+          "FREEZE": 0,
+          "ABSTAIN": 4
+        },
+        "coverage": 0.0,
+        "abstention_rate": 1.0,
+        "adapt_precision_B>0": null,
+        "false_adapt_unconditional": 0.0,
+        "false_adapt_conditional": null,
+        "n_false_adapt": 0,
+        "false_adapt_definition": "false adapt := ADAPT and B <= 0; fa_u marginal (bounded by thm:certificate), fa_c conditional",
+        "false_adapt_rate_B<0": null,
+        "mean_acc": {
+          "always_adapt": 0.58125,
+          "always_freeze": 0.55625,
+          "K_Bound": 0.55625,
+          "oracle": 0.59375
+        },
+        "regret_vs_oracle": {
+          "always_adapt": 0.012500000000000011,
+          "always_freeze": 0.037500000000000006,
+          "K_Bound": 0.037500000000000006
+        },
+        "worst_case_acc": {
+          "always_adapt": 0.475,
+          "always_freeze": 0.475,
+          "K_Bound": 0.475
+        },
+        "alpha_false_adapt_budget": 0.1,
+        "beats_both_regret_only": false,
+        "beats_both": false,
+        "beats_both_gate": "regret vs both fixed policies AND fa_u <= alpha (fa_u = Pr[ADAPT and B <= 0])",
+        "eps_conformal": Infinity,
+        "eps_conformal_is": "mean of the per-cell leave-one-out-of-pool radii",
+        "eps_conformal_min": Infinity,
+        "eps_conformal_max": Infinity
+      }
+    },
+    "tent_episodic": {
+      "n_cells": 4,
+      "mean_B": 0.04375000000000001,
+      "base_rate_harmful_B<0": 0.25,
+      "mean_acc": {
+        "always_adapt": 0.6000000000000001,
+        "always_freeze": 0.55625
+      },
+      "kga": {
+        "n": 4,
+        "decision_counts": {
+          "ADAPT": 0,
+          "FREEZE": 0,
+          "ABSTAIN": 4
+        },
+        "coverage": 0.0,
+        "abstention_rate": 1.0,
+        "adapt_precision_B>0": null,
+        "false_adapt_unconditional": 0.0,
+        "false_adapt_conditional": null,
+        "n_false_adapt": 0,
+        "false_adapt_definition": "false adapt := ADAPT and B <= 0; fa_u marginal (bounded by thm:certificate), fa_c conditional",
+        "false_adapt_rate_B<0": null,
+        "mean_acc": {
+          "always_adapt": 0.6000000000000001,
+          "always_freeze": 0.55625,
+          "K_Bound": 0.55625,
+          "oracle": 0.6125
+        },
+        "regret_vs_oracle": {
+          "always_adapt": 0.012500000000000011,
+          "always_freeze": 0.05625000000000002,
+          "K_Bound": 0.05625000000000002
+        },
+        "worst_case_acc": {
+          "always_adapt": 0.475,
+          "always_freeze": 0.475,
+          "K_Bound": 0.475
+        },
+        "alpha_false_adapt_budget": 0.1,
+        "beats_both_regret_only": false,
+        "beats_both": false,
+        "beats_both_gate": "regret vs both fixed policies AND fa_u <= alpha (fa_u = Pr[ADAPT and B <= 0])",
+        "eps_conformal": Infinity,
+        "eps_conformal_is": "mean of the per-cell leave-one-out-of-pool radii",
+        "eps_conformal_min": Infinity,
+        "eps_conformal_max": Infinity
+      }
+    },
+    "tent_online": {
+      "n_cells": 4,
+      "mean_B": 0.04375000000000001,
+      "base_rate_harmful_B<0": 0.25,
+      "mean_acc": {
+        "always_adapt": 0.6000000000000001,
+        "always_freeze": 0.55625
+      },
+      "kga": {
+        "n": 4,
+        "decision_counts": {
+          "ADAPT": 0,
+          "FREEZE": 0,
+          "ABSTAIN": 4
+        },
+        "coverage": 0.0,
+        "abstention_rate": 1.0,
+        "adapt_precision_B>0": null,
+        "false_adapt_unconditional": 0.0,
+        "false_adapt_conditional": null,
+        "n_false_adapt": 0,
+        "false_adapt_definition": "false adapt := ADAPT and B <= 0; fa_u marginal (bounded by thm:certificate), fa_c conditional",
+        "false_adapt_rate_B<0": null,
+        "mean_acc": {
+          "always_adapt": 0.6000000000000001,
+          "always_freeze": 0.55625,
+          "K_Bound": 0.55625,
+          "oracle": 0.6125
+        },
+        "regret_vs_oracle": {
+          "always_adapt": 0.012500000000000011,
+          "always_freeze": 0.05625000000000002,
+          "K_Bound": 0.05625000000000002
+        },
+        "worst_case_acc": {
+          "always_adapt": 0.475,
+          "always_freeze": 0.475,
+          "K_Bound": 0.475
+        },
+        "alpha_false_adapt_budget": 0.1,
+        "beats_both_regret_only": false,
+        "beats_both": false,
+        "beats_both_gate": "regret vs both fixed policies AND fa_u <= alpha (fa_u = Pr[ADAPT and B <= 0])",
+        "eps_conformal": Infinity,
+        "eps_conformal_is": "mean of the per-cell leave-one-out-of-pool radii",
+        "eps_conformal_min": Infinity,
+        "eps_conformal_max": Infinity
+      }
+    }
+  },
+  "routing_b_multicandidate": {
+    "n_conditions": 4,
+    "mean_acc": {
+      "router": 0.55625,
+      "always_freeze": 0.55625,
+      "best_fixed_always_adapt": 0.6000000000000001,
+      "per_condition_oracle": 0.6125
+    },
+    "regret_vs_oracle": {
+      "router": 0.05625000000000002,
+      "always_freeze": 0.05625000000000002,
+      "best_fixed_always_adapt": 0.012500000000000011
+    },
+    "coverage": 0.0,
+    "abstention_rate": 0.0,
+    "false_adapt_rate": null,
+    "mean_tau": null,
+    "gate_pass_rate": 0.0,
+    "fixed_best_candidate": "tent_online",
+    "routing_breakdown": {
+      "ERROR": 4
+    },
+    "decisions_by_regime": {
+      "helpful": {
+        "ERROR": 3
+      },
+      "harmful": {
+        "ERROR": 1
+      }
+    },
+    "decisions_by_domain": {
+      "imagenet_r": {
+        "ERROR": 4
+      }
+    },
+    "alpha_false_adapt_budget": 0.1,
+    "beats_both_regret_only": false,
+    "beats_both": false
+  },
+  "routing_c_smooth_drift": {
+    "implemented": false,
+    "theorem": "1B",
+    "reason": "val_smooth_drift import failed: ModuleNotFoundError(\"No module named 'matplotlib'\")",
+    "note": "smooth-drift route not executed"
+  },
+  "detectability": {
+    "n_cells": 24,
+    "n_harmful": 6,
+    "base_rate_harmful": 0.25,
+    "mean_B": 0.03333333333333333,
+    "per_feature": {
+      "pre_entropy": {
+        "pearson_corr_B": -0.38228375961175304,
+        "harm_AUC": 0.6666666666666666
+      },
+      "pre_conf": {
+        "pearson_corr_B": 0.31502977732821336,
+        "harm_AUC": 0.6666666666666666
+      },
+      "pre_pbal": {
+        "pearson_corr_B": 0.21611172044324484,
+        "harm_AUC": 1.0
+      },
+      "post_entropy": {
+        "pearson_corr_B": -0.6810106462750334,
+        "harm_AUC": 0.6666666666666666
+      },
+      "post_conf": {
+        "pearson_corr_B": 0.6610098625418028,
+        "harm_AUC": 0.6296296296296297
+      },
+      "post_pbal": {
+        "pearson_corr_B": -0.6561780874976457,
+        "harm_AUC": 0.5925925925925926
+      },
+      "pbal_drop": {
+        "pearson_corr_B": 0.5496188458701281,
+        "harm_AUC": 1.0
+      },
+      "entropy_drop": {
+        "pearson_corr_B": 0.2995307292328503,
+        "harm_AUC": 0.9259259259259259
+      },
+      "frac_highconf": {
+        "pearson_corr_B": 0.7800001688019941,
+        "harm_AUC": 0.6851851851851852
+      },
+      "marginal_KL": {
+        "pearson_corr_B": -0.5721203016825276,
+        "harm_AUC": 1.0
+      },
+      "update_norm": {
+        "pearson_corr_B": 0.34144847583937366,
+        "harm_AUC": 0.6574074074074074
+      }
+    },
+    "certificate_harm_AUC_negBhat": 1.0,
+    "certificate_eps": 0.023954407216923063,
+    "certificate_eps_is": "mean of the per-cell leave-one-out-of-pool radii",
+    "certificate_eps_min": 0.019096645703129224,
+    "certificate_eps_max": 0.024396021899995235,
+    "best_single_feature_harm_AUC": 1.0,
+    "detectability_verdict": "detectable"
+  },
+  "kbound_summary": {
+    "classification": "mixed+detectable",
+    "base_rate_harmful_B<0": 0.25,
+    "mean_B": 0.03333333333333333,
+    "detectability_verdict": "detectable",
+    "best_single_feature_harm_AUC": 1.0,
+    "gamma_S_proxy_indist_advantage": null,
+    "gamma_T_proxy_oracle_advantage": null,
+    "delta": 0.05,
+    "abs_gammaT_minus_gammaS": null,
+    "gamma_gap_within_delta": null,
+    "real_data_multicandidate_tau_mean": null,
+    "_note": "gamma_S/gamma_T are operational debug-scale proxies (in-dist vs OOD adaptation advantage); final defs follow the paper. Classification honors the integrity policy: reported from measured B, never tuned to a target."
+  },
+  "tau_distribution": [],
+  "records": [
+    {
+      "seed": 0,
+      "domain": "imagenet_r",
+      "comp": "iid",
+      "regime": "tiny",
+      "aggr": "mild",
+      "method": "tent",
+      "mode": "online",
+      "candidate": "tent_online",
+      "a0": 0.575,
+      "aa": 0.625,
+      "B": 0.050000000000000044,
+      "upd_norm": 1.219393916970809,
+      "Z": [
+        2.2215123176574707,
+        0.34258437156677246,
+        0.9328213242102024,
+        1.8555634021759033,
+        0.46675920486450195,
+        0.9156652719566961,
+        0.01715605225350625,
+        0.3659489154815674,
+        0.25,
+        0.12831789255142212,
+        1.219393916970809
+      ],
+      "regime_label": "helpful",
+      "c_ij": [
+        [
+          1.0,
+          0.25,
+          0.30000000000000004,
+          0.3500000000000001,
+          0.25,
+          0.25,
+          0.19999999999999996
+        ],
+        [
+          0.25,
+          1.0,
+          0.8500000000000001,
+          0.8,
+          0.8500000000000001,
+          0.8,
+          0.75
+        ],
+        [
+          0.30000000000000004,
+          0.8500000000000001,
+          1.0,
+          0.8500000000000001,
+          0.8999999999999999,
+          0.8500000000000001,
+          0.8
+        ],
+        [
+          0.3500000000000001,
+          0.8,
+          0.8500000000000001,
+          1.0,
+          0.8999999999999999,
+          0.8500000000000001,
+          0.8
+        ],
+        [
+          0.25,
+          0.8500000000000001,
+          0.8999999999999999,
+          0.8999999999999999,
+          1.0,
+          0.95,
+          0.8999999999999999
+        ],
+        [
+          0.25,
+          0.8,
+          0.8500000000000001,
+          0.8500000000000001,
+          0.95,
+          1.0,
+          0.95
+        ],
+        [
+          0.19999999999999996,
+          0.75,
+          0.8,
+          0.8,
+          0.8999999999999999,
+          0.95,
+          1.0
+        ]
+      ],
+      "n_D": 17
+    },
+    {
+      "seed": 0,
+      "domain": "imagenet_r",
+      "comp": "iid",
+      "regime": "tiny",
+      "aggr": "mild",
+      "method": "tent",
+      "mode": "episodic",
+      "candidate": "tent_episodic",
+      "a0": 0.575,
+      "aa": 0.625,
+      "B": 0.050000000000000044,
+      "upd_norm": 1.0153685492142877,
+      "Z": [
+        2.2215123176574707,
+        0.34258437156677246,
+        0.9328213242102024,
+        1.8859820365905762,
+        0.45832639932632446,
+        0.918346765645763,
+        0.014474558564439355,
+        0.33553028106689453,
+        0.25,
+        0.1269083321094513,
+        1.0153685492142877
+      ],
+      "regime_label": "helpful",
+      "c_ij": [
+        [
+          1.0,
+          0.25,
+          0.30000000000000004,
+          0.3500000000000001,
+          0.25,
+          0.25,
+          0.19999999999999996
+        ],
+        [
+          0.25,
+          1.0,
+          0.8500000000000001,
+          0.8,
+          0.8500000000000001,
+          0.8,
+          0.75
+        ],
+        [
+          0.30000000000000004,
+          0.8500000000000001,
+          1.0,
+          0.8500000000000001,
+          0.8999999999999999,
+          0.8500000000000001,
+          0.8
+        ],
+        [
+          0.3500000000000001,
+          0.8,
+          0.8500000000000001,
+          1.0,
+          0.8999999999999999,
+          0.8500000000000001,
+          0.8
+        ],
+        [
+          0.25,
+          0.8500000000000001,
+          0.8999999999999999,
+          0.8999999999999999,
+          1.0,
+          0.95,
+          0.8999999999999999
+        ],
+        [
+          0.25,
+          0.8,
+          0.8500000000000001,
+          0.8500000000000001,
+          0.95,
+          1.0,
+          0.95
+        ],
+        [
+          0.19999999999999996,
+          0.75,
+          0.8,
+          0.8,
+          0.8999999999999999,
+          0.95,
+          1.0
+        ]
+      ],
+      "n_D": 17
+    },
+    {
+      "seed": 0,
+      "domain": "imagenet_r",
+      "comp": "iid",
+      "regime": "tiny",
+      "aggr": "mild",
+      "method": "eata",
+      "mode": "online",
+      "candidate": "eata_online",
+      "a0": 0.575,
+      "aa": 0.6,
+      "B": 0.025000000000000022,
+      "upd_norm": 1.1170852549113763,
+      "Z": [
+        2.2215123176574707,
+        0.34258437156677246,
+        0.9328213242102024,
+        2.300575017929077,
+        0.3244463801383972,
+        0.953225045503858,
+        -0.02040372129365564,
+        -0.07906270027160645,
+        0.125,
+        0.12135129421949387,
+        1.1170852549113763
+      ],
+      "regime_label": "helpful",
+      "c_ij": [
+        [
+          1.0,
+          0.25,
+          0.30000000000000004,
+          0.3500000000000001,
+          0.25,
+          0.25,
+          0.19999999999999996
+        ],
+        [
+          0.25,
+          1.0,
+          0.8500000000000001,
+          0.8,
+          0.8500000000000001,
+          0.8,
+          0.75
+        ],
+        [
+          0.30000000000000004,
+          0.8500000000000001,
+          1.0,
+          0.8500000000000001,
+          0.8999999999999999,
+          0.8500000000000001,
+          0.8
+        ],
+        [
+          0.3500000000000001,
+          0.8,
+          0.8500000000000001,
+          1.0,
+          0.8999999999999999,
+          0.8500000000000001,
+          0.8
+        ],
+        [
+          0.25,
+          0.8500000000000001,
+          0.8999999999999999,
+          0.8999999999999999,
+          1.0,
+          0.95,
+          0.8999999999999999
+        ],
+        [
+          0.25,
+          0.8,
+          0.8500000000000001,
+          0.8500000000000001,
+          0.95,
+          1.0,
+          0.95
+        ],
+        [
+          0.19999999999999996,
+          0.75,
+          0.8,
+          0.8,
+          0.8999999999999999,
+          0.95,
+          1.0
+        ]
+      ],
+      "n_D": 17
+    },
+    {
+      "seed": 0,
+      "domain": "imagenet_r",
+      "comp": "iid",
+      "regime": "tiny",
+      "aggr": "mild",
+      "method": "eata",
+      "mode": "episodic",
+      "candidate": "eata_episodic",
+      "a0": 0.575,
+      "aa": 0.6,
+      "B": 0.025000000000000022,
+      "upd_norm": 0.9343993529219898,
+      "Z": [
+        2.2215123176574707,
+        0.34258437156677246,
+        0.9328213242102024,
+        2.3036718368530273,
+        0.3230065107345581,
+        0.9532524231143124,
+        -0.02043109890410999,
+        -0.08215951919555664,
+        0.125,
+        0.12165626883506775,
+        0.9343993529219898
+      ],
+      "regime_label": "helpful",
+      "c_ij": [
+        [
+          1.0,
+          0.25,
+          0.30000000000000004,
+          0.3500000000000001,
+          0.25,
+          0.25,
+          0.19999999999999996
+        ],
+        [
+          0.25,
+          1.0,
+          0.8500000000000001,
+          0.8,
+          0.8500000000000001,
+          0.8,
+          0.75
+        ],
+        [
+          0.30000000000000004,
+          0.8500000000000001,
+          1.0,
+          0.8500000000000001,
+          0.8999999999999999,
+          0.8500000000000001,
+          0.8
+        ],
+        [
+          0.3500000000000001,
+          0.8,
+          0.8500000000000001,
+          1.0,
+          0.8999999999999999,
+          0.8500000000000001,
+          0.8
+        ],
+        [
+          0.25,
+          0.8500000000000001,
+          0.8999999999999999,
+          0.8999999999999999,
+          1.0,
+          0.95,
+          0.8999999999999999
+        ],
+        [
+          0.25,
+          0.8,
+          0.8500000000000001,
+          0.8500000000000001,
+          0.95,
+          1.0,
+          0.95
+        ],
+        [
+          0.19999999999999996,
+          0.75,
+          0.8,
+          0.8,
+          0.8999999999999999,
+          0.95,
+          1.0
+        ]
+      ],
+      "n_D": 17
+    },
+    {
+      "seed": 0,
+      "domain": "imagenet_r",
+      "comp": "iid",
+      "regime": "tiny",
+      "aggr": "mild",
+      "method": "sar",
+      "mode": "online",
+      "candidate": "sar_online",
+      "a0": 0.575,
+      "aa": 0.6,
+      "B": 0.025000000000000022,
+      "upd_norm": 0.07503767201204056,
+      "Z": [
+        2.2215123176574707,
+        0.34258437156677246,
+        0.9328213242102024,
+        2.4069597721099854,
+        0.30201229453086853,
+        0.9603242827356908,
+        -0.027502958525488452,
+        -0.18544745445251465,
+        0.0,
+        0.1098540723323822,
+        0.07503767201204056
+      ],
+      "regime_label": "helpful",
+      "c_ij": [
+        [
+          1.0,
+          0.25,
+          0.30000000000000004,
+          0.3500000000000001,
+          0.25,
+          0.25,
+          0.19999999999999996
+        ],
+        [
+          0.25,
+          1.0,
+          0.8500000000000001,
+          0.8,
+          0.8500000000000001,
+          0.8,
+          0.75
+        ],
+        [
+          0.30000000000000004,
+          0.8500000000000001,
+          1.0,
+          0.8500000000000001,
+          0.8999999999999999,
+          0.8500000000000001,
+          0.8
+        ],
+        [
+          0.3500000000000001,
+          0.8,
+          0.8500000000000001,
+          1.0,
+          0.8999999999999999,
+          0.8500000000000001,
+          0.8
+        ],
+        [
+          0.25,
+          0.8500000000000001,
+          0.8999999999999999,
+          0.8999999999999999,
+          1.0,
+          0.95,
+          0.8999999999999999
+        ],
+        [
+          0.25,
+          0.8,
+          0.8500000000000001,
+          0.8500000000000001,
+          0.95,
+          1.0,
+          0.95
+        ],
+        [
+          0.19999999999999996,
+          0.75,
+          0.8,
+          0.8,
+          0.8999999999999999,
+          0.95,
+          1.0
+        ]
+      ],
+      "n_D": 17
+    },
+    {
+      "seed": 0,
+      "domain": "imagenet_r",
+      "comp": "iid",
+      "regime": "tiny",
+      "aggr": "mild",
+      "method": "sar",
+      "mode": "episodic",
+      "candidate": "sar_episodic",
+      "a0": 0.575,
+      "aa": 0.575,
+      "B": 0.0,
+      "upd_norm": 0.060984552855196626,
+      "Z": [
+        2.2215123176574707,
+        0.34258437156677246,
+        0.9328213242102024,
+        2.412471294403076,
+        0.3006611466407776,
+        0.9607611307118071,
+        -0.02793980650160477,
+        -0.19095897674560547,
+        0.0,
+        0.1096099466085434,
+        0.060984552855196626
+      ],
+      "regime_label": "marginal",
+      "c_ij": [
+        [
+          1.0,
+          0.25,
+          0.30000000000000004,
+          0.3500000000000001,
+          0.25,
+          0.25,
+          0.19999999999999996
+        ],
+        [
+          0.25,
+          1.0,
+          0.8500000000000001,
+          0.8,
+          0.8500000000000001,
+          0.8,
+          0.75
+        ],
+        [
+          0.30000000000000004,
+          0.8500000000000001,
+          1.0,
+          0.8500000000000001,
+          0.8999999999999999,
+          0.8500000000000001,
+          0.8
+        ],
+        [
+          0.3500000000000001,
+          0.8,
+          0.8500000000000001,
+          1.0,
+          0.8999999999999999,
+          0.8500000000000001,
+          0.8
+        ],
+        [
+          0.25,
+          0.8500000000000001,
+          0.8999999999999999,
+          0.8999999999999999,
+          1.0,
+          0.95,
+          0.8999999999999999
+        ],
+        [
+          0.25,
+          0.8,
+          0.8500000000000001,
+          0.8500000000000001,
+          0.95,
+          1.0,
+          0.95
+        ],
+        [
+          0.19999999999999996,
+          0.75,
+          0.8,
+          0.8,
+          0.8999999999999999,
+          0.95,
+          1.0
+        ]
+      ],
+      "n_D": 17
+    },
+    {
+      "seed": 0,
+      "domain": "imagenet_r",
+      "comp": "single_class",
+      "regime": "tiny",
+      "aggr": "mild",
+      "method": "tent",
+      "mode": "online",
+      "candidate": "tent_online",
+      "a0": 0.525,
+      "aa": 0.475,
+      "B": -0.050000000000000044,
+      "upd_norm": 1.2374231339012383,
+      "Z": [
+        1.937090277671814,
+        0.45910152792930603,
+        0.7964750939499159,
+        2.228970527648926,
+        0.3555811643600464,
+        0.9352530767899501,
+        -0.13877798284003418,
+        -0.2918802499771118,
+        0.125,
+        0.1848423033952713,
+        1.2374231339012383
+      ],
+      "regime_label": "harmful",
+      "c_ij": [
+        [
+          1.0,
+          0.3500000000000001,
+          0.3500000000000001,
+          0.3500000000000001,
+          0.3500000000000001,
+          0.3500000000000001,
+          0.3500000000000001
+        ],
+        [
+          0.3500000000000001,
+          1.0,
+          0.95,
+          0.95,
+          0.95,
+          0.95,
+          0.95
+        ],
+        [
+          0.3500000000000001,
+          0.95,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0
+        ],
+        [
+          0.3500000000000001,
+          0.95,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0
+        ],
+        [
+          0.3500000000000001,
+          0.95,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0
+        ],
+        [
+          0.3500000000000001,
+          0.95,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0
+        ],
+        [
+          0.3500000000000001,
+          0.95,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0
+        ]
+      ],
+      "n_D": 13
+    },
+    {
+      "seed": 0,
+      "domain": "imagenet_r",
+      "comp": "single_class",
+      "regime": "tiny",
+      "aggr": "mild",
+      "method": "tent",
+      "mode": "episodic",
+      "candidate": "tent_episodic",
+      "a0": 0.525,
+      "aa": 0.475,
+      "B": -0.050000000000000044,
+      "upd_norm": 1.0123048188579105,
+      "Z": [
+        1.937090277671814,
+        0.45910152792930603,
+        0.7964750939499159,
+        2.2905163764953613,
+        0.337858647108078,
+        0.9403303501520047,
+        -0.14385525620208883,
+        -0.35342609882354736,
+        0.125,
+        0.1863844096660614,
+        1.0123048188579105
+      ],
+      "regime_label": "harmful",
+      "c_ij": [
+        [
+          1.0,
+          0.3500000000000001,
+          0.3500000000000001,
+          0.3500000000000001,
+          0.3500000000000001,
+          0.3500000000000001,
+          0.3500000000000001
+        ],
+        [
+          0.3500000000000001,
+          1.0,
+          0.95,
+          0.95,
+          0.95,
+          0.95,
+          0.95
+        ],
+        [
+          0.3500000000000001,
+          0.95,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0
+        ],
+        [
+          0.3500000000000001,
+          0.95,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0
+        ],
+        [
+          0.3500000000000001,
+          0.95,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0
+        ],
+        [
+          0.3500000000000001,
+          0.95,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0
+        ],
+        [
+          0.3500000000000001,
+          0.95,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0
+        ]
+      ],
+      "n_D": 13
+    },
+    {
+      "seed": 0,
+      "domain": "imagenet_r",
+      "comp": "single_class",
+      "regime": "tiny",
+      "aggr": "mild",
+      "method": "eata",
+      "mode": "online",
+      "candidate": "eata_online",
+      "a0": 0.525,
+      "aa": 0.475,
+      "B": -0.050000000000000044,
+      "upd_norm": 0.0,
+      "Z": [
+        1.937090277671814,
+        0.45910152792930603,
+        0.7964750939499159,
+        2.807800769805908,
+        0.17444971203804016,
+        0.9857583216060288,
+        -0.18928322765611294,
+        -0.8707104921340942,
+        0.0,
+        0.24726641178131104,
+        0.0
+      ],
+      "regime_label": "harmful",
+      "c_ij": [
+        [
+          1.0,
+          0.3500000000000001,
+          0.3500000000000001,
+          0.3500000000000001,
+          0.3500000000000001,
+          0.3500000000000001,
+          0.3500000000000001
+        ],
+        [
+          0.3500000000000001,
+          1.0,
+          0.95,
+          0.95,
+          0.95,
+          0.95,
+          0.95
+        ],
+        [
+          0.3500000000000001,
+          0.95,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0
+        ],
+        [
+          0.3500000000000001,
+          0.95,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0
+        ],
+        [
+          0.3500000000000001,
+          0.95,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0
+        ],
+        [
+          0.3500000000000001,
+          0.95,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0
+        ],
+        [
+          0.3500000000000001,
+          0.95,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0
+        ]
+      ],
+      "n_D": 13
+    },
+    {
+      "seed": 0,
+      "domain": "imagenet_r",
+      "comp": "single_class",
+      "regime": "tiny",
+      "aggr": "mild",
+      "method": "eata",
+      "mode": "episodic",
+      "candidate": "eata_episodic",
+      "a0": 0.525,
+      "aa": 0.475,
+      "B": -0.050000000000000044,
+      "upd_norm": 0.0,
+      "Z": [
+        1.937090277671814,
+        0.45910152792930603,
+        0.7964750939499159,
+        2.807800769805908,
+        0.17444971203804016,
+        0.9857583216060288,
+        -0.18928322765611294,
+        -0.8707104921340942,
+        0.0,
+        0.24726641178131104,
+        0.0
+      ],
+      "regime_label": "harmful",
+      "c_ij": [
+        [
+          1.0,
+          0.3500000000000001,
+          0.3500000000000001,
+          0.3500000000000001,
+          0.3500000000000001,
+          0.3500000000000001,
+          0.3500000000000001
+        ],
+        [
+          0.3500000000000001,
+          1.0,
+          0.95,
+          0.95,
+          0.95,
+          0.95,
+          0.95
+        ],
+        [
+          0.3500000000000001,
+          0.95,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0
+        ],
+        [
+          0.3500000000000001,
+          0.95,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0
+        ],
+        [
+          0.3500000000000001,
+          0.95,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0
+        ],
+        [
+          0.3500000000000001,
+          0.95,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0
+        ],
+        [
+          0.3500000000000001,
+          0.95,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0
+        ]
+      ],
+      "n_D": 13
+    },
+    {
+      "seed": 0,
+      "domain": "imagenet_r",
+      "comp": "single_class",
+      "regime": "tiny",
+      "aggr": "mild",
+      "method": "sar",
+      "mode": "online",
+      "candidate": "sar_online",
+      "a0": 0.525,
+      "aa": 0.475,
+      "B": -0.050000000000000044,
+      "upd_norm": 0.0,
+      "Z": [
+        1.937090277671814,
+        0.45910152792930603,
+        0.7964750939499159,
+        2.807800769805908,
+        0.17444971203804016,
+        0.9857583216060288,
+        -0.18928322765611294,
+        -0.8707104921340942,
+        0.0,
+        0.24726641178131104,
+        0.0
+      ],
+      "regime_label": "harmful",
+      "c_ij": [
+        [
+          1.0,
+          0.3500000000000001,
+          0.3500000000000001,
+          0.3500000000000001,
+          0.3500000000000001,
+          0.3500000000000001,
+          0.3500000000000001
+        ],
+        [
+          0.3500000000000001,
+          1.0,
+          0.95,
+          0.95,
+          0.95,
+          0.95,
+          0.95
+        ],
+        [
+          0.3500000000000001,
+          0.95,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0
+        ],
+        [
+          0.3500000000000001,
+          0.95,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0
+        ],
+        [
+          0.3500000000000001,
+          0.95,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0
+        ],
+        [
+          0.3500000000000001,
+          0.95,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0
+        ],
+        [
+          0.3500000000000001,
+          0.95,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0
+        ]
+      ],
+      "n_D": 13
+    },
+    {
+      "seed": 0,
+      "domain": "imagenet_r",
+      "comp": "single_class",
+      "regime": "tiny",
+      "aggr": "mild",
+      "method": "sar",
+      "mode": "episodic",
+      "candidate": "sar_episodic",
+      "a0": 0.525,
+      "aa": 0.475,
+      "B": -0.050000000000000044,
+      "upd_norm": 0.0,
+      "Z": [
+        1.937090277671814,
+        0.45910152792930603,
+        0.7964750939499159,
+        2.807800769805908,
+        0.17444971203804016,
+        0.9857583216060288,
+        -0.18928322765611294,
+        -0.8707104921340942,
+        0.0,
+        0.24726641178131104,
+        0.0
+      ],
+      "regime_label": "harmful",
+      "c_ij": [
+        [
+          1.0,
+          0.3500000000000001,
+          0.3500000000000001,
+          0.3500000000000001,
+          0.3500000000000001,
+          0.3500000000000001,
+          0.3500000000000001
+        ],
+        [
+          0.3500000000000001,
+          1.0,
+          0.95,
+          0.95,
+          0.95,
+          0.95,
+          0.95
+        ],
+        [
+          0.3500000000000001,
+          0.95,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0
+        ],
+        [
+          0.3500000000000001,
+          0.95,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0
+        ],
+        [
+          0.3500000000000001,
+          0.95,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0
+        ],
+        [
+          0.3500000000000001,
+          0.95,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0
+        ],
+        [
+          0.3500000000000001,
+          0.95,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0
+        ]
+      ],
+      "n_D": 13
+    },
+    {
+      "seed": 1,
+      "domain": "imagenet_r",
+      "comp": "iid",
+      "regime": "tiny",
+      "aggr": "mild",
+      "method": "tent",
+      "mode": "online",
+      "candidate": "tent_online",
+      "a0": 0.475,
+      "aa": 0.625,
+      "B": 0.15000000000000002,
+      "upd_norm": 1.218552068901489,
+      "Z": [
+        1.5143076181411743,
+        0.5624260306358337,
+        0.8606511575397984,
+        1.5708773136138916,
+        0.5611421465873718,
+        0.8918864643137707,
+        -0.03123530677397235,
+        -0.056569695472717285,
+        0.375,
+        0.07203676551580429,
+        1.218552068901489
+      ],
+      "regime_label": "helpful",
+      "c_ij": [
+        [
+          1.0,
+          0.1499999999999999,
+          0.19999999999999996,
+          0.25,
+          0.19999999999999996,
+          0.30000000000000004,
+          0.30000000000000004
+        ],
+        [
+          0.1499999999999999,
+          1.0,
+          0.95,
+          0.8999999999999999,
+          0.95,
+          0.8500000000000001,
+          0.8500000000000001
+        ],
+        [
+          0.19999999999999996,
+          0.95,
+          1.0,
+          0.95,
+          1.0,
+          0.8999999999999999,
+          0.8999999999999999
+        ],
+        [
+          0.25,
+          0.8999999999999999,
+          0.95,
+          1.0,
+          0.95,
+          0.95,
+          0.95
+        ],
+        [
+          0.19999999999999996,
+          0.95,
+          1.0,
+          0.95,
+          1.0,
+          0.8999999999999999,
+          0.8999999999999999
+        ],
+        [
+          0.30000000000000004,
+          0.8500000000000001,
+          0.8999999999999999,
+          0.95,
+          0.8999999999999999,
+          1.0,
+          1.0
+        ],
+        [
+          0.30000000000000004,
+          0.8500000000000001,
+          0.8999999999999999,
+          0.95,
+          0.8999999999999999,
+          1.0,
+          1.0
+        ]
+      ],
+      "n_D": 17
+    },
+    {
+      "seed": 1,
+      "domain": "imagenet_r",
+      "comp": "iid",
+      "regime": "tiny",
+      "aggr": "mild",
+      "method": "tent",
+      "mode": "episodic",
+      "candidate": "tent_episodic",
+      "a0": 0.475,
+      "aa": 0.625,
+      "B": 0.15000000000000002,
+      "upd_norm": 0.9977276030636998,
+      "Z": [
+        1.5143076181411743,
+        0.5624260306358337,
+        0.8606511575397984,
+        1.5956223011016846,
+        0.5563624501228333,
+        0.8933691529264592,
+        -0.03271799538666087,
+        -0.08131468296051025,
+        0.375,
+        0.07009768486022949,
+        0.9977276030636998
+      ],
+      "regime_label": "helpful",
+      "c_ij": [
+        [
+          1.0,
+          0.1499999999999999,
+          0.19999999999999996,
+          0.25,
+          0.19999999999999996,
+          0.30000000000000004,
+          0.30000000000000004
+        ],
+        [
+          0.1499999999999999,
+          1.0,
+          0.95,
+          0.8999999999999999,
+          0.95,
+          0.8500000000000001,
+          0.8500000000000001
+        ],
+        [
+          0.19999999999999996,
+          0.95,
+          1.0,
+          0.95,
+          1.0,
+          0.8999999999999999,
+          0.8999999999999999
+        ],
+        [
+          0.25,
+          0.8999999999999999,
+          0.95,
+          1.0,
+          0.95,
+          0.95,
+          0.95
+        ],
+        [
+          0.19999999999999996,
+          0.95,
+          1.0,
+          0.95,
+          1.0,
+          0.8999999999999999,
+          0.8999999999999999
+        ],
+        [
+          0.30000000000000004,
+          0.8500000000000001,
+          0.8999999999999999,
+          0.95,
+          0.8999999999999999,
+          1.0,
+          1.0
+        ],
+        [
+          0.30000000000000004,
+          0.8500000000000001,
+          0.8999999999999999,
+          0.95,
+          0.8999999999999999,
+          1.0,
+          1.0
+        ]
+      ],
+      "n_D": 17
+    },
+    {
+      "seed": 1,
+      "domain": "imagenet_r",
+      "comp": "iid",
+      "regime": "tiny",
+      "aggr": "mild",
+      "method": "eata",
+      "mode": "online",
+      "candidate": "eata_online",
+      "a0": 0.475,
+      "aa": 0.6,
+      "B": 0.125,
+      "upd_norm": 1.122670874729761,
+      "Z": [
+        1.5143076181411743,
+        0.5624260306358337,
+        0.8606511575397984,
+        1.992403507232666,
+        0.4355464577674866,
+        0.923794114265413,
+        -0.06314295672561465,
+        -0.4780958890914917,
+        0.25,
+        0.09964802116155624,
+        1.122670874729761
+      ],
+      "regime_label": "helpful",
+      "c_ij": [
+        [
+          1.0,
+          0.1499999999999999,
+          0.19999999999999996,
+          0.25,
+          0.19999999999999996,
+          0.30000000000000004,
+          0.30000000000000004
+        ],
+        [
+          0.1499999999999999,
+          1.0,
+          0.95,
+          0.8999999999999999,
+          0.95,
+          0.8500000000000001,
+          0.8500000000000001
+        ],
+        [
+          0.19999999999999996,
+          0.95,
+          1.0,
+          0.95,
+          1.0,
+          0.8999999999999999,
+          0.8999999999999999
+        ],
+        [
+          0.25,
+          0.8999999999999999,
+          0.95,
+          1.0,
+          0.95,
+          0.95,
+          0.95
+        ],
+        [
+          0.19999999999999996,
+          0.95,
+          1.0,
+          0.95,
+          1.0,
+          0.8999999999999999,
+          0.8999999999999999
+        ],
+        [
+          0.30000000000000004,
+          0.8500000000000001,
+          0.8999999999999999,
+          0.95,
+          0.8999999999999999,
+          1.0,
+          1.0
+        ],
+        [
+          0.30000000000000004,
+          0.8500000000000001,
+          0.8999999999999999,
+          0.95,
+          0.8999999999999999,
+          1.0,
+          1.0
+        ]
+      ],
+      "n_D": 17
+    },
+    {
+      "seed": 1,
+      "domain": "imagenet_r",
+      "comp": "iid",
+      "regime": "tiny",
+      "aggr": "mild",
+      "method": "eata",
+      "mode": "episodic",
+      "candidate": "eata_episodic",
+      "a0": 0.475,
+      "aa": 0.625,
+      "B": 0.15000000000000002,
+      "upd_norm": 0.9680304183384971,
+      "Z": [
+        1.5143076181411743,
+        0.5624260306358337,
+        0.8606511575397984,
+        1.9894225597381592,
+        0.43703389167785645,
+        0.923322009657229,
+        -0.06267085211743062,
+        -0.47511494159698486,
+        0.25,
+        0.09870839864015579,
+        0.9680304183384971
+      ],
+      "regime_label": "helpful",
+      "c_ij": [
+        [
+          1.0,
+          0.1499999999999999,
+          0.19999999999999996,
+          0.25,
+          0.19999999999999996,
+          0.30000000000000004,
+          0.30000000000000004
+        ],
+        [
+          0.1499999999999999,
+          1.0,
+          0.95,
+          0.8999999999999999,
+          0.95,
+          0.8500000000000001,
+          0.8500000000000001
+        ],
+        [
+          0.19999999999999996,
+          0.95,
+          1.0,
+          0.95,
+          1.0,
+          0.8999999999999999,
+          0.8999999999999999
+        ],
+        [
+          0.25,
+          0.8999999999999999,
+          0.95,
+          1.0,
+          0.95,
+          0.95,
+          0.95
+        ],
+        [
+          0.19999999999999996,
+          0.95,
+          1.0,
+          0.95,
+          1.0,
+          0.8999999999999999,
+          0.8999999999999999
+        ],
+        [
+          0.30000000000000004,
+          0.8500000000000001,
+          0.8999999999999999,
+          0.95,
+          0.8999999999999999,
+          1.0,
+          1.0
+        ],
+        [
+          0.30000000000000004,
+          0.8500000000000001,
+          0.8999999999999999,
+          0.95,
+          0.8999999999999999,
+          1.0,
+          1.0
+        ]
+      ],
+      "n_D": 17
+    },
+    {
+      "seed": 1,
+      "domain": "imagenet_r",
+      "comp": "iid",
+      "regime": "tiny",
+      "aggr": "mild",
+      "method": "sar",
+      "mode": "online",
+      "candidate": "sar_online",
+      "a0": 0.475,
+      "aa": 0.575,
+      "B": 0.09999999999999998,
+      "upd_norm": 0.029954054713156854,
+      "Z": [
+        1.5143076181411743,
+        0.5624260306358337,
+        0.8606511575397984,
+        2.1200482845306396,
+        0.40359652042388916,
+        0.9323255825371783,
+        -0.07167442499737997,
+        -0.6057406663894653,
+        0.25,
+        0.11350475251674652,
+        0.029954054713156854
+      ],
+      "regime_label": "helpful",
+      "c_ij": [
+        [
+          1.0,
+          0.1499999999999999,
+          0.19999999999999996,
+          0.25,
+          0.19999999999999996,
+          0.30000000000000004,
+          0.30000000000000004
+        ],
+        [
+          0.1499999999999999,
+          1.0,
+          0.95,
+          0.8999999999999999,
+          0.95,
+          0.8500000000000001,
+          0.8500000000000001
+        ],
+        [
+          0.19999999999999996,
+          0.95,
+          1.0,
+          0.95,
+          1.0,
+          0.8999999999999999,
+          0.8999999999999999
+        ],
+        [
+          0.25,
+          0.8999999999999999,
+          0.95,
+          1.0,
+          0.95,
+          0.95,
+          0.95
+        ],
+        [
+          0.19999999999999996,
+          0.95,
+          1.0,
+          0.95,
+          1.0,
+          0.8999999999999999,
+          0.8999999999999999
+        ],
+        [
+          0.30000000000000004,
+          0.8500000000000001,
+          0.8999999999999999,
+          0.95,
+          0.8999999999999999,
+          1.0,
+          1.0
+        ],
+        [
+          0.30000000000000004,
+          0.8500000000000001,
+          0.8999999999999999,
+          0.95,
+          0.8999999999999999,
+          1.0,
+          1.0
+        ]
+      ],
+      "n_D": 17
+    },
+    {
+      "seed": 1,
+      "domain": "imagenet_r",
+      "comp": "iid",
+      "regime": "tiny",
+      "aggr": "mild",
+      "method": "sar",
+      "mode": "episodic",
+      "candidate": "sar_episodic",
+      "a0": 0.475,
+      "aa": 0.575,
+      "B": 0.09999999999999998,
+      "upd_norm": 0.02221945021144487,
+      "Z": [
+        1.5143076181411743,
+        0.5624260306358337,
+        0.8606511575397984,
+        2.122471570968628,
+        0.40291139483451843,
+        0.9324908828189044,
+        -0.07183972527910598,
+        -0.6081639528274536,
+        0.25,
+        0.11367762088775635,
+        0.02221945021144487
+      ],
+      "regime_label": "helpful",
+      "c_ij": [
+        [
+          1.0,
+          0.1499999999999999,
+          0.19999999999999996,
+          0.25,
+          0.19999999999999996,
+          0.30000000000000004,
+          0.30000000000000004
+        ],
+        [
+          0.1499999999999999,
+          1.0,
+          0.95,
+          0.8999999999999999,
+          0.95,
+          0.8500000000000001,
+          0.8500000000000001
+        ],
+        [
+          0.19999999999999996,
+          0.95,
+          1.0,
+          0.95,
+          1.0,
+          0.8999999999999999,
+          0.8999999999999999
+        ],
+        [
+          0.25,
+          0.8999999999999999,
+          0.95,
+          1.0,
+          0.95,
+          0.95,
+          0.95
+        ],
+        [
+          0.19999999999999996,
+          0.95,
+          1.0,
+          0.95,
+          1.0,
+          0.8999999999999999,
+          0.8999999999999999
+        ],
+        [
+          0.30000000000000004,
+          0.8500000000000001,
+          0.8999999999999999,
+          0.95,
+          0.8999999999999999,
+          1.0,
+          1.0
+        ],
+        [
+          0.30000000000000004,
+          0.8500000000000001,
+          0.8999999999999999,
+          0.95,
+          0.8999999999999999,
+          1.0,
+          1.0
+        ]
+      ],
+      "n_D": 17
+    },
+    {
+      "seed": 1,
+      "domain": "imagenet_r",
+      "comp": "single_class",
+      "regime": "tiny",
+      "aggr": "mild",
+      "method": "tent",
+      "mode": "online",
+      "candidate": "tent_online",
+      "a0": 0.65,
+      "aa": 0.675,
+      "B": 0.025000000000000022,
+      "upd_norm": 1.1974468813531474,
+      "Z": [
+        2.8807990550994873,
+        0.13329598307609558,
+        0.9843831537832352,
+        2.8033127784729004,
+        0.1703435480594635,
+        0.9899447880093168,
+        -0.005561634226081691,
+        0.07748627662658691,
+        0.0,
+        0.03530697152018547,
+        1.1974468813531474
+      ],
+      "regime_label": "helpful",
+      "c_ij": [
+        [
+          1.0,
+          0.55,
+          0.55,
+          0.55,
+          0.55,
+          0.55,
+          0.55
+        ],
+        [
+          0.55,
+          1.0,
+          0.95,
+          1.0,
+          1.0,
+          1.0,
+          1.0
+        ],
+        [
+          0.55,
+          0.95,
+          1.0,
+          0.95,
+          0.95,
+          0.95,
+          0.95
+        ],
+        [
+          0.55,
+          1.0,
+          0.95,
+          1.0,
+          1.0,
+          1.0,
+          1.0
+        ],
+        [
+          0.55,
+          1.0,
+          0.95,
+          1.0,
+          1.0,
+          1.0,
+          1.0
+        ],
+        [
+          0.55,
+          1.0,
+          0.95,
+          1.0,
+          1.0,
+          1.0,
+          1.0
+        ],
+        [
+          0.55,
+          1.0,
+          0.95,
+          1.0,
+          1.0,
+          1.0,
+          1.0
+        ]
+      ],
+      "n_D": 9
+    },
+    {
+      "seed": 1,
+      "domain": "imagenet_r",
+      "comp": "single_class",
+      "regime": "tiny",
+      "aggr": "mild",
+      "method": "tent",
+      "mode": "episodic",
+      "candidate": "tent_episodic",
+      "a0": 0.65,
+      "aa": 0.675,
+      "B": 0.025000000000000022,
+      "upd_norm": 1.015773408161152,
+      "Z": [
+        2.8807990550994873,
+        0.13329598307609558,
+        0.9843831537832352,
+        2.7801222801208496,
+        0.17890521883964539,
+        0.988461462708013,
+        -0.004078308924777896,
+        0.1006767749786377,
+        0.0,
+        0.0409468449652195,
+        1.015773408161152
+      ],
+      "regime_label": "helpful",
+      "c_ij": [
+        [
+          1.0,
+          0.55,
+          0.55,
+          0.55,
+          0.55,
+          0.55,
+          0.55
+        ],
+        [
+          0.55,
+          1.0,
+          0.95,
+          1.0,
+          1.0,
+          1.0,
+          1.0
+        ],
+        [
+          0.55,
+          0.95,
+          1.0,
+          0.95,
+          0.95,
+          0.95,
+          0.95
+        ],
+        [
+          0.55,
+          1.0,
+          0.95,
+          1.0,
+          1.0,
+          1.0,
+          1.0
+        ],
+        [
+          0.55,
+          1.0,
+          0.95,
+          1.0,
+          1.0,
+          1.0,
+          1.0
+        ],
+        [
+          0.55,
+          1.0,
+          0.95,
+          1.0,
+          1.0,
+          1.0,
+          1.0
+        ],
+        [
+          0.55,
+          1.0,
+          0.95,
+          1.0,
+          1.0,
+          1.0,
+          1.0
+        ]
+      ],
+      "n_D": 9
+    },
+    {
+      "seed": 1,
+      "domain": "imagenet_r",
+      "comp": "single_class",
+      "regime": "tiny",
+      "aggr": "mild",
+      "method": "eata",
+      "mode": "online",
+      "candidate": "eata_online",
+      "a0": 0.65,
+      "aa": 0.675,
+      "B": 0.025000000000000022,
+      "upd_norm": 0.0,
+      "Z": [
+        2.8807990550994873,
+        0.13329598307609558,
+        0.9843831537832352,
+        2.9437263011932373,
+        0.09871785342693329,
+        0.9980418754733498,
+        -0.013658721690114617,
+        -0.06292724609375,
+        0.0,
+        0.028767012059688568,
+        0.0
+      ],
+      "regime_label": "helpful",
+      "c_ij": [
+        [
+          1.0,
+          0.55,
+          0.55,
+          0.55,
+          0.55,
+          0.55,
+          0.55
+        ],
+        [
+          0.55,
+          1.0,
+          0.95,
+          1.0,
+          1.0,
+          1.0,
+          1.0
+        ],
+        [
+          0.55,
+          0.95,
+          1.0,
+          0.95,
+          0.95,
+          0.95,
+          0.95
+        ],
+        [
+          0.55,
+          1.0,
+          0.95,
+          1.0,
+          1.0,
+          1.0,
+          1.0
+        ],
+        [
+          0.55,
+          1.0,
+          0.95,
+          1.0,
+          1.0,
+          1.0,
+          1.0
+        ],
+        [
+          0.55,
+          1.0,
+          0.95,
+          1.0,
+          1.0,
+          1.0,
+          1.0
+        ],
+        [
+          0.55,
+          1.0,
+          0.95,
+          1.0,
+          1.0,
+          1.0,
+          1.0
+        ]
+      ],
+      "n_D": 9
+    },
+    {
+      "seed": 1,
+      "domain": "imagenet_r",
+      "comp": "single_class",
+      "regime": "tiny",
+      "aggr": "mild",
+      "method": "eata",
+      "mode": "episodic",
+      "candidate": "eata_episodic",
+      "a0": 0.65,
+      "aa": 0.675,
+      "B": 0.025000000000000022,
+      "upd_norm": 0.0,
+      "Z": [
+        2.8807990550994873,
+        0.13329598307609558,
+        0.9843831537832352,
+        2.9437263011932373,
+        0.09871785342693329,
+        0.9980418754733498,
+        -0.013658721690114617,
+        -0.06292724609375,
+        0.0,
+        0.028767012059688568,
+        0.0
+      ],
+      "regime_label": "helpful",
+      "c_ij": [
+        [
+          1.0,
+          0.55,
+          0.55,
+          0.55,
+          0.55,
+          0.55,
+          0.55
+        ],
+        [
+          0.55,
+          1.0,
+          0.95,
+          1.0,
+          1.0,
+          1.0,
+          1.0
+        ],
+        [
+          0.55,
+          0.95,
+          1.0,
+          0.95,
+          0.95,
+          0.95,
+          0.95
+        ],
+        [
+          0.55,
+          1.0,
+          0.95,
+          1.0,
+          1.0,
+          1.0,
+          1.0
+        ],
+        [
+          0.55,
+          1.0,
+          0.95,
+          1.0,
+          1.0,
+          1.0,
+          1.0
+        ],
+        [
+          0.55,
+          1.0,
+          0.95,
+          1.0,
+          1.0,
+          1.0,
+          1.0
+        ],
+        [
+          0.55,
+          1.0,
+          0.95,
+          1.0,
+          1.0,
+          1.0,
+          1.0
+        ]
+      ],
+      "n_D": 9
+    },
+    {
+      "seed": 1,
+      "domain": "imagenet_r",
+      "comp": "single_class",
+      "regime": "tiny",
+      "aggr": "mild",
+      "method": "sar",
+      "mode": "online",
+      "candidate": "sar_online",
+      "a0": 0.65,
+      "aa": 0.675,
+      "B": 0.025000000000000022,
+      "upd_norm": 0.0,
+      "Z": [
+        2.8807990550994873,
+        0.13329598307609558,
+        0.9843831537832352,
+        2.9437263011932373,
+        0.09871785342693329,
+        0.9980418754733498,
+        -0.013658721690114617,
+        -0.06292724609375,
+        0.0,
+        0.028767012059688568,
+        0.0
+      ],
+      "regime_label": "helpful",
+      "c_ij": [
+        [
+          1.0,
+          0.55,
+          0.55,
+          0.55,
+          0.55,
+          0.55,
+          0.55
+        ],
+        [
+          0.55,
+          1.0,
+          0.95,
+          1.0,
+          1.0,
+          1.0,
+          1.0
+        ],
+        [
+          0.55,
+          0.95,
+          1.0,
+          0.95,
+          0.95,
+          0.95,
+          0.95
+        ],
+        [
+          0.55,
+          1.0,
+          0.95,
+          1.0,
+          1.0,
+          1.0,
+          1.0
+        ],
+        [
+          0.55,
+          1.0,
+          0.95,
+          1.0,
+          1.0,
+          1.0,
+          1.0
+        ],
+        [
+          0.55,
+          1.0,
+          0.95,
+          1.0,
+          1.0,
+          1.0,
+          1.0
+        ],
+        [
+          0.55,
+          1.0,
+          0.95,
+          1.0,
+          1.0,
+          1.0,
+          1.0
+        ]
+      ],
+      "n_D": 9
+    },
+    {
+      "seed": 1,
+      "domain": "imagenet_r",
+      "comp": "single_class",
+      "regime": "tiny",
+      "aggr": "mild",
+      "method": "sar",
+      "mode": "episodic",
+      "candidate": "sar_episodic",
+      "a0": 0.65,
+      "aa": 0.675,
+      "B": 0.025000000000000022,
+      "upd_norm": 0.0,
+      "Z": [
+        2.8807990550994873,
+        0.13329598307609558,
+        0.9843831537832352,
+        2.9437263011932373,
+        0.09871785342693329,
+        0.9980418754733498,
+        -0.013658721690114617,
+        -0.06292724609375,
+        0.0,
+        0.028767012059688568,
+        0.0
+      ],
+      "regime_label": "helpful",
+      "c_ij": [
+        [
+          1.0,
+          0.55,
+          0.55,
+          0.55,
+          0.55,
+          0.55,
+          0.55
+        ],
+        [
+          0.55,
+          1.0,
+          0.95,
+          1.0,
+          1.0,
+          1.0,
+          1.0
+        ],
+        [
+          0.55,
+          0.95,
+          1.0,
+          0.95,
+          0.95,
+          0.95,
+          0.95
+        ],
+        [
+          0.55,
+          1.0,
+          0.95,
+          1.0,
+          1.0,
+          1.0,
+          1.0
+        ],
+        [
+          0.55,
+          1.0,
+          0.95,
+          1.0,
+          1.0,
+          1.0,
+          1.0
+        ],
+        [
+          0.55,
+          1.0,
+          0.95,
+          1.0,
+          1.0,
+          1.0,
+          1.0
+        ],
+        [
+          0.55,
+          1.0,
+          0.95,
+          1.0,
+          1.0,
+          1.0,
+          1.0
+        ]
+      ],
+      "n_D": 9
+    }
+  ],
+  "conditions": [
+    {
+      "seed": 0,
+      "domain": "imagenet_r",
+      "comp": "iid",
+      "regime": "tiny",
+      "aggr": "mild",
+      "cand_names": [
+        "freeze_f0",
+        "tent_online",
+        "tent_episodic",
+        "eata_online",
+        "eata_episodic",
+        "sar_online",
+        "sar_episodic"
+      ],
+      "aa_all": [
+        0.575,
+        0.625,
+        0.625,
+        0.6,
+        0.6,
+        0.6,
+        0.575
+      ],
+      "a0": 0.575,
+      "oracle": 0.625,
+      "best_adapt": 0.625,
+      "true_best": "tent_online",
+      "route": {
+        "decision": "ERROR",
+        "reason": "val_multicandidate_residual import failed: ModuleNotFoundError(\"No module named 'matplotlib'\")"
+      },
+      "route_c": {
+        "decision": "ERROR",
+        "implemented": false,
+        "reason": "val_smooth_drift import failed: ModuleNotFoundError(\"No module named 'matplotlib'\")"
+      },
+      "realized": 0.575,
+      "regime_label": "helpful"
+    },
+    {
+      "seed": 0,
+      "domain": "imagenet_r",
+      "comp": "single_class",
+      "regime": "tiny",
+      "aggr": "mild",
+      "cand_names": [
+        "freeze_f0",
+        "tent_online",
+        "tent_episodic",
+        "eata_online",
+        "eata_episodic",
+        "sar_online",
+        "sar_episodic"
+      ],
+      "aa_all": [
+        0.525,
+        0.475,
+        0.475,
+        0.475,
+        0.475,
+        0.475,
+        0.475
+      ],
+      "a0": 0.525,
+      "oracle": 0.525,
+      "best_adapt": 0.475,
+      "true_best": "freeze_f0",
+      "route": {
+        "decision": "ERROR",
+        "reason": "val_multicandidate_residual import failed: ModuleNotFoundError(\"No module named 'matplotlib'\")"
+      },
+      "route_c": {
+        "decision": "ERROR",
+        "implemented": false,
+        "reason": "val_smooth_drift import failed: ModuleNotFoundError(\"No module named 'matplotlib'\")"
+      },
+      "realized": 0.525,
+      "regime_label": "harmful"
+    },
+    {
+      "seed": 1,
+      "domain": "imagenet_r",
+      "comp": "iid",
+      "regime": "tiny",
+      "aggr": "mild",
+      "cand_names": [
+        "freeze_f0",
+        "tent_online",
+        "tent_episodic",
+        "eata_online",
+        "eata_episodic",
+        "sar_online",
+        "sar_episodic"
+      ],
+      "aa_all": [
+        0.475,
+        0.625,
+        0.625,
+        0.6,
+        0.625,
+        0.575,
+        0.575
+      ],
+      "a0": 0.475,
+      "oracle": 0.625,
+      "best_adapt": 0.625,
+      "true_best": "tent_online",
+      "route": {
+        "decision": "ERROR",
+        "reason": "val_multicandidate_residual import failed: ModuleNotFoundError(\"No module named 'matplotlib'\")"
+      },
+      "route_c": {
+        "decision": "ERROR",
+        "implemented": false,
+        "reason": "val_smooth_drift import failed: ModuleNotFoundError(\"No module named 'matplotlib'\")"
+      },
+      "realized": 0.475,
+      "regime_label": "helpful"
+    },
+    {
+      "seed": 1,
+      "domain": "imagenet_r",
+      "comp": "single_class",
+      "regime": "tiny",
+      "aggr": "mild",
+      "cand_names": [
+        "freeze_f0",
+        "tent_online",
+        "tent_episodic",
+        "eata_online",
+        "eata_episodic",
+        "sar_online",
+        "sar_episodic"
+      ],
+      "aa_all": [
+        0.65,
+        0.675,
+        0.675,
+        0.675,
+        0.675,
+        0.675,
+        0.675
+      ],
+      "a0": 0.65,
+      "oracle": 0.675,
+      "best_adapt": 0.675,
+      "true_best": "tent_online",
+      "route": {
+        "decision": "ERROR",
+        "reason": "val_multicandidate_residual import failed: ModuleNotFoundError(\"No module named 'matplotlib'\")"
+      },
+      "route_c": {
+        "decision": "ERROR",
+        "implemented": false,
+        "reason": "val_smooth_drift import failed: ModuleNotFoundError(\"No module named 'matplotlib'\")"
+      },
+      "realized": 0.65,
+      "regime_label": "helpful"
+    }
+  ]
+}

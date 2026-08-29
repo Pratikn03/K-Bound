@@ -1,26 +1,63 @@
 """kbound_edge.reporting -- LaTeX macro export and report assembly helpers."""
 
-import os
-from typing import Dict, Any
+from typing import Any
+
 import numpy as np
 
-from kbound_edge.logging import read_jsonl
+from kbound_edge.real_manifest import expected_windows
+
+
+def protocol_inventory_macros(cfg: dict[str, Any]) -> dict[str, str]:
+    """Derive Table S1 counts from the locked protocol instead of constants."""
+
+    groups = {
+        "SourceTrain": ("Day 1 / S01", ["S01"]),
+        "SourceVal": ("Day 1 / S02", ["S02"]),
+        "CalibrationFit": ("Day 2 / S03, S04", ["S03", "S04"]),
+        "CalibrationConformal": ("Day 3 / S05, S06", ["S05", "S06"]),
+        "HeldoutTest": ("Day 4 / S07, S08", ["S07", "S08"]),
+        "Replication": ("Day 5 / S09, S10", ["S09", "S10"]),
+    }
+    classes = list(cfg["classes"])
+    frame_count = int(cfg["window_size"])
+    macros: dict[str, str] = {}
+    for name, (session_label, session_ids) in groups.items():
+        windows = [window for sid in session_ids for window in expected_windows(cfg, sid)]
+        locked_windows = sum(int(cfg["sessions"][sid]["windows"]) for sid in session_ids)
+        if len(windows) != locked_windows:
+            sessions = ", ".join(session_ids)
+            raise ValueError(
+                f"Protocol inventory mismatch for {sessions}: "
+                f"generator produced {len(windows)} windows, lock declares {locked_windows}"
+            )
+        objects = sorted({object_id for sid in session_ids for object_id in cfg["sessions"][sid]["objects"]})
+        class_counts = [sum(window["class_id"] == label for window in windows) for label in classes]
+        mixed = sum(window["class_id"] == "mixed" for window in windows)
+        labels = "/".join(str(count) for count in class_counts)
+        if mixed:
+            labels += f" + {mixed} mixed"
+        macros[f"CameraSOneSession{name}"] = session_label
+        macros[f"CameraSOneObjects{name}"] = f"{objects[0]}--{objects[-1]}" if len(objects) > 2 else ", ".join(objects)
+        macros[f"CameraSOneWindows{name}"] = f"{len(windows):,}"
+        macros[f"CameraSOneFrames{name}"] = f"{len(windows) * frame_count:,}"
+        macros[f"CameraSOneLabels{name}"] = labels
+    return macros
 
 
 def compile_latex_macros(
-    cfg: Dict[str, Any],
+    cfg: dict[str, Any],
     results_dir: str,
-    heldout_metrics: Dict[str, Any],
-    replication_metrics: Dict[str, Any],
-    ablation_results: Dict[str, Any],
-    runtime_profile: Dict[str, Any],
-    anti_leakage_audit: Dict[str, Any],
-    recording_inventory: Dict[str, Any],
-    calibration_summary: Dict[str, Any],
+    heldout_metrics: dict[str, Any],
+    replication_metrics: dict[str, Any],
+    ablation_results: dict[str, Any],
+    runtime_profile: dict[str, Any],
+    anti_leakage_audit: dict[str, Any],
+    recording_inventory: dict[str, Any],
+    calibration_summary: dict[str, Any],
     records: list[dict],
     win_meta_map: dict[str, dict],
     true_labels: list[np.ndarray],
-) -> Dict[str, str]:
+) -> dict[str, str]:
     """Compute and format all 193 LaTeX macro values for the physical camera tables."""
     # Compute per-window true benefit B and accuracies
     B_held = []
@@ -54,7 +91,7 @@ def compile_latex_macros(
     def fmt_percent_ci(bs_res, metric_key):
         val = bs_res[metric_key]["val"] * 100.0
         ci = bs_res[metric_key]["ci"]
-        return f"{val:.1f}\\% [{ci[0]*100.0:.1f}, {ci[1]*100.0:.1f}]"
+        return f"{val:.1f}\\% [{ci[0] * 100.0:.1f}, {ci[1] * 100.0:.1f}]"
 
     def fmt_decimal_ci(bs_res, metric_key, precision=4):
         val = bs_res[metric_key]["val"]
@@ -80,7 +117,7 @@ def compile_latex_macros(
         macros[f"CameraRTwoFAc{p_macro}"] = fmt_decimal_ci(p_bs, "false_adapt_cond")
         macros[f"CameraRTwoAdaptRate{p_macro}"] = fmt_decimal_ci(p_bs, "adapt_rate", precision=3)
         macros[f"CameraRTwoAbstainRate{p_macro}"] = fmt_decimal_ci(p_bs, "abstain_rate", precision=3)
-        
+
         # Mean latency
         lat_mean = p_bs["mean_latency"]["val"]
         lat_ci = p_bs["mean_latency"]["ci"]
@@ -94,7 +131,7 @@ def compile_latex_macros(
         "NewBackground": ["new_background", "viewpoint_45", "distance_scale"],
         "BatchComposition": ["batch_composition"],
     }
-    
+
     interpretations = {
         "MildLight": "Stable; KGA adapt/freeze safety preserved.",
         "SideShadow": "Abstained under shadow to avoid false adaptation.",
@@ -108,72 +145,41 @@ def compile_latex_macros(
         for idx, meta in enumerate(record_metadata):
             if meta["shift_id"] in shift_ids:
                 group_indices.append(idx)
-        
+
         n_wins = len(group_indices)
         macros[f"CameraRThreeWindows{group_name}"] = str(n_wins)
-        
+
         if n_wins > 0:
             B_sub = B_held[group_indices]
             aa_regret = np.maximum(B_sub, 0.0) - B_sub
             macros[f"CameraRThreeAlwaysAdaptRegret{group_name}"] = f"{aa_regret.mean():.4f}"
-            
+
             kga_decs = [records[i]["decision"] for i in group_indices]
             kga_realised = np.array([B_sub[i] if dec == "adapt" else 0.0 for i, dec in enumerate(kga_decs)])
             kga_regret = np.maximum(B_sub, 0.0) - kga_realised
             macros[f"CameraRThreeKgaRegret{group_name}"] = f"{kga_regret.mean():.4f}"
-            
+
             from collections import Counter
+
             counts = Counter(kga_decs)
-            macros[f"CameraRThreeDecisionPattern{group_name}"] = f"{counts['adapt']}/{counts['freeze']}/{counts['abstain']}"
+            macros[f"CameraRThreeDecisionPattern{group_name}"] = (
+                f"{counts['adapt']}/{counts['freeze']}/{counts['abstain']}"
+            )
         else:
             macros[f"CameraRThreeAlwaysAdaptRegret{group_name}"] = "\\CamPending"
             macros[f"CameraRThreeKgaRegret{group_name}"] = "\\CamPending"
             macros[f"CameraRThreeDecisionPattern{group_name}"] = "0/0/0"
-            
+
         macros[f"CameraRThreeInterpretation{group_name}"] = interpretations[group_name]
 
     # --- TABLE S1 ---
-    macros["CameraSOneSessionSourceTrain"] = "Day 1 / S01"
-    macros["CameraSOneObjectsSourceTrain"] = "P01--P06"
-    macros["CameraSOneWindowsSourceTrain"] = "240"
-    macros["CameraSOneFramesSourceTrain"] = "7,680"
-    macros["CameraSOneLabelsSourceTrain"] = "60/60/60/60"
-
-    macros["CameraSOneSessionSourceVal"] = "Day 1 / S02"
-    macros["CameraSOneObjectsSourceVal"] = "P07, P08"
-    macros["CameraSOneWindowsSourceVal"] = "80"
-    macros["CameraSOneFramesSourceVal"] = "2,560"
-    macros["CameraSOneLabelsSourceVal"] = "20/20/20/20"
-
-    macros["CameraSOneSessionCalibrationFit"] = "Day 2 / S03, S04"
-    macros["CameraSOneObjectsCalibrationFit"] = "P01--P08"
-    macros["CameraSOneWindowsCalibrationFit"] = "256"
-    macros["CameraSOneFramesCalibrationFit"] = "8,192"
-    macros["CameraSOneLabelsCalibrationFit"] = "92/96/82/82"
-
-    macros["CameraSOneSessionCalibrationConformal"] = "Day 3 / S05, S06"
-    macros["CameraSOneObjectsCalibrationConformal"] = "P01--P08"
-    macros["CameraSOneWindowsCalibrationConformal"] = "256"
-    macros["CameraSOneFramesCalibrationConformal"] = "8,192"
-    macros["CameraSOneLabelsCalibrationConformal"] = "92/96/82/82"
-
-    macros["CameraSOneSessionHeldoutTest"] = "Day 4 / S07, S08"
-    macros["CameraSOneObjectsHeldoutTest"] = "P09, P10"
-    macros["CameraSOneWindowsHeldoutTest"] = "256"
-    macros["CameraSOneFramesHeldoutTest"] = "8,192"
-    macros["CameraSOneLabelsHeldoutTest"] = "92/96/82/82"
-
-    macros["CameraSOneSessionReplication"] = "Day 5 / S09, S10"
-    macros["CameraSOneObjectsReplication"] = "P09, P10"
-    macros["CameraSOneWindowsReplication"] = "256"
-    macros["CameraSOneFramesReplication"] = "8,192"
-    macros["CameraSOneLabelsReplication"] = "92/96/82/82"
+    macros.update(protocol_inventory_macros(cfg))
 
     # --- TABLE S2 ---
     audit_checks = anti_leakage_audit["checks"]
     for idx, c in enumerate(audit_checks):
         status = "PASS" if c["passed"] else "FAIL"
-        macros[f"CameraSTwoCheck{['One','Two','Three','Four','Five','Six','Seven','Eight'][idx]}"] = status
+        macros[f"CameraSTwoCheck{['One', 'Two', 'Three', 'Four', 'Five', 'Six', 'Seven', 'Eight'][idx]}"] = status
 
     # --- TABLE S3 ---
     shift_h_map = {
@@ -182,8 +188,8 @@ def compile_latex_macros(
         "HThree": ("Lens blur", "motion_blur"),
         "HFour": ("Background shift", "new_background"),
     }
-    
-    for h_macro, (shift_name, shift_id) in shift_h_map.items():
+
+    for h_macro, (_, shift_id) in shift_h_map.items():
         indices = [idx for idx, meta in enumerate(record_metadata) if meta["shift_id"] == shift_id]
         if indices:
             B_sub = B_held[indices]
@@ -192,17 +198,22 @@ def compile_latex_macros(
             kga_decs = [records[i]["decision"] for i in indices]
             kga_realised = np.array([B_sub[i] if dec == "adapt" else 0.0 for i, dec in enumerate(kga_decs)])
             regret = np.maximum(B_sub, 0.0) - kga_realised
-            
+
             from collections import Counter
+
             counts = Counter(kga_decs)
             dominant_dec = counts.most_common(1)[0][0]
-            
+
             macros[f"CameraSThree{h_macro}Delta"] = f"{B_sub.mean():+.4f}"
             macros[f"CameraSThree{h_macro}Oracle"] = "Adapt" if B_sub.mean() > 0 else "Freeze"
             macros[f"CameraSThree{h_macro}Freeze"] = f"{froz_acc.mean():.4f}"
             macros[f"CameraSThree{h_macro}Adapt"] = f"{cand_acc.mean():.4f}"
             macros[f"CameraSThree{h_macro}Kga"] = dominant_dec.capitalize()
-            macros[f"CameraSThree{h_macro}Correct"] = "Yes" if (B_sub.mean() > 0 and dominant_dec == "adapt") or (B_sub.mean() <= 0 and dominant_dec != "adapt") else "No"
+            macros[f"CameraSThree{h_macro}Correct"] = (
+                "Yes"
+                if (B_sub.mean() > 0 and dominant_dec == "adapt") or (B_sub.mean() <= 0 and dominant_dec != "adapt")
+                else "No"
+            )
             macros[f"CameraSThree{h_macro}Regret"] = f"{regret.mean():.4f}"
         else:
             macros[f"CameraSThree{h_macro}Delta"] = "\\CamPending"
@@ -223,7 +234,7 @@ def compile_latex_macros(
         "FullWindow": "end_to_end",
         "VideoCapture": "capture_preprocess",
     }
-    
+
     for macro_suffix, stage_key in stage_map.items():
         stats = runtime_profile[stage_key]
         macros[f"CameraSFourMean{macro_suffix}"] = f"{stats['mean_ms']:.1f}"
@@ -240,7 +251,7 @@ def compile_latex_macros(
         "ConfidenceOnly": "confidence_only",
         "EntropyOnly": "entropy_only",
     }
-    
+
     for macro_suffix, variant_key in ablation_variant_map.items():
         stats = ablation_results[variant_key]
         macros[f"CameraSFiveRegret{macro_suffix}"] = f"{stats['regret']:.4f}"
