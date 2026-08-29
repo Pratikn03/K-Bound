@@ -11,18 +11,21 @@ Two subcommands, and neither of them fakes anything.
     it is the only thing this subcommand claims.
 
 ``kga decide``
-    Run a real certificate and the ADAPT/FREEZE/ABSTAIN trichotomy.  It needs a
-    benefit signal, which unlabelled scores do not contain, so exactly one of the
-    two conventions must be supplied::
+    Run a real certificate and the ADAPT/FREEZE/ABSTAIN trichotomy. Exactly one
+    of three conventions must be supplied::
 
-        # (1) paired benefits X_i = loss(f0_i) - loss(fa_i)
+        # (1) label-free deployment using a pre-fitted, schema-bound estimator
+        python -m kga decide --calib calib.npy --test test.npy \
+          --estimator-json benefit.json --protocol-sha256 "$PROTOCOL_SHA"
+
+        # (2) labelled paired-benefit audit
         python -m kga decide --benefits benefits.npy --benefit-range 2.0
 
-        # (2) a benefit point estimate + held-out calibration residuals
+        # (3) externally computed point estimate + held-out residuals
         python -m kga decide --delta-hat 0.031 --calib-residuals resid.npy
 
-    ``--calib``/``--test`` may be added to either form to attach the evidence
-    block to the output; they never influence the decision.
+    In convention 1, label-free evidence directly drives the frozen estimator.
+    In conventions 2 and 3, ``--calib``/``--test`` are reporting-only.
 
 Why this file was rewritten (panel finding F2-10)
 -------------------------------------------------
@@ -43,6 +46,7 @@ from collections.abc import Sequence
 
 import numpy as np
 
+from kga.benefit import FrozenLinearBenefitEstimator
 from kga.certificate import (
     Certificate,
     conformal_split,
@@ -51,6 +55,7 @@ from kga.certificate import (
     hoeffding,
 )
 from kga.evidence import compute_evidence
+from kga.kga import KGA
 from kga.policy import decide
 
 _BATCH_ESTIMATORS = {"ebern": empirical_bernstein, "hoeffding": hoeffding, "evalue": evalue_anytime}
@@ -109,14 +114,26 @@ def _certificate_from_args(args: argparse.Namespace) -> Certificate:
     """Build a real certificate from whichever convention the user supplied."""
     has_benefits = args.benefits is not None
     has_point = args.delta_hat is not None or args.calib_residuals is not None
-    if has_benefits == has_point:
+    has_estimator = args.estimator_json is not None or args.protocol_sha256 is not None
+    if sum((has_benefits, has_point, has_estimator)) != 1:
         raise SystemExit(
-            "kga decide: supply exactly one of\n"
+            "kga decide: supply exactly one of these conventions:\n"
+            "  --estimator-json MODEL.json --protocol-sha256 SHA --calib CAL.npy --test TEST.npy\n"
             "  --benefits BENEFITS.npy [--benefit-range R] [--method ebern|hoeffding|evalue]\n"
             "  --delta-hat D --calib-residuals RESID.npy\n"
-            "Unlabelled --calib/--test scores alone cannot yield a decision "
-            "(that is Theorem 1); they may be added to either form for reporting."
+            "Unlabelled scores require a pre-fitted benefit estimator; evidence alone "
+            "does not identify the benefit sign."
         )
+
+    if has_estimator:
+        if args.estimator_json is None or args.protocol_sha256 is None:
+            raise SystemExit("kga decide: --estimator-json and --protocol-sha256 must be given together.")
+        if args.calib is None or args.test is None:
+            raise SystemExit("kga decide: the label-free estimator path requires --calib and --test.")
+        estimator = FrozenLinearBenefitEstimator.load_json(args.estimator_json)
+        gate = KGA(alpha=args.alpha)
+        gate.evidence(_load_array(args.calib, "calib"), _load_array(args.test, "test"))
+        return gate.certify_evidence(estimator, protocol_sha256=args.protocol_sha256)
 
     if has_benefits:
         benefits = _load_array(args.benefits, "benefits").ravel()
@@ -240,12 +257,30 @@ def build_parser() -> argparse.ArgumentParser:
     )
     p_decide.add_argument("--delta-hat", type=float, default=None, help="Benefit point estimate Delta_hat.")
     p_decide.add_argument(
+        "--estimator-json",
+        default=None,
+        help="Frozen linear benefit-estimator JSON for the label-free deployment path.",
+    )
+    p_decide.add_argument(
+        "--protocol-sha256",
+        default=None,
+        help="Active protocol digest; must match the frozen estimator artifact.",
+    )
+    p_decide.add_argument(
         "--calib-residuals",
         default=None,
         help="Held-out |Delta_hat_i - Delta_i| residuals (.npy) for the split-conformal radius.",
     )
-    p_decide.add_argument("--calib", default=None, help="Optional calibration scores (.npy), reported as evidence only.")
-    p_decide.add_argument("--test", default=None, help="Optional test scores (.npy), reported as evidence only.")
+    p_decide.add_argument(
+        "--calib",
+        default=None,
+        help="Calibration scores (.npy): estimator input on label-free path, otherwise reporting only.",
+    )
+    p_decide.add_argument(
+        "--test",
+        default=None,
+        help="Unlabelled target scores (.npy): estimator input on label-free path, otherwise reporting only.",
+    )
     p_decide.add_argument("--alpha", type=float, default=0.1, help="Miscoverage level in (0, 1). Default 0.1.")
     p_decide.set_defaults(func=_decide_command)
 

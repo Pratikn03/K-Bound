@@ -205,6 +205,10 @@ class _BettingEProcess:
         # NOTE (F2-15): this class used to store an unused ``self.alpha``.  The
         # threshold is supplied by ``rejected_null(global_alpha, k)``, which is
         # the only level that matters, so the stale copy has been removed.
+        if not a < 0.0 < b:
+            raise ValueError("a < 0 < b is required")
+        if not 0.0 < cap < 1.0:
+            raise ValueError("cap must be in (0, 1)")
         self.a, self.b = a, b
         self.lam_max = cap / (-a)
         self.s1 = 0.0
@@ -213,7 +217,9 @@ class _BettingEProcess:
         self.logw = 0.0
 
     def update(self, x: float) -> float:
-        x = float(max(self.a, min(self.b, x)))
+        x = float(x)
+        if not math.isfinite(x) or x < self.a or x > self.b:
+            raise ValueError(f"benefit must be finite and in the predeclared support [{self.a}, {self.b}]")
         mu = self.s1 / self.cnt if self.cnt > 0 else 0.0
         s2 = self.s2 / max(self.cnt, 1.0)
         lam = float(np.clip(mu / s2 if s2 > 0 else 0.0, 0.0, self.lam_max))

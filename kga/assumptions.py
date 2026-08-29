@@ -40,10 +40,11 @@ from __future__ import annotations
 
 import json
 import math
+from collections.abc import Iterable, Mapping, Sequence
 from dataclasses import asdict, dataclass, field
 from enum import Enum
 from pathlib import Path
-from typing import Any, Callable, Iterable, Mapping, Sequence
+from typing import Any, Callable
 
 import numpy as np
 
@@ -66,6 +67,7 @@ __all__ = [
     "RadiusStability",
     "RiskAlignmentAudit",
     "ConclusionStability",
+    "CoverageClaimBasis",
     "AssumptionReport",
     "GateThresholds",
     "conformal_radius",
@@ -128,6 +130,46 @@ _LADDER: dict[GateDecision, FallbackAction] = {
     GateDecision.DIAGNOSTIC_ONLY: FallbackAction.NONE,
     GateDecision.REJECT: FallbackAction.NONE,
 }
+
+
+@dataclass(frozen=True)
+class CoverageClaimBasis:
+    """External, auditable basis for a theoretical coverage statement.
+
+    Diagnostics in this module can falsify a proposed transfer argument but
+    cannot establish it. A theoretical claim therefore requires a separate
+    record naming the theorem/design, inference unit, assumptions, locked
+    protocol, and exact calibration artifact. The record is evidence about the
+    declared argument, not proof that its assumptions hold in nature.
+    """
+
+    theorem_or_result: str
+    calibration_design: str
+    inference_unit: str
+    assumptions: tuple[str, ...]
+    protocol_sha256: str
+    calibration_artifact_sha256: str
+    justification: str
+
+    def validate(self, record: ProtocolRecord) -> list[str]:
+        errors: list[str] = []
+        for name in ("theorem_or_result", "calibration_design", "inference_unit", "justification"):
+            if not str(getattr(self, name)).strip():
+                errors.append(f"coverage basis: {name} is required")
+        if self.inference_unit != record.inference_unit:
+            errors.append("coverage basis: inference unit does not match protocol record")
+        if not self.assumptions or any(not str(item).strip() for item in self.assumptions):
+            errors.append("coverage basis: assumptions must be a non-empty tuple")
+        for name in ("protocol_sha256", "calibration_artifact_sha256"):
+            value = str(getattr(self, name))
+            if len(value) != 64:
+                errors.append(f"coverage basis: {name} must be a SHA-256 digest")
+                continue
+            try:
+                int(value, 16)
+            except ValueError:
+                errors.append(f"coverage basis: {name} must be a SHA-256 digest")
+        return errors
 
 
 @dataclass(frozen=True)
@@ -211,9 +253,7 @@ def _auroc(scores: np.ndarray, labels: np.ndarray) -> float | None:
     return float((r[labels == 1].sum() - n_pos * (n_pos + 1) / 2.0) / (n_pos * n_neg))
 
 
-def _fit_logistic(
-    x: np.ndarray, y: np.ndarray, *, l2: float = 1.0, iters: int = 400, lr: float = 0.5
-) -> np.ndarray:
+def _fit_logistic(x: np.ndarray, y: np.ndarray, *, l2: float = 1.0, iters: int = 400, lr: float = 0.5) -> np.ndarray:
     """Deterministic L2 logistic regression by full-batch gradient descent.
 
     Small and dependency-free on purpose: the separability diagnostic must be
@@ -286,9 +326,7 @@ def effective_units(groups: Sequence[Any] | np.ndarray | None, n_rows: int) -> i
     return int(len(np.unique(np.asarray(groups))))
 
 
-def conformal_radius(
-    residuals: Sequence[float] | np.ndarray, alpha: float
-) -> dict[str, Any]:
+def conformal_radius(residuals: Sequence[float] | np.ndarray, alpha: float) -> dict[str, Any]:
     """Exact-rank conformal radius and the ceiling its sample size imposes.
 
     With ``k = ceil((n+1)(1-alpha))``: if ``k > n`` the requested level is
@@ -412,9 +450,7 @@ def evidence_support_overlap(
     notes: list[str] = []
 
     if a.shape[1] != b.shape[1]:
-        raise ValueError(
-            f"evidence dimensionality differs: cal has {a.shape[1]}, dep has {b.shape[1]}"
-        )
+        raise ValueError(f"evidence dimensionality differs: cal has {a.shape[1]}, dep has {b.shape[1]}")
     if a.shape[0] == 0 or b.shape[0] == 0:
         return SupportOverlap(
             status=Status.FAIL.value,
@@ -458,13 +494,9 @@ def evidence_support_overlap(
         notes.append("domain-classifier AUROC not computable at this sample size")
 
     status = Status.PASS
-    if frac_outside >= th.support_frac_outside_fail or (
-        auroc is not None and auroc >= th.domain_auroc_fail
-    ):
+    if frac_outside >= th.support_frac_outside_fail or (auroc is not None and auroc >= th.domain_auroc_fail):
         status = Status.FAIL
-    elif frac_outside >= th.support_frac_outside_warn or (
-        auroc is not None and auroc >= th.domain_auroc_warn
-    ):
+    elif frac_outside >= th.support_frac_outside_warn or (auroc is not None and auroc >= th.domain_auroc_warn):
         status = Status.WARNING
 
     notes.append(
@@ -484,9 +516,7 @@ def evidence_support_overlap(
     )
 
 
-def _crossfit_domain_auroc(
-    a_s: np.ndarray, b_s: np.ndarray, *, n_folds: int = 5
-) -> float | None:
+def _crossfit_domain_auroc(a_s: np.ndarray, b_s: np.ndarray, *, n_folds: int = 5) -> float | None:
     n_a, n_b = a_s.shape[0], b_s.shape[0]
     if min(n_a, n_b) < 2:
         return None
@@ -602,10 +632,7 @@ def radius_stability(
                 flips |= _actions(dh, rad) != base
             disagreement = float(flips.mean())
         else:
-            notes.append(
-                "pooled radius is infinite (alpha unattainable); decision "
-                "disagreement not computed"
-            )
+            notes.append("pooled radius is infinite (alpha unattainable); decision disagreement not computed")
 
     status = Status.PASS
     if (cv is not None and cv >= th.radius_cv_fail) or (
@@ -675,9 +702,7 @@ def risk_alignment_audit(
         "time; it audits A2 on evaluated conditions and does not license A2 elsewhere"
     ]
     if dh.size == 0:
-        return RiskAlignmentAudit(
-            True, None, None, None, None, None, None, 0, notes + ["empty sample"]
-        )
+        return RiskAlignmentAudit(True, None, None, None, None, None, None, 0, notes + ["empty sample"])
 
     err = dh - dt
     sign_agree = float((np.sign(dh) == np.sign(dt)).mean())
@@ -688,10 +713,7 @@ def risk_alignment_audit(
         harmful = dt <= 0
         if groups is not None:
             g = np.asarray(groups)
-            fa_by_group = {
-                str(u): float(((acts == 1) & harmful)[g == u].mean())
-                for u in np.unique(g)
-            }
+            fa_by_group = {str(u): float(((acts == 1) & harmful)[g == u].mean()) for u in np.unique(g)}
         else:
             fa_by_group = {"__pooled__": float(((acts == 1) & harmful).mean())}
     elif radius is not None:
@@ -701,9 +723,7 @@ def risk_alignment_audit(
     if evidence_region is not None and radius is not None and math.isfinite(radius):
         reg = np.asarray(evidence_region)
         inside = (dt >= dh - radius) & (dt <= dh + radius)
-        cov_by_region = {
-            str(u): float(inside[reg == u].mean()) for u in np.unique(reg)
-        }
+        cov_by_region = {str(u): float(inside[reg == u].mean()) for u in np.unique(reg)}
 
     return RiskAlignmentAudit(
         retrospective=True,
@@ -765,9 +785,7 @@ def conclusion_stability(
             notes.append(f"alternative {name!r} failed to evaluate: {exc}")
 
     frac = len(changed) / len(alternatives)
-    status = (
-        Status.FAIL.value if frac > th.conclusion_change_fail else Status.PASS.value
-    )
+    status = Status.FAIL.value if frac > th.conclusion_change_fail else Status.PASS.value
     return ConclusionStability(
         status=status,
         n_alternatives=len(alternatives),
@@ -833,17 +851,11 @@ def leakage_audit(record: ProtocolRecord) -> tuple[Status, list[str]]:
     if fixed is None or evaluated is None:
         reasons.append("candidate fix time or evaluation time not recorded (A6)")
     elif fixed > evaluated:
-        reasons.append(
-            f"A6 violated: candidate fixed at {fixed}, after target evaluation "
-            f"at {evaluated}"
-        )
+        reasons.append(f"A6 violated: candidate fixed at {fixed}, after target evaluation at {evaluated}")
 
     design = record.calibration_design_fixed_at
     if design is not None and evaluated is not None and design > evaluated:
-        reasons.append(
-            f"A6 violated: calibration design fixed at {design}, after target "
-            f"evaluation at {evaluated}"
-        )
+        reasons.append(f"A6 violated: calibration design fixed at {design}, after target evaluation at {evaluated}")
 
     if record.failed_runs_retained is False:
         reasons.append(
@@ -863,9 +875,9 @@ def leakage_audit(record: ProtocolRecord) -> tuple[Status, list[str]]:
 class AssumptionReport:
     """Machine-readable assumption state, emitted alongside every result.
 
-    ``theoretical_coverage_claimed`` is False unless a caller explicitly argues A1-A3
-    and passes ``claim_theoretical_coverage=True`` to :func:`run_gate`.  There is no
-    code path in which a diagnostic result flips it to True.
+    ``theoretical_coverage_claimed`` is False unless a caller supplies a valid
+    :class:`CoverageClaimBasis` and explicitly requests the claim. There is no
+    code path in which a diagnostic result alone flips it to True.
     """
 
     dataset: str
@@ -876,6 +888,7 @@ class AssumptionReport:
     target_labels_used_for_routing: bool | None
     coverage_type: str
     theoretical_coverage_claimed: bool
+    coverage_claim_basis: dict[str, Any] | None
     observed_coverage: float | None
     n_rows: int | None
     n_units: int | None
@@ -891,7 +904,7 @@ class AssumptionReport:
     thresholds: dict[str, Any]
     diagnostics: dict[str, Any]
     limitations: list[str] = field(default_factory=list)
-    schema_version: str = "kbound-assumption-report/1"
+    schema_version: str = "kbound-assumption-report/2"
 
     def to_json(self, **kwargs: Any) -> str:
         return json.dumps(asdict(self), indent=2, sort_keys=False, **kwargs)
@@ -915,6 +928,7 @@ def run_gate(
     alternatives: Mapping[str, Callable[[], Any]] | None = None,
     thresholds: GateThresholds | None = None,
     claim_theoretical_coverage: bool = False,
+    coverage_claim_basis: CoverageClaimBasis | None = None,
     seed: int = 0,
 ) -> AssumptionReport:
     """Run the seven-step assumption gate and return the report.
@@ -952,8 +966,7 @@ def run_gate(
         )
     if n_eff < th.min_effective_units:
         limitations.append(
-            f"only {n_eff} effective calibration units against a declared minimum of "
-            f"{th.min_effective_units}; A5 unmet"
+            f"only {n_eff} effective calibration units against a declared minimum of {th.min_effective_units}; A5 unmet"
         )
         decision = _downgrade(decision, GateDecision.DIAGNOSTIC_ONLY)
 
@@ -974,14 +987,10 @@ def run_gate(
         diagnostics["support_overlap"] = asdict(so)
         support_status = so.status
         if support_status == Status.FAIL.value:
-            limitations.append(
-                "deployment evidence outside the calibrated support; A1/A2 suspect"
-            )
+            limitations.append("deployment evidence outside the calibrated support; A1/A2 suspect")
             decision = _downgrade(decision, GateDecision.RESTRICTED)
         elif support_status == Status.WARNING.value:
-            limitations.append(
-                "support-overlap warning: strict adapt is withheld, freeze/abstain only"
-            )
+            limitations.append("support-overlap warning: strict adapt is withheld, freeze/abstain only")
             decision = _downgrade(decision, GateDecision.RESTRICTED)
     else:
         support_status = Status.FAIL.value
@@ -993,25 +1002,18 @@ def run_gate(
 
     # -- Step 4: calibration stability -------------------------------------- #
     if residuals is not None and calibration_groups is not None:
-        rs = radius_stability(
-            residuals, calibration_groups, alpha, delta_hat=delta_hat, thresholds=th
-        )
+        rs = radius_stability(residuals, calibration_groups, alpha, delta_hat=delta_hat, thresholds=th)
         diagnostics["radius_stability"] = asdict(rs)
         radius_status = rs.status
         if radius_status == Status.FAIL.value:
-            limitations.append(
-                "radius or action mix unstable across admissible splits; strict "
-                "decisions withheld"
-            )
+            limitations.append("radius or action mix unstable across admissible splits; strict decisions withheld")
             decision = _downgrade(decision, GateDecision.RESTRICTED)
         elif radius_status == Status.WARNING.value:
             limitations.append("radius stability warning; freeze/abstain only")
             decision = _downgrade(decision, GateDecision.RESTRICTED)
     else:
         radius_status = Status.FAIL.value
-        limitations.append(
-            "radius stability not evaluated (residuals or unit labels missing)"
-        )
+        limitations.append("radius stability not evaluated (residuals or unit labels missing)")
         decision = _downgrade(decision, GateDecision.RESTRICTED)
 
     # -- Step 5: sensitivity of the promoted conclusion --------------------- #
@@ -1026,10 +1028,7 @@ def run_gate(
                     f"choice ({', '.join(cs.changed_under)}); result is diagnostic only"
                 )
             else:
-                limitations.append(
-                    "sensitivity to the calibration construction untested; result is "
-                    "diagnostic only"
-                )
+                limitations.append("sensitivity to the calibration construction untested; result is diagnostic only")
             decision = _downgrade(decision, GateDecision.DIAGNOSTIC_ONLY)
     else:
         conclusion_status = Status.FAIL.value
@@ -1045,11 +1044,7 @@ def run_gate(
         "coverage_interval_95": None,
         "interval_method": None,
     }
-    if (
-        delta_true is not None
-        and interval_lower is not None
-        and interval_upper is not None
-    ):
+    if delta_true is not None and interval_lower is not None and interval_upper is not None:
         cov = observed_coverage(
             delta_true,
             interval_lower,
@@ -1063,10 +1058,7 @@ def run_gate(
                 "evaluation rows are correlated this interval is too narrow"
             )
     else:
-        limitations.append(
-            "observed coverage not computable: labelled benefits or interval "
-            "endpoints not supplied"
-        )
+        limitations.append("observed coverage not computable: labelled benefits or interval endpoints not supplied")
 
     if delta_hat is not None and delta_true is not None:
         radius_for_audit = None
@@ -1086,16 +1078,25 @@ def run_gate(
         )
 
     # -- Coverage-claim discipline ------------------------------------------ #
+    basis_payload: dict[str, Any] | None = None
+    if coverage_claim_basis is not None:
+        basis_errors = coverage_claim_basis.validate(record)
+        diagnostics["coverage_claim_basis"] = {
+            "status": Status.PASS.value if not basis_errors else Status.FAIL.value,
+            "errors": basis_errors,
+        }
+        basis_payload = asdict(coverage_claim_basis)
+        if basis_errors:
+            limitations.extend(basis_errors)
+            claim_theoretical_coverage = False
+    elif claim_theoretical_coverage:
+        claim_theoretical_coverage = False
+        limitations.append("theoretical coverage claim refused: no auditable CoverageClaimBasis supplied")
+
     if claim_theoretical_coverage and decision is not GateDecision.CERTIFY:
         claim_theoretical_coverage = False
-        limitations.append(
-            "theoretical coverage claim withdrawn: the gate did not return CERTIFY"
-        )
-    coverage_type = (
-        CoverageType.THEORETICAL.value
-        if claim_theoretical_coverage
-        else cov["coverage_type"]
-    )
+        limitations.append("theoretical coverage claim withdrawn: the gate did not return CERTIFY")
+    coverage_type = CoverageType.THEORETICAL.value if claim_theoretical_coverage else cov["coverage_type"]
     if not claim_theoretical_coverage:
         limitations.append(
             "no theoretical coverage claim: A1-A3 are not checkable from label-free "
@@ -1115,6 +1116,7 @@ def run_gate(
         target_labels_used_for_routing=record.target_labels_used_for_routing,
         coverage_type=coverage_type,
         theoretical_coverage_claimed=bool(claim_theoretical_coverage),
+        coverage_claim_basis=basis_payload,
         observed_coverage=cov["observed_coverage"],
         n_rows=cov["n_rows"],
         n_units=cov["n_units"],

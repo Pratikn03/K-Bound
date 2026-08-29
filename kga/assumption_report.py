@@ -24,6 +24,13 @@ from kga.assumptions import (  # noqa: F401
 )
 
 __all__ = [
-    "AssumptionReport", "CoverageType", "FallbackAction", "GateDecision",
-    "GateThresholds", "ProtocolRecord", "Status", "run_gate", "write_report",
+    "AssumptionReport",
+    "CoverageType",
+    "FallbackAction",
+    "GateDecision",
+    "GateThresholds",
+    "ProtocolRecord",
+    "Status",
+    "run_gate",
+    "write_report",
 ]

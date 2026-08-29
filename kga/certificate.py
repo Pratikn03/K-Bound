@@ -135,11 +135,16 @@ class Certificate:
         return self.delta_hat + self.epsilon
 
     @property
-    def interval_level(self) -> float:
-        """Simultaneous coverage of ``[lower, upper]``: ``1 - 2 alpha``, or
-        ``1 - alpha`` for the two-sided ``conformal`` radius."""
+    def interval_level(self) -> float | None:
+        """Simultaneous interval coverage, when this is an interval object.
+
+        The e-value path encodes a directional threshold crossing in the common
+        certificate container; it is not a confidence interval.
+        """
         if self.method == "conformal":
             return 1.0 - self.alpha
+        if self.method == "evalue":
+            return None
         return 1.0 - 2.0 * self.alpha
 
 
@@ -501,9 +506,11 @@ def conformal_radii_loo(
     This is fix-queue item 4.  Every shipped runner used to compute one radius
     over *all* ``N`` residuals -- including the residual of the very cell being
     scored -- which makes ``epsilon`` a function of the test labels that the
-    ``FA_u <= alpha`` guarantee attaches to.  Excluding the scored index restores
-    exchangeability between the query residual and the calibration pool, which is
-    the only assumption the rank argument needs.
+    ``FA_u <= alpha`` guarantee attaches to. Excluding the scored index removes
+    direct self-inclusion. It does **not** establish exchangeability when cells
+    are correlated, condition dependent, or scored by different fitted models.
+    Controlled-grid use is therefore empirical leave-one-condition-out residual
+    calibration, not exact split conformal or jackknife+.
 
     Note the knock-on effect at small ``n``: a pool of ``n`` residuals yields
     LOO pools of ``n - 1``, so feasibility now requires
@@ -621,7 +628,8 @@ def evalue_anytime(
     Parameters
     ----------
     paired_benefits : array-like of shape (n,)
-        Ordered stream of per-sample benefits ``X_i`` in ``[a, b]``.
+        Ordered stream of per-sample benefits ``X_i`` in ``[a, b]``. Values
+        outside the predeclared support raise; they are never silently clipped.
     alpha : float, default=0.1
         Anytime type-I error budget.
     a, b : float, default=-1.0, 1.0
@@ -651,7 +659,17 @@ def evalue_anytime(
         raise ValueError(f"a must be < 0 for the one-sided test on H0: Delta<=0; got {a}")
     if b <= 0.0:
         raise ValueError(f"b must be > 0 for the one-sided test on H0': Delta>=0; got {b}")
+    if not 0.0 < bet_cap_frac < 1.0:
+        raise ValueError("bet_cap_frac must be in (0, 1)")
+    if not math.isfinite(prior_var) or prior_var <= 0.0:
+        raise ValueError("prior_var must be finite and > 0")
+    if not math.isfinite(prior_weight) or prior_weight <= 0.0:
+        raise ValueError("prior_weight must be finite and > 0")
     arr = _as_1d(paired_benefits, "paired_benefits")
+    if np.any(arr < a) or np.any(arr > b):
+        raise ValueError(
+            f"paired_benefits must lie in the predeclared support [{a}, {b}]; clipping would change the tested mean"
+        )
     n = arr.size
 
     lam_max_plus = bet_cap_frac / (-a)
@@ -669,7 +687,7 @@ def evalue_anytime(
     log_w_minus = 0.0
 
     for x in arr:
-        x_clamp = float(max(a, min(b, x)))
+        x_value = float(x)
         # Predictable bets from PAST statistics only.
         mu_hat = s1 / cnt if cnt > 0 else 0.0
         mu_hat_m = s1m / cnt if cnt > 0 else 0.0
@@ -678,14 +696,14 @@ def evalue_anytime(
         lam_plus = float(np.clip(mu_hat / sig2 if sig2 > 0 else 0.0, 0.0, lam_max_plus))
         lam_minus = float(np.clip(mu_hat_m / sig2m if sig2m > 0 else 0.0, 0.0, lam_max_minus))
 
-        log_w_plus += math.log(max(1.0 + lam_plus * x_clamp, 1e-300))
-        log_w_minus += math.log(max(1.0 + lam_minus * (-x_clamp), 1e-300))
+        log_w_plus += math.log(max(1.0 + lam_plus * x_value, 1e-300))
+        log_w_minus += math.log(max(1.0 + lam_minus * (-x_value), 1e-300))
 
         # Update predictable stats AFTER betting (so they remain F_{i-1}-measurable).
-        s1 += x_clamp
-        s1m += -x_clamp
-        s2 += x_clamp**2
-        s2m += x_clamp**2
+        s1 += x_value
+        s1m += -x_value
+        s2 += x_value**2
+        s2m += x_value**2
         cnt += 1.0
         cnt_var += 1.0
 
@@ -714,13 +732,15 @@ def evalue_anytime(
 
 
 def worst_group_conformal_radius(group_residuals: list[np.ndarray], alpha: float) -> float:
-    """Computes robust worst-group domain conformal radius across domain clusters.
+    """Compute the maximum exact-rank radius across calibration groups.
 
     eps_robust = max_{g} split_conformal_rank_radius(R_g, alpha)
 
-    Protects against domain non-exchangeability (unit mismatch) when novel deployment
-    environments exhibit higher drift variance than baseline calibration cells.
+    This is conservative for the supplied groups. It protects a new group only
+    under an additional dominance/transfer assumption that its residual law is
+    no heavier-tailed than the worst calibration group.
     """
+    if not group_residuals:
+        raise ValueError("group_residuals must contain at least one group")
     radii = [split_conformal_rank_radius(np.asarray(res, dtype=float), alpha) for res in group_residuals]
     return float(max(radii))
-

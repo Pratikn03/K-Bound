@@ -56,7 +56,9 @@ def test_decide_proxy_mode(monkeypatch: pytest.MonkeyPatch):
     body = resp.json()
     assert body["decision"] in {"ADAPT", "FREEZE", "ABSTAIN"}
     assert body["cert_mode"] == "proxy"
-    assert body["epsilon"] >= 0
+    assert body["decision"] == "ABSTAIN"
+    assert body["epsilon"] is None
+    assert not body["radius_feasible"]
 
 
 def test_decide_full_mode_benefit_scores(monkeypatch: pytest.MonkeyPatch):
@@ -73,6 +75,7 @@ def test_decide_full_mode_benefit_scores(monkeypatch: pytest.MonkeyPatch):
             "cert_mode": "full",
             "benefit_scores": benefits,
             "method": "ebern",
+            "benefit_range": 2.0,
         },
     )
     assert resp.status_code == 200
@@ -80,6 +83,23 @@ def test_decide_full_mode_benefit_scores(monkeypatch: pytest.MonkeyPatch):
     assert body["cert_mode"] == "full"
     assert body["method"] == "ebern"
     assert body["decision"] == "ADAPT"
+    assert body["radius_feasible"]
+
+
+def test_decide_full_mode_rejects_data_dependent_support(monkeypatch: pytest.MonkeyPatch):
+    client = _client(monkeypatch)
+    resp = client.post(
+        "/decide",
+        headers={"X-API-Key": "test-secret"},
+        json={
+            "calib_scores": [0.1, 0.2, 0.15, 0.18],
+            "test_scores": [0.5, 0.55, 0.52, 0.48],
+            "cert_mode": "full",
+            "benefit_scores": [0.2] * 20,
+            "method": "ebern",
+        },
+    )
+    assert resp.status_code == 422
 
 
 def test_decide_full_mode_requires_inputs(monkeypatch: pytest.MonkeyPatch):

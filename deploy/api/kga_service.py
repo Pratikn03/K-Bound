@@ -23,6 +23,7 @@ def perform_kga_decide(
     benefit_scores: list[float] | None = None,
     calib_residuals: list[float] | None = None,
     method: str = "ebern",
+    benefit_range: float | None = None,
 ) -> tuple[Decision, Certificate, Evidence]:
     """Run evidence + certificate + trichotomy.
 
@@ -35,16 +36,18 @@ def perform_kga_decide(
 
     if cert_mode == "full":
         if benefit_scores is not None:
-            certificate = kga.certify(scores=np.asarray(benefit_scores, dtype=float), method=method)
+            certificate = kga.certify(
+                scores=np.asarray(benefit_scores, dtype=float),
+                method=method,
+                benefit_range=benefit_range,
+            )
         elif calib_residuals is not None:
             certificate = kga.certify(
                 delta_hat=0.0,
                 calib_residuals=np.asarray(calib_residuals, dtype=float),
             )
         else:
-            raise ValueError(
-                "cert_mode='full' requires benefit_scores or calib_residuals"
-            )
+            raise ValueError("cert_mode='full' requires benefit_scores or calib_residuals")
     else:
         residual_proxy = np.abs(calib_scores - float(np.median(calib_scores)))
         certificate = conformal_split(0.0, residual_proxy, alpha=alpha)

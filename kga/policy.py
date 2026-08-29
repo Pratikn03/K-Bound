@@ -7,8 +7,9 @@ The Knowability-Guided Adaptation (KGA) gate turns a finite-sample certificate
                  ``Delta_hat - epsilon > 0`` (adapting is provably beneficial);
 * ``FREEZE``  -- the certified upper bound is strictly negative,
                  ``Delta_hat + epsilon < 0`` (adapting is provably harmful);
-* ``ABSTAIN`` -- the certificate brackets zero, so the sign of the true benefit
-                 ``Delta = R(f0) - R(fa)`` is not knowable at level ``alpha``.
+* ``ABSTAIN`` -- the certificate representation does not support a strict
+                 commitment. This may reflect finite sample size, estimator
+                 error, transfer failure, or structural ambiguity.
 
 This is exactly the rule implemented in every K-Bound experiment script (e.g.
 ``src/scripts/kbound/knowability_experiment.py`` lines 120-121,
@@ -41,10 +42,9 @@ Which function should I call?
   :class:`Decision`.  The primitive.
 * :func:`decide_batch` -- vectorised :func:`decide` over arrays of
   ``delta_hat`` / ``epsilon`` (``epsilon`` may be scalar or per-cell).
-* :func:`decide_kga`  -- **the canonical end-to-end rule**: stored per-cell
-  benefit estimates and realised benefits in, decisions out, with the
-  leave-one-out-of-pool exact-rank conformal radius.  Every driver in this
-  repository must route through this function (fix-queue item 15); the seven
+* :func:`decide_kga`  -- the canonical controlled-grid **replay rule**: stored
+  per-cell benefit estimates and realised benefits in, decisions out, with a
+  leave-one-out-of-pool exact-rank residual radius. The seven
   copy-pasted ``decide_kga`` forks that produced the published numbers used an
   interpolated ``np.quantile`` over a pool that included the scored cell, and
   they are gone.
@@ -158,7 +158,7 @@ def decide(certificate: Certificate, alpha: float | None = None) -> Decision:
 
 
 # ---------------------------------------------------------------------------
-# The canonical K-Bound decision path (fix-queue item 15)
+# The canonical controlled-grid replay path (fix-queue item 15)
 # ---------------------------------------------------------------------------
 #: Calibration conventions accepted by :func:`decide_kga`.
 CALIBRATIONS = ("loo", "in_pool")
@@ -218,7 +218,7 @@ def decide_kga(
     alpha: float = 0.1,
     calibration: str = "loo",
 ):
-    """THE canonical K-Bound rule: stored ``b_hat``/``B`` in, decisions out.
+    """Canonical controlled-grid replay: stored ``b_hat``/``B`` in, decisions out.
 
     This is the single entry point every driver, re-scoring script and table
     generator in the repository must call (fix-queue item 15).  It implements
@@ -234,17 +234,18 @@ def decide_kga(
        ``np.quantile`` is never used.  When ``k > n`` the radius is ``+inf``
        and every cell ABSTAINs (fix-queue item 25).
     2. **Pool** -- cell ``i``'s radius is calibrated on the *other* ``n - 1``
-       residuals only (:func:`kga.certificate.conformal_radii_loo`), so
-       ``eps`` is not a function of the label of the cell it is used to protect
-       (fix-queue item 4).
+       residuals only (:func:`kga.certificate.conformal_radii_loo`), removing
+       direct self-inclusion (fix-queue item 4). This does not prove residual
+       exchangeability across correlated or heterogeneous conditions.
     3. **Trichotomy** -- ADAPT iff ``delta_hat_i - eps_i > 0``; FREEZE iff
        ``delta_hat_i + eps_i < 0``; otherwise ABSTAIN.  Strict inequalities, so
        a lower bound of exactly zero ABSTAINs, matching the ``|M| > beta``
        commitment rule of the knowability frontier.
 
-    Implements ``thm:certificate`` (Theorem 3): on the ``1 - alpha`` coverage
-    event the ADAPT branch fires only when ``Delta > 0``, hence
-    ``Pr[ADAPT and Delta <= 0] <= alpha``.
+    Theorem 3 applies conditionally: if the resulting interval has the stated
+    marginal coverage, ADAPT implies positive benefit on the coverage event.
+    The leave-one-condition-out grid construction itself is an empirical
+    calibration design, not a proof of exact split-conformal coverage.
 
     Parameters
     ----------

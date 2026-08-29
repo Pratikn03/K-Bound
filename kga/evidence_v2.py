@@ -18,6 +18,7 @@ Features:
 ProjNorm (Yu et al. 2022) requires training a probe on pseudo-labels (GPU);
 documented in GPU_WIRING.md, NOT implemented here.
 """
+
 from __future__ import annotations
 
 import numpy as np
@@ -91,24 +92,39 @@ def _persample_stats(L: np.ndarray) -> dict:
     ent = -(P * np.log(np.clip(P, 1e-12, 1.0))).sum(axis=1)
     top2 = np.sort(P, axis=1)[:, -2:]
     margin = top2[:, 1] - top2[:, 0]
-    energy = -np.log(np.exp(L - L.max(axis=1, keepdims=True)).sum(axis=1)) \
-        - L.max(axis=1)
+    energy = -np.log(np.exp(L - L.max(axis=1, keepdims=True)).sum(axis=1)) - L.max(axis=1)
     q = lambda x, p: float(np.quantile(x, p))  # noqa: E731
-    return dict(ent_q10=q(ent, .1), ent_q50=q(ent, .5), ent_q90=q(ent, .9),
-                margin_q10=q(margin, .1), margin_q50=q(margin, .5),
-                margin_q90=q(margin, .9),
-                energy_mean=float(energy.mean()), energy_q10=q(energy, .1))
+    return {
+        "ent_q10": q(ent, 0.1),
+        "ent_q50": q(ent, 0.5),
+        "ent_q90": q(ent, 0.9),
+        "margin_q10": q(margin, 0.1),
+        "margin_q50": q(margin, 0.5),
+        "margin_q90": q(margin, 0.9),
+        "energy_mean": float(energy.mean()),
+        "energy_q10": q(energy, 0.1),
+    }
 
 
 BASELINE_FEATURES = {"entropy": entropy_score, "msp": msp_score}
-NEW_FEATURES = {"mano": mano_score, "nuclear": nuclear_score,
-                "gdscore": gdscore_proxy}
+NEW_FEATURES = {"mano": mano_score, "nuclear": nuclear_score, "gdscore": gdscore_proxy}
 
 # canonical feature order (panel_capture serializes in this order)
-FEATURE_ORDER = ["entropy", "msp", "mano", "nuclear", "gdscore",
-                 "ent_q10", "ent_q50", "ent_q90",
-                 "margin_q10", "margin_q50", "margin_q90",
-                 "energy_mean", "energy_q10"]
+FEATURE_ORDER = [
+    "entropy",
+    "msp",
+    "mano",
+    "nuclear",
+    "gdscore",
+    "ent_q10",
+    "ent_q50",
+    "ent_q90",
+    "margin_q10",
+    "margin_q50",
+    "margin_q90",
+    "energy_mean",
+    "energy_q10",
+]
 
 
 def extract_all(L: np.ndarray) -> dict:

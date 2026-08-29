@@ -7,12 +7,12 @@ The integration is optional: importing :mod:`kga` does not import ELARA-U.
 
 from __future__ import annotations
 
-from collections.abc import Mapping
 from dataclasses import dataclass
 from enum import Enum
 
 import numpy as np
 
+from kga.benefit import FrozenLinearBenefitEstimator
 from kga.kga import KGA
 from kga.policy import Decision
 
@@ -23,44 +23,6 @@ class EvaluationMode(str, Enum):
     RETROSPECTIVE_AUDIT = "retrospective_audit"
     TARGET_LABEL_LIGHT = "target_label_light"
     LABEL_FREE = "label_free"
-
-
-@dataclass(frozen=True)
-class FrozenLinearBenefitEstimator:
-    """Frozen label-free benefit model calibrated on disjoint conditions."""
-
-    feature_names: tuple[str, ...]
-    weights: np.ndarray
-    intercept: float
-    residuals: np.ndarray
-    protocol_hash: str
-
-    def __post_init__(self) -> None:
-        weights = np.asarray(self.weights, dtype=float).ravel()
-        residuals = np.asarray(self.residuals, dtype=float).ravel()
-        if not self.protocol_hash:
-            raise ValueError("protocol_hash is required")
-        if len(self.feature_names) != weights.size:
-            raise ValueError("feature_names and weights must have equal length")
-        if residuals.size == 0:
-            raise ValueError("residuals must be non-empty")
-        if not np.all(np.isfinite(weights)) or not np.isfinite(self.intercept):
-            raise ValueError("weights and intercept must be finite")
-        if not np.all(np.isfinite(residuals)) or np.any(residuals < 0):
-            raise ValueError("residuals must be finite and non-negative")
-        object.__setattr__(self, "weights", weights)
-        object.__setattr__(self, "residuals", residuals)
-
-    def predict(self, features: Mapping[str, float]) -> float:
-        """Predict adaptation benefit from a fixed label-free feature map."""
-
-        missing = [name for name in self.feature_names if name not in features]
-        if missing:
-            raise ValueError(f"missing estimator features: {missing}")
-        x = np.array([features[name] for name in self.feature_names], dtype=float)
-        if not np.all(np.isfinite(x)):
-            raise ValueError("estimator features must be finite")
-        return float(self.intercept + x @ self.weights)
 
 
 @dataclass
@@ -232,8 +194,12 @@ class ELARAKGAGuard:
                 raise ValueError("label_free mode must not receive probe_indices")
             if estimator is None:
                 raise ValueError("label_free mode requires a frozen estimator")
-            delta_hat = estimator.predict(feature_map)
-            cert = kga.certify(delta_hat=delta_hat, calib_residuals=estimator.residuals)
+            cert = kga.certify_evidence(
+                estimator,
+                protocol_sha256=estimator.protocol_sha256,
+                features=feature_map,
+                evidence_schema_version=estimator.evidence_schema_version,
+            )
             labels_used = 0
             claim_tier = "label_free_candidate"
             claim_reasons = ("requires_heldout_aggregate_promotion_check",)

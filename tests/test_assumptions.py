@@ -15,6 +15,7 @@ import numpy as np
 import pytest
 
 from kga.assumptions import (
+    CoverageClaimBasis,
     CoverageType,
     GateDecision,
     GateThresholds,
@@ -31,22 +32,36 @@ from kga.assumptions import (
     run_gate,
 )
 
+HASH = "a" * 64
+
+
+def _coverage_basis():
+    return CoverageClaimBasis(
+        theorem_or_result="exact split-conformal rank theorem",
+        calibration_design="disjoint exchangeable residual split",
+        inference_unit="domain",
+        assumptions=("exchangeable domain-level residuals", "fixed estimator before calibration"),
+        protocol_sha256=HASH,
+        calibration_artifact_sha256="b" * 64,
+        justification="The deployment unit is sampled by the locked domain-level protocol.",
+    )
+
 
 def _clean_record(**over):
-    base = dict(
-        protocol="TEST_PROTOCOL_v1",
-        dataset="synthetic",
-        inference_unit="domain",
-        candidate_fixed_at="2026-01-01T00:00:00Z",
-        calibration_design_fixed_at="2026-01-02T00:00:00Z",
-        target_evaluated_at="2026-02-01T00:00:00Z",
-        target_labels_accessed=False,
-        target_labels_used_for_routing=False,
-        test_set_influenced_hparams=False,
-        calibration_test_separated=True,
-        protocol_lock_id="lock-abc123",
-        failed_runs_retained=True,
-    )
+    base = {
+        "protocol": "TEST_PROTOCOL_v1",
+        "dataset": "synthetic",
+        "inference_unit": "domain",
+        "candidate_fixed_at": "2026-01-01T00:00:00Z",
+        "calibration_design_fixed_at": "2026-01-02T00:00:00Z",
+        "target_evaluated_at": "2026-02-01T00:00:00Z",
+        "target_labels_accessed": False,
+        "target_labels_used_for_routing": False,
+        "test_set_influenced_hparams": False,
+        "calibration_test_separated": True,
+        "protocol_lock_id": "lock-abc123",
+        "failed_runs_retained": True,
+    }
     base.update(over)
     return ProtocolRecord(**base)
 
@@ -110,9 +125,7 @@ def test_clustered_interval_is_wider_than_the_iid_one_when_rows_are_correlated()
     hit = np.repeat(group_hit, 20)
     d = np.where(hit, 0.0, 5.0)
     iid = observed_coverage(d, np.full(200, -1.0), np.full(200, 1.0))
-    clustered = observed_coverage(
-        d, np.full(200, -1.0), np.full(200, 1.0), groups=groups
-    )
+    clustered = observed_coverage(d, np.full(200, -1.0), np.full(200, 1.0), groups=groups)
     assert clustered["n_units"] == 10
     assert iid["n_units"] == 200
     width_iid = iid["coverage_interval_95"][1] - iid["coverage_interval_95"][0]
@@ -331,20 +344,20 @@ def _good_gate_inputs(seed=7, n_units=40, per_unit=10):
     z_dep = rng.normal(size=(200, 2))
     delta_hat = rng.normal(loc=0.3, scale=0.05, size=n)
     delta_true = delta_hat + rng.normal(scale=0.02, size=n)
-    return dict(
-        alpha=0.1,
-        residuals=residuals,
-        calibration_groups=groups,
-        z_cal=z_cal,
-        z_dep=z_dep,
-        delta_hat=delta_hat,
-        delta_true=delta_true,
-        interval_lower=delta_hat - 0.2,
-        interval_upper=delta_hat + 0.2,
-        evaluation_groups=groups,
-        conclusion="no-harm",
-        alternatives={"by seed": lambda: "no-harm", "by cell": lambda: "no-harm"},
-    )
+    return {
+        "alpha": 0.1,
+        "residuals": residuals,
+        "calibration_groups": groups,
+        "z_cal": z_cal,
+        "z_dep": z_dep,
+        "delta_hat": delta_hat,
+        "delta_true": delta_true,
+        "interval_lower": delta_hat - 0.2,
+        "interval_upper": delta_hat + 0.2,
+        "evaluation_groups": groups,
+        "conclusion": "no-harm",
+        "alternatives": {"by seed": lambda: "no-harm", "by cell": lambda: "no-harm"},
+    }
 
 
 def test_a_well_provenanced_track_can_certify():
@@ -364,11 +377,37 @@ def test_theoretical_claim_is_withdrawn_when_the_gate_does_not_certify():
     args = _good_gate_inputs()
     args["z_dep"] = np.asarray(args["z_dep"]) + 8.0  # force a support failure
     rep = run_gate(
-        record=_clean_record(), claim_theoretical_coverage=True, **args
+        record=_clean_record(),
+        claim_theoretical_coverage=True,
+        coverage_claim_basis=_coverage_basis(),
+        **args,
     )
     assert rep.deployment_gate != GateDecision.CERTIFY.value
     assert rep.theoretical_coverage_claimed is False
     assert any("withdrawn" in x for x in rep.limitations)
+
+
+def test_theoretical_claim_requires_auditable_basis():
+    rep = run_gate(
+        record=_clean_record(),
+        claim_theoretical_coverage=True,
+        **_good_gate_inputs(),
+    )
+    assert rep.theoretical_coverage_claimed is False
+    assert any("no auditable CoverageClaimBasis" in x for x in rep.limitations)
+
+
+def test_valid_external_basis_can_be_recorded_but_is_not_created_by_diagnostics():
+    rep = run_gate(
+        record=_clean_record(),
+        claim_theoretical_coverage=True,
+        coverage_claim_basis=_coverage_basis(),
+        **_good_gate_inputs(),
+    )
+    assert rep.deployment_gate == GateDecision.CERTIFY.value
+    assert rep.theoretical_coverage_claimed is True
+    assert rep.coverage_type == CoverageType.THEORETICAL.value
+    assert rep.coverage_claim_basis["protocol_sha256"] == HASH
 
 
 def test_leakage_rejects_and_nothing_downstream_can_upgrade_it():
@@ -414,22 +453,20 @@ def test_missing_numbers_are_none_never_invented():
 def test_report_round_trips_through_json():
     rep = run_gate(record=_clean_record(), **_good_gate_inputs())
     parsed = json.loads(rep.to_json())
-    assert parsed["schema_version"] == "kbound-assumption-report/1"
+    assert parsed["schema_version"] == "kbound-assumption-report/2"
     assert parsed["dataset"] == "synthetic"
-    assert set(
-        [
-            "deployment_gate",
-            "fallback_action",
-            "coverage_type",
-            "theoretical_coverage_claimed",
-            "observed_coverage",
-            "coverage_interval_95",
-            "support_overlap_status",
-            "radius_stability_status",
-            "conclusion_stability_status",
-            "limitations",
-        ]
-    ) <= set(parsed)
+    assert {
+        "deployment_gate",
+        "fallback_action",
+        "coverage_type",
+        "theoretical_coverage_claimed",
+        "observed_coverage",
+        "coverage_interval_95",
+        "support_overlap_status",
+        "radius_stability_status",
+        "conclusion_stability_status",
+        "limitations",
+    } <= set(parsed)
 
 
 def test_gate_is_deterministic():

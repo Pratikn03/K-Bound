@@ -293,6 +293,14 @@ class TestEValue:
         cert = evalue_anytime(x, alpha=0.1)
         assert decide(cert) == Decision.ABSTAIN
 
+    def test_out_of_support_stream_is_rejected_not_clipped(self):
+        with pytest.raises(ValueError, match="predeclared support"):
+            evalue_anytime(np.array([0.0, 1.1]), alpha=0.1, a=-1.0, b=1.0)
+
+    def test_evalue_encoding_is_not_reported_as_confidence_interval(self):
+        cert = evalue_anytime(np.zeros(20), alpha=0.1)
+        assert cert.interval_level is None
+
 
 # ---------------------------------------------------------------------------
 # Non-identifiability witness: identical Z, opposite truth => ABSTAIN

@@ -44,6 +44,20 @@ from dataclasses import dataclass, field
 import numpy as np
 from scipy.stats import ks_2samp, rankdata
 
+EVIDENCE_SCHEMA_VERSION = "kga-generic-score-evidence/1"
+EVIDENCE_FEATURE_NAMES = (
+    "ks_mean",
+    "ks_max",
+    "disagree",
+    "entropy_shift",
+    "conf_shift",
+    "calib_entropy",
+    "test_entropy",
+    "calib_conf",
+    "test_conf",
+    "ess_frac",
+)
+
 
 @dataclass(frozen=True)
 class Evidence:
@@ -97,6 +111,17 @@ class Evidence:
     n_detectors: int
     extra: dict = field(default_factory=dict)
 
+    @property
+    def schema_version(self) -> str:
+        """Immutable schema identifier required by frozen benefit estimators."""
+
+        return EVIDENCE_SCHEMA_VERSION
+
+    def to_mapping(self) -> dict[str, float]:
+        """Return the exact deployment feature map in schema order."""
+
+        return dict(zip(EVIDENCE_FEATURE_NAMES, self.to_vector().tolist(), strict=True))
+
     def to_vector(self) -> np.ndarray:
         """Return the core scalar signals as a fixed-order feature vector.
 
@@ -104,21 +129,7 @@ class Evidence:
         calib_entropy, test_entropy, calib_conf, test_conf, ess_frac]``.
         Useful as the input ``Z`` to a downstream benefit regressor.
         """
-        return np.array(
-            [
-                self.ks_mean,
-                self.ks_max,
-                self.disagree,
-                self.entropy_shift,
-                self.conf_shift,
-                self.calib_entropy,
-                self.test_entropy,
-                self.calib_conf,
-                self.test_conf,
-                self.ess_frac,
-            ],
-            dtype=float,
-        )
+        return np.array([getattr(self, name) for name in EVIDENCE_FEATURE_NAMES], dtype=float)
 
 
 def _as_2d(scores: np.ndarray, name: str) -> np.ndarray:

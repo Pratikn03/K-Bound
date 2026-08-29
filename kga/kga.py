@@ -3,15 +3,16 @@
 ``KGA`` ties together the three K-Bound stages into a small, documented API:
 
     1. ``.evidence(calib, test)``      -> label-free evidence ``Z``  (kga.evidence)
-    2. ``.certify(...)``               -> certificate ``Delta_hat +/- epsilon``
+    2. ``.certify_evidence(...)``      -> frozen ``h(Z)`` and certificate
                                           (kga.certificate)
     3. ``.decide(...)``                -> ADAPT / FREEZE / ABSTAIN  (kga.policy)
 
 with ``.explain()`` returning every intermediate quantity for auditing.
 
-The object holds only an operating level ``alpha`` and a default certificate
-``method``; it carries no learned state, so a single instance is reusable and
-thread-safe.  Everything is pure ``numpy``/``scipy`` -- no torch.
+Deployment is label free only on the second path: the benefit estimator must
+have been fitted on development data and calibrated on disjoint labelled
+conditions before deployment.  :meth:`certify` remains available for labelled
+paired-benefit audits and for callers that already hold a point estimate.
 
 Example
 -------
@@ -19,7 +20,7 @@ Example
 >>> from kga import KGA
 >>> rng = np.random.default_rng(0)
 >>> kga = KGA(alpha=0.1, method="ebern")
->>> # Strongly positive paired benefits -> ADAPT is certifiable.
+>>> # A labelled paired-benefit audit (not the label-free deployment path).
 >>> benefits = rng.normal(0.3, 0.1, size=400)
 >>> cert = kga.certify(scores=benefits, benefit_range=2.0)
 >>> kga.decide(cert).value in {"ADAPT", "FREEZE", "ABSTAIN"}
@@ -37,6 +38,7 @@ from typing import cast
 
 import numpy as np
 
+from kga.benefit import BenefitEstimator
 from kga.certificate import (
     Certificate,
     conformal_split,
@@ -92,6 +94,9 @@ class KGA:
         self.last_evidence: Evidence | None = None
         self.last_certificate: Certificate | None = None
         self.last_decision: Decision | None = None
+        self.last_estimator_artifact_sha256: str | None = None
+        self.last_protocol_sha256: str | None = None
+        self.last_evidence_schema_version: str | None = None
 
     # ------------------------------------------------------------------
     # Stage 1: label-free evidence
@@ -118,6 +123,69 @@ class KGA:
     # ------------------------------------------------------------------
     # Stage 2: finite-sample certificate
     # ------------------------------------------------------------------
+    def certify_evidence(
+        self,
+        estimator: BenefitEstimator,
+        *,
+        protocol_sha256: str,
+        features: dict[str, float] | None = None,
+        evidence_schema_version: str | None = None,
+    ) -> Certificate:
+        """Run the label-free ``Z -> Delta_hat -> interval`` deployment path.
+
+        The estimator is frozen and carries residuals from a disjoint labelled
+        calibration split.  At deployment this method reads only the supplied
+        feature values; the protocol and evidence-schema identities must match
+        the fitted artifact exactly.  Any mismatch raises instead of silently
+        reusing a calibration radius.
+
+        Parameters
+        ----------
+        estimator : BenefitEstimator
+            Frozen model and disjoint absolute calibration residuals.
+        protocol_sha256 : str
+            Digest of the active checkpoint/adapter/split/feature protocol.
+        features : mapping, optional
+            Protocol-specific label-free feature map.  If omitted, the most
+            recent generic :class:`Evidence` from :meth:`evidence` is used.
+        evidence_schema_version : str, optional
+            Required with a custom feature map; inferred from ``Evidence`` for
+            the generic score-evidence path.
+
+        Returns
+        -------
+        Certificate
+            Exact-rank split-conformal certificate around ``estimator.predict``.
+
+        Notes
+        -----
+        The statistical coverage claim is conditional on the calibration
+        residual and deployment unit being exchangeable (or on another stated
+        valid transfer argument).  Schema validation does not prove that
+        assumption.
+        """
+
+        if features is None:
+            if self.last_evidence is None:
+                raise ValueError("No evidence available; call evidence(...) or pass features.")
+            features = self.last_evidence.to_mapping()
+            evidence_schema_version = self.last_evidence.schema_version
+        elif evidence_schema_version is None:
+            raise ValueError("evidence_schema_version is required with custom features")
+        if not isinstance(estimator, BenefitEstimator):
+            raise TypeError("estimator must implement the frozen BenefitEstimator protocol")
+        delta_hat = estimator.predict(
+            features,
+            evidence_schema_version=str(evidence_schema_version),
+            protocol_sha256=protocol_sha256,
+        )
+        cert = conformal_split(delta_hat, np.asarray(estimator.residuals), alpha=self.alpha)
+        self.last_certificate = cert
+        self.last_estimator_artifact_sha256 = estimator.artifact_sha256
+        self.last_protocol_sha256 = protocol_sha256
+        self.last_evidence_schema_version = str(evidence_schema_version)
+        return cert
+
     def certify(
         self,
         adapt_risk: float | None = None,
@@ -131,7 +199,9 @@ class KGA:
     ) -> Certificate:
         """Build a certificate ``Delta_hat +/- epsilon`` for adapting vs freezing.
 
-        Three calling conventions are supported (pick exactly one):
+        Three audit/low-level calling conventions are supported (pick exactly
+        one).  None consumes :attr:`last_evidence`; use
+        :meth:`certify_evidence` for the label-free deployment path.
 
         1. **Paired benefits** -- pass ``scores`` = per-sample benefits
            ``X_i = loss(f0_i) - loss(fa_i)`` (positive means adapt helps).  A
@@ -282,8 +352,9 @@ class KGA:
         Returns
         -------
         Decision
-            ADAPT / FREEZE / ABSTAIN, with the false-adapt ``<= alpha`` guarantee
-            of Theorem 3 (see :func:`kga.policy.decide`).
+            ADAPT / FREEZE / ABSTAIN. False-adapt control is inherited only when
+            the certificate's stated coverage assumptions hold; the threshold
+            function itself cannot verify them.
         """
         if certificate is None:
             certificate = self.last_certificate
@@ -345,4 +416,7 @@ class KGA:
             "evidence": evidence_dict,
             "certificate": certificate_dict,
             "decision": dec.value if dec is not None else None,
+            "estimator_artifact_sha256": self.last_estimator_artifact_sha256,
+            "protocol_sha256": self.last_protocol_sha256,
+            "evidence_schema_version": self.last_evidence_schema_version,
         }

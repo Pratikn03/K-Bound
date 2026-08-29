@@ -32,6 +32,7 @@ from __future__ import annotations
 
 import ast
 import math
+import os
 import sys
 import warnings
 from pathlib import Path
@@ -52,7 +53,9 @@ from kga.policy import decide_kga
 ALPHA = 0.1
 REPO = Path(__file__).resolve().parents[1]
 DRIVER = REPO / "docs" / "research" / "kbound" / "scripts" / "kbound_decide.py"
+NATURAL_ANALYSIS = REPO / "docs" / "research" / "kbound" / "scripts" / "analyze_F.py"
 LIBRARY_FILES = (REPO / "kga" / "certificate.py", REPO / "kga" / "policy.py")
+RADIUS_PATHS = (*LIBRARY_FILES, DRIVER, NATURAL_ANALYSIS)
 
 #: The only functions allowed to contain ``min(n, ceil(...))``.  Neither is
 #: reachable from :func:`kga.policy.decide_kga`:
@@ -121,7 +124,7 @@ def _quantile_calls(node: ast.AST) -> list[str]:
     return found
 
 
-@pytest.mark.parametrize("path", [*LIBRARY_FILES, DRIVER], ids=lambda p: p.name)
+@pytest.mark.parametrize("path", RADIUS_PATHS, ids=lambda p: p.name)
 def test_no_rank_clamp_outside_the_allowlist(path: Path):
     """``min(n, ceil(...))`` may appear only in the two allowlisted functions."""
     if not path.exists():
@@ -142,7 +145,7 @@ def test_no_rank_clamp_outside_the_allowlist(path: Path):
     )
 
 
-@pytest.mark.parametrize("path", [*LIBRARY_FILES, DRIVER], ids=lambda p: p.name)
+@pytest.mark.parametrize("path", RADIUS_PATHS, ids=lambda p: p.name)
 def test_no_interpolated_quantile_in_a_radius_function(path: Path):
     """No radius function may call ``np.quantile`` / ``np.percentile``."""
     if not path.exists():
@@ -161,7 +164,7 @@ def test_no_interpolated_quantile_in_a_radius_function(path: Path):
     )
 
 
-@pytest.mark.parametrize("path", [*LIBRARY_FILES, DRIVER], ids=lambda p: p.name)
+@pytest.mark.parametrize("path", RADIUS_PATHS, ids=lambda p: p.name)
 def test_no_clamp_parameter_on_any_decision_entry_point(path: Path):
     """No public radius/decision function may take a ``clamp``-style argument."""
     if not path.exists():
@@ -311,36 +314,44 @@ INTERPOLATED_RADIUS_ALLOWLIST: dict[str, str] = {
     "docs/research/kbound/scripts/theory_extensions_validation.py": "superseded v1 (banner in file)",
     # -- deliberate replays / demonstrations OF the superseded rule.  Converting
     #    these would delete the comparison they exist to make.
-    "docs/research/kbound/theory_v2/realdata/eps_recal/_probe2.py":
-        "labelled 'the superseded rule'; the probe compares the two rules head to head",
-    "docs/research/kbound/theory_v2/realdata/eps_recal/eps_recal_camelyon.py":
-        "the eps-recalibration study whose subject IS the archived interpolated radius",
+    "docs/research/kbound/theory_v2/realdata/eps_recal/_probe2.py": "labelled 'the superseded rule'; the probe compares the two rules head to head",
+    "docs/research/kbound/theory_v2/realdata/eps_recal/eps_recal_camelyon.py": "the eps-recalibration study whose subject IS the archived interpolated radius",
     # -- exploratory sweeps that were never promoted.
     "docs/research/kbound/gapclose_wave5/win_hunt_A_universal_gate.py": "exploratory win-hunt sweep, not promoted",
     "docs/research/kbound/gapclose_wave5/win_hunt_E_universal7.py": "exploratory win-hunt sweep, not promoted",
     "docs/research/kbound/realshift_win/verify_realshift_win.py": "exploratory real-shift probe, not promoted",
-    "docs/research/kbound/theory_v2/realdata/deepgrid_audit/deepgrid_audit.py":
-        "parametric-bootstrap deviation quantile, not a split-conformal residual radius",
+    "docs/research/kbound/theory_v2/realdata/deepgrid_audit/deepgrid_audit.py": "parametric-bootstrap deviation quantile, not a split-conformal residual radius",
     "experiments/kbound/test_3dadam_bootstrap.py": "3D-ADAM benchmark, not a K-Bound panel track",
     "experiments/kbound/test_3dadam_namedcond.py": "3D-ADAM benchmark, not a K-Bound panel track",
     # -- immutable archived analysis scripts.  These ARE the record of how an
     #    archived number was produced; editing them would falsify the record.
-    "experiments/kbound/results/camelyon17_fullscale_B_v1/_locked_B_analysis.py":
-        "sealed archived analysis script; it documents how the archived number was made",
-    "experiments/kbound/results/camelyon17_fullscale_B_v1/estimator_dryrun/dryrun.py":
-        "sealed archived dry-run under the same locked results directory",
+    "experiments/kbound/results/camelyon17_fullscale_B_v1/_locked_B_analysis.py": "sealed archived analysis script; it documents how the archived number was made",
+    "experiments/kbound/results/camelyon17_fullscale_B_v1/estimator_dryrun/dryrun.py": "sealed archived dry-run under the same locked results directory",
     # -- not a certificate radius at all: a baseline router's threshold on a
     #    SOURCE statistic tau, which the K-Bound rule does not govern.
     "experiments/kbound/wilds/analyze_camelyon_kbound.py": "route_b baseline tau threshold, not a K-Bound radius",
     "experiments/kbound/wilds/analyze_iwildcam_kbound.py": "route_b baseline tau threshold, not a K-Bound radius",
     "docs/research/kbound/panel_review_2026-07-25/recompute/kb_common.py": "archived panel-review recompute helper script",
-    "experiments/kbound/officehome/oh_analyze.py": "archived exploratory office-home analysis script",
     "experiments/kbound/theory_validation/frontier_decisive/realdata/realdata_frontier.py": "archived real-data frontier theory validation script",
 }
 
 _RADIUS_NAMES = frozenset(
-    {"eps", "epsilon", "eps_glob", "epsg", "eps0", "eps_naive", "eps_bonf", "eps_sidak",
-     "eps_inpool", "eps_archived", "eps_out", "eps_c", "radius", "tau_star"}
+    {
+        "eps",
+        "epsilon",
+        "eps_glob",
+        "epsg",
+        "eps0",
+        "eps_naive",
+        "eps_bonf",
+        "eps_sidak",
+        "eps_inpool",
+        "eps_archived",
+        "eps_out",
+        "eps_c",
+        "radius",
+        "tau_star",
+    }
 )
 
 
@@ -371,13 +382,37 @@ def _interpolated_radius_sites(path: Path) -> list[int]:
     return sorted(set(out))
 
 
+def _iter_authored_python_files(root: Path):
+    """Walk authored Python sources while pruning dependencies before descent."""
+    ignored = {
+        ".git",
+        ".venv",
+        ".venv_wilds",
+        "venv",
+        "__pypackages__",
+        "__pycache__",
+        "node_modules",
+        ".mypy_cache",
+        ".pytest_cache",
+        ".ruff_cache",
+        "archive",
+        "research_lock",
+        "audits",
+        "build",
+        "external",
+    }
+    for directory, names, files in os.walk(root):
+        names[:] = sorted(name for name in names if name not in ignored)
+        base = Path(directory)
+        for name in sorted(files):
+            if name.endswith(".py"):
+                yield base / name
+
+
 def test_no_new_interpolated_certificate_radius_in_the_tree():
     """D10: the census of interpolated radii may shrink, never grow."""
     found: dict[str, list[int]] = {}
-    IGNORE_PARTS = {"__pycache__", "archive", "research_lock", ".venv", "audits", "build", "external"}
-    for path in sorted(REPO.rglob("*.py")):
-        if any(p in path.parts for p in IGNORE_PARTS):
-            continue
+    for path in _iter_authored_python_files(REPO):
         rel = str(path.relative_to(REPO))
         if rel == str(Path(__file__).relative_to(REPO)):
             continue
@@ -403,16 +438,18 @@ def test_no_new_interpolated_certificate_radius_in_the_tree():
 # ---------------------------------------------------------------------------
 #: The two files allowed to *implement* ``decide_kga``: the library, and the
 #: driver-side shim that item 15 introduced so a bare checkout still runs.
-DECIDE_KGA_IMPLEMENTATIONS = frozenset(
-    {"kga/policy.py", "docs/research/kbound/scripts/kbound_decide.py"}
-)
+DECIDE_KGA_IMPLEMENTATIONS = frozenset({"kga/policy.py", "docs/research/kbound/scripts/kbound_decide.py"})
 
 
 def _is_pure_delegation(node: ast.FunctionDef) -> bool:
     """True iff the body is (optional docstring) + a single ``return <call>``."""
     body = list(node.body)
-    if body and isinstance(body[0], ast.Expr) and isinstance(body[0].value, ast.Constant) \
-            and isinstance(body[0].value.value, str):
+    if (
+        body
+        and isinstance(body[0], ast.Expr)
+        and isinstance(body[0].value, ast.Constant)
+        and isinstance(body[0].value.value, str)
+    ):
         body = body[1:]
     if len(body) != 1 or not isinstance(body[0], ast.Return):
         return False
@@ -429,10 +466,7 @@ def test_every_decide_kga_fork_is_a_bodiless_delegation():
     else -- no local radius, no local trichotomy, no second estimator.
     """
     offenders = []
-    IGNORE_PARTS = {"__pycache__", "archive", "research_lock", ".venv", "audits", "build", "external"}
-    for path in sorted(REPO.rglob("*.py")):
-        if any(p in path.parts for p in IGNORE_PARTS):
-            continue
+    for path in _iter_authored_python_files(REPO):
         rel = str(path.relative_to(REPO))
         if rel in DECIDE_KGA_IMPLEMENTATIONS:
             continue
@@ -468,4 +502,3 @@ def test_worst_group_conformal_radius():
 
     assert r_robust == max(r1, r2)
     assert r_robust >= r1
-

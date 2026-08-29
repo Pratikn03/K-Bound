@@ -1,35 +1,36 @@
 """kga -- Knowability-Guided Adaptation (KGA), the K-Bound decision algorithm.
 
-KGA decides, **without target labels**, whether to ADAPT, FREEZE, or ABSTAIN on a
-test distribution.  It does so from label-free evidence ``Z`` and a finite-sample
-certificate ``Delta_hat +/- epsilon`` on the benefit of adapting over freezing,
-applying the trichotomy
+KGA can decide without deployment target labels after a benefit estimator has
+been fitted on labelled development conditions and its residual radius calibrated
+on a disjoint split.  Deployment maps label-free evidence ``Z`` to a certificate
+``Delta_hat +/- epsilon`` and applies the trichotomy
 
     ADAPT   if Delta_hat - epsilon > 0
     FREEZE  if Delta_hat + epsilon < 0
     ABSTAIN otherwise
 
-with a false-adapt probability bounded by ``alpha`` (Theorem 3 of the K-Bound
-paper, ``docs/research/kbound/K-Bound_paper.pdf``).
+with false-adapt probability bounded by ``alpha`` conditional on the stated
+coverage/transfer assumptions (Theorem 3 of the K-Bound paper).
 
-The one canonical rule
-----------------------
-Every driver, re-scoring script and table generator in this repository routes
-through :func:`kga.policy.decide_kga` (fix-queue item 15).  That function pins
-all three degrees of freedom that used to vary between copy-pasted forks:
+Controlled-grid replay rule
+---------------------------
+The controlled-grid re-scoring path routes through
+:func:`kga.policy.decide_kga`. That function pins the degrees of freedom that
+used to vary between copy-pasted historical scripts:
 
 * the radius is the **exact split-conformal rank** quantile
   ``eps = r_(k)``, ``k = ceil((n + 1)(1 - alpha))`` -- never an interpolated
   ``np.quantile``, and ``+inf`` (forced ABSTAIN) when ``k > n``;
-* the pool is **leave-one-out-of-pool**: cell ``i``'s radius is calibrated on
-  the other ``n - 1`` residuals, so ``eps`` is not a function of the label it
-  is protecting;
+* the pool is **leave-one-out-of-pool**: cell ``i``'s radius excludes its own
+  labelled residual;
 * the trichotomy uses **strict** inequalities, matching the ``|M| > beta``
   commitment convention of the knowability frontier.
 
 Public API
 ----------
-KGA                        -- the facade gate (evidence -> certify -> decide).
+KGA                        -- facade gate (evidence -> frozen estimator -> decide).
+BenefitEstimator           -- protocol for a frozen benefit model.
+FrozenLinearBenefitEstimator -- auditable reference estimator artifact.
 Decision                   -- the ADAPT/FREEZE/ABSTAIN enum.
 Certificate                -- a finite-sample certificate ``Delta_hat +/- eps``.
 Evidence                   -- the label-free evidence ``Z`` container.
@@ -41,7 +42,7 @@ split_conformal_rank_radius / conformal_radii_loo / min_calibration_size
 The submodules ``kga.certificate`` and ``kga.policy`` remain the stable import
 surface for scripts; nothing there has been renamed.
 
-The package is pure ``numpy``/``scipy`` (no torch) and deterministic.
+The core decision path is ``numpy``/``scipy`` (no torch) and deterministic.
 """
 
 from __future__ import annotations
@@ -49,6 +50,7 @@ from __future__ import annotations
 from kga._version import __version__
 from kga.assumptions import (
     AssumptionReport,
+    CoverageClaimBasis,
     CoverageType,
     FallbackAction,
     GateDecision,
@@ -63,6 +65,11 @@ from kga.assumptions import (
     run_gate,
     write_report,
 )
+from kga.benefit import (
+    BenefitEstimator,
+    FrozenLinearBenefitEstimator,
+    fit_frozen_linear_benefit_estimator,
+)
 from kga.certificate import (
     Certificate,
     InsufficientCalibrationError,
@@ -72,7 +79,13 @@ from kga.certificate import (
     min_calibration_size,
     split_conformal_rank_radius,
 )
-from kga.evidence import Evidence
+from kga.evidence import EVIDENCE_FEATURE_NAMES, EVIDENCE_SCHEMA_VERSION, Evidence
+from kga.frontier import (
+    FrontierAssessment,
+    assess_frontier,
+    frontier_action,
+    frontier_sensitivity,
+)
 from kga.kga import KGA
 from kga.policy import Decision, decide, decide_batch, decide_kga
 from kga.routing import (
@@ -86,13 +99,22 @@ from kga.routing import (
 
 __all__ = [
     "KGA",
+    "BenefitEstimator",
+    "FrozenLinearBenefitEstimator",
+    "fit_frozen_linear_benefit_estimator",
     "Decision",
     "Certificate",
     "Evidence",
+    "EVIDENCE_FEATURE_NAMES",
+    "EVIDENCE_SCHEMA_VERSION",
+    "FrontierAssessment",
     "InsufficientCalibrationError",
     "decide",
     "decide_batch",
     "decide_kga",
+    "assess_frontier",
+    "frontier_action",
+    "frontier_sensitivity",
     "conformal_split",
     "conformal_radii_loo",
     "conformal_attained_level",
@@ -105,6 +127,7 @@ __all__ = [
     "multiclass_benefit",
     "route_panel",
     "AssumptionReport",
+    "CoverageClaimBasis",
     "CoverageType",
     "FallbackAction",
     "GateDecision",

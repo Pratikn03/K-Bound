@@ -43,6 +43,11 @@ class KGADecideRequest(BaseModel):
         description="Held-out |Delta_hat - Delta| residuals for conformal full cert.",
     )
     method: str = Field("ebern", description="Batch estimator for full+benefit_scores.")
+    benefit_range: float | None = Field(
+        None,
+        gt=0.0,
+        description="A-priori support width for ebern/hoeffding paired benefits.",
+    )
 
     @field_validator("calib_scores", "test_scores", "benefit_scores", "calib_residuals")
     @classmethod
@@ -57,6 +62,13 @@ class KGADecideRequest(BaseModel):
     def _full_mode_inputs(self) -> KGADecideRequest:
         if self.cert_mode == "full" and self.benefit_scores is None and self.calib_residuals is None:
             raise ValueError("cert_mode='full' requires benefit_scores or calib_residuals")
+        if (
+            self.cert_mode == "full"
+            and self.benefit_scores is not None
+            and self.method in {"ebern", "hoeffding"}
+            and self.benefit_range is None
+        ):
+            raise ValueError("ebern/hoeffding benefit_scores require an a-priori benefit_range")
         return self
 
 
@@ -75,7 +87,8 @@ class KGAEvidenceModel(BaseModel):
 class KGADecideResponse(BaseModel):
     decision: str
     delta_hat: float
-    epsilon: float
+    epsilon: float | None
+    radius_feasible: bool
     method: str
     cert_mode: str
     evidence: KGAEvidenceModel
@@ -100,11 +113,14 @@ async def kga_decide(
             benefit_scores=req.benefit_scores,
             calib_residuals=req.calib_residuals,
             method=req.method,
+            benefit_range=req.benefit_range,
         )
+        radius_feasible = bool(np.isfinite(certificate.epsilon))
         return KGADecideResponse(
             decision=decision.value,
             delta_hat=certificate.delta_hat,
-            epsilon=certificate.epsilon,
+            epsilon=certificate.epsilon if radius_feasible else None,
+            radius_feasible=radius_feasible,
             method=certificate.method,
             cert_mode=req.cert_mode,
             evidence=KGAEvidenceModel(
