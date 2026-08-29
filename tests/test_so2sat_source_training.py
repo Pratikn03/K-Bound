@@ -1,5 +1,7 @@
 """Focused tests for the source-only So2Sat training stack."""
 
+# ruff: noqa: E402, I001 -- local modules require the optional Torch skip first.
+
 from __future__ import annotations
 
 import json
@@ -13,7 +15,12 @@ import pytest
 torch = pytest.importorskip("torch")
 nn = torch.nn
 
-from experiments.kbound.so2sat.integrity import IntegrityError, strict_json_load
+from experiments.kbound.so2sat.integrity import (
+    IntegrityError,
+    file_sha256,
+    stable_sha256,
+    strict_json_load,
+)
 from experiments.kbound.so2sat.model import (
     CANONICAL_MODEL_SEEDS,
     NUM_CLASSES,
@@ -36,6 +43,7 @@ from experiments.kbound.so2sat.train_source import (
     build_synthetic_smoke_bundle,
     run_synthetic_smoke,
     train_one_seed,
+    verify_complete_source_result,
 )
 
 
@@ -91,6 +99,32 @@ def _one_hot_labels(count: int) -> np.ndarray:
     return labels
 
 
+def _rewrite_receipted_json(path: Path, document: dict[str, Any]) -> None:
+    """Rewrite a temporary test pair while preserving a valid generic receipt."""
+
+    receipt_path = path.with_name(path.name + ".receipt.json")
+    payload = json.dumps(
+        document,
+        indent=2,
+        sort_keys=True,
+        ensure_ascii=True,
+        allow_nan=False,
+    ) + "\n"
+    path.chmod(0o644)
+    path.write_text(payload, encoding="ascii")
+    receipt = strict_json_load(receipt_path)
+    receipt["artifact_bytes"] = path.stat().st_size
+    receipt["artifact_sha256"] = file_sha256(path)
+    receipt["canonical_document_sha256"] = stable_sha256(document)
+    receipt_path.chmod(0o644)
+    receipt_path.write_text(
+        json.dumps(receipt, indent=2, sort_keys=True, allow_nan=False) + "\n",
+        encoding="ascii",
+    )
+    path.chmod(0o444)
+    receipt_path.chmod(0o444)
+
+
 def test_native_resnet18_is_10_band_32px_full_network_and_seed_independent() -> None:
     hashes = []
     for seed in (0, 1):
@@ -133,7 +167,7 @@ def test_inventory_uses_sealed_sample_roles_and_never_city_role_names() -> None:
         "splits": {
             "training": {
                 "observed_samples": len(records),
-                "sample_role_counts": {role: 1 for role in roles},
+                "sample_role_counts": dict.fromkeys(roles, 1),
                 "geo_artifact": {"sha256": H64["geo"]},
             }
         },
@@ -292,6 +326,46 @@ def test_fast_synthetic_smoke_seals_five_independent_receipts(tmp_path: Path) ->
     assert [row.checkpoint_tensor_sha256 for row in verified_again] == [
         row.checkpoint_tensor_sha256 for row in results
     ]
+
+    training_receipt = tmp_path / "so2sat_resnet18_seed0.training.json"
+    original_training = training_receipt.read_bytes()
+    training_byte_receipt = training_receipt.with_name(
+        training_receipt.name + ".receipt.json"
+    )
+    original_training_byte_receipt = training_byte_receipt.read_bytes()
+
+    tampered = strict_json_load(training_receipt)
+    tampered["best_epoch"] = 1
+    _rewrite_receipted_json(training_receipt, tampered)
+    with pytest.raises(IntegrityError, match="best_epoch does not replay"):
+        verify_complete_source_result(tmp_path, 0)
+
+    training_receipt.chmod(0o644)
+    training_receipt.write_bytes(original_training)
+    training_byte_receipt.chmod(0o644)
+    training_byte_receipt.write_bytes(original_training_byte_receipt)
+    tampered = strict_json_load(training_receipt)
+    tampered["history"][0]["source_monitor"]["top1_accuracy"] = 0.123
+    _rewrite_receipted_json(training_receipt, tampered)
+    with pytest.raises(IntegrityError, match="top-1 accuracy does not replay"):
+        verify_complete_source_result(tmp_path, 0)
+
+    training_receipt.chmod(0o644)
+    training_receipt.write_bytes(original_training)
+    training_byte_receipt.chmod(0o644)
+    training_byte_receipt.write_bytes(original_training_byte_receipt)
+    tampered = strict_json_load(training_receipt)
+    tampered["epochs_completed"] = 2
+    _rewrite_receipted_json(training_receipt, tampered)
+    with pytest.raises(IntegrityError, match="epochs/history are incomplete"):
+        verify_complete_source_result(tmp_path, 0)
+
+    training_receipt.chmod(0o644)
+    training_receipt.write_bytes(original_training)
+    training_byte_receipt.chmod(0o644)
+    training_byte_receipt.write_bytes(original_training_byte_receipt)
+    training_receipt.chmod(0o444)
+    training_byte_receipt.chmod(0o444)
     checkpoint = tmp_path / "so2sat_resnet18_seed0.pt"
     payload = bytearray(checkpoint.read_bytes())
     payload[-1] ^= 1

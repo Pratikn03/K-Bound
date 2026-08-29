@@ -12,6 +12,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import math
 import os
 import platform
 import random
@@ -49,6 +50,8 @@ from .model import (
     tensor_state_sha256,
 )
 from .source_data import (
+    SOURCE_MONITOR_ROLE,
+    SOURCE_TRAIN_ROLE,
     ArraySourceContainer,
     BandNormalizer,
     H5SourceContainer,
@@ -61,7 +64,6 @@ from .source_data import (
     seal_band_normalizer,
     synthetic_source_inventory,
 )
-
 
 TRAINING_CONFIG_SCHEMA = "kbound_so2sat_source_training_config_v1"
 CHECKPOINT_SCHEMA = "kbound_so2sat_source_checkpoint_v1"
@@ -591,6 +593,419 @@ def _load_resume(
     return payload
 
 
+def _require_finite_number(value: Any, *, field: str) -> float:
+    if isinstance(value, bool) or not isinstance(value, (int, float)):
+        raise IntegrityError(f"{field} must be a finite number")
+    result = float(value)
+    if not math.isfinite(result):
+        raise IntegrityError(f"{field} must be a finite number")
+    return result
+
+
+def _validated_monitor_metrics(
+    value: Any,
+    *,
+    expected_n: int | None = None,
+) -> dict[str, Any]:
+    """Validate one source-monitor metric row and replay its aggregates."""
+
+    expected_fields = {
+        "cross_entropy",
+        "top1_accuracy",
+        "macro_recall_supported_classes",
+        "supported_class_count",
+        "class_support",
+        "class_correct",
+        "n",
+        "role",
+    }
+    if not isinstance(value, Mapping) or set(value) != expected_fields:
+        raise IntegrityError("source-monitor metrics have unknown or missing fields")
+    if value.get("role") != "source_monitor":
+        raise IntegrityError("source-monitor metrics carry another data role")
+    n = value.get("n")
+    supported_count = value.get("supported_class_count")
+    if (
+        isinstance(n, bool)
+        or not isinstance(n, int)
+        or n < 1
+        or isinstance(supported_count, bool)
+        or not isinstance(supported_count, int)
+        or not 1 <= supported_count <= NUM_CLASSES
+    ):
+        raise IntegrityError("source-monitor metric counts are invalid")
+    if expected_n is not None and n != expected_n:
+        raise IntegrityError("source-monitor metric population differs from the sealed role")
+    support = value.get("class_support")
+    correct = value.get("class_correct")
+    if (
+        not isinstance(support, list)
+        or not isinstance(correct, list)
+        or len(support) != NUM_CLASSES
+        or len(correct) != NUM_CLASSES
+        or any(isinstance(item, bool) or not isinstance(item, int) or item < 0 for item in support)
+        or any(isinstance(item, bool) or not isinstance(item, int) or item < 0 for item in correct)
+        or any(hit > total for hit, total in zip(correct, support, strict=True))
+        or sum(support) != n
+    ):
+        raise IntegrityError("source-monitor class support/correct counts are invalid")
+    observed_supported = sum(total > 0 for total in support)
+    if observed_supported != supported_count:
+        raise IntegrityError("source-monitor supported-class count does not replay")
+
+    cross_entropy = _require_finite_number(value.get("cross_entropy"), field="cross_entropy")
+    top1 = _require_finite_number(value.get("top1_accuracy"), field="top1_accuracy")
+    macro = _require_finite_number(
+        value.get("macro_recall_supported_classes"),
+        field="macro_recall_supported_classes",
+    )
+    if cross_entropy < 0.0 or not 0.0 <= top1 <= 1.0 or not 0.0 <= macro <= 1.0:
+        raise IntegrityError("source-monitor metric value is outside its valid range")
+    replay_top1 = sum(correct) / n
+    replay_macro = float(
+        np.mean([hit / total for hit, total in zip(correct, support, strict=True) if total > 0])
+    )
+    if not math.isclose(top1, replay_top1, rel_tol=0.0, abs_tol=1e-15):
+        raise IntegrityError("source-monitor top-1 accuracy does not replay from class counts")
+    if not math.isclose(macro, replay_macro, rel_tol=0.0, abs_tol=1e-15):
+        raise IntegrityError("source-monitor macro recall does not replay from class counts")
+    return dict(value)
+
+
+def _verify_training_history(
+    receipt: Mapping[str, Any],
+    checkpoint: Mapping[str, Any],
+) -> tuple[int, dict[str, Any]]:
+    """Replay checkpoint selection from the immutable epoch history."""
+
+    config = receipt.get("config")
+    data = receipt.get("data")
+    if not isinstance(config, Mapping) or not isinstance(data, Mapping):
+        raise IntegrityError("source training receipt lacks config/data mappings")
+    epochs = config.get("epochs")
+    completed = receipt.get("epochs_completed")
+    history = receipt.get("history")
+    if (
+        isinstance(epochs, bool)
+        or not isinstance(epochs, int)
+        or epochs < 1
+        or isinstance(completed, bool)
+        or not isinstance(completed, int)
+        or completed != epochs
+        or not isinstance(history, list)
+        or len(history) != completed
+    ):
+        raise IntegrityError("source training epochs/history are incomplete or inconsistent")
+    expected_train_n = data.get("source_train_unique_label_rows_authorized")
+    expected_monitor_n = data.get("source_monitor_unique_label_rows_authorized")
+    if (
+        isinstance(expected_train_n, bool)
+        or not isinstance(expected_train_n, int)
+        or expected_train_n < 1
+        or isinstance(expected_monitor_n, bool)
+        or not isinstance(expected_monitor_n, int)
+        or expected_monitor_n < 1
+    ):
+        raise IntegrityError("source training receipt has invalid role populations")
+    if (
+        data.get("source_train_label_read_passes") != completed
+        or data.get("source_monitor_label_read_passes") != completed
+    ):
+        raise IntegrityError("source training receipt label-read passes differ from completed epochs")
+
+    running_key = (-float("inf"), -float("inf"), -float("inf"))
+    selected_epoch = -1
+    selected_metrics: dict[str, Any] | None = None
+    invariant_support: list[int] | None = None
+    expected_history_fields = {
+        "epoch",
+        "source_train",
+        "source_monitor",
+        "learning_rate_after_scheduler_step",
+        "selected",
+    }
+    for epoch, row in enumerate(history):
+        if not isinstance(row, Mapping) or set(row) != expected_history_fields:
+            raise IntegrityError("source training history row has unknown or missing fields")
+        if row.get("epoch") != epoch or not isinstance(row.get("selected"), bool):
+            raise IntegrityError("source training history epoch/selection marker drift")
+        source_train = row.get("source_train")
+        if not isinstance(source_train, Mapping) or set(source_train) != {
+            "role",
+            "cross_entropy_with_label_smoothing",
+            "n",
+        }:
+            raise IntegrityError("source_train history metrics have unknown or missing fields")
+        if source_train.get("role") != "source_train" or source_train.get("n") != expected_train_n:
+            raise IntegrityError("source_train history metrics differ from the sealed role")
+        if _require_finite_number(
+            source_train.get("cross_entropy_with_label_smoothing"),
+            field="source_train.cross_entropy_with_label_smoothing",
+        ) < 0.0:
+            raise IntegrityError("source_train loss is negative")
+        learning_rate = _require_finite_number(
+            row.get("learning_rate_after_scheduler_step"),
+            field="learning_rate_after_scheduler_step",
+        )
+        if learning_rate < 0.0:
+            raise IntegrityError("source scheduler emitted a negative learning rate")
+        monitor = _validated_monitor_metrics(row.get("source_monitor"), expected_n=expected_monitor_n)
+        support = list(monitor["class_support"])
+        if invariant_support is None:
+            invariant_support = support
+        elif support != invariant_support:
+            raise IntegrityError("source_monitor class support changed across epochs")
+        key = _selection_key(monitor)
+        expected_selected = key > running_key
+        if row.get("selected") is not expected_selected:
+            raise IntegrityError("source training selected flag does not replay")
+        if expected_selected:
+            running_key = key
+            selected_epoch = epoch
+            selected_metrics = monitor
+
+    best_epoch = receipt.get("best_epoch")
+    if (
+        isinstance(best_epoch, bool)
+        or not isinstance(best_epoch, int)
+        or best_epoch != selected_epoch
+        or checkpoint.get("best_epoch") != best_epoch
+    ):
+        raise IntegrityError("source best_epoch does not replay across receipt/checkpoint/history")
+    receipt_best = receipt.get("best_source_monitor")
+    checkpoint_best = checkpoint.get("best_source_monitor")
+    if selected_metrics is None or receipt_best != selected_metrics or checkpoint_best != selected_metrics:
+        raise IntegrityError(
+            "source best_source_monitor does not replay across receipt/checkpoint/history"
+        )
+    return best_epoch, selected_metrics
+
+
+def _verify_final_identities(
+    receipt: Mapping[str, Any],
+    checkpoint: Mapping[str, Any],
+) -> None:
+    """Recompute every JSON-level identity stored by the source trainer."""
+
+    config = receipt.get("config")
+    data = receipt.get("data")
+    scientific = receipt.get("scientific_identity")
+    code_files = receipt.get("code_files_sha256")
+    if not all(isinstance(value, Mapping) for value in (config, data, scientific, code_files)):
+        raise IntegrityError("source training receipt identity mappings are incomplete")
+    assert isinstance(config, Mapping)
+    assert isinstance(data, Mapping)
+    assert isinstance(scientific, Mapping)
+    assert isinstance(code_files, Mapping)
+    expected_config_fields = {
+        "schema",
+        "run_mode",
+        "model",
+        "model_seeds",
+        "epochs",
+        "optimizer",
+        "scheduler",
+        "loss",
+        "batching",
+        "augmentation",
+        "normalization",
+        "optimization_role",
+        "checkpoint_selection",
+        "optimization_scope",
+        "deterministic_algorithms",
+        "target_data_inputs",
+        "target_scoring_imports",
+    }
+    if (
+        set(config) != expected_config_fields
+        or config.get("schema") != TRAINING_CONFIG_SCHEMA
+        or config.get("target_data_inputs") != []
+        or config.get("target_scoring_imports") != []
+    ):
+        raise IntegrityError("source training config schema/access contract drift")
+    optimizer = config.get("optimizer")
+    scheduler = config.get("scheduler")
+    loss = config.get("loss")
+    batching = config.get("batching")
+    if not all(isinstance(value, Mapping) for value in (optimizer, scheduler, loss, batching)):
+        raise IntegrityError("source training optimizer/scheduler config is incomplete")
+    assert isinstance(optimizer, Mapping)
+    assert isinstance(scheduler, Mapping)
+    assert isinstance(loss, Mapping)
+    assert isinstance(batching, Mapping)
+    try:
+        replay_config = TrainingConfig(
+            epochs=config.get("epochs"),
+            batch_size=batching.get("physical_batch_size"),
+            learning_rate=optimizer.get("learning_rate"),
+            weight_decay=optimizer.get("weight_decay"),
+            label_smoothing=loss.get("label_smoothing"),
+            scheduler_eta_min=scheduler.get("eta_min"),
+            workers=batching.get("workers"),
+            model_seeds=tuple(config.get("model_seeds", ())),
+            run_mode=config.get("run_mode"),
+        )
+    except (TypeError, ValueError) as exc:
+        raise IntegrityError("source training config cannot be replayed") from exc
+    if replay_config.document() != dict(config):
+        raise IntegrityError("source training config differs from the declared recipe")
+    model_spec = config.get("model")
+    if (
+        not isinstance(model_spec, Mapping)
+        or model_spec.get("architecture_id") != ARCHITECTURE_ID
+        or checkpoint.get("architecture_id") != ARCHITECTURE_ID
+    ):
+        raise IntegrityError("source training architecture identity drift")
+    config_sha = stable_sha256(dict(config))
+    if receipt.get("config_sha256") != config_sha or checkpoint.get("config_sha256") != config_sha:
+        raise IntegrityError("source training config SHA-256 does not replay")
+    for name, digest in code_files.items():
+        if not isinstance(name, str) or not name:
+            raise IntegrityError("source code identity contains an invalid filename")
+        require_sha256(digest, field=f"code_files_sha256.{name}")
+    code_sha = stable_sha256(dict(code_files))
+    if receipt.get("code_sha256") != code_sha or checkpoint.get("code_sha256") != code_sha:
+        raise IntegrityError("source code aggregate SHA-256 does not replay")
+
+    container_identity = data.get("source_container_identity")
+    normalizer_document = data.get("normalizer")
+    expected_data_fields = {
+        "population_identity_sha256",
+        "population_manifest_sha256",
+        "training_geo_sha256",
+        "training_population_n",
+        "source_train_n",
+        "source_monitor_n",
+        "source_rows_sha256",
+        "source_container_identity",
+        "source_container_identity_sha256",
+        "normalizer",
+        "source_train_unique_label_rows_authorized",
+        "source_train_label_read_passes",
+        "source_monitor_unique_label_rows_authorized",
+        "source_monitor_label_read_passes",
+        "other_role_label_rows_read",
+        "target_split_pixels_read",
+        "target_split_labels_read",
+    }
+    if (
+        set(data) != expected_data_fields
+        or not isinstance(container_identity, Mapping)
+        or not isinstance(normalizer_document, Mapping)
+    ):
+        raise IntegrityError("source receipt lacks container/normalizer identity mappings")
+    container_sha = stable_sha256(dict(container_identity))
+    if data.get("source_container_identity_sha256") != container_sha:
+        raise IntegrityError("source container identity SHA-256 does not replay")
+    normalizer = BandNormalizer.from_document(normalizer_document)
+    if normalizer.source_container_identity_sha256 != container_sha:
+        raise IntegrityError("source normalizer belongs to another source container")
+    inventory_fields = (
+        "population_identity_sha256",
+        "population_manifest_sha256",
+        "training_geo_sha256",
+        "training_population_n",
+        "source_train_n",
+        "source_monitor_n",
+        "source_rows_sha256",
+    )
+    inventory = {field: data.get(field) for field in inventory_fields}
+    for field in (
+        "population_identity_sha256",
+        "population_manifest_sha256",
+        "training_geo_sha256",
+        "source_rows_sha256",
+    ):
+        require_sha256(inventory[field], field=field)
+    population_n = inventory["training_population_n"]
+    source_train_n = inventory["source_train_n"]
+    source_monitor_n = inventory["source_monitor_n"]
+    if (
+        any(
+            isinstance(value, bool) or not isinstance(value, int) or value < 1
+            for value in (population_n, source_train_n, source_monitor_n)
+        )
+        or source_train_n + source_monitor_n > population_n
+        or data.get("source_train_unique_label_rows_authorized") != source_train_n
+        or data.get("source_monitor_unique_label_rows_authorized") != source_monitor_n
+        or normalizer.source_train_n != source_train_n
+        or normalizer.source_rows_sha256 != inventory["source_rows_sha256"]
+    ):
+        raise IntegrityError("source normalizer belongs to another row inventory")
+    data_identity_document = {
+        "inventory": inventory,
+        "source_container_identity": dict(container_identity),
+        "source_container_identity_sha256": container_sha,
+        "normalizer_sha256": normalizer.normalizer_sha256,
+        "label_access_roles": [SOURCE_TRAIN_ROLE, SOURCE_MONITOR_ROLE],
+        "optimization_role": SOURCE_TRAIN_ROLE,
+        "checkpoint_selection_role": SOURCE_MONITOR_ROLE,
+        "target_split_paths": [],
+    }
+    data_sha = stable_sha256(data_identity_document)
+    if receipt.get("data_identity_sha256") != data_sha or checkpoint.get("data_identity_sha256") != data_sha:
+        raise IntegrityError("source data identity SHA-256 does not replay")
+    if (
+        checkpoint.get("normalizer_sha256") != normalizer.normalizer_sha256
+        or checkpoint.get("source_rows_sha256") != inventory["source_rows_sha256"]
+    ):
+        raise IntegrityError("source checkpoint normalizer/row identity drift")
+
+    expected_scientific_keys = {
+        "schema",
+        "model_seed",
+        "config",
+        "config_sha256",
+        "data_identity_sha256",
+        "population_manifest_sha256",
+        "source_rows_sha256",
+        "source_container_identity_sha256",
+        "normalizer_sha256",
+        "code_sha256",
+        "runtime",
+        "runtime_sha256",
+        "target_data_inputs",
+    }
+    if (
+        set(scientific) != expected_scientific_keys
+        or scientific.get("schema") != "kbound_so2sat_source_seed_identity_v1"
+    ):
+        raise IntegrityError("source scientific identity schema drift")
+    scientific_sha = stable_sha256(dict(scientific))
+    if (
+        receipt.get("scientific_identity_sha256") != scientific_sha
+        or checkpoint.get("scientific_identity_sha256") != scientific_sha
+    ):
+        raise IntegrityError("source scientific identity SHA-256 does not replay")
+    runtime = scientific.get("runtime")
+    if not isinstance(runtime, Mapping) or scientific.get("runtime_sha256") != stable_sha256(dict(runtime)):
+        raise IntegrityError("source runtime identity SHA-256 does not replay")
+    expected_scientific_fields = {
+        "model_seed": receipt.get("model_seed"),
+        "config": dict(config),
+        "config_sha256": config_sha,
+        "data_identity_sha256": data_sha,
+        "population_manifest_sha256": inventory["population_manifest_sha256"],
+        "source_rows_sha256": inventory["source_rows_sha256"],
+        "source_container_identity_sha256": container_sha,
+        "normalizer_sha256": normalizer.normalizer_sha256,
+        "code_sha256": code_sha,
+        "target_data_inputs": [],
+    }
+    for field, expected in expected_scientific_fields.items():
+        if scientific.get(field) != expected:
+            raise IntegrityError(f"source scientific identity field {field} drift")
+    if (
+        receipt.get("optimization_data_role") != SOURCE_TRAIN_ROLE
+        or receipt.get("selection_data_role") != SOURCE_MONITOR_ROLE
+        or data.get("other_role_label_rows_read") != 0
+        or data.get("target_split_pixels_read") != 0
+        or data.get("target_split_labels_read") != 0
+        or checkpoint.get("target_data_inputs") != []
+    ):
+        raise IntegrityError("source final artifact access/role contract drift")
+
+
 def _verify_complete_result(
     paths: ArtifactPaths,
     *,
@@ -602,8 +1017,41 @@ def _verify_complete_result(
 ) -> TrainingResult:
     verify_artifact_receipt(paths.training_receipt)
     receipt = strict_json_load(paths.training_receipt)
-    if not isinstance(receipt, Mapping) or receipt.get("schema") != TRAINING_RECEIPT_SCHEMA:
+    expected_receipt_fields = {
+        "schema",
+        "status",
+        "model_seed",
+        "checkpoint_basename",
+        "checkpoint_file_sha256",
+        "checkpoint_tensor_sha256",
+        "initial_tensor_sha256",
+        "best_epoch",
+        "best_source_monitor",
+        "selection_data_role",
+        "optimization_data_role",
+        "config",
+        "config_sha256",
+        "scientific_identity",
+        "scientific_identity_sha256",
+        "data",
+        "data_identity_sha256",
+        "code_files_sha256",
+        "code_sha256",
+        "epochs_completed",
+        "history",
+        "device",
+        "wall_seconds",
+    }
+    if (
+        not isinstance(receipt, Mapping)
+        or set(receipt) != expected_receipt_fields
+        or receipt.get("schema") != TRAINING_RECEIPT_SCHEMA
+        or receipt.get("status") != "SOURCE_TRAINING_COMPLETE"
+    ):
         raise IntegrityError("unknown So2Sat source training receipt")
+    wall_seconds = _require_finite_number(receipt.get("wall_seconds"), field="wall_seconds")
+    if wall_seconds < 0.0 or not isinstance(receipt.get("device"), str) or not receipt["device"]:
+        raise IntegrityError("source training runtime summary is invalid")
     if receipt.get("model_seed") != model_seed:
         raise IntegrityError("source training receipt model seed mismatch")
     if receipt.get("checkpoint_basename") != paths.checkpoint.name:
@@ -614,7 +1062,29 @@ def _verify_complete_result(
     if receipt.get("checkpoint_file_sha256") != checkpoint_file_hash:
         raise IntegrityError("source checkpoint file SHA-256 mismatch")
     checkpoint = _load_torch_mapping(paths.checkpoint)
-    if checkpoint.get("schema") != CHECKPOINT_SCHEMA or checkpoint.get("model_seed") != model_seed:
+    expected_checkpoint_fields = {
+        "schema",
+        "architecture_id",
+        "model_state",
+        "model_seed",
+        "checkpoint_tensor_sha256",
+        "initial_tensor_sha256",
+        "best_epoch",
+        "best_source_monitor",
+        "scientific_identity_sha256",
+        "config_sha256",
+        "data_identity_sha256",
+        "code_sha256",
+        "normalizer_sha256",
+        "source_rows_sha256",
+        "target_data_inputs",
+    }
+    if (
+        set(checkpoint) != expected_checkpoint_fields
+        or checkpoint.get("schema") != CHECKPOINT_SCHEMA
+        or checkpoint.get("model_seed") != model_seed
+        or checkpoint.get("architecture_id") != ARCHITECTURE_ID
+    ):
         raise IntegrityError("unknown So2Sat source checkpoint identity")
     state = checkpoint.get("model_state")
     if not isinstance(state, Mapping):
@@ -642,9 +1112,8 @@ def _verify_complete_result(
     for field, expected in expected_fields.items():
         if expected is not None and receipt.get(field) != expected:
             raise IntegrityError(f"complete source result differs from current {field}")
-    metrics = receipt.get("best_source_monitor")
-    if not isinstance(metrics, Mapping) or metrics.get("role") != "source_monitor":
-        raise IntegrityError("source checkpoint was not selected on source_monitor")
+    _verify_final_identities(receipt, checkpoint)
+    best_epoch, metrics = _verify_training_history(receipt, checkpoint)
     return TrainingResult(
         model_seed=model_seed,
         checkpoint_path=paths.checkpoint,
@@ -654,9 +1123,33 @@ def _verify_complete_result(
         initial_tensor_sha256=require_sha256(
             receipt.get("initial_tensor_sha256"), field="initial_tensor_sha256"
         ),
-        best_epoch=int(receipt["best_epoch"]),
+        best_epoch=best_epoch,
         best_source_monitor_macro_recall=float(metrics["macro_recall_supported_classes"]),
         best_source_monitor_accuracy=float(metrics["top1_accuracy"]),
+    )
+
+
+def verify_complete_source_result(
+    checkpoint_dir: str | os.PathLike[str],
+    model_seed: int,
+    *,
+    expected_scientific_identity_sha256: str | None = None,
+    expected_config_sha256: str | None = None,
+    expected_data_identity_sha256: str | None = None,
+    expected_code_sha256: str | None = None,
+) -> TrainingResult:
+    """Strictly replay one immutable source checkpoint/receipt pair."""
+
+    if model_seed not in CANONICAL_MODEL_SEEDS:
+        raise IntegrityError(f"model seed must be one of {CANONICAL_MODEL_SEEDS}")
+    directory = Path(checkpoint_dir).expanduser().resolve()
+    return _verify_complete_result(
+        _artifact_paths(directory, model_seed),
+        model_seed=model_seed,
+        expected_scientific_identity_sha256=expected_scientific_identity_sha256,
+        expected_config_sha256=expected_config_sha256,
+        expected_data_identity_sha256=expected_data_identity_sha256,
+        expected_code_sha256=expected_code_sha256,
     )
 
 
