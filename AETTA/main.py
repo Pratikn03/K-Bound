@@ -383,7 +383,7 @@ def parse_arguments(argv):
     parser.add_argument('--e_margin', type=float, default=math.log(1000) * 0.40,
                         help='entropy margin E_0 in Eqn. (3) for filtering reliable samples')
     parser.add_argument('--d_margin', type=float, default=0.05,
-                        help='\epsilon in Eqn. (5) for filtering redundant samples')
+                        help=r'\epsilon in Eqn. (5) for filtering redundant samples')
 
     parser.add_argument('--high_threshold', default=0.99, type=float, help='High confidence threshold')
 
