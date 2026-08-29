@@ -1,7 +1,7 @@
 # DATA.md — Dataset Provenance, Versions, Licences, and Acquisition
 
 **Document created:** 2026-07-26 (closes fix-queue item F4-13).
-**Last updated:** 2026-08-17.
+**Last updated:** 2026-08-28.
 
 Three entries in `docs/research/kbound/STORAGE_MANIFEST.json` previously pointed to this file
 before it existed. One acquisition command in that manifest was not a valid script invocation;
@@ -15,21 +15,28 @@ states what the author must supply. Checksums are recorded as **NOT RECORDED** r
 estimated; they must be filled at release time per
 `docs/research/kbound/PLACEHOLDER_INVENTORY.md` Guard 2.
 
+Current retrospective hash coverage is recorded in
+`docs/research/kbound/KBOUND_PHASE1_PROVENANCE_AUDIT_2026-08-27.md` and its machine-readable
+`audits/phase1_provenance_2026_08_27/provenance_seal.json`. A digest computed there after an
+experiment is explicitly a post-hoc snapshot, not proof of the bytes used at execution time.
+
 ---
 
-## 0. Summary: Which Promoted Claim Depends on Which Dataset
+## 0. Summary: Dataset Roles and Evidence Status
 
-| Dataset | Promoted artifact | Evidence tier |
+| Dataset | Maintained artifact or role | Evidence status |
 |---|---|---|
 | CIFAR-10 + CIFAR-10-C | `tab:primary-numeric`; panel rows CIFAR-10-C Tent / EATA; `tab:gates`; all ablations | Locked — the paper's strongest track |
 | ImageNet-C | Panel row ImageNet-C SAR; `tab:imagenetc-perseed` | Locked — point-estimate claim only after the radius fix |
 | CIFAR-10.1 v6 | Panel row CIFAR-10.1 K (declared negative result) | Diagnostic fail — no claim |
-| WILDS Camelyon17 | Panel row Camelyon17 OOD; `tab:multiseed` Camelyon rows | Sealed but not recomputable from the release (§4b) |
-| WILDS iWildCam | Panel row iWildCam H v2 | Locked row; source record file absent (§4c) |
+| WILDS Camelyon17 | Archived Camelyon diagnostics | Opened/archived diagnostic evidence; the historical OOD row is sealed but not recomputable (§4b) |
+| WILDS iWildCam | iWildCam H v2 diagnostic | Source record is tracked, but numerical promotion is withheld because the archived scorer does not implement the official WILDS macro-F1 contract (§4c) |
 | WILDS RxRx1 | Panel row RxRx1 J | Locked |
-| Office-Home | Panel row Office-Home M v2 | Locked row; both source record files absent; runner is an unreadable placeholder (§4c, §5) |
+| Office-Home | Canonical primary row, 54-cell replication, and later five-checkpoint candidate audit | Primary and replication evidence remain descriptive; only the later five-checkpoint route is invalid (§4c, §5) |
 | PACS | Panel row PACS (null diagnostic) | Locked diagnostic; cannot be re-scored from the release (§6) |
 | ImageNet-R | Panel row ImageNet-R D (null diagnostic) | Locked diagnostic |
+| CCT-20 | Locked natural-location stress test on the official `trans_test` cameras | Execution was outcome-unopened before model execution; archive, population, protocol, and source-training inputs were sealed (§8a) |
+| So2Sat LCZ42 v4.2 | Acquisition, label-free population manifest, structural protocol, and source-data preflight | Official repository revision and archive bytes are pinned; this document states no empirical outcome (§8b) |
 
 ImageNet-1k (source-domain training data for the ImageNet-C / ImageNet-R backbones) is **not
 downloaded by this project**: all ImageNet backbones use torchvision pretrained weights. See §9.
@@ -58,6 +65,11 @@ downloaded by this project**: all ImageNet backbones use torchvision pretrained 
 | **Licence** | CC BY 4.0 (Zenodo record) | Upstream |
 | **Local layout** | `$KBOUND_DATA_ROOT/CIFAR-10-C/<corruption>.npy` + `labels.npy` | `run_decisive_cifar.sh` |
 | **Archive checksum** | **NOT RECORDED** — Zenodo publishes a per-file md5; record it at release | — |
+
+The Phase-1 audit does not claim a complete current CIFAR-10-C content seal: the promoted-subset
+`defocus_blur.npy` and `contrast.npy` files are macOS dataless placeholders in this working copy.
+The SAR labels and source-checkpoint digests match their predeclared protocol values. Other
+currently readable corruption-array hashes are post-hoc snapshots only.
 
 ### 2a. Operating Point
 
@@ -134,9 +146,9 @@ internal `~/kbound_cam`, NOT this [complete T9 copy]."
 A third party downloading the complete `camelyon17_v1.0` will not reproduce the non-test-center
 conditions cell-for-cell. This must be stated in the paper's data availability section.
 
-### 4b. Camelyon17 — Promoted Row Is Sealed but Not Recomputable
+### 4b. Camelyon17 — Historical OOD reconciliation provenance
 
-The promoted panel row is `0.0000 / 0.0000 / 0.1381 (n = 18, FA_u = 0)`. Its status, stated
+The historical panel row is `0.0000 / 0.0000 / 0.1381 (n = 18, FA_u = 0)`. Its status, stated
 precisely:
 
 - **The regret triple is recorded on disk**, in exactly one place:
@@ -144,26 +156,25 @@ precisely:
   `OOD_test_only: {n_test: 18, regret_kga: 0.0, regret_adapt: 0.0, regret_freeze: 0.1381,
   beats_both: false}`. This file is sealed in `LOCK_SEAL.json` and its hash verifies
   byte-for-byte. A grep restricted to `*.json` misses it; it is a `.yaml`.
-- **The promoted `FA_u = 0` is not recorded anywhere.** The YAML's only false-adapt figure for
+- **The historical `FA_u = 0` is not recorded anywhere.** The YAML's only false-adapt figure for
   Camelyon is `idval_only: {false_adapt: 0.80}`. The `OOD_test_only` entry has no false-adapt
   field.
-- **Nothing recomputes it.** The YAML is a hand-transcribed summary of a rerun, not a per-cell
-  artifact. The three files it names as its evidence —
-  `audits/integrity_2026-06-20/camelyon_reconciliation/{camelyon_G_reconciliation.py,
-  recon_results.json, VERDICT_phase1.md}` — are absent from disk; two are the only 2 of 72 files
-  sealed in `LOCK_SEAL.json` that are missing, and the third (the script) was never sealed.
+- **The reconciliation files have been restored.** `recon_results.json` and `VERDICT_phase1.md`
+  are present and match their historical lock hashes. `camelyon_G_reconciliation.py` is also
+  present, but no historical seal authenticates its current bytes; its current digest is therefore
+  recorded only as an unsealed post-hoc snapshot.
 - **The nearest live artifacts disagree on different slices**, as expected, since they score
   different subsets: `camelyon17_protocol_G_v1` gives `false_adapt` 0.0256 at n = 54 (the
   contaminated pooled split); `camelyon17_richZ_F_v1` gives 0.0329 at n = 324.
 
-**Correct label:** "sealed but not recomputable from the release." A reader can verify that the
-number was written before the paper cited it; a reader cannot verify that it is correct.
-**Restoration procedure:** `docs/research/kbound/SUBMISSION_LEDGER.md §8`.
+**Correct label:** opened/archived diagnostic with restored reconciliation outputs, not untouched
+prospective evidence. Restoration improves auditability but does not strengthen the scientific
+claim.
 
 ### 4c. Source Record Files
 
-`docs/research/kbound/scripts/bootstrap_win_cis.py` loads four record files to produce the
-promoted Office-Home, iWildCam, and Camelyon17 bootstrap intervals. All four are present on disk
+`docs/research/kbound/scripts/bootstrap_win_cis.py` loads four record files used by the historical
+Office-Home, iWildCam, and Camelyon17 bootstrap intervals. All four are present on disk
 and tracked in Git (verified 2026-08-21):
 
 ```
@@ -183,24 +194,25 @@ committed to Git at that time. The warning is retracted.
 
 | Field | Value | Source |
 |---|---|---|
-| **Version** | **UNPINNED** | — |
-| **Domains** | Art, Clipart, Product, Real-World (4 domains, 65 classes) | Upstream convention; not asserted anywhere in the release |
-| **Split definition** | **UNPINNED** — the protocol names roles (`target_val`, `target_test`, calibration seeds {0, 1}, test seeds {0, 1}), but the code that materializes them is unreadable (see below) | `research_lock/OFFICEHOME_PROTOCOL_M_v2.yaml:33–41` |
-| **Acquisition URL** | **UNPINNED** — no download path exists in the release | — |
+| **Version** | Hugging Face mirror `flwrlabs/office-home`; repository revision **UNPINNED** | `experiments/kbound/officehome/materialize_officehome.py` |
+| **Domains** | Art, Clipart, Product, Real_World (4 domains, 65 classes) | `experiments/kbound/officehome/oh_data.py` |
+| **Split definition** | Deterministic per-class split, seed 20260615: Real_World 70% train / 30% validation; each target domain (Art, Clipart, Product) 50% validation / 50% test | `experiments/kbound/officehome/oh_data.py:49–78` |
+| **Acquisition** | `python experiments/kbound/officehome/materialize_officehome.py --out <root>`; downloads the `flwrlabs/office-home` mirror and writes `<root>/<Domain>/<Class>/*.jpg` | `experiments/kbound/officehome/materialize_officehome.py` |
 | **Licence** | Research use only, by request from the dataset authors (Venkateswara et al., CVPR 2017) | Upstream |
 
-Office-Home is the least reproducible dataset in the panel. The runner
-`experiments/kbound/officehome/run_officehome_kbound.py` (17 202 bytes) and the analysis script
-`oh_analyze.py` (18 989 bytes) are **iCloud placeholders — zero readable bytes** (see
-`docs/research/kbound/PLACEHOLDER_INVENTORY.md`, group B), as are nine additional files in that
-directory. Both source record files are also absent (§4c). No aspect of the Office-Home split can
-be recovered from the release as it stands.
+The active materializer, split code, runner, and two source records are readable and tracked.
+The former exploratory analysis was moved to
+`archive/legacy_kbound/officehome/oh_analyze.py`; it is not an active publication path. A clean
+third-party materialization is possible, but exact archive-level reproducibility remains incomplete
+until the Hugging Face dataset revision and materialized-image checksum are pinned. The maintained
+manuscript retains the canonical primary row and the 54-cell replication as descriptive evidence.
+The later five-checkpoint candidate route remains invalid and is reported only as an archived
+checkpoint-opportunity audit.
 
-**Required author actions, in order:**
-1. Materialize the placeholders (`brctl download`).
-2. Read the split definition from `oh_data.py` and record it in this section.
-3. Commit the two source record files listed in §4c.
-4. Record the acquisition URL and confirm licence terms.
+The current 15,588-image materialization has post-hoc content-tree SHA-256
+`b995bd0f1ece7b589344c05d03fa61c200fb46fd24df15850d62d668998f8b66`. The Hugging Face revision
+was not pinned before the historical run, so this digest is a rerun input receipt, not a historical
+execution identity.
 
 ---
 
@@ -240,6 +252,10 @@ from the release; only the aggregate rates in `PACS_MULTISEED_RESULTS.json` are 
 > accepts only `--enron`, `--cifar10`, `--all`, and `--no-kaggle`. The manifest has been corrected
 > to reference this section.
 
+The current complete 30,000-image materialization has post-hoc content-tree SHA-256
+`3f1bbfb98fe6fcaea3f2cf4ac22071330d5bee3ce3ba7ff2e86e84860ed62409`. The historical Protocol-D
+run did not record that digest, so it must not be presented as a pre-run population seal.
+
 ---
 
 ## 8. CIFAR-10.1
@@ -255,8 +271,82 @@ from the release; only the aggregate rates in `PACS_MULTISEED_RESULTS.json` are 
 | **Licence** | MIT (Recht et al. 2019 repository) | Upstream |
 | **Archive checksum** | **NOT RECORDED** | — |
 
+The current v6 files have post-hoc SHA-256 values
+`2997188e5816f5bd545dc77771b6227828c28146049fcecf3fa10775474cacc6` (data) and
+`ae40beda001693674edc94d925ee8268cfe68905f8f9aff800c8dcdfcd6c9448` (labels). The historical
+Protocol-K artifact did not bind these digests.
+
 CIFAR-10.1 is the only dataset in the panel whose acquisition is fully automatic and whose URLs
 are statically pinned in the runner.
+
+---
+
+## 8a. CCT-20 (Caltech Camera Traps Benchmark)
+
+| Field | Value | Source |
+|---|---|---|
+| **Benchmark** | CCT-20 subset introduced by Beery, Van Horn, and Perona, *Recognition in Terra Incognita* (ECCV 2018) | `research_lock/KBOUND_CCT20_TARGET_SELECTION_v1.yaml`; upstream LILA page |
+| **Official page** | `https://lila.science/datasets/caltech-camera-traps` | LILA |
+| **Image archive** | `https://storage.googleapis.com/public-datasets-lila/caltechcameratraps/eccv_18_all_images_sm.tar.gz` | Target-selection lock |
+| **Annotation archive** | `https://storage.googleapis.com/public-datasets-lila/caltechcameratraps/eccv_18_annotations.tar.gz` | Target-selection lock |
+| **Licence** | Community Data License Agreement — Permissive, Version 1.0 (`CDLA-Permissive-1.0`) | LILA dataset page; `https://cdla.dev/permissive-1-0/` |
+| **Image archive identity** | 6,492,615,601 bytes; md5 `8143c17aa2a12872b66f284ff211531f`; SHA-256 `50d0e46d4f42c4891d99a13cda80b6c062d3586d79296edc9d1406a5e7cc4b20` | `research_lock/KBOUND_CCT20_SOURCE_TRAINING_SEAL_v1.json` |
+| **Annotation archive identity** | 2,997,071 bytes; md5 `66a1f481b44aa1edadf75c9cfbd27aba`; SHA-256 `e31d0162d411fb031ba4741758a54fa15cc7257df6f344581f5fda612b2cc974` | Same |
+| **Official archive population** | 57,864 unique image records across the five supplied split files | `experiments/kbound/cct20/prospective_protocol_v1.yaml` |
+| **Source training** | `train_annotations.json`, 13,553 images; deterministic sequence-hash partition into 12,083 fit and 1,470 source-monitor images | Source preflight and protocol |
+| **Development gate** | FIT: `trans_val` location 125 and `cis_test` location 33; CAL: `cis_test` locations 38, 43, 51, 61, 88, 90, 108, 115, and 120 | Prospective protocol |
+| **Locked natural target** | Complete `trans_test`: 23,275 images from previously unseen camera locations 0, 7, 28, 40, 46, 78, 100, 105, and 130 | Prospective protocol and label-free target manifest |
+| **Annotation split SHA-256 values** | `train`: `439f8030d8e1200a4ebd9620cd79ad544c5fcdedafe9f3b5c478ba5463a79b6e`; `cis_val`: `d1191d4510307e2d7458b2e2fcb6d363facc754f2980080efd44cea8408c6e7f`; `cis_test`: `d13ef0b4d34c4a072b1bfbb147a7d67c9f513cd53609a01a0ac5f0d8d1cc95e3`; `trans_val`: `4f292434ddd2a727f6c8ab62d2193095d5148831c95359cc64a3239c6d7dc95b`; `trans_test`: `49b7bee90fee877e8c100f561cdce14dc12ed768204af586ff6de31d48cc8cdf` | Source-training seal |
+| **Selected-image member-list SHA-256** | `82afcab526bdba692165fd66d819419e3568e1c7acaf1aeb04bbb5f5d6552a96` | Source-training seal |
+| **Sealed protocol SHA-256** | `dc6f5da269b7e12523c036030f60b504fa46ca7170f15f9506004aa6e49041a5` | `prospective_protocol_v1.yaml` |
+
+The ECCV paper reports 57,868 images, while the official CCT companion page and the five annotation
+files in the downloaded archive contain 57,864 unique image records in total. The experiment uses
+all 57,864 records supplied by those files and discloses the four-image difference; no row was
+added, removed, or substituted. Archive-wide membership checks passed. Full decode-and-hash checks
+passed for all 13,553 source-training images and all 23,275 locked target images.
+
+The target is **outcome-unopened before model execution, not literally label-unopened**. During
+candidate ranking, aggregate target annotation metadata was inspected to establish feasibility;
+that inspection is recorded in
+`research_lock/KBOUND_CCT20_TARGET_SELECTION_v1_ADDENDUM.yaml`. At candidate-ranking and
+target-selection time, no CCT-20 pixels, predictions, per-location outcomes, gate actions, or
+K-Bound results had been inspected. The target runner is label-free and can read only the sealed
+image metadata and pixels; the scorer receives labels once, after all checkpoint-by-location action
+and prediction artifacts are immutable.
+
+The archive's sparse category IDs define 16 evaluation classes: 14 animal categories, `car`, and
+`empty`. Repeated same-category annotations collapse; distinct categories on one image are retained
+as a set-valued target. These rules were fixed in
+`research_lock/KBOUND_CCT20_TARGET_SELECTION_v1_LABEL_CONTRACT_ADDENDUM.yaml` before source
+training.
+
+---
+
+## 8b. So2Sat LCZ42 v4.2
+
+| Field | Value | Source |
+|---|---|---|
+| **Benchmark** | So2Sat LCZ42, Culture-10 scenario; 17 local-climate-zone classes; 32 × 32 patches | `experiments/kbound/so2sat/prospective_protocol_v1.json` |
+| **Official project** | `https://github.com/zhu-xlab/So2Sat-LCZ42` | Same |
+| **Acquisition snapshot** | Hugging Face dataset repository `zhu-xlab/So2Sat-LCZ42`, revision `b5c817486899935e864832b93086cc87f3eee473`, directory `v4/` | `research_lock/KBOUND_SO2SAT_ACQUISITION_MANIFEST_v1.json` |
+| **Licence** | CC BY 4.0 | Acquisition manifest |
+| **Official split counts** | Training 352,366; validation 24,119; testing 24,188 | Structural protocol and label-free population manifest |
+| **Sealed modality** | Sentinel-2 `sen2`, 10 bands | Structural protocol |
+| **Training archive** | 16,002,423,246 bytes; SHA-256 `a72f8e834198312360c217b23fc3b9e1af3acd916b046d9bd0f91fa93d402b27` | Acquisition manifest |
+| **Validation archive** | 1,100,208,338 bytes; SHA-256 `d8b0ad2030d4b873e0d41bcb69d73f7a9ecd1586d212a869cf7bb1d6f10e59a2` | Acquisition manifest |
+| **Testing archive** | 1,100,520,239 bytes; SHA-256 `df7c3498bd265d21dbec03f5f618b0a901848536f96f0ff4f4e80be782d17f97` | Acquisition manifest |
+| **Extracted training container** | 52,006,404,720 bytes; SHA-256 `06df6c9b8875e37f172ba548f466640293d77ad3be335c2d5dfcba3d35942daf` | `research_lock/KBOUND_SO2SAT_SOURCE_PREFLIGHT_v1.json` |
+| **Geographic population contract** | Complete metadata-only manifest: 42 training cities partitioned into 14 source-fit, 9 gate-fit, and 19 gate-calibration cities; the 10 official Culture-10 cities remain the target population | `research_lock/KBOUND_SO2SAT_POPULATION_MANIFEST_v1.json` |
+
+The acquisition receipt records the three compressed image archives as opaque bytes at the pinned
+repository revision. The label-free population manifest opens only the geographic companions'
+`city`, `epsg`, and `tfw` datasets. The source preflight opens only `training.h5` and
+`training_geo.h5`; it reports 352,366 valid one-hot training labels and no critical finding. Its
+status is `SOURCE_DATA_PREFLIGHT_PASSED_WITH_WARNINGS` because the source-monitor role lacks class
+IDs 0 and 6 and the gate-fit probe role lacks class ID 6. These are source-data and provenance
+facts, not an empirical K-Bound result. The committed acquisition and preflight receipts record no
+target image-container or target-outcome-array access.
 
 ---
 
@@ -286,24 +376,31 @@ WILDS-side source models `f0` are trained in-repository: 4 DenseNet-121 seeds,
 | WILDS Camelyon17, iWildCam, RxRx1 | **Yes for the data** (requires `wilds==2.0.0`); **no for the exact Camelyon17 patch set** (90.9% copy, §4a) |
 | PACS | **Yes** — `flwrlabs/pacs` via `export_pacs_hf.py`; HuggingFace revision unpinned (§6) |
 | ImageNet-R | **Yes** — tarball URL recorded in §7 (updated 2026-08-17) |
-| Office-Home | **No** — no download URL, no split definition, and runner is an unreadable placeholder (§5) |
+| Office-Home | **Yes, with an unpinned mirror revision** — materializer and deterministic split are in the release; pin the Hugging Face revision and materialized-image checksum for exact byte-level reproduction (§5) |
+| CCT-20 | **Yes** — official LILA benchmark archives, exact URLs, md5 values, SHA-256 values, split hashes, and population contract are recorded in §8a |
+| So2Sat LCZ42 | **Yes** — the official Hugging Face repository revision, archive byte counts, SHA-256 values, split counts, and source-container receipt are recorded in §8b |
 
-One of nine datasets (Office-Home) is not independently reproducible from the release. This is
-documented honestly here rather than obscured; full restoration requires the author actions listed
-in §5.
+All eleven benchmark entries now have an acquisition path; they name twelve datasets when
+CIFAR-10 and CIFAR-10-C are counted separately. Exact byte-level reproduction is still incomplete
+where archive revisions or checksums are explicitly marked unpinned, and the internal Camelyon17
+copy cannot be reconstructed exactly (§4a).
 
 ---
 
-## 11. Release Checklist (Updated 2026-08-17)
+## 11. Release Checklist (Updated 2026-08-28)
 
 | # | Item | Status |
 |---|---|---|
 | 1 | Pin `wilds==2.0.0` in `download_all_datasets.sh:52` | ✅ **Closed 2026-08-17** |
 | 2 | Record the ImageNet-R acquisition URL in §7 | ✅ **Closed 2026-08-17** — tarball URL verified against upstream README |
-| 3 | Materialize Office-Home placeholders and record the split definition (§5) | ⚠️ **Deferred to camera-ready** — no promoted claim in the current TMLR submission depends on an independently verifiable Office-Home split |
+| 3 | Restore the Office-Home source, materializer, and split definition (§5) | ✅ **Closed 2026-08-27** — active code is readable and the split is documented |
 | 4 | Commit `_zenodo_md5sums.txt` for ImageNet-C so `verify_imagenetc_tars.sh` runs without manual setup | ⚠️ **Deferred to camera-ready** |
-| 5 | Register all dataset archives in `STORAGE_MANIFEST.json` with `sha256` and `size_bytes` | ⚠️ **Deferred to camera-ready** |
-| 6 | Commit the four absent record files listed in §4c | ⚠️ **Deferred to camera-ready** |
+| 5 | Register dataset/archive identities with `sha256` and `size_bytes` | ⚠️ **Partially closed** — current ImageNet-R, Office-Home, and CIFAR-10.1 bytes are post-hoc hashed; historical binding and the remaining datasets still require pinned archives or sealed reruns |
+| 6 | Verify the four source record files listed in §4c | ✅ **Closed 2026-08-27** — all four are present, tracked, and SHA-256 checked |
+| 7 | Pin the `flwrlabs/office-home` Hugging Face revision and record a materialized-tree checksum | ⚠️ **Deferred to camera-ready** |
+| 8 | Record CCT-20 archive URLs, licence, byte counts, provider md5 values, SHA-256 values, split identities, and the locked target population | ✅ **Closed 2026-08-28** — recorded in §8a and bound by the pre-training seal |
+| 9 | Pin the So2Sat LCZ42 repository revision, archive identities, split counts, label-free population, and source-container preflight | ✅ **Closed 2026-08-28** — recorded in §8b and bound by committed receipts |
 
-Items 3–6 are provenance-completeness tasks. No promoted empirical claim in the TMLR submission
-depends on any deferred item being resolved.
+Items 4, 5, and 7 remain provenance-completeness tasks. No maintained empirical claim in the TMLR
+submission depends on treating a post-hoc digest, unpinned dataset, or invalid historical route as
+publication-grade.
