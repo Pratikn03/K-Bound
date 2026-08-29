@@ -1,8 +1,9 @@
 # =============================================================================
 # K-Bound / KGA continuous integration (fast, hermetic, no GPU, no external data)
 #
-# Complements the existing .github/workflows/ci.yml (torch CPU + full suite +
-# Docker/API security gate). This workflow is the lightweight A+ matrix:
+# Complements the core syntax/KGA checks in .github/workflows/ci.yml. This
+# workflow contains the wider K-Bound matrix, including the hash-locked Linux
+# CPU research suite:
 #   * lint      — repo-wide critical-error gate + STRICT ruff lint/format on the
 #                 maintained A+ surfaces (kga/, the new src/uais packages, the
 #                 K-Bound scripts, the kga API route, and their tests).
@@ -38,7 +39,11 @@ env:
     src/scripts/kbound/make_synth_archive.py
     src/scripts/kbound/smoke_trichotomy.py
     deploy/api/kga_routes.py
+    kga/experiment_contract.py
+    docs/research/kbound/scripts/validate_closure_protocol.py
+    docs/research/kbound/scripts/run_closure_stage.py
     tests/test_kga_package.py
+    tests/test_kga_experiment_contract.py
     tests/test_smoke_trichotomy.py
 
 jobs:
@@ -48,7 +53,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
-          python-version: "3.11"
+          python-version-file: ".python-version"
       - name: Install ruff
         run: |
           python -m pip install --upgrade pip
@@ -68,7 +73,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
-          python-version: "3.11"
+          python-version-file: ".python-version"
       - name: Install minimal kga deps
         run: |
           python -m pip install --upgrade pip
@@ -86,7 +91,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
-          python-version: "3.11"
+          python-version-file: ".python-version"
       - name: Install minimal deps
         run: |
           python -m pip install --upgrade pip
@@ -96,6 +101,7 @@ jobs:
         run: |
           pytest \
             tests/test_kga_package.py \
+            tests/test_kga_experiment_contract.py \
             tests/test_kga_routing.py \
             tests/test_smoke_trichotomy.py \
             tests/test_kga_api_routes.py \
@@ -117,7 +123,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
-          python-version: "3.11"
+          python-version-file: ".python-version"
       - name: Install smoke deps
         run: |
           python -m pip install --upgrade pip
@@ -131,7 +137,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
-          python-version: "3.11"
+          python-version-file: ".python-version"
       - name: Install validator deps
         run: |
           python -m pip install --upgrade pip
@@ -193,13 +199,24 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
-          python-version: "3.11"
+          python-version-file: ".python-version"
       - name: Install research-test deps
         run: |
-          python -m pip install --upgrade pip
-          python -m pip install numpy scipy scikit-learn pandas pyyaml joblib pytest psutil \
-            opencv-python-headless
-          python -m pip install torch torchvision --index-url https://download.pytorch.org/whl/cpu
+          python -m pip --version
+          python -m pip install --only-binary=:all: --require-hashes \
+            -r requirements-research-ci.lock.txt
+      - name: Verify CPU-only Torch contract
+        run: |
+          python - <<'PY'
+          import torch
+          import torchvision
+
+          assert torch.__version__ == "2.5.1+cpu", torch.__version__
+          assert torchvision.__version__ == "0.20.1+cpu", torchvision.__version__
+          assert torch.version.cuda is None, torch.version.cuda
+          assert not torch.cuda.is_available()
+          print("CPU Torch contract OK", torch.__version__, torchvision.__version__)
+          PY
       - name: K-Bound research tests (pkg + integrity + edge)
         run: |
           pytest \
@@ -207,6 +224,25 @@ jobs:
             docs/research/kbound/tests \
             docs/research/kbound/edge/tests \
             -q --tb=short
+      - name: Repository collection gate
+        run: pytest --collect-only -q
+      - name: Prospective experiment-contract tests
+        run: |
+          pytest \
+            tests/test_kga_experiment_contract.py \
+            tests/test_kga_frontier_api.py \
+            tests/test_pacs_replay_artifact.py \
+            tests/test_independent_checkpoint_audit.py \
+            tests/test_official_baseline_provenance.py \
+            tests/test_natural_target_provenance.py \
+            tests/test_exact_confirmation_pipeline.py \
+            -q
+      - name: Draft closure-protocol validation
+        run: |
+          python docs/research/kbound/scripts/validate_closure_protocol.py
+          python docs/research/kbound/scripts/run_frontier_kga_bridge.py
+          python docs/research/kbound/scripts/audit_natural_target_provenance.py
+          python docs/research/kbound/scripts/audit_official_baselines.py --repo .
       - name: Certificate drift guard
         run: pytest tests/test_certificate_drift_guard.py -q
       - name: Canonical script wrappers resolve

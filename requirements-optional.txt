@@ -1,4 +1,5 @@
-# Optional heavy/UX dependencies. Install as needed:
+# Optional heavy/UX dependencies for the broad application profile.
+# This is not a paper/research reproducibility lock. Install as needed:
 # pip install -r requirements-optional.txt
 
 # UI / Dashboard
@@ -9,11 +10,13 @@ plotly>=5.23.0
 shap>=0.44.0
 lime>=0.2.0.1
 
-# Deep learning (CPU wheels by default; swap for GPU-specific wheels on your platform)
+# Deep learning. These are flexible application ranges; use the pinned research
+# profile for experiments and the CI lock for Linux CPU verification.
 torch>=2.1.0 --index-url https://download.pytorch.org/whl/cpu
 torchvision>=0.15.0 --index-url https://download.pytorch.org/whl/cpu
 torchaudio>=2.1.0 --index-url https://download.pytorch.org/whl/cpu
 tensorflow-cpu>=2.11.0
+wilds>=2.0.0,<3
 
 # NLP
 transformers>=4.43.0

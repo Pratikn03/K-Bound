@@ -1,10 +1,12 @@
-# Complete K-Bound research/collection profile (CPU Torch + WILDS).
+# Complete K-Bound research/collection input profile (Torch + WILDS).
 #
-# Install this file for repository-wide pytest collection.  It extends the
-# paper/core profile with the repository-pinned API stack and the exact heavy
-# dependency versions exercised by the supported Python 3.12 environment on
-# 2026-08-27. CI installs the pinned Torch pair from the PyTorch CPU index
-# first, then installs this file.
+# This portable, human-maintained input extends the paper/core profile with the
+# exact direct dependencies used for repository-wide pytest collection.  On
+# macOS, install this file directly to obtain the native CPU/MPS Torch wheel.
+# Linux x86_64 CI must instead install requirements-research-ci.lock.txt with
+# --require-hashes; that lock binds the CPU-only Torch wheels and every
+# transitive dependency.  Edit this file only when intentionally refreshing
+# that lock.
 -r requirements-paper.txt
 
 # API/security tests
@@ -16,6 +18,9 @@ psutil==7.2.2
 
 # Headless edge-dashboard tests
 opencv-python-headless==4.13.0.92
+
+# Manuscript Word-export tests
+python-docx==1.2.0
 
 # Natural-shift runners and the NLP smoke-test import surface
 torch==2.5.1
