@@ -88,6 +88,38 @@ def test_tree_enumeration_does_not_request_unrelated_blob_sizes(
     assert calls == [("ls-tree", "-r", "-z", "source-commit")]
 
 
+def test_source_seal_ignores_missing_unrelated_blob_but_requires_maintained_blob(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    _git(tmp_path, "init", "-q")
+    _git(tmp_path, "config", "user.name", "Release Test")
+    _git(tmp_path, "config", "user.email", "release@example.invalid")
+    maintained = tmp_path / "maintained.txt"
+    unrelated = tmp_path / "unrelated.bin"
+    maintained.write_bytes(b"sealed source\n")
+    unrelated.write_bytes(b"unrelated object\n")
+    _git(tmp_path, "add", "maintained.txt", "unrelated.bin")
+    _git(tmp_path, "commit", "-qm", "source freeze")
+    head = _git(tmp_path, "rev-parse", "HEAD")
+
+    monkeypatch.setattr(seal, "EXPLICIT_FILES", {"test_source": ("maintained.txt",)})
+    monkeypatch.setattr(seal, "GENERATED_OUTPUT_ALLOWLIST", frozenset())
+
+    def loose_object(oid: str) -> Path:
+        return tmp_path / ".git" / "objects" / oid[:2] / oid[2:]
+
+    unrelated_oid = _git(tmp_path, "rev-parse", "HEAD:unrelated.bin")
+    loose_object(unrelated_oid).unlink()
+    payload = seal.build_payload(tmp_path, head)
+    assert payload["sealed_artifact_count"] == 1
+    assert payload["artifacts"][0]["bytes"] == len(b"sealed source\n")
+
+    maintained_oid = _git(tmp_path, "rev-parse", "HEAD:maintained.txt")
+    loose_object(maintained_oid).unlink()
+    with pytest.raises(subprocess.CalledProcessError):
+        seal.build_payload(tmp_path, head)
+
+
 def test_release_generated_authorities_are_outer_checksum_outputs() -> None:
     generated = {
         "docs/research/kbound/claim_ledger.json",
