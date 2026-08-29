@@ -172,6 +172,13 @@ def _sha256(data: bytes) -> str:
     return hashlib.sha256(data).hexdigest()
 
 
+def _git_blob_oid(data: bytes, object_format: str) -> str:
+    digest = hashlib.new(object_format)
+    digest.update(f"blob {len(data)}\0".encode("ascii"))
+    digest.update(data)
+    return digest.hexdigest()
+
+
 def _dirty_paths(repo: Path) -> set[str]:
     raw = _git_bytes(
         "-c",
@@ -246,6 +253,7 @@ def _inventory(repo: Path, commit: str) -> list[tuple[str, str]]:
 
 def _artifact_rows(repo: Path, commit: str) -> list[dict[str, object]]:
     blobs = _tree_blobs(repo, commit)
+    object_format = _git("rev-parse", "--show-object-format", repo=repo)
     rows: list[dict[str, object]] = []
     for category, relative in _inventory(repo, commit):
         if relative not in blobs:
@@ -253,7 +261,14 @@ def _artifact_rows(repo: Path, commit: str) -> list[dict[str, object]]:
                 f"required release-seal input is not tracked at {commit}: {relative}"
             )
         blob_oid = blobs[relative]
-        data = _git_bytes("cat-file", "blob", blob_oid, repo=repo)
+        current = repo / relative
+        if not current.is_file():
+            raise FileNotFoundError(f"sealed maintained path is missing: {relative}")
+        data = current.read_bytes()
+        if _git_blob_oid(data, object_format) != blob_oid:
+            raise ValueError(
+                f"checked-out bytes do not match source commit blob: {relative}"
+            )
         blob_bytes = len(data)
         rows.append(
             {

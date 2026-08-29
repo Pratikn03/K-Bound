@@ -88,7 +88,7 @@ def test_tree_enumeration_does_not_request_unrelated_blob_sizes(
     assert calls == [("ls-tree", "-r", "-z", "source-commit")]
 
 
-def test_source_seal_ignores_missing_unrelated_blob_but_requires_maintained_blob(
+def test_source_seal_verifies_checkout_without_materializing_loose_blobs(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     _git(tmp_path, "init", "-q")
@@ -110,14 +110,17 @@ def test_source_seal_ignores_missing_unrelated_blob_but_requires_maintained_blob
 
     unrelated_oid = _git(tmp_path, "rev-parse", "HEAD:unrelated.bin")
     loose_object(unrelated_oid).unlink()
-    payload = seal.build_payload(tmp_path, head)
-    assert payload["sealed_artifact_count"] == 1
-    assert payload["artifacts"][0]["bytes"] == len(b"sealed source\n")
-
     maintained_oid = _git(tmp_path, "rev-parse", "HEAD:maintained.txt")
     loose_object(maintained_oid).unlink()
-    with pytest.raises(subprocess.CalledProcessError):
-        seal.build_payload(tmp_path, head)
+
+    payload = seal.build_payload(tmp_path, head)
+    assert payload["sealed_artifact_count"] == 1
+    assert payload["artifacts"][0]["git_blob"] == maintained_oid
+    assert payload["artifacts"][0]["bytes"] == len(b"sealed source\n")
+
+    maintained.write_bytes(b"different bytes\n")
+    with pytest.raises(ValueError, match="checked-out bytes do not match source commit"):
+        seal._artifact_rows(tmp_path, head)
 
 
 def test_release_generated_authorities_are_outer_checksum_outputs() -> None:
