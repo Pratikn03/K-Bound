@@ -1,0 +1,180 @@
+{
+  "access_boundary_at_amendment_creation": {
+    "authorized_gate_fit_container_opened": true,
+    "gate_calibration_labels_opened": 0,
+    "gate_calibration_pixels_opened": 0,
+    "gate_fit_evaluation_forward_started": false,
+    "gate_fit_evaluation_label_values_consumed": 0,
+    "gate_fit_probe_forward_attempted": true,
+    "target_hdf5_containers_deserialized": 0,
+    "target_labels_opened": 0,
+    "target_paths_accepted_by_failed_command": false,
+    "target_pixels_opened": 0,
+    "valid_provenance_phrase": "target-outcome-unopened before fresh development rerun"
+  },
+  "amendment_id": "KBOUND_SO2SAT_DEVELOPMENT_RUNTIME_AMENDMENT_v1",
+  "authority": {
+    "classification": "versioned_downstream_execution_backend_compatibility_amendment",
+    "conflict_rule": "The original protocol controls every scientific setting. This amendment changes only MPS-safe tensor transfer order and exception cleanup. Any other conflict must stop execution.",
+    "original_protocol_preserved_byte_identically": true,
+    "outcome_based_tuning": false,
+    "source_checkpoints_reused_byte_identically": true,
+    "source_training_seal_preserved_byte_identically": true,
+    "target_boundary_preserved_byte_identically": true
+  },
+  "fresh_rerun_contract": {
+    "both_candidates_regenerated_from_first_cell": true,
+    "device": "mps",
+    "old_attempt_artifact_reuse": false,
+    "required_output_initial_state": "new_and_empty",
+    "required_output_path": "/Volumes/T9/uav/AutoML_Flagship_V8/experiments/kbound/results/so2sat_lcz42_prospective_v1/development_attempt2_mps_bn_fix_v1",
+    "required_runner_code_sha256": "71d8ed2ad5ca03e139b0d33278b3e855a0b5678ed827a8d0c6575a202a2d3c38",
+    "stop_before_target_unless_gate_fit_selects_exactly_one_feasible_candidate": true
+  },
+  "immutable_anchors": {
+    "authoritative_protocol": {
+      "artifact_basename": "prospective_protocol_v1.json",
+      "artifact_sha256": "3eef92d7b33938bc24aa211fa4bcf32aedd849ff85eb42b6705a86494ef93f16",
+      "canonical_document_sha256": "e0ec39d27b6c47845cd8512921391d0e07e8cba732cb8cd4d54594c7ce53eadf",
+      "receipt_sha256": "f06b6c1995961d6c3069fc7ae853baed90cd091732234f5a0d97a0c9e0a99eb4"
+    },
+    "population_manifest": {
+      "artifact_basename": "KBOUND_SO2SAT_POPULATION_MANIFEST_v1.json",
+      "artifact_sha256": "e503d6088984ca353b7c4e6a220e5ad26c12c82f8fa36bc0c42e6748744d8c7d",
+      "canonical_document_sha256": "7b7763ef6803390d211dbbe503efb3ae0832d8bfa73c2ba696fddcbec42cd57e",
+      "receipt_sha256": "1bd2e7e321c0c6e2bf54823711940081d177dc8b00e86d7abe2f20359d31cee9"
+    },
+    "source_postrun_acceptance": {
+      "artifact_basename": "so2sat_source_postrun_acceptance.json",
+      "artifact_sha256": "04814beaa43f30cdc5c3d88b0758e3077cd451fdf36bab120f04fc6b875163cb",
+      "canonical_document_sha256": "835757a0ece06430e8d07388d1ab0e1be7f347d13c9e9e73f77c84045b7e84b6",
+      "checkpoint_collection_artifact_sha256": "cc9388bf783576d49d68d05f532de6d28bf7b064efa9704f0dd30b762a18cd94",
+      "normalizer_sha256": "28f8d15ce5465c451cc2d741417af599851ce2630fae2ec5dba2d0680ff112d6",
+      "receipt_sha256": "fdb1d8d23f8d6d34b5a8987aaa36d0dfecdab14a674700c94f5fc2f73d363fd5",
+      "source_container_identity_sha256": "339ee12eac8584b479f9765d112ab18faa3ba892781c78306c833db9b8028188"
+    },
+    "source_preflight": {
+      "artifact_basename": "KBOUND_SO2SAT_SOURCE_PREFLIGHT_v1.json",
+      "artifact_sha256": "eb019086876ac7a14a25fbdab3cfad15fabe3bfc16579af1e6baaf17136f20b0",
+      "canonical_document_sha256": "4a554611092978386e899040c6b1eeaaf2f2e7448d6c4387e32fe38c1b585315",
+      "receipt_sha256": "04b504202e67b3557bc7dc9cd2dd01dcd38596ca797a4514996652f1002236f3"
+    }
+  },
+  "implementation_correction": {
+    "candidate_configuration_changed": false,
+    "changes": [
+      "Transfer MPS activations and parameters to CPU before float64 widening.",
+      "Compute full-activation BatchNorm moments on CPU in float64.",
+      "Remove hooks without replacing the primary exception on a failed probe pass."
+    ],
+    "dataset_partition_changed": false,
+    "feature_definition_changed": false,
+    "fix_commit": "d3587f87caaeaa11ecd545802b34ec5cb2cfe4e1",
+    "fix_commit_tree": "d1418880eafe1bdcda3168c1d373b74ad082e9c4",
+    "gate_algorithm_or_threshold_changed": false,
+    "mathematical_definition_changed": false,
+    "post_fix_adapter_file_sha256": "e18b22d1764f8847102627ccdf2c32af88feefcc0131013d7f4b9e69a95063bd",
+    "post_fix_runner_code_identity": {
+      "code_sha256": "71d8ed2ad5ca03e139b0d33278b3e855a0b5678ed827a8d0c6575a202a2d3c38",
+      "files_sha256": {
+        "adapters.py": "e18b22d1764f8847102627ccdf2c32af88feefcc0131013d7f4b9e69a95063bd",
+        "development.py": "1708c197e7d247d920b842e5b67e3735879a165fa94aa00ef844b1d7ed92b2ed",
+        "features.py": "56c2518878e3bc2ae29c9d6095f088602783169f3327765e2436e7cbda594d8b",
+        "gate.py": "cdc04e0a0302dc9a71f69e06f621c622ac34d4e717132551f45e614bdb4c55e1",
+        "integrity.py": "3867498fea9d5cf172dd3b10962e488ffbefe158904f56ddca33b366d5f4a82f",
+        "label_firewall.py": "901f077b2be44b5ab1fd3739af25797b54b46e7068c04266d86702e20db31eb5",
+        "metadata_manifest.py": "e3c2798e95dd81c061fcb2c1f3634197c8744e2716bab9133b610251742163e8",
+        "model.py": "a7288a40a02ef216fde6b828e68e599e8a7d0e875328d2d9d43bcf55644bea10",
+        "prospective_protocol_v1.json": "3eef92d7b33938bc24aa211fa4bcf32aedd849ff85eb42b6705a86494ef93f16",
+        "prospective_protocol_v1.json.receipt.json": "f06b6c1995961d6c3069fc7ae853baed90cd091732234f5a0d97a0c9e0a99eb4",
+        "protocol.py": "c08181b14e2136dfbe2b7447ab75ed54782a979c5eb3e18a3d77b58bee761da7",
+        "source_acceptance.py": "be97e110223106f73875bc36fb423e815d1ac9e2cd941b5263ffe4e23e337918",
+        "source_data.py": "256f50febccf5e5f3e41cdd2f19070a7368b30201fbc40e4abb621dccc0db9b4",
+        "source_preflight.py": "29113ce648ce1ed559594f73ffcba658d65d30b3a012a0b18eeb05b8ba964e14",
+        "train_source.py": "671e4715671a77718a63a613e6d04f034c972458ad079f56e050398a28483990"
+      }
+    },
+    "post_fix_test_file_sha256": "ef5f805187f8676bbacd4cc3898c235608051b06d1d0dd9652be985fba7908df",
+    "source_model_or_checkpoint_changed": false,
+    "target_contract_changed": false
+  },
+  "preserved_scientific_contract": {
+    "candidate_bindings": {
+      "sar_sam_bn_affine_probe_transfer_v1": {
+        "candidate_config_sha256": "d8ba4b47f288d749aa394957ddddfa15feee138c92c7cbb83446f6265371b115",
+        "official_commit": "20f6e24b17525f34503510afccedc0629b67b7c4",
+        "official_repository": "https://github.com/mr-eggplant/SAR"
+      },
+      "tent_adam_bn_affine_probe_transfer_v1": {
+        "candidate_config_sha256": "6dd6513ef50848a4303ca142c0b8da4752d5c5c8d1fb0f76cda2b666765287a1",
+        "official_commit": "e9e926a668d85244c66a6d5c006efbd2b82e83e8",
+        "official_repository": "https://github.com/DequanWang/tent"
+      }
+    },
+    "minimum_absolute_city_mean_benefit": 0.0025,
+    "minimum_action_cells_per_policy": 9,
+    "minimum_action_cities_per_policy": 2,
+    "minimum_harmful_cities": 2,
+    "minimum_helpful_cities": 2,
+    "minimum_loco_routed_gain_over_best_fixed": 0.001,
+    "minimum_loco_sign_accuracy": 0.55,
+    "minimum_oracle_routing_gap": 0.0025,
+    "ridge_penalty": 10.0
+  },
+  "purpose": "Record and supersede a first-cell MPS backend failure before any candidate bundle, selection, gate-calibration artifact, or target access; authorize only a fresh development rerun using an algebraically unchanged CPU-float64 diagnostic.",
+  "schema": "kbound_so2sat_development_runtime_amendment_v1",
+  "sealed_utc": "2026-08-29T14:35:09Z",
+  "status": "SEALED_AFTER_PRE_RESULT_MPS_FAILURE_BEFORE_FRESH_GATE_FIT_RERUN",
+  "superseded_development_attempt": {
+    "attempt_id": "development_first_cell_mps_float64_failure_v1",
+    "candidate_bundle_count": 0,
+    "candidate_cell_count": 0,
+    "failure_stage": "first_gate_fit_probe_frozen_batchnorm_pre_hook_before_evaluation",
+    "gate_calibration_started": false,
+    "masked_exception_message": "BatchNorm divergence collector observed no probe batch",
+    "original_head_commit": "d40196d2a593fe0fc3668feb50a503095e72e243",
+    "output_directory_preserved_in_place": true,
+    "output_path": "/Volumes/T9/uav/AutoML_Flagship_V8/experiments/kbound/results/so2sat_lcz42_prospective_v1/development",
+    "output_regular_file_count_before_amendment": 0,
+    "pre_fix_runner_code_identity": {
+      "code_sha256": "8098417bb0515c53ec3c8fa32d112600d6bdc0aa13bc594f684572943294bcf7",
+      "files_sha256": {
+        "adapters.py": "d36d913eaebab27051789ebc4df86cbb2f2696cbf3be8e4acd8591f1956fe60e",
+        "development.py": "1708c197e7d247d920b842e5b67e3735879a165fa94aa00ef844b1d7ed92b2ed",
+        "features.py": "56c2518878e3bc2ae29c9d6095f088602783169f3327765e2436e7cbda594d8b",
+        "gate.py": "cdc04e0a0302dc9a71f69e06f621c622ac34d4e717132551f45e614bdb4c55e1",
+        "integrity.py": "3867498fea9d5cf172dd3b10962e488ffbefe158904f56ddca33b366d5f4a82f",
+        "label_firewall.py": "901f077b2be44b5ab1fd3739af25797b54b46e7068c04266d86702e20db31eb5",
+        "metadata_manifest.py": "e3c2798e95dd81c061fcb2c1f3634197c8744e2716bab9133b610251742163e8",
+        "model.py": "a7288a40a02ef216fde6b828e68e599e8a7d0e875328d2d9d43bcf55644bea10",
+        "prospective_protocol_v1.json": "3eef92d7b33938bc24aa211fa4bcf32aedd849ff85eb42b6705a86494ef93f16",
+        "prospective_protocol_v1.json.receipt.json": "f06b6c1995961d6c3069fc7ae853baed90cd091732234f5a0d97a0c9e0a99eb4",
+        "protocol.py": "c08181b14e2136dfbe2b7447ab75ed54782a979c5eb3e18a3d77b58bee761da7",
+        "source_acceptance.py": "be97e110223106f73875bc36fb423e815d1ac9e2cd941b5263ffe4e23e337918",
+        "source_data.py": "256f50febccf5e5f3e41cdd2f19070a7368b30201fbc40e4abb621dccc0db9b4",
+        "source_preflight.py": "29113ce648ce1ed559594f73ffcba658d65d30b3a012a0b18eeb05b8ba964e14",
+        "train_source.py": "671e4715671a77718a63a613e6d04f034c972458ad079f56e050398a28483990"
+      }
+    },
+    "pre_fix_test_file_sha256": "2e1fb1aad7c46e473a01947d04e55e9f39b31fbd3b5c4ec8c4e008a9f7f70392",
+    "primary_exception_message": "Cannot convert a MPS Tensor to float64 dtype",
+    "primary_exception_type": "TypeError",
+    "reuse_in_fresh_rerun": "forbidden",
+    "selection_artifact_created": false,
+    "target_prediction_count": 0,
+    "target_runner_invoked": false,
+    "target_scoring_started": false
+  },
+  "verification": {
+    "actual_mps_regression_executed": true,
+    "cpu_mps_divergence_parity_checked": true,
+    "mps_parameter_norm_regression_checked": true,
+    "package_ast_mps_safety_guard_checked": true,
+    "primary_exception_preservation_checked": true,
+    "pytest_command": "/Users/pratik_n/.venv_wilds/bin/python -m pytest tests/test_so2sat_development_selection.py -q",
+    "pytest_failed": 0,
+    "pytest_passed": 18,
+    "ruff_command": "/Users/pratik_n/.venv_wilds/bin/python -m ruff check experiments/kbound/so2sat/adapters.py tests/test_so2sat_development_selection.py",
+    "ruff_status": "ALL_CHECKS_PASSED"
+  }
+}
