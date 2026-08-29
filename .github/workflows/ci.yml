@@ -6,6 +6,19 @@ on:
   pull_request:
     branches: ["main", "master"]
 
+# Explicitly lint maintained first-party trees.  Vendor, archive, and immutable
+# evidence trees are intentionally outside this path list; non-mutating
+# pre-commit structural and secret-scanning hooks still cover them.
+env:
+  FIRST_PARTY_PATHS: >-
+    kga
+    deploy/api
+    scripts
+    src
+    tests
+    experiments/kbound
+    docs/research/kbound
+
 jobs:
   lint:
     runs-on: ubuntu-latest
@@ -18,9 +31,9 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           python -m pip install ruff
-      - name: Lint (syntax/undefined-name gate)
+      - name: First-party critical-error gate
         run: |
-          ruff check --select E9,F63,F7,F82 .
+          ruff check --select E9,F63,F7,F82 ${{ env.FIRST_PARTY_PATHS }}
 
   kbound-core:
     name: KGA core (hermetic smoke + theorem validators)

@@ -5,32 +5,41 @@
 #   pre-commit run --all-files    # run every hook over the whole tree
 #
 # Ruff is the single source of truth for linting and formatting (line-length 120,
-# rule set E,W,F,I,C,B,UP), configured in pyproject.toml under [tool.ruff]; the
-# hooks below inherit that configuration. mypy is run only over the pure-numpy
-# `kga/` package, which is fully typed.
+# rule set E,W,F,I,C,B,UP), configured in pyproject.toml under [tool.ruff]. A
+# non-mutating critical-rule hook covers maintained first-party Python, while
+# autofix and formatting are restricted to the explicit A+ allowlist. mypy is
+# run only over the pure-numpy `kga/` package, which is fully typed.
 #
 # Pinned revisions are recent stable tags; bump them with `pre-commit autoupdate`.
 
 minimum_pre_commit_version: "3.5.0"
 
 repos:
-  # --- Ruff: lint (with autofix) + format -------------------------------------
-  # Pinned to the 0.6.x family, which matches the ruff config in pyproject.toml.
+  # --- Ruff: broad critical gate + A+ autofix/format --------------------------
+  # Keep the hook revision pinned; update it in a dedicated dependency change.
   - repo: https://github.com/astral-sh/ruff-pre-commit
     rev: v0.6.9
     hooks:
       - id: ruff
-        name: ruff (lint, autofix)
+        name: ruff (first-party critical errors)
+        args: ["--select", "E9,F63,F7,F82"]
+        files: ^(?:kga/|deploy/api/|scripts/|src/|tests/|experiments/kbound/|docs/research/kbound/)
+      - id: ruff
+        name: ruff (A+ lint, autofix)
         args: ["--fix", "--exit-non-zero-on-fix"]
+        files: ^(?:kga/.*\.py|src/scripts/kbound/(?:make_synth_archive|smoke_trichotomy)\.py|deploy/api/kga_routes\.py|docs/research/kbound/scripts/(?:validate_closure_protocol|run_closure_stage)\.py|tests/(?:test_kga_package|test_kga_experiment_contract|test_smoke_trichotomy)\.py)$
       - id: ruff-format
-        name: ruff (format)
+        name: ruff (A+ format)
+        files: ^(?:kga/.*\.py|src/scripts/kbound/(?:make_synth_archive|smoke_trichotomy)\.py|deploy/api/kga_routes\.py|docs/research/kbound/scripts/(?:validate_closure_protocol|run_closure_stage)\.py|tests/(?:test_kga_package|test_kga_experiment_contract|test_smoke_trichotomy)\.py)$
 
   # --- Standard hygiene hooks -------------------------------------------------
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v5.0.0
     hooks:
       - id: trailing-whitespace
+        exclude: &immutable_or_external ^(?:AETTA/|external/|archive/|research_lock/|audits/|experiments/kbound/results/|docs/research/kbound/(?:kbound_pkg/|paper/generated/|results/|audits/))
       - id: end-of-file-fixer
+        exclude: *immutable_or_external
       - id: check-yaml
       - id: check-json
       - id: check-added-large-files

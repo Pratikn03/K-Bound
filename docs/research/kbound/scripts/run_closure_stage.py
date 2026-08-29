@@ -37,9 +37,7 @@ def _verify_lock(document: dict, lock_path: Path) -> None:
         raise ContractError(f"cannot read protocol lock {lock_path}: {exc}") from exc
     expected = protocol_sha256(document)
     if lock.get("protocol_sha256") != expected:
-        raise ContractError(
-            "protocol hash does not match the sealed lock; resealing after test access is forbidden"
-        )
+        raise ContractError("protocol hash does not match the sealed lock; resealing after test access is forbidden")
     if lock.get("protocol_id") != document.get("protocol_id"):
         raise ContractError("protocol ID does not match the sealed lock")
 

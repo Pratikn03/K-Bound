@@ -4,17 +4,14 @@
 # Complements the core syntax/KGA checks in .github/workflows/ci.yml. This
 # workflow contains the wider K-Bound matrix, including the hash-locked Linux
 # CPU research suite:
-#   * lint      — repo-wide critical-error gate + STRICT ruff lint/format on the
-#                 maintained A+ surfaces (kga/, the new src/uais packages, the
-#                 K-Bound scripts, the kga API route, and their tests).
+#   * lint      — broad critical-error gate over explicit first-party paths +
+#                 strict ruff lint/format on the maintained A+ surfaces.
 #   * kga-package      — import + version + the pure-numpy/scipy package tests.
 #   * unit-tests       — the new package test suite with coverage.
 #   * hermetic-smoke   — scripts/smoke_kbound.sh: zero external data, < 60s.
 #   * theorem-validators — every val_thm*.py must exit 0.
-#   * orchestration-import — imports work WITHOUT prefect (import-shim contract).
 #
 # kga is a top-level package -> repo root on PYTHONPATH.
-# uais.* / orchestration live under src/ -> src on PYTHONPATH.
 # =============================================================================
 
 name: kbound-ci
@@ -32,8 +29,18 @@ concurrency:
 permissions:
   contents: read
 
-# Maintained A+ surfaces held to the full ruff rule set + formatting.
+# The broad gate checks runtime-critical rules throughout maintained first-party
+# trees.  Full lint and formatting remain limited to the explicit A+ allowlist;
+# this does not claim that historical research scripts are style-clean.
 env:
+  FIRST_PARTY_PATHS: >-
+    kga
+    deploy/api
+    scripts
+    src
+    tests
+    experiments/kbound
+    docs/research/kbound
   APLUS_PATHS: >-
     kga
     src/scripts/kbound/make_synth_archive.py
@@ -58,8 +65,8 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           python -m pip install ruff
-      - name: Critical-error gate (whole repo)
-        run: ruff check --select E9,F63,F7,F82 .
+      - name: Critical-error gate (first-party paths)
+        run: ruff check --select E9,F63,F7,F82 ${{ env.FIRST_PARTY_PATHS }}
       - name: Full ruff lint (A+ surfaces)
         run: ruff check ${{ env.APLUS_PATHS }}
       - name: Ruff format check (A+ surfaces)
