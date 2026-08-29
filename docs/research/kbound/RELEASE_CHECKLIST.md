@@ -1,8 +1,8 @@
 # K-Bound publication release checklist
 
-Status: final local freeze pending. External publication actions require the author's GitHub,
-Zenodo, venue, and optionally PyPI credentials. This checklist does not authorize a push, tag,
-upload, or submission.
+Scope: local publication freeze and external handoff. External publication actions require the
+author's GitHub, Zenodo, venue, and optionally PyPI credentials. This checklist does not authorize
+a push, tag, upload, or submission.
 
 ## 1. Freeze the scientific scope
 
