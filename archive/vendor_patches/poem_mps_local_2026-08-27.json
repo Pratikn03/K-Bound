@@ -1,0 +1,38 @@
+{
+  "schema": "kbound_archived_vendor_patch_v1",
+  "created": "2026-08-27",
+  "status": "ARCHIVED_UNVALIDATED_LOCAL_PORT",
+  "vendor": "POEM",
+  "upstream": {
+    "commit": "8911b8514346706f916b609a1d9a3652197a05bf",
+    "remote": "https://github.com/yarinbar/poem"
+  },
+  "patch": {
+    "path": "archive/vendor_patches/poem_mps_local_2026-08-27.patch.gz",
+    "compression": "deterministic_gzip_no_name_no_timestamp",
+    "bytes": 3256,
+    "sha256": "453f7dfafbb34fcf9eecec645f739c29f1bcd8077520a0ca65a9a4a7642235ae",
+    "clean_base_apply_check": "passed"
+  },
+  "changed_paths": [
+    "cifar_office.py",
+    "cotta/cifar/cifar100c.py",
+    "cotta/cifar/cifar10c.py",
+    "cotta/cifar/cifar10c_gradual.py",
+    "cotta/cifar/cotta.py",
+    "cotta/cifar/robustbench/model_zoo/architectures/dm_wide_resnet.py",
+    "cotta/imagenet/cotta.py",
+    "cotta/imagenet/imagenetc.py",
+    "cotta/imagenet/robustbench/model_zoo/architectures/dm_wide_resnet.py",
+    "main.py",
+    "temperature_scaling.py"
+  ],
+  "normalization": "Two trailing-space-only defects were removed before archival; no executable token changed in those lines.",
+  "limitations": [
+    "The patch is not an official upstream POEM implementation.",
+    "The patch has not passed a cross-device CUDA/MPS/CPU test matrix.",
+    "Several CUDA-guarded branches choose MPS or CPU and are unsafe on a CUDA-only host.",
+    "No scientific result is promoted or reclassified by preserving this patch."
+  ],
+  "restore": "From a clean external/poem checkout at the recorded commit, run: gzip -dc ../../archive/vendor_patches/poem_mps_local_2026-08-27.patch.gz | git apply -"
+}
