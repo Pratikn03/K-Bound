@@ -1,0 +1,43 @@
+schema_version: 1
+addendum_for: KBOUND_CCT20_PROSPECTIVE_CONFIRMATION_v1
+original_lock: research_lock/KBOUND_CCT20_TARGET_SELECTION_v1.yaml
+original_lock_sha256: 1283205124f086dd4af291c302a7c55bb9dd2c5c164111702dcdfe9f50f2c183
+recorded_utc: "2026-08-28T04:03:55Z"
+status: DISCLOSED_BEFORE_EXECUTION_SEAL
+
+reason: >-
+  A parallel feasibility auditor inspected aggregate metadata from the official
+  CCT-20 trans-test annotation file while ranking candidate datasets. This
+  disclosure preserves the immutable original target-selection lock and narrows
+  the provenance claim before any model is trained or run on CCT-20.
+
+metadata_inspected:
+  - official split image counts and camera identifiers
+  - annotation category identifiers and aggregate category counts
+  - per-camera animal-image, class, and sequence counts
+  - per-camera day/night image counts derived from capture timestamps
+  - filename overlap with the local WILDS iWildCam metadata (zero overlap found)
+
+not_inspected:
+  - CCT-20 image pixels
+  - any model prediction on CCT-20
+  - frozen or adapted accuracy
+  - adaptation benefit
+  - regret or oracle action
+  - K-Bound score, interval, decision, threshold, or result
+
+corrected_provenance_claim:
+  valid: OUTCOME_UNOPENED_BEFORE_TARGET_SELECTION_AND_EXECUTION
+  invalid: LITERALLY_NO_TARGET_LABEL_METADATA_EVER_INSPECTED
+  interpretation: >-
+    The confirmatory experiment remains prospective with respect to every
+    model-linked outcome and every K-Bound decision. It must not be described as
+    strictly label-unopened. Aggregate target metadata may not be used to remove
+    cameras, samples, classes, or to tune the model, adapter, gate, or inference.
+
+unchanged_commitments:
+  - all nine official trans-test camera locations remain mandatory
+  - no target sample may be excluded based on the inspected metadata
+  - no target labels or label summaries may enter training, tuning, calibration, window construction, or inference
+  - target predictions and decisions must be sealed before the scorer joins item-level labels
+  - all results are reported regardless of direction or significance

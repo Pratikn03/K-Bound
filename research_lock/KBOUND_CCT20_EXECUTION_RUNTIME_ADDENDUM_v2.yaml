@@ -1,0 +1,388 @@
+schema: kbound-cct20-execution-runtime-addendum-v2
+addendum_id: KBOUND_CCT20_EXECUTION_RUNTIME_ADDENDUM_v2
+status: SEALED_AFTER_15_DEVELOPMENT_TRACES_BEFORE_GATE_AND_TARGET_INFERENCE
+sealed_utc: "2026-08-28T16:26:01Z"
+
+purpose: >-
+  Versioned downstream execution amendment for the final K-Bound CCT-20
+  confirmation. Development attempt v1 stopped fail-closed after 15 immutable
+  traces when the next cell exposed cancellation in a mathematically
+  nonnegative Gaussian-KL diagnostic. This amendment preserves and excludes
+  the partial v1 evidence, replaces only that diagnostic's numerical
+  evaluation with an algebraically equivalent stable implementation, and
+  requires all 55 development cells to be regenerated before gate fitting or
+  target inference.
+
+authority:
+  classification: versioned_downstream_execution_protocol_amendment
+  original_protocol_preserved_byte_identically: true
+  source_training_seal_preserved_byte_identically: true
+  source_checkpoints_reused_byte_identically: true
+  parent_runtime_addendum_preserved_byte_identically: true
+  prospective_boundary: >-
+    Sealed after 15 authorized development traces and two development-only
+    numerical diagnostics, but before a development gate or collection
+    existed, before any target action or target model inference, and before
+    target outcomes were opened.
+  conflict_rule: >-
+    The original protocol controls every field not explicitly amended by v1
+    or v2. Addendum v1 controls the batch cap and hybrid backend. Addendum v2
+    supersedes only the Gaussian-KL numerical evaluation and requires a fresh
+    55-cell development run. Any other conflict must stop execution.
+
+immutable_anchors:
+  authoritative_protocol:
+    path: experiments/kbound/cct20/prospective_protocol_v1.yaml
+    protocol_id: KBOUND_CCT20_PROSPECTIVE_CONFIRMATION_v1
+    file_sha256: dc6f5da269b7e12523c036030f60b504fa46ca7170f15f9506004aa6e49041a5
+  source_training_seal:
+    path: research_lock/KBOUND_CCT20_SOURCE_TRAINING_SEAL_v1.json
+    artifact_sha256: 31556ee57d65b0dba192139ab7a1257968b56a1172d2858d0b7cd5de150fa334
+    canonical_document_sha256: 6beae941d68ef2d9e346ca74bcf2b3211e9cd74ac28ee193a23d1eac5da58fee
+    source_code_identity_sha256: 840145d10c9170872383515bcb59c6bfcecae06aad882c29b1210bbb52662f24
+  source_training_seal_receipt:
+    path: research_lock/KBOUND_CCT20_SOURCE_TRAINING_SEAL_v1.json.receipt.json
+    file_sha256: e6716692dc2d4aaa0b0fb017217861996008d9309b7ea50c5eeca06d258613af
+  official_tent:
+    repository: https://github.com/DequanWang/tent
+    commit: e9e926a668d85244c66a6d5c006efbd2b82e83e8
+    tree: f482757a924f4a61651a37b15e75d0eab2fd3c9e
+    path: external/tent_official/tent.py
+    file_sha256: d854e1f65f741aa1632dfb55420ca1bcf5405c978bef890e45caad04980514c8
+
+superseded_development_attempt:
+  attempt_id: development_gate_v1_partial_15_traces
+  original_output_path: /Volumes/T9/uav/AutoML_Flagship_V8/experiments/kbound/results/cct20_prospective_v1/development_gate_v1
+  original_output_preserved_in_place: true
+  successful_trace_count: 15
+  successful_trace_and_receipt_file_count: 30
+  completed_cells:
+    - trans_val:125:checkpoint-0
+    - trans_val:125:checkpoint-1
+    - trans_val:125:checkpoint-2
+    - trans_val:125:checkpoint-3
+    - trans_val:125:checkpoint-4
+    - cis_test:33:checkpoint-0
+    - cis_test:33:checkpoint-1
+    - cis_test:33:checkpoint-2
+    - cis_test:33:checkpoint-3
+    - cis_test:33:checkpoint-4
+    - cis_test:38:checkpoint-0
+    - cis_test:38:checkpoint-1
+    - cis_test:38:checkpoint-2
+    - cis_test:38:checkpoint-3
+    - cis_test:38:checkpoint-4
+  failed_cell: cis_test:43:checkpoint-0
+  failed_cell_trace_created: false
+  failure_stage: frozen_batchnorm_probe_moment_finalization_before_evaluation
+  direct_cancellation_prone_kl: -5.551115123125783e-17
+  stable_decimal_oracle_kl: 1.3540155737375239e-17
+  failure_interpretation: benign_float64_cancellation_not_invalid_moments
+  gate_created: false
+  development_collection_created: false
+  target_runner_invoked: false
+  target_action_count: 0
+  target_prediction_count: 0
+  target_scoring_started: false
+  target_outcomes_accessed: false
+  reuse_in_v2_gate_or_target: forbidden
+  v1_runtime_sha256: 15caaf0b78dab6aa2e700247974f9a76f04c42846e7a69d7511a8d9352834e34
+  v1_runtime_artifact_sha256: 5113e6ac4fde63efc1c32ae21748e481066297e15a94fb4576f5d52cd958a28f
+  v1_runtime_addendum:
+    path: research_lock/KBOUND_CCT20_EXECUTION_RUNTIME_ADDENDUM_v1.yaml
+    sha256: 67c28ab6410e8595a13827ccf10906c4b053b2f6fcc56e001e18de3147595ac0
+  supersession_record:
+    path: /Volumes/T9/uav/AutoML_Flagship_V8/experiments/kbound/results/cct20_prospective_v1/superseded/development_gate_v1.failed_bn_kl_roundoff_after15_20260828/supersession_record.json
+    sha256: ab64d1dd4ef6ed8495326427bd5d9c2687d5cec6eee7c474a70cfc26d1a77027
+    immutable_receipt_required: true
+  preservation_archives:
+    scientific_artifacts:
+      path: /Volumes/T9/uav/AutoML_Flagship_V8/experiments/kbound/results/cct20_prospective_v1/superseded/development_gate_v1.failed_bn_kl_roundoff_after15_20260828/development_gate_v1_scientific_artifacts.tar.gz
+      sha256: ab490a8cce03b75ba45748b0457e398b90be0fb37e2303c54eb38e5970971bd2
+      regular_files: 32
+      uncompressed_bytes: 69705547
+    runtime_code_and_locks:
+      path: /Volumes/T9/uav/AutoML_Flagship_V8/experiments/kbound/results/cct20_prospective_v1/superseded/development_gate_v1.failed_bn_kl_roundoff_after15_20260828/runtime_code_and_locks_v1.tar.gz
+      sha256: a75378a2f454be69ca64c0a9f1522596e1ab80a531157da057be8b654a6b7a98
+      regular_files: 22
+
+pre_v2_evidence_state:
+  authorized_development_outcomes_potentially_visible: true
+  development_outcomes_visible_scope: 15_checkpoint_location_cells
+  v1_traces_excluded_from_final_analysis: true
+  successful_v2_development_trace_count: 0
+  v2_development_gate_fitted: false
+  v2_development_collection_created: false
+  target_action_count: 0
+  target_model_inference_started: false
+  target_prediction_artifact_count: 0
+  target_scoring_started: false
+  target_outcomes_accessed: false
+  target_annotations_deserialized_by_execution_pipeline: false
+  valid_provenance_phrase: outcome-unopened before model execution; not literally label-unopened
+
+development_only_diagnostics:
+  - diagnostic_id: paired_probe_exact_failure_replay
+    split: cis_test
+    location: 43
+    checkpoint_seed: 0
+    probe_images: 729
+    sequence_atomic_batches: 25
+    frozen_probe_forward: true
+    official_tent_probe_forward: true
+    evaluation_role_processed: false
+    accuracy_benefit_or_gate_computed: false
+    artifact_written: false
+    purpose: identify_the_exact_negative_channel_and_compare_algebraic_forms
+  - diagnostic_id: frozen_probe_v2_closure_replay
+    split: cis_test
+    location: 43
+    checkpoint_seed: 0
+    probe_images: 729
+    sequence_atomic_batches: 25
+    frozen_probe_forward: true
+    official_tent_probe_forward: false
+    evaluation_role_processed: false
+    accuracy_benefit_or_gate_computed: false
+    artifact_written: false
+    result: stable_no_clipping_receipt_pass
+    minimum_channel_kl: 1.3540155737375239e-17
+    taylor_branch_channels: 27
+development_only_diagnostic_access_boundary: >-
+  Both diagnostics used authorized development data. The normal cis-test
+  loader placed development labels in memory, but the diagnostics did not
+  analyze evaluation accuracy, adaptation benefit, or gate actions. No
+  trans-test annotation, pixel, prediction, action, or outcome was accessed.
+
+explicit_protocol_amendments:
+  downstream_batching:
+    original_target_images_per_batch: 128
+    amended_sequence_atomic_max_images: 32
+    sequence_atomicity_unchanged: true
+    cross_location_batches_forbidden: true
+    singleton_final_batch_merge_unchanged: true
+    oversized_single_sequence_rule_unchanged: >-
+      A sequence longer than 32 images remains one indivisible oversize batch.
+    selection_basis: runtime_only_synthetic_preflight_before_successful_v1_trace
+    tuning_claim: no_outcome_based_batch_tuning
+
+  execution_backend:
+    strategy: mps_resnet50_official_tent_cpu_root_bn1_v1
+    requested_device_argument: mps
+    automatic_device_selection: forbidden
+    frozen_model_device: mps
+    adapted_model_default_device: mps
+    fallback_layer: bn1
+    fallback_module_class: KBoundCPUFallbackBatchNorm2d
+    fallback_input_device: mps
+    fallback_compute_device: cpu
+    fallback_parameter_device: cpu
+    fallback_output_device: mps
+    official_tent_parameter_devices_expected: [cpu, mps]
+    bn_gaussian_kl_numeric_implementation: stable_relative_variance_log1p_taylor_v2
+    bn_gaussian_kl_taylor_threshold: 0.0001
+    bn_gaussian_kl_taylor_terms: 6
+    bn_gaussian_kl_numeric_clipping: none
+    installation_state_rule: >-
+      The native and installed root-BatchNorm state dictionaries must have the
+      same exact tensor SHA-256 before official Tent configuration.
+    frozen_upstream_required: true
+    reason: sealed_runtime_mps_root_batchnorm_backward_nonfinite
+
+official_tent_contract_unchanged:
+  upstream_entry_points: [configure_model, collect_params, Tent]
+  optimizer: Adam
+  learning_rate: 0.001
+  betas: [0.9, 0.999]
+  weight_decay: 0.0
+  steps: 1
+  episodic: false
+  reset_boundary: checkpoint_x_location
+  collected_parameter_set: every_BatchNorm2d_weight_and_bias
+  prediction_semantics: official_pre_update_logits_for_each_online_batch
+
+implementation_corrections:
+  stable_gaussian_kl:
+    numeric_implementation: stable_relative_variance_log1p_taylor_v2
+    mathematical_definition: gaussian_kl_probe_to_source
+    source_scale: source_var+eps
+    relative_variance: "(probe_var-source_var)/(source_var+eps)"
+    variance_gap: "x-log1p(x)"
+    mean_gap: "(probe_mean-source_mean)^2/(source_var+eps)"
+    taylor_threshold: 0.0001
+    taylor_terms: 6
+    taylor_series: "x^2/2-x^3/3+x^4/4-x^5/5+x^6/6-x^7/7"
+    numeric_clipping: none
+    nonfinite_or_negative_result: fail_closed
+    feature_definition_changed: false
+    official_tent_update_changed: false
+    outcome_based_tuning: false
+    regenerate_all_55_development_cells: true
+    exact_failure_regression_expected: 1.3540155737375239e-17
+
+  amendment_fail_closed_replay:
+    parser: PyYAML_6.0.3_safe_load
+    checksum_sidecar_required: true
+    exact_repository_path_required: true
+    schema_and_status_replayed: true
+    immutable_anchor_hashes_replayed: true
+    superseded_v1_record_receipt_and_archive_hashes_replayed: true
+    exact_code_path_set_replayed: true
+    exact_code_file_hashes_replayed: true
+    canonical_code_aggregate_replayed: true
+    batch_backend_numeric_thread_scope_and_dependency_counts_replayed: true
+    validation_points:
+      - before_pre_development_shared_runtime_identity_creation
+      - before_target_execution_seal_creation
+      - before_locked_target_execution
+    explicit_device_argument_rule: only_literal_mps_is_accepted
+    automatic_device_resolution_rejected: true
+
+  device_first_cpu_float64_transfer:
+    locked_sequence:
+      - detach_for_diagnostic_or_serialized_values
+      - transfer_to_cpu_without_dtype_change
+      - widen_to_float64_on_cpu
+    mathematical_feature_definitions_changed: false
+
+  batchnorm_probe_sufficient_statistics:
+    originating_device_reduction_dtype: float32
+    reduction_operation: torch.var_mean
+    reduction_dimensions: [batch, height, width]
+    population_variance_correction: 0
+    transfer_scope: O(number_of_batchnorm_channels)
+    merge_device: cpu
+    merge_dtype: float64
+    batch_m2_rule: transfer_variance_then_multiply_by_exact_count_in_cpu_float64
+    numerical_identity_claimed_across_backends: false
+
+locked_runtime:
+  host:
+    architecture: arm64
+    cpu_model: Apple M5
+    hardware_model: Mac17,2
+    physical_memory_bytes: 17179869184
+    platform: macOS-26.6.2-arm64-arm-64bit
+  software:
+    python: "3.12.13"
+    torch: "2.5.1"
+    torchvision: "0.20.1"
+    numpy: "2.4.6"
+    pillow: "12.2.0"
+    pyyaml: "6.0.3"
+  pytorch_threads:
+    intraop_threads: 4
+    interop_threads: 10
+    record_and_replay_required: true
+  determinism:
+    torch_deterministic_algorithms_enabled: true
+    cudnn_benchmark: false
+    cudnn_deterministic: true
+  numeric_contract:
+    model_parameter_dtype_except_cpu_fallback: float32
+    model_activation_dtype: float32
+    diagnostic_merge_dtype: float64
+    gaussian_kl_evaluation_dtype: float64
+    serialized_logit_dtype: float64
+    probability_and_gate_computation_dtype: float64
+
+execution_scope:
+  development_cells: 55
+  target_cells: 45
+  total_cells_under_one_shared_runtime_identity: 100
+  v1_development_cells_included: 0
+  fresh_v2_development_cells_required: 55
+  shared_runtime_identity_required_before_first_development_trace: true
+  development_trace_runtime_hash_required: true
+  development_collection_runtime_artifact_and_receipt_required: true
+  target_execution_seal_must_reuse_development_runtime: true
+  live_runtime_revalidation_before_and_after_target_execution: true
+  mixed_runtime_artifacts: forbidden
+  partial_reuse_after_runtime_or_code_change: forbidden
+  target_outcome_based_runtime_or_code_change: forbidden
+
+artifact_binding:
+  addendum_path: research_lock/KBOUND_CCT20_EXECUTION_RUNTIME_ADDENDUM_v2.yaml
+  addendum_binding: >-
+    Exact v2 addendum bytes are hashed into the pre-development shared runtime
+    identity. That immutable runtime artifact and receipt are bound into every
+    fresh development trace, the v2 collection, and the target execution seal.
+  execution_dependency_name: downstream_execution_runtime_addendum
+  expected_execution_dependency_counts:
+    dataset: 4
+    code_and_artifact: 138
+    total: 142
+
+code_identities:
+  hash_algorithm: sha256_of_exact_file_bytes
+  canonical_aggregate_rule: >-
+    Stable SHA-256 of canonical JSON over the mapping from repository-relative
+    path to exact file SHA-256.
+  aggregate_sha256: c0631b59f282643132f09a1efbc784148a0172a13fcca574f0490600a4e9259a
+  files:
+    experiments/kbound/cct20/runner_runtime.py: 715d57cd904544bb60c79dbd4482a4bbcbbe14091c92916da18b262a365870ea
+    experiments/kbound/cct20/tent_official.py: 617167875bb9344a674c15e13805b7a7533d2e092bd35c954179eb766d0a8c3a
+    experiments/kbound/cct20/run_development_gate.py: 7536d5af24f4c0d47e3d3bfffe8e7c7f39e81e05c8fed53f6495e3c4408b4ca5
+    experiments/kbound/cct20/label_free_traces.py: 4c016309f3ea35337dc40e8b71fed4b0dcf8dd28a83315a9cd9e6f014a0130c4
+    experiments/kbound/cct20/ridge_gate.py: 4128628f76ad4143bdc7e4e01aa2515103df726e317d22199c79f37a53b5e377
+    experiments/kbound/cct20/seal_cct20_execution.py: 09561a8a18d1a72f02331cf717c782465328fbaf0ff75440432d5ff8a7ef07ed
+    experiments/kbound/cct20/run_locked_target.py: 9308957b8575edbc115122fa90f24e967789a73c869bfb4e7a00339f3c490b6b
+    experiments/kbound/cct20/target_executor.py: 61095037642287e6aa5b3c12c39e7ad772efcb30fc8af87de17ce10ca17efb39
+    experiments/kbound/cct20/prediction_artifacts.py: 05904d19c48bf8da848f6010af4a3da9bf851a62a5c37f74a44ace0c53ead31c
+    experiments/kbound/cct20/protocol_seal.py: 9946f56f5232852b54c83b5e7caefeffe70cd8f75e381241602ee41708935078
+    experiments/kbound/cct20/integrity.py: 073511f241d8d8a9b3ace9e159bf46ec42c3c1d8c53c16a5f35d0a4623274b30
+    experiments/kbound/cct20/prospective_data.py: 668cd4eb264487cd046c5cc8d1f199330885d84cebbf4e21818dd03230cc6d73
+    experiments/kbound/cct20/audit_checkpoints.py: ea8616fe2e0a6bd2bbe36de6a2f9d70bf9858cf6f6f50fdbe1992115b42389b5
+    experiments/kbound/cct20/train_source.py: ccfbd35d62669b78415ad2550f19486881df17bea819d5cddb72614b1e653ae4
+    experiments/kbound/cct20/score_once.py: 4359ae135db5f0aee34538aea28a52bfcad704e25fe028e5bd728588ef7a0c40
+    experiments/kbound/cct20/two_way_inference.py: 6a23504069990a29f2282a83ad05ab00be22453e90cfee5cd6cfe6bc1b6552cc
+    experiments/kbound/cct20/prospective_protocol_v1.yaml: dc6f5da269b7e12523c036030f60b504fa46ca7170f15f9506004aa6e49041a5
+    external/tent_official/tent.py: d854e1f65f741aa1632dfb55420ca1bcf5405c978bef890e45caad04980514c8
+
+regression_contract:
+  cct_test_result: 91_passed
+  exact_failure_decimal_oracle_test: passed
+  equality_zero_kl_test: passed
+  invalid_variance_rejection_test: passed
+  failing_probe_v2_closure_replay: passed
+  no_gaussian_kl_clipping: true
+  real_mps_device_first_transfer_test: passed
+  real_mps_hybrid_root_batchnorm_update_test: passed
+  split_vs_concatenated_bn_population_moment_tolerance:
+    relative: 0.000001
+    absolute: 0.000000001
+  runtime_addendum_self_validation_test: passed
+  automatic_device_selection_rejection_test: passed
+  ruff_check: passed
+  python_compile: passed
+  git_diff_check: passed
+
+change_control:
+  immutable_after_v2_shared_runtime_receipt_creation: true
+  amendment_rule: >-
+    Any later device, batch, thread, software, deterministic-setting, numeric
+    implementation, code, data, checkpoint, gate, scoring, or inference change
+    requires a new versioned addendum. If any successful v2 development trace
+    exists, all 55 v2 cells must be regenerated. No target-setting change is
+    permitted after target outcomes are opened.
+  v1_trace_reuse: forbidden
+
+publication_disclosure:
+  required_summary: >-
+    After 15 authorized development cells had been sealed, the next cell
+    halted before trace creation because direct floating-point evaluation of a
+    theoretically nonnegative Gaussian KL produced -5.55e-17 through
+    cancellation. Before gate fitting or any target inference, runtime
+    addendum v2 replaced only this computation with an algebraically equivalent
+    stable log1p/Taylor evaluation with no clipping, and required all 55
+    development cells to be regenerated. The partial v1 traces were preserved
+    for provenance and excluded from every final analysis. The target remained
+    outcome-unopened.
+  prohibited_claims:
+    - all_downstream_code_was_fixed_before_any_development_outcome
+    - v1_partial_traces_contributed_to_the_final_gate
+    - gaussian_kl_values_were_clipped_or_floored
+    - literal_label_unopened_target_selection
+    - bitwise_identity_across_cpu_cuda_and_mps
+    - hardware_independent_results
+    - failed_or_superseded_attempts_produced_final_scientific_evidence

@@ -1,0 +1,97 @@
+schema_version: 1
+addendum_for: KBOUND_CCT20_PROSPECTIVE_CONFIRMATION_v1
+original_lock: research_lock/KBOUND_CCT20_TARGET_SELECTION_v1.yaml
+original_lock_sha256: 1283205124f086dd4af291c302a7c55bb9dd2c5c164111702dcdfe9f50f2c183
+metadata_disclosure_addendum: research_lock/KBOUND_CCT20_TARGET_SELECTION_v1_ADDENDUM.yaml
+metadata_disclosure_addendum_sha256: a79fc983573cce4d4fa3e5896130dda7683d2f0c4c852002b3cf802d667fbe08
+sealed_utc: "2026-08-28T04:50:49Z"
+status: SEALED_LABEL_CONTRACT_BEFORE_TARGET_INFERENCE
+
+reason: >-
+  A source-only schema audit found that the archive categories and annotation
+  multiplicity are more complicated than the public-summary shorthand recorded
+  in the target-selection lock. This addendum corrects the factual description
+  and freezes a deterministic label contract before any target prediction,
+  decision, accuracy, benefit, regret, or K-Bound outcome is computed.
+
+source_only_findings:
+  target_annotation_values_inspected_for_this_addendum: false
+  official_train_images: 13553
+  official_train_annotations: 14071
+  train_images_with_repeated_annotations: 414
+  train_images_with_more_than_one_distinct_category: 7
+  category_description_correction: >-
+    The 16 archive categories are 14 animal categories, car, and empty; they are
+    not 15 animal categories plus empty.
+
+frozen_category_mapping:
+  order: ascending_sparse_archive_category_id
+  category_id_to_output_index:
+    1: 0
+    3: 1
+    5: 2
+    6: 3
+    7: 4
+    8: 5
+    9: 6
+    10: 7
+    11: 8
+    16: 9
+    21: 10
+    30: 11
+    33: 12
+    34: 13
+    51: 14
+    99: 15
+  category_id_to_name:
+    1: opossum
+    3: raccoon
+    5: squirrel
+    6: bobcat
+    7: skunk
+    8: dog
+    9: coyote
+    10: rabbit
+    11: bird
+    16: cat
+    21: badger
+    30: empty
+    33: car
+    34: deer
+    51: fox
+    99: rodent
+
+frozen_multi_annotation_rule:
+  repeated_same_category: collapse to one ground-truth category
+  distinct_categories: retain the complete set of distinct ground-truth categories
+  training_target: >-
+    Uniform probability mass over the distinct ground-truth category set; use
+    normalized soft-target cross-entropy. A single-category image is the usual
+    one-hot special case.
+  primary_top1_correctness: >-
+    One if the model's single top-ranked category is a member of the complete
+    ground-truth category set, and zero otherwise.
+  primary_benefit: >-
+    Adapted set-membership top-1 correctness minus frozen set-membership top-1
+    correctness, aggregated using the locked camera-by-checkpoint estimand.
+  secondary_macro_f1: >-
+    Multi-label macro-F1 over all 16 category indicators, with the model's top-1
+    prediction represented as a one-hot prediction set.
+  zero_annotation_image: fail the complete experiment; never exclude or substitute
+  unknown_category_id: fail the complete experiment
+
+unchanged_population_contract:
+  - all official trans-test images remain mandatory
+  - all nine official trans-test camera locations remain mandatory
+  - no image is excluded because it is empty, a car, repeated, or multi-category
+  - the label-free target runner receives no category IDs or ground-truth sets
+  - the separate scorer joins the sealed predictions to the complete label sets only after action-artifact hashing
+  - all results are reported regardless of direction or statistical significance
+
+interpretation_boundary:
+  valid: prospective all-frame 16-output natural-shift evaluation with set-valued top-1 scoring
+  invalid:
+    - exact reproduction of the paper's single-label classification leaderboard
+    - 15-animal-plus-empty task description
+    - selecting the first annotation or first category by file order
+    - removing conflicting target images after labels are joined

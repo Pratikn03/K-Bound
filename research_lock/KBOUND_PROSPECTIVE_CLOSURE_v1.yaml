@@ -1,0 +1,129 @@
+schema_version: 1
+protocol_id: KBOUND_PROSPECTIVE_CLOSURE_v1
+status: DRAFT_UNSEALED
+created_utc: "2026-08-21T00:00:00Z"
+purpose: >
+  Prospectively evaluate one unopened natural target, independent-seed natural
+  replications, a separate real physical deployment, and an exact-rank
+  randomized-condition confirmation under one KGA decision contract.
+
+alpha: 0.10
+model_seeds: [0, 1, 2, 3, 4]
+
+decision_rule:
+  adapt: "delta_hat - epsilon > 0"
+  freeze: "delta_hat + epsilon < 0"
+  otherwise: abstain
+
+metrics:
+  benefit: "delta = risk_freeze - risk_adapt"
+  false_adapt_unconditional: "P(ADAPT and delta <= 0)"
+  false_adapt_conditional: "P(delta <= 0 | ADAPT)"
+  decision_coverage: "P(ADAPT or FREEZE)"
+  regret: oracle_action_regret
+
+inference:
+  unit: environment_x_model_seed
+  confidence_level: 0.95
+  comparison_family: [kga_vs_always_adapt, kga_vs_always_freeze]
+  multiplicity: holm
+  paired: true
+  resamples: 10000
+  adapt_exposure_minimum: 0.10
+  strict_coverage_minimum: 0.30
+
+calibration:
+  estimator_fit_disjoint_from_calibration: true
+  calibration_disjoint_from_test: true
+  radius: exact_split_conformal_order_statistic
+  rank: "ceil((n_cal + 1) * (1 - alpha))"
+  infeasible_rank_action: infinite_radius_and_abstain
+  stress_grid_loo_is_confirmatory: false
+
+primary_natural_track:
+  dataset: null
+  dataset_version: null
+  provenance_status: NO_VERIFIED_UNOPENED_TARGET_FOUND
+  provenance_audit: experiments/kbound/results/natural_target_provenance_v1/NATURAL_TARGET_PROVENANCE_AUDIT.json
+  inference_unit: environment_x_model_seed
+  candidate_adapters: [tent, eata, sar]
+  splits:
+    source_train: []
+    development: []
+    estimator_fit: []
+    residual_calibration: []
+    test: []
+    replication: []
+  fail_honest_branch: >
+    Preserve the one-shot result as win, point-only, no-harm, low-exposure,
+    or negative. Never retune on the opened test environments.
+
+replication_tracks:
+  - dataset: officehome
+    status: SOFTWARE_READY_PENDING_FIVE_INDEPENDENT_CHECKPOINTS
+    claim_scope: replication_not_untouched_confirmation
+    inference_unit: domain_x_model_seed
+  - dataset: iwildcam
+    status: SOFTWARE_READY_PENDING_FIVE_INDEPENDENT_CHECKPOINTS
+    claim_scope: replication_not_untouched_confirmation
+    inference_unit: camera_x_model_seed
+
+physical_track:
+  protocol: edge_real_phone_v1
+  status: PENDING_REAL_CAPTURES
+  source_sessions: [S01, S02]
+  estimator_fit_sessions: [S03, S04]
+  residual_calibration_sessions: [S05, S06]
+  test_sessions: [S07, S08]
+  replication_sessions: [S09, S10]
+  mock_or_pilot_is_evidence: false
+
+controlled_exact_confirmation:
+  status: DRAFT_GENERATED_NOT_SEALED_OR_EXECUTED
+  deployment_unit_generator: docs/research/kbound/scripts/generate_exact_confirmation_units.py
+  draft_manifest: research_lock/KBOUND_EXACT_CONFIRMATION_UNSEALED_v1.json
+  draft_manifest_sha256: 2defce368b184a518229718e649a221fa3884196c014fe47d3eb77e95ec5c077
+  estimator_fit_draws: 120
+  residual_calibration_draws: 120
+  test_draws: 240
+  historical_loo_panel_remains_empirical: true
+
+baseline_tracks:
+  poem:
+    status: PORT_ONLY_DIRTY_SOURCE_AND_INCOMPLETE_NATIVE_OUTPUT
+    label_until_verified: protocol-matched_port
+    official_commit: 8911b8514346706f916b609a1d9a3652197a05bf
+  aetta:
+    status: PORT_ONLY_UPSTREAM_COMMIT_AND_COMPLETE_NATIVE_OUTPUT_MISSING
+    label_until_verified: protocol-matched_port
+    official_commit: null
+
+launcher_compatibility:
+  natural_primary: BLOCKED_NO_VERIFIED_UNOPENED_TARGET
+  officehome: VERIFIED_SOFTWARE_PENDING_GPU_CHECKPOINTS
+  iwildcam: VERIFIED_SOFTWARE_PENDING_GPU_CHECKPOINTS
+  pacs: VERIFIED_REPLAY_SMOKE
+  official_baselines: VERIFIED_FAIL_CLOSED_PENDING_NATIVE_RUNS
+  physical: VERIFIED_FAIL_CLOSED_PENDING_REAL_CAPTURES
+  controlled_exact_confirmation: VERIFIED_SOFTWARE_PENDING_SEAL_AND_GPU_RECORDS
+
+execution:
+  train: []
+  evaluate: []
+
+prohibitions:
+  - target-test labels before decisions are frozen
+  - post-test alpha, radius, evidence, adapter, seed, condition, or subgroup selection
+  - relabelling one checkpoint as multiple model seeds
+  - pooled multi-dataset result presented as a single natural-dataset win
+  - exact split-conformal claim for leave-one-condition-out residual reuse
+  - epsilon equals beta
+  - delta_hat equals M
+  - mock, pilot, or browser-camera data promoted as physical evidence
+
+seal_requirements:
+  - select a genuinely unopened natural target and record its environment IDs
+  - populate disjoint estimator-fit, residual-calibration, and test split IDs
+  - mark every required launcher VERIFIED after dry-run and smoke tests
+  - write a canonical protocol hash sidecar
+  - commit the protocol and sidecar before opening the test target

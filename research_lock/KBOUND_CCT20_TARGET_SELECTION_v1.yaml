@@ -1,0 +1,117 @@
+schema_version: 1
+protocol_id: KBOUND_CCT20_PROSPECTIVE_CONFIRMATION_v1
+seal_stage: TARGET_SELECTION
+status: SEALED_TARGET_SELECTION
+sealed_utc: "2026-08-28T03:57:12Z"
+
+purpose: >-
+  Prospectively evaluate whether the current K-Bound decision rule adds value on
+  a natural camera-location shift that has not previously been evaluated in this
+  project. This stage freezes the dataset and target population before data are
+  downloaded or any K-Bound outcomes are computed. It is not the later execution
+  seal for code, checkpoints, or configuration.
+
+dataset:
+  name: Caltech Camera Traps-20
+  short_name: CCT-20
+  task: 16-way full-frame image classification (15 animal classes plus empty)
+  natural_domain: camera location
+  official_population:
+    total_images: 57868
+    total_locations: 20
+    source_locations: 10
+    trans_validation_locations: 1
+    trans_test_locations: 9
+  official_target_split: trans_test
+  target_scope: all samples from all nine official trans-test locations
+  source_page: https://lila.science/datasets/caltech-camera-traps
+  paper: https://arxiv.org/abs/1807.04975
+  image_archive:
+    url: https://storage.googleapis.com/public-datasets-lila/caltechcameratraps/eccv_18_all_images_sm.tar.gz
+    content_length_bytes: 6492615601
+    provider_md5_base64: gUPBeqKhKHK2byhP8hFTHw==
+    provider_etag: 8143c17aa2a12872b66f284ff211531f
+  annotation_archive:
+    url: https://storage.googleapis.com/public-datasets-lila/caltechcameratraps/eccv_18_annotations.tar.gz
+    content_length_bytes: 2997071
+    provider_md5_base64: ZqH0gbRKoe2t91yc+9J6ug==
+    provider_etag: 66a1f481b44aa1edadf75c9cfbd27aba
+
+selection_rationale:
+  - The official benchmark is explicitly designed for generalization to unseen camera locations.
+  - Nine trans-test locations provide natural cluster units for paired inference.
+  - The 6.49 GB image archive fits the available local experimental budget.
+  - The task is close to the paper's existing camera-trap evidence while using a distinct dataset and target population.
+  - Selection used only public dataset documentation and published benchmark descriptions, never K-Bound outcomes on CCT-20.
+
+prior_opening_audit:
+  scope: project repository, git history, and mounted external result/data names
+  completed_utc: "2026-08-28T03:57:12Z"
+  searches:
+    - "case-insensitive CCT20 / Caltech Camera / Terra Incognita / LILA text search excluding embedded notebook images"
+    - "git log content search for CCT20 and Terra Incognita"
+    - "mounted /Volumes/T9 filename search for CCT20, Terra Incognita, Caltech Camera, and eccv_18 archives"
+  matching_project_artifacts: []
+  result: NO_PROJECT_EVIDENCE_OF_PRIOR_TARGET_OPENING
+  limitation: >-
+    This is an auditable project-level provenance statement, not a claim about
+    every fact an individual researcher may previously have read in public papers.
+
+frozen_before_download:
+  primary_candidate: tent_official
+  fixed_policy_comparators:
+    - always_adapt
+    - always_freeze
+  model_seeds: [0, 1, 2, 3, 4]
+  primary_action_unit: camera_location_x_model_seed
+  primary_natural_cluster: camera_location
+  target_selection_uses_labels: false
+  target_window_construction_uses_labels: false
+  target_exclusion_after_opening_allowed: false
+  minimum_required_target_coverage: all nine official trans-test locations
+  primary_contrast: baseline_regret_minus_kga_regret
+  positive_contrast_favors: KGA
+  primary_family:
+    - KGA versus always-adapt
+    - KGA versus always-freeze
+  multiplicity: Holm at family-wise alpha 0.05 over the two fixed-policy comparisons
+  primary_outcome: top-1 accuracy regret to the better fixed action within each location and model seed
+  secondary_outcome: label-present macro-F1, reported without replacing the primary outcome
+  harmful_definition: adapted accuracy minus frozen accuracy <= 0
+  required_action_exposure:
+    adapt_rate_minimum: 0.10
+    freeze_rate_minimum: 0.10
+    strict_decision_coverage_minimum: 0.30
+
+target_firewall:
+  - No target labels, accuracies, benefits, regrets, oracle actions, or aggregate metrics may be read before the decision artifact is written and sealed.
+  - Target sample ordering, windows, and probe/evaluation partitions must use only official metadata, native order, sequence ID, location ID, and a frozen hash rule.
+  - Every official trans-test sample ID must occur exactly once in the declared target role; unreadable files fail closed and are never silently substituted.
+  - The inference runner must not import the label-bearing scorer.
+  - A separate scorer may join sealed predictions and decisions to labels only after decision-artifact hashing.
+  - All nine trans-test locations and all five independently trained checkpoints are reported regardless of sign or statistical significance.
+
+required_before_execution_seal:
+  - Download and hash the exact image and annotation archives without inspecting target outcomes.
+  - Pin and hash the official Tent implementation and its exact optimizer/update/reset settings.
+  - Freeze source-training, gate-FIT, gate-CAL, target-probe, and target-evaluation roles at the sequence/location level.
+  - Prove role disjointness and full official target coverage in tests.
+  - Freeze the classifier architecture, initialization, augmentation, training epochs, early-stopping rule, and five model seeds.
+  - Reject duplicate checkpoint tensor hashes.
+  - Freeze a location-aware or two-way location/checkpoint inference procedure.
+  - Freeze all hyperparameters without viewing trans-test labels or K-Bound outcomes.
+
+repository_at_target_selection:
+  git_head: a7969c05409bf676eea75988a57b71f9179345e3
+  worktree_note: >-
+    The repository contained pre-existing uncommitted manuscript, audit, and
+    implementation changes. The later execution seal must hash every file that
+    is actually used; git_head alone is not an implementation seal.
+
+interpretation_boundary:
+  valid_if_completed: prospective natural-shift confirmation on CCT-20 trans-test
+  never_implies:
+    - guaranteed favorable results
+    - benchmark-wide dominance
+    - independent confirmation by another research group
+    - official leaderboard comparability unless the final evaluator exactly matches the official task contract
