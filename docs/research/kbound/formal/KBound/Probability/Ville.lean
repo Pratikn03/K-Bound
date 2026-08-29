@@ -4,21 +4,25 @@ import Mathlib.Tactic.Linarith
 import Mathlib.Tactic.FieldSimp
 
 /-!
-# Discrete e-process / Ville layer (`thm:anytime`)
+# Pointwise betting / Markov layer used by the anytime argument
 
-Paper: anytime-valid false-adapt control via a one-sided betting supermartingale
-and Ville's inequality (Markov form).
+This file does not define a filtration, conditional expectation, nonnegative
+supermartingale, maximal event, or stopping time. Consequently
+`ville_bound_false_adapt` is the pointwise indicator inequality behind Markov's
+inequality, not a full formalization of Ville's maximal inequality or optional
+stopping. The manuscript-level anytime theorem still relies on those external
+probability results.
 -/
 
 namespace KBound
 
-/-- Null-update supermartingale step (paper `thm:anytime` one-step core). -/
+/-- Deterministic null-update wealth step (not a conditional-expectation theorem). -/
 theorem betting_wealth_supermartingale_step (w lam x : ℝ)
     (hw : 0 ≤ w) (hl : 0 ≤ lam) (hx : x ≤ 0) (hb : lam * x ≥ -1) :
     w * bettingFactor lam x ≤ w :=
   betting_wealth_step_le w lam x hw hl hx hb
 
-/-- **Discrete Ville / Markov bound** (pointwise core of the anytime certificate).
+/-- **Pointwise Markov indicator bound** (algebraic core used inside Ville's theorem).
 For a nonnegative weight `W` and level `0 < α`,
 `1{W ≥ 1/α} ≤ α · W`. -/
 theorem ville_bound_false_adapt (W alpha : ℝ)

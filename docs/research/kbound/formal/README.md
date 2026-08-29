@@ -29,20 +29,23 @@ First full build: **15–40 minutes**. Later builds are incremental.
 ```bash
 cd docs/research/kbound/formal
 python3 formal_audit.py --build --strict-core
-python3 formal_audit.py --build --full-foundations --json-out formal_audit_report.json
+python3 formal_audit.py --build --strict-core --json-out formal_audit_report.json
+python3 formal_audit.py --full-foundations  # expected FAIL; prints remaining foundations
 ```
 
 - `--strict-core` / `--strict-100`: Lean build + no `sorry`/`admit`/`axiom` + every
   `VERIFIED_THEOREMS` name is `#check`-able.
-- `--full-foundations`: same, and requires the paper-faithful foundation gap list to be
-  empty (Wave 6 closed those gaps).
+- `--full-foundations`: a deliberately stronger audit covering a general
+  measure-theoretic exchangeability theorem, filtered e-process/Ville theorem,
+  general KL/TV Le Cam layer, concentration theory, and general target-law
+  construction. It currently fails and lists those gaps.
 
-Current release status: **57 checks PASS; Wave 7 pending local kernel build**. The audit now
-requires 65 named theorem checks, including the
-closed/open frontier-band and both zero-versus-strict boundary witnesses).
-This is the paper-faithful bar (exchangeable-score reduction, discrete Ville,
-two-point Le Cam packaging, Hoeffding-radius commit bridge, evidence swap
-involution) — not a from-scratch Mathlib probability textbook.
+Current release status: **65 named checks pass when `lake build` succeeds**,
+including the closed/open frontier band and both zero-versus-strict boundary
+witnesses. This is a valuable mechanized algebraic and finite-model spine. It is
+not full foundational mechanization of the probability results named in the
+paper; the stronger audit must remain red until those theorems are genuinely
+formalized.
 
 ## What is mechanized (no `sorry`)
 
@@ -53,19 +56,30 @@ involution) — not a from-scratch Mathlib probability textbook.
 | `thm:imp`, `cor:forced-abstain` | `KBound/Impossibility.lean` | `abstention_mass_ge_one_sub_two_alpha_arith`, `matched_opposite_worlds_force_abstain` |
 | `prop:lecam-finite` | `KBound/FiniteTesting.lean`, `LeCam.lean`, `LeCamMeasure.lean` | `lecam_testing_two_point`, `lecam_tv_two_point_measure` |
 | `thm:frontier` | `KBound/Frontier.lean` | sufficiency, all decision branches, closed/open-band witnesses, and both zero-versus-strict boundary witnesses |
-| `thm:frontier` necessity/maximality lift | `KBound/TargetLaw.lean` | candidate Wave 7 closure: finite discrete measurable target laws, matched evidence, concrete opposite-benefit worlds, and the distributional lift under explicit `RichAt`; release only after the 65-check kernel audit passes |
+| `thm:frontier` necessity/maximality lift | `KBound/TargetLaw.lean` | finite discrete target laws, matched constant evidence, concrete opposite-benefit worlds, and a lift under explicit assumed `RichAt` |
 | `lem:reduction`, `thm:disagree` | `KBound/Disagreement.lean` | `binary_sign_reduction` |
 | `cor:samplecomp` | `KBound/Corollaries.lean` | `one_sided_commit_when_radius_small` |
 | finite conformal rank algebra | `KBound/Conformal.lean` | `finite_uniform_rank_miss_le_alpha` |
 | uniform-index conformal | `KBound/Probability/UniformConformal.lean` | `uniformIndex_false_adapt_le` |
 | exchangeable-score reduction | `KBound/Probability/Exchangeable.lean` | `uniformIndexLaw_miss_le_alpha`, `uniformIndexLaw_false_adapt_le` |
-| anytime / Ville | `KBound/Probability/EProcess.lean`, `Ville.lean` | `betting_wealth_supermartingale_step`, `ville_bound_false_adapt` |
+| anytime / Ville finite core | `KBound/Probability/EProcess.lean`, `Ville.lean` | deterministic one-step wealth inequality and pointwise Markov indicator bound; no filtered supermartingale/optional-stopping development |
 | one-bit swap involution | `KBound/Dichotomy.lean` | `evidence_swap_involution`, `swap_flips_benefit_preserves_evidence` |
-| rate / Hoeffding bridge | `KBound/Probability/Rates.lean` | `hoeffding_radius_le`, `rate_commit_from_concentration` |
+| rate / Hoeffding bridge | `KBound/Probability/Rates.lean` | radius nonnegativity and conditional commit implication; the Hoeffding concentration theorem is not mechanized here |
 | multicandidate algebraic core | `KBound/Multicandidate.lean` | `multiclass_routing_harm_equiv` |
 | three-world multiclass harm core | `KBound/ThreeWorld.lean` | `multiclass_harm_iff_nonpos` |
 
 Full index: `KBound/TheoremMap.lean`
+
+## Explicit external or unmechanized assumptions
+
+- Exchangeability must still be connected to the finite uniform-rank premise.
+- Benchmark calibration transfer and risk alignment are deployment assumptions.
+- The anytime claim still needs a filtered nonnegative-supermartingale and
+  maximal/optional-stopping layer.
+- The Le Cam development is a finite two-point model, not a general KL/TV
+  product-experiment theorem.
+- `TargetLaw.lean` assumes `RichAt`; it does not prove that an arbitrary real
+  benchmark target class satisfies that richness condition.
 
 ## Toolchain
 

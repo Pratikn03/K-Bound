@@ -7,9 +7,10 @@ import Mathlib.Tactic.Ring
 # One-bit dichotomy + evidence-preserving swap involution (`thm:conj1-dichotomy`)
 
 Negating the accuracy coordinate flips the benefit sign on the disagreement region.
-The `EvidenceState` swap map is the finite-dimensional evidence-preserving involution
-used by the paper's one-bit dichotomy: label-free score evidence is fixed while the
-latent accuracy bit is flipped.
+The `EvidenceState` swap map is a finite-dimensional coordinate involution:
+label-free score evidence is fixed while latent accuracy is complemented. It
+does not by itself construct general measurable target laws or prove the full
+channel-level one-bit dichotomy.
 -/
 
 namespace KBound

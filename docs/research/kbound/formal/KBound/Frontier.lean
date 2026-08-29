@@ -100,8 +100,8 @@ theorem frontier_open_band_opposite_witnesses {M beta : ℝ} (hband : |M| < beta
   have hbeta : 0 < beta := lt_of_le_of_lt (abs_nonneg M) hband
   have hb := (abs_lt.mp hband)
   refine ⟨beta, -beta, ?_, ?_, ?_, ?_⟩
-  · simpa [abs_of_pos hbeta]
-  · simpa [abs_of_pos hbeta]
+  · simp [abs_of_pos hbeta]
+  · simp [abs_of_pos hbeta]
   · linarith
   · linarith
 
@@ -113,7 +113,7 @@ theorem frontier_positive_boundary_zero_strict {M beta : ℝ}
       |gammaZero| ≤ beta ∧ |gammaStrict| ≤ beta ∧
       M + gammaZero = 0 ∧ 0 < M + gammaStrict := by
   refine ⟨-beta, 0, ?_, ?_, ?_, ?_⟩
-  · simp [abs_of_pos hbeta, le_rfl]
+  · simp [abs_of_pos hbeta]
   · simp [le_of_lt hbeta]
   · linarith
   · linarith
@@ -126,7 +126,7 @@ theorem frontier_negative_boundary_zero_strict {M beta : ℝ}
       |gammaZero| ≤ beta ∧ |gammaStrict| ≤ beta ∧
       M + gammaZero = 0 ∧ M + gammaStrict < 0 := by
   refine ⟨beta, 0, ?_, ?_, ?_, ?_⟩
-  · simp [abs_of_pos hbeta, le_rfl]
+  · simp [abs_of_pos hbeta]
   · simp [le_of_lt hbeta]
   · linarith
   · linarith

@@ -10,7 +10,6 @@ import subprocess
 import sys
 from pathlib import Path
 
-
 ROOT = Path(__file__).resolve().parent
 
 VERIFIED_THEOREMS = [
@@ -83,21 +82,55 @@ VERIFIED_THEOREMS = [
     "distributional_frontier_maximal",
 ]
 
-# Wave 6 closed the paper-faithful foundation cores. Empty list ⇒ --full-foundations can pass.
-FOUNDATIONAL_PROBABILITY_LIMITS: list[dict[str, str]] = []
+# These are intentionally non-empty. The current package checks finite algebraic
+# reductions and conditional implications; it is not a from-scratch Mathlib
+# development of every probability theorem invoked by the manuscript.
+FOUNDATIONAL_PROBABILITY_LIMITS: list[dict[str, str]] = [
+    {
+        "item": "full measure-theoretic split-conformal exchangeability",
+        "current": "finite uniform-rank algebra after the uniform-rank premise",
+        "needed": "derive rank super-uniformity from exchangeability of measurable scores, including ties",
+    },
+    {
+        "item": "filtered e-process and Ville optional-stopping theorem",
+        "current": "one-step deterministic betting algebra and a pointwise Markov indicator inequality",
+        "needed": "adapted filtration, nonnegative supermartingale, maximal inequality, and stopping-time result",
+    },
+    {
+        "item": "general KL/TV Le Cam probability layer",
+        "current": "two-point Bernoulli-style real algebra packaged as TwoPointLaw",
+        "needed": "probability measures, total variation/KL inequalities, and product experiments",
+    },
+    {
+        "item": "concentration and martingale rate theory",
+        "current": "definition/nonnegativity of a Hoeffding-shaped radius and a conditional commit implication",
+        "needed": "the concentration inequality itself and any sequential/martingale finite-sample rates claimed",
+    },
+    {
+        "item": "general measurable target-law richness construction",
+        "current": "finite two-atom target laws with constant Unit-valued evidence and an assumed RichAt class",
+        "needed": "general measurable label kernels/evidence fibres and derivation of richness for each declared class",
+    },
+]
 
-# Wave 4 paper/validator frontier items that remain outside the Lean package.
-OPEN_RESEARCH_FRONTIER: list[dict[str, str]] = []
+# The finite coordinate swap is checked, but the strongest manuscript-level
+# one-bit/channel theorem would need a general distributional construction.
+OPEN_RESEARCH_FRONTIER: list[dict[str, str]] = [
+    {
+        "item": "full one-bit channel dichotomy over the manuscript's declared model class",
+        "current": "finite-dimensional accuracy-complement involution",
+        "needed": "lift to the complete target-law/evidence-channel statement with all range and measurability conditions",
+    }
+]
 
 CLOSURE_RECORD = {
     "wave": 7,
-    "date": "2026-07-22",
+    "date": "2026-08-26",
     "scope": (
         "kernel-checked algebraic theorem spine, uniform-index conformal measure layer, "
-        "and paper-faithful foundation closures (exchangeable-score reduction, discrete "
-        "Ville, two-point Le Cam packaging, Hoeffding radius commit bridge, evidence "
-        "swap involution), plus a finite measurable target-law realization and the "
-        "distributional frontier lift under an explicit target-class richness premise"
+        "plus finite reductions for exchangeable ranks, betting, two-point Le Cam, "
+        "a Hoeffding-shaped radius, a coordinate swap, and a finite target-law lift. "
+        "The full probability foundations listed below remain outside the kernel-checked scope."
     ),
     "mechanized_modules": [
         "KBound/Probability/ConformalExchangeability.lean",
@@ -140,11 +173,7 @@ def strip_lean_comments(text: str) -> str:
 
 
 def lean_source_paths() -> list[Path]:
-    paths = sorted(
-        p
-        for p in (ROOT / "KBound").rglob("*.lean")
-        if p.is_file() and not p.name.startswith("._")
-    )
+    paths = sorted(p for p in (ROOT / "KBound").rglob("*.lean") if p.is_file() and not p.name.startswith("._"))
     for extra in (ROOT / "KBound.lean", ROOT / "lakefile.lean"):
         if extra.is_file() and not extra.name.startswith("._"):
             paths.append(extra)
@@ -203,7 +232,7 @@ def main() -> int:
     parser.add_argument(
         "--full-foundations",
         action="store_true",
-        help="Fail unless the documented deep probability-foundation limits are closed.",
+        help="Audit the stronger foundational bar; currently expected to fail with explicit gaps.",
     )
     args = parser.parse_args()
     strict_core = args.strict_core or args.strict_100
@@ -259,7 +288,11 @@ def main() -> int:
         print("NOTE: --strict-100 is a legacy alias for strict-core scope, not full Mathlib probability foundations.")
     print(f"Documented foundational probability limits: {len(FOUNDATIONAL_PROBABILITY_LIMITS)}")
     if args.full_foundations:
-        print("Full foundational probability gate: FAIL" if foundation_blockers else "Full foundational probability gate: PASS")
+        print(
+            "Full foundational probability gate: FAIL"
+            if strict_blockers
+            else "Full foundational probability gate: PASS"
+        )
     if strict_blockers:
         print("Strict/full-foundation blockers:")
         for item in strict_blockers:

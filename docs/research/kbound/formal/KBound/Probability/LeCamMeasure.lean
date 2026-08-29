@@ -6,9 +6,10 @@ import Mathlib.Data.Real.Basic
 
 Paper: `prop:lecam-finite`, `thm:minimax-opt` (two-point testing).
 
-Records the finite TV identity under an explicit two-point probability packaging
-(`TwoPointLaw`) so the Le Cam affinity bound is stated at the measure-model
-layer used by the paper, not only as bare reals.
+Records the finite TV identity under a two-point Bernoulli-style packaging
+(`TwoPointLaw`). Despite the historical filename, this is not a Mathlib
+`Measure` development and does not formalize KL/TV inequalities or product
+experiments for general probability measures.
 -/
 
 namespace KBound

@@ -8,9 +8,10 @@ import Mathlib.Tactic.Positivity
 /-!
 # Finite-sample rate corollaries (`thm:ev-rate`, `cor:samplecomp`)
 
-Connects a Hoeffding-style radius to the adapt/freeze commit rule. The classical
-concentration inequality itself is the standard Hoeffding formula; the
-kernel-checked content is the radius definition and the commit implication.
+Connects a Hoeffding-shaped radius to the adapt/freeze commit rule. The
+kernel-checked content is only the radius definition/nonnegativity and the
+conditional commit implication. The Hoeffding concentration inequality itself
+is not proved in this module.
 -/
 
 namespace KBound

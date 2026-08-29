@@ -6,9 +6,9 @@ import Mathlib.Tactic.Linarith
 /-!
 # Exchangeability bridge for split conformal coverage (`sec:t2-prop-conformal`)
 
-Under the ideal split-conformal rank hypothesis (exchangeability of calibration and
-deployment scores implies a uniform rank on `{1,…,n+1}`), the finite miss mass bound of
-`KBound.Conformal` yields the paper's marginal coverage guarantee.
+This module starts after the ideal rank premise has been reduced to a finite
+uniform-rank model. It does not derive rank super-uniformity from exchangeability
+of arbitrary measurable scores or handle ties at that generality.
 -/
 
 namespace KBound
