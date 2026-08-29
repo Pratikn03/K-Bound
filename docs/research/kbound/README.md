@@ -1,60 +1,56 @@
 # K-Bound Research Guide
 
-This directory is the maintained research surface for K-Bound and KGA. It contains the manuscript,
-historical extended manuscript, formalization, canonical result manifest, dashboard, and
+This directory is the maintained research surface for K-Bound and KGA. It contains the compact
+manuscript, synchronized long companion, formalization, canonical result manifest, dashboard, and
 physical-camera validation package.
 
-> ## State of the project as of 2026-07-26 — read this before anything else
+> ## State of the project as of 2026-08-27 -- read this before anything else
 >
-> An external five-specialist review panel audited the manuscript and the release on 2026-07-25.
-> The project's own audit documents were found to certify things the source contradicted. The
-> 2026-07-26 revision fixes that. What a reader arriving today needs to know:
+> The maintained release keeps the compact submission and long companion synchronized while
+> separating both from historical manuscript and audit records. Older drafts remain for provenance and do not override
+> the source-hashed reconciled panel. What a reader arriving today needs to know:
 >
-> - **Target venue is TMLR**, not an IEEE conference. Single-column; the length problem was a
->   two-column artifact and no results were cut for it.
-> - **The manuscript is NOT FROZEN.** The pinned commit and PDF sha256 in the old ledger were
->   stale by construction — `EDIT_NOTES_2026-07-23.md` records 12 edits made the day after the
->   freeze, two of which change the compiled output. A dated re-freeze procedure replaces the stale
->   hashes: `SUBMISSION_LEDGER.md §0`.
-> - **The conformal radius was calibrated in sample** on five shipped scripts and seven `decide_kga`
->   forks. Fixed. The CIFAR-10-C flagship result is **completely unaffected** (0 of 9 504 decisions
->   change); ImageNet-C SAR moves from a CI-supported beats-both to a **point-estimate no-harm**;
->   Camelyon17 Table VIII gets slightly worse. `SUBMISSION_LEDGER.md §9`.
-> - **`PHASE6_LEAKAGE_AUDIT.md`'s 2026-07-21 "PASS (clean)" verdict is retracted** at the top of
->   that file, with the original text preserved so the correction can be diffed.
-> - **Three tracks are demoted**: ImageNet-C SAR (beats-both -> point-estimate no-harm),
->   Camelyon17 OOD (locked -> **sealed but not recomputable from release**), and Office-Home /
->   iWildCam (locked rows whose source record files are absent). `SUBMISSION_LEDGER.md §3`, `§8`.
-> - **143 committed text artifacts are NUL-filled iCloud placeholders**, including the whole
->   Office-Home runner and every ablation JSON. Census, one-command recovery, and the release-guard
->   spec: [PLACEHOLDER_INVENTORY.md](PLACEHOLDER_INVENTORY.md).
-> - **Multi-seed runs were not produced under one environment** — three Python/torch stacks across
->   five CIFAR seeds, and no manifest records a scikit-learn version. Their spread is not seed
->   variance. `REPRODUCE.md §0a`.
-> - **The multiplicity family was declared post hoc** (the three comparisons that won, out of 1 427
->   recorded `beats_both` determinations). Prospective declaration and full arm inventory:
->   [COMPARISON_FAMILY.md](COMPARISON_FAMILY.md).
+> - `kbound_submission.tex` is the primary compact Phase-1 driver. `kbound_tmlr.tex` is the
+>   maintained single-column long companion and consumes the same synchronized
+>   `kbound_submission_body.tex`; neither driver is an independent numerical authority.
+> - The population frontier uses $(M,\gamma,\beta)$; empirical KGA uses
+>   $(\widehat\Delta,\varepsilon)$. Real-data KGA does not numerically receive $\beta$.
+> - The canonical empirical panel is
+>   `experiments/kbound/results/reconciled_panels_v1/canonical_panel_results.json`, generated from
+>   106 source-hashed compact artifacts. Generated LaTeX tables and repeated numbers read this panel.
+> - CIFAR-10-C Tent and EATA beat both fixed policies by current exact-rank point estimate.
+>   A retrospective current-policy sensitivity over six corruption families gives Tent positive
+>   ordinary bootstrap intervals against both baselines, but the preregistered six-comparison Holm gate fails ($p=0.09375$ for both Tent contrasts). No cluster-robust or confirmatory win is claimed.
+>   The older cluster artifact remains historical, and the completed SAR rebuild is negative.
+> - Office-Home, Camelyon17 OOD, and RxRx1 primarily support one-sided no-harm or endpoint
+>   reproduction. The iWildCam numerical/action row is withheld pending an official-metric,
+>   population-sealed rerun. PACS, ImageNet-R, and CIFAR-10.1 are retained as null or negative diagnostics.
+> - No clean single-dataset natural-shift CI-robust beats-both claim and no real-camera result are
+>   made. The camera package is a prospective validation protocol.
 >
-> The single-sentence version: the CIFAR-10-C stress-grid safety result is real, well-powered and
-> survives every check; most of the rest of the panel supports a narrower claim than the one
-> originally written, and the documents now say so.
+> The single-sentence version: K-Bound has a strong theory and a coherent deployable controller,
+> one controlled mixed-regime routing result, and an intentionally narrow natural-shift claim.
 
 ## Start Here
 
 | Goal | Entry point |
 |---|---|
-| **Understand the current state and every open item** | **[SUBMISSION_LEDGER.md](SUBMISSION_LEDGER.md)** — canonical; overrides every other document |
-| Read the manuscript | [kbound_short.tex](kbound_short.tex) and [kbound_short_appendix.tex](kbound_short_appendix.tex) |
-| Inspect every promoted number | [paper/generated/kbound_result_manifest.json](paper/generated/kbound_result_manifest.json) |
+| Read the current provenance and data-quality verdict | [KBOUND_PHASE1_PROVENANCE_AUDIT_2026-08-27.md](KBOUND_PHASE1_PROVENANCE_AUDIT_2026-08-27.md) and [audits/empirical_data_quality_2026_08_27/audit_summary.json](audits/empirical_data_quality_2026_08_27/audit_summary.json) |
+| **Execute the remaining empirical and release work** | **[KBOUND_EMPIRICAL_AND_RELEASE_CLOSURE_PLAN.md](KBOUND_EMPIRICAL_AND_RELEASE_CLOSURE_PLAN.md)** |
+| Understand current source-hashed result verdicts | [KBOUND_SHORT_RESULT_AUDIT.md](KBOUND_SHORT_RESULT_AUDIT.md) and [KBOUND_SHORT_CLAIM_MANIFEST.md](KBOUND_SHORT_CLAIM_MANIFEST.md) |
+| Inspect the historical freeze ledger | [SUBMISSION_LEDGER.md](SUBMISSION_LEDGER.md) — superseded for current result verdicts and maintained paths |
+| Read the compact submission | [kbound_submission.tex](kbound_submission.tex) and [kbound_submission_body.tex](kbound_submission_body.tex) |
+| Read the synchronized long companion | [kbound_tmlr.tex](kbound_tmlr.tex) — maintained single-column rendering of [kbound_submission_body.tex](kbound_submission_body.tex) |
+| Inspect every canonical panel number | [../../../experiments/kbound/results/reconciled_panels_v1/canonical_panel_results.json](../../../experiments/kbound/results/reconciled_panels_v1/canonical_panel_results.json) |
 | Audit claim-to-artifact links | [KBOUND_SHORT_CLAIM_MANIFEST.md](KBOUND_SHORT_CLAIM_MANIFEST.md) |
 | Obtain the datasets | [../../../DATA.md](../../../DATA.md) — per-dataset version, split, licence, acquisition |
 | Reproduce the submission | [REPRODUCE.md](REPRODUCE.md), then [REVIEWER_REPRO_PACKET.md](REVIEWER_REPRO_PACKET.md) (partially superseded) |
 | Run an independent replication | [INDEPENDENT_REPLICATION_PROTOCOL.md](INDEPENDENT_REPLICATION_PROTOCOL.md) |
 | See what is unreadable and why | [PLACEHOLDER_INVENTORY.md](PLACEHOLDER_INVENTORY.md) |
-| See the comparison family and arm inventory | [COMPARISON_FAMILY.md](COMPARISON_FAMILY.md) |
+| Inspect the historical comparison-family census | [COMPARISON_FAMILY.md](COMPARISON_FAMILY.md) — superseded; not current multiplicity evidence |
 | Read the corrected leakage audit | [PHASE6_LEAKAGE_AUDIT.md](PHASE6_LEAKAGE_AUDIT.md) |
 | Understand tracked vs external artifacts | [EXTERNAL_STORAGE_POLICY.md](EXTERNAL_STORAGE_POLICY.md) / [STORAGE_MANIFEST.json](STORAGE_MANIFEST.json) |
-| Inspect the withheld CIFAR SAR arm | [CIFAR10C_SAR_QUARANTINE.md](CIFAR10C_SAR_QUARANTINE.md) |
+| Inspect the historical CIFAR SAR quarantine | [CIFAR10C_SAR_QUARANTINE.md](CIFAR10C_SAR_QUARANTINE.md) -- superseded by the completed rebuild |
 | Inspect theory-to-code mapping | [THEORY_TO_CODE_MAP.md](THEORY_TO_CODE_MAP.md) |
 | Build the research dashboard | [dashboard/README.md](dashboard/README.md) |
 | Start the physical study | [edge/PHYSICAL_STUDY_RUNBOOK.md](edge/PHYSICAL_STUDY_RUNBOOK.md) |
@@ -72,47 +68,27 @@ The population frontier and empirical certificate are related but distinct.
 Real-data KGA does not receive beta, and empirical abstention does not by itself
 prove structural non-identifiability.
 
-## Evidence Tiers (revised 2026-07-26)
+## Evidence Tiers (reconciled 2026-08-20)
 
-Authoritative version with numbers: `SUBMISSION_LEDGER.md §3`.
+The canonical JSON and generated table are authoritative for current point estimates.
 
-### CI-supported beats-both — one track, two candidates
-
-- **CIFAR-10-C Tent**: five seeds, 432 cells per seed, CI beats-both. Unaffected by the radius fix
-  (0 of 9 504 decisions change). Operating point is 6 of the 15 corruptions at severities {1,5} —
-  say so wherever the track is reported (`DATA.md §2`).
-- **CIFAR-10-C EATA**: same, with one caveat now disclosed — the adapt-gap CI excludes zero at 432
-  i.i.d. cells but **not** when clustered by corruption family.
-- The three-source OOF stream also clears the bar, but it is a **researcher-constructed routing
-  mixture**, not unseen-domain transfer, and is labelled so.
-
-### Point-estimate result — no CI claim
-
-- **ImageNet-C SAR**: 27 cells per seed, five seeds. Under the declared leave-one-out-of-pool
-  radius the point estimate still beats always-freeze (0.0289 vs 0.0319), but the freeze-gap CI at
-  the seed-averaged unit includes zero. **Demoted from beats-both 2026-07-26.**
-
-### One-sided no-harm — with source problems
-
-Office-Home M v2, iWildCam H v2, RxRx1 J, Camelyon17 OOD. None is a natural beats-both win, and
-three of the four have missing sources:
-
-- **Camelyon17 OOD**: **sealed but not recomputable from release** — the promoted triple exists in
-  one sealed YAML and in no computable artifact; the promoted FA_u = 0 is recorded nowhere.
-- **Office-Home**: both source record files absent, and the entire runner directory is unreadable.
-- **iWildCam**: source record file absent; 1 ADAPT decision, so the guarantee is untested.
-- **RxRx1**: 0 ADAPT decisions, so the guarantee is untested.
-
-### Diagnostic, negative or withheld
-
-- **CIFAR-10.1** fails the declared transfer bar (FA_u 0.167, FA_c 0.444) — a pre-declared negative
-  that came out worse than declared.
-- **ImageNet-R**: four of four seeds; a null, and a worse one than the mean row shows — KGA is
-  worse than always-adapt on 7 of 10 backbones and 4 of 10 have a 0% harmful base rate.
-- **PACS**: three of three seeds; a null. Cannot be re-scored from the release.
-- **CIFAR-10-C SAR** is withheld after a replay mismatch and contributes no empirical claim — note
-  that the non-reproducing seed is also the seed on a different Python, torch and commit
-  (`SUBMISSION_LEDGER.md §10`).
+- **Controlled point-estimate routing:** CIFAR-10-C Tent and EATA beat both fixed policies under the
+  current exact-rank replay. Tent's retrospective current-policy sensitivity has positive ordinary
+  intervals over six observed corruption families, but the preregistered six-comparison Holm gate fails.
+  The within-Tent two-contrast Holm value is post hoc; historical earlier-policy cluster
+  evidence remains separate.
+- **Completed negative candidate:** CIFAR-10-C SAR has zero observed false adaptations but loses to
+  always-adapt. It is not pooled into a candidate-universal claim.
+- **Candidate-dependent large-scale corruption:** ImageNet-C SAR has a pooled point edge without a
+  promoted CI-robust claim; Tent ties freeze; EATA trails adapt.
+- **One-sided natural diagnostics:** primary Office-Home reproduces freeze, Camelyon17 OOD reproduces
+  adapt, and RxRx1 freezes throughout. The iWildCam numerical/action row is withheld pending an
+  official-metric, population-sealed rerun. The separate Office-Home replication has a small point
+  edge whose seed interval includes zero.
+- **Negative diagnostics:** PACS loses to always-adapt, ImageNet-R is worse than adapt on eight of
+  ten backbones, and CIFAR-10.1 ties freeze with no adapt decisions.
+- **Constructed mixtures:** historical routing aggregates are not promoted as natural-shift wins or
+  evidence of transfer to unseen shift families.
 
 ## Canonical Build
 
@@ -121,14 +97,19 @@ bash scripts/reproduce_submission.sh
 bash scripts/build_dashboard.sh
 ~~~
 
-Paper-only build (PDF **and** Word):
+Build the compact submission, canonical tables, and figures:
 
 ~~~bash
 bash scripts/build_pdfs.sh
 ~~~
 
-Outputs: `kbound_short.pdf`, `kbound_short.docx` (and matching `*_final_draft.*` copies).
-Optional long paper: `BUILD_LONG=1 bash scripts/build_pdfs.sh`.
+Maintained outputs are exactly `kbound_short_final_draft.pdf`, `kbound_tmlr.pdf`, and
+`kbound_short_final_draft.docx`. The default command builds the compact PDF;
+`BUILD_LONG_TMLR=1` also renders the synchronized long companion, and `BUILD_DOCX=1` exports the
+Word file. `BUILD_HISTORICAL_TMLR=1` remains a backward-compatible alias for the long-build switch.
+Historical compatibility PDFs are not refreshed by this pipeline.
+`BUILD_DIAGNOSTIC_IEEE=1` renders the stale shared source through the legacy two-column driver for
+diagnostic use only.
 
 The generated result manifest is authoritative for repeated headline values.
 Historical notes and archived runs are provenance, not automatic evidence.
@@ -187,16 +168,11 @@ external.
 
 ## Manuscript Policy
 
-**Target venue: TMLR, single-column.** The submission core is `kbound_short.tex` +
-`kbound_short_appendix.tex`. The 59-page `kbound.tex` predates the current claim corrections and is
-not submission-ready; use it only as a source inventory for proofs, diagnostics, and background.
-(Known stale row: `kbound.tex` Table 1 still carries the superseded single-seed ImageNet-C values
-0.0108/0.0625/0.0319 — see `EDIT_NOTES_2026-07-23.md`.)
-
-Because the venue is TMLR rather than a two-column conference, **no result is cut for length**. The
-eight meta-tables the review flagged (`tab:regime-summary`, `tab:data-access`,
-`tab:assumptions-role`, `tab:notation-main`, `tab:evidence-map`, `tab:failure-modes`,
-`tab:claim-status`, `tab:baseline-faithfulness`) may be merged for readability, not for page count.
+The primary compact paper is `kbound_submission.tex`; the maintained single-column companion is
+`kbound_tmlr.tex`. Both consume `kbound_submission_body.tex`, so empirical corrections propagate to
+both outputs. The long driver must not input the stale `kbound_short_body.tex` or
+`kbound_short_appendix.tex`. Use `BUILD_LONG_TMLR=1` when the synchronized long artifact is
+required.
 
 A balanced version should retain:
 

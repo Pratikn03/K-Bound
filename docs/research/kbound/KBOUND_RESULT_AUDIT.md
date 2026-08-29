@@ -1,5 +1,11 @@
 # K-Bound Result Audit — Reconciliation + Leakage (Phase 4)
 
+> **SUPERSEDED HISTORICAL AUDIT.** The result paths, numerical values, and draft-TODO policy below
+> describe an earlier manuscript state. They are retained only as process history. Current numbers
+> come from `experiments/kbound/results/reconciled_panels_v1/canonical_panel_results.json`; use
+> `KBOUND_SHORT_RESULT_AUDIT.md` for current claim scope and
+> `KBOUND_PHASE1_PROVENANCE_AUDIT_2026-08-27.md` for provenance coverage.
+
 Every number below was checked against the actual source files in this checkout
 (`results_source.json`, `pacs_result.json`, `gate_comparison.json`, the `experiments/kbound/results/`
 artifacts, and `research_lock/`), not against a prior draft. Values I changed in the manuscript are

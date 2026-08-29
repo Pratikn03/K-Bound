@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
-"""Build the paper's auditable empirical decision/provenance artifacts.
+"""Retired July empirical-artifact builder retained for forensic provenance.
 
-This script never converts a missing statistic into zero.  It reports an explicit
-``not_retained`` status when an authoritative artifact does not preserve the
-cell-level decisions needed to recompute a quantity.
+The current release artifacts are generated from the source-hashed canonical panel
+by ``scripts/sync_reconciled_panels.py``.  This older builder reads superseded raw
+trees and metric contracts, so executing it would reintroduce stale CIFAR-10-C
+counts and a non-release-eligible iWildCam row.  It now fails closed.
 """
 from __future__ import annotations
 
@@ -83,7 +84,7 @@ def summary_track(name, n, adapt, coverage, fa, source, seeds, command):
                 "note": "No theorem premise is inferred from this empirical summary."}}
 
 
-def main():
+def _legacy_main():
     OUT.mkdir(parents=True, exist_ok=True)
     tracks = []
     # CIFAR-10-C SAR is deliberately excluded: the archived aggregate does not
@@ -181,7 +182,7 @@ def main():
         ["False-adapt uncertainty", "nine-track panel", "track-specific", "decision_metrics.json", "decision metrics table", "closed where denominator exists"],
         ["Coverage uncertainty", "nine-track panel", "track-specific", "decision_metrics.json", "coverage audit", "closed where interval-hit records exist; historical natural logs marked not retained"],
         ["CIFAR-10-C SAR quarantine", "CIFAR-10-C", "none promoted", "CIFAR10C_SAR_QUARANTINE.md", "excluded from tables and claims", "withheld: replay mismatch; reinstatement gates not met"],
-        ["iWildCam stability", "iWildCam", "0--4", iw_stability_path, "uniform panel caveat", "closed: stable no-harm; supplemental to OOF lock" if (ROOT / iw_stability_path).exists() else "pending"],
+        ["iWildCam numerical/action evidence", "iWildCam", "none promoted", "claim_ledger.json (KB-CLAIM-021)", "excluded from numerical tables and routing claims", "withheld: archived metric contract is invalid; population-sealed official-metric rerun required"],
         ["PACS planned seeds", "PACS", ",".join(map(str, pacs_done)), "experiments/kbound/results/pacs_multiseed_v1/PACS_MULTISEED_RESULTS.json", "PACS row", "closed" if pacs_aggregate.exists() and {0,1,2}.issubset(pacs_done) else "pending seeds 1--2; seed-matched locked protocol"],
         ["ImageNet-R planned seeds", "ImageNet-R", ",".join(map(str,inr_seeds)), "imagenetr_protocol_d_multiseed_v1", "ImageNet-R row", "closed" if set(inr_seeds)=={0,1,2,3} else "pending seed 3"],
         ["Controlled multimodal routing", "MNIST two-view controlled", "fixed seed 0; 130 conditions", d33_path, "Appendix Protocol D33", "closed: KB-CLAIM-027 supported; controlled mechanism confirmation"],
@@ -191,6 +192,14 @@ def main():
     (OUT / "claim_matrix.md").write_text("\n".join(md) + "\n")
     print(f"wrote {OUT/'decision_metrics.json'}")
     print(f"wrote {OUT/'claim_matrix.md'}")
+
+
+def main() -> None:
+    raise RuntimeError(
+        "empirical_closure.py is retired because it reads superseded artifact trees. "
+        "Run scripts/reconcile_result_panels.py followed by "
+        "scripts/sync_reconciled_panels.py instead."
+    )
 
 
 if __name__ == "__main__":

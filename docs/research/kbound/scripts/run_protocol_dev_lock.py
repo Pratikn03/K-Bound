@@ -72,7 +72,9 @@ def run_holdout_same_file(path: str, candidate: str, cal_seeds: list[int], test_
     cal = filter_seeds(recs, cal_seeds)
     import numpy as _np
     Zc, Bc = af.arrays(cal)[0], af.arrays(cal)[1]
-    # out-of-fold (leave-one-out) residuals -> valid conformal radius (matches af.run_split; no leakage)
+    # Leave-one-calibration-record-out empirical residual radius. This removes
+    # in-sample residual bias but is not exact split conformal for the separately
+    # refit deployment estimator unless an additional stability premise holds.
     _loo = _np.empty(len(Bc))
     for _i in range(len(Bc)):
         _tr = _np.arange(len(Bc)) != _i

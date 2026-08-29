@@ -6,15 +6,16 @@ The scoring + statistics layer is the reusable part: it takes a per-condition DE
 sequence from ANY policy and computes regret-to-oracle, FA_u, decisive rate, and the KGA
 regret-gap with a paired condition-bootstrap CI (Holm-corrected across the baseline family).
 
-To close the "not official reproduction" caveat, run the authors' OFFICIAL POEM / AETTA code
-and pass their per-condition decisions here:
+To close the "not official reproduction" caveat, run the authors' POEM / AETTA code,
+pass the native logs through the fail-closed provenance audit and converter, and then pass
+the resulting per-condition decisions here:
 
     python3 official_baselines_headtohead.py \
         --decisions poem=/path/poem_decisions.json aetta=/path/aetta_decisions.json
 
-where each JSON maps  {condition_string: "adapt"|"freeze"|"abstain"}  over the SAME 432
-conditions (same order as the logged stream).  Without --decisions, the harness falls back to
-protocol-matched *ports* (clearly labelled) so the pipeline is runnable end-to-end today.
+where each version-2 JSON carries a ``decisions`` map over the SAME 432 conditions and the
+provenance-gate verdict. Legacy flat maps are accepted but are labelled unverified. Without
+--decisions, the harness falls back to protocol-matched *ports* (clearly labelled).
 
 No fabrication: if an external decisions file is missing a condition, it errors out.
 """
@@ -24,12 +25,14 @@ from sklearn.ensemble import GradientBoostingRegressor
 from sklearn.model_selection import KFold
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-RES = os.path.join(HERE, "..", "experiments", "kbound", "results")
+REPO = os.path.abspath(os.path.join(HERE, "..", "..", "..", ".."))
+RES = os.path.join(REPO, "experiments", "kbound", "results")
+STRESS = os.path.join(RES, "stress_persample_v1")
 GBR = dict(n_estimators=250, max_depth=2, learning_rate=0.05, subsample=0.8, random_state=0)
 Zi = dict(pre_entropy=0, pre_conf=1, post_entropy=3, post_conf=4, entropy_drop=7)
 
 def load(cand):
-    f = os.path.join(RES, f"per_condition_cifar10c_{cand}_seed0.json")
+    f = os.path.join(STRESS, f"per_condition_cifar10c_{cand}_seed0.json")
     recs = json.load(open(f))["records"]
     cond = [r.get("condition","") for r in recs]
     Z  = np.array([r["Z"] for r in recs], float); B = np.array([r["B"] for r in recs], float)
@@ -56,10 +59,27 @@ def aetta_port(Z):  # AETTA-style accuracy-proxy gate (port): adapt if adapted c
     d = np.where(Z[:,Zi["post_conf"]] > Z[:,Zi["pre_conf"]], "adapt", "freeze"); return d.astype(object)
 
 def load_external(path, cond):
-    m = json.load(open(path))
+    raw = json.load(open(path))
+    if not isinstance(raw, dict):
+        raise SystemExit(f"external decisions must be a JSON object: {path}")
+    if "decisions" in raw:
+        m = raw["decisions"]
+        official = bool(raw.get("official_label_allowed", False))
+        label = raw.get("label", "external_protocol_adapter_unverified")
+    else:
+        m = raw
+        official = False
+        label = "legacy_external_decisions_unverified"
+    if not isinstance(m, dict):
+        raise SystemExit(f"external decisions payload is not an object: {path}")
     miss = [c for c in cond if c not in m]
     if miss: raise SystemExit(f"external decisions missing {len(miss)} conditions e.g. {miss[:2]} in {path}")
-    return np.array([m[c] for c in cond], dtype=object)
+    extra = sorted(set(m) - set(cond))
+    if extra: raise SystemExit(f"external decisions contain {len(extra)} out-of-stream conditions e.g. {extra[:2]}")
+    values = np.array([m[c] for c in cond], dtype=object)
+    bad = sorted(set(values) - {"adapt", "freeze", "abstain"})
+    if bad: raise SystemExit(f"external decisions contain invalid actions: {bad}")
+    return values, official, label
 
 # ---- scoring ----
 def regret_pc(dec, a0, aa, ao): return ao - np.where(dec=="adapt", aa, a0)
@@ -98,8 +118,16 @@ def main():
     policies = {"always_adapt":always("adapt",n), "always_freeze":always("freeze",n),
                 "oracle":np.where(B>0,"adapt","freeze").astype(object)}
     # official if provided, else labelled ports
-    policies["POEM_official" if "poem" in ext else "POEM_port"]  = ext.get("poem",  poem_port(Z))
-    policies["AETTA_official" if "aetta" in ext else "AETTA_port"] = ext.get("aetta", aetta_port(Z))
+    if "poem" in ext:
+        poem_decisions, poem_official, _ = ext["poem"]
+        policies["POEM_official_adapter" if poem_official else "POEM_external_unverified"] = poem_decisions
+    else:
+        policies["POEM_port"] = poem_port(Z)
+    if "aetta" in ext:
+        aetta_decisions, aetta_official, _ = ext["aetta"]
+        policies["AETTA_official_adapter" if aetta_official else "AETTA_external_unverified"] = aetta_decisions
+    else:
+        policies["AETTA_port"] = aetta_port(Z)
 
     rows={"KGA":{**summ(kga,B,a0,aa,ao),"gap_vs_KGA":"---","holm_beats":"---"}}
     compare=[k for k in policies if k not in ("oracle",)]
@@ -111,8 +139,10 @@ def main():
         s["gap_vs_KGA"]= boots[k] if k in compare else "---"
         rows[k]=s
     out=dict(candidate=a.candidate, alpha=a.alpha, n_conditions=n, input_sha12=sha,
-             official=[k for k in ("poem","aetta") if k in ext],
-             note="POEM/AETTA are protocol-matched ports unless --decisions supplies official-code output.",
+             official=[k for k, value in ext.items() if value[1]],
+             external_labels={k: value[2] for k, value in ext.items()},
+             note=("POEM/AETTA are protocol-matched ports unless a converted decision artifact "
+                   "carries a passing fail-closed provenance audit."),
              rows=rows)
     json.dump(out, open(a.out,"w"), indent=2); print("wrote", a.out)
     print(f"\n{'policy':16s} {'regret':>8s} {'FA_u':>6s} {'decisive':>8s} {'gap[CI]':>22s} holm")

@@ -1,4 +1,8 @@
-% Appendix for kbound_short.tex — full theory, calibration protocol, supplementary experiments.
+% ============================================================================
+% STATUS: SUPERSEDED EMPIRICAL ARCHIVE -- NOT MAINTAINED SUBMISSION SOURCE.
+% Retained only with the archival kbound_short.tex driver. The maintained
+% compact and long drivers use the vetted appendices in kbound_submission_body.tex.
+% ============================================================================
 
 \section{Calibration and held-out evaluation}\label{app:calib-eval}
 Algorithm~\ref{alg:calib-eval} gives the evaluation protocol behind the uniform
@@ -362,6 +366,19 @@ generalization-error bounds exist~\cite{sonoda2025lean}---and to our knowledge m
 conformal-coverage results remain uncommon; no priority claim is made.
 
 \section{Claim-to-artifact map}\label{app:claim-artifact}
+The authoritative empirical index is
+\path{experiments/kbound/results/reconciled_panels_v1/canonical_panel_results.json}. It is regenerated
+by \path{scripts/reconcile_result_panels.py} from $105$ compact source files whose original and
+released SHA-256 hashes are recorded in \path{source_manifest.json}. The generated panel table and
+the decision-frontier figure consume this same manifest. The canonical CIFAR-10-C source is the
+sealed \path{stress_grid_multiseed_v1} panel: Tent, EATA, and SAR are all retained, with candidate
+verdicts kept separate. Office-Home, iWildCam, ImageNet-C, PACS, ImageNet-R, Camelyon17, RxRx1, and
+CIFAR-10.1 are reconciled in the same run; unavailable replay fields are represented as limitations,
+not reconstructed values. \path{claim_ledger.json} maps the scoped prose claims to these artifacts.
+
+\iffalse
+% Historical reconciliation narrative retained in source only. It describes
+% manifests and promoted values superseded by reconciled_panels_v1.
 The machine-readable manifest \path{paper/generated/kbound_result_manifest.json} is the
 authoritative index for every promoted number, seed count, protocol, quantile convention, and known
 replay caveat. It was regenerated for this revision, and three of its \texttt{source} fields were
@@ -378,11 +395,10 @@ directory is still absent, but the row is recomputable without it and now carrie
 $5\times6\times3\times6$ grid the sealed reconciliation partitioned; calibrating on dev seeds
 $\{0,1\}$ and scoring test seeds $\{2,3,4\}$ reproduces all four of its recorded routes, the pooled
 $n{=}54$ one to seven significant figures. \texttt{iwildcam\_H\_v2} moved the other way: its
-promoted \texttt{regret} triple mixed two scoring paths --- the $\mathrm{regret}_{\textsc{kga}}$
-slot carried the always-freeze value from the OOF bootstrap file, while the decision counts beside
-it came from the Protocol H v2 scorer --- and it now reports the Protocol H v2 scorer throughout
-($0.0037$, not $0.0041$) with \texttt{NOT\_REPRODUCIBLE\_FROM\_RELEASE}, because its held-out record
-file is absent. Every row that was recomputed says so, and every row that could not be says why.
+promoted result mixed two scoring paths and incompatible action counts. The row is now fully
+withheld because the archived metric contract is invalid, the target population was not sealed,
+and the held-out record file is absent. Every row that was recomputed says so, and every row that
+could not be says why.
 
 The derived audit \path{paper/generated/empirical_audit/decision_metrics.json}
 adds adapt/freeze/abstain counts and rates, the exact source artifact, and a reproduction command.
@@ -419,32 +435,28 @@ records are marked \texttt{not\_retained}, not assigned a synthetic coverage val
 claim matrix \path{paper/generated/empirical_audit/claim_matrix.md} records claim, dataset,
 seeds, artifact, paper consumer, and closure status. The reader-facing summary is the
 guarantee-accounting table of \S\ref{sec:guarantees}.
+\fi
 
-\paragraph{The two analyses added in this revision.} Both live in
-\path{experiments/kbound/frontier_sweep_v1/}, are seeded at $20260726$, require no GPU and no
-network, and rewrite their result JSONs byte-identically on re-run.
-\emph{(i)} The $\beta$-sweep frontier test of \S\ref{sec:beta-sweep}:
+\paragraph{Regenerated and historical analyses.}
+\emph{(i)} The historical $\beta$-sweep frontier test of \S\ref{sec:beta-sweep} lives in
+\path{experiments/kbound/frontier_sweep_v1/}, is seeded at $20260726$, and requires no GPU or
+network. Specifically,
 \path{beta_sweep.py} (with \path{fs_common.py}) reads the $15$ CIFAR-10-C and $15$ ImageNet-C
 per-condition dumps and writes \path{beta_sweep_results.json};
 \path{leakage_check.py} is the adversarial label-firewall check whose six configurations must all
 pass before the results are read; \path{summarize.py} emits the tables. Every number in
 Tables~\ref{tab:beta-sweep} and~\ref{tab:beta-confusion} is a field of
-\path{beta_sweep_results.json}.
-\emph{(ii)} The decision-value analysis of \S\ref{sec:decision-value}:
-\path{decision_value.py} writes \path{decision_value_results.json} and carries a \path{--self-test}
-mode that demonstrates its run-time label guard firing on $B$, on a copy of $B$, on a view of $B$,
-and on $a_{\text{oracle}}$, and that states the guard's own limitation (it catches copies and views,
-not arbitrary functions of a label, so the evaluation-only annotations still require structural
-review). Its integrity record shows the replayed $\kappa{=}1$ rule reproducing the released
-\texttt{kga\_decision} on $7{,}365/7{,}365$ cells.
-Figures~\ref{fig:beta-frontier}, \ref{fig:decision-frontier} and~\ref{fig:yield-ceiling} are
-regenerated from those two JSONs alone by
-\path{docs/research/kbound/figures/source/make_frontier_sweep_figs.py}; that script contains no
-hard-coded results, and re-running it rewrites all three PNGs byte-identically.
+\path{beta_sweep_results.json}. Figure~\ref{fig:beta-frontier} is retained only for that declared
+negative experiment.
+\emph{(ii)} The current decision-value figure in \S\ref{sec:decision-value} is regenerated directly
+from \path{canonical_panel_results.json} by
+\path{docs/research/kbound/scripts/plot_canonical_decision_frontier.py}. It uses the same candidate
+rows and $\kappa$ sweep as the canonical table; no superseded yield-ceiling or per-commitment number
+is promoted.
 
-\emph{(iii) Adversarial re-test of (i) and (ii).} An independent check, written against the premise
-that the two analyses above are circular until proven otherwise, lives in the same directory and
-produced the caveats recorded in \S\ref{sec:beta-sweep} and \S\ref{sec:decision-value}.
+\emph{(iii) Adversarial re-test of the historical frontier analysis.} A separate recomputation,
+written against the premise that the archived analysis is circular until shown otherwise, lives in
+the same directory and produced the caveats recorded in \S\ref{sec:beta-sweep}.
 \path{adversarial_ablations.py} re-runs the whole $\beta$ pipeline end to end under four input
 perturbations---labels shuffled, $Z$ replaced by Gaussian noise, $Z$ row-shuffled, and $M$ replaced
 by noise at the real $M$'s scale---and additionally reports (a) the correlation of every $Z$
@@ -548,18 +560,18 @@ Track & Candidate & Verdict on declared test cells \\
 \midrule
 CIFAR-10-C stress & Tent & BB, CI excludes zero vs.\ both \emph{at every resampling unit down to $6$ corruption clusters} \\
 CIFAR-10-C stress & EATA & BB point estimate; CI excludes zero vs.\ freeze at every unit, vs.\ adapt \emph{only} at the cell / twin-pair unit ($[-0.0044,+0.0004]$ at $6$ corruption clusters) \\
-CIFAR-10-C stress & SAR & \textbf{quarantined}; loses to always-adapt on seeds $1$--$4$ \\
+CIFAR-10-C stress & SAR & \textbf{negative}; completed five-seed exact-rank rebuild loses to always-adapt \\
 ImageNet-C & SAR & \textbf{no CI-supported BB}; point-estimate no-harm vs.\ always-freeze ($0.0289$ vs.\ $0.0319$); both condition-level intervals include zero under the promoted leave-one-out pool \\
 ImageNet-C & Tent & no BB; ties always-freeze exactly, $0/135$ adapts \\
 ImageNet-C & EATA & no BB; \emph{trails} always-adapt $0.0007$ vs.\ $0.0001$ \\
 Camelyon17 & EATA & no-harm, and vacuous: recomputable from release (2026-07-26), but all $18$ cells are helpful and KGA adapts $18/18$ \\
-Camelyon17 (multi-seed) & Tent/EATA/SAR & no BB; SAR over-freezes \\
-iWildCam H v2 & Tent & descriptive no-harm, ties freeze; $0$ adapts; one test seed and A7 open \\
-Office-Home M v2 & SAR & descriptive no-harm, ties freeze; $0$ adapts; A7 open \\
+Camelyon17 B--v2 & Tent/EATA/SAR & Tent/EATA negative; SAR diagnostic point/seed-bootstrap BB, not an untouched-domain headline \\
+iWildCam H v2 & Tent & numerical/action row withheld; archived metric contract invalid; official-metric, population-sealed rerun required \\
+Office-Home M v2 & SAR & descriptive point edge over both fixed policies; $1$ adapt; A7 open, so no robust win is claimed \\
 RxRx1 J & online & no-harm, ties freeze; $0$ adapts \\
 PACS (LODO) & fixed & \textbf{null}; loses to always-adapt $2.45\times$ \\
 ImageNet-R D & $10$ backbones & \textbf{null}; $0/10$ CI beats-both; worse than adapt on $8/10$ \\
-CIFAR-10.1 K & Tent/EATA/SAR & \textbf{fails} the transfer bar, $\mathrm{FA}_{\mathrm u}=0.167$ \\
+CIFAR-10.1 K & Tent & diagnostic null; ties freeze with $0$ adapt, $22$ freeze, $26$ abstain \\
 Three-source mixture & constructed & historical routing aggregate; demoted pending replay of changed component decisions \\
 Multimodal D33 & constructed & BB on an injected-corruption grid; $9$ adapts \\
 \bottomrule
@@ -621,19 +633,19 @@ vit\_b\_16 & $0.0207$ & $0.0004$ & $0.0237$ & $6.2\%$ \\
 \end{tabular}
 \end{table}
 
-\paragraph{CIFAR-10-C stress grid.} Here the spread is small and it is worth saying so: per-seed
-\textsc{KGA} regret is $0.001567$/$0.001631$/$0.001639$/$0.001440$/$0.001853$ for Tent
-($\varepsilon$ coefficient of variation $0.030$) and $5/5$ seeds beat both fixed policies. EATA is
-likewise $5/5$ with $\varepsilon$ c.v.\ $0.068$. The withheld SAR arm's $\varepsilon$ c.v.\ is
-$0.390$, an order of magnitude larger, which is the quantitative form of the instability that put it
-in quarantine (\S\ref{sec:cifar-stress}).
+\paragraph{CIFAR-10-C stress grid.} Each candidate has five complete $432$-cell seed panels. The
+canonical aggregate regrets are $0.00165/0.00798/0.12394$ for Tent,
+$0.00132/0.00328/0.13134$ for EATA, and $0.00156/0.00034/0.14047$ for SAR (KGA / adapt / freeze).
+The paired seed summaries and exact-rank replay decisions are stored in the canonical manifest.
+Tent is the only candidate whose beats-both claim survives corruption-family clustering; EATA is
+point-only at that unit, and SAR is a completed negative arm.
 
 \subsection{Constructed Heterogeneous Routing}\label{sec:constructed-routing}
 The historical three-source OOF mixture combined separately calibrated Office-Home, iWildCam, and
 Camelyon17 conditions. It was always a researcher-constructed stream rather than a transfer result.
-The Office-Home and iWildCam decision streams changed under source replay, so the old $n=143$
-aggregate is demoted and its numeric win is not used as evidence. \textbf{DRAFT TODO: rerun the
-constructed mixture from the reconciled component records before restoring a routing claim.}
+The Office-Home and iWildCam decision streams changed under source replay, so the old aggregate is
+withdrawn and its numeric win is not used as evidence. No constructed-mixture claim is
+made in the current paper.
 
 % CUT 2026-07-27 (length pass): tab:primary-numeric, "Primary numeric evidence used
 % for empirical claims". Six rows, of which five (CIFAR-10-C Tent, CIFAR-10-C EATA,
@@ -667,13 +679,13 @@ $\beta$ estimable from $K$ exchangeable logged episodes with revealed outcomes &
 E2 (episode exchangeability) holds at a novel deployment & \textbf{false, measured} & coverage $0.626$ (corruption family) and $0.454$ (severity) against a null of $0.900$; $5/10$ severity splits infeasible (\S\ref{sec:episode-empirics}) \\
 Weighted conformal repairs the E2 failure & \textbf{valid and vacuous} & \texttt{LOSEV} coverage $0.454\to1.000$ at decision yield $0.615\to0.000$ (\S\ref{sec:episode-empirics}) \\
 $\mathrm{FA}_u \le \alpha$ (unconditional false-adapt) & theorem & measurable marginal coverage; exchangeability/shift correction only justifies coverage \\
-$\mathrm{FA}_u \le \alpha$ \emph{as measured on the grids} & \textbf{forced, not measured} & under in-sample rank calibration the ceiling is $(n{-}k)/n<\alpha$ for every $n$ used here (\S\ref{sec:fa-identity}) \\
+$\mathrm{FA}_u \le \alpha$ \emph{as measured on the grids} & \textbf{empirical} & leave-one-condition-out residual calibration excludes the scored cell but is not exact split conformal or jackknife$+$ (\S\ref{sec:fa-identity}) \\
 $\mathrm{FA}_c \le \alpha$ (conditional false-adapt) & \textbf{not claimed} & CP$_{95}$ upper bound is $0.0027$ on CIFAR-10-C but $0.13$--$0.95$ elsewhere \\
-An observed $\mathrm{FA}_{\mathrm u}$ exceedance exists in this paper & \textbf{yes, disclosed} & Camelyon17 SAR seed~$0$, $1/9=0.111$ under the archived interpolated rule; CP$_{95}$ interval $[0.003,0.429]$, i.e.\ inside binomial noise; PACS art\_painting seed~$1$, $2/18=0.111$ \\
+Observed false adaptations exist in the panel & \textbf{yes, disclosed} & ImageNet-C SAR has $1/135$ marginal false adapt; PACS has $2/216$ pooled. Neither is hidden by candidate averaging \\
 Nine-track panel & \textbf{accounting} & sealed lock inventory (\texttt{NINE\_TRACK\_LOCK\_SEAL\_v1}); incomplete tracks stay diagnostic \\
-Stress-grid action validity and routing utility (Tent/EATA) & locked & locked Protocol~A v1 stress grid; $6$ of $15$ corruptions, severities $\{1,5\}$ \\
-CIFAR-10-C \emph{Tent} beats both, cluster-robustly & locked & adapt-gap CI excludes zero at all four units down to $6$ corruption clusters $[-0.0095,-0.0026]$; survives leave-one-corruption-out refit (Table~\ref{tab:cifar-cluster}) \\
-CIFAR-10-C \emph{EATA} beats both, cluster-robustly & \textbf{not claimed} & adapt-gap CI includes zero at $12$ clusters $[-0.0048,+0.0004]$ and $6$ clusters $[-0.0044,+0.0004]$; two adverse corruption families. Point beats-both and the freeze-side CI stand \\
+Stress-grid action validity and routing utility & locked & locked Protocol~A v1 stress grid; Tent/EATA/SAR, five seeds, $6$ corruptions and severities $\{1,5\}$ \\
+CIFAR-10-C \emph{Tent} beats both, cluster-robustly & locked & adapt-gap CI excludes zero down to $6$ corruption clusters $[-0.00954,-0.00251]$ (Table~\ref{tab:cifar-cluster}) \\
+CIFAR-10-C \emph{EATA} beats both, cluster-robustly & \textbf{not claimed} & adapt-gap CI includes zero at $12$ clusters $[-0.00473,+0.00053]$ and $6$ clusters $[-0.00438,+0.00067]$; point beats-both and the freeze-side CI stand \\
 \bottomrule
 \end{tabular}
 \end{center}
@@ -690,10 +702,11 @@ ImageNet-C SAR beats always-freeze & \textbf{point estimate only} & $0.0289$ vs.
 ImageNet-C SAR beats always-adapt & \textbf{point estimate only} & condition-level CI $[-0.076,+0.018]$ includes zero \\
 Natural safety (RxRx1) & locked & held-out test artifacts; $0$ adapts, so the bound is untested \\
 Natural safety (Camelyon17 $n{=}18$) & \textbf{recomputable and vacuous} & recomputed 2026-07-26 from \path{camelyon17_richZ_F_v1/_partial.json}; all $18$ cells are helpful and KGA adapts $18/18$, so the zero false-adapt rate is untested \\
-Office-Home and iWildCam transfer summaries & \textbf{source-replayed, descriptive} & exact-rank transfer scores tie always-freeze with zero \textsc{adapt} decisions; A7 stability was not predeclared, so no beats-both or coverage theorem is promoted \\
+Office-Home transfer summary & \textbf{source-replayed, descriptive} & small point edge with one \textsc{adapt}; A7 stability was not predeclared, so no robust beats-both or coverage theorem is promoted \\
+iWildCam transfer summary & \textbf{withheld} & archived metric contract is invalid; no numerical or action claim is promoted pending an official-metric, population-sealed rerun \\
 Three-source mixed routing aggregate & \textbf{withdrawn pending replay} & the historical constructed mixture used superseded component decisions; rerun from the reconciled records before making a routing claim \\
 Universal improvement & \textbf{not claimed} & impossible in general \\
-No-harm on \emph{every} natural shift & \textbf{withdrawn} & point-estimate no-harm holds on four one-sided tracks with stated caveats; PACS and ImageNet-R lose to always-adapt \\
+No-harm on \emph{every} natural shift & \textbf{withdrawn} & point-estimate no-harm holds on three release-eligible one-sided tracks with stated caveats; iWildCam is withheld, and PACS and ImageNet-R lose to always-adapt \\
 $\varepsilon$ estimates drift budget $\beta$ & \textbf{false} & $\beta$ is declared; $\varepsilon$ is empirical \\
 $|M|>\beta$ is a deployable rule at a declarable $\beta$ & \textbf{withdrawn (measured)} & $\widehat\beta$ from source-like dev cells is $1.4$--$50\times$ too small on CIFAR-10-C ($24$--$73\%$ of cells outside $\mathcal C_\beta$, commit error $0.4$--$16.6\%$ against a promised $0\%$) and returns $0$ commitments on all $405$ ImageNet-C cells in $5$ of $10$ configurations (\S\ref{sec:beta-sweep}) \\
 Population frontier matches the empirical rule at some $\beta>0$ & \textbf{false under held-out $M$} & fails on both yield and regret in $15$ of $18$ configurations; the $3$ exceptions are the full-$Z$ GBM channel on the $405$-cell ImageNet-C grid at a $\beta$ the declaration procedure does not return \\
@@ -712,10 +725,9 @@ Statement (continued) & Status & Requirement / observed \\
 \midrule
 Theorem~\ref{thm:headline} / Theorem~\ref{lem:nonid} proofs affected by the above & \textbf{no} & sufficiency is arithmetic; necessity is the matched-evidence construction. Only the operational reading is withdrawn \\
 Abstention is a free way to satisfy no-harm & \textbf{false} & \textsc{abstain} realizes $f_0$, so always-abstain $=$ always-freeze: regret $0.128$ / $0.027$ / $0.033$ on CIFAR-10-C / ImageNet-C / ImageNet-R, the worst row on two of three \\
-Commitments land on high-stakes cells & \textbf{yes, on the stress grids} & CIFAR-10-C: $+0.0094$ per committed decision vs.\ permutation null $-0.0185$, $p<0.0002$; committed $|\Delta|$ is $24.5\times$ abstained, $p<0.0002$ \\
-Commitments land on high-stakes cells on ImageNet-R & \textbf{no, disclosed} & value per committed decision exactly $0$ on $9$ of $10$ backbones; concentration $p\in[0.054,1.000]$; pooled share of value from commitments $-0.77$ \\
+Per-commitment permutation claim & \textbf{not reported} & the historical diagnostic used superseded operating points and is omitted pending canonical regeneration \\
 $\alpha{=}0.10$ is regret-optimal & \textbf{not claimed} & pre-registered safety choice; $\kappa{=}0.9$ dominates it on $2$ of $3$ pooled tracks \\
-The zero-\textsc{adapt} natural tracks are timid & \textbf{false} & $\Pr(\Delta>\varepsilon)\le0.007$ on iWildCam and $=0.000$ on RxRx1: no cell has a benefit exceeding the radius \\
+Zero-\textsc{adapt} natural tracks prove structural unknowability & \textbf{false} & they may reflect small effects, finite-sample width, estimator inadequacy, or transfer failure; $M,\gamma,\beta$ are not jointly measured \\
 Real-camera study & \textbf{pending; no result} & Pre-registration only (\S\ref{app:edge-physical}); every result cell of both locked tables is blank. Templates are not evidence \\
 Lemma~\ref{lem:nonid}'s configuration occurs in logged deployments & \textbf{yes, but rare} & matched-evidence opposite-sign rate $0.0047$ (CIFAR-10-C) and $0.160$ (ImageNet-C) against permutation nulls of $0.185$ and $0.240$ --- \emph{below} chance, $39\times$ and $1.5\times$; $29.4\%$ of evaluable CIFAR-10-C cells sit in certified-ambiguous fibres of width $0.011$--$0.013$ (\S\ref{sec:necessity-observed}) \\
 The logged evidence vector has $11$ independent coordinates & \textbf{false, measured} & $9$: \texttt{entropy\_drop} and \texttt{pbal\_drop} are exact linear functions of other coordinates (residual $0.0$), so every covariance of $Z$ is singular (\S\ref{sec:necessity-observed}) \\
@@ -728,8 +740,8 @@ The logged evidence vector has $11$ independent coordinates & \textbf{false, mea
 % every one of its rows was either already a row of the guarantee-accounting
 % table immediately above (which is strictly denser and carries the disclosures
 % this one omitted) or a caveat stated at full length in the section it points
-% to: "SAR is withheld after a replay mismatch" -> \S\ref{sec:cifar-stress}
-% ("The withheld SAR arm"); "replay, not a re-run" -> \S\ref{sec:decision-value};
+% to: the historical SAR quarantine -> the completed negative rebuild in
+% \S\ref{sec:cifar-stress}; "replay, not a re-run" -> \S\ref{sec:decision-value};
 % "not official implementations" -> the POEM/AETTA subsection, twice;
 % "mechanism confirmation, not a natural multimodal benchmark" -> the caption of
 % Table~\ref{tab:d33} and the paragraph after it; "templates are not evidence"

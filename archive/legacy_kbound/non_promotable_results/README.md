@@ -13,3 +13,8 @@ evaluation images, two batches, and a heuristic multicandidate route. The
 iWildCam snapshot contains its own `BEATS-BOTH` string, but that embedded label
 is not a release verdict. It is a one-checkpoint, one-seed result without a
 canonical metric/provenance acceptance record.
+
+The Office-Home snapshot is an opened-target, post-hoc candidate opportunity
+audit. Its multicandidate route is invalid for the 65-class task, and its five
+files use non-standard `Infinity` tokens. They support only the explicitly
+descriptive accuracy audit named in their local README.

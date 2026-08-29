@@ -1,15 +1,10 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%% kbound_tmlr.tex -- single-column TMLR build of the K-Bound paper.
+%% kbound_tmlr.tex -- maintained single-column long-form K-Bound companion.
 %%
-%% ============================================================================
-%% STATUS: AUTHORITATIVE SUBMISSION DRIVER.
-%% This is the single driver the TMLR submission is built from.  The other two
-%% drivers in this directory are NOT submission candidates:
-%%   kbound_short.tex  SUPERSEDED  -- IEEEtran two-column build this file replaced
-%%   kbound.tex        COMPANION   -- long-form IEEEtran manuscript, archival only
-%% All three \input the SAME abstract, body, appendix and theory sources, so the
-%% science cannot diverge between them.  Edit content in those shared files.
-%% ============================================================================
+%% This driver uses the same corrected abstract, 11-section body, generated
+%% numbers, theorem sources, appendices, and bibliography as the compact paper.
+%% The source-hashed canonical panel remains the numerical authority for both
+%% layouts. Build this companion with BUILD_LONG_TMLR=1.
 %%
 %% WHY THIS FILE EXISTS
 %%   The IEEEtran two-column build (kbound_short.tex) ran to 23 pages with 26
@@ -44,29 +39,9 @@
 %%   (the released tree contains CITATION.cff with the author's name and email).
 %%
 %% SHARED SOURCE
-%%   This driver and kbound_short.tex \input the SAME body, abstract, appendix,
-%%   theory sections and bibliography. Edit those, never a driver, for content.
-%%     kbound_abstract.tex        abstract text
-%%     kbound_short_body.tex      Introduction .. Conclusion
-%%     kbound_short_appendix.tex  appendices (which \input paper/sections/*)
-%%     paper/references_kbound_expanded.tex
-%%
-%% WHAT WAS CUT FOR THIS BUILD (and what deliberately was not)
-%%   Cut:  fig:regime-map (fig_phase_diagram.png) -- its own caption conceded it
-%%         was a conceptual schematic duplicating tab:regime-summary.
-%%   Cut:  every \resizebox{\columnwidth}{!} wrapper -- with a single column the
-%%         tables fit at their declared point size, and scaling glyphs below
-%%         \scriptsize was an accessibility problem in the two-column build.
-%%   Merged: tab:data-access and tab:assumptions-role -- two adjacent meta-tables about
-%%         the same subject (protocol discipline), neither of which was \ref'd anywhere
-%%         in the text. They are now one float in kbound_short_body.tex carrying both
-%%         labels. tab:notation-main is kept: it IS referenced, and it is the reference
-%%         card a referee actually uses.
-%%   NOT cut: any result table. tab:decisive, tab:gates, tab:headtohead-poem-aetta,
-%%         tab:imagenetc-faithful, tab:imagenetc-ci-unit, tab:multiseed,
-%%         tab:uniform-panel, tab:decision-accounting, tab:imagenetr-backbone,
-%%         tab:primary-numeric, the ablation tables and the appendix tables all
-%%         stay. Length is a formatting problem; deleting evidence is not a fix.
+%%   kbound_abstract.tex          shared abstract
+%%   kbound_submission_body.tex  shared main body and vetted appendices
+%%   paper/references_kbound_expanded.tex
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 \documentclass[11pt]{article}
@@ -80,7 +55,10 @@
 \usepackage{algorithm}
 \usepackage{algpseudocode}
 \usepackage{xcolor}
+\usepackage{enumitem}
 \usepackage{url}
+\usepackage{xspace}
+\usepackage{seqsplit}
 \usepackage[colorlinks=true,linkcolor=black,citecolor=blue,urlcolor=blue]{hyperref}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%% BEGIN TMLR SHIM %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -125,6 +103,11 @@
 \newcommand{\TV}{\mathrm{TV}}
 \newcommand{\sign}{\operatorname{sign}}
 \newcommand{\Law}{\mathrm{Law}}
+\newcommand{\KGA}{\textnormal{\textsc{KGA}}\xspace}
+\newcommand{\adapt}{\textnormal{\textsc{adapt}}\xspace}
+\newcommand{\freeze}{\textnormal{\textsc{freeze}}\xspace}
+\newcommand{\abstain}{\textnormal{\textsc{abstain}}\xspace}
+\DeclareRobustCommand{\hashtext}[1]{{\ttfamily\expandafter\seqsplit\expandafter{#1}}}
 
 %% Anonymity switch. TMLR is single-blind by default -> \anonfalse.
 %% Set \anontrue for a double-blind venue; this also suppresses the repository
@@ -146,6 +129,7 @@
 
 \emergencystretch=3em
 \input{paper/generated/kbound_numbers}  % auto-generated result numbers (scripts/make_tables.py)
+\input{paper/generated/cct20_numbers.tex}
 
 \input{paper/float_params}  % float placement parameters (layout only)
 \input{paper/figure_fallback}  % graceful degradation for absent figure assets
@@ -162,10 +146,7 @@ test-time adaptation, safe adaptation, abstention, selective prediction, distrib
 identifiability, label-free risk estimation
 \end{IEEEkeywords}
 
-\input{kbound_short_body}
-
-\appendices
-\input{kbound_short_appendix}
+\input{kbound_submission_body}
 
 \input{paper/references_kbound_expanded}
 

@@ -1,45 +1,71 @@
-# K-Bound Short Paper Theory Audit
+# K-Bound Mathematical Audit
 
-Date: 2026-08-11
+Date: 2026-08-24
 
 ## Verdict
 
-The current manuscript keeps the mathematical and empirical layers distinct. No empirical panel in
-this reconciliation is used to alter or prove a population theorem.
+The maintained papers now present one coherent logical chain without equating population
+identifiability with empirical calibration. The core algebra and finite-event implications are
+internally consistent. The paper remains conditional on declared deployment classes and coverage;
+it is not an assumption-free safety theorem.
 
-## Checked conventions
+## Checked Statements
 
-- Benefit is `Delta = R_T(f_0) - R_T(f_a)`: positive helps, negative harms, and zero is a tie.
-- A strict adapt/freeze commitment is uniformly supportable over the declared drift class only
-  outside the closed band `|M| <= beta`; the conservative action inside the band is abstention.
-- `beta = 0` is a zero-drift assumption, not a conservative default for unknown drift.
-- `M`, `gamma`, and `beta` are population quantities.
-- `Delta_hat` and `epsilon` are finite-sample KGA quantities.
-- `epsilon` does not estimate `beta`, and real-data KGA does not numerically apply `|M| > beta`.
-- The elementary false-adapt implication requires interval coverage. Exchangeability or a valid
-  correction may justify coverage; risk alignment is not an extra premise after coverage is assumed.
-- `FA_u = P(adapt and Delta <= 0)` is the theorem-controlled marginal event under coverage.
-- `FA_c = P(Delta <= 0 | adapt)` is descriptive unless separately proved.
+- Benefit: `Delta = R_T(f_0) - R_T(f_a)`; positive helps, negative harms, zero is risk-equivalent.
+- Pointwise correctness: `eta_a(x) = P_T(f_a(X)=Y | X=x)`.
+- Reduction:
+  `M + gamma = (E[s|D]-1/2) + E[eta_a-s|D] = E[eta_a|D]-1/2` and
+  `Delta = 2 mu_T(D)(M+gamma)` under the binary disagreement setup.
+- Interior: for `beta > 0` and `|M| < beta`, admissible evidence-identical worlds have opposite
+  nonzero benefit signs.
+- Boundary: at `|M| = beta > 0`, one admissible world has zero benefit and another has a strict
+  benefit with the sign of `M`; opposite nonzero signs are not claimed there.
+- Closed band: under strict directional semantics, abstention is the maximal sound three-way action
+  on `|M| <= beta`, including the degenerate zero-drift tie.
+- Frontier: a strict direction is uniformly supportable over the rich declared class if and only if
+  `|M| > beta`.
+- Certificate: assumed interval coverage implies marginal false-adapt and false-freeze control.
+  `FA_c` is not theorem-controlled.
+- Multiclass: `Delta = P_T(D)(p_a-p_0)`; no binary complement identity is reused.
 
-## Lean scope
+## Population And Empirical Layers
 
-The manuscript describes the Lean development as kernel-checked for the named algebraic,
-finite-decision, measure-containment, and conditional uniform-rank results. It does not claim that a
-successful build mechanizes the entire deployment theorem. External assumptions and unmechanized
-links include target-law construction, evidence-law equality, deployment-class membership, risk
-alignment, calibration transfer, and the lift to arbitrary exchangeable deployment processes.
+| Quantity | Layer | Meaning |
+|---|---|---|
+| `M` | population | observable disagreement-region margin |
+| `gamma` | population | latent calibration drift |
+| `beta` | population | externally declared bound on `|gamma|` |
+| `Delta` | shared target | frozen-minus-candidate risk |
+| `Delta_hat` | empirical KGA | learned estimate from label-free evidence `Z` |
+| `epsilon` | empirical KGA | residual-coverage radius |
 
-## Empirical non-implications
+`epsilon` does not estimate `beta`; real-data KGA does not compute `M`, `gamma`, or `beta`.
+Empirical abstention may result from structural ambiguity, finite data, a weak benefit estimator,
+calibration-transfer failure, or a conservative radius. It is not automatically a theorem-specific
+non-identifiability diagnosis.
 
-- Empirical abstention is not automatically structural non-identifiability.
-- A fitted benefit regressor does not certify risk alignment.
-- Source-replayed natural no-harm results do not prove a universal no-harm theorem.
-- ImageNet-C SAR point beats-both does not establish CI-robust or seed-robust superiority.
-- ImageNet-R and PACS are retained as negative diagnostics rather than forced into the theory claim.
+## Lean/Mathlib Verification
 
-## Residual theory risk
+`formal/build.sh` completed 2,554 jobs from the pinned Lake manifest. The audit reports:
 
-The main submission risk is interpretive, not an algebraic contradiction: reviewers may still read
-the long population-budget development as stronger than the deployment evidence. The paper now
-states the operational frontier reading as withdrawn where the declared budget procedure fails.
+- formal audit: PASS;
+- forbidden proof-hole scan: PASS;
+- 65 theorem-map checks;
+- measure-level false-adapt and false-freeze containment;
+- finite uniform-rank coverage and exchangeable-index implications;
+- interior, boundary, closed-band, and distributional frontier declarations;
+- finite matched-world construction, unit-mismatch, stability, two-point Le Cam, rate, swap, and
+  non-finite witness declarations.
 
+The public build is free of Lean linter warnings. The audit reports ordinary Mathlib axioms such as
+classical choice, propositional extensionality, and quotient soundness where expected. A successful kernel build does
+not discharge paper-level empirical obligations: class membership, evidence-map validity,
+calibration transfer to a new environment, or the claim that a benchmark protocol represents a
+future deployment.
+
+## Remaining Mathematical Risk
+
+The risk is scope, not a known contradiction. Necessity needs a class rich enough to contain the
+matched label kernels and boundary law. The finite-sample theorem is only as useful as its coverage
+premise at the declared scoring unit. The paper now states both qualifications adjacent to the
+results they govern.

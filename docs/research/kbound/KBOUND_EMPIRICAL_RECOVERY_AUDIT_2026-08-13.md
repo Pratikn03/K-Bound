@@ -2,6 +2,13 @@
 
 Date: 2026-08-13
 
+> **SUPERSEDED EVIDENCE SNAPSHOT.** This document records the recovery state on 2026-08-13 and
+> contains findings that were later reconciled or invalidated. Do not use any number or verdict
+> below as current evidence. The numerical authority is
+> `experiments/kbound/results/reconciled_panels_v1/canonical_panel_results.json`; use
+> `KBOUND_SHORT_RESULT_AUDIT.md` for its current interpretation and
+> `KBOUND_PHASE1_PROVENANCE_AUDIT_2026-08-27.md` for hash coverage and remaining identity gaps.
+
 ## Scope and decision rule
 
 This audit searched the internal working repository, the T9 archive, the nine-track lock,

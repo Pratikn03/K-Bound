@@ -8,6 +8,7 @@ locked_analysis / headtohead blocks (so PDF macros stay current before a full re
 
 Single source of truth -> docs/research/kbound/paper/generated/kbound_numbers.tex.
 """
+
 import json
 import os
 
@@ -17,17 +18,30 @@ ROOT = REPO_ROOT if os.path.isdir(os.path.join(REPO_ROOT, "docs/research/kbound"
 KBOUND = os.path.join(ROOT, "docs/research/kbound") if ROOT == REPO_ROOT else ROOT
 SRC = os.path.join(KBOUND, "paper/generated/kbound_result_manifest.json")
 OUT = os.path.join(KBOUND, "paper/generated/kbound_numbers.tex")
-LOCKED_DEFAULT = os.path.join(
-    ROOT, "experiments/kbound/results/stress_grid_multiseed_v1/LOCKED_ANALYSIS_RESULTS.json"
-)
+LOCKED_DEFAULT = os.path.join(ROOT, "experiments/kbound/results/stress_grid_multiseed_v1/LOCKED_ANALYSIS_RESULTS.json")
 H2H_DEFAULT = os.path.join(
     ROOT,
-    "experiments/kbound/results/mixed_headtohead_v1/"
-    "HEADTOHEAD_RESULTS_cifar10c_tent_primary.json",
+    "experiments/kbound/results/mixed_headtohead_v1/HEADTOHEAD_RESULTS_cifar10c_tent_primary.json",
 )
+RECONCILED = os.path.join(ROOT, "experiments/kbound/results/reconciled_panels_v1/canonical_panel_results.json")
+# These generated macros appear in both text-mode tables and math-mode cells.
+# ``\textnormal`` is safe in either context; a bare ``\mathrm`` is math-only
+# and previously broke the maintained full-manuscript build.
+WITHHELD = r"\textnormal{withheld}"
+PENDING = r"\textnormal{pending}"
 
-f = lambda x: f"{x:.4f}"
-pct = lambda x: f"{x * 100:.0f}"
+
+def f(x):
+    return f"{x:.4f}"
+
+
+def pct(x):
+    return f"{x * 100:.0f}"
+
+
+def zero_event_cp95(n):
+    """Upper Clopper-Pearson bound for zero events, undefined at zero exposure."""
+    return r"\textnormal{not defined}" if n <= 0 else f(1.0 - 0.05 ** (1.0 / n))
 
 
 def _load_json(path):
@@ -65,38 +79,118 @@ def _headtohead():
 
 d = _load_json(SRC)
 tracks = d.get("tracks", {})
+canonical = _load_json(RECONCILED)
+iwild_release_eligible = False
+if canonical:
+    source_manifest_sha256 = canonical.get("source_manifest_sha256")
+    if not isinstance(source_manifest_sha256, str) or len(source_manifest_sha256) != 64:
+        raise ValueError("canonical panel is missing a valid source_manifest_sha256")
+    panels = canonical["panels"]
+    iwild_release_eligible = panels["iwildcam"].get("release_promotion", {}).get("eligible", False)
+
+    def as_track(score):
+        regret = score["regret"]
+        return {
+            "regret": [regret["kga"], regret["always_adapt"], regret["always_freeze"]],
+            "false_adapt": score["fa_u"],
+        }
+
+    tracks = {
+        "officehome_M_v2": as_track(panels["officehome"]["primary"]["exact_rank_transfer_score"]),
+        "iwildcam_H_v2": as_track(panels["iwildcam"]["primary"]["exact_rank_transfer_score"]),
+        "cifar10c_tent": as_track(panels["cifar10c"]["panel"]["candidates"]["tent"]),
+        "cifar10c_eata": as_track(panels["cifar10c"]["panel"]["candidates"]["eata"]),
+        "imagenetc_sar": as_track(panels["imagenetc"]["panel"]["candidates"]["sar"]),
+    }
+
+    office_primary = panels["officehome"]["primary"]["exact_rank_transfer_score"]
+    office_replication = panels["officehome"]["test_stream_seed_replication"]["exact_rank_transfer_score"]
+    generated_macros = {}
+    for prefix, score in (
+        ("OH", office_primary),
+        ("OHRep", office_replication),
+    ):
+        generated_macros.update(
+            {
+                f"{prefix}N": str(score["n"]),
+                f"{prefix}AdaptCount": str(score["adapt_count"]),
+                f"{prefix}FreezeCount": str(score["freeze_count"]),
+                f"{prefix}AbstainCount": str(score["abstain_count"]),
+            }
+        )
+    generated_macros.update(
+        {
+            "SourceManifestSHA": source_manifest_sha256,
+            "OHRepKga": f(office_replication["regret"]["kga"]),
+            "OHRepAdapt": f(office_replication["regret"]["always_adapt"]),
+            "OHRepFreeze": f(office_replication["regret"]["always_freeze"]),
+            "OHFaCUpper": zero_event_cp95(office_primary["adapt_count"]),
+            "OHRepFaCUpper": zero_event_cp95(office_replication["adapt_count"]),
+        }
+    )
+else:
+    generated_macros = {}
 ns = d.get("natural_shifts", {})
 if tracks:
     ns = {
-        "officehome_M_v2": dict(zip(("regret_kga", "regret_adapt", "regret_freeze"), tracks["officehome_M_v2"]["regret"])) | {"false_adapt": tracks["officehome_M_v2"]["false_adapt"]},
-        "iwildcam_H_v2": dict(zip(("regret_kga", "regret_adapt", "regret_freeze"), tracks["iwildcam_H_v2"]["regret"])) | {"false_adapt": tracks["iwildcam_H_v2"]["false_adapt"]},
+        "officehome_M_v2": dict(
+            zip(("regret_kga", "regret_adapt", "regret_freeze"), tracks["officehome_M_v2"]["regret"])
+        )
+        | {"false_adapt": tracks["officehome_M_v2"]["false_adapt"]},
+        "iwildcam_H_v2": dict(zip(("regret_kga", "regret_adapt", "regret_freeze"), tracks["iwildcam_H_v2"]["regret"]))
+        | {"false_adapt": tracks["iwildcam_H_v2"]["false_adapt"]},
     }
 oh = ns.get("officehome_M_v2", {})
 iw = ns.get("iwildcam_H_v2", {})
 M = {}
+M.update(generated_macros)
 if oh:
-    M.update({
-        "OHadapt": f(oh["regret_adapt"]),
-        "OHfreeze": f(oh["regret_freeze"]),
-        "OHkga": f(oh["regret_kga"]),
-        "OHfa": pct(oh["false_adapt"]),
-    })
-if iw:
-    M.update({
-        "iWadapt": f(iw["regret_adapt"]),
-        "iWfreeze": f(iw["regret_freeze"]),
-        "iWkga": f(iw["regret_kga"]),
-        "iWfa": pct(iw["false_adapt"]),
-    })
+    M.update(
+        {
+            "OHadapt": f(oh["regret_adapt"]),
+            "OHfreeze": f(oh["regret_freeze"]),
+            "OHkga": f(oh["regret_kga"]),
+            "OHfa": pct(oh["false_adapt"]),
+        }
+    )
+if iw and iwild_release_eligible:
+    M.update(
+        {
+            "iWadapt": f(iw["regret_adapt"]),
+            "iWfreeze": f(iw["regret_freeze"]),
+            "iWkga": f(iw["regret_kga"]),
+            "iWfa": pct(iw["false_adapt"]),
+        }
+    )
+else:
+    # The archived iWildCam scorer used sklearn macro-F1, which includes
+    # prediction-only classes. Keep every paper-facing macro non-numeric until
+    # a pinned rerun uses the official WILDS label-present metric contract.
+    M.update(
+        {
+            "iWN": WITHHELD,
+            "iWAdaptCount": WITHHELD,
+            "iWFreezeCount": WITHHELD,
+            "iWAbstainCount": WITHHELD,
+            "iWadapt": WITHHELD,
+            "iWfreeze": WITHHELD,
+            "iWkga": WITHHELD,
+            "iWfa": WITHHELD,
+        }
+    )
 
 cg = d.get("corruption_grids", {})
 if tracks:
     cg = {
-        "cifar10c_stress": {"candidates": {
-            "tent": dict(zip(("regret_kga", "regret_adapt", "regret_freeze"), tracks["cifar10c_tent"]["regret"])) | {"false_adapt": tracks["cifar10c_tent"]["false_adapt"]},
-            "eata": dict(zip(("regret_kga", "regret_adapt", "regret_freeze"), tracks["cifar10c_eata"]["regret"])) | {"false_adapt": tracks["cifar10c_eata"]["false_adapt"]},
-        }},
-        "imagenetc_sar": dict(zip(("regret_kga", "regret_adapt", "regret_freeze"), tracks["imagenetc_sar"]["regret"]))
+        "cifar10c_stress": {
+            "candidates": {
+                "tent": dict(zip(("regret_kga", "regret_adapt", "regret_freeze"), tracks["cifar10c_tent"]["regret"]))
+                | {"false_adapt": tracks["cifar10c_tent"]["false_adapt"]},
+                "eata": dict(zip(("regret_kga", "regret_adapt", "regret_freeze"), tracks["cifar10c_eata"]["regret"]))
+                | {"false_adapt": tracks["cifar10c_eata"]["false_adapt"]},
+            }
+        },
+        "imagenetc_sar": dict(zip(("regret_kga", "regret_adapt", "regret_freeze"), tracks["imagenetc_sar"]["regret"])),
     }
 if "cifar10c_stress" in cg:
     c10 = cg["cifar10c_stress"]
@@ -123,20 +217,33 @@ for cand in ("tent", "eata"):
 
 hh = _headtohead()
 if hh:
-    M["HeadToHeadVerdict"] = hh.get("verdict", "—")
-    for k, macro in [
-        ("kga_regret", "HeadToHeadKga"),
-        ("adapt_regret", "HeadToHeadAdapt"),
-        ("freeze_regret", "HeadToHeadFreeze"),
-        ("poem_regret", "HeadToHeadPoem"),
-        ("aetta_regret", "HeadToHeadAetta"),
-    ]:
-        if k in hh:
-            M[macro] = f(hh[k])
-    if "kga_fa" in hh:
-        M["HeadToHeadKgaFA"] = f(hh["kga_fa"])
-    if "kga_decisive" in hh:
-        M["HeadToHeadKgaDec"] = f(hh["kga_decisive"])
+    if hh.get("policy_synchronized") is False or hh.get("numeric_release_eligible") is False:
+        M["HeadToHeadVerdict"] = "HISTORICAL ONLY"
+        for macro in (
+            "HeadToHeadKga",
+            "HeadToHeadAdapt",
+            "HeadToHeadFreeze",
+            "HeadToHeadPoem",
+            "HeadToHeadAetta",
+            "HeadToHeadKgaFA",
+            "HeadToHeadKgaDec",
+        ):
+            M[macro] = PENDING
+    else:
+        M["HeadToHeadVerdict"] = hh.get("verdict", "—")
+        for k, macro in [
+            ("kga_regret", "HeadToHeadKga"),
+            ("adapt_regret", "HeadToHeadAdapt"),
+            ("freeze_regret", "HeadToHeadFreeze"),
+            ("poem_regret", "HeadToHeadPoem"),
+            ("aetta_regret", "HeadToHeadAetta"),
+        ]:
+            if k in hh:
+                M[macro] = f(hh[k])
+        if "kga_fa" in hh:
+            M["HeadToHeadKgaFA"] = f(hh["kga_fa"])
+        if "kga_decisive" in hh:
+            M["HeadToHeadKgaDec"] = f(hh["kga_decisive"])
 
 os.makedirs(os.path.dirname(OUT), exist_ok=True)
 with open(OUT, "w") as fh:

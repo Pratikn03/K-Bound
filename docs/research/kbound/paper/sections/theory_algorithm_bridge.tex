@@ -91,16 +91,17 @@ uniform quantification over all laws in $\mathcal C_\beta$.
 
 The logical chain is therefore
 \[
+\begin{gathered}
   \boxed{\mathcal C_\beta\ \text{declared}}
-  \longrightarrow
-  \boxed{\mathcal P_{\mathrm{KGA}}\subseteq\mathcal C_\beta\
-         \ \text{risk-aligned for }Z}
-  \longrightarrow
-  \boxed{\widehat\Delta=h_\theta(Z)}
-  \longrightarrow
-  \boxed{\Pr(|\widehat\Delta-\Delta|\le\varepsilon)\ge1-\alpha}
-  \longrightarrow
+  \quad\Longrightarrow\quad
+  \boxed{\mathcal P_{\mathrm{KGA}}\subseteq\mathcal C_\beta
+         \text{ and risk-aligned for }Z}\\[2pt]
+  \Longrightarrow\quad \widehat\Delta=h_\theta(Z)
+  \quad\Longrightarrow\quad
+  \Pr(|\widehat\Delta-\Delta|\le\varepsilon)\ge1-\alpha\\[2pt]
+  \Longrightarrow\quad
   \boxed{\textsc{adapt}/\textsc{freeze}/\textsc{abstain}}.
+\end{gathered}
 \]
 The arrows are not all learned by KGA.  Declaring a credible outer class and
 drift budget, specifying the narrower operational class, defending risk
@@ -148,17 +149,30 @@ it through $(\widehat\Delta,\varepsilon)$.  The algorithm therefore realizes
 the framework's adapt/freeze/abstain semantics, but it does not turn the
 external population assumptions into data-derived facts.
 
+The released controlled bridge makes this separation executable.  Its
+repository script evaluates an externally supplied
+$(M,\beta)$ with the population API and a separately supplied
+$(\widehat\Delta,\varepsilon)$ with the KGA API on the same algebraic cells.
+The saved artifact reports both agreement and disagreement: either is possible
+because the rules quantify over different uncertainty objects.  This is a
+code-level correspondence check, not a benchmark result, a learned drift
+budget, or evidence that the two abstention sets coincide.
+
 \subsection{Robust Conformal Extensions for Real-World Deployment}
 \label{sec:robust-conformal-extensions}
 
 When deployed across heterogeneous real-world environments, two practical calibration failure modes can arise:
 \begin{enumerate}
-  \item \textbf{Domain non-exchangeability (Unit mismatch).} If calibration cells originate from development environments $\{g_1, \dots, g_G\}$ but a novel target deployment exhibits higher drift variance, standard pooled conformal calibration can under-cover. KGA resolves this via \emph{Worst-Group Domain Conformal Calibration}:
+  \item \textbf{Domain non-exchangeability (unit mismatch).} If calibration cells originate from development environments $\{g_1, \dots, g_G\}$ but a novel target deployment exhibits a different residual law, pooled calibration can under-cover. A conservative development-group sensitivity is
   \begin{equation}
     \varepsilon_{\mathrm{robust}} = \max_{g \in \{1, \dots, G\}} \mathrm{conformal\_radius}(R_g, \alpha),
     \label{eq:worst-group-radius}
   \end{equation}
-  which guarantees $1-\alpha$ coverage over the worst-case development cluster and restores target coverage under domain shift.
-  \item \textbf{Estimator overfitting.} If the benefit predictor $\widehat\Delta = h_\theta(Z)$ overfits development data, in-fold residuals underestimate prediction error. KGA enforces \emph{Out-of-Fold (OOF) Jackknife Calibration}: residuals $R_j^{\mathrm{OOF}} = |\widehat\Delta_{-k}(Z_j) - \Delta_j|$ are computed strictly on held-out folds, ensuring $\varepsilon$ absorbs estimator prediction error and forces safe \textsc{abstention} whenever $\widehat\Delta$ mispredicts benefit direction.
+  where each group radius uses the same exact order-statistic rule. This controls the observed
+  development groups under group-conditional exchangeability. It transfers to a new target group
+  only under an additional, declared condition---for example, that the target residual distribution
+  is stochastically dominated by the worst calibration group. Without such a condition,
+  Eq.~\eqref{eq:worst-group-radius} is a robustness sensitivity, not a target-domain guarantee.
+  \item \textbf{Estimator overfitting.} If the benefit predictor $\widehat\Delta = h_\theta(Z)$ overfits development data, in-fold residuals underestimate prediction error. KGA therefore computes residuals out of fold,
+  $R_j^{\mathrm{OOF}} = |\widehat\Delta_{-k}(Z_j) - \Delta_j|$, so no residual is evaluated by an estimator trained on that same unit. This removes direct in-fold leakage. Exact finite-sample coverage still requires a valid conformal construction at the declared inference unit; the leave-one-condition-out empirical radius used on the controlled grids is not relabeled as one.
 \end{enumerate}
-

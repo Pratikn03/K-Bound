@@ -180,7 +180,6 @@ emit_checksums() {
     "$KB/claim_ledger.json"
     "$KB/RESULT_MANIFEST.json"
     "$KB/kbound_short_final_draft.pdf"
-    "$KB/kbound_submission.pdf"
     "$KB/kbound_tmlr.pdf"
     "experiments/kbound/results/reconciled_panels_v1/canonical_panel_results.json"
     "experiments/kbound/results/reconciled_panels_v1/source_manifest.json"
@@ -217,7 +216,6 @@ emit_checksums() {
   local required_pdf
   for required_pdf in \
     "$KB/kbound_short_final_draft.pdf" \
-    "$KB/kbound_submission.pdf" \
     "$KB/kbound_tmlr.pdf"; do
     if [[ ! -f "$required_pdf" ]]; then
       warn "missing maintained release PDF: $required_pdf"

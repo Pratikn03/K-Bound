@@ -1,5 +1,17 @@
-# K-Bound SUBMISSION LEDGER (canonical)
-Single source of truth. No other manuscript, lock, or audit doc may override this.
+# K-Bound SUBMISSION LEDGER (historical freeze record)
+
+> **SUPERSEDED FOR CURRENT STATUS (2026-08-21).** This ledger contains historical July/August
+> freeze state, obsolete manuscript paths, and verdict language that predates the reconciled
+> 106-artifact panel. Use `KBOUND_SHORT_RESULT_AUDIT.md`, `KBOUND_SHORT_CLAIM_MANIFEST.md`, and
+> `KBOUND_EMPIRICAL_AND_RELEASE_CLOSURE_PLAN.md` for current claims and remaining work. Retain this
+> file only as provenance; it does not override the current canonical JSON or maintained papers.
+
+> **HISTORICAL VALUES BELOW ARE NOT RELEASE VALUES.** In the current source-hashed panel,
+> CIFAR-10-C Tent has 1,107 ADAPT / 359 FREEZE / 694 ABSTAIN decisions and EATA has
+> 1,241 / 132 / 787. The iWildCam performance and action row is withheld because the archived
+> scorer does not match the official WILDS label-present macro-F1 contract. The older counts and
+> iWildCam values retained later in this file describe the July freeze only.
+
 Originally generated 2026-07-19 (audit plan Phase 1). **Substantially revised 2026-07-26** after an
 external five-specialist review; §§0, 3, 4, 5, 8, 9, 10, 11, 12 are new or rewritten. Supersedes all
 prior audit docs, including the versions of `PHASE6_LEAKAGE_AUDIT.md` and
@@ -707,4 +719,3 @@ different candidate. This sentence supersedes all three prior accounts.
 All four deferred items (2, 3, 6, 8) are provenance-completeness or tooling tasks.
 No promoted empirical claim, no stated theorem, and no safety guarantee in the TMLR
 submission depends on any deferred item. The submission is defensible as-is.
-

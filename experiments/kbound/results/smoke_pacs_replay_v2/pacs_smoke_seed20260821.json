@@ -1,0 +1,74 @@
+{
+  "alpha": 0.1,
+  "dataset": "PACS",
+  "n_classes": 7,
+  "per_domain": {
+    "art_painting": {
+      "FA_c": 0.125,
+      "FA_u": 0.1,
+      "adapt_rate": 0.8,
+      "base_rate_harmful": 0.1,
+      "calibration_domain": "sketch",
+      "cis": {
+        "vs_adapt_ci": [
+          -0.015873023867607118,
+          0.0
+        ],
+        "vs_adapt_mean": -0.006349208950996399,
+        "vs_freeze_ci": [
+          0.028571432828903197,
+          0.1000000149011612
+        ],
+        "vs_freeze_mean": 0.06507937014102935
+      },
+      "coverage": 0.8,
+      "eps": 0.1548080391075652,
+      "n_test_cells": 10,
+      "per_cell_artifact": "per_cell/pacs_art_painting_seed20260821_percell.json",
+      "per_cell_sha256": "957c1bb26de11b730d6f6adbffce6f1dab0482557934a60e908e766bbefaf4f9",
+      "radius_status": "FINITE",
+      "regret": {
+        "K_Bound": 0.007936510443687438,
+        "always_adapt": 0.00158730149269104,
+        "always_freeze": 0.0730158805847168
+      },
+      "residual_pool_sha256": "41e1cdb418d4b5ac294cdc439f00396cc08b218af68610b3bb018bf76072c1d3",
+      "run_config_sha256": "383b6bf4918585a4f41feac0064fee513d1f0192d9666a0b91a7b00016772470",
+      "source_checkpoint_sha256": "2c43d8ac0178e80bd78ca8448e68dde8aadc794ac961cd2c9a5e4a9c3034adae",
+      "verdict": "NULL",
+      "wall_sec": 209.4
+    }
+  },
+  "protocol": {
+    "cell_grid": {
+      "aggressiveness": [
+        "mild"
+      ],
+      "batch_regimes": [
+        "small"
+      ],
+      "compositions": [
+        "iid",
+        "single_class"
+      ],
+      "repetitions": [
+        0,
+        1,
+        2,
+        3,
+        4
+      ]
+    },
+    "erm_steps": 30,
+    "methods": [
+      "tent"
+    ]
+  },
+  "schema": "kbound_pacs_seed_v1",
+  "seed": 20260821,
+  "win_hunt_v5_override": {
+    "adapt_lr": null,
+    "aggressiveness": null,
+    "batch_regimes": null
+  }
+}

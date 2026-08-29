@@ -61,6 +61,7 @@ and marked deprecated.
 """
 from __future__ import annotations
 
+import hashlib
 import math
 import os
 import sys
@@ -276,6 +277,124 @@ def loo_bhat(Z, B, n_estimators=250, max_depth=2, lr=0.05, seed=0) -> np.ndarray
     return bh
 
 
+def minimum_crossfit_size(alpha=ALPHA, min_train=2) -> int:
+    """Minimum cells for label-disjoint score/train/calibration partitions."""
+    if not 0.0 < float(alpha) < 1.0:
+        raise ValueError("alpha must lie strictly between zero and one")
+    if int(min_train) < 2:
+        raise ValueError("min_train must be at least two")
+    min_calibration = int(math.ceil(1.0 / float(alpha)) - 1)
+    return min_calibration + int(min_train) + 1
+
+
+def _stable_crossfit_order(sample_ids, salt, seed):
+    return sorted(
+        range(len(sample_ids)),
+        key=lambda index: hashlib.sha256(
+            f"{seed}|{salt}|{sample_ids[index]}".encode("utf-8")
+        ).hexdigest(),
+    )
+
+
+def decide_kga_crossfit(
+    Z,
+    B,
+    alpha=ALPHA,
+    n_estimators=250,
+    max_depth=2,
+    lr=0.05,
+    seed=0,
+    sample_ids=None,
+    n_folds=5,
+):
+    """Label-disjoint cross-fitted K-Bound diagnostic.
+
+    For every score fold, the remaining cells are split—using only stable sample
+    identifiers—into an estimator-fit set and an exact-rank calibration set. The
+    score-fold labels enter neither fit. Therefore changing ``B[i]`` cannot change
+    cell ``i``'s prediction, radius, or decision.
+
+    This removes the subtler leakage in the historical two-stage LOO procedure:
+    although residual ``i`` was deleted from radius ``i``, every other residual's
+    estimator had been trained with ``B[i]``. Cross-fitting is suitable for
+    development diagnostics; confirmation still requires a predeclared, disjoint
+    validation lock and an unopened test partition.
+    """
+    from sklearn.ensemble import GradientBoostingRegressor
+
+    Z = np.asarray(Z, dtype=float)
+    B = np.asarray(B, dtype=float)
+    if Z.ndim != 2 or B.ndim != 1 or len(Z) != len(B):
+        raise ValueError("Z must be two-dimensional and match one-dimensional B")
+    if not (np.isfinite(Z).all() and np.isfinite(B).all()):
+        raise ValueError("Z and B must contain only finite values")
+    n = len(B)
+    if sample_ids is None:
+        sample_ids = [f"index:{index}" for index in range(n)]
+    else:
+        sample_ids = [str(value) for value in sample_ids]
+    if len(sample_ids) != n or len(set(sample_ids)) != n:
+        raise ValueError("sample_ids must be unique and match Z/B length")
+
+    minimum = minimum_crossfit_size(alpha)
+    if n < minimum or len(np.unique(B)) < 2:
+        bhat = np.full(n, float(np.mean(B)) if n else 0.0)
+        epsilon = np.full(n, float("inf"))
+        return bhat, epsilon, decide(bhat, epsilon, alpha=alpha)
+
+    min_calibration = int(math.ceil(1.0 / float(alpha)) - 1)
+    max_score_fold = n - min_calibration - 2
+    folds_required = int(math.ceil(n / max_score_fold))
+    fold_count = min(n, max(2, int(n_folds), folds_required))
+    order = _stable_crossfit_order(sample_ids, "score-fold", seed)
+    score_folds = [order[offset::fold_count] for offset in range(fold_count)]
+
+    bhat = np.full(n, np.nan, dtype=float)
+    epsilon = np.full(n, np.inf, dtype=float)
+    all_indices = set(range(n))
+    for fold_index, score_indices in enumerate(score_folds):
+        if not score_indices:
+            continue
+        remaining = sorted(all_indices - set(score_indices))
+        calibration_order_local = _stable_crossfit_order(
+            [sample_ids[index] for index in remaining],
+            f"calibration-fold:{fold_index}",
+            seed,
+        )
+        ordered_remaining = [remaining[index] for index in calibration_order_local]
+        desired_calibration = max(
+            min_calibration,
+            int(math.ceil(0.30 * len(ordered_remaining))),
+        )
+        calibration_n = min(desired_calibration, len(ordered_remaining) - 2)
+        if calibration_n < min_calibration:
+            continue
+        calibration_indices = ordered_remaining[:calibration_n]
+        train_indices = ordered_remaining[calibration_n:]
+        model = GradientBoostingRegressor(
+            n_estimators=n_estimators,
+            max_depth=max_depth,
+            learning_rate=lr,
+            subsample=0.8,
+            random_state=seed,
+        )
+        model.fit(Z[train_indices], B[train_indices])
+        calibration_prediction = model.predict(Z[calibration_indices])
+        fold_radius = conformal_radius(
+            np.abs(calibration_prediction - B[calibration_indices]),
+            alpha=alpha,
+        )
+        bhat[score_indices] = model.predict(Z[score_indices])
+        epsilon[score_indices] = fold_radius
+
+    missing = np.isnan(bhat)
+    if missing.any():
+        # A future split-policy regression must fail closed, never partially route.
+        bhat[missing] = float(np.mean(B))
+        epsilon[missing] = float("inf")
+    return bhat, epsilon, decide(bhat, epsilon, alpha=alpha)
+
+
 def decide_kga(Z, B, alpha=ALPHA, n_estimators=250, max_depth=2, lr=0.05, seed=0,
                calibration="loo"):
     """The one K-Bound decision path.  Returns ``(Bhat, eps, dec)``.
@@ -392,7 +511,8 @@ def records(path):
 __all__ = [
     "ALPHA", "BACKEND", "REPO_ROOT", "backend", "repo_path", "results_root",
     "conformal_radius", "radii_in_pool", "radii_loo", "radii_holdout",
-    "CALIBRATIONS", "decide", "loo_bhat", "decide_kga", "decide_from_records",
+    "CALIBRATIONS", "decide", "loo_bhat", "minimum_crossfit_size",
+    "decide_kga_crossfit", "decide_kga", "decide_from_records",
     "false_adapt", "fa_ceiling", "read_json", "records",
     "selftest_radius_excludes_scored_cell",
 ]

@@ -1,5 +1,9 @@
 # FINAL STATUS — build, adversarial verification, verdict
 
+> **Historical panel-review snapshot.** Page counts, paths, and empirical verdicts below describe
+> the July 2026 review build. They are not current release authority. Use `../DOCS_INDEX.md`,
+> `../KBOUND_SHORT_RESULT_AUDIT.md`, and the maintained submission artifacts instead.
+
 Written by the final build/verify slice. Every number below was recomputed in this container from
 the named artifact or read out of a build log produced in this session. Nothing is quoted from the
 integrator's report without independent re-derivation; where I re-derived a number the recomputation

@@ -31,24 +31,25 @@ USAGE:
       --dev-seeds 0 1 --test-seeds 2 3 4
 """
 from __future__ import annotations
-import os, sys, json, argparse
+
+import argparse
+import json
+import os
+import sys
+
 import numpy as np
 from sklearn.ensemble import GradientBoostingRegressor
 from sklearn.linear_model import QuantileRegressor
 from sklearn.preprocessing import StandardScaler
 
+from kbound_decide import conformal_radius as _canonical_conformal_radius
+
 ALPHA = 0.10  # FIXED — never tuned
 
 
 def conformal_rank_radius(residuals, alpha=ALPHA):
-    """Exact split-conformal order statistic; no quantile interpolation."""
-    r = np.asarray(residuals, dtype=float).ravel()
-    if r.size == 0 or not np.all(np.isfinite(r)):
-        raise ValueError("residuals must be non-empty and finite")
-    if not (0.0 < alpha < 1.0):
-        raise ValueError("alpha must lie in (0, 1)")
-    k = min(r.size, int(np.ceil((r.size + 1) * (1.0 - alpha))))
-    return float(np.sort(r)[k - 1])
+    """Delegate to the repository's single exact-rank radius implementation."""
+    return _canonical_conformal_radius(residuals, alpha)
 
 
 # ─── record loading ──────────────────────────────────────────────────────────
@@ -183,8 +184,9 @@ def run_split(records, cal_seeds, test_seeds, estimator="ppi_debias", conformal=
     elif estimator != "gbr":
         raise ValueError(estimator)
 
-    # Out-of-fold (leave-one-out) residuals for the conformal radius -> no in-sample leakage.
-    # (The in-sample radius was ~10x too small on small dev sets; see audit 2026-06.)
+    # Leave-one-calibration-record-out residuals remove in-sample residual bias.
+    # They are empirical cross-fitted calibration residuals, not exact split
+    # conformal residuals for the separately refit full-calibration estimator.
     if estimator == "gbr":
         _loo = np.empty(len(Bc))
         for _i in range(len(Bc)):

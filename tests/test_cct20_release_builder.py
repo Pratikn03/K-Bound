@@ -642,4 +642,4 @@ def test_publication_runbook_builds_and_seals_both_manuscript_forms() -> None:
         "kbound_short_final_draft.docx",
     ):
         assert name in runbook
-    assert '("kbound_submission.pdf", "kbound_tmlr.pdf")' in renderer
+    assert '("kbound_short_final_draft.pdf", "kbound_tmlr.pdf")' in renderer

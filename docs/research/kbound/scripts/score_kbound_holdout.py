@@ -72,9 +72,10 @@ def score_transfer(cal_records, test_records, estimator: str, conformal: str, fr
     elif estimator != "gbr":
         raise ValueError(estimator)
 
-    # Conformal residuals: out-of-fold (leave-one-out) for the base estimator, so each residual
-    # uses a model that did NOT see that calibration point -> no in-sample leakage (matches
-    # decide_kga and the transfer runner). Deployment Bhat_t stays the full-calibration fit.
+    # Leave-one-calibration-record-out residuals remove in-sample residual bias.
+    # Deployment Bhat_t still comes from a separately refit full-calibration model,
+    # so this is empirical cross-fitted calibration unless estimator stability is
+    # established; it is not exact split conformal or jackknife+.
     if conformal == "frozen":
         resid_c = None  # eps supplied externally (frozen dev radius); skip the LOO refit
     elif estimator == "gbr":

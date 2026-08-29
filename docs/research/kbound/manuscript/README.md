@@ -5,20 +5,21 @@ K-Bound claims after Wave 4 (2026-07-01).
 
 Use instead:
 
-- **Short paper:** `kbound_short.tex` / `kbound_short.pdf`
-- **Long paper:** `kbound.tex` / `kbound.pdf`
-- **Status ledger:** `PROJECT_STATUS_AND_OPEN_PROBLEMS.md`
+- **Compact paper:** `../kbound_submission.tex` / `../kbound_short_final_draft.pdf`
+- **Maintained full paper:** `../kbound_tmlr.tex` / `../kbound_tmlr.pdf`
+- **Current documentation index:** `../DOCS_INDEX.md`
 - **Closure gate:** `THEORY_100_PERCENT_CLOSURE_PLAN.md` + `formal/formal_audit.py --strict-100`
 
-Several `manuscript/` chapters still mark `conj:gen` and related items as open; those rows
-were closed negatively or as dichotomies in the live paper (see `main_theory_5.tex` and
-Wave 4 appendix in `kbound.tex`).
+Several `manuscript/` chapters still contain superseded theorem and empirical claims, including
+iWildCam values that are withheld in the current release. The tracked PDFs in this directory are
+historical snapshots. Do not compile, cite, or use this tree as release evidence; use the maintained
+full paper and current claim ledger instead.
 
-## Exception: `theory_spine/` is live
+## Preserved theory source: `theory_spine/`
 
-`theory_spine/theory_beta_impossible.tex` and `theory_spine/theory_beta_estimable.tex` are **not**
-part of the deprecated book edition. They are live main-body sections of `../kbound.tex`
-(the impossibility spine, acts 2 and 4) and are `\input` from it directly:
+`theory_spine/theory_beta_impossible.tex` and `theory_spine/theory_beta_estimable.tex` are reusable
+theory-source records rather than empirical evidence. The superseded `../kbound.tex` archive inputs
+them directly:
 
 ```
 \input{manuscript/theory_spine/theory_beta_impossible}   % Sec. VI  (label app:beta-impossible)
@@ -28,6 +29,6 @@ part of the deprecated book edition. They are live main-body sections of `../kbo
 They are derived from `kb_fixes/theory_beta_{impossible,estimable}.tex` with three edits:
 `\providecommand` macro guards (`\Var`, `\E`, ...), `\ref{sec:experiments}` repointed to
 `\ref{sec:exp}`, `\ref{rem:fa-marginal}` repointed to `\ref{thm:cert}` (that label is not in the
-long build), the CIFAR-10-C episode-coverage table promoted to a `table*` float
+archival build), the CIFAR-10-C episode-coverage table promoted to a `table*` float
 (`tab:episode-coverage`), several displays broken for the two-column measure, and one added
-forward pointer (`rem:seam`). Edit these copies, not the `kb_fixes/` originals, for the long build.
+forward pointer (`rem:seam`). Their presence does not promote the deprecated monograph's empirical claims.

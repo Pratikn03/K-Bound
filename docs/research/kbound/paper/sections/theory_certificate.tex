@@ -10,15 +10,15 @@ deployment-unit randomness, and that the benefit interval satisfies marginal cov
 Define
 \[
 g(Z)=\begin{cases}
-\textsc{adapt} & \widehat\Delta-\varepsilon>0,\\
-\textsc{freeze} & \widehat\Delta+\varepsilon<0,\\
-\textsc{abstain} & \text{otherwise}.
+\adapt & \widehat\Delta-\varepsilon>0,\\
+\freeze & \widehat\Delta+\varepsilon<0,\\
+\abstain & \text{otherwise}.
 \end{cases}
 \]
 Then, marginally over that common probability space,
 \begin{align*}
-\Pr\bigl[g(Z)=\textsc{adapt},\Delta\le0\bigr]&\le\alpha,\\
-\Pr\bigl[g(Z)=\textsc{freeze},\Delta\ge0\bigr]&\le\alpha.
+\Pr\bigl[g(Z)=\adapt,\Delta\le0\bigr]&\le\alpha,\\
+\Pr\bigl[g(Z)=\freeze,\Delta\ge0\bigr]&\le\alpha.
 \end{align*}
 \end{theorem}
 \begin{proof}
@@ -32,7 +32,7 @@ alignment is not required for the conditional-on-coverage implication.
 \begin{remark}[Marginal vs.\ conditional error]\label{rem:fa-marginal}
 Theorem~\ref{thm:certificate} bounds the \emph{marginal, unconditional} false-adapt and
 false-freeze probabilities ($\mathrm{FA}_{\mathrm u}$). It does \emph{not} bound the conditional
-rate $\mathrm{FA}_{\mathrm c}=\Pr[\Delta\le0\mid\textsc{adapt}]$, which we report empirically.
+rate $\mathrm{FA}_{\mathrm c}=\Pr[\Delta\le0\mid\adapt]$, which we report empirically.
 Risk alignment (Definition~\ref{def:risk-align}) is required for the \emph{frontier}
 identifiability claim; coverage alone certifies the \emph{interval} rule above.
 \end{remark}

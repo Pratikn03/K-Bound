@@ -3,12 +3,11 @@
 
 from __future__ import annotations
 
+import argparse
 import shutil
 import subprocess
 import tempfile
-import argparse
 from pathlib import Path
-
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -52,7 +51,7 @@ def main() -> None:
         if shutil.which(tool) is None:
             raise SystemExit(f"ERROR: missing required PDF tool: {tool}")
     output_root = args.output_root.resolve()
-    for name in ("kbound_short.pdf", "kbound.pdf"):
+    for name in ("kbound_short_final_draft.pdf", "kbound_tmlr.pdf"):
         pdf = ROOT / name
         if not pdf.is_file():
             raise SystemExit(f"ERROR: missing release PDF: {pdf}")

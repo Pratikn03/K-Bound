@@ -1,37 +1,44 @@
-# K-Bound Short Paper Remaining Work
+# K-Bound Remaining Work
 
-Date: 2026-08-11
+Date: 2026-08-24
 
-## Required before an empirical camera-ready claim
+The manuscript, canonical result pipeline, KGA implementation tests, and current Lean development
+are complete enough to circulate as a research draft. The following items require new evidence or
+submission packaging; they cannot be solved by rewriting existing numbers.
 
-- [ ] Run the preregistered physical-camera protocol and populate the locked tables from fresh logs.
-- [ ] Add independent natural-shift seeds under one declared train/calibration/test split.
-- [ ] Predeclare and test the transfer-stability premise, or explicitly keep transfer results
-  descriptive without theorem-level coverage language.
-- [ ] Export PACS per-cell `Delta`, `Delta_hat`, calibration residuals, and exact-rank decisions so the
-  gate is replayable.
+The executable work breakdown, acceptance gates, required schemas, and run order are maintained in
+[`KBOUND_EMPIRICAL_AND_RELEASE_CLOSURE_PLAN.md`](KBOUND_EMPIRICAL_AND_RELEASE_CLOSURE_PLAN.md).
 
-## Explicit manuscript TODOs
+## Empirical Evidence
 
-- [ ] Regenerate the ImageNet-R per-commitment permutation diagnostic at the corrected exact-LOO
-  operating point.
-- [ ] Rerun the ImageNet-C Tent counterfactual power probe using the corrected radius.
-- [ ] Rebuild the three-source heterogeneous mixture from reconciled Office-Home, iWildCam, and
-  Camelyon17 component records.
+- [ ] Run a prospectively locked natural-shift experiment with mixed helpful and harmful conditions,
+  separate estimator fitting and residual calibration, untouched target environments, and inference
+  at the environment or independently trained checkpoint unit.
+- [ ] Complete the preregistered physical-camera sessions and populate deployment, accuracy,
+  macro-F1, regret, FA_u, FA_c, action exposure, and end-to-end latency tables from fresh logs.
+- [ ] Add independent model seeds for Office-Home and iWildCam if those tracks are to support more
+  than descriptive endpoint results.
+- [ ] Export PACS per-cell `Delta`, `Delta_hat`, residual pools, and decisions for a complete replay.
+- [ ] Use official neighboring-method code when claiming an official POEM, AETTA, or other baseline;
+  retain `protocol-matched port` until then.
 
-## Submission packaging
+## Submission Packaging
 
-- [ ] Replace the local TMLR shim with the official venue style file before submission.
-- [ ] Decide anonymous versus named submission and lock repository disclosure accordingly.
-- [ ] Commit only the reconciled release artifacts after reviewing the existing dirty worktree.
-- [ ] Run the full repository suite in an environment that includes the intentionally excluded ELARA
-  legacy files, or remove those tests from the K-Bound-only release configuration.
+- [ ] Replace the local article shim with the official venue style and rerun visual QA.
+- [ ] Select named versus anonymous submission and remove repository/author metadata accordingly.
+- [ ] Freeze the canonical JSON, source manifest, PDFs, config hashes, and commit hash in one release.
+- [ ] Archive or clearly stamp older July audit documents whose historical wording conflicts with
+  the current README. They remain provenance but are not current status.
+- [ ] Run the release gate from a clean checkout and freeze the resulting checksums. The maintained
+  full collection, tests, Lean build, manuscript checks, and PDF rendering are green under the
+  supported Python 3.12 environment; Python 3.14 is not a release target.
 
-## Claims that must remain out
+## Claims That Must Remain Out
 
-- [ ] Do not claim universal improvement or universal natural-shift no-harm.
-- [ ] Do not claim a clean natural CI-robust beats-both win from Office-Home, iWildCam, PACS,
-  ImageNet-R, Camelyon17, or RxRx1 without new evidence.
-- [ ] Do not restore the old constructed-mixture win before source-record replay.
-- [ ] Do not describe real-camera templates as completed physical validation.
-
+- [ ] Do not claim universal accuracy improvement or universal natural-shift no-harm.
+- [ ] Do not call EATA corruption-cluster robust, ImageNet-C SAR CI-robust, or SAR CIFAR-10-C a win.
+- [ ] Do not present zero-adapt natural rows as powered false-adapt evidence.
+- [ ] Do not equate empirical abstention with structural non-identifiability.
+- [ ] Do not equate `epsilon` with `beta`, or state that real-data KGA evaluates `|M| > beta`.
+- [ ] Do not present the prospective camera protocol or historical constructed mixture as completed
+  held-out natural evidence.
