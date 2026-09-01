@@ -42,7 +42,7 @@ from __future__ import annotations
 import argparse
 import json
 import sys
-from collections.abc import Sequence
+from collections.abc import Callable, Sequence
 
 import numpy as np
 
@@ -59,7 +59,11 @@ from kga.evidence import compute_evidence
 from kga.kga import KGA
 from kga.policy import Decision, decide
 
-_BATCH_ESTIMATORS = {"ebern": empirical_bernstein, "hoeffding": hoeffding, "evalue": evalue_anytime}
+_BATCH_ESTIMATORS: dict[str, Callable[..., Certificate]] = {
+    "ebern": empirical_bernstein,
+    "hoeffding": hoeffding,
+    "evalue": evalue_anytime,
+}
 
 
 def _load_array(path: str, name: str) -> np.ndarray:
@@ -149,8 +153,8 @@ def _certificate_from_args(args: argparse.Namespace) -> Certificate:
                 "estimating it from the sample voids the finite-sample guarantee. "
                 "For |p - y| paired 0/1 losses pass --benefit-range 2.0."
             )
-        estimator = _BATCH_ESTIMATORS[args.method]
-        return estimator(benefits, alpha=args.alpha, benefit_range=args.benefit_range)
+        batch_estimator = _BATCH_ESTIMATORS[args.method]
+        return batch_estimator(benefits, alpha=args.alpha, benefit_range=args.benefit_range)
 
     if args.delta_hat is None or args.calib_residuals is None:
         raise SystemExit("kga decide: --delta-hat and --calib-residuals must be given together.")
@@ -185,7 +189,7 @@ def _decide_command(args: argparse.Namespace) -> int:
     out = {
         "decision": dec.value,
         "delta_hat": cert.delta_hat if cert is not None else None,
-        "epsilon": cert.epsilon if radius_feasible else None,
+        "epsilon": cert.epsilon if cert is not None and radius_feasible else None,
         "lower": cert.lower if cert is not None and np.isfinite(cert.lower) else None,
         "upper": cert.upper if cert is not None and np.isfinite(cert.upper) else None,
         "method": cert.method if cert is not None else "unavailable",
@@ -199,7 +203,9 @@ def _decide_command(args: argparse.Namespace) -> int:
         "decision_scope": (
             "label_free_estimator"
             if args.estimator_json is not None
-            else "paired_benefit_audit" if args.benefits is not None else "external_estimate_audit"
+            else "paired_benefit_audit"
+            if args.benefits is not None
+            else "external_estimate_audit"
         ),
     }
     json.dump(out, sys.stdout, indent=2, allow_nan=False)

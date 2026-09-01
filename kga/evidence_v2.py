@@ -21,12 +21,14 @@ documented in GPU_WIRING.md, NOT implemented here.
 
 from __future__ import annotations
 
+from typing import cast
+
 import numpy as np
 
 
 def _softmax(L: np.ndarray) -> np.ndarray:
     e = np.exp(L - L.max(axis=1, keepdims=True))
-    return e / e.sum(axis=1, keepdims=True)
+    return cast(np.ndarray, e / e.sum(axis=1, keepdims=True))
 
 
 def softrun(L: np.ndarray) -> np.ndarray:
@@ -44,7 +46,7 @@ def softrun(L: np.ndarray) -> np.ndarray:
         X = X / (np.abs(X).max() + 1e-12)
         Q = 1.0 + X + 0.5 * X * X
         Q = Q / Q.sum(axis=1, keepdims=True)
-        return Q
+        return cast(np.ndarray, Q)
     return P
 
 

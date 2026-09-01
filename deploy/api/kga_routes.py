@@ -29,6 +29,7 @@ from .kga_service import assess_kga_decision
 
 MAX_KGA_SCORES = 200_000
 
+
 class _KGAValidationRoute(APIRoute):
     """Keep malformed requests as JSON-safe 422 errors, never certificates."""
 

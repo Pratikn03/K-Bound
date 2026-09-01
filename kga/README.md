@@ -35,7 +35,10 @@ y_fit = 0.15 * x_fit[:, 0] - 0.10 * x_fit[:, 1]
 x_cal = rng.normal(size=(40, len(EVIDENCE_FEATURE_NAMES)))
 y_cal = 0.15 * x_cal[:, 0] - 0.10 * x_cal[:, 1]
 estimator = fit_frozen_linear_benefit_estimator(
-    x_fit, y_fit, x_cal, y_cal,
+    x_fit,
+    y_fit,
+    x_cal,
+    y_cal,
     feature_names=EVIDENCE_FEATURE_NAMES,
     evidence_schema_version="kga-generic-score-evidence/1",
     protocol_sha256=protocol_sha,
@@ -43,7 +46,7 @@ estimator = fit_frozen_linear_benefit_estimator(
 
 # (1) Label-free evidence Z from calibration vs unlabelled test scores.
 calib = rng.normal(0.0, 1.0, size=(500, 3))
-test  = rng.normal(0.0, 1.0, size=(500, 3))
+test = rng.normal(0.0, 1.0, size=(500, 3))
 z = kga.evidence(calib, test)
 print(z.ks_mean, z.disagree, z.ess_frac)
 
@@ -55,7 +58,9 @@ print(cert.delta_hat, cert.epsilon, cert.lower)
 print(kga.decide(cert))
 
 # (4) Audit everything.
-import json; print(json.dumps(kga.explain(), indent=2))
+import json
+
+print(json.dumps(kga.explain(), indent=2))
 ```
 
 Command line:

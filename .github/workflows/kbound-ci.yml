@@ -198,6 +198,9 @@ jobs:
         run: |
           curl -sSfL https://raw.githubusercontent.com/leanprover/elan/master/elan-init.sh | sh -s -- -y --default-toolchain none
           echo "$HOME/.elan/bin" >> "$GITHUB_PATH"
+      - name: Download pinned Mathlib build cache
+        working-directory: docs/research/kbound/formal
+        run: lake exe cache get
       - name: Build KBound Lean package
         run: |
           cd docs/research/kbound/formal

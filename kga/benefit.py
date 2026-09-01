@@ -55,10 +55,21 @@ def _canonical_json_bytes(value: Mapping[str, Any]) -> bytes:
 class BenefitEstimator(Protocol):
     """Protocol implemented by a frozen deployment-time benefit estimator."""
 
-    feature_names: tuple[str, ...]
-    evidence_schema_version: str
-    protocol_sha256: str
-    residuals: np.ndarray
+    @property
+    def feature_names(self) -> tuple[str, ...]:
+        """Ordered names of the estimator's required evidence features."""
+
+    @property
+    def evidence_schema_version(self) -> str:
+        """Evidence schema identity used when fitting the estimator."""
+
+    @property
+    def protocol_sha256(self) -> str:
+        """Digest of the deployment protocol bound to the estimator."""
+
+    @property
+    def residuals(self) -> np.ndarray:
+        """Held-out absolute residuals used for conformal calibration."""
 
     @property
     def artifact_sha256(self) -> str:

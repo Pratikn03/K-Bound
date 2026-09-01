@@ -203,9 +203,7 @@ def route_panel(
     lcbs: list[float] = []
     for i in range(k):
         try:
-            dh, eps, _ = candidate_lcb_from_calibration(
-                deploy_scores[i], cal_scores[i], cal_truth[i], alpha=bonf
-            )
+            dh, eps, _ = candidate_lcb_from_calibration(deploy_scores[i], cal_scores[i], cal_truth[i], alpha=bonf)
         except ValueError:
             # Do not impute missing/nonfinite evidence or drop residuals from
             # the locked pool. This candidate has no usable certificate.
@@ -303,9 +301,7 @@ class AnytimeMulticandidatePanel:
         # a later invalid candidate leaves earlier candidates partially updated.
         for x, process in zip(values, self._procs, strict=True):
             if not math.isfinite(x) or x < process.a or x > process.b:
-                raise ValueError(
-                    f"benefit must be finite and in the predeclared support [{process.a}, {process.b}]"
-                )
+                raise ValueError(f"benefit must be finite and in the predeclared support [{process.a}, {process.b}]")
         self._steps += 1
         # 1. every process ingests the step ...
         for i, x in enumerate(values):
