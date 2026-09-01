@@ -615,7 +615,7 @@ def test_inputting_generated_cct20_results_activates_release_gate(tmp_path: Path
     assert any("lacks a readable release manifest" in problem for problem in problems)
 
 
-def test_completed_cct20_claim_requires_generated_verdict_macros(tmp_path: Path) -> None:
+def test_completed_cct20_claim_requires_generated_verdict_macro(tmp_path: Path) -> None:
     manifest_path, _ = _write_release_manifest(tmp_path)
     snippet = r"\section{CCT-20 evaluation} We report the completed CCT-20 evaluation."
     problems = VALIDATOR.validate_cct20_claims(
@@ -624,7 +624,31 @@ def test_completed_cct20_claim_requires_generated_verdict_macros(tmp_path: Path)
         repository_root=tmp_path,
     )
     assert any("must consume generated \\CCTVerdict" in problem for problem in problems)
-    assert any("must consume generated \\CCTManuscriptClaim" in problem for problem in problems)
+    assert not any("must consume generated \\CCTManuscriptClaim" in problem for problem in problems)
+
+
+def test_completed_cct20_claim_accepts_scoped_prose_without_legacy_claim_expansion(
+    tmp_path: Path,
+) -> None:
+    manifest_path = _write_safe_utility_only_no_adapt_release(tmp_path)
+    # The sealed macro is still checked in the release artifacts; current prose
+    # may qualify inference without expanding that historical sentence.
+    snippet = (
+        r"\section{CCT-20 evaluation} We report the completed CCT-20 evaluation. "
+        r"\CCTVerdict. The recorded safe-utility result is a nominal calculation "
+        r"on the evaluated cells. It is not a finite-sample population-safety guarantee. "
+        r"KGA matched always-freeze and made no ADAPT decisions; "
+        r"the stronger selective-routing criterion was not met."
+    )
+    assert r"\CCTManuscriptClaim" not in snippet
+    assert (
+        VALIDATOR.validate_cct20_claims(
+            snippet,
+            release_manifest_path=manifest_path,
+            repository_root=tmp_path,
+        )
+        == []
+    )
 
 
 @pytest.mark.parametrize("verdict_code", sorted(VALIDATOR.CCT20_VERDICT_CLAIMS))

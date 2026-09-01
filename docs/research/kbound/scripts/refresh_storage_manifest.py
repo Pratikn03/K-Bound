@@ -83,11 +83,12 @@ def refresh(manifest: dict[str, Any]) -> None:
     rows[
         "experiments/kbound/results/reconciled_panels_v1/canonical_panel_results.json"
     ]["drift_note"] = (
-        "The deterministic 2026-08-28 reconciler reproduced the Phase-1 canonical authority "
-        "hash recorded by the provenance audit. Current-policy six-family sensitivity remains "
-        "a separately hashed artifact synchronized into the paper manifests; panel measurements "
-        "are unchanged, and the retrospective Holm gates over the six prospectively named "
-        "contrasts remain false."
+        "The current canonical authority is regenerated from archived panel inputs with "
+        "current generator/source identities. Updating those identities changes the artifact "
+        "hash even if panel measurements agree. Current-policy six-family sensitivity remains "
+        "a separately hashed artifact synchronized into the paper manifests. Historical "
+        "provenance-audit expectations and verdicts are retained; this refreshed row is not "
+        "itself a numerical-invariance test or a new experimental result."
     )
     manifest["generated_by"] = (
         "mechanically refreshed by docs/research/kbound/scripts/"

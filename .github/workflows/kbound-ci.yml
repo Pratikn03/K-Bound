@@ -107,11 +107,10 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version-file: ".python-version"
-      - name: Install minimal deps
+      - name: Install production API profile and test deps
         run: |
           python -m pip install --upgrade pip
-          python -m pip install numpy scipy scikit-learn pandas pyyaml joblib \
-            pytest pytest-cov httpx fastapi 'python-jose[cryptography]' passlib
+          python -m pip install -r requirements-api.txt pytest pytest-cov pandas
       - name: Run unit tests with coverage
         run: |
           pytest \
@@ -120,6 +119,9 @@ jobs:
             tests/test_kga_routing.py \
             tests/test_smoke_trichotomy.py \
             tests/test_kga_api_routes.py \
+            tests/test_kga_masked_inputs.py \
+            tests/test_kga_unavailable_runtime.py \
+            tests/test_kga_unavailable_api.py \
             tests/test_model_governance.py \
             --cov=kga \
             --cov-report=term-missing --cov-report=xml
@@ -200,10 +202,10 @@ jobs:
         run: |
           cd docs/research/kbound/formal
           bash build.sh
-      - name: Strict-100 formal audit
+      - name: Scoped kernel and transitive-axiom audit
         run: |
           cd docs/research/kbound/formal
-          python3 formal_audit.py --build --strict-100
+          python3 formal_audit.py --build --strict-core
 
   kbound-research-tests:
     runs-on: ubuntu-latest
@@ -241,6 +243,25 @@ jobs:
             -q --tb=short
       - name: Repository collection gate
         run: pytest --collect-only -q
+      - name: Current runtime and manuscript regressions (executed)
+        run: |
+          pytest \
+            tests/test_kga_package.py \
+            tests/test_kga_benefit_estimator.py \
+            tests/test_kga_routing.py \
+            tests/test_kga_masked_inputs.py \
+            tests/test_certificate_drift_guard.py \
+            tests/test_kga_unavailable_runtime.py \
+            tests/test_kga_api_routes.py \
+            tests/test_kga_unavailable_api.py \
+            tests/test_kbound_theory_scope.py \
+            tests/test_kbound_formal_audit.py \
+            tests/test_kbound_current_policy_bindings.py \
+            tests/test_kbound_bibliography.py \
+            tests/test_kbound_estimand_inference_wording.py \
+            tests/test_kbound_dashboard_metadata.py \
+            tests/test_reconcile_no_implicit_cleanup.py \
+            -q --tb=short
       - name: Prospective experiment-contract tests
         run: |
           pytest \

@@ -1,7 +1,7 @@
 {
   "schema_version": "kbound-result-manifest-v1",
   "created_at": "2026-08-29T00:00:00Z",
-  "code_commit": "eb4e331550e55549e2b7b1ef305eba44a29e9cf9",
+  "code_commit": "38724b5985116c9f6f4e724e62b3bb7c71f79999",
   "runtime": {
     "builder": "docs/research/kbound/scripts/build_result_manifest.py",
     "worktree_dirty": true
@@ -131,13 +131,13 @@
           "status": "retrospective_current_policy_family_sensitivity",
           "confirmatory": false,
           "artifact_path": "experiments/kbound/results/reconciled_panels_v1/current_policy_cluster_inference.json",
-          "artifact_sha256": "5b1887fc7848ca0a23940806643416c231a04abb62bd141eb318a5e43a36fbdb",
-          "artifact_bytes": 18810,
+          "artifact_sha256": "5942d60b0287604a63442b336f703adc91e55893177b3b0df6f97f5a52e1ff5e",
+          "artifact_bytes": 18964,
           "schema": "kbound-current-policy-cluster-inference-v3",
-          "generated_utc": "2026-08-29T19:54:59.574208+00:00",
-          "git_head": "eb4e331550e55549e2b7b1ef305eba44a29e9cf9",
+          "generated_utc": "2026-08-31T09:45:24.464981+00:00",
+          "git_head": "38724b5985116c9f6f4e724e62b3bb7c71f79999",
           "analysis_script": "docs/research/kbound/scripts/analyze_current_policy_cluster_inference.py",
-          "analysis_script_sha256": "42e7d28135820ae5ec7f456089c7f468216c1becbcf7e017f0e605e7bc7db63c",
+          "analysis_script_sha256": "e450edf1bb21eaa78f81ba74405a12cbe1c63eea38d19bc288b9bb425a8e58c5",
           "runtime": {
             "python": "3.12.13",
             "numpy": "2.4.4",
@@ -146,11 +146,15 @@
           "live_code_bindings": {
             "policy": {
               "path": "kga/policy.py",
-              "sha256": "d63ea5a123d2cd63a3f13fd2f59928dc3fb39f4ee472cc9ad91e5affdd33282b"
+              "sha256": "256d2449787f6b1bebdfbf0eae4b7424b4f60a665ad31c2ef53358e0f52b65cb"
             },
             "certificate": {
               "path": "kga/certificate.py",
-              "sha256": "9fdc11831cc9d2a29d5445d0ecc1098e2b624be92df665f80d58380775a4e4ea"
+              "sha256": "d918a19d0117b8c9e979a79855af24cac437044b82bb7794f52f3f77f100a72b"
+            },
+            "numeric_validation": {
+              "path": "kga/_validation.py",
+              "sha256": "fe2b71602973e39a830c04c2e5059896a2d802ab7e911920a4d84aeb3457803c"
             },
             "preregistered_protocol": {
               "path": "research_lock/STRESS_GRID_MULTISEED_PROTOCOL_A_v1.yaml",
@@ -343,7 +347,7 @@
           "release_interpretation": "Tent has positive ordinary family-bootstrap intervals against both fixed policies. Its within-candidate two-contrast Holm result is post hoc; the retrospectively Holm-adjusted p-values over the six prospectively named contrasts are 0.09375 against both baselines. The exact-rank replay, sign-flip tests, and Holm analysis are retrospective and non-confirmatory; EATA and SAR also fail the gate."
         },
         "independent_checkpoint_inference": "not_available",
-        "artifact_sha256": "ee64e858184cc9f67f4e596183b69880d59d64d267e22d3ba29c422afa609df9",
+        "artifact_sha256": "4239a7b38b087fe8d4c81eb935d9da5104545a228fffb7c956b29c6e00d97062",
         "artifact_bytes": 587516
       }
     },
@@ -392,7 +396,7 @@
           "current_policy_authority": true
         },
         "n_seeds": 5,
-        "artifact_sha256": "ee64e858184cc9f67f4e596183b69880d59d64d267e22d3ba29c422afa609df9",
+        "artifact_sha256": "4239a7b38b087fe8d4c81eb935d9da5104545a228fffb7c956b29c6e00d97062",
         "artifact_bytes": 587516
       }
     },
@@ -441,7 +445,47 @@
           "current_policy_authority": true
         },
         "a7_status": "not_established",
-        "artifact_sha256": "ee64e858184cc9f67f4e596183b69880d59d64d267e22d3ba29c422afa609df9",
+        "test_stream_seed_replication": {
+          "n_decisions": 54,
+          "regret_kga": 0.02150997150997151,
+          "regret_adapt": 0.045797720797720785,
+          "regret_freeze": 0.02172364672364672,
+          "false_adapt_num": 0,
+          "false_adapt_den": 54,
+          "decision_counts": {
+            "ADAPT": 1,
+            "FREEZE": 14,
+            "ABSTAIN": 39
+          },
+          "point_beats_both": true,
+          "ci_robust_beats_both": false,
+          "comparison_inference": {
+            "convention": "baseline_regret_minus_kga_regret; positive values favor KGA",
+            "comparisons": {
+              "always_adapt": {
+                "point": 0.024287749287749277,
+                "ci95": [
+                  0.009188034188034183,
+                  0.032264957264957275
+                ]
+              },
+              "always_freeze": {
+                "point": 0.00021367521367521292,
+                "ci95": [
+                  0.0,
+                  0.0006410256410256387
+                ]
+              }
+            },
+            "unit": "run-seed mean conditional on the archived checkpoint/protocol",
+            "current_policy_authority": true
+          },
+          "a7_status": "not_established",
+          "independent_checkpoint_inference": "not_available",
+          "headline_promotion_eligible": false,
+          "claim_scope": "separate run-seed replication conditional on archived checkpoint identities; subordinate to the KB-CLAIM-020 primary result"
+        },
+        "artifact_sha256": "4239a7b38b087fe8d4c81eb935d9da5104545a228fffb7c956b29c6e00d97062",
         "artifact_bytes": 587516
       }
     },
@@ -597,7 +641,7 @@
         "false_adapt_reported_rate": 0.009259259259259259,
         "decision_replay_available": false,
         "beats_both_promoted": false,
-        "artifact_sha256": "ee64e858184cc9f67f4e596183b69880d59d64d267e22d3ba29c422afa609df9",
+        "artifact_sha256": "4239a7b38b087fe8d4c81eb935d9da5104545a228fffb7c956b29c6e00d97062",
         "artifact_bytes": 587516
       }
     },
@@ -621,7 +665,7 @@
         "false_adapt_den": 480,
         "beats_both_candidates": 0,
         "worse_than_always_adapt_candidates": 8,
-        "artifact_sha256": "ee64e858184cc9f67f4e596183b69880d59d64d267e22d3ba29c422afa609df9",
+        "artifact_sha256": "4239a7b38b087fe8d4c81eb935d9da5104545a228fffb7c956b29c6e00d97062",
         "artifact_bytes": 587516
       }
     },
@@ -671,7 +715,7 @@
         },
         "headline_promotion_eligible": false,
         "opened_target": true,
-        "artifact_sha256": "ee64e858184cc9f67f4e596183b69880d59d64d267e22d3ba29c422afa609df9",
+        "artifact_sha256": "4239a7b38b087fe8d4c81eb935d9da5104545a228fffb7c956b29c6e00d97062",
         "artifact_bytes": 587516
       }
     },
@@ -740,7 +784,7 @@
             }
           }
         },
-        "artifact_sha256": "ee64e858184cc9f67f4e596183b69880d59d64d267e22d3ba29c422afa609df9",
+        "artifact_sha256": "4239a7b38b087fe8d4c81eb935d9da5104545a228fffb7c956b29c6e00d97062",
         "artifact_bytes": 587516
       }
     },
@@ -789,7 +833,7 @@
           "current_policy_authority": true
         },
         "headline_promotion_eligible": false,
-        "artifact_sha256": "ee64e858184cc9f67f4e596183b69880d59d64d267e22d3ba29c422afa609df9",
+        "artifact_sha256": "4239a7b38b087fe8d4c81eb935d9da5104545a228fffb7c956b29c6e00d97062",
         "artifact_bytes": 587516
       }
     },
@@ -903,18 +947,123 @@
         "artifact_sha256": "8db11a797d98c5f104736a5ed982a422982f9f75fc8a7d1c6e13f07a826c0b79",
         "artifact_bytes": 9801
       }
+    },
+    {
+      "claim_id": "KB-CLAIM-053",
+      "dataset": "Camelyon17 B-v2",
+      "protocol": "CAMELYON17_B_V2_ARCHIVED_DIAGNOSTIC",
+      "status": "diagnostic",
+      "source_artifact": "experiments/kbound/results/reconciled_panels_v1/canonical_panel_results.json",
+      "config_hash": null,
+      "config_hash_status": "No single execution-time configuration hash can truthfully represent this aggregate or historical claim. Recoverable serialized configuration hashes, protocol-file hashes, and unresolved gaps are recorded in the Phase-1 provenance seal.",
+      "quantile_rule": "per-candidate/per-run-seed exact-rank leave-one-condition-out residual calibration",
+      "metrics": {
+        "n_decisions": 108,
+        "regret_kga": 0.0006329571759259259,
+        "regret_adapt": 0.001636646412037037,
+        "regret_freeze": 0.1001247829861111,
+        "false_adapt_num": 0,
+        "false_adapt_den": 108,
+        "decision_counts": {
+          "ADAPT": 71,
+          "FREEZE": 0,
+          "ABSTAIN": 37
+        },
+        "point_beats_both": true,
+        "ci_robust_beats_both": false,
+        "comparison_inference": {
+          "convention": "baseline_regret_minus_kga_regret; positive values favor KGA",
+          "comparisons": {
+            "always_adapt": {
+              "point": 0.001003689236111111,
+              "ci95": [
+                0.00016276041666666674,
+                0.0014919704861111112
+              ]
+            },
+            "always_freeze": {
+              "point": 0.09949182581018517,
+              "ci95": [
+                0.09258355034722222,
+                0.11268446180555554
+              ]
+            }
+          },
+          "unit": "run-seed mean conditional on the archived checkpoint/protocol",
+          "current_policy_authority": true
+        },
+        "n_run_seeds": 3,
+        "within_seed_diagnostic": true,
+        "untouched_target_domain_evaluation": false,
+        "independent_checkpoint_identities_recorded": false,
+        "headline_promotion_eligible": false,
+        "claim_scope": "diagnostic cross-fitted stress result only; it is not an untouched held-out natural-domain evaluation and no historical win is promoted",
+        "artifact_sha256": "4239a7b38b087fe8d4c81eb935d9da5104545a228fffb7c956b29c6e00d97062",
+        "artifact_bytes": 587516
+      }
+    },
+    {
+      "claim_id": "KB-CLAIM-054",
+      "dataset": "FMoW",
+      "protocol": "FMOW_PROTOCOL_L_v1",
+      "status": "diagnostic",
+      "source_artifact": "experiments/kbound/results/fmow_protocol_L_v1/VERIFIED_FINDINGS.json",
+      "config_hash": null,
+      "config_hash_status": "No single execution-time configuration hash can truthfully represent this aggregate or historical claim. Recoverable serialized configuration hashes, protocol-file hashes, and unresolved gaps are recorded in the Phase-1 provenance seal.",
+      "quantile_rule": "historical Protocol L analyze_F",
+      "metrics": {
+        "candidate": "sar_online",
+        "n_decisions": 180,
+        "regret_kga": 0.01293847918126778,
+        "regret_adapt": 0.009167574844589754,
+        "regret_freeze": 0.01293847918126778,
+        "false_adapt_conditional_rate": 0.375,
+        "false_adapt_unconditional_rate": null,
+        "point_beats_both": false,
+        "ci_robust_beats_both": false,
+        "verdict": "not-cleared",
+        "canonical_panel_member": false,
+        "headline_promotion_eligible": false,
+        "artifact_sha256": "65ccbd7871ea0ac92fedc5e0c5a4bf8ae2e89b19f07fc63e21a4c7c3c31e747e",
+        "artifact_bytes": 939
+      }
+    },
+    {
+      "claim_id": "KB-CLAIM-055",
+      "dataset": "PovertyMap",
+      "protocol": "POVERTY_PROTOCOL_L_v1",
+      "status": "diagnostic",
+      "source_artifact": "experiments/kbound/results/poverty_protocol_L_dev/VERIFIED_FINDINGS.json",
+      "config_hash": null,
+      "config_hash_status": "No single execution-time configuration hash can truthfully represent this aggregate or historical claim. Recoverable serialized configuration hashes, protocol-file hashes, and unresolved gaps are recorded in the Phase-1 provenance seal.",
+      "quantile_rule": "development harm-detectability screen",
+      "metrics": {
+        "development_screen": "STOP",
+        "development_harm_auc": 0.6372720063441712,
+        "development_harmful_rate": 0.5989583333333334,
+        "stop_reason": "harm_AUC below 0.65 gate",
+        "held_out_evaluation_run": false,
+        "target_score": null,
+        "point_beats_both": null,
+        "ci_robust_beats_both": null,
+        "verdict": "dev-screen-stop",
+        "canonical_panel_member": false,
+        "headline_promotion_eligible": false,
+        "artifact_sha256": "a9a6816ca971569c59e9d11503fe8100df5b905d25f51b05995606874afd2f5d",
+        "artifact_bytes": 509
+      }
     }
   ],
   "reconciliation_source": {
     "canonical_panel": "experiments/kbound/results/reconciled_panels_v1/canonical_panel_results.json",
-    "canonical_panel_sha256": "ee64e858184cc9f67f4e596183b69880d59d64d267e22d3ba29c422afa609df9",
+    "canonical_panel_sha256": "4239a7b38b087fe8d4c81eb935d9da5104545a228fffb7c956b29c6e00d97062",
     "source_manifest": "experiments/kbound/results/reconciled_panels_v1/source_manifest.json",
-    "source_manifest_sha256": "391983f4fa09d65c256ab8c620fea772866b652c219dad0c36574ce38c740482",
+    "source_manifest_sha256": "266ce7cd87ae795e0742d43c40afefef82e82b555baa7dda8c6d270f73e2c031",
     "comparison_ci_convention": "baseline_regret_minus_kga_regret; positive values favor KGA",
     "current_policy_family_sensitivity": {
       "artifact": "experiments/kbound/results/reconciled_panels_v1/current_policy_cluster_inference.json",
-      "artifact_sha256": "5b1887fc7848ca0a23940806643416c231a04abb62bd141eb318a5e43a36fbdb",
-      "artifact_bytes": 18810,
+      "artifact_sha256": "5942d60b0287604a63442b336f703adc91e55893177b3b0df6f97f5a52e1ff5e",
+      "artifact_bytes": 18964,
       "status": "retrospective_not_preregistered_significant"
     },
     "separate_receipt_linked_authorities": {
@@ -931,6 +1080,27 @@
         "artifact_sha256": "8db11a797d98c5f104736a5ed982a422982f9f75fc8a7d1c6e13f07a826c0b79",
         "verdict": "NO_FEASIBLE_CANDIDATE_STOP_BEFORE_GATE_CAL",
         "target_access": "none"
+      }
+    },
+    "separate_historical_diagnostic_authorities": {
+      "fmow_protocol_l": {
+        "claim_id": "KB-CLAIM-054",
+        "artifact": "experiments/kbound/results/fmow_protocol_L_v1/VERIFIED_FINDINGS.json",
+        "artifact_sha256": "65ccbd7871ea0ac92fedc5e0c5a4bf8ae2e89b19f07fc63e21a4c7c3c31e747e",
+        "artifact_bytes": 939,
+        "verdict": "not-cleared",
+        "canonical_panel_member": false,
+        "headline_promotion_eligible": false
+      },
+      "poverty_protocol_l_development": {
+        "claim_id": "KB-CLAIM-055",
+        "artifact": "experiments/kbound/results/poverty_protocol_L_dev/VERIFIED_FINDINGS.json",
+        "artifact_sha256": "a9a6816ca971569c59e9d11503fe8100df5b905d25f51b05995606874afd2f5d",
+        "artifact_bytes": 509,
+        "verdict": "dev-screen-stop",
+        "held_out_evaluation_run": false,
+        "canonical_panel_member": false,
+        "headline_promotion_eligible": false
       }
     },
     "multiplicity_status": {

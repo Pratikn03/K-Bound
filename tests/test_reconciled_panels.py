@@ -487,6 +487,101 @@ def test_historical_policy_artifacts_cannot_imply_a_current_win() -> None:
     assert claim["metrics"]["release_eligible_win"] is False
 
 
+def test_natural_diagnostic_inventory_preserves_evidence_boundaries() -> None:
+    canonical = load("canonical_panel_results.json")
+    panels = canonical["panels"]
+    table = json.loads(
+        (ROOT / "docs/research/kbound/paper/generated/kbound_result_manifest.json").read_text()
+    )
+    ledger = json.loads((ROOT / "docs/research/kbound/claim_ledger.json").read_text())
+    result_manifest = json.loads(
+        (ROOT / "docs/research/kbound/RESULT_MANIFEST.json").read_text()
+    )
+    claims = {row["claim_id"]: row for row in ledger["claims"]}
+    results = {row["claim_id"]: row for row in result_manifest["results"]}
+
+    cam_score = panels["camelyon17"]["b_v2_diagnostic"]["panel"]["candidates"]["sar"]
+    cam_track = table["tracks"]["camelyon17_b_v2_sar"]
+    assert cam_track["n_test"] == cam_score["n"] == 108
+    assert cam_track["regret"] == [
+        cam_score["regret"]["kga"],
+        cam_score["regret"]["always_adapt"],
+        cam_score["regret"]["always_freeze"],
+    ]
+    assert cam_track["point_beats_both"] is True
+    assert cam_track["ci_robust_beats_both"] is False
+    assert cam_track["headline_promotion_eligible"] is False
+    assert cam_track["untouched_target_domain_evaluation"] is False
+    assert cam_track["independent_checkpoint_identities_recorded"] is False
+    cam_metrics = results["KB-CLAIM-053"]["metrics"]
+    assert cam_metrics["within_seed_diagnostic"] is True
+    assert cam_metrics["point_beats_both"] is True
+    assert cam_metrics["ci_robust_beats_both"] is False
+    assert cam_metrics["headline_promotion_eligible"] is False
+
+    office_replication_score = panels["officehome"]["test_stream_seed_replication"][
+        "exact_rank_transfer_score"
+    ]
+    office_replication = results["KB-CLAIM-020"]["metrics"][
+        "test_stream_seed_replication"
+    ]
+    assert office_replication["n_decisions"] == office_replication_score["n"] == 54
+    assert office_replication["decision_counts"] == {
+        "ADAPT": 1,
+        "FREEZE": 14,
+        "ABSTAIN": 39,
+    }
+    assert office_replication["point_beats_both"] is True
+    assert office_replication["ci_robust_beats_both"] is False
+    assert office_replication["a7_status"] == "not_established"
+    assert office_replication["headline_promotion_eligible"] is False
+
+    fmow_rel = "experiments/kbound/results/fmow_protocol_L_v1/VERIFIED_FINDINGS.json"
+    poverty_rel = (
+        "experiments/kbound/results/poverty_protocol_L_dev/VERIFIED_FINDINGS.json"
+    )
+    for claim_id, artifact in (
+        (
+            "KB-CLAIM-053",
+            "experiments/kbound/results/reconciled_panels_v1/canonical_panel_results.json",
+        ),
+        ("KB-CLAIM-054", fmow_rel),
+        ("KB-CLAIM-055", poverty_rel),
+    ):
+        assert claims[claim_id]["status"] == "diagnostic"
+        assert artifact in claims[claim_id]["supporting_artifacts"]
+
+    historical = ledger["reconciliation_source"][
+        "separate_historical_diagnostic_authorities"
+    ]
+    for key, artifact in (
+        ("fmow_protocol_l", fmow_rel),
+        ("poverty_protocol_l_development", poverty_rel),
+    ):
+        path = ROOT / artifact
+        assert historical[key]["artifact"] == artifact
+        assert historical[key]["artifact_sha256"] == hashlib.sha256(
+            path.read_bytes()
+        ).hexdigest()
+        assert historical[key]["artifact_bytes"] == path.stat().st_size
+        assert historical[key]["canonical_panel_member"] is False
+        assert historical[key]["headline_promotion_eligible"] is False
+
+    fmow_metrics = results["KB-CLAIM-054"]["metrics"]
+    assert fmow_metrics["n_decisions"] == 180
+    assert fmow_metrics["false_adapt_conditional_rate"] == pytest.approx(0.375)
+    assert fmow_metrics["false_adapt_unconditional_rate"] is None
+    assert fmow_metrics["point_beats_both"] is False
+    assert fmow_metrics["canonical_panel_member"] is False
+
+    poverty_metrics = results["KB-CLAIM-055"]["metrics"]
+    assert poverty_metrics["development_screen"] == "STOP"
+    assert poverty_metrics["held_out_evaluation_run"] is False
+    assert poverty_metrics["target_score"] is None
+    assert poverty_metrics["point_beats_both"] is None
+    assert poverty_metrics["canonical_panel_member"] is False
+
+
 def test_phase1_release_keeps_long_manuscript_synchronized() -> None:
     kbound = ROOT / "docs/research/kbound"
     active = "\n".join(

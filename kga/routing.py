@@ -20,6 +20,7 @@ from typing import Literal
 
 import numpy as np
 
+from kga._validation import as_float_array
 from kga.certificate import min_calibration_size as _min_calibration_size
 from kga.certificate import split_conformal_rank_radius as _split_conformal_rank_radius
 
@@ -35,7 +36,14 @@ class CandidateCertificate:
     epsilon: float
 
     @property
+    def available(self) -> bool:
+        """Whether this candidate has a finite estimate and usable radius."""
+        return math.isfinite(self.delta_hat) and math.isfinite(self.epsilon) and self.epsilon >= 0.0
+
+    @property
     def lcb(self) -> float:
+        if not self.available:
+            return -math.inf
         return self.delta_hat - self.epsilon
 
 
@@ -43,8 +51,9 @@ class CandidateCertificate:
 class RoutingDecision:
     """Bonferroni multicandidate / multiclass routing outcome.
 
-    ``feasible`` is ``False`` when the calibration set is too small for the
-    Bonferroni level ``alpha / K`` to be attainable (see :func:`route_panel`);
+    ``feasible`` is ``False`` when no candidate has a usable certificate,
+    including when the calibration set is too small for the Bonferroni level
+    ``alpha / K`` to be attainable (see :func:`route_panel`);
     in that case ``selected is None`` and ``committed is False`` regardless of
     the point estimates.
     """
@@ -72,7 +81,7 @@ def split_conformal_rank_radius(cal_errors: np.ndarray, level: float) -> float:
     Inherits the small-``n`` behaviour: ``+inf`` when
     ``ceil((n + 1)(1 - level)) > n``.
     """
-    return _split_conformal_rank_radius(np.abs(np.asarray(cal_errors, dtype=float).ravel()), level)
+    return _split_conformal_rank_radius(np.abs(as_float_array(cal_errors).ravel()), level)
 
 
 def candidate_lcb_from_calibration(
@@ -90,10 +99,12 @@ def candidate_lcb_from_calibration(
     per-candidate calibration requirement is ``K`` times stricter than it looks
     (panel finding F2-7).
     """
-    cal_scores = np.asarray(cal_scores, dtype=float).ravel()
-    cal_truth = np.asarray(cal_truth, dtype=float).ravel()
+    cal_scores = as_float_array(cal_scores).ravel()
+    cal_truth = as_float_array(cal_truth).ravel()
     if cal_scores.shape != cal_truth.shape:
         raise ValueError("cal_scores and cal_truth must have the same shape")
+    if not math.isfinite(float(deploy_score)):
+        raise ValueError("deploy_score must be finite")
     residuals = np.abs(cal_scores - cal_truth)
     eps = split_conformal_rank_radius(residuals, alpha)
     delta_hat = float(deploy_score)
@@ -126,10 +137,15 @@ def bonferroni_multicandidate_route(
     double-counting.  Panel finding F2-15 flagged the dead parameter; it is
     documented rather than deleted because it is part of the published API.
     """
-    if not lcbs:
+    if selector not in ("argmax_lcb", "first_positive"):
+        raise ValueError(f"unknown selector: {selector!r}")
+    arr = as_float_array(lcbs)
+    if arr.ndim != 1:
+        raise ValueError("lcbs must be a one-dimensional sequence")
+    if arr.size == 0:
         return None
-    arr = np.asarray(lcbs, dtype=float)
-    positive = np.where(arr > 0.0)[0]
+    # Overflow/NaN is unavailable evidence, never an exceptionally strong LCB.
+    positive = np.where(np.isfinite(arr) & (arr > 0.0))[0]
     if positive.size == 0:
         return None
     if selector == "first_positive":
@@ -165,22 +181,39 @@ def route_panel(
     ``+inf``, and this function returns ``feasible=False``, ``committed=False``.
     It used to return ``committed=True`` at an unattainable level.
     """
-    deploy_scores = np.asarray(deploy_scores, dtype=float).ravel()
-    cal_scores = np.asarray(cal_scores, dtype=float)
-    cal_truth = np.asarray(cal_truth, dtype=float)
+    deploy_scores = as_float_array(deploy_scores).ravel()
+    cal_scores = as_float_array(cal_scores)
+    cal_truth = as_float_array(cal_truth)
     k = deploy_scores.size
+    if not (0.0 < alpha < 1.0):
+        raise ValueError(f"alpha must be in (0, 1), got {alpha}")
+    if selector not in ("argmax_lcb", "first_positive"):
+        raise ValueError(f"unknown selector: {selector!r}")
+    if k == 0:
+        raise ValueError("route_panel requires at least one candidate")
+    if cal_scores.ndim != 2 or cal_truth.ndim != 2:
+        raise ValueError("cal_scores and cal_truth must be two-dimensional")
     if cal_scores.shape != cal_truth.shape or cal_scores.shape[0] != k:
         raise ValueError("deploy_scores length must match cal_scores/cal_truth rows")
     bonf = alpha / k
     n_min = _min_calibration_size(bonf)
-    n_cal = int(cal_scores.shape[1]) if cal_scores.ndim > 1 else int(cal_scores.size)
+    n_cal = int(cal_scores.shape[1])
     feasible = n_cal >= n_min
     certs: list[CandidateCertificate] = []
     lcbs: list[float] = []
     for i in range(k):
-        dh, eps, lcb = candidate_lcb_from_calibration(deploy_scores[i], cal_scores[i], cal_truth[i], alpha=bonf)
-        certs.append(CandidateCertificate(index=i, delta_hat=dh, epsilon=eps))
-        lcbs.append(lcb)
+        try:
+            dh, eps, _ = candidate_lcb_from_calibration(
+                deploy_scores[i], cal_scores[i], cal_truth[i], alpha=bonf
+            )
+        except ValueError:
+            # Do not impute missing/nonfinite evidence or drop residuals from
+            # the locked pool. This candidate has no usable certificate.
+            dh, eps = float(deploy_scores[i]), math.inf
+        candidate = CandidateCertificate(index=i, delta_hat=dh, epsilon=eps)
+        certs.append(candidate)
+        lcbs.append(candidate.lcb)
+    feasible = feasible and any(candidate.available for candidate in certs)
     selected = None if not feasible else bonferroni_multicandidate_route(lcbs, alpha=alpha, selector=selector)
     return RoutingDecision(
         selected=selected,
@@ -205,8 +238,8 @@ class _BettingEProcess:
         # NOTE (F2-15): this class used to store an unused ``self.alpha``.  The
         # threshold is supplied by ``rejected_null(global_alpha, k)``, which is
         # the only level that matters, so the stale copy has been removed.
-        if not a < 0.0 < b:
-            raise ValueError("a < 0 < b is required")
+        if not math.isfinite(a) or not math.isfinite(b) or not a < 0.0 < b:
+            raise ValueError("finite a < 0 < b is required")
         if not 0.0 < cap < 1.0:
             raise ValueError("cap must be in (0, 1)")
         self.a, self.b = a, b
@@ -239,6 +272,8 @@ class AnytimeMulticandidatePanel:
     def __init__(self, k: int, alpha: float = 0.1) -> None:
         if k < 1:
             raise ValueError("k must be >= 1")
+        if not (0.0 < alpha < 1.0):
+            raise ValueError(f"alpha must be in (0, 1), got {alpha}")
         self.k = k
         self.alpha = float(alpha)
         self._procs = [_BettingEProcess() for _ in range(k)]
@@ -263,10 +298,18 @@ class AnytimeMulticandidatePanel:
         """
         if len(benefits) != self.k:
             raise ValueError(f"expected {self.k} benefits, got {len(benefits)}")
+        values = tuple(float(x) for x in as_float_array(benefits))
+        # Validate the complete step before advancing any process. Otherwise
+        # a later invalid candidate leaves earlier candidates partially updated.
+        for x, process in zip(values, self._procs, strict=True):
+            if not math.isfinite(x) or x < process.a or x > process.b:
+                raise ValueError(
+                    f"benefit must be finite and in the predeclared support [{process.a}, {process.b}]"
+                )
         self._steps += 1
         # 1. every process ingests the step ...
-        for i, x in enumerate(benefits):
-            self._procs[i].update(float(x))
+        for i, x in enumerate(values):
+            self._procs[i].update(x)
         # 2. ... and only then do we look for rejections.
         crossed = [i for i in range(self.k) if self._procs[i].rejected_null(self.alpha, self.k)]
         if not crossed:

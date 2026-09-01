@@ -1,9 +1,11 @@
 #!/usr/bin/env python3
-"""Build the canonical promoted-result manifest from the claim ledger.
+"""Build the canonical empirical-result manifest from the claim ledger.
 
 The ledger controls wording/status. This manifest records one existing authoritative
-artifact for every release-eligible empirical claim and adds bounded, machine-readable
+artifact for every included empirical claim and adds bounded, machine-readable
 metrics for canonical panels plus the separately sealed CCT-20 and So2Sat authorities.
+Historical FMoW/PovertyMap diagnostics are inventoried separately and are never
+treated as canonical-panel or headline evidence.
 """
 from __future__ import annotations
 
@@ -31,8 +33,20 @@ SO2SAT_SELECTION = (
     / "experiments/kbound/results/so2sat_lcz42_prospective_v1/"
     "development_mps_bn_fix_v1/so2sat_candidate_selection.json"
 )
+FMOW_FINDINGS = (
+    ROOT / "experiments/kbound/results/fmow_protocol_L_v1/VERIFIED_FINDINGS.json"
+)
+POVERTY_FINDINGS = (
+    ROOT / "experiments/kbound/results/poverty_protocol_L_dev/VERIFIED_FINDINGS.json"
+)
 CI_CONVENTION = "baseline_regret_minus_kga_regret; positive values favor KGA"
 CURRENT_CLUSTER_SCHEMA = "kbound-current-policy-cluster-inference-v3"
+CURRENT_POLICY_BINDING_PATHS = {
+    "policy": "kga/policy.py",
+    "certificate": "kga/certificate.py",
+    "numeric_validation": "kga/_validation.py",
+    "preregistered_protocol": "research_lock/STRESS_GRID_MULTISEED_PROTOCOL_A_v1.yaml",
+}
 FAMILY_FIELD = "retrospective_holm_over_six_prospectively_named_contrasts"
 COMPARISON_P_FIELD = "p_value_retrospective_holm_six_prospectively_named_contrasts"
 GATE_REJECTS_BOTH_FIELD = "both_sign_flip_tests_survive_retrospective_six_contrast_holm_0_05"
@@ -78,6 +92,45 @@ def validated_separate_authorities(ledger: dict) -> dict:
             or row.get("verdict") != verdict
         ):
             raise ValueError(f"release ledger has a stale or malformed {name} authority")
+    return authorities
+
+
+def validated_historical_diagnostic_authorities(ledger: dict) -> dict:
+    """Validate non-panel FMoW/PovertyMap inventory authorities."""
+
+    reconciliation = ledger.get("reconciliation_source", {})
+    authorities = reconciliation.get("separate_historical_diagnostic_authorities", {})
+    expected = {
+        "fmow_protocol_l": (
+            "KB-CLAIM-054",
+            FMOW_FINDINGS,
+            "not-cleared",
+        ),
+        "poverty_protocol_l_development": (
+            "KB-CLAIM-055",
+            POVERTY_FINDINGS,
+            "dev-screen-stop",
+        ),
+    }
+    if set(authorities) != set(expected):
+        raise ValueError(
+            "release ledger must name exactly the FMoW and PovertyMap historical diagnostics"
+        )
+    for name, (claim_id, path, verdict) in expected.items():
+        row = authorities[name]
+        if (
+            row.get("claim_id") != claim_id
+            or row.get("artifact") != path.relative_to(ROOT).as_posix()
+            or row.get("artifact_sha256") != digest(path)
+            or row.get("artifact_bytes") != path.stat().st_size
+            or row.get("verdict") != verdict
+            or row.get("canonical_panel_member") is not False
+            or row.get("headline_promotion_eligible") is not False
+        ):
+            raise ValueError(f"release ledger has a stale or malformed {name} authority")
+    poverty_authority = authorities["poverty_protocol_l_development"]
+    if poverty_authority.get("held_out_evaluation_run") is not False:
+        raise ValueError("PovertyMap development stop must not imply held-out evaluation")
     return authorities
 
 
@@ -135,6 +188,27 @@ def config_hash_status(claim_id: str) -> str:
     )
 
 
+def _validated_current_policy_bindings(bindings: object) -> dict:
+    """Require the complete canonical binding set, paths, and live file hashes."""
+    if not isinstance(bindings, dict) or set(bindings) != set(CURRENT_POLICY_BINDING_PATHS):
+        raise ValueError(
+            "current-policy family sensitivity must bind exactly "
+            + ", ".join(CURRENT_POLICY_BINDING_PATHS)
+        )
+    for name, relative_path in CURRENT_POLICY_BINDING_PATHS.items():
+        binding = bindings[name]
+        if (
+            not isinstance(binding, dict)
+            or binding.get("path") != relative_path
+            or not isinstance(binding.get("sha256"), str)
+        ):
+            raise ValueError(f"current-policy family sensitivity {name} binding has invalid path/hash metadata")
+        path = ROOT / relative_path
+        if not path.is_file() or digest(path) != binding["sha256"]:
+            raise ValueError(f"current-policy family sensitivity {name} binding is stale")
+    return bindings
+
+
 def current_cluster_metrics() -> dict:
     raw = json.loads(CURRENT_CLUSTER.read_text())
     if raw.get("schema") != CURRENT_CLUSTER_SCHEMA:
@@ -151,10 +225,7 @@ def current_cluster_metrics() -> dict:
             "prospectively named contrasts"
         )
 
-    for name, binding in raw.get("live_code_bindings", {}).items():
-        path = ROOT / binding["path"]
-        if not path.is_file() or digest(path) != binding["sha256"]:
-            raise ValueError(f"current-policy family sensitivity {name} binding is stale")
+    bindings = _validated_current_policy_bindings(raw.get("live_code_bindings"))
 
     candidates = {}
     for candidate in ("tent", "eata", "sar"):
@@ -203,7 +274,7 @@ def current_cluster_metrics() -> dict:
         "analysis_script": raw["analysis_script"],
         "analysis_script_sha256": raw["analysis_script_sha256"],
         "runtime": raw["runtime"],
-        "live_code_bindings": raw["live_code_bindings"],
+        "live_code_bindings": bindings,
         "convention": CI_CONVENTION,
         "inference": raw["inference"],
         "claim_boundary": raw["claim_boundary"],
@@ -248,7 +319,21 @@ def special_metrics(claim_id: str) -> dict:
     if claim_id == "KB-CLAIM-020":
         primary = panels["officehome"]["primary"]
         score = primary["exact_rank_transfer_score"]
-        return {**score_metrics(score), "a7_status": primary["calibration"]["a7_status"]}
+        replication = panels["officehome"]["test_stream_seed_replication"]
+        return {
+            **score_metrics(score),
+            "a7_status": primary["calibration"]["a7_status"],
+            "test_stream_seed_replication": {
+                **score_metrics(replication["exact_rank_transfer_score"]),
+                "a7_status": replication["calibration"]["a7_status"],
+                "independent_checkpoint_inference": "not_available",
+                "headline_promotion_eligible": False,
+                "claim_scope": (
+                    "separate run-seed replication conditional on archived checkpoint "
+                    "identities; subordinate to the KB-CLAIM-020 primary result"
+                ),
+            },
+        }
     if claim_id == "KB-CLAIM-026":
         raw = json.loads(HEADTOHEAD.read_text())
         comparisons = []
@@ -452,12 +537,84 @@ def special_metrics(claim_id: str) -> dict:
             "ci_robust_beats_both": False,
             "headline_promotion_eligible": False,
         }
+    if claim_id == "KB-CLAIM-053":
+        diagnostic = panels["camelyon17"]["b_v2_diagnostic"]
+        score = diagnostic["panel"]["candidates"]["sar"]
+        if (
+            diagnostic["headline_promotion"].get("eligible") is not False
+            or score.get("point_beats_both") is not True
+            or score.get("seed_inference", {}).get("ci_robust_beats_both") is not False
+        ):
+            raise ValueError("Camelyon17 B-v2 SAR diagnostic scope drifted")
+        return {
+            **score_metrics(score),
+            "n_run_seeds": len(diagnostic["panel"]["seeds"]),
+            "within_seed_diagnostic": True,
+            "untouched_target_domain_evaluation": False,
+            "independent_checkpoint_identities_recorded": False,
+            "headline_promotion_eligible": False,
+            "claim_scope": diagnostic["claim_scope"],
+        }
+    if claim_id == "KB-CLAIM-054":
+        raw = json.loads(FMOW_FINDINGS.read_text())
+        score = raw.get("analyze_F", {})
+        if (
+            raw.get("protocol") != "FMOW_PROTOCOL_L_v1"
+            or raw.get("dataset") != "wilds-fmow"
+            or raw.get("verdict") != "not-cleared"
+            or raw.get("headline") is not False
+            or score.get("candidate") != "sar_online"
+            or score.get("n_test") != 180
+            or score.get("beats_both") is not False
+        ):
+            raise ValueError("FMoW historical diagnostic is stale or malformed")
+        return {
+            "candidate": score["candidate"],
+            "n_decisions": score["n_test"],
+            "regret_kga": score["regret_kga"],
+            "regret_adapt": score["regret_adapt"],
+            "regret_freeze": score["regret_freeze"],
+            "false_adapt_conditional_rate": score["false_adapt"],
+            "false_adapt_unconditional_rate": None,
+            "point_beats_both": score["beats_both"],
+            "ci_robust_beats_both": False,
+            "verdict": raw["verdict"],
+            "canonical_panel_member": False,
+            "headline_promotion_eligible": False,
+        }
+    if claim_id == "KB-CLAIM-055":
+        raw = json.loads(POVERTY_FINDINGS.read_text())
+        screen = raw.get("dev_screen", {})
+        if (
+            raw.get("protocol") != "POVERTY_PROTOCOL_L_v1"
+            or raw.get("dataset") != "wilds-poverty"
+            or raw.get("verdict") != "dev-screen-stop"
+            or raw.get("headline") is not False
+            or screen.get("screen") != "STOP"
+            or screen.get("reason") != "harm_AUC below 0.65 gate"
+            or raw.get("held_out_val_test") != "not run per pre-registration"
+        ):
+            raise ValueError("PovertyMap development diagnostic is stale or malformed")
+        return {
+            "development_screen": screen["screen"],
+            "development_harm_auc": screen["harm_AUC"],
+            "development_harmful_rate": screen["harmful_rate"],
+            "stop_reason": screen["reason"],
+            "held_out_evaluation_run": False,
+            "target_score": None,
+            "point_beats_both": None,
+            "ci_robust_beats_both": None,
+            "verdict": raw["verdict"],
+            "canonical_panel_member": False,
+            "headline_promotion_eligible": False,
+        }
     return {}
 
 
 def main() -> None:
     ledger = json.loads(LEDGER.read_text())
     separate_authorities = validated_separate_authorities(ledger)
+    historical_diagnostic_authorities = validated_historical_diagnostic_authorities(ledger)
     results = []
     missing = []
     for claim in ledger["claims"]:
@@ -482,7 +639,9 @@ def main() -> None:
             "quantile_rule": claim.get("calibration_method"), "metrics": metrics,
         })
     if missing:
-        raise FileNotFoundError("promoted empirical claims without an artifact: " + ", ".join(missing))
+        raise FileNotFoundError(
+            "release-manifest empirical claims without an artifact: " + ", ".join(missing)
+        )
     sha = subprocess.run(["git", "rev-parse", "HEAD"], cwd=ROOT, text=True, capture_output=True).stdout.strip() or None
     dirty = bool(
         subprocess.run(
@@ -510,6 +669,7 @@ def main() -> None:
                 "status": "retrospective_not_preregistered_significant",
             },
             "separate_receipt_linked_authorities": separate_authorities,
+            "separate_historical_diagnostic_authorities": historical_diagnostic_authorities,
             "multiplicity_status": ledger["reconciliation_source"][
                 "multiplicity_status"
             ],
@@ -521,7 +681,7 @@ def main() -> None:
         },
     }
     OUT.write_text(json.dumps(payload, indent=2) + "\n")
-    print(f"wrote {OUT} ({len(results)} promoted empirical claims)")
+    print(f"wrote {OUT} ({len(results)} empirical evidence entries)")
 
 
 if __name__ == "__main__":

@@ -1,40 +1,43 @@
-"""kga.policy -- Trichotomy decision rule with the false-adapt <= alpha guarantee.
+"""kga.policy -- Trichotomy with conditional certificate-based error control.
 
 The Knowability-Guided Adaptation (KGA) gate turns a finite-sample certificate
 ``Delta_hat +/- epsilon`` into one of three actions:
 
 * ``ADAPT``   -- the certified lower bound is strictly positive,
-                 ``Delta_hat - epsilon > 0`` (adapting is provably beneficial);
+                 ``Delta_hat - epsilon > 0``;
 * ``FREEZE``  -- the certified upper bound is strictly negative,
-                 ``Delta_hat + epsilon < 0`` (adapting is provably harmful);
+                 ``Delta_hat + epsilon < 0``;
 * ``ABSTAIN`` -- the certificate representation does not support a strict
                  commitment. This may reflect finite sample size, estimator
                  error, transfer failure, or structural ambiguity.
 
-This is exactly the rule implemented in every K-Bound experiment script (e.g.
-``src/scripts/kbound/knowability_experiment.py`` lines 120-121,
-``mixed_regime_experiment.py`` line 94) and in
-``docs/research/kbound/kbound_pkg/kbound/certificate.py::decide``.
+This is the maintained public KGA rule. Historical experiment artifacts retain
+their own declared protocols; this implementation does not retroactively alter
+their calibration designs or validate their statistical assumptions.
 
-False-adapt guarantee (Theorem 3, ``thm:cert`` in
-``docs/research/kbound/kbound.tex``).
-    The certificate is constructed so that the bound ``Delta >= Delta_hat -
-    epsilon`` holds with probability at least ``1 - alpha`` (one-sided).  The
-    ADAPT branch fires only when ``Delta_hat - epsilon > 0``, which on the
-    good event implies ``Delta > 0``.  Therefore
+Conditional certificate criterion.
+    Let ``B`` be the certificate's declared scalar target. If its lower bound
+    satisfies ``P(B >= delta_hat - epsilon) >= 1 - alpha`` under the stated
+    sampling/calibration/transfer assumptions, then ADAPT implies ``B > 0`` on
+    that coverage event. Consequently
 
-        P( ADAPT  and  Delta <= 0 )  <=  alpha,
+        P( ADAPT  and  B <= 0 )  <=  alpha.
 
-    i.e. the probability of a *harmful* adaptation ("false adapt") is bounded by
-    ``alpha``.  The symmetric statement bounds the false-freeze probability.
-    The anytime e-value certificate (Theorem 3b, the testing-by-betting variant
-    validated in ``experiments/kbound/theory_validation/val_thm3_evalue.py``)
-    upgrades this to hold *simultaneously over all sample sizes* via Ville's
-    inequality.
+    The symmetric statement requires a valid upper bound for that same target.
+    Coverage for a measured cell does not, by itself, cover population benefit.
+    These are unconditional joint error-event bounds, not bounds conditional
+    on commitment or a claim of simultaneous two-sided coverage for every
+    certificate method.
 
-Note that the guarantee is inherited entirely from the certificate radius
-``epsilon`` -- the decision function itself is a deterministic threshold and
-introduces no additional error.
+    The specified ``evalue_anytime`` e-process instead controls directional
+    rejection over time for its fixed declared nulls and bounded stream, with
+    predictable bets. Ville's argument does not authorize arbitrary repeated
+    deployment decisions, candidate changes, or an adaptively changed testing
+    setup. Its common certificate container is not a confidence interval.
+
+The threshold function cannot verify the target, coverage, or transfer
+assumptions. Its conditional guarantee is inherited from a valid certificate,
+not created by choosing a numerical radius.
 
 Which function should I call?
 -----------------------------
@@ -68,6 +71,8 @@ from enum import Enum
 from typing import TYPE_CHECKING
 
 import numpy as np
+
+from kga._validation import as_float_array
 
 if TYPE_CHECKING:  # pragma: no cover - import only for type checkers
     from kga.certificate import Certificate
@@ -110,8 +115,10 @@ def decide(certificate: Certificate, alpha: float | None = None) -> Decision:
     Raises
     ------
     ValueError
-        If ``epsilon`` is negative, if ``delta_hat``/``epsilon`` are not finite,
-        or if ``alpha`` is supplied and disagrees with ``certificate.alpha``.
+        If ``epsilon`` is negative or NaN, if ``delta_hat`` is nonfinite,
+        if the level or sample count is invalid, or if ``alpha`` is supplied
+        and disagrees with ``certificate.alpha``. A ``+inf`` radius represents
+        an unavailable finite certificate and returns ABSTAIN.
 
     Notes
     -----
@@ -140,6 +147,12 @@ def decide(certificate: Certificate, alpha: float | None = None) -> Decision:
         raise ValueError("epsilon must not be NaN")
     if epsilon < 0.0:
         raise ValueError(f"epsilon must be non-negative, got {epsilon}")
+    if not (0.0 < float(certificate.alpha) < 1.0):
+        raise ValueError("certificate.alpha must be finite and in (0, 1)")
+    if not isinstance(certificate.n, (int, np.integer)) or isinstance(certificate.n, bool) or certificate.n < 1:
+        raise ValueError("certificate.n must be a positive integer")
+    if alpha is not None and not (0.0 < alpha < 1.0):
+        raise ValueError("alpha must be finite and in (0, 1)")
     if alpha is not None and abs(alpha - float(certificate.alpha)) > 1e-12:
         raise ValueError(
             f"alpha={alpha} does not match certificate.alpha={certificate.alpha}; "
@@ -174,7 +187,7 @@ def decide_batch(delta_hat, epsilon, *, alpha: float = 0.1) -> np.ndarray:
     epsilon : float or array-like
         Confidence radius.  A scalar is broadcast; a per-cell array (what
         :func:`kga.certificate.conformal_radii_loo` returns) is used elementwise.
-        Non-finite entries yield ABSTAIN.
+        Non-finite or masked entries yield ABSTAIN.
     alpha : float, default=0.1
         The level ``epsilon`` was computed at.  Recorded on the intermediate
         certificates so a mismatched level is caught, exactly as in
@@ -196,10 +209,18 @@ def decide_batch(delta_hat, epsilon, *, alpha: float = 0.1) -> np.ndarray:
     """
     from kga.certificate import Certificate
 
-    bh = np.asarray(delta_hat, dtype=float)
-    eps = np.broadcast_to(np.asarray(epsilon, dtype=float), bh.shape)
+    if not (0.0 < alpha < 1.0):
+        raise ValueError(f"alpha must be in (0, 1), got {alpha}")
+    bh = as_float_array(delta_hat)
+    eps = np.broadcast_to(as_float_array(epsilon), bh.shape)
     flat = np.empty(bh.size, dtype=object)
     for i in range(bh.size):
+        # A missing estimate/radius is unavailable evidence, not a negative
+        # interval. Keep scalar validation strict while honoring this batch
+        # API's documented per-cell ABSTAIN contract.
+        if not math.isfinite(float(bh.flat[i])) or not math.isfinite(float(eps.flat[i])):
+            flat[i] = Decision.ABSTAIN.value
+            continue
         cert = Certificate(
             delta_hat=float(bh.flat[i]),
             epsilon=float(eps.flat[i]),
@@ -242,7 +263,7 @@ def decide_kga(
        a lower bound of exactly zero ABSTAINs, matching the ``|M| > beta``
        commitment rule of the knowability frontier.
 
-    Theorem 3 applies conditionally: if the resulting interval has the stated
+    The certificate criterion applies conditionally: if the interval has the stated
     marginal coverage, ADAPT implies positive benefit on the coverage event.
     The leave-one-condition-out grid construction itself is an empirical
     calibration design, not a proof of exact split-conformal coverage.
@@ -295,8 +316,8 @@ def decide_kga(
 
     if calibration not in CALIBRATIONS:
         raise ValueError(f"calibration must be one of {sorted(CALIBRATIONS)}, got {calibration!r}")
-    bh = np.asarray(delta_hat, dtype=float).ravel()
-    bt = np.asarray(benefit, dtype=float).ravel()
+    bh = as_float_array(delta_hat).ravel()
+    bt = as_float_array(benefit).ravel()
     if bh.shape != bt.shape:
         raise ValueError(f"delta_hat and benefit must have the same length, got {bh.size} and {bt.size}")
     residuals = np.abs(bh - bt)

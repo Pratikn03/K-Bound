@@ -52,6 +52,12 @@ DEFAULT_OUTPUT = (
 BASELINES = ("always_adapt", "always_freeze")
 CI_CONVENTION = "baseline_regret_minus_kga_regret; positive values favor KGA"
 PROTOCOL_LOCK = ROOT / "research_lock/STRESS_GRID_MULTISEED_PROTOCOL_A_v1.yaml"
+CURRENT_POLICY_BINDING_PATHS = {
+    "policy": "kga/policy.py",
+    "certificate": "kga/certificate.py",
+    "numeric_validation": "kga/_validation.py",
+    "preregistered_protocol": PROTOCOL_LOCK.relative_to(ROOT).as_posix(),
+}
 SCHEMA = "kbound-current-policy-cluster-inference-v3"
 FAMILY_FIELD = "retrospective_holm_over_six_prospectively_named_contrasts"
 COMPARISON_P_FIELD = "p_value_retrospective_holm_six_prospectively_named_contrasts"
@@ -62,6 +68,14 @@ GATE_PASS_FIELD = "retrospective_six_contrast_cluster_sensitivity_pass"
 
 def sha256(path: Path) -> str:
     return hashlib.sha256(path.read_bytes()).hexdigest()
+
+
+def current_policy_code_bindings() -> dict[str, dict[str, str]]:
+    """Seal the executed replay primitives, including mask-aware coercion."""
+    return {
+        name: {"path": relative_path, "sha256": sha256(ROOT / relative_path)}
+        for name, relative_path in CURRENT_POLICY_BINDING_PATHS.items()
+    }
 
 
 def git_head() -> str | None:
@@ -341,8 +355,6 @@ def build_artifact(args: argparse.Namespace) -> dict[str, Any]:
             and all(protocol_rejects)
         )
 
-    policy_path = ROOT / "kga/policy.py"
-    certificate_path = ROOT / "kga/certificate.py"
     return {
         "schema": SCHEMA,
         "generated_utc": datetime.now(timezone.utc).isoformat(),
@@ -354,20 +366,7 @@ def build_artifact(args: argparse.Namespace) -> dict[str, Any]:
             "numpy": np.__version__,
             "platform": platform.platform(),
         },
-        "live_code_bindings": {
-            "policy": {
-                "path": policy_path.relative_to(ROOT).as_posix(),
-                "sha256": sha256(policy_path),
-            },
-            "certificate": {
-                "path": certificate_path.relative_to(ROOT).as_posix(),
-                "sha256": sha256(certificate_path),
-            },
-            "preregistered_protocol": {
-                "path": PROTOCOL_LOCK.relative_to(ROOT).as_posix(),
-                "sha256": sha256(PROTOCOL_LOCK),
-            },
-        },
+        "live_code_bindings": current_policy_code_bindings(),
         "source_scope": "canonical current-policy exact-rank CIFAR-10-C compact panel",
         "contrast_convention": CI_CONVENTION,
         "inference": {

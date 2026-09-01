@@ -29,6 +29,7 @@ ACTIVE_DRIVER_RELATIVE_PATHS = (
 ACTIVE_SOURCE_RELATIVE_PATHS = (
     "docs/research/kbound/kbound_submission.tex",
     "docs/research/kbound/kbound_submission_body.tex",
+    "docs/research/kbound/kbound_submission_supplement.tex",
     "docs/research/kbound/paper/sections/theory_core_main.tex",
     "docs/research/kbound/paper/sections/theory_algorithm_bridge.tex",
     "docs/research/kbound/paper/sections/theory_certificate.tex",

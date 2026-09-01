@@ -26,21 +26,34 @@ import KBound.Probability.Ville
 import KBound.Probability.MeasureCertificate
 import KBound.Probability.RankCounting
 import KBound.Probability.UniformConformal
+import KBound.Probability.MeasureConformal
+import KBound.Probability.FilteredVille
+import KBound.Probability.InformationBound
+import KBound.Probability.GeneralLeCam
+import KBound.Probability.Concentration
+import KBound.Probability.MeasureSwap
+import KBound.Probability.MeasureTarget
+import KBound.Probability.MeasureFrontier
+import KBound.Probability.ChannelCounterexample
 
 /-!
-# K-Bound paper theorem index (Wave 4 spine + Wave 5 measure + Wave 6 foundations)
+# K-Bound paper theorem index: finite spine and measurable foundations
 
 ## Clause-level coverage of the short-paper spine
 
 `lem:reduction`
 * FORMALIZED: binary benefit/sign algebra (`binary_sign_reduction`, `binary_margin_split`).
-* PEN-AND-PAPER: construction of the conditional correctness function from a target law.
+* FORMALIZED: measurable label kernels, actual joint target laws and the population
+  zero-one loss integral (`MeasureTarget`, `MeasureFrontier`). On disagreement the
+  constructed class is supported on the two predicted labels.
 
 `lem:nonid` and `cor:matched-abstain`
 * FORMALIZED: opposite fixed benefits force abstention; action-probability arithmetic
   (`matched_opposite_worlds_force_abstain`, `abstention_mass_ge_one_sub_two_alpha_arith`).
-* PEN-AND-PAPER: measurable target-label kernels, equality of induced evidence laws, and
-  membership of the constructed laws in the declared drift class.
+* FORMALIZED: measurable target-label kernels and equality of all measurable
+  input-evidence laws; opposite risks within the declared full correctness-field
+  class subject to a calibration-residual budget (`MeasureTarget`, `MeasureFrontier`).
+* NOT INFERRED: membership in an arbitrary restricted deployment class.
 
 `prop:closed-band` and `thm:frontier`
 * FORMALIZED: frontier sufficiency, the three deterministic decision branches, the
@@ -52,19 +65,31 @@ import KBound.Probability.UniformConformal
 * FORMALIZED: a canonical finite discrete measurable target-law construction,
   matched induced evidence laws, and the distributional necessity/pointwise-maximality
   lift under the explicit `RichAt` target-class premise (`KBound/TargetLaw.lean`).
-* PEN-AND-PAPER: realization on an arbitrary non-finite input space and proof that a
-  user-declared target subclass satisfies `RichAt`; these cannot follow without
-  additional assumptions on that subclass.
+* FORMALIZED: arbitrary measurable input spaces, clipped feasible identified
+  interval and exact strict ADAPT/FREEZE equivalences over the full measurable
+  correctness-field class, with unchanged off-disagreement kernel and input law.
+  This construction does not assume `RichAt` (`MeasureFrontier`). It does not
+  establish richness of an arbitrary restricted target subclass.
 
 `thm:certificate`
 * FORMALIZED: pointwise containment of strict directional errors in coverage failure,
-  measure-level error bounds conditional on coverage, and finite uniform-rank/exchangeable-score
-  reductions (certificate, measure, and probability declarations checked below).
+  measure-level error bounds, and one-shot residual coverage derived from
+  exchangeable measurable scores (including ties) and a calibration threshold
+  (`MeasureConformal`), not an assumed uniform-rank conclusion.
 * NOT CLAIMED FORMALIZED: calibration transfer for the paper's heterogeneous deployment tracks or
   a general theorem that leave-one-condition-out empirical calibration is exact conformal.
 
-Successful compilation checks only the declarations listed here; it is not an assertion that the
-pen-and-paper clauses above have been kernel-checked.
+`FilteredVille`, `Concentration`, and `GeneralLeCam` add filtered maximal and
+bounded optional-stopping results, genuine concentration inequalities, and
+general randomized-testing/KL bounds for finite product experiments.
+
+`MeasureSwap` lifts the label-swap obstruction to arbitrary measurable evidence
+channels. `ChannelCounterexample` disproves the historical orbit-selection
+sufficiency claim and proves a set-theoretic fibre-consistency criterion. This
+does not close the historical full one-bit/H/ratio-rate extension.
+
+Successful compilation proves encoded propositions under their explicit
+assumptions; it does not certify empirical preprocessing or calibration transfer.
 -/
 
 namespace KBoundTheoremMap
@@ -143,7 +168,7 @@ namespace KBoundTheoremMap
 #check KBoundNF.matched_opposite_forces_abstain
 #check KBoundNF.continuum_matched_witness
 #check KBoundNF.continuum_impossibility
--- Wave 6: paper-faithful foundation closures
+-- Historical finite probability reductions (retained for compatibility).
 #check KBound.uniformIndexLaw_miss_le_alpha
 #check KBound.uniformIndexLaw_false_adapt_le
 #check KBound.betting_wealth_supermartingale_step
@@ -154,5 +179,100 @@ namespace KBoundTheoremMap
 #check KBound.rate_commit_from_concentration
 #check KBound.evidence_swap_involution
 #check KBound.swap_flips_benefit_preserves_evidence
+
+-- Measurable foundation scope: MeasureConformal.
+#check KBound.exchangeable_scoreLaw_miss_le
+#check KBound.exchangeable_scores_rank_miss_le
+#check KBound.exchangeable_scores_rank_coverage_ge
+#check KBound.calibrationThreshold_rank_le
+#check KBound.exchangeable_calibration_threshold_miss_le
+#check KBound.exchangeable_calibration_threshold_coverage_ge
+#check KBound.exchangeable_residual_coverage_ge
+#check KBound.exchangeable_residual_false_adapt_le
+#check KBound.exchangeable_residual_false_freeze_le
+#check KBound.exchangeable_residual_either_error_le
+
+-- Measurable foundation scope: FilteredVille.
+#check KBound.filtered_optional_stopping_le
+#check KBound.filtered_ville_finite
+#check KBound.filtered_ville
+#check KBound.filtered_ville_alpha
+#check KBound.dominated_eprocess_ville
+#check KBound.eprocess_finite_time_crossing
+#check KBound.filtered_betting_supermartingale
+#check KBound.filtered_betting_anytime
+#check KBound.predictable_betting_wealth_bounds
+#check KBound.predictable_betting_wealth_adapted
+#check KBound.bounded_predictable_betting_anytime
+
+-- Measurable foundation scope: InformationBound.
+#check KBound.binary_bretagnolle_huber
+
+-- Measurable foundation scope: GeneralLeCam.
+#check KBound.measurableTotalVariation_eq_abs_sup
+#check KBound.measurableTotalVariation_symm
+#check KBound.measurableTotalVariation_map_le
+#check KBound.general_lecam_testing_error_ge
+#check KBound.exists_lecam_optimal_test
+#check KBound.general_lecam_inf_testing_error
+#check KBound.general_lecam_worst_case_error_ge
+#check KBound.general_lecam_regret_floor
+#check KBound.general_lecam_iid_testing_identity
+#check KBound.binary_partition_kl_le
+#check KBound.binary_partition_support
+#check KBound.klDiv_map_measurableEquiv
+#check KBound.klDiv_prod_add
+#check KBound.klDiv_iidObservationLaw
+#check KBound.general_bretagnolle_huber_finite
+#check KBound.general_bretagnolle_huber
+#check KBound.general_lecam_exponential_regret_floor
+#check KBound.general_lecam_iid_exponential_regret_floor
+
+-- Measurable foundation scope: Concentration.
+#check KBound.subgaussian_abs_tail
+#check KBound.bounded_independent_sum_tail
+#check KBound.unit_interval_mean_tail
+#check KBound.unit_interval_hoeffding_coverage
+#check KBound.common_mean_hoeffding_coverage
+#check KBound.paired_benefit_hoeffding_coverage
+#check KBound.adapted_subgaussian_sum_tail
+#check KBound.conditional_hoeffding_of_bounded_zero_mean
+#check KBound.bounded_martingale_difference_tail
+
+-- Measurable foundation scope: MeasureSwap.
+#check KBound.measurable_predictionSwap
+#check KBound.predictionSwap_law_involutive
+#check KBound.predictionSwap_preserves_evidence
+#check KBound.predictionSwap_preserves_channel
+#check KBound.predictionSwap_negates_populationBenefit
+#check KBound.evidence_definable_opposite_target
+
+-- Measurable foundation scope: MeasureTarget.
+#check KBound.targetLabelKernel_isMarkov
+#check KBound.joint_target_probability
+#check KBound.target_label_free_law
+#check KBound.measurable_label_kernel_freedom
+#check KBound.measurable_label_kernel_freedom_subtype
+#check KBound.constructed_target_population_benefit
+#check KBound.constant_target_population_benefit
+#check KBound.disagreementMean_bounds
+#check KBound.measurable_target_benefit_reduction
+#check KBound.measurable_correctness_identified_interval
+#check KBound.measurable_target_frontier_attainment
+
+-- Measurable foundation scope: MeasureFrontier.
+#check KBound.correctnessFieldTarget_properties
+#check KBound.correctnessFieldTarget_benefit
+#check KBound.measurable_frontier_class_nonempty
+#check KBound.measurable_frontier_adapt_iff
+#check KBound.measurable_frontier_freeze_iff
+#check KBound.measurable_closed_band_zero_target
+#check KBound.measurable_open_band_opposite_targets
+
+-- Measurable foundation scope: ChannelCounterexample.
+#check KBound.OrbitFibreCounterexample.selected_exactly_one
+#check KBound.OrbitFibreCounterexample.orbit_selection_not_fibre_orientation
+#check KBound.OrbitFibreCounterexample.no_evidence_decoder
+#check KBound.bool_decoder_iff_constant_on_fibres
 
 end KBoundTheoremMap

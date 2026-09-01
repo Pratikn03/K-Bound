@@ -1,157 +1,154 @@
-# K-Bound documentation index
+# K-Bound research map
 
-**Last reconciled:** 2026-08-29 (Phase-1 provenance, CCT-20 target authority, stopped So2Sat development study, and maintained artifacts).
-Previous reconciliation: 2026-07-01 (Wave 4 strict-100 + doc cleanup).
+**Reviewed 2026-08-31.** Start here for the maintained claims, their evidence, and their limits.
+The full audit is [research_traceability.json](audits/research_traceability.json).
+Older status documents and successful numerical validators do not establish theorem closure.
 
-Use this file instead of dated status notes. Stale process MDs from June 2026 were removed;
-history remains in git.
+## What the research actually establishes
 
----
+| Finding | Manuscript | Proof or implementation | Scope |
+|---|---|---|---|
+| Benefit is not identified from prediction evidence alone when matched-evidence worlds have opposite signs. | [Core theory](paper/sections/theory_core_main.tex) | [Impossibility](formal/KBound/Impossibility.lean), [measurable frontier](formal/KBound/Probability/MeasureFrontier.lean) | Explicit admissible target class; not a claim that every practical problem is unidentifiable. |
+| The clipped identified benefit interval gives the strict ADAPT/FREEZE/ABSTAIN frontier. | [Core theory](paper/sections/theory_core_main.tex) | [Measurable target construction](formal/KBound/Probability/MeasureTarget.lean), [frontier](formal/KBound/Probability/MeasureFrontier.lean) | Binary zero-one loss (or labels supported only on the two predictions on their disagreement region), full declared correctness-field class, feasible margins, positive disagreement mass; equality supports no strict commitment. |
+| A valid interval controls erroneous directional commitments. | [Certificate theorem](paper/sections/theory_certificate.tex) | [Measure certificate](formal/KBound/Probability/MeasureCertificate.lean), [exchangeable residual coverage](formal/KBound/Probability/MeasureConformal.lean), [current certificate](../../../kga/certificate.py) | Marginal, named-target coverage premise; neither conditional false-adapt control nor repeated-use protection follows automatically. |
+| The audit floor explains why unrelated source labels cannot identify the target residual budget. | [Shared body](kbound_submission_body.tex) | Pen-and-paper fibre argument in the body; finite validators are supporting examples. | This general audit-floor statement is not itself one of the registered Lean capstones. |
+| Additional probability foundations supply coverage, testing, concentration, and anytime ingredients. | [Formal-scope supplement](kbound_submission_supplement.tex) | [Formal package](formal/README.md) | Five foundational layers under explicit assumptions; the historical sixth one-bit/H/ratio-rate extension remains incomplete. |
+| Orbit selection alone does not ensure a consistent sign on an evidence fibre. | [Supplement](kbound_submission_supplement.tex) | [Channel counterexample](formal/KBound/Probability/ChannelCounterexample.lean) | A genuine negative result. It must not be overwritten by older “one bit closes the theory” language. |
 
-## Start here
+The population variables are `M, gamma, beta`; gamma is a calibration residual, not automatically
+distribution drift. Empirical KGA uses `Delta_hat, epsilon`, not a numerical beta input. Covering
+an observed batch outcome is different from covering population risk.
 
-| Doc | Role |
-|-----|------|
-| [`KBOUND_PHASE1_PROVENANCE_AUDIT_2026-08-27.md`](KBOUND_PHASE1_PROVENANCE_AUDIT_2026-08-27.md) | Current configuration, dataset, checkpoint, and code-hash coverage, with unrecoverable historical identities kept explicit. |
-| [`audits/empirical_data_quality_2026_08_27/audit_summary.json`](audits/empirical_data_quality_2026_08_27/audit_summary.json) | Machine-readable 2026-08-27 forensic snapshot; its 14/14 checksum result refers to pre-Phase-1 bytes, and its unopened-target statement predates CCT-20/So2Sat. |
-| [`KBOUND_EMPIRICAL_AND_RELEASE_CLOSURE_PLAN.md`](KBOUND_EMPIRICAL_AND_RELEASE_CLOSURE_PLAN.md) | **ACTIVE.** Executable plan for natural evidence, uniform protocols, official baselines, camera validation, and release CI. |
-| [`KBOUND_SHORT_RESULT_AUDIT.md`](KBOUND_SHORT_RESULT_AUDIT.md) | Current source-hashed empirical verdicts and protocol scope. |
-| [`KBOUND_SHORT_CLAIM_MANIFEST.md`](KBOUND_SHORT_CLAIM_MANIFEST.md) | Current claim-to-artifact authority. |
-| [`paper/generated/cct20_release_manifest.json`](paper/generated/cct20_release_manifest.json) | Separate receipt-linked authority for the prospective CCT-20 target result (`SAFE_UTILITY_ONLY`, not strong routing success). |
-| [`../../../experiments/kbound/results/so2sat_lcz42_prospective_v1/development_mps_bn_fix_v1/README.md`](../../../experiments/kbound/results/so2sat_lcz42_prospective_v1/development_mps_bn_fix_v1/README.md) | Separate authority for the So2Sat negative development-gate stop; no target access and no target score. |
-| [`KBOUND_RELEASE_SHA256SUMS.txt`](KBOUND_RELEASE_SHA256SUMS.txt) | Release byte seal. Treat it as authoritative only after `runbooks/release_candidate.sh checksums` is run on the final frozen artifacts and every entry verifies. |
-| [`SUBMISSION_LEDGER.md`](SUBMISSION_LEDGER.md) | Historical July/August freeze ledger; superseded for current verdicts and paths. |
-| [`KBOUND_RELEASE_CLEANUP_REPORT_2026-08-27.md`](KBOUND_RELEASE_CLEANUP_REPORT_2026-08-27.md) | Historical pre-Phase-1 cleanup/checksum snapshot; operational cleanup ledger only. |
-| [`COMPARISON_FAMILY.md`](COMPARISON_FAMILY.md) | Superseded 2026-07-26 search census and proposed Holm family; retained as history, not current multiplicity evidence. |
-| [`README.md`](README.md) | Repo tour, current-state banner, evidence tiers, quick reproduce |
-| [`../../../DATA.md`](../../../DATA.md) | **NEW 2026-07-26.** Per-dataset version, split, DOI/URL, licence, acquisition, and which table depends on it |
-| [`PLACEHOLDER_INVENTORY.md`](PLACEHOLDER_INVENTORY.md) | **NEW 2026-07-26.** The 143 unreadable iCloud placeholders, what depends on them, recovery command, release-guard spec |
-| [`PHASE6_LEAKAGE_AUDIT.md`](PHASE6_LEAKAGE_AUDIT.md) | **Corrected 2026-07-26** — its 2026-07-21 "PASS (clean)" verdict is retracted at the top of the file |
-| [`PIPELINE_VS_PDF_AUDIT.md`](PIPELINE_VS_PDF_AUDIT.md) | Superseded July showcase/PDF map; retained as history, not the current generation chain |
-| [`PROJECT_STATUS_AND_OPEN_PROBLEMS.md`](PROJECT_STATUS_AND_OPEN_PROBLEMS.md) | Theory ledger, empirical ledger, freeze gate (superseded by `SUBMISSION_LEDGER.md` where they disagree) |
-| [`THEORY_100_PERCENT_CLOSURE_PLAN.md`](THEORY_100_PERCENT_CLOSURE_PLAN.md) | Wave 4 closure gate (`formal_audit.py --strict-100`) |
-| [`THEORY_TO_CODE_MAP.md`](THEORY_TO_CODE_MAP.md) | Theorem → proof → validator → code → JSON |
-| [`claim_ledger.json`](claim_ledger.json) | Every claim ID → artifact → allowed wording |
+### Formal inventory: counts have different meanings
 
-### Superseded — stamped in place, retained as history
+A fresh full compiler audit checked **238 authored theorem/lemma statements**:
+142 registered capstones, 11 further indexed results, and 85 unindexed support/results.
+The complete compiled inventory has 632 declarations; generated auxiliaries, definitions, instances,
+and projections are not additional independent research contributions. All compiled declarations
+passed the axiom/safety audit, with only the standard `propext`, `Classical.choice`, and `Quot.sound`
+axioms observed. Exact types, source hashes, and the compiler receipt are recorded in the audit bundle.
 
-`GAP_AUDIT.md`, `INTEGRITY_FIXES.md` (both repo root), `EVIDENCE_MATRIX.md`,
-`PHASE7_INTEGRATION_AUDIT.md`, `KBOUND_RESULT_AUDIT.md`,
-`KBOUND_EMPIRICAL_RECOVERY_AUDIT_2026-08-13.md`,
-`KBOUND_TABLE4_NATURAL_SHIFT_RECONCILIATION_2026-08-27.md`, `COMPARISON_FAMILY.md`, and
-`REVIEWER_REPRO_PACKET.md` (partially). Each carries a header stating what it still gets wrong or
-is listed here as retained process history. Registry: `SUBMISSION_LEDGER.md §11`.
-The July `audits/MAIN_PAPER_*` files and dated generated audit snapshots are routed through
-[`audits/README.md`](audits/README.md); they do not override the current claim ledger.
+This is broader than the 142-item release registry, but it does not close the historical sixth
+foundational layer or establish that empirical calibration assumptions hold.
 
----
+## Results, including the work that was hard to find
 
-## Papers (source of truth for claims)
+| Evidence | Authority | Honest interpretation |
+|---|---|---|
+| CIFAR-10-C Tent/EATA/SAR | [Canonical panel](../../../experiments/kbound/results/reconciled_panels_v1/canonical_panel_results.json), [current-policy sensitivity](../../../experiments/kbound/results/reconciled_panels_v1/current_policy_cluster_inference.json) | Tent/EATA have lower pooled point-estimate regret than both fixed policies; SAR favors always-adapt. Tent's retrospective six-contrast Holm-adjusted p-values are 0.09375. No confirmatory routing result. |
+| Interval quality and action exposure | [Interval diagnostics](paper/generated/current_policy_interval_diagnostics.json) | 2,160 cells per candidate; retrospective inclusion, widths, and false-direction counts. Rank-based observed inclusion is not new independent coverage evidence. |
+| Controlled two-view MNIST (D33) | [Results](../../../experiments/kbound/results/controlled_multimodal_d33/results.json), claim KB-CLAIM-027 | 130 conditions: 9 ADAPT, 119 FREEZE, 2 ABSTAIN. Recorded mean accuracy is 85.6785%, versus 85.3554% single-A and 58.3231% always-fuse. Zero observed false ADAPT among only nine ADAPT decisions does not establish a small conditional error rate. Controlled injected corruption, not a natural-shift result; absent from the maintained paper. |
+| Population/empirical decision bridge | [Seven-example bridge](../../../experiments/kbound/results/frontier_kga_bridge_v1/bridge_results.json), claim KB-CLAIM-043 | Five agreements and two disagreements show why the two APIs are related but have different abstention sets. A controlled algebraic diagnostic, not a real-data beta estimator. |
+| CCT-20 | [Receipt-linked result](paper/generated/cct20_release_manifest.json) | Prospective safe-utility endpoint: 44 FREEZE, zero ADAPT, one ABSTAIN; ties freeze and avoids measured adaptation harm. No selective-routing gain; bootstrap levels are nominal. |
+| So2Sat | [Development stop](../../../experiments/kbound/results/so2sat_lcz42_prospective_v1/development_mps_bn_fix_v1/README.md) | No feasible candidate; no target access and no target natural-shift score. |
+| Other natural studies | [Result audit](KBOUND_SHORT_RESULT_AUDIT.md), [claim manifest](KBOUND_SHORT_CLAIM_MANIFEST.md) | Office-Home, Camelyon17 OOD, RxRx1, PACS, ImageNet-R and CIFAR-10.1 have differing diagnostic/retention roles. The iWildCam numerical/action row remains withheld; fMoW is not cleared and PovertyMap stopped before held-out evaluation. |
 
-| Artifact | Pages | Use |
-|----------|------:|-----|
-| [`kbound_submission.tex`](kbound_submission.tex) / [`kbound_short_final_draft.pdf`](kbound_short_final_draft.pdf) / [`kbound_short_final_draft.docx`](kbound_short_final_draft.docx) | 30 | Primary compact Phase-1 submission and synchronized Word export |
-| [`kbound_tmlr.tex`](kbound_tmlr.tex) / [`kbound_tmlr.pdf`](kbound_tmlr.pdf) | 34 | Maintained anonymous official-style TMLR driver synchronized through `kbound_submission_body.tex` |
+The historical `three_source_oof` block in
+[the table manifest](paper/generated/kbound_result_manifest.json) still carries a stale positive CI
+verdict. KB-CLAIM-024 correctly treats this as a historical constructed aggregate requiring a
+reconciled rerun. Do not promote that block; correcting its generator and adding a regression guard
+remains open. The maintained paper does not claim that aggregate as a natural win.
 
----
+### Useful theory outside the paper—not a queue of ready-made theorems
 
-## Reproduce & train
+- The [joint wrong-direction bound](formal/KBound/Probability/MeasureConformal.lean) controls the
+  union of the two errors at alpha in one covered experiment; the active statement gives the
+  marginal bounds separately.
+- [UnitMismatch](formal/KBound/UnitMismatch.lean) and [Stability](formal/KBound/Stability.lean)
+  contain useful transfer/negative results. They do not prove that arbitrary LOO residuals are
+  exchangeable.
+- [JackknifePlus](formal/KBound/JackknifePlus.lean) proves counting ingredients, not the complete
+  Jackknife+ coverage theorem.
+- Episode budgets, regression brackets, Gaussian certification prices, and multiclass witnesses
+  contain useful ideas, but their excluded drafts have assumption, constant, or statement defects.
+  The audit records what can be retained and what needs a new proof. Do not import whole files.
+- The [separate multiclass-vector track](../multiclass_vector_capacity/README.md) has 46 verified
+  local named Lean proofs and 103 exact certificates. Its ledger explicitly forbids promotion into
+  K-Bound: most of its proposed research program and novelty assessment remain open.
 
-| Command / doc | Purpose |
-|---------------|---------|
-| `bash docs/research/kbound/runbooks/release_candidate.sh all` | Current clean-checkout publication gate: authorities, generation, tests, Lean, both PDFs, required compact DOCX, PDF rendering, checksums |
-| `bash docs/research/kbound/scripts/reproduce_submission.sh` | Historical compatibility verifier; not sufficient for a current release PASS |
-| `BUILD_LONG_TMLR=1 BUILD_DOCX=1 bash docs/research/kbound/scripts/build_pdfs.sh` | Direct manuscript build of the compact PDF, synchronized long companion, and required compact DOCX |
-| `bash docs/research/kbound/scripts/kbtrain.sh theory-v2` | Wave 4 validators + routing selftest |
-| `bash docs/research/kbound/scripts/kbtrain.sh smoke-all` | ~0.5% smoke, single seed, all 9 datasets |
-| `bash docs/research/kbound/scripts/kbtrain.sh smoke-all-v2` | ~1% **multiseed** smoke (Protocol-A CIFAR, theory preflight) |
-| `bash docs/research/kbound/scripts/run_smoke_showcase.sh` | **Multiseed smoke + locked-analysis mini-run + pipeline report** |
-| `bash docs/research/kbound/scripts/kbtrain.sh final-all-v2` | Theory preflight + full 9-dataset GPU refresh |
-| `bash docs/research/kbound/scripts/run_85plus_readiness.sh` | **85+ scorecard** — theory, smoke, edge, RxRx1 blockers |
-| `bash docs/research/kbound/edge/scripts/run_edge_source_gate.sh` | Physical R2 phase 1: S01–S02 + 0.80 gate |
-| `bash docs/research/kbound/scripts/prepare_rxrx1_data.sh` | RxRx1 download instructions / check |
-| `bash docs/research/kbound/scripts/run_final_showcase.sh` | Legacy train-and-showcase workflow; not the maintained publication generator |
-| [`REVIEWER_REPRO_PACKET.md`](REVIEWER_REPRO_PACKET.md) | External reproducer checklist |
-| [`RUN_FINAL_SHOWCASE.md`](RUN_FINAL_SHOWCASE.md) | Pre-registered showcase wrapper (calls `final-all-v2`) |
+## Current software and release gaps
 
----
+The root distribution publishes `kga` and `kga.*`. The hardened core decision path and focused
+HTTP checks pass, but this does **not** make all shipped wrappers safe:
 
-## Theory & formal
+1. [Experiment shim](scripts/kbound_decide.py): masking can be lost; errors can fall through to
+   comparisons that certify infinite estimates or negative radii.
+2. [Public assumption helpers](../../../kga/assumptions.py): masked calibration can produce a
+   zero radius and a “certify” gate; empty calibration can raise a formatting exception.
+3. [ELARA integration](../../../kga/integrations/elara.py): the artifact's own protocol/schema
+   identity is supplied as its expected identity; masked inputs and non-JSON-safe infinity remain.
+4. [Promotion assessor](../../../kga/integrations/claims.py): malformed Boolean, failure-list, and
+   probability metadata can be accepted.
+5. The historical [prototype](kbound_pkg/README.md) and edge adapter paths have further legacy
+   contract gaps. Gradient scaling is not parameter-preserving FREEZE. Compatibility tests do not
+   certify deployment safety.
 
-| Path | Role |
-|------|------|
-| [`formal/README.md`](formal/README.md) | Lean 4 package + `formal_audit.py` |
-| [`theory_v2/`](theory_v2/) | Wave 4 `.tex` fragments + `val_*.py` |
-| [`theory_v2/UNCONDITIONAL_WEAKEST_CLASS_ATTEMPT.md`](theory_v2/UNCONDITIONAL_WEAKEST_CLASS_ATTEMPT.md) | `thm:uncond-weakest` derivation notes |
-| [`THEORY_AUDIT_senior_review.md`](THEORY_AUDIT_senior_review.md) | External-style theory review |
-| `bash docs/research/kbound/scripts/theory_audit_full.sh` | Full theory audit report |
+These failures were reproduced with synthetic fixtures, without opening target data. They do not
+by themselves show that the existing finite-valued canonical panel is numerically wrong. They are
+release blockers until corrected and covered by regression tests.
 
----
+The full isolated audit ran 130 test modules. It is not a clean-checkout release: missing data,
+Git/cache context, stale assertions, and a native OpenMP problem are reported separately from
+passing tests and reproduced software bugs. See the machine audit for exact counts and logs.
 
-## Protocols & empirics
+## Maintained artifacts and authoritative inputs
 
-| Doc | Role |
-|-----|------|
-| [`MIXED_BENCHMARK_PROTOCOL.md`](MIXED_BENCHMARK_PROTOCOL.md) | Mixed harmful+helpful benchmark |
-| [`gate_comparison.md`](gate_comparison.md) | Decision-gate vs certificate |
-| [`realshift_win/PROTOCOL_realshift_win.md`](realshift_win/PROTOCOL_realshift_win.md) | Real-shift win protocol |
-| [`RELEASE_10X_TRACK.md`](RELEASE_10X_TRACK.md) | Release artifact manifest |
+| Read/build | Maintained path |
+|---|---|
+| Compact submission | [kbound_submission.tex](kbound_submission.tex), [PDF](kbound_short_final_draft.pdf), [Word](kbound_short_final_draft.docx) |
+| Synchronized long companion | [kbound_tmlr.tex](kbound_tmlr.tex), [PDF](kbound_tmlr.pdf) |
+| Shared manuscript | [Body](kbound_submission_body.tex), [supplement](kbound_submission_supplement.tex); the recursive live closure has 23 TeX inputs |
+| Current claim wording | [claim_ledger.json](claim_ledger.json); theorem entries were reviewed against actual proofs in this audit |
+| Canonical panel provenance | [source_manifest.json](../../../experiments/kbound/results/reconciled_panels_v1/source_manifest.json), [Phase-1 audit](KBOUND_PHASE1_PROVENANCE_AUDIT_2026-08-27.md) |
+| Current full audit | [research_traceability.json](audits/research_traceability.json) |
+| Reproduction and publication checklist | [REPRODUCE.md](REPRODUCE.md), [RELEASE_CHECKLIST.md](RELEASE_CHECKLIST.md), [data acquisition](../../../DATA.md) |
 
----
+This audit does not rebuild the PDFs/Word file or manufacture a clean-source release seal.
+[The prior revision receipt](audits/revision_verification_2026_08_31.json) and
+[KBOUND_RELEASE_SHA256SUMS.txt](KBOUND_RELEASE_SHA256SUMS.txt) are historical snapshots; they do not
+attest the newly edited working tree. Final source freeze, clean-checkout verification and fresh
+independently verified release checksums remain required. Full Git object integrity is still
+unverified, not demonstrated corrupt.
 
-## Edge / camera (open empirical)
+From the repository root, these are separate checks:
 
-| Doc | Role |
-|-----|------|
-| [`edge/README.md`](edge/README.md) | Physical deployment package |
-| [`edge/PHYSICAL_STUDY_RUNBOOK.md`](edge/PHYSICAL_STUDY_RUNBOOK.md) | Capture S01–S10 |
-| [`edge/R2_SESSION_TRACKER.md`](edge/R2_SESSION_TRACKER.md) | Session log (KB-CLAIM-030 pending) |
+~~~bash
+python docs/research/kbound/scripts/validate_canonical_release_data.py
+python src/scripts/validate_manuscript_claims.py
+python docs/research/kbound/scripts/build_current_policy_interval_diagnostics.py --check
+bash docs/research/kbound/formal/build.sh --json-out /tmp/kbound-formal-audit.json
+~~~
 
----
+The full publication workflow remains `bash docs/research/kbound/runbooks/release_candidate.sh all`
+from a reviewed clean commit using the pinned research environment. It is not equivalent to the
+component checks above and it does not launch training.
 
-## Generated reports (`reports/`)
+## Documentation cleanup
 
-Auto-written or point-in-time audits — **not** canonical status:
+Eight superseded process documents were removed from the active tree only after byte-for-byte
+recovery verification. Their paths, SHA-256 hashes, reasons, replacement authorities, and recovery
+archive name are in [the audit](audits/research_traceability.json). The recovery archive lives
+outside this repository; dated historical references to removed paths can be resolved through that
+receipt.
 
-- `reports/THEORY_AUDIT_FULL.md` — from `theory_audit_full.py`
-- `reports/reproducibility_release_report.md` — from `reproduce_submission.sh`
-- `reports/KBOUND_10X_FINAL_GATE.md` — June 2026 gate snapshot
+Removed: the old manuscript strategy, two completed/obsolete cleanup plans, three July
+`MAIN_PAPER_*` review projections, the July nontraining claim matrix, and the old 10X rating gate.
+No dataset, checkpoint, proof, TeX source, implementation, unique derivation, sealed protocol,
+or unreadable cloud placeholder was deleted.
 
-The July reproducibility report and `RELEASE_MANIFEST.json` are historical PASS snapshots, not a
-PASS for the current checkout. They remain stamped in place as history; the current certification
-surface is the successful final clean-checkout gate output together with a freshly generated and
-verified `KBOUND_RELEASE_SHA256SUMS.txt`.
+Retained but **not current authority**:
 
----
+- `THEORY_TO_CODE_MAP.md`, `THEORY_100_PERCENT_CLOSURE_PLAN.md`, and
+  `PROJECT_STATUS_AND_OPEN_PROBLEMS.md`: contain obsolete closure/status assertions; do not use
+  them to override this map or the active theorem statements.
+- `KBOUND_EMPIRICAL_AND_RELEASE_CLOSURE_PLAN.md`: executed in part and superseded as current
+  status, not an active blanket work order.
+- `KBOUND_REMAINING_TODOS.md`: preserves calibration/leakage correction history and still has
+  incoming references.
+- `reports/THEORY_AUDIT_FULL.md`: generated by a historical checker with stale fixed expectations;
+  not a current proof-completeness gate.
+- Audit receipts, research locks, unique failed attempts, reproducibility instructions, and
+  download scripts still needed to obtain data: retained for scientific reproducibility.
 
-## Deprecated (do not use)
-
-| Path | Note |
-|------|------|
-| [`manuscript/`](manuscript/README.md) | Parallel book; stale `conj:gen` wording |
-| `kbound_short.tex`, `kbound_short_body.tex`, `kbound_short_appendix.tex` | Superseded empirical archive; excluded from maintained drivers |
-| `kbound.pdf`, `kbound_edited.pdf`, `kbound_long_companion.pdf`, `kbound_short.pdf`, `kbound_short_edited.pdf`, `kbound_short_companion.pdf`, `kbound_short.docx` | Historical compatibility snapshots; not refreshed or delivered |
-
----
-
-## Optional ops plans (not theory closure)
-
-| Doc | Role |
-|-----|------|
-| [`REPO_CLEANUP_PLAN.md`](REPO_CLEANUP_PLAN.md) | Disk / dataset tiering (~800 GB) |
-| [`REPO_LEVEL80_PLAN.md`](REPO_LEVEL80_PLAN.md) | Architecture & CI hardening plan |
-| [`RELEASE_CHECKLIST.md`](RELEASE_CHECKLIST.md) | Zenodo / PyPI publish steps |
-
----
-
-## What is still open (not doc gaps)
-
-1. No natural result currently establishes CI-robust beats-both routing. CCT-20 completed as
-   `SAFE_UTILITY_ONLY`; So2Sat stopped at development with no feasible candidate and no target access.
-2. Independent Office-Home and official-metric, population-sealed iWildCam reruns remain optional
-   extensions if stronger natural evidence is sought.
-3. PACS per-cell replay and official POEM/AETTA runs remain optional evidence upgrades.
-4. Physical camera R2 captures remain pending; they are not required for the theory-led claim set.
-5. Final venue/anonymity selection, clean-checkout release gate, and source-hashed release freeze.
-
-Everything in the **theory closure plan** (Section A + B) is **done**.
+[Audit-history rules](audits/README.md) explain how dated records are kept separate from current
+evidence. No old cleanup plan authorizes further deletion.

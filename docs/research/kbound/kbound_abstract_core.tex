@@ -1,24 +1,16 @@
 % Shared abstract text for both maintained drivers.
-Test-time adaptation updates a deployed model without target labels, but an update can help or
-harm. K-Bound asks the decision that comes first: when does label-free evidence justify replacing a
-frozen model with an adapted candidate? It allows three actions---\adapt, \freeze, and \abstain---for
-the benefit $\Delta=R_T(f_0)-R_T(f_a)$. In a binary disagreement model,
-$\Delta=2\mu_T(D)(M+\gamma)$ separates an observable margin $M$ from hidden calibration drift
-$\gamma$. If the declared class satisfies $|\gamma|\le\beta$, a strict population action is
-uniformly supportable exactly when $|M|>\beta$. Throughout the closed band $|M|\le\beta$, the same
-label-free evidence does not uniformly support either strict action. Without added labels or a stated
-coupling, the same label-free evidence cannot shrink the unresolved drift budget. The
-practical method, Knowability-Guided Adaptation (\KGA), is separate: it predicts $\Delta$ and acts
-only when $\widehat\Delta\pm\varepsilon$ excludes zero. Here $\varepsilon$ is an empirical
-uncertainty radius, not an estimate of $\beta$.
-On controlled CIFAR-10-C, reconciled results give point gains for Tent and EATA. Tent also has
-positive ordinary intervals over six corruption families. Holm over the six prospectively named
-contrasts gives adjusted retrospective sign-flip values of $0.09375$ for both Tent comparisons.
-Because the replay, corruption-family unit, and test were not preregistered, this is not confirmatory
-evidence. On the locked CCT-20 camera-location
-shift, \CCTCheckpointCount{} checkpoints across \CCTLocationCount{} locations produced
-\CCTCellCount{} cells. KGA made \CCTFreezeCount{} FREEZE, \CCTAbstainCount{} ABSTAIN, and
-\CCTAdaptCount{} ADAPT decisions. It matched always freeze and was more accurate than always adapt.
-It did not support the predeclared stronger claim.
-This is a safe-utility result, not evidence of selective natural-shift routing. K-Bound is a
-validity and rollback layer, not a universal accuracy booster.
+Test-time adaptation updates a model without new target labels, but an update can help or harm.
+We ask when the available evidence supports replacing a frozen predictor with a fixed adapted
+candidate. K-Bound answers this question for a binary population model with a declared bound
+$\beta$ on the target calibration residual. We construct target label laws that preserve all
+label-free observations and derive the exact feasible interval for paired benefit. A strict
+decision is supported precisely when $|M|>\beta$; inside the closed band, no strict direction is
+uniformly justified. We also show why the same observations cannot audit away the unresolved
+residual bound. Knowability-Guided Adaptation (\KGA) is an empirical companion, not an implementation
+of this frontier. It learns to predict observed evaluation-cell benefit from labeled historical
+outcomes, then uses a residual-based interval to choose \adapt, \freeze, or \abstain without new
+evaluation labels. On an exploratory, cross-fitted CIFAR-10-C panel, Tent and EATA have lower point
+regret than either fixed policy, while SAR favors always-adapt. On CCT-20, KGA retains frozen
+predictions and avoids observed degradation from always-adapt, but makes no ADAPT decisions.
+These results support candidate-specific commitment control; they do not establish interval
+coverage or population-risk protection on unseen natural shifts.

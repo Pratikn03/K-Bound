@@ -3,10 +3,11 @@
     "build_id": "20260827T000000Z",
     "generated_at": "2026-08-27T00:00:00Z",
     "commit": null,
-    "canonical_panel_sha256": "ee64e858184cc9f67f4e596183b69880d59d64d267e22d3ba29c422afa609df9",
-    "current_policy_sha256": "5b1887fc7848ca0a23940806643416c231a04abb62bd141eb318a5e43a36fbdb",
+    "canonical_panel_sha256": "4239a7b38b087fe8d4c81eb935d9da5104545a228fffb7c956b29c6e00d97062",
+    "current_policy_sha256": "5942d60b0287604a63442b336f703adc91e55893177b3b0df6f97f5a52e1ff5e",
     "paper": "docs/research/kbound/kbound_short_final_draft.pdf",
-    "paper_pages": 22
+    "paper_pages": 34,
+    "refresh_mode": "paper-only"
   },
   "research_status": {
     "theory": "verified",
@@ -16,12 +17,12 @@
   },
   "evidence_strip": {
     "proven_theorems": {
-      "value": "3 core",
-      "sub": "plus multiclass/regression bridges"
+      "value": "3 theorems",
+      "sub": "8 numbered statements; stated assumptions apply"
     },
     "theorem_validators": {
-      "value": "Lean partial",
-      "sub": "kernel-checked spine; external assumptions disclosed"
+      "value": "142 registered Lean checks",
+      "sub": "5 positive foundational layers; stated assumptions apply"
     },
     "controlled_beats_both": {
       "value": "3 point-estimate tracks",
@@ -32,8 +33,8 @@
       "sub": "Office-Home and RxRx1; Camelyon is diagnostic and iWildCam is withheld"
     },
     "open_theory": {
-      "value": "foundations",
-      "sub": "full probability mechanization remains incomplete"
+      "value": "historical sixth layer",
+      "sub": "An orbit/fibre counterexample is proved; the broader sufficiency and H-rate extension is not."
     },
     "reproducibility": {
       "value": "manifest-backed",
@@ -70,7 +71,7 @@
       "title": "Weak or non-transferable evidence",
       "action": "Abstain or report diagnostic failure",
       "status": "diagnostic",
-      "examples": "CIFAR-10.1, ImageNet-R, incomplete PACS",
+      "examples": "CIFAR-10.1, ImageNet-R, PACS aggregate-only replay",
       "artifact": "docs/research/kbound/paper/generated/kbound_result_manifest.json"
     }
   ],
@@ -81,13 +82,13 @@
       "status": "verified",
       "artifact": "docs/research/kbound/paper/sections/theory_core_main.tex",
       "implication": "For beta > 0 and |M| < beta, evidence-identical target laws can have opposite nonzero benefit.",
-      "evidence": "Paper proof; Lean covers supporting algebra, not the full target-law construction."
+      "evidence": "Lean includes measurable target-law and testing constructions under their explicit assumptions; empirical population assumptions are not inferred."
     },
     {
       "id": "P1",
       "name": "Closed-band abstention",
       "status": "verified",
-      "artifact": "docs/research/kbound/kbound_short.tex",
+      "artifact": "docs/research/kbound/kbound_submission_body.tex",
       "implication": "Under strict-action semantics, abstention is maximal on |M| <= beta.",
       "evidence": "Boundary distinguishes zero-versus-strict ambiguity from the interior construction."
     },
@@ -95,23 +96,23 @@
       "id": "T2",
       "name": "Strict-commitment frontier",
       "status": "verified",
-      "artifact": "docs/research/kbound/formal/KBound/Frontier.lean",
-      "implication": "A uniform strict action is supportable exactly outside the declared drift band.",
-      "evidence": "Lean checks the sufficiency spine; richness/necessity assumptions remain paper-level."
+      "artifact": "docs/research/kbound/formal/KBound/Probability/MeasureFrontier.lean",
+      "implication": "A uniform strict action is supportable exactly outside the declared uncertainty band.",
+      "evidence": "Lean covers the feasible measurable target-law class; arbitrary restricted deployment classes are not automatically covered."
     },
     {
       "id": "T3",
       "name": "Marginal false-adapt certificate",
       "status": "conditional",
-      "artifact": "docs/research/kbound/formal/KBound/Certificate.lean",
+      "artifact": "docs/research/kbound/formal/KBound/Probability/MeasureConformal.lean",
       "implication": "Interval coverage controls FA_u, not conditional FA_c.",
-      "evidence": "Coverage is the premise; exchangeability or shift correction is external support for coverage."
+      "evidence": "Lean derives one-shot residual coverage under exchangeable score laws; this does not verify benchmark exchangeability, population improvement, or repeated-use coverage."
     },
     {
       "id": "M1",
       "name": "Multiclass bridge",
       "status": "conditional",
-      "artifact": "docs/research/kbound/kbound_short.tex",
+      "artifact": "docs/research/kbound/kbound_submission_body.tex",
       "implication": "Delta = P(D)(p_a-p_0); empirical KGA estimates Delta directly.",
       "evidence": "The converse frontier requires declared-class richness."
     }
@@ -299,14 +300,19 @@
         "name": "ImageNet-R Protocol D",
         "status": "diagnostic",
         "artifact": "docs/research/kbound/paper/generated/kbound_result_manifest.json",
-        "framing": "Three of four planned seeds complete; no stable CI-robust beats-both result.",
-        "note": "A diagnostic null, not proof of structural non-identifiability."
+        "completed_seed_count": 4,
+        "backbone_count": 10,
+        "framing": "4 completed run seeds across 10 backbones; an architecture-panel diagnostic, not one deployable policy.",
+        "note": "No natural-shift superiority is claimed; a benchmark null does not prove structural non-identifiability."
       },
       {
         "name": "PACS",
-        "status": "pending",
+        "status": "diagnostic",
         "artifact": "docs/research/kbound/paper/generated/kbound_result_manifest.json",
-        "framing": "One of three planned seeds complete; breadth evidence remains incomplete."
+        "completed_seed_count": 3,
+        "decision_replay_available": false,
+        "framing": "3-seed aggregate agrees with the archived seed summaries; cell-level decisions remain unreplayable.",
+        "note": "archived per-cell files omit b_hat and the calibration-domain residual records; the saved seed summaries can be cross-validated but the gate cannot be rerun"
       },
       {
         "name": "Constructed three-source OOF stream",
@@ -327,6 +333,78 @@
         "note": "CI beats both, but the stream is researcher-constructed and does not establish transfer."
       }
     ]
+  },
+  "safety": {
+    "metrics": [
+      {
+        "label": "FA_u",
+        "value": "P(adapt and Delta <= 0)",
+        "meaning": "The marginal false-adapt quantity controlled under valid interval coverage."
+      },
+      {
+        "label": "FA_c",
+        "value": "P(Delta <= 0 | adapt)",
+        "meaning": "Descriptive unless separately proved; not theorem-controlled here."
+      },
+      {
+        "label": "Abstain",
+        "value": "retain f0",
+        "meaning": "Do not commit the update; prediction continues from the frozen fallback."
+      }
+    ],
+    "prose": {
+      "false_adapt": "The empirical certificate is Delta_hat +/- epsilon; epsilon is not beta.",
+      "abstain": "Empirical abstention may reflect structural ambiguity, finite data, model inadequacy, transfer failure, or conservative width.",
+      "unknowable": "A benchmark null alone does not establish structural non-identifiability.",
+      "certificate_scope": "Every claim is limited to its saved protocol, calibration unit, adapter, and artifact lineage."
+    }
+  },
+  "reproduce": {
+    "primary": "bash docs/research/kbound/scripts/reproduce_submission.sh",
+    "gpu": "bash docs/research/kbound/scripts/kbtrain.sh smoke-all",
+    "validators": "cd docs/research/kbound/formal && bash build.sh",
+    "dashboard": "bash docs/research/kbound/scripts/build_dashboard.sh",
+    "runtime_estimate": "Cached audit is CPU-friendly; dataset refreshes require the documented data and accelerator.",
+    "inputs": [
+      "docs/research/kbound/paper/generated/kbound_result_manifest.json",
+      "research_lock/",
+      "experiments/kbound/results/"
+    ],
+    "outputs": [
+      "docs/research/kbound/dashboard/data/snapshot.json",
+      "docs/research/kbound/kbound_short_final_draft.pdf"
+    ]
+  },
+  "provenance": {
+    "snapshot_path": "docs/research/kbound/dashboard/data/snapshot.json",
+    "manifest": "docs/research/kbound/paper/generated/kbound_result_manifest.json",
+    "headline_lock": "research_lock/",
+    "edge_protocol_lock": "docs/research/kbound/edge/artifacts_real/protocol_lock.json",
+    "commit": null,
+    "canonical_panel_sha256": "4239a7b38b087fe8d4c81eb935d9da5104545a228fffb7c956b29c6e00d97062",
+    "current_policy_sha256": "5942d60b0287604a63442b336f703adc91e55893177b3b0df6f97f5a52e1ff5e",
+    "manifest_sha256": "3b3219eb7772e7880302f5931df5430e4c27368dc289d8c34686a219aea27f20",
+    "formal_scope": {
+      "registry": "docs/research/kbound/formal/formal_audit.py",
+      "registry_sha256": "1a3ffa6c6bdb3f42b0ecc59b20d374e9cb414aa4541dbf39893c09abfa3e233a",
+      "registered_lean_checks": 142,
+      "legacy_core_checks": 65,
+      "foundational_checks": 77,
+      "positive_foundational_layers": 5,
+      "counterexample_layers": 1,
+      "full_foundations_proof": false,
+      "verification_note": "Registered source scope; this dashboard refresh does not run Lean or reverify kernel proofs."
+    },
+    "local_clips_note": "Raw physical clips remain local; manifests and hashes are release artifacts after privacy review.",
+    "refresh_mode": "paper-only",
+    "edge_validation_refresh": {
+      "checked_this_run": false,
+      "mode": "preserved_not_rechecked",
+      "preserved_edge_canonical_json_sha256": "81d4ca15b968867313f99c4f5c352121e9b105a1a81822e8bfcbcd7413dd421d",
+      "source_snapshot_canonical_json_sha256": "6d8e97a7bef0e6762769542ffdfa1b32b9e0dcbd39be67fe6c6d8603c4a402cb",
+      "source_snapshot_generated_at": "2026-08-27T00:00:00Z",
+      "note": "Saved edge_validation copied unchanged; no physical-edge files, sessions, or publication gates were rechecked by this paper-only refresh."
+    }
   },
   "edge_validation": {
     "study_status": "pending",
@@ -485,56 +563,5 @@
     },
     "protocol_hash": null,
     "audit_pass": false
-  },
-  "safety": {
-    "metrics": [
-      {
-        "label": "FA_u",
-        "value": "P(adapt and Delta <= 0)",
-        "meaning": "The marginal false-adapt quantity controlled under valid interval coverage."
-      },
-      {
-        "label": "FA_c",
-        "value": "P(Delta <= 0 | adapt)",
-        "meaning": "Descriptive unless separately proved; not theorem-controlled here."
-      },
-      {
-        "label": "Abstain",
-        "value": "retain f0",
-        "meaning": "Do not commit the update; prediction continues from the frozen fallback."
-      }
-    ],
-    "prose": {
-      "false_adapt": "The empirical certificate is Delta_hat +/- epsilon; epsilon is not beta.",
-      "abstain": "Empirical abstention may reflect structural ambiguity, finite data, model inadequacy, transfer failure, or conservative width.",
-      "unknowable": "A benchmark null alone does not establish structural non-identifiability.",
-      "certificate_scope": "Every claim is limited to its saved protocol, calibration unit, adapter, and artifact lineage."
-    }
-  },
-  "reproduce": {
-    "primary": "bash docs/research/kbound/scripts/reproduce_submission.sh",
-    "gpu": "bash docs/research/kbound/scripts/kbtrain.sh smoke-all",
-    "validators": "cd docs/research/kbound/formal && bash build.sh",
-    "dashboard": "bash docs/research/kbound/scripts/build_dashboard.sh",
-    "runtime_estimate": "Cached audit is CPU-friendly; dataset refreshes require the documented data and accelerator.",
-    "inputs": [
-      "docs/research/kbound/paper/generated/kbound_result_manifest.json",
-      "research_lock/",
-      "experiments/kbound/results/"
-    ],
-    "outputs": [
-      "docs/research/kbound/dashboard/data/snapshot.json",
-      "docs/research/kbound/kbound_short_final_draft.pdf"
-    ]
-  },
-  "provenance": {
-    "snapshot_path": "docs/research/kbound/dashboard/data/snapshot.json",
-    "manifest": "docs/research/kbound/paper/generated/kbound_result_manifest.json",
-    "headline_lock": "research_lock/",
-    "edge_protocol_lock": "docs/research/kbound/edge/artifacts_real/protocol_lock.json",
-    "commit": null,
-    "canonical_panel_sha256": "ee64e858184cc9f67f4e596183b69880d59d64d267e22d3ba29c422afa609df9",
-    "current_policy_sha256": "5b1887fc7848ca0a23940806643416c231a04abb62bd141eb318a5e43a36fbdb",
-    "local_clips_note": "Raw physical clips remain local; manifests and hashes are release artifacts after privacy review."
   }
 }

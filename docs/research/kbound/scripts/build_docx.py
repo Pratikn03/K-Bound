@@ -33,8 +33,8 @@ SOURCE = ROOT / "kbound_submission.tex"
 GENERATED_DIR = ROOT / "paper" / "generated"
 FIGURE_ALTS = (
     "K-Bound decision flow from shadow candidate generation to adapt, freeze, or abstain.",
-    "Population strict-commitment frontier over observable margin M and declared drift budget beta.",
-    "Finite-sample KGA certificate using the benefit estimate and uncertainty radius.",
+    "Population strict-commitment frontier over observable margin M and declared calibration-residual bound beta.",
+    "KGA interval decisions for measured cell benefit; empirical residual coverage is not population-risk coverage.",
 )
 
 INPUT_PATTERN = re.compile(r"\\(?:input|include)\s*\{([^{}]+)\}")
@@ -360,11 +360,23 @@ def simplify_alignment_math(tex: str) -> str:
     """Remove alignment markers that Word exposes as literal ampersands."""
 
     def split_align(match: re.Match[str]) -> str:
-        lines = [line.strip().replace("&", "") for line in re.split(r"\\\\", match.group(1))]
-        return "\n".join(r"\[" + line + r"\]" for line in lines if line)
+        lines = [line.strip().replace("&", "") for line in re.split(r"\\\\", match.group(2))]
+        rendered = []
+        for line in lines:
+            if not line:
+                continue
+            suppressed = re.search(r"\\(?:notag|nonumber)\b", line) is not None
+            line = re.sub(r"\\(?:notag|nonumber)\b", "", line)
+            if match.group(1) == "align" and not suppressed:
+                # Preserve each numbered row and label for the shared equation
+                # counter. Turning align into \[...\] loses cross-references.
+                rendered.append(r"\begin{equation}" + line + r"\end{equation}")
+            else:
+                rendered.append(r"\[" + line + r"\]")
+        return "\n".join(rendered)
 
     tex = re.sub(
-        r"\\begin\{align\*?\}(.*?)\\end\{align\*?\}",
+        r"\\begin\{(align\*?)\}(.*?)\\end\{\1\}",
         split_align,
         tex,
         flags=re.DOTALL,
@@ -388,22 +400,163 @@ def simplify_alignment_math(tex: str) -> str:
 
 
 def replace_algorithm_for_word(tex: str) -> str:
-    """Render the single KGA algorithm as editable numbered Word steps."""
-    replacement = r"""
-\paragraph{Algorithm 1. Knowability-Guided Adaptation (KGA).}
-\begin{enumerate}
-\item \textbf{Inputs:} frozen model $f_0$, adapter $\mathcal A$, unlabeled batch $X$, fitted benefit model $h_\theta$, and radius $\varepsilon$.
-\item Checkpoint $f_0$ and propose $f_a\leftarrow\mathcal A(f_0,X)$ in shadow state.
-\item Evaluate $f_0$ and $f_a$ on $X$, then extract $Z=\phi(X,f_0,f_a)$.
-\item Compute $\widehat\Delta\leftarrow h_\theta(Z)$, $L\leftarrow\widehat\Delta-\varepsilon$, and $U\leftarrow\widehat\Delta+\varepsilon$.
-\item If $L>0$, commit $f_a$ and return \textsc{adapt}. If $U<0$, roll back and return \textsc{freeze}. Otherwise retain $f_0$, log uncertainty, and return \textsc{abstain}.
-\end{enumerate}
-"""
-    pattern = re.compile(r"\\begin\{algorithm\}\[t\].*?\\end\{algorithm\}", re.DOTALL)
-    tex, count = pattern.subn(lambda _: replacement, tex)
-    if count != 1:
-        raise RuntimeError(f"expected one KGA algorithm, found {count}")
-    return tex
+    """Translate the manuscript's algorithmic subset into editable Word lists.
+
+    Statements and conditions come from the source, not a second algorithm.
+    Unknown commands and malformed branches must fail before Pandoc can discard
+    an instruction. Nested enumerations preserve each conditional branch.
+    """
+    pattern = re.compile(
+        r"\\begin\{algorithm\}(?:\[[^]\r\n]*\])?(.*?)\\end\{algorithm\}",
+        re.DOTALL,
+    )
+    matches = list(pattern.finditer(tex))
+    if len(matches) != 1:
+        raise RuntimeError(f"expected one KGA algorithm, found {len(matches)}")
+    match = matches[0]
+    content = strip_tex_comments(match.group(1)).strip()
+    bodies = list(re.finditer(
+        r"\\begin\{algorithmic\}(?:\[\d+\])?(.*?)\\end\{algorithmic\}",
+        content,
+        flags=re.DOTALL,
+    ))
+    if len(bodies) != 1:
+        raise RuntimeError("expected one algorithmic body in the KGA algorithm")
+    body = bodies[0]
+    controls = {"Require", "State", "If", "ElsIf", "Else", "EndIf"}
+    inline_commands = {
+        "mathcal", "phi", "theta", "leftarrow", "widehat", "Delta", "varepsilon",
+        "eqref", "ref", "text", "textbf", "texttt", "textsc", "emph", "mathrm",
+        "adapt", "freeze", "abstain",
+    }
+
+    def validate_inline(value: str) -> str:
+        unknown = set(re.findall(r"\\([A-Za-z@]+)", value)) - inline_commands
+        if unknown:
+            raise RuntimeError("unsupported algorithm text command(s): " + ", ".join(sorted(unknown)))
+        return " ".join(value.split())
+
+    def argument(value: str, context: str) -> tuple[str, str]:
+        value = value.lstrip()
+        if not value.startswith("{"):
+            raise RuntimeError(f"algorithm {context} requires a literal braced argument")
+        try:
+            closing = find_brace_end(value, 0)
+        except RuntimeError as error:
+            raise RuntimeError(f"unbalanced algorithm {context} argument") from error
+        result = value[1:closing].strip()
+        if not result:
+            raise RuntimeError(f"empty algorithm {context} argument")
+        return result, value[closing + 1:]
+
+    metadata = (content[:body.start()] + content[body.end():]).strip()
+    caption = None
+    labels = []
+    while metadata:
+        command = re.match(r"\\(caption|label)\b", metadata)
+        if command is None:
+            raise RuntimeError("unsupported algorithm metadata: " + metadata[:80])
+        value, metadata = argument(metadata[command.end():], command.group(1))
+        metadata = metadata.strip()
+        if command.group(1) == "caption":
+            if caption is not None:
+                raise RuntimeError("expected one algorithm caption")
+            caption = validate_inline(value)
+        else:
+            if not re.fullmatch(r"[A-Za-z0-9:._-]+", value):
+                raise RuntimeError("unsupported algorithm label: " + value)
+            labels.append(r"\label{" + value + "}")
+    if caption is None:
+        raise RuntimeError("expected one algorithm caption")
+
+    source = body.group(1).strip()
+    unknown = set(re.findall(r"\\([A-Za-z@]+)", source)) - controls - inline_commands
+    if unknown:
+        raise RuntimeError("unsupported algorithm command(s): " + ", ".join(sorted(unknown)))
+    tokens = list(re.finditer(r"\\(Require|State|If|ElsIf|Else|EndIf)\b", source))
+    if not tokens or source[:tokens[0].start()].strip():
+        raise RuntimeError("unsupported algorithm text before its first statement")
+    lines = [r"\paragraph{Algorithm 1. " + caption + "}", *labels, r"\begin{enumerate}"]
+    branches = []
+    state_count = 0
+    for index, token in enumerate(tokens):
+        end = tokens[index + 1].start() if index + 1 < len(tokens) else len(source)
+        value = source[token.end():end].strip()
+        command = token.group(1)
+        if command in {"Require", "State"}:
+            if not value:
+                raise RuntimeError(f"empty algorithm {command} statement")
+            value = validate_inline(value)
+            if command == "Require":
+                if index != 0:
+                    raise RuntimeError("algorithm Require must precede all action statements")
+                lines.append(r"\item \textbf{Inputs:} " + value)
+            else:
+                state_count += 1
+                lines.append(r"\item " + value)
+                if branches:
+                    branches[-1]["has_content"] = True
+            continue
+        if command in {"If", "ElsIf"}:
+            condition, remainder = argument(value, command)
+            if remainder.strip():
+                raise RuntimeError("unsupported algorithm text after a condition")
+            condition = validate_inline(condition)
+        elif value:
+            raise RuntimeError(f"unsupported algorithm text after {command}")
+        if command == "If":
+            if branches:
+                branches[-1]["has_content"] = True
+            lines.extend((r"\item \textbf{If} " + condition + ":", r"\begin{enumerate}"))
+            branches.append({"has_else": False, "has_content": False})
+        else:
+            if not branches or not branches[-1]["has_content"]:
+                raise RuntimeError(f"algorithm {command} has no preceding nonempty branch")
+            lines.append(r"\end{enumerate}")
+            if command == "EndIf":
+                branches.pop()
+                continue
+            if branches[-1]["has_else"]:
+                raise RuntimeError(f"algorithm {command} cannot follow Else")
+            branches[-1]["has_else"] = command == "Else"
+            branches[-1]["has_content"] = False
+            heading = r"\textbf{Else}:" if command == "Else" else r"\textbf{Else if} " + condition + ":"
+            lines.extend((r"\item " + heading, r"\begin{enumerate}"))
+    if branches:
+        raise RuntimeError("algorithm has an unclosed If branch")
+    if tokens[0].group(1) != "Require" or not state_count:
+        raise RuntimeError("algorithm requires inputs and at least one action statement")
+    lines.append(r"\end{enumerate}")
+    return tex[:match.start()] + "\n".join(lines) + tex[match.end():]
+
+
+def normalize_word_theory_notation(tex: str) -> str:
+    """Preserve the overbar and explicit Roman theorem clauses in Word.
+
+    Pandoc emits an accent for ``\\bar a`` that LibreOffice can display as an
+    acute mark. The equivalent ``\\overline{a}`` emits an editable OMML top bar.
+    Pandoc also drops the source's manual ``\\item[\\textnormal{(i)}]`` labels;
+    its native Roman-list syntax keeps those labels aligned with the proof.
+    These conversions affect the Word input only, not the maintained TeX/PDF.
+    """
+    tex = re.sub(r"\\bar(?:\s*\{\s*a\s*\}|\s+a)(?![A-Za-z@])", r"\\overline{a}", tex)
+    roman_item = re.compile(r"\\item\[\\textnormal\{\(([ivxlcdm]+)\)\}\]")
+
+    def normalize_list(match: re.Match[str]) -> str:
+        content = match.group(1)
+        labels = roman_item.findall(content)
+        if not labels:
+            return match.group(0)
+        # The maintained theorem has four clauses. Fail visibly if that source
+        # contract changes instead of silently dropping or relabeling items.
+        expected = ["i", "ii", "iii", "iv"]
+        if labels != expected or len(re.findall(r"\\item\b", content)) != len(expected):
+            raise RuntimeError("expected four consecutive Roman theorem clauses (i)--(iv)")
+        return r"\begin{enumerate}[(i)]" + roman_item.sub(r"\\item", content) + r"\end{enumerate}"
+
+    return re.sub(
+        r"\\begin\{enumerate\}(.*?)\\end\{enumerate\}", normalize_list, tex, flags=re.DOTALL
+    )
 
 
 def replace_figure_macro(tex: str) -> str:
@@ -582,30 +735,107 @@ def number_environments(tex: str) -> tuple[str, dict[str, str]]:
     return tex, labels
 
 
-def section_labels(tex: str) -> dict[str, str]:
+def number_section_headings(tex: str) -> tuple[str, dict[str, str]]:
+    """Materialize article-style heading numbers and their cross-reference map.
+
+    Pandoc does not number these Word headings by default.  Use the same
+    source-derived numbers in the visible headings and references, just as for
+    captions and equations above.  Every unstarred heading advances its counter,
+    whether or not it has a label; ``\\appendix`` resets sections to A, B, ... .
+    Labels may be inside the title or immediately after it (including comments).
+    This is a literal-heading exporter, not a general TeX counter interpreter.
+    """
+    # Preserve source offsets while preventing commented-out commands or braces
+    # from participating in the heading scan.
+    scan = re.sub(r"(?<!\\)%[^\n]*", lambda match: " " * len(match.group()), tex)
+    pattern = re.compile(r"(?<!\\)\\(appendix|section|subsection|subsubsection)(?![A-Za-z@])")
+    label_pattern = re.compile(r"\s*\\label\s*\{([^{}]+)\}")
     labels: dict[str, str] = {}
-    section = subsection = subsubsection = 0
-    pattern = re.compile(r"\\(section|subsection|subsubsection)\{[^{}]*\}\s*\\label\{([^}]+)\}")
-    for match in pattern.finditer(tex):
-        level, label = match.groups()
-        if level == "section":
-            section += 1
-            subsection = subsubsection = 0
-            number = str(section)
-        elif level == "subsection":
-            subsection += 1
-            subsubsection = 0
-            number = f"{section}.{subsection}"
+    counters = [0, 0, 0]
+    appendix = False
+    insertions: list[tuple[int, str]] = []
+    position = 0
+
+    while match := pattern.search(scan, position):
+        command = match.group(1)
+        position = match.end()
+        if command == "appendix":
+            counters = [0, 0, 0]
+            appendix = True
+            continue
+
+        while position < len(scan) and scan[position].isspace():
+            position += 1
+        starred = position < len(scan) and scan[position] == "*"
+        if starred:
+            position += 1
+        while position < len(scan) and scan[position].isspace():
+            position += 1
+        if position < len(scan) and scan[position] == "[":
+            # An optional short title ends at an unbraced closing bracket.
+            depth = 0
+            position += 1
+            while position < len(scan):
+                char = scan[position]
+                if position == 0 or scan[position - 1] != "\\":
+                    if char == "{":
+                        depth += 1
+                    elif char == "}":
+                        depth -= 1
+                    elif char == "]" and depth == 0:
+                        break
+                position += 1
+            if position == len(scan):
+                raise RuntimeError(f"unbalanced optional title for {command}")
+            position += 1
+            while position < len(scan) and scan[position].isspace():
+                position += 1
+        if position == len(scan) or scan[position] != "{":
+            raise RuntimeError(f"expected a literal braced title for {command}")
+        opening = position
+        try:
+            closing = find_brace_end(scan, opening)
+        except RuntimeError as error:
+            raise RuntimeError(f"unbalanced title for {command}") from error
+        position = closing + 1
+        if starred:
+            continue
+
+        level = ("section", "subsection", "subsubsection").index(command)
+        counters[level] += 1
+        counters[level + 1 :] = [0] * (2 - level)
+        if appendix:
+            if not 1 <= counters[0] <= 26:
+                raise RuntimeError("appendix headings require an article-style section from A to Z")
+            section = chr(ord("A") + counters[0] - 1)
         else:
-            subsubsection += 1
-            number = f"{section}.{subsection}.{subsubsection}"
-        labels[label] = number
-    return labels
+            section = str(counters[0])
+        number = ".".join([section, *(str(value) for value in counters[1 : level + 1])])
+        insertions.append((opening + 1, number + " "))
+
+        heading_labels = re.findall(r"\\label\s*\{([^{}]+)\}", scan[opening + 1 : closing])
+        while label_match := label_pattern.match(scan, position):
+            heading_labels.append(label_match.group(1))
+            position = label_match.end()
+        for label in heading_labels:
+            if label in labels:
+                raise RuntimeError(f"duplicate section label: {label}")
+            labels[label] = number
+
+    for offset, prefix in reversed(insertions):
+        tex = tex[:offset] + prefix + tex[offset:]
+    return tex, labels
+
+
+def section_labels(tex: str) -> dict[str, str]:
+    """Return the same label map used to number the visible Word headings."""
+    return number_section_headings(tex)[1]
 
 
 def resolve_cross_references(tex: str) -> str:
     tex, labels = number_environments(tex)
-    labels.update(section_labels(tex))
+    tex, heading_labels = number_section_headings(tex)
+    labels.update(heading_labels)
 
     def eqref(match: re.Match[str]) -> str:
         label = match.group(1)
@@ -637,6 +867,7 @@ def preprocess_with_metadata(tex: str, *, macros: Mapping[str, str] | None = Non
     tex = replace_actions_in_math(tex)
     tex = expand_text_action_words(tex)
     tex = simplify_alignment_math(tex)
+    tex = normalize_word_theory_notation(tex)
     tex = replace_algorithm_for_word(tex)
     tex = replace_figure_macro(tex)
     tex = unwrap_resizebox_tables(tex)
@@ -710,6 +941,9 @@ def configure_styles(doc: Document) -> None:
     for name in ("Title", "Heading 1", "Heading 2", "Heading 3", "Heading 4"):
         if name in doc.styles:
             doc.styles[name].paragraph_format.keep_with_next = True
+    # Table captions precede their tables; image captions can follow an image.
+    if "Table Caption" in doc.styles:
+        doc.styles["Table Caption"].paragraph_format.keep_with_next = True
 
 
 def normalize_compact_heading_hierarchy(doc: Document) -> None:
@@ -781,6 +1015,15 @@ def set_table_borders(table) -> None:
 
 
 def table_widths(table, total: int) -> list[int]:
+    headers = tuple(
+        re.sub(r"\s+", " ", cell.text).strip().lower()
+        for cell in table.rows[0].cells
+    )
+    if headers == ("track", "shift geometry", "candidate/protocol", "defensible use"):
+        return [2150, 2300, 2200, total - 6650]
+    if headers == ("track", "released status", "present evidence", "remaining limitation"):
+        return [1800, 1600, 3100, total - 6500]
+
     columns = len(table.columns)
     weights: list[float] = []
     for column in range(columns):
@@ -798,6 +1041,26 @@ def table_widths(table, total: int) -> list[int]:
         widest = max(range(len(widths) - 1), key=widths.__getitem__)
         widths[widest] -= deficit
     return widths
+
+
+def protect_numeric_citations_in_tables(doc: Document) -> None:
+    """Keep bracketed numeric citations intact in narrow Word table cells."""
+
+    pattern = re.compile(r"\[([0-9]+(?:--[0-9]+)?(?:,\s*[0-9]+(?:--[0-9]+)?)*)\]")
+    word_joiner = "\u2060"
+    for table in doc.tables:
+        for row in table.rows:
+            for cell in row.cells:
+                for paragraph in cell.paragraphs:
+                    for run in paragraph.runs:
+                        run.text = pattern.sub(
+                            lambda match: (
+                                f"[{word_joiner}"
+                                + match.group(1).replace(" ", "\u00a0")
+                                + f"{word_joiner}]"
+                            ),
+                            run.text,
+                        )
 
 
 def set_table_geometry(table, widths: list[int]) -> None:
@@ -854,11 +1117,18 @@ def format_tables(doc: Document) -> None:
         set_table_borders(table)
         size = 7.4 if columns >= 7 else 7.8 if columns >= 5 else 8.3 if columns == 4 else 8.8
         for row_index, row in enumerate(table.rows):
+            tr_pr = row._tr.get_or_add_trPr()
+            cant_split = tr_pr.find(qn("w:cantSplit"))
+            if cant_split is None:
+                cant_split = OxmlElement("w:cantSplit")
+                tr_pr.append(cant_split)
+            cant_split.set(qn("w:val"), "true")
             if row_index == 0:
-                tr_pr = row._tr.get_or_add_trPr()
-                repeat = OxmlElement("w:tblHeader")
+                repeat = tr_pr.find(qn("w:tblHeader"))
+                if repeat is None:
+                    repeat = OxmlElement("w:tblHeader")
+                    tr_pr.append(repeat)
                 repeat.set(qn("w:val"), "true")
-                tr_pr.append(repeat)
             for cell in row.cells:
                 cell.vertical_alignment = WD_ALIGN_VERTICAL.CENTER
                 set_cell_margins(cell)
@@ -873,8 +1143,11 @@ def format_tables(doc: Document) -> None:
                     paragraph.paragraph_format.space_before = Pt(0)
                     paragraph.paragraph_format.space_after = Pt(0)
                     paragraph.paragraph_format.line_spacing = 1.0
-                    if keep_table_together and row_index < len(table.rows) - 1:
-                        paragraph.paragraph_format.keep_with_next = True
+                    # Keep a header with its first complete body row.  Longer
+                    # tables may paginate between body rows, never within one.
+                    paragraph.paragraph_format.keep_with_next = (
+                        row_index < len(table.rows) - 1 and (row_index == 0 or keep_table_together)
+                    )
                     text = paragraph.text.strip()
                     if row_index == 0 or re.fullmatch(r"[-+()0-9.,/%\s]+", text or "x"):
                         paragraph.alignment = WD_ALIGN_PARAGRAPH.CENTER
@@ -917,6 +1190,31 @@ def add_page_number(section) -> None:
         run._r.append(node)
 
 
+def bibliography_paragraphs(doc: Document, *, required: bool = True) -> list:
+    """Return only the reference block, stopping before a later appendix section.
+
+    TMLR places references before appendices. Applying bibliography typography
+    or counting numbered paragraphs to the rest of the document would corrupt
+    both the appendix style and the data-derived reference count.
+    """
+    paragraphs = doc.paragraphs
+    headings = [index for index, paragraph in enumerate(paragraphs)
+                if paragraph.text.strip() == "References"]
+    if not headings:
+        if required:
+            raise RuntimeError("References heading is missing from the DOCX")
+        return []
+    if len(headings) != 1:
+        raise RuntimeError("expected one References heading in the DOCX")
+    start = headings[0] + 1
+    end = next(
+        (index for index in range(start, len(paragraphs))
+         if paragraphs[index].style is not None and paragraphs[index].style.name == "Heading 1"),
+        len(paragraphs),
+    )
+    return paragraphs[start:end]
+
+
 def postprocess(raw_docx: Path, output: Path) -> None:
     doc = Document(raw_docx)
     configure_styles(doc)
@@ -943,18 +1241,14 @@ def postprocess(raw_docx: Path, output: Path) -> None:
             shape.height = int(shape.width * ratio)
         shape._inline.docPr.set("descr", alt)
         shape._inline.docPr.set("title", alt.split(".")[0])
+    protect_numeric_citations_in_tables(doc)
     format_tables(doc)
-    reference_index = next(
-        (index for index, paragraph in enumerate(doc.paragraphs) if paragraph.text.strip() == "References"),
-        None,
-    )
-    if reference_index is not None:
-        for paragraph in doc.paragraphs[reference_index + 1 :]:
-            paragraph.paragraph_format.space_after = Pt(2)
-            paragraph.paragraph_format.line_spacing = 1.0
-            for run in paragraph.runs:
-                run.font.name = "Times New Roman"
-                run.font.size = Pt(8.3)
+    for paragraph in bibliography_paragraphs(doc, required=False):
+        paragraph.paragraph_format.space_after = Pt(1)
+        paragraph.paragraph_format.line_spacing = 1.0
+        for run in paragraph.runs:
+            run.font.name = "Times New Roman"
+            run.font.size = Pt(8.2)
     doc.core_properties.title = "K-Bound: When Is Label-Free Adaptation Knowable?"
     doc.core_properties.subject = "Editable Word version of the final compact K-Bound manuscript"
     doc.core_properties.author = "Pratik Niroula"
@@ -964,16 +1258,10 @@ def postprocess(raw_docx: Path, output: Path) -> None:
 
 
 def count_docx_references(doc: Document) -> int:
-    """Count numbered reference paragraphs after the References heading."""
-    reference_index = next(
-        (index for index, paragraph in enumerate(doc.paragraphs) if paragraph.text.strip() == "References"),
-        None,
-    )
-    if reference_index is None:
-        raise RuntimeError("References heading is missing from the DOCX")
+    """Count numbered reference paragraphs, excluding later appendix lists."""
     return sum(
         1
-        for paragraph in doc.paragraphs[reference_index + 1 :]
+        for paragraph in bibliography_paragraphs(doc)
         if paragraph._p.pPr is not None and paragraph._p.pPr.numPr is not None
     )
 

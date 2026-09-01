@@ -18,6 +18,7 @@
 #   * Portable: the repository root is DISCOVERED (no /Users/... or /Volumes/...).
 #   * Read-only on data: datasets are validated, never modified.
 #   * Fails closed: missing required evidence aborts the release.
+#   * Pins a completely clean source HEAD before all work; checks it after each phase.
 #   * NEVER launches training. Training is a separate, explicit command.
 # =============================================================================
 set -euo pipefail
@@ -137,6 +138,7 @@ step_generate() {
   "$PY" "$KB/scripts/build_result_manifest.py"
   "$PY" "$KB/scripts/build_so2sat_numbers.py"
   "$PY" "$KB/scripts/build_results_source_compat.py"
+  "$PY" "$KB/scripts/build_current_policy_interval_diagnostics.py" --refresh-existing
   "$PY" "$KB/scripts/make_tables.py"
   "$PY" "$KB/scripts/plot_canonical_decision_frontier.py"
   "$PY" "$KB/scripts/plot_conceptual_regime_geometry.py"
@@ -170,9 +172,28 @@ step_test() {
     tests/test_cct20_release_builder.py \
     tests/test_cct20_manuscript_claim_validation.py \
     tests/test_build_docx_pipeline.py \
+    tests/test_kbound_theory_scope.py \
+    tests/test_kbound_current_policy_bindings.py \
+    tests/test_kbound_formal_audit.py \
+    tests/test_kbound_bibliography.py \
+    tests/test_kbound_estimand_inference_wording.py \
+    tests/test_kbound_dashboard_metadata.py \
+    tests/test_kbound_interval_diagnostics.py \
+    tests/test_kbound_metric_display_tables.py \
+    tests/test_kbound_narrative_revision.py \
+    tests/test_kbound_pdf_build_isolation.py \
+    tests/test_kga_package.py \
+    tests/test_kga_benefit_estimator.py \
     tests/test_kga_canonical_rule.py \
+    tests/test_kga_masked_inputs.py \
+    tests/test_kga_routing.py \
+    tests/test_certificate_drift_guard.py \
+    tests/test_kga_unavailable_runtime.py \
+    tests/test_kga_api_routes.py \
+    tests/test_kga_unavailable_api.py \
     tests/test_release_checksum_verifier.py \
     tests/test_release_source_seal.py \
+    tests/test_reconcile_no_implicit_cleanup.py \
     tests/test_reconciled_panels.py \
     tests/test_manuscript_claim_consistency.py \
     tests/test_so2sat_prospective_protocol.py \
@@ -182,7 +203,7 @@ step_test() {
   validate_manuscript_claims
   "$PY" -m kbound_repro.check_repo --staged
   log "Lean/Mathlib build and formal audit"
-  bash "$KB/formal/build.sh"
+  bash "$KB/formal/build.sh" --json-out "$REPO/$KB/audits/formal_foundations_2026_08_31.json"
 }
 
 step_pdf() {
@@ -207,9 +228,32 @@ step_pdf() {
   fi
 }
 
+start_release_run() {
+  # Capture HEAD once, before validation/generation can write any outputs.
+  # A caller-supplied ref is resolved now and must name that exact clean source.
+  RELEASE_SOURCE_COMMIT="$(git -c core.preloadindex=false -c core.fsmonitor=false rev-parse --verify HEAD)"
+  readonly RELEASE_SOURCE_COMMIT
+  if [[ -n "${KBOUND_SOURCE_COMMIT:-}" ]]; then
+    local requested_source
+    requested_source="$(git -c core.preloadindex=false -c core.fsmonitor=false rev-parse --verify "${KBOUND_SOURCE_COMMIT}^{commit}")"
+    if [[ "$requested_source" != "$RELEASE_SOURCE_COMMIT" ]]; then
+      warn "KBOUND_SOURCE_COMMIT must equal the starting HEAD"
+      return 1
+    fi
+  fi
+  export KBOUND_SOURCE_COMMIT="$RELEASE_SOURCE_COMMIT"
+  log "pin clean release source $RELEASE_SOURCE_COMMIT"
+  "$PY" "$KB/scripts/build_release_source_seal.py" --preflight --source-commit "$RELEASE_SOURCE_COMMIT"
+}
+
+check_release_source() {
+  "$PY" "$KB/scripts/build_release_source_seal.py" --check-source \
+    --source-commit "${RELEASE_SOURCE_COMMIT:?release source was not captured}"
+}
+
 step_source_seal() {
   local source_commit
-  source_commit="${KBOUND_SOURCE_COMMIT:-$(git -c core.preloadindex=false -c core.fsmonitor=false rev-parse HEAD)}"
+  source_commit="${RELEASE_SOURCE_COMMIT:-${KBOUND_SOURCE_COMMIT:-$(git -c core.preloadindex=false -c core.fsmonitor=false rev-parse HEAD)}}"
   log "MODE source-seal -- bind maintained release sources at $source_commit"
   "$PY" "$KB/scripts/build_release_source_seal.py" --source-commit "$source_commit"
   "$PY" "$KB/scripts/build_release_source_seal.py" --check --source-commit "$source_commit"
@@ -223,98 +267,21 @@ step_deep_local_provenance() {
 emit_checksums() {
   log "output checksums (authoritative artifacts)"
   local output="$KB/KBOUND_RELEASE_SHA256SUMS.txt"
-  local files=(
-    "$KB/claim_ledger.json"
-    "$KB/RESULT_MANIFEST.json"
-    "$KB/STORAGE_MANIFEST.json"
-    "$KB/results_source.json"
-    "$KB/audits/empirical_data_quality_2026_08_27/artifact.json"
-    "$KB/audits/empirical_data_quality_2026_08_27/audit_summary.json"
-    "$KB/audits/empirical_data_quality_2026_08_27/reviewer_scorecard.csv"
-    "$KB/dashboard/data/snapshot.json"
-    "$KB/paper/generated/kbound_numbers.tex"
-    "$KB/paper/generated/kbound_result_manifest.json"
-    "$KB/paper/generated/current_policy_family_sensitivity.tex"
-    "$KB/paper/generated/empirical_audit/decision_metrics.json"
-    "$KB/paper/generated/uniform_verdicts.json"
-    "$KB/figures/fig_decision_value_frontier.png"
-    "$KB/figures/fig_phase_diagram.png"
-    "$KB/kbound_short_final_draft.pdf"
-    "$KB/kbound_short_final_draft.docx"
-    "$KB/kbound_tmlr.pdf"
-    "experiments/kbound/results/reconciled_panels_v1/canonical_panel_results.json"
-    "experiments/kbound/results/reconciled_panels_v1/CANONICAL_PANEL_RESULTS.md"
-    "experiments/kbound/results/reconciled_panels_v1/canonical_panel_table.tex"
-    "experiments/kbound/results/reconciled_panels_v1/source_manifest.json"
-    "experiments/kbound/results/reconciled_panels_v1/current_policy_cluster_inference.json"
-    "experiments/kbound/frontier_sweep_v1/decision_value_results.json"
-    "research_lock/KBOUND_PROSPECTIVE_CLOSURE_v1.yaml"
-    "research_lock/KBOUND_EXACT_CONFIRMATION_UNSEALED_v1.json"
-    "experiments/kbound/results/frontier_kga_bridge_v1/bridge_results.json"
-    "experiments/kbound/results/natural_target_provenance_v1/NATURAL_TARGET_PROVENANCE_AUDIT.json"
-    "experiments/kbound/results/official_repro_v1/OFFICIAL_BASELINE_AUDIT.json"
-    "experiments/kbound/results/smoke_pacs_replay_v2/PACS_REPLAY_AUDIT.json"
-    "experiments/kbound/results/edge_real_phone_v1/publication_gate.json"
-    "$KB/audits/phase1_provenance_2026_08_27/provenance_seal.json"
-    "$KB/audits/release_source_seal_2026_08_29.json"
-  )
-  local cct_manifest="$KB/paper/generated/cct20_release_manifest.json"
-  local cct_files=(
-    "$cct_manifest"
-    "$KB/paper/generated/cct20_release_manifest.json.receipt.json"
-    "$KB/paper/generated/cct20_numbers.tex"
-    "$KB/paper/generated/cct20_primary_table.tex"
-    "$KB/paper/generated/cct20_location_effects.tex"
-    "research_lock/KBOUND_CCT20_EXECUTION_RUNTIME_ADDENDUM_v2.yaml"
-    "research_lock/KBOUND_CCT20_EXECUTION_RUNTIME_ADDENDUM_v2.yaml.sha256"
-  )
-  local cct_file
-  for cct_file in "${cct_files[@]}"; do
-    if [[ ! -f "$cct_file" ]]; then
-      warn "completed CCT-20 release is incomplete: missing $cct_file"
-      return 1
-    fi
-  done
-  files+=("${cct_files[@]}")
-  local so2sat_dir="experiments/kbound/results/so2sat_lcz42_prospective_v1/development_mps_bn_fix_v1"
-  local so2sat_files=(
-    "$so2sat_dir/so2sat_candidate_selection.json"
-    "$so2sat_dir/so2sat_candidate_selection.json.receipt.json"
-    "$so2sat_dir/so2sat_tent_adam_bn_affine_probe_transfer_v1.gate_fit.json"
-    "$so2sat_dir/so2sat_tent_adam_bn_affine_probe_transfer_v1.gate_fit.json.receipt.json"
-    "$so2sat_dir/so2sat_sar_sam_bn_affine_probe_transfer_v1.gate_fit.json"
-    "$so2sat_dir/so2sat_sar_sam_bn_affine_probe_transfer_v1.gate_fit.json.receipt.json"
-    "$KB/paper/generated/so2sat_numbers.tex"
-    "research_lock/KBOUND_SO2SAT_DEVELOPMENT_RUNTIME_AMENDMENT_v1.json"
-    "research_lock/KBOUND_SO2SAT_DEVELOPMENT_RUNTIME_AMENDMENT_v1.json.receipt.json"
-    "experiments/kbound/so2sat/prospective_protocol_v1.json"
-    "experiments/kbound/so2sat/prospective_protocol_v1.json.receipt.json"
-  )
-  local so2sat_file
-  for so2sat_file in "${so2sat_files[@]}"; do
-    if [[ ! -f "$so2sat_file" ]]; then
-      warn "completed So2Sat development result is incomplete: missing $so2sat_file"
-      return 1
-    fi
-  done
-  files+=("${so2sat_files[@]}")
-  local required_pdf
-  for required_pdf in \
-    "$KB/kbound_short_final_draft.pdf" \
-    "$KB/kbound_tmlr.pdf"; do
-    if [[ ! -f "$required_pdf" ]]; then
-      warn "missing maintained release PDF: $required_pdf"
-      return 1
-    fi
-  done
-  if [[ ! -f "$KB/kbound_short_final_draft.docx" ]]; then
-    warn "missing maintained release DOCX: $KB/kbound_short_final_draft.docx"
+  # Producer and verifier share one complete authoritative inventory. The
+  # default verifier rejects a valid-but-truncated manifest; --generic is opt-in.
+  local inventory
+  inventory="$("$PY" "$KB/scripts/verify_release_checksums.py" --list-required)"
+  local files=()
+  local required_path
+  while IFS= read -r required_path; do
+    if [[ -n "$required_path" ]]; then files+=("$required_path"); fi
+  done <<<"$inventory"
+  if [[ ${#files[@]} -eq 0 ]]; then
+    warn "release checksum inventory is empty"
     return 1
   fi
-  if [[ ! -f "$KB/audits/release_source_seal_2026_08_29.json" ]]; then
-    warn "missing final release source seal"
-    return 1
-  fi
+  # A fresh byte list must not bless an absent, stale, or malformed source seal.
+  "$PY" "$KB/scripts/build_release_source_seal.py" --check
   local f
   for f in "${files[@]}"; do
     if [[ ! -f "$f" ]]; then
@@ -364,13 +331,23 @@ case "$MODE" in
   # only. Scientific validation/build modes retain the strict Python preflight.
   checksums)         emit_checksums ;;
   all)
+    start_release_run
     step_preflight
+    check_release_source
     step_validate_results
+    check_release_source
     step_generate
+    check_release_source
     step_test
+    check_release_source
     step_pdf
+    check_release_source
     step_source_seal
+    check_release_source
     emit_checksums
+    check_release_source
+    "$PY" "$KB/scripts/build_release_source_seal.py" --check --source-commit "$RELEASE_SOURCE_COMMIT"
+    "$PY" "$KB/scripts/verify_release_checksums.py" --root "$REPO"
     ;;
   *) echo "unknown MODE '$MODE' (preflight|validate-results|generate|test|pdf|source-seal|deep-local-provenance|checksums|all)" >&2; exit 2 ;;
 esac

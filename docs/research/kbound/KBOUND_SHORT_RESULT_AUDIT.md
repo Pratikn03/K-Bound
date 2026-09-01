@@ -28,8 +28,8 @@ silently merged into that panel:
 - **CCT-20 target:** `docs/research/kbound/paper/generated/cct20_release_manifest.json`
   (SHA-256 `722d2ebbe2d883c7eb173d72af9e4aa4c0a99b1ec320d913bf668f07d28eff48`)
   and its receipt are the authority. The verdict is `SAFE_UTILITY_ONLY`: 44 FREEZE, zero ADAPT, one
-  ABSTAIN across 45 checkpoint-location cells. KGA ties always-freeze and improves over harmful
-  always-adapt, but fails the preregistered strong-success action-exposure requirement. Outcomes
+  ABSTAIN across 45 checkpoint-location cells. KGA ties always-freeze and avoids the degradation
+  from always-adapt, but fails the preregistered strong-success action-exposure requirement. Outcomes
   were unopened before execution, but aggregate target metadata had been inspected during dataset
   ranking; the study is therefore not described as literally label-unopened.
 - **So2Sat development gate-fit:**
@@ -50,14 +50,14 @@ silently merged into that panel:
 | ImageNet-C SAR | 135 | .0289 | .0529 | .0319 | .0074 | .2074 | pooled point edge, not CI-robust |
 | ImageNet-C Tent | 135 | .0145 | .0191 | .0145 | .0000 | .0000 | ties freeze; no adapts |
 | ImageNet-C EATA | 135 | .0007 | .0001 | .0342 | .0074 | .8963 | trails adapt |
-| PACS | 12 domain-seed units | .0431 | .0176 | .0446 | .0093 | .8148 | negative; per-cell replay incomplete |
-| ImageNet-R | 480 | .0150 | .0064 | .0325 | .0000 | .4042 | negative; worse than adapt on 8/10 backbones |
-| CIFAR-10-C Tent | 2160 | .0016 | .0080 | .1239 | .0000 | .6787 | current exact-rank point win; ordinary six-family intervals positive; retrospective six-contrast Holm is non-confirmatory |
-| CIFAR-10-C EATA | 2160 | .0013 | .0033 | .1313 | .0000 | .6356 | current exact-rank point win; adapt-side family interval crosses zero; retrospective six-contrast Holm is non-confirmatory |
-| CIFAR-10-C SAR | 2160 | .0016 | .0003 | .1405 | .0000 | .6694 | completed negative arm |
+| PACS | 12 domain-seed units | .0431 | .0176 | .0446 | .0093 | .8148 | favors always-adapt; per-cell replay incomplete |
+| ImageNet-R | 480 | .0150 | .0064 | .0325 | .0000 | .4042 | favors adaptation on 8/10 backbones |
+| CIFAR-10-C Tent | 2160 | .0016 | .0080 | .1239 | .0000 | .6787 | lower exact-rank point regret than each fixed policy; ordinary six-family intervals positive; retrospective six-contrast Holm is non-confirmatory |
+| CIFAR-10-C EATA | 2160 | .0013 | .0033 | .1313 | .0000 | .6356 | lower exact-rank point regret than each fixed policy; adapt-side family interval crosses zero; retrospective six-contrast Holm is non-confirmatory |
+| CIFAR-10-C SAR | 2160 | .0016 | .0003 | .1405 | .0000 | .6694 | always-adapt has lower regret |
 | Camelyon17 OOD | 18 | .0000 | .0000 | .1381 | .0000 | 1.0000 | reproduces always-adapt; one-sided |
-| Camelyon17 B-v2 Tent | 108 | .0296 | .0097 | .0820 | .0093 | .3704 | negative diagnostic |
-| Camelyon17 B-v2 EATA | 108 | .0083 | .0040 | .0911 | .0000 | .5648 | negative diagnostic |
+| Camelyon17 B-v2 Tent | 108 | .0296 | .0097 | .0820 | .0093 | .3704 | comparator-favoring diagnostic |
+| Camelyon17 B-v2 EATA | 108 | .0083 | .0040 | .0911 | .0000 | .5648 | comparator-favoring diagnostic |
 | Camelyon17 B-v2 SAR | 108 | .0006 | .0016 | .1001 | .0000 | .6574 | within-seed diagnostic point result |
 | RxRx1 | 60 | .0000 | .2531 | .0000 | .0000 | 1.0000 | freezes throughout; endpoint no-harm |
 | CIFAR-10.1 | 48 | .0017 | .0190 | .0017 | .0000 | .4583 | ties freeze; no adapts |
@@ -90,7 +90,7 @@ false-adapt denominator.
   adjustment over the six prospectively named contrasts gives 0.09375 for both Tent contrasts and
   does not support a confirmatory claim.
 - EATA's ordinary adapt-side family interval [-0.00052, 0.00438] crosses zero, and SAR loses to
-  always-adapt. No candidate earns a cluster-robust or confirmatory win. The analysis is conditional
+  always-adapt. No candidate earns a cluster-robust or confirmatory routing-utility claim. The analysis is conditional
   on one archived checkpoint and is not independent-checkpoint, prospective, natural-shift, or
   official POEM/AETTA evidence.
 - The earlier KGA-policy cluster artifact remains separately marked historical. It does not replace
@@ -113,7 +113,7 @@ p-values are different families and must not be pooled or used to promote the CI
 - The archived H-v2 scorer used sklearn macro-F1, which does not match the official WILDS
   label-present macro-F1 contract. Its performance values, radius, and action counts are therefore
   audit-only and are not release-level numerical evidence.
-- Replays of the archived records explain why the historical beats-both flag was unstable, but a
+- Replays of the archived records explain why the historical two-comparator flag was unstable, but a
   replay cannot repair the metric contract or seal the evaluated population retroactively.
 - The release row remains withheld until a pinned official-metric rerun is completed against a
   population manifest sealed before scoring.

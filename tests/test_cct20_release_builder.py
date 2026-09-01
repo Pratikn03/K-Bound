@@ -621,6 +621,8 @@ def test_script_has_no_target_annotation_or_scorer_entrypoint() -> None:
 
 
 def test_publication_runbook_builds_and_seals_both_manuscript_forms() -> None:
+    from docs.research.kbound.scripts.verify_release_checksums import REQUIRED_RELEASE_PATHS
+
     runbook = (
         release.REPOSITORY_ROOT
         / "docs/research/kbound/runbooks/release_candidate.sh"
@@ -634,6 +636,9 @@ def test_publication_runbook_builds_and_seals_both_manuscript_forms() -> None:
     assert "tests/test_cct20_release_builder.py" in runbook
     assert "tests/test_cct20_manuscript_claim_validation.py" in runbook
     assert "tests/test_build_docx_pipeline.py" in runbook
+    # The runbook and verifier share one exact-path inventory. Do not require
+    # a duplicated filename list in the shell producer.
+    assert '"$KB/scripts/verify_release_checksums.py" --list-required' in runbook
     for name in (
         "cct20_release_manifest.json.receipt.json",
         "cct20_numbers.tex",
@@ -641,5 +646,6 @@ def test_publication_runbook_builds_and_seals_both_manuscript_forms() -> None:
         "cct20_location_effects.tex",
         "kbound_short_final_draft.docx",
     ):
-        assert name in runbook
+        prefix = "docs/research/kbound/" if name.endswith(".docx") else "docs/research/kbound/paper/generated/"
+        assert prefix + name in REQUIRED_RELEASE_PATHS
     assert '("kbound_short_final_draft.pdf", "kbound_tmlr.pdf")' in renderer

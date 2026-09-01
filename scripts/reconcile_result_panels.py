@@ -1278,13 +1278,6 @@ def write_outputs(result: dict[str, Any]) -> None:
     (RESULT_ROOT / "canonical_panel_table.tex").write_text(render_latex(result))
 
 
-def remove_appledouble_files() -> None:
-    """Remove macOS sidecar metadata from the generated release tree."""
-    for path in RESULT_ROOT.rglob("._*"):
-        if path.is_file():
-            path.unlink(missing_ok=True)
-
-
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument(
@@ -1333,7 +1326,8 @@ def main() -> int:
         parser.error("--reuse-transfer requires an existing canonical_panel_results.json")
     result = reconcile(reuse_transfer=args.reuse_transfer)
     write_outputs(result)
-    remove_appledouble_files()
+    # Reconciliation does not authorize storage cleanup. In particular, leave
+    # AppleDouble sidecars alone; exact-scope cleanup is a separate operation.
     print(f"Wrote {RESULT_ROOT / 'canonical_panel_results.json'}")
     print(f"Wrote {RESULT_ROOT / 'CANONICAL_PANEL_RESULTS.md'}")
     print(f"Wrote {RESULT_ROOT / 'canonical_panel_table.tex'}")

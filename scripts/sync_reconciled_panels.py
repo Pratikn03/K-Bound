@@ -58,12 +58,24 @@ SO2SAT_SAR_GATE_FIT_PATH = (
 SO2SAT_RUNTIME_AMENDMENT_PATH = (
     ROOT / "research_lock/KBOUND_SO2SAT_DEVELOPMENT_RUNTIME_AMENDMENT_v1.json"
 )
+FMOW_FINDINGS_PATH = (
+    ROOT / "experiments/kbound/results/fmow_protocol_L_v1/VERIFIED_FINDINGS.json"
+)
+POVERTY_FINDINGS_PATH = (
+    ROOT / "experiments/kbound/results/poverty_protocol_L_dev/VERIFIED_FINDINGS.json"
+)
 
 CI_CONVENTION = "baseline_regret_minus_kga_regret; positive values favor KGA"
 CURRENT_POLICY_STATUS = "current_policy_exact_rank_replay"
 HISTORICAL_POLICY_STATUS = "historical_policy_only"
 CURRENT_CLUSTER_STATUS = "retrospective_current_policy_family_sensitivity"
 CURRENT_CLUSTER_SCHEMA = "kbound-current-policy-cluster-inference-v3"
+CURRENT_POLICY_BINDING_PATHS = {
+    "policy": "kga/policy.py",
+    "certificate": "kga/certificate.py",
+    "numeric_validation": "kga/_validation.py",
+    "preregistered_protocol": "research_lock/STRESS_GRID_MULTISEED_PROTOCOL_A_v1.yaml",
+}
 FAMILY_FIELD = "retrospective_holm_over_six_prospectively_named_contrasts"
 COMPARISON_P_FIELD = "p_value_retrospective_holm_six_prospectively_named_contrasts"
 COMPARISON_REJECT_FIELD = "retrospective_holm_six_contrasts_reject_at_0_05"
@@ -160,6 +172,58 @@ def _validated_separate_natural_authorities() -> tuple[dict[str, Any], dict[str,
         raise ValueError("So2Sat release authority no longer records a negative gate-fit")
 
     return cct, so2sat
+
+
+def _validated_historical_natural_diagnostics() -> tuple[dict[str, Any], dict[str, Any]]:
+    """Load bounded FMoW/PovertyMap diagnostics that remain outside the panel.
+
+    These records are useful inventory evidence, but neither is a canonical-panel
+    row.  FMoW is a completed historical non-clearance and PovertyMap is a
+    development-screen stop with no held-out score.  Validate that boundary before
+    placing either record in the claim ledger.
+    """
+
+    missing = [
+        _relative(path)
+        for path in (FMOW_FINDINGS_PATH, POVERTY_FINDINGS_PATH)
+        if not path.is_file()
+    ]
+    if missing:
+        raise FileNotFoundError(
+            "historical natural-shift diagnostic is incomplete: " + ", ".join(missing)
+        )
+
+    fmow = _load(FMOW_FINDINGS_PATH)
+    fmow_score = fmow.get("analyze_F", {})
+    if (
+        fmow.get("protocol") != "FMOW_PROTOCOL_L_v1"
+        or fmow.get("dataset") != "wilds-fmow"
+        or fmow.get("verdict") != "not-cleared"
+        or fmow.get("headline") is not False
+        or fmow_score.get("candidate") != "sar_online"
+        or fmow_score.get("n_test") != 180
+        or fmow_score.get("beats_both") is not False
+        or not math.isclose(fmow_score.get("regret_kga", math.nan), 0.01293847918126778)
+        or not math.isclose(fmow_score.get("regret_adapt", math.nan), 0.009167574844589754)
+        or not math.isclose(fmow_score.get("regret_freeze", math.nan), 0.01293847918126778)
+    ):
+        raise ValueError("FMoW Protocol L diagnostic is stale or malformed")
+
+    poverty = _load(POVERTY_FINDINGS_PATH)
+    poverty_screen = poverty.get("dev_screen", {})
+    if (
+        poverty.get("protocol") != "POVERTY_PROTOCOL_L_v1"
+        or poverty.get("dataset") != "wilds-poverty"
+        or poverty.get("verdict") != "dev-screen-stop"
+        or poverty.get("headline") is not False
+        or poverty_screen.get("screen") != "STOP"
+        or poverty_screen.get("reason") != "harm_AUC below 0.65 gate"
+        or not math.isclose(poverty_screen.get("harm_AUC", math.nan), 0.6372720063441712)
+        or poverty.get("held_out_val_test") != "not run per pre-registration"
+    ):
+        raise ValueError("PovertyMap Protocol L development stop is stale or malformed")
+
+    return fmow, poverty
 
 
 def _separate_natural_release_claims(
@@ -402,6 +466,27 @@ def _normalized_historical_cluster() -> dict[str, Any]:
     }
 
 
+def _validated_current_policy_bindings(bindings: object) -> dict[str, Any]:
+    """Reject missing/substituted replay dependencies before promoting results."""
+    if not isinstance(bindings, dict) or set(bindings) != set(CURRENT_POLICY_BINDING_PATHS):
+        raise ValueError(
+            "current-policy cluster artifact must bind exactly "
+            + ", ".join(CURRENT_POLICY_BINDING_PATHS)
+        )
+    for name, relative_path in CURRENT_POLICY_BINDING_PATHS.items():
+        binding = bindings[name]
+        if (
+            not isinstance(binding, dict)
+            or binding.get("path") != relative_path
+            or not isinstance(binding.get("sha256"), str)
+        ):
+            raise ValueError(f"current-policy cluster {name} binding has invalid path/hash metadata")
+        bound_path = ROOT / relative_path
+        if not bound_path.is_file() or _sha256(bound_path) != binding["sha256"]:
+            raise ValueError(f"current-policy cluster {name} binding does not match the live file")
+    return bindings
+
+
 def _normalized_current_cluster(raw: dict[str, Any], candidate: str) -> dict[str, Any]:
     """Expose the corrected family sensitivity without promoting a confirmatory win."""
 
@@ -417,17 +502,7 @@ def _normalized_current_cluster(raw: dict[str, Any], candidate: str) -> dict[str
             "prospectively named contrasts"
         )
 
-    bindings = raw.get("live_code_bindings", {})
-    required_bindings = ("policy", "certificate", "preregistered_protocol")
-    for name in required_bindings:
-        binding = bindings.get(name, {})
-        path = binding.get("path")
-        expected_hash = binding.get("sha256")
-        if not isinstance(path, str) or not isinstance(expected_hash, str):
-            raise ValueError(f"current-policy cluster artifact is missing the {name} binding")
-        bound_path = ROOT / path
-        if not bound_path.is_file() or _sha256(bound_path) != expected_hash:
-            raise ValueError(f"current-policy cluster {name} binding does not match the live file")
+    bindings = _validated_current_policy_bindings(raw.get("live_code_bindings"))
 
     row = raw.get("candidates", {}).get(candidate)
     if not isinstance(row, dict):
@@ -903,6 +978,44 @@ def _sync_table(
                 "it is not prospective and not a beats-both result."
             ),
             "source_caveat": camelyon_panel["claim_scope"],
+            "reproducibility_status": "REPRODUCIBLE_FROM_CANONICAL_COMPACT_SOURCE",
+        }
+    )
+
+    camelyon_b_v2_panel = panels["camelyon17"]["b_v2_diagnostic"]
+    camelyon_b_v2_sar = camelyon_b_v2_panel["panel"]["candidates"]["sar"]
+    camelyon_b_v2_sar_row = tracks.setdefault("camelyon17_b_v2_sar", {})
+    _drop_stale_ci_aliases(camelyon_b_v2_sar_row)
+    camelyon_b_v2_sar_row.update(
+        {
+            "regret": _regret(camelyon_b_v2_sar),
+            "false_adapt": camelyon_b_v2_sar["fa_u"],
+            "false_adapt_count": camelyon_b_v2_sar["false_adapt_count"],
+            "n_test": camelyon_b_v2_sar["n"],
+            "decision_counts": _decision_counts(camelyon_b_v2_sar),
+            "cp95_upper_fa_c": _cp95_upper(
+                camelyon_b_v2_sar["false_adapt_count"],
+                camelyon_b_v2_sar["adapt_count"],
+            ),
+            "seeds": camelyon_b_v2_panel["panel"]["seeds"],
+            "point_beats_both": camelyon_b_v2_sar["point_beats_both"],
+            "ci_robust_beats_both": False,
+            "comparison_inference": _comparison_inference(camelyon_b_v2_sar),
+            "source": source,
+            "source_manifest": source_manifest,
+            "status": "diagnostic_within_seed_exact_rank_replay",
+            "current_policy_authority": True,
+            "numeric_release_eligible": True,
+            "headline_promotion_eligible": False,
+            "untouched_target_domain_evaluation": False,
+            "independent_checkpoint_identities_recorded": False,
+            "protocol": camelyon_b_v2_panel["protocol"],
+            "verdict": (
+                "Within-seed diagnostic point ordering only; the run seeds do not record "
+                "independent checkpoint identities and the study is not an untouched "
+                "hospital-domain evaluation."
+            ),
+            "source_caveat": camelyon_b_v2_panel["claim_scope"],
             "reproducibility_status": "REPRODUCIBLE_FROM_CANONICAL_COMPACT_SOURCE",
         }
     )
@@ -1793,10 +1906,18 @@ def _sync_decision_metrics(
     }
 
 
-def _sync_ledger(ledger: dict[str, Any], current_cluster: dict[str, Any]) -> None:
+def _sync_ledger(
+    ledger: dict[str, Any],
+    current_cluster: dict[str, Any],
+    panel: dict[str, Any] | None = None,
+) -> None:
+    # Keep the two-argument helper interface used by the release idempotence tests.
+    if panel is None:
+        panel = _load(PANEL_PATH)
     source = PANEL_PATH.relative_to(ROOT).as_posix()
     source_manifest = SOURCE_MANIFEST.relative_to(ROOT).as_posix()
     cct20_authority, so2sat_authority = _validated_separate_natural_authorities()
+    fmow_diagnostic, poverty_diagnostic = _validated_historical_natural_diagnostics()
 
     theorem = _claim(ledger, "KB-CLAIM-001")
     theorem["claim_text"] = (
@@ -2067,7 +2188,8 @@ def _sync_ledger(ledger: dict[str, Any], current_cluster: dict[str, Any]) -> Non
         "missing": [],
         "note": (
             "All supporting paths verified after adding receipt-linked CCT-20 and So2Sat "
-            "claims and preserving KB-CLAIM-044/045 as superseded historical records."
+            "claims, hash-bound historical FMoW/PovertyMap diagnostics, and preserving "
+            "KB-CLAIM-044/045 as superseded historical records."
         ),
     }
 
@@ -2100,6 +2222,27 @@ def _sync_ledger(ledger: dict[str, Any], current_cluster: dict[str, Any]) -> Non
                 "target_access": "none",
             },
         },
+        "separate_historical_diagnostic_authorities": {
+            "fmow_protocol_l": {
+                "claim_id": "KB-CLAIM-054",
+                "artifact": _relative(FMOW_FINDINGS_PATH),
+                "artifact_sha256": _sha256(FMOW_FINDINGS_PATH),
+                "artifact_bytes": FMOW_FINDINGS_PATH.stat().st_size,
+                "verdict": fmow_diagnostic["verdict"],
+                "canonical_panel_member": False,
+                "headline_promotion_eligible": False,
+            },
+            "poverty_protocol_l_development": {
+                "claim_id": "KB-CLAIM-055",
+                "artifact": _relative(POVERTY_FINDINGS_PATH),
+                "artifact_sha256": _sha256(POVERTY_FINDINGS_PATH),
+                "artifact_bytes": POVERTY_FINDINGS_PATH.stat().st_size,
+                "verdict": poverty_diagnostic["verdict"],
+                "held_out_evaluation_run": False,
+                "canonical_panel_member": False,
+                "headline_promotion_eligible": False,
+            },
+        },
         "multiplicity_status": {
             "cifar_current_policy_scope": (
                 "The six candidate-by-fixed-policy contrast family was prospectively "
@@ -2123,6 +2266,15 @@ def _sync_ledger(ledger: dict[str, Any], current_cluster: dict[str, Any]) -> Non
         },
     }
     ledger["generated_at"] = "2026-08-29"
+
+    camelyon_b_v2 = panel["panels"]["camelyon17"]["b_v2_diagnostic"]
+    camelyon_b_v2_sar = camelyon_b_v2["panel"]["candidates"]["sar"]
+    if (
+        camelyon_b_v2["headline_promotion"].get("eligible") is not False
+        or camelyon_b_v2_sar.get("point_beats_both") is not True
+        or camelyon_b_v2_sar.get("seed_inference", {}).get("ci_robust_beats_both") is not False
+    ):
+        raise ValueError("Camelyon17 B-v2 SAR diagnostic scope drifted")
 
     closure_claims = [
         {
@@ -2239,6 +2391,103 @@ def _sync_ledger(ledger: dict[str, Any], current_cluster: dict[str, Any]) -> Non
             "allowed_wording": "negative exact-rank diagnostic that ties always-freeze",
             "forbidden_wording": ["FA_u failure", "beats both", "natural-shift win"],
         },
+        {
+            "claim_id": "KB-CLAIM-053",
+            "claim_text": (
+                "Camelyon17 B-v2 SAR has lower point regret than both fixed policies in a "
+                "three-run within-seed replay, but the run seeds do not record independent "
+                "checkpoint identities and the study is not an untouched hospital-domain "
+                "evaluation."
+            ),
+            "claim_type": "empirical",
+            "claim_tier": "B",
+            "protocol": "CAMELYON17_B_V2_ARCHIVED_DIAGNOSTIC",
+            "dataset": "Camelyon17 B-v2",
+            "candidate_adapter": "sar",
+            "calibration_method": (
+                "per-candidate/per-run-seed exact-rank leave-one-condition-out residual calibration"
+            ),
+            "test_split": "three opened within-seed 36-condition grids",
+            "status": "diagnostic",
+            "supporting_artifacts": [source, source_manifest],
+            "assumptions": [
+                "opened diagnostic grid rather than an untouched target-domain evaluation",
+                "run seeds are conditional on archived checkpoint identities",
+                "independent checkpoint identities are not recorded",
+            ],
+            "allowed_wording": (
+                "Camelyon17 B-v2 SAR within-seed diagnostic point ordering; no natural-domain "
+                "or independent-checkpoint promotion"
+            ),
+            "forbidden_wording": [
+                "prospective Camelyon17 win",
+                "untouched hospital-domain result",
+                "independent-checkpoint confirmation",
+                "CI-robust natural-shift win",
+            ],
+        },
+        {
+            "claim_id": "KB-CLAIM-054",
+            "claim_text": (
+                "The historical FMoW Protocol L test did not clear its release gate: KGA "
+                "matched always-freeze regret and had higher regret than always-adapt."
+            ),
+            "claim_type": "empirical",
+            "claim_tier": "C",
+            "protocol": "FMOW_PROTOCOL_L_v1",
+            "dataset": "FMoW",
+            "candidate_adapter": fmow_diagnostic["analyze_F"]["candidate"],
+            "calibration_method": "historical Protocol L analyze_F",
+            "test_split": "historical WILDS FMoW test, seeds 2-4",
+            "status": "diagnostic",
+            "supporting_artifacts": [
+                _relative(FMOW_FINDINGS_PATH),
+                "research_lock/FMOW_PROTOCOL_L_v1.yaml",
+            ],
+            "assumptions": [
+                "historical result outside the source-hashed canonical panel",
+                "stored false_adapt=0.375 is conditional FA_c, not theorem-controlled FA_u",
+            ],
+            "allowed_wording": (
+                "historical FMoW non-clearance: KGA matches freeze and trails adapt"
+            ),
+            "forbidden_wording": [
+                "canonical-panel FMoW result",
+                "FMoW routing win",
+                "FA_u equals 0.375",
+            ],
+        },
+        {
+            "claim_id": "KB-CLAIM-055",
+            "claim_text": (
+                "PovertyMap Protocol L stopped at its preregistered development screen because "
+                "harm AUC was below 0.65; held-out validation and test evaluation did not run."
+            ),
+            "claim_type": "empirical",
+            "claim_tier": "C",
+            "protocol": "POVERTY_PROTOCOL_L_v1",
+            "dataset": "PovertyMap",
+            "candidate_adapter": "development screen across Tent, EATA, and SAR",
+            "calibration_method": "development harm-detectability screen",
+            "test_split": "development id_val only; held-out validation/test not run",
+            "status": "diagnostic",
+            "supporting_artifacts": [
+                _relative(POVERTY_FINDINGS_PATH),
+                "research_lock/POVERTY_PROTOCOL_L_v1.yaml",
+            ],
+            "assumptions": [
+                "development-only screen outside the source-hashed canonical panel",
+                "no held-out score exists",
+            ],
+            "allowed_wording": (
+                "PovertyMap development-screen stop; held-out evaluation did not run"
+            ),
+            "forbidden_wording": [
+                "PovertyMap target result",
+                "PovertyMap routing win",
+                "held-out PovertyMap accuracy",
+            ],
+        },
     ]
     closure_claims.extend(
         _separate_natural_release_claims(cct20_authority, so2sat_authority)
@@ -2311,7 +2560,7 @@ def main() -> None:
     _sync_table(panel, table, current_cluster)
     _sync_uniform_verdicts(panel, uniform, current_cluster)
     _sync_decision_metrics(panel, decision_metrics, current_cluster)
-    _sync_ledger(ledger, current_cluster)
+    _sync_ledger(ledger, current_cluster, panel)
     _sync_frontier(panel, frontier)
     if not args.json_only:
         _write_current_cluster_table(current_cluster)

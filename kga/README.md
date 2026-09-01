@@ -7,11 +7,16 @@ the decision algorithm from the paper *K-Bound: When Is Label-Free Adaptation Kn
 KGA can decide without **deployment** target labels after a benefit estimator has
 been fitted on labelled development conditions and calibrated on a disjoint
 labelled residual split. At deployment it maps label-free evidence `Z` to a
-finite-sample certificate `Δ̂ ± ε` on the benefit of adapting over freezing.
+certificate `Δ̂ ± ε` for a declared benefit target. Its error guarantee depends
+on coverage for that target and the stated sampling, calibration, and transfer
+assumptions; the API cannot verify those assumptions by itself.
 
 ---
 
 ## Quickstart
+
+This example uses synthetic numbers to demonstrate the API. It is not evidence
+that a deployed estimator is valid, or a natural-shift experiment.
 
 ```python
 import hashlib
@@ -64,23 +69,35 @@ python -m kga decide --calib calib.npy --test test.npy \
 
 ## The trichotomy and its guarantee
 
-Let `Δ = R(f0) − R(fa)` be the true benefit of the adapted predictor `fa` over the
-frozen one `f0` (positive ⇒ adapting reduces risk). A certificate gives a point
-estimate `Δ̂` and a radius `ε` at level `α`. KGA applies:
+Let `B` be the certificate's declared benefit target; positive means adaptation
+helps. It can be the population risk difference `Δ = R(f0) − R(fa)` only when
+the interval covers that population quantity. Calibration against measured-cell
+benefits does not automatically cover population benefit: additional sampling
+uncertainty may need to be accounted for.
+
+The API calls the point estimate `Δ̂` (`delta_hat`) and the radius `ε`
+(`epsilon`). For an interval intended to cover `B`, KGA applies:
 
 | condition | decision |
 |---|---|
-| `Δ̂ − ε > 0` | **ADAPT** — adapting is certified beneficial |
-| `Δ̂ + ε < 0` | **FREEZE** — adapting is certified harmful |
+| `Δ̂ − ε > 0` | **ADAPT** — the lower bound for `B` is positive |
+| `Δ̂ + ε < 0` | **FREEZE** — the upper bound for `B` is negative |
 | otherwise | **ABSTAIN** — the empirical certificate supports no strict update |
 
-**Unconditional false-adapt event (Theorem 3, `thm:cert`).** If the radius construction
-attains the stated marginal coverage, then
-`Δ ≥ Δ̂ − ε` holds with probability ≥ `1 − α`. ADAPT fires only when `Δ̂ − ε > 0`,
-which on that event forces `Δ > 0`. Hence `P(ADAPT and Δ ≤ 0) ≤ α` — the chance of a
-*harmful* adaptation is bounded by `α`. The symmetric statement bounds false-freeze.
-The **anytime** variant uses a testing-by-betting e-process; its guarantee requires
-the declared bounded-stream and predictable-bet assumptions.
+**Unconditional false-adapt event (conditional certificate criterion).** If the radius construction
+attains its stated marginal coverage for `B`, then
+`B ≥ Δ̂ − ε` holds with probability ≥ `1 − α`. ADAPT fires only when `Δ̂ − ε > 0`,
+which on that coverage event forces `B > 0`. Hence `P(ADAPT and B ≤ 0) ≤ α`.
+This guarantee depends on the coverage assumptions, but the probability is an
+unconditional joint error event—not `P(B ≤ 0 | ADAPT)`. The symmetric false-freeze
+statement requires a valid upper bound for the same target; separate one-sided
+guarantees do not imply simultaneous two-sided coverage at the same level.
+
+The **anytime** method uses a testing-by-betting e-process for fixed declared
+nulls, bounded benefit streams, and predictable bets. Its guarantee covers
+repeated looks at that specified process, not arbitrary repeated deployments,
+restarts, or changing candidates. Its shared `Certificate` container encodes
+directional test decisions; it is not a confidence interval.
 
 An empirical abstention does not diagnose its own cause. It can reflect structural
 non-identifiability, a weak estimator, finite calibration size, failed transfer, or
@@ -93,11 +110,11 @@ For **K adapter candidates** per condition, use ``kga.routing``:
 ```python
 from kga.routing import route_panel, AnytimeMulticandidatePanel
 
-# Batch Bonferroni FWER (thm:multicand, thm:multiclass-multicand)
+# Batch Bonferroni control from valid per-candidate lower bounds
 dec = route_panel(deploy_scores, cal_scores, cal_truth, alpha=0.1)
 print(dec.selected, dec.decision)  # index or None, adapt/abstain
 
-# Anytime panel (thm:anytime-multicand)
+# Anytime panel for a fixed, declared bounded-stream testing setup
 panel = AnytimeMulticandidatePanel(k=4, alpha=0.1)
 chosen = panel.update([0.2, -0.1, 0.05, 0.0])
 ```
@@ -138,14 +155,15 @@ those identities explicitly.
 Frozen dataclass `(delta_hat, epsilon, method, alpha, n)` with `.lower`/`.upper`.
 Estimators:
 - `empirical_bernstein(...)` — Maurer–Pontil (2009) empirical-Bernstein LCB
-  (batch Theorem 3; default). Identical formula to
+  (default batch certificate). Identical formula to
   `docs/research/kbound/vendored_from_elara/certification/switching_certificate.py`.
 - `hoeffding(...)` — distribution-free LCB (conservative baseline).
 - `conformal_split(delta_hat, calib_residuals, ...)` — exact-rank split-conformal
   radius on a disjoint exchangeable residual split. Controlled-grid LOO replay
   is empirical residual calibration, not exact split conformal.
-- `evalue_anytime(...)` — anytime-valid betting e-process (Ville; Theorem 3b),
-  mirroring `experiments/kbound/theory_validation/val_thm3_evalue.py`.
+- `evalue_anytime(...)` — the specified bounded-stream betting e-process (Ville),
+  mirroring the historical validation in
+  `experiments/kbound/theory_validation/val_thm3_evalue.py`.
 
 ### `Decision` (`kga.policy`)
 `Enum` with `ADAPT`, `FREEZE`, `ABSTAIN` (each compares equal to its string value).

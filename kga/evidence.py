@@ -8,19 +8,20 @@ experiments -- see ``src/scripts/kbound/knowability_experiment.py`` (the ``Z =
 dict(...)`` block, lines 74-96) and ``mixed_regime_experiment.py`` (the
 ``evidence`` helper, lines 47-54).
 
-The signals fall into four families, each tied to a theorem:
+The signals fall into four families motivated by the identifiability and
+coverage arguments:
 
 * **Drift (KS).**  Per-detector Kolmogorov-Smirnov distance between the
   calibration and test score marginals (``scipy.stats.ks_2samp``).  Large drift
   is the *observable* signature of a covariate shift the gate can react to
-  (Theorem 4, ``thm:pos``; detectability via Theorem 6 / ``thm:disagree``
-  evidence).  When the marginal is preserved but the signal is destroyed (the
+  (the covariate-shift positive result and disagreement-region analysis).
+  When the marginal is preserved but the signal is destroyed (the
   "covert" failure of ``mixed_regime_experiment.py``), KS ~ 0 and the regime is
-  unknowable (Theorem 1, ``thm:imp``).
+  unknowable (the hidden-drift construction and observable-fiber criterion).
 * **Disagreement.**  ``1 - mean pairwise rank correlation`` of the test scores
   across detectors -- a label-free proxy for the size/heterogeneity of the
-  disagreement region ``D`` on which sign-of-difference lives (Theorem 5,
-  ``thm:disagree``).
+  disagreement region ``D`` on which sign-of-difference lives (the
+  prediction-disagreement decomposition).
 * **Entropy / confidence shift.**  Mean Shannon entropy and mean confidence of
   the score distributions, and their calibration->test drops.  These mirror the
   ``pre/post`` entropy & confidence signals of the deep-TTA evidence vector in
@@ -29,8 +30,8 @@ The signals fall into four families, each tied to a theorem:
 * **Importance weight / ESS.**  A Gaussian-ratio importance weight between the
   calibration and test score laws and its effective sample size
   ``ESS = (sum w)^2 / sum w^2``.  Low ESS means the target is poorly covered by
-  the source, so importance-weighted certificates are unreliable (Theorem 4
-  support-overlap condition; cf. the weight-variance/overlap features in
+  the source, so importance-weighted certificates are unreliable (the
+  covariate-shift support-overlap condition; cf. the weight-variance/overlap features in
   ``kbound_full_experiments.py::run_regression``).
 
 All functions are pure ``numpy``/``scipy`` and deterministic.
@@ -43,6 +44,8 @@ from dataclasses import dataclass, field
 
 import numpy as np
 from scipy.stats import ks_2samp, rankdata
+
+from kga._validation import as_float_array
 
 EVIDENCE_SCHEMA_VERSION = "kga-generic-score-evidence/1"
 EVIDENCE_FEATURE_NAMES = (
@@ -129,18 +132,20 @@ class Evidence:
         calib_entropy, test_entropy, calib_conf, test_conf, ess_frac]``.
         Useful as the input ``Z`` to a downstream benefit regressor.
         """
-        return np.array([getattr(self, name) for name in EVIDENCE_FEATURE_NAMES], dtype=float)
+        return as_float_array([getattr(self, name) for name in EVIDENCE_FEATURE_NAMES])
 
 
 def _as_2d(scores: np.ndarray, name: str) -> np.ndarray:
     """Coerce a score array to shape ``(n_samples, n_detectors)``."""
-    arr = np.asarray(scores, dtype=float)
+    arr = as_float_array(scores)
     if arr.ndim == 1:
         arr = arr.reshape(-1, 1)
     if arr.ndim != 2:
         raise ValueError(f"{name} must be 1-D or 2-D, got shape {arr.shape}")
     if arr.shape[0] == 0:
         raise ValueError(f"{name} must have at least one sample")
+    if arr.shape[1] == 0:
+        raise ValueError(f"{name} must have at least one detector")
     if not np.all(np.isfinite(arr)):
         raise ValueError(f"{name} must contain only finite values")
     return arr

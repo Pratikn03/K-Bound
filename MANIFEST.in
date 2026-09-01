@@ -1,0 +1,19 @@
+# The root distribution is the maintained, lightweight KGA library.
+# Full research tests, protocols, and historical runners stay in the repository.
+include MANIFEST.in pyproject.toml README.md LICENSE CITATION.cff
+recursive-include kga *.py *.md py.typed
+prune tests
+prune test
+prune docs
+prune experiments
+prune src
+prune archive
+prune archives
+prune research_lock
+prune data
+prune .git
+prune .venv
+prune .pytest_cache
+prune .mypy_cache
+prune .ruff_cache
+global-exclude ._* .DS_Store *.pyc *.pyo *.log

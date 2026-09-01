@@ -10,7 +10,7 @@ on a disjoint split.  Deployment maps label-free evidence ``Z`` to a certificate
     ABSTAIN otherwise
 
 with false-adapt probability bounded by ``alpha`` conditional on the stated
-coverage/transfer assumptions (Theorem 3 of the K-Bound paper).
+coverage/transfer assumptions (the paper's conditional certificate criterion).
 
 Controlled-grid replay rule
 ---------------------------

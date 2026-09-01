@@ -7,8 +7,9 @@ and how sure are we?".  Concretely it carries
     epsilon     a confidence radius at level ``alpha``,
 
 Feeding the certificate to :func:`kga.policy.decide` yields the
-ADAPT/FREEZE/ABSTAIN trichotomy with the false-adapt ``<= alpha`` guarantee of
-Theorem 3.
+ADAPT/FREEZE/ABSTAIN trichotomy. The conditional certificate criterion gives
+false-adapt ``<= alpha`` when the bound covers its declared target under the
+stated assumptions.
 
 Sidedness of the radius (read this before quoting an interval)
 --------------------------------------------------------------
@@ -25,8 +26,8 @@ the lower side and the FREEZE branch only ever uses the upper side, so
 ``FA_u <= alpha`` and ``FF_u <= alpha`` each follow from a *single* one-sided
 statement.  Any figure, table or sentence that presents ``[lower, upper]`` as a
 simultaneous interval must label it ``1 - 2 alpha``.  (Panel finding F2-12 /
-F1-12; the companion fix restates ``thm:certificate`` as two one-sided coverage
-conditions rather than one two-sided one.)
+F1-12; the historical companion fix restates the certificate criterion as two
+one-sided coverage conditions rather than one two-sided one.)
 
 :func:`conformal_split` is the exception: its radius is a two-sided
 order statistic of ``|Delta_hat - Delta|``, so ``Pr[|Delta - Delta_hat| <=
@@ -36,7 +37,7 @@ This module provides four estimators, each mirroring a piece of the paper's
 canonical code:
 
 * :func:`empirical_bernstein` -- Maurer & Pontil (2009) empirical-Bernstein LCB,
-  the batch Theorem 3 certificate, identical to
+  the default batch certificate, identical to
   ``vendored_from_elara/certification/switching_certificate.py::
   empirical_bernstein_lcb`` and ``kbound_pkg/kbound/certificate.py``.
 * :func:`hoeffding` -- the distribution-free Hoeffding LCB (looser baseline).
@@ -44,8 +45,8 @@ canonical code:
   over ``|Delta_hat - Delta|`` calibration residuals, the
   cross-task estimator used in ``knowability_experiment.py`` /
   ``mixed_regime_experiment.py``.
-* :func:`evalue_anytime` -- the anytime-valid testing-by-betting e-process
-  (Ville's inequality), Theorem 3b, mirroring
+* :func:`evalue_anytime` -- the specified bounded-stream testing-by-betting
+  e-process (Ville's inequality), mirroring the historical validation in
   ``experiments/kbound/theory_validation/val_thm3_evalue.py`` and
   ``kbound_pkg/kbound/eprocess.py``.
 
@@ -69,6 +70,8 @@ import warnings
 from dataclasses import dataclass
 
 import numpy as np
+
+from kga._validation import as_float_array
 
 #: Allowed estimator identifiers (the ``method`` field of a :class:`Certificate`).
 METHODS = ("ebern", "hoeffding", "conformal", "evalue")
@@ -178,9 +181,9 @@ def _check_benefit_range(benefit_range: float, caller: str) -> float:
     return rng
 
 
-def _as_1d(x: np.ndarray, name: str) -> np.ndarray:
-    arr = np.asarray(x, dtype=float).ravel()
-    if arr.size == 0:
+def _as_1d(x: np.ndarray, name: str, *, allow_empty: bool = False) -> np.ndarray:
+    arr = as_float_array(x).ravel()
+    if arr.size == 0 and not allow_empty:
         raise ValueError(f"{name} must be a non-empty 1-D array")
     if not np.all(np.isfinite(arr)):
         raise ValueError(f"{name} must contain only finite values")
@@ -188,7 +191,7 @@ def _as_1d(x: np.ndarray, name: str) -> np.ndarray:
 
 
 # ---------------------------------------------------------------------------
-# (1) Empirical-Bernstein  (batch Theorem 3 -- the default certificate)
+# (1) Empirical-Bernstein  (the default batch certificate)
 # ---------------------------------------------------------------------------
 # PROVENANCE (integrity pass 2026-06-20): the empirical-Bernstein certificate below
 # is shared with the ELARA companion work (same Maurer-Pontil 2009 LCB). ELARA's
@@ -200,7 +203,7 @@ def empirical_bernstein(
     alpha: float = 0.1,
     benefit_range: float,
 ) -> Certificate:
-    """Maurer-Pontil (2009) empirical-Bernstein certificate (batch Theorem 3).
+    """Maurer-Pontil (2009) empirical-Bernstein batch certificate.
 
     For i.i.d. paired benefits ``X_i = loss(f0_i) - loss(fa_i)`` in ``[a, b]``
     with empirical mean ``mu_hat`` and unbiased sample variance ``V_hat``, with
@@ -472,7 +475,9 @@ def split_conformal_rank_radius(
             "under-covers, and it is now only reachable through the explicitly named "
             "kga.certificate.legacy_clamped_radius()."
         )
-    arr = _as_1d(calib_residuals, "calib_residuals")
+    # Zero residuals is also an infeasible rank. In particular this occurs in
+    # one-cell LOO replay; it must not select a finite radius or a strict sign.
+    arr = _as_1d(calib_residuals, "calib_residuals", allow_empty=True)
     if np.any(arr < 0.0):
         raise ValueError("calib_residuals must be non-negative (they are |Delta_hat - Delta|)")
     n = arr.size
@@ -585,7 +590,7 @@ def conformal_split(
 
 
 # ---------------------------------------------------------------------------
-# (4) Anytime-valid e-value  (Theorem 3b -- Ville / testing-by-betting)
+# (4) Anytime-valid e-value  (Ville / testing-by-betting)
 # ---------------------------------------------------------------------------
 def evalue_anytime(
     paired_benefits: np.ndarray,
@@ -597,9 +602,9 @@ def evalue_anytime(
     prior_var: float = 0.25,
     prior_weight: float = 1.0,
 ) -> Certificate:
-    """Anytime-valid e-value certificate (Theorem 3b, testing-by-betting).
+    """Bounded-stream e-value certificate using testing-by-betting.
 
-    Runs the two one-sided betting e-processes of
+    Runs the two one-sided betting e-processes of the historical validation
     ``val_thm3_evalue.py`` over the supplied benefit stream::
 
         E_t^+ = prod_{i<=t} (1 + lam_i  X_i)       tests H0 : Delta <= 0,
@@ -655,10 +660,10 @@ def evalue_anytime(
     True
     """
     _check_alpha(alpha)
-    if a >= 0.0:
-        raise ValueError(f"a must be < 0 for the one-sided test on H0: Delta<=0; got {a}")
-    if b <= 0.0:
-        raise ValueError(f"b must be > 0 for the one-sided test on H0': Delta>=0; got {b}")
+    if not math.isfinite(a) or a >= 0.0:
+        raise ValueError(f"a must be finite and < 0 for the one-sided test on H0: Delta<=0; got {a}")
+    if not math.isfinite(b) or b <= 0.0:
+        raise ValueError(f"b must be finite and > 0 for the one-sided test on H0': Delta>=0; got {b}")
     if not 0.0 < bet_cap_frac < 1.0:
         raise ValueError("bet_cap_frac must be in (0, 1)")
     if not math.isfinite(prior_var) or prior_var <= 0.0:
@@ -742,5 +747,5 @@ def worst_group_conformal_radius(group_residuals: list[np.ndarray], alpha: float
     """
     if not group_residuals:
         raise ValueError("group_residuals must contain at least one group")
-    radii = [split_conformal_rank_radius(np.asarray(res, dtype=float), alpha) for res in group_residuals]
+    radii = [split_conformal_rank_radius(res, alpha) for res in group_residuals]
     return float(max(radii))

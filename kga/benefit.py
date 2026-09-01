@@ -23,6 +23,8 @@ from typing import Any, Protocol, runtime_checkable
 
 import numpy as np
 
+from kga._validation import as_float_array
+
 LINEAR_ARTIFACT_SCHEMA = "kga-frozen-linear-benefit/1"
 
 
@@ -37,7 +39,7 @@ def _is_sha256(value: str) -> bool:
 
 
 def _as_finite_vector(value: Sequence[float] | np.ndarray, name: str) -> np.ndarray:
-    array = np.asarray(value, dtype=float).ravel()
+    array = as_float_array(value).ravel()
     if array.size == 0:
         raise ValueError(f"{name} must be non-empty")
     if not np.all(np.isfinite(array)):
@@ -166,7 +168,7 @@ class FrozenLinearBenefitEstimator:
         unexpected = sorted(supplied - expected)
         if missing or unexpected:
             raise ValueError(f"evidence feature mismatch: missing={missing}, unexpected={unexpected}")
-        x = np.asarray([features[name] for name in self.feature_names], dtype=float)
+        x = as_float_array([features[name] for name in self.feature_names])
         if not np.all(np.isfinite(x)):
             raise ValueError("evidence features must be finite")
         standardized = (x - self.feature_center) / self.feature_scale
@@ -187,11 +189,11 @@ class FrozenLinearBenefitEstimator:
             raise ValueError(f"unsupported benefit artifact schema: {value.get('schema')!r}")
         estimator = cls(
             feature_names=tuple(value["feature_names"]),
-            weights=np.asarray(value["weights"], dtype=float),
+            weights=as_float_array(value["weights"]),
             intercept=float(value["intercept"]),
-            feature_center=np.asarray(value["feature_center"], dtype=float),
-            feature_scale=np.asarray(value["feature_scale"], dtype=float),
-            residuals=np.asarray(value["residuals"], dtype=float),
+            feature_center=as_float_array(value["feature_center"]),
+            feature_scale=as_float_array(value["feature_scale"]),
+            residuals=as_float_array(value["residuals"]),
             evidence_schema_version=str(value["evidence_schema_version"]),
             protocol_sha256=str(value["protocol_sha256"]),
             fit_unit=str(value["fit_unit"]),
@@ -243,8 +245,8 @@ def fit_frozen_linear_benefit_estimator(
     """
 
     names = tuple(str(name) for name in feature_names)
-    fit_x = np.asarray(x_fit, dtype=float)
-    cal_x = np.asarray(x_calibration, dtype=float)
+    fit_x = as_float_array(x_fit)
+    cal_x = as_float_array(x_calibration)
     fit_y = _as_finite_vector(y_fit, "y_fit")
     cal_y = _as_finite_vector(y_calibration, "y_calibration")
     if fit_x.ndim != 2 or cal_x.ndim != 2:

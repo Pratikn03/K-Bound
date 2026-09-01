@@ -1,0 +1,521 @@
+Formally Verified Multiclass Vector-Capacity Research Design
+
+Status
+
+This document specifies an independent, breakthrough-seeking theory program for
+K-Bound. It does not change the current K-Bound manuscript, claim ledger, result
+authority, or submission-closure protocol. Results may be proposed for inclusion
+in K-Bound only after the promotion gates in this specification pass.
+
+The program is high risk. It does not assume that its headline conjectures are
+true or novel. A valid negative result, a counterexample, or a literature collision
+ends or narrows the affected claim. No engineering milestone or quantity of
+experiments can substitute for a new and correct theorem.
+
+Research objective
+
+Characterize the exact information required to decide whether test-time
+adaptation is safer than freezing in a multiclass, cost-sensitive deployment,
+then derive matching passive and adaptive target-label complexity for decisions
+that are not identifiable from unlabeled evidence alone.
+
+The strongest intended result is a linked theorem family containing:
+
+a necessary-and-sufficient multiclass benefit-identification criterion;
+
+a minimal supplementary-information characterization;
+
+a sharp label-free impossibility result;
+
+matching passive-label upper and lower bounds;
+
+matching adaptive-label upper and lower bounds;
+
+a non-vacuous regime with a strict active-over-passive label advantage;
+
+a multi-adapter, cost-sensitive ADAPT/FREEZE/ABSTAIN controller with
+finite-sample false-commit control;
+
+complete Lean 4 formalization of every mathematical theorem claimed by the
+program.
+
+Relationship to existing K-Bound and ORIUS
+
+The work lives in an isolated multiclass_vector_capacity theory track. The
+existing K-Bound paper remains the stable baseline and continues through its own
+reconciliation and submission-closure workflow.
+
+If the new program produces only a correct partial characterization, it remains a
+separate theory note or follow-up paper. If it produces the complete matching
+theorem family and survives novelty review, it may justify restructuring K-Bound
+around the result. Its eventual ORIUS role would be a safety-decision layer that
+selects among a frozen controller and adaptive candidates under asymmetric
+physical costs and sparse delayed feedback. ORIUS integration is outside this
+program and cannot be used as evidence for a theorem.
+
+Literature boundary
+
+The novelty claim must be made against, at minimum, these neighboring areas:
+
+robust decisions from partially calibrated high-dimensional forecasts;
+
+decision calibration, multicalibration, omniprediction, and downstream regret;
+
+partial identification and minimax-regret decisions;
+
+multiclass risk estimation under label, covariate, and joint shift;
+
+structured credal learning and distributionally robust classification;
+
+active testing, active risk estimation, optimal experimental design, and
+best-arm identification;
+
+class-conditional conformal validity and target-label complexity;
+
+safety and risk monitoring for test-time adaptation.
+
+Two particularly close references known at design time are:
+
+Kiyani, Hassani, Pappas, and Roth, Robust Decision Making with Partially
+Calibrated Forecasts, arXiv:2510.23471 (2025), which derives efficiently
+computable minimax policies under partial calibration;
+
+Venkatesh, Hüllermeier, Bischl, and Rezaei, Structured Credal Learning, UAI
+2026, which studies tractable robust learning under separated covariate and
+label uncertainty.
+
+The program is not novel merely because it uses a robust ambiguity set, a
+multiclass cost matrix, abstention, or a minimax policy. Its target distinction is
+the adaptation-benefit functional, its observable-equivalence class, the exact
+supplement needed to identify the decision, and matching passive/adaptive label
+complexity.
+
+Mathematical setting
+
+Finite deployment model
+
+The authoritative initial setting is finite:
+
+outcome classes Y = {1, ..., K}, with K >= 3;
+
+observable deployment strata S = {1, ..., m};
+
+a frozen policy indexed by 0 and candidate adapters indexed by
+J = {1, ..., p};
+
+known target stratum probabilities q_s, obtained from the unlimited unlabeled
+population, with q_s >= 0 and sum_s q_s = 1;
+
+unknown target conditional label vectors eta_s in the K-simplex;
+
+known bounded safety costs C_s(y, a) in [0, 1] for each stratum, outcome, and
+policy output/action.
+
+Costs outside [0, 1] are handled by an explicitly recorded positive scale
+factor. Scaling must be reversed when reporting application-level quantities.
+Context-dependent costs are allowed because the stratum index is observable.
+
+For adapter j, define the known cost-contrast vector
+
+g_{s,j}(y) = C_s(y, f_0(s)) - C_s(y, f_j(s))
+
+and the target benefit
+
+Delta_j(eta) = sum_s q_s * inner(g_{s,j}, eta_s).
+
+Positive benefit means adapter j has lower target safety cost than freezing.
+All orientation conventions are fixed by this definition and tested by mutation.
+
+Observable restrictions and ambiguity fiber
+
+Unlimited unlabeled evidence and declared structural knowledge induce a finite
+linear restriction
+
+A * eta = b(O),
+
+together with the product-simplex constraints on eta. The observable O
+contains only permitted quantities: target stratum frequencies, inputs, model
+outputs, logits or representations reduced to declared strata, model
+disagreement, and source-derived or structurally justified calibration moments.
+It contains no target label, target loss, target confusion entry, target benefit,
+or proxy assumption equivalent to one of those quantities.
+
+The ambiguity fiber is
+
+F(O) = {eta in product_s Simplex(K) : A * eta = b(O)}.
+
+Every structural restriction must have a named scientific justification and an
+ablation that removes it. An empty fiber is a protocol failure, not a certificate.
+
+Sign and action identification
+
+The identified benefit set is
+
+I(O) = {Delta(eta) : eta in F(O)}.
+
+For one adapter, ADAPT is identified when inf I(O) > 0, FREEZE is identified
+when sup I(O) < 0, and the controller abstains otherwise. For multiple adapters,
+a strict adapter selection requires its worst-case cost to be lower than freezing
+and every competing committed candidate under the declared comparison rule.
+
+Point identification, uniform identification over an observable model class, and
+sign identification at one realized fiber are separate statements. A proof of one
+must not be described as a proof of another.
+
+Theorem program
+
+Every item below begins as a conjecture. It becomes a theorem only when its Lean
+declaration compiles under the formal-verification policy.
+
+T1: Multiclass cost-benefit identity
+
+Prove the exact vector identity expressing every frozen-versus-adapter safety-cost
+difference as the linear functional Delta_j(eta) above. Include arbitrary
+finite K, strata, candidates, and bounded stratum-dependent costs.
+
+T2: Uniform identification criterion
+
+Test and, if correct, prove that the complete benefit vector is uniformly
+identified over the affine observable model exactly when the relevant rows of the
+cost-contrast operator vanish on the observable null space, equivalently when
+they lie in the row space generated by the observable restrictions after the
+simplex affine hull is incorporated.
+
+The simplex affine constraints must be part of the operator before any rank or
+row-space calculation. Omitting them is a required mutation test.
+
+T3: Minimal linear supplement
+
+Test and, if correct, prove that the minimum number of independent additional
+linear moments needed for uniform point identification equals the rank increment
+of the contrast operator over the observable-plus-simplex operator. State and
+prove the precise field, finite-dimensionality, independence, and admissible
+supplement class. Do not translate the dimension automatically into “bits.”
+
+The result is not allowed to define an admissible supplement by directly exposing
+Delta, its sign, or an invertible encoding of the answer. Scientifically useful
+supplements must also be instantiated using observable structural knowledge or
+target labels.
+
+T4: Realized-fiber sign capacity
+
+Characterize sign identification through the extrema of I(O) and prove the
+soundness of the ternary frontier. Determine which claims are uniform and which
+are fiber-specific. Establish non-vacuous examples where point identification
+fails but sign identification succeeds.
+
+T5: Label-free impossibility
+
+When a relevant contrast direction survives in the observable null space,
+construct admissible target worlds with identical unlabeled observable laws and
+opposite optimal strict decisions. Prove the strongest correct decision-error
+lower bound. A 1/2 statement is promoted only under explicit symmetric or
+two-point conditions sufficient to make that constant valid; otherwise the
+correct total-variation or minimax bound is used.
+
+T6: Passive delayed-label complexity
+
+In the passive model, each labeled observation has stratum drawn independently
+from q, and its label is revealed after a declared delay. Label complexity counts
+revealed labels; wall-clock/sample-arrival complexity is reported separately.
+
+Derive a finite-sample confidence region and a matching minimax or
+instance-dependent lower bound for the requested commitment task. Bounds must
+show their dependence on safety margin, contrast range or variance, stratum mass,
+candidate count, confidence, and any effective contrast dimension. Upper and
+lower bounds called “matching” must agree up to explicitly stated universal or
+logarithmic factors.
+
+T7: Adaptive delayed-label complexity
+
+In the active pool model, unlabeled strata arrive from q; the controller may
+choose whether to request each label using only information available before that
+label. Query probabilities and estimators must preserve validity under adaptive
+selection and delayed returns.
+
+Derive the optimal or provably near-optimal allocation for the commitment task,
+an upper bound for the resulting controller, and a matching information-theoretic
+lower bound. Label count and unlabeled waiting time are distinct resources.
+
+T8: Strict active-over-passive separation
+
+Construct a scientifically meaningful family, such as rare informative strata
+under asymmetric safety costs, in which active querying uses asymptotically fewer
+labels than passive feedback at the same false-commit level. The separation must
+hold under the same target family, margin convention, and cost normalization.
+
+T9: Multi-adapter safe controller
+
+Give simultaneous confidence control for all frozen-versus-adapter and required
+adapter-versus-adapter contrasts. Prove that the controller's probability of a
+wrong strict commitment is at most the declared delta, including adaptive query
+selection and the multiplicity method. Define ties and abstention explicitly.
+
+Formal verification policy
+
+Authority
+
+Lean 4 is authoritative for mathematical theorem status. A LaTeX proof, Python
+validator, LP certificate, simulation, or expert review cannot promote a claim
+whose Lean declaration does not compile.
+
+Every mathematical theorem claimed by this program must be fully formalized,
+including deterministic, optimization, probabilistic, passive-label,
+adaptive-label, lower-bound, and controller-validity results. Corollaries described
+as mathematical guarantees are subject to the same rule.
+
+Lean module structure
+
+The intended module boundary is:
+
+Basic.lean: finite types, strata, candidates, simplexes, probabilities, costs;
+
+Benefit.lean: cost contrasts and the benefit identity;
+
+ObservableFiber.lean: restrictions, fibers, and observable equivalence;
+
+Identification.lean: null-space and row-space equivalences;
+
+MinimalSupplement.lean: rank increment and admissible supplements;
+
+SignCapacity.lean: identified extrema and ternary frontier;
+
+Impossibility.lean: indistinguishable worlds and decision lower bounds;
+
+PassiveLabels.lean: passive estimators, confidence, and lower bounds;
+
+ActiveLabels.lean: predictable querying, estimators, bounds, and separation;
+
+MultiAdapter.lean: simultaneous comparisons and multiplicity;
+
+SafeController.lean: commitment rule and false-commit theorem;
+
+Audit.lean: exported headline theorem inventory and axiom inspection.
+
+Modules may be split when necessary for clarity, but no module may combine theorem
+discovery scripts, empirical data processing, and formal proofs.
+
+Prohibited proof gaps
+
+The formal tree must contain no sorry, admit, by_contra! misuse hidden behind
+an inconsistent assumption, custom unproved axiom, or placeholder declaration.
+Standard Lean and mathlib logical foundations may appear in #print axioms and
+must be reported. Every locally introduced axiom is a release-blocking failure.
+
+An automated audit scans source and compiled declarations, runs lake build, and
+captures #print axioms for every headline declaration. The allowlist covers only
+documented standard Lean/mathlib foundations, never a program-specific claim.
+
+Statement parity
+
+Each paper-facing theorem receives a stable theorem ID. A machine-readable ledger
+maps that ID to:
+
+the exact Lean declaration;
+
+the human-readable statement;
+
+assumptions and scope;
+
+dependency declarations;
+
+compiled axiom report;
+
+source and build hashes;
+
+exact validators and witnesses;
+
+promotion status.
+
+A statement-parity test fails if the manuscript changes a quantifier, inequality,
+constant, action orientation, scope, or assumption relative to the ledger and Lean
+declaration.
+
+Discovery and adversarial verification
+
+Exact oracle
+
+A separate discovery implementation uses exact rational arithmetic for finite
+simplexes, ranks, fibers, and linear-program certificates. Floating-point LP output
+may guide search but cannot certify a theorem or witness.
+
+For each claimed extremum, store primal and dual certificates when the selected
+formulation admits them. The exact checker independently validates feasibility,
+objective equality, and sign orientation.
+
+Counterexample search
+
+Before proof effort, enumerate bounded rational systems and run property-based
+mutations covering at least:
+
+K = 3, 4, 5;
+
+one and multiple strata;
+
+one and multiple adapters;
+
+symmetric, asymmetric, zero, and catastrophic cost patterns;
+
+full-rank, deficient-rank, redundant, and inconsistent observable operators;
+
+disconnected and overlapping conflict structures;
+
+zero-margin and near-boundary cases;
+
+zero-mass strata;
+
+simplex vertices, faces, and interior points.
+
+Bounded enumeration does not prove a theorem. Its role is to kill false statements
+early and ensure validators fail loudly when a known condition is removed.
+
+Required mutations
+
+The verification suite must detect deliberate corruption of:
+
+benefit orientation;
+
+strict versus non-strict inequalities;
+
+simplex normalization or nonnegativity;
+
+incorporation of the simplex affine hull into rank calculations;
+
+observable-equivalence constraints;
+
+label-query predictability;
+
+importance weights;
+
+multiplicity correction;
+
+confidence level;
+
+passive/active resource accounting.
+
+Statistical and empirical validation
+
+Experiments demonstrate relevance and non-vacuity; they do not prove theorems.
+
+Synthetic exact suite
+
+Generate sealed finite problems spanning identification rank, safety margins,
+stratum rarity, candidate count, cost asymmetry, and active-query informativeness.
+Include positive, negative, boundary, and assumption-violation families. Compare
+empirical commitment error and label use with the formal bounds without changing
+the protocol after observing results.
+
+Natural multiclass suite
+
+Use existing K-Bound-compatible multiclass shifts only after the theorem survives
+the synthetic and Lean gates. Candidate datasets may include existing CIFAR,
+ImageNet, PACS, OfficeHome, and WILDS tracks, subject to source integrity and
+licensing. The experiment protocol must predeclare:
+
+cost matrices and their domain justification;
+
+frozen and candidate adapters;
+
+strata and query policy;
+
+passive and active label budgets;
+
+delay model;
+
+safety margin and confidence level;
+
+baselines and statistical unit;
+
+primary and negative-control endpoints;
+
+all promotion and failure rules.
+
+No cost matrix may be tuned to make K-Bound win. At least one independent
+domain-informed matrix and one sensitivity family must be used.
+
+Baselines
+
+Required conceptual baselines are label-free commitment, passive uniform labels,
+stratified passive labels, uncertainty sampling, cost-weighted heuristics,
+oracle allocation, always freeze, always adapt, and the best valid ambiguity-set
+or partial-calibration decision rule identified by the novelty audit.
+
+Work products
+
+The independent track will contain:
+
+a living research specification and theorem ledger;
+
+a dated novelty matrix with claim-level comparisons;
+
+Lean source, pinned toolchain, build manifest, and axiom reports;
+
+exact rational oracle and counterexample corpus;
+
+passive and active discovery simulations;
+
+sealed synthetic and natural experiment protocols;
+
+generated tables and figures sourced from authoritative artifacts;
+
+a standalone theory manuscript only after at least T1--T5 are formalized and
+the novelty gate remains open.
+
+The current K-Bound manuscript is not an output target until the promotion decision.
+
+Promotion and kill gates
+
+Claim-level kill conditions
+
+A claim is withdrawn or narrowed if any of the following occurs:
+
+a published result directly subsumes it under equivalent assumptions;
+
+an exact or Lean-checked counterexample refutes it;
+
+its proof requires observing target risk, target benefit, or an equivalent oracle;
+
+its assumptions make the ambiguity fiber singleton by definition without a
+scientifically available information source;
+
+a stated matching bound has a substantive unclosed rate gap;
+
+active querying has no strict label advantage in any non-degenerate common model;
+
+the result holds only by choosing costs or strata after inspecting outcomes.
+
+Program success levels
+
+Verified foundation: T1--T5 formalized, novel, and non-vacuous. This supports
+a strong theory contribution but is not called a breakthrough.
+
+Major result: verified foundation plus a correct passive or active label
+complexity theory with a meaningful application.
+
+Breakthrough-potential result: T1--T9 formalized, passive and active bounds
+match under declared criteria, strict active separation is proved, the novelty
+audit finds no subsuming result, and prospective experiments support relevance.
+
+No document may state “breakthrough” as an established fact. Venue reviewers and
+subsequent scientific use determine impact; the program may state only that the
+complete package has breakthrough potential.
+
+Promotion into K-Bound
+
+Promotion requires all of:
+
+the relevant theorem set is fully Lean-verified;
+
+exact-oracle, mutation, parity, and build gates pass from a clean checkout;
+
+the claim-level novelty matrix remains favorable;
+
+a separate adversarial review finds no fatal assumption or overclaim;
+
+the current K-Bound submission closure remains valid;
+
+manuscript integration does not alter or reinterpret frozen empirical outcomes;
+
+a written decision explains why integration is stronger than a separate paper.
+
+Until all seven conditions hold, the track remains independent.

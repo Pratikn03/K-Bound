@@ -1,5 +1,7 @@
 % Keep the compact paper's numeric labels while allowing the official TMLR
 % driver to use natbib-compatible author-year citations from this shared list.
+% Uncited context records are preserved in references_kbound_context_archive.tex;
+% that archive is not an input to either maintained paper driver.
 \providecommand{\KBbibitem}[3]{%
   \ifdefined\KBoundAuthorYearCitations
     \bibitem[#2(#3)]{#1}%
@@ -65,16 +67,14 @@ online entropy matching: A betting approach. \emph{NeurIPS}, 2024. arXiv:2408.07
 Leveraging unlabeled data to predict out-of-distribution performance. \emph{ICLR},
 2022. arXiv:2201.04234.
 
-\KBbibitem{kalai2021abstain}{Kalai and Kanade}{2021} A. T. Kalai, V. Kanade. Towards optimally abstaining from
-prediction with OOD test examples. \emph{NeurIPS}, 2021. arXiv:2105.14119.
-
 \KBbibitem{miller2021aol}{Miller et al.}{2021} J. Miller, R. Taori, A. Raghunathan, S. Sagawa, P. W. Koh,
 V. Shankar, P. Liang, Y. Carmon, L. Schmidt. Accuracy on the line: On the strong
 correlation between out-of-distribution and in-distribution generalization.
 \emph{ICML}, 2021. arXiv:2107.04649.
 
-\KBbibitem{baek2022aol}{Baek et al.}{2022} C. Baek, Y. Jiang, A. Raghunathan, J. Z. Kolter. Agreement-on-
-the-line: Predicting the performance of neural networks under distribution shift.
+% Primary record: https://papers.nips.cc/paper_files/paper/2022/hash/7a8d388b7a17df480856dff1cc079b08-Abstract-Conference.html
+\KBbibitem{baek2022aol}{Baek et al.}{2022} C. Baek, Y. Jiang, A. Raghunathan, J. Z. Kolter.
+Agreement-on-the-line: Predicting the performance of neural networks under distribution shift.
 \emph{NeurIPS}, 2022. arXiv:2206.13089.
 
 \KBbibitem{lee2024aetta}{Lee et al.}{2024} T. Lee, S. Chottananurak, T. Gong, S.-J. Lee. AETTA:
@@ -84,9 +84,10 @@ arXiv:2404.01351.
 \KBbibitem{steinhardt2016}{Steinhardt and Liang}{2016} J. Steinhardt, P. Liang. Unsupervised risk estimation using
 only conditional independence structure. \emph{NeurIPS}, 2016. arXiv:1606.05313.
 
-\KBbibitem{bendavid2010theory}{Ben-David et al.}{2010} S. Ben-David, J. Blitzer, K. Crammer, A. Kulesza,
+% The a/b suffixes distinguish the two Ben-David et al. author-year citations.
+\KBbibitem{bendavid2010theory}{Ben-David et al.}{2010a} S. Ben-David, J. Blitzer, K. Crammer, A. Kulesza,
 F. Pereira, J. Wortman Vaughan. A theory of learning from different domains.
-\emph{Machine Learning} 79(1--2):151--175, 2010.
+\emph{Machine Learning} 79(1--2):151--175, 2010a.
 
 \KBbibitem{rosenfeld2023dis2}{Rosenfeld and Garg}{2023} E. Rosenfeld, S. Garg. (Almost) provable error bounds
 under distribution shift via disagreement discrepancy. \emph{NeurIPS}, 2023.
@@ -94,9 +95,6 @@ arXiv:2306.00312.
 
 \KBbibitem{geifman2017selective}{Geifman and El-Yaniv}{2017} Y. Geifman, R. El-Yaniv. Selective classification for
 deep neural networks. \emph{NeurIPS}, 2017.
-
-\KBbibitem{deng2009imagenet}{Deng et al.}{2009} J. Deng, W. Dong, R. Socher, L.-J. Li, K. Li, L. Fei-Fei.
-ImageNet: A large-scale hierarchical image database. \emph{CVPR}, 2009.
 
 \KBbibitem{hendrycks2019cifar10c}{Hendrycks and Dietterich}{2019} D. Hendrycks, T. Dietterich. Benchmarking neural
 network robustness to common corruptions and perturbations. \emph{ICLR}, 2019.
@@ -115,10 +113,15 @@ M. Balkenhol, M. Hermsen, et al. From detection of individual metastases to
 classification of lymph node status at the patient level: The CAMELYON17 challenge.
 \emph{IEEE Trans.\ Med.\ Imaging} 38(2):550--560, 2019.
 
-\KBbibitem{taylor2019rxrx1}{Taylor et al.}{2019} J. Taylor, S. L. Earnshaw, B. M. Mabey, M. Victors,
-M. N. Annis, D. Y. Torigian, et al. The RXRX1 dataset and challenge:
-Unsupervised classification of cellular morphological changes.
-\emph{arXiv:1907.04758}, 2019.
+% Preserve the legacy key used by the maintained dataset table.
+% Primary records: https://arxiv.org/abs/2301.05768
+% https://openaccess.thecvf.com/content/CVPR2023W/CVMI/html/Sypetkowski_RxRx1_A_Dataset_for_Evaluating_Experimental_Batch_Correction_Methods_CVPRW_2023_paper.html
+\KBbibitem{taylor2019rxrx1}{Sypetkowski et al.}{2023} M. Sypetkowski, M. Rezanejad, S. Saberian,
+O. Kraus, J. Urbanik, J. Taylor, B. Mabey, M. Victors, J. Yosinski,
+A. Rezazadeh Sereshkeh, I. Haque, B. Earnshaw.
+RxRx1: A dataset for evaluating experimental batch correction methods.
+\emph{Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition
+(CVPR) Workshops}, pages 4285--4294, 2023. arXiv:2301.05768.
 
 \KBbibitem{zhu2020so2sat}{Zhu et al.}{2020} X. X. Zhu, J. Hu, C. Qiu, Y. Shi, J. Kang, L. Mou,
 H. Bagheri, M. H\"aberle, Y. Hua, R. Huang, L. Hughes, H. Li, Y. Sun, G. Zhang,
@@ -132,19 +135,16 @@ S. Panchanathan. Deep hashing network for unsupervised domain adaptation.
 \emph{CVPR}, 2017. (Office-Home dataset release).
 
 \KBbibitem{li2017pacs}{Li et al.}{2017} D. Li, Y. Yang, Y.-Z. Song, T. M. Hospedales.
-Deeper, broader and artier domain generalization. \emph{ICCV}, pages 5542--5550, 2017.
+% Use the IEEE edition's page range with its DOI, not the CVF preprint pagination.
+% Primary record: https://www.pure.ed.ac.uk/ws/portalfiles/portal/41072820/li2017dg.pdf
+Deeper, broader and artier domain generalization. \emph{ICCV}, pages 5543--5551, 2017.
 doi:10.1109/ICCV.2017.591.
 
-\KBbibitem{gulrajani2021domainbed}{Gulrajani and Lopez-Paz}{2021} I. Gulrajani, D. Lopez-Paz. In search of lost
-domain generalization. \emph{ICLR}, 2021.
-
-\KBbibitem{croce2021robustbench}{Croce et al.}{2021} F. Croce, M. Andriushchenko, V. Sehwag,
-E. Debenedetti, N. Flammarion, M. Chiang, P. Mittal, M. Hein.
-RobustBench: A standardized adversarial robustness benchmark.
-\emph{NeurIPS Datasets and Benchmarks}, 2021.
-
-\KBbibitem{recht2019cifar10}{Recht et al.}{2019} B. Recht, R. Roelofs, L. Schmidt, V. Shankar.
-Do CIFAR-10 classifiers generalize to CIFAR-10? \emph{ICML}, 2019.
+% Preserve the legacy key; the cited CIFAR-10.1 paper is the 2018 preprint.
+% Primary record: https://arxiv.org/abs/1806.00451
+\KBbibitem{recht2019cifar10}{Recht et al.}{2018} B. Recht, R. Roelofs, L. Schmidt, V. Shankar.
+Do CIFAR-10 classifiers generalize to CIFAR-10? \emph{arXiv preprint},
+2018. arXiv:1806.00451.
 
 \KBbibitem{paszke2019pytorch}{Paszke et al.}{2019} A. Paszke, S. Gross, F. Massa, A. Lerer, J. Bradbury,
 G. Chanan, T. Killeen, Z. Lin, N. Gimelshein, L. Antiga, et al.
@@ -163,10 +163,6 @@ shifts. \emph{NeurIPS}, 2024. arXiv:2405.18979.
 dispersity speak: characterizing prediction matrix for unsupervised accuracy estimation.
 \emph{ICML}, 2023. arXiv:2302.01094.
 
-\KBbibitem{liang2025ttasurvey}{Liang et al.}{2025} J. Liang, R. He, T. Tan. A comprehensive survey on
-test-time adaptation under distribution shifts. \emph{IJCV} 133(1):31--64, 2025.
-arXiv:2303.15361.
-
 \KBbibitem{tibshirani2019conformal}{Tibshirani et al.}{2019} R. J. Tibshirani, R. F. Barber, E. Cand\`es,
 A. Ramdas. Conformal prediction under covariate shift. \emph{NeurIPS}, 2019.
 arXiv:1904.06019.
@@ -175,11 +171,12 @@ arXiv:1904.06019.
 Conformal prediction beyond exchangeability. \emph{Annals of Statistics}
 51(2):816--845, 2023. arXiv:2202.13415.
 
+\KBbibitem{hemerik2018exact}{Hemerik and Goeman}{2018} J. Hemerik, J. Goeman.
+Exact testing with random permutations. \emph{TEST} 27:811--825, 2018.
+doi:10.1007/s11749-017-0571-1.
+
 \KBbibitem{gibbs2021adaptive}{Gibbs and Candes}{2021} I. Gibbs, E. Cand\`es. Adaptive conformal inference under
 distribution shift. \emph{NeurIPS}, 2021. arXiv:2106.00170.
-
-\KBbibitem{park2022pac}{Park et al.}{2022} S. Park, E. Dobriban, I. Lee, O. Bastani. PAC prediction sets
-under covariate shift. \emph{ICLR}, 2022. arXiv:2106.09848.
 
 \KBbibitem{bates2021rcps}{Bates et al.}{2021} S. Bates, A. Angelopoulos, L. Lei, J. Malik, M. I. Jordan.
 Distribution-free, risk-controlling prediction sets. \emph{JACM} 68(6), 2021.
@@ -189,27 +186,11 @@ arXiv:2101.02703.
 M. I. Jordan, L. Lei. Learn then test: calibrating predictive algorithms to achieve
 risk control. \emph{Annals of Applied Statistics}, 2025. arXiv:2110.01052.
 
-\KBbibitem{hoang2024petta}{Hoang et al.}{2024} T. Hoang, D. M. Vo, M. N. Do. Persistent test-time adaptation
-in recurring testing scenarios. \emph{NeurIPS}, 2024. arXiv:2311.18193.
-
-\KBbibitem{lee2024deyo}{Lee et al.}{2024} J. Lee, D. Jung, S. Lee, J. Park, J. Shin, U. Hwang, S. Yoon.
-Entropy is not enough for test-time adaptation: from the perspective of disentangled
-factors. \emph{ICLR}, 2024. arXiv:2403.07366.
-
-\KBbibitem{lim2026reset}{Lim et al.}{2026} T. Lim, J. Hwang, K. Lee. When and where to reset matters for
-long-term test-time adaptation. \emph{ICLR}, 2026. arXiv:2603.03796.
-
-\KBbibitem{sonoda2025lean}{Sonoda et al.}{2025} S. Sonoda, Y. Mizuno, K. Tsukamoto, N. Onda. Lean formalization
-of generalization error bound by Rademacher complexity and Dudley's entropy integral.
-2025. arXiv:2503.19605.
-
-\KBbibitem{tempora2026}{Sreeram et al.}{2026} S. Sreeram, Y. D. Kwon, C. Mascolo.
-Tempora: Characterising the time-contingent utility of online test-time adaptation.
-\emph{ICML}, 2026. arXiv:2602.06136.
-
-\KBbibitem{corradaemmanuel2024}{Corrada-Emmanuel}{2023} A. Corrada-Emmanuel. The logic of NTQR evaluations of
-noisy AI agents: Complete postulates and logically consistent error correlations.
-2023. arXiv:2312.05392.
+% Pin the 2025 v3 title and author list rather than mixing later-version metadata.
+% Primary record: https://arxiv.org/abs/2503.19605v3
+\KBbibitem{sonoda2025lean}{Sonoda et al.}{2025} S. Sonoda, K. Kasaura, Y. Mizuno, K. Tsukamoto, N. Onda.
+Lean formalization of generalization error bound by Rademacher complexity.
+\emph{arXiv preprint}, 2025. arXiv:2503.19605v3.
 
 \KBbibitem{gupta2021toplabel}{Gupta and Ramdas}{2022} C. Gupta, A. Ramdas. Top-label calibration and
 multiclass-to-binary reductions. \emph{ICLR}, 2022. arXiv:2107.08353.
@@ -255,9 +236,6 @@ arXiv:1707.00087.
 guarantees of kernel max-sliced Wasserstein distances. 2024. arXiv:2405.15441.
 \fi
 
-\KBbibitem{bendavid2012hardness}{Ben-David and Urner}{2012} S. Ben-David, R. Urner. On the hardness of domain
-adaptation and the utility of unlabeled target samples. \emph{ALT}, 2012.
-
 \KBbibitem{lipton2018bbse}{Lipton et al.}{2018} Z. C. Lipton, Y.-X. Wang, A. Smola. Detecting and correcting
 for label shift with black box predictors. \emph{ICML}, 2018.
 
@@ -270,13 +248,53 @@ view of label shift estimation. \emph{NeurIPS}, 2020.
 \KBbibitem{cortes2016boosting}{Cortes et al.}{2016} C. Cortes, G. DeSalvo, M. Mohri. Learning with rejection.
 \emph{ALT}, 2016.
 
-\KBbibitem{madras2018learntodefer}{Madras et al.}{2018} D. Madras, T. Pitassi, R. Zemel. Predict responsibly:
-improving fairness and accuracy by learning to defer. \emph{NeurIPS}, 2018.
-
 \KBbibitem{beery2018recognition}{Beery et al.}{2018}
 S. Beery, G. Van Horn, and P. Perona,
 ``Recognition in Terra Incognita,''
 in \emph{Proceedings of the European Conference on Computer Vision (ECCV)},
-2018, pp. 456--473, doi: 10.1007/978-3-030-01270-0\_28.
+% Use the Springer edition's page range with its DOI.
+% Primary record: https://authors.library.caltech.edu/records/m2211-qkc66
+2018, pp. 472--489, doi: 10.1007/978-3-030-01270-0\_28.
+
+% Primary record: https://proceedings.mlr.press/v9/david10a.html
+\KBbibitem{bendavid2010impossibility}{Ben-David et al.}{2010b} S. Ben-David, T. Lu, T. Luu, D. P\'al.
+Impossibility theorems for domain adaptation.
+\emph{Proceedings of the Thirteenth International Conference on Artificial Intelligence
+and Statistics}, PMLR 9:129--136, 2010b.
+\url{https://proceedings.mlr.press/v9/david10a.html}.
+
+% Cite the verified preprint; the arXiv comment alone is not a venue verification.
+% Primary record: https://arxiv.org/abs/2603.08578v1
+\KBbibitem{lamaakal2026drifttoaction}{Lamaakal et al.}{2026} I. Lamaakal, C. Yahyati, K. El Makkaoui,
+I. Ouahbi, Y. Maleh. Drift-to-Action Controllers: Budgeted interventions with online risk certificates.
+\emph{arXiv preprint}, 2026. arXiv:2603.08578v1.
+
+% Primary record: https://proceedings.neurips.cc/paper_files/paper/2024/hash/d96fcc07d623a9eba68616629911143a-Abstract-Conference.html
+\KBbibitem{kim2024ttaline}{Kim et al.}{2024} E. Kim, M. Sun, C. Baek,
+A. Raghunathan, J. Z. Kolter.
+Test-Time Adaptation Induces Stronger Accuracy and Agreement-on-the-Line.
+\emph{Advances in Neural Information Processing Systems}, 37, 2024.
+doi:\href{https://doi.org/10.52202/079017-3820}{10.52202/079017-3820}.
+
+% Primary record: https://academic.oup.com/jrsssb/article/87/4/1239/8113856
+\KBbibitem{jin2025selection}{Jin and Ren}{2025} Y. Jin, Z. Ren.
+Confidence on the focal: conformal prediction with selection-conditional coverage.
+\emph{Journal of the Royal Statistical Society Series B: Statistical Methodology},
+87(4):1239--1259, 2025. doi:10.1093/jrsssb/qkaf016.
+
+% Primary record: https://academic.oup.com/jrsssb/article/87/4/1100/8058684
+\KBbibitem{gibbs2025conditional}{Gibbs et al.}{2025} I. Gibbs, J. J. Cherian,
+E. J. Cand\`es.
+Conformal prediction with conditional guarantees.
+\emph{Journal of the Royal Statistical Society Series B: Statistical Methodology},
+87(4):1100--1126, 2025. doi:10.1093/jrsssb/qkaf008.
+
+% Use the published corrected proof, not the 2022 preprint's publication year.
+% Primary record: https://academic.oup.com/restud/advance-article-abstract/doi/10.1093/restud/rdag017/8502914
+\KBbibitem{christensen2026optimal}{Christensen et al.}{2026} T. Christensen,
+H. R. Moon, F. Schorfheide.
+Optimal Decision Rules When Payoffs are Partially Identified.
+\emph{The Review of Economic Studies}, rdag017, 2026.
+Advance article, corrected proof. doi:10.1093/restud/rdag017.
 
 \end{thebibliography}

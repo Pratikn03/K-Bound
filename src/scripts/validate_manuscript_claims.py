@@ -1265,9 +1265,11 @@ def _validate_cct20_verdict_usage(
 
     problems: list[str] = []
     source = _strip_tex_comments_for_claims(context)
-    for macro in ("CCTVerdict", "CCTManuscriptClaim"):
-        if re.search(rf"\\{macro}(?![A-Za-z@])", source) is None:
-            problems.append(f"completed CCT-20 manuscript must consume generated \\{macro}")
+    # Keep the recorded verdict in prose, but do not require expansion of the
+    # receipt-bound historical claim: current prose qualifies its inference scope.
+    # CCTManuscriptClaim remains required and checked in the sealed number macros.
+    if re.search(r"\\CCTVerdict(?![A-Za-z@])", source) is None:
+        problems.append("completed CCT-20 manuscript must consume generated \\CCTVerdict")
 
     verdict = release_document.get("verdict", {})
     code = verdict.get("code")
@@ -1818,7 +1820,7 @@ def main(argv: list[str] | None = None) -> int:
         r"\Delta=R_T(f_0)-R_T(f_a)": "benefit convention",
         r"if and only if $|M|>\beta$": "strict-commitment frontier",
         r"does not numerically apply $|M|>\beta$": "population/KGA separation",
-        r"not a universal accuracy booster": "claim-scope limitation",
+        r"validity, commitment-control, and rollback layer": "claim-scope framing",
         r"leave-one-condition-out cross-fitted empirical residual calibration": "stress-grid scope",
     }
     for token, reason in required.items():
@@ -1832,11 +1834,25 @@ def main(argv: list[str] | None = None) -> int:
                 problems.append(f"missing transductive candidate-TTA disclosure: {path.relative_to(ROOT)}")
             if "evaluation-batch BatchNorm statistics" not in text:
                 problems.append(f"missing evaluation-batch BatchNorm disclosure: {path.relative_to(ROOT)}")
-            if path.name == "kbound_submission_body.tex" and text.count(r"\SourceManifestSHA") < 2:
+            if r"\SourceManifestSHA" in text:
                 problems.append(
-                    "compact manuscript must obtain both printed provenance hashes from "
-                    "the generated SourceManifestSHA macro"
+                    "main scientific narrative must keep release hashes in the supplement"
                 )
+
+    supplement = KBOUND / "kbound_submission_supplement.tex"
+    if not supplement.is_file():
+        problems.append("missing maintained supplementary manuscript source")
+    elif live_latex(supplement.read_text()).count(r"\SourceManifestSHA") < 2:
+        problems.append(
+            "supplement must obtain printed provenance hashes from the generated SourceManifestSHA macro"
+        )
+    for driver in (KBOUND / "kbound_submission.tex", LONG_TMLR):
+        if driver.is_file():
+            source = live_latex(driver.read_text())
+            reference_position = source.find(r"\input{paper/references_kbound_expanded}")
+            supplement_position = source.find(r"\input{kbound_submission_supplement}")
+            if reference_position < 0 or supplement_position < reference_position:
+                problems.append(f"references must precede the maintained supplement: {driver.relative_to(ROOT)}")
 
     data: dict | None = None
     cluster_data: dict | None = None

@@ -1,49 +1,64 @@
 % Finite-sample certificate: split out of theory_core_main.tex during the 2026-07 restructure.
 % Consumed by the "what remains" method section (sec:method), not by the impossibility section.
-\begin{theorem}[Finite-sample adapt/freeze/abstain certificate]\label{thm:certificate}\label{thm:cert}
-Suppose $\Delta$, $\widehat\Delta$, and the nonnegative random radius $\varepsilon$ are measurable
-on a common probability space containing all calibration, benefit-model fitting, and
-deployment-unit randomness, and that the benefit interval satisfies marginal coverage
+\begin{proposition}[Coverage-to-action implication]\label{thm:certificate}\label{thm:cert}
+Fix the scalar benefit target and its evaluation unit before calibration. Let $B$ and $\widehat B$
+be finite real random variables, and let $\varepsilon\in[0,\infty]$ be a measurable random radius
+on a common probability space containing all calibration, benefit-model fitting,
+candidate-construction, and evaluation-unit randomness. The prediction $\widehat B$ and radius
+$\varepsilon$ must be available without reading the new unit's evaluation labels. For
+$\alpha\in(0,1)$, suppose the interval satisfies marginal coverage
 \[
-\Pr\!\bigl[\,|\widehat\Delta-\Delta|\le\varepsilon\,\bigr]\ \ge\ 1-\alpha .
+\Pr\!\bigl[\,|\widehat B-B|\le\varepsilon\,\bigr]\ \ge\ 1-\alpha .
 \]
 Define
 \[
-g(Z)=\begin{cases}
-\adapt & \widehat\Delta-\varepsilon>0,\\
-\freeze & \widehat\Delta+\varepsilon<0,\\
+g=\begin{cases}
+\adapt & \widehat B-\varepsilon>0,\\
+\freeze & \widehat B+\varepsilon<0,\\
 \abstain & \text{otherwise}.
 \end{cases}
 \]
 Then, marginally over that common probability space,
 \begin{align*}
-\Pr\bigl[g(Z)=\adapt,\Delta\le0\bigr]&\le\alpha,\\
-\Pr\bigl[g(Z)=\freeze,\Delta\ge0\bigr]&\le\alpha.
+\Pr\bigl[g=\adapt,B\le0\bigr]&\le\alpha,\\
+\Pr\bigl[g=\freeze,B\ge0\bigr]&\le\alpha.
 \end{align*}
-\end{theorem}
+\end{proposition}
 \begin{proof}
-On the event $\{|\widehat\Delta-\Delta|\le\varepsilon\}$, the condition
-$\widehat\Delta-\varepsilon>0$ implies $\Delta>0$, so a false adapt requires the complement of
+On the event $\{|\widehat B-B|\le\varepsilon\}$, the condition
+$\widehat B-\varepsilon>0$ implies $B>0$, so a false adapt requires the complement of
 this event, which has probability at most $\alpha$. The freeze case is symmetric.
 \end{proof}
-Exchangeability, or an explicit shift correction, is one route to this coverage assumption. Risk
-alignment is not required for the conditional-on-coverage implication.
+For the empirical panels, $B=\Delta^{\mathrm{cell}}$ is the observed evaluation-unit score
+difference and $\widehat B=\widehat\Delta$. A population-risk application instead takes
+$B=\Delta$ and requires coverage for that quantity; cell-outcome coverage alone does not supply it.
+Coverage must be justified separately. Joint exchangeability of calibration and next-unit scores
+under the fitting and candidate protocol, or a justified shift correction, can support this premise.
+Risk alignment is not required for the conditional-on-coverage implication.
 
 \begin{remark}[Marginal vs.\ conditional error]\label{rem:fa-marginal}
-Theorem~\ref{thm:certificate} bounds the \emph{marginal, unconditional} false-adapt and
-false-freeze probabilities ($\mathrm{FA}_{\mathrm u}$). It does \emph{not} bound the conditional
-rate $\mathrm{FA}_{\mathrm c}=\Pr[\Delta\le0\mid\adapt]$, which we report empirically.
-Risk alignment (Definition~\ref{def:risk-align}) is required for the \emph{frontier}
-identifiability claim; coverage alone certifies the \emph{interval} rule above.
+Proposition~\ref{thm:certificate} bounds the \emph{marginal, unconditional} false-commit
+probabilities for the declared target $B$. Its false-adapt rate is
+$\mathrm{FA}_{\mathrm u}=\Pr[g=\adapt,B\le0]$. It does \emph{not} bound
+$\mathrm{FA}_{\mathrm c}=\Pr[B\le0\mid g=\adapt]$, defined when
+$\Pr[g=\adapt]>0$ and reported descriptively for $B=\Delta^{\mathrm{cell}}$.
+Selection-conditional coverage requires a separate construction, such as that of
+Jin and Ren~\cite{jin2025selection}; conditional guarantees over specified shift classes
+also require their own calibration procedure~\cite{gibbs2025conditional}.
+Neither is supplied by the marginal premise above. Simultaneous protection across candidates
+and time-uniform protection likewise require additional guarantees.
+Risk alignment (Definition~\ref{def:risk-align}) concerns population sign identifiability;
+coverage for $B$ alone yields the \emph{interval} implication above.
 \end{remark}
 
 \begin{remark}[Fallback when assumptions are unsupported]\label{cor:abstain-valid}
-If interval coverage---or the calibration assumptions supporting it (exchangeability, or an explicit
-shift correction)---cannot be justified on the deployment batch, Theorem~\ref{thm:certificate}
-supplies no level-$\alpha$ protection for either strict action. A deployment must then use a
-separately declared operational fallback, such as abstention or serving the frozen model; this is a
-policy recommendation, not a conclusion that either fallback is optimal. If instead \emph{risk alignment}
-(Definition~\ref{def:risk-align}) cannot be justified, the population-frontier interpretation and the
-transferability of the benefit estimator are unsupported, even though the interval implication of
-Theorem~\ref{thm:certificate} remains valid \emph{conditional on coverage} (cf.\ Theorem~\ref{lem:nonid}).
+If interval coverage for the declared target and evaluation unit---or the assumptions supporting
+it---cannot be justified, Proposition~\ref{thm:certificate} supplies no level-$\alpha$ protection
+for either strict action. A separately declared operational fallback may retain the frozen model
+and record abstention. Serving the frozen model without a valid negative interval is not a
+certified $\freeze$ decision. This policy recommendation does not establish that the retained
+model is safe or optimal. If \emph{risk alignment} (Definition~\ref{def:risk-align}) cannot
+be justified for an intended population sign claim, that interpretation remains unsupported.
+The interval implication of Proposition~\ref{thm:certificate} still holds when coverage for the
+declared $B$ is established (cf.\ Theorem~\ref{lem:nonid}).
 \end{remark}

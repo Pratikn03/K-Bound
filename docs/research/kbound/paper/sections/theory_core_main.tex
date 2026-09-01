@@ -25,14 +25,14 @@ so $\sign\Delta=\sign(\bar a-\tfrac12)=\sign(M+\gamma)$.
 \end{proof}
 
 \begin{theorem}[Interior matched-evidence impossibility]\label{lem:nonid}
-Fix $\beta>0$. For any margin with $|M|<\beta$ there exist
+Fix $\beta>0$. For any feasible margin $M\in[-\tfrac12,\tfrac12]$ with $|M|<\beta$ there exist
 $P_T^1,P_T^2\in\mathcal{C}_\beta$ such
 that $\Law(\widetilde Z\mid P_T^1)=\Law(\widetilde Z\mid P_T^2)$ for
 $\widetilde Z=(Z,M)$, $M(P_T^1)=M(P_T^2)=M$, and
 $\sign\Delta_1=-\sign\Delta_2\neq0$. (For $\beta=0$ the class
 $\mathcal{C}_0$ forces $\gamma=0$, so $\sign\Delta=\sign M$
-is determined and no such pair exists: matched-evidence ambiguity is a strictly-positive-drift
-phenomenon.)
+is determined and no such pair exists: matched-evidence ambiguity requires a positive
+declared residual bound.)
 \end{theorem}
 \begin{proof}
 This is Lemma~\ref{lem:fibre} read at one radius. Choose
@@ -108,7 +108,7 @@ additional richness assumption.
 $\sign\Delta=\sign M$.
 \item[\textnormal{(iii)}] \textbf{Necessity.} If $|M|<\beta$ (which requires $\beta>0$), there exist
 $P_T^1,P_T^2\in\mathcal{C}_\beta$ with the same augmented-evidence law and opposite \emph{nonzero} benefit
-signs; at $|M|=\beta>0$ the admissible drift $\gamma=-\sign(M)\beta$ yields $\Delta=0$, and in the
+signs; at $|M|=\beta>0$ the admissible residual $\gamma=-\sign(M)\beta$ yields $\Delta=0$, and in the
 degenerate case $M=\beta=0$ the class $\mathcal{C}_0$ forces $\Delta\equiv0$. Hence no \emph{strict}
 benefit direction is uniformly supported by $\Law(\widetilde Z)$ over $\mathcal{C}_\beta$
 whenever $|M|\le\beta$.
@@ -132,3 +132,14 @@ combines (ii), (iii), and Proposition~\ref{prop:closed-band}. Pointwise maximali
 (ii) certifies the unique strict direction outside the band, while Theorem~\ref{lem:nonid} and
 Proposition~\ref{prop:closed-band} rule out both strict directions inside and on the boundary.
 \end{proof}
+\noindent The feasible range can also be read directly from the identified benefit set. Write
+$d=\mu_T(D)>0$. Over the full declared class with the observables fixed,
+\[
+ \Delta(\mathcal C_\beta)
+ =2d\left[\max\{-\tfrac12,M-\beta\},
+          \min\{\tfrac12,M+\beta\}\right].
+\]
+Indeed, $\bar a-\tfrac12\in[-\tfrac12,\tfrac12]$ and
+$|\bar a-\tfrac12-M|\le\beta$; every value in their intersection is attained by a constant
+correctness kernel on $D$. A strict direction is available exactly when this whole interval
+lies above or below zero.

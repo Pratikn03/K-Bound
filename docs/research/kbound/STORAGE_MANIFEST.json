@@ -1,7 +1,7 @@
 {
   "schema_version": "kbound-storage-manifest-v1",
   "generated_at": "2026-08-28",
-  "generated_by": "mechanically refreshed by docs/research/kbound/scripts/refresh_storage_manifest.py from the four declared tracked release authorities; historical evidence seals are never rewritten; this remains a working-copy snapshot, not a clean-commit or final outer-checksum attestation",
+  "generated_by": "mechanically refreshed by docs/research/kbound/scripts/refresh_storage_manifest.py from the four declared tracked release authorities; the claim-ledger row alone was refreshed after the reviewed 2026-08-31 theorem metadata corrections; historical evidence seals are never rewritten; this remains a working-copy snapshot, not a clean-commit or final outer-checksum attestation",
   "policy": {
     "tracked_publication_evidence": [
       "compact authoritative JSON (claim ledger, locked result summaries, headline findings)",
@@ -31,21 +31,21 @@
       "expected_location": "docs/research/kbound/claim_ledger.json",
       "tracked": true,
       "class": "tracked_evidence",
-      "size_bytes": 48093,
-      "sha256": "9df0a5d40fc950ff891fdf6457d40dbaa44ce83c984caca5dcaeeff2e8e57a88",
+      "size_bytes": 69758,
+      "sha256": "15d74ca9524b35c5bb2fcbcb4b539a56416b74354659cfac4cec12f54ec57a5d",
       "reproduction_command": "authoritative source (hand-maintained wording/status authority)",
       "required": true,
       "previous_sha256_2026_07_21": "81b9d1e0cef4155140551a758e43fc404589ff2983f4d90cb2ef52c09e3adf92",
       "previous_size_bytes_2026_07_21": 23179,
-      "drift_note": "checksum drifted between 2026-07-21 and 2026-07-26; refreshed from disk. This is the F4-15 finding: the file designated the wording/status authority was the one whose seal was broken. Refreshed again after the deterministic 2026-08-28 panel synchronization; the final rebuilt release is sealed in KBOUND_RELEASE_SHA256SUMS.txt."
+      "drift_note": "Historical checksum drift and the 2026-08-28 panel synchronization remain recorded in prior receipts. The current row binds the reviewed 2026-08-31 theorem-wording/status corrections; no empirical values or runtime semantics changed. KBOUND_RELEASE_SHA256SUMS.txt already mismatched before this edit and remains a historical seal, not an attestation of the current working tree."
     },
     {
       "artifact": "current_policy_cluster_inference.json",
       "expected_location": "experiments/kbound/results/reconciled_panels_v1/current_policy_cluster_inference.json",
       "tracked": true,
       "class": "tracked_evidence",
-      "size_bytes": 18810,
-      "sha256": "5b1887fc7848ca0a23940806643416c231a04abb62bd141eb318a5e43a36fbdb",
+      "size_bytes": 18964,
+      "sha256": "5942d60b0287604a63442b336f703adc91e55893177b3b0df6f97f5a52e1ff5e",
       "reproduction_command": "python docs/research/kbound/scripts/analyze_current_policy_cluster_inference.py",
       "required": true,
       "scope": "Retrospective six-corruption-family current-policy sensitivity; ordinary intervals are unadjusted. Retrospective Holm adjustment over the six prospectively named contrasts is non-confirmatory and no candidate passes both baselines."
@@ -126,11 +126,11 @@
       "tracked": true,
       "class": "tracked_derived_release_authority",
       "size_bytes": 587516,
-      "sha256": "ee64e858184cc9f67f4e596183b69880d59d64d267e22d3ba29c422afa609df9",
+      "sha256": "4239a7b38b087fe8d4c81eb935d9da5104545a228fffb7c956b29c6e00d97062",
       "reproduction_command": "PYTHONDONTWRITEBYTECODE=1 python scripts/reconcile_result_panels.py --reuse-transfer",
       "required": true,
       "previous_sha256_before_final_rebuild": "9aae314041dbc161abe5e4dd2bc28e5af250512448c8e8e81e2a98ccaf807337",
-      "drift_note": "The deterministic 2026-08-28 reconciler reproduced the Phase-1 canonical authority hash recorded by the provenance audit. Current-policy six-family sensitivity remains a separately hashed artifact synchronized into the paper manifests; panel measurements are unchanged, and the retrospective Holm gates over the six prospectively named contrasts remain false."
+      "drift_note": "The current canonical authority is regenerated from archived panel inputs with current generator/source identities. Updating those identities changes the artifact hash even if panel measurements agree. Current-policy six-family sensitivity remains a separately hashed artifact synchronized into the paper manifests. Historical provenance-audit expectations and verdicts are retained; this refreshed row is not itself a numerical-invariance test or a new experimental result."
     },
     {
       "artifact": "Phase-1 retrospective provenance seal",

@@ -1,0 +1,1084 @@
+\appendix
+
+\section{From Cell Coverage to Population Coverage}
+\label{app:population-transfer}
+
+The interval proposition covers its declared target. The following conditional argument explains
+what would be needed to change a cell-level target into a population one.
+
+\paragraph{Additional condition for population transfer.}
+For cell outcomes using the same loss as the population risk, such as accuracy and $0/1$ loss,
+suppose that, on the same probability space,
+\[
+ \begin{aligned}
+ \Pr(|\widehat\Delta-\Delta^{\mathrm{cell}}|\le\varepsilon)&\ge1-\alpha_{\mathrm{cell}},\\
+ \Pr(|\Delta^{\mathrm{cell}}-\Delta|\le b)&\ge1-\delta,
+ \end{aligned}
+\]
+where $b\ge0$ is available without the new evaluation labels, then
+\[
+ \Pr(|\widehat\Delta-\Delta|\le\varepsilon+b)
+ \ge1-\alpha_{\mathrm{cell}}-\delta.
+\]
+The triangle inequality applies on the intersection of the two coverage events, and the union
+bound controls its complement; independence is not needed. A population certificate would use
+radius $\varepsilon+b$ and budget
+$\alpha_{\mathrm{cell}}+\delta\le\alpha_{\mathrm{target}}$. No such sampling-error bound is
+established for the reported panels, and their gates do not apply this enlarged radius. This
+conditional implication therefore adds no new population-safety claim to the empirical results.
+
+
+For a nonlinear score such as macro-F1, an analogous argument must first define the population
+functional and a suitable sampling-error bound. Neither follows from the binary disagreement
+identity. Appendix~\ref{app:compact-reviewer-guide} gives a counterexample with perfect
+cell-outcome coverage and negative population benefit.
+
+\section{Supplementary Results and Non-Promoted Studies}
+\label{app:auxiliary-results}
+\suppressfloats[t]
+
+This section preserves the evidence outside the two primary protocols. The presentation separates
+ordinary accuracy from balanced accuracy; no value is pooled across metrics, datasets, candidates,
+or protocols. The source-manifest identity is \hashtext{\SourceManifestSHA}. Historical, incomplete,
+and invalid studies keep their original scope instead of being silently removed.
+
+\subsection{Accuracy-Based Diagnostic Replays}
+
+Table~\ref{tab:compact-canonical} collects the remaining ordinary-accuracy replays;
+the dataset-specific interpretations follow below.
+
+\begin{table*}[!htbp]
+\centering
+\scriptsize
+\caption{Supplementary accuracy-regret rows. Lower regret is better. Commitment rate counts
+ADAPT or FREEZE and is not interval coverage. These are protocol-specific point summaries:
+Office-Home's primary and stream-seed rows are different from its invalidated five-checkpoint
+audit; ImageNet-C is configuration-sensitive; PACS has aggregate-only replay. For PACS, $n=12$
+counts domain--seed inference units, whereas action frequencies use 216 repeated decisions.}
+\label{tab:compact-canonical}
+\input{paper/generated/kbound_auxiliary_accuracy_table.tex}
+\end{table*}
+
+\subsection{Balanced-Accuracy Diagnostic Replays}
+
+Table~\ref{tab:auxiliary-balanced} reports the balanced-accuracy replays on their own
+metric scale, with each recorded candidate and evaluation unit kept distinct.
+
+\begin{table*}[!htbp]
+\centering
+\scriptsize
+\caption{Supplementary balanced-accuracy-regret rows, kept separate from ordinary accuracy.
+The archived runner contracts name balanced accuracy for Camelyon17, ImageNet-R, and RxRx1;
+ordinary accuracy can coincide only under the recorded class-balancing conditions.
+ImageNet-R aggregates candidate backbones rather than one deployed gate. Camelyon17 OOD was already
+opened; its B--v2 rows are separate within-seed diagnostics. RxRx1's displayed row is model seed 0.}
+\label{tab:auxiliary-balanced}
+\input{paper/generated/kbound_auxiliary_balanced_accuracy_table.tex}
+\end{table*}
+
+\subsection{Large-Scale Corruption: ImageNet-C}
+
+ImageNet-C is candidate-dependent. SAR has KGA/adapt/freeze regrets
+$\ICkga$/$\ICadapt$/$\ICfreeze$, a pooled point advantage relative to each fixed policy, but with
+one false adaptation among 135 cells and without seed-robust inferential support. Tent ties the
+always-freeze point estimate and makes no strict decisions in the reconciled row. EATA nearly
+tracks always-adapt but has a larger KGA regret ($0.0007$ versus $0.0001$). These results show why
+ImageNet-C must be interpreted at the candidate-policy level rather than through one dataset-wide
+success label.
+This SAR result uses a learning rate $16\times$ higher than SAR's published setting
+($4\times10^{-3}$ versus $2.5\times10^{-4}$), with the final ResNet stage left adaptable---an
+aggressive configuration at which SAR is expected to be fragile. No control at SAR's official
+operating point has been run; this is a claim about this configuration, not about SAR as published.
+
+\subsection{Office-Home}
+
+The primary Office-Home row~\cite{venkateswara2017officehome} is conservative. KGA regret is $\OHkga$, tying always-freeze
+($\OHfreeze$) and below always-adapt ($\OHadapt$), with $\OHAdaptCount$ adapt decisions. This is a
+descriptive point-estimate match that evaluates conservative retention rather than selective
+routing. The archived protocol does not supply a predeclared uniform stability guarantee for the
+full-fit versus out-of-fold benefit predictor.
+
+The 54-cell Office-Home stream-seed replication in Table~\ref{tab:compact-canonical} has KGA regret
+$\OHRepKga$ versus $\OHRepAdapt$ and $\OHRepFreeze$, a small point advantage relative to each fixed
+policy. The three run seeds do not record independent checkpoint identities, and the seed-level
+interval includes zero, so the comparison remains descriptive.
+
+\begin{table}[t]
+\centering
+\scriptsize
+\caption{Office-Home protocols are different experiments, not conflicting versions of one row.
+Entries are measured accuracy regret to the per-condition oracle; lower is better. The first row is the
+canonical single-candidate KGA replay with fixed SAR. The focused route is invalid, so only the
+post-hoc fixed-SAR opportunity regret ($.0027$) and freeze regret ($.0230$) are retained; its actions
+have no routing or certificate interpretation. A/F/U are adapt/freeze/abstain actions.}
+\label{tab:officehome-reconcile}
+\resizebox{\columnwidth}{!}{%
+\begin{tabular}{@{}p{0.36\columnwidth}rcc@{}}
+\toprule
+Protocol & $n$ & Router / Adapt / Freeze & A/F/U \\
+\midrule
+Archived stream-seed replay & 54 & .0215 / .0458 / .0217 & 1/14/39 \\
+Five-checkpoint candidate audit & 15 & invalid / .0027 / .0230 & n/a \\
+\bottomrule
+\end{tabular}
+}
+\end{table}
+
+The post-hoc five-checkpoint Office-Home study is a candidate opportunity audit, not a valid KGA
+result. It uses five independently trained source checkpoints, the three target-test domains, one
+fixed IID/tiny condition, and Tent, EATA, and SAR. Checkpoint identity passed, but routing and
+serialization did not. The identifying agreement relation is binary-only and does not apply to the
+65-class task; the old spectral estimate was sign-indeterminate and unbounded. Thirteen of 15
+anchors were negative, 9 of 60 stored $\widehat b$ values fell outside $[0,1]$, and EATA and SAR
+produced exactly the same predictions in 10 of 15 cells. Each checkpoint has only three LOO cells,
+whereas a 90\% empirical order-statistic single-candidate radius requires at least 10 total cells. All five result
+files fail strict JSON and contain 57 literal \texttt{Infinity} values in total.
+
+The archived exploratory implementation printed \abstain in all 15 cells, but those outputs
+have no safety, routing, or certificate meaning. The valid descriptive quantities are checkpoint
+accuracies and candidate opportunity: freeze is $0.5711$, SAR is $0.5914$, their paired difference
+is $0.0203$ (nominal post-hoc 95\% $t$-interval $[0.0123,0.0283]$), and the per-cell oracle is
+$0.5941$. Oracle minus SAR is $0.0027$ (nominal post-hoc 95\% interval $[-0.0024,0.0077]$).
+The best adapted candidate improves over freeze
+in 13 cells, ties in one, and harms in one. Because the target was already opened and SAR was chosen
+after comparing the audit means, these statistics are post-hoc opportunity evidence only.
+
+\subsection{Camelyon17}
+
+The archived Camelyon17 OOD evaluation~\cite{bandi2019camelyon} yields zero KGA and always-adapt regret against $0.1381$ for
+freeze. All 18 cells are helpful, so this already-opened panel is a descriptive always-adapt
+one-sided diagnostic rather than prospective evidence of selective routing. Within-seed candidate
+diagnostics remain separate from this OOD endpoint. In the B--v2 SAR diagnostic, KGA regret is
+$0.0006$, compared with $0.0016$ for always-adapt and $0.1001$ for always-freeze. All three run-seed
+point estimates favor KGA relative to each fixed policy, but the archived paired interval against
+always-adapt includes zero and the Holm-adjusted comparison does not pass. The run seeds also do not
+record independent checkpoint identities, and the target was already open. We therefore retain this
+as within-seed stress evidence rather than untouched natural-domain transfer.
+
+\subsection{RxRx1}
+
+The displayed RxRx1 row~\cite{taylor2019rxrx1} is model seed 0: KGA and freeze regret are zero against $0.2531$ for
+always-adapt, with no adapt decisions. A separate audit across three independently trained model
+checkpoints repeats the same all-freeze tie. It strengthens model-variation reproducibility but
+adds no adapt exposure. RxRx1 therefore evaluates reproducible conservative retention rather than
+selective routing.
+
+\subsection{iWildCam}
+
+iWildCam~\cite{koh2021wilds} is not assigned a canonical numerical row. The archived scorer used sklearn macro-F1,
+which averages prediction-only classes, rather than the official WILDS metric, which averages labels
+present in the target truth. The archived runtime, sample identities, and target population were not
+sealed under the current contract, so its diagnostic scores and routing actions remain audit-only.
+A pinned rerun with the official metric, sealed sample identifiers, and a population hash is required
+before promotion. The older binary dominance flag and the later replay under the same invalid metric
+contract remain hash-locked only as superseded audit history.
+
+\subsection{Boundary and Transfer Diagnostics}
+
+\subsubsection{PACS}
+
+PACS~\cite{li2017pacs} KGA regret is $0.0431$, compared with $0.0176$ for always-adapt. Its archived aggregate lacks
+the residual detail needed for full gate replay, so it remains an aggregate performance diagnostic
+with incomplete certificate replay.
+
+\subsubsection{ImageNet-R Backbone Breakdown}
+
+ImageNet-R~\cite{hendrycks2021manyfaces} KGA regret is $0.0150$, compared with $0.0064$ for always-adapt, across the ten-backbone
+architecture panel. No backbone has lower KGA point regret than each fixed comparator. KGA regret
+is higher than always-adapt regret on 8 of 10 backbones; four of those eight have a 0\% harmful base
+rate, so routing has no harm to avoid. On
+\texttt{efficientnet\_b0} (100\% harmful) and \texttt{swin\_t} (60.4\% harmful), KGA improves over
+always-adapt but exactly matches always-freeze and makes no adapt decisions. The pattern is
+consistent with the regime map: routing can add value only where candidate harm is present, while
+these two rows evaluate conservative retention rather than selective routing.
+
+\subsubsection{CIFAR-10.1}
+
+CIFAR-10.1~\cite{recht2019cifar10} matches always-freeze at $0.0017$ and is retained as a low-margin cross-seed transfer
+diagnostic. This pattern alone does not prove structural non-identifiability; weak evidence, low
+margin, estimator inadequacy, or calibration transfer can produce the same behavior.
+
+\subsection{Historical Protocol-Matched POEM and AETTA Ports}
+The repository retains a head-to-head artifact on the locked CIFAR-10-C stress stream, but its KGA
+actions came from an earlier policy and are not synchronized with the current empirical order-statistic actions.
+Its numerical ordering is therefore audit history, not release-eligible comparative evidence, and
+we do not report a superiority estimate from it. The neighboring methods are protocol-matched ports,
+not untouched official implementations. A defensible comparison requires all methods to be replayed
+on identical current-policy records with the multiplicity family fixed in advance.
+
+These controlled results use empirical calibration. Leaving one cell out prevents that cell from
+directly fitting its own prediction or radius. It does not establish exact split-conformal coverage
+when corruption cells are dependent. Thus zero observed false adaptations describes this protocol;
+it does not guarantee the same result for every future corruption family.
+
+\subsection{So2Sat Development and Action-Unit Audit}
+\label{app:so2sat-development}
+
+The locked So2Sat-LCZ42 v1 study evaluated \SoTwoCandidateCount{} candidates, Tent and SAR, on
+\SoTwoDevelopmentCityCount{} development cities and \SoTwoCheckpointCount{} independent source
+checkpoints, giving \SoTwoCellCountPerCandidate{} city--checkpoint cells per candidate. This was a
+candidate-feasibility stage, not target evaluation. Tent had \SoTwoTentHelpfulCityCount{} helpful and
+\SoTwoTentHarmfulCityCount{} harmful cities and a cell-oracle opportunity of
+\SoTwoTentOracleGainPP{} percentage points. Its leave-one-city-out sign agreement was
+\SoTwoTentLocoSignPct{}\%, and its routed score was \SoTwoTentLossBestFixedPP{} percentage points
+below always-adapt, its better fixed policy. SAR had \SoTwoSarHelpfulCityCount{} qualifying helpful
+cities, \SoTwoSarHarmfulCityCount{} harmful cities, and an oracle opportunity of
+\SoTwoSarOracleGainPP{} percentage points. It selected ADAPT in only \SoTwoSarAdaptCellCount{} of
+\SoTwoCellCountPerCandidate{} cells, and its routed score was \SoTwoSarLossBestFixedPP{} percentage
+points below always-freeze. Tent passed \SoTwoTentPassedCheckCount{} of
+\SoTwoFeasibilityCheckCount{} feasibility checks and SAR passed \SoTwoSarPassedCheckCount{} of
+\SoTwoFeasibilityCheckCount{}, so neither candidate was eligible.
+
+The locked status records no feasible candidate and a stop before gate calibration. No held-out
+gate-calibration rows or target inputs were accessed; the recorded counts were
+\SoTwoGateCalRowsRead{} gate-calibration rows, \SoTwoTargetInputCount{} target inputs,
+\SoTwoTargetPixelsRead{} target pixels, and \SoTwoTargetLabelsRead{} target labels. The study
+therefore documents failure to meet the v1 cross-city development-transfer feasibility criteria
+while also showing that a cell-oracle routing opportunity existed for Tent. It contains no target natural-shift
+score. All \SoTwoOpenedOutcomeCount{}
+development outcomes are now open, so retuning on them cannot produce fresh confirmatory evidence.
+In addition, v1 declares one
+target action per city while the target runner creates city--checkpoint actions. This mismatch did
+not affect the stop, because no target action was created, but target execution remains blocked until
+a new versioned protocol and implementation use the same action unit.
+
+\subsection{Withdrawn Development Proxy for the Population Budget}
+
+The frontier is exact relative to $\mathcal C_\beta$, but an unlabeled deployment batch cannot
+verify $|\gamma|\le\beta$. A credible budget must come from domain knowledge, a declared coupling,
+or historical labeled deployments under a transfer assumption. Setting $\beta=0$ assumes a zero
+target disagreement-conditional residual; it is not a safe default.
+
+We tested a source-development benefit-scale proxy as a possible operational surrogate for
+$\beta$; it does not estimate the theorem's calibration-residual bound. On CIFAR-10-C, the proxy is
+$1.4$--$50\times$ too small relative to evaluation-scale discrepancies: 24--73\% of cells violate
+the putative budget, and commit error is 0.4--16.6\%. On ImageNet-C, a larger proxy often removes
+most decisions; 5 of 10 configurations return zero commitments on all 405 cells. We therefore
+withdraw this surrogate route. The population $\beta$ remains externally supplied from domain
+knowledge or a stated assumption.
+
+\paragraph{The theory-to-algorithm link needs a sampling argument.}
+The population layer targets $\Delta$; the reported empirical calibration targets
+$\Delta^{\mathrm{cell}}$, as Section~\ref{sec:compact-bridge} makes explicit. Coverage for the latter
+does not cover the former without an additional evaluation-error argument such as that in
+Appendix~\ref{app:population-transfer}. Neither layer establishes that $Z$ is risk-aligned, that
+$h_\theta$ transfers, or that residual coverage holds in a new domain. KGA applies the three-way
+decision through an interval; it does not learn these validity assumptions.
+
+\section{Compact Assumption and Claim Ledger}
+\label{app:compact-ledger}
+
+Table~\ref{tab:compact-ledger} separates formal claims from empirical findings and records the
+conditions and scope limits for each.
+
+\begin{table*}[!t]
+\centering
+\footnotesize
+\caption{Claim-to-support ledger for the compact submission. Support pairs each evidence reference
+with the conditions required for its stated scope.}
+\label{tab:compact-ledger}
+\begin{tabular}{@{}p{0.20\textwidth}p{0.47\textwidth}p{0.25\textwidth}@{}}
+\toprule
+Claim and type & Support and requirement & Boundary \\
+\midrule
+Interior evidence ambiguity (theorem) & Thm.~\ref{lem:nonid}; $\beta>0$, $|M|<\beta$, and full fibre richness & binary, $0/1$ loss \\
+Closed-band abstention (proposition) & Prop.~\ref{prop:closed-band}; strict directional semantics and a rich class & zero benefit blocks a strict claim \\
+Strict-commitment frontier (theorem) & Thm.~\ref{thm:headline}; fixed augmented evidence and declared $\mathcal C_\beta$ & $\beta$ is externally supplied \\
+Marginal false-adapt control (operational proposition) & Prop.~\ref{thm:certificate} under Eq.~\eqref{eq:compact-coverage} for the measured cell target & neither population-risk nor conditional $\mathrm{FA}_{\mathrm c}$ control follows \\
+CIFAR-10-C Tent regret (empirical) & Tables~\ref{tab:primary-cifar} and~\ref{tab:compact-current-family}; frozen Tent controlled-grid protocol & lower empirical order-statistic point regret; nominal family-bootstrap intervals favor KGA; retrospective Holm is nonconfirmatory \\
+CIFAR-10-C EATA regret (empirical) & Tables~\ref{tab:primary-cifar} and~\ref{tab:compact-current-family}; frozen EATA controlled-grid protocol & adapt-side family interval includes zero; retrospective Holm is nonconfirmatory \\
+Natural-shift conservative rows (empirical) & Tables~\ref{tab:compact-canonical}, \ref{tab:auxiliary-balanced}, and \ref{tab:cct20-safe-utility}; each split and candidate remain fixed & often zero ADAPT exposure \\
+So2Sat development stop (diagnostic) & Sec.~\ref{sec:so2sat-development-stop}; locked v1 feasibility rules and unopened target boundary & no eligible candidate, gate calibration, or target score \\
+ImageNet-C candidate scope (diagnostic) & Table~\ref{tab:compact-canonical}; candidate rows interpreted separately & candidate-specific evidence \\
+PACS/ImageNet-R/CIFAR-10.1 scope (diagnostic) & Tables~\ref{tab:compact-canonical} and~\ref{tab:auxiliary-balanced}; canonical replay scope retained & observed behavior does not prove unknowability \\
+Deployment generalization (future evidence) & Sec.~\ref{app:compact-confirmation}; diverse unopened natural targets & outside current evidence scope \\
+Real-camera validation (pending) & locked sessions and fresh held-out recordings & protocol infrastructure only; no result in this paper \\
+\bottomrule
+\end{tabular}
+\end{table*}
+
+\section{Calibration and Evaluation Contracts}
+\label{app:compact-contracts}
+
+\paragraph{Controlled-grid contract.}
+The fitting unit is the condition cell. An out-of-fold benefit estimate is produced without fitting
+on the scored cell, and the residual radius for that cell excludes its residual. This is
+leave-one-condition-out cross-fitted empirical residual calibration. Related cells may still be
+dependent through corruption family, checkpoint, or seed. Exact split-conformal wording is not used
+for this branch.
+
+\paragraph{Natural-shift contract.}
+Development conditions fit the benefit model; a disjoint calibration partition supplies residuals;
+choices are frozen; and the target partition is scored once where the archived protocol records all
+three stages. When the saved evidence does not support that complete chain, the row is marked
+descriptive or diagnostic. Replaying a table does not strengthen its original design.
+
+The candidate TTA step itself is transductive. Episodic candidates update on each unlabeled
+evaluation batch before predicting that batch. Online candidates update on a separate auxiliary
+stream, but prediction still uses evaluation-batch BatchNorm statistics. Thus ``disjoint'' above
+refers to development, residual-calibration, and target partitions (and to the recorded auxiliary
+stream versus evaluation sample identities); it does not mean that candidate inference is
+inductive. No target labels enter adaptation, prediction, evidence, or the action.
+
+\paragraph{Action contract.}
+Every action is computed from $Z$, $\widehat\Delta$, and $\varepsilon$ without target labels.
+Offline labels determine $\Delta^{\mathrm{cell}}$, the measured oracle action, empirical regret,
+and false-commit indicators only after the action is fixed. Existing artifact fields named
+\texttt{delta} store this cell outcome; their schema and numerical values are unchanged.
+Abstention resolves to the frozen prediction for measured task-performance accounting, while its log
+retains the distinction from a certified freeze.
+
+\paragraph{Configuration contract.}
+The checkpoint, candidate adapter, optimizer, adapted parameter subset, update count, evidence
+schema, feature normalization, benefit estimator, calibration split, $\alpha$, and software version
+are part of one calibration identity. Changing any of them requires either a declared transfer
+argument or recalibration. The fail-closed default on identity mismatch is non-commitment.
+
+\section{Decision Exposure and Repetition Audit}
+\label{app:compact-actions}
+
+Point regret alone can conceal whether a conservative match exercised the ADAPT branch. Table
+\ref{tab:compact-actions} therefore reconstructs action counts from the same canonical panel used
+in Tables~\ref{tab:primary-cifar}, \ref{tab:compact-canonical}, and~\ref{tab:auxiliary-balanced}.
+A/F/U denote adapt, freeze, and abstain. PACS is omitted from
+the action table because the released aggregate cross-checks regret but does not contain the
+per-cell benefit estimates and residuals required for a complete gate replay. iWildCam is omitted
+because its archived actions were scored under the wrong macro-F1 contract.
+
+\begin{table*}[!t]
+\centering
+\scriptsize
+\caption{Action exposure in replayable canonical rows. Counts are not independent experiments:
+they are evaluation units within the protocol shown. A zero false-adapt count is informative only
+when adaptation was attempted and the residual pool did not make the inequality automatic. Harm
+and false adaptation are defined by measured cell outcomes, not population risks. Counts
+were regenerated from source manifest SHA-256
+\texttt{\SourceManifestSHA}.}
+\label{tab:compact-actions}
+\setlength{\tabcolsep}{4pt}
+\begin{tabular}{@{}p{0.19\textwidth}rrrrrrp{0.35\textwidth}@{}}
+\toprule
+Row & $n$ & A & F & U & false A & $\mathrm{FA}_{\mathrm u}$ & repetition / scope \\
+\midrule
+Office--Home primary & \OHN & \OHAdaptCount & \OHFreezeCount & \OHAbstainCount & 0 & .0000 & 2 test-stream seeds; ties freeze \\
+Office--Home stream-seed repl. & \OHRepN & \OHRepAdaptCount & \OHRepFreezeCount & \OHRepAbstainCount & 0 & .0000 & 3 test-stream seeds; point-only edge \\
+ImageNet--C SAR & 135 & 13 & 15 & 107 & 1 & .0074 & 5 seeds $\times$ 27 cells \\
+ImageNet--C Tent & 135 & 0 & 0 & 135 & 0 & .0000 & 5 seeds $\times$ 27 cells \\
+ImageNet--C EATA & 135 & 120 & 1 & 14 & 1 & .0074 & 5 seeds $\times$ 27 cells \\
+ImageNet--R & 480 & 165 & 29 & 286 & 0 & .0000 & 4 seeds $\times$ 10 backbones $\times$ 12 cells \\
+CIFAR--10--C Tent & 2160 & 1107 & 359 & 694 & 0 & .0000 & 5 seeds $\times$ 432 cells \\
+CIFAR--10--C EATA & 2160 & 1241 & 132 & 787 & 0 & .0000 & 5 seeds $\times$ 432 cells \\
+CIFAR--10--C SAR & 2160 & 1446 & 0 & 714 & 0 & .0000 & 5 seeds $\times$ 432 cells \\
+Camelyon17 OOD & 18 & 18 & 0 & 0 & 0 & .0000 & archived opened helpful-only OOD subset \\
+Camelyon17 B--v2 Tent & 108 & 40 & 0 & 68 & 1 & .0093 & 3 within-seed grids; diagnostic \\
+Camelyon17 B--v2 EATA & 108 & 61 & 0 & 47 & 0 & .0000 & 3 within-seed grids; diagnostic \\
+Camelyon17 B--v2 SAR & 108 & 71 & 0 & 37 & 0 & .0000 & 3 within-seed grids; diagnostic \\
+RxRx1 J & 60 & 0 & 60 & 0 & 0 & .0000 & displayed model seed 0; separate 3-checkpoint audit also all-freeze \\
+CIFAR--10.1 K & 48 & 0 & 22 & 26 & 0 & .0000 & locked cross-seed replay \\
+\bottomrule
+\end{tabular}
+\end{table*}
+
+The largest adapt exposure occurs on the controlled CIFAR-10-C rows. This is why those rows are the
+main empirical test of the adapt-side certificate. Primary Office-Home and RxRx1 have zero adapt
+exposure, while the 54-cell Office-Home stream-seed replication has one adapt decision. Their zero
+false-adapt values barely test whether the gate can distinguish a harmful adaptation from a helpful
+one; they show that the controller declines the candidate under those evidence/calibration
+contracts. The invalidated five-checkpoint Office-Home route and the withheld iWildCam actions are
+not counted. Camelyon17 OOD has the opposite limitation: every archived condition is helpful and
+every action adapts, so there is no harmful opportunity to reject. ImageNet-C EATA has substantial
+adapt exposure and one false adaptation, while Tent
+abstains everywhere. Those three patterns are operationally different even when their regrets are
+small.
+
+The repetition column also prevents a common inflation of evidence. Five seeds of one checkpoint
+and grid protocol are not five independently designed studies. Ten ImageNet-R backbones are a panel
+of candidate policies, not ten target domains for one frozen gate. Three Camelyon17 within-seed
+grids permit a stability diagnostic but do not create an untouched hospital-domain replication.
+RxRx1 is stronger on model variation because the source checkpoint is independently trained three
+times, but its all-freeze behavior still provides no adapt exposure.
+
+\section{Inference Discipline}
+\label{app:compact-inference}
+
+\subsection{Point Estimates, Paired Gaps, and Clusters}
+
+For a baseline $b\in\{\text{always-adapt},\text{always-freeze}\}$, the paired routing gap at
+condition $j$ is
+\[
+G_{bj}=\operatorname{regret}_{b,j}-\operatorname{regret}_{\mathrm{KGA},j}.
+\]
+A positive mean gap means lower regret for KGA. All paired routing-gap intervals reported in this
+paper use this baseline-minus-KGA sign convention. The point-estimate two-comparator criterion requires both
+means to be positive. Interval support additionally requires the lower confidence limit for both
+paired means to exceed zero at the declared resampling unit. These definitions are intentionally separate:
+Table~\ref{tab:compact-canonical} can establish a point ordering, but not an inference claim without
+the associated unit, interval artifact, and justified coverage assumptions. A positive computed
+lower endpoint is numerical interval support under the resampling model, not verified coverage.
+Multiplicity adjustments do not repair invalid marginal intervals or tests.
+
+Condition-level resampling treats cells as exchangeable and can understate uncertainty when
+severities and compositions share a corruption family. Corruption-family resampling preserves
+observed within-family dependence, but few clusters limit reliability; conservativeness is not
+guaranteed. Seed resampling measures variation across repeated training or test streams only when
+the seeds represent the intended deployment randomness. The compact paper therefore does not use
+one generic ``bootstrap CI'' label. An inference claim must state whether the unit is cell,
+corruption--severity pair, corruption family, seed, backbone, domain, or physical session.
+
+\subsection{Current-Policy Corruption-Family Sensitivity}
+
+The six candidate-by-baseline contrasts were named before this analysis; the replay policy,
+corruption-family unit, sign-flip reference test, and Holm adjustment were selected retrospectively.
+The current-policy artifact averages run seeds and condition cells within each of the six families.
+Table~\ref{tab:compact-current-family} retains every contrast, including EATA's adapt-side interval
+crossing zero and SAR's disadvantage against always-adapt. The within-Tent two-contrast Holm
+calculation is post hoc and is not the declared six-contrast family.
+
+\begin{table*}[!t]
+\centering
+\scriptsize
+\caption{Retrospective current-policy sensitivity over six observed CIFAR-10-C corruption families.
+Each cell reports baseline regret minus KGA regret and a nominal, unadjusted 95\% family-bootstrap
+interval; positive values favor KGA. Holm values adjust retrospective sign-flip reference values over six
+prospectively named candidate-by-baseline contrasts. The replay, corruption-family unit, sign-flip
+test, and Holm adjustment were not preregistered. The within-Tent two-contrast Holm value is
+$0.03125$ but is post hoc. This table is conditional on one archived checkpoint and does not provide
+verified finite-sample coverage, simultaneous intervals, independent-checkpoint inference,
+prospective confirmation, natural-shift
+evidence, or official POEM/AETTA superiority.}
+\label{tab:compact-current-family}
+\resizebox{\textwidth}{!}{\input{paper/generated/current_policy_family_sensitivity}}
+\end{table*}
+
+\subsection{Retrospective Interval Inclusion by Family}
+\label{app:interval-groups}
+
+The following audit replays the current policy from stored, cross-fitted predictions and measured
+cell outcomes. It uses each candidate's original residual rule and excludes the scored residual
+from its own radius. No fitting, tuning, new target access, or training is performed. The input,
+policy, code, and output digests are recorded in the generated diagnostic JSON.
+
+The pooled inclusion fraction is constrained by the overlapping leave-one-cell-out order statistics.
+It is not an independent estimate of coverage on new environments. Family rows reveal the
+distribution of those same misses, widths, and decisions; they do not supply group-conditional
+guarantees. A nominal 90\% target is a calibration setting, not a promise validated by this replay.
+
+\begin{table*}[t]
+\centering
+\scriptsize
+\caption{Current-policy interval and decision diagnostics by corruption family. Width is full
+interval width, $2\varepsilon$. Inclusion is measured on already-open, dependent cross-fitted cells.
+Conditional errors use the number of the corresponding action as denominator and are undefined
+when that action is absent. These diagnostics are not held-out group-coverage validation.}
+\label{tab:interval-groups}
+\resizebox{\textwidth}{!}{\input{paper/generated/current_policy_interval_diagnostics_groups.tex}}
+\end{table*}
+
+\subsection{False-Adapt Accounting}
+
+The event in Eq.~\eqref{eq:compact-fau} is unconditional and concerns measured cell benefit.
+Its reported frequency divides ADAPT decisions with $\Delta_j^{\mathrm{cell}}\le0$ by all
+evaluated units, including freezes and abstentions. This need not estimate the population-harm
+event $\{g=\adapt,\Delta\le0\}$. Conditional false-adapt
+divides by adapt decisions and is undefined when no adaptation occurs. A zero observed count should
+be accompanied by the number of adapt decisions; otherwise a controller that never adapts appears
+perfect. Table~\ref{tab:compact-actions} exposes that denominator.
+
+If the scored residual is included in the same finite residual vector whose order statistic decides
+the action, the number of residuals above the order statistic is algebraically constrained. Such
+coverage is not an independent empirical validation. Excluding the scored residual removes direct
+self-inclusion, but pooled LOO inclusion remains rank-constrained. It is not independent validation
+and does not supply the exchangeability or stability needed for a finite-sample theorem. Clean
+split calibration and LOO empirical calibration therefore remain different protocol labels.
+
+\subsection{Multiplicity and Search History}
+
+An earlier repository census counted many historical two-comparator flags, but it did not freeze the
+file list and commit needed to reproduce a current total. We therefore do not promote that count or
+its positive rate as release evidence. The panel in this paper is a post-hoc reconciled audit panel
+assembled from individually locked and historical protocols; it is not a globally preregistered
+confirmatory family. A result selected after a search cannot become confirmatory by correcting only
+the final positive rows. Future confirmatory families must name every candidate--track test before
+any test value is computed, and must retain failures and incomplete runs.
+
+\paragraph{Search history.}
+The repository contains many exploratory configurations. One superseded review census reported
+1,387 determinations and 326 positives (23.5\%); a broader archived scan reported 1,427
+determinations and 345 positives. Because neither census froze one reproducible family definition,
+file list, and commit, neither total is promoted as the release
+multiplicity family. We instead report a current post-hoc reconciled panel and do not relabel its
+favorable rows as confirmatory discoveries. Future claims should declare the candidate, calibration
+unit, target unit, seed structure, inference unit, and two-comparator success criterion before test
+labels are opened.
+
+\section{Track-Level Provenance and Remaining Evidence}
+\label{app:compact-provenance}
+
+\begin{table*}[!t]
+\centering
+\scriptsize
+\caption{What is present in the compact release and what remains unavailable. ``Replay'' means the
+stored quantities suffice to recompute the displayed gate output under the released scorer.}
+\label{tab:compact-provenance}
+\begin{tabular}{@{}p{0.17\textwidth}p{0.16\textwidth}p{0.26\textwidth}p{0.32\textwidth}@{}}
+\toprule
+Track & Released status & Present evidence & Remaining limitation \\
+\midrule
+CIFAR-10-C & replayable & per-condition $\Delta^{\mathrm{cell}}$, $\widehat\Delta$, radius, action; 5 seeds; 3 candidates & related grid cells; no untouched corruption-family test in canonical table \\
+ImageNet-C & replayable & per-condition records for 5 seeds and Tent/EATA/SAR & 27-cell controlled configuration; candidate-specific, not one policy \\
+Office-Home & replayable & canonical primary and 54-cell stream-seed records; later five-checkpoint audit reported separately & full-fit-versus-OOF transfer-stability premise not predeclared \\
+iWildCam & withheld & archived opened test-split records; non-promoted official-metric diagnostic & wrong archived metric; population was not sealed and overlap is unauditable \\
+Camelyon17 & replayable diagnostic & archived opened OOD row plus separate B--v2 diagnostics & OOD row is one-sided and non-prospective; B--v2 is not untouched-domain evidence \\
+RxRx1 & replayable & displayed model-seed-0 row plus three model-checkpoint records and source hashes & all three checkpoints freeze throughout; no helpful test conditions \\
+CCT-20 & sealed complete & 5 independent checkpoints, 9 target locations, actions, predictions, score, and inference hashes & only two fit locations; no ADAPT exposure; trans-target extrapolation \\
+So2Sat-LCZ42 & sealed development stop & \SoTwoCandidateCount{} candidate bundles, \SoTwoDevelopmentCityCount{} development cities, \SoTwoCheckpointCount{} checkpoints, selection record, and \SoTwoTargetInputCount{} target inputs & no feasible candidate; all \SoTwoOpenedOutcomeCount{} gate-fit outcomes now open; no gate calibration or target result \\
+PACS & partial & three-seed aggregate and source cross-checks & missing per-cell $\widehat\Delta$ and residuals prevent full gate replay \\
+ImageNet-R & replayable & 4 seeds, 10 candidate backbones, 12 conditions each & architecture aggregate is diagnostic, not one deployable router \\
+CIFAR-10.1 & replayable & locked cross-seed condition records & low-margin conservative match; selective routing not exercised \\
+Physical camera & protocol only & dashboard, logging schema, planned session split & no fresh held-out physical recordings or result table \\
+\bottomrule
+\end{tabular}
+\end{table*}
+
+Separate archival records preserve two additional scope checks outside the canonical panel. FMoW
+Protocol~L reached held-out scoring and matched always-freeze, while always-adapt had lower regret;
+its status remains not-cleared. PovertyMap stopped at its preregistered development screen because
+the harm-detection AUC was $0.637$, below the $0.65$ threshold, so held-out validation and test
+scoring did not run. These records remain in the claim inventory and are not pooled with the
+canonical rows.
+
+The provenance table is part of the result, not administrative metadata. A reviewer can trace a
+canonical row to compact records and their original archive hashes. If the original large artifact
+is not shipped, the manifest still records its byte count and digest. This guards against silent
+replacement of a result while allowing the release to omit raw datasets and oversized transient
+checkpoints.
+
+Three upgrades would materially strengthen the empirical case. First, hold out entire shift
+families rather than individual controlled cells and fit all hyperparameters before opening the
+family. Second, add independent model and test-session seeds to the natural tracks that currently
+have one target replay. Third, run the physical protocol with days, devices, and objects assigned at
+the session level, then score every policy on the same locked streams. These upgrades address
+dependence and transfer; simply adding more rows from the same grid does not.
+
+\subsection{CCT-20 Inference, Location, and Release Ledger}
+\label{app:cct20-ledger}
+
+\paragraph{Provenance ledger.}
+Cell-level outcomes remained unopened before target execution. Aggregate target label metadata had
+already been inspected during candidate ranking, so this is not a label-unopened study.
+Item-level target labels were deserialized once, after the one-shot scoring marker was spent. The
+release chain also records the numeric-v2 repair in a sealed addendum created before outcome access.
+That repair replaced an unstable divergence calculation with a stable Gaussian KL computation; it
+did not change the model, data split, or scoring rule. We treat it as protocol provenance, not
+result-driven tuning. All primary outcome values and action/effect counts come from the sealed,
+content-addressed, receipt-linked CCT-20 release manifest and its generated macros
+(canonicalized inference-document SHA-256
+\hashtext{\CCTInferenceSHA}).
+
+\begin{table*}[t]
+\centering
+\scriptsize
+\caption{Locked CCT-20 primary contrasts. The estimand is baseline regret minus KGA regret, so
+positive values mean lower regret for KGA. Intervals use a paired two-way product bootstrap that
+resamples checkpoint rows and location columns independently. Two nominal 97.5\% per-comparison
+intervals target a nominal 95\% Bonferroni family level; actual family coverage requires valid
+marginal coverage. Reference $p$-values enumerate one-sided sign flips of the nine location means
+under Eq.~\eqref{eq:compact-signflip-null}. Holm adjusts only these reference values; the threshold
+flags reproduce the locked calculation, not a verified population guarantee.}
+\label{tab:cct20-primary}
+\resizebox{\textwidth}{!}{\input{paper/generated/cct20_primary_table_display.tex}}
+\end{table*}
+
+Finite-sample sign-flip validity requires the null joint law of the nine location gaps to satisfy
+Eq.~\eqref{eq:compact-signflip-null}. Independent zero-symmetric location gaps conditional on the
+evaluated checkpoints would suffice, but that assumption is unverified here. Exchangeability alone
+does not suffice. The sign-flip analysis conditions on the evaluated checkpoints, whereas the
+two-way bootstrap also resamples checkpoint levels. These are different uncertainty models, and
+neither establishes distribution-free safety for unseen locations.
+
+\paragraph{Primary result.}
+KGA exactly matched always-freeze. Its contrast against always-freeze was \CCTVsFreezePoint{} with
+nominal Bonferroni-adjusted 97.5\% bootstrap interval [\CCTVsFreezeCILower, \CCTVsFreezeCIUpper],
+enumerated location sign-flip
+$p=\CCTVsFreezeExactP$, and Holm $p=\CCTVsFreezeHolmP$. Against always-adapt, the contrast was
+\CCTVsAdaptPoint{} with interval [\CCTVsAdaptCILower, \CCTVsAdaptCIUpper], sign-flip reference
+$p=\CCTVsAdaptExactP$, and Holm $p=\CCTVsAdaptHolmP$. Measured cell benefit is adapted accuracy minus
+frozen accuracy: \CCTHelpfulCount{} cell was helpful, \CCTZeroCount{} were exactly zero, and
+\CCTHarmfulCount{} were harmful. These counts explain why freezing was useful here. They do not
+show that the gate learned when to adapt.
+
+\paragraph{Limits and next step.}
+All 55 development cells showed lower performance after Tent than under the frozen model, so the
+gate had no helpful ADAPT example. The
+ridge fit used 10 checkpoint--location rows from only two camera units for 11 recorded features.
+Calibration used 45 rows collapsed to nine cis-test camera locations, while the locked targets came
+from trans-test locations. Coverage therefore needs an unverified cross-split exchangeability
+assumption. Target Mahalanobis diagnostics ranged from 7.12 to 485.67 (median 28.73), showing strong
+extrapolation; this diagnostic never changed an action and is not a formal coverage guarantee. One
+natural target study also cannot establish transfer of selective routing across natural shifts. A
+follow-on locked study on So2Sat-LCZ42 retained an outcome-blind boundary but stopped at development
+feasibility, as described next. A new versioned study still needs diverse development units, useful exposure to both ADAPT and
+FREEZE, and untouched confirmation environments.
+\CCTSecondaryMetricDisclosure
+
+
+
+Table~\ref{tab:cct20-locations} reports all nine location clusters. Evaluation $n$ is the number of
+evaluation images per checkpoint at that location. Each A/F/U triplet and each
+helpful/zero/harmful triplet therefore has denominator five, one cell for each checkpoint. These
+labels describe measured cell outcomes. Accuracy differences use one sign throughout: adapted minus frozen for adaptation benefit, and KGA minus the
+named fixed policy for the two policy columns.
+
+\begin{table*}[t]
+\centering
+\footnotesize
+\caption{Complete locked CCT-20 location ledger. A/F/U denotes ADAPT/FREEZE/ABSTAIN, and $+/0/-$
+counts positive/zero/negative measured-benefit cells. Difference columns are equal-weight means over five checkpoint
+cells and are rounded to four decimals for display; the sealed manifest retains full precision.
+Cells are repeated-model observations, and the inferential cluster unit is the camera location.}
+\label{tab:cct20-locations}
+\input{paper/generated/cct20_location_effects_display.tex}
+\end{table*}
+
+The release ledger contains all \CCTCellCount{} cells: \CCTAdaptCount{} ADAPT, \CCTFreezeCount{}
+FREEZE, and \CCTAbstainCount{} ABSTAIN actions; \CCTHelpfulCount{} helpful, \CCTZeroCount{} zero,
+and \CCTHarmfulCount{} harmful adaptation effects. The release verdict remains \CCTVerdict. The
+location table is descriptive; sign-flip enumeration uses the nine location means under the
+reference model in Eq.~\eqref{eq:compact-signflip-null}, and no post-hoc
+aggregate is claimed for the secondary macro-F1 outcome.
+
+\section{Extended KGA Implementation Contract}
+\label{app:compact-implementation}
+
+\subsection{State Isolation}
+
+The frozen and candidate predictors must not share mutable normalization buffers, optimizer state,
+or parameter storage during preview. The candidate is created from a checkpoint, adapted on the
+unlabeled window, and evaluated without overwriting the active state. Only an adapt decision may
+replace the active checkpoint. Freeze and abstain discard the temporary state. A unit test should
+hash the active parameters before and after each non-adapt decision and require equality.
+
+\subsection{Evidence Determinism}
+
+Evidence extraction must define preprocessing, batch order, numerical precision, class ordering,
+normalization constants, and missing-value behavior. Paired features require frozen and candidate
+outputs on the same samples in the same order. Source statistics and ATC thresholds are immutable
+calibration artifacts. Evidence schema versions should be explicit rather than inferred from vector
+length, because two schemas can share a dimension while changing semantics.
+
+\subsection{Calibration Identity}
+
+The calibration identity should hash the source checkpoint, candidate adapter class, adapted
+parameter names, optimizer and learning rate, update steps, evidence schema, benefit-model
+hyperparameters, feature scaler, residual construction, $\alpha$, and inference-unit definition.
+The radius belongs to that identity. Reusing it after a candidate or evidence change is not a benign
+software optimization; it changes the random variable whose residual is being covered.
+
+\subsection{Runtime Accounting}
+
+A deployment report should time capture/preprocessing, frozen inference, candidate adaptation,
+candidate inference, evidence extraction, benefit prediction, interval decision, copy creation, and
+rollback separately. Mean and tail latency should be reported at the decision-window level. Peak
+memory should include both model states and optimizer buffers. The compact manuscript leaves these
+cells unfilled because the canonical cross-dataset manifest does not provide one comparable runtime
+measurement. Omitting an unsupported number is preferable to quoting controller-only latency as
+end-to-end cost.
+
+\section{Evidence Inventory}
+\label{app:compact-evidence}
+
+\subsection{Protocol-Specific Feature and Model Schemas}
+
+The controlled-grid implementation records 11 label-free coordinates with effective rank 9.
+Two coordinates are deterministic differences:
+\texttt{entropy\_drop}=\texttt{pre\_entropy}-\texttt{post\_entropy} and
+\texttt{pbal\_drop}=\texttt{pre\_pbal}-\texttt{post\_pbal}. The panel therefore contains 11
+stored values, not 11 independent information sources. Together they describe confidence, class
+balance, change from the frozen model, and update size.
+
+Natural-shift artifacts do not all use the same schema. iWildCam, RxRx1, and most archived tracks
+use the 11-feature panel. Camelyon17 uses 17 features by adding disagreement, entropy gap,
+free-energy shift, batch-statistic divergence, a source-fixed ATC estimate, and confidence drop.
+Office-Home uses 18 features and also records source-prior KL and mean candidate disagreement. A
+model and its radius are valid only for the schema on which they were calibrated. Missing,
+reordered, or invalid features force non-commitment.
+
+The controlled and archived GBRT protocols use scikit-learn's
+\texttt{GradientBoostingRegressor}~\cite{pedregosa2011sklearn} with squared-error loss,
+250 trees, depth 2, learning rate $0.05$, subsample $0.8$, and random seed 0. The fit is specific
+to each dataset and adapter. CCT-20 instead uses its sealed ridge model, as described in
+Section~\ref{sec:cct20-design}. Thus ``adapter agnostic'' describes the interface: any adapter can propose a
+candidate that is evaluated and either committed or rolled back. It does not mean that a benefit
+model fitted for Tent transfers validly to EATA, SAR, or another adapter.
+
+
+
+\begin{table*}[!t]
+\centering
+\scriptsize
+\caption{Feature families used by the maintained implementation. All quantities are aggregate
+statistics of unlabeled inputs, frozen/candidate outputs, or the proposed update.}
+\label{tab:compact-evidence}
+\begin{tabular}{@{}p{0.18\textwidth}p{0.30\textwidth}p{0.19\textwidth}p{0.25\textwidth}@{}}
+\toprule
+Family & Representative coordinates & Required state & Failure handling \\
+\midrule
+Predictive uncertainty & mean entropy, confidence, quantiles & frozen/candidate softmax & reject NaN or malformed probabilities \\
+Marginal balance & normalized class-marginal entropy and change & predicted-class marginals & fixed class count and normalization \\
+Model change & entropy gap, confidence drop, prediction disagreement & paired frozen/candidate outputs & require aligned sample order \\
+Collapse signal & fraction above adapted confidence $0.9$ & candidate probabilities & threshold fixed before scoring \\
+Distribution shift & free-energy shift, batch/running-statistic divergence & frozen logits and source statistics & missing source statistic forces non-commitment \\
+Update magnitude & parameter-update $\ell_2$ norm & shadow candidate delta & configuration hash must match calibration \\
+Source-calibrated proxy & ATC-style threshold estimate & source-fixed threshold & target labels never used \\
+\bottomrule
+\end{tabular}
+\end{table*}
+
+The base panel has 11 coordinates; the canonical Camelyon17 rich-Z artifact has 17 and the
+Office-Home artifact has 18. Other natural tracks retain the 11-coordinate base panel. These
+protocol-specific dimensions are part of the fitted estimator contract. They should not be described as
+universal sufficient statistics: a different shift may hide the benefit direction from all listed features. Feature
+selection can improve empirical prediction, but cannot defeat the label-kernel construction of
+Lemma~\ref{lem:fibre} over an unrestricted target fibre.
+
+\section{Failure-Safe Deployment Checklist}
+\label{app:compact-deployment}
+
+\begin{table}[t]
+\centering
+\scriptsize
+\caption{Operational failures and conservative responses.}
+\label{tab:compact-failures}
+\begin{tabular}{@{}p{0.32\columnwidth}p{0.31\columnwidth}p{0.27\columnwidth}@{}}
+\toprule
+Failure & Detection & Response \\
+\midrule
+Checkpoint/adapter mismatch & stored hash mismatch & rollback and recalibrate \\
+Evidence outside support & distance or support audit & abstain \\
+Missing/invalid feature & schema and finite-value check & retain $f_0$; abstain \\
+Insufficient calibration size & rank $k>n$ & infinite radius \\
+Batch too small & minimum-size contract & wait or abstain \\
+Residual transfer concern & group/residual diagnostic & widen or withhold claim \\
+Continual-state drift & state and stream monitor & restore last certified state \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+The audit log should store a timestamp, dataset or stream identifier, checkpoint and adapter hashes,
+evidence schema version, evidence vector, benefit estimate, radius, interval endpoints, action,
+rollback outcome, latency components, and configuration hash. Labels, if later revealed, are joined
+in a separate offline audit table. This separation makes it possible to verify that the live
+decision was target-label-free.
+
+\section{Prospective Natural-Shift Confirmation Protocol}
+\label{app:compact-confirmation}
+
+The sealed CCT-20 study supplies a completed natural-shift target evaluation. Its
+\CCTCellCount{} checkpoint--location cells contain \CCTHelpfulCount{} helpful and
+\CCTHarmfulCount{} harmful candidate updates, but KGA makes \CCTFreezeCount{} FREEZE,
+\CCTAbstainCount{} ABSTAIN, and \CCTAdaptCount{} ADAPT decisions. It therefore matches
+always-freeze and has lower regret than always-adapt, providing evidence of conservative harm
+avoidance under natural shift. The predeclared stronger routing criterion was not met because the
+policy never selected ADAPT and did not select the single helpful cell. A second
+locked attempt on So2Sat-LCZ42 stopped at its development-feasibility gate with no eligible Tent or
+SAR candidate. No held-out gate-calibration rows or target inputs were accessed. The following
+protocol therefore describes a new versioned confirmation, not a continuation or reinterpretation
+of v1.
+
+All So2Sat v1 gate-fit outcomes are open and cannot be used to tune a fresh confirmatory arm. Its
+target protocol also defines one action per city, whereas the current runner creates one action per
+city--checkpoint cell. That mismatch did not affect the development stop, but the target runner
+must remain disabled until a versioned lock resolves the action unit. The design below is future
+evidence and is not counted as a completed target experiment in this paper.
+
+\subsection{Lock Before Target Labels}
+
+The protocol should name one source checkpoint, one candidate adapter, one evidence schema, one
+benefit-model class, one calibration rule, one $\alpha$, and one target-domain family. Adapter
+hyperparameters must be selected on development domains and then frozen. The lock should hash the
+checkpoint, code revision, configuration, calibration records, and planned scoring script. It must
+also name the test unit and the multiplicity family. A later change creates a new protocol version;
+it does not overwrite an earlier development-stopped or incomplete arm.
+
+Natural heterogeneity should be built through independently defined environments rather than by
+pooling whichever benchmark conditions produce opposite signs. Examples include hospitals, camera
+locations, laboratory batches, acquisition days, physical devices, or visual domains. Environment
+membership may be observed at deployment, but the measured cell-benefit label remains hidden. The target
+test environments should be absent from estimator fitting, residual calibration, threshold tuning,
+and candidate selection.
+
+\subsection{Three-Way Data Separation}
+
+Development data fit $h_\theta$ and select the evidence pipeline. A separate calibration set
+produces residuals for Eq.~\eqref{eq:compact-rank}. The held-out target set is opened exactly once
+after all software and configuration hashes match the lock. Splitting adjacent frames, patches, or
+samples from the same session across these stages is leakage even when filenames differ. The split
+must occur at the environment or session level that defines deployment exchangeability.
+
+The target stream is replayed identically for always-freeze, always-adapt, simple gates, KGA without
+a radius, and the full certificate. Model randomness should either be frozen for paired replay or
+repeated through independently trained checkpoints declared in advance. Every policy receives the
+same ordered windows. Labels are stored behind a separate audit interface and are unavailable to
+the live decision process.
+
+\subsection{Endpoints and Decision Rule}
+
+The primary endpoint is paired regret against each fixed policy. Success requires both baseline
+minus KGA regret gaps to be positive and both predeclared intervals to exclude zero, with coverage
+justified for the declared estimand and sampling model. If the intended claim concerns population
+risk rather than measured cells, the protocol must also justify that transfer. The false-adapt
+endpoint is $\mathrm{FA}_{\mathrm u}$ with the adapt count
+reported beside it. Secondary endpoints are $\mathrm{FA}_{\mathrm c}$, adapt rate, freeze rate,
+abstain rate, commitment rate, task accuracy, and latency. Conditional false-adapt is descriptive
+unless a separate selective-risk result is proved.
+
+The primary certificate rule remains unchanged: adapt if
+$\widehat\Delta-\varepsilon>0$, freeze if
+$\widehat\Delta+\varepsilon<0$, and abstain otherwise. The experiment must not lower
+$\varepsilon$, change $\alpha$, or select a different benefit regressor after observing target
+labels. Exploratory sensitivity analyses may be reported, but they remain outside the primary bar.
+
+\begin{table*}[!t]
+\centering
+\scriptsize
+\caption{Minimum lock for a confirmatory natural-shift KGA experiment.}
+\label{tab:compact-confirm-lock}
+\begin{tabular}{@{}p{0.18\textwidth}p{0.31\textwidth}p{0.42\textwidth}@{}}
+\toprule
+Component & Must be fixed & Audit evidence \\
+\midrule
+Model and candidate & checkpoint, adapter, optimizer, steps, adapted parameters & hashes and immutable configuration \\
+Evidence and estimator & schema, normalization, model class, hyperparameters, seed & feature contract and fitted-artifact hash \\
+Calibration & split unit, residual construction, exact rank, $\alpha$ & calibration IDs, residuals, radius, no target overlap \\
+Target evaluation & environments, windowing, order, exclusion rules, transductive/inductive candidate semantics & sealed manifest and one-time scoring log \\
+Primary inference & two paired regret gaps, cluster unit, interval method & code and random seed fixed before label reveal \\
+Safety & $\mathrm{FA}_{\mathrm u}$ and adapt exposure & action log joined to labels only offline \\
+Multiplicity & all candidate--track arms in family & time-stamped inventory including failures \\
+Runtime & end-to-end components and peak memory & raw timing rows on the target hardware \\
+\bottomrule
+\end{tabular}
+\end{table*}
+
+\subsection{Interpreting Outcomes}
+
+Four outcomes are scientifically useful. An interval-supported reduction in regret relative to each
+fixed comparator, with nontrivial ADAPT and FREEZE exposure, supports routing utility under the
+locked natural-shift class. Matching the better fixed policy with few errors supports conservative
+commitment but not selective routing. High abstention with low error indicates a conservative
+certificate and motivates better evidence or more calibration data. A comparator shortfall fails
+the predeclared routing-utility criterion; excess false adaptation challenges the corresponding
+safety or calibration criterion. Both outcomes must remain in the result family. None of these
+outcomes alone establishes the
+population band: that conclusion still requires the declared class and its structural assumptions.
+
+\section{Reviewer Guide to Theorem Dependencies and Nonclaims}
+\label{app:compact-reviewer-guide}
+
+The compact paper uses three related logical statements. First, the disagreement reduction is an
+identity under the binary setup. Second, the population frontier is a uniform statement over a rich,
+declared class. Third, the empirical certificate is a marginal implication from interval coverage.
+The population statements concern $\Delta$; the reported empirical calibration concerns
+$\Delta^{\mathrm{cell}}$. Connecting these targets requires an additional validity argument.
+Neither the assumptions nor the quantifiers are interchangeable.
+
+\begin{table*}[!t]
+\centering
+\scriptsize
+\caption{Dependency map. A check in one row does not validate premises in another row.}
+\label{tab:compact-dependencies}
+\begin{tabular}{@{}p{0.18\textwidth}p{0.24\textwidth}p{0.25\textwidth}p{0.24\textwidth}@{}}
+\toprule
+Statement & Inputs & Conclusion & Not concluded \\
+\midrule
+Disagreement reduction & binary labels, $0/1$ loss, $\mu_T(D)>0$ & $\Delta=2\mu_T(D)(M+\gamma)$ & calibration transfer or observability of $\gamma$ \\
+Interior impossibility & label-free fibre, $\beta>0$, $|M|<\beta$, class richness & evidence-identical laws with opposite nonzero benefits & every empirical abstention is structural \\
+Closed-band result & strict directional semantics and boundary law & no uniformly sound strict action on $|M|\le\beta$ & adapt/freeze have different task risk at $\Delta=0$ \\
+Frontier sufficiency & declared $|\gamma|\le\beta$ and fixed $M$ & direction is fixed when $|M|>\beta$ & label-free estimation of $\beta$ \\
+Coverage-to-action proposition & marginal interval coverage for a declared target $B$ & marginal false-adapt/freeze control for $B$ & conditional error control or risk alignment \\
+KGA benchmark & fitted $h_\theta$, declared residual rule, frozen protocol & measured regret and actions on saved units & population-benefit coverage or universal transfer to a new domain \\
+Lean build & encoded definitions and assumptions & kernel-checked formal statements & correctness of unencoded data and deployment assumptions \\
+\bottomrule
+\end{tabular}
+\end{table*}
+
+\paragraph{Why the boundary is separate.}
+For $|M|<\beta$, the construction chooses two latent residuals that yield opposite nonzero benefits.
+At $|M|=\beta>0$, one admissible residual can make the benefit zero while another retains the sign of
+$M$; opposite nonzero signs need not exist. Both cases block a uniform strict commitment, but for
+different reasons. At $M=\beta=0$, every law in the zero-residual class has zero benefit under the
+model. Abstention remains the maximal action only under the paper's strict-direction convention,
+not because either task-risk choice is worse.
+
+\paragraph{Why a calibration residual need not be drift.}
+Let $P_T=P_S$, with equiprobable inputs $a,b$, deterministic labels $Y(a)=1$, $Y(b)=0$,
+and candidate $f_a\equiv1$. Set $f_0(a)=0$, $f_0(b)=1$, and $s\equiv\tfrac12$.
+The candidate is correct on half the source inputs, so this constant score is source-calibrated
+in the ordinary sense. Yet disagreement occurs only at $a$, where the candidate is always
+correct. Thus $M=0$, $\gamma=\tfrac12$, and $\Delta=\tfrac12$, although the source and target
+laws are identical. Conditioning on disagreement, not a distribution change, explains the
+nonzero residual. The frontier requires a bound on this residual regardless of its cause.
+
+\paragraph{Why coverage is the premise.}
+The certificate proof is elementary once Eq.~\eqref{eq:compact-coverage} holds: on the coverage
+event, an interval wholly above zero cannot contain a nonpositive $\Delta^{\mathrm{cell}}$. The
+scientific burden is therefore to justify coverage for the declared outcome and
+calibration/deployment pair. Joint exchangeability of the residual scores is one route;
+known shift correction or another valid construction may be another. Risk alignment can explain why
+a useful predictor transfers, but it is not an additional logical premise after coverage is given.
+
+\paragraph{Why cell coverage is not population coverage.}
+Consider the fixed binary predictors $f_0\equiv0$ and $f_a\equiv1$. Let the target input be $a$
+with probability $0.45$ and $b$ with probability $0.55$, with deterministic labels $Y(a)=1$ and
+$Y(b)=0$. Population benefit is $\Delta=-0.10$. In a one-item evaluation cell, a fixed predictor
+that maps $a$ to $+1$ and $b$ to $-1$ predicts $\Delta^{\mathrm{cell}}$ perfectly without reading
+the new label. With radius zero, cell coverage is perfect, yet the gate selects ADAPT with
+probability $0.45$ despite negative benefit under the fixed population law. This constructed example
+does not contradict Proposition~\ref{thm:certificate}; it shows why its covered target cannot be changed.
+
+\paragraph{Why exchangeability alone does not validate sign flips.}
+As a separate null example, let all nine cluster gaps equal the same fair random sign $S$.
+This vector is exchangeable, each gap is symmetric about zero, and a global sign change preserves
+its law. Nevertheless, when $S=+1$, independent-coordinate sign-flip enumeration for the mean gives
+a reference value of $1/512$. That occurs with probability $1/2$, not $1/512$. The vector fails
+Eq.~\eqref{eq:compact-signflip-null}. This example explains the required assumption; it is not a
+model fitted to the CCT-20 observations.
+
+\paragraph{Why a null is not an impossibility result.}
+A null benchmark row can arise because the true effects are small, the candidate is one-sided, the
+evidence map is weak, the benefit model underfits, the radius is wide, or calibration does not
+transfer. The population impossibility requires evidence-identical target laws inside the declared
+class with incompatible strict directions. The canonical benchmark table does not estimate that
+full fibre. It therefore reports weak or adverse empirical regimes without calling them proven
+unknowable worlds.
+
+\paragraph{What would falsify the practical claim.}
+The practical claim is conditional and testable. A clean target replay with the locked pipeline can
+show excessive $\mathrm{FA}_{\mathrm u}$, poor coverage, or regret above both fixed policies. A
+checkpoint or adapter change can show that calibration does not transfer. A family-held-out split
+can show that cell-level cross-fitting was optimistic. Such failures do not refute the population
+identity; they refute the operational assumptions used to obtain a useful empirical interval.
+
+\section{Formalization and Artifact Scope}
+\label{app:compact-formal}
+
+The Lean project under \path{docs/research/kbound/formal/} provides a kernel-checked inventory for
+the theorem names it exports. The compact paper relies on the LaTeX statements above; it does not
+claim that every sentence has a one-to-one Lean theorem.
+
+In particular, deployment-class richness,
+risk alignment of a learned evidence map, exchangeability of a benchmark split, and correctness of
+data preprocessing remain outside the proof assistant unless separately encoded.
+
+The registered audit contains 142 declarations: the 65-result finite and algebraic core plus
+77 probability capstones and counterexample results. The added modules derive one-shot residual
+coverage from exchangeable measurable scores, including ties; filtered Ville and bounded
+optional-stopping bounds; general KL/TV testing bounds for finite product experiments; and
+independent bounded and martingale-difference concentration inequalities. Their assumptions are
+explicit. In particular, these results do not establish exchangeability or conditional nulls for
+the benchmark data, nor do they turn batch-level coverage into population-risk coverage.
+
+The measurable target-law construction also goes beyond the original two-atom example. It fixes
+the input law and off-disagreement label kernel, varies a measurable correctness field on
+disagreement, and integrates the actual zero-one loss difference. With labels supported on the
+two predictions on disagreement, feasible margins, and positive disagreement mass, it proves the
+clipped identified interval and exact strict ADAPT/FREEZE frontiers without assuming
+\texttt{RichAt}. It does not prove richness for an arbitrary restricted deployment subclass.
+
+One historical extension remains outside the verified scope. A measurable label swap preserves
+label-free evidence and reverses population benefit, but selecting one representative from each
+swap orbit need not identify the sign: distinct orbits can share the same evidence law and have
+opposite selected signs. Lean verifies this counterexample and the corresponding set-theoretic
+fibre-consistency criterion, not a general measurable decoder or the older H/ratio-rate extension.
+Those stronger claims are excluded from this compact submission. The
+\texttt{--full-foundations} gate therefore remains failing for the sixth layer; the scoped
+kernel audit checks the registered results and rejects nonstandard proof axioms.
+
+The formal build and empirical build answer different questions. Lean checks that a proposition
+follows from formal assumptions. The reconciliation scripts check that displayed aggregates match
+saved records under implemented definitions. Neither checks the truth of an unencoded deployment
+assumption, and neither substitutes for independent experimental replication.
+
+The authoritative compact artifacts are therefore layered:
+\begin{enumerate}
+  \item this source and its compiled PDF for the scoped narrative;
+  \item shared theorem inputs for the exact statements and proofs;
+  \item canonical JSON and generated LaTeX for numerical results;
+  \item the source manifest for record-level provenance;
+  \item package tests and Lean logs for implementation and formal checks.
+\end{enumerate}
+
+Historical drafts, dashboards, and exploratory search folders can remain useful development
+records, but they are not evidence sources for this compact submission unless referenced by the
+canonical manifest.
+
+\section{Reproducibility and Release Procedures}
+\label{sec:compact-repro}
+
+\subsection{Canonical Numerical Source of Truth}
+
+The CIFAR primary rows and the supplementary reconciled point estimates have one numerical source:
+\path{experiments/kbound/results/reconciled_panels_v1/canonical_panel_results.json}. Its compact
+source manifest has SHA-256 \hashtext{\SourceManifestSHA}. Named auxiliary artifacts support only
+their stated roles. The code-bound current-policy family sensitivity is retrospective and fails the
+confirmatory bar: Holm over six prospectively named contrasts gives adjusted retrospective sign-flip
+reference values of $0.09375$ for both Tent comparisons, but the replay, corruption-family unit, and test were
+not preregistered. The earlier Tent cluster artifact and archived POEM/AETTA comparison remain
+historical. The So2Sat-LCZ42 selection artifact is a separate locked
+development-gate record with no promoted target row. None of these overwrites the canonical
+point-estimate panel. The generated result manifest indexes every promoted claim and its scope.
+
+\subsection{Reproduction Pipeline}
+
+The full gate requires Python~3.12 with the repository-wide research profile
+\path{requirements-research.txt}; the smaller paper-only profile does not include the Torch imports
+used during repository-wide test collection. The model runtime uses
+PyTorch~\cite{paszke2019pytorch}. From the repository root, the release command is:
+\begin{quote}
+\small\noindent\texttt{KBOUND\_PYTHON=.venv/bin/python bash }%
+\path{docs/research/kbound/runbooks/release_candidate.sh}\texttt{ all}
+\end{quote}
+It runs the read-only preflight, validates and regenerates result authorities, executes software and
+formal checks, builds the two PDFs and compact DOCX, renders every PDF page, and emits release
+checksums. It consumes frozen model outputs and never launches training.
+
+For presentation-only rebuilding from already validated authorities, the command is:
+\begin{quote}
+\small\noindent\texttt{BUILD\_LONG\_TMLR=1 BUILD\_DOCX=1 bash }%
+\path{docs/research/kbound/scripts/build_pdfs.sh}
+\end{quote}
+This shorter command validates the frozen authorities, regenerates presentation tables and figures,
+and builds the maintained PDFs and DOCX. It does not replace the full release gate or create new
+empirical evidence.
+
+\subsection{Calibration Identity and Implementation Contract}
+
+The maintained API binds a certificate to the checkpoint, adapter configuration, evidence schema,
+benefit estimator, residual construction, safety level, and scoring unit. The deployment path must
+fail closed when any identity differs. \texttt{KGA.certify\_evidence} requires a frozen estimator,
+the exact schema, a protocol hash, and a separate residual set. The lower-level
+\texttt{certify} function is an audit interface; it does not construct evidence or validate
+transfer by itself.
+
+\subsection{Formalization and Lean Scope}
+
+Lean artifacts and validators check the encoded theorem cores and selected finite constructions.
+Formalization of learning-theory results has precedent, including a Rademacher-complexity
+generalization bound~\cite{sonoda2025lean}; we cite its pinned 2025 version as context, not as a
+proof of K-Bound's assumptions.
+These checks do not certify dataset correctness, preprocessing, empirical transfer, exchangeability, or
+every deployment assumption stated in prose. Machine checking strengthens the statements it
+encodes; it does not validate the benchmark pipeline outside those statements.
+
+\subsection{Release Checklist and Audit Logs}
+
+The Phase-1 provenance audit matches all 106 canonical source/compact hash pairs, all 10 recoverable
+configuration hashes, and all 6 archived checkpoint hashes; it also records a 21-file current-code
+snapshot. Historical runs that did not serialize full identity remain explicitly partial rather
+than being backfilled. The release gate runs reconciliation tests, claim-ledger and result-manifest
+validation, manuscript checks, LaTeX builds, checksum verification, and visual PDF inspection. Build
+logs, the canonical manifest, the provenance seal, and the final PDFs are archived together.
+
+\ifanon
+Repository URLs and author-identifying metadata must be withheld or redacted for a double-blind
+venue. The local paths above describe artifact roles without providing a public identity link.
+\fi

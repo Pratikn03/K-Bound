@@ -26,6 +26,10 @@ SO2SAT_REL = (
 SO2SAT_RECEIPT_REL = SO2SAT_REL + ".receipt.json"
 SO2SAT_NUMBERS_REL = "docs/research/kbound/paper/generated/so2sat_numbers.tex"
 SO2SAT_NUMBERS_BUILDER_REL = "docs/research/kbound/scripts/build_so2sat_numbers.py"
+FMOW_REL = "experiments/kbound/results/fmow_protocol_L_v1/VERIFIED_FINDINGS.json"
+POVERTY_REL = (
+    "experiments/kbound/results/poverty_protocol_L_dev/VERIFIED_FINDINGS.json"
+)
 CURRENT_CLUSTER_SCHEMA = "kbound-current-policy-cluster-inference-v3"
 FAMILY_FIELD = "retrospective_holm_over_six_prospectively_named_contrasts"
 GATE_PASS_FIELD = "retrospective_six_contrast_cluster_sensitivity_pass"
@@ -257,18 +261,37 @@ def validate() -> list[str]:
     cct20_receipt_path = ROOT / CCT20_RECEIPT_REL
     so2sat_path = ROOT / SO2SAT_REL
     so2sat_receipt_path = ROOT / SO2SAT_RECEIPT_REL
+    fmow_path = ROOT / FMOW_REL
+    poverty_path = ROOT / POVERTY_REL
     for path in (cct20_path, cct20_receipt_path, so2sat_path, so2sat_receipt_path):
         if not path.is_file():
             problems.append(f"missing separate release authority: {path.relative_to(ROOT)}")
-    if any(not path.is_file() for path in (cct20_path, cct20_receipt_path, so2sat_path, so2sat_receipt_path)):
+    for path in (fmow_path, poverty_path):
+        if not path.is_file():
+            problems.append(f"missing historical diagnostic authority: {path.relative_to(ROOT)}")
+    if any(
+        not path.is_file()
+        for path in (
+            cct20_path,
+            cct20_receipt_path,
+            so2sat_path,
+            so2sat_receipt_path,
+            fmow_path,
+            poverty_path,
+        )
+    ):
         return problems
 
     cct20_hash = sha256(cct20_path)
     so2sat_hash = sha256(so2sat_path)
+    fmow_hash = sha256(fmow_path)
+    poverty_hash = sha256(poverty_path)
     cct20 = strict_json(cct20_path)
     cct20_receipt = strict_json(cct20_receipt_path)
     so2sat = strict_json(so2sat_path)
     so2sat_receipt = strict_json(so2sat_receipt_path)
+    fmow = strict_json(fmow_path)
+    poverty = strict_json(poverty_path)
     if (
         cct20_receipt.get("artifact_sha256") != cct20_hash
         or cct20_receipt.get("artifact_bytes") != cct20_path.stat().st_size
@@ -315,6 +338,33 @@ def validate() -> list[str]:
         or so2sat.get("target_labels_read") != 0
     ):
         problems.append("So2Sat authority drifted from the no-candidate/no-target-access stop")
+    if (
+        fmow.get("protocol") != "FMOW_PROTOCOL_L_v1"
+        or fmow.get("verdict") != "not-cleared"
+        or fmow.get("headline") is not False
+        or (fmow.get("analyze_F") or {}).get("beats_both") is not False
+        or (fmow.get("analyze_F") or {}).get("false_adapt") != 0.375
+    ):
+        problems.append("FMoW historical authority drifted from the bounded non-clearance")
+    if (
+        poverty.get("protocol") != "POVERTY_PROTOCOL_L_v1"
+        or poverty.get("verdict") != "dev-screen-stop"
+        or poverty.get("headline") is not False
+        or (poverty.get("dev_screen") or {}).get("screen") != "STOP"
+        or poverty.get("held_out_val_test") != "not run per pre-registration"
+    ):
+        problems.append("PovertyMap authority drifted from the development-screen stop")
+
+    for claim_id, artifact in (
+        ("KB-CLAIM-053", CANONICAL_REL),
+        ("KB-CLAIM-054", FMOW_REL),
+        ("KB-CLAIM-055", POVERTY_REL),
+    ):
+        claim = ledger_claims.get(claim_id) or {}
+        if claim.get("status") != "diagnostic" or artifact not in (
+            claim.get("supporting_artifacts") or []
+        ):
+            problems.append(f"{claim_id} must remain a diagnostic bound to {artifact}")
 
     table = documents["table_manifest"]
     tracks = table.get("tracks") or {}
@@ -328,14 +378,30 @@ def validate() -> list[str]:
         problems.append("iWildCam release regret must remain null")
     if any(value is not None for value in (iwild.get("decision_counts") or {}).values()):
         problems.append("iWildCam release action counts must remain null")
+    camelyon_b_v2 = tracks.get("camelyon17_b_v2_sar") or {}
+    if (
+        camelyon_b_v2.get("n_test") != 108
+        or camelyon_b_v2.get("point_beats_both") is not True
+        or camelyon_b_v2.get("ci_robust_beats_both") is not False
+        or camelyon_b_v2.get("headline_promotion_eligible") is not False
+        or camelyon_b_v2.get("untouched_target_domain_evaluation") is not False
+        or camelyon_b_v2.get("independent_checkpoint_identities_recorded") is not False
+    ):
+        problems.append("Camelyon17 B-v2 SAR table row is missing or over-promoted")
 
     result_claim_ids = {
         row.get("claim_id") for row in documents["result_manifest"].get("results", [])
     }
     if "KB-CLAIM-021" in result_claim_ids:
         problems.append("withheld iWildCam must not appear in RESULT_MANIFEST results")
-    if not {"KB-CLAIM-051", "KB-CLAIM-052"} <= result_claim_ids:
-        problems.append("RESULT_MANIFEST must include CCT-20 and So2Sat release entries")
+    if not {
+        "KB-CLAIM-051",
+        "KB-CLAIM-052",
+        "KB-CLAIM-053",
+        "KB-CLAIM-054",
+        "KB-CLAIM-055",
+    } <= result_claim_ids:
+        problems.append("RESULT_MANIFEST is missing a required bounded evidence entry")
     result_rows = {
         row.get("claim_id"): row
         for row in documents["result_manifest"].get("results", [])
@@ -363,6 +429,61 @@ def validate() -> list[str]:
     ):
         problems.append("RESULT_MANIFEST So2Sat row is stale or implies target access")
 
+    office_metrics = (result_rows.get("KB-CLAIM-020") or {}).get("metrics") or {}
+    office_replication = office_metrics.get("test_stream_seed_replication") or {}
+    if (
+        office_replication.get("n_decisions") != 54
+        or office_replication.get("decision_counts")
+        != {"ADAPT": 1, "FREEZE": 14, "ABSTAIN": 39}
+        or office_replication.get("point_beats_both") is not True
+        or office_replication.get("ci_robust_beats_both") is not False
+        or office_replication.get("a7_status") != "not_established"
+        or office_replication.get("headline_promotion_eligible") is not False
+    ):
+        problems.append("Office-Home test-stream replication is missing or over-promoted")
+
+    cam_result = result_rows.get("KB-CLAIM-053") or {}
+    cam_metrics = cam_result.get("metrics") or {}
+    if (
+        cam_result.get("source_artifact") != CANONICAL_REL
+        or cam_metrics.get("n_decisions") != 108
+        or cam_metrics.get("point_beats_both") is not True
+        or cam_metrics.get("ci_robust_beats_both") is not False
+        or cam_metrics.get("within_seed_diagnostic") is not True
+        or cam_metrics.get("untouched_target_domain_evaluation") is not False
+        or cam_metrics.get("independent_checkpoint_identities_recorded") is not False
+        or cam_metrics.get("headline_promotion_eligible") is not False
+    ):
+        problems.append("RESULT_MANIFEST Camelyon17 B-v2 row is missing or over-promoted")
+
+    fmow_result = result_rows.get("KB-CLAIM-054") or {}
+    fmow_metrics = fmow_result.get("metrics") or {}
+    if (
+        fmow_result.get("source_artifact") != FMOW_REL
+        or fmow_metrics.get("artifact_sha256") != fmow_hash
+        or fmow_metrics.get("n_decisions") != 180
+        or fmow_metrics.get("false_adapt_conditional_rate") != 0.375
+        or fmow_metrics.get("false_adapt_unconditional_rate") is not None
+        or fmow_metrics.get("point_beats_both") is not False
+        or fmow_metrics.get("canonical_panel_member") is not False
+        or fmow_metrics.get("headline_promotion_eligible") is not False
+    ):
+        problems.append("RESULT_MANIFEST FMoW diagnostic is stale or mislabeled")
+
+    poverty_result = result_rows.get("KB-CLAIM-055") or {}
+    poverty_metrics = poverty_result.get("metrics") or {}
+    if (
+        poverty_result.get("source_artifact") != POVERTY_REL
+        or poverty_metrics.get("artifact_sha256") != poverty_hash
+        or poverty_metrics.get("development_screen") != "STOP"
+        or poverty_metrics.get("held_out_evaluation_run") is not False
+        or poverty_metrics.get("target_score") is not None
+        or poverty_metrics.get("point_beats_both") is not None
+        or poverty_metrics.get("canonical_panel_member") is not False
+        or poverty_metrics.get("headline_promotion_eligible") is not False
+    ):
+        problems.append("RESULT_MANIFEST PovertyMap diagnostic implies unrun held-out evidence")
+
     for label in ("claim_ledger", "result_manifest"):
         authorities = (documents[label].get("reconciliation_source") or {}).get(
             "separate_receipt_linked_authorities"
@@ -373,6 +494,23 @@ def validate() -> list[str]:
             != so2sat_hash
         ):
             problems.append(f"{label} has stale separate CCT-20/So2Sat authorities")
+        historical = (documents[label].get("reconciliation_source") or {}).get(
+            "separate_historical_diagnostic_authorities"
+        ) or {}
+        if (
+            (historical.get("fmow_protocol_l") or {}).get("artifact_sha256") != fmow_hash
+            or (historical.get("fmow_protocol_l") or {}).get("canonical_panel_member")
+            is not False
+            or (historical.get("poverty_protocol_l_development") or {}).get(
+                "artifact_sha256"
+            )
+            != poverty_hash
+            or (historical.get("poverty_protocol_l_development") or {}).get(
+                "held_out_evaluation_run"
+            )
+            is not False
+        ):
+            problems.append(f"{label} has stale FMoW/PovertyMap diagnostic authorities")
     compat_iwild = (documents["results_source"].get("tracks") or {}).get("iwildcam_H_v2") or {}
     if compat_iwild.get("regret") is not None:
         problems.append("results_source iWildCam regret must remain null")

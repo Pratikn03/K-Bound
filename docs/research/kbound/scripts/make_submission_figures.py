@@ -1,17 +1,15 @@
 #!/usr/bin/env python3
-"""Regenerate the K-Bound short-paper figures (reproducible).
+"""Render the maintained population schematic or historical figure variants.
 
-    python docs/research/kbound/scripts/make_submission_figures.py
+Maintained, data-free path:
+    python docs/research/kbound/scripts/make_submission_figures.py --frontier-only
 
-fig_natural_forest.png     : per-dataset regret reduction vs each fixed policy,
-                             VALID OUT-OF-FOLD radius (matches the paper's honest
-                             no-harm result). We do NOT use KBOUND_WIN_BOOTSTRAP_CIS.json
-                             for Office-Home: that file's CI is an in-sample radius that
-                             overstates the result as a beats-both. Honest out-of-fold:
-                             both Office-Home and iWildCam beat always-adapt and TIE
-                             always-freeze (no-harm / damage-prevention).
-fig_frontier_schematic.png : conceptual (no data).
+The no-argument path retains historical forest/phase plots for reproducibility.
+Its hard-coded experiment values are not current release evidence and must not
+be used by a manuscript build. The frontier-only path writes just the schematic,
+with a declared illustrative beta and M inside its feasible [-1/2, 1/2] range.
 """
+import argparse
 import os, matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
@@ -48,18 +46,24 @@ def forest():
     print("wrote fig_natural_forest.png (out-of-fold; Office-Home + iWildCam tie freeze)")
 
 def frontier():
-    fig, ax = plt.subplots(figsize=(6.4, 2.5)); b=1.0
-    ax.axvspan(-b,b,color="#f0a000",alpha=0.25); ax.axvspan(b,3.2,color=GREEN,alpha=0.18); ax.axvspan(-3.2,-b,color="#d6604d",alpha=0.18)
+    # Illustrative values, not fitted parameters or experimental measurements.
+    b, limit = 0.1, 0.32
+    assert 0 < b < limit <= 0.5
+    fig, ax = plt.subplots(figsize=(6.4, 2.5))
+    ax.axvspan(-b,b,color="#71717A",alpha=0.16)
+    ax.axvspan(b,limit,color="#1F5A85",alpha=0.18)
+    ax.axvspan(-limit,-b,color="#C68B2B",alpha=0.20)
     for x in (-b,b): ax.axvline(x,color="k",lw=1.2)
     ax.axvline(0,color="k",lw=0.6,ls=":")
-    ax.text(2.1,0.5,"ADAPT\n(knowably helpful)",ha="center",va="center",fontsize=9,color=GREEN)
-    ax.text(-2.1,0.5,"FREEZE\n(knowably harmful)",ha="center",va="center",fontsize=9,color="#d6604d")
-    ax.text(0,0.5,"ABSTAIN\n(no sound strict commitment)",ha="center",va="center",fontsize=9,color="#9a6b00")
+    ax.text(0.21,0.5,"ADAPT\n(knowably helpful)",ha="center",va="center",fontsize=9,color="#1F5A85")
+    ax.text(-0.21,0.5,"FREEZE\n(knowably harmful)",ha="center",va="center",fontsize=9,color="#8A5A0B")
+    ax.text(0,0.5,"ABSTAIN\n(no sound strict\ncommitment)",ha="center",va="center",fontsize=9,color="#454545")
     ax.annotate("",xy=(b,-0.28),xytext=(-b,-0.28),arrowprops=dict(arrowstyle="<->",color="k"))
-    ax.text(0,-0.43,r"calibration-drift budget  $2\beta$",ha="center",va="top",fontsize=8.5)
-    ax.set_xlim(-3.2,3.2); ax.set_ylim(-0.6,1.05); ax.set_yticks([])
-    ax.set_xlabel(r"population evidence margin  $M$")
-    ax.set_title(r"Population strict-commitment frontier: commit iff $|M|>\beta$", fontsize=11)
+    ax.text(0,-0.43,r"unresolved band width  $2\beta$",ha="center",va="top",fontsize=8.5)
+    ax.set_xlim(-limit,limit); ax.set_ylim(-0.6,1.05); ax.set_yticks([])
+    ax.set_xticks((-0.3, -0.2, -0.1, 0, 0.1, 0.2, 0.3))
+    ax.set_xlabel(r"Population evidence margin $M$ (illustration: $\beta=0.1$)")
+    ax.set_title(r"Population strict-commitment frontier: commit iff $|M|>\beta$", fontsize=10.5)
     fig.tight_layout(); fig.savefig(f"{FIG}/fig_frontier_schematic.png", dpi=200); plt.close(fig)
     print("wrote fig_frontier_schematic.png")
 
@@ -84,4 +88,10 @@ def phase():
     print("wrote fig_phase_diagram.png (conceptual; no numeric coordinates)")
 
 if __name__ == "__main__":
-    forest(); frontier(); phase(); print("done")
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--frontier-only", action="store_true")
+    args = parser.parse_args()
+    if args.frontier_only:
+        frontier()
+    else:
+        forest(); frontier(); phase(); print("done")

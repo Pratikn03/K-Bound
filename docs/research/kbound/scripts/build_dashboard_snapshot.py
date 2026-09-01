@@ -8,19 +8,146 @@ Archived or legacy ELARA outputs are intentionally ignored.
 
 from __future__ import annotations
 
+import argparse
+import ast
+import copy
 import csv
 import hashlib
 import json
+import os
 from pathlib import Path
+import re
+import shutil
+import stat
+import subprocess
 from typing import Any
 
 SCRIPT = Path(__file__).resolve()
 KBOUND = SCRIPT.parents[1]
 REPO = SCRIPT.parents[4]
 MANIFEST = KBOUND / "paper" / "generated" / "kbound_result_manifest.json"
+CANONICAL_PANEL = REPO / "experiments/kbound/results/reconciled_panels_v1/canonical_panel_results.json"
+CURRENT_POLICY = REPO / "experiments/kbound/results/reconciled_panels_v1/current_policy_cluster_inference.json"
+FORMAL_REGISTRY = KBOUND / "formal" / "formal_audit.py"
 EDGE = KBOUND / "edge"
 EDGE_RESULTS = REPO / "experiments" / "kbound" / "results" / "edge_real_phone_v1"
 OUT = KBOUND / "dashboard" / "data" / "snapshot.json"
+SHORT_PDF = KBOUND / "kbound_short_final_draft.pdf"
+THEORY_SOURCES = (
+    KBOUND / "kbound_submission_body.tex",
+    KBOUND / "paper" / "sections" / "theory_core_main.tex",
+    KBOUND / "paper" / "sections" / "theory_certificate.tex",
+)
+
+
+def require_resident_file(path: Path) -> os.stat_result:
+    """Do not treat a missing, empty, or cloud-only input as verified content."""
+    if not path.is_file():
+        raise FileNotFoundError(f"Required presentation input is missing: {path}")
+    if stat.S_ISLNK(os.lstat(path).st_mode):
+        raise ValueError(f"Required presentation input must not be a symlink: {path}")
+    info = path.stat()
+    if info.st_size <= 0:
+        raise ValueError(f"Required presentation input is empty: {path}")
+    if getattr(info, "st_blocks", 1) == 0 or getattr(info, "st_flags", 0) & getattr(stat, "SF_DATALESS", 0x40000000):
+        raise ValueError(f"Required presentation input is not locally resident: {path}")
+    return info
+
+
+def resident_bytes(path: Path) -> bytes:
+    """Read one resident authority, rejecting a concurrent partial refresh."""
+    before = require_resident_file(path)
+    content = path.read_bytes()
+    after = require_resident_file(path)
+    if len(content) != before.st_size or (
+        before.st_ino, before.st_mtime_ns, before.st_size
+    ) != (after.st_ino, after.st_mtime_ns, after.st_size):
+        raise ValueError(f"Presentation input changed during read: {path}")
+    return content
+
+
+def resident_json(path: Path) -> tuple[dict[str, Any], str]:
+    content = resident_bytes(path)
+
+    def reject_nonfinite(value: str) -> None:
+        raise ValueError(f"Non-finite JSON value in required presentation input {path}: {value}")
+
+    value = json.loads(content, parse_constant=reject_nonfinite)
+    if not isinstance(value, dict):
+        raise ValueError(f"Required presentation input must be a JSON object: {path}")
+    return value, hashlib.sha256(content).hexdigest()
+
+
+def pdf_page_count(path: Path) -> int:
+    """Read the built PDF with Poppler; never guess or retain a stale count."""
+    require_resident_file(path)
+    tool = shutil.which("pdfinfo")
+    if tool is None:
+        raise RuntimeError("pdfinfo is required to verify the built PDF page count")
+    try:
+        result = subprocess.run(
+            [tool, str(path)],
+            check=True,
+            capture_output=True,
+            text=True,
+            timeout=15,
+            env={**os.environ, "LC_ALL": "C"},
+        )
+    except (subprocess.CalledProcessError, subprocess.TimeoutExpired, OSError) as exc:
+        raise RuntimeError(f"Could not verify the built PDF page count: {path}") from exc
+    counts = re.findall(r"^Pages:\s+([0-9]+)\s*$", result.stdout, flags=re.MULTILINE)
+    if len(counts) != 1 or int(counts[0]) <= 0:
+        raise ValueError(f"pdfinfo did not report one positive page count: {path}")
+    return int(counts[0])
+
+
+def theory_statement_counts() -> dict[str, int]:
+    """Count maintained theorem-style statements, not definitions or remarks.
+
+    These are paper statements under their stated assumptions. Their count is
+    not a claim that all probability foundations have been mechanized in Lean.
+    The three explicit sources are the maintained body and its two theory inputs;
+    superseded drivers and historical bridge manuscripts are intentionally absent.
+    """
+    counts = {kind: 0 for kind in ("theorem", "lemma", "proposition", "corollary")}
+    pattern = re.compile(r"\\begin\{(theorem|lemma|proposition|corollary)\}")
+    for path in THEORY_SOURCES:
+        info = require_resident_file(path)
+        content = path.read_bytes()
+        if len(content) != info.st_size:
+            raise ValueError(f"Incomplete presentation-source read: {path}")
+        source = re.sub(r"(?<!\\)%[^\n]*", "", content.decode("utf-8"))
+        for kind in pattern.findall(source):
+            counts[kind] += 1
+    if counts["theorem"] == 0:
+        raise ValueError("Maintained theory sources contain no numbered theorems")
+    return counts
+
+
+def presentation_metadata() -> tuple[int, dict[str, str]]:
+    pages = pdf_page_count(SHORT_PDF)
+    counts = theory_statement_counts()
+    return pages, {
+        "value": f"{counts['theorem']} theorems",
+        "sub": f"{sum(counts.values())} numbered statements; stated assumptions apply",
+    }
+
+
+def refresh_presentation_metadata(snapshot: dict[str, Any]) -> dict[str, Any]:
+    """Refresh two presentation fields only; do not read edge or target data."""
+    if not isinstance(snapshot, dict):
+        raise ValueError("Presentation refresh requires an existing dashboard snapshot")
+    meta = snapshot.get("meta")
+    strip = snapshot.get("evidence_strip")
+    if not isinstance(meta, dict) or meta.get("paper") != rel(SHORT_PDF):
+        raise ValueError("Dashboard metadata does not identify the maintained short PDF")
+    if not isinstance(strip, dict) or not isinstance(strip.get("proven_theorems"), dict):
+        raise ValueError("Dashboard snapshot lacks the existing theory presentation field")
+    pages, theory = presentation_metadata()
+    refreshed = copy.deepcopy(snapshot)
+    refreshed["meta"]["paper_pages"] = pages
+    refreshed["evidence_strip"]["proven_theorems"] = theory
+    return refreshed
 
 
 def load(path: Path) -> dict[str, Any] | None:
@@ -38,7 +165,139 @@ def rel(path: Path) -> str:
 
 
 def sha256(path: Path) -> str:
-    return hashlib.sha256(path.read_bytes()).hexdigest()
+    return hashlib.sha256(resident_bytes(path)).hexdigest()
+
+
+def paper_authorities() -> tuple[dict[str, Any], dict[str, Any], dict[str, str]]:
+    """Load only the three named paper authorities, never manifest-selected data."""
+    manifest, manifest_sha = resident_json(MANIFEST)
+    reconciliation = manifest.get("reconciliation_source")
+    if not isinstance(reconciliation, dict):
+        raise ValueError("canonical result manifest is missing reconciliation_source")
+    policy_binding = reconciliation.get("current_policy_family_sensitivity")
+    if not isinstance(policy_binding, dict):
+        raise ValueError("canonical result manifest is missing current-policy binding")
+    if reconciliation.get("canonical_panel") != rel(CANONICAL_PANEL):
+        raise ValueError("canonical result manifest has an unexpected canonical-panel path")
+    if policy_binding.get("artifact") != rel(CURRENT_POLICY):
+        raise ValueError("canonical result manifest has an unexpected current-policy artifact path")
+    expected_canonical = reconciliation.get("canonical_panel_sha256")
+    expected_policy = policy_binding.get("artifact_sha256")
+    for name, value in (("canonical-panel", expected_canonical), ("current-policy", expected_policy)):
+        if not isinstance(value, str) or re.fullmatch(r"[0-9a-f]{64}", value) is None:
+            raise ValueError(f"canonical result manifest has an invalid {name} SHA256 binding")
+    canonical, canonical_sha = resident_json(CANONICAL_PANEL)
+    if canonical_sha != expected_canonical:
+        raise ValueError("canonical result manifest has a stale canonical-panel binding")
+    _, policy_sha = resident_json(CURRENT_POLICY)
+    if policy_sha != expected_policy:
+        raise ValueError("canonical result manifest has a stale current-policy artifact binding")
+    return manifest, canonical, {
+        "manifest_sha256": manifest_sha,
+        "canonical_panel_sha256": canonical_sha,
+        "current_policy_sha256": policy_sha,
+    }
+
+
+def registered_formal_scope() -> dict[str, Any]:
+    """Read declared scope without importing the audit or claiming a new build."""
+    content = resident_bytes(FORMAL_REGISTRY)
+    wanted = {"LEGACY_CORE_THEOREMS", "FOUNDATION_THEOREMS", "FOUNDATION_LAYERS"}
+    values: dict[str, Any] = {}
+    for node in ast.parse(content, filename=str(FORMAL_REGISTRY)).body:
+        if isinstance(node, ast.Assign):
+            names = [target.id for target in node.targets if isinstance(target, ast.Name)]
+        elif isinstance(node, ast.AnnAssign) and isinstance(node.target, ast.Name):
+            names = [node.target.id]
+        else:
+            continue
+        for name in wanted.intersection(names):
+            if name in values:
+                raise ValueError(f"Formal registry declares {name} more than once")
+            values[name] = ast.literal_eval(node.value)
+    if set(values) != wanted:
+        raise ValueError("Formal registry is missing declared theorem/foundation scope")
+    core = values["LEGACY_CORE_THEOREMS"]
+    foundations = values["FOUNDATION_THEOREMS"]
+    layers = values["FOUNDATION_LAYERS"]
+    if not isinstance(core, list) or not isinstance(foundations, dict) or not isinstance(layers, list):
+        raise ValueError("Formal registry has invalid declaration containers")
+    if not all(isinstance(names, list) for names in foundations.values()):
+        raise ValueError("Formal registry has invalid foundational theorem lists")
+    extended = [name for names in foundations.values() for name in names]
+    names = [*core, *extended]
+    if not names or not all(isinstance(name, str) and name for name in names) or len(set(names)) != len(names):
+        raise ValueError("Formal registry has missing or duplicate theorem names")
+    if not all(isinstance(layer, dict) for layer in layers):
+        raise ValueError("Formal registry has invalid foundational layer descriptions")
+    positive = sum(layer.get("status") == "MECHANIZED_WITH_EXPLICIT_ASSUMPTIONS" for layer in layers)
+    counterexamples = sum(layer.get("status") == "PARTIAL_COUNTEREXAMPLE_FOUND" for layer in layers)
+    if len(layers) != 6 or positive != 5 or counterexamples != 1:
+        raise ValueError("Dashboard wording requires the declared five-positive/partial-sixth foundation scope")
+    return {
+        "registry": rel(FORMAL_REGISTRY),
+        "registry_sha256": hashlib.sha256(content).hexdigest(),
+        "registered_lean_checks": len(names),
+        "legacy_core_checks": len(core),
+        "foundational_checks": len(extended),
+        "positive_foundational_layers": positive,
+        "counterexample_layers": counterexamples,
+        "full_foundations_proof": False,
+        "verification_note": "Registered source scope; this dashboard refresh does not run Lean or reverify kernel proofs.",
+    }
+
+
+def completed_diagnostic_rows(manifest: dict[str, Any], canonical: dict[str, Any]) -> list[dict[str, Any]]:
+    """Describe saved ImageNet-R/PACS coverage without promoting either result."""
+    imagenetr = canonical["panels"]["imagenet_r"]["panel"]
+    image_track = manifest["tracks"]["imagenet_r_D"]
+    seeds = imagenetr.get("seeds")
+    candidates = imagenetr.get("candidates")
+    if (
+        not isinstance(seeds, list) or not seeds
+        or not all(type(seed) is int for seed in seeds) or len(set(seeds)) != len(seeds)
+        or image_track.get("completed_seeds") != seeds
+        or not isinstance(candidates, dict) or not candidates
+        or type(imagenetr.get("candidate_count")) is not int
+        or imagenetr["candidate_count"] != len(candidates)
+        or not isinstance(image_track.get("per_backbone"), dict)
+        or set(image_track["per_backbone"]) != set(candidates)
+    ):
+        raise ValueError("ImageNet-R manifest/canonical seed or backbone coverage is inconsistent")
+    pacs = canonical["panels"]["pacs"]
+    pacs_track = manifest["tracks"]["pacs"]
+    pacs_seeds = pacs.get("seeds")
+    if (
+        not isinstance(pacs_seeds, list) or not pacs_seeds
+        or not all(type(seed) is int for seed in pacs_seeds) or len(set(pacs_seeds)) != len(pacs_seeds)
+        or type(pacs_track.get("completed_seeds")) is not int
+        or pacs_track["completed_seeds"] != len(pacs_seeds)
+        or pacs.get("aggregate_matches_seed_files") is not True
+        or pacs.get("decision_replay_available") is not False
+        or pacs_track.get("decision_replay_available") is not False
+        or not isinstance(pacs.get("decision_replay_blocker"), str) or not pacs["decision_replay_blocker"]
+    ):
+        raise ValueError("PACS manifest/canonical aggregate or incomplete-replay scope is inconsistent")
+    return [
+        {
+            "name": "ImageNet-R Protocol D",
+            "status": "diagnostic",
+            "artifact": rel(MANIFEST),
+            "completed_seed_count": len(seeds),
+            "backbone_count": len(candidates),
+            "framing": f"{len(seeds)} completed run seeds across {len(candidates)} backbones; an architecture-panel diagnostic, not one deployable policy.",
+            "note": "No natural-shift superiority is claimed; a benchmark null does not prove structural non-identifiability.",
+        },
+        {
+            "name": "PACS",
+            "status": "diagnostic",
+            "artifact": rel(MANIFEST),
+            "completed_seed_count": len(pacs_seeds),
+            "decision_replay_available": False,
+            "framing": f"{len(pacs_seeds)}-seed aggregate agrees with the archived seed summaries; cell-level decisions remain unreplayable.",
+            "note": pacs["decision_replay_blocker"],
+        },
+    ]
 
 
 def regret_row(
@@ -219,10 +478,12 @@ def edge_status() -> dict[str, Any]:
     }
 
 
-def build_snapshot() -> dict[str, Any]:
-    manifest = load(MANIFEST)
-    if not manifest:
-        raise FileNotFoundError(f"Canonical result manifest is missing: {MANIFEST}")
+def build_paper_projection() -> dict[str, Any]:
+    """Build paper fields from resident authorities without inspecting edge data."""
+    pages, theory = presentation_metadata()
+    manifest, canonical, bindings = paper_authorities()
+    formal_scope = registered_formal_scope()
+    diagnostic_rows = completed_diagnostic_rows(manifest, canonical)
 
     controlled = [
         regret_row(
@@ -298,19 +559,7 @@ def build_snapshot() -> dict[str, Any]:
             "false_adapt": c101["false_adapt_unconditional"],
             "note": "Consistent with weak evidence, low margin, estimator inadequacy, or calibration failure.",
         },
-        {
-            "name": "ImageNet-R Protocol D",
-            "status": "diagnostic",
-            "artifact": rel(MANIFEST),
-            "framing": "Three of four planned seeds complete; no stable CI-robust beats-both result.",
-            "note": "A diagnostic null, not proof of structural non-identifiability.",
-        },
-        {
-            "name": "PACS",
-            "status": "pending",
-            "artifact": rel(MANIFEST),
-            "framing": "One of three planned seeds complete; breadth evidence remains incomplete.",
-        },
+        *diagnostic_rows,
         {
             **constructed,
             "name": "Constructed three-source OOF stream",
@@ -326,13 +575,13 @@ def build_snapshot() -> dict[str, Any]:
             "status": "verified",
             "artifact": "docs/research/kbound/paper/sections/theory_core_main.tex",
             "implication": "For beta > 0 and |M| < beta, evidence-identical target laws can have opposite nonzero benefit.",
-            "evidence": "Paper proof; Lean covers supporting algebra, not the full target-law construction.",
+            "evidence": "Lean includes measurable target-law and testing constructions under their explicit assumptions; empirical population assumptions are not inferred.",
         },
         {
             "id": "P1",
             "name": "Closed-band abstention",
             "status": "verified",
-            "artifact": "docs/research/kbound/kbound_short.tex",
+            "artifact": "docs/research/kbound/kbound_submission_body.tex",
             "implication": "Under strict-action semantics, abstention is maximal on |M| <= beta.",
             "evidence": "Boundary distinguishes zero-versus-strict ambiguity from the interior construction.",
         },
@@ -340,23 +589,23 @@ def build_snapshot() -> dict[str, Any]:
             "id": "T2",
             "name": "Strict-commitment frontier",
             "status": "verified",
-            "artifact": "docs/research/kbound/formal/KBound/Frontier.lean",
-            "implication": "A uniform strict action is supportable exactly outside the declared drift band.",
-            "evidence": "Lean checks the sufficiency spine; richness/necessity assumptions remain paper-level.",
+            "artifact": "docs/research/kbound/formal/KBound/Probability/MeasureFrontier.lean",
+            "implication": "A uniform strict action is supportable exactly outside the declared uncertainty band.",
+            "evidence": "Lean covers the feasible measurable target-law class; arbitrary restricted deployment classes are not automatically covered.",
         },
         {
             "id": "T3",
             "name": "Marginal false-adapt certificate",
             "status": "conditional",
-            "artifact": "docs/research/kbound/formal/KBound/Certificate.lean",
+            "artifact": "docs/research/kbound/formal/KBound/Probability/MeasureConformal.lean",
             "implication": "Interval coverage controls FA_u, not conditional FA_c.",
-            "evidence": "Coverage is the premise; exchangeability or shift correction is external support for coverage.",
+            "evidence": "Lean derives one-shot residual coverage under exchangeable score laws; this does not verify benchmark exchangeability, population improvement, or repeated-use coverage.",
         },
         {
             "id": "M1",
             "name": "Multiclass bridge",
             "status": "conditional",
-            "artifact": "docs/research/kbound/kbound_short.tex",
+            "artifact": "docs/research/kbound/kbound_submission_body.tex",
             "implication": "Delta = P(D)(p_a-p_0); empirical KGA estimates Delta directly.",
             "evidence": "The converse frontier requires declared-class richness.",
         },
@@ -365,15 +614,8 @@ def build_snapshot() -> dict[str, Any]:
     release_date = manifest.get("regenerated_utc")
     if not isinstance(release_date, str) or len(release_date) != 10:
         raise ValueError("canonical result manifest must provide YYYY-MM-DD regenerated_utc")
-    reconciliation = manifest.get("reconciliation_source") or {}
-    canonical_sha = reconciliation.get("canonical_panel_sha256")
-    current_policy = reconciliation.get("current_policy_family_sensitivity") or {}
-    if not isinstance(canonical_sha, str) or len(canonical_sha) != 64:
-        raise ValueError("canonical result manifest is missing canonical_panel_sha256")
-    if canonical_sha != sha256(REPO / reconciliation["canonical_panel"]):
-        raise ValueError("canonical result manifest has a stale canonical-panel binding")
-    if current_policy.get("artifact_sha256") != sha256(REPO / current_policy["artifact"]):
-        raise ValueError("canonical result manifest has a stale current-policy artifact binding")
+    canonical_sha = bindings["canonical_panel_sha256"]
+    policy_sha = bindings["current_policy_sha256"]
 
     return {
         "meta": {
@@ -381,9 +623,9 @@ def build_snapshot() -> dict[str, Any]:
             "generated_at": release_date + "T00:00:00Z",
             "commit": None,
             "canonical_panel_sha256": canonical_sha,
-            "current_policy_sha256": current_policy["artifact_sha256"],
-            "paper": "docs/research/kbound/kbound_short_final_draft.pdf",
-            "paper_pages": 22,
+            "current_policy_sha256": policy_sha,
+            "paper": rel(SHORT_PDF),
+            "paper_pages": pages,
         },
         "research_status": {
             "theory": "verified",
@@ -392,8 +634,11 @@ def build_snapshot() -> dict[str, Any]:
             "edge_study": "pending",
         },
         "evidence_strip": {
-            "proven_theorems": {"value": "3 core", "sub": "plus multiclass/regression bridges"},
-            "theorem_validators": {"value": "Lean partial", "sub": "kernel-checked spine; external assumptions disclosed"},
+            "proven_theorems": theory,
+            "theorem_validators": {
+                "value": f"{formal_scope['registered_lean_checks']} registered Lean checks",
+                "sub": f"{formal_scope['positive_foundational_layers']} positive foundational layers; stated assumptions apply",
+            },
             "controlled_beats_both": {
                 "value": "3 point-estimate tracks",
                 "sub": "No current track has a promoted CI-robust or preregistered cluster win",
@@ -402,7 +647,10 @@ def build_snapshot() -> dict[str, Any]:
                 "value": "2 ties",
                 "sub": "Office-Home and RxRx1; Camelyon is diagnostic and iWildCam is withheld",
             },
-            "open_theory": {"value": "foundations", "sub": "full probability mechanization remains incomplete"},
+            "open_theory": {
+                "value": "historical sixth layer",
+                "sub": "An orbit/fibre counterexample is proved; the broader sufficiency and H-rate extension is not.",
+            },
             "reproducibility": {"value": "manifest-backed", "sub": "one promoted-number source"},
         },
         "regime_map": [
@@ -435,7 +683,7 @@ def build_snapshot() -> dict[str, Any]:
                 "title": "Weak or non-transferable evidence",
                 "action": "Abstain or report diagnostic failure",
                 "status": "diagnostic",
-                "examples": "CIFAR-10.1, ImageNet-R, incomplete PACS",
+                "examples": "CIFAR-10.1, ImageNet-R, PACS aggregate-only replay",
                 "artifact": rel(MANIFEST),
             },
         ],
@@ -447,7 +695,6 @@ def build_snapshot() -> dict[str, Any]:
             "natural_shift_no_harm": natural,
             "boundary_negative": boundary,
         },
-        "edge_validation": edge_status(),
         "safety": {
             "metrics": [
                 {
@@ -489,14 +736,132 @@ def build_snapshot() -> dict[str, Any]:
             "edge_protocol_lock": rel(EDGE / "artifacts_real" / "protocol_lock.json"),
             "commit": None,
             "canonical_panel_sha256": canonical_sha,
-            "current_policy_sha256": current_policy["artifact_sha256"],
+            "current_policy_sha256": policy_sha,
+            "manifest_sha256": bindings["manifest_sha256"],
+            "formal_scope": formal_scope,
             "local_clips_note": "Raw physical clips remain local; manifests and hashes are release artifacts after privacy review.",
         },
     }
 
 
-def main() -> int:
-    snapshot = build_snapshot()
+def build_snapshot() -> dict[str, Any]:
+    """The default full build still performs the active physical-edge checks."""
+    snapshot = build_paper_projection()
+    snapshot["edge_validation"] = edge_status()
+    snapshot["provenance"]["refresh_mode"] = "full"
+    snapshot["provenance"]["edge_validation_refresh"] = {
+        "checked_this_run": True,
+        "mode": "active_edge_inputs",
+    }
+    return snapshot
+
+
+def validated_saved_edge(snapshot: dict[str, Any]) -> dict[str, Any]:
+    """Validate the saved JSON shape, not the underlying physical evidence."""
+    if not isinstance(snapshot, dict):
+        raise ValueError("Paper-only refresh requires an existing dashboard snapshot")
+    meta = snapshot.get("meta")
+    if not isinstance(meta, dict) or meta.get("paper") != rel(SHORT_PDF):
+        raise ValueError("Dashboard metadata does not identify the maintained short PDF")
+    edge = snapshot.get("edge_validation")
+    if (
+        not isinstance(edge, dict)
+        or not isinstance(edge.get("study_status"), str)
+        or edge["study_status"] not in {"pending", "verified"}
+    ):
+        raise ValueError("Paper-only refresh requires a valid saved edge_validation object")
+    if not isinstance(edge.get("study_label"), str) or not edge["study_label"].strip():
+        raise ValueError("Saved edge_validation lacks its study label")
+    phases = edge.get("phases")
+    if not isinstance(phases, list) or not phases or not all(
+        isinstance(row, dict)
+        and all(isinstance(row.get(key), str) and row[key] for key in ("id", "label", "status", "detail", "artifact"))
+        and row["status"] in {"pending", "verified"}
+        for row in phases
+    ):
+        raise ValueError("Saved edge_validation has invalid phases")
+    progress = edge.get("session_progress")
+    if not isinstance(progress, list) or not progress or not all(
+        isinstance(row, dict) and isinstance(row.get("session"), str) and row["session"]
+        and all(type(row.get(key)) is int and row[key] >= 0 for key in ("expected_clips", "captured_clips"))
+        and type(row.get("complete")) is bool
+        for row in progress
+    ):
+        raise ValueError("Saved edge_validation has invalid session progress")
+    unblock = edge.get("unblock")
+    if not isinstance(unblock, dict) or type(unblock.get("all_pass")) is not bool or type(edge.get("audit_pass")) is not bool:
+        raise ValueError("Saved edge_validation lacks boolean gate/audit status")
+    if (edge["study_status"] == "verified") != unblock["all_pass"] or (unblock["all_pass"] and not edge["audit_pass"]):
+        raise ValueError("Saved edge_validation has contradictory study/gate status")
+    current = unblock.get("current")
+    thresholds = unblock.get("gate_thresholds")
+    gaps = unblock.get("gaps")
+    commands = unblock.get("commands")
+    if (
+        not isinstance(current, dict)
+        or not all(type(current.get(key)) is bool for key in ("sessions_complete", "physical_only", "source_gate", "audit_pass"))
+        or not isinstance(thresholds, dict)
+        or not all(type(thresholds.get(key)) in (int, float) and 0 < thresholds[key] <= 1 for key in ("balanced_acc", "macro_f1"))
+        or not isinstance(gaps, list)
+        or not all(isinstance(row, dict) and type(row.get("passed")) is bool and isinstance(row.get("check"), str) and isinstance(row.get("detail"), str) for row in gaps)
+        or not isinstance(commands, dict) or not commands
+        or not all(isinstance(value, str) and value for value in commands.values())
+        or "development_metrics" not in edge
+        or (edge["development_metrics"] is not None and not isinstance(edge["development_metrics"], dict))
+        or "protocol_hash" not in edge
+        or (edge["protocol_hash"] is not None and not isinstance(edge["protocol_hash"], str))
+    ):
+        raise ValueError("Saved edge_validation has an invalid cached evidence structure")
+    # Reject non-standard numeric values even in extra cached diagnostic fields.
+    json.dumps(edge, allow_nan=False)
+    return edge
+
+
+def refresh_paper_snapshot(snapshot: dict[str, Any]) -> dict[str, Any]:
+    """Refresh paper fields, preserving cached edge evidence without a recheck."""
+    edge = validated_saved_edge(snapshot)
+    refreshed = build_paper_projection()
+    refreshed["edge_validation"] = copy.deepcopy(edge)
+    refreshed["research_status"]["edge_study"] = edge["study_status"]
+    refreshed["meta"]["refresh_mode"] = "paper-only"
+    refreshed["provenance"]["refresh_mode"] = "paper-only"
+    refreshed["provenance"]["edge_validation_refresh"] = {
+        "checked_this_run": False,
+        "mode": "preserved_not_rechecked",
+        "preserved_edge_canonical_json_sha256": hashlib.sha256(
+            json.dumps(edge, sort_keys=True, separators=(",", ":"), allow_nan=False).encode("utf-8")
+        ).hexdigest(),
+        "source_snapshot_canonical_json_sha256": hashlib.sha256(
+            json.dumps(snapshot, sort_keys=True, separators=(",", ":"), allow_nan=False).encode("utf-8")
+        ).hexdigest(),
+        "source_snapshot_generated_at": snapshot["meta"].get("generated_at"),
+        "note": "Saved edge_validation copied unchanged; no physical-edge files, sessions, or publication gates were rechecked by this paper-only refresh.",
+    }
+    return refreshed
+
+
+def main(argv: list[str] | None = None) -> int:
+    parser = argparse.ArgumentParser(description=__doc__)
+    mode = parser.add_mutually_exclusive_group()
+    mode.add_argument(
+        "--metadata-only",
+        action="store_true",
+        help="refresh built-PDF pages and scoped statement counts; preserve all evidence/edge fields",
+    )
+    mode.add_argument(
+        "--paper-only",
+        action="store_true",
+        help="refresh resident paper/benchmark authorities; preserve existing edge_validation without rechecking physical inputs",
+    )
+    args = parser.parse_args(argv)
+    if args.metadata_only:
+        require_resident_file(OUT)
+        snapshot = refresh_presentation_metadata(load(OUT))
+    elif args.paper_only:
+        existing, _ = resident_json(OUT)
+        snapshot = refresh_paper_snapshot(existing)
+    else:
+        snapshot = build_snapshot()
     OUT.parent.mkdir(parents=True, exist_ok=True)
     OUT.write_text(json.dumps(snapshot, indent=2) + "\n", encoding="utf-8")
     print(f"[dashboard] wrote {OUT}")

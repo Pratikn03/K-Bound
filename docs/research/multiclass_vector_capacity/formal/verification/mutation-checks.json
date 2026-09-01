@@ -1,0 +1,116 @@
+{
+  "positive_controls": 1,
+  "probes": [
+    {
+      "actual_exit": 0,
+      "command": [
+        "/Users/pratik_n/.elan/toolchains/leanprover--lean4---v4.29.1/bin/lake",
+        "--no-cache",
+        "env",
+        "lean",
+        "/private/tmp/mvc-lean-mutations.oAGilA/Control.lean"
+      ],
+      "expected_exit": 0,
+      "log": "verification/probe-Control.log",
+      "log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "name": "Control",
+      "source_path": "/private/tmp/mvc-lean-mutations.oAGilA/Control.lean",
+      "source_sha256": "25f7539f8beee85a1d5fa78a8faaf1268a1bf70452f5099a938d8b4b22ac47eb",
+      "status": "PASS",
+      "source_text": "import MulticlassVectorCapacity.EdgeCases\nopen MulticlassVectorCapacity\n\nexample : benefit ThreeClass.model (ThreeClass.labels 0 (by norm_num) (by norm_num)) 0 = 3 / 5 := by\n  rw [ThreeClass.labels_benefit]\n  norm_num\n\nexample : fiberDecision EdgeCases.zeroCostModel ThreeClass.observable ThreeClass.observedValue 0 =\n    some .abstain := EdgeCases.zero_cost_boundary_abstains\n\nexample : ¬ ∃ η : ConditionalLabels (Fin 1) (Fin 3), η.prob 0 1 = -1 / 5 :=\n  EdgeCases.negative_conditional_coordinate_rejected\n\nexample : ¬ ∃ η : ConditionalLabels (Fin 1) (Fin 3), ∀ y, η.prob 0 y = 1 :=\n  EdgeCases.unnormalized_simplex_rejected\n"
+    },
+    {
+      "actual_exit": 1,
+      "command": [
+        "/Users/pratik_n/.elan/toolchains/leanprover--lean4---v4.29.1/bin/lake",
+        "--no-cache",
+        "env",
+        "lean",
+        "/private/tmp/mvc-lean-mutations.oAGilA/ReversedOrientation.lean"
+      ],
+      "expected_exit": 1,
+      "log": "verification/probe-ReversedOrientation.log",
+      "log_sha256": "f633b711c5709349986bd0224c919992d6ee5b37da7c5f9a75d26534ca36a83e",
+      "name": "ReversedOrientation",
+      "source_path": "/private/tmp/mvc-lean-mutations.oAGilA/ReversedOrientation.lean",
+      "source_sha256": "aa5b94d9620d53e8ddd2b2e07b59d20c69d1bd66a6745710c1592e0ed1f2c199",
+      "status": "REJECTED_AS_REQUIRED",
+      "source_text": "import MulticlassVectorCapacity.EdgeCases\nopen MulticlassVectorCapacity\n\nexample : benefit ThreeClass.model (ThreeClass.labels 0 (by norm_num) (by norm_num)) 0 = -3 / 5 := by\n  rw [ThreeClass.labels_benefit]\n  norm_num\n"
+    },
+    {
+      "actual_exit": 1,
+      "command": [
+        "/Users/pratik_n/.elan/toolchains/leanprover--lean4---v4.29.1/bin/lake",
+        "--no-cache",
+        "env",
+        "lean",
+        "/private/tmp/mvc-lean-mutations.oAGilA/ZeroStrictAdapt.lean"
+      ],
+      "expected_exit": 1,
+      "log": "verification/probe-ZeroStrictAdapt.log",
+      "log_sha256": "4fadac8fa0b0012482bab91ed5cca6b08afd74c3ac6d276b76c22e0da901c7e7",
+      "name": "ZeroStrictAdapt",
+      "source_path": "/private/tmp/mvc-lean-mutations.oAGilA/ZeroStrictAdapt.lean",
+      "source_sha256": "8e2b3d5525a5e75c2f2910c73f05d663c588bbec367cecae07cf5ff66149e611",
+      "status": "REJECTED_AS_REQUIRED",
+      "source_text": "import MulticlassVectorCapacity.EdgeCases\nopen MulticlassVectorCapacity\n\nexample : fiberDecision EdgeCases.zeroCostModel ThreeClass.observable ThreeClass.observedValue 0 =\n    some .adapt := by\n  rw [EdgeCases.zero_cost_boundary_abstains]\n  rfl\n"
+    },
+    {
+      "actual_exit": 1,
+      "command": [
+        "/Users/pratik_n/.elan/toolchains/leanprover--lean4---v4.29.1/bin/lake",
+        "--no-cache",
+        "env",
+        "lean",
+        "/private/tmp/mvc-lean-mutations.oAGilA/NegativeSimplexCoordinate.lean"
+      ],
+      "expected_exit": 1,
+      "log": "verification/probe-NegativeSimplexCoordinate.log",
+      "log_sha256": "ba3fc01b12490384b77f1b20674f9e805691e643a8babbe830464761ff7abdb3",
+      "name": "NegativeSimplexCoordinate",
+      "source_path": "/private/tmp/mvc-lean-mutations.oAGilA/NegativeSimplexCoordinate.lean",
+      "source_sha256": "a1d9b4a914cb056a308dc305ef7adcd1b673d4310874670acbeb62c10b1ebc5d",
+      "status": "REJECTED_AS_REQUIRED",
+      "source_text": "import MulticlassVectorCapacity.EdgeCases\nopen MulticlassVectorCapacity\n\nnoncomputable def invalidLabels : ConditionalLabels (Fin 1) (Fin 3) where\n  prob := fun _ => ![1 / 5, -1 / 5, 1]\n  nonneg := by intro _ y; fin_cases y <;> norm_num\n  sum_one := by intro _; norm_num [Fin.sum_univ_succ]\n"
+    },
+    {
+      "actual_exit": 1,
+      "command": [
+        "/Users/pratik_n/.elan/toolchains/leanprover--lean4---v4.29.1/bin/lake",
+        "--no-cache",
+        "env",
+        "lean",
+        "/private/tmp/mvc-lean-mutations.oAGilA/UnnormalizedSimplex.lean"
+      ],
+      "expected_exit": 1,
+      "log": "verification/probe-UnnormalizedSimplex.log",
+      "log_sha256": "7a0161c4b22d22068fc21d1be9f500c468a74b3e3d7bc9cd767007e23ba172f9",
+      "name": "UnnormalizedSimplex",
+      "source_path": "/private/tmp/mvc-lean-mutations.oAGilA/UnnormalizedSimplex.lean",
+      "source_sha256": "6362a40d7c5e22b583cc46f6a2334dbab4efd1fdf0b34f6c4fa457f4f887da71",
+      "status": "REJECTED_AS_REQUIRED",
+      "source_text": "import MulticlassVectorCapacity.EdgeCases\nopen MulticlassVectorCapacity\n\ndef invalidLabels : ConditionalLabels (Fin 1) (Fin 3) where\n  prob := fun _ _ => 1\n  nonneg := by intros; norm_num\n  sum_one := by intro _; norm_num [Fin.sum_univ_succ]\n"
+    },
+    {
+      "actual_exit": 1,
+      "command": [
+        "/Users/pratik_n/.elan/toolchains/leanprover--lean4---v4.29.1/bin/lake",
+        "--no-cache",
+        "env",
+        "lean",
+        "/private/tmp/mvc-lean-mutations.oAGilA/WrongObservableFiber.lean"
+      ],
+      "expected_exit": 1,
+      "log": "verification/probe-WrongObservableFiber.log",
+      "log_sha256": "b0317c08134970d9095b2477128d7fad9a16c05f6d73fd9f32735c85252a431f",
+      "name": "WrongObservableFiber",
+      "source_path": "/private/tmp/mvc-lean-mutations.oAGilA/WrongObservableFiber.lean",
+      "source_sha256": "90f8b1221e61e01ca05a033e0aa826b3916ecf2c0469324c840b71fe2e7d831f",
+      "status": "REJECTED_AS_REQUIRED",
+      "source_text": "import MulticlassVectorCapacity.EdgeCases\nopen MulticlassVectorCapacity\n\nnoncomputable def validLabelsWrongMoment : ConditionalLabels (Fin 1) (Fin 3) where\n  prob := fun _ => ![2 / 5, 3 / 5, 0]\n  nonneg := by intro _ y; fin_cases y <;> norm_num\n  sum_one := by intro _; norm_num [Fin.sum_univ_succ]\n\nexample : validLabelsWrongMoment ∈ fiber ThreeClass.observable ThreeClass.observedValue := by\n  apply (ThreeClass.mem_fiber_iff _).mpr\n  norm_num [validLabelsWrongMoment]\n"
+    }
+  ],
+  "rejected_mutations": 5,
+  "scope": "Temporary compile controls for five deliberately false or invalid finite-model mutations; not the entire T1–T9 mutation program.",
+  "source_retention": "Exact UTF-8 probe source is embedded in each source_text field and bound by source_sha256; temporary paths are historical execution locations."
+}

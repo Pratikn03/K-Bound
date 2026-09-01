@@ -30,6 +30,9 @@ def test_separate_natural_authorities_survive_result_manifest_regeneration() -> 
     authorities = builder.validated_separate_authorities(ledger)
     assert authorities["cct20"]["claim_id"] == "KB-CLAIM-051"
     assert authorities["so2sat_development"]["claim_id"] == "KB-CLAIM-052"
+    historical = builder.validated_historical_diagnostic_authorities(ledger)
+    assert historical["fmow_protocol_l"]["claim_id"] == "KB-CLAIM-054"
+    assert historical["poverty_protocol_l_development"]["claim_id"] == "KB-CLAIM-055"
 
     cct20 = builder.special_metrics("KB-CLAIM-051")
     assert cct20["decision_counts"] == {"ADAPT": 0, "FREEZE": 44, "ABSTAIN": 1}
@@ -59,14 +62,18 @@ def test_panel_sync_preserves_later_studies_and_is_idempotent() -> None:
     sync._sync_ledger(ledger, current_cluster)
     assert ledger == first_sync
     assert ledger["generated_at"] == "2026-08-29"
-    assert len(ledger["claims"]) == 39
+    assert len(ledger["claims"]) == 42
 
     by_id = {row["claim_id"]: row for row in ledger["claims"]}
     assert by_id["KB-CLAIM-044"]["status"] == "diagnostic"
     assert by_id["KB-CLAIM-045"]["status"] == "diagnostic"
     assert by_id["KB-CLAIM-051"]["verdict"] == "SAFE_UTILITY_ONLY"
     assert by_id["KB-CLAIM-052"]["target_access"]["target_labels_read"] == 0
+    assert by_id["KB-CLAIM-053"]["status"] == "diagnostic"
+    assert by_id["KB-CLAIM-054"]["status"] == "diagnostic"
+    assert by_id["KB-CLAIM-055"]["status"] == "diagnostic"
     builder.validated_separate_authorities(ledger)
+    builder.validated_historical_diagnostic_authorities(ledger)
 
     promoted = [
         row
@@ -75,8 +82,14 @@ def test_panel_sync_preserves_later_studies_and_is_idempotent() -> None:
         and row.get("status") in {"supported", "no-harm", "descriptive", "diagnostic"}
         and any((ROOT / rel).is_file() for rel in row.get("supporting_artifacts", []))
     ]
-    assert len(promoted) == 13
-    assert {"KB-CLAIM-051", "KB-CLAIM-052"} <= {
+    assert len(promoted) == 16
+    assert {
+        "KB-CLAIM-051",
+        "KB-CLAIM-052",
+        "KB-CLAIM-053",
+        "KB-CLAIM-054",
+        "KB-CLAIM-055",
+    } <= {
         row["claim_id"] for row in promoted
     }
 

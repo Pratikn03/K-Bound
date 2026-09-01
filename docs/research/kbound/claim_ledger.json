@@ -4,7 +4,7 @@
   "claims": [
     {
       "claim_id": "KB-CLAIM-001",
-      "claim_text": "A strict adapt or freeze commitment is uniformly supportable over the declared drift class iff |M| > beta; on |M| <= beta, abstention is the maximal sound three-way action.",
+      "claim_text": "Over the full declared correctness-field target class at a fixed evidence law, a strict adapt or freeze commitment is uniformly supportable iff |M| > beta; in the closed band abstention is the maximal sound three-way action.",
       "claim_type": "theorem",
       "claim_tier": "A",
       "protocol": "theory_validation",
@@ -13,22 +13,34 @@
       "calibration_method": "n/a",
       "test_split": "n/a",
       "supporting_artifacts": [
+        "docs/research/kbound/paper/sections/theory_core_main.tex",
+        "docs/research/kbound/formal/KBound/Probability/MeasureTarget.lean",
+        "docs/research/kbound/formal/KBound/Probability/MeasureFrontier.lean"
+      ],
+      "assumptions": [
+        "fixed predictors, score, source law and target-input evidence",
+        "binary zero-one loss, or multiclass target kernels supported only on the two model predictions on their disagreement region",
+        "positive disagreement mass and feasible M as defined in the active population theorem",
+        "nonnegative residual budget beta",
+        "full admissible class contains the constructed opposite-benefit and zero-benefit target kernels; narrower classes need their own richness premise"
+      ],
+      "status": "supported",
+      "allowed_wording": "exact strict-commitment frontier over the full declared residual-bounded target class; sufficiency alone for narrower subclasses without richness",
+      "forbidden_wording": [
+        "assumption-free",
+        "universal",
+        "benefit sign identifiable iff"
+      ],
+      "historical_attempt_artifacts": [
         "experiments/kbound/theory_validation/results_thm2_regret.json",
         "experiments/kbound/theory_validation/results_thm5_multiclass.json",
         "experiments/kbound/theory_validation/results_frontier.json",
         "experiments/kbound/theory_validation/results_benefit_frontier.json"
       ],
-      "assumptions": [
-        "declared target class",
-        "risk alignment on identifiable region"
-      ],
-      "status": "supported",
-      "allowed_wording": "strict-commitment frontier over the declared drift class",
-      "forbidden_wording": [
-        "assumption-free",
-        "universal",
-        "benefit sign identifiable iff"
-      ]
+      "audit_review_2026_08_31": {
+        "classification": "ACTIVE_THEOREM_ASSUMPTIONS_AND_PROOF_POINTERS_ALIGNED",
+        "record": "docs/research/kbound/audits/research_traceability.json"
+      }
     },
     {
       "claim_id": "KB-CLAIM-002",
@@ -54,7 +66,7 @@
     },
     {
       "claim_id": "KB-CLAIM-003",
-      "claim_text": "If P(|Delta_hat-Delta| <= epsilon) >= 1-alpha, the KGA interval rule controls the unconditional false-adapt event FA_u at level alpha.",
+      "claim_text": "For a fixed scalar benefit target and evaluation unit, valid marginal interval coverage implies that each unconditional wrong-direction commitment probability is at most alpha; this does not identify an observed batch outcome with population risk.",
       "claim_type": "theorem",
       "claim_tier": "A",
       "protocol": "certificate",
@@ -63,20 +75,32 @@
       "calibration_method": "split_conformal_quantile",
       "test_split": "calibration conformal split",
       "supporting_artifacts": [
-        "docs/research/kbound/kbound_pkg/kbound/certificate.py",
-        "experiments/kbound/theory_validation/results_thm3_evalue_alpha005.json"
+        "docs/research/kbound/paper/sections/theory_certificate.tex",
+        "docs/research/kbound/formal/KBound/Probability/MeasureCertificate.lean",
+        "docs/research/kbound/formal/KBound/Probability/MeasureConformal.lean",
+        "kga/certificate.py"
       ],
       "assumptions": [
-        "valid marginal interval coverage",
-        "exchangeability or another justified calibration argument is one route to coverage"
+        "valid marginal interval coverage for the declared scalar target on the common probability space including fitting, candidate and evaluation randomness",
+        "finite benefit and estimate, measurable nonnegative possibly infinite radius, alpha in (0,1)",
+        "estimate and radius available without the next evaluation unit's labels; exchangeability of the actual scores or another justified calibration argument is needed when using conformal calibration"
       ],
       "status": "supported",
-      "allowed_wording": "FA_u <= alpha under interval coverage",
+      "allowed_wording": "coverage-to-action implication for the declared target; empirical cell-outcome protection is not automatic population or repeated-use protection",
       "forbidden_wording": [
         "FA_c <= alpha",
         "guaranteed safe in the wild",
         "assumption-free"
-      ]
+      ],
+      "historical_attempt_artifacts": [
+        "docs/research/kbound/kbound_pkg/kbound/certificate.py",
+        "experiments/kbound/theory_validation/results_thm3_evalue_alpha005.json"
+      ],
+      "audit_review_2026_08_31": {
+        "classification": "ACTIVE_CERTIFICATE_TARGET_AND_IMPLEMENTATION_POINTERS_ALIGNED",
+        "record": "docs/research/kbound/audits/research_traceability.json",
+        "formal_scope": "Generic fixed-radius and finite-real conformal formal statements support the implication; do not claim literal formal parity with every extended-real random-radius clause."
+      }
     },
     {
       "claim_id": "KB-CLAIM-004",
@@ -128,8 +152,8 @@
       ],
       "current_policy_family_sensitivity": {
         "artifact_path": "experiments/kbound/results/reconciled_panels_v1/current_policy_cluster_inference.json",
-        "artifact_sha256": "5b1887fc7848ca0a23940806643416c231a04abb62bd141eb318a5e43a36fbdb",
-        "artifact_bytes": 18810,
+        "artifact_sha256": "5942d60b0287604a63442b336f703adc91e55893177b3b0df6f97f5a52e1ff5e",
+        "artifact_bytes": 18964,
         "status": "retrospective_current_policy_family_sensitivity",
         "runtime": {
           "python": "3.12.13",
@@ -139,11 +163,15 @@
         "live_code_bindings": {
           "policy": {
             "path": "kga/policy.py",
-            "sha256": "d63ea5a123d2cd63a3f13fd2f59928dc3fb39f4ee472cc9ad91e5affdd33282b"
+            "sha256": "256d2449787f6b1bebdfbf0eae4b7424b4f60a665ad31c2ef53358e0f52b65cb"
           },
           "certificate": {
             "path": "kga/certificate.py",
-            "sha256": "9fdc11831cc9d2a29d5445d0ecc1098e2b624be92df665f80d58380775a4e4ea"
+            "sha256": "d918a19d0117b8c9e979a79855af24cac437044b82bb7794f52f3f77f100a72b"
+          },
+          "numeric_validation": {
+            "path": "kga/_validation.py",
+            "sha256": "fe2b71602973e39a830c04c2e5059896a2d802ab7e911920a4d84aeb3457803c"
           },
           "preregistered_protocol": {
             "path": "research_lock/STRESS_GRID_MULTISEED_PROTOCOL_A_v1.yaml",
@@ -363,7 +391,7 @@
     },
     {
       "claim_id": "KB-CLAIM-025",
-      "claim_text": "Universal label-free benefit bracketing (conj:gen) does not exist; minimal supplement is one bit.",
+      "claim_text": "Historical general one-bit closure is unsupported. The measurable swap establishes evidence-definable-class impossibility; orbit-wise selection does not establish a general identifying supplement.",
       "claim_type": "theorem",
       "claim_tier": "A",
       "protocol": "theory_validation",
@@ -372,18 +400,31 @@
       "calibration_method": "n/a",
       "test_split": "n/a",
       "supporting_artifacts": [
+        "docs/research/kbound/formal/KBound/Probability/MeasureSwap.lean",
+        "docs/research/kbound/formal/KBound/Probability/ChannelCounterexample.lean",
+        "docs/research/kbound/kbound_submission_supplement.tex",
+        "docs/research/kbound/audits/research_traceability.json"
+      ],
+      "assumptions": [
+        "fixed evidence law",
+        "declared class contains the measurable opposite-benefit swap when applying impossibility"
+      ],
+      "status": "diagnostic",
+      "allowed_wording": "measurable swap/impossibility is proved; general one-bit sufficiency and H/ratio-rate extension remain unclosed",
+      "forbidden_wording": [
+        "general minimal supplement is one bit",
+        "one representative per swap orbit suffices",
+        "full historical one-bit dichotomy closed"
+      ],
+      "audit_review_2026_08_31": {
+        "classification": "NARROW; composite claim combines a valid impossibility with an unsupported general one-bit closure",
+        "reason": "Measurable evidence-preserving opposite-benefit swaps support impossibility on suitably rich evidence-definable classes. Selecting one representative per swap orbit is not enough for fibre-wide sign identification. A theorem label is not an assumption set, and prohibiting 'conj:gen open' suppresses honest discussion of the unclosed sufficiency/H extension.",
+        "record": "docs/research/kbound/audits/research_traceability.json"
+      },
+      "historical_attempt_artifacts": [
         "docs/research/kbound/paper/sections/main_theory_5.tex",
         "docs/research/kbound/theory_v2/conj1_closure_results.json",
         "experiments/kbound/theory_validation/results_conj1_genpos.json"
-      ],
-      "assumptions": [
-        "thm:conj1-dichotomy"
-      ],
-      "status": "supported",
-      "allowed_wording": "resolved negatively; impossibility not open problem",
-      "forbidden_wording": [
-        "conj:gen open",
-        "universal label-free bracketing exists"
       ]
     },
     {
@@ -507,15 +548,25 @@
       "calibration_method": "n/a",
       "test_split": "n/a",
       "supporting_artifacts": [
-        "experiments/kbound/theory_validation/results_conj1_genpos.json"
+        "docs/research/kbound/audits/research_traceability.json"
       ],
       "assumptions": [
         "General Position"
       ],
-      "status": "supported",
-      "allowed_wording": "weakest one-bit class under GP",
+      "status": "withdrawn",
+      "allowed_wording": "historical GP weakest-class attempt; only the declared-field identity Delta=sigma*T_E and finite diagnostic checks are retained",
       "forbidden_wording": [
-        "unique weakest class unconditionally"
+        "weakest one-bit class under GP",
+        "GP proves structural bit minimality",
+        "machine-verified weakest-class theorem"
+      ],
+      "audit_review_2026_08_31": {
+        "classification": "RETRACT_UNSUPPORTED_THEOREM; GP alone does not repair the proof",
+        "reason": "The proof infers independently free regional signs from global swap closure, which does not follow. The advertised witness uses a2=+/-2 although a=2 eta_a-1 must be in [-1,1]. Finite simulations do not prove minimality over all structural supplements/classes. Delta=sigma*T_E is a valid identity but not the claimed weakest-class result.",
+        "record": "docs/research/kbound/audits/research_traceability.json"
+      },
+      "historical_attempt_artifacts": [
+        "experiments/kbound/theory_validation/results_conj1_genpos.json"
       ]
     },
     {
@@ -529,21 +580,31 @@
       "calibration_method": "n/a",
       "test_split": "n/a",
       "supporting_artifacts": [
-        "docs/research/kbound/theory_v2/unconditional_weakest_results.json",
-        "docs/research/kbound/theory_v2/val_unconditional_weakest.py"
+        "docs/research/kbound/audits/research_traceability.json"
       ],
       "assumptions": [
         "finite polytope enumeration"
       ],
-      "status": "supported",
-      "allowed_wording": "explicit finite family W*; GP as collapsing face",
+      "status": "withdrawn",
+      "allowed_wording": "finite canonical-model dominance calculations are diagnostics; unconditional weakest-class characterization is unsupported",
       "forbidden_wording": [
-        "unique weakest class"
+        "unconditional weakest one-bit classes characterized",
+        "machine-verified unconditional dominance-polytope theorem",
+        "GP as proven collapsing face for all falsifiable classes"
+      ],
+      "audit_review_2026_08_31": {
+        "classification": "RETRACT_UNSUPPORTED_THEOREM; finite enumeration is not a theorem assumption or general proof",
+        "reason": "The canonical-form iff is false for globally swap-closed classes with correlated regional signs; closure under one global involution does not imply independent local sign freedom. The dominance tests are only conditional calculations inside a stipulated finite canonical model, with tie and arbitrary-W interval qualifications.",
+        "record": "docs/research/kbound/audits/research_traceability.json"
+      },
+      "historical_attempt_artifacts": [
+        "docs/research/kbound/theory_v2/unconditional_weakest_results.json",
+        "docs/research/kbound/theory_v2/val_unconditional_weakest.py"
       ]
     },
     {
       "claim_id": "KB-CLAIM-031",
-      "claim_text": "Anytime-valid streaming certificate controls false-adapt time-uniformly under optional stopping.",
+      "claim_text": "For a nonnegative e-process with initial expectation at most one under the stated fixed conditional null, the probability of ever crossing 1/alpha is at most alpha; fixed-candidate Bonferroni composition gives a conditional global-null family bound.",
       "claim_type": "theorem",
       "claim_tier": "A",
       "protocol": "theory_v2",
@@ -552,22 +613,38 @@
       "calibration_method": "e-process",
       "test_split": "n/a",
       "supporting_artifacts": [
-        "docs/research/kbound/theory_v2/val_sequential_anytime_results.json",
-        "docs/research/kbound/kbound_pkg/kbound/eprocess.py"
+        "docs/research/kbound/formal/KBound/Probability/FilteredVille.lean",
+        "docs/research/kbound/theory_v2/anytime_multicandidate_theorem.tex",
+        "docs/research/kbound/audits/research_traceability.json"
       ],
       "assumptions": [
-        "bounded benefits",
-        "valid e-process"
+        "fixed probability/null law and declared filtration",
+        "predictable admissibly bounded bets",
+        "adapted bounded benefit increments with E[X_t|F_(t-1)]<=0 under null",
+        "nonnegative integrable process, initial expectation <=1",
+        "fixed candidate family and valid component processes for family composition"
       ],
       "status": "supported",
-      "allowed_wording": "time-uniform FA_u extension; multiclass anytime FWER closed (Wave 4)",
+      "allowed_wording": "conditional time-uniform false-adapt control under the declared filtration/null; no benchmark conditional-null validation",
       "forbidden_wording": [
-        "multiclass anytime open"
+        "arbitrary drifting-window harm control",
+        "batch conformal guarantees are automatically anytime valid",
+        "historical H/ratio-rate closure",
+        "benchmark anytime safety established"
+      ],
+      "audit_review_2026_08_31": {
+        "classification": "RETAIN_WITH_ASSUMPTIONS; NARROW closure/operational wording",
+        "reason": "The current filtered probability theorem genuinely constructs predictable bounded betting wealth and proves an anytime bound under a fixed null law and conditional mean inequalities. Neither a marginal mean condition nor repeated application of a batch conformal gate establishes those conditional nulls. Global-harmful multicandidate extension is a conditional union-bound application, not arbitrary current-window harm control.",
+        "record": "docs/research/kbound/audits/research_traceability.json"
+      },
+      "historical_attempt_artifacts": [
+        "docs/research/kbound/theory_v2/val_sequential_anytime_results.json",
+        "docs/research/kbound/kbound_pkg/kbound/eprocess.py"
       ]
     },
     {
       "claim_id": "KB-CLAIM-032",
-      "claim_text": "Multicandidate Bonferroni routing controls family-wise false-adapt at level alpha.",
+      "claim_text": "For a fixed K-candidate family with valid level-alpha/K lower bounds for the declared benefits, selecting any candidate with positive lower bound controls one-experiment family-wise false-adapt at alpha under arbitrary dependence.",
       "claim_type": "theorem",
       "claim_tier": "A",
       "protocol": "theory_v2",
@@ -576,22 +653,36 @@
       "calibration_method": "Bonferroni per-candidate",
       "test_split": "n/a",
       "supporting_artifacts": [
-        "docs/research/kbound/theory_v2/val_multicandidate_results.json",
-        "docs/research/kbound/kbound_pkg/kbound/router.py"
+        "docs/research/kbound/theory_v2/multicandidate_theorem.tex",
+        "kga/routing.py",
+        "docs/research/kbound/audits/research_traceability.json"
       ],
       "assumptions": [
-        "independent per-candidate calibration or Bonferroni"
+        "fixed candidate family/declared estimands",
+        "actual one-sided coverage at alpha/K for each candidate including fitting/calibration randomness",
+        "select only among positive corrected lower bounds"
       ],
       "status": "supported",
-      "allowed_wording": "family-wise FA <= alpha under Bonferroni selection-proof",
+      "allowed_wording": "conditional fixed-candidate Bonferroni guarantee for any selector",
       "forbidden_wording": [
-        "naive argmax L_k has FA <= alpha",
-        "multiclass routing open"
+        "Bonferroni creates per-candidate validity",
+        "two-sided delta automatically gives one-sided delta/2",
+        "best-candidate optimality certified",
+        "automatic simultaneous control for the empirical benchmark protocol"
+      ],
+      "audit_review_2026_08_31": {
+        "classification": "RETAIN_WITH_ASSUMPTIONS; REPAIR assumption and implementation pointers",
+        "reason": "Bonferroni is the construction, not a substitute for valid per-candidate coverage. The theorem's actual lower-bound premise gives selection-proof containment under arbitrary dependence. Its false delta/2 parenthetical is unnecessary to that proof. The cited legacy BenefitRouter is a single-benefit LOO estimator/gate, not the fixed-K Bonferroni router.",
+        "record": "docs/research/kbound/audits/research_traceability.json"
+      },
+      "historical_attempt_artifacts": [
+        "docs/research/kbound/theory_v2/val_multicandidate_results.json",
+        "docs/research/kbound/kbound_pkg/kbound/router.py"
       ]
     },
     {
       "claim_id": "KB-CLAIM-033",
-      "claim_text": "Exact 3-world minimax certifying sample complexity n*_3 = kappa(alpha) n_opt (thm:t1c-exact).",
+      "claim_text": "The historical Gaussian three-world proof gives a continuous certification threshold kappa(alpha)*n_opt; its integer sample-count statement needs a ceiling correction and is not a Lean-proved Gaussian optimality result.",
       "claim_type": "theorem",
       "claim_tier": "A",
       "protocol": "theory_v2",
@@ -602,22 +693,35 @@
       "supporting_artifacts": [
         "docs/research/kbound/theory_v2/tight_constants_closure.tex",
         "docs/research/kbound/theory_v2/tight_constants_results.json",
-        "docs/research/kbound/formal/KBound/Probability/Rates.lean"
+        "docs/research/kbound/audits/research_traceability.json"
       ],
       "assumptions": [
-        "Gaussian 3-world location model",
-        "honest frontier abstention"
+        "three Gaussian location worlds -Delta,0,+Delta with known sigma",
+        "alpha in the stated range",
+        "both alternative-world miss constraints and null-world abstention constraint"
       ],
-      "status": "supported",
-      "allowed_wording": "kappa(alpha) is exact; 4 n_opt is pairwise floor only",
+      "status": "diagnostic",
+      "allowed_wording": "narrow Gaussian three-world analytic result retained for correction; continuous threshold and integer ceiling distinguished",
       "forbidden_wording": [
-        "tight constants open",
-        "kappa/4 still open"
+        "unrounded expression is exact integer sample complexity",
+        "all constraints bind after integer rounding",
+        "Gaussian three-world constant proved in Rates.lean",
+        "deployed KGA is globally minimax optimal"
+      ],
+      "audit_review_2026_08_31": {
+        "classification": "NARROW; original integer equality false, useful continuous argument retained",
+        "reason": "n*_3 is defined as an integer minimum, but equals a generally noninteger continuous threshold in the cited theorem. Integer complexity is ceil(kappa(alpha)*n_opt), and all three constraints bind only at the continuous threshold. Rates.lean contains no Gaussian Neyman-Pearson theorem: its header explicitly limits scope to radius/nonnegativity/conditional commit.",
+        "record": "docs/research/kbound/audits/research_traceability.json"
+      },
+      "historical_attempt_artifacts": [
+        "docs/research/kbound/theory_v2/tight_constants_closure.tex",
+        "docs/research/kbound/theory_v2/tight_constants_results.json",
+        "docs/research/kbound/formal/KBound/Probability/Rates.lean"
       ]
     },
     {
       "claim_id": "KB-CLAIM-034",
-      "claim_text": "Multiclass multicandidate routing with Bonferroni family-wise false-adapt and false-harm control on D.",
+      "claim_text": "For fixed multiclass zero-one-loss candidates with valid corrected lower bounds for their declared benefits, Bonferroni selection controls one-experiment family-wise false-adapt; with positive disagreement mass this is the same ordinal harm event.",
       "claim_type": "theorem",
       "claim_tier": "A",
       "protocol": "theory_v2",
@@ -627,18 +731,34 @@
       "test_split": "n/a",
       "supporting_artifacts": [
         "docs/research/kbound/theory_v2/multiclass_multicandidate_theorem.tex",
+        "docs/research/kbound/formal/KBound/Multicandidate.lean",
+        "kga/routing.py",
+        "docs/research/kbound/audits/research_traceability.json"
+      ],
+      "assumptions": [
+        "fixed candidates and coherent per-candidate or common disagreement region",
+        "zero-one population risk and positive relevant disagreement mass",
+        "actual per-candidate one-sided coverage at alpha/K for the same target/unit"
+      ],
+      "status": "supported",
+      "allowed_wording": "conditional multiclass fixed-candidate routing implication; does not construct general label-free benefit bounds",
+      "formal_scope": "Multicandidate.lean proves algebraic harm equivalence and single-candidate soundness; the probabilistic Bonferroni composition is a separate pen-and-paper implication under valid per-candidate coverage.",
+      "forbidden_wording": [
+        "agreement statistics alone certify correctness",
+        "general multiclass bracketing closed",
+        "automatic empirical simultaneous coverage",
+        "Lean proves full multicandidate FWER from benchmark data"
+      ],
+      "audit_review_2026_08_31": {
+        "classification": "RETAIN_WITH_ASSUMPTIONS; clarify estimands and no automatic label-free bracket",
+        "reason": "The benefit identity and conditional Bonferroni implication are valid. For different candidates define D_k for each pair, or a common D outside which every candidate agrees with the baseline; require positive corresponding mass for strict harm equivalence. No label-free estimation of correctness follows solely from agreement statistics. The source itself leaves general bracketing open at 73–80.",
+        "record": "docs/research/kbound/audits/research_traceability.json"
+      },
+      "historical_attempt_artifacts": [
+        "docs/research/kbound/theory_v2/multiclass_multicandidate_theorem.tex",
         "docs/research/kbound/theory_v2/val_multiclass_multicandidate_results.json",
         "kga/routing.py",
         "docs/research/kbound/scripts/multicandidate_decide_kga.py"
-      ],
-      "assumptions": [
-        "per-candidate LCB eq:mc-percand",
-        "0/1 multiclass on D"
-      ],
-      "status": "supported",
-      "allowed_wording": "FWER <= alpha for multiclass routing on D",
-      "forbidden_wording": [
-        "multiclass certs not attempted"
       ]
     },
     {
@@ -652,18 +772,28 @@
       "calibration_method": "n/a",
       "test_split": "n/a",
       "supporting_artifacts": [
-        "docs/research/kbound/theory_v2/multiclass_capacity_impossibility.tex",
-        "docs/research/kbound/theory_v2/val_multiclass_capacity.py"
+        "docs/research/kbound/audits/research_traceability.json"
       ],
       "assumptions": [
         "vector-concept regime",
         "multi-conflict-pair"
       ],
-      "status": "supported",
-      "allowed_wording": "closed negatively; per-component orientation minimal supplement",
+      "status": "withdrawn",
+      "allowed_wording": "historical universal-scalar impossibility is unsupported; a concrete deployed-score/binary-margin reduct can fail in multiclass",
       "forbidden_wording": [
-        "general multiclass capacity exists",
-        "conj:gen-capacity open"
+        "no universal scalar multiclass capacity proved",
+        "general capacity question closed negatively",
+        "per-component orientation minimality proved",
+        "isolated M1 necessity proved"
+      ],
+      "audit_review_2026_08_31": {
+        "classification": "RETRACT_UNSUPPORTED_UNIVERSAL_THEOREM",
+        "reason": "The claimed failure quantifies over every scalar capacity but does not exclude K=0 or impose nontrivial power. Its component argument assumes arbitrary scalar O(mu) is monotone. Its per-component orientation conclusion is not proved by the cited binary-reduct witness and relies on the flawed one-bit generalization.",
+        "record": "docs/research/kbound/audits/research_traceability.json"
+      },
+      "historical_attempt_artifacts": [
+        "docs/research/kbound/theory_v2/multiclass_capacity_impossibility.tex",
+        "docs/research/kbound/theory_v2/val_multiclass_capacity.py"
       ]
     },
     {
@@ -677,23 +807,33 @@
       "calibration_method": "n/a",
       "test_split": "n/a",
       "supporting_artifacts": [
-        "docs/research/kbound/theory_v2/margin_computability_closure.tex",
-        "docs/research/kbound/theory_v2/margin_computability_results.json"
+        "docs/research/kbound/audits/research_traceability.json"
       ],
       "assumptions": [
         "integral-functional families",
         "atomless vs atom dichotomy"
       ],
-      "status": "supported",
-      "allowed_wording": "dichotomy not unconditional computability",
+      "status": "withdrawn",
+      "allowed_wording": "historical computability closure is unsupported; toy convergence and smooth-family bisection examples are diagnostics",
       "forbidden_wording": [
-        "conj:dich-compute open",
-        "margin always computable"
+        "frontier-margin computability dichotomy closed",
+        "Specker atom law proved computable",
+        "atomless and transversal alone imply effective computability",
+        "finite validator proves noncomputability"
+      ],
+      "audit_review_2026_08_31": {
+        "classification": "RETRACT_UNSUPPORTED_COMPUTABILITY_CLOSURE",
+        "reason": "For computable o, the proposed atom-location law exposes the noncomputable Specker real through a bounded continuous first-moment test; it is not a computable input law. A finite square-set toy with a known tail cannot repair that proof. The positive atomless/transversal premise also omits effective presentation/modulus requirements.",
+        "record": "docs/research/kbound/audits/research_traceability.json"
+      },
+      "historical_attempt_artifacts": [
+        "docs/research/kbound/theory_v2/margin_computability_closure.tex",
+        "docs/research/kbound/theory_v2/margin_computability_results.json"
       ]
     },
     {
       "claim_id": "KB-CLAIM-037",
-      "claim_text": "Regression bracketing dichotomy: bounded-drift iff (thm:reg-iff) plus general impossibility.",
+      "claim_text": "Historical regression work gives a finite-risk squared-loss identity and a sharp bounded-drift interval under explicit integrability and full-class assumptions; its blanket closed-dichotomy wording is not promoted.",
       "claim_type": "theorem",
       "claim_tier": "A",
       "protocol": "theory_v2",
@@ -703,23 +843,37 @@
       "test_split": "n/a",
       "supporting_artifacts": [
         "docs/research/kbound/theory_v2/regression_bracketing_closure.tex",
-        "docs/research/kbound/theory_v2/val_regression_bracketing_closure_results.json",
-        "docs/research/kbound/scripts/regression_conjecture_validation.py"
+        "docs/research/kbound/paper/sections/regression_conjecture.tex",
+        "docs/research/kbound/audits/research_traceability.json"
       ],
       "assumptions": [
-        "squared loss",
-        "known drift budget B"
+        "finite squared risks/integrable displayed terms",
+        "all measurable drifts with essential bound B are allowed",
+        "same fixed predictors/input evidence and known source-transfer term or a valid interval for it",
+        "strict directional identification; W>0 when using a radius ratio"
       ],
-      "status": "supported",
-      "allowed_wording": "complete iff under bounded drift; no universal bracket",
+      "status": "diagnostic",
+      "allowed_wording": "scoped regression identity and extremal bracket retained as analytic research; strict-direction and integrability qualifications required",
       "forbidden_wording": [
-        "regression bracketing open",
-        "universal drift bracket"
+        "general regression program closed",
+        "arbitrary infinite-variance noise permits subtraction of absolute risks",
+        "finite unlabeled data give exact population U and W",
+        "regression result fully Lean verified"
+      ],
+      "audit_review_2026_08_31": {
+        "classification": "NARROW; retain useful algebra without blanket closure",
+        "reason": "The exact bounded-drift interval is valid with integrable terms and a full admissible drift class. Finite squared risks are needed to subtract risks under arbitrary mean-zero noise. Strict-direction/tie semantics matter; W>0 is needed for B-star. General impossibility requires evidence-matched opposite-benefit worlds, not every restricted regression model. Calling all regression bracketing closed overstates these conditions.",
+        "record": "docs/research/kbound/audits/research_traceability.json"
+      },
+      "historical_attempt_artifacts": [
+        "docs/research/kbound/theory_v2/regression_bracketing_closure.tex",
+        "docs/research/kbound/theory_v2/val_regression_bracketing_closure_results.json",
+        "docs/research/kbound/scripts/regression_conjecture_validation.py"
       ]
     },
     {
       "claim_id": "KB-CLAIM-038",
-      "claim_text": "K-Bound theory closure plan: strict-core formal audit passes (Lean + validators).",
+      "claim_text": "The dated strict-core Lean build/axiom audit passes for 142 registered capstones under their formal assumptions; full historical one-bit/H closure remains incomplete.",
       "claim_type": "protocol",
       "claim_tier": "A",
       "protocol": "formal_audit",
@@ -728,18 +882,34 @@
       "calibration_method": "n/a",
       "test_split": "n/a",
       "supporting_artifacts": [
+        "docs/research/kbound/audits/research_traceability.json",
+        "docs/research/kbound/formal/formal_audit.py",
+        "docs/research/kbound/formal/KBound/TheoremMap.lean",
+        "docs/research/kbound/kbound_submission_supplement.tex"
+      ],
+      "assumptions": [
+        "exact audited source/build identity and declared formal assumptions",
+        "standard allowed axioms only",
+        "registered capstone count is distinct from all authored theorem/lemma declarations"
+      ],
+      "status": "supported",
+      "allowed_wording": "scoped strict-core audit passes; five foundational layers mechanized with explicit assumptions; sixth historical extension remains partial",
+      "forbidden_wording": [
+        "closure plan complete",
+        "full-foundations gate passes",
+        "all historical theory closed",
+        "all validators establish mathematical correctness",
+        "142 is the total authored theorem count"
+      ],
+      "audit_review_2026_08_31": {
+        "classification": "RETAIN_NARROW_PROTOCOL_RESULT; STALE_CLOSURE_SOURCE_AND_ALLOWED_WORDING_MUST_BE_REPLACED",
+        "reason": "The root's fresh strict-core receipt genuinely passes 142 registered declarations, but records full_foundations_scope_complete=false and excludes the historical one-bit/H extension. The cited exact-HEAD closure plan explicitly claims full-foundations PASS and full research closure (3–15), directly contradicting current code/supplement. Strict-core kernel audit does not certify all theorem validators or all historical mathematical prose.",
+        "record": "docs/research/kbound/audits/research_traceability.json"
+      },
+      "historical_attempt_artifacts": [
         "docs/research/kbound/THEORY_100_PERCENT_CLOSURE_PLAN.md",
         "docs/research/kbound/formal/formal_audit.py",
         "docs/research/kbound/formal/KBound/TheoremMap.lean"
-      ],
-      "assumptions": [
-        "algebraic/finite-sample Lean scope as documented"
-      ],
-      "status": "supported",
-      "allowed_wording": "closure plan complete within stated scopes",
-      "forbidden_wording": [
-        "100% full Mathlib measure theory",
-        "all open problems closed"
       ]
     },
     {
@@ -1053,19 +1223,99 @@
           "feasible": false
         }
       }
+    },
+    {
+      "claim_id": "KB-CLAIM-053",
+      "claim_text": "Camelyon17 B-v2 SAR has lower point regret than both fixed policies in a three-run within-seed replay, but the run seeds do not record independent checkpoint identities and the study is not an untouched hospital-domain evaluation.",
+      "claim_type": "empirical",
+      "claim_tier": "B",
+      "protocol": "CAMELYON17_B_V2_ARCHIVED_DIAGNOSTIC",
+      "dataset": "Camelyon17 B-v2",
+      "candidate_adapter": "sar",
+      "calibration_method": "per-candidate/per-run-seed exact-rank leave-one-condition-out residual calibration",
+      "test_split": "three opened within-seed 36-condition grids",
+      "status": "diagnostic",
+      "supporting_artifacts": [
+        "experiments/kbound/results/reconciled_panels_v1/canonical_panel_results.json",
+        "experiments/kbound/results/reconciled_panels_v1/source_manifest.json"
+      ],
+      "assumptions": [
+        "opened diagnostic grid rather than an untouched target-domain evaluation",
+        "run seeds are conditional on archived checkpoint identities",
+        "independent checkpoint identities are not recorded"
+      ],
+      "allowed_wording": "Camelyon17 B-v2 SAR within-seed diagnostic point ordering; no natural-domain or independent-checkpoint promotion",
+      "forbidden_wording": [
+        "prospective Camelyon17 win",
+        "untouched hospital-domain result",
+        "independent-checkpoint confirmation",
+        "CI-robust natural-shift win"
+      ]
+    },
+    {
+      "claim_id": "KB-CLAIM-054",
+      "claim_text": "The historical FMoW Protocol L test did not clear its release gate: KGA matched always-freeze regret and had higher regret than always-adapt.",
+      "claim_type": "empirical",
+      "claim_tier": "C",
+      "protocol": "FMOW_PROTOCOL_L_v1",
+      "dataset": "FMoW",
+      "candidate_adapter": "sar_online",
+      "calibration_method": "historical Protocol L analyze_F",
+      "test_split": "historical WILDS FMoW test, seeds 2-4",
+      "status": "diagnostic",
+      "supporting_artifacts": [
+        "experiments/kbound/results/fmow_protocol_L_v1/VERIFIED_FINDINGS.json",
+        "research_lock/FMOW_PROTOCOL_L_v1.yaml"
+      ],
+      "assumptions": [
+        "historical result outside the source-hashed canonical panel",
+        "stored false_adapt=0.375 is conditional FA_c, not theorem-controlled FA_u"
+      ],
+      "allowed_wording": "historical FMoW non-clearance: KGA matches freeze and trails adapt",
+      "forbidden_wording": [
+        "canonical-panel FMoW result",
+        "FMoW routing win",
+        "FA_u equals 0.375"
+      ]
+    },
+    {
+      "claim_id": "KB-CLAIM-055",
+      "claim_text": "PovertyMap Protocol L stopped at its preregistered development screen because harm AUC was below 0.65; held-out validation and test evaluation did not run.",
+      "claim_type": "empirical",
+      "claim_tier": "C",
+      "protocol": "POVERTY_PROTOCOL_L_v1",
+      "dataset": "PovertyMap",
+      "candidate_adapter": "development screen across Tent, EATA, and SAR",
+      "calibration_method": "development harm-detectability screen",
+      "test_split": "development id_val only; held-out validation/test not run",
+      "status": "diagnostic",
+      "supporting_artifacts": [
+        "experiments/kbound/results/poverty_protocol_L_dev/VERIFIED_FINDINGS.json",
+        "research_lock/POVERTY_PROTOCOL_L_v1.yaml"
+      ],
+      "assumptions": [
+        "development-only screen outside the source-hashed canonical panel",
+        "no held-out score exists"
+      ],
+      "allowed_wording": "PovertyMap development-screen stop; held-out evaluation did not run",
+      "forbidden_wording": [
+        "PovertyMap target result",
+        "PovertyMap routing win",
+        "held-out PovertyMap accuracy"
+      ]
     }
   ],
   "_correction_2026_07_26": "Annotated after an external five-specialist review. This file remains the wording/status authority; its recorded checksum in STORAGE_MANIFEST.json had drifted (F4-15) and has been refreshed. Evidence tiers: SUBMISSION_LEDGER.md section 3.",
   "reconciliation_source": {
     "canonical_panel": "experiments/kbound/results/reconciled_panels_v1/canonical_panel_results.json",
-    "canonical_panel_sha256": "ee64e858184cc9f67f4e596183b69880d59d64d267e22d3ba29c422afa609df9",
+    "canonical_panel_sha256": "4239a7b38b087fe8d4c81eb935d9da5104545a228fffb7c956b29c6e00d97062",
     "source_manifest": "experiments/kbound/results/reconciled_panels_v1/source_manifest.json",
-    "source_manifest_sha256": "391983f4fa09d65c256ab8c620fea772866b652c219dad0c36574ce38c740482",
+    "source_manifest_sha256": "266ce7cd87ae795e0742d43c40afefef82e82b555baa7dda8c6d270f73e2c031",
     "comparison_ci_convention": "baseline_regret_minus_kga_regret; positive values favor KGA",
     "current_policy_family_sensitivity": {
       "artifact": "experiments/kbound/results/reconciled_panels_v1/current_policy_cluster_inference.json",
-      "artifact_sha256": "5b1887fc7848ca0a23940806643416c231a04abb62bd141eb318a5e43a36fbdb",
-      "artifact_bytes": 18810,
+      "artifact_sha256": "5942d60b0287604a63442b336f703adc91e55893177b3b0df6f97f5a52e1ff5e",
+      "artifact_bytes": 18964,
       "status": "retrospective_current_policy_family_sensitivity",
       "retrospective_six_contrast_holm_gate": "failed_for_all_candidates"
     },
@@ -1085,6 +1335,27 @@
         "target_access": "none"
       }
     },
+    "separate_historical_diagnostic_authorities": {
+      "fmow_protocol_l": {
+        "claim_id": "KB-CLAIM-054",
+        "artifact": "experiments/kbound/results/fmow_protocol_L_v1/VERIFIED_FINDINGS.json",
+        "artifact_sha256": "65ccbd7871ea0ac92fedc5e0c5a4bf8ae2e89b19f07fc63e21a4c7c3c31e747e",
+        "artifact_bytes": 939,
+        "verdict": "not-cleared",
+        "canonical_panel_member": false,
+        "headline_promotion_eligible": false
+      },
+      "poverty_protocol_l_development": {
+        "claim_id": "KB-CLAIM-055",
+        "artifact": "experiments/kbound/results/poverty_protocol_L_dev/VERIFIED_FINDINGS.json",
+        "artifact_sha256": "a9a6816ca971569c59e9d11503fe8100df5b905d25f51b05995606874afd2f5d",
+        "artifact_bytes": 509,
+        "verdict": "dev-screen-stop",
+        "held_out_evaluation_run": false,
+        "canonical_panel_member": false,
+        "headline_promotion_eligible": false
+      }
+    },
     "multiplicity_status": {
       "cifar_current_policy_scope": "The six candidate-by-fixed-policy contrast family was prospectively specified; the current exact-rank replay and six-corruption-family bootstrap sensitivity are retrospective.",
       "confidence_intervals": "ordinary unadjusted family-bootstrap intervals",
@@ -1101,6 +1372,27 @@
     "checked": "every supporting_artifacts path, resolved against the repository root",
     "missing_count": 0,
     "missing": [],
-    "note": "All supporting paths verified after adding receipt-linked CCT-20 and So2Sat claims and preserving KB-CLAIM-044/045 as superseded historical records."
+    "note": "All supporting paths verified after adding receipt-linked CCT-20 and So2Sat claims, hash-bound historical FMoW/PovertyMap diagnostics, and preserving KB-CLAIM-044/045 as superseded historical records."
+  },
+  "theory_review_2026_08_31": {
+    "record": "docs/research/kbound/audits/research_traceability.json",
+    "reviewed_claim_ids": [
+      "KB-CLAIM-001",
+      "KB-CLAIM-003",
+      "KB-CLAIM-025",
+      "KB-CLAIM-028",
+      "KB-CLAIM-029",
+      "KB-CLAIM-031",
+      "KB-CLAIM-032",
+      "KB-CLAIM-033",
+      "KB-CLAIM-034",
+      "KB-CLAIM-035",
+      "KB-CLAIM-036",
+      "KB-CLAIM-037",
+      "KB-CLAIM-038"
+    ],
+    "empirical_values_changed": false,
+    "runtime_semantics_changed": false,
+    "historical_generated_at_preserved": true
   }
 }

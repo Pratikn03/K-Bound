@@ -46,6 +46,7 @@ from collections.abc import Sequence
 
 import numpy as np
 
+from kga._validation import as_float_array
 from kga.benefit import FrozenLinearBenefitEstimator
 from kga.certificate import (
     Certificate,
@@ -56,7 +57,7 @@ from kga.certificate import (
 )
 from kga.evidence import compute_evidence
 from kga.kga import KGA
-from kga.policy import decide
+from kga.policy import Decision, decide
 
 _BATCH_ESTIMATORS = {"ebern": empirical_bernstein, "hoeffding": hoeffding, "evalue": evalue_anytime}
 
@@ -64,7 +65,7 @@ _BATCH_ESTIMATORS = {"ebern": empirical_bernstein, "hoeffding": hoeffding, "eval
 def _load_array(path: str, name: str) -> np.ndarray:
     """Load a 1-D or 2-D float array from a ``.npy`` file."""
     arr = np.load(path, allow_pickle=False)
-    arr = np.asarray(arr, dtype=float)
+    arr = as_float_array(arr)
     if arr.ndim not in (1, 2):
         raise ValueError(f"{path}: expected a 1-D or 2-D array for {name}, got shape {arr.shape}")
     if not np.all(np.isfinite(arr)):
@@ -82,6 +83,8 @@ def _evidence_block(calib_path: str | None, test_path: str | None) -> dict | Non
     if not calib_path or not test_path:
         return None
     ev = compute_evidence(_load_array(calib_path, "calib"), _load_array(test_path, "test"))
+    if not np.isfinite(ev.to_vector()).all():
+        raise ValueError("computed evidence features are nonfinite")
     return {
         "ks_mean": ev.ks_mean,
         "ks_max": ev.ks_max,
@@ -157,21 +160,49 @@ def _certificate_from_args(args: argparse.Namespace) -> Certificate:
 
 def _decide_command(args: argparse.Namespace) -> int:
     """Run the ``decide`` subcommand; returns a process exit code."""
-    cert = _certificate_from_args(args)
-    dec = decide(cert, alpha=args.alpha)
+    cert = None
+    evidence = None
+    dec = Decision.ABSTAIN
+    availability = "unavailable"
+    reason = None
+    try:
+        cert = _certificate_from_args(args)
+        dec = decide(cert, alpha=args.alpha)
+        evidence = _evidence_block(args.calib, args.test)
+        if np.isfinite(cert.epsilon):
+            availability = "available"
+            if dec is Decision.ABSTAIN:
+                reason = "benefit interval does not support a strict decision"
+        else:
+            reason = "insufficient calibration or evaluation information for a finite radius"
+    except (ValueError, TypeError, OSError, FloatingPointError, OverflowError) as exc:
+        # Keep argument-convention SystemExit errors explicit. Runtime evidence
+        # failures, however, are an unavailable decision, never certified FREEZE.
+        cert = None
+        dec = Decision.ABSTAIN
+        reason = str(exc)
+    radius_feasible = cert is not None and bool(np.isfinite(cert.epsilon))
     out = {
         "decision": dec.value,
-        "delta_hat": cert.delta_hat,
-        "epsilon": cert.epsilon,
-        "lower": cert.lower,
-        "upper": cert.upper,
-        "method": cert.method,
-        "alpha": cert.alpha,
-        "n": cert.n,
-        "interval_level": cert.interval_level,
-        "evidence": _evidence_block(args.calib, args.test),
+        "delta_hat": cert.delta_hat if cert is not None else None,
+        "epsilon": cert.epsilon if radius_feasible else None,
+        "lower": cert.lower if cert is not None and np.isfinite(cert.lower) else None,
+        "upper": cert.upper if cert is not None and np.isfinite(cert.upper) else None,
+        "method": cert.method if cert is not None else "unavailable",
+        "alpha": cert.alpha if cert is not None else args.alpha if np.isfinite(args.alpha) else None,
+        "n": cert.n if cert is not None else None,
+        "interval_level": cert.interval_level if cert is not None and radius_feasible else None,
+        "evidence": evidence,
+        "availability": availability,
+        "reason": reason,
+        "model_action": "use_candidate" if dec is Decision.ADAPT else "retain_frozen",
+        "decision_scope": (
+            "label_free_estimator"
+            if args.estimator_json is not None
+            else "paired_benefit_audit" if args.benefits is not None else "external_estimate_audit"
+        ),
     }
-    json.dump(out, sys.stdout, indent=2)
+    json.dump(out, sys.stdout, indent=2, allow_nan=False)
     sys.stdout.write("\n")
     return 0
 

@@ -1,8 +1,8 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% kbound_tmlr.tex -- anonymous TMLR submission driver.
 %%
-%% This driver uses the same corrected abstract, 11-section body, generated
-%% numbers, theorem sources, appendices, and bibliography as the compact paper.
+%% This driver uses the same corrected abstract, ten-section scientific body,
+%% generated numbers, theorem sources, supplement, and bibliography as the compact paper.
 %% The source-hashed canonical panel remains the numerical authority for both
 %% layouts. Build this companion with BUILD_LONG_TMLR=1.
 %%
@@ -22,7 +22,8 @@
 %%
 %% SHARED SOURCE
 %%   kbound_abstract.tex          shared abstract
-%%   kbound_submission_body.tex  shared main body and vetted appendices
+%%   kbound_submission_body.tex  shared scientific main body
+%%   kbound_submission_supplement.tex  supplementary material after references
 %%   paper/references_kbound_expanded.tex
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -110,5 +111,8 @@ identifiability, label-free risk estimation
 \input{kbound_submission_body}
 
 \input{paper/references_kbound_expanded}
+
+\clearpage
+\input{kbound_submission_supplement}
 
 \end{document}
