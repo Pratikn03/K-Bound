@@ -42,7 +42,7 @@ The definitive structural command was:
 ```sh
 python3 docs/research/kbound/scripts/verify_pdf_structure.py \
   --pdf-root /tmp/kbound-r1-final.SZUjxm/worktree/docs/research/kbound/release/current \
-  --output-root /Users/pratik_n/Documents/AutoML_Flagship_V8/docs/research/kbound/paper/reports/pdf_structure
+  --output-root /tmp/kbound-r1-final.SZUjxm/worktree/docs/research/kbound/paper/reports/final_structural_verification
 ```
 
 Each PDF passed `pdfinfo`, `pdffonts`, `pdftotext -layout`, and a Ghostscript null-device parse. All pages are US Letter (`612 x 792 pt`), all fonts are embedded, text extraction is clean, the files are unencrypted, and Ghostscript reported no parse defect. The extracted text contains no unresolved-reference marker. The anonymous TMLR build contains no author name, institution, or email leak.
@@ -60,7 +60,7 @@ Evidence locations:
 
 - full-resolution renders: `paper/reports/final_renders/`
 - final all-page contact sheets: `paper/reports/visual_inspection/final_efec/`
-- structural report: `paper/reports/pdf_structure/PDF_STRUCTURAL_VERIFICATION.md`
+- structural report: `paper/reports/final_structural_verification/PDF_STRUCTURAL_VERIFICATION.md`
 - baseline/current render comparison: `paper/reports/render_diffs/VISUAL_RENDER_COMPARISON.md`
 - TMLR per-page metrics: `paper/reports/visual_inspection/final_efec/tmlr_page_diagnostics/`
 
@@ -171,4 +171,3 @@ None of these notes hides content, breaks reading order, strands a heading, leav
 ## Final publication-layout result
 
 Across all four roles there is no clipping, overlap, blank or near-blank page, malformed glyph, identity leak in the anonymous manuscript, unresolved reference marker, broken paragraph, bad float order, caption separation, or blocking white-space defect. The final four-PDF family passes visual and structural publication QA.
-
