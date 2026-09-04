@@ -17,6 +17,13 @@ ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 REPO="$(cd "$ROOT/../../.." && pwd)"
 cd "$ROOT"
 export COPYFILE_DISABLE=1
+# Freeze TeX's clock for byte-reproducible release PDFs.  The epoch is the
+# start of the final release day in the repository's declared local timezone
+# (2026-09-04 00:00:00 America/Chicago).  Individual drivers also suppress the
+# random trailer identifier and engine-path metadata.
+export SOURCE_DATE_EPOCH=1788498000
+export FORCE_SOURCE_DATE=1
+export TZ=UTC
 
 if [[ -n "${PYTHON:-}" ]]; then
   PY="$PYTHON"
