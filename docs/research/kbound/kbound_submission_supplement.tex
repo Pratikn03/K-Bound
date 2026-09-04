@@ -807,7 +807,11 @@ helpful/zero/harmful triplet therefore has denominator five, one cell for each c
 labels describe measured cell outcomes. Accuracy differences use one sign throughout: adapted minus frozen for adaptation benefit, and KGA minus the
 named fixed policy for the two policy columns.
 
+\ifdefined\KBoundFullReportLayout
+\begin{table}[H]
+\else
 \begin{table*}[t]
+\fi
 \centering
 \footnotesize
 \caption[CCT-20 location ledger.]{Complete cell-outcome-unopened CCT-20 location ledger. A/F/U denotes
@@ -817,7 +821,11 @@ Values are rounded to four decimals, while the sealed manifest retains full prec
 repeated-model observations, and the inferential cluster unit is the camera location.}
 \label{tab:cct20-locations}
 \input{paper/generated/cct20_location_effects_display.tex}
+\ifdefined\KBoundFullReportLayout
+\end{table}
+\else
 \end{table*}
+\fi
 
 The release ledger contains all \CCTCellCount{} cells: \CCTAdaptCount{} ADAPT, \CCTFreezeCount{}
 FREEZE, and \CCTAbstainCount{} ABSTAIN actions; \CCTHelpfulCount{} helpful, \CCTZeroCount{} zero,
