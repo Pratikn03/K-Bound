@@ -559,6 +559,7 @@ def test_all_four_current_manuscript_roles_and_shared_inputs_are_source_bound() 
         "docs/research/kbound/scripts/audit_current_kbound_release.py",
         "docs/research/kbound/scripts/audit_tmlr_anonymity.py",
         "docs/research/kbound/scripts/compare_pdf_renders.py",
+        "docs/research/kbound/scripts/empirical_closure.py",
         "docs/research/kbound/scripts/generate_release_identity.py",
         "docs/research/kbound/scripts/verify_pdf_structure.py",
     }
@@ -574,9 +575,15 @@ def test_all_four_current_manuscript_roles_and_shared_inputs_are_source_bound() 
 
 def test_current_release_guidance_and_table_crosswalk_are_source_bound() -> None:
     required_configuration = {
+        "docs/research/kbound/CIFAR10C_SAR_QUARANTINE.md",
+        "docs/research/kbound/G8_EXACTRANK_REGEN.md",
         "docs/research/kbound/KBOUND_SHORT_CLAIM_MANIFEST.md",
         "docs/research/kbound/KBOUND_SHORT_RESULT_AUDIT.md",
+        "docs/research/kbound/MIXED_BENCHMARK_PROTOCOL.md",
+        "docs/research/kbound/RELATED_WORK_POSITIONING.md",
+        "docs/research/kbound/REPRODUCE.md",
         "docs/research/kbound/RELEASE_CHECKLIST.md",
+        "docs/research/kbound/paper/generated/empirical_audit/claim_matrix.md",
         "docs/research/kbound/paper/RELEASE_TABLE_CROSSWALK.md",
     }
 

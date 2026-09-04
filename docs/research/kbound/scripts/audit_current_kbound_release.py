@@ -428,6 +428,29 @@ def audit_release_files(kbound_root: Path = KBOUND_ROOT) -> list[str]:
     ):
         if not (kbound_root / relative).is_file():
             problems.append(f"missing release file: {relative}")
+
+    superseded_markers = {
+        "CIFAR10C_SAR_QUARANTINE.md": "SUPERSEDED HISTORICAL AUDIT",
+        "G8_EXACTRANK_REGEN.md": "SUPERSEDED HISTORICAL AUDIT",
+        "RELATED_WORK_POSITIONING.md": "SUPERSEDED HISTORICAL POSITIONING",
+        "MIXED_BENCHMARK_PROTOCOL.md": "SUPERSEDED HISTORICAL PROTOCOL",
+    }
+    for relative, marker in superseded_markers.items():
+        candidate = kbound_root / relative
+        if not candidate.is_file():
+            problems.append(f"missing historical-scope file: {relative}")
+        elif marker not in candidate.read_text(encoding="utf-8")[:1200]:
+            problems.append(f"historical-scope file lacks superseded banner: {relative}")
+
+    claim_matrix = kbound_root / "paper/generated/empirical_audit/claim_matrix.md"
+    if not claim_matrix.is_file():
+        problems.append("missing current empirical claim matrix")
+    else:
+        matrix_text = claim_matrix.read_text(encoding="utf-8")
+        if "CIFAR-10-C SAR negative arm" not in matrix_text:
+            problems.append("current empirical claim matrix omits the SAR negative arm")
+        if "CIFAR-10-C SAR quarantine" in matrix_text:
+            problems.append("current empirical claim matrix still presents SAR as quarantined")
     return problems
 
 

@@ -1,4 +1,10 @@
 # MIXED HARMFUL+HELPFUL HEAD-TO-HEAD PROTOCOL — KGA vs POEM vs AETTA
+
+> **SUPERSEDED HISTORICAL PROTOCOL — NOT A CURRENT RESULT OR RELEASE CLAIM.**
+> The mixed-stream wins and Holm language below belong to an older policy and opened exploratory
+> record. POEM/AETTA remain historical protocol-matched ports, not official superiority evidence.
+> Use `KBOUND_SHORT_RESULT_AUDIT.md` and the current canonical panel for release claims.
+
 # Pre-registration (research_lock style). REGISTERED: 2026-06-19, BEFORE any
 # KGA-vs-POEM and KGA-vs-AETTA number is computed on the real cached scores.
 

@@ -1,5 +1,12 @@
 # CIFAR-10-C SAR quarantine
 
+> **SUPERSEDED HISTORICAL AUDIT — DO NOT USE THIS FILE AS THE CURRENT SAR STATUS.**
+> This note records why an older SAR aggregate was quarantined. The later reconciled current
+> authority includes SAR as an adverse, candidate-specific diagnostic: always-adapt has lower
+> regret than KGA and there is no FREEZE exposure. Use
+> `experiments/kbound/results/reconciled_panels_v1/canonical_panel_results.json` and semantic tables
+> `tab:cifar-primary` / `tab:cifar-interval-diagnostics`. No official-setting SAR conclusion follows.
+
 **Status: withheld.** The archived CIFAR-10-C SAR aggregate is not reproducible from the current seed-0 replay and is excluded from paper evidence. It may be retained only for historical audit.
 
 > **Added 2026-07-26 — the cause is confounded and cannot be attributed from this release.**

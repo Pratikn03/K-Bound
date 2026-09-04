@@ -1,4 +1,11 @@
 # G8 exact-rank regeneration — RESULT (2026-07-20)
+
+> **SUPERSEDED HISTORICAL AUDIT — NUMBERS AND CLAIMS BELOW ARE NOT CURRENT.**
+> This note predates the cell-outcome-disjoint three-way cross-fit and canonical reconciled panel.
+> Do not use its zero-false-ADAPT, regret, beats-both, or “paper updated” statements. Current values
+> and claim scope are in `KBOUND_SHORT_RESULT_AUDIT.md` and
+> `experiments/kbound/results/reconciled_panels_v1/canonical_panel_results.json`.
+
 Question: does the EXACT split-conformal rank rule (eps=sorted(rho)[k-1], k=ceil((n+1)(1-alpha)),
 kbound_pkg/kbound/certificate.py) keep FA_u<=alpha AND preserve the beats-both, replacing the
 interpolated np.quantile that under-covers at finite n?  Script: scripts/g8_exactrank_regen.py

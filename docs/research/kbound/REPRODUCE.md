@@ -1,9 +1,10 @@
 # Reproducing K-Bound
 
 > **CURRENT ENTRY POINT (2026-08-29):** run
-> `bash docs/research/kbound/runbooks/release_candidate.sh all` under Python 3.12. Sections 0a--5
-> below are retained as a forensic account of historical heterogeneous runs and legacy helper
-> scripts; several named headline artifacts and commands are intentionally superseded. Current
+> `bash docs/research/kbound/runbooks/release_candidate.sh all` under Python 3.12.13. Section 1 is
+> the maintained validation route; Sections 0a and 2--5 retain a forensic account of historical
+> heterogeneous runs and legacy helper scripts. Several named headline artifacts and commands are
+> intentionally superseded. Current
 > claims come from `KBOUND_SHORT_RESULT_AUDIT.md`, `claim_ledger.json`, the canonical reconciled
 > panel, and the separate receipt-linked CCT-20/So2Sat authorities. A green legacy helper is not a
 > current release PASS.
@@ -14,22 +15,75 @@ was never accessed, and the CCT-20 target result uses its own receipt-linked rel
 
 ## 0. Environment
 ```
-python3.12 -m venv .venv
-uv pip install --python .venv/bin/python -r requirements-research.txt
-KBOUND_PYTHON=.venv/bin/python \
+uv venv --python 3.12.13 .venv-release
+uv pip sync --python .venv-release/bin/python \
+  --require-hashes --only-binary=:all: \
+  requirements-release-macos-arm64.lock.txt
+.venv-release/bin/python \
+  docs/research/kbound/scripts/verify_python_environment.py \
+  --lock requirements-release-macos-arm64.lock.txt \
+  --content-profile docs/research/kbound/release_python_environment_macos_arm64.json \
+  --output environment-receipt.json
+.venv-release/bin/python \
+  docs/research/kbound/scripts/verify_release_toolchain.py \
+  --profile docs/research/kbound/release_toolchain_macos_arm64.json \
+  --output toolchain-receipt.json
+KBOUND_PYTHON=.venv-release/bin/python \
   bash docs/research/kbound/runbooks/release_candidate.sh all
 ```
-The full release profile includes Torch, torchvision, WILDS, and the Word-export dependencies because
-repository-wide test collection imports those surfaces even though the release gate never trains a
-model. Linux CI uses the hashed `requirements-research-ci.lock.txt`; the smaller
-`requirements-paper.lock.txt` is sufficient only for a presentation rebuild from already validated
-authorities. A `Dockerfile` at the repo root pins the full environment for GPU re-runs.
+The canonical release platform is macOS arm64 with Python **3.12.13** and
+NumPy **2.4.4**. `requirements-release.txt` is the human-maintained input;
+`requirements-release-macos-arm64.lock.txt` is the install authority. The
+verifier rejects Python/platform drift, missing or extra distributions,
+version disagreement, duplicate normalized package names, unhashed entries,
+ranges, options, and direct URLs. Preserve `environment-receipt.json` beside
+the release seal; it binds the exact lock bytes, runtime, and installed set.
+The external-tool profile separately fixes zlib plus the Perl interpreter,
+LaTeX/Pandoc conversion tools, Poppler, and LibreOffice executable bytes and
+version probes. Its receipt records only
+logical command names, versions, and SHA-256 values; it never publishes local
+executable paths. A different binary with the same display version is rejected.
+If a pinned executable is not on `PATH`, point the verifier to it with the
+corresponding local-only `KBOUND_TOOL_<NAME>` variable (for example,
+`KBOUND_TOOL_PDFTOTEXT`); do not commit those machine-local values. The release
+driver converts every verified command to a private exact-realpath override,
+rechecks the profile immediately before tool-using phases, and removes the
+temporary path map. `latexmk` and `latexpand` are executed through the verified
+Perl realpath, and `latexmk` receives the verified `pdflatex` realpath with an
+explicit `-fmt=pdflatex` selection (the resolved executable is `pdftex`);
+tool-directory ordering on `PATH` is never treated as a release guarantee.
+
+The full release profile includes Torch, torchvision, WILDS, and the
+Word-export dependencies because repository-wide test collection imports
+those surfaces even though the release gate never trains a model. Linux CI
+uses the CPU-only, hashed `requirements-ci-py312-linux.lock.txt`; production
+uses the smaller Python 3.11 Linux
+`requirements-api-py311-linux.lock.txt`. The legacy
+`requirements-research-ci.lock.txt` and `requirements-paper.lock.txt` are not
+install authorities for the hardened release workflow.
+
+All three locks were resolved by uv 0.11.19 with
+`--exclude-newer 2026-09-01T00:00:00Z`, `--only-binary=:all:`, and
+`--generate-hashes`. Validate a lock refresh for its target before review:
+
+```bash
+uv pip install --dry-run --require-hashes --only-binary=:all: \
+  --python-version 3.12.13 --python-platform aarch64-apple-darwin \
+  --target /tmp/kbound-release-lock-check \
+  -r requirements-release-macos-arm64.lock.txt
+UV_TORCH_BACKEND=cpu uv pip install --dry-run --require-hashes \
+  --only-binary=:all: --python-version 3.12.13 \
+  --python-platform x86_64-unknown-linux-gnu \
+  --target /tmp/kbound-ci-lock-check \
+  -r requirements-ci-py312-linux.lock.txt
+```
 
 ### 0a. Disclosure: the committed multi-seed runs were NOT produced under one environment
 
 Read this before treating any across-seed spread in this project as seed variance. It is not:
 some of it is toolchain variance. Scanned from the 43 committed `result_manifest.json` files
-(fix-queue item 19; F4-6, F4-14; `NUMBERS_PACK.md §7.3`).
+(fix-queue item 19; F4-6, F4-14; historical derivation preserved in
+[`NUMBERS_PACK.md §7.3`](archive/legacy_publication_surfaces_2026-09-02/retired_tree/docs/research/kbound/panel_review_2026-07-25/NUMBERS_PACK.md)).
 
 **CIFAR-10-C stress grid — three distinct stacks across five seeds:**
 
@@ -68,8 +122,10 @@ Four further facts, all verified:
 **What this permits and forbids.**
 *Permitted:* reporting the five seeds as five runs, and reporting their spread as an upper bound on
 seed variance. *Forbidden:* calling it a five-seed variance estimate, or attributing any seed-0
-outlier to the seed. The CIFAR-10-C SAR quarantine (`CIFAR10C_SAR_QUARANTINE.md`) is the concrete
-instance: seed 0's harmful base rate is 0.53 against ~0.10 on seeds 1-4, and seed 0 is also the one
+outlier to the seed. The superseded historical CIFAR-10-C SAR quarantine
+(`CIFAR10C_SAR_QUARANTINE.md`) records the earlier concrete instance; it is not the current SAR
+release status. In that older record, seed 0's harmful base rate is 0.53 against ~0.10 on seeds 1-4,
+and seed 0 is also the one
 seed on a different Python, torch and commit. Those two facts cannot be separated from the release.
 
 **Historical closeout requirement:** the original draft required a seed-0 rerun under the
@@ -80,37 +136,27 @@ nor a current significance claim. A future paper claim that attributes dispersio
 random seed would still require the homogeneous rerun and complete environment manifests above;
 the historical blanket footnote prescription is not a condition imposed on the current manuscript.
 
-## 1. One-command verification (CPU, seconds)
-```
-python3 docs/research/kbound/scripts/reproduce_headlines.py
-```
-Exits 0 iff all checks PASS. It:
-- **rebuilds** the CIFAR-10-C Tent and EATA beats-both verdicts from the raw per-condition logs
-  (`experiments/kbound/results/per_condition_cifar10c_{tent,eata}_seed0.json`) using the exact-rank
-  KGA certificate — the verdict is recomputed, not read back;
-- checks the decision-gate certificate has FA_u = 0 (`gate_comparison.json`);
-- confirms the ImageNet-C SAR, three-source, and Camelyon17 headline numbers are present in the
-  locked artifacts (`results_source.json`, `research_lock/KBOUND_MIXED_STREAM_v2.json`,
-  `recon_results.json`, `.../imagenetc_aggr/decisive_tta_results.json`).
+## 1. Maintained result and claim verification
 
-> **Known failures of this script as of 2026-07-26 — do not report a green run as a clean bill.**
-> - `recon_results.json` **does not exist** in this release. The Camelyon17 check either skips or
->   must be repointed at `research_lock/CAMELYON17_PROTOCOL_G_RECONCILED_v2.yaml:29`, which carries
->   the regret triple but **not** the promoted `FA_u = 0`. See `SUBMISSION_LEDGER.md §8`.
-> - `.../imagenetc_aggr/decisive_tta_results.json`'s sibling `checkpoint.json` is a NUL-filled
->   iCloud placeholder (`PLACEHOLDER_INVENTORY.md`, group D).
-> - The ImageNet-C SAR number this script confirms is the **in-pool** value 0.0264. Under the
->   2026-07-26 leave-one-out-of-pool radius fix it is 0.0289 with FA_u 1/135
->   (`SUBMISSION_LEDGER.md §9`). A check that passes against the old constant is checking the wrong
->   constant.
+```bash
+KBOUND_PYTHON=.venv/bin/python \
+  bash docs/research/kbound/runbooks/release_candidate.sh validate-results
+```
+
+This fail-closed route validates the canonical reconciled panel, result schemas and hashes, current
+claim wording, manuscript dependency closure, interval diagnostics, and receipt-bound CCT-20
+release surface. It neither launches training nor opens target data. The former headline wrapper
+mixed obsolete constants, missing artifacts, and promoted-language checks; it is preserved only in
+the [legacy-publication archive](archive/legacy_publication_surfaces_2026-09-02/README.md) and must
+not be used as release evidence.
 
 ## 2. Locked artifacts (CI-confirmed headlines)
 | Result | Artifact |
 |--------|----------|
-| CIFAR-10-C Tent/EATA stress beats-both | `results_source.json` (locked_analysis) + raw `per_condition_cifar10c_*` |
-| ImageNet-C SAR beats-both | `experiments/kbound/results/win_hunt_v5/imagenetc_aggr/decisive_tta_results.json` |
+| CIFAR-10-C Tent/EATA retrospective point estimates | `experiments/kbound/results/reconciled_panels_v1/canonical_panel_results.json`; no confirmatory routing result |
+| ImageNet-C SAR historical diagnostic | `experiments/kbound/results/win_hunt_v5/imagenetc_aggr/decisive_tta_results.json`; not a current confirmatory win |
 | Decision-gate comparison | `gate_comparison.json` |
-| Three-source mixture (constructed) | `research_lock/KBOUND_MIXED_STREAM_v2.json` |
+| Three-source mixture (constructed) | `research_lock/KBOUND_MIXED_STREAM_v2.json`; historical aggregate requires a reconciled rerun |
 | Anytime streaming | label-informed offline diagnostic only; not promoted as label-free evidence |
 | Exact-rank ablations | `experiments/kbound/results/ablation_exactrank.json` (input SHAs inside) |
 | Controller cost profile | `experiments/kbound/results/cost_profile.json` — **NUL-filled placeholder, unreadable** |

@@ -1,5 +1,12 @@
 # Positioning K-Bound vs. concurrent label-free TTA-safety work (2026-06-19)
 
+> **SUPERSEDED HISTORICAL POSITIONING — DO NOT USE AS CURRENT THEORY SCOPE.**
+> The one-bit/H/rate extension described below is not a closed maintained headline layer. The
+> current core is the binary population strict-commitment frontier, the evidence-fibre audit floor,
+> and the coverage-to-action implication, with KGA presented separately as an empirical
+> benefit-interval gate. See `paper/sections/theory_core_main.tex` and
+> `KBOUND_SHORT_CLAIM_MANIFEST.md`.
+
 Readable companion to `paper/sections/related_work_positioning.tex`. Drafted from
 primary abstracts (AETTA CVPR'24; Monitoring Risks in TTA, Schirmer et al. 2025;
 Suitability Filter 2025) and ATC (Garg et al. ICLR'22) / agreement-on-the-line
