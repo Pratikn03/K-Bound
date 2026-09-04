@@ -1,0 +1,15 @@
+# K-Bound Linux CI input profile.
+#
+# All direct versions are deliberate and preserve the maintained research and
+# production constraints.  Generate the platform lock with the command printed
+# in requirements-ci-py312-linux.lock.txt; CI installs only that lock.
+-r requirements-release.txt
+
+# Repository quality, distribution, and coverage gates.
+bandit[toml]==1.9.4
+build==1.3.0
+mypy==2.1.0
+pre-commit==4.6.0
+pytest-cov==7.1.0
+ruff==0.15.13
+twine==6.2.0
