@@ -15,14 +15,16 @@ coverage/transfer assumptions (the paper's conditional certificate criterion).
 Controlled-grid replay rule
 ---------------------------
 The controlled-grid re-scoring path routes through
-:func:`kga.policy.decide_kga`. That function pins the degrees of freedom that
-used to vary between copy-pasted historical scripts:
+:func:`kga.crossfit.controlled_grid_crossfit`.  It deterministically partitions
+stable cell identifiers into score folds and then partitions each fold's
+complement into disjoint estimator-fit and residual-calibration subsets:
 
 * the radius is the **exact split-conformal rank** quantile
   ``eps = r_(k)``, ``k = ceil((n + 1)(1 - alpha))`` -- never an interpolated
   ``np.quantile``, and ``+inf`` (forced ABSTAIN) when ``k > n``;
-* the pool is **leave-one-out-of-pool**: cell ``i``'s radius excludes its own
-  labelled residual;
+* a scored cell's outcome enters neither its predictor fit nor its residual
+  calibration, so changing that outcome cannot change its prediction, radius,
+  or action;
 * the trichotomy uses **strict** inequalities, matching the ``|M| > beta``
   commitment convention of the knowability frontier.
 
@@ -34,7 +36,8 @@ FrozenLinearBenefitEstimator -- auditable reference estimator artifact.
 Decision                   -- the ADAPT/FREEZE/ABSTAIN enum.
 Certificate                -- a finite-sample certificate ``Delta_hat +/- eps``.
 Evidence                   -- the label-free evidence ``Z`` container.
-decide_kga                 -- the canonical end-to-end rule (see above).
+controlled_grid_crossfit   -- the canonical controlled-grid rule (see above).
+decide_kga                 -- historical stored-prediction replay compatibility.
 decide_batch               -- vectorised trichotomy over stored arrays.
 split_conformal_rank_radius / conformal_radii_loo / min_calibration_size
                            -- the radius primitives.
@@ -79,6 +82,12 @@ from kga.certificate import (
     min_calibration_size,
     split_conformal_rank_radius,
 )
+from kga.crossfit import (
+    ControlledGridCrossfitResult,
+    controlled_grid_crossfit,
+    controlled_grid_input_sha256,
+    controlled_grid_sample_id,
+)
 from kga.evidence import EVIDENCE_FEATURE_NAMES, EVIDENCE_SCHEMA_VERSION, Evidence
 from kga.frontier import (
     FrontierAssessment,
@@ -120,6 +129,10 @@ __all__ = [
     "conformal_attained_level",
     "min_calibration_size",
     "split_conformal_rank_radius",
+    "ControlledGridCrossfitResult",
+    "controlled_grid_crossfit",
+    "controlled_grid_input_sha256",
+    "controlled_grid_sample_id",
     "AnytimeMulticandidatePanel",
     "CandidateCertificate",
     "RoutingDecision",

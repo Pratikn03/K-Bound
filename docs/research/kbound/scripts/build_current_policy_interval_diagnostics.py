@@ -6,9 +6,9 @@ This is a deterministic, no-training replay, not a new experiment. Only the
 authorities are read. Every candidate and corruption family is retained.
 Historical ``eps_conformal`` and ``kga_decision`` fields are never scored.
 
-The same residual collection is reused across leave-one-cell-out calibration
-pools. Its aggregate inclusion rate is therefore strongly rank-constrained,
-not an independent validation of calibration. These dependent-cell summaries
+The canonical three-way cross-fit predictions and radii are reused without
+refitting. These dependent-cell summaries are descriptive and are not an
+independent validation of calibration. They
 establish neither exchangeability nor selection-conditional, held-out-family,
 independent-checkpoint, natural-shift, or population-risk coverage.
 
@@ -53,9 +53,11 @@ INFERENCE_REL = RESULT_REL / "current_policy_cluster_inference.json"
 MANIFEST_REL = RESULT_REL / "source_manifest.json"
 OUTPUT_REL = Path("docs/research/kbound/paper/generated/current_policy_interval_diagnostics")
 CODE_PATHS = {
+    "crossfit": "kga/crossfit.py",
     "policy": "kga/policy.py",
     "certificate": "kga/certificate.py",
     "numeric_validation": "kga/_validation.py",
+    "reconciliation": "scripts/reconcile_result_panels.py",
     "preregistered_protocol": "research_lock/STRESS_GRID_MULTISEED_PROTOCOL_A_v1.yaml",
 }
 DATALESS_FLAG = 0x40000000
@@ -74,6 +76,26 @@ def require_resident(path: Path) -> None:
 def resident_bytes(path: Path) -> bytes:
     require_resident(path)
     return path.read_bytes()
+
+
+def _compact_sha256(value: Any) -> str:
+    return hashlib.sha256(
+        json.dumps(value, sort_keys=True, separators=(",", ":"), allow_nan=False).encode()
+    ).hexdigest()
+
+
+def controlled_grid_sample_id(*, track: str, candidate: str, seed: int, condition: str) -> str:
+    identity = {"track": track, "candidate": candidate, "seed": seed, "condition": condition}
+    payload = (json.dumps(identity, indent=2, sort_keys=True, allow_nan=False) + "\n").encode()
+    return f"grid-cell-sha256:{hashlib.sha256(payload).hexdigest()}"
+
+
+def controlled_grid_input_sha256(Z: Any, B: Any, sample_ids: list[str]) -> dict[str, str]:
+    return {
+        "Z": _compact_sha256(np.asarray(Z, dtype=float).tolist()),
+        "B": _compact_sha256(np.asarray(B, dtype=float).tolist()),
+        "sample_ids": _compact_sha256([str(value) for value in sample_ids]),
+    }
 
 
 def _unique_keys(pairs: list[tuple[str, Any]]) -> dict[str, Any]:
@@ -101,19 +123,6 @@ def read_json(path: Path, root: Path) -> tuple[dict[str, Any], dict[str, Any]]:
     }
 
 
-def _released_policy():
-    # Importing kga executes its public package initializer. Preflight package
-    # files as well as the three numerical dependencies before that import.
-    package_files = sorted((ROOT / "kga").glob("*.py"))
-    if not package_files:
-        raise ValueError("released kga package is unavailable")
-    for path in package_files:
-        require_resident(path)
-    from kga.policy import decide_kga
-
-    return decide_kga
-
-
 def _finite_number(row: dict[str, Any], name: str) -> float:
     value = row.get(name)
     if isinstance(value, bool) or not isinstance(value, (int, float)) or not math.isfinite(value):
@@ -121,8 +130,10 @@ def _finite_number(row: dict[str, Any], name: str) -> float:
     return float(value)
 
 
-def replay_records(records: list[dict[str, Any]], candidate: str, seed: int) -> list[dict[str, Any]]:
-    """Replay one intact candidate/run-seed pool through released decide_kga."""
+def replay_records(
+    records: list[dict[str, Any]], candidate: str, seed: int, canonical_file: dict[str, Any]
+) -> list[dict[str, Any]]:
+    """Join one intact source pool to its canonical cross-fit cell authority."""
     if not isinstance(records, list) or not records:
         raise ValueError("a nonempty, intact record pool is required")
     clean: list[dict[str, Any]] = []
@@ -143,21 +154,78 @@ def replay_records(records: list[dict[str, Any]], candidate: str, seed: int) -> 
         if condition in seen:
             raise ValueError(f"duplicate condition in candidate/seed pool: {condition}")
         seen.add(condition)
-        values = {key: _finite_number(row, key) for key in ("B", "b_hat", "a0", "a_adapted")}
+        values = {key: _finite_number(row, key) for key in ("B", "a0", "a_adapted")}
         if not all(0 <= values[key] <= 1 for key in ("a0", "a_adapted")):
             raise ValueError("accuracy values must lie in [0, 1]")
         if abs(values["B"] - (values["a_adapted"] - values["a0"])) > BENEFIT_IDENTITY_ATOL:
             raise ValueError("B disagrees with adapted minus frozen accuracy")
         clean.append({"candidate": candidate, "seed": seed, "condition": condition, "family": family, **values})
 
-    prediction = np.asarray([row["b_hat"] for row in clean], dtype=float)
-    benefit = np.asarray([row["B"] for row in clean], dtype=float)
-    epsilon, decisions = _released_policy()(prediction, benefit, alpha=ALPHA, calibration="loo")
-    if epsilon.shape != prediction.shape or decisions.shape != prediction.shape:
-        raise ValueError("released replay returned a changed record shape")
-    for row, radius, action in zip(clean, epsilon, decisions, strict=True):
+    authority = canonical_file.get("current_cell_authority")
+    if not isinstance(authority, dict) or authority.get("schema") != "kbound-controlled-grid-cell-authority-v1":
+        raise ValueError("canonical current-cell authority is missing")
+    cells = authority.get("cells")
+    if not isinstance(cells, list) or len(cells) != len(clean):
+        raise ValueError("canonical current-cell authority changed record shape")
+    payload_hash = hashlib.sha256(
+        (json.dumps(cells, indent=2, sort_keys=True, allow_nan=False) + "\n").encode()
+    ).hexdigest()
+    if authority.get("sha256") != payload_hash:
+        raise ValueError("canonical current-cell authority hash mismatch")
+    arrays = {
+        "prediction": [cell.get("prediction") for cell in cells],
+        "radius": [cell.get("radius") for cell in cells],
+        "action": [cell.get("action") for cell in cells],
+    }
+    for name, values in arrays.items():
+        digest = hashlib.sha256(
+            (json.dumps(values, indent=2, sort_keys=True, allow_nan=False) + "\n").encode()
+        ).hexdigest()
+        if canonical_file.get(f"current_{name}_sha256") != digest:
+            raise ValueError(f"canonical current-{name} hash mismatch")
+    sample_ids = [
+        controlled_grid_sample_id(
+            track="cifar10c", candidate=candidate, seed=seed, condition=row["condition"]
+        )
+        for row in clean
+    ]
+    if sample_ids != [cell.get("sample_id") for cell in cells]:
+        raise ValueError("canonical stable sample IDs mismatch")
+    protocol = canonical_file.get("crossfit_protocol")
+    expected_settings = {
+        "schema": "kga-controlled-grid-crossfit-v1",
+        "status": "ok",
+        "alpha": ALPHA,
+        "requested_n_folds": 5,
+        "calibration_fraction_target": 0.3,
+        "gbrt": {
+            "n_estimators": 250,
+            "max_depth": 2,
+            "learning_rate": 0.05,
+            "subsample": 0.8,
+            "random_state": 0,
+        },
+    }
+    if not isinstance(protocol, dict) or any(protocol.get(key) != value for key, value in expected_settings.items()):
+        raise ValueError("canonical cross-fit protocol mismatch")
+    expected_inputs = controlled_grid_input_sha256(
+        [row["Z"] for row in records], [row["B"] for row in records], sample_ids
+    )
+    if protocol.get("input_sha256") != expected_inputs:
+        raise ValueError("canonical cross-fit input hash mismatch")
+    expected_dependencies = {
+        name: hashlib.sha256(resident_bytes(ROOT / relative)).hexdigest()
+        for name, relative in CODE_PATHS.items()
+        if name in {"crossfit", "policy", "certificate", "numeric_validation"}
+    }
+    if protocol.get("implementation_sha256") != expected_dependencies:
+        raise ValueError("canonical cross-fit executable hashes mismatch")
+    for row, prediction, radius, action in zip(clean, arrays["prediction"], arrays["radius"], arrays["action"], strict=True):
         if math.isnan(float(radius)) or radius < 0 or str(action) not in ACTIONS:
-            raise ValueError("released replay returned an invalid radius or action")
+            raise ValueError("canonical replay contains an invalid radius or action")
+        if not math.isfinite(float(prediction)):
+            raise ValueError("canonical replay contains a nonfinite prediction")
+        row["prediction"] = float(prediction)
         row["epsilon"] = float(radius)
         row["decision"] = str(action)
     return clean
@@ -184,7 +252,7 @@ def summarize(records: list[dict[str, Any]]) -> dict[str, Any]:
     if not records:
         raise ValueError("cannot summarize an empty group")
     n = len(records)
-    prediction = np.asarray([row["b_hat"] for row in records], dtype=float)
+    prediction = np.asarray([row["prediction"] for row in records], dtype=float)
     benefit = np.asarray([row["B"] for row in records], dtype=float)
     epsilon = np.asarray([row["epsilon"] for row in records], dtype=float)
     decisions = np.asarray([row["decision"] for row in records], dtype=object)
@@ -356,12 +424,22 @@ def build_artifact(root: Path = ROOT) -> dict[str, Any]:
     for candidate in CANDIDATES:
         authority = inference["candidates"][candidate]
         replay_contract = authority["current_policy_replay"]
-        for key, expected in (("entry_point", "kga.policy.decide_kga"), ("alpha", ALPHA), ("calibration", "loo"), ("stored_kga_decision_used_for_scoring", False)):
+        for key, expected in (
+            ("entry_point", "canonical_panel_results.json per-file current_cell_authority"),
+            ("alpha", ALPHA),
+            ("calibration", "cell-outcome-disjoint fit/calibrate/score cross-fit"),
+            ("stored_b_hat_used_for_scoring", False),
+            ("stored_kga_decision_used_for_scoring", False),
+        ):
             exact_match(checks, f"{candidate}.replay.{key}", replay_contract[key], expected)
         inference_sources = {row["path"]: row for row in authority["sources"]}
         if len(inference_sources) != len(authority["sources"]) or len(inference_sources) != len(SEEDS):
             raise ValueError("incomplete or duplicate current-policy source identity")
         records = []
+        canonical_candidate = canonical_panel["panel"]["candidates"][candidate]
+        canonical_files = {int(row["seed"]): row for row in canonical_candidate["per_file"]}
+        if set(canonical_files) != set(SEEDS):
+            raise ValueError("incomplete or duplicate canonical per-file authority")
         expected_order = None
         for seed in SEEDS:
             path = source_dir / f"per_condition_cifar10c_{candidate}_seed{seed}.json"
@@ -384,7 +462,7 @@ def build_artifact(root: Path = ROOT) -> dict[str, Any]:
             exact_match(checks, f"canonical.source.{relative}.sha256", seal["sha256"], canonical_sources[relative]["compact_sha256"])
             for key, value in {**seal, "records": len(source_records), "run_seed": seed}.items():
                 exact_match(checks, f"current_policy.source.{relative}.{key}", value, inference_sources[relative][key])
-            replay = replay_records(source_records, candidate, seed)
+            replay = replay_records(source_records, candidate, seed, canonical_files[seed])
             conditions = tuple(row["condition"] for row in replay)
             if expected_order is None:
                 expected_order = conditions
@@ -400,7 +478,7 @@ def build_artifact(root: Path = ROOT) -> dict[str, Any]:
         identities = {(row["candidate"], row["seed"], row["condition"]) for row in records}
         if len(identities) != len(records):
             raise ValueError("duplicate candidate/run-seed/condition identity")
-        science_checks = verify_scientific_equality(records, canonical_panel["panel"]["candidates"][candidate], authority)
+        science_checks = verify_scientific_equality(records, canonical_candidate, authority)
         result[candidate] = {
             "summary": summarize(records),
             "by_corruption_family": {family: summarize([row for row in records if row["family"] == family]) for family in FAMILIES},
@@ -414,15 +492,15 @@ def build_artifact(root: Path = ROOT) -> dict[str, Any]:
         "analysis_script": script.relative_to(ROOT).as_posix(),
         "analysis_script_sha256": hashlib.sha256(resident_bytes(script)).hexdigest(),
         "runtime": {"python": platform.python_version(), "numpy": np.__version__},
-        "scope": "Retrospective descriptive interval inclusion on already-opened dependent CIFAR-10-C cells; no fitting or new data access.",
+        "scope": "Retrospective descriptive interval inclusion from canonical three-way cross-fit authorities on already-opened dependent CIFAR-10-C cells; no fitting or new data access.",
         "calibration": {
-            "entry_point": "kga.policy.decide_kga",
-            "method": "leave-one-cell-out empirical order-statistic calibration",
+            "entry_point": "canonical_panel_results.json per-file current_cell_authority",
+            "method": "cell-outcome-disjoint fit/calibrate/score cross-fit with exact-rank residual calibration",
             "alpha": ALPHA,
             "nominal_inclusion_target": 1 - ALPHA,
-            "pool": "other 431 cells of the same candidate and run seed; unchanged across family summaries",
-            "historical_fields_ignored": ["eps_conformal", "kga_decision"],
-            "reuse_warning": "LOO residual pools reuse the same scored collection. Aggregate inclusion is strongly rank-constrained, not independent validation of calibration.",
+            "pool": "per-fold residual-calibration subset disjoint from both estimator-fit and score cells; unchanged across family summaries",
+            "historical_fields_ignored": ["b_hat", "eps_conformal", "kga_decision"],
+            "reuse_warning": "The opened dependent grid is reused for retrospective cross-fit diagnostics; this is not independent calibration validation.",
         },
         "units": {
             "record": "candidate x run seed x controlled condition",
@@ -430,7 +508,7 @@ def build_artifact(root: Path = ROOT) -> dict[str, Any]:
             "groups": "3 candidates; 6 corruption families each; 2160 cells/candidate; 360 cells/family/candidate",
             "weighting": "each saved cell has equal weight; no aggregation across candidate policies",
             "outcome": "measured cell accuracy benefit B = adapted accuracy - frozen accuracy; not population benefit",
-            "interval_inclusion": "abs(b_hat - B) <= epsilon, including equality and all +infinity intervals",
+            "interval_inclusion": "abs(current cross-fit prediction - B) <= radius, including equality and all +infinity intervals",
             "interval_width": "2 * epsilon (full, unclipped width), accuracy proportion units, not percentage points",
             "commitment": "(ADAPT + FREEZE) / all cells; different from interval inclusion and adapt rate",
             "false_adapt": "ADAPT and B <= 0; marginal denominator all cells; conditional denominator ADAPT cells",
@@ -469,7 +547,7 @@ def render_latex(artifact: dict[str, Any]) -> str:
     lines = [
         "% Generated by build_current_policy_interval_diagnostics.py; do not edit.",
         "% RETROSPECTIVE dependent-cell description, not independent calibration validation.",
-        "% LOO pool reuse strongly rank-constrains pooled inclusion. All rates are fractions.",
+        "% Canonical three-way cross-fit intervals on an opened dependent grid. All rates are fractions.",
         "% Full widths are 2*epsilon, unclipped, in accuracy proportion units. -- is undefined.",
         r"\begin{tabular}{lrrrrrrrr}",
         r"\toprule",
@@ -490,7 +568,7 @@ def render_groups_latex(artifact: dict[str, Any]) -> str:
     lines = [
         "% Generated by build_current_policy_interval_diagnostics.py; do not edit.",
         "% RETROSPECTIVE family diagnostics; no within-family recalibration is performed.",
-        "% Pooled LOO inclusion is rank-constrained, not independent calibration validation.",
+        "% Canonical three-way cross-fit inclusion is not independent calibration validation.",
         "% All rates are fractions; width is the mean full 2*epsilon in accuracy units.",
         "% Conditional errors include exact false-action/action counts; -- is undefined.",
         r"\begin{tabular}{llrrrrll}",

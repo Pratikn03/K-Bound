@@ -33,9 +33,11 @@ sync = _load_sync_module()
 
 
 EXPECTED_BINDINGS = {
+    "crossfit": "kga/crossfit.py",
     "policy": "kga/policy.py",
     "certificate": "kga/certificate.py",
     "numeric_validation": "kga/_validation.py",
+    "reconciliation": "scripts/reconcile_result_panels.py",
     "preregistered_protocol": "research_lock/STRESS_GRID_MULTISEED_PROTOCOL_A_v1.yaml",
 }
 CONSUMERS = (manifest, sync)
@@ -52,7 +54,7 @@ def bindings(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> dict:
     return producer.current_policy_code_bindings()
 
 
-def test_producer_and_consumers_require_the_same_exact_four_bindings(bindings: dict) -> None:
+def test_producer_and_consumers_require_the_same_exact_bindings(bindings: dict) -> None:
     for module in (producer, *CONSUMERS):
         assert module.CURRENT_POLICY_BINDING_PATHS == EXPECTED_BINDINGS
     assert set(bindings) == set(EXPECTED_BINDINGS)

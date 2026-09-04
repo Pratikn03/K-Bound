@@ -27,6 +27,7 @@ def raw_records(n: int = 20, *, seed: int = 0, candidate: str = "tent") -> list[
                 "method": candidate,
                 "benchmark": "cifar10c",
                 "condition": f"{family}|synthetic{index}",
+                "Z": [float(index), 1.0],
                 "B": benefit,
                 "b_hat": benefit,
                 "a0": 0.5,
@@ -43,7 +44,7 @@ def raw_records(n: int = 20, *, seed: int = 0, candidate: str = "tent") -> list[
 def summary_record(benefit: float, prediction: float, radius: float, decision: str) -> dict:
     return {
         "B": benefit,
-        "b_hat": prediction,
+        "prediction": prediction,
         "epsilon": radius,
         "decision": decision,
         "a0": 0.5,
@@ -51,41 +52,92 @@ def summary_record(benefit: float, prediction: float, radius: float, decision: s
     }
 
 
-def test_replay_uses_released_loo_policy_and_ignores_historical_fields(monkeypatch) -> None:
-    original = diagnostics._released_policy()
-    calls = []
+def canonical_file(records: list[dict], prediction=None, radius=None, actions=None) -> dict:
+    prediction = prediction or [row["B"] for row in records]
+    radius = radius or [0.0] * len(records)
+    actions = actions or ["ADAPT" if value > 0 else "FREEZE" for value in prediction]
+    cells = [
+        {
+            "sample_id": diagnostics.controlled_grid_sample_id(
+                track="cifar10c", candidate=row["method"], seed=row["seed"], condition=row["condition"]
+            ),
+            "condition": row["condition"],
+            "prediction": prediction[index],
+            "radius": radius[index],
+            "action": actions[index],
+        }
+        for index, row in enumerate(records)
+    ]
+    digest = lambda value: hashlib.sha256(
+        (json.dumps(value, indent=2, sort_keys=True, allow_nan=False) + "\n").encode()
+    ).hexdigest()
+    return {
+        "seed": records[0]["seed"],
+        "current_prediction_sha256": digest(prediction),
+        "current_radius_sha256": digest(radius),
+        "current_action_sha256": digest(actions),
+        "current_cell_authority": {
+            "schema": "kbound-controlled-grid-cell-authority-v1",
+            "sha256": digest(cells),
+            "cells": cells,
+        },
+        "crossfit_protocol": {
+            "schema": "kga-controlled-grid-crossfit-v1",
+            "status": "ok",
+            "alpha": diagnostics.ALPHA,
+            "requested_n_folds": 5,
+            "calibration_fraction_target": 0.3,
+            "gbrt": {
+                "n_estimators": 250,
+                "max_depth": 2,
+                "learning_rate": 0.05,
+                "subsample": 0.8,
+                "random_state": 0,
+            },
+            "input_sha256": diagnostics.controlled_grid_input_sha256(
+                [row["Z"] for row in records], [row["B"] for row in records], [cell["sample_id"] for cell in cells]
+            ),
+            "implementation_sha256": {
+                name: hashlib.sha256((diagnostics.ROOT / relative).read_bytes()).hexdigest()
+                for name, relative in diagnostics.CODE_PATHS.items()
+                if name in {"crossfit", "policy", "certificate", "numeric_validation"}
+            },
+        },
+    }
 
-    def spy(prediction, benefit, **kwargs):
-        calls.append(kwargs)
-        return original(prediction, benefit, **kwargs)
 
-    monkeypatch.setattr(diagnostics, "_released_policy", lambda: spy)
+def test_replay_uses_canonical_crossfit_authority_and_ignores_historical_fields() -> None:
     raw = raw_records()
     unchanged = copy.deepcopy(raw)
-    replay = diagnostics.replay_records(raw, "tent", 0)
+    replay = diagnostics.replay_records(raw, "tent", 0, canonical_file(raw))
     assert raw == unchanged
-    assert calls == [{"alpha": 0.1, "calibration": "loo"}]
     assert len(replay) == len(raw)
     assert [row["epsilon"] for row in replay] == [0.0] * 20
     assert [row["decision"] for row in replay] == ["ADAPT", "FREEZE"] * 10
     assert all("eps_conformal" not in row and "kga_decision" not in row for row in replay)
 
 
+def test_replay_rejects_changed_b_even_when_accuracy_identity_still_holds() -> None:
+    raw = raw_records()
+    authority = canonical_file(raw)
+    raw[0]["B"] += 0.01
+    raw[0]["a_adapted"] += 0.01
+    with pytest.raises(ValueError, match="input hash mismatch"):
+        diagnostics.replay_records(raw, "tent", 0, authority)
+
+
 def test_family_summaries_keep_the_original_per_seed_calibration_pool() -> None:
     raw = raw_records(40)
-    for index, row in enumerate(raw):
-        row["b_hat"] += index / 512
-    replay = diagnostics.replay_records(raw, "tent", 0)
+    prediction = [row["B"] + index / 512 for index, row in enumerate(raw)]
+    radius = [0.1] * len(raw)
+    replay = diagnostics.replay_records(raw, "tent", 0, canonical_file(raw, prediction, radius))
     before = copy.deepcopy(replay)
-    original_epsilon, _ = diagnostics._released_policy()(
-        [row["b_hat"] for row in raw], [row["B"] for row in raw], alpha=0.1, calibration="loo"
-    )
     for family in ("contrast", "fog"):
         indexes = [index for index, row in enumerate(replay) if row["family"] == family]
         group = [replay[index] for index in indexes]
         result = diagnostics.summarize(group)
         assert result["n"] == 20
-        assert result["full_interval_width"]["mean"]["value"] == float(np.mean(2 * original_epsilon[indexes]))
+        assert result["full_interval_width"]["mean"]["value"] == float(np.mean(2 * np.asarray(radius)[indexes]))
     assert replay == before
 
 
@@ -138,8 +190,7 @@ def test_false_adapt_and_freeze_use_their_own_exposure_denominators() -> None:
 
 
 def test_infinite_intervals_are_counted_not_dropped_and_json_is_strict() -> None:
-    with pytest.warns(UserWarning):
-        replay = diagnostics.replay_records(raw_records(3), "tent", 0)
+    replay = [summary_record(value, value, float("inf"), "ABSTAIN") for value in (0.1, -0.1, 0.0)]
     result = diagnostics.summarize(replay)
     assert result["n"] == 3
     assert result["observed_inclusion"]["value"] == 1
@@ -155,13 +206,13 @@ def test_infinite_intervals_are_counted_not_dropped_and_json_is_strict() -> None
     assert "Infinity" not in encoded and "NaN" not in encoded
 
 
-@pytest.mark.parametrize("field", ["B", "b_hat", "a0", "a_adapted"])
+@pytest.mark.parametrize("field", ["B", "a0", "a_adapted"])
 @pytest.mark.parametrize("invalid", [None, float("nan"), float("inf"), float("-inf"), True, "0.125"])
 def test_unavailable_or_malformed_values_fail_without_dropping_a_cell(field, invalid) -> None:
     raw = raw_records()
     raw[0][field] = invalid
     with pytest.raises(ValueError, match="finite number"):
-        diagnostics.replay_records(raw, "tent", 0)
+        diagnostics.replay_records(raw, "tent", 0, canonical_file(raw_records()))
 
 
 @pytest.mark.parametrize(
@@ -181,16 +232,16 @@ def test_unit_and_score_contract_failures(field, invalid, message) -> None:
     raw = raw_records()
     raw[0][field] = invalid
     with pytest.raises(ValueError, match=message):
-        diagnostics.replay_records(raw, "tent", 0)
+        diagnostics.replay_records(raw, "tent", 0, canonical_file(raw_records()))
 
 
 def test_duplicate_cells_and_empty_pools_fail() -> None:
     raw = raw_records()
     raw[1]["condition"] = raw[0]["condition"]
     with pytest.raises(ValueError, match="duplicate condition"):
-        diagnostics.replay_records(raw, "tent", 0)
+        diagnostics.replay_records(raw, "tent", 0, canonical_file(raw_records()))
     with pytest.raises(ValueError, match="nonempty"):
-        diagnostics.replay_records([], "tent", 0)
+        diagnostics.replay_records([], "tent", 0, {})
     with pytest.raises(ValueError, match="empty group"):
         diagnostics.summarize([])
     with pytest.raises(ValueError, match="empty pool"):
@@ -247,7 +298,10 @@ def test_symlink_and_missing_inputs_are_not_followed_or_restored(tmp_path) -> No
 
 
 def scientific_fixture() -> tuple[list[dict], dict, dict]:
-    per_seed = [diagnostics.replay_records(raw_records(seed=seed), "tent", seed) for seed in (0, 1)]
+    per_seed = [
+        diagnostics.replay_records(raw_records(seed=seed), "tent", seed, canonical_file(raw_records(seed=seed)))
+        for seed in (0, 1)
+    ]
     rows = [row for group in per_seed for row in group]
     canonical = diagnostics.replay_score(rows)
     canonical["per_file"] = [
@@ -311,8 +365,8 @@ def test_latex_includes_every_candidate_and_group_with_undefined_rates() -> None
     assert groups.count(" & gaussian\\_noise & ") == 3
     assert "0.0000/-- & 0.0000/--" in latex
     assert "0/0; -- & 0/0; --" in groups
-    assert "RETROSPECTIVE" in latex and "rank-constrains" in latex
-    assert "RETROSPECTIVE" in groups and "rank-constrained" in groups
+    assert "RETROSPECTIVE" in latex and "three-way cross-fit" in latex
+    assert "RETROSPECTIVE" in groups and "three-way cross-fit" in groups
     for candidate in diagnostics.CANDIDATES:
         assert latex.count(f"{candidate.upper()} & ") == 1
         assert groups.count(f"{candidate.upper()} & ") == 6

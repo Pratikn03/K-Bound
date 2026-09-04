@@ -7,13 +7,16 @@ jobs:
 
 1. ``--import-from`` creates compact, source-hashed panel artifacts containing
    every field needed to replay the decision metrics.
-2. The default reconciliation pass applies the canonical exact-rank KGA rule
-   and writes one JSON/Markdown/LaTeX result panel.
+2. The default reconciliation pass refits the canonical cell-outcome-disjoint
+   three-way cross-fit from stored ``Z`` and ``B`` and writes one
+   JSON/Markdown/LaTeX result panel.
 
-No training is performed and no metric is accepted from prose.  PACS is the one
-partial exception: its archived seed summaries are validated against each
-other, but the saved per-cell files omit ``b_hat`` and calibration residuals,
-so PACS decisions cannot be replayed.  The output marks that limitation.
+The controlled-grid benefit estimator is refitted; stored ``b_hat``, radii, and
+actions remain historical provenance only.  No metric is accepted from prose.
+PACS is the one partial exception: its archived seed summaries are validated
+against each other, but the saved per-cell files omit ``b_hat`` and calibration
+residuals, so PACS decisions cannot be replayed.  The output marks that
+limitation.
 """
 
 from __future__ import annotations
@@ -37,6 +40,7 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
 from kga.certificate import split_conformal_rank_radius  # noqa: E402
+from kga.crossfit import controlled_grid_crossfit, controlled_grid_sample_id  # noqa: E402
 from kga.policy import decide_batch, decide_kga  # noqa: E402
 
 ALPHA = 0.10
@@ -703,11 +707,48 @@ def _grid_files(directory: Path) -> list[Path]:
     return sorted(directory.glob("per_condition_*.json"))
 
 
+def _grid_cell_ids(records: Sequence[dict[str, Any]]) -> list[str]:
+    """Derive stable unique IDs from immutable controlled-grid coordinates."""
+
+    cell_ids = []
+    for row in records:
+        identity = {
+            "track": row.get("benchmark") or row.get("dataset"),
+            "candidate": row.get("method") or row.get("candidate"),
+            "seed": row.get("seed"),
+            "condition": row.get("condition"),
+        }
+        if any(value is None or value == "" for value in identity.values()):
+            raise ValueError(f"controlled-grid cell identity is incomplete: {identity}")
+        cell_ids.append(controlled_grid_sample_id(**identity))
+    if len(cell_ids) != len(set(cell_ids)):
+        raise ValueError("duplicate controlled-grid cell identity")
+    return cell_ids
+
+
+def _values_sha256(values: Any) -> str:
+    array = np.asarray(values, dtype=object).tolist()
+    return hashlib.sha256(_json_bytes(array)).hexdigest()
+
+
 def _grid_panel(directory: Path, *, expected_seeds: set[int]) -> dict[str, Any]:
     files = _grid_files(directory)
     if not files:
         raise FileNotFoundError(f"no per-condition files under {directory}")
-    by_candidate: dict[str, list[tuple[list[dict[str, Any]], np.ndarray, np.ndarray, np.ndarray]]] = defaultdict(list)
+    by_candidate: dict[
+        str,
+        list[
+            tuple[
+                list[dict[str, Any]],
+                list[str],
+                np.ndarray,
+                np.ndarray,
+                np.ndarray,
+                dict[str, Any],
+                dict[str, Any],
+            ]
+        ],
+    ] = defaultdict(list)
     seen_seeds: dict[str, set[int]] = defaultdict(set)
     for path in files:
         records = _records(path)
@@ -719,9 +760,39 @@ def _grid_panel(directory: Path, *, expected_seeds: set[int]) -> dict[str, Any]:
             raise ValueError(f"duplicate candidate/seed panel: {candidate}/{seed}")
         seen_seeds[candidate].add(seed)
         benefit = np.asarray([row["B"] for row in records], dtype=float)
-        prediction = np.asarray([row["b_hat"] for row in records], dtype=float)
-        epsilon, decisions = decide_kga(prediction, benefit, alpha=ALPHA, calibration="loo")
-        by_candidate[candidate].append((records, prediction, epsilon, decisions))
+        features = np.asarray([row["Z"] for row in records], dtype=float)
+        cell_ids = _grid_cell_ids(records)
+        current = controlled_grid_crossfit(
+            features,
+            benefit,
+            sample_ids=cell_ids,
+            alpha=ALPHA,
+            n_folds=5,
+            n_estimators=250,
+            max_depth=2,
+            learning_rate=0.05,
+            subsample=0.8,
+            random_state=0,
+        )
+        historical_fields = {
+            field: {
+                "status": "historical_only",
+                "current_authority": False,
+                "sha256": _values_sha256([row.get(field) for row in records]),
+            }
+            for field in ("b_hat", "eps_conformal", "kga_decision")
+        }
+        by_candidate[candidate].append(
+            (
+                records,
+                cell_ids,
+                current.prediction,
+                current.radius,
+                current.action,
+                current.protocol,
+                historical_fields,
+            )
+        )
     if any(seeds != expected_seeds for seeds in seen_seeds.values()):
         raise ValueError(f"incomplete seed panel: {dict(seen_seeds)}; expected {sorted(expected_seeds)}")
     candidates: dict[str, dict[str, Any]] = {}
@@ -735,13 +806,23 @@ def _grid_panel(directory: Path, *, expected_seeds: set[int]) -> dict[str, Any]:
         candidate_epsilons: list[float] = []
         candidate_decisions: list[str] = []
         per_file: list[dict[str, Any]] = []
-        for records, prediction, epsilon, decisions in sorted(
+        for records, cell_ids, prediction, epsilon, decisions, protocol, historical_fields in sorted(
             by_candidate[candidate], key=lambda item: int(item[0][0]["seed"])
         ):
             candidate_records.extend(records)
             candidate_predictions.extend(float(value) for value in prediction)
             candidate_epsilons.extend(float(value) for value in epsilon)
             candidate_decisions.extend(str(value) for value in decisions)
+            current_cells = [
+                {
+                    "sample_id": cell_ids[index],
+                    "condition": str(row["condition"]),
+                    "prediction": float(prediction[index]),
+                    "radius": float(epsilon[index]),
+                    "action": str(decisions[index]),
+                }
+                for index, row in enumerate(records)
+            ]
             per_file.append(
                 {
                     "seed": int(records[0]["seed"]),
@@ -750,6 +831,16 @@ def _grid_panel(directory: Path, *, expected_seeds: set[int]) -> dict[str, Any]:
                     "epsilon_mean": float(np.mean(epsilon)),
                     "epsilon_max": float(np.max(epsilon)),
                     "score": score_decisions(records, decisions),
+                    "current_prediction_sha256": _values_sha256(prediction),
+                    "current_radius_sha256": _values_sha256(epsilon),
+                    "current_action_sha256": _values_sha256(decisions),
+                    "current_cell_authority": {
+                        "schema": "kbound-controlled-grid-cell-authority-v1",
+                        "sha256": hashlib.sha256(_json_bytes(current_cells)).hexdigest(),
+                        "cells": current_cells,
+                    },
+                    "crossfit_protocol": protocol,
+                    "historical_fields": historical_fields,
                 }
             )
         score = _annotate_score(candidate_records, candidate_decisions)
@@ -770,11 +861,21 @@ def _grid_panel(directory: Path, *, expected_seeds: set[int]) -> dict[str, Any]:
     aggregate["kappa_sweep"] = _kappa_sweep(all_records, all_predictions, all_epsilons)
     aggregate["radius_diagnostics"] = _radius_diagnostics(all_records, all_predictions, all_epsilons, all_decisions)
     return {
-        "rule": "per-candidate, per-seed exact-rank leave-one-condition-out KGA",
+        "rule": "per-candidate, per-seed deterministic cell-outcome-disjoint fit/calibrate/score cross-fit KGA",
         "calibration_scope": (
-            "cross-fitted empirical residual calibration; direct self-inclusion removed, "
-            "exchangeability and independence not established"
+            "cross-fitted empirical residual calibration on a disjoint complement subset; "
+            "exchangeability is not established"
         ),
+        "result_scope": "retrospective, opened, dependent, and constructed",
+        "label_flow_limitation": (
+            "the three-way split blocks each scored B_i from its own prediction, radius, and action; "
+            "it does not turn this opened constructed grid into untouched evidence"
+        ),
+        "historical_field_policy": {
+            "fields": ["b_hat", "eps_conformal", "kga_decision"],
+            "status": "historical_only",
+            "current_authority": False,
+        },
         "alpha": ALPHA,
         "seeds": sorted(expected_seeds),
         "seed_scope": (
@@ -942,7 +1043,7 @@ def reconcile_missing_locked_panels() -> dict[str, Any]:
                 "source_provenance": _source_provenance(camelyon_ood_source),
             },
             "b_v2_diagnostic": {
-                "protocol": "three-seed, 36-condition-per-adapter within-seed LOO stress grid",
+                "protocol": "three-seed, 36-condition-per-adapter within-seed three-way cross-fit stress grid",
                 "panel": camelyon_b,
                 "claim_scope": (
                     "diagnostic cross-fitted stress result only; it is not an untouched "
@@ -1112,7 +1213,7 @@ def _panel_rows(result: dict[str, Any]) -> list[dict[str, Any]]:
                 "name": f"ImageNet-C {candidate.upper()}",
                 "score": imagenetc[candidate],
                 "replay": "yes",
-                "scope": "corrected LOO grid",
+                "scope": "cell-outcome-disjoint three-way cross-fit grid",
             }
         )
     pacs = result["panels"]["pacs"]["pooled_domain_seed_mean"]
@@ -1202,7 +1303,7 @@ def render_markdown(result: dict[str, Any]) -> str:
             "",
             "- Office-Home is numerically reconciled from its saved per-condition records, but remains descriptive because no predeclared uniform A7 full-fit-versus-LOO stability bound was archived.",
             "- iWildCam is withheld from the release-level numerical panel because its archived records used sklearn macro-F1 rather than the official WILDS metric. Historical and cross-fitted values under that invalid contract remain hash-locked for audit only; a pinned official-metric rerun is required.",
-            "- ImageNet-C is recomputed with exact-rank, leave-one-condition-out radii. It is a corrected controlled-grid panel, not a natural-shift claim.",
+            "- ImageNet-C is recomputed with cell-outcome-disjoint three-way cross-fit exact-rank radii. It is a corrected controlled-grid panel, not a natural-shift claim.",
             "- PACS seed summaries agree with the three-seed aggregate, but the absent `b_hat` and calibration residuals prevent decision replay.",
             "- ImageNet-R is replayed per backbone and seed. Its aggregate is an architecture-panel diagnostic, not one deployable policy and not a beats-both result.",
             "- CIFAR-10-C uses the completed SAR rebuild alongside the original Tent/EATA stress-grid records. Candidate scores are separate policies; their aggregate is diagnostic only.",

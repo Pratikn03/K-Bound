@@ -45,9 +45,11 @@ Which function should I call?
   :class:`Decision`.  The primitive.
 * :func:`decide_batch` -- vectorised :func:`decide` over arrays of
   ``delta_hat`` / ``epsilon`` (``epsilon`` may be scalar or per-cell).
-* :func:`decide_kga`  -- the canonical controlled-grid **replay rule**: stored
-  per-cell benefit estimates and realised benefits in, decisions out, with a
-  leave-one-out-of-pool exact-rank residual radius. The seven
+* :func:`decide_kga`  -- the historical controlled-grid replay compatibility
+  rule: stored per-cell benefit estimates and realised benefits in, decisions
+  out, with a leave-one-out-of-pool exact-rank residual radius. The canonical
+  refitted controlled-grid path is :func:`kga.crossfit.controlled_grid_crossfit`.
+  The seven
   copy-pasted ``decide_kga`` forks that produced the published numbers used an
   interpolated ``np.quantile`` over a pool that included the scored cell, and
   they are gone.
@@ -171,7 +173,7 @@ def decide(certificate: Certificate, alpha: float | None = None) -> Decision:
 
 
 # ---------------------------------------------------------------------------
-# The canonical controlled-grid replay path (fix-queue item 15)
+# Historical stored-prediction controlled-grid replay compatibility
 # ---------------------------------------------------------------------------
 #: Calibration conventions accepted by :func:`decide_kga`.
 CALIBRATIONS = ("loo", "in_pool")
@@ -239,11 +241,13 @@ def decide_kga(
     alpha: float = 0.1,
     calibration: str = "loo",
 ):
-    """Canonical controlled-grid replay: stored ``b_hat``/``B`` in, decisions out.
+    """Historical controlled-grid replay: stored ``b_hat``/``B`` in, decisions out.
 
-    This is the single entry point every driver, re-scoring script and table
-    generator in the repository must call (fix-queue item 15).  It implements
-    exactly one radius rule.  It has exactly one switch, ``calibration``, and
+    New controlled-grid results must use
+    :func:`kga.crossfit.controlled_grid_crossfit`, which refits from ``Z`` and
+    ``B`` with the scored outcome absent from both estimator fitting and
+    residual calibration.  This compatibility function implements exactly one
+    stored-prediction radius rule.  It has one switch, ``calibration``, and
     that switch is **not** a statistical option: its non-default value replays an
     archived pre-fix artifact and is forbidden for a new number (see below).
     There is no clamp mode and no interpolated mode, at any setting:

@@ -441,8 +441,9 @@ def split_conformal_rank_radius(
     docstring promised ``1 - alpha``.  **There is no clamp mode any more**: the
     function returns ``+inf`` (or raises), which :func:`kga.policy.decide` turns
     into ABSTAIN -- the honest answer, and the one three sibling scripts in this
-    repo (``ablation_exactrank.py``, ``official_baselines_headtohead.py``,
-    ``reproduce_headlines.py``) and the project's own validator
+    repo (``ablation_exactrank.py`` and ``official_baselines_headtohead.py``)
+    and the project's maintained claim validator
+    (``src/scripts/validate_manuscript_claims.py``) and theory validator
     (``theory_v2/val_multicandidate.py:93-98``) already give.  The superseded
     clamped value is available only from the separately named
     :func:`legacy_clamped_radius`, which no decision path calls.

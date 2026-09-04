@@ -2,21 +2,45 @@
 
 from __future__ import annotations
 
+import copy
 import hashlib
+import importlib.util
 import json
 from pathlib import Path
 
 import numpy as np
 import pytest
 
-from kga.policy import decide_kga
-
 ROOT = Path(__file__).resolve().parents[1]
 PANEL_ROOT = ROOT / "experiments/kbound/results/reconciled_panels_v1"
 
 
+def _load_script(path: Path, name: str):
+    spec = importlib.util.spec_from_file_location(name, path)
+    assert spec is not None and spec.loader is not None
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
+
+
+SYNC = _load_script(ROOT / "scripts/sync_reconciled_panels.py", "three_source_sync")
+COMPAT = _load_script(
+    ROOT / "docs/research/kbound/scripts/build_results_source_compat.py",
+    "three_source_compat",
+)
+RECON = _load_script(ROOT / "scripts/reconcile_result_panels.py", "controlled_grid_reconciliation")
+
+
 def load(name: str) -> dict:
     return json.loads((PANEL_ROOT / name).read_text())
+
+
+def test_sync_loader_rejects_non_object_json(tmp_path: Path) -> None:
+    source = tmp_path / "not-an-object.json"
+    source.write_text("[]\n", encoding="utf-8")
+
+    with pytest.raises(ValueError, match="JSON object"):
+        SYNC._load(source)
 
 
 def test_compact_sources_are_complete_and_hash_locked() -> None:
@@ -68,10 +92,11 @@ def test_reconciled_conflicts_and_negative_panels_are_locked() -> None:
     assert reconciliation["status"] == "superseded_not_promotable"
 
     sar = panels["imagenetc"]["panel"]["candidates"]["sar"]
-    assert np.isclose(sar["regret"]["kga"], 0.028892592368302522)
-    assert sar["false_adapt_count"] == 1
+    assert sar["false_adapt_count"] == 0
     assert sar["point_beats_both"]
     assert not sar["seed_inference"]["ci_robust_beats_both"]
+    assert all(row["crossfit_protocol"]["status"] == "ok" for row in sar["per_file"])
+    assert all(row["historical_fields"]["b_hat"]["current_authority"] is False for row in sar["per_file"])
 
     pacs = panels["pacs"]
     assert pacs["aggregate_matches_seed_files"]
@@ -79,36 +104,48 @@ def test_reconciled_conflicts_and_negative_panels_are_locked() -> None:
 
     imagenet_r = panels["imagenet_r"]["panel"]["architecture_panel_aggregate"]
     assert imagenet_r["n"] == 480
-    assert np.isclose(imagenet_r["regret"]["kga"], 0.014968749999999998)
     assert imagenet_r["regret"]["kga"] > imagenet_r["regret"]["always_adapt"]
     assert not imagenet_r["point_beats_both"]
     kappa_one = next(row for row in imagenet_r["kappa_sweep"] if row["kappa"] == 1.0)
     assert np.isclose(kappa_one["regret"], imagenet_r["regret"]["kga"])
     assert np.isclose(kappa_one["yield"], imagenet_r["decision_coverage"])
-    worse = sum(
-        row["regret"]["kga"] > row["regret"]["always_adapt"]
+    assert all(
+        file_row["crossfit_protocol"]["status"] == "ok"
         for row in panels["imagenet_r"]["panel"]["candidates"].values()
+        for file_row in row["per_file"]
     )
-    assert worse == 8
 
     imagenetc = panels["imagenetc"]["panel"]["architecture_panel_aggregate"]
     assert np.isclose(imagenetc["radius_diagnostics"]["yield"], imagenetc["decision_coverage"])
-    assert np.isclose(imagenetc["radius_diagnostics"]["eps_mean"], 0.05320361619896232)
+    assert imagenetc["radius_diagnostics"]["eps_mean"] > 0.0
 
 
-def test_imagenetc_source_replays_through_canonical_rule() -> None:
+def test_imagenetc_source_is_bound_to_canonical_crossfit_authority() -> None:
     source = load("source/imagenetc/per_condition_imagenetc_sar_seed0.json")
     records = source["records"]
-    prediction = np.asarray([row["b_hat"] for row in records], dtype=float)
+    features = np.asarray([row["Z"] for row in records], dtype=float)
     benefit = np.asarray([row["B"] for row in records], dtype=float)
-    epsilon, decision = decide_kga(prediction, benefit, alpha=0.1, calibration="loo")
-
     generated = load("canonical_panel_results.json")["panels"]["imagenetc"]["panel"]
     seed0 = generated["candidates"]["sar"]["per_file"][0]
-    assert np.isclose(seed0["epsilon_min"], epsilon.min())
-    assert np.isclose(seed0["epsilon_mean"], epsilon.mean())
-    assert np.isclose(seed0["epsilon_max"], epsilon.max())
-    assert seed0["score"]["adapt_count"] == int(np.sum(decision == "ADAPT"))
+    protocol = seed0["crossfit_protocol"]
+    compact_sha256 = lambda value: hashlib.sha256(  # noqa: E731 - compact independent hash oracle
+        json.dumps(value, sort_keys=True, separators=(",", ":"), allow_nan=False).encode("utf-8")
+    ).hexdigest()
+    assert protocol["input_sha256"] == {
+        "Z": compact_sha256(features.tolist()),
+        "B": compact_sha256(benefit.tolist()),
+        "sample_ids": compact_sha256(RECON._grid_cell_ids(records)),
+    }
+    assert protocol["software_versions"] == {
+        "python": "3.12.13",
+        "numpy": "2.4.4",
+        "scikit_learn": "1.8.0",
+    }
+    cells = seed0["current_cell_authority"]["cells"]
+    assert hashlib.sha256(
+        (json.dumps(cells, indent=2, sort_keys=True, allow_nan=False) + "\n").encode("utf-8")
+    ).hexdigest() == seed0["current_cell_authority"]["sha256"]
+    assert seed0["historical_fields"]["b_hat"]["current_authority"] is False
 
 
 def test_missing_locked_tracks_use_exact_rank_and_retain_negative_scope() -> None:
@@ -136,7 +173,7 @@ def test_missing_locked_tracks_use_exact_rank_and_retain_negative_scope() -> Non
     assert not camelyon["ood"]["headline_promotion"]["eligible"]
 
     b_v2 = camelyon["b_v2_diagnostic"]
-    assert b_v2["panel"]["candidates"]["sar"]["point_beats_both"]
+    assert not b_v2["panel"]["candidates"]["sar"]["point_beats_both"]
     assert not b_v2["headline_promotion"]["eligible"]
     assert "diagnostic" in b_v2["claim_scope"]
 
@@ -247,6 +284,206 @@ def test_generated_paper_manifest_matches_every_cifar_candidate() -> None:
         assert "one archived checkpoint/protocol" in paper["inference_scope"]
 
 
+def test_three_source_oof_uses_diagnostic_claim_authority() -> None:
+    manifest = json.loads((ROOT / "docs/research/kbound/paper/generated/kbound_result_manifest.json").read_text())
+    ledger = json.loads((ROOT / "docs/research/kbound/claim_ledger.json").read_text())
+    row = manifest["tracks"]["three_source_oof"]
+    authority = next(claim for claim in ledger["claims"] if claim["claim_id"] == "KB-CLAIM-024")
+    historical_wording = (
+        "historical researcher-constructed routing aggregate; rerun required under reconciled per-track decisions"
+    )
+
+    assert row["claim_id"] == "KB-CLAIM-024"
+    assert row["claim_status"] == "diagnostic"
+    assert row["status"] == "historical_policy_only"
+    assert row["current_policy_authority"] is False
+    assert row["numeric_release_eligible"] is False
+    assert row["headline_promotion_eligible"] is False
+    assert row["policy_synchronized"] is False
+    assert "seal" not in row
+    assert row["historical_audit_seal"].startswith(
+        "docs/research/kbound/archive/superseded_empirical_authorities_2026-09-02/retired_tree/"
+    )
+    assert row["historical_audit_seal"].endswith("#three_source_oof")
+    assert authority["claim_text"] == historical_wording
+    assert authority["allowed_wording"] == historical_wording
+    assert row["verdict"] == authority["claim_text"]
+    lowered = row["verdict"].lower()
+    assert "beats-both" not in lowered
+    assert "natural-shift" not in lowered
+    assert "transfer result" not in lowered
+
+
+def test_three_source_oof_helper_overwrites_stale_row_from_synthetic_authority() -> None:
+    stale = {
+        "regret": [0.0059117, 0.0632323, 0.0342043],
+        "false_adapt": 0.0,
+        "n_conditions": 143,
+        "verdict": "stale CI win wording",
+        "source": "historical/source.json",
+        "caveat": "historical scorer caveat",
+        "seal": "experiments/kbound/results/nine_track_lock_v1/LOCK_SEAL.json#three_source_oof",
+    }
+    original_numeric_and_evidence = {
+        key: copy.deepcopy(stale[key]) for key in ("regret", "false_adapt", "n_conditions", "source", "caveat")
+    }
+    authority = {
+        "claim_id": "KB-CLAIM-024",
+        "status": "diagnostic",
+        "claim_text": (
+            "historical researcher-constructed routing aggregate; rerun required under reconciled per-track decisions"
+        ),
+        "allowed_wording": (
+            "historical researcher-constructed routing aggregate; rerun required under reconciled per-track decisions"
+        ),
+        "forbidden_wording": ["natural-shift win", "transfer result"],
+    }
+
+    SYNC._sync_three_source_oof(stale, {"claims": [authority]})
+
+    assert {key: stale[key] for key in original_numeric_and_evidence} == original_numeric_and_evidence
+    assert stale["verdict"] == authority["claim_text"]
+    assert stale["claim_id"] == authority["claim_id"]
+    assert stale["claim_status"] == "diagnostic"
+    assert stale["status"] == "historical_policy_only"
+    assert stale["current_policy_authority"] is False
+    assert stale["numeric_release_eligible"] is False
+    assert stale["headline_promotion_eligible"] is False
+    assert stale["release_eligible_win"] is False
+    assert stale["policy_synchronized"] is False
+    assert "seal" not in stale
+    assert stale["historical_audit_seal"].startswith(
+        "docs/research/kbound/archive/superseded_empirical_authorities_2026-09-02/retired_tree/"
+    )
+
+    first = copy.deepcopy(stale)
+    SYNC._sync_three_source_oof(stale, {"claims": [authority]})
+    assert stale == first
+
+
+def test_three_source_claim_normalization_then_projection_is_idempotent() -> None:
+    ledger = {
+        "claims": [
+            {
+                "claim_id": "KB-CLAIM-024",
+                "claim_text": "This aggregate beats both fixed policies.",
+                "status": "supported",
+                "allowed_wording": "promoted win",
+                "forbidden_wording": [],
+                "supporting_artifacts": ["historical/source.json"],
+            }
+        ]
+    }
+    row = {
+        "regret": [0.0059117, 0.0632323, 0.0342043],
+        "false_adapt": 0.0,
+        "n_conditions": 143,
+        "verdict": "stale CI win wording",
+        "source": "historical/source.json",
+    }
+
+    SYNC._sync_three_source_claim_authority(ledger)
+    SYNC._sync_three_source_oof(row, ledger)
+    first = copy.deepcopy((ledger, row))
+    SYNC._sync_three_source_claim_authority(ledger)
+    SYNC._sync_three_source_oof(row, ledger)
+
+    authority = ledger["claims"][0]
+    assert authority["claim_text"] == SYNC.THREE_SOURCE_HISTORICAL_WORDING
+    assert authority["allowed_wording"] == authority["claim_text"]
+    assert authority["status"] == "diagnostic"
+    assert row["verdict"] == authority["claim_text"]
+    assert (ledger, row) == first
+
+
+@pytest.mark.parametrize(
+    "authority",
+    [
+        {"claim_id": "KB-CLAIM-024", "status": "supported", "allowed_wording": "win"},
+        {"claim_id": "KB-CLAIM-024", "status": "diagnostic"},
+        {
+            "claim_id": "KB-CLAIM-024",
+            "status": "diagnostic",
+            "allowed_wording": "not a historical aggregate",
+        },
+        {
+            "claim_id": "KB-CLAIM-024",
+            "status": "diagnostic",
+            "claim_text": "This constructed aggregate beats both fixed policies.",
+            "allowed_wording": (
+                "historical researcher-constructed routing aggregate; rerun required under "
+                "reconciled per-track decisions"
+            ),
+            "forbidden_wording": ["beats both"],
+        },
+        {
+            "claim_id": "KB-CLAIM-024",
+            "status": "diagnostic",
+            "claim_text": (
+                "historical researcher-constructed routing aggregate; rerun required under "
+                "reconciled per-track decisions; CI beats both"
+            ),
+            "allowed_wording": (
+                "historical researcher-constructed routing aggregate; rerun required under "
+                "reconciled per-track decisions; CI beats both"
+            ),
+            "forbidden_wording": ["promoted beats-both claim", "natural-shift win", "transfer result"],
+        },
+    ],
+)
+def test_three_source_oof_helper_rejects_malformed_or_non_diagnostic_authority(authority) -> None:
+    with pytest.raises(ValueError, match="KB-CLAIM-024 authority"):
+        SYNC._sync_three_source_oof({"verdict": "stale"}, {"claims": [authority]})
+
+
+def test_results_source_compat_projects_normalized_track_without_source_tree_write(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    normalized = {
+        "regret": [0.0059117, 0.0632323, 0.0342043],
+        "false_adapt": 0.0,
+        "n_conditions": 143,
+        "verdict": "stale CI win wording",
+        "source": "historical/source.json",
+        "caveat": "historical scorer caveat",
+        "seal": "experiments/kbound/results/nine_track_lock_v1/LOCK_SEAL.json#three_source_oof",
+    }
+    authority = {
+        "claim_id": "KB-CLAIM-024",
+        "status": "diagnostic",
+        "claim_text": (
+            "historical researcher-constructed routing aggregate; rerun required under reconciled per-track decisions"
+        ),
+        "allowed_wording": (
+            "historical researcher-constructed routing aggregate; rerun required under reconciled per-track decisions"
+        ),
+        "forbidden_wording": [],
+    }
+    SYNC._sync_three_source_oof(normalized, {"claims": [authority]})
+
+    table_path = tmp_path / "docs/research/kbound/paper/generated/kbound_result_manifest.json"
+    claims_path = tmp_path / "docs/research/kbound/RESULT_MANIFEST.json"
+    output_path = tmp_path / "docs/research/kbound/results_source.json"
+    source_tree_output = ROOT / "docs/research/kbound/results_source.json"
+    source_tree_bytes = source_tree_output.read_bytes()
+    table_path.parent.mkdir(parents=True)
+    claims_path.parent.mkdir(parents=True, exist_ok=True)
+    table_path.write_text(
+        json.dumps({"regenerated_utc": "test", "alpha": 0.1, "tracks": {"three_source_oof": normalized}})
+    )
+    claims_path.write_text("{}")
+    monkeypatch.setattr(COMPAT, "ROOT", tmp_path)
+    monkeypatch.setattr(COMPAT, "TABLE", table_path)
+    monkeypatch.setattr(COMPAT, "CLAIMS", claims_path)
+    monkeypatch.setattr(COMPAT, "OUT", output_path)
+
+    COMPAT.main()
+
+    generated = json.loads(output_path.read_text())
+    assert generated["tracks"]["three_source_oof"] == normalized
+    assert source_tree_output.read_bytes() == source_tree_bytes
+
+
 def test_secondary_release_surfaces_match_counts_and_withhold_iwildcam() -> None:
     panels = load("canonical_panel_results.json")["panels"]
     expected = {
@@ -258,12 +495,8 @@ def test_secondary_release_surfaces_match_counts_and_withhold_iwildcam() -> None
         for candidate in ("tent", "eata")
     }
 
-    generated = json.loads(
-        (ROOT / "docs/research/kbound/paper/generated/kbound_result_manifest.json").read_text()
-    )
-    uniform = json.loads(
-        (ROOT / "docs/research/kbound/paper/generated/uniform_verdicts.json").read_text()
-    )
+    generated = json.loads((ROOT / "docs/research/kbound/paper/generated/kbound_result_manifest.json").read_text())
+    uniform = json.loads((ROOT / "docs/research/kbound/paper/generated/uniform_verdicts.json").read_text())
     metrics = json.loads(
         (ROOT / "docs/research/kbound/paper/generated/empirical_audit/decision_metrics.json").read_text()
     )
@@ -274,8 +507,7 @@ def test_secondary_release_surfaces_match_counts_and_withhold_iwildcam() -> None
     for candidate, title in (("tent", "Tent"), ("eata", "EATA")):
         assert generated["tracks"][f"cifar10c_{candidate}"]["decision_counts"] == expected[candidate]
         assert {
-            action: accounting[f"CIFAR-10-C {title}"][action]
-            for action in ("ADAPT", "FREEZE", "ABSTAIN")
+            action: accounting[f"CIFAR-10-C {title}"][action] for action in ("ADAPT", "FREEZE", "ABSTAIN")
         } == expected[candidate]
         assert uniform_rows[f"CIFAR-10-C {title}"]["decision_counts"] == expected[candidate]
         assert {
@@ -292,15 +524,11 @@ def test_secondary_release_surfaces_match_counts_and_withhold_iwildcam() -> None
     assert iwild_manifest["seal"] is None
     iwild_uniform = uniform_rows["iWildCam H v2"]
     assert iwild_uniform["numeric_release_eligible"] is False
-    assert all(
-        iwild_uniform[field] is None
-        for field in ("regret_kga", "regret_adapt", "regret_freeze", "FA_u")
-    )
+    assert all(iwild_uniform[field] is None for field in ("regret_kga", "regret_adapt", "regret_freeze", "FA_u"))
     iwild_metrics = metric_rows["iWildCam"]
     assert iwild_metrics["numeric_release_eligible"] is False
     assert all(
-        iwild_metrics["actions"][action]["count"] is None
-        and iwild_metrics["actions"][action]["rate"] is None
+        iwild_metrics["actions"][action]["count"] is None and iwild_metrics["actions"][action]["rate"] is None
         for action in ("adapt", "freeze", "abstain")
     )
 
@@ -319,12 +547,8 @@ def test_secondary_release_surfaces_match_counts_and_withhold_iwildcam() -> None
 
 def test_generated_current_policy_surfaces_match_canonical_exactly() -> None:
     panels = load("canonical_panel_results.json")["panels"]
-    generated = json.loads(
-        (ROOT / "docs/research/kbound/paper/generated/kbound_result_manifest.json").read_text()
-    )
-    uniform = json.loads(
-        (ROOT / "docs/research/kbound/paper/generated/uniform_verdicts.json").read_text()
-    )
+    generated = json.loads((ROOT / "docs/research/kbound/paper/generated/kbound_result_manifest.json").read_text())
+    uniform = json.loads((ROOT / "docs/research/kbound/paper/generated/uniform_verdicts.json").read_text())
     metrics = json.loads(
         (ROOT / "docs/research/kbound/paper/generated/empirical_audit/decision_metrics.json").read_text()
     )
@@ -412,22 +636,17 @@ def test_generated_current_policy_surfaces_match_canonical_exactly() -> None:
 
 
 def test_historical_policy_artifacts_cannot_imply_a_current_win() -> None:
-    generated = json.loads(
-        (ROOT / "docs/research/kbound/paper/generated/kbound_result_manifest.json").read_text()
-    )
-    uniform = json.loads(
-        (ROOT / "docs/research/kbound/paper/generated/uniform_verdicts.json").read_text()
-    )
+    generated = json.loads((ROOT / "docs/research/kbound/paper/generated/kbound_result_manifest.json").read_text())
+    uniform = json.loads((ROOT / "docs/research/kbound/paper/generated/uniform_verdicts.json").read_text())
     result_manifest = json.loads((ROOT / "docs/research/kbound/RESULT_MANIFEST.json").read_text())
+    current_tent_regret = load("canonical_panel_results.json")["panels"]["cifar10c"]["panel"]["candidates"]["tent"]["regret"]["kga"]
 
     head = generated["headtohead"]
     assert head["policy_synchronized"] is False
     assert head["current_policy_authority"] is False
     assert head["numeric_release_eligible"] is False
     assert head["release_eligible_win"] is False
-    assert head["current_exact_rank_reference"]["kga_regret"] == pytest.approx(
-        0.0016453700209105456
-    )
+    assert head["current_exact_rank_reference"]["kga_regret"] == pytest.approx(current_tent_regret)
     assert "0.0015851849" not in json.dumps(generated)
 
     cluster = generated["tracks"]["cifar10c_tent"]["historical_cluster_resampling"]
@@ -437,24 +656,20 @@ def test_historical_policy_artifacts_cannot_imply_a_current_win() -> None:
     assert cluster["convention"] == generated["ci_convention"]
     assert cluster["as_shipped_cell_out"]["comparisons"]["always_adapt"]["point"] > 0
 
-    current_cluster = generated["tracks"]["cifar10c_tent"][
-        "current_policy_family_sensitivity"
-    ]
+    current_cluster = generated["tracks"]["cifar10c_tent"]["current_policy_family_sensitivity"]
     assert current_cluster["current_policy_authority"] is True
     assert current_cluster["retrospective"] is True
     assert current_cluster["confirmatory"] is False
     assert current_cluster["pointwise_family_intervals_positive_vs_both"] is True
     assert current_cluster["within_candidate_posthoc_holm_rejects_both"] is True
     assert current_cluster["retrospective_six_contrast_holm_rejects_both"] is False
+    expected_holm = {"always_adapt": 0.140625, "always_freeze": 0.09375}
+    expected_posthoc = {"always_adapt": 0.046875, "always_freeze": 0.03125}
     for baseline in ("always_adapt", "always_freeze"):
         comparison = current_cluster["comparisons"][baseline]
         assert comparison["ci95_unadjusted_family_bootstrap"][0] > 0
-        assert comparison["p_value_holm_within_candidate_posthoc"] == pytest.approx(0.03125)
-        assert comparison[
-            "p_value_retrospective_holm_six_prospectively_named_contrasts"
-        ] == pytest.approx(
-            0.09375
-        )
+        assert comparison["p_value_holm_within_candidate_posthoc"] == pytest.approx(expected_posthoc[baseline])
+        assert comparison["p_value_retrospective_holm_six_prospectively_named_contrasts"] == pytest.approx(expected_holm[baseline])
 
     uniform_head = next(
         row for row in uniform["wave"] if row["track"] == "Mixed head-to-head (CIFAR-10-C Tent primary)"
@@ -468,18 +683,12 @@ def test_historical_policy_artifacts_cannot_imply_a_current_win() -> None:
         "CIFAR-10-C Tent cluster resampling",
         "Mixed head-to-head (CIFAR-10-C Tent primary)",
     ]
-    assert "no candidate passes the retrospective Holm gate over the six" in uniform[
-        "migration"
-    ]["note"]
+    assert "no candidate passes the retrospective Holm gate over the six" in uniform["migration"]["note"]
 
-    current_claim = next(
-        row for row in result_manifest["results"] if row["claim_id"] == "KB-CLAIM-010"
-    )
+    current_claim = next(row for row in result_manifest["results"] if row["claim_id"] == "KB-CLAIM-010")
     sensitivity = current_claim["metrics"]["current_policy_family_sensitivity"]
     assert sensitivity["confirmatory"] is False
-    assert sensitivity["candidates"]["tent"][
-        "retrospective_six_contrast_holm_rejects_both"
-    ] is False
+    assert sensitivity["candidates"]["tent"]["retrospective_six_contrast_holm_rejects_both"] is False
 
     claim = next(row for row in result_manifest["results"] if row["claim_id"] == "KB-CLAIM-026")
     assert claim["status"] == "diagnostic"
@@ -487,16 +696,119 @@ def test_historical_policy_artifacts_cannot_imply_a_current_win() -> None:
     assert claim["metrics"]["release_eligible_win"] is False
 
 
-def test_natural_diagnostic_inventory_preserves_evidence_boundaries() -> None:
-    canonical = load("canonical_panel_results.json")
-    panels = canonical["panels"]
+def test_sync_claim_text_is_derived_from_current_crossfit_authorities() -> None:
+    cluster = load("current_policy_cluster_inference.json")
+    assert SYNC._tent_holm_values(cluster) == (0.140625, 0.09375)
+    source = (ROOT / "scripts/sync_reconciled_panels.py").read_text()
+    for stale in (
+        "one false adaptation in 135 cells",
+        "ImageNet-C SAR exact-LOO panel",
+        "Camelyon17 B-v2 SAR has lower point regret than both fixed policies",
+        "0.09375 for both Tent contrasts",
+        "within-candidate two-contrast Holm p-values are 0.03125",
+    ):
+        assert stale not in source
+    assert "three-way cell-outcome-disjoint cross-fit" in source
+
+
+def test_current_crossfit_wording_reaches_release_and_dashboard_surfaces() -> None:
+    kbound = ROOT / "docs/research/kbound"
+    result_manifest = json.loads((kbound / "RESULT_MANIFEST.json").read_text())
+    policy_binding = result_manifest["reconciliation_source"]["current_policy_family_sensitivity"]
+    assert policy_binding["status"] == "retrospective_current_policy_family_sensitivity"
+
+    interpretation = next(
+        row for row in result_manifest["results"] if row["claim_id"] == "KB-CLAIM-010"
+    )["metrics"]["current_policy_family_sensitivity"]["release_interpretation"]
+    assert "0.140625 against always-adapt" in interpretation
+    assert "0.09375 against always-freeze" in interpretation
+    assert "against both baselines" not in interpretation
+
+    dashboard = json.loads((kbound / "dashboard/data/snapshot.json").read_text())
+    serialized_dashboard = json.dumps(dashboard)
+    assert "0 false adaptations in 135 cells" in serialized_dashboard
+    assert "both descriptive run-seed gap intervals have positive lower bounds" in serialized_dashboard
+    for stale in (
+        "both 0.09375",
+        "one false adaptation in 135 cells",
+        "freeze-side seed interval touches zero",
+    ):
+        assert stale not in serialized_dashboard
+
+    claim_manifest = (kbound / "KBOUND_SHORT_CLAIM_MANIFEST.md").read_text()
+    assert "cell-outcome-disjoint three-way cross-fit" in claim_manifest
+    assert "0.140625" in claim_manifest and "0.09375" in claim_manifest
+    assert "exact LOO replay" not in claim_manifest
+
+    producer_text = "\n".join(
+        (kbound / relative).read_text()
+        for relative in (
+            "scripts/build_result_manifest.py",
+            "scripts/build_dashboard_snapshot.py",
+        )
+    )
+    for stale in (
+        "0.09375 against both baselines",
+        "prospectively named contrasts are both 0.09375",
+        "one false adaptation in 135 cells",
+        "freeze-side seed interval touches zero",
+    ):
+        assert stale not in producer_text
+
+
+def test_current_controlled_grid_methods_and_imagenetc_reason_are_synchronized() -> None:
+    canonical = load("canonical_panel_results.json")["panels"]
     table = json.loads(
         (ROOT / "docs/research/kbound/paper/generated/kbound_result_manifest.json").read_text()
     )
     ledger = json.loads((ROOT / "docs/research/kbound/claim_ledger.json").read_text())
-    result_manifest = json.loads(
-        (ROOT / "docs/research/kbound/RESULT_MANIFEST.json").read_text()
+    decision_metrics = json.loads(
+        (ROOT / "docs/research/kbound/paper/generated/empirical_audit/decision_metrics.json").read_text()
     )
+    claims = {row["claim_id"]: row for row in ledger["claims"]}
+
+    sar = canonical["imagenetc"]["panel"]["candidates"]["sar"]
+    inference = sar["seed_inference"]
+    assert inference["descriptive_seed_bootstrap"]["both_lower_bounds_positive"] is True
+    assert all(
+        inference["descriptive_seed_bootstrap"]["gaps"][baseline]["ci95"][0] > 0
+        for baseline in ("always_adapt", "always_freeze")
+    )
+    assert inference["reason"] in table["tracks"]["imagenetc_sar"]["verdict"]
+    assert "touches zero" not in table["tracks"]["imagenetc_sar"]["verdict"]
+    assert inference["reason"] in claims["KB-CLAIM-011"]["claim_text"]
+
+    for track in ("cifar10c_tent", "imagenetc_sar", "imagenet_r_D", "camelyon17_b_v2_sar"):
+        method = table["tracks"][track]["quantile_rule"]
+        assert "three-way cell-outcome-disjoint" in method
+        assert "loo" not in method.lower() and "leave-one" not in method.lower()
+
+    validator = (
+        ROOT / "docs/research/kbound/scripts/validate_canonical_release_data.py"
+    ).read_text()
+    assert 'camelyon_b_v2.get("point_beats_both") is not False' in validator
+    assert 'cam_metrics.get("point_beats_both") is not False' in validator
+    for claim_id in ("KB-CLAIM-010", "KB-CLAIM-011", "KB-CLAIM-042", "KB-CLAIM-053"):
+        method = claims[claim_id]["calibration_method"]
+        assert "three-way cell-outcome-disjoint" in method
+        assert "loo" not in method.lower() and "leave-one" not in method.lower()
+    controlled_metric_rows = [
+        row for row in decision_metrics["tracks"]
+        if row.get("current_policy_authority") is True
+        and row.get("track", "").startswith(("CIFAR-10-C", "ImageNet-C", "ImageNet-R", "Camelyon17 B"))
+    ]
+    assert controlled_metric_rows
+    for row in controlled_metric_rows:
+        method = row["radius_rule"]
+        assert "three-way cell-outcome-disjoint" in method
+        assert "leave-one-out-of-pool" not in method
+
+def test_natural_diagnostic_inventory_preserves_evidence_boundaries() -> None:
+    canonical = load("canonical_panel_results.json")
+    panels = canonical["panels"]
+    table = json.loads((ROOT / "docs/research/kbound/paper/generated/kbound_result_manifest.json").read_text())
+    ledger = json.loads((ROOT / "docs/research/kbound/claim_ledger.json").read_text())
+    result_manifest = json.loads((ROOT / "docs/research/kbound/RESULT_MANIFEST.json").read_text())
     claims = {row["claim_id"]: row for row in ledger["claims"]}
     results = {row["claim_id"]: row for row in result_manifest["results"]}
 
@@ -508,23 +820,19 @@ def test_natural_diagnostic_inventory_preserves_evidence_boundaries() -> None:
         cam_score["regret"]["always_adapt"],
         cam_score["regret"]["always_freeze"],
     ]
-    assert cam_track["point_beats_both"] is True
+    assert cam_track["point_beats_both"] is False
     assert cam_track["ci_robust_beats_both"] is False
     assert cam_track["headline_promotion_eligible"] is False
     assert cam_track["untouched_target_domain_evaluation"] is False
     assert cam_track["independent_checkpoint_identities_recorded"] is False
     cam_metrics = results["KB-CLAIM-053"]["metrics"]
     assert cam_metrics["within_seed_diagnostic"] is True
-    assert cam_metrics["point_beats_both"] is True
+    assert cam_metrics["point_beats_both"] is False
     assert cam_metrics["ci_robust_beats_both"] is False
     assert cam_metrics["headline_promotion_eligible"] is False
 
-    office_replication_score = panels["officehome"]["test_stream_seed_replication"][
-        "exact_rank_transfer_score"
-    ]
-    office_replication = results["KB-CLAIM-020"]["metrics"][
-        "test_stream_seed_replication"
-    ]
+    office_replication_score = panels["officehome"]["test_stream_seed_replication"]["exact_rank_transfer_score"]
+    office_replication = results["KB-CLAIM-020"]["metrics"]["test_stream_seed_replication"]
     assert office_replication["n_decisions"] == office_replication_score["n"] == 54
     assert office_replication["decision_counts"] == {
         "ADAPT": 1,
@@ -537,9 +845,7 @@ def test_natural_diagnostic_inventory_preserves_evidence_boundaries() -> None:
     assert office_replication["headline_promotion_eligible"] is False
 
     fmow_rel = "experiments/kbound/results/fmow_protocol_L_v1/VERIFIED_FINDINGS.json"
-    poverty_rel = (
-        "experiments/kbound/results/poverty_protocol_L_dev/VERIFIED_FINDINGS.json"
-    )
+    poverty_rel = "experiments/kbound/results/poverty_protocol_L_dev/VERIFIED_FINDINGS.json"
     for claim_id, artifact in (
         (
             "KB-CLAIM-053",
@@ -551,18 +857,14 @@ def test_natural_diagnostic_inventory_preserves_evidence_boundaries() -> None:
         assert claims[claim_id]["status"] == "diagnostic"
         assert artifact in claims[claim_id]["supporting_artifacts"]
 
-    historical = ledger["reconciliation_source"][
-        "separate_historical_diagnostic_authorities"
-    ]
+    historical = ledger["reconciliation_source"]["separate_historical_diagnostic_authorities"]
     for key, artifact in (
         ("fmow_protocol_l", fmow_rel),
         ("poverty_protocol_l_development", poverty_rel),
     ):
         path = ROOT / artifact
         assert historical[key]["artifact"] == artifact
-        assert historical[key]["artifact_sha256"] == hashlib.sha256(
-            path.read_bytes()
-        ).hexdigest()
+        assert historical[key]["artifact_sha256"] == hashlib.sha256(path.read_bytes()).hexdigest()
         assert historical[key]["artifact_bytes"] == path.stat().st_size
         assert historical[key]["canonical_panel_member"] is False
         assert historical[key]["headline_promotion_eligible"] is False
@@ -584,16 +886,14 @@ def test_natural_diagnostic_inventory_preserves_evidence_boundaries() -> None:
 
 def test_phase1_release_keeps_long_manuscript_synchronized() -> None:
     kbound = ROOT / "docs/research/kbound"
-    active = "\n".join(
-        (kbound / name).read_text()
-        for name in ("kbound_submission.tex", "kbound_submission_body.tex")
-    )
+    active = "\n".join((kbound / name).read_text() for name in ("kbound_submission.tex", "kbound_submission_body.tex"))
+    normalized_active = " ".join(active.split())
     assert "0.001585" not in active
     assert "Verdict: WIN" not in active
     assert "cluster-robust for Tent" not in active
     assert "current-policy cluster inference is pending" not in active
     assert "retrospective" in active
-    assert "six prospectively named contrasts" in active
+    assert "six prospectively named candidate-by-baseline contrasts" in normalized_active
 
     tmlr = (kbound / "kbound_tmlr.tex").read_text()
     assert r"\input{kbound_submission_body}" in tmlr
@@ -605,7 +905,11 @@ def test_phase1_release_keeps_long_manuscript_synchronized() -> None:
     assert 'BUILD_LONG_TMLR="${BUILD_LONG_TMLR:-${BUILD_HISTORICAL_TMLR:-0}}"' in build
 
     result_audit = (kbound / "KBOUND_SHORT_RESULT_AUDIT.md").read_text()
-    assert "adjustment over the six prospectively named contrasts gives 0.09375" in result_audit
+    normalized_result_audit = " ".join(result_audit.split())
+    assert (
+        "adjustment over the six prospectively named contrasts gives 0.140625 against "
+        "always-adapt and 0.09375 against always-freeze"
+    ) in normalized_result_audit
     assert "earlier KGA policy" in result_audit
     assert "confidence intervals are unadjusted" in result_audit
 

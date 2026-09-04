@@ -17,5 +17,5 @@ def as_float_array(value: Any) -> np.ndarray:
     callers apply their existing per-cell unavailable policy. Unmasked values
     and the input shape are unchanged, and the caller's array is not mutated.
     """
-    array = np.ma.asarray(value, dtype=float)
+    array: np.ma.MaskedArray = np.ma.asarray(value, dtype=float)
     return np.asarray(array.filled(np.nan), dtype=float)

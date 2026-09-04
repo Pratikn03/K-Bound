@@ -1,11 +1,13 @@
 #!/usr/bin/env python3
 """Cluster-aware inference for the current exact-rank CIFAR-10-C policies.
 
-The canonical compact panel stores one row per condition and run seed.  Run
-seeds share an archived checkpoint, so they are nested repetitions rather than
-independent model draws.  This analysis therefore averages the paired regret
-gaps within corruption family and uses the six corruption families as the
-inference units.
+The canonical compact source stores one row per condition and run seed, while
+``canonical_panel_results.json`` stores the current cross-fitted per-cell
+prediction, radius, and action.  Historical ``b_hat`` and actions in the compact
+source are audit fields only.  Run seeds share an archived checkpoint, so they
+are nested repetitions rather than independent model draws.  This analysis
+therefore averages the paired regret gaps within corruption family and uses the
+six corruption families as the inference units.
 
 The reported contrast is always
 
@@ -39,10 +41,11 @@ import numpy as np
 ROOT = Path(__file__).resolve().parents[4]
 sys.path.insert(0, str(ROOT))
 
-from kga.policy import decide_kga  # noqa: E402
-
 DEFAULT_SOURCE_DIR = (
     ROOT / "experiments/kbound/results/reconciled_panels_v1/source/cifar10c"
+)
+DEFAULT_CANONICAL = (
+    ROOT / "experiments/kbound/results/reconciled_panels_v1/canonical_panel_results.json"
 )
 DEFAULT_OUTPUT = (
     ROOT
@@ -53,9 +56,11 @@ BASELINES = ("always_adapt", "always_freeze")
 CI_CONVENTION = "baseline_regret_minus_kga_regret; positive values favor KGA"
 PROTOCOL_LOCK = ROOT / "research_lock/STRESS_GRID_MULTISEED_PROTOCOL_A_v1.yaml"
 CURRENT_POLICY_BINDING_PATHS = {
+    "crossfit": "kga/crossfit.py",
     "policy": "kga/policy.py",
     "certificate": "kga/certificate.py",
     "numeric_validation": "kga/_validation.py",
+    "reconciliation": "scripts/reconcile_result_panels.py",
     "preregistered_protocol": PROTOCOL_LOCK.relative_to(ROOT).as_posix(),
 }
 SCHEMA = "kbound-current-policy-cluster-inference-v3"
@@ -70,6 +75,33 @@ def sha256(path: Path) -> str:
     return hashlib.sha256(path.read_bytes()).hexdigest()
 
 
+def _compact_sha256(value: Any) -> str:
+    return hashlib.sha256(
+        json.dumps(value, sort_keys=True, separators=(",", ":"), allow_nan=False).encode()
+    ).hexdigest()
+
+
+def controlled_grid_sample_id(*, track: str, candidate: str, seed: int, condition: str) -> str:
+    identity = {"track": track, "candidate": candidate, "seed": seed, "condition": condition}
+    payload = (json.dumps(identity, indent=2, sort_keys=True, allow_nan=False) + "\n").encode()
+    return f"grid-cell-sha256:{hashlib.sha256(payload).hexdigest()}"
+
+
+def controlled_grid_input_sha256(Z: Any, B: Any, sample_ids: list[str]) -> dict[str, str]:
+    return {
+        "Z": _compact_sha256(np.asarray(Z, dtype=float).tolist()),
+        "B": _compact_sha256(np.asarray(B, dtype=float).tolist()),
+        "sample_ids": _compact_sha256([str(value) for value in sample_ids]),
+    }
+
+
+def relative_or_name(path: Path) -> str:
+    try:
+        return path.relative_to(ROOT).as_posix()
+    except ValueError:
+        return path.name
+
+
 def current_policy_code_bindings() -> dict[str, dict[str, str]]:
     """Seal the executed replay primitives, including mask-aware coercion."""
     return {
@@ -81,16 +113,83 @@ def current_policy_code_bindings() -> dict[str, dict[str, str]]:
 def git_head() -> str | None:
     try:
         return subprocess.check_output(
-            ["git", "rev-parse", "HEAD"], cwd=ROOT, text=True
+            ["git", "rev-parse", "HEAD"], cwd=ROOT, text=True, timeout=2
         ).strip()
-    except (OSError, subprocess.CalledProcessError):
+    except (OSError, subprocess.CalledProcessError, subprocess.TimeoutExpired):
         return None
 
 
-def load_candidate(source_dir: Path, candidate: str) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
+def _canonical_candidate_files(canonical_path: Path, candidate: str) -> dict[int, dict[str, Any]]:
+    payload = json.loads(canonical_path.read_text(encoding="utf-8"))
+    try:
+        files = payload["panels"]["cifar10c"]["panel"]["candidates"][candidate]["per_file"]
+    except (KeyError, TypeError) as exc:
+        raise ValueError(f"canonical cell authority is missing candidate {candidate!r}") from exc
+    if not isinstance(files, list) or not files:
+        raise ValueError(f"canonical cell authority has no files for candidate {candidate!r}")
+    by_seed: dict[int, dict[str, Any]] = {}
+    for row in files:
+        seed = int(row["seed"])
+        if seed in by_seed:
+            raise ValueError(f"duplicate canonical run seed {seed} for {candidate}")
+        authority = row.get("current_cell_authority")
+        if not isinstance(authority, dict) or authority.get("schema") != "kbound-controlled-grid-cell-authority-v1":
+            raise ValueError(f"missing canonical per-cell authority for {candidate} seed {seed}")
+        cells = authority.get("cells")
+        if not isinstance(cells, list) or not cells:
+            raise ValueError(f"empty canonical per-cell authority for {candidate} seed {seed}")
+        expected_hash = hashlib.sha256(
+            (json.dumps(cells, indent=2, sort_keys=True, allow_nan=False) + "\n").encode("utf-8")
+        ).hexdigest()
+        if authority.get("sha256") != expected_hash:
+            raise ValueError(f"canonical per-cell authority hash mismatch for {candidate} seed {seed}")
+        predictions = [cell.get("prediction") for cell in cells]
+        radii = [cell.get("radius") for cell in cells]
+        actions = [cell.get("action") for cell in cells]
+        for name, values in (("prediction", predictions), ("radius", radii), ("action", actions)):
+            value_hash = hashlib.sha256(
+                (json.dumps(values, indent=2, sort_keys=True, allow_nan=False) + "\n").encode("utf-8")
+            ).hexdigest()
+            if row.get(f"current_{name}_sha256") != value_hash:
+                raise ValueError(f"canonical current-{name} hash mismatch for {candidate} seed {seed}")
+        protocol = row.get("crossfit_protocol")
+        if not isinstance(protocol, dict) or protocol.get("status") != "ok":
+            raise ValueError(f"canonical cross-fit protocol is not successful for {candidate} seed {seed}")
+        expected_settings = {
+            "schema": "kga-controlled-grid-crossfit-v1",
+            "alpha": 0.1,
+            "requested_n_folds": 5,
+            "calibration_fraction_target": 0.3,
+            "gbrt": {
+                "n_estimators": 250,
+                "max_depth": 2,
+                "learning_rate": 0.05,
+                "subsample": 0.8,
+                "random_state": 0,
+            },
+        }
+        if any(protocol.get(key) != value for key, value in expected_settings.items()):
+            raise ValueError(f"canonical cross-fit protocol settings mismatch for {candidate} seed {seed}")
+        expected_dependencies = {
+            name: sha256(ROOT / CURRENT_POLICY_BINDING_PATHS[name])
+            for name in ("crossfit", "certificate", "policy", "numeric_validation")
+        }
+        if protocol.get("implementation_sha256") != expected_dependencies:
+            raise ValueError(f"canonical cross-fit executable hashes mismatch for {candidate} seed {seed}")
+        by_seed[seed] = row
+    return by_seed
+
+
+def load_candidate(
+    source_dir: Path,
+    candidate: str,
+    *,
+    canonical_path: Path = DEFAULT_CANONICAL,
+) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
     files = sorted(source_dir.glob(f"per_condition_cifar10c_{candidate}_seed*.json"))
     if not files:
         raise ValueError(f"no canonical files found for candidate {candidate!r} in {source_dir}")
+    canonical_by_seed = _canonical_candidate_files(canonical_path, candidate)
 
     all_records: list[dict[str, Any]] = []
     sources: list[dict[str, Any]] = []
@@ -121,11 +220,31 @@ def load_candidate(source_dir: Path, candidate: str) -> tuple[list[dict[str, Any
         elif conditions != expected_conditions:
             raise ValueError(f"condition order/set differs in {path}")
 
-        benefit = np.asarray([row["B"] for row in records], dtype=float)
-        prediction = np.asarray([row["b_hat"] for row in records], dtype=float)
-        current_epsilon, current_decisions = decide_kga(
-            prediction, benefit, alpha=0.10, calibration="loo"
+        canonical_file = canonical_by_seed.get(seed)
+        if canonical_file is None:
+            raise ValueError(f"canonical per-cell authority is missing {candidate} seed {seed}")
+        authority = canonical_file["current_cell_authority"]
+        canonical_cells = authority["cells"]
+        canonical_conditions = tuple(str(cell["condition"]) for cell in canonical_cells)
+        if canonical_conditions != conditions:
+            raise ValueError(f"canonical per-cell condition order differs in {path}")
+
+        sample_ids = [
+            controlled_grid_sample_id(
+                track=str(row.get("benchmark") or row.get("dataset")),
+                candidate=str(row.get("method") or row.get("candidate")),
+                seed=int(row["seed"]),
+                condition=str(row["condition"]),
+            )
+            for row in records
+        ]
+        if sample_ids != [str(cell.get("sample_id")) for cell in canonical_cells]:
+            raise ValueError(f"canonical stable sample IDs differ in {path}")
+        expected_inputs = controlled_grid_input_sha256(
+            [row["Z"] for row in records], [row["B"] for row in records], sample_ids
         )
+        if canonical_file["crossfit_protocol"].get("input_sha256") != expected_inputs:
+            raise ValueError(f"canonical cross-fit input hash mismatch in {path}")
 
         for index, row in enumerate(records):
             if int(row["seed"]) != seed:
@@ -133,24 +252,39 @@ def load_candidate(source_dir: Path, candidate: str) -> tuple[list[dict[str, Any
             decision = str(row["kga_decision"]).upper()
             if decision not in {"ADAPT", "FREEZE", "ABSTAIN"}:
                 raise ValueError(f"invalid decision {decision!r} in {path}")
-            values = [row["a0"], row["a_adapted"], row["B"], row["b_hat"], row["eps_conformal"]]
+            cell = canonical_cells[index]
+            current_prediction = float(cell["prediction"])
+            current_epsilon = float(cell["radius"])
+            current_decision = str(cell["action"]).upper()
+            if current_decision not in {"ADAPT", "FREEZE", "ABSTAIN"}:
+                raise ValueError(f"invalid canonical decision {current_decision!r} in {canonical_path}")
+            values = [row["a0"], row["a_adapted"], row["B"], current_prediction, current_epsilon]
             if not all(math.isfinite(float(value)) for value in values):
                 raise ValueError(f"non-finite numeric value in {path}")
             replayed = dict(row)
-            replayed["current_policy_epsilon"] = float(current_epsilon[index])
-            replayed["current_policy_decision"] = str(current_decisions[index])
+            replayed["current_policy_prediction"] = current_prediction
+            replayed["current_policy_epsilon"] = current_epsilon
+            replayed["current_policy_decision"] = current_decision
             all_records.append(replayed)
 
         sources.append(
             {
-                "path": path.relative_to(ROOT).as_posix(),
+                "path": relative_or_name(path),
                 "sha256": sha256(path),
                 "bytes": path.stat().st_size,
                 "run_seed": seed,
                 "records": len(records),
+                "canonical_path": relative_or_name(canonical_path),
+                "canonical_sha256": sha256(canonical_path),
+                "canonical_cell_authority_sha256": authority["sha256"],
             }
         )
 
+    if seen_seeds != set(canonical_by_seed):
+        raise ValueError(
+            f"source/canonical run-seed mismatch for {candidate}: "
+            f"source={sorted(seen_seeds)}, canonical={sorted(canonical_by_seed)}"
+        )
     return all_records, sources
 
 
@@ -232,11 +366,12 @@ def analyze_candidate(
     source_dir: Path,
     candidate: str,
     *,
+    canonical_path: Path = DEFAULT_CANONICAL,
     n_boot: int,
     seed: int,
     ci_level: float,
 ) -> dict[str, Any]:
-    records, sources = load_candidate(source_dir, candidate)
+    records, sources = load_candidate(source_dir, candidate, canonical_path=canonical_path)
     effects_by_family = family_effects(records)
     families = sorted(effects_by_family)
     if len(families) != 6:
@@ -312,10 +447,11 @@ def analyze_candidate(
             ),
         },
         "current_policy_replay": {
-            "entry_point": "kga.policy.decide_kga",
+            "entry_point": "canonical_panel_results.json per-file current_cell_authority",
             "alpha": 0.10,
-            "calibration": "loo",
-            "radius": "exact split-conformal rank radius, leave-one-cell-out",
+            "calibration": "cell-outcome-disjoint fit/calibrate/score cross-fit",
+            "radius": "exact split-conformal rank radius on the score-fold complement calibration subset",
+            "stored_b_hat_used_for_scoring": False,
             "stored_kga_decision_used_for_scoring": False,
         },
         "sources": sources,
@@ -327,6 +463,7 @@ def build_artifact(args: argparse.Namespace) -> dict[str, Any]:
         analyze_candidate(
             args.source_dir,
             candidate,
+            canonical_path=getattr(args, "canonical_path", DEFAULT_CANONICAL),
             n_boot=args.n_boot,
             seed=args.seed + 10 * index,
             ci_level=args.ci_level,
@@ -424,6 +561,7 @@ def build_artifact(args: argparse.Namespace) -> dict[str, Any]:
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser()
     parser.add_argument("--source-dir", type=Path, default=DEFAULT_SOURCE_DIR)
+    parser.add_argument("--canonical", dest="canonical_path", type=Path, default=DEFAULT_CANONICAL)
     parser.add_argument("--output", type=Path, default=DEFAULT_OUTPUT)
     parser.add_argument("--candidates", nargs="+", default=["tent", "eata", "sar"])
     parser.add_argument("--n-boot", type=int, default=20_000)
