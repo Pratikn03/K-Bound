@@ -173,6 +173,11 @@ else
   echo "==> Protected So2Sat development authority remains outside the public build closure"
 fi
 "$PY" scripts/build_current_policy_interval_diagnostics.py --check
+# The claim validator expands every active TeX include.  Generate the shared
+# release identity first so a clean checkout does not depend on an older local
+# build product being present.
+"$PY" scripts/generate_release_identity.py \
+  --source-snapshot-commit "$KBOUND_SOURCE_SNAPSHOT_COMMIT"
 if [[ "$KBOUND_AUTHORIZE_PROTECTED_SO2SAT" == "1" ]]; then
   (cd "$REPO" && PYTHONPATH="$REPO/src:$ROOT${PYTHONPATH:+:$PYTHONPATH}" \
     "$PY" src/scripts/validate_manuscript_claims.py --authorize-protected-so2sat)
@@ -183,8 +188,6 @@ fi
 
 echo "==> Regenerating canonical numbers and figures"
 "$PY" scripts/make_tables.py
-"$PY" scripts/generate_release_identity.py \
-  --source-snapshot-commit "$KBOUND_SOURCE_SNAPSHOT_COMMIT"
 "$PY" scripts/plot_canonical_decision_frontier.py
 "$PY" scripts/plot_conceptual_regime_geometry.py
 "$PY" scripts/make_submission_figures.py --frontier-only
