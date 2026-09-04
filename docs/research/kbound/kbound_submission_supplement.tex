@@ -301,7 +301,7 @@ residual coverage in a new domain.
 Table~\ref{tab:compact-ledger} separates formal claims from empirical findings and records the
 conditions and scope limits for each.
 
-\ifdefined\KBoundTMLRLayout
+\ifdefined\KBoundSingleColumnLayout
 \begin{table}[H]
 \else
 \begin{table*}[!t]
@@ -323,13 +323,13 @@ Audit floor; residual radius & common observable-law fibre and uniform validity 
 Coverage-to-action; declared cell target $B$ & \KBMainRef{Prop.}{thm:certificate}{Main-paper Prop. 2} and \KBMainEqRef{eq:compact-coverage}{marginal coverage} & marginal false ADAPT and false FREEZE control for $B$ & population-risk, conditional, group, or anytime control \\
 \bottomrule
 \end{tabular}
-\ifdefined\KBoundTMLRLayout
+\ifdefined\KBoundSingleColumnLayout
 \end{table}
 \else
 \end{table*}
 \fi
 
-\ifdefined\KBoundTMLRLayout
+\ifdefined\KBoundSingleColumnLayout
 \begin{table}[H]
 \else
 \begin{table*}[!t]
@@ -353,7 +353,7 @@ Prospective confirmation; future targets & Sec.~\ref{app:compact-confirmation}; 
 Physical camera; future sessions & locked session split and held-out recordings & protocol infrastructure only & a completed camera result \\
 \bottomrule
 \end{tabular}
-\ifdefined\KBoundTMLRLayout
+\ifdefined\KBoundSingleColumnLayout
 \end{table}
 \else
 \end{table*}
@@ -431,7 +431,7 @@ the action table because the released aggregate cross-checks regret but does not
 per-cell benefit estimates and residuals required for a complete gate replay. We omit iWildCam
 because its archived actions were scored under the wrong macro-F1 contract.
 
-\ifdefined\KBoundTMLRLayout
+\ifdefined\KBoundSingleColumnLayout
 \begin{table}[H]
 \else
 \begin{table*}[!t]
@@ -469,7 +469,7 @@ RxRx1 J & 60 & 0 & 60 & 0 & -- & -- & model seed 0; 3-checkpoint audit also all-
 CIFAR--10.1 K & 48 & 0 & 22 & 26 & -- & -- & locked cross-seed replay \\
 \bottomrule
 \end{tabular}
-\ifdefined\KBoundTMLRLayout
+\ifdefined\KBoundSingleColumnLayout
 \end{table}
 \else
 \end{table*}
@@ -545,7 +545,11 @@ always-adapt. These nominal bootstrap intervals are distinct from the retrospect
 analysis. The within-Tent two-contrast Holm calculation is itself post hoc and is not the six-test
 family reported in Table~\ref{tab:cifar-family-sensitivity}.
 
+\ifdefined\KBoundSingleColumnLayout
+\begin{table}[H]
+\else
 \begin{table*}[!t]
+\fi
 \centering
 \scriptsize
 \caption{Retrospective sensitivity over six opened CIFAR-10-C corruption families. Each candidate
@@ -559,7 +563,11 @@ verified coverage, independent-checkpoint inference, prospective confirmation, n
 evidence, or official POEM/AETTA comparison.}
 \label{tab:cifar-family-sensitivity}
 \resizebox{\textwidth}{!}{\input{paper/generated/current_policy_family_sensitivity}}
+\ifdefined\KBoundSingleColumnLayout
+\end{table}
+\else
 \end{table*}
+\fi
 
 \subsection{Retrospective Interval Inclusion by Family}
 \label{app:interval-groups}
@@ -949,10 +957,11 @@ over the official Tent BatchNorm-affine parameters. The final coordinate is a ch
 Gaussian KL divergence from the probe-batch statistics to the stored source BatchNorm statistics,
 using the layer's BatchNorm epsilon. Probability values are clipped only at machine tiny before a
 logarithm. These normalizations are distinct from the archived GBRT coordinates above.
-
-
-
+\ifdefined\KBoundSingleColumnLayout
+\begin{table}[H]
+\else
 \begin{table*}[!t]
+\fi
 \centering
 \scriptsize
 \caption{Non-empirical feature-family summary for the maintained implementation. Each row names one
@@ -973,7 +982,11 @@ Update magnitude & parameter-update $\ell_2$ norm & shadow candidate delta & con
 Source-calibrated proxy & ATC-style threshold estimate & source-fixed threshold & target labels never used \\
 \bottomrule
 \end{tabular}
+\ifdefined\KBoundSingleColumnLayout
+\end{table}
+\else
 \end{table*}
+\fi
 
 These protocol-specific dimensions are part of the fitted estimator contract, not universal
 sufficient statistics. Feature selection may improve prediction, but it cannot defeat the
@@ -1140,7 +1153,11 @@ $p_a=\Pr_T(f_a=Y\mid D)$ and $p_0=\Pr_T(f_0=Y\mid D)$. Only the binary setting f
 $p_0=1-p_a$. KGA may predict a multiclass scalar score difference, but that interface does not
 inherit the binary population identity.
 
+\ifdefined\KBoundSingleColumnLayout
+\begin{table}[H]
+\else
 \begin{table*}[!t]
+\fi
 \centering
 \scriptsize
 \caption{Logical dependency map for the paper's formal and empirical statements. Each row lists a
@@ -1160,7 +1177,11 @@ KGA benchmark & fitted $h_\theta$, declared residual rule, frozen protocol & mea
 Lean build & encoded definitions and assumptions & kernel-checked formal statements & correctness of unencoded data and deployment assumptions \\
 \bottomrule
 \end{tabular}
+\ifdefined\KBoundSingleColumnLayout
+\end{table}
+\else
 \end{table*}
+\fi
 
 \paragraph{Why the boundary is separate.}
 For $|M|<\beta$, the construction chooses two latent residuals that yield opposite nonzero benefits.
