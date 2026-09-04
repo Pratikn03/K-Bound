@@ -14,12 +14,13 @@ import copy
 import csv
 import hashlib
 import json
+import math
 import os
-from pathlib import Path
 import re
 import shutil
 import stat
 import subprocess
+from pathlib import Path
 from typing import Any
 
 SCRIPT = Path(__file__).resolve()
@@ -59,9 +60,11 @@ def resident_bytes(path: Path) -> bytes:
     before = require_resident_file(path)
     content = path.read_bytes()
     after = require_resident_file(path)
-    if len(content) != before.st_size or (
-        before.st_ino, before.st_mtime_ns, before.st_size
-    ) != (after.st_ino, after.st_mtime_ns, after.st_size):
+    if len(content) != before.st_size or (before.st_ino, before.st_mtime_ns, before.st_size) != (
+        after.st_ino,
+        after.st_mtime_ns,
+        after.st_size,
+    ):
         raise ValueError(f"Presentation input changed during read: {path}")
     return content
 
@@ -81,9 +84,25 @@ def resident_json(path: Path) -> tuple[dict[str, Any], str]:
 def pdf_page_count(path: Path) -> int:
     """Read the built PDF with Poppler; never guess or retain a stale count."""
     require_resident_file(path)
-    tool = shutil.which("pdfinfo")
+    override = os.environ.get("KBOUND_TOOL_PDFINFO")
+    tool = override if override else shutil.which("pdfinfo")
     if tool is None:
         raise RuntimeError("pdfinfo is required to verify the built PDF page count")
+    if override:
+        unresolved = Path(override).expanduser()
+        try:
+            resolved = unresolved.resolve(strict=True)
+        except OSError as exc:
+            raise RuntimeError("KBOUND_TOOL_PDFINFO is not a resident executable") from exc
+        if (
+            not unresolved.is_absolute()
+            or unresolved.is_symlink()
+            or unresolved != resolved
+            or not resolved.is_file()
+            or not os.access(resolved, os.X_OK)
+        ):
+            raise RuntimeError("KBOUND_TOOL_PDFINFO must name an absolute non-symlink executable realpath")
+        tool = str(resolved)
     try:
         result = subprocess.run(
             [tool, str(path)],
@@ -109,7 +128,7 @@ def theory_statement_counts() -> dict[str, int]:
     The three explicit sources are the maintained body and its two theory inputs;
     superseded drivers and historical bridge manuscripts are intentionally absent.
     """
-    counts = {kind: 0 for kind in ("theorem", "lemma", "proposition", "corollary")}
+    counts = dict.fromkeys(("theorem", "lemma", "proposition", "corollary"), 0)
     pattern = re.compile(r"\\begin\{(theorem|lemma|proposition|corollary)\}")
     for path in THEORY_SOURCES:
         info = require_resident_file(path)
@@ -153,8 +172,17 @@ def refresh_presentation_metadata(snapshot: dict[str, Any]) -> dict[str, Any]:
 def load(path: Path) -> dict[str, Any] | None:
     if not path.is_file():
         return None
+
+    def reject_nonfinite(value: str) -> None:
+        raise ValueError(f"Dashboard JSON authority contains a non-finite value at {path}: {value}")
+
     with path.open(encoding="utf-8") as fh:
-        return json.load(fh)
+        payload = json.load(fh, parse_constant=reject_nonfinite)
+    if not isinstance(payload, dict):
+        raise ValueError(f"Dashboard JSON authority must contain an object: {path}")
+    if not _json_numbers_are_finite(payload):
+        raise ValueError(f"Dashboard JSON authority contains a non-finite value: {path}")
+    return payload
 
 
 def rel(path: Path) -> str:
@@ -192,11 +220,15 @@ def paper_authorities() -> tuple[dict[str, Any], dict[str, Any], dict[str, str]]
     _, policy_sha = resident_json(CURRENT_POLICY)
     if policy_sha != expected_policy:
         raise ValueError("canonical result manifest has a stale current-policy artifact binding")
-    return manifest, canonical, {
-        "manifest_sha256": manifest_sha,
-        "canonical_panel_sha256": canonical_sha,
-        "current_policy_sha256": policy_sha,
-    }
+    return (
+        manifest,
+        canonical,
+        {
+            "manifest_sha256": manifest_sha,
+            "canonical_panel_sha256": canonical_sha,
+            "current_policy_sha256": policy_sha,
+        },
+    )
 
 
 def registered_formal_scope() -> dict[str, Any]:
@@ -207,14 +239,18 @@ def registered_formal_scope() -> dict[str, Any]:
     for node in ast.parse(content, filename=str(FORMAL_REGISTRY)).body:
         if isinstance(node, ast.Assign):
             names = [target.id for target in node.targets if isinstance(target, ast.Name)]
+            value_node = node.value
         elif isinstance(node, ast.AnnAssign) and isinstance(node.target, ast.Name):
             names = [node.target.id]
+            if node.value is None:
+                raise ValueError(f"Formal registry declares {node.target.id} without a value")
+            value_node = node.value
         else:
             continue
         for name in wanted.intersection(names):
             if name in values:
                 raise ValueError(f"Formal registry declares {name} more than once")
-            values[name] = ast.literal_eval(node.value)
+            values[name] = ast.literal_eval(value_node)
     if set(values) != wanted:
         raise ValueError("Formal registry is missing declared theorem/foundation scope")
     core = values["LEGACY_CORE_THEOREMS"]
@@ -254,10 +290,13 @@ def completed_diagnostic_rows(manifest: dict[str, Any], canonical: dict[str, Any
     seeds = imagenetr.get("seeds")
     candidates = imagenetr.get("candidates")
     if (
-        not isinstance(seeds, list) or not seeds
-        or not all(type(seed) is int for seed in seeds) or len(set(seeds)) != len(seeds)
+        not isinstance(seeds, list)
+        or not seeds
+        or not all(type(seed) is int for seed in seeds)
+        or len(set(seeds)) != len(seeds)
         or image_track.get("completed_seeds") != seeds
-        or not isinstance(candidates, dict) or not candidates
+        or not isinstance(candidates, dict)
+        or not candidates
         or type(imagenetr.get("candidate_count")) is not int
         or imagenetr["candidate_count"] != len(candidates)
         or not isinstance(image_track.get("per_backbone"), dict)
@@ -268,14 +307,17 @@ def completed_diagnostic_rows(manifest: dict[str, Any], canonical: dict[str, Any
     pacs_track = manifest["tracks"]["pacs"]
     pacs_seeds = pacs.get("seeds")
     if (
-        not isinstance(pacs_seeds, list) or not pacs_seeds
-        or not all(type(seed) is int for seed in pacs_seeds) or len(set(pacs_seeds)) != len(pacs_seeds)
+        not isinstance(pacs_seeds, list)
+        or not pacs_seeds
+        or not all(type(seed) is int for seed in pacs_seeds)
+        or len(set(pacs_seeds)) != len(pacs_seeds)
         or type(pacs_track.get("completed_seeds")) is not int
         or pacs_track["completed_seeds"] != len(pacs_seeds)
         or pacs.get("aggregate_matches_seed_files") is not True
         or pacs.get("decision_replay_available") is not False
         or pacs_track.get("decision_replay_available") is not False
-        or not isinstance(pacs.get("decision_replay_blocker"), str) or not pacs["decision_replay_blocker"]
+        or not isinstance(pacs.get("decision_replay_blocker"), str)
+        or not pacs["decision_replay_blocker"]
     ):
         raise ValueError("PACS manifest/canonical aggregate or incomplete-replay scope is inconsistent")
     return [
@@ -331,6 +373,46 @@ def regret_row(
     }
 
 
+def historical_three_source_row(manifest: dict[str, Any]) -> dict[str, Any]:
+    """Project the demoted historical authority without inventing dashboard scope."""
+    track = manifest["tracks"]["three_source_oof"]
+    wording = track.get("verdict")
+    if (
+        track.get("claim_id") != "KB-CLAIM-024"
+        or track.get("claim_status") != "diagnostic"
+        or track.get("status") != "historical_policy_only"
+        or not isinstance(wording, str)
+        or not wording.strip()
+        or "historical researcher-constructed routing aggregate" not in wording.lower()
+        or "rerun required under reconciled per-track decisions" not in wording.lower()
+        or "beats both" in wording.lower()
+        or "beats-both" in wording.lower()
+        or any(
+            track.get(field) is not False
+            for field in (
+                "policy_synchronized",
+                "current_policy_authority",
+                "numeric_release_eligible",
+                "headline_promotion_eligible",
+                "release_eligible_win",
+            )
+        )
+        or (track.get("point_beats_both") is not None and track.get("point_beats_both") is not False)
+        or (track.get("ci_robust_beats_both") is not None and track.get("ci_robust_beats_both") is not False)
+    ):
+        raise ValueError("three_source_oof historical authority is stale or malformed")
+    row = regret_row(
+        manifest,
+        "three_source_oof",
+        "Constructed three-source OOF stream",
+        track["claim_status"],
+        wording.strip(),
+    )
+    row["historical_status"] = track["status"]
+    row["note"] = wording.strip()
+    return row
+
+
 def session_progress() -> list[dict[str, Any]]:
     rows: list[dict[str, Any]] = []
     raw = EDGE / "artifacts_real" / "raw"
@@ -354,8 +436,161 @@ def session_progress() -> list[dict[str, Any]]:
     return rows
 
 
+def _finite_threshold_pass(value: Any, threshold: float) -> bool:
+    return type(value) in (int, float) and math.isfinite(value) and value >= threshold
+
+
+def _positive_window_count(payload: dict[str, Any]) -> bool:
+    value = payload.get("n_windows")
+    return type(value) is int and value > 0
+
+
+def _json_numbers_are_finite(value: Any) -> bool:
+    if type(value) is float:
+        return math.isfinite(value)
+    if isinstance(value, dict):
+        return all(_json_numbers_are_finite(child) for child in value.values())
+    if isinstance(value, list):
+        return all(_json_numbers_are_finite(child) for child in value)
+    return True
+
+
+def _strict_json_object(content: bytes, path: Path) -> dict[str, Any]:
+    """Parse one JSON object without accepting duplicate or non-finite values."""
+
+    def reject_nonfinite(value: str) -> None:
+        raise ValueError(f"Non-finite JSON value in protocol authority {path}: {value}")
+
+    def reject_duplicate_pairs(pairs: list[tuple[str, Any]]) -> dict[str, Any]:
+        parsed: dict[str, Any] = {}
+        for key, value in pairs:
+            if key in parsed:
+                raise ValueError(f"Duplicate JSON key in protocol authority {path}: {key}")
+            parsed[key] = value
+        return parsed
+
+    payload = json.loads(
+        content,
+        parse_constant=reject_nonfinite,
+        object_pairs_hook=reject_duplicate_pairs,
+    )
+    if not isinstance(payload, dict):
+        raise ValueError(f"Protocol authority must contain a JSON object: {path}")
+    if not _json_numbers_are_finite(payload):
+        raise ValueError(f"Protocol authority contains a non-finite value: {path}")
+    return payload
+
+
+def _canonical_protocol_hash(lock: dict[str, Any]) -> str:
+    """Match ``real_manifest.canonical_protocol_hash`` without edge dependencies."""
+
+    def sort_struct(value: Any) -> Any:
+        if isinstance(value, dict):
+            return {key: sort_struct(value[key]) for key in sorted(value)}
+        if isinstance(value, list):
+            return [sort_struct(child) for child in value]
+        return value
+
+    canonical = json.dumps(sort_struct(lock), sort_keys=True)
+    return hashlib.sha256(canonical.encode("utf-8")).hexdigest()
+
+
+def _valid_protocol_lock(lock: dict[str, Any]) -> bool:
+    expected_sessions = {
+        "S01": ("source_train", "phone_a", ["P01", "P02", "P03", "P04", "P05", "P06"], 120),
+        "S02": ("source_val", "phone_a", ["P07", "P08"], 40),
+        "S03": ("calibration_fit_a", "phone_a", ["P01", "P02", "P03", "P04"], 64),
+        "S04": ("calibration_fit_b", "phone_a", ["P01", "P02", "P03", "P04"], 80),
+        "S05": ("calibration_conformal_a", "phone_a", ["P01", "P02", "P03", "P04"], 64),
+        "S06": ("calibration_conformal_b", "phone_a", ["P01", "P02", "P03", "P04"], 80),
+        "S07": ("heldout_a", "phone_a", ["P09", "P10"], 64),
+        "S08": ("heldout_b", "phone_a", ["P09", "P10"], 80),
+        "S09": ("replication_a", "phone_b", ["P09", "P10"], 64),
+        "S10": ("replication_b", "phone_b", ["P09", "P10"], 80),
+    }
+    sessions = lock.get("sessions")
+    objects = lock.get("objects")
+    phones = lock.get("phones")
+    shifts = lock.get("shifts")
+    paths = lock.get("paths")
+    return (
+        _json_numbers_are_finite(lock)
+        and lock.get("protocol") == "edge_real_phone_v1"
+        and lock.get("schema_version") == "kbound-edge-v1"
+        and type(lock.get("seed")) is int
+        and lock["seed"] >= 0
+        and lock.get("num_classes") == 4
+        and lock.get("classes") == ["ok", "missing_label", "misaligned_label", "damaged_label"]
+        and lock.get("image_size") == 224
+        and lock.get("window_size") == 32
+        and type(lock.get("alpha")) in (int, float)
+        and lock["alpha"] == 0.10
+        and objects
+        == {
+            "source_train_calib": ["P01", "P02", "P03", "P04", "P05", "P06"],
+            "source_val_calib": ["P07", "P08"],
+            "held_out_replication": ["P09", "P10"],
+        }
+        and isinstance(phones, dict)
+        and isinstance(phones.get("phone_a"), dict)
+        and isinstance(phones.get("phone_b"), dict)
+        and shifts
+        == {
+            "A_sessions": ["mild_light", "side_shadow", "new_background", "glare"],
+            "B_sessions": ["motion_blur", "viewpoint_45", "distance_scale", "batch_composition"],
+        }
+        and isinstance(sessions, dict)
+        and set(sessions) == set(expected_sessions)
+        and all(
+            isinstance(sessions[session_id], dict)
+            and (
+                sessions[session_id].get("split"),
+                sessions[session_id].get("phone_id"),
+                sessions[session_id].get("objects"),
+                sessions[session_id].get("windows"),
+            )
+            == expected
+            for session_id, expected in expected_sessions.items()
+        )
+        and isinstance(paths, dict)
+        and bool(paths)
+        and all(isinstance(key, str) and key and isinstance(value, str) and value for key, value in paths.items())
+        and paths.get("artifacts") == "artifacts_real"
+        and paths.get("protocol_lock") == "artifacts_real/protocol_lock.json"
+        and paths.get("protocol_lock_sha") == "artifacts_real/protocol_lock.sha256"
+    )
+
+
+def protocol_lock_authority() -> tuple[dict[str, Any], str | None]:
+    """Load and authenticate the producer's protocol-lock JSON/sidecar pair."""
+    lock_path = EDGE / "artifacts_real" / "protocol_lock.json"
+    sidecar_path = EDGE / "artifacts_real" / "protocol_lock.sha256"
+    lock_exists = lock_path.is_file()
+    sidecar_exists = sidecar_path.is_file()
+    if not lock_exists or not sidecar_exists:
+        missing = [
+            str(path) for path, exists in ((lock_path, lock_exists), (sidecar_path, sidecar_exists)) if not exists
+        ]
+        raise FileNotFoundError(f"Protocol lock authority is incomplete; missing: {', '.join(missing)}")
+
+    lock = _strict_json_object(resident_bytes(lock_path), lock_path)
+    try:
+        sidecar = resident_bytes(sidecar_path).decode("ascii")
+    except UnicodeDecodeError as exc:
+        raise ValueError(f"Protocol lock SHA256 sidecar is not ASCII: {sidecar_path}") from exc
+    if re.fullmatch(r"[0-9a-f]{64}\n", sidecar) is None:
+        raise ValueError(f"Protocol lock SHA256 sidecar must contain exactly one lowercase digest: {sidecar_path}")
+    expected_hash = sidecar[:-1]
+    computed_hash = _canonical_protocol_hash(lock)
+    if computed_hash != expected_hash:
+        raise ValueError("Protocol lock SHA256 sidecar does not match the canonical protocol content")
+    if not _valid_protocol_lock(lock):
+        raise ValueError("Protocol lock content does not satisfy edge_real_phone_v1")
+    return lock, computed_hash
+
+
 def edge_status() -> dict[str, Any]:
-    lock = load(EDGE / "artifacts_real" / "protocol_lock.json") or {}
+    lock, protocol_hash = protocol_lock_authority()
     model = load(EDGE_RESULTS / "model_card.json") or {}
     heldout = load(EDGE_RESULTS / "heldout_metrics.json") or {}
     replication = load(EDGE_RESULTS / "replication_metrics.json") or {}
@@ -363,29 +598,48 @@ def edge_status() -> dict[str, Any]:
     inventory = load(EDGE_RESULTS / "recording_inventory.json") or {}
     gate = load(EDGE_RESULTS / "publication_gate.json") or {}
 
+    lock_valid = _valid_protocol_lock(lock)
+    model_valid = _json_numbers_are_finite(model)
+    heldout_valid = _json_numbers_are_finite(heldout)
+    replication_valid = _json_numbers_are_finite(replication)
+    audit_valid = _json_numbers_are_finite(audit)
+    inventory_valid = _json_numbers_are_finite(inventory)
+    gate_valid = _json_numbers_are_finite(gate)
+
     progress = session_progress()
     all_sessions = bool(progress) and all(row["complete"] for row in progress)
-    clips = inventory.get("clips") or []
-    physical_only = bool(clips) and all(row.get("capture_mode") == "physical" for row in clips)
-    audit_pass = bool(audit.get("checks")) and all(
-        bool(row.get("passed")) for row in audit.get("checks", [])
+    clips = inventory.get("clips")
+    physical_only = (
+        inventory_valid
+        and isinstance(clips, list)
+        and bool(clips)
+        and all(isinstance(row, dict) and row.get("capture_mode") == "physical" for row in clips)
+    )
+    audit_checks = audit.get("checks")
+    audit_pass = (
+        audit_valid
+        and isinstance(audit_checks, list)
+        and bool(audit_checks)
+        and all(isinstance(row, dict) and row.get("passed") is True for row in audit_checks)
     )
     metrics = model.get("metrics") or {}
     source_gate = (
-        float(metrics.get("val_balanced_acc", 0.0)) >= 0.80
-        and float(metrics.get("val_macro_f1", 0.0)) >= 0.80
+        model_valid
+        and isinstance(metrics, dict)
+        and all(_finite_threshold_pass(metrics.get(name), 0.80) for name in ("val_balanced_acc", "val_macro_f1"))
     )
-    heldout_present = bool(heldout.get("n_windows"))
-    replication_present = bool(replication.get("n_windows"))
-    publication_pass = bool(gate.get("passed")) and all(
-        (all_sessions, physical_only, audit_pass, source_gate, heldout_present, replication_present)
+    heldout_present = heldout_valid and _positive_window_count(heldout)
+    replication_present = replication_valid and _positive_window_count(replication)
+    publication_gate_pass = gate_valid and gate.get("passed") is True
+    publication_pass = publication_gate_pass and all(
+        (lock_valid, all_sessions, physical_only, audit_pass, source_gate, heldout_present, replication_present)
     )
 
     phases = [
         {
             "id": "protocol",
             "label": "Protocol lock",
-            "status": "verified" if lock else "pending",
+            "status": "verified" if lock_valid else "pending",
             "detail": "Configuration and hash are frozen before capture.",
             "artifact": rel(EDGE / "artifacts_real" / "protocol_lock.json"),
         },
@@ -419,10 +673,10 @@ def edge_status() -> dict[str, Any]:
         },
     ]
 
-    held_metrics = heldout.get("kga_full_metrics") or {}
-    bootstrap = (heldout.get("bootstrap_results") or {}).get("kga_full") or {}
+    held_metrics = (heldout.get("kga_full_metrics") or {}) if heldout_valid else {}
+    bootstrap = ((heldout.get("bootstrap_results") or {}).get("kga_full") or {}) if heldout_valid else {}
     development_metrics = None
-    if model or heldout:
+    if (model_valid and model) or (heldout_valid and heldout):
         development_metrics = {
             "note": (
                 "Diagnostic only until publication_gate.json passes. Browser previews, pilots, "
@@ -436,16 +690,19 @@ def edge_status() -> dict[str, Any]:
         }
 
     checks = [
+        ("Valid frozen protocol lock", lock_valid, "edge_real_phone_v1 lock covers sessions S01-S10"),
         ("Fresh physical S01-S10 captures", all_sessions and physical_only, "no mock or pilot clips"),
         ("Source-model gate", source_gate, "balanced accuracy and macro-F1 >= 0.80"),
         ("Strict anti-leakage audit", audit_pass, "all eight checks pass"),
         ("Phone A held-out replay", heldout_present, "S07-S08 metrics exist"),
         ("Phone B replication", replication_present, "S09-S10 metrics exist"),
-        ("Publication gate", bool(gate.get("passed")), "machine-readable final gate passes"),
+        ("Publication gate", publication_gate_pass, "machine-readable final gate passes"),
     ]
     return {
         "study_status": "verified" if publication_pass else "pending",
-        "study_label": "Physical study complete" if publication_pass else "Pre-registered / awaiting fresh physical sessions",
+        "study_label": "Physical study complete"
+        if publication_pass
+        else "Pre-registered / awaiting fresh physical sessions",
         "phases": phases,
         "session_progress": progress,
         "development_metrics": development_metrics,
@@ -458,10 +715,7 @@ def edge_status() -> dict[str, Any]:
                 "source_gate": source_gate,
                 "audit_pass": audit_pass,
             },
-            "gaps": [
-                {"check": label, "passed": passed, "detail": detail}
-                for label, passed, detail in checks
-            ],
+            "gaps": [{"check": label, "passed": passed, "detail": detail} for label, passed, detail in checks],
             "commands": {
                 "preflight": "python docs/research/kbound/edge/scripts/preflight_r2.py",
                 "full_pipeline": "bash docs/research/kbound/edge/scripts/run_edge_publication_pipeline.sh",
@@ -473,7 +727,7 @@ def edge_status() -> dict[str, Any]:
                 "refresh_dashboard": "bash docs/research/kbound/scripts/build_dashboard.sh",
             },
         },
-        "protocol_hash": lock.get("protocol_hash"),
+        "protocol_hash": protocol_hash if lock_valid else None,
         "audit_pass": audit_pass,
     }
 
@@ -484,6 +738,16 @@ def build_paper_projection() -> dict[str, Any]:
     manifest, canonical, bindings = paper_authorities()
     formal_scope = registered_formal_scope()
     diagnostic_rows = completed_diagnostic_rows(manifest, canonical)
+    tent_comparisons = manifest["current_policy_family_sensitivity"]["candidates"]["tent"][
+        "comparisons"
+    ]
+    tent_adapt_holm = tent_comparisons["always_adapt"][
+        "p_value_retrospective_holm_six_prospectively_named_contrasts"
+    ]
+    tent_freeze_holm = tent_comparisons["always_freeze"][
+        "p_value_retrospective_holm_six_prospectively_named_contrasts"
+    ]
+    imagenetc_sar_framing = manifest["tracks"]["imagenetc_sar"]["verdict"]
 
     controlled = [
         regret_row(
@@ -494,7 +758,8 @@ def build_paper_projection() -> dict[str, Any]:
             (
                 "Point estimate is below both fixed policies and ordinary six-family intervals "
                 "are positive, but p-values from retrospective Holm adjustment over the six "
-                "prospectively named contrasts are both 0.09375."
+                f"prospectively named contrasts are {tent_adapt_holm:g} against always-adapt "
+                f"and {tent_freeze_holm:g} against always-freeze."
             ),
         ),
         regret_row(
@@ -513,23 +778,22 @@ def build_paper_projection() -> dict[str, Any]:
             "imagenetc_sar",
             "ImageNet-C / SAR",
             "no_harm",
-            (
-                "Pooled point estimate is below both fixed policies, with one false adaptation "
-                "in 135 cells; the freeze-side seed interval touches zero."
-            ),
+            imagenetc_sar_framing,
         ),
     ]
-    constructed = regret_row(
-        manifest,
-        "three_source_oof",
-        "Constructed three-source OOF stream",
-        "conditional",
-        "Researcher-constructed heterogeneous stream; routing evidence, not unseen-domain transfer.",
-    )
+    constructed = historical_three_source_row(manifest)
 
     natural = [
-        regret_row(manifest, "officehome_M_v2", "Office-Home M v2", "no_harm", "No-harm; ties the safer fixed policy within the declared criterion."),
-        regret_row(manifest, "rxrx1_J", "RxRx1 J", "no_harm", "Locked no-harm result; always-freeze is already optimal."),
+        regret_row(
+            manifest,
+            "officehome_M_v2",
+            "Office-Home M v2",
+            "no_harm",
+            "No-harm; ties the safer fixed policy within the declared criterion.",
+        ),
+        regret_row(
+            manifest, "rxrx1_J", "RxRx1 J", "no_harm", "Locked no-harm result; always-freeze is already optimal."
+        ),
     ]
 
     c101 = manifest["tracks"]["cifar10_1_K"]
@@ -560,12 +824,7 @@ def build_paper_projection() -> dict[str, Any]:
             "note": "Consistent with weak evidence, low margin, estimator inadequacy, or calibration failure.",
         },
         *diagnostic_rows,
-        {
-            **constructed,
-            "name": "Constructed three-source OOF stream",
-            "status": "conditional",
-            "note": "CI beats both, but the stream is researcher-constructed and does not establish transfer.",
-        },
+        constructed,
     ]
 
     theory_ledger = [
@@ -721,7 +980,7 @@ def build_paper_projection() -> dict[str, Any]:
             },
         },
         "reproduce": {
-            "primary": "bash docs/research/kbound/scripts/reproduce_submission.sh",
+            "primary": "bash docs/research/kbound/runbooks/release_candidate.sh all",
             "gpu": "bash docs/research/kbound/scripts/kbtrain.sh smoke-all",
             "validators": "cd docs/research/kbound/formal && bash build.sh",
             "dashboard": "bash docs/research/kbound/scripts/build_dashboard.sh",
@@ -757,7 +1016,7 @@ def build_snapshot() -> dict[str, Any]:
 
 
 def validated_saved_edge(snapshot: dict[str, Any]) -> dict[str, Any]:
-    """Validate the saved JSON shape, not the underlying physical evidence."""
+    """Validate cached edge truth values without reopening physical evidence."""
     if not isinstance(snapshot, dict):
         raise ValueError("Paper-only refresh requires an existing dashboard snapshot")
     meta = snapshot.get("meta")
@@ -773,45 +1032,107 @@ def validated_saved_edge(snapshot: dict[str, Any]) -> dict[str, Any]:
     if not isinstance(edge.get("study_label"), str) or not edge["study_label"].strip():
         raise ValueError("Saved edge_validation lacks its study label")
     phases = edge.get("phases")
-    if not isinstance(phases, list) or not phases or not all(
-        isinstance(row, dict)
-        and all(isinstance(row.get(key), str) and row[key] for key in ("id", "label", "status", "detail", "artifact"))
-        and row["status"] in {"pending", "verified"}
-        for row in phases
+    if (
+        not isinstance(phases, list)
+        or not phases
+        or not all(
+            isinstance(row, dict)
+            and all(
+                isinstance(row.get(key), str) and row[key] for key in ("id", "label", "status", "detail", "artifact")
+            )
+            and row["status"] in {"pending", "verified"}
+            for row in phases
+        )
     ):
         raise ValueError("Saved edge_validation has invalid phases")
+    expected_phase_ids = {"protocol", "capture", "source", "heldout", "replication"}
+    phase_ids = [row["id"] for row in phases]
+    if len(phase_ids) != len(set(phase_ids)) or set(phase_ids) != expected_phase_ids:
+        raise ValueError("Saved edge_validation has invalid phase identities")
     progress = edge.get("session_progress")
-    if not isinstance(progress, list) or not progress or not all(
-        isinstance(row, dict) and isinstance(row.get("session"), str) and row["session"]
-        and all(type(row.get(key)) is int and row[key] >= 0 for key in ("expected_clips", "captured_clips"))
-        and type(row.get("complete")) is bool
-        for row in progress
+    if (
+        not isinstance(progress, list)
+        or not progress
+        or not all(
+            isinstance(row, dict)
+            and isinstance(row.get("session"), str)
+            and row["session"]
+            and all(type(row.get(key)) is int and row[key] >= 0 for key in ("expected_clips", "captured_clips"))
+            and type(row.get("complete")) is bool
+            for row in progress
+        )
     ):
         raise ValueError("Saved edge_validation has invalid session progress")
+    expected_session_ids = {f"S{number:02d}" for number in range(1, 11)}
+    session_ids = [row["session"] for row in progress]
+    if len(session_ids) != len(set(session_ids)) or set(session_ids) != expected_session_ids:
+        raise ValueError("Saved edge_validation has invalid session identities")
+    derived_session_completion = [
+        row["expected_clips"] > 0 and row["captured_clips"] >= row["expected_clips"] for row in progress
+    ]
+    if any(row["complete"] is not derived for row, derived in zip(progress, derived_session_completion, strict=True)):
+        raise ValueError("Saved edge_validation has contradictory session completion")
     unblock = edge.get("unblock")
-    if not isinstance(unblock, dict) or type(unblock.get("all_pass")) is not bool or type(edge.get("audit_pass")) is not bool:
+    if (
+        not isinstance(unblock, dict)
+        or type(unblock.get("all_pass")) is not bool
+        or type(edge.get("audit_pass")) is not bool
+    ):
         raise ValueError("Saved edge_validation lacks boolean gate/audit status")
-    if (edge["study_status"] == "verified") != unblock["all_pass"] or (unblock["all_pass"] and not edge["audit_pass"]):
-        raise ValueError("Saved edge_validation has contradictory study/gate status")
     current = unblock.get("current")
     thresholds = unblock.get("gate_thresholds")
     gaps = unblock.get("gaps")
     commands = unblock.get("commands")
+    expected_current_keys = {"sessions_complete", "physical_only", "source_gate", "audit_pass"}
     if (
         not isinstance(current, dict)
-        or not all(type(current.get(key)) is bool for key in ("sessions_complete", "physical_only", "source_gate", "audit_pass"))
+        or set(current) != expected_current_keys
+        or not all(type(current.get(key)) is bool for key in expected_current_keys)
         or not isinstance(thresholds, dict)
-        or not all(type(thresholds.get(key)) in (int, float) and 0 < thresholds[key] <= 1 for key in ("balanced_acc", "macro_f1"))
+        or set(thresholds) != {"balanced_acc", "macro_f1"}
+        or not all(
+            type(thresholds.get(key)) in (int, float) and 0 < thresholds[key] <= 1
+            for key in ("balanced_acc", "macro_f1")
+        )
         or not isinstance(gaps, list)
-        or not all(isinstance(row, dict) and type(row.get("passed")) is bool and isinstance(row.get("check"), str) and isinstance(row.get("detail"), str) for row in gaps)
-        or not isinstance(commands, dict) or not commands
+        or not gaps
+        or not all(
+            isinstance(row, dict)
+            and type(row.get("passed")) is bool
+            and isinstance(row.get("check"), str)
+            and isinstance(row.get("detail"), str)
+            for row in gaps
+        )
+        or not isinstance(commands, dict)
+        or not commands
         or not all(isinstance(value, str) and value for value in commands.values())
         or "development_metrics" not in edge
         or (edge["development_metrics"] is not None and not isinstance(edge["development_metrics"], dict))
         or "protocol_hash" not in edge
-        or (edge["protocol_hash"] is not None and not isinstance(edge["protocol_hash"], str))
+        or (
+            edge["protocol_hash"] is not None
+            and (
+                not isinstance(edge["protocol_hash"], str)
+                or re.fullmatch(r"[0-9a-f]{64}", edge["protocol_hash"]) is None
+            )
+        )
     ):
         raise ValueError("Saved edge_validation has an invalid cached evidence structure")
+    sessions_complete = all(derived_session_completion)
+    if current["sessions_complete"] is not sessions_complete or edge["audit_pass"] is not current["audit_pass"]:
+        raise ValueError("Saved edge_validation has contradictory cached evidence")
+    all_pass = all(
+        (
+            all(row["status"] == "verified" for row in phases),
+            sessions_complete,
+            all(current[key] for key in expected_current_keys),
+            all(row["passed"] for row in gaps),
+            edge["audit_pass"],
+            edge["protocol_hash"] is not None,
+        )
+    )
+    if unblock["all_pass"] is not all_pass or (edge["study_status"] == "verified") is not all_pass:
+        raise ValueError("Saved edge_validation has contradictory study/gate status")
     # Reject non-standard numeric values even in extra cached diagnostic fields.
     json.dumps(edge, allow_nan=False)
     return edge
@@ -856,14 +1177,17 @@ def main(argv: list[str] | None = None) -> int:
     args = parser.parse_args(argv)
     if args.metadata_only:
         require_resident_file(OUT)
-        snapshot = refresh_presentation_metadata(load(OUT))
+        existing = load(OUT)
+        if existing is None:
+            raise FileNotFoundError(f"Required presentation input is missing: {OUT}")
+        snapshot = refresh_presentation_metadata(existing)
     elif args.paper_only:
         existing, _ = resident_json(OUT)
         snapshot = refresh_paper_snapshot(existing)
     else:
         snapshot = build_snapshot()
     OUT.parent.mkdir(parents=True, exist_ok=True)
-    OUT.write_text(json.dumps(snapshot, indent=2) + "\n", encoding="utf-8")
+    OUT.write_text(json.dumps(snapshot, indent=2, allow_nan=False) + "\n", encoding="utf-8")
     print(f"[dashboard] wrote {OUT}")
     return 0
 

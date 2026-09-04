@@ -166,10 +166,12 @@ def validate() -> list[str]:
         "docs/research/kbound/kbound_tmlr.tex",
     ):
         driver = ROOT / driver_rel
-        if not driver.is_file() or r"\input{paper/generated/so2sat_numbers.tex}" not in driver.read_text(
-            encoding="utf-8"
-        ):
-            problems.append(f"maintained driver does not input So2Sat numbers: {driver_rel}")
+        if not driver.is_file():
+            problems.append(f"missing maintained driver: {driver_rel}")
+        elif r"\input{paper/generated/so2sat_numbers.tex}" in driver.read_text(encoding="utf-8"):
+            problems.append(
+                f"maintained driver must not input protected So2Sat development numbers: {driver_rel}"
+            )
 
     current = strict_json(current_path)
     if current.get("schema") != CURRENT_CLUSTER_SCHEMA:
@@ -381,7 +383,7 @@ def validate() -> list[str]:
     camelyon_b_v2 = tracks.get("camelyon17_b_v2_sar") or {}
     if (
         camelyon_b_v2.get("n_test") != 108
-        or camelyon_b_v2.get("point_beats_both") is not True
+        or camelyon_b_v2.get("point_beats_both") is not False
         or camelyon_b_v2.get("ci_robust_beats_both") is not False
         or camelyon_b_v2.get("headline_promotion_eligible") is not False
         or camelyon_b_v2.get("untouched_target_domain_evaluation") is not False
@@ -447,7 +449,7 @@ def validate() -> list[str]:
     if (
         cam_result.get("source_artifact") != CANONICAL_REL
         or cam_metrics.get("n_decisions") != 108
-        or cam_metrics.get("point_beats_both") is not True
+        or cam_metrics.get("point_beats_both") is not False
         or cam_metrics.get("ci_robust_beats_both") is not False
         or cam_metrics.get("within_seed_diagnostic") is not True
         or cam_metrics.get("untouched_target_domain_evaluation") is not False
