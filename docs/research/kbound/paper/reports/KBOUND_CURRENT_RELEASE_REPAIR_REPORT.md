@@ -27,7 +27,7 @@ and byte-reproducible PDF settings.
 
 ## 4. Artifact commit
 
-Artifact commit: `ab8439204015ff4a666d670819a977f2587fc73c` (`ab8439204015`).
+Artifact commit: `2d5b066d20137bf7e414216133a4a1818563f8db` (`2d5b066d2013`).
 
 ## 5. Source-to-output map
 
