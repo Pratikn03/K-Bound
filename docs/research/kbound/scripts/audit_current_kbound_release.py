@@ -376,29 +376,86 @@ def audit_release_directory(pdf_dir: Path) -> list[str]:
 
 
 def audit_active_claims(kbound_root: Path = KBOUND_ROOT) -> list[str]:
+    """Scan every active publication surface for promoted legacy claims.
+
+    This is deliberately a curated allowlist rather than a recursive scan.  The
+    tree contains experiment logs, superseded audits, and archived protocols
+    whose job is to preserve negative history.  Those files are checked for an
+    explicit superseded banner in :func:`audit_release_files`; the paths below
+    are the sources that can reach a current manuscript, release note, generated
+    claim matrix, or default packaging command.
+    """
+
     problems: list[str] = []
-    active_paths = (
-        kbound_root / "kbound_abstract_core.tex",
-        kbound_root / "kbound_submission_body.tex",
-        kbound_root / "kbound_submission_supplement.tex",
-        kbound_root / "kbound_full_report_extensions.tex",
+    active_relatives = (
+        "kbound_abstract.tex",
+        "kbound_abstract_core.tex",
+        "kbound_short_main.tex",
+        "kbound_short_supplement.tex",
+        "kbound_submission.tex",
+        "kbound_submission_body.tex",
+        "kbound_submission_supplement.tex",
+        "kbound_tmlr.tex",
+        "kbound_full_report.tex",
+        "kbound_full_report_extensions.tex",
+        "README.md",
+        "CURRENT_RELEASE.md",
+        "DOCS_INDEX.md",
+        "RELEASE_CHECKLIST.md",
+        "REPRODUCE.md",
+        "KBOUND_SHORT_CLAIM_MANIFEST.md",
+        "KBOUND_SHORT_RESULT_AUDIT.md",
+        "KBOUND_SHORT_THEORY_AUDIT.md",
+        "paper/reports/KBOUND_SOURCE_OUTPUT_MAP.md",
+        "paper/RELEASE_TABLE_CROSSWALK.md",
+        "paper/generated/empirical_audit/claim_matrix.md",
+        "paper/release/current_release.json",
+        "scripts/build_pdfs.sh",
+        "scripts/publish_current_pdfs.py",
+        "scripts/empirical_closure.py",
     )
     forbidden = (
+        r"zero false ADAPT(?: actions?)? for (?:current )?(?:CIFAR(?:-10-C)? )?Tent",
+        r"(?:valid|confirmed|successful) current iWildCam (?:result|claim)",
+        r"iWildCam[^\n]{0,100}(?:no-harm|beats both|beats-both)",
+        r"(?:universal natural-shift|uniformly) no-harm",
         r"uniformly no-harm on every natural shift",
-        r"pre-registered beats-both on four datasets",
-        r"13\s*[-–]\s*24\s*[x×]",
+        r"completed (?:real|physical)[ -]camera (?:result|study)",
+        r"physical-camera[^\n]{0,80}(?:accuracy|regret|utility|error)\s*[=:]?\s*\d",
+        r"(?:old )?36-cell ImageNet-C[^\n]{0,80}(?:current|authority)",
+        r"official-setting SAR conclusion",
         r"mechanism-faithful SAR",
+        r"(?:leave-one-out|jackknife\+?)[^\n]{0,100}current CIFAR",
+        r"CIFAR(?:-10-C)? Tent[^\n]{0,100}0\.0016",
+        r"CIFAR(?:-10-C)? EATA[^\n]{0,100}0\.0015",
+        r"(?:population-risk|population risk) certificate",
+        r"13\s*[-–]\s*24\s*[x×]\s+below either fixed policy",
+        r"(?:current headline|headline result)[^\n]{0,100}pooled mixed-stream",
+        r"(?:maintained headline theory|headline theorem)[^\n]{0,120}(?:one-bit|Le Cam|minimax|full-foundations)",
+        r"KGA[^\n]{0,120}beats both[^\n]{0,120}(?:all|most) natural shifts",
+        r"CCT(?:-20)?[^\n]{0,100}(?:learned|demonstrates) selective routing",
+        r"CCT(?:-20)?[^\n]{0,100}(?:no directional error|zero directional error)",
+        r"CCT(?:-20)?[^\n]{0,100}globally label-unopened",
         r"0/44/1,\s*or\s*0/44/1",
     )
     contextual_markers = (
         "historical",
         "superseded",
         "withdrawn",
+        "invalid",
+        "pending",
+        "not completed",
+        "no completed",
+        "not globally",
+        "does not",
+        "cannot",
+        "lacks",
         "not claim",
         "not a current",
         "forbidden",
     )
-    for path in active_paths:
+    for relative in active_relatives:
+        path = kbound_root / relative
         if not path.is_file():
             problems.append(f"missing active source for legacy-claim scan: {path}")
             continue
