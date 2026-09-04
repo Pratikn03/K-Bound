@@ -81,6 +81,10 @@
 \DeclareRobustCommand{\hashtext}[1]{{\ttfamily\expandafter\seqsplit\expandafter{#1}}}
 % Select natbib-compatible author-year labels from the shared bibliography.
 \newcommand{\KBoundAuthorYearCitations}{}
+% The shared supplement uses ordinary here-placed tables in this one-column
+% review layout; its other drivers retain full-width table* floats.
+\newcommand{\KBoundTMLRLayout}{}
+\newcommand{\KBoundSingleColumnLayout}{}
 
 %% The maintained TMLR artifact is the anonymous review submission.
 \newif\ifanon
@@ -109,8 +113,8 @@
 \end{abstract}
 
 \begin{IEEEkeywords}
-test-time adaptation, safe adaptation, abstention, selective prediction, distribution shift,
-identifiability, label-free risk estimation
+test-time adaptation; adaptation gating; abstention; partial identification; distribution shift;
+conformal calibration; selective decisions
 \end{IEEEkeywords}
 
 \KBoundAnonymousReleaseBlock

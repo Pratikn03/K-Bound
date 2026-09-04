@@ -3,11 +3,20 @@
 \documentclass[11pt,twocolumn]{article}
 \usepackage[T1]{fontenc}
 \usepackage{lmodern,microtype}
-\usepackage[letterpaper,margin=0.74in,columnsep=0.25in]{geometry}
+% A readable conference-style text block.  The earlier 0.74-inch setting made
+% the prose and bibliography needlessly dense and produced brittle float
+% packing; standard one-inch margins keep the paper compact without using
+% page-count padding.
+\usepackage[letterpaper,margin=1in,columnsep=0.25in]{geometry}
 \usepackage{amsmath,amssymb,amsthm,graphicx,booktabs,algorithm,algpseudocode,tikz}
 \usetikzlibrary{arrows.meta,positioning}
-\usepackage{xcolor,enumitem,url,xspace,seqsplit}
-\usepackage[section]{placeins}
+\usepackage{xcolor,enumitem,url,xspace,seqsplit,flushend}
+\usepackage[authoryear,round]{natbib}
+% Do not force full-width floats to clear at every section boundary.  In a
+% two-column article that policy can strand an entire right column whenever a
+% table* is queued near the end of a section.  We instead clear the queue once,
+% immediately before the bibliography.
+\usepackage{placeins}
 \usepackage[colorlinks=true,linkcolor=black,citecolor=blue,urlcolor=blue]{hyperref}
 \hypersetup{pdftitle={K-Bound Short Main Paper},pdfauthor={Pratik Niroula}}
 \theoremstyle{plain}
@@ -32,6 +41,7 @@
 \newcommand{\abstain}{\textnormal{\textsc{abstain}}\xspace}
 \DeclareRobustCommand{\hashtext}[1]{{\ttfamily\expandafter\seqsplit\expandafter{#1}}}
 \providecommand{\path}[1]{\texttt{#1}}
+\newcommand{\KBoundAuthorYearCitations}{}
 % A standalone main paper must not depend on labels defined only in the
 % separately compiled supplement.  Shared prose supplies a descriptive third
 % argument for every such reference.
@@ -57,9 +67,13 @@
 \begin{document}
 \maketitle
 \begin{abstract}\input{kbound_abstract}\end{abstract}
-\noindent\textbf{Keywords:} test-time adaptation; abstention; distribution shift;
-label-free risk estimation; conformal calibration; selective decisions.
+\noindent\textbf{Keywords:} test-time adaptation; adaptation gating; abstention; partial
+identification; distribution shift; conformal calibration; selective decisions.
 \KBoundNamedReleaseBlock{\KBoundRoleShortMain}
 \input{kbound_submission_body}
-{\footnotesize\input{paper/references_kbound_expanded}}
+\FloatBarrier
+% Keep references readable at the same compact size used by many
+% double-column proceedings; footnote-size type made the final pages visually
+% sparse and harder to scan.
+{\small\input{paper/references_kbound_expanded}}
 \end{document}

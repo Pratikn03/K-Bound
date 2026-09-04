@@ -21,7 +21,7 @@ def test_supported_commitment_error_claim_uses_current_semantics():
     claim_text = certificate["claim_text"].lower()
 
     assert certificate["status"] == "supported"
-    assert "fixed scalar benefit target" in claim_text
+    assert "fixed declared scalar target" in claim_text
     assert "evaluation unit" in claim_text
     assert "valid marginal interval coverage" in claim_text
     assert "unconditional wrong-direction commitment probability" in claim_text

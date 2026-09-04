@@ -648,7 +648,11 @@ replacement of a result while allowing the release to omit raw datasets and over
 checkpoints.
 
 \FloatBarrier
+\ifdefined\KBoundSingleColumnLayout
+\begin{table}[H]
+\else
 \begin{table*}[H]
+\fi
 \centering
 \scriptsize
 \caption{Release-status inventory, not a performance comparison. ``Replayable'' means stored
@@ -673,7 +677,11 @@ CIFAR-10.1 & replayable & locked cross-seed condition records & low-margin conse
 Physical camera & protocol only & dashboard, logging schema, and planned session split & no completed fresh recording, held-out session, or result table \\
 \bottomrule
 \end{tabular}
+\ifdefined\KBoundSingleColumnLayout
+\end{table}
+\else
 \end{table*}
+\fi
 \FloatBarrier
 
 \subsection{CCT-20 Inference, Location, and Release Ledger}
@@ -1070,7 +1078,11 @@ $\widehat\Delta+\varepsilon<0$, and abstain otherwise. The experiment must not l
 $\varepsilon$, change $\alpha$, or select a different benefit regressor after observing target
 labels. Exploratory sensitivity analyses may be reported, but they remain outside the primary bar.
 
+\ifdefined\KBoundSingleColumnLayout
+\begin{table}[H]
+\else
 \begin{table*}[H]
+\fi
 \centering
 \scriptsize
 \caption{Protocol requirements for a future confirmatory natural-shift KGA experiment. Each row
@@ -1091,7 +1103,11 @@ Multiplicity & all candidate--track arms in family & time-stamped inventory incl
 Runtime & end-to-end components and peak memory & raw timing rows on the target hardware \\
 \bottomrule
 \end{tabular}
+\ifdefined\KBoundSingleColumnLayout
+\end{table}
+\else
 \end{table*}
+\fi
 
 \subsection{Interpreting Outcomes}
 

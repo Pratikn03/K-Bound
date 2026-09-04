@@ -33,8 +33,11 @@ BUILD_FULL_REPORT="${BUILD_FULL_REPORT-0}"
 KBOUND_AUTHORIZE_PROTECTED_SO2SAT="${KBOUND_AUTHORIZE_PROTECTED_SO2SAT:-0}"
 if [[ -n "${SOURCE_SNAPSHOT_COMMIT:-}" ]]; then
   KBOUND_SOURCE_SNAPSHOT_COMMIT="$SOURCE_SNAPSHOT_COMMIT"
-else
+elif [[ -e "$REPO/.git" ]]; then
   KBOUND_SOURCE_SNAPSHOT_COMMIT="$(git -C "$REPO" rev-parse --short=12 HEAD)"
+else
+  KBOUND_SOURCE_SNAPSHOT_COMMIT="000000000000"
+  echo "WARNING: no Git metadata; using an unsealed nonrelease source identity" >&2
 fi
 if [[ ! "$KBOUND_SOURCE_SNAPSHOT_COMMIT" =~ ^[0-9a-f]{12}$ ]]; then
   echo "ERROR: SOURCE_SNAPSHOT_COMMIT must be exactly 12 lowercase hex characters" >&2

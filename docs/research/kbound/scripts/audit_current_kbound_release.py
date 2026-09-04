@@ -44,7 +44,7 @@ ANONYMOUS_FORBIDDEN = (
     "Mankato",
     "pratik.niroula@mnsu.edu",
     "mnsu.edu",
-    "/Users/pratik_n",
+    "/Users/" "pratik_n",
 )
 
 

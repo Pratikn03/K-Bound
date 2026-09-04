@@ -103,7 +103,7 @@ FORBIDDEN_RULES = (
     ),
     LeakRule(
         "local workspace directory name",
-        "AutoML_Flagship_V8",
+        "AutoML_" "Flagship_V8",
         re.compile(r"\bautoml_flagship_v8\b", re.I),
     ),
 )

@@ -2,9 +2,8 @@
 
 \subsection{Benefit Reduction and Matched-Evidence Impossibility}
 
-The first result connects the decision target to the three population symbols. Agreement outside
-$D$ contributes no risk difference. Binary complementarity on $D$ then makes the sign of benefit
-depend only on $M+\gamma$.
+The first result connects the decision target to the three population symbols. Because the models
+agree off $D$ and binary correctness is complementary on $D$, benefit depends only on $M+\gamma$.
 
 \begin{lemma}[Disagreement-region reduction]\label{lem:reduction}
 Under Assumption~\ref{ass:deploy}, with $\bar a:=\Pr_T(f_a{=}Y\mid D)$,
@@ -67,12 +66,10 @@ $\bar a_\theta=\tfrac12+\theta\delta$ and
 Thus both laws belong to $\mathcal C_\beta$. Lemma~\ref{lem:reduction} yields
 $\Delta_\theta=2\mu_T(D)\theta\delta$. The two benefits are nonzero and have opposite signs.
 \end{proof}
-\noindent The two evidence laws coincide exactly because only the label kernel on $D$ changes.
-This is not a rate-based Le Cam argument. Their total-variation distance is zero, so the conclusion
-is exact non-identifiability rather than a lower bound that varies with separation.
-
-Randomization cannot resolve two worlds that induce exactly the same evidence law. A controller
-that limits both directional errors must instead leave most of its probability on ABSTAIN.
+\noindent The evidence laws coincide exactly---their total-variation distance is zero---so this is
+exact non-identifiability, not a rate-dependent testing bound. Randomization cannot resolve two
+worlds that induce exactly the same evidence law. Controlling both directional errors therefore
+requires abstention.
 
 \begin{corollary}[Matched-evidence abstention lower bound]\label{cor:matched-abstain}
 Fix $\alpha\in(0,\tfrac12)$ and the shared evidence law from Theorem~\ref{lem:nonid}. Let $g$ be
@@ -91,8 +88,8 @@ The three action probabilities sum to one.
 
 \subsection{Boundary Case}
 
-The interior construction gives opposite nonzero signs. The boundary needs a separate argument:
-one evidence-compatible world with zero benefit is already enough to defeat a uniform strict claim.
+Inside the band, both strict signs may be feasible. At the boundary, zero benefit is feasible.
+These constructions differ, but both prevent a uniform strict direction.
 
 \begin{proposition}[Boundary case and closed-band abstention]\label{prop:closed-band}
 Fix $\alpha\in(0,\tfrac12)$. Under Definition~\ref{def:strict-sound}, abstention is the pointwise
@@ -122,11 +119,10 @@ We can now answer the population question completely. The theorem separates four
 sufficiency outside the band, necessity inside the band, and maximality of the resulting rule.
 
 \begin{theorem}[Exact strict-commitment frontier]\label{thm:headline}\label{thm:frontier}
-Under Assumption~\ref{ass:deploy}, fix $(\mu_T,P_S,f_0,f_a,s)$ so that $M$ is determined. Let
-$\beta\ge0$. Necessity and maximality use the full, rich class $\mathcal C_\beta$. In particular,
-that class contains the evidence-identical kernels from Theorem~\ref{lem:nonid} and the zero-benefit
-boundary law. For a narrower subclass not closed under these constructions, only sufficiency
-follows without an additional richness assumption.
+Under Assumption~\ref{ass:deploy}, fix $(\mu_T,P_S,f_0,f_a,s)$ and let $\beta\ge0$. Necessity and
+maximality hold for $\mathcal C_\beta$, or for a subclass closed under the constructions in
+Theorem~\ref{lem:nonid} and Proposition~\ref{prop:closed-band}; otherwise only sufficiency follows
+without an additional richness assumption.
 \begin{enumerate}
 \item[\textnormal{(i)}] \textbf{Reduction.} For every $P_T$, $\sign\Delta=\sign(M+\gamma)$
 (Lemma~\ref{lem:reduction}).
@@ -142,7 +138,7 @@ abstention is the pointwise maximal sound action in the sense of
 Definition~\ref{def:strict-sound}.
 \end{enumerate}
 The population rule $M>\beta\Rightarrow\adapt$, $M<-\beta\Rightarrow\freeze$,
-$|M|\le\beta\Rightarrow\abstain$ is the pointwise maximal sound certificate on
+$|M|\le\beta\Rightarrow\abstain$ is the pointwise maximal sound rule on
 $\mathcal{C}_\beta$.
 \end{theorem}
 \begin{proof}
@@ -159,19 +155,15 @@ Part~(iv) combines (ii), (iii), and Proposition~\ref{prop:closed-band}. Sufficie
 sound strict direction outside the band. The impossibility and boundary results rule out both
 strict directions on the band.
 \end{proof}
-\noindent Outside the band, the permitted residual is too small to reverse the visible direction
-$M$. Inside the band, the same evidence is compatible with a failed strict claim. Abstention is
-therefore part of the identified answer, not a defect of the decision rule.
-
-\noindent The same frontier is visible from the identified benefit set. Let $d=\mu_T(D)>0$. With
-the observables fixed, the full declared class gives
+\noindent Outside the band, the residual cannot reverse $M$; on the band, the same evidence admits
+a failed strict claim, so abstention is part of the identified answer. Let $d=\mu_T(D)>0$. The
+full class identifies
 \[
+ \begin{aligned}
  \Delta(\mathcal C_\beta)
- =2d\left[\max\{-\tfrac12,M-\beta\},
-          \min\{\tfrac12,M+\beta\}\right].
+ &=2d\bigl[\max\{-\tfrac12,M-\beta\},\\
+ &\hspace{3.2em}\min\{\tfrac12,M+\beta\}\bigr].
+ \end{aligned}
 \]
-The interval inside brackets is
-$[-\tfrac12,\tfrac12]\cap[M-\beta,M+\beta]$. The first set enforces
-$\bar a\in[0,1]$; the second enforces $|\bar a-\tfrac12-M|\le\beta$. Every point in their
-intersection is attained by a constant correctness kernel on $D$. A strict direction is available
-exactly when the entire benefit interval lies above or below zero.
+The bracket equals $[-\tfrac12,\tfrac12]\cap[M-\beta,M+\beta]$, and constant correctness kernels
+attain every point. A strict direction exists exactly when this interval excludes zero.

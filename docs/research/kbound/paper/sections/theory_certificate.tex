@@ -29,36 +29,15 @@ On the event $\{|\widehat B-B|\le\varepsilon\}$, the condition
 $\widehat B-\varepsilon>0$ implies $B>0$, so a false adapt requires the complement of
 this event, which has probability at most $\alpha$. The freeze case is symmetric.
 \end{proof}
-For the empirical panels, $B=\Delta^{\mathrm{cell}}$ is the observed evaluation-unit score
-difference and $\widehat B=\widehat\Delta$. A population-risk application instead takes
-$B=\Delta$ and requires coverage for that quantity; cell-outcome coverage alone does not supply it.
-Coverage must be justified separately. Joint exchangeability of calibration and next-unit scores
-under the fitting and candidate protocol, or a justified shift correction, can support this premise.
-Risk alignment is not required for the conditional-on-coverage implication.
+For the empirical panels, $B=\Delta^{\mathrm{cell}}$ and $\widehat B=\widehat\Delta$. A
+population-risk application instead sets $B=\Delta$ and requires coverage for that quantity;
+cell-outcome coverage alone does not provide it.
 
-\begin{remark}[Marginal vs.\ conditional error]\label{rem:fa-marginal}
-Proposition~\ref{thm:certificate} bounds the \emph{marginal, unconditional} false-commit
-probabilities for the declared target $B$. Its false-adapt rate is
-$\mathrm{FA}_{\mathrm u}=\Pr[g=\adapt,B\le0]$. It does \emph{not} bound
-$\mathrm{FA}_{\mathrm c}=\Pr[B\le0\mid g=\adapt]$, defined when
-$\Pr[g=\adapt]>0$ and reported descriptively for $B=\Delta^{\mathrm{cell}}$.
-Selection-conditional coverage requires a separate construction, such as that of
-Jin and Ren~\cite{jin2025selection}; conditional guarantees over specified shift classes
-also require their own calibration procedure~\cite{gibbs2025conditional}.
-Neither is supplied by the marginal premise above. Simultaneous protection across candidates
-and time-uniform protection likewise require additional guarantees.
-Risk alignment (Definition~\ref{def:risk-align}) concerns population sign identifiability;
-coverage for $B$ alone yields the \emph{interval} implication above.
-\end{remark}
-
-\begin{remark}[Fallback when assumptions are unsupported]\label{cor:abstain-valid}
-If interval coverage for the declared target and evaluation unit---or the assumptions supporting
-it---cannot be justified, Proposition~\ref{thm:certificate} supplies no level-$\alpha$ protection
-for either strict action. A separately declared operational fallback may retain the frozen model
-and record abstention. Serving the frozen model without a valid negative interval is not a
-certified $\freeze$ decision. This policy recommendation does not establish that the retained
-model is safe or optimal. If \emph{risk alignment} (Definition~\ref{def:risk-align}) cannot
-be justified for an intended population sign claim, that interpretation remains unsupported.
-The interval implication of Proposition~\ref{thm:certificate} still holds when coverage for the
-declared $B$ is established (cf.\ Theorem~\ref{lem:nonid}).
+\begin{remark}[Scope of the implication]\label{rem:fa-marginal}\label{cor:abstain-valid}
+Proposition~\ref{thm:certificate} controls marginal error for the declared target. It does not
+control error conditional on commitment, group-specific coverage, candidate-selection
+multiplicity, or repeated-time behavior. The coverage premise needs separate justification. When
+it is unsupported, a declared fallback may retain $f_0$ and record \abstain, but that response does
+not prove $f_0$ safe or optimal and is not a certified \freeze decision. Population sign claims
+also require their own risk-alignment argument.
 \end{remark}
