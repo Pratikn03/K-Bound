@@ -22,16 +22,19 @@ Authoritative result artifact:
 
 ## Authority Boundary for Later Studies
 
-The 106-artifact canonical panel predates two later, prospectively governed studies. They are not
+The 106-artifact canonical panel predates two later, separately governed studies. They are not
 silently merged into that panel:
 
 - **CCT-20 target:** `docs/research/kbound/paper/generated/cct20_release_manifest.json`
   (SHA-256 `2ac7365df0f86eabb284fd0e0646986c4dc1f8f552b3a32f16a2072fdceaf26c`)
-  and its receipt are the authority. The verdict is `SAFE_UTILITY_ONLY`: 44 FREEZE, zero ADAPT, one
-  ABSTAIN across 45 checkpoint-location cells. KGA ties always-freeze and avoids the degradation
-  from always-adapt, but fails the preregistered strong-success action-exposure requirement. Outcomes
-  were unopened before execution, but aggregate target metadata had been inspected during dataset
-  ranking; the study is therefore not described as literally label-unopened.
+  and its receipt are the authority. This was a cell-outcome-unopened, internally sealed execution:
+  individual cell outcomes remained unopened until one-shot scoring. Aggregate target-label
+  metadata had previously been inspected, so the study was not globally label-unopened or publicly
+  preregistered. The verdict is `SAFE_UTILITY_ONLY`: 0/44/1 ADAPT/FREEZE/ABSTAIN across 45
+  checkpoint--location cells. All 45 predictions used the frozen model, but the sole helpful cell
+  received FREEZE, yielding one false FREEZE among 44 FREEZE actions (1/45 overall). KGA matched
+  always-freeze and avoided the degradation from always-adapt, but failed the internally locked
+  strong-success action-exposure requirement.
 - **So2Sat development gate-fit:**
   `experiments/kbound/results/so2sat_lcz42_prospective_v1/development_mps_bn_fix_v1/so2sat_candidate_selection.json`
   (SHA-256 `8db11a797d98c5f104736a5ed982a422982f9f75fc8a7d1c6e13f07a826c0b79`)
