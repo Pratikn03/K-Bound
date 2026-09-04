@@ -54,7 +54,11 @@ incomplete, and invalid studies retain their original status.
 Table~\ref{tab:compact-canonical} collects the remaining ordinary-accuracy replays;
 the dataset-specific interpretations follow below.
 
+\ifdefined\KBoundFullReportLayout
+\begin{table}[H]
+\else
 \begin{table*}[!htbp]
+\fi
 \centering
 \scriptsize
 \caption{Appendix ordinary-accuracy diagnostics. Each row is weighted over the evaluation
@@ -65,7 +69,11 @@ candidate-specific. For PACS, $n=12$ denotes equal-weight domain--seed regret un
 archive contains 216 repeated action decisions.}
 \label{tab:compact-canonical}
 \input{paper/generated/kbound_auxiliary_accuracy_table.tex}
+\ifdefined\KBoundFullReportLayout
+\end{table}
+\else
 \end{table*}
+\fi
 
 \subsection{Balanced-Accuracy Diagnostic Replays}
 
@@ -74,7 +82,11 @@ archive contains 216 repeated action decisions.}
 Table~\ref{tab:auxiliary-balanced} reports the balanced-accuracy replays on their own
 metric scale, with each recorded candidate and evaluation unit kept distinct.
 
+\ifdefined\KBoundFullReportLayout
+\begin{table}[H]
+\else
 \begin{table*}[!htbp]
+\fi
 \centering
 \scriptsize
 \caption{Appendix balanced-accuracy diagnostics; lower regret is better. Each row uses the
@@ -85,7 +97,11 @@ OOD was opened, its B--v2 rows are separate within-seed diagnostics, and the dis
 model seed 0. No interval or confirmatory claim is attached to this table.}
 \label{tab:auxiliary-balanced}
 \input{paper/generated/kbound_auxiliary_balanced_accuracy_table.tex}
+\ifdefined\KBoundFullReportLayout
+\end{table}
+\else
 \end{table*}
+\fi
 
 \subsection{Large-Scale Corruption: ImageNet-C}
 
